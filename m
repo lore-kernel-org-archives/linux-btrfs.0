@@ -1,60 +1,171 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp2130.oracle.com ([141.146.126.79]:38416 "EHLO
-        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752090AbeC0UlP (ORCPT
+Received: from userp2130.oracle.com ([156.151.31.86]:58626 "EHLO
+        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752069AbeC0WE2 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 27 Mar 2018 16:41:15 -0400
-Subject: Re: [PATCH 2/8] btrfs: return required error from
- btrfs_check_super_csum
-To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
-        linux-btrfs@vger.kernel.org
+        Tue, 27 Mar 2018 18:04:28 -0400
+Subject: Re: [PATCH 5/8] btrfs: check if the fsid in the primary sb and copy
+ sb are same
+To: Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
 References: <20180326082742.9235-1-anand.jain@oracle.com>
- <20180326082742.9235-3-anand.jain@oracle.com>
- <4203fb44-3fd4-1e26-bf03-40d640de09af@suse.com>
- <20180327191636.GE30422@twin.jikos.cz>
+ <20180326082742.9235-6-anand.jain@oracle.com>
+ <8da9690d-9a4b-2544-be21-0c99f09760f0@suse.com>
 From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <ac89e7e0-dd67-d606-859d-dd784157e453@oracle.com>
-Date: Wed, 28 Mar 2018 04:43:02 +0800
+Message-ID: <430fc7dc-1266-e9f4-6453-60bda1e9a82c@oracle.com>
+Date: Wed, 28 Mar 2018 06:06:16 +0800
 MIME-Version: 1.0
-In-Reply-To: <20180327191636.GE30422@twin.jikos.cz>
+In-Reply-To: <8da9690d-9a4b-2544-be21-0c99f09760f0@suse.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On 03/28/2018 03:16 AM, David Sterba wrote:
-> On Tue, Mar 27, 2018 at 11:05:53AM +0300, Nikolay Borisov wrote:
->>> +	if (err) {
->>> +		if (err == -EINVAL)
->>> +			pr_err("BTRFS error (device %pg): "\
->>> +				"unsupported checksum algorithm",
->>> +				fs_devices->latest_bdev);
->>
->> I don't think strings should be idented. I.e the correct thing here
->> should be to have only fs_devices->latest_bdev on a new line, even if
->> the string goes above the char limit of 80. In any case the \ is not
->> needed due to gcc's support for string literal concatenation:
->>
->> pr_err("BTRFS error (device %pg): "
->>         "unsupported checksum algorithm",
->>         fs_devices->latest_bdev)
->>
->> should work equally well. But as I said I don't think this is even
->> needed. Let's wait and see what David says.
+On 03/27/2018 04:49 PM, Nikolay Borisov wrote:
 > 
-> The strings should not be split, because we want to be able to grep the
-> sources for the error messages. If the string does not fit 80 chars
-> per line, then it can be moved to the next line and un-indented to the
-> left. Plenty of examples.
+> 
+> On 26.03.2018 11:27, Anand Jain wrote:
+>> During the btrfs dev scan make sure that other copies of superblock
+>> contain the same fsid as the primary SB. So that we bring to the
+>> user notice if the superblock has been overwritten.
+>>
+>>   mkfs.btrfs -fq /dev/sdc
+>>   mkfs.btrfs -fq /dev/sdb
+>>   dd if=/dev/sdb of=/dev/sdc count=4K skip=64K seek=64K obs=1 ibs=1
+>>   mount /dev/sdc /btrfs
+>>
+>> Caveat: Pls note that older btrfs-progs do not wipe the non-overwriting
+>> stale superblock like copy2 if a smaller mkfs.btrfs -b  <size>  is created.
+>> So this patch in the kernel will report error. The workaround is to wipe
+>> the superblock manually, like
+>>   dd if=/dev/zero of=<dev> seek=274877906944 ibs=1 obs=1 count4K
+>> OR apply btrfs-progs patch
+>>    btrfs-progs: wipe copies of the stale superblock beyond -b size
+>> which shall find and wipe the non overwriting superblock.
+>>
+>> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+>> ---
+>>   fs/btrfs/volumes.c | 60 ++++++++++++++++++++++++++++++++++++++++++------------
+>>   1 file changed, 47 insertions(+), 13 deletions(-)
+>>
+>> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+>> index ed22f0a3d239..45dd0674571b 100644
+>> --- a/fs/btrfs/volumes.c
+>> +++ b/fs/btrfs/volumes.c
+>> @@ -1198,40 +1198,74 @@ static int btrfs_read_disk_super(struct block_device *bdev, u64 bytenr,
+>>   int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
+>>   			  struct btrfs_fs_devices **fs_devices_ret)
+>>   {
+>> +	struct btrfs_super_block *disk_super_primary;
+>>   	struct btrfs_super_block *disk_super;
+>>   	struct btrfs_device *device;
+>>   	struct block_device *bdev;
+>>   	struct page *page;
+>>   	int ret = 0;
+>> -	u64 bytenr;
+>> +	int i;
+>>   
+>> -	/*
+>> -	 * we would like to check all the supers, but that would make
+>> -	 * a btrfs mount succeed after a mkfs from a different FS.
+>> -	 * So, we need to add a special mount option to scan for
+>> -	 * later supers, using BTRFS_SUPER_MIRROR_MAX instead
+>> -	 */
+>> -	bytenr = btrfs_sb_offset(0);
+>>   	flags |= FMODE_EXCL;
+>>   
+>>   	bdev = blkdev_get_by_path(path, flags, holder);
+>>   	if (IS_ERR(bdev))
+>>   		return PTR_ERR(bdev);
+>>   
+>> -	ret = btrfs_read_disk_super(bdev, bytenr, &page, &disk_super);
+>> -	if (ret)
+>> +	disk_super_primary = kzalloc(sizeof(*disk_super_primary), GFP_KERNEL);
+>> +	if (!disk_super_primary) {
+>> +		ret = -ENOMEM;
+>>   		goto error_bdev_put;
+>> +	}
+>> +
+>> +	/*
+>> +	 * We would like to check all the supers and use one good copy,
+>> +	 * but that would make a btrfs mount succeed after a mkfs from
+>> +	 * a different FS.
+>> +	 * So, we need to add a special mount option to scan for
+>> +	 * later supers, using BTRFS_SUPER_MIRROR_MAX instead.
+>> +	 * So, just validate if all copies of the superblocks are ok
+>> +	 * and have the same fsid.
+>> +	 */
+>> +	for (i = 0; i < BTRFS_SUPER_MIRROR_MAX; i++) {
+>> +		u64 bytenr = btrfs_sb_offset(i);
+>> +
+>> +		ret = btrfs_read_disk_super(bdev, bytenr, &page, &disk_super);
+>> +		if (ret) {
+>> +			if (i == 0)
+>> +				goto error_kfree;
+>> +			/* copy2 is optional */
+>> +			ret = 0;
+>> +			continue;
+>> +		}
+>> +
+>> +		if (i == 0) {
+>> +			memcpy(disk_super_primary, disk_super,
+>> +			       sizeof(*disk_super_primary));
+>> +			btrfs_release_disk_super(page);
+>> +			continue;
+> 
+> Doing the memcpy is enough here, the bottom of the loop already releases
+> the disk page and continues on the next iteration.
 
-  I understand reason behind string should not be split, but I
-  thought here will be an exception, as if you want to search
-  for the string you will still use "unsupported checksum algorithm"
-  which is still in one line.
-  About the grep not able to find the string which are split,
-  I look at it as fixing the wrong end of the problem. That is Grep
-  end problem being fixes at the c code end. Anyway as its kind of
-  linux general guidlines, I shall fix my patch.
+  The page map happens inside btrfs_read_disk_super(), we
+  need unmap before going for the next superblock.
+
+
+>> +		} else if (memcmp(disk_super_primary->fsid, disk_super->fsid,
+>> +			   BTRFS_FSID_SIZE)) {
+>> +			pr_err("BTRFS (device %pg): superblock fsid missmatch "\
+>> +				"primary %pU copy%d %pU", bdev,
+>> +				disk_super_primary->fsid, i, disk_super->fsid);
+>> +			ret = -EINVAL;
+>> +			btrfs_release_disk_super(page);
+>> +			goto error_kfree;
+>> +		}
+>> +		btrfs_release_disk_super(page);
+> 
+> I'd say split the "read first sb" from the loop, because alway want to
+> read it and return an error if it fails. And then have the loop begin at
+> i = 1 and handle only the possible mirrors of the sb. That would clean
+> up the nested 'if' in handling the ret.
+> 
+> Also you could introduce another struct *page primary_page where you
+> read the first super block. That way you save a memcpy + kzalloc but
+> you'd have to always free it on function exit so I am not sure how much
+> value it brings in terms of readability.
+
+  Right. Also with this approach I don't have to kzallo() anymore. Will fix.
 
 Thanks, Anand
+
+>> +	}
+>>   
+>>   	mutex_lock(&uuid_mutex);
+>> -	device = device_list_add(path, disk_super);
+>> +	device = device_list_add(path, disk_super_primary);
+>>   	if (IS_ERR(device))
+>>   		ret = PTR_ERR(device);
+>>   	else
+>>   		*fs_devices_ret = device->fs_devices;
+>>   	mutex_unlock(&uuid_mutex);
+>>   
+>> -	btrfs_release_disk_super(page);
+>> -
+>> +error_kfree:
+>> +	kfree(disk_super_primary);
+>>   error_bdev_put:
+>>   	blkdev_put(bdev, flags);
+>>   
+>>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 

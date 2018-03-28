@@ -1,161 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp2130.oracle.com ([141.146.126.79]:36786 "EHLO
-        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752129AbeC0XiO (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 27 Mar 2018 19:38:14 -0400
-Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
-        by aserp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w2RNHbb5033935
-        for <linux-btrfs@vger.kernel.org>; Tue, 27 Mar 2018 23:38:14 GMT
-Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
-        by aserp2130.oracle.com with ESMTP id 2gyygk822q-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Tue, 27 Mar 2018 23:38:13 +0000
-Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
-        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w2RNcDWb002958
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Tue, 27 Mar 2018 23:38:13 GMT
-Received: from abhmp0004.oracle.com (abhmp0004.oracle.com [141.146.116.10])
-        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w2RNcCYO032759
-        for <linux-btrfs@vger.kernel.org>; Tue, 27 Mar 2018 23:38:12 GMT
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 0/9] Superblock read and verify cleanups
-Date: Wed, 28 Mar 2018 07:39:51 +0800
-Message-Id: <20180327234000.23656-1-anand.jain@oracle.com>
+Received: from mx2.suse.de ([195.135.220.15]:60176 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1750703AbeC1HF6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 28 Mar 2018 03:05:58 -0400
+Subject: Re: [PATCH v2 3/8] btrfs: cleanup btrfs_read_disk_super() to return
+ std error
+To: Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
+References: <20180327234000.23656-1-anand.jain@oracle.com>
+ <20180327234000.23656-4-anand.jain@oracle.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <e402bb73-de66-eda4-ae30-b293d5f31e24@suse.com>
+Date: Wed, 28 Mar 2018 10:05:56 +0300
+MIME-Version: 1.0
+In-Reply-To: <20180327234000.23656-4-anand.jain@oracle.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-v1->v2:
- Various changes suggested by Nicokay. Thanks. For specific changes
- pls ref to the patch.
-
-Patch 1-4/8 are preparatory patches adds cleanups and nonstatic requisites.
-
-Patch 5/8 makes sure that all copies of the superblock have the same fsid
-when we scan the device.
-
-Patch 6/8 verifies superblock csum when we read it in the scan context.
-
-Patch 7/8 fixes a bug that we weren't verifying the superblock csum for
-the non-latest_bdev.
-
-And 8/8 patch drops the redundant invalidate_bdev() call during mount.
-
-There is a btrfs-progs patch which is a kind of related, as its found that
-we weren't wiping the non-overwritten superblock, so it could cause
-confusion during the superblock recovery process. So the patch btrfs-progs
-1/1 adds code to wipe superblock if we aren't overwriting it.
-
-Now since kernel patch 5/8 checks if all the superblock copies are
-pointing to the same fsid on the disk, so the scan will fail if without
-the above 1/1 btrfs-progs, as in the example below [1]. However the simple
-workaround is to wipe the superblock manually [2] or apply the btrfs-progs
-patch below.
-
-[1]
- mkfs.btrfs -qf /dev/sdb <-- 1T disk
- mkfs.btrfs -b 256M  /dev/sdb
- ERROR: device scan failed on /dev/sdb
-
-[2]
- dd if=/dev/zero of=<dev> seek=274877906944 ibs=1 obs=1 count4K
-
-Unfortunately, the error messages should have been failed to register
-[3] device into the kernel to be more appropriate to the error.
-
-[3]
-        ret = ioctl(fd, BTRFS_IOC_SCAN_DEV, &args);
-        if (ret < 0) {
-                error("device scan failed on '%s': %m", fname);
-                ret = -errno;
-        }
 
 
-Patches 1-7/8 were sent independently before. And  I found few more things
-to fix alongs the line, and since they are related, so I am sending these
-all together. Also, as there are minor changes, like in pr_err strings,
-and splitting the unrelated changes into a separate patch, so though I am
-thankful for the received reviewed-by, I couldn't include them here. Sorry.
+On 28.03.2018 02:39, Anand Jain wrote:
+> The only caller btrfs_scan_one_device() sets -EINVAL for error from
+> btrfs_read_disk_super(), so this patch returns -EINVAL from the latter
+> function.
+> 
+> A preparatory patch to add csum check in btrfs_read_disk_super().
+> 
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
 
-Finally, here I am including the function relations [4] so that it will help
-to review the code. And this flow is before these patches were applied.
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 
-[4]
-In the long term, I suggest deprecating ioctl args which pass device path
-(where possible), like in delete-device/replace. And
-btrfs_read_dev_one_super() should replace btrfs_read_disk_super()
-
-delete-device/replace:
-btrfs_rm_device() || btrfs_dev_replace_by_ioctl()
-|_btrfs_find_device_by_devspec()
-  |_btrfs_find_device_missing_or_by_path()
-    |_btrfs_find_device_by_path()
-      |_btrfs_get_bdev_and_sb()
-        |_btrfs_read_dev_super()
-          |_btrfs_read_dev_one_super()
-            |___bread()
-
-btrfs_mount_root()
- |
- |_btrfs_parse_early_options (-o device only)
- | |_btrfs_scan_one_device
- |   |_btrfs_read_disk_super()
- |     |_read_cache_page_gfp()
- |
- |_btrfs_scan_one_device(mount-arg-dev only)
- | |_btrfs_read_disk_super()
- |   |_read_cache_page_gfp()
- |
- |
- |_btrfs_open_devices(fsid:all)
- |  |_btrfs_open_one_device()
- |    |_btrfs_get_bdev_and_sb()  <--- invalidate_bdev(fsid:all)
- |      |_btrfs_read_dev_super()
- |        |_btrfs_read_dev_one_super()
- |          |___bread()
- |
- |_btrfs_fill_super()
-   |_btrfs_open_ctree()   <-- invalidate_bdev(latest_bdev) <-- redundant
-     |_btrfs_read_dev_super(latest_bdev only)
-     | |_btrfs_read_dev_one_super(latest_bdev only)
-     |   |___bread(latest_bdev)
-     |
-     |_btrfs_check_super_csum(latest_bdev only) [*]
-     |
-     |_btrfs_read_chunk_tree
-     | |_read_one_dev()
-     |   |_open_seed_devices()
-     |     |_btrfs_open_devices(fs_devices->seed only)
-
-scan/ready
-|
-|_btrfs_scan_one_device(ioctl-arg-dev only)
-   |_btrfs_read_disk_super()
-     |_read_cache_page_gfp()
-
-
-Anand Jain (8):
-  btrfs: cleanup btrfs_check_super_csum() for better code flow
-  btrfs: return required error from btrfs_check_super_csum
-  btrfs: cleanup btrfs_read_disk_super() to return std error
-  btrfs: make btrfs_check_super_csum() non static
-  btrfs: check if the fsid in the primary sb and copy sb are same
-  btrfs: verify checksum when superblock is read for scan
-  btrfs: verify checksum for all devices in mount context
-  btrfs: drop the redundant invalidate_bdev()
-
- fs/btrfs/disk-io.c | 72 +++++++++++++++++++++++-----------------------
- fs/btrfs/disk-io.h |  1 +
- fs/btrfs/volumes.c | 84 ++++++++++++++++++++++++++++++++++++++++++------------
- 3 files changed, 102 insertions(+), 55 deletions(-)
-
-Anand Jain (1):
-  btrfs-progs: wipe copies of the stale superblock beyond -b size
-
- utils.c | 35 +++++++++++++++++++++++++++++++++++
- 1 file changed, 35 insertions(+)
-
--- 
-2.7.0
-
+> ---
+> v1->v2:
+>  Check btrfs_read_disk_super() to be more explicit ret < 0
+> 
+>  fs/btrfs/volumes.c | 15 +++++++--------
+>  1 file changed, 7 insertions(+), 8 deletions(-)
+> 
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index 87d183accdb2..e63723f23227 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -1154,23 +1154,23 @@ static int btrfs_read_disk_super(struct block_device *bdev, u64 bytenr,
+>  
+>  	/* make sure our super fits in the device */
+>  	if (bytenr + PAGE_SIZE >= i_size_read(bdev->bd_inode))
+> -		return 1;
+> +		return -EINVAL;
+>  
+>  	/* make sure our super fits in the page */
+>  	if (sizeof(**disk_super) > PAGE_SIZE)
+> -		return 1;
+> +		return -EINVAL;
+>  
+>  	/* make sure our super doesn't straddle pages on disk */
+>  	index = bytenr >> PAGE_SHIFT;
+>  	if ((bytenr + sizeof(**disk_super) - 1) >> PAGE_SHIFT != index)
+> -		return 1;
+> +		return -EINVAL;
+>  
+>  	/* pull in the page with our super */
+>  	*page = read_cache_page_gfp(bdev->bd_inode->i_mapping,
+>  				   index, GFP_KERNEL);
+>  
+>  	if (IS_ERR_OR_NULL(*page))
+> -		return 1;
+> +		return -EINVAL;
+>  
+>  	p = kmap(*page);
+>  
+> @@ -1180,7 +1180,7 @@ static int btrfs_read_disk_super(struct block_device *bdev, u64 bytenr,
+>  	if (btrfs_super_bytenr(*disk_super) != bytenr ||
+>  	    btrfs_super_magic(*disk_super) != BTRFS_MAGIC) {
+>  		btrfs_release_disk_super(*page);
+> -		return 1;
+> +		return -EINVAL;
+>  	}
+>  
+>  	if ((*disk_super)->label[0] &&
+> @@ -1218,10 +1218,9 @@ int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
+>  	if (IS_ERR(bdev))
+>  		return PTR_ERR(bdev);
+>  
+> -	if (btrfs_read_disk_super(bdev, bytenr, &page, &disk_super)) {
+> -		ret = -EINVAL;
+> +	ret = btrfs_read_disk_super(bdev, bytenr, &page, &disk_super);
+> +	if (ret < 0)
+>  		goto error_bdev_put;
+> -	}
+>  
+>  	mutex_lock(&uuid_mutex);
+>  	device = device_list_add(path, disk_super);
+> 

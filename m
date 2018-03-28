@@ -1,32 +1,102 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:54523 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:35406 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752159AbeC3WBB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 30 Mar 2018 18:01:01 -0400
-Date: Fri, 30 Mar 2018 23:58:33 +0200
+        id S1752562AbeC1OAX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 28 Mar 2018 10:00:23 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id D441BADE2
+        for <linux-btrfs@vger.kernel.org>; Wed, 28 Mar 2018 14:00:21 +0000 (UTC)
+Date: Wed, 28 Mar 2018 15:57:55 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Omar Sandoval <osandov@osandov.com>
-Cc: linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: Re: [PATCH 0/5] libbtrfsutil: misc fixes
-Message-ID: <20180330215833.GX30422@twin.jikos.cz>
+To: David Sterba <dsterba@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: lift errors from add_extent_changeset to the
+ callers
+Message-ID: <20180328135755.GH30422@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <cover.1522309741.git.osandov@fb.com>
+References: <20180327174403.3339-1-dsterba@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <cover.1522309741.git.osandov@fb.com>
+In-Reply-To: <20180327174403.3339-1-dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Mar 29, 2018 at 12:53:52AM -0700, Omar Sandoval wrote:
-> From: Omar Sandoval <osandov@fb.com>
-> This is a handful of minor fixes for libbtrfsutil that would be good to
-> get in before the release. Patch 1 fixes an issue reported by Tomohiro a
-> few weeks back. Patch 2 fixes a memory leak I noticed while writing
-> patch 1. Patch 3 makes us use the local mkfs.btrfs so that the tests can
-> run on the CI system. Patch 4 fixes an issue I noticed while testing
-> that fix. Patch 5 fixes a test failure caused by "btrfs-progs: mkfs: add
-> uuid and otime to ROOT_ITEM of, FS_TREE".
+On Tue, Mar 27, 2018 at 07:44:03PM +0200, David Sterba wrote:
+> The missing error handling in add_extent_changeset was hidden, so make
+> it at least visible in the callers.
 > 
-> Based on your devel branch. Please apply!
+> Signed-off-by: David Sterba <dsterba@suse.com>
+> ---
+>  fs/btrfs/extent_io.c | 19 +++++++++++--------
+>  1 file changed, 11 insertions(+), 8 deletions(-)
+> 
+> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> index f27bad003f8e..f141d0fd7a65 100644
+> --- a/fs/btrfs/extent_io.c
+> +++ b/fs/btrfs/extent_io.c
+> @@ -119,23 +119,22 @@ struct extent_page_data {
+>  	unsigned int sync_io:1;
+>  };
+>  
+> -static void add_extent_changeset(struct extent_state *state, unsigned bits,
+> +static int add_extent_changeset(struct extent_state *state, unsigned bits,
+>  				 struct extent_changeset *changeset,
+>  				 int set)
+>  {
+>  	int ret;
+>  
+>  	if (!changeset)
+> -		return;
+> +		return 0;
+>  	if (set && (state->state & bits) == bits)
+> -		return;
+> +		return 0;
+>  	if (!set && (state->state & bits) == 0)
+> -		return;
+> +		return 0;
+>  	changeset->bytes_changed += state->end - state->start + 1;
+>  	ret = ulist_add(&changeset->range_changed, state->start, state->end,
+>  			GFP_ATOMIC);
+> -	/* ENOMEM */
+> -	BUG_ON(ret < 0);
+> +	return ret;
+>  }
+>  
+>  static void flush_write_bio(struct extent_page_data *epd);
+> @@ -527,6 +526,7 @@ static struct extent_state *clear_state_bit(struct extent_io_tree *tree,
+>  {
+>  	struct extent_state *next;
+>  	unsigned bits_to_clear = *bits & ~EXTENT_CTLBITS;
+> +	int ret;
+>  
+>  	if ((bits_to_clear & EXTENT_DIRTY) && (state->state & EXTENT_DIRTY)) {
+>  		u64 range = state->end - state->start + 1;
+> @@ -534,7 +534,8 @@ static struct extent_state *clear_state_bit(struct extent_io_tree *tree,
+>  		tree->dirty_bytes -= range;
+>  	}
+>  	clear_state_cb(tree, state, bits);
+> -	add_extent_changeset(state, bits_to_clear, changeset, 0);
+> +	ret = add_extent_changeset(state, bits_to_clear, changeset, 0);
+> +	BUG_ON(ret);
 
-Done, thanks.
+This must be BUG_ON(ret < 0) of course.
+
+>  	state->state &= ~bits_to_clear;
+>  	if (wake)
+>  		wake_up(&state->wq);
+> @@ -805,13 +806,15 @@ static void set_state_bits(struct extent_io_tree *tree,
+>  			   unsigned *bits, struct extent_changeset *changeset)
+>  {
+>  	unsigned bits_to_set = *bits & ~EXTENT_CTLBITS;
+> +	int ret;
+>  
+>  	set_state_cb(tree, state, bits);
+>  	if ((bits_to_set & EXTENT_DIRTY) && !(state->state & EXTENT_DIRTY)) {
+>  		u64 range = state->end - state->start + 1;
+>  		tree->dirty_bytes += range;
+>  	}
+> -	add_extent_changeset(state, bits_to_set, changeset, 1);
+> +	ret = add_extent_changeset(state, bits_to_set, changeset, 1);
+> +	BUG_ON(ret);
+
+Same.

@@ -1,32 +1,110 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:34991 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752384AbeCaAEg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 30 Mar 2018 20:04:36 -0400
-Date: Sat, 31 Mar 2018 02:02:07 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Liu Bo <bo.liu@linux.alibaba.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: print error messages when failing to read trees
-Message-ID: <20180331000207.GA30422@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1522275105-60516-1-git-send-email-bo.liu@linux.alibaba.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1522275105-60516-1-git-send-email-bo.liu@linux.alibaba.com>
+Received: from out30-130.freemail.mail.aliyun.com ([115.124.30.130]:58292 "EHLO
+        out30-130.freemail.mail.aliyun.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1753578AbeC1WL7 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 28 Mar 2018 18:11:59 -0400
+From: Liu Bo <bo.liu@linux.alibaba.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: print error messages when failing to read trees
+Date: Thu, 29 Mar 2018 06:11:45 +0800
+Message-Id: <1522275105-60516-1-git-send-email-bo.liu@linux.alibaba.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Mar 29, 2018 at 06:11:45AM +0800, Liu Bo wrote:
-> When mount fails to read trees like fs tree, checksum tree, extent
-> tree, etc, there is not enough information about where went wrong.
-> 
-> With this, messages like
-> 
-> "BTRFS warning (device sdf): failed to read root (objectid=7): -5"
-> 
-> would help us a bit.
-> 
-> Signed-off-by: Liu Bo <bo.liu@linux.alibaba.com>
+When mount fails to read trees like fs tree, checksum tree, extent
+tree, etc, there is not enough information about where went wrong.
 
-Reviewed-by: David Sterba <dsterba@suse.com>
+With this, messages like
+
+"BTRFS warning (device sdf): failed to read root (objectid=7): -5"
+
+would help us a bit.
+
+Signed-off-by: Liu Bo <bo.liu@linux.alibaba.com>
+---
+ fs/btrfs/disk-io.c | 31 ++++++++++++++++++++++---------
+ 1 file changed, 22 insertions(+), 9 deletions(-)
+
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 21f34ad..954616c 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2334,23 +2334,29 @@ static int btrfs_read_roots(struct btrfs_fs_info *fs_info)
+ 	location.offset = 0;
+ 
+ 	root = btrfs_read_tree_root(tree_root, &location);
+-	if (IS_ERR(root))
+-		return PTR_ERR(root);
++	if (IS_ERR(root)) {
++		ret = PTR_ERR(root);
++		goto out;
++	}
+ 	set_bit(BTRFS_ROOT_TRACK_DIRTY, &root->state);
+ 	fs_info->extent_root = root;
+ 
+ 	location.objectid = BTRFS_DEV_TREE_OBJECTID;
+ 	root = btrfs_read_tree_root(tree_root, &location);
+-	if (IS_ERR(root))
+-		return PTR_ERR(root);
++	if (IS_ERR(root)) {
++		ret = PTR_ERR(root);
++		goto out;
++	}
+ 	set_bit(BTRFS_ROOT_TRACK_DIRTY, &root->state);
+ 	fs_info->dev_root = root;
+ 	btrfs_init_devices_late(fs_info);
+ 
+ 	location.objectid = BTRFS_CSUM_TREE_OBJECTID;
+ 	root = btrfs_read_tree_root(tree_root, &location);
+-	if (IS_ERR(root))
+-		return PTR_ERR(root);
++	if (IS_ERR(root)) {
++		ret = PTR_ERR(root);
++		goto out;
++	}
+ 	set_bit(BTRFS_ROOT_TRACK_DIRTY, &root->state);
+ 	fs_info->csum_root = root;
+ 
+@@ -2367,7 +2373,7 @@ static int btrfs_read_roots(struct btrfs_fs_info *fs_info)
+ 	if (IS_ERR(root)) {
+ 		ret = PTR_ERR(root);
+ 		if (ret != -ENOENT)
+-			return ret;
++			goto out;
+ 	} else {
+ 		set_bit(BTRFS_ROOT_TRACK_DIRTY, &root->state);
+ 		fs_info->uuid_root = root;
+@@ -2376,13 +2382,19 @@ static int btrfs_read_roots(struct btrfs_fs_info *fs_info)
+ 	if (btrfs_fs_compat_ro(fs_info, FREE_SPACE_TREE)) {
+ 		location.objectid = BTRFS_FREE_SPACE_TREE_OBJECTID;
+ 		root = btrfs_read_tree_root(tree_root, &location);
+-		if (IS_ERR(root))
+-			return PTR_ERR(root);
++		if (IS_ERR(root)) {
++			ret = PTR_ERR(root);
++			goto out;
++		}
+ 		set_bit(BTRFS_ROOT_TRACK_DIRTY, &root->state);
+ 		fs_info->free_space_root = root;
+ 	}
+ 
+ 	return 0;
++out:
++	btrfs_warn(fs_info, "failed to read root (objectid=%llu): %d",
++		   location.objectid, ret);
++	return ret;
+ }
+ 
+ int open_ctree(struct super_block *sb,
+@@ -2953,6 +2965,7 @@ int open_ctree(struct super_block *sb,
+ 	fs_info->fs_root = btrfs_read_fs_root_no_name(fs_info, &location);
+ 	if (IS_ERR(fs_info->fs_root)) {
+ 		err = PTR_ERR(fs_info->fs_root);
++		btrfs_warn(fs_info, "failed to read fs tree: %d", err);
+ 		goto fail_qgroup;
+ 	}
+ 
+-- 
+1.8.3.1
+

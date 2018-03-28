@@ -1,55 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.99]:57760 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750917AbeC0Idx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 27 Mar 2018 04:33:53 -0400
-Received: from debian3.lan (bl12-226-64.dsl.telepac.pt [85.245.226.64])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id A0C382183B
-        for <linux-btrfs@vger.kernel.org>; Tue, 27 Mar 2018 08:33:52 +0000 (UTC)
-From: fdmanana@kernel.org
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/2] Btrfs: fix copy_items() return value when logging an inode
-Date: Mon, 26 Mar 2018 23:59:12 +0100
-Message-Id: <20180326225912.10049-1-fdmanana@kernel.org>
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:23544 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1752027AbeC1GHv (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 28 Mar 2018 02:07:51 -0400
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
+        by cn.fujitsu.com (Postfix) with ESMTP id 9569C4D0EFCD
+        for <linux-btrfs@vger.kernel.org>; Wed, 28 Mar 2018 14:07:47 +0800 (CST)
+From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] btrfs-progs: build: modify cscope/ctags rules to include directories such as check
+Date: Wed, 28 Mar 2018 14:07:38 +0800
+Message-ID: <20180328060738.23896-1-lufq.fnst@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+Modify cscope/ctags rule to include directories such as check/
+libbtrfsutil/kernel-lib/kernel-shared.
 
-When logging an inode, at tree-log.c:copy_items(), if we call
-btrfs_next_leaf() at the loop which checks for the need to log holes, we
-need to make sure copy_items() returns the value 1 to its caller and
-not 0 (on success). This is because the path the caller passed was
-released and is now different from what is was before, and the caller
-expects a return value of 0 to mean both success and that the path
-has not changed, while a return value of 1 means both success and
-signals the caller that it can not reuse the path, it has to perform
-another tree search.
-
-Even though this is a case that should not be triggered on normal
-circumstances or very rare at least, its consequences can be very
-unpredictable (especially when replaying a log tree).
-
-Fixes: 16e7549f045d ("Btrfs: incompatible format change to remove hole extents")
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
+Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 ---
- fs/btrfs/tree-log.c | 1 +
- 1 file changed, 1 insertion(+)
+ Makefile | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 1d738ff5c41b..abd9fd81cd1c 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -3960,6 +3960,7 @@ static noinline int copy_items(struct btrfs_trans_handle *trans,
- 			ASSERT(ret == 0);
- 			src = src_path->nodes[0];
- 			i = 0;
-+			need_find_last_extent = true;
- 		}
+diff --git a/Makefile b/Makefile
+index 6065522a615f..8afc8f6ed6a3 100644
+--- a/Makefile
++++ b/Makefile
+@@ -585,11 +585,15 @@ manpages:
  
- 		btrfs_item_key_to_cpu(src, &key, i);
+ tags: FORCE
+ 	@echo "    [TAGS]   $(TAGS_CMD)"
+-	$(Q)$(TAGS_CMD) *.[ch] image/*.[ch] convert/*.[ch] mkfs/*.[ch]
++	$(Q)$(TAGS_CMD) *.[ch] image/*.[ch] convert/*.[ch] mkfs/*.[ch] \
++		check/*.[ch] kernel-lib/*.[ch] kernel-shared/*.[ch] \
++		libbtrfsutil/*.[ch]
+ 
+ cscope: FORCE
+ 	@echo "    [CSCOPE] $(CSCOPE_CMD)"
+-	$(Q)ls -1 *.[ch] image/*.[ch] convert/*.[ch] mkfs/*.[ch] > cscope.files
++	$(Q)ls -1 *.[ch] image/*.[ch] convert/*.[ch] mkfs/*.[ch] check/*.[ch] \
++		kernel-lib/*.[ch] kernel-shared/*.[ch] libbtrfsutil/*.[ch] \
++		> cscope.files
+ 	$(Q)$(CSCOPE_CMD)
+ 
+ clean-all: clean clean-doc clean-gen
 -- 
-2.11.0
+2.16.2
+
+
 

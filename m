@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pg0-f68.google.com ([74.125.83.68]:34121 "EHLO
-        mail-pg0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751169AbeC2HyG (ORCPT
+Received: from mail-pg0-f65.google.com ([74.125.83.65]:36679 "EHLO
+        mail-pg0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752021AbeC2HyH (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 29 Mar 2018 03:54:06 -0400
-Received: by mail-pg0-f68.google.com with SMTP id y16so2025943pgv.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 29 Mar 2018 00:54:06 -0700 (PDT)
+        Thu, 29 Mar 2018 03:54:07 -0400
+Received: by mail-pg0-f65.google.com with SMTP id 201so2569972pgg.3
+        for <linux-btrfs@vger.kernel.org>; Thu, 29 Mar 2018 00:54:07 -0700 (PDT)
 From: Omar Sandoval <osandov@osandov.com>
 To: linux-btrfs@vger.kernel.org
 Cc: kernel-team@fb.com
-Subject: [PATCH 3/5] libbtrfsutil: use local mkfs.btrfs for tests if it exists
-Date: Thu, 29 Mar 2018 00:53:55 -0700
-Message-Id: <17179692e153c54e92591a728b7a28b9c2127bce.1522309741.git.osandov@fb.com>
+Subject: [PATCH 4/5] libbtrfsutil: always build libbtrfsutil.so.$MAJOR
+Date: Thu, 29 Mar 2018 00:53:56 -0700
+Message-Id: <7c3074bb611c599bd4751d0361a1888b739e23cc.1522309741.git.osandov@fb.com>
 In-Reply-To: <cover.1522309741.git.osandov@fb.com>
 References: <cover.1522309741.git.osandov@fb.com>
 In-Reply-To: <cover.1522309741.git.osandov@fb.com>
@@ -21,45 +21,26 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Omar Sandoval <osandov@fb.com>
 
-The system might not have mkfs installed at all.
+Otherwise, make test-libbtrfsutil from a fresh checkout fails.
 
 Signed-off-by: Omar Sandoval <osandov@fb.com>
 ---
- Makefile                              | 2 +-
- libbtrfsutil/python/tests/__init__.py | 6 +++++-
- 2 files changed, 6 insertions(+), 2 deletions(-)
+ Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/Makefile b/Makefile
-index 8afc8f6e..699f864d 100644
+index 699f864d..fbd6677a 100644
 --- a/Makefile
 +++ b/Makefile
-@@ -357,7 +357,7 @@ testsuite: btrfs-corrupt-block fssum
- 	$(Q)cd tests && ./export-testsuite.sh
+@@ -417,7 +417,7 @@ libbtrfsutil.so.$(libbtrfsutil_major) libbtrfsutil.so: libbtrfsutil.so.$(libbtrf
+ 	$(Q)$(LN_S) -f $< $@
  
  ifeq ($(PYTHON_BINDINGS),1)
--test-libbtrfsutil: libbtrfsutil_python
-+test-libbtrfsutil: libbtrfsutil_python mkfs.btrfs
+-libbtrfsutil_python: libbtrfsutil.so libbtrfsutil/btrfsutil.h
++libbtrfsutil_python: libbtrfsutil.so.$(libbtrfsutil_major) libbtrfsutil.so libbtrfsutil/btrfsutil.h
+ 	@echo "    [PY]     libbtrfsutil"
  	$(Q)cd libbtrfsutil/python; \
- 		LD_LIBRARY_PATH=../.. $(PYTHON) -m unittest discover -v tests
- 
-diff --git a/libbtrfsutil/python/tests/__init__.py b/libbtrfsutil/python/tests/__init__.py
-index d2c6ff28..35550e0a 100644
---- a/libbtrfsutil/python/tests/__init__.py
-+++ b/libbtrfsutil/python/tests/__init__.py
-@@ -37,8 +37,12 @@ class BtrfsTestCase(unittest.TestCase):
-             os.rmdir(self.mountpoint)
-             raise e
- 
-+        if os.path.exists('../../mkfs.btrfs'):
-+            mkfs = '../../mkfs.btrfs'
-+        else:
-+            mkfs = 'mkfs.btrfs'
-         try:
--            subprocess.check_call(['mkfs.btrfs', '-q', self.image])
-+            subprocess.check_call([mkfs, '-q', self.image])
-             subprocess.check_call(['mount', '-o', 'loop', '--', self.image, self.mountpoint])
-         except Exception as e:
-             os.remove(self.image)
+ 		CFLAGS= LDFLAGS= $(PYTHON) setup.py $(SETUP_PY_Q) build_ext -i build
 -- 
 2.16.3
 

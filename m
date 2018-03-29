@@ -1,59 +1,107 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:50039 "EHLO
-        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752112AbeC0Mo1 (ORCPT
-        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Tue, 27 Mar 2018 08:44:27 -0400
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/2] btrfs: tests/qgroup: Fix wrong tree backref level
-Date: Tue, 27 Mar 2018 20:44:18 +0800
-Message-Id: <20180327124419.28398-1-wqu@suse.com>
+Received: from mout.gmx.net ([212.227.15.15]:34149 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1750732AbeC2AHN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 28 Mar 2018 20:07:13 -0400
+Subject: Re: [PATCH 1/2] btrfs: tests/qgroup: Fix wrong tree backref level
+To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+References: <20180327124419.28398-1-wqu@suse.com>
+ <20180328153227.GN30422@twin.jikos.cz>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <a215dafe-deb3-2fc4-1be2-e74f1d81407f@gmx.com>
+Date: Thu, 29 Mar 2018 08:06:59 +0800
+MIME-Version: 1.0
+In-Reply-To: <20180328153227.GN30422@twin.jikos.cz>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="XhnvijDU58Pj6OQwhJXYgFYhaXaXxuLXY"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The extent tree of the test fs is like the following:
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--XhnvijDU58Pj6OQwhJXYgFYhaXaXxuLXY
+Content-Type: multipart/mixed; boundary="xdGaiPhRN6ozsP9lknVQvmIi17AVhgCen";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Message-ID: <a215dafe-deb3-2fc4-1be2-e74f1d81407f@gmx.com>
+Subject: Re: [PATCH 1/2] btrfs: tests/qgroup: Fix wrong tree backref level
+References: <20180327124419.28398-1-wqu@suse.com>
+ <20180328153227.GN30422@twin.jikos.cz>
+In-Reply-To: <20180328153227.GN30422@twin.jikos.cz>
 
- BTRFS info (device (null)): leaf 16327509003777336587 total ptrs 1 free space 3919
-  item 0 key (4096 168 4096) itemoff 3944 itemsize 51
-          extent refs 1 gen 1 flags 2
-          tree block key (68719476736 0 0) level 1
-                                           ^^^^^^^
-          ref#0: tree block backref root 5
+--xdGaiPhRN6ozsP9lknVQvmIi17AVhgCen
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-And it's using an empty tree for fs tree, so there is no way that its
-level can be 1.
 
-For REAL (created by mkfs) fs tree backref with no skinny metadata, the
-result should look like:
 
- item 3 key (30408704 EXTENT_ITEM 4096) itemoff 3845 itemsize 51
-         refs 1 gen 4 flags TREE_BLOCK
-         tree block key (256 INODE_ITEM 0) level 0
-                                           ^^^^^^^
-         tree block backref root 5
+On 2018=E5=B9=B403=E6=9C=8828=E6=97=A5 23:32, David Sterba wrote:
+> On Tue, Mar 27, 2018 at 08:44:18PM +0800, Qu Wenruo wrote:
+>> The extent tree of the test fs is like the following:
+>>
+>>  BTRFS info (device (null)): leaf 16327509003777336587 total ptrs 1 fr=
+ee space 3919
+>>   item 0 key (4096 168 4096) itemoff 3944 itemsize 51
+>>           extent refs 1 gen 1 flags 2
+>>           tree block key (68719476736 0 0) level 1
+>>                                            ^^^^^^^
+>>           ref#0: tree block backref root 5
+>>
+>> And it's using an empty tree for fs tree, so there is no way that its
+>> level can be 1.
+>>
+>> For REAL (created by mkfs) fs tree backref with no skinny metadata, th=
+e
+>> result should look like:
+>>
+>>  item 3 key (30408704 EXTENT_ITEM 4096) itemoff 3845 itemsize 51
+>>          refs 1 gen 4 flags TREE_BLOCK
+>>          tree block key (256 INODE_ITEM 0) level 0
+>>                                            ^^^^^^^
+>>          tree block backref root 5
+>>
+>> Fix the level to 0, so it won't break later tree level checker.
+>>
+>> Fixes: faa2dbf004e8 ("Btrfs: add sanity tests for new qgroup accountin=
+g code")
+>> Signed-off-by: Qu Wenruo <wqu@suse.com>
+>=20
+> So this is just a bug in the self-tests and does not have any other
+> impact, right?
 
-Fix the level to 0, so it won't break later tree level checker.
+Yep, until we're implementing level check for backref (and all other
+tree block reader)
 
-Fixes: faa2dbf004e8 ("Btrfs: add sanity tests for new qgroup accounting code")
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/tests/qgroup-tests.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Thanks,
+Qu
 
-diff --git a/fs/btrfs/tests/qgroup-tests.c b/fs/btrfs/tests/qgroup-tests.c
-index 90204b166643..160eb2fba726 100644
---- a/fs/btrfs/tests/qgroup-tests.c
-+++ b/fs/btrfs/tests/qgroup-tests.c
-@@ -63,7 +63,7 @@ static int insert_normal_tree_ref(struct btrfs_root *root, u64 bytenr,
- 	btrfs_set_extent_generation(leaf, item, 1);
- 	btrfs_set_extent_flags(leaf, item, BTRFS_EXTENT_FLAG_TREE_BLOCK);
- 	block_info = (struct btrfs_tree_block_info *)(item + 1);
--	btrfs_set_tree_block_level(leaf, block_info, 1);
-+	btrfs_set_tree_block_level(leaf, block_info, 0);
- 	iref = (struct btrfs_extent_inline_ref *)(block_info + 1);
- 	if (parent > 0) {
- 		btrfs_set_extent_inline_ref_type(leaf, iref,
--- 
-2.16.2
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>=20
 
+
+--xdGaiPhRN6ozsP9lknVQvmIi17AVhgCen--
+
+--XhnvijDU58Pj6OQwhJXYgFYhaXaXxuLXY
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlq8LiMACgkQwj2R86El
+/qgmkQgAsDSobcLuACOrC7B4wDA7ZFh1YfHFT40A2lB1kC0nQcXLvSP86+4jp8dh
+DRTInJOQy0Zm7JzxFKTtnROCxoX4D1KtSCFn8i8PKLjsbdB3GES/A3SCtKPWNIea
+aRXdJNx7EFTYsGZOzd0eptCBZZsZVDGaqQjAkjL+uzoFJqJQ2KrAhWWhTrw+c4oW
+93PFvqOSGnJ0qfuPVXtM1vhmAh6Ca5n/5fui7wMx+z2y+zt9ZIsLhb4s97B8CvXv
+nn1EyhecB++pSkCNhtVw/o78M2ryYyLCstfaC7H061k4c7bXyxzeFSIfQjO0Ve18
+2lxcSDYuqy5Rl4HNDd4zzazpz2fjbw==
+=QdC8
+-----END PGP SIGNATURE-----
+
+--XhnvijDU58Pj6OQwhJXYgFYhaXaXxuLXY--

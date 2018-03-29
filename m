@@ -1,106 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:38070 "EHLO
-        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750971AbeC2BJm (ORCPT
-        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Wed, 28 Mar 2018 21:09:42 -0400
-Subject: Re: [PATCH] btrfs-progs: mkfs/rootdir: Don't follow symbolic link
- when calcuating size
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-References: <20180328063909.937-1-wqu@suse.com>
- <20180328145542.GM30422@twin.jikos.cz>
-From: Qu Wenruo <wqu@suse.com>
-Message-ID: <4175c2e0-94cc-2a1f-0707-6c6be617eaf3@suse.com>
-Date: Thu, 29 Mar 2018 09:09:34 +0800
-MIME-Version: 1.0
-In-Reply-To: <20180328145542.GM30422@twin.jikos.cz>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="yQ1RCW5IAVt1UR0oxzOuXOascYBGgjugI"
+Received: from mail-pg0-f67.google.com ([74.125.83.67]:37416 "EHLO
+        mail-pg0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751106AbeC2HyE (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 29 Mar 2018 03:54:04 -0400
+Received: by mail-pg0-f67.google.com with SMTP id n11so2570160pgp.4
+        for <linux-btrfs@vger.kernel.org>; Thu, 29 Mar 2018 00:54:04 -0700 (PDT)
+From: Omar Sandoval <osandov@osandov.com>
+To: linux-btrfs@vger.kernel.org
+Cc: kernel-team@fb.com
+Subject: [PATCH 0/5] libbtrfsutil: misc fixes
+Date: Thu, 29 Mar 2018 00:53:52 -0700
+Message-Id: <cover.1522309741.git.osandov@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---yQ1RCW5IAVt1UR0oxzOuXOascYBGgjugI
-Content-Type: multipart/mixed; boundary="v6iG02FXJfi9j1ShxN5sMHb341oGWT6eY";
- protected-headers="v1"
-From: Qu Wenruo <wqu@suse.com>
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Message-ID: <4175c2e0-94cc-2a1f-0707-6c6be617eaf3@suse.com>
-Subject: Re: [PATCH] btrfs-progs: mkfs/rootdir: Don't follow symbolic link
- when calcuating size
-References: <20180328063909.937-1-wqu@suse.com>
- <20180328145542.GM30422@twin.jikos.cz>
-In-Reply-To: <20180328145542.GM30422@twin.jikos.cz>
+From: Omar Sandoval <osandov@fb.com>
 
---v6iG02FXJfi9j1ShxN5sMHb341oGWT6eY
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+Hi, Dave,
 
+This is a handful of minor fixes for libbtrfsutil that would be good to
+get in before the release. Patch 1 fixes an issue reported by Tomohiro a
+few weeks back. Patch 2 fixes a memory leak I noticed while writing
+patch 1. Patch 3 makes us use the local mkfs.btrfs so that the tests can
+run on the CI system. Patch 4 fixes an issue I noticed while testing
+that fix. Patch 5 fixes a test failure caused by "btrfs-progs: mkfs: add
+uuid and otime to ROOT_ITEM of, FS_TREE".
 
+Based on your devel branch. Please apply!
 
-On 2018=E5=B9=B403=E6=9C=8828=E6=97=A5 22:55, David Sterba wrote:
-> On Wed, Mar 28, 2018 at 02:39:09PM +0800, Qu Wenruo wrote:
->> [BUG]
->> If we have a symbolic link in rootdir pointing to non-existing locatio=
-n,
->> mkfs.btrfs --rootdir will just fail:
->> ------
->> $ mkfs.btrfs  -f --rootdir /tmp/rootdir/ /dev/data/btrfs
->> btrfs-progs v4.15.1
->> See http://btrfs.wiki.kernel.org for more information.
->>
->> ERROR: ftw subdir walk of /tmp/rootdir/ failed: No such file or direct=
-ory
->> ------
->>
->> [CAUSE]
->> Commit 599a0abed564 ("btrfs-progs: mkfs/rootdir: Use over-reserve meth=
-od
->> to make size estimate easier") add extra ftw walk to estimate the
->> filesystem size.
->>
->> Such default ftw walk will follow symbolic link and gives ENOENT error=
-=2E
->>
->> [FIX]
->> Use nftw() to specify FTW_PHYS so we won't follow symbolic link for si=
-ze
->> calculation.
->>
->> Reported-by: Alexander Kanavin <alexander.kanavin@intel.com>
->> Fixes: 599a0abed564 ("btrfs-progs: mkfs/rootdir: Use over-reserve meth=
-od to make size estimate easier")
->> Signed-off-by: Qu Wenruo <wqu@suse.com>
->=20
-> Applied, thanks. Can you please write a testcase for that?
->=20
-Sorry, I planned but forgot that.
+Omar Sandoval (5):
+  libbtrfsutil: don't return free space cache inodes from
+    deleted_subvolumes()
+  libbtrfsutil: fix memory leak in deleted_subvolumes()
+  libbtrfsutil: use local mkfs.btrfs for tests if it exists
+  libbtrfsutil: always build libbtrfsutil.so.$MAJOR
+  libbtrfsutil: fix test assumptions about top-level subvolume
 
-Will come soon.
+ Makefile                                    |  4 ++--
+ libbtrfsutil/python/tests/__init__.py       |  6 ++++-
+ libbtrfsutil/python/tests/test_subvolume.py |  8 ++++---
+ libbtrfsutil/subvolume.c                    | 34 +++++++++++++++++++----------
+ 4 files changed, 35 insertions(+), 17 deletions(-)
 
-Thanks,
-Qu
+-- 
+2.16.3
 
-
---v6iG02FXJfi9j1ShxN5sMHb341oGWT6eY--
-
---yQ1RCW5IAVt1UR0oxzOuXOascYBGgjugI
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlq8PM4ACgkQwj2R86El
-/qiPAwf/bUU3bMWMNNbZQrqNJa2CwV8ESzhjeOQVWygwwS9vhFMZLdjkW5v1HoQn
-Q1a8OZWaH6RiRfieEINvDwG6V+Df+spMKzGDLHknmdNnIDR//yyIfE/6uhybZHG9
-p9xSY3Mzuf0Q/LY3uEAjT7ihlOBqsZJo3SqNvBJahSPYK8RgrjmhCy7eXUNGY2Mu
-PjHaa2nAiZ/9k1nNkvNgJe+O++nQQLEDTbfKSTPUb4F4iUhLPPF3XOeTD3jo3FUl
-mVsiqGi9LrpHfmrmkMSxiW1jj2GYxkPY8rNlx3FtygGChYHb7pBn5bl2P1NARJBF
-NidaTiBcLRR691u3TKGwDrX8cGrNuQ==
-=C/W6
------END PGP SIGNATURE-----
-
---yQ1RCW5IAVt1UR0oxzOuXOascYBGgjugI--

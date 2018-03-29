@@ -1,103 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:56330 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750939AbeC0Hpy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 27 Mar 2018 03:45:54 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 838F0AFE0
-        for <linux-btrfs@vger.kernel.org>; Tue, 27 Mar 2018 07:45:53 +0000 (UTC)
-From: Nikolay Borisov <nborisov@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH v2 4/4] btrfs-progs: Remove deprecated btrfs-calc-size tool
-Date: Tue, 27 Mar 2018 10:45:46 +0300
-Message-Id: <1522136746-13365-4-git-send-email-nborisov@suse.com>
-In-Reply-To: <1522136746-13365-1-git-send-email-nborisov@suse.com>
-References: <1522136746-13365-1-git-send-email-nborisov@suse.com>
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:1658 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1750753AbeC2JVq (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 29 Mar 2018 05:21:46 -0400
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
+        by cn.fujitsu.com (Postfix) with ESMTP id 38A2348AE772
+        for <linux-btrfs@vger.kernel.org>; Thu, 29 Mar 2018 17:21:43 +0800 (CST)
+From: Gu Jinxiang <gujx@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] btrfs-progs: Do not add extra slash if given path end with it
+Date: Thu, 29 Mar 2018 17:11:19 +0800
+Message-ID: <1522314679-762-1-git-send-email-gujx@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Its function has been superseded by btrfs inspect-internal tree-stats.
-Just remove it.
+When use a given path end with a slash like below,
+the output of path will have double slash.
 
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+Do not add extra slash if there is already one in the given
+path.
+
+$ btrfs filesystem du ./test/
+output:
+Total   Exclusive  Set shared  Filename
+0.00B       0.00B           -  /home/gujx/device/tmp/test//foo
+
+Signed-off-by: Gu Jinxiang <gujx@cn.fujitsu.com>
 ---
- .gitignore        |  1 -
- Makefile          |  2 +-
- btrfs-calc-size.c | 39 ---------------------------------------
- 3 files changed, 1 insertion(+), 41 deletions(-)
- delete mode 100644 btrfs-calc-size.c
+ cmds-fi-du.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/.gitignore b/.gitignore
-index 06db51f39512..9e4b7520e709 100644
---- a/.gitignore
-+++ b/.gitignore
-@@ -29,7 +29,6 @@ btrfs-find-root.static
- btrfs-image
- btrfs-corrupt-block
- btrfs-select-super
--btrfs-calc-size
- btrfs-crc
- btrfstune
- mktables
-diff --git a/Makefile b/Makefile
-index 087289b756ef..051739b8cbc9 100644
---- a/Makefile
-+++ b/Makefile
-@@ -215,7 +215,7 @@ progs_install = btrfs mkfs.btrfs btrfs-map-logical btrfs-image \
- 	btrfs-select-super
+diff --git a/cmds-fi-du.c b/cmds-fi-du.c
+index 8a44665c..74f57320 100644
+--- a/cmds-fi-du.c
++++ b/cmds-fi-du.c
+@@ -449,7 +449,7 @@ static int du_add_file(const char *filename, int dirfd,
+ 	}
  
- # other tools, not built by default
--progs_extra = btrfs-fragments btrfs-calc-size
-+progs_extra = btrfs-fragments
- 
- progs_static = $(foreach p,$(progs),$(p).static)
- 
-diff --git a/btrfs-calc-size.c b/btrfs-calc-size.c
-deleted file mode 100644
-index d2d68ab259eb..000000000000
---- a/btrfs-calc-size.c
-+++ /dev/null
-@@ -1,39 +0,0 @@
--/*
-- * Copyright (C) 2011 Red Hat.  All rights reserved.
-- *
-- * This program is free software; you can redistribute it and/or
-- * modify it under the terms of the GNU General Public
-- * License v2 as published by the Free Software Foundation.
-- *
-- * This program is distributed in the hope that it will be useful,
-- * but WITHOUT ANY WARRANTY; without even the implied warranty of
-- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-- * General Public License for more details.
-- *
-- * You should have received a copy of the GNU General Public
-- * License along with this program; if not, write to the
-- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-- * Boston, MA 021110-1307, USA.
-- */
--
--#include "volumes.h"
--#include "utils.h"
--#include "commands.h"
--#include "help.h"
--
--int main(int argc, char **argv)
--{
--	int ret;
--
--	warning(
--"\nthe tool has been deprecated, please use 'btrfs inspect-internal tree-stats' instead\n");
--
--	if (argc > 1 && !strcmp(argv[1], "--help"))
--		usage(cmd_inspect_tree_stats_usage);
--
--	ret = cmd_inspect_tree_stats(argc, argv);
--
--	btrfs_close_all_devices();
--
--	return ret;
--}
+ 	pathtmp = pathp;
+-	if (pathp == path)
++	if (pathp == path || *(pathp-1) == '/')
+ 		ret = sprintf(pathp, "%s", filename);
+ 	else
+ 		ret = sprintf(pathp, "/%s", filename);
 -- 
-2.7.4
+2.14.3
+
+
 

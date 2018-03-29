@@ -1,44 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:52245 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750907AbeC0HTr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 27 Mar 2018 03:19:47 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id C100EAFE8
-        for <linux-btrfs@vger.kernel.org>; Tue, 27 Mar 2018 07:19:45 +0000 (UTC)
-From: Nikolay Borisov <nborisov@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 10/10] btrfs-progs: Make __btrfs_fs_incompat return bool
-Date: Tue, 27 Mar 2018 10:19:32 +0300
-Message-Id: <1522135172-8276-11-git-send-email-nborisov@suse.com>
-In-Reply-To: <1522135172-8276-1-git-send-email-nborisov@suse.com>
-References: <1522135172-8276-1-git-send-email-nborisov@suse.com>
+Received: from mgwkm03.jp.fujitsu.com ([202.219.69.170]:46699 "EHLO
+        mgwkm03.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750753AbeC2IWT (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 29 Mar 2018 04:22:19 -0400
+Received: from g01jpfmpwyt01.exch.g01.fujitsu.local (g01jpfmpwyt01.exch.g01.fujitsu.local [10.128.193.38])
+        by kw-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id 6F9D4AC00C2
+        for <linux-btrfs@vger.kernel.org>; Thu, 29 Mar 2018 17:22:13 +0900 (JST)
+Received: from g01jpexchyt36.g01.fujitsu.local (unknown [10.128.193.4])
+        by g01jpfmpwyt01.exch.g01.fujitsu.local (Postfix) with ESMTP id BEAA66D6566
+        for <linux-btrfs@vger.kernel.org>; Thu, 29 Mar 2018 17:22:12 +0900 (JST)
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+From: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
+Subject: [PATCH v2 0/3] btrfs-progs: Some fix for fi usage
+Message-ID: <99d3f3bf-ecc3-b6f5-c38c-8fba83db48d0@jp.fujitsu.com>
+Date: Thu, 29 Mar 2018 17:21:29 +0900
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-First this function does the '!!' trick to turn its value into a bool,
-yet the return type is int. Second, the kernel counterpart also returns
-bool.
+v1->v2
+  These were sent several months ago, just rebased to current devel branch.
 
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
----
- ctree.h | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Patch 1 and 2 aims to fix the "fi du" to include the information of "fi df"
+even when running without root privilege.
 
-diff --git a/ctree.h b/ctree.h
-index fa861ba0b4c3..1fafe7f90837 100644
---- a/ctree.h
-+++ b/ctree.h
-@@ -2460,7 +2460,7 @@ static inline u32 btrfs_file_extent_inline_len(struct extent_buffer *eb,
- #define btrfs_fs_incompat(fs_info, opt) \
- 	__btrfs_fs_incompat((fs_info), BTRFS_FEATURE_INCOMPAT_##opt)
- 
--static inline int __btrfs_fs_incompat(struct btrfs_fs_info *fs_info, u64 flag)
-+static inline bool __btrfs_fs_incompat(struct btrfs_fs_info *fs_info, u64 flag)
- {
- 	struct btrfs_super_block *disk_super;
- 	disk_super = fs_info->super_copy;
+Patch 3 is an independent cleanup.
+
+Tomohiro Misono (3):
+  btrfs-progs: fi usage: change warning message more appropriately
+  btrfs-progs: fi usage: change to output more info without root privilege
+  btrfs-progs: fi usage: cleanup unnecessary permission error check
+
+ cmds-fi-usage.c | 20 ++++++--------------
+ 1 file changed, 6 insertions(+), 14 deletions(-)
+
 -- 
-2.7.4
+2.14.3
 

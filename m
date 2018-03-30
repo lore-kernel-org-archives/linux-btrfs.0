@@ -1,49 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from prv3-mh.provo.novell.com ([137.65.250.26]:52413 "EHLO
-        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932456AbeCBFXH (ORCPT
-        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Fri, 2 Mar 2018 00:23:07 -0500
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH 5/5] btrfs: Show more accurate max_inline
-Date: Fri,  2 Mar 2018 13:22:54 +0800
-Message-Id: <20180302052254.7059-6-wqu@suse.com>
-In-Reply-To: <20180302052254.7059-1-wqu@suse.com>
-References: <20180302052254.7059-1-wqu@suse.com>
+Received: from out30-133.freemail.mail.aliyun.com ([115.124.30.133]:43017 "EHLO
+        out30-133.freemail.mail.aliyun.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1752282AbeC3WMH (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 30 Mar 2018 18:12:07 -0400
+From: Liu Bo <bo.liu@linux.alibaba.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: clean up resources during umount after trans is aborted
+Date: Sat, 31 Mar 2018 06:11:56 +0800
+Message-Id: <1522447918-19147-2-git-send-email-bo.liu@linux.alibaba.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Btrfs shows max_inline option into kernel message, but for
-max_inline=4096, btrfs won't really inline 4096 bytes inline data if
-it's not compressed.
+Currently if some fatal errors occur, like all IO get -EIO, resources
+would be cleaned up when
+a) transaction is being committed or
+b) BTRFS_FS_STATE_ERROR is set
 
-Since we have unified the behavior and now BTRFS_MAX_INLINE_DATA_SIZE()
-should handle most of the condition check, just limit
-fs_info->max_inline to BTRFS_MAX_INLINE_DATA_SIZE(), so we could have
-more accurate max_inline output.
+However, in some rare cases, resources may be left alone after transaction
+gets aborted and umount may run into some ASSERT(), e.g.
+ASSERT(list_empty(&block_group->dirty_list));
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
+For case a), in btrfs_commit_transaciton(), there're several places at the
+beginning where we just call btrfs_end_transaction() without cleaning up
+resources.  For case b), it is possible that the trans handle doesn't have
+any dirty stuff, then only trans hanlde is marked as aborted while
+BTRFS_FS_STATE_ERROR is not set, so resources remain in memory.
+
+This makes btrfs also check BTRFS_FS_STATE_TRANS_ABORTED to make sure that
+all resources won't stay in memory after umount.
+
+Signed-off-by: Liu Bo <bo.liu@linux.alibaba.com>
 ---
- fs/btrfs/super.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ fs/btrfs/disk-io.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 3a4dce153645..6685016bc0ec 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -618,8 +618,8 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 21f34ad..643bd69 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3735,7 +3735,8 @@ void close_ctree(struct btrfs_fs_info *fs_info)
+ 			btrfs_err(fs_info, "commit super ret %d", ret);
+ 	}
  
- 				if (info->max_inline) {
- 					info->max_inline = min_t(u64,
--						info->max_inline,
--						info->sectorsize);
-+					info->max_inline,
-+					BTRFS_MAX_INLINE_DATA_SIZE(info));
- 				}
- 				btrfs_info(info, "max_inline at %llu",
- 					   info->max_inline);
+-	if (test_bit(BTRFS_FS_STATE_ERROR, &fs_info->fs_state))
++	if (test_bit(BTRFS_FS_STATE_ERROR, &fs_info->fs_state) ||
++	    test_bit(BTRFS_FS_STATE_TRANS_ABORTED, &fs_info->fs_state))
+ 		btrfs_error_commit_super(fs_info);
+ 
+ 	kthread_stop(fs_info->transaction_kthread);
 -- 
-2.16.2
+1.8.3.1
 

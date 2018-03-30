@@ -1,63 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:42329 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:57570 "EHLO
         prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750967AbeC3Hfo (ORCPT
+        with ESMTP id S1751180AbeC3Hfo (ORCPT
         <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
         Fri, 30 Mar 2018 03:35:44 -0400
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/3] btrfs-progs: disk-io: Fix read_extent_data() error handler for missing device
-Date: Fri, 30 Mar 2018 15:35:26 +0800
-Message-Id: <20180330073528.20650-2-wqu@suse.com>
+Subject: [PATCH 2/3] btrfs-progs: convert: Fix offset-by-one error in read_data_extent()
+Date: Fri, 30 Mar 2018 15:35:27 +0800
+Message-Id: <20180330073528.20650-3-wqu@suse.com>
 In-Reply-To: <20180330073528.20650-1-wqu@suse.com>
 References: <20180330073528.20650-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When device is missing, read_extent_data() (function exported from old
-btrfs check code) has the following problems:
+For read_data_extent() in convert/main.c it's using mirror number in a
+incorrect way, which will not get correct copy for RAID1:
+------
+	for (cur_mirror = 0; cur_mirror < num_copies; cur_mirror++) {
+------
 
-1) Modify @len parameter if device is missing
-   If device returned in @multi is missing, @len can be larger than
-   @max_len (originl length).
+In such case, for RAID1 @cur_mirror will only be 0 and 1.
 
-   This could confusing caller and underflow the read loop.
+However for 0 and 1 case, btrfs_map_block() will only return the first
+copy.
+To reach the 2nd copy, it correct @cur_mirror range should be 1 and 2.
 
-2) Still return 0 for missing device
-   It only handles read error, missing device is not handled and 0 is
-   returned.
+So with this offset-by-one error, btrfs-image will never be able to read
+out data extent if the first stripe of the chunk is the missing one.
 
-3) Wrong check for device->fd
-   In fact, 0 is also a valid fd.
-   Although not possible under most case, it's still need fix.
+Fix it by starting @cur_mirror from 1 and to @num_copies (including).
 
-Fix them all.
-
-Fixes: 1bad2f2f2dfe ("Btrfs-progs: fsck: add an option to check data csums")
+Fixes: 2d46558b30f5 ("btrfs-progs: Use existing facility to replace read_data_extent function")
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- disk-io.c | 6 ++++--
- 1 file changed, 4 insertions(+), 2 deletions(-)
+ image/main.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/disk-io.c b/disk-io.c
-index 610963357675..310ab19cf099 100644
---- a/disk-io.c
-+++ b/disk-io.c
-@@ -395,10 +395,12 @@ int read_extent_data(struct btrfs_fs_info *fs_info, char *data, u64 logical,
- 	}
- 	device = multi->stripes[0].dev;
+diff --git a/image/main.c b/image/main.c
+index 5f155c23dce6..351c5a256938 100644
+--- a/image/main.c
++++ b/image/main.c
+@@ -571,7 +571,7 @@ static int read_data_extent(struct metadump_struct *md,
+ 	num_copies = btrfs_num_copies(root->fs_info, logical, bytes_left);
  
--	if (device->fd <= 0)
--		goto err;
- 	if (*len > max_len)
- 		*len = max_len;
-+	if (device->fd < 0) {
-+		ret = -EIO;
-+		goto err;
-+	}
- 
- 	ret = pread64(device->fd, data, *len, multi->stripes[0].physical);
- 	if (ret != *len)
+ 	/* Try our best to read data, just like read_tree_block() */
+-	for (cur_mirror = 0; cur_mirror < num_copies; cur_mirror++) {
++	for (cur_mirror = 1; cur_mirror <= num_copies; cur_mirror++) {
+ 		while (bytes_left) {
+ 			read_len = bytes_left;
+ 			ret = read_extent_data(fs_info,
 -- 
 2.16.3
 

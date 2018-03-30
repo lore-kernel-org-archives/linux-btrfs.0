@@ -1,55 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from prv3-mh.provo.novell.com ([137.65.250.26]:48830 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:41470 "EHLO
         prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750971AbeC2B06 (ORCPT
+        with ESMTP id S1751163AbeC3Hfo (ORCPT
         <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Wed, 28 Mar 2018 21:26:58 -0400
+        Fri, 30 Mar 2018 03:35:44 -0400
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: tests/mkfs: Test if mkfs.btrfs --rootdir can handle broken soft link well
-Date: Thu, 29 Mar 2018 09:26:44 +0800
-Message-Id: <20180329012644.17822-1-wqu@suse.com>
+Subject: [PATCH 0/3] btrfs-progs: Enhance btrfs-image to handle missing device
+Date: Fri, 30 Mar 2018 15:35:25 +0800
+Message-Id: <20180330073528.20650-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- .../016-rootdir-bad-symbolic-link/test.sh          | 26 ++++++++++++++++++++++
- 1 file changed, 26 insertions(+)
- create mode 100755 tests/mkfs-tests/016-rootdir-bad-symbolic-link/test.sh
+Can be fetched from github:
+https://github.com/adam900710/btrfs-progs/tree/btrfs_image_fix
 
-diff --git a/tests/mkfs-tests/016-rootdir-bad-symbolic-link/test.sh b/tests/mkfs-tests/016-rootdir-bad-symbolic-link/test.sh
-new file mode 100755
-index 000000000000..d12efa629042
---- /dev/null
-+++ b/tests/mkfs-tests/016-rootdir-bad-symbolic-link/test.sh
-@@ -0,0 +1,26 @@
-+#!/bin/bash
-+# Regression test for mkfs.btrfs --rootdir with bad symbolic link
-+# (points to non-existing location)
-+#
-+# Since mkfs.btrfs --rootdir will just create symbolic link other than
-+# follow it, we shouldn't hit any problem
-+
-+source "$TEST_TOP/common"
-+
-+check_prereq mkfs.btrfs
-+
-+prepare_test_dev
-+
-+tmp=$(mktemp -d --tmpdir btrfs-progs-mkfs.rootdirXXXXXXX)
-+
-+non_existing="/no/such/file"
-+
-+if [ -f "$non_existing" ]; then
-+	# Some smartass don't want to this test case to run
-+	_not_run "Some one created $non_exist, which is not expect to exist"
-+fi
-+
-+run_check ln -sf "$non_existing" "$tmp/foobar"
-+
-+run_check "$TOP/mkfs.btrfs" -f --rootdir "$tmp" "$TEST_DEV"
-+run_check "$TOP/btrfs" check "$TEST_DEV"
+Bug report:
+https://github.com/kdave/btrfs-progs/issues/118
+
+In short, the problem is caused by some old code (read_extent_data()
+from ancient btrfs check code) and offset-by-one from btrfs-image.
+Which makes btrfs-image can only read from the first stripe of RAID1.
+
+And if device of the first stripe is missing, btrfs-image will fail.
+
+Fix the problem and add test case for it.
+
+Qu Wenruo (3):
+  btrfs-progs: disk-io: Fix read_extent_data() error handler for missing
+    device
+  btrfs-progs: convert: Fix offset-by-one error in read_data_extent()
+  btrfs-progs: tests/misc: Test if btrfs-image can handle RAID1 missing
+    device
+
+ disk-io.c                                         |  6 ++-
+ image/main.c                                      |  2 +-
+ tests/misc-tests/030-missing-device-image/test.sh | 57 +++++++++++++++++++++++
+ 3 files changed, 62 insertions(+), 3 deletions(-)
+ create mode 100755 tests/misc-tests/030-missing-device-image/test.sh
+
 -- 
-2.16.2
+2.16.3
 

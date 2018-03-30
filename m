@@ -1,102 +1,143 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp2120.oracle.com ([141.146.126.78]:54480 "EHLO
+Received: from aserp2120.oracle.com ([141.146.126.78]:59880 "EHLO
         aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750735AbeC3AMr (ORCPT
+        with ESMTP id S1752177AbeC3AQw (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 29 Mar 2018 20:12:47 -0400
+        Thu, 29 Mar 2018 20:16:52 -0400
 Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
-        by aserp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w2U041RC007630
-        for <linux-btrfs@vger.kernel.org>; Fri, 30 Mar 2018 00:12:47 GMT
-Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
-        by aserp2120.oracle.com with ESMTP id 2h1abwr0na-1
+        by aserp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w2U04cgI007776
+        for <linux-btrfs@vger.kernel.org>; Fri, 30 Mar 2018 00:16:52 GMT
+Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
+        by aserp2120.oracle.com with ESMTP id 2h1abwr1tn-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Fri, 30 Mar 2018 00:12:46 +0000
+        for <linux-btrfs@vger.kernel.org>; Fri, 30 Mar 2018 00:16:49 +0000
 Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w2U07k9n002670
+        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w2U07fIM012677
         (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Fri, 30 Mar 2018 00:07:46 GMT
+        for <linux-btrfs@vger.kernel.org>; Fri, 30 Mar 2018 00:07:41 GMT
 Received: from abhmp0016.oracle.com (abhmp0016.oracle.com [141.146.116.22])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w2U07j5P005045
-        for <linux-btrfs@vger.kernel.org>; Fri, 30 Mar 2018 00:07:45 GMT
+        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w2U07e17005039
+        for <linux-btrfs@vger.kernel.org>; Fri, 30 Mar 2018 00:07:41 GMT
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: wipe copies of the stale superblock beyond -b size
-Date: Fri, 30 Mar 2018 08:09:24 +0800
-Message-Id: <20180330000924.11148-9-anand.jain@oracle.com>
+Subject: [PATCH v2 4/7] btrfs: check if the fsid in the primary sb and copy sb are same
+Date: Fri, 30 Mar 2018 08:09:20 +0800
+Message-Id: <20180330000924.11148-5-anand.jain@oracle.com>
+In-Reply-To: <20180330000924.11148-1-anand.jain@oracle.com>
+References: <20180330000924.11148-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-During the mkfs.btrfs -b <blockcount> btrfs_prepare_device() zeros all
-the superblock bytenr locations only if the bytenr is below the
-blockcount. The problem with this is that if the BTRFS is recreated
-with a smaller size then we will leave the stale superblock in the disk
-which shall confuse the recovery. As shown in the test case below.
+During the btrfs dev scan make sure that other copies of superblock
+contain the same fsid as the primary SB. So that we bring to the
+user notice if the superblock has been overwritten.
 
- mkfs.btrfs -qf /dev/mapper/vg-lv
- mkfs.btrfs -qf -b1G /dev/mapper/vg-lv
- btrfs in dump-super -a /dev/mapper/vg-lv | grep '.fsid|superblock:'
+ mkfs.btrfs -fq /dev/sdc
+ mkfs.btrfs -fq /dev/sdb
+ dd if=/dev/sdb of=/dev/sdc count=4K skip=64K seek=64K obs=1 ibs=1
+ mount /dev/sdc /btrfs
 
- superblock: bytenr=65536, device=/dev/mapper/vg-lv
- dev_item.fsid		ebc67d01-7fc5-43f0-90b4-d1925002551e [match]
- superblock: bytenr=67108864, device=/dev/mapper/vg-lv
- dev_item.fsid		ebc67d01-7fc5-43f0-90b4-d1925002551e [match]
- superblock: bytenr=274877906944, device=/dev/mapper/vg-lv
- dev_item.fsid		b97a9206-593b-4933-a424-c6a6ee23fe7c [match]
-
-So if we find a valid superblock zero it even if it's beyond the
-blockcount.
+Caveat: Pls note that older btrfs-progs do not wipe the non-overwriting
+stale superblock like copy2 if a smaller mkfs.btrfs -b  <size> is created.
+Thus this patch in the kernel will report error. The workaround is to wipe
+the superblock manually, like
+  dd if=/dev/zero of=<dev> seek=274877906944 ibs=1 obs=1 count4K
+OR apply the btrfs-progs patch
+  btrfs-progs: wipe copies of the stale superblock beyond -b size
+which shall find and wipe the non overwriting superblock during mkfs.
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 ---
- utils.c | 35 +++++++++++++++++++++++++++++++++++
- 1 file changed, 35 insertions(+)
+v1->v2:
+  Do an explicit read for primary superblock. Drop kzalloc().
+  Fix split pr_err().
 
-diff --git a/utils.c b/utils.c
-index e9cb3a82fda6..6a9408b06e73 100644
---- a/utils.c
-+++ b/utils.c
-@@ -365,6 +365,41 @@ int btrfs_prepare_device(int fd, const char *file, u64 *block_count_ret,
- 		return 1;
- 	}
+ fs/btrfs/volumes.c | 48 ++++++++++++++++++++++++++++++++++++++----------
+ 1 file changed, 38 insertions(+), 10 deletions(-)
+
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index e63723f23227..035affa447fa 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1198,39 +1198,67 @@ static int btrfs_read_disk_super(struct block_device *bdev, u64 bytenr,
+ int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
+ 			  struct btrfs_fs_devices **fs_devices_ret)
+ {
++	struct btrfs_super_block *disk_super_primary;
+ 	struct btrfs_super_block *disk_super;
+ 	struct btrfs_device *device;
+ 	struct block_device *bdev;
++	struct page *page_primary;
+ 	struct page *page;
+ 	int ret = 0;
+ 	u64 bytenr;
++	int i;
  
+-	/*
+-	 * we would like to check all the supers, but that would make
+-	 * a btrfs mount succeed after a mkfs from a different FS.
+-	 * So, we need to add a special mount option to scan for
+-	 * later supers, using BTRFS_SUPER_MIRROR_MAX instead
+-	 */
+-	bytenr = btrfs_sb_offset(0);
+ 	flags |= FMODE_EXCL;
+ 
+ 	bdev = blkdev_get_by_path(path, flags, holder);
+ 	if (IS_ERR(bdev))
+ 		return PTR_ERR(bdev);
+ 
+-	ret = btrfs_read_disk_super(bdev, bytenr, &page, &disk_super);
 +	/*
-+	 * Check for the BTRFS SB copies up until btrfs_device_size() and zero
-+	 * it. So that kernel (or user for the manual recovery) don't have to
-+	 * confuse with the stale SB copy during recovery.
++	 * We would like to check all the supers and use one good copy,
++	 * but that would make a btrfs mount succeed after a mkfs from
++	 * a different FS.
++	 * So, we need to add a special mount option to scan for
++	 * later supers, using BTRFS_SUPER_MIRROR_MAX instead.
++	 * So, just validate if all copies of the superblocks are ok
++	 * and have the same fsid.
 +	 */
-+	if (block_count != btrfs_device_size(fd, &st)) {
-+		for (i = 1; i < BTRFS_SUPER_MIRROR_MAX; i++) {
-+			struct btrfs_super_block *disk_super;
-+			char buf[BTRFS_SUPER_INFO_SIZE];
-+			disk_super = (struct btrfs_super_block *)buf;
-+
-+			/* Already zeroed above */
-+			if (btrfs_sb_offset(i) < block_count)
-+				continue;
-+
-+			/* Beyond actual disk size */
-+			if (btrfs_sb_offset(i) >= btrfs_device_size(fd, &st))
-+				continue;
-+
-+			/* Does not contain any stale SB */
-+			if (btrfs_read_dev_super(fd, disk_super,
-+						 btrfs_sb_offset(i), 0))
-+				continue;
-+
-+			ret = zero_dev_clamped(fd, btrfs_sb_offset(i),
-+						BTRFS_SUPER_INFO_SIZE,
-+						btrfs_device_size(fd, &st));
-+			if (ret < 0) {
-+				error("failed to zero device '%s' bytenr %llu: %s",
-+					file, btrfs_sb_offset(i), strerror(-ret));
-+				return 1;
-+			}
++	bytenr = btrfs_sb_offset(0);
++	ret = btrfs_read_disk_super(bdev, bytenr, &page_primary,
++				    &disk_super_primary);
+ 	if (ret < 0)
+ 		goto error_bdev_put;
+ 
++	for (i = 1; i < BTRFS_SUPER_MIRROR_MAX; i++) {
++		bytenr = btrfs_sb_offset(i);
++		ret = btrfs_read_disk_super(bdev, bytenr, &page, &disk_super);
++		if (ret < 0) {
++			ret = 0;
++			continue;
 +		}
++
++		if (memcmp(disk_super_primary->fsid, disk_super->fsid,
++			   BTRFS_FSID_SIZE)) {
++			pr_err("BTRFS (device %pg): superblock fsid mismatch, primary %pU copy%d %pU",
++				bdev, disk_super_primary->fsid, i,
++				disk_super->fsid);
++			ret = -EINVAL;
++			btrfs_release_disk_super(page);
++			goto error_rel_primary;
++		}
++		btrfs_release_disk_super(page);
 +	}
 +
- 	*block_count_ret = block_count;
- 	return 0;
- }
+ 	mutex_lock(&uuid_mutex);
+-	device = device_list_add(path, disk_super);
++	device = device_list_add(path, disk_super_primary);
+ 	if (IS_ERR(device))
+ 		ret = PTR_ERR(device);
+ 	else
+ 		*fs_devices_ret = device->fs_devices;
+ 	mutex_unlock(&uuid_mutex);
+ 
+-	btrfs_release_disk_super(page);
++error_rel_primary:
++	btrfs_release_disk_super(page_primary);
+ 
+ error_bdev_put:
+ 	blkdev_put(bdev, flags);
 -- 
 2.7.0
 

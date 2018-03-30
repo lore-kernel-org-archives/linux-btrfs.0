@@ -1,170 +1,237 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp2120.oracle.com ([141.146.126.78]:59626 "EHLO
-        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752177AbeC3AQv (ORCPT
+Received: from mgwym02.jp.fujitsu.com ([211.128.242.41]:46788 "EHLO
+        mgwym02.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750741AbeC3Err (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 29 Mar 2018 20:16:51 -0400
-Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
-        by aserp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w2U04RiP007752
-        for <linux-btrfs@vger.kernel.org>; Fri, 30 Mar 2018 00:16:50 GMT
-Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
-        by aserp2120.oracle.com with ESMTP id 2h1abwr21p-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Fri, 30 Mar 2018 00:16:45 +0000
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w2U07aaX012516
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Fri, 30 Mar 2018 00:07:36 GMT
-Received: from abhmp0016.oracle.com (abhmp0016.oracle.com [141.146.116.22])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w2U07aBj018368
-        for <linux-btrfs@vger.kernel.org>; Fri, 30 Mar 2018 00:07:36 GMT
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v4 0/7] Superblock read and verify cleanups
-Date: Fri, 30 Mar 2018 08:09:16 +0800
-Message-Id: <20180330000924.11148-1-anand.jain@oracle.com>
+        Fri, 30 Mar 2018 00:47:47 -0400
+Received: from g01jpfmpwkw02.exch.g01.fujitsu.local (g01jpfmpwkw02.exch.g01.fujitsu.local [10.0.193.56])
+        by yt-mxoi1.gw.nic.fujitsu.com (Postfix) with ESMTP id DFA0EAC0269
+        for <linux-btrfs@vger.kernel.org>; Fri, 30 Mar 2018 13:47:43 +0900 (JST)
+Subject: Re: [RFC PATCH v3 0/7] btrfs-progs: Allow normal user to call
+ "subvolume list/show"
+To: <kreijack@inwind.it>, linux-btrfs <linux-btrfs@vger.kernel.org>,
+        <dsterba@suse.com>
+References: <a1089ceb-6642-0b20-9690-6cf961efe42e@jp.fujitsu.com>
+ <7512a9b0-697d-8b5b-9f43-796f211fc5fd@libero.it>
+From: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
+Message-ID: <b44aab69-db62-5adf-e191-9dc3f8cc69f9@jp.fujitsu.com>
+Date: Fri, 30 Mar 2018 13:46:46 +0900
+MIME-Version: 1.0
+In-Reply-To: <7512a9b0-697d-8b5b-9f43-796f211fc5fd@libero.it>
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-v3->v4:
- Update changelog and signoff.
- Reintroduce explicit check for '-EUCLEAN'
-  at Patch 2/8 and 5/8.
+On 2018/03/30 2:35, Goffredo Baroncelli wrote:
+> Hi Misono,
 
-v2->v3:
- Squash
-  4/8 btrfs: make btrfs_check_super_csum() non static
- to
-  6/8 btrfs: verify superblock checksum during scan
- As in the individual patch mentioned
- 
-v1->v2:
- Various changes suggested by Nicokay. Thanks. For specific changes
- pls ref to the patch.
+Hello,
 
-Patch 1-4/8 are preparatory patches adds cleanups and nonstatic requisites.
+> 
+> I tested you patch, and it seems to work. I verified that the output is correct and the permission check is performed. However the output of "btrfs sub list" in the "root" mode and the "user" mode are a bit different.
+> 
+> As reported before, I find your output more consistent, and understandable than the original one, which is quite confusing about the sub-volume path relationship. 
+> 
+> The problem which I am talking is probably due to the fact that I mount a subvolume as root filesystem, and the root-subvolume (the one with ID=5) in a subdirectory (/var/btrfs for what matters).
 
-Patch 5/8 makes sure that all copies of the superblock have the same fsid
-when we scan the device.
+I didn't think this situation and thanks for pointing out.
 
-Patch 6/8 verifies superblock csum when we read it in the scan context.
+Currently this RFC does not care about mounted subvolumes under the specified path.
+However, it should be able to search those subvolumes too and list up all the subvolumes
+including mounted ones (and below it), by changing progs code.
 
-Patch 7/8 fixes a bug that we weren't verifying the superblock csum for
-the non-latest_bdev.
+> 
+> I think that the "stock" "btrfs sub list", trying to scan the metadata of btrfs and merging these information with this filesystem layout (composed by different subvolumes mounted in different places) doesn't do a good job.
+> 
+> The constraints that your API has (the fact that the subvolume has to be accessed by the filesystem), create an output more friendly. Unfortunately this output became again confusing when the command is started by root.
+> 
+> [Un]fortunately, the stock "btrfs sub list" has the capability to show all the subvolumes, even the ones not mounted, so this can be entirely replaced by your API.
+> 
+> My conclusion, is that your work is not consistent with the current implementation; so I am suggesting to create a new subcommand ("btrfs sub tree" ?) where you can use, without constraint, your api.
 
-And 8/8 patch drops the redundant invalidate_bdev() call during mount.
+I agree that the current output of "sub list" is confusing first of all and
+it is not easy to keep consistent behavior between user and root.
 
-There is a btrfs-progs patch which is a kind of related, as its found that
-we weren't wiping the non-overwritten superblock, so it could cause
-confusion during the superblock recovery process. So the patch btrfs-progs
-1/1 adds code to wipe superblock if we aren't overwriting it.
+So, I think "sub list" (or new command) should be:
+  - (default) list the subvolumes under the specified path, including subvolumes mounted below the specified path.
+              Any user can do this (with appropriate permission checks).
+              The path to be printed is the relative from the specified path.
+  - (-a option) list all the subvolmumes in the filesystem. Only root can do this.
+              The path to be printed is the absolute path from the toplevel subvolume.
 
-Now since kernel patch 5/8 checks if all the superblock copies are
-pointing to the same fsid on the disk, so the scan will fail if without
-the above 1/1 btrfs-progs, as in the example below [1]. However the simple
-workaround is to wipe the superblock manually [2] or apply the btrfs-progs
-patch below.
+This would need some changes in progs code, but I think we can use the same new ioctls I proposed[1] for the default behavior.
 
-[1]
- mkfs.btrfs -qf /dev/sdb <-- 1T disk
- mkfs.btrfs -b 256M  /dev/sdb
- ERROR: device scan failed on /dev/sdb
+I'd like to update "sub list" command eventually rather than adding new command, even though this breaks the compatibility.
+I want to know what other developer/user think.
 
-[2]
- dd if=/dev/zero of=<dev> seek=274877906944 ibs=1 obs=1 count4K
+[1] https://www.spinics.net/lists/linux-btrfs/msg76003.html
 
-Unfortunately, the error messages should have been failed to register
-[3] device into the kernel to be more appropriate to the error.
+> 
+> Another small differences that I found is in the subcommand "btrfs sub show". This is not capable to show the snapshots of a subvolume; I think that, in "user mode", it should be reported that there is a "missing capabilities" problem than to show an empty list
 
-[3]
-        ret = ioctl(fd, BTRFS_IOC_SCAN_DEV, &args);
-        if (ret < 0) {
-                error("device scan failed on '%s': %m", fname);
-                ret = -errno;
-        }
+Yes, this is because that only the snapshots *under the specified path* are searched.
+This can be easily changed to search under the mount point, but this also results in
+slight change in print format of the path for root. I tried to keep as much consistency in this version.
 
-Patches 1-7/8 were sent independently before. And  I found few more things
-to fix alongs the line, and since they are related, so I am sending these
-all together. Also, as there are minor changes, like in pr_err strings,
-and splitting the unrelated changes into a separate patch, so though I am
-thankful for the received reviewed-by, I couldn't include them here. Sorry.
+Thanks,
+Tomohiro Misono
 
-Finally, here I am including the function relations [4] so that it will help
-to review the code. And this flow is before these patches were applied.
-
-[4]
-In the long term, I suggest deprecating ioctl args which pass device path
-(where possible), like in delete-device/replace. And
-btrfs_read_dev_one_super() should replace btrfs_read_disk_super()
-
-delete-device/replace:
-btrfs_rm_device() || btrfs_dev_replace_by_ioctl()
-|_btrfs_find_device_by_devspec()
-  |_btrfs_find_device_missing_or_by_path()
-    |_btrfs_find_device_by_path()
-      |_btrfs_get_bdev_and_sb()
-        |_btrfs_read_dev_super()
-          |_btrfs_read_dev_one_super()
-            |___bread()
-
-btrfs_mount_root()
- |
- |_btrfs_parse_early_options (-o device only)
- | |_btrfs_scan_one_device
- |   |_btrfs_read_disk_super()
- |     |_read_cache_page_gfp()
- |
- |_btrfs_scan_one_device(mount-arg-dev only)
- | |_btrfs_read_disk_super()
- |   |_read_cache_page_gfp()
- |
- |
- |_btrfs_open_devices(fsid:all)
- |  |_btrfs_open_one_device()
- |    |_btrfs_get_bdev_and_sb()  <--- invalidate_bdev(fsid:all)
- |      |_btrfs_read_dev_super()
- |        |_btrfs_read_dev_one_super()
- |          |___bread()
- |
- |_btrfs_fill_super()
-   |_btrfs_open_ctree()   <-- invalidate_bdev(latest_bdev) <-- redundant
-     |_btrfs_read_dev_super(latest_bdev only)
-     | |_btrfs_read_dev_one_super(latest_bdev only)
-     |   |___bread(latest_bdev)
-     |
-     |_btrfs_check_super_csum(latest_bdev only) [*]
-     |
-     |_btrfs_read_chunk_tree
-     | |_read_one_dev()
-     |   |_open_seed_devices()
-     |     |_btrfs_open_devices(fs_devices->seed only)
-
-scan/ready
-|
-|_btrfs_scan_one_device(ioctl-arg-dev only)
-   |_btrfs_read_disk_super()
-     |_read_cache_page_gfp()
-
-
-Anand Jain (7):
-  btrfs: cleanup btrfs_check_super_csum() for better code flow
-  btrfs: return required error from btrfs_check_super_csum
-  btrfs: cleanup btrfs_read_disk_super() to return std error
-  btrfs: check if the fsid in the primary sb and copy sb are same
-  btrfs: verify superblock checksum during scan
-  btrfs: verify checksum for all devices in mount context
-  btrfs: drop the redundant invalidate_bdev()
-
- fs/btrfs/disk-io.c | 72 ++++++++++++++++++++++++++----------------------------
- fs/btrfs/disk-io.h |  1 +
- fs/btrfs/volumes.c | 72 ++++++++++++++++++++++++++++++++++++++++++------------
- 3 files changed, 92 insertions(+), 53 deletions(-)
-
-Anand Jain (1):
-  btrfs-progs: wipe copies of the stale superblock beyond -b size
-
- utils.c | 35 +++++++++++++++++++++++++++++++++++
- 1 file changed, 35 insertions(+)
--- 
-2.7.0
+> 
+> Below an example of what I am say:
+> 
+> ghigo@venice:/tmp$ btrfs sub cre a
+> ghigo@venice:/tmp$ btrfs sub snap a c
+> 
+> ghigo@venice:/tmp$ # patched btrfs
+> ghigo@venice:/tmp$ /home/ghigo/btrfs/btrfs-progs/btrfs sub show a
+> tmp/a
+> 	Name: 			a
+> 	UUID: 			0c19a7a4-a7f5-1849-9262-88ab3da504d0
+> 	Parent UUID: 		-
+> 	Received UUID: 		-
+> 	Creation time: 		2018-03-28 22:48:09 +0200
+> 	Subvolume ID: 		598
+> 	Generation: 		696908
+> 	Gen at creation: 	696907
+> 	Parent ID: 		257
+> 	Top level ID: 		257
+> 	Flags: 			-
+> 	Snapshot(s):
+>                             ^^^^^^^^^^^^^^^^^^^^
+> 
+> ghigo@venice:/tmp$ # stock btrfs
+> ghigo@venice:/tmp$ sudo /home/ghigo/btrfs/btrfs-progs/btrfs sub show a
+>                   ^^^^^^
+> tmp/a
+> 	Name: 			a
+> 	UUID: 			0c19a7a4-a7f5-1849-9262-88ab3da504d0
+> 	Parent UUID: 		-
+> 	Received UUID: 		-
+> 	Creation time: 		2018-03-28 22:48:09 +0200
+> 	Subvolume ID: 		598
+> 	Generation: 		696908
+> 	Gen at creation: 	696907
+> 	Parent ID: 		257
+> 	Top level ID: 		257
+> 	Flags: 			-
+> 	Snapshot(s):
+> 				debian/tmp/c
+>                                 ^^^^^^^^^^^^^
+>                                
+> 
+> BR
+> G.Baroncelli
+> 
+> 
+> -----
+> Test performed:
+> 
+> ghigo@venice:/tmp$ sudo btrfs sub crea a
+> ghigo@venice:/tmp$ sudo btrfs sub crea a/a1
+> ghigo@venice:/tmp$ sudo btrfs sub crea a/a1/a2
+> ghigo@venice:/tmp$ sudo btrfs sub crea b
+> ghigo@venice:/tmp$ sudo btrfs sub crea b/b1
+> ghigo@venice:/tmp$ sudo chmod og-rwx b/.
+> 
+> 
+> # stock btrfs progs
+> ghigo@venice:/tmp$ sudo btrfs sub l .
+> ID 257 gen 696886 top level 5 path debian
+> ID 289 gen 587461 top level 257 path var/lib/machines
+> ID 299 gen 693561 top level 5 path boot
+> ID 582 gen 683965 top level 5 path i386
+> ID 592 gen 696884 top level 257 path tmp/a
+> ID 593 gen 696885 top level 592 path tmp/a/a1
+> ID 594 gen 696885 top level 593 path tmp/a/a1/a2
+> ID 595 gen 696887 top level 257 path tmp/b
+> ID 596 gen 696887 top level 595 path tmp/b/b1
+> 
+> # patched btrfs progs
+> ghigo@venice:/tmp$ /home/ghigo/btrfs/btrfs-progs/btrfs sub lis .
+> ID 592 gen 696884 top level 257 path a
+> ID 593 gen 696885 top level 592 path a/a1
+> ID 594 gen 696885 top level 593 path a/a1/a2
+> ID 595 gen 0 top level 257 path b
+> 
+> 
+> ghigo@venice:/tmp$ /home/ghigo/btrfs/btrfs-progs/btrfs sub show a
+> tmp/a
+> 	Name: 			a
+> 	UUID: 			17520c11-ec8b-5b49-a07e-37ba58113261
+> 	Parent UUID: 		-
+> 	Received UUID: 		-
+> 	Creation time: 		2018-03-28 22:19:48 +0200
+> 	Subvolume ID: 		592
+> 	Generation: 		696884
+> 	Gen at creation: 	696883
+> 	Parent ID: 		257
+> 	Top level ID: 		257
+> 	Flags: 			-
+> 	Snapshot(s):
+> 
+> 
+> On 03/19/2018 08:30 AM, Misono, Tomohiro wrote:
+>> changelog:
+>>
+>> v2 -> v3
+>>   - use get_euid() to check the caller's privilege (and remove 3rd patch)
+>>   - improve error handling
+>> v1 -> v2
+>>   - add independent error handling patch (1st patch)
+>>   - reimplement according to ioctl change
+>>   - various cleanup
+>> ===
+>>
+>> This RFC implements user version of "subvolume list/show" using three new ioctls.
+>> The ioctl patch to the kernel can be found in the ML titled 
+>>   "[PATCH v3 0/3] btrfs: Add three new unprivileged ioctls to allow normal users to call "sub list/show" etc.
+>>
+>> 1th patch is independent and improvements of error handling
+>> 2nd-4th are some prepartion works.
+>> 5th patch is the main part.
+>> 6th-7th adds the test for "subvolume list"
+>>
+>> The main behavior differences between root and normal users are:
+>>
+>> - "sub list" list the subvolumes which exist under the specified path 
+>> (including the path itself). The specified path itself is not needed to be
+>>  a subvolume. Also If the subvolume cannot be opend but the parent
+>> directory can be, the information other than name or id would be zeroed out.
+>>
+>> - snapshot filed of "subvolume show" just lists
+>> the snapshots under the specified subvolume.
+>>
+>>
+>> This is a part of RFC I sent last December[1] whose aim is to improve normal users' usability.
+>> The remaining works of RFC are: 
+>>   - Allow "sub delete" for empty subvolume
+>>   - Allow "qgroup show" to check quota limit
+>>
+>> [1] https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg70991.html
+>>
+>>
+>> Tomohiro Misono (7):
+>>   btrfs-progs: sub list: Call rb_free_nodes() in error path
+>>   btrfs-progs: ioctl: Add 3 definitions of new unprivileged ioctl
+>>   btrfs-progs: sub list: Pass specified path down to
+>>     btrfs_list_subvols()
+>>   btrfs-progs: fallback to open without O_NOATIME flag in
+>>     find_mount_root()
+>>   btrfs-progs: sub list: Allow normal user to call "subvolume list/show"
+>>   btrfs-progs: test: Add helper function to check if test user exists
+>>   btrfs-porgs: test: Add cli-test/009 to check subvolume list for both
+>>     root and normal user
+>>
+>>  btrfs-list.c                               | 376 +++++++++++++++++++++++++++--
+>>  btrfs-list.h                               |   7 +-
+>>  cmds-subvolume.c                           |  14 +-
+>>  ioctl.h                                    |  86 +++++++
+>>  tests/cli-tests/009-subvolume-list/test.sh | 136 +++++++++++
+>>  tests/common                               |  10 +
+>>  utils.c                                    |  13 +-
+>>  7 files changed, 609 insertions(+), 33 deletions(-)
+>>  create mode 100755 tests/cli-tests/009-subvolume-list/test.sh
+>>
+> 
+> 
 

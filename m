@@ -1,53 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:1658 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1750753AbeC2JVq (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 29 Mar 2018 05:21:46 -0400
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
-        by cn.fujitsu.com (Postfix) with ESMTP id 38A2348AE772
-        for <linux-btrfs@vger.kernel.org>; Thu, 29 Mar 2018 17:21:43 +0800 (CST)
-From: Gu Jinxiang <gujx@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] btrfs-progs: Do not add extra slash if given path end with it
-Date: Thu, 29 Mar 2018 17:11:19 +0800
-Message-ID: <1522314679-762-1-git-send-email-gujx@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from victor.provo.novell.com ([137.65.250.26]:46492 "EHLO
+        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750725AbeC3FtM (ORCPT
+        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+        Fri, 30 Mar 2018 01:49:12 -0400
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v2 0/5] btrfs-progs: extent buffer related refactor and cleanup
+Date: Fri, 30 Mar 2018 13:48:52 +0800
+Message-Id: <20180330054857.6106-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When use a given path end with a slash like below,
-the output of path will have double slash.
+The patchset can be fetched from github:
+https://github.com/adam900710/btrfs-progs/tree/eb_cleanup
 
-Do not add extra slash if there is already one in the given
-path.
+Just like kernel cleanup and refactors, this patchset will embed
+btrfs_fs_info structure into extent_buffer.
 
-$ btrfs filesystem du ./test/
-output:
-Total   Exclusive  Set shared  Filename
-0.00B       0.00B           -  /home/gujx/device/tmp/test//foo
+And fixes several possible NULL pointer dereference (although not
+utilized in btrfs-progs yet).
 
-Signed-off-by: Gu Jinxiang <gujx@cn.fujitsu.com>
----
- cmds-fi-du.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Changelog:
+v2:
+  Embarrassingly, I forgot to install reiserfsprogs in my development
+  machine, so the 3rd patch lacks one call site in
+  convert/source-reiserfs.c.
 
-diff --git a/cmds-fi-du.c b/cmds-fi-du.c
-index 8a44665c..74f57320 100644
---- a/cmds-fi-du.c
-+++ b/cmds-fi-du.c
-@@ -449,7 +449,7 @@ static int du_add_file(const char *filename, int dirfd,
- 	}
- 
- 	pathtmp = pathp;
--	if (pathp == path)
-+	if (pathp == path || *(pathp-1) == '/')
- 		ret = sprintf(pathp, "%s", filename);
- 	else
- 		ret = sprintf(pathp, "/%s", filename);
+Qu Wenruo (5):
+  btrfs-progs: extent_io: Fix NULL pointer dereference in
+    free_extent_buffer_final()
+  btrfs-progs: extent_io: Init eb->lru to avoid NULL pointer dereference
+  btrfs-progs: extent_io: Refactor alloc_extent_buffer() to follow
+    kernel parameters
+  btrfs-progs: Unify btrfs_leaf_free_psace() parameter with kernel
+  btrfs-progs: print-tree: Remove btrfs_root parameter
+
+ btrfs-corrupt-block.c     |  2 +-
+ check/main.c              |  2 +-
+ check/mode-lowmem.c       |  2 +-
+ cmds-inspect-dump-tree.c  | 31 ++++++++++------------
+ convert/source-reiserfs.c |  3 +--
+ ctree.c                   | 65 +++++++++++++++++++++++++----------------------
+ ctree.h                   |  3 ++-
+ disk-io.c                 |  3 +--
+ extent-tree.c             |  8 +++---
+ extent_io.c               | 17 ++++++++-----
+ extent_io.h               |  3 ++-
+ print-tree.c              | 20 ++++++++-------
+ print-tree.h              |  4 +--
+ 13 files changed, 85 insertions(+), 78 deletions(-)
+
 -- 
-2.14.3
-
-
+2.16.3
 

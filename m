@@ -1,44 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:41470 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:42329 "EHLO
         prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751163AbeC3Hfo (ORCPT
+        with ESMTP id S1750967AbeC3Hfo (ORCPT
         <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
         Fri, 30 Mar 2018 03:35:44 -0400
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/3] btrfs-progs: Enhance btrfs-image to handle missing device
-Date: Fri, 30 Mar 2018 15:35:25 +0800
-Message-Id: <20180330073528.20650-1-wqu@suse.com>
+Subject: [PATCH 1/3] btrfs-progs: disk-io: Fix read_extent_data() error handler for missing device
+Date: Fri, 30 Mar 2018 15:35:26 +0800
+Message-Id: <20180330073528.20650-2-wqu@suse.com>
+In-Reply-To: <20180330073528.20650-1-wqu@suse.com>
+References: <20180330073528.20650-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Can be fetched from github:
-https://github.com/adam900710/btrfs-progs/tree/btrfs_image_fix
+When device is missing, read_extent_data() (function exported from old
+btrfs check code) has the following problems:
 
-Bug report:
-https://github.com/kdave/btrfs-progs/issues/118
+1) Modify @len parameter if device is missing
+   If device returned in @multi is missing, @len can be larger than
+   @max_len (originl length).
 
-In short, the problem is caused by some old code (read_extent_data()
-from ancient btrfs check code) and offset-by-one from btrfs-image.
-Which makes btrfs-image can only read from the first stripe of RAID1.
+   This could confusing caller and underflow the read loop.
 
-And if device of the first stripe is missing, btrfs-image will fail.
+2) Still return 0 for missing device
+   It only handles read error, missing device is not handled and 0 is
+   returned.
 
-Fix the problem and add test case for it.
+3) Wrong check for device->fd
+   In fact, 0 is also a valid fd.
+   Although not possible under most case, it's still need fix.
 
-Qu Wenruo (3):
-  btrfs-progs: disk-io: Fix read_extent_data() error handler for missing
-    device
-  btrfs-progs: convert: Fix offset-by-one error in read_data_extent()
-  btrfs-progs: tests/misc: Test if btrfs-image can handle RAID1 missing
-    device
+Fix them all.
 
- disk-io.c                                         |  6 ++-
- image/main.c                                      |  2 +-
- tests/misc-tests/030-missing-device-image/test.sh | 57 +++++++++++++++++++++++
- 3 files changed, 62 insertions(+), 3 deletions(-)
- create mode 100755 tests/misc-tests/030-missing-device-image/test.sh
+Fixes: 1bad2f2f2dfe ("Btrfs-progs: fsck: add an option to check data csums")
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ disk-io.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
 
+diff --git a/disk-io.c b/disk-io.c
+index 610963357675..310ab19cf099 100644
+--- a/disk-io.c
++++ b/disk-io.c
+@@ -395,10 +395,12 @@ int read_extent_data(struct btrfs_fs_info *fs_info, char *data, u64 logical,
+ 	}
+ 	device = multi->stripes[0].dev;
+ 
+-	if (device->fd <= 0)
+-		goto err;
+ 	if (*len > max_len)
+ 		*len = max_len;
++	if (device->fd < 0) {
++		ret = -EIO;
++		goto err;
++	}
+ 
+ 	ret = pread64(device->fd, data, *len, multi->stripes[0].physical);
+ 	if (ret != *len)
 -- 
 2.16.3
 

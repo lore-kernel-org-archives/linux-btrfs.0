@@ -1,81 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:42836 "EHLO
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:43240 "EHLO
         james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
-        by vger.kernel.org with ESMTP id S1750776AbeCaExT (ORCPT
+        by vger.kernel.org with ESMTP id S1750776AbeCaFDp (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 31 Mar 2018 00:53:19 -0400
-Date: Sat, 31 Mar 2018 00:53:18 -0400
+        Sat, 31 Mar 2018 01:03:45 -0400
+Date: Sat, 31 Mar 2018 01:03:45 -0400
 From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-To: Menion <menion@gmail.com>
+To: kreijack@inwind.it
 Cc: Christoph Anton Mitterer <calestyo@scientia.net>,
         linux-btrfs@vger.kernel.org
 Subject: Re: Status of RAID5/6
-Message-ID: <20180331045317.GD2446@hungrycats.org>
+Message-ID: <20180331050345.GE2446@hungrycats.org>
 References: <CAJVZm6dkZmSpnV3wz4sfOMzMCP36Mrt+-2J7o0mU4z=dEYQqQQ@mail.gmail.com>
  <CANQeFDDxZSZ4jYDPvW-Q=AoyPrGzpp0fVywjFOJtkeD+Ysgmew@mail.gmail.com>
  <1521662556.4312.39.camel@scientia.net>
  <20180329215011.GC2446@hungrycats.org>
- <CAJVZm6dY9vg15Qxnv8uLAwwPvoiiMZ0gJWARLS_9Ab6LX47ajA@mail.gmail.com>
+ <389bce3c-92ac-390a-1719-5b9591c9b85c@libero.it>
 MIME-Version: 1.0
 Content-Type: multipart/signed; micalg=pgp-sha1;
-        protocol="application/pgp-signature"; boundary="u65IjBhB3TIa72Vp"
-In-Reply-To: <CAJVZm6dY9vg15Qxnv8uLAwwPvoiiMZ0gJWARLS_9Ab6LX47ajA@mail.gmail.com>
+        protocol="application/pgp-signature"; boundary="dFWYt1i2NyOo1oI9"
+In-Reply-To: <389bce3c-92ac-390a-1719-5b9591c9b85c@libero.it>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---u65IjBhB3TIa72Vp
+--dFWYt1i2NyOo1oI9
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-On Fri, Mar 30, 2018 at 09:21:00AM +0200, Menion wrote:
->  Thanks for the detailed explanation. I think that a summary of this
-> should go in the btrfs raid56 wiki status page, because now it is
-> completely inconsistent and if a user comes there, ihe may get the
-> impression that the raid56 is just broken
-> Still I have the 1 bilion dollar question: from your word I understand
-> that even in RAID56 the metadata are spread on the devices in a coplex
-> way, but shall I assume that the array can survice to the sudden death
-> of one (two for raid6) HDD in the array?
+On Fri, Mar 30, 2018 at 06:14:52PM +0200, Goffredo Baroncelli wrote:
+> On 03/29/2018 11:50 PM, Zygo Blaxell wrote:
+> > On Wed, Mar 21, 2018 at 09:02:36PM +0100, Christoph Anton Mitterer wrot=
+e:
+> >> Hey.
+> >>
+> >> Some things would IMO be nice to get done/clarified (i.e. documented in
+> >> the Wiki and manpages) from users'/admin's  POV:
+> [...]
+> >=20
+> > btrfs has no optimization like mdadm write-intent bitmaps; recovery
+> > is always a full-device operation.  In theory btrfs could track
+> > modifications at the chunk level but this isn't even specified in the
+> > on-disk format, much less implemented.
+>=20
+> It could go even further; it would be sufficient to track which
+> *partial* stripes update will be performed before a commit, in one
+> of the btrfs logs. Then in case of a mount of an unclean filesystem,
+> a scrub on these stripes would be sufficient.
 
-I wouldn't assume that.  There is still the write hole, and while there
-is a small probability of having a write hole failure, it's a probability
-that applies on *every* write in degraded mode, and since disks can fail
-at any time, the array can enter degraded mode at any time.
+A scrub cannot fix a raid56 write hole--the data is already lost.
+The damaged stripe updates must be replayed from the log.
 
-It's similar to lottery tickets--buy one ticket, you probably won't win,
-but if you buy millions of tickets, you'll claim the prize eventually.
-The "prize" in this case is a severely damaged, possibly unrecoverable
-filesystem.
+A scrub could fix raid1/raid10 partial updates but only if the filesystem
+can reliably track which blocks failed to be updated by the disconnected
+disks.
 
-If the data is raid5 and the metadata is raid1, the filesystem can
-survive a single disk failure easily; however, some of the data may be
-lost if writes to the remaining disks are interrupted by a system crash
-or power failure and the write hole issue occurs.  Note that the damage
-is not necessarily limited to recently written data--it's any random
-data that is merely located adjacent to written data on the filesystem.
+It would be nice if scrub could be filtered the same way balance is, e.g.
+only certain block ranges, or only metadata blocks; however, this is not
+presently implemented.
 
-I wouldn't use raid6 until the write hole issue is resolved.  There is
-no configuration where two disks can fail and metadata can still be
-updated reliably.
+> BR
+> G.Baroncelli
+>=20
+> [...]
+>=20
+>=20
+> --=20
+> gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+> Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-Some users use the 'ssd_spread' mount option to reduce the probability
-of write hole failure, which happens to be helpful by accident on some
-array configurations, but it has a fairly high cost when the array is
-not degraded due to all the extra balancing required.
-
-
-
-> Bye
-
---u65IjBhB3TIa72Vp
+--dFWYt1i2NyOo1oI9
 Content-Type: application/pgp-signature; name="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iF0EABECAB0WIQSnOVjcfGcC/+em7H2B+YsaVrMbnAUCWr8UOAAKCRCB+YsaVrMb
-nA13AJ0X4wVeAKooXWSh0drlj7dGpK19GACfXAcgQPWMD/9pkVuCmtXkgVcwwck=
-=+P4h
+iF0EABECAB0WIQSnOVjcfGcC/+em7H2B+YsaVrMbnAUCWr8WqAAKCRCB+YsaVrMb
+nOk4AJ47UT2Mfc7d6rwcvPkEvVFPpNP5dwCg6ZdHShC54Vcrd4ISv29fEj7vjBc=
+=saJ/
 -----END PGP SIGNATURE-----
 
---u65IjBhB3TIa72Vp--
+--dFWYt1i2NyOo1oI9--

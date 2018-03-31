@@ -1,212 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp2130.oracle.com ([141.146.126.79]:35014 "EHLO
-        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S967916AbeCAMBd (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Mar 2018 07:01:33 -0500
-Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
-        by aserp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w21BvhVA003451
-        for <linux-btrfs@vger.kernel.org>; Thu, 1 Mar 2018 12:01:33 GMT
-Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
-        by aserp2130.oracle.com with ESMTP id 2gegja84wv-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Thu, 01 Mar 2018 12:01:33 +0000
-Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id w21C1WBe000916
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL)
-        for <linux-btrfs@vger.kernel.org>; Thu, 1 Mar 2018 12:01:32 GMT
-Received: from abhmp0005.oracle.com (abhmp0005.oracle.com [141.146.116.11])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w21C1WHD016698
-        for <linux-btrfs@vger.kernel.org>; Thu, 1 Mar 2018 12:01:32 GMT
-Subject: Re: [PATCH 1/1] btrfs: introduce feature to forget a btrfs device
-To: bo.li.liu@oracle.com
-Cc: linux-btrfs@vger.kernel.org
-References: <20180111012551.14765-1-anand.jain@oracle.com>
- <20180111012551.14765-2-anand.jain@oracle.com>
- <20180228005711.GE12338@dhcp-10-211-47-181.usdhcp.oraclecorp.com>
-From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <f1cdd8ea-ec04-9f62-38f9-8a9af3d9e8da@oracle.com>
-Date: Thu, 1 Mar 2018 20:03:10 +0800
+Received: from mail-ot0-f178.google.com ([74.125.82.178]:41621 "EHLO
+        mail-ot0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752824AbeCaWe7 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 31 Mar 2018 18:34:59 -0400
+Received: by mail-ot0-f178.google.com with SMTP id i28-v6so12546511otf.8
+        for <linux-btrfs@vger.kernel.org>; Sat, 31 Mar 2018 15:34:59 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <20180228005711.GE12338@dhcp-10-211-47-181.usdhcp.oraclecorp.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <b4d5bb24-e8d0-dc1b-94d2-4e7f9a292630@inwind.it>
+References: <CAJVZm6dkZmSpnV3wz4sfOMzMCP36Mrt+-2J7o0mU4z=dEYQqQQ@mail.gmail.com>
+ <CANQeFDDxZSZ4jYDPvW-Q=AoyPrGzpp0fVywjFOJtkeD+Ysgmew@mail.gmail.com>
+ <1521662556.4312.39.camel@scientia.net> <20180329215011.GC2446@hungrycats.org>
+ <389bce3c-92ac-390a-1719-5b9591c9b85c@libero.it> <20180331050345.GE2446@hungrycats.org>
+ <b4d5bb24-e8d0-dc1b-94d2-4e7f9a292630@inwind.it>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Sat, 31 Mar 2018 16:34:58 -0600
+Message-ID: <CAJCQCtRpWj45Ja_isnR=aV+iqDObZdKDNHH-g7+33Edz3Cq4=Q@mail.gmail.com>
+Subject: Re: Status of RAID5/6
+To: Goffredo Baroncelli <kreijack@inwind.it>
+Cc: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
+        Christoph Anton Mitterer <calestyo@scientia.net>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Sat, Mar 31, 2018 at 12:57 AM, Goffredo Baroncelli
+<kreijack@inwind.it> wrote:
+> On 03/31/2018 07:03 AM, Zygo Blaxell wrote:
+>>>> btrfs has no optimization like mdadm write-intent bitmaps; recovery
+>>>> is always a full-device operation.  In theory btrfs could track
+>>>> modifications at the chunk level but this isn't even specified in the
+>>>> on-disk format, much less implemented.
+>>> It could go even further; it would be sufficient to track which
+>>> *partial* stripes update will be performed before a commit, in one
+>>> of the btrfs logs. Then in case of a mount of an unclean filesystem,
+>>> a scrub on these stripes would be sufficient.
+>
+>> A scrub cannot fix a raid56 write hole--the data is already lost.
+>> The damaged stripe updates must be replayed from the log.
+>
+> Your statement is correct, but you doesn't consider the COW nature of btrfs.
+>
+> The key is that if a data write is interrupted, all the transaction is interrupted and aborted. And due to the COW nature of btrfs, the "old state" is restored at the next reboot.
+>
+> What is needed in any case is rebuild of parity to avoid the "write-hole" bug.
+
+Write hole happens on disk in Btrfs, but the ensuing corruption on
+rebuild is detected. Corrupt data never propagates. The problem is
+that Btrfs gives up when it's detected.
+
+If it assumes just a bit flip - not always a correct assumption but
+might be reasonable most of the time, it could iterate very quickly.
+Flip bit, and recompute and compare checksum. It doesn't have to
+iterate across 64KiB times the number of devices. It really only has
+to iterate bit flips on the particular 4KiB block that has failed csum
+(or in the case of metadata, 16KiB for the default leaf size, up to a
+max of 64KiB).
+
+That's a maximum of 4096 iterations and comparisons. It'd be quite
+fast. And going for two bit flips while a lot slower is probably not
+all that bad either.
+
+Now if it's the kind of corruption you get from a torn or misdirected
+write, there's enough corruption that now you're trying to find a
+collision on crc32c with a partial match as a guide. That'd take a
+while and who knows you might actually get corrupted data anyway since
+crc32c isn't cryptographically secure.
 
 
-On 02/28/2018 08:57 AM, Liu Bo wrote:
-> On Thu, Jan 11, 2018 at 09:25:50AM +0800, Anand Jain wrote:
->> Support for a new command 'btrfs dev forget [dev]' is proposed here,
->> to undo the effects of 'btrfs dev scan [dev]'. For this purpose,
->> this patch proposes to use ioctl #5 as it was empty.
->> 	IOW(BTRFS_IOCTL_MAGIC, 5, ..)
->> This patch adds new ioctl BTRFS_IOC_FORGET_DEV which can be sent from
->> the /dev/btrfs-control to forget one or all devices, (devices which are
->> not mounted) from the btrfs kernel.
->>
-> 
-> To me this seems to offer a debugging ability, could you please
-> elaborate the use case where we need to forget a particular device
-> instead of just wiping the uuid?
-
-
-Right, debug is one use case, the other use case is to recover from
-the split brain scenario [1].
-When it happens we need to bring user's attention to decide which
-disk is good and needs a way to un-scan/forget the device so that
-the FS can be mounted with a disk missing.
-
-[1]
-  https://patchwork.kernel.org/patch/10055145/
-
-Thanks, Anand
-
-
-> Thanks,
-> 
-> -liubo
->> The argument it takes is struct btrfs_ioctl_vol_args_v2, and ::name can be
->> set to specify the device path. And all unmounted devices can be removed
->> from the kernel using the BTRFS_DEVICE_SPEC_ALL_DEV flag. Remove all
->> devices functionality would override remove one device when both are
->> specified in an IOCTL call.
->> Again, the devices are removed only if the relevant fsid aren't mounted.
->>
->> Signed-off-by: Anand Jain <anand.jain@oracle.com>
->> ---
->>   fs/btrfs/super.c           | 27 +++++++++++++++++++++++----
->>   fs/btrfs/volumes.c         |  9 +++++++++
->>   fs/btrfs/volumes.h         |  1 +
->>   include/uapi/linux/btrfs.h |  6 +++++-
->>   4 files changed, 38 insertions(+), 5 deletions(-)
->>
->> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
->> index 559fc53ff59e..6a9a5ce8af3b 100644
->> --- a/fs/btrfs/super.c
->> +++ b/fs/btrfs/super.c
->> @@ -2219,21 +2219,37 @@ static long btrfs_control_ioctl(struct file *file, unsigned int cmd,
->>   				unsigned long arg)
->>   {
->>   	struct btrfs_ioctl_vol_args *vol;
->> +	struct btrfs_ioctl_vol_args_v2 *vol2;
->>   	struct btrfs_fs_devices *fs_devices;
->>   	int ret = -ENOTTY;
->>   
->>   	if (!capable(CAP_SYS_ADMIN))
->>   		return -EPERM;
->>   
->> -	vol = memdup_user((void __user *)arg, sizeof(*vol));
->> -	if (IS_ERR(vol))
->> -		return PTR_ERR(vol);
->> +	if (cmd == BTRFS_IOC_FORGET_DEV) {
->> +		vol2 = memdup_user((void __user *)arg, sizeof(*vol2));
->> +		if (IS_ERR(vol2))
->> +			return PTR_ERR(vol2);
->> +
->> +		if (vol2->flags & ~BTRFS_VOL_ARG_V2_FLAGS_SUPPORTED)
->> +			return -EOPNOTSUPP;
->> +	} else {
->> +		vol = memdup_user((void __user *)arg, sizeof(*vol));
->> +		if (IS_ERR(vol))
->> +			return PTR_ERR(vol);
->> +	}
->>   
->>   	switch (cmd) {
->>   	case BTRFS_IOC_SCAN_DEV:
->>   		ret = btrfs_scan_one_device(vol->name, FMODE_READ,
->>   					    &btrfs_fs_type, &fs_devices);
->>   		break;
->> +	case BTRFS_IOC_FORGET_DEV:
->> +		if (vol2->flags & BTRFS_DEVICE_SPEC_ALL_DEV)
->> +			ret = btrfs_forget_devices(NULL);
->> +		else
->> +			ret = btrfs_forget_devices(vol2->name);
->> +		break;
->>   	case BTRFS_IOC_DEVICES_READY:
->>   		ret = btrfs_scan_one_device(vol->name, FMODE_READ,
->>   					    &btrfs_fs_type, &fs_devices);
->> @@ -2246,7 +2262,10 @@ static long btrfs_control_ioctl(struct file *file, unsigned int cmd,
->>   		break;
->>   	}
->>   
->> -	kfree(vol);
->> +	if (cmd == BTRFS_IOC_FORGET_DEV)
->> +		kfree(vol2);
->> +	else
->> +		kfree(vol);
->>   	return ret;
->>   }
->>   
->> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
->> index e947e47f8fff..b0c9948baf9a 100644
->> --- a/fs/btrfs/volumes.c
->> +++ b/fs/btrfs/volumes.c
->> @@ -1171,6 +1171,15 @@ static int btrfs_read_disk_super(struct block_device *bdev, u64 bytenr,
->>   	return 0;
->>   }
->>   
->> +int btrfs_forget_devices(const char *path)
->> +{
->> +	mutex_lock(&uuid_mutex);
->> +	btrfs_free_stale_devices(path, NULL);
->> +	mutex_unlock(&uuid_mutex);
->> +
->> +	return 0;
->> +}
->> +
->>   /*
->>    * Look for a btrfs signature on a device. This may be called out of the mount path
->>    * and we are not allowed to call set_blocksize during the scan. The superblock
->> diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
->> index 15216fed918b..b954ca3b79a9 100644
->> --- a/fs/btrfs/volumes.h
->> +++ b/fs/btrfs/volumes.h
->> @@ -422,6 +422,7 @@ int btrfs_open_devices(struct btrfs_fs_devices *fs_devices,
->>   		       fmode_t flags, void *holder);
->>   int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
->>   			  struct btrfs_fs_devices **fs_devices_ret);
->> +int btrfs_forget_devices(const char *path);
->>   int btrfs_close_devices(struct btrfs_fs_devices *fs_devices);
->>   void btrfs_close_extra_devices(struct btrfs_fs_devices *fs_devices, int step);
->>   void btrfs_assign_next_active_device(struct btrfs_fs_info *fs_info,
->> diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
->> index c8d99b9ca550..4e8ec1391872 100644
->> --- a/include/uapi/linux/btrfs.h
->> +++ b/include/uapi/linux/btrfs.h
->> @@ -41,12 +41,14 @@ struct btrfs_ioctl_vol_args {
->>   #define BTRFS_SUBVOL_QGROUP_INHERIT	(1ULL << 2)
->>   
->>   #define BTRFS_DEVICE_SPEC_BY_ID		(1ULL << 3)
->> +#define BTRFS_DEVICE_SPEC_ALL_DEV	(1ULL << 4)
->>   
->>   #define BTRFS_VOL_ARG_V2_FLAGS_SUPPORTED		\
->>   			(BTRFS_SUBVOL_CREATE_ASYNC |	\
->>   			BTRFS_SUBVOL_RDONLY |		\
->>   			BTRFS_SUBVOL_QGROUP_INHERIT |	\
->> -			BTRFS_DEVICE_SPEC_BY_ID)
->> +			BTRFS_DEVICE_SPEC_BY_ID |	\
->> +			BTRFS_DEVICE_SPEC_ALL_DEV)
->>   
->>   #define BTRFS_FSID_SIZE 16
->>   #define BTRFS_UUID_SIZE 16
->> @@ -745,6 +747,8 @@ enum btrfs_err_code {
->>   				   struct btrfs_ioctl_vol_args)
->>   #define BTRFS_IOC_SCAN_DEV _IOW(BTRFS_IOCTL_MAGIC, 4, \
->>   				   struct btrfs_ioctl_vol_args)
->> +#define BTRFS_IOC_FORGET_DEV _IOW(BTRFS_IOCTL_MAGIC, 5, \
->> +				   struct btrfs_ioctl_vol_args)
->>   /* trans start and trans end are dangerous, and only for
->>    * use by applications that know how to avoid the
->>    * resulting deadlocks
->> -- 
->> 2.7.0
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+-- 
+Chris Murphy

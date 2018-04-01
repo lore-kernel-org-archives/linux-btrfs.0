@@ -1,214 +1,227 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.21]:35905 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.17.22]:53999 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753379AbeDAKed (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 1 Apr 2018 06:34:33 -0400
-Subject: Re: bug? fstrim only trims unallocated space, not unused in bg's
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <CAJCQCtRpWuPLsmGLmNcon45YzfewRFPHxjhCJY=mVZ_Od7jxxQ@mail.gmail.com>
- <d784d9a6-bc0e-e4c3-6633-043081ea800b@gmx.com>
- <CAJCQCtSZmRmeFUGPSiRLV4TCOjbD6uTqpoEqKD24Li8w1iO7qQ@mail.gmail.com>
- <0f6c7514-1cf2-1d88-1307-c43f7642b525@gmx.com>
- <CAJCQCtSH-w4Pt9kmGhuYZUX_FdktFEpV4WyKnxw5GaDKfVmdng@mail.gmail.com>
- <d8973b92-b320-5088-aae6-2b3835f1b2ca@gmx.com>
- <CAJCQCtSjBWMauccwremxQ+eCTTBXsz=VEXFy=ckABpKtC-9NTw@mail.gmail.com>
- <af39cb86-693c-2f3b-7831-60968d3b5c3d@gmx.com>
- <CAJCQCtS6tXcKRuwZiAfB8eUkENz6secVcvxYS=syCFp_VH_+Vw@mail.gmail.com>
- <56401bb3-39fb-66d9-f77b-30e164bd8973@gmx.com>
- <CAJCQCtQiTt78svzzdcV_Pm2iPK6RgYLXsvMda7H6aQeMf2w07g@mail.gmail.com>
- <4b7a0fae-ca96-7583-90d0-37cabc78849b@gmx.com>
- <CAJCQCtSezvyBGBQJRwQ+aeJH+8_8QsihkFD-iZaEVFeoL-00+Q@mail.gmail.com>
- <a95813ad-d87e-bd5a-a258-c3d241fa5181@gmx.com>
- <CAJCQCtSAfYxZigvrgAq=vw3anMKiPK=ZWnOvC+mbR__XUW8ugA@mail.gmail.com>
+        id S1751130AbeDAKfd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 1 Apr 2018 06:35:33 -0400
+Subject: Re: [PATCH RESEND 1/2] btrfs: Enhance btrfs_trim_fs function to
+ handle error better
+To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz
+References: <20171128070830.12756-1-wqu@suse.com>
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <3247ca88-4ea6-f5a7-d21c-0b3105e9a7f3@gmx.com>
-Date: Sun, 1 Apr 2018 18:34:27 +0800
+Message-ID: <4befd8e2-c6e6-a3cb-2d38-9a3c9739a32e@gmx.com>
+Date: Sun, 1 Apr 2018 18:35:17 +0800
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtSAfYxZigvrgAq=vw3anMKiPK=ZWnOvC+mbR__XUW8ugA@mail.gmail.com>
+In-Reply-To: <20171128070830.12756-1-wqu@suse.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="tAJfKXzLR7EXVp7Ee86HVYoyk4NhRKFx0"
+ boundary="GLQ8HDP8DQa2NEjqueJZHCDEUnC8jbiGo"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---tAJfKXzLR7EXVp7Ee86HVYoyk4NhRKFx0
-Content-Type: multipart/mixed; boundary="1eRnGRsQv9GwplZtkHu4VS4MpFftaZ70K";
+--GLQ8HDP8DQa2NEjqueJZHCDEUnC8jbiGo
+Content-Type: multipart/mixed; boundary="zHuWTtNzNRyuKVOFhI8LtHkI63cUx3RFP";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Message-ID: <3247ca88-4ea6-f5a7-d21c-0b3105e9a7f3@gmx.com>
-Subject: Re: bug? fstrim only trims unallocated space, not unused in bg's
-References: <CAJCQCtRpWuPLsmGLmNcon45YzfewRFPHxjhCJY=mVZ_Od7jxxQ@mail.gmail.com>
- <d784d9a6-bc0e-e4c3-6633-043081ea800b@gmx.com>
- <CAJCQCtSZmRmeFUGPSiRLV4TCOjbD6uTqpoEqKD24Li8w1iO7qQ@mail.gmail.com>
- <0f6c7514-1cf2-1d88-1307-c43f7642b525@gmx.com>
- <CAJCQCtSH-w4Pt9kmGhuYZUX_FdktFEpV4WyKnxw5GaDKfVmdng@mail.gmail.com>
- <d8973b92-b320-5088-aae6-2b3835f1b2ca@gmx.com>
- <CAJCQCtSjBWMauccwremxQ+eCTTBXsz=VEXFy=ckABpKtC-9NTw@mail.gmail.com>
- <af39cb86-693c-2f3b-7831-60968d3b5c3d@gmx.com>
- <CAJCQCtS6tXcKRuwZiAfB8eUkENz6secVcvxYS=syCFp_VH_+Vw@mail.gmail.com>
- <56401bb3-39fb-66d9-f77b-30e164bd8973@gmx.com>
- <CAJCQCtQiTt78svzzdcV_Pm2iPK6RgYLXsvMda7H6aQeMf2w07g@mail.gmail.com>
- <4b7a0fae-ca96-7583-90d0-37cabc78849b@gmx.com>
- <CAJCQCtSezvyBGBQJRwQ+aeJH+8_8QsihkFD-iZaEVFeoL-00+Q@mail.gmail.com>
- <a95813ad-d87e-bd5a-a258-c3d241fa5181@gmx.com>
- <CAJCQCtSAfYxZigvrgAq=vw3anMKiPK=ZWnOvC+mbR__XUW8ugA@mail.gmail.com>
-In-Reply-To: <CAJCQCtSAfYxZigvrgAq=vw3anMKiPK=ZWnOvC+mbR__XUW8ugA@mail.gmail.com>
+To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz
+Message-ID: <4befd8e2-c6e6-a3cb-2d38-9a3c9739a32e@gmx.com>
+Subject: Re: [PATCH RESEND 1/2] btrfs: Enhance btrfs_trim_fs function to
+ handle error better
+References: <20171128070830.12756-1-wqu@suse.com>
+In-Reply-To: <20171128070830.12756-1-wqu@suse.com>
 
---1eRnGRsQv9GwplZtkHu4VS4MpFftaZ70K
+--zHuWTtNzNRyuKVOFhI8LtHkI63cUx3RFP
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
+Gentle ping?
 
-
-On 2018=E5=B9=B404=E6=9C=8801=E6=97=A5 11:28, Chris Murphy wrote:
-> On Mon, Nov 20, 2017 at 11:10 PM, Qu Wenruo <quwenruo.btrfs@gmx.com> wr=
-ote:
->>
->>
->> On 2017=E5=B9=B411=E6=9C=8821=E6=97=A5 13:58, Chris Murphy wrote:
->>> On Mon, Nov 20, 2017 at 9:58 PM, Qu Wenruo <quwenruo.btrfs@gmx.com> w=
-rote:
->>>>
->>>>
->>>> On 2017=E5=B9=B411=E6=9C=8821=E6=97=A5 12:49, Chris Murphy wrote:
->>>>> On Mon, Nov 20, 2017 at 9:43 PM, Qu Wenruo <quwenruo.btrfs@gmx.com>=
- wrote:
->>>>>>
->>>>>>
->>>>>>>
->>>>>>> Apply in addition to previous patch? Or apply to clean v4.14?
->>>>>>
->>>>>> On previous patch.
->>>>>
->>>>> Refuses to apply with or without previous patch.
->>>>>
->>>>> $ git apply -v ~/qufstrim3.patch
->>>>> Checking patch fs/btrfs/extent-tree.c...
->>>>> error: while searching for:
->>>>>        int dev_ret =3D 0;
->>>>>        int ret =3D 0;
->>>>>
->>>>>        /*
->>>>>         * try to trim all FS space, our block group may start from =
-non-zero.
->>>>>         */
->>>>>
->>>>> error: patch failed: fs/btrfs/extent-tree.c:10972
->>>>> error: fs/btrfs/extent-tree.c: patch does not apply
->>>>>
->>>>
->>>> Please try this branch.
->>>>
->>>> It's just previous patch and diff merged together and applied on v4.=
-14
->>>> tag from torvalds.
->>>>
->>>> https://github.com/adam900710/linux/tree/tmp
->>>
->>> # fstrim -v /
->>> /: 38 GiB (40767586304 bytes) trimmed
->>> # dmesg
->>>
->>> ..snip...
->>> [   46.408792] BTRFS info (device nvme0n1p8): trimming btrfs, start=3D=
-0
->>> len=3D75161927680 minlen=3D512
->>> [   46.408800] BTRFS info (device nvme0n1p8): bg start=3D140882477056=
-
->>> len=3D1073741824
->>> [   46.433867] BTRFS info (device nvme0n1p8): trimming done
->>
->> Great (for the output, not for the trimming failure).
->>
->> And the problem is very obvious now.
->> 140882477056 << First chunk start
->> 75161927680  << length of fstrim_range passed in
->>
->> Obviously, fstrim_range passed in is using the filesystem size it
->> assumes to be.
->>
->> While we stupidly use the range in fstrim_range without considering th=
-e
->> fact that, we're dealing with *btrfs logical address space*.
->> Where our chunk can start from any bytenr (well, at least aligned with=
-
->> sectorsize).
->> When I read the code I also think the range check has nothing wrong at=
- all.
->>
->> So the truth here is, we should not ever try to check the range from
->> fstrim_range.
->>
->> And the problem means that, a normal btrfs with some usage and after
->> several full balance, fstrim will only trim the unallocated space for =
-btrfs.
->>
->> Now the fix should not be a hard to craft.
->>
->> Great thanks for all your help to locate the problem.
->=20
-> I still see this problem in 4.16.0-0.rc7.git1.1.fc29.x86_64. Are there
-> any patches to test?
->=20
-> [chris@f27h mnt]$ sudo btrfs fi us /
-> Overall:
->     Device size:          70.00GiB
->     Device allocated:          60.06GiB
->     Device unallocated:           9.94GiB
->     Device missing:             0.00B
->     Used:              36.89GiB
->     Free (estimated):          29.75GiB    (min: 24.78GiB)
->     Data ratio:                  1.00
->     Metadata ratio:              1.00
->     Global reserve:         107.77MiB    (used: 12.38MiB)
->=20
-> Data,single: Size:55.00GiB, Used:35.19GiB
->    /dev/nvme0n1p9      55.00GiB
->=20
-> Metadata,single: Size:5.00GiB, Used:1.70GiB
->    /dev/nvme0n1p9       5.00GiB
->=20
-> System,DUP: Size:32.00MiB, Used:16.00KiB
->    /dev/nvme0n1p9      64.00MiB
->=20
-> Unallocated:
->    /dev/nvme0n1p9       9.94GiB
-> [chris@f27h mnt]$ sudo fstrim -v /
-> [sudo] password for chris:
-> /: 10 GiB (10669260800 bytes) trimmed
-
-The latest version is here
-https://patchwork.kernel.org/patch/10078773/
-https://patchwork.kernel.org/patch/10083979/
-
-And I didn't see it in misc-next either, I may need to ping it soon.
+The patch is small and (with its 2nd patch) should fix trim behavior
+inside block groups.
 
 Thanks,
 Qu
 
+On 2017=E5=B9=B411=E6=9C=8828=E6=97=A5 15:08, Qu Wenruo wrote:
+> Function btrfs_trim_fs() doesn't handle errors in a consistent way, if
+> error happens when trimming existing block groups, it will skip the
+> remaining blocks and continue to trim unallocated space for each device=
+=2E
+>=20
+> And the return value will only reflect the final error from device
+> trimming.
+>=20
+> This patch will fix such behavior by:
+>=20
+> 1) Recording first error from block group or device trimming
+>    So return value will also reflect any error found when trimming.
+>    Make developer more aware of the problem.
+>=20
+> 2) Outputting btrfs warning message for each trimming failure
+>    Any error for block group or device trimming will cause btrfs warnin=
+g
+>    kernel message.
+>=20
+> 3) Continuing trimming if we can
+>    If we failed to trim one block group or device, we could still try
+>    next block group or device.
+>=20
+> Such behavior can avoid confusion for case like failure to trim the
+> first block group and then only unallocated space is trimmed.
+>=20
+> Reported-by: Chris Murphy <lists@colorremedies.com>
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+>  fs/btrfs/extent-tree.c | 59 ++++++++++++++++++++++++++++++++++++------=
+--------
+>  1 file changed, 43 insertions(+), 16 deletions(-)
+>=20
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index 673ac4e01dd0..f830aa91ac3d 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -10948,6 +10948,16 @@ static int btrfs_trim_free_extents(struct btrf=
+s_device *device,
+>  	return ret;
+>  }
+> =20
+> +/*
+> + * Trim the whole fs, by:
+> + * 1) Trimming free space in each block group
+> + * 2) Trimming unallocated space in each device
+> + *
+> + * Will try to continue trimming even if we failed to trim one block g=
+roup or
+> + * device.
+> + * The return value will be the error return value of the first error.=
 
---1eRnGRsQv9GwplZtkHu4VS4MpFftaZ70K--
+> + * Or 0 if nothing wrong happened.
+> + */
+>  int btrfs_trim_fs(struct btrfs_fs_info *fs_info, struct fstrim_range *=
+range)
+>  {
+>  	struct btrfs_block_group_cache *cache =3D NULL;
+> @@ -10958,6 +10968,8 @@ int btrfs_trim_fs(struct btrfs_fs_info *fs_info=
+, struct fstrim_range *range)
+>  	u64 end;
+>  	u64 trimmed =3D 0;
+>  	u64 total_bytes =3D btrfs_super_total_bytes(fs_info->super_copy);
+> +	int bg_ret =3D 0;
+> +	int dev_ret =3D 0;
+>  	int ret =3D 0;
+> =20
+>  	/*
+> @@ -10968,7 +10980,7 @@ int btrfs_trim_fs(struct btrfs_fs_info *fs_info=
+, struct fstrim_range *range)
+>  	else
+>  		cache =3D btrfs_lookup_block_group(fs_info, range->start);
+> =20
+> -	while (cache) {
+> +	for (; cache; cache =3D next_block_group(fs_info, cache)) {
+>  		if (cache->key.objectid >=3D (range->start + range->len)) {
+>  			btrfs_put_block_group(cache);
+>  			break;
+> @@ -10982,29 +10994,36 @@ int btrfs_trim_fs(struct btrfs_fs_info *fs_in=
+fo, struct fstrim_range *range)
+>  			if (!block_group_cache_done(cache)) {
+>  				ret =3D cache_block_group(cache, 0);
+>  				if (ret) {
+> -					btrfs_put_block_group(cache);
+> -					break;
+> +					btrfs_warn_rl(fs_info,
+> +		"failed to cache block group %llu ret %d",
+> +						   cache->key.objectid, ret);
+> +					if (!bg_ret)
+> +						bg_ret =3D ret;
+> +					continue;
+>  				}
+>  				ret =3D wait_block_group_cache_done(cache);
+>  				if (ret) {
+> -					btrfs_put_block_group(cache);
+> -					break;
+> +					btrfs_warn_rl(fs_info,
+> +		"failed to wait cache for block group %llu ret %d",
+> +						   cache->key.objectid, ret);
+> +					if (!bg_ret)
+> +						bg_ret =3D ret;
+> +					continue;
+>  				}
+>  			}
+> -			ret =3D btrfs_trim_block_group(cache,
+> -						     &group_trimmed,
+> -						     start,
+> -						     end,
+> -						     range->minlen);
+> +			ret =3D btrfs_trim_block_group(cache, &group_trimmed,
+> +						start, end, range->minlen);
+> =20
+>  			trimmed +=3D group_trimmed;
+>  			if (ret) {
+> -				btrfs_put_block_group(cache);
+> -				break;
+> +				btrfs_warn_rl(fs_info,
+> +		"failed to trim block group %llu ret %d",
+> +					   cache->key.objectid, ret);
+> +				if (!bg_ret)
+> +					bg_ret =3D ret;
+> +				continue;
+>  			}
+>  		}
+> -
+> -		cache =3D next_block_group(fs_info, cache);
+>  	}
+> =20
+>  	mutex_lock(&fs_info->fs_devices->device_list_mutex);
+> @@ -11012,15 +11031,23 @@ int btrfs_trim_fs(struct btrfs_fs_info *fs_in=
+fo, struct fstrim_range *range)
+>  	list_for_each_entry(device, devices, dev_alloc_list) {
+>  		ret =3D btrfs_trim_free_extents(device, range->minlen,
+>  					      &group_trimmed);
+> -		if (ret)
+> +		if (ret) {
+> +			btrfs_warn_rl(fs_info,
+> +		"failed to trim unallocated space for devid %llu ret %d",
+> +				      device->devid, ret);
+> +			if (!dev_ret)
+> +				dev_ret =3D ret;
+>  			break;
+> +		}
+> =20
+>  		trimmed +=3D group_trimmed;
+>  	}
+>  	mutex_unlock(&fs_info->fs_devices->device_list_mutex);
+> =20
+>  	range->len =3D trimmed;
+> -	return ret;
+> +	if (bg_ret)
+> +		return bg_ret;
+> +	return dev_ret;
+>  }
+> =20
+>  /*
+>=20
 
---tAJfKXzLR7EXVp7Ee86HVYoyk4NhRKFx0
+
+--zHuWTtNzNRyuKVOFhI8LtHkI63cUx3RFP--
+
+--GLQ8HDP8DQa2NEjqueJZHCDEUnC8jbiGo
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlrAtbMACgkQwj2R86El
-/qjyIgf/VMXOQuKbafw5l10qQ+Lm8ClUJJbBd71xGz1Zbu/jffAKLljUhGsjIhgI
-agGNkZL1c2Vzcj7J49GCq0qC/WAZewIH57pNpj2VnjP2TUb4i9bwYjG0QcJEdLQH
-ocS6dnxhFXkhYeP0NfNgFeTZvi5tRPoXMYQODuGaNQkVaadtzrkOK2SerE20KMY5
-ajcSIJrZLKlxqzR3jDVC1ZMjwGnbe25AX3hrwnjj/zv6lN+EdhXUbVY3fY23+eNy
-pzb7wiOWx3y8/GMYRcx7YfZ+nPkzcS0mkjzn7kbDGH/Aso35MyRNCzWexuxGZ8m9
-BKJRQAkLhSTgn66kcHox6Ka6ASVnrQ==
-=Jv6r
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlrAteYACgkQwj2R86El
+/qhrlQf+KJxefXZ3v75xvqSjhrc9rXKeYB+q5ZMIohcAIGZjl669TasvMJyDkNZm
+8DA9zNZrPtR/NHOvtspYGNcy9pcl1cYp8WfpVCeJC7d1m8EVhJ2hdPxwS2L1dYyH
+XY0gRvrHcJ3Faiois8MCp+4BB7/kzupZrGFcVQoxnabRe3t+VGo73scM6FYkWvWk
+0jy2HLOlkgemAnsrdoCxN7yTgv70/ApSWxmFpJ6mKI7UjoLtKWJE5MR3xh0iUtKE
+JXHoiK/VsXpbxo8MThVokJzNI1EGz+lHfGE4DU9WMaGoNMhVyhF6A2hOpLo5fEZf
+k7xQVHtW40vK5hyTJrqB0ibeimiObw==
+=0M1m
 -----END PGP SIGNATURE-----
 
---tAJfKXzLR7EXVp7Ee86HVYoyk4NhRKFx0--
+--GLQ8HDP8DQa2NEjqueJZHCDEUnC8jbiGo--

@@ -1,72 +1,138 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ot0-f178.google.com ([74.125.82.178]:41621 "EHLO
-        mail-ot0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752824AbeCaWe7 (ORCPT
+Received: from mail-ot0-f180.google.com ([74.125.82.180]:45868 "EHLO
+        mail-ot0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752949AbeDAD2s (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 31 Mar 2018 18:34:59 -0400
-Received: by mail-ot0-f178.google.com with SMTP id i28-v6so12546511otf.8
-        for <linux-btrfs@vger.kernel.org>; Sat, 31 Mar 2018 15:34:59 -0700 (PDT)
+        Sat, 31 Mar 2018 23:28:48 -0400
+Received: by mail-ot0-f180.google.com with SMTP id h26-v6so12818894otj.12
+        for <linux-btrfs@vger.kernel.org>; Sat, 31 Mar 2018 20:28:47 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <b4d5bb24-e8d0-dc1b-94d2-4e7f9a292630@inwind.it>
-References: <CAJVZm6dkZmSpnV3wz4sfOMzMCP36Mrt+-2J7o0mU4z=dEYQqQQ@mail.gmail.com>
- <CANQeFDDxZSZ4jYDPvW-Q=AoyPrGzpp0fVywjFOJtkeD+Ysgmew@mail.gmail.com>
- <1521662556.4312.39.camel@scientia.net> <20180329215011.GC2446@hungrycats.org>
- <389bce3c-92ac-390a-1719-5b9591c9b85c@libero.it> <20180331050345.GE2446@hungrycats.org>
- <b4d5bb24-e8d0-dc1b-94d2-4e7f9a292630@inwind.it>
+In-Reply-To: <a95813ad-d87e-bd5a-a258-c3d241fa5181@gmx.com>
+References: <CAJCQCtRpWuPLsmGLmNcon45YzfewRFPHxjhCJY=mVZ_Od7jxxQ@mail.gmail.com>
+ <d784d9a6-bc0e-e4c3-6633-043081ea800b@gmx.com> <CAJCQCtSZmRmeFUGPSiRLV4TCOjbD6uTqpoEqKD24Li8w1iO7qQ@mail.gmail.com>
+ <0f6c7514-1cf2-1d88-1307-c43f7642b525@gmx.com> <CAJCQCtSH-w4Pt9kmGhuYZUX_FdktFEpV4WyKnxw5GaDKfVmdng@mail.gmail.com>
+ <d8973b92-b320-5088-aae6-2b3835f1b2ca@gmx.com> <CAJCQCtSjBWMauccwremxQ+eCTTBXsz=VEXFy=ckABpKtC-9NTw@mail.gmail.com>
+ <af39cb86-693c-2f3b-7831-60968d3b5c3d@gmx.com> <CAJCQCtS6tXcKRuwZiAfB8eUkENz6secVcvxYS=syCFp_VH_+Vw@mail.gmail.com>
+ <56401bb3-39fb-66d9-f77b-30e164bd8973@gmx.com> <CAJCQCtQiTt78svzzdcV_Pm2iPK6RgYLXsvMda7H6aQeMf2w07g@mail.gmail.com>
+ <4b7a0fae-ca96-7583-90d0-37cabc78849b@gmx.com> <CAJCQCtSezvyBGBQJRwQ+aeJH+8_8QsihkFD-iZaEVFeoL-00+Q@mail.gmail.com>
+ <a95813ad-d87e-bd5a-a258-c3d241fa5181@gmx.com>
 From: Chris Murphy <lists@colorremedies.com>
-Date: Sat, 31 Mar 2018 16:34:58 -0600
-Message-ID: <CAJCQCtRpWj45Ja_isnR=aV+iqDObZdKDNHH-g7+33Edz3Cq4=Q@mail.gmail.com>
-Subject: Re: Status of RAID5/6
-To: Goffredo Baroncelli <kreijack@inwind.it>
-Cc: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
-        Christoph Anton Mitterer <calestyo@scientia.net>,
+Date: Sat, 31 Mar 2018 21:28:46 -0600
+Message-ID: <CAJCQCtSAfYxZigvrgAq=vw3anMKiPK=ZWnOvC+mbR__XUW8ugA@mail.gmail.com>
+Subject: Re: bug? fstrim only trims unallocated space, not unused in bg's
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: Chris Murphy <lists@colorremedies.com>,
         Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Mar 31, 2018 at 12:57 AM, Goffredo Baroncelli
-<kreijack@inwind.it> wrote:
-> On 03/31/2018 07:03 AM, Zygo Blaxell wrote:
->>>> btrfs has no optimization like mdadm write-intent bitmaps; recovery
->>>> is always a full-device operation.  In theory btrfs could track
->>>> modifications at the chunk level but this isn't even specified in the
->>>> on-disk format, much less implemented.
->>> It could go even further; it would be sufficient to track which
->>> *partial* stripes update will be performed before a commit, in one
->>> of the btrfs logs. Then in case of a mount of an unclean filesystem,
->>> a scrub on these stripes would be sufficient.
+On Mon, Nov 20, 2017 at 11:10 PM, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
 >
->> A scrub cannot fix a raid56 write hole--the data is already lost.
->> The damaged stripe updates must be replayed from the log.
 >
-> Your statement is correct, but you doesn't consider the COW nature of btrfs.
+> On 2017年11月21日 13:58, Chris Murphy wrote:
+>> On Mon, Nov 20, 2017 at 9:58 PM, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
+>>>
+>>>
+>>> On 2017年11月21日 12:49, Chris Murphy wrote:
+>>>> On Mon, Nov 20, 2017 at 9:43 PM, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
+>>>>>
+>>>>>
+>>>>>>
+>>>>>> Apply in addition to previous patch? Or apply to clean v4.14?
+>>>>>
+>>>>> On previous patch.
+>>>>
+>>>> Refuses to apply with or without previous patch.
+>>>>
+>>>> $ git apply -v ~/qufstrim3.patch
+>>>> Checking patch fs/btrfs/extent-tree.c...
+>>>> error: while searching for:
+>>>>        int dev_ret = 0;
+>>>>        int ret = 0;
+>>>>
+>>>>        /*
+>>>>         * try to trim all FS space, our block group may start from non-zero.
+>>>>         */
+>>>>
+>>>> error: patch failed: fs/btrfs/extent-tree.c:10972
+>>>> error: fs/btrfs/extent-tree.c: patch does not apply
+>>>>
+>>>
+>>> Please try this branch.
+>>>
+>>> It's just previous patch and diff merged together and applied on v4.14
+>>> tag from torvalds.
+>>>
+>>> https://github.com/adam900710/linux/tree/tmp
+>>
+>> # fstrim -v /
+>> /: 38 GiB (40767586304 bytes) trimmed
+>> # dmesg
+>>
+>> ..snip...
+>> [   46.408792] BTRFS info (device nvme0n1p8): trimming btrfs, start=0
+>> len=75161927680 minlen=512
+>> [   46.408800] BTRFS info (device nvme0n1p8): bg start=140882477056
+>> len=1073741824
+>> [   46.433867] BTRFS info (device nvme0n1p8): trimming done
 >
-> The key is that if a data write is interrupted, all the transaction is interrupted and aborted. And due to the COW nature of btrfs, the "old state" is restored at the next reboot.
+> Great (for the output, not for the trimming failure).
 >
-> What is needed in any case is rebuild of parity to avoid the "write-hole" bug.
+> And the problem is very obvious now.
+> 140882477056 << First chunk start
+> 75161927680  << length of fstrim_range passed in
+>
+> Obviously, fstrim_range passed in is using the filesystem size it
+> assumes to be.
+>
+> While we stupidly use the range in fstrim_range without considering the
+> fact that, we're dealing with *btrfs logical address space*.
+> Where our chunk can start from any bytenr (well, at least aligned with
+> sectorsize).
+> When I read the code I also think the range check has nothing wrong at all.
+>
+> So the truth here is, we should not ever try to check the range from
+> fstrim_range.
+>
+> And the problem means that, a normal btrfs with some usage and after
+> several full balance, fstrim will only trim the unallocated space for btrfs.
+>
+> Now the fix should not be a hard to craft.
+>
+> Great thanks for all your help to locate the problem.
 
-Write hole happens on disk in Btrfs, but the ensuing corruption on
-rebuild is detected. Corrupt data never propagates. The problem is
-that Btrfs gives up when it's detected.
+I still see this problem in 4.16.0-0.rc7.git1.1.fc29.x86_64. Are there
+any patches to test?
 
-If it assumes just a bit flip - not always a correct assumption but
-might be reasonable most of the time, it could iterate very quickly.
-Flip bit, and recompute and compare checksum. It doesn't have to
-iterate across 64KiB times the number of devices. It really only has
-to iterate bit flips on the particular 4KiB block that has failed csum
-(or in the case of metadata, 16KiB for the default leaf size, up to a
-max of 64KiB).
+[chris@f27h mnt]$ sudo btrfs fi us /
+Overall:
+    Device size:          70.00GiB
+    Device allocated:          60.06GiB
+    Device unallocated:           9.94GiB
+    Device missing:             0.00B
+    Used:              36.89GiB
+    Free (estimated):          29.75GiB    (min: 24.78GiB)
+    Data ratio:                  1.00
+    Metadata ratio:              1.00
+    Global reserve:         107.77MiB    (used: 12.38MiB)
 
-That's a maximum of 4096 iterations and comparisons. It'd be quite
-fast. And going for two bit flips while a lot slower is probably not
-all that bad either.
+Data,single: Size:55.00GiB, Used:35.19GiB
+   /dev/nvme0n1p9      55.00GiB
 
-Now if it's the kind of corruption you get from a torn or misdirected
-write, there's enough corruption that now you're trying to find a
-collision on crc32c with a partial match as a guide. That'd take a
-while and who knows you might actually get corrupted data anyway since
-crc32c isn't cryptographically secure.
+Metadata,single: Size:5.00GiB, Used:1.70GiB
+   /dev/nvme0n1p9       5.00GiB
+
+System,DUP: Size:32.00MiB, Used:16.00KiB
+   /dev/nvme0n1p9      64.00MiB
+
+Unallocated:
+   /dev/nvme0n1p9       9.94GiB
+[chris@f27h mnt]$ sudo fstrim -v /
+[sudo] password for chris:
+/: 10 GiB (10669260800 bytes) trimmed
+
+
 
 
 -- 

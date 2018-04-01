@@ -1,227 +1,187 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.22]:53999 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751130AbeDAKfd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 1 Apr 2018 06:35:33 -0400
-Subject: Re: [PATCH RESEND 1/2] btrfs: Enhance btrfs_trim_fs function to
- handle error better
-To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-References: <20171128070830.12756-1-wqu@suse.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <4befd8e2-c6e6-a3cb-2d38-9a3c9739a32e@gmx.com>
-Date: Sun, 1 Apr 2018 18:35:17 +0800
+Received: from mail-ot0-f169.google.com ([74.125.82.169]:33029 "EHLO
+        mail-ot0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751178AbeDAUvH (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 1 Apr 2018 16:51:07 -0400
+Received: by mail-ot0-f169.google.com with SMTP id 23-v6so13973116otj.0
+        for <linux-btrfs@vger.kernel.org>; Sun, 01 Apr 2018 13:51:07 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <20171128070830.12756-1-wqu@suse.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="GLQ8HDP8DQa2NEjqueJZHCDEUnC8jbiGo"
+In-Reply-To: <20180401034544.GA28769@hungrycats.org>
+References: <CAJVZm6dkZmSpnV3wz4sfOMzMCP36Mrt+-2J7o0mU4z=dEYQqQQ@mail.gmail.com>
+ <CANQeFDDxZSZ4jYDPvW-Q=AoyPrGzpp0fVywjFOJtkeD+Ysgmew@mail.gmail.com>
+ <1521662556.4312.39.camel@scientia.net> <20180329215011.GC2446@hungrycats.org>
+ <389bce3c-92ac-390a-1719-5b9591c9b85c@libero.it> <20180331050345.GE2446@hungrycats.org>
+ <b4d5bb24-e8d0-dc1b-94d2-4e7f9a292630@inwind.it> <CAJCQCtRpWj45Ja_isnR=aV+iqDObZdKDNHH-g7+33Edz3Cq4=Q@mail.gmail.com>
+ <20180401034544.GA28769@hungrycats.org>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Sun, 1 Apr 2018 14:51:06 -0600
+Message-ID: <CAJCQCtSrcFD7jTbrqsWZFWrKUrMp4wW0QhkPApB-pgA-O3WksA@mail.gmail.com>
+Subject: Re: Status of RAID5/6
+To: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        Goffredo Baroncelli <kreijack@inwind.it>,
+        Christoph Anton Mitterer <calestyo@scientia.net>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---GLQ8HDP8DQa2NEjqueJZHCDEUnC8jbiGo
-Content-Type: multipart/mixed; boundary="zHuWTtNzNRyuKVOFhI8LtHkI63cUx3RFP";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Message-ID: <4befd8e2-c6e6-a3cb-2d38-9a3c9739a32e@gmx.com>
-Subject: Re: [PATCH RESEND 1/2] btrfs: Enhance btrfs_trim_fs function to
- handle error better
-References: <20171128070830.12756-1-wqu@suse.com>
-In-Reply-To: <20171128070830.12756-1-wqu@suse.com>
+On Sat, Mar 31, 2018 at 9:45 PM, Zygo Blaxell
+<ce3g8jdj@umail.furryterror.org> wrote:
+> On Sat, Mar 31, 2018 at 04:34:58PM -0600, Chris Murphy wrote:
 
---zHuWTtNzNRyuKVOFhI8LtHkI63cUx3RFP
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+>> Write hole happens on disk in Btrfs, but the ensuing corruption on
+>> rebuild is detected. Corrupt data never propagates.
+>
+> Data written with nodatasum or nodatacow is corrupted without detection
+> (same as running ext3/ext4/xfs on top of mdadm raid5 without a parity
+> journal device).
 
-Gentle ping?
-
-The patch is small and (with its 2nd patch) should fix trim behavior
-inside block groups.
-
-Thanks,
-Qu
-
-On 2017=E5=B9=B411=E6=9C=8828=E6=97=A5 15:08, Qu Wenruo wrote:
-> Function btrfs_trim_fs() doesn't handle errors in a consistent way, if
-> error happens when trimming existing block groups, it will skip the
-> remaining blocks and continue to trim unallocated space for each device=
-=2E
->=20
-> And the return value will only reflect the final error from device
-> trimming.
->=20
-> This patch will fix such behavior by:
->=20
-> 1) Recording first error from block group or device trimming
->    So return value will also reflect any error found when trimming.
->    Make developer more aware of the problem.
->=20
-> 2) Outputting btrfs warning message for each trimming failure
->    Any error for block group or device trimming will cause btrfs warnin=
-g
->    kernel message.
->=20
-> 3) Continuing trimming if we can
->    If we failed to trim one block group or device, we could still try
->    next block group or device.
->=20
-> Such behavior can avoid confusion for case like failure to trim the
-> first block group and then only unallocated space is trimmed.
->=20
-> Reported-by: Chris Murphy <lists@colorremedies.com>
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> ---
->  fs/btrfs/extent-tree.c | 59 ++++++++++++++++++++++++++++++++++++------=
---------
->  1 file changed, 43 insertions(+), 16 deletions(-)
->=20
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index 673ac4e01dd0..f830aa91ac3d 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -10948,6 +10948,16 @@ static int btrfs_trim_free_extents(struct btrf=
-s_device *device,
->  	return ret;
->  }
-> =20
-> +/*
-> + * Trim the whole fs, by:
-> + * 1) Trimming free space in each block group
-> + * 2) Trimming unallocated space in each device
-> + *
-> + * Will try to continue trimming even if we failed to trim one block g=
-roup or
-> + * device.
-> + * The return value will be the error return value of the first error.=
-
-> + * Or 0 if nothing wrong happened.
-> + */
->  int btrfs_trim_fs(struct btrfs_fs_info *fs_info, struct fstrim_range *=
-range)
->  {
->  	struct btrfs_block_group_cache *cache =3D NULL;
-> @@ -10958,6 +10968,8 @@ int btrfs_trim_fs(struct btrfs_fs_info *fs_info=
-, struct fstrim_range *range)
->  	u64 end;
->  	u64 trimmed =3D 0;
->  	u64 total_bytes =3D btrfs_super_total_bytes(fs_info->super_copy);
-> +	int bg_ret =3D 0;
-> +	int dev_ret =3D 0;
->  	int ret =3D 0;
-> =20
->  	/*
-> @@ -10968,7 +10980,7 @@ int btrfs_trim_fs(struct btrfs_fs_info *fs_info=
-, struct fstrim_range *range)
->  	else
->  		cache =3D btrfs_lookup_block_group(fs_info, range->start);
-> =20
-> -	while (cache) {
-> +	for (; cache; cache =3D next_block_group(fs_info, cache)) {
->  		if (cache->key.objectid >=3D (range->start + range->len)) {
->  			btrfs_put_block_group(cache);
->  			break;
-> @@ -10982,29 +10994,36 @@ int btrfs_trim_fs(struct btrfs_fs_info *fs_in=
-fo, struct fstrim_range *range)
->  			if (!block_group_cache_done(cache)) {
->  				ret =3D cache_block_group(cache, 0);
->  				if (ret) {
-> -					btrfs_put_block_group(cache);
-> -					break;
-> +					btrfs_warn_rl(fs_info,
-> +		"failed to cache block group %llu ret %d",
-> +						   cache->key.objectid, ret);
-> +					if (!bg_ret)
-> +						bg_ret =3D ret;
-> +					continue;
->  				}
->  				ret =3D wait_block_group_cache_done(cache);
->  				if (ret) {
-> -					btrfs_put_block_group(cache);
-> -					break;
-> +					btrfs_warn_rl(fs_info,
-> +		"failed to wait cache for block group %llu ret %d",
-> +						   cache->key.objectid, ret);
-> +					if (!bg_ret)
-> +						bg_ret =3D ret;
-> +					continue;
->  				}
->  			}
-> -			ret =3D btrfs_trim_block_group(cache,
-> -						     &group_trimmed,
-> -						     start,
-> -						     end,
-> -						     range->minlen);
-> +			ret =3D btrfs_trim_block_group(cache, &group_trimmed,
-> +						start, end, range->minlen);
-> =20
->  			trimmed +=3D group_trimmed;
->  			if (ret) {
-> -				btrfs_put_block_group(cache);
-> -				break;
-> +				btrfs_warn_rl(fs_info,
-> +		"failed to trim block group %llu ret %d",
-> +					   cache->key.objectid, ret);
-> +				if (!bg_ret)
-> +					bg_ret =3D ret;
-> +				continue;
->  			}
->  		}
-> -
-> -		cache =3D next_block_group(fs_info, cache);
->  	}
-> =20
->  	mutex_lock(&fs_info->fs_devices->device_list_mutex);
-> @@ -11012,15 +11031,23 @@ int btrfs_trim_fs(struct btrfs_fs_info *fs_in=
-fo, struct fstrim_range *range)
->  	list_for_each_entry(device, devices, dev_alloc_list) {
->  		ret =3D btrfs_trim_free_extents(device, range->minlen,
->  					      &group_trimmed);
-> -		if (ret)
-> +		if (ret) {
-> +			btrfs_warn_rl(fs_info,
-> +		"failed to trim unallocated space for devid %llu ret %d",
-> +				      device->devid, ret);
-> +			if (!dev_ret)
-> +				dev_ret =3D ret;
->  			break;
-> +		}
-> =20
->  		trimmed +=3D group_trimmed;
->  	}
->  	mutex_unlock(&fs_info->fs_devices->device_list_mutex);
-> =20
->  	range->len =3D trimmed;
-> -	return ret;
-> +	if (bg_ret)
-> +		return bg_ret;
-> +	return dev_ret;
->  }
-> =20
->  /*
->=20
+Yeah I guess I'm not very worried about nodatasum/nodatacow if the
+user isn't. Perhaps it's not a fair bias, but bias nonetheless.
 
 
---zHuWTtNzNRyuKVOFhI8LtHkI63cUx3RFP--
+>
+> Metadata always has csums, and files have checksums if they are created
+> with default attributes and mount options.  Those cases are covered,
+> any corrupted data will give EIO on reads (except once per 4 billion
+> blocks, where the corrupted CRC matches at random).
+>
+>> The problem is that Btrfs gives up when it's detected.
+>
+> Before recent kernels (4.14 or 4.15) btrfs would not attempt all possible
+> combinations of recovery blocks for raid6, and earlier kernels than
+> those would not recover correctly for raid5 either.  I think this has
+> all been fixed in recent kernels but I haven't tested these myself so
+> don't quote me on that.
 
---GLQ8HDP8DQa2NEjqueJZHCDEUnC8jbiGo
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
+Looks like 4.15
+https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/diff/fs/btrfs/raid56.c?id=v4.15&id2=v4.14
 
------BEGIN PGP SIGNATURE-----
+And those parts aren't yet backported to 4.14
+https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git/diff/fs/btrfs/raid56.c?id=v4.15.15&id2=v4.14.32
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlrAteYACgkQwj2R86El
-/qhrlQf+KJxefXZ3v75xvqSjhrc9rXKeYB+q5ZMIohcAIGZjl669TasvMJyDkNZm
-8DA9zNZrPtR/NHOvtspYGNcy9pcl1cYp8WfpVCeJC7d1m8EVhJ2hdPxwS2L1dYyH
-XY0gRvrHcJ3Faiois8MCp+4BB7/kzupZrGFcVQoxnabRe3t+VGo73scM6FYkWvWk
-0jy2HLOlkgemAnsrdoCxN7yTgv70/ApSWxmFpJ6mKI7UjoLtKWJE5MR3xh0iUtKE
-JXHoiK/VsXpbxo8MThVokJzNI1EGz+lHfGE4DU9WMaGoNMhVyhF6A2hOpLo5fEZf
-k7xQVHtW40vK5hyTJrqB0ibeimiObw==
-=0M1m
------END PGP SIGNATURE-----
+And more in 4.16
+https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/diff/fs/btrfs/raid56.c?id=v4.16-rc7&id2=v4.15
 
---GLQ8HDP8DQa2NEjqueJZHCDEUnC8jbiGo--
+
+>
+>> If it assumes just a bit flip - not always a correct assumption but
+>> might be reasonable most of the time, it could iterate very quickly.
+>
+> That is not how write hole works (or csum recovery for that matter).
+> Write hole producing a single bit flip would occur extremely rarely
+> outside of contrived test cases.
+
+Yes, what I wrote is definitely wrong, and I know better. I guess I
+had a torn write in my brain!
+
+
+
+> Users can run scrub immediately after _every_ unclean shutdown to
+> reduce the risk of inconsistent parity and unrecoverable data should
+> a disk fail later, but this can only prevent future write hole events,
+> not recover data lost during past events.
+
+Problem is, Btrfs assumes a leaf is correct if it passes checksum. And
+such a leaf containing EXTENT_CSUM means that EXTENT_CSUM
+
+
+
+
+>
+> If one of the data blocks is not available, its content cannot be
+> recomputed from parity due to the inconsistency within the stripe.
+> This will likely be detected as a csum failure (unless the data block
+> is part of a nodatacow/nodatasum file, in which case corruption occurs
+> but is not detected) except for the one time out of 4 billion when
+> two CRC32s on random data match at random.
+>
+> If a damaged block contains btrfs metadata, the filesystem will be
+> severely affected:  read-only, up to 100% of data inaccessible, only
+> recovery methods involving brute force search will work.
+>
+>> Flip bit, and recompute and compare checksum. It doesn't have to
+>> iterate across 64KiB times the number of devices. It really only has
+>> to iterate bit flips on the particular 4KiB block that has failed csum
+>> (or in the case of metadata, 16KiB for the default leaf size, up to a
+>> max of 64KiB).
+>
+> Write hole is effectively 32768 possible bit flips in a 4K block--assuming
+> only one block is affected, which is not very likely.  Each disk in an
+> array can have dozens of block updates in flight when an interruption
+> occurs, so there can be millions of bits corrupted in a single write
+> interruption event (and dozens of opportunities to encounter the nominally
+> rare write hole itself).
+>
+> An experienced forensic analyst armed with specialized tools, a database
+> of file formats, and a recent backup of the filesystem might be able to
+> recover the damaged data or deduce what it was.  btrfs, being only mere
+> software running in the kernel, cannot.
+>
+> There are two ways to solve the write hole problem and this is not one
+> of them.
+>
+>> That's a maximum of 4096 iterations and comparisons. It'd be quite
+>> fast. And going for two bit flips while a lot slower is probably not
+>> all that bad either.
+>
+> You could use that approach to fix a corrupted parity or data block
+> on a degraded array, but not a stripe that has data blocks destroyed
+> by an update with a write hole event.  Also this approach assumes that
+> whatever is flipping bits in RAM is not in and of itself corrupting data
+> or damaging the filesystem in unrecoverable ways, but most RAM-corrupting
+> agents in the real world do not limit themselves only to detectable and
+> recoverable mischief.
+>
+> Aside:  As a best practice, if you see one-bit corruptions on your
+> btrfs filesystem, it is time to start replacing hardware, possibly also
+> finding a new hardware vendor or model (assuming the corruption is coming
+> from hardware, not a kernel memory corruption bug in some random device
+> driver).  Healthy hardware doesn't do bit flips.  So many things can go
+> wrong on unhealthy hardware, and they aren't all detectable or fixable.
+> It's one of the few IT risks that can be mitigated by merely spending
+> money until the problem goes away.
+>
+>> Now if it's the kind of corruption you get from a torn or misdirected
+>> write, there's enough corruption that now you're trying to find a
+>> collision on crc32c with a partial match as a guide. That'd take a
+>> while and who knows you might actually get corrupted data anyway since
+>> crc32c isn't cryptographically secure.
+>
+> All the CRC32 does is reduce the search space to for data recovery
+> from 32768 bits to 32736 bits per 4K block.  It is not possible to
+> brute-force search a 32736-bit space (that's two to the power of 32736
+> possible combinations), and even if it was, there would be no way to
+> distinguish which of billions of billions of billions of billions...[over
+> 4000 "billions of" deleted]...of billions of possible data blocks that
+> have a matching CRC is the right one.  A SHA256 as block csum would only
+> reduce the search space to 32512 bits.
+>
+> Our forensic analyst above could reduce the search space to a manageable
+> size for a data-specific recovery tool, but we can't put one of those
+> in the kernel.
+>
+> Getting corrupted data out of a brute force search of multiple bit
+> flips against a checksum is not just likely--it's certain, if you can
+> even run the search long enough to get a result.  The number of corrupt
+> 4K blocks with correct CRC outnumbers the number of correct blocks by
+> ten thousand orders of magnitude.
+>
+> It would work with a small number of bit flips because of the properties
+> of the CRC32 function is that it reliably detects errors with length
+> shorter than the polynomial.
+>
+>>
+>> --
+>> Chris Murphy
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>
+
+
+
+-- 
+Chris Murphy

@@ -1,57 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f169.google.com ([209.85.223.169]:40222 "EHLO
-        mail-io0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750927AbeDBMRO (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 Apr 2018 08:17:14 -0400
-Received: by mail-io0-f169.google.com with SMTP id e79so17706652ioi.7
-        for <linux-btrfs@vger.kernel.org>; Mon, 02 Apr 2018 05:17:14 -0700 (PDT)
-Subject: Re: Question, will ls -l eventually be able to show subvolumes?
-To: Adam Borowski <kilobyte@angband.pl>, Pete <pete@petezilla.co.uk>
-Cc: linux-btrfs@vger.kernel.org
-References: <f8d1785e-0cad-29d7-4afa-af07bfe41530@petezilla.co.uk>
- <20180330163817.piz5pesm2al43uo5@angband.pl>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <58422ff4-904b-b464-bc28-43af3137dba1@gmail.com>
-Date: Mon, 2 Apr 2018 08:17:10 -0400
+Received: from smtp-18-i6.italiaonline.it ([213.209.14.18]:51456 "EHLO
+        libero.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1751913AbeDBPSY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 2 Apr 2018 11:18:24 -0400
+Reply-To: kreijack@inwind.it
+Subject: Re: Status of RAID5/6
+To: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
+        Chris Murphy <lists@colorremedies.com>
+Cc: Christoph Anton Mitterer <calestyo@scientia.net>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <CANQeFDDxZSZ4jYDPvW-Q=AoyPrGzpp0fVywjFOJtkeD+Ysgmew@mail.gmail.com>
+ <1521662556.4312.39.camel@scientia.net>
+ <20180329215011.GC2446@hungrycats.org>
+ <389bce3c-92ac-390a-1719-5b9591c9b85c@libero.it>
+ <20180331050345.GE2446@hungrycats.org>
+ <b4d5bb24-e8d0-dc1b-94d2-4e7f9a292630@inwind.it>
+ <CAJCQCtRpWj45Ja_isnR=aV+iqDObZdKDNHH-g7+33Edz3Cq4=Q@mail.gmail.com>
+ <20180401034544.GA28769@hungrycats.org>
+ <CAJCQCtSrcFD7jTbrqsWZFWrKUrMp4wW0QhkPApB-pgA-O3WksA@mail.gmail.com>
+ <CAJCQCtTXQGbVjRLegC25DDokcv4Wph6O04s=C_rzp8n5jRpt5Q@mail.gmail.com>
+ <20180402054521.GC28769@hungrycats.org>
+From: Goffredo Baroncelli <kreijack@inwind.it>
+Message-ID: <df74c8a6-b748-20c5-8bef-eb261b645b29@inwind.it>
+Date: Mon, 2 Apr 2018 17:18:21 +0200
 MIME-Version: 1.0
-In-Reply-To: <20180330163817.piz5pesm2al43uo5@angband.pl>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <20180402054521.GC28769@hungrycats.org>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2018-03-30 12:38, Adam Borowski wrote:
-> On Fri, Mar 30, 2018 at 10:42:10AM +0100, Pete wrote:
->> I've just notice work going on to make rmdir be able to delete
->> subvolumes.  Is there an intent to allow ls -l to display directories as
->> subvolumes?
+On 04/02/2018 07:45 AM, Zygo Blaxell wrote:
+[...]
+> It is possible to combine writes from a single transaction into full
+> RMW stripes, but this *does* have an impact on fragmentation in btrfs.
+> Any partially-filled stripe is effectively read-only and the space within
+> it is inaccessible until all data within the stripe is overwritten,
+> deleted, or relocated by balance.
+>
+> btrfs could do a mini-balance on one RAID stripe instead of a RMW stripe
+> update, but that has a significant write magnification effect (and before
+> kernel 4.14, non-trivial CPU load as well).
 > 
-> That's entirely up to coreutils guys.
+> btrfs could also just allocate the full stripe to an extent, but emit
+> only extent ref items for the blocks that are in use.  No fragmentation
+> but lots of extra disk space used.  Also doesn't quite work the same
+> way for metadata pages.
+> 
+> If btrfs adopted the ZFS approach, the extent allocator and all higher
+> layers of the filesystem would have to know about--and skip over--the
+> parity blocks embedded inside extents.  Making this change would mean
+> that some btrfs RAID profiles start interacting with stuff like balance
+> and compression which they currently do not.  It would create a new
+> block group type and require an incompatible on-disk format change for
+> both reads and writes.
 
-Expanding on Adam's 100% accurate answer:
+I thought that a possible solution is to create BG with different number of data disks. E.g. supposing to have a raid 6 system with 6 disks, where 2 are parity disk; we should allocate 3 BG
 
-The primary issue here is that determining what is a subvolume requires 
-some non-trivial work.  You either need to call a specific ioctl (and 
-make sure you call it in the right location) which last I checked 
-requires root privileges to use, or do some significant guess-work that 
-happens to fall apart once you throw explicitly mounted subvolumes into 
-the mix.
+BG #1: 1 data disk, 2 parity disks
+BG #2: 2 data disks, 2 parity disks,
+BG #3: 4 data disks, 2 parity disks
 
-You can take a look at the `get_subvol_list` function in [1] for an 
-example of what that guess-work looks like in Python.  That particular 
-function relies on some specific internals of BTRFS that really aren't 
-technically part of the ABI (namely that subvolumes all have an inode 
-number of 256), but it falls apart if the subvolumes are explicitly 
-mounted (because if you don't exclude explicit mounts, you may 
-accidentally recurse into another BTRFS volume).
+For simplicity, the disk-stripe length is assumed = 4K.
 
-There's also a secondary issue in that the concept of a subvolume isn't 
-really universal.  BTRFS and ZFS are the only filesystems supported on 
-Linux that have such a concept, but ZFS datasets are a very different 
-implementation of the concept that doesn't really make sense to mark 
-with `ls`.  Given the level of specificity, it just doesn't make sense 
-to mark subvolumes as such in `ls`, just like it doesn't make much sense 
-to treat NILFS2 checkpoints any differently from read-only directories.
+So If you have a write with a length of 4 KB, this should be placed in BG#1; if you have a write with a length of 4*3KB, the first 8KB, should be placed in in BG#2, then in BG#1.
+
+This would avoid space wasting, even if the fragmentation will increase (but shall the fragmentation matters with the modern solid state disks ?).
+
+Time to time, a re-balance should be performed to empty the BG #1, and #2. Otherwise a new BG should be allocated.
+
+The cost should be comparable to the logging/journaling (each data shorter than a full-stripe, has to be written two times); the implementation should be quite easy, because already NOW btrfs support BG with different set of disks.
+
+BR 
+G.Baroncelli
 
 
-[1] 
-https://raw.githubusercontent.com/Ferroin/btrfs-subv-backup/master/btrfs-subv-backup.py
+-- 
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

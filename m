@@ -1,69 +1,149 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:54916 "EHLO
-        frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754429AbeDBWHC (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 Apr 2018 18:07:02 -0400
-Date: Mon, 2 Apr 2018 22:07:01 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Fedja Beader <fedja@protonmail.ch>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [wiki] Please clarify how to check whether barriers are properly
- implemented in hardware
-Message-ID: <20180402220701.GK17966@carfax.org.uk>
-References: <4qM6bqeIXt1jGOul3HmynOFezEQLL--S4mQQsyYaGU5u_eYiiCP9uLZnyuBYU4LyUbe9Yp32oYU1rY-wh6p5Jg==@protonmail.ch>
- <u_zEBVQVCIIoJiHQIDjqqi7rHOFPhczdc2XdtJiOWRo7_5ththeYDrz_jnkNaSirIpkV94nBhQAtzWP2viADYw==@protonmail.ch>
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:47434 "EHLO
+        james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
+        by vger.kernel.org with ESMTP id S1754457AbeDBWXh (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 2 Apr 2018 18:23:37 -0400
+Date: Mon, 2 Apr 2018 18:23:34 -0400
+From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Cc: kreijack@inwind.it, Chris Murphy <lists@colorremedies.com>,
+        Christoph Anton Mitterer <calestyo@scientia.net>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: Status of RAID5/6
+Message-ID: <20180402222250.GH2446@hungrycats.org>
+References: <389bce3c-92ac-390a-1719-5b9591c9b85c@libero.it>
+ <20180331050345.GE2446@hungrycats.org>
+ <b4d5bb24-e8d0-dc1b-94d2-4e7f9a292630@inwind.it>
+ <CAJCQCtRpWj45Ja_isnR=aV+iqDObZdKDNHH-g7+33Edz3Cq4=Q@mail.gmail.com>
+ <20180401034544.GA28769@hungrycats.org>
+ <CAJCQCtSrcFD7jTbrqsWZFWrKUrMp4wW0QhkPApB-pgA-O3WksA@mail.gmail.com>
+ <CAJCQCtTXQGbVjRLegC25DDokcv4Wph6O04s=C_rzp8n5jRpt5Q@mail.gmail.com>
+ <20180402054521.GC28769@hungrycats.org>
+ <df74c8a6-b748-20c5-8bef-eb261b645b29@inwind.it>
+ <7c76dae7-b38c-d514-4284-1cd093f5bcac@gmail.com>
 MIME-Version: 1.0
 Content-Type: multipart/signed; micalg=pgp-sha1;
-        protocol="application/pgp-signature"; boundary="sU4rRG038CsJurvk"
-In-Reply-To: <u_zEBVQVCIIoJiHQIDjqqi7rHOFPhczdc2XdtJiOWRo7_5ththeYDrz_jnkNaSirIpkV94nBhQAtzWP2viADYw==@protonmail.ch>
+        protocol="application/pgp-signature"; boundary="ik0NlRzMGhMnxrMX"
+In-Reply-To: <7c76dae7-b38c-d514-4284-1cd093f5bcac@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---sU4rRG038CsJurvk
+--ik0NlRzMGhMnxrMX
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-On Mon, Apr 02, 2018 at 06:03:00PM -0400, Fedja Beader wrote:
-> Is there some testing utility for this? Is there a way to extract this/tell with a high enough certainty from datasheets/other material before purchase?
+On Mon, Apr 02, 2018 at 11:49:42AM -0400, Austin S. Hemmelgarn wrote:
+> On 2018-04-02 11:18, Goffredo Baroncelli wrote:
+> > On 04/02/2018 07:45 AM, Zygo Blaxell wrote:
+> > [...]
+> > > It is possible to combine writes from a single transaction into full
+> > > RMW stripes, but this *does* have an impact on fragmentation in btrfs.
+> > > Any partially-filled stripe is effectively read-only and the space wi=
+thin
+> > > it is inaccessible until all data within the stripe is overwritten,
+> > > deleted, or relocated by balance.
+> > >=20
+> > > btrfs could do a mini-balance on one RAID stripe instead of a RMW str=
+ipe
+> > > update, but that has a significant write magnification effect (and be=
+fore
+> > > kernel 4.14, non-trivial CPU load as well).
+> > >=20
+> > > btrfs could also just allocate the full stripe to an extent, but emit
+> > > only extent ref items for the blocks that are in use.  No fragmentati=
+on
+> > > but lots of extra disk space used.  Also doesn't quite work the same
+> > > way for metadata pages.
+> > >=20
+> > > If btrfs adopted the ZFS approach, the extent allocator and all higher
+> > > layers of the filesystem would have to know about--and skip over--the
+> > > parity blocks embedded inside extents.  Making this change would mean
+> > > that some btrfs RAID profiles start interacting with stuff like balan=
+ce
+> > > and compression which they currently do not.  It would create a new
+> > > block group type and require an incompatible on-disk format change for
+> > > both reads and writes.
+> >=20
+> > I thought that a possible solution is to create BG with different
+> number of data disks. E.g. supposing to have a raid 6 system with 6
+> disks, where 2 are parity disk; we should allocate 3 BG
+> >=20
+> > BG #1: 1 data disk, 2 parity disks
+> > BG #2: 2 data disks, 2 parity disks,
+> > BG #3: 4 data disks, 2 parity disks
+> >=20
+> > For simplicity, the disk-stripe length is assumed =3D 4K.
+> >=20
+> > So If you have a write with a length of 4 KB, this should be placed
+> in BG#1; if you have a write with a length of 4*3KB, the first 8KB,
+> should be placed in in BG#2, then in BG#1.
+> >=20
+> > This would avoid space wasting, even if the fragmentation will
+> increase (but shall the fragmentation matters with the modern solid
+> state disks ?).
 
-   Given that not implementing barriers is basically a bug in the
-hardware [for SATA or SAS], I don't think anyone's going to specify
-anything other than "fully suppors barriers" in their datasheets.
+I don't really see why this would increase fragmentation or waste space.
+The extent size is determined before allocation anyway, all that changes
+in this proposal is where those small extents ultimately land on the disk.
 
-   I don't know of a testing tool. It may not be obvious that barriers
-aren't being honoured without doing things like power-failure testing.
+If anything, it might _reduce_ fragmentation since everything in BG #1
+and BG #2 will be of uniform size.
 
-   Hugo.
+It does solve write hole (one transaction per RAID stripe).
 
-> https://btrfs.wiki.kernel.org/index.php/FAQ#How_does_this_happen.3F
+> Also, you're still going to be wasting space, it's just that less space w=
+ill
+> be wasted, and it will be wasted at the chunk level instead of the block
+> level, which opens up a whole new set of issues to deal with, most
+> significantly that it becomes functionally impossible without brute-force
+> search techniques to determine when you will hit the common-case of -ENOS=
+PC
+> due to being unable to allocate a new chunk.
 
--- 
-Hugo Mills             | "Damn and blast British Telecom!" said Dirk,
-hugo@... carfax.org.uk | the words coming easily from force of habit.
-http://carfax.org.uk/  |                                        Douglas Adams,
-PGP: E2AB1DE4          |               Dirk Gently's Holistic Detective Agency
+Hopefully the allocator only keeps one of each size of small block groups
+around at a time.  The allocator can take significant short cuts because
+the size of every extent in the small block groups is known (they are
+all the same size by definition).
 
---sU4rRG038CsJurvk
+When a small block group fills up, the next one should occupy the
+most-empty subset of disks--which is the opposite of the usual RAID5/6
+allocation policy.  This will probably lead to "interesting" imbalances
+since there are now two allocators on the filesystem with different goals
+(though it is no worse than -draid5 -mraid1, and I had no problems with
+free space when I was running that).
+
+There will be an increase in the amount of allocated but not usable space,
+though, because now the amount of free space depends on how much data
+is batched up before fsync() or sync().  Probably best to just not count
+any space in the small block groups as 'free' in statvfs terms at all.
+
+There are a lot of variables implied there.  Without running some
+simulations I have no idea if this is a good idea or not.
+
+> > Time to time, a re-balance should be performed to empty the BG #1,
+> and #2. Otherwise a new BG should be allocated.
+
+That shouldn't be _necessary_ (the filesystem should just allocate
+whatever BGs it needs), though it will improve storage efficiency if it
+is done.
+
+> > The cost should be comparable to the logging/journaling (each
+> data shorter than a full-stripe, has to be written two times); the
+> implementation should be quite easy, because already NOW btrfs support
+> BG with different set of disks.
+
+
+--ik0NlRzMGhMnxrMX
 Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
 
 -----BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
 
-iQIcBAEBAgAGBQJawqmFAAoJEFheFHXiqx3kdREP+QGxndg2wWdEck1wWHgyqx8h
-xuhC0MNsnUpRkbZY1JF+wkHmlu2Cce+rsICq2ncBivBIgaLiaP9ckzZJHBdmlVL0
-jP66uS7IaJrz/yTboZpF86chanWHyFYLZJaJq1KHbN0nRHwsvaK1nyv0Kp2yRQKg
-VxNERDU3hGzbgYb93S5lXkvJQjcrc5D+ZjCQBSShFL/MHXq0E40ASrwyUJNRBmIy
-HRpSbzPEeyts+JB2Mxx6bwOnAr1DVOe20MnEQqkhy2fTnK2ZF9ZsULkfnTzgrh+/
-w4nluBiH38E0B6LHnVWz0BZkD6j3GP8QF5f85yLbdp/J2Z72IaYPMLKwssdqoACn
-+CXMs5crhLLO+5HGdW8vPzFtn8B/xT5lqIINKAuE6s+KkEK7n4XdDKyt4huHVV28
-+MUSf6XD8v2HS7hmYXqHdHucn/5zksLiYr0XCZJ4vPrXu/5Oo7DHllTT7UtMz0/F
-c53WSYxX75oGOvY3qatpmhtvTAXmBezk9U+eIQqV/c7k0LIE6MZ59OQYaRnO46Xv
-tRceuyZ1GHu4XkOb35np5XaeJQ+js14Iyonj0ao/Z9NBVDTPHFmndLPOUQ3JCvdy
-mM7kcQUVO6QyA8i4lIbkllUtVfHfhqgwZNWnDzety6XINveFgS4Umjw1Xl9Xqq2Z
-bo0TSPL5eDlvQ0R91TeA
-=wHPX
+iF0EABECAB0WIQSnOVjcfGcC/+em7H2B+YsaVrMbnAUCWsKtNgAKCRCB+YsaVrMb
+nFlqAJ4xuYDYupdwxz7wEBVhHcaejV3RMwCbBBr96WGeV+5raukoAsFaBf5jpAU=
+=XHy6
 -----END PGP SIGNATURE-----
 
---sU4rRG038CsJurvk--
+--ik0NlRzMGhMnxrMX--

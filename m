@@ -1,75 +1,129 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:33938 "EHLO mx2.suse.de"
+Received: from mout.gmx.net ([212.227.15.19]:50679 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1756297AbeDFNka (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 6 Apr 2018 09:40:30 -0400
-Date: Fri, 6 Apr 2018 15:38:00 +0200
-From: David Sterba <dsterba@suse.cz>
-To: fdmanana@kernel.org
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: fix loss of prealloc extents past i_size after
- fsync log replay
-Message-ID: <20180406133800.GE8557@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20180405215512.513-1-fdmanana@kernel.org>
+        id S1754209AbeDBKrq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 2 Apr 2018 06:47:46 -0400
+Subject: Re: [PATCH v2 2/2] btrfs: Validate child tree block's level and first
+ key
+To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+References: <20180327124419.28398-1-wqu@suse.com>
+ <20180327124419.28398-2-wqu@suse.com> <20180328154949.GO30422@twin.jikos.cz>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <7d95e99d-09bf-483f-2fa8-3ab658c2a8f5@gmx.com>
+Date: Mon, 2 Apr 2018 18:47:32 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180405215512.513-1-fdmanana@kernel.org>
+In-Reply-To: <20180328154949.GO30422@twin.jikos.cz>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="QGRe3FiLoXylOPjqaNSu6AXHoBS8NMMAz"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Apr 05, 2018 at 10:55:12PM +0100, fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
-> 
-> Currently if we allocate extents beyond an inode's i_size (through the
-> fallocate system call) and then fsync the file, we log the extents but
-> after a power failure we replay them and then immediately drop them.
-> This behaviour happens since about 2009, commit c71bf099abdd ("Btrfs:
-> Avoid orphan inodes cleanup while replaying log"), because it marks
-> the inode as an orphan instead of dropping any extents beyond i_size
-> before replaying logged extents, so after the log replay, and while
-> the mount operation is still ongoing, we find the inode marked as an
-> orphan and then perform a truncation (drop extents beyond the inode's
-> i_size). Because the processing of orphan inodes is still done
-> right after replaying the log and before the mount operation finishes,
-> the intention of that commit does not make any sense (at least as
-> of today). However reverting that behaviour is not enough, because
-> we can not simply discard all extents beyond i_size and then replay
-> logged extents, because we risk dropping extents beyond i_size created
-> in past transactions, for example:
-> 
->   add prealloc extent beyond i_size
->   fsync - clears the flag BTRFS_INODE_NEEDS_FULL_SYNC from the inode
->   transaction commit
->   add another prealloc extent beyond i_size
->   fsync - triggers the fast fsync path
->   power failure
-> 
-> In that scenario, we would drop the first extent and then replay the
-> second one. To fix this just make sure that all prealloc extents
-> beyond i_size are logged, and if we find too many (which is far from
-> a common case), fallback to a full transaction commit (like we do when
-> logging regular extents in the fast fsync path).
-> 
-> Trivial reproducer:
-> 
->  $ mkfs.btrfs -f /dev/sdb
->  $ mount /dev/sdb /mnt
->  $ xfs_io -f -c "pwrite -S 0xab 0 256K" /mnt/foo
->  $ sync
->  $ xfs_io -c "falloc -k 256K 1M" /mnt/foo
->  $ xfs_io -c "fsync" /mnt/foo
->  <power failure>
-> 
->  # mount to replay log
->  $ mount /dev/sdb /mnt
->  # at this point the file only has one extent, at offset 0, size 256K
-> 
-> A test case for fstests follows soon, covering multiple scenarios that
-> involve adding prealloc extents with previous shrinking truncates and
-> without such truncates.
-> 
-> Fixes: c71bf099abdd ("Btrfs: Avoid orphan inodes cleanup while replaying log")
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--QGRe3FiLoXylOPjqaNSu6AXHoBS8NMMAz
+Content-Type: multipart/mixed; boundary="kF1TZugRSm1Sq9lvYvkRIqEgp1CNMQX5C";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Message-ID: <7d95e99d-09bf-483f-2fa8-3ab658c2a8f5@gmx.com>
+Subject: Re: [PATCH v2 2/2] btrfs: Validate child tree block's level and first
+ key
+References: <20180327124419.28398-1-wqu@suse.com>
+ <20180327124419.28398-2-wqu@suse.com> <20180328154949.GO30422@twin.jikos.cz>
+In-Reply-To: <20180328154949.GO30422@twin.jikos.cz>
 
-Added to next, thanks.
+--kF1TZugRSm1Sq9lvYvkRIqEgp1CNMQX5C
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
+
+
+
+On 2018=E5=B9=B403=E6=9C=8828=E6=97=A5 23:49, David Sterba wrote:
+> On Tue, Mar 27, 2018 at 08:44:19PM +0800, Qu Wenruo wrote:
+>> We have several reports about node pointer points to incorrect child
+>> tree blocks, which could have even wrong owner and level but still wit=
+h
+>> valid generation and checksum.
+>>
+>> Although btrfs check could handle it and print error message like:
+>> leaf parent key incorrect 60670574592
+>>
+>> Kernel doesn't have enough check on this type of corruption correctly.=
+
+>> At least add such check to read_tree_block() and btrfs_read_buffer(),
+>> where we need two new parameters @level and @first_key to verify the
+>> child tree block.
+>>
+>> The new @level check is mandatory and all call sites are already
+>> modified to extract expected level from its call chain.
+>>
+>> While @first_key is optional, the following call sites are skipping su=
+ch
+>> check:
+>> 1) Root node/leaf
+>>    As ROOT_ITEM doesn't contain the first key, skip @first_key check.
+>> 2) Direct backref
+>>    Only parent bytenr and level is known and we need to resolve the ke=
+y
+>>    all by ourselves, skip @first_key check.
+>>
+>> Another note of this verification is, it needs extra info from nodeptr=
+
+>> or ROOT_ITEM, so it can't fit into current tree-checker framework, whi=
+ch
+>> is limited to node/leaf boundary.
+>>
+>> Signed-off-by: Qu Wenruo <wqu@suse.com>
+>> ---
+>> changelog:
+>> v2:
+>>   Make @level check mandatory, suggesed by Jeff and Nikolay.
+>>   Change parameter order as @level is now mandatory, put it in front o=
+f
+>>   @first_key.
+>>   Change verify_parent_level() to verify_key_level() to avoid confusio=
+n
+>>   on the @level parameter.
+>>   Add btrfs_error() output for CONFIG_BTRFS_DEBUG to help debugging.
+>=20
+> That's much better overall, thanks. Adding it to next.
+
+Nikolay reported a case where @first_key check seems to cause false alert=
+=2E
+(Although my xfstests check hasn't exposed it yet)
+
+Please discard this patch since it has the possibility to cause false
+alert for btrfs core functionality.
+
+Thanks,
+Qu
+
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>=20
+
+
+--kF1TZugRSm1Sq9lvYvkRIqEgp1CNMQX5C--
+
+--QGRe3FiLoXylOPjqaNSu6AXHoBS8NMMAz
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlrCCkQACgkQwj2R86El
+/qjWVAf/RSvfkNixWTwzZ7aSW4Vkfk9RCTbgdVftnPuUTWzfBlpN6p3W3BLxDsjs
+z/7tE5JW88cT56ktGYvjaua8yJsFaHLQX4MbuUnl1DHamgZGLjViCugqCtbEPO3n
+8y+u5zA00Q1ZjYAQ9hjH4u5gxbxbNCBODbiO3M+EyImk7oATplXz38g6+NglRPIA
+NXyfpJOaCDASVp4dTij5YB+nXFTGhBo5gLC0xef1lONBfGAN3vclFCY+XLP3YY3b
+j3Q7vsL8/CrA1e6N0f8hZOe3x090o3LkUffUPYZ0yxQCvnQDRMaGprAwf6t6sGG6
+kzDdcjGMpJowP8qJNZtGLycboRnhfg==
+=7P4e
+-----END PGP SIGNATURE-----
+
+--QGRe3FiLoXylOPjqaNSu6AXHoBS8NMMAz--

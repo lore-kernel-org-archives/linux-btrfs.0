@@ -1,60 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bastet.se.axis.com ([195.60.68.11]:42668 "EHLO
-        bastet.se.axis.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751178AbeDDOFR (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Apr 2018 10:05:17 -0400
-Received: from localhost (localhost [127.0.0.1])
-        by bastet.se.axis.com (Postfix) with ESMTP id 1539A18483
-        for <linux-btrfs@vger.kernel.org>; Wed,  4 Apr 2018 16:05:16 +0200 (CEST)
-Received: from bastet.se.axis.com ([IPv6:::ffff:127.0.0.1])
-        by localhost (bastet.se.axis.com [::ffff:127.0.0.1]) (amavisd-new, port 10024)
-        with LMTP id 1jRGFbGdJK55 for <linux-btrfs@vger.kernel.org>;
-        Wed,  4 Apr 2018 16:05:15 +0200 (CEST)
-Received: from boulder03.se.axis.com (boulder03.se.axis.com [10.0.8.17])
-        by bastet.se.axis.com (Postfix) with ESMTPS id 335F31847E
-        for <linux-btrfs@vger.kernel.org>; Wed,  4 Apr 2018 16:05:15 +0200 (CEST)
-Received: from boulder03.se.axis.com (unknown [127.0.0.1])
-        by IMSVA (Postfix) with ESMTP id BEB5C1E07C
-        for <linux-btrfs@vger.kernel.org>; Wed,  4 Apr 2018 16:05:14 +0200 (CEST)
-Received: from boulder03.se.axis.com (unknown [127.0.0.1])
-        by IMSVA (Postfix) with ESMTP id B25C31E06C
-        for <linux-btrfs@vger.kernel.org>; Wed,  4 Apr 2018 16:05:14 +0200 (CEST)
-Received: from thoth.se.axis.com (unknown [10.0.2.173])
-        by boulder03.se.axis.com (Postfix) with ESMTP
-        for <linux-btrfs@vger.kernel.org>; Wed,  4 Apr 2018 16:05:14 +0200 (CEST)
-From: Peter Kjellerstedt <peter.kjellerstedt@axis.com>
-To: linux-btrfs@vger.kernel.org
-Cc: pkj@axis.com
-Subject: [PATCH] btrfs-progs: build: Do not use cp -a to install files
-Date: Wed,  4 Apr 2018 16:04:59 +0200
-Message-Id: <20180404140459.20644-1-pkj@axis.com>
+Received: from mout.gmx.net ([212.227.17.20]:52077 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1754036AbeDBCJW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 1 Apr 2018 22:09:22 -0400
+Subject: Re: [PATCH] btrfs-progs: mkfs rootdir: use lgetxattr() not to follow
+ a symbolic link
+To: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <f53cc5d0-24ff-81b7-68db-0c615edf4936@jp.fujitsu.com>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <fad736ed-5353-bd9a-5af3-125f409d6c4e@gmx.com>
+Date: Mon, 2 Apr 2018 10:09:11 +0800
+MIME-Version: 1.0
+In-Reply-To: <f53cc5d0-24ff-81b7-68db-0c615edf4936@jp.fujitsu.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="8vFmjDWLF7PFMuGGfNwdkBEIDnUjaHs3w"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Using cp -a to install files will preserve the ownership of the
-original files (if possible), which is typically not wanted. E.g., if
-the files were built by a normal user, but are being installed by
-root, then the installed files would maintain the UIDs/GIDs of the
-user that built the files rather than be owned by root.
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--8vFmjDWLF7PFMuGGfNwdkBEIDnUjaHs3w
+Content-Type: multipart/mixed; boundary="iXrGPQc77wLjlyhfPajcaNCIpVbc7WfbL";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>,
+ linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-ID: <fad736ed-5353-bd9a-5af3-125f409d6c4e@gmx.com>
+Subject: Re: [PATCH] btrfs-progs: mkfs rootdir: use lgetxattr() not to follow
+ a symbolic link
+References: <f53cc5d0-24ff-81b7-68db-0c615edf4936@jp.fujitsu.com>
+In-Reply-To: <f53cc5d0-24ff-81b7-68db-0c615edf4936@jp.fujitsu.com>
 
-Signed-off-by: Peter Kjellerstedt <peter.kjellerstedt@axis.com>
----
- Makefile | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+--iXrGPQc77wLjlyhfPajcaNCIpVbc7WfbL
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-diff --git a/Makefile b/Makefile
-index 92cfe7b5..0e8bfd98 100644
---- a/Makefile
-+++ b/Makefile
-@@ -578,7 +578,7 @@ install: $(libs) $(progs_install) $(INSTALLDIRS)
- 	$(LN_S) -f btrfs $(DESTDIR)$(bindir)/btrfsck
- 	$(INSTALL) -m755 -d $(DESTDIR)$(libdir)
- 	$(INSTALL) $(libs) $(DESTDIR)$(libdir)
--	cp -a $(lib_links) $(DESTDIR)$(libdir)
-+	cp -d $(lib_links) $(DESTDIR)$(libdir)
- 	$(INSTALL) -m755 -d $(DESTDIR)$(incdir)
- 	$(INSTALL) -m644 $(headers) $(DESTDIR)$(incdir)
- ifneq ($(udevdir),)
--- 
-2.12.0
 
+
+On 2018=E5=B9=B404=E6=9C=8802=E6=97=A5 09:59, Misono Tomohiro wrote:
+> mkfs-test 016 "rootdir-bad-symbolic-link" fails when selinux is enabled=
+=2E
+> This is because add_xattr_item() uses getxattr() and tries to follow a
+> bad symbolic link for selinux item, which causes ENOENT error.
+>=20
+> The line above already uses llistxattr() for getting list of xattr in
+> order not to follow a symbolic link, so just use lgetxattr() too.
+>=20
+> Signed-off-by: Tomohiro Misono <misono.tomohiro@jp.fujitsu.com>
+
+Reviewed-by: Qu Wenruo <wqu@suse.com>
+
+Thanks,
+Qu
+
+> ---
+>  mkfs/rootdir.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+>=20
+> diff --git a/mkfs/rootdir.c b/mkfs/rootdir.c
+> index 33c3ff1e..ff00bb0f 100644
+> --- a/mkfs/rootdir.c
+> +++ b/mkfs/rootdir.c
+> @@ -249,7 +249,7 @@ static int add_xattr_item(struct btrfs_trans_handle=
+ *trans,
+>  		cur_name_len =3D strlen(cur_name);
+>  		next_location +=3D cur_name_len + 1;
+> =20
+> -		ret =3D getxattr(file_name, cur_name, cur_value, XATTR_SIZE_MAX);
+> +		ret =3D lgetxattr(file_name, cur_name, cur_value, XATTR_SIZE_MAX);
+>  		if (ret < 0) {
+>  			if (errno =3D=3D ENOTSUP)
+>  				return 0;
+>=20
+
+
+--iXrGPQc77wLjlyhfPajcaNCIpVbc7WfbL--
+
+--8vFmjDWLF7PFMuGGfNwdkBEIDnUjaHs3w
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlrBkMcACgkQwj2R86El
+/qj8bwf/QXvxaHdp7kd8Wo4JXR8LeqxXEJ2coMIh0rYNkrZTcMRv4iQKYruoKonV
+0wgHCP9xwIug8O7QWLp/T2ve2jeKgp9EtyFXw6rGswb1qIXF/bqoKoL5+o1qk6Qa
+TRS5vuNH72mymLkVnuAEo3uVyFxePbUT/gvUZ25uOPsCA1dMWy0UgSzRlZuEkBfi
+b6BPMxeNzZj/rSMjPMhwrxj96GiQwecuPHV0p6nRbdJdLrcNJYnGRO98Vbx/EUxR
+d1vQMCHMBRwF8rpcii7L6Z7DsRw7d2IXMFhpSiiaDlSuO9wabDRoj4Vh/gXd+mY+
+rYHiusVopQjaeonH3YSI/FQCP9gOgg==
+=a6Jc
+-----END PGP SIGNATURE-----
+
+--8vFmjDWLF7PFMuGGfNwdkBEIDnUjaHs3w--

@@ -1,64 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:35563 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:35575 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752977AbeDCSgp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 3 Apr 2018 14:36:45 -0400
+        id S1752977AbeDCSgs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 3 Apr 2018 14:36:48 -0400
 Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id B45AEABC9
-        for <linux-btrfs@vger.kernel.org>; Tue,  3 Apr 2018 18:36:44 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id E6A6FABC9
+        for <linux-btrfs@vger.kernel.org>; Tue,  3 Apr 2018 18:36:46 +0000 (UTC)
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 07/16] btrfs: add proper safety check before resuming dev-replace
-Date: Tue,  3 Apr 2018 20:34:17 +0200
-Message-Id: <23d9506da78be87309480cd39e884242ef2ff42f.1522780026.git.dsterba@suse.com>
+Subject: [PATCH 08/16] btrfs: add sanity check when resuming balance after mount
+Date: Tue,  3 Apr 2018 20:34:19 +0200
+Message-Id: <a5729260c2f8b50912bf975b30081ab1dbd8c8fd.1522780026.git.dsterba@suse.com>
 In-Reply-To: <cover.1522780026.git.dsterba@suse.com>
 References: <cover.1522780026.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The device replace is paused by unmount or read only remount, and
-resumed on next mount or write remount.
+Replace a WARN_ON with a proper check and message in case something goes
+really wrong and resumed balance cannot set up its exclusive status.
+The check is a user friendly assertion, I don't expect to ever happen
+under normal circumstances.
 
-The exclusive status should be checked properly as it's a global
-invariant and we must not allow 2 operations run. In this case, the
-balance can be also paused and resumed under same conditions. It's
-always checked first so dev-replace could see the EXCL_OP already taken,
-BUT, the ioctl would never let start both at the same time.
-
-Replace the WARN_ON with message and return 0, indicating no error as
-this is purely theoretical and the user will be informed. Resolving that
-manually should be possible by waiting for the other operation to finish
-or cancel the paused state.
+Also document that the paused balance starts here and owns the exclusive
+op status.
 
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/dev-replace.c | 12 +++++++++++-
- 1 file changed, 11 insertions(+), 1 deletion(-)
+ fs/btrfs/volumes.c | 16 ++++++++++++++--
+ 1 file changed, 14 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index 7a87ffad041e..346bd460f8e7 100644
---- a/fs/btrfs/dev-replace.c
-+++ b/fs/btrfs/dev-replace.c
-@@ -908,7 +908,17 @@ int btrfs_resume_dev_replace_async(struct btrfs_fs_info *fs_info)
- 	}
- 	btrfs_dev_replace_write_unlock(dev_replace);
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index eb78c1d0ce2b..843982a2cbdb 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -3982,6 +3982,20 @@ int btrfs_recover_balance(struct btrfs_fs_info *fs_info)
+ 	struct btrfs_key key;
+ 	int ret;
  
--	WARN_ON(test_and_set_bit(BTRFS_FS_EXCL_OP, &fs_info->flags));
 +	/*
-+	 * This could collide with a paused balance, but the exclusive op logic
-+	 * should never allow both to start and pause. We don't want to allow
-+	 * dev-replace to start anyway.
++	 * This should never happen, as the paused balance state is recovered
++	 * during mount without any chance of other exclusive ops to collide.
++	 * Let it fail early and do not continue mount.
++	 *
++	 * Otherwise, this gives the exclusive op status to balance and keeps
++	 * in paused state until user intervention (cancel or umount).
 +	 */
 +	if (test_and_set_bit(BTRFS_FS_EXCL_OP, &fs_info->flags)) {
-+		btrfs_info(fs_info,
-+		"cannot resume dev-replace, other exclusive operation running");
-+		return 0;
++		btrfs_err(fs_info,
++			"cannot set exclusive op status to resume balance");
++		return -EINVAL;
 +	}
 +
- 	task = kthread_run(btrfs_dev_replace_kthread, fs_info, "btrfs-devrepl");
- 	return PTR_ERR_OR_ZERO(task);
- }
+ 	path = btrfs_alloc_path();
+ 	if (!path)
+ 		return -ENOMEM;
+@@ -4018,8 +4032,6 @@ int btrfs_recover_balance(struct btrfs_fs_info *fs_info)
+ 	btrfs_balance_sys(leaf, item, &disk_bargs);
+ 	btrfs_disk_balance_args_to_cpu(&bctl->sys, &disk_bargs);
+ 
+-	WARN_ON(test_and_set_bit(BTRFS_FS_EXCL_OP, &fs_info->flags));
+-
+ 	mutex_lock(&fs_info->volume_mutex);
+ 	mutex_lock(&fs_info->balance_mutex);
+ 
 -- 
 2.16.2
 

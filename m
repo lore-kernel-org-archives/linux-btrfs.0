@@ -1,132 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:35585 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:35596 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752977AbeDCSgu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 3 Apr 2018 14:36:50 -0400
+        id S1753094AbeDCSgw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 3 Apr 2018 14:36:52 -0400
 Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 4C1FBAC76
-        for <linux-btrfs@vger.kernel.org>; Tue,  3 Apr 2018 18:36:49 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id A3B84ABC9
+        for <linux-btrfs@vger.kernel.org>; Tue,  3 Apr 2018 18:36:51 +0000 (UTC)
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 09/16] btrfs: cleanup helpers that reset balance state
-Date: Tue,  3 Apr 2018 20:34:22 +0200
-Message-Id: <a0fff9cb92264458531b286b80cb5f07042d7d12.1522780026.git.dsterba@suse.com>
+Subject: [PATCH 10/16] btrfs: remove wrong use of volume_mutex from btrfs_dev_replace_start
+Date: Tue,  3 Apr 2018 20:34:24 +0200
+Message-Id: <3506f0f2a65a88ef2a5bb1cfff0617503621ba19.1522780026.git.dsterba@suse.com>
 In-Reply-To: <cover.1522780026.git.dsterba@suse.com>
 References: <cover.1522780026.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The function __cancel_balance name is confusing with the cancel
-operation of balance and it really resets the state of balance back to
-zero. The unset_balance_control helper is called only from one place and
-simple enough to be inlined.
+The volume mutex does not protect against anything in this case, the
+comment about scrub is right but not related to locking and looks
+confusing. The comment in btrfs_find_device_missing_or_by_path is wrong
+and confusing too.
+
+The device_list_mutex is not held here to protect device lookup, but in
+this case device replace cannot run in parallel with device removal (due
+to exclusive op protection), so we don't need further locking here.
 
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/ioctl.c   |  8 ++++----
- fs/btrfs/volumes.c | 27 ++++++++++++---------------
- 2 files changed, 16 insertions(+), 19 deletions(-)
+ fs/btrfs/dev-replace.c | 7 +------
+ fs/btrfs/volumes.c     | 4 ----
+ 2 files changed, 1 insertion(+), 10 deletions(-)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 582bde5b7eda..2f172122b63d 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -4653,10 +4653,10 @@ static long btrfs_ioctl_balance(struct file *file, void __user *arg)
+diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+index 346bd460f8e7..ba011af9b0d2 100644
+--- a/fs/btrfs/dev-replace.c
++++ b/fs/btrfs/dev-replace.c
+@@ -426,18 +426,13 @@ int btrfs_dev_replace_start(struct btrfs_fs_info *fs_info,
+ 	struct btrfs_device *tgt_device = NULL;
+ 	struct btrfs_device *src_device = NULL;
  
- do_balance:
- 	/*
--	 * Ownership of bctl and filesystem flag BTRFS_FS_EXCL_OP
--	 * goes to to btrfs_balance.  bctl is freed in __cancel_balance,
--	 * or, if restriper was paused all the way until unmount, in
--	 * free_fs_info.  The flag should be cleared after __cancel_balance.
-+	 * Ownership of bctl and filesystem flag BTRFS_FS_EXCL_OP goes to to
-+	 * btrfs_balance.  bctl is freed in reset_balance_state, or, if
-+	 * restriper was paused all the way until unmount, in free_fs_info.
-+	 * The flag should be cleared after reset_balance_state.
- 	 */
- 	need_unlock = false;
+-	/* the disk copy procedure reuses the scrub code */
+-	mutex_lock(&fs_info->volume_mutex);
+ 	ret = btrfs_find_device_by_devspec(fs_info, srcdevid,
+ 					    srcdev_name, &src_device);
+-	if (ret) {
+-		mutex_unlock(&fs_info->volume_mutex);
++	if (ret)
+ 		return ret;
+-	}
+ 
+ 	ret = btrfs_init_dev_replace_tgtdev(fs_info, tgtdev_name,
+ 					    src_device, &tgt_device);
+-	mutex_unlock(&fs_info->volume_mutex);
+ 	if (ret)
+ 		return ret;
  
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 843982a2cbdb..b073ab4c3c70 100644
+index b073ab4c3c70..0ae29cd69363 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -3192,7 +3192,7 @@ static void update_balance_args(struct btrfs_balance_control *bctl)
- /*
-  * Should be called with both balance and volume mutexes held to
-  * serialize other volume operations (add_dev/rm_dev/resize) with
-- * restriper.  Same goes for unset_balance_control.
-+ * restriper.  Same goes for reset_balance_state.
-  */
- static void set_balance_control(struct btrfs_balance_control *bctl)
- {
-@@ -3205,9 +3205,13 @@ static void set_balance_control(struct btrfs_balance_control *bctl)
- 	spin_unlock(&fs_info->balance_lock);
- }
+@@ -2198,10 +2198,6 @@ int btrfs_find_device_missing_or_by_path(struct btrfs_fs_info *fs_info,
+ 		struct btrfs_device *tmp;
  
--static void unset_balance_control(struct btrfs_fs_info *fs_info)
-+/*
-+ * Clear the balance status in fs_info and delete the balance item from disk.
-+ */
-+static void reset_balance_state(struct btrfs_fs_info *fs_info)
- {
- 	struct btrfs_balance_control *bctl = fs_info->balance_ctl;
-+	int ret;
- 
- 	BUG_ON(!fs_info->balance_ctl);
- 
-@@ -3216,6 +3220,9 @@ static void unset_balance_control(struct btrfs_fs_info *fs_info)
- 	spin_unlock(&fs_info->balance_lock);
- 
- 	kfree(bctl);
-+	ret = del_balance_item(fs_info);
-+	if (ret)
-+		btrfs_handle_fs_error(fs_info, ret, NULL);
- }
- 
- /*
-@@ -3752,16 +3759,6 @@ static inline int balance_need_close(struct btrfs_fs_info *fs_info)
- 		 atomic_read(&fs_info->balance_cancel_req) == 0);
- }
- 
--static void __cancel_balance(struct btrfs_fs_info *fs_info)
--{
--	int ret;
--
--	unset_balance_control(fs_info);
--	ret = del_balance_item(fs_info);
--	if (ret)
--		btrfs_handle_fs_error(fs_info, ret, NULL);
--}
--
- /* Non-zero return value signifies invalidity */
- static inline int validate_convert_profile(struct btrfs_balance_args *bctl_arg,
- 		u64 allowed)
-@@ -3916,7 +3913,7 @@ int btrfs_balance(struct btrfs_balance_control *bctl,
- 
- 	if ((ret && ret != -ECANCELED && ret != -ENOSPC) ||
- 	    balance_need_close(fs_info)) {
--		__cancel_balance(fs_info);
-+		reset_balance_state(fs_info);
- 		clear_bit(BTRFS_FS_EXCL_OP, &fs_info->flags);
- 	}
- 
-@@ -4095,13 +4092,13 @@ int btrfs_cancel_balance(struct btrfs_fs_info *fs_info)
- 			   atomic_read(&fs_info->balance_running) == 0);
- 		mutex_lock(&fs_info->balance_mutex);
- 	} else {
--		/* __cancel_balance needs volume_mutex */
-+		/* reset_balance_state needs volume_mutex */
- 		mutex_unlock(&fs_info->balance_mutex);
- 		mutex_lock(&fs_info->volume_mutex);
- 		mutex_lock(&fs_info->balance_mutex);
- 
- 		if (fs_info->balance_ctl) {
--			__cancel_balance(fs_info);
-+			reset_balance_state(fs_info);
- 			clear_bit(BTRFS_FS_EXCL_OP, &fs_info->flags);
- 		}
- 
+ 		devices = &fs_info->fs_devices->devices;
+-		/*
+-		 * It is safe to read the devices since the volume_mutex
+-		 * is held by the caller.
+-		 */
+ 		list_for_each_entry(tmp, devices, dev_list) {
+ 			if (test_bit(BTRFS_DEV_STATE_IN_FS_METADATA,
+ 					&tmp->dev_state) && !tmp->bdev) {
 -- 
 2.16.2
 

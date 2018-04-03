@@ -1,415 +1,181 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.rep.pm ([94.130.28.144]:50381 "EHLO mail.rep.pm"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751469AbeDCVmU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 3 Apr 2018 17:42:20 -0400
-Received: from [172.16.54.11] (unknown [5.79.74.142])
-        by mail.rep.pm (Postfix) with ESMTPSA id 46C6C48E53
-        for <linux-btrfs@vger.kernel.org>; Tue,  3 Apr 2018 21:35:33 +0000 (UTC)
-Reply-To: kernelorg-djthmw7n9w@central-intelligence.agency
-To: linux-btrfs@vger.kernel.org
-From: Richard Schwab <kernelorg-djthmw7n9w@central-intelligence.agency>
-Subject: System freezes a lot - btrfs trace in dmesg - symptom or cause?
-Message-ID: <ad1a25fd-0dce-eb5f-c4ca-1aa4fdb5c63b@central-intelligence.agency>
-Date: Tue, 3 Apr 2018 23:35:32 +0200
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:38966 "EHLO
+        james.kirk.hungrycats.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754406AbeDCW5u (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Apr 2018 18:57:50 -0400
+Date: Tue, 3 Apr 2018 18:57:46 -0400
+From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To: Goffredo Baroncelli <kreijack@inwind.it>
+Cc: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
+        Chris Murphy <lists@colorremedies.com>,
+        Christoph Anton Mitterer <calestyo@scientia.net>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: Status of RAID5/6
+Message-ID: <20180403225742.GJ2446@hungrycats.org>
+References: <CAJCQCtRpWj45Ja_isnR=aV+iqDObZdKDNHH-g7+33Edz3Cq4=Q@mail.gmail.com>
+ <20180401034544.GA28769@hungrycats.org>
+ <CAJCQCtSrcFD7jTbrqsWZFWrKUrMp4wW0QhkPApB-pgA-O3WksA@mail.gmail.com>
+ <CAJCQCtTXQGbVjRLegC25DDokcv4Wph6O04s=C_rzp8n5jRpt5Q@mail.gmail.com>
+ <20180402054521.GC28769@hungrycats.org>
+ <df74c8a6-b748-20c5-8bef-eb261b645b29@inwind.it>
+ <7c76dae7-b38c-d514-4284-1cd093f5bcac@gmail.com>
+ <20180402222250.GH2446@hungrycats.org>
+ <20180403003102.GI2446@hungrycats.org>
+ <242e2515-fad2-e98d-3e59-c0838362afdc@inwind.it>
 MIME-Version: 1.0
-Content-Type: multipart/mixed;
- boundary="------------68F5DFF90CA8FDCEA9D9FC35"
+Content-Type: multipart/signed; micalg=pgp-sha1;
+        protocol="application/pgp-signature"; boundary="nywXBoy70X0GaB8B"
+In-Reply-To: <242e2515-fad2-e98d-3e59-c0838362afdc@inwind.it>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a multi-part message in MIME format.
---------------68F5DFF90CA8FDCEA9D9FC35
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: 8bit
 
-Hi there,
+--nywXBoy70X0GaB8B
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-I'm currently having some issues with my system freezing a lot, from a
-few seconds up to a few minutes. I haven't figured out yet what might be
-causing this, however, coincidentally some btrfs notices appeared in my
-dmesg after I had a freeze for about 5 minutes. I'm wondering whether
-this is just another symptom of my system having some weird issues or
-whether this might actually be the cause of the freezes I've been
-experiencing.
+On Tue, Apr 03, 2018 at 07:03:06PM +0200, Goffredo Baroncelli wrote:
+> On 04/03/2018 02:31 AM, Zygo Blaxell wrote:
+> > On Mon, Apr 02, 2018 at 06:23:34PM -0400, Zygo Blaxell wrote:
+> >> On Mon, Apr 02, 2018 at 11:49:42AM -0400, Austin S. Hemmelgarn wrote:
+> >>> On 2018-04-02 11:18, Goffredo Baroncelli wrote:
+> >>>> I thought that a possible solution is to create BG with different
+> >>> number of data disks. E.g. supposing to have a raid 6 system with 6
+> >>> disks, where 2 are parity disk; we should allocate 3 BG
+> >>>> BG #1: 1 data disk, 2 parity disks
+> >>>> BG #2: 2 data disks, 2 parity disks,
+> >>>> BG #3: 4 data disks, 2 parity disks
+> >>>>
+> >>>> For simplicity, the disk-stripe length is assumed =3D 4K.
+> >>>>
+> >>>> So If you have a write with a length of 4 KB, this should be placed
+> >>> in BG#1; if you have a write with a length of 4*3KB, the first 8KB,
+> >>> should be placed in in BG#2, then in BG#1.
+> >>>> This would avoid space wasting, even if the fragmentation will
+> >>> increase (but shall the fragmentation matters with the modern solid
+> >>> state disks ?).
+> >> I don't really see why this would increase fragmentation or waste spac=
+e.
+>=20
+> > Oh, wait, yes I do.  If there's a write of 6 blocks, we would have
+> > to split an extent between BG #3 (the first 4 blocks) and BG #2 (the
+> > remaining 2 blocks).  It also flips the usual order of "determine size
+> > of extent, then allocate space for it" which might require major surgery
+> > on the btrfs allocator to implement.
+>=20
+> I have to point out that in any case the extent is physically
+> interrupted at the disk-stripe size. Assuming disk-stripe=3D64KB, if
+> you want to write 128KB, the first half is written in the first disk,
+> the other in the 2nd disk.  If you want to write 96kb, the first 64
+> are written in the first disk, the last part in the 2nd, only on a
+> different BG.
 
-$ uname -a
-Linux mypc 4.15.14-1-ARCH #1 SMP PREEMPT Wed Mar 28 17:34:29 UTC 2018
-x86_64 GNU/Linux
+The "only on a different BG" part implies something expensive, either
+a seek or a new erase page depending on the hardware.  Without that,
+nearby logical blocks are nearby physical blocks as well.
 
-$ btrfs --version
-btrfs-progs v4.15.1
+> So yes there is a fragmentation from a logical point of view; from a
+> physical point of view the data is spread on the disks in any case.
 
-$ btrfs fi show
-Label: none  uuid: uuid1
-    Total devices 1 FS bytes used 226.60GiB
-    devid    1 size 237.37GiB used 237.31GiB path /dev/mapper/cryptroot256g
+What matters is the extent-tree point of view.  There is (currently)
+no fragmentation there, even for RAID5/6.  The extent tree is unaware
+of RAID5/6 (to its peril).
 
-Label: none  uuid: uuid2
-    Total devices 1 FS bytes used 116.61MiB
-    devid    1 size 1.00GiB used 460.00MiB path /dev/sdb2
+ZFS makes its thing-like-the-extent-tree aware of RAID5/6, and it can
+put a stripe of any size anywhere.  If we're going to do that in btrfs,
+you might as well just do what ZFS does.
 
-$ btrfs fi df /
-Data, single: total=231.28GiB, used=223.66GiB
-System, single: total=32.00MiB, used=48.00KiB
-Metadata, single: total=6.00GiB, used=2.93GiB
-GlobalReserve, single: total=512.00MiB, used=0.00B
+OTOH, variable-size block groups give us read-compatibility with old
+kernel versions (and write-compatibility for that matter--a kernel that
+didn't know about the BG separation would just work but have write hole).
 
-Partial dmesg is attached as file. Please tell me if you need more than
-this, however, before these lines it only contained the startup process
-(up until 87s).
+If an application does a loop writing 68K then fsync(), the multiple-BG
+solution adds two seeks to read every 68K.  That's expensive if sequential
+read bandwidth is more scarce than free space.
 
-Sincerely
-Richard Schwab
+> In any case, you are right, we should gather some data, because the
+> performance impact are no so clear.
+>=20
+> I am not worried abut having different BG; we have problem with these
+> because we never developed tool to handle this issue properly (i.e. a
+> daemon which starts a balance when needed). But I hope that this will
+> be solved in future.
 
---------------68F5DFF90CA8FDCEA9D9FC35
-Content-Type: text/plain; charset=UTF-8;
- name="btrfs.dmesg.txt"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment;
- filename="btrfs.dmesg.txt"
+Balance daemons are easy to the point of being trivial to write in Python.
 
-WyA2OTk1LjAyODI2OF0gcGVyZjogaW50ZXJydXB0IHRvb2sgdG9vIGxvbmcgKDI1MTMgPiAy
-NTAwKSwgbG93ZXJpbmcga2VybmVsLnBlcmZfZXZlbnRfbWF4X3NhbXBsZV9yYXRlIHRvIDc5
-MDAwClsxMDUxMy4zNDQyNTVdIENocm9tZV9+ZFRocmVhZFs2MjExXTogc2VnZmF1bHQgYXQg
-MCBpcCAwMDAwN2YwY2YxM2Q2YWVkIHNwIDAwMDA3ZjBjZWIzN2ViMDAgZXJyb3IgNiBpbiBs
-aWJ4dWwuc29bN2YwY2YwZmUyMDAwKzRjMTQwMDBdClsxMDUxMy4zNDQ1NTNdIENocm9tZV9+
-ZFRocmVhZFszMjQyXTogc2VnZmF1bHQgYXQgMCBpcCAwMDAwN2Y4YmNiMGQ2YWVkIHNwIDAw
-MDA3ZjhiYzUwN2ViMDAgZXJyb3IgNgpbMTA1MTMuMzQ0NTU3XSBDaHJvbWVffmRUaHJlYWRb
-MzExMF06IHNlZ2ZhdWx0IGF0IDAgaXAgMDAwMDdmMTNhNTBkNmFlZCBzcCAwMDAwN2YxMzlm
-MDdlYjAwIGVycm9yIDYgaW4gbGlieHVsLnNvWzdmMTNhNGNlMjAwMCs0YzE0MDAwXQpbMTA1
-MTMuMzQ0NTYyXSAgaW4gbGlieHVsLnNvWzdmOGJjYWNlMjAwMCs0YzE0MDAwXQpbMTA1MTMu
-MzQ0NzA0XSBDaHJvbWVffmRUaHJlYWRbMzIwMl06IHNlZ2ZhdWx0IGF0IDAgaXAgMDAwMDdm
-MDg5ZTdkNmFlZCBzcCAwMDAwN2YwODk4NzdlYjAwIGVycm9yIDYgaW4gbGlieHVsLnNvWzdm
-MDg5ZTNlMjAwMCs0YzE0MDAwXQpbMTA2OTEuNjkzMTg4XSBJTkZPOiB0YXNrIGJ0cmZzLXRy
-YW5zYWN0aTo0NDcgYmxvY2tlZCBmb3IgbW9yZSB0aGFuIDEyMCBzZWNvbmRzLgpbMTA2OTEu
-NjkzMTk2XSAgICAgICBUYWludGVkOiBQICAgICAgICAgICBPICAgICA0LjE1LjE0LTEtQVJD
-SCAjMQpbMTA2OTEuNjkzMTk5XSAiZWNobyAwID4gL3Byb2Mvc3lzL2tlcm5lbC9odW5nX3Rh
-c2tfdGltZW91dF9zZWNzIiBkaXNhYmxlcyB0aGlzIG1lc3NhZ2UuClsxMDY5MS42OTMyMDJd
-IGJ0cmZzLXRyYW5zYWN0aSBEICAgIDAgICA0NDcgICAgICAyIDB4ODAwMDAwMDAKWzEwNjkx
-LjY5MzIwN10gQ2FsbCBUcmFjZToKWzEwNjkxLjY5MzIyMV0gID8gX19zY2hlZHVsZSsweDI0
-Yi8weDhjMApbMTA2OTEuNjkzMjI5XSAgPyBlbnF1ZXVlX2VudGl0eSsweDU5Yi8weGM3MApb
-MTA2OTEuNjkzMjM0XSAgc2NoZWR1bGUrMHgzMi8weDkwClsxMDY5MS42OTMyMzldICBpb19z
-Y2hlZHVsZSsweDEyLzB4NDAKWzEwNjkxLjY5MzI0N10gIF9fbG9ja19wYWdlKzB4ZjgvMHgx
-MzAKWzEwNjkxLjY5MzI1Ml0gID8gYWRkX3RvX3BhZ2VfY2FjaGVfbHJ1KzB4ZTAvMHhlMApb
-MTA2OTEuNjkzMzA5XSAgcmVhZF9leHRlbnRfYnVmZmVyX3BhZ2VzKzB4ZjAvMHgyZjAgW2J0
-cmZzXQpbMTA2OTEuNjkzMzM3XSAgPyBidHJmc19hbGxvY19yb290KzB4MzAvMHgzMCBbYnRy
-ZnNdClsxMDY5MS42OTMzNjVdICBidHJlZV9yZWFkX2V4dGVudF9idWZmZXJfcGFnZXMrMHg5
-NC8weGYwIFtidHJmc10KWzEwNjkxLjY5MzM4OV0gIHJlYWRfYmxvY2tfZm9yX3NlYXJjaC5p
-c3JhLjE0KzB4MTVhLzB4MmYwIFtidHJmc10KWzEwNjkxLjY5MzQxM10gIGJ0cmZzX3NlYXJj
-aF9zbG90KzB4M2NkLzB4YTAwIFtidHJmc10KWzEwNjkxLjY5MzQzN10gID8gYmxvY2tfZ3Jv
-dXBfY2FjaGVfdHJlZV9zZWFyY2grMHhiYS8weGQwIFtidHJmc10KWzEwNjkxLjY5MzQ2MF0g
-IGJ0cmZzX2luc2VydF9lbXB0eV9pdGVtcysweDY2LzB4YjAgW2J0cmZzXQpbMTA2OTEuNjkz
-NDg0XSAgYWxsb2NfcmVzZXJ2ZWRfZmlsZV9leHRlbnQrMHg5Ni8weDMyMCBbYnRyZnNdClsx
-MDY5MS42OTM1MTFdICBfX2J0cmZzX3J1bl9kZWxheWVkX3JlZnMrMHg5MDgvMHgxMTgwIFti
-dHJmc10KWzEwNjkxLjY5MzUzOV0gIGJ0cmZzX3J1bl9kZWxheWVkX3JlZnMrMHhlNS8weDFi
-MCBbYnRyZnNdClsxMDY5MS42OTM1NjZdICBidHJmc19zdGFydF9kaXJ0eV9ibG9ja19ncm91
-cHMrMHgyY2IvMHg0NzAgW2J0cmZzXQpbMTA2OTEuNjkzNTk2XSAgYnRyZnNfY29tbWl0X3Ry
-YW5zYWN0aW9uKzB4MTE3LzB4OTMwIFtidHJmc10KWzEwNjkxLjY5MzYyNl0gID8gc3RhcnRf
-dHJhbnNhY3Rpb24rMHg5ZS8weDQyMCBbYnRyZnNdClsxMDY5MS42OTM2NTRdICB0cmFuc2Fj
-dGlvbl9rdGhyZWFkKzB4MTdiLzB4MWEwIFtidHJmc10KWzEwNjkxLjY5MzY4NF0gID8gYnRy
-ZnNfY2xlYW51cF90cmFuc2FjdGlvbisweDU3MC8weDU3MCBbYnRyZnNdClsxMDY5MS42OTM2
-ODddICBrdGhyZWFkKzB4MTEzLzB4MTMwClsxMDY5MS42OTM2OTFdICA/IGt0aHJlYWRfY3Jl
-YXRlX29uX25vZGUrMHg3MC8weDcwClsxMDY5MS42OTM2OTVdICByZXRfZnJvbV9mb3JrKzB4
-MzUvMHg0MApbMTA2OTEuNjkzNzAzXSBJTkZPOiB0YXNrIGpvdXJuYWwtb2ZmbGluZTo3MTUx
-IGJsb2NrZWQgZm9yIG1vcmUgdGhhbiAxMjAgc2Vjb25kcy4KWzEwNjkxLjY5MzcwN10gICAg
-ICAgVGFpbnRlZDogUCAgICAgICAgICAgTyAgICAgNC4xNS4xNC0xLUFSQ0ggIzEKWzEwNjkx
-LjY5MzcwOV0gImVjaG8gMCA+IC9wcm9jL3N5cy9rZXJuZWwvaHVuZ190YXNrX3RpbWVvdXRf
-c2VjcyIgZGlzYWJsZXMgdGhpcyBtZXNzYWdlLgpbMTA2OTEuNjkzNzEyXSBqb3VybmFsLW9m
-ZmxpbmUgRCAgICAwICA3MTUxICAgICAgMSAweDAwMDAwMTA0ClsxMDY5MS42OTM3MTVdIENh
-bGwgVHJhY2U6ClsxMDY5MS42OTM3MjFdICA/IF9fc2NoZWR1bGUrMHgyNGIvMHg4YzAKWzEw
-NjkxLjY5MzcyNl0gID8gcHJlZW1wdF9jb3VudF9hZGQrMHg2OC8weGEwClsxMDY5MS42OTM3
-MzBdICBzY2hlZHVsZSsweDMyLzB4OTAKWzEwNjkxLjY5Mzc1OV0gIHdhaXRfY3VycmVudF90
-cmFucysweGMzLzB4ZjAgW2J0cmZzXQpbMTA2OTEuNjkzNzYzXSAgPyB3YWl0X3dva2VuKzB4
-ODAvMHg4MApbMTA2OTEuNjkzNzkyXSAgc3RhcnRfdHJhbnNhY3Rpb24rMHgzMzIvMHg0MjAg
-W2J0cmZzXQpbMTA2OTEuNjkzODI0XSAgYnRyZnNfc3luY19maWxlKzB4MmI2LzB4NDQwIFti
-dHJmc10KWzEwNjkxLjY5MzgzMl0gIGRvX2ZzeW5jKzB4MzgvMHg2MApbMTA2OTEuNjkzODM2
-XSAgU3lTX2ZzeW5jKzB4Yy8weDEwClsxMDY5MS42OTM4NDBdICBkb19zeXNjYWxsXzY0KzB4
-NzQvMHgxOTAKWzEwNjkxLjY5Mzg0NV0gIGVudHJ5X1NZU0NBTExfNjRfYWZ0ZXJfaHdmcmFt
-ZSsweDNkLzB4YTIKWzEwNjkxLjY5Mzg0OF0gUklQOiAwMDMzOjB4N2Y3MTQ3YjVhMGVjClsx
-MDY5MS42OTM4NTBdIFJTUDogMDAyYjowMDAwN2Y3MTQxOTFjZDMwIEVGTEFHUzogMDAwMDAy
-OTMgT1JJR19SQVg6IDAwMDAwMDAwMDAwMDAwNGEKWzEwNjkxLjY5Mzg1NF0gUkFYOiBmZmZm
-ZmZmZmZmZmZmZmRhIFJCWDogMDAwMDU1ZDAwMjg0NjQxMCBSQ1g6IDAwMDA3ZjcxNDdiNWEw
-ZWMKWzEwNjkxLjY5Mzg1Nl0gUkRYOiAwMDAwMDAwMDAwMDAwMDAwIFJTSTogMDAwMDdmNzE0
-NzRiNjgxMSBSREk6IDAwMDAwMDAwMDAwMDAwMTUKWzEwNjkxLjY5Mzg1N10gUkJQOiAwMDAw
-N2Y3MTQ3NGI3YzYwIFIwODogMDAwMDdmNzE0MTkxZDcwMCBSMDk6IDAwMDA3ZjcxNDE5MWQ3
-MDAKWzEwNjkxLjY5Mzg1OV0gUjEwOiAwMDAwMDAwMDAwMDAwMDExIFIxMTogMDAwMDAwMDAw
-MDAwMDI5MyBSMTI6IDAwMDAwMDAwMDAwMDAwMDIKWzEwNjkxLjY5Mzg2MV0gUjEzOiAwMDAw
-N2ZmZjg0NTY4NzBmIFIxNDogMDAwMDdmZmY4NDU2ODcxMCBSMTU6IDAwMDAwMDAwMDAwMDAw
-MTYKWzEwNjkxLjY5Mzg2Nl0gSU5GTzogdGFzayBqb3VybmFsLW9mZmxpbmU6NzE1MiBibG9j
-a2VkIGZvciBtb3JlIHRoYW4gMTIwIHNlY29uZHMuClsxMDY5MS42OTM4NjldICAgICAgIFRh
-aW50ZWQ6IFAgICAgICAgICAgIE8gICAgIDQuMTUuMTQtMS1BUkNIICMxClsxMDY5MS42OTM4
-NzFdICJlY2hvIDAgPiAvcHJvYy9zeXMva2VybmVsL2h1bmdfdGFza190aW1lb3V0X3NlY3Mi
-IGRpc2FibGVzIHRoaXMgbWVzc2FnZS4KWzEwNjkxLjY5Mzg3NF0gam91cm5hbC1vZmZsaW5l
-IEQgICAgMCAgNzE1MiAgICAgIDEgMHgwMDAwMDEwNApbMTA2OTEuNjkzODc3XSBDYWxsIFRy
-YWNlOgpbMTA2OTEuNjkzODgzXSAgPyBfX3NjaGVkdWxlKzB4MjRiLzB4OGMwClsxMDY5MS42
-OTM4ODddICA/IHByZWVtcHRfY291bnRfYWRkKzB4NjgvMHhhMApbMTA2OTEuNjkzODkxXSAg
-c2NoZWR1bGUrMHgzMi8weDkwClsxMDY5MS42OTM5MjBdICB3YWl0X2N1cnJlbnRfdHJhbnMr
-MHhjMy8weGYwIFtidHJmc10KWzEwNjkxLjY5MzkyM10gID8gd2FpdF93b2tlbisweDgwLzB4
-ODAKWzEwNjkxLjY5Mzk1Ml0gIHN0YXJ0X3RyYW5zYWN0aW9uKzB4MzMyLzB4NDIwIFtidHJm
-c10KWzEwNjkxLjY5Mzk4NF0gIGJ0cmZzX3N5bmNfZmlsZSsweDJiNi8weDQ0MCBbYnRyZnNd
-ClsxMDY5MS42OTM5OTBdICBkb19mc3luYysweDM4LzB4NjAKWzEwNjkxLjY5Mzk5NF0gIFN5
-U19mc3luYysweGMvMHgxMApbMTA2OTEuNjkzOTk4XSAgZG9fc3lzY2FsbF82NCsweDc0LzB4
-MTkwClsxMDY5MS42OTQwMDFdICBlbnRyeV9TWVNDQUxMXzY0X2FmdGVyX2h3ZnJhbWUrMHgz
-ZC8weGEyClsxMDY5MS42OTQwMDRdIFJJUDogMDAzMzoweDdmNzE0N2I1YTBlYwpbMTA2OTEu
-Njk0MDA1XSBSU1A6IDAwMmI6MDAwMDdmNzE0MDExYmQzMCBFRkxBR1M6IDAwMDAwMjkzIE9S
-SUdfUkFYOiAwMDAwMDAwMDAwMDAwMDRhClsxMDY5MS42OTQwMDldIFJBWDogZmZmZmZmZmZm
-ZmZmZmZkYSBSQlg6IDAwMDA1NWQwMDI4NGI4MTAgUkNYOiAwMDAwN2Y3MTQ3YjVhMGVjClsx
-MDY5MS42OTQwMTBdIFJEWDogMDAwMDAwMDAwMDAwMDAwMCBSU0k6IDAwMDA3ZjcxNDc0YjY4
-MTEgUkRJOiAwMDAwMDAwMDAwMDAwMDE2ClsxMDY5MS42OTQwMTJdIFJCUDogMDAwMDdmNzE0
-NzRiN2M2MCBSMDg6IDAwMDA3ZjcxNDAxMWM3MDAgUjA5OiAwMDAwN2Y3MTQwMTFjNzAwClsx
-MDY5MS42OTQwMTRdIFIxMDogMDAwMDAwMDAwMDAwMDAxMSBSMTE6IDAwMDAwMDAwMDAwMDAy
-OTMgUjEyOiAwMDAwMDAwMDAwMDAwMDAyClsxMDY5MS42OTQwMTZdIFIxMzogMDAwMDdmZmY4
-NDU2ODcwZiBSMTQ6IDAwMDA3ZmZmODQ1Njg3MTAgUjE1OiAwMDAwMDAwMDAwMDAwMDE2Clsx
-MDY5MS42OTQwNDNdIElORk86IHRhc2sgZ25vbWUtc2hlbGw6MTExNiBibG9ja2VkIGZvciBt
-b3JlIHRoYW4gMTIwIHNlY29uZHMuClsxMDY5MS42OTQwNDddICAgICAgIFRhaW50ZWQ6IFAg
-ICAgICAgICAgIE8gICAgIDQuMTUuMTQtMS1BUkNIICMxClsxMDY5MS42OTQwNDldICJlY2hv
-IDAgPiAvcHJvYy9zeXMva2VybmVsL2h1bmdfdGFza190aW1lb3V0X3NlY3MiIGRpc2FibGVz
-IHRoaXMgbWVzc2FnZS4KWzEwNjkxLjY5NDA1Ml0gZ25vbWUtc2hlbGwgICAgIEQgICAgMCAg
-MTExNiAgIDEwNjEgMHgwMDAwMDAwMApbMTA2OTEuNjk0MDU1XSBDYWxsIFRyYWNlOgpbMTA2
-OTEuNjk0MDYxXSAgPyBfX3NjaGVkdWxlKzB4MjRiLzB4OGMwClsxMDY5MS42OTQwNjVdICA/
-IHByZWVtcHRfY291bnRfYWRkKzB4NjgvMHhhMApbMTA2OTEuNjk0MDY5XSAgc2NoZWR1bGUr
-MHgzMi8weDkwClsxMDY5MS42OTQwOThdICB3YWl0X2N1cnJlbnRfdHJhbnMrMHhjMy8weGYw
-IFtidHJmc10KWzEwNjkxLjY5NDEwMl0gID8gd2FpdF93b2tlbisweDgwLzB4ODAKWzEwNjkx
-LjY5NDEzMV0gIHN0YXJ0X3RyYW5zYWN0aW9uKzB4MzMyLzB4NDIwIFtidHJmc10KWzEwNjkx
-LjY5NDE3N10gIGJ0cmZzX2NyZWF0ZSsweDU3LzB4MjAwIFtidHJmc10KWzEwNjkxLjY5NDE4
-M10gIHBhdGhfb3BlbmF0KzB4YmY3LzB4MTMyMApbMTA2OTEuNjk0MTg5XSAgPyBzb2NrX2dl
-dHNvY2tvcHQrMHgzNTYvMHg4ZTAKWzEwNjkxLjY5NDE5NF0gIGRvX2ZpbHBfb3BlbisweDli
-LzB4MTEwClsxMDY5MS42OTQyMDFdICA/IF9fY2hlY2tfb2JqZWN0X3NpemUrMHg5Yi8weDFh
-MApbMTA2OTEuNjk0MjA2XSAgPyBfX2FsbG9jX2ZkKzB4YWYvMHgxNjAKWzEwNjkxLjY5NDIx
-MV0gID8gZG9fc3lzX29wZW4rMHgxYmQvMHgyNTAKWzEwNjkxLjY5NDIxNF0gIGRvX3N5c19v
-cGVuKzB4MWJkLzB4MjUwClsxMDY5MS42OTQyMTldICBkb19zeXNjYWxsXzY0KzB4NzQvMHgx
-OTAKWzEwNjkxLjY5NDIyNF0gIGVudHJ5X1NZU0NBTExfNjRfYWZ0ZXJfaHdmcmFtZSsweDNk
-LzB4YTIKWzEwNjkxLjY5NDIyNl0gUklQOiAwMDMzOjB4N2Y4ZTFhN2Q2MzkwClsxMDY5MS42
-OTQyMjhdIFJTUDogMDAyYjowMDAwN2ZmYzRkNmI4M2MwIEVGTEFHUzogMDAwMDAyOTMgT1JJ
-R19SQVg6IDAwMDAwMDAwMDAwMDAxMDEKWzEwNjkxLjY5NDIzMV0gUkFYOiBmZmZmZmZmZmZm
-ZmZmZmRhIFJCWDogMDAwMDU2MzEyYWY0N2QwMCBSQ1g6IDAwMDA3ZjhlMWE3ZDYzOTAKWzEw
-NjkxLjY5NDIzM10gUkRYOiAwMDAwMDAwMDAwMDAwMGMxIFJTSTogMDAwMDU2MzEyYWY0N2Qw
-MCBSREk6IGZmZmZmZmZmZmZmZmZmOWMKWzEwNjkxLjY5NDIzNV0gUkJQOiAwMDAwN2Y4ZTE5
-NmUzNDIwIFIwODogMDAwMDAwMDAwMDAwMDAwMCBSMDk6IDAwMDAwMDAwMDAwMDAwMjMKWzEw
-NjkxLjY5NDIzNl0gUjEwOiAwMDAwMDAwMDAwMDAwMWI2IFIxMTogMDAwMDAwMDAwMDAwMDI5
-MyBSMTI6IDAwMDA1NjMxMmFmNDdkMzYKWzEwNjkxLjY5NDIzOF0gUjEzOiAwMDAwMDAwMDVh
-Y2U2ODllIFIxNDogMGUzOGUzOGUzOGUzOGUzOSBSMTU6IDAwMDA3ZjhlMTk3NDcyZTAKWzEw
-NjkxLjY5NDI5Nl0gSU5GTzogdGFzayBiYWxvb19maWxlX2V4dHI6MTY1MyBibG9ja2VkIGZv
-ciBtb3JlIHRoYW4gMTIwIHNlY29uZHMuClsxMDY5MS42OTQyOTldICAgICAgIFRhaW50ZWQ6
-IFAgICAgICAgICAgIE8gICAgIDQuMTUuMTQtMS1BUkNIICMxClsxMDY5MS42OTQzMDFdICJl
-Y2hvIDAgPiAvcHJvYy9zeXMva2VybmVsL2h1bmdfdGFza190aW1lb3V0X3NlY3MiIGRpc2Fi
-bGVzIHRoaXMgbWVzc2FnZS4KWzEwNjkxLjY5NDMwNF0gYmFsb29fZmlsZV9leHRyIEQgICAg
-MCAgMTY1MyAgIDE2NTIgMHgwMDAwMDAwMApbMTA2OTEuNjk0MzA4XSBDYWxsIFRyYWNlOgpb
-MTA2OTEuNjk0MzEzXSAgPyBfX3NjaGVkdWxlKzB4MjRiLzB4OGMwClsxMDY5MS42OTQzMThd
-ICBzY2hlZHVsZSsweDMyLzB4OTAKWzEwNjkxLjY5NDMyM10gIGlvX3NjaGVkdWxlKzB4MTIv
-MHg0MApbMTA2OTEuNjk0MzI4XSAgd2FpdF9vbl9wYWdlX2JpdCsweGVhLzB4MTMwClsxMDY5
-MS42OTQzMzNdICA/IGFkZF90b19wYWdlX2NhY2hlX2xydSsweGUwLzB4ZTAKWzEwNjkxLjY5
-NDM2OV0gIHJlYWRfZXh0ZW50X2J1ZmZlcl9wYWdlcysweDI1YS8weDJmMCBbYnRyZnNdClsx
-MDY5MS42OTQzOTZdICA/IGJ0cmZzX2FsbG9jX3Jvb3QrMHgzMC8weDMwIFtidHJmc10KWzEw
-NjkxLjY5NDQyM10gIGJ0cmVlX3JlYWRfZXh0ZW50X2J1ZmZlcl9wYWdlcysweDk0LzB4ZjAg
-W2J0cmZzXQpbMTA2OTEuNjk0NDUyXSAgcmVhZF90cmVlX2Jsb2NrKzB4MzEvMHg2MCBbYnRy
-ZnNdClsxMDY5MS42OTQ0NzVdICByZWFkX2Jsb2NrX2Zvcl9zZWFyY2guaXNyYS4xNCsweDEx
-MC8weDJmMCBbYnRyZnNdClsxMDY5MS42OTQ0OTldICBidHJmc19zZWFyY2hfc2xvdCsweDNj
-ZC8weGEwMCBbYnRyZnNdClsxMDY5MS42OTQ1MjNdICA/IGJsb2NrX2dyb3VwX2NhY2hlX3Ry
-ZWVfc2VhcmNoKzB4YmEvMHhkMCBbYnRyZnNdClsxMDY5MS42OTQ1NDZdICBidHJmc19pbnNl
-cnRfZW1wdHlfaXRlbXMrMHg2Ni8weGIwIFtidHJmc10KWzEwNjkxLjY5NDU2OV0gIGFsbG9j
-X3Jlc2VydmVkX2ZpbGVfZXh0ZW50KzB4OTYvMHgzMjAgW2J0cmZzXQpbMTA2OTEuNjk0Njg1
-XSAgX19idHJmc19ydW5fZGVsYXllZF9yZWZzKzB4OTA4LzB4MTE4MCBbYnRyZnNdClsxMDY5
-MS42OTQ3MTNdICBidHJmc19ydW5fZGVsYXllZF9yZWZzKzB4ZTUvMHgxYjAgW2J0cmZzXQpb
-MTA2OTEuNjk0NzQzXSAgYnRyZnNfY29tbWl0X3RyYW5zYWN0aW9uKzB4NDYvMHg5MzAgW2J0
-cmZzXQpbMTA2OTEuNjk0Nzc3XSAgPyBidHJmc193YWl0X29yZGVyZWRfcmFuZ2UrMHg5Mi8w
-eDEwMCBbYnRyZnNdClsxMDY5MS42OTQ4MDhdICBidHJmc19zeW5jX2ZpbGUrMHgzNjMvMHg0
-NDAgW2J0cmZzXQpbMTA2OTEuNjk0ODQyXSAgYnRyZnNfZmlsZV93cml0ZV9pdGVyKzB4NGM5
-LzB4NjUwIFtidHJmc10KWzEwNjkxLjY5NDg0OV0gIF9fdmZzX3dyaXRlKzB4ZjgvMHgxODAK
-WzEwNjkxLjY5NDg1NV0gIHZmc193cml0ZSsweGIxLzB4MWEwClsxMDY5MS42OTQ4NjBdICBT
-eVNfcHdyaXRlNjQrMHg5MC8weGIwClsxMDY5MS42OTQ4NjVdICBkb19zeXNjYWxsXzY0KzB4
-NzQvMHgxOTAKWzEwNjkxLjY5NDg3MF0gIGVudHJ5X1NZU0NBTExfNjRfYWZ0ZXJfaHdmcmFt
-ZSsweDNkLzB4YTIKWzEwNjkxLjY5NDg3Ml0gUklQOiAwMDMzOjB4N2Y4N2MzODBjYWYzClsx
-MDY5MS42OTQ4NzRdIFJTUDogMDAyYjowMDAwN2ZmZDJkMzAyMmIwIEVGTEFHUzogMDAwMDAy
-OTMgT1JJR19SQVg6IDAwMDAwMDAwMDAwMDAwMTIKWzEwNjkxLjY5NDg3N10gUkFYOiBmZmZm
-ZmZmZmZmZmZmZmRhIFJCWDogMDAwMDU1ZTA5NjdiNzQ1MCBSQ1g6IDAwMDA3Zjg3YzM4MGNh
-ZjMKWzEwNjkxLjY5NDg3OV0gUkRYOiAwMDAwMDAwMDAwMDAwMDc4IFJTSTogMDAwMDdmZmQy
-ZDMwMjM0MCBSREk6IDAwMDAwMDAwMDAwMDAwMTMKWzEwNjkxLjY5NDg4MV0gUkJQOiAwMDAw
-N2ZmZDJkMzAyMzMwIFIwODogMDAwMDAwMDAzMTAwNDAwMCBSMDk6IDAwMDAwMDAwMDAwMDAx
-ZmQKWzEwNjkxLjY5NDg4M10gUjEwOiAwMDAwMDAwMDAwMDAwMDIwIFIxMTogMDAwMDAwMDAw
-MDAwMDI5MyBSMTI6IDAwMDAwMDAwMDAwMDAwMTMKWzEwNjkxLjY5NDg4NV0gUjEzOiAwMDAw
-MDAwMDAwM2E3YjYxIFIxNDogMDAwMDAwMDAwMDAwMDAwMCBSMTU6IDAwMDA1NWUwOTY3OWY2
-NjAKWzEwNjkxLjY5NDg5MV0gSU5GTzogdGFzayBxdWl0ZXJzczoxNjcyIGJsb2NrZWQgZm9y
-IG1vcmUgdGhhbiAxMjAgc2Vjb25kcy4KWzEwNjkxLjY5NDg5NV0gICAgICAgVGFpbnRlZDog
-UCAgICAgICAgICAgTyAgICAgNC4xNS4xNC0xLUFSQ0ggIzEKWzEwNjkxLjY5NDg5N10gImVj
-aG8gMCA+IC9wcm9jL3N5cy9rZXJuZWwvaHVuZ190YXNrX3RpbWVvdXRfc2VjcyIgZGlzYWJs
-ZXMgdGhpcyBtZXNzYWdlLgpbMTA2OTEuNjk0OTAwXSBxdWl0ZXJzcyAgICAgICAgRCAgICAw
-ICAxNjcyICAgMTExNiAweDAwMDAwMDAwClsxMDY5MS42OTQ5MDRdIENhbGwgVHJhY2U6Clsx
-MDY5MS42OTQ5MTBdICA/IF9fc2NoZWR1bGUrMHgyNGIvMHg4YzAKWzEwNjkxLjY5NDkxNF0g
-ID8gcHJlZW1wdF9jb3VudF9hZGQrMHg2OC8weGEwClsxMDY5MS42OTQ5MTldICBzY2hlZHVs
-ZSsweDMyLzB4OTAKWzEwNjkxLjY5NDk0N10gIHdhaXRfY3VycmVudF90cmFucysweGMzLzB4
-ZjAgW2J0cmZzXQpbMTA2OTEuNjk0OTUxXSAgPyB3YWl0X3dva2VuKzB4ODAvMHg4MApbMTA2
-OTEuNjk0OTgwXSAgc3RhcnRfdHJhbnNhY3Rpb24rMHgzMzIvMHg0MjAgW2J0cmZzXQpbMTA2
-OTEuNjk1MDEyXSAgYnRyZnNfY3JlYXRlKzB4NTcvMHgyMDAgW2J0cmZzXQpbMTA2OTEuNjk1
-MDE3XSAgcGF0aF9vcGVuYXQrMHhiZjcvMHgxMzIwClsxMDY5MS42OTUwMjNdICBkb19maWxw
-X29wZW4rMHg5Yi8weDExMApbMTA2OTEuNjk1MDI5XSAgPyBwcmVlbXB0X2NvdW50X2FkZCsw
-eDQ5LzB4YTAKWzEwNjkxLjY5NTAzMl0gID8gX19jaGVja19vYmplY3Rfc2l6ZSsweDliLzB4
-MWEwClsxMDY5MS42OTUwMzVdICA/IHByZWVtcHRfY291bnRfYWRkKzB4NjgvMHhhMApbMTA2
-OTEuNjk1MDM4XSAgPyBfX2NoZWNrX29iamVjdF9zaXplKzB4OWIvMHgxYTAKWzEwNjkxLjY5
-NTA0M10gID8gX19hbGxvY19mZCsweGFmLzB4MTYwClsxMDY5MS42OTUwNDddICA/IGRvX3N5
-c19vcGVuKzB4MWJkLzB4MjUwClsxMDY5MS42OTUwNTFdICBkb19zeXNfb3BlbisweDFiZC8w
-eDI1MApbMTA2OTEuNjk1MDU2XSAgZG9fc3lzY2FsbF82NCsweDc0LzB4MTkwClsxMDY5MS42
-OTUwNjBdICBlbnRyeV9TWVNDQUxMXzY0X2FmdGVyX2h3ZnJhbWUrMHgzZC8weGEyClsxMDY5
-MS42OTUwNjJdIFJJUDogMDAzMzoweDdmYWZmMjhkODM5MApbMTA2OTEuNjk1MDY0XSBSU1A6
-IDAwMmI6MDAwMDdmZmMyYzQ4YWM2MCBFRkxBR1M6IDAwMDAwMjkzIE9SSUdfUkFYOiAwMDAw
-MDAwMDAwMDAwMTAxClsxMDY5MS42OTUwNjddIFJBWDogZmZmZmZmZmZmZmZmZmZkYSBSQlg6
-IDAwMDAwMDAwMDAwMDAwNjQgUkNYOiAwMDAwN2ZhZmYyOGQ4MzkwClsxMDY5MS42OTUwNjld
-IFJEWDogMDAwMDAwMDAwMDA4MDBjMSBSU0k6IDAwMDA1NWMyZjQ5Y2YxOTggUkRJOiBmZmZm
-ZmZmZmZmZmZmZjljClsxMDY5MS42OTUwNzFdIFJCUDogMDAwMDU1YzJmNDljZjE5OCBSMDg6
-IDAwMDAwMDAwMDAwMDAwMDAgUjA5OiAwMDAwMDAwMDAwMDAwMDQ5ClsxMDY5MS42OTUwNzNd
-IFIxMDogMDAwMDAwMDAwMDAwMDFiNiBSMTE6IDAwMDAwMDAwMDAwMDAyOTMgUjEyOiAwMDAw
-N2ZmYzJjNDhhZGIwClsxMDY5MS42OTUwNzRdIFIxMzogMDAwMDdmZmMyYzQ4YWRhOCBSMTQ6
-IDAwMDA3ZmZjMmM0OGFkYzAgUjE1OiAwMDAwN2ZmYzJjNDhhZGEwClsxMDY5MS42OTUxMjFd
-IElORk86IHRhc2sgdGhyZWFkZWQtbWw6MjUxNyBibG9ja2VkIGZvciBtb3JlIHRoYW4gMTIw
-IHNlY29uZHMuClsxMDY5MS42OTUxMjVdICAgICAgIFRhaW50ZWQ6IFAgICAgICAgICAgIE8g
-ICAgIDQuMTUuMTQtMS1BUkNIICMxClsxMDY5MS42OTUxMjhdICJlY2hvIDAgPiAvcHJvYy9z
-eXMva2VybmVsL2h1bmdfdGFza190aW1lb3V0X3NlY3MiIGRpc2FibGVzIHRoaXMgbWVzc2Fn
-ZS4KWzEwNjkxLjY5NTEzMV0gdGhyZWFkZWQtbWwgICAgIEQgICAgMCAgMjUxNyAgIDI0ODkg
-MHgwMDAwMDAwMApbMTA2OTEuNjk1MTM0XSBDYWxsIFRyYWNlOgpbMTA2OTEuNjk1MTQxXSAg
-PyBfX3NjaGVkdWxlKzB4MjRiLzB4OGMwClsxMDY5MS42OTUxNDNdICA/IF9yYXdfc3Bpbl91
-bmxvY2srMHgxNi8weDMwClsxMDY5MS42OTUxNDhdICBzY2hlZHVsZSsweDMyLzB4OTAKWzEw
-NjkxLjY5NTE1M10gIGlvX3NjaGVkdWxlKzB4MTIvMHg0MApbMTA2OTEuNjk1MTU4XSAgd2Fp
-dF9vbl9wYWdlX2JpdCsweGVhLzB4MTMwClsxMDY5MS42OTUxNjNdICA/IGFkZF90b19wYWdl
-X2NhY2hlX2xydSsweGUwLzB4ZTAKWzEwNjkxLjY5NTE5Nl0gIHByZXBhcmVfcGFnZXMrMHgy
-NTYvMHgyNzAgW2J0cmZzXQpbMTA2OTEuNjk1MjI5XSAgX19idHJmc19idWZmZXJlZF93cml0
-ZS5pc3JhLjQrMHgyNTcvMHg3MDAgW2J0cmZzXQpbMTA2OTEuNjk1MjYzXSAgYnRyZnNfZmls
-ZV93cml0ZV9pdGVyKzB4MjE2LzB4NjUwIFtidHJmc10KWzEwNjkxLjY5NTI3MF0gIF9fdmZz
-X3dyaXRlKzB4ZjgvMHgxODAKWzEwNjkxLjY5NTI3Nl0gIHZmc193cml0ZSsweGIxLzB4MWEw
-ClsxMDY5MS42OTUyODFdICBTeVNfd3JpdGUrMHg1Mi8weGMwClsxMDY5MS42OTUyODZdICBk
-b19zeXNjYWxsXzY0KzB4NzQvMHgxOTAKWzEwNjkxLjY5NTI5MF0gIGVudHJ5X1NZU0NBTExf
-NjRfYWZ0ZXJfaHdmcmFtZSsweDNkLzB4YTIKWzEwNjkxLjY5NTI5Ml0gUklQOiAwMDMzOjB4
-N2YxNzQ4ODJiNDdiClsxMDY5MS42OTUyOTRdIFJTUDogMDAyYjowMDAwN2YxNmUzZmZlMzYw
-IEVGTEFHUzogMDAwMDAyOTMgT1JJR19SQVg6IDAwMDAwMDAwMDAwMDAwMDEKWzEwNjkxLjY5
-NTI5N10gUkFYOiBmZmZmZmZmZmZmZmZmZmRhIFJCWDogMDAwMDAwMDAwMzA5YjcyMCBSQ1g6
-IDAwMDA3ZjE3NDg4MmI0N2IKWzEwNjkxLjY5NTI5OV0gUkRYOiAwMDAwMDAwMDAwMDAwMDc0
-IFJTSTogMDAwMDAwMDAwMzA5YjcyMCBSREk6IDAwMDAwMDAwMDAwMDAwMTAKWzEwNjkxLjY5
-NTMwMF0gUkJQOiAwMDAwMDAwMDAwMDAwMDc0IFIwODogMDAwMDAwMDAwMDAwMDAwMCBSMDk6
-IDAwMDA3ZjE2ZTNmZmY3MDAKWzEwNjkxLjY5NTMwMl0gUjEwOiAwMDAwMDAwMDAwMDAwMDA0
-IFIxMTogMDAwMDAwMDAwMDAwMDI5MyBSMTI6IDAwMDAwMDAwMDAwMDAwNzQKWzEwNjkxLjY5
-NTMwNF0gUjEzOiAwMDAwMDAwMDAwMDAwMDAxIFIxNDogMDAwMDAwMDAwMmRlYzEyMCBSMTU6
-IDAwMDAwMDAwMDAwMDAwNzQKWzEwNjkxLjY5NTM1M10gSU5GTzogdGFzayBzeXN0ZW1kLWNv
-cmVkdW06NzEzNCBibG9ja2VkIGZvciBtb3JlIHRoYW4gMTIwIHNlY29uZHMuClsxMDY5MS42
-OTUzNTddICAgICAgIFRhaW50ZWQ6IFAgICAgICAgICAgIE8gICAgIDQuMTUuMTQtMS1BUkNI
-ICMxClsxMDY5MS42OTUzNTldICJlY2hvIDAgPiAvcHJvYy9zeXMva2VybmVsL2h1bmdfdGFz
-a190aW1lb3V0X3NlY3MiIGRpc2FibGVzIHRoaXMgbWVzc2FnZS4KWzEwNjkxLjY5NTM2Ml0g
-c3lzdGVtZC1jb3JlZHVtIEQgICAgMCAgNzEzNCAgICAgIDEgMHgwMDAwMDEwMApbMTA2OTEu
-Njk1MzY1XSBDYWxsIFRyYWNlOgpbMTA2OTEuNjk1MzcxXSAgPyBfX3NjaGVkdWxlKzB4MjRi
-LzB4OGMwClsxMDY5MS42OTUzNzVdICA/IHByZWVtcHRfY291bnRfYWRkKzB4NjgvMHhhMApb
-MTA2OTEuNjk1Mzc5XSAgc2NoZWR1bGUrMHgzMi8weDkwClsxMDY5MS42OTU0MDhdICB3YWl0
-X2N1cnJlbnRfdHJhbnMrMHhjMy8weGYwIFtidHJmc10KWzEwNjkxLjY5NTQxMl0gID8gd2Fp
-dF93b2tlbisweDgwLzB4ODAKWzEwNjkxLjY5NTQ0MV0gIHN0YXJ0X3RyYW5zYWN0aW9uKzB4
-MzMyLzB4NDIwIFtidHJmc10KWzEwNjkxLjY5NTQ3M10gIGJ0cmZzX3N5bmNfZmlsZSsweDJi
-Ni8weDQ0MCBbYnRyZnNdClsxMDY5MS42OTU0NzldICBkb19mc3luYysweDM4LzB4NjAKWzEw
-NjkxLjY5NTQ4NF0gIFN5U19mc3luYysweGMvMHgxMApbMTA2OTEuNjk1NDg5XSAgZG9fc3lz
-Y2FsbF82NCsweDc0LzB4MTkwClsxMDY5MS42OTU0OTVdICBlbnRyeV9TWVNDQUxMXzY0X2Fm
-dGVyX2h3ZnJhbWUrMHgzZC8weGEyClsxMDY5MS42OTU0OTldIFJJUDogMDAzMzoweDdmZDEw
-MjM5MjBjNApbMTA2OTEuNjk1NTAxXSBSU1A6IDAwMmI6MDAwMDdmZmU4YjY0MWRhOCBFRkxB
-R1M6IDAwMDAwMjQ2IE9SSUdfUkFYOiAwMDAwMDAwMDAwMDAwMDRhClsxMDY5MS42OTU1MDZd
-IFJBWDogZmZmZmZmZmZmZmZmZmZkYSBSQlg6IDAwMDAwMDAwMDAwMDAwMDAgUkNYOiAwMDAw
-N2ZkMTAyMzkyMGM0ClsxMDY5MS42OTU1MDhdIFJEWDogMDAwMDAwMDAwMDA5MDAwMCBSU0k6
-IDAwMDA1NWE5ODdmMzIwYjAgUkRJOiAwMDAwMDAwMDAwMDAwMDA4ClsxMDY5MS42OTU1MTBd
-IFJCUDogMDAwMDU1YTk4N2YzMjBiMCBSMDg6IDAwMDAwMDAwMWZmZmZmZmYgUjA5OiAwMDAw
-MDAwMDAwMDAwMDAwClsxMDY5MS42OTU1MTNdIFIxMDogMDAwMDAwMDAwMDAwMDAwMCBSMTE6
-IDAwMDAwMDAwMDAwMDAyNDYgUjEyOiAwMDAwMDAwMDAwMDAwMDA4ClsxMDY5MS42OTU1MTVd
-IFIxMzogMDAwMDAwMDAwMDAwMDAwNyBSMTQ6IDAwMDAwMDAwMDAwMDAwMDAgUjE1OiAwMDAw
-NTVhOTg3NmM1ZWNhClsxMDY5MS42OTU1MjJdIElORk86IHRhc2sgc3lzdGVtZC1jb3JlZHVt
-OjcxMzUgYmxvY2tlZCBmb3IgbW9yZSB0aGFuIDEyMCBzZWNvbmRzLgpbMTA2OTEuNjk1NTI3
-XSAgICAgICBUYWludGVkOiBQICAgICAgICAgICBPICAgICA0LjE1LjE0LTEtQVJDSCAjMQpb
-MTA2OTEuNjk1NTMxXSAiZWNobyAwID4gL3Byb2Mvc3lzL2tlcm5lbC9odW5nX3Rhc2tfdGlt
-ZW91dF9zZWNzIiBkaXNhYmxlcyB0aGlzIG1lc3NhZ2UuClsxMDY5MS42OTU1MzVdIHN5c3Rl
-bWQtY29yZWR1bSBEICAgIDAgIDcxMzUgICAgICAxIDB4MDAwMDAxMDAKWzEwNjkxLjY5NTUz
-OV0gQ2FsbCBUcmFjZToKWzEwNjkxLjY5NTU0OF0gID8gX19zY2hlZHVsZSsweDI0Yi8weDhj
-MApbMTA2OTEuNjk1NTUzXSAgPyBwcmVlbXB0X2NvdW50X2FkZCsweDY4LzB4YTAKWzEwNjkx
-LjY5NTU1OV0gIHNjaGVkdWxlKzB4MzIvMHg5MApbMTA2OTEuNjk1NTkzXSAgd2FpdF9jdXJy
-ZW50X3RyYW5zKzB4YzMvMHhmMCBbYnRyZnNdClsxMDY5MS42OTU1OTddICA/IHdhaXRfd29r
-ZW4rMHg4MC8weDgwClsxMDY5MS42OTU2MjRdICBzdGFydF90cmFuc2FjdGlvbisweDMzMi8w
-eDQyMCBbYnRyZnNdClsxMDY5MS42OTU2NTJdICBidHJmc19zeW5jX2ZpbGUrMHgyYjYvMHg0
-NDAgW2J0cmZzXQpbMTA2OTEuNjk1NjU3XSAgZG9fZnN5bmMrMHgzOC8weDYwClsxMDY5MS42
-OTU2NjFdICBTeVNfZnN5bmMrMHhjLzB4MTAKWzEwNjkxLjY5NTY2NV0gIGRvX3N5c2NhbGxf
-NjQrMHg3NC8weDE5MApbMTA2OTEuNjk1NjY5XSAgZW50cnlfU1lTQ0FMTF82NF9hZnRlcl9o
-d2ZyYW1lKzB4M2QvMHhhMgpbMTA2OTEuNjk1NjcxXSBSSVA6IDAwMzM6MHg3ZWZjMTE4MDYw
-YzQKWzEwNjkxLjY5NTY3M10gUlNQOiAwMDJiOjAwMDA3ZmZlM2Q1MTQ1MjggRUZMQUdTOiAw
-MDAwMDI0NiBPUklHX1JBWDogMDAwMDAwMDAwMDAwMDA0YQpbMTA2OTEuNjk1Njc2XSBSQVg6
-IGZmZmZmZmZmZmZmZmZmZGEgUkJYOiAwMDAwMDAwMDAwMDAwMDUwIFJDWDogMDAwMDdlZmMx
-MTgwNjBjNApbMTA2OTEuNjk1Njc4XSBSRFg6IDAwMDA1NWQ3OWFlM2YyOWQgUlNJOiAwMDAw
-NTVkNzk4ZjFhZWNhIFJESTogMDAwMDAwMDAwMDAwMDAwNwpbMTA2OTEuNjk1NjgwXSBSQlA6
-IDAwMDA3ZmZlM2Q1MTQ3ZTAgUjA4OiAwMDAwMDAwMDAwMDAwMDAxIFIwOTogMDAwMDAwMDAw
-MDAwMDAwMQpbMTA2OTEuNjk1NjgxXSBSMTA6IDAwMDAwMDAwMDAwMDAwMTggUjExOiAwMDAw
-MDAwMDAwMDAwMjQ2IFIxMjogMDAwMDAwMDAwMDAwMDAwNwpbMTA2OTEuNjk1NjgzXSBSMTM6
-IDAwMDA1NWQ3OTkxMWM2YzAgUjE0OiAwMDAwMDAwMDAwMDAwMDAwIFIxNTogMDAwMDU1ZDc5
-OGYxYWVjYQpbMTA3NzcuMjE1OTA3XSBzeXN0ZW1kWzFdOiBzeXN0ZW1kLWpvdXJuYWxkLnNl
-cnZpY2U6IFN0YXRlICdzdG9wLXNpZ2FicnQnIHRpbWVkIG91dC4gVGVybWluYXRpbmcuClsx
-MDgxMy40NjcwMTJdIHN5c3RlbWRbMV06IHN5c3RlbWQtY29yZWR1bXBAMy03MTI5LTAuc2Vy
-dmljZTogU2VydmljZSByZWFjaGVkIHJ1bnRpbWUgdGltZSBsaW1pdC4gU3RvcHBpbmcuClsx
-MDgxMy40NjczMjFdIHN5c3RlbWRbMV06IHN5c3RlbWQtY29yZWR1bXBANC03MTMyLTAuc2Vy
-dmljZTogU2VydmljZSByZWFjaGVkIHJ1bnRpbWUgdGltZSBsaW1pdC4gU3RvcHBpbmcuClsx
-MDgxMy40Njc1MzBdIHN5c3RlbWRbMV06IHN5c3RlbWQtY29yZWR1bXBAMi03MTMxLTAuc2Vy
-dmljZTogU2VydmljZSByZWFjaGVkIHJ1bnRpbWUgdGltZSBsaW1pdC4gU3RvcHBpbmcuClsx
-MDgxMy40Njc3MTRdIHN5c3RlbWRbMV06IHN5c3RlbWQtY29yZWR1bXBAMS03MTMwLTAuc2Vy
-dmljZTogU2VydmljZSByZWFjaGVkIHJ1bnRpbWUgdGltZSBsaW1pdC4gU3RvcHBpbmcuClsx
-MDgxNC41NzY5MzddIElORk86IHRhc2sgYnRyZnMtdHJhbnNhY3RpOjQ0NyBibG9ja2VkIGZv
-ciBtb3JlIHRoYW4gMTIwIHNlY29uZHMuClsxMDgxNC41NzY5NDRdICAgICAgIFRhaW50ZWQ6
-IFAgICAgICAgICAgIE8gICAgIDQuMTUuMTQtMS1BUkNIICMxClsxMDgxNC41NzY5NDddICJl
-Y2hvIDAgPiAvcHJvYy9zeXMva2VybmVsL2h1bmdfdGFza190aW1lb3V0X3NlY3MiIGRpc2Fi
-bGVzIHRoaXMgbWVzc2FnZS4KWzEwODE0LjU3Njk1MF0gYnRyZnMtdHJhbnNhY3RpIEQgICAg
-MCAgIDQ0NyAgICAgIDIgMHg4MDAwMDAwMApbMTA4MTQuNTc2OTU1XSBDYWxsIFRyYWNlOgpb
-MTA4MTQuNTc2OTY5XSAgPyBfX3NjaGVkdWxlKzB4MjRiLzB4OGMwClsxMDgxNC41NzY5NzZd
-ICA/IGVucXVldWVfZW50aXR5KzB4NTliLzB4YzcwClsxMDgxNC41NzY5ODJdICBzY2hlZHVs
-ZSsweDMyLzB4OTAKWzEwODE0LjU3Njk4N10gIGlvX3NjaGVkdWxlKzB4MTIvMHg0MApbMTA4
-MTQuNTc2OTk1XSAgX19sb2NrX3BhZ2UrMHhmOC8weDEzMApbMTA4MTQuNTc3MDAxXSAgPyBh
-ZGRfdG9fcGFnZV9jYWNoZV9scnUrMHhlMC8weGUwClsxMDgxNC41NzcwNTddICByZWFkX2V4
-dGVudF9idWZmZXJfcGFnZXMrMHhmMC8weDJmMCBbYnRyZnNdClsxMDgxNC41NzcwODVdICA/
-IGJ0cmZzX2FsbG9jX3Jvb3QrMHgzMC8weDMwIFtidHJmc10KWzEwODE0LjU3NzExM10gIGJ0
-cmVlX3JlYWRfZXh0ZW50X2J1ZmZlcl9wYWdlcysweDk0LzB4ZjAgW2J0cmZzXQpbMTA4MTQu
-NTc3MTM3XSAgcmVhZF9ibG9ja19mb3Jfc2VhcmNoLmlzcmEuMTQrMHgxNWEvMHgyZjAgW2J0
-cmZzXQpbMTA4MTQuNTc3MTYyXSAgYnRyZnNfc2VhcmNoX3Nsb3QrMHgzY2QvMHhhMDAgW2J0
-cmZzXQpbMTA4MTQuNTc3MTg1XSAgPyBibG9ja19ncm91cF9jYWNoZV90cmVlX3NlYXJjaCsw
-eGJhLzB4ZDAgW2J0cmZzXQpbMTA4MTQuNTc3MjA4XSAgYnRyZnNfaW5zZXJ0X2VtcHR5X2l0
-ZW1zKzB4NjYvMHhiMCBbYnRyZnNdClsxMDgxNC41NzcyMzJdICBhbGxvY19yZXNlcnZlZF9m
-aWxlX2V4dGVudCsweDk2LzB4MzIwIFtidHJmc10KWzEwODE0LjU3NzI1OF0gIF9fYnRyZnNf
-cnVuX2RlbGF5ZWRfcmVmcysweDkwOC8weDExODAgW2J0cmZzXQpbMTA4MTQuNTc3Mjg2XSAg
-YnRyZnNfcnVuX2RlbGF5ZWRfcmVmcysweGU1LzB4MWIwIFtidHJmc10KWzEwODE0LjU3NzMx
-M10gIGJ0cmZzX3N0YXJ0X2RpcnR5X2Jsb2NrX2dyb3VwcysweDJjYi8weDQ3MCBbYnRyZnNd
-ClsxMDgxNC41NzczNDRdICBidHJmc19jb21taXRfdHJhbnNhY3Rpb24rMHgxMTcvMHg5MzAg
-W2J0cmZzXQpbMTA4MTQuNTc3Mzc2XSAgPyBzdGFydF90cmFuc2FjdGlvbisweDllLzB4NDIw
-IFtidHJmc10KWzEwODE0LjU3NzQxNF0gIHRyYW5zYWN0aW9uX2t0aHJlYWQrMHgxN2IvMHgx
-YTAgW2J0cmZzXQpbMTA4MTQuNTc3NDUwXSAgPyBidHJmc19jbGVhbnVwX3RyYW5zYWN0aW9u
-KzB4NTcwLzB4NTcwIFtidHJmc10KWzEwODE0LjU3NzQ1Nl0gIGt0aHJlYWQrMHgxMTMvMHgx
-MzAKWzEwODE0LjU3NzQ2MV0gID8ga3RocmVhZF9jcmVhdGVfb25fbm9kZSsweDcwLzB4NzAK
-WzEwODE0LjU3NzQ2N10gIHJldF9mcm9tX2ZvcmsrMHgzNS8weDQwClsxMDgyOS41NzM3Mjdd
-IHN5c3RlbWRbMV06IHN5c3RlbWQtY29yZWR1bXBAMy03MTI5LTAuc2VydmljZTogRmFpbGVk
-IHdpdGggcmVzdWx0ICd0aW1lb3V0Jy4KWzEwODI5LjU5ODM4M10gc3lzdGVtZFsxXTogc3lz
-dGVtZC1jb3JlZHVtcEA0LTcxMzItMC5zZXJ2aWNlOiBGYWlsZWQgd2l0aCByZXN1bHQgJ3Rp
-bWVvdXQnLgpbMTA4NjcuNDY4NjM0XSBzeXN0ZW1kWzFdOiBzeXN0ZW1kLWpvdXJuYWxkLnNl
-cnZpY2U6IFN0YXRlICdzdG9wLXNpZ3Rlcm0nIHRpbWVkIG91dC4gS2lsbGluZy4KWzEwODY3
-LjQ2ODY3NV0gc3lzdGVtZFsxXTogc3lzdGVtZC1qb3VybmFsZC5zZXJ2aWNlOiBLaWxsaW5n
-IHByb2Nlc3MgNDgzIChzeXN0ZW1kLWpvdXJuYWwpIHdpdGggc2lnbmFsIFNJR0tJTEwuClsx
-MDg4Mi40NTkwMTddIHN5c3RlbWRbMV06IHN5c3RlbWQtY29yZWR1bXBAMi03MTMxLTAuc2Vy
-dmljZTogRmFpbGVkIHdpdGggcmVzdWx0ICd0aW1lb3V0Jy4KWzEwODgyLjU0MzY2Nl0gc3lz
-dGVtZFsxXTogc3lzdGVtZC1qb3VybmFsZC5zZXJ2aWNlOiBNYWluIHByb2Nlc3MgZXhpdGVk
-LCBjb2RlPWtpbGxlZCwgc3RhdHVzPTkvS0lMTApbMTA4ODIuNTQzNzI0XSBzeXN0ZW1kWzFd
-OiBzeXN0ZW1kLWpvdXJuYWxkLnNlcnZpY2U6IEZhaWxlZCB3aXRoIHJlc3VsdCAnd2F0Y2hk
-b2cnLgpbMTA4ODIuNTQ0NDYzXSBzeXN0ZW1kWzFdOiBzeXN0ZW1kLWpvdXJuYWxkLnNlcnZp
-Y2U6IFNlcnZpY2UgaGFzIG5vIGhvbGQtb2ZmIHRpbWUsIHNjaGVkdWxpbmcgcmVzdGFydC4K
-WzEwODgyLjU0NDUxNF0gc3lzdGVtZFsxXTogc3lzdGVtZC1qb3VybmFsZC5zZXJ2aWNlOiBT
-Y2hlZHVsZWQgcmVzdGFydCBqb2IsIHJlc3RhcnQgY291bnRlciBpcyBhdCAxLgpbMTA4ODIu
-NTQ0OTczXSBzeXN0ZW1kWzFdOiBTdG9wcGVkIEZsdXNoIEpvdXJuYWwgdG8gUGVyc2lzdGVu
-dCBTdG9yYWdlLgpbMTA4ODIuNTQ0OTg0XSBzeXN0ZW1kWzFdOiBTdG9wcGluZyBGbHVzaCBK
-b3VybmFsIHRvIFBlcnNpc3RlbnQgU3RvcmFnZS4uLgpbMTA4ODIuNTQ0OTkwXSBzeXN0ZW1k
-WzFdOiBTdG9wcGVkIEpvdXJuYWwgU2VydmljZS4KWzEwODgyLjU0NjEyMl0gc3lzdGVtZFsx
-XTogU3RhcnRpbmcgSm91cm5hbCBTZXJ2aWNlLi4uClsxMDg4Mi41NTYxMTZdIHN5c3RlbWQt
-Y29yZWR1bXBbNzIyMF06IEZhaWxlZCB0byBnZXQgQ09NTSwgZmFsbGluZyBiYWNrIHRvIHRo
-ZSBjb21tYW5kIGxpbmU6IE5vIHN1Y2ggcHJvY2VzcwpbMTA4ODIuNTU2MTI1XSBzeXN0ZW1k
-LWNvcmVkdW1wWzcyMjBdOiBGYWlsZWQgdG8gZ2V0IEVYRSwgaWdub3Jpbmc6IE5vIHN1Y2gg
-cHJvY2VzcwpbMTA4ODIuNTU4MjEyXSBzeXN0ZW1kWzFdOiBTdGFydGVkIFByb2Nlc3MgQ29y
-ZSBEdW1wIChQSUQgNzIyMC9VSUQgMCkuClsxMDg4Mi42NTc0MjFdIHN5c3RlbWQtam91cm5h
-bGRbNzIyMV06IEZpbGUgL3Zhci9sb2cvam91cm5hbC8zZWYwZGE5M2IzODQ0Njg4OGVhZGU1
-YmJiZTgyZmFhMC9zeXN0ZW0uam91cm5hbCBjb3JydXB0ZWQgb3IgdW5jbGVhbmx5IHNodXQg
-ZG93biwgcmVuYW1pbmcgYW5kIHJlcGxhY2luZy4KWzEwODgyLjg2NDU1OV0gc3lzdGVtZC1q
-b3VybmFsZFs3MjIxXTogRmlsZSAvdmFyL2xvZy9qb3VybmFsLzNlZjBkYTkzYjM4NDQ2ODg4
-ZWFkZTViYmJlODJmYWEwL3VzZXItMTAwMC5qb3VybmFsIGNvcnJ1cHRlZCBvciB1bmNsZWFu
-bHkgc2h1dCBkb3duLCByZW5hbWluZyBhbmQgcmVwbGFjaW5nLgpbMTE5NTguNjQxODk3XSBw
-ZXJmOiBpbnRlcnJ1cHQgdG9vayB0b28gbG9uZyAoMzE1MCA+IDMxNDEpLCBsb3dlcmluZyBr
-ZXJuZWwucGVyZl9ldmVudF9tYXhfc2FtcGxlX3JhdGUgdG8gNjMwMDAK
---------------68F5DFF90CA8FDCEA9D9FC35--
+The balancing itself is quite expensive and invasive:  can't usefully
+ionice it, can only abort it on block group boundaries, can't delete
+snapshots while it's running.
+
+If balance could be given a vrange that was the size of one extent...then
+we could talk about daemons.
+
+> In any case, the all solutions proposed have their trade off:
+>=20
+> - a) as is: write hole bug
+> - b) variable stripe size (like ZFS): big impact on how btrfs handle
+> the extent. limited waste of space
+> - c) logging data before writing: we wrote the data two times in a
+> short time window. Moreover the log area is written several order of
+> magnitude more than the other area; there was some patch around
+> - d) rounding the writing to the stripe size: waste of space; simple
+> to implement;
+> - e) different BG with different stripe size: limited waste of space;
+> logical fragmentation.
+
+Also:
+
+  - f) avoiding writes to partially filled stripes: free space
+  fragmentation; simple to implement (ssd_spread does it accidentally)
+
+The difference between d) and f) is that d) allocates the space to the
+extent while f) leaves the space unallocated, but skips any free space
+fragments smaller than the stripe size when allocating.  f) gets the
+space back with a balance (i.e. it is exactly as space-efficient as (a)
+after balance).
+
+> * c),d),e) are applied only for the tail of the extent, in case the
+size is less than the stripe size.
+
+It's only necessary to split an extent if there are no other writes
+in the same transaction that could be combined with the extent tail
+into a single RAID stripe.  As long as everything in the RAID stripe
+belongs to a single transaction, there is no write hole.
+
+> * for b),d), e), the wasting of space may be reduced with a balance=20
+
+Not for d.  Balance doesn't know how to get rid of unreachable blocks
+in extents (it just moves the entire extent around) so after a balance
+the writes would still be rounded up to the stripe size.  Balance would
+never be able to free the rounded-up space.  That space would just be
+gone until the file was overwritten, deleted, or defragged.
+
+Possibly not for b either, for the same reason.  Defrag is the existing
+btrfs tool to fix extents with unused space attached to them.  Or some
+new thing designed explicitly to handle these cases.
+
+And also not for e, but it's a little different there.  In e the wasted
+space is the extra metadata extent refs due to discontiguous extent
+allocation.  You don't get that back with balance, you need defrag
+here too.  e) also effectively can't claim that unused space in BG's is
+"free" since there are non-trivial restrictions on whether it can be
+allocated for any given write.  So even if you have free space, 'df'
+has to tell you that you don't.
+
+>=20
+> --=20
+> gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+> Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+
+--nywXBoy70X0GaB8B
+Content-Type: application/pgp-signature; name="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iF0EABECAB0WIQSnOVjcfGcC/+em7H2B+YsaVrMbnAUCWsQG2wAKCRCB+YsaVrMb
+nO8+AJ9bdRuQ11ylJb6XgJtXw4McVPYtvgCfaXO67GMv5XNYimCPWa44uYKuB2U=
+=gXDG
+-----END PGP SIGNATURE-----
+
+--nywXBoy70X0GaB8B--

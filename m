@@ -1,68 +1,131 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:35575 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:35585 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752977AbeDCSgs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 3 Apr 2018 14:36:48 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id E6A6FABC9
-        for <linux-btrfs@vger.kernel.org>; Tue,  3 Apr 2018 18:36:46 +0000 (UTC)
+        id S1752977AbeDCSgu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 3 Apr 2018 14:36:50 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 4C1FBAC76
+        for <linux-btrfs@vger.kernel.org>; Tue,  3 Apr 2018 18:36:49 +0000 (UTC)
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 08/16] btrfs: add sanity check when resuming balance after mount
-Date: Tue,  3 Apr 2018 20:34:19 +0200
-Message-Id: <a5729260c2f8b50912bf975b30081ab1dbd8c8fd.1522780026.git.dsterba@suse.com>
+Subject: [PATCH 09/16] btrfs: cleanup helpers that reset balance state
+Date: Tue,  3 Apr 2018 20:34:22 +0200
+Message-Id: <a0fff9cb92264458531b286b80cb5f07042d7d12.1522780026.git.dsterba@suse.com>
 In-Reply-To: <cover.1522780026.git.dsterba@suse.com>
 References: <cover.1522780026.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Replace a WARN_ON with a proper check and message in case something goes
-really wrong and resumed balance cannot set up its exclusive status.
-The check is a user friendly assertion, I don't expect to ever happen
-under normal circumstances.
-
-Also document that the paused balance starts here and owns the exclusive
-op status.
+The function __cancel_balance name is confusing with the cancel
+operation of balance and it really resets the state of balance back to
+zero. The unset_balance_control helper is called only from one place and
+simple enough to be inlined.
 
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/volumes.c | 16 ++++++++++++++--
- 1 file changed, 14 insertions(+), 2 deletions(-)
+ fs/btrfs/ioctl.c   |  8 ++++----
+ fs/btrfs/volumes.c | 27 ++++++++++++---------------
+ 2 files changed, 16 insertions(+), 19 deletions(-)
 
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 582bde5b7eda..2f172122b63d 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -4653,10 +4653,10 @@ static long btrfs_ioctl_balance(struct file *file, void __user *arg)
+ 
+ do_balance:
+ 	/*
+-	 * Ownership of bctl and filesystem flag BTRFS_FS_EXCL_OP
+-	 * goes to to btrfs_balance.  bctl is freed in __cancel_balance,
+-	 * or, if restriper was paused all the way until unmount, in
+-	 * free_fs_info.  The flag should be cleared after __cancel_balance.
++	 * Ownership of bctl and filesystem flag BTRFS_FS_EXCL_OP goes to to
++	 * btrfs_balance.  bctl is freed in reset_balance_state, or, if
++	 * restriper was paused all the way until unmount, in free_fs_info.
++	 * The flag should be cleared after reset_balance_state.
+ 	 */
+ 	need_unlock = false;
+ 
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index eb78c1d0ce2b..843982a2cbdb 100644
+index 843982a2cbdb..b073ab4c3c70 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -3982,6 +3982,20 @@ int btrfs_recover_balance(struct btrfs_fs_info *fs_info)
- 	struct btrfs_key key;
- 	int ret;
+@@ -3192,7 +3192,7 @@ static void update_balance_args(struct btrfs_balance_control *bctl)
+ /*
+  * Should be called with both balance and volume mutexes held to
+  * serialize other volume operations (add_dev/rm_dev/resize) with
+- * restriper.  Same goes for unset_balance_control.
++ * restriper.  Same goes for reset_balance_state.
+  */
+ static void set_balance_control(struct btrfs_balance_control *bctl)
+ {
+@@ -3205,9 +3205,13 @@ static void set_balance_control(struct btrfs_balance_control *bctl)
+ 	spin_unlock(&fs_info->balance_lock);
+ }
  
-+	/*
-+	 * This should never happen, as the paused balance state is recovered
-+	 * during mount without any chance of other exclusive ops to collide.
-+	 * Let it fail early and do not continue mount.
-+	 *
-+	 * Otherwise, this gives the exclusive op status to balance and keeps
-+	 * in paused state until user intervention (cancel or umount).
-+	 */
-+	if (test_and_set_bit(BTRFS_FS_EXCL_OP, &fs_info->flags)) {
-+		btrfs_err(fs_info,
-+			"cannot set exclusive op status to resume balance");
-+		return -EINVAL;
-+	}
-+
- 	path = btrfs_alloc_path();
- 	if (!path)
- 		return -ENOMEM;
-@@ -4018,8 +4032,6 @@ int btrfs_recover_balance(struct btrfs_fs_info *fs_info)
- 	btrfs_balance_sys(leaf, item, &disk_bargs);
- 	btrfs_disk_balance_args_to_cpu(&bctl->sys, &disk_bargs);
+-static void unset_balance_control(struct btrfs_fs_info *fs_info)
++/*
++ * Clear the balance status in fs_info and delete the balance item from disk.
++ */
++static void reset_balance_state(struct btrfs_fs_info *fs_info)
+ {
+ 	struct btrfs_balance_control *bctl = fs_info->balance_ctl;
++	int ret;
  
--	WARN_ON(test_and_set_bit(BTRFS_FS_EXCL_OP, &fs_info->flags));
+ 	BUG_ON(!fs_info->balance_ctl);
+ 
+@@ -3216,6 +3220,9 @@ static void unset_balance_control(struct btrfs_fs_info *fs_info)
+ 	spin_unlock(&fs_info->balance_lock);
+ 
+ 	kfree(bctl);
++	ret = del_balance_item(fs_info);
++	if (ret)
++		btrfs_handle_fs_error(fs_info, ret, NULL);
+ }
+ 
+ /*
+@@ -3752,16 +3759,6 @@ static inline int balance_need_close(struct btrfs_fs_info *fs_info)
+ 		 atomic_read(&fs_info->balance_cancel_req) == 0);
+ }
+ 
+-static void __cancel_balance(struct btrfs_fs_info *fs_info)
+-{
+-	int ret;
 -
- 	mutex_lock(&fs_info->volume_mutex);
- 	mutex_lock(&fs_info->balance_mutex);
+-	unset_balance_control(fs_info);
+-	ret = del_balance_item(fs_info);
+-	if (ret)
+-		btrfs_handle_fs_error(fs_info, ret, NULL);
+-}
+-
+ /* Non-zero return value signifies invalidity */
+ static inline int validate_convert_profile(struct btrfs_balance_args *bctl_arg,
+ 		u64 allowed)
+@@ -3916,7 +3913,7 @@ int btrfs_balance(struct btrfs_balance_control *bctl,
+ 
+ 	if ((ret && ret != -ECANCELED && ret != -ENOSPC) ||
+ 	    balance_need_close(fs_info)) {
+-		__cancel_balance(fs_info);
++		reset_balance_state(fs_info);
+ 		clear_bit(BTRFS_FS_EXCL_OP, &fs_info->flags);
+ 	}
+ 
+@@ -4095,13 +4092,13 @@ int btrfs_cancel_balance(struct btrfs_fs_info *fs_info)
+ 			   atomic_read(&fs_info->balance_running) == 0);
+ 		mutex_lock(&fs_info->balance_mutex);
+ 	} else {
+-		/* __cancel_balance needs volume_mutex */
++		/* reset_balance_state needs volume_mutex */
+ 		mutex_unlock(&fs_info->balance_mutex);
+ 		mutex_lock(&fs_info->volume_mutex);
+ 		mutex_lock(&fs_info->balance_mutex);
+ 
+ 		if (fs_info->balance_ctl) {
+-			__cancel_balance(fs_info);
++			reset_balance_state(fs_info);
+ 			clear_bit(BTRFS_FS_EXCL_OP, &fs_info->flags);
+ 		}
  
 -- 
 2.16.2

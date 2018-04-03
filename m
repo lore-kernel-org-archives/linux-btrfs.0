@@ -1,47 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-sn1nam01on0120.outbound.protection.outlook.com ([104.47.32.120]:62865
-        "EHLO NAM01-SN1-obe.outbound.protection.outlook.com"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751934AbeDFUGH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 6 Apr 2018 16:06:07 -0400
-From: Sasha Levin <Alexander.Levin@microsoft.com>
-To: Sasha Levin <Alexander.Levin@microsoft.com>,
-        David Sterba <dsterba@suse.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-CC: David Sterba <dsterba@suse.com>,
-        "stable@vger.kernel.org" <stable@vger.kernel.org>
-Subject: Re: [PATCH 08/16] btrfs: add sanity check when resuming balance after
- mount
-Date: Fri, 6 Apr 2018 20:06:05 +0000
-Message-ID: <MW2PR2101MB1034A1F36200F757E05ED6BCFBBA0@MW2PR2101MB1034.namprd21.prod.outlook.com>
-References: <a5729260c2f8b50912bf975b30081ab1dbd8c8fd.1522780026.git.dsterba@suse.com>
-In-Reply-To: <a5729260c2f8b50912bf975b30081ab1dbd8c8fd.1522780026.git.dsterba@suse.com>
-Content-Type: text/plain; charset="iso-8859-1"
-MIME-Version: 1.0
+Received: from mx2.suse.de ([195.135.220.15]:35625 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1753094AbeDCSg7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 3 Apr 2018 14:36:59 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 6DC39AC76
+        for <linux-btrfs@vger.kernel.org>; Tue,  3 Apr 2018 18:36:58 +0000 (UTC)
+From: David Sterba <dsterba@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.com>
+Subject: [PATCH 13/16] btrfs: remove redundant read-only check from btrfs_cancel_balance
+Date: Tue,  3 Apr 2018 20:34:31 +0200
+Message-Id: <afdb0e99249c050b26a200ccbbc772a1ef90c1a4.1522780026.git.dsterba@suse.com>
+In-Reply-To: <cover.1522780026.git.dsterba@suse.com>
+References: <cover.1522780026.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Balance cannot be started on a read-only filesystem and will have to
+finish/exit before eg. going to read-only via remount. Cancelling does
+not need to check for that.
 
-[This is an automated email]
+In case the filesystem is forcibly set to read-only after an error,
+balance will finish anyway and if the cancel call is too fast it will
+just wait for that to happen. Again does not have to check.
 
-This commit has been processed by the -stable helper bot and determined
-to be a high probability candidate for -stable trees. (score: 16.7330)
+Signed-off-by: David Sterba <dsterba@suse.com>
+---
+ fs/btrfs/volumes.c | 3 ---
+ 1 file changed, 3 deletions(-)
 
-The bot has tested the following trees: v4.16, v4.15.15, v4.14.32, v4.9.92, v4.4.126.
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index a0420af1fad9..2956e7b4cb9f 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -4053,9 +4053,6 @@ int btrfs_pause_balance(struct btrfs_fs_info *fs_info)
+ 
+ int btrfs_cancel_balance(struct btrfs_fs_info *fs_info)
+ {
+-	if (sb_rdonly(fs_info->sb))
+-		return -EROFS;
+-
+ 	mutex_lock(&fs_info->balance_mutex);
+ 	if (!fs_info->balance_ctl) {
+ 		mutex_unlock(&fs_info->balance_mutex);
+-- 
+2.16.2
 
-v4.16: Build OK!
-v4.15.15: Build OK!
-v4.14.32: Build OK!
-v4.9.92: Failed to apply! Possible dependencies:
-    509cdd5c938a ("btrfs: add sanity check when resuming balance after mount")
-
-v4.4.126: Failed to apply! Possible dependencies:
-    509cdd5c938a ("btrfs: add sanity check when resuming balance after mount")
-
-
-Please let us know if you'd like to have this patch included in a stable tree.
-
---
-Thanks,
-Sasha

@@ -1,78 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:33369 "EHLO
-        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751741AbeDFGje (ORCPT
-        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Fri, 6 Apr 2018 02:39:34 -0400
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: Use more loose open ctree flags for dump-tree and restore
-Date: Fri,  6 Apr 2018 14:39:19 +0800
-Message-Id: <20180406063919.11771-1-wqu@suse.com>
+Received: from mx2.suse.de ([195.135.220.15]:40293 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1754331AbeDCFv2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 3 Apr 2018 01:51:28 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id AF89CAF58
+        for <linux-btrfs@vger.kernel.org>; Tue,  3 Apr 2018 05:51:26 +0000 (UTC)
+Subject: Re: [PATCH 1/2] btrfs-progs: check: Skip data csum verification for
+ metadata dump
+To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+References: <20180403053947.5908-1-wqu@suse.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <28d6599f-136a-a053-b4e9-6cb296a35d2a@suse.com>
+Date: Tue, 3 Apr 2018 08:51:25 +0300
+MIME-Version: 1.0
+In-Reply-To: <20180403053947.5908-1-wqu@suse.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Corrupted extent tree (either the root node or leaf) can normally block
-us from open the fs.
-As normally open_ctree() has the following call chain:
-__open_ctree_fd()
-|- btrfs_setup_all_roots()
-   |- btrfs_read_block_groups()
-      And we will search block group items in extent tree.
 
-And considering how block group items are scattered around the whole
-extent tree, any error would block the fs from being mounted.
 
-Fortunately, we already have OPEN_CTREE_NO_BLOCK_GROUPS flags to disable
-block group items search, which will not only allow us to open some
-fs, but also hugely speed up open time.
+On  3.04.2018 08:39, Qu Wenruo wrote:
+> For metadata dump (fs restored by btrfs-image), since no data is
+> restored check sum verification will definitely report error.
+> 
+> Add such check in check_csums() and prompt for user.
+> 
+> Issue: #103
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
 
-Currently dump-tree and btrfs-restore is ensured that they care nothing
-about block group items. So specify OPEN_CTREE_NO_BLOCK_GROUPS flag as
-default.
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 
-Also fix a typo where dump-tree is using OPEN_CTREE_FS_PARTIAL, which
-should be OPEN_CTREE_PARTIAL.
-This makes dump-tree do more check and can sometimes fail to open
-certain filesystems.
+> ---
+>  check/main.c | 13 ++++++++++++-
+>  1 file changed, 12 insertions(+), 1 deletion(-)
+> 
+> diff --git a/check/main.c b/check/main.c
+> index 891a6d797756..15c94543946a 100644
+> --- a/check/main.c
+> +++ b/check/main.c
+> @@ -5601,6 +5601,7 @@ static int check_csums(struct btrfs_root *root)
+>  	int ret;
+>  	u64 data_len;
+>  	unsigned long leaf_offset;
+> +	bool verify_csum = !!check_data_csum;
 
-Reported-by: Christoph Anton Mitterer <calestyo@scientia.net>
-Fixes: 8698a2b9ba89 ("btrfs-progs: Allow inspect dump-tree to show specified tree block even some tree roots are corrupted")
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- cmds-inspect-dump-tree.c | 4 +++-
- cmds-restore.c           | 3 ++-
- 2 files changed, 5 insertions(+), 2 deletions(-)
+nit: Why don't you convert check_data_csum to bool in this patch. My
+recent testing in !! usage showed that it's generating quite a number of
+additional instructions. Not that it will have big impact in this case
+though.
 
-diff --git a/cmds-inspect-dump-tree.c b/cmds-inspect-dump-tree.c
-index 7defb7164a49..8be976041543 100644
---- a/cmds-inspect-dump-tree.c
-+++ b/cmds-inspect-dump-tree.c
-@@ -303,7 +303,9 @@ int cmd_inspect_dump_tree(int argc, char **argv)
- 	int uuid_tree_only = 0;
- 	int roots_only = 0;
- 	int root_backups = 0;
--	unsigned open_ctree_flags = OPEN_CTREE_FS_PARTIAL;
-+	/* Speed up open_ctree() and continue if extent tree is corrupted */
-+	unsigned open_ctree_flags = OPEN_CTREE_PARTIAL |
-+				    OPEN_CTREE_NO_BLOCK_GROUPS;
- 	u64 block_bytenr;
- 	struct btrfs_root *tree_root_scan;
- 	u64 tree_id = 0;
-diff --git a/cmds-restore.c b/cmds-restore.c
-index ade35f0f880f..b43bd2ac6502 100644
---- a/cmds-restore.c
-+++ b/cmds-restore.c
-@@ -1282,7 +1282,8 @@ static struct btrfs_root *open_fs(const char *dev, u64 root_location,
- 	for (i = super_mirror; i < BTRFS_SUPER_MIRROR_MAX; i++) {
- 		bytenr = btrfs_sb_offset(i);
- 		fs_info = open_ctree_fs_info(dev, bytenr, root_location, 0,
--					     OPEN_CTREE_PARTIAL);
-+					     OPEN_CTREE_PARTIAL |
-+					     OPEN_CTREE_NO_BLOCK_GROUPS);
- 		if (fs_info)
- 			break;
- 		fprintf(stderr, "Could not open root, trying backup super\n");
--- 
-2.17.0
-
+>  
+>  	root = root->fs_info->csum_root;
+>  	if (!extent_buffer_uptodate(root->node)) {
+> @@ -5623,6 +5624,16 @@ static int check_csums(struct btrfs_root *root)
+>  		path.slots[0]--;
+>  	ret = 0;
+>  
+> +	/*
+> +	 * For metadata dump (btrfs-image) all data is wiped so verifying data
+> +	 * csum is meaningless and will always report csum error.
+> +	 */
+> +	if (check_data_csum && (btrfs_super_flags(root->fs_info->super_copy) &
+> +	    (BTRFS_SUPER_FLAG_METADUMP | BTRFS_SUPER_FLAG_METADUMP_V2))) {
+> +		printf("skip data csum verification for metadata dump\n");
+> +		verify_csum = false;
+> +	}
+> +
+>  	while (1) {
+>  		if (path.slots[0] >= btrfs_header_nritems(path.nodes[0])) {
+>  			ret = btrfs_next_leaf(root, &path);
+> @@ -5644,7 +5655,7 @@ static int check_csums(struct btrfs_root *root)
+>  
+>  		data_len = (btrfs_item_size_nr(leaf, path.slots[0]) /
+>  			      csum_size) * root->fs_info->sectorsize;
+> -		if (!check_data_csum)
+> +		if (!verify_csum)
+>  			goto skip_csum_check;
+>  		leaf_offset = btrfs_item_ptr_offset(leaf, path.slots[0]);
+>  		ret = check_extent_csums(root, key.offset, data_len,
+> 

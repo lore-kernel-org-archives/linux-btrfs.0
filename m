@@ -1,146 +1,162 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.22]:46183 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751249AbeDEM5z (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 5 Apr 2018 08:57:55 -0400
-Subject: Re: Couldn't read tree root BTRFS - SEED
-To: =?UTF-8?Q?Sen=c3=a9n_Vidal_Blanco?= <senenvidal@sgisoft.com>,
-        linux-btrfs@vger.kernel.org
-References: <1816851.fIrENY6aja@pcsenen>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <d73a19fb-5f4a-a690-b688-b2af3e410895@gmx.com>
-Date: Thu, 5 Apr 2018 20:57:49 +0800
-MIME-Version: 1.0
-In-Reply-To: <1816851.fIrENY6aja@pcsenen>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="n7pQazDrA2L8Eptbrx0hI7550MItBu3Qm"
+Received: from victor.provo.novell.com ([137.65.250.26]:48644 "EHLO
+        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751722AbeDDGP4 (ORCPT
+        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+        Wed, 4 Apr 2018 02:15:56 -0400
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH RESEND 1/2] btrfs: Enhance btrfs_trim_fs function to handle error better
+Date: Wed,  4 Apr 2018 14:15:42 +0800
+Message-Id: <20180404061543.7819-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---n7pQazDrA2L8Eptbrx0hI7550MItBu3Qm
-Content-Type: multipart/mixed; boundary="49bGZIwrVxxEih4X8C4O561ZmCHW9c0zI";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: =?UTF-8?Q?Sen=c3=a9n_Vidal_Blanco?= <senenvidal@sgisoft.com>,
- linux-btrfs@vger.kernel.org
-Message-ID: <d73a19fb-5f4a-a690-b688-b2af3e410895@gmx.com>
-Subject: Re: Couldn't read tree root BTRFS - SEED
-References: <1816851.fIrENY6aja@pcsenen>
-In-Reply-To: <1816851.fIrENY6aja@pcsenen>
+Function btrfs_trim_fs() doesn't handle errors in a consistent way, if
+error happens when trimming existing block groups, it will skip the
+remaining blocks and continue to trim unallocated space for each device.
 
---49bGZIwrVxxEih4X8C4O561ZmCHW9c0zI
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+And the return value will only reflect the final error from device
+trimming.
 
+This patch will fix such behavior by:
 
+1) Recording first error from block group or device trimming
+   So return value will also reflect any error found when trimming.
+   Make developer more aware of the problem.
 
-On 2018=E5=B9=B404=E6=9C=8805=E6=97=A5 19:27, Sen=C3=A9n Vidal Blanco wro=
-te:
-> Hello,
-> I have a problem when mounting the btrfs system with two units (one in =
-SEED=20
-> mode and the other in read-write mode)
-> =20
-> Initially it is functioning correctly in production:
-> =20
-> btrfs fi sh=20
-> Label: 'SEED_MD2'  uuid: 285b16fa-b297-43ed-bb3b-311950729eb6=20
->        Total devices 2 FS bytes used 2.00TiB=20
->        devid    1 size 5.44TiB used 1.97TiB path /dev/bcache1=20
->        devid    2 size 1.80TiB used 119.03GiB path /dev/bcache0=20
-> =20
-> Label: 'BOOT'  uuid: ce8fd2ef-975c-417a-b90c-280f8d324c44=20
->        Total devices 1 FS bytes used 536.86MiB=20
->        devid    1 size 1.86GiB used 1.15GiB path /dev/md1=20
-> =20
-> Label: 'SEED_MD2'  uuid: 851e4474-d375-4a25-b202-949e51f05877=20
->        Total devices 1 FS bytes used 1.94TiB=20
->        devid    1 size 5.44TiB used 1.97TiB path /dev/bcache1
-> =20
-> The bcache0 and bcache1 units are what I mention.
-> bcache1 is the SEED
-> bcache0 is the read-write
-> =20
-> When it comes to mounting the two copy mirror devices that is in produc=
-tion I=20
-> have this result:
-> =20
-> parent transid verify failed on 2184045428736 wanted 269593 found 26627=
-5=20
-> parent transid verify failed on 2184045428736 wanted 269593 found 26627=
-5
+2) Outputting btrfs warning message for each trimming failure
+   Any error for block group or device trimming will cause btrfs warning
+   kernel message.
 
-It's not the problem that btrfs fails to assemble correct seed/rw
-devices list, it's something wrong (metadata corruption) happened.
+3) Continuing trimming if we can
+   If we failed to trim one block group or device, we could still try
+   next block group or device.
 
+Such behavior can avoid confusion for case like failure to trim the
+first block group and then only unallocated space is trimmed.
 
+Reported-by: Chris Murphy <lists@colorremedies.com>
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/extent-tree.c | 59 ++++++++++++++++++++++++++++++++++++--------------
+ 1 file changed, 43 insertions(+), 16 deletions(-)
 
-> Ignoring transid failure
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index d83d449e749a..f3b088665b7a 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -10975,6 +10975,16 @@ static int btrfs_trim_free_extents(struct btrfs_device *device,
+ 	return ret;
+ }
+ 
++/*
++ * Trim the whole fs, by:
++ * 1) Trimming free space in each block group
++ * 2) Trimming unallocated space in each device
++ *
++ * Will try to continue trimming even if we failed to trim one block group or
++ * device.
++ * The return value will be the error return value of the first error.
++ * Or 0 if nothing wrong happened.
++ */
+ int btrfs_trim_fs(struct btrfs_fs_info *fs_info, struct fstrim_range *range)
+ {
+ 	struct btrfs_block_group_cache *cache = NULL;
+@@ -10985,6 +10995,8 @@ int btrfs_trim_fs(struct btrfs_fs_info *fs_info, struct fstrim_range *range)
+ 	u64 end;
+ 	u64 trimmed = 0;
+ 	u64 total_bytes = btrfs_super_total_bytes(fs_info->super_copy);
++	int bg_ret = 0;
++	int dev_ret = 0;
+ 	int ret = 0;
+ 
+ 	/*
+@@ -10995,7 +11007,7 @@ int btrfs_trim_fs(struct btrfs_fs_info *fs_info, struct fstrim_range *range)
+ 	else
+ 		cache = btrfs_lookup_block_group(fs_info, range->start);
+ 
+-	while (cache) {
++	for (; cache; cache = next_block_group(fs_info, cache)) {
+ 		if (cache->key.objectid >= (range->start + range->len)) {
+ 			btrfs_put_block_group(cache);
+ 			break;
+@@ -11009,29 +11021,36 @@ int btrfs_trim_fs(struct btrfs_fs_info *fs_info, struct fstrim_range *range)
+ 			if (!block_group_cache_done(cache)) {
+ 				ret = cache_block_group(cache, 0);
+ 				if (ret) {
+-					btrfs_put_block_group(cache);
+-					break;
++					btrfs_warn_rl(fs_info,
++		"failed to cache block group %llu ret %d",
++						   cache->key.objectid, ret);
++					if (!bg_ret)
++						bg_ret = ret;
++					continue;
+ 				}
+ 				ret = wait_block_group_cache_done(cache);
+ 				if (ret) {
+-					btrfs_put_block_group(cache);
+-					break;
++					btrfs_warn_rl(fs_info,
++		"failed to wait cache for block group %llu ret %d",
++						   cache->key.objectid, ret);
++					if (!bg_ret)
++						bg_ret = ret;
++					continue;
+ 				}
+ 			}
+-			ret = btrfs_trim_block_group(cache,
+-						     &group_trimmed,
+-						     start,
+-						     end,
+-						     range->minlen);
++			ret = btrfs_trim_block_group(cache, &group_trimmed,
++						start, end, range->minlen);
+ 
+ 			trimmed += group_trimmed;
+ 			if (ret) {
+-				btrfs_put_block_group(cache);
+-				break;
++				btrfs_warn_rl(fs_info,
++		"failed to trim block group %llu ret %d",
++					   cache->key.objectid, ret);
++				if (!bg_ret)
++					bg_ret = ret;
++				continue;
+ 			}
+ 		}
+-
+-		cache = next_block_group(fs_info, cache);
+ 	}
+ 
+ 	mutex_lock(&fs_info->fs_devices->device_list_mutex);
+@@ -11039,15 +11058,23 @@ int btrfs_trim_fs(struct btrfs_fs_info *fs_info, struct fstrim_range *range)
+ 	list_for_each_entry(device, devices, dev_alloc_list) {
+ 		ret = btrfs_trim_free_extents(device, range->minlen,
+ 					      &group_trimmed);
+-		if (ret)
++		if (ret) {
++			btrfs_warn_rl(fs_info,
++		"failed to trim unallocated space for devid %llu ret %d",
++				      device->devid, ret);
++			if (!dev_ret)
++				dev_ret = ret;
+ 			break;
++		}
+ 
+ 		trimmed += group_trimmed;
+ 	}
+ 	mutex_unlock(&fs_info->fs_devices->device_list_mutex);
+ 
+ 	range->len = trimmed;
+-	return ret;
++	if (bg_ret)
++		return bg_ret;
++	return dev_ret;
+ }
+ 
+ /*
+-- 
+2.16.3
 
-So this is btrfs-progs (btrfs check). Kernel doesn't ignore any transid
-failure AFAIK.
-
-> Couldn't map the block 2287467560960=20
-> No mapping for 2287467560960-2287467577344=20
-> Couldn't map the block 2287467560960=20
-> bytenr mismatch, want=3D2287467560960, have=3D0=20
-> Couldn't read tree root=20
-> Label: 'SEED_MD2'  uuid: 851e4474-d375-4a25-b202-949e51f05877=20
->        Total devices 1 FS bytes used 1.94TiB=20
->        devid    1 size 5.44TiB used 1.97TiB path /dev/bcache1=20
-> =20
-> Label: 'SEED_MD2'  uuid: 285b16fa-b297-43ed-bb3b-311950729eb6=20
->        Total devices 2 FS bytes used 1.98TiB=20
->        devid    2 size 1.80TiB used 102.03GiB path /dev/bcache2=20
->        *** Some devices missing
-> =20
-> Would there be any way to tell BTRFS that the missing unit is the one t=
-hat=20
-> corresponds to the SEED unit so that it correctly rebuilds the file sys=
-tem?
-
-The rw device is corrupted.
-
-To ensure your seed device is safe, please run "btrfs check <SEED
-device>" to see if there is any problem.
-
-=46rom current output, it seems that your chunk tree is corrupted, so tha=
-t
-btrfs check can't even map the logical address for your tree root.
-
-And to further debug the corrupted fs, please attach the following data:
-
-1) btrfs inspect dump-super -fa <seed>
-2) btrfs inspect dump-tree -t chunk <seed>
-
-Thanks,
-Qu
-
->=20
-> Thank you.
->=20
-
-
---49bGZIwrVxxEih4X8C4O561ZmCHW9c0zI--
-
---n7pQazDrA2L8Eptbrx0hI7550MItBu3Qm
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlrGHU0ACgkQwj2R86El
-/qghCQf+Ps6blfdkcuz1Ot7yhcLq++PBJny7jS/JYSBoY9hxqLZVuxhjBJKf9zBO
-Pea+gQozqnyZ4MfGTx3HzFj05qa3mqPiIOH5rDe5f+oTAD7X3pkttd4gM7sOLt4E
-0U7bKLhiPsv2gier22VpxWBHj1SYYsh6LhbkeTTO1vqtwWdHx/pw9rAO7m67rShf
-/OzFBmY+JW56Is+k532AeCa+q38ArnY9Uss/ortk+4o+mVq/CaJJdwOULaAQQ8Mq
-d/n1oAFSMv9Hc0O3dD++B2xXZBizGD6SUZ/XNw/s2/1umzhQ/q2AidK3JABGX1Bj
-jx+1Jog6lFAGnDdlJWEw5P5LOOyUGQ==
-=PfGo
------END PGP SIGNATURE-----
-
---n7pQazDrA2L8Eptbrx0hI7550MItBu3Qm--

@@ -1,19 +1,20 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:46116 "EHLO
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:46958 "EHLO
         james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
-        by vger.kernel.org with ESMTP id S1750890AbeDDGCX (ORCPT
+        by vger.kernel.org with ESMTP id S1751098AbeDDGU3 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 4 Apr 2018 02:02:23 -0400
-Date: Wed, 4 Apr 2018 02:01:02 -0400
+        Wed, 4 Apr 2018 02:20:29 -0400
+Date: Wed, 4 Apr 2018 02:20:27 -0400
 From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-To: Goffredo Baroncelli <kreijack@inwind.it>
-Cc: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
-        Chris Murphy <lists@colorremedies.com>,
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Goffredo Baroncelli <kreijack@inwind.it>,
+        "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
         Christoph Anton Mitterer <calestyo@scientia.net>,
         Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Subject: Re: Status of RAID5/6
-Message-ID: <20180404060101.GK2446@hungrycats.org>
-References: <CAJCQCtSrcFD7jTbrqsWZFWrKUrMp4wW0QhkPApB-pgA-O3WksA@mail.gmail.com>
+Message-ID: <20180404062024.GL2446@hungrycats.org>
+References: <20180401034544.GA28769@hungrycats.org>
+ <CAJCQCtSrcFD7jTbrqsWZFWrKUrMp4wW0QhkPApB-pgA-O3WksA@mail.gmail.com>
  <CAJCQCtTXQGbVjRLegC25DDokcv4Wph6O04s=C_rzp8n5jRpt5Q@mail.gmail.com>
  <20180402054521.GC28769@hungrycats.org>
  <df74c8a6-b748-20c5-8bef-eb261b645b29@inwind.it>
@@ -21,133 +22,147 @@ References: <CAJCQCtSrcFD7jTbrqsWZFWrKUrMp4wW0QhkPApB-pgA-O3WksA@mail.gmail.com>
  <20180402222250.GH2446@hungrycats.org>
  <20180403003102.GI2446@hungrycats.org>
  <242e2515-fad2-e98d-3e59-c0838362afdc@inwind.it>
- <20180403225742.GJ2446@hungrycats.org>
- <cfae662a-d64d-6fd8-9ca3-9892fc349747@inwind.it>
+ <CAJCQCtR+iFAHFQJw1LdmMmca1NQQgTqGZ0kNUnxn-ctU5Dze1g@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: multipart/signed; micalg=pgp-sha1;
-        protocol="application/pgp-signature"; boundary="Xsn3knLL3qrmRbVI"
-In-Reply-To: <cfae662a-d64d-6fd8-9ca3-9892fc349747@inwind.it>
+        protocol="application/pgp-signature"; boundary="jtcAeju3WzRmRF+o"
+In-Reply-To: <CAJCQCtR+iFAHFQJw1LdmMmca1NQQgTqGZ0kNUnxn-ctU5Dze1g@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---Xsn3knLL3qrmRbVI
+--jtcAeju3WzRmRF+o
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
 Content-Transfer-Encoding: quoted-printable
 
-On Wed, Apr 04, 2018 at 07:15:54AM +0200, Goffredo Baroncelli wrote:
-> On 04/04/2018 12:57 AM, Zygo Blaxell wrote:
-> >> I have to point out that in any case the extent is physically
-> >> interrupted at the disk-stripe size. Assuming disk-stripe=3D64KB, if
-> >> you want to write 128KB, the first half is written in the first disk,
-> >> the other in the 2nd disk.  If you want to write 96kb, the first 64
-> >> are written in the first disk, the last part in the 2nd, only on a
-> >> different BG.
-> > The "only on a different BG" part implies something expensive, either
-> > a seek or a new erase page depending on the hardware.  Without that,
-> > nearby logical blocks are nearby physical blocks as well.
+On Tue, Apr 03, 2018 at 09:08:01PM -0600, Chris Murphy wrote:
+> On Tue, Apr 3, 2018 at 11:03 AM, Goffredo Baroncelli <kreijack@inwind.it>=
+ wrote:
+> > On 04/03/2018 02:31 AM, Zygo Blaxell wrote:
+> >> On Mon, Apr 02, 2018 at 06:23:34PM -0400, Zygo Blaxell wrote:
+> >>> On Mon, Apr 02, 2018 at 11:49:42AM -0400, Austin S. Hemmelgarn wrote:
+> >>>> On 2018-04-02 11:18, Goffredo Baroncelli wrote:
+> >>>>> I thought that a possible solution is to create BG with different
+> >>>> number of data disks. E.g. supposing to have a raid 6 system with 6
+> >>>> disks, where 2 are parity disk; we should allocate 3 BG
+> >>>>> BG #1: 1 data disk, 2 parity disks
+> >>>>> BG #2: 2 data disks, 2 parity disks,
+> >>>>> BG #3: 4 data disks, 2 parity disks
+> >>>>>
+> >>>>> For simplicity, the disk-stripe length is assumed =3D 4K.
+> >>>>>
+> >>>>> So If you have a write with a length of 4 KB, this should be placed
+> >>>> in BG#1; if you have a write with a length of 4*3KB, the first 8KB,
+> >>>> should be placed in in BG#2, then in BG#1.
+> >>>>> This would avoid space wasting, even if the fragmentation will
+> >>>> increase (but shall the fragmentation matters with the modern solid
+> >>>> state disks ?).
+> >>> I don't really see why this would increase fragmentation or waste spa=
+ce.
+> >
+> >> Oh, wait, yes I do.  If there's a write of 6 blocks, we would have
+> >> to split an extent between BG #3 (the first 4 blocks) and BG #2 (the
+> >> remaining 2 blocks).  It also flips the usual order of "determine size
+> >> of extent, then allocate space for it" which might require major surge=
+ry
+> >> on the btrfs allocator to implement.
+> >
+> > I have to point out that in any case the extent is physically interrupt=
+ed at the disk-stripe size. Assuming disk-stripe=3D64KB, if you want to wri=
+te 128KB, the first half is written in the first disk, the other in the 2nd=
+ disk.  If you want to write 96kb, the first 64 are written in the first di=
+sk, the last part in the 2nd, only on a different BG.
+> > So yes there is a fragmentation from a logical point of view; from a ph=
+ysical point of view the data is spread on the disks in any case.
+> >
+> > In any case, you are right, we should gather some data, because the per=
+formance impact are no so clear.
 >=20
-> In any case it happens on a different disk
+> They're pretty clear, and there's a lot written about small file size
+> and parity raid performance being shit, no matter the implementation
+> (md, ZFS, Btrfs, hardware maybe less so just because of all the
+> caching and extra processing hardware that's dedicated to the task).
 
-No it doesn't.  The small-BG could be on the same disk(s) as the big-BG.
+Pretty much everything goes fast if you put a faster non-volatile cache
+in front of it.
 
-> >> So yes there is a fragmentation from a logical point of view; from a
-> >> physical point of view the data is spread on the disks in any case.
+> The linux-raid@ list is full of optimizations for this that are use
+> case specific. One of those that often comes up is how badly suited
+> raid56 are for e.g. mail servers, tons of small file reads and writes,
+> and all the disk contention that comes up, and it's even worse when
+> you lose a disk, and even if you're running raid 6 and lose two disk
+> it's really god awful. It can be unexpectedly a disqualifying setup
+> without prior testing in that condition: can your workload really be
+> usable for two or three days in a double degraded state on that raid6?
+> *shrug*
 >=20
-> > What matters is the extent-tree point of view.  There is (currently)
-> > no fragmentation there, even for RAID5/6.  The extent tree is unaware
-> > of RAID5/6 (to its peril).
+> Parity raid is well suited for full stripe reads and writes, lots of
+> sequential writes. Ergo a small file is anything less than a full
+> stripe write. Of course, delayed allocation can end up making for more
+> full stripe writes. But now you have more RMW which is the real
+> performance killer, again no matter the raid.
+
+RMW isn't necessary if you have properly configured COW on top.
+ZFS doesn't do RMW at all.  OTOH for some workloads COW is a step in a
+different wrong direction--the btrfs raid5 problems with nodatacow
+files can be solved by stripe logging and nothing else.
+
+Some equivalent of autodefrag that repacks your small RAID stripes
+into bigger ones will burn 3x your write IOPS eventually--it just
+lets you defer the inevitable until a hopefully more convenient time.
+A continuously loaded server never has a more convenient time, so it
+needs a different solution.
+
+> > I am not worried abut having different BG; we have problem with these b=
+ecause we never developed tool to handle this issue properly (i.e. a daemon=
+ which starts a balance when needed). But I hope that this will be solved i=
+n future.
+> >
+> > In any case, the all solutions proposed have their trade off:
+> >
+> > - a) as is: write hole bug
+> > - b) variable stripe size (like ZFS): big impact on how btrfs handle th=
+e extent. limited waste of space
+> > - c) logging data before writing: we wrote the data two times in a shor=
+t time window. Moreover the log area is written several order of magnitude =
+more than the other area; there was some patch around
+> > - d) rounding the writing to the stripe size: waste of space; simple to=
+ implement;
+> > - e) different BG with different stripe size: limited waste of space; l=
+ogical fragmentation.
 >=20
-> Before you pointed out that the non-contiguous block written has
-> an impact on performance. I am replaying  that the switching from a
-> different BG happens at the stripe-disk boundary, so in any case the
-> block is physically interrupted and switched to another disk
-
-The difference is that the write is switched to a different local address
-on the disk.
-
-It's not "another" disk if it's a different BG.  Recall in this plan
-there is a full-width BG that is on _every_ disk, which means every
-small-width BG shares a disk with the full-width BG.  Every extent tail
-write requires a seek on a minimum of two disks in the array for raid5,
-three disks for raid6.  A tail that is strip-width minus one will hit
-N - 1 disks twice in an N-disk array.
-
-> However yes: from an extent-tree point of view there will be an increase
-> of number extents, because the end of the writing is allocated to
-> another BG (if the size is not stripe-boundary)
+> I'd say for sure you're worse off with metadata raid5 vs metadata
+> raid1. And if there are many devices you might be better off with
+> metadata raid1 even on a raid6, it's not an absolute certainty you
+> lose the file system with a 2nd drive failure - it depends on the
+> device and what chunk copies happen to be on it. But at the least if
+> you have a script or some warning you can relatively easily rebalance
+> ... HMMM
 >=20
-> > If an application does a loop writing 68K then fsync(), the multiple-BG
-> > solution adds two seeks to read every 68K.  That's expensive if sequent=
-ial
-> > read bandwidth is more scarce than free space.
+> Actually that should be a test. Single drive degraded raid6 with
+> metadata raid1, can you do a metadata only balance to force the
+> missing copy of metadata to be replicated again? In theory this should
+> be quite fast.
+
+I've done it, but it's not as fast as you might hope.  Metadata balances
+95% slower than data, and seeks pretty hard (stressing the surviving
+drives and sucking performance) while it does so.  Also you're likely to
+have to fix or work around a couple of btrfs bugs while you do it.
+
 >=20
-> Why you talk about an additional seeks? In any case (even without the
-> additional BG) the read happens from another disks
-
-See above:  not another disk, usually a different location on two or
-more of the same disks.
-
-> >> * c),d),e) are applied only for the tail of the extent, in case the
-> > size is less than the stripe size.
-> >=20
-> > It's only necessary to split an extent if there are no other writes
-> > in the same transaction that could be combined with the extent tail
-> > into a single RAID stripe.  As long as everything in the RAID stripe
-> > belongs to a single transaction, there is no write hole
->=20
-> May be that a more "simpler" optimization would be close the transaction
-> when the data reach the stripe boundary... But I suspect that it is
-> not so simple to implement.
-
-Transactions exist in btrfs to batch up writes into big contiguous extents
-already.  The trick is to _not_ do that when one transaction ends and
-the next begins, i.e. leave a space at the end of the partially-filled
-stripe so that the next transaction begins in an empty stripe.
-
-This does mean that there will only be extra seeks during transaction
-commit and fsync()--which were already very seeky to begin with.  It's
-not necessary to write a partial stripe when there are other extents to
-combine.
-
-So there will be double the amount of seeking, but depending on the
-workload, it could double a very small percentage of writes.
-
-> > Not for d.  Balance doesn't know how to get rid of unreachable blocks
-> > in extents (it just moves the entire extent around) so after a balance
-> > the writes would still be rounded up to the stripe size.  Balance would
-> > never be able to free the rounded-up space.  That space would just be
-> > gone until the file was overwritten, deleted, or defragged.
->=20
-> If balance is capable to move the extent, why not place one near the
-> other during a balance ? The goal is not to limit the the writing of
-> the end of a extent, but avoid writing the end of an extent without
-> further data (e.g. the gap to the stripe has to be filled in the
-> same transaction)
-
-That's plan f (leave gaps in RAID stripes empty).  Balance will repack
-short extents into RAID stripes nicely.
-
-Plan d can't do that because plan d overallocates the extent so that
-the extent fills the stripe (only some of the extent is used for data).
-Small but important difference.
-
-> BR
-> G.Baroncelli
 >=20
 > --=20
-> gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
-> Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+> Chris Murphy
 
---Xsn3knLL3qrmRbVI
+--jtcAeju3WzRmRF+o
 Content-Type: application/pgp-signature; name="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iF0EABECAB0WIQSnOVjcfGcC/+em7H2B+YsaVrMbnAUCWsRqGQAKCRCB+YsaVrMb
-nK58AJ9ZZUY/t1RfLzADm9xcmgHnc1h8lwCgiLAI8fIMYkh8fzYmRmaqTfxMcpU=
-=lSSN
+iF0EABECAB0WIQSnOVjcfGcC/+em7H2B+YsaVrMbnAUCWsRunQAKCRCB+YsaVrMb
+nNXeAJ9hY+7OAMPwGsKTL7UcZeQJTeJb6QCeLgUnHhTrqfxbIwc2nGDNqDZKwy4=
+=799c
 -----END PGP SIGNATURE-----
 
---Xsn3knLL3qrmRbVI--
+--jtcAeju3WzRmRF+o--

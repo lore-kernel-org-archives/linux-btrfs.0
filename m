@@ -1,40 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-cys01nam02on0111.outbound.protection.outlook.com ([104.47.37.111]:45123
-        "EHLO NAM02-CY1-obe.outbound.protection.outlook.com"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751363AbeDEQmg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 5 Apr 2018 12:42:36 -0400
-From: Sasha Levin <Alexander.Levin@microsoft.com>
-To: Sasha Levin <Alexander.Levin@microsoft.com>,
-        Liu Bo <bo.liu@linux.alibaba.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-CC: "stable@vger.kernel.org" <stable@vger.kernel.org>
+Received: from mx2.suse.de ([195.135.220.15]:41700 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1750786AbeDEREu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 5 Apr 2018 13:04:50 -0400
+Date: Thu, 5 Apr 2018 19:02:21 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Liu Bo <bo.liu@linux.alibaba.com>
+Cc: linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH v2] Btrfs: fix NULL pointer dereference in log_dir_items
-Date: Thu, 5 Apr 2018 16:42:34 +0000
-Message-ID: <DM5PR2101MB1032B5A71C5024A50654000AFBBB0@DM5PR2101MB1032.namprd21.prod.outlook.com>
+Message-ID: <20180405170221.GK2635@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <1522691988-127156-1-git-send-email-bo.liu@linux.alibaba.com>
-In-Reply-To: <1522691988-127156-1-git-send-email-bo.liu@linux.alibaba.com>
-Content-Type: text/plain; charset="iso-8859-1"
 MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1522691988-127156-1-git-send-email-bo.liu@linux.alibaba.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi.
+On Tue, Apr 03, 2018 at 01:59:47AM +0800, Liu Bo wrote:
+> 0, 1 and <0 can be returned by btrfs_next_leaf(), and when <0 is
+> returned, path->nodes[0] could be NULL, log_dir_items lacks such a
+> check for <0 and we may run into a null pointer dereference panic.
+> 
+> Fixes: e02119d5a7b4 ("Btrfs: Add a write ahead tree log to optimize synchronous operations")
+> Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+> Signed-off-by: Liu Bo <bo.liu@linux.alibaba.com>
+> ---
 
-[This is an automated email]
+Added to next, thanks.
 
-This commit has been processed by the -stable helper bot and determined
-to be a high probability candidate for -stable trees. (score: 9.9156)
+> v2: Add Fixes tag and reviewed-by.
+> 
+>  fs/btrfs/tree-log.c | 7 +++++--
+>  1 file changed, 5 insertions(+), 2 deletions(-)
+> 
+> diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+> index 4344577..4ee9431 100644
+> --- a/fs/btrfs/tree-log.c
+> +++ b/fs/btrfs/tree-log.c
+> @@ -3518,8 +3518,11 @@ static noinline int log_dir_items(struct btrfs_trans_handle *trans,
+>  		 * from this directory and from this transaction
+>  		 */
+>  		ret = btrfs_next_leaf(root, path);
+> -		if (ret == 1) {
+> -			last_offset = (u64)-1;
+> +		if (ret) {
+> +			if (ret == 1)
+> +				last_offset = (u64)-1;
+> +			else
+> +				err = ret;
 
-The bot has tested the following trees: v4.15.15, v4.14.32, v4.9.92, v4.4.126, 
+I wonder if we could find some more consistent if/else pattern of the
+error handling for this function. Each caller cares about something else
+so it's hard to tell from a quick look which part is the expected one.
 
-v4.15.15: Build OK!
-v4.14.32: Build OK!
-v4.9.92: Build OK!
-v4.4.126: Build OK!
+Something like:
 
-Please let us know if you'd like to have this patch included in a stable tree.
-
---
-Thanks.
-Sasha
+if (ret < 0) {
+	unexpected error
+} else if (ret > 0 ) {
+	no more leaves, probably a terminating condition
+} else {
+	more leaves to scan, possibly this can be ommitted in most cases
+}

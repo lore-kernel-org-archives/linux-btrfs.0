@@ -1,93 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.99]:39768 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753608AbeD3SFM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 30 Apr 2018 14:05:12 -0400
-Received: from debian3.lan (bl12-226-64.dsl.telepac.pt [85.245.226.64])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 10D8F21746
-        for <linux-btrfs@vger.kernel.org>; Mon, 30 Apr 2018 18:05:10 +0000 (UTC)
-From: fdmanana@kernel.org
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: send, fix missing truncate for inode with prealloc extent past eof
-Date: Mon, 30 Apr 2018 19:05:07 +0100
-Message-Id: <20180430180507.21751-1-fdmanana@kernel.org>
+Received: from mail.linuxfoundation.org ([140.211.169.12]:60434 "EHLO
+        mail.linuxfoundation.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751573AbeDETQu (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 Apr 2018 15:16:50 -0400
+Date: Thu, 5 Apr 2018 21:16:48 +0200
+From: Greg KH <gregkh@linuxfoundation.org>
+To: dsterba@suse.cz, Sasha Levin <Alexander.Levin@microsoft.com>,
+        Liu Bo <bo.liu@linux.alibaba.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "stable@vger.kernel.org" <stable@vger.kernel.org>
+Subject: Re: [PATCH v2] Btrfs: fix NULL pointer dereference in log_dir_items
+Message-ID: <20180405191648.GB19589@kroah.com>
+References: <1522691988-127156-1-git-send-email-bo.liu@linux.alibaba.com>
+ <DM5PR2101MB1032B5A71C5024A50654000AFBBB0@DM5PR2101MB1032.namprd21.prod.outlook.com>
+ <20180405171114.GL2635@twin.jikos.cz>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20180405171114.GL2635@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+On Thu, Apr 05, 2018 at 07:11:14PM +0200, David Sterba wrote:
+> On Thu, Apr 05, 2018 at 04:42:34PM +0000, Sasha Levin wrote:
+> > Hi.
+> > 
+> > [This is an automated email]
+> > 
+> > This commit has been processed by the -stable helper bot and determined
+> > to be a high probability candidate for -stable trees. (score: 9.9156)
+> > 
+> > The bot has tested the following trees: v4.15.15, v4.14.32, v4.9.92, v4.4.126, 
+> > 
+> > v4.15.15: Build OK!
+> > v4.14.32: Build OK!
+> > v4.9.92: Build OK!
+> > v4.4.126: Build OK!
+> > 
+> > Please let us know if you'd like to have this patch included in a stable tree.
+> 
+> Yes, in this case we expect that the Fixes: tag will let the patch flow
+> to stable after it gets applied to master.
 
-An incremental send operation can miss a truncate operation when an inode
-has an increased size in the send snapshot and a prealloc extent beyond
-its size.
+Fixes: tags almost never cause that to happen, unless I am bored and go
+digging for them.
 
-Consider the following scenario where a necessary truncate operation is
-missing in the incremental send stream:
+Please read:
+    https://www.kernel.org/doc/html/latest/process/stable-kernel-rules.html
+for how to do this properly if you want a patch applied to the stable
+tree.
 
-1) In the parent snapshot an inode has a size of 1282957 bytes and it has
-   no prealloc extents beyond its size;
+thanks,
 
-2) In the the send snapshot it has a size of 5738496 bytes and has a new
-   extent at offsets 1884160 (length of 106496 bytes) and a prealloc
-   extent beyond eof at offset 6729728 (and a length of 339968 bytes);
-
-3) When processing the prealloc extent, at offset 6729728, we end up at
-   send.c:send_write_or_clone() and set the @len variable to a value of
-   18446744073708560384 because @offset plus the original @len value is
-   larger then the inode's size (6729728 + 339968 > 5738496). We then
-   call send_extent_data(), with that @offset and @len, which in turn
-   calls send_write(), and then the later calls fill_read_buf(). Because
-   the offset passed to fill_read_buf() is greater then inode's i_size,
-   this function returns 0 immediately, which makes send_write() and
-   send_extent_data() do nothing and return immediately as well. When
-   we get back to send.c:send_write_or_clone() we adjust the value
-   of sctx->cur_inode_next_write_offset to @offset plus @len, which
-   corresponds to 6729728 + 18446744073708560384 = 5738496, which is
-   precisely the the size of the inode in the send snapshot;
-
-4) Later when at send.c:finish_inode_if_needed() we determine that
-   we don't need to issue a truncate operation because the value of
-   sctx->cur_inode_next_write_offset corresponds to the inode's new
-   size, 5738496 bytes. This is wrong because the last write operation
-   that was issued started at offset 1884160 with a length of 106496
-   bytes, so the correct value for sctx->cur_inode_next_write_offset
-   should be 1990656 (1884160 + 106496), so that a truncate operation
-   with a value of 5738496 bytes would have been sent to insert a
-   trailing hole at the destination.
-
-So fix the issue by making send.c:send_write_or_clone() not attempt
-to send write or clone operations for extents that start beyond the
-inode's size, since such attempts do nothing but waste time by
-calling helper functions and allocating path structures, and send
-currently has no fallocate command in order to create prealloc extents
-at the destination (either beyond a file's eof or not).
-
-The issue was found running the test btrfs/007 from fstests using a seed
-value of 1524346151 for fsstress.
-
-Reported-by: Gu, Jinxiang <gujx@cn.fujitsu.com>
-Fixes: ffa7c4296e93 ("Btrfs: send, do not issue unnecessary truncate operations")
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/send.c | 4 ++++
- 1 file changed, 4 insertions(+)
-
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 1f5748c7d1c7..fff44ed15927 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -5249,6 +5249,10 @@ static int send_write_or_clone(struct send_ctx *sctx,
- 		len = btrfs_file_extent_num_bytes(path->nodes[0], ei);
- 	}
- 
-+	if (offset >= sctx->cur_inode_size) {
-+		ret = 0;
-+		goto out;
-+	}
- 	if (offset + len > sctx->cur_inode_size)
- 		len = sctx->cur_inode_size - offset;
- 	if (len == 0) {
--- 
-2.11.0
-
+greg k-h

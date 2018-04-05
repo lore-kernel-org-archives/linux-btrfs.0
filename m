@@ -1,66 +1,160 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f41.google.com ([209.85.218.41]:46247 "EHLO
-        mail-oi0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751922AbeCaWnz (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 31 Mar 2018 18:43:55 -0400
-Received: by mail-oi0-f41.google.com with SMTP id e123-v6so10271515oih.13
-        for <linux-btrfs@vger.kernel.org>; Sat, 31 Mar 2018 15:43:55 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <20180331224006.llzkfni4tsuaaveg@angband.pl>
-References: <CAJCQCtTTerrYvXpof+jiShO1D8PmaPaFCA9W1PyFxaGs0PZaig@mail.gmail.com>
- <20180331224006.llzkfni4tsuaaveg@angband.pl>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Sat, 31 Mar 2018 16:43:54 -0600
-Message-ID: <CAJCQCtScwyQFHxQB=wiP3XAepYZ9pmA+LpK8F1yRBdZ0bbn2Jg@mail.gmail.com>
-Subject: Re: dead or dying SDXC card fsck's OK but mount hangs indefinitely
-To: Adam Borowski <kilobyte@angband.pl>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Cc: Btrfs BTRFS <linux-block@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Received: from mail.kernel.org ([198.145.29.99]:36462 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1750962AbeDFHq5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 6 Apr 2018 03:46:57 -0400
+Received: from debian3.lan (bl12-226-64.dsl.telepac.pt [85.245.226.64])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id 8C11420838
+        for <linux-btrfs@vger.kernel.org>; Fri,  6 Apr 2018 07:46:56 +0000 (UTC)
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: fix loss of prealloc extents past i_size after fsync log replay
+Date: Thu,  5 Apr 2018 22:55:12 +0100
+Message-Id: <20180405215512.513-1-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Mar 31, 2018 at 4:40 PM, Adam Borowski <kilobyte@angband.pl> wrote:
-> On Sat, Mar 31, 2018 at 03:50:03PM -0600, Chris Murphy wrote:
->> This is perhaps a novelty problem report. And it's also a throw away
->> card data wise, and is a $12 Samsung EVO+ SDXC card used in an Intel
->> NUC.
->>
->> It contains FAT, ext4, and Btrfs file systems. They can all be fsck'd,
->> but none can be mounted. Even if it use blockdev --setro on the entire
->> mmc device and then mount -o ro it still fails. Kinda weird huh?
->
->> [69107.488123] mmc0: Card stuck in programming state! mmcblk0 card_busy_detect
->> [69107.539128] mmc0: Tuning timeout, falling back to fixed sampling clock
->
->> The corrupt 10 was fixed with a scrub months ago, and I never reset
->> the counter so that's not a current corruption. The most recent scrub
->> was maybe a week ago. And even offline scrub works. So literally every
->> single block related to this Btrfs file system is readable, and yet
->> it's not mountable? Very weird.
->
->> Basically the card is in some sort of state that the kernel code is
->> not going to ever second guess. So there's no further error or reset
->> attempt.
->
-> As the SD card is tiny compared to any hard disks (be they spinning or
-> solid), I'd dd it as an image as the first step.
->
-> This in general is a wise step for any kind of recovery, but in your case
-> it's especially easy.  It also lets you separate hardware issues from
-> filesystem corruption.
+From: Filipe Manana <fdmanana@suse.com>
 
-It's definitely not file system corruption. The FAT and ext4 volumes
-have the same issue, they will not mount, presumably because they
-immediately want to update a superblock.
+Currently if we allocate extents beyond an inode's i_size (through the
+fallocate system call) and then fsync the file, we log the extents but
+after a power failure we replay them and then immediately drop them.
+This behaviour happens since about 2009, commit c71bf099abdd ("Btrfs:
+Avoid orphan inodes cleanup while replaying log"), because it marks
+the inode as an orphan instead of dropping any extents beyond i_size
+before replaying logged extents, so after the log replay, and while
+the mount operation is still ongoing, we find the inode marked as an
+orphan and then perform a truncation (drop extents beyond the inode's
+i_size). Because the processing of orphan inodes is still done
+right after replaying the log and before the mount operation finishes,
+the intention of that commit does not make any sense (at least as
+of today). However reverting that behaviour is not enough, because
+we can not simply discard all extents beyond i_size and then replay
+logged extents, because we risk dropping extents beyond i_size created
+in past transactions, for example:
 
-Anyway, recovery not required. Just a spectacle that it fails in a
-readable state (it's completely totally readable once mounting
-ro,nologreplay) but not a single write can happen.
+  add prealloc extent beyond i_size
+  fsync - clears the flag BTRFS_INODE_NEEDS_FULL_SYNC from the inode
+  transaction commit
+  add another prealloc extent beyond i_size
+  fsync - triggers the fast fsync path
+  power failure
 
-Also blkdiscard command succeeds, but does nothing. All the data is
-still present.
+In that scenario, we would drop the first extent and then replay the
+second one. To fix this just make sure that all prealloc extents
+beyond i_size are logged, and if we find too many (which is far from
+a common case), fallback to a full transaction commit (like we do when
+logging regular extents in the fast fsync path).
 
+Trivial reproducer:
+
+ $ mkfs.btrfs -f /dev/sdb
+ $ mount /dev/sdb /mnt
+ $ xfs_io -f -c "pwrite -S 0xab 0 256K" /mnt/foo
+ $ sync
+ $ xfs_io -c "falloc -k 256K 1M" /mnt/foo
+ $ xfs_io -c "fsync" /mnt/foo
+ <power failure>
+
+ # mount to replay log
+ $ mount /dev/sdb /mnt
+ # at this point the file only has one extent, at offset 0, size 256K
+
+A test case for fstests follows soon, covering multiple scenarios that
+involve adding prealloc extents with previous shrinking truncates and
+without such truncates.
+
+Fixes: c71bf099abdd ("Btrfs: Avoid orphan inodes cleanup while replaying log")
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/tree-log.c | 63 ++++++++++++++++++++++++++++++++++++++++++++++++-----
+ 1 file changed, 58 insertions(+), 5 deletions(-)
+
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 70afd1085033..eb3a41269b0e 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -2457,13 +2457,41 @@ static int replay_one_buffer(struct btrfs_root *log, struct extent_buffer *eb,
+ 			if (ret)
+ 				break;
+ 
+-			/* for regular files, make sure corresponding
+-			 * orphan item exist. extents past the new EOF
+-			 * will be truncated later by orphan cleanup.
++			/*
++			 * Before replaying extents, truncate the inode to its
++			 * size. We need to do it now and not after log replay
++			 * because before an fsync we can have prealloc extents
++			 * added beyond the inode's i_size. If we did it after,
++			 * through orphan cleanup for example, we would drop
++			 * those prealloc extents just after replaying them.
+ 			 */
+ 			if (S_ISREG(mode)) {
+-				ret = insert_orphan_item(wc->trans, root,
+-							 key.objectid);
++				struct inode *inode;
++				u64 from;
++
++				inode = read_one_inode(root, key.objectid);
++				if (!inode) {
++					ret = -EIO;
++					break;
++				}
++				from = ALIGN(i_size_read(inode),
++					     root->fs_info->sectorsize);
++				ret = btrfs_drop_extents(wc->trans, root, inode,
++							 from, (u64)-1, 1);
++				/*
++				 * If the nlink count is zero here, the iput
++				 * will free the inode.  We bump it to make
++				 * sure it doesn't get freed until the link
++				 * count fixup is done.
++				 */
++				if (!ret) {
++					if (inode->i_nlink == 0)
++						inc_nlink(inode);
++					/* Update link count and nbytes. */
++					ret = btrfs_update_inode(wc->trans,
++								 root, inode);
++				}
++				iput(inode);
+ 				if (ret)
+ 					break;
+ 			}
+@@ -4348,6 +4376,31 @@ static int btrfs_log_changed_extents(struct btrfs_trans_handle *trans,
+ 		num++;
+ 	}
+ 
++	/*
++	 * Add all prealloc extents beyond the inode's i_size to make sure we
++	 * don't lose them after doing a fast fsync and replaying the log.
++	 */
++	if (inode->flags & BTRFS_INODE_PREALLOC) {
++		struct rb_node *node;
++
++		for (node = rb_last(&tree->map); node; node = rb_prev(node)) {
++			em = rb_entry(node, struct extent_map, rb_node);
++			if (em->start < i_size_read(&inode->vfs_inode))
++				break;
++			if (!list_empty(&em->list))
++				continue;
++			/* Same as above loop. */
++			if (++num > 32768) {
++				list_del_init(&tree->modified_extents);
++				ret = -EFBIG;
++				goto process;
++			}
++			refcount_inc(&em->refs);
++			set_bit(EXTENT_FLAG_LOGGING, &em->flags);
++			list_add_tail(&em->list, &extents);
++		}
++	}
++
+ 	list_sort(NULL, &extents, extent_cmp);
+ 	btrfs_get_logged_extents(inode, logged_list, logged_start, logged_end);
+ 	/*
 -- 
-Chris Murphy
+2.11.0
+

@@ -1,46 +1,30 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from out30-131.freemail.mail.aliyun.com ([115.124.30.131]:53827 "EHLO
-        out30-131.freemail.mail.aliyun.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1753219AbeDBSAB (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 2 Apr 2018 14:00:01 -0400
-From: Liu Bo <bo.liu@linux.alibaba.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH v2] Btrfs: bail out on error during replay_dir_deletes
-Date: Tue,  3 Apr 2018 01:59:48 +0800
-Message-Id: <1522691988-127156-2-git-send-email-bo.liu@linux.alibaba.com>
+Received: from mx2.suse.de ([195.135.220.15]:42600 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751259AbeDERRi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 5 Apr 2018 13:17:38 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 0D973AE01
+        for <linux-btrfs@vger.kernel.org>; Thu,  5 Apr 2018 17:17:37 +0000 (UTC)
+Date: Thu, 5 Apr 2018 19:15:09 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Nikolay Borisov <nborisov@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: Drop delayed_refs argument from
+ btrfs_check_delayed_seq
+Message-ID: <20180405171509.GO2635@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1522846662-30109-1-git-send-email-nborisov@suse.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1522846662-30109-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If errors were returned by btrfs_next_leaf(), replay_dir_deletes needs
-to bail out, otherwise @ret would be forced to be 0 after 'break;' and
-the caller won't be aware of it.
+On Wed, Apr 04, 2018 at 03:57:42PM +0300, Nikolay Borisov wrote:
+> It's used to print its pointer in a debug statement but doesn't really
+> bring any useful information to the error message.
+> 
+> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 
-Fixes: e02119d5a7b4 ("Btrfs: Add a write ahead tree log to optimize synchronous operations")
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-Signed-off-by: Liu Bo <bo.liu@linux.alibaba.com>
----
-v2: Add Fixes tag and reviewed-by.~
-
- fs/btrfs/tree-log.c | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 4ee9431..11e2c26 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -2356,8 +2356,10 @@ static noinline int replay_dir_deletes(struct btrfs_trans_handle *trans,
- 			nritems = btrfs_header_nritems(path->nodes[0]);
- 			if (path->slots[0] >= nritems) {
- 				ret = btrfs_next_leaf(root, path);
--				if (ret)
-+				if (ret == 1)
- 					break;
-+				else if (ret < 0)
-+					goto out;
- 			}
- 			btrfs_item_key_to_cpu(path->nodes[0], &found_key,
- 					      path->slots[0]);
--- 
-1.8.3.1
-
+Reviewed-by: David Sterba <dsterba@suse.com>

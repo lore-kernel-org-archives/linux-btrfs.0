@@ -1,46 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:44247 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:44841 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751179AbeDEOak (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 5 Apr 2018 10:30:40 -0400
-Date: Thu, 5 Apr 2018 16:28:10 +0200
+        id S1751179AbeDEOd4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 5 Apr 2018 10:33:56 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id C967BAB34
+        for <linux-btrfs@vger.kernel.org>; Thu,  5 Apr 2018 14:33:54 +0000 (UTC)
+Date: Thu, 5 Apr 2018 16:31:27 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Anand Jain <anand.jain@oracle.com>
-Cc: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 05/16] btrfs: move volume_mutex to callers of
- btrfs_rm_device
-Message-ID: <20180405142810.GD2635@twin.jikos.cz>
+To: David Sterba <dsterba@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 00/16 v1] Kill fs_info::volume_mutex
+Message-ID: <20180405143126.GE2635@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 References: <cover.1522780026.git.dsterba@suse.com>
- <004920f0f641ebffa974129fe8f4b0d6a9ee9f34.1522780026.git.dsterba@suse.com>
- <7dc04550-5325-76ef-0636-87eb84831359@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <7dc04550-5325-76ef-0636-87eb84831359@oracle.com>
+In-Reply-To: <cover.1522780026.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Apr 05, 2018 at 05:41:57PM +0800, Anand Jain wrote:
+On Tue, Apr 03, 2018 at 08:34:01PM +0200, David Sterba wrote:
+> This series gets rid of the volume mutex. The fstests do not pass
+> cleanly, 2 or more tests fail so this needs to be fixed, but otherwise
+> majority of the work ready for review.
 > 
-> > @@ -2716,6 +2718,7 @@ static long btrfs_ioctl_rm_dev(struct file *file, void __user *arg)
-> >   		ret = BTRFS_ERROR_DEV_EXCL_RUN_IN_PROGRESS;
-> >   		goto out_drop_write;
-> >   	}
-> > +	mutex_lock(&fs_info->volume_mutex);
-> >   
-> >   	vol_args = memdup_user(arg, sizeof(*vol_args));
-> >   	if (IS_ERR(vol_args)) { > @@ -2730,6 +2733,7 @@ static long btrfs_ioctl_rm_dev(struct file 
-> *file, void __user *arg)
-> >   		btrfs_info(fs_info, "disk deleted %s", vol_args->name);
-> >   	kfree(vol_args);
-> >   out:
-> > +	mutex_unlock(&fs_info->volume_mutex);
-> >   	clear_bit(BTRFS_FS_EXCL_OP, &fs_info->flags);
-> >   out_drop_write:
-> >   	mnt_drop_write_file(file);
+> The merge target is 4.18 and I'll probably not get back to this pathset
+> during merge window (nor add it to next), so there should be enough time
+> for review.
 > 
->   Why not memdup_user() be outside of volume_mutex?
+> David Sterba (16):
+>   btrfs: squeeze btrfs_dev_replace_continue_on_mount to its caller
+>   btrfs: make success path out of btrfs_init_dev_replace_tgtdev more
+>     clear
+>   btrfs: export and rename free_device
+>   btrfs: move btrfs_init_dev_replace_tgtdev to dev-replace.c and make
+>     static
+>   btrfs: move volume_mutex to callers of btrfs_rm_device
+>   btrfs: move clearing of EXCL_OP out of __cancel_balance
+>   btrfs: add proper safety check before resuming dev-replace
+>   btrfs: add sanity check when resuming balance after mount
+>   btrfs: cleanup helpers that reset balance state
+>   btrfs: remove wrong use of volume_mutex from btrfs_dev_replace_start
+>   btrfs: kill btrfs_fs_info::volume_mutex
+>   btrfs: track running balance in a simpler way
+>   btrfs: remove redundant read-only check from btrfs_cancel_balance
+>   btrfs: drop lock parameter from update_ioctl_balance_args and rename
+>   btrfs: use mutex in btrfs_resume_balance_async
+>   btrfs: open code set_balance_control
 
-The point of the patch is to put the mutex_lock right next to the
-exclusive operation bit setting. It's not optimal regarding the size of
-critical section and normally the memdup should be outside.
+Branch updated in
+
+git://github.com/kdave/btrfs-devel dev/remove-volume-mutex
+
+the misapplied patch hunks have been sorted out and now it also compiles.

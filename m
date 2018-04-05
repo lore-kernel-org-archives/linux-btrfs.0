@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:47445 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:33597 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753239AbeDQNgh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 17 Apr 2018 09:36:37 -0400
-Date: Tue, 17 Apr 2018 15:34:04 +0200
+        id S1751262AbeDEQNf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 5 Apr 2018 12:13:35 -0400
+Date: Thu, 5 Apr 2018 18:11:06 +0200
 From: David Sterba <dsterba@suse.cz>
 To: Liu Bo <bo.liu@linux.alibaba.com>
 Cc: linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH] Btrfs: clean up resources during umount after trans is
  aborted
-Message-ID: <20180417133404.GD21272@twin.jikos.cz>
+Message-ID: <20180405161106.GH2635@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 References: <1522447918-19147-2-git-send-email-bo.liu@linux.alibaba.com>
 MIME-Version: 1.0
@@ -33,24 +33,26 @@ On Sat, Mar 31, 2018 at 06:11:56AM +0800, Liu Bo wrote:
 > resources.  For case b), it is possible that the trans handle doesn't have
 > any dirty stuff, then only trans hanlde is marked as aborted while
 > BTRFS_FS_STATE_ERROR is not set, so resources remain in memory.
-
-I have some doubts here. The flag BTRFS_FS_STATE_TRANS_ABORTED was added
-to avoid duplicate warnings when the transaction is aborted for the
-first time. And nothing else.
-
-BTRFS_FS_STATE_ERROR should track the overall state and is checked in
-several places if a post-error cleanup is necessary.
-
-Calling abort should set BTRFS_FS_STATE_ERROR immediatelly so any caller
-up the callchaing can potentially cleanup.
-
+> 
 > This makes btrfs also check BTRFS_FS_STATE_TRANS_ABORTED to make sure that
 > all resources won't stay in memory after umount.
+> 
+> Signed-off-by: Liu Bo <bo.liu@linux.alibaba.com>
 
-The question is why BTRFS_FS_STATE_ERROR is not set but we still got
-here and the filesystem is in an error state.
+Is it possible that the following stactrace could be caused by the
+missing check? It roughly matches what you describe (ie. close_ctree and
+unreleased resources). This is from generic/475, that does some error
+injection:
 
-You're not specific about the rare cases where the resources are left
-after abort and the umount is about to start. I think the rare cases
-need to be identified and understood otherwise this seems like papering
-over the problem.
+[16991.455178] WARNING: CPU: 6 PID: 23518 at fs/btrfs/extent-tree.c:9896 btrfs_free_block_groups+0x2c8/0x420 [btrfs]
+
+[16991.621105]  close_ctree+0x114/0x2d0 [btrfs]
+[16991.625482]  generic_shutdown_super+0x6c/0x120
+[16991.630025]  kill_anon_super+0xe/0x20
+[16991.633820]  btrfs_kill_super+0x13/0x100 [btrfs]
+[16991.638550]  deactivate_locked_super+0x3f/0x70
+[16991.643332]  cleanup_mnt+0x3b/0x70
+[16991.646889]  task_work_run+0x89/0xa0
+[16991.650565]  exit_to_usermode_loop+0x79/0xa3
+[16991.654985]  do_syscall_64+0xe9/0x110
+[16991.658841]  entry_SYSCALL_64_after_hwframe+0x3d/0xa2

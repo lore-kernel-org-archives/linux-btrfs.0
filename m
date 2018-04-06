@@ -1,56 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:44841 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751179AbeDEOd4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 5 Apr 2018 10:33:56 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id C967BAB34
-        for <linux-btrfs@vger.kernel.org>; Thu,  5 Apr 2018 14:33:54 +0000 (UTC)
-Date: Thu, 5 Apr 2018 16:31:27 +0200
-From: David Sterba <dsterba@suse.cz>
-To: David Sterba <dsterba@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 00/16 v1] Kill fs_info::volume_mutex
-Message-ID: <20180405143126.GE2635@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <cover.1522780026.git.dsterba@suse.com>
+Received: from mail-sn1nam01on0094.outbound.protection.outlook.com ([104.47.32.94]:65094
+        "EHLO NAM01-SN1-obe.outbound.protection.outlook.com"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1751540AbeDFUGF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 6 Apr 2018 16:06:05 -0400
+From: Sasha Levin <Alexander.Levin@microsoft.com>
+To: Sasha Levin <Alexander.Levin@microsoft.com>,
+        David Sterba <dsterba@suse.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+CC: David Sterba <dsterba@suse.com>,
+        "stable@vger.kernel.org" <stable@vger.kernel.org>
+Subject: Re: [PATCH 07/16] btrfs: add proper safety check before resuming
+ dev-replace
+Date: Fri, 6 Apr 2018 20:06:03 +0000
+Message-ID: <MW2PR2101MB103430A1AB03BFCBD17849ADFBBA0@MW2PR2101MB1034.namprd21.prod.outlook.com>
+References: <23d9506da78be87309480cd39e884242ef2ff42f.1522780026.git.dsterba@suse.com>
+In-Reply-To: <23d9506da78be87309480cd39e884242ef2ff42f.1522780026.git.dsterba@suse.com>
+Content-Type: text/plain; charset="iso-8859-1"
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <cover.1522780026.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Apr 03, 2018 at 08:34:01PM +0200, David Sterba wrote:
-> This series gets rid of the volume mutex. The fstests do not pass
-> cleanly, 2 or more tests fail so this needs to be fixed, but otherwise
-> majority of the work ready for review.
-> 
-> The merge target is 4.18 and I'll probably not get back to this pathset
-> during merge window (nor add it to next), so there should be enough time
-> for review.
-> 
-> David Sterba (16):
->   btrfs: squeeze btrfs_dev_replace_continue_on_mount to its caller
->   btrfs: make success path out of btrfs_init_dev_replace_tgtdev more
->     clear
->   btrfs: export and rename free_device
->   btrfs: move btrfs_init_dev_replace_tgtdev to dev-replace.c and make
->     static
->   btrfs: move volume_mutex to callers of btrfs_rm_device
->   btrfs: move clearing of EXCL_OP out of __cancel_balance
->   btrfs: add proper safety check before resuming dev-replace
->   btrfs: add sanity check when resuming balance after mount
->   btrfs: cleanup helpers that reset balance state
->   btrfs: remove wrong use of volume_mutex from btrfs_dev_replace_start
->   btrfs: kill btrfs_fs_info::volume_mutex
->   btrfs: track running balance in a simpler way
->   btrfs: remove redundant read-only check from btrfs_cancel_balance
->   btrfs: drop lock parameter from update_ioctl_balance_args and rename
->   btrfs: use mutex in btrfs_resume_balance_async
->   btrfs: open code set_balance_control
+Hi,
 
-Branch updated in
+[This is an automated email]
 
-git://github.com/kdave/btrfs-devel dev/remove-volume-mutex
+This commit has been processed by the -stable helper bot and determined
+to be a high probability candidate for -stable trees. (score: 34.4419)
 
-the misapplied patch hunks have been sorted out and now it also compiles.
+The bot has tested the following trees: v4.16, v4.15.15, v4.14.32, v4.9.92, v4.4.126.
+
+v4.16: Build OK!
+v4.15.15: Build OK!
+v4.14.32: Build OK!
+v4.9.92: Failed to apply! Possible dependencies:
+    2799d90f3887 ("btrfs: add proper safety check before resuming dev-replace")
+
+v4.4.126: Failed to apply! Possible dependencies:
+    2799d90f3887 ("btrfs: add proper safety check before resuming dev-replace")
+
+
+Please let us know if you'd like to have this patch included in a stable tree.
+
+--
+Thanks,
+Sasha

@@ -1,108 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from prv3-mh.provo.novell.com ([137.65.250.26]:38205 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:56248 "EHLO
         prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751846AbeDDGP4 (ORCPT
+        with ESMTP id S1751482AbeDFGMT (ORCPT
         <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Wed, 4 Apr 2018 02:15:56 -0400
+        Fri, 6 Apr 2018 02:12:19 -0400
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: stable@vger.kernel.org
-Subject: [PATCH RESEND 2/2] btrfs: Ensure btrfs_trim_fs can trim the whole fs
-Date: Wed,  4 Apr 2018 14:15:43 +0800
-Message-Id: <20180404061543.7819-2-wqu@suse.com>
-In-Reply-To: <20180404061543.7819-1-wqu@suse.com>
-References: <20180404061543.7819-1-wqu@suse.com>
+Subject: [PATCH 0/1] btrfs-progs: dump-tree: allow -b multiple times
+Date: Fri,  6 Apr 2018 14:12:01 +0800
+Message-Id: <20180406061202.6529-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-[BUG]
-fstrim on some btrfs only trims the unallocated space, not trimming any
-space in existing block groups.
+Although just one patch, it needs the extent buffer cleanup code as
+basis, so please fetch it from my github repo:
+https://github.com/adam900710/btrfs-progs/tree/dump_tree_multi_blocks
 
-[CAUSE]
-Before fstrim_range passed to btrfs_trim_fs(), it get truncated to
-range [0, super->total_bytes).
-So later btrfs_trim_fs() will only be able to trim block groups in range
-[0, super->total_bytes).
+This patch allow -b to be specified multiple times, and add extra basic
+check for them.
+For later enhancement (Issue: #113) it needs extra work to handle
+special roots.
 
-While for btrfs, any bytenr aligned to sector size is valid, since btrfs use
-its logical address space, there is nothing limiting the location where
-we put block groups.
+Qu Wenruo (1):
+  btrfs-progs: inspect-dump-tree: Allow '-b|--block' to be specified
+    multiple times
 
-For btrfs with routine balance, it's quite easy to relocate all
-block groups and bytenr of block groups will start beyond super->total_bytes.
+ Documentation/btrfs-inspect-internal.asciidoc |   2 +-
+ cmds-inspect-dump-tree.c                      | 108 ++++++++++++++----
+ 2 files changed, 89 insertions(+), 21 deletions(-)
 
-In that case, btrfs will not trim existing block groups.
-
-[FIX]
-Just remove the truncation in btrfs_ioctl_fitrim(), so btrfs_trim_fs()
-can get the unmodified range, which is normally set to [0, U64_MAX].
-
-Reported-by: Chris Murphy <lists@colorremedies.com>
-Fixes: f4c697e6406d ("btrfs: return EINVAL if start > total_bytes in fitrim ioctl")
-Cc: <stable@vger.kernel.org> # v4.0+
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/extent-tree.c | 10 +---------
- fs/btrfs/ioctl.c       | 11 +++++++----
- 2 files changed, 8 insertions(+), 13 deletions(-)
-
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index f3b088665b7a..647691fc16e8 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -10994,19 +10994,11 @@ int btrfs_trim_fs(struct btrfs_fs_info *fs_info, struct fstrim_range *range)
- 	u64 start;
- 	u64 end;
- 	u64 trimmed = 0;
--	u64 total_bytes = btrfs_super_total_bytes(fs_info->super_copy);
- 	int bg_ret = 0;
- 	int dev_ret = 0;
- 	int ret = 0;
- 
--	/*
--	 * try to trim all FS space, our block group may start from non-zero.
--	 */
--	if (range->len == total_bytes)
--		cache = btrfs_lookup_first_block_group(fs_info, range->start);
--	else
--		cache = btrfs_lookup_block_group(fs_info, range->start);
--
-+	cache = btrfs_lookup_first_block_group(fs_info, range->start);
- 	for (; cache; cache = next_block_group(fs_info, cache)) {
- 		if (cache->key.objectid >= (range->start + range->len)) {
- 			btrfs_put_block_group(cache);
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index ac85e07f567b..761fba8d8f75 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -364,7 +364,6 @@ static noinline int btrfs_ioctl_fitrim(struct file *file, void __user *arg)
- 	struct fstrim_range range;
- 	u64 minlen = ULLONG_MAX;
- 	u64 num_devices = 0;
--	u64 total_bytes = btrfs_super_total_bytes(fs_info->super_copy);
- 	int ret;
- 
- 	if (!capable(CAP_SYS_ADMIN))
-@@ -388,11 +387,15 @@ static noinline int btrfs_ioctl_fitrim(struct file *file, void __user *arg)
- 		return -EOPNOTSUPP;
- 	if (copy_from_user(&range, arg, sizeof(range)))
- 		return -EFAULT;
--	if (range.start > total_bytes ||
--	    range.len < fs_info->sb->s_blocksize)
-+
-+	/*
-+	 * NOTE: Don't truncate the range using super->total_bytes.
-+	 * Bytenr of btrfs block group is in btrfs logical address space,
-+	 * which can be any sector size aligned bytenr in [0, U64_MAX].
-+	 */
-+	if (range.len < fs_info->sb->s_blocksize)
- 		return -EINVAL;
- 
--	range.len = min(range.len, total_bytes - range.start);
- 	range.minlen = max(range.minlen, minlen);
- 	ret = btrfs_trim_fs(fs_info, &range);
- 	if (ret < 0)
 -- 
-2.16.3
+2.17.0
 

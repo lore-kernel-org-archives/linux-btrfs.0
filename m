@@ -1,23 +1,23 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:33378 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:45887 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751362AbeDFP6N (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 6 Apr 2018 11:58:13 -0400
+        id S1750962AbeDFRF7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 6 Apr 2018 13:05:59 -0400
+Date: Fri, 6 Apr 2018 19:03:29 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Ben Parsons <9parsonsb@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
 Subject: Re: Bad magic on superblock on /dev/sda at 65536
-To: Ben Parsons <9parsonsb@gmail.com>, linux-btrfs@vger.kernel.org
+Message-ID: <20180406170329.GH8557@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <CAAGPGf9+y_BXj=jQ1aY3xSPzMTjOTWPPO2avBODSYem5pyRXGQ@mail.gmail.com>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <c0fd5e71-7daa-3301-a72d-c3075c8e453e@suse.com>
-Date: Fri, 6 Apr 2018 18:58:10 +0300
 MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 In-Reply-To: <CAAGPGf9+y_BXj=jQ1aY3xSPzMTjOTWPPO2avBODSYem5pyRXGQ@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-On  6.04.2018 16:32, Ben Parsons wrote:
+On Fri, Apr 06, 2018 at 11:32:34PM +1000, Ben Parsons wrote:
 > Hi,
 > 
 > I just had an unexpected restart and now my btrfs pool wont mount.
@@ -36,14 +36,12 @@ On  6.04.2018 16:32, Ben Parsons wrote:
 > 
 > Any help would be much appreciated.
 
-Try recovering the super block from one of the backup copies via
-"btrfs rescue super-recover /dev/sda"
+In the previous report, there were 2 isolated areas of superblock
+damaged. Please post output of
 
-> 
-> Thanks,
-> Ben
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+	btrfs inspect dump-super /path
+
+so we can see if it's a similar issue.
+
+In case it is, there's a tool in the btrfs-progs repo that can fix the
+individual values.

@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from prv3-mh.provo.novell.com ([137.65.250.26]:50570 "EHLO
+Received: from prv3-mh.provo.novell.com ([137.65.250.26]:49969 "EHLO
         prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751529AbeDFGMT (ORCPT
+        with ESMTP id S1751482AbeDFGVU (ORCPT
         <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Fri, 6 Apr 2018 02:12:19 -0400
+        Fri, 6 Apr 2018 02:21:20 -0400
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/1] btrfs-progs: inspect-dump-tree: Allow '-b|--block' to be specified multiple times
-Date: Fri,  6 Apr 2018 14:12:02 +0800
-Message-Id: <20180406061202.6529-2-wqu@suse.com>
-In-Reply-To: <20180406061202.6529-1-wqu@suse.com>
-References: <20180406061202.6529-1-wqu@suse.com>
+Subject: [PATCH v2 1/1] btrfs-progs: inspect-dump-tree: Allow '-b|--block' to be specified multiple times
+Date: Fri,  6 Apr 2018 14:21:06 +0800
+Message-Id: <20180406062106.9610-1-wqu@suse.com>
+Reply-To: <20180406061202.6529-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
+In-Reply-To: <20180406061202.6529-1-wqu@suse.com>
 
 Reuse extent-cache facility to record multiple bytenr so '-b|--block'
 can be specified multiple times.
@@ -24,9 +24,14 @@ chunk start bytenr could be unaligned to nodesize)
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
+changelog:
+v2:
+  Fix memory leak detected by asan.
+  Fix NULL pointer derefenrece detected by asan.
+---
  Documentation/btrfs-inspect-internal.asciidoc |   2 +-
- cmds-inspect-dump-tree.c                      | 108 ++++++++++++++----
- 2 files changed, 89 insertions(+), 21 deletions(-)
+ cmds-inspect-dump-tree.c                      | 109 +++++++++++++++---
+ 2 files changed, 91 insertions(+), 20 deletions(-)
 
 diff --git a/Documentation/btrfs-inspect-internal.asciidoc b/Documentation/btrfs-inspect-internal.asciidoc
 index e2db64660b9a..ba8529f57660 100644
@@ -42,10 +47,16 @@ index e2db64660b9a..ba8529f57660 100644
  use with '-b', print all children tree blocks of '<block_num>'
  -t <tree_id>::::
 diff --git a/cmds-inspect-dump-tree.c b/cmds-inspect-dump-tree.c
-index b0cd49b32664..fb3ccfc9d0ba 100644
+index b0cd49b32664..7defb7164a49 100644
 --- a/cmds-inspect-dump-tree.c
 +++ b/cmds-inspect-dump-tree.c
-@@ -203,6 +203,85 @@ const char * const cmd_inspect_dump_tree_usage[] = {
+@@ -198,11 +198,92 @@ const char * const cmd_inspect_dump_tree_usage[] = {
+ 	"-R|--backups           same as --roots plus print backup root info",
+ 	"-u|--uuid              print only the uuid tree",
+ 	"-b|--block <block_num> print info from the specified block only",
++	"                       can be specified multile times",
+ 	"-t|--tree <tree_id>    print only tree with the given id (string or number)",
+ 	"--follow               use with -b, to show all children tree blocks of <block_num>",
  	NULL
  };
  
@@ -123,6 +134,7 @@ index b0cd49b32664..fb3ccfc9d0ba 100644
 +		free_extent_buffer(eb);
 +next:
 +		remove_cache_extent(tree, ce);
++		free(ce);
 +		ce = first_cache_extent(tree);
 +	}
 +	return ret;
@@ -131,7 +143,7 @@ index b0cd49b32664..fb3ccfc9d0ba 100644
  int cmd_inspect_dump_tree(int argc, char **argv)
  {
  	struct btrfs_root *root;
-@@ -213,6 +292,7 @@ int cmd_inspect_dump_tree(int argc, char **argv)
+@@ -213,6 +294,7 @@ int cmd_inspect_dump_tree(int argc, char **argv)
  	struct extent_buffer *leaf;
  	struct btrfs_disk_key disk_key;
  	struct btrfs_key found_key;
@@ -139,7 +151,7 @@ index b0cd49b32664..fb3ccfc9d0ba 100644
  	char uuidbuf[BTRFS_UUID_UNPARSED_SIZE];
  	int ret;
  	int slot;
-@@ -222,11 +302,12 @@ int cmd_inspect_dump_tree(int argc, char **argv)
+@@ -222,11 +304,12 @@ int cmd_inspect_dump_tree(int argc, char **argv)
  	int roots_only = 0;
  	int root_backups = 0;
  	unsigned open_ctree_flags = OPEN_CTREE_FS_PARTIAL;
@@ -153,7 +165,7 @@ index b0cd49b32664..fb3ccfc9d0ba 100644
  	while (1) {
  		int c;
  		enum { GETOPT_VAL_FOLLOW = 256 };
-@@ -268,7 +349,10 @@ int cmd_inspect_dump_tree(int argc, char **argv)
+@@ -268,7 +351,10 @@ int cmd_inspect_dump_tree(int argc, char **argv)
  			 * other than chunk root
  			 */
  			open_ctree_flags |= __OPEN_CTREE_RETURN_CHUNK_ROOT;
@@ -165,12 +177,13 @@ index b0cd49b32664..fb3ccfc9d0ba 100644
  			break;
  		case 't': {
  			const char *end = NULL;
-@@ -316,24 +400,8 @@ int cmd_inspect_dump_tree(int argc, char **argv)
+@@ -316,24 +402,9 @@ int cmd_inspect_dump_tree(int argc, char **argv)
  		goto out;
  	}
  
 -	if (block_only) {
--		root = info->chunk_root;
++	if (!cache_tree_empty(&block_root)) {
+ 		root = info->chunk_root;
 -		leaf = read_tree_block(info, block_only, 0);
 -		if (extent_buffer_uptodate(leaf) &&
 -		    btrfs_header_level(leaf) != 0) {
@@ -187,7 +200,6 @@ index b0cd49b32664..fb3ccfc9d0ba 100644
 -		}
 -		btrfs_print_tree(leaf, follow);
 -		free_extent_buffer(leaf);
-+	if (!cache_tree_empty(&block_root)) {
 +		ret = dump_print_tree_blocks(info, &block_root, follow);
  		goto close_root;
  	}

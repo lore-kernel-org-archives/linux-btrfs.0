@@ -1,70 +1,197 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:37853 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751510AbeDXPvY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 24 Apr 2018 11:51:24 -0400
-Date: Tue, 24 Apr 2018 17:48:49 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Anand Jain <anand.jain@oracle.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: update uuid_mutex and device_list_mutex comments
-Message-ID: <20180424154848.GK21272@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180418095631.9977-1-anand.jain@oracle.com>
+Received: from prv3-mh.provo.novell.com ([137.65.250.26]:50570 "EHLO
+        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751529AbeDFGMT (ORCPT
+        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+        Fri, 6 Apr 2018 02:12:19 -0400
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/1] btrfs-progs: inspect-dump-tree: Allow '-b|--block' to be specified multiple times
+Date: Fri,  6 Apr 2018 14:12:02 +0800
+Message-Id: <20180406061202.6529-2-wqu@suse.com>
+In-Reply-To: <20180406061202.6529-1-wqu@suse.com>
+References: <20180406061202.6529-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
-References: <20180418095631.9977-1-anand.jain@oracle.com>
 
-On Wed, Apr 18, 2018 at 05:56:31PM +0800, Anand Jain wrote:
-> @@ -155,29 +155,26 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
->   *
->   * uuid_mutex (global lock)
->   * ------------------------
-> - * protects the fs_uuids list that tracks all per-fs fs_devices, resulting from
-> + * Protects the fs_uuids list that tracks all per-fs fs_devices, resulting from
->   * the SCAN_DEV ioctl registration or from mount either implicitly (the first
-> - * device) or requested by the device= mount option
-> - *
-> - * the mutex can be very coarse and can cover long-running operations
-> - *
-> - * protects: updates to fs_devices counters like missing devices, rw devices,
-> - * seeding, structure cloning, openning/closing devices at mount/umount time
-> + * device) or requested by the device= mount option.
->   *
->   * global::fs_devs - add, remove, updates to the global list
-              ^^^^^^^
+Reuse extent-cache facility to record multiple bytenr so '-b|--block'
+can be specified multiple times.
 
-My typo, this should be fs_uuids.
+Despite that, add a sector size alignment check before we try to print a
+tree block.
+(Please note that, nodesize alignment check is not suitable here as meta
+chunk start bytenr could be unaligned to nodesize)
 
->   * fs_devices::device_list_mutex (per-fs, with RCU)
->   * ------------------------------------------------
-> - * protects updates to fs_devices::devices, ie. adding and deleting
-> + * Protects updates to fs_devices::devices, ie. adding and deleting, and its
-> + * counters like missing devices, rw devices, seeding, structure cloning,
-> + * openning/closing devices at mount/umount time.
->   *
-> - * simple list traversal with read-only actions can be done with RCU protection
-> + * Simple list traversal with read-only actions can be done with RCU protection.
->   *
-> - * may be used to exclude some operations from running concurrently without any
-> - * modifications to the list (see write_all_supers)
-> + * May be used to exclude some operations from running concurrently without any
-> + * modifications to the list (see write_all_supers).
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ Documentation/btrfs-inspect-internal.asciidoc |   2 +-
+ cmds-inspect-dump-tree.c                      | 108 ++++++++++++++----
+ 2 files changed, 89 insertions(+), 21 deletions(-)
 
-The uuid_mutex usage is a bit muddy, so far I think that most uses are
-not necessary so this is in line with this patchset. In some cases we
-might need to add the device_list_mutex once uuid mutex is gone.
+diff --git a/Documentation/btrfs-inspect-internal.asciidoc b/Documentation/btrfs-inspect-internal.asciidoc
+index e2db64660b9a..ba8529f57660 100644
+--- a/Documentation/btrfs-inspect-internal.asciidoc
++++ b/Documentation/btrfs-inspect-internal.asciidoc
+@@ -86,7 +86,7 @@ the respective tree root block offset
+ -u|--uuid::::
+ print only the uuid tree information, empty output if the tree does not exist
+ -b <block_num>::::
+-print info of the specified block only
++print info of the specified block only, can be specified multiple times.
+ --follow::::
+ use with '-b', print all children tree blocks of '<block_num>'
+ -t <tree_id>::::
+diff --git a/cmds-inspect-dump-tree.c b/cmds-inspect-dump-tree.c
+index b0cd49b32664..fb3ccfc9d0ba 100644
+--- a/cmds-inspect-dump-tree.c
++++ b/cmds-inspect-dump-tree.c
+@@ -203,6 +203,85 @@ const char * const cmd_inspect_dump_tree_usage[] = {
+ 	NULL
+ };
+ 
++/*
++ * Helper function to record all tree block bytenr so we don't need to put
++ * all code into deep indent.
++ *
++ * Return >0 if we hit a duplicated bytenr (already recorded)
++ * Return 0 if nothing went wrong
++ * Return <0 if error happens (ENOMEM)
++ *
++ * For != 0 return value, all warning/error will be outputted by this function.
++ */
++static int dump_add_tree_block(struct cache_tree *tree, u64 bytenr)
++{
++	int ret;
++
++	/*
++	 * We don't really care about the size and we don't have
++	 * nodesize before we open the fs, so just use 1 as size here.
++	 */
++	ret = add_cache_extent(tree, bytenr, 1);
++	if (ret == -EEXIST) {
++		warning("tree block bytenr %llu is duplicated", bytenr);
++		return 1;
++	}
++	if (ret < 0) {
++		error("failed to record tree block bytenr %llu: %d(%s)",
++			bytenr, ret, strerror(-ret));
++		return ret;
++	}
++	return ret;
++}
++
++/*
++ * Print all tree blocks recorded.
++ * All tree block bytenr record will also be freed in this function.
++ *
++ * Return 0 if nothing wrong happened for *each* tree blocks
++ * Return <0 if anything wrong happened, and return value will be the last
++ * error.
++ */
++static int dump_print_tree_blocks(struct btrfs_fs_info *fs_info,
++				  struct cache_tree *tree, bool follow)
++{
++	struct cache_extent *ce;
++	struct extent_buffer *eb;
++	u64 bytenr;
++	int ret = 0;
++
++	ce = first_cache_extent(tree);
++	while (ce) {
++		bytenr = ce->start;
++
++		/*
++		 * Please note that here we can't check it against nodesize,
++		 * as it's possible a chunk is just aligned to sectorsize but
++		 * not aligned to nodesize.
++		 */
++		if (!IS_ALIGNED(bytenr, fs_info->sectorsize)) {
++			error(
++		"tree block bytenr %llu is not aligned to sectorsize %u",
++			      bytenr, fs_info->sectorsize);
++			ret = -EINVAL;
++			goto next;
++		}
++
++		eb = read_tree_block(fs_info, bytenr, 0);
++		if (!extent_buffer_uptodate(eb)) {
++			error("failed to read tree block %llu", bytenr);
++			ret = -EIO;
++			goto next;
++		}
++		btrfs_print_tree(eb, follow);
++		free_extent_buffer(eb);
++next:
++		remove_cache_extent(tree, ce);
++		ce = first_cache_extent(tree);
++	}
++	return ret;
++}
++
+ int cmd_inspect_dump_tree(int argc, char **argv)
+ {
+ 	struct btrfs_root *root;
+@@ -213,6 +292,7 @@ int cmd_inspect_dump_tree(int argc, char **argv)
+ 	struct extent_buffer *leaf;
+ 	struct btrfs_disk_key disk_key;
+ 	struct btrfs_key found_key;
++	struct cache_tree block_root;	/* for multiple --block parameters */
+ 	char uuidbuf[BTRFS_UUID_UNPARSED_SIZE];
+ 	int ret;
+ 	int slot;
+@@ -222,11 +302,12 @@ int cmd_inspect_dump_tree(int argc, char **argv)
+ 	int roots_only = 0;
+ 	int root_backups = 0;
+ 	unsigned open_ctree_flags = OPEN_CTREE_FS_PARTIAL;
+-	u64 block_only = 0;
++	u64 block_bytenr;
+ 	struct btrfs_root *tree_root_scan;
+ 	u64 tree_id = 0;
+ 	bool follow = false;
+ 
++	cache_tree_init(&block_root);
+ 	while (1) {
+ 		int c;
+ 		enum { GETOPT_VAL_FOLLOW = 256 };
+@@ -268,7 +349,10 @@ int cmd_inspect_dump_tree(int argc, char **argv)
+ 			 * other than chunk root
+ 			 */
+ 			open_ctree_flags |= __OPEN_CTREE_RETURN_CHUNK_ROOT;
+-			block_only = arg_strtou64(optarg);
++			block_bytenr = arg_strtou64(optarg);
++			ret = dump_add_tree_block(&block_root, block_bytenr);
++			if (ret < 0)
++				goto out;
+ 			break;
+ 		case 't': {
+ 			const char *end = NULL;
+@@ -316,24 +400,8 @@ int cmd_inspect_dump_tree(int argc, char **argv)
+ 		goto out;
+ 	}
+ 
+-	if (block_only) {
+-		root = info->chunk_root;
+-		leaf = read_tree_block(info, block_only, 0);
+-		if (extent_buffer_uptodate(leaf) &&
+-		    btrfs_header_level(leaf) != 0) {
+-			free_extent_buffer(leaf);
+-			leaf = NULL;
+-		}
+-
+-		if (!leaf)
+-			leaf = read_tree_block(info, block_only, 0);
+-		if (!extent_buffer_uptodate(leaf)) {
+-			error("failed to read %llu",
+-				(unsigned long long)block_only);
+-			goto close_root;
+-		}
+-		btrfs_print_tree(leaf, follow);
+-		free_extent_buffer(leaf);
++	if (!cache_tree_empty(&block_root)) {
++		ret = dump_print_tree_blocks(info, &block_root, follow);
+ 		goto close_root;
+ 	}
+ 
+-- 
+2.17.0
 
-The clear usage of the uuid_mutex is when a new fs_devices is added to
-the global fs_uuids, to prevent concurrent access by device scan and
-mount. Another one is the seed fs manipulation, that on the higher level
-works on the linked fs_devices. And the last one is the device renames
-that happen after a device appears under a different name.
-
-So far I haven't noticed any problems during tests of for-next with this
-patchset, so I guess we'd have to try harder to trigger the potential
-races. Thre's no device add/delete/replace/scan stress tests. The
-seeding is not very well covered by tests, so I'll keep the branch in
-for-next, but more tests are welcome.

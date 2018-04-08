@@ -1,170 +1,270 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.15]:59003 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752475AbeDHBxW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 7 Apr 2018 21:53:22 -0400
-Subject: Re: Bad magic on superblock on /dev/sda at 65536
-To: Ben Parsons <9parsonsb@gmail.com>
-Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-References: <CAAGPGf9+y_BXj=jQ1aY3xSPzMTjOTWPPO2avBODSYem5pyRXGQ@mail.gmail.com>
- <20180406170329.GH8557@twin.jikos.cz>
- <1401c2e5-d0e9-ac9e-178f-776cb9847ffb@gmx.com>
- <CAAGPGf8m-8qQ-tsW6ZxtEktm1DbP4FfrU6FZr+tX3vb_Cq+9_g@mail.gmail.com>
- <17a45d05-1dc9-4b1b-5786-c4bf8ae8a5eb@gmx.com>
- <CAAGPGf8JXhrCDmGPGi90bJhD_HY=mYEZJUdJ1mvx5+MRLsb_Og@mail.gmail.com>
- <40ef1367-45f3-6c61-af68-0a6c13af6aac@gmx.com>
- <CAAGPGf8R1Q05BnxDyOWZ00Li+ocm+S46iNdxz2K2075Y35AJvg@mail.gmail.com>
- <7aaa8833-fefe-e369-ed5d-e2d5d13484a3@gmx.com>
- <CAAGPGf_5D1y6ow4DJDEas7-Zwk_Ojd5K1oFmEVaQnmkRr55aRw@mail.gmail.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <6cfd8d24-679b-3e40-2566-5c54ed9205d4@gmx.com>
-Date: Sun, 8 Apr 2018 09:53:12 +0800
+Received: from mail-wr0-f174.google.com ([209.85.128.174]:44250 "EHLO
+        mail-wr0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752034AbeDHCPg (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 7 Apr 2018 22:15:36 -0400
+Received: by mail-wr0-f174.google.com with SMTP id u46so4835577wrc.11
+        for <linux-btrfs@vger.kernel.org>; Sat, 07 Apr 2018 19:15:35 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAAGPGf_5D1y6ow4DJDEas7-Zwk_Ojd5K1oFmEVaQnmkRr55aRw@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <6cfd8d24-679b-3e40-2566-5c54ed9205d4@gmx.com>
+References: <CAAGPGf9+y_BXj=jQ1aY3xSPzMTjOTWPPO2avBODSYem5pyRXGQ@mail.gmail.com>
+ <20180406170329.GH8557@twin.jikos.cz> <1401c2e5-d0e9-ac9e-178f-776cb9847ffb@gmx.com>
+ <CAAGPGf8m-8qQ-tsW6ZxtEktm1DbP4FfrU6FZr+tX3vb_Cq+9_g@mail.gmail.com>
+ <17a45d05-1dc9-4b1b-5786-c4bf8ae8a5eb@gmx.com> <CAAGPGf8JXhrCDmGPGi90bJhD_HY=mYEZJUdJ1mvx5+MRLsb_Og@mail.gmail.com>
+ <40ef1367-45f3-6c61-af68-0a6c13af6aac@gmx.com> <CAAGPGf8R1Q05BnxDyOWZ00Li+ocm+S46iNdxz2K2075Y35AJvg@mail.gmail.com>
+ <7aaa8833-fefe-e369-ed5d-e2d5d13484a3@gmx.com> <CAAGPGf_5D1y6ow4DJDEas7-Zwk_Ojd5K1oFmEVaQnmkRr55aRw@mail.gmail.com>
+ <6cfd8d24-679b-3e40-2566-5c54ed9205d4@gmx.com>
+From: Ben Parsons <9parsonsb@gmail.com>
+Date: Sun, 8 Apr 2018 12:14:53 +1000
+Message-ID: <CAAGPGf-ECaX07rwGYJfFryB3_pUAY8XWuFkfS7griZLXrWjqOg@mail.gmail.com>
+Subject: Re: Bad magic on superblock on /dev/sda at 65536
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+Content-Type: multipart/mixed; boundary="f4f5e80a11d84b5a5e05694cdd0d"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+--f4f5e80a11d84b5a5e05694cdd0d
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-
-On 2018年04月08日 08:57, Ben Parsons wrote:
-> See attached for requested output.
-> 
-> Do I still need to recover the super block of sdb?
-
-Yep. Please also attach the binary dump of superblock of sdb.
-
-> 
-> Could you please point me the right direction for doing the inplace recovery?
-
-I'll provide the patched superblock for both disks (sdb and sdc1)
-
-And with them written back to disk, just run "btrfs check" first, if
-nothing wrong, mount it RW and run scrub.
-
-Pretty straightforward.
+Super block of sdb as requested
 
 Thanks,
-Qu
-> 
-> I have not rebooterd or tried to recover / mount the disc btw.
-> 
+Ben
+
+On 8 April 2018 at 11:53, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
+>
+>
+> On 2018=E5=B9=B404=E6=9C=8808=E6=97=A5 08:57, Ben Parsons wrote:
+>> See attached for requested output.
+>>
+>> Do I still need to recover the super block of sdb?
+>
+> Yep. Please also attach the binary dump of superblock of sdb.
+>
+>>
+>> Could you please point me the right direction for doing the inplace reco=
+very?
+>
+> I'll provide the patched superblock for both disks (sdb and sdc1)
+>
+> And with them written back to disk, just run "btrfs check" first, if
+> nothing wrong, mount it RW and run scrub.
+>
+> Pretty straightforward.
+>
 > Thanks,
-> Ben
-> 
-> On 8 April 2018 at 10:02, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
+> Qu
 >>
->>
->> On 2018年04月08日 07:29, Ben Parsons wrote:
->>> On 7 April 2018 at 22:09, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
->>>>
->>>>
->>>> On 2018年04月07日 10:31, Ben Parsons wrote:
->>>> [snip]
->>>>>> Pretty common hard power reset.
->>>>>>
->>>>>>> looking at journalctl, there is a large stacktrace from kernel: amdgpu
->>>>>>> (see attached).
->>>>>>> then when I booted back up the pool (2 disks, 1TB + 2TB) wouldn't mount.
->>>>>>
->>>>>> I'd say such corruption is pretty serious.
->>>>>>
->>>>>> And what's the profile of the btrfs? If metadata is raid1, we could at
->>>>>> least try to recovery the superblock from the remaining disk.
->>>>>
->>>>> I am not sure what the metadata was but the two disks had no parity
->>>>> and just appeared as a single disk with total space of the two disks
->>>>
->>>> Strangely, for the 2nd disk, it's sdc1, which means it has partition table.
->>>> While for the 1st disk, it's sda, without partition table at all.
->>>> Is there any possibility that you just took run partition?
->>>> (Or did some program uses it incorrectly?)
->>>>
->>>
->>> I dont quite understand what you are asking.
->>> I was always under the impression I could run mount on either
->>> partition and it would mount the pool
->>>
->>>>>
->>>>> how would i got about recovering the 2nd disk? attached is
->>>>
->>>> The 2nd disk looks good, however it's csum_type is wrong.
->>>> 41700 looks like garbage.
->>>>
->>>> Despite that, incompact_flags also has garbage.
->>>>
->>>> The good news is, the system (and metadata) profile is RAID1, so it's
->>>> highly possible for us to salvage (to be more accurate, rebuild) the
->>>> superblock for the 1st device.
->>>>
->>>> Please dump the superblock of the 2nd device (sdc1) by the following
->>>> command:
->>>>
->>>> # dd if=/dev/sdc1 of=super_dump.sdc1 bs=1 count=4096 skip=64k
->>>>
->>>
->>> See attached.
->>>
->>>>
->>>> Unfortunately, btrfs-sb-mod tool added recently doesn't have all needed
->>>> fields, so I'm afraid I need to manually modify it.
->>>>
->>>> And just in case, please paste the following output to help us verify if
->>>> it's really sda without offset:
->>>>
->>>> # lsblk /dev/sda
->>>> # grep -obUaP "\x5F\x42\x48\x52\x66\x53\x5F\x4D"
->>>>
->>>
->>> dd if=/dev/sdb of=toGrep.sdb bs=1 count=128M status=progress
->>> cat toGrep.sdb | grep -obUaP "\x5F\x42\x48\x52\x66\x53\x5F\x4D"
->>>
->>> 65600:_BHRfS_M
->>> 67108928:_BHRfS_M
->>
->> Well, the magic number is completely correct, and at correct location.
->>
->> Would you please run "btrfs inspect dump-super -fFa /dev/sdb" again?
->> This time it should provide good data.
->>
->>>
->>>>
->>>> Above grep could be very slow since it will try to iterate the whole
->>>> disk. It's recommended to dump the first 128M of the disk and then grep
->>>> on that 128M image.
->>>>
->>>>
->>>> BTW, with superblock of sdc1 patched, you should be able to mount the fs
->>>> with -o ro,degraded, and salvage some data.
->>>>
->>>> Thanks,
->>>> Qu
->>>
->>> Thank you so much!
->>>
->>> I am better off copying the data to another disk and then rebuilding the pool?
->>> or can I just run a scrub after the super block is fixed?
->>
->> According to your latest grep output, strangely the 1st device is not
->> that corrupted as before.
->>
->> So I think in-place recover should save you a lot of time.
+>> I have not rebooterd or tried to recover / mount the disc btw.
 >>
 >> Thanks,
->> Qu
+>> Ben
 >>
+>> On 8 April 2018 at 10:02, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
 >>>
->>> For reference here is lsblk:
 >>>
->>> sda      8:0    0 465.8G  0 disk
->>> ├─sda1   8:1    0   512M  0 part /boot
->>> ├─sda2   8:2    0 455.3G  0 part /
->>> └─sda3   8:3    0    10G  0 part [SWAP]
+>>> On 2018=E5=B9=B404=E6=9C=8808=E6=97=A5 07:29, Ben Parsons wrote:
+>>>> On 7 April 2018 at 22:09, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
+>>>>>
+>>>>>
+>>>>> On 2018=E5=B9=B404=E6=9C=8807=E6=97=A5 10:31, Ben Parsons wrote:
+>>>>> [snip]
+>>>>>>> Pretty common hard power reset.
+>>>>>>>
+>>>>>>>> looking at journalctl, there is a large stacktrace from kernel: am=
+dgpu
+>>>>>>>> (see attached).
+>>>>>>>> then when I booted back up the pool (2 disks, 1TB + 2TB) wouldn't =
+mount.
+>>>>>>>
+>>>>>>> I'd say such corruption is pretty serious.
+>>>>>>>
+>>>>>>> And what's the profile of the btrfs? If metadata is raid1, we could=
+ at
+>>>>>>> least try to recovery the superblock from the remaining disk.
+>>>>>>
+>>>>>> I am not sure what the metadata was but the two disks had no parity
+>>>>>> and just appeared as a single disk with total space of the two disks
+>>>>>
+>>>>> Strangely, for the 2nd disk, it's sdc1, which means it has partition =
+table.
+>>>>> While for the 1st disk, it's sda, without partition table at all.
+>>>>> Is there any possibility that you just took run partition?
+>>>>> (Or did some program uses it incorrectly?)
+>>>>>
+>>>>
+>>>> I dont quite understand what you are asking.
+>>>> I was always under the impression I could run mount on either
+>>>> partition and it would mount the pool
+>>>>
+>>>>>>
+>>>>>> how would i got about recovering the 2nd disk? attached is
+>>>>>
+>>>>> The 2nd disk looks good, however it's csum_type is wrong.
+>>>>> 41700 looks like garbage.
+>>>>>
+>>>>> Despite that, incompact_flags also has garbage.
+>>>>>
+>>>>> The good news is, the system (and metadata) profile is RAID1, so it's
+>>>>> highly possible for us to salvage (to be more accurate, rebuild) the
+>>>>> superblock for the 1st device.
+>>>>>
+>>>>> Please dump the superblock of the 2nd device (sdc1) by the following
+>>>>> command:
+>>>>>
+>>>>> # dd if=3D/dev/sdc1 of=3Dsuper_dump.sdc1 bs=3D1 count=3D4096 skip=3D6=
+4k
+>>>>>
+>>>>
+>>>> See attached.
+>>>>
+>>>>>
+>>>>> Unfortunately, btrfs-sb-mod tool added recently doesn't have all need=
+ed
+>>>>> fields, so I'm afraid I need to manually modify it.
+>>>>>
+>>>>> And just in case, please paste the following output to help us verify=
+ if
+>>>>> it's really sda without offset:
+>>>>>
+>>>>> # lsblk /dev/sda
+>>>>> # grep -obUaP "\x5F\x42\x48\x52\x66\x53\x5F\x4D"
+>>>>>
+>>>>
+>>>> dd if=3D/dev/sdb of=3DtoGrep.sdb bs=3D1 count=3D128M status=3Dprogress
+>>>> cat toGrep.sdb | grep -obUaP "\x5F\x42\x48\x52\x66\x53\x5F\x4D"
+>>>>
+>>>> 65600:_BHRfS_M
+>>>> 67108928:_BHRfS_M
 >>>
->>> sdb      8:16   0 931.5G  0 disk
->>> -- first disk
+>>> Well, the magic number is completely correct, and at correct location.
 >>>
->>> sdc      8:32   0   1.8T  0 disk
->>> └─sdc1   8:33   0   1.8T  0 part
->>> -- 2nd disk
+>>> Would you please run "btrfs inspect dump-super -fFa /dev/sdb" again?
+>>> This time it should provide good data.
 >>>
+>>>>
+>>>>>
+>>>>> Above grep could be very slow since it will try to iterate the whole
+>>>>> disk. It's recommended to dump the first 128M of the disk and then gr=
+ep
+>>>>> on that 128M image.
+>>>>>
+>>>>>
+>>>>> BTW, with superblock of sdc1 patched, you should be able to mount the=
+ fs
+>>>>> with -o ro,degraded, and salvage some data.
+>>>>>
+>>>>> Thanks,
+>>>>> Qu
+>>>>
+>>>> Thank you so much!
+>>>>
+>>>> I am better off copying the data to another disk and then rebuilding t=
+he pool?
+>>>> or can I just run a scrub after the super block is fixed?
+>>>
+>>> According to your latest grep output, strangely the 1st device is not
+>>> that corrupted as before.
+>>>
+>>> So I think in-place recover should save you a lot of time.
+>>>
+>>> Thanks,
+>>> Qu
+>>>
+>>>>
+>>>> For reference here is lsblk:
+>>>>
+>>>> sda      8:0    0 465.8G  0 disk
+>>>> =E2=94=9C=E2=94=80sda1   8:1    0   512M  0 part /boot
+>>>> =E2=94=9C=E2=94=80sda2   8:2    0 455.3G  0 part /
+>>>> =E2=94=94=E2=94=80sda3   8:3    0    10G  0 part [SWAP]
+>>>>
+>>>> sdb      8:16   0 931.5G  0 disk
+>>>> -- first disk
+>>>>
+>>>> sdc      8:32   0   1.8T  0 disk
+>>>> =E2=94=94=E2=94=80sdc1   8:33   0   1.8T  0 part
+>>>> -- 2nd disk
+>>>>
+
+--f4f5e80a11d84b5a5e05694cdd0d
+Content-Type: application/octet-stream; name="super_dump.sdb"
+Content-Disposition: attachment; filename="super_dump.sdb"
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_jfq6dc4y0
+
+duA4nQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAI5Rx2AGhFurrInB9XNj7GAAABAAAAAAAB
+AAAAAAAAAF9CSFJmU19N55wTAAAAAAAAwJT75QUAAABAq+IEBQAAAAAAAAAAAAAAAAAAAAAAAABg
+26G1AgAAAHCr9agCAAAGAAAAAAAAAAIAAAAAAAAAABAAAABAAAAAQAAAABAAAIEAAABFbxMAAAAA
+AAAAAAAAAAAAAAAAAAAAAABpAQAAAEAiW+SiAQEAAgAAAAAAAAAAYNvg6AAAAAAAyyDkAAAAABAA
+AAAQAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAApAmq4/r9SdW1idVO7cpijwjl
+HHYAaEW6usicH1c2PsYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA55wTAAAAAADnnBMAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAABAAAAAAAA5AAAq+IEBQAAAAAAAgAAAAACAAAAAAAAAAAAAQAAAAAAEgAA
+AAAAAAAAAAEAAAABAAAQAAACAAEAAQAAAAAAAAAAAEBC7AAAAJpEic1a7kHpkl58jDVN1T8CAAAA
+AAAAAAAAEIIBAAAApAmq4/r9SdW1idVO7cpijwABAAAAAAAA5AAAKyXjBQAAAAAAAgAAAAACAAAA
+AAAAAAAAAQAAAAAAEgAAAAAAAAAAAAEAAAABAAAQAAACAAEAAgAAAAAAAAAAABCC4QAAAKQJquP6
+/UnVtYnVTu3KYo8BAAAAAAAAAAAAQMLFAQAAmkSJzVruQemSXnyMNU3VPwAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAMCU++UFAADnnBMAAAAAAABAq+IEBQAARW8TAAAAAAAAAJT75QUAAOecEwAAAAAA
+AACT++UFAADnnBMAAAAAAAAAf2wvBAAApowTAAAAAAAAAJb75QUAAOecEwAAAAAAAGDbobUCAAAA
+cKv1qAIAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAQICAQMAAAAA
+AAAAAAAAAEB2++UFAADknBMAAAAAAABAq+IEBQAARW8TAAAAAAAAAHX75QUAAOScEwAAAAAAAEBz
+++UFAADknBMAAAAAAAAAf2wvBAAApowTAAAAAAAAAHT75QUAAOScEwAAAAAAAGDbobUCAAAAcKv1
+qAIAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAQICAQMAAAAAAAAA
+AAAAAIB9++UFAADlnBMAAAAAAABAq+IEBQAARW8TAAAAAAAAQHz75QUAAOWcEwAAAAAAAIB7++UF
+AADlnBMAAAAAAAAAf2wvBAAApowTAAAAAAAAAH/75QUAAOWcEwAAAAAAAGDbobUCAAAAcKv1qAIA
+AAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAQICAQMAAAAAAAAAAAAA
+AECM++UFAADmnBMAAAAAAABAq+IEBQAARW8TAAAAAAAAgIr75QUAAOacEwAAAAAAAACE++UFAADm
+nBMAAAAAAAAAf2wvBAAApowTAAAAAAAAQI775QUAAOacEwAAAAAAAGDbobUCAAAAcKv1qAIAAAIA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAQICAQMAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==
+--f4f5e80a11d84b5a5e05694cdd0d--

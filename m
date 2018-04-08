@@ -1,359 +1,170 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wr0-f181.google.com ([209.85.128.181]:39588 "EHLO
-        mail-wr0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751681AbeDHA6j (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 7 Apr 2018 20:58:39 -0400
-Received: by mail-wr0-f181.google.com with SMTP id c24so4786909wrc.6
-        for <linux-btrfs@vger.kernel.org>; Sat, 07 Apr 2018 17:58:38 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <7aaa8833-fefe-e369-ed5d-e2d5d13484a3@gmx.com>
-References: <CAAGPGf9+y_BXj=jQ1aY3xSPzMTjOTWPPO2avBODSYem5pyRXGQ@mail.gmail.com>
- <20180406170329.GH8557@twin.jikos.cz> <1401c2e5-d0e9-ac9e-178f-776cb9847ffb@gmx.com>
- <CAAGPGf8m-8qQ-tsW6ZxtEktm1DbP4FfrU6FZr+tX3vb_Cq+9_g@mail.gmail.com>
- <17a45d05-1dc9-4b1b-5786-c4bf8ae8a5eb@gmx.com> <CAAGPGf8JXhrCDmGPGi90bJhD_HY=mYEZJUdJ1mvx5+MRLsb_Og@mail.gmail.com>
- <40ef1367-45f3-6c61-af68-0a6c13af6aac@gmx.com> <CAAGPGf8R1Q05BnxDyOWZ00Li+ocm+S46iNdxz2K2075Y35AJvg@mail.gmail.com>
- <7aaa8833-fefe-e369-ed5d-e2d5d13484a3@gmx.com>
-From: Ben Parsons <9parsonsb@gmail.com>
-Date: Sun, 8 Apr 2018 10:57:56 +1000
-Message-ID: <CAAGPGf_5D1y6ow4DJDEas7-Zwk_Ojd5K1oFmEVaQnmkRr55aRw@mail.gmail.com>
+Received: from mout.gmx.net ([212.227.15.15]:59003 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752475AbeDHBxW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 7 Apr 2018 21:53:22 -0400
 Subject: Re: Bad magic on superblock on /dev/sda at 65536
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: Ben Parsons <9parsonsb@gmail.com>
 Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Content-Type: multipart/mixed; boundary="f4f5e80a11d814206b05694bca9c"
+References: <CAAGPGf9+y_BXj=jQ1aY3xSPzMTjOTWPPO2avBODSYem5pyRXGQ@mail.gmail.com>
+ <20180406170329.GH8557@twin.jikos.cz>
+ <1401c2e5-d0e9-ac9e-178f-776cb9847ffb@gmx.com>
+ <CAAGPGf8m-8qQ-tsW6ZxtEktm1DbP4FfrU6FZr+tX3vb_Cq+9_g@mail.gmail.com>
+ <17a45d05-1dc9-4b1b-5786-c4bf8ae8a5eb@gmx.com>
+ <CAAGPGf8JXhrCDmGPGi90bJhD_HY=mYEZJUdJ1mvx5+MRLsb_Og@mail.gmail.com>
+ <40ef1367-45f3-6c61-af68-0a6c13af6aac@gmx.com>
+ <CAAGPGf8R1Q05BnxDyOWZ00Li+ocm+S46iNdxz2K2075Y35AJvg@mail.gmail.com>
+ <7aaa8833-fefe-e369-ed5d-e2d5d13484a3@gmx.com>
+ <CAAGPGf_5D1y6ow4DJDEas7-Zwk_Ojd5K1oFmEVaQnmkRr55aRw@mail.gmail.com>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <6cfd8d24-679b-3e40-2566-5c54ed9205d4@gmx.com>
+Date: Sun, 8 Apr 2018 09:53:12 +0800
+MIME-Version: 1.0
+In-Reply-To: <CAAGPGf_5D1y6ow4DJDEas7-Zwk_Ojd5K1oFmEVaQnmkRr55aRw@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---f4f5e80a11d814206b05694bca9c
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
 
-See attached for requested output.
 
-Do I still need to recover the super block of sdb?
+On 2018年04月08日 08:57, Ben Parsons wrote:
+> See attached for requested output.
+> 
+> Do I still need to recover the super block of sdb?
 
-Could you please point me the right direction for doing the inplace recover=
-y?
+Yep. Please also attach the binary dump of superblock of sdb.
 
-I have not rebooterd or tried to recover / mount the disc btw.
+> 
+> Could you please point me the right direction for doing the inplace recovery?
+
+I'll provide the patched superblock for both disks (sdb and sdc1)
+
+And with them written back to disk, just run "btrfs check" first, if
+nothing wrong, mount it RW and run scrub.
+
+Pretty straightforward.
 
 Thanks,
-Ben
-
-On 8 April 2018 at 10:02, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
->
->
-> On 2018=E5=B9=B404=E6=9C=8808=E6=97=A5 07:29, Ben Parsons wrote:
->> On 7 April 2018 at 22:09, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
->>>
->>>
->>> On 2018=E5=B9=B404=E6=9C=8807=E6=97=A5 10:31, Ben Parsons wrote:
->>> [snip]
->>>>> Pretty common hard power reset.
->>>>>
->>>>>> looking at journalctl, there is a large stacktrace from kernel: amdg=
-pu
->>>>>> (see attached).
->>>>>> then when I booted back up the pool (2 disks, 1TB + 2TB) wouldn't mo=
-unt.
->>>>>
->>>>> I'd say such corruption is pretty serious.
->>>>>
->>>>> And what's the profile of the btrfs? If metadata is raid1, we could a=
-t
->>>>> least try to recovery the superblock from the remaining disk.
->>>>
->>>> I am not sure what the metadata was but the two disks had no parity
->>>> and just appeared as a single disk with total space of the two disks
->>>
->>> Strangely, for the 2nd disk, it's sdc1, which means it has partition ta=
-ble.
->>> While for the 1st disk, it's sda, without partition table at all.
->>> Is there any possibility that you just took run partition?
->>> (Or did some program uses it incorrectly?)
->>>
->>
->> I dont quite understand what you are asking.
->> I was always under the impression I could run mount on either
->> partition and it would mount the pool
->>
->>>>
->>>> how would i got about recovering the 2nd disk? attached is
->>>
->>> The 2nd disk looks good, however it's csum_type is wrong.
->>> 41700 looks like garbage.
->>>
->>> Despite that, incompact_flags also has garbage.
->>>
->>> The good news is, the system (and metadata) profile is RAID1, so it's
->>> highly possible for us to salvage (to be more accurate, rebuild) the
->>> superblock for the 1st device.
->>>
->>> Please dump the superblock of the 2nd device (sdc1) by the following
->>> command:
->>>
->>> # dd if=3D/dev/sdc1 of=3Dsuper_dump.sdc1 bs=3D1 count=3D4096 skip=3D64k
->>>
->>
->> See attached.
->>
->>>
->>> Unfortunately, btrfs-sb-mod tool added recently doesn't have all needed
->>> fields, so I'm afraid I need to manually modify it.
->>>
->>> And just in case, please paste the following output to help us verify i=
-f
->>> it's really sda without offset:
->>>
->>> # lsblk /dev/sda
->>> # grep -obUaP "\x5F\x42\x48\x52\x66\x53\x5F\x4D"
->>>
->>
->> dd if=3D/dev/sdb of=3DtoGrep.sdb bs=3D1 count=3D128M status=3Dprogress
->> cat toGrep.sdb | grep -obUaP "\x5F\x42\x48\x52\x66\x53\x5F\x4D"
->>
->> 65600:_BHRfS_M
->> 67108928:_BHRfS_M
->
-> Well, the magic number is completely correct, and at correct location.
->
-> Would you please run "btrfs inspect dump-super -fFa /dev/sdb" again?
-> This time it should provide good data.
->
->>
->>>
->>> Above grep could be very slow since it will try to iterate the whole
->>> disk. It's recommended to dump the first 128M of the disk and then grep
->>> on that 128M image.
->>>
->>>
->>> BTW, with superblock of sdc1 patched, you should be able to mount the f=
-s
->>> with -o ro,degraded, and salvage some data.
->>>
->>> Thanks,
->>> Qu
->>
->> Thank you so much!
->>
->> I am better off copying the data to another disk and then rebuilding the=
- pool?
->> or can I just run a scrub after the super block is fixed?
->
-> According to your latest grep output, strangely the 1st device is not
-> that corrupted as before.
->
-> So I think in-place recover should save you a lot of time.
->
+Qu
+> 
+> I have not rebooterd or tried to recover / mount the disc btw.
+> 
 > Thanks,
-> Qu
->
+> Ben
+> 
+> On 8 April 2018 at 10:02, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
 >>
->> For reference here is lsblk:
 >>
->> sda      8:0    0 465.8G  0 disk
->> =E2=94=9C=E2=94=80sda1   8:1    0   512M  0 part /boot
->> =E2=94=9C=E2=94=80sda2   8:2    0 455.3G  0 part /
->> =E2=94=94=E2=94=80sda3   8:3    0    10G  0 part [SWAP]
+>> On 2018年04月08日 07:29, Ben Parsons wrote:
+>>> On 7 April 2018 at 22:09, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
+>>>>
+>>>>
+>>>> On 2018年04月07日 10:31, Ben Parsons wrote:
+>>>> [snip]
+>>>>>> Pretty common hard power reset.
+>>>>>>
+>>>>>>> looking at journalctl, there is a large stacktrace from kernel: amdgpu
+>>>>>>> (see attached).
+>>>>>>> then when I booted back up the pool (2 disks, 1TB + 2TB) wouldn't mount.
+>>>>>>
+>>>>>> I'd say such corruption is pretty serious.
+>>>>>>
+>>>>>> And what's the profile of the btrfs? If metadata is raid1, we could at
+>>>>>> least try to recovery the superblock from the remaining disk.
+>>>>>
+>>>>> I am not sure what the metadata was but the two disks had no parity
+>>>>> and just appeared as a single disk with total space of the two disks
+>>>>
+>>>> Strangely, for the 2nd disk, it's sdc1, which means it has partition table.
+>>>> While for the 1st disk, it's sda, without partition table at all.
+>>>> Is there any possibility that you just took run partition?
+>>>> (Or did some program uses it incorrectly?)
+>>>>
+>>>
+>>> I dont quite understand what you are asking.
+>>> I was always under the impression I could run mount on either
+>>> partition and it would mount the pool
+>>>
+>>>>>
+>>>>> how would i got about recovering the 2nd disk? attached is
+>>>>
+>>>> The 2nd disk looks good, however it's csum_type is wrong.
+>>>> 41700 looks like garbage.
+>>>>
+>>>> Despite that, incompact_flags also has garbage.
+>>>>
+>>>> The good news is, the system (and metadata) profile is RAID1, so it's
+>>>> highly possible for us to salvage (to be more accurate, rebuild) the
+>>>> superblock for the 1st device.
+>>>>
+>>>> Please dump the superblock of the 2nd device (sdc1) by the following
+>>>> command:
+>>>>
+>>>> # dd if=/dev/sdc1 of=super_dump.sdc1 bs=1 count=4096 skip=64k
+>>>>
+>>>
+>>> See attached.
+>>>
+>>>>
+>>>> Unfortunately, btrfs-sb-mod tool added recently doesn't have all needed
+>>>> fields, so I'm afraid I need to manually modify it.
+>>>>
+>>>> And just in case, please paste the following output to help us verify if
+>>>> it's really sda without offset:
+>>>>
+>>>> # lsblk /dev/sda
+>>>> # grep -obUaP "\x5F\x42\x48\x52\x66\x53\x5F\x4D"
+>>>>
+>>>
+>>> dd if=/dev/sdb of=toGrep.sdb bs=1 count=128M status=progress
+>>> cat toGrep.sdb | grep -obUaP "\x5F\x42\x48\x52\x66\x53\x5F\x4D"
+>>>
+>>> 65600:_BHRfS_M
+>>> 67108928:_BHRfS_M
 >>
->> sdb      8:16   0 931.5G  0 disk
->> -- first disk
+>> Well, the magic number is completely correct, and at correct location.
 >>
->> sdc      8:32   0   1.8T  0 disk
->> =E2=94=94=E2=94=80sdc1   8:33   0   1.8T  0 part
->> -- 2nd disk
+>> Would you please run "btrfs inspect dump-super -fFa /dev/sdb" again?
+>> This time it should provide good data.
 >>
-
---f4f5e80a11d814206b05694bca9c
-Content-Type: text/plain; charset="US-ASCII"; name="inspect_dump-super_sdb.txt"
-Content-Disposition: attachment; filename="inspect_dump-super_sdb.txt"
-Content-Transfer-Encoding: base64
-X-Attachment-Id: f_jfq3moyk0
-
-c3VwZXJibG9jazogYnl0ZW5yPTY1NTM2LCBkZXZpY2U9L2Rldi9zZGIKLS0tLS0tLS0tLS0tLS0t
-LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tCmNzdW1fdHlwZQkJNDE3
-MDAgKElOVkFMSUQpCmNzdW1fc2l6ZQkJMzIKY3N1bQkJCTB4NzZlMDM4OWQwMDAwMDAwMDAwMDAw
-MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMCBbbWF0Y2hdCmJ5dGVu
-cgkJCTY1NTM2CmZsYWdzCQkJMHgxCgkJCSggV1JJVFRFTiApCm1hZ2ljCQkJX0JIUmZTX00gW21h
-dGNoXQpmc2lkCQkJMDhlNTFjNzYtMDA2OC00NWJhLWJhYzgtOWMxZjU3MzYzZWM2CmxhYmVsCQkJ
-CmdlbmVyYXRpb24JCTEyODUzNTEKcm9vdAkJCTY0ODUzMjY0NzkzNjAKc3lzX2FycmF5X3NpemUJ
-CTEyOQpjaHVua19yb290X2dlbmVyYXRpb24JMTI3MzY2OQpyb290X2xldmVsCQkxCmNodW5rX3Jv
-b3QJCTU1MTg1NDA4ODE5MjAKY2h1bmtfcm9vdF9sZXZlbAkxCmxvZ19yb290CQkwCmxvZ19yb290
-X3RyYW5zaWQJMApsb2dfcm9vdF9sZXZlbAkJMAp0b3RhbF9ieXRlcwkJMjk3OTEyNzg0NDg2NApi
-eXRlc191c2VkCQkyOTI0Njk5NDE0NTI4CnNlY3RvcnNpemUJCTQwOTYKbm9kZXNpemUJCTE2Mzg0
-CmxlYWZzaXplIChkZXByZWNhdGVkKQkJMTYzODQKc3RyaXBlc2l6ZQkJNDA5Ngpyb290X2RpcgkJ
-NgpudW1fZGV2aWNlcwkJMgpjb21wYXRfZmxhZ3MJCTB4MApjb21wYXRfcm9fZmxhZ3MJCTB4MApp
-bmNvbXBhdF9mbGFncwkJMHg1YjIyNDAwMDAwMDAwMTY5CgkJCSggTUlYRURfQkFDS1JFRiB8CgkJ
-CSAgQ09NUFJFU1NfTFpPIHwKCQkJICBCSUdfTUVUQURBVEEgfAoJCQkgIEVYVEVOREVEX0lSRUYg
-fAoJCQkgIFNLSU5OWV9NRVRBREFUQSB8CgkJCSAgdW5rbm93biBmbGFnOiAweDViMjI0MDAwMDAw
-MDAwMDAgKQpjYWNoZV9nZW5lcmF0aW9uCTEyODUzNTEKdXVpZF90cmVlX2dlbmVyYXRpb24JMTI4
-NTM1MQpkZXZfaXRlbS51dWlkCQlhNDA5YWFlMy1mYWZkLTQ5ZDUtYjU4OS1kNTRlZWRjYTYyOGYK
-ZGV2X2l0ZW0uZnNpZAkJMDhlNTFjNzYtMDA2OC00NWJhLWJhYzgtOWMxZjU3MzYzZWM2IFttYXRj
-aF0KZGV2X2l0ZW0udHlwZQkJMApkZXZfaXRlbS50b3RhbF9ieXRlcwkxMDAwMjA0ODg2MDE2CmRl
-dl9pdGVtLmJ5dGVzX3VzZWQJOTc5ODAyNzE4MjA4CmRldl9pdGVtLmlvX2FsaWduCTQwOTYKZGV2
-X2l0ZW0uaW9fd2lkdGgJNDA5NgpkZXZfaXRlbS5zZWN0b3Jfc2l6ZQk0MDk2CmRldl9pdGVtLmRl
-dmlkCQkyCmRldl9pdGVtLmRldl9ncm91cAkwCmRldl9pdGVtLnNlZWtfc3BlZWQJMApkZXZfaXRl
-bS5iYW5kd2lkdGgJMApkZXZfaXRlbS5nZW5lcmF0aW9uCTAKc3lzX2NodW5rX2FycmF5WzIwNDhd
-OgoJaXRlbSAwIGtleSAoRklSU1RfQ0hVTktfVFJFRSBDSFVOS19JVEVNIDU1MTg1NDA4NjU1MzYp
-CgkJbGVuZ3RoIDMzNTU0NDMyIG93bmVyIDIgc3RyaXBlX2xlbiA2NTUzNiB0eXBlIFNZU1RFTXxS
-QUlEMQoJCWlvX2FsaWduIDY1NTM2IGlvX3dpZHRoIDY1NTM2IHNlY3Rvcl9zaXplIDQwOTYKCQlu
-dW1fc3RyaXBlcyAyIHN1Yl9zdHJpcGVzIDEKCQkJc3RyaXBlIDAgZGV2aWQgMSBvZmZzZXQgMTAx
-NDcyMzc3MjQxNgoJCQlkZXZfdXVpZCA5YTQ0ODljZC01YWVlLTQxZTktOTI1ZS03YzhjMzU0ZGQ1
-M2YKCQkJc3RyaXBlIDEgZGV2aWQgMiBvZmZzZXQgNjQ3NzA1Mzk1MgoJCQlkZXZfdXVpZCBhNDA5
-YWFlMy1mYWZkLTQ5ZDUtYjU4OS1kNTRlZWRjYTYyOGYKYmFja3VwX3Jvb3RzWzRdOgoJYmFja3Vw
-IDA6CgkJYmFja3VwX3RyZWVfcm9vdDoJNjQ4NTMyNjQ3OTM2MAlnZW46IDEyODUzNTEJbGV2ZWw6
-IDEKCQliYWNrdXBfY2h1bmtfcm9vdDoJNTUxODU0MDg4MTkyMAlnZW46IDEyNzM2NjkJbGV2ZWw6
-IDEKCQliYWNrdXBfZXh0ZW50X3Jvb3Q6CTY0ODUzMjY0MzAyMDgJZ2VuOiAxMjg1MzUxCWxldmVs
-OiAyCgkJYmFja3VwX2ZzX3Jvb3Q6CQk2NDg1MzI2MzY0NjcyCWdlbjogMTI4NTM1MQlsZXZlbDog
-MgoJCWJhY2t1cF9kZXZfcm9vdDoJNDYwMTczMDIzNjQxNglnZW46IDEyODExOTAJbGV2ZWw6IDEK
-CQliYWNrdXBfY3N1bV9yb290Ogk2NDg1MzI2NTYxMjgwCWdlbjogMTI4NTM1MQlsZXZlbDogMwoJ
-CWJhY2t1cF90b3RhbF9ieXRlczoJMjk3OTEyNzg0NDg2NAoJCWJhY2t1cF9ieXRlc191c2VkOgky
-OTI0Njk5NDE0NTI4CgkJYmFja3VwX251bV9kZXZpY2VzOgkyCgoJYmFja3VwIDE6CgkJYmFja3Vw
-X3RyZWVfcm9vdDoJNjQ4NTMyNDQ4MDUxMglnZW46IDEyODUzNDgJbGV2ZWw6IDEKCQliYWNrdXBf
-Y2h1bmtfcm9vdDoJNTUxODU0MDg4MTkyMAlnZW46IDEyNzM2NjkJbGV2ZWw6IDEKCQliYWNrdXBf
-ZXh0ZW50X3Jvb3Q6CTY0ODUzMjQzOTg1OTIJZ2VuOiAxMjg1MzQ4CWxldmVsOiAyCgkJYmFja3Vw
-X2ZzX3Jvb3Q6CQk2NDg1MzI0MjgzOTA0CWdlbjogMTI4NTM0OAlsZXZlbDogMgoJCWJhY2t1cF9k
-ZXZfcm9vdDoJNDYwMTczMDIzNjQxNglnZW46IDEyODExOTAJbGV2ZWw6IDEKCQliYWNrdXBfY3N1
-bV9yb290Ogk2NDg1MzI0MzMzMDU2CWdlbjogMTI4NTM0OAlsZXZlbDogMwoJCWJhY2t1cF90b3Rh
-bF9ieXRlczoJMjk3OTEyNzg0NDg2NAoJCWJhY2t1cF9ieXRlc191c2VkOgkyOTI0Njk5NDE0NTI4
-CgkJYmFja3VwX251bV9kZXZpY2VzOgkyCgoJYmFja3VwIDI6CgkJYmFja3VwX3RyZWVfcm9vdDoJ
-NjQ4NTMyNDk1NTY0OAlnZW46IDEyODUzNDkJbGV2ZWw6IDEKCQliYWNrdXBfY2h1bmtfcm9vdDoJ
-NTUxODU0MDg4MTkyMAlnZW46IDEyNzM2NjkJbGV2ZWw6IDEKCQliYWNrdXBfZXh0ZW50X3Jvb3Q6
-CTY0ODUzMjQ4NzM3MjgJZ2VuOiAxMjg1MzQ5CWxldmVsOiAyCgkJYmFja3VwX2ZzX3Jvb3Q6CQk2
-NDg1MzI0ODI0NTc2CWdlbjogMTI4NTM0OQlsZXZlbDogMgoJCWJhY2t1cF9kZXZfcm9vdDoJNDYw
-MTczMDIzNjQxNglnZW46IDEyODExOTAJbGV2ZWw6IDEKCQliYWNrdXBfY3N1bV9yb290Ogk2NDg1
-MzI1MDUzOTUyCWdlbjogMTI4NTM0OQlsZXZlbDogMwoJCWJhY2t1cF90b3RhbF9ieXRlczoJMjk3
-OTEyNzg0NDg2NAoJCWJhY2t1cF9ieXRlc191c2VkOgkyOTI0Njk5NDE0NTI4CgkJYmFja3VwX251
-bV9kZXZpY2VzOgkyCgoJYmFja3VwIDM6CgkJYmFja3VwX3RyZWVfcm9vdDoJNjQ4NTMyNTkyMjMw
-NAlnZW46IDEyODUzNTAJbGV2ZWw6IDEKCQliYWNrdXBfY2h1bmtfcm9vdDoJNTUxODU0MDg4MTky
-MAlnZW46IDEyNzM2NjkJbGV2ZWw6IDEKCQliYWNrdXBfZXh0ZW50X3Jvb3Q6CTY0ODUzMjU4MDc2
-MTYJZ2VuOiAxMjg1MzUwCWxldmVsOiAyCgkJYmFja3VwX2ZzX3Jvb3Q6CQk2NDg1MzI1MzgxNjMy
-CWdlbjogMTI4NTM1MAlsZXZlbDogMgoJCWJhY2t1cF9kZXZfcm9vdDoJNDYwMTczMDIzNjQxNgln
-ZW46IDEyODExOTAJbGV2ZWw6IDEKCQliYWNrdXBfY3N1bV9yb290Ogk2NDg1MzI2MDUzMzc2CWdl
-bjogMTI4NTM1MAlsZXZlbDogMwoJCWJhY2t1cF90b3RhbF9ieXRlczoJMjk3OTEyNzg0NDg2NAoJ
-CWJhY2t1cF9ieXRlc191c2VkOgkyOTI0Njk5NDE0NTI4CgkJYmFja3VwX251bV9kZXZpY2VzOgky
-CgoKc3VwZXJibG9jazogYnl0ZW5yPTY3MTA4ODY0LCBkZXZpY2U9L2Rldi9zZGIKLS0tLS0tLS0t
-LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tCmNzdW1fdHlw
-ZQkJNDE3MDAgKElOVkFMSUQpCmNzdW1fc2l6ZQkJMzIKY3N1bQkJCTB4ZDY4MTEwNTMwMDAwMDAw
-MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMCBbRE9OJ1Qg
-TUFUQ0hdCmJ5dGVucgkJCTY3MTA4ODY0CmZsYWdzCQkJMHgxCgkJCSggV1JJVFRFTiApCm1hZ2lj
-CQkJX0JIUmZTX00gW21hdGNoXQpmc2lkCQkJMDhlNTFjNzYtMDA2OC00NWJhLWJhYzgtOWMxZjU3
-MzYzZWM2CmxhYmVsCQkJCmdlbmVyYXRpb24JCTEyODUzNTEKcm9vdAkJCTY0ODUzMjY0NzkzNjAK
-c3lzX2FycmF5X3NpemUJCTEyOQpjaHVua19yb290X2dlbmVyYXRpb24JMTI3MzY2OQpyb290X2xl
-dmVsCQkxCmNodW5rX3Jvb3QJCTU1MTg1NDA4ODE5MjAKY2h1bmtfcm9vdF9sZXZlbAkxCmxvZ19y
-b290CQkwCmxvZ19yb290X3RyYW5zaWQJMApsb2dfcm9vdF9sZXZlbAkJMAp0b3RhbF9ieXRlcwkJ
-Mjk3OTEyNzg0NDg2NApieXRlc191c2VkCQkyOTI0Njk5NDE0NTI4CnNlY3RvcnNpemUJCTQwOTYK
-bm9kZXNpemUJCTE2Mzg0CmxlYWZzaXplIChkZXByZWNhdGVkKQkJMTYzODQKc3RyaXBlc2l6ZQkJ
-NDA5Ngpyb290X2RpcgkJNgpudW1fZGV2aWNlcwkJMgpjb21wYXRfZmxhZ3MJCTB4MApjb21wYXRf
-cm9fZmxhZ3MJCTB4MAppbmNvbXBhdF9mbGFncwkJMHg1YjIyNDAwMDAwMDAwMTY5CgkJCSggTUlY
-RURfQkFDS1JFRiB8CgkJCSAgQ09NUFJFU1NfTFpPIHwKCQkJICBCSUdfTUVUQURBVEEgfAoJCQkg
-IEVYVEVOREVEX0lSRUYgfAoJCQkgIFNLSU5OWV9NRVRBREFUQSB8CgkJCSAgdW5rbm93biBmbGFn
-OiAweDViMjI0MDAwMDAwMDAwMDAgKQpjYWNoZV9nZW5lcmF0aW9uCTEyODUzNTEKdXVpZF90cmVl
-X2dlbmVyYXRpb24JMTI4NTM1MQpkZXZfaXRlbS51dWlkCQlhNDA5YWFlMy1mYWZkLTQ5ZDUtYjU4
-OS1kNTRlZWRjYTYyOGYKZGV2X2l0ZW0uZnNpZAkJMDhlNTFjNzYtMDA2OC00NWJhLWJhYzgtOWMx
-ZjU3MzYzZWM2IFttYXRjaF0KZGV2X2l0ZW0udHlwZQkJMApkZXZfaXRlbS50b3RhbF9ieXRlcwkx
-MDAwMjA0ODg2MDE2CmRldl9pdGVtLmJ5dGVzX3VzZWQJOTc5ODAyNzE4MjA4CmRldl9pdGVtLmlv
-X2FsaWduCTQwOTYKZGV2X2l0ZW0uaW9fd2lkdGgJNDA5NgpkZXZfaXRlbS5zZWN0b3Jfc2l6ZQk0
-MDk2CmRldl9pdGVtLmRldmlkCQkyCmRldl9pdGVtLmRldl9ncm91cAkwCmRldl9pdGVtLnNlZWtf
-c3BlZWQJMApkZXZfaXRlbS5iYW5kd2lkdGgJMApkZXZfaXRlbS5nZW5lcmF0aW9uCTAKc3lzX2No
-dW5rX2FycmF5WzIwNDhdOgoJaXRlbSAwIGtleSAoRklSU1RfQ0hVTktfVFJFRSBDSFVOS19JVEVN
-IDU1MTg1NDA4NjU1MzYpCgkJbGVuZ3RoIDMzNTU0NDMyIG93bmVyIDIgc3RyaXBlX2xlbiA2NTUz
-NiB0eXBlIFNZU1RFTXxSQUlEMQoJCWlvX2FsaWduIDY1NTM2IGlvX3dpZHRoIDY1NTM2IHNlY3Rv
-cl9zaXplIDQwOTYKCQludW1fc3RyaXBlcyAyIHN1Yl9zdHJpcGVzIDEKCQkJc3RyaXBlIDAgZGV2
-aWQgMSBvZmZzZXQgMTAxNDcyMzc3MjQxNgoJCQlkZXZfdXVpZCA5YTQ0ODljZC01YWVlLTQxZTkt
-OTI1ZS03YzhjMzU0ZGQ1M2YKCQkJc3RyaXBlIDEgZGV2aWQgMiBvZmZzZXQgNjQ3NzA1Mzk1MgoJ
-CQlkZXZfdXVpZCBhNDA5YWFlMy1mYWZkLTQ5ZDUtYjU4OS1kNTRlZWRjYTYyOGYKYmFja3VwX3Jv
-b3RzWzRdOgoJYmFja3VwIDA6CgkJYmFja3VwX3RyZWVfcm9vdDoJNjQ4NTMyNjQ3OTM2MAlnZW46
-IDEyODUzNTEJbGV2ZWw6IDEKCQliYWNrdXBfY2h1bmtfcm9vdDoJNTUxODU0MDg4MTkyMAlnZW46
-IDEyNzM2NjkJbGV2ZWw6IDEKCQliYWNrdXBfZXh0ZW50X3Jvb3Q6CTY0ODUzMjY0MzAyMDgJZ2Vu
-OiAxMjg1MzUxCWxldmVsOiAyCgkJYmFja3VwX2ZzX3Jvb3Q6CQk2NDg1MzI2MzY0NjcyCWdlbjog
-MTI4NTM1MQlsZXZlbDogMgoJCWJhY2t1cF9kZXZfcm9vdDoJNDYwMTczMDIzNjQxNglnZW46IDEy
-ODExOTAJbGV2ZWw6IDEKCQliYWNrdXBfY3N1bV9yb290Ogk2NDg1MzI2NTYxMjgwCWdlbjogMTI4
-NTM1MQlsZXZlbDogMwoJCWJhY2t1cF90b3RhbF9ieXRlczoJMjk3OTEyNzg0NDg2NAoJCWJhY2t1
-cF9ieXRlc191c2VkOgkyOTI0Njk5NDE0NTI4CgkJYmFja3VwX251bV9kZXZpY2VzOgkyCgoJYmFj
-a3VwIDE6CgkJYmFja3VwX3RyZWVfcm9vdDoJNjQ4NTMyNDQ4MDUxMglnZW46IDEyODUzNDgJbGV2
-ZWw6IDEKCQliYWNrdXBfY2h1bmtfcm9vdDoJNTUxODU0MDg4MTkyMAlnZW46IDEyNzM2NjkJbGV2
-ZWw6IDEKCQliYWNrdXBfZXh0ZW50X3Jvb3Q6CTY0ODUzMjQzOTg1OTIJZ2VuOiAxMjg1MzQ4CWxl
-dmVsOiAyCgkJYmFja3VwX2ZzX3Jvb3Q6CQk2NDg1MzI0MjgzOTA0CWdlbjogMTI4NTM0OAlsZXZl
-bDogMgoJCWJhY2t1cF9kZXZfcm9vdDoJNDYwMTczMDIzNjQxNglnZW46IDEyODExOTAJbGV2ZWw6
-IDEKCQliYWNrdXBfY3N1bV9yb290Ogk2NDg1MzI0MzMzMDU2CWdlbjogMTI4NTM0OAlsZXZlbDog
-MwoJCWJhY2t1cF90b3RhbF9ieXRlczoJMjk3OTEyNzg0NDg2NAoJCWJhY2t1cF9ieXRlc191c2Vk
-OgkyOTI0Njk5NDE0NTI4CgkJYmFja3VwX251bV9kZXZpY2VzOgkyCgoJYmFja3VwIDI6CgkJYmFj
-a3VwX3RyZWVfcm9vdDoJNjQ4NTMyNDk1NTY0OAlnZW46IDEyODUzNDkJbGV2ZWw6IDEKCQliYWNr
-dXBfY2h1bmtfcm9vdDoJNTUxODU0MDg4MTkyMAlnZW46IDEyNzM2NjkJbGV2ZWw6IDEKCQliYWNr
-dXBfZXh0ZW50X3Jvb3Q6CTY0ODUzMjQ4NzM3MjgJZ2VuOiAxMjg1MzQ5CWxldmVsOiAyCgkJYmFj
-a3VwX2ZzX3Jvb3Q6CQk2NDg1MzI0ODI0NTc2CWdlbjogMTI4NTM0OQlsZXZlbDogMgoJCWJhY2t1
-cF9kZXZfcm9vdDoJNDYwMTczMDIzNjQxNglnZW46IDEyODExOTAJbGV2ZWw6IDEKCQliYWNrdXBf
-Y3N1bV9yb290Ogk2NDg1MzI1MDUzOTUyCWdlbjogMTI4NTM0OQlsZXZlbDogMwoJCWJhY2t1cF90
-b3RhbF9ieXRlczoJMjk3OTEyNzg0NDg2NAoJCWJhY2t1cF9ieXRlc191c2VkOgkyOTI0Njk5NDE0
-NTI4CgkJYmFja3VwX251bV9kZXZpY2VzOgkyCgoJYmFja3VwIDM6CgkJYmFja3VwX3RyZWVfcm9v
-dDoJNjQ4NTMyNTkyMjMwNAlnZW46IDEyODUzNTAJbGV2ZWw6IDEKCQliYWNrdXBfY2h1bmtfcm9v
-dDoJNTUxODU0MDg4MTkyMAlnZW46IDEyNzM2NjkJbGV2ZWw6IDEKCQliYWNrdXBfZXh0ZW50X3Jv
-b3Q6CTY0ODUzMjU4MDc2MTYJZ2VuOiAxMjg1MzUwCWxldmVsOiAyCgkJYmFja3VwX2ZzX3Jvb3Q6
-CQk2NDg1MzI1MzgxNjMyCWdlbjogMTI4NTM1MAlsZXZlbDogMgoJCWJhY2t1cF9kZXZfcm9vdDoJ
-NDYwMTczMDIzNjQxNglnZW46IDEyODExOTAJbGV2ZWw6IDEKCQliYWNrdXBfY3N1bV9yb290Ogk2
-NDg1MzI2MDUzMzc2CWdlbjogMTI4NTM1MAlsZXZlbDogMwoJCWJhY2t1cF90b3RhbF9ieXRlczoJ
-Mjk3OTEyNzg0NDg2NAoJCWJhY2t1cF9ieXRlc191c2VkOgkyOTI0Njk5NDE0NTI4CgkJYmFja3Vw
-X251bV9kZXZpY2VzOgkyCgoKc3VwZXJibG9jazogYnl0ZW5yPTI3NDg3NzkwNjk0NCwgZGV2aWNl
-PS9kZXYvc2RiCi0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t
-LS0tLS0tLS0tLQpjc3VtX3R5cGUJCTQxNzAwIChJTlZBTElEKQpjc3VtX3NpemUJCTMyCmNzdW0J
-CQkweDJiMDY0NjYyMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAw
-MDAwMDAwMDAwMDAgW0RPTidUIE1BVENIXQpieXRlbnIJCQkyNzQ4Nzc5MDY5NDQKZmxhZ3MJCQkw
-eDEKCQkJKCBXUklUVEVOICkKbWFnaWMJCQlfQkhSZlNfTSBbbWF0Y2hdCmZzaWQJCQkwOGU1MWM3
-Ni0wMDY4LTQ1YmEtYmFjOC05YzFmNTczNjNlYzYKbGFiZWwJCQkKZ2VuZXJhdGlvbgkJMTI4NTM1
-MQpyb290CQkJNjQ4NTMyNjQ3OTM2MApzeXNfYXJyYXlfc2l6ZQkJMTI5CmNodW5rX3Jvb3RfZ2Vu
-ZXJhdGlvbgkxMjczNjY5CnJvb3RfbGV2ZWwJCTEKY2h1bmtfcm9vdAkJNTUxODU0MDg4MTkyMApj
-aHVua19yb290X2xldmVsCTEKbG9nX3Jvb3QJCTAKbG9nX3Jvb3RfdHJhbnNpZAkwCmxvZ19yb290
-X2xldmVsCQkwCnRvdGFsX2J5dGVzCQkyOTc5MTI3ODQ0ODY0CmJ5dGVzX3VzZWQJCTI5MjQ2OTk0
-MTQ1MjgKc2VjdG9yc2l6ZQkJNDA5Ngpub2Rlc2l6ZQkJMTYzODQKbGVhZnNpemUgKGRlcHJlY2F0
-ZWQpCQkxNjM4NApzdHJpcGVzaXplCQk0MDk2CnJvb3RfZGlyCQk2Cm51bV9kZXZpY2VzCQkyCmNv
-bXBhdF9mbGFncwkJMHgwCmNvbXBhdF9yb19mbGFncwkJMHgwCmluY29tcGF0X2ZsYWdzCQkweDVi
-MjI0MDAwMDAwMDAxNjkKCQkJKCBNSVhFRF9CQUNLUkVGIHwKCQkJICBDT01QUkVTU19MWk8gfAoJ
-CQkgIEJJR19NRVRBREFUQSB8CgkJCSAgRVhURU5ERURfSVJFRiB8CgkJCSAgU0tJTk5ZX01FVEFE
-QVRBIHwKCQkJICB1bmtub3duIGZsYWc6IDB4NWIyMjQwMDAwMDAwMDAwMCApCmNhY2hlX2dlbmVy
-YXRpb24JMTI4NTM1MQp1dWlkX3RyZWVfZ2VuZXJhdGlvbgkxMjg1MzUxCmRldl9pdGVtLnV1aWQJ
-CWE0MDlhYWUzLWZhZmQtNDlkNS1iNTg5LWQ1NGVlZGNhNjI4ZgpkZXZfaXRlbS5mc2lkCQkwOGU1
-MWM3Ni0wMDY4LTQ1YmEtYmFjOC05YzFmNTczNjNlYzYgW21hdGNoXQpkZXZfaXRlbS50eXBlCQkw
-CmRldl9pdGVtLnRvdGFsX2J5dGVzCTEwMDAyMDQ4ODYwMTYKZGV2X2l0ZW0uYnl0ZXNfdXNlZAk5
-Nzk4MDI3MTgyMDgKZGV2X2l0ZW0uaW9fYWxpZ24JNDA5NgpkZXZfaXRlbS5pb193aWR0aAk0MDk2
-CmRldl9pdGVtLnNlY3Rvcl9zaXplCTQwOTYKZGV2X2l0ZW0uZGV2aWQJCTIKZGV2X2l0ZW0uZGV2
-X2dyb3VwCTAKZGV2X2l0ZW0uc2Vla19zcGVlZAkwCmRldl9pdGVtLmJhbmR3aWR0aAkwCmRldl9p
-dGVtLmdlbmVyYXRpb24JMApzeXNfY2h1bmtfYXJyYXlbMjA0OF06CglpdGVtIDAga2V5IChGSVJT
-VF9DSFVOS19UUkVFIENIVU5LX0lURU0gNTUxODU0MDg2NTUzNikKCQlsZW5ndGggMzM1NTQ0MzIg
-b3duZXIgMiBzdHJpcGVfbGVuIDY1NTM2IHR5cGUgU1lTVEVNfFJBSUQxCgkJaW9fYWxpZ24gNjU1
-MzYgaW9fd2lkdGggNjU1MzYgc2VjdG9yX3NpemUgNDA5NgoJCW51bV9zdHJpcGVzIDIgc3ViX3N0
-cmlwZXMgMQoJCQlzdHJpcGUgMCBkZXZpZCAxIG9mZnNldCAxMDE0NzIzNzcyNDE2CgkJCWRldl91
-dWlkIDlhNDQ4OWNkLTVhZWUtNDFlOS05MjVlLTdjOGMzNTRkZDUzZgoJCQlzdHJpcGUgMSBkZXZp
-ZCAyIG9mZnNldCA2NDc3MDUzOTUyCgkJCWRldl91dWlkIGE0MDlhYWUzLWZhZmQtNDlkNS1iNTg5
-LWQ1NGVlZGNhNjI4ZgpiYWNrdXBfcm9vdHNbNF06CgliYWNrdXAgMDoKCQliYWNrdXBfdHJlZV9y
-b290Ogk2NDg1MzI2NDc5MzYwCWdlbjogMTI4NTM1MQlsZXZlbDogMQoJCWJhY2t1cF9jaHVua19y
-b290Ogk1NTE4NTQwODgxOTIwCWdlbjogMTI3MzY2OQlsZXZlbDogMQoJCWJhY2t1cF9leHRlbnRf
-cm9vdDoJNjQ4NTMyNjQzMDIwOAlnZW46IDEyODUzNTEJbGV2ZWw6IDIKCQliYWNrdXBfZnNfcm9v
-dDoJCTY0ODUzMjYzNjQ2NzIJZ2VuOiAxMjg1MzUxCWxldmVsOiAyCgkJYmFja3VwX2Rldl9yb290
-Ogk0NjAxNzMwMjM2NDE2CWdlbjogMTI4MTE5MAlsZXZlbDogMQoJCWJhY2t1cF9jc3VtX3Jvb3Q6
-CTY0ODUzMjY1NjEyODAJZ2VuOiAxMjg1MzUxCWxldmVsOiAzCgkJYmFja3VwX3RvdGFsX2J5dGVz
-OgkyOTc5MTI3ODQ0ODY0CgkJYmFja3VwX2J5dGVzX3VzZWQ6CTI5MjQ2OTk0MTQ1MjgKCQliYWNr
-dXBfbnVtX2RldmljZXM6CTIKCgliYWNrdXAgMToKCQliYWNrdXBfdHJlZV9yb290Ogk2NDg1MzI0
-NDgwNTEyCWdlbjogMTI4NTM0OAlsZXZlbDogMQoJCWJhY2t1cF9jaHVua19yb290Ogk1NTE4NTQw
-ODgxOTIwCWdlbjogMTI3MzY2OQlsZXZlbDogMQoJCWJhY2t1cF9leHRlbnRfcm9vdDoJNjQ4NTMy
-NDM5ODU5MglnZW46IDEyODUzNDgJbGV2ZWw6IDIKCQliYWNrdXBfZnNfcm9vdDoJCTY0ODUzMjQy
-ODM5MDQJZ2VuOiAxMjg1MzQ4CWxldmVsOiAyCgkJYmFja3VwX2Rldl9yb290Ogk0NjAxNzMwMjM2
-NDE2CWdlbjogMTI4MTE5MAlsZXZlbDogMQoJCWJhY2t1cF9jc3VtX3Jvb3Q6CTY0ODUzMjQzMzMw
-NTYJZ2VuOiAxMjg1MzQ4CWxldmVsOiAzCgkJYmFja3VwX3RvdGFsX2J5dGVzOgkyOTc5MTI3ODQ0
-ODY0CgkJYmFja3VwX2J5dGVzX3VzZWQ6CTI5MjQ2OTk0MTQ1MjgKCQliYWNrdXBfbnVtX2Rldmlj
-ZXM6CTIKCgliYWNrdXAgMjoKCQliYWNrdXBfdHJlZV9yb290Ogk2NDg1MzI0OTU1NjQ4CWdlbjog
-MTI4NTM0OQlsZXZlbDogMQoJCWJhY2t1cF9jaHVua19yb290Ogk1NTE4NTQwODgxOTIwCWdlbjog
-MTI3MzY2OQlsZXZlbDogMQoJCWJhY2t1cF9leHRlbnRfcm9vdDoJNjQ4NTMyNDg3MzcyOAlnZW46
-IDEyODUzNDkJbGV2ZWw6IDIKCQliYWNrdXBfZnNfcm9vdDoJCTY0ODUzMjQ4MjQ1NzYJZ2VuOiAx
-Mjg1MzQ5CWxldmVsOiAyCgkJYmFja3VwX2Rldl9yb290Ogk0NjAxNzMwMjM2NDE2CWdlbjogMTI4
-MTE5MAlsZXZlbDogMQoJCWJhY2t1cF9jc3VtX3Jvb3Q6CTY0ODUzMjUwNTM5NTIJZ2VuOiAxMjg1
-MzQ5CWxldmVsOiAzCgkJYmFja3VwX3RvdGFsX2J5dGVzOgkyOTc5MTI3ODQ0ODY0CgkJYmFja3Vw
-X2J5dGVzX3VzZWQ6CTI5MjQ2OTk0MTQ1MjgKCQliYWNrdXBfbnVtX2RldmljZXM6CTIKCgliYWNr
-dXAgMzoKCQliYWNrdXBfdHJlZV9yb290Ogk2NDg1MzI1OTIyMzA0CWdlbjogMTI4NTM1MAlsZXZl
-bDogMQoJCWJhY2t1cF9jaHVua19yb290Ogk1NTE4NTQwODgxOTIwCWdlbjogMTI3MzY2OQlsZXZl
-bDogMQoJCWJhY2t1cF9leHRlbnRfcm9vdDoJNjQ4NTMyNTgwNzYxNglnZW46IDEyODUzNTAJbGV2
-ZWw6IDIKCQliYWNrdXBfZnNfcm9vdDoJCTY0ODUzMjUzODE2MzIJZ2VuOiAxMjg1MzUwCWxldmVs
-OiAyCgkJYmFja3VwX2Rldl9yb290Ogk0NjAxNzMwMjM2NDE2CWdlbjogMTI4MTE5MAlsZXZlbDog
-MQoJCWJhY2t1cF9jc3VtX3Jvb3Q6CTY0ODUzMjYwNTMzNzYJZ2VuOiAxMjg1MzUwCWxldmVsOiAz
-CgkJYmFja3VwX3RvdGFsX2J5dGVzOgkyOTc5MTI3ODQ0ODY0CgkJYmFja3VwX2J5dGVzX3VzZWQ6
-CTI5MjQ2OTk0MTQ1MjgKCQliYWNrdXBfbnVtX2RldmljZXM6CTIKCgo=
---f4f5e80a11d814206b05694bca9c--
+>>>
+>>>>
+>>>> Above grep could be very slow since it will try to iterate the whole
+>>>> disk. It's recommended to dump the first 128M of the disk and then grep
+>>>> on that 128M image.
+>>>>
+>>>>
+>>>> BTW, with superblock of sdc1 patched, you should be able to mount the fs
+>>>> with -o ro,degraded, and salvage some data.
+>>>>
+>>>> Thanks,
+>>>> Qu
+>>>
+>>> Thank you so much!
+>>>
+>>> I am better off copying the data to another disk and then rebuilding the pool?
+>>> or can I just run a scrub after the super block is fixed?
+>>
+>> According to your latest grep output, strangely the 1st device is not
+>> that corrupted as before.
+>>
+>> So I think in-place recover should save you a lot of time.
+>>
+>> Thanks,
+>> Qu
+>>
+>>>
+>>> For reference here is lsblk:
+>>>
+>>> sda      8:0    0 465.8G  0 disk
+>>> ├─sda1   8:1    0   512M  0 part /boot
+>>> ├─sda2   8:2    0 455.3G  0 part /
+>>> └─sda3   8:3    0    10G  0 part [SWAP]
+>>>
+>>> sdb      8:16   0 931.5G  0 disk
+>>> -- first disk
+>>>
+>>> sdc      8:32   0   1.8T  0 disk
+>>> └─sdc1   8:33   0   1.8T  0 part
+>>> -- 2nd disk
+>>>

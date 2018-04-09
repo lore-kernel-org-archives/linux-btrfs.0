@@ -1,63 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:51461 "EHLO
-        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754331AbeDCFkE (ORCPT
-        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Tue, 3 Apr 2018 01:40:04 -0400
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/2] btrfs-progs: tests/fsck: Add test case to check if btrfs check can skip data csum verfication for metadata dump
-Date: Tue,  3 Apr 2018 13:39:47 +0800
-Message-Id: <20180403053947.5908-2-wqu@suse.com>
-In-Reply-To: <20180403053947.5908-1-wqu@suse.com>
-References: <20180403053947.5908-1-wqu@suse.com>
+Received: from mx2.suse.de ([195.135.220.15]:51418 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1750982AbeDIOla (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 9 Apr 2018 10:41:30 -0400
+Date: Mon, 9 Apr 2018 16:39:00 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Gu Jinxiang <gujx@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs-progs: Do not add extra slash if given path end
+ with it
+Message-ID: <20180409143900.GU8557@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1522314679-762-1-git-send-email-gujx@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1522314679-762-1-git-send-email-gujx@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- .../031-metadatadump-check-data-csum/test.sh       | 32 ++++++++++++++++++++++
- 1 file changed, 32 insertions(+)
- create mode 100755 tests/fsck-tests/031-metadatadump-check-data-csum/test.sh
+On Thu, Mar 29, 2018 at 05:11:19PM +0800, Gu Jinxiang wrote:
+> When use a given path end with a slash like below,
+> the output of path will have double slash.
+> 
+> Do not add extra slash if there is already one in the given
+> path.
+> 
+> $ btrfs filesystem du ./test/
+> output:
+> Total   Exclusive  Set shared  Filename
+> 0.00B       0.00B           -  /home/gujx/device/tmp/test//foo
+> 
+> Signed-off-by: Gu Jinxiang <gujx@cn.fujitsu.com>
 
-diff --git a/tests/fsck-tests/031-metadatadump-check-data-csum/test.sh b/tests/fsck-tests/031-metadatadump-check-data-csum/test.sh
-new file mode 100755
-index 000000000000..9f14c4122f4b
---- /dev/null
-+++ b/tests/fsck-tests/031-metadatadump-check-data-csum/test.sh
-@@ -0,0 +1,32 @@
-+#!/bin/bash
-+# To check if "btrfs check" can detect metadata dump (restored by btrfs-iamge)
-+# and ignore --check-data-csum option
-+
-+source "$TEST_TOP/common"
-+
-+check_prereq btrfs
-+check_prereq mkfs.btrfs
-+check_prereq btrfs-image
-+setup_root_helper
-+prepare_test_dev
-+ 
-+tmp=$(mktemp --tmpdir btrfs-progs-fsck.XXXXXXX)
-+
-+run_check $SUDO_HELPER "$TOP/mkfs.btrfs" -f "$TEST_DEV"
-+run_check_mount_test_dev
-+
-+run_check $SUDO_HELPER dd if=/dev/urandom of="$TEST_MNT/file" bs=4k count=16
-+run_check_umount_test_dev
-+
-+run_check $SUDO_HELPER "$TOP/btrfs-image" "$TEST_DEV" "$tmp.image"
-+
-+# use prepare_test_dev() to wipe all existing data on $TEST_DEV
-+# so there is no way that restored image could have mathcing data csum
-+prepare_test_dev
-+
-+run_check $SUDO_HELPER "$TOP/btrfs-image" -r "$tmp.image" "$TEST_DEV"
-+
-+# Should not report any error
-+run_check "$TOP/btrfs" check --check-data-csum "$TEST_DEV"
-+
-+rm -rf -- "$tmp*"
--- 
-2.16.3
+Applied, thanks.
 
+I was wondering if we should remove all trailing slashes, but I think
+that the chance of that happening often is too low. The tab completion
+will append only a single tab and that's about the case I'd care.

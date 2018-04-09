@@ -1,17 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp2120.oracle.com ([156.151.31.85]:44966 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752232AbeDIOut (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Apr 2018 10:50:49 -0400
-Subject: Re: [PATCH 11/16] btrfs: kill btrfs_fs_info::volume_mutex
+Received: from aserp2130.oracle.com ([141.146.126.79]:37910 "EHLO
+        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751662AbeDIOxl (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Apr 2018 10:53:41 -0400
+Subject: Re: [PATCH 10/16] btrfs: remove wrong use of volume_mutex from
+ btrfs_dev_replace_start
 To: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
 References: <cover.1522780026.git.dsterba@suse.com>
- <773c3cb3c347d102718975831837e8eb7e9f30ad.1522780026.git.dsterba@suse.com>
+ <3506f0f2a65a88ef2a5bb1cfff0617503621ba19.1522780026.git.dsterba@suse.com>
 From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <2f0ca098-01d1-e6ab-848b-febe1e06ea96@oracle.com>
-Date: Mon, 9 Apr 2018 22:52:41 +0800
+Message-ID: <65cccbc8-367b-4af0-f181-daed6605c815@oracle.com>
+Date: Mon, 9 Apr 2018 22:55:38 +0800
 MIME-Version: 1.0
-In-Reply-To: <773c3cb3c347d102718975831837e8eb7e9f30ad.1522780026.git.dsterba@suse.com>
+In-Reply-To: <3506f0f2a65a88ef2a5bb1cfff0617503621ba19.1522780026.git.dsterba@suse.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -19,47 +20,18 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 
 On 04/04/2018 02:34 AM, David Sterba wrote:
-> Mutual exclusion of device add/rm and balance was done by the volume
-> mutex up to version 3.7. The commit 5ac00addc7ac091109 ("Btrfs: disallow
-> mutually exclusive admin operations from user mode") added a bit that
-> essentially tracked the same information.
+> The volume mutex does not protect against anything in this case, the
+> comment about scrub is right but not related to locking and looks
+> confusing. The comment in btrfs_find_device_missing_or_by_path is wrong
+> and confusing too.
 > 
-> The status bit has an advantage over a mutex that it can be set without
-> restrictions of function context, so it started to be used in the
-> mount-time resuming of balance or device replace.
+> The device_list_mutex is not held here to protect device lookup, but in
+> this case device replace cannot run in parallel with device removal (due
+> to exclusive op protection), so we don't need further locking here.
 > 
-> But we don't really need to track the same information in two ways.
-> 
-> 1) After the previous cleanups, the main ioctl handlers for
->     add/del/resize copy the EXCL_OP bit next to the volume mutex, here
->     it's clearly safe.
-> 
-> 2) Resuming balance during mount or after rw remount will set only the
->     EXCL_OP bit and the volume_mutex is held in the kernel thread that
->     calls btrfs_balance.
-> 
-> 3) Resuming device replace during mount or after rw remount is done
->     after balance and is excluded by the EXCL_OP bit. It does not take
->     the volume_mutex at all and completely relies on the EXCL_OP bit.
-> 
-> 4) The resuming of balance and dev-replace cannot hapen at the same time
->     as the ioctls cannot be started in parallel. Nevertheless, a crafted
->     image could trigger that and a warning is printed.
-> 
-> 5) Balance is normally excluded by EXCL_OP and also uses own mutex to
->     protect against concurrent access to its status data. There's some
->     trickery to maintain the right lock nesting in case we need to
->     reexamine the status in btrfs_ioctl_balance. The volume_mutex is
->     removed and the unlock/lock sequence is left in place as we might
->     expect other waiters to proceed.
-> 
-> 6) Similar to 5, the unlock/lock sequence is kept in
->     btrfs_cancel_balance to allow waiters to continue. >
 > Signed-off-by: David Sterba <dsterba@suse.com>
-
-  Thanks for cleaning volume_mutex.
 
   Reviewed-by: Anand Jain <anand.jain@oracle.com>
 
-Anand
+Thanks, Anand
 

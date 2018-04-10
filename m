@@ -1,85 +1,135 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.15]:60529 "EHLO mout.gmx.net"
+Received: from mx2.suse.de ([195.135.220.15]:34785 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751401AbeDFX1T (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 6 Apr 2018 19:27:19 -0400
-Subject: Re: [PATCH v2 2/2] btrfs: Validate child tree block's level and first
- key
-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-References: <20180327124419.28398-1-wqu@suse.com>
- <20180327124419.28398-2-wqu@suse.com> <20180328154949.GO30422@twin.jikos.cz>
- <7d95e99d-09bf-483f-2fa8-3ab658c2a8f5@gmx.com>
- <20180406170748.GI8557@twin.jikos.cz>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <34030821-fa65-73b3-fbea-789689bc785b@gmx.com>
-Date: Sat, 7 Apr 2018 07:27:06 +0800
+        id S1751272AbeDJPvg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 10 Apr 2018 11:51:36 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id A10CBAF2A
+        for <linux-btrfs@vger.kernel.org>; Tue, 10 Apr 2018 15:51:34 +0000 (UTC)
+Date: Tue, 10 Apr 2018 17:49:05 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Nikolay Borisov <nborisov@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/2] btrfs: Factor out read portion of
+ btrfs_get_blocks_direct
+Message-ID: <20180410154905.GE2817@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1519315934-13611-1-git-send-email-nborisov@suse.com>
 MIME-Version: 1.0
-In-Reply-To: <20180406170748.GI8557@twin.jikos.cz>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1519315934-13611-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Thu, Feb 22, 2018 at 06:12:13PM +0200, Nikolay Borisov wrote:
+> Currently this function handles both the READ and WRITE dio cases. This
+> is facilitated by a bunch of 'if' statements, a goto short-circuit
+> statement and a very perverse aliasing of "!created"(READ) case
+> by setting lockstart = lockend and checking for lockstart < lockend for
+> detecting the write. Let's simplify this mess by extracting the
+> READ-only code into a separate __btrfs_get_block_direct_read function.
+> This is only the first step, the next one will be to factor out the
+> write side as well. The end goal will be to have the common locking/
+> unlocking code in btrfs_get_blocks_direct and then it will call either
+> the read|write subvariants. No functional changes.
 
+Reviewed-by: David Sterba <dsterba@suse.com>
 
-On 2018年04月07日 01:07, David Sterba wrote:
-> On Mon, Apr 02, 2018 at 06:47:32PM +0800, Qu Wenruo wrote:
->> On 2018年03月28日 23:49, David Sterba wrote:
->>> On Tue, Mar 27, 2018 at 08:44:19PM +0800, Qu Wenruo wrote:
->>>> We have several reports about node pointer points to incorrect child
->>>> tree blocks, which could have even wrong owner and level but still with
->>>> valid generation and checksum.
->>>>
->>>> Although btrfs check could handle it and print error message like:
->>>> leaf parent key incorrect 60670574592
->>>>
->>>> Kernel doesn't have enough check on this type of corruption correctly.
->>>> At least add such check to read_tree_block() and btrfs_read_buffer(),
->>>> where we need two new parameters @level and @first_key to verify the
->>>> child tree block.
->>>>
->>>> The new @level check is mandatory and all call sites are already
->>>> modified to extract expected level from its call chain.
->>>>
->>>> While @first_key is optional, the following call sites are skipping such
->>>> check:
->>>> 1) Root node/leaf
->>>>    As ROOT_ITEM doesn't contain the first key, skip @first_key check.
->>>> 2) Direct backref
->>>>    Only parent bytenr and level is known and we need to resolve the key
->>>>    all by ourselves, skip @first_key check.
->>>>
->>>> Another note of this verification is, it needs extra info from nodeptr
->>>> or ROOT_ITEM, so it can't fit into current tree-checker framework, which
->>>> is limited to node/leaf boundary.
->>>>
->>>> Signed-off-by: Qu Wenruo <wqu@suse.com>
->>>> ---
->>>> changelog:
->>>> v2:
->>>>   Make @level check mandatory, suggesed by Jeff and Nikolay.
->>>>   Change parameter order as @level is now mandatory, put it in front of
->>>>   @first_key.
->>>>   Change verify_parent_level() to verify_key_level() to avoid confusion
->>>>   on the @level parameter.
->>>>   Add btrfs_error() output for CONFIG_BTRFS_DEBUG to help debugging.
->>>
->>> That's much better overall, thanks. Adding it to next.
->>
->> Nikolay reported a case where @first_key check seems to cause false alert.
->> (Although my xfstests check hasn't exposed it yet)
->>
->> Please discard this patch since it has the possibility to cause false
->> alert for btrfs core functionality.
+uh what a convoluted code to untangle. A few style notes below.
 > 
-> Too late, the patch is in master now, so we need to fix it.
-
-Seems to be a very rare race in tree operations, still under investigation.
-
-Thanks,
-Qu
-
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+> ---
+>  fs/btrfs/inode.c | 49 ++++++++++++++++++++++++++++++++++++-------------
+>  1 file changed, 36 insertions(+), 13 deletions(-)
 > 
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 491a7397f6fa..fd99347d0c91 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -7677,6 +7677,27 @@ static struct extent_map *create_io_em(struct inode *inode, u64 start, u64 len,
+>  	return em;
+>  }
+>  
+> +
+> +static int __btrfs_get_blocks_direct_read(struct extent_map *em,
+
+Please drop the "__" the function is static and there's no
+underscore-less version.
+
+> +					 struct buffer_head *bh_result,
+> +					 struct inode *inode,
+> +					 u64 start, u64 len)
+> +{
+> +	if (em->block_start == EXTENT_MAP_HOLE ||
+> +			test_bit(EXTENT_FLAG_PREALLOC, &em->flags))
+> +		return -ENOENT;
+> +
+> +	len = min(len, em->len - (start - em->start));
+> +
+> +	bh_result->b_blocknr = (em->block_start + (start - em->start)) >>
+> +		inode->i_blkbits;
+> +	bh_result->b_size = len;
+> +	bh_result->b_bdev = em->bdev;
+> +	set_buffer_mapped(bh_result);
+> +
+> +	return 0;
+> +}
+> +
+>  static int btrfs_get_blocks_direct(struct inode *inode, sector_t iblock,
+>  				   struct buffer_head *bh_result, int create)
+>  {
+> @@ -7745,11 +7766,22 @@ static int btrfs_get_blocks_direct(struct inode *inode, sector_t iblock,
+>  		goto unlock_err;
+>  	}
+>  
+> -	/* Just a good old fashioned hole, return */
+> -	if (!create && (em->block_start == EXTENT_MAP_HOLE ||
+> -			test_bit(EXTENT_FLAG_PREALLOC, &em->flags))) {
+> +	if (!create) {
+> +		ret = __btrfs_get_blocks_direct_read(em, bh_result, inode,
+> +						   start, len);
+> +		/* Can be negative only if we read from a hole */
+> +		if (ret < 0) {
+> +			ret = 0;
+> +			free_extent_map(em);
+> +			goto unlock_err;
+> +		}
+> +		/*
+> +		 * We need to unlock only the end area that we aren't using
+> +		 * if there is any leftover space
+> +		 */
+> +		free_extent_state(cached_state);
+>  		free_extent_map(em);
+> -		goto unlock_err;
+> +		return 0;
+
+Please add a separate label for that, the funcion uses the single exit
+block style (labels and one-or-two returns).
+
+>  	}
+>  
+>  	/*
+> @@ -7761,12 +7793,6 @@ static int btrfs_get_blocks_direct(struct inode *inode, sector_t iblock,
+>  	 * just use the extent.
+>  	 *
+>  	 */
+> -	if (!create) {
+> -		len = min(len, em->len - (start - em->start));
+> -		lockstart = start + len;
+> -		goto unlock;
+> -	}
+> -
+>  	if (test_bit(EXTENT_FLAG_PREALLOC, &em->flags) ||
+>  	    ((BTRFS_I(inode)->flags & BTRFS_INODE_NODATACOW) &&
+>  	     em->block_start != EXTENT_MAP_HOLE)) {
+> @@ -7853,10 +7879,7 @@ static int btrfs_get_blocks_direct(struct inode *inode, sector_t iblock,
+>  		clear_extent_bit(&BTRFS_I(inode)->io_tree, lockstart,
+>  				 lockend, unlock_bits, 1, 0,
+>  				 &cached_state);
+> -	} else {
+> -		free_extent_state(cached_state);
+>  	}
+> -
+>  	free_extent_map(em);
+>  
+>  	return 0;

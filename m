@@ -1,21 +1,21 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-by2nam01on0139.outbound.protection.outlook.com ([104.47.34.139]:39793
-        "EHLO NAM01-BY2-obe.outbound.protection.outlook.com"
+Received: from mail-dm3nam03on0133.outbound.protection.outlook.com ([104.47.41.133]:45508
+        "EHLO NAM03-DM3-obe.outbound.protection.outlook.com"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1754792AbeDIDgp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 8 Apr 2018 23:36:45 -0400
+        id S1754204AbeDJNuX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 10 Apr 2018 09:50:23 -0400
 From: Sasha Levin <Alexander.Levin@microsoft.com>
 To: Sasha Levin <Alexander.Levin@microsoft.com>,
-        Nikolay Borisov <nborisov@suse.com>,
+        Filipe Manana <fdmanana@suse.com>,
         "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-CC: Nikolay Borisov <nborisov@suse.com>,
-        "stable@vger.kernel.org" <stable@vger.kernel.org>
-Subject: Re: [PATCH] btrfs: Fix possible softlock on single core machines
-Date: Mon, 9 Apr 2018 03:36:42 +0000
-Message-ID: <DM5PR2101MB10321235FD09133CA3EAA688FBBF0@DM5PR2101MB1032.namprd21.prod.outlook.com>
-References: <1522914015-32534-1-git-send-email-nborisov@suse.com>
-In-Reply-To: <1522914015-32534-1-git-send-email-nborisov@suse.com>
-Content-Type: text/plain; charset="iso-8859-1"
+CC: "stable@vger.kernel.org" <stable@vger.kernel.org>
+Subject: Re: [PATCH] Btrfs: fix loss of prealloc extents past i_size after
+ fsync log replay
+Date: Tue, 10 Apr 2018 13:50:21 +0000
+Message-ID: <DM5PR2101MB103293C63B8465C6B91284C2FBBE0@DM5PR2101MB1032.namprd21.prod.outlook.com>
+References: <20180405215512.513-1-fdmanana@kernel.org>
+In-Reply-To: <20180405215512.513-1-fdmanana@kernel.org>
+Content-Type: text/plain; charset="utf-8"
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -25,18 +25,26 @@ Hi,
 [This is an automated email]
 
 This commit has been processed because it contains a "Fixes:" tag,
-fixing commit: 6d74119f1a3e Btrfs: avoid taking the chunk_mutex in do_chunk_alloc.
+fixing commit: c71bf099abdd Btrfs: Avoid orphan inodes cleanup while replaying log.
 
-The bot has also determined it's probably a bug fixing patch. (score: 55.2868)
+The bot has also determined it's probably a bug fixing patch. (score: 6.2138)
 
-The bot has tested the following trees: v4.16, v4.15.15, v4.14.32, v4.9.92, v4.4.126.
+The bot has tested the following trees: v4.16.1, v4.15.16, v4.14.33, v4.9.93, v4.4.127.
 
-v4.16: Build OK!
-v4.15.15: Build OK!
-v4.14.32: Build OK!
-v4.9.92: Build OK!
-v4.4.126: Build OK!
+v4.16.1: Build OK!
+v4.15.16: Build OK!
+v4.14.33: Build OK!
+v4.9.93: Build failed! Errors:
+    tree-log.c:2367:24: error: â€˜struct btrfs_fs_infoâ€™ has no member named â€˜sectorsizeâ€™
+    tree-log.c:2367:24: error: â€˜struct btrfs_fs_infoâ€™ has no member named â€˜sectorsizeâ€™
+    tree-log.c:4224:13: error: â€˜struct inodeâ€™ has no member named â€˜flagsâ€™; did you mean â€˜i_flagsâ€™?
+    tree-log.c:4229:38: error: â€˜struct inodeâ€™ has no member named â€˜vfs_inodeâ€™
+    tree-log.c:4239:4: error: implicit declaration of function â€˜refcount_incâ€™; did you mean â€˜i_readcount_incâ€™? [-Werror=implicit-function-declaration]
+
+v4.4.127: Failed to apply! Possible dependencies:
+    0132761017e0 ("btrfs: fix string and comment grammatical issues and typos")
+
 
 --
 Thanks,
-Sasha
+Sashaÿôèº{.nÇ+‰·Ÿ®‰­†+%ŠËÿ±éİ¶¥Šwÿº{.nÇ+‰·¥Š{±ı»k~ÏâØ^n‡r¡ö¦zËëh™¨è­Ú&£ûàz¿äz¹Ş—ú+€Ê+zf£¢·hšˆ§~†­†Ûiÿÿïêÿ‘êçz_è®æj:+v‰¨ş)ß£øm

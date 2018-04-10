@@ -1,57 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:46095 "EHLO mx2.suse.de"
+Received: from mout.gmx.net ([212.227.17.21]:50817 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752432AbeDLOw6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 12 Apr 2018 10:52:58 -0400
-Date: Thu, 12 Apr 2018 16:50:25 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Sasha Levin <Alexander.Levin@microsoft.com>
-Cc: Filipe Manana <fdmanana@suse.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "stable@vger.kernel.org" <stable@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: fix loss of prealloc extents past i_size after
- fsync log replay
-Message-ID: <20180412145025.GM21272@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20180405215512.513-1-fdmanana@kernel.org>
- <DM5PR2101MB103293C63B8465C6B91284C2FBBE0@DM5PR2101MB1032.namprd21.prod.outlook.com>
+        id S1751650AbeDJBtq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 9 Apr 2018 21:49:46 -0400
+Subject: Re: [PATCH] btrfs-progs: Use more loose open ctree flags for
+ dump-tree and restore
+To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+References: <20180406063919.11771-1-wqu@suse.com>
+ <20180409141235.GP8557@twin.jikos.cz>
+ <a75a16c3-eb04-5c64-a861-e370aa144606@gmx.com>
+ <20180409150538.GW8557@twin.jikos.cz>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <f5a96b8d-5325-bc23-c295-180496e5f2bb@gmx.com>
+Date: Tue, 10 Apr 2018 09:49:28 +0800
 MIME-Version: 1.0
+In-Reply-To: <20180409150538.GW8557@twin.jikos.cz>
 Content-Type: text/plain; charset=utf-8
-In-Reply-To: <DM5PR2101MB103293C63B8465C6B91284C2FBBE0@DM5PR2101MB1032.namprd21.prod.outlook.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Apr 10, 2018 at 01:50:21PM +0000, Sasha Levin wrote:
-> Hi,
-> 
-> [This is an automated email]
-> 
-> This commit has been processed because it contains a "Fixes:" tag,
-> fixing commit: c71bf099abdd Btrfs: Avoid orphan inodes cleanup while replaying log.
-> 
-> The bot has also determined it's probably a bug fixing patch. (score: 6.2138)
-> 
-> The bot has tested the following trees: v4.16.1, v4.15.16, v4.14.33, v4.9.93, v4.4.127.
-> 
-> v4.16.1: Build OK!
-> v4.15.16: Build OK!
-> v4.14.33: Build OK!
-> v4.9.93: Build failed! Errors:
->     tree-log.c:2367:24: error: ‘struct btrfs_fs_info’ has no member named ‘sectorsize’
->     tree-log.c:2367:24: error: ‘struct btrfs_fs_info’ has no member named ‘sectorsize’
->     tree-log.c:4224:13: error: ‘struct inode’ has no member named ‘flags’; did you mean ‘i_flags’?
->     tree-log.c:4229:38: error: ‘struct inode’ has no member named ‘vfs_inode’
->     tree-log.c:4239:4: error: implicit declaration of function ‘refcount_inc’; did you mean ‘i_readcount_inc’? [-Werror=implicit-function-declaration]
 
-4.9 and older would need manual fixes to the patch. There are a few
-refactorings but that should be easy to resolve if somebody wants to
-backport port that.
 
+On 2018年04月09日 23:05, David Sterba wrote:
+> On Mon, Apr 09, 2018 at 10:29:34PM +0800, Qu Wenruo wrote:
+>>>> --- a/cmds-inspect-dump-tree.c
+>>>> +++ b/cmds-inspect-dump-tree.c
+>>>> @@ -303,7 +303,9 @@ int cmd_inspect_dump_tree(int argc, char **argv)
+>>>>  	int uuid_tree_only = 0;
+>>>>  	int roots_only = 0;
+>>>>  	int root_backups = 0;
+>>>> -	unsigned open_ctree_flags = OPEN_CTREE_FS_PARTIAL;
+>>>> +	/* Speed up open_ctree() and continue if extent tree is corrupted */
+>>>> +	unsigned open_ctree_flags = OPEN_CTREE_PARTIAL |
+>>>> +				    OPEN_CTREE_NO_BLOCK_GROUPS;
+>>>
+>>> We could consider that separatelly, whether to allow dumping a partially
+>>> created filesystem, ie. OPEN_CTREE_FS_PARTIAL added by a new option.
+>>
+>> For dump-tree, there is really no limitation here.
+>> As long as chunk tree is OK, we should be OK to do "-b" dump.
+>>
+>> For "-t" or all tree (default) dump, with chunk tree opened only, we
+>> could try our best to print any good trees.
+>> So I don't get the point to read all other trees.
 > 
-> v4.4.127: Failed to apply! Possible dependencies:
->     0132761017e0 ("btrfs: fix string and comment grammatical issues and typos")
+> Yeah, eg. a bad filesystem magic number does not stop dump-tree, so no
+> change is needed.
+
+Bad magic will still stop dump-tree, super block check is not affected
+by open ctree flags.
+The only way to block dump-tree is corrupted chunk tree, which mostly
+makes the fs garbage.
+
+Even root tree is corrupted, we can still specify bytenr manually to
+salvage what we need.
+
+The point here is still the same, for read-only operations where we
+don't care about the cross-reference, there is no need to care about
+extent tree at all, and skip block group item search could save us a lot
+of time.
+
+Thanks,
+Qu
 > 
-> 
-> --
-> Thanks,
-> Sasha????{.n?+???????+%?????ݶ??w??{.n?+????{???k~????^n?r???z???h?????&???z??z?ޗ?+??+zf???h???~????i?????????z_???j:+v???)ߣ?m

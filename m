@@ -1,38 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f48.google.com ([209.85.214.48]:40521 "EHLO
-        mail-it0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752211AbeDKPdX (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 11 Apr 2018 11:33:23 -0400
-Received: by mail-it0-f48.google.com with SMTP id u62-v6so3138567ita.5
-        for <linux-btrfs@vger.kernel.org>; Wed, 11 Apr 2018 08:33:22 -0700 (PDT)
-MIME-Version: 1.0
-From: Tom Vincent <tom@tlvince.com>
-Date: Wed, 11 Apr 2018 16:33:21 +0100
-Message-ID: <CAG4vCreOmBdsPT84ajozGb4XV83+Fc-joyUqXgizutPah0VrrA@mail.gmail.com>
-Subject: btrfs fails to mount after power outage
+Received: from prv3-mh.provo.novell.com ([137.65.250.26]:33816 "EHLO
+        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751490AbeDJFzr (ORCPT
+        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+        Tue, 10 Apr 2018 01:55:47 -0400
+From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+Subject: [PATCH RFC] btrfs-progs: ctree: Don't return error if first key mismatch on leaf
+Date: Tue, 10 Apr 2018 13:55:29 +0800
+Message-Id: <20180410055529.28341-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-My btrfs laptop had a power outage and failed to boot with "parent
-transid verify failed..." errors. (I have backups).
+When running btrfs/074 with enough CPUs, it's possible (around 1%) to
+hit first key mismatch warning.
 
-I couldn't rw mount on a live disk, but could ro mount. I tried btrfs
-scrub and then btrfs check --repair to no avail. However, btrfs rescue
-zero-log _did_ work; the drive can be rw mounted and the machine boots
-fine again.
+Most of such warning happens in split_leaf() where it can ignore error
+from push_leaf_right(), some of such problem also happens in
+btrfs_search_forward().
 
-Although there doesn't appear to be an immediate data loss, there's
-still a transid error during boot. "BTRFS error (device dm-0): parent
-transid verify failed on 115490816 wanted 339949 found 340182".
+Since it could break normal tree operations, at least keep the warning
+for debug build but change its return to 0 for leaf, so we won't break
+normal tree operations.
 
-If I umount and re-run btrfs check, I'm given further transid errors
-and pages of "inode [n] errors 2001, no inode item, link count wrong".
+And, any suggest/advice on this tree locking problem is welcome.
 
-What steps should I take now?
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/disk-io.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
 
-btrfs progs 4.15
-kernel 4.15.15
-NVMe drive
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index bb38f4098e9c..cf58e9babe34 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -442,6 +442,7 @@ static int verify_level_key(struct btrfs_fs_info *fs_info,
+ 		btrfs_err(fs_info,
+ "tree level mismatch detected, bytenr=%llu level expected=%u has=%u",
+ 			  eb->start, level, found_level);
++		btrfs_print_tree(eb, false);
+ #endif
+ 		return -EIO;
+ 	}
+@@ -463,8 +464,16 @@ static int verify_level_key(struct btrfs_fs_info *fs_info,
+ 			  eb->start, first_key->objectid, first_key->type,
+ 			  first_key->offset, found_key.objectid,
+ 			  found_key.type, found_key.offset);
++		btrfs_print_tree(eb, false);
+ 	}
+ #endif
++	/*
++	 * XXX: We seems to have locking problem for leaf, where we have race
++	 * updating parent nodeptr's first key.
++	 * So if this eb is leaf and first key doesn't match, still let it go.
++	 */
++	if (level == 0 && ret)
++		ret = 0;
+ 	return ret;
+ }
+ 
+-- 
+2.17.0
+

@@ -1,48 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:53313 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:53326 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751854AbeDKIVZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 11 Apr 2018 04:21:25 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 972CFAF6E
-        for <linux-btrfs@vger.kernel.org>; Wed, 11 Apr 2018 08:21:24 +0000 (UTC)
+        id S1751861AbeDKIVa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 11 Apr 2018 04:21:30 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id E0C54AB35
+        for <linux-btrfs@vger.kernel.org>; Wed, 11 Apr 2018 08:21:28 +0000 (UTC)
 From: Nikolay Borisov <nborisov@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 2/4] btrfs: Fix lock release order
-Date: Wed, 11 Apr 2018 11:21:18 +0300
-Message-Id: <1523434880-7799-3-git-send-email-nborisov@suse.com>
+Subject: [PATCH 3/4] btrfs: Consolidate error checking for btrfs_alloc_chunk
+Date: Wed, 11 Apr 2018 11:21:19 +0300
+Message-Id: <1523434880-7799-4-git-send-email-nborisov@suse.com>
 In-Reply-To: <1523434880-7799-1-git-send-email-nborisov@suse.com>
 References: <1523434880-7799-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Locks should generally be released in the oppposite order they are
-acquired. Generally lock acquisiton ordering is used to ensure
-deadlocks don't happen. However, as becomes more complicated it's
-best to also maintain proper unlock order so as to avoid possible dead
-locks. This was found by code inspection and doesn't necessarily lead
-to a deadlock scenario.
+The second if is really a subcase of ret being less than 0. So
+introduce a generic if (ret < 0) check, and inside have another if
+which explicitly handles the -ENOSPC and any other errors. No
+functional changes.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/extent-tree.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ fs/btrfs/extent-tree.c | 12 +++++++-----
+ 1 file changed, 7 insertions(+), 5 deletions(-)
 
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 3ae6394f9265..5e0c987e8fa8 100644
+index 5e0c987e8fa8..facc5248d500 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -2609,8 +2609,8 @@ static int cleanup_ref_head(struct btrfs_trans_handle *trans,
- 	delayed_refs->num_heads--;
- 	rb_erase(&head->href_node, &delayed_refs->href_root);
- 	RB_CLEAR_NODE(&head->href_node);
--	spin_unlock(&delayed_refs->lock);
- 	spin_unlock(&head->lock);
-+	spin_unlock(&delayed_refs->lock);
- 	atomic_dec(&delayed_refs->num_entries);
+@@ -4681,12 +4681,14 @@ static int do_chunk_alloc(struct btrfs_trans_handle *trans,
+ 	trans->allocating_chunk = false;
  
- 	trace_run_delayed_ref_head(fs_info, head, 0);
+ 	spin_lock(&space_info->lock);
+-	if (ret < 0 && ret != -ENOSPC)
+-		goto out;
+-	if (ret)
+-		space_info->full = 1;
+-	else
++	if (ret < 0) {
++		if (ret == -ENOSPC)
++			space_info->full = 1;
++		else
++			goto out;
++	} else {
+ 		ret = 1;
++	}
+ 
+ 	space_info->force_alloc = CHUNK_ALLOC_NO_FORCE;
+ out:
 -- 
 2.7.4
 

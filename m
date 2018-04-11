@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:47033 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:51486 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752445AbeDKHEy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 11 Apr 2018 03:04:54 -0400
+        id S1751898AbeDKH7O (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 11 Apr 2018 03:59:14 -0400
 From: Nikolay Borisov <nborisov@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: jeffm@suse.com, osandov@osandov.com, dsterba@suse.com,
+To: osandov@osandov.com
+Cc: linux-btrfs@vger.kernel.org, jeffm@suse.com,
         Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH] btrfs: Fix race condition between delayed refs and blockgroup removal
-Date: Wed, 11 Apr 2018 10:04:49 +0300
-Message-Id: <1523430289-29145-1-git-send-email-nborisov@suse.com>
+Subject: [PATCH v2] btrfs: Fix race condition between delayed refs and blockgroup removal
+Date: Wed, 11 Apr 2018 10:59:09 +0300
+Message-Id: <1523433549-5248-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -54,10 +54,14 @@ Fixes: d7eae3403f46 ("Btrfs: rework delayed ref total_bytes_pinned accounting")
 Suggested-by: Omar Sandoval <osandov@osandov.com>
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
+
+v2: 
+ * Collapsed the if/else logic in cleanup_ref_head
+
  fs/btrfs/delayed-ref.c | 19 ++++++++++++++-----
  fs/btrfs/delayed-ref.h |  1 +
- fs/btrfs/extent-tree.c | 20 +++++++++++++++-----
- 3 files changed, 30 insertions(+), 10 deletions(-)
+ fs/btrfs/extent-tree.c | 18 +++++++++++++-----
+ 3 files changed, 28 insertions(+), 10 deletions(-)
 
 diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
 index 5ac2d7909782..20fa7b4c132d 100644
@@ -140,10 +144,10 @@ index cdf4a94ce5c1..7e7bf4e66d48 100644
  };
  
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 9a05e5b5089f..ba3468a84f57 100644
+index 9a05e5b5089f..349b053680c8 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -2616,13 +2616,23 @@ static int cleanup_ref_head(struct btrfs_trans_handle *trans,
+@@ -2616,13 +2616,21 @@ static int cleanup_ref_head(struct btrfs_trans_handle *trans,
  	trace_run_delayed_ref_head(fs_info, head, 0);
  
  	if (head->total_ref_mod < 0) {
@@ -156,14 +160,12 @@ index 9a05e5b5089f..ba3468a84f57 100644
 +		if (head->is_data) {
 +			space_info = __find_space_info(fs_info,
 +						       BTRFS_BLOCK_GROUP_DATA);
-+		} else {
-+			if (head->is_system) {
-+				space_info = __find_space_info(fs_info,
++		} else if (head->is_system) {
++			space_info = __find_space_info(fs_info,
 +						BTRFS_BLOCK_GROUP_SYSTEM);
-+			} else {
-+				space_info = __find_space_info(fs_info,
++		} else {
++			space_info = __find_space_info(fs_info,
 +						BTRFS_BLOCK_GROUP_METADATA);
-+			}
 +		}
 +		ASSERT(space_info);
 +		percpu_counter_add(&space_info->total_bytes_pinned,

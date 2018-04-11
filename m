@@ -1,817 +1,524 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pl0-f65.google.com ([209.85.160.65]:35892 "EHLO
+Received: from mail-pl0-f65.google.com ([209.85.160.65]:33117 "EHLO
         mail-pl0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752575AbeDKJAH (ORCPT
+        with ESMTP id S1752809AbeDKJAI (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 11 Apr 2018 05:00:07 -0400
-Received: by mail-pl0-f65.google.com with SMTP id 91-v6so910185pld.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 11 Apr 2018 02:00:07 -0700 (PDT)
+        Wed, 11 Apr 2018 05:00:08 -0400
+Received: by mail-pl0-f65.google.com with SMTP id s10-v6so921847plp.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 11 Apr 2018 02:00:08 -0700 (PDT)
 From: Omar Sandoval <osandov@osandov.com>
 To: linux-btrfs@vger.kernel.org
 Cc: kernel-team@fb.com
-Subject: [PATCH 1/2] btrfs-progs: remove stale dir-test and quick-test
-Date: Wed, 11 Apr 2018 01:59:58 -0700
-Message-Id: <aad7571b405df8681347642c2e62cebc375919ce.1523437169.git.osandov@fb.com>
+Subject: [PATCH 2/2] btrfs-progs: make all programs and libraries optional
+Date: Wed, 11 Apr 2018 01:59:59 -0700
+Message-Id: <071315a4f7290d0ca669d5ec1a8bbef7d10ac38b.1523437169.git.osandov@fb.com>
+In-Reply-To: <aad7571b405df8681347642c2e62cebc375919ce.1523437169.git.osandov@fb.com>
+References: <aad7571b405df8681347642c2e62cebc375919ce.1523437169.git.osandov@fb.com>
+In-Reply-To: <aad7571b405df8681347642c2e62cebc375919ce.1523437169.git.osandov@fb.com>
+References: <aad7571b405df8681347642c2e62cebc375919ce.1523437169.git.osandov@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Omar Sandoval <osandov@fb.com>
 
-These don't build anymore and don't appear to be used for anything.
+We have a build system internally which only needs to build the
+libraries out of a repository, not any binaries. I looked at how this
+works with other projects, and the best example was util-linux, which
+makes it possible to enable or disable everything individually. This is
+nice and really flexible, so let's do the same. This way, if you only
+want to build and install libbtrfsutil, you can simply do
+
+  ./configure --disable-documentation --disable-all-programs --enable-libbtrfsutil
+  make
+  make install
 
 Signed-off-by: Omar Sandoval <osandov@fb.com>
 ---
- Makefile     |  10 +-
- dir-test.c   | 518 ---------------------------------------------------
- quick-test.c | 226 ----------------------
- 3 files changed, 1 insertion(+), 753 deletions(-)
- delete mode 100644 dir-test.c
- delete mode 100644 quick-test.c
+ Makefile        | 129 +++++++++++++++++++++++++++++++-------------
+ Makefile.inc.in |  16 +++++-
+ configure.ac    | 138 +++++++++++++++++++++++++++++++++++++++++-------
+ 3 files changed, 226 insertions(+), 57 deletions(-)
 
 diff --git a/Makefile b/Makefile
-index cbd85533..5f27011c 100644
+index 5f27011c..74bd118c 100644
 --- a/Makefile
 +++ b/Makefile
-@@ -495,14 +495,6 @@ btrfs-convert.static: $(static_convert_objects) $(static_objects) $(static_libbt
- 	@echo "    [LD]     $@"
- 	$(Q)$(CC) -o $@ $^ $(STATIC_LDFLAGS) $(btrfs_convert_libs) $(STATIC_LIBS)
+@@ -206,22 +206,40 @@ endif
  
--dir-test: dir-test.o $(objects) $(libs)
--	@echo "    [LD]     $@"
--	$(Q)$(CC) -o $@ $^ $(LDFLAGS) $(LIBS)
+ MAKEOPTS = --no-print-directory Q=$(Q)
+ 
+-# build all by default
+-progs = $(progs_install) btrfsck btrfs-corrupt-block
 -
--quick-test: quick-test.o $(objects) $(libs)
--	@echo "    [LD]     $@"
--	$(Q)$(CC) -o $@ $^ $(LDFLAGS) $(LIBS)
+-# install only selected
+-progs_install = btrfs mkfs.btrfs btrfs-map-logical btrfs-image \
+-	btrfs-find-root btrfstune \
+-	btrfs-select-super
 -
- ioctl-test.o: ioctl-test.c ioctl.h kerncompat.h ctree.h
- 	@echo "    [CC]   $@"
- 	$(Q)$(CC) $(CFLAGS) -c $< -o $@
-@@ -603,7 +595,7 @@ clean: $(CLEANDIRS)
- 		image/*.o image/*.o.d \
- 		convert/*.o convert/*.o.d \
- 		mkfs/*.o mkfs/*.o.d check/*.o check/*.o.d \
--	      dir-test ioctl-test quick-test library-test library-test-static \
-+	      ioctl-test library-test library-test-static \
+-# other tools, not built by default
+-progs_extra = btrfs-fragments
+-
+-progs_static = $(foreach p,$(progs),$(p).static)
+-
+-ifneq ($(DISABLE_BTRFSCONVERT),1)
++ifeq ($(BUILD_BTRFS),1)
++progs_install += btrfs
++progs += btrfsck
++endif
++ifeq ($(BUILD_CONVERT),1)
+ progs_install += btrfs-convert
+ endif
++ifeq ($(BUILD_CORRUPT_BLOCK),1)
++progs += btrfs-corrupt-block
++endif
++ifeq ($(BUILD_FIND_ROOT),1)
++progs_install += btrfs-find-root
++endif
++ifeq ($(BUILD_FRAGMENTS),1)
++progs += btrfs-fragments
++endif
++ifeq ($(BUILD_IMAGE),1)
++progs_install += btrfs-image
++endif
++ifeq ($(BUILD_MAP_LOGICAL),1)
++progs_install += btrfs-map-logical
++endif
++ifeq ($(BUILD_MKFS),1)
++progs_install += mkfs.btrfs
++endif
++ifeq ($(BUILD_SELECT_SUPER),1)
++progs_install += btrfs-select-super
++endif
++ifeq ($(BUILD_TUNE),1)
++progs_install += btrfstune
++endif
++
++progs += $(progs_install)
++progs_static = $(foreach p,$(progs),$(p).static)
+ 
+ # external libs required by various binaries; for btrfs-foo,
+ # specify btrfs_foo_libs = <list of libs>; see $($(subst...)) rules below
+@@ -233,7 +251,7 @@ cmds_restore_cflags = -DBTRFSRESTORE_ZSTD=$(BTRFSRESTORE_ZSTD)
+ CHECKER_FLAGS += $(btrfs_convert_cflags)
+ 
+ # collect values of the variables above
+-standalone_deps = $(foreach dep,$(patsubst %,%_objects,$(subst -,_,$(filter btrfs-%, $(progs) $(progs_extra)))),$($(dep)))
++standalone_deps = $(foreach dep,$(patsubst %,%_objects,$(subst -,_,$(filter btrfs-%, $(progs)))),$($(dep)))
+ 
+ SUBDIRS =
+ BUILDDIRS = $(patsubst %,build-%,$(SUBDIRS))
+@@ -262,10 +280,21 @@ static_convert_objects = $(patsubst %.o, %.static.o, $(convert_objects))
+ static_mkfs_objects = $(patsubst %.o, %.static.o, $(mkfs_objects))
+ static_image_objects = $(patsubst %.o, %.static.o, $(image_objects))
+ 
+-libs_shared = libbtrfs.so.0.1 libbtrfsutil.so.$(libbtrfsutil_version)
+-libs_static = libbtrfs.a libbtrfsutil.a
++ifeq ($(BUILD_LIBBTRFS),1)
++ifeq ($(BUILD_SHARED),1)
++libs_shared += libbtrfs.so.0.1
++lib_links += libbtrfs.so.0 libbtrfs.so
++endif
++libs_static += libbtrfs.a
++endif
++ifeq ($(BUILD_LIBBTRFSUTIL),1)
++ifeq ($(BUILD_SHARED),1)
++libs_shared += libbtrfsutil.so.$(libbtrfsutil_version)
++lib_links += libbtrfsutil.so.$(libbtrfsutil_major) libbtrfsutil.so
++endif
++libs_static += libbtrfsutil.a
++endif
+ libs = $(libs_shared) $(libs_static)
+-lib_links = libbtrfs.so.0 libbtrfs.so libbtrfsutil.so.$(libbtrfsutil_major) libbtrfsutil.so
+ 
+ # make C=1 to enable sparse
+ ifdef C
+@@ -303,7 +332,7 @@ endif
+ 		$($(subst -,_,btrfs-$(@:%/$(notdir $@)=%)-cflags))
+ 
+ all: $(progs) $(libs) $(lib_links) $(BUILDDIRS)
+-ifeq ($(PYTHON_BINDINGS),1)
++ifeq ($(BUILD_PYTHON),1)
+ all: libbtrfsutil_python
+ endif
+ $(SUBDIRS): $(BUILDDIRS)
+@@ -353,7 +382,7 @@ testsuite: btrfs-corrupt-block fssum
+ 	@echo "Export tests as a package"
+ 	$(Q)cd tests && ./export-testsuite.sh
+ 
+-ifeq ($(PYTHON_BINDINGS),1)
++ifeq ($(BUILD_PYTHON),1)
+ test-libbtrfsutil: libbtrfsutil_python mkfs.btrfs
+ 	$(Q)cd libbtrfsutil/python; \
+ 		LD_LIBRARY_PATH=../.. $(PYTHON) -m unittest discover -v tests
+@@ -413,7 +442,7 @@ libbtrfsutil.so.$(libbtrfsutil_major) libbtrfsutil.so: libbtrfsutil.so.$(libbtrf
+ 	@echo "    [LN]     $@"
+ 	$(Q)$(LN_S) -f $< $@
+ 
+-ifeq ($(PYTHON_BINDINGS),1)
++ifeq ($(BUILD_PYTHON),1)
+ libbtrfsutil_python: libbtrfsutil.so.$(libbtrfsutil_major) libbtrfsutil.so libbtrfsutil/btrfsutil.h
+ 	@echo "    [PY]     libbtrfsutil"
+ 	$(Q)cd libbtrfsutil/python; \
+@@ -439,14 +468,14 @@ btrfs-%.static: btrfs-%.static.o $(static_objects) $(patsubst %.o,%.static.o,$(s
+ 		$(static_libbtrfs_objects) $(STATIC_LDFLAGS) \
+ 		$($(subst -,_,$(subst .static,,$@)-libs)) $(STATIC_LIBS)
+ 
+-btrfs-%: btrfs-%.o $(objects) $(standalone_deps) $(libs_static)
++btrfs-%: btrfs-%.o $(objects) $(standalone_deps) libbtrfs.a libbtrfsutil.a
+ 	@echo "    [LD]     $@"
+ 	$(Q)$(CC) -o $@ $(objects) $@.o \
+ 		$($(subst -,_,$@-objects)) \
+-		$(libs_static) \
++		libbtrfs.a libbtrfsutil.a \
+ 		$(LDFLAGS) $(LIBS) $($(subst -,_,$@-libs))
+ 
+-btrfs: btrfs.o $(objects) $(cmds_objects) $(libs_static)
++btrfs: btrfs.o $(objects) $(cmds_objects) libbtrfs.a libbtrfsutil.a
+ 	@echo "    [LD]     $@"
+ 	$(Q)$(CC) -o $@ $^ $(LDFLAGS) $(LIBS) $(LIBS_COMP)
+ 
+@@ -463,7 +492,7 @@ btrfsck.static: btrfs.static
+ 	@echo "    [LN]     $@"
+ 	$(Q)$(LN_S) -f $^ $@
+ 
+-mkfs.btrfs: $(mkfs_objects) $(objects) $(libs_static)
++mkfs.btrfs: $(mkfs_objects) $(objects) libbtrfs.a libbtrfsutil.a
+ 	@echo "    [LD]     $@"
+ 	$(Q)$(CC) -o $@ $^ $(LDFLAGS) $(LIBS)
+ 
+@@ -471,7 +500,7 @@ mkfs.btrfs.static: $(static_mkfs_objects) $(static_objects) $(static_libbtrfs_ob
+ 	@echo "    [LD]     $@"
+ 	$(Q)$(CC) -o $@ $^ $(STATIC_LDFLAGS) $(STATIC_LIBS)
+ 
+-btrfstune: btrfstune.o $(objects) $(libs_static)
++btrfstune: btrfstune.o $(objects) libbtrfs.a libbtrfsutil.a
+ 	@echo "    [LD]     $@"
+ 	$(Q)$(CC) -o $@ $^ $(LDFLAGS) $(LIBS)
+ 
+@@ -479,7 +508,7 @@ btrfstune.static: btrfstune.static.o $(static_objects) $(static_libbtrfs_objects
+ 	@echo "    [LD]     $@"
+ 	$(Q)$(CC) -o $@ $^ $(STATIC_LDFLAGS) $(STATIC_LIBS)
+ 
+-btrfs-image: $(image_objects) $(objects) $(libs_static)
++btrfs-image: $(image_objects) $(objects) libbtrfs.a libbtrfsutil.a
+ 	@echo "    [LD]     $@"
+ 	$(Q)$(CC) -o $@ $^ $(LDFLAGS) $(LIBS) $(LIBS_COMP)
+ 
+@@ -487,7 +516,7 @@ btrfs-image.static: $(static_image_objects) $(static_objects) $(static_libbtrfs_
+ 	@echo "    [LD]     $@"
+ 	$(Q)$(CC) -o $@ $^ $(STATIC_LDFLAGS) $(STATIC_LIBS) $(STATIC_LIBS_COMP)
+ 
+-btrfs-convert: $(convert_objects) $(objects) $(libs_static)
++btrfs-convert: $(convert_objects) $(objects) libbtrfs.a libbtrfsutil.a
+ 	@echo "    [LD]     $@"
+ 	$(Q)$(CC) -o $@ $^ $(LDFLAGS) $(btrfs_convert_libs) $(LIBS)
+ 
+@@ -541,7 +570,7 @@ library-test: library-test.c libbtrfs.so
+ 	@echo "    [TEST CLEAN] $@"
+ 	$(Q)$(RM) -rf -- $(TMPD)
+ 
+-library-test.static: library-test.c $(libs_static)
++library-test.static: library-test.c libbtrfs.a
+ 	@echo "    [TEST PREP]  $@"$(eval TMPD=$(shell mktemp -d))
+ 	$(Q)mkdir -p $(TMPD)/include/btrfs && \
+ 	cp $(libbtrfs_headers) $(TMPD)/include/btrfs && \
+@@ -567,7 +596,6 @@ test-build-real:
+ 	-$(MAKE) $(MAKEOPTS) library-test.static
+ 	$(MAKE) $(MAKEOPTS) -j 8 all
+ 	-$(MAKE) $(MAKEOPTS) -j 8 static
+-	$(MAKE) $(MAKEOPTS) -j 8 $(progs_extra)
+ 
+ manpages:
+ 	$(Q)$(MAKE) $(MAKEOPTS) -C Documentation
+@@ -598,10 +626,10 @@ clean: $(CLEANDIRS)
+ 	      ioctl-test library-test library-test-static \
                mktables btrfs.static mkfs.btrfs.static fssum \
  	      $(check_defs) \
- 	      $(libs) $(lib_links) \
-diff --git a/dir-test.c b/dir-test.c
-deleted file mode 100644
-index cfb77f2a..00000000
---- a/dir-test.c
-+++ /dev/null
-@@ -1,518 +0,0 @@
--/*
-- * Copyright (C) 2007 Oracle.  All rights reserved.
-- *
-- * This program is free software; you can redistribute it and/or
-- * modify it under the terms of the GNU General Public
-- * License v2 as published by the Free Software Foundation.
-- *
-- * This program is distributed in the hope that it will be useful,
-- * but WITHOUT ANY WARRANTY; without even the implied warranty of
-- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-- * General Public License for more details.
-- *
-- * You should have received a copy of the GNU General Public
-- * License along with this program; if not, write to the
-- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-- * Boston, MA 021110-1307, USA.
-- */
+-	      $(libs) $(lib_links) \
+-	      $(progs_static) $(progs_extra) \
++	      libbtrfs.a libbtrfs.so* libbtrfsutil.a libbtrfsutil.so* \
++	      $(progs_static) \
+ 	      libbtrfsutil/*.o libbtrfsutil/*.o.d
+-ifeq ($(PYTHON_BINDINGS),1)
++ifeq ($(BUILD_PYTHON),1)
+ 	$(Q)cd libbtrfsutil/python; \
+ 		$(PYTHON) setup.py $(SETUP_PY_Q) clean -a
+ endif
+@@ -624,23 +652,36 @@ $(CLEANDIRS):
+ 	$(Q)$(MAKE) $(MAKEOPTS) -C $(patsubst clean-%,%,$@) clean
+ 
+ install: $(libs) $(progs_install) $(INSTALLDIRS)
++ifneq ($(progs_install),)
+ 	$(INSTALL) -m755 -d $(DESTDIR)$(bindir)
+ 	$(INSTALL) $(progs_install) $(DESTDIR)$(bindir)
++endif
++ifeq ($(BUILD_BTRFS),1)
+ 	$(INSTALL) fsck.btrfs $(DESTDIR)$(bindir)
+ 	# btrfsck is a link to btrfs in the src tree, make it so for installed file as well
+ 	$(LN_S) -f btrfs $(DESTDIR)$(bindir)/btrfsck
++ifneq ($(udevdir),)
++	$(INSTALL) -m755 -d $(DESTDIR)$(udevruledir)
++	$(INSTALL) -m644 $(udev_rules) $(DESTDIR)$(udevruledir)
++endif
++endif
++ifneq ($(libs),)
+ 	$(INSTALL) -m755 -d $(DESTDIR)$(libdir)
+ 	$(INSTALL) $(libs) $(DESTDIR)$(libdir)
++ifneq ($(lib_links),)
+ 	cp -d $(lib_links) $(DESTDIR)$(libdir)
++endif
++endif
++ifeq ($(BUILD_LIBBTRFS),1)
+ 	$(INSTALL) -m755 -d $(DESTDIR)$(incdir)/btrfs
+ 	$(INSTALL) -m644 $(libbtrfs_headers) $(DESTDIR)$(incdir)/btrfs
++endif
++ifeq ($(BUILD_LIBBTRFSUTIL),1)
++	$(INSTALL) -m755 -d $(DESTDIR)$(incdir)
+ 	$(INSTALL) -m644 libbtrfsutil/btrfsutil.h $(DESTDIR)$(incdir)
+-ifneq ($(udevdir),)
+-	$(INSTALL) -m755 -d $(DESTDIR)$(udevruledir)
+-	$(INSTALL) -m644 $(udev_rules) $(DESTDIR)$(udevruledir)
+ endif
+ 
+-ifeq ($(PYTHON_BINDINGS),1)
++ifeq ($(BUILD_PYTHON),1)
+ install_python: libbtrfsutil_python
+ 	$(Q)cd libbtrfsutil/python; \
+ 		$(PYTHON) setup.py install --skip-build $(if $(DESTDIR),--root $(DESTDIR)) --prefix $(prefix)
+@@ -649,22 +690,36 @@ install_python: libbtrfsutil_python
+ endif
+ 
+ install-static: $(progs_static) $(INSTALLDIRS)
++ifneq ($(progs_static),)
+ 	$(INSTALL) -m755 -d $(DESTDIR)$(bindir)
+ 	$(INSTALL) $(progs_static) $(DESTDIR)$(bindir)
++endif
++ifeq ($(BUILD_BTRFS),1)
+ 	# btrfsck is a link to btrfs in the src tree, make it so for installed file as well
+ 	$(LN_S) -f btrfs.static $(DESTDIR)$(bindir)/btrfsck.static
++endif
+ 
+ $(INSTALLDIRS):
+ 	@echo "Making install in $(patsubst install-%,%,$@)"
+ 	$(Q)$(MAKE) $(MAKEOPTS) -C $(patsubst install-%,%,$@) install
+ 
+ uninstall:
++ifneq ($(DISABLE_DOCUMENTATION),1)
+ 	$(Q)$(MAKE) $(MAKEOPTS) -C Documentation uninstall
++endif
++ifeq ($(BUILD_LIBBTRFS),1)
+ 	cd $(DESTDIR)$(incdir)/btrfs; $(RM) -f -- $(libbtrfs_headers)
+ 	$(RMDIR) -p --ignore-fail-on-non-empty -- $(DESTDIR)$(incdir)/btrfs
++endif
++ifeq ($(BUILD_LIBBTRFSUTIL),1)
+ 	cd $(DESTDIR)$(incdir); $(RM) -f -- btrfsutil.h
++endif
++ifneq ($(libs) $(lib_links),)
+ 	cd $(DESTDIR)$(libdir); $(RM) -f -- $(lib_links) $(libs)
++endif
++ifneq ($(progs_install),)
+ 	cd $(DESTDIR)$(bindir); $(RM) -f -- btrfsck fsck.btrfs $(progs_install)
++endif
+ 
+ ifneq ($(MAKECMDGOALS),clean)
+ -include $(all_objects:.o=.o.d) $(subst .btrfs,, $(filter-out btrfsck.o.d, $(progs:=.o.d)))
+diff --git a/Makefile.inc.in b/Makefile.inc.in
+index 52410f69..eae4dfbe 100644
+--- a/Makefile.inc.in
++++ b/Makefile.inc.in
+@@ -10,11 +10,23 @@ RM = @RM@
+ RMDIR = @RMDIR@
+ INSTALL = @INSTALL@
+ DISABLE_DOCUMENTATION = @DISABLE_DOCUMENTATION@
+-DISABLE_BTRFSCONVERT = @DISABLE_BTRFSCONVERT@
++BUILD_BTRFS = @BUILD_BTRFS@
++BUILD_CONVERT = @BUILD_CONVERT@
++BUILD_CORRUPT_BLOCK = @BUILD_CORRUPT_BLOCK@
++BUILD_FIND_ROOT = @BUILD_FIND_ROOT@
++BUILD_FRAGMENTS = @BUILD_FRAGMENTS@
++BUILD_IMAGE = @BUILD_IMAGE@
++BUILD_MAP_LOGICAL = @BUILD_MAP_LOGICAL@
++BUILD_MKFS = @BUILD_MKFS@
++BUILD_SELECT_SUPER = @BUILD_SELECT_SUPER@
++BUILD_TUNE = @BUILD_TUNE@
+ BTRFSCONVERT_EXT2 = @BTRFSCONVERT_EXT2@
+ BTRFSCONVERT_REISERFS = @BTRFSCONVERT_REISERFS@
+ BTRFSRESTORE_ZSTD = @BTRFSRESTORE_ZSTD@
+-PYTHON_BINDINGS = @PYTHON_BINDINGS@
++BUILD_LIBBTRFS = @BUILD_LIBBTRFS@
++BUILD_LIBBTRFSUTIL = @BUILD_LIBBTRFSUTIL@
++BUILD_PYTHON = @BUILD_PYTHON@
++BUILD_SHARED = @BUILD_SHARED@
+ PYTHON = @PYTHON@
+ PYTHON_CFLAGS = @PYTHON_CFLAGS@
+ 
+diff --git a/configure.ac b/configure.ac
+index af13a959..5b5e5db1 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -113,13 +113,129 @@ if test "x$enable_documentation" = xyes; then
+ fi
+ AC_SUBST([ASCIIDOC_TOOL])
+ 
++AC_ARG_ENABLE([all-programs],
++  AS_HELP_STRING([--disable-all-programs], [disable everything, might be overridden by --enable-<name>]),
++  [], [enable_all_programs=undefined]
++)
++
++AS_CASE([$enable_all_programs],
++  [yes], [AC_MSG_WARN([force to build all programs by default])
++          default_estate=yes],
++  [no],  [AC_MSG_WARN([disable all programs by default])
++          default_estate=no]
++)
++
++AC_DEFUN([DEFAULT_ENABLE], [
++  m4_define([suffix], $1)
++  if test "x$default_estate" != x; then
++    enable_[]suffix=$default_estate
++  else
++    enable_[]suffix=$2
++  fi
++])
++
++AC_ARG_ENABLE([btrfs],
++	      AS_HELP_STRING([--disable-btrfs], [do not build btrfs]),
++	      [], [DEFAULT_ENABLE([btrfs], [yes])]
++)
++AS_IF([test "x$enable_btrfs" = xyes], [BUILD_BTRFS=1], [BUILD_BTRFS=0])
++AC_SUBST([BUILD_BTRFS])
++
+ AC_ARG_ENABLE([convert],
+ 	      AS_HELP_STRING([--disable-convert], [do not build btrfs-convert]),
+-  [], [enable_convert=yes]
++	      [], [DEFAULT_ENABLE([convert], [yes])]
++)
++AS_IF([test "x$enable_convert" = xyes], [BUILD_CONVERT=1], [BUILD_CONVERT=0])
++AC_SUBST([BUILD_CONVERT])
++
++AC_ARG_ENABLE([corrupt-block],
++	      AS_HELP_STRING([--disable-corrupt-block], [do not build btrfs-corrupt-block]),
++	      [], [DEFAULT_ENABLE([corrupt_block], [yes])]
+ )
++AS_IF([test "x$enable_corrupt_block" = xyes], [BUILD_CORRUPT_BLOCK=1], [BUILD_CORRUPT_BLOCK=0])
++AC_SUBST([BUILD_CORRUPT_BLOCK])
+ 
+-AS_IF([test "x$enable_convert" = xyes], [DISABLE_BTRFSCONVERT=0], [DISABLE_BTRFSCONVERT=1])
+-AC_SUBST([DISABLE_BTRFSCONVERT])
++AC_ARG_ENABLE([find-root],
++	      AS_HELP_STRING([--disable-find-root], [do not build btrfs-find-root]),
++	      [], [DEFAULT_ENABLE([find_root], [yes])]
++)
++AS_IF([test "x$enable_find_root" = xyes], [BUILD_FIND_ROOT=1], [BUILD_FIND_ROOT=0])
++AC_SUBST([BUILD_FIND_ROOT])
++
++AC_ARG_ENABLE([fragments],
++	      AS_HELP_STRING([--enable-fragments], [build btrfs-fragments]),
++	      [], [DEFAULT_ENABLE([fragments], [no])]
++)
++AS_IF([test "x$enable_fragments" = xyes], [BUILD_FRAGMENTS=1], [BUILD_FRAGMENTS=0])
++AC_SUBST([BUILD_FRAGMENTS])
++
++AC_ARG_ENABLE([image],
++	      AS_HELP_STRING([--disable-image], [do not build btrfs-image]),
++	      [], [DEFAULT_ENABLE([image], [yes])]
++)
++AS_IF([test "x$enable_image" = xyes], [BUILD_IMAGE=1], [BUILD_IMAGE=0])
++AC_SUBST([BUILD_IMAGE])
++
++AC_ARG_ENABLE([map-logical],
++	      AS_HELP_STRING([--disable-map-logical], [do not build btrfs-map-logical]),
++	      [], [DEFAULT_ENABLE([map_logical], [yes])]
++)
++AS_IF([test "x$enable_map_logical" = xyes], [BUILD_MAP_LOGICAL=1], [BUILD_MAP_LOGICAL=0])
++AC_SUBST([BUILD_MAP_LOGICAL])
++
++AC_ARG_ENABLE([mkfs],
++	      AS_HELP_STRING([--disable-mkfs], [do not build mkfs.btrfs]),
++	      [], [DEFAULT_ENABLE([mkfs], [yes])]
++)
++AS_IF([test "x$enable_mkfs" = xyes], [BUILD_MKFS=1], [BUILD_MKFS=0])
++AC_SUBST([BUILD_MKFS])
++
++AC_ARG_ENABLE([select-super],
++	      AS_HELP_STRING([--disable-select-super], [do not build btrfs-select-super]),
++	      [], [DEFAULT_ENABLE([select_super], [yes])]
++)
++AS_IF([test "x$enable_select_super" = xyes], [BUILD_SELECT_SUPER=1], [BUILD_SELECT_SUPER=0])
++AC_SUBST([BUILD_SELECT_SUPER])
++
++AC_ARG_ENABLE([tune],
++	      AS_HELP_STRING([--disable-tune], [do not build btrfstune]),
++	      [], [DEFAULT_ENABLE([tune], [yes])]
++)
++AS_IF([test "x$enable_tune" = xyes], [BUILD_TUNE=1], [BUILD_TUNE=0])
++AC_SUBST([BUILD_TUNE])
++
++AC_ARG_ENABLE([libbtrfs],
++	      AS_HELP_STRING([--disable-libbtrfs], [do not build libbtrfs]),
++	      [], [DEFAULT_ENABLE([libbtrfs], [yes])]
++)
++AS_IF([test "x$enable_libbtrfs" = xyes], [BUILD_LIBBTRFS=1], [BUILD_LIBBTRFS=0])
++AC_SUBST([BUILD_LIBBTRFS])
++
++AC_ARG_ENABLE([libbtrfsutil],
++	      AS_HELP_STRING([--disable-libbtrfsutil], [do not build libbtrfsutil]),
++	      [], [DEFAULT_ENABLE([libbtrfsutil], [yes])]
++)
++AS_IF([test "x$enable_libbtrfsutil" = xyes], [BUILD_LIBBTRFSUTIL=1], [BUILD_LIBBTRFSUTIL=0])
++AC_SUBST([BUILD_LIBBTRFSUTIL])
++
++AC_ARG_ENABLE([python],
++	      AS_HELP_STRING([--disable-python], [do not build libbtrfsutil Python bindings]),
++	      [], [DEFAULT_ENABLE([python], [yes])]
++)
++AS_IF([test "x$enable_python" = xyes], [BUILD_PYTHON=1], [BUILD_PYTHON=0])
++AC_SUBST([BUILD_PYTHON])
++AC_SUBST([PYTHON])
++if test "x$enable_python" = xyes; then
++	AM_PATH_PYTHON([3.4])
++	PKG_CHECK_MODULES(PYTHON, [python-${PYTHON_VERSION}])
++fi
++
++AC_ARG_ENABLE([shared],
++	      AS_HELP_STRING([--disable-shared], [do not build shared libraries]),
++	      [], [DEFAULT_ENABLE([shared], [yes])]
++)
++AS_IF([test "x$enable_shared" = xyes], [BUILD_SHARED=1], [BUILD_SHARED=0])
++AC_SUBST([BUILD_SHARED])
+ 
+ AC_ARG_WITH([convert],
+ 	    AS_HELP_STRING([[[]--with-convert[[=auto]]]], [built-in filesystems for convert (default: auto)
+@@ -170,7 +286,7 @@ if ! test "x$tmp" = "x"; then
+ 	AC_MSG_ERROR([unknown tokens for --with-convert: $tmp])
+ fi
+ 
+-if test "$DISABLE_BTRFSCONVERT" = 0 && test "x$convertfs" = "x"; then
++if test "$BUILD_BTRFSCONVERT" = 1 && test "x$convertfs" = "x"; then
+ 	AC_MSG_ERROR([no filesystems for convert, use --disable-convert instead])
+ fi
+ 
+@@ -212,20 +328,6 @@ fi
+ AS_IF([test "x$enable_zstd" = xyes], [BTRFSRESTORE_ZSTD=1], [BTRFSRESTORE_ZSTD=0])
+ AC_SUBST(BTRFSRESTORE_ZSTD)
+ 
+-AC_ARG_ENABLE([python],
+-	AS_HELP_STRING([--disable-python], [do not build libbtrfsutil Python bindings]),
+-	[], [enable_python=yes]
+-)
 -
--#include <stdio.h>
--#include <stdlib.h>
--#include <signal.h>
--#include <sys/types.h>
--#include <sys/stat.h>
--#include <unistd.h>
--#include "kerncompat.h"
--#include "radix-tree.h"
--#include "ctree.h"
--#include "disk-io.h"
--#include "print-tree.h"
--#include "hash.h"
--#include "transaction.h"
+-if test "x$enable_python" = xyes; then
+-	AM_PATH_PYTHON([3.4])
+-	PKG_CHECK_MODULES(PYTHON, [python-${PYTHON_VERSION}])
+-fi
 -
--int keep_running = 1;
--struct btrfs_super_block super;
--static u64 dir_oid = 0;
--static u64 file_oid = 33778;
+-AS_IF([test "x$enable_python" = xyes], [PYTHON_BINDINGS=1], [PYTHON_BINDINGS=0])
+-AC_SUBST(PYTHON_BINDINGS)
+-AC_SUBST(PYTHON)
 -
--static int find_num(struct radix_tree_root *root, unsigned long *num_ret,
--		     int exists)
--{
--	unsigned long num = rand();
--	unsigned long res[2];
--	int ret;
--
--again:
--	ret = radix_tree_gang_lookup(root, (void **)res, num, 2);
--	if (exists) {
--		if (ret == 0)
--			return -1;
--		num = res[0];
--	} else if (ret != 0 && num == res[0]) {
--		num++;
--		if (ret > 1 && num == res[1]) {
--			num++;
--			goto again;
--		}
--	}
--	*num_ret = num;
--	return 0;
--}
--
--static void initial_inode_init(struct btrfs_root *root,
--			       struct btrfs_inode_item *inode_item)
--{
--	memset(inode_item, 0, sizeof(*inode_item));
--	btrfs_set_inode_generation(inode_item, root->fs_info->generation);
--	btrfs_set_inode_mode(inode_item, S_IFREG | 0700);
--}
--
--static int ins_one(struct btrfs_trans_handle *trans, struct btrfs_root *root,
--		   struct radix_tree_root *radix)
--{
--	int ret;
--	char buf[128];
--	unsigned long oid;
--	u64 objectid;
--	struct btrfs_path path;
--	struct btrfs_key inode_map;
--	struct btrfs_inode_item inode_item;
--
--	find_num(radix, &oid, 0);
--	sprintf(buf, "str-%lu", oid);
--
--	ret = btrfs_find_free_objectid(trans, root, dir_oid + 1, &objectid);
--	if (ret)
--		goto error;
--
--	inode_map.objectid = objectid;
--	inode_map.flags = 0;
--	inode_map.type = BTRFS_INODE_ITEM_KEY;
--	inode_map.offset = 0;
--
--	initial_inode_init(root, &inode_item);
--	ret = btrfs_insert_inode(trans, root, objectid, &inode_item);
--	if (ret)
--		goto error;
--	ret = btrfs_insert_dir_item(trans, root, buf, strlen(buf), dir_oid,
--				    &inode_map, BTRFS_FT_UNKNOWN);
--	if (ret)
--		goto error;
--
--	radix_tree_preload(GFP_KERNEL);
--	ret = radix_tree_insert(radix, oid, (void *)oid);
--	radix_tree_preload_end();
--	if (ret)
--		goto error;
--	return ret;
--error:
--	if (ret != -EEXIST)
--		goto fatal;
--
--	/*
--	 * if we got an EEXIST, it may be due to hash collision, double
--	 * check
--	 */
--	btrfs_init_path(&path);
--	ret = btrfs_lookup_dir_item(trans, root, &path, dir_oid, buf,
--				    strlen(buf), 0);
--	if (ret)
--		goto fatal_release;
--	if (!btrfs_match_dir_item_name(root, &path, buf, strlen(buf))) {
--		struct btrfs_dir_item *di;
--		char *found;
--		u32 found_len;
--		u64 myhash;
--		u64 foundhash;
--
--		di = btrfs_item_ptr(&path.nodes[0]->leaf, path.slots[0],
--				    struct btrfs_dir_item);
--		found = (char *)(di + 1);
--		found_len = btrfs_dir_name_len(di);
--		myhash = btrfs_name_hash(buf, strlen(buf));
--		foundhash = btrfs_name_hash(found, found_len);
--		if (myhash != foundhash)
--			goto fatal_release;
--		btrfs_release_path(&path);
--		return 0;
--	}
--fatal_release:
--	btrfs_release_path(&path);
--fatal:
--	printf("failed to insert %lu ret %d\n", oid, ret);
--	return ret;
--}
--
--static int insert_dup(struct btrfs_trans_handle *trans, struct btrfs_root
--		      *root, struct radix_tree_root *radix)
--{
--	int ret;
--	char buf[128];
--	unsigned long oid;
--	struct btrfs_key key;
--
--	ret = find_num(radix, &oid, 1);
--	if (ret < 0)
--		return 0;
--	sprintf(buf, "str-%lu", oid);
--
--	key.objectid = file_oid;
--	key.flags = 0;
--	key.type = BTRFS_INODE_ITEM_KEY;
--	key.offset = 0;
--	ret = btrfs_insert_dir_item(trans, root, buf, strlen(buf), dir_oid,
--				    &key, BTRFS_FT_UNKNOWN);
--	if (ret != -EEXIST) {
--		printf("insert on %s gave us %d\n", buf, ret);
--		return 1;
--	}
--	return 0;
--}
--
--static int del_dir_item(struct btrfs_trans_handle *trans,
--			struct btrfs_root *root,
--			struct radix_tree_root *radix,
--			unsigned long radix_index,
--			struct btrfs_path *path)
--{
--	int ret;
--	unsigned long *ptr;
--	u64 file_objectid;
--	struct btrfs_dir_item *di;
--
--	/* find the inode number of the file */
--	di = btrfs_item_ptr(&path->nodes[0]->leaf, path->slots[0],
--			    struct btrfs_dir_item);
--	file_objectid = btrfs_disk_key_objectid(&di->location);
--
--	/* delete the directory item */
--	ret = btrfs_del_item(trans, root, path);
--	if (ret)
--		goto out_release;
--	btrfs_release_path(path);
--
--	/* delete the inode */
--	btrfs_init_path(path);
--	ret = btrfs_lookup_inode(trans, root, path, file_objectid, -1);
--	if (ret)
--		goto out_release;
--	ret = btrfs_del_item(trans, root, path);
--	if (ret)
--		goto out_release;
--	btrfs_release_path(path);
--
--	if (root->fs_info->last_inode_alloc > file_objectid)
--		root->fs_info->last_inode_alloc = file_objectid;
--	ptr = radix_tree_delete(radix, radix_index);
--	if (!ptr) {
--		ret = -5555;
--		goto out;
--	}
--	return 0;
--out_release:
--	btrfs_release_path(path);
--out:
--	printf("failed to delete %lu %d\n", radix_index, ret);
--	return ret;
--}
--
--static int del_one(struct btrfs_trans_handle *trans, struct btrfs_root *root,
--		   struct radix_tree_root *radix)
--{
--	int ret;
--	char buf[128];
--	unsigned long oid;
--	struct btrfs_path path;
--
--	ret = find_num(radix, &oid, 1);
--	if (ret < 0)
--		return 0;
--	sprintf(buf, "str-%lu", oid);
--	btrfs_init_path(&path);
--	ret = btrfs_lookup_dir_item(trans, root, &path, dir_oid, buf,
--				    strlen(buf), -1);
--	if (ret)
--		goto out_release;
--
--	ret = del_dir_item(trans, root, radix, oid, &path);
--	if (ret)
--		goto out_release;
--	return ret;
--out_release:
--	btrfs_release_path(&path);
--	printf("failed to delete %lu %d\n", oid, ret);
--	return ret;
--}
--
--static int lookup_item(struct btrfs_trans_handle *trans, struct btrfs_root
--		       *root, struct radix_tree_root *radix)
--{
--	struct btrfs_path path;
--	char buf[128];
--	int ret;
--	unsigned long oid;
--	u64 objectid;
--	struct btrfs_dir_item *di;
--
--	ret = find_num(radix, &oid, 1);
--	if (ret < 0)
--		return 0;
--	sprintf(buf, "str-%lu", oid);
--	btrfs_init_path(&path);
--	ret = btrfs_lookup_dir_item(trans, root, &path, dir_oid, buf,
--				    strlen(buf), 0);
--	if (!ret) {
--		di = btrfs_item_ptr(&path.nodes[0]->leaf, path.slots[0],
--				    struct btrfs_dir_item);
--		objectid = btrfs_disk_key_objectid(&di->location);
--	}
--	btrfs_release_path(&path);
--	if (ret) {
--		printf("unable to find key %lu\n", oid);
--		return ret;
--	}
--	return 0;
--}
--
--static int lookup_enoent(struct btrfs_trans_handle *trans, struct btrfs_root
--			 *root, struct radix_tree_root *radix)
--{
--	struct btrfs_path path;
--	char buf[128];
--	int ret;
--	unsigned long oid;
--
--	ret = find_num(radix, &oid, 0);
--	if (ret < 0)
--		return 0;
--	sprintf(buf, "str-%lu", oid);
--	btrfs_init_path(&path);
--	ret = btrfs_lookup_dir_item(trans, root, &path, dir_oid, buf,
--				    strlen(buf), 0);
--	btrfs_release_path(&path);
--	if (!ret) {
--		printf("able to find key that should not exist %lu\n", oid);
--		return ret;
--	}
--	return 0;
--}
--
--static int empty_tree(struct btrfs_trans_handle *trans, struct btrfs_root
--		      *root, struct radix_tree_root *radix, int nr)
--{
--	struct btrfs_path path;
--	struct btrfs_key key;
--	unsigned long found = 0;
--	u32 found_len;
--	int ret;
--	int slot;
--	int count = 0;
--	char buf[128];
--	struct btrfs_dir_item *di;
--
--	key.offset = (u64)-1;
--	key.flags = 0;
--	key.type = BTRFS_DIR_ITEM_KEY;
--	key.objectid = dir_oid;
--	while(nr-- >= 0) {
--		btrfs_init_path(&path);
--		ret = btrfs_search_slot(trans, root, &key, &path, -1, 1);
--		if (ret < 0) {
--			btrfs_release_path(&path);
--			return ret;
--		}
--		if (ret != 0) {
--			if (path.slots[0] == 0) {
--				btrfs_release_path(&path);
--				break;
--			}
--			path.slots[0] -= 1;
--		}
--		slot = path.slots[0];
--		di = btrfs_item_ptr(&path.nodes[0]->leaf, slot,
--				    struct btrfs_dir_item);
--		found_len = btrfs_dir_name_len(di);
--		memcpy(buf, (char *)(di + 1), found_len);
--		BUG_ON(found_len > 128);
--		buf[found_len] = '\0';
--		found = atoi(buf + 4);
--		ret = del_dir_item(trans, root, radix, found, &path);
--		count++;
--		if (ret) {
--			fprintf(stderr,
--				"failed to remove %lu from tree\n",
--				found);
--			return ret;
--		}
--		if (!keep_running)
--			break;
--	}
--	return 0;
--	fprintf(stderr, "failed to delete from the radix %lu\n", found);
--	return ret;
--}
--
--static int fill_tree(struct btrfs_trans_handle *trans, struct btrfs_root *root,
--		     struct radix_tree_root *radix, int count)
--{
--	int i;
--	int ret = 0;
--	for (i = 0; i < count; i++) {
--		ret = ins_one(trans, root, radix);
--		if (ret) {
--			fprintf(stderr, "fill failed\n");
--			goto out;
--		}
--		if (i % 1000 == 0) {
--			ret = btrfs_commit_transaction(trans, root, &super);
--			if (ret) {
--				fprintf(stderr, "fill commit failed\n");
--				return ret;
--			}
--		}
--		if (i && i % 10000 == 0) {
--			printf("bigfill %d\n", i);
--		}
--		if (!keep_running)
--			break;
--	}
--out:
--	return ret;
--}
--
--static int bulk_op(struct btrfs_trans_handle *trans, struct btrfs_root *root,
--		   struct radix_tree_root *radix)
--{
--	int ret;
--	int nr = rand() % 5000;
--	static int run_nr = 0;
--
--	/* do the bulk op much less frequently */
--	if (run_nr++ % 100)
--		return 0;
--	ret = empty_tree(trans, root, radix, nr);
--	if (ret)
--		return ret;
--	ret = fill_tree(trans, root, radix, nr);
--	if (ret)
--		return ret;
--	return 0;
--}
--
--
--int (*ops[])(struct btrfs_trans_handle *trans, struct btrfs_root *root, struct
--	     radix_tree_root *radix) =
--	{ ins_one, insert_dup, del_one, lookup_item,
--	  lookup_enoent, bulk_op };
--
--void sigstopper(int ignored)
--{
--	keep_running = 0;
--	fprintf(stderr, "caught exit signal, stopping\n");
--}
--
--int print_usage(void)
--{
--	printf("usage: tester [-ih] [-c count] [-f count]\n");
--	printf("\t -c count -- iteration count after filling\n");
--	printf("\t -f count -- run this many random inserts before starting\n");
--	printf("\t -i       -- only do initial fill\n");
--	printf("\t -h       -- this help text\n");
--	exit(1);
--}
--int main(int ac, char **av)
--{
--	RADIX_TREE(radix, GFP_KERNEL);
--	struct btrfs_root *root;
--	int i;
--	int ret;
--	int count;
--	int op;
--	int iterations = 20000;
--	int init_fill_count = 800000;
--	int err = 0;
--	int initial_only = 0;
--	struct btrfs_trans_handle *trans;
--	radix_tree_init();
--
--	root = open_ctree(av[ac-1], &super, 0);
--
--	if (!root) {
--		fprintf(stderr, "Open ctree failed\n");
--		return 1;
--	}
--
--	trans = btrfs_start_transaction(root, 1);
--	BUG_ON(IS_ERR(trans));
--
--	dir_oid = btrfs_super_root_dir(&super);
--
--	signal(SIGTERM, sigstopper);
--	signal(SIGINT, sigstopper);
--
--	for (i = 1 ; i < ac - 1; i++) {
--		if (strcmp(av[i], "-i") == 0) {
--			initial_only = 1;
--		} else if (strcmp(av[i], "-c") == 0) {
--			iterations = atoi(av[i+1]);
--			i++;
--		} else if (strcmp(av[i], "-f") == 0) {
--			init_fill_count = atoi(av[i+1]);
--			i++;
--		} else {
--			print_usage();
--		}
--	}
--	printf("initial fill\n");
--	ret = fill_tree(trans, root, &radix, init_fill_count);
--	printf("starting run\n");
--	if (ret) {
--		err = ret;
--		goto out;
--	}
--	if (initial_only == 1) {
--		goto out;
--	}
--	for (i = 0; i < iterations; i++) {
--		op = rand() % ARRAY_SIZE(ops);
--		count = rand() % 128;
--		if (i % 2000 == 0) {
--			printf("%d\n", i);
--			fflush(stdout);
--		}
--		if (i && i % 5000 == 0) {
--			printf("open & close, root level %d nritems %d\n",
--				btrfs_header_level(&root->node->node.header),
--				btrfs_header_nritems(&root->node->node.header));
--			close_ctree(root, &super);
--			root = open_ctree("dbfile", &super, 0);
--
--			if (!root) {
--				fprintf(stderr, "Open ctree failed\n");
--				return 1;
--			}
--		}
--		while(count--) {
--			ret = ops[op](trans, root, &radix);
--			if (ret) {
--				fprintf(stderr, "op %d failed %d:%d\n",
--					op, i, iterations);
--				btrfs_print_tree(root, root->node, 1);
--				fprintf(stderr, "op %d failed %d:%d\n",
--					op, i, iterations);
--				err = ret;
--				goto out;
--			}
--			if (ops[op] == bulk_op)
--				break;
--			if (keep_running == 0) {
--				err = 0;
--				goto out;
--			}
--		}
--	}
--out:
--	close_ctree(root, &super);
--	return !!err;
--}
--
-diff --git a/quick-test.c b/quick-test.c
-deleted file mode 100644
-index 5da47c32..00000000
---- a/quick-test.c
-+++ /dev/null
-@@ -1,226 +0,0 @@
--/*
-- * Copyright (C) 2007 Oracle.  All rights reserved.
-- *
-- * This program is free software; you can redistribute it and/or
-- * modify it under the terms of the GNU General Public
-- * License v2 as published by the Free Software Foundation.
-- *
-- * This program is distributed in the hope that it will be useful,
-- * but WITHOUT ANY WARRANTY; without even the implied warranty of
-- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-- * General Public License for more details.
-- *
-- * You should have received a copy of the GNU General Public
-- * License along with this program; if not, write to the
-- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-- * Boston, MA 021110-1307, USA.
-- */
--
--#include <stdio.h>
--#include <stdlib.h>
--#include <fcntl.h>
--#include "kerncompat.h"
--#include "radix-tree.h"
--#include "ctree.h"
--#include "disk-io.h"
--#include "print-tree.h"
--#include "transaction.h"
--
--/* for testing only */
--static int next_key(int i, int max_key) {
--	return rand() % max_key;
--	// return i;
--}
--
--int main(int ac, char **av) {
--	struct btrfs_key ins;
--	struct btrfs_key last = { (u64)-1, 0, 0};
--	char *buf;
--	int i;
--	int num;
--	int ret;
--	int run_size = 300000;
--	int max_key =  100000000;
--	int tree_size = 2;
--	struct btrfs_path path;
--	struct btrfs_root *root;
--	struct btrfs_trans_handle *trans;
--
--	buf = calloc(1, 512);
--
--	radix_tree_init();
--
--	root = open_ctree(av[1], BTRFS_SUPER_INFO_OFFSET, OPEN_CTREE_WRITES);
--	if (!root) {
--		fprintf(stderr, "Open ctree failed\n");
--		exit(1);
--	}
--	trans = btrfs_start_transaction(root, 1);
--	BUG_ON(IS_ERR(trans));
--	srand(55);
--	ins.type = BTRFS_STRING_ITEM_KEY;
--	for (i = 0; i < run_size; i++) {
--		num = next_key(i, max_key);
--		// num = i;
--		sprintf(buf, "string-%d", num);
--		if (i % 10000 == 0)
--			fprintf(stderr, "insert %d:%d\n", num, i);
--		ins.objectid = num;
--		ins.offset = 0;
--		ret = btrfs_insert_item(trans, root, &ins, buf, 512);
--		if (!ret)
--			tree_size++;
--		if (i == run_size - 5) {
--			btrfs_commit_transaction(trans, root);
--			trans = btrfs_start_transaction(root, 1);
--			BUG_ON(IS_ERR(trans));
--		}
--	}
--	btrfs_commit_transaction(trans, root);
--	close_ctree(root);
--	exit(1);
--	root = open_ctree(av[1], BTRFS_SUPER_INFO_OFFSET, OPEN_CTREE_WRITES);
--	if (!root) {
--		fprintf(stderr, "Open ctree failed\n");
--		exit(1);
--	}
--	printf("starting search\n");
--	srand(55);
--	for (i = 0; i < run_size; i++) {
--		num = next_key(i, max_key);
--		ins.objectid = num;
--		btrfs_init_path(&path);
--		if (i % 10000 == 0)
--			fprintf(stderr, "search %d:%d\n", num, i);
--		ret = btrfs_search_slot(NULL, root, &ins, &path, 0, 0);
--		if (ret) {
--			btrfs_print_tree(root, root->node, 1);
--			printf("unable to find %d\n", num);
--			exit(1);
--		}
--		btrfs_release_path(&path);
--	}
--	close_ctree(root);
--
--	root = open_ctree(av[1], BTRFS_SUPER_INFO_OFFSET, OPEN_CTREE_WRITES);
--	if (!root) {
--		fprintf(stderr, "Open ctree failed\n");
--		exit(1);
--	}
--	printf("node %p level %d total ptrs %d free spc %lu\n", root->node,
--	        btrfs_header_level(root->node),
--		btrfs_header_nritems(root->node),
--		(unsigned long)BTRFS_NODEPTRS_PER_BLOCK(root->fs_info) -
--		btrfs_header_nritems(root->node));
--	printf("all searches good, deleting some items\n");
--	i = 0;
--	srand(55);
--	trans = btrfs_start_transaction(root, 1);
--	BUG_ON(IS_ERR(trans));
--	for (i = 0 ; i < run_size/4; i++) {
--		num = next_key(i, max_key);
--		ins.objectid = num;
--		btrfs_init_path(&path);
--		ret = btrfs_search_slot(trans, root, &ins, &path, -1, 1);
--		if (!ret) {
--			if (i % 10000 == 0)
--				fprintf(stderr, "del %d:%d\n", num, i);
--			ret = btrfs_del_item(trans, root, &path);
--			if (ret != 0)
--				BUG();
--			tree_size--;
--		}
--		btrfs_release_path(&path);
--	}
--	btrfs_commit_transaction(trans, root);
--	close_ctree(root);
--
--	root = open_ctree(av[1], BTRFS_SUPER_INFO_OFFSET, OPEN_CTREE_WRITES);
--	if (!root) {
--		fprintf(stderr, "Open ctree failed\n");
--		exit(1);
--	}
--	trans = btrfs_start_transaction(root, 1);
--	BUG_ON(IS_ERR(trans));
--	srand(128);
--	for (i = 0; i < run_size; i++) {
--		num = next_key(i, max_key);
--		sprintf(buf, "string-%d", num);
--		ins.objectid = num;
--		if (i % 10000 == 0)
--			fprintf(stderr, "insert %d:%d\n", num, i);
--		ret = btrfs_insert_item(trans, root, &ins, buf, 512);
--		if (!ret)
--			tree_size++;
--	}
--	btrfs_commit_transaction(trans, root);
--	close_ctree(root);
--
--	root = open_ctree(av[1], BTRFS_SUPER_INFO_OFFSET, OPEN_CTREE_WRITES);
--	if (!root) {
--		fprintf(stderr, "Open ctree failed\n");
--		exit(1);
--	}
--	srand(128);
--	printf("starting search2\n");
--	for (i = 0; i < run_size; i++) {
--		num = next_key(i, max_key);
--		ins.objectid = num;
--		btrfs_init_path(&path);
--		if (i % 10000 == 0)
--			fprintf(stderr, "search %d:%d\n", num, i);
--		ret = btrfs_search_slot(NULL, root, &ins, &path, 0, 0);
--		if (ret) {
--			btrfs_print_tree(root, root->node, 1);
--			printf("unable to find %d\n", num);
--			exit(1);
--		}
--		btrfs_release_path(&path);
--	}
--	printf("starting big long delete run\n");
--	trans = btrfs_start_transaction(root, 1);
--	BUG_ON(IS_ERR(trans));
--	while(root->node && btrfs_header_nritems(root->node) > 0) {
--		struct extent_buffer *leaf;
--		int slot;
--		ins.objectid = (u64)-1;
--		btrfs_init_path(&path);
--		ret = btrfs_search_slot(trans, root, &ins, &path, -1, 1);
--		if (ret == 0)
--			BUG();
--
--		leaf = path.nodes[0];
--		slot = path.slots[0];
--		if (slot != btrfs_header_nritems(leaf))
--			BUG();
--		while(path.slots[0] > 0) {
--			path.slots[0] -= 1;
--			slot = path.slots[0];
--			leaf = path.nodes[0];
--
--			btrfs_item_key_to_cpu(leaf, &last, slot);
--
--			if (tree_size % 10000 == 0)
--				printf("big del %d:%d\n", tree_size, i);
--			ret = btrfs_del_item(trans, root, &path);
--			if (ret != 0) {
--				printf("del_item returned %d\n", ret);
--				BUG();
--			}
--			tree_size--;
--		}
--		btrfs_release_path(&path);
--	}
--	/*
--	printf("previous tree:\n");
--	btrfs_print_tree(root, root->commit_root);
--	printf("map before commit\n");
--	btrfs_print_tree(root->extent_root, root->extent_root->node);
--	*/
--	btrfs_commit_transaction(trans, root);
--	printf("tree size is now %d\n", tree_size);
--	printf("root %p commit root %p\n", root->node, root->commit_root);
--	btrfs_print_tree(root, root->node, 1);
--	close_ctree(root);
--	return 0;
--}
+ # udev v190 introduced the btrfs builtin and a udev rule to use it.
+ # Our udev rule gives us the friendly dm names but isn't required (or valid)
+ # on earlier releases.
 -- 
 2.17.0
 

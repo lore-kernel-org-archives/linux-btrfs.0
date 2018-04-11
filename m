@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:36536 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:45647 "EHLO
         prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751861AbeDKH6M (ORCPT
+        with ESMTP id S1751699AbeDKH34 (ORCPT
         <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Wed, 11 Apr 2018 03:58:12 -0400
+        Wed, 11 Apr 2018 03:29:56 -0400
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: calestyo@scientia.net
-Subject: [PATCH v2.1 2/2] btrfs-progs: Use more loose open ctree flags for dump-tree and restore
-Date: Wed, 11 Apr 2018 15:58:01 +0800
-Message-Id: <20180411075801.14686-1-wqu@suse.com>
+Subject: [PATCH v2 2/2] btrfs-progs: Use more loose open ctree flags for dump-tree and restore
+Date: Wed, 11 Apr 2018 15:29:36 +0800
+Message-Id: <20180411072936.12915-2-wqu@suse.com>
 In-Reply-To: <20180411072936.12915-1-wqu@suse.com>
 References: <20180411072936.12915-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -34,15 +34,17 @@ Currently dump-tree and btrfs-restore is ensured that they care nothing
 about block group items. So specify OPEN_CTREE_NO_BLOCK_GROUPS flag as
 default.
 
+Also fix a typo where dump-tree is using OPEN_CTREE_FS_PARTIAL, which
+should be OPEN_CTREE_PARTIAL.
+This makes dump-tree do more check and can sometimes fail to open
+certain filesystems.
+
 Reported-by: Christoph Anton Mitterer <calestyo@scientia.net>
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
 changelog:
 v2:
   New comment to explain why OPEN_CTREE_NO_BLOCK_GROUPS is OK here.
-v2.1:
-  Update commit message, as the typo fix goes to previous patch, not
-  this one.
 ---
  cmds-inspect-dump-tree.c | 10 +++++++++-
  cmds-restore.c           |  9 ++++++++-

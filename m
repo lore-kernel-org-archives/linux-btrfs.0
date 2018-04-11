@@ -1,58 +1,102 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:47825 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:53312 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752978AbeDPSzw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 16 Apr 2018 14:55:52 -0400
+        id S1751798AbeDKIVZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 11 Apr 2018 04:21:25 -0400
 Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 6E73EAF19
-        for <linux-btrfs@vger.kernel.org>; Mon, 16 Apr 2018 18:55:51 +0000 (UTC)
-Date: Mon, 16 Apr 2018 20:53:21 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Nikolay Borisov <nborisov@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 4/4] btrfs: Rewrite retry logic in do_chunk_alloc
-Message-ID: <20180416185321.GW21272@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+        by mx2.suse.de (Postfix) with ESMTP id 6368AAF54
+        for <linux-btrfs@vger.kernel.org>; Wed, 11 Apr 2018 08:21:24 +0000 (UTC)
+From: Nikolay Borisov <nborisov@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH 1/4] btrfs: Use while loop instead of labels in __endio_write_update_ordered
+Date: Wed, 11 Apr 2018 11:21:17 +0300
+Message-Id: <1523434880-7799-2-git-send-email-nborisov@suse.com>
+In-Reply-To: <1523434880-7799-1-git-send-email-nborisov@suse.com>
 References: <1523434880-7799-1-git-send-email-nborisov@suse.com>
- <1523434880-7799-5-git-send-email-nborisov@suse.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1523434880-7799-5-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Apr 11, 2018 at 11:21:20AM +0300, Nikolay Borisov wrote:
-> do_chunk_alloc implements logic to detect whether there is currently
-> pending chunk allocation  (by means of space_info->chunk_alloc being
-> set) and if so it loops around to the 'again' label. Additionally,
-> based on the state of the space_info (e.g. whether it's full or not)
-> and the return value of should_alloc_chunk() it decides whether this
-> is a "hard" error (ENOSPC) or we can just return 0.
-> 
-> This patch refactors all of this:
-> 
-> 1. Put order to the scattered ifs handling the various cases in an
-> easy-to-read if {} else if{} branches. This makes clear the various
-> cases we are interested in handling.
-> 
-> 2. Call should_alloc_chunk only once and use the result in the
-> if/else if constructs. All of this is done under space_info->lock, so
-> even before multiple calls of should_alloc_chunk were unnecessary.
-> 
-> 3. Rewrite the "do {} while()" loop currently implemented via label
-> into an explicit loop construct.
-> 
-> 4. Move the mutex locking outside of the while loop and remove the
-> comment. The comment in fact was misleading since in the old code if the
-> mutex is acquired and we don't need to loop again (wait_for_alloc) is
-> 0 then we don't recheck if we need to allocate (the comment was stating
-> the opposite).
+Currently __endio_write_update_ordered uses labels to implement
+what is essentially a simple while loop. This makes the code more
+cumbersome to follow than it actually has to be. No functional
+changes. No xfstest regressions were found during testing.
 
-The comment seems correct to me. It is referring to the actual
-allocation that happens in paralell (a few lines below calling
-btrfs_alloc_chunk). So the first part attempts to determine if we should
-wait, and if yes, then take the mutex and block until the other
-allocation finishes.
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+---
+ fs/btrfs/inode.c | 52 +++++++++++++++++++++++++---------------------------
+ 1 file changed, 25 insertions(+), 27 deletions(-)
 
-This is completely mising in the new code so the loop is only blocking
-on the space info spinlock, but not going to sleep. Busy looping.
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index ddaed8369874..16f688a4b92d 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -8159,7 +8159,6 @@ static void __endio_write_update_ordered(struct inode *inode,
+ 	u64 ordered_offset = offset;
+ 	u64 ordered_bytes = bytes;
+ 	u64 last_offset;
+-	int ret;
+ 
+ 	if (btrfs_is_free_space_inode(BTRFS_I(inode))) {
+ 		wq = fs_info->endio_freespace_worker;
+@@ -8169,32 +8168,31 @@ static void __endio_write_update_ordered(struct inode *inode,
+ 		func = btrfs_endio_write_helper;
+ 	}
+ 
+-again:
+-	last_offset = ordered_offset;
+-	ret = btrfs_dec_test_first_ordered_pending(inode, &ordered,
+-						   &ordered_offset,
+-						   ordered_bytes,
+-						   uptodate);
+-	if (!ret)
+-		goto out_test;
+-
+-	btrfs_init_work(&ordered->work, func, finish_ordered_fn, NULL, NULL);
+-	btrfs_queue_work(wq, &ordered->work);
+-out_test:
+-	/*
+-	 * If btrfs_dec_test_ordered_pending does not find any ordered extent
+-	 * in the range, we can exit.
+-	 */
+-	if (ordered_offset == last_offset)
+-		return;
+-	/*
+-	 * our bio might span multiple ordered extents.  If we haven't
+-	 * completed the accounting for the whole dio, go back and try again
+-	 */
+-	if (ordered_offset < offset + bytes) {
+-		ordered_bytes = offset + bytes - ordered_offset;
+-		ordered = NULL;
+-		goto again;
++	while (ordered_offset < offset + bytes) {
++		last_offset = ordered_offset;
++		if (btrfs_dec_test_first_ordered_pending(inode, &ordered,
++							   &ordered_offset,
++							   ordered_bytes,
++							   uptodate)) {
++			btrfs_init_work(&ordered->work, func,
++					finish_ordered_fn,
++					NULL, NULL);
++			btrfs_queue_work(wq, &ordered->work);
++		}
++		/*
++		 * If btrfs_dec_test_ordered_pending does not find any ordered
++		 * extent in the range, we can exit.
++		 */
++		if (ordered_offset == last_offset)
++			return;
++		/*
++		 * Our bio might span multiple ordered extents. In this case
++		 * we keep goin until we have accounted the whole dio.
++		 */
++		if (ordered_offset < offset + bytes) {
++			ordered_bytes = offset + bytes - ordered_offset;
++			ordered = NULL;
++		}
+ 	}
+ }
+ 
+-- 
+2.7.4
+

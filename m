@@ -1,228 +1,197 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:37560 "EHLO
-        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1752166AbeDRSu2 (ORCPT
+Received: from mail-pl0-f47.google.com ([209.85.160.47]:42616 "EHLO
+        mail-pl0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752167AbeDKHJy (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 18 Apr 2018 14:50:28 -0400
-Subject: Re: [PATCH] btrfs: optimize free space tree bitmap conversion
-To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>, Chris Mason <clm@fb.com>,
-        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
-        Omar Sandoval <osandov@osandov.com>, <kernel-team@fb.com>
-References: <20180417231904.19842-1-hmclauchlan@fb.com>
- <20180418155017.GQ21272@twin.jikos.cz>
-From: Howard McLauchlan <hmclauchlan@fb.com>
-Message-ID: <8e185033-9a0a-027a-c2c8-3fc5b7a5436e@fb.com>
-Date: Wed, 18 Apr 2018 11:50:00 -0700
+        Wed, 11 Apr 2018 03:09:54 -0400
+Received: by mail-pl0-f47.google.com with SMTP id t20-v6so703689ply.9
+        for <linux-btrfs@vger.kernel.org>; Wed, 11 Apr 2018 00:09:54 -0700 (PDT)
+Date: Wed, 11 Apr 2018 00:09:52 -0700
+From: Omar Sandoval <osandov@osandov.com>
+To: Nikolay Borisov <nborisov@suse.com>
+Cc: linux-btrfs@vger.kernel.org, jeffm@suse.com, dsterba@suse.com
+Subject: Re: [PATCH] btrfs: Fix race condition between delayed refs and
+ blockgroup removal
+Message-ID: <20180411070952.GA29155@vader>
+References: <1523430289-29145-1-git-send-email-nborisov@suse.com>
 MIME-Version: 1.0
-In-Reply-To: <20180418155017.GQ21272@twin.jikos.cz>
-Content-Type: text/plain; charset="utf-8"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1523430289-29145-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 04/18/2018 08:50 AM, David Sterba wrote:
-> On Tue, Apr 17, 2018 at 04:19:04PM -0700, Howard McLauchlan wrote:
->> Presently, convert_free_space_to_extents() does a linear scan of the
->> bitmap. We can speed this up with find_next_{bit,zero_bit}_le().
->>
->> This patch replaces the linear scan with find_next_{bit,zero_bit}_le().
->> Testing shows a 20-33% decrease in execution time for
->> convert_free_space_to_extents().
-> Sounds good.
->
->> Suggested-by: Omar Sandoval <osandov@osandov.com>
->> Signed-off-by: Howard McLauchlan <hmclauchlan@fb.com>
->> ---
->> Based on 4.17-rc1
->>
->>  fs/btrfs/extent_io.c       | 12 ++++-----
->>  fs/btrfs/extent_io.h       |  4 +--
->>  fs/btrfs/free-space-tree.c | 54 ++++++++++++++------------------------
->>  3 files changed, 27 insertions(+), 43 deletions(-)
->>
->> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
->> index e99b329002cf..1c0e7ce49556 100644
->> --- a/fs/btrfs/extent_io.c
->> +++ b/fs/btrfs/extent_io.c
->> @@ -5620,12 +5620,12 @@ void copy_extent_buffer(struct extent_buffer *dst, struct extent_buffer *src,
->>  	}
->>  }
->>  
->> -void le_bitmap_set(u8 *map, unsigned int start, int len)
->> +void le_bitmap_set(unsigned long *map, unsigned int start, int len)
->>  {
->> -	u8 *p = map + BIT_BYTE(start);
->> +	char *p = ((char *)map) + BIT_BYTE(start);
->>  	const unsigned int size = start + len;
->>  	int bits_to_set = BITS_PER_BYTE - (start % BITS_PER_BYTE);
->> -	u8 mask_to_set = BITMAP_FIRST_BYTE_MASK(start);
->> +	char mask_to_set = BITMAP_FIRST_BYTE_MASK(start);
-> Why do you switch to char? As there are bit operations done below (that
-> you don't change), the unsigned type seems correct.
->
->>  
->>  	while (len - bits_to_set >= 0) {
->>  		*p |= mask_to_set;
->> @@ -5640,12 +5640,12 @@ void le_bitmap_set(u8 *map, unsigned int start, int len)
->>  	}
->>  }
->>  
->> -void le_bitmap_clear(u8 *map, unsigned int start, int len)
->> +void le_bitmap_clear(unsigned long *map, unsigned int start, int len)
->>  {
->> -	u8 *p = map + BIT_BYTE(start);
->> +	char *p = ((char *)map) + BIT_BYTE(start);
->>  	const unsigned int size = start + len;
->>  	int bits_to_clear = BITS_PER_BYTE - (start % BITS_PER_BYTE);
->> -	u8 mask_to_clear = BITMAP_FIRST_BYTE_MASK(start);
->> +	char mask_to_clear = BITMAP_FIRST_BYTE_MASK(start);
-> Same here and in below. Otherwise it looks ok.
->
->>  
->>  	while (len - bits_to_clear >= 0) {
->>  		*p &= ~mask_to_clear;
->> diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
->> index a53009694b16..a6db233f4a40 100644
->> --- a/fs/btrfs/extent_io.h
->> +++ b/fs/btrfs/extent_io.h
->> @@ -84,8 +84,8 @@ static inline int le_test_bit(int nr, const u8 *addr)
->>  	return 1U & (addr[BIT_BYTE(nr)] >> (nr & (BITS_PER_BYTE-1)));
->>  }
->>  
->> -void le_bitmap_set(u8 *map, unsigned int start, int len);
->> -void le_bitmap_clear(u8 *map, unsigned int start, int len);
->> +void le_bitmap_set(unsigned long *map, unsigned int start, int len);
->> +void le_bitmap_clear(unsigned long *map, unsigned int start, int len);
->>  
->>  struct extent_state;
->>  struct btrfs_root;
->> diff --git a/fs/btrfs/free-space-tree.c b/fs/btrfs/free-space-tree.c
->> index 32a0f6cb5594..0ddf96b01a3a 100644
->> --- a/fs/btrfs/free-space-tree.c
->> +++ b/fs/btrfs/free-space-tree.c
->> @@ -138,9 +138,9 @@ static inline u32 free_space_bitmap_size(u64 size, u32 sectorsize)
->>  	return DIV_ROUND_UP((u32)div_u64(size, sectorsize), BITS_PER_BYTE);
->>  }
->>  
->> -static u8 *alloc_bitmap(u32 bitmap_size)
->> +static unsigned long *alloc_bitmap(u32 bitmap_size)
->>  {
->> -	u8 *ret;
->> +	unsigned long *ret;
->>  	unsigned int nofs_flag;
->>  
->>  	/*
->> @@ -166,7 +166,8 @@ int convert_free_space_to_bitmaps(struct btrfs_trans_handle *trans,
->>  	struct btrfs_free_space_info *info;
->>  	struct btrfs_key key, found_key;
->>  	struct extent_buffer *leaf;
->> -	u8 *bitmap, *bitmap_cursor;
->> +	unsigned long *bitmap;
->> +	char *bitmap_cursor;
->>  	u64 start, end;
->>  	u64 bitmap_range, i;
->>  	u32 bitmap_size, flags, expected_extent_count;
->> @@ -255,7 +256,7 @@ int convert_free_space_to_bitmaps(struct btrfs_trans_handle *trans,
->>  		goto out;
->>  	}
->>  
->> -	bitmap_cursor = bitmap;
->> +	bitmap_cursor = (char *)bitmap;
->>  	bitmap_range = fs_info->sectorsize * BTRFS_FREE_SPACE_BITMAP_BITS;
->>  	i = start;
->>  	while (i < end) {
->> @@ -304,13 +305,10 @@ int convert_free_space_to_extents(struct btrfs_trans_handle *trans,
->>  	struct btrfs_free_space_info *info;
->>  	struct btrfs_key key, found_key;
->>  	struct extent_buffer *leaf;
->> -	u8 *bitmap;
->> +	unsigned long *bitmap;
->>  	u64 start, end;
->> -	/* Initialize to silence GCC. */
->> -	u64 extent_start = 0;
->> -	u64 offset;
->>  	u32 bitmap_size, flags, expected_extent_count;
->> -	int prev_bit = 0, bit, bitnr;
->> +	unsigned long nrbits, start_bit, end_bit;
->>  	u32 extent_count = 0;
->>  	int done = 0, nr;
->>  	int ret;
->> @@ -348,7 +346,7 @@ int convert_free_space_to_extents(struct btrfs_trans_handle *trans,
->>  				break;
->>  			} else if (found_key.type == BTRFS_FREE_SPACE_BITMAP_KEY) {
->>  				unsigned long ptr;
->> -				u8 *bitmap_cursor;
->> +				char *bitmap_cursor;
->>  				u32 bitmap_pos, data_size;
->>  
->>  				ASSERT(found_key.objectid >= start);
->> @@ -358,7 +356,7 @@ int convert_free_space_to_extents(struct btrfs_trans_handle *trans,
->>  				bitmap_pos = div_u64(found_key.objectid - start,
->>  						     fs_info->sectorsize *
->>  						     BITS_PER_BYTE);
->> -				bitmap_cursor = bitmap + bitmap_pos;
->> +				bitmap_cursor = ((char *)bitmap) + bitmap_pos;
->>  				data_size = free_space_bitmap_size(found_key.offset,
->>  								   fs_info->sectorsize);
->>  
->> @@ -392,32 +390,16 @@ int convert_free_space_to_extents(struct btrfs_trans_handle *trans,
->>  	btrfs_mark_buffer_dirty(leaf);
->>  	btrfs_release_path(path);
->>  
->> -	offset = start;
->> -	bitnr = 0;
->> -	while (offset < end) {
->> -		bit = !!le_test_bit(bitnr, bitmap);
->> -		if (prev_bit == 0 && bit == 1) {
->> -			extent_start = offset;
->> -		} else if (prev_bit == 1 && bit == 0) {
->> -			key.objectid = extent_start;
->> -			key.type = BTRFS_FREE_SPACE_EXTENT_KEY;
->> -			key.offset = offset - extent_start;
->> -
->> -			ret = btrfs_insert_empty_item(trans, root, path, &key, 0);
->> -			if (ret)
->> -				goto out;
->> -			btrfs_release_path(path);
->> +	nrbits = div_u64(block_group->key.offset, block_group->fs_info->sectorsize);
->> +	start_bit = find_next_bit_le(bitmap, nrbits, 0);
->>  
->> -			extent_count++;
->> -		}
->> -		prev_bit = bit;
->> -		offset += fs_info->sectorsize;
->> -		bitnr++;
->> -	}
->> -	if (prev_bit == 1) {
->> -		key.objectid = extent_start;
->> +	while (start_bit < nrbits) {
->> +		end_bit = find_next_zero_bit_le(bitmap, nrbits, start_bit);
->> +		ASSERT(start_bit < end_bit);
->> +
->> +		key.objectid = start + start_bit * block_group->fs_info->sectorsize;
->>  		key.type = BTRFS_FREE_SPACE_EXTENT_KEY;
->> -		key.offset = end - extent_start;
->> +		key.offset = (end_bit - start_bit) * block_group->fs_info->sectorsize;
->>  
->>  		ret = btrfs_insert_empty_item(trans, root, path, &key, 0);
->>  		if (ret)
->> @@ -425,6 +407,8 @@ int convert_free_space_to_extents(struct btrfs_trans_handle *trans,
->>  		btrfs_release_path(path);
->>  
->>  		extent_count++;
->> +
->> +		start_bit = find_next_bit_le(bitmap, nrbits, end_bit);
->>  	}
->>  
->>  	if (extent_count != expected_extent_count) {
->> -- 
->> 2.17.0
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+On Wed, Apr 11, 2018 at 10:04:49AM +0300, Nikolay Borisov wrote:
+> When the delayed refs for a head are all run, eventually
+> cleanup_ref_head is called which (in case of deletion) obtains a
+> reference for the relevant btrfs_space_info struct by querying the bg
+> for the range. This is problematic because when the last extent of a
+> bg is deleted a race window emerges between removal of that bg and the
+> subsequent invocation of cleanup_ref_head. This can result in cache being null
+> and either a null pointer dereference or assertion failure.
+> 
+> 	task: ffff8d04d31ed080 task.stack: ffff9e5dc10cc000
+> 	RIP: 0010:assfail.constprop.78+0x18/0x1a [btrfs]
+> 	RSP: 0018:ffff9e5dc10cfbe8 EFLAGS: 00010292
+> 	RAX: 0000000000000044 RBX: 0000000000000000 RCX: 0000000000000000
+> 	RDX: ffff8d04ffc1f868 RSI: ffff8d04ffc178c8 RDI: ffff8d04ffc178c8
+> 	RBP: ffff8d04d29e5ea0 R08: 00000000000001f0 R09: 0000000000000001
+> 	R10: ffff9e5dc0507d58 R11: 0000000000000001 R12: ffff8d04d29e5ea0
+> 	R13: ffff8d04d29e5f08 R14: ffff8d04efe29b40 R15: ffff8d04efe203e0
+> 	FS:  00007fbf58ead500(0000) GS:ffff8d04ffc00000(0000) knlGS:0000000000000000
+> 	CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+> 	CR2: 00007fe6c6975648 CR3: 0000000013b2a000 CR4: 00000000000006f0
+> 	DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+> 	DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+> 	Call Trace:
+> 	 __btrfs_run_delayed_refs+0x10e7/0x12c0 [btrfs]
+> 	 btrfs_run_delayed_refs+0x68/0x250 [btrfs]
+> 	 btrfs_should_end_transaction+0x42/0x60 [btrfs]
+> 	 btrfs_truncate_inode_items+0xaac/0xfc0 [btrfs]
+> 	 btrfs_evict_inode+0x4c6/0x5c0 [btrfs]
+> 	 evict+0xc6/0x190
+> 	 do_unlinkat+0x19c/0x300
+> 	 do_syscall_64+0x74/0x140
+> 	 entry_SYSCALL_64_after_hwframe+0x3d/0xa2
+> 	RIP: 0033:0x7fbf589c57a7
+> 
+> To fix this, introduce a new flag "is_system" to head_ref structs,
+> which is populated at insertion time. This allows to decouple the
+> querying for the spaceinfo from querying the possibly deleted bg.
+> 
+> Fixes: d7eae3403f46 ("Btrfs: rework delayed ref total_bytes_pinned accounting")
+> Suggested-by: Omar Sandoval <osandov@osandov.com>
+> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+> ---
+>  fs/btrfs/delayed-ref.c | 19 ++++++++++++++-----
+>  fs/btrfs/delayed-ref.h |  1 +
+>  fs/btrfs/extent-tree.c | 20 +++++++++++++++-----
+>  3 files changed, 30 insertions(+), 10 deletions(-)
+> 
+> diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
+> index 5ac2d7909782..20fa7b4c132d 100644
+> --- a/fs/btrfs/delayed-ref.c
+> +++ b/fs/btrfs/delayed-ref.c
+> @@ -550,8 +550,10 @@ add_delayed_ref_head(struct btrfs_fs_info *fs_info,
+>  		     struct btrfs_delayed_ref_head *head_ref,
+>  		     struct btrfs_qgroup_extent_record *qrecord,
+>  		     u64 bytenr, u64 num_bytes, u64 ref_root, u64 reserved,
+> -		     int action, int is_data, int *qrecord_inserted_ret,
+> +		     int action, int is_data, int is_system,
+> +		     int *qrecord_inserted_ret,
+>  		     int *old_ref_mod, int *new_ref_mod)
+> +
+>  {
+>  	struct btrfs_delayed_ref_head *existing;
+>  	struct btrfs_delayed_ref_root *delayed_refs;
+> @@ -595,6 +597,7 @@ add_delayed_ref_head(struct btrfs_fs_info *fs_info,
+>  	head_ref->ref_mod = count_mod;
+>  	head_ref->must_insert_reserved = must_insert_reserved;
+>  	head_ref->is_data = is_data;
+> +	head_ref->is_system = is_system;
+>  	head_ref->ref_tree = RB_ROOT;
+>  	INIT_LIST_HEAD(&head_ref->ref_add_list);
+>  	RB_CLEAR_NODE(&head_ref->href_node);
+> @@ -782,6 +785,7 @@ int btrfs_add_delayed_tree_ref(struct btrfs_fs_info *fs_info,
+>  	struct btrfs_delayed_ref_root *delayed_refs;
+>  	struct btrfs_qgroup_extent_record *record = NULL;
+>  	int qrecord_inserted;
+> +	int is_system = ref_root == BTRFS_CHUNK_TREE_OBJECTID;
+>  
+>  	BUG_ON(extent_op && extent_op->is_data);
+>  	ref = kmem_cache_alloc(btrfs_delayed_tree_ref_cachep, GFP_NOFS);
+> @@ -810,8 +814,8 @@ int btrfs_add_delayed_tree_ref(struct btrfs_fs_info *fs_info,
+>  	 */
+>  	head_ref = add_delayed_ref_head(fs_info, trans, head_ref, record,
+>  					bytenr, num_bytes, 0, 0, action, 0,
+> -					&qrecord_inserted, old_ref_mod,
+> -					new_ref_mod);
+> +					is_system, &qrecord_inserted,
+> +					old_ref_mod, new_ref_mod);
+>  
+>  	add_delayed_tree_ref(fs_info, trans, head_ref, &ref->node, bytenr,
+>  			     num_bytes, parent, ref_root, level, action);
+> @@ -878,7 +882,7 @@ int btrfs_add_delayed_data_ref(struct btrfs_fs_info *fs_info,
+>  	 */
+>  	head_ref = add_delayed_ref_head(fs_info, trans, head_ref, record,
+>  					bytenr, num_bytes, ref_root, reserved,
+> -					action, 1, &qrecord_inserted,
+> +					action, 1, 0,  &qrecord_inserted,
+>  					old_ref_mod, new_ref_mod);
+>  
+>  	add_delayed_data_ref(fs_info, trans, head_ref, &ref->node, bytenr,
+> @@ -908,9 +912,14 @@ int btrfs_add_delayed_extent_op(struct btrfs_fs_info *fs_info,
+>  	delayed_refs = &trans->transaction->delayed_refs;
+>  	spin_lock(&delayed_refs->lock);
+>  
+> +	/*
+> +	 * extent_ops just modify the flags of an extent and they don't result
+> +	 * in ref count changes, hence it's safe to pass false/0 for is_system
+> +	 * argument
+> +	 */
+>  	add_delayed_ref_head(fs_info, trans, head_ref, NULL, bytenr,
+>  			     num_bytes, 0, 0, BTRFS_UPDATE_DELAYED_HEAD,
+> -			     extent_op->is_data, NULL, NULL, NULL);
+> +			     extent_op->is_data, 0, NULL, NULL, NULL);
+>  
+>  	spin_unlock(&delayed_refs->lock);
+>  	return 0;
+> diff --git a/fs/btrfs/delayed-ref.h b/fs/btrfs/delayed-ref.h
+> index cdf4a94ce5c1..7e7bf4e66d48 100644
+> --- a/fs/btrfs/delayed-ref.h
+> +++ b/fs/btrfs/delayed-ref.h
+> @@ -139,6 +139,7 @@ struct btrfs_delayed_ref_head {
+>  	 */
+>  	unsigned int must_insert_reserved:1;
+>  	unsigned int is_data:1;
+> +	unsigned int is_system:1;
+>  	unsigned int processing:1;
+>  };
+>  
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index 9a05e5b5089f..ba3468a84f57 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -2616,13 +2616,23 @@ static int cleanup_ref_head(struct btrfs_trans_handle *trans,
+>  	trace_run_delayed_ref_head(fs_info, head, 0);
+>  
+>  	if (head->total_ref_mod < 0) {
+> -		struct btrfs_block_group_cache *cache;
+> +		struct btrfs_space_info *space_info;
+>  
+> -		cache = btrfs_lookup_block_group(fs_info, head->bytenr);
+> -		ASSERT(cache);
+> -		percpu_counter_add(&cache->space_info->total_bytes_pinned,
+> +		if (head->is_data) {
+> +			space_info = __find_space_info(fs_info,
+> +						       BTRFS_BLOCK_GROUP_DATA);
+> +		} else {
+> +			if (head->is_system) {
+> +				space_info = __find_space_info(fs_info,
+> +						BTRFS_BLOCK_GROUP_SYSTEM);
+> +			} else {
+> +				space_info = __find_space_info(fs_info,
+> +						BTRFS_BLOCK_GROUP_METADATA);
+> +			}
 
-ah, I'll fix and send a V2. Also just realized le_bitmap_clear() isn't used, will remove.
+Could you collapse the nested if/else into a big if (head->is_data) else
+if (head->is_system) else?
 
-Howard
+Were you able to reproduce this on demand?
 
+Besides that,
+
+Reviewed-by: Omar Sandoval <osandov@fb.com>
+
+Thanks for fixing this!
+
+> +		}
+> +		ASSERT(space_info);
+> +		percpu_counter_add(&space_info->total_bytes_pinned,
+>  				   -head->num_bytes);
+> -		btrfs_put_block_group(cache);
+>  
+>  		if (head->is_data) {
+>  			spin_lock(&delayed_refs->lock);
+> -- 
+> 2.7.4
+> 

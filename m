@@ -1,50 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-dm3nam03on0133.outbound.protection.outlook.com ([104.47.41.133]:45508
-        "EHLO NAM03-DM3-obe.outbound.protection.outlook.com"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1754204AbeDJNuX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 10 Apr 2018 09:50:23 -0400
-From: Sasha Levin <Alexander.Levin@microsoft.com>
-To: Sasha Levin <Alexander.Levin@microsoft.com>,
-        Filipe Manana <fdmanana@suse.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-CC: "stable@vger.kernel.org" <stable@vger.kernel.org>
+Received: from mx2.suse.de ([195.135.220.15]:46095 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752432AbeDLOw6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 12 Apr 2018 10:52:58 -0400
+Date: Thu, 12 Apr 2018 16:50:25 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Sasha Levin <Alexander.Levin@microsoft.com>
+Cc: Filipe Manana <fdmanana@suse.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "stable@vger.kernel.org" <stable@vger.kernel.org>
 Subject: Re: [PATCH] Btrfs: fix loss of prealloc extents past i_size after
  fsync log replay
-Date: Tue, 10 Apr 2018 13:50:21 +0000
-Message-ID: <DM5PR2101MB103293C63B8465C6B91284C2FBBE0@DM5PR2101MB1032.namprd21.prod.outlook.com>
+Message-ID: <20180412145025.GM21272@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <20180405215512.513-1-fdmanana@kernel.org>
-In-Reply-To: <20180405215512.513-1-fdmanana@kernel.org>
-Content-Type: text/plain; charset="utf-8"
+ <DM5PR2101MB103293C63B8465C6B91284C2FBBE0@DM5PR2101MB1032.namprd21.prod.outlook.com>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <DM5PR2101MB103293C63B8465C6B91284C2FBBE0@DM5PR2101MB1032.namprd21.prod.outlook.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On Tue, Apr 10, 2018 at 01:50:21PM +0000, Sasha Levin wrote:
+> Hi,
+> 
+> [This is an automated email]
+> 
+> This commit has been processed because it contains a "Fixes:" tag,
+> fixing commit: c71bf099abdd Btrfs: Avoid orphan inodes cleanup while replaying log.
+> 
+> The bot has also determined it's probably a bug fixing patch. (score: 6.2138)
+> 
+> The bot has tested the following trees: v4.16.1, v4.15.16, v4.14.33, v4.9.93, v4.4.127.
+> 
+> v4.16.1: Build OK!
+> v4.15.16: Build OK!
+> v4.14.33: Build OK!
+> v4.9.93: Build failed! Errors:
+>     tree-log.c:2367:24: error: â€˜struct btrfs_fs_infoâ€™ has no member named â€˜sectorsizeâ€™
+>     tree-log.c:2367:24: error: â€˜struct btrfs_fs_infoâ€™ has no member named â€˜sectorsizeâ€™
+>     tree-log.c:4224:13: error: â€˜struct inodeâ€™ has no member named â€˜flagsâ€™; did you mean â€˜i_flagsâ€™?
+>     tree-log.c:4229:38: error: â€˜struct inodeâ€™ has no member named â€˜vfs_inodeâ€™
+>     tree-log.c:4239:4: error: implicit declaration of function â€˜refcount_incâ€™; did you mean â€˜i_readcount_incâ€™? [-Werror=implicit-function-declaration]
 
-[This is an automated email]
+4.9 and older would need manual fixes to the patch. There are a few
+refactorings but that should be easy to resolve if somebody wants to
+backport port that.
 
-This commit has been processed because it contains a "Fixes:" tag,
-fixing commit: c71bf099abdd Btrfs: Avoid orphan inodes cleanup while replaying log.
-
-The bot has also determined it's probably a bug fixing patch. (score: 6.2138)
-
-The bot has tested the following trees: v4.16.1, v4.15.16, v4.14.33, v4.9.93, v4.4.127.
-
-v4.16.1: Build OK!
-v4.15.16: Build OK!
-v4.14.33: Build OK!
-v4.9.93: Build failed! Errors:
-    tree-log.c:2367:24: error: â€˜struct btrfs_fs_infoâ€™ has no member named â€˜sectorsizeâ€™
-    tree-log.c:2367:24: error: â€˜struct btrfs_fs_infoâ€™ has no member named â€˜sectorsizeâ€™
-    tree-log.c:4224:13: error: â€˜struct inodeâ€™ has no member named â€˜flagsâ€™; did you mean â€˜i_flagsâ€™?
-    tree-log.c:4229:38: error: â€˜struct inodeâ€™ has no member named â€˜vfs_inodeâ€™
-    tree-log.c:4239:4: error: implicit declaration of function â€˜refcount_incâ€™; did you mean â€˜i_readcount_incâ€™? [-Werror=implicit-function-declaration]
-
-v4.4.127: Failed to apply! Possible dependencies:
-    0132761017e0 ("btrfs: fix string and comment grammatical issues and typos")
-
-
---
-Thanks,
-Sashaÿôèº{.nÇ+‰·Ÿ®‰­†+%ŠËÿ±éÝ¶¥Šwÿº{.nÇ+‰·¥Š{±ý»k~ÏâžØ^n‡r¡ö¦zËëh™¨è­Ú&£ûàz¿äz¹Þ—ú+€Ê+zf£¢·hšˆ§~†­†Ûiÿÿïêÿ‘êçz_è®æj:+v‰¨þ)ß£øm
+> 
+> v4.4.127: Failed to apply! Possible dependencies:
+>     0132761017e0 ("btrfs: fix string and comment grammatical issues and typos")
+> 
+> 
+> --
+> Thanks,
+> Sasha????{.n?+???????+%?????Ý¶??w??{.n?+????{???k~????^n?r???z???h?????&???z??z?Þ—?+??+zf???h???~????i?????????z_???j:+v???)ß£?m

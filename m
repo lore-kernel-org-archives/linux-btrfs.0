@@ -1,179 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:56633 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1758378AbeDXOSc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 24 Apr 2018 10:18:32 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 754DDAF27
-        for <linux-btrfs@vger.kernel.org>; Tue, 24 Apr 2018 14:18:31 +0000 (UTC)
-From: Nikolay Borisov <nborisov@suse.com>
+Received: from userp2120.oracle.com ([156.151.31.85]:53920 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751870AbeDLC1h (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 11 Apr 2018 22:27:37 -0400
+Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
+        by userp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w3C2QmCC042275
+        for <linux-btrfs@vger.kernel.org>; Thu, 12 Apr 2018 02:27:36 GMT
+Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
+        by userp2120.oracle.com with ESMTP id 2h6pn4srr2-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Thu, 12 Apr 2018 02:27:36 +0000
+Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
+        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w3C2RZBX003737
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Thu, 12 Apr 2018 02:27:36 GMT
+Received: from abhmp0016.oracle.com (abhmp0016.oracle.com [141.146.116.22])
+        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w3C2RZcH006827
+        for <linux-btrfs@vger.kernel.org>; Thu, 12 Apr 2018 02:27:35 GMT
+From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH v2 8/8] btrfs: split delayed ref head initialization and addition
-Date: Tue, 24 Apr 2018 17:18:24 +0300
-Message-Id: <1524579504-30304-9-git-send-email-nborisov@suse.com>
-In-Reply-To: <1524579504-30304-1-git-send-email-nborisov@suse.com>
-References: <1524579504-30304-1-git-send-email-nborisov@suse.com>
+Subject: [PATCH 0/15] Review uuid_mutex usage
+Date: Thu, 12 Apr 2018 10:29:23 +0800
+Message-Id: <20180412022938.8257-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-add_delayed_ref_head really performed 2 independent operations -
-initialisting the ref head and adding it to a list. Now that the init
-part is in a separate function let's complete the separation between
-both operations. This results in a lot simpler interface for
-add_delayed_ref_head since the function now deals solely with either
-adding the newly initialised delayed ref head or merging it into an
-existing delayed ref head. This results in vastly simplified function
-signature since 5 arguments are dropped. The only other thing worth
-mentioning is that due to this split the WARN_ON catching reinit of
-existing. In this patch the condition is extended such that:
+uuid_mutex lock is not a per-fs lock but a global lock. The main aim of
+this patch-set is to critically review the usage of this lock, and delete
+the unnecessary once. By doing this we improve the concurrency of
+device operations across multiple btrfs filesystems is in the system.
 
-  qrecord && head_ref->qgroup_ref_root && head_ref->qgroup_reserved
+patch 1: Was sent before, I am including it here, as its about uuid_mutex.
 
-is added. This is done because the two qgroup_* prefixed member are
-set only if both ref_root and reserved are passed. So functionally
-it's equivalent to the old WARN_ON and allows to remove the two args
-from add_delayed_ref_head.
+patch 2-9: Are cleanup and or preparatory patches.
 
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
----
- fs/btrfs/delayed-ref.c | 46 ++++++++++++++++++++++------------------------
- 1 file changed, 22 insertions(+), 24 deletions(-)
+patch 10-14: Drops the uuid_mutex and makes sure there is enough lock,
+as discussed in the patch change log.
 
-diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
-index b4b809511fce..8f799d18315b 100644
---- a/fs/btrfs/delayed-ref.c
-+++ b/fs/btrfs/delayed-ref.c
-@@ -605,9 +605,7 @@ static noinline struct btrfs_delayed_ref_head *
- add_delayed_ref_head(struct btrfs_trans_handle *trans,
- 		     struct btrfs_delayed_ref_head *head_ref,
- 		     struct btrfs_qgroup_extent_record *qrecord,
--		     u64 bytenr, u64 num_bytes, u64 ref_root, u64 reserved,
--		     int action, int is_data, int is_system,
--		     int *qrecord_inserted_ret,
-+		     int action, int *qrecord_inserted_ret,
- 		     int *old_ref_mod, int *new_ref_mod)
- 
- {
-@@ -616,8 +614,7 @@ add_delayed_ref_head(struct btrfs_trans_handle *trans,
- 	int qrecord_inserted = 0;
- 
- 	delayed_refs = &trans->transaction->delayed_refs;
--	init_delayed_ref_head(head_ref, qrecord, bytenr, num_bytes, ref_root,
--			      reserved, action, is_data, is_system);
-+
- 	/* Record qgroup extent info if provided */
- 	if (qrecord) {
- 		if (btrfs_qgroup_trace_extent_nolock(trans->fs_info,
-@@ -632,7 +629,9 @@ add_delayed_ref_head(struct btrfs_trans_handle *trans,
- 	existing = htree_insert(&delayed_refs->href_root,
- 				&head_ref->href_node);
- 	if (existing) {
--		WARN_ON(ref_root && reserved && existing->qgroup_ref_root
-+		WARN_ON(qrecord && head_ref->qgroup_ref_root
-+			&& head_ref->qgroup_reserved
-+			&& existing->qgroup_ref_root
- 			&& existing->qgroup_reserved);
- 		update_existing_head_ref(delayed_refs, existing, head_ref,
- 					 old_ref_mod);
-@@ -645,8 +644,8 @@ add_delayed_ref_head(struct btrfs_trans_handle *trans,
- 	} else {
- 		if (old_ref_mod)
- 			*old_ref_mod = 0;
--		if (is_data && head_ref->ref_mod < 0)
--			delayed_refs->pending_csums += num_bytes;
-+		if (head_ref->is_data && head_ref->ref_mod < 0)
-+			delayed_refs->pending_csums += head_ref->num_bytes;
- 		delayed_refs->num_heads++;
- 		delayed_refs->num_heads_ready++;
- 		atomic_inc(&delayed_refs->num_entries);
-@@ -656,6 +655,7 @@ add_delayed_ref_head(struct btrfs_trans_handle *trans,
- 		*qrecord_inserted_ret = qrecord_inserted;
- 	if (new_ref_mod)
- 		*new_ref_mod = head_ref->total_ref_mod;
-+
- 	return head_ref;
- }
- 
-@@ -727,7 +727,7 @@ int btrfs_add_delayed_tree_ref(struct btrfs_fs_info *fs_info,
- 	struct btrfs_delayed_ref_root *delayed_refs;
- 	struct btrfs_qgroup_extent_record *record = NULL;
- 	int qrecord_inserted;
--	int is_system = (ref_root == BTRFS_CHUNK_TREE_OBJECTID);
-+	bool is_system = (ref_root == BTRFS_CHUNK_TREE_OBJECTID);
- 	int ret;
- 	u8 ref_type = parent ? BTRFS_SHARED_BLOCK_REF_KEY :
- 		BTRFS_TREE_BLOCK_REF_KEY;
-@@ -758,6 +758,8 @@ int btrfs_add_delayed_tree_ref(struct btrfs_fs_info *fs_info,
- 			goto free_head_ref;
- 	}
- 
-+	init_delayed_ref_head(head_ref, record, bytenr, num_bytes,
-+			      ref_root, 0, action, false, is_system);
- 	head_ref->extent_op = extent_op;
- 
- 	delayed_refs = &trans->transaction->delayed_refs;
-@@ -767,12 +769,10 @@ int btrfs_add_delayed_tree_ref(struct btrfs_fs_info *fs_info,
- 	 * insert both the head node and the new ref without dropping
- 	 * the spin lock
- 	 */
--	head_ref = add_delayed_ref_head(trans, head_ref, record, bytenr,
--					num_bytes, 0, 0, action, 0,
--					is_system, &qrecord_inserted,
-+	head_ref = add_delayed_ref_head(trans, head_ref, record,
-+					action, &qrecord_inserted,
- 					old_ref_mod, new_ref_mod);
- 
--
- 	ret = insert_delayed_ref(trans, delayed_refs, head_ref, &ref->node);
- 	spin_unlock(&delayed_refs->lock);
- 
-@@ -846,6 +846,8 @@ int btrfs_add_delayed_data_ref(struct btrfs_fs_info *fs_info,
- 		}
- 	}
- 
-+	init_delayed_ref_head(head_ref, record, bytenr, num_bytes, ref_root,
-+			      reserved, action, true, false);
- 	head_ref->extent_op = NULL;
- 
- 	delayed_refs = &trans->transaction->delayed_refs;
-@@ -855,9 +857,8 @@ int btrfs_add_delayed_data_ref(struct btrfs_fs_info *fs_info,
- 	 * insert both the head node and the new ref without dropping
- 	 * the spin lock
- 	 */
--	head_ref = add_delayed_ref_head(trans, head_ref, record, bytenr,
--					num_bytes, ref_root, reserved,
--					action, 1, 0, &qrecord_inserted,
-+	head_ref = add_delayed_ref_head(trans, head_ref, record,
-+					action, &qrecord_inserted,
- 					old_ref_mod, new_ref_mod);
- 
- 	ret = insert_delayed_ref(trans, delayed_refs, head_ref, &ref->node);
-@@ -887,19 +888,16 @@ int btrfs_add_delayed_extent_op(struct btrfs_fs_info *fs_info,
- 	if (!head_ref)
- 		return -ENOMEM;
- 
-+	init_delayed_ref_head(head_ref, NULL, bytenr, num_bytes, 0, 0,
-+			      BTRFS_UPDATE_DELAYED_HEAD, extent_op->is_data,
-+			      false);
- 	head_ref->extent_op = extent_op;
- 
- 	delayed_refs = &trans->transaction->delayed_refs;
- 	spin_lock(&delayed_refs->lock);
- 
--	/*
--	 * extent_ops just modify the flags of an extent and they don't result
--	 * in ref count changes, hence it's safe to pass false/0 for is_system
--	 * argument
--	 */
--	add_delayed_ref_head(trans, head_ref, NULL, bytenr, num_bytes, 0, 0,
--			     BTRFS_UPDATE_DELAYED_HEAD, extent_op->is_data,
--			     0, NULL, NULL, NULL);
-+	add_delayed_ref_head(trans, head_ref, NULL, BTRFS_UPDATE_DELAYED_HEAD,
-+			     NULL, NULL, NULL);
- 
- 	spin_unlock(&delayed_refs->lock);
- 	return 0;
+patch 15: A generic cleanup patch around functions in the same context.
+
+These patches are on top of
+  https://github.com/kdave/btrfs-devel.git remove-volume-mutex
+And it will be a good idea to go along with the kill-volume-mutex patches.
+
+This is tested with xfstests and there are no _new_ regression. And I am
+trying to understand the old regressions, and notice that they are
+inconsistent.
+
+Anand Jain (15):
+  btrfs: optimize move uuid_mutex closer to the critical section
+  btrfs: rename struct btrfs_fs_devices::list
+  btrfs: cleanup __btrfs_open_devices() drop head pointer
+  btrfs: rename __btrfs_close_devices to close_fs_devices
+  btrfs: rename __btrfs_open_devices to open_fs_devices
+  btrfs: cleanup find_device() drop list_head pointer
+  btrfs: cleanup btrfs_rm_device() promote fs_devices pointer
+  btrfs: cleanup btrfs_rm_device() use cur_devices
+  btrfs: uuid_mutex in read_chunk_tree, add a comment
+  btrfs: drop uuid_mutex in btrfs_free_extra_devids()
+  btrfs: drop uuid_mutex in btrfs_open_devices()
+  btrfs: drop uuid_mutex in close_fs_devices()
+  btrfs: drop uuid_mutex in btrfs_dev_replace_finishing()
+  btrfs: drop uuid_mutex in btrfs_destroy_dev_replace_tgtdev()
+  btrfs: cleanup btrfs_destroy_dev_replace_tgtdev() localize
+    btrfs_fs_devices
+
+ fs/btrfs/dev-replace.c |   3 --
+ fs/btrfs/sysfs.c       |   2 +-
+ fs/btrfs/volumes.c     | 113 ++++++++++++++++++++++++-------------------------
+ fs/btrfs/volumes.h     |   2 +-
+ 4 files changed, 58 insertions(+), 62 deletions(-)
+
 -- 
-2.7.4
-
+2.7.0

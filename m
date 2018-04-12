@@ -1,63 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.20]:37737 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751633AbeDKXZV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 11 Apr 2018 19:25:21 -0400
-Subject: Re: btrfs fails to mount after power outage
-To: Tom Vincent <tom@tlvince.com>, linux-btrfs@vger.kernel.org
-References: <CAG4vCreOmBdsPT84ajozGb4XV83+Fc-joyUqXgizutPah0VrrA@mail.gmail.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <db34f571-2a31-5a0a-9f8d-e55a9b579753@gmx.com>
-Date: Thu, 12 Apr 2018 07:25:15 +0800
+Received: from aserp2130.oracle.com ([141.146.126.79]:48596 "EHLO
+        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750730AbeDLGlx (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 12 Apr 2018 02:41:53 -0400
+Subject: Re: [PATCH v4 0/7] Superblock read and verify cleanups
+To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+References: <20180330000924.11148-1-anand.jain@oracle.com>
+ <20180410144836.GD2817@twin.jikos.cz>
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <c4bf0305-4b54-7e69-ecff-0ebd782d78d8@oracle.com>
+Date: Thu, 12 Apr 2018 14:43:56 +0800
 MIME-Version: 1.0
-In-Reply-To: <CAG4vCreOmBdsPT84ajozGb4XV83+Fc-joyUqXgizutPah0VrrA@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <20180410144836.GD2817@twin.jikos.cz>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On 2018年04月11日 23:33, Tom Vincent wrote:
-> My btrfs laptop had a power outage and failed to boot with "parent
-> transid verify failed..." errors. (I have backups).
-
-Metadata corruption, again.
-
-I'm curious about what's the underlying disk?
-Is it plain physical device? Or have other layers like bcache/lvm?
-
-And what's the physical device? SSD or HDD? Vendor info is also helpful
-here.
-(Intel 600P used to have problem with XFS, not sure if it will affect btrfs)
-
+On 04/10/2018 10:48 PM, David Sterba wrote:
+> On Fri, Mar 30, 2018 at 08:09:16AM +0800, Anand Jain wrote:
+>> v3->v4:
+>>   Update changelog and signoff.
+>>   Reintroduce explicit check for '-EUCLEAN'
+>>    at Patch 2/8 and 5/8.
+>>
+>> v2->v3:
+>>   Squash
+>>    4/8 btrfs: make btrfs_check_super_csum() non static
+>>   to
+>>    6/8 btrfs: verify superblock checksum during scan
+>>   As in the individual patch mentioned
+>>   
+>> v1->v2:
+>>   Various changes suggested by Nicokay. Thanks. For specific changes
+>>   pls ref to the patch.
+>>
+>> Patch 1-4/8 are preparatory patches adds cleanups and nonstatic requisites.
+>>
+>> Patch 5/8 makes sure that all copies of the superblock have the same fsid
+>> when we scan the device.
 > 
-> I couldn't rw mount on a live disk, but could ro mount. I tried btrfs
-> scrub and then btrfs check --repair to no avail. However, btrfs rescue
-> zero-log _did_ work; the drive can be rw mounted and the machine boots
-> fine again.
+> This is IMO too strict and the need of workaround puts the burden on the
+> user while it's not necessary and scan or mount can continue as long as
+> the first superblock is valid.
+
+  IMO there is indirect loss for not being too strict here. Offline
+  disk-corruptions will be reported as btrfs corruption at a later stage,
+  by that time we would have overwritten the superblocks on all the
+  disks. Its just about doing the right thing and IMO is pays well to
+  itself in the long term. I am ok to drop this if any disagreements.
+
+>> Patch 6/8 verifies superblock csum when we read it in the scan context.
 > 
-> Although there doesn't appear to be an immediate data loss, there's
-> still a transid error during boot. "BTRFS error (device dm-0): parent
-> transid verify failed on 115490816 wanted 339949 found 340182".
+> This was the main intention, as I read the discussion in the thread
+> under the RFC patch.
+>
+> The semantics of scanning is not exactly defined, in the current code
+> it's "pick any device that has the right magic and sb offset", so adding
+> the csum check would add some validation but otherwise it's fine. All
+> the work is left to mount and all reported errors can be examined
+> immediatelly.
 > 
-> If I umount and re-run btrfs check, I'm given further transid errors
-> and pages of "inode [n] errors 2001, no inode item, link count wrong".
+> Wiping the magic either manually or by wipefs will not touch the csum,
+> so we don't change the behaviour.
 
-Full output please.
+  Will fix progs patch. Just noticed that wipefs wipes the magic only,
+  I could do that in the progs patch here.
 
-> 
-> What steps should I take now?
+> Reporting errors on each scan is a usability no-go.
 
-For transid error, btrfs check --repair can fix it, but only do it when
-that's the only problem.
+  Ok.
 
-Thanks,
-Qu
+> Patches 1-4 look ok,
+> I'll have to think more about 5.
 
-> 
-> btrfs progs 4.15
-> kernel 4.15.15
-> NVMe drive
+  Sure.
+
+Thanks, Anand
+
 > --
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 > the body of a message to majordomo@vger.kernel.org

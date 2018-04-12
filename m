@@ -1,141 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:35786 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:60431 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752214AbeDIMBb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 9 Apr 2018 08:01:31 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id A8A99AEF8
-        for <linux-btrfs@vger.kernel.org>; Mon,  9 Apr 2018 12:01:29 +0000 (UTC)
-From: David Sterba <dsterba@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 6/7] btrfs: tests: pass fs_info to extent_map tests
-Date: Mon,  9 Apr 2018 13:58:57 +0200
-Message-Id: <33be620e8f584afacd804333acbbd5952a1f76d3.1523275048.git.dsterba@suse.com>
-In-Reply-To: <cover.1523275048.git.dsterba@suse.com>
-References: <cover.1523275048.git.dsterba@suse.com>
+        id S1753028AbeDLNPt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 12 Apr 2018 09:15:49 -0400
+Date: Thu, 12 Apr 2018 15:13:19 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org, dsterba@suse.cz
+Subject: Re: [PATCH v2 10/10] btrfs: qgroup: Use independent and accurate per
+ inode qgroup rsv
+Message-ID: <20180412131318.GI21272@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20171222061847.13158-1-wqu@suse.com>
+ <20171222061847.13158-11-wqu@suse.com>
+ <8476c1ee-365a-bb0f-0d44-94cca28d09f3@gmx.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <8476c1ee-365a-bb0f-0d44-94cca28d09f3@gmx.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Preparatory work to pass fs_info to btrfs_add_extent_mapping so we can
-get a better tracepoint message. Extent maps do not need fs_info for
-anything so we only add a dummy one without any other initialization.
+On Tue, Apr 03, 2018 at 03:30:34PM +0800, Qu Wenruo wrote:
+> I didn't see this patch merged in your misc-next branch but only the
+> remaining patches.
+> 
+> However without this patch, btrfs qgroup reserved space will get
+> obviously increased as prealloc metadata reserved space is never freed
+> until inode reserved space is freed.
+> 
+> This would cause a lot of qgroup related test cases to fail.
+> 
+> Would you please merge this patch with all qgroup patchset?
 
-Signed-off-by: David Sterba <dsterba@suse.com>
----
- fs/btrfs/tests/extent-map-tests.c | 52 +++++++++++++++++++++++++++------------
- 1 file changed, 36 insertions(+), 16 deletions(-)
-
-diff --git a/fs/btrfs/tests/extent-map-tests.c b/fs/btrfs/tests/extent-map-tests.c
-index c23bd00bdd92..33760a7f580d 100644
---- a/fs/btrfs/tests/extent-map-tests.c
-+++ b/fs/btrfs/tests/extent-map-tests.c
-@@ -60,7 +60,8 @@ static void free_extent_map_tree(struct extent_map_tree *em_tree)
-  *                                    ->add_extent_mapping(0, 16K)
-  *                                    -> #handle -EEXIST
-  */
--static void test_case_1(struct extent_map_tree *em_tree)
-+static void test_case_1(struct btrfs_fs_info *fs_info,
-+		struct extent_map_tree *em_tree)
- {
- 	struct extent_map *em;
- 	u64 start = 0;
-@@ -125,7 +126,8 @@ static void test_case_1(struct extent_map_tree *em_tree)
-  * Reading the inline ending up with EEXIST, ie. read an inline
-  * extent and discard page cache and read it again.
-  */
--static void test_case_2(struct extent_map_tree *em_tree)
-+static void test_case_2(struct btrfs_fs_info *fs_info,
-+		struct extent_map_tree *em_tree)
- {
- 	struct extent_map *em;
- 	int ret;
-@@ -182,7 +184,8 @@ static void test_case_2(struct extent_map_tree *em_tree)
- 	free_extent_map_tree(em_tree);
- }
- 
--static void __test_case_3(struct extent_map_tree *em_tree, u64 start)
-+static void __test_case_3(struct btrfs_fs_info *fs_info,
-+		struct extent_map_tree *em_tree, u64 start)
- {
- 	struct extent_map *em;
- 	u64 len = SZ_4K;
-@@ -248,14 +251,16 @@ static void __test_case_3(struct extent_map_tree *em_tree, u64 start)
-  *   -> add_extent_mapping()
-  *                            -> add_extent_mapping()
-  */
--static void test_case_3(struct extent_map_tree *em_tree)
-+static void test_case_3(struct btrfs_fs_info *fs_info,
-+		struct extent_map_tree *em_tree)
- {
--	__test_case_3(em_tree, 0);
--	__test_case_3(em_tree, SZ_8K);
--	__test_case_3(em_tree, (12 * 1024ULL));
-+	__test_case_3(fs_info, em_tree, 0);
-+	__test_case_3(fs_info, em_tree, SZ_8K);
-+	__test_case_3(fs_info, em_tree, (12 * 1024ULL));
- }
- 
--static void __test_case_4(struct extent_map_tree *em_tree, u64 start)
-+static void __test_case_4(struct btrfs_fs_info *fs_info,
-+		struct extent_map_tree *em_tree, u64 start)
- {
- 	struct extent_map *em;
- 	u64 len = SZ_4K;
-@@ -337,30 +342,45 @@ static void __test_case_4(struct extent_map_tree *em_tree, u64 start)
-  *                                             # handle -EEXIST when adding
-  *                                             # [0, 32K)
-  */
--static void test_case_4(struct extent_map_tree *em_tree)
-+static void test_case_4(struct btrfs_fs_info *fs_info,
-+		struct extent_map_tree *em_tree)
- {
--	__test_case_4(em_tree, 0);
--	__test_case_4(em_tree, SZ_4K);
-+	__test_case_4(fs_info, em_tree, 0);
-+	__test_case_4(fs_info, em_tree, SZ_4K);
- }
- 
- int btrfs_test_extent_map(void)
- {
-+	struct btrfs_fs_info *fs_info = NULL;
- 	struct extent_map_tree *em_tree;
- 
- 	test_msg("Running extent_map tests\n");
- 
-+	/*
-+	 * Note: the fs_info is not set up completely, we only need
-+	 * fs_info::fsid for the tracepoint.
-+	 */
-+	fs_info = btrfs_alloc_dummy_fs_info(PAGE_SIZE, PAGE_SIZE);
-+	if (!fs_info) {
-+		test_msg("Couldn't allocate dummy fs info\n");
-+		return -ENOMEM;
-+	}
-+
- 	em_tree = kzalloc(sizeof(*em_tree), GFP_KERNEL);
- 	if (!em_tree)
- 		/* Skip the test on error. */
--		return 0;
-+		goto out;
- 
- 	extent_map_tree_init(em_tree);
- 
--	test_case_1(em_tree);
--	test_case_2(em_tree);
--	test_case_3(em_tree);
--	test_case_4(em_tree);
-+	test_case_1(fs_info, em_tree);
-+	test_case_2(fs_info, em_tree);
-+	test_case_3(fs_info, em_tree);
-+	test_case_4(fs_info, em_tree);
- 
- 	kfree(em_tree);
-+out:
-+	btrfs_free_dummy_fs_info(fs_info);
-+
- 	return 0;
- }
--- 
-2.16.2
-
+For the record: patch 9 and 10 are now in misc next and will go to 4.17.
+I need to let them through the for-next and other testing, so it will be
+some of the post rc1 pull requests.

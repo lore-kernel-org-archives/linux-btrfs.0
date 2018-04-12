@@ -1,103 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp2120.oracle.com ([156.151.31.85]:54004 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752759AbeDLC1o (ORCPT
+Received: from aserp2130.oracle.com ([141.146.126.79]:58630 "EHLO
+        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752320AbeDLC1i (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 11 Apr 2018 22:27:44 -0400
-Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w3C2Qomb042329
-        for <linux-btrfs@vger.kernel.org>; Thu, 12 Apr 2018 02:27:43 GMT
-Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
-        by userp2120.oracle.com with ESMTP id 2h6pn4srrb-1
+        Wed, 11 Apr 2018 22:27:38 -0400
+Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
+        by aserp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w3C2QaJT171049
+        for <linux-btrfs@vger.kernel.org>; Thu, 12 Apr 2018 02:27:37 GMT
+Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
+        by aserp2130.oracle.com with ESMTP id 2h6kgtj0uk-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Thu, 12 Apr 2018 02:27:43 +0000
+        for <linux-btrfs@vger.kernel.org>; Thu, 12 Apr 2018 02:27:37 +0000
 Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
-        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id w3C2RhIm026977
+        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id w3C2RbH3001188
         (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Thu, 12 Apr 2018 02:27:43 GMT
+        for <linux-btrfs@vger.kernel.org>; Thu, 12 Apr 2018 02:27:37 GMT
 Received: from abhmp0016.oracle.com (abhmp0016.oracle.com [141.146.116.22])
-        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w3C2RhXr021327
-        for <linux-btrfs@vger.kernel.org>; Thu, 12 Apr 2018 02:27:43 GMT
+        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w3C2Ra8a021304
+        for <linux-btrfs@vger.kernel.org>; Thu, 12 Apr 2018 02:27:36 GMT
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 07/15] btrfs: cleanup btrfs_rm_device() promote fs_devices pointer
-Date: Thu, 12 Apr 2018 10:29:30 +0800
-Message-Id: <20180412022938.8257-8-anand.jain@oracle.com>
+Subject: [PATCH 01/15] btrfs: optimize move uuid_mutex closer to the critical section
+Date: Thu, 12 Apr 2018 10:29:24 +0800
+Message-Id: <20180412022938.8257-2-anand.jain@oracle.com>
 In-Reply-To: <20180412022938.8257-1-anand.jain@oracle.com>
 References: <20180412022938.8257-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This function uses fs_info::fs_devices number of time, however we declare
-and use it only at the end, instead do it in the beginning of the function
-and use it.
+Move uuid_mutex closer to the exclusion section.
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
+Reviewed-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/volumes.c | 13 ++++++-------
- 1 file changed, 6 insertions(+), 7 deletions(-)
+ fs/btrfs/volumes.c | 12 +++++-------
+ 1 file changed, 5 insertions(+), 7 deletions(-)
 
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 5714cdaf9c03..db077c505fe0 100644
+index 1d9f20fc3392..7ccd1a38c634 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -1918,12 +1918,13 @@ int btrfs_rm_device(struct btrfs_fs_info *fs_info, const char *device_path,
- {
- 	struct btrfs_device *device;
- 	struct btrfs_fs_devices *cur_devices;
-+	struct btrfs_fs_devices *fs_devices = fs_info->fs_devices;
- 	u64 num_devices;
- 	int ret = 0;
- 
- 	mutex_lock(&uuid_mutex);
- 
--	num_devices = fs_info->fs_devices->num_devices;
-+	num_devices = fs_devices->num_devices;
- 	btrfs_dev_replace_read_lock(&fs_info->dev_replace);
- 	if (btrfs_dev_replace_is_ongoing(&fs_info->dev_replace)) {
- 		WARN_ON(num_devices < 1);
-@@ -1987,7 +1988,7 @@ int btrfs_rm_device(struct btrfs_fs_info *fs_info, const char *device_path,
+@@ -1206,31 +1206,29 @@ int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
  	 */
+ 	bytenr = btrfs_sb_offset(0);
+ 	flags |= FMODE_EXCL;
+-	mutex_lock(&uuid_mutex);
  
- 	cur_devices = device->fs_devices;
--	mutex_lock(&fs_info->fs_devices->device_list_mutex);
-+	mutex_lock(&fs_devices->device_list_mutex);
- 	list_del_rcu(&device->dev_list);
+ 	bdev = blkdev_get_by_path(path, flags, holder);
+-	if (IS_ERR(bdev)) {
+-		ret = PTR_ERR(bdev);
+-		goto error;
+-	}
++	if (IS_ERR(bdev))
++		return PTR_ERR(bdev);
  
- 	device->fs_devices->num_devices--;
-@@ -2001,12 +2002,12 @@ int btrfs_rm_device(struct btrfs_fs_info *fs_info, const char *device_path,
- 	if (device->bdev) {
- 		device->fs_devices->open_devices--;
- 		/* remove sysfs entry */
--		btrfs_sysfs_rm_device_link(fs_info->fs_devices, device);
-+		btrfs_sysfs_rm_device_link(fs_devices, device);
+ 	if (btrfs_read_disk_super(bdev, bytenr, &page, &disk_super)) {
+ 		ret = -EINVAL;
+ 		goto error_bdev_put;
  	}
  
- 	num_devices = btrfs_super_num_devices(fs_info->super_copy) - 1;
- 	btrfs_set_super_num_devices(fs_info->super_copy, num_devices);
--	mutex_unlock(&fs_info->fs_devices->device_list_mutex);
-+	mutex_unlock(&fs_devices->device_list_mutex);
++	mutex_lock(&uuid_mutex);
+ 	device = device_list_add(path, disk_super);
+ 	if (IS_ERR(device))
+ 		ret = PTR_ERR(device);
+ 	else
+ 		*fs_devices_ret = device->fs_devices;
++	mutex_unlock(&uuid_mutex);
  
- 	/*
- 	 * at this point, the device is zero sized and detached from
-@@ -2020,8 +2021,6 @@ int btrfs_rm_device(struct btrfs_fs_info *fs_info, const char *device_path,
- 	call_rcu(&device->rcu, free_device_rcu);
+ 	btrfs_release_disk_super(page);
  
- 	if (cur_devices->open_devices == 0) {
--		struct btrfs_fs_devices *fs_devices;
--		fs_devices = fs_info->fs_devices;
- 		while (fs_devices) {
- 			if (fs_devices->seed == cur_devices) {
- 				fs_devices->seed = cur_devices->seed;
-@@ -2042,7 +2041,7 @@ int btrfs_rm_device(struct btrfs_fs_info *fs_info, const char *device_path,
- 	if (test_bit(BTRFS_DEV_STATE_WRITEABLE, &device->dev_state)) {
- 		mutex_lock(&fs_info->chunk_mutex);
- 		list_add(&device->dev_alloc_list,
--			 &fs_info->fs_devices->alloc_list);
-+			 &fs_devices->alloc_list);
- 		device->fs_devices->rw_devices++;
- 		mutex_unlock(&fs_info->chunk_mutex);
- 	}
+ error_bdev_put:
+ 	blkdev_put(bdev, flags);
+-error:
+-	mutex_unlock(&uuid_mutex);
++
+ 	return ret;
+ }
+ 
 -- 
 2.7.0
 

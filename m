@@ -1,209 +1,108 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from prv3-mh.provo.novell.com ([137.65.250.26]:49969 "EHLO
-        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751482AbeDFGVU (ORCPT
-        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Fri, 6 Apr 2018 02:21:20 -0400
-From: Qu Wenruo <wqu@suse.com>
+Received: from userp2120.oracle.com ([156.151.31.85]:59256 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751112AbeDLINJ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 12 Apr 2018 04:13:09 -0400
+Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
+        by userp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w3C8B2Rn068423
+        for <linux-btrfs@vger.kernel.org>; Thu, 12 Apr 2018 08:13:08 GMT
+Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
+        by userp2120.oracle.com with ESMTP id 2h6pn4tmjg-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Thu, 12 Apr 2018 08:13:08 +0000
+Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
+        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id w3C8D78G018432
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Thu, 12 Apr 2018 08:13:07 GMT
+Received: from abhmp0007.oracle.com (abhmp0007.oracle.com [141.146.116.13])
+        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w3C8D6mZ016464
+        for <linux-btrfs@vger.kernel.org>; Thu, 12 Apr 2018 08:13:06 GMT
+From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 1/1] btrfs-progs: inspect-dump-tree: Allow '-b|--block' to be specified multiple times
-Date: Fri,  6 Apr 2018 14:21:06 +0800
-Message-Id: <20180406062106.9610-1-wqu@suse.com>
-Reply-To: <20180406061202.6529-1-wqu@suse.com>
+Subject: [PATCH v2] btrfs-progs: wipe copies of the stale superblock beyond -b size
+Date: Thu, 12 Apr 2018 16:15:06 +0800
+Message-Id: <20180412081506.28409-1-anand.jain@oracle.com>
+In-Reply-To: <20180330000924.11148-9-anand.jain@oracle.com>
+References: <20180330000924.11148-9-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
-In-Reply-To: <20180406061202.6529-1-wqu@suse.com>
 
-Reuse extent-cache facility to record multiple bytenr so '-b|--block'
-can be specified multiple times.
+During the mkfs.btrfs -b <blockcount> btrfs_prepare_device() zeros all
+the superblock bytenr locations only if the bytenr is below the
+blockcount. The problem with this is that if the BTRFS is recreated
+with a smaller size then we will leave the stale superblock in the disk
+which shall confuse the recovery. As shown in the test case below.
 
-Despite that, add a sector size alignment check before we try to print a
-tree block.
-(Please note that, nodesize alignment check is not suitable here as meta
-chunk start bytenr could be unaligned to nodesize)
+ mkfs.btrfs -qf /dev/mapper/vg-lv
+ mkfs.btrfs -qf -b1G /dev/mapper/vg-lv
+ btrfs in dump-super -a /dev/mapper/vg-lv | grep '.fsid|superblock:'
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
+ superblock: bytenr=65536, device=/dev/mapper/vg-lv
+ dev_item.fsid		ebc67d01-7fc5-43f0-90b4-d1925002551e [match]
+ superblock: bytenr=67108864, device=/dev/mapper/vg-lv
+ dev_item.fsid		ebc67d01-7fc5-43f0-90b4-d1925002551e [match]
+ superblock: bytenr=274877906944, device=/dev/mapper/vg-lv
+ dev_item.fsid		b97a9206-593b-4933-a424-c6a6ee23fe7c [match]
+
+So if we find a valid superblock zero it even if it's beyond the
+blockcount.
+
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
-changelog:
-v2:
-  Fix memory leak detected by asan.
-  Fix NULL pointer derefenrece detected by asan.
----
- Documentation/btrfs-inspect-internal.asciidoc |   2 +-
- cmds-inspect-dump-tree.c                      | 109 +++++++++++++++---
- 2 files changed, 91 insertions(+), 20 deletions(-)
+v1->v2: zero only the magic of the alien superblock, instead of whole of
+        superblock. And comments updated. Thanks.
 
-diff --git a/Documentation/btrfs-inspect-internal.asciidoc b/Documentation/btrfs-inspect-internal.asciidoc
-index e2db64660b9a..ba8529f57660 100644
---- a/Documentation/btrfs-inspect-internal.asciidoc
-+++ b/Documentation/btrfs-inspect-internal.asciidoc
-@@ -86,7 +86,7 @@ the respective tree root block offset
- -u|--uuid::::
- print only the uuid tree information, empty output if the tree does not exist
- -b <block_num>::::
--print info of the specified block only
-+print info of the specified block only, can be specified multiple times.
- --follow::::
- use with '-b', print all children tree blocks of '<block_num>'
- -t <tree_id>::::
-diff --git a/cmds-inspect-dump-tree.c b/cmds-inspect-dump-tree.c
-index b0cd49b32664..7defb7164a49 100644
---- a/cmds-inspect-dump-tree.c
-+++ b/cmds-inspect-dump-tree.c
-@@ -198,11 +198,92 @@ const char * const cmd_inspect_dump_tree_usage[] = {
- 	"-R|--backups           same as --roots plus print backup root info",
- 	"-u|--uuid              print only the uuid tree",
- 	"-b|--block <block_num> print info from the specified block only",
-+	"                       can be specified multile times",
- 	"-t|--tree <tree_id>    print only tree with the given id (string or number)",
- 	"--follow               use with -b, to show all children tree blocks of <block_num>",
- 	NULL
- };
+ utils.c | 36 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 36 insertions(+)
+
+diff --git a/utils.c b/utils.c
+index 715bab0ebfb5..4e7964962d0e 100644
+--- a/utils.c
++++ b/utils.c
+@@ -367,6 +367,42 @@ int btrfs_prepare_device(int fd, const char *file, u64 *block_count_ret,
+ 		return 1;
+ 	}
  
-+/*
-+ * Helper function to record all tree block bytenr so we don't need to put
-+ * all code into deep indent.
-+ *
-+ * Return >0 if we hit a duplicated bytenr (already recorded)
-+ * Return 0 if nothing went wrong
-+ * Return <0 if error happens (ENOMEM)
-+ *
-+ * For != 0 return value, all warning/error will be outputted by this function.
-+ */
-+static int dump_add_tree_block(struct cache_tree *tree, u64 bytenr)
-+{
-+	int ret;
-+
 +	/*
-+	 * We don't really care about the size and we don't have
-+	 * nodesize before we open the fs, so just use 1 as size here.
++	 * Check and wipe alien superblock at bytenr beyond the block_count.
 +	 */
-+	ret = add_cache_extent(tree, bytenr, 1);
-+	if (ret == -EEXIST) {
-+		warning("tree block bytenr %llu is duplicated", bytenr);
-+		return 1;
-+	}
-+	if (ret < 0) {
-+		error("failed to record tree block bytenr %llu: %d(%s)",
-+			bytenr, ret, strerror(-ret));
-+		return ret;
-+	}
-+	return ret;
-+}
++	if (block_count != btrfs_device_size(fd, &st)) {
++		for (i = 1; i < BTRFS_SUPER_MIRROR_MAX; i++) {
++			struct btrfs_super_block *disk_super;
++			char buf[BTRFS_SUPER_INFO_SIZE];
++			disk_super = (struct btrfs_super_block *)buf;
 +
-+/*
-+ * Print all tree blocks recorded.
-+ * All tree block bytenr record will also be freed in this function.
-+ *
-+ * Return 0 if nothing wrong happened for *each* tree blocks
-+ * Return <0 if anything wrong happened, and return value will be the last
-+ * error.
-+ */
-+static int dump_print_tree_blocks(struct btrfs_fs_info *fs_info,
-+				  struct cache_tree *tree, bool follow)
-+{
-+	struct cache_extent *ce;
-+	struct extent_buffer *eb;
-+	u64 bytenr;
-+	int ret = 0;
++			if (btrfs_sb_offset(i) < block_count)
++				continue;
 +
-+	ce = first_cache_extent(tree);
-+	while (ce) {
-+		bytenr = ce->start;
++			/* Beyond actual disk size */
++			if (btrfs_sb_offset(i) >= btrfs_device_size(fd, &st))
++				continue;
 +
-+		/*
-+		 * Please note that here we can't check it against nodesize,
-+		 * as it's possible a chunk is just aligned to sectorsize but
-+		 * not aligned to nodesize.
-+		 */
-+		if (!IS_ALIGNED(bytenr, fs_info->sectorsize)) {
-+			error(
-+		"tree block bytenr %llu is not aligned to sectorsize %u",
-+			      bytenr, fs_info->sectorsize);
-+			ret = -EINVAL;
-+			goto next;
++			/*
++			 * We are reading sperblock at bytenr > block_count, and
++			 * if there is a valid superblock then its an alien
++			 * superblock which should be wiped.
++			 */
++			if (btrfs_read_dev_super(fd, disk_super,
++						 btrfs_sb_offset(i), 0))
++				continue;
++
++			ret = zero_blocks(fd, btrfs_sb_offset(i) +
++				      offsetof(struct btrfs_super_block, magic),
++				      sizeof(u64));
++			if (ret < 0) {
++				error("failed to zero device '%s' bytenr %llu: %s",
++					file, btrfs_sb_offset(i), strerror(-ret));
++				return 1;
++			}
 +		}
-+
-+		eb = read_tree_block(fs_info, bytenr, 0);
-+		if (!extent_buffer_uptodate(eb)) {
-+			error("failed to read tree block %llu", bytenr);
-+			ret = -EIO;
-+			goto next;
-+		}
-+		btrfs_print_tree(eb, follow);
-+		free_extent_buffer(eb);
-+next:
-+		remove_cache_extent(tree, ce);
-+		free(ce);
-+		ce = first_cache_extent(tree);
 +	}
-+	return ret;
-+}
 +
- int cmd_inspect_dump_tree(int argc, char **argv)
- {
- 	struct btrfs_root *root;
-@@ -213,6 +294,7 @@ int cmd_inspect_dump_tree(int argc, char **argv)
- 	struct extent_buffer *leaf;
- 	struct btrfs_disk_key disk_key;
- 	struct btrfs_key found_key;
-+	struct cache_tree block_root;	/* for multiple --block parameters */
- 	char uuidbuf[BTRFS_UUID_UNPARSED_SIZE];
- 	int ret;
- 	int slot;
-@@ -222,11 +304,12 @@ int cmd_inspect_dump_tree(int argc, char **argv)
- 	int roots_only = 0;
- 	int root_backups = 0;
- 	unsigned open_ctree_flags = OPEN_CTREE_FS_PARTIAL;
--	u64 block_only = 0;
-+	u64 block_bytenr;
- 	struct btrfs_root *tree_root_scan;
- 	u64 tree_id = 0;
- 	bool follow = false;
- 
-+	cache_tree_init(&block_root);
- 	while (1) {
- 		int c;
- 		enum { GETOPT_VAL_FOLLOW = 256 };
-@@ -268,7 +351,10 @@ int cmd_inspect_dump_tree(int argc, char **argv)
- 			 * other than chunk root
- 			 */
- 			open_ctree_flags |= __OPEN_CTREE_RETURN_CHUNK_ROOT;
--			block_only = arg_strtou64(optarg);
-+			block_bytenr = arg_strtou64(optarg);
-+			ret = dump_add_tree_block(&block_root, block_bytenr);
-+			if (ret < 0)
-+				goto out;
- 			break;
- 		case 't': {
- 			const char *end = NULL;
-@@ -316,24 +402,9 @@ int cmd_inspect_dump_tree(int argc, char **argv)
- 		goto out;
- 	}
- 
--	if (block_only) {
-+	if (!cache_tree_empty(&block_root)) {
- 		root = info->chunk_root;
--		leaf = read_tree_block(info, block_only, 0);
--		if (extent_buffer_uptodate(leaf) &&
--		    btrfs_header_level(leaf) != 0) {
--			free_extent_buffer(leaf);
--			leaf = NULL;
--		}
--
--		if (!leaf)
--			leaf = read_tree_block(info, block_only, 0);
--		if (!extent_buffer_uptodate(leaf)) {
--			error("failed to read %llu",
--				(unsigned long long)block_only);
--			goto close_root;
--		}
--		btrfs_print_tree(leaf, follow);
--		free_extent_buffer(leaf);
-+		ret = dump_print_tree_blocks(info, &block_root, follow);
- 		goto close_root;
- 	}
- 
+ 	*block_count_ret = block_count;
+ 	return 0;
+ }
 -- 
-2.17.0
+2.7.0
 

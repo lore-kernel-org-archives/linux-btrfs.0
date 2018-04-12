@@ -1,78 +1,92 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:54126 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1754043AbeDMOME (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 13 Apr 2018 10:12:04 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 1C1C6AE78
-        for <linux-btrfs@vger.kernel.org>; Fri, 13 Apr 2018 14:12:03 +0000 (UTC)
-Date: Fri, 13 Apr 2018 16:09:33 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH for 4.7-rc] btrfs: Only check first key for committed
- tree blocks
-Message-ID: <20180413140933.GO21272@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20180412223247.13705-1-wqu@suse.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180412223247.13705-1-wqu@suse.com>
+Received: from prv3-mh.provo.novell.com ([137.65.250.26]:56337 "EHLO
+        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751894AbeDLWdG (ORCPT
+        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+        Thu, 12 Apr 2018 18:33:06 -0400
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH for 4.7-rc] btrfs: Only check first key for committed tree blocks
+Date: Fri, 13 Apr 2018 06:32:47 +0800
+Message-Id: <20180412223247.13705-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Apr 13, 2018 at 06:32:47AM +0800, Qu Wenruo wrote:
-> When looping btrfs/074 with many cpus (>= 8), it's possible to trigger
-> kernel warning due to first key verification:
-> 
-> [ 4239.523446] WARNING: CPU: 5 PID: 2381 at fs/btrfs/disk-io.c:460 btree_read_extent_buffer_pages+0x1ad/0x210
-> [ 4239.523830] Modules linked in:
-> [ 4239.524630] RIP: 0010:btree_read_extent_buffer_pages+0x1ad/0x210
-> [ 4239.527101] Call Trace:
-> [ 4239.527251]  read_tree_block+0x42/0x70
-> [ 4239.527434]  read_node_slot+0xd2/0x110
-> [ 4239.527632]  push_leaf_right+0xad/0x1b0
-> [ 4239.527809]  split_leaf+0x4ea/0x700
-> [ 4239.527988]  ? leaf_space_used+0xbc/0xe0
-> [ 4239.528192]  ? btrfs_set_lock_blocking_rw+0x99/0xb0
-> [ 4239.528416]  btrfs_search_slot+0x8cc/0xa40
-> [ 4239.528605]  btrfs_insert_empty_items+0x71/0xc0
-> [ 4239.528798]  __btrfs_run_delayed_refs+0xa98/0x1680
-> [ 4239.529013]  btrfs_run_delayed_refs+0x10b/0x1b0
-> [ 4239.529205]  btrfs_commit_transaction+0x33/0xaf0
-> [ 4239.529445]  ? start_transaction+0xa8/0x4f0
-> [ 4239.529630]  btrfs_alloc_data_chunk_ondemand+0x1b0/0x4e0
-> [ 4239.529833]  btrfs_check_data_free_space+0x54/0xa0
-> [ 4239.530045]  btrfs_delalloc_reserve_space+0x25/0x70
-> [ 4239.531907]  btrfs_direct_IO+0x233/0x3d0
-> [ 4239.532098]  generic_file_direct_write+0xcb/0x170
-> [ 4239.532296]  btrfs_file_write_iter+0x2bb/0x5f4
-> [ 4239.532491]  aio_write+0xe2/0x180
-> [ 4239.532669]  ? lock_acquire+0xac/0x1e0
-> [ 4239.532839]  ? __might_fault+0x3e/0x90
-> [ 4239.533032]  do_io_submit+0x594/0x860
-> [ 4239.533223]  ? do_io_submit+0x594/0x860
-> [ 4239.533398]  SyS_io_submit+0x10/0x20
-> [ 4239.533560]  ? SyS_io_submit+0x10/0x20
-> [ 4239.533729]  do_syscall_64+0x75/0x1d0
-> [ 4239.533979]  entry_SYSCALL_64_after_hwframe+0x42/0xb7
-> [ 4239.534182] RIP: 0033:0x7f8519741697
-> 
-> The problem here is, at btree_read_extent_buffer_pages() we don't have
-> acquired read/write lock on that extent buffer, only basic info like
-> level/bytenr is reliable.
-> 
-> So race condition leads to such false alert.
-> 
-> However in current call site, it's impossible to acquire proper lock
-> without race window.
-> To fix the problem, we only verify first key for committed tree blocks
-> (whose generation is no larger than fs_info->last_trans_committed), so
-> the content of such tree blocks will not change and there is no need to
-> get read/write lock.
-> 
-> Reported-by: Nikolay Borisov <nborisov@suse.com>
-> Fixes: 581c1760415c ("btrfs: Validate child tree block's level and first key")
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
+When looping btrfs/074 with many cpus (>= 8), it's possible to trigger
+kernel warning due to first key verification:
 
-Thanks, qeueued for 4.17.
+[ 4239.523446] WARNING: CPU: 5 PID: 2381 at fs/btrfs/disk-io.c:460 btree_read_extent_buffer_pages+0x1ad/0x210
+[ 4239.523830] Modules linked in:
+[ 4239.524630] RIP: 0010:btree_read_extent_buffer_pages+0x1ad/0x210
+[ 4239.527101] Call Trace:
+[ 4239.527251]  read_tree_block+0x42/0x70
+[ 4239.527434]  read_node_slot+0xd2/0x110
+[ 4239.527632]  push_leaf_right+0xad/0x1b0
+[ 4239.527809]  split_leaf+0x4ea/0x700
+[ 4239.527988]  ? leaf_space_used+0xbc/0xe0
+[ 4239.528192]  ? btrfs_set_lock_blocking_rw+0x99/0xb0
+[ 4239.528416]  btrfs_search_slot+0x8cc/0xa40
+[ 4239.528605]  btrfs_insert_empty_items+0x71/0xc0
+[ 4239.528798]  __btrfs_run_delayed_refs+0xa98/0x1680
+[ 4239.529013]  btrfs_run_delayed_refs+0x10b/0x1b0
+[ 4239.529205]  btrfs_commit_transaction+0x33/0xaf0
+[ 4239.529445]  ? start_transaction+0xa8/0x4f0
+[ 4239.529630]  btrfs_alloc_data_chunk_ondemand+0x1b0/0x4e0
+[ 4239.529833]  btrfs_check_data_free_space+0x54/0xa0
+[ 4239.530045]  btrfs_delalloc_reserve_space+0x25/0x70
+[ 4239.531907]  btrfs_direct_IO+0x233/0x3d0
+[ 4239.532098]  generic_file_direct_write+0xcb/0x170
+[ 4239.532296]  btrfs_file_write_iter+0x2bb/0x5f4
+[ 4239.532491]  aio_write+0xe2/0x180
+[ 4239.532669]  ? lock_acquire+0xac/0x1e0
+[ 4239.532839]  ? __might_fault+0x3e/0x90
+[ 4239.533032]  do_io_submit+0x594/0x860
+[ 4239.533223]  ? do_io_submit+0x594/0x860
+[ 4239.533398]  SyS_io_submit+0x10/0x20
+[ 4239.533560]  ? SyS_io_submit+0x10/0x20
+[ 4239.533729]  do_syscall_64+0x75/0x1d0
+[ 4239.533979]  entry_SYSCALL_64_after_hwframe+0x42/0xb7
+[ 4239.534182] RIP: 0033:0x7f8519741697
+
+The problem here is, at btree_read_extent_buffer_pages() we don't have
+acquired read/write lock on that extent buffer, only basic info like
+level/bytenr is reliable.
+
+So race condition leads to such false alert.
+
+However in current call site, it's impossible to acquire proper lock
+without race window.
+To fix the problem, we only verify first key for committed tree blocks
+(whose generation is no larger than fs_info->last_trans_committed), so
+the content of such tree blocks will not change and there is no need to
+get read/write lock.
+
+Reported-by: Nikolay Borisov <nborisov@suse.com>
+Fixes: 581c1760415c ("btrfs: Validate child tree block's level and first key")
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/disk-io.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 07b5e6f7df67..23803102aa0d 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -449,6 +449,14 @@ static int verify_level_key(struct btrfs_fs_info *fs_info,
+ 	if (!first_key)
+ 		return 0;
+ 
++	/*
++	 * For live tree block (new tree blocks in current transaction),
++	 * we need proper lock context to avoid race, which is impossible here.
++	 * So we only checks tree blocks which is read from disk, whose
++	 * generation <= fs_info->last_trans_committed.
++	 */
++	if (btrfs_header_generation(eb) > fs_info->last_trans_committed)
++		return 0;
+ 	if (found_level)
+ 		btrfs_node_key_to_cpu(eb, &found_key, 0);
+ 	else
+-- 
+2.17.0
+

@@ -1,51 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:41546 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:54126 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752060AbeDPRaY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 16 Apr 2018 13:30:24 -0400
-Date: Mon, 16 Apr 2018 19:27:52 +0200
+        id S1754043AbeDMOME (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 13 Apr 2018 10:12:04 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 1C1C6AE78
+        for <linux-btrfs@vger.kernel.org>; Fri, 13 Apr 2018 14:12:03 +0000 (UTC)
+Date: Fri, 13 Apr 2018 16:09:33 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
-Cc: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2 10/10] btrfs: qgroup: Use independent and accurate per
- inode qgroup rsv
-Message-ID: <20180416172752.GR21272@twin.jikos.cz>
+To: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH for 4.7-rc] btrfs: Only check first key for committed
+ tree blocks
+Message-ID: <20180413140933.GO21272@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <20171222061847.13158-1-wqu@suse.com>
- <20171222061847.13158-11-wqu@suse.com>
- <8476c1ee-365a-bb0f-0d44-94cca28d09f3@gmx.com>
- <20180412131318.GI21272@twin.jikos.cz>
- <e697b170-fdc7-9f59-d224-095a39c4abef@jp.fujitsu.com>
+References: <20180412223247.13705-1-wqu@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <e697b170-fdc7-9f59-d224-095a39c4abef@jp.fujitsu.com>
+In-Reply-To: <20180412223247.13705-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Apr 16, 2018 at 04:53:10PM +0900, Misono Tomohiro wrote:
-> On 2018/04/12 22:13, David Sterba wrote:
-> > On Tue, Apr 03, 2018 at 03:30:34PM +0800, Qu Wenruo wrote:
-> >> I didn't see this patch merged in your misc-next branch but only the
-> >> remaining patches.
-> >>
-> >> However without this patch, btrfs qgroup reserved space will get
-> >> obviously increased as prealloc metadata reserved space is never freed
-> >> until inode reserved space is freed.
-> >>
-> >> This would cause a lot of qgroup related test cases to fail.
-> >>
-> >> Would you please merge this patch with all qgroup patchset?
-> > 
-> > For the record: patch 9 and 10 are now in misc next and will go to 4.17.
-> > I need to let them through the for-next and other testing, so it will be
-> > some of the post rc1 pull requests.
+On Fri, Apr 13, 2018 at 06:32:47AM +0800, Qu Wenruo wrote:
+> When looping btrfs/074 with many cpus (>= 8), it's possible to trigger
+> kernel warning due to first key verification:
 > 
-> I still saw qgroup related xfstests (btrfs/022 etc.) fails in current misc-next branch
-> which includes 9th and 10th patches.
+> [ 4239.523446] WARNING: CPU: 5 PID: 2381 at fs/btrfs/disk-io.c:460 btree_read_extent_buffer_pages+0x1ad/0x210
+> [ 4239.523830] Modules linked in:
+> [ 4239.524630] RIP: 0010:btree_read_extent_buffer_pages+0x1ad/0x210
+> [ 4239.527101] Call Trace:
+> [ 4239.527251]  read_tree_block+0x42/0x70
+> [ 4239.527434]  read_node_slot+0xd2/0x110
+> [ 4239.527632]  push_leaf_right+0xad/0x1b0
+> [ 4239.527809]  split_leaf+0x4ea/0x700
+> [ 4239.527988]  ? leaf_space_used+0xbc/0xe0
+> [ 4239.528192]  ? btrfs_set_lock_blocking_rw+0x99/0xb0
+> [ 4239.528416]  btrfs_search_slot+0x8cc/0xa40
+> [ 4239.528605]  btrfs_insert_empty_items+0x71/0xc0
+> [ 4239.528798]  __btrfs_run_delayed_refs+0xa98/0x1680
+> [ 4239.529013]  btrfs_run_delayed_refs+0x10b/0x1b0
+> [ 4239.529205]  btrfs_commit_transaction+0x33/0xaf0
+> [ 4239.529445]  ? start_transaction+0xa8/0x4f0
+> [ 4239.529630]  btrfs_alloc_data_chunk_ondemand+0x1b0/0x4e0
+> [ 4239.529833]  btrfs_check_data_free_space+0x54/0xa0
+> [ 4239.530045]  btrfs_delalloc_reserve_space+0x25/0x70
+> [ 4239.531907]  btrfs_direct_IO+0x233/0x3d0
+> [ 4239.532098]  generic_file_direct_write+0xcb/0x170
+> [ 4239.532296]  btrfs_file_write_iter+0x2bb/0x5f4
+> [ 4239.532491]  aio_write+0xe2/0x180
+> [ 4239.532669]  ? lock_acquire+0xac/0x1e0
+> [ 4239.532839]  ? __might_fault+0x3e/0x90
+> [ 4239.533032]  do_io_submit+0x594/0x860
+> [ 4239.533223]  ? do_io_submit+0x594/0x860
+> [ 4239.533398]  SyS_io_submit+0x10/0x20
+> [ 4239.533560]  ? SyS_io_submit+0x10/0x20
+> [ 4239.533729]  do_syscall_64+0x75/0x1d0
+> [ 4239.533979]  entry_SYSCALL_64_after_hwframe+0x42/0xb7
+> [ 4239.534182] RIP: 0033:0x7f8519741697
 > 
-> I noticed 5th patch in the tree (already in v4.17-rc1) is older version and this
-> seems the reason that the tests still fails.
+> The problem here is, at btree_read_extent_buffer_pages() we don't have
+> acquired read/write lock on that extent buffer, only basic info like
+> level/bytenr is reliable.
+> 
+> So race condition leads to such false alert.
+> 
+> However in current call site, it's impossible to acquire proper lock
+> without race window.
+> To fix the problem, we only verify first key for committed tree blocks
+> (whose generation is no larger than fs_info->last_trans_committed), so
+> the content of such tree blocks will not change and there is no need to
+> get read/write lock.
+> 
+> Reported-by: Nikolay Borisov <nborisov@suse.com>
+> Fixes: 581c1760415c ("btrfs: Validate child tree block's level and first key")
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
 
-Qu, can you please have a look a send an incremental fixup? Handling of
-this patchset was not very good from my side, I should have asked for a
-fresh resend as I applied the changes from mailinglist and not from git.
+Thanks, qeueued for 4.17.

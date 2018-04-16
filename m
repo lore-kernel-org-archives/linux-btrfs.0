@@ -1,57 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f48.google.com ([209.85.214.48]:50771 "EHLO
-        mail-it0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753069AbeDPQHj (ORCPT
+Received: from mail-ot0-f170.google.com ([74.125.82.170]:36777 "EHLO
+        mail-ot0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752788AbeDPRKR (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 16 Apr 2018 12:07:39 -0400
-Received: by mail-it0-f48.google.com with SMTP id r19-v6so12095963itc.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 16 Apr 2018 09:07:39 -0700 (PDT)
+        Mon, 16 Apr 2018 13:10:17 -0400
+Received: by mail-ot0-f170.google.com with SMTP id p2-v6so1395530otf.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 16 Apr 2018 10:10:17 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <db34f571-2a31-5a0a-9f8d-e55a9b579753@gmx.com>
-References: <CAG4vCreOmBdsPT84ajozGb4XV83+Fc-joyUqXgizutPah0VrrA@mail.gmail.com>
- <db34f571-2a31-5a0a-9f8d-e55a9b579753@gmx.com>
-From: Tom Vincent <tom@tlvince.com>
-Date: Mon, 16 Apr 2018 17:07:38 +0100
-Message-ID: <CAG4vCrfCb=VUQe8rpMebeUCHbqwrXviBmOYpekRbFMRL-xJVKA@mail.gmail.com>
-Subject: Re: btrfs fails to mount after power outage
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
+In-Reply-To: <5425366f-f339-d6f3-26d1-d02c3ba80671@gmail.com>
+References: <CAJCQCtQ3r16BYYtrx9rVYauh7JeAp9omWidS4zzwxqvhU1bh+g@mail.gmail.com>
+ <5425366f-f339-d6f3-26d1-d02c3ba80671@gmail.com>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Mon, 16 Apr 2018 11:10:16 -0600
+Message-ID: <CAJCQCtRzmBys+eYsd=zsAK1deYQt47nysHQBdn3CreOmObz59g@mail.gmail.com>
+Subject: Re: Add udev-md-raid-safe-timeouts.rules
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>, linux-lvm@redhat.com,
+        Linux-RAID <linux-raid@vger.kernel.org>, linux-scsi@vger.kernel.org,
+        linux-usb@vger.kernel.org
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 12 April 2018 at 00:25, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
-> I'm curious about what's the underlying disk?
+Adding linux-usb@ and linux-scsi@
+(This email does contain the thread initiating email, but some replies
+are on the other lists.)
 
-It's an Samsung PM951 NVMe SSD.
+On Mon, Apr 16, 2018 at 5:43 AM, Austin S. Hemmelgarn
+<ahferroin7@gmail.com> wrote:
+> On 2018-04-15 21:04, Chris Murphy wrote:
+>>
+>> I just ran into this:
+>>
+>> https://github.com/neilbrown/mdadm/pull/32/commits/af1ddca7d5311dfc9ed60a5eb6497db1296f1bec
+>>
+>> This solution is inadequate, can it be made more generic? This isn't
+>> an md specific problem, it affects Btrfs and LVM as well. And in fact
+>> raid0, and even none raid setups.
+>>
+>> There is no good reason to prevent deep recovery, which is what
+>> happens with the default command timer of 30 seconds, with this class
+>> of drive. Basically that value is going to cause data loss for the
+>> single device and also raid0 case, where the reset happens before deep
+>> recovery has a chance. And even if deep recovery fails to return user
+>> data, what we need to see is the proper error message: read error UNC,
+>> rather than a link reset message which just obfuscates the problem.
+>
+>
+> This has been discussed at least once here before (probably more times, hard
+> to be sure since it usually comes up as a side discussion in an only
+> marginally related thread).  Last I knew, the consensus here was that it
+> needs to be changed upstream in the kernel, not by adding a udev rule
+> because while the value is technically system policy, the default policy is
+> brain-dead for anything but the original disks it was i9ntended for (30
+> seconds works perfectly fine for actual SCSI devices because they behave
+> sanely in the face of media errors, but it's horribly inadequate for ATA
+> devices).
+>
+> To re-iterate what I've said before on the subject:
+>
+> For ATA drives it should probably be 150 seconds.  That's 30 seconds beyond
+> the typical amount of time most consumer drives will keep retrying a sector,
+> so even if it goes the full time to try and recover a sector this shouldn't
+> trigger.  The only people this change should negatively impact are those who
+> have failing drives which support SCT ERC and have it enabled, but aren't
+> already adjusting this timeout.
+>
+> For physical SCSI devices, it should continue to be 30 seconds.  SCSI disks
+> are sensible here and don't waste your time trying to recover a sector.  For
+> PV-SCSI devices, it should probably be adjusted too, but I don't know what a
+> reasonable value is.
+>
+> For USB devices it should probably be higher than 30 seconds, but again I
+> have no idea what a reasonable value is.
 
-> Is it plain physical device? Or have other layers like bcache/lvm?
+I don't know how all of this is designed but it seems like there's
+only one location for the command timer, and the SCSI driver owns it,
+and then everyone else (ATA and USB and for all I know SAN) are on top
+of that and lack any ability to have separate timeouts.
 
-btrfs on LUKS
+The nice thing about the udev rule is that it tests for SCT ERC before
+making a change. There certainly are enterprise and almost enterprise
+"NAS" SATA drives that have short SCT ERC times enabled out of the box
+- and the udev method makes them immune to the change.
 
->> btrfs check
-> Full output please.
 
-https://gist.githubusercontent.com/tlvince/acf51b37622c216e1c33cdc3dfbd321f/raw/d0237948bbffacd4bb8d53fdfa5f23391416c1e2/btrfs-check.txt
-
-> For transid error, btrfs check --repair can fix it, but only do it when
-> that's the only problem.
-
-I ran this (for ~12+ hours) to no avail; it appears to have been
-looping around "Btree for root 259 is fixed". I grew impatient and
-SIGINT-ed, which unsurprisingly toasted the file system once and for
-all (I rebuilt from backups at that point).
-
-Full output:
-
-https://gist.githubusercontent.com/tlvince/8060c19526aa011b0baff2b12e3873fd/raw/ecc43bd9dc7b352e490aa0bf0deac368af04e117/btrfs-check-repair.txt
-
-Note, the system was fine for a few days after zero-log (before check
---repair), but then hit the same transid error at boot.
-
-On 13 April 2018 at 06:46, Duncan <1i5t5.duncan@cox.net> wrote:
-> What mount options?  In particular, is the discard option used (and of
-> course I'm assuming nothing as insane as nobarrier)?
-
-noatime,compress=lzo
-
-... as well as some defaults: rw,noatime,compress=lzo,ssd,space_cache
+-- 
+Chris Murphy

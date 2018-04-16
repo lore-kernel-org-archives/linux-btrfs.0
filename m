@@ -1,60 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwym02.jp.fujitsu.com ([211.128.242.41]:52411 "EHLO
-        mgwym02.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753002AbeDRCfl (ORCPT
+Received: from userp2130.oracle.com ([156.151.31.86]:34988 "EHLO
+        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754160AbeDPK0b (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 17 Apr 2018 22:35:41 -0400
-Received: from g01jpfmpwkw03.exch.g01.fujitsu.local (g01jpfmpwkw03.exch.g01.fujitsu.local [10.0.193.57])
-        by yt-mxoi1.gw.nic.fujitsu.com (Postfix) with ESMTP id 62F8AAC00F2
-        for <linux-btrfs@vger.kernel.org>; Wed, 18 Apr 2018 11:35:36 +0900 (JST)
-Received: from g01jpexchkw36.g01.fujitsu.local (unknown [10.0.193.4])
-        by g01jpfmpwkw03.exch.g01.fujitsu.local (Postfix) with ESMTP id 404CBBD6732
-        for <linux-btrfs@vger.kernel.org>; Wed, 18 Apr 2018 11:35:35 +0900 (JST)
-Subject: [PATCH v5 3/3] btrfs: Allow rmdir(2) to delete an empty subvolume
-From: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <558a949c-ceb5-115d-744f-80fac2620f7d@jp.fujitsu.com>
-Message-ID: <afaab1c3-4f17-2d39-4de7-d4ab50e93b33@jp.fujitsu.com>
-Date: Wed, 18 Apr 2018 11:35:31 +0900
-MIME-Version: 1.0
-In-Reply-To: <558a949c-ceb5-115d-744f-80fac2620f7d@jp.fujitsu.com>
-Content-Type: text/plain; charset="utf-8"
+        Mon, 16 Apr 2018 06:26:31 -0400
+Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
+        by userp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w3GAQ0mB074715
+        for <linux-btrfs@vger.kernel.org>; Mon, 16 Apr 2018 10:26:30 GMT
+Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
+        by userp2130.oracle.com with ESMTP id 2hbam5vd46-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Mon, 16 Apr 2018 10:26:29 +0000
+Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
+        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id w3GAQTQv030848
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Mon, 16 Apr 2018 10:26:29 GMT
+Received: from abhmp0004.oracle.com (abhmp0004.oracle.com [141.146.116.10])
+        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w3GAQTiP020826
+        for <linux-btrfs@vger.kernel.org>; Mon, 16 Apr 2018 10:26:29 GMT
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs: add comment about BTRFS_FS_EXCL_OP
+Date: Mon, 16 Apr 2018 18:28:31 +0800
+Message-Id: <20180416102831.12388-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Change the behavior of rmdir(2) and allow it to delete an empty subvolume
-by using btrfs_delete_subvolume() which is used by
-btrfs_ioctl_snap_destroy(). The required lock for @dir and inode of
-@dentry is already acquired in vfs layer.
+Adds comments about BTRFS_FS_EXCL_OP to existing comments
+about the device locks.
 
-We need some check before deleting a subvolume. Permission check is done
-in vfs layer, emptiness check is in btrfs_rmdir() and additional check
-(i.e. neither the subvolume is a default subvolume nor send is in progress)
-is in btrfs_delete_subvolume().
-
-Note that in btrfs_ioctl_snap_destroy(), d_delete() is called after
-btrfs_delete_subvolume(). For rmdir(2), d_delete() is called in vfs
-layer later.
-
-Tested-by: Goffredo Baroncelli <kreijack@inwind.it>
-Signed-off-by: Tomohiro Misono <misono.tomohiro@jp.fujitsu.com>
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- fs/btrfs/inode.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ fs/btrfs/volumes.c | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index b421aa8dd1a4..231e4c2ea1b4 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -4522,7 +4522,7 @@ static int btrfs_rmdir(struct inode *dir, struct dentry *dentry)
- 	if (inode->i_size > BTRFS_EMPTY_DIR_SIZE)
- 		return -ENOTEMPTY;
- 	if (btrfs_ino(BTRFS_I(inode)) == BTRFS_FIRST_FREE_OBJECTID)
--		return -EPERM;
-+		return btrfs_delete_subvolume(dir, dentry);
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 3a3912a9dec9..18306165ffaa 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -202,6 +202,22 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
+  *   device_list_mutex
+  *     chunk_mutex
+  *   balance_mutex
++ *
++ * BTRFS_FS_EXCL_OP
++ * ----------------
++ * Maintains the exclusivity of the following device operations.
++ *
++ * - Balance (*)
++ * - Add
++ * - Remove
++ * - Replace (*)
++ * - Resize
++ *
++ * The device operation with (*) indicate it can continue after a CLI pause
++ * (only balance can be paused using CLI) or remount or unmount-mount sequence
++ * or a power-recycle, as long as the FS is still writeable. And during the
++ * course of the pause, the BTRFS_FS_EXCL_OP remains set. BTRFS_FS_EXCL_OP flag
++ * is set and cleared using atomic functions.
+  */
  
- 	trans = __unlink_start_trans(dir);
- 	if (IS_ERR(trans))
+ DEFINE_MUTEX(uuid_mutex);
 -- 
-2.14.3
+2.15.0
 

@@ -1,51 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yb0-f180.google.com ([209.85.213.180]:46694 "EHLO
-        mail-yb0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752004AbeDPIGE (ORCPT
+Received: from mail-io0-f181.google.com ([209.85.223.181]:35936 "EHLO
+        mail-io0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1755074AbeDPLno (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 16 Apr 2018 04:06:04 -0400
-Received: by mail-yb0-f180.google.com with SMTP id z16-v6so909710ybk.13
-        for <linux-btrfs@vger.kernel.org>; Mon, 16 Apr 2018 01:06:04 -0700 (PDT)
+        Mon, 16 Apr 2018 07:43:44 -0400
+Subject: Re: Add udev-md-raid-safe-timeouts.rules
+To: Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>, linux-lvm@redhat.com,
+        Linux-RAID <linux-raid@vger.kernel.org>
+References: <CAJCQCtQ3r16BYYtrx9rVYauh7JeAp9omWidS4zzwxqvhU1bh+g@mail.gmail.com>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <5425366f-f339-d6f3-26d1-d02c3ba80671@gmail.com>
+Date: Mon, 16 Apr 2018 07:43:39 -0400
 MIME-Version: 1.0
-In-Reply-To: <20180412141027.GL21272@twin.jikos.cz>
-References: <CAJUuSvEgV0NU8Gu89eM=pM4mnYtKZgyNG31BASeHkiuH6Xj_nA@mail.gmail.com>
- <20180412141027.GL21272@twin.jikos.cz>
-From: Ilan Schwarts <ilan84@gmail.com>
-Date: Mon, 16 Apr 2018 11:06:03 +0300
-Message-ID: <CAJUuSvGYrCmw7yOwNy+amYadi_=Y7HNiGaJwMW1nV4QneFi=4A@mail.gmail.com>
-Subject: Re: error: redefinition of 'struct btrfs_ioctl_defrag_range_args
-To: dsterba@suse.cz, Ilan Schwarts <ilan84@gmail.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <CAJCQCtQ3r16BYYtrx9rVYauh7JeAp9omWidS4zzwxqvhU1bh+g@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thanks.
-If you see no problems, then its probably locally on my machine.
+On 2018-04-15 21:04, Chris Murphy wrote:
+> I just ran into this:
+> https://github.com/neilbrown/mdadm/pull/32/commits/af1ddca7d5311dfc9ed60a5eb6497db1296f1bec
+> 
+> This solution is inadequate, can it be made more generic? This isn't
+> an md specific problem, it affects Btrfs and LVM as well. And in fact
+> raid0, and even none raid setups.
+> 
+> There is no good reason to prevent deep recovery, which is what
+> happens with the default command timer of 30 seconds, with this class
+> of drive. Basically that value is going to cause data loss for the
+> single device and also raid0 case, where the reset happens before deep
+> recovery has a chance. And even if deep recovery fails to return user
+> data, what we need to see is the proper error message: read error UNC,
+> rather than a link reset message which just obfuscates the problem.
 
-On Thu, Apr 12, 2018 at 5:10 PM, David Sterba <dsterba@suse.cz> wrote:
-> On Wed, Apr 11, 2018 at 01:22:23PM +0300, Ilan Schwarts wrote:
->> Hi
->> While trying to compile my kernel module on suse 12.2 kernel
->> 4.4.103-92.53-default
->> I recieve the following warning: error: redefinition of 'struct
->> btrfs_ioctl_defrag_range_args
->> I see that struct is defined in 2 places:
->> /lib/modules/4.4.103-92.53-default/source/fs/btrfs/ctree.h:1985:8
->> /usr/src/linux-4.4.103-92.53/include/uapi/linux/btrfs.h:497:8
->
-> Some of the defintions were moved from fs/btrfs/ to uapi, so the sources
-> seem to be in a half-state where it exists in both places.
->
->> Why is it defined in 2 places ?
->> No one else is getting that warning (which treated as error for me) ?
->
-> I've never seen the warning, but I don't compile the 4.4 distro kernel.
+This has been discussed at least once here before (probably more times, 
+hard to be sure since it usually comes up as a side discussion in an 
+only marginally related thread).  Last I knew, the consensus here was 
+that it needs to be changed upstream in the kernel, not by adding a udev 
+rule because while the value is technically system policy, the default 
+policy is brain-dead for anything but the original disks it was 
+i9ntended for (30 seconds works perfectly fine for actual SCSI devices 
+because they behave sanely in the face of media errors, but it's 
+horribly inadequate for ATA devices).
 
+To re-iterate what I've said before on the subject:
 
+For ATA drives it should probably be 150 seconds.  That's 30 seconds 
+beyond the typical amount of time most consumer drives will keep 
+retrying a sector, so even if it goes the full time to try and recover a 
+sector this shouldn't trigger.  The only people this change should 
+negatively impact are those who have failing drives which support SCT 
+ERC and have it enabled, but aren't already adjusting this timeout.
 
--- 
+For physical SCSI devices, it should continue to be 30 seconds.  SCSI 
+disks are sensible here and don't waste your time trying to recover a 
+sector.  For PV-SCSI devices, it should probably be adjusted too, but I 
+don't know what a reasonable value is.
 
-
--
-Ilan Schwarts
+For USB devices it should probably be higher than 30 seconds, but again 
+I have no idea what a reasonable value is.

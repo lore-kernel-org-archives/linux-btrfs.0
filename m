@@ -1,25 +1,24 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:52186 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:56187 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752487AbeDKIIg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 11 Apr 2018 04:08:36 -0400
+        id S1750917AbeDPUNt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 16 Apr 2018 16:13:49 -0400
+Date: Mon, 16 Apr 2018 22:11:17 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Nikolay Borisov <nborisov@suse.com>
+Cc: osandov@osandov.com, linux-btrfs@vger.kernel.org, jeffm@suse.com
 Subject: Re: [PATCH v2] btrfs: Fix race condition between delayed refs and
  blockgroup removal
-To: osandov@osandov.com
-Cc: linux-btrfs@vger.kernel.org, jeffm@suse.com
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <5b531ae2-18c5-be48-186e-1155e2632453@suse.com>
-Date: Wed, 11 Apr 2018 11:08:34 +0300
+Message-ID: <20180416201117.GB21272@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 In-Reply-To: <1523433549-5248-1-git-send-email-nborisov@suse.com>
-Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 References: <1523433549-5248-1-git-send-email-nborisov@suse.com>
 
-
-
-On 11.04.2018 10:59, Nikolay Borisov wrote:
+On Wed, Apr 11, 2018 at 10:59:09AM +0300, Nikolay Borisov wrote:
 > When the delayed refs for a head are all run, eventually
 > cleanup_ref_head is called which (in case of deletion) obtains a
 > reference for the relevant btrfs_space_info struct by querying the bg
@@ -64,13 +63,141 @@ On 11.04.2018 10:59, Nikolay Borisov wrote:
 > 
 > v2: 
 >  * Collapsed the if/else logic in cleanup_ref_head
+> 
+>  fs/btrfs/delayed-ref.c | 19 ++++++++++++++-----
+>  fs/btrfs/delayed-ref.h |  1 +
+>  fs/btrfs/extent-tree.c | 18 +++++++++++++-----
+>  3 files changed, 28 insertions(+), 10 deletions(-)
+> 
+> diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
+> index 5ac2d7909782..20fa7b4c132d 100644
+> --- a/fs/btrfs/delayed-ref.c
+> +++ b/fs/btrfs/delayed-ref.c
+> @@ -550,8 +550,10 @@ add_delayed_ref_head(struct btrfs_fs_info *fs_info,
+>  		     struct btrfs_delayed_ref_head *head_ref,
+>  		     struct btrfs_qgroup_extent_record *qrecord,
+>  		     u64 bytenr, u64 num_bytes, u64 ref_root, u64 reserved,
+> -		     int action, int is_data, int *qrecord_inserted_ret,
+> +		     int action, int is_data, int is_system,
+> +		     int *qrecord_inserted_ret,
+>  		     int *old_ref_mod, int *new_ref_mod)
+> +
+>  {
+>  	struct btrfs_delayed_ref_head *existing;
+>  	struct btrfs_delayed_ref_root *delayed_refs;
+> @@ -595,6 +597,7 @@ add_delayed_ref_head(struct btrfs_fs_info *fs_info,
+>  	head_ref->ref_mod = count_mod;
+>  	head_ref->must_insert_reserved = must_insert_reserved;
+>  	head_ref->is_data = is_data;
+> +	head_ref->is_system = is_system;
+>  	head_ref->ref_tree = RB_ROOT;
+>  	INIT_LIST_HEAD(&head_ref->ref_add_list);
+>  	RB_CLEAR_NODE(&head_ref->href_node);
+> @@ -782,6 +785,7 @@ int btrfs_add_delayed_tree_ref(struct btrfs_fs_info *fs_info,
+>  	struct btrfs_delayed_ref_root *delayed_refs;
+>  	struct btrfs_qgroup_extent_record *record = NULL;
+>  	int qrecord_inserted;
+> +	int is_system = ref_root == BTRFS_CHUNK_TREE_OBJECTID;
+>  
+>  	BUG_ON(extent_op && extent_op->is_data);
+>  	ref = kmem_cache_alloc(btrfs_delayed_tree_ref_cachep, GFP_NOFS);
+> @@ -810,8 +814,8 @@ int btrfs_add_delayed_tree_ref(struct btrfs_fs_info *fs_info,
+>  	 */
+>  	head_ref = add_delayed_ref_head(fs_info, trans, head_ref, record,
+>  					bytenr, num_bytes, 0, 0, action, 0,
+> -					&qrecord_inserted, old_ref_mod,
+> -					new_ref_mod);
+> +					is_system, &qrecord_inserted,
+> +					old_ref_mod, new_ref_mod);
+>  
+>  	add_delayed_tree_ref(fs_info, trans, head_ref, &ref->node, bytenr,
+>  			     num_bytes, parent, ref_root, level, action);
+> @@ -878,7 +882,7 @@ int btrfs_add_delayed_data_ref(struct btrfs_fs_info *fs_info,
+>  	 */
+>  	head_ref = add_delayed_ref_head(fs_info, trans, head_ref, record,
+>  					bytenr, num_bytes, ref_root, reserved,
+> -					action, 1, &qrecord_inserted,
+> +					action, 1, 0,  &qrecord_inserted,
+>  					old_ref_mod, new_ref_mod);
+>  
+>  	add_delayed_data_ref(fs_info, trans, head_ref, &ref->node, bytenr,
+> @@ -908,9 +912,14 @@ int btrfs_add_delayed_extent_op(struct btrfs_fs_info *fs_info,
+>  	delayed_refs = &trans->transaction->delayed_refs;
+>  	spin_lock(&delayed_refs->lock);
+>  
+> +	/*
+> +	 * extent_ops just modify the flags of an extent and they don't result
+> +	 * in ref count changes, hence it's safe to pass false/0 for is_system
+> +	 * argument
+> +	 */
+>  	add_delayed_ref_head(fs_info, trans, head_ref, NULL, bytenr,
+>  			     num_bytes, 0, 0, BTRFS_UPDATE_DELAYED_HEAD,
+> -			     extent_op->is_data, NULL, NULL, NULL);
+> +			     extent_op->is_data, 0, NULL, NULL, NULL);
+>  
+>  	spin_unlock(&delayed_refs->lock);
+>  	return 0;
+> diff --git a/fs/btrfs/delayed-ref.h b/fs/btrfs/delayed-ref.h
+> index cdf4a94ce5c1..7e7bf4e66d48 100644
+> --- a/fs/btrfs/delayed-ref.h
+> +++ b/fs/btrfs/delayed-ref.h
+> @@ -139,6 +139,7 @@ struct btrfs_delayed_ref_head {
+>  	 */
+>  	unsigned int must_insert_reserved:1;
+>  	unsigned int is_data:1;
+> +	unsigned int is_system:1;
+>  	unsigned int processing:1;
+>  };
+>  
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index 9a05e5b5089f..349b053680c8 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -2616,13 +2616,21 @@ static int cleanup_ref_head(struct btrfs_trans_handle *trans,
+>  	trace_run_delayed_ref_head(fs_info, head, 0);
+>  
+>  	if (head->total_ref_mod < 0) {
+> -		struct btrfs_block_group_cache *cache;
+> +		struct btrfs_space_info *space_info;
+>  
+> -		cache = btrfs_lookup_block_group(fs_info, head->bytenr);
+> -		ASSERT(cache);
+> -		percpu_counter_add(&cache->space_info->total_bytes_pinned,
+> +		if (head->is_data) {
+> +			space_info = __find_space_info(fs_info,
+> +						       BTRFS_BLOCK_GROUP_DATA);
+> +		} else if (head->is_system) {
+> +			space_info = __find_space_info(fs_info,
+> +						BTRFS_BLOCK_GROUP_SYSTEM);
+> +		} else {
+> +			space_info = __find_space_info(fs_info,
+> +						BTRFS_BLOCK_GROUP_METADATA);
+> +		}
 
-So I had a bit written up about how I tested this code:
+Could you please convert that to something like that:
 
-I did a full xfstest run with both the new code and old code and the
-following assert:
-  ASSERT(space_info == cache->space_info);
+		u64 flags
 
-It didn't trigger, so I'm confident this shouldn't introduce any
-regressions.
+		if (is_system)
+			flags = BTRFS_BLOCK_GROUP_SYSTEM;
+		else if (is_data)
+			etc
 
+		__find_space_info(fs_info, flags);
+
+This is to avoid repeating the same function call.
+
+> +		ASSERT(space_info);
+> +		percpu_counter_add(&space_info->total_bytes_pinned,
+>  				   -head->num_bytes);
+> -		btrfs_put_block_group(cache);
+>  
+>  		if (head->is_data) {
+>  			spin_lock(&delayed_refs->lock);
+> -- 
+> 2.7.4
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

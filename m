@@ -1,80 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from imap.thunk.org ([74.207.234.97]:44244 "EHLO imap.thunk.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751205AbeDPFwv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 16 Apr 2018 01:52:51 -0400
-Date: Mon, 16 Apr 2018 01:52:31 -0400
-From: "Theodore Y. Ts'o" <tytso@mit.edu>
-To: Vijay Chidambaram <vijay@cs.utexas.edu>
-Cc: Dave Chinner <david@fromorbit.com>,
-        Jayashree Mohan <jayashree2912@gmail.com>,
-        Amir Goldstein <amir73il@gmail.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        fstests <fstests@vger.kernel.org>,
-        linux-f2fs-devel@lists.sourceforge.net
-Subject: Re: Symlink not persisted even after fsync
-Message-ID: <20180416055231.GB22870@thunk.org>
-References: <CAPaz=E+-baGSWhL3nD-8X4jn6rKdn2AVGLeqWh3EY5Nh-RodRA@mail.gmail.com>
- <CAOQ4uxhRoAnxr36Cy1pov+ExnNJ8Y+inmUc7chD77ONPt=u9qw@mail.gmail.com>
- <CA+EzBbCFURDs77xiL3ECf7+4irrywbmD1HdsUSUYE_oeonbo8A@mail.gmail.com>
- <20180414012017.GF5572@dastard>
- <CAPaz=EJrOc7dBE+gBf=Gx0W-4_q0GwTrRhchquPveWs-m-Djeg@mail.gmail.com>
- <20180414215529.GG5572@dastard>
- <20180415011735.GB21830@thunk.org>
- <CAHWVdUXAyyeTGNXrtTTc+tUbA3t9TUjJPSF=M4Cetj4+d1w3eQ@mail.gmail.com>
- <20180415141338.GA22870@thunk.org>
- <CAPaz=ELkYavvWYuMg=t+L_nSZ7fZ8CkaZr-qfGVN3QfydbOh7w@mail.gmail.com>
+Received: from mail-yb0-f171.google.com ([209.85.213.171]:44193 "EHLO
+        mail-yb0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751849AbeDPIFQ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 16 Apr 2018 04:05:16 -0400
+Received: by mail-yb0-f171.google.com with SMTP id z1-v6so2313802ybn.11
+        for <linux-btrfs@vger.kernel.org>; Mon, 16 Apr 2018 01:05:16 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAPaz=ELkYavvWYuMg=t+L_nSZ7fZ8CkaZr-qfGVN3QfydbOh7w@mail.gmail.com>
+From: Ilan Schwarts <ilan84@gmail.com>
+Date: Mon, 16 Apr 2018 11:05:15 +0300
+Message-ID: <CAJUuSvFzg1UyLLub1OdyBc-ctaZ-JsUouWiFj3ZVLWfJ4wzykw@mail.gmail.com>
+Subject: Why btrfsInode -> root is null
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Apr 15, 2018 at 07:10:52PM -0500, Vijay Chidambaram wrote:
-> 
-> I don't think this is what the paper's ext3-fast does. All the paper
-> says is if you have a file system where the fsync of a file persisted
-> only data related to that file, it would increase performance.
-> ext3-fast is the name given to such a file system. Note that we do not
-> present a design of ext3-fast or analyze it in any detail. In fact, we
-> explicitly say "The ext3-fast file system (derived from inferences
-> provided by ALICE) seems interesting for application safety, though
-> further investigation is required into the validity of its design."
+Hi all,
 
-Well, says that it's based on ext3's data=journal "Abstract Persistent
-Model".  It's true that a design was not proposed --- but if you
-don't propose a design, how do you know what the performance is or
-whether it's even practical?  That's one of those things I find
-extremely distasteful in the paper.  Sure, I can model a faster than
-light interstellar engine ala Star Trek's Warp Drive --- and I can
-talk about it having, say, better performance than a reaction drive.
-But it doesn't tell us anything useful about whether it can be built,
-or whether it's even useful to dream about it.
+I maintain kernel module on top of VFS.
+When action executes, e.g vfs_rename, i get dentry object.
+I need to get the fsid from the dentry object.
+Since I maintain the same code for alot of suse distro and kernels
+(11.4, 12.0, 12.1, 12.2), i have many #if macros,
 
-To me, that part of the paper, really read as, "watch as I wave my
-hands around widely, that they never leave the ends of my arms!"
+My question is in SLES 12.2 kernel 4.4.103*, How do i get BTRFS dentry FSID ?
+In previous kernels I did:
+1. dentry->d_inode->i_op->getattr(NULL, dentry, &kstat)
+2. btrfsInode->root->anon_super.s_dev
+3. btrfsInode->root->anon_dev
 
-> Thanks! As I mentioned before, this is useful. I have a follow-up
-> question. Consider the following workload:
-> 
->  creat foo
->  link (foo, A/bar)
->  fsync(foo)
->  crash
-> 
-> In this case, after the file system recovers, do we expect foo's link
-> count to be 2 or 1? I would say 2, but POSIX is silent on this, so
-> thought I would confirm. The tricky part here is we are not calling
-> fsync() on directory A.
-> 
-> In this case, its not a symlink; its a hard link, so I would say the
-> link count for foo should be 2. But btrfs and F2FS show link count of
-> 1 after a crash.
+I cast Inode to btrfs inode:
+    struct btrfs_inode *btrfsInode;
+    btrfsInode = BTRFS_I(dentry->d_inode);
 
-Well, is the link count accurate?  That is to say, does A/bar exist?
-I would think that the requirement that the file system be self
-consistent is the most important consideration.
 
-Cheers,
+On this version 4.4.103*,, there is the operation:
+dentry->d_inode->i_sb->s_op->get_inode_dev(dentry->d_inode);
 
-							- Ted
+I have 2 questions,
+1. Is this the proper way to obtain it ?
+2. In some dentries, after casting inode to btrfsInode, the
+btrfsInode->root is null, how could that be ? shouldn't the cast fail
+(return null) ?
+
+Thanks

@@ -1,53 +1,507 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:43085 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1755227AbeDWO3n (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 23 Apr 2018 10:29:43 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 91233ACF9
-        for <linux-btrfs@vger.kernel.org>; Mon, 23 Apr 2018 14:29:42 +0000 (UTC)
-Date: Mon, 23 Apr 2018 16:27:10 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Nikolay Borisov <nborisov@suse.com>
-Cc: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: Fix wrong first_key parameter in replace_path
-Message-ID: <20180423142709.GX21272@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20180423093204.20943-1-wqu@suse.com>
- <20180423141622.GW21272@twin.jikos.cz>
- <f2b1f711-f484-e217-831c-7de2020d6f62@suse.com>
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:51340 "EHLO
+        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1751164AbeDQXuD (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 17 Apr 2018 19:50:03 -0400
+Subject: Re: [PATCH] btrfs: add chattr support for send/receive
+To: <linux-btrfs@vger.kernel.org>
+CC: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.com>, Omar Sandoval <osandov@osandov.com>,
+        <kernel-team@fb.com>
+References: <20180417233936.30629-1-hmclauchlan@fb.com>
+From: Howard McLauchlan <hmclauchlan@fb.com>
+Message-ID: <e5e31d66-043c-ab15-0fee-dcf7bc74c059@fb.com>
+Date: Tue, 17 Apr 2018 16:49:56 -0700
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <f2b1f711-f484-e217-831c-7de2020d6f62@suse.com>
+In-Reply-To: <20180417233936.30629-1-hmclauchlan@fb.com>
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Apr 23, 2018 at 05:20:06PM +0300, Nikolay Borisov wrote:
-> On 23.04.2018 17:16, David Sterba wrote:
-> > On Mon, Apr 23, 2018 at 05:32:04PM +0800, Qu Wenruo wrote:
-> >> Commit 581c1760415c ("btrfs: Validate child tree block's level and first
-> >> key") introduced new @first_key parameter for read_tree_block(), however
-> >> caller in replace_path() is parasing wrong key to read_tree_block().
-> >>
-> >> It should use parameter @first_key other than @key.
-> >>
-> >> Normally it won't expose problem as @key is normally initialzied to the
-> >> same value of @first_key we expect.
-> >> However in relocation recovery case, @key can be set to (0, 0, 0), and
-> >> since no valid key in relocation tree can be (0, 0, 0), it will cause
-> >> read_tree_block() to return -EUCLEAN and interrupt relocation recovery.
-> >>
-> >> Fix it by setting @first_key correctly.
-> >>
-> >> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> > 
-> > Added to next, thanks.
-> 
-> This is actually -rc2 material, right?
 
-Yes, adding to next is the 1st stage as we want to start testing. What
-will end up in the next rc pull is determined later if everything is
-fine. For some patches it's obvious that they're fixing a regression,
-the others are clear fixes that still qualify for rc. I can be more
-specific about the target branch, but this should be transparent to
-developers anyway once the patch is in the pool.
+
+On 04/17/2018 04:39 PM, Howard McLauchlan wrote:
+> Presently btrfs send/receive does not propagate inode attribute flags;
+> all chattr operations are effectively discarded upon transmission.
+>
+> This patch adds kernel support for inode attribute flags. Userspace
+> support can be found under the commit:
+>
+>     btrfs-progs: add chattr support for send/receive
+>
+> An associated xfstest can be found at:
+>
+>     btrfs: add verify chattr support for send/receive test
+>
+> A caveat is that a user with an updated kernel (aware of chattrs) and an
+> older version of btrfs-progs (unaware of chattrs) will fail to receive
+> if a chattr is included in the send stream.
+>
+> Signed-off-by: Howard McLauchlan <hmclauchlan@fb.com>
+> ---
+> Based on 4.17-rc1
+>
+>  fs/btrfs/ctree.h |   2 +
+>  fs/btrfs/ioctl.c |   2 +-
+>  fs/btrfs/send.c  | 176 +++++++++++++++++++++++++++++++++++++++--------
+>  fs/btrfs/send.h  |   2 +
+>  4 files changed, 154 insertions(+), 28 deletions(-)
+>
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index 5474ef14d6e6..a0dc6a8a37eb 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -1436,6 +1436,8 @@ struct btrfs_map_token {
+>  	unsigned long offset;
+>  };
+>  
+> +unsigned int btrfs_flags_to_ioctl(unsigned int flags);
+> +
+>  #define BTRFS_BYTES_TO_BLKS(fs_info, bytes) \
+>  				((bytes) >> (fs_info)->sb->s_blocksize_bits)
+>  
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index 632e26d6f7ce..36ce1e589f9e 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -106,7 +106,7 @@ static unsigned int btrfs_mask_flags(umode_t mode, unsigned int flags)
+>  /*
+>   * Export inode flags to the format expected by the FS_IOC_GETFLAGS ioctl.
+>   */
+> -static unsigned int btrfs_flags_to_ioctl(unsigned int flags)
+> +unsigned int btrfs_flags_to_ioctl(unsigned int flags)
+>  {
+>  	unsigned int iflags = 0;
+>  
+> diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+> index 221e5cdb060b..da521a5a1843 100644
+> --- a/fs/btrfs/send.c
+> +++ b/fs/btrfs/send.c
+> @@ -101,6 +101,13 @@ struct send_ctx {
+>  	u64 cur_inode_last_extent;
+>  	u64 cur_inode_next_write_offset;
+>  
+> +	/*
+> +	 * state for chattr purposes
+> +	 */
+> +	u64 cur_inode_flip_flags;
+> +	u64 cur_inode_receive_flags;
+> +	int receive_flags_valid;
+> +
+>  	u64 send_progress;
+>  
+>  	struct list_head new_refs;
+> @@ -798,7 +805,7 @@ static int send_rmdir(struct send_ctx *sctx, struct fs_path *path)
+>   */
+>  static int __get_inode_info(struct btrfs_root *root, struct btrfs_path *path,
+>  			  u64 ino, u64 *size, u64 *gen, u64 *mode, u64 *uid,
+> -			  u64 *gid, u64 *rdev)
+> +			  u64 *gid, u64 *rdev, u64 *flags)
+>  {
+>  	int ret;
+>  	struct btrfs_inode_item *ii;
+> @@ -828,6 +835,8 @@ static int __get_inode_info(struct btrfs_root *root, struct btrfs_path *path,
+>  		*gid = btrfs_inode_gid(path->nodes[0], ii);
+>  	if (rdev)
+>  		*rdev = btrfs_inode_rdev(path->nodes[0], ii);
+> +	if (flags)
+> +		*flags = btrfs_inode_flags(path->nodes[0], ii);
+>  
+>  	return ret;
+>  }
+> @@ -835,7 +844,7 @@ static int __get_inode_info(struct btrfs_root *root, struct btrfs_path *path,
+>  static int get_inode_info(struct btrfs_root *root,
+>  			  u64 ino, u64 *size, u64 *gen,
+>  			  u64 *mode, u64 *uid, u64 *gid,
+> -			  u64 *rdev)
+> +			  u64 *rdev, u64 *flags)
+>  {
+>  	struct btrfs_path *path;
+>  	int ret;
+> @@ -844,7 +853,7 @@ static int get_inode_info(struct btrfs_root *root,
+>  	if (!path)
+>  		return -ENOMEM;
+>  	ret = __get_inode_info(root, path, ino, size, gen, mode, uid, gid,
+> -			       rdev);
+> +			       rdev, flags);
+>  	btrfs_free_path(path);
+>  	return ret;
+>  }
+> @@ -1233,7 +1242,7 @@ static int __iterate_backrefs(u64 ino, u64 offset, u64 root, void *ctx_)
+>  	 * accept clones from these extents.
+>  	 */
+>  	ret = __get_inode_info(found->root, bctx->path, ino, &i_size, NULL, NULL,
+> -			       NULL, NULL, NULL);
+> +			       NULL, NULL, NULL, NULL);
+>  	btrfs_release_path(bctx->path);
+>  	if (ret < 0)
+>  		return ret;
+> @@ -1593,7 +1602,7 @@ static int get_cur_inode_state(struct send_ctx *sctx, u64 ino, u64 gen)
+>  	u64 right_gen;
+>  
+>  	ret = get_inode_info(sctx->send_root, ino, NULL, &left_gen, NULL, NULL,
+> -			NULL, NULL);
+> +			NULL, NULL, NULL);
+>  	if (ret < 0 && ret != -ENOENT)
+>  		goto out;
+>  	left_ret = ret;
+> @@ -1602,7 +1611,7 @@ static int get_cur_inode_state(struct send_ctx *sctx, u64 ino, u64 gen)
+>  		right_ret = -ENOENT;
+>  	} else {
+>  		ret = get_inode_info(sctx->parent_root, ino, NULL, &right_gen,
+> -				NULL, NULL, NULL, NULL);
+> +				NULL, NULL, NULL, NULL, NULL);
+>  		if (ret < 0 && ret != -ENOENT)
+>  			goto out;
+>  		right_ret = ret;
+> @@ -1771,7 +1780,7 @@ static int get_first_ref(struct btrfs_root *root, u64 ino,
+>  
+>  	if (dir_gen) {
+>  		ret = get_inode_info(root, parent_dir, NULL, dir_gen, NULL,
+> -				     NULL, NULL, NULL);
+> +				     NULL, NULL, NULL, NULL);
+>  		if (ret < 0)
+>  			goto out;
+>  	}
+> @@ -1844,7 +1853,7 @@ static int will_overwrite_ref(struct send_ctx *sctx, u64 dir, u64 dir_gen,
+>  	 */
+>  	if (sctx->parent_root && dir != BTRFS_FIRST_FREE_OBJECTID) {
+>  		ret = get_inode_info(sctx->parent_root, dir, NULL, &gen, NULL,
+> -				     NULL, NULL, NULL);
+> +				     NULL, NULL, NULL, NULL);
+>  		if (ret < 0 && ret != -ENOENT)
+>  			goto out;
+>  		if (ret) {
+> @@ -1872,7 +1881,7 @@ static int will_overwrite_ref(struct send_ctx *sctx, u64 dir, u64 dir_gen,
+>  	if (other_inode > sctx->send_progress ||
+>  	    is_waiting_for_move(sctx, other_inode)) {
+>  		ret = get_inode_info(sctx->parent_root, other_inode, NULL,
+> -				who_gen, who_mode, NULL, NULL, NULL);
+> +				who_gen, who_mode, NULL, NULL, NULL, NULL);
+>  		if (ret < 0)
+>  			goto out;
+>  
+> @@ -1912,7 +1921,7 @@ static int did_overwrite_ref(struct send_ctx *sctx,
+>  
+>  	if (dir != BTRFS_FIRST_FREE_OBJECTID) {
+>  		ret = get_inode_info(sctx->send_root, dir, NULL, &gen, NULL,
+> -				     NULL, NULL, NULL);
+> +				     NULL, NULL, NULL, NULL);
+>  		if (ret < 0 && ret != -ENOENT)
+>  			goto out;
+>  		if (ret) {
+> @@ -1935,7 +1944,7 @@ static int did_overwrite_ref(struct send_ctx *sctx,
+>  	}
+>  
+>  	ret = get_inode_info(sctx->send_root, ow_inode, NULL, &gen, NULL, NULL,
+> -			NULL, NULL);
+> +			NULL, NULL, NULL);
+>  	if (ret < 0)
+>  		goto out;
+>  
+> @@ -2502,6 +2511,39 @@ static int send_chown(struct send_ctx *sctx, u64 ino, u64 gen, u64 uid, u64 gid)
+>  	return ret;
+>  }
+>  
+> +static int send_chattr(struct send_ctx *sctx, u64 ino, u64 gen, u64 flags)
+> +{
+> +	struct btrfs_fs_info *fs_info = sctx->send_root->fs_info;
+> +	int ret = 0;
+> +	int __flags;
+> +	struct fs_path *p;
+> +
+> +	__flags = btrfs_flags_to_ioctl(flags);
+> +
+> +	btrfs_debug(fs_info, "send_chattr %llu flags=%llu", ino, flags);
+> +
+> +	p = fs_path_alloc();
+> +	if (!p)
+> +		return -ENOMEM;
+> +
+> +	ret = begin_cmd(sctx, BTRFS_SEND_C_CHATTR);
+> +	if (ret < 0)
+> +		goto out;
+> +
+> +	ret = get_cur_path(sctx, ino, gen, p);
+> +	if (ret < 0)
+> +		goto out;
+> +	TLV_PUT_PATH(sctx, BTRFS_SEND_A_PATH, p);
+> +	TLV_PUT_U64(sctx, BTRFS_SEND_A_CHATTR, __flags);
+> +
+> +	ret = send_cmd(sctx);
+> +
+> +tlv_put_failure:
+> +out:
+> +	fs_path_free(p);
+> +	return ret;
+> +}
+> +
+>  static int send_utimes(struct send_ctx *sctx, u64 ino, u64 gen)
+>  {
+>  	struct btrfs_fs_info *fs_info = sctx->send_root->fs_info;
+> @@ -2583,7 +2625,7 @@ static int send_create_inode(struct send_ctx *sctx, u64 ino)
+>  
+>  	if (ino != sctx->cur_ino) {
+>  		ret = get_inode_info(sctx->send_root, ino, NULL, &gen, &mode,
+> -				     NULL, NULL, &rdev);
+> +				     NULL, NULL, &rdev, NULL);
+>  		if (ret < 0)
+>  			goto out;
+>  	} else {
+> @@ -3299,7 +3341,7 @@ static int apply_dir_move(struct send_ctx *sctx, struct pending_dir_move *pm)
+>  		 * The parent inode might have been deleted in the send snapshot
+>  		 */
+>  		ret = get_inode_info(sctx->send_root, cur->dir, NULL,
+> -				     NULL, NULL, NULL, NULL, NULL);
+> +				     NULL, NULL, NULL, NULL, NULL, NULL);
+>  		if (ret == -ENOENT) {
+>  			ret = 0;
+>  			continue;
+> @@ -3469,11 +3511,11 @@ static int wait_for_dest_dir_move(struct send_ctx *sctx,
+>  	}
+>  
+>  	ret = get_inode_info(sctx->parent_root, di_key.objectid, NULL,
+> -			     &left_gen, NULL, NULL, NULL, NULL);
+> +			     &left_gen, NULL, NULL, NULL, NULL, NULL);
+>  	if (ret < 0)
+>  		goto out;
+>  	ret = get_inode_info(sctx->send_root, di_key.objectid, NULL,
+> -			     &right_gen, NULL, NULL, NULL, NULL);
+> +			     &right_gen, NULL, NULL, NULL, NULL, NULL);
+>  	if (ret < 0) {
+>  		if (ret == -ENOENT)
+>  			ret = 0;
+> @@ -3617,7 +3659,7 @@ static int is_ancestor(struct btrfs_root *root,
+>  			}
+>  
+>  			ret = get_inode_info(root, parent, NULL, &parent_gen,
+> -					     NULL, NULL, NULL, NULL);
+> +					     NULL, NULL, NULL, NULL, NULL);
+>  			if (ret < 0)
+>  				goto out;
+>  			ret = check_ino_in_path(root, ino1, ino1_gen,
+> @@ -3707,7 +3749,7 @@ static int wait_for_parent_move(struct send_ctx *sctx,
+>  
+>  			ret = get_inode_info(sctx->parent_root, ino, NULL,
+>  					     &parent_ino_gen, NULL, NULL, NULL,
+> -					     NULL);
+> +					     NULL, NULL);
+>  			if (ret < 0)
+>  				goto out;
+>  			if (ino_gen == parent_ino_gen) {
+> @@ -4184,7 +4226,7 @@ static int record_ref(struct btrfs_root *root, u64 dir, struct fs_path *name,
+>  		return -ENOMEM;
+>  
+>  	ret = get_inode_info(root, dir, NULL, &gen, NULL, NULL,
+> -			NULL, NULL);
+> +			NULL, NULL, NULL);
+>  	if (ret < 0)
+>  		goto out;
+>  
+> @@ -4272,7 +4314,7 @@ static int __find_iref(int num, u64 dir, int index,
+>  		 * else matches.
+>  		 */
+>  		ret = get_inode_info(ctx->root, dir, NULL, &dir_gen, NULL,
+> -				     NULL, NULL, NULL);
+> +				     NULL, NULL, NULL, NULL);
+>  		if (ret)
+>  			return ret;
+>  		if (dir_gen != ctx->dir_gen)
+> @@ -4316,7 +4358,7 @@ static int __record_changed_new_ref(int num, u64 dir, int index,
+>  	struct send_ctx *sctx = ctx;
+>  
+>  	ret = get_inode_info(sctx->send_root, dir, NULL, &dir_gen, NULL,
+> -			     NULL, NULL, NULL);
+> +			     NULL, NULL, NULL, NULL);
+>  	if (ret)
+>  		return ret;
+>  
+> @@ -4339,7 +4381,7 @@ static int __record_changed_deleted_ref(int num, u64 dir, int index,
+>  	struct send_ctx *sctx = ctx;
+>  
+>  	ret = get_inode_info(sctx->parent_root, dir, NULL, &dir_gen, NULL,
+> -			     NULL, NULL, NULL);
+> +			     NULL, NULL, NULL, NULL);
+>  	if (ret)
+>  		return ret;
+>  
+> @@ -4915,7 +4957,7 @@ static int send_clone(struct send_ctx *sctx,
+>  
+>  	if (clone_root->root == sctx->send_root) {
+>  		ret = get_inode_info(sctx->send_root, clone_root->ino, NULL,
+> -				&gen, NULL, NULL, NULL, NULL);
+> +				&gen, NULL, NULL, NULL, NULL, NULL);
+>  		if (ret < 0)
+>  			goto out;
+>  		ret = get_cur_path(sctx, clone_root->ino, gen, p);
+> @@ -5777,9 +5819,11 @@ static int finish_inode_if_needed(struct send_ctx *sctx, int at_end)
+>  	u64 right_mode;
+>  	u64 right_uid;
+>  	u64 right_gid;
+> +	u64 left_flags;
+>  	int need_chmod = 0;
+>  	int need_chown = 0;
+>  	int need_truncate = 1;
+> +	int need_chattr = 0;
+>  	int pending_move = 0;
+>  	int refs_processed = 0;
+>  
+> @@ -5787,7 +5831,6 @@ static int finish_inode_if_needed(struct send_ctx *sctx, int at_end)
+>  					      &refs_processed);
+>  	if (ret < 0)
+>  		goto out;
+> -
+>  	/*
+>  	 * We have processed the refs and thus need to advance send_progress.
+>  	 * Now, calls to get_cur_xxx will take the updated refs of the current
+> @@ -5805,11 +5848,67 @@ static int finish_inode_if_needed(struct send_ctx *sctx, int at_end)
+>  
+>  	if (sctx->cur_ino == 0 || sctx->cur_inode_deleted)
+>  		goto out;
+> +
+> +	/*
+> +	 * If possible, we want to know what flags are set for this inode on the
+> +	 * receiving end.
+> +	 */
+> +	if (sctx->parent_root && !sctx->receive_flags_valid) {
+> +		ret = get_inode_info(sctx->parent_root, sctx->cur_ino, NULL,
+> +				     NULL, NULL, NULL, NULL, NULL,
+> +				     &sctx->cur_inode_receive_flags);
+> +		if (ret < 0)
+> +			goto out;
+> +		sctx->receive_flags_valid = 1;
+> +	}
+> +
+> +	/*
+> +	 * The change is going to modify data and the inode already exists
+> +	 * !at_end prevents unnecessary chattr.
+> +	 */
+> +	if (!at_end && sctx->parent_root && !sctx->cur_inode_new &&
+> +	    (sctx->cmp_key->type == BTRFS_EXTENT_DATA_KEY ||
+> +	    sctx->cmp_key->type == BTRFS_XATTR_ITEM_KEY)) {
+> +
+> +		ret = get_inode_info(sctx->send_root, sctx->cur_ino, NULL, NULL,
+> +				NULL, NULL, NULL, NULL, &left_flags);
+> +		if (ret < 0)
+> +			goto out;
+> +		/*
+> +		 * We check against the receive flags first; then check against
+> +		 * the left flags to see if we can save a chattr later on
+> +		 */
+> +		if (sctx->cur_inode_receive_flags & BTRFS_INODE_IMMUTABLE) {
+> +			sctx->cur_inode_flip_flags |= (left_flags &
+> +						       BTRFS_INODE_IMMUTABLE);
+> +			left_flags &= ~BTRFS_INODE_IMMUTABLE;
+> +			need_chattr = 1;
+> +		}
+> +		if (sctx->cur_inode_receive_flags & BTRFS_INODE_APPEND) {
+> +			sctx->cur_inode_flip_flags |= (left_flags &
+> +						       BTRFS_INODE_APPEND);
+> +			left_flags &= ~BTRFS_INODE_APPEND;
+> +			need_chattr = 1;
+> +		}
+> +		if (need_chattr) {
+> +			need_chattr = 0;
+> +			ret = send_chattr(sctx, sctx->cur_ino,
+> +					  sctx->cur_inode_gen, left_flags);
+> +			if (ret < 0)
+> +				goto out;
+> +			/*
+> +			 * left_flags is now an accurate rep of what the
+> +			 * receiving inode's flags are
+> +			 */
+> +			sctx->cur_inode_receive_flags = left_flags;
+> +		}
+> +	}
+> +
+>  	if (!at_end && sctx->cmp_key->objectid == sctx->cur_ino)
+>  		goto out;
+>  
+>  	ret = get_inode_info(sctx->send_root, sctx->cur_ino, NULL, NULL,
+> -			&left_mode, &left_uid, &left_gid, NULL);
+> +			&left_mode, &left_uid, &left_gid, NULL, &left_flags);
+>  	if (ret < 0)
+>  		goto out;
+>  
+> @@ -5819,12 +5918,14 @@ static int finish_inode_if_needed(struct send_ctx *sctx, int at_end)
+>  			need_chmod = 1;
+>  		if (sctx->cur_inode_next_write_offset == sctx->cur_inode_size)
+>  			need_truncate = 0;
+> +		if (left_flags)
+> +			need_chattr = 1;
+>  	} else {
+>  		u64 old_size;
+>  
+>  		ret = get_inode_info(sctx->parent_root, sctx->cur_ino,
+>  				&old_size, NULL, &right_mode, &right_uid,
+> -				&right_gid, NULL);
+> +				&right_gid, NULL, NULL);
+>  		if (ret < 0)
+>  			goto out;
+>  
+> @@ -5897,6 +5998,27 @@ static int finish_inode_if_needed(struct send_ctx *sctx, int at_end)
+>  			goto out;
+>  	}
+>  
+> +	/*
+> +	 * At this point, if we toggled stuff earlier, untoggle it
+> +	 * force a chattr and fix the flags
+> +	 */
+> +	if (sctx->cur_inode_flip_flags) {
+> +		left_flags |= sctx->cur_inode_flip_flags;
+> +	}
+> +
+Just noticed I have some extra braces here. Will fix in V2 along with other feedback.
+> +	/*
+> +	 * We either need a chattr because this inode is new, or we need to make
+> +	 * a change due to a discrepancy between left_flags and receive_flags
+> +	 */
+> +	if (need_chattr || (sctx->cur_inode_receive_flags != left_flags)) {
+> +		ret = send_chattr(sctx, sctx->cur_ino, sctx->cur_inode_gen,
+> +				  left_flags);
+> +		if (ret < 0)
+> +			goto out;
+> +	}
+> +	sctx->cur_inode_flip_flags = 0;
+> +	sctx->cur_inode_receive_flags = 0;
+> +	sctx->receive_flags_valid = 0;
+>  out:
+>  	return ret;
+>  }
+> @@ -6198,12 +6320,12 @@ static int dir_changed(struct send_ctx *sctx, u64 dir)
+>  	int ret;
+>  
+>  	ret = get_inode_info(sctx->send_root, dir, NULL, &new_gen, NULL, NULL,
+> -			     NULL, NULL);
+> +			     NULL, NULL, NULL);
+>  	if (ret)
+>  		return ret;
+>  
+>  	ret = get_inode_info(sctx->parent_root, dir, NULL, &orig_gen, NULL,
+> -			     NULL, NULL, NULL);
+> +			     NULL, NULL, NULL, NULL);
+>  	if (ret)
+>  		return ret;
+>  
+> diff --git a/fs/btrfs/send.h b/fs/btrfs/send.h
+> index ead397f7034f..b6e6dcc3db70 100644
+> --- a/fs/btrfs/send.h
+> +++ b/fs/btrfs/send.h
+> @@ -77,6 +77,7 @@ enum btrfs_send_cmd {
+>  
+>  	BTRFS_SEND_C_END,
+>  	BTRFS_SEND_C_UPDATE_EXTENT,
+> +	BTRFS_SEND_C_CHATTR,
+>  	__BTRFS_SEND_C_MAX,
+>  };
+>  #define BTRFS_SEND_C_MAX (__BTRFS_SEND_C_MAX - 1)
+> @@ -114,6 +115,7 @@ enum {
+>  	BTRFS_SEND_A_CLONE_PATH,
+>  	BTRFS_SEND_A_CLONE_OFFSET,
+>  	BTRFS_SEND_A_CLONE_LEN,
+> +	BTRFS_SEND_A_CHATTR,
+>  
+>  	__BTRFS_SEND_A_MAX,
+>  };
+

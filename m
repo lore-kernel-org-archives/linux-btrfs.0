@@ -1,119 +1,93 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-36-i6.italiaonline.it ([213.209.14.36]:57892 "EHLO
-        libero.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1752683AbeDQTUp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 17 Apr 2018 15:20:45 -0400
+Received: from mail-wr0-f173.google.com ([209.85.128.173]:47100 "EHLO
+        mail-wr0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751204AbeDQT5o (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 17 Apr 2018 15:57:44 -0400
+Received: by mail-wr0-f173.google.com with SMTP id d1so38740969wrj.13
+        for <linux-btrfs@vger.kernel.org>; Tue, 17 Apr 2018 12:57:44 -0700 (PDT)
+To: Grub-devel@gnu.org
 Reply-To: kreijack@inwind.it
-Subject: Re: How to dump/find parity of RAID-5 file?
-To: "Lakshmipathi.G" <lakshmipathi.g@giis.co.in>, linux-btrfs@vger.kernel.org
-References: <20170203104406.GA3670@giis.co.in>
- <15ae32eb-195a-712c-2746-cf7528b728a2@inwind.it>
-From: Goffredo Baroncelli <kreijack@inwind.it>
-Message-ID: <7a80857f-ec57-1dbf-37b3-da1a151f72fd@inwind.it>
-Date: Tue, 17 Apr 2018 21:20:42 +0200
+From: Goffredo Baroncelli <kreijack@gmail.com>
+Subject: [RFC] Add support for BTRFS raid5/6 to GRUB
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-ID: <2708f56e-1dac-481e-af8a-d81066df8b42@gmail.com>
+Date: Tue, 17 Apr 2018 21:57:40 +0200
 MIME-Version: 1.0
-In-Reply-To: <15ae32eb-195a-712c-2746-cf7528b728a2@inwind.it>
-Content-Type: text/plain; charset=windows-1252
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 02/06/2017 09:40 PM, Goffredo Baroncelli wrote:
-> On 2017-02-03 11:44, Lakshmipathi.G wrote:
->> Hi.
->>
->> Came across this thread https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg55161.html 
->> Exploring possibility of adding test-scripts around these area using dump-tree & corrupt-block.But
->> unable to figure-out how to get parity of file or find its location.  dump-tree output gave,
->>
->>     item 5 key (FIRST_CHUNK_TREE CHUNK_ITEM 145096704) itemoff 15557 itemsize 144
->>         length 134217728 owner 2 stripe_len 65536 type DATA|RAID5
->>         io_align 65536 io_width 65536 sector_size 4096
->>         num_stripes 3 sub_stripes 0
->>             stripe 0 devid 3 offset 63111168                 # Is this parity?Seems empty?
->>             dev_uuid f62df114-186c-4e48-8152-9ed15aa078b4
->>             stripe 1 devid 2 offset 63111168                 # Contains file data-stripe-1
->>             dev_uuid c0aeaab0-e57e-4f7a-9356-db1878876d9f
->>             stripe 2 devid 1 offset 83034112                 # Contains file data-stripe-2
->>             dev_uuid 637b3666-9d8f-4ec4-9969-53b0b933b9b1
->> thanks.
-> 
-> IIRC, the parity is spread across the disk stripes of the chunk.
-> 
-> So first you have to find the logical-offset [LO] where the the file begins. Then you have to map this offset to the chunk which holds the data. The chunk has the following info:
-> - chunk start [CS], chunk length [CL]
-> - for each stripe:
-> 	where the stripe starts
-> 
-> If you subtract the chunk-start from the logical-offset [ CO == LO-CS], you will find the offset where the data belongs in the chunk.
-> 
-> As stated above, the PARITY is spread across the chunk stripes. So (supposing that the stripe size is 64K, the raid level is 5, the disks are three), 
-> 
-> - the first 64k of stripe 0, is data [0..64K)
-> - the first 64k of stripe 1, is data [64..128K)
-> - the first 64k of stripe 2 is parity, 
-> 
-> - the 2nd 64k of stripe 0 is parity, 
-> - the 2nd 64k of stripe 1, is data [128..196K)
-> - the 2nd 64k of stripe 2, is data [192..256K)
-> 
-> - the 3rd 64k of stripe 0, is data [256..320K)
-> - the 3rd 64k of stripe 1 is parity, 
-> - the 3rd 64k of stripe 2, is data [320..384K)
-> and so on,
+Hi All,
 
-I was wrong !
-- the 3rd 64k of stripe 0, is data [320..384K)
-- the 3rd 64k of stripe 1 is parity, 
-- the 3rd 64k of stripe 2, is data [256..320K)
+Below you can find a patch to add support for accessing files from grub in a RAID5/6 btrfs filesystem. This is a RFC because it is missing the support for recovery (i.e. if some devices are missed). In the next days (weeks ?) I will extend this patch to support also this case.
 
-Basically stripe 0 and 2 were swapped. The idea is that after parity there is stripe 1, then stripe 2, and so on ....
-
-D    D    D
-I    I    I
-S    S    S
-K    K    K
-1    2    3
-
-0    1    P     
-P    2    3     
-5    P    4     
-6    7    P     
-
-Where 
-  P = parity
-  0...7 are the slices of data
-
-So 'P' parity move from left to right starting from the last disk; the data are in the increasing address from left to right *starting* from parity in a circular buffer.
-
-I am trying to implement raid5/6 in grub, so I went deep in the raid5 layout
+Comments are welcome.
 
 BR
 G.Baroncelli
 
 
+---
 
+commit 8c80a1b7c913faf50f95c5c76b4666ed17685666
+Author: Goffredo Baroncelli <kreijack@inwind.it>
+Date:   Tue Apr 17 21:40:31 2018 +0200
 
-> 
-> To find the data, You have to compare the CO to the data [...) range.
-> 
-> If you look to an my old patch (unfinished :-( ), you can find some example to dump the different stripe
-> 
-> [BTRFS-PROGS][PATCH][V2] Add two new commands: 'btrfs insp physical-find' and 'btrfs insp physical-dump'
-> 
-> 
-> 
-> 
-> 
-> 
->> Cheers.
->> Lakshmipathi.G
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
-> 
-> 
+    Add initial support for btrfs raid5/6 chunk
+
+diff --git a/grub-core/fs/btrfs.c b/grub-core/fs/btrfs.c
+index be195448d..4c5632acb 100644
+--- a/grub-core/fs/btrfs.c
++++ b/grub-core/fs/btrfs.c
+@@ -119,6 +119,8 @@ struct grub_btrfs_chunk_item
+ #define GRUB_BTRFS_CHUNK_TYPE_RAID1         0x10
+ #define GRUB_BTRFS_CHUNK_TYPE_DUPLICATED    0x20
+ #define GRUB_BTRFS_CHUNK_TYPE_RAID10        0x40
++#define GRUB_BTRFS_CHUNK_TYPE_RAID5         0x80
++#define GRUB_BTRFS_CHUNK_TYPE_RAID6        0x100
+   grub_uint8_t dummy2[0xc];
+   grub_uint16_t nstripes;
+   grub_uint16_t nsubstripes;
+@@ -764,6 +766,39 @@ grub_btrfs_read_logical (struct grub_btrfs_data *data, grub_disk_addr_t addr,
+ 	      stripe_offset = low + chunk_stripe_length
+ 		* high;
+ 	      csize = chunk_stripe_length - low;
++	      break;
++	    }
++	  case GRUB_BTRFS_CHUNK_TYPE_RAID5:
++	  case GRUB_BTRFS_CHUNK_TYPE_RAID6:
++	    {
++	      grub_uint64_t nparities;
++	      grub_uint64_t parity_pos;
++	      grub_uint64_t stripe_nr, high;
++	      grub_uint64_t low;
++
++	      redundancy = 1;	/* no redundancy for now */
++
++	      if (grub_le_to_cpu64 (chunk->type) & GRUB_BTRFS_CHUNK_TYPE_RAID5)
++		{
++		  grub_dprintf ("btrfs", "RAID5\n");
++		  nparities = 1;
++		}
++	      else
++		{
++		  grub_dprintf ("btrfs", "RAID6\n");
++		  nparities = 2;
++		}
++
++	      stripe_nr = grub_divmod64 (off, chunk_stripe_length, &low);
++
++	      high = grub_divmod64 (stripe_nr, nstripes - nparities, &stripen);
++	      grub_divmod64 (high+nstripes-nparities, nstripes, &parity_pos);
++	      grub_divmod64 (parity_pos+nparities+stripen, nstripes, &stripen);
++
++	      stripe_offset = low + chunk_stripe_length * high;
++	      csize = chunk_stripe_length - low;
++
+ 	      break;
+ 	    }
+ 	  default:
 
 
 -- 

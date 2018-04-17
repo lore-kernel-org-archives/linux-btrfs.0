@@ -1,109 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.99]:32774 "EHLO mail.kernel.org"
+Received: from mx2.suse.de ([195.135.220.15]:41875 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753179AbeDRIfB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 18 Apr 2018 04:35:01 -0400
-Received: from mail-ua0-f178.google.com (mail-ua0-f178.google.com [209.85.217.178])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 588D2217D6
-        for <linux-btrfs@vger.kernel.org>; Wed, 18 Apr 2018 08:35:00 +0000 (UTC)
-Received: by mail-ua0-f178.google.com with SMTP id o34so589412uae.9
-        for <linux-btrfs@vger.kernel.org>; Wed, 18 Apr 2018 01:35:00 -0700 (PDT)
+        id S1753838AbeDQRGD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 17 Apr 2018 13:06:03 -0400
+Date: Tue, 17 Apr 2018 19:03:31 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
+Cc: dsterba@suse.cz, linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH v4 3/4] btrfs: Refactor btrfs_ioctl_snap_destroy() by
+ using btrfs_delete_subvolume()
+Message-ID: <20180417170330.GG21272@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <d5c7d8e3-4c07-18c3-56a5-0482c899cfe5@jp.fujitsu.com>
+ <e4e8ecc3-fc4f-5967-1bf3-9f5abbac0c62@jp.fujitsu.com>
+ <20180416175330.GS21272@twin.jikos.cz>
+ <b373228a-a871-784a-0b46-45b77951a091@jp.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <CA+EzBbA=3M29LjxxgjbGHTwgR2cP78emnaZy1SqJ3hvB=O=r1g@mail.gmail.com>
-References: <CA+EzBbDv8GKKgSVwAYwQAn5Q3-MMz2BLUeFcjn3uv6eNBKvs5g@mail.gmail.com>
- <CA+EzBbA=3M29LjxxgjbGHTwgR2cP78emnaZy1SqJ3hvB=O=r1g@mail.gmail.com>
-From: Filipe Manana <fdmanana@kernel.org>
-Date: Wed, 18 Apr 2018 09:34:58 +0100
-Message-ID: <CAL3q7H60ZK3+u4XDcnFBrEOU+CzFFBqr2JY-9yjJ5HEJmr_UeA@mail.gmail.com>
-Subject: Re: Hard link not persisted on fsync
-To: Jayashree Mohan <jayashree2912@gmail.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Vijaychidambaram Velayudhan Pillai <vijay@cs.utexas.edu>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <b373228a-a871-784a-0b46-45b77951a091@jp.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Apr 18, 2018 at 1:02 AM, Jayashree Mohan
-<jayashree2912@gmail.com> wrote:
-> Hi,
->
-> A gentle reminder on the crash consistency bug that we found on btrfs:
+On Tue, Apr 17, 2018 at 09:21:16AM +0900, Misono Tomohiro wrote:
+> On 2018/04/17 2:53, David Sterba wrote:
+> > On Wed, Apr 11, 2018 at 02:20:49PM +0900, Misono Tomohiro wrote:
+> >> Use btrfs_delete_subvolume() to refactor btrfs_ioctl_snap_destroy().
+> >> The permission check is still done in btrfs_ioctl_snap_destroy(). Also,
+> >> call of d_delete() is still required since btrfs_delete_subvolume()
+> >> does not call it.
+> >>
+> >> As a result, btrfs_unlink_subvol() and may_destroy_subvol()
+> >> become static functions. No functional change happens.
+> >>
+> >> Signed-off-by: Tomohiro Misono <misono.tomohiro@jp.fujitsu.com>
+> > 
+> > Why is this still split into two patches? Factoring out a function
+> > should happen in one patch, ie 2 and 3 in one go. Do you have a reason
+> > not to do it like that?
+> 
+> I thought this reduces code change in one patch and might be good, but
+> I'm completely fine with merging 2nd and 3rd patches.
 
-Why do you call it a consistency bug?
-The filesystem does not stay in inconsistent state. The link count
-stays 1 and the dentry used for fsync (foo) is persisted.
-An inconsistency would be if we ended up with a link count of 2 and
-only one of the dentries was persisted, or if we ended up with a link
-count of 1 and both dentries were persisted.
-Those cases would be detected by an fsck and would could fs operations
-to fail unexpectedly (attemping to remove a dentry, etc).
+This makes the rewiew harder, if the code is moved the diff can be long
+but we have both pieces to compare. Moving code is considered one
+logical change and should not introduce any other changes, besides
+renaming or formatting fixups.
 
-> Link count of a file is not persisted even after a fsync. We believe a
-> filesystem that ensures strictly ordered metadata behaviour should be
-> able to persist the hard link after a fsync on the original file.
+> Should I send v5?
 
-The thing is there's no written specification about what's the
-expected and correct behavior.
-Yes, I'm aware of Dave's explanation on strictly ordered metadata on
-the other thread and transaction details, but things on btrfs work
-very differently from xfs (I'm not saying he's wrong).
-
-For me it makes more sense to persist the hard link, but again,
-there's a lack of a specification that demands such behaviour, and I'm
-not aware of applications needing that behaviour nor user reports
-about it.
-
-> Could you comment on why btrfs does not exhibit this behavior, and if
-> it's something you'd want to fix?
-
-I don't know the "why", as I am not the original author of the log
-tree (what is used to implement fsync on btrfs), so either it's
-accidental behavior (the most likely) or intentional.
-
-Since it's not something that causes any corruption, fs inconsistency,
-crash, etc, nor there are user reports complaining about this (afaik),
-for me it would be far from a priority at the moment as I'm trying to
-fix corruptions and similar issues (not necessarily caused by fsync).
-
-Plus, adding such behaviour would have to be done carefully to not
-impact performance, as checking if the node has multiple hard links
-and which ones need to be persisted (created in the current,
-uncommitted, transaction) may have a measurable impact. The current
-behaviour it to only guarantee persisting the dentry used for the
-fsync call.
-
-
->
-> Thanks,
-> Jayashree Mohan
->
->
->
-> On Mon, Apr 16, 2018 at 9:35 AM, Jayashree Mohan
-> <jayashree2912@gmail.com> wrote:
->> Hi,
->>
->> The following seems to be a crash consistency bug on btrfs, where in
->> the link count is not persisted even after a fsync on the original
->> file.
->>
->> Consider the following workload :
->> creat foo
->> link (foo, A/bar)
->> fsync(foo)
->> ---Crash---
->>
->> Now, on recovery we expect the metadata of foo to be persisted i.e
->> have a link count of 2. However in btrfs, the link count is 1 and file
->> A/bar is not persisted. The expected behaviour would be to persist the
->> dependencies of inode foo. That is to say, shouldn't fsync of foo
->> persist A/bar and correctly update the link count?
->> Note that ext4, xfs and f2fs recover to the correct link count of 2
->> for the above workload.
->>
->> Let us know what you think about this behavior.
->>
->> Thanks,
->> Jayashree Mohan
+Yes please, this is not a trivial change and the changelogs need to be
+adjusted. Thanks.

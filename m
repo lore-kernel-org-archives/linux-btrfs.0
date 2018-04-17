@@ -1,98 +1,109 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from iolanthe.rowland.org ([192.131.102.54]:59496 "HELO
-        iolanthe.rowland.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with SMTP id S1752980AbeDPRdi (ORCPT
+Received: from ipmail03.adl2.internode.on.net ([150.101.137.141]:51101 "EHLO
+        ipmail03.adl2.internode.on.net" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1750972AbeDQAPF (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 16 Apr 2018 13:33:38 -0400
-Date: Mon, 16 Apr 2018 13:33:37 -0400 (EDT)
-From: Alan Stern <stern@rowland.harvard.edu>
-To: Chris Murphy <lists@colorremedies.com>
-cc: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>, <linux-lvm@redhat.com>,
-        Linux-RAID <linux-raid@vger.kernel.org>, <linux-scsi@vger.kernel.org>,
-        <linux-usb@vger.kernel.org>
-Subject: Re: Add udev-md-raid-safe-timeouts.rules
-In-Reply-To: <CAJCQCtRzmBys+eYsd=zsAK1deYQt47nysHQBdn3CreOmObz59g@mail.gmail.com>
-Message-ID: <Pine.LNX.4.44L0.1804161326480.1398-100000@iolanthe.rowland.org>
+        Mon, 16 Apr 2018 20:15:05 -0400
+Date: Tue, 17 Apr 2018 10:07:36 +1000
+From: Dave Chinner <david@fromorbit.com>
+To: Vijay Chidambaram <vijay@cs.utexas.edu>
+Cc: "Theodore Y. Ts'o" <tytso@mit.edu>,
+        Jayashree Mohan <jayashree2912@gmail.com>,
+        Amir Goldstein <amir73il@gmail.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        fstests <fstests@vger.kernel.org>,
+        linux-f2fs-devel@lists.sourceforge.net
+Subject: Re: Symlink not persisted even after fsync
+Message-ID: <20180417000736.GI23861@dastard>
+References: <CAPaz=E+-baGSWhL3nD-8X4jn6rKdn2AVGLeqWh3EY5Nh-RodRA@mail.gmail.com>
+ <CAOQ4uxhRoAnxr36Cy1pov+ExnNJ8Y+inmUc7chD77ONPt=u9qw@mail.gmail.com>
+ <CA+EzBbCFURDs77xiL3ECf7+4irrywbmD1HdsUSUYE_oeonbo8A@mail.gmail.com>
+ <20180414012017.GF5572@dastard>
+ <CAPaz=EJrOc7dBE+gBf=Gx0W-4_q0GwTrRhchquPveWs-m-Djeg@mail.gmail.com>
+ <20180414215529.GG5572@dastard>
+ <20180415011735.GB21830@thunk.org>
+ <CAHWVdUXAyyeTGNXrtTTc+tUbA3t9TUjJPSF=M4Cetj4+d1w3eQ@mail.gmail.com>
+ <20180415141338.GA22870@thunk.org>
+ <CAPaz=ELkYavvWYuMg=t+L_nSZ7fZ8CkaZr-qfGVN3QfydbOh7w@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAPaz=ELkYavvWYuMg=t+L_nSZ7fZ8CkaZr-qfGVN3QfydbOh7w@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 16 Apr 2018, Chris Murphy wrote:
-
-> Adding linux-usb@ and linux-scsi@
-> (This email does contain the thread initiating email, but some replies
-> are on the other lists.)
+On Sun, Apr 15, 2018 at 07:10:52PM -0500, Vijay Chidambaram wrote:
+> Thanks! As I mentioned before, this is useful. I have a follow-up
+> question. Consider the following workload:
 > 
-> On Mon, Apr 16, 2018 at 5:43 AM, Austin S. Hemmelgarn
-> <ahferroin7@gmail.com> wrote:
-> > On 2018-04-15 21:04, Chris Murphy wrote:
-> >>
-> >> I just ran into this:
-> >>
-> >> https://github.com/neilbrown/mdadm/pull/32/commits/af1ddca7d5311dfc9ed60a5eb6497db1296f1bec
-> >>
-> >> This solution is inadequate, can it be made more generic? This isn't
-> >> an md specific problem, it affects Btrfs and LVM as well. And in fact
-> >> raid0, and even none raid setups.
-> >>
-> >> There is no good reason to prevent deep recovery, which is what
-> >> happens with the default command timer of 30 seconds, with this class
-> >> of drive. Basically that value is going to cause data loss for the
-> >> single device and also raid0 case, where the reset happens before deep
-> >> recovery has a chance. And even if deep recovery fails to return user
-> >> data, what we need to see is the proper error message: read error UNC,
-> >> rather than a link reset message which just obfuscates the problem.
-> >
-> >
-> > This has been discussed at least once here before (probably more times, hard
-> > to be sure since it usually comes up as a side discussion in an only
-> > marginally related thread).  Last I knew, the consensus here was that it
-> > needs to be changed upstream in the kernel, not by adding a udev rule
-> > because while the value is technically system policy, the default policy is
-> > brain-dead for anything but the original disks it was i9ntended for (30
-> > seconds works perfectly fine for actual SCSI devices because they behave
-> > sanely in the face of media errors, but it's horribly inadequate for ATA
-> > devices).
-> >
-> > To re-iterate what I've said before on the subject:
-> >
-> > For ATA drives it should probably be 150 seconds.  That's 30 seconds beyond
-> > the typical amount of time most consumer drives will keep retrying a sector,
-> > so even if it goes the full time to try and recover a sector this shouldn't
-> > trigger.  The only people this change should negatively impact are those who
-> > have failing drives which support SCT ERC and have it enabled, but aren't
-> > already adjusting this timeout.
-> >
-> > For physical SCSI devices, it should continue to be 30 seconds.  SCSI disks
-> > are sensible here and don't waste your time trying to recover a sector.  For
-> > PV-SCSI devices, it should probably be adjusted too, but I don't know what a
-> > reasonable value is.
-> >
-> > For USB devices it should probably be higher than 30 seconds, but again I
-> > have no idea what a reasonable value is.
+>  creat foo
+>  link (foo, A/bar)
+>  fsync(foo)
+>  crash
 > 
-> I don't know how all of this is designed but it seems like there's
-> only one location for the command timer, and the SCSI driver owns it,
-> and then everyone else (ATA and USB and for all I know SAN) are on top
-> of that and lack any ability to have separate timeouts.
+> In this case, after the file system recovers, do we expect foo's link
+> count to be 2 or 1? 
 
-As far as mass-storage is concerned, USB is merely a transport.  It 
-doesn't impose any timeout rules; the appropriate timeout value is 
-whatever the device at the end of the USB link needs.  Thus, a SCSI 
-drive connected over USB could use a 30-second timeout, an ATA drive 
-could use 150 seconds, and so on.
+So, strictly ordered behaviour:
 
-Unfortunately, the only way to tell what sort of drive you've got is by
-looking at the Vendor/Product IDs or other information provided by the
-drive itself.  You can't tell anything just from knowing what sort of
-bus it's on.
+create foo:
+	- creates dirent in inode B and new inode A in an atomic
+	  transaction sequence #1
 
-Alan Stern
+link foo -> A/bar
+	- creates dirent in inode C and bumps inode A link count in
+	  an atomic transaction seqeunce #2.
 
-> The nice thing about the udev rule is that it tests for SCT ERC before
-> making a change. There certainly are enterprise and almost enterprise
-> "NAS" SATA drives that have short SCT ERC times enabled out of the box
-> - and the udev method makes them immune to the change.
+fsync foo
+	- looks at inode A, sees it's "last modification" sequence
+	  counter as #2
+	- flushes all transactions up to and including #2 to the
+	  journal.
 
+See the dependency chain? Both the inodes and dirents in the create
+operation and the link operation are chained to the inode foo via
+the atomic transactions. Hence when we flush foo, we also flush the
+dependent changes because of the change atomicity requirements....
+
+> I would say 2,
+
+Correct, for strict ordering. But....
+
+> but POSIX is silent on this,
+
+Well, it's not silent, POSIX explicitly allows for fsync() to do
+nothing and report success. Hence we can't really look to POSIX to
+define how fsync() should behave.
+
+> so
+> thought I would confirm. The tricky part here is we are not calling
+> fsync() on directory A.
+
+Right. But directory A has a dependent change linked to foo. If we
+fsync() foo, we are persisting the link count change in that file,
+and hence all the other changes related to that link count change
+must also be flushed. Similarly, all the cahnges related to the
+creation on foo must be flushed, too.
+
+> In this case, its not a symlink; its a hard link, so I would say the
+> link count for foo should be 2.
+
+Right - that's the "reference counted object dependency" I refered
+to. i.e. it's a bi-direction atomic dependency - either we show both
+the new dirent and the link count change, or we show neither of
+them.  Hence fsync on one object implies that we are also persisting
+the related changes in the other object, too.
+
+> But btrfs and F2FS show link count of
+> 1 after a crash.
+
+That may be valid if the dirent A/bar does not exist after recovery,
+but it also means fsync() hasn't actually guaranteed inode changes
+made prior to the fsync to be persistent on disk. i.e. that's a
+violation of ordered metadata semantics and probably a bug.
+
+Cheers,
+
+Dave.
+-- 
+Dave Chinner
+david@fromorbit.com

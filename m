@@ -1,38 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.20]:44967 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.17.21]:53735 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751980AbeDRFch (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 18 Apr 2018 01:32:37 -0400
-Subject: Re: [PATCH v2 08/10] btrfs-progs: undelete-subvol: add
- undelete-subvol subcommand
+        id S1751180AbeDRFmW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 18 Apr 2018 01:42:22 -0400
+Subject: Re: [PATCH v2 09/10] btrfs-progs: tests: add testcase for
+ undelete-subvol
 To: Lu Fengqi <lufq.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
 References: <20180327070658.13064-1-lufq.fnst@cn.fujitsu.com>
- <20180327070658.13064-9-lufq.fnst@cn.fujitsu.com>
+ <20180327070658.13064-10-lufq.fnst@cn.fujitsu.com>
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <13f077b1-7128-cf95-5972-383030aa1114@gmx.com>
-Date: Wed, 18 Apr 2018 13:32:29 +0800
+Message-ID: <199e5b40-02d5-3adf-dbc9-d5aca45591c8@gmx.com>
+Date: Wed, 18 Apr 2018 13:42:14 +0800
 MIME-Version: 1.0
-In-Reply-To: <20180327070658.13064-9-lufq.fnst@cn.fujitsu.com>
+In-Reply-To: <20180327070658.13064-10-lufq.fnst@cn.fujitsu.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="gAAyf96307KTXbs0DtMs895pFZmoNgtGn"
+ boundary="7YtCHVB6K3yU3i5Zy3LEmYrAtRfRKRfEx"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---gAAyf96307KTXbs0DtMs895pFZmoNgtGn
-Content-Type: multipart/mixed; boundary="EwCAqtDlHxzCcnZryvjdQjvLFfXk9ysbn";
+--7YtCHVB6K3yU3i5Zy3LEmYrAtRfRKRfEx
+Content-Type: multipart/mixed; boundary="oKXcqPceKVxvFJA9WCBpwgUhPEMFTZwOw";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 To: Lu Fengqi <lufq.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-Message-ID: <13f077b1-7128-cf95-5972-383030aa1114@gmx.com>
-Subject: Re: [PATCH v2 08/10] btrfs-progs: undelete-subvol: add
- undelete-subvol subcommand
+Message-ID: <199e5b40-02d5-3adf-dbc9-d5aca45591c8@gmx.com>
+Subject: Re: [PATCH v2 09/10] btrfs-progs: tests: add testcase for
+ undelete-subvol
 References: <20180327070658.13064-1-lufq.fnst@cn.fujitsu.com>
- <20180327070658.13064-9-lufq.fnst@cn.fujitsu.com>
-In-Reply-To: <20180327070658.13064-9-lufq.fnst@cn.fujitsu.com>
+ <20180327070658.13064-10-lufq.fnst@cn.fujitsu.com>
+In-Reply-To: <20180327070658.13064-10-lufq.fnst@cn.fujitsu.com>
 
---EwCAqtDlHxzCcnZryvjdQjvLFfXk9ysbn
+--oKXcqPceKVxvFJA9WCBpwgUhPEMFTZwOw
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
@@ -40,147 +40,268 @@ Content-Transfer-Encoding: quoted-printable
 
 
 On 2018=E5=B9=B403=E6=9C=8827=E6=97=A5 15:06, Lu Fengqi wrote:
-> Add the undelete-subvol subcommand for btrfs rescue. This subcommand is=
-
-> used to recover deleted subvolume left intact on the device.
+> The testcase checks the functionality of "btrfs rescue undelete-subvol"=
+,
+> including recovering an intact subvolume, and handling correctly
+> incomplete subvolume.
 >=20
 > Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 > ---
-> v2: add -s option to specify subvol_id.
+> v2: add shell quoting to test script.
 >=20
->  cmds-rescue.c | 70 +++++++++++++++++++++++++++++++++++++++++++++++++++=
-++++++++
->  1 file changed, 70 insertions(+)
->=20
-> diff --git a/cmds-rescue.c b/cmds-rescue.c
-> index c40088ad374e..c5132126e922 100644
-> --- a/cmds-rescue.c
-> +++ b/cmds-rescue.c
-> @@ -25,6 +25,7 @@
->  #include "disk-io.h"
->  #include "commands.h"
->  #include "utils.h"
-> +#include "undelete-subvol.h"
->  #include "help.h"
-> =20
->  static const char * const rescue_cmd_group_usage[] =3D {
-> @@ -248,6 +249,73 @@ out:
->  	return !!ret;
->  }
-> =20
-> +static const char * const cmd_rescue_undelete_subvol_usage[] =3D {
-> +	"btrfs rescue undelete-subvol [-s <subvolid>] <device>",
-> +	"Undelete deleted subvolume",
-> +	"All deleted subvolume that still left intact on the device will be",=
+>  .../030-undelete-subvol/deleted_subvolume.img      | Bin 0 -> 4096 byt=
+es
+>  .../030-undelete-subvol/drop_progress.raw.xz       | Bin 0 -> 23452 by=
+tes
 
-> +	"recovered. If -s <subvolid> option is given, then just recover the",=
+030 is already taken.
 
-> +	"subvolume which specified by <subvolid>.",
-> +	"",
-> +	"-s <subvolid>	specify the subvolume which will be recovered.",
-> +	NULL
-> +};
-> +
-> +static int cmd_rescue_undelete_subvol(int argc, char **argv)
-> +{
-> +	struct btrfs_fs_info *fs_info;
-> +	char *devname;
-> +	u64 subvol_id =3D 0;
-> +	int ret;
-> +
-> +	while (1) {
-> +		int c =3D getopt(argc, argv, "s:");
-> +
-> +		if (c < 0)
-> +			break;
-> +		switch (c) {
-> +		case 's':
-> +			subvol_id =3D arg_strtou64(optarg);
-> +			if (!is_fstree(subvol_id)) {
-> +				error("%llu is not a valid subvolume id",
-> +						subvol_id);
-> +				ret =3D -EINVAL;
-> +				goto out;
-> +			}
-> +			break;
-> +		default:
-> +			usage(cmd_rescue_undelete_subvol_usage);
-> +		}
-> +	}
-> +
-> +	if (check_argc_exact(argc - optind, 1))
-> +		usage(cmd_rescue_undelete_subvol_usage);
-> +
-> +	devname =3D argv[optind];
-> +	ret =3D check_mounted(devname);
-> +	if (ret < 0) {
-> +		error("could not check mount status: %s", strerror(-ret));
-> +		goto out;
-> +	} else if (ret) {
-> +		error("%s is currently mounted", devname);
-> +		ret =3D -EBUSY;
-> +		goto out;
-> +	}
-> +
-> +	fs_info =3D open_ctree_fs_info(devname, 0, 0, 0, OPEN_CTREE_WRITES |
-> +				     OPEN_CTREE_PARTIAL);
+And just a nitpick, the file name is not obvious for its content.
+In fact for "drop_progress", it have 2 orphan roots while only one can
+be recovered.
+For "deleted_subvolume" it has 1 orphan root and it can be recovered.
 
-I'm not sure if using OPEN_CTREE_PARTIAL here is a good idea.
-
-As the undelete-subvol looks like a tool to revert stupid user mistake,
-and we expect a healthy fs to be provided.
-And for corrupted fs, we may make the case worse.
+Despite that, it looks good to me.
 
 Thanks,
 Qu
 
-> +	if (!fs_info) {
-> +		error("could not open btrfs");
-> +		ret =3D -EIO;
-> +		goto out;
-> +	}
+>  tests/misc-tests/030-undelete-subvol/test.sh       |  34 +++++++++++++=
+++++++++
+>  3 files changed, 34 insertions(+)
+>  create mode 100644 tests/misc-tests/030-undelete-subvol/deleted_subvol=
+ume.img
+>  create mode 100644 tests/misc-tests/030-undelete-subvol/drop_progress.=
+raw.xz
+>  create mode 100755 tests/misc-tests/030-undelete-subvol/test.sh
+>=20
+> diff --git a/tests/misc-tests/030-undelete-subvol/deleted_subvolume.img=
+ b/tests/misc-tests/030-undelete-subvol/deleted_subvolume.img
+> new file mode 100644
+> index 0000000000000000000000000000000000000000..9168a8e33fbbb14f9ea7851=
+4721a52191b94d1a0
+> GIT binary patch
+> literal 4096
+> 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
+> ZeM(;pZJdD++rKZroo*A@Ch+ek@Fx_v;e7xA
+>=20
+> literal 0
+> HcmV?d00001
+>=20
+> diff --git a/tests/misc-tests/030-undelete-subvol/drop_progress.raw.xz =
+b/tests/misc-tests/030-undelete-subvol/drop_progress.raw.xz
+> new file mode 100644
+> index 0000000000000000000000000000000000000000..3db2c80e61fa9bb99db3745=
+09dbb95910965d467
+> GIT binary patch
+> literal 23452
+> zcmeHPXH=3D63mktC7z4zV}r8hyO7ZF71J@gJj=3Dp6y+(xijbKnNWvN|D}+^dbU^sPx_m
+> zAee9V?4CV)c4qg}`DSLFv-y{QZ{GXfd!PF}w_J((=3D^Fw77^^d{6wv`JX!HO8fOt%Q
+> z7>Rs>(P<0-IA0-=3Dum<EkDJ2RwF>{T^q#LWS2+;ZNGGoXTU+*0WG?kjb!RY9Rd@zE!
+> zprWN%HWIB*2GqTt(O<mJ>QjR79XdXGC|eojjqRj@Ntje7V=3D&Dfp58RkEphE+!*iK3
+> ze=3DgkgvO#(Wb3wy1yH#b!yCt$!YIsJE^$1(}*0xh|G%dc{X8vwN4zHQ}bVmsR<s^;p
+> zo1FQ@#en!Cnsw{>RrWRKCJQwJZ4r;|fIzaNqWP$xtDSB^E`4R#+kNfF<kDzNG(HMk
+> z-Pu^-_90d6FamaI%>#ZlImmLpgm-*(wek`j)@7COOkP^)r&;tzG%wF$uJ>jkzy^dj
+> z*q1CnCUcRGf<3#$dF~&$F~=3D`u6%?zfjrjSgZ#=3DWTN%JruO&XD64@f4|;_Itq@hv``
+> znjt?-*%=3DZcor6q8k0n~uoI_Sjmizo#?Qx)NGtnCjRYcZ6yKf~=3Dj+^wl)tqQ;;UoIe
+> z6dYQm&UF5`k}lBct=3DxCfMBv`>_%x+lk+Tb7FuRhD^!2Cr(cdZ=3D3Hg+ski3Y-op&tg
+> zFEWTlcBk^eKNL|WnH>4v24}=3D}Oi<&5mq8M6PBQuKPF}pW3#$g6<m`@L=3Dxf?G^=3D=3D=
+1)
+> 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
+u
+> zwUK}EJjfrzsDF#D7C+LAM6pE_TST$NpNuV{+Ulsb`mYBA{}>=3DZH9b*H&%dJSNsPw*
+> zuT4n?;C%HR+WbErVEnDJ>7P#U{&1kmE`{2o3Nch6hAPBRh1h=3D?H~(oSB)(_L9938R
+> zuDap@niOEmLc|w=3Dw0c>^k84}^@Xjkm(Y^KPaVE#-m1U9X)H*I^9xn`J0MF`Z40Xgl
+> zw-!k0S_di}k9+8bW@A8xTj$oJE7N(9yjz+7WU=3DIjVd-bvCipcN6Qy$*p@8#;fwT0N
+> z!HTWikEBa{6mY3)!9oMr<LaK=3D{O`NewG&y>v4Ez7F5=3D`Jf}$C43N-jS42N^O3~6}1
+> z!VRA?sklw-|KpgL{*!Gll%xHyqoIThl#qcEGJdLMJXA=3DcLJ}2{sF3{6rDhb%{9l&w
+> z|Mr{-MazE|Ek~gw3MEk}`IDjKFAXJ+{@WD04FQ!#LEm{z<!_(Be=3DT}_#|;_xR@%yc
+> zlPmtk7TkB=3DtohqoIRdaIXbCJbn+%eEU-ust^SFBnD8Vv}{Egc@f7|!`6K=3Dum!J4a3
+> zk{C)7Lp3c?O-oeM^80SP{q6AsMJG{o@~@d5L*3Z>&hvh#kVJ(fDkOixvzI6h5v3vi
+> znHplSXfpr=3D*mesVH2U-k5T7H4`*6nj769$I9xXUHSmu|z+cKE}>*Q48{J>v+127B>
+> F{{akY3)=3Dty
+>=20
+> literal 0
+> HcmV?d00001
+>=20
+> diff --git a/tests/misc-tests/030-undelete-subvol/test.sh b/tests/misc-=
+tests/030-undelete-subvol/test.sh
+> new file mode 100755
+> index 000000000000..d3dfa5008601
+> --- /dev/null
+> +++ b/tests/misc-tests/030-undelete-subvol/test.sh
+> @@ -0,0 +1,34 @@
+> +#!/bin/bash
+> +# Test undelete-subvol can recover the intact subvolume, and can skip =
+the
+> +# incomplete subvolume.
 > +
-> +	ret =3D btrfs_undelete_intact_subvols(fs_info->tree_root, subvol_id);=
-
+> +source "$TOP/tests/common"
 > +
-> +	close_ctree(fs_info->tree_root);
-> +out:
-> +	return ret;
+> +check_prereq btrfs
+> +check_prereq btrfs-image
+> +
+> +setup_root_helper
+> +
+> +check_image()
+> +{
+> +	TEST_DEV=3D"$1"
+> +
+> +	run_check_stdout "$TOP/btrfs" rescue undelete-subvol "$TEST_DEV" \
+> +		| grep -q "Recovered 1 subvols" \
+> +		|| _fail "failed to undelete subvol $image" >&2
+> +
+> +	run_check "$TOP/btrfs" check "$TEST_DEV"
+> +
+> +	# check whether the recovered image can be mounted normally
+> +	run_check_mount_test_dev
+> +
+> +	run_check_stdout $SUDO_HELPER "$TOP/btrfs" subvolume list "$TEST_MNT"=
+ \
+> +		| grep -q "lost+found" \
+> +		|| _fail "failed to find the recovered subvol $image" >&2
+> +
+> +	run_check_umount_test_dev "$TEST_MNT"
+> +
+> +	rm "$TEST_DEV"
 > +}
 > +
->  static const char rescue_cmd_group_info[] =3D
->  "toolbox for specific rescue operations";
-> =20
-> @@ -260,6 +328,8 @@ const struct cmd_group rescue_cmd_group =3D {
->  		{ "zero-log", cmd_rescue_zero_log, cmd_rescue_zero_log_usage, NULL, =
-0},
->  		{ "fix-device-size", cmd_rescue_fix_device_size,
->  			cmd_rescue_fix_device_size_usage, NULL, 0},
-> +		{ "undelete-subvol", cmd_rescue_undelete_subvol,
-> +			cmd_rescue_undelete_subvol_usage, NULL, 0},
->  		NULL_CMD_STRUCT
->  	}
->  };
+> +check_all_images
 >=20
 
 
---EwCAqtDlHxzCcnZryvjdQjvLFfXk9ysbn--
+--oKXcqPceKVxvFJA9WCBpwgUhPEMFTZwOw--
 
---gAAyf96307KTXbs0DtMs895pFZmoNgtGn
+--7YtCHVB6K3yU3i5Zy3LEmYrAtRfRKRfEx
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlrW2G0ACgkQwj2R86El
-/qi3Gwf/WxAUuDVtNW6jSRsr4NXBGTiv9SNxo0ORlhMVU7xXISo0FzrshCKepCze
-33+B6T5nFRr7AVCHGUEKlB1u1xLS3jBymc7HvuekxXI7nbnnT47siVcVra+HqGma
-XeaLU3BjkTMqnrTuNVUg8zIuJPH71B2A7cOOsZ3WNErcXrZ4xaojRZpFdd8qWwaS
-ircaNV6k6Xwgj25vsVAKJpx3qwYxpppyySIFLUvl9usLWe0mlau47SfiUQny4Fbr
-vqV4eidqNSpKtVTWbLI3RXBIbBE8Hm4RD5EnYd8piBKE2UtHB3+8zv19+am8aqP2
-cqi4g+FubykQTntzlqgn5voiWO9ELA==
-=6UK+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlrW2rYACgkQwj2R86El
+/qjG1wf/XT/boaF12VCtnRu7ltfN4cngNIjjgRf+T33/Dac/ifDknAJtzT9doJp7
+OVJqcP5aJKSzMPI9sOuXIJjE8Ym9SfR6wjHK7r6P7g3zNx5ifEBi6LAv2PgfC1+k
+NQLvSwjk89XZjiNvD606JSunSv7L18c4IqtlBvH0+fBd3ShJR9MoQDxpR+onDPxc
+Z+Mvr1T08W2bamCwUQj5SvTjabrdzujLPcVegLc9jIyDrlsnqgnsVr4BpAHuwzOP
+GWeWIzdWtNBqaArFFoL3PGcIaic319eNZjJtepMYEdryHqqfkYH5WD8TxDQvZEYh
+900J/N+gSrsh3Ahs+MHmXuDRtx7m7w==
+=6lWd
 -----END PGP SIGNATURE-----
 
---gAAyf96307KTXbs0DtMs895pFZmoNgtGn--
+--7YtCHVB6K3yU3i5Zy3LEmYrAtRfRKRfEx--

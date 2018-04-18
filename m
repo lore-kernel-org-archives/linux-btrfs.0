@@ -1,187 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:51574 "EHLO mx1.redhat.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751195AbeD3VnT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 30 Apr 2018 17:43:19 -0400
-To: fstests <fstests@vger.kernel.org>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        linux-xfs <linux-xfs@vger.kernel.org>
-From: Eric Sandeen <sandeen@redhat.com>
-Subject: [PATCH] test online label ioctl
-Message-ID: <fd1e2651-099f-8acd-da4d-a67c1e45cd07@redhat.com>
-Date: Mon, 30 Apr 2018 16:43:18 -0500
-MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Received: from userp2120.oracle.com ([156.151.31.85]:48034 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751407AbeDRJy0 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 18 Apr 2018 05:54:26 -0400
+Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
+        by userp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w3I9pujq137239
+        for <linux-btrfs@vger.kernel.org>; Wed, 18 Apr 2018 09:54:26 GMT
+Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
+        by userp2120.oracle.com with ESMTP id 2hdrxp1ur2-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Wed, 18 Apr 2018 09:54:26 +0000
+Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
+        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w3I9sOe7020115
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Wed, 18 Apr 2018 09:54:25 GMT
+Received: from abhmp0018.oracle.com (abhmp0018.oracle.com [141.146.116.24])
+        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w3I9sOP2020872
+        for <linux-btrfs@vger.kernel.org>; Wed, 18 Apr 2018 09:54:24 GMT
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs: update uuid_mutex and device_list_mutex comments
+Date: Wed, 18 Apr 2018 17:56:31 +0800
+Message-Id: <20180418095631.9977-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This tests the online label ioctl that btrfs has, which has been
-recently proposed for XFS.
+Make the uuid_mutex and device_list_mutex comments inline with
+the changes.
 
-To run, it requires an updated xfs_io with the label command and a
-filesystem that supports it
-
-A slight change here to _require_xfs_io_command as well, so that tests
-which simply fail with "Inappropriate ioctl" can be caught in the
-common case.
-
-Signed-off-by: Eric Sandeen <sandeen@redhat.com>
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
+Hi David,
 
-this passes on btrfs, _notruns on xfs/ext4 of yore, and passes
-on xfs w/ my online label patchset (as long as xfs_io has the new
-capability)
+ Can you kindly add this patch to the set: 'Review uuid_mutex usage'
 
-diff --git a/common/rc b/common/rc
-index 9ffab7f..c53a721 100644
---- a/common/rc
-+++ b/common/rc
-@@ -2158,6 +2158,9 @@ _require_xfs_io_command()
- 		echo $testio | grep -q "Inappropriate ioctl" && \
- 			_notrun "xfs_io $command support is missing"
- 		;;
-+	"label")
-+		testio=`$XFS_IO_PROG -c "label" $TEST_DIR 2>&1`
-+		;;
- 	"open")
- 		# -c "open $f" is broken in xfs_io <= 4.8. Along with the fix,
- 		# a new -C flag was introduced to execute one shot commands.
-@@ -2196,7 +2199,7 @@ _require_xfs_io_command()
- 	rm -f $testfile 2>&1 > /dev/null
- 	echo $testio | grep -q "not found" && \
- 		_notrun "xfs_io $command support is missing"
--	echo $testio | grep -q "Operation not supported" && \
-+	echo $testio | grep -q "Operation not supported\|Inappropriate ioctl" && \
- 		_notrun "xfs_io $command failed (old kernel/wrong fs?)"
- 	echo $testio | grep -q "Invalid" && \
- 		_notrun "xfs_io $command failed (old kernel/wrong fs/bad args?)"
-diff --git a/tests/generic/485 b/tests/generic/485
-new file mode 100755
-index 0000000..79902c2
---- /dev/null
-+++ b/tests/generic/485
-@@ -0,0 +1,99 @@
-+#! /bin/bash
-+# FS QA Test 485
-+#
-+# Test the online filesystem label set/get ioctls
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2018 Red Hat, Inc.  All Rights Reserved.
-+# Author: Eric Sandeen <sandeen@redhat.com>
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+#
-+
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1	# failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+	cd /
-+	rm -f $tmp.*
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+
-+# remove previous $seqres.full before test
-+rm -f $seqres.full
-+
-+# real QA test starts here
-+
-+_supported_fs generic
-+_supported_os Linux
-+_require_scratch
-+_require_xfs_io_command "label"
-+
-+_scratch_mkfs > $seqres.full 2>&1
-+_scratch_mount
-+
-+# Make sure we can set & clear the label
-+$XFS_IO_PROG -c "label label.$seq" $SCRATCH_MNT
-+$XFS_IO_PROG -c "label" $SCRATCH_MNT
-+
-+# And that userspace can see it now, while mounted
-+blkid -s LABEL $SCRATCH_DEV | _filter_scratch
-+
-+# And that the it is still there when it's unmounted
-+_scratch_unmount
-+blkid -s LABEL $SCRATCH_DEV | _filter_scratch
-+
-+# And that it persists after a remount
-+_scratch_mount
-+$XFS_IO_PROG -c "label" $SCRATCH_MNT
-+
-+# And that a too-long label is rejected, beyond the interface max:
-+LABEL=$(perl -e "print 'l' x 257;")
-+$XFS_IO_PROG -c "label $LABEL" $SCRATCH_MNT
-+
-+# And that it succeeds right at the filesystem max:
-+case $FSTYP in
-+xfs)
-+	MAXLEN=12;
-+	;;
-+btrfs)
-+	MAXLEN=256
-+	;;
-+*)
-+	MAXLEN=256
-+	echo "Your filesystem supports online label, please add max length"
-+	;;
-+esac
-+LABEL=$(perl -e "print 'o' x $MAXLEN;")
-+$XFS_IO_PROG -c "label $LABEL" $SCRATCH_MNT | sed -e 's/o\+/MAXLABEL/'
-+
-+# And that it fails just past the filesystem max:
-+let TOOLONG=MAXLEN+1
-+LABEL=$(perl -e "print 'o' x $TOOLONG;")
-+$XFS_IO_PROG -c "label $LABEL" $SCRATCH_MNT
-+
-+# success, all done
-+status=0
-+exit
-diff --git a/tests/generic/485.out b/tests/generic/485.out
-new file mode 100644
-index 0000000..bc54684
---- /dev/null
-+++ b/tests/generic/485.out
-@@ -0,0 +1,9 @@
-+QA output created by 485
-+label = "label.485"
-+label = "label.485"
-+SCRATCH_DEV: LABEL="label.485" 
-+SCRATCH_DEV: LABEL="label.485" 
-+label = "label.485"
-+label: Invalid argument
-+label = "MAXLABEL"
-+label: Invalid argument
-diff --git a/tests/generic/group b/tests/generic/group
-index 19be926..cf6ac49 100644
---- a/tests/generic/group
-+++ b/tests/generic/group
-@@ -487,3 +487,4 @@
- 482 auto metadata replay
- 483 auto quick log metadata
- 484 auto quick
-+485 auto quick
+Thanks, Anand
+
+ fs/btrfs/volumes.c | 21 +++++++++------------
+ 1 file changed, 9 insertions(+), 12 deletions(-)
+
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 6d7f10729713..12617a8a7083 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -155,29 +155,26 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
+  *
+  * uuid_mutex (global lock)
+  * ------------------------
+- * protects the fs_uuids list that tracks all per-fs fs_devices, resulting from
++ * Protects the fs_uuids list that tracks all per-fs fs_devices, resulting from
+  * the SCAN_DEV ioctl registration or from mount either implicitly (the first
+- * device) or requested by the device= mount option
+- *
+- * the mutex can be very coarse and can cover long-running operations
+- *
+- * protects: updates to fs_devices counters like missing devices, rw devices,
+- * seeding, structure cloning, openning/closing devices at mount/umount time
++ * device) or requested by the device= mount option.
+  *
+  * global::fs_devs - add, remove, updates to the global list
+  *
+- * does not protect: manipulation of the fs_devices::devices list!
++ * Does not protect: manipulation of the fs_devices::devices list!
+  *
+  * btrfs_device::name - renames (write side), read is RCU
+  *
+  * fs_devices::device_list_mutex (per-fs, with RCU)
+  * ------------------------------------------------
+- * protects updates to fs_devices::devices, ie. adding and deleting
++ * Protects updates to fs_devices::devices, ie. adding and deleting, and its
++ * counters like missing devices, rw devices, seeding, structure cloning,
++ * openning/closing devices at mount/umount time.
+  *
+- * simple list traversal with read-only actions can be done with RCU protection
++ * Simple list traversal with read-only actions can be done with RCU protection.
+  *
+- * may be used to exclude some operations from running concurrently without any
+- * modifications to the list (see write_all_supers)
++ * May be used to exclude some operations from running concurrently without any
++ * modifications to the list (see write_all_supers).
+  *
+  * balance_mutex
+  * -------------
+-- 
+2.15.0
 

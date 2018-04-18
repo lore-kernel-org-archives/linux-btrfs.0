@@ -1,40 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.20]:40861 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.17.20]:42391 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752543AbeDRFMW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 18 Apr 2018 01:12:22 -0400
-Subject: Re: [PATCH v2 04/10] btrfs-progs: undelete-subvol: introduce
- is_subvol_intact
+        id S1751444AbeDRFRC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 18 Apr 2018 01:17:02 -0400
+Subject: Re: [PATCH v2 05/10] btrfs-progs: undelete-subvol: introduce
+ recover_dead_root
 To: Lu Fengqi <lufq.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
 References: <20180327070658.13064-1-lufq.fnst@cn.fujitsu.com>
- <20180327070658.13064-5-lufq.fnst@cn.fujitsu.com>
-Cc: David Sterba <dsterba@suse.cz>
+ <20180327070658.13064-6-lufq.fnst@cn.fujitsu.com>
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <c4bd3079-c431-4c99-f140-bb02493d708b@gmx.com>
-Date: Wed, 18 Apr 2018 13:12:10 +0800
+Message-ID: <e58a8fec-f1b0-ca82-33d8-4e19e7edaaed@gmx.com>
+Date: Wed, 18 Apr 2018 13:16:55 +0800
 MIME-Version: 1.0
-In-Reply-To: <20180327070658.13064-5-lufq.fnst@cn.fujitsu.com>
+In-Reply-To: <20180327070658.13064-6-lufq.fnst@cn.fujitsu.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="DurMcTYTkAk6EvPP64l3TA4bckWCO8KI4"
+ boundary="MGuarRyjpQmD3sG37gGBqwHHpElGbrwlJ"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---DurMcTYTkAk6EvPP64l3TA4bckWCO8KI4
-Content-Type: multipart/mixed; boundary="4I8ioX9cc0T2T2rhceOGnlmvz2ByVxDFJ";
+--MGuarRyjpQmD3sG37gGBqwHHpElGbrwlJ
+Content-Type: multipart/mixed; boundary="hZZNlXc7wnoK7OjPAAyHV6gN0xNAAUUTZ";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 To: Lu Fengqi <lufq.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>
-Message-ID: <c4bd3079-c431-4c99-f140-bb02493d708b@gmx.com>
-Subject: Re: [PATCH v2 04/10] btrfs-progs: undelete-subvol: introduce
- is_subvol_intact
+Message-ID: <e58a8fec-f1b0-ca82-33d8-4e19e7edaaed@gmx.com>
+Subject: Re: [PATCH v2 05/10] btrfs-progs: undelete-subvol: introduce
+ recover_dead_root
 References: <20180327070658.13064-1-lufq.fnst@cn.fujitsu.com>
- <20180327070658.13064-5-lufq.fnst@cn.fujitsu.com>
-In-Reply-To: <20180327070658.13064-5-lufq.fnst@cn.fujitsu.com>
+ <20180327070658.13064-6-lufq.fnst@cn.fujitsu.com>
+In-Reply-To: <20180327070658.13064-6-lufq.fnst@cn.fujitsu.com>
 
---4I8ioX9cc0T2T2rhceOGnlmvz2ByVxDFJ
+--hZZNlXc7wnoK7OjPAAyHV6gN0xNAAUUTZ
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
@@ -42,81 +40,73 @@ Content-Transfer-Encoding: quoted-printable
 
 
 On 2018=E5=B9=B403=E6=9C=8827=E6=97=A5 15:06, Lu Fengqi wrote:
-> The function is used to determine whether the subvolume is intact.
+> The function will find the root_item specified by the subvol_id,
+> clear the BTRFS_ROOT_SUBVOL_DEAD flag and set root_refs to one.
+
+Sorry I didn't point it out in btrfs_link_subvol() patch, but at least
+to me, refs should only be modified by btrfs_link_subvol(), just like
+btrfs_unlink().
+
+Thanks,
+Qu
+
 >=20
 > Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 > ---
->  Makefile          |  3 ++-
->  undelete-subvol.c | 53 +++++++++++++++++++++++++++++++++++++++++++++++=
-++++++
->  undelete-subvol.h | 17 +++++++++++++++++
->  3 files changed, 72 insertions(+), 1 deletion(-)
->  create mode 100644 undelete-subvol.c
->  create mode 100644 undelete-subvol.h
+>  ctree.h           |  1 +
+>  undelete-subvol.c | 55 +++++++++++++++++++++++++++++++++++++++++++++++=
+++++++++
+>  2 files changed, 56 insertions(+)
 >=20
-> diff --git a/Makefile b/Makefile
-> index 6065522a615f..cb38984c7386 100644
-> --- a/Makefile
-> +++ b/Makefile
-> @@ -116,7 +116,8 @@ objects =3D ctree.o disk-io.o kernel-lib/radix-tree=
-=2Eo extent-tree.o print-tree.o \
->  	  qgroup.o free-space-cache.o kernel-lib/list_sort.o props.o \
->  	  kernel-shared/ulist.o qgroup-verify.o backref.o string-table.o task=
--utils.o \
->  	  inode.o file.o find-root.o free-space-tree.o help.o send-dump.o \
-> -	  fsfeatures.o kernel-lib/tables.o kernel-lib/raid56.o transaction.o
-> +	  fsfeatures.o kernel-lib/tables.o kernel-lib/raid56.o transaction.o =
-\
-> +	  undelete-subvol.o
->  cmds_objects =3D cmds-subvolume.o cmds-filesystem.o cmds-device.o cmds=
--scrub.o \
->  	       cmds-inspect.o cmds-balance.o cmds-send.o cmds-receive.o \
->  	       cmds-quota.o cmds-qgroup.o cmds-replace.o check/main.o \
+> diff --git a/ctree.h b/ctree.h
+> index 4bff0b821472..7c0b8150bc4e 100644
+> --- a/ctree.h
+> +++ b/ctree.h
+> @@ -184,6 +184,7 @@ static int btrfs_csum_sizes[] =3D { 4 };
+>  #define BTRFS_FT_MAX		9
+> =20
+>  #define BTRFS_ROOT_SUBVOL_RDONLY	(1ULL << 0)
+> +#define BTRFS_ROOT_SUBVOL_DEAD		(1ULL << 48)
+> =20
+>  /*
+>   * the key defines the order in the tree, and so it also defines (opti=
+mal)
 > diff --git a/undelete-subvol.c b/undelete-subvol.c
-> new file mode 100644
-> index 000000000000..00fcc4895778
-> --- /dev/null
+> index 00fcc4895778..781057df2b84 100644
+> --- a/undelete-subvol.c
 > +++ b/undelete-subvol.c
-> @@ -0,0 +1,53 @@
-> +/*
-> + * Copyright (C) 2018 Fujitsu.  All rights reserved.
-
-IIRC David will remove all such copy right line.
-Is there some principle about this, David?
-
-> + *
-> + * This program is free software; you can redistribute it and/or
-> + * modify it under the terms of the GNU General Public
-> + * License v2 as published by the Free Software Foundation.
-> + *
-> + * This program is distributed in the hope that it will be useful,
-> + * but WITHOUT ANY WARRANTY; without even the implied warranty of
-> + * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-> + * General Public License for more details.
-> + */
-> +
-> +#include "ctree.h"
-> +
-> +/*
-> + * Determines whether the subvolume is intact, according to the drop_p=
+> @@ -12,6 +12,9 @@
+>   */
+> =20
+>  #include "ctree.h"
+> +#include "transaction.h"
+> +#include "disk-io.h"
+> +#include "messages.h"
+> =20
+>  /*
+>   * Determines whether the subvolume is intact, according to the drop_p=
 rogress
-> + * of the root item specified by subvol_id.
+> @@ -51,3 +54,55 @@ out:
+>  	btrfs_release_path(&path);
+>  	return ret;
+>  }
+> +
+> +/*
+> + * Clear BTRFS_ROOT_SUBVOL_DEAD flag and set the root_refs to one.
 > + *
-> + * Return true if the subvolume is intact, otherwise return false.
+> + * @root	the root of root tree.
+> + * @subvol_id	specify the root_item which will be modified.
+> + *
+> + * Return 0 if no error occurred.
 > + */
-> +static bool is_subvol_intact(struct btrfs_root *root, u64 subvol_id)
-
-Here we have 2 parameters which can represent a root, so please explain
-the meaning of each parameter.
-
-And after looking into the code, @root should be tree root, and in that
-case, I prefer passing @fs_info here to get rid of any confusion.
-
+> +static int recover_dead_root(struct btrfs_trans_handle *trans,
+> +			     struct btrfs_root *root, u64 subvol_id)
 > +{
-> +	struct btrfs_path path;
 > +	struct btrfs_key key;
+> +	struct btrfs_path path;
 > +	struct extent_buffer *leaf;
 > +	struct btrfs_root_item root_item;
+> +	u64 root_flags;
 > +	u64 offset;
 > +	int ret;
 > +
@@ -125,79 +115,53 @@ case, I prefer passing @fs_info here to get rid of any confusion.
 > +	key.offset =3D 0;
 > +
 > +	btrfs_init_path(&path);
-> +	ret =3D btrfs_search_slot(NULL, root, &key, &path, 0, 0);
-
-Instead of setting up keys and search manually, what about using
-btrfs_read_fs_root()?
-
+> +	ret =3D btrfs_search_slot(trans, root, &key, &path, 0, 0);
 > +	if (ret) {
-> +		ret =3D false;
+> +		error("couldn't find ROOT_ITEM for %llu failed: %d",
+> +				subvol_id, ret);
 > +		goto out;
 > +	}
 > +
 > +	leaf =3D path.nodes[0];
-> +	offset =3D btrfs_item_ptr_offset(leaf, path.slots[0]);
 > +
+> +	offset =3D btrfs_item_ptr_offset(leaf, path.slots[0]);
 > +	read_extent_buffer(leaf, &root_item, offset, sizeof(root_item));
 > +
-> +	/* the subvolume is intact if the objectid of drop_progress =3D=3D 0 =
-*/
-> +	ret =3D btrfs_disk_key_objectid(&root_item.drop_progress) ? false : t=
-rue;
+> +	/* Clear BTRFS_ROOT_SUBVOL_DEAD */
+> +	root_flags =3D btrfs_root_flags(&root_item);
+> +	btrfs_set_root_flags(&root_item,
+> +			     root_flags & ~BTRFS_ROOT_SUBVOL_DEAD);
+> +
+> +	/* Increase the refs */
+> +	btrfs_set_root_refs(&root_item, 1);
+> +
+> +	write_extent_buffer(leaf, &root_item, offset, sizeof(root_item));
+> +	btrfs_mark_buffer_dirty(leaf);
 > +
 > +out:
 > +	btrfs_release_path(&path);
 > +	return ret;
 > +}
-> diff --git a/undelete-subvol.h b/undelete-subvol.h
-> new file mode 100644
-> index 000000000000..7cfd100cce37
-> --- /dev/null
-> +++ b/undelete-subvol.h
-> @@ -0,0 +1,17 @@
-> +/*
-> + * Copyright (C) 2018 Fujitsu.  All rights reserved.
-> + *
-> + * This program is free software; you can redistribute it and/or
-> + * modify it under the terms of the GNU General Public
-> + * License v2 as published by the Free Software Foundation.
-> + *
-> + * This program is distributed in the hope that it will be useful,
-> + * but WITHOUT ANY WARRANTY; without even the implied warranty of
-> + * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-> + * General Public License for more details.
-> + */
-> +
-> +#ifndef __BTRFS_UNDELETE_SUBVOLUME_H__
-I think the empty header is not really needed here.
-What about introducing it when we have something here?
-
-Thanks,
-Qu
-
-> +#define __BTRFS_UNDELETE_SUBVOLUME_H__
-> +
-> +#endif
 >=20
 
 
---4I8ioX9cc0T2T2rhceOGnlmvz2ByVxDFJ--
+--hZZNlXc7wnoK7OjPAAyHV6gN0xNAAUUTZ--
 
---DurMcTYTkAk6EvPP64l3TA4bckWCO8KI4
+--MGuarRyjpQmD3sG37gGBqwHHpElGbrwlJ
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlrW06oACgkQwj2R86El
-/qjR1AgAm5i2qcsJK2z1267j7IO7JAm+XPTfwXf5UYgTSwc0yqaKgqr3mZuAo59A
-jRvYjPsoZ1FBkwgQOiF5RMsD4TLaBVAVoWJlK1J5tzElEneQxWa9h8jqBEDY/Fuk
-W1BNYHGsgOa+BvAZi492b4ZZ3eTEoaQ2YHGQymlSi5oug5nTCXBXkZl+riGPjC4W
-YSF2ApTWVosPnhl4VmLXvmWBydmVsWvWM3PAIDUU0rnYm86aCyImtptUMyY5wX5H
-61sltIkwW20IQ15OXD+XIygEdkHg7U5eCQ8lOX4gccFXM/zd6SKWh1B5dkk5Fh8W
-ytz2Dj11OXGURpVYuHW3SNE+VuYGtA==
-=k1yn
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlrW1McACgkQwj2R86El
+/qi4nwf+KRL6ziULSpa3X+gcfv8Lw3sd5SRX4AuiXtkKdJHQVvfe/L+tRelckwe9
+lEbN6RxwcURcIXy1bjydkfjhiQW7KeFJs6kHpgYVX9HNBVveZTsBCsIX8AueBb7A
+eE+FGL8YOUCBRBxksKk6ZWkVZjrHaYo5iMuJzESnz4C4+5m/wmIiuTGtHAIIkFyY
+MZ2j4C2l88BBQhD+haEG2UW+RRgsmmCBaLauHwX5UAotF+mVtY4LEmPV71GgiSWs
+XmsQlGEnEXfw5jyaq8+agLY/un2BlqvxbDRRdX7SWDyGrSSzP2LLRVpM9gsqfnpZ
+iJ2Vpwcool++VFyQFqQ8JFGFQuG60Q==
+=XSgf
 -----END PGP SIGNATURE-----
 
---DurMcTYTkAk6EvPP64l3TA4bckWCO8KI4--
+--MGuarRyjpQmD3sG37gGBqwHHpElGbrwlJ--

@@ -1,38 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.20]:42391 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.17.22]:57327 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751444AbeDRFRC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 18 Apr 2018 01:17:02 -0400
-Subject: Re: [PATCH v2 05/10] btrfs-progs: undelete-subvol: introduce
- recover_dead_root
+        id S1753550AbeDRFVg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 18 Apr 2018 01:21:36 -0400
+Subject: Re: [PATCH v2 06/10] btrfs-progs: undelete-subvol: introduce
+ link_subvol_to_lostfound
 To: Lu Fengqi <lufq.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
 References: <20180327070658.13064-1-lufq.fnst@cn.fujitsu.com>
- <20180327070658.13064-6-lufq.fnst@cn.fujitsu.com>
+ <20180327070658.13064-7-lufq.fnst@cn.fujitsu.com>
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <e58a8fec-f1b0-ca82-33d8-4e19e7edaaed@gmx.com>
-Date: Wed, 18 Apr 2018 13:16:55 +0800
+Message-ID: <21596e4a-e198-8299-4af3-030ce72dc5ae@gmx.com>
+Date: Wed, 18 Apr 2018 13:21:27 +0800
 MIME-Version: 1.0
-In-Reply-To: <20180327070658.13064-6-lufq.fnst@cn.fujitsu.com>
+In-Reply-To: <20180327070658.13064-7-lufq.fnst@cn.fujitsu.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="MGuarRyjpQmD3sG37gGBqwHHpElGbrwlJ"
+ boundary="zu698z79MBU8bHXJWpmQrXTPkMSBAp6FC"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---MGuarRyjpQmD3sG37gGBqwHHpElGbrwlJ
-Content-Type: multipart/mixed; boundary="hZZNlXc7wnoK7OjPAAyHV6gN0xNAAUUTZ";
+--zu698z79MBU8bHXJWpmQrXTPkMSBAp6FC
+Content-Type: multipart/mixed; boundary="vDgfMl0KW4ZxlXKDJwxUbG1u2kaALFx5d";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 To: Lu Fengqi <lufq.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-Message-ID: <e58a8fec-f1b0-ca82-33d8-4e19e7edaaed@gmx.com>
-Subject: Re: [PATCH v2 05/10] btrfs-progs: undelete-subvol: introduce
- recover_dead_root
+Message-ID: <21596e4a-e198-8299-4af3-030ce72dc5ae@gmx.com>
+Subject: Re: [PATCH v2 06/10] btrfs-progs: undelete-subvol: introduce
+ link_subvol_to_lostfound
 References: <20180327070658.13064-1-lufq.fnst@cn.fujitsu.com>
- <20180327070658.13064-6-lufq.fnst@cn.fujitsu.com>
-In-Reply-To: <20180327070658.13064-6-lufq.fnst@cn.fujitsu.com>
+ <20180327070658.13064-7-lufq.fnst@cn.fujitsu.com>
+In-Reply-To: <20180327070658.13064-7-lufq.fnst@cn.fujitsu.com>
 
---hZZNlXc7wnoK7OjPAAyHV6gN0xNAAUUTZ
+--vDgfMl0KW4ZxlXKDJwxUbG1u2kaALFx5d
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
@@ -40,128 +40,134 @@ Content-Transfer-Encoding: quoted-printable
 
 
 On 2018=E5=B9=B403=E6=9C=8827=E6=97=A5 15:06, Lu Fengqi wrote:
-> The function will find the root_item specified by the subvol_id,
-> clear the BTRFS_ROOT_SUBVOL_DEAD flag and set root_refs to one.
-
-Sorry I didn't point it out in btrfs_link_subvol() patch, but at least
-to me, refs should only be modified by btrfs_link_subvol(), just like
-btrfs_unlink().
-
-Thanks,
-Qu
-
+> The function will create lost+found directory, link the deleted
+> subvolume specified by the subvol_id to the directory, update the
+> information of root_item and cleanup the associated orphan item.
 >=20
 > Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 > ---
->  ctree.h           |  1 +
->  undelete-subvol.c | 55 +++++++++++++++++++++++++++++++++++++++++++++++=
+>  undelete-subvol.c | 76 +++++++++++++++++++++++++++++++++++++++++++++++=
 ++++++++
->  2 files changed, 56 insertions(+)
+>  1 file changed, 76 insertions(+)
 >=20
-> diff --git a/ctree.h b/ctree.h
-> index 4bff0b821472..7c0b8150bc4e 100644
-> --- a/ctree.h
-> +++ b/ctree.h
-> @@ -184,6 +184,7 @@ static int btrfs_csum_sizes[] =3D { 4 };
->  #define BTRFS_FT_MAX		9
-> =20
->  #define BTRFS_ROOT_SUBVOL_RDONLY	(1ULL << 0)
-> +#define BTRFS_ROOT_SUBVOL_DEAD		(1ULL << 48)
-> =20
->  /*
->   * the key defines the order in the tree, and so it also defines (opti=
-mal)
 > diff --git a/undelete-subvol.c b/undelete-subvol.c
-> index 00fcc4895778..781057df2b84 100644
+> index 781057df2b84..9243e35545c5 100644
 > --- a/undelete-subvol.c
 > +++ b/undelete-subvol.c
-> @@ -12,6 +12,9 @@
->   */
-> =20
->  #include "ctree.h"
-> +#include "transaction.h"
-> +#include "disk-io.h"
-> +#include "messages.h"
-> =20
->  /*
->   * Determines whether the subvolume is intact, according to the drop_p=
-rogress
-> @@ -51,3 +54,55 @@ out:
+> @@ -106,3 +106,79 @@ out:
 >  	btrfs_release_path(&path);
 >  	return ret;
 >  }
 > +
 > +/*
-> + * Clear BTRFS_ROOT_SUBVOL_DEAD flag and set the root_refs to one.
+> + * Recover a subvolume specified by subvol_id, and link it to the lost=
++found
+> + * directory.
 > + *
-> + * @root	the root of root tree.
-> + * @subvol_id	specify the root_item which will be modified.
+> + * @root: the root of the root tree.
+
+In that case, @fs_info would case less confusion.
+
+Otherwise looks good.
+
+Reviewed-by: Qu Wenruo <wqu@suse.com>
+
+Thanks,
+Qu
+
+> + * @subvol_id: specify the subvolume which will be linked, and also be=
+ the part
+> + * of the subvolume name.
 > + *
 > + * Return 0 if no error occurred.
 > + */
-> +static int recover_dead_root(struct btrfs_trans_handle *trans,
-> +			     struct btrfs_root *root, u64 subvol_id)
+> +static int link_subvol_to_lostfound(struct btrfs_root *root, u64 subvo=
+l_id)
 > +{
-> +	struct btrfs_key key;
-> +	struct btrfs_path path;
-> +	struct extent_buffer *leaf;
-> +	struct btrfs_root_item root_item;
-> +	u64 root_flags;
-> +	u64 offset;
+> +	struct btrfs_trans_handle *trans;
+> +	struct btrfs_fs_info *fs_info =3D root->fs_info;
+> +	struct btrfs_root *fs_root =3D fs_info->fs_root;
+> +	char buf[BTRFS_NAME_LEN + 1] =3D {0}; /* 1 for snprintf null */
+> +	char *dir_name =3D "lost+found";
+> +	u64 lost_found_ino =3D 0;
+> +	u32 mode =3D 0700;
 > +	int ret;
 > +
-> +	key.objectid =3D subvol_id;
-> +	key.type =3D BTRFS_ROOT_ITEM_KEY;
-> +	key.offset =3D 0;
+> +	/*
+> +	 * For link subvolume to lost+found,
+> +	 * 2 for parent(256)'s dir_index and dir_item
+> +	 * 2 for lost+found dir's inode_item and inode_ref
+> +	 * 2 for lost+found dir's dir_index and dir_item for the subvolume
+> +	 * 2 for the subvolume's root_ref and root_backref
+> +	 */
+> +	trans =3D btrfs_start_transaction(fs_root, 8);
+> +	if (IS_ERR(trans)) {
+> +		error("unable to start transaction");
+> +		ret =3D PTR_ERR(trans);
+> +		goto out;
+> +	}
 > +
-> +	btrfs_init_path(&path);
-> +	ret =3D btrfs_search_slot(trans, root, &key, &path, 0, 0);
+> +	/* Create lost+found directory */
+> +	ret =3D btrfs_mkdir(trans, fs_root, dir_name, strlen(dir_name),
+> +			  BTRFS_FIRST_FREE_OBJECTID, &lost_found_ino,
+> +			  mode);
+> +	if (ret < 0) {
+> +		error("failed to create '%s' dir: %d", dir_name, ret);
+> +		goto out;
+> +	}
+> +
+> +	/* Link the subvolume to lost+found directory */
+> +	snprintf(buf, BTRFS_NAME_LEN + 1, "sub%llu", subvol_id);
+> +	ret =3D btrfs_link_subvol(trans, fs_root, buf, subvol_id, lost_found_=
+ino,
+> +				false);
 > +	if (ret) {
-> +		error("couldn't find ROOT_ITEM for %llu failed: %d",
+> +		error("failed to link the subvol %llu: %d", subvol_id, ret);
+> +		goto out;
+> +	}
+> +
+> +	/* Clear root flags BTRFS_ROOT_SUBVOL_DEAD and increase root refs */
+> +	ret =3D recover_dead_root(trans, root, subvol_id);
+> +	if (ret)
+> +		goto out;
+> +
+> +	/* Delete the orphan item after undeletion is completed. */
+> +	ret =3D btrfs_del_orphan_item(trans, root, subvol_id);
+> +	if (ret) {
+> +		error("failed to delete the orphan_item for %llu: %d",
 > +				subvol_id, ret);
 > +		goto out;
 > +	}
 > +
-> +	leaf =3D path.nodes[0];
-> +
-> +	offset =3D btrfs_item_ptr_offset(leaf, path.slots[0]);
-> +	read_extent_buffer(leaf, &root_item, offset, sizeof(root_item));
-> +
-> +	/* Clear BTRFS_ROOT_SUBVOL_DEAD */
-> +	root_flags =3D btrfs_root_flags(&root_item);
-> +	btrfs_set_root_flags(&root_item,
-> +			     root_flags & ~BTRFS_ROOT_SUBVOL_DEAD);
-> +
-> +	/* Increase the refs */
-> +	btrfs_set_root_refs(&root_item, 1);
-> +
-> +	write_extent_buffer(leaf, &root_item, offset, sizeof(root_item));
-> +	btrfs_mark_buffer_dirty(leaf);
+> +	ret =3D btrfs_commit_transaction(trans, fs_root);
+> +	if (ret) {
+> +		error("transaction commit failed: %d", ret);
+> +		goto out;
+> +	}
 > +
 > +out:
-> +	btrfs_release_path(&path);
 > +	return ret;
 > +}
 >=20
 
 
---hZZNlXc7wnoK7OjPAAyHV6gN0xNAAUUTZ--
+--vDgfMl0KW4ZxlXKDJwxUbG1u2kaALFx5d--
 
---MGuarRyjpQmD3sG37gGBqwHHpElGbrwlJ
+--zu698z79MBU8bHXJWpmQrXTPkMSBAp6FC
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlrW1McACgkQwj2R86El
-/qi4nwf+KRL6ziULSpa3X+gcfv8Lw3sd5SRX4AuiXtkKdJHQVvfe/L+tRelckwe9
-lEbN6RxwcURcIXy1bjydkfjhiQW7KeFJs6kHpgYVX9HNBVveZTsBCsIX8AueBb7A
-eE+FGL8YOUCBRBxksKk6ZWkVZjrHaYo5iMuJzESnz4C4+5m/wmIiuTGtHAIIkFyY
-MZ2j4C2l88BBQhD+haEG2UW+RRgsmmCBaLauHwX5UAotF+mVtY4LEmPV71GgiSWs
-XmsQlGEnEXfw5jyaq8+agLY/un2BlqvxbDRRdX7SWDyGrSSzP2LLRVpM9gsqfnpZ
-iJ2Vpwcool++VFyQFqQ8JFGFQuG60Q==
-=XSgf
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlrW1dcACgkQwj2R86El
+/qjO5gf/XIIjNA3pfVwxOV0fmjr7HF2SoADuyr4uoNrdrZd56zrSLT69DXRaVFmT
+zjXAZnQIttPzR/NJ7DbgXm/5sL1DzmU+fyb5UVlcYHCdMbsz3wDKf6iML0/tVTHE
+4xmFGyE9MFKlQTvq1ZdVFpdbRU+Eb4CVVQb5YCSTmJqw6nzMCMOUaiVK5jXCtskO
+TDOW6BqlUIbIuhbkXElnYAQ4PHjatWkdwwmgYK/Ol8ZNT7djR6hMMs9QnEYFRw0k
+pqPozleCYGTM0gtS3fLFBV6B63JHixZb82ocYrgCLBSeEDSKlYj5Nszg1d2ArHi4
+Ry+qbUrtB76oc4ZUdVrjXyjGCm2xyg==
+=w+oL
 -----END PGP SIGNATURE-----
 
---MGuarRyjpQmD3sG37gGBqwHHpElGbrwlJ--
+--zu698z79MBU8bHXJWpmQrXTPkMSBAp6FC--

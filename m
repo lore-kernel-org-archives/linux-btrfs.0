@@ -1,97 +1,224 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f68.google.com ([209.85.214.68]:36315 "EHLO
-        mail-it0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751335AbeDRRMh (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 18 Apr 2018 13:12:37 -0400
+Received: from mx2.suse.de ([195.135.220.15]:43389 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751256AbeDRPwu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 18 Apr 2018 11:52:50 -0400
+Date: Wed, 18 Apr 2018 17:50:17 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Howard McLauchlan <hmclauchlan@fb.com>
+Cc: linux-btrfs@vger.kernel.org, Chris Mason <clm@fb.com>,
+        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
+        Omar Sandoval <osandov@osandov.com>, kernel-team@fb.com
+Subject: Re: [PATCH] btrfs: optimize free space tree bitmap conversion
+Message-ID: <20180418155017.GQ21272@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20180417231904.19842-1-hmclauchlan@fb.com>
 MIME-Version: 1.0
-In-Reply-To: <20180418131731.11519-1-dsterba@suse.com>
-References: <20180418131731.11519-1-dsterba@suse.com>
-From: Liu Bo <obuil.liubo@gmail.com>
-Date: Wed, 18 Apr 2018 10:12:35 -0700
-Message-ID: <CANQeFDAqm7xZodAxexU9y+Y+BaiNKZkh91U2x5ocDTJ6AaVHnA@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: fix unaligned access in readdir
-To: David Sterba <dsterba@suse.com>
-Cc: linux-btrfs@vger.kernel.org, stable@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20180417231904.19842-1-hmclauchlan@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Apr 18, 2018 at 6:17 AM, David Sterba <dsterba@suse.com> wrote:
-> The last update to readdir introduced a temporary buffer to store the
-> emitted readdir data, but as there are file names of variable length,
-> there's a lot of unaligned access.
->
-> This was observed on a sparc64 machine:
->
->   Kernel unaligned access at TPC[102f3080] btrfs_real_readdir+0x51c/0x718 [btrfs]
->
+On Tue, Apr 17, 2018 at 04:19:04PM -0700, Howard McLauchlan wrote:
+> Presently, convert_free_space_to_extents() does a linear scan of the
+> bitmap. We can speed this up with find_next_{bit,zero_bit}_le().
+> 
+> This patch replaces the linear scan with find_next_{bit,zero_bit}_le().
+> Testing shows a 20-33% decrease in execution time for
+> convert_free_space_to_extents().
 
-Reviewed-by: Liu Bo <bo.liu@linux.alibaba.com>
+Sounds good.
 
-thanks,
-liubo
-> Fixes: 23b5ec74943 ("btrfs: fix readdir deadlock with pagefault")
-> CC: stable@vger.kernel.org # 4.14+
-> Reported-and-tested-by: René Rebe <rene@exactcode.com>
-> Signed-off-by: David Sterba <dsterba@suse.com>
+> Suggested-by: Omar Sandoval <osandov@osandov.com>
+> Signed-off-by: Howard McLauchlan <hmclauchlan@fb.com>
 > ---
->  fs/btrfs/inode.c | 20 ++++++++++++--------
->  1 file changed, 12 insertions(+), 8 deletions(-)
->
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index e064c49c9a9a..d241285a0d2a 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -31,6 +31,7 @@
->  #include <linux/uio.h>
->  #include <linux/magic.h>
->  #include <linux/iversion.h>
-> +#include <asm/unaligned.h>
->  #include "ctree.h"
->  #include "disk-io.h"
->  #include "transaction.h"
-> @@ -5905,11 +5906,13 @@ static int btrfs_filldir(void *addr, int entries, struct dir_context *ctx)
->                 struct dir_entry *entry = addr;
->                 char *name = (char *)(entry + 1);
->
-> -               ctx->pos = entry->offset;
-> -               if (!dir_emit(ctx, name, entry->name_len, entry->ino,
-> -                             entry->type))
-> +               ctx->pos = get_unaligned(&entry->offset);
-> +               if (!dir_emit(ctx, name, get_unaligned(&entry->name_len),
-> +                                        get_unaligned(&entry->ino),
-> +                                        get_unaligned(&entry->type)))
->                         return 1;
-> -               addr += sizeof(struct dir_entry) + entry->name_len;
-> +               addr += sizeof(struct dir_entry) +
-> +                       get_unaligned(&entry->name_len);
->                 ctx->pos++;
->         }
->         return 0;
-> @@ -5999,14 +6002,15 @@ static int btrfs_real_readdir(struct file *file, struct dir_context *ctx)
->                 }
->
->                 entry = addr;
-> -               entry->name_len = name_len;
-> +               put_unaligned(name_len, &entry->name_len);
->                 name_ptr = (char *)(entry + 1);
->                 read_extent_buffer(leaf, name_ptr, (unsigned long)(di + 1),
->                                    name_len);
-> -               entry->type = btrfs_filetype_table[btrfs_dir_type(leaf, di)];
-> +               put_unaligned(btrfs_filetype_table[btrfs_dir_type(leaf, di)],
-> +                               &entry->type);
->                 btrfs_dir_item_key_to_cpu(leaf, di, &location);
-> -               entry->ino = location.objectid;
-> -               entry->offset = found_key.offset;
-> +               put_unaligned(location.objectid, &entry->ino);
-> +               put_unaligned(found_key.offset, &entry->offset);
->                 entries++;
->                 addr += sizeof(struct dir_entry) + name_len;
->                 total_len += sizeof(struct dir_entry) + name_len;
-> --
-> 2.16.2
->
+> Based on 4.17-rc1
+> 
+>  fs/btrfs/extent_io.c       | 12 ++++-----
+>  fs/btrfs/extent_io.h       |  4 +--
+>  fs/btrfs/free-space-tree.c | 54 ++++++++++++++------------------------
+>  3 files changed, 27 insertions(+), 43 deletions(-)
+> 
+> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> index e99b329002cf..1c0e7ce49556 100644
+> --- a/fs/btrfs/extent_io.c
+> +++ b/fs/btrfs/extent_io.c
+> @@ -5620,12 +5620,12 @@ void copy_extent_buffer(struct extent_buffer *dst, struct extent_buffer *src,
+>  	}
+>  }
+>  
+> -void le_bitmap_set(u8 *map, unsigned int start, int len)
+> +void le_bitmap_set(unsigned long *map, unsigned int start, int len)
+>  {
+> -	u8 *p = map + BIT_BYTE(start);
+> +	char *p = ((char *)map) + BIT_BYTE(start);
+>  	const unsigned int size = start + len;
+>  	int bits_to_set = BITS_PER_BYTE - (start % BITS_PER_BYTE);
+> -	u8 mask_to_set = BITMAP_FIRST_BYTE_MASK(start);
+> +	char mask_to_set = BITMAP_FIRST_BYTE_MASK(start);
+
+Why do you switch to char? As there are bit operations done below (that
+you don't change), the unsigned type seems correct.
+
+>  
+>  	while (len - bits_to_set >= 0) {
+>  		*p |= mask_to_set;
+> @@ -5640,12 +5640,12 @@ void le_bitmap_set(u8 *map, unsigned int start, int len)
+>  	}
+>  }
+>  
+> -void le_bitmap_clear(u8 *map, unsigned int start, int len)
+> +void le_bitmap_clear(unsigned long *map, unsigned int start, int len)
+>  {
+> -	u8 *p = map + BIT_BYTE(start);
+> +	char *p = ((char *)map) + BIT_BYTE(start);
+>  	const unsigned int size = start + len;
+>  	int bits_to_clear = BITS_PER_BYTE - (start % BITS_PER_BYTE);
+> -	u8 mask_to_clear = BITMAP_FIRST_BYTE_MASK(start);
+> +	char mask_to_clear = BITMAP_FIRST_BYTE_MASK(start);
+
+Same here and in below. Otherwise it looks ok.
+
+>  
+>  	while (len - bits_to_clear >= 0) {
+>  		*p &= ~mask_to_clear;
+> diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+> index a53009694b16..a6db233f4a40 100644
+> --- a/fs/btrfs/extent_io.h
+> +++ b/fs/btrfs/extent_io.h
+> @@ -84,8 +84,8 @@ static inline int le_test_bit(int nr, const u8 *addr)
+>  	return 1U & (addr[BIT_BYTE(nr)] >> (nr & (BITS_PER_BYTE-1)));
+>  }
+>  
+> -void le_bitmap_set(u8 *map, unsigned int start, int len);
+> -void le_bitmap_clear(u8 *map, unsigned int start, int len);
+> +void le_bitmap_set(unsigned long *map, unsigned int start, int len);
+> +void le_bitmap_clear(unsigned long *map, unsigned int start, int len);
+>  
+>  struct extent_state;
+>  struct btrfs_root;
+> diff --git a/fs/btrfs/free-space-tree.c b/fs/btrfs/free-space-tree.c
+> index 32a0f6cb5594..0ddf96b01a3a 100644
+> --- a/fs/btrfs/free-space-tree.c
+> +++ b/fs/btrfs/free-space-tree.c
+> @@ -138,9 +138,9 @@ static inline u32 free_space_bitmap_size(u64 size, u32 sectorsize)
+>  	return DIV_ROUND_UP((u32)div_u64(size, sectorsize), BITS_PER_BYTE);
+>  }
+>  
+> -static u8 *alloc_bitmap(u32 bitmap_size)
+> +static unsigned long *alloc_bitmap(u32 bitmap_size)
+>  {
+> -	u8 *ret;
+> +	unsigned long *ret;
+>  	unsigned int nofs_flag;
+>  
+>  	/*
+> @@ -166,7 +166,8 @@ int convert_free_space_to_bitmaps(struct btrfs_trans_handle *trans,
+>  	struct btrfs_free_space_info *info;
+>  	struct btrfs_key key, found_key;
+>  	struct extent_buffer *leaf;
+> -	u8 *bitmap, *bitmap_cursor;
+> +	unsigned long *bitmap;
+> +	char *bitmap_cursor;
+>  	u64 start, end;
+>  	u64 bitmap_range, i;
+>  	u32 bitmap_size, flags, expected_extent_count;
+> @@ -255,7 +256,7 @@ int convert_free_space_to_bitmaps(struct btrfs_trans_handle *trans,
+>  		goto out;
+>  	}
+>  
+> -	bitmap_cursor = bitmap;
+> +	bitmap_cursor = (char *)bitmap;
+>  	bitmap_range = fs_info->sectorsize * BTRFS_FREE_SPACE_BITMAP_BITS;
+>  	i = start;
+>  	while (i < end) {
+> @@ -304,13 +305,10 @@ int convert_free_space_to_extents(struct btrfs_trans_handle *trans,
+>  	struct btrfs_free_space_info *info;
+>  	struct btrfs_key key, found_key;
+>  	struct extent_buffer *leaf;
+> -	u8 *bitmap;
+> +	unsigned long *bitmap;
+>  	u64 start, end;
+> -	/* Initialize to silence GCC. */
+> -	u64 extent_start = 0;
+> -	u64 offset;
+>  	u32 bitmap_size, flags, expected_extent_count;
+> -	int prev_bit = 0, bit, bitnr;
+> +	unsigned long nrbits, start_bit, end_bit;
+>  	u32 extent_count = 0;
+>  	int done = 0, nr;
+>  	int ret;
+> @@ -348,7 +346,7 @@ int convert_free_space_to_extents(struct btrfs_trans_handle *trans,
+>  				break;
+>  			} else if (found_key.type == BTRFS_FREE_SPACE_BITMAP_KEY) {
+>  				unsigned long ptr;
+> -				u8 *bitmap_cursor;
+> +				char *bitmap_cursor;
+>  				u32 bitmap_pos, data_size;
+>  
+>  				ASSERT(found_key.objectid >= start);
+> @@ -358,7 +356,7 @@ int convert_free_space_to_extents(struct btrfs_trans_handle *trans,
+>  				bitmap_pos = div_u64(found_key.objectid - start,
+>  						     fs_info->sectorsize *
+>  						     BITS_PER_BYTE);
+> -				bitmap_cursor = bitmap + bitmap_pos;
+> +				bitmap_cursor = ((char *)bitmap) + bitmap_pos;
+>  				data_size = free_space_bitmap_size(found_key.offset,
+>  								   fs_info->sectorsize);
+>  
+> @@ -392,32 +390,16 @@ int convert_free_space_to_extents(struct btrfs_trans_handle *trans,
+>  	btrfs_mark_buffer_dirty(leaf);
+>  	btrfs_release_path(path);
+>  
+> -	offset = start;
+> -	bitnr = 0;
+> -	while (offset < end) {
+> -		bit = !!le_test_bit(bitnr, bitmap);
+> -		if (prev_bit == 0 && bit == 1) {
+> -			extent_start = offset;
+> -		} else if (prev_bit == 1 && bit == 0) {
+> -			key.objectid = extent_start;
+> -			key.type = BTRFS_FREE_SPACE_EXTENT_KEY;
+> -			key.offset = offset - extent_start;
+> -
+> -			ret = btrfs_insert_empty_item(trans, root, path, &key, 0);
+> -			if (ret)
+> -				goto out;
+> -			btrfs_release_path(path);
+> +	nrbits = div_u64(block_group->key.offset, block_group->fs_info->sectorsize);
+> +	start_bit = find_next_bit_le(bitmap, nrbits, 0);
+>  
+> -			extent_count++;
+> -		}
+> -		prev_bit = bit;
+> -		offset += fs_info->sectorsize;
+> -		bitnr++;
+> -	}
+> -	if (prev_bit == 1) {
+> -		key.objectid = extent_start;
+> +	while (start_bit < nrbits) {
+> +		end_bit = find_next_zero_bit_le(bitmap, nrbits, start_bit);
+> +		ASSERT(start_bit < end_bit);
+> +
+> +		key.objectid = start + start_bit * block_group->fs_info->sectorsize;
+>  		key.type = BTRFS_FREE_SPACE_EXTENT_KEY;
+> -		key.offset = end - extent_start;
+> +		key.offset = (end_bit - start_bit) * block_group->fs_info->sectorsize;
+>  
+>  		ret = btrfs_insert_empty_item(trans, root, path, &key, 0);
+>  		if (ret)
+> @@ -425,6 +407,8 @@ int convert_free_space_to_extents(struct btrfs_trans_handle *trans,
+>  		btrfs_release_path(path);
+>  
+>  		extent_count++;
+> +
+> +		start_bit = find_next_bit_le(bitmap, nrbits, end_bit);
+>  	}
+>  
+>  	if (extent_count != expected_extent_count) {
+> -- 
+> 2.17.0
+> 
 > --
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 > the body of a message to majordomo@vger.kernel.org

@@ -1,65 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:47089 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:55077 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750961AbeDRQsw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 18 Apr 2018 12:48:52 -0400
-Subject: Re: Filesystem full with unallocated space?
-To: Matthew Lai <m@matthewlai.ca>, linux-btrfs@vger.kernel.org
-References: <89d90bb8-dbe3-1789-60eb-a29f9d1e3a64@matthewlai.ca>
- <b7c2b3f9-89cf-9ae4-7d73-cfdd274f56cd@matthewlai.ca>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <aa9580ac-eba2-038c-1e60-a57a05eb544d@suse.com>
-Date: Wed, 18 Apr 2018 19:48:49 +0300
+        id S1750885AbeDRSac (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 18 Apr 2018 14:30:32 -0400
+Date: Wed, 18 Apr 2018 20:28:00 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Nikolay Borisov <nborisov@suse.com>
+Cc: Brendan Hide <brendan@swiftspirit.co.za>, linux-btrfs@vger.kernel.org
+Subject: Re: nvme+btrfs+compression sensibility and benchmark
+Message-ID: <20180418182800.GR21272@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <271cf4a5-92d6-04eb-5f7a-471c2997ca48@swiftspirit.co.za>
+ <2611a2b3-689a-10a2-50e9-9de43fc03c8c@suse.com>
 MIME-Version: 1.0
-In-Reply-To: <b7c2b3f9-89cf-9ae4-7d73-cfdd274f56cd@matthewlai.ca>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=iso-8859-1
+In-Reply-To: <2611a2b3-689a-10a2-50e9-9de43fc03c8c@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-On 17.04.2018 19:08, Matthew Lai wrote:
-> Hello!
+On Wed, Apr 18, 2018 at 06:14:07PM +0300, Nikolay Borisov wrote:
 > 
-> I am getting ENOSPC on my root filesystem with plenty of unallocated
-> space according to "fi usage". Any idea why that may be? This is a root
-> partition for Debian Stable. Not doing anything unusual that I'm aware
-> of. No snapshots.
 > 
-> Thanks!
+> On 18.04.2018 18:10, Brendan Hide wrote:
+> > Hi, all
+> > 
+> > I'm looking for some advice re compression with NVME. Compression helps
+> > performance with a minor CPU hit - but is it still worth it with the far
+> > higher throughputs offered by newer PCI and NVME-type SSDs?
+> > 
+> > I've ordered a PCIe-to-M.2 adapter along with a 1TB 960 Evo drive for my
+> > home desktop. I previously used compression on an older SATA-based Intel
+> > 520 SSD, where compression made sense.
+> > 
+> > However, the wisdom isn't so clear-cut if the SSD is potentially faster
+> > than the compression algorithm with my CPU (aging i7 3770).
+> > 
+> > Testing using a copy of the kernel source tarball in tmpfs� it seems my
+> > system can compress/decompress at about 670MB/s using zstd with 8
+> > threads. lzop isn't that far behind. But I'm not sure if the benchmark
+> > I'm running is the same as how btrfs would be using it internally.
+> > 
+> > Given these numbers I'm inclined to believe compression will make things
+> > slower - but can't be sure without knowing if I'm testing correctly.
+> > 
+> > What is the best practice with benchmarking and with NVME/PCI storage?
 > 
-> Matthew
-> 
-> uname -a:
-> Linux bigfoot 4.9.0-4-amd64 #1 SMP Debian 4.9.65-3+deb9u1 (2017-12-23)
-> x86_64 GNU/Linux
-> 
-> btrfs --version:
-> btrfs-progs v4.7.3
-> 
-> btrfs fi show:
-> Label: none  uuid: 2364c63f-e20c-410f-90b4-05f722ee1c77
->     Total devices 1 FS bytes used 176.27GiB
->     devid    1 size 246.33GiB used 185.01GiB path /dev/sda2
-> 
-> btrfs fi df /:
-> Data, single: total=183.00GiB, used=175.78GiB
-> System, single: total=4.00MiB, used=48.00KiB
-> Metadata, single: total=2.01GiB, used=504.81MiB
-> GlobalReserve, single: total=211.39MiB, used=0.00B
-> 
+> btrfs doesn't support DAX so using it on NVME doesn't make much sense
+> performance wise.
 
-
-You haven't shown "btrfs fi usage". In any case there were some patches
-in more recent kernels which deal with premature ENOSPC:
-
-
-996478ca9c46 ("btrfs: change how we decide to commit transactions during
-flushing")
-17024ad0a0fd ("Btrfs: fix early ENOSPC due to delalloc")
-
-
-I'd advise you update to 4.14 stable. Otherwise running:
-git log --oneline --grep "enospc" fs/btrfs/
-
-will shows you likely candidates.
+Is'nt NVMe just "the faster SSD"? Not the persistent memory thing.

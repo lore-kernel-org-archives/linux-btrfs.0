@@ -1,38 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.21]:35293 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.17.21]:46171 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751878AbeDRFC5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 18 Apr 2018 01:02:57 -0400
-Subject: Re: [PATCH v2 02/10] btrfs-progs: extract btrfs_link_subvol from
- btrfs_mksubvol
+        id S1753244AbeDRFEJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 18 Apr 2018 01:04:09 -0400
+Subject: Re: [PATCH v2 03/10] btrfs-progs: use btrfs_find_free_dir_index to
+ find free inode index
 To: Lu Fengqi <lufq.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
 References: <20180327070658.13064-1-lufq.fnst@cn.fujitsu.com>
- <20180327070658.13064-3-lufq.fnst@cn.fujitsu.com>
+ <20180327070658.13064-4-lufq.fnst@cn.fujitsu.com>
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <55438435-3da6-6b84-a8dc-22cc976e648f@gmx.com>
-Date: Wed, 18 Apr 2018 13:02:43 +0800
+Message-ID: <7f4c44c8-8b59-7aee-bfc1-5f921ae2887c@gmx.com>
+Date: Wed, 18 Apr 2018 13:04:02 +0800
 MIME-Version: 1.0
-In-Reply-To: <20180327070658.13064-3-lufq.fnst@cn.fujitsu.com>
+In-Reply-To: <20180327070658.13064-4-lufq.fnst@cn.fujitsu.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="kbTtReYORJ4CwLarH6zAfGNuHwHccJM1S"
+ boundary="5aPhOQ0vbF0FyLnhnjqRU2dviUG77dZdm"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---kbTtReYORJ4CwLarH6zAfGNuHwHccJM1S
-Content-Type: multipart/mixed; boundary="qWNl7Zs3WiWqCmqGVugEEu0D5xBdUO5MB";
+--5aPhOQ0vbF0FyLnhnjqRU2dviUG77dZdm
+Content-Type: multipart/mixed; boundary="8mfn3MoTn6CvLwEUHP3hyFO2wqNHvvINk";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 To: Lu Fengqi <lufq.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-Message-ID: <55438435-3da6-6b84-a8dc-22cc976e648f@gmx.com>
-Subject: Re: [PATCH v2 02/10] btrfs-progs: extract btrfs_link_subvol from
- btrfs_mksubvol
+Message-ID: <7f4c44c8-8b59-7aee-bfc1-5f921ae2887c@gmx.com>
+Subject: Re: [PATCH v2 03/10] btrfs-progs: use btrfs_find_free_dir_index to
+ find free inode index
 References: <20180327070658.13064-1-lufq.fnst@cn.fujitsu.com>
- <20180327070658.13064-3-lufq.fnst@cn.fujitsu.com>
-In-Reply-To: <20180327070658.13064-3-lufq.fnst@cn.fujitsu.com>
+ <20180327070658.13064-4-lufq.fnst@cn.fujitsu.com>
+In-Reply-To: <20180327070658.13064-4-lufq.fnst@cn.fujitsu.com>
 
---qWNl7Zs3WiWqCmqGVugEEu0D5xBdUO5MB
+--8mfn3MoTn6CvLwEUHP3hyFO2wqNHvvINk
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
@@ -40,267 +40,93 @@ Content-Transfer-Encoding: quoted-printable
 
 
 On 2018=E5=B9=B403=E6=9C=8827=E6=97=A5 15:06, Lu Fengqi wrote:
-> The original btrfs_mksubvol is too specific to specify the directory th=
-at
-> the subvolume will link to. Furthermore, in this transaction, we don't =
-only
-> need to create root_ref/dir-item, but also update the refs or flags of
-> root_item. Extract a generic btrfs_link_subvol that allow the caller pa=
-ss a
-> trans argument for later subvolume undelete.
-
-The idea makes sense.
-
-Although some small nitpicks inlined below.
-
->=20
-> No functional changes for the btrfs_mksubvol.
+> Since we have an existing function to find free inode index, we can
+> reuse it here.
 >=20
 > Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-> ---
->  convert/main.c | 57 ++++++++++++++++++++++++++++++++++++++++++++++++++=
-+++++++
->  ctree.h        |  5 +++--
->  inode.c        | 46 +++++++++++++++++++++-------------------------
->  3 files changed, 81 insertions(+), 27 deletions(-)
->=20
-> diff --git a/convert/main.c b/convert/main.c
-> index 6bdfab40d0b0..dd6b42a1f2b1 100644
-> --- a/convert/main.c
-> +++ b/convert/main.c
-> @@ -1002,6 +1002,63 @@ err:
->  	return ret;
->  }
-> =20
-> +/*
-> + * Link the subvolume specified by @root_objectid to the root_dir of @=
-root.
 
-However the function name is btrfs_mksubvol(), not btrfs_link_subvol().
-After reading the code, it turns out that btrfs_mksubvol() is just an
-less generic btrfs_link_subvol().
+Looks good.
 
-> + * @root		the root of the file tree which the subvolume will
-> + *			be linked to.
-
-Here you're using btrfs_root for source subvolume.
-
-> + * @subvol_name		the name of the subvolume which will be linked.
-> + * @root_objectid	specify the subvolume which will be linked.
-
-But here you're specifying subvolume id as destination.
-
-It would be much better to unify both parameter to the same structure.
-And personally I prefer both btrfs_root.
-
-> + * @convert		the flag to determine whether to try to resolve
-> + *			the name conflict.
-
-This parameter is not used in this function, and the name "convert"
-doesn't reflect the name conflict check.
-
-Personally speaking, I would like the parameters to be something like
-btrfs_mksubolv(struct btrfs_root *dst_root,
-               struct btrfs_root *src_root)
-
-> + *
-> + * Return the root of the subvolume if success, otherwise return NULL.=
-
-> + */
-> +static struct btrfs_root *btrfs_mksubvol(struct btrfs_root *root,
-> +					 const char *subvol_name,
-> +					 u64 root_objectid,
-> +					 bool convert)
-> +{
-> +	struct btrfs_trans_handle *trans;
-> +	struct btrfs_root *subvol_root =3D NULL;
-> +	struct btrfs_key key;
-> +	u64 dirid =3D btrfs_root_dirid(&root->root_item);
-> +	int ret;
-> +
-> +
-> +	trans =3D btrfs_start_transaction(root, 1);
-> +	if (IS_ERR(trans)) {
-> +		error("unable to start transaction");
-> +		goto fail;
-> +	}
-> +
-> +	ret =3D btrfs_link_subvol(trans, root, subvol_name, root_objectid, di=
-rid,
-> +				true);
-> +	if (ret) {
-> +		error("unable to link subvolume %s", subvol_name);
-> +		goto fail;
-> +	}
-> +
-> +	ret =3D btrfs_commit_transaction(trans, root);
-> +	if (ret) {
-> +		error("transaction commit failed: %d", ret);
-> +		goto fail;
-> +	}
-> +
-> +	key.objectid =3D root_objectid;
-> +	key.offset =3D (u64)-1;
-> +	key.type =3D BTRFS_ROOT_ITEM_KEY;
-> +
-> +	subvol_root =3D btrfs_read_fs_root(root->fs_info, &key);
-> +	if (!subvol_root) {
-> +		error("unable to link subvolume %s", subvol_name);
-> +		goto fail;
-> +	}
-> +
-> +fail:
-> +	return subvol_root;
-> +}
-> +
->  /*
->   * Migrate super block to its default position and zero 0 ~ 16k
->   */
-> diff --git a/ctree.h b/ctree.h
-> index 0fc31dd8d998..4bff0b821472 100644
-> --- a/ctree.h
-> +++ b/ctree.h
-> @@ -2797,8 +2797,9 @@ int btrfs_del_orphan_item(struct btrfs_trans_hand=
-le *trans,
->  			  struct btrfs_root *root, u64 offset);
->  int btrfs_mkdir(struct btrfs_trans_handle *trans, struct btrfs_root *r=
-oot,
->  		char *name, int namelen, u64 parent_ino, u64 *ino, int mode);
-> -struct btrfs_root *btrfs_mksubvol(struct btrfs_root *root, const char =
-*base,
-> -				  u64 root_objectid, bool convert);
-> +int btrfs_link_subvol(struct btrfs_trans_handle *trans, struct btrfs_r=
-oot *root,
-> +		      const char *base, u64 root_objectid, u64 dirid,
-> +		      bool convert);
-> =20
->  /* file.c */
->  int btrfs_get_extent(struct btrfs_trans_handle *trans,
-> diff --git a/inode.c b/inode.c
-> index 8d0812c7cf50..478036562652 100644
-> --- a/inode.c
-> +++ b/inode.c
-> @@ -606,19 +606,28 @@ out:
->  	return ret;
->  }
-> =20
-> -struct btrfs_root *btrfs_mksubvol(struct btrfs_root *root,
-> -				  const char *base, u64 root_objectid,
-> -				  bool convert)
-> +/*
-> + * Link the subvolume specified by @root_objectid to the directory spe=
-cified by
-> + * @dirid on the file tree specified by @root.
-> + *
-> + * @root		the root of the file tree where the directory on.
-> + * @base		the name of the subvolume which will be linked.
-> + * @root_objectid	specify the subvolume which will be linked.
-
-Same nitpick about parameter here.
+Reviewed-by: Qu Wenruo <wqu@suse.com>
 
 Thanks,
 Qu
 
-> + * @dirid		specify the directory which the subvolume will be
-> + *			linked to.
-> + * @convert		the flag to determine whether to try to resolve
-> + *			the name conflict.
-> + */
-> +int btrfs_link_subvol(struct btrfs_trans_handle *trans, struct btrfs_r=
-oot *root,
-> +		      const char *base, u64 root_objectid, u64 dirid,
-> +		      bool convert)
->  {
-> -	struct btrfs_trans_handle *trans;
->  	struct btrfs_fs_info *fs_info =3D root->fs_info;
->  	struct btrfs_root *tree_root =3D fs_info->tree_root;
-> -	struct btrfs_root *new_root =3D NULL;
->  	struct btrfs_path path;
+> ---
+>  inode.c | 27 +++++++--------------------
+>  1 file changed, 7 insertions(+), 20 deletions(-)
+>=20
+> diff --git a/inode.c b/inode.c
+> index 478036562652..86905365dfd8 100644
+> --- a/inode.c
+> +++ b/inode.c
+> @@ -628,7 +628,7 @@ int btrfs_link_subvol(struct btrfs_trans_handle *tr=
+ans, struct btrfs_root *root,
 >  	struct btrfs_inode_item *inode_item;
 >  	struct extent_buffer *leaf;
 >  	struct btrfs_key key;
-> -	u64 dirid =3D btrfs_root_dirid(&root->root_item);
->  	u64 index =3D 2;
+> -	u64 index =3D 2;
+> +	u64 index;
 >  	char buf[BTRFS_NAME_LEN + 1]; /* for snprintf null */
 >  	int len;
-> @@ -627,8 +636,9 @@ struct btrfs_root *btrfs_mksubvol(struct btrfs_root=
- *root,
-> =20
->  	len =3D strlen(base);
+>  	int i;
+> @@ -638,28 +638,15 @@ int btrfs_link_subvol(struct btrfs_trans_handle *=
+trans, struct btrfs_root *root,
 >  	if (len =3D=3D 0 || len > BTRFS_NAME_LEN)
-> -		return NULL;
-> +		return -EINVAL;
+>  		return -EINVAL;
 > =20
-> +	/* find the free dir_index */
->  	btrfs_init_path(&path);
->  	key.objectid =3D dirid;
->  	key.type =3D BTRFS_DIR_INDEX_KEY;
-> @@ -649,12 +659,7 @@ struct btrfs_root *btrfs_mksubvol(struct btrfs_roo=
-t *root,
->  	}
->  	btrfs_release_path(&path);
-> =20
-> -	trans =3D btrfs_start_transaction(root, 1);
-> -	if (IS_ERR(trans)) {
-> -		error("unable to start transaction");
-> -		goto fail;
-> -	}
+> -	/* find the free dir_index */
+> -	btrfs_init_path(&path);
+> -	key.objectid =3D dirid;
+> -	key.type =3D BTRFS_DIR_INDEX_KEY;
+> -	key.offset =3D (u64)-1;
 > -
+> -	ret =3D btrfs_search_slot(NULL, root, &key, &path, 0, 0);
+> -	if (ret <=3D 0) {
+> -		error("search for DIR_INDEX dirid %llu failed: %d",
+> -				(unsigned long long)dirid, ret);
 > +	/* add the dir_item/dir_index */
->  	key.objectid =3D dirid;
->  	key.offset =3D 0;
->  	key.type =3D  BTRFS_INODE_ITEM_KEY;
-> @@ -675,6 +680,7 @@ struct btrfs_root *btrfs_mksubvol(struct btrfs_root=
- *root,
-> =20
->  	memcpy(buf, base, len);
->  	if (convert) {
-> +		/* try to resolve name conflict by adding the number suffix */
->  		for (i =3D 0; i < 1024; i++) {
->  			ret =3D btrfs_insert_dir_item(trans, root, buf, len,
->  					dirid, &key, BTRFS_FT_DIR, index);
-> @@ -719,18 +725,8 @@ struct btrfs_root *btrfs_mksubvol(struct btrfs_roo=
-t *root,
+> +	ret =3D btrfs_find_free_dir_index(root, dirid, &index);
+> +	if (ret < 0) {
+> +		error("unable to find free dir index dirid %llu failed: %d",
+> +		      (unsigned long long)dirid, ret);
 >  		goto fail;
 >  	}
 > =20
-> -	ret =3D btrfs_commit_transaction(trans, root);
-> -	if (ret) {
-> -		error("transaction commit failed: %d", ret);
-> -		goto fail;
+> -	if (path.slots[0] > 0) {
+> -		path.slots[0]--;
+> -		btrfs_item_key_to_cpu(path.nodes[0], &key, path.slots[0]);
+> -		if (key.objectid =3D=3D dirid && key.type =3D=3D BTRFS_DIR_INDEX_KEY=
+)
+> -			index =3D key.offset + 1;
 > -	}
-> =20
-> -	new_root =3D btrfs_read_fs_root(fs_info, &key);
-> -	if (IS_ERR(new_root)) {
-> -		error("unable to fs read root: %lu", PTR_ERR(new_root));
-> -		new_root =3D NULL;
-> -	}
->  fail:
-> -	btrfs_init_path(&path);
-> -	return new_root;
-> +	btrfs_release_path(&path);
-> +	return ret;
->  }
+> -	btrfs_release_path(&path);
+> -
+> -	/* add the dir_item/dir_index */
+> +	btrfs_init_path(&path);
+>  	key.objectid =3D dirid;
+>  	key.offset =3D 0;
+>  	key.type =3D  BTRFS_INODE_ITEM_KEY;
 >=20
 
 
---qWNl7Zs3WiWqCmqGVugEEu0D5xBdUO5MB--
+--8mfn3MoTn6CvLwEUHP3hyFO2wqNHvvINk--
 
---kbTtReYORJ4CwLarH6zAfGNuHwHccJM1S
+--5aPhOQ0vbF0FyLnhnjqRU2dviUG77dZdm
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlrW0XMACgkQwj2R86El
-/qgIBgf7Bp2/MpnYCRxKSIRfDmHkHbTIIt6rZAQLFCcRxiplBv2NxD9mAMMWOmcZ
-DuskUN35vsBm1vTad3ZgM/AVep+iveoZ1QxWwbWaWoCpVOdLopMu2U64wZ5jeRuO
-w5GmkLgPNMSR2Lo3ElDQ6cAHyVAeUi2MxWtWGSjQtgj7HJaFXUAlmKI8O9XBueP8
-jy5M1rYJhRVWs2dBj9SB8Yx7qg6c2quR1GA5uwPNkfHMOptSXdL4A7/CTZljAVST
-WBPhiKOLp/f/Uty3gODxuWQ4pQv/HI13qde+AyA287OiGmoxevRvEHa8nI5ByioI
-WXlrk8Nc1CS8slMxqWjGyPT55x5kgQ==
-=5/tc
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlrW0cIACgkQwj2R86El
+/qjZzgf/bxiAq4BAjTzlYK8FHQJiGuBU93oWjN50S2wzBi8NuW+xvHX5HCIjyomu
+HQg1nkty5lLrr4pCUrmHOOBasuqlFqWMKsGqEaocHj5abiBw3pjxh6Rvn8/z8qaW
+9C4crbVdvIvmI/vZnPOI09UW3IiFMyicHGhxuDjNk/PwODQNyIAxMxy8i9nxLVAZ
+nVAw3CgwbD/nNwpyG1mhyijhlONQr7Sz8uOT7QuflRCKylkvMxHyg3oQ+IhSugop
+tgsR8i/MYBxZUimsO8XkzMMe6j1CyFQkDLa6Vvr5oVuuUOh993T+6GctU3HW2jTI
+CijphK1x6DiqxZ4MU+FUI9tfj1Y49w==
+=MM9m
 -----END PGP SIGNATURE-----
 
---kbTtReYORJ4CwLarH6zAfGNuHwHccJM1S--
+--5aPhOQ0vbF0FyLnhnjqRU2dviUG77dZdm--

@@ -1,53 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:43778 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751407AbeDRWHF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 18 Apr 2018 18:07:05 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id BA4D9AB3C
-        for <linux-btrfs@vger.kernel.org>; Wed, 18 Apr 2018 22:07:03 +0000 (UTC)
-Date: Thu, 19 Apr 2018 00:04:32 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v3] btrfs: Do super block verification before writing it
- to disk
-Message-ID: <20180418220432.GV21272@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20180417014719.3799-1-wqu@suse.com>
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:51886 "EHLO
+        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1753115AbeDRXJv (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 18 Apr 2018 19:09:51 -0400
+Subject: Re: [PATCH 2/2] btrfs: optimize free space tree bitmap conversion
+To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>, Chris Mason <clm@fb.com>,
+        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
+        <kernel-team@fb.com>
+References: <20180418213059.8025-1-hmclauchlan@fb.com>
+ <20180418213059.8025-2-hmclauchlan@fb.com>
+ <20180418222606.GX21272@twin.jikos.cz>
+From: Howard McLauchlan <hmclauchlan@fb.com>
+Message-ID: <afad2b1a-d4cb-458a-bbce-145ae49d9670@fb.com>
+Date: Wed, 18 Apr 2018 16:09:13 -0700
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180417014719.3799-1-wqu@suse.com>
+In-Reply-To: <20180418222606.GX21272@twin.jikos.cz>
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Apr 17, 2018 at 09:47:19AM +0800, Qu Wenruo wrote:
-> @@ -2680,7 +2681,7 @@ int open_ctree(struct super_block *sb,
->  
->  	memcpy(fs_info->fsid, fs_info->super_copy->fsid, BTRFS_FSID_SIZE);
->  
-> -	ret = btrfs_check_super_valid(fs_info);
-> +	ret = btrfs_check_super_valid(fs_info, fs_info->super_copy);
->  	if (ret) {
->  		btrfs_err(fs_info, "superblock contains fatal errors");
->  		err = -EINVAL;
-> @@ -3310,6 +3311,27 @@ static int write_dev_supers(struct btrfs_device *device,
+On 04/18/2018 03:26 PM, David Sterba wrote:
+> On Wed, Apr 18, 2018 at 02:30:59PM -0700, Howard McLauchlan wrote:
+>> Presently, convert_free_space_to_extents() does a linear scan of the
+>> bitmap. We can speed this up with find_next_{bit,zero_bit}_le().
+>>
+>> This patch replaces the linear scan with find_next_{bit,zero_bit}_le().
+>> Testing shows a 20-33% decrease in execution time for
+>> convert_free_space_to_extents().
+>>
+>> Suggested-by: Omar Sandoval <osandov@osandov.com>
+>> Signed-off-by: Howard McLauchlan <hmclauchlan@fb.com>
+>> ---
+>>
+>> Since we change bitmap to be unsigned long, we have to do some casting for the
+>> bitmap cursor. In le_bitmap_set() it makes sense to use u8, as we are doing
+>> bit operations. Everywhere else, we're just using it for pointer arithmetic and
+>> not directly accessing it, so char seems more appropriate.
+> Ok, makes sense for just passing the pointers around. I'll add the text
+> to changelog and apply the patch to next.
+>
+>> -		bit = !!le_test_bit(bitnr, bitmap);
+> This is the last use of le_test_bit, so it can be removed (in another
+> patch).
+I just found an issue in this patch that should be fixed. I'll address
+moving le_bitmap_set(), le_test_bit and send a V2 for both these patches.
 
-This is in write_dev_supers, so the superblock is checked
-number-of-devices times. The caller write_all_supers rewrites the device
-item so it matches the device it's going to write to. But,
-btrfs_check_super_valid does not validate the dev_item so all the
-validation does not bring much benefit, as it repeatedly checks the same
-data.
-
-So, what if the validation is done only once in write_all_supers? Lock
-the devices, validate, if it fails, report that and unlock devices and
-go readonly.
-
-There's a differnce to what you implemented: if the in-memory superblock
-corruption happens between writing to the devices, there are some left
-with the new superblock and some with the old.
-
-Although this sounds quite improbable, I think that doing the check in
-advance would save some trouble if that happens. The superblocks on all
-devices will match.
+Howard

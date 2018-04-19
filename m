@@ -1,34 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:60415 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:46914 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751496AbeDCSQB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 3 Apr 2018 14:16:01 -0400
-From: David Sterba <dsterba@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>, clm@fb.com, linux-kernel@vger.kernel.org
-Subject: [PATCH 3/3] btrfs: add SPDX header to Kconfig
-Date: Tue,  3 Apr 2018 20:13:32 +0200
-Message-Id: <02c93560f5566c0c923630ee1f390ff5e2cade9d.1522778802.git.dsterba@suse.com>
-In-Reply-To: <cover.1522778802.git.dsterba@suse.com>
-References: <cover.1522778802.git.dsterba@suse.com>
+        id S1752617AbeDSO5G (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 19 Apr 2018 10:57:06 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id BC636ACC2
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Apr 2018 14:57:05 +0000 (UTC)
+Date: Thu, 19 Apr 2018 16:54:33 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Nikolay Borisov <nborisov@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 4/6] btrfs: Use list_empty instead of list_empty_careful
+Message-ID: <20180419145433.GE21272@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1524123999-4220-1-git-send-email-nborisov@suse.com>
+ <1524123999-4220-4-git-send-email-nborisov@suse.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1524123999-4220-4-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Signed-off-by: David Sterba <dsterba@suse.com>
----
- fs/btrfs/Kconfig | 2 ++
- 1 file changed, 2 insertions(+)
+On Thu, Apr 19, 2018 at 10:46:37AM +0300, Nikolay Borisov wrote:
+> list_empty_careful usually is a signal of something tricky going on. Its
+> usage in btrfs is actually not needed since both lists it's used on are
+> local to a function and cannot be modified concurrently. So switch to
+> plain list_empty. No functional changes.
+> 
+> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 
-diff --git a/fs/btrfs/Kconfig b/fs/btrfs/Kconfig
-index 167e5dc7eadd..23537bc8c827 100644
---- a/fs/btrfs/Kconfig
-+++ b/fs/btrfs/Kconfig
-@@ -1,3 +1,5 @@
-+# SPDX-License-Identifier: GPL-2.0
-+
- config BTRFS_FS
- 	tristate "Btrfs filesystem support"
- 	select LIBCRC32C
--- 
-2.16.2
-
+Reviewed-by: David Sterba <dsterba@suse.com>

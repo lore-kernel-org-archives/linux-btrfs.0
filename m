@@ -1,90 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:54147 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:54150 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752510AbeDSHqo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1752558AbeDSHqo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Thu, 19 Apr 2018 03:46:44 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 6678CADFA
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id B2299AE21
         for <linux-btrfs@vger.kernel.org>; Thu, 19 Apr 2018 07:46:42 +0000 (UTC)
 From: Nikolay Borisov <nborisov@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 3/6] btrfs: Remove redundant tree argument from extent_readpages
-Date: Thu, 19 Apr 2018 10:46:36 +0300
-Message-Id: <1524123999-4220-3-git-send-email-nborisov@suse.com>
+Subject: [PATCH 4/6] btrfs: Use list_empty instead of list_empty_careful
+Date: Thu, 19 Apr 2018 10:46:37 +0300
+Message-Id: <1524123999-4220-4-git-send-email-nborisov@suse.com>
 In-Reply-To: <1524123999-4220-1-git-send-email-nborisov@suse.com>
 References: <1524123999-4220-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This function is called only from btrfs_readpage and is already passed
-the mapping. Simplify its signature by moving the code obtaining
-reference to the extent tree in the function. No functional changes.
+list_empty_careful usually is a signal of something tricky going on. Its
+usage in btrfs is actually not needed since both lists it's used on are
+local to a function and cannot be modified concurrently. So switch to
+plain list_empty. No functional changes.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/extent_io.c | 6 +++---
- fs/btrfs/extent_io.h | 5 ++---
- fs/btrfs/inode.c     | 5 ++---
- 3 files changed, 7 insertions(+), 9 deletions(-)
+ fs/btrfs/inode.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index ffa7bf370f14..5cde345fa0b6 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -4126,9 +4126,8 @@ int extent_writepages(struct extent_io_tree *tree,
- 	return ret;
- }
- 
--int extent_readpages(struct extent_io_tree *tree,
--		     struct address_space *mapping,
--		     struct list_head *pages, unsigned nr_pages)
-+int extent_readpages(struct address_space *mapping, struct list_head *pages,
-+		     unsigned nr_pages)
- {
- 	struct bio *bio = NULL;
- 	unsigned page_idx;
-@@ -4136,6 +4135,7 @@ int extent_readpages(struct extent_io_tree *tree,
- 	struct page *pagepool[16];
- 	struct page *page;
- 	struct extent_map *em_cached = NULL;
-+	struct extent_io_tree *tree = &BTRFS_I(mapping->host)->io_tree;
- 	int nr = 0;
- 	u64 prev_em_start = (u64)-1;
- 
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index cf131fcbecc1..2f085108335d 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -424,9 +424,8 @@ int extent_writepages(struct extent_io_tree *tree,
- 		      struct writeback_control *wbc);
- int btree_write_cache_pages(struct address_space *mapping,
- 			    struct writeback_control *wbc);
--int extent_readpages(struct extent_io_tree *tree,
--		     struct address_space *mapping,
--		     struct list_head *pages, unsigned nr_pages);
-+int extent_readpages(struct address_space *mapping, struct list_head *pages,
-+		     unsigned nr_pages);
- int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
- 		__u64 start, __u64 len);
- void set_page_extent_mapped(struct page *page);
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index a5b8229aa2d8..7b1026a7ffab 100644
+index 7b1026a7ffab..423a6eb3165c 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -8740,10 +8740,9 @@ static int
- btrfs_readpages(struct file *file, struct address_space *mapping,
- 		struct list_head *pages, unsigned nr_pages)
- {
--	struct extent_io_tree *tree;
--	tree = &BTRFS_I(mapping->host)->io_tree;
--	return extent_readpages(tree, mapping, pages, nr_pages);
-+	return extent_readpages(mapping, pages, nr_pages);
- }
-+
- static int __btrfs_releasepage(struct page *page, gfp_t gfp_flags)
- {
- 	int ret = try_release_extent_mapping(page, gfp_flags);
+@@ -10086,7 +10086,7 @@ static int __start_delalloc_inodes(struct btrfs_root *root, int delay_iput,
+ 		btrfs_wait_and_free_delalloc_work(work);
+ 	}
+ 
+-	if (!list_empty_careful(&splice)) {
++	if (!list_empty(&splice)) {
+ 		spin_lock(&root->delalloc_lock);
+ 		list_splice_tail(&splice, &root->delalloc_inodes);
+ 		spin_unlock(&root->delalloc_lock);
+@@ -10148,7 +10148,7 @@ int btrfs_start_delalloc_roots(struct btrfs_fs_info *fs_info, int delay_iput,
+ 
+ 	ret = 0;
+ out:
+-	if (!list_empty_careful(&splice)) {
++	if (!list_empty(&splice)) {
+ 		spin_lock(&fs_info->delalloc_root_lock);
+ 		list_splice_tail(&splice, &fs_info->delalloc_roots);
+ 		spin_unlock(&fs_info->delalloc_root_lock);
 -- 
 2.7.4
 

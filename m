@@ -1,85 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:36186 "EHLO mx2.suse.de"
+Received: from wecheer.com ([54.200.0.65]:42999 "EHLO wecheer.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751130AbeDSFiQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 19 Apr 2018 01:38:16 -0400
-Subject: Re: [PATCH v3] btrfs: Fix race condition between delayed refs and
- blockgroup removal
-To: dsterba@suse.cz, osandov@osandov.com, jeffm@suse.com,
-        linux-btrfs@vger.kernel.org
-References: <1524033714-20063-1-git-send-email-nborisov@suse.com>
- <20180418204735.GU21272@twin.jikos.cz>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <043876e9-5196-cadd-6fb1-36c0a14377ee@suse.com>
-Date: Thu, 19 Apr 2018 08:38:13 +0300
+        id S1751147AbeDSLML (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 19 Apr 2018 07:12:11 -0400
+Subject: Re: Filesystem full with unallocated space?
+To: Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
+References: <89d90bb8-dbe3-1789-60eb-a29f9d1e3a64@matthewlai.ca>
+ <b7c2b3f9-89cf-9ae4-7d73-cfdd274f56cd@matthewlai.ca>
+ <aa9580ac-eba2-038c-1e60-a57a05eb544d@suse.com>
+From: Matthew Lai <m@matthewlai.ca>
+Message-ID: <9c33b8be-f2f0-2b5d-856c-46acba79f0d7@matthewlai.ca>
+Date: Thu, 19 Apr 2018 12:12:07 +0100
 MIME-Version: 1.0
-In-Reply-To: <20180418204735.GU21272@twin.jikos.cz>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <aa9580ac-eba2-038c-1e60-a57a05eb544d@suse.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi Nikolay,
+
+Updating to 4.15 seems to have fixed it.
+
+Thanks!
+
+Matthew
 
 
-On 18.04.2018 23:47, David Sterba wrote:
-> On Wed, Apr 18, 2018 at 09:41:54AM +0300, Nikolay Borisov wrote:
->> When the delayed refs for a head are all run, eventually
->> cleanup_ref_head is called which (in case of deletion) obtains a
->> reference for the relevant btrfs_space_info struct by querying the bg
->> for the range. This is problematic because when the last extent of a
->> bg is deleted a race window emerges between removal of that bg and the
->> subsequent invocation of cleanup_ref_head. This can result in cache being null
->> and either a null pointer dereference or assertion failure.
+On 04/18/2018 05:48 PM, Nikolay Borisov wrote:
+>
+> On 17.04.2018 19:08, Matthew Lai wrote:
+>> Hello!
 >>
->> 	task: ffff8d04d31ed080 task.stack: ffff9e5dc10cc000
->> 	RIP: 0010:assfail.constprop.78+0x18/0x1a [btrfs]
->> 	RSP: 0018:ffff9e5dc10cfbe8 EFLAGS: 00010292
->> 	RAX: 0000000000000044 RBX: 0000000000000000 RCX: 0000000000000000
->> 	RDX: ffff8d04ffc1f868 RSI: ffff8d04ffc178c8 RDI: ffff8d04ffc178c8
->> 	RBP: ffff8d04d29e5ea0 R08: 00000000000001f0 R09: 0000000000000001
->> 	R10: ffff9e5dc0507d58 R11: 0000000000000001 R12: ffff8d04d29e5ea0
->> 	R13: ffff8d04d29e5f08 R14: ffff8d04efe29b40 R15: ffff8d04efe203e0
->> 	FS:  00007fbf58ead500(0000) GS:ffff8d04ffc00000(0000) knlGS:0000000000000000
->> 	CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
->> 	CR2: 00007fe6c6975648 CR3: 0000000013b2a000 CR4: 00000000000006f0
->> 	DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
->> 	DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
->> 	Call Trace:
->> 	 __btrfs_run_delayed_refs+0x10e7/0x12c0 [btrfs]
->> 	 btrfs_run_delayed_refs+0x68/0x250 [btrfs]
->> 	 btrfs_should_end_transaction+0x42/0x60 [btrfs]
->> 	 btrfs_truncate_inode_items+0xaac/0xfc0 [btrfs]
->> 	 btrfs_evict_inode+0x4c6/0x5c0 [btrfs]
->> 	 evict+0xc6/0x190
->> 	 do_unlinkat+0x19c/0x300
->> 	 do_syscall_64+0x74/0x140
->> 	 entry_SYSCALL_64_after_hwframe+0x3d/0xa2
->> 	RIP: 0033:0x7fbf589c57a7
+>> I am getting ENOSPC on my root filesystem with plenty of unallocated
+>> space according to "fi usage". Any idea why that may be? This is a root
+>> partition for Debian Stable. Not doing anything unusual that I'm aware
+>> of. No snapshots.
 >>
->> To fix this, introduce a new flag "is_system" to head_ref structs,
->> which is populated at insertion time. This allows to decouple the
->> querying for the spaceinfo from querying the possibly deleted bg.
+>> Thanks!
 >>
->> Fixes: d7eae3403f46 ("Btrfs: rework delayed ref total_bytes_pinned accounting")
->> Suggested-by: Omar Sandoval <osandov@osandov.com>
->> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
-> 
-> Added to next, thanks.
-> 
->> @@ -550,8 +550,10 @@ add_delayed_ref_head(struct btrfs_fs_info *fs_info,
->>  		     struct btrfs_delayed_ref_head *head_ref,
->>  		     struct btrfs_qgroup_extent_record *qrecord,
->>  		     u64 bytenr, u64 num_bytes, u64 ref_root, u64 reserved,
->> -		     int action, int is_data, int *qrecord_inserted_ret,
->> +		     int action, int is_data, int is_system,
->> +		     int *qrecord_inserted_ret,
->>  		     int *old_ref_mod, int *new_ref_mod)
-> 
-> At some point we might want to peel of a few arguments of that function.
-> It now has 14.  The fs_info/trans should work and the
-> action/is_data/is_system could be merged to a bitmask.
+>> Matthew
+>>
+>> uname -a:
+>> Linux bigfoot 4.9.0-4-amd64 #1 SMP Debian 4.9.65-3+deb9u1 (2017-12-23)
+>> x86_64 GNU/Linux
+>>
+>> btrfs --version:
+>> btrfs-progs v4.7.3
+>>
+>> btrfs fi show:
+>> Label: none  uuid: 2364c63f-e20c-410f-90b4-05f722ee1c77
+>>      Total devices 1 FS bytes used 176.27GiB
+>>      devid    1 size 246.33GiB used 185.01GiB path /dev/sda2
+>>
+>> btrfs fi df /:
+>> Data, single: total=183.00GiB, used=175.78GiB
+>> System, single: total=4.00MiB, used=48.00KiB
+>> Metadata, single: total=2.01GiB, used=504.81MiB
+>> GlobalReserve, single: total=211.39MiB, used=0.00B
+>>
+>
+> You haven't shown "btrfs fi usage". In any case there were some patches
+> in more recent kernels which deal with premature ENOSPC:
+>
+>
+> 996478ca9c46 ("btrfs: change how we decide to commit transactions during
+> flushing")
+> 17024ad0a0fd ("Btrfs: fix early ENOSPC due to delalloc")
+>
+>
+> I'd advise you update to 4.14 stable. Otherwise running:
+> git log --oneline --grep "enospc" fs/btrfs/
+>
+> will shows you likely candidates.
 
-Yes, I sent a series which splits the delayed ref initialisation +
-addition. It will conflicts with this patch but I intend to rebase. I'm
-talking about [PATCH 0/8] Delayed refs cleanups/streamlining
-
-> 

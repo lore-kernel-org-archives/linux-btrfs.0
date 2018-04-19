@@ -1,130 +1,178 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:45492 "EHLO
-        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1752705AbeDSBD3 (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:37268 "EHLO
+        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+        by vger.kernel.org with ESMTP id S1752499AbeDSBDV (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 18 Apr 2018 21:03:29 -0400
+        Wed, 18 Apr 2018 21:03:21 -0400
 From: Howard McLauchlan <hmclauchlan@fb.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
         David Sterba <dsterba@suse.com>, <kernel-team@fb.com>,
         Howard McLauchlan <hmclauchlan@fb.com>
-Subject: [PATCH v2 1/3] btrfs: clean up le_bitmap_{set, clear}()
-Date: Wed, 18 Apr 2018 18:02:35 -0700
-Message-ID: <20180419010237.30960-1-hmclauchlan@fb.com>
+Subject: [PATCH v2 2/3] btrfs: optimize free space tree bitmap conversion
+Date: Wed, 18 Apr 2018 18:02:36 -0700
+Message-ID: <20180419010237.30960-2-hmclauchlan@fb.com>
+In-Reply-To: <20180419010237.30960-1-hmclauchlan@fb.com>
+References: <20180419010237.30960-1-hmclauchlan@fb.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-le_bitmap_set() is only used by free-space-tree, so move it there and
-make it static. le_bitmap_clear() is not used, so remove it.
+Presently, convert_free_space_to_extents() does a linear scan of the
+bitmap. We can speed this up with find_next_{bit,zero_bit}_le().
 
+This patch replaces the linear scan with find_next_{bit,zero_bit}_le().
+Testing shows a 20-33% decrease in execution time for
+convert_free_space_to_extents().
+
+Suggested-by: Omar Sandoval <osandov@osandov.com>
 Signed-off-by: Howard McLauchlan <hmclauchlan@fb.com>
 ---
-V1->V2: Also move le_bitmap_set()
-based on 4.17-rc1
- fs/btrfs/extent_io.c       | 40 --------------------------------------
- fs/btrfs/extent_io.h       |  3 ---
- fs/btrfs/free-space-tree.c | 20 +++++++++++++++++++
- 3 files changed, 20 insertions(+), 43 deletions(-)
+V1->V2: Round the bitmap size accordingly when allocating bitmap.
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index e99b329002cf..9a521e5e297d 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -5620,46 +5620,6 @@ void copy_extent_buffer(struct extent_buffer *dst, struct extent_buffer *src,
- 	}
- }
- 
--void le_bitmap_set(u8 *map, unsigned int start, int len)
--{
--	u8 *p = map + BIT_BYTE(start);
--	const unsigned int size = start + len;
--	int bits_to_set = BITS_PER_BYTE - (start % BITS_PER_BYTE);
--	u8 mask_to_set = BITMAP_FIRST_BYTE_MASK(start);
--
--	while (len - bits_to_set >= 0) {
--		*p |= mask_to_set;
--		len -= bits_to_set;
--		bits_to_set = BITS_PER_BYTE;
--		mask_to_set = ~0;
--		p++;
--	}
--	if (len) {
--		mask_to_set &= BITMAP_LAST_BYTE_MASK(size);
--		*p |= mask_to_set;
--	}
--}
--
--void le_bitmap_clear(u8 *map, unsigned int start, int len)
--{
--	u8 *p = map + BIT_BYTE(start);
--	const unsigned int size = start + len;
--	int bits_to_clear = BITS_PER_BYTE - (start % BITS_PER_BYTE);
--	u8 mask_to_clear = BITMAP_FIRST_BYTE_MASK(start);
--
--	while (len - bits_to_clear >= 0) {
--		*p &= ~mask_to_clear;
--		len -= bits_to_clear;
--		bits_to_clear = BITS_PER_BYTE;
--		mask_to_clear = ~0;
--		p++;
--	}
--	if (len) {
--		mask_to_clear &= BITMAP_LAST_BYTE_MASK(size);
--		*p &= ~mask_to_clear;
--	}
--}
--
- /*
-  * eb_bitmap_offset() - calculate the page and offset of the byte containing the
-  * given bit number
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index a53009694b16..d34416c831bf 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -84,9 +84,6 @@ static inline int le_test_bit(int nr, const u8 *addr)
- 	return 1U & (addr[BIT_BYTE(nr)] >> (nr & (BITS_PER_BYTE-1)));
- }
- 
--void le_bitmap_set(u8 *map, unsigned int start, int len);
--void le_bitmap_clear(u8 *map, unsigned int start, int len);
--
- struct extent_state;
- struct btrfs_root;
- struct btrfs_inode;
+ fs/btrfs/free-space-tree.c | 61 ++++++++++++++------------------------
+ 1 file changed, 23 insertions(+), 38 deletions(-)
+
 diff --git a/fs/btrfs/free-space-tree.c b/fs/btrfs/free-space-tree.c
-index 32a0f6cb5594..e03830d83311 100644
+index e03830d83311..7019afe6e727 100644
 --- a/fs/btrfs/free-space-tree.c
 +++ b/fs/btrfs/free-space-tree.c
-@@ -157,6 +157,26 @@ static u8 *alloc_bitmap(u32 bitmap_size)
+@@ -138,10 +138,11 @@ static inline u32 free_space_bitmap_size(u64 size, u32 sectorsize)
+ 	return DIV_ROUND_UP((u32)div_u64(size, sectorsize), BITS_PER_BYTE);
+ }
+ 
+-static u8 *alloc_bitmap(u32 bitmap_size)
++static unsigned long *alloc_bitmap(u32 bitmap_size)
+ {
+-	u8 *ret;
++	unsigned long *ret;
+ 	unsigned int nofs_flag;
++	u32 bitmap_rounded_size = round_up(bitmap_size, sizeof(unsigned long));
+ 
+ 	/*
+ 	 * GFP_NOFS doesn't work with kvmalloc(), but we really can't recurse
+@@ -152,14 +153,14 @@ static u8 *alloc_bitmap(u32 bitmap_size)
+ 	 * know that recursion is unsafe.
+ 	 */
+ 	nofs_flag = memalloc_nofs_save();
+-	ret = kvzalloc(bitmap_size, GFP_KERNEL);
++	ret = kvzalloc(bitmap_rounded_size, GFP_KERNEL);
+ 	memalloc_nofs_restore(nofs_flag);
  	return ret;
  }
  
-+static void le_bitmap_set(u8 *map, unsigned int start, int len)
-+{
-+	u8 *p = map + BIT_BYTE(start);
-+	const unsigned int size = start + len;
-+	int bits_to_set = BITS_PER_BYTE - (start % BITS_PER_BYTE);
-+	u8 mask_to_set = BITMAP_FIRST_BYTE_MASK(start);
+-static void le_bitmap_set(u8 *map, unsigned int start, int len)
++static void le_bitmap_set(unsigned long *map, unsigned int start, int len)
+ {
+-	u8 *p = map + BIT_BYTE(start);
++	u8 *p = ((u8 *)map) + BIT_BYTE(start);
+ 	const unsigned int size = start + len;
+ 	int bits_to_set = BITS_PER_BYTE - (start % BITS_PER_BYTE);
+ 	u8 mask_to_set = BITMAP_FIRST_BYTE_MASK(start);
+@@ -186,7 +187,8 @@ int convert_free_space_to_bitmaps(struct btrfs_trans_handle *trans,
+ 	struct btrfs_free_space_info *info;
+ 	struct btrfs_key key, found_key;
+ 	struct extent_buffer *leaf;
+-	u8 *bitmap, *bitmap_cursor;
++	unsigned long *bitmap;
++	char *bitmap_cursor;
+ 	u64 start, end;
+ 	u64 bitmap_range, i;
+ 	u32 bitmap_size, flags, expected_extent_count;
+@@ -275,7 +277,7 @@ int convert_free_space_to_bitmaps(struct btrfs_trans_handle *trans,
+ 		goto out;
+ 	}
+ 
+-	bitmap_cursor = bitmap;
++	bitmap_cursor = (char *)bitmap;
+ 	bitmap_range = fs_info->sectorsize * BTRFS_FREE_SPACE_BITMAP_BITS;
+ 	i = start;
+ 	while (i < end) {
+@@ -324,13 +326,10 @@ int convert_free_space_to_extents(struct btrfs_trans_handle *trans,
+ 	struct btrfs_free_space_info *info;
+ 	struct btrfs_key key, found_key;
+ 	struct extent_buffer *leaf;
+-	u8 *bitmap;
++	unsigned long *bitmap;
+ 	u64 start, end;
+-	/* Initialize to silence GCC. */
+-	u64 extent_start = 0;
+-	u64 offset;
+ 	u32 bitmap_size, flags, expected_extent_count;
+-	int prev_bit = 0, bit, bitnr;
++	unsigned long nrbits, start_bit, end_bit;
+ 	u32 extent_count = 0;
+ 	int done = 0, nr;
+ 	int ret;
+@@ -368,7 +367,7 @@ int convert_free_space_to_extents(struct btrfs_trans_handle *trans,
+ 				break;
+ 			} else if (found_key.type == BTRFS_FREE_SPACE_BITMAP_KEY) {
+ 				unsigned long ptr;
+-				u8 *bitmap_cursor;
++				char *bitmap_cursor;
+ 				u32 bitmap_pos, data_size;
+ 
+ 				ASSERT(found_key.objectid >= start);
+@@ -378,7 +377,7 @@ int convert_free_space_to_extents(struct btrfs_trans_handle *trans,
+ 				bitmap_pos = div_u64(found_key.objectid - start,
+ 						     fs_info->sectorsize *
+ 						     BITS_PER_BYTE);
+-				bitmap_cursor = bitmap + bitmap_pos;
++				bitmap_cursor = ((char *)bitmap) + bitmap_pos;
+ 				data_size = free_space_bitmap_size(found_key.offset,
+ 								   fs_info->sectorsize);
+ 
+@@ -412,32 +411,16 @@ int convert_free_space_to_extents(struct btrfs_trans_handle *trans,
+ 	btrfs_mark_buffer_dirty(leaf);
+ 	btrfs_release_path(path);
+ 
+-	offset = start;
+-	bitnr = 0;
+-	while (offset < end) {
+-		bit = !!le_test_bit(bitnr, bitmap);
+-		if (prev_bit == 0 && bit == 1) {
+-			extent_start = offset;
+-		} else if (prev_bit == 1 && bit == 0) {
+-			key.objectid = extent_start;
+-			key.type = BTRFS_FREE_SPACE_EXTENT_KEY;
+-			key.offset = offset - extent_start;
+-
+-			ret = btrfs_insert_empty_item(trans, root, path, &key, 0);
+-			if (ret)
+-				goto out;
+-			btrfs_release_path(path);
++	nrbits = div_u64(block_group->key.offset, block_group->fs_info->sectorsize);
++	start_bit = find_next_bit_le(bitmap, nrbits, 0);
+ 
+-			extent_count++;
+-		}
+-		prev_bit = bit;
+-		offset += fs_info->sectorsize;
+-		bitnr++;
+-	}
+-	if (prev_bit == 1) {
+-		key.objectid = extent_start;
++	while (start_bit < nrbits) {
++		end_bit = find_next_zero_bit_le(bitmap, nrbits, start_bit);
++		ASSERT(start_bit < end_bit);
 +
-+	while (len - bits_to_set >= 0) {
-+		*p |= mask_to_set;
-+		len -= bits_to_set;
-+		bits_to_set = BITS_PER_BYTE;
-+		mask_to_set = ~0;
-+		p++;
-+	}
-+	if (len) {
-+		mask_to_set &= BITMAP_LAST_BYTE_MASK(size);
-+		*p |= mask_to_set;
-+	}
-+}
++		key.objectid = start + start_bit * block_group->fs_info->sectorsize;
+ 		key.type = BTRFS_FREE_SPACE_EXTENT_KEY;
+-		key.offset = end - extent_start;
++		key.offset = (end_bit - start_bit) * block_group->fs_info->sectorsize;
+ 
+ 		ret = btrfs_insert_empty_item(trans, root, path, &key, 0);
+ 		if (ret)
+@@ -445,6 +428,8 @@ int convert_free_space_to_extents(struct btrfs_trans_handle *trans,
+ 		btrfs_release_path(path);
+ 
+ 		extent_count++;
 +
- int convert_free_space_to_bitmaps(struct btrfs_trans_handle *trans,
- 				  struct btrfs_fs_info *fs_info,
- 				  struct btrfs_block_group_cache *block_group,
++		start_bit = find_next_bit_le(bitmap, nrbits, end_bit);
+ 	}
+ 
+ 	if (extent_count != expected_extent_count) {
 -- 
 2.17.0
 

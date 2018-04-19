@@ -1,75 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from wecheer.com ([54.200.0.65]:42999 "EHLO wecheer.com"
+Received: from mx2.suse.de ([195.135.220.15]:57996 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751147AbeDSLML (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 19 Apr 2018 07:12:11 -0400
-Subject: Re: Filesystem full with unallocated space?
-To: Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
-References: <89d90bb8-dbe3-1789-60eb-a29f9d1e3a64@matthewlai.ca>
- <b7c2b3f9-89cf-9ae4-7d73-cfdd274f56cd@matthewlai.ca>
- <aa9580ac-eba2-038c-1e60-a57a05eb544d@suse.com>
-From: Matthew Lai <m@matthewlai.ca>
-Message-ID: <9c33b8be-f2f0-2b5d-856c-46acba79f0d7@matthewlai.ca>
-Date: Thu, 19 Apr 2018 12:12:07 +0100
+        id S1752694AbeDSNEI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 19 Apr 2018 09:04:08 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 840AFAF0D
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Apr 2018 13:04:07 +0000 (UTC)
+Date: Thu, 19 Apr 2018 15:01:36 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 2/2] btrfs: print-tree: Add locking status output for
+ debug build
+Message-ID: <20180419130136.GC21272@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20180411090813.19495-1-wqu@suse.com>
+ <20180411090813.19495-2-wqu@suse.com>
 MIME-Version: 1.0
-In-Reply-To: <aa9580ac-eba2-038c-1e60-a57a05eb544d@suse.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20180411090813.19495-2-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Nikolay,
+On Wed, Apr 11, 2018 at 05:08:13PM +0800, Qu Wenruo wrote:
+> It's pretty handy if we can get debug output for locking status of an
+> extent buffer, specially for race related debugging.
+> 
+> So add the following output for btrfs_print_tree() and
+> btrfs_print_leaf():
+> - refs
+> - write_locks (as w:%u)
+> - read_locks (as r:%u)
+> - blocking_writers (as bw:%u)
+> - blocking_readers (as br:%u)
+> - spinning_writers (as sw:%u)
+> - spinning_readers (as sr:%u)
+> - lock_owner
+> - current->pid
 
-Updating to 4.15 seems to have fixed it.
-
-Thanks!
-
-Matthew
-
-
-On 04/18/2018 05:48 PM, Nikolay Borisov wrote:
->
-> On 17.04.2018 19:08, Matthew Lai wrote:
->> Hello!
->>
->> I am getting ENOSPC on my root filesystem with plenty of unallocated
->> space according to "fi usage". Any idea why that may be? This is a root
->> partition for Debian Stable. Not doing anything unusual that I'm aware
->> of. No snapshots.
->>
->> Thanks!
->>
->> Matthew
->>
->> uname -a:
->> Linux bigfoot 4.9.0-4-amd64 #1 SMP Debian 4.9.65-3+deb9u1 (2017-12-23)
->> x86_64 GNU/Linux
->>
->> btrfs --version:
->> btrfs-progs v4.7.3
->>
->> btrfs fi show:
->> Label: none  uuid: 2364c63f-e20c-410f-90b4-05f722ee1c77
->>      Total devices 1 FS bytes used 176.27GiB
->>      devid    1 size 246.33GiB used 185.01GiB path /dev/sda2
->>
->> btrfs fi df /:
->> Data, single: total=183.00GiB, used=175.78GiB
->> System, single: total=4.00MiB, used=48.00KiB
->> Metadata, single: total=2.01GiB, used=504.81MiB
->> GlobalReserve, single: total=211.39MiB, used=0.00B
->>
->
-> You haven't shown "btrfs fi usage". In any case there were some patches
-> in more recent kernels which deal with premature ENOSPC:
->
->
-> 996478ca9c46 ("btrfs: change how we decide to commit transactions during
-> flushing")
-> 17024ad0a0fd ("Btrfs: fix early ENOSPC due to delalloc")
->
->
-> I'd advise you update to 4.14 stable. Otherwise running:
-> git log --oneline --grep "enospc" fs/btrfs/
->
-> will shows you likely candidates.
-
+Useful, but atomic is 'int' (%d), and pid_t is also int in disguise
+(maybe there's a special printk specifier for that).

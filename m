@@ -1,66 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vk0-f42.google.com ([209.85.213.42]:38412 "EHLO
-        mail-vk0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754470AbeDTJlf (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 20 Apr 2018 05:41:35 -0400
-Received: by mail-vk0-f42.google.com with SMTP id b16so4890726vka.5
-        for <linux-btrfs@vger.kernel.org>; Fri, 20 Apr 2018 02:41:35 -0700 (PDT)
+Received: from mx2.suse.de ([195.135.220.15]:54470 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1753549AbeDSQYv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 19 Apr 2018 12:24:51 -0400
+Subject: Re: [PATCH 1/3] btrfs: Add incompat flags check for
+ btrfs_check_super_valid()
+To: dsterba@suse.cz, Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+References: <20180419093816.888-1-wqu@suse.com>
+ <7e7554c2-28d1-5912-7f02-e1f87556a3a8@suse.com>
+ <b94eaf2e-8d5e-23e9-0672-2eb5abd56ae8@gmx.com>
+ <20180419153106.GJ21272@twin.jikos.cz>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <17216718-a88d-de20-1a26-e7a5a515d02a@suse.com>
+Date: Thu, 19 Apr 2018 19:24:48 +0300
 MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <516DDBE5B1D92D42BCF7A2E37F045A5D01A84EA5CF@G08CNEXMBPEKD02.g08.fujitsu.local>
-References: <516DDBE5B1D92D42BCF7A2E37F045A5D01A84EA5CF@G08CNEXMBPEKD02.g08.fujitsu.local>
-From: Filipe Manana <fdmanana@gmail.com>
-Date: Fri, 20 Apr 2018 10:41:34 +0100
-Message-ID: <CAL3q7H6AEj_x87qSjhSs=Lfw6vdkKdCKvx4AtdWDRQH0Vwv1DA@mail.gmail.com>
-Subject: Re: [bug report] btrfs fail when run xfstests-dev/btrfs/007
-To: "Gu, Jinxiang" <gujx@cn.fujitsu.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <20180419153106.GJ21272@twin.jikos.cz>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Apr 20, 2018 at 10:23 AM, Gu, Jinxiang <gujx@cn.fujitsu.com> wrote:
-> Hi,
->
-> Here's a bug report.
-> Kernel v4.17-rc1 failed xfstests-dev/btrfs/007.
-> It is not always happens.( occurred times/test times: 1/20)
-
-You don't need to check how many times it fails... You have a fsstress
-seed from the .full file, that's all that matters.
-
-I'll take a look at it, it's due to a missing truncate operation.
-
-thanks
-
->
-> And I confirmed this test using kernel v4.16-rc1.
-> It also occurred sometimes.
->
-> LOG when using kernel v4.17-rc1.
-> btrfs/007        [failed, exit status 1] - output mismatch (see /home/gujx/xfstests-dev/results//btrfs/007.out.bad)
->     --- tests/btrfs/007.out     2017-08-18 12:45:06.560413266 +0800
->     +++ /home/gujx/xfstests-dev/results//btrfs/007.out.bad      2018-04-17 13:24:06.887089998 +0800
->     @@ -1,4 +1,5 @@
->      QA output created by 007
->      *** test send / receive
->     -*** done
->     +failed: '/home/gujx/xfstests-dev/src/fssum -r /tmp/tmp.SkEUIXw683/incr.fssum /mnt/scratch/incr'
->     +(see /home/gujx/xfstests-dev/results//btrfs/007.full for details)
->      *** unmount
->     ...
->     (Run 'diff -u tests/btrfs/007.out /home/gujx/xfstests-dev/results//btrfs/007.out.bad'  to see the entire diff)
->
-> And the detail can be found in the attachment.
->
-> Thanks, Gu Jinxiang
->
->
 
 
+On 19.04.2018 18:31, David Sterba wrote:
+> On Thu, Apr 19, 2018 at 07:10:30PM +0800, Qu Wenruo wrote:
+>>
+>>
+>> On 2018年04月19日 18:59, Nikolay Borisov wrote:
+>>>
+>>>
+>>> On 19.04.2018 12:38, Qu Wenruo wrote:
+>>>> Although we have already checked incompat flags manually before really
+>>>> mounting it, we could still enhance btrfs_check_super_valid() to check
+>>>> incompat flags for later write time super block validation check.
+>>>>
+>>>> This patch adds such incompat flags check for btrfs_check_super_valid(),
+>>>> currently it won't be triggered, but provides the basis for later write
+>>>> time check.
+>>>>
+>>>> Signed-off-by: Qu Wenruo <wqu@suse.com>
+>>>
+>>> Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+>>>
+>>>> ---
+>>>>  fs/btrfs/disk-io.c | 13 +++++++++++++
+>>>>  1 file changed, 13 insertions(+)
+>>>>
+>>>> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+>>>> index 60caa68c3618..ec123158f051 100644
+>>>> --- a/fs/btrfs/disk-io.c
+>>>> +++ b/fs/btrfs/disk-io.c
+>>>> @@ -4104,6 +4104,19 @@ static int btrfs_check_super_valid(struct btrfs_fs_info *fs_info)
+>>>
+>>> nit: Thinking out loud here - wouldn't it make more sense to name the
+>>> function btrfs_validate_super. check_super_valid sounds a bit cumbersome
+>>> to me. What do you think ?
+>>
+>> Indeed, I also like to remove the btrfs_ prefix since it's a static
+>> function.
+>> validate_super() looks much better.
+> 
+> It's not necessary to remove the btrfs_ prefix from all static
+> functions, sometimes the functions appear on stacks or mixed with other
+> subystem helpers that have generic names. The prefix makes it clear that
+> it's our function.
 
--- 
-Filipe David Manana,
-
-“Whether you think you can, or you think you can't — you're right.”
+I agree with David, just make it btrfs_validate_super
+> 

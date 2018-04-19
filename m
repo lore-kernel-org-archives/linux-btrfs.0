@@ -1,58 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from antelope.ash.relay.mailchannels.net ([23.83.222.4]:56683 "EHLO
-        antelope.ash.relay.mailchannels.net" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1752245AbeDRUGa (ORCPT
+Received: from mail-pg0-f67.google.com ([74.125.83.67]:37401 "EHLO
+        mail-pg0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752245AbeDSAAd (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 18 Apr 2018 16:06:30 -0400
-Subject: Re: nvme+btrfs+compression sensibility and benchmark
-To: Chris Murphy <lists@colorremedies.com>,
-        "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <271cf4a5-92d6-04eb-5f7a-471c2997ca48@swiftspirit.co.za>
- <f336feb1-5da4-6d08-53f5-0a591253218b@gmail.com>
- <CAJCQCtSBs9nJXi2CZuBsgegCoN0J5K1BDWGPqD5K9z_G6pOPsg@mail.gmail.com>
-From: Brendan Hide <brendan@swiftspirit.co.za>
-Message-ID: <298d6590-c611-bfad-76a3-1c20d39eb718@swiftspirit.co.za>
-Date: Wed, 18 Apr 2018 21:56:34 +0200
+        Wed, 18 Apr 2018 20:00:33 -0400
+Date: Wed, 18 Apr 2018 17:00:29 -0700
+From: Eric Biggers <ebiggers3@gmail.com>
+To: linux-btrfs@vger.kernel.org, Chris Mason <clm@fb.com>
+Cc: linux-fsdevel@vger.kernel.org
+Subject: d_instantiate() and unlock_new_inode() order in btrfs_mkdir()
+Message-ID: <20180419000029.GA133757@gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtSBs9nJXi2CZuBsgegCoN0J5K1BDWGPqD5K9z_G6pOPsg@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thank you, all
+Hi Chris and other btrfs folks,
 
-Though the info is useful, there's not a clear consensus on what I 
-should expect. For interest's sake, I'll post benchmarks from the device 
-itself when it arrives.
+btrfs_mkdir() calls d_instantiate() before unlock_new_inode(), which is wrong
+because it exposes the inode to lookups before it's been fully initialized.
+Most filesystems get it right, but f2fs and btrfs don't.  I sent a f2fs patch
+(https://marc.info/?l=linux-fsdevel&m=152409178431350) and was going to send a
+btrfs patch too, but in btrfs_mkdir() there is actually a comment claiming that
+the existing order is intentional:
 
-I'm expecting at least that I'll be blown away :)
+        d_instantiate(dentry, inode);
+        /*
+         * mkdir is special.  We're unlocking after we call d_instantiate
+         * to avoid a race with nfsd calling d_instantiate.
+         */
+        unlock_new_inode(inode);
 
-On 04/18/2018 09:23 PM, Chris Murphy wrote:
-> 
-> 
-> On Wed, Apr 18, 2018 at 10:38 AM, Austin S. Hemmelgarn 
-> <ahferroin7@gmail.com <mailto:ahferroin7@gmail.com>> wrote:
-> 
->     For reference, the zstd compression in BTRFS uses level 3 by default
->     (as does zlib compression IIRC), though I'm not sure about lzop (I
->     think it uses the lowest compression setting).
-> 
-> 
-> 
-> The user space tool, zstd, does default to 3, according to its man page.
-> 
->         -#     # compression level [1-19] (default: 3)
-> 
-> 
-> However, the kernel is claiming it's level 0, which doesn't exist in the 
-> man page. So I have no idea what we're using. This is what I get with 
-> mount option compress=zstd
-> 
-> [    4.097858] BTRFS info (device nvme0n1p9): use zstd compression, level 0
-> 
-> 
-> 
-> 
-> -- 
-> Chris Murphy
+Unfortunately, I cannot find what it is refering to.  The comment was added by
+commit b0d5d10f41a0 ("Btrfs: use insert_inode_locked4 for inode creation").
+Chris, do you remember exactly what you had in mind when you wrote this?
+
+And in case anyone wants it, here's a reproducer for the deadlock caused by the
+current code that calls d_instantiate() before unlock_new_inode().  Note: it
+needs CONFIG_DEBUG_LOCK_ALLOC=y.
+
+	#include <sys/stat.h>
+	#include <unistd.h>
+
+	int main()
+	{
+		struct stat stbuf;
+
+		if (fork() == 0) {
+			for (;;)
+				stat("dir/file", &stbuf);
+		} else {
+			for (;;) {
+				mkdir("dir", 0777);
+				stat("dir/file", &stbuf);
+				rmdir("dir");
+			}
+		}
+	}

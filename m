@@ -1,54 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:54150 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:54153 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752558AbeDSHqo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 19 Apr 2018 03:46:44 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id B2299AE21
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Apr 2018 07:46:42 +0000 (UTC)
+        id S1751210AbeDSHqp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 19 Apr 2018 03:46:45 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 0A029AE55
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Apr 2018 07:46:43 +0000 (UTC)
 From: Nikolay Borisov <nborisov@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 4/6] btrfs: Use list_empty instead of list_empty_careful
-Date: Thu, 19 Apr 2018 10:46:37 +0300
-Message-Id: <1524123999-4220-4-git-send-email-nborisov@suse.com>
+Subject: [PATCH 5/6] btrfs: Remove tree argument from extent_writepages
+Date: Thu, 19 Apr 2018 10:46:38 +0300
+Message-Id: <1524123999-4220-5-git-send-email-nborisov@suse.com>
 In-Reply-To: <1524123999-4220-1-git-send-email-nborisov@suse.com>
 References: <1524123999-4220-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-list_empty_careful usually is a signal of something tricky going on. Its
-usage in btrfs is actually not needed since both lists it's used on are
-local to a function and cannot be modified concurrently. So switch to
-plain list_empty. No functional changes.
+It can be directly referenced from the passed address_space so do that.
+No functional changes.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/inode.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ fs/btrfs/extent_io.c | 5 ++---
+ fs/btrfs/extent_io.h | 3 +--
+ fs/btrfs/inode.c     | 5 +----
+ 3 files changed, 4 insertions(+), 9 deletions(-)
 
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 5cde345fa0b6..22688b5ffb62 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -4109,14 +4109,13 @@ int extent_write_locked_range(struct inode *inode, u64 start, u64 end,
+ 	return ret;
+ }
+ 
+-int extent_writepages(struct extent_io_tree *tree,
+-		      struct address_space *mapping,
++int extent_writepages(struct address_space *mapping,
+ 		      struct writeback_control *wbc)
+ {
+ 	int ret = 0;
+ 	struct extent_page_data epd = {
+ 		.bio = NULL,
+-		.tree = tree,
++		.tree = &BTRFS_I(mapping->host)->io_tree,
+ 		.extent_locked = 0,
+ 		.sync_io = wbc->sync_mode == WB_SYNC_ALL,
+ 	};
+diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+index 2f085108335d..e02bda4b85cd 100644
+--- a/fs/btrfs/extent_io.h
++++ b/fs/btrfs/extent_io.h
+@@ -419,8 +419,7 @@ int extent_invalidatepage(struct extent_io_tree *tree,
+ int extent_write_full_page(struct page *page, struct writeback_control *wbc);
+ int extent_write_locked_range(struct inode *inode, u64 start, u64 end,
+ 			      int mode);
+-int extent_writepages(struct extent_io_tree *tree,
+-		      struct address_space *mapping,
++int extent_writepages(struct address_space *mapping,
+ 		      struct writeback_control *wbc);
+ int btree_write_cache_pages(struct address_space *mapping,
+ 			    struct writeback_control *wbc);
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 7b1026a7ffab..423a6eb3165c 100644
+index 423a6eb3165c..b4158c2b6f3e 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -10086,7 +10086,7 @@ static int __start_delalloc_inodes(struct btrfs_root *root, int delay_iput,
- 		btrfs_wait_and_free_delalloc_work(work);
- 	}
+@@ -8730,10 +8730,7 @@ static int btrfs_writepage(struct page *page, struct writeback_control *wbc)
+ static int btrfs_writepages(struct address_space *mapping,
+ 			    struct writeback_control *wbc)
+ {
+-	struct extent_io_tree *tree;
+-
+-	tree = &BTRFS_I(mapping->host)->io_tree;
+-	return extent_writepages(tree, mapping, wbc);
++	return extent_writepages(mapping, wbc);
+ }
  
--	if (!list_empty_careful(&splice)) {
-+	if (!list_empty(&splice)) {
- 		spin_lock(&root->delalloc_lock);
- 		list_splice_tail(&splice, &root->delalloc_inodes);
- 		spin_unlock(&root->delalloc_lock);
-@@ -10148,7 +10148,7 @@ int btrfs_start_delalloc_roots(struct btrfs_fs_info *fs_info, int delay_iput,
- 
- 	ret = 0;
- out:
--	if (!list_empty_careful(&splice)) {
-+	if (!list_empty(&splice)) {
- 		spin_lock(&fs_info->delalloc_root_lock);
- 		list_splice_tail(&splice, &fs_info->delalloc_roots);
- 		spin_unlock(&fs_info->delalloc_root_lock);
+ static int
 -- 
 2.7.4
 

@@ -1,119 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:45127 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:55254 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1754607AbeDTMWH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 20 Apr 2018 08:22:07 -0400
-Date: Fri, 20 Apr 2018 14:19:34 +0200
-From: David Sterba <dsterba@suse.cz>
-To: dsterba@suse.cz, Anand Jain <anand.jain@oracle.com>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2 12/16] btrfs: track running balance in a simpler way
-Message-ID: <20180420121934.GP21272@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+        id S1753761AbeDSQfo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 19 Apr 2018 12:35:44 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 62D5BAC76
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Apr 2018 16:35:43 +0000 (UTC)
+From: David Sterba <dsterba@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.com>
+Subject: [PATCH v2 01/16] btrfs: squeeze btrfs_dev_replace_continue_on_mount to its caller
+Date: Thu, 19 Apr 2018 18:33:12 +0200
+Message-Id: <c708ac000e8d098d6a4ac4281b8a07089fa62b3a.1524146555.git.dsterba@suse.com>
+In-Reply-To: <cover.1524146555.git.dsterba@suse.com>
 References: <cover.1524146555.git.dsterba@suse.com>
- <6d512cf2c8f825592703ee0d45c51f22396e6078.1524146556.git.dsterba@suse.com>
- <6ab5bdc1-45a2-d0a4-cdc7-587731c4103a@oracle.com>
- <20180420115811.GM21272@twin.jikos.cz>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180420115811.GM21272@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Apr 20, 2018 at 01:58:11PM +0200, David Sterba wrote:
-> On Fri, Apr 20, 2018 at 03:52:24PM +0800, Anand Jain wrote:
-> > 
-> > 
-> > On 04/20/2018 12:33 AM, David Sterba wrote:
-> > > Currently fs_info::balance_running is 0 or 1 and does not use the
-> > > semantics of atomics. The pause and cancel check for 0, that can happen
-> > > only after __btrfs_balance exits for whatever reason.
-> > > 
-> > > Parallel calls to balance ioctl may enter btrfs_ioctl_balance multiple
-> > > times but will block on the balance_mutex that protects the
-> > > fs_info::flags bit.
-> > > 
-> > > Signed-off-by: David Sterba <dsterba@suse.com>
-> > > ---
-> > >   fs/btrfs/ctree.h   |  6 +++++-
-> > >   fs/btrfs/disk-io.c |  1 -
-> > >   fs/btrfs/ioctl.c   |  6 +++---
-> > >   fs/btrfs/volumes.c | 18 ++++++++++--------
-> > >   4 files changed, 18 insertions(+), 13 deletions(-)
-> > > 
-> > > diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-> > > index 011cb9a8a967..fda94a264eb7 100644
-> > > --- a/fs/btrfs/ctree.h
-> > > +++ b/fs/btrfs/ctree.h
-> > > @@ -726,6 +726,11 @@ struct btrfs_delayed_root;
-> > >    * (device replace, resize, device add/delete, balance)
-> > >    */
-> > >   #define BTRFS_FS_EXCL_OP			16
-> > > +/*
-> > > + * Indicate that balance has been set up from the ioctl and is in the main
-> > > + * phase. The fs_info::balance_ctl is initialized.
-> > > + */
-> > > +#define BTRFS_FS_BALANCE_RUNNING		17
-> > 
-> > 
-> >   Change looks good to me as such and its a good idea to drop
-> >     fs_info::balance_running;
-> > 
-> >   However instead of making BTRFS_FS_BALANCE_RUNNING part of
-> >     btrfs_fs_info::flags
-> >   pls make it part of
-> >     btrfs_balance_control::flags
-> > 
-> >   Because:
-> >   We already have BTRFS_BALANCE_RESUME there.
-> >   And at fs_info level BTRFS_FS_EXCL_OP tells someone excl is running.
-> >   And if its a balance (either in running or implicit-paused state)
-> >   then btrfs_fs_info::balance_ctl is not NULL.
-> 
-> This would work fine, if the btrfs_balance_control::flags were not copy
-> of the ioctl structure. There are the filter flags stored there, in
-> addition to BTRFS_BALANCE_RESUME.
-> 
-> >From that point it's the balance ioctl interface and adding the internal
-> runtime flag does not seem to fit.
-> 
-> The status bit could be tracked separatelly in btrfs_balance_control so
-> it does not use the whole filesystem flag namespace, as it's always used
-> under balance mutex.
-> 
-> As this is simple change to the patch, I'll do that.
+The function is called once and is fairly small, we can merge it with
+the caller.
 
-Ok not that simple, the running status is checked outside of
-balance_mutex and there's one more assertion that does not expect the
-balance_ctl to exist:
+Reviewed-by: Anand Jain <anand.jain@oracle.com>
+Signed-off-by: David Sterba <dsterba@suse.com>
+---
+ fs/btrfs/dev-replace.c | 16 +++-------------
+ 1 file changed, 3 insertions(+), 13 deletions(-)
 
-@@ -4031,16 +4032,16 @@ int btrfs_pause_balance(struct btrfs_fs_info *fs_info)
-                return -ENOTCONN;
-        }
+diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+index 0d203633bb96..c0397cd2a3ba 100644
+--- a/fs/btrfs/dev-replace.c
++++ b/fs/btrfs/dev-replace.c
+@@ -45,8 +45,6 @@ static void btrfs_dev_replace_update_device_in_mapping_tree(
+ 						struct btrfs_device *srcdev,
+ 						struct btrfs_device *tgtdev);
+ static int btrfs_dev_replace_kthread(void *data);
+-static int btrfs_dev_replace_continue_on_mount(struct btrfs_fs_info *fs_info);
+-
+ 
+ int btrfs_init_dev_replace(struct btrfs_fs_info *fs_info)
+ {
+@@ -822,6 +820,7 @@ static int btrfs_dev_replace_kthread(void *data)
+ 	struct btrfs_fs_info *fs_info = data;
+ 	struct btrfs_dev_replace *dev_replace = &fs_info->dev_replace;
+ 	u64 progress;
++	int ret;
+ 
+ 	progress = btrfs_dev_replace_progress(fs_info);
+ 	progress = div_u64(progress, 10);
+@@ -832,23 +831,14 @@ static int btrfs_dev_replace_kthread(void *data)
+ 		btrfs_dev_name(dev_replace->tgtdev),
+ 		(unsigned int)progress);
+ 
+-	btrfs_dev_replace_continue_on_mount(fs_info);
+-	clear_bit(BTRFS_FS_EXCL_OP, &fs_info->flags);
+-
+-	return 0;
+-}
+-
+-static int btrfs_dev_replace_continue_on_mount(struct btrfs_fs_info *fs_info)
+-{
+-	struct btrfs_dev_replace *dev_replace = &fs_info->dev_replace;
+-	int ret;
+-
+ 	ret = btrfs_scrub_dev(fs_info, dev_replace->srcdev->devid,
+ 			      dev_replace->committed_cursor_left,
+ 			      btrfs_device_get_total_bytes(dev_replace->srcdev),
+ 			      &dev_replace->scrub_progress, 0, 1);
+ 	ret = btrfs_dev_replace_finishing(fs_info, ret);
+ 	WARN_ON(ret);
++
++	clear_bit(BTRFS_FS_EXCL_OP, &fs_info->flags);
+ 	return 0;
+ }
+ 
+-- 
+2.16.2
 
--       if (atomic_read(&fs_info->balance_running)) {
-+       if (test_bit(BTRFS_FS_BALANCE_RUNNING, &fs_info->flags)) {
-                atomic_inc(&fs_info->balance_pause_req);
-                mutex_unlock(&fs_info->balance_mutex);
-
-                wait_event(fs_info->balance_wait_q,
--                          atomic_read(&fs_info->balance_running) == 0);
-+                          !test_bit(BTRFS_FS_BALANCE_RUNNING, &fs_info->flags));
-
-here it's unlocked
-
-
-                mutex_lock(&fs_info->balance_mutex);
-                /* we are good with balance_ctl ripped off from under us */
--               BUG_ON(atomic_read(&fs_info->balance_running));
-+               BUG_ON(test_bit(BTRFS_FS_BALANCE_RUNNING, &fs_info->flags));
-
-and rewriting the code so this could be checked the same way is not a simple
-fixup as I expected.
-
-As there's still the extra balance mutex lock/unlock after the volume
-mutex removal, I'll have a look how this could be cleaned up further.
-
-                atomic_dec(&fs_info->balance_pause_req);
-        } else {
-                ret = -ENOTCONN;

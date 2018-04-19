@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:54370 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:49200 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752934AbeDPTyc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 16 Apr 2018 15:54:32 -0400
-Date: Mon, 16 Apr 2018 21:52:00 +0200
+        id S1750858AbeDSPZ2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 19 Apr 2018 11:25:28 -0400
+Date: Thu, 19 Apr 2018 17:22:54 +0200
 From: David Sterba <dsterba@suse.cz>
 To: Anand Jain <anand.jain@oracle.com>
 Cc: linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH 0/15] Review uuid_mutex usage
-Message-ID: <20180416195200.GA21272@twin.jikos.cz>
+Message-ID: <20180419152254.GI21272@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 References: <20180412022938.8257-1-anand.jain@oracle.com>
 MIME-Version: 1.0
@@ -39,15 +39,18 @@ On Thu, Apr 12, 2018 at 10:29:23AM +0800, Anand Jain wrote:
 > This is tested with xfstests and there are no _new_ regression. And I am
 > trying to understand the old regressions, and notice that they are
 > inconsistent.
+> 
+> Anand Jain (15):
+>   btrfs: optimize move uuid_mutex closer to the critical section
 
-The series looks good to me, I don't see any obvious breakage when the
-uuid mutex is being removed, most of the device list consistency is
-guarded by the device_list_mutex.
+FYI, the patches:
 
-It indeed looks like uuid_mutex is overused and I've noticed that the
-lock description in volumes.c is not entirely correct as it says that
-eg. the device count and count of rw devices is proteced by that lock.
+>   btrfs: rename struct btrfs_fs_devices::list
+>   btrfs: cleanup __btrfs_open_devices() drop head pointer
+>   btrfs: rename __btrfs_close_devices to close_fs_devices
+>   btrfs: rename __btrfs_open_devices to open_fs_devices
+>   btrfs: cleanup find_device() drop list_head pointer
+>   btrfs: cleanup btrfs_rm_device() promote fs_devices pointer
 
-This would be good to update too, so it matches the code.
-
-I'll add the branch to for-next to expose it to more testing.
+have been added to misc-next as they're independent cleanups. The rest
+is still under review.

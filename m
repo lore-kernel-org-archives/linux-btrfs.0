@@ -1,19 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp2120.oracle.com ([141.146.126.78]:44386 "EHLO
-        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754462AbeDTJTU (ORCPT
+Received: from aserp2130.oracle.com ([141.146.126.79]:42796 "EHLO
+        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754149AbeDTJX3 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 20 Apr 2018 05:19:20 -0400
-Subject: Re: [PATCH v2 14/16] btrfs: drop lock parameter from
- update_ioctl_balance_args and rename
+        Fri, 20 Apr 2018 05:23:29 -0400
+Subject: Re: [PATCH v2 15/16] btrfs: use mutex in btrfs_resume_balance_async
 To: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
 References: <cover.1524146555.git.dsterba@suse.com>
- <afbad2279a57354e0b71fa20fdcb4e35d0ca0211.1524146556.git.dsterba@suse.com>
+ <a17bb1118ad18ab1b823cfd472dbb57bce6e1e88.1524146556.git.dsterba@suse.com>
 From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <1707cf51-477b-af00-febb-4c182f7fe987@oracle.com>
-Date: Fri, 20 Apr 2018 17:21:27 +0800
+Message-ID: <992f610e-7a86-6163-b49b-f829ce5a26a9@oracle.com>
+Date: Fri, 20 Apr 2018 17:25:36 +0800
 MIME-Version: 1.0
-In-Reply-To: <afbad2279a57354e0b71fa20fdcb4e35d0ca0211.1524146556.git.dsterba@suse.com>
+In-Reply-To: <a17bb1118ad18ab1b823cfd472dbb57bce6e1e88.1524146556.git.dsterba@suse.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -21,14 +20,16 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 
 On 04/20/2018 12:33 AM, David Sterba wrote:
-> The parameter controls locking of the stats part but we can lock it
-> unconditionally, as this only happens once when balance starts. This is
-> not performance critical.
+> While the spinlock does not cause problems, using the mutex is more
+> correct and consistent with others. The global status of balance is eg.
+> checked from btrfs_pause_balance or btrfs_cancel_balance with mutex.
 > 
-> Add the prefix for an exported function.
+> Resuming balance happens during mount or ro->rw remount. In the former
+> case, no other user of the balance_ctl exists, in the latter, balance
+> cannot run until the ro/rw transition is finished.
 > 
 > Signed-off-by: David Sterba <dsterba@suse.com>
 
-  Reviewed-by: Anand Jain <anand.jain@oracle.com>
+Reviewed-by: Anand Jain <anand.jain@oracle.com>
 
 Thanks, Anand

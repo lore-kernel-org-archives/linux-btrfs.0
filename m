@@ -1,112 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:10285 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1754149AbeDTJXT (ORCPT
+Received: from mail-vk0-f42.google.com ([209.85.213.42]:38412 "EHLO
+        mail-vk0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754470AbeDTJlf (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 20 Apr 2018 05:23:19 -0400
-Received: from G08CNEXCHPEKD03.g08.fujitsu.local (unknown [10.167.33.85])
-        by cn.fujitsu.com (Postfix) with ESMTP id A523B48AE931
-        for <linux-btrfs@vger.kernel.org>; Fri, 20 Apr 2018 17:23:19 +0800 (CST)
-From: "Gu, Jinxiang" <gujx@cn.fujitsu.com>
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: [bug report] btrfs fail when run xfstests-dev/btrfs/007
-Date: Fri, 20 Apr 2018 09:23:18 +0000
-Message-ID: <516DDBE5B1D92D42BCF7A2E37F045A5D01A84EA5CF@G08CNEXMBPEKD02.g08.fujitsu.local>
-Content-Type: multipart/mixed;
-        boundary="_002_516DDBE5B1D92D42BCF7A2E37F045A5D01A84EA5CFG08CNEXMBPEKD_"
+        Fri, 20 Apr 2018 05:41:35 -0400
+Received: by mail-vk0-f42.google.com with SMTP id b16so4890726vka.5
+        for <linux-btrfs@vger.kernel.org>; Fri, 20 Apr 2018 02:41:35 -0700 (PDT)
 MIME-Version: 1.0
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <516DDBE5B1D92D42BCF7A2E37F045A5D01A84EA5CF@G08CNEXMBPEKD02.g08.fujitsu.local>
+References: <516DDBE5B1D92D42BCF7A2E37F045A5D01A84EA5CF@G08CNEXMBPEKD02.g08.fujitsu.local>
+From: Filipe Manana <fdmanana@gmail.com>
+Date: Fri, 20 Apr 2018 10:41:34 +0100
+Message-ID: <CAL3q7H6AEj_x87qSjhSs=Lfw6vdkKdCKvx4AtdWDRQH0Vwv1DA@mail.gmail.com>
+Subject: Re: [bug report] btrfs fail when run xfstests-dev/btrfs/007
+To: "Gu, Jinxiang" <gujx@cn.fujitsu.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---_002_516DDBE5B1D92D42BCF7A2E37F045A5D01A84EA5CFG08CNEXMBPEKD_
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+On Fri, Apr 20, 2018 at 10:23 AM, Gu, Jinxiang <gujx@cn.fujitsu.com> wrote:
+> Hi,
+>
+> Here's a bug report.
+> Kernel v4.17-rc1 failed xfstests-dev/btrfs/007.
+> It is not always happens.( occurred times/test times: 1/20)
 
-SGksDQoNCkhlcmUncyBhIGJ1ZyByZXBvcnQuDQpLZXJuZWwgdjQuMTctcmMx
-IGZhaWxlZCB4ZnN0ZXN0cy1kZXYvYnRyZnMvMDA3Lg0KSXQgaXMgbm90IGFs
-d2F5cyBoYXBwZW5zLiggb2NjdXJyZWQgdGltZXMvdGVzdCB0aW1lczogMS8y
-MCkNCg0KQW5kIEkgY29uZmlybWVkIHRoaXMgdGVzdCB1c2luZyBrZXJuZWwg
-djQuMTYtcmMxLg0KSXQgYWxzbyBvY2N1cnJlZCBzb21ldGltZXMuDQoNCkxP
-RyB3aGVuIHVzaW5nIGtlcm5lbCB2NC4xNy1yYzEuDQpidHJmcy8wMDcgICAg
-ICAgIFtmYWlsZWQsIGV4aXQgc3RhdHVzIDFdIC0gb3V0cHV0IG1pc21hdGNo
-IChzZWUgL2hvbWUvZ3VqeC94ZnN0ZXN0cy1kZXYvcmVzdWx0cy8vYnRyZnMv
-MDA3Lm91dC5iYWQpDQogICAgLS0tIHRlc3RzL2J0cmZzLzAwNy5vdXQgICAg
-IDIwMTctMDgtMTggMTI6NDU6MDYuNTYwNDEzMjY2ICswODAwDQogICAgKysr
-IC9ob21lL2d1angveGZzdGVzdHMtZGV2L3Jlc3VsdHMvL2J0cmZzLzAwNy5v
-dXQuYmFkICAgICAgMjAxOC0wNC0xNyAxMzoyNDowNi44ODcwODk5OTggKzA4
-MDANCiAgICBAQCAtMSw0ICsxLDUgQEANCiAgICAgUUEgb3V0cHV0IGNyZWF0
-ZWQgYnkgMDA3DQogICAgICoqKiB0ZXN0IHNlbmQgLyByZWNlaXZlDQogICAg
-LSoqKiBkb25lDQogICAgK2ZhaWxlZDogJy9ob21lL2d1angveGZzdGVzdHMt
-ZGV2L3NyYy9mc3N1bSAtciAvdG1wL3RtcC5Ta0VVSVh3NjgzL2luY3IuZnNz
-dW0gL21udC9zY3JhdGNoL2luY3InDQogICAgKyhzZWUgL2hvbWUvZ3VqeC94
-ZnN0ZXN0cy1kZXYvcmVzdWx0cy8vYnRyZnMvMDA3LmZ1bGwgZm9yIGRldGFp
-bHMpDQogICAgICoqKiB1bm1vdW50DQogICAgLi4uIA0KICAgIChSdW4gJ2Rp
-ZmYgLXUgdGVzdHMvYnRyZnMvMDA3Lm91dCAvaG9tZS9ndWp4L3hmc3Rlc3Rz
-LWRldi9yZXN1bHRzLy9idHJmcy8wMDcub3V0LmJhZCcgIHRvIHNlZSB0aGUg
-ZW50aXJlIGRpZmYpDQoNCkFuZCB0aGUgZGV0YWlsIGNhbiBiZSBmb3VuZCBp
-biB0aGUgYXR0YWNobWVudC4NCg0KVGhhbmtzLCBHdSBKaW54aWFuZw0KCgo=
+You don't need to check how many times it fails... You have a fsstress
+seed from the .full file, that's all that matters.
 
---_002_516DDBE5B1D92D42BCF7A2E37F045A5D01A84EA5CFG08CNEXMBPEKD_
-Content-Type: application/octet-stream; name="007.full"
-Content-Description: 007.full
-Content-Disposition: attachment; filename="007.full"; size=2408;
-	creation-date="Fri, 20 Apr 2018 06:09:59 GMT";
-	modification-date="Fri, 20 Apr 2018 06:09:59 GMT"
-Content-Transfer-Encoding: base64
+I'll take a look at it, it's due to a missing truncate operation.
 
-KioqIG1rZnMgLWRzaXplPTIwOTcxNTIwMDAKCmJ0cmZzLXByb2dzIHY0LjE2
-ClNlZSBodHRwOi8vYnRyZnMud2lraS5rZXJuZWwub3JnIGZvciBtb3JlIGlu
-Zm9ybWF0aW9uLgoKTGFiZWw6ICAgICAgICAgICAgICAobnVsbCkKVVVJRDog
-ICAgICAgICAgICAgICAyYjhiOGFiZS0wNzA2LTQyZTAtOGQyYi03NmEyMjQ3
-M2VjNzEKTm9kZSBzaXplOiAgICAgICAgICAxNjM4NApTZWN0b3Igc2l6ZTog
-ICAgICAgIDQwOTYKRmlsZXN5c3RlbSBzaXplOiAgICAxLjk1R2lCCkJsb2Nr
-IGdyb3VwIHByb2ZpbGVzOgogIERhdGE6ICAgICAgICAgICAgIHNpbmdsZSAg
-ICAgICAgICAgIDguMDBNaUIKICBNZXRhZGF0YTogICAgICAgICBEVVAgICAg
-ICAgICAgICAgMTAwLjAwTWlCCiAgU3lzdGVtOiAgICAgICAgICAgRFVQICAg
-ICAgICAgICAgICAgOC4wME1pQgpTU0QgZGV0ZWN0ZWQ6ICAgICAgIG5vCklu
-Y29tcGF0IGZlYXR1cmVzOiAgZXh0cmVmLCBza2lubnktbWV0YWRhdGEKTnVt
-YmVyIG9mIGRldmljZXM6ICAxCkRldmljZXM6CiAgIElEICAgICAgICBTSVpF
-ICBQQVRICiAgICAxICAgICAxLjk1R2lCICAvZGV2L3ZkZDEKCiMgLi9sdHAv
-ZnNzdHJlc3MgLWQgL21udC9zY3JhdGNoIC1uIDIwMCAteCAvdXNyL2xvY2Fs
-L2Jpbi9idHJmcyBzdWJ2b2x1bWUgc25hcHNob3QgLXIgL21udC9zY3JhdGNo
-IC9tbnQvc2NyYXRjaC9iYXNlCnNlZWQgPSAxNTI0MzQ2MTUxCkNyZWF0ZSBh
-IHJlYWRvbmx5IHNuYXBzaG90IG9mICcvbW50L3NjcmF0Y2gnIGluICcvbW50
-L3NjcmF0Y2gvYmFzZScKIyAvdXNyL2xvY2FsL2Jpbi9idHJmcyBzdWJ2b2x1
-bWUgc25hcHNob3QgLXIgL21udC9zY3JhdGNoIC9tbnQvc2NyYXRjaC9pbmNy
-CkNyZWF0ZSBhIHJlYWRvbmx5IHNuYXBzaG90IG9mICcvbW50L3NjcmF0Y2gn
-IGluICcvbW50L3NjcmF0Y2gvaW5jcicKIyAvdXNyL2xvY2FsL2Jpbi9idHJm
-cyBzZW5kIC9tbnQvc2NyYXRjaC9iYXNlID4gL3RtcC90bXAuU2tFVUlYdzY4
-My9iYXNlLnNuYXAKQXQgc3Vidm9sIC9tbnQvc2NyYXRjaC9iYXNlCiMgL3Vz
-ci9sb2NhbC9iaW4vYnRyZnMgc2VuZCAtcCAvbW50L3NjcmF0Y2gvYmFzZQkJ
-L21udC9zY3JhdGNoL2luY3IgPiAvdG1wL3RtcC5Ta0VVSVh3NjgzL2luY3Iu
-c25hcApBdCBzdWJ2b2wgL21udC9zY3JhdGNoL2luY3IKIyAvaG9tZS9ndWp4
-L3hmc3Rlc3RzLWRldi9zcmMvZnNzdW0gLUEgLWYgLXcgL3RtcC90bXAuU2tF
-VUlYdzY4My9iYXNlLmZzc3VtIC9tbnQvc2NyYXRjaC9iYXNlCiMgL2hvbWUv
-Z3VqeC94ZnN0ZXN0cy1kZXYvc3JjL2Zzc3VtIC1BIC1mIC13IC90bXAvdG1w
-LlNrRVVJWHc2ODMvaW5jci5mc3N1bSAteCAvbW50L3NjcmF0Y2gvaW5jci9i
-YXNlIC9tbnQvc2NyYXRjaC9pbmNyCioqKiBta2ZzIC1kc2l6ZT0yMDk3MTUy
-MDAwCgpidHJmcy1wcm9ncyB2NC4xNgpTZWUgaHR0cDovL2J0cmZzLndpa2ku
-a2VybmVsLm9yZyBmb3IgbW9yZSBpbmZvcm1hdGlvbi4KCkxhYmVsOiAgICAg
-ICAgICAgICAgKG51bGwpClVVSUQ6ICAgICAgICAgICAgICAgMDNlYTFkNDkt
-YjA5My00NTM1LWFlMTQtZGFiNDQ4YTJlNmFlCk5vZGUgc2l6ZTogICAgICAg
-ICAgMTYzODQKU2VjdG9yIHNpemU6ICAgICAgICA0MDk2CkZpbGVzeXN0ZW0g
-c2l6ZTogICAgMS45NUdpQgpCbG9jayBncm91cCBwcm9maWxlczoKICBEYXRh
-OiAgICAgICAgICAgICBzaW5nbGUgICAgICAgICAgICA4LjAwTWlCCiAgTWV0
-YWRhdGE6ICAgICAgICAgRFVQICAgICAgICAgICAgIDEwMC4wME1pQgogIFN5
-c3RlbTogICAgICAgICAgIERVUCAgICAgICAgICAgICAgIDguMDBNaUIKU1NE
-IGRldGVjdGVkOiAgICAgICBubwpJbmNvbXBhdCBmZWF0dXJlczogIGV4dHJl
-Ziwgc2tpbm55LW1ldGFkYXRhCk51bWJlciBvZiBkZXZpY2VzOiAgMQpEZXZp
-Y2VzOgogICBJRCAgICAgICAgU0laRSAgUEFUSAogICAgMSAgICAgMS45NUdp
-QiAgL2Rldi92ZGQxCgojIC91c3IvbG9jYWwvYmluL2J0cmZzIHJlY2VpdmUg
-L21udC9zY3JhdGNoCkF0IHN1YnZvbCBiYXNlCiMgL2hvbWUvZ3VqeC94ZnN0
-ZXN0cy1kZXYvc3JjL2Zzc3VtIC1yIC90bXAvdG1wLlNrRVVJWHc2ODMvYmFz
-ZS5mc3N1bSAvbW50L3NjcmF0Y2gvYmFzZQpPSwojIC91c3IvbG9jYWwvYmlu
-L2J0cmZzIHJlY2VpdmUgL21udC9zY3JhdGNoCkF0IHNuYXBzaG90IGluY3IK
-IyAvaG9tZS9ndWp4L3hmc3Rlc3RzLWRldi9zcmMvZnNzdW0gLXIgL3RtcC90
-bXAuU2tFVUlYdzY4My9pbmNyLmZzc3VtIC9tbnQvc2NyYXRjaC9pbmNyCm1l
-dGFkYXRhIGFuZCBkYXRhIG1pc21hdGNoIGluIC9wMC9mMApkYXRhIG1pc21h
-dGNoIGluIC9wMC8KRkFJTApmYWlsZWQ6ICcvaG9tZS9ndWp4L3hmc3Rlc3Rz
-LWRldi9zcmMvZnNzdW0gLXIgL3RtcC90bXAuU2tFVUlYdzY4My9pbmNyLmZz
-c3VtIC9tbnQvc2NyYXRjaC9pbmNyJwo=
+thanks
 
---_002_516DDBE5B1D92D42BCF7A2E37F045A5D01A84EA5CFG08CNEXMBPEKD_--
+>
+> And I confirmed this test using kernel v4.16-rc1.
+> It also occurred sometimes.
+>
+> LOG when using kernel v4.17-rc1.
+> btrfs/007        [failed, exit status 1] - output mismatch (see /home/gujx/xfstests-dev/results//btrfs/007.out.bad)
+>     --- tests/btrfs/007.out     2017-08-18 12:45:06.560413266 +0800
+>     +++ /home/gujx/xfstests-dev/results//btrfs/007.out.bad      2018-04-17 13:24:06.887089998 +0800
+>     @@ -1,4 +1,5 @@
+>      QA output created by 007
+>      *** test send / receive
+>     -*** done
+>     +failed: '/home/gujx/xfstests-dev/src/fssum -r /tmp/tmp.SkEUIXw683/incr.fssum /mnt/scratch/incr'
+>     +(see /home/gujx/xfstests-dev/results//btrfs/007.full for details)
+>      *** unmount
+>     ...
+>     (Run 'diff -u tests/btrfs/007.out /home/gujx/xfstests-dev/results//btrfs/007.out.bad'  to see the entire diff)
+>
+> And the detail can be found in the attachment.
+>
+> Thanks, Gu Jinxiang
+>
+>
+
+
+
+-- 
+Filipe David Manana,
+
+“Whether you think you can, or you think you can't — you're right.”

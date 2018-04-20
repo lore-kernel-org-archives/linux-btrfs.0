@@ -1,138 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp2130.oracle.com ([141.146.126.79]:52046 "EHLO
-        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750816AbeDUFQI (ORCPT
+Received: from aserp2120.oracle.com ([141.146.126.78]:51492 "EHLO
+        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754217AbeDTJac (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 21 Apr 2018 01:16:08 -0400
-Subject: Re: [PATCH 1/3] btrfs: Add incompat flags check for
- btrfs_check_super_valid()
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>, dsterba@suse.cz,
-        Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-References: <20180419093816.888-1-wqu@suse.com>
- <6df01860-98e8-b4a1-0d76-68a22511ca52@oracle.com>
- <20180420151504.GR21272@twin.jikos.cz>
- <a5e4bc54-460e-7db7-ebaa-98e1d9aaee5e@oracle.com>
- <999a862f-a50b-9d21-94de-53463b6f3387@gmx.com>
+        Fri, 20 Apr 2018 05:30:32 -0400
+Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
+        by aserp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w3K9Qew4043027
+        for <linux-btrfs@vger.kernel.org>; Fri, 20 Apr 2018 09:30:31 GMT
+Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
+        by aserp2120.oracle.com with ESMTP id 2hdrxnksew-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Fri, 20 Apr 2018 09:30:31 +0000
+Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
+        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w3K9UUJY009943
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Fri, 20 Apr 2018 09:30:30 GMT
+Received: from abhmp0019.oracle.com (abhmp0019.oracle.com [141.146.116.25])
+        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w3K9UUVR013771
+        for <linux-btrfs@vger.kernel.org>; Fri, 20 Apr 2018 09:30:30 GMT
 From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <dff543e5-5c34-641c-87de-f9e3c8239fa8@oracle.com>
-Date: Sat, 21 Apr 2018 13:18:09 +0800
-MIME-Version: 1.0
-In-Reply-To: <999a862f-a50b-9d21-94de-53463b6f3387@gmx.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs: fix BUG trying to resume balance without resume flag
+Date: Fri, 20 Apr 2018 17:32:31 +0800
+Message-Id: <20180420093231.17440-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+We set the BTRFS_BALANCE_RESUME flag in the btrfs_recover_balance(),
+which is not called during the remount. So when resuming from the
+paused balance we hit BUG.
 
+ kernel: kernel BUG at fs/btrfs/volumes.c:3890!
+ ::
+ kernel:  balance_kthread+0x51/0x60 [btrfs]
+ kernel:  kthread+0x111/0x130
+ ::
+ kernel: RIP: btrfs_balance+0x12e1/0x1570 [btrfs] RSP: ffffba7d0090bde8
 
-On 04/21/2018 10:43 AM, Qu Wenruo wrote:
-> 
-> 
-> On 2018年04月21日 10:38, Anand Jain wrote:
->>
->>
->> On 04/20/2018 11:15 PM, David Sterba wrote:
->>> On Fri, Apr 20, 2018 at 10:32:03PM +0800, Anand Jain wrote:
->>>>
->>>>
->>>> On 04/19/2018 05:38 PM, Qu Wenruo wrote:
->>>>> Although we have already checked incompat flags manually before really
->>>>> mounting it, we could still enhance btrfs_check_super_valid() to check
->>>>> incompat flags for later write time super block validation check.
->>>>>
->>>>> This patch adds such incompat flags check for
->>>>> btrfs_check_super_valid(),
->>>>> currently it won't be triggered, but provides the basis for later write
->>>>> time check.
->>>>>
->>>>> Signed-off-by: Qu Wenruo <wqu@suse.com>
->>>>> ---
->>>>>     fs/btrfs/disk-io.c | 13 +++++++++++++
->>>>>     1 file changed, 13 insertions(+)
->>>>>
->>>>> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
->>>>> index 60caa68c3618..ec123158f051 100644
->>>>> --- a/fs/btrfs/disk-io.c
->>>>> +++ b/fs/btrfs/disk-io.c
->>>>> @@ -4104,6 +4104,19 @@ static int btrfs_check_super_valid(struct
->>>>> btrfs_fs_info *fs_info)
->>>>>             ret = -EINVAL;
->>>>>         }
->>>>>     +    /*
->>>>> +     * Before calling btrfs_check_super_valid() we have already
->>>>> checked
->>>>> +     * incompat flags. So if we developr new incompat flags, it's
->>>>> must be
->>>>> +     * some corruption.
->>>>> +     */
->>>>> +    if (btrfs_super_incompat_flags(sb) &
->>>>> ~BTRFS_FEATURE_INCOMPAT_SUPP) {
->>>>> +        btrfs_err(fs_info,
->>>>> +        "corrupted incompat flags detected 0x%llx, supported 0x%llx",
->>>
->>>> 2707         features = btrfs_super_incompat_flags(disk_super) &
->>>> 2708                 ~BTRFS_FEATURE_INCOMPAT_SUPP;
->>>> 2709         if (features) {
->>>> 2710                 btrfs_err(fs_info,
->>>> 2711                     "cannot mount because of unsupported
->>>> optional features (%llx)",
->>>> 2712                     features);
->>>> 2713                 err = -EINVAL;
->>>> 2714                 goto fail_alloc;
->>>> 2715         }
->>>
->>> So there's a "user experience" change, now that you pointed out the
->>> other check.
->>
->>   Its a regression.
->>
->>> If a filesystem with incompat bits set will be mounted,
->>> this will say 'you have corrupted filesystem', which is not IMO what we
->>> want to tell.
->>>
->>> Tough the extended btrfs_check_super_valid could catch the corrupted
->>> incompat bits, what we need at mount time is wording from the 2nd
->>> message ("cannot mount unsuppported features").
->>>
->>> I think that there should be a separate function that does the
->>> pre-commit checks, calls btrfs_check_super_valid and also validates the
->>> incompat bit.
->>
->>   We can still print it as 'unsupported optional features', which would
->>   imply corruption in the non-mount context.
-> 
-> In that case such wording is not obvious enough to info it's super block
-> corruption.
+Reproducer:
+  On a mounted BTRFS.
 
-  If the device is already mounted. Then its a corruption.
+  btrfs balance start --full-balance /btrfs
+  btrfs balance pause /btrfs
+  mount -o remount,ro /dev/sdb /btrfs
+  mount -o remount,rw /dev/sdb /btrfs
 
-Thanks, Anand
+To fix this set the BTRFS_BALANCE_RESUME flag in btrfs_resume_balance_async()
+instead of btrfs_recover_balance().
 
-> So I still prefer current way of checking incompact flags and csum types
-> manually at mount time before btrfs_validate_super().
-> 
-> David's idea of a separate function to do mount time check and gives
-> better prompt is pretty good.
-> Especially for incompat features, as incompat features will increase in
-> the future and for older kernel info such feature as corruption is not
-> acceptable.
-> 
-> But currently, there are only 2 members we need to check at mount time
-> (csum_type and incompat features), and only one caller, current code
-> looks good enough for its purpose.
-> 
-> Thanks,
-> Qu
-> 
->>
->> Thanks, Anand
->>
->>> -- 
->>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->>> the body of a message to majordomo@vger.kernel.org
->>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>>
->> -- 
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+ fs/btrfs/volumes.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 66d2ed96aef1..9c29fdca9075 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -3963,6 +3963,10 @@ int btrfs_resume_balance_async(struct btrfs_fs_info *fs_info)
+ 		return 0;
+ 	}
+ 
++	spin_lock(&fs_info->balance_lock);
++	fs_info->balance_ctl->flags |= BTRFS_BALANCE_RESUME;
++	spin_unlock(&fs_info->balance_lock);
++
+ 	tsk = kthread_run(balance_kthread, fs_info, "btrfs-balance");
+ 	return PTR_ERR_OR_ZERO(tsk);
+ }
+@@ -4004,7 +4008,6 @@ int btrfs_recover_balance(struct btrfs_fs_info *fs_info)
+ 
+ 	bctl->fs_info = fs_info;
+ 	bctl->flags = btrfs_balance_flags(leaf, item);
+-	bctl->flags |= BTRFS_BALANCE_RESUME;
+ 
+ 	btrfs_balance_data(leaf, item, &disk_bargs);
+ 	btrfs_disk_balance_args_to_cpu(&bctl->data, &disk_bargs);
+-- 
+2.7.0
+

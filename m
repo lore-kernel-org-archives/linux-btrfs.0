@@ -1,19 +1,19 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp2130.oracle.com ([156.151.31.86]:44368 "EHLO
-        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754193AbeDTJKy (ORCPT
+Received: from aserp2120.oracle.com ([141.146.126.78]:44386 "EHLO
+        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754462AbeDTJTU (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 20 Apr 2018 05:10:54 -0400
-Subject: Re: [PATCH v2 13/16] btrfs: move and comment read-only check in
- btrfs_cancel_balance
+        Fri, 20 Apr 2018 05:19:20 -0400
+Subject: Re: [PATCH v2 14/16] btrfs: drop lock parameter from
+ update_ioctl_balance_args and rename
 To: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
 References: <cover.1524146555.git.dsterba@suse.com>
- <d1db2691059cb458d2b44cae473b1cf2ea73ed78.1524146556.git.dsterba@suse.com>
+ <afbad2279a57354e0b71fa20fdcb4e35d0ca0211.1524146556.git.dsterba@suse.com>
 From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <189a5404-4bf9-5907-40d2-ad670b5889d1@oracle.com>
-Date: Fri, 20 Apr 2018 17:13:02 +0800
+Message-ID: <1707cf51-477b-af00-febb-4c182f7fe987@oracle.com>
+Date: Fri, 20 Apr 2018 17:21:27 +0800
 MIME-Version: 1.0
-In-Reply-To: <d1db2691059cb458d2b44cae473b1cf2ea73ed78.1524146556.git.dsterba@suse.com>
+In-Reply-To: <afbad2279a57354e0b71fa20fdcb4e35d0ca0211.1524146556.git.dsterba@suse.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -21,36 +21,14 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 
 On 04/20/2018 12:33 AM, David Sterba wrote:
-> Balance cannot be started on a read-only filesystem and will have to
-> finish/exit before eg. going to read-only via remount.
+> The parameter controls locking of the stats part but we can lock it
+> unconditionally, as this only happens once when balance starts. This is
+> not performance critical.
+> 
+> Add the prefix for an exported function.
+> 
+> Signed-off-by: David Sterba <dsterba@suse.com>
 
-  It can be paused as well.
-    btrfs balance pause /btrfs && mount -o remount,ro /dev/sdb /btrfs
-
-
-> @@ -4053,15 +4053,20 @@ int btrfs_pause_balance(struct btrfs_fs_info *fs_info)
->   
->   int btrfs_cancel_balance(struct btrfs_fs_info *fs_info)
->   {
-> -	if (sb_rdonly(fs_info->sb))
-> -		return -EROFS;
-> -
->   	mutex_lock(&fs_info->balance_mutex);
->   	if (!fs_info->balance_ctl) {
->   		mutex_unlock(&fs_info->balance_mutex);
->   		return -ENOTCONN;
->   	}
->   
-> +	/*
-> +	 * A paused balance with the item stored on disk can be resumed at
-> +	 * mount time if the mount is read-write. Otherwise it's still paused
-> +	 * and we must not allow cancelling as it deletes the item.
-> +	 */
-> +	if (sb_rdonly(fs_info->sb))
-> +		return -EROFS;
-> +
-
-   mutex_unlock(&fs_info->balance_mutex); ?
+  Reviewed-by: Anand Jain <anand.jain@oracle.com>
 
 Thanks, Anand
-

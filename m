@@ -1,68 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:55366 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1754010AbeDSQgL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 19 Apr 2018 12:36:11 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 94997AC76
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Apr 2018 16:36:10 +0000 (UTC)
-From: David Sterba <dsterba@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH v2 13/16] btrfs: move and comment read-only check in btrfs_cancel_balance
-Date: Thu, 19 Apr 2018 18:33:39 +0200
-Message-Id: <d1db2691059cb458d2b44cae473b1cf2ea73ed78.1524146556.git.dsterba@suse.com>
-In-Reply-To: <cover.1524146555.git.dsterba@suse.com>
+Received: from aserp2130.oracle.com ([141.146.126.79]:44496 "EHLO
+        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754843AbeDTNav (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 20 Apr 2018 09:30:51 -0400
+Subject: Re: [PATCH v2 12/16] btrfs: track running balance in a simpler way
+To: dsterba@suse.cz, David Sterba <dsterba@suse.com>,
+        linux-btrfs@vger.kernel.org
 References: <cover.1524146555.git.dsterba@suse.com>
+ <6d512cf2c8f825592703ee0d45c51f22396e6078.1524146556.git.dsterba@suse.com>
+ <6ab5bdc1-45a2-d0a4-cdc7-587731c4103a@oracle.com>
+ <20180420115811.GM21272@twin.jikos.cz> <20180420121934.GP21272@twin.jikos.cz>
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <6bb5f60f-0c22-a4e3-086c-f4a039875447@oracle.com>
+Date: Fri, 20 Apr 2018 21:32:54 +0800
+MIME-Version: 1.0
+In-Reply-To: <20180420121934.GP21272@twin.jikos.cz>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Balance cannot be started on a read-only filesystem and will have to
-finish/exit before eg. going to read-only via remount.
+	
 
-In case the filesystem is forcibly set to read-only after an error,
-balance will finish anyway and if the cancel call is too fast it will
-just wait for that to happen.
 
-The last case is when the balance is paused after mount but it's
-read-only and cancelling would want to delete the item. The test is
-moved after the check if balance is running at all, as it looks more
-logical to report "no balance running" instead of "read-only
-filesystem".
 
-Signed-off-by: David Sterba <dsterba@suse.com>
----
- fs/btrfs/volumes.c | 11 ++++++++---
- 1 file changed, 8 insertions(+), 3 deletions(-)
+> Ok not that simple, the running status is checked outside of
+> balance_mutex and there's one more assertion that does not expect the
+> balance_ctl to exist:
+> 
+> @@ -4031,16 +4032,16 @@ int btrfs_pause_balance(struct btrfs_fs_info *fs_info)
+>                  return -ENOTCONN;
+>          }
+> 
+> -       if (atomic_read(&fs_info->balance_running)) {
+> +       if (test_bit(BTRFS_FS_BALANCE_RUNNING, &fs_info->flags)) {
+>                  atomic_inc(&fs_info->balance_pause_req);
+>                  mutex_unlock(&fs_info->balance_mutex);
+> 
+>                  wait_event(fs_info->balance_wait_q,
+> -                          atomic_read(&fs_info->balance_running) == 0);
+> +                          !test_bit(BTRFS_FS_BALANCE_RUNNING, &fs_info->flags));
+> 
+> here it's unlocked
+> 
+>                  mutex_lock(&fs_info->balance_mutex);
+>                  /* we are good with balance_ctl ripped off from under us */
+> -               BUG_ON(atomic_read(&fs_info->balance_running));
+> +               BUG_ON(test_bit(BTRFS_FS_BALANCE_RUNNING, &fs_info->flags));
+> 
+> and rewriting the code so this could be checked the same way is not a simple
+> fixup as I expected.
+> 
+> As there's still the extra balance mutex lock/unlock after the volume
+> mutex removal, I'll have a look how this could be cleaned up further.
+> 
+>                  atomic_dec(&fs_info->balance_pause_req);
+>          } else {
+>                  ret = -ENOTCONN;
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index a766d2f988c1..9e48a4654d3a 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -4053,15 +4053,20 @@ int btrfs_pause_balance(struct btrfs_fs_info *fs_info)
- 
- int btrfs_cancel_balance(struct btrfs_fs_info *fs_info)
- {
--	if (sb_rdonly(fs_info->sb))
--		return -EROFS;
--
- 	mutex_lock(&fs_info->balance_mutex);
- 	if (!fs_info->balance_ctl) {
- 		mutex_unlock(&fs_info->balance_mutex);
- 		return -ENOTCONN;
- 	}
- 
-+	/*
-+	 * A paused balance with the item stored on disk can be resumed at
-+	 * mount time if the mount is read-write. Otherwise it's still paused
-+	 * and we must not allow cancelling as it deletes the item.
-+	 */
-+	if (sb_rdonly(fs_info->sb))
-+		return -EROFS;
-+
- 	atomic_inc(&fs_info->balance_cancel_req);
- 	/*
- 	 * if we are running just wait and return, balance item is
--- 
-2.16.2
+  Makes sense.
+
+Thanks, Anand
 

@@ -1,73 +1,160 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:55048 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:55063 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753606AbeDTRFQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 20 Apr 2018 13:05:16 -0400
+        id S1753618AbeDTRFS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 20 Apr 2018 13:05:18 -0400
 Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id D96B3AC4F
-        for <linux-btrfs@vger.kernel.org>; Fri, 20 Apr 2018 17:05:14 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 17068AC4F
+        for <linux-btrfs@vger.kernel.org>; Fri, 20 Apr 2018 17:05:17 +0000 (UTC)
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 6/7] btrfs: add FS_IOC_FSGETXATTR ioctl
-Date: Fri, 20 Apr 2018 19:02:43 +0200
-Message-Id: <ecd125f68764400e5812653b9bc40f1a626a1314.1524242295.git.dsterba@suse.com>
+Subject: [PATCH 7/7] btrfs: add FS_IOC_FSSETXATTR ioctl
+Date: Fri, 20 Apr 2018 19:02:45 +0200
+Message-Id: <2f7092ca40d306b6895ec21e9bceda1102ce8903.1524242295.git.dsterba@suse.com>
 In-Reply-To: <cover.1524242295.git.dsterba@suse.com>
 References: <cover.1524242295.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The new ioctl is an extension to the FS_IOC_GETFLAGS and adds new
-flags and is extensible. This patch allows to return the xflags portion
-of the fsxattr structure, other items have no meaning for btrfs or can
-be added later.
+The new ioctl is an extension to the FS_IOC_SETFLAGS and adds new
+flags and is extensible. Don't get fooled by the XATTR in the name, it
+does not have anything in common with the extended attributes,
+incidentally also abbreviated as XATTRs.
+
+This patch allows to set the xflags portion of the fsxattr structure,
+other items have no meaning and non-zero values will result in
+EOPNOTSUPP.
+
+Currently supported xflags:
+
+- APPEND
+- IMMUTABLE
+- NOATIME
+- NODUMP
+- SYNC
+
+The structure of btrfs_ioctl_fssetxattr copies btrfs_ioctl_setflags but
+is simpler on the flag setting side.
 
 The original patch was written by Chandan Jay Sharma but was incomplete
-and no further revision has been sent. Several cleanups were necessary
-to avoid confusion with other ioctls, as we have another flavor of
-flags.
+and no further revision has been sent.
 
 Based-on-patches-by: Chandan Jay Sharma <chandansbg@gmail.com>
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/ioctl.c | 20 ++++++++++++++++++++
- 1 file changed, 20 insertions(+)
+ fs/btrfs/ioctl.c | 94 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 94 insertions(+)
 
 diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index a25ad4e6a478..52b12ab9b82b 100644
+index 52b12ab9b82b..4fd61f191bba 100644
 --- a/fs/btrfs/ioctl.c
 +++ b/fs/btrfs/ioctl.c
-@@ -370,6 +370,24 @@ static int check_xflags(unsigned int flags)
+@@ -388,6 +388,98 @@ static int btrfs_ioctl_fsgetxattr(struct file *file, void __user *arg)
  	return 0;
  }
  
-+/*
-+ * Set the xflags from the internal inode flags. The remaining items of fsxattr
-+ * are zeroed.
-+ */
-+static int btrfs_ioctl_fsgetxattr(struct file *file, void __user *arg)
++static int btrfs_ioctl_fssetxattr(struct file *file, void __user *arg)
 +{
-+	struct btrfs_inode *binode = BTRFS_I(file_inode(file));
++	struct inode *inode = file_inode(file);
++	struct btrfs_inode *binode = BTRFS_I(inode);
++	struct btrfs_root *root = binode->root;
++	struct btrfs_trans_handle *trans;
 +	struct fsxattr fa;
++	unsigned oldflags;
++	unsigned old_i_flags;
++	int ret = 0;
++
++	if (!inode_owner_or_capable(inode))
++		return -EPERM;
++
++	if (btrfs_root_readonly(root))
++		return -EROFS;
 +
 +	memset(&fa, 0, sizeof(fa));
-+	fa.fsx_xflags = btrfs_inode_flags_to_xflags(binode->flags);
-+
-+	if (copy_to_user(arg, &fa, sizeof(fa)))
++	if (copy_from_user(&fa, arg, sizeof(fa)))
 +		return -EFAULT;
 +
-+	return 0;
++	ret = check_xflags(fa.fsx_xflags);
++	if (ret)
++		return ret;
++
++	if (fa.fsx_extsize != 0 || fa.fsx_projid != 0 || fa.fsx_cowextsize != 0)
++		return -EOPNOTSUPP;
++
++	ret = mnt_want_write_file(file);
++	if (ret)
++		return ret;
++
++	inode_lock(inode);
++
++	oldflags = binode->flags;
++	old_i_flags = inode->i_flags;
++
++	/* We need the capabilities to change append-only or immutable inode */
++	if (((oldflags & (BTRFS_INODE_APPEND | BTRFS_INODE_IMMUTABLE)) ||
++	     (fa.fsx_xflags & (FS_XFLAG_APPEND | FS_XFLAG_IMMUTABLE))) &&
++	    !capable(CAP_LINUX_IMMUTABLE)) {
++		ret = -EPERM;
++		goto out_unlock;
++	}
++
++	if (fa.fsx_xflags & FS_XFLAG_SYNC)
++		binode->flags |= BTRFS_INODE_SYNC;
++	else
++		binode->flags &= ~BTRFS_INODE_SYNC;
++	if (fa.fsx_xflags & FS_XFLAG_IMMUTABLE)
++		binode->flags |= BTRFS_INODE_IMMUTABLE;
++	else
++		binode->flags &= ~BTRFS_INODE_IMMUTABLE;
++	if (fa.fsx_xflags & FS_XFLAG_APPEND)
++		binode->flags |= BTRFS_INODE_APPEND;
++	else
++		binode->flags &= ~BTRFS_INODE_APPEND;
++	if (fa.fsx_xflags & FS_XFLAG_NODUMP)
++		binode->flags |= BTRFS_INODE_NODUMP;
++	else
++		binode->flags &= ~BTRFS_INODE_NODUMP;
++	if (fa.fsx_xflags & FS_XFLAG_NOATIME)
++		binode->flags |= BTRFS_INODE_NOATIME;
++	else
++		binode->flags &= ~BTRFS_INODE_NOATIME;
++
++	/* 1 item for the inode */
++	trans = btrfs_start_transaction(root, 1);
++	if (IS_ERR(trans)) {
++		ret = PTR_ERR(trans);
++		goto out_drop;
++	}
++
++	btrfs_sync_inode_flags_to_i_flags(inode);
++	inode_inc_iversion(inode);
++	inode->i_ctime = current_time(inode);
++	ret = btrfs_update_inode(trans, root, inode);
++
++	btrfs_end_transaction(trans);
++
++	if (ret) {
++		binode->flags = oldflags;
++		inode->i_flags = old_i_flags;
++	}
++
++out_unlock:
++	inode_unlock(inode);
++out_drop:
++	mnt_drop_write_file(file);
++	return ret;
 +}
 +
  static int btrfs_ioctl_getversion(struct file *file, int __user *arg)
  {
  	struct inode *inode = file_inode(file);
-@@ -5600,6 +5618,8 @@ long btrfs_ioctl(struct file *file, unsigned int
- 		return btrfs_ioctl_get_features(file, argp);
- 	case BTRFS_IOC_SET_FEATURES:
+@@ -5620,6 +5712,8 @@ long btrfs_ioctl(struct file *file, unsigned int
  		return btrfs_ioctl_set_features(file, argp);
-+	case FS_IOC_FSGETXATTR:
-+		return btrfs_ioctl_fsgetxattr(file, argp);
+ 	case FS_IOC_FSGETXATTR:
+ 		return btrfs_ioctl_fsgetxattr(file, argp);
++	case FS_IOC_FSSETXATTR:
++		return btrfs_ioctl_fssetxattr(file, argp);
  	}
  
  	return -ENOTTY;

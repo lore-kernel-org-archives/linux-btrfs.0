@@ -1,115 +1,160 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:34833 "EHLO
-        frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753758AbeDSXTc (ORCPT
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:13528 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1751258AbeDTGWh (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 19 Apr 2018 19:19:32 -0400
-Received: from hrm by frost.carfax.org.uk with local (Exim 4.80)
-        (envelope-from <hrm@carfax.org.uk>)
-        id 1f9Ipv-00014O-Hr
-        for linux-btrfs@vger.kernel.org; Thu, 19 Apr 2018 23:19:31 +0000
-Date: Thu, 19 Apr 2018 23:19:31 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: Recovery from full metadata with all device space consumed?
-Message-ID: <20180419231931.GJ13551@carfax.org.uk>
-References: <20180419220848.GB24508@bottomless.cesspool.net>
- <20180419224357.GI13551@carfax.org.uk>
- <20180419231239.GD24508@bottomless.cesspool.net>
+        Fri, 20 Apr 2018 02:22:37 -0400
+From: "Gu, Jinxiang" <gujx@cn.fujitsu.com>
+To: Anand Jain <anand.jain@oracle.com>, "dsterba@suse.cz" <dsterba@suse.cz>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: RE: [PATCH RESEND v4 0/4] device_list_add() peparation to add
+ reappearing missing device
+Date: Fri, 20 Apr 2018 06:22:31 +0000
+Message-ID: <516DDBE5B1D92D42BCF7A2E37F045A5D01A84EA4B8@G08CNEXMBPEKD02.g08.fujitsu.local>
+References: <20180118140236.25349-1-anand.jain@oracle.com>
+ <20180118174717.GT13726@twin.jikos.cz>
+ <20180119232756.GB15713@twin.jikos.cz>
+ <334ef632-a913-372b-a91b-826278329fc3@oracle.com>
+ <20180122152642.GG15713@twin.jikos.cz>
+ <2b12274d-2d78-061d-b35d-fbe2f35cd0f0@oracle.com>
+In-Reply-To: <2b12274d-2d78-061d-b35d-fbe2f35cd0f0@oracle.com>
+Content-Type: multipart/mixed;
+        boundary="_002_516DDBE5B1D92D42BCF7A2E37F045A5D01A84EA4B8G08CNEXMBPEKD_"
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-        protocol="application/pgp-signature"; boundary="utPK4TBebyzZxMrE"
-In-Reply-To: <20180419231239.GD24508@bottomless.cesspool.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+--_002_516DDBE5B1D92D42BCF7A2E37F045A5D01A84EA4B8G08CNEXMBPEKD_
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 
---utPK4TBebyzZxMrE
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+SGksDQoNCkkgcmVwcm9kdWNlZCB0aGlzIHVzaW5nIGtlcm5lbCB2NC4xNy1y
+YzEuDQpJdCBpcyBub3QgYWx3YXlzIGhhcHBlbnMuKCBvY2N1cnJlZCB0aW1l
+cy90ZXN0IHRpbWVzOiAxLzIwKQ0KDQo+IC0tLS0tT3JpZ2luYWwgTWVzc2Fn
+ZS0tLS0tDQo+IEZyb206IGxpbnV4LWJ0cmZzLW93bmVyQHZnZXIua2VybmVs
+Lm9yZyBbbWFpbHRvOmxpbnV4LWJ0cmZzLW93bmVyQHZnZXIua2VybmVsLm9y
+Z10gT24gQmVoYWxmIE9mIEFuYW5kIEphaW4NCj4gU2VudDogVHVlc2RheSwg
+SmFudWFyeSAyMywgMjAxOCA1OjUzIEFNDQo+IFRvOiBkc3RlcmJhQHN1c2Uu
+Y3o7IGxpbnV4LWJ0cmZzQHZnZXIua2VybmVsLm9yZw0KPiBTdWJqZWN0OiBS
+ZTogW1BBVENIIFJFU0VORCB2NCAwLzRdIGRldmljZV9saXN0X2FkZCgpIHBl
+cGFyYXRpb24gdG8gYWRkIHJlYXBwZWFyaW5nIG1pc3NpbmcgZGV2aWNlDQo+
+IA0KPiANCj4gDQo+IE9uIDAxLzIyLzIwMTggMTE6MjYgUE0sIERhdmlkIFN0
+ZXJiYSB3cm90ZToNCj4gPiBPbiBNb24sIEphbiAyMiwgMjAxOCBhdCAwOToz
+MTo0N1BNICswODAwLCBBbmFuZCBKYWluIHdyb3RlOg0KPiA+PiAgICBQcm9i
+bGVtIHdhcyBtYWlubHkgZHVlIHRvIHRoZSBwYXRjaCAzLzQsIHdoaWNoIHRy
+aWVkIHRvIGFjY2VzcyB0aGUNCj4gPj4gICAgcmV0dXJuIHBvaW50ZXIgZXZl
+biBmb3IgdGhlIGZhaWxlZCBjb25kaXRpb24uIFRoZSBmaXggaXMgdG8gYnJp
+bmcgdGhlDQo+ID4+ICAgIGRldmljZSBwb2ludCBhY2Nlc3MgdW5kZXIgdGhl
+IGVsc2UgcGFydCBhcyBzaG93IGJlbG93IFsyXS4gSSBoYXZlDQo+ID4+ICAg
+IGluY2x1ZGVkIHRoaXMgZml4IGluIFY1LiBXaGljaCBpcyB0ZXN0ZWQgd2l0
+aCBidHJmcyB4ZnN0ZXN0cy4NCj4gPj4gICAgUGxzIGNvdWxkIHlvdSBjb25z
+aWRlciB2NSBmb3IgNC4xNiA/DQo+ID4NCj4gPiBIbSBvaywgdGhyZSdzIHN0
+aWxsIHNvbWUgdGltZSB0byB0ZXN0IGl0LiBPbmUgbW9yZSBmc3Rlc3RzIHJl
+cG9ydCB0aGF0DQo+ID4gYXBwZWFyZWQgYmVmb3JlIGFuZCBhbHNvIHdpdGgg
+dGhlIHY1Og0KPiANCj4gICBJIHdpbGwgdHJ5IHRvIG5haWwgaXQgZG93bi4g
+SXQgcGFzc2VzIG9uIGJhcmUgbWV0YWwgYW5kIGEgVk0gaGVyZS4NCj4gICBi
+dHJmcy1wcm9nczogSSBhbSB1c2luZyB5b3VyIGxhdGVzdCBtYXN0ZXIgYXQN
+Cj4gICAgICAoZ2l0Oi8vZ2l0aHViLmNvbS9rZGF2ZS9idHJmcy1wcm9ncy5n
+aXQpLg0KPiANCj4gDQo+ID4gYnRyZnMvMDA3IDRzIC4uLiAgICAgICAgWzE2
+OjM4OjA5XSBbMTY6Mzg6MTJdIFtmYWlsZWQsIGV4aXQgc3RhdHVzIDFdIC0g
+b3V0cHV0IG1pc21hdGNoIChzZWUNCj4gL3Jvb3QvdGVzdC9tbXRlc3RzL3dv
+cmsvc291cmNlcy94ZnN0ZXN0cy1naXQtaW5zdGFsbGVkL3Jlc3VsdHMvL2J0
+cmZzLzAwNy5vdXQuYmFkKQ0KPiA+ICAgICAgLS0tIHRlc3RzL2J0cmZzLzAw
+Ny5vdXQgICAgIDIwMTctMDktMjAgMTQ6MjQ6NTguMzM0NzE2NjU4ICswMjAw
+DQo+ID4gICAgICArKysgL3Jvb3QvdGVzdC9tbXRlc3RzL3dvcmsvc291cmNl
+cy94ZnN0ZXN0cy1naXQtaW5zdGFsbGVkL3Jlc3VsdHMvL2J0cmZzLzAwNy5v
+dXQuYmFkICAgICAgIDIwMTgtMDEtMjIgMTY6Mzg6MTIuODgzOTMxNTkzDQo+
+ICswMTAwDQo+ID4gICAgICBAQCAtMSw0ICsxLDUgQEANCj4gPiAgICAgICBR
+QSBvdXRwdXQgY3JlYXRlZCBieSAwMDcNCj4gPiAgICAgICAqKiogdGVzdCBz
+ZW5kIC8gcmVjZWl2ZQ0KPiA+ICAgICAgLSoqKiBkb25lDQo+ID4gICAgICAr
+ZmFpbGVkOiAnL3Jvb3QvdGVzdC9tbXRlc3RzL3dvcmsvc291cmNlcy94ZnN0
+ZXN0cy1naXQtaW5zdGFsbGVkL3NyYy9mc3N1bSAtciAvdG1wL3RtcC5lWmNy
+MTd3cU5uL2luY3IuZnNzdW0NCj4gL3Jvb3QvdGVzdC9tbXRlc3RzL3NjcmF0
+Y2hfbW50L2luY3InDQo+IA0KPiAgIExvb2tzIGxpa2UgZnNzdW0gb24gdGhl
+IHJldmVyc2UgY29waWVkIGZpbGUgZmFpbGVkLg0KPiANCj4gPiAgICAgICso
+c2VlDQo+ID4gL3Jvb3QvdGVzdC9tbXRlc3RzL3dvcmsvc291cmNlcy94ZnN0
+ZXN0cy1naXQtaW5zdGFsbGVkL3Jlc3VsdHMvL2J0cmZzLw0KPiA+IDAwNy5m
+dWxsIGZvciBkZXRhaWxzKQ0KPiANCj4gICBDYW4geW91IHBscyBzZW5kIG1l
+IHRoaXMgPw0KUGxlYXNlIHNlZSB0aGUgYXR0YWNobWVudC4NCg0KQW5kIEkg
+Y29uZmlybWVkIGJ0cmZzLzAwNyB1c2luZyBrZXJuZWwgdjQuMTYtcmMxLg0K
+SXQgYWxzbyBvY2N1cnJlZCBzb21ldGltZXMNCj4gDQo+IFRoYW5rcywgQW5h
+bmQNCj4gDQo+ID4gICAgICAgKioqIHVubW91bnQNCj4gPiAgICAgIC4uLg0K
+PiA+ICAgICAgKFJ1biAnZGlmZiAtdSB0ZXN0cy9idHJmcy8wMDcub3V0DQo+
+ID4gL3Jvb3QvdGVzdC9tbXRlc3RzL3dvcmsvc291cmNlcy94ZnN0ZXN0cy1n
+aXQtaW5zdGFsbGVkL3Jlc3VsdHMvL2J0cmZzLw0KPiA+IDAwNy5vdXQuYmFk
+JyAgdG8gc2VlIHRoZSBlbnRpcmUgZGlmZikNCj4gPiAtLQ0KPiA+IFRvIHVu
+c3Vic2NyaWJlIGZyb20gdGhpcyBsaXN0OiBzZW5kIHRoZSBsaW5lICJ1bnN1
+YnNjcmliZSBsaW51eC1idHJmcyINCj4gPiBpbiB0aGUgYm9keSBvZiBhIG1l
+c3NhZ2UgdG8gbWFqb3Jkb21vQHZnZXIua2VybmVsLm9yZyBNb3JlIG1ham9y
+ZG9tbw0KPiA+IGluZm8gYXQgIGh0dHA6Ly92Z2VyLmtlcm5lbC5vcmcvbWFq
+b3Jkb21vLWluZm8uaHRtbA0KPiA+DQo+IC0tDQo+IFRvIHVuc3Vic2NyaWJl
+IGZyb20gdGhpcyBsaXN0OiBzZW5kIHRoZSBsaW5lICJ1bnN1YnNjcmliZSBs
+aW51eC1idHJmcyIgaW4gdGhlIGJvZHkgb2YgYSBtZXNzYWdlIHRvIG1ham9y
+ZG9tb0B2Z2VyLmtlcm5lbC5vcmcgTW9yZQ0KPiBtYWpvcmRvbW8gaW5mbyBh
+dCAgaHR0cDovL3ZnZXIua2VybmVsLm9yZy9tYWpvcmRvbW8taW5mby5odG1s
+DQo+IA0KDQoKCg==
 
-On Thu, Apr 19, 2018 at 04:12:39PM -0700, Drew Bloechl wrote:
-> On Thu, Apr 19, 2018 at 10:43:57PM +0000, Hugo Mills wrote:
-> >    Given that both data and metadata levels here require paired
-> > chunks, try adding _two_ temporary devices so that it can allocate a
-> > new block group.
-> 
-> Thank you very much, that seems to have done the trick:
-> 
-> # fallocate -l 4GiB /var/tmp/btrfs-temp-1
-> # fallocate -l 4GiB /var/tmp/btrfs-temp-2
-> # losetup -f /var/tmp/btrfs-temp-1
-> # losetup -f /var/tmp/btrfs-temp-2
-> # btrfs device add /dev/loop0 /broken
-> Performing full device TRIM (4.00GiB) ...
-> # btrfs device add /dev/loop1 /broken
-> Performing full device TRIM (4.00GiB) ...
-> # btrfs balance start -v -dusage=1 /broken
-> Dumping filters: flags 0x1, state 0x0, force is off
->   DATA (flags 0x2): balancing, usage=1
+--_002_516DDBE5B1D92D42BCF7A2E37F045A5D01A84EA4B8G08CNEXMBPEKD_
+Content-Type: application/octet-stream; name="007.full"
+Content-Description: 007.full
+Content-Disposition: attachment; filename="007.full"; size=2408;
+	creation-date="Fri, 20 Apr 2018 06:09:59 GMT";
+	modification-date="Fri, 20 Apr 2018 06:09:59 GMT"
+Content-Transfer-Encoding: base64
 
-   Excellent. Don't forget to "btrfs dev delete" the devices after
-you're finished the balance. You could damage the FS (possibly
-irreparably) if you destroy the devices without doing so.
+KioqIG1rZnMgLWRzaXplPTIwOTcxNTIwMDAKCmJ0cmZzLXByb2dzIHY0LjE2
+ClNlZSBodHRwOi8vYnRyZnMud2lraS5rZXJuZWwub3JnIGZvciBtb3JlIGlu
+Zm9ybWF0aW9uLgoKTGFiZWw6ICAgICAgICAgICAgICAobnVsbCkKVVVJRDog
+ICAgICAgICAgICAgICAyYjhiOGFiZS0wNzA2LTQyZTAtOGQyYi03NmEyMjQ3
+M2VjNzEKTm9kZSBzaXplOiAgICAgICAgICAxNjM4NApTZWN0b3Igc2l6ZTog
+ICAgICAgIDQwOTYKRmlsZXN5c3RlbSBzaXplOiAgICAxLjk1R2lCCkJsb2Nr
+IGdyb3VwIHByb2ZpbGVzOgogIERhdGE6ICAgICAgICAgICAgIHNpbmdsZSAg
+ICAgICAgICAgIDguMDBNaUIKICBNZXRhZGF0YTogICAgICAgICBEVVAgICAg
+ICAgICAgICAgMTAwLjAwTWlCCiAgU3lzdGVtOiAgICAgICAgICAgRFVQICAg
+ICAgICAgICAgICAgOC4wME1pQgpTU0QgZGV0ZWN0ZWQ6ICAgICAgIG5vCklu
+Y29tcGF0IGZlYXR1cmVzOiAgZXh0cmVmLCBza2lubnktbWV0YWRhdGEKTnVt
+YmVyIG9mIGRldmljZXM6ICAxCkRldmljZXM6CiAgIElEICAgICAgICBTSVpF
+ICBQQVRICiAgICAxICAgICAxLjk1R2lCICAvZGV2L3ZkZDEKCiMgLi9sdHAv
+ZnNzdHJlc3MgLWQgL21udC9zY3JhdGNoIC1uIDIwMCAteCAvdXNyL2xvY2Fs
+L2Jpbi9idHJmcyBzdWJ2b2x1bWUgc25hcHNob3QgLXIgL21udC9zY3JhdGNo
+IC9tbnQvc2NyYXRjaC9iYXNlCnNlZWQgPSAxNTI0MzQ2MTUxCkNyZWF0ZSBh
+IHJlYWRvbmx5IHNuYXBzaG90IG9mICcvbW50L3NjcmF0Y2gnIGluICcvbW50
+L3NjcmF0Y2gvYmFzZScKIyAvdXNyL2xvY2FsL2Jpbi9idHJmcyBzdWJ2b2x1
+bWUgc25hcHNob3QgLXIgL21udC9zY3JhdGNoIC9tbnQvc2NyYXRjaC9pbmNy
+CkNyZWF0ZSBhIHJlYWRvbmx5IHNuYXBzaG90IG9mICcvbW50L3NjcmF0Y2gn
+IGluICcvbW50L3NjcmF0Y2gvaW5jcicKIyAvdXNyL2xvY2FsL2Jpbi9idHJm
+cyBzZW5kIC9tbnQvc2NyYXRjaC9iYXNlID4gL3RtcC90bXAuU2tFVUlYdzY4
+My9iYXNlLnNuYXAKQXQgc3Vidm9sIC9tbnQvc2NyYXRjaC9iYXNlCiMgL3Vz
+ci9sb2NhbC9iaW4vYnRyZnMgc2VuZCAtcCAvbW50L3NjcmF0Y2gvYmFzZQkJ
+L21udC9zY3JhdGNoL2luY3IgPiAvdG1wL3RtcC5Ta0VVSVh3NjgzL2luY3Iu
+c25hcApBdCBzdWJ2b2wgL21udC9zY3JhdGNoL2luY3IKIyAvaG9tZS9ndWp4
+L3hmc3Rlc3RzLWRldi9zcmMvZnNzdW0gLUEgLWYgLXcgL3RtcC90bXAuU2tF
+VUlYdzY4My9iYXNlLmZzc3VtIC9tbnQvc2NyYXRjaC9iYXNlCiMgL2hvbWUv
+Z3VqeC94ZnN0ZXN0cy1kZXYvc3JjL2Zzc3VtIC1BIC1mIC13IC90bXAvdG1w
+LlNrRVVJWHc2ODMvaW5jci5mc3N1bSAteCAvbW50L3NjcmF0Y2gvaW5jci9i
+YXNlIC9tbnQvc2NyYXRjaC9pbmNyCioqKiBta2ZzIC1kc2l6ZT0yMDk3MTUy
+MDAwCgpidHJmcy1wcm9ncyB2NC4xNgpTZWUgaHR0cDovL2J0cmZzLndpa2ku
+a2VybmVsLm9yZyBmb3IgbW9yZSBpbmZvcm1hdGlvbi4KCkxhYmVsOiAgICAg
+ICAgICAgICAgKG51bGwpClVVSUQ6ICAgICAgICAgICAgICAgMDNlYTFkNDkt
+YjA5My00NTM1LWFlMTQtZGFiNDQ4YTJlNmFlCk5vZGUgc2l6ZTogICAgICAg
+ICAgMTYzODQKU2VjdG9yIHNpemU6ICAgICAgICA0MDk2CkZpbGVzeXN0ZW0g
+c2l6ZTogICAgMS45NUdpQgpCbG9jayBncm91cCBwcm9maWxlczoKICBEYXRh
+OiAgICAgICAgICAgICBzaW5nbGUgICAgICAgICAgICA4LjAwTWlCCiAgTWV0
+YWRhdGE6ICAgICAgICAgRFVQICAgICAgICAgICAgIDEwMC4wME1pQgogIFN5
+c3RlbTogICAgICAgICAgIERVUCAgICAgICAgICAgICAgIDguMDBNaUIKU1NE
+IGRldGVjdGVkOiAgICAgICBubwpJbmNvbXBhdCBmZWF0dXJlczogIGV4dHJl
+Ziwgc2tpbm55LW1ldGFkYXRhCk51bWJlciBvZiBkZXZpY2VzOiAgMQpEZXZp
+Y2VzOgogICBJRCAgICAgICAgU0laRSAgUEFUSAogICAgMSAgICAgMS45NUdp
+QiAgL2Rldi92ZGQxCgojIC91c3IvbG9jYWwvYmluL2J0cmZzIHJlY2VpdmUg
+L21udC9zY3JhdGNoCkF0IHN1YnZvbCBiYXNlCiMgL2hvbWUvZ3VqeC94ZnN0
+ZXN0cy1kZXYvc3JjL2Zzc3VtIC1yIC90bXAvdG1wLlNrRVVJWHc2ODMvYmFz
+ZS5mc3N1bSAvbW50L3NjcmF0Y2gvYmFzZQpPSwojIC91c3IvbG9jYWwvYmlu
+L2J0cmZzIHJlY2VpdmUgL21udC9zY3JhdGNoCkF0IHNuYXBzaG90IGluY3IK
+IyAvaG9tZS9ndWp4L3hmc3Rlc3RzLWRldi9zcmMvZnNzdW0gLXIgL3RtcC90
+bXAuU2tFVUlYdzY4My9pbmNyLmZzc3VtIC9tbnQvc2NyYXRjaC9pbmNyCm1l
+dGFkYXRhIGFuZCBkYXRhIG1pc21hdGNoIGluIC9wMC9mMApkYXRhIG1pc21h
+dGNoIGluIC9wMC8KRkFJTApmYWlsZWQ6ICcvaG9tZS9ndWp4L3hmc3Rlc3Rz
+LWRldi9zcmMvZnNzdW0gLXIgL3RtcC90bXAuU2tFVUlYdzY4My9pbmNyLmZz
+c3VtIC9tbnQvc2NyYXRjaC9pbmNyJwo=
 
-> I'm guessing that'll take a while to complete, but meanwhile, in another
-> terminal:
-> 
-> # btrfs fi show /broken
-> Label: 'mon_data'  uuid: 85e52555-7d6d-4346-8b37-8278447eb590
-> 	Total devices 6 FS bytes used 69.53GiB
-> 	devid    1 size 931.51GiB used 731.02GiB path /dev/sda1
-> 	devid    2 size 931.51GiB used 731.02GiB path /dev/sdb1
-> 	devid    3 size 931.51GiB used 730.03GiB path /dev/sdc1
-> 	devid    4 size 931.51GiB used 730.03GiB path /dev/sdd1
-> 	devid    5 size 4.00GiB used 1.00GiB path /dev/loop0
-> 	devid    6 size 4.00GiB used 1.00GiB path /dev/loop1
-> 
-> # btrfs fi df /broken
-> Data, RAID0: total=2.77TiB, used=67.00GiB
-> System, RAID1: total=8.00MiB, used=192.00KiB
-> Metadata, RAID1: total=4.00GiB, used=2.49GiB
-> GlobalReserve, single: total=512.00MiB, used=0.00B
-> 
-> Do I understand correctly that this could require up to 3 extra devices,
-> if for instance you arrived in this situation with a RAID6 data profile?
-> Or is the number even higher for profiles like RAID10?
-
-   The minimum number of devices for each RAID level is:
-
-single, DUP:     1
-RAID-0, -1, -5:  2
-RAID-6:          3
-RAID-10:         4
-
-   Hugo.
-
--- 
-Hugo Mills             | Gentlemen! You can't fight here! This is the War
-hugo@... carfax.org.uk | Room!
-http://carfax.org.uk/  |
-PGP: E2AB1DE4          |                                        Dr Strangelove
-
---utPK4TBebyzZxMrE
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJa2SQDAAoJEFheFHXiqx3kTnwP/0QYlnL6OxFMLBNB8tetH4IJ
-msDB/IN7Xj2YOQl5dLVsZgvZLZ3ayds5YKnCrwRlusOOlAL35cjkKF0/2oxmQnpL
-+CB3HY4guSNvadROaIaR3qzrVIgWgxqSpSNn5lZ0n0yzzII2GTqvMfPcrD5Bf35c
-Jt2OZqd4NaWrTrIGkLKM1ZMaC9mq/T9pfGK5U8jfGQRdav9yB/uoVISvFqagD3aN
-cPxUyxH3F2VhyovT3X0384P1WPLzc4PC/UXx3wef4O0UfOEWziO2fHqOLcF87ji4
-vFRe/NIx6SPpEVEZfcsmOdW+OOFPY+bYrMFMyV/OC+nVQV9ClLXfGLDB2ut43ggf
-LNDdScIXeCKO7zlAs8JfKWu4O3uYweabJDVCbuwqoPRiZ9Q+TGljKLj+lVqr+jW+
-bV50pK06vC+waYrx0JvudoA0XS3kf0P0UV8Sij5RCfy+mB9UeogHOckm20ZruOGp
-5UH1QZX3ADInPHCU6Cws192pn1htVBMTFCUEh7HZBSp6Za7RQHVmGVQqiMBZquhv
-t/YA1itzu91/QijHcG8OHTPdKn41zk3Wdq0bhXG587Eeb9uWF5zXCOn5SclS41E0
-d6Pc1WL0Vm0ZYzU7FpUXM/1DZ2FQiiIrlbmXqgWLvH0gvQDWA11h+M1JPOI2XmFQ
-F7S7H6f4vi6sCKa4oi2A
-=Vjl4
------END PGP SIGNATURE-----
-
---utPK4TBebyzZxMrE--
+--_002_516DDBE5B1D92D42BCF7A2E37F045A5D01A84EA4B8G08CNEXMBPEKD_--

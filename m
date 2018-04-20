@@ -1,58 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:55246 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:44294 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753761AbeDSQfm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 19 Apr 2018 12:35:42 -0400
+        id S1753483AbeDTHCZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 20 Apr 2018 03:02:25 -0400
 Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 5AE4AAC76
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Apr 2018 16:35:41 +0000 (UTC)
-From: David Sterba <dsterba@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH v2 00/16] Kill fs_info::volume_mutex
-Date: Thu, 19 Apr 2018 18:33:09 +0200
-Message-Id: <cover.1524146555.git.dsterba@suse.com>
+        by mx2.suse.de (Postfix) with ESMTP id EDCCCAEAC
+        for <linux-btrfs@vger.kernel.org>; Fri, 20 Apr 2018 07:02:23 +0000 (UTC)
+Subject: Re: [PATCH v2 06/16] btrfs: move clearing of EXCL_OP out of
+ __cancel_balance
+To: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+References: <cover.1524146555.git.dsterba@suse.com>
+ <c5cb79f4b8f36ce894e9e58903029d3a92722d5c.1524146555.git.dsterba@suse.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <c0d64179-0b4a-7964-b75e-deb0b470f829@suse.com>
+Date: Fri, 20 Apr 2018 10:02:21 +0300
+MIME-Version: 1.0
+In-Reply-To: <c5cb79f4b8f36ce894e9e58903029d3a92722d5c.1524146555.git.dsterba@suse.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This series gets rid of the volume mutex because it's redundant. Updated
-branch: git://github.com/kdave/btrfs-devel dev/remove-volume-mutex
 
-Changes for v2:
-- sanity check in balance resume is only a warning
-- read-only check in balance cancel remains and is only moved
-- typo fixes
 
-The fstests seem to pass all relevant tests now and qualifies for
-conditional addition to for-next.
+On 19.04.2018 19:33, David Sterba wrote:
+> Make the clearning visible in the callers so we can pair it with the
+> test_and_set part.
+> 
+> Signed-off-by: David Sterba <dsterba@suse.com>
 
-David Sterba (16):
-  btrfs: squeeze btrfs_dev_replace_continue_on_mount to its caller
-  btrfs: make success path out of btrfs_init_dev_replace_tgtdev more clear
-  btrfs: export and rename free_device
-  btrfs: move btrfs_init_dev_replace_tgtdev to dev-replace.c and make static
-  btrfs: move volume_mutex to callers of btrfs_rm_device
-  btrfs: move clearing of EXCL_OP out of __cancel_balance
-  btrfs: add proper safety check before resuming dev-replace
-  btrfs: add sanity check when resuming balance after mount
-  btrfs: cleanup helpers that reset balance state
-  btrfs: remove wrong use of volume_mutex from btrfs_dev_replace_start
-  btrfs: kill btrfs_fs_info::volume_mutex
-  btrfs: track running balance in a simpler way
-  btrfs: move and comment read-only check in btrfs_cancel_balance
-  btrfs: drop lock parameter from update_ioctl_balance_args and rename
-  btrfs: use mutex in btrfs_resume_balance_async
-  btrfs: open code set_balance_control
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 
- fs/btrfs/ctree.h       |   9 +-
- fs/btrfs/dev-replace.c | 135 +++++++++++++++++++++----
- fs/btrfs/disk-io.c     |   2 -
- fs/btrfs/extent-tree.c |   2 +-
- fs/btrfs/ioctl.c       |  41 +++-----
- fs/btrfs/volumes.c     | 263 +++++++++++++++----------------------------------
- fs/btrfs/volumes.h     |   5 +-
- 7 files changed, 216 insertions(+), 241 deletions(-)
-
--- 
-2.16.2
-
+> ---
+>  fs/btrfs/ioctl.c   |  2 +-
+>  fs/btrfs/volumes.c | 13 +++++++------
+>  2 files changed, 8 insertions(+), 7 deletions(-)
+> 
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index b93dea445802..582bde5b7eda 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -4656,7 +4656,7 @@ static long btrfs_ioctl_balance(struct file *file, void __user *arg)
+>  	 * Ownership of bctl and filesystem flag BTRFS_FS_EXCL_OP
+>  	 * goes to to btrfs_balance.  bctl is freed in __cancel_balance,
+>  	 * or, if restriper was paused all the way until unmount, in
+> -	 * free_fs_info.  The flag is cleared in __cancel_balance.
+> +	 * free_fs_info.  The flag should be cleared after __cancel_balance.
+>  	 */
+>  	need_unlock = false;
+>  
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index e0bd181dc9e0..5c83ebc8e199 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -3760,8 +3760,6 @@ static void __cancel_balance(struct btrfs_fs_info *fs_info)
+>  	ret = del_balance_item(fs_info);
+>  	if (ret)
+>  		btrfs_handle_fs_error(fs_info, ret, NULL);
+> -
+> -	clear_bit(BTRFS_FS_EXCL_OP, &fs_info->flags);
+>  }
+>  
+>  /* Non-zero return value signifies invalidity */
+> @@ -3919,6 +3917,7 @@ int btrfs_balance(struct btrfs_balance_control *bctl,
+>  	if ((ret && ret != -ECANCELED && ret != -ENOSPC) ||
+>  	    balance_need_close(fs_info)) {
+>  		__cancel_balance(fs_info);
+> +		clear_bit(BTRFS_FS_EXCL_OP, &fs_info->flags);
+>  	}
+>  
+>  	wake_up(&fs_info->balance_wait_q);
+> @@ -3927,10 +3926,10 @@ int btrfs_balance(struct btrfs_balance_control *bctl,
+>  out:
+>  	if (bctl->flags & BTRFS_BALANCE_RESUME)
+>  		__cancel_balance(fs_info);
+> -	else {
+> +	else
+>  		kfree(bctl);
+> -		clear_bit(BTRFS_FS_EXCL_OP, &fs_info->flags);
+> -	}
+> +	clear_bit(BTRFS_FS_EXCL_OP, &fs_info->flags);
+> +
+>  	return ret;
+>  }
+>  
+> @@ -4089,8 +4088,10 @@ int btrfs_cancel_balance(struct btrfs_fs_info *fs_info)
+>  		mutex_lock(&fs_info->volume_mutex);
+>  		mutex_lock(&fs_info->balance_mutex);
+>  
+> -		if (fs_info->balance_ctl)
+> +		if (fs_info->balance_ctl) {
+>  			__cancel_balance(fs_info);
+> +			clear_bit(BTRFS_FS_EXCL_OP, &fs_info->flags);
+> +		}
+>  
+>  		mutex_unlock(&fs_info->volume_mutex);
+>  	}
+> 

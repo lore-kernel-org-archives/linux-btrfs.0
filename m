@@ -1,149 +1,322 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from corp-mailer.zoner.com ([217.198.120.77]:46558 "EHLO
-        corp-mailer.zoner.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751258AbeDUJYz (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 21 Apr 2018 05:24:55 -0400
-Subject: Re: extent-tree.c no space left (4.9.77 + 4.16.2)
-To: David Goodwin <david@codepoets.co.uk>, linux-btrfs@vger.kernel.org
-References: <74c299a0-913b-d6ed-466b-59d83103eead@codepoets.co.uk>
-From: Martin Svec <martin.svec@zoner.cz>
-Cc: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <bc39e325-7c7b-dd00-78bd-483c5393cd64@zoner.cz>
-Date: Sat, 21 Apr 2018 11:18:03 +0200
+Received: from demfloro.ru ([188.166.0.225]:50024 "EHLO demfloro.ru"
+        rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1752350AbeDUPGm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 21 Apr 2018 11:06:42 -0400
+Received: from [2001:470:28:88::100] (helo=localhost.localdomain)
+        by demfloro.ru with esmtpsa (TLSv1.2:ECDHE-RSA-AES256-GCM-SHA384:256)
+        (Exim 4.89)
+        (envelope-from <demfloro@demfloro.ru>)
+        id 1f9tvr-0002bI-KT
+        for linux-btrfs@vger.kernel.org; Sat, 21 Apr 2018 14:56:08 +0000
+Date: Sat, 21 Apr 2018 17:55:48 +0300
+From: Dmitrii Tcvetkov <demfloro@demfloro.ru>
+To: linux-btrfs@vger.kernel.org
+Subject: 4.17-rc1 FS went read-only during balance
+Message-ID: <20180421175548.4b07dffc@demfloro.ru>
 MIME-Version: 1.0
-In-Reply-To: <74c299a0-913b-d6ed-466b-59d83103eead@codepoets.co.uk>
-Content-Type: text/plain; charset=utf-8
+Content-Type: multipart/mixed; boundary="MP_/RrBy2fgvkLkRyZKLMJIaSe0"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi David,
+--MP_/RrBy2fgvkLkRyZKLMJIaSe0
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
 
-this looks like the bug that I already reported two times:
+TL;DR It seems as regression in 4.17, but I managed to find a
+workaround to make filesystem rw mountable again.
 
-https://www.spinics.net/lists/linux-btrfs/msg54394.html
-https://www.spinics.net/lists/linux-btrfs/msg75104.html
+Kernel built from tag v4.17-rc1
+btrfs-progs 4.16
 
-The second thread contains Nikolay's debug patch that can confirm if you run out of global metadata
-reservations too.
+Tonight two my machines (PC (ECC RAM) and laptop(non-ECC RAM)) were
+doing usual weekly balance with this command via cron:
+btrfs balance start -musage=50 -dusage=50 <mountpoint>
+Both machines run same kernel version. 
 
-Martin
+On PC that caused root and "data" filesystems to go readonly. Root is on
+an SSD with data single and metadata DUP, "data" filesystem is on 2 HDDs
+with RAID1 for data and metadata.
 
-Dne 21.4.2018 v 9:38 David Goodwin napsal(a):
-> Hi,
->
-> I'm running a 3TiB EBS based (2+1TiB devices) volume in EC2 which contains about 500 read-only
-> snapshots.
->
-> btrfs-progs v4.7.3
->
-> There are two dmesg trace things below. The first one from a 4.9.77 kernel -
->
-> ------------[ cut here ]------------
-> BTRFS: error (device xvdg) in btrfs_run_delayed_refs:2967: errno=-28 No space left
-> BTRFS info (device xvdg): forced readonlyApr 19 11:44:40 gateway1 kernel: [7648104.300115]
-> WARNING: CPU: 2 PID: 963 at fs/btrfs/extent-tree.c:2967 btrfs_run_delayed_refs+0x27e/0x2b0
-> [btrfs]Apr 19 11:44:40 gateway1 kernel: [7648104.313268] BTRFS: Transaction aborted (error -28)
-> Modules linked in: dm_mod nfsv3 ipt_REJECT nf_reject_ipv4 ipt_MASQUERADE nf_nat_masquerade_ipv4
-> iptable_nat nf_conntrack_ipv4 nf_defrag_ipv4 nf_nat_ipv4 nf_nat_ftp nf_conntrack_ftp nf_nat
-> nf_conntrack xt_mu
-> nfsd auth_rpcgss oid_registry nfs_acl nfs lockd grace fscache sunrpc evdev intel_rapl
-> crct10dif_pclmul crc32_pclmul ghash_clmulni_intel snd_pcsp snd_pcm aesni_intel aes_x86_64 lrw
-> gf128mul glue_helper snd_timer ablk_helper snd cryptd soundcore ext4 crc16 jbd2 mbcache btrfs xor
-> raid6_pq xen_netfront xen_blkfront crc32c_intel
-> CPU: 2 PID: 963 Comm: btrfs-transacti Not tainted 4.9.77-dg1 #1Apr 19 11:44:40 gateway1 kernel:
-> [7648104.408561]  0000000000000000 ffffffff812f17a4 ffffc90043203d08 0000000000000000
->  ffffffff8107389e ffffffffa0157d5a ffffc90043203d58 ffff8802ccfd7170
->  ffff880394684800 ffff880394684800 000000000007315c ffffffff8107390f
-> Call Trace:
->  [<ffffffff812f17a4>] ? dump_stack+0x5c/0x78
->  [<ffffffff8107389e>] ? __warn+0xbe/0xe0
->  [<ffffffff8107390f>] ? warn_slowpath_fmt+0x4f/0x60
->  [<ffffffffa00bd3fe>] ? btrfs_run_delayed_refs+0x27e/0x2b0 [btrfs]
->  [<ffffffffa00a7523>] ? btrfs_release_path+0x13/0x80 [btrfs]
->  [<ffffffffa00c1dc2>] ? btrfs_start_dirty_block_groups+0x2c2/0x450 [btrfs]
->  [<ffffffffa00d36ac>] ? btrfs_commit_transaction+0x14c/0xa30 [btrfs]
->  [<ffffffffa00d4026>] ? start_transaction+0x96/0x480 [btrfs]
->  [<ffffffffa00ce54c>] ? transaction_kthread+0x1dc/0x200 [btrfs]
->  [<ffffffffa00ce370>] ? btrfs_cleanup_transaction+0x550/0x550 [btrfs]
->  [<ffffffff81091ef7>] ? kthread+0xc7/0xe0
->  [<ffffffff81091e30>] ? kthread_park+0x60/0x60
->  [<ffffffff815a3174>] ? ret_from_fork+0x54/0x60
-> ---[ end trace 69ca1332d91b4310 ]---
-> BTRFS: error (device xvdg) in btrfs_run_delayed_refs:2967: errno=-28 No space left
-> BTRFS error (device xvdg): parent transid verify failed on 5400398217216 wanted 1893543 found 1893366
->
->
->
-> On checking btrfs fi us there was plenty of unallocated space left.
->
-> % btrfs fi us /broken/
->
-> Overall:
->     Device size:           3.06TiB
->     Device allocated:           2.43TiB
->     Device unallocated:         643.09GiB
->     Device missing:             0.00B
->     Used:               2.43TiB
->     Free (estimated):         646.41GiB    (min: 646.41GiB)
->     Data ratio:                  1.00
->     Metadata ratio:              1.00
->     Global reserve:         512.00MiB    (used: 0.00B)
->
-> ....
->
-> The VM was then rebooted with a 4.16.2 kernel, which encountered what I assume is the same problem:
->
->
-> ------------[ cut here ]------------
-> BTRFS: Transaction aborted (error -28)
-> WARNING: CPU: 2 PID: 981 at fs/btrfs/extent-tree.c:6990 __btrfs_free_extent.isra.63+0x3d2/0xd20
-> [btrfs]
-> Modules linked in: nfsv3 ipt_REJECT nf_reject_ipv4 ipt_MASQUERADE nf_nat_masquerade_ipv4
-> iptable_nat nf_conntrack_ipv4 nf_defrag_ipv4 nf_nat_ipv4 nf_nat_ftp nf_conntrack_ftp nf_nat
-> nf_conntrack libcrc32c crc32c_generic xt_multiport iptable_filter ip_tables x_tables autofs4 nfsd
-> auth_rpcgss nfs_acl nfs lockd grace fscache sunrpc intel_rapl crct10dif_pclmul crc32_pclmul
-> ghash_clmulni_intel evdev pcbc snd_pcsp aesni_intel snd_pcm aes_x86_64 snd_timer crypto_simd
-> glue_helper snd cryptd soundcore ext4 crc16 mbcache jbd2 btrfs xor zstd_decompress zstd_compress
-> xxhash raid6_pq xen_netfront xen_blkfront crc32c_intel
-> CPU: 2 PID: 981 Comm: btrfs-transacti Not tainted 4.16.2-dg1 #1
-> RIP: e030:__btrfs_free_extent.isra.63+0x3d2/0xd20 [btrfs]
-> RSP: e02b:ffffc900428d7c68 EFLAGS: 00010292
-> RAX: 0000000000000026 RBX: 000001fb8031c000 RCX: 0000000000000006
-> RDX: 0000000000000007 RSI: 0000000000000001 RDI: ffff88039a916650
-> RBP: 00000000ffffffe4 R08: 0000000000000001 R09: 000000000000010a
-> R10: 0000000000000001 R11: 000000000000010a R12: ffff8803957e6000
-> R13: ffff88036f5a9e70 R14: 0000000000000000 R15: 0000000000000002
-> FS:  0000000000000000(0000) GS:ffff88039a900000(0000) knlGS:ffff88039a900000
-> CS:  e033 DS: 0000 ES: 0000 CR0: 0000000080050033
-> CR2: 00007f2168f8c274 CR3: 000000038fd88000 CR4: 0000000000000660
-> Call Trace:
->  ? btrfs_merge_delayed_refs+0x23c/0x3c0 [btrfs]
->  __btrfs_run_delayed_refs+0x320/0x1150 [btrfs]
->  btrfs_run_delayed_refs+0x105/0x1c0 [btrfs]
->  btrfs_commit_transaction+0x393/0x8a0 [btrfs]
->  ? start_transaction+0x93/0x420 [btrfs]
->  transaction_kthread+0x195/0x1b0 [btrfs]
->  kthread+0xf8/0x130
->  ? btrfs_cleanup_transaction+0x520/0x520 [btrfs]
->  ? kthread_create_worker_on_cpu+0x50/0x50
->  ret_from_fork+0x35/0x40
-> Code: 48 8b 04 24 48 8b 40 50 f0 48 0f ba a8 d0 16 00 00 02 72 19 83 fd fb 0f 84 07 03 00 00 89 ee
-> 48 c7 c7 28 29 16 a0 e8 9e b2 fb e0 <0f> 0b 48 8b 3c 24 89 e9 ba 4e 1b 00 00 48 c7 c6 80 b8 15 a0 e8
-> ---[ end trace 7d4d4006f7a3a06e ]---
->
-> BTRFS: error (device xvdg) in __btrfs_free_extent:6990: errno=-28 No space left
->
->
-> The volume appears to be usable when mounted read-only.
->
-> Hopefully the above might help someone remove what I ignorantly assume is a bug.
->
-> David.
-> -- 
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+On laptop only /home went ro, it's on NVMe SSD with data single and
+metadata DUP. 
 
+Btrfs check of PC rootfs was without any errors in both modes, I did
+them once each before reboot on readonly filesystem with --force flag
+and then from live usb. Same output without any errors.
 
+After reboot kernel refused rw mount rootfs with the same error as
+during cron balance, ro mount was accepted, error during rw mount:
+BTRFS: error (device dm-17) in merge_reloc_roots:2465: errno=-117
+unknown BTRFS info (device dm-17): forced readonly BTRFS info (device
+dm-17): delayed_refs has NO entry BTRFS error (device dm-17): cleaner
+transaction attach returned -3
 
+mount rw with skip_balance parameter didn't help to mount.
+
+After that I mounted rw the rootfs with 4.16.2 kernel, mount was
+successful and kernel finished balance. After that the filesystem is
+mountable rw by 4.17-rc1 kernel without errors, btrfs check is clean
+too.
+
+Data filesystem behaves the same, rw mount on 4.17-rc1 kernel yields:
+[ 2321.370113] BTRFS: error (device dm-17) in merge_reloc_roots:2465:
+errno=-117 unknown [ 2321.370119] BTRFS warning (device dm-17): failed
+to recover relocation: -30 [ 2321.370137] BTRFS info (device dm-17):
+delayed_refs has NO entry [ 2321.370155] BTRFS error (device dm-17):
+cleaner transaction attach returned -30 [ 2321.414219] BTRFS error
+(device dm-17): open_ctree failed
+
+Rw mount on 4.16.2 goes ok and after balance finishes the filesystem is
+mountable by 4.17-rc1 again. I saved /home filesystem from laptop in
+unmountable by 4.17-rc1 state and can test patches and/or create
+btrfs-image if it's needed.
+
+--MP_/RrBy2fgvkLkRyZKLMJIaSe0
+Content-Type: text/plain
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment; filename=pc-dmesg
+
+Apr 20 23:46:00 fire kernel: BTRFS: device label root devid 1 transid 350197 /dev/dm-2
+Apr 20 23:46:00 fire kernel: BTRFS info (device dm-2): enabling auto defrag
+Apr 20 23:46:00 fire kernel: BTRFS info (device dm-2): use lzo compression, level 0
+Apr 20 23:46:00 fire kernel: BTRFS info (device dm-2): using free space tree
+Apr 20 23:46:00 fire kernel: BTRFS info (device dm-2): has skinny extents
+Apr 20 23:46:00 fire kernel: BTRFS info (device dm-2): using free space tree
+Apr 20 23:46:10 fire kernel: BTRFS: device label home devid 2 transid 358906 /dev/dm-5
+Apr 20 23:46:13 fire kernel: BTRFS: device label home devid 1 transid 358906 /dev/dm-12
+Apr 20 23:46:13 fire kernel: BTRFS info (device dm-12): use zstd compression, level 0
+Apr 20 23:46:13 fire kernel: BTRFS info (device dm-12): enabling auto defrag
+Apr 20 23:46:13 fire kernel: BTRFS info (device dm-12): using free space tree
+Apr 20 23:46:13 fire kernel: BTRFS info (device dm-12): has skinny extents
+Apr 20 23:52:32 fire kernel: BTRFS: device label storage devid 1 transid 357668 /dev/dm-17
+Apr 20 23:52:32 fire kernel: BTRFS: device label backup devid 1 transid 5383 /dev/dm-18
+Apr 20 23:52:41 fire kernel: BTRFS: device label storage devid 2 transid 357668 /dev/dm-21
+Apr 20 23:52:41 fire kernel: BTRFS: device label backup devid 2 transid 5383 /dev/dm-22
+Apr 20 23:52:42 fire kernel: BTRFS info (device dm-17): enabling auto defrag
+Apr 20 23:52:42 fire kernel: BTRFS info (device dm-17): use zstd compression, level 0
+Apr 20 23:52:42 fire kernel: BTRFS info (device dm-17): using free space tree
+Apr 20 23:52:42 fire kernel: BTRFS info (device dm-17): has skinny extents
+Apr 20 23:52:45 fire kernel: BTRFS info (device dm-18): enabling auto defrag
+Apr 20 23:52:45 fire kernel: BTRFS info (device dm-18): use zstd compression, level 0
+Apr 20 23:52:45 fire kernel: BTRFS info (device dm-18): using free space tree
+Apr 20 23:52:45 fire kernel: BTRFS info (device dm-18): has skinny extents
+Apr 21 01:30:00 fire kernel: BTRFS info (device dm-2): relocating block group 27309113344 flags system|dup
+Apr 21 01:30:00 fire kernel: BTRFS info (device dm-12): relocating block group 62910365696 flags system|raid1
+Apr 21 01:30:00 fire kernel: BTRFS info (device dm-17): relocating block group 2140869230592 flags metadata|raid1
+Apr 21 01:30:00 fire kernel: BTRFS info (device dm-2): relocating block group 27040677888 flags metadata|dup
+Apr 21 01:30:00 fire kernel: BTRFS info (device dm-12): relocating block group 61836623872 flags data|raid1
+Apr 21 01:30:01 fire kernel: BTRFS info (device dm-12): found 5 extents
+Apr 21 01:30:01 fire kernel: BTRFS: error (device dm-2) in merge_reloc_roots:2465: errno=-117 unknown
+Apr 21 01:30:01 fire kernel: BTRFS info (device dm-2): forced readonly
+Apr 21 01:30:03 fire kernel: BTRFS info (device dm-12): found 5 extents
+Apr 21 01:30:04 fire kernel: BTRFS info (device dm-12): relocating block group 60762882048 flags metadata|raid1
+Apr 21 01:30:08 fire kernel: BTRFS info (device dm-17): found 1521 extents
+Apr 21 01:30:08 fire kernel: BTRFS info (device dm-17): relocating block group 2139761934336 flags metadata|raid1
+Apr 21 01:30:22 fire kernel: BTRFS info (device dm-12): found 1709 extents
+Apr 21 01:30:25 fire kernel: BTRFS info (device dm-17): found 4297 extents
+Apr 21 01:30:25 fire kernel: BTRFS info (device dm-2): delayed_refs has NO entry
+Apr 21 01:30:26 fire kernel: BTRFS: error (device dm-17) in merge_reloc_roots:2465: errno=-117 unknown
+Apr 21 01:30:26 fire kernel: BTRFS info (device dm-17): forced readonly
+Apr 21 01:30:26 fire kernel: BTRFS info (device dm-17): delayed_refs has NO entry
+Apr 21 10:28:29 fire kernel: BTRFS error (device dm-17): cleaner transaction attach returned -30
+
+--MP_/RrBy2fgvkLkRyZKLMJIaSe0
+Content-Type: text/plain
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment; filename=laptop-dmesg
+
+Apr 12 14:56:42 xps kernel: BTRFS info (device dm-3): enabling auto defrag
+Apr 12 14:56:42 xps kernel: BTRFS info (device dm-3): using free space tree
+Apr 12 14:56:42 xps kernel: BTRFS info (device dm-3): has skinny extents
+Apr 14 02:00:00 xps kernel: BTRFS info (device dm-1): relocating block group 30496784384 flags data
+Apr 14 02:00:00 xps kernel: BTRFS info (device dm-1): found 2 extents
+Apr 14 02:00:00 xps kernel: BTRFS info (device dm-1): found 2 extents
+Apr 14 02:00:00 xps kernel: BTRFS info (device dm-1): relocating block group 30463229952 flags system|dup
+Apr 14 02:00:00 xps kernel: BTRFS info (device dm-1): found 1 extents
+Apr 14 02:00:00 xps kernel: BTRFS info (device dm-1): relocating block group 29892804608 flags metadata|dup
+Apr 14 02:00:00 xps kernel: BTRFS info (device dm-1): found 849 extents
+Apr 14 02:05:00 xps kernel: BTRFS info (device dm-3): relocating block group 64453869568 flags metadata|dup
+Apr 14 02:05:01 xps kernel: BTRFS info (device dm-3): found 2145 extents
+Apr 14 02:05:01 xps kernel: BTRFS info (device dm-3): relocating block group 64420315136 flags system|dup
+Apr 14 02:05:01 xps kernel: BTRFS info (device dm-3): found 1 extents
+Apr 14 02:05:01 xps kernel: BTRFS info (device dm-3): relocating block group 61165535232 flags data
+Apr 14 02:05:01 xps kernel: BTRFS info (device dm-3): found 13 extents
+Apr 14 02:05:01 xps kernel: BTRFS info (device dm-3): found 13 extents
+Apr 14 02:05:01 xps kernel: BTRFS info (device dm-3): relocating block group 60091793408 flags data
+Apr 14 02:05:01 xps kernel: BTRFS info (device dm-3): found 5 extents
+Apr 14 02:05:01 xps kernel: BTRFS info (device dm-3): found 5 extents
+Apr 14 02:05:01 xps kernel: BTRFS info (device dm-3): relocating block group 59018051584 flags data
+Apr 14 02:05:01 xps kernel: BTRFS info (device dm-3): found 5 extents
+Apr 14 02:05:01 xps kernel: BTRFS info (device dm-3): found 5 extents
+Apr 14 02:05:01 xps kernel: BTRFS info (device dm-3): relocating block group 57944309760 flags data
+Apr 14 02:05:01 xps kernel: BTRFS info (device dm-3): found 4 extents
+Apr 14 02:05:01 xps kernel: BTRFS info (device dm-3): found 4 extents
+Apr 14 02:05:01 xps kernel: BTRFS info (device dm-3): relocating block group 56870567936 flags data
+Apr 14 02:05:01 xps kernel: BTRFS info (device dm-3): found 3 extents
+Apr 14 02:05:02 xps kernel: BTRFS info (device dm-3): found 3 extents
+Apr 14 02:05:02 xps kernel: BTRFS info (device dm-3): relocating block group 55796826112 flags data
+Apr 14 02:05:02 xps kernel: BTRFS info (device dm-3): found 4 extents
+Apr 14 02:05:02 xps kernel: BTRFS info (device dm-3): found 4 extents
+Apr 14 02:05:02 xps kernel: BTRFS info (device dm-3): relocating block group 54723084288 flags data
+Apr 14 02:05:02 xps kernel: BTRFS info (device dm-3): found 7 extents
+Apr 14 02:05:02 xps kernel: BTRFS info (device dm-3): found 7 extents
+Apr 14 02:05:02 xps kernel: BTRFS info (device dm-3): relocating block group 53649342464 flags data
+Apr 14 02:05:02 xps kernel: BTRFS info (device dm-3): found 8 extents
+Apr 14 02:05:02 xps kernel: BTRFS info (device dm-3): found 8 extents
+Apr 14 02:05:02 xps kernel: BTRFS info (device dm-3): relocating block group 52575600640 flags data
+Apr 14 02:05:02 xps kernel: BTRFS info (device dm-3): found 2 extents
+Apr 14 02:05:03 xps kernel: BTRFS info (device dm-3): found 2 extents
+Apr 14 02:05:03 xps kernel: BTRFS info (device dm-3): relocating block group 51501858816 flags data
+Apr 14 02:05:03 xps kernel: BTRFS info (device dm-3): found 4 extents
+Apr 14 02:05:03 xps kernel: BTRFS info (device dm-3): found 4 extents
+Apr 14 02:05:03 xps kernel: BTRFS info (device dm-3): relocating block group 50428116992 flags data
+Apr 14 02:05:03 xps kernel: BTRFS info (device dm-3): found 3 extents
+Apr 14 02:05:03 xps kernel: BTRFS info (device dm-3): found 3 extents
+Apr 14 02:05:03 xps kernel: BTRFS info (device dm-3): relocating block group 49354375168 flags data
+Apr 14 02:05:03 xps kernel: BTRFS info (device dm-3): found 7 extents
+Apr 14 02:05:03 xps kernel: BTRFS info (device dm-3): found 7 extents
+Apr 14 02:05:03 xps kernel: BTRFS info (device dm-3): relocating block group 48280633344 flags data
+Apr 14 02:05:03 xps kernel: BTRFS info (device dm-3): found 7 extents
+Apr 14 02:05:04 xps kernel: BTRFS info (device dm-3): found 7 extents
+Apr 14 02:05:04 xps kernel: BTRFS info (device dm-3): relocating block group 47206891520 flags data
+Apr 14 02:05:04 xps kernel: BTRFS info (device dm-3): found 7 extents
+Apr 14 02:05:04 xps kernel: BTRFS info (device dm-3): found 7 extents
+Apr 14 02:05:04 xps kernel: BTRFS info (device dm-3): relocating block group 46133149696 flags data
+Apr 14 02:05:04 xps kernel: BTRFS info (device dm-3): found 8 extents
+Apr 14 02:05:04 xps kernel: BTRFS info (device dm-3): found 8 extents
+Apr 14 02:05:04 xps kernel: BTRFS info (device dm-3): relocating block group 45059407872 flags data
+Apr 14 02:05:04 xps kernel: BTRFS info (device dm-3): found 7 extents
+Apr 14 02:05:05 xps kernel: BTRFS info (device dm-3): found 7 extents
+Apr 17 22:00:37 xps kernel: BTRFS: device label root devid 1 transid 186700 /dev/dm-1
+Apr 17 22:00:37 xps kernel: BTRFS: device label home devid 1 transid 269843 /dev/dm-3
+Apr 17 22:00:37 xps kernel: BTRFS info (device dm-1): enabling auto defrag
+Apr 17 22:00:37 xps kernel: BTRFS info (device dm-1): using free space tree
+Apr 17 22:00:37 xps kernel: BTRFS info (device dm-1): has skinny extents
+Apr 17 22:00:37 xps kernel: BTRFS info (device dm-1): using free space tree
+Apr 17 22:00:38 xps kernel: BTRFS info (device dm-3): enabling auto defrag
+Apr 17 22:00:38 xps kernel: BTRFS info (device dm-3): using free space tree
+Apr 17 22:00:38 xps kernel: BTRFS info (device dm-3): has skinny extents
+Apr 21 02:00:00 xps kernel: BTRFS info (device dm-1): relocating block group 31100764160 flags data
+Apr 21 02:00:00 xps kernel: BTRFS info (device dm-1): found 2 extents
+Apr 21 02:00:00 xps kernel: BTRFS info (device dm-1): found 2 extents
+Apr 21 02:00:00 xps kernel: BTRFS info (device dm-1): relocating block group 30832328704 flags metadata|dup
+Apr 21 02:00:01 xps kernel: BTRFS info (device dm-1): found 1104 extents
+Apr 21 02:00:01 xps kernel: BTRFS info (device dm-1): found 188 extents
+Apr 21 02:00:01 xps kernel: BTRFS info (device dm-1): found 188 extents
+Apr 21 02:00:01 xps kernel: BTRFS info (device dm-1): found 188 extents
+Apr 21 02:00:01 xps kernel: BTRFS info (device dm-1): relocating block group 30798774272 flags system|dup
+Apr 21 02:00:01 xps kernel: BTRFS info (device dm-1): found 1 extents
+Apr 21 02:05:00 xps kernel: BTRFS info (device dm-3): relocating block group 68815945728 flags data
+Apr 21 02:05:00 xps kernel: BTRFS info (device dm-3): found 18 extents
+Apr 21 02:05:00 xps kernel: BTRFS info (device dm-3): found 18 extents
+Apr 21 02:05:00 xps kernel: BTRFS info (device dm-3): relocating block group 67742203904 flags metadata|dup
+Apr 21 02:05:01 xps kernel: BTRFS: error (device dm-3) in merge_reloc_roots:2465: errno=-117 unknown
+Apr 21 02:05:01 xps kernel: BTRFS info (device dm-3): forced readonly
+Apr 21 02:05:11 xps kernel: BTRFS error (device dm-3): pending csums is 13107200
+
+--MP_/RrBy2fgvkLkRyZKLMJIaSe0
+Content-Type: text/plain
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment; filename=pc-data-original-check
+
+# btrfs check --readonly /dev/disk/by-uuid/011912ff-8375-4fd0-8568-715cd28c2b8b
+Checking filesystem on /dev/disk/by-uuid/011912ff-8375-4fd0-8568-715cd28c2b8b
+UUID: 011912ff-8375-4fd0-8568-715cd28c2b8b
+checking extents
+checking free space tree
+checking fs roots
+checking csums
+checking root refs
+found 1023097102336 bytes used, no error found
+total csum bytes: 995795540
+total tree bytes: 1777254400
+total fs tree bytes: 499777536
+total extent tree bytes: 156712960
+btree space waste bytes: 206534832
+file data blocks allocated: 2580921212928
+ referenced 1103042093056
+
+--MP_/RrBy2fgvkLkRyZKLMJIaSe0
+Content-Type: text/plain
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment; filename=pc-data-lowmem-check
+
+# btrfs check --mode lowmem --readonly /dev/disk/by-uuid/011912ff-8375-4fd0-8568-715cd28c2b8b                                                                                         [18/6001]
+Checking filesystem on /dev/disk/by-uuid/011912ff-8375-4fd0-8568-715cd28c2b8b
+UUID: 011912ff-8375-4fd0-8568-715cd28c2b8b
+checking extents
+ERROR: extent[1211914780672, 16777216] referencer count mismatch (root: 2073, owner: 236200, offset: 33554432) wanted: 17, have: 18
+ERROR: extent[1623008329728, 16777216] referencer count mismatch (root: 2073, owner: 241424, offset: 83886080) wanted: 12, have: 17
+ERROR: extent[1636104806400, 16777216] referencer count mismatch (root: 2073, owner: 195667, offset: 117440512) wanted: 13, have: 14
+ERROR: extent[1639128367104, 16777216] referencer count mismatch (root: 2073, owner: 197430, offset: 0) wanted: 13, have: 17
+ERROR: extent[1689763446784, 16777216] referencer count mismatch (root: 2073, owner: 246255, offset: 67108864) wanted: 4, have: 17
+ERROR: extent[1811447328768, 16777216] referencer count mismatch (root: 2073, owner: 253089, offset: 33554432) wanted: 15, have: 16
+ERROR: extent[1853376790528, 16777216] referencer count mismatch (root: 2073, owner: 265031, offset: 117440512) wanted: 4, have: 5
+ERROR: extent[1864968953856, 16777216] referencer count mismatch (root: 2073, owner: 271372, offset: 100663296) wanted: 12, have: 15
+ERROR: extent[1865509302272, 16777216] referencer count mismatch (root: 2073, owner: 271480, offset: 0) wanted: 15, have: 19
+ERROR: extent[1873773236224, 16777216] referencer count mismatch (root: 260, owner: 28919, offset: 33554432) wanted: 1, have: 2
+ERROR: extent[1875367809024, 16777216] referencer count mismatch (root: 2073, owner: 275001, offset: 0) wanted: 12, have: 15
+ERROR: extent[2060846788608, 134217728] referencer count mismatch (root: 263, owner: 265, offset: 50054324224) wanted: 31, have: 111
+ERROR: extent[2080751099904, 134217728] referencer count mismatch (root: 263, owner: 265, offset: 32112349184) wanted: 2, have: 12
+ERROR: extent[2094597668864, 186949632] referencer count mismatch (root: 259, owner: 33786, offset: 0) wanted: 27, have: 69
+ERROR: errors found in extent allocation tree or chunk allocation
+checking free space tree
+checking fs roots
+checking csums
+checking root refs
+found 1023097102336 bytes used, error(s) found
+total csum bytes: 995795540
+total tree bytes: 1976434688
+total fs tree bytes: 698957824
+total extent tree bytes: 156712960
+btree space waste bytes: 219547602
+file data blocks allocated: 2849277431808
+ referenced 1426447798272
+
+--MP_/RrBy2fgvkLkRyZKLMJIaSe0
+Content-Type: text/plain
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment; filename=laptop-home-original-check
+
+WARNING: filesystem mounted, continuing because of --force
+checking extents
+checking free space tree
+checking fs roots
+checking csums
+checking root refs
+Checking filesystem on /dev/xps/home
+UUID: 4b4b80dc-e2e3-4d76-96ae-02d42879771d
+found 24599171072 bytes used, no error found
+total csum bytes: 23610896
+total tree bytes: 405340160
+total fs tree bytes: 357548032
+total extent tree bytes: 18857984
+btree space waste bytes: 79738263
+file data blocks allocated: 38386794496
+ referenced 38672330752
+
+--MP_/RrBy2fgvkLkRyZKLMJIaSe0
+Content-Type: text/plain
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment; filename=laptop-home-lowmem-check
+
+WARNING: filesystem mounted, continuing because of --force
+checking extents
+checking free space tree
+checking fs roots
+ERROR: root 5 DIR INODE[791126] shouldn't have more than one link(0)
+ERROR: errors found in fs roots
+Checking filesystem on /dev/xps/home
+UUID: 4b4b80dc-e2e3-4d76-96ae-02d42879771d
+found 24599171072 bytes used, error(s) found
+total csum bytes: 23610896
+total tree bytes: 353976320
+total fs tree bytes: 306184192
+total extent tree bytes: 18857984
+btree space waste bytes: 66493351
+file data blocks allocated: 24513560576
+ referenced 24935272448
+
+--MP_/RrBy2fgvkLkRyZKLMJIaSe0--

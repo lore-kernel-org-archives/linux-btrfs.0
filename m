@@ -1,64 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp2130.oracle.com ([141.146.126.79]:44496 "EHLO
-        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754843AbeDTNav (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 20 Apr 2018 09:30:51 -0400
-Subject: Re: [PATCH v2 12/16] btrfs: track running balance in a simpler way
-To: dsterba@suse.cz, David Sterba <dsterba@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <cover.1524146555.git.dsterba@suse.com>
- <6d512cf2c8f825592703ee0d45c51f22396e6078.1524146556.git.dsterba@suse.com>
- <6ab5bdc1-45a2-d0a4-cdc7-587731c4103a@oracle.com>
- <20180420115811.GM21272@twin.jikos.cz> <20180420121934.GP21272@twin.jikos.cz>
-From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <6bb5f60f-0c22-a4e3-086c-f4a039875447@oracle.com>
-Date: Fri, 20 Apr 2018 21:32:54 +0800
+Received: from mx2.suse.de ([195.135.220.15]:32973 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1754901AbeDVPJN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 22 Apr 2018 11:09:13 -0400
+From: David Sterba <dsterba@suse.com>
+To: torvalds@linux-foundation.org
+Cc: David Sterba <dsterba@suse.com>, clm@fb.com, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+Subject: [GIT PULL] Btrfs fixes for 4.17-rc1
+Date: Sun, 22 Apr 2018 17:06:36 +0200
+Message-Id: <cover.1524409013.git.dsterba@suse.com>
 MIME-Version: 1.0
-In-Reply-To: <20180420121934.GP21272@twin.jikos.cz>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-	
+Hi,
 
+the branch contains a few fixups to qgroup patches that were merged this
+dev cycle, unaligned access fix, blockgroup removal corner case fix and
+a small debugging output tweak.
 
+Please pull, thanks.
 
-> Ok not that simple, the running status is checked outside of
-> balance_mutex and there's one more assertion that does not expect the
-> balance_ctl to exist:
-> 
-> @@ -4031,16 +4032,16 @@ int btrfs_pause_balance(struct btrfs_fs_info *fs_info)
->                  return -ENOTCONN;
->          }
-> 
-> -       if (atomic_read(&fs_info->balance_running)) {
-> +       if (test_bit(BTRFS_FS_BALANCE_RUNNING, &fs_info->flags)) {
->                  atomic_inc(&fs_info->balance_pause_req);
->                  mutex_unlock(&fs_info->balance_mutex);
-> 
->                  wait_event(fs_info->balance_wait_q,
-> -                          atomic_read(&fs_info->balance_running) == 0);
-> +                          !test_bit(BTRFS_FS_BALANCE_RUNNING, &fs_info->flags));
-> 
-> here it's unlocked
-> 
->                  mutex_lock(&fs_info->balance_mutex);
->                  /* we are good with balance_ctl ripped off from under us */
-> -               BUG_ON(atomic_read(&fs_info->balance_running));
-> +               BUG_ON(test_bit(BTRFS_FS_BALANCE_RUNNING, &fs_info->flags));
-> 
-> and rewriting the code so this could be checked the same way is not a simple
-> fixup as I expected.
-> 
-> As there's still the extra balance mutex lock/unlock after the volume
-> mutex removal, I'll have a look how this could be cleaned up further.
-> 
->                  atomic_dec(&fs_info->balance_pause_req);
->          } else {
->                  ret = -ENOTCONN;
+----------------------------------------------------------------
+The following changes since commit 5d41be6f702f19f72db816c17175caf9dbdcdfa6:
 
-  Makes sense.
+  btrfs: Only check first key for committed tree blocks (2018-04-13 16:16:15 +0200)
 
-Thanks, Anand
+are available in the Git repository at:
 
+  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-4.17-rc1-tag
+
+for you to fetch changes up to c0872323746e11fc79344e3738b283a8cda86654:
+
+  btrfs: print-tree: debugging output enhancement (2018-04-20 19:18:16 +0200)
+
+----------------------------------------------------------------
+David Sterba (1):
+      btrfs: fix unaligned access in readdir
+
+Nikolay Borisov (1):
+      btrfs: Fix race condition between delayed refs and blockgroup removal
+
+Qu Wenruo (5):
+      btrfs: qgroup: Commit transaction in advance to reduce early EDQUOT
+      btrfs: qgroup: Use independent and accurate per inode qgroup rsv
+      btrfs: delayed-inode: Remove wrong qgroup meta reservation calls
+      btrfs: Fix wrong btrfs_delalloc_release_extents parameter
+      btrfs: print-tree: debugging output enhancement
+
+ fs/btrfs/ctree.h         | 25 +++++++++++++++++
+ fs/btrfs/delayed-inode.c | 20 ++++++++++---
+ fs/btrfs/delayed-ref.c   | 19 +++++++++----
+ fs/btrfs/delayed-ref.h   |  1 +
+ fs/btrfs/disk-io.c       |  1 +
+ fs/btrfs/extent-tree.c   | 73 +++++++++++++++++++++++++++++++++++++-----------
+ fs/btrfs/file.c          |  2 +-
+ fs/btrfs/inode.c         | 20 +++++++------
+ fs/btrfs/print-tree.c    | 25 ++++++++++-------
+ fs/btrfs/print-tree.h    |  2 +-
+ fs/btrfs/qgroup.c        | 43 ++++++++++++++++++++++++++--
+ fs/btrfs/transaction.c   |  1 +
+ fs/btrfs/transaction.h   | 14 ++++++++++
+ 13 files changed, 199 insertions(+), 47 deletions(-)

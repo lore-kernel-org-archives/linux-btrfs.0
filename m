@@ -1,76 +1,92 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:50890 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:50893 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1754144AbeDWHyX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1754152AbeDWHyX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Mon, 23 Apr 2018 03:54:23 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id DE664AE08
-        for <linux-btrfs@vger.kernel.org>; Mon, 23 Apr 2018 07:54:21 +0000 (UTC)
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 27424AE0C
+        for <linux-btrfs@vger.kernel.org>; Mon, 23 Apr 2018 07:54:22 +0000 (UTC)
 From: Nikolay Borisov <nborisov@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 3/5] btrfs: Remove delay_iput parameter from __start_delalloc_inodes
-Date: Mon, 23 Apr 2018 10:54:15 +0300
-Message-Id: <1524470057-21969-4-git-send-email-nborisov@suse.com>
+Subject: [PATCH 4/5] btrfs: Remove delayed_iput member from btrfs_delalloc_work
+Date: Mon, 23 Apr 2018 10:54:16 +0300
+Message-Id: <1524470057-21969-5-git-send-email-nborisov@suse.com>
 In-Reply-To: <1524470057-21969-1-git-send-email-nborisov@suse.com>
 References: <1524470057-21969-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It's always set to 0 so remove it
+When allocating a delalloc work we are always setting the delayed_iput
+to 0. So remove the delay_iput member of btrfs_delalloc_work, as a
+result also remove it as a parameter from btrfs_alloc_delalloc_work
+since it's not used anymore.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/inode.c | 14 +++++---------
- 1 file changed, 5 insertions(+), 9 deletions(-)
+ fs/btrfs/ctree.h |  4 +---
+ fs/btrfs/inode.c | 11 +++--------
+ 2 files changed, 4 insertions(+), 11 deletions(-)
 
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 1ac983270bb7..91f51a80334f 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -3165,14 +3165,12 @@ void btrfs_extent_item_to_extent_map(struct btrfs_inode *inode,
+ /* inode.c */
+ struct btrfs_delalloc_work {
+ 	struct inode *inode;
+-	int delay_iput;
+ 	struct completion completion;
+ 	struct list_head list;
+ 	struct btrfs_work work;
+ };
+ 
+-struct btrfs_delalloc_work *btrfs_alloc_delalloc_work(struct inode *inode,
+-						    int delay_iput);
++struct btrfs_delalloc_work *btrfs_alloc_delalloc_work(struct inode *inode);
+ 
+ struct extent_map *btrfs_get_extent_fiemap(struct btrfs_inode *inode,
+ 		struct page *page, size_t pg_offset, u64 start,
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 855237737acb..42a2590559df 100644
+index 42a2590559df..9b8f2904ad55 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -10189,8 +10189,7 @@ struct btrfs_delalloc_work *btrfs_alloc_delalloc_work(struct inode *inode,
-  * some fairly slow code that needs optimization. This walks the list
-  * of all the inodes with pending delalloc and forces them to disk.
-  */
--static int __start_delalloc_inodes(struct btrfs_root *root, int delay_iput,
--				   int nr)
-+static int __start_delalloc_inodes(struct btrfs_root *root, int nr)
+@@ -10158,15 +10158,11 @@ static void btrfs_run_delalloc_work(struct btrfs_work *work)
+ 				&BTRFS_I(inode)->runtime_flags))
+ 		filemap_flush(inode->i_mapping);
+ 
+-	if (delalloc_work->delay_iput)
+-		btrfs_add_delayed_iput(inode);
+-	else
+-		iput(inode);
++	iput(inode);
+ 	complete(&delalloc_work->completion);
+ }
+ 
+-struct btrfs_delalloc_work *btrfs_alloc_delalloc_work(struct inode *inode,
+-						    int delay_iput)
++struct btrfs_delalloc_work *btrfs_alloc_delalloc_work(struct inode *inode)
  {
- 	struct btrfs_inode *binode;
- 	struct inode *inode;
-@@ -10218,12 +10217,9 @@ static int __start_delalloc_inodes(struct btrfs_root *root, int delay_iput,
+ 	struct btrfs_delalloc_work *work;
+ 
+@@ -10177,7 +10173,6 @@ struct btrfs_delalloc_work *btrfs_alloc_delalloc_work(struct inode *inode,
+ 	init_completion(&work->completion);
+ 	INIT_LIST_HEAD(&work->list);
+ 	work->inode = inode;
+-	work->delay_iput = delay_iput;
+ 	WARN_ON_ONCE(!inode);
+ 	btrfs_init_work(&work->work, btrfs_flush_delalloc_helper,
+ 			btrfs_run_delalloc_work, NULL, NULL);
+@@ -10217,7 +10212,7 @@ static int __start_delalloc_inodes(struct btrfs_root *root, int nr)
  		}
  		spin_unlock(&root->delalloc_lock);
  
--		work = btrfs_alloc_delalloc_work(inode, delay_iput);
-+		work = btrfs_alloc_delalloc_work(inode, 0);
+-		work = btrfs_alloc_delalloc_work(inode, 0);
++		work = btrfs_alloc_delalloc_work(inode);
  		if (!work) {
--			if (delay_iput)
--				btrfs_add_delayed_iput(inode);
--			else
--				iput(inode);
-+			iput(inode);
+ 			iput(inode);
  			ret = -ENOMEM;
- 			goto out;
- 		}
-@@ -10262,7 +10258,7 @@ int btrfs_start_delalloc_inodes(struct btrfs_root *root)
- 	if (test_bit(BTRFS_FS_STATE_ERROR, &fs_info->fs_state))
- 		return -EROFS;
- 
--	ret = __start_delalloc_inodes(root, 0, -1);
-+	ret = __start_delalloc_inodes(root, -1);
- 	if (ret > 0)
- 		ret = 0;
- 	return ret;
-@@ -10291,7 +10287,7 @@ int btrfs_start_delalloc_roots(struct btrfs_fs_info *fs_info, int nr)
- 			       &fs_info->delalloc_roots);
- 		spin_unlock(&fs_info->delalloc_root_lock);
- 
--		ret = __start_delalloc_inodes(root, 0, nr);
-+		ret = __start_delalloc_inodes(root, nr);
- 		btrfs_put_fs_root(root);
- 		if (ret < 0)
- 			goto out;
 -- 
 2.7.4
 

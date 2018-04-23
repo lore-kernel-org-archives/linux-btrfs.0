@@ -1,141 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from demfloro.ru ([188.166.0.225]:50532 "EHLO demfloro.ru"
-        rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1754451AbeDWIk3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 23 Apr 2018 04:40:29 -0400
-Date: Mon, 23 Apr 2018 11:40:16 +0300
-From: Dmitrii Tcvetkov <demfloro@demfloro.ru>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
-Subject: Re: 4.17-rc1 FS went read-only during balance
-Message-ID: <20180423114016.3cdc0ac1@job>
-In-Reply-To: <d935c0e0-c2c8-a0ec-bb07-5c3879dd1be0@gmx.com>
-References: <20180421175548.4b07dffc@demfloro.ru>
-        <5775f38a-5f17-1f6d-a6cd-289e18188a26@gmx.com>
-        <20180423080745.5a9dc6be@demfloro.ru>
-        <3d2443c8-0b34-2eea-3adc-2f33570f75b1@gmx.com>
-        <20180423105543.43f13e3a@job>
-        <d935c0e0-c2c8-a0ec-bb07-5c3879dd1be0@gmx.com>
-MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha256;
- boundary="Sig_/X+gOnbNuHXHSn/0/aS_Laas"; protocol="application/pgp-signature"
+Received: from boksu.net-space.pl ([185.15.1.105]:35574 "EHLO
+        boksu.net-space.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754710AbeDWMCZ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 23 Apr 2018 08:02:25 -0400
+Received: (from localhost user: 'dkiper' uid#4000 fake: STDIN
+        (dkiper@boksu.net-space.pl)) by router-fw-old.local.net-space.pl
+        id S1837282AbeDWLun (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 23 Apr 2018 13:50:43 +0200
+Date: Mon, 23 Apr 2018 13:50:43 +0200
+From: Daniel Kiper <dkiper@net-space.pl>
+To: kreijack@gmail.com
+Cc: grub-devel@gnu.org, linux-btrfs@vger.kernel.org
+Subject: Re: [RFC] Add support for BTRFS raid5/6 to GRUB
+Message-ID: <20180423115043.GA4061@router-fw-old.local.net-space.pl>
+References: <2708f56e-1dac-481e-af8a-d81066df8b42@gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <2708f56e-1dac-481e-af8a-d81066df8b42@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/X+gOnbNuHXHSn/0/aS_Laas
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: quoted-printable
+On Tue, Apr 17, 2018 at 09:57:40PM +0200, Goffredo Baroncelli wrote:
+> Hi All,
+>
+> Below you can find a patch to add support for accessing files from
+> grub in a RAID5/6 btrfs filesystem. This is a RFC because it is
+> missing the support for recovery (i.e. if some devices are missed). In
+> the next days (weeks ?) I will extend this patch to support also this
+> case.
+>
+> Comments are welcome.
 
-> >>>>> TL;DR It seems as regression in 4.17, but I managed to find a
-> >>>>> workaround to make filesystem rw mountable again.
-> >>>>>
-> >>>>> Kernel built from tag v4.17-rc1
-> >>>>> btrfs-progs 4.16
-> >>>>>
-> >>>>> Tonight two my machines (PC (ECC RAM) and laptop(non-ECC RAM)) were
-> >>>>> doing usual weekly balance with this command via cron:
-> >>>>> btrfs balance start -musage=3D50 -dusage=3D50 <mountpoint>
-> >>>>> Both machines run same kernel version.=20
-> >>>>>
-> >>>>> On PC that caused root and "data" filesystems to go readonly. Root
-> >>>>> is on an SSD with data single and metadata DUP, "data" filesystem
-> >>>>> is on 2 HDDs with RAID1 for data and metadata.
-> >>>>>
-> >>>>> On laptop only /home went ro, it's on NVMe SSD with data single and
-> >>>>> metadata DUP.=20
-> >>>>>
-> >>>>> Btrfs check of PC rootfs was without any errors in both modes, I did
-> >>>>> them once each before reboot on readonly filesystem with --force
-> >>>>> flag and then from live usb. Same output without any errors.
-> >>>>>
-> >>>>> After reboot kernel refused rw mount rootfs with the same error as
-> >>>>> during cron balance, ro mount was accepted, error during rw mount:
-> >>>>> BTRFS: error (device dm-17) in merge_reloc_roots:2465: errno=3D-117=
-     =20
-> >>>    =20
-> >>>> 117 means EUCLEAN, which could be caused by the newly introduced
-> >>>> first_key and level check.   =20
-> >>>    =20
-> >>>> Please apply this hotfix to fix it.
-> >>>> btrfs: Only check first key for committed tree blocks
-> >>>> (Which is included in latest pull request)   =20
-> >>>    =20
-> >>>> Also, please consider enable CONFIG_BTRFS_DEBUG to provide extra
-> >>>> debug info.   =20
-> >>>    =20
-> >>>> Thanks,
-> >>>> Qu   =20
-> >>>
-> >>> I tried 4.17-rc2 (as the pull request was pulled) with
-> >>> CONFIG_BTRFS_DEBUG on LVM snapshot of laptop home partition (/dev/vdb)
-> >>> in a VM (VM kernel sees only snapshot so no UUID collisions). Dmesg
-> >>> attached.   =20
-> >>
-> >> Thanks for the info and your previous btrfs-image.
-> >>
-> >> The image itself shows nothing wrong, so it should be runtime problem.
-> >> Would you please apply these two debug patches?
-> >> https://patchwork.kernel.org/patch/10335133/
-> >> https://patchwork.kernel.org/patch/10335135/
-> >>
-> >> And the attached diff file?
-> >>
-> >> My guess is the parent node is not initialized correctly in this case.
-> >>
-> >> Thanks,
-> >> Qu =20
-> >=20
-> > Dmesg from kernel with all three patches applied attached.
-> >  =20
-> Thanks for the debug info, it really helps a lot!
->=20
-> It turns out that I'm just a super idiot, a typo in replace_path()
-> caused this, and it could not be trigger unless we enter it from
-> relocation recovery.
->=20
-> Please try the attached patch to see if it solves the problem.
->=20
-> Thanks,
-> Qu
-Glad to help, the patch solved the problem,=20
-rw mount is successful and balance finished, no errors or debug output,
-btrfs check is clean in both modes.
+More or less LGTM. Just a nitpick below... I am happy to take full blown
+patch into GRUB if it is ready.
 
-[    2.842718] BTRFS: device label home devid 1 transid 277952 /dev/vdb
-[    2.924965] BTRFS: device label root devid 1 transid 84092 /dev/vda2
-[    3.072271] BTRFS info (device vda2): use lzo compression, level 0
-[    3.072897] BTRFS info (device vda2): enabling auto defrag
-[    3.073476] BTRFS info (device vda2): using free space tree
-[    3.074049] BTRFS info (device vda2): has skinny extents
-[    5.411821] BTRFS info (device vda2): using free space tree
-[   24.925293] BTRFS info (device vdb): using free space tree
-[   24.925324] BTRFS info (device vdb): has skinny extents
-[   31.711868] BTRFS info (device vdb): continuing balance
-[   31.721658] BTRFS info (device vdb): checking UUID tree
-[   31.822920] BTRFS info (device vdb): relocating block group 69889687552f=
-lags data=20
-[   33.730399] BTRFS info (device vdb): found 12 extents
-[   36.950699] BTRFS info (device vdb): found 12 extents
-[   37.030813] BTRFS info (device vdb): relocating block group 67742203904f=
-lags metadata|dup=20
-[   37.104174] BTRFS info (device vdb): relocating block group 67708649472 =
-flags system|dup=20
-[   37.189843] BTRFS info (device vdb): found 1 extents
+> BR
+> G.Baroncelli
+>
+>
+> ---
+>
+> commit 8c80a1b7c913faf50f95c5c76b4666ed17685666
+> Author: Goffredo Baroncelli <kreijack@inwind.it>
+> Date:   Tue Apr 17 21:40:31 2018 +0200
+>
+>     Add initial support for btrfs raid5/6 chunk
+>
+> diff --git a/grub-core/fs/btrfs.c b/grub-core/fs/btrfs.c
+> index be195448d..4c5632acb 100644
+> --- a/grub-core/fs/btrfs.c
+> +++ b/grub-core/fs/btrfs.c
+> @@ -119,6 +119,8 @@ struct grub_btrfs_chunk_item
+>  #define GRUB_BTRFS_CHUNK_TYPE_RAID1         0x10
+>  #define GRUB_BTRFS_CHUNK_TYPE_DUPLICATED    0x20
+>  #define GRUB_BTRFS_CHUNK_TYPE_RAID10        0x40
+> +#define GRUB_BTRFS_CHUNK_TYPE_RAID5         0x80
+> +#define GRUB_BTRFS_CHUNK_TYPE_RAID6        0x100
+>    grub_uint8_t dummy2[0xc];
+>    grub_uint16_t nstripes;
+>    grub_uint16_t nsubstripes;
+> @@ -764,6 +766,39 @@ grub_btrfs_read_logical (struct grub_btrfs_data *data, grub_disk_addr_t addr,
+>  	      stripe_offset = low + chunk_stripe_length
+>  		* high;
+>  	      csize = chunk_stripe_length - low;
+> +	      break;
+> +	    }
+> +	  case GRUB_BTRFS_CHUNK_TYPE_RAID5:
+> +	  case GRUB_BTRFS_CHUNK_TYPE_RAID6:
+> +	    {
+> +	      grub_uint64_t nparities;
+> +	      grub_uint64_t parity_pos;
+> +	      grub_uint64_t stripe_nr, high;
+> +	      grub_uint64_t low;
+> +
+> +	      redundancy = 1;	/* no redundancy for now */
+> +
+> +	      if (grub_le_to_cpu64 (chunk->type) & GRUB_BTRFS_CHUNK_TYPE_RAID5)
+> +		{
+> +		  grub_dprintf ("btrfs", "RAID5\n");
+> +		  nparities = 1;
+> +		}
+> +	      else
+> +		{
+> +		  grub_dprintf ("btrfs", "RAID6\n");
+> +		  nparities = 2;
+> +		}
+> +
+> +	      stripe_nr = grub_divmod64 (off, chunk_stripe_length, &low);
+> +
+> +	      high = grub_divmod64 (stripe_nr, nstripes - nparities, &stripen);
+> +	      grub_divmod64 (high+nstripes-nparities, nstripes, &parity_pos);
+> +	      grub_divmod64 (parity_pos+nparities+stripen, nstripes, &stripen);
 
+Missing spaces around "+" and "-".
 
---Sig_/X+gOnbNuHXHSn/0/aS_Laas
-Content-Type: application/pgp-signature
-Content-Description: OpenPGP digital signature
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEEaxJP+1DpEM+EyRU12K4MF+bMXxoFAlrdm/EACgkQ2K4MF+bM
-Xxr2iAgAmvRnCdCAkoZmTrHFh6YvAyLNMfa46273tXm0Kkx2vuDXfAZwVEcci50M
-/Of3ohh/MIybJ02S9DmiQZBu/2zFjZFgEpUE54k7wQu6IR9+ZiAY/MhnJUeaFlXs
-D0G5qCOvfKEM3KYAh272/GRRyq2ASBQtC/vTZCUbKAab3PP1mymTRkc8M5iat58p
-X+jbQ2VheT0B7VDulGAic92GRBf7X4BZ0ZHhuv3jfBQKKHX0u29VO6YF5C94J/qm
-BocqWbB9lBBuHM4e7B2CSgZZBJU6A4rBpQttfIE6d90+T0moN5Y16aFEimzfHxwy
-FZ/5/fv7bqiY1Ix2uZGjbOA4v/t2ww==
-=7Wev
------END PGP SIGNATURE-----
-
---Sig_/X+gOnbNuHXHSn/0/aS_Laas--
+Daniel

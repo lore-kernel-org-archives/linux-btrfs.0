@@ -1,87 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from out30-131.freemail.mail.aliyun.com ([115.124.30.131]:50613 "EHLO
-        out30-131.freemail.mail.aliyun.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1751863AbeDQRO4 (ORCPT
+Received: from mgwkm01.jp.fujitsu.com ([202.219.69.168]:34214 "EHLO
+        mgwkm01.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750756AbeDWFHe (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 17 Apr 2018 13:14:56 -0400
-Date: Tue, 17 Apr 2018 10:14:41 -0700
-From: Liu Bo <bo.liu@linux.alibaba.com>
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: clean up resources during umount after trans is
- aborted
-Message-ID: <20180417171440.skamknycotzydnib@US-160370MP2.local>
-Reply-To: bo.liu@linux.alibaba.com
-References: <1522447918-19147-2-git-send-email-bo.liu@linux.alibaba.com>
- <20180417133404.GD21272@twin.jikos.cz>
+        Mon, 23 Apr 2018 01:07:34 -0400
+Received: from g01jpfmpwyt03.exch.g01.fujitsu.local (g01jpfmpwyt03.exch.g01.fujitsu.local [10.128.193.57])
+        by kw-mxauth.gw.nic.fujitsu.com (Postfix) with ESMTP id D001EAC0129
+        for <linux-btrfs@vger.kernel.org>; Mon, 23 Apr 2018 14:07:28 +0900 (JST)
+Received: from g01jpexchyt38.g01.fujitsu.local (unknown [10.128.193.4])
+        by g01jpfmpwyt03.exch.g01.fujitsu.local (Postfix) with ESMTP id 273EE46E62E
+        for <linux-btrfs@vger.kernel.org>; Mon, 23 Apr 2018 14:07:28 +0900 (JST)
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+From: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
+Subject: [RFC PATCH v4 0/6] btrfs-porgs: Allow normal user to call "subvolume
+ list"
+Message-ID: <70590827-0c29-75ea-5e43-2e53264b3d4c@jp.fujitsu.com>
+Date: Mon, 23 Apr 2018 14:05:55 +0900
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180417133404.GD21272@twin.jikos.cz>
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Apr 17, 2018 at 03:34:04PM +0200, David Sterba wrote:
-> On Sat, Mar 31, 2018 at 06:11:56AM +0800, Liu Bo wrote:
-> > Currently if some fatal errors occur, like all IO get -EIO, resources
-> > would be cleaned up when
-> > a) transaction is being committed or
-> > b) BTRFS_FS_STATE_ERROR is set
-> > 
-> > However, in some rare cases, resources may be left alone after transaction
-> > gets aborted and umount may run into some ASSERT(), e.g.
-> > ASSERT(list_empty(&block_group->dirty_list));
-> > 
-> > For case a), in btrfs_commit_transaciton(), there're several places at the
-> > beginning where we just call btrfs_end_transaction() without cleaning up
-> > resources.  For case b), it is possible that the trans handle doesn't have
-> > any dirty stuff, then only trans hanlde is marked as aborted while
-> > BTRFS_FS_STATE_ERROR is not set, so resources remain in memory.
-> 
-> I have some doubts here. The flag BTRFS_FS_STATE_TRANS_ABORTED was added
-> to avoid duplicate warnings when the transaction is aborted for the
-> first time. And nothing else.
-> 
-> BTRFS_FS_STATE_ERROR should track the overall state and is checked in
-> several places if a post-error cleanup is necessary.
-> 
-> Calling abort should set BTRFS_FS_STATE_ERROR immediatelly so any caller
-> up the callchaing can potentially cleanup.
-> 
-> > This makes btrfs also check BTRFS_FS_STATE_TRANS_ABORTED to make sure that
-> > all resources won't stay in memory after umount.
-> 
-> The question is why BTRFS_FS_STATE_ERROR is not set but we still got
-> here and the filesystem is in an error state.
-> 
-> You're not specific about the rare cases where the resources are left
-> after abort and the umount is about to start. I think the rare cases
-> need to be identified and understood otherwise this seems like papering
-> over the problem.
+This version is only for testing new ioctls[1] with btrfs-progs 4.16 for the
+meantime.
 
-Yes, that makes sense.
+Since progs code has changed, "sub show" cannot be run by non-root user with
+this version. Also, the behavior difference between root and non-root has not
+been settled. I'll continue working on these and send updated version later.
 
-btrfs_commit_transaction()
-   -> btrfs_run_delayed_refs() # the very 1st one
-      -> __btrfs_run_delayed_refs() # bail out with errors e.g. -EIO, -ENOSPC
-      -> btrfs_abort_transaction()
-         -> # set BTRFS_FS_STATE_TRANS_ABORTED
-	 -> __btrfs_abort_transaction() # !trans->dirty and no new_bgs,
-	                                   then return without setting
-					   BTRFS_FS_STATA_ERROR
+[1] https://www.spinics.net/lists/linux-btrfs/msg76003.html
 
-While trans handle is aborted, cur_trans is not aborted, so that other
-threads would join this @cur_trans and it's likely that they would go
-thru the same process.  Eventually umount is called,
+changelog:
 
-close_ctree()
-   -> btrfs_commit_super()
-       -> join_transaction()
-       -> btrfs_commit_transaction() # bail out due to the same reason
-   -> ...  # btrfs_error_commit_super is not called due to STATE_ERROR not being set.
+v3 -> v4
+  - rebased to btrfs progs v4.16
+v2 -> v3
+  - use get_euid() to check the caller's privilege (and remove 3rd patch)
+  - improve error handling
+v1 -> v2
+  - add independent error handling patch (1st patch)
+  - reimplement according to ioctl change
+  - various cleanup
+===
 
+This RFC implements user version of "subvolume list" using three new ioctls.
+The ioctl patch to the kernel can be found in the ML titled 
+  "[PATCH v3 0/3] btrfs: Add three new unprivileged ioctls to allow normal
+   users to call "sub list/show" etc.
 
-So as we can see, if btrfs_commit_transaction() enters COMMIT phrase,
-then cleanup_transaction would handle the rest well, otherwise we'd
-get this.
+1th patch is independent and improvements of error handling
+2nd-3rd are some prepartion works.
+4th patch is the main part.
+5th-6th adds the test for "subvolume list"
 
-thanks,
--liubo
+The main behavior differences between root and normal users are:
+
+- "sub list" list the subvolumes which exist under the specified path 
+(including the path itself). The specified path itself is not needed to be
+ a subvolume. Also If the subvolume cannot be opend but the parent
+directory can be, the information other than name or id would be zeroed out.
+
+This is a part of RFC I sent last December[2] whose aim is to improve normal
+users' usability.
+The remaining works of RFC are: 
+  - Allow "sub delete" for empty subvolume
+  - Allow "qgroup show" to check quota limit
+
+[2] https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg70991.html
+
+Tomohiro Misono (6):
+  btrfs-progs: sub list: Call rb_free_nodes() in error path
+  btrfs-progs: ioctl: Add 3 definitions of new unprivileged ioctl
+  btrfs-progs: sub list: Pass specified path down to btrfs_list_subvols()
+  btrfs-progs: sub list: Allow normal user to call "subvolume list"
+  btrfs-progs: test: Add helper function to check if test user exists
+  btrfs-porgs: test: Add cli-test/009 to check subvolume list for both root and normal user
+
+ btrfs-list.c                               | 382 +++++++++++++++++++++++++++--
+ btrfs-list.h                               |   7 +-
+ cmds-subvolume.c                           |  10 +-
+ ioctl.h                                    |  86 +++++++
+ tests/cli-tests/009-subvolume-list/test.sh | 136 ++++++++++
+ tests/common                               |  10 +
+ 6 files changed, 605 insertions(+), 26 deletions(-)
+ create mode 100755 tests/cli-tests/009-subvolume-list/test.sh
+
+-- 
+2.14.3
+

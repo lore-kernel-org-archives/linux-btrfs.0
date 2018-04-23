@@ -1,27 +1,30 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f178.google.com ([209.85.223.178]:40087 "EHLO
-        mail-io0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753355AbeDSQYb (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 19 Apr 2018 12:24:31 -0400
-Received: by mail-io0-f178.google.com with SMTP id t123-v6so7275085iof.7
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Apr 2018 09:24:31 -0700 (PDT)
+Received: from mx2.suse.de ([195.135.220.15]:48047 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1755504AbeDWPSw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 23 Apr 2018 11:18:52 -0400
+Date: Mon, 23 Apr 2018 17:16:18 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Gandalf Corvotempesta <gandalf.corvotempesta@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: status page
+Message-ID: <20180423151618.GY21272@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <CAJH6TXhQA-yx1kE2CJLboxMyay+54qb9DxiRZkNrGhsPP8LkXw@mail.gmail.com>
 MIME-Version: 1.0
-From: Gandalf Corvotempesta <gandalf.corvotempesta@gmail.com>
-Date: Thu, 19 Apr 2018 18:24:29 +0200
-Message-ID: <CAJH6TXhQA-yx1kE2CJLboxMyay+54qb9DxiRZkNrGhsPP8LkXw@mail.gmail.com>
-Subject: status page
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAJH6TXhQA-yx1kE2CJLboxMyay+54qb9DxiRZkNrGhsPP8LkXw@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi to all,
-as kernel 4.16 is out and 4.17 in in RC, would be possible to update
-BTRFS status page
-https://btrfs.wiki.kernel.org/index.php/Status to reflect 4.16 stability ?
+On Thu, Apr 19, 2018 at 06:24:29PM +0200, Gandalf Corvotempesta wrote:
+> Hi to all,
+> as kernel 4.16 is out and 4.17 in in RC, would be possible to update
+> BTRFS status page
+> https://btrfs.wiki.kernel.org/index.php/Status to reflect 4.16 stability ?
+> 
+> That page is still based on kernel 4.15 (marked as EOL here:
+> https://www.kernel.org/)
 
-That page is still based on kernel 4.15 (marked as EOL here:
-https://www.kernel.org/)
-
-Thank you
+Reviewed and updated for 4.16, there's no change regarding the overall
+status, though 4.16 has some raid56 fixes.

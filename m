@@ -1,69 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:58882 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1755160AbeDTOY3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 20 Apr 2018 10:24:29 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id C830BAEBF
-        for <linux-btrfs@vger.kernel.org>; Fri, 20 Apr 2018 14:24:28 +0000 (UTC)
-From: David Sterba <dsterba@suse.com>
+Received: from smtp.domeneshop.no ([194.63.252.55]:33956 "EHLO
+        smtp.domeneshop.no" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932194AbeDWSZZ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 23 Apr 2018 14:25:25 -0400
+Received: from 0.79-161-197.customer.lyse.net ([79.161.197.0]:34085 helo=[10.0.0.10])
+        by smtp.domeneshop.no with esmtpsa (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128)
+        (Exim 4.84_2)
+        (envelope-from <waxhead@dirtcellar.net>)
+        id 1fAg9T-0001dx-9a
+        for linux-btrfs@vger.kernel.org; Mon, 23 Apr 2018 20:25:23 +0200
 To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 6/6] btrfs: add more zeroout modes for clearing unused space
-Date: Fri, 20 Apr 2018 16:21:57 +0200
-Message-Id: <aed736d257f7e91cf3b0cf4d1fdfc247212d8bf7.1524233244.git.dsterba@suse.com>
-In-Reply-To: <cover.1524233244.git.dsterba@suse.com>
-References: <cover.1524233244.git.dsterba@suse.com>
+Reply-To: waxhead@dirtcellar.net
+From: waxhead <waxhead@dirtcellar.net>
+Subject: libbrtfsutil questions
+Message-ID: <003ad066-7544-e452-90ac-b2cad9cc1d06@dirtcellar.net>
+Date: Mon, 23 Apr 2018 20:25:22 +0200
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Signed-off-by: David Sterba <dsterba@suse.com>
----
- fs/btrfs/extent-tree.c     | 12 +++++++++++-
- include/uapi/linux/btrfs.h |  5 +++++
- 2 files changed, 16 insertions(+), 1 deletion(-)
+Howdy!
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 285bace8e2c6..bd2ac5779998 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -2046,9 +2046,19 @@ static int btrfs_issue_clear_op(struct block_device *bdev, u64 start, u64 size,
- 	case BTRFS_CLEAR_OP_DISCARD:
- 		return blkdev_issue_discard(bdev, start >> 9, size >> 9,
- 				GFP_NOFS, flags);
-+	case BTRFS_CLEAR_OP_ZERO_NOUNMAP:
-+		flags = BLKDEV_ZERO_NOUNMAP;
-+		goto zeroout;
-+	case BTRFS_CLEAR_OP_ZERO_NOFALLBACK:
-+		flags = BLKDEV_ZERO_NOFALLBACK;
-+		goto zeroout;
-+	case BTRFS_CLEAR_OP_ZERO_NOUNMAP_NOFALLBACK:
-+		flags = BLKDEV_ZERO_NOUNMAP | BLKDEV_ZERO_NOFALLBACK;
-+		/* fall through */
- 	case BTRFS_CLEAR_OP_ZERO:
-+zeroout:
- 		return blkdev_issue_zeroout(bdev, start >> 9, size >> 9,
--				GFP_NOFS, 0);
-+				GFP_NOFS, flags);
- 	default:
- 		return -EOPNOTSUPP;
- 	}
-diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
-index 1becbb241e53..5d1f13045906 100644
---- a/include/uapi/linux/btrfs.h
-+++ b/include/uapi/linux/btrfs.h
-@@ -744,6 +744,11 @@ enum btrfs_clear_op_type {
- 	BTRFS_CLEAR_OP_DISCARD = 0,
- 	BTRFS_CLEAR_OP_ZERO,
- 	BTRFS_CLEAR_OP_DISCARD_SECURE,
-+
-+	/* Fine tuning for clearing by zeros, see __blkdev_issue_zeroout */
-+	BTRFS_CLEAR_OP_ZERO_NOUNMAP,
-+	BTRFS_CLEAR_OP_ZERO_NOFALLBACK,
-+	BTRFS_CLEAR_OP_ZERO_NOUNMAP_NOFALLBACK,
- 	BTRFS_NR_CLEAR_OP_TYPES,
- };
- 
--- 
-2.16.2
+I am pondering writing a little C program that use libmicrohttpd and 
+libbtrfsutil to display some very basic (overview) details about BTRFS.
+
+I was hoping to display the same information that'btrfs fi sh /mnt' and 
+'btrfs fi us -T /mnt' do, but somewhat combined. Since I recently just 
+figured out how easy it was to do svg graphics I was hoping to try to 
+visualize things a bit.
+
+What I was hoping to achieve is:
+- show all filesystems
+- ..show all devices in a filesystem (and mark missing devices clearly)
+- ....show usage and/or allocation for each device
+- ....possibly display chunks as blocks (like old defrag programs) where 
+the brightness indicate how utilied a (meta)data chunk is.
+- ....possibly mark devices with errors ( 'btrfs de st /mnt' ).
+
+The problem is ... I looked at libbtrfsutil and it appears that there is 
+mostly sync + subvolume/snapshot stuff in there.
+
+So my question is: Is libbtrfsutil the right choice and intended to at 
+some point (in the future?) supply me with the data I need for these 
+things or should I look elsewhere?
+
+PS! This a completely private project for my own egoistic reasons. 
+However if it turns out to be useful and the code is not too 
+embarrassing I am happy put the code into public domain ... if it ever 
+gets written.... :S
+
+
+
+
+
+
 

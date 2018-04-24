@@ -1,36 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.15]:51787 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.15.15]:36343 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1756268AbeDXGKF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 24 Apr 2018 02:10:05 -0400
-Subject: Re: [PATCH 2/3] btrfs-progs: remove useless branch in __merge_refs
+        id S1756279AbeDXGRX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 24 Apr 2018 02:17:23 -0400
+Subject: Re: [PATCH 3/3] btrfs-progs: do not merge tree block refs have
+ different root_id
 To: Su Yue <suy.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
 References: <20180424055233.6420-1-suy.fnst@cn.fujitsu.com>
- <20180424055233.6420-2-suy.fnst@cn.fujitsu.com>
+ <20180424055233.6420-3-suy.fnst@cn.fujitsu.com>
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <5a9026fe-f8bf-b20a-2b1e-0b40cfed890f@gmx.com>
-Date: Tue, 24 Apr 2018 14:09:57 +0800
+Message-ID: <5de2f409-32e4-7e23-3589-e89c2e7510c3@gmx.com>
+Date: Tue, 24 Apr 2018 14:17:13 +0800
 MIME-Version: 1.0
-In-Reply-To: <20180424055233.6420-2-suy.fnst@cn.fujitsu.com>
+In-Reply-To: <20180424055233.6420-3-suy.fnst@cn.fujitsu.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="gMjWD1slV8SDzaXvylOt7BSRvPkpXk9L1"
+ boundary="wdvjUp9Ae9G5mN1iDTAKEFKg5Yl6efvvb"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---gMjWD1slV8SDzaXvylOt7BSRvPkpXk9L1
-Content-Type: multipart/mixed; boundary="koyQOWyM8HEDC1UiCSjpywkAnfOkYewk9";
+--wdvjUp9Ae9G5mN1iDTAKEFKg5Yl6efvvb
+Content-Type: multipart/mixed; boundary="IrTvJzJ1ZJ9gvgMpdD3A4kgc2YhPiEvb7";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 To: Su Yue <suy.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-Message-ID: <5a9026fe-f8bf-b20a-2b1e-0b40cfed890f@gmx.com>
-Subject: Re: [PATCH 2/3] btrfs-progs: remove useless branch in __merge_refs
+Message-ID: <5de2f409-32e4-7e23-3589-e89c2e7510c3@gmx.com>
+Subject: Re: [PATCH 3/3] btrfs-progs: do not merge tree block refs have
+ different root_id
 References: <20180424055233.6420-1-suy.fnst@cn.fujitsu.com>
- <20180424055233.6420-2-suy.fnst@cn.fujitsu.com>
-In-Reply-To: <20180424055233.6420-2-suy.fnst@cn.fujitsu.com>
+ <20180424055233.6420-3-suy.fnst@cn.fujitsu.com>
+In-Reply-To: <20180424055233.6420-3-suy.fnst@cn.fujitsu.com>
 
---koyQOWyM8HEDC1UiCSjpywkAnfOkYewk9
+--IrTvJzJ1ZJ9gvgMpdD3A4kgc2YhPiEvb7
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
@@ -38,71 +40,110 @@ Content-Transfer-Encoding: quoted-printable
 
 
 On 2018=E5=B9=B404=E6=9C=8824=E6=97=A5 13:52, Su Yue wrote:
-> After call of ref_for_same_block, ref1->parent must equals to
-> ref2->parent, the block of exchange is never reached.
+> For an extent item which contains many tree block backrefs, like
+> =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
+> In 020-extent-ref-cases/keyed_block_ref.img
 >=20
-> So remove the block of exchange.
+> item 10 key (29470720 METADATA_ITEM 0) itemoff 3450 itemsize 222
+>                 refs 23 gen 10 flags TREE_BLOCK
+>                 tree block skinny level 0
+>                 tree block backref root 278
+>                 tree block backref root 277
+>                 tree block backref root 276
+>                 tree block backref root 275
+>                 tree block backref root 274
+>                 tree block backref root 273
+>                 tree block backref root 272
+>                 tree block backref root 271
+>                 tree block backref root 270
+>                 tree block backref root 269
+>                 tree block backref root 268
+>                 tree block backref root 267
+>                 tree block backref root 266
+>                 tree block backref root 265
+>                 tree block backref root 264
+>                 tree block backref root 263
+>                 tree block backref root 262
+>                 tree block backref root 261
+>                 tree block backref root 260
+>                 tree block backref root 259
+>                 tree block backref root 258
+>                 tree block backref root 257
+> =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
+> In find_parent_nodes(), these refs's parents are 0, then __merge_refs
+> will merge refs to one ref. It causes only one root to be returned.
 
-Reviewed-by: Qu Wenruo <wqu@suse.com>
+This is a pretty big problem, and it would cause qgroup verification
+code to cause false alerts.
 
-The patch looks good, but considering how much difference the kernel and
-btrfs-progs have in backref.c, I think it would be much better to start
-merging code for it.
+So a new test case would do great help here.
 
-Thanks,
-Qu
+>=20
+> So, if both parents are 0, do not merge refs.
+>=20
+> Lowmem check calls find_parent_nodes frequently to decide whether.
+> check an extent buffer or not. These bug influences bytes accounting.
+
+Although it looks good so far, and would fix the problem you found, but
+I strongly recommend to port kernel backref code to btrfs-progs here, as
+kernel backref code is more tested than btrfs-progs backref code.
+
+I'm pretty sure we have more bugs in btrfs-progs backref, and I'm not a
+big fan of playing whac-a-mole here.
 
 >=20
 > Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
 > ---
->  backref.c | 6 ------
->  1 file changed, 6 deletions(-)
+>  backref.c | 2 ++
+>  1 file changed, 2 insertions(+)
 >=20
 > diff --git a/backref.c b/backref.c
-> index c144dbf060f2..51553c702187 100644
+> index 51553c702187..daadb6299c79 100644
 > --- a/backref.c
 > +++ b/backref.c
-> @@ -497,7 +497,6 @@ static void __merge_refs(struct pref_state *prefsta=
+> @@ -507,6 +507,8 @@ static void __merge_refs(struct pref_state *prefsta=
 te, int mode)
->  		for (pos2 =3D pos1->next, n2 =3D pos2->next; pos2 !=3D head;
->  		     pos2 =3D n2, n2 =3D pos2->next) {
->  			struct __prelim_ref *ref2;
-> -			struct __prelim_ref *xchg;
->  			struct extent_inode_elem *eie;
-> =20
->  			ref2 =3D list_entry(pos2, struct __prelim_ref, list);
-> @@ -505,11 +504,6 @@ static void __merge_refs(struct pref_state *prefst=
-ate, int mode)
->  			if (mode =3D=3D 1) {
->  				if (!ref_for_same_block(ref1, ref2))
->  					continue;> -				if (!ref1->parent && ref2->parent) {
-> -					xchg =3D ref1;
-> -					ref1 =3D ref2;
-> -					ref2 =3D xchg;
-> -				}
 >  			} else {
 >  				if (ref1->parent !=3D ref2->parent)
 >  					continue;
+> +				if (ref1->parent =3D=3D 0)
+> +					continue;
+
+It's better to put it above (ref1->parent !=3D ref2->parent).
+As parent =3D=3D 0 means we haven't resolve the parent bytenr yet, so can=
+'t
+be merged nor compared.
+
+Thanks,
+Qu
+
+>  			}
+> =20
+>  			eie =3D ref1->inode_list;
 >=20
 
 
---koyQOWyM8HEDC1UiCSjpywkAnfOkYewk9--
+--IrTvJzJ1ZJ9gvgMpdD3A4kgc2YhPiEvb7--
 
---gMjWD1slV8SDzaXvylOt7BSRvPkpXk9L1
+--wdvjUp9Ae9G5mN1iDTAKEFKg5Yl6efvvb
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlreyjUACgkQwj2R86El
-/qiViQf/cQF+xqtTFnLBlbP7+gedaGle6M4LAe4JzafEJ8KFCm8MU5x9L3p02s8t
-mFouabd8ur1+grkr6CO8PAFpwtzQpwHwq9tuMVVXNF+zjtHCXnur8inajig64te4
-XR+2X/5Zijt4J6A6Esql+Up8J2P0eiHDuPO8oKSo+GL9CzHDimM6BkFxxBAaTDGK
-A89JUmIMjLobE67ZGYEJaKZrILY5IhT8CS9OlCZpkPklfK7XWYlTlQ5oQd3iUW4M
-92Ix/xMlgK50DGMxmJ3AFEB/ELuIcmmlb8sGzD8A7bkjxxfAruYrmnsQkbXpaI5I
-r8mJhDz5ikmUdA1T3LQrYdrkfFcxIA==
-=fGPu
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlrey+oACgkQwj2R86El
+/qh5OAf+NK+f7VI8KOWtJj05VOF3AMbBtSH57wu5qbOBDkZNrt6aR2JKc71Hj/n5
+6yBdT9Seb9pe1G684+zjr+f8yTYrX289gG3N1ujKdDuaAygK3bKRSZVJTk/AGixy
+z2qLSHVqKnyjSA68w+emeZzFgLorgmwQ6UhZwxEw4qsWoGYXvTmBJ85kmghCqb2U
+3ht0vJyYdQ7A95ahWp5ZWO3QRrxeNPt4EgOnpZ6D5ef4MYp9SeIAuGjItuOcSBCw
+yP2/yXCwNGCPXcsKorjzH2M8ha+wkId03hvtdbAYkFMen77vMgZJMQOf1uTGHseh
+BqG9S0jFw7912/9FM4lcQZwMSzUUSA==
+=AfV+
 -----END PGP SIGNATURE-----
 
---gMjWD1slV8SDzaXvylOt7BSRvPkpXk9L1--
+--wdvjUp9Ae9G5mN1iDTAKEFKg5Yl6efvvb--

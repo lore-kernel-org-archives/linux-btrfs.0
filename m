@@ -1,45 +1,108 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:42164 "EHLO mx2.suse.de"
+Received: from mout.gmx.net ([212.227.15.15]:51787 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1758072AbeD0S4q (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 27 Apr 2018 14:56:46 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 1C1B0ADAE
-        for <linux-btrfs@vger.kernel.org>; Fri, 27 Apr 2018 18:56:45 +0000 (UTC)
-From: jeffm@suse.com
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.com, Jeff Mahoney <jeffm@suse.com>
-Subject: [PATCH 3/3] btrfs-progs: build: use m4_flatten instead of m4_chomp
-Date: Fri, 27 Apr 2018 14:56:37 -0400
-Message-Id: <20180427185637.16642-4-jeffm@suse.com>
-In-Reply-To: <20180427185637.16642-1-jeffm@suse.com>
-References: <20180427185637.16642-1-jeffm@suse.com>
+        id S1756268AbeDXGKF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 24 Apr 2018 02:10:05 -0400
+Subject: Re: [PATCH 2/3] btrfs-progs: remove useless branch in __merge_refs
+To: Su Yue <suy.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+References: <20180424055233.6420-1-suy.fnst@cn.fujitsu.com>
+ <20180424055233.6420-2-suy.fnst@cn.fujitsu.com>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <5a9026fe-f8bf-b20a-2b1e-0b40cfed890f@gmx.com>
+Date: Tue, 24 Apr 2018 14:09:57 +0800
+MIME-Version: 1.0
+In-Reply-To: <20180424055233.6420-2-suy.fnst@cn.fujitsu.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="gMjWD1slV8SDzaXvylOt7BSRvPkpXk9L1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Jeff Mahoney <jeffm@suse.com>
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--gMjWD1slV8SDzaXvylOt7BSRvPkpXk9L1
+Content-Type: multipart/mixed; boundary="koyQOWyM8HEDC1UiCSjpywkAnfOkYewk9";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: Su Yue <suy.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+Message-ID: <5a9026fe-f8bf-b20a-2b1e-0b40cfed890f@gmx.com>
+Subject: Re: [PATCH 2/3] btrfs-progs: remove useless branch in __merge_refs
+References: <20180424055233.6420-1-suy.fnst@cn.fujitsu.com>
+ <20180424055233.6420-2-suy.fnst@cn.fujitsu.com>
+In-Reply-To: <20180424055233.6420-2-suy.fnst@cn.fujitsu.com>
 
-Commit 2e1932e6a38 (btrfs-progs: build: simplify version tracking)
-started m4_chomp to strip the newlines from the version file.  m4_chomp
-was introduced in autoconf 2.64 but SLE11 ships with autoconf 2.63.
-For purposes of just stripping the newline, m4_flatten is sufficient.
+--koyQOWyM8HEDC1UiCSjpywkAnfOkYewk9
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-Signed-off-by: Jeff Mahoney <jeffm@suse.com>
----
- configure.ac | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/configure.ac b/configure.ac
-index 17880206..a0cebf15 100644
---- a/configure.ac
-+++ b/configure.ac
-@@ -1,5 +1,5 @@
- AC_INIT([btrfs-progs],
--	m4_chomp(m4_include([VERSION])),
-+	m4_flatten(m4_include([VERSION])),
- 	[linux-btrfs@vger.kernel.org],,
- 	[http://btrfs.wiki.kernel.org])
- 
--- 
-2.12.3
 
+On 2018=E5=B9=B404=E6=9C=8824=E6=97=A5 13:52, Su Yue wrote:
+> After call of ref_for_same_block, ref1->parent must equals to
+> ref2->parent, the block of exchange is never reached.
+>=20
+> So remove the block of exchange.
+
+Reviewed-by: Qu Wenruo <wqu@suse.com>
+
+The patch looks good, but considering how much difference the kernel and
+btrfs-progs have in backref.c, I think it would be much better to start
+merging code for it.
+
+Thanks,
+Qu
+
+>=20
+> Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
+> ---
+>  backref.c | 6 ------
+>  1 file changed, 6 deletions(-)
+>=20
+> diff --git a/backref.c b/backref.c
+> index c144dbf060f2..51553c702187 100644
+> --- a/backref.c
+> +++ b/backref.c
+> @@ -497,7 +497,6 @@ static void __merge_refs(struct pref_state *prefsta=
+te, int mode)
+>  		for (pos2 =3D pos1->next, n2 =3D pos2->next; pos2 !=3D head;
+>  		     pos2 =3D n2, n2 =3D pos2->next) {
+>  			struct __prelim_ref *ref2;
+> -			struct __prelim_ref *xchg;
+>  			struct extent_inode_elem *eie;
+> =20
+>  			ref2 =3D list_entry(pos2, struct __prelim_ref, list);
+> @@ -505,11 +504,6 @@ static void __merge_refs(struct pref_state *prefst=
+ate, int mode)
+>  			if (mode =3D=3D 1) {
+>  				if (!ref_for_same_block(ref1, ref2))
+>  					continue;> -				if (!ref1->parent && ref2->parent) {
+> -					xchg =3D ref1;
+> -					ref1 =3D ref2;
+> -					ref2 =3D xchg;
+> -				}
+>  			} else {
+>  				if (ref1->parent !=3D ref2->parent)
+>  					continue;
+>=20
+
+
+--koyQOWyM8HEDC1UiCSjpywkAnfOkYewk9--
+
+--gMjWD1slV8SDzaXvylOt7BSRvPkpXk9L1
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlreyjUACgkQwj2R86El
+/qiViQf/cQF+xqtTFnLBlbP7+gedaGle6M4LAe4JzafEJ8KFCm8MU5x9L3p02s8t
+mFouabd8ur1+grkr6CO8PAFpwtzQpwHwq9tuMVVXNF+zjtHCXnur8inajig64te4
+XR+2X/5Zijt4J6A6Esql+Up8J2P0eiHDuPO8oKSo+GL9CzHDimM6BkFxxBAaTDGK
+A89JUmIMjLobE67ZGYEJaKZrILY5IhT8CS9OlCZpkPklfK7XWYlTlQ5oQd3iUW4M
+92Ix/xMlgK50DGMxmJ3AFEB/ELuIcmmlb8sGzD8A7bkjxxfAruYrmnsQkbXpaI5I
+r8mJhDz5ikmUdA1T3LQrYdrkfFcxIA==
+=fGPu
+-----END PGP SIGNATURE-----
+
+--gMjWD1slV8SDzaXvylOt7BSRvPkpXk9L1--

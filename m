@@ -1,59 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:40771 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751295AbeDXL2L (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 24 Apr 2018 07:28:11 -0400
-Date: Tue, 24 Apr 2018 13:25:37 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Su Yue <suy.fnst@cn.fujitsu.com>
-Cc: dsterba@suse.cz, Rosen Penev <rosenp@gmail.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs-progs: treewide: Replace strerror(errno) with %m.
-Message-ID: <20180424112537.GC21272@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1515362061-13281-1-git-send-email-rosenp@gmail.com>
- <20180123194216.GQ15713@twin.jikos.cz>
- <bebb46aa-7d60-a08a-037e-13a83276ceb4@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <bebb46aa-7d60-a08a-037e-13a83276ceb4@cn.fujitsu.com>
+Received: from mail-lf0-f68.google.com ([209.85.215.68]:44160 "EHLO
+        mail-lf0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750766AbeDXXk5 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 24 Apr 2018 19:40:57 -0400
+Received: by mail-lf0-f68.google.com with SMTP id g203-v6so22787011lfg.11
+        for <linux-btrfs@vger.kernel.org>; Tue, 24 Apr 2018 16:40:56 -0700 (PDT)
+From: Timofey Titovets <nefelim4ag@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Timofey Titovets <nefelim4ag@gmail.com>
+Subject: [PATCH 0/4] [RESEND] Btrfs: just bunch of patches to ioctl.c
+Date: Wed, 25 Apr 2018 02:37:13 +0300
+Message-Id: <20180424233717.31283-1-nefelim4ag@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Apr 24, 2018 at 10:52:41AM +0800, Su Yue wrote:
-> 
-> 
-> On 01/24/2018 03:42 AM, David Sterba wrote:
-> > On Sun, Jan 07, 2018 at 01:54:21PM -0800, Rosen Penev wrote:
-> >> As btrfs is specific to Linux, %m can be used instead of strerror(errno)
-> >> in format strings. This has some size reduction benefits for embedded
-> >> systems.
-> > 
-> > Makes sense.
-> > 
-> >> glibc, musl, and uclibc-ng all support %m as a modifier to printf.
-> >> A quick glance at the BIONIC libc source indicates that it has
-> >> support for %m as well. BSDs and Windows do not but I do believe
-> >> them to be beyond the scope of btrfs-progs.
-> > 
-> > Thanks for checking the compatibility. The %m can be substituted
-> > by a wrapper if this becomes a problem in the future.
-> > 
-> It seems a little problem in output now since it's not caused by this
-> patch.
-> 
-> $ touch /tmp/tmp
-> $ btrfs-image -r /tmp/tmp /tmp/test.img
-> ERROR: unable to read cluster: Success
+1st patch, remove 16MiB restriction from extent_same ioctl(),
+by doing iterations over passed range.
 
-That's probably because there's also 0 in the condition (line 1967):
+I did not see much difference in performance, so it's just remove
+logic restriction.
 
-1966         ret = fread(cluster, BLOCK_SIZE, 1, mdres->in);
-1967         if (ret <= 0) {
-1968                 error("unable to read cluster: %m");
-1969                 return -EIO;
-1970         }
-1971         ret = 0;
+2-3 pathes, update defrag ioctl():
+ - Fix bad behaviour with full rewriting all compressed
+   extents in defrag range. (that also make autodefrag on compressed fs
+   not so expensive)
+ - Allow userspace specify NONE as target compression type,
+   that allow users to uncompress files by defragmentation with btrfs-progs
+ - Make defrag ioctl understood requested compression type and current
+   compression type of extents, to make btrfs fi def -rc<type>
+   idempotent operation.
+   i.e. now possible to say, make all extents compressed with lzo,
+   and btrfs will not recompress lzo compressed data.
+   Same for zlib, zstd, none.
+   (patch to btrfs-progs in PR on kdave GitHub).
 
-We'd need to distinguish the < 0 and == 0 cases, and in one we can use
-the %m as the errno will be set.
+4th patch, reduce size of struct btrfs_inode
+ - btrfs_inode store fields like: prop_compress, defrag_compress and
+   after 3rd patch, change_compress.
+   They use unsigned as a type, and use 12 bytes in sum.
+   But change_compress is a bitflag, and prop_compress/defrag_compress
+   only store compression type, that currently use 0-3 of 2^32-1.
+   
+   So, set a bitfields on that vars, and reduce size of btrfs_inode:
+   1136 -> 1128.
+
+Timofey Titovets (4):
+  Btrfs: btrfs_dedupe_file_range() ioctl, remove 16MiB restriction
+  Btrfs: make should_defrag_range() understood compressed extents
+  Btrfs: allow btrfs_defrag_file() uncompress files on defragmentation
+  Btrfs: reduce size of struct btrfs_inode
+
+ fs/btrfs/btrfs_inode.h |   5 +-
+ fs/btrfs/inode.c       |   4 +-
+ fs/btrfs/ioctl.c       | 203 +++++++++++++++++++++++++++++++------------------
+ 3 files changed, 133 insertions(+), 79 deletions(-)
+
+-- 
+2.15.1

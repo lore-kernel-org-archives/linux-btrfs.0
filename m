@@ -1,63 +1,107 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:49743 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:49750 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S933095AbeDXNNd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 24 Apr 2018 09:13:33 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 48E23AE07
-        for <linux-btrfs@vger.kernel.org>; Tue, 24 Apr 2018 13:13:32 +0000 (UTC)
+        id S933230AbeDXNNf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 24 Apr 2018 09:13:35 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 8ED9BAE07
+        for <linux-btrfs@vger.kernel.org>; Tue, 24 Apr 2018 13:13:34 +0000 (UTC)
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH v2 1/3] btrfs: introduce conditional wakeup helpers
-Date: Tue, 24 Apr 2018 15:10:59 +0200
-Message-Id: <0ed05bc9b62df9f3e9acd2cb0a2541d7aaf2a94a.1524575208.git.dsterba@suse.com>
+Cc: David Sterba <dsterba@suse.com>, Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH v2 2/3] btrfs: add barriers to btrfs_sync_log before log_commit_wait wakeups
+Date: Tue, 24 Apr 2018 15:11:01 +0200
+Message-Id: <1112c056afd15d763f38f3246c566ad685ab50e8.1524575208.git.dsterba@suse.com>
 In-Reply-To: <cover.1524575208.git.dsterba@suse.com>
 References: <cover.1524575208.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add convenience wrappers for the waitqueue management that involves
-memory barriers to prevent deadlocks. The helpers will let us remove
-barriers and the necessary comments in several places.
+Currently the code assumes that there's an implied barrier by the
+sequence of code preceding the wakeup, namely the mutex unlock.
 
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+As Nikolay pointed out:
+
+I think this is wrong (not your code) but the original assumption that
+the RELEASE semantics provided by mutex_unlock is sufficient.
+According to memory-barriers.txt:
+
+Section 'LOCK ACQUISITION FUNCTIONS' states:
+
+ (2) RELEASE operation implication:
+
+     Memory operations issued before the RELEASE will be completed before the
+     RELEASE operation has completed.
+
+     Memory operations issued after the RELEASE *may* be completed before the
+     RELEASE operation has completed.
+
+(I've bolded the may portion)
+
+The example given there:
+
+As an example, consider the following:
+
+    *A = a;
+    *B = b;
+    ACQUIRE
+    *C = c;
+    *D = d;
+    RELEASE
+    *E = e;
+    *F = f;
+
+The following sequence of events is acceptable:
+
+    ACQUIRE, {*F,*A}, *E, {*C,*D}, *B, RELEASE
+
+So if we assume that *C is modifying the flag which the waitqueue is checking,
+and *E is the actual wakeup, then those accesses can be re-ordered...
+
+IMHO this code should be considered broken...
+~~~
+
+To be on the safe side, add the barriers. The synchronization logic
+around log using the mutexes and several other threads does not make it
+easy to reason for/against the barrier.
+
+CC: Nikolay Borisov <nborisov@suse.com>
+Link: https://lkml.kernel.org/r/6ee068d8-1a69-3728-00d1-d86293d43c9f@suse.com
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/ctree.h | 22 ++++++++++++++++++++++
- 1 file changed, 22 insertions(+)
+ fs/btrfs/tree-log.c | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 2771cc56a622..1389942f3be1 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3765,4 +3765,26 @@ static inline int btrfs_is_testing(struct btrfs_fs_info *fs_info)
- 	return 0;
- }
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 43758e30aa7a..fa5b3dc5f4d5 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -3116,8 +3116,11 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
+ 	mutex_unlock(&log_root_tree->log_mutex);
  
-+static inline void cond_wake_up(struct wait_queue_head *wq)
-+{
-+	/*
-+	 * This implies a full smp_mb barrier, see comments for
-+	 * waitqueue_active why.
-+	 */
-+	if (wq_has_sleeper(wq))
-+		wake_up(wq);
-+}
-+
-+static inline void cond_wake_up_nomb(struct wait_queue_head *wq)
-+{
-+	/*
-+	 * Special case for conditional wakeup where the barrier required for
-+	 * waitqueue_active is implied by some of the preceding code. Eg. one
-+	 * of such atomic operations (atomic_dec_and_return, ...), or a
-+	 * unlock/lock sequence, etc.
-+	 */
-+	if (waitqueue_active(wq))
-+		wake_up(wq);
-+}
-+
- #endif
+ 	/*
+-	 * The barrier before waitqueue_active is implied by mutex_unlock
++	 * The barrier before waitqueue_active is needed so all the updates
++	 * above are seen by the woken threads. It might not be necessary, but
++	 * proving that seems to be hard.
+ 	 */
++	smp_mb();
+ 	if (waitqueue_active(&log_root_tree->log_commit_wait[index2]))
+ 		wake_up(&log_root_tree->log_commit_wait[index2]);
+ out:
+@@ -3128,8 +3131,11 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
+ 	mutex_unlock(&root->log_mutex);
+ 
+ 	/*
+-	 * The barrier before waitqueue_active is implied by mutex_unlock
++	 * The barrier before waitqueue_active is needed so all the updates
++	 * above are seen by the woken threads. It might not be necessary, but
++	 * proving that seems to be hard.
+ 	 */
++	smp_mb();
+ 	if (waitqueue_active(&root->log_commit_wait[index1]))
+ 		wake_up(&root->log_commit_wait[index1]);
+ 	return ret;
 -- 
 2.16.2
 

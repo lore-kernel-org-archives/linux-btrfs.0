@@ -1,135 +1,146 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from atrey.karlin.mff.cuni.cz ([195.113.26.193]:55738 "EHLO
-        atrey.karlin.mff.cuni.cz" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932567AbeDWXal (ORCPT
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:31740 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S932721AbeDXCqz (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 23 Apr 2018 19:30:41 -0400
-Date: Tue, 24 Apr 2018 01:30:39 +0200
-From: Petr Janecek <janecek@ucw.cz>
-To: linux-btrfs@vger.kernel.org
-Subject: 4.14.35: possible circular locking dependency detected
-Message-ID: <20180423233039.GA26751@atrey.karlin.mff.cuni.cz>
+        Mon, 23 Apr 2018 22:46:55 -0400
+Subject: Re: [PATCH] btrfs-progs: treewide: Replace strerror(errno) with %m.
+To: <dsterba@suse.cz>, Rosen Penev <rosenp@gmail.com>,
+        <linux-btrfs@vger.kernel.org>
+References: <1515362061-13281-1-git-send-email-rosenp@gmail.com>
+ <20180123194216.GQ15713@twin.jikos.cz>
+From: Su Yue <suy.fnst@cn.fujitsu.com>
+Message-ID: <bebb46aa-7d60-a08a-037e-13a83276ceb4@cn.fujitsu.com>
+Date: Tue, 24 Apr 2018 10:52:41 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20180123194216.GQ15713@twin.jikos.cz>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
-   after scrub start, scrub cancel, umount, mount of a two disk raid1
-(data + metadata):
-
-[12999.229791] ======================================================
-[12999.236029] WARNING: possible circular locking dependency detected
-[12999.242261] 4.14.35 #36 Not tainted
-[12999.245806] ------------------------------------------------------
-[12999.252037] btrfs/4682 is trying to acquire lock:
-[12999.256794]  ("%s-%s""btrfs", name){+.+.}, at: [<ffffffff9b06f900>] flush_workqueue+0x70/0x480
-[12999.265486] 
-               but task is already holding lock:
-[12999.271390]  (&fs_info->scrub_lock){+.+.}, at: [<ffffffffc03e82f1>] btrfs_scrub_dev+0x311/0x650 [btrfs]
-[12999.280887] 
-               which lock already depends on the new lock.
-
-[12999.289147] 
-               the existing dependency chain (in reverse order) is:
-[12999.296721] 
-               -> #3 (&fs_info->scrub_lock){+.+.}:
-[12999.302949]        __mutex_lock+0x66/0x9a0
-[12999.307287]        btrfs_scrub_dev+0x105/0x650 [btrfs]
-[12999.312615]        btrfs_ioctl+0x19a0/0x2030 [btrfs]
-[12999.317706]        do_vfs_ioctl+0x8c/0x6a0
-[12999.321951]        SyS_ioctl+0x6f/0x80
-[12999.325860]        do_syscall_64+0x64/0x170
-[12999.330202]        entry_SYSCALL_64_after_hwframe+0x42/0xb7
-[12999.335930] 
-               -> #2 (&fs_devs->device_list_mutex){+.+.}:
-[12999.342798]        __mutex_lock+0x66/0x9a0
-[12999.347049]        reada_start_machine_worker+0xb0/0x3c0 [btrfs]
-[12999.353324]        btrfs_worker_helper+0x8b/0x630 [btrfs]
-[12999.358926]        process_one_work+0x242/0x6a0
-[12999.363613]        worker_thread+0x32/0x3f0
-[12999.367894]        kthread+0x11f/0x140
-[12999.371792]        ret_from_fork+0x3a/0x50
-[12999.376038] 
-               -> #1 ((&work->normal_work)){+.+.}:
-[12999.382254]        process_one_work+0x20c/0x6a0
-[12999.386881]        worker_thread+0x32/0x3f0
-[12999.391216]        kthread+0x11f/0x140
-[12999.395107]        ret_from_fork+0x3a/0x50
-[12999.399290] 
-               -> #0 ("%s-%s""btrfs", name){+.+.}:
-[12999.405455]        lock_acquire+0x93/0x220
-[12999.409683]        flush_workqueue+0x97/0x480
-[12999.414129]        drain_workqueue+0xa4/0x180
-[12999.418620]        destroy_workqueue+0xe/0x1e0
-[12999.423202]        btrfs_destroy_workqueue+0x57/0x280 [btrfs]
-[12999.429137]        scrub_workers_put+0x29/0x60 [btrfs]
-[12999.434426]        btrfs_scrub_dev+0x324/0x650 [btrfs]
-[12999.439764]        btrfs_ioctl+0x19a0/0x2030 [btrfs]
-[12999.444870]        do_vfs_ioctl+0x8c/0x6a0
-[12999.449115]        SyS_ioctl+0x6f/0x80
-[12999.453017]        do_syscall_64+0x64/0x170
-[12999.457367]        entry_SYSCALL_64_after_hwframe+0x42/0xb7
-[12999.463103] 
-               other info that might help us debug this:
-
-[12999.471370] Chain exists of:
-                 "%s-%s""btrfs", name --> &fs_devs->device_list_mutex --> &fs_info->scrub_lock
-
-[12999.484396]  Possible unsafe locking scenario:
-
-[12999.490524]        CPU0                    CPU1
-[12999.495161]        ----                    ----
-[12999.499840]   lock(&fs_info->scrub_lock);
-[12999.504001]                                lock(&fs_devs->device_list_mutex);
-[12999.511341]                                lock(&fs_info->scrub_lock);
-[12999.518074]   lock("%s-%s""btrfs", name);
-[12999.522243] 
-                *** DEADLOCK ***
-
-[12999.528347] 2 locks held by btrfs/4682:
-[12999.532330]  #0:  (sb_writers#15){.+.+}, at: [<ffffffff9b1fd163>] mnt_want_write_file+0x33/0xb0
-[12999.541310]  #1:  (&fs_info->scrub_lock){+.+.}, at: [<ffffffffc03e82f1>] btrfs_scrub_dev+0x311/0x650 [btrfs]
-[12999.551389] 
-               stack backtrace:
-[12999.555917] CPU: 3 PID: 4682 Comm: btrfs Not tainted 4.14.35 #36
-[12999.562139] Hardware name: Supermicro X8SIL/X8SIL, BIOS 1.2a       06/27/2012
-[12999.569487] Call Trace:
-[12999.572049]  dump_stack+0x67/0x95
-[12999.575530]  print_circular_bug.isra.42+0x1ce/0x1db
-[12999.580580]  __lock_acquire+0x121c/0x1300
-[12999.584758]  ? lock_acquire+0x93/0x220
-[12999.588668]  lock_acquire+0x93/0x220
-[12999.592316]  ? flush_workqueue+0x70/0x480
-[12999.596485]  flush_workqueue+0x97/0x480
-[12999.600487]  ? flush_workqueue+0x70/0x480
-[12999.604596]  ? find_held_lock+0x2d/0x90
-[12999.608541]  ? drain_workqueue+0xa4/0x180
-[12999.612724]  drain_workqueue+0xa4/0x180
-[12999.616730]  destroy_workqueue+0xe/0x1e0
-[12999.620784]  btrfs_destroy_workqueue+0x57/0x280 [btrfs]
-[12999.626252]  scrub_workers_put+0x29/0x60 [btrfs]
-[12999.631087]  btrfs_scrub_dev+0x324/0x650 [btrfs]
-[12999.635814]  ? __sb_start_write+0x137/0x1a0
-[12999.640156]  ? mnt_want_write_file+0x33/0xb0
-[12999.644624]  btrfs_ioctl+0x19a0/0x2030 [btrfs]
-[12999.649194]  ? find_held_lock+0x2d/0x90
-[12999.653146]  ? do_vfs_ioctl+0x8c/0x6a0
-[12999.657095]  ? btrfs_ioctl_get_supported_features+0x20/0x20 [btrfs]
-[12999.663572]  do_vfs_ioctl+0x8c/0x6a0
-[12999.667203]  ? __fget+0x100/0x1f0
-[12999.670627]  SyS_ioctl+0x6f/0x80
-[12999.673954]  do_syscall_64+0x64/0x170
-[12999.677777]  entry_SYSCALL_64_after_hwframe+0x42/0xb7
-[12999.682993] RIP: 0033:0x7f409f638f07
-[12999.686667] RSP: 002b:00007f409f549d38 EFLAGS: 00000246 ORIG_RAX: 0000000000000010
-[12999.694458] RAX: ffffffffffffffda RBX: 000055a730ca04b0 RCX: 00007f409f638f07
-[12999.701808] RDX: 000055a730ca04b0 RSI: 00000000c400941b RDI: 0000000000000003
-[12999.709208] RBP: 0000000000000000 R08: 00007f409f54a700 R09: 0000000000000000
-[12999.716550] R10: 00007f409f54a700 R11: 0000000000000246 R12: 00007ffdd7f5481e
-[12999.723899] R13: 00007ffdd7f5481f R14: 00007ffdd7f54820 R15: 0000000000000000
 
 
-Regards,
+On 01/24/2018 03:42 AM, David Sterba wrote:
+> On Sun, Jan 07, 2018 at 01:54:21PM -0800, Rosen Penev wrote:
+>> As btrfs is specific to Linux, %m can be used instead of strerror(errno)
+>> in format strings. This has some size reduction benefits for embedded
+>> systems.
+> 
+> Makes sense.
+> 
+>> glibc, musl, and uclibc-ng all support %m as a modifier to printf.
+>> A quick glance at the BIONIC libc source indicates that it has
+>> support for %m as well. BSDs and Windows do not but I do believe
+>> them to be beyond the scope of btrfs-progs.
+> 
+> Thanks for checking the compatibility. The %m can be substituted
+> by a wrapper if this becomes a problem in the future.
+> 
+It seems a little problem in output now since it's not caused by this
+patch.
 
-Petr
+$ touch /tmp/tmp
+$ btrfs-image -r /tmp/tmp /tmp/test.img
+ERROR: unable to read cluster: Success
+ERROR: restore failed: Success
+$ echo $?
+1
+
+Though btrfs-image failed, %m(strerror(errno) argument makes output
+looks strange.
+IMO, here we should judge errno before output. But it means size 
+reduction is inavaiable for embedded systems.
+
+Thanks,
+Su
+
+>> Compiled sizes on Ubuntu 16.04:
+>>
+>> Before:
+>> 3916512 btrfs
+> 
+>> After:
+>> 3908744 btrfs
+> 
+> the delta is about 7KiB, that's not much but still counts. I would not
+> object further optimizations towards size reduction as long as the code
+> remains maintainable.
+> 
+>> 233256  libbtrfs.so.0.1
+>> 4899    bcp
+>> 2366560 btrfs-convert
+>> 2207432 btrfs-corrupt-block
+>> 13302   btrfs-debugfs
+>> 2151104 btrfs-debug-tree
+>> 2134968 btrfs-find-root
+>> 2281864 btrfs-image
+>> 2143536 btrfs-map-logical
+>> 2129704 btrfs-select-super
+>> 2151552 btrfstune
+>> 2130696 btrfs-zero-log
+>> 2276272 mkfs.btrfs
+> 
+> Some of the utilities are typically installed by default, the binaries
+> share a lot of code as they get built from the same object files. I had
+> once an idea of a compound binary that would switch the function by the
+> name of the executable. Similar to what busybox does.
+> 
+> https://github.com/kdave/btrfs-progs/commit/8fc697a7f763f39f3afe0abaa68ac13a49ac8a86
+> 
+> ---
+> * btrfs
+> * mkfs.btrfs
+> * btrfstun
+> * btrfs-image
+> * btrfs-convert
+> * btrfs-debug-tree
+> * btrfs-show-super
+> * btrfs-find-root
+> 
+> The static target is also supported. The name of resulting boxed
+> binaries is btrfs.box and btrfs.box.static .
+> 
+>     text    data     bss     dec     hex filename
+>   550988   19120   15444  585552   8ef50 btrfs
+> 1562099   25316   42256 1629671  18dde7 btrfs.static
+>   659504   21104   16492  697100   aa30c btrfs.box
+> 1817274   27988   44088 1889350  1cd446 btrfs.box.static
+> ---
+> 
+> I was not sure if this is was just another good idea waiting for a usecase (or
+> not), so I haven't continued past the prototype. Please let me know if you'd be
+> interested in this functionality, the patch is fairly trivial to update.
+> 
+>> @@ -815,7 +815,7 @@ static const char * const cmd_filesystem_sync_usage[] = {
+>>   
+>>   static int cmd_filesystem_sync(int argc, char **argv)
+>>   {
+>> -	int 	fd, res, e;
+>> +	int 	fd, res;
+>>   	char	*path;
+>>   	DIR	*dirstream = NULL;
+>>   
+>> @@ -831,10 +831,9 @@ static int cmd_filesystem_sync(int argc, char **argv)
+>>   		return 1;
+>>   
+>>   	res = ioctl(fd, BTRFS_IOC_SYNC);
+>> -	e = errno;
+>>   	close_file_or_dir(fd, dirstream);
+>>   	if( res < 0 ){
+>> -		error("sync ioctl failed on '%s': %s", path, strerror(e));
+>> +		error("sync ioctl failed on '%s': %m", path);
+> 
+> Let me use that one as example, there are a few more similar updates.
+> 
+> There's potentially lost errno from the ioctl if something inside
+> close_file_or_dir() overwrites it, as there are closedir and close. This
+> is highly unlikely and I'll deal with that separately, so I'm going to
+> apply the patch without further changes. Thanks.
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+> 
+
+

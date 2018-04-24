@@ -1,47 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:56795 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:44890 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932551AbeDWXGO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 23 Apr 2018 19:06:14 -0400
+        id S1752110AbeDXF7E (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 24 Apr 2018 01:59:04 -0400
 Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id C7C0FAC92
-        for <linux-btrfs@vger.kernel.org>; Mon, 23 Apr 2018 23:06:13 +0000 (UTC)
-From: David Sterba <dsterba@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 0/3] Simplify counting of extent buffer pages
-Date: Tue, 24 Apr 2018 01:03:40 +0200
-Message-Id: <cover.1524523681.git.dsterba@suse.com>
+        by mx2.suse.de (Postfix) with ESMTP id ACC8CABEA
+        for <linux-btrfs@vger.kernel.org>; Tue, 24 Apr 2018 05:59:02 +0000 (UTC)
+Subject: Re: [PATCH 1/3] btrfs: simplify counting number of eb pages
+To: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+References: <cover.1524523681.git.dsterba@suse.com>
+ <faf2e8e2cb4f87f4b418b177256d8950cd8deba1.1524523682.git.dsterba@suse.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <27114496-d14c-7210-a130-3acb39f21677@suse.com>
+Date: Tue, 24 Apr 2018 08:59:00 +0300
+MIME-Version: 1.0
+In-Reply-To: <faf2e8e2cb4f87f4b418b177256d8950cd8deba1.1524523682.git.dsterba@suse.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Some low-hanging cleanup fruit. The argument bloat-o-meter shows some
-improvements:
 
-extent_io.c:cache_state_if_flags.part.27       -8 (8 -> 0)
-extent_io.c:cache_state.part.28                -8 (8 -> 0)
-extent_io.c:check_buffer_tree_ref.part.31     -24 (24 -> 0)
-extent_io.c:mark_extent_buffer_accessed        -8 (40 -> 32)
-extent_io.c:alloc_extent_state_atomic.part.35  -8 (8 -> 0)
-extent_io.c:flush_write_bio.isra.40           -16 (16 -> 0)
-extent_io.c:set_page_extent_mapped.part.49     -8 (8 -> 0)
-extent_io.c:extent_buffer_under_io.part.50     -8 (8 -> 0)
-extent_io.c:__unlock_for_delalloc.isra.38      -8 (8 -> 0)
-extent_io.c:merge_state.part.45               -48 (48 -> 0)
-extent_io.c:repair_eb_io_failure               -8 (72 -> 64)
-extent_io.c:set_extent_buffer_dirty            -8 (40 -> 32)
-extent_io.c:__alloc_dummy_extent_buffer        +8 (32 -> 40)
-extent_io.c:write_one_eb                      +16 (152 -> 168)
 
-David Sterba (3):
-  btrfs: simplify counting number of eb pages
-  btrfs: pass only eb to num_extent_pages
-  btrfs: switch types to int when counting eb pages
+On 24.04.2018 02:03, David Sterba wrote:
+> The eb length is nodesize, as initialized in __alloc_extent_buffer.
+> Regardless of start, we should always get the same number of pages, so
+> use that fact.
+> 
+> Signed-off-by: David Sterba <dsterba@suse.com>
+> ---
+>  fs/btrfs/extent_io.h | 3 +--
+>  1 file changed, 1 insertion(+), 2 deletions(-)
+> 
+> diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+> index a53009694b16..ee92c1289edd 100644
+> --- a/fs/btrfs/extent_io.h
+> +++ b/fs/btrfs/extent_io.h
+> @@ -454,8 +454,7 @@ void wait_on_extent_buffer_writeback(struct extent_buffer *eb);
+>  
+>  static inline unsigned long num_extent_pages(u64 start, u64 len)
+>  {
+> -	return ((start + len + PAGE_SIZE - 1) >> PAGE_SHIFT) -
+> -		(start >> PAGE_SHIFT);
+> +	return len >> PAGE_SHIFT;
 
- fs/btrfs/extent_io.c | 68 ++++++++++++++++++++++++++--------------------------
- fs/btrfs/extent_io.h |  5 ++--
- 2 files changed, 36 insertions(+), 37 deletions(-)
+Shouldn't this really be len + PAGE_SIZE -1 or in fact DIV_ROUND_DOWN
+(len, PAGE_SIZE). Because with a nodesize of 4k (and basically less than
+a page size) we can get into a situation where we do:
 
--- 
-2.16.2
+4096 >> 13 = 0
 
+On powerpc for example we have:
+
+arch/powerpc/include/asm/page.h:#define PAGE_SHIFT              18
+arch/powerpc/include/asm/page.h:#define PAGE_SHIFT              16
+arch/powerpc/include/asm/page.h:#define PAGE_SHIFT              14
+arch/powerpc/include/asm/page.h:#define PAGE_SHIFT              12
+
+
+>  }
+>  
+>  static inline void extent_buffer_get(struct extent_buffer *eb)
+> 

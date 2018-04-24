@@ -1,137 +1,116 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:56624 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:56627 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1758377AbeDXOSb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 24 Apr 2018 10:18:31 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id A7869AF2C
+        id S1758363AbeDXOSc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 24 Apr 2018 10:18:32 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id DED02ACB3
         for <linux-btrfs@vger.kernel.org>; Tue, 24 Apr 2018 14:18:30 +0000 (UTC)
 From: Nikolay Borisov <nborisov@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH v2 5/8] btrfs: Open-code add_delayed_data_ref
-Date: Tue, 24 Apr 2018 17:18:21 +0300
-Message-Id: <1524579504-30304-6-git-send-email-nborisov@suse.com>
+Subject: [PATCH v2 6/8] btrfs: Introduce init_delayed_ref_head
+Date: Tue, 24 Apr 2018 17:18:22 +0300
+Message-Id: <1524579504-30304-7-git-send-email-nborisov@suse.com>
 In-Reply-To: <1524579504-30304-1-git-send-email-nborisov@suse.com>
 References: <1524579504-30304-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Now that the initialization part and the critical section code have
-been split it's a lot easier to open code add_delayed_data_ref. Do
-so in the following manner:
-
-1. The common init function is put immediately after memory-to-be-init
-is allocated, followed by the specific data ref initialization.
-
-2. The only piece of code that remains in the critical section is
-insert_delayed_ref call.
-
-3. Tracing and memory freeing code is moved outside of the critical
-section.
-
-No functional changes, just an overall shorter critical section.
+add_delayed_ref_head implements the logic to both initialize a head_ref
+structure as well as perform the necessary operations to add it to the
+delayed ref machinery. This has resulted in a very cumebrsome interface
+with loads of parameters and code, which at first glance, looks very
+unwieldy. Begin untangling it by first extracting the initialization
+only code in its own function. It's more or less verbatim copy of the
+first part of add_delayed_ref_head.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/delayed-ref.c | 63 ++++++++++++++++++--------------------------------
- 1 file changed, 22 insertions(+), 41 deletions(-)
+ fs/btrfs/delayed-ref.c | 70 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 70 insertions(+)
 
 diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
-index 827ca01cf5af..2d1375739b3d 100644
+index 2d1375739b3d..39481a0f6834 100644
 --- a/fs/btrfs/delayed-ref.c
 +++ b/fs/btrfs/delayed-ref.c
-@@ -696,45 +696,6 @@ static void init_delayed_ref_common(struct btrfs_fs_info *fs_info,
+@@ -526,6 +526,76 @@ update_existing_head_ref(struct btrfs_delayed_ref_root *delayed_refs,
+ 	spin_unlock(&existing->lock);
  }
  
- /*
-- * helper to insert a delayed data ref into the rbtree.
-- */
--static noinline void
--add_delayed_data_ref(struct btrfs_trans_handle *trans,
--		     struct btrfs_delayed_ref_head *head_ref,
--		     struct btrfs_delayed_ref_node *ref, u64 bytenr,
--		     u64 num_bytes, u64 parent, u64 ref_root, u64 owner,
--		     u64 offset, int action)
--{
--	struct btrfs_delayed_data_ref *full_ref;
--	struct btrfs_delayed_ref_root *delayed_refs;
--	u8 ref_type;
--	int ret;
--
--
--	delayed_refs = &trans->transaction->delayed_refs;
--	full_ref = btrfs_delayed_node_to_data_ref(ref);
--	if (parent)
--	        ref_type = BTRFS_SHARED_DATA_REF_KEY;
--	else
--	        ref_type = BTRFS_EXTENT_DATA_REF_KEY;
--
--	init_delayed_ref_common(trans->fs_info, ref, bytenr, num_bytes,
--				ref_root, action, ref_type);
--	full_ref->root = ref_root;
--	full_ref->parent = parent;
--	full_ref->objectid = owner;
--	full_ref->offset = offset;
--
--	trace_add_delayed_data_ref(trans->fs_info, ref, full_ref,
--				   action == BTRFS_ADD_DELAYED_EXTENT ?
--				   BTRFS_ADD_DELAYED_REF : action);
--
--	ret = insert_delayed_ref(trans, delayed_refs, head_ref, ref);
--	if (ret > 0)
--		kmem_cache_free(btrfs_delayed_data_ref_cachep, full_ref);
--}
--
--/*
-  * add a delayed tree ref.  This does all of the accounting required
-  * to make sure the delayed ref is eventually processed before this
-  * transaction commits.
-@@ -834,11 +795,25 @@ int btrfs_add_delayed_data_ref(struct btrfs_fs_info *fs_info,
- 	struct btrfs_delayed_ref_root *delayed_refs;
- 	struct btrfs_qgroup_extent_record *record = NULL;
- 	int qrecord_inserted;
-+	int ret;
-+	u8 ref_type;
- 
- 	ref = kmem_cache_alloc(btrfs_delayed_data_ref_cachep, GFP_NOFS);
- 	if (!ref)
- 		return -ENOMEM;
- 
-+	if (parent)
-+	        ref_type = BTRFS_SHARED_DATA_REF_KEY;
++
++static void init_delayed_ref_head(struct btrfs_delayed_ref_head *head_ref,
++				  struct btrfs_qgroup_extent_record *qrecord,
++				  u64 bytenr, u64 num_bytes, u64 ref_root,
++				  u64 reserved, int action, bool is_data,
++				  bool is_system)
++{
++
++	int count_mod = 1;
++	int must_insert_reserved = 0;
++
++	/* If reserved is provided, it must be a data extent. */
++	BUG_ON(!is_data && reserved);
++
++	/*
++	 * the head node stores the sum of all the mods, so dropping a ref
++	 * should drop the sum in the head node by one.
++	 */
++	if (action == BTRFS_UPDATE_DELAYED_HEAD)
++		count_mod = 0;
++	else if (action == BTRFS_DROP_DELAYED_REF)
++		count_mod = -1;
++
++	/*
++	 * BTRFS_ADD_DELAYED_EXTENT means that we need to update
++	 * the reserved accounting when the extent is finally added, or
++	 * if a later modification deletes the delayed ref without ever
++	 * inserting the extent into the extent allocation tree.
++	 * ref->must_insert_reserved is the flag used to record
++	 * that accounting mods are required.
++	 *
++	 * Once we record must_insert_reserved, switch the action to
++	 * BTRFS_ADD_DELAYED_REF because other special casing is not required.
++	 */
++	if (action == BTRFS_ADD_DELAYED_EXTENT)
++		must_insert_reserved = 1;
 +	else
-+	        ref_type = BTRFS_EXTENT_DATA_REF_KEY;
-+	init_delayed_ref_common(fs_info, &ref->node, bytenr, num_bytes,
-+				ref_root, action, ref_type);
-+	ref->root = ref_root;
-+	ref->parent = parent;
-+	ref->objectid = owner;
-+	ref->offset = offset;
++		must_insert_reserved = 0;
 +
 +
- 	head_ref = kmem_cache_alloc(btrfs_delayed_ref_head_cachep, GFP_NOFS);
- 	if (!head_ref) {
- 		kmem_cache_free(btrfs_delayed_data_ref_cachep, ref);
-@@ -870,10 +845,16 @@ int btrfs_add_delayed_data_ref(struct btrfs_fs_info *fs_info,
- 					action, 1, 0, &qrecord_inserted,
- 					old_ref_mod, new_ref_mod);
- 
--	add_delayed_data_ref(trans, head_ref, &ref->node, bytenr, num_bytes,
--			     parent, ref_root, owner, offset, action);
-+	ret = insert_delayed_ref(trans, delayed_refs, head_ref, &ref->node);
- 	spin_unlock(&delayed_refs->lock);
- 
-+	trace_add_delayed_data_ref(trans->fs_info, &ref->node, ref,
-+				   action == BTRFS_ADD_DELAYED_EXTENT ?
-+				   BTRFS_ADD_DELAYED_REF : action);
-+	if (ret > 0)
-+		kmem_cache_free(btrfs_delayed_data_ref_cachep, ref);
++	refcount_set(&head_ref->refs, 1);
++	head_ref->bytenr = bytenr;
++	head_ref->num_bytes = num_bytes;
++	head_ref->ref_mod = count_mod;
++	head_ref->must_insert_reserved = must_insert_reserved;
++	head_ref->is_data = is_data;
++	head_ref->is_system = is_system;
++	head_ref->ref_tree = RB_ROOT;
++	INIT_LIST_HEAD(&head_ref->ref_add_list);
++	RB_CLEAR_NODE(&head_ref->href_node);
++	head_ref->processing = 0;
++	head_ref->total_ref_mod = count_mod;
++	head_ref->qgroup_reserved = 0;
++	head_ref->qgroup_ref_root = 0;
++	spin_lock_init(&head_ref->lock);
++	mutex_init(&head_ref->mutex);
 +
 +
- 	if (qrecord_inserted)
- 		return btrfs_qgroup_trace_extent_post(fs_info, record);
- 	return 0;
++	if (qrecord) {
++		if (ref_root && reserved) {
++			head_ref->qgroup_ref_root = ref_root;
++			head_ref->qgroup_reserved = reserved;
++		}
++
++		qrecord->bytenr = bytenr;
++		qrecord->num_bytes = num_bytes;
++		qrecord->old_roots = NULL;
++	}
++}
++
+ /*
+  * helper function to actually insert a head node into the rbtree.
+  * this does all the dirty work in terms of maintaining the correct
 -- 
 2.7.4
 

@@ -1,20 +1,20 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:51206 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:51199 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S934103AbeDXN0i (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 24 Apr 2018 09:26:38 -0400
+        id S934067AbeDXN03 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 24 Apr 2018 09:26:29 -0400
 Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id C2231AC9E
-        for <linux-btrfs@vger.kernel.org>; Tue, 24 Apr 2018 13:26:36 +0000 (UTC)
-Subject: Re: [PATCH 3/3] btrfs: switch types to int when counting eb pages
+        by mx2.suse.de (Postfix) with ESMTP id 917ADAC65
+        for <linux-btrfs@vger.kernel.org>; Tue, 24 Apr 2018 13:26:28 +0000 (UTC)
+Subject: Re: [PATCH 2/3] btrfs: pass only eb to num_extent_pages
 To: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
 References: <cover.1524523681.git.dsterba@suse.com>
- <868400eeb4643da5af1e3a76c63e220299a191ee.1524523682.git.dsterba@suse.com>
+ <ec1c1d8fd32993aa5271f3f9b4160bd2df62ba03.1524523682.git.dsterba@suse.com>
 From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <78106b43-78dc-3945-2c81-469ef527edc8@suse.com>
-Date: Tue, 24 Apr 2018 16:26:36 +0300
+Message-ID: <c213af39-6161-5643-925b-bd6c36fe574e@suse.com>
+Date: Tue, 24 Apr 2018 16:26:27 +0300
 MIME-Version: 1.0
-In-Reply-To: <868400eeb4643da5af1e3a76c63e220299a191ee.1524523682.git.dsterba@suse.com>
+In-Reply-To: <ec1c1d8fd32993aa5271f3f9b4160bd2df62ba03.1524523682.git.dsterba@suse.com>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -22,183 +22,176 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 
 On 24.04.2018 02:03, David Sterba wrote:
-> The loops iterating eb pages use unsigned long, that's an overkill as
-> we know that there are at most 16 pages (64k / 4k), and 4 by default
-> (with nodesize 16k).
+> Almost all callers pass the start and len as 2 arguments but this is not
+> necessary, all the information is provided by the eb. By reordering the
+> calls to num_extent_pages, we don't need the local variables with
+> start/len.
 > 
 > Signed-off-by: David Sterba <dsterba@suse.com>
+
 Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 > ---
->  fs/btrfs/extent_io.c | 44 ++++++++++++++++++++++----------------------
->  fs/btrfs/extent_io.h |  2 +-
->  2 files changed, 23 insertions(+), 23 deletions(-)
+>  fs/btrfs/extent_io.c | 30 +++++++++++++++---------------
+>  fs/btrfs/extent_io.h |  4 ++--
+>  2 files changed, 17 insertions(+), 17 deletions(-)
 > 
 > diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-> index 0cc5d6ae1876..5bdfdb9c8777 100644
+> index fb32394fd830..0cc5d6ae1876 100644
 > --- a/fs/btrfs/extent_io.c
 > +++ b/fs/btrfs/extent_io.c
 > @@ -2062,7 +2062,7 @@ int repair_eb_io_failure(struct btrfs_fs_info *fs_info,
 >  			 struct extent_buffer *eb, int mirror_num)
 >  {
 >  	u64 start = eb->start;
-> -	unsigned long i, num_pages = num_extent_pages(eb);
-> +	int i, num_pages = num_extent_pages(eb);
+> -	unsigned long i, num_pages = num_extent_pages(eb->start, eb->len);
+> +	unsigned long i, num_pages = num_extent_pages(eb);
 >  	int ret = 0;
 >  
 >  	if (sb_rdonly(fs_info->sb))
-> @@ -3541,7 +3541,7 @@ lock_extent_buffer_for_io(struct extent_buffer *eb,
->  			  struct btrfs_fs_info *fs_info,
->  			  struct extent_page_data *epd)
->  {
-> -	unsigned long i, num_pages;
-> +	int i, num_pages;
->  	int flush = 0;
+> @@ -3591,7 +3591,7 @@ lock_extent_buffer_for_io(struct extent_buffer *eb,
+>  	if (!ret)
+>  		return ret;
+>  
+> -	num_pages = num_extent_pages(eb->start, eb->len);
+> +	num_pages = num_extent_pages(eb);
+>  	for (i = 0; i < num_pages; i++) {
+>  		struct page *p = eb->pages[i];
+>  
+> @@ -3721,7 +3721,7 @@ static noinline_for_stack int write_one_eb(struct extent_buffer *eb,
 >  	int ret = 0;
 >  
-> @@ -3715,7 +3715,7 @@ static noinline_for_stack int write_one_eb(struct extent_buffer *eb,
->  	struct extent_io_tree *tree = &BTRFS_I(fs_info->btree_inode)->io_tree;
->  	u64 offset = eb->start;
->  	u32 nritems;
-> -	unsigned long i, num_pages;
-> +	int i, num_pages;
->  	unsigned long start, end;
->  	unsigned int write_flags = wbc_to_write_flags(wbc) | REQ_META;
->  	int ret = 0;
-> @@ -4648,7 +4648,7 @@ int extent_buffer_under_io(struct extent_buffer *eb)
->   */
->  static void btrfs_release_extent_buffer_page(struct extent_buffer *eb)
->  {
-> -	unsigned long index;
-> +	int index;
->  	struct page *page;
->  	int mapped = !test_bit(EXTENT_BUFFER_DUMMY, &eb->bflags);
+>  	clear_bit(EXTENT_BUFFER_WRITE_ERR, &eb->bflags);
+> -	num_pages = num_extent_pages(eb->start, eb->len);
+> +	num_pages = num_extent_pages(eb);
+>  	atomic_set(&eb->io_pages, num_pages);
 >  
-> @@ -4744,10 +4744,10 @@ __alloc_extent_buffer(struct btrfs_fs_info *fs_info, u64 start,
+>  	/* set btree blocks beyond nritems with 0 to avoid stale content. */
+> @@ -4654,7 +4654,7 @@ static void btrfs_release_extent_buffer_page(struct extent_buffer *eb)
 >  
->  struct extent_buffer *btrfs_clone_extent_buffer(struct extent_buffer *src)
->  {
-> -	unsigned long i;
-> +	int i;
+>  	BUG_ON(extent_buffer_under_io(eb));
+>  
+> -	index = num_extent_pages(eb->start, eb->len);
+> +	index = num_extent_pages(eb);
+>  	if (index == 0)
+>  		return;
+>  
+> @@ -4747,7 +4747,7 @@ struct extent_buffer *btrfs_clone_extent_buffer(struct extent_buffer *src)
+>  	unsigned long i;
 >  	struct page *p;
 >  	struct extent_buffer *new;
-> -	unsigned long num_pages = num_extent_pages(src);
-> +	int num_pages = num_extent_pages(src);
+> -	unsigned long num_pages = num_extent_pages(src->start, src->len);
+> +	unsigned long num_pages = num_extent_pages(src);
 >  
 >  	new = __alloc_extent_buffer(src->fs_info, src->start, src->len);
 >  	if (new == NULL)
-> @@ -4776,8 +4776,8 @@ struct extent_buffer *__alloc_dummy_extent_buffer(struct btrfs_fs_info *fs_info,
->  						  u64 start, unsigned long len)
->  {
->  	struct extent_buffer *eb;
-> -	unsigned long num_pages;
-> -	unsigned long i;
-> +	int num_pages;
-> +	int i;
+> @@ -4779,12 +4779,11 @@ struct extent_buffer *__alloc_dummy_extent_buffer(struct btrfs_fs_info *fs_info,
+>  	unsigned long num_pages;
+>  	unsigned long i;
 >  
+> -	num_pages = num_extent_pages(start, len);
+> -
 >  	eb = __alloc_extent_buffer(fs_info, start, len);
 >  	if (!eb)
-> @@ -4843,7 +4843,7 @@ static void check_buffer_tree_ref(struct extent_buffer *eb)
->  static void mark_extent_buffer_accessed(struct extent_buffer *eb,
->  		struct page *accessed)
->  {
-> -	unsigned long num_pages, i;
-> +	int num_pages, i;
+>  		return NULL;
+>  
+> +	num_pages = num_extent_pages(eb);
+>  	for (i = 0; i < num_pages; i++) {
+>  		eb->pages[i] = alloc_page(GFP_NOFS);
+>  		if (!eb->pages[i])
+> @@ -4848,7 +4847,7 @@ static void mark_extent_buffer_accessed(struct extent_buffer *eb,
 >  
 >  	check_buffer_tree_ref(eb);
 >  
-> @@ -4944,8 +4944,8 @@ struct extent_buffer *alloc_extent_buffer(struct btrfs_fs_info *fs_info,
+> -	num_pages = num_extent_pages(eb->start, eb->len);
+> +	num_pages = num_extent_pages(eb);
+>  	for (i = 0; i < num_pages; i++) {
+>  		struct page *p = eb->pages[i];
+>  
+> @@ -4945,7 +4944,7 @@ struct extent_buffer *alloc_extent_buffer(struct btrfs_fs_info *fs_info,
 >  					  u64 start)
 >  {
 >  	unsigned long len = fs_info->nodesize;
-> -	unsigned long num_pages;
-> -	unsigned long i;
-> +	int num_pages;
-> +	int i;
+> -	unsigned long num_pages = num_extent_pages(start, len);
+> +	unsigned long num_pages;
+>  	unsigned long i;
 >  	unsigned long index = start >> PAGE_SHIFT;
 >  	struct extent_buffer *eb;
->  	struct extent_buffer *exists = NULL;
-> @@ -5160,8 +5160,8 @@ void free_extent_buffer_stale(struct extent_buffer *eb)
+> @@ -4968,6 +4967,7 @@ struct extent_buffer *alloc_extent_buffer(struct btrfs_fs_info *fs_info,
+>  	if (!eb)
+>  		return ERR_PTR(-ENOMEM);
 >  
->  void clear_extent_buffer_dirty(struct extent_buffer *eb)
->  {
-> -	unsigned long i;
-> -	unsigned long num_pages;
-> +	int i;
-> +	int num_pages;
+> +	num_pages = num_extent_pages(eb);
+>  	for (i = 0; i < num_pages; i++, index++) {
+>  		p = find_or_create_page(mapping, index, GFP_NOFS|__GFP_NOFAIL);
+>  		if (!p) {
+> @@ -5164,7 +5164,7 @@ void clear_extent_buffer_dirty(struct extent_buffer *eb)
+>  	unsigned long num_pages;
 >  	struct page *page;
 >  
->  	num_pages = num_extent_pages(eb);
-> @@ -5190,8 +5190,8 @@ void clear_extent_buffer_dirty(struct extent_buffer *eb)
+> -	num_pages = num_extent_pages(eb->start, eb->len);
+> +	num_pages = num_extent_pages(eb);
 >  
->  int set_extent_buffer_dirty(struct extent_buffer *eb)
->  {
-> -	unsigned long i;
-> -	unsigned long num_pages;
-> +	int i;
-> +	int num_pages;
->  	int was_dirty = 0;
+>  	for (i = 0; i < num_pages; i++) {
+>  		page = eb->pages[i];
+> @@ -5198,7 +5198,7 @@ int set_extent_buffer_dirty(struct extent_buffer *eb)
 >  
->  	check_buffer_tree_ref(eb);
-> @@ -5209,9 +5209,9 @@ int set_extent_buffer_dirty(struct extent_buffer *eb)
+>  	was_dirty = test_and_set_bit(EXTENT_BUFFER_DIRTY, &eb->bflags);
 >  
->  void clear_extent_buffer_uptodate(struct extent_buffer *eb)
->  {
-> -	unsigned long i;
-> +	int i;
->  	struct page *page;
-> -	unsigned long num_pages;
-> +	int num_pages;
+> -	num_pages = num_extent_pages(eb->start, eb->len);
+> +	num_pages = num_extent_pages(eb);
+>  	WARN_ON(atomic_read(&eb->refs) == 0);
+>  	WARN_ON(!test_bit(EXTENT_BUFFER_TREE_REF, &eb->bflags));
+>  
+> @@ -5214,7 +5214,7 @@ void clear_extent_buffer_uptodate(struct extent_buffer *eb)
+>  	unsigned long num_pages;
 >  
 >  	clear_bit(EXTENT_BUFFER_UPTODATE, &eb->bflags);
->  	num_pages = num_extent_pages(eb);
-> @@ -5224,9 +5224,9 @@ void clear_extent_buffer_uptodate(struct extent_buffer *eb)
->  
->  void set_extent_buffer_uptodate(struct extent_buffer *eb)
->  {
-> -	unsigned long i;
-> +	int i;
->  	struct page *page;
-> -	unsigned long num_pages;
-> +	int num_pages;
+> -	num_pages = num_extent_pages(eb->start, eb->len);
+> +	num_pages = num_extent_pages(eb);
+>  	for (i = 0; i < num_pages; i++) {
+>  		page = eb->pages[i];
+>  		if (page)
+> @@ -5229,7 +5229,7 @@ void set_extent_buffer_uptodate(struct extent_buffer *eb)
+>  	unsigned long num_pages;
 >  
 >  	set_bit(EXTENT_BUFFER_UPTODATE, &eb->bflags);
->  	num_pages = num_extent_pages(eb);
-> @@ -5239,13 +5239,13 @@ void set_extent_buffer_uptodate(struct extent_buffer *eb)
->  int read_extent_buffer_pages(struct extent_io_tree *tree,
->  			     struct extent_buffer *eb, int wait, int mirror_num)
->  {
-> -	unsigned long i;
-> +	int i;
->  	struct page *page;
->  	int err;
->  	int ret = 0;
->  	int locked_pages = 0;
->  	int all_uptodate = 1;
-> -	unsigned long num_pages;
-> +	int num_pages;
->  	unsigned long num_reads = 0;
->  	struct bio *bio = NULL;
->  	unsigned long bio_flags = 0;
-> @@ -5577,7 +5577,7 @@ void copy_extent_buffer_full(struct extent_buffer *dst,
->  			     struct extent_buffer *src)
->  {
->  	int i;
-> -	unsigned num_pages;
-> +	int num_pages;
+> -	num_pages = num_extent_pages(eb->start, eb->len);
+> +	num_pages = num_extent_pages(eb);
+>  	for (i = 0; i < num_pages; i++) {
+>  		page = eb->pages[i];
+>  		SetPageUptodate(page);
+> @@ -5253,7 +5253,7 @@ int read_extent_buffer_pages(struct extent_io_tree *tree,
+>  	if (test_bit(EXTENT_BUFFER_UPTODATE, &eb->bflags))
+>  		return 0;
+>  
+> -	num_pages = num_extent_pages(eb->start, eb->len);
+> +	num_pages = num_extent_pages(eb);
+>  	for (i = 0; i < num_pages; i++) {
+>  		page = eb->pages[i];
+>  		if (wait == WAIT_NONE) {
+> @@ -5581,7 +5581,7 @@ void copy_extent_buffer_full(struct extent_buffer *dst,
 >  
 >  	ASSERT(dst->len == src->len);
 >  
+> -	num_pages = num_extent_pages(dst->start, dst->len);
+> +	num_pages = num_extent_pages(dst);
+>  	for (i = 0; i < num_pages; i++)
+>  		copy_page(page_address(dst->pages[i]),
+>  				page_address(src->pages[i]));
 > diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-> index d08abc9d385e..3248553a3aa2 100644
+> index ee92c1289edd..d08abc9d385e 100644
 > --- a/fs/btrfs/extent_io.h
 > +++ b/fs/btrfs/extent_io.h
-> @@ -452,7 +452,7 @@ int read_extent_buffer_pages(struct extent_io_tree *tree,
+> @@ -452,9 +452,9 @@ int read_extent_buffer_pages(struct extent_io_tree *tree,
 >  			     int mirror_num);
 >  void wait_on_extent_buffer_writeback(struct extent_buffer *eb);
 >  
-> -static inline unsigned long num_extent_pages(const struct extent_buffer *eb)
-> +static inline int num_extent_pages(const struct extent_buffer *eb)
+> -static inline unsigned long num_extent_pages(u64 start, u64 len)
+> +static inline unsigned long num_extent_pages(const struct extent_buffer *eb)
 >  {
->  	return eb->len >> PAGE_SHIFT;
+> -	return len >> PAGE_SHIFT;
+> +	return eb->len >> PAGE_SHIFT;
 >  }
+>  
+>  static inline void extent_buffer_get(struct extent_buffer *eb)
 > 

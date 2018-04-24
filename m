@@ -1,45 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:49736 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:49743 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1757927AbeDXNNb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 24 Apr 2018 09:13:31 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 21B23AE20
-        for <linux-btrfs@vger.kernel.org>; Tue, 24 Apr 2018 13:13:30 +0000 (UTC)
+        id S933095AbeDXNNd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 24 Apr 2018 09:13:33 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 48E23AE07
+        for <linux-btrfs@vger.kernel.org>; Tue, 24 Apr 2018 13:13:32 +0000 (UTC)
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH v2 0/3] Cleanup waitqueue_active and barriers
-Date: Tue, 24 Apr 2018 15:10:57 +0200
-Message-Id: <cover.1524575208.git.dsterba@suse.com>
+Subject: [PATCH v2 1/3] btrfs: introduce conditional wakeup helpers
+Date: Tue, 24 Apr 2018 15:10:59 +0200
+Message-Id: <0ed05bc9b62df9f3e9acd2cb0a2541d7aaf2a94a.1524575208.git.dsterba@suse.com>
+In-Reply-To: <cover.1524575208.git.dsterba@suse.com>
+References: <cover.1524575208.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Reduce number of standalone barriers before waitqueue_active calls.
+Add convenience wrappers for the waitqueue management that involves
+memory barriers to prevent deadlocks. The helpers will let us remove
+barriers and the necessary comments in several places.
 
-Changes v2:
-* add 2 barriers to btrfs_sync_log and do not assume they're implied,
-  (pointed out by Nikolay)
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+Signed-off-by: David Sterba <dsterba@suse.com>
+---
+ fs/btrfs/ctree.h | 22 ++++++++++++++++++++++
+ 1 file changed, 22 insertions(+)
 
-git://github.com/kdave/btrfs-devel.git cleanup/cond-wake
-
-David Sterba (3):
-  btrfs: introduce conditional wakeup helpers
-  btrfs: add barriers to btrfs_sync_log before log_commit_wait wakeups
-  btrfs: replace waitqueue_actvie with cond_wake_up
-
- fs/btrfs/compression.c   |  7 +------
- fs/btrfs/ctree.h         | 22 ++++++++++++++++++++++
- fs/btrfs/delayed-inode.c |  9 +++------
- fs/btrfs/dev-replace.c   | 10 ++++------
- fs/btrfs/extent-tree.c   |  7 +------
- fs/btrfs/inode.c         |  9 +++------
- fs/btrfs/locking.c       | 34 +++++++++++-----------------------
- fs/btrfs/ordered-data.c  | 14 ++++----------
- fs/btrfs/transaction.c   |  7 +------
- fs/btrfs/tree-log.c      | 29 +++++++++++++----------------
- 10 files changed, 63 insertions(+), 85 deletions(-)
-
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 2771cc56a622..1389942f3be1 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -3765,4 +3765,26 @@ static inline int btrfs_is_testing(struct btrfs_fs_info *fs_info)
+ 	return 0;
+ }
+ 
++static inline void cond_wake_up(struct wait_queue_head *wq)
++{
++	/*
++	 * This implies a full smp_mb barrier, see comments for
++	 * waitqueue_active why.
++	 */
++	if (wq_has_sleeper(wq))
++		wake_up(wq);
++}
++
++static inline void cond_wake_up_nomb(struct wait_queue_head *wq)
++{
++	/*
++	 * Special case for conditional wakeup where the barrier required for
++	 * waitqueue_active is implied by some of the preceding code. Eg. one
++	 * of such atomic operations (atomic_dec_and_return, ...), or a
++	 * unlock/lock sequence, etc.
++	 */
++	if (waitqueue_active(wq))
++		wake_up(wq);
++}
++
+ #endif
 -- 
 2.16.2
 

@@ -1,163 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:55063 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:56597 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753618AbeDTRFS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 20 Apr 2018 13:05:18 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 17068AC4F
-        for <linux-btrfs@vger.kernel.org>; Fri, 20 Apr 2018 17:05:17 +0000 (UTC)
-From: David Sterba <dsterba@suse.com>
+        id S1758363AbeDXOSa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 24 Apr 2018 10:18:30 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 338F5ACB3
+        for <linux-btrfs@vger.kernel.org>; Tue, 24 Apr 2018 14:18:29 +0000 (UTC)
+From: Nikolay Borisov <nborisov@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 7/7] btrfs: add FS_IOC_FSSETXATTR ioctl
-Date: Fri, 20 Apr 2018 19:02:45 +0200
-Message-Id: <2f7092ca40d306b6895ec21e9bceda1102ce8903.1524242295.git.dsterba@suse.com>
-In-Reply-To: <cover.1524242295.git.dsterba@suse.com>
-References: <cover.1524242295.git.dsterba@suse.com>
+Cc: Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH v2 0/8] Delayed refs cleanups/streamlining
+Date: Tue, 24 Apr 2018 17:18:16 +0300
+Message-Id: <1524579504-30304-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The new ioctl is an extension to the FS_IOC_SETFLAGS and adds new
-flags and is extensible. Don't get fooled by the XATTR in the name, it
-does not have anything in common with the extended attributes,
-incidentally also abbreviated as XATTRs.
+This patchkit aims to simplify and streamline the logic involved in 
+initialising and adding delayed refs/delayed head structures which deal with 
+modification of the extent tree. Currently the logic for init and add was 
+contained in one function for each type of structure. This resulted in very 
+awkward interface with shitloads of arguments, this in turn made it really hard
+to understand the gist of the code. This series rectifies the situation by 
+extracting common parts and using those rather than open coding duplicated
+logic for every type of delayed ref (tree or data ref). 
 
-This patch allows to set the xflags portion of the fsxattr structure,
-other items have no meaning and non-zero values will result in
-EOPNOTSUPP.
+The first 5 patches deal with the delayed_ref structs. Each patch is 
+incremental and makes the code bisectable. The last tree factor out the init 
+code for delayed_ref_head into a separate function and begin to use it. The 
+final completely splits the two. 
 
-Currently supported xflags:
+The net result is both a cleaner interface as well as somewhat reduced 
+critical section under delayed_refs->lock spinlock. 
 
-- APPEND
-- IMMUTABLE
-- NOATIME
-- NODUMP
-- SYNC
+V2: Rebased the patches on latest misc-next.
 
-The structure of btrfs_ioctl_fssetxattr copies btrfs_ioctl_setflags but
-is simpler on the flag setting side.
+Nikolay Borisov (8):
+  btrfs: Factor out common delayed refs init code
+  btrfs: Use init_delayed_ref_common in add_delayed_tree_ref
+  btrfs: Use init_delayed_ref_common in add_delayed_data_ref
+  btrfs: Open-code add_delayed_tree_ref
+  btrfs: Open-code add_delayed_data_ref
+  btrfs: Introduce init_delayed_ref_head
+  btrfs: Use init_delayed_ref_head in add_delayed_ref_head
+  btrfs: split delayed ref head initialization and addition
 
-The original patch was written by Chandan Jay Sharma but was incomplete
-and no further revision has been sent.
+ fs/btrfs/delayed-ref.c | 248 ++++++++++++++++++++++++-------------------------
+ 1 file changed, 121 insertions(+), 127 deletions(-)
 
-Based-on-patches-by: Chandan Jay Sharma <chandansbg@gmail.com>
-Signed-off-by: David Sterba <dsterba@suse.com>
----
- fs/btrfs/ioctl.c | 94 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 94 insertions(+)
-
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 52b12ab9b82b..4fd61f191bba 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -388,6 +388,98 @@ static int btrfs_ioctl_fsgetxattr(struct file *file, void __user *arg)
- 	return 0;
- }
- 
-+static int btrfs_ioctl_fssetxattr(struct file *file, void __user *arg)
-+{
-+	struct inode *inode = file_inode(file);
-+	struct btrfs_inode *binode = BTRFS_I(inode);
-+	struct btrfs_root *root = binode->root;
-+	struct btrfs_trans_handle *trans;
-+	struct fsxattr fa;
-+	unsigned oldflags;
-+	unsigned old_i_flags;
-+	int ret = 0;
-+
-+	if (!inode_owner_or_capable(inode))
-+		return -EPERM;
-+
-+	if (btrfs_root_readonly(root))
-+		return -EROFS;
-+
-+	memset(&fa, 0, sizeof(fa));
-+	if (copy_from_user(&fa, arg, sizeof(fa)))
-+		return -EFAULT;
-+
-+	ret = check_xflags(fa.fsx_xflags);
-+	if (ret)
-+		return ret;
-+
-+	if (fa.fsx_extsize != 0 || fa.fsx_projid != 0 || fa.fsx_cowextsize != 0)
-+		return -EOPNOTSUPP;
-+
-+	ret = mnt_want_write_file(file);
-+	if (ret)
-+		return ret;
-+
-+	inode_lock(inode);
-+
-+	oldflags = binode->flags;
-+	old_i_flags = inode->i_flags;
-+
-+	/* We need the capabilities to change append-only or immutable inode */
-+	if (((oldflags & (BTRFS_INODE_APPEND | BTRFS_INODE_IMMUTABLE)) ||
-+	     (fa.fsx_xflags & (FS_XFLAG_APPEND | FS_XFLAG_IMMUTABLE))) &&
-+	    !capable(CAP_LINUX_IMMUTABLE)) {
-+		ret = -EPERM;
-+		goto out_unlock;
-+	}
-+
-+	if (fa.fsx_xflags & FS_XFLAG_SYNC)
-+		binode->flags |= BTRFS_INODE_SYNC;
-+	else
-+		binode->flags &= ~BTRFS_INODE_SYNC;
-+	if (fa.fsx_xflags & FS_XFLAG_IMMUTABLE)
-+		binode->flags |= BTRFS_INODE_IMMUTABLE;
-+	else
-+		binode->flags &= ~BTRFS_INODE_IMMUTABLE;
-+	if (fa.fsx_xflags & FS_XFLAG_APPEND)
-+		binode->flags |= BTRFS_INODE_APPEND;
-+	else
-+		binode->flags &= ~BTRFS_INODE_APPEND;
-+	if (fa.fsx_xflags & FS_XFLAG_NODUMP)
-+		binode->flags |= BTRFS_INODE_NODUMP;
-+	else
-+		binode->flags &= ~BTRFS_INODE_NODUMP;
-+	if (fa.fsx_xflags & FS_XFLAG_NOATIME)
-+		binode->flags |= BTRFS_INODE_NOATIME;
-+	else
-+		binode->flags &= ~BTRFS_INODE_NOATIME;
-+
-+	/* 1 item for the inode */
-+	trans = btrfs_start_transaction(root, 1);
-+	if (IS_ERR(trans)) {
-+		ret = PTR_ERR(trans);
-+		goto out_drop;
-+	}
-+
-+	btrfs_sync_inode_flags_to_i_flags(inode);
-+	inode_inc_iversion(inode);
-+	inode->i_ctime = current_time(inode);
-+	ret = btrfs_update_inode(trans, root, inode);
-+
-+	btrfs_end_transaction(trans);
-+
-+	if (ret) {
-+		binode->flags = oldflags;
-+		inode->i_flags = old_i_flags;
-+	}
-+
-+out_unlock:
-+	inode_unlock(inode);
-+out_drop:
-+	mnt_drop_write_file(file);
-+	return ret;
-+}
-+
- static int btrfs_ioctl_getversion(struct file *file, int __user *arg)
- {
- 	struct inode *inode = file_inode(file);
-@@ -5620,6 +5712,8 @@ long btrfs_ioctl(struct file *file, unsigned int
- 		return btrfs_ioctl_set_features(file, argp);
- 	case FS_IOC_FSGETXATTR:
- 		return btrfs_ioctl_fsgetxattr(file, argp);
-+	case FS_IOC_FSSETXATTR:
-+		return btrfs_ioctl_fssetxattr(file, argp);
- 	}
- 
- 	return -ENOTTY;
 -- 
-2.16.2
+2.7.4
 

@@ -1,71 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:43440 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752789AbeDXMBf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 24 Apr 2018 08:01:35 -0400
-From: David Sterba <dsterba@suse.com>
+Received: from victor.provo.novell.com ([137.65.250.26]:47027 "EHLO
+        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1755801AbeDXEsU (ORCPT
+        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+        Tue, 24 Apr 2018 00:48:20 -0400
+From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: clm@fb.com
-Subject: Btrfs progs release 4.16.1
-Date: Tue, 24 Apr 2018 13:58:57 +0200
-Message-Id: <20180424115857.25174-1-dsterba@suse.com>
+Subject: [PATCH v2 0/4] btrfs: Add write time super block validation
+Date: Tue, 24 Apr 2018 12:48:05 +0800
+Message-Id: <20180424044809.29838-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+This patchset can be fetched from github:
+https://github.com/adam900710/linux/tree/write_time_sb_check
 
-btrfs-progs version 4.16.1 have been released.  This is a bugfix release.
+We have 2 reports about corrupted btrfs super block, which has some garbage
+in its super block, but otherwise it's completely fine and its csum even
+matches.
 
-Changes:
+This means we develop memory corruption during btrfs mount time.
+It's not clear whether it's caused by btrfs or some other kernel module,
+but at least let's do write time verification to catch such corruption
+early.
 
-  * remove obsolete tools: btrfs-debug-tree, btrfs-zero-log, btrfs-show-super,
-    btrfs-calc-size
-  * sb-mod: new debugging tool to edit superblock items
-  * mkfs: detect if thin-provisioned device does not have enough space
-  * check: don't try to verify checksums on metadata dump images
-  * build: fail documentation build if xmlto is not found
-  * build: fix build of btrfs.static
+Changelog:
+v2:
+  Rename btrfs_check_super_valid() to btrfs_validate_super() suggested
+  by Nikolay and David.
 
-Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
-Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
+Qu Wenruo (4):
+  btrfs: Rename btrfs_check_super_valid() to btrfs_validate_super()
+  btrfs: Add incompat flags check for btrfs_check_super_valid()
+  btrfs: Add csum type check for btrfs_check_super_valid()
+  btrfs: Do super block verification before writing it to disk
 
-Shortlog:
+ fs/btrfs/disk-io.c | 58 ++++++++++++++++++++++++++++++++++++++++------
+ 1 file changed, 51 insertions(+), 7 deletions(-)
 
-Baruch Siach (1):
-      btrfs-progs: build btrfs.static needs libbtrfsutil to build
+-- 
+2.17.0
 
-David Sterba (5):
-      btrfs-progs: sb-mod: add preliminary support for non-u64 types
-      btrfs-progs: sb-mod: add csum_type
-      btrfs-progs: sb-mod: add compat bit to the recognized fields
-      btrfs-progs: reorder extent buffer members for better packing
-      btrfs-progs: update CHANGES for v4.16.1
-
-Gu Jinxiang (4):
-      btrfs-progs: send-utils: remove unused functions path_cat and path_cat3
-      btrfs-progs: Let function find_device to be consistent with kernel
-      btrfs-progs: Remove duplicate value-get for data_extents_scrubbed
-      btrfs-progs: Do not add extra slash if given path end with it
-
-Misono Tomohiro (1):
-      btrfs-progs: configure: check if xmlto exists at configure time
-
-Nikolay Borisov (4):
-      btrfs-progs: Remove btrfs-debug-tree command
-      btrfs-progs: Remove deprecated btrfs-zero-log standalone tool
-      btrfs-progs: Remove deprecated btrfs-show-super
-      btrfs-progs: Remove deprecated btrfs-calc-size tool
-
-Qu Wenruo (9):
-      btrfs-progs: check: Skip data csum verification for metadata dump
-      btrfs-progs: tests/fsck: Add test case to check if btrfs check can skip data csum verfication for metadata dump
-      btrfs-progs: extent_io: Fix NULL pointer dereference in free_extent_buffer_final()
-      btrfs-progs: extent_io: Init eb->lru to avoid NULL pointer dereference
-      btrfs-progs: extent_io: Refactor alloc_extent_buffer() to follow kernel parameters
-      btrfs-progs: Unify btrfs_leaf_free_space() parameter with kernel
-      btrfs-progs: print-tree: Remove btrfs_root parameter
-      btrfs-progs: Rename OPEN_CTREE_FS_PARTIAL to OPEN_CTREE_TEMPORARY_SUPER
-      btrfs-progs: Use more loose open ctree flags for dump-tree and restore
-
-Su Yue (1):
-      btrfs-progs: mkfs: return nozero value on thin provisioned device

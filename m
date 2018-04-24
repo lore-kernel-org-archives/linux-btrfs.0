@@ -1,91 +1,230 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:9117 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1756459AbeDXGma (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 24 Apr 2018 02:42:30 -0400
-Subject: Re: [PATCH 1/3] btrfs-progs: remove comments about delayed ref in
- backref.c
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>, <linux-btrfs@vger.kernel.org>
+Received: from mout.gmx.net ([212.227.15.18]:55127 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1755614AbeDXGvI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 24 Apr 2018 02:51:08 -0400
+Subject: Re: [PATCH 3/3] btrfs-progs: do not merge tree block refs have
+ different root_id
+To: Su Yue <suy.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
 References: <20180424055233.6420-1-suy.fnst@cn.fujitsu.com>
- <59c132d1-f6eb-708d-2c8f-96533ac9ce59@gmx.com>
-From: Su Yue <suy.fnst@cn.fujitsu.com>
-Message-ID: <30643dd4-0f17-d89e-0216-9751d7133703@cn.fujitsu.com>
-Date: Tue, 24 Apr 2018 14:48:17 +0800
+ <20180424055233.6420-3-suy.fnst@cn.fujitsu.com>
+ <5de2f409-32e4-7e23-3589-e89c2e7510c3@gmx.com>
+ <c40ab3ef-5495-74be-489c-1704eac9f77f@cn.fujitsu.com>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <ae2fa324-0e8b-9641-d957-37c941344321@gmx.com>
+Date: Tue, 24 Apr 2018 14:50:57 +0800
 MIME-Version: 1.0
-In-Reply-To: <59c132d1-f6eb-708d-2c8f-96533ac9ce59@gmx.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+In-Reply-To: <c40ab3ef-5495-74be-489c-1704eac9f77f@cn.fujitsu.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="lyQSJBFgC0Ind8hrsAqhB2kv0B03LBRBZ"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--lyQSJBFgC0Ind8hrsAqhB2kv0B03LBRBZ
+Content-Type: multipart/mixed; boundary="W0f207QeBjGP4SvGWmnGqxcchx6kngYRp";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: Su Yue <suy.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+Message-ID: <ae2fa324-0e8b-9641-d957-37c941344321@gmx.com>
+Subject: Re: [PATCH 3/3] btrfs-progs: do not merge tree block refs have
+ different root_id
+References: <20180424055233.6420-1-suy.fnst@cn.fujitsu.com>
+ <20180424055233.6420-3-suy.fnst@cn.fujitsu.com>
+ <5de2f409-32e4-7e23-3589-e89c2e7510c3@gmx.com>
+ <c40ab3ef-5495-74be-489c-1704eac9f77f@cn.fujitsu.com>
+In-Reply-To: <c40ab3ef-5495-74be-489c-1704eac9f77f@cn.fujitsu.com>
+
+--W0f207QeBjGP4SvGWmnGqxcchx6kngYRp
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
 
-On 04/24/2018 02:02 PM, Qu Wenruo wrote:
-> 
-> 
-> On 2018年04月24日 13:52, Su Yue wrote:
->> There is no delayed ref in btrfs-progs, so remove related comments.
+
+On 2018=E5=B9=B404=E6=9C=8824=E6=97=A5 14:43, Su Yue wrote:
+>=20
+>=20
+> On 04/24/2018 02:17 PM, Qu Wenruo wrote:
 >>
-> 
-> Indeed.
-> Delayed ref is only used to speed up extent tree modification with the
-> cost of code complexity.
-> 
-Thanks for your explanation :).
+>>
+>> On 2018=E5=B9=B404=E6=9C=8824=E6=97=A5 13:52, Su Yue wrote:
+>>> For an extent item which contains many tree block backrefs, like
+>>> =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
+>>> In 020-extent-ref-cases/keyed_block_ref.img
+>>>
+>>> item 10 key (29470720 METADATA_ITEM 0) itemoff 3450 itemsize 222
+>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0 refs 23 gen 10 flags TREE_BLOCK
+>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0 tree block skinny level 0
+>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0 tree block backref root 278
+>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0 tree block backref root 277
+>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0 tree block backref root 276
+>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0 tree block backref root 275
+>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0 tree block backref root 274
+>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0 tree block backref root 273
+>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0 tree block backref root 272
+>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0 tree block backref root 271
+>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0 tree block backref root 270
+>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0 tree block backref root 269
+>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0 tree block backref root 268
+>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0 tree block backref root 267
+>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0 tree block backref root 266
+>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0 tree block backref root 265
+>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0 tree block backref root 264
+>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0 tree block backref root 263
+>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0 tree block backref root 262
+>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0 tree block backref root 261
+>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0 tree block backref root 260
+>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0 tree block backref root 259
+>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0 tree block backref root 258
+>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0 tree block backref root 257
+>>> =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
+>>> In find_parent_nodes(), these refs's parents are 0, then __merge_refs=
 
-> For btrfs-progs we don't need to worry about it at all.
-> 
-So I suggest to remove comments in progs.
+>>> will merge refs to one ref. It causes only one root to be returned.
+>>
+>> This is a pretty big problem, and it would cause qgroup verification
+>> code to cause false alerts.
+>>
+>> So a new test case would do great help here.
+>>
+> Let me think how to construct a test case a while.
+> If I remember correctly, the function is called rarely only
+> in check/lowmem check.
+> Check calls it in a very corner case.
+> As you know, extent check in lowmme is buggy which I'm try to fix.
+
+I mean, if the problem is find_parent_nodes() can only return one root,
+it would definitely cause problem for qgroup_verify_all() function, then
+it should be pretty easy to craft a test image.
 
 Thanks,
-Su
+Qu
 
+>=20
+>>>
+>>> So, if both parents are 0, do not merge refs.
+>>>
+>>> Lowmem check calls find_parent_nodes frequently to decide whether.
+>>> check an extent buffer or not. These bug influences bytes accounting.=
+
+>>
+>> Although it looks good so far, and would fix the problem you found, bu=
+t
+>=20
+> Fixing another bug in lowmem, found it by accident.
+>=20
+>> I strongly recommend to port kernel backref code to btrfs-progs here, =
+as
+>> kernel backref code is more tested than btrfs-progs backref code.
+>>
+> It's a fact. Seen backref.c in btrfs-progs, there are many useless code=
+s
+> and confusing logicals.
+> I agree that port kernel backref code to btrfs-progs.
+>=20
+>> I'm pretty sure we have more bugs in btrfs-progs backref, and I'm not =
+a
+>> big fan of playing whac-a-mole here.
+>>
+>>>
+>>> Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
+>>> ---
+>>> =C2=A0 backref.c | 2 ++
+>>> =C2=A0 1 file changed, 2 insertions(+)
+>>>
+>>> diff --git a/backref.c b/backref.c
+>>> index 51553c702187..daadb6299c79 100644
+>>> --- a/backref.c
+>>> +++ b/backref.c
+>>> @@ -507,6 +507,8 @@ static void __merge_refs(struct pref_state
+>>> *prefstate, int mode)
+>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0 } else {
+>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 if (ref1->parent !=3Def2->parent)
+>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 continue;
+>>> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0 if (ref1->parent =3D0)
+>>> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 continue;
+>>
+>> It's better to put it above (ref1->parent !=3Def2->parent).
+>> As parent =3D0 means we haven't resolve the parent bytenr yet, so can'=
+t
+>> be merged nor compared.
+>=20
+> Ok, will do it in V2.
+>=20
 > Thanks,
-> Qu
-> 
->> Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
->> ---
->>   backref.c | 19 +++----------------
->>   1 file changed, 3 insertions(+), 16 deletions(-)
+> Su
 >>
->> diff --git a/backref.c b/backref.c
->> index 27309e07a1e9..c144dbf060f2 100644
->> --- a/backref.c
->> +++ b/backref.c
->> @@ -155,19 +155,6 @@ static void init_pref_state(struct pref_state *prefstate)
->>    * - if you cannot add the parent or a correct key, then we will look into the
->>    *   block later to set a correct key
->>    *
->> - * delayed refs
->> - * ============
->> - *        backref type | shared | indirect | shared | indirect
->> - * information         |   tree |     tree |   data |     data
->> - * --------------------+--------+----------+--------+----------
->> - *      parent logical |    y   |     -    |    -   |     -
->> - *      key to resolve |    -   |     y    |    y   |     y
->> - *  tree block logical |    -   |     -    |    -   |     -
->> - *  root for resolving |    y   |     y    |    y   |     y
->> - *
->> - * - column 1:       we've the parent -> done
->> - * - column 2, 3, 4: we use the key to find the parent
->> - *
->>    * on disk refs (inline or keyed)
->>    * ==============================
->>    *        backref type | shared | indirect | shared | indirect
->> @@ -735,9 +722,9 @@ static int __add_keyed_refs(struct btrfs_fs_info *fs_info,
->>   }
->>   
->>   /*
->> - * this adds all existing backrefs (inline backrefs, backrefs and delayed
->> - * refs) for the given bytenr to the refs list, merges duplicates and resolves
->> - * indirect refs to their parent bytenr.
->> + * this adds all existing backrefs (inline backrefs, backrefs for the given
->> + * bytenr to the refs list, merges duplicates and resolves indirect refs to
->> + * their parent bytenr.
->>    * When roots are found, they're added to the roots list
->>    *
->>    * FIXME some caching might speed things up
+>> Thanks,
+>> Qu
 >>
-> 
+>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0 }
+>>> =C2=A0 =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0 eie =3Def1->inode_list;
+>>>
+>>
+>=20
+>=20
+> --=20
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at=C2=A0 http://vger.kernel.org/majordomo-info.html=
 
 
+
+--W0f207QeBjGP4SvGWmnGqxcchx6kngYRp--
+
+--lyQSJBFgC0Ind8hrsAqhB2kv0B03LBRBZ
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlre09EACgkQwj2R86El
+/qjhzgf/epULbdZggOZYyT/uRX3LM6gX/UxEUBdyS7NN9KkwnIFpCuGT5gAd/Xvg
+ATmgyyjbSQsb67B/1hcucjZo8ddKBUwo34D0zVmf8pQ3XnfxTyCgnhns5RcWhSWz
+a2APjFp61HilWp4gAL2vlO1gKQIDpp8WtGfXNgpQyUUrkeq5b+vewOZiCn1Jarfi
+EytPj28EHiGbxqUzI+TUOk3N+EtmiPEg9vySIBM0OSvgleRBn6jueeZR3bO0B2UF
+9G0KdtPPqxVv5Gb0BvXqbtPgh7BDKjTVrbGkACyuVNNZwMy4dFbx3aRlm7CkMIKr
+C5iAeYV7x7FlGA/PAecmdSbddsofSQ==
+=2bnb
+-----END PGP SIGNATURE-----
+
+--lyQSJBFgC0Ind8hrsAqhB2kv0B03LBRBZ--

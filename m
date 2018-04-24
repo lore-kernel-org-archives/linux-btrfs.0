@@ -1,17 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:35655 "EHLO
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:42243 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1750995AbeDYFIU (ORCPT
+        with ESMTP id S1756135AbeDXFq4 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 25 Apr 2018 01:08:20 -0400
+        Tue, 24 Apr 2018 01:46:56 -0400
 Received: from G08CNEXCHPEKD03.g08.fujitsu.local (unknown [10.167.33.85])
-        by cn.fujitsu.com (Postfix) with ESMTP id E103F49F19DD
-        for <linux-btrfs@vger.kernel.org>; Wed, 25 Apr 2018 13:08:04 +0800 (CST)
+        by cn.fujitsu.com (Postfix) with ESMTP id 00CCA49F19D2
+        for <linux-btrfs@vger.kernel.org>; Tue, 24 Apr 2018 13:46:50 +0800 (CST)
 From: Su Yue <suy.fnst@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH V2] btrfs-progs: do not merge tree block refs have different root_id
-Date: Wed, 25 Apr 2018 13:13:49 +0800
-Message-ID: <20180425051349.2639-1-suy.fnst@cn.fujitsu.com>
+CC: <suy.fnst@cn.fujitsu.com>
+Subject: [PATCH 2/3] btrfs-progs: remove useless branch in __merge_refs
+Date: Tue, 24 Apr 2018 13:52:32 +0800
+Message-ID: <20180424055233.6420-2-suy.fnst@cn.fujitsu.com>
 In-Reply-To: <20180424055233.6420-1-suy.fnst@cn.fujitsu.com>
 References: <20180424055233.6420-1-suy.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -19,75 +20,40 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-For an extent item which contains many tree block backrefs, like
-=================================================================
-In 020-extent-ref-cases/keyed_block_ref.img
+After call of ref_for_same_block, ref1->parent must equals to
+ref2->parent, the block of exchange is never reached.
 
-item 10 key (29470720 METADATA_ITEM 0) itemoff 3450 itemsize 222
-                refs 23 gen 10 flags TREE_BLOCK
-                tree block skinny level 0
-                tree block backref root 278
-                tree block backref root 277
-                tree block backref root 276
-                tree block backref root 275
-                tree block backref root 274
-                tree block backref root 273
-                tree block backref root 272
-                tree block backref root 271
-                tree block backref root 270
-                tree block backref root 269
-                tree block backref root 268
-                tree block backref root 267
-                tree block backref root 266
-                tree block backref root 265
-                tree block backref root 264
-                tree block backref root 263
-                tree block backref root 262
-                tree block backref root 261
-                tree block backref root 260
-                tree block backref root 259
-                tree block backref root 258
-                tree block backref root 257
-=================================================================
-In find_parent_nodes(), these refs's parents are 0, then __merge_refs
-will merge refs to one ref. It causes only one root to be returned.
-
-So, if both parents are 0, do not merge refs.
-
-Lowmem check calls find_parent_nodes frequently to decide whether
-check an extent buffer or not. The bug influences bytes accounting.
+So remove the block of exchange.
 
 Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
 ---
-Changelog:
-v2:
-  Put judgment of ref->parent above comparison.
-  Add the comment.
-  Fix typos.
----
- backref.c | 7 +++++++
- 1 file changed, 7 insertions(+)
+ backref.c | 6 ------
+ 1 file changed, 6 deletions(-)
 
 diff --git a/backref.c b/backref.c
-index 51553c702187..d5772ec228c3 100644
+index c144dbf060f2..51553c702187 100644
 --- a/backref.c
 +++ b/backref.c
-@@ -505,8 +505,15 @@ static void __merge_refs(struct pref_state *prefstate, int mode)
+@@ -497,7 +497,6 @@ static void __merge_refs(struct pref_state *prefstate, int mode)
+ 		for (pos2 = pos1->next, n2 = pos2->next; pos2 != head;
+ 		     pos2 = n2, n2 = pos2->next) {
+ 			struct __prelim_ref *ref2;
+-			struct __prelim_ref *xchg;
+ 			struct extent_inode_elem *eie;
+ 
+ 			ref2 = list_entry(pos2, struct __prelim_ref, list);
+@@ -505,11 +504,6 @@ static void __merge_refs(struct pref_state *prefstate, int mode)
+ 			if (mode == 1) {
  				if (!ref_for_same_block(ref1, ref2))
  					continue;
+-				if (!ref1->parent && ref2->parent) {
+-					xchg = ref1;
+-					ref1 = ref2;
+-					ref2 = xchg;
+-				}
  			} else {
-+				/*
-+				 * Parent == 0 means that the ref is tree block
-+				 * backref or its parent is unresolved.
-+				 */
-+				if (!ref1->parent || !ref2->parent)
-+					continue;
  				if (ref1->parent != ref2->parent)
  					continue;
-+
- 			}
- 
- 			eie = ref1->inode_list;
 -- 
 2.17.0
 

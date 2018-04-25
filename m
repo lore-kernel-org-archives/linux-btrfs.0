@@ -1,161 +1,147 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:43205 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751064AbeDYF3I (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 25 Apr 2018 01:29:08 -0400
-Subject: Re: [PATCH 3/3] btrfs-progs: do not merge tree block refs have
+Received: from mout.gmx.net ([212.227.15.19]:43915 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751022AbeDYGQQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 25 Apr 2018 02:16:16 -0400
+Subject: Re: [PATCH V2.1] btrfs-progs: do not merge tree block refs have
  different root_id
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>, <linux-btrfs@vger.kernel.org>
+To: Su Yue <suy.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
 References: <20180424055233.6420-1-suy.fnst@cn.fujitsu.com>
- <20180424055233.6420-3-suy.fnst@cn.fujitsu.com>
- <5de2f409-32e4-7e23-3589-e89c2e7510c3@gmx.com>
- <c40ab3ef-5495-74be-489c-1704eac9f77f@cn.fujitsu.com>
- <ae2fa324-0e8b-9641-d957-37c941344321@gmx.com>
-From: Su Yue <suy.fnst@cn.fujitsu.com>
-Message-ID: <ebb7fe99-6b0c-e3ed-c16d-bd1064545e36@cn.fujitsu.com>
-Date: Wed, 25 Apr 2018 13:34:41 +0800
+ <20180425051924.2924-1-suy.fnst@cn.fujitsu.com>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <8b99e4b3-2866-8154-63be-3c34c137f15d@gmx.com>
+Date: Wed, 25 Apr 2018 14:15:56 +0800
 MIME-Version: 1.0
-In-Reply-To: <ae2fa324-0e8b-9641-d957-37c941344321@gmx.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+In-Reply-To: <20180425051924.2924-1-suy.fnst@cn.fujitsu.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="sz6dfPbe0LR2s1DHkSXDdr98UA8OfEB9g"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--sz6dfPbe0LR2s1DHkSXDdr98UA8OfEB9g
+Content-Type: multipart/mixed; boundary="dDuCQHWInPTnsdqGBJEGgVcTTxsNZIZgg";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: Su Yue <suy.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+Message-ID: <8b99e4b3-2866-8154-63be-3c34c137f15d@gmx.com>
+Subject: Re: [PATCH V2.1] btrfs-progs: do not merge tree block refs have
+ different root_id
+References: <20180424055233.6420-1-suy.fnst@cn.fujitsu.com>
+ <20180425051924.2924-1-suy.fnst@cn.fujitsu.com>
+In-Reply-To: <20180425051924.2924-1-suy.fnst@cn.fujitsu.com>
+
+--dDuCQHWInPTnsdqGBJEGgVcTTxsNZIZgg
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
 
-On 04/24/2018 02:50 PM, Qu Wenruo wrote:
-> 
-> 
-> On 2018年04月24日 14:43, Su Yue wrote:
->>
->>
->> On 04/24/2018 02:17 PM, Qu Wenruo wrote:
->>>
->>>
->>> On 2018年04月24日 13:52, Su Yue wrote:
->>>> For an extent item which contains many tree block backrefs, like
->>>> ===============================================================
->>>> In 020-extent-ref-cases/keyed_block_ref.img
->>>>
->>>> item 10 key (29470720 METADATA_ITEM 0) itemoff 3450 itemsize 222
->>>>                   refs 23 gen 10 flags TREE_BLOCK
->>>>                   tree block skinny level 0
->>>>                   tree block backref root 278
->>>>                   tree block backref root 277
->>>>                   tree block backref root 276
->>>>                   tree block backref root 275
->>>>                   tree block backref root 274
->>>>                   tree block backref root 273
->>>>                   tree block backref root 272
->>>>                   tree block backref root 271
->>>>                   tree block backref root 270
->>>>                   tree block backref root 269
->>>>                   tree block backref root 268
->>>>                   tree block backref root 267
->>>>                   tree block backref root 266
->>>>                   tree block backref root 265
->>>>                   tree block backref root 264
->>>>                   tree block backref root 263
->>>>                   tree block backref root 262
->>>>                   tree block backref root 261
->>>>                   tree block backref root 260
->>>>                   tree block backref root 259
->>>>                   tree block backref root 258
->>>>                   tree block backref root 257
->>>> ===============================================================
->>>> In find_parent_nodes(), these refs's parents are 0, then __merge_refs
->>>> will merge refs to one ref. It causes only one root to be returned.
->>>
->>> This is a pretty big problem, and it would cause qgroup verification
->>> code to cause false alerts.
->>>
->>> So a new test case would do great help here.
->>>
->> Let me think how to construct a test case a while.
->> If I remember correctly, the function is called rarely only
->> in check/lowmem check.
->> Check calls it in a very corner case.
->> As you know, extent check in lowmme is buggy which I'm try to fix.
-> 
-> I mean, if the problem is find_parent_nodes() can only return one root,
-> it would definitely cause problem for qgroup_verify_all() function, then
-> it should be pretty easy to craft a test image.
-> 
 
-Unfortunately, qgroup_verify_all() uses another version
-find_parent_roots() written by itself own.
-The test case is hard to create.
+On 2018=E5=B9=B404=E6=9C=8825=E6=97=A5 13:19, Su Yue wrote:
+> For an extent item which contains many tree block backrefs, like
+> =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
+> In 020-extent-ref-cases/keyed_block_ref.img
+>=20
+> item 10 key (29470720 METADATA_ITEM 0) itemoff 3450 itemsize 222
+>                 refs 23 gen 10 flags TREE_BLOCK
+>                 tree block skinny level 0
+>                 tree block backref root 278
+>                 tree block backref root 277
+>                 tree block backref root 276
+>                 tree block backref root 275
+>                 tree block backref root 274
+>                 tree block backref root 273
+>                 tree block backref root 272
+>                 tree block backref root 271
+>                 tree block backref root 270
+>                 tree block backref root 269
+>                 tree block backref root 268
+>                 tree block backref root 267
+>                 tree block backref root 266
+>                 tree block backref root 265
+>                 tree block backref root 264
+>                 tree block backref root 263
+>                 tree block backref root 262
+>                 tree block backref root 261
+>                 tree block backref root 260
+>                 tree block backref root 259
+>                 tree block backref root 258
+>                 tree block backref root 257
+> =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
+> In find_parent_nodes(), these refs's parents are 0, then __merge_refs
+> will merge refs to one ref. It causes only one root to be returned.
+>=20
+> So, if both parents are 0, do not merge refs.
+>=20
+> Lowmem check calls find_parent_nodes frequently to decide whether
+> check an extent buffer or not. The bug influences bytes accounting.
+>=20
+> Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
 
-The best solution still is porting codes from kernel to btrfs-progs.
-But the work needs some time to do.
-The v2.1 version of this patch is temporary fix at present.
+Reviewed-by: Qu Wenruo <wqu@suse.com>
+
+Waiting for the kernel port of backref.c to solve the problem permanently=
+=2E
 
 Thanks,
-Su
-> Thanks,
-> Qu
-> 
->>
->>>>
->>>> So, if both parents are 0, do not merge refs.
->>>>
->>>> Lowmem check calls find_parent_nodes frequently to decide whether.
->>>> check an extent buffer or not. These bug influences bytes accounting.
->>>
->>> Although it looks good so far, and would fix the problem you found, but
->>
->> Fixing another bug in lowmem, found it by accident.
->>
->>> I strongly recommend to port kernel backref code to btrfs-progs here, as
->>> kernel backref code is more tested than btrfs-progs backref code.
->>>
->> It's a fact. Seen backref.c in btrfs-progs, there are many useless codes
->> and confusing logicals.
->> I agree that port kernel backref code to btrfs-progs.
->>
->>> I'm pretty sure we have more bugs in btrfs-progs backref, and I'm not a
->>> big fan of playing whac-a-mole here.
->>>
->>>>
->>>> Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
->>>> ---
->>>>    backref.c | 2 ++
->>>>    1 file changed, 2 insertions(+)
->>>>
->>>> diff --git a/backref.c b/backref.c
->>>> index 51553c702187..daadb6299c79 100644
->>>> --- a/backref.c
->>>> +++ b/backref.c
->>>> @@ -507,6 +507,8 @@ static void __merge_refs(struct pref_state
->>>> *prefstate, int mode)
->>>>                } else {
->>>>                    if (ref1->parent !=ef2->parent)
->>>>                        continue;
->>>> +                if (ref1->parent =0)
->>>> +                    continue;
->>>
->>> It's better to put it above (ref1->parent !=ef2->parent).
->>> As parent =0 means we haven't resolve the parent bytenr yet, so can't
->>> be merged nor compared.
->>
->> Ok, will do it in V2.
->>
->> Thanks,
->> Su
->>>
->>> Thanks,
->>> Qu
->>>
->>>>                }
->>>>                  eie =ef1->inode_list;
->>>>
->>>
->>
->>
->> -- 
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+Qu
+
+> ---
+> Changelog:
+> v2:
+>   Put judgment of ref->parent above comparison.
+>   Add the comment.
+>   Fix typos.
+> v2.1:
+>   Remove the change of adding a new line.
+> ---
+>  backref.c | 6 ++++++
+>  1 file changed, 6 insertions(+)
+>=20
+> diff --git a/backref.c b/backref.c
+> index 51553c702187..23a394edfd02 100644
+> --- a/backref.c
+> +++ b/backref.c
+> @@ -505,6 +505,12 @@ static void __merge_refs(struct pref_state *prefst=
+ate, int mode)
+>  				if (!ref_for_same_block(ref1, ref2))
+>  					continue;
+>  			} else {
+> +				/*
+> +				 * Parent =3D=3D 0 means that the ref is tree block
+> +				 * backref or its parent is unresolved.
+> +				 */
+> +				if (!ref1->parent || !ref2->parent)
+> +					continue;
+>  				if (ref1->parent !=3D ref2->parent)
+>  					continue;
+>  			}
+>=20
 
 
+--dDuCQHWInPTnsdqGBJEGgVcTTxsNZIZgg--
+
+--sz6dfPbe0LR2s1DHkSXDdr98UA8OfEB9g
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlrgHRwACgkQwj2R86El
+/qh0Ygf/b8Ft/b4V04UTeEMzBMhqhVzrJ9tEYbP1gGDYzlOKgRuWfpR47A4mIOhe
+MY9/VLlKi3LyTig0RZ5aperZBzijS3MzOUcLDC8gcS0oCXWbvgtW8nPg0LI89Kau
+wXrA80fAWd5mh4GXbx0gFL3+3xogivRK51UqC1QvFm0pgzGJ07ajH3FbCpInH7GM
+yM1koAcuRzjFKE25HWhujpfMnksJegg3Q5IUvo4ZncwbbyBNCN9ZqibQLjPoa4dM
+v90hpxYUcxX89tjpJCUOzkEWbMdK3ZSNGESAe5/0YtDXaNRZ27cPGx3j2/4WtH8p
+ELZgi6Prz4SnDsbVNy5uBz2PP8bF4g==
+=PeCr
+-----END PGP SIGNATURE-----
+
+--sz6dfPbe0LR2s1DHkSXDdr98UA8OfEB9g--

@@ -1,78 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:57069 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752262AbeDXOYD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 24 Apr 2018 10:24:03 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 8BF17ACB3
-        for <linux-btrfs@vger.kernel.org>; Tue, 24 Apr 2018 14:24:02 +0000 (UTC)
-From: Nikolay Borisov <nborisov@suse.com>
-To: dsterba@suse.cz
-Cc: linux-btrfs@vger.kernel.org, Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH v2] btrfs: Unexport btrfs_alloc_delalloc_work
-Date: Tue, 24 Apr 2018 17:23:59 +0300
-Message-Id: <1524579839-31778-1-git-send-email-nborisov@suse.com>
-In-Reply-To: <1524470057-21969-6-git-send-email-nborisov@suse.com>
-References: <1524470057-21969-6-git-send-email-nborisov@suse.com>
+Received: from [195.159.176.226] ([195.159.176.226]:39005 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1750841AbeDYGdi (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 25 Apr 2018 02:33:38 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-3@m.gmane.org>)
+        id 1fBDxd-0003GJ-T7
+        for linux-btrfs@vger.kernel.org; Wed, 25 Apr 2018 08:31:25 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Btrfs progs release 4.16.1
+Date: Wed, 25 Apr 2018 06:31:20 +0000 (UTC)
+Message-ID: <pan$3f697$9cfd5cd2$6e9f2dc3$73937e71@cox.net>
+References: <20180424115857.25174-1-dsterba@suse.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It's used only in inode.c so makes no sense to have it exported. Also
-move the definition of btrfs_delalloc_work to inode.c since it's used
-only this file.
+David Sterba posted on Tue, 24 Apr 2018 13:58:57 +0200 as excerpted:
 
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
----
- fs/btrfs/ctree.h | 9 ---------
- fs/btrfs/inode.c | 8 ++++++++
- 2 files changed, 8 insertions(+), 9 deletions(-)
+> btrfs-progs version 4.16.1 have been released.  This is a bugfix
+> release.
+> 
+> Changes:
+> 
+>   * remove obsolete tools: btrfs-debug-tree, btrfs-zero-log,
+>   btrfs-show-super, btrfs-calc-size
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 91f51a80334f..fd7ad63d51cc 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3163,15 +3163,6 @@ void btrfs_extent_item_to_extent_map(struct btrfs_inode *inode,
- 				     struct extent_map *em);
- 
- /* inode.c */
--struct btrfs_delalloc_work {
--	struct inode *inode;
--	struct completion completion;
--	struct list_head list;
--	struct btrfs_work work;
--};
--
--struct btrfs_delalloc_work *btrfs_alloc_delalloc_work(struct inode *inode);
--
- struct extent_map *btrfs_get_extent_fiemap(struct btrfs_inode *inode,
- 		struct page *page, size_t pg_offset, u64 start,
- 		u64 len, int create);
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 9b8f2904ad55..078e02c21825 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -10145,6 +10145,13 @@ static int btrfs_rename2(struct inode *old_dir, struct dentry *old_dentry,
- 	return btrfs_rename(old_dir, old_dentry, new_dir, new_dentry, flags);
- }
- 
-+struct btrfs_delalloc_work {
-+	struct inode *inode;
-+	struct completion completion;
-+	struct list_head list;
-+	struct btrfs_work work;
-+};
-+
- static void btrfs_run_delalloc_work(struct btrfs_work *work)
- {
- 	struct btrfs_delalloc_work *delalloc_work;
-@@ -10162,6 +10169,7 @@ static void btrfs_run_delalloc_work(struct btrfs_work *work)
- 	complete(&delalloc_work->completion);
- }
- 
-+static
- struct btrfs_delalloc_work *btrfs_alloc_delalloc_work(struct inode *inode)
- {
- 	struct btrfs_delalloc_work *work;
+Cue the admin-side gripes about developer definitions of micro-upgrade 
+explicit "bugfix release" that allow disappearance of "obsolete tools".
+
+Arguably such removals can be expected in a "feature release", but 
+shouldn't surprise unsuspecting admins doing a micro-version upgrade 
+that's specifically billed as a "bugfix release".
+
+(Further support for btrfs being "still stabilizing, not yet fully stable 
+and mature."  But development mode habits need to end /sometime/, if 
+stability is indeed a goal.) 
+
 -- 
-2.7.4
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

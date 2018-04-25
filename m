@@ -1,44 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f66.google.com ([209.85.214.66]:54635 "EHLO
-        mail-it0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752439AbeDYLtU (ORCPT
+Received: from aserp2130.oracle.com ([141.146.126.79]:46062 "EHLO
+        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753022AbeDYK7e (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 25 Apr 2018 07:49:20 -0400
-Received: by mail-it0-f66.google.com with SMTP id h143-v6so19567435ita.4
-        for <linux-btrfs@vger.kernel.org>; Wed, 25 Apr 2018 04:49:20 -0700 (PDT)
-Subject: Re: Btrfs progs release 4.16.1
-To: Christoph Anton Mitterer <calestyo@scientia.net>,
-        linux-btrfs@vger.kernel.org
-References: <20180424115857.25174-1-dsterba@suse.com>
- <pan$3f697$9cfd5cd2$6e9f2dc3$73937e71@cox.net>
- <20180425110234.GN21272@twin.jikos.cz>
- <64535388-9024-087c-3d67-4425cd4b0292@gmail.com>
- <8c13c7b8794cb214b4a34078d24f4ffd7bd56f25.camel@scientia.net>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <efdc6077-1eb5-5fc1-b597-4e1d03a0de0a@gmail.com>
-Date: Wed, 25 Apr 2018 07:49:17 -0400
-MIME-Version: 1.0
-In-Reply-To: <8c13c7b8794cb214b4a34078d24f4ffd7bd56f25.camel@scientia.net>
-Content-Type: text/plain; charset=utf-8; format=flowed
+        Wed, 25 Apr 2018 06:59:34 -0400
+Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
+        by aserp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w3PAuNIt010190
+        for <linux-btrfs@vger.kernel.org>; Wed, 25 Apr 2018 10:59:33 GMT
+Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
+        by aserp2130.oracle.com with ESMTP id 2hftty67fx-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Wed, 25 Apr 2018 10:59:33 +0000
+Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
+        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w3PAxWNl014580
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Wed, 25 Apr 2018 10:59:32 GMT
+Received: from abhmp0006.oracle.com (abhmp0006.oracle.com [141.146.116.12])
+        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w3PAxWXe006940
+        for <linux-btrfs@vger.kernel.org>; Wed, 25 Apr 2018 10:59:32 GMT
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 0/3] enhance btrfs_raid_array[]
+Date: Wed, 25 Apr 2018 19:01:41 +0800
+Message-Id: <20180425110144.12871-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2018-04-25 07:29, Christoph Anton Mitterer wrote:
-> On Wed, 2018-04-25 at 07:22 -0400, Austin S. Hemmelgarn wrote:
->> While I can understand Duncan's point here, I'm inclined to agree
->> with
->> David
-> 
-> Same from my side... and I run a multi-PiB storage site (though not
-> with btrfs).
-> 
-> Cosmetically one shouldn't do this in a bugfix release, this should
-> have really no impact on the real world.
-> 
-> The typical sysadmin will anyway use some stable distribution... and is
-> there any which ships already 4.16?
-Arch, Gentoo, and Void all have it ATM, but whether or not you want to 
-consider them stable is another question.
+Cleanup patches as in the individual change log.
 
-OpenSUSE Tumbleweed and Fedora Rawhide also have 4.16, though those are 
-also of questionable stability.
+These patches were sent independently as they aren't related as such,
+but as I am updating the 1/3 the 2/3 would endup with conflict. So
+here I am putting all of them together with the conflict fixed at
+my end. And as such there is no change in 2/3 and 3/3 from its v1.
+
+Anand Jain (3):
+  btrfs: kill btrfs_raid_type_names[]
+  btrfs: kill btrfs_raid_group[]
+  btrfs: kill btrfs_raid_mindev_error[]
+
+ fs/btrfs/disk-io.c     |  2 +-
+ fs/btrfs/extent-tree.c | 20 +------------------
+ fs/btrfs/volumes.c     | 54 +++++++++++++++++++++++++++-----------------------
+ fs/btrfs/volumes.h     |  7 +++++--
+ 4 files changed, 36 insertions(+), 47 deletions(-)
+
+-- 
+2.7.0
+

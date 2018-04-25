@@ -1,125 +1,161 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.15]:53139 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1755919AbeDXGC6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 24 Apr 2018 02:02:58 -0400
-Subject: Re: [PATCH 1/3] btrfs-progs: remove comments about delayed ref in
- backref.c
-To: Su Yue <suy.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:43205 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1751064AbeDYF3I (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 25 Apr 2018 01:29:08 -0400
+Subject: Re: [PATCH 3/3] btrfs-progs: do not merge tree block refs have
+ different root_id
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>, <linux-btrfs@vger.kernel.org>
 References: <20180424055233.6420-1-suy.fnst@cn.fujitsu.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <59c132d1-f6eb-708d-2c8f-96533ac9ce59@gmx.com>
-Date: Tue, 24 Apr 2018 14:02:39 +0800
+ <20180424055233.6420-3-suy.fnst@cn.fujitsu.com>
+ <5de2f409-32e4-7e23-3589-e89c2e7510c3@gmx.com>
+ <c40ab3ef-5495-74be-489c-1704eac9f77f@cn.fujitsu.com>
+ <ae2fa324-0e8b-9641-d957-37c941344321@gmx.com>
+From: Su Yue <suy.fnst@cn.fujitsu.com>
+Message-ID: <ebb7fe99-6b0c-e3ed-c16d-bd1064545e36@cn.fujitsu.com>
+Date: Wed, 25 Apr 2018 13:34:41 +0800
 MIME-Version: 1.0
-In-Reply-To: <20180424055233.6420-1-suy.fnst@cn.fujitsu.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="X0CHMlvfXP0PHsfg31CCzr5ydLZOpHiGT"
+In-Reply-To: <ae2fa324-0e8b-9641-d957-37c941344321@gmx.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---X0CHMlvfXP0PHsfg31CCzr5ydLZOpHiGT
-Content-Type: multipart/mixed; boundary="okn8XSUaeNPeQz8dbKKTMVzgnGdsdoRi4";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Su Yue <suy.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-Message-ID: <59c132d1-f6eb-708d-2c8f-96533ac9ce59@gmx.com>
-Subject: Re: [PATCH 1/3] btrfs-progs: remove comments about delayed ref in
- backref.c
-References: <20180424055233.6420-1-suy.fnst@cn.fujitsu.com>
-In-Reply-To: <20180424055233.6420-1-suy.fnst@cn.fujitsu.com>
-
---okn8XSUaeNPeQz8dbKKTMVzgnGdsdoRi4
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
 
 
+On 04/24/2018 02:50 PM, Qu Wenruo wrote:
+> 
+> 
+> On 2018年04月24日 14:43, Su Yue wrote:
+>>
+>>
+>> On 04/24/2018 02:17 PM, Qu Wenruo wrote:
+>>>
+>>>
+>>> On 2018年04月24日 13:52, Su Yue wrote:
+>>>> For an extent item which contains many tree block backrefs, like
+>>>> ===============================================================
+>>>> In 020-extent-ref-cases/keyed_block_ref.img
+>>>>
+>>>> item 10 key (29470720 METADATA_ITEM 0) itemoff 3450 itemsize 222
+>>>>                   refs 23 gen 10 flags TREE_BLOCK
+>>>>                   tree block skinny level 0
+>>>>                   tree block backref root 278
+>>>>                   tree block backref root 277
+>>>>                   tree block backref root 276
+>>>>                   tree block backref root 275
+>>>>                   tree block backref root 274
+>>>>                   tree block backref root 273
+>>>>                   tree block backref root 272
+>>>>                   tree block backref root 271
+>>>>                   tree block backref root 270
+>>>>                   tree block backref root 269
+>>>>                   tree block backref root 268
+>>>>                   tree block backref root 267
+>>>>                   tree block backref root 266
+>>>>                   tree block backref root 265
+>>>>                   tree block backref root 264
+>>>>                   tree block backref root 263
+>>>>                   tree block backref root 262
+>>>>                   tree block backref root 261
+>>>>                   tree block backref root 260
+>>>>                   tree block backref root 259
+>>>>                   tree block backref root 258
+>>>>                   tree block backref root 257
+>>>> ===============================================================
+>>>> In find_parent_nodes(), these refs's parents are 0, then __merge_refs
+>>>> will merge refs to one ref. It causes only one root to be returned.
+>>>
+>>> This is a pretty big problem, and it would cause qgroup verification
+>>> code to cause false alerts.
+>>>
+>>> So a new test case would do great help here.
+>>>
+>> Let me think how to construct a test case a while.
+>> If I remember correctly, the function is called rarely only
+>> in check/lowmem check.
+>> Check calls it in a very corner case.
+>> As you know, extent check in lowmme is buggy which I'm try to fix.
+> 
+> I mean, if the problem is find_parent_nodes() can only return one root,
+> it would definitely cause problem for qgroup_verify_all() function, then
+> it should be pretty easy to craft a test image.
+> 
 
-On 2018=E5=B9=B404=E6=9C=8824=E6=97=A5 13:52, Su Yue wrote:
-> There is no delayed ref in btrfs-progs, so remove related comments.
->=20
+Unfortunately, qgroup_verify_all() uses another version
+find_parent_roots() written by itself own.
+The test case is hard to create.
 
-Indeed.
-Delayed ref is only used to speed up extent tree modification with the
-cost of code complexity.
-
-For btrfs-progs we don't need to worry about it at all.
+The best solution still is porting codes from kernel to btrfs-progs.
+But the work needs some time to do.
+The v2.1 version of this patch is temporary fix at present.
 
 Thanks,
-Qu
+Su
+> Thanks,
+> Qu
+> 
+>>
+>>>>
+>>>> So, if both parents are 0, do not merge refs.
+>>>>
+>>>> Lowmem check calls find_parent_nodes frequently to decide whether.
+>>>> check an extent buffer or not. These bug influences bytes accounting.
+>>>
+>>> Although it looks good so far, and would fix the problem you found, but
+>>
+>> Fixing another bug in lowmem, found it by accident.
+>>
+>>> I strongly recommend to port kernel backref code to btrfs-progs here, as
+>>> kernel backref code is more tested than btrfs-progs backref code.
+>>>
+>> It's a fact. Seen backref.c in btrfs-progs, there are many useless codes
+>> and confusing logicals.
+>> I agree that port kernel backref code to btrfs-progs.
+>>
+>>> I'm pretty sure we have more bugs in btrfs-progs backref, and I'm not a
+>>> big fan of playing whac-a-mole here.
+>>>
+>>>>
+>>>> Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
+>>>> ---
+>>>>    backref.c | 2 ++
+>>>>    1 file changed, 2 insertions(+)
+>>>>
+>>>> diff --git a/backref.c b/backref.c
+>>>> index 51553c702187..daadb6299c79 100644
+>>>> --- a/backref.c
+>>>> +++ b/backref.c
+>>>> @@ -507,6 +507,8 @@ static void __merge_refs(struct pref_state
+>>>> *prefstate, int mode)
+>>>>                } else {
+>>>>                    if (ref1->parent !=ef2->parent)
+>>>>                        continue;
+>>>> +                if (ref1->parent =0)
+>>>> +                    continue;
+>>>
+>>> It's better to put it above (ref1->parent !=ef2->parent).
+>>> As parent =0 means we haven't resolve the parent bytenr yet, so can't
+>>> be merged nor compared.
+>>
+>> Ok, will do it in V2.
+>>
+>> Thanks,
+>> Su
+>>>
+>>> Thanks,
+>>> Qu
+>>>
+>>>>                }
+>>>>                  eie =ef1->inode_list;
+>>>>
+>>>
+>>
+>>
+>> -- 
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
 
-> Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
-> ---
->  backref.c | 19 +++----------------
->  1 file changed, 3 insertions(+), 16 deletions(-)
->=20
-> diff --git a/backref.c b/backref.c
-> index 27309e07a1e9..c144dbf060f2 100644
-> --- a/backref.c
-> +++ b/backref.c
-> @@ -155,19 +155,6 @@ static void init_pref_state(struct pref_state *pre=
-fstate)
->   * - if you cannot add the parent or a correct key, then we will look =
-into the
->   *   block later to set a correct key
->   *
-> - * delayed refs
-> - * =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
-> - *        backref type | shared | indirect | shared | indirect
-> - * information         |   tree |     tree |   data |     data
-> - * --------------------+--------+----------+--------+----------
-> - *      parent logical |    y   |     -    |    -   |     -
-> - *      key to resolve |    -   |     y    |    y   |     y
-> - *  tree block logical |    -   |     -    |    -   |     -
-> - *  root for resolving |    y   |     y    |    y   |     y
-> - *
-> - * - column 1:       we've the parent -> done
-> - * - column 2, 3, 4: we use the key to find the parent
-> - *
->   * on disk refs (inline or keyed)
->   * =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
-=3D=3D=3D=3D=3D=3D=3D
->   *        backref type | shared | indirect | shared | indirect
-> @@ -735,9 +722,9 @@ static int __add_keyed_refs(struct btrfs_fs_info *f=
-s_info,
->  }
-> =20
->  /*
-> - * this adds all existing backrefs (inline backrefs, backrefs and dela=
-yed
-> - * refs) for the given bytenr to the refs list, merges duplicates and =
-resolves
-> - * indirect refs to their parent bytenr.
-> + * this adds all existing backrefs (inline backrefs, backrefs for the =
-given
-> + * bytenr to the refs list, merges duplicates and resolves indirect re=
-fs to
-> + * their parent bytenr.
->   * When roots are found, they're added to the roots list
->   *
->   * FIXME some caching might speed things up
->=20
 
-
---okn8XSUaeNPeQz8dbKKTMVzgnGdsdoRi4--
-
---X0CHMlvfXP0PHsfg31CCzr5ydLZOpHiGT
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlreyIAACgkQwj2R86El
-/qiXJgf/RVxVGI21vTkKpPHG079ANU4Yz/dXFG6zxzVntoOP0l8vNx1Sa3fWqU2W
-UM4vB8xZ+oJHI1rnZ0VpodGa1C7Q0PuIg/bkjj7voVXzeFmTHlJ31Lx6PiHPcmd6
-fimXwZN+Dz/4MyztdQjfYHbwSj5sBRZ/x72Nf9SfKUTsixDQg0PiejM5XtQONMHM
-bTmRpjMR9D6PY9/pd/ntIY/EsAN4Z08S0cR0SvGYQfQZdbhgg4BKjRg1/WCVGs2/
-eCPNNuVaTzRfVp1IeoBaX0/3+h+dcY/yP0REicc+jfZEA8dVdm6tmUr/TS1bnf4W
-zYjYvp+AfxEK1LHXcAj+waI/oJXg3g==
-=lvSJ
------END PGP SIGNATURE-----
-
---X0CHMlvfXP0PHsfg31CCzr5ydLZOpHiGT--

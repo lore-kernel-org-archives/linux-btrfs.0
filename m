@@ -1,18 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:58208 "EHLO
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:57593 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1756138AbeDXFq4 (ORCPT
+        with ESMTP id S1750862AbeDYFNo (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 24 Apr 2018 01:46:56 -0400
+        Wed, 25 Apr 2018 01:13:44 -0400
 Received: from G08CNEXCHPEKD03.g08.fujitsu.local (unknown [10.167.33.85])
-        by cn.fujitsu.com (Postfix) with ESMTP id 938B349F19D1
-        for <linux-btrfs@vger.kernel.org>; Tue, 24 Apr 2018 13:46:50 +0800 (CST)
+        by cn.fujitsu.com (Postfix) with ESMTP id 7574A49F19DD
+        for <linux-btrfs@vger.kernel.org>; Wed, 25 Apr 2018 13:13:39 +0800 (CST)
 From: Su Yue <suy.fnst@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-CC: <suy.fnst@cn.fujitsu.com>
-Subject: [PATCH 3/3] btrfs-progs: do not merge tree block refs have different root_id
-Date: Tue, 24 Apr 2018 13:52:33 +0800
-Message-ID: <20180424055233.6420-3-suy.fnst@cn.fujitsu.com>
+Subject: [PATCH V2.1] btrfs-progs: do not merge tree block refs have different root_id
+Date: Wed, 25 Apr 2018 13:19:24 +0800
+Message-ID: <20180425051924.2924-1-suy.fnst@cn.fujitsu.com>
 In-Reply-To: <20180424055233.6420-1-suy.fnst@cn.fujitsu.com>
 References: <20180424055233.6420-1-suy.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -55,27 +54,39 @@ will merge refs to one ref. It causes only one root to be returned.
 
 So, if both parents are 0, do not merge refs.
 
-Lowmem check calls find_parent_nodes frequently to decide whether.
-check an extent buffer or not. These bug influences bytes accounting.
+Lowmem check calls find_parent_nodes frequently to decide whether
+check an extent buffer or not. The bug influences bytes accounting.
 
 Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
 ---
- backref.c | 2 ++
- 1 file changed, 2 insertions(+)
+Changelog:
+v2:
+  Put judgment of ref->parent above comparison.
+  Add the comment.
+  Fix typos.
+v2.1:
+  Remove the change of adding a new line.
+---
+ backref.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
 diff --git a/backref.c b/backref.c
-index 51553c702187..daadb6299c79 100644
+index 51553c702187..23a394edfd02 100644
 --- a/backref.c
 +++ b/backref.c
-@@ -507,6 +507,8 @@ static void __merge_refs(struct pref_state *prefstate, int mode)
+@@ -505,6 +505,12 @@ static void __merge_refs(struct pref_state *prefstate, int mode)
+ 				if (!ref_for_same_block(ref1, ref2))
+ 					continue;
  			} else {
++				/*
++				 * Parent == 0 means that the ref is tree block
++				 * backref or its parent is unresolved.
++				 */
++				if (!ref1->parent || !ref2->parent)
++					continue;
  				if (ref1->parent != ref2->parent)
  					continue;
-+				if (ref1->parent == 0)
-+					continue;
  			}
- 
- 			eie = ref1->inode_list;
 -- 
 2.17.0
 

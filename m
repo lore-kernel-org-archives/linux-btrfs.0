@@ -1,42 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:37872 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:39409 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1758503AbeD1RNP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 28 Apr 2018 13:13:15 -0400
-Date: Sat, 28 Apr 2018 19:10:39 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Noah Massey <noah.massey@gmail.com>
-Cc: David Sterba <dsterba@suse.cz>, Jeff Mahoney <jeffm@suse.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 1/3] btrfs: qgroups, fix rescan worker running races
-Message-ID: <20180428171039.GK21272@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+        id S1752826AbeDZTX4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 26 Apr 2018 15:23:56 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 6AEF2AE14
+        for <linux-btrfs@vger.kernel.org>; Thu, 26 Apr 2018 19:23:55 +0000 (UTC)
+From: jeffm@suse.com
+To: linux-btrfs@vger.kernel.org
+Cc: Jeff Mahoney <jeffm@suse.com>
+Subject: [PATCH 3/3] btrfs: qgroup, don't try to insert status item after ENOMEM in rescan worker
+Date: Thu, 26 Apr 2018 15:23:51 -0400
+Message-Id: <20180426192351.473-3-jeffm@suse.com>
+In-Reply-To: <20180426192351.473-1-jeffm@suse.com>
 References: <20180426192351.473-1-jeffm@suse.com>
- <20180427155608.GC21272@twin.jikos.cz>
- <CADfjVrh0NozrDu=tzAS+pgksrZOzt2QxXYV_vOOo8csXpzkf-Q@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CADfjVrh0NozrDu=tzAS+pgksrZOzt2QxXYV_vOOo8csXpzkf-Q@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Apr 27, 2018 at 03:28:44PM -0400, Noah Massey wrote:
-> On Fri, Apr 27, 2018 at 11:56 AM, David Sterba <dsterba@suse.cz> wrote:
-> > On Thu, Apr 26, 2018 at 03:23:49PM -0400, jeffm@suse.com wrote:
-> >> From: Jeff Mahoney <jeffm@suse.com>
-> >>
-> >> Commit d2c609b834d6 (Btrfs: fix qgroup rescan worker initialization)
-...
-> >>
-> >> Fixes: d2c609b834d6 (Btrfs: fix qgroup rescan worker initialization)
-> >> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
-> >
-> > I've added this to misc-next as I'd like to push it to the next rc. The
-> > Fixes is fixed.
-> >
-> 
-> I don't see it pushed to misc-next yet, but based on f89fbcd776, could
-> you update the reference in the first line of the commit to match the
-> Fixes line?
+From: Jeff Mahoney <jeffm@suse.com>
 
-Fixed, thanks for the notice.
+If we fail to allocate memory for a path, don't bother trying to
+insert the qgroup status item.  We haven't done anything yet and it'll
+fail also.  Just print an error and be done with it.
+
+Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+---
+ fs/btrfs/qgroup.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index 8de423a0c7e3..4c0978bce5b9 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -2648,7 +2648,6 @@ static void btrfs_qgroup_rescan_worker(struct btrfs_work *work)
+ 			btrfs_end_transaction(trans);
+ 	}
+ 
+-out:
+ 	btrfs_free_path(path);
+ 
+ 	mutex_lock(&fs_info->qgroup_rescan_lock);
+@@ -2688,6 +2687,7 @@ static void btrfs_qgroup_rescan_worker(struct btrfs_work *work)
+ 		btrfs_info(fs_info, "qgroup scan completed%s",
+ 			err > 0 ? " (inconsistency flag cleared)" : "");
+ 	} else {
++out:
+ 		btrfs_err(fs_info, "qgroup scan failed with %d", err);
+ 	}
+ 
+-- 
+2.12.3
+

@@ -1,109 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.18]:49137 "EHLO mout.gmx.net"
+Received: from mx2.suse.de ([195.135.220.15]:38084 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750791AbeDXXoi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 24 Apr 2018 19:44:38 -0400
-Subject: Re: [PATCH v2] btrfs: print-tree: Add locking status output for debug
- build
-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-References: <20180424050313.32740-1-wqu@suse.com>
- <20180424144452.GJ21272@twin.jikos.cz>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <bfa4ebf4-295f-2af1-f001-3287b4b6d51c@gmx.com>
-Date: Wed, 25 Apr 2018 07:44:24 +0800
+        id S1755172AbeDZN1e (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 26 Apr 2018 09:27:34 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 53063ABE4
+        for <linux-btrfs@vger.kernel.org>; Thu, 26 Apr 2018 13:27:33 +0000 (UTC)
+Date: Thu, 26 Apr 2018 15:24:59 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: trace: Add trace points for unused block groups
+Message-ID: <20180426132459.GU21272@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20180426091720.24185-1-wqu@suse.com>
 MIME-Version: 1.0
-In-Reply-To: <20180424144452.GJ21272@twin.jikos.cz>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="Ned6o5xB1UaoYbzBNReLyNuBZwXNgiznB"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20180426091720.24185-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---Ned6o5xB1UaoYbzBNReLyNuBZwXNgiznB
-Content-Type: multipart/mixed; boundary="AlAd0GUcgdMPllaBw5goIHg3BPYnaSMtX";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Message-ID: <bfa4ebf4-295f-2af1-f001-3287b4b6d51c@gmx.com>
-Subject: Re: [PATCH v2] btrfs: print-tree: Add locking status output for debug
- build
-References: <20180424050313.32740-1-wqu@suse.com>
- <20180424144452.GJ21272@twin.jikos.cz>
-In-Reply-To: <20180424144452.GJ21272@twin.jikos.cz>
+On Thu, Apr 26, 2018 at 05:17:20PM +0800, Qu Wenruo wrote:
+> This patch will add the following trace events:
+> 1) btrfs_remove_block_group
+>    For btrfs_remove_block_group() function.
+>    Triggered when a block group is really removed.
+> 
+> 2) btrfs_add_unused_block_group
+>    Triggered which block group is added to unused_bgs list.
+> 
+> 3) btrfs_skip_unused_block_group
+>    Triggered which unused block group is not deleted.
+> 
+> These trace events is pretty handy to debug case related to block group
+> auto remove.
 
---AlAd0GUcgdMPllaBw5goIHg3BPYnaSMtX
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+Sounds useful.
 
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
 
+> +DECLARE_EVENT_CLASS(btrfs__block_group,
+> +	TP_PROTO(const struct btrfs_block_group_cache *bg_cache),
+> +
+> +	TP_ARGS(bg_cache),
+> +
+> +	TP_STRUCT__entry_btrfs(
+> +		__field(	u64,	bytenr		)
+> +		__field(	u64,	flags		)
+> +		__field(	u64,	len		)
+> +		__field(	u64,	used		)
+> +	),
+> +
+> +	TP_fast_assign_btrfs(bg_cache->fs_info,
+> +		__entry->bytenr = bg_cache->key.objectid,
+> +		__entry->len	= bg_cache->key.offset,
+> +		__entry->flags	= bg_cache->flags;
+> +		__entry->used	= btrfs_block_group_used(&bg_cache->item);
+> +	),
+> +
+> +	TP_printk_btrfs("bg bytenr=%llu len=%llu used=%llu flags=%llu(%s)",
+> +		__entry->bytenr, __entry->len, __entry->used, __entry->flags,
+> +		__print_flags(__entry->flags, "|", BTRFS_GROUP_FLAGS))
 
-On 2018=E5=B9=B404=E6=9C=8824=E6=97=A5 22:44, David Sterba wrote:
-> On Tue, Apr 24, 2018 at 01:03:13PM +0800, Qu Wenruo wrote:
->> It's pretty handy if we can get debug output for locking status of an
->> extent buffer, specially for race related debugging.
->>
->> So add the following output for btrfs_print_tree() and
->> btrfs_print_leaf():
->> - refs
->> - write_locks (as w:%d)
->> - read_locks (as r:%d)
->> - blocking_writers (as bw:%d)
->> - blocking_readers (as br:%d)
->> - spinning_writers (as sw:%d)
->> - spinning_readers (as sr:%d)
->> - lock_owner
->> - current->pid
->=20
-> This is fine
->=20
->> +	btrfs_info(eb->fs_info,
->=20
-> I'd rather make that btrfs_debug, but info is fine as long as it's unde=
-r
-> CONFIG_BTRFS_DEBUG.
->=20
->> +"refs %u lock(w:%u r:%u bw:%u br:%u sw:%u sr:%u) lock_owner %u curren=
-t %u",
->=20
-> This is not :) but I'll fix that according to the above.
+I've reorered the fields so they're sorted the same way in all 3
+sections, as defined in the printk (bytenr, len, used, flags).
 
-Not again...
-I forgot to commit the change, no wonder everything is the same and need
-to modify the patch commit message.
-Sorry for the inconvenience.
-
-Thanks,
-Qu
-
->=20
-> Reviewed-by: David Sterba <dsterba@suse.com>
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->=20
-
-
---AlAd0GUcgdMPllaBw5goIHg3BPYnaSMtX--
-
---Ned6o5xB1UaoYbzBNReLyNuBZwXNgiznB
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlrfwVgACgkQwj2R86El
-/qgSjgf/UXXnBBrELI6PBAhKVR8s3M/QJDBMLlu9mdsWMdbO+rBpam04s81MrLSR
-KNq5yHTgs5O8Ieuev4CNFim2hGFEZUAFA405Zp29689CgHdTRfW7Mn5jj7VYyTEJ
-a5JdZPqTinHvN/P/ZV/mh34Fa/E9wGF1u9hwWAjWby7lw5tUNwMm+JJSEid6ed6m
-cmpcaUqC1rxBMpHhGRDBJYdabM5Cwh3CBuffHWWKvFBu+kf0ffQJ4To6f3E/ZHqZ
-wVQpb9+n4WQyy2b6ryN1LtrVmx8nhnCQzK9QEHo+8tVAxX59RQCravVN4/LBf1IK
-H7mTfRX3+vG0m1pOQXcePbrRnwru2Q==
-=1Jbz
------END PGP SIGNATURE-----
-
---Ned6o5xB1UaoYbzBNReLyNuBZwXNgiznB--
+Reviewed-by: David Sterba <dsterba@suse.com>

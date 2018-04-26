@@ -1,55 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f68.google.com ([209.85.215.68]:40026 "EHLO
-        mail-lf0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750853AbeDXXlB (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 24 Apr 2018 19:41:01 -0400
-Received: by mail-lf0-f68.google.com with SMTP id j16-v6so5563966lfb.7
-        for <linux-btrfs@vger.kernel.org>; Tue, 24 Apr 2018 16:41:00 -0700 (PDT)
-From: Timofey Titovets <nefelim4ag@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Timofey Titovets <nefelim4ag@gmail.com>
-Subject: [PATCH 4/4] [RESEND] Btrfs: reduce size of struct btrfs_inode
-Date: Wed, 25 Apr 2018 02:37:17 +0300
-Message-Id: <20180424233717.31283-5-nefelim4ag@gmail.com>
-In-Reply-To: <20180424233717.31283-1-nefelim4ag@gmail.com>
+Received: from mx2.suse.de ([195.135.220.15]:39631 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1756424AbeDZNom (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 26 Apr 2018 09:44:42 -0400
+Date: Thu, 26 Apr 2018 15:42:06 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Timofey Titovets <nefelim4ag@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 4/4] [RESEND] Btrfs: reduce size of struct btrfs_inode
+Message-ID: <20180426134206.GV21272@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <20180424233717.31283-1-nefelim4ag@gmail.com>
+ <20180424233717.31283-5-nefelim4ag@gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20180424233717.31283-5-nefelim4ag@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Currently btrfs_inode have size equal 1136 bytes. (On x86_64).
+On Wed, Apr 25, 2018 at 02:37:17AM +0300, Timofey Titovets wrote:
+> Currently btrfs_inode have size equal 1136 bytes. (On x86_64).
+> 
+> struct btrfs_inode store several vars releated to compression code,
+> all states use 1 or 2 bits.
+> 
+> Lets declare bitfields for compression releated vars, to reduce
+> sizeof btrfs_inode to 1128 bytes.
 
-struct btrfs_inode store several vars releated to compression code,
-all states use 1 or 2 bits.
+Unfortunatelly, this has no big effect. The inodes are allocated from a
+slab page, that's 4k and there are at most 3 inodes there. Snippet from
+/proc/slabinfo:
 
-Lets declare bitfields for compression releated vars, to reduce
-sizeof btrfs_inode to 1128 bytes.
+# name            <active_objs> <num_objs> <objsize> <objperslab> <pagesperslab>
+btrfs_inode       256043 278943   1096    3    1
 
-Signed-off-by: Timofey Titovets <nefelim4ag@gmail.com>
----
- fs/btrfs/btrfs_inode.h | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+The size on my box is 1096 as it's 4.14, but this should not matter to
+demonstrate the idea.
 
-diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index 9eb0c92ee4b4..9d29d7e68757 100644
---- a/fs/btrfs/btrfs_inode.h
-+++ b/fs/btrfs/btrfs_inode.h
-@@ -181,13 +181,13 @@ struct btrfs_inode {
- 	/*
- 	 * Cached values of inode properties
- 	 */
--	unsigned prop_compress;		/* per-file compression algorithm */
-+	unsigned prop_compress : 2;	/* per-file compression algorithm */
- 	/*
- 	 * Force compression on the file using the defrag ioctl, could be
- 	 * different from prop_compress and takes precedence if set
- 	 */
--	unsigned defrag_compress;
--	unsigned change_compress;
-+	unsigned defrag_compress : 2;
-+	unsigned change_compress : 1;
- 
- 	struct btrfs_delayed_node *delayed_node;
- 
--- 
-2.15.1
+objperslab is 3 here, ie. there are 3 btrfs_inode in the page, and
+there's 4096 - 3 * 1096 = 808 of slack space. In order to pack 4 inodes
+per page, we'd have to squeeze the inode size to 1024 bytes. I've looked
+into that and did not see enough members to remove or substitute. IIRC
+there were like 24-32 bytes possible to shave, but that was it.
+
+Once we'd get to 1024, adding anything new to btrfs_inode would be quite
+difficult and as it goes, there's always something to add to the inode.
+
+So I'd take a different approach, to regroup items and decide by
+cacheline access patterns what to put together and what to separate.
+
+The maximum size of inode before going to 2 objects per page is 1365, so
+there's enough space for cacheline alignments.

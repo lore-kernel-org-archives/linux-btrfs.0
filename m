@@ -1,99 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ua0-f176.google.com ([209.85.217.176]:39672 "EHLO
-        mail-ua0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752722AbeDYNx1 (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:35056 "EHLO
+        mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1756751AbeDZQ2h (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 25 Apr 2018 09:53:27 -0400
-Received: by mail-ua0-f176.google.com with SMTP id g10so14903066ual.6
-        for <linux-btrfs@vger.kernel.org>; Wed, 25 Apr 2018 06:53:27 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <CAFk8rvbzwUyiT0Ey1TkVKAJ6TKoFRgb72z8DwjYaYzATCSEG_A@mail.gmail.com>
-References: <CA+EzBbC7rmYsKjy_+rkwJLK-bmU51q+a4rnezvOoZYyJ8kWGqg@mail.gmail.com>
- <CAJCQCtT7S9Qb-m3-7EXJPwtMT9nuUJjDykHi915KU+fc4fB-aQ@mail.gmail.com>
- <CAHWVdUXeDs+M1HeyiPxLbQHhw8BCW2SXeOGf69Er4_EQP4tgDA@mail.gmail.com> <CAFk8rvbzwUyiT0Ey1TkVKAJ6TKoFRgb72z8DwjYaYzATCSEG_A@mail.gmail.com>
-From: Ashlie Martinez <ashmrtn@utexas.edu>
-Date: Wed, 25 Apr 2018 08:53:26 -0500
-Message-ID: <CAFk8rvaX2dYMVDTkBMOuPZ5vP5pdMkb3aBx5Nq2gRCXFciFFUA@mail.gmail.com>
+        Thu, 26 Apr 2018 12:28:37 -0400
+From: Chris Mason <clm@fb.com>
+To: Jayashree Mohan <jayashree2912@gmail.com>
+CC: linux-btrfs <linux-btrfs@vger.kernel.org>,
+        fstests <fstests@vger.kernel.org>,
+        Vijaychidambaram Velayudhan Pillai <vijay@cs.utexas.edu>
 Subject: Re: Inconsistent behavior of fsync in btrfs
-To: Vijaychidambaram Velayudhan Pillai <vijay@cs.utexas.edu>
-Cc: Chris Murphy <lists@colorremedies.com>,
-        Jayashree Mohan <jayashree2912@gmail.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        fstests <fstests@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Date: Thu, 26 Apr 2018 10:28:22 -0600
+Message-ID: <34B2B717-B12D-44F4-B0D0-E3D606BBEFA6@fb.com>
+In-Reply-To: <CA+EzBbC7rmYsKjy_+rkwJLK-bmU51q+a4rnezvOoZYyJ8kWGqg@mail.gmail.com>
+References: <CA+EzBbC7rmYsKjy_+rkwJLK-bmU51q+a4rnezvOoZYyJ8kWGqg@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Apr 25, 2018 at 7:36 AM, Ashlie Martinez <ashmrtn@utexas.edu> wrote:
-> I don't really know all that much about the btrfs code, but I was
-> digging around to try and find the cause of this. Given the fact that
-> inserting a sleep between the fsyncs gives correct behavior, do you
-> think the issue could be related to how btrfs determines whether or
-> not to log a change to an inode? I found some code in
-> btrfs_log_inode_parent() (part of the fsync path for both files and
-> directories) that appears to check if the inode being fsync-ed is
-> already in the log and, if it is, returns BTRFS_NO_LOG_SYNC [1]. Since
-> in both cases we saw issues where the same inode was either changed
-> parent directories (rename) or was present in multiple directories
-> (hard link), it seems plausible that this could be the problem. Do you
-> have any thoughts on this?
+On 24 Apr 2018, at 20:35, Jayashree Mohan wrote:
+
+> Hi,
 >
-> [1] https://www.google.com/url?q=https://elixir.bootlin.com/linux/v4.16-rc7/source/fs/btrfs/tree-log.c%23L5563&sa=D&source=hangouts&ust=1524702498584000&usg=AFQjCNE_KadcgkZ7xiIhLOzQCFQoet8Lqw
+> While investigating crash consistency bugs on btrfs, we came across
+> workloads that demonstrate inconsistent behavior of fsync.
 >
-> Thanks,
-> Ashlie
+> Consider the following workload where fsync on the directory did not 
+> persist it.
+
+> Only file B/foo gets persisted, and both A/foo and C/foo are missing.
 >
-> On Tue, Apr 24, 2018 at 10:16 PM, Vijaychidambaram Velayudhan Pillai
-> <vijay@cs.utexas.edu> wrote:
->> Hi Chris,
->>
->> On Tue, Apr 24, 2018 at 10:07 PM, Chris Murphy <lists@colorremedies.com> wrote:
->>> I don't have answer to your question,
+> This seems like inconsistent behavior as only the first fsync persists
+> the file, while all others don't seem to. Do you agree if this is
+> indeed incorrect and needs fixing?
+>
+> All the above tests pass on ext4 and xfs.
+>
+> Please let us know what you feel about such inconsistency.
+>
 
-Sending inline just to make sure I get a response (sorry if this is spam):
+The btrfs fsync log is more fine grained than xfs/ext, but fsync(any 
+file) should be enough to persist that file in its current directory.
 
-I don't really know all that much about the btrfs code, but I was
-digging around to try and find the cause of this. Given the fact that
-inserting a sleep between the fsyncs gives correct behavior, do you
-think the issue could be related to how btrfs determines whether or
-not to log a change to an inode? I found some code in
-btrfs_log_inode_parent() (part of the fsync path for both files and
-directories) that appears to check if the inode being fsync-ed is
-already in the log and, if it is, returns BTRFS_NO_LOG_SYNC [1]. Since
-in both cases we saw issues where the same inode was either changed
-parent directories (rename) or was present in multiple directories
-(hard link), it seems plausible that this could be the problem. Do you
-have any thoughts on this?
+I'll get these reproduced and see if we can nail down why we're not 
+logging the location properly.
 
-[1] https://www.google.com/url?q=https://elixir.bootlin.com/linux/v4.16-rc7/source/fs/btrfs/tree-log.c%23L5563&sa=D&source=hangouts&ust=1524702498584000&usg=AFQjCNE_KadcgkZ7xiIhLOzQCFQoet8Lqw
-
-Thanks,
-Ashlie
-
-
- but I'm curious exactly how you
->>> simulate a crash? For my own really rudimentary testing I've been doing
->>> crazy things like:
->>>
->>> # grub-mkconfig -o /boot/efi && echo b > /proc/sysrq-trigger
->>>
->>> And seeing what makes it to disk - or not. And I'm finding a some
->>> non-determinstic results are possible even in a VM which is a bit confusing.
->>> I'm sure with real hardware I'd find even more inconsistency.
->>
->> We are using software we developed called CrashMonkey [1]. It
->> simulates the state on storage after a crash (taking into accounts
->> FLUSH and FUA flags). Talk slides on how it works can be found here
->> [2].
->>
->> It is similar to dm-log-writes if you have used that in the past.
->>
->> [1] https://github.com/utsaslab/crashmonkey
->> [2] http://www.cs.utexas.edu/~vijay/papers/hotstorage17-crashmonkey-slides.pdf
->>
->> Thanks,
->> Vijay Chidambaram
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+-chris

@@ -1,98 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mga18.intel.com ([134.134.136.126]:14164 "EHLO mga18.intel.com"
+Received: from mx2.suse.de ([195.135.220.15]:46548 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750775AbeD1SE5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 28 Apr 2018 14:04:57 -0400
-Date: Sun, 29 Apr 2018 02:04:12 +0800
-From: kbuild test robot <lkp@intel.com>
-To: Nikolay Borisov <nborisov@suse.com>
-Cc: kbuild-all@01.org, linux-btrfs@vger.kernel.org,
-        Nikolay Borisov <nborisov@suse.com>
-Subject: Re: [PATCH v2] btrfs: Unexport and rename btrfs_invalidate_inodes
-Message-ID: <201804290153.kwHLp9AY%fengguang.wu@intel.com>
-References: <1524828984-2797-1-git-send-email-nborisov@suse.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1524828984-2797-1-git-send-email-nborisov@suse.com>
+        id S1757487AbeD0JWM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 27 Apr 2018 05:22:12 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 092FDAC79
+        for <linux-btrfs@vger.kernel.org>; Fri, 27 Apr 2018 09:22:11 +0000 (UTC)
+From: Nikolay Borisov <nborisov@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH 1/5] btrfs: Unexport btrfs_alloc_delalloc_work
+Date: Fri, 27 Apr 2018 12:21:50 +0300
+Message-Id: <1524820914-30864-2-git-send-email-nborisov@suse.com>
+In-Reply-To: <1524820914-30864-1-git-send-email-nborisov@suse.com>
+References: <1524820914-30864-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Nikolay,
+It's used only in inode.c so makes no sense to have it exported. Also
+move the definition of btrfs_delalloc_work to inode.c since it's used
+only this file.
 
-Thank you for the patch! Perhaps something to improve:
-
-[auto build test WARNING on next-20180424]
-[cannot apply to v4.17-rc2 v4.17-rc1 v4.16 v4.17-rc2]
-[if your patch is applied to the wrong git tree, please drop us a note to help improve the system]
-
-url:    https://github.com/0day-ci/linux/commits/Nikolay-Borisov/btrfs-Unexport-and-rename-btrfs_invalidate_inodes/20180428-234332
-reproduce:
-        # apt-get install sparse
-        make ARCH=x86_64 allmodconfig
-        make C=1 CF=-D__CHECK_ENDIAN__
-
-
-sparse warnings: (new ones prefixed by >>)
-
-   fs/btrfs/disk-io.c:4317:17: sparse: undefined identifier 'btrfs_invalidate_inodes'
-   fs/btrfs/disk-io.c:295:27: sparse: expression using sizeof(void)
-   fs/btrfs/disk-io.c:295:27: sparse: expression using sizeof(void)
-   fs/btrfs/disk-io.c:2257:39: sparse: expression using sizeof(void)
-   fs/btrfs/disk-io.c:2257:39: sparse: expression using sizeof(void)
-   fs/btrfs/disk-io.c:2298:39: sparse: expression using sizeof(void)
-   fs/btrfs/disk-io.c:2298:39: sparse: expression using sizeof(void)
-   fs/btrfs/disk-io.c:2560:37: sparse: expression using sizeof(void)
-   fs/btrfs/disk-io.c:2788:31: sparse: expression using sizeof(void)
-   fs/btrfs/disk-io.c:3191:17: sparse: incompatible types in comparison expression (different address spaces)
-   fs/btrfs/disk-io.c:3523:33: sparse: expression using sizeof(void)
-   fs/btrfs/disk-io.c:3523:33: sparse: expression using sizeof(void)
-   fs/btrfs/disk-io.c:3532:33: sparse: expression using sizeof(void)
-   fs/btrfs/disk-io.c:3532:33: sparse: expression using sizeof(void)
->> fs/btrfs/disk-io.c:4317:40: sparse: call with no type!
-   fs/btrfs/disk-io.c: In function 'btrfs_destroy_delalloc_inodes':
-   fs/btrfs/disk-io.c:4317:3: error: implicit declaration of function 'btrfs_invalidate_inodes'; did you mean 'btrfs_update_inode'? [-Werror=implicit-function-declaration]
-      btrfs_invalidate_inodes(btrfs_inode->root);
-      ^~~~~~~~~~~~~~~~~~~~~~~
-      btrfs_update_inode
-   cc1: some warnings being treated as errors
-
-vim +4317 fs/btrfs/disk-io.c
-
-acce952b0 liubo        2011-01-06  4297  
-143bede52 Jeff Mahoney 2012-03-01  4298  static void btrfs_destroy_delalloc_inodes(struct btrfs_root *root)
-acce952b0 liubo        2011-01-06  4299  {
-acce952b0 liubo        2011-01-06  4300  	struct btrfs_inode *btrfs_inode;
-acce952b0 liubo        2011-01-06  4301  	struct list_head splice;
-acce952b0 liubo        2011-01-06  4302  
-acce952b0 liubo        2011-01-06  4303  	INIT_LIST_HEAD(&splice);
-acce952b0 liubo        2011-01-06  4304  
-eb73c1b7c Miao Xie     2013-05-15  4305  	spin_lock(&root->delalloc_lock);
-eb73c1b7c Miao Xie     2013-05-15  4306  	list_splice_init(&root->delalloc_inodes, &splice);
-acce952b0 liubo        2011-01-06  4307  
-acce952b0 liubo        2011-01-06  4308  	while (!list_empty(&splice)) {
-eb73c1b7c Miao Xie     2013-05-15  4309  		btrfs_inode = list_first_entry(&splice, struct btrfs_inode,
-acce952b0 liubo        2011-01-06  4310  					       delalloc_inodes);
-acce952b0 liubo        2011-01-06  4311  
-acce952b0 liubo        2011-01-06  4312  		list_del_init(&btrfs_inode->delalloc_inodes);
-df0af1a57 Miao Xie     2013-01-29  4313  		clear_bit(BTRFS_INODE_IN_DELALLOC_LIST,
-df0af1a57 Miao Xie     2013-01-29  4314  			  &btrfs_inode->runtime_flags);
-eb73c1b7c Miao Xie     2013-05-15  4315  		spin_unlock(&root->delalloc_lock);
-acce952b0 liubo        2011-01-06  4316  
-acce952b0 liubo        2011-01-06 @4317  		btrfs_invalidate_inodes(btrfs_inode->root);
-b216cbfb5 Miao Xie     2013-05-15  4318  
-eb73c1b7c Miao Xie     2013-05-15  4319  		spin_lock(&root->delalloc_lock);
-acce952b0 liubo        2011-01-06  4320  	}
-acce952b0 liubo        2011-01-06  4321  
-eb73c1b7c Miao Xie     2013-05-15  4322  	spin_unlock(&root->delalloc_lock);
-acce952b0 liubo        2011-01-06  4323  }
-acce952b0 liubo        2011-01-06  4324  
-
-:::::: The code at line 4317 was first introduced by commit
-:::::: acce952b0263825da32cf10489413dec78053347 Btrfs: forced readonly mounts on errors
-
-:::::: TO: liubo <liubo2009@cn.fujitsu.com>
-:::::: CC: Chris Mason <chris.mason@oracle.com>
-
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
-0-DAY kernel test infrastructure                Open Source Technology Center
-https://lists.01.org/pipermail/kbuild-all                   Intel Corporation
+ fs/btrfs/ctree.h | 9 ---------
+ fs/btrfs/inode.c | 8 ++++++++
+ 2 files changed, 8 insertions(+), 9 deletions(-)
+
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 789c7da2721c..5b7080d2fbff 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -3167,15 +3167,6 @@ void btrfs_extent_item_to_extent_map(struct btrfs_inode *inode,
+ 				     struct extent_map *em);
+ 
+ /* inode.c */
+-struct btrfs_delalloc_work {
+-	struct inode *inode;
+-	struct completion completion;
+-	struct list_head list;
+-	struct btrfs_work work;
+-};
+-
+-struct btrfs_delalloc_work *btrfs_alloc_delalloc_work(struct inode *inode);
+-
+ struct extent_map *btrfs_get_extent_fiemap(struct btrfs_inode *inode,
+ 		struct page *page, size_t pg_offset, u64 start,
+ 		u64 len, int create);
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 9b8f2904ad55..078e02c21825 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -10145,6 +10145,13 @@ static int btrfs_rename2(struct inode *old_dir, struct dentry *old_dentry,
+ 	return btrfs_rename(old_dir, old_dentry, new_dir, new_dentry, flags);
+ }
+ 
++struct btrfs_delalloc_work {
++	struct inode *inode;
++	struct completion completion;
++	struct list_head list;
++	struct btrfs_work work;
++};
++
+ static void btrfs_run_delalloc_work(struct btrfs_work *work)
+ {
+ 	struct btrfs_delalloc_work *delalloc_work;
+@@ -10162,6 +10169,7 @@ static void btrfs_run_delalloc_work(struct btrfs_work *work)
+ 	complete(&delalloc_work->completion);
+ }
+ 
++static
+ struct btrfs_delalloc_work *btrfs_alloc_delalloc_work(struct inode *inode)
+ {
+ 	struct btrfs_delalloc_work *work;
+-- 
+2.7.4
+

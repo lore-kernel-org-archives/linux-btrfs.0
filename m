@@ -1,88 +1,91 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp2130.oracle.com ([156.151.31.86]:60980 "EHLO
-        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750882AbeD3Jqj (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 30 Apr 2018 05:46:39 -0400
-Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
-        by userp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w3U9jsfw038017
-        for <linux-btrfs@vger.kernel.org>; Mon, 30 Apr 2018 09:46:38 GMT
-Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
-        by userp2130.oracle.com with ESMTP id 2hmgdjbcrh-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 30 Apr 2018 09:46:38 +0000
-Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
-        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id w3U9kbs4001809
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 30 Apr 2018 09:46:37 GMT
-Received: from abhmp0009.oracle.com (abhmp0009.oracle.com [141.146.116.15])
-        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w3U9kacK032353
-        for <linux-btrfs@vger.kernel.org>; Mon, 30 Apr 2018 09:46:36 GMT
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2] btrfs: fix BUG trying to resume balance without resume flag
-Date: Mon, 30 Apr 2018 17:48:45 +0800
-Message-Id: <20180430094845.26229-1-anand.jain@oracle.com>
+Received: from mx2.suse.de ([195.135.220.15]:52328 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1757753AbeD0KQT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 27 Apr 2018 06:16:19 -0400
+Subject: Re: [PATCH] btrfs: Take trans lock before access running trans in
+ check_delayed_ref
+To: ethanwu <ethanwu@synology.com>, linux-btrfs@vger.kernel.org
+Cc: bo.li.liu@oracle.com
+References: <1524823126-23414-1-git-send-email-ethanwu@synology.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <85f3de8b-3b59-954e-e293-269b18c90e7c@suse.com>
+Date: Fri, 27 Apr 2018 13:16:15 +0300
+MIME-Version: 1.0
+In-Reply-To: <1524823126-23414-1-git-send-email-ethanwu@synology.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We set the BTRFS_BALANCE_RESUME flag in the btrfs_recover_balance(),
-which is not called during the remount. So when resuming from the
-paused balance we hit BUG.
 
- kernel: kernel BUG at fs/btrfs/volumes.c:3890!
- ::
- kernel:  balance_kthread+0x51/0x60 [btrfs]
- kernel:  kthread+0x111/0x130
- ::
- kernel: RIP: btrfs_balance+0x12e1/0x1570 [btrfs] RSP: ffffba7d0090bde8
 
-Reproducer:
-  On a mounted BTRFS.
+On 27.04.2018 12:58, ethanwu wrote:
+> In preivous patch:
+> Btrfs: kill trans in run_delalloc_nocow and btrfs_cross_ref_exist
+> We avoid starting btrfs transaction and get this information from
+> fs_info->running_transaction directly.
+> 
+> When accessing running_transaction in check_delayed_ref, there's a
+> chance that current transaction will be freed by commit transaction
+> after the NULL pointer check of running_transaction is passed.
+> 
+> After looking all the other places using fs_info->running_transaction,
+> they are either protected by trans_lock or holding the transactions.
+> 
+> Fix this by using trans_lock and incrementing the use_count.
 
-  btrfs balance start --full-balance /btrfs
-  btrfs balance pause /btrfs
-  mount -o remount,ro /dev/sdb /btrfs
-  mount -o remount,rw /dev/sdb /btrfs
+Yep, looking at how ->running_transaction is set/cleared, holding the
+trans_lock is correct here. However there is one point which you need to
+fix.
 
-To fix this set the BTRFS_BALANCE_RESUME flag in btrfs_resume_balance_async()
-instead of btrfs_recover_balance().
+> 
+> Signed-off-by: ethanwu <ethanwu@synology.com>
+> ---
+>  fs/btrfs/extent-tree.c | 7 +++++++
+>  1 file changed, 7 insertions(+)
+> 
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index c1618ab..c8fd37b 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -3149,7 +3149,11 @@ static noinline int check_delayed_ref(struct btrfs_root *root,
+>  	struct rb_node *node;
+>  	int ret = 0;
+>  
+> +	spin_lock(&root->fs_info->trans_lock);
+>  	cur_trans = root->fs_info->running_transaction;
+> +	if (cur_trans)
+> +		atomic_inc(&cur_trans->use_count);
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
-v1->v2: btrfs_resume_balance_async() can be called only from remount or
-mount, we don't need to hold fs_info->balance_lock.
+The ->use_count is using refcount_inc now, not atomic_inc. Please base
+all further upstream patches on upstream code
 
-Strictly speaking we should rather keep the balance at the paused state
-unless it is resumed by the user again, that means neither mount nor
-remount-rw should resume the balance automatically, former case needs
-writing balance status to the disk. Which needs compatibility
-verification.  So for now just avoid BUG. 
-
- fs/btrfs/volumes.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 3e6983a169c4..64bcaf25908b 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -4115,6 +4115,8 @@ int btrfs_resume_balance_async(struct btrfs_fs_info *fs_info)
- 		return 0;
- 	}
- 
-+	fs_info->balance_ctl->b_flags |= BTRFS_BALANCE_RESUME;
-+
- 	tsk = kthread_run(balance_kthread, fs_info, "btrfs-balance");
- 	return PTR_ERR_OR_ZERO(tsk);
- }
-@@ -4156,7 +4158,6 @@ int btrfs_recover_balance(struct btrfs_fs_info *fs_info)
- 
- 	bctl->fs_info = fs_info;
- 	bctl->flags = btrfs_balance_flags(leaf, item);
--	bctl->flags |= BTRFS_BALANCE_RESUME;
- 
- 	btrfs_balance_data(leaf, item, &disk_bargs);
- 	btrfs_disk_balance_args_to_cpu(&bctl->data, &disk_bargs);
--- 
-2.7.0
-
+> +	spin_unlock(&root->fs_info->trans_lock);
+>  	if (!cur_trans)
+>  		return 0;
+>  
+> @@ -3158,6 +3162,7 @@ static noinline int check_delayed_ref(struct btrfs_root *root,
+>  	head = btrfs_find_delayed_ref_head(delayed_refs, bytenr);
+>  	if (!head) {
+>  		spin_unlock(&delayed_refs->lock);
+> +		btrfs_put_transaction(cur_trans);
+>  		return 0;
+>  	}
+>  
+> @@ -3174,6 +3179,7 @@ static noinline int check_delayed_ref(struct btrfs_root *root,
+>  		mutex_lock(&head->mutex);
+>  		mutex_unlock(&head->mutex);
+>  		btrfs_put_delayed_ref_head(head);
+> +		btrfs_put_transaction(cur_trans);
+>  		return -EAGAIN;
+>  	}
+>  	spin_unlock(&delayed_refs->lock);
+> @@ -3206,6 +3212,7 @@ static noinline int check_delayed_ref(struct btrfs_root *root,
+>  	}
+>  	spin_unlock(&head->lock);
+>  	mutex_unlock(&head->mutex);
+> +	btrfs_put_transaction(cur_trans);
+>  	return ret;
+>  }
+>  
+> 

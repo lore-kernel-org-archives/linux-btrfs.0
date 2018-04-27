@@ -1,82 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:43072 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:43829 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1758594AbeD0QCQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 27 Apr 2018 12:02:16 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 3E088AC07
-        for <linux-btrfs@vger.kernel.org>; Fri, 27 Apr 2018 16:02:15 +0000 (UTC)
-Subject: Re: [PATCH 1/3] btrfs: qgroups, fix rescan worker running races
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+        id S1758276AbeD0QIq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 27 Apr 2018 12:08:46 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id C6DEEAC07
+        for <linux-btrfs@vger.kernel.org>; Fri, 27 Apr 2018 16:08:45 +0000 (UTC)
+Subject: Re: [PATCH 3/3] btrfs: qgroup, don't try to insert status item after
+ ENOMEM in rescan worker
+To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
+        linux-btrfs@vger.kernel.org
 References: <20180426192351.473-1-jeffm@suse.com>
- <20180427155608.GC21272@twin.jikos.cz>
+ <20180426192351.473-3-jeffm@suse.com>
+ <471d8f08-ee33-80c7-67be-d35d5df6f166@suse.com>
+ <20180427154425.GB21272@twin.jikos.cz>
 From: Jeff Mahoney <jeffm@suse.com>
-Message-ID: <fbfbd98c-a7ee-4309-22ab-1e3a8416d27a@suse.com>
-Date: Fri, 27 Apr 2018 12:02:13 -0400
+Message-ID: <b688d761-ff7f-2fe8-484d-f29eac58a0b5@suse.com>
+Date: Fri, 27 Apr 2018 12:08:43 -0400
 MIME-Version: 1.0
-In-Reply-To: <20180427155608.GC21272@twin.jikos.cz>
+In-Reply-To: <20180427154425.GB21272@twin.jikos.cz>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 4/27/18 11:56 AM, David Sterba wrote:
-> On Thu, Apr 26, 2018 at 03:23:49PM -0400, jeffm@suse.com wrote:
->> From: Jeff Mahoney <jeffm@suse.com>
+On 4/27/18 11:44 AM, David Sterba wrote:
+> On Thu, Apr 26, 2018 at 11:39:50PM +0300, Nikolay Borisov wrote:
+>> On 26.04.2018 22:23, jeffm@suse.com wrote:
+>>> From: Jeff Mahoney <jeffm@suse.com>
+>>>
+>>> If we fail to allocate memory for a path, don't bother trying to
+>>> insert the qgroup status item.  We haven't done anything yet and it'll
+>>> fail also.  Just print an error and be done with it.
+>>>
+>>> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 >>
->> Commit d2c609b834d6 (Btrfs: fix qgroup rescan worker initialization)
->> fixed the issue with BTRFS_IOC_QUOTA_RESCAN_WAIT being racy, but
->> ended up reintroducing the hang-on-unmount bug that the commit it
->> intended to fix addressed.
->>
->> The race this time is between qgroup_rescan_init setting
->> ->qgroup_rescan_running = true and the worker starting.  There are
->> many scenarios where we initialize the worker and never start it.  The
->> completion btrfs_ioctl_quota_rescan_wait waits for will never come.
->> This can happen even without involving error handling, since mounting
->> the file system read-only returns between initializing the worker and
->> queueing it.
->>
->> The right place to do it is when we're queuing the worker.  The flag
->> really just means that btrfs_ioctl_quota_rescan_wait should wait for
->> a completion.
->>
->> This patch introduces a new helper, queue_rescan_worker, that handles
->> the ->qgroup_rescan_running flag, including any races with umount.
->>
->> While we're at it, ->qgroup_rescan_running is protected only by the
->> ->qgroup_rescan_mutex.  btrfs_ioctl_quota_rescan_wait doesn't need
->> to take the spinlock too.
->>
->> Fixes: d2c609b834d6 (Btrfs: fix qgroup rescan worker initialization)
->> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+>> nit: So the code is correct however, having the out label there is
+>> really ugly. What about on path alloc failure just have the print in the
+>> if branch do goto done?
 > 
-> I've added this to misc-next as I'd like to push it to the next rc. The
-> Fixes is fixed.
+> Yeah, I don't like jumping to the inner blocks either. I saw this in the
+> qgroup code so we should clean it up and not add new instances.
 > 
->> +	/* qgroup rescan worker is running or queued to run */
->>  	bool qgroup_rescan_running;	/* protected by qgroup_rescan_lock */
+> In this case, only the path allocation failure jumps to the out label,
+> so printing the message and then jump to done makes sense to me.
+> However, the message would have to be duplicated in the end, and I don't
+> see a better way without further restructuring the code.
 > 
-> Comments merged.
 
-Thanks.
-
->>  	/* filesystem state */
->> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
->> index aa259d6986e1..be491b6c020a 100644
->> --- a/fs/btrfs/qgroup.c
->> +++ b/fs/btrfs/qgroup.c
->> @@ -2072,6 +2072,30 @@ int btrfs_qgroup_account_extents(struct btrfs_trans_handle *trans,
->>  	return ret;
->>  }
->>  
->> +static void queue_rescan_worker(struct btrfs_fs_info *fs_info)
->> +{
-> 
-> And this had to be moved upwards as there was earlier use of
-> btrfs_queue_work that matched following the hunk.
-
-Weird.  That must be exactly the kind of mismerge artifact that we were
-talking about the other day.  In my tree it's in the right spot.
+It doesn't require major surgery.  The else can be disconnected.
 
 -Jeff
 

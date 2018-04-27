@@ -1,24 +1,26 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:42597 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:43072 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1758236AbeD0QAJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 27 Apr 2018 12:00:09 -0400
+        id S1758594AbeD0QCQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 27 Apr 2018 12:02:16 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 3E088AC07
+        for <linux-btrfs@vger.kernel.org>; Fri, 27 Apr 2018 16:02:15 +0000 (UTC)
 Subject: Re: [PATCH 1/3] btrfs: qgroups, fix rescan worker running races
-To: fdmanana@gmail.com
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
 References: <20180426192351.473-1-jeffm@suse.com>
- <CAL3q7H6hJxE383ZkV4JhTr44_i5tQCtU4nPGGxeOb+_Y2mDzxQ@mail.gmail.com>
+ <20180427155608.GC21272@twin.jikos.cz>
 From: Jeff Mahoney <jeffm@suse.com>
-Message-ID: <e845aaf2-3b19-8b7f-7f6a-33b659276444@suse.com>
-Date: Fri, 27 Apr 2018 12:00:06 -0400
+Message-ID: <fbfbd98c-a7ee-4309-22ab-1e3a8416d27a@suse.com>
+Date: Fri, 27 Apr 2018 12:02:13 -0400
 MIME-Version: 1.0
-In-Reply-To: <CAL3q7H6hJxE383ZkV4JhTr44_i5tQCtU4nPGGxeOb+_Y2mDzxQ@mail.gmail.com>
+In-Reply-To: <20180427155608.GC21272@twin.jikos.cz>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 4/27/18 4:48 AM, Filipe Manana wrote:
-> On Thu, Apr 26, 2018 at 8:23 PM,  <jeffm@suse.com> wrote:
+On 4/27/18 11:56 AM, David Sterba wrote:
+> On Thu, Apr 26, 2018 at 03:23:49PM -0400, jeffm@suse.com wrote:
 >> From: Jeff Mahoney <jeffm@suse.com>
 >>
 >> Commit d2c609b834d6 (Btrfs: fix qgroup rescan worker initialization)
@@ -46,18 +48,35 @@ On 4/27/18 4:48 AM, Filipe Manana wrote:
 >> to take the spinlock too.
 >>
 >> Fixes: d2c609b834d6 (Btrfs: fix qgroup rescan worker initialization)
+>> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 > 
-> The commit id and subjects don't match:
+> I've added this to misc-next as I'd like to push it to the next rc. The
+> Fixes is fixed.
 > 
-> commit d2c609b834d62f1e91f1635a27dca29f7806d3d6
-> Author: Jeff Mahoney <jeffm@suse.com>
-> Date:   Mon Aug 15 12:10:33 2016 -0400
+>> +	/* qgroup rescan worker is running or queued to run */
+>>  	bool qgroup_rescan_running;	/* protected by qgroup_rescan_lock */
 > 
->     btrfs: properly track when rescan worker is running
-> 
+> Comments merged.
 
+Thanks.
 
-Thanks.  Fixed.
+>>  	/* filesystem state */
+>> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+>> index aa259d6986e1..be491b6c020a 100644
+>> --- a/fs/btrfs/qgroup.c
+>> +++ b/fs/btrfs/qgroup.c
+>> @@ -2072,6 +2072,30 @@ int btrfs_qgroup_account_extents(struct btrfs_trans_handle *trans,
+>>  	return ret;
+>>  }
+>>  
+>> +static void queue_rescan_worker(struct btrfs_fs_info *fs_info)
+>> +{
+> 
+> And this had to be moved upwards as there was earlier use of
+> btrfs_queue_work that matched following the hunk.
+
+Weird.  That must be exactly the kind of mismerge artifact that we were
+talking about the other day.  In my tree it's in the right spot.
 
 -Jeff
 

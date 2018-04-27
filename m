@@ -1,48 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:42158 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:45880 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1758062AbeD0S4p (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 27 Apr 2018 14:56:45 -0400
+        id S932889AbeD0TSU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 27 Apr 2018 15:18:20 -0400
 Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 426ECACDC
-        for <linux-btrfs@vger.kernel.org>; Fri, 27 Apr 2018 18:56:44 +0000 (UTC)
-From: jeffm@suse.com
+        by mx2.suse.de (Postfix) with ESMTP id A0666ACAE
+        for <linux-btrfs@vger.kernel.org>; Fri, 27 Apr 2018 19:18:19 +0000 (UTC)
+Subject: Re: [PATCH 3/3] btrfs-progs: build: use m4_flatten instead of
+ m4_chomp
 To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.com, Jeff Mahoney <jeffm@suse.com>
-Subject: [PATCH 0/3] btrfs-progs: build on SLE11
-Date: Fri, 27 Apr 2018 14:56:34 -0400
-Message-Id: <20180427185637.16642-1-jeffm@suse.com>
+Cc: dsterba@suse.com
+References: <20180427185637.16642-1-jeffm@suse.com>
+ <20180427185637.16642-4-jeffm@suse.com>
+From: Jeff Mahoney <jeffm@suse.com>
+Message-ID: <75b17e5e-520f-7c23-b592-047e2b150474@suse.com>
+Date: Fri, 27 Apr 2018 15:18:17 -0400
+MIME-Version: 1.0
+In-Reply-To: <20180427185637.16642-4-jeffm@suse.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Jeff Mahoney <jeffm@suse.com>
+On 4/27/18 2:56 PM, jeffm@suse.com wrote:
+> From: Jeff Mahoney <jeffm@suse.com>
+> 
+> Commit 2e1932e6a38 (btrfs-progs: build: simplify version tracking)
+> started m4_chomp to strip the newlines from the version file.  m4_chomp
+> was introduced in autoconf 2.64 but SLE11 ships with autoconf 2.63.
+> For purposes of just stripping the newline, m4_flatten is sufficient.
 
-This patch set allows btrfs-progs to build without further patching
-on a stock SLE11 SP4 install.  The major issues were:
-- new dependencies on e2fsprogs 1.42
-- use of -std=gnu90, which gcc 4.3.4 doesn't support
-- use of m4_chomp, introduced in autoconf 2.64.
-
-This patch set is also posted as a GitHub pull request:
-https://github.com/kdave/btrfs-progs/pull/125
+Scratch that.  The previous patch also requires autoconf 2.64.
 
 -Jeff
 
----
+> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+> ---
+>  configure.ac | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> diff --git a/configure.ac b/configure.ac
+> index 17880206..a0cebf15 100644
+> --- a/configure.ac
+> +++ b/configure.ac
+> @@ -1,5 +1,5 @@
+>  AC_INIT([btrfs-progs],
+> -	m4_chomp(m4_include([VERSION])),
+> +	m4_flatten(m4_include([VERSION])),
+>  	[linux-btrfs@vger.kernel.org],,
+>  	[http://btrfs.wiki.kernel.org])
+>  
+> 
 
-Jeff Mahoney (3):
-  btrfs-progs: convert: fix support for e2fsprogs < 1.42
-  btrfs-progs: build: detect whether -std=gnu90 is supported
-  btrfs-progs: build: use m4_flatten instead of m4_chomp
-
- Makefile                    |  1 -
- Makefile.inc.in             |  1 +
- configure.ac                | 10 +++---
- convert/source-ext2.h       | 12 +++++++-
- m4/ax_check_compile_flag.m4 | 74 +++++++++++++++++++++++++++++++++++++++++++++
- 5 files changed, 90 insertions(+), 8 deletions(-)
- create mode 100644 m4/ax_check_compile_flag.m4
 
 -- 
-2.12.3
-
+Jeff Mahoney
+SUSE Labs

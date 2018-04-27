@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f66.google.com ([209.85.214.66]:50260 "EHLO
-        mail-it0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752030AbeD0DXY (ORCPT
+Received: from mail-io0-f195.google.com ([209.85.223.195]:44462 "EHLO
+        mail-io0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1757094AbeD0Fgh (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 26 Apr 2018 23:23:24 -0400
-Received: by mail-it0-f66.google.com with SMTP id p3-v6so296392itc.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 26 Apr 2018 20:23:24 -0700 (PDT)
+        Fri, 27 Apr 2018 01:36:37 -0400
+Received: by mail-io0-f195.google.com with SMTP id d11-v6so1157234iof.11
+        for <linux-btrfs@vger.kernel.org>; Thu, 26 Apr 2018 22:36:36 -0700 (PDT)
 MIME-Version: 1.0
 In-Reply-To: <20180426180659.GX21272@twin.jikos.cz>
 References: <1524706063-93210-1-git-send-email-bo.liu@linux.alibaba.com> <20180426180659.GX21272@twin.jikos.cz>
 From: Liu Bo <obuil.liubo@gmail.com>
-Date: Fri, 27 Apr 2018 11:23:23 +0800
-Message-ID: <CANQeFDBF7RwCufPa7s782fPsw60JBRq70ue_Dq7O__M0XFxaew@mail.gmail.com>
+Date: Fri, 27 Apr 2018 13:36:35 +0800
+Message-ID: <CANQeFDCWvuU06eN-TR1VPKDKHYDSHr_2TDRjhczHiPfc_skRuw@mail.gmail.com>
 Subject: Re: [PATCH v2] Btrfs: set keep_lock when necessary in btrfs_defrag_leaves
 To: David Sterba <dsterba@suse.cz>, Liu Bo <bo.liu@linux.alibaba.com>,
         linux-btrfs@vger.kernel.org
@@ -64,14 +64,13 @@ On Fri, Apr 27, 2018 at 2:06 AM, David Sterba <dsterba@suse.cz> wrote:
 > keep_locks is preserved after btrfs_path_release.
 >
 
-It will set it back,
-
-out:
-        path->keep_locks = keep_locks;
-
+FYI, btrfs_search_forward() doesn't need keep_locks's semantics as all
+of its callers only access path->nodes[0], thus I'm planning to remove
+keep_locks setting inside it, too.
 
 thanks,
 liubo
+
 >>       if (ret < 0)
 >>               goto out;
 >> @@ -81,6 +79,7 @@ int btrfs_defrag_leaves(struct btrfs_trans_handle *trans,

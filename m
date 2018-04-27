@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:42168 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:42190 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1758062AbeD0S4r (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 27 Apr 2018 14:56:47 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 58CC4ACDC
-        for <linux-btrfs@vger.kernel.org>; Fri, 27 Apr 2018 18:56:46 +0000 (UTC)
+        id S1758020AbeD0S4x (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 27 Apr 2018 14:56:53 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 2AAFBADAE
+        for <linux-btrfs@vger.kernel.org>; Fri, 27 Apr 2018 18:56:52 +0000 (UTC)
 From: jeffm@suse.com
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.com, Jeff Mahoney <jeffm@suse.com>
-Subject: [PATCH 1/3] btrfs-progs: convert: fix support for e2fsprogs < 1.42
-Date: Fri, 27 Apr 2018 14:56:35 -0400
-Message-Id: <20180427185637.16642-2-jeffm@suse.com>
+Subject: [PATCH 2/3] btrfs-progs: build: detect whether -std=gnu90 is supported
+Date: Fri, 27 Apr 2018 14:56:36 -0400
+Message-Id: <20180427185637.16642-3-jeffm@suse.com>
 In-Reply-To: <20180427185637.16642-1-jeffm@suse.com>
 References: <20180427185637.16642-1-jeffm@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -19,66 +19,136 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Jeff Mahoney <jeffm@suse.com>
 
-Commit 324d4c1857a (btrfs-progs: convert: Add larger device support)
-introduced new dependencies on the 64-bit API provided by e2fsprogs.
-That API was introduced in v1.42 (along with bigalloc).
-
-This patch maps the following to their equivalents in e2fsprogs < 1.42.
-- ext2fs_get_block_bitmap_range2
-- ext2fs_inode_data_blocks2
-- ext2fs_read_ext_attr2
-
-Since we need to detect and define EXT2_FLAG_64BITS for compatibilty
-anyway, it makes sense to use that to detect the older e2fsprogs instead
-of defining a new flag ourselves.
+Older versions of gcc don't support -std=gnu90 so btrfs-progs won't
+build at all on older distros.  We can detect whether the compiler
+supports -std=gnu90 and fall back to -std=gnu89 if it doesn't.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- configure.ac          |  6 +-----
- convert/source-ext2.h | 12 +++++++++++-
- 2 files changed, 12 insertions(+), 6 deletions(-)
+ Makefile                    |  1 -
+ Makefile.inc.in             |  1 +
+ configure.ac                |  2 ++
+ m4/ax_check_compile_flag.m4 | 74 +++++++++++++++++++++++++++++++++++++++++++++
+ 4 files changed, 77 insertions(+), 1 deletion(-)
+ create mode 100644 m4/ax_check_compile_flag.m4
 
+diff --git a/Makefile b/Makefile
+index 5ba76d2e..c0eb3d68 100644
+--- a/Makefile
++++ b/Makefile
+@@ -63,7 +63,6 @@ ABSTOPDIR = $(shell pwd)
+ TOPDIR := .
+ 
+ # Common build flags
+-CSTD = -std=gnu90
+ CFLAGS = $(SUBST_CFLAGS) \
+ 	 $(CSTD) \
+ 	 -include config.h \
+diff --git a/Makefile.inc.in b/Makefile.inc.in
+index 52410f69..fc3dec69 100644
+--- a/Makefile.inc.in
++++ b/Makefile.inc.in
+@@ -4,6 +4,7 @@
+ export
+ 
+ CC = @CC@
++CSTD = @CSTD@
+ LN_S = @LN_S@
+ AR = @AR@
+ RM = @RM@
 diff --git a/configure.ac b/configure.ac
-index af13a959..2dea1c64 100644
+index 2dea1c64..17880206 100644
 --- a/configure.ac
 +++ b/configure.ac
-@@ -140,11 +140,7 @@ BTRFSCONVERT_EXT2=0
- BTRFSCONVERT_REISERFS=0
- if test "x$enable_convert" = xyes; then
- 	if test "x$with_convert" = "xauto" || echo "$with_convert" | grep -q "ext2"; then
--		PKG_CHECK_MODULES(EXT2FS, [ext2fs >= 1.42],,
--			[PKG_CHECK_MODULES(EXT2FS, [ext2fs],
--				[AC_DEFINE([HAVE_OLD_E2FSPROGS], [1],
--					  [E2fsprogs does not support BIGALLOC])]
--				)])
-+		PKG_CHECK_MODULES(EXT2FS, [ext2fs])
- 		PKG_CHECK_MODULES(COM_ERR, [com_err])
- 		convertfs="${convertfs:+$convertfs,}ext2"
- 		BTRFSCONVERT_EXT2=1
-diff --git a/convert/source-ext2.h b/convert/source-ext2.h
-index 80833b21..c3214125 100644
---- a/convert/source-ext2.h
-+++ b/convert/source-ext2.h
-@@ -33,8 +33,18 @@
-  * BIGALLOC.
-  * Unlike normal RO compat flag, BIGALLOC affects how e2fsprogs check used
-  * space, and btrfs-convert heavily relies on it.
-+ *
-+ * e2fsprogs 1.42 also introduced the 64-bit API.  Any file system
-+ * that requires it will have EXT4_FEATURE_INCOMPAT_64BIT set and
-+ * will fail to open with earlier releases.  We can map it to the
-+ * older API without risk of corruption.
-  */
--#ifdef HAVE_OLD_E2FSPROGS
-+#ifndef EXT2_FLAG_64BITS
-+#define EXT2_FLAG_64BITS		(0)
-+#define ext2fs_get_block_bitmap_range2 ext2fs_get_block_bitmap_range
-+#define ext2fs_inode_data_blocks2 ext2fs_inode_data_blocks
-+#define ext2fs_read_ext_attr2 ext2fs_read_ext_attr
-+#define ext2fs_blocks_count(s)		((s)->s_blocks_count)
- #define EXT2FS_CLUSTER_RATIO(fs)	(1)
- #define EXT2_CLUSTERS_PER_GROUP(s)	(EXT2_BLOCKS_PER_GROUP(s))
- #define EXT2FS_B2C(fs, blk)		(blk)
+@@ -30,6 +30,8 @@ AC_CANONICAL_HOST
+ AC_C_CONST
+ AC_C_VOLATILE
+ AC_C_BIGENDIAN
++AX_CHECK_COMPILE_FLAG([-std=gnu90],[CSTD=-std=gnu90],[CSTD=-std=gnu89])
++AC_SUBST([CSTD])
+ 
+ AC_SYS_LARGEFILE
+ 
+diff --git a/m4/ax_check_compile_flag.m4 b/m4/ax_check_compile_flag.m4
+new file mode 100644
+index 00000000..dcabb92a
+--- /dev/null
++++ b/m4/ax_check_compile_flag.m4
+@@ -0,0 +1,74 @@
++# ===========================================================================
++#  https://www.gnu.org/software/autoconf-archive/ax_check_compile_flag.html
++# ===========================================================================
++#
++# SYNOPSIS
++#
++#   AX_CHECK_COMPILE_FLAG(FLAG, [ACTION-SUCCESS], [ACTION-FAILURE], [EXTRA-FLAGS], [INPUT])
++#
++# DESCRIPTION
++#
++#   Check whether the given FLAG works with the current language's compiler
++#   or gives an error.  (Warnings, however, are ignored)
++#
++#   ACTION-SUCCESS/ACTION-FAILURE are shell commands to execute on
++#   success/failure.
++#
++#   If EXTRA-FLAGS is defined, it is added to the current language's default
++#   flags (e.g. CFLAGS) when the check is done.  The check is thus made with
++#   the flags: "CFLAGS EXTRA-FLAGS FLAG".  This can for example be used to
++#   force the compiler to issue an error when a bad flag is given.
++#
++#   INPUT gives an alternative input source to AC_COMPILE_IFELSE.
++#
++#   NOTE: Implementation based on AX_CFLAGS_GCC_OPTION. Please keep this
++#   macro in sync with AX_CHECK_{PREPROC,LINK}_FLAG.
++#
++# LICENSE
++#
++#   Copyright (c) 2008 Guido U. Draheim <guidod@gmx.de>
++#   Copyright (c) 2011 Maarten Bosmans <mkbosmans@gmail.com>
++#
++#   This program is free software: you can redistribute it and/or modify it
++#   under the terms of the GNU General Public License as published by the
++#   Free Software Foundation, either version 3 of the License, or (at your
++#   option) any later version.
++#
++#   This program is distributed in the hope that it will be useful, but
++#   WITHOUT ANY WARRANTY; without even the implied warranty of
++#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
++#   Public License for more details.
++#
++#   You should have received a copy of the GNU General Public License along
++#   with this program. If not, see <https://www.gnu.org/licenses/>.
++#
++#   As a special exception, the respective Autoconf Macro's copyright owner
++#   gives unlimited permission to copy, distribute and modify the configure
++#   scripts that are the output of Autoconf when processing the Macro. You
++#   need not follow the terms of the GNU General Public License when using
++#   or distributing such scripts, even though portions of the text of the
++#   Macro appear in them. The GNU General Public License (GPL) does govern
++#   all other use of the material that constitutes the Autoconf Macro.
++#
++#   This special exception to the GPL applies to versions of the Autoconf
++#   Macro released by the Autoconf Archive. When you make and distribute a
++#   modified version of the Autoconf Macro, you may extend this special
++#   exception to the GPL to apply to your modified version as well.
++
++#serial 5
++
++AC_DEFUN([AX_CHECK_COMPILE_FLAG],
++[AC_PREREQ(2.64)dnl for _AC_LANG_PREFIX and AS_VAR_IF
++AS_VAR_PUSHDEF([CACHEVAR],[ax_cv_check_[]_AC_LANG_ABBREV[]flags_$4_$1])dnl
++AC_CACHE_CHECK([whether _AC_LANG compiler accepts $1], CACHEVAR, [
++  ax_check_save_flags=$[]_AC_LANG_PREFIX[]FLAGS
++  _AC_LANG_PREFIX[]FLAGS="$[]_AC_LANG_PREFIX[]FLAGS $4 $1"
++  AC_COMPILE_IFELSE([m4_default([$5],[AC_LANG_PROGRAM()])],
++    [AS_VAR_SET(CACHEVAR,[yes])],
++    [AS_VAR_SET(CACHEVAR,[no])])
++  _AC_LANG_PREFIX[]FLAGS=$ax_check_save_flags])
++AS_VAR_IF(CACHEVAR,yes,
++  [m4_default([$2], :)],
++  [m4_default([$3], :)])
++AS_VAR_POPDEF([CACHEVAR])dnl
++])dnl AX_CHECK_COMPILE_FLAGS
 -- 
 2.12.3
 

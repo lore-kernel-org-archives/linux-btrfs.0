@@ -1,49 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp2130.oracle.com ([156.151.31.86]:52852 "EHLO
-        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754672AbeD0BMa (ORCPT
+Received: from aserp2130.oracle.com ([141.146.126.79]:33070 "EHLO
+        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1756518AbeD0CAD (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 26 Apr 2018 21:12:30 -0400
-Subject: Re: [PATCH 0/3] enhance btrfs_raid_array[]
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-References: <20180425110144.12871-1-anand.jain@oracle.com>
- <20180426130129.GR21272@twin.jikos.cz>
+        Thu, 26 Apr 2018 22:00:03 -0400
+Subject: Re: [PATCH v2.1 13/16] btrfs: move and comment read-only check in
+ btrfs_cancel_balance
+To: dsterba@suse.cz, David Sterba <dsterba@suse.com>,
+        linux-btrfs@vger.kernel.org
+References: <cover.1524146555.git.dsterba@suse.com>
+ <d1db2691059cb458d2b44cae473b1cf2ea73ed78.1524146556.git.dsterba@suse.com>
+ <189a5404-4bf9-5907-40d2-ad670b5889d1@oracle.com>
+ <20180420120604.GO21272@twin.jikos.cz>
 From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <bc394a77-a6f0-5b0f-fd37-4e46b3264b1b@oracle.com>
-Date: Fri, 27 Apr 2018 09:14:43 +0800
+Message-ID: <5d281ac8-9eba-0648-e9ea-a0217486a273@oracle.com>
+Date: Fri, 27 Apr 2018 10:02:13 +0800
 MIME-Version: 1.0
-In-Reply-To: <20180426130129.GR21272@twin.jikos.cz>
+In-Reply-To: <20180420120604.GO21272@twin.jikos.cz>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On 04/26/2018 09:01 PM, David Sterba wrote:
-> On Wed, Apr 25, 2018 at 07:01:41PM +0800, Anand Jain wrote:
->> Cleanup patches as in the individual change log.
->>
->> These patches were sent independently as they aren't related as such,
->> but as I am updating the 1/3 the 2/3 would endup with conflict. So
->> here I am putting all of them together with the conflict fixed at
->> my end. And as such there is no change in 2/3 and 3/3 from its v1.
->>
->> Anand Jain (3):
->>    btrfs: kill btrfs_raid_type_names[]
->>    btrfs: kill btrfs_raid_group[]
->>    btrfs: kill btrfs_raid_mindev_error[]
+On 04/20/2018 08:06 PM, David Sterba wrote:
+> Balance cannot be started on a read-only filesystem and will have to
+> finish/exit before eg. going to read-only via remount.
 > 
-> Added to misc-next, thanks.
+> In case the filesystem is forcibly set to read-only after an error,
+> balance will finish anyway and if the cancel call is too fast it will
+> just wait for that to happen.
+> 
+> The last case is when the balance is paused after mount but it's
+> read-only and cancelling would want to delete the item. The test is
+> moved after the check if balance is running at all, as it looks more
+> logical to report "no balance running" instead of "read-only
+> filesystem".
+> 
+> Signed-off-by: David Sterba <dsterba@suse.com>
 
-> I've reordered the mindev_error before the
-> raid_name for better struct packing.
+Reviewed-by: Anand Jain <anand.jain@oracle.com>
 
-  Right. Thanks.
+Thanks, Anand
 
--Anand
 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> ---
+> 
+> - Add missing unlock
+> 
+>   fs/btrfs/volumes.c | 13 ++++++++++---
+>   1 file changed, 10 insertions(+), 3 deletions(-)
+> 
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index a766d2f988c1..9176d77e02ee 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -4053,15 +4053,22 @@ int btrfs_pause_balance(struct btrfs_fs_info *fs_info)
+>   
+>   int btrfs_cancel_balance(struct btrfs_fs_info *fs_info)
+>   {
+> -	if (sb_rdonly(fs_info->sb))
+> -		return -EROFS;
+> -
+>   	mutex_lock(&fs_info->balance_mutex);
+>   	if (!fs_info->balance_ctl) {
+>   		mutex_unlock(&fs_info->balance_mutex);
+>   		return -ENOTCONN;
+>   	}
+>   
+> +	/*
+> +	 * A paused balance with the item stored on disk can be resumed at
+> +	 * mount time if the mount is read-write. Otherwise it's still paused
+> +	 * and we must not allow cancelling as it deletes the item.
+> +	 */
+> +	if (sb_rdonly(fs_info->sb)) {
+> +		mutex_unlock(&fs_info->balance_mutex);
+> +		return -EROFS;
+> +	}
+> +
+>   	atomic_inc(&fs_info->balance_cancel_req);
+>   	/*
+>   	 * if we are running just wait and return, balance item is
 > 

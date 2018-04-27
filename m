@@ -1,58 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:44941 "EHLO
-        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751334AbeD3DQD (ORCPT
-        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Sun, 29 Apr 2018 23:16:03 -0400
-From: Qu Wenruo <wqu@suse.com>
+Received: from mx2.suse.de ([195.135.220.15]:42158 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1758062AbeD0S4p (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 27 Apr 2018 14:56:45 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 426ECACDC
+        for <linux-btrfs@vger.kernel.org>; Fri, 27 Apr 2018 18:56:44 +0000 (UTC)
+From: jeffm@suse.com
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 3/3] btrfs-progs: print-tree: Enhance btrfs_print_tree() check to avoid out-of-boundary memory access
-Date: Mon, 30 Apr 2018 11:15:45 +0800
-Message-Id: <20180430031545.29891-3-wqu@suse.com>
-In-Reply-To: <20180430031545.29891-1-wqu@suse.com>
-References: <20180430031545.29891-1-wqu@suse.com>
+Cc: dsterba@suse.com, Jeff Mahoney <jeffm@suse.com>
+Subject: [PATCH 0/3] btrfs-progs: build on SLE11
+Date: Fri, 27 Apr 2018 14:56:34 -0400
+Message-Id: <20180427185637.16642-1-jeffm@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-For btrfs_print_tree(), if nr_items is corrupted, it can easily go
-beyond extent buffer boundary.
+From: Jeff Mahoney <jeffm@suse.com>
 
-Add extra nr_item check, and only print as many valid slots as possible.
+This patch set allows btrfs-progs to build without further patching
+on a stock SLE11 SP4 install.  The major issues were:
+- new dependencies on e2fsprogs 1.42
+- use of -std=gnu90, which gcc 4.3.4 doesn't support
+- use of m4_chomp, introduced in autoconf 2.64.
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
+This patch set is also posted as a GitHub pull request:
+https://github.com/kdave/btrfs-progs/pull/125
+
+-Jeff
+
 ---
- print-tree.c | 11 ++++++++++-
- 1 file changed, 10 insertions(+), 1 deletion(-)
 
-diff --git a/print-tree.c b/print-tree.c
-index 31a851ef4413..55db80bebb2a 100644
---- a/print-tree.c
-+++ b/print-tree.c
-@@ -1376,6 +1376,11 @@ void btrfs_print_tree(struct extent_buffer *eb, int follow)
- 		btrfs_print_leaf(eb);
- 		return;
- 	}
-+	/* We are crossing eb boundary, this node must be corrupted */
-+	if (nr > BTRFS_NODEPTRS_PER_EXTENT_BUFFER(eb))
-+		warning(
-+		"node nr_items corrupted, has %u limit %u, continue print anyway",
-+			nr, BTRFS_NODEPTRS_PER_EXTENT_BUFFER(eb));
- 	printf("node %llu level %d items %d free %u generation %llu owner ",
- 	       (unsigned long long)eb->start,
- 	        btrfs_header_level(eb), nr,
-@@ -1386,7 +1391,11 @@ void btrfs_print_tree(struct extent_buffer *eb, int follow)
- 	print_uuids(eb);
- 	fflush(stdout);
- 	for (i = 0; i < nr; i++) {
--		u64 blocknr = btrfs_node_blockptr(eb, i);
-+		u64 blocknr;
-+
-+		if (i > BTRFS_NODEPTRS_PER_EXTENT_BUFFER(eb))
-+			break;
-+		blocknr = btrfs_node_blockptr(eb, i);
- 		btrfs_node_key(eb, &disk_key, i);
- 		btrfs_disk_key_to_cpu(&key, &disk_key);
- 		printf("\t");
+Jeff Mahoney (3):
+  btrfs-progs: convert: fix support for e2fsprogs < 1.42
+  btrfs-progs: build: detect whether -std=gnu90 is supported
+  btrfs-progs: build: use m4_flatten instead of m4_chomp
+
+ Makefile                    |  1 -
+ Makefile.inc.in             |  1 +
+ configure.ac                | 10 +++---
+ convert/source-ext2.h       | 12 +++++++-
+ m4/ax_check_compile_flag.m4 | 74 +++++++++++++++++++++++++++++++++++++++++++++
+ 5 files changed, 90 insertions(+), 8 deletions(-)
+ create mode 100644 m4/ax_check_compile_flag.m4
+
 -- 
-2.17.0
+2.12.3
 

@@ -1,43 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:6500 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751886AbeDIGk5 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Apr 2018 02:40:57 -0400
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
-        by cn.fujitsu.com (Postfix) with ESMTP id 520374D0EFE7
-        for <linux-btrfs@vger.kernel.org>; Mon,  9 Apr 2018 14:40:52 +0800 (CST)
-From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] btrfs-progs: print-tree: remove dead code from btrfs_print_tree
-Date: Mon, 9 Apr 2018 14:40:44 +0800
-Message-ID: <20180409064044.1699-1-lufq.fnst@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from synology.com ([59.124.61.242]:35118 "EHLO synology.com"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1757449AbeD0HFk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 27 Apr 2018 03:05:40 -0400
+From: Ethan Lien <ethanlien@synology.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Ethan Lien <ethanlien@synology.com>
+Subject: [PATCH] btrfs: balance dirty metadata pages in btrfs_finish_ordered_io
+Date: Fri, 27 Apr 2018 15:05:24 +0800
+Message-Id: <20180427070524.12188-1-ethanlien@synology.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Since the out label has been deleted, this free_extent_buffer will never
-be executed.
+We should balance dirty metadata pages at the end of
+btrfs_finish_ordered_io, since a small, unmergeable random write can
+potentially produce dirty metadata which is multiple times larger than
+the data itself. For example, a small, unmergeable 4KiB write may
+produce:
 
-Fixes: f37ae8d275c2 ("btrfs-progs: print-tree: Enhance warning on tree block level mismatch and error handling")
-Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+    16KiB dirty leaf (and possibly 16KiB dirty node) in subvolume tree
+    16KiB dirty leaf (and possibly 16KiB dirty node) in checksum tree
+    16KiB dirty leaf (and possibly 16KiB dirty node) in extent tree
+
+Although we do call balance dirty pages in write side, but in the
+buffered write path, most metadata are dirtied only after we reach the
+dirty background limit (which by far onlys counts dirty data pages) and
+wakeup the flusher thread. If there are many small, unmergeable random
+writes spread in a large btree, we'll find a burst of dirty pages
+exceeds the dirty_bytes limit after we wakeup the flusher thread - which
+is not what we expect. In our machine, it caused out-of-memory problem
+since a page cannot be dropped if it is marked dirty.
+
+Someone may worry about we may sleep in btrfs_btree_balance_dirty(), but
+since we do btrfs_finish_ordered_io in a separate worker, it will not
+stop the flusher consuming dirty pages. Also, we use different worker for
+metadata writeback endio, sleep in btrfs_finish_ordered_io help us
+throttle the size of dirty metadata pages.
+
+Signed-off-by: Ethan Lien <ethanlien@synology.com>
 ---
- print-tree.c | 2 --
- 1 file changed, 2 deletions(-)
+ fs/btrfs/inode.c | 2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/print-tree.c b/print-tree.c
-index a2f6bfc027c9..44e9b40a9874 100644
---- a/print-tree.c
-+++ b/print-tree.c
-@@ -1416,6 +1416,4 @@ void btrfs_print_tree(struct btrfs_root *root, struct extent_buffer *eb, int fol
- 	}
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index d241285a0d2a..d09433ab126e 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -3151,6 +3151,8 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)
+ 	/* once for the tree */
+ 	btrfs_put_ordered_extent(ordered_extent);
  
- 	return;
--
--	free_extent_buffer(next);
++	btrfs_btree_balance_dirty(fs_info);
++
+ 	return ret;
  }
+ 
 -- 
-2.16.3
-
-
+2.17.0
 

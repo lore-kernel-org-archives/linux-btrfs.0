@@ -1,21 +1,19 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:48433 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:42772 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753393AbeDZUjy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 26 Apr 2018 16:39:54 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id B2199AE21
-        for <linux-btrfs@vger.kernel.org>; Thu, 26 Apr 2018 20:39:52 +0000 (UTC)
-Subject: Re: [PATCH 3/3] btrfs: qgroup, don't try to insert status item after
- ENOMEM in rescan worker
+        id S1757712AbeD0ImG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 27 Apr 2018 04:42:06 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id DC316ADF5
+        for <linux-btrfs@vger.kernel.org>; Fri, 27 Apr 2018 08:42:04 +0000 (UTC)
+Subject: Re: [PATCH 1/3] btrfs: qgroups, fix rescan worker running races
 To: jeffm@suse.com, linux-btrfs@vger.kernel.org
 References: <20180426192351.473-1-jeffm@suse.com>
- <20180426192351.473-3-jeffm@suse.com>
 From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <471d8f08-ee33-80c7-67be-d35d5df6f166@suse.com>
-Date: Thu, 26 Apr 2018 23:39:50 +0300
+Message-ID: <e551a717-c66c-dad3-9880-ec4ca18e8e38@suse.com>
+Date: Fri, 27 Apr 2018 11:42:04 +0300
 MIME-Version: 1.0
-In-Reply-To: <20180426192351.473-3-jeffm@suse.com>
+In-Reply-To: <20180426192351.473-1-jeffm@suse.com>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -25,41 +23,150 @@ List-ID: <linux-btrfs.vger.kernel.org>
 On 26.04.2018 22:23, jeffm@suse.com wrote:
 > From: Jeff Mahoney <jeffm@suse.com>
 > 
-> If we fail to allocate memory for a path, don't bother trying to
-> insert the qgroup status item.  We haven't done anything yet and it'll
-> fail also.  Just print an error and be done with it.
+> Commit d2c609b834d6 (Btrfs: fix qgroup rescan worker initialization)
+> fixed the issue with BTRFS_IOC_QUOTA_RESCAN_WAIT being racy, but
+> ended up reintroducing the hang-on-unmount bug that the commit it
+> intended to fix addressed.
 > 
+> The race this time is between qgroup_rescan_init setting
+> ->qgroup_rescan_running = true and the worker starting.  There are
+> many scenarios where we initialize the worker and never start it.  The
+> completion btrfs_ioctl_quota_rescan_wait waits for will never come.
+> This can happen even without involving error handling, since mounting
+> the file system read-only returns between initializing the worker and
+> queueing it.
+> 
+> The right place to do it is when we're queuing the worker.  The flag
+> really just means that btrfs_ioctl_quota_rescan_wait should wait for
+> a completion.
+> 
+> This patch introduces a new helper, queue_rescan_worker, that handles
+> the ->qgroup_rescan_running flag, including any races with umount.
+> 
+> While we're at it, ->qgroup_rescan_running is protected only by the
+> ->qgroup_rescan_mutex.  btrfs_ioctl_quota_rescan_wait doesn't need
+> to take the spinlock too.
+> 
+> Fixes: d2c609b834d6 (Btrfs: fix qgroup rescan worker initialization)
 > Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 
-nit: So the code is correct however, having the out label there is
-really ugly. What about on path alloc failure just have the print in the
-if branch do goto done?
 
+LGTM.
 
 Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 
 > ---
->  fs/btrfs/qgroup.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
+>  fs/btrfs/ctree.h  |  1 +
+>  fs/btrfs/qgroup.c | 40 ++++++++++++++++++++++++++++------------
+>  2 files changed, 29 insertions(+), 12 deletions(-)
 > 
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index da308774b8a4..dbba615f4d0f 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -1045,6 +1045,7 @@ struct btrfs_fs_info {
+>  	struct btrfs_workqueue *qgroup_rescan_workers;
+>  	struct completion qgroup_rescan_completion;
+>  	struct btrfs_work qgroup_rescan_work;
+> +	/* qgroup rescan worker is running or queued to run */
+>  	bool qgroup_rescan_running;	/* protected by qgroup_rescan_lock */
+>  
+>  	/* filesystem state */
 > diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-> index 8de423a0c7e3..4c0978bce5b9 100644
+> index aa259d6986e1..be491b6c020a 100644
 > --- a/fs/btrfs/qgroup.c
 > +++ b/fs/btrfs/qgroup.c
-> @@ -2648,7 +2648,6 @@ static void btrfs_qgroup_rescan_worker(struct btrfs_work *work)
->  			btrfs_end_transaction(trans);
->  	}
+> @@ -2072,6 +2072,30 @@ int btrfs_qgroup_account_extents(struct btrfs_trans_handle *trans,
+>  	return ret;
+>  }
 >  
-> -out:
->  	btrfs_free_path(path);
+> +static void queue_rescan_worker(struct btrfs_fs_info *fs_info)
+> +{
+> +	mutex_lock(&fs_info->qgroup_rescan_lock);
+> +	if (btrfs_fs_closing(fs_info)) {
+> +		mutex_unlock(&fs_info->qgroup_rescan_lock);
+> +		return;
+> +	}
+> +	if (WARN_ON(fs_info->qgroup_rescan_running)) {
+> +		btrfs_warn(fs_info, "rescan worker already queued");
+> +		mutex_unlock(&fs_info->qgroup_rescan_lock);
+> +		return;
+> +	}
+> +
+> +	/*
+> +	 * Being queued is enough for btrfs_qgroup_wait_for_completion
+> +	 * to need to wait.
+> +	 */
+> +	fs_info->qgroup_rescan_running = true;
+> +	mutex_unlock(&fs_info->qgroup_rescan_lock);
+> +
+> +	btrfs_queue_work(fs_info->qgroup_rescan_workers,
+> +			 &fs_info->qgroup_rescan_work);
+> +}
+> +
+>  /*
+>   * called from commit_transaction. Writes all changed qgroups to disk.
+>   */
+> @@ -2123,8 +2147,7 @@ int btrfs_run_qgroups(struct btrfs_trans_handle *trans,
+>  		ret = qgroup_rescan_init(fs_info, 0, 1);
+>  		if (!ret) {
+>  			qgroup_rescan_zero_tracking(fs_info);
+> -			btrfs_queue_work(fs_info->qgroup_rescan_workers,
+> -					 &fs_info->qgroup_rescan_work);
+> +			queue_rescan_worker(fs_info);
+>  		}
+
+So here it's not possible to race, since if qgroup_rescan_init returns 0
+then we are guaranteed to queue the rescan.
+
+>  		ret = 0;
+>  	}
+> @@ -2713,7 +2736,6 @@ qgroup_rescan_init(struct btrfs_fs_info *fs_info, u64 progress_objectid,
+>  		sizeof(fs_info->qgroup_rescan_progress));
+>  	fs_info->qgroup_rescan_progress.objectid = progress_objectid;
+>  	init_completion(&fs_info->qgroup_rescan_completion);
+> -	fs_info->qgroup_rescan_running = true;
+>  
+>  	spin_unlock(&fs_info->qgroup_lock);
+>  	mutex_unlock(&fs_info->qgroup_rescan_lock);
+> @@ -2785,9 +2807,7 @@ btrfs_qgroup_rescan(struct btrfs_fs_info *fs_info)
+>  
+>  	qgroup_rescan_zero_tracking(fs_info);
+>  
+> -	btrfs_queue_work(fs_info->qgroup_rescan_workers,
+> -			 &fs_info->qgroup_rescan_work);
+> -
+> +	queue_rescan_worker(fs_info);
+
+Which leaves this to be the only problematic case, in case transaction
+joining/commit fails, right?
+
+>  	return 0;
+>  }
+>  
+> @@ -2798,9 +2818,7 @@ int btrfs_qgroup_wait_for_completion(struct btrfs_fs_info *fs_info,
+>  	int ret = 0;
 >  
 >  	mutex_lock(&fs_info->qgroup_rescan_lock);
-> @@ -2688,6 +2687,7 @@ static void btrfs_qgroup_rescan_worker(struct btrfs_work *work)
->  		btrfs_info(fs_info, "qgroup scan completed%s",
->  			err > 0 ? " (inconsistency flag cleared)" : "");
->  	} else {
-> +out:
->  		btrfs_err(fs_info, "qgroup scan failed with %d", err);
->  	}
+> -	spin_lock(&fs_info->qgroup_lock);
+>  	running = fs_info->qgroup_rescan_running;
+> -	spin_unlock(&fs_info->qgroup_lock);
+>  	mutex_unlock(&fs_info->qgroup_rescan_lock);
 >  
+>  	if (!running)
+> @@ -2819,12 +2837,10 @@ int btrfs_qgroup_wait_for_completion(struct btrfs_fs_info *fs_info,
+>   * this is only called from open_ctree where we're still single threaded, thus
+>   * locking is omitted here.
+>   */
+> -void
+> -btrfs_qgroup_rescan_resume(struct btrfs_fs_info *fs_info)
+> +void btrfs_qgroup_rescan_resume(struct btrfs_fs_info *fs_info)
+>  {
+>  	if (fs_info->qgroup_flags & BTRFS_QGROUP_STATUS_FLAG_RESCAN)
+> -		btrfs_queue_work(fs_info->qgroup_rescan_workers,
+> -				 &fs_info->qgroup_rescan_work);
+> +		queue_rescan_worker(fs_info);
+>  }
+>  
+>  /*
 > 

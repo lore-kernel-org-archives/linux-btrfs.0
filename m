@@ -1,78 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from synology.com ([59.124.61.242]:44022 "EHLO synology.com"
+Received: from mx2.suse.de ([195.135.220.15]:41278 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752455AbeD2IDh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 29 Apr 2018 04:03:37 -0400
-From: ethanwu <ethanwu@synology.com>
-To: linux-btrfs@vger.kernel.org
-Cc: ethanwu <ethanwu@synology.com>
-Subject: [PATCH v2] btrfs: Take trans lock before access running trans in check_delayed_ref
-Date: Sun, 29 Apr 2018 15:59:42 +0800
-Message-Id: <1524988782-2680-1-git-send-email-ethanwu@synology.com>
+        id S1757642AbeD0I26 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 27 Apr 2018 04:28:58 -0400
+Subject: Re: [PATCH] btrfs: modify path->reada in btrfs_shrink_device to
+ READA_BACK
+To: Gu Jinxiang <gujx@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+References: <1524817327-32038-1-git-send-email-gujx@cn.fujitsu.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <b7ca6e41-ac5d-cffe-7cbc-1e0b5ab07c9a@suse.com>
+Date: Fri, 27 Apr 2018 11:28:55 +0300
+MIME-Version: 1.0
+In-Reply-To: <1524817327-32038-1-git-send-email-gujx@cn.fujitsu.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In preivous patch:
-Btrfs: kill trans in run_delalloc_nocow and btrfs_cross_ref_exist
-We avoid starting btrfs transaction and get this information from
-fs_info->running_transaction directly.
 
-When accessing running_transaction in check_delayed_ref, there's a
-chance that current transaction will be freed by commit transaction
-after the NULL pointer check of running_transaction is passed.
 
-After looking all the other places using fs_info->running_transaction,
-they are either protected by trans_lock or holding the transactions.
+On 27.04.2018 11:22, Gu Jinxiang wrote:
+> In btrfs_shrink_device, before btrfs_search_slot, path->reada is
+> set to READA_FORWARD. But I think READA_BACK is correct.
+> Since,
+>  1.key.offset is set to (u64)-1
+>  2.After btrfs_search_slot, btrfs_previous_item is called.
+> So, for readahead previous items, READA_BACK is correct one.
 
-Fix this by using trans_lock and increasing the use_count.
+My analysis arrives at the same conclusions so:
 
-Signed-off-by: ethanwu <ethanwu@synology.com>
----
-V2: Use refcount_inc rather than aomitc_inc to increase use_count
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 
- fs/btrfs/extent-tree.c | 7 +++++++
- 1 file changed, 7 insertions(+)
-
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index c1618ab..7c302ed 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3149,7 +3149,11 @@ static noinline int check_delayed_ref(struct btrfs_root *root,
- 	struct rb_node *node;
- 	int ret = 0;
- 
-+	spin_lock(&root->fs_info->trans_lock);
- 	cur_trans = root->fs_info->running_transaction;
-+	if (cur_trans)
-+		refcount_inc(&cur_trans->use_count);
-+	spin_unlock(&root->fs_info->trans_lock);
- 	if (!cur_trans)
- 		return 0;
- 
-@@ -3158,6 +3162,7 @@ static noinline int check_delayed_ref(struct btrfs_root *root,
- 	head = btrfs_find_delayed_ref_head(delayed_refs, bytenr);
- 	if (!head) {
- 		spin_unlock(&delayed_refs->lock);
-+		btrfs_put_transaction(cur_trans);
- 		return 0;
- 	}
- 
-@@ -3174,6 +3179,7 @@ static noinline int check_delayed_ref(struct btrfs_root *root,
- 		mutex_lock(&head->mutex);
- 		mutex_unlock(&head->mutex);
- 		btrfs_put_delayed_ref_head(head);
-+		btrfs_put_transaction(cur_trans);
- 		return -EAGAIN;
- 	}
- 	spin_unlock(&delayed_refs->lock);
-@@ -3206,6 +3212,7 @@ static noinline int check_delayed_ref(struct btrfs_root *root,
- 	}
- 	spin_unlock(&head->lock);
- 	mutex_unlock(&head->mutex);
-+	btrfs_put_transaction(cur_trans);
- 	return ret;
- }
- 
--- 
-1.9.1
-
+> 
+> Signed-off-by: Gu Jinxiang <gujx@cn.fujitsu.com>
+> ---
+>  fs/btrfs/volumes.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index 292266f6ab9c..1a3506a3003d 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -4473,7 +4473,7 @@ int btrfs_shrink_device(struct btrfs_device *device, u64 new_size)
+>  	if (!path)
+>  		return -ENOMEM;
+>  
+> -	path->reada = READA_FORWARD;
+> +	path->reada = READA_BACK;
+>  
+>  	mutex_lock(&fs_info->chunk_mutex);
+>  
+> 

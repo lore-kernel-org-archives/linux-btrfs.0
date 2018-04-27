@@ -1,118 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:57745 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:42168 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752895AbeD2NT3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 29 Apr 2018 09:19:29 -0400
+        id S1758062AbeD0S4r (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 27 Apr 2018 14:56:47 -0400
 Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id CE665AEC4
-        for <linux-btrfs@vger.kernel.org>; Sun, 29 Apr 2018 13:19:27 +0000 (UTC)
-Subject: Re: [PATCH 3/3] btrfs-progs: build: use m4_flatten instead of
- m4_chomp
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org, dsterba@suse.com
+        by mx2.suse.de (Postfix) with ESMTP id 58CC4ACDC
+        for <linux-btrfs@vger.kernel.org>; Fri, 27 Apr 2018 18:56:46 +0000 (UTC)
+From: jeffm@suse.com
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.com, Jeff Mahoney <jeffm@suse.com>
+Subject: [PATCH 1/3] btrfs-progs: convert: fix support for e2fsprogs < 1.42
+Date: Fri, 27 Apr 2018 14:56:35 -0400
+Message-Id: <20180427185637.16642-2-jeffm@suse.com>
+In-Reply-To: <20180427185637.16642-1-jeffm@suse.com>
 References: <20180427185637.16642-1-jeffm@suse.com>
- <20180427185637.16642-4-jeffm@suse.com>
- <75b17e5e-520f-7c23-b592-047e2b150474@suse.com>
- <20180429101309.GN21272@twin.jikos.cz>
-From: Jeff Mahoney <jeffm@suse.com>
-Message-ID: <e4ef1312-7622-bc71-c321-d4e627c2176b@suse.com>
-Date: Sun, 29 Apr 2018 09:19:24 -0400
-MIME-Version: 1.0
-In-Reply-To: <20180429101309.GN21272@twin.jikos.cz>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="k1jFdSyGlpOqFTPWe94rJhmE3gdLDLhdZ"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---k1jFdSyGlpOqFTPWe94rJhmE3gdLDLhdZ
-Content-Type: multipart/mixed; boundary="tBTGgoezb3zVlFfebabSQoobp6qtNnhog";
- protected-headers="v1"
 From: Jeff Mahoney <jeffm@suse.com>
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org, dsterba@suse.com
-Message-ID: <e4ef1312-7622-bc71-c321-d4e627c2176b@suse.com>
-Subject: Re: [PATCH 3/3] btrfs-progs: build: use m4_flatten instead of
- m4_chomp
-References: <20180427185637.16642-1-jeffm@suse.com>
- <20180427185637.16642-4-jeffm@suse.com>
- <75b17e5e-520f-7c23-b592-047e2b150474@suse.com>
- <20180429101309.GN21272@twin.jikos.cz>
-In-Reply-To: <20180429101309.GN21272@twin.jikos.cz>
 
---tBTGgoezb3zVlFfebabSQoobp6qtNnhog
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+Commit 324d4c1857a (btrfs-progs: convert: Add larger device support)
+introduced new dependencies on the 64-bit API provided by e2fsprogs.
+That API was introduced in v1.42 (along with bigalloc).
 
-On 4/29/18 6:13 AM, David Sterba wrote:
-> On Fri, Apr 27, 2018 at 03:18:17PM -0400, Jeff Mahoney wrote:
->> On 4/27/18 2:56 PM, jeffm@suse.com wrote:
->>> From: Jeff Mahoney <jeffm@suse.com>
->>>
->>> Commit 2e1932e6a38 (btrfs-progs: build: simplify version tracking)
->>> started m4_chomp to strip the newlines from the version file.  m4_cho=
-mp
->>> was introduced in autoconf 2.64 but SLE11 ships with autoconf 2.63.
->>> For purposes of just stripping the newline, m4_flatten is sufficient.=
+This patch maps the following to their equivalents in e2fsprogs < 1.42.
+- ext2fs_get_block_bitmap_range2
+- ext2fs_inode_data_blocks2
+- ext2fs_read_ext_attr2
 
->>
->> Scratch that.  The previous patch also requires autoconf 2.64.
->=20
-> I wanted to avoid shell tricks, but this should work everywhere:
->=20
-> m4_esyscmd([echo -n $(cat VERSION)])
->=20
+Since we need to detect and define EXT2_FLAG_64BITS for compatibilty
+anyway, it makes sense to use that to detect the older e2fsprogs instead
+of defining a new flag ourselves.
 
-m4_flatten should work everywhere.  It's the AX_CHECK_COMPILE_FLAGS that
-depends on autoconf 2.64.
+Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+---
+ configure.ac          |  6 +-----
+ convert/source-ext2.h | 12 +++++++++++-
+ 2 files changed, 12 insertions(+), 6 deletions(-)
 
-I can fix the dependency, but it ends up looking like:
+diff --git a/configure.ac b/configure.ac
+index af13a959..2dea1c64 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -140,11 +140,7 @@ BTRFSCONVERT_EXT2=0
+ BTRFSCONVERT_REISERFS=0
+ if test "x$enable_convert" = xyes; then
+ 	if test "x$with_convert" = "xauto" || echo "$with_convert" | grep -q "ext2"; then
+-		PKG_CHECK_MODULES(EXT2FS, [ext2fs >= 1.42],,
+-			[PKG_CHECK_MODULES(EXT2FS, [ext2fs],
+-				[AC_DEFINE([HAVE_OLD_E2FSPROGS], [1],
+-					  [E2fsprogs does not support BIGALLOC])]
+-				)])
++		PKG_CHECK_MODULES(EXT2FS, [ext2fs])
+ 		PKG_CHECK_MODULES(COM_ERR, [com_err])
+ 		convertfs="${convertfs:+$convertfs,}ext2"
+ 		BTRFSCONVERT_EXT2=1
+diff --git a/convert/source-ext2.h b/convert/source-ext2.h
+index 80833b21..c3214125 100644
+--- a/convert/source-ext2.h
++++ b/convert/source-ext2.h
+@@ -33,8 +33,18 @@
+  * BIGALLOC.
+  * Unlike normal RO compat flag, BIGALLOC affects how e2fsprogs check used
+  * space, and btrfs-convert heavily relies on it.
++ *
++ * e2fsprogs 1.42 also introduced the 64-bit API.  Any file system
++ * that requires it will have EXT4_FEATURE_INCOMPAT_64BIT set and
++ * will fail to open with earlier releases.  We can map it to the
++ * older API without risk of corruption.
+  */
+-#ifdef HAVE_OLD_E2FSPROGS
++#ifndef EXT2_FLAG_64BITS
++#define EXT2_FLAG_64BITS		(0)
++#define ext2fs_get_block_bitmap_range2 ext2fs_get_block_bitmap_range
++#define ext2fs_inode_data_blocks2 ext2fs_inode_data_blocks
++#define ext2fs_read_ext_attr2 ext2fs_read_ext_attr
++#define ext2fs_blocks_count(s)		((s)->s_blocks_count)
+ #define EXT2FS_CLUSTER_RATIO(fs)	(1)
+ #define EXT2_CLUSTERS_PER_GROUP(s)	(EXT2_BLOCKS_PER_GROUP(s))
+ #define EXT2FS_B2C(fs, blk)		(blk)
+-- 
+2.12.3
 
-m4_version_prereq([2.64], [
-    AX_CHECK_COMPILE_FLAG([-std=3Dgnu90],[CSTD=3D-std=3Dgnu90],[CSTD=3D-s=
-td=3Dgnu89])
-  ], [
-    AX_GCC_VERSION([4], [5], [0], [CSTD=3D-std=3Dgnu90],[CSTD=3D-std=3Dgn=
-u89])
-  ])
-AC_SUBST([CSTD])
-
-AX_GCC_VERSION is deprecated, but works with earlier autoconf versions.
-I'm not thrilled about it, but keying off the autoconf version and using
-the newer way for newer versions means it'll be easier to drop it later
-when we drop support for earlier autoconf.
-
-Alternatively, I can just put this patch in the OBS project.
-
--Jeff
-
---=20
-Jeff Mahoney
-SUSE Labs
-
-
---tBTGgoezb3zVlFfebabSQoobp6qtNnhog--
-
---k1jFdSyGlpOqFTPWe94rJhmE3gdLDLhdZ
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQIzBAEBCAAdFiEE8wzgbmZ74SnKPwtDHntLYyF55bIFAlrlxlwACgkQHntLYyF5
-5bKc7w/5Aaho/kDxkHQtLU/T90qzvmpaLQSTze1jKfpb7/Qir5ooUJix2QiFK8fV
-YUiYXwg1Y0aiFYUGgQ4K3g5j5UsEPYbd5/pRIYrq7h3i2o5IkUwnoZb6oFauKcU3
-dnztHZL7nWWFzetbK3PDpyGy2BaOj0wG5v/4NaBUni1lJK9TAyqyA6ooblqo6KF/
-04AGFTKynvCYlmngGDpnD3UI1j40oTa2k0O0ci+TmfpR+/YM89BjnFd4gcdCtNWy
-aYsjZjOJmuokKWTrLFs1DH05e1fyNN9wJUfTCQoX+CNIMKy98SmYsSugeRLFSpSQ
-j8AS1Q1AQhsKBvCYNLaKKP2krDMs5zTbNf9DMFln11X9e4zQ6P9UaeDjQIDcBEyn
-jyPwIz+dDBYmyQfa7bM89C3csN6iWumOqwiIhrF+6lkUr0w+s7tNN18CoqGN9AbI
-NBGN5cNFjpEv8Y1+KnpGLrO++rKjjNMrgWS6A0mNRKXoEOLHrhRLsVbBjH3f8UY0
-Awk/rz/7vP4bozNbzwo9jtAUuMn2KM7OncOH7pYoaf0Z2qyms9bxb80Hqqm11FO0
-HUwnwH/PCML3i+7fKTpNlkUGkr1u2o03oqlspNyZSMiRbrZ1+IclrPg4jo51xxvm
-vPE0jr0OAMwQdywMqqh4tgpICqBr+z+p6PHGbXDJIaTrBqrkUt4=
-=vocZ
------END PGP SIGNATURE-----
-
---k1jFdSyGlpOqFTPWe94rJhmE3gdLDLhdZ--

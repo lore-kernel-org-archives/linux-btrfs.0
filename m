@@ -1,132 +1,146 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from glass.birch.relay.mailchannels.net ([23.83.209.70]:23946 "EHLO
-        glass.birch.relay.mailchannels.net" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1752688AbeD1Hai (ORCPT
+Received: from mail-vk0-f46.google.com ([209.85.213.46]:34090 "EHLO
+        mail-vk0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1759635AbeD1IaU (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 28 Apr 2018 03:30:38 -0400
-Subject: Re: NVMe SSD + compression - benchmarking
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <5be6d7f3-c905-dc7b-56e0-4c4be60ea952@swiftspirit.co.za>
- <e80e34ff-3d1c-99da-e622-4576c2dc8329@gmx.com>
-From: Brendan Hide <brendan@swiftspirit.co.za>
-Message-ID: <6adcb5da-16af-5453-383b-f289e9857506@swiftspirit.co.za>
-Date: Sat, 28 Apr 2018 09:30:30 +0200
+        Sat, 28 Apr 2018 04:30:20 -0400
+Received: by mail-vk0-f46.google.com with SMTP id t63-v6so2481240vkb.1
+        for <linux-btrfs@vger.kernel.org>; Sat, 28 Apr 2018 01:30:20 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <e80e34ff-3d1c-99da-e622-4576c2dc8329@gmx.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+From: Michael Wade <spikewade@gmail.com>
+Date: Sat, 28 Apr 2018 09:30:19 +0100
+Message-ID: <CAB+znrFyimDnOZt46CqterRJ6MvwD4TSWagQvv-oQxjPvG-m2w@mail.gmail.com>
+Subject: BTRFS RAID filesystem unmountable
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi all,
 
-On 04/28/2018 04:05 AM, Qu Wenruo wrote:
-> 
-> 
-> On 2018年04月28日 01:41, Brendan Hide wrote:
->> Hey, all
->>
->> I'm following up on the queries I had last week since I have installed
->> the NVMe SSD into the PCI-e adapter. I'm having difficulty knowing
->> whether or not I'm doing these benchmarks correctly.
->>
->> As a first test, I put together a 4.7GB .tar containing mostly
->> duplicated copies of the kernel source code (rather compressible).
->> Writing this to the SSD I was seeing repeatable numbers - but noted that
->> the new (supposedly faster) zstd compression is noticeably slower than
->> all other methods. Perhaps this is partly due to lack of
->> multi-threading? No matter, I did also notice a supposedly impossible
->> stat when there is no compression, in that it seems to be faster than
->> the PCI-E 2.0 bus theoretically can deliver:
-> 
-> I'd say the test method is more like real world usage other than benchmark.
-> Moreover, the kernel source copying is not that good for compression, as
-> mostly of the files are smaller than 128K, which means they can't take
-> much advantage of multi thread split based on 128K.
-> 
-> And kernel source is consistent of multiple small files, and btrfs is
-> really slow for metadata heavy workload.
-> 
-> I'd recommend to start with simpler workload, then go step by step
-> towards more complex workload.
-> 
-> Large file sequence write with large block size would be a nice start
-> point, as it could take all advantage of multithread compression.
+I was hoping that someone would be able to help me resolve the issues
+I am having with my ReadyNAS BTRFS volume. Basically my trouble
+started after a power cut, subsequently the volume would not mount.
+Here are the details of my setup as it is at the moment:
 
-Thanks, Qu
+uname -a
+Linux QAI 4.4.116.alpine.1 #1 SMP Mon Feb 19 21:58:38 PST 2018 armv7l GNU/Linux
 
-I did also test the folder tree where I realised it is intense / far 
-from a regular use-case. It gives far slower results with zlib being the 
-slowest. The source's average file size is near 13KiB. However, in this 
-test where I gave some results below, the .tar is a large (4.7GB) 
-singular file - I'm not unpacking it at all.
+btrfs --version
+btrfs-progs v4.12
 
-Average results from source tree:
-compression type / write speed / read speed
-no / 0.29 GBps / 0.20 GBps
-lzo / 0.21 GBps / 0.17 GBps
-zstd / 0.13 GBps / 0.14 GBps
-zlib / 0.06 GBps / 0.10 GBps
+btrfs fi show
+Label: '11baed92:data'  uuid: 20628cda-d98f-4f85-955c-932a367f8821
+Total devices 1 FS bytes used 5.12TiB
+devid    1 size 7.27TiB used 6.24TiB path /dev/md127
 
-Average results from .tar:
-compression type / write speed / read speed
-no / 1.42 GBps / 2.79 GBps
-lzo / 1.17 GBps / 2.04 GBps
-zstd / 0.75 GBps / 1.97 GBps
-zlib / 1.24 GBps / 2.07 GBps
+Here are the relevant dmesg logs for the current state of the device:
 
-> Another advice here is, if you really want a super fast storage, and
-> there is plenty memory, brd module will be your best friend.
-> And for modern mainstream hardware, brd could provide performance over
-> 1GiB/s:
-> $ sudo modprobe brd rd_nr=1 rd_size=2097152
-> $ LANG=C dd if=/dev/zero  bs=1M of=/dev/ram0  count=2048
-> 2048+0 records in
-> 2048+0 records out
-> 2147483648 bytes (2.1 GB, 2.0 GiB) copied, 1.45593 s, 1.5 GB/s
+[   19.119391] md: md127 stopped.
+[   19.120841] md: bind<sdb3>
+[   19.121120] md: bind<sdc3>
+[   19.121380] md: bind<sda3>
+[   19.125535] md/raid:md127: device sda3 operational as raid disk 0
+[   19.125547] md/raid:md127: device sdc3 operational as raid disk 2
+[   19.125554] md/raid:md127: device sdb3 operational as raid disk 1
+[   19.126712] md/raid:md127: allocated 3240kB
+[   19.126778] md/raid:md127: raid level 5 active with 3 out of 3
+devices, algorithm 2
+[   19.126784] RAID conf printout:
+[   19.126789]  --- level:5 rd:3 wd:3
+[   19.126794]  disk 0, o:1, dev:sda3
+[   19.126799]  disk 1, o:1, dev:sdb3
+[   19.126804]  disk 2, o:1, dev:sdc3
+[   19.128118] md127: detected capacity change from 0 to 7991637573632
+[   19.395112] Adding 523708k swap on /dev/md1.  Priority:-1 extents:1
+across:523708k
+[   19.434956] BTRFS: device label 11baed92:data devid 1 transid
+151800 /dev/md127
+[   19.739276] BTRFS info (device md127): setting nodatasum
+[   19.740440] BTRFS critical (device md127): unable to find logical
+3208757641216 len 4096
+[   19.740450] BTRFS critical (device md127): unable to find logical
+3208757641216 len 4096
+[   19.740498] BTRFS critical (device md127): unable to find logical
+3208757641216 len 4096
+[   19.740512] BTRFS critical (device md127): unable to find logical
+3208757641216 len 4096
+[   19.740552] BTRFS critical (device md127): unable to find logical
+3208757641216 len 4096
+[   19.740560] BTRFS critical (device md127): unable to find logical
+3208757641216 len 4096
+[   19.740576] BTRFS error (device md127): failed to read chunk root
+[   19.783975] BTRFS error (device md127): open_ctree failed
 
-My real worry is that I'm currently reading at 2.79GB/s (see result 
-above and below) without compression when my hardware *should* limit it 
-to 2.0GB/s. This tells me either `sync` is not working or my benchmark 
-method is flawed.
+In an attempt to recover the volume myself I run a few BTRFS commands
+mostly using advice from here:
+https://lists.opensuse.org/opensuse/2017-02/msg00930.html. However
+that actually seems to have made things worse as I can no longer mount
+the file system, not even in readonly mode.
 
-> Thanks,
-> Qu
-> 
->>
->> compression type / write speed / read speed (in GBps)
->> zlib / 1.24 / 2.07
->> lzo / 1.17 / 2.04
->> zstd / 0.75 / 1.97
->> no / 1.42 / 2.79
->>
->> The SSD is PCI-E 3.0 4-lane capable and is connected to a PCI-E 2.0
->> 16-lane slot. lspci -vv confirms it is using 4 lanes. This means it's
->> peak throughput *should* be 2.0 GBps - but above you can see the average
->> read benchmark is 2.79GBps. :-/
->>
->> The crude timing script I've put together does the following:
->> - Format the SSD anew with btrfs and no custom settings
->> - wait 180 seconds for possible hardware TRIM to settle (possibly
->> overkill since the SSD is new)
->> - Mount the fs using all defaults except for compression, which could be
->> of zlib, lzo, zstd, or no
->> - sync
->> - Drop all caches
->> - Time the following
->>   - Copy the file to the test fs (source is a ramdisk)
->>   - sync
->> - Drop all caches
->> - Time the following
->>   - Copy back from the test fs to ramdisk
->>   - sync
->> - unmount
->>
->> I can see how, with compression, it *can* be faster than 2 GBps (though
->> it isn't). But I cannot see how having no compression could possibly be
->> faster than 2 GBps. :-/
->>
->> -- 
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+So starting from the beginning here is a list of things I have done so
+far (hopefully I remembered the order in which I ran them!)
+
+1. Noticed that my backups to the NAS were not running (didn't get
+notified that the volume had basically "died")
+2. ReadyNAS UI indicated that the volume was inactive.
+3. SSHed onto the box and found that the first drive was not marked as
+operational (log showed I/O errors / UNKOWN (0x2003))  so I replaced
+the disk and let the array resync.
+4. After resync the volume still was unaccessible so I looked at the
+logs once more and saw something like the following which seemed to
+indicate that the replay log had been corrupted when the power went
+out:
+
+BTRFS critical (device md127): corrupt leaf, non-root leaf's nritems
+is 0: block=232292352, root=7, slot=0
+BTRFS critical (device md127): corrupt leaf, non-root leaf's nritems
+is 0: block=232292352, root=7, slot=0
+BTRFS: error (device md127) in btrfs_replay_log:2524: errno=-5 IO
+failure (Failed to recover log tree)
+BTRFS error (device md127): pending csums is 155648
+BTRFS error (device md127): cleaner transaction attach returned -30
+BTRFS critical (device md127): corrupt leaf, non-root leaf's nritems
+is 0: block=232292352, root=7, slot=0
+
+5. Then:
+
+btrfs rescue zero-log
+
+6. Was then able to mount the volume in readonly mode.
+
+btrfs scrub start
+
+Which fixed some errors but not all:
+
+scrub status for 20628cda-d98f-4f85-955c-932a367f8821
+
+scrub started at Tue Apr 24 17:27:44 2018, running for 04:00:34
+total bytes scrubbed: 224.26GiB with 6 errors
+error details: csum=6
+corrected errors: 0, uncorrectable errors: 6, unverified errors: 0
+
+scrub status for 20628cda-d98f-4f85-955c-932a367f8821
+scrub started at Tue Apr 24 17:27:44 2018, running for 04:34:43
+total bytes scrubbed: 224.26GiB with 6 errors
+error details: csum=6
+corrected errors: 0, uncorrectable errors: 6, unverified errors: 0
+
+6. Seeing this hanging I rebooted the NAS
+7. Think this is when the volume would not mount at all.
+8. Seeing log entries like these:
+
+BTRFS warning (device md127): checksum error at logical 20800943685632
+on dev /dev/md127, sector 520167424: metadata node (level 1) in tree 3
+
+I ran
+
+btrfs check --fix-crc
+
+And that brings us to where I am now: Some seemly corrupted BTRFS
+metadata and unable to mount the drive even with the recovery option.
+
+Any help you can give is much appreciated!
+
+Kind regards
+Michael

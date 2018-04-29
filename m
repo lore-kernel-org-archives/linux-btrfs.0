@@ -1,49 +1,372 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:35983 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1750891AbeD2Iab (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 29 Apr 2018 04:30:31 -0400
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-3@m.gmane.org>)
-        id 1fChgt-0005YP-1N
-        for linux-btrfs@vger.kernel.org; Sun, 29 Apr 2018 10:28:15 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: NVMe SSD + compression - benchmarking
-Date: Sun, 29 Apr 2018 08:28:09 +0000 (UTC)
-Message-ID: <pan$4c272$fabeda98$48538e85$39262988@cox.net>
-References: <5be6d7f3-c905-dc7b-56e0-4c4be60ea952@swiftspirit.co.za>
-        <e80e34ff-3d1c-99da-e622-4576c2dc8329@gmx.com>
-        <6adcb5da-16af-5453-383b-f289e9857506@swiftspirit.co.za>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from mout.gmx.net ([212.227.17.20]:43707 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1750891AbeD2Id2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 29 Apr 2018 04:33:28 -0400
+Subject: Re: BTRFS RAID filesystem unmountable
+To: Michael Wade <spikewade@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+References: <CAB+znrFyimDnOZt46CqterRJ6MvwD4TSWagQvv-oQxjPvG-m2w@mail.gmail.com>
+ <54d2f70a-adae-98cc-581f-2e4786783b26@gmx.com>
+ <CAB+znrHYrhBB4cstUaS3KcOfEHhOTPUsfAJKj3Cj62HJ-05FrQ@mail.gmail.com>
+ <d32f3fdc-5ba0-2b62-ce79-5e5665d4c960@gmx.com>
+ <CAB+znrF_d+Hg_A9AMvWEB=S5eVAtYrvr2jUPcvR4FfB4hnCMWA@mail.gmail.com>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <bff1c7b3-5bac-9806-a376-3612057865cf@gmx.com>
+Date: Sun, 29 Apr 2018 16:33:22 +0800
+MIME-Version: 1.0
+In-Reply-To: <CAB+znrF_d+Hg_A9AMvWEB=S5eVAtYrvr2jUPcvR4FfB4hnCMWA@mail.gmail.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="WFBWr1U70WmRFmwVx0xD4l7hkyT1TRLFF"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Brendan Hide posted on Sat, 28 Apr 2018 09:30:30 +0200 as excerpted:
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--WFBWr1U70WmRFmwVx0xD4l7hkyT1TRLFF
+Content-Type: multipart/mixed; boundary="URyYsczzTikWNJlU0sqkdgLgg7fbFiul0";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: Michael Wade <spikewade@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Message-ID: <bff1c7b3-5bac-9806-a376-3612057865cf@gmx.com>
+Subject: Re: BTRFS RAID filesystem unmountable
+References: <CAB+znrFyimDnOZt46CqterRJ6MvwD4TSWagQvv-oQxjPvG-m2w@mail.gmail.com>
+ <54d2f70a-adae-98cc-581f-2e4786783b26@gmx.com>
+ <CAB+znrHYrhBB4cstUaS3KcOfEHhOTPUsfAJKj3Cj62HJ-05FrQ@mail.gmail.com>
+ <d32f3fdc-5ba0-2b62-ce79-5e5665d4c960@gmx.com>
+ <CAB+znrF_d+Hg_A9AMvWEB=S5eVAtYrvr2jUPcvR4FfB4hnCMWA@mail.gmail.com>
+In-Reply-To: <CAB+znrF_d+Hg_A9AMvWEB=S5eVAtYrvr2jUPcvR4FfB4hnCMWA@mail.gmail.com>
 
-> My real worry is that I'm currently reading at 2.79GB/s (see result
-> above and below) without compression when my hardware *should* limit it
-> to 2.0GB/s. This tells me either `sync` is not working or my benchmark
-> method is flawed.
+--URyYsczzTikWNJlU0sqkdgLgg7fbFiul0
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-No answer but a couple additional questions/suggestions:
 
-* Tarfile:  Just to be sure, you're using an uncompressed tarfile, not a 
-(compressed tarfile) tgz/tbz2/etc, correct?
 
-* How does hdparm -t and -T compare?  That's read-only and bypasses the 
-filesystem, so it should at least give you something to compare the 2.79 
-GB/s to, both from-raw-device (-t) and cached/memory-only (-T).  See the 
-hdparm (8) manpage for the details.
+On 2018=E5=B9=B404=E6=9C=8829=E6=97=A5 16:11, Michael Wade wrote:
+> Thanks Qu,
+>=20
+> Please find attached the log file for the chunk recover command.
 
-* And of course try the compressed tarball too, since it should be easy 
-enough and should give you compressable vs. uncompressable numbers for 
-sanity checking.
+Strangely, btrfs chunk recovery found no extra chunk beyond current
+system chunk range.
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+Which means, it's chunk tree corrupted.
 
+Please dump the chunk tree with latest btrfs-progs (which provides the
+new --follow option).
+
+# btrfs inspect dump-tree -b 20800943685632 <device>
+
+If it doesn't work, please provide the following binary dump:
+
+# dd if=3D<dev> of=3D/tmp/chunk_root.copy1 bs=3D1 count=3D32K skip=3D2663=
+25721088
+# dd if=3D<dev> of=3D/tmp/chunk_root.copy2 bs=3D1 count=3D32K skip=3D2663=
+59275520
+(And will need to repeat similar dump for several times according to
+above dump)
+
+Thanks,
+Qu
+
+
+>=20
+> Kind regards
+> Michael
+>=20
+> On 28 April 2018 at 12:38, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
+>>
+>>
+>> On 2018=E5=B9=B404=E6=9C=8828=E6=97=A5 17:37, Michael Wade wrote:
+>>> Hi Qu,
+>>>
+>>> Thanks for your reply. I will investigate upgrading the kernel,
+>>> however I worry that future ReadyNAS firmware upgrades would fail on =
+a
+>>> newer kernel version (I don't have much linux experience so maybe my
+>>> concerns are unfounded!?).
+>>>
+>>> I have attached the output of the dump super command.
+>>>
+>>> I did actually run chunk recover before, without the verbose option,
+>>> it took around 24 hours to finish but did not resolve my issue. Happy=
+
+>>> to start that again if you need its output.
+>>
+>> The system chunk only contains the following chunks:
+>> [0, 4194304]:           Initial temporary chunk, not used at all
+>> [20971520, 29360128]:   System chunk created by mkfs, should be full
+>>                         used up
+>> [20800943685632, 20800977240064]:
+>>                         The newly created large system chunk.
+>>
+>> The chunk root is still in 2nd chunk thus valid, but some of its leaf =
+is
+>> out of the range.
+>>
+>> If you can't wait 24h for chunk recovery to run, my advice would be mo=
+ve
+>> the disk to some other computer, and use latest btrfs-progs to execute=
+
+>> the following command:
+>>
+>> # btrfs inpsect dump-tree -b 20800943685632 --follow
+>>
+>> If we're lucky enough, we may read out the tree leaf containing the ne=
+w
+>> system chunk and save a day.
+>>
+>> Thanks,
+>> Qu
+>>
+>>>
+>>> Thanks so much for your help.
+>>>
+>>> Kind regards
+>>> Michael
+>>>
+>>> On 28 April 2018 at 09:45, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
+>>>>
+>>>>
+>>>> On 2018=E5=B9=B404=E6=9C=8828=E6=97=A5 16:30, Michael Wade wrote:
+>>>>> Hi all,
+>>>>>
+>>>>> I was hoping that someone would be able to help me resolve the issu=
+es
+>>>>> I am having with my ReadyNAS BTRFS volume. Basically my trouble
+>>>>> started after a power cut, subsequently the volume would not mount.=
+
+>>>>> Here are the details of my setup as it is at the moment:
+>>>>>
+>>>>> uname -a
+>>>>> Linux QAI 4.4.116.alpine.1 #1 SMP Mon Feb 19 21:58:38 PST 2018 armv=
+7l GNU/Linux
+>>>>
+>>>> The kernel is pretty old for btrfs.
+>>>> Strongly recommended to upgrade.
+>>>>
+>>>>>
+>>>>> btrfs --version
+>>>>> btrfs-progs v4.12
+>>>>
+>>>> So is the user tools.
+>>>>
+>>>> Although I think it won't be a big problem, as needed tool should be=
+ there.
+>>>>
+>>>>>
+>>>>> btrfs fi show
+>>>>> Label: '11baed92:data'  uuid: 20628cda-d98f-4f85-955c-932a367f8821
+>>>>> Total devices 1 FS bytes used 5.12TiB
+>>>>> devid    1 size 7.27TiB used 6.24TiB path /dev/md127
+>>>>
+>>>> So, it's btrfs on mdraid.
+>>>> It would normally make things harder to debug, so I could only provi=
+de
+>>>> advice from the respect of btrfs.
+>>>> For mdraid part, I can't ensure anything.
+>>>>
+>>>>>
+>>>>> Here are the relevant dmesg logs for the current state of the devic=
+e:
+>>>>>
+>>>>> [   19.119391] md: md127 stopped.
+>>>>> [   19.120841] md: bind<sdb3>
+>>>>> [   19.121120] md: bind<sdc3>
+>>>>> [   19.121380] md: bind<sda3>
+>>>>> [   19.125535] md/raid:md127: device sda3 operational as raid disk =
+0
+>>>>> [   19.125547] md/raid:md127: device sdc3 operational as raid disk =
+2
+>>>>> [   19.125554] md/raid:md127: device sdb3 operational as raid disk =
+1
+>>>>> [   19.126712] md/raid:md127: allocated 3240kB
+>>>>> [   19.126778] md/raid:md127: raid level 5 active with 3 out of 3
+>>>>> devices, algorithm 2
+>>>>> [   19.126784] RAID conf printout:
+>>>>> [   19.126789]  --- level:5 rd:3 wd:3
+>>>>> [   19.126794]  disk 0, o:1, dev:sda3
+>>>>> [   19.126799]  disk 1, o:1, dev:sdb3
+>>>>> [   19.126804]  disk 2, o:1, dev:sdc3
+>>>>> [   19.128118] md127: detected capacity change from 0 to 7991637573=
+632
+>>>>> [   19.395112] Adding 523708k swap on /dev/md1.  Priority:-1 extent=
+s:1
+>>>>> across:523708k
+>>>>> [   19.434956] BTRFS: device label 11baed92:data devid 1 transid
+>>>>> 151800 /dev/md127
+>>>>> [   19.739276] BTRFS info (device md127): setting nodatasum
+>>>>> [   19.740440] BTRFS critical (device md127): unable to find logica=
+l
+>>>>> 3208757641216 len 4096
+>>>>> [   19.740450] BTRFS critical (device md127): unable to find logica=
+l
+>>>>> 3208757641216 len 4096
+>>>>> [   19.740498] BTRFS critical (device md127): unable to find logica=
+l
+>>>>> 3208757641216 len 4096
+>>>>> [   19.740512] BTRFS critical (device md127): unable to find logica=
+l
+>>>>> 3208757641216 len 4096
+>>>>> [   19.740552] BTRFS critical (device md127): unable to find logica=
+l
+>>>>> 3208757641216 len 4096
+>>>>> [   19.740560] BTRFS critical (device md127): unable to find logica=
+l
+>>>>> 3208757641216 len 4096
+>>>>> [   19.740576] BTRFS error (device md127): failed to read chunk roo=
+t
+>>>>
+>>>> This shows it pretty clear, btrfs fails to read chunk root.
+>>>> And according your above "len 4096" it's pretty old fs, as it's stil=
+l
+>>>> using 4K nodesize other than 16K nodesize.
+>>>>
+>>>> According to above output, it means your superblock by somehow lacks=
+ the
+>>>> needed system chunk mapping, which is used to initialize chunk mappi=
+ng.
+>>>>
+>>>> Please provide the following command output:
+>>>>
+>>>> # btrfs inspect dump-super -fFa /dev/md127
+>>>>
+>>>> Also, please consider run the following command and dump all its out=
+put:
+>>>>
+>>>> # btrfs rescue chunk-recover -v /dev/md127.
+>>>>
+>>>> Please note that, above command can take a long time to finish, and =
+if
+>>>> it works without problem, it may solve your problem.
+>>>> But if it doesn't work, the output could help me to manually craft a=
+ fix
+>>>> to your super block.
+>>>>
+>>>> Thanks,
+>>>> Qu
+>>>>
+>>>>
+>>>>> [   19.783975] BTRFS error (device md127): open_ctree failed
+>>>>>
+>>>>> In an attempt to recover the volume myself I run a few BTRFS comman=
+ds
+>>>>> mostly using advice from here:
+>>>>> https://lists.opensuse.org/opensuse/2017-02/msg00930.html. However
+>>>>> that actually seems to have made things worse as I can no longer mo=
+unt
+>>>>> the file system, not even in readonly mode.
+>>>>>
+>>>>> So starting from the beginning here is a list of things I have done=
+ so
+>>>>> far (hopefully I remembered the order in which I ran them!)
+>>>>>
+>>>>> 1. Noticed that my backups to the NAS were not running (didn't get
+>>>>> notified that the volume had basically "died")
+>>>>> 2. ReadyNAS UI indicated that the volume was inactive.
+>>>>> 3. SSHed onto the box and found that the first drive was not marked=
+ as
+>>>>> operational (log showed I/O errors / UNKOWN (0x2003))  so I replace=
+d
+>>>>> the disk and let the array resync.
+>>>>> 4. After resync the volume still was unaccessible so I looked at th=
+e
+>>>>> logs once more and saw something like the following which seemed to=
+
+>>>>> indicate that the replay log had been corrupted when the power went=
+
+>>>>> out:
+>>>>>
+>>>>> BTRFS critical (device md127): corrupt leaf, non-root leaf's nritem=
+s
+>>>>> is 0: block=3D232292352, root=3D7, slot=3D0
+>>>>> BTRFS critical (device md127): corrupt leaf, non-root leaf's nritem=
+s
+>>>>> is 0: block=3D232292352, root=3D7, slot=3D0
+>>>>> BTRFS: error (device md127) in btrfs_replay_log:2524: errno=3D-5 IO=
+
+>>>>> failure (Failed to recover log tree)
+>>>>> BTRFS error (device md127): pending csums is 155648
+>>>>> BTRFS error (device md127): cleaner transaction attach returned -30=
+
+>>>>> BTRFS critical (device md127): corrupt leaf, non-root leaf's nritem=
+s
+>>>>> is 0: block=3D232292352, root=3D7, slot=3D0
+>>>>>
+>>>>> 5. Then:
+>>>>>
+>>>>> btrfs rescue zero-log
+>>>>>
+>>>>> 6. Was then able to mount the volume in readonly mode.
+>>>>>
+>>>>> btrfs scrub start
+>>>>>
+>>>>> Which fixed some errors but not all:
+>>>>>
+>>>>> scrub status for 20628cda-d98f-4f85-955c-932a367f8821
+>>>>>
+>>>>> scrub started at Tue Apr 24 17:27:44 2018, running for 04:00:34
+>>>>> total bytes scrubbed: 224.26GiB with 6 errors
+>>>>> error details: csum=3D6
+>>>>> corrected errors: 0, uncorrectable errors: 6, unverified errors: 0
+>>>>>
+>>>>> scrub status for 20628cda-d98f-4f85-955c-932a367f8821
+>>>>> scrub started at Tue Apr 24 17:27:44 2018, running for 04:34:43
+>>>>> total bytes scrubbed: 224.26GiB with 6 errors
+>>>>> error details: csum=3D6
+>>>>> corrected errors: 0, uncorrectable errors: 6, unverified errors: 0
+>>>>>
+>>>>> 6. Seeing this hanging I rebooted the NAS
+>>>>> 7. Think this is when the volume would not mount at all.
+>>>>> 8. Seeing log entries like these:
+>>>>>
+>>>>> BTRFS warning (device md127): checksum error at logical 20800943685=
+632
+>>>>> on dev /dev/md127, sector 520167424: metadata node (level 1) in tre=
+e 3
+>>>>>
+>>>>> I ran
+>>>>>
+>>>>> btrfs check --fix-crc
+>>>>>
+>>>>> And that brings us to where I am now: Some seemly corrupted BTRFS
+>>>>> metadata and unable to mount the drive even with the recovery optio=
+n.
+>>>>>
+>>>>> Any help you can give is much appreciated!
+>>>>>
+>>>>> Kind regards
+>>>>> Michael
+>>>>> --
+>>>>> To unsubscribe from this list: send the line "unsubscribe linux-btr=
+fs" in
+>>>>> the body of a message to majordomo@vger.kernel.org
+>>>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>>>>
+>>>>
+>>
+
+
+--URyYsczzTikWNJlU0sqkdgLgg7fbFiul0--
+
+--WFBWr1U70WmRFmwVx0xD4l7hkyT1TRLFF
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlrlg1IACgkQwj2R86El
+/qh7hwgAgTsgOTU82S68LRLrFdaxyFb9+hVmXTu0baZSZtQ94lAQZBwWPkGBLuQM
+XXntX7UzGnPDZlFQG1wWsp3apAsnG+xD3I/NR3TS5hjSNkYmnbVXE6r6BxD50Tdo
+OuT4hpnc+OZgMVkeEZ55XIyfrNnYi2fj8vZdtug9+mrTGOVNEK22v6gmbLfMD2BT
++rB7UqCG1DqTkxRHjCnEohEzRuV/ch07SXdV5WubVL3aROImXU1qQbjzBh5lyRAz
+Fu1Bnw4trYVLIWBk4vZWkqTLiT8SAW6GUyyZ6x43CuhuKfxrt2P9bM6fV3qGxSiD
+ymftw6GvUMs4cosmc38EEMhuT0XBKg==
+=SKcP
+-----END PGP SIGNATURE-----
+
+--WFBWr1U70WmRFmwVx0xD4l7hkyT1TRLFF--

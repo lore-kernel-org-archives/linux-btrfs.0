@@ -1,293 +1,108 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ua0-f173.google.com ([209.85.217.173]:33809 "EHLO
-        mail-ua0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751280AbeD2I7O (ORCPT
+Received: from avasout05.plus.net ([84.93.230.250]:53028 "EHLO
+        avasout05.plus.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752647AbeD2JUE (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 29 Apr 2018 04:59:14 -0400
-Received: by mail-ua0-f173.google.com with SMTP id f22so3738484uam.1
-        for <linux-btrfs@vger.kernel.org>; Sun, 29 Apr 2018 01:59:14 -0700 (PDT)
+        Sun, 29 Apr 2018 05:20:04 -0400
+From: "David C. Partridge" <david.partridge@perdrix.co.uk>
+To: "'Qu Wenruo'" <quwenruo.btrfs@gmx.com>, <linux-btrfs@vger.kernel.org>
+References: <003801d3de56$fba1b930$f2e52b90$@perdrix.co.uk> <035a8b69-127a-0b7f-28e0-67c0a3e3f5c7@gmx.com> <003801d3def2$d90965c0$8b1c3140$@perdrix.co.uk> <a5c24cee-ad20-f317-28e8-40e88039db45@gmx.com> <004d01d3def6$4000ed40$c002c7c0$@perdrix.co.uk> <60674123-6fe2-2cfe-e7a8-25d62e023c53@gmx.com> <006201d3defa$2783dda0$768b98e0$@perdrix.co.uk> <0dba3a1c-434a-dc23-5d5d-75151121ffbf@gmx.com> <001701d3df0a$55d7cf30$01876d90$@perdrix.co.uk> <275af8f8-4997-5246-d2a4-99ab2bf299fb@gmx.com> <002f01d3df5d$25dd0270$71970750$@perdrix.co.uk> <c26c307a-75ce-d0f5-ca29-75854c34280c@gmx.com> <002a01d3df93$74b7b760$5e272620$@perdrix.co.uk> <126b8a98-384e-af68-8a36-ad702f07fad2@gmx.com>
+In-Reply-To: <126b8a98-384e-af68-8a36-ad702f07fad2@gmx.com>
+Subject: RE: Problems with btrfs
+Date: Sun, 29 Apr 2018 10:20:01 +0100
+Message-ID: <000b01d3df9b$40f17fd0$c2d47f70$@perdrix.co.uk>
 MIME-Version: 1.0
-In-Reply-To: <bff1c7b3-5bac-9806-a376-3612057865cf@gmx.com>
-References: <CAB+znrFyimDnOZt46CqterRJ6MvwD4TSWagQvv-oQxjPvG-m2w@mail.gmail.com>
- <54d2f70a-adae-98cc-581f-2e4786783b26@gmx.com> <CAB+znrHYrhBB4cstUaS3KcOfEHhOTPUsfAJKj3Cj62HJ-05FrQ@mail.gmail.com>
- <d32f3fdc-5ba0-2b62-ce79-5e5665d4c960@gmx.com> <CAB+znrF_d+Hg_A9AMvWEB=S5eVAtYrvr2jUPcvR4FfB4hnCMWA@mail.gmail.com>
- <bff1c7b3-5bac-9806-a376-3612057865cf@gmx.com>
-From: Michael Wade <spikewade@gmail.com>
-Date: Sun, 29 Apr 2018 09:59:13 +0100
-Message-ID: <CAB+znrHPF7963-MAXtgu8s3+vLEA7ENE0=uCCJ6sWCF6KUWToQ@mail.gmail.com>
-Subject: Re: BTRFS RAID filesystem unmountable
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: multipart/mixed;
+        boundary="----=_NextPart_000_000C_01D3DFA3.A2B635F0"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Ok, will it be possible for me to install the new version of the tools
-on my current kernel without overriding the existing install? Hesitant
-to update kernel/btrfs as it might break the ReadyNAS interface /
-future firmware upgrades.
+This is a multipart message in MIME format.
 
-Perhaps I could grab this:
-https://github.com/kdave/btrfs-progs/releases/tag/v4.16.1 and
-hopefully build from source and then run the binaries directly?
+------=_NextPart_000_000C_01D3DFA3.A2B635F0
+Content-Type: text/plain;
+	charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
 
-Kind regards
+Here is the result of btrfs check after applying the patch
 
-On 29 April 2018 at 09:33, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
->
->
-> On 2018年04月29日 16:11, Michael Wade wrote:
->> Thanks Qu,
+Dave
+-----Original Message-----
+From: Qu Wenruo [mailto:quwenruo.btrfs@gmx.com]=20
+Sent: 29 April 2018 09:36
+To: David C. Partridge
+Subject: Re: Problems with btrfs
+
+Here is the patched binary tree block.
+
+You could apply them by the following command (copy1 and copy2 are the =
+same).
+
+# dd if=3Dcopy1.img of=3D<device> bs=3D1 count=3D16K seek=3D25942081536 =
+# dd if=3Dcopy1.img of=3D<device> bs=3D1 count=3D16K seek=3D26478952448
+
+And after that, try btrfs check to see if it reports new error.
+
+Thanks,
+Qu
+
+On 2018=E5=B9=B404=E6=9C=8829=E6=97=A5 16:24, David C. Partridge wrote:
+> Attached as requested
+>=20
+> -----Original Message-----
+> From: linux-btrfs-owner@vger.kernel.org=20
+> [mailto:linux-btrfs-owner@vger.kernel.org] On Behalf Of Qu Wenruo
+> Sent: 29 April 2018 03:08
+> To: David C. Partridge; linux-btrfs@vger.kernel.org
+> Subject: Re: Problems with btrfs
+>=20
+>=20
+>=20
+> On 2018=E5=B9=B404=E6=9C=8829=E6=97=A5 09:55, David C. Partridge =
+wrote:
+>> Not a problem
 >>
->> Please find attached the log file for the chunk recover command.
->
-> Strangely, btrfs chunk recovery found no extra chunk beyond current
-> system chunk range.
->
-> Which means, it's chunk tree corrupted.
->
-> Please dump the chunk tree with latest btrfs-progs (which provides the
-> new --follow option).
->
-> # btrfs inspect dump-tree -b 20800943685632 <device>
->
-> If it doesn't work, please provide the following binary dump:
->
-> # dd if=<dev> of=/tmp/chunk_root.copy1 bs=1 count=32K skip=266325721088
-> # dd if=<dev> of=/tmp/chunk_root.copy2 bs=1 count=32K skip=266359275520
-> (And will need to repeat similar dump for several times according to
-> above dump)
->
+>> See attached
+>=20
+> The final binary dump:
+>=20
+> # dd if=3D<device> of=3D/tmp/copy1.img bs=3D1 count=3D16K =
+skip=3D25942081536 #=20
+> dd if=3D<device> of=3D/tmp/copy2.img bs=3D1 count=3D16K =
+skip=3D26478952448
+>=20
 > Thanks,
 > Qu
->
->
->>
->> Kind regards
->> Michael
->>
->> On 28 April 2018 at 12:38, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
->>>
->>>
->>> On 2018年04月28日 17:37, Michael Wade wrote:
->>>> Hi Qu,
->>>>
->>>> Thanks for your reply. I will investigate upgrading the kernel,
->>>> however I worry that future ReadyNAS firmware upgrades would fail on a
->>>> newer kernel version (I don't have much linux experience so maybe my
->>>> concerns are unfounded!?).
->>>>
->>>> I have attached the output of the dump super command.
->>>>
->>>> I did actually run chunk recover before, without the verbose option,
->>>> it took around 24 hours to finish but did not resolve my issue. Happy
->>>> to start that again if you need its output.
->>>
->>> The system chunk only contains the following chunks:
->>> [0, 4194304]:           Initial temporary chunk, not used at all
->>> [20971520, 29360128]:   System chunk created by mkfs, should be full
->>>                         used up
->>> [20800943685632, 20800977240064]:
->>>                         The newly created large system chunk.
->>>
->>> The chunk root is still in 2nd chunk thus valid, but some of its leaf is
->>> out of the range.
->>>
->>> If you can't wait 24h for chunk recovery to run, my advice would be move
->>> the disk to some other computer, and use latest btrfs-progs to execute
->>> the following command:
->>>
->>> # btrfs inpsect dump-tree -b 20800943685632 --follow
->>>
->>> If we're lucky enough, we may read out the tree leaf containing the new
->>> system chunk and save a day.
->>>
->>> Thanks,
->>> Qu
->>>
->>>>
->>>> Thanks so much for your help.
->>>>
->>>> Kind regards
->>>> Michael
->>>>
->>>> On 28 April 2018 at 09:45, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
->>>>>
->>>>>
->>>>> On 2018年04月28日 16:30, Michael Wade wrote:
->>>>>> Hi all,
->>>>>>
->>>>>> I was hoping that someone would be able to help me resolve the issues
->>>>>> I am having with my ReadyNAS BTRFS volume. Basically my trouble
->>>>>> started after a power cut, subsequently the volume would not mount.
->>>>>> Here are the details of my setup as it is at the moment:
->>>>>>
->>>>>> uname -a
->>>>>> Linux QAI 4.4.116.alpine.1 #1 SMP Mon Feb 19 21:58:38 PST 2018 armv7l GNU/Linux
->>>>>
->>>>> The kernel is pretty old for btrfs.
->>>>> Strongly recommended to upgrade.
->>>>>
->>>>>>
->>>>>> btrfs --version
->>>>>> btrfs-progs v4.12
->>>>>
->>>>> So is the user tools.
->>>>>
->>>>> Although I think it won't be a big problem, as needed tool should be there.
->>>>>
->>>>>>
->>>>>> btrfs fi show
->>>>>> Label: '11baed92:data'  uuid: 20628cda-d98f-4f85-955c-932a367f8821
->>>>>> Total devices 1 FS bytes used 5.12TiB
->>>>>> devid    1 size 7.27TiB used 6.24TiB path /dev/md127
->>>>>
->>>>> So, it's btrfs on mdraid.
->>>>> It would normally make things harder to debug, so I could only provide
->>>>> advice from the respect of btrfs.
->>>>> For mdraid part, I can't ensure anything.
->>>>>
->>>>>>
->>>>>> Here are the relevant dmesg logs for the current state of the device:
->>>>>>
->>>>>> [   19.119391] md: md127 stopped.
->>>>>> [   19.120841] md: bind<sdb3>
->>>>>> [   19.121120] md: bind<sdc3>
->>>>>> [   19.121380] md: bind<sda3>
->>>>>> [   19.125535] md/raid:md127: device sda3 operational as raid disk 0
->>>>>> [   19.125547] md/raid:md127: device sdc3 operational as raid disk 2
->>>>>> [   19.125554] md/raid:md127: device sdb3 operational as raid disk 1
->>>>>> [   19.126712] md/raid:md127: allocated 3240kB
->>>>>> [   19.126778] md/raid:md127: raid level 5 active with 3 out of 3
->>>>>> devices, algorithm 2
->>>>>> [   19.126784] RAID conf printout:
->>>>>> [   19.126789]  --- level:5 rd:3 wd:3
->>>>>> [   19.126794]  disk 0, o:1, dev:sda3
->>>>>> [   19.126799]  disk 1, o:1, dev:sdb3
->>>>>> [   19.126804]  disk 2, o:1, dev:sdc3
->>>>>> [   19.128118] md127: detected capacity change from 0 to 7991637573632
->>>>>> [   19.395112] Adding 523708k swap on /dev/md1.  Priority:-1 extents:1
->>>>>> across:523708k
->>>>>> [   19.434956] BTRFS: device label 11baed92:data devid 1 transid
->>>>>> 151800 /dev/md127
->>>>>> [   19.739276] BTRFS info (device md127): setting nodatasum
->>>>>> [   19.740440] BTRFS critical (device md127): unable to find logical
->>>>>> 3208757641216 len 4096
->>>>>> [   19.740450] BTRFS critical (device md127): unable to find logical
->>>>>> 3208757641216 len 4096
->>>>>> [   19.740498] BTRFS critical (device md127): unable to find logical
->>>>>> 3208757641216 len 4096
->>>>>> [   19.740512] BTRFS critical (device md127): unable to find logical
->>>>>> 3208757641216 len 4096
->>>>>> [   19.740552] BTRFS critical (device md127): unable to find logical
->>>>>> 3208757641216 len 4096
->>>>>> [   19.740560] BTRFS critical (device md127): unable to find logical
->>>>>> 3208757641216 len 4096
->>>>>> [   19.740576] BTRFS error (device md127): failed to read chunk root
->>>>>
->>>>> This shows it pretty clear, btrfs fails to read chunk root.
->>>>> And according your above "len 4096" it's pretty old fs, as it's still
->>>>> using 4K nodesize other than 16K nodesize.
->>>>>
->>>>> According to above output, it means your superblock by somehow lacks the
->>>>> needed system chunk mapping, which is used to initialize chunk mapping.
->>>>>
->>>>> Please provide the following command output:
->>>>>
->>>>> # btrfs inspect dump-super -fFa /dev/md127
->>>>>
->>>>> Also, please consider run the following command and dump all its output:
->>>>>
->>>>> # btrfs rescue chunk-recover -v /dev/md127.
->>>>>
->>>>> Please note that, above command can take a long time to finish, and if
->>>>> it works without problem, it may solve your problem.
->>>>> But if it doesn't work, the output could help me to manually craft a fix
->>>>> to your super block.
->>>>>
->>>>> Thanks,
->>>>> Qu
->>>>>
->>>>>
->>>>>> [   19.783975] BTRFS error (device md127): open_ctree failed
->>>>>>
->>>>>> In an attempt to recover the volume myself I run a few BTRFS commands
->>>>>> mostly using advice from here:
->>>>>> https://lists.opensuse.org/opensuse/2017-02/msg00930.html. However
->>>>>> that actually seems to have made things worse as I can no longer mount
->>>>>> the file system, not even in readonly mode.
->>>>>>
->>>>>> So starting from the beginning here is a list of things I have done so
->>>>>> far (hopefully I remembered the order in which I ran them!)
->>>>>>
->>>>>> 1. Noticed that my backups to the NAS were not running (didn't get
->>>>>> notified that the volume had basically "died")
->>>>>> 2. ReadyNAS UI indicated that the volume was inactive.
->>>>>> 3. SSHed onto the box and found that the first drive was not marked as
->>>>>> operational (log showed I/O errors / UNKOWN (0x2003))  so I replaced
->>>>>> the disk and let the array resync.
->>>>>> 4. After resync the volume still was unaccessible so I looked at the
->>>>>> logs once more and saw something like the following which seemed to
->>>>>> indicate that the replay log had been corrupted when the power went
->>>>>> out:
->>>>>>
->>>>>> BTRFS critical (device md127): corrupt leaf, non-root leaf's nritems
->>>>>> is 0: block=232292352, root=7, slot=0
->>>>>> BTRFS critical (device md127): corrupt leaf, non-root leaf's nritems
->>>>>> is 0: block=232292352, root=7, slot=0
->>>>>> BTRFS: error (device md127) in btrfs_replay_log:2524: errno=-5 IO
->>>>>> failure (Failed to recover log tree)
->>>>>> BTRFS error (device md127): pending csums is 155648
->>>>>> BTRFS error (device md127): cleaner transaction attach returned -30
->>>>>> BTRFS critical (device md127): corrupt leaf, non-root leaf's nritems
->>>>>> is 0: block=232292352, root=7, slot=0
->>>>>>
->>>>>> 5. Then:
->>>>>>
->>>>>> btrfs rescue zero-log
->>>>>>
->>>>>> 6. Was then able to mount the volume in readonly mode.
->>>>>>
->>>>>> btrfs scrub start
->>>>>>
->>>>>> Which fixed some errors but not all:
->>>>>>
->>>>>> scrub status for 20628cda-d98f-4f85-955c-932a367f8821
->>>>>>
->>>>>> scrub started at Tue Apr 24 17:27:44 2018, running for 04:00:34
->>>>>> total bytes scrubbed: 224.26GiB with 6 errors
->>>>>> error details: csum=6
->>>>>> corrected errors: 0, uncorrectable errors: 6, unverified errors: 0
->>>>>>
->>>>>> scrub status for 20628cda-d98f-4f85-955c-932a367f8821
->>>>>> scrub started at Tue Apr 24 17:27:44 2018, running for 04:34:43
->>>>>> total bytes scrubbed: 224.26GiB with 6 errors
->>>>>> error details: csum=6
->>>>>> corrected errors: 0, uncorrectable errors: 6, unverified errors: 0
->>>>>>
->>>>>> 6. Seeing this hanging I rebooted the NAS
->>>>>> 7. Think this is when the volume would not mount at all.
->>>>>> 8. Seeing log entries like these:
->>>>>>
->>>>>> BTRFS warning (device md127): checksum error at logical 20800943685632
->>>>>> on dev /dev/md127, sector 520167424: metadata node (level 1) in tree 3
->>>>>>
->>>>>> I ran
->>>>>>
->>>>>> btrfs check --fix-crc
->>>>>>
->>>>>> And that brings us to where I am now: Some seemly corrupted BTRFS
->>>>>> metadata and unable to mount the drive even with the recovery option.
->>>>>>
->>>>>> Any help you can give is much appreciated!
->>>>>>
->>>>>> Kind regards
->>>>>> Michael
->>>>>> --
->>>>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->>>>>> the body of a message to majordomo@vger.kernel.org
->>>>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>>>>>
->>>>>
->>>
->
+>=20
+
+------=_NextPart_000_000C_01D3DFA3.A2B635F0
+Content-Type: application/octet-stream;
+	name="btrfs-check1.log"
+Content-Transfer-Encoding: quoted-printable
+Content-Disposition: attachment;
+	filename="btrfs-check1.log"
+
+root@ubuntu:/home/amonra# btrfs check /dev/mapper/Charon--vg-root=0A=
+Checking filesystem on /dev/mapper/Charon--vg-root=0A=
+UUID: a0a6c5a6-061f-4c86-bc14-7f9abf3cb57e=0A=
+checking extents=0A=
+owner ref check failed [224304857088 16384]=0A=
+checking free space cache=0A=
+Wanted bytes 32768, found 65536 for off 236453888000=0A=
+Wanted bytes 536870912, found 65536 for off 236453888000=0A=
+cache appears valid but isn't 236453888000=0A=
+Wanted bytes 16384, found 557056 for off 279384162304=0A=
+Wanted bytes 536870912, found 557056 for off 279384162304=0A=
+cache appears valid but isn't 279384162304=0A=
+found 26552209419 bytes used err is -22=0A=
+total csum bytes: 23801264=0A=
+total tree bytes: 2076573696=0A=
+total fs tree bytes: 1966374912=0A=
+total extent tree bytes: 77348864=0A=
+btree space waste bytes: 571022401=0A=
+file data blocks allocated: 192698281984=0A=
+ referenced 132292960256=0A=
+root@ubuntu:/home/amonra# =0A=
+
+------=_NextPart_000_000C_01D3DFA3.A2B635F0--
+

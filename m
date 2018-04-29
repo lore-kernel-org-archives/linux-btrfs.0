@@ -1,65 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f180.google.com ([209.85.223.180]:44104 "EHLO
-        mail-io0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751340AbeDHKTO (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 8 Apr 2018 06:19:14 -0400
-Received: by mail-io0-f180.google.com with SMTP id d7so6381651ioc.11
-        for <linux-btrfs@vger.kernel.org>; Sun, 08 Apr 2018 03:19:14 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <744d42cf-7ace-2921-00ae-86340ad743d7@suse.com>
-References: <CAJVZm6dAcTC7e4RFtfhrJ-DdnR8m4tGGh=z-EAM2uOKVCU_sdg@mail.gmail.com>
- <744d42cf-7ace-2921-00ae-86340ad743d7@suse.com>
-From: Menion <menion@gmail.com>
-Date: Sun, 8 Apr 2018 12:18:53 +0200
-Message-ID: <CAJVZm6cdT7==PHEDVsQk57v_iP7K8xtPK7rnj-WhvFn-Y-XFWw@mail.gmail.com>
-Subject: Re: Unable to compile btrfs progs 4.16 on ubuntu Xenial
-To: Nikolay Borisov <nborisov@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+Received: from synology.com ([59.124.61.242]:44022 "EHLO synology.com"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752455AbeD2IDh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 29 Apr 2018 04:03:37 -0400
+From: ethanwu <ethanwu@synology.com>
+To: linux-btrfs@vger.kernel.org
+Cc: ethanwu <ethanwu@synology.com>
+Subject: [PATCH v2] btrfs: Take trans lock before access running trans in check_delayed_ref
+Date: Sun, 29 Apr 2018 15:59:42 +0800
+Message-Id: <1524988782-2680-1-git-send-email-ethanwu@synology.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Ok, that was missing, also python3—setuptools is required.
-I think it is worth to add in the wiki the packages dependencies
-Bye
+In preivous patch:
+Btrfs: kill trans in run_delalloc_nocow and btrfs_cross_ref_exist
+We avoid starting btrfs transaction and get this information from
+fs_info->running_transaction directly.
 
-2018-04-08 10:51 GMT+02:00 Nikolay Borisov <nborisov@suse.com>:
->
->
-> On  7.04.2018 20:16, Menion wrote:
->> Hi all
->> Apparently it is not possible to compile with python bindings the
->> btrfs progs on ubuntu xenial
->>
->> checking for a Python interpreter with version >= 3.4... python3
->> checking for python3... /usr/bin/python3
->> checking for python3 version... 3.5
->> checking for python3 platform... linux
->> checking for python3 script directory... ${prefix}/lib/python3.5/site-packages
->> checking for python3 extension module directory...
->> ${exec_prefix}/lib/python3.5/site-packages
->> checking for python-3.5... no
->> configure: error: Package requirements (python-3.5) were not met:
->>
->> No package 'python-3.5' found
->>
->> Consider adjusting the PKG_CONFIG_PATH environment variable if you
->> installed software in a non-standard prefix.
->>
->> Alternatively, you may set the environment variables PYTHON_CFLAGS
->> and PYTHON_LIBS to avoid the need to call pkg-config.
->> See the pkg-config man page for more details.
->>
->> /usr/lib/python3.5/site-packages exists, but on Ubuntu the package
->> name is python3.5 and not python-3.5
->
->
-> Do you have libpython3-dev installed? When I installed it on my ubuntu i
-> could compile the progs irrespective of whether --prefix was passed or not
->>
->> Bye
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
+When accessing running_transaction in check_delayed_ref, there's a
+chance that current transaction will be freed by commit transaction
+after the NULL pointer check of running_transaction is passed.
+
+After looking all the other places using fs_info->running_transaction,
+they are either protected by trans_lock or holding the transactions.
+
+Fix this by using trans_lock and increasing the use_count.
+
+Signed-off-by: ethanwu <ethanwu@synology.com>
+---
+V2: Use refcount_inc rather than aomitc_inc to increase use_count
+
+ fs/btrfs/extent-tree.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index c1618ab..7c302ed 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3149,7 +3149,11 @@ static noinline int check_delayed_ref(struct btrfs_root *root,
+ 	struct rb_node *node;
+ 	int ret = 0;
+ 
++	spin_lock(&root->fs_info->trans_lock);
+ 	cur_trans = root->fs_info->running_transaction;
++	if (cur_trans)
++		refcount_inc(&cur_trans->use_count);
++	spin_unlock(&root->fs_info->trans_lock);
+ 	if (!cur_trans)
+ 		return 0;
+ 
+@@ -3158,6 +3162,7 @@ static noinline int check_delayed_ref(struct btrfs_root *root,
+ 	head = btrfs_find_delayed_ref_head(delayed_refs, bytenr);
+ 	if (!head) {
+ 		spin_unlock(&delayed_refs->lock);
++		btrfs_put_transaction(cur_trans);
+ 		return 0;
+ 	}
+ 
+@@ -3174,6 +3179,7 @@ static noinline int check_delayed_ref(struct btrfs_root *root,
+ 		mutex_lock(&head->mutex);
+ 		mutex_unlock(&head->mutex);
+ 		btrfs_put_delayed_ref_head(head);
++		btrfs_put_transaction(cur_trans);
+ 		return -EAGAIN;
+ 	}
+ 	spin_unlock(&delayed_refs->lock);
+@@ -3206,6 +3212,7 @@ static noinline int check_delayed_ref(struct btrfs_root *root,
+ 	}
+ 	spin_unlock(&head->lock);
+ 	mutex_unlock(&head->mutex);
++	btrfs_put_transaction(cur_trans);
+ 	return ret;
+ }
+ 
+-- 
+1.9.1
+

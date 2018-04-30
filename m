@@ -1,103 +1,290 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:59072 "EHLO
-        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751841AbeD3G2V (ORCPT
-        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Mon, 30 Apr 2018 02:28:21 -0400
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/2] btrfs-progs: fsck-tests: Add test case to ensure btrfs check return error for corrupted qgroups
-Date: Mon, 30 Apr 2018 14:28:07 +0800
-Message-Id: <20180430062807.19428-2-wqu@suse.com>
-In-Reply-To: <20180430062807.19428-1-wqu@suse.com>
-References: <20180430062807.19428-1-wqu@suse.com>
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:56244 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1751231AbeD3DVb (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 29 Apr 2018 23:21:31 -0400
+Subject: Re: [PATCH 1/3] btrfs-progs: Remove fs_info parameter from
+ btrfs_leaf_free_space()
+To: Qu Wenruo <wqu@suse.com>, <linux-btrfs@vger.kernel.org>
+References: <20180430031545.29891-1-wqu@suse.com>
+From: Su Yue <suy.fnst@cn.fujitsu.com>
+Message-ID: <db4bdb86-eef7-22dc-c680-e17e1a17cf30@cn.fujitsu.com>
+Date: Mon, 30 Apr 2018 11:27:21 +0800
+MIME-Version: 1.0
+In-Reply-To: <20180430031545.29891-1-wqu@suse.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Since the test case uses run_mustfail(), which is pretty easy pass due to
-other unexpected problems, so here an extra run_check() is added to
-ensure we don't only report qgroup error, but also fix it without
-problem.
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- .../032-corrupted-qgroup/qgroup_corrupted.img | Bin 0 -> 3072 bytes
- tests/fsck-tests/032-corrupted-qgroup/test.sh |  19 ++++++++++++++++++
- 2 files changed, 19 insertions(+)
- create mode 100644 tests/fsck-tests/032-corrupted-qgroup/qgroup_corrupted.img
- create mode 100755 tests/fsck-tests/032-corrupted-qgroup/test.sh
 
-diff --git a/tests/fsck-tests/032-corrupted-qgroup/qgroup_corrupted.img b/tests/fsck-tests/032-corrupted-qgroup/qgroup_corrupted.img
-new file mode 100644
-index 0000000000000000000000000000000000000000..a19a303534d419fa7660615d0dcf25ad314e7b20
-GIT binary patch
-literal 3072
-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
-M0{wko&HnrGZzc7KcK`qY
+On 04/30/2018 11:15 AM, Qu Wenruo wrote:
+> For btrfs_leaf_free_space(), to get leaf data size, we have two way to
+> get it:
+> 
+> 1) leaf->fs_info->nodesize
+> 2) leaf->len
+> 
+> Anyway, we could get rid of @fs_info parameter for
+> btrfs_leaf_free_space().
+> And here we choose method 2), as it provides extra benefit to get leaf
+> free space without initializing a real fs_info.
+> 
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
 
-literal 0
-HcmV?d00001
+Reviewed-by: Su Yue <suy.fnst@cn.fujitsu.com>
 
-diff --git a/tests/fsck-tests/032-corrupted-qgroup/test.sh b/tests/fsck-tests/032-corrupted-qgroup/test.sh
-new file mode 100755
-index 000000000000..ccecfeac3ca3
---- /dev/null
-+++ b/tests/fsck-tests/032-corrupted-qgroup/test.sh
-@@ -0,0 +1,19 @@
-+#!/bin/bash
-+# To check if btrfs check can handle valid orphan items.
-+# Orphan item is a marker for deleted inodes that were open at the time of
-+# deletion.  # Orphan inode/root will is not referenced and will have an orphan
-+# item, which should not be reported as error.
-+
-+source "$TEST_TOP/common"
-+
-+check_prereq btrfs
-+
-+check_image() {
-+	run_mustfail "btrfs check failed to detect qgroup corruption" \
-+		     "$TOP/btrfs" check "$1"
-+	# Above command can fail due to other bugs, so add extra safe net to
-+	# ensure we can fix qgroup without problem.
-+	run_check "$TOP/btrfs" check --repair "$1"
-+}
-+
-+check_all_images
--- 
-2.17.0
+> ---
+>   btrfs-corrupt-block.c |  2 +-
+>   check/main.c          |  2 +-
+>   check/mode-lowmem.c   |  2 +-
+>   ctree.c               | 49 ++++++++++++++++++++++---------------------
+>   ctree.h               |  3 +--
+>   print-tree.c          |  2 +-
+>   6 files changed, 30 insertions(+), 30 deletions(-)
+> 
+> diff --git a/btrfs-corrupt-block.c b/btrfs-corrupt-block.c
+> index da0ec8c51e5a..fc06204b6481 100644
+> --- a/btrfs-corrupt-block.c
+> +++ b/btrfs-corrupt-block.c
+> @@ -726,7 +726,7 @@ out:
+>   static void shift_items(struct btrfs_root *root, struct extent_buffer *eb)
+>   {
+>   	int nritems = btrfs_header_nritems(eb);
+> -	int shift_space = btrfs_leaf_free_space(root->fs_info, eb) / 2;
+> +	int shift_space = btrfs_leaf_free_space(eb) / 2;
+>   	int slot = nritems / 2;
+>   	int i = 0;
+>   	unsigned int data_end = btrfs_item_offset_nr(eb, nritems - 1);
+> diff --git a/check/main.c b/check/main.c
+> index c4a1801fb0ef..2030fe663e1b 100644
+> --- a/check/main.c
+> +++ b/check/main.c
+> @@ -5970,7 +5970,7 @@ static int run_next_block(struct btrfs_root *root,
+>   		goto out;
+>   
+>   	if (btrfs_is_leaf(buf)) {
+> -		btree_space_waste += btrfs_leaf_free_space(fs_info, buf);
+> +		btree_space_waste += btrfs_leaf_free_space(buf);
+>   		for (i = 0; i < nritems; i++) {
+>   			struct btrfs_file_extent_item *fi;
+>   
+> diff --git a/check/mode-lowmem.c b/check/mode-lowmem.c
+> index bfe45abab6cc..227ecf87cf97 100644
+> --- a/check/mode-lowmem.c
+> +++ b/check/mode-lowmem.c
+> @@ -390,7 +390,7 @@ static void account_bytes(struct btrfs_root *root, struct btrfs_path *path,
+>   		total_extent_tree_bytes += eb->len;
+>   
+>   	if (level == 0) {
+> -		btree_space_waste += btrfs_leaf_free_space(root->fs_info, eb);
+> +		btree_space_waste += btrfs_leaf_free_space(eb);
+>   	} else {
+>   		free_nrs = (BTRFS_NODEPTRS_PER_BLOCK(root->fs_info) -
+>   			    btrfs_header_nritems(eb));
+> diff --git a/ctree.c b/ctree.c
+> index d1c41925d71c..2c3ba70b000c 100644
+> --- a/ctree.c
+> +++ b/ctree.c
+> @@ -480,11 +480,11 @@ btrfs_check_leaf(struct btrfs_root *root, struct btrfs_disk_key *parent_key,
+>   		       (unsigned long long)btrfs_header_bytenr(buf));
+>   		goto fail;
+>   	}
+> -	if (btrfs_leaf_free_space(root->fs_info, buf) < 0) {
+> +	if (btrfs_leaf_free_space(buf) < 0) {
+>   		ret = BTRFS_TREE_BLOCK_INVALID_FREE_SPACE;
+>   		fprintf(stderr, "leaf free space incorrect %llu %d\n",
+>   			(unsigned long long)btrfs_header_bytenr(buf),
+> -			btrfs_leaf_free_space(root->fs_info, buf));
+> +			btrfs_leaf_free_space(buf));
+>   		goto fail;
+>   	}
+>   
+> @@ -1193,7 +1193,7 @@ again:
+>   		} else {
+>   			p->slots[level] = slot;
+>   			if (ins_len > 0 &&
+> -			    ins_len > btrfs_leaf_free_space(root->fs_info, b)) {
+> +			    ins_len > btrfs_leaf_free_space(b)) {
+>   				int sret = split_leaf(trans, root, key,
+>   						      p, ins_len, ret == 0);
+>   				BUG_ON(sret > 0);
+> @@ -1634,17 +1634,19 @@ static int leaf_space_used(struct extent_buffer *l, int start, int nr)
+>    * the start of the leaf data.  IOW, how much room
+>    * the leaf has left for both items and data
+>    */
+> -int btrfs_leaf_free_space(struct btrfs_fs_info *fs_info,
+> -			  struct extent_buffer *leaf)
+> +int btrfs_leaf_free_space(struct extent_buffer *leaf)
+>   {
+>   	int nritems = btrfs_header_nritems(leaf);
+> +	u32 leaf_data_size;
+>   	int ret;
+>   
+> -	ret = BTRFS_LEAF_DATA_SIZE(fs_info) - leaf_space_used(leaf, 0, nritems);
+> +	BUG_ON(leaf->fs_info && leaf->fs_info->nodesize != leaf->len);
+> +	leaf_data_size = __BTRFS_LEAF_DATA_SIZE(leaf->len);
+> +	ret = leaf_data_size - leaf_space_used(leaf, 0 ,nritems);
+>   	if (ret < 0) {
+> -		printk("leaf free space ret %d, leaf data size %lu, used %d nritems %d\n",
+> -		       ret, BTRFS_LEAF_DATA_SIZE(fs_info),
+> -		       leaf_space_used(leaf, 0, nritems), nritems);
+> +		printk("leaf free space ret %d, leaf data size %u, used %d nritems %d\n",
+> +		       ret, leaf_data_size, leaf_space_used(leaf, 0, nritems),
+> +		       nritems);
+>   	}
+>   	return ret;
+>   }
+> @@ -1692,7 +1694,7 @@ static int push_leaf_right(struct btrfs_trans_handle *trans, struct btrfs_root
+>   			return PTR_ERR(right);
+>   		return -EIO;
+>   	}
+> -	free_space = btrfs_leaf_free_space(fs_info, right);
+> +	free_space = btrfs_leaf_free_space(right);
+>   	if (free_space < data_size) {
+>   		free_extent_buffer(right);
+>   		return 1;
+> @@ -1705,7 +1707,7 @@ static int push_leaf_right(struct btrfs_trans_handle *trans, struct btrfs_root
+>   		free_extent_buffer(right);
+>   		return 1;
+>   	}
+> -	free_space = btrfs_leaf_free_space(fs_info, right);
+> +	free_space = btrfs_leaf_free_space(right);
+>   	if (free_space < data_size) {
+>   		free_extent_buffer(right);
+>   		return 1;
+> @@ -1844,7 +1846,7 @@ static int push_leaf_left(struct btrfs_trans_handle *trans, struct btrfs_root
+>   	}
+>   
+>   	left = read_node_slot(fs_info, path->nodes[1], slot - 1);
+> -	free_space = btrfs_leaf_free_space(fs_info, left);
+> +	free_space = btrfs_leaf_free_space(left);
+>   	if (free_space < data_size) {
+>   		free_extent_buffer(left);
+>   		return 1;
+> @@ -1859,7 +1861,7 @@ static int push_leaf_left(struct btrfs_trans_handle *trans, struct btrfs_root
+>   		return 1;
+>   	}
+>   
+> -	free_space = btrfs_leaf_free_space(fs_info, left);
+> +	free_space = btrfs_leaf_free_space(left);
+>   	if (free_space < data_size) {
+>   		free_extent_buffer(left);
+>   		return 1;
+> @@ -2083,7 +2085,7 @@ static noinline int split_leaf(struct btrfs_trans_handle *trans,
+>   		l = path->nodes[0];
+>   
+>   		/* did the pushes work? */
+> -		if (btrfs_leaf_free_space(root->fs_info, l) >= data_size)
+> +		if (btrfs_leaf_free_space(l) >= data_size)
+>   			return 0;
+>   	}
+>   
+> @@ -2240,7 +2242,7 @@ int btrfs_split_item(struct btrfs_trans_handle *trans,
+>   
+>   	leaf = path->nodes[0];
+>   	btrfs_item_key_to_cpu(leaf, &orig_key, path->slots[0]);
+> -	if (btrfs_leaf_free_space(root->fs_info, leaf) >=
+> +	if (btrfs_leaf_free_space(leaf) >=
+>   	    sizeof(struct btrfs_item))
+>   		goto split;
+>   
+> @@ -2261,8 +2263,7 @@ int btrfs_split_item(struct btrfs_trans_handle *trans,
+>   	ret = split_leaf(trans, root, &orig_key, path, 0, 0);
+>   	BUG_ON(ret);
+>   
+> -	BUG_ON(btrfs_leaf_free_space(root->fs_info, leaf) <
+> -	       sizeof(struct btrfs_item));
+> +	BUG_ON(btrfs_leaf_free_space(leaf) < sizeof(struct btrfs_item));
+>   	leaf = path->nodes[0];
+>   
+>   split:
+> @@ -2314,7 +2315,7 @@ split:
+>   	btrfs_mark_buffer_dirty(leaf);
+>   
+>   	ret = 0;
+> -	if (btrfs_leaf_free_space(root->fs_info, leaf) < 0) {
+> +	if (btrfs_leaf_free_space(leaf) < 0) {
+>   		btrfs_print_leaf(leaf);
+>   		BUG();
+>   	}
+> @@ -2410,7 +2411,7 @@ int btrfs_truncate_item(struct btrfs_root *root, struct btrfs_path *path,
+>   	btrfs_mark_buffer_dirty(leaf);
+>   
+>   	ret = 0;
+> -	if (btrfs_leaf_free_space(root->fs_info, leaf) < 0) {
+> +	if (btrfs_leaf_free_space(leaf) < 0) {
+>   		btrfs_print_leaf(leaf);
+>   		BUG();
+>   	}
+> @@ -2435,7 +2436,7 @@ int btrfs_extend_item(struct btrfs_root *root, struct btrfs_path *path,
+>   	nritems = btrfs_header_nritems(leaf);
+>   	data_end = leaf_data_end(root->fs_info, leaf);
+>   
+> -	if (btrfs_leaf_free_space(root->fs_info, leaf) < data_size) {
+> +	if (btrfs_leaf_free_space(leaf) < data_size) {
+>   		btrfs_print_leaf(leaf);
+>   		BUG();
+>   	}
+> @@ -2472,7 +2473,7 @@ int btrfs_extend_item(struct btrfs_root *root, struct btrfs_path *path,
+>   	btrfs_mark_buffer_dirty(leaf);
+>   
+>   	ret = 0;
+> -	if (btrfs_leaf_free_space(root->fs_info, leaf) < 0) {
+> +	if (btrfs_leaf_free_space(leaf) < 0) {
+>   		btrfs_print_leaf(leaf);
+>   		BUG();
+>   	}
+> @@ -2521,10 +2522,10 @@ int btrfs_insert_empty_items(struct btrfs_trans_handle *trans,
+>   	nritems = btrfs_header_nritems(leaf);
+>   	data_end = leaf_data_end(root->fs_info, leaf);
+>   
+> -	if (btrfs_leaf_free_space(root->fs_info, leaf) < total_size) {
+> +	if (btrfs_leaf_free_space(leaf) < total_size) {
+>   		btrfs_print_leaf(leaf);
+>   		printk("not enough freespace need %u have %d\n",
+> -		       total_size, btrfs_leaf_free_space(root->fs_info, leaf));
+> +		       total_size, btrfs_leaf_free_space(leaf));
+>   		BUG();
+>   	}
+>   
+> @@ -2582,7 +2583,7 @@ int btrfs_insert_empty_items(struct btrfs_trans_handle *trans,
+>   		btrfs_fixup_low_keys(root, path, &disk_key, 1);
+>   	}
+>   
+> -	if (btrfs_leaf_free_space(root->fs_info, leaf) < 0) {
+> +	if (btrfs_leaf_free_space(leaf) < 0) {
+>   		btrfs_print_leaf(leaf);
+>   		BUG();
+>   	}
+> diff --git a/ctree.h b/ctree.h
+> index 1fef37c93485..e291a7d48d14 100644
+> --- a/ctree.h
+> +++ b/ctree.h
+> @@ -2664,8 +2664,7 @@ static inline int btrfs_next_item(struct btrfs_root *root,
+>   }
+>   
+>   int btrfs_prev_leaf(struct btrfs_root *root, struct btrfs_path *path);
+> -int btrfs_leaf_free_space(struct btrfs_fs_info *fs_info,
+> -			  struct extent_buffer *leaf);
+> +int btrfs_leaf_free_space(struct extent_buffer *leaf);
+>   void btrfs_fixup_low_keys(struct btrfs_root *root, struct btrfs_path *path,
+>   			  struct btrfs_disk_key *key, int level);
+>   int btrfs_set_item_key_safe(struct btrfs_root *root, struct btrfs_path *path,
+> diff --git a/print-tree.c b/print-tree.c
+> index a1a7954abdae..34a724d5f7ef 100644
+> --- a/print-tree.c
+> +++ b/print-tree.c
+> @@ -1191,7 +1191,7 @@ void btrfs_print_leaf(struct extent_buffer *eb)
+>   
+>   	printf("leaf %llu items %d free space %d generation %llu owner ",
+>   		(unsigned long long)btrfs_header_bytenr(eb), nr,
+> -		btrfs_leaf_free_space(fs_info, eb),
+> +		btrfs_leaf_free_space(eb),
+>   		(unsigned long long)btrfs_header_generation(eb));
+>   	print_objectid(stdout, btrfs_header_owner(eb), 0);
+>   	printf("\n");
+> 
+
 

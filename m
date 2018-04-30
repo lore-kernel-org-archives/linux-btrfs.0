@@ -1,78 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:51794 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752928AbeDETpY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 5 Apr 2018 15:45:24 -0400
-Subject: Re: [PATCH v2] Btrfs: fix NULL pointer dereference in log_dir_items
-To: dsterba@suse.cz, Liu Bo <bo.liu@linux.alibaba.com>,
-        linux-btrfs@vger.kernel.org
-References: <1522691988-127156-1-git-send-email-bo.liu@linux.alibaba.com>
- <20180405170221.GK2635@twin.jikos.cz>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <4ca4af01-a1eb-ba7c-44ea-e309679e5092@suse.com>
-Date: Thu, 5 Apr 2018 22:45:19 +0300
-MIME-Version: 1.0
-In-Reply-To: <20180405170221.GK2635@twin.jikos.cz>
-Content-Type: text/plain; charset=utf-8
+Received: from 50-226-31-50-static.hfc.comcastbusiness.net ([50.226.31.50]:55554
+        "EHLO linux-q7u8.site" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1753827AbeD3Om2 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 30 Apr 2018 10:42:28 -0400
+From: jeffm@suse.com
+To: linux-btrfs@vger.kernel.org
+Cc: Jeff Mahoney <jeffm@suse.com>
+Subject: [PATCH 1/3] btrfs-progs: convert: fix support for e2fsprogs < 1.42
+Date: Mon, 30 Apr 2018 10:37:06 -0400
+Message-Id: <1525099028-11737-1-git-send-email-jeffm@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+From: Jeff Mahoney <jeffm@suse.com>
 
+Commit 324d4c1857a (btrfs-progs: convert: Add larger device support)
+introduced new dependencies on the 64-bit API provided by e2fsprogs.
+That API was introduced in v1.42 (along with bigalloc).
 
-On  5.04.2018 20:02, David Sterba wrote:
-> On Tue, Apr 03, 2018 at 01:59:47AM +0800, Liu Bo wrote:
->> 0, 1 and <0 can be returned by btrfs_next_leaf(), and when <0 is
->> returned, path->nodes[0] could be NULL, log_dir_items lacks such a
->> check for <0 and we may run into a null pointer dereference panic.
->>
->> Fixes: e02119d5a7b4 ("Btrfs: Add a write ahead tree log to optimize synchronous operations")
->> Reviewed-by: Nikolay Borisov <nborisov@suse.com>
->> Signed-off-by: Liu Bo <bo.liu@linux.alibaba.com>
->> ---
-> 
-> Added to next, thanks.
-> 
->> v2: Add Fixes tag and reviewed-by.
->>
->>  fs/btrfs/tree-log.c | 7 +++++--
->>  1 file changed, 5 insertions(+), 2 deletions(-)
->>
->> diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
->> index 4344577..4ee9431 100644
->> --- a/fs/btrfs/tree-log.c
->> +++ b/fs/btrfs/tree-log.c
->> @@ -3518,8 +3518,11 @@ static noinline int log_dir_items(struct btrfs_trans_handle *trans,
->>  		 * from this directory and from this transaction
->>  		 */
->>  		ret = btrfs_next_leaf(root, path);
->> -		if (ret == 1) {
->> -			last_offset = (u64)-1;
->> +		if (ret) {
->> +			if (ret == 1)
->> +				last_offset = (u64)-1;
->> +			else
->> +				err = ret;
-> 
-> I wonder if we could find some more consistent if/else pattern of the
-> error handling for this function. Each caller cares about something else
-> so it's hard to tell from a quick look which part is the expected one.
-> 
-> Something like:
-> 
-> if (ret < 0) {
-> 	unexpected error
-> } else if (ret > 0 ) {
-> 	no more leaves, probably a terminating condition
-> } else {
-> 	more leaves to scan, possibly this can be ommitted in most cases
-> }
+This patch maps the following to their equivalents in e2fsprogs < 1.42.
+- ext2fs_get_block_bitmap_range2
+- ext2fs_inode_data_blocks2
+- ext2fs_read_ext_attr2
 
-I agree this is better, generally when I see disparate if branches but
-which pertain to the same 'ret' value I tend to rewrite them to follow
-if/else if/else. This makes the code 'semantically closer' (for the lack
-of a better term).
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+Since we need to detect and define EXT2_FLAG_64BITS for compatibilty
+anyway, it makes sense to use that to detect the older e2fsprogs instead
+of defining a new flag ourselves.
+
+Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+---
+ configure.ac          |  6 +-----
+ convert/source-ext2.h | 12 +++++++++++-
+ 2 files changed, 12 insertions(+), 6 deletions(-)
+
+diff --git a/configure.ac b/configure.ac
+index af13a95..2dea1c6 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -140,11 +140,7 @@ BTRFSCONVERT_EXT2=0
+ BTRFSCONVERT_REISERFS=0
+ if test "x$enable_convert" = xyes; then
+ 	if test "x$with_convert" = "xauto" || echo "$with_convert" | grep -q "ext2"; then
+-		PKG_CHECK_MODULES(EXT2FS, [ext2fs >= 1.42],,
+-			[PKG_CHECK_MODULES(EXT2FS, [ext2fs],
+-				[AC_DEFINE([HAVE_OLD_E2FSPROGS], [1],
+-					  [E2fsprogs does not support BIGALLOC])]
+-				)])
++		PKG_CHECK_MODULES(EXT2FS, [ext2fs])
+ 		PKG_CHECK_MODULES(COM_ERR, [com_err])
+ 		convertfs="${convertfs:+$convertfs,}ext2"
+ 		BTRFSCONVERT_EXT2=1
+diff --git a/convert/source-ext2.h b/convert/source-ext2.h
+index 80833b2..c321412 100644
+--- a/convert/source-ext2.h
++++ b/convert/source-ext2.h
+@@ -33,8 +33,18 @@
+  * BIGALLOC.
+  * Unlike normal RO compat flag, BIGALLOC affects how e2fsprogs check used
+  * space, and btrfs-convert heavily relies on it.
++ *
++ * e2fsprogs 1.42 also introduced the 64-bit API.  Any file system
++ * that requires it will have EXT4_FEATURE_INCOMPAT_64BIT set and
++ * will fail to open with earlier releases.  We can map it to the
++ * older API without risk of corruption.
+  */
+-#ifdef HAVE_OLD_E2FSPROGS
++#ifndef EXT2_FLAG_64BITS
++#define EXT2_FLAG_64BITS		(0)
++#define ext2fs_get_block_bitmap_range2 ext2fs_get_block_bitmap_range
++#define ext2fs_inode_data_blocks2 ext2fs_inode_data_blocks
++#define ext2fs_read_ext_attr2 ext2fs_read_ext_attr
++#define ext2fs_blocks_count(s)		((s)->s_blocks_count)
+ #define EXT2FS_CLUSTER_RATIO(fs)	(1)
+ #define EXT2_CLUSTERS_PER_GROUP(s)	(EXT2_BLOCKS_PER_GROUP(s))
+ #define EXT2FS_B2C(fs, blk)		(blk)
+-- 
+1.7.12.4
+

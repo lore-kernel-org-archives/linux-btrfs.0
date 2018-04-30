@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.21]:50877 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.15.18]:53201 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751095AbeD3BwR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 29 Apr 2018 21:52:17 -0400
+        id S1750938AbeD3DCY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 29 Apr 2018 23:02:24 -0400
 Subject: Re: BTRFS RAID filesystem unmountable
 To: Michael Wade <spikewade@gmail.com>
 Cc: linux-btrfs@vger.kernel.org
@@ -16,24 +16,24 @@ References: <CAB+znrFyimDnOZt46CqterRJ6MvwD4TSWagQvv-oQxjPvG-m2w@mail.gmail.com>
  <bb0df6b1-3780-8ea5-b48e-e82f65a68f60@gmx.com>
  <CAB+znrEcW3+++ZBrB_ZGRFncssO-zffbJ6ug8_z0DJOhbp+vGA@mail.gmail.com>
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <02287651-cd3c-1547-72e9-bab788dcdecc@gmx.com>
-Date: Mon, 30 Apr 2018 09:52:11 +0800
+Message-ID: <f9694e69-ca47-57cd-3afb-2279bb79467a@gmx.com>
+Date: Mon, 30 Apr 2018 11:02:17 +0800
 MIME-Version: 1.0
 In-Reply-To: <CAB+znrEcW3+++ZBrB_ZGRFncssO-zffbJ6ug8_z0DJOhbp+vGA@mail.gmail.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="Z5ZjFJhNf8qh2wLHPQwszUQ775VI8iRa0"
+ boundary="2x3x3E2TwY2e5XAy9PJA80R0xPTkAiWCe"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---Z5ZjFJhNf8qh2wLHPQwszUQ775VI8iRa0
-Content-Type: multipart/mixed; boundary="RqkTBhM5DufaKSue6JiPqD2y1XmcLBQDz";
+--2x3x3E2TwY2e5XAy9PJA80R0xPTkAiWCe
+Content-Type: multipart/mixed; boundary="C1eI1Xc5ENdUY0JG4ufy4iReEYDDJh1RA";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 To: Michael Wade <spikewade@gmail.com>
 Cc: linux-btrfs@vger.kernel.org
-Message-ID: <02287651-cd3c-1547-72e9-bab788dcdecc@gmx.com>
+Message-ID: <f9694e69-ca47-57cd-3afb-2279bb79467a@gmx.com>
 Subject: Re: BTRFS RAID filesystem unmountable
 References: <CAB+znrFyimDnOZt46CqterRJ6MvwD4TSWagQvv-oQxjPvG-m2w@mail.gmail.com>
  <54d2f70a-adae-98cc-581f-2e4786783b26@gmx.com>
@@ -46,7 +46,7 @@ References: <CAB+znrFyimDnOZt46CqterRJ6MvwD4TSWagQvv-oQxjPvG-m2w@mail.gmail.com>
  <CAB+znrEcW3+++ZBrB_ZGRFncssO-zffbJ6ug8_z0DJOhbp+vGA@mail.gmail.com>
 In-Reply-To: <CAB+znrEcW3+++ZBrB_ZGRFncssO-zffbJ6ug8_z0DJOhbp+vGA@mail.gmail.com>
 
---RqkTBhM5DufaKSue6JiPqD2y1XmcLBQDz
+--C1eI1Xc5ENdUY0JG4ufy4iReEYDDJh1RA
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
@@ -71,13 +71,24 @@ On 2018=E5=B9=B404=E6=9C=8829=E6=97=A5 22:08, Michael Wade wrote:
 > dd if=3D/dev/md127 of=3D/tmp/chunk_root.copy2 bs=3D1 count=3D32K skip=3D=
 266359275520
 
-A little strange, the two copies mismatch with each other.
+Unfortunately, both dumps are corrupted and contain mostly garbage.
+I think it's the underlying stack (mdraid) has something wrong or failed
+to recover its data.
 
-I'll double check the different of it, and maybe that's the reason.
+This means your last chance will be btrfs-find-root.
+
+Please try:
+# btrfs-find-root -o 3 <device>
+
+And provide all the output.
+
+But please keep in mind, chunk root is a critical tree, and so far it's
+already heavily damaged.
+Although I could still continue try to recover, there is pretty low
+chance now.
 
 Thanks,
 Qu
-
 >=20
 > Kind regards
 > Michael
@@ -442,23 +453,23 @@ tml
 >>
 
 
---RqkTBhM5DufaKSue6JiPqD2y1XmcLBQDz--
+--C1eI1Xc5ENdUY0JG4ufy4iReEYDDJh1RA--
 
---Z5ZjFJhNf8qh2wLHPQwszUQ775VI8iRa0
+--2x3x3E2TwY2e5XAy9PJA80R0xPTkAiWCe
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlrmdssACgkQwj2R86El
-/qhOOQf+I7JhieH4wzLXL2bbmcVlCgvVoVtMQDlU4vtpiJsvu1yqRUYDlCazsti8
-RqlxdpfSbEAzQNZGdjrKYA3qSvrhLCQtCSgcx+kSWPcb7RaDB1DV+tfYU4ULsfkI
-sPk+RdoHaaGQFHYm6hSCuJ5gwLBeY/NwmGQCYO34ZPWGLHCZasLnjS3ZFviBNjYh
-IyP4dsf0j1sdHSlmkaj6dwmMj9sNQwqP73BBxTfNvlHSvKk5LxODjDlMKZ8+kXSP
-gwHW349S4a169vjk3EvZe4ztGXzRBP2EaAFyaewhTHWsL6nhqx+giggVxgP6KEpz
-pnrkPg9i9CprLYn7l3TmkRkalIZA9g==
-=K+lN
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlrmhzkACgkQwj2R86El
+/qhcxAgAmEEMfMUzT9s/yXM0sfZl6MkWrlxvO6202stqYwOeYdSvOJH+vL6XPi2C
+2bf0PeL4IHrsOWQPMid2LXW+e2/QdOYFhg6EvJEjZhoG6MHnFkEAYFgpyoTvJ2Lp
+nTNitSjeMJNTCXEPC5dnjGdr+ASOLf25yeHuz61yTgrALELBinpRwEQ79LEoaldK
+4BZMP2cdkT+xeDnkE2FUXOrL3HQwMg17tZ5BmcTfm1nFHXm9j2nIu5yu0KVM8oUK
+O5P8heH9UQjDWzSTP9HaOuPovWQi8BiSEv/UPo5Bw1NC8BTzc7T7uUoqGap7NemM
+12bntHGVJZA9FYmymgCW++uxLWDH6w==
+=4+HZ
 -----END PGP SIGNATURE-----
 
---Z5ZjFJhNf8qh2wLHPQwszUQ775VI8iRa0--
+--2x3x3E2TwY2e5XAy9PJA80R0xPTkAiWCe--

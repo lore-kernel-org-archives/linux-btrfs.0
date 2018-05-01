@@ -1,41 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:47298 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:47246 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1755155AbeEAO6k (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 1 May 2018 10:58:40 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id A6EEAAF0B
-        for <linux-btrfs@vger.kernel.org>; Tue,  1 May 2018 14:58:39 +0000 (UTC)
-Date: Tue, 1 May 2018 16:56:04 +0200
+        id S1753072AbeEAO54 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 1 May 2018 10:57:56 -0400
+Date: Tue, 1 May 2018 16:55:20 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <wqu@suse.com>
+To: fdmanana@kernel.org
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: trace: Allow trace_qgroup_update_counters() to
- record old rfer/excl value
-Message-ID: <20180501145604.GV21272@twin.jikos.cz>
+Subject: Re: [PATCH] Btrfs: send, fix missing truncate for inode with
+ prealloc extent past eof
+Message-ID: <20180501145519.GU21272@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <20180430070444.23837-1-wqu@suse.com>
+References: <20180430180507.21751-1-fdmanana@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180430070444.23837-1-wqu@suse.com>
+In-Reply-To: <20180430180507.21751-1-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Apr 30, 2018 at 03:04:44PM +0800, Qu Wenruo wrote:
-> Origin trace_qgroup_update_counters() only records qgroup id and its
-> reference count change.
+On Mon, Apr 30, 2018 at 07:05:07PM +0100, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
 > 
-> It's good enough to debug qgroup accounting change, but when rescan race
-> is involved, it's pretty hard to distinguish which modification belongs
-> to which rescan.
+> An incremental send operation can miss a truncate operation when an inode
+> has an increased size in the send snapshot and a prealloc extent beyond
+> its size.
 > 
-> So add old_rfer and old_excl trace output to help distinguishing
-> different rescan instance.
-> (Different rescan instance should reset its qgroup->rfer to 0)
+> Consider the following scenario where a necessary truncate operation is
+> missing in the incremental send stream:
 > 
-> For trace event parameter, it just changes from u64 qgroup_id to struct
-> btrfs_qgroup *qgroup, so number of parameters is not changed at all.
+> 1) In the parent snapshot an inode has a size of 1282957 bytes and it has
+>    no prealloc extents beyond its size;
 > 
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> 2) In the the send snapshot it has a size of 5738496 bytes and has a new
+>    extent at offsets 1884160 (length of 106496 bytes) and a prealloc
+>    extent beyond eof at offset 6729728 (and a length of 339968 bytes);
+> 
+> 3) When processing the prealloc extent, at offset 6729728, we end up at
+>    send.c:send_write_or_clone() and set the @len variable to a value of
+>    18446744073708560384 because @offset plus the original @len value is
+>    larger then the inode's size (6729728 + 339968 > 5738496). We then
+>    call send_extent_data(), with that @offset and @len, which in turn
+>    calls send_write(), and then the later calls fill_read_buf(). Because
+>    the offset passed to fill_read_buf() is greater then inode's i_size,
+>    this function returns 0 immediately, which makes send_write() and
+>    send_extent_data() do nothing and return immediately as well. When
+>    we get back to send.c:send_write_or_clone() we adjust the value
+>    of sctx->cur_inode_next_write_offset to @offset plus @len, which
+>    corresponds to 6729728 + 18446744073708560384 = 5738496, which is
+>    precisely the the size of the inode in the send snapshot;
+> 
+> 4) Later when at send.c:finish_inode_if_needed() we determine that
+>    we don't need to issue a truncate operation because the value of
+>    sctx->cur_inode_next_write_offset corresponds to the inode's new
+>    size, 5738496 bytes. This is wrong because the last write operation
+>    that was issued started at offset 1884160 with a length of 106496
+>    bytes, so the correct value for sctx->cur_inode_next_write_offset
+>    should be 1990656 (1884160 + 106496), so that a truncate operation
+>    with a value of 5738496 bytes would have been sent to insert a
+>    trailing hole at the destination.
+> 
+> So fix the issue by making send.c:send_write_or_clone() not attempt
+> to send write or clone operations for extents that start beyond the
+> inode's size, since such attempts do nothing but waste time by
+> calling helper functions and allocating path structures, and send
+> currently has no fallocate command in order to create prealloc extents
+> at the destination (either beyond a file's eof or not).
+> 
+> The issue was found running the test btrfs/007 from fstests using a seed
+> value of 1524346151 for fsstress.
+> 
+> Reported-by: Gu, Jinxiang <gujx@cn.fujitsu.com>
+> Fixes: ffa7c4296e93 ("Btrfs: send, do not issue unnecessary truncate operations")
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
 
-Reviewed-by: David Sterba <dsterba@suse.com>
+Added to next, thanks.

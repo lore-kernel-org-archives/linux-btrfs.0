@@ -1,47 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp2130.oracle.com ([156.151.31.86]:41866 "EHLO
-        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752015AbeEPCsi (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 15 May 2018 22:48:38 -0400
-From: Anand Jain <anand.jain@oracle.com>
-Subject: Re: [PATCH 2/2] btrfs: add balance args info during start and resume
-To: Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
-References: <20180426080129.3270-1-anand.jain@oracle.com>
- <20180426080129.3270-3-anand.jain@oracle.com>
- <9822975f-9fe7-429d-2871-84ed9e5d299d@suse.com>
- <16571dc5-de44-fe74-5641-e825af114cee@oracle.com>
-Message-ID: <653cffe1-3d20-308c-953f-5ae0492f71a3@oracle.com>
-Date: Wed, 16 May 2018 10:51:05 +0800
+Received: from mx2.suse.de ([195.135.220.15]:40665 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1754987AbeEAOFL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 1 May 2018 10:05:11 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id BBAEBAB3E
+        for <linux-btrfs@vger.kernel.org>; Tue,  1 May 2018 14:05:09 +0000 (UTC)
+Date: Tue, 1 May 2018 16:02:34 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Nikolay Borisov <nborisov@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 0/5] Fix delalloc inodes leaking on btrfs unmount
+Message-ID: <20180501140234.GT21272@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1524820914-30864-1-git-send-email-nborisov@suse.com>
 MIME-Version: 1.0
-In-Reply-To: <16571dc5-de44-fe74-5641-e825af114cee@oracle.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1524820914-30864-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-  All comments accepted in v2 in ml, except for the one below.
-
->>>       clear_bit(BTRFS_FS_BALANCE_RUNNING, &fs_info->flags);
->>>       if (bargs) {
->>> @@ -3947,10 +4096,8 @@ static int balance_kthread(void *data)
->>>       int ret = 0;
->>>       mutex_lock(&fs_info->balance_mutex);
->>> -    if (fs_info->balance_ctl) {
->>> -        btrfs_info(fs_info, "balance: resuming");
->>> +    if (fs_info->balance_ctl)
->>>           ret = btrfs_balance(fs_info->balance_ctl, NULL);
->>> -    }
->> Unrelated change.
+On Fri, Apr 27, 2018 at 12:21:49PM +0300, Nikolay Borisov wrote:
+> After investigating crashes on generic/176 it turned that the culprit in fact
+> is the random failure induced by generic/019. As it happens, if on unmount the 
+> filesystem is in BTRFS_FS_STATE_ERROR then btrfs_error_commit_super is called. 
+> This unveiled 2 bugs:
+>  1. btrfs_destroy_delalloc_inodes's implementation was completely bogus, since
+>  it only called btrfs_invalidate_inodes which only pruned dentries and didn't 
+>  do anything to free any inodes with pending delalloc bytes. Once this is fixed 
+>  with the use of invalide_inode_pages2 the second bug transpired. 
+>  2. The last call ot run_delayed_iputs is made before btrfs_cleanup_transaction
+>  is called. The latter in turn could queue up more delayed iputs resulting from 
+>  invalidates_inode_pages2. 
 > 
->   Why?
+> This series fixes the problem by first fixing btrfs_destroy_delalloc_inode to 
+> properly cleanup delalloc inodes and as a result cleans up the code a bit. 
+> 
+> I've given it a good bashing through xfstest (4 full xfstest cycles + 100 
+> iterations of generic/475 since it was hitting some early assertion failures,
+> which are fixed in the final version) so am pretty confident in the change. 
 
-  I believe this change is related to this patch, as this patch has
-  added the resume log at btrfs_balance() and so we don't needed
-  the resume log again in btrfs_kthread().
-  OR.
-  I don't know your reasoning. I am ignoring this comment as of now.
+Thanks. I'll add it as topic branch to next, this needs some testing
+exposure. The plan is to push the core patches to some rc, possibly rc5.
 
-  V2 is in the ML.
-
-Thanks, Anand
+Review of patch 3 is required.

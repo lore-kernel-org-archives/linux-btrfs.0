@@ -1,176 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwym04.jp.fujitsu.com ([211.128.242.43]:50968 "EHLO
-        mgwym04.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751213AbeDWFK2 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 23 Apr 2018 01:10:28 -0400
-Received: from g01jpfmpwyt01.exch.g01.fujitsu.local (g01jpfmpwyt01.exch.g01.fujitsu.local [10.128.193.38])
-        by yt-mxoi1.gw.nic.fujitsu.com (Postfix) with ESMTP id 56C80AC00D0
-        for <linux-btrfs@vger.kernel.org>; Mon, 23 Apr 2018 14:10:25 +0900 (JST)
-Received: from g01jpexchyt36.g01.fujitsu.local (unknown [10.128.193.4])
-        by g01jpfmpwyt01.exch.g01.fujitsu.local (Postfix) with ESMTP id 600416D663B
-        for <linux-btrfs@vger.kernel.org>; Mon, 23 Apr 2018 14:10:24 +0900 (JST)
-Subject: [RFC PATCH v4 6/6] btrfs-porgs: test: Add cli-test/009 to check
- subvolume list for both root and normal user
-From: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <70590827-0c29-75ea-5e43-2e53264b3d4c@jp.fujitsu.com>
-Message-ID: <e1b822a0-4d5c-84f3-1f9a-f75687d4c6cb@jp.fujitsu.com>
-Date: Mon, 23 Apr 2018 14:10:20 +0900
+Received: from smtp.nue.novell.com ([195.135.221.5]:40098 "EHLO
+        smtp.nue.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751081AbeEAIri (ORCPT
+        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+        Tue, 1 May 2018 04:47:38 -0400
+Date: Tue, 1 May 2018 10:47:09 +0200
+From: Jan Fajerski <jfajerski@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: stack trace during scrub
+Message-ID: <20180501084709.cfu2mqayubq36er7@jf_suse_laptop>
 MIME-Version: 1.0
-In-Reply-To: <70590827-0c29-75ea-5e43-2e53264b3d4c@jp.fujitsu.com>
-Content-Type: text/plain; charset="utf-8"
+Content-Type: text/plain; charset=us-ascii; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Signed-off-by: Tomohiro Misono <misono.tomohiro@jp.fujitsu.com>
----
- tests/cli-tests/009-subvolume-list/test.sh | 136 +++++++++++++++++++++++++++++
- 1 file changed, 136 insertions(+)
- create mode 100755 tests/cli-tests/009-subvolume-list/test.sh
+The system has multiple btrfs filesystems (RAID1 and single device). During last 
+nights scrub the kernel logged the following stack trace about 1.5h into the 
+scrub:
 
-diff --git a/tests/cli-tests/009-subvolume-list/test.sh b/tests/cli-tests/009-subvolume-list/test.sh
-new file mode 100755
-index 00000000..2ea24983
---- /dev/null
-+++ b/tests/cli-tests/009-subvolume-list/test.sh
-@@ -0,0 +1,136 @@
-+#!/bin/bash
-+# test for "subvolume list" both for root and normal user
-+
-+source "$TEST_TOP/common"
-+
-+check_testuser
-+check_prereq mkfs.btrfs
-+check_prereq btrfs
-+
-+setup_root_helper
-+prepare_test_dev
-+
-+
-+# test if the ids returned by "sub list" match expected ids
-+# $1  ... indicate run as root or test user
-+# $2  ... PATH to be specified by sub list command
-+# $3~ ... expected return ids
-+test_list()
-+{
-+	local SUDO
-+	if [ $1 -eq 1 ]; then
-+		SUDO=$SUDO_HELPER
-+	else
-+		SUDO="sudo -u progs-test"
-+	fi
-+
-+	result=$(run_check_stdout $SUDO "$TOP/btrfs" subvolume list "$2" | \
-+		awk '{print $2}' | xargs | sort -n)
-+
-+	shift
-+	shift
-+	expected=($(echo "$@" | tr " " "\n" | sort -n))
-+	expected=$(IFS=" "; echo "${expected[*]}")
-+
-+	if [ "$result" != "$expected" ]; then
-+		echo "result  : $result"
-+		echo "expected: $expected"
-+		_fail "ids returned by sub list does not match expected ids"
-+	fi
-+}
-+
-+run_check $SUDO_HELPER "$TOP/mkfs.btrfs" -f "$TEST_DEV"
-+run_check_mount_test_dev
-+cd "$TEST_MNT"
-+
-+# create subvolumes and directories and make some non-readable
-+# by user 'progs-test'
-+run_check $SUDO_HELPER "$TOP/btrfs" subvolume create sub1
-+run_check $SUDO_HELPER "$TOP/btrfs" subvolume create sub1/subsub1
-+run_check $SUDO_HELPER mkdir sub1/dir
-+
-+run_check $SUDO_HELPER "$TOP/btrfs" subvolume create sub2
-+run_check $SUDO_HELPER mkdir -p sub2/dir/dirdir
-+run_check $SUDO_HELPER "$TOP/btrfs" subvolume create sub2/dir/subsub2
-+run_check $SUDO_HELPER "$TOP/btrfs" subvolume create sub2/dir/dirdir/subsubX
-+
-+run_check $SUDO_HELPER "$TOP/btrfs" subvolume create sub3
-+run_check $SUDO_HELPER "$TOP/btrfs" subvolume create sub3/subsub3
-+run_check $SUDO_HELPER mkdir sub3/dir
-+run_check $SUDO_HELPER "$TOP/btrfs" subvolume create sub3/dir/subsubY
-+run_check $SUDO_HELPER chmod o-r sub3
-+
-+run_check $SUDO_HELPER "$TOP/btrfs" subvolume create sub4
-+run_check $SUDO_HELPER "$TOP/btrfs" subvolume create sub4/subsub4
-+run_check $SUDO_HELPER mkdir sub4/dir
-+run_check $SUDO_HELPER "$TOP/btrfs" subvolume create sub4/dir/subsubZ
-+run_check $SUDO_HELPER setfacl -m u:progs-test:- sub4/dir
-+
-+run_check $SUDO_HELPER touch "file"
-+
-+# expected result for root:
-+#
-+# ID 256 gen 8 top level 5 path sub1
-+# ID 258 gen 7 top level 256 path sub1/subsub1
-+# ID 259 gen 10 top level 5 path sub2
-+# ID 260 gen 9 top level 259 path sub2/dir/subsub2
-+# ID 261 gen 10 top level 259 path sub2/dir/dirdir/subsubX
-+# ID 262 gen 14 top level 5 path sub3
-+# ID 263 gen 12 top level 262 path sub3/subsub3
-+# ID 264 gen 13 top level 262 path sub3/dir/subsubY
-+# ID 265 gen 16 top level 5 path sub4
-+# ID 266 gen 15 top level 265 path sub4/subsub4
-+# ID 267 gen 16 top level 265 path sub4/dir/subsubZ
-+
-+# check for root for both absolute/relative path
-+# always returns all subvolumes
-+all=(256 258 259 260 261 262 263 264 265 266 267)
-+test_list 1 "$TEST_MNT" "${all[@]}"
-+test_list 1 "$TEST_MNT/sub1" "${all[@]}"
-+test_list 1 "$TEST_MNT/sub1/dir" "${all[@]}"
-+test_list 1 "$TEST_MNT/sub2" "${all[@]}"
-+test_list 1 "$TEST_MNT/sub2/dir" "${all[@]}"
-+test_list 1 "$TEST_MNT/sub3" "${all[@]}"
-+test_list 1 "$TEST_MNT/sub4" "${all[@]}"
-+run_mustfail "should fail for file" \
-+	$SUDO_HELPER "$TOP/btrfs" subvolume list "$TEST_MNT/file"
-+
-+test_list 1 "." "${all[@]}"
-+test_list 1 "sub1" "${all[@]}"
-+test_list 1 "sub1/dir" "${all[@]}"
-+test_list 1 "sub2" "${all[@]}"
-+test_list 1 "sub2/dir" "${all[@]}"
-+test_list 1 "sub3" "${all[@]}"
-+test_list 1 "sub4" "${all[@]}"
-+run_mustfail "should fail for file" \
-+	$SUDO_HELPER "$TOP/btrfs" subvolume list "file"
-+
-+# check for normal user for both absolute/relative path
-+# only returns subvolumes under specified path
-+test_list 0 "$TEST_MNT" "256 258 259 260 261 262 265 266"
-+test_list 0 "$TEST_MNT/sub1" "256 258"
-+test_list 0 "$TEST_MNT/sub1/dir" ""
-+test_list 0 "$TEST_MNT/sub2" "259 260 261"
-+test_list 0 "$TEST_MNT/sub2/dir" "260 261"
-+run_mustfail "should raise permission error" \
-+	sudo -u progs-test "$TOP/btrfs" subvolume list "$TEST_MNT/sub3"
-+test_list 0 "$TEST_MNT/sub4" "265 266"
-+run_mustfail "should raise permission error" \
-+	sudo -u progs-test "$TOP/btrfs" subvolume list "$TEST_MNT/sub4/dir"
-+run_mustfail "should fail for file" \
-+	sudo -u progs-test "$TOP/btrfs" subvolume list "$TEST_MNT/file"
-+
-+test_list 0 "." "256 258 259 260 261 262 265 266"
-+test_list 0 "sub1/dir" ""
-+test_list 0 "sub2" "259 260 261"
-+test_list 0 "sub2/dir" "260 261"
-+run_mustfail "should raise permission error" \
-+	sudo -u progs-test "$TOP/btrfs" subvolume list "sub3"
-+test_list 0 "sub4" "265 266"
-+run_mustfail "should raise permission error" \
-+	sudo -u progs-test "$TOP/btrfs" subvolume list "sub4/dir"
-+run_mustfail "should fail for file" \
-+	sudo -u progs-test "$TOP/btrfs" subvolume list "file"
-+
-+cd ..
-+run_check_umount_test_dev
--- 
-2.14.3
+May 01 03:29:27 apollo kernel: ------------[ cut here ]------------
+May 01 03:29:27 apollo kernel: WARNING: CPU: 1 PID: 24395 at /build/linux-3RM5ap/linux-4.14.13/fs/btrfs/ctree.h:1564 btrfs_update_devi
+May 01 03:29:27 apollo kernel: Modules linked in: ufs qnx4 hfsplus hfs minix ntfs vfat msdos fat jfs xfs dm_mod ext4 crc16 mbcache jbd
+May 01 03:29:27 apollo kernel:  sg battery rc_core ipmi_msghandler tpm_crb video shpchp button acpi_pad sunrpc coretemp ip_tables x_ta
+May 01 03:29:27 apollo kernel: CPU: 1 PID: 24395 Comm: btrfs Not tainted 4.14.0-0.bpo.3-amd64 #1 Debian 4.14.13-1~bpo9+1
+May 01 03:29:27 apollo kernel: Hardware name: To Be Filled By O.E.M. To Be Filled By O.E.M./E3C224D4I-14S, BIOS P3.20 05/29/2015
+May 01 03:29:27 apollo kernel: task: ffff9330eacad1c0 task.stack: ffffa55acc6ec000
+May 01 03:29:27 apollo kernel: RIP: 0010:btrfs_update_device+0x1b2/0x1c0 [btrfs]
+May 01 03:29:27 apollo kernel: RSP: 0018:ffffa55acc6efa18 EFLAGS: 00010206
+May 01 03:29:27 apollo kernel: RAX: 0000000000000fff RBX: ffff932f75fdc2a0 RCX: 000002baa1371e00
+May 01 03:29:27 apollo kernel: RDX: 0000000000001000 RSI: 0000000000003efa RDI: ffff93303754d7a8
+May 01 03:29:27 apollo kernel: RBP: ffff93310f0bc000 R08: ffffa55acc6ef9c8 R09: ffffa55acc6ef9d0
+May 01 03:29:27 apollo kernel: R10: 0000000000000003 R11: 0000000000003000 R12: 0000000000000000
+May 01 03:29:27 apollo kernel: R13: 0000000000003eda R14: ffff93303754d7a8 R15: 00000000fffffff4
+May 01 03:29:27 apollo kernel: FS:  00007f89d4c37700(0000) GS:ffff93311fd00000(0000) knlGS:0000000000000000
+May 01 03:29:27 apollo kernel: CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+May 01 03:29:27 apollo kernel: CR2: 00007f23b69ed0a0 CR3: 0000000190c76002 CR4: 00000000000606e0
+May 01 03:29:27 apollo kernel: Call Trace:
+May 01 03:29:27 apollo kernel:  btrfs_finish_chunk_alloc+0x122/0x4a0 [btrfs]
+May 01 03:29:27 apollo kernel:  ? btrfs_insert_item+0x7e/0xf0 [btrfs]
+May 01 03:29:27 apollo kernel:  btrfs_create_pending_block_groups+0x144/0x250 [btrfs]
+May 01 03:29:27 apollo kernel:  __btrfs_end_transaction+0x8e/0x2e0 [btrfs]
+May 01 03:29:27 apollo kernel:  btrfs_inc_block_group_ro+0xcd/0x160 [btrfs]
+May 01 03:29:27 apollo kernel:  scrub_enumerate_chunks+0x1f7/0x620 [btrfs]
+May 01 03:29:27 apollo kernel:  ? remove_wait_queue+0x60/0x60
+May 01 03:29:27 apollo kernel:  btrfs_scrub_dev+0x227/0x560 [btrfs]
+May 01 03:29:27 apollo kernel:  ? __check_object_size+0xb3/0x190
+May 01 03:29:27 apollo kernel:  btrfs_ioctl+0x134e/0x24e0 [btrfs]
+May 01 03:29:27 apollo kernel:  ? kmem_cache_alloc_node+0x13b/0x5a0
+May 01 03:29:27 apollo kernel:  ? do_vfs_ioctl+0x9f/0x600
+May 01 03:29:27 apollo kernel:  do_vfs_ioctl+0x9f/0x600
+May 01 03:29:27 apollo kernel:  ? get_task_io_context+0x43/0x80
+May 01 03:29:27 apollo kernel:  SyS_ioctl+0x74/0x80
+May 01 03:29:27 apollo kernel:  system_call_fast_compare_end+0xc/0x6f
+May 01 03:29:27 apollo kernel: RIP: 0033:0x7f89d6d1cdd7
+May 01 03:29:27 apollo kernel: RSP: 002b:00007f89d4c36d58 EFLAGS: 00000246
+May 01 03:29:27 apollo kernel: Code: 4c 89 f7 45 31 c0 ba 10 00 00 00 4c 89 ee e8 26 24 ff ff 4c 89 f7 e8 de f7 fc ff e9 de fe ff ff 4
+May 01 03:29:27 apollo kernel: ---[ end trace 502b81f0556393a0 ]---
+May 01 03:29:27 apollo kernel: ------------[ cut here ]------------
+
+Everything seems to function normally, the scrub finished seemingly fine and no 
+scrub errors where logged.
 

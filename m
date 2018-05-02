@@ -1,76 +1,121 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:50601 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:45115 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1030888AbeEXQp7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 24 May 2018 12:45:59 -0400
-Received: from relay1.suse.de (charybdis-ext-too.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 241F4AEE2
-        for <linux-btrfs@vger.kernel.org>; Thu, 24 May 2018 16:45:58 +0000 (UTC)
-Date: Thu, 24 May 2018 18:43:14 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <wqu@suse.de>
-Cc: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2 3/4] btrfs: lzo: Add header length check to avoid slab
- out of bounds access
-Message-ID: <20180524164313.GH6649@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20180521051927.3715-1-wqu@suse.com>
- <20180521051927.3715-4-wqu@suse.com>
- <20180522150636.GN6649@twin.jikos.cz>
- <34f13170-f2cb-4efe-7f11-72ce7aa5c622@suse.de>
+        id S1751050AbeEBGwU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 2 May 2018 02:52:20 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 324F7AD91
+        for <linux-btrfs@vger.kernel.org>; Wed,  2 May 2018 06:52:19 +0000 (UTC)
+Subject: Re: [PATCH] btrfs: qgroup: More meaningful qgroup_rescan_init error
+ message
+To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+References: <20180502052803.4222-1-wqu@suse.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <f8693d6d-fcaf-bc9b-1be3-31c73fd341cc@suse.com>
+Date: Wed, 2 May 2018 09:52:18 +0300
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <34f13170-f2cb-4efe-7f11-72ce7aa5c622@suse.de>
+In-Reply-To: <20180502052803.4222-1-wqu@suse.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, May 23, 2018 at 07:38:28AM +0800, Qu Wenruo wrote:
-> >> --- a/fs/btrfs/lzo.c
-> >> +++ b/fs/btrfs/lzo.c
-> >> @@ -281,6 +281,7 @@ static int lzo_decompress_bio(struct list_head *ws, struct compressed_bio *cb)
-> >>  	unsigned long working_bytes;
-> >>  	size_t in_len;
-> >>  	size_t out_len;
-> >> +	size_t max_segment_len = lzo1x_worst_compress(PAGE_SIZE);
-> > 
-> > The value is a compile-time constant, it does not need to be stored in a
-> > variable.
+
+
+On  2.05.2018 08:28, Qu Wenruo wrote:
+> Error message from qgroup_rescan_init() mostly looks like:
 > 
-> Just to save some long lines, as it's used several times.
-
-My concern is about the eventual stack consumption by the variable. I
-haven't measured that as the stack-bloat-script is now somehow broken so
-I'm basing this on my previous evaluations. The long term plan is to
-remove unnecessary variables or at least help the compiler to optimize
-them out, every few bytes help and we hope for the cumulative effect.
-
-The replacement by local variable sort of does not need to be in this
-patch as it's not used for the header length check itself.
-
-> >> @@ -294,6 +295,18 @@ static int lzo_decompress_bio(struct list_head *ws, struct compressed_bio *cb)
-> >>  
-> >>  	data_in = kmap(pages_in[0]);
-> >>  	tot_len = read_compress_length(data_in);
-> >> +	/*
-> >> +	 * Compressed data header check.
-> >> +	 *
-> >> +	 * The real compressed size can't exceed extent length, and all pages
-> >> +	 * should be used (a full pending page is not possible).
-> >> +	 * If this happens it means the compressed extent is corrupted.
-> >> +	 */
-> >> +	if (tot_len > min_t(size_t, BTRFS_MAX_COMPRESSED, srclen) ||
-> >> +	    tot_len < srclen - PAGE_SIZE) {
-> > 
-> > All such conditions can be put into unlikely() as this is an error
-> > handling shortcut.
+> ------
+> BTRFS info (device nvme0n1p1): qgroup_rescan_init failed with -115
+> ------
 > 
-> I'm OK to put it into unlikely().
+> Which is far from meaningful, and sometimes confusing as for above
+> -EINPROGRESS it's mostly (despite the init race) harmless, but sometimes
+> it can also indicates problem if return value is -EINVAL.
 > 
-> I'll update this in next version.
+> Change it to some more meaningful messages like:
+> 
+> ------
+> BTRFS info (device nvme0n1p1): qgroup rescan is already in progress
+> ------
+> 
+> And
+> 
+> ------
+> BTRFS err(device nvme0n1p1): qgroup_rescan_init failed, qgroup is not enabled
+> ------
+> 
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
 
-I don't see the unlikely() in the most recent version but after some
-considerations, I don't think it's needed. I'd rather look at the final
-assembly if the compiler is smart enough to recognize the pattern.
+Much better indeed:
 
-Adding likely/unlikely without some proof is not welcome in general,
-though in this case it's the allowed "jump to error handling".
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+
+> ---
+>  fs/btrfs/qgroup.c | 34 +++++++++++++++++++---------------
+>  1 file changed, 19 insertions(+), 15 deletions(-)
+> 
+> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+> index ec2339a49ec3..a5742e9e9a14 100644
+> --- a/fs/btrfs/qgroup.c
+> +++ b/fs/btrfs/qgroup.c
+> @@ -2760,26 +2760,37 @@ qgroup_rescan_init(struct btrfs_fs_info *fs_info, u64 progress_objectid,
+>  {
+>  	int ret = 0;
+>  
+> -	if (!init_flags &&
+> -	    (!(fs_info->qgroup_flags & BTRFS_QGROUP_STATUS_FLAG_RESCAN) ||
+> -	     !(fs_info->qgroup_flags & BTRFS_QGROUP_STATUS_FLAG_ON))) {
+> -		ret = -EINVAL;
+> -		goto err;
+> +	if (!init_flags) {
+> +		/* we're resuming qgroup rescan at mount time */
+> +		if (!(fs_info->qgroup_flags & BTRFS_QGROUP_STATUS_FLAG_RESCAN))
+> +			btrfs_err(fs_info, "%s failed, qgroup is not enabled",
+> +				  __func__);
+> +		else if (!(fs_info->qgroup_flags & BTRFS_QGROUP_STATUS_FLAG_ON))
+> +			btrfs_err(fs_info,
+> +				  "%s failed, qgroup rescan is not queued",
+> +				  __func__);
+> +		return -EINVAL;
+>  	}
+>  
+>  	mutex_lock(&fs_info->qgroup_rescan_lock);
+>  	spin_lock(&fs_info->qgroup_lock);
+>  
+>  	if (init_flags) {
+> -		if (fs_info->qgroup_flags & BTRFS_QGROUP_STATUS_FLAG_RESCAN)
+> +		if (fs_info->qgroup_flags & BTRFS_QGROUP_STATUS_FLAG_RESCAN) {
+> +			btrfs_info(fs_info,
+> +				   "qgroup rescan is already in progress");
+>  			ret = -EINPROGRESS;
+> -		else if (!(fs_info->qgroup_flags & BTRFS_QGROUP_STATUS_FLAG_ON))
+> +		} else if (!(fs_info->qgroup_flags &
+> +			     BTRFS_QGROUP_STATUS_FLAG_ON)) {
+> +			btrfs_err(fs_info, "%s failed, qgroup is not enabled",
+> +				  __func__);
+>  			ret = -EINVAL;
+> +		}
+>  
+>  		if (ret) {
+>  			spin_unlock(&fs_info->qgroup_lock);
+>  			mutex_unlock(&fs_info->qgroup_rescan_lock);
+> -			goto err;
+> +			return ret;
+>  		}
+>  		fs_info->qgroup_flags |= BTRFS_QGROUP_STATUS_FLAG_RESCAN;
+>  	}
+> @@ -2798,13 +2809,6 @@ qgroup_rescan_init(struct btrfs_fs_info *fs_info, u64 progress_objectid,
+>  	btrfs_init_work(&fs_info->qgroup_rescan_work,
+>  			btrfs_qgroup_rescan_helper,
+>  			btrfs_qgroup_rescan_worker, NULL, NULL);
+> -
+> -	if (ret) {
+> -err:
+> -		btrfs_info(fs_info, "qgroup_rescan_init failed with %d", ret);
+> -		return ret;
+> -	}
+> -
+>  	return 0;
+>  }
+>  
+> 

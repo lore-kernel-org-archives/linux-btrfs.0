@@ -1,47 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:44023 "EHLO mx2.suse.de"
+Received: from synology.com ([59.124.61.242]:53233 "EHLO synology.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750707AbeEDOrn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 4 May 2018 10:47:43 -0400
-From: David Sterba <dsterba@suse.com>
-To: torvalds@linux-foundation.org
-Cc: David Sterba <dsterba@suse.com>, clm@fb.com, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Subject: [GIT PULL] Btrfs updates for 4.17-rc3
-Date: Fri,  4 May 2018 16:45:03 +0200
-Message-Id: <cover.1525444301.git.dsterba@suse.com>
+        id S1750785AbeEBCzJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 1 May 2018 22:55:09 -0400
+From: ethanwu <ethanwu@synology.com>
+To: linux-btrfs@vger.kernel.org
+Cc: ethanwu <ethanwu@synology.com>
+Subject: [PATCH] btrfs: Take trans lock before access running trans in check_delayed_ref
+Date: Wed,  2 May 2018 10:55:02 +0800
+Message-Id: <1525229702-10243-1-git-send-email-ethanwu@synology.com>
+In-Reply-To: <20180501133021.GQ21272@twin.jikos.cz>
+References: <20180501133021.GQ21272@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+In preivous patch:
+Btrfs: kill trans in run_delalloc_nocow and btrfs_cross_ref_exist
+We avoid starting btrfs transaction and get transaction from
+fs_info->running_transaction directly.
 
-please pull the following branch with 2 regression fixes and one fix for
-stable. Thanks.
+When accessing running_transaction in check_delayed_ref, there's a
+chance that current transaction will be freed by commit transaction
+after the NULL pointer check of running_transaction is passed.
 
-----------------------------------------------------------------
-The following changes since commit c0872323746e11fc79344e3738b283a8cda86654:
+After looking all the other places using fs_info->running_transaction,
+they are either
+1. protected by trans_lock or
+2. holding the transaction, so commit transaction must wait before
+   it could finish committing and free the transaction structure
 
-  btrfs: print-tree: debugging output enhancement (2018-04-20 19:18:16 +0200)
+Fix this by using trans_lock and increasing the use_count.
 
-are available in the Git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-4.17-rc3-tag
-
-for you to fetch changes up to a6aa10c70bf72fb28504cb5de5deac75da78b0f5:
-
-  Btrfs: send, fix missing truncate for inode with prealloc extent past eof (2018-05-02 11:55:29 +0200)
-
-----------------------------------------------------------------
-Filipe Manana (1):
-      Btrfs: send, fix missing truncate for inode with prealloc extent past eof
-
-Qu Wenruo (1):
-      btrfs: Fix wrong first_key parameter in replace_path
-
-ethanwu (1):
-      btrfs: Take trans lock before access running trans in check_delayed_ref
+Fixes: e4c3b2dcd144 ("Btrfs: kill trans in run_delalloc_nocow and btrfs_cross_ref_exist")
+Signed-off-by: ethanwu <ethanwu@synology.com>
+Reviewed-by: Liu Bo <bo.liu@linux.alibaba.com>
+---
+V2: Use refcount_inc rather than aomitc_inc to increase use_count
+V3: Add Fixes tag and refine commit log
 
  fs/btrfs/extent-tree.c | 7 +++++++
- fs/btrfs/relocation.c  | 2 +-
- fs/btrfs/send.c        | 4 ++++
- 3 files changed, 12 insertions(+), 1 deletion(-)
+ 1 file changed, 7 insertions(+)
+
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index c1618ab..7c302ed 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3149,7 +3149,11 @@ static noinline int check_delayed_ref(struct btrfs_root *root,
+ 	struct rb_node *node;
+ 	int ret = 0;
+ 
++	spin_lock(&root->fs_info->trans_lock);
+ 	cur_trans = root->fs_info->running_transaction;
++	if (cur_trans)
++		refcount_inc(&cur_trans->use_count);
++	spin_unlock(&root->fs_info->trans_lock);
+ 	if (!cur_trans)
+ 		return 0;
+ 
+@@ -3158,6 +3162,7 @@ static noinline int check_delayed_ref(struct btrfs_root *root,
+ 	head = btrfs_find_delayed_ref_head(delayed_refs, bytenr);
+ 	if (!head) {
+ 		spin_unlock(&delayed_refs->lock);
++		btrfs_put_transaction(cur_trans);
+ 		return 0;
+ 	}
+ 
+@@ -3174,6 +3179,7 @@ static noinline int check_delayed_ref(struct btrfs_root *root,
+ 		mutex_lock(&head->mutex);
+ 		mutex_unlock(&head->mutex);
+ 		btrfs_put_delayed_ref_head(head);
++		btrfs_put_transaction(cur_trans);
+ 		return -EAGAIN;
+ 	}
+ 	spin_unlock(&delayed_refs->lock);
+@@ -3206,6 +3212,7 @@ static noinline int check_delayed_ref(struct btrfs_root *root,
+ 	}
+ 	spin_unlock(&head->lock);
+ 	mutex_unlock(&head->mutex);
++	btrfs_put_transaction(cur_trans);
+ 	return ret;
+ }
+ 
+-- 
+1.9.1
+

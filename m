@@ -1,35 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from zeniv.linux.org.uk ([195.92.253.2]:54640 "EHLO
-        ZenIV.linux.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751948AbeEJTQM (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 10 May 2018 15:16:12 -0400
-Date: Thu, 10 May 2018 20:16:09 +0100
-From: Al Viro <viro@ZenIV.linux.org.uk>
-To: Eric Sandeen <sandeen@sandeen.net>
-Cc: Eric Sandeen <sandeen@redhat.com>, fsdevel <linux-fsdevel@vger.kernel.org>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Linux API <linux-api@vger.kernel.org>
-Subject: Re: [PATCH 1/2 V2] fs: hoist BTRFS_IOC_[SG]ET_FSLABEL to vfs
-Message-ID: <20180510191608.GR30522@ZenIV.linux.org.uk>
-References: <d2979d75-5e45-b145-9ca5-2c315d8ead9c@redhat.com>
- <b8c7feca-68ce-b1a8-3a96-a99b50457a84@sandeen.net>
- <4a4f33c3-2173-9795-f4e4-1e9d338fd9a7@sandeen.net>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <4a4f33c3-2173-9795-f4e4-1e9d338fd9a7@sandeen.net>
+Received: from mx2.suse.de ([195.135.220.15]:44523 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751480AbeEBVMG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 2 May 2018 17:12:06 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id EC21FADC6
+        for <linux-btrfs@vger.kernel.org>; Wed,  2 May 2018 21:12:04 +0000 (UTC)
+From: jeffm@suse.com
+To: dsterba@suse.com, linux-btrfs@vger.kernel.org
+Cc: Jeff Mahoney <jeffm@suse.com>
+Subject: [PATCH v3 0/3] btrfs: qgroup rescan races (part 1)
+Date: Wed,  2 May 2018 17:11:53 -0400
+Message-Id: <20180502211156.9460-1-jeffm@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, May 10, 2018 at 01:13:57PM -0500, Eric Sandeen wrote:
-> Move the btrfs label ioctls up to the vfs for general use.
-> 
-> This retains 256 chars as the maximum size through the interface, which
-> is the btrfs limit and AFAIK exceeds any other filesystem's maximum
-> label size.
-> 
-> Signed-off-by: Eric Sandeen <sandeen@redhat.com>
-> Reviewed-by: Andreas Dilger <adilger@dilger.ca>
-> Reviewed-by: David Sterba <dsterba@suse.com>
+From: Jeff Mahoney <jeffm@suse.com>
 
-No objections (and it obviously ought to go through btrfs tree).
+Hi Dave -
+
+Here's the updated patchset for the rescan races.  This fixes the issue
+where we'd try to start multiple workers.  It introduces a new "ready"
+bool that we set during initialization and clear while queuing the worker.
+The queuer is also now responsible for most of the initialization.
+
+I have a separate patch set start that gets rid of the racy mess surrounding
+the rescan worker startup.  We can handle it in btrfs_run_qgroups and
+just set a flag to start it everywhere else.
+
+-Jeff
+
+---
+
+Jeff Mahoney (3):
+  btrfs: qgroups, fix rescan worker running races
+  btrfs: qgroups, remove unnecessary memset before btrfs_init_work
+  btrfs: qgroup, don't try to insert status item after ENOMEM in rescan
+    worker
+
+ fs/btrfs/async-thread.c |   1 +
+ fs/btrfs/ctree.h        |   2 +
+ fs/btrfs/qgroup.c       | 100 +++++++++++++++++++++++++++---------------------
+ 3 files changed, 60 insertions(+), 43 deletions(-)
+
+-- 
+2.12.3
+

@@ -1,527 +1,110 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.20]:47417 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750766AbeEBBcB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 1 May 2018 21:32:01 -0400
-Subject: Re: BTRFS RAID filesystem unmountable
-To: Michael Wade <spikewade@gmail.com>, linux-btrfs@vger.kernel.org
-References: <CAB+znrFyimDnOZt46CqterRJ6MvwD4TSWagQvv-oQxjPvG-m2w@mail.gmail.com>
- <54d2f70a-adae-98cc-581f-2e4786783b26@gmx.com>
- <CAB+znrHYrhBB4cstUaS3KcOfEHhOTPUsfAJKj3Cj62HJ-05FrQ@mail.gmail.com>
- <d32f3fdc-5ba0-2b62-ce79-5e5665d4c960@gmx.com>
- <CAB+znrF_d+Hg_A9AMvWEB=S5eVAtYrvr2jUPcvR4FfB4hnCMWA@mail.gmail.com>
- <bff1c7b3-5bac-9806-a376-3612057865cf@gmx.com>
- <CAB+znrHPF7963-MAXtgu8s3+vLEA7ENE0=uCCJ6sWCF6KUWToQ@mail.gmail.com>
- <bb0df6b1-3780-8ea5-b48e-e82f65a68f60@gmx.com>
- <CAB+znrEcW3+++ZBrB_ZGRFncssO-zffbJ6ug8_z0DJOhbp+vGA@mail.gmail.com>
- <f9694e69-ca47-57cd-3afb-2279bb79467a@gmx.com>
- <CAB+znrHAKZ8TOTBtd3AtUJCZqcC77+m41sq+zMB12w=oWY0trw@mail.gmail.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <df3b2ffd-2188-0f14-1ff0-afb98ffb70a9@gmx.com>
-Date: Wed, 2 May 2018 09:31:53 +0800
-MIME-Version: 1.0
-In-Reply-To: <CAB+znrHAKZ8TOTBtd3AtUJCZqcC77+m41sq+zMB12w=oWY0trw@mail.gmail.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="8jfWp45U0U6SS0QQYOAo0GySwNtnkN6KK"
+Received: from [195.159.176.226] ([195.159.176.226]:52120 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1750823AbeEBBtp (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 May 2018 21:49:45 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-3@m.gmane.org>)
+        id 1fDgrk-0000Lh-FK
+        for linux-btrfs@vger.kernel.org; Wed, 02 May 2018 03:47:32 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: RAID56 - 6 parity raid
+Date: Wed, 2 May 2018 01:47:25 +0000 (UTC)
+Message-ID: <pan$13d50$86fb3347$db26ba71$62968586@cox.net>
+References: <CAJH6TXi96F=kwZS4imACiOrkeoHz2LVjPpi2W0fWw781Fba3hA@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---8jfWp45U0U6SS0QQYOAo0GySwNtnkN6KK
-Content-Type: multipart/mixed; boundary="tsCobOTPLwY8M2Tl7RoQeYTwKckI3NqaV";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Michael Wade <spikewade@gmail.com>, linux-btrfs@vger.kernel.org
-Message-ID: <df3b2ffd-2188-0f14-1ff0-afb98ffb70a9@gmx.com>
-Subject: Re: BTRFS RAID filesystem unmountable
-References: <CAB+znrFyimDnOZt46CqterRJ6MvwD4TSWagQvv-oQxjPvG-m2w@mail.gmail.com>
- <54d2f70a-adae-98cc-581f-2e4786783b26@gmx.com>
- <CAB+znrHYrhBB4cstUaS3KcOfEHhOTPUsfAJKj3Cj62HJ-05FrQ@mail.gmail.com>
- <d32f3fdc-5ba0-2b62-ce79-5e5665d4c960@gmx.com>
- <CAB+znrF_d+Hg_A9AMvWEB=S5eVAtYrvr2jUPcvR4FfB4hnCMWA@mail.gmail.com>
- <bff1c7b3-5bac-9806-a376-3612057865cf@gmx.com>
- <CAB+znrHPF7963-MAXtgu8s3+vLEA7ENE0=uCCJ6sWCF6KUWToQ@mail.gmail.com>
- <bb0df6b1-3780-8ea5-b48e-e82f65a68f60@gmx.com>
- <CAB+znrEcW3+++ZBrB_ZGRFncssO-zffbJ6ug8_z0DJOhbp+vGA@mail.gmail.com>
- <f9694e69-ca47-57cd-3afb-2279bb79467a@gmx.com>
- <CAB+znrHAKZ8TOTBtd3AtUJCZqcC77+m41sq+zMB12w=oWY0trw@mail.gmail.com>
-In-Reply-To: <CAB+znrHAKZ8TOTBtd3AtUJCZqcC77+m41sq+zMB12w=oWY0trw@mail.gmail.com>
+Gandalf Corvotempesta posted on Tue, 01 May 2018 21:57:59 +0000 as
+excerpted:
 
---tsCobOTPLwY8M2Tl7RoQeYTwKckI3NqaV
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+> Hi to all I've found some patches from Andrea Mazzoleni that adds
+> support up to 6 parity raid.
+> Why these are wasn't merged ?
+> With modern disk size, having something greater than 2 parity, would be
+> great.
 
+1) Btrfs parity-raid was known to be seriously broken until quite 
+recently (and still has the common parity-raid write-hole, which is more 
+serious on btrfs because btrfs otherwise goes to some lengths to ensure 
+data/metadata integrity via checksumming and verification, and the parity 
+isn't checksummed, risking even old data due to the write hole, but there 
+are a number of proposals to fix that), and piling even more not well 
+tested patches on top was _not_ the way toward a solution.
 
+2) Btrfs features in general have taken longer to merge and stabilize 
+than one might expect, and parity-raid has been a prime example, with the 
+original roadmap calling for parity-raid merge back in the 3.5 timeframe 
+or so... partial/runtime (not full recovery) code was finally merged ~3 
+years later in (IIRC) 3.19, took several development cycles for the 
+initial critical bugs to be worked out but by 4.2 or so was starting to 
+look good, then more bugs were found and reported, that took several more 
+years to fix, tho IIRC LTS-4.14 has them.
 
-On 2018=E5=B9=B405=E6=9C=8801=E6=97=A5 23:50, Michael Wade wrote:
-> Hi Qu,
->=20
-> Oh dear that is not good news!
->=20
-> I have been running the find root command since yesterday but it only
-> seems to be only be outputting the following message:
->=20
-> ERROR: tree block bytenr 0 is not aligned to sectorsize 4096
+Meanwhile, consider that N-way-mirroring was fast-path roadmapped for 
+"right after raid56 mode, because some of its code depends on that), so 
+was originally expected in 3.6 or so...  As someone who had been wanting 
+to use /that/, I personally know the pain of "still waiting".
 
-It's mostly fine, as find-root will go through all tree blocks and try
-to read them as tree blocks.
-Although btrfs-find-root will suppress csum error output, but such basic
-tree validation check is not suppressed, thus you get such message.
+And that was "fast-pathed".
 
-> ERROR: tree block bytenr 0 is not aligned to sectorsize 4096
-> ERROR: tree block bytenr 0 is not aligned to sectorsize 4096
-> ERROR: tree block bytenr 0 is not aligned to sectorsize 4096
-> ERROR: tree block bytenr 0 is not aligned to sectorsize 4096
-> ERROR: tree block bytenr 0 is not aligned to sectorsize 4096
-> ERROR: tree block bytenr 0 is not aligned to sectorsize 4096
-> ERROR: tree block bytenr 0 is not aligned to sectorsize 4096
-> ERROR: tree block bytenr 0 is not aligned to sectorsize 4096
-> ERROR: tree block bytenr 0 is not aligned to sectorsize 4096
->=20
-> I tried with the latest btrfs tools compiled from source and the ones
-> I have installed with the same result. Is there a CLI utility I could
-> use to determine if the log contains any other content?
-
-Did it report any useful info at the end?
-
-Thanks,
-Qu
-
->=20
-> Kind regards
-> Michael
->=20
->=20
-> On 30 April 2018 at 04:02, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
->>
->>
->> On 2018=E5=B9=B404=E6=9C=8829=E6=97=A5 22:08, Michael Wade wrote:
->>> Hi Qu,
->>>
->>> Got this error message:
->>>
->>> ./btrfs inspect dump-tree -b 20800943685632 /dev/md127
->>> btrfs-progs v4.16.1
->>> bytenr mismatch, want=3D20800943685632, have=3D3118598835113619663
->>> ERROR: cannot read chunk root
->>> ERROR: unable to open /dev/md127
->>>
->>> I have attached the dumps for:
->>>
->>> dd if=3D/dev/md127 of=3D/tmp/chunk_root.copy1 bs=3D1 count=3D32K skip=
-=3D266325721088
->>> dd if=3D/dev/md127 of=3D/tmp/chunk_root.copy2 bs=3D1 count=3D32K skip=
-=3D266359275520
->>
->> Unfortunately, both dumps are corrupted and contain mostly garbage.
->> I think it's the underlying stack (mdraid) has something wrong or fail=
-ed
->> to recover its data.
->>
->> This means your last chance will be btrfs-find-root.
->>
->> Please try:
->> # btrfs-find-root -o 3 <device>
->>
->> And provide all the output.
->>
->> But please keep in mind, chunk root is a critical tree, and so far it'=
-s
->> already heavily damaged.
->> Although I could still continue try to recover, there is pretty low
->> chance now.
->>
->> Thanks,
->> Qu
->>>
->>> Kind regards
->>> Michael
->>>
->>>
->>> On 29 April 2018 at 10:33, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
->>>>
->>>>
->>>> On 2018=E5=B9=B404=E6=9C=8829=E6=97=A5 16:59, Michael Wade wrote:
->>>>> Ok, will it be possible for me to install the new version of the to=
-ols
->>>>> on my current kernel without overriding the existing install? Hesit=
-ant
->>>>> to update kernel/btrfs as it might break the ReadyNAS interface /
->>>>> future firmware upgrades.
->>>>>
->>>>> Perhaps I could grab this:
->>>>> https://github.com/kdave/btrfs-progs/releases/tag/v4.16.1 and
->>>>> hopefully build from source and then run the binaries directly?
->>>>
->>>> Of course, that's how most of us test btrfs-progs builds.
->>>>
->>>> Thanks,
->>>> Qu
->>>>
->>>>>
->>>>> Kind regards
->>>>>
->>>>> On 29 April 2018 at 09:33, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote=
-:
->>>>>>
->>>>>>
->>>>>> On 2018=E5=B9=B404=E6=9C=8829=E6=97=A5 16:11, Michael Wade wrote:
->>>>>>> Thanks Qu,
->>>>>>>
->>>>>>> Please find attached the log file for the chunk recover command.
->>>>>>
->>>>>> Strangely, btrfs chunk recovery found no extra chunk beyond curren=
-t
->>>>>> system chunk range.
->>>>>>
->>>>>> Which means, it's chunk tree corrupted.
->>>>>>
->>>>>> Please dump the chunk tree with latest btrfs-progs (which provides=
- the
->>>>>> new --follow option).
->>>>>>
->>>>>> # btrfs inspect dump-tree -b 20800943685632 <device>
->>>>>>
->>>>>> If it doesn't work, please provide the following binary dump:
->>>>>>
->>>>>> # dd if=3D<dev> of=3D/tmp/chunk_root.copy1 bs=3D1 count=3D32K skip=
-=3D266325721088
->>>>>> # dd if=3D<dev> of=3D/tmp/chunk_root.copy2 bs=3D1 count=3D32K skip=
-=3D266359275520
->>>>>> (And will need to repeat similar dump for several times according =
-to
->>>>>> above dump)
->>>>>>
->>>>>> Thanks,
->>>>>> Qu
->>>>>>
->>>>>>
->>>>>>>
->>>>>>> Kind regards
->>>>>>> Michael
->>>>>>>
->>>>>>> On 28 April 2018 at 12:38, Qu Wenruo <quwenruo.btrfs@gmx.com> wro=
-te:
->>>>>>>>
->>>>>>>>
->>>>>>>> On 2018=E5=B9=B404=E6=9C=8828=E6=97=A5 17:37, Michael Wade wrote=
-:
->>>>>>>>> Hi Qu,
->>>>>>>>>
->>>>>>>>> Thanks for your reply. I will investigate upgrading the kernel,=
-
->>>>>>>>> however I worry that future ReadyNAS firmware upgrades would fa=
-il on a
->>>>>>>>> newer kernel version (I don't have much linux experience so may=
-be my
->>>>>>>>> concerns are unfounded!?).
->>>>>>>>>
->>>>>>>>> I have attached the output of the dump super command.
->>>>>>>>>
->>>>>>>>> I did actually run chunk recover before, without the verbose op=
-tion,
->>>>>>>>> it took around 24 hours to finish but did not resolve my issue.=
- Happy
->>>>>>>>> to start that again if you need its output.
->>>>>>>>
->>>>>>>> The system chunk only contains the following chunks:
->>>>>>>> [0, 4194304]:           Initial temporary chunk, not used at all=
-
->>>>>>>> [20971520, 29360128]:   System chunk created by mkfs, should be =
-full
->>>>>>>>                         used up
->>>>>>>> [20800943685632, 20800977240064]:
->>>>>>>>                         The newly created large system chunk.
->>>>>>>>
->>>>>>>> The chunk root is still in 2nd chunk thus valid, but some of its=
- leaf is
->>>>>>>> out of the range.
->>>>>>>>
->>>>>>>> If you can't wait 24h for chunk recovery to run, my advice would=
- be move
->>>>>>>> the disk to some other computer, and use latest btrfs-progs to e=
-xecute
->>>>>>>> the following command:
->>>>>>>>
->>>>>>>> # btrfs inpsect dump-tree -b 20800943685632 --follow
->>>>>>>>
->>>>>>>> If we're lucky enough, we may read out the tree leaf containing =
-the new
->>>>>>>> system chunk and save a day.
->>>>>>>>
->>>>>>>> Thanks,
->>>>>>>> Qu
->>>>>>>>
->>>>>>>>>
->>>>>>>>> Thanks so much for your help.
->>>>>>>>>
->>>>>>>>> Kind regards
->>>>>>>>> Michael
->>>>>>>>>
->>>>>>>>> On 28 April 2018 at 09:45, Qu Wenruo <quwenruo.btrfs@gmx.com> w=
-rote:
->>>>>>>>>>
->>>>>>>>>>
->>>>>>>>>> On 2018=E5=B9=B404=E6=9C=8828=E6=97=A5 16:30, Michael Wade wro=
-te:
->>>>>>>>>>> Hi all,
->>>>>>>>>>>
->>>>>>>>>>> I was hoping that someone would be able to help me resolve th=
-e issues
->>>>>>>>>>> I am having with my ReadyNAS BTRFS volume. Basically my troub=
-le
->>>>>>>>>>> started after a power cut, subsequently the volume would not =
-mount.
->>>>>>>>>>> Here are the details of my setup as it is at the moment:
->>>>>>>>>>>
->>>>>>>>>>> uname -a
->>>>>>>>>>> Linux QAI 4.4.116.alpine.1 #1 SMP Mon Feb 19 21:58:38 PST 201=
-8 armv7l GNU/Linux
->>>>>>>>>>
->>>>>>>>>> The kernel is pretty old for btrfs.
->>>>>>>>>> Strongly recommended to upgrade.
->>>>>>>>>>
->>>>>>>>>>>
->>>>>>>>>>> btrfs --version
->>>>>>>>>>> btrfs-progs v4.12
->>>>>>>>>>
->>>>>>>>>> So is the user tools.
->>>>>>>>>>
->>>>>>>>>> Although I think it won't be a big problem, as needed tool sho=
-uld be there.
->>>>>>>>>>
->>>>>>>>>>>
->>>>>>>>>>> btrfs fi show
->>>>>>>>>>> Label: '11baed92:data'  uuid: 20628cda-d98f-4f85-955c-932a367=
-f8821
->>>>>>>>>>> Total devices 1 FS bytes used 5.12TiB
->>>>>>>>>>> devid    1 size 7.27TiB used 6.24TiB path /dev/md127
->>>>>>>>>>
->>>>>>>>>> So, it's btrfs on mdraid.
->>>>>>>>>> It would normally make things harder to debug, so I could only=
- provide
->>>>>>>>>> advice from the respect of btrfs.
->>>>>>>>>> For mdraid part, I can't ensure anything.
->>>>>>>>>>
->>>>>>>>>>>
->>>>>>>>>>> Here are the relevant dmesg logs for the current state of the=
- device:
->>>>>>>>>>>
->>>>>>>>>>> [   19.119391] md: md127 stopped.
->>>>>>>>>>> [   19.120841] md: bind<sdb3>
->>>>>>>>>>> [   19.121120] md: bind<sdc3>
->>>>>>>>>>> [   19.121380] md: bind<sda3>
->>>>>>>>>>> [   19.125535] md/raid:md127: device sda3 operational as raid=
- disk 0
->>>>>>>>>>> [   19.125547] md/raid:md127: device sdc3 operational as raid=
- disk 2
->>>>>>>>>>> [   19.125554] md/raid:md127: device sdb3 operational as raid=
- disk 1
->>>>>>>>>>> [   19.126712] md/raid:md127: allocated 3240kB
->>>>>>>>>>> [   19.126778] md/raid:md127: raid level 5 active with 3 out =
-of 3
->>>>>>>>>>> devices, algorithm 2
->>>>>>>>>>> [   19.126784] RAID conf printout:
->>>>>>>>>>> [   19.126789]  --- level:5 rd:3 wd:3
->>>>>>>>>>> [   19.126794]  disk 0, o:1, dev:sda3
->>>>>>>>>>> [   19.126799]  disk 1, o:1, dev:sdb3
->>>>>>>>>>> [   19.126804]  disk 2, o:1, dev:sdc3
->>>>>>>>>>> [   19.128118] md127: detected capacity change from 0 to 7991=
-637573632
->>>>>>>>>>> [   19.395112] Adding 523708k swap on /dev/md1.  Priority:-1 =
-extents:1
->>>>>>>>>>> across:523708k
->>>>>>>>>>> [   19.434956] BTRFS: device label 11baed92:data devid 1 tran=
-sid
->>>>>>>>>>> 151800 /dev/md127
->>>>>>>>>>> [   19.739276] BTRFS info (device md127): setting nodatasum
->>>>>>>>>>> [   19.740440] BTRFS critical (device md127): unable to find =
-logical
->>>>>>>>>>> 3208757641216 len 4096
->>>>>>>>>>> [   19.740450] BTRFS critical (device md127): unable to find =
-logical
->>>>>>>>>>> 3208757641216 len 4096
->>>>>>>>>>> [   19.740498] BTRFS critical (device md127): unable to find =
-logical
->>>>>>>>>>> 3208757641216 len 4096
->>>>>>>>>>> [   19.740512] BTRFS critical (device md127): unable to find =
-logical
->>>>>>>>>>> 3208757641216 len 4096
->>>>>>>>>>> [   19.740552] BTRFS critical (device md127): unable to find =
-logical
->>>>>>>>>>> 3208757641216 len 4096
->>>>>>>>>>> [   19.740560] BTRFS critical (device md127): unable to find =
-logical
->>>>>>>>>>> 3208757641216 len 4096
->>>>>>>>>>> [   19.740576] BTRFS error (device md127): failed to read chu=
-nk root
->>>>>>>>>>
->>>>>>>>>> This shows it pretty clear, btrfs fails to read chunk root.
->>>>>>>>>> And according your above "len 4096" it's pretty old fs, as it'=
-s still
->>>>>>>>>> using 4K nodesize other than 16K nodesize.
->>>>>>>>>>
->>>>>>>>>> According to above output, it means your superblock by somehow=
- lacks the
->>>>>>>>>> needed system chunk mapping, which is used to initialize chunk=
- mapping.
->>>>>>>>>>
->>>>>>>>>> Please provide the following command output:
->>>>>>>>>>
->>>>>>>>>> # btrfs inspect dump-super -fFa /dev/md127
->>>>>>>>>>
->>>>>>>>>> Also, please consider run the following command and dump all i=
-ts output:
->>>>>>>>>>
->>>>>>>>>> # btrfs rescue chunk-recover -v /dev/md127.
->>>>>>>>>>
->>>>>>>>>> Please note that, above command can take a long time to finish=
-, and if
->>>>>>>>>> it works without problem, it may solve your problem.
->>>>>>>>>> But if it doesn't work, the output could help me to manually c=
-raft a fix
->>>>>>>>>> to your super block.
->>>>>>>>>>
->>>>>>>>>> Thanks,
->>>>>>>>>> Qu
->>>>>>>>>>
->>>>>>>>>>
->>>>>>>>>>> [   19.783975] BTRFS error (device md127): open_ctree failed
->>>>>>>>>>>
->>>>>>>>>>> In an attempt to recover the volume myself I run a few BTRFS =
-commands
->>>>>>>>>>> mostly using advice from here:
->>>>>>>>>>> https://lists.opensuse.org/opensuse/2017-02/msg00930.html. Ho=
-wever
->>>>>>>>>>> that actually seems to have made things worse as I can no lon=
-ger mount
->>>>>>>>>>> the file system, not even in readonly mode.
->>>>>>>>>>>
->>>>>>>>>>> So starting from the beginning here is a list of things I hav=
-e done so
->>>>>>>>>>> far (hopefully I remembered the order in which I ran them!)
->>>>>>>>>>>
->>>>>>>>>>> 1. Noticed that my backups to the NAS were not running (didn'=
-t get
->>>>>>>>>>> notified that the volume had basically "died")
->>>>>>>>>>> 2. ReadyNAS UI indicated that the volume was inactive.
->>>>>>>>>>> 3. SSHed onto the box and found that the first drive was not =
-marked as
->>>>>>>>>>> operational (log showed I/O errors / UNKOWN (0x2003))  so I r=
-eplaced
->>>>>>>>>>> the disk and let the array resync.
->>>>>>>>>>> 4. After resync the volume still was unaccessible so I looked=
- at the
->>>>>>>>>>> logs once more and saw something like the following which see=
-med to
->>>>>>>>>>> indicate that the replay log had been corrupted when the powe=
-r went
->>>>>>>>>>> out:
->>>>>>>>>>>
->>>>>>>>>>> BTRFS critical (device md127): corrupt leaf, non-root leaf's =
-nritems
->>>>>>>>>>> is 0: block=3D232292352, root=3D7, slot=3D0
->>>>>>>>>>> BTRFS critical (device md127): corrupt leaf, non-root leaf's =
-nritems
->>>>>>>>>>> is 0: block=3D232292352, root=3D7, slot=3D0
->>>>>>>>>>> BTRFS: error (device md127) in btrfs_replay_log:2524: errno=3D=
--5 IO
->>>>>>>>>>> failure (Failed to recover log tree)
->>>>>>>>>>> BTRFS error (device md127): pending csums is 155648
->>>>>>>>>>> BTRFS error (device md127): cleaner transaction attach return=
-ed -30
->>>>>>>>>>> BTRFS critical (device md127): corrupt leaf, non-root leaf's =
-nritems
->>>>>>>>>>> is 0: block=3D232292352, root=3D7, slot=3D0
->>>>>>>>>>>
->>>>>>>>>>> 5. Then:
->>>>>>>>>>>
->>>>>>>>>>> btrfs rescue zero-log
->>>>>>>>>>>
->>>>>>>>>>> 6. Was then able to mount the volume in readonly mode.
->>>>>>>>>>>
->>>>>>>>>>> btrfs scrub start
->>>>>>>>>>>
->>>>>>>>>>> Which fixed some errors but not all:
->>>>>>>>>>>
->>>>>>>>>>> scrub status for 20628cda-d98f-4f85-955c-932a367f8821
->>>>>>>>>>>
->>>>>>>>>>> scrub started at Tue Apr 24 17:27:44 2018, running for 04:00:=
-34
->>>>>>>>>>> total bytes scrubbed: 224.26GiB with 6 errors
->>>>>>>>>>> error details: csum=3D6
->>>>>>>>>>> corrected errors: 0, uncorrectable errors: 6, unverified erro=
-rs: 0
->>>>>>>>>>>
->>>>>>>>>>> scrub status for 20628cda-d98f-4f85-955c-932a367f8821
->>>>>>>>>>> scrub started at Tue Apr 24 17:27:44 2018, running for 04:34:=
-43
->>>>>>>>>>> total bytes scrubbed: 224.26GiB with 6 errors
->>>>>>>>>>> error details: csum=3D6
->>>>>>>>>>> corrected errors: 0, uncorrectable errors: 6, unverified erro=
-rs: 0
->>>>>>>>>>>
->>>>>>>>>>> 6. Seeing this hanging I rebooted the NAS
->>>>>>>>>>> 7. Think this is when the volume would not mount at all.
->>>>>>>>>>> 8. Seeing log entries like these:
->>>>>>>>>>>
->>>>>>>>>>> BTRFS warning (device md127): checksum error at logical 20800=
-943685632
->>>>>>>>>>> on dev /dev/md127, sector 520167424: metadata node (level 1) =
-in tree 3
->>>>>>>>>>>
->>>>>>>>>>> I ran
->>>>>>>>>>>
->>>>>>>>>>> btrfs check --fix-crc
->>>>>>>>>>>
->>>>>>>>>>> And that brings us to where I am now: Some seemly corrupted B=
-TRFS
->>>>>>>>>>> metadata and unable to mount the drive even with the recovery=
- option.
->>>>>>>>>>>
->>>>>>>>>>> Any help you can give is much appreciated!
->>>>>>>>>>>
->>>>>>>>>>> Kind regards
->>>>>>>>>>> Michael
->>>>>>>>>>> --
->>>>>>>>>>> To unsubscribe from this list: send the line "unsubscribe lin=
-ux-btrfs" in
->>>>>>>>>>> the body of a message to majordomo@vger.kernel.org
->>>>>>>>>>> More majordomo info at  http://vger.kernel.org/majordomo-info=
-=2Ehtml
->>>>>>>>>>>
->>>>>>>>>>
->>>>>>>>
->>>>>>
->>>>> --
->>>>> To unsubscribe from this list: send the line "unsubscribe linux-btr=
-fs" in
->>>>> the body of a message to majordomo@vger.kernel.org
->>>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>>>>
->>>>
->>
+So even if the multi-way-parity patches were on the "fast" path, it's 
+only "now" (for relative values of now, for argument say by 4.20/5.0 or 
+whatever it ends up being called) that such a thing could be reasonably 
+considered.
 
 
---tsCobOTPLwY8M2Tl7RoQeYTwKckI3NqaV--
+3) AFAIK none of the btrfs devs have flat rejected the idea, but btrfs 
+remains development opportunity rich and implementing dev poor... there's 
+likely 20 years or more of "good" ideas out there.  And the N-way-parity-
+raid patches haven't hit any of the current devs' (or their employers') 
+"personal itch that needs to be scratched" interest points, so while it 
+certainly does remain a "nice idea", given the implementation timeline 
+history for even 'fast-pathed" ideas, realistically we're looking at at 
+least a decade out.  But with the practical projection horizon no more 
+than 5-7 years out (beyond that other, unpredicted, developments, are 
+likely to change things so much that projection is effectively 
+impossible), in practice, a decade out is "bluesky", aka "it'd be nice to 
+have someday, but it's not a priority, and with current developer 
+manpower, it's unlikely to happen any time in the practically projectable 
+future.
 
---8jfWp45U0U6SS0QQYOAo0GySwNtnkN6KK
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
+4) Of course all that's subject to no major new btrfs developer (or 
+sponsor) making it a high priority, but even should such a developer (and/
+or sponsor) appear, they'd probably need to spend at least two years 
+coming up to speed with the code first, fixing normal bugs and improving 
+the existing code quality, then post the updated and rebased N-way-parity 
+patches for discussion, and get them roadmapped for merge probably some 
+years later due to other then-current project feature dependencies.
 
------BEGIN PGP SIGNATURE-----
+So even if the N-way-parity patches became some new developer's (or 
+sponsor's) personal itch to scratch, by the time they came up to speed 
+and the code was actually merged, there's no realistic projection that it 
+would be in under 5 years, plus another couple to stabilize, so at least 
+7 years to properly usable stability.  So even then, we're already at the 
+5-7 years practical projectability limit.
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlrpFQkACgkQwj2R86El
-/qgrHAf+K0sytXslBTV9NrstrpB/i5LOYz7fzKuPhRVv2ok7gYzySKykiTQ+hVs6
-HrjWCKPhxh3nCDpDghEHn6gqZAMWyOysNEaMrz/1TpDYbQMs7h473peFVaklO2qE
-wTiV36p7jWc+SYE6syUHnkdE89OtwtqVyg8WwOOfQ/aOlgA/A6H0oAT5mnVGA2Tz
-sIYNVzc4qgLVOfoPfBt65tGLyjKhj+YIAq13OxBzrnwzWXSDS+A2/qSdGfkwQ35c
-pA3pJtTvO6wHF49ItQ1QUzA7iMynGIywD5IZZA4dRzI4JYY9YP2KmNeouq+veIAV
-TS2UHRMdMUS1qyEcXoxvvRvpA8XPAw==
-=jjNS
------END PGP SIGNATURE-----
 
---8jfWp45U0U6SS0QQYOAo0GySwNtnkN6KK--
+Meanwhile, have you looked at zfs?  Perhaps they have something like 
+that?  And there's also a new(?) one, stratis, AFAIK commercially 
+sponsored and device-mapper based, that I saw an article on recently, tho 
+I've seen/heard no kernel-community discussion on it (there's a good 
+chance followup here will change that if it's worth discussing, as 
+there's several folks here for whom knowing about such things is part of 
+their job) and no other articles (besides the pt 1 of the series 
+mentioned below), so for all I know it's pie-in-the-sky or still new 
+enough it'd be 5-7 years before it can be used in practice, as well.  But 
+assuming it's a viable project, presumably it would get support if device-
+mapper did/has.
+
+The stratis article I saw (apparently part 2 in a series):
+https://opensource.com/article/18/4/stratis-lessons-learned
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

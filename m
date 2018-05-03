@@ -1,83 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:38483 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750957AbeERNMz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 18 May 2018 09:12:55 -0400
-From: Nikolay Borisov <nborisov@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: jeffm@suse.com, josef@toxicpanda.com, Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH] btrfs: Document __btrfs_inc_extent_ref
-Date: Fri, 18 May 2018 16:12:50 +0300
-Message-Id: <1526649170-29815-1-git-send-email-nborisov@suse.com>
+Received: from smtp-16-i6.italiaonline.it ([213.209.14.16]:55220 "EHLO
+        libero.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1751133AbeECTQU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 3 May 2018 15:16:20 -0400
+Reply-To: kreijack@inwind.it
+Subject: Re: [PATCH 00/14 RFC] Btrfs: Add journal for raid5/6 writes
+To: Chris Mason <clm@fb.com>, "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
+        Roman Mamedov <rm@romanrm.net>, Liu Bo <bo.li.liu@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+References: <20170801161439.13426-1-bo.li.liu@oracle.com>
+ <20170801222547.35d1bd03@natsu>
+ <50312ea2-a0bf-09f7-8bc0-804c3a087ae4@gmail.com>
+ <5800c104-5b03-8d48-bb49-b1710be05cd0@fb.com>
+From: Goffredo Baroncelli <kreijack@libero.it>
+Message-ID: <0f1198b1-bad0-f9d3-dda8-79a67b329e16@libero.it>
+Date: Thu, 3 May 2018 21:16:14 +0200
+MIME-Version: 1.0
+In-Reply-To: <5800c104-5b03-8d48-bb49-b1710be05cd0@fb.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Here is a doc-only patch which tires to deobfuscate the terra-incognita
-that arguments for delayed refs are.
+On 08/02/2017 08:47 PM, Chris Mason wrote:
+>> I agree, MD pretty much needs a separate device simply because they can't allocate arbitrary space on the other array members.  BTRFS can do that though, and I would actually think that that would be _easier_ to implement than having a separate device.
+>>
+>> That said, I do think that it would need to be a separate chunk type, because things could get really complicated if the metadata is itself using a parity raid profile.
+> 
+> Thanks for running with this Liu, I'm reading through all the patches. I do agree that it's better to put the logging into a dedicated chunk type, that way we can have it default to either double or triple mirroring.
 
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
----
-Hello, 
+Sorry for reply a bit late :-), however it should be sufficient to start the writes from the stripe boundary. For a filesystem this is complicate to grant, however for a journal it would be more simple to do;
 
-This patch needs revieweing since I'm not entirely sure I managed to capture 
-the semantics of the "parent" and "owner" arguments. Specifically, parent is 
-passed "ref->parent" only if we have a shared block, however looking at the 
-code where parent is passed to the add delayed tree/data refs, it seems that 
-parent is set to the eb->Start only if the tree where this extent comes from is 
-the data_reloc_tree, i.e the code in replace_path/replace_file_extents/do_relocation
-__btrfs_cow_block.
+BR
+G.Baroncelli
 
-For the "owner" argument in case of data extents it'set to the ino, for metadata
-extents it's a bit trickier, what I think it always contains for such extents 
-is the level of the parent block in the tree. 
-
-
-If this function is documented correctly then it wil be fairly trivial to 
-document btrfs_add_delayed(tree|data)_ref ones as well. 
-
- fs/btrfs/extent-tree.c | 29 +++++++++++++++++++++++++++++
- 1 file changed, 29 insertions(+)
-
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 2ce32f05812f..5a2f4a86dc71 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -2207,6 +2207,35 @@ int btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
- 	return ret;
- }
- 
-+/*
-+ * __btrfs_inc_extent_ref - insert backreference for a given extent
-+ *
-+ * @trans:	    Handle of transaction
-+ *
-+ * @node:	    The delayed ref node used to get the bytenr/length for
-+ *		    extent
-+ *
-+ * @parent:	    If this is a shared extent (BTRFS_SHARED_DATA_REF_KEY/
-+ *		    BTRFS_SHARED_BLOCK_REF_KEY) then parent *may* hold the
-+ *		    logical bytenr of the parent block.
-+ *
-+ * @root_objectid: The id of the root where this modification has originated,
-+ *		    this can be either one of the well-known metadata trees or
-+ *		    the subvolume id which references this extent.
-+ *
-+ * @owner:	    For data extents it is the inode number of the owning file.
-+ *		    For metadata extents this parameter holds the level in the
-+ *		    tree of the parent block.
-+ *
-+ * @offset:	    For metadata extents this is always 0. For data extents it
-+ *		    is the fileoffset this extent belongs to.
-+ *
-+ * @refs_to_add    Number of references to add
-+ *
-+ * @extent_op      Pointer to a structure, holding information necessary when
-+ *                 updating a tree block's flags
-+ *
-+ */
- static int __btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
- 				  struct btrfs_delayed_ref_node *node,
- 				  u64 parent, u64 root_objectid,
 -- 
-2.7.4
-
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

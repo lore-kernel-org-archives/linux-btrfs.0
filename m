@@ -1,68 +1,188 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:56149 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1751587AbeEBXej (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 May 2018 19:34:39 -0400
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-3@m.gmane.org>)
-        id 1fE1EY-0006Xr-ML
-        for linux-btrfs@vger.kernel.org; Thu, 03 May 2018 01:32:26 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: RAID56 - 6 parity raid
-Date: Wed, 2 May 2018 23:32:20 +0000 (UTC)
-Message-ID: <pan$8e6d9$374a25c9$565659d8$ffe562b1@cox.net>
-References: <CAJH6TXi96F=kwZS4imACiOrkeoHz2LVjPpi2W0fWw781Fba3hA@mail.gmail.com>
-        <pan$13d50$86fb3347$db26ba71$62968586@cox.net>
-        <0931730f-be41-e63b-f7f9-85fd111d0470@libero.it>
-        <bf58f92b-4d38-91dc-e515-eef5ab969dde@dirtcellar.net>
-        <66dceb8e-7a43-10cc-2ec6-e477a55b4deb@inwind.it>
-        <99e79113-39ac-e67e-ff22-bfcfcdac00bc@gmail.com>
-        <432bd25d-b823-9661-a408-11864df43425@inwind.it>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from mout.gmx.net ([212.227.15.18]:55505 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751774AbeECFSL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 3 May 2018 01:18:11 -0400
+Subject: Re: [PATCH 01/20] btrfs-progs: quota: Add -W option to rescan to wait
+ without starting rescan
+To: jeffm@suse.com, linux-btrfs@vger.kernel.org
+References: <20180308024047.10104-1-jeffm@suse.com>
+ <20180308024047.10104-2-jeffm@suse.com>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <10d603cd-7727-c3e2-e138-c1c18e5e0f23@gmx.com>
+Date: Thu, 3 May 2018 13:17:58 +0800
+MIME-Version: 1.0
+In-Reply-To: <20180308024047.10104-2-jeffm@suse.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="MeJX0MjT53r6XXWwBSgy1yPxfeKnE2kD1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Goffredo Baroncelli posted on Wed, 02 May 2018 22:40:27 +0200 as
-excerpted:
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--MeJX0MjT53r6XXWwBSgy1yPxfeKnE2kD1
+Content-Type: multipart/mixed; boundary="Vhqp8hVhuzcENI1VZLnUIZdvhXkzYlkaU";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: jeffm@suse.com, linux-btrfs@vger.kernel.org
+Message-ID: <10d603cd-7727-c3e2-e138-c1c18e5e0f23@gmx.com>
+Subject: Re: [PATCH 01/20] btrfs-progs: quota: Add -W option to rescan to wait
+ without starting rescan
+References: <20180308024047.10104-1-jeffm@suse.com>
+ <20180308024047.10104-2-jeffm@suse.com>
+In-Reply-To: <20180308024047.10104-2-jeffm@suse.com>
 
-> Anyway, my "rant" started when Ducan put near the missing of parity
-> checksum and the write hole. The first might be a performance problem.
-> Instead the write hole could lead to a loosing data. My intention was to
-> highlight that the parity-checksum is not related to the reliability and
-> safety of raid5/6.
+--Vhqp8hVhuzcENI1VZLnUIZdvhXkzYlkaU
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-Thanks for making that point... and to everyone else for the vigorous 
-thread debating it, as I'm learning quite a lot! =:^)
+Gentle ping.
 
->From your first reply:
+This patch can be applied independently and is pretty critical to expose
+rescan and transaction race.
 
->> Why the fact that the parity is not checksummed is a problem ?
->> I read several times that this is a problem. However each time the
->> thread reached the conclusion that... it is not a problem.
+It would be quite an important part for crafting test case.
 
-I must have missed those threads, or at least, missed that conclusion 
-from them (maybe believing they were about something rather narrower, or 
-conflating... for instance), because AFAICT, this is the first time I've 
-seen the practical merits of checksummed parity actually debated, at 
-least in terms I as a non-dev can reasonably understand.  To my mind it 
-was settled (or I'd have worded my original claim rather differently) and 
-only now am I learning different.
+Thanks,
+Qu
 
-And... to my credit... given the healthy vigor of the debate, it seems 
-I'm not the only one that missed them...
+On 2018=E5=B9=B403=E6=9C=8808=E6=97=A5 10:40, jeffm@suse.com wrote:
+> From: Jeff Mahoney <jeffm@suse.com>
+>=20
+> This patch adds a new -W option to wait for a rescan without starting a=
 
-But I'm surely learning of it now, and indeed, I had somewhat conflated 
-parity-checksumming with the in-place-stripe-read-modify-write atomicity 
-issue.  I'll leave the parity-checksumming debate (now that I know it at 
-least remains debatable) to those more knowledgeable than myself, but in 
-addition to what I've learned of it, I've definitely learned that I can't 
-properly conflate it with the in-place stripe-rmw atomicity issue, so 
-thanks!
+> new operation.  This is useful for things like xfstests where we want
+> do to do a "btrfs quota enable" and not continue until the subsequent
+> rescan has finished.
+>=20
+> In addition to documenting the new option in the man page, I've cleaned=
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+> up the rescan entry to document the -w option a bit better.
+>=20
+> Reviewed-by: Qu Wenruo <wqu@suse.com>
+> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+> ---
+>  Documentation/btrfs-quota.asciidoc | 10 +++++++---
+>  cmds-quota.c                       | 20 ++++++++++++++------
+>  2 files changed, 21 insertions(+), 9 deletions(-)
+>=20
+> diff --git a/Documentation/btrfs-quota.asciidoc b/Documentation/btrfs-q=
+uota.asciidoc
+> index 85ebf729..0b64a69b 100644
+> --- a/Documentation/btrfs-quota.asciidoc
+> +++ b/Documentation/btrfs-quota.asciidoc
+> @@ -238,15 +238,19 @@ Disable subvolume quota support for a filesystem.=
 
+>  *enable* <path>::
+>  Enable subvolume quota support for a filesystem.
+> =20
+> -*rescan* [-s] <path>::
+> +*rescan* [-s|-w|-W] <path>::
+>  Trash all qgroup numbers and scan the metadata again with the current =
+config.
+>  +
+>  `Options`
+>  +
+>  -s::::
+> -show status of a running rescan operation.
+> +Show status of a running rescan operation.
+> +
+>  -w::::
+> -wait for rescan operation to finish(can be already in progress).
+> +Start rescan operation and wait until it has finished before exiting. =
+ If a rescan is already running, wait until it finishes and then exit wit=
+hout starting a new one.
+> +
+> +-W::::
+> +Wait for rescan operation to finish and then exit.  If a rescan is not=
+ already running, exit silently.
+> =20
+>  EXIT STATUS
+>  -----------
+> diff --git a/cmds-quota.c b/cmds-quota.c
+> index 745889d1..7f933495 100644
+> --- a/cmds-quota.c
+> +++ b/cmds-quota.c
+> @@ -120,14 +120,20 @@ static int cmd_quota_rescan(int argc, char **argv=
+)
+>  	int wait_for_completion =3D 0;
+> =20
+>  	while (1) {
+> -		int c =3D getopt(argc, argv, "sw");
+> +		int c =3D getopt(argc, argv, "swW");
+>  		if (c < 0)
+>  			break;
+>  		switch (c) {
+>  		case 's':
+>  			ioctlnum =3D BTRFS_IOC_QUOTA_RESCAN_STATUS;
+>  			break;
+> +		case 'W':
+> +			ioctlnum =3D 0;
+> +			wait_for_completion =3D 1;
+> +			break;
+>  		case 'w':
+> +			/* Reset it in case the user did both -W and -w */
+> +			ioctlnum =3D BTRFS_IOC_QUOTA_RESCAN;
+>  			wait_for_completion =3D 1;
+>  			break;
+>  		default:
+> @@ -135,8 +141,8 @@ static int cmd_quota_rescan(int argc, char **argv)
+>  		}
+>  	}
+> =20
+> -	if (ioctlnum !=3D BTRFS_IOC_QUOTA_RESCAN && wait_for_completion) {
+> -		error("switch -w cannot be used with -s");
+> +	if (ioctlnum =3D=3D BTRFS_IOC_QUOTA_RESCAN_STATUS && wait_for_complet=
+ion) {
+> +		error("switches -w/-W cannot be used with -s");
+>  		return 1;
+>  	}
+> =20
+> @@ -150,8 +156,10 @@ static int cmd_quota_rescan(int argc, char **argv)=
+
+>  	if (fd < 0)
+>  		return 1;
+> =20
+> -	ret =3D ioctl(fd, ioctlnum, &args);
+> -	e =3D errno;
+> +	if (ioctlnum) {
+> +		ret =3D ioctl(fd, ioctlnum, &args);
+> +		e =3D errno;
+> +	}
+> =20
+>  	if (ioctlnum =3D=3D BTRFS_IOC_QUOTA_RESCAN_STATUS) {
+>  		close_file_or_dir(fd, dirstream);
+> @@ -167,7 +175,7 @@ static int cmd_quota_rescan(int argc, char **argv)
+>  		return 0;
+>  	}
+> =20
+> -	if (ret =3D=3D 0) {
+> +	if (ioctlnum =3D=3D BTRFS_IOC_QUOTA_RESCAN && ret =3D=3D 0) {
+>  		printf("quota rescan started\n");
+>  		fflush(stdout);
+>  	} else if (ret < 0 && (!wait_for_completion || e !=3D EINPROGRESS)) {=
+
+>=20
+
+
+--Vhqp8hVhuzcENI1VZLnUIZdvhXkzYlkaU--
+
+--MeJX0MjT53r6XXWwBSgy1yPxfeKnE2kD1
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlrqm4YACgkQwj2R86El
+/qjhwAf+M6XvVnffMfn8bnJHyjdgns7kJ6J4SfukrGhpulz1UILWu6QgMMBFmEN3
+o4+q/pORqDC9jWODH4xiRuH50Jcv2zNp2/f2J5rvP89Inn7t9GGAlGxn8a4ugL+V
+c/N8+W+xv2ga+abMCWRuBH0ZmB6PjnwOpFo23NOXIebZpWNGYqFoYnza3b8JBVOg
+Bg6KEF1nriChKrMva5iMAHqttwyF3UQ18XYHl5gunsnGGZMmqTnzTd6hT0fJHVTl
+yJkBvMM/ubpQtQrv9k+wWaCUGEsB2MhH5S3KO39pTw60lbWhnyxxfG83UrOBzAzD
+wGTDhOshpdO6+cM8onkozGn3AUmwPA==
+=GH6+
+-----END PGP SIGNATURE-----
+
+--MeJX0MjT53r6XXWwBSgy1yPxfeKnE2kD1--

@@ -1,76 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:47246 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:44023 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753072AbeEAO54 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 1 May 2018 10:57:56 -0400
-Date: Tue, 1 May 2018 16:55:20 +0200
-From: David Sterba <dsterba@suse.cz>
-To: fdmanana@kernel.org
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: send, fix missing truncate for inode with
- prealloc extent past eof
-Message-ID: <20180501145519.GU21272@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20180430180507.21751-1-fdmanana@kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180430180507.21751-1-fdmanana@kernel.org>
+        id S1750707AbeEDOrn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 4 May 2018 10:47:43 -0400
+From: David Sterba <dsterba@suse.com>
+To: torvalds@linux-foundation.org
+Cc: David Sterba <dsterba@suse.com>, clm@fb.com, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+Subject: [GIT PULL] Btrfs updates for 4.17-rc3
+Date: Fri,  4 May 2018 16:45:03 +0200
+Message-Id: <cover.1525444301.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Apr 30, 2018 at 07:05:07PM +0100, fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
-> 
-> An incremental send operation can miss a truncate operation when an inode
-> has an increased size in the send snapshot and a prealloc extent beyond
-> its size.
-> 
-> Consider the following scenario where a necessary truncate operation is
-> missing in the incremental send stream:
-> 
-> 1) In the parent snapshot an inode has a size of 1282957 bytes and it has
->    no prealloc extents beyond its size;
-> 
-> 2) In the the send snapshot it has a size of 5738496 bytes and has a new
->    extent at offsets 1884160 (length of 106496 bytes) and a prealloc
->    extent beyond eof at offset 6729728 (and a length of 339968 bytes);
-> 
-> 3) When processing the prealloc extent, at offset 6729728, we end up at
->    send.c:send_write_or_clone() and set the @len variable to a value of
->    18446744073708560384 because @offset plus the original @len value is
->    larger then the inode's size (6729728 + 339968 > 5738496). We then
->    call send_extent_data(), with that @offset and @len, which in turn
->    calls send_write(), and then the later calls fill_read_buf(). Because
->    the offset passed to fill_read_buf() is greater then inode's i_size,
->    this function returns 0 immediately, which makes send_write() and
->    send_extent_data() do nothing and return immediately as well. When
->    we get back to send.c:send_write_or_clone() we adjust the value
->    of sctx->cur_inode_next_write_offset to @offset plus @len, which
->    corresponds to 6729728 + 18446744073708560384 = 5738496, which is
->    precisely the the size of the inode in the send snapshot;
-> 
-> 4) Later when at send.c:finish_inode_if_needed() we determine that
->    we don't need to issue a truncate operation because the value of
->    sctx->cur_inode_next_write_offset corresponds to the inode's new
->    size, 5738496 bytes. This is wrong because the last write operation
->    that was issued started at offset 1884160 with a length of 106496
->    bytes, so the correct value for sctx->cur_inode_next_write_offset
->    should be 1990656 (1884160 + 106496), so that a truncate operation
->    with a value of 5738496 bytes would have been sent to insert a
->    trailing hole at the destination.
-> 
-> So fix the issue by making send.c:send_write_or_clone() not attempt
-> to send write or clone operations for extents that start beyond the
-> inode's size, since such attempts do nothing but waste time by
-> calling helper functions and allocating path structures, and send
-> currently has no fallocate command in order to create prealloc extents
-> at the destination (either beyond a file's eof or not).
-> 
-> The issue was found running the test btrfs/007 from fstests using a seed
-> value of 1524346151 for fsstress.
-> 
-> Reported-by: Gu, Jinxiang <gujx@cn.fujitsu.com>
-> Fixes: ffa7c4296e93 ("Btrfs: send, do not issue unnecessary truncate operations")
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+Hi,
 
-Added to next, thanks.
+please pull the following branch with 2 regression fixes and one fix for
+stable. Thanks.
+
+----------------------------------------------------------------
+The following changes since commit c0872323746e11fc79344e3738b283a8cda86654:
+
+  btrfs: print-tree: debugging output enhancement (2018-04-20 19:18:16 +0200)
+
+are available in the Git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-4.17-rc3-tag
+
+for you to fetch changes up to a6aa10c70bf72fb28504cb5de5deac75da78b0f5:
+
+  Btrfs: send, fix missing truncate for inode with prealloc extent past eof (2018-05-02 11:55:29 +0200)
+
+----------------------------------------------------------------
+Filipe Manana (1):
+      Btrfs: send, fix missing truncate for inode with prealloc extent past eof
+
+Qu Wenruo (1):
+      btrfs: Fix wrong first_key parameter in replace_path
+
+ethanwu (1):
+      btrfs: Take trans lock before access running trans in check_delayed_ref
+
+ fs/btrfs/extent-tree.c | 7 +++++++
+ fs/btrfs/relocation.c  | 2 +-
+ fs/btrfs/send.c        | 4 ++++
+ 3 files changed, 12 insertions(+), 1 deletion(-)

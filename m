@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:56801 "EHLO
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:45920 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751903AbeEGDKs (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 6 May 2018 23:10:48 -0400
+        with ESMTP id S1751938AbeEGDKr (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 6 May 2018 23:10:47 -0400
 Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
-        by cn.fujitsu.com (Postfix) with ESMTP id 18B884B34D23
+        by cn.fujitsu.com (Postfix) with ESMTP id 8B3E14B34D40
         for <linux-btrfs@vger.kernel.org>; Mon,  7 May 2018 11:10:45 +0800 (CST)
 From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH v3 06/10] btrfs-progs: undelete-subvol: introduce link_subvol_to_lostfound
-Date: Mon, 7 May 2018 11:10:29 +0800
-Message-ID: <20180507031033.4125-7-lufq.fnst@cn.fujitsu.com>
+Subject: [PATCH v3 07/10] btrfs-progs: undelete-subvol: introduce btrfs_undelete_subvols
+Date: Mon, 7 May 2018 11:10:30 +0800
+Message-ID: <20180507031033.4125-8-lufq.fnst@cn.fujitsu.com>
 In-Reply-To: <20180507031033.4125-1-lufq.fnst@cn.fujitsu.com>
 References: <20180507031033.4125-1-lufq.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -18,104 +18,126 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The function will create lost+found directory, link the deleted
-subvolume specified by the subvol_id to the directory, update the
-information of root_item and cleanup the associated orphan item.
+The function default will traverse the all orphan items on the tree root,
+and recover the all intact subvolumes. If subvol_id is specified, then only
+the corresponding subvolume will be recovered.
 
 Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-Reviewed-by: Qu Wenruo <wqu@suse.com>
 ---
 V3:
 pass btrfs_fs_info instead of btrfs_root;
-add Reviewed-by from Qu Wenruo.
+rename btrfs_undelete_intact_subvols to btrfs_undelete_subvols;
+use btrfs_previous_item to iterate.
+V2: add subvol_id argument to specify subvol_id instead of recovering
+all subvolumes.
 
- undelete-subvol.c | 76 +++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 76 insertions(+)
+ undelete-subvol.c | 70 +++++++++++++++++++++++++++++++++++++++++++++++
+ undelete-subvol.h | 11 ++++++++
+ 2 files changed, 81 insertions(+)
+ create mode 100644 undelete-subvol.h
 
 diff --git a/undelete-subvol.c b/undelete-subvol.c
-index 6d3ef19977d6..9851998ec3df 100644
+index 9851998ec3df..6b9803d4c590 100644
 --- a/undelete-subvol.c
 +++ b/undelete-subvol.c
-@@ -79,3 +79,79 @@ out:
- 	btrfs_release_path(&path);
+@@ -7,6 +7,7 @@
+ #include "disk-io.h"
+ #include "transaction.h"
+ #include "messages.h"
++#include "undelete-subvol.h"
+ 
+ /*
+  * Determines whether the subvolume is intact, according to the drop_progress
+@@ -155,3 +156,72 @@ static int link_subvol_to_lostfound(struct btrfs_fs_info *fs_info,
+ out:
  	return ret;
  }
 +
 +/*
-+ * Recover a subvolume specified by subvol_id, and link it to the lost+found
-+ * directory.
++ * Traverse all orphan items on the root tree, restore them to the lost+found
++ * directory if the corresponding subvolumes are still intact left on the disk.
 + *
-+ * @subvol_id: specify the subvolume which will be linked, and also be the part
-+ * of the subvolume name.
++ * @subvol_id	if not set to 0, skip other subvolumes and only recover the
++ *		subvolume specified by @subvol_id.
 + *
-+ * Return 0 if no error occurred.
++ * Return 0 if no error occurred even if no subvolume was recovered.
 + */
-+static int link_subvol_to_lostfound(struct btrfs_fs_info *fs_info,
-+				    u64 subvol_id)
++int btrfs_undelete_subvols(struct btrfs_fs_info *fs_info, u64 subvol_id)
 +{
-+	struct btrfs_trans_handle *trans;
 +	struct btrfs_root *root = fs_info->tree_root;
-+	struct btrfs_root *fs_root = fs_info->fs_root;
-+	char buf[BTRFS_NAME_LEN + 1] = {0}; /* 1 for snprintf null */
-+	char *dir_name = "lost+found";
-+	u64 lost_found_ino = 0;
-+	u32 mode = 0700;
-+	int ret;
++	struct btrfs_key key;
++	struct btrfs_path path;
++	u64 found_count = 0;
++	u64 recovered_count = 0;
++	int ret = 0;
 +
-+	/*
-+	 * For link subvolume to lost+found,
-+	 * 2 for parent(256)'s dir_index and dir_item
-+	 * 2 for lost+found dir's inode_item and inode_ref
-+	 * 2 for lost+found dir's dir_index and dir_item for the subvolume
-+	 * 2 for the subvolume's root_ref and root_backref
-+	 */
-+	trans = btrfs_start_transaction(fs_root, 8);
-+	if (IS_ERR(trans)) {
-+		error("unable to start transaction");
-+		ret = PTR_ERR(trans);
-+		goto out;
++	key.objectid = BTRFS_ORPHAN_OBJECTID;
++	key.type = BTRFS_ORPHAN_ITEM_KEY;
++	key.offset = subvol_id ? subvol_id + 1 : (u64)-1;
++
++	btrfs_init_path(&path);
++	while (subvol_id != key.offset) {
++		ret = btrfs_search_slot(NULL, root, &key, &path, 0, 0);
++		if (ret < 0) {
++			error("search ORPHAN_ITEM for %llu failed.\n",
++			      key.offset);
++			btrfs_release_path(&path);
++			break;
++		}
++
++		ret = btrfs_previous_item(root, &path, BTRFS_ORPHAN_OBJECTID,
++					  BTRFS_ORPHAN_ITEM_KEY);
++		if (ret) {
++			btrfs_release_path(&path);
++			break;
++		}
++
++		btrfs_item_key_to_cpu(path.nodes[0], &key, path.slots[0]);
++		btrfs_release_path(&path);
++
++		/* If subvol_id is non-zero, skip other deleted subvolume. */
++		if (subvol_id && subvol_id != key.offset) {
++			ret = -ENOENT;
++			break;
++		}
++
++		if (!is_subvol_intact(fs_info, key.offset))
++			continue;
++
++		/* Here we can confirm there is an intact subvolume. */
++		found_count++;
++		ret = link_subvol_to_lostfound(fs_info, key.offset);
++		if (ret == 0) {
++			recovered_count++;
++			printf(
++		"Recovered subvolume %llu to lost+found successfully.\n",
++				key.offset);
++		}
++
 +	}
 +
-+	/* Create lost+found directory */
-+	ret = btrfs_mkdir(trans, fs_root, dir_name, strlen(dir_name),
-+			  BTRFS_FIRST_FREE_OBJECTID, &lost_found_ino,
-+			  mode);
-+	if (ret < 0) {
-+		error("failed to create '%s' dir: %d", dir_name, ret);
-+		goto out;
-+	}
++	printf("Found %llu deleted subvols left intact\n", found_count);
++	printf("Recovered %llu deleted subvols\n", found_count);
 +
-+	/* Link the subvolume to lost+found directory */
-+	snprintf(buf, BTRFS_NAME_LEN + 1, "sub%llu", subvol_id);
-+	ret = btrfs_link_subvol(trans, fs_root, buf, subvol_id, lost_found_ino,
-+				false);
-+	if (ret) {
-+		error("failed to link the subvol %llu: %d", subvol_id, ret);
-+		goto out;
-+	}
-+
-+	/* Clear root flags BTRFS_ROOT_SUBVOL_DEAD */
-+	ret = recover_dead_root(trans, subvol_id);
-+	if (ret)
-+		goto out;
-+
-+	/* Delete the orphan item after undeletion is completed. */
-+	ret = btrfs_del_orphan_item(trans, root, subvol_id);
-+	if (ret) {
-+		error("failed to delete the orphan_item for %llu: %d",
-+				subvol_id, ret);
-+		goto out;
-+	}
-+
-+	ret = btrfs_commit_transaction(trans, fs_root);
-+	if (ret) {
-+		error("transaction commit failed: %d", ret);
-+		goto out;
-+	}
-+
-+out:
 +	return ret;
 +}
+diff --git a/undelete-subvol.h b/undelete-subvol.h
+new file mode 100644
+index 000000000000..a98d8ab90cea
+--- /dev/null
++++ b/undelete-subvol.h
+@@ -0,0 +1,11 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++/*
++ * Copyright (C) 2018 Fujitsu.  All rights reserved.
++ */
++
++#ifndef __BTRFS_UNDELETE_SUBVOLUME_H__
++#define __BTRFS_UNDELETE_SUBVOLUME_H__
++
++int btrfs_undelete_subvols(struct btrfs_fs_info *fs_info, u64 subvol_id);
++
++#endif
 -- 
 2.17.0
 

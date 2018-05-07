@@ -1,86 +1,30 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from synology.com ([59.124.61.242]:53233 "EHLO synology.com"
+Received: from mx2.suse.de ([195.135.220.15]:45559 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750785AbeEBCzJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 1 May 2018 22:55:09 -0400
-From: ethanwu <ethanwu@synology.com>
-To: linux-btrfs@vger.kernel.org
-Cc: ethanwu <ethanwu@synology.com>
-Subject: [PATCH] btrfs: Take trans lock before access running trans in check_delayed_ref
-Date: Wed,  2 May 2018 10:55:02 +0800
-Message-Id: <1525229702-10243-1-git-send-email-ethanwu@synology.com>
-In-Reply-To: <20180501133021.GQ21272@twin.jikos.cz>
-References: <20180501133021.GQ21272@twin.jikos.cz>
+        id S1752035AbeEGO5G (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 7 May 2018 10:57:06 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 56CE0AE91
+        for <linux-btrfs@vger.kernel.org>; Mon,  7 May 2018 14:57:05 +0000 (UTC)
+Date: Mon, 7 May 2018 16:54:25 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Nikolay Borisov <nborisov@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: Remove devid parameter from btrfs_rmap_block
+Message-ID: <20180507145425.GA6649@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1525420385-19112-1-git-send-email-nborisov@suse.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1525420385-19112-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In preivous patch:
-Btrfs: kill trans in run_delalloc_nocow and btrfs_cross_ref_exist
-We avoid starting btrfs transaction and get transaction from
-fs_info->running_transaction directly.
+On Fri, May 04, 2018 at 10:53:05AM +0300, Nikolay Borisov wrote:
+> This function is used in only one place and devid argument is always
+> passed 0. So just remove it, similarly to how it was removed in the
+> userspace code.
+> 
+> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 
-When accessing running_transaction in check_delayed_ref, there's a
-chance that current transaction will be freed by commit transaction
-after the NULL pointer check of running_transaction is passed.
-
-After looking all the other places using fs_info->running_transaction,
-they are either
-1. protected by trans_lock or
-2. holding the transaction, so commit transaction must wait before
-   it could finish committing and free the transaction structure
-
-Fix this by using trans_lock and increasing the use_count.
-
-Fixes: e4c3b2dcd144 ("Btrfs: kill trans in run_delalloc_nocow and btrfs_cross_ref_exist")
-Signed-off-by: ethanwu <ethanwu@synology.com>
-Reviewed-by: Liu Bo <bo.liu@linux.alibaba.com>
----
-V2: Use refcount_inc rather than aomitc_inc to increase use_count
-V3: Add Fixes tag and refine commit log
-
- fs/btrfs/extent-tree.c | 7 +++++++
- 1 file changed, 7 insertions(+)
-
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index c1618ab..7c302ed 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3149,7 +3149,11 @@ static noinline int check_delayed_ref(struct btrfs_root *root,
- 	struct rb_node *node;
- 	int ret = 0;
- 
-+	spin_lock(&root->fs_info->trans_lock);
- 	cur_trans = root->fs_info->running_transaction;
-+	if (cur_trans)
-+		refcount_inc(&cur_trans->use_count);
-+	spin_unlock(&root->fs_info->trans_lock);
- 	if (!cur_trans)
- 		return 0;
- 
-@@ -3158,6 +3162,7 @@ static noinline int check_delayed_ref(struct btrfs_root *root,
- 	head = btrfs_find_delayed_ref_head(delayed_refs, bytenr);
- 	if (!head) {
- 		spin_unlock(&delayed_refs->lock);
-+		btrfs_put_transaction(cur_trans);
- 		return 0;
- 	}
- 
-@@ -3174,6 +3179,7 @@ static noinline int check_delayed_ref(struct btrfs_root *root,
- 		mutex_lock(&head->mutex);
- 		mutex_unlock(&head->mutex);
- 		btrfs_put_delayed_ref_head(head);
-+		btrfs_put_transaction(cur_trans);
- 		return -EAGAIN;
- 	}
- 	spin_unlock(&delayed_refs->lock);
-@@ -3206,6 +3212,7 @@ static noinline int check_delayed_ref(struct btrfs_root *root,
- 	}
- 	spin_unlock(&head->lock);
- 	mutex_unlock(&head->mutex);
-+	btrfs_put_transaction(cur_trans);
- 	return ret;
- }
- 
--- 
-1.9.1
-
+Reviewed-by: David Sterba <dsterba@suse.com>

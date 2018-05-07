@@ -1,114 +1,268 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from synology.com ([59.124.61.242]:49203 "EHLO synology.com"
+Received: from mx2.suse.de ([195.135.220.15]:60025 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S933864AbeEIKfu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 9 May 2018 06:35:50 -0400
-From: robbieko <robbieko@synology.com>
+        id S1750708AbeEGFmY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 7 May 2018 01:42:24 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id AABE1AD16
+        for <linux-btrfs@vger.kernel.org>; Mon,  7 May 2018 05:42:22 +0000 (UTC)
+From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Robbie Ko <robbieko@synology.com>
-Subject: [PATCH] btrfs: fix invalid memory access with journal_info
-Date: Wed,  9 May 2018 18:35:25 +0800
-Message-Id: <1525862125-15228-1-git-send-email-robbieko@synology.com>
+Subject: [RFC PATCH] btrfs: qgroup: Only queue rescan work after QUOTA_ENABLED flag takes effect
+Date: Mon,  7 May 2018 13:42:19 +0800
+Message-Id: <20180507054219.12022-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Robbie Ko <robbieko@synology.com>
+Currently we set QUOTA_ENABLED flags and then queue rescan work, and
+then commit current transaction.
 
-When send process requires memory allocation, shrinker may be triggered
-due to insufficient memory.
-Then evict_inode gets called when inode is freed, and this function
-may need to start transaction.
-However, the journal_info is already points to BTRFS_SEND_TRANS_STUB, it
-passed the if condition,
-and the following use yields illegal memory access.
+The behavior could lead to missing quota accounts as quota rescan only
+scan committed root, thus it won't account modification in current
+transaction.
+While for current transaction, we rely btrfs_qgroup_extent_record
+structure to trace dirty extents, which is only created after
+QUOTA_ENABLED flags set.
 
-  if (current->journal_info) {
-      WARN_ON(type & TRANS_EXTWRITERS);
-      h = current->journal_info;
-      refcount_inc(&h->use_count);
-      WARN_ON(refcount_read(&h->use_count) > 2);
-      h->orig_rsv = h->block_rsv;
-      h->block_rsv = NULL;
-      goto got_it;
-  }
+Above behavior a window where any modification before we set QUOTA_ENABLED
+flags will not be accounted in current transaction.
 
-Direct IO has a similar problem, journal_info will store btrfs_dio_data,
-which will lead to illegal memory access.
+This patch will fix the behavior by delaying setting QUOTA_ENABLED flags
+(sounds pretty familiar right? Just like the old pending_quota_status),
+and QUOTA_ENABLED will only be enabled after current transaction
+committed, then we queue rescan work.
 
-We fixed the problem by save the journal_info and restore afterwards.
-
-CallTrace looks like this:
- BUG: unable to handle kernel NULL pointer dereference at 0000000000000021
- IP: [<ffffffffa086f2d4>] start_transaction+0x64/0x450 [btrfs]
- PGD 8fea4b067 PUD a33bea067 PMD 0
- Oops: 0000 [#1] SMP
- CPU: 3 PID: 12681 Comm: btrfs Tainted: P C O 3.10.102 #15266
- RIP: 0010:[<ffffffffa086f2d4>] start_transaction+0x64/0x450 [btrfs]
- Call Trace:
- [<ffffffffa087a838>] ? btrfs_evict_inode+0x3d8/0x580 [btrfs]
- [<ffffffff81115932>] ? evict+0xa2/0x1a0
- [<ffffffff81112888>] ? shrink_dentry_list+0x308/0x3d0
- [<ffffffff811137f3>] ? prune_dcache_sb+0x133/0x160
- [<ffffffff810fa51f>] ? prune_super+0xcf/0x1a0
- [<ffffffff810bf6bf>] ? shrink_slab+0x11f/0x1d0
- [<ffffffff810c19f2>] ? do_try_to_free_pages+0x452/0x560
- [<ffffffff810bf054>] ? throttle_direct_reclaim+0x74/0x240
- [<ffffffff810c1bae>] ? try_to_free_pages+0xae/0xc0
- [<ffffffff810ba16b>] ? __alloc_pages_nodemask+0x53b/0x9f0
- [<ffffffff810bc89c>] ? __do_page_cache_readahead+0xec/0x270
- [<ffffffff810bcb2b>] ? ondemand_readahead+0xbb/0x220
- [<ffffffffa08d7c43>] ? fill_read_buf+0x2b3/0x3a0 [btrfs]
- [<ffffffffa08dbf5e>] ? send_extent_data+0x10e/0x300 [btrfs]
- [<ffffffffa08dc34b>] ? process_extent+0x1fb/0x1310 [btrfs]
- [<ffffffffa08d8300>] ? iterate_dir_item.isra.28+0x1b0/0x250 [btrfs]
- [<ffffffffa08dd500>] ? send_set_xattr+0xa0/0xa0 [btrfs]
- [<ffffffffa08de565>] ? changed_cb+0xd5/0xc40 [btrfs]
- [<ffffffffa08df1c2>] ? full_send_tree+0xf2/0x1a0 [btrfs]
- [<ffffffffa08e022b>] ? btrfs_ioctl_send+0xfbb/0x1040 [btrfs]
- [<ffffffffa08a9864>] ? btrfs_ioctl+0x1084/0x32a0 [btrfs]
-
-Signed-off-by: Robbie Ko <robbieko@synology.com>
+Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/inode.c | 12 ++++++++++++
- 1 file changed, 12 insertions(+)
+ fs/btrfs/ioctl.c       | 16 ++-------------
+ fs/btrfs/qgroup.c      | 46 +++++++++++++++++++++++++++++++++++-------
+ fs/btrfs/qgroup.h      |  6 ++----
+ fs/btrfs/transaction.c |  3 +++
+ fs/btrfs/transaction.h |  6 ++++++
+ 5 files changed, 52 insertions(+), 25 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index f534701..77aec8d 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -5295,6 +5295,7 @@ void btrfs_evict_inode(struct inode *inode)
- 	int steal_from_global = 0;
- 	u64 min_size;
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index e1dedc78d1ad..2ed8fdf9d1d5 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -4527,9 +4527,7 @@ static long btrfs_ioctl_quota_ctl(struct file *file, void __user *arg)
+ 	struct inode *inode = file_inode(file);
+ 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+ 	struct btrfs_ioctl_quota_ctl_args *sa;
+-	struct btrfs_trans_handle *trans = NULL;
  	int ret;
-+	void *journal_info = NULL;
+-	int err;
  
- 	trace_btrfs_inode_evict(inode);
- 
-@@ -5303,6 +5304,16 @@ void btrfs_evict_inode(struct inode *inode)
- 		return;
+ 	if (!capable(CAP_SYS_ADMIN))
+ 		return -EPERM;
+@@ -4545,28 +4543,18 @@ static long btrfs_ioctl_quota_ctl(struct file *file, void __user *arg)
  	}
  
-+	/*
-+	 * Send or Direct IO may store information in journal_info.
-+	 * However, this function may use start_transaction and
-+	 * start_transaction will use journal_info.
-+	 * To avoid accessing invalid memory, we can save the journal_info
-+	 * and restore it later.
-+	 */
-+	journal_info = current->journal_info;
-+	current->journal_info = NULL;
-+
- 	min_size = btrfs_calc_trunc_metadata_size(fs_info, 1);
+ 	down_write(&fs_info->subvol_sem);
+-	trans = btrfs_start_transaction(fs_info->tree_root, 2);
+-	if (IS_ERR(trans)) {
+-		ret = PTR_ERR(trans);
+-		goto out;
+-	}
  
- 	evict_inode_truncate_pages(inode);
-@@ -5462,6 +5473,7 @@ void btrfs_evict_inode(struct inode *inode)
- no_delete:
- 	btrfs_remove_delayed_node(BTRFS_I(inode));
- 	clear_inode(inode);
-+	current->journal_info = journal_info;
+ 	switch (sa->cmd) {
+ 	case BTRFS_QUOTA_CTL_ENABLE:
+-		ret = btrfs_quota_enable(trans, fs_info);
++		ret = btrfs_quota_enable(fs_info);
+ 		break;
+ 	case BTRFS_QUOTA_CTL_DISABLE:
+-		ret = btrfs_quota_disable(trans, fs_info);
++		ret = btrfs_quota_disable(fs_info);
+ 		break;
+ 	default:
+ 		ret = -EINVAL;
+ 		break;
+ 	}
+-
+-	err = btrfs_commit_transaction(trans);
+-	if (err && !ret)
+-		ret = err;
+-out:
+ 	kfree(sa);
+ 	up_write(&fs_info->subvol_sem);
+ drop_write:
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index 2ee2d21d43ab..6a14aae426da 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -875,9 +875,9 @@ static int btrfs_clean_quota_tree(struct btrfs_trans_handle *trans,
+ 	return ret;
  }
  
- /*
+-int btrfs_quota_enable(struct btrfs_trans_handle *trans,
+-		       struct btrfs_fs_info *fs_info)
++int btrfs_quota_enable(struct btrfs_fs_info *fs_info)
+ {
++	struct btrfs_trans_handle *trans;
+ 	struct btrfs_root *quota_root;
+ 	struct btrfs_root *tree_root = fs_info->tree_root;
+ 	struct btrfs_path *path = NULL;
+@@ -886,9 +886,14 @@ int btrfs_quota_enable(struct btrfs_trans_handle *trans,
+ 	struct btrfs_key key;
+ 	struct btrfs_key found_key;
+ 	struct btrfs_qgroup *qgroup = NULL;
++	bool free_root = false;
+ 	int ret = 0;
+ 	int slot;
+ 
++	trans = btrfs_start_transaction(fs_info->tree_root, 2);
++	if (IS_ERR(trans))
++		return PTR_ERR(trans);
++
+ 	mutex_lock(&fs_info->qgroup_ioctl_lock);
+ 	if (fs_info->quota_root)
+ 		goto out;
+@@ -908,6 +913,7 @@ int btrfs_quota_enable(struct btrfs_trans_handle *trans,
+ 		ret =  PTR_ERR(quota_root);
+ 		goto out;
+ 	}
++	free_root = true;
+ 
+ 	path = btrfs_alloc_path();
+ 	if (!path) {
+@@ -983,10 +989,24 @@ int btrfs_quota_enable(struct btrfs_trans_handle *trans,
+ 		ret = PTR_ERR(qgroup);
+ 		goto out_free_path;
+ 	}
++	free_root = false;
+ 	spin_lock(&fs_info->qgroup_lock);
+ 	fs_info->quota_root = quota_root;
+-	set_bit(BTRFS_FS_QUOTA_ENABLED, &fs_info->flags);
++	/*
++	 * Quota rescan work is only add quota numbers for commit root, thus
++	 * modication happened current transaction will not be accounted if
++	 * QUOTA_ENABLED flag is set.
++	 * So only set QUOTA_ENABLED flag on next transaction and queue rescan
++	 * work in next transaction.
++	 */
++	set_bit(BTRFS_FS_QUOTA_ENABLED,
++		&trans->transaction->pending_fs_info_flags);
+ 	spin_unlock(&fs_info->qgroup_lock);
++	ret = btrfs_commit_transaction(trans);
++	trans = NULL;
++	if (ret)
++		goto out_free_path;
++
+ 	ret = qgroup_rescan_init(fs_info, 0, 1);
+ 	if (!ret) {
+ 	        qgroup_rescan_zero_tracking(fs_info);
+@@ -997,7 +1017,7 @@ int btrfs_quota_enable(struct btrfs_trans_handle *trans,
+ out_free_path:
+ 	btrfs_free_path(path);
+ out_free_root:
+-	if (ret) {
++	if (free_root) {
+ 		free_extent_buffer(quota_root->node);
+ 		free_extent_buffer(quota_root->commit_root);
+ 		kfree(quota_root);
+@@ -1008,15 +1028,21 @@ int btrfs_quota_enable(struct btrfs_trans_handle *trans,
+ 		fs_info->qgroup_ulist = NULL;
+ 	}
+ 	mutex_unlock(&fs_info->qgroup_ioctl_lock);
++	if (trans)
++		btrfs_end_transaction(trans);
+ 	return ret;
+ }
+ 
+-int btrfs_quota_disable(struct btrfs_trans_handle *trans,
+-			struct btrfs_fs_info *fs_info)
++int btrfs_quota_disable(struct btrfs_fs_info *fs_info)
+ {
+ 	struct btrfs_root *quota_root;
++	struct btrfs_trans_handle *trans;
+ 	int ret = 0;
+ 
++	trans = btrfs_start_transaction(fs_info->tree_root, 2);
++	if (IS_ERR(trans))
++		return PTR_ERR(trans);
++
+ 	mutex_lock(&fs_info->qgroup_ioctl_lock);
+ 	if (!fs_info->quota_root)
+ 		goto out;
+@@ -1048,8 +1074,12 @@ int btrfs_quota_disable(struct btrfs_trans_handle *trans,
+ 	free_extent_buffer(quota_root->node);
+ 	free_extent_buffer(quota_root->commit_root);
+ 	kfree(quota_root);
++	ret = btrfs_commit_transaction(trans);
++	trans = NULL;
+ out:
+ 	mutex_unlock(&fs_info->qgroup_ioctl_lock);
++	if (trans)
++		btrfs_end_transaction(trans);
+ 	return ret;
+ }
+ 
+@@ -2162,7 +2192,9 @@ int btrfs_run_qgroups(struct btrfs_trans_handle *trans,
+ 					BTRFS_QGROUP_STATUS_FLAG_INCONSISTENT;
+ 		spin_lock(&fs_info->qgroup_lock);
+ 	}
+-	if (test_bit(BTRFS_FS_QUOTA_ENABLED, &fs_info->flags))
++	if (test_bit(BTRFS_FS_QUOTA_ENABLED, &fs_info->flags) ||
++	    test_bit(BTRFS_FS_QUOTA_ENABLED,
++		     &trans->transaction->pending_fs_info_flags))
+ 		fs_info->qgroup_flags |= BTRFS_QGROUP_STATUS_FLAG_ON;
+ 	else
+ 		fs_info->qgroup_flags &= ~BTRFS_QGROUP_STATUS_FLAG_ON;
+diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
+index d60dd06445ce..bec7c9b17a8e 100644
+--- a/fs/btrfs/qgroup.h
++++ b/fs/btrfs/qgroup.h
+@@ -141,10 +141,8 @@ struct btrfs_qgroup {
+ #define QGROUP_RELEASE		(1<<1)
+ #define QGROUP_FREE		(1<<2)
+ 
+-int btrfs_quota_enable(struct btrfs_trans_handle *trans,
+-		       struct btrfs_fs_info *fs_info);
+-int btrfs_quota_disable(struct btrfs_trans_handle *trans,
+-			struct btrfs_fs_info *fs_info);
++int btrfs_quota_enable(struct btrfs_fs_info *fs_info);
++int btrfs_quota_disable(struct btrfs_fs_info *fs_info);
+ int btrfs_qgroup_rescan(struct btrfs_fs_info *fs_info);
+ void btrfs_qgroup_rescan_resume(struct btrfs_fs_info *fs_info);
+ int btrfs_qgroup_wait_for_completion(struct btrfs_fs_info *fs_info,
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index dd3b0e0d822f..46c6e31d79bc 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -241,6 +241,7 @@ static noinline int join_transaction(struct btrfs_fs_info *fs_info,
+ 	refcount_set(&cur_trans->use_count, 2);
+ 	atomic_set(&cur_trans->pending_ordered, 0);
+ 	cur_trans->flags = 0;
++	cur_trans->pending_fs_info_flags = 0;
+ 	cur_trans->start_time = get_seconds();
+ 
+ 	memset(&cur_trans->delayed_refs, 0, sizeof(cur_trans->delayed_refs));
+@@ -2218,6 +2219,8 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
+ 	spin_lock(&fs_info->trans_lock);
+ 	cur_trans->state = TRANS_STATE_UNBLOCKED;
+ 	fs_info->running_transaction = NULL;
++	fs_info->flags |= cur_trans->pending_fs_info_flags;
++	cur_trans->pending_fs_info_flags = 0;
+ 	spin_unlock(&fs_info->trans_lock);
+ 	mutex_unlock(&fs_info->reloc_mutex);
+ 
+diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
+index d8c0826bc2c7..3654d78dbf7b 100644
+--- a/fs/btrfs/transaction.h
++++ b/fs/btrfs/transaction.h
+@@ -43,6 +43,12 @@ struct btrfs_transaction {
+ 
+ 	unsigned long flags;
+ 
++	/*
++	 * flags which will be set to fs_info->flags after this transaction
++	 * committed
++	 */
++	unsigned long pending_fs_info_flags;
++
+ 	/* Be protected by fs_info->trans_lock when we want to change it. */
+ 	enum btrfs_trans_state state;
+ 	int aborted;
 -- 
-1.9.1
+2.17.0
 

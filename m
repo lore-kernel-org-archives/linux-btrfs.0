@@ -1,62 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:60687 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:58889 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1755404AbeEHQcv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 8 May 2018 12:32:51 -0400
-Date: Tue, 8 May 2018 18:30:08 +0200
+        id S1751976AbeEGRza (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 7 May 2018 13:55:30 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id C491BAB46
+        for <linux-btrfs@vger.kernel.org>; Mon,  7 May 2018 17:55:28 +0000 (UTC)
+Date: Mon, 7 May 2018 19:52:51 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <wqu@suse.de>
-Cc: Su Yue <suy.fnst@cn.fujitsu.com>, Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v4 00/18] btrfs-progs: lowmem check: avoid extents
- overwrite
-Message-ID: <20180508163008.GI6649@twin.jikos.cz>
+To: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+Subject: Re: [PATCH 0/3] Lowmem fsck repair to fix filetype mismatch
+Message-ID: <20180507175251.GD6649@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <20180208032737.31561-1-suy.fnst@cn.fujitsu.com>
- <20180507181737.GE6649@twin.jikos.cz>
- <86ef8426-80b3-be41-2c95-d2d173d973ab@cn.fujitsu.com>
- <f43e2d6d-4800-faae-6b81-99cd12f7ecda@suse.de>
+References: <20180117051710.16853-1-wqu@suse.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-In-Reply-To: <f43e2d6d-4800-faae-6b81-99cd12f7ecda@suse.de>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20180117051710.16853-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, May 08, 2018 at 10:06:05AM +0800, Qu Wenruo wrote:
-> >>>   - Repair functions for lowmem mode call try_avoid_extents_overwrite()
-> >>>     and start transactions.
-> >>>     Su Yue (18):
-> >>>    btrfs-progs: lowmem check: release path in repair_extent_data_item()
-> >>>    btrfs-progs: lowmem check: record returned errors after
-> >>>      walk_down_tree_v2()
-> >>>    btrfs-progs: lowmem check: assign @parent early in
-> >>>      repair_extent_data_item()
-> >>>    btrfs-progs: lowmem check: exclude extents of metadata blocks
-> >>
-> >> Patch 1-4 added to devel.
-> >>
-> >>>    btrfs-progs: lowmem check: introduce mark/clear_block_groups_full()
-> >>
-> >> There were too many conflicts starting with this patch.
-> >>
-> >> Can you please refresh teh rest of the series and resend?
-> >>
-> > OK of cource. An small question below.
-> > 
-> > Though this patchset is for lowmem mode, it also changes original mode
-> > for code reuse.
-> > 
-> > This patch and remainings base on Qu's unmerged patchset:
-> >     [PATCH 0/3] btrfs-progs: Split original mode check to its own
-> >         Author: Qu Wenruo <wqu@suse.com>
-> > New version is named
-> >     [PATCH 0/3] btrfs-progs: Split mode-original code
-> >     Author: Qu Wenruo <wqu@suse.com>
+On Wed, Jan 17, 2018 at 01:17:07PM +0800, Qu Wenruo wrote:
+> Sebastian reported a filesystem corruption where DIR_INDEX has wrong
+> filetype against INODE_ITEM.
 > 
-> Sorry, that patchset will not be updated until we get a relatively
-> stable check code base.
-> So I'm afraid you need to base them on current devel branch other than
-> my patchset.
+> Lowmem mode normally handles such problem by checking DIR_INDEX,
+> DIR_ITEM and INODE_REF/INODE_ITEM to determine the correct file type.
+> In such case, lowmem mode fsck can get the correct filetype.
+> 
+> When fixing the problem, lowmem mode will try to re-insert correct
+> (DIR_INDEX, DIR_ITEM, INODE_REF) tuple, and if existing correct
+> DIR_ITEM and INODE_REF is found, btrfs_link() will just skip and only
+> insert correct DIR_INDEX.
+> 
+> However, when inserting correct DIR_INDEX, due to extra DIR_INDEX
+> validation, incorrect one will be skiped and correct one will be
+> inserted after invalid one.
+> 
+> This leads to lowmem mode repair to create duplicated DIR_INDEX.
+> 
+> This patch will fix it by removing the whole (DIR_INDEX, DIR_ITEM,
+> INODE_REF) tuple before inserting correct tuple.
+> And the removing part, btrfs_unlink(), will be enhanced to handle
+> incorrect tuple member more robust.
+> 
+> Please note that, due a bug in lowmem mode repair, btrfs check will
+> still show "error(s) found in fs tree" even repair is done successfully.
+> 
+> And test case for this repair still needs extra work for original mode
+> to support such repair, or test case won't pass original mode test.
+> 
+> Qu Wenruo (3):
+>   btrfs-progs: lowmem fsck: Remove corupted link before re-add correct
+>     link
+>   btrfs-progs: dir-item: Allow dir item and dir index lookup to ignore
+>     found problem
+>   btrfs-progs: dir-item: Make btrfs_delete_one_dir_name more robust to
+>     handle corrupted name len
 
-Yeah, my plan for the upcoming weeks is to get all the pending patchsets
-with fixes merged before any bigger code cleanups, in check/.
+Added to devel, thanks. The code has moved so I applied some diff hunks
+manually.

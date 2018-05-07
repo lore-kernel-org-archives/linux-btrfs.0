@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:12219 "EHLO
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:56801 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751936AbeEGDKr (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 6 May 2018 23:10:47 -0400
+        with ESMTP id S1751903AbeEGDKs (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 6 May 2018 23:10:48 -0400
 Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
-        by cn.fujitsu.com (Postfix) with ESMTP id 9A7C24B314A2
-        for <linux-btrfs@vger.kernel.org>; Mon,  7 May 2018 11:10:44 +0800 (CST)
+        by cn.fujitsu.com (Postfix) with ESMTP id 18B884B34D23
+        for <linux-btrfs@vger.kernel.org>; Mon,  7 May 2018 11:10:45 +0800 (CST)
 From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH v3 05/10] btrfs-progs: undelete-subvol: introduce recover_dead_root
-Date: Mon, 7 May 2018 11:10:28 +0800
-Message-ID: <20180507031033.4125-6-lufq.fnst@cn.fujitsu.com>
+Subject: [PATCH v3 06/10] btrfs-progs: undelete-subvol: introduce link_subvol_to_lostfound
+Date: Mon, 7 May 2018 11:10:29 +0800
+Message-ID: <20180507031033.4125-7-lufq.fnst@cn.fujitsu.com>
 In-Reply-To: <20180507031033.4125-1-lufq.fnst@cn.fujitsu.com>
 References: <20180507031033.4125-1-lufq.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -18,95 +18,102 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The function will find the root_item specified by the subvol_id
-and clear the BTRFS_ROOT_SUBVOL_DEAD flag.
+The function will create lost+found directory, link the deleted
+subvolume specified by the subvol_id to the directory, update the
+information of root_item and cleanup the associated orphan item.
 
 Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+Reviewed-by: Qu Wenruo <wqu@suse.com>
 ---
 V3:
-remove btrfs_root argument;
-don't modify root_refs.
+pass btrfs_fs_info instead of btrfs_root;
+add Reviewed-by from Qu Wenruo.
 
- ctree.h           |  1 +
- undelete-subvol.c | 51 +++++++++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 52 insertions(+)
+ undelete-subvol.c | 76 +++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 76 insertions(+)
 
-diff --git a/ctree.h b/ctree.h
-index 2ac1eb532986..6e2046145f7c 100644
---- a/ctree.h
-+++ b/ctree.h
-@@ -186,6 +186,7 @@ static int btrfs_csum_sizes[] = { 4 };
- #define BTRFS_FT_MAX		9
- 
- #define BTRFS_ROOT_SUBVOL_RDONLY	(1ULL << 0)
-+#define BTRFS_ROOT_SUBVOL_DEAD		(1ULL << 48)
- 
- /*
-  * the key defines the order in the tree, and so it also defines (optimal)
 diff --git a/undelete-subvol.c b/undelete-subvol.c
-index 26e156092011..6d3ef19977d6 100644
+index 6d3ef19977d6..9851998ec3df 100644
 --- a/undelete-subvol.c
 +++ b/undelete-subvol.c
-@@ -5,6 +5,8 @@
- 
- #include "ctree.h"
- #include "disk-io.h"
-+#include "transaction.h"
-+#include "messages.h"
- 
- /*
-  * Determines whether the subvolume is intact, according to the drop_progress
-@@ -28,3 +30,52 @@ static bool is_subvol_intact(struct btrfs_fs_info *fs_info, u64 subvol_id)
- 	/* the subvolume is intact if the objectid of drop_progress == 0 */
- 	return !btrfs_disk_key_objectid(&root->root_item.drop_progress);
+@@ -79,3 +79,79 @@ out:
+ 	btrfs_release_path(&path);
+ 	return ret;
  }
 +
 +/*
-+ * Clear BTRFS_ROOT_SUBVOL_DEAD flag.
++ * Recover a subvolume specified by subvol_id, and link it to the lost+found
++ * directory.
 + *
-+ * @subvol_id	specify the root_item which will be modified.
++ * @subvol_id: specify the subvolume which will be linked, and also be the part
++ * of the subvolume name.
 + *
 + * Return 0 if no error occurred.
 + */
-+static int recover_dead_root(struct btrfs_trans_handle *trans, u64 subvol_id)
++static int link_subvol_to_lostfound(struct btrfs_fs_info *fs_info,
++				    u64 subvol_id)
 +{
-+	struct btrfs_fs_info *fs_info = trans->fs_info;
++	struct btrfs_trans_handle *trans;
 +	struct btrfs_root *root = fs_info->tree_root;
-+	struct btrfs_key key;
-+	struct btrfs_path path;
-+	struct extent_buffer *leaf;
-+	struct btrfs_root_item root_item;
-+	u64 root_flags;
-+	u64 offset;
++	struct btrfs_root *fs_root = fs_info->fs_root;
++	char buf[BTRFS_NAME_LEN + 1] = {0}; /* 1 for snprintf null */
++	char *dir_name = "lost+found";
++	u64 lost_found_ino = 0;
++	u32 mode = 0700;
 +	int ret;
 +
-+	key.objectid = subvol_id;
-+	key.type = BTRFS_ROOT_ITEM_KEY;
-+	key.offset = 0;
++	/*
++	 * For link subvolume to lost+found,
++	 * 2 for parent(256)'s dir_index and dir_item
++	 * 2 for lost+found dir's inode_item and inode_ref
++	 * 2 for lost+found dir's dir_index and dir_item for the subvolume
++	 * 2 for the subvolume's root_ref and root_backref
++	 */
++	trans = btrfs_start_transaction(fs_root, 8);
++	if (IS_ERR(trans)) {
++		error("unable to start transaction");
++		ret = PTR_ERR(trans);
++		goto out;
++	}
 +
-+	btrfs_init_path(&path);
-+	ret = btrfs_search_slot(trans, root, &key, &path, 0, 0);
++	/* Create lost+found directory */
++	ret = btrfs_mkdir(trans, fs_root, dir_name, strlen(dir_name),
++			  BTRFS_FIRST_FREE_OBJECTID, &lost_found_ino,
++			  mode);
++	if (ret < 0) {
++		error("failed to create '%s' dir: %d", dir_name, ret);
++		goto out;
++	}
++
++	/* Link the subvolume to lost+found directory */
++	snprintf(buf, BTRFS_NAME_LEN + 1, "sub%llu", subvol_id);
++	ret = btrfs_link_subvol(trans, fs_root, buf, subvol_id, lost_found_ino,
++				false);
 +	if (ret) {
-+		error("couldn't find ROOT_ITEM for %llu failed: %d",
++		error("failed to link the subvol %llu: %d", subvol_id, ret);
++		goto out;
++	}
++
++	/* Clear root flags BTRFS_ROOT_SUBVOL_DEAD */
++	ret = recover_dead_root(trans, subvol_id);
++	if (ret)
++		goto out;
++
++	/* Delete the orphan item after undeletion is completed. */
++	ret = btrfs_del_orphan_item(trans, root, subvol_id);
++	if (ret) {
++		error("failed to delete the orphan_item for %llu: %d",
 +				subvol_id, ret);
 +		goto out;
 +	}
 +
-+	leaf = path.nodes[0];
-+
-+	offset = btrfs_item_ptr_offset(leaf, path.slots[0]);
-+	read_extent_buffer(leaf, &root_item, offset, sizeof(root_item));
-+
-+	/* Clear BTRFS_ROOT_SUBVOL_DEAD */
-+	root_flags = btrfs_root_flags(&root_item);
-+	btrfs_set_root_flags(&root_item,
-+			     root_flags & ~BTRFS_ROOT_SUBVOL_DEAD);
-+
-+	write_extent_buffer(leaf, &root_item, offset, sizeof(root_item));
-+	btrfs_mark_buffer_dirty(leaf);
++	ret = btrfs_commit_transaction(trans, fs_root);
++	if (ret) {
++		error("transaction commit failed: %d", ret);
++		goto out;
++	}
 +
 +out:
-+	btrfs_release_path(&path);
 +	return ret;
 +}
 -- 

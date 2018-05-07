@@ -1,67 +1,277 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f54.google.com ([209.85.215.54]:35718 "EHLO
-        mail-lf0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751791AbeEFAop (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 5 May 2018 20:44:45 -0400
-Received: by mail-lf0-f54.google.com with SMTP id y72-v6so22038600lfd.2
-        for <linux-btrfs@vger.kernel.org>; Sat, 05 May 2018 17:44:44 -0700 (PDT)
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:37268 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1751917AbeEGCBO (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 6 May 2018 22:01:14 -0400
+From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+Subject: Re: [PATCH v2 02/10] btrfs-progs: extract btrfs_link_subvol from
+ btrfs_mksubvol
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+CC: <linux-btrfs@vger.kernel.org>
+References: <20180327070658.13064-1-lufq.fnst@cn.fujitsu.com>
+ <20180327070658.13064-3-lufq.fnst@cn.fujitsu.com>
+ <55438435-3da6-6b84-a8dc-22cc976e648f@gmx.com>
+Message-ID: <6bd78b48-37b1-a632-9add-aa7122ca60b9@cn.fujitsu.com>
+Date: Mon, 7 May 2018 10:00:39 +0800
 MIME-Version: 1.0
-From: =?UTF-8?B?VG9tw6HFoSBNZXRlbGth?= <tomas.metelka@metaliza.cz>
-Date: Sun, 6 May 2018 02:44:22 +0200
-Message-ID: <CAC5rCSjVpjGr--x7NgSfmeBOc5+PRcgU4Zj5YSHXAHw_vDCQwQ@mail.gmail.com>
-Subject: Corrupted node, damaged slots data
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <55438435-3da6-6b84-a8dc-22cc976e648f@gmx.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all,
+On Wed, Apr 18, 2018 at 01:02:43PM +0800, Qu Wenruo wrote:
+>
+>
+>On 2018年03月27日 15:06, Lu Fengqi wrote:
+>> The original btrfs_mksubvol is too specific to specify the directory that
+>> the subvolume will link to. Furthermore, in this transaction, we don't only
+>> need to create root_ref/dir-item, but also update the refs or flags of
+>> root_item. Extract a generic btrfs_link_subvol that allow the caller pass a
+>> trans argument for later subvolume undelete.
+>
+>The idea makes sense.
+>
+>Although some small nitpicks inlined below.
 
-I have a following problem:
-FS sudenly became RO, after reboot FS became non-mountable with the
-following error:
+Sorry I've taken so long to reply.
 
-[  +0.006976] BTRFS critical (device sda4): corrupt node: root=1
-block=75150311424 slot=245, invalid NULL node pointer
-[  +0.000007] BTRFS error (device sda4): failed to read block groups: -5
-[  +0.038021] BTRFS error (device sda4): open_ctree failed
+>
+>> 
+>> No functional changes for the btrfs_mksubvol.
+>> 
+>> Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+>> ---
+>>  convert/main.c | 57 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+>>  ctree.h        |  5 +++--
+>>  inode.c        | 46 +++++++++++++++++++++-------------------------
+>>  3 files changed, 81 insertions(+), 27 deletions(-)
+>> 
+>> diff --git a/convert/main.c b/convert/main.c
+>> index 6bdfab40d0b0..dd6b42a1f2b1 100644
+>> --- a/convert/main.c
+>> +++ b/convert/main.c
+>> @@ -1002,6 +1002,63 @@ err:
+>>  	return ret;
+>>  }
+>>  
+>> +/*
+>> + * Link the subvolume specified by @root_objectid to the root_dir of @root.
+>
+>However the function name is btrfs_mksubvol(), not btrfs_link_subvol().
+>After reading the code, it turns out that btrfs_mksubvol() is just an
+>less generic btrfs_link_subvol().
 
-I've tried:
-btrfs check /dev/sda4
+The function name is really confusing. I will rename this function and
+reword this comment to make it clear.
 
-but:
-ERROR: cannot open file system
+>
+>> + * @root		the root of the file tree which the subvolume will
+>> + *			be linked to.
+>
+>Here you're using btrfs_root for source subvolume.
+>
+>> + * @subvol_name		the name of the subvolume which will be linked.
+>> + * @root_objectid	specify the subvolume which will be linked.
+>
+>But here you're specifying subvolume id as destination.
+>
+>It would be much better to unify both parameter to the same structure.
+>And personally I prefer both btrfs_root.
 
-I've also tried:
-btrfs inspect-internal dump-tree -b 75150311424
+Unfortunately, btrfs_root can't pass the subvolume name string.
 
-Result:
-btrfs-progs v4.15.1
-node 75150311424 level 1 items 249 free 244 generation 2488741 owner 2
-fs uuid be557007-42c9-4079-be16-568997e94cd9
-chunk uuid dbe69c7e-2d50-4001-af31-148c5475b48b
-    key (13276114944 EXTENT_ITEM 4096) block 74355359744 (4538291) gen 2392964
-    key (13279277056 EXTENT_ITEM 4096) block 775307264 (47321) gen 2484930
-    key (13286531072 EXTENT_ITEM 4096) block 74792714240 (4564985) gen 2392814
-...
-(slots 244-248)
-    key (14811271168 EXTENT_ITEM 135168) block 656310272 (40058) gen 2488049
-    key (1505328190277054464 UNKNOWN.4 366981796979539968) block 0 (0) gen 0
-    key (0 UNKNOWN.0 1419267647995904) block 6468220747776 (394788864)
-gen 7786775707648
-    key (12884901888 EXTENT_ITEM 24576) block 816693248 (49847) gen 2484931
-    key (14902849536 EXTENT_ITEM 131072) block 75150327808 (4586812) gen 2488741
+>
+>> + * @convert		the flag to determine whether to try to resolve
+>> + *			the name conflict.
+>
+>This parameter is not used in this function, and the name "convert"
+>doesn't reflect the name conflict check.
+>
+
+Yeah, I keep it to follow the original btrfs_mksubvol, but it is really
+redundant and I will remove it. Of course, I will also rename it at
+btrfs_link_subvol.
+
+>Personally speaking, I would like the parameters to be something like
+>btrfs_mksubolv(struct btrfs_root *dst_root,
+>               struct btrfs_root *src_root)
+
+How about the following defination?
+link_subvolv_for_convert(struct btrfs_root *root,
+			 const char *subvol_name, u64 root_objectid)
+
+-- 
+Thanks,
+Lu
+
+>
+>> + *
+>> + * Return the root of the subvolume if success, otherwise return NULL.
+>> + */
+>> +static struct btrfs_root *btrfs_mksubvol(struct btrfs_root *root,
+>> +					 const char *subvol_name,
+>> +					 u64 root_objectid,
+>> +					 bool convert)
+>> +{
+>> +	struct btrfs_trans_handle *trans;
+>> +	struct btrfs_root *subvol_root = NULL;
+>> +	struct btrfs_key key;
+>> +	u64 dirid = btrfs_root_dirid(&root->root_item);
+>> +	int ret;
+>> +
+>> +
+>> +	trans = btrfs_start_transaction(root, 1);
+>> +	if (IS_ERR(trans)) {
+>> +		error("unable to start transaction");
+>> +		goto fail;
+>> +	}
+>> +
+>> +	ret = btrfs_link_subvol(trans, root, subvol_name, root_objectid, dirid,
+>> +				true);
+>> +	if (ret) {
+>> +		error("unable to link subvolume %s", subvol_name);
+>> +		goto fail;
+>> +	}
+>> +
+>> +	ret = btrfs_commit_transaction(trans, root);
+>> +	if (ret) {
+>> +		error("transaction commit failed: %d", ret);
+>> +		goto fail;
+>> +	}
+>> +
+>> +	key.objectid = root_objectid;
+>> +	key.offset = (u64)-1;
+>> +	key.type = BTRFS_ROOT_ITEM_KEY;
+>> +
+>> +	subvol_root = btrfs_read_fs_root(root->fs_info, &key);
+>> +	if (!subvol_root) {
+>> +		error("unable to link subvolume %s", subvol_name);
+>> +		goto fail;
+>> +	}
+>> +
+>> +fail:
+>> +	return subvol_root;
+>> +}
+>> +
+>>  /*
+>>   * Migrate super block to its default position and zero 0 ~ 16k
+>>   */
+>> diff --git a/ctree.h b/ctree.h
+>> index 0fc31dd8d998..4bff0b821472 100644
+>> --- a/ctree.h
+>> +++ b/ctree.h
+>> @@ -2797,8 +2797,9 @@ int btrfs_del_orphan_item(struct btrfs_trans_handle *trans,
+>>  			  struct btrfs_root *root, u64 offset);
+>>  int btrfs_mkdir(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+>>  		char *name, int namelen, u64 parent_ino, u64 *ino, int mode);
+>> -struct btrfs_root *btrfs_mksubvol(struct btrfs_root *root, const char *base,
+>> -				  u64 root_objectid, bool convert);
+>> +int btrfs_link_subvol(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+>> +		      const char *base, u64 root_objectid, u64 dirid,
+>> +		      bool convert);
+>>  
+>>  /* file.c */
+>>  int btrfs_get_extent(struct btrfs_trans_handle *trans,
+>> diff --git a/inode.c b/inode.c
+>> index 8d0812c7cf50..478036562652 100644
+>> --- a/inode.c
+>> +++ b/inode.c
+>> @@ -606,19 +606,28 @@ out:
+>>  	return ret;
+>>  }
+>>  
+>> -struct btrfs_root *btrfs_mksubvol(struct btrfs_root *root,
+>> -				  const char *base, u64 root_objectid,
+>> -				  bool convert)
+>> +/*
+>> + * Link the subvolume specified by @root_objectid to the directory specified by
+>> + * @dirid on the file tree specified by @root.
+>> + *
+>> + * @root		the root of the file tree where the directory on.
+>> + * @base		the name of the subvolume which will be linked.
+>> + * @root_objectid	specify the subvolume which will be linked.
+>
+>Same nitpick about parameter here.
+>
+>Thanks,
+>Qu
+>
+>> + * @dirid		specify the directory which the subvolume will be
+>> + *			linked to.
+>> + * @convert		the flag to determine whether to try to resolve
+>> + *			the name conflict.
+>> + */
+>> +int btrfs_link_subvol(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+>> +		      const char *base, u64 root_objectid, u64 dirid,
+>> +		      bool convert)
+>>  {
+>> -	struct btrfs_trans_handle *trans;
+>>  	struct btrfs_fs_info *fs_info = root->fs_info;
+>>  	struct btrfs_root *tree_root = fs_info->tree_root;
+>> -	struct btrfs_root *new_root = NULL;
+>>  	struct btrfs_path path;
+>>  	struct btrfs_inode_item *inode_item;
+>>  	struct extent_buffer *leaf;
+>>  	struct btrfs_key key;
+>> -	u64 dirid = btrfs_root_dirid(&root->root_item);
+>>  	u64 index = 2;
+>>  	char buf[BTRFS_NAME_LEN + 1]; /* for snprintf null */
+>>  	int len;
+>> @@ -627,8 +636,9 @@ struct btrfs_root *btrfs_mksubvol(struct btrfs_root *root,
+>>  
+>>  	len = strlen(base);
+>>  	if (len == 0 || len > BTRFS_NAME_LEN)
+>> -		return NULL;
+>> +		return -EINVAL;
+>>  
+>> +	/* find the free dir_index */
+>>  	btrfs_init_path(&path);
+>>  	key.objectid = dirid;
+>>  	key.type = BTRFS_DIR_INDEX_KEY;
+>> @@ -649,12 +659,7 @@ struct btrfs_root *btrfs_mksubvol(struct btrfs_root *root,
+>>  	}
+>>  	btrfs_release_path(&path);
+>>  
+>> -	trans = btrfs_start_transaction(root, 1);
+>> -	if (IS_ERR(trans)) {
+>> -		error("unable to start transaction");
+>> -		goto fail;
+>> -	}
+>> -
+>> +	/* add the dir_item/dir_index */
+>>  	key.objectid = dirid;
+>>  	key.offset = 0;
+>>  	key.type =  BTRFS_INODE_ITEM_KEY;
+>> @@ -675,6 +680,7 @@ struct btrfs_root *btrfs_mksubvol(struct btrfs_root *root,
+>>  
+>>  	memcpy(buf, base, len);
+>>  	if (convert) {
+>> +		/* try to resolve name conflict by adding the number suffix */
+>>  		for (i = 0; i < 1024; i++) {
+>>  			ret = btrfs_insert_dir_item(trans, root, buf, len,
+>>  					dirid, &key, BTRFS_FT_DIR, index);
+>> @@ -719,18 +725,8 @@ struct btrfs_root *btrfs_mksubvol(struct btrfs_root *root,
+>>  		goto fail;
+>>  	}
+>>  
+>> -	ret = btrfs_commit_transaction(trans, root);
+>> -	if (ret) {
+>> -		error("transaction commit failed: %d", ret);
+>> -		goto fail;
+>> -	}
+>>  
+>> -	new_root = btrfs_read_fs_root(fs_info, &key);
+>> -	if (IS_ERR(new_root)) {
+>> -		error("unable to fs read root: %lu", PTR_ERR(new_root));
+>> -		new_root = NULL;
+>> -	}
+>>  fail:
+>> -	btrfs_init_path(&path);
+>> -	return new_root;
+>> +	btrfs_release_path(&path);
+>> +	return ret;
+>>  }
+>> 
+>
 
 
-Is there a way to repair slots 245-247 from some other data (located elsewhere)?
-
-Thanx
-TM
-
---
-
-  Tomáš Metelka
-  Business & IT Analyst
-
-  Tel: +420 728 627 252
-  Email: tomas.metelka@metaliza.cz

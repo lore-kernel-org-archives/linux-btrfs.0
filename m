@@ -1,93 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from prv3-mh.provo.novell.com ([137.65.250.26]:49617 "EHLO
-        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751874AbeECB7T (ORCPT
-        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Wed, 2 May 2018 21:59:19 -0400
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: qgroup: Allow trace_btrfs_qgroup_account_extent() to record its transid
-Date: Thu,  3 May 2018 09:59:02 +0800
-Message-Id: <20180503015902.26032-1-wqu@suse.com>
+Received: from mx2.suse.de ([195.135.220.15]:33410 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752369AbeEGShb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 7 May 2018 14:37:31 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 1AE3BABB4
+        for <linux-btrfs@vger.kernel.org>; Mon,  7 May 2018 18:37:30 +0000 (UTC)
+Date: Mon, 7 May 2018 20:34:53 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+Subject: Re: [PATCH 0/4] btrfs check --check-data-csum enhancement for
+Message-ID: <20180507183453.GF6649@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20180227091259.10877-1-wqu@suse.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20180227091259.10877-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When debugging quota rescan race, some times btrfs rescan could account
-some old (committed) leaf and then re-account newly committed leaf
-in next generation.
+On Tue, Feb 27, 2018 at 05:12:55PM +0800, Qu Wenruo wrote:
+> Log-writes tool from Josef exposed btrfs data corruption.
+> 
+> Although still digging, at least enhance --check-data-csum option so
+> that log-replay --check can stop exactly at the point where btrfs data
+> get corrupted, instead of manually checking the output.
+> 
+> Qu Wenruo (4):
+>   btrfs-progs: check: Check data csum for all copies
+>   btrfs-progs: check: Fix data csum check return value
+>   btrfs-progs: check: Continue check even csum error is found
+>   btrfs-progs: check: Distingusih csum checking output for
+>     --check-data-csum
 
-This race needs extra transid to locate, so add @transid for
-trace_btrfs_qgroup_account_extent() for such debug.
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/qgroup.c            |  4 ++--
- include/trace/events/btrfs.h | 20 ++++++++++++--------
- 2 files changed, 14 insertions(+), 10 deletions(-)
-
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index a5742e9e9a14..4baa4ba2d630 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -2014,8 +2014,8 @@ btrfs_qgroup_account_extent(struct btrfs_trans_handle *trans,
- 
- 	BUG_ON(!fs_info->quota_root);
- 
--	trace_btrfs_qgroup_account_extent(fs_info, bytenr, num_bytes,
--					  nr_old_roots, nr_new_roots);
-+	trace_btrfs_qgroup_account_extent(fs_info, trans->transid, bytenr,
-+					num_bytes, nr_old_roots, nr_new_roots);
- 
- 	qgroups = ulist_alloc(GFP_NOFS);
- 	if (!qgroups) {
-diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
-index cfcbcd2eb338..59bb885b557e 100644
---- a/include/trace/events/btrfs.h
-+++ b/include/trace/events/btrfs.h
-@@ -1578,12 +1578,14 @@ DEFINE_EVENT(btrfs_qgroup_extent, btrfs_qgroup_trace_extent,
- 
- TRACE_EVENT(btrfs_qgroup_account_extent,
- 
--	TP_PROTO(const struct btrfs_fs_info *fs_info, u64 bytenr,
-+	TP_PROTO(const struct btrfs_fs_info *fs_info, u64 transid, u64 bytenr,
- 		 u64 num_bytes, u64 nr_old_roots, u64 nr_new_roots),
- 
--	TP_ARGS(fs_info, bytenr, num_bytes, nr_old_roots, nr_new_roots),
-+	TP_ARGS(fs_info, transid, bytenr, num_bytes, nr_old_roots,
-+		nr_new_roots),
- 
- 	TP_STRUCT__entry_btrfs(
-+		__field(	u64,  transid			)
- 		__field(	u64,  bytenr			)
- 		__field(	u64,  num_bytes			)
- 		__field(	u64,  nr_old_roots		)
-@@ -1591,18 +1593,20 @@ TRACE_EVENT(btrfs_qgroup_account_extent,
- 	),
- 
- 	TP_fast_assign_btrfs(fs_info,
-+		__entry->transid	= transid;
- 		__entry->bytenr		= bytenr;
- 		__entry->num_bytes	= num_bytes;
- 		__entry->nr_old_roots	= nr_old_roots;
- 		__entry->nr_new_roots	= nr_new_roots;
- 	),
- 
--	TP_printk_btrfs("bytenr=%llu num_bytes=%llu nr_old_roots=%llu "
--		  "nr_new_roots=%llu",
--		  __entry->bytenr,
--		  __entry->num_bytes,
--		  __entry->nr_old_roots,
--		  __entry->nr_new_roots)
-+	TP_printk_btrfs(
-+"transid=%llu bytenr=%llu num_bytes=%llu nr_old_roots=%llu nr_new_roots=%llu",
-+		__entry->transid,
-+		__entry->bytenr,
-+		__entry->num_bytes,
-+		__entry->nr_old_roots,
-+		__entry->nr_new_roots)
- );
- 
- TRACE_EVENT(qgroup_update_counters,
--- 
-2.17.0
-
+Added to devel, thanks.

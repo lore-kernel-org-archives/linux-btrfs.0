@@ -1,30 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:45585 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:45963 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750732AbeEGO5l (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 7 May 2018 10:57:41 -0400
-Date: Mon, 7 May 2018 16:55:02 +0200
+        id S1751912AbeEGPDZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 7 May 2018 11:03:25 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id CBAE2AE91
+        for <linux-btrfs@vger.kernel.org>; Mon,  7 May 2018 15:03:23 +0000 (UTC)
+Date: Mon, 7 May 2018 17:00:46 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Colin King <colin.king@canonical.com>
-Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
-        kernel-janitors@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: Re: [PATCH] btrfs: send: fix spelling mistake: "send_in_progres" ->
- "send_in_progress"
-Message-ID: <20180507145502.GB6649@twin.jikos.cz>
+To: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: qgroup: Allow trace_btrfs_qgroup_account_extent()
+ to record its transid
+Message-ID: <20180507150046.GC6649@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <20180504111112.14900-1-colin.king@canonical.com>
+References: <20180503015902.26032-1-wqu@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180504111112.14900-1-colin.king@canonical.com>
+In-Reply-To: <20180503015902.26032-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, May 04, 2018 at 12:11:12PM +0100, Colin King wrote:
-> From: Colin Ian King <colin.king@canonical.com>
+On Thu, May 03, 2018 at 09:59:02AM +0800, Qu Wenruo wrote:
+> When debugging quota rescan race, some times btrfs rescan could account
+> some old (committed) leaf and then re-account newly committed leaf
+> in next generation.
 > 
-> Trivial fix to spelling mistake of function name in btrfs_err message
+> This race needs extra transid to locate, so add @transid for
+> trace_btrfs_qgroup_account_extent() for such debug.
 > 
-> Signed-off-by: Colin Ian King <colin.king@canonical.com>
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
 
-Applied, thanks.
+Reviewed-by: David Sterba <dsterba@suse.com>

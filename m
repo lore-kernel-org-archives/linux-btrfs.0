@@ -1,243 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from synology.com ([59.124.61.242]:45744 "EHLO synology.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752313AbeEGImV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 7 May 2018 04:42:21 -0400
-From: robbieko <robbieko@synology.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Robbie Ko <robbieko@synology.com>
-Subject: [PATCH v2 2/2] Btrfs: fix fiemap extent SHARED flag error with range clone.
-Date: Mon,  7 May 2018 16:42:05 +0800
-Message-Id: <1525682525-1424-3-git-send-email-robbieko@synology.com>
-In-Reply-To: <1525682525-1424-1-git-send-email-robbieko@synology.com>
-References: <1525682525-1424-1-git-send-email-robbieko@synology.com>
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:58024 "EHLO
+        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1750732AbeEGOtz (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 7 May 2018 10:49:55 -0400
+From: Chris Mason <clm@fb.com>
+To: Martin Svec <martin.svec@zoner.cz>
+CC: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: metadata_ratio mount option?
+Date: Mon, 7 May 2018 10:49:26 -0400
+Message-ID: <A77C59EB-BB88-4F12-B8FF-E0C50EBD9750@fb.com>
+In-Reply-To: <bd1f9ac2-49ce-7095-7f1f-8a2f905da995@zoner.cz>
+References: <bd1f9ac2-49ce-7095-7f1f-8a2f905da995@zoner.cz>
+MIME-Version: 1.0
+Content-Type: text/plain; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Robbie Ko <robbieko@synology.com>
+On 7 May 2018, at 7:40, Martin Svec wrote:
 
-[BUG]
-Range clone can cause fiemap to return error result.
-Like:
- # mount /dev/vdb5 /mnt/btrfs
- # dd if=/dev/zero bs=16K count=2 oflag=dsync of=/mnt/btrfs/file
+> Hi,
+>
+> According to man btrfs [1], I assume that metadata_ratio=1 mount 
+> option should
+> force allocation of one metadata chunk after every allocated data 
+> chunk. However,
+> when I set this option and start filling btrfs with "dd if=/dev/zero 
+> of=dummyfile.dat",
+> only data chunks are allocated but no metadata ones. So, how does the 
+> metadata_ratio
+> option really work?
+>
+> Note that I'm trying to use this option as a workaround of the bug 
+> reported here:
+>
 
- # btrfs-debugfs -f file
- (276 0): ram 16384 disk 2171609088 disk_size 16384
- (276 16384): ram 16384 disk 2171625472 disk_size 16384
- (276 32768): ram 16384 disk 2171641856 disk_size 16384
- (276 49152): ram 16384 disk 2171658240 disk_size 16384
- file: file extents 4 disk size 65536 logical size 65536 ratio 1.00
+[ urls that FB email server eats, sorry ]
 
- # xfs_io -c "fiemap -v" /mnt/btrfs/file
- /mnt/btrfs/file:
- EXT: FILE-OFFSET      BLOCK-RANGE      TOTAL FLAGS
-   0: [0..63]:         4241424..4241487    64   0x1
-
- # cloner -s $((16*1024)) /mnt/btrfs/file /mnt/btrfs/file_clone
- # xfs_io -c "fiemap -v" /mnt/btrfs/file
- /mnt/btrfs/file:
- EXT: FILE-OFFSET      BLOCK-RANGE      TOTAL FLAGS
-   0: [0..63]:         4241424..4241487    64   0x1
- If we clone second file extent, we will get error FLAGS,
- SHARED bit is not set.
-
-[REASON]
-Btrfs only checks if the first extent in extent map is shared,
-but in fact it can correspond to many extents and each one has
-the potential to be cloned so we need to examine each one individually.
-
-[FIX]
-Here we will check each extent with extent map range,
-if one of them is shared, extent map is shared.
-
-[PATCH RESULT]
- # xfs_io -c "fiemap -v" /mnt/btrfs/file
- /mnt/btrfs/file:
- EXT: FILE-OFFSET      BLOCK-RANGE      TOTAL FLAGS
-   0: [0..63]:         4241424..4241487    64 0x2001
-
-Signed-off-by: Robbie Ko <robbieko@synology.com>
----
-V2:
-fix comments and coding style.
+>
+> i.e. I want to manually preallocate metadata chunks to avoid nightly 
+> ENOSPC errors.
 
 
- fs/btrfs/extent_io.c | 147 +++++++++++++++++++++++++++++++++++++++++++++------
- 1 file changed, 132 insertions(+), 15 deletions(-)
+metadata_ratio is almost but not quite what you want.  It sets a flag on 
+the space_info to force a chunk allocation the next time we decide to 
+call should_alloc_chunk().  Thanks to the overcommit code, we usually 
+don't call that until the metadata we think we're going to need is 
+bigger than the metadata space available.  In other words, by the time 
+we're into the code that honors the force flag, reservations are already 
+high enough to make us allocate the chunk anyway.
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 066b6df..b2267dd 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -4394,8 +4394,8 @@ static int emit_fiemap_extent(struct fiemap_extent_info *fieinfo,
- 	 */
- 	if (cache->offset + cache->len  == offset &&
- 	    cache->phys + cache->len == phys  &&
--	    (cache->flags & ~FIEMAP_EXTENT_LAST) ==
--			(flags & ~FIEMAP_EXTENT_LAST)) {
-+		(cache->flags & ~(FIEMAP_EXTENT_LAST|FIEMAP_EXTENT_SHARED)) ==
-+			(flags & ~(FIEMAP_EXTENT_LAST|FIEMAP_EXTENT_SHARED))) {
- 		cache->len += len;
- 		cache->flags |= flags;
- 		goto try_submit_last;
-@@ -4450,6 +4450,134 @@ static int emit_last_fiemap_cache(struct btrfs_fs_info *fs_info,
- 	return ret;
- }
- 
-+/*
-+ * Helper to check the file range is shared.
-+ *
-+ * Fiemap extent will be combined with many extents, so we need to examine
-+ * each extent, and if shared, the results are shared.
-+ *
-+ * Return: 0 if file range is not shared, 1 if it is shared, < 0 on error.
-+ */
-+static int extent_map_check_shared(struct inode *inode, u64 start, u64 end)
-+{
-+	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
-+	struct btrfs_root *root = BTRFS_I(inode)->root;
-+	int ret = 0;
-+	struct extent_buffer *leaf;
-+	struct btrfs_path *path;
-+	struct btrfs_file_extent_item *fi;
-+	struct btrfs_key found_key;
-+	int check_prev = 1;
-+	int extent_type;
-+	int shared = 0;
-+	u64 cur_offset;
-+	u64 extent_end;
-+	u64 ino = btrfs_ino(BTRFS_I(inode));
-+	u64 disk_bytenr;
-+
-+	path = btrfs_alloc_path();
-+	if (!path)
-+		return -ENOMEM;
-+
-+	cur_offset = start;
-+	while (1) {
-+		ret = btrfs_lookup_file_extent(NULL, root, path, ino,
-+					       cur_offset, 0);
-+		if (ret < 0)
-+			goto error;
-+		if (ret > 0 && path->slots[0] > 0 && check_prev) {
-+			leaf = path->nodes[0];
-+			btrfs_item_key_to_cpu(leaf, &found_key,
-+					      path->slots[0] - 1);
-+			if (found_key.objectid == ino &&
-+			    found_key.type == BTRFS_EXTENT_DATA_KEY)
-+				path->slots[0]--;
-+		}
-+		check_prev = 0;
-+next_slot:
-+		leaf = path->nodes[0];
-+		if (path->slots[0] >= btrfs_header_nritems(leaf)) {
-+			ret = btrfs_next_leaf(root, path);
-+			if (ret < 0)
-+				goto error;
-+			if (ret > 0)
-+				break;
-+			leaf = path->nodes[0];
-+		}
-+
-+		disk_bytenr = 0;
-+		btrfs_item_key_to_cpu(leaf, &found_key, path->slots[0]);
-+
-+		if (found_key.objectid > ino)
-+			break;
-+		if (WARN_ON_ONCE(found_key.objectid < ino) ||
-+		    found_key.type < BTRFS_EXTENT_DATA_KEY) {
-+			path->slots[0]++;
-+			goto next_slot;
-+		}
-+		if (found_key.type > BTRFS_EXTENT_DATA_KEY ||
-+		    found_key.offset > end)
-+			break;
-+
-+		fi = btrfs_item_ptr(leaf, path->slots[0],
-+				    struct btrfs_file_extent_item);
-+		extent_type = btrfs_file_extent_type(leaf, fi);
-+
-+		if (extent_type == BTRFS_FILE_EXTENT_REG ||
-+		    extent_type == BTRFS_FILE_EXTENT_PREALLOC) {
-+			disk_bytenr = btrfs_file_extent_disk_bytenr(leaf, fi);
-+			extent_end = found_key.offset +
-+				btrfs_file_extent_num_bytes(leaf, fi);
-+			if (extent_end <= start) {
-+				path->slots[0]++;
-+				goto next_slot;
-+			}
-+			if (disk_bytenr == 0) {
-+				path->slots[0]++;
-+				goto next_slot;
-+			}
-+
-+			btrfs_release_path(path);
-+
-+			/*
-+			 * As btrfs supports shared space, this information
-+			 * can be exported to userspace tools via
-+			 * flag FIEMAP_EXTENT_SHARED.  If fi_extents_max == 0
-+			 * then we're just getting a count and we can skip the
-+			 * lookup stuff.
-+			 */
-+			ret = btrfs_check_shared(root,
-+						 ino, disk_bytenr);
-+			if (ret < 0)
-+				goto error;
-+			if (ret)
-+				shared = 1;
-+			ret = 0;
-+			if (shared)
-+				break;
-+		} else if (extent_type == BTRFS_FILE_EXTENT_INLINE) {
-+			extent_end = found_key.offset +
-+				btrfs_file_extent_inline_len(leaf,
-+						     path->slots[0], fi);
-+			extent_end = ALIGN(extent_end, fs_info->sectorsize);
-+			path->slots[0]++;
-+			goto next_slot;
-+		} else {
-+			WARN_ON(1);
-+			ret = -EIO;
-+			goto error;
-+		}
-+		cur_offset = extent_end;
-+		if (cur_offset > end)
-+			break;
-+	}
-+
-+	ret = 0;
-+error:
-+	btrfs_free_path(path);
-+	return !ret ? shared : ret;
-+}
-+
- int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
- 		__u64 start, __u64 len, get_extent_t *get_extent)
- {
-@@ -4587,19 +4715,8 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
- 			flags |= (FIEMAP_EXTENT_DELALLOC |
- 				  FIEMAP_EXTENT_UNKNOWN);
- 		} else if (fieinfo->fi_extents_max) {
--			u64 bytenr = em->block_start -
--				(em->start - em->orig_start);
--
--			/*
--			 * As btrfs supports shared space, this information
--			 * can be exported to userspace tools via
--			 * flag FIEMAP_EXTENT_SHARED.  If fi_extents_max == 0
--			 * then we're just getting a count and we can skip the
--			 * lookup stuff.
--			 */
--			ret = btrfs_check_shared(root,
--						 btrfs_ino(BTRFS_I(inode)),
--						 bytenr);
-+			ret = extent_map_check_shared(inode, em->start,
-+							extent_map_end(em) - 1);
- 			if (ret < 0)
- 				goto out_free;
- 			if (ret)
--- 
-1.9.1
+I tried to use metadata_ratio to experiment with forcing more metadata 
+slop space, but really I have to tweak the overcommit code first.
+Omar beat me to a better solution, tracking down our transient ENOSPC 
+problems here at FB to reservations done for orphans.  Do you have a lot 
+of deleted files still being held open?  lsof /mntpoint | grep deleted 
+will list them.
+
+We're working through a patch for the orphans here.  You've got a ton of 
+bytes pinned, which isn't a great match for the symptoms we see:
+
+[285169.096630] BTRFS info (device sdb): space_info 4 has 
+18446744072120172544 free, is not full
+[285169.096633] BTRFS info (device sdb): space_info total=273804165120, 
+used=269218267136, pinned=3459629056, reserved=52396032, 
+may_use=2663120896, readonly=131072
+
+But, your may_use count is high enough that you might be hitting this 
+problem.  Otherwise I'll work out a patch to make some more metadata 
+chunks while Josef is perfecting his great delayed ref update.
+
+-chris
+
 

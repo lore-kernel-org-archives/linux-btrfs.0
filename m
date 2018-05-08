@@ -1,12 +1,12 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from synology.com ([59.124.61.242]:57163 "EHLO synology.com"
+Received: from synology.com ([59.124.61.242]:53986 "EHLO synology.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1754380AbeEHJVa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 8 May 2018 05:21:30 -0400
+        id S1754371AbeEHKaW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 8 May 2018 06:30:22 -0400
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8;
  format=flowed
-Date: Tue, 08 May 2018 17:21:28 +0800
+Date: Tue, 08 May 2018 18:30:20 +0800
 From: robbieko <robbieko@synology.com>
 To: fdmanana@gmail.com
 Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
@@ -16,13 +16,53 @@ Subject: Re: [PATCH] btrfs: incremental send, fix BUG when parent commit_root
 In-Reply-To: <CAL3q7H7kjKhdGBpntjJ4aHi4na6oFyH6mzhRHHw9d=Xzatremg@mail.gmail.com>
 References: <1525767358-3625-1-git-send-email-robbieko@synology.com>
  <CAL3q7H7kjKhdGBpntjJ4aHi4na6oFyH6mzhRHHw9d=Xzatremg@mail.gmail.com>
-Message-ID: <6c93f799bc336cd3733f14dd64fe5765@synology.com>
+Message-ID: <a4ded87a7636521c25e6453bc8d36f1e@synology.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Manana,
+Hi Filipe Manana,
 
-I will fix and modify and then send patch V2.
+Although the snapshot is readonly, when the snapshot is created,
+in order to modify the last_snapshot, it will cause generation changes,
+and it will affect the commit_root modification.
+
+Example:
+#btrfs sub show snap1
+	Name: 			snap1
+	UUID: 			17ba3140-b79d-1649-a2e1-b238c3253a40
+	Parent UUID: 	6fe90a14-02f3-1b40-bdfc-be435060d023
+	Received UUID: 	17ba3140-b79d-1649-a2e1-b238c3253a40
+	Creation time: 	2018-04-27 18:04:11 +0800
+	Subvolume ID: 	514
+	Generation: 		4854
+	Gen at creation: 	506
+	Parent ID: 		511
+	Top level ID: 	511
+	Flags: 			readonly
+	Snapshot(s):
+
+#btrfs-debug-tree -t 514 /dev/md2 | more
+btrfs-progs v4.0
+file tree key (514 ROOT_ITEM 506)
+node 259127066624 level 2 items 192 free 301 generation 4854 owner 514
+fs uuid 081b4c28-007c-430b-be7f-ead57aa71548
+chunk uuid a48e7346-bd15-4eac-8957-b11a2bf9bbe2
+	key (256 INODE_ITEM 0) block 258707652608 (15790262) gen 505
+
+#btrfs sub snap send_snap1 test_subvol
+#btrfs-debug-tree -t 514 /dev/md2 | more
+btrfs-progs v4.0
+file tree key (514 ROOT_ITEM 506)
+node 258444509184 level 2 items 192 free 301 generation 4881 owner 514
+fs uuid 081b4c28-007c-430b-be7f-ead57aa71548
+chunk uuid a48e7346-bd15-4eac-8957-b11a2bf9bbe2
+	key (256 INODE_ITEM 0) block 258707652608 (15790262) gen 505
+
+According to the above example node and generation will be updated.
+
+This means that as long as the send or parent snapshot is taken during
+the btrfs send, commit_root will change, and send process may access
+invalid memory.
 
 Thanks.
 Robbie Ko

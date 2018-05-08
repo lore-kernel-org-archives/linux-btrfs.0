@@ -1,107 +1,218 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from mail.cn.fujitsu.com ([183.91.158.132]:15459 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S933099AbeEHIY0 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 May 2018 04:24:26 -0400
+        with ESMTP id S933140AbeEHIYb (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 May 2018 04:24:31 -0400
 From: Su Yue <suy.fnst@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: <suy.fnst@cn.fujitsu.com>, <dsterba@suse.cz>
-Subject: [PATCH v5 00/16] btrfs-progs: lowmem: avoid extents overwrite
-Date: Tue, 8 May 2018 16:29:56 +0800
-Message-ID: <20180508083012.12090-1-suy.fnst@cn.fujitsu.com>
+Subject: [PATCH v5 04/16] btrfs-progs: lowmem: introduce try_force_cow_in_new_chunk()
+Date: Tue, 8 May 2018 16:30:00 +0800
+Message-ID: <20180508083012.12090-5-suy.fnst@cn.fujitsu.com>
+In-Reply-To: <20180508083012.12090-1-suy.fnst@cn.fujitsu.com>
+References: <20180508083012.12090-1-suy.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patchset can be fetched from my github:
-https://github.com/Damenly/btrfs-progs/tree/lowmem_v5
+Introduce create_chunk_and_block_block_group() to allocate a new chunk
+and corresponding block group.
 
-Patch[1] is added for code shared.
+The new function force_cow_in_new_chunk() firstly allocates new chunk
+and records its start.
+Then it modifies all metadata block groups cached and full.
+Finally it marks the new block group uncached and unfree.
+In the next CoW, extents states will be updated automatically by
+cache_block_group().
 
-Patch[2-6] introduce two ways to avoid extents overwrite:
-1) Traverse trees and exclude all metadata blocks.
-   It's time-inefficient for large filesystems.
-2) Mark all existed chunks full, allocate new chunk for CoW and
-   records chunk start.
-   If the last allocated chunk is almost full, allocated a new one.
-   
-Method 2 is More efficient than 1. However, it can't handle situations
-like no space(fsck-tests/004).
-Lowmem repair will try method 2 first and then method 1.
+New function try_to_force_cow_in_new_chunk() will try to mark block
+groups full, allocate a new chunk and records the start.
+If the last allocated chunk is almost full, a new chunk will be
+allocated.
 
-Patch[7-15] remove parameters @trans in functions in lowmem repair.
-They try to avoid extents overwrite if necessary and start
-transactions by themselves.
-
-Patch[16] adds a test image for new chunks allocation.
-Excluding extents can be tested by existed image in fsck-tests/014.
-
-Those patches are mainly for lowmem repair. Original mode is not
-influenced.
-
+Suggested-by: Qu Wenruo <wqu@suse.com>
+Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
 ---
-Changlog:
-v5->v4:
- - Rebase to devel. Bases commit 9c6d390217b8 ("btrfs-progs: check:
-   	  Distingusih csum checking output for --check-data-csum")
- - Change changelogs and fix typos.
- - Rename subjects from "* lowmem check: *" to "* lowmem: *".
+ check/mode-lowmem.c | 165 ++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 165 insertions(+)
 
-v4->v3:
- - Remove global enum extents_operation to simplify
-   avoid_extents_overwrite() and its cleanup.
- - Rebase after work of check split.
+diff --git a/check/mode-lowmem.c b/check/mode-lowmem.c
+index de96c12b5740..eb50c7e63ead 100644
+--- a/check/mode-lowmem.c
++++ b/check/mode-lowmem.c
+@@ -326,6 +326,171 @@ static int clear_block_groups_full(struct btrfs_fs_info *fs_info, u64 flags)
+ 	return modify_block_groups_cache(fs_info, flags, 0);
+ }
  
-v3->v2:
- - check_btrfs_root() returns FATAL_ERROR if check_fs_first_inode()
-   failed. Thanks Nikolay Borisov.
- - Add function try_to_force_cow_in_new_chunk() and global u64
-   varaiable to record start of the last allocated chunk.
- - Remove unused EXTENTS_PIN in enum lowmem_extents_operation.
- 
-v2->v1:
- - Let @err in check_btrfs_root() record err bits but excluded
-   negative values.
- - Do not delete a line of code to release path after extent item'
-   insertion in repair_extent_data_item().
- - Add patch[3].
- - Force CoW in new allocated chunk to avoid extents overwrite.
- - Remove parameters @trans in check_chunks_and_extents_v2() and
-   related callees.
- - Repair functions for lowmem mode call try_avoid_extents_overwrite()
-   and start transactions.
-   
-Su Yue (16):
-  btrfs-progs: check: move pin_down_tree_blocks to mode-common.c
-  btrfs-progs: lowmem: exclude extents of metadata blocks
-  btrfs-progs: lowmem: introduce mark/clear_block_groups_full()
-  btrfs-progs: lowmem: introduce try_force_cow_in_new_chunk()
-  btrfs-progs: lowmem: introduce avoid_extents_overwrite()
-  btrfs-progs: lowmem: exclude extents if init-extent-tree in lowmem
-  btrfs-progs: lowmem: start to remove parameters @trans in lowmem
-  btrfs-progs: lowmem: remove parameter @trans of delete_extent_item()
-  btrfs-progs: lowmem: remove parameter @trans of repair_chunk_item()
-  btrfs-progs: lowmem: remove parameter @trans of repair_extent_item()
-  btrfs-progs: lowmem: remove parameter @trans of check_leaf_items()
-  btrfs-progs: lowmem: remove parameter @trans of repair_tree_back_ref()
-  btrfs-progs: lowmem: remove parameter @trans of check_btrfs_root()
-  btrfs-progs: lowmem: introduce repair_block_accounting()
-  btrfs-progs: lowmem: end of removing parameters @trans in lowmem
-  btrfs-progs: fsck-tests: add image no extent with normal device size
-
- check/main.c                                  | 118 +---
- check/mode-common.c                           | 141 +++++
- check/mode-common.h                           |   3 +
- check/mode-lowmem.c                           | 539 +++++++++++++++---
- .../014-no-extent-info/.lowmem_repairable     |   0
- .../014-no-extent-info/no_extent.raw.xz       | Bin 0 -> 28084 bytes
- ...default_case.img => no_extent_bad_dev.img} | Bin
- 7 files changed, 627 insertions(+), 174 deletions(-)
- create mode 100644 tests/fsck-tests/014-no-extent-info/.lowmem_repairable
- create mode 100644 tests/fsck-tests/014-no-extent-info/no_extent.raw.xz
- rename tests/fsck-tests/014-no-extent-info/{default_case.img => no_extent_bad_dev.img} (100%)
-
++static int create_chunk_and_block_group(struct btrfs_fs_info *fs_info,
++					u64 flags, u64 *start, u64 *nbytes)
++{
++	struct btrfs_trans_handle *trans;
++	struct btrfs_root *root = fs_info->extent_root;
++	int ret;
++
++	if ((flags & BTRFS_BLOCK_GROUP_TYPE_MASK) == 0)
++		return -EINVAL;
++
++	trans = btrfs_start_transaction(root, 1);
++	if (IS_ERR(trans)) {
++		ret = PTR_ERR(trans);
++		error("error starting transaction %s", strerror(-ret));
++		return ret;
++	}
++	ret = btrfs_alloc_chunk(trans, fs_info, start, nbytes, flags);
++	if (ret) {
++		error("fail to allocate new chunk %s", strerror(-ret));
++		goto out;
++	}
++	ret = btrfs_make_block_group(trans, fs_info, 0, flags, *start,
++				     *nbytes);
++	if (ret) {
++		error("fail to make block group for chunk %llu %llu %s",
++		      *start, *nbytes, strerror(-ret));
++		goto out;
++	}
++out:
++	btrfs_commit_transaction(trans, root);
++	return ret;
++}
++
++static int force_cow_in_new_chunk(struct btrfs_fs_info *fs_info,
++				  u64 *start_ret)
++{
++	struct btrfs_block_group_cache *bg;
++	u64 start;
++	u64 nbytes;
++	u64 alloc_profile;
++	u64 flags;
++	int ret;
++
++	alloc_profile = (fs_info->avail_metadata_alloc_bits &
++			 fs_info->metadata_alloc_profile);
++	flags = BTRFS_BLOCK_GROUP_METADATA | alloc_profile;
++	if (btrfs_fs_incompat(fs_info, MIXED_GROUPS))
++		flags |= BTRFS_BLOCK_GROUP_DATA;
++
++	ret = create_chunk_and_block_group(fs_info, flags, &start, &nbytes);
++	if (ret)
++		goto err;
++	printf("Created new chunk [%llu %llu]\n", start, nbytes);
++
++	flags = BTRFS_BLOCK_GROUP_METADATA;
++	/* Mark all metadata block groups cached and full in free space*/
++	ret = mark_block_groups_full(fs_info, flags);
++	if (ret)
++		goto clear_bgs_full;
++
++	bg = btrfs_lookup_block_group(fs_info, start);
++	if (!bg) {
++		ret = -ENOENT;
++		error("fail to look up block group %llu %llu", start, nbytes);
++		goto clear_bgs_full;
++	}
++
++	/* Clear block group cache just allocated */
++	ret = modify_block_group_cache(fs_info, bg, 0);
++	if (ret)
++		goto clear_bgs_full;
++	if (start_ret)
++		*start_ret = start;
++	return 0;
++
++clear_bgs_full:
++	clear_block_groups_full(fs_info, flags);
++err:
++	return ret;
++}
++
++/*
++ * Returns 0 means not almost full.
++ * Returns >0 means almost full.
++ * Returns <0 means fatal error.
++ */
++static int is_chunk_almost_full(struct btrfs_fs_info *fs_info, u64 start)
++{
++	struct btrfs_path path;
++	struct btrfs_key key;
++	struct btrfs_root *root = fs_info->extent_root;
++	struct btrfs_block_group_item *bi;
++	struct btrfs_block_group_item bg_item;
++	struct extent_buffer *eb;
++	u64 used;
++	u64 total;
++	u64 min_free;
++	int ret;
++	int slot;
++
++	key.objectid = start;
++	key.type = BTRFS_BLOCK_GROUP_ITEM_KEY;
++	key.offset = (u64)-1;
++
++	btrfs_init_path(&path);
++	ret = btrfs_search_slot(NULL, root, &key, &path, 0, 0);
++	if (!ret)
++		ret = -EIO;
++	if (ret < 0)
++		goto out;
++	ret = btrfs_previous_item(root, &path, start,
++				  BTRFS_BLOCK_GROUP_ITEM_KEY);
++	if (ret) {
++		error("failed to find block group %llu", start);
++		ret = -ENOENT;
++		goto out;
++	}
++
++	eb = path.nodes[0];
++	slot = path.slots[0];
++	btrfs_item_key_to_cpu(eb, &key, slot);
++	if (key.objectid != start) {
++		ret = -ENOENT;
++		goto out;
++	}
++
++	total = key.offset;
++	bi = btrfs_item_ptr(eb, slot, struct btrfs_block_group_item);
++	read_extent_buffer(eb, &bg_item, (unsigned long)bi, sizeof(bg_item));
++	used = btrfs_block_group_used(&bg_item);
++
++	/*
++	 * if the free space in the chunk is less than %10 of total,
++	 * or not not enough for CoW once, we think the chunk is almost full.
++	 */
++	min_free = max_t(u64, (BTRFS_MAX_LEVEL + 1) * fs_info->nodesize,
++			 div_factor(total, 1));
++
++	if ((total - used) > min_free)
++		ret = 0;
++	else
++		ret = 1;
++out:
++	btrfs_release_path(&path);
++	return ret;
++}
++
++/*
++ * Returns <0 for error.
++ * Returns 0 for success.
++ */
++static int try_to_force_cow_in_new_chunk(struct btrfs_fs_info *fs_info,
++					u64 old_start, u64 *new_start)
++{
++	int ret;
++
++	if (old_start) {
++		ret = is_chunk_almost_full(fs_info, old_start);
++		if (ret <= 0)
++			return ret;
++	}
++	ret = force_cow_in_new_chunk(fs_info, new_start);
++	return ret;
++}
++
+ /*
+  * This function only handles BACKREF_MISSING,
+  * If corresponding extent item exists, increase the ref, else insert an extent
 -- 
 2.17.0
 

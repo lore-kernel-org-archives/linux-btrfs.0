@@ -1,186 +1,246 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f182.google.com ([209.85.223.182]:41319 "EHLO
-        mail-io0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753512AbeEHBIR (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 May 2018 21:08:17 -0400
-Received: by mail-io0-f182.google.com with SMTP id e12-v6so36441538iob.8
-        for <linux-btrfs@vger.kernel.org>; Mon, 07 May 2018 18:08:16 -0700 (PDT)
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:41107 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1754096AbeEHF7K (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 May 2018 01:59:10 -0400
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
+        by cn.fujitsu.com (Postfix) with ESMTP id 7370948AE76D
+        for <linux-btrfs@vger.kernel.org>; Tue,  8 May 2018 13:59:07 +0800 (CST)
+From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH v3.1 09/10] btrfs-progs: tests: add testcase for undelete-subvol
+Date: Tue, 8 May 2018 13:58:59 +0800
+Message-ID: <20180508055859.23752-1-lufq.fnst@cn.fujitsu.com>
+In-Reply-To: <20180507031033.4125-10-lufq.fnst@cn.fujitsu.com>
+References: <20180507031033.4125-10-lufq.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <d5a49536db0af628f97f871254dc266d@synology.com>
-References: <d5a49536db0af628f97f871254dc266d@synology.com>
-From: Liu Bo <obuil.liubo@gmail.com>
-Date: Tue, 8 May 2018 09:08:15 +0800
-Message-ID: <CANQeFDBgTLdkWz02YHoDh9AahEo-O18mcwQcKqGgeJxPDnhHjQ@mail.gmail.com>
-Subject: Re: Problem with current->journal_info for BTRFS, Null pointer
- dereference in start_transaction
-To: robbieko <robbieko@synology.com>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, May 7, 2018 at 2:49 PM, robbieko <robbieko@synology.com> wrote:
-> Hi,
->
-> When send process requires memory allocation, shrinker may be triggered due
-> to insufficient memory.
-> Then evict_inode gets called when inode is dropped, and this function may
-> need to start transaction.
-> However, the journal_info is already points to BTRFS_SEND_TRANS_STUB, it
-> passed the if condition,
-> and the following use yields illegal memory access.
->
->  495     if (current->journal_info) {
->  496         WARN_ON(type & TRANS_EXTWRITERS);
->  497         h = current->journal_info;
->  498         refcount_inc(&h->use_count);
->  499         WARN_ON(refcount_read(&h->use_count) > 2);
->  500         h->orig_rsv = h->block_rsv;
->  501         h->block_rsv = NULL;
->  502         goto got_it;
->  503     }
->
-> Direct IO has a similar problem, journal_info will store btrfs_dio_data,
-> which will lead to illegal memory access.
->
-> Anyone have the best solution?
->
+The testcase checks the functionality of "btrfs rescue undelete-subvol",
+including recovering an intact subvolume, and handling correctly
+incomplete subvolume.
 
-btrfs_evict_inode() only starts transaction before doing truncate,
-thus we can save the trans_handle and restore afterwards.
+Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+---
+V3.1: remove unnecessary check_prereq btrfs-image
+V3:
+rename testcase to 031-undelete-subvol;
+rename images and add image description to test.sh.
+V2: add shell quoting to test script.
 
-The same stuff can be applied to direct IO as what we used to do.
+ .../031-undelete-subvol/intact_subvolume.img  | Bin 0 -> 4096 bytes
+ .../subvolume_in_drop_progress.raw.xz         | Bin 0 -> 23452 bytes
+ tests/misc-tests/031-undelete-subvol/test.sh  |  37 ++++++++++++++++++
+ 3 files changed, 37 insertions(+)
+ create mode 100644 tests/misc-tests/031-undelete-subvol/intact_subvolume.img
+ create mode 100644 tests/misc-tests/031-undelete-subvol/subvolume_in_drop_progress.raw.xz
+ create mode 100755 tests/misc-tests/031-undelete-subvol/test.sh
 
-thanks,
-liubo
-> CallTrace looks like this:
-> 018-04-30T04:28:00+08:00 Office kernel: [62182.567827] BUG: unable to handle
-> kernel NULL pointer dereference at 0000000000000021
-> 2018-04-30T04:28:00+08:00 Office kernel: [62182.576596] IP:
-> [<ffffffffa086f2d4>] start_transaction+0x64/0x450 [btrfs]
-> 2018-04-30T04:28:00+08:00 Office kernel: [62182.584208] PGD 8fea4b067 PUD
-> a33bea067 PMD 0
-> 2018-04-30T04:28:00+08:00 Office kernel: [62182.589179] Oops: 0000 [#1] SMP
-> 2018-04-30T04:28:00+08:00 Office kernel: [62182.734282] CPU: 3 PID: 12681
-> Comm: btrfs Tainted: P C O 3.10.102 #15266
-> 2018-04-30T04:28:00+08:00 Office kernel: [62182.742554] Hardware name:
-> Synology Inc. RS3617xs Series/Type2 - Board Product Name1, BIOS M.012
-> 2016/06/04
-> 2018-04-30T04:28:00+08:00 Office kernel: [62182.753451] task:
-> ffff880a2babc040 ti: ffff880013e80000 task.ti: ffff880013e80000
-> 2018-04-30T04:28:00+08:00 Office kernel: [62182.761819] RIP:
-> 0010:[<ffffffffa086f2d4>] [<ffffffffa086f2d4>] start_transaction+0x64/0x450
-> [btrfs]
-> 2018-04-30T04:28:00+08:00 Office kernel: [62182.772148] RSP:
-> 0018:ffff880013e834d0 EFLAGS: 00010246
-> 2018-04-30T04:28:00+08:00 Office kernel: [62182.778085] RAX:
-> ffff880a2babc040 RBX: ffff880b7e8488a0 RCX: 0000000000000000
-> 2018-04-30T04:28:00+08:00 Office kernel: [62182.786063] RDX:
-> ffff88101c1bc000 RSI: 0000000000000000 RDI: 0000000000000000
-> 2018-04-30T04:28:00+08:00 Office kernel: [62182.794034] RBP:
-> 0000000000000801 R08: 0000000000000001 R09: 0000000000000000
-> 2018-04-30T04:28:00+08:00 Office kernel: [62182.802012] R10:
-> 0000000000000100 R11: 0000000000000002 R12: ffff881018148000
-> 2018-04-30T04:28:00+08:00 Office kernel: [62182.809983] R13:
-> 0000000000000001 R14: ffff88101c1bc188 R15: ffff881018148000
-> 2018-04-30T04:28:00+08:00 Office kernel: [62182.817961] FS:
-> 00007f3db36038c0(0000) GS:ffff88107fc60000(0000) knlGS:0000000000000000
-> 2018-04-30T04:28:00+08:00 Office kernel: [62182.827001] CS: 0010 DS: 0000
-> ES: 0000 CR0: 0000000080050033
-> 2018-04-30T04:28:00+08:00 Office kernel: [62182.833424] CR2:
-> 0000000000000021 CR3: 0000000633403000 CR4: 00000000003407e0
-> 2018-04-30T04:28:00+08:00 Office kernel: [62182.841394] DR0:
-> 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
-> 2018-04-30T04:28:00+08:00 Office kernel: [62182.849373] DR3:
-> 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
-> 2018-04-30T04:28:00+08:00 Office kernel: [62182.857351] Stack:
-> 2018-04-30T04:28:00+08:00 Office kernel: [62182.859585] 0000000000020000
-> ffff881018148000 ffff880b7e8488a0 0000000000020000
-> 2018-04-30T04:28:00+08:00 Office kernel: [62182.867869] ffff880933256540
-> ffff880013e83550 ffff88101c1bc188 ffff881018148000
-> 2018-04-30T04:28:00+08:00 Office kernel: [62182.876161] ffffffffa087a838
-> 0000000000000007 0000000000000000 ffff88101c1bc000
-> 2018-04-30T04:28:00+08:00 Office kernel: [62182.884450] Call Trace:
-> 2018-04-30T04:28:00+08:00 Office kernel: [62182.887198] [<ffffffffa087a838>]
-> ? btrfs_evict_inode+0x3d8/0x580 [btrfs]
-> 2018-04-30T04:28:00+08:00 Office kernel: [62182.894799] [<ffffffff81115932>]
-> ? evict+0xa2/0x1a0
-> 2018-04-30T04:28:00+08:00 Office kernel: [62182.900352] [<ffffffff81112888>]
-> ? shrink_dentry_list+0x308/0x3d0
-> 2018-04-30T04:28:00+08:00 Office kernel: [62182.907263] [<ffffffff811137f3>]
-> ? prune_dcache_sb+0x133/0x160
-> 2018-04-30T04:28:00+08:00 Office kernel: [62182.913881] [<ffffffff810fa51f>]
-> ? prune_super+0xcf/0x1a0
-> 2018-04-30T04:28:00+08:00 Office kernel: [62182.920013] [<ffffffff810bf6bf>]
-> ? shrink_slab+0x11f/0x1d0
-> 2018-04-30T04:28:00+08:00 Office kernel: [62182.926242] [<ffffffff810c19f2>]
-> ? do_try_to_free_pages+0x452/0x560
-> 2018-04-30T04:28:00+08:00 Office kernel: [62182.933337] [<ffffffff810bf054>]
-> ? throttle_direct_reclaim+0x74/0x240
-> 2018-04-30T04:28:00+08:00 Office kernel: [62182.940634] [<ffffffff810c1bae>]
-> ? try_to_free_pages+0xae/0xc0
-> 2018-04-30T04:28:00+08:00 Office kernel: [62182.947252] [<ffffffff810ba16b>]
-> ? __alloc_pages_nodemask+0x53b/0x9f0
-> 2018-04-30T04:28:00+08:00 Office kernel: [62182.954542] [<ffffffff810bc89c>]
-> ? __do_page_cache_readahead+0xec/0x270
-> 2018-04-30T04:28:00+08:00 Office kernel: [62182.962035] [<ffffffff810bcb2b>]
-> ? ondemand_readahead+0xbb/0x220
-> 2018-04-30T04:28:00+08:00 Office kernel: [62182.968863] [<ffffffffa08d7c43>]
-> ? fill_read_buf+0x2b3/0x3a0 [btrfs]
-> 2018-04-30T04:28:00+08:00 Office kernel: [62182.976073] [<ffffffffa08dbf5e>]
-> ? send_extent_data+0x10e/0x300 [btrfs]
-> 2018-04-30T04:28:00+08:00 Office kernel: [62182.983566] [<ffffffffa08dc34b>]
-> ? process_extent+0x1fb/0x1310 [btrfs]
-> 2018-04-30T04:28:00+08:00 Office kernel: [62182.990969] [<ffffffffa08d8300>]
-> ? iterate_dir_item.isra.28+0x1b0/0x250 [btrfs]
-> 2018-04-30T04:28:00+08:00 Office kernel: [62182.999249] [<ffffffffa08dd500>]
-> ? send_set_xattr+0xa0/0xa0 [btrfs]
-> 2018-04-30T04:28:00+08:00 Office kernel: [62183.006378] [<ffffffffa08de565>]
-> ? changed_cb+0xd5/0xc40 [btrfs]
-> 2018-04-30T04:28:00+08:00 Office kernel: [62183.013190] [<ffffffffa08df1c2>]
-> ? full_send_tree+0xf2/0x1a0 [btrfs]
-> 2018-04-30T04:28:00+08:00 Office kernel: [62183.020400] [<ffffffffa08e022b>]
-> ? btrfs_ioctl_send+0xfbb/0x1040 [btrfs]
-> 2018-04-30T04:28:00+08:00 Office kernel: [62183.028003] [<ffffffffa08a9864>]
-> ? btrfs_ioctl+0x1084/0x32a0 [btrfs]
-> 2018-04-30T04:28:00+08:00 Office kernel: [62183.035223] [<ffffffff810d2333>]
-> ? handle_pte_fault+0x363/0x980
-> 2018-04-30T04:28:00+08:00 Office kernel: [62183.041939] [<ffffffff81054e81>]
-> ? atomic_notifier_call_chain+0x11/0x20
-> 2018-04-30T04:28:00+08:00 Office kernel: [62183.049433] [<ffffffff8105a1bc>]
-> ? set_task_cpu+0xbc/0x150
-> 2018-04-30T04:28:00+08:00 Office kernel: [62183.055678] [<ffffffff810d34ae>]
-> ? handle_mm_fault+0x13e/0x2a0
-> 2018-04-30T04:28:00+08:00 Office kernel: [62183.062297] [<ffffffff8102a6e8>]
-> ? __do_page_fault+0x1b8/0x480
-> 2018-04-30T04:28:00+08:00 Office kernel: [62183.068916] [<ffffffff81058263>]
-> ? update_rq_clock.part.63+0x13/0x30
-> 2018-04-30T04:28:00+08:00 Office kernel: [62183.076119] [<ffffffff81059edf>]
-> ? check_preempt_curr+0x4f/0x90
-> 2018-04-30T04:28:00+08:00 Office kernel: [62183.082835] [<ffffffff8110e12e>]
-> ? do_vfs_ioctl+0x20e/0x880
-> 2018-04-30T04:28:00+08:00 Office kernel: [62183.089163] [<ffffffff8103323a>]
-> ? do_fork+0xfa/0x350
-> 2018-04-30T04:28:00+08:00 Office kernel: [62183.094906] [<ffffffff8110e820>]
-> ? SyS_ioctl+0x80/0xa0
-> 2018-04-30T04:28:00+08:00 Office kernel: [62183.100749] [<ffffffff814b0ff2>]
-> ? system_call_fastpath+0x16/0x1b
-> 2018-04-30T04:28:00+08:00 Office kernel: [62183.107658] Code: 00 48 83 b8 f8
-> 05 00 00 00 0f 84 28 01 00 00 f7 c5 00 07 00 00 0f 85 e6 00 00 00 65 48 8b
-> 04 25 c0 a7 00 00 4c 8b a8 f8 05 00 00 <49> 8b 45 20 48 83 c0 01 48 83 f8 02
-> 49 89 45 20 0f 87 d6 00 00
-> 2018-04-30T04:28:00+08:00 Office kernel: [62183.129061] RIP
-> [<ffffffffa086f2d4>] start_transaction+0x64/0x450 [btrfs]
-> 2018-04-30T04:28:00+08:00 Office kernel: [62183.136769] RSP
-> <ffff880013e834d0>
-> 2018-04-30T04:28:00+08:00 Office kernel: [62183.140663] CR2:
-> 0000000000000021
-> 2018-04-30T04:28:00+08:00 Office kernel: [62183.144411] ---[ end trace
-> 09fed78afc32d93e ]---
->
-> Thanks.
-> Robbie Ko
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+diff --git a/tests/misc-tests/031-undelete-subvol/intact_subvolume.img b/tests/misc-tests/031-undelete-subvol/intact_subvolume.img
+new file mode 100644
+index 0000000000000000000000000000000000000000..9168a8e33fbbb14f9ea78514721a52191b94d1a0
+GIT binary patch
+literal 4096
+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
+ZeM(;pZJdD++rKZroo*A@Ch+ek@Fx_v;e7xA
+
+literal 0
+HcmV?d00001
+
+diff --git a/tests/misc-tests/031-undelete-subvol/subvolume_in_drop_progress.raw.xz b/tests/misc-tests/031-undelete-subvol/subvolume_in_drop_progress.raw.xz
+new file mode 100644
+index 0000000000000000000000000000000000000000..3db2c80e61fa9bb99db374509dbb95910965d467
+GIT binary patch
+literal 23452
+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
+F{{akY3)=ty
+
+literal 0
+HcmV?d00001
+
+diff --git a/tests/misc-tests/031-undelete-subvol/test.sh b/tests/misc-tests/031-undelete-subvol/test.sh
+new file mode 100755
+index 000000000000..f5eb0f46da7d
+--- /dev/null
++++ b/tests/misc-tests/031-undelete-subvol/test.sh
+@@ -0,0 +1,37 @@
++#!/bin/bash
++# Test undelete-subvol can recover the intact subvolume, and can skip the
++# incomplete subvolume.
++#
++# For intact_subvolume.img it has 1 orphan root and it can be recovered.
++# For subvolume_in_drop_progress.raw.xz it has 2 orphan roots while only
++# one can be recovered.
++
++source "$TOP/tests/common"
++
++check_prereq btrfs
++
++setup_root_helper
++
++check_image()
++{
++	TEST_DEV="$1"
++
++	run_check_stdout "$TOP/btrfs" rescue undelete-subvol "$TEST_DEV" \
++		| grep -q "Recovered 1 deleted subvols" \
++		|| _fail "failed to undelete subvol $image" >&2
++
++	run_check "$TOP/btrfs" check "$TEST_DEV"
++
++	# check whether the recovered image can be mounted normally
++	run_check_mount_test_dev
++
++	run_check_stdout $SUDO_HELPER "$TOP/btrfs" subvolume list "$TEST_MNT" \
++		| grep -q "lost+found" \
++		|| _fail "failed to find the recovered subvol $image" >&2
++
++	run_check_umount_test_dev "$TEST_MNT"
++
++	rm "$TEST_DEV"
++}
++
++check_all_images
+-- 
+2.17.0
+
+
+

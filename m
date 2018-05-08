@@ -1,90 +1,91 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from corp-mailer.zoner.com ([217.198.120.77]:45429 "EHLO
-        corp-mailer.zoner.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932297AbeEHIrI (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 May 2018 04:47:08 -0400
-Subject: Btrfs remounted read-only due to ENOSPC in btrfs_run_delayed_refs
- cont. [Was: Re: metadata_ratio mount option?]
-To: Chris Mason <clm@fb.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>, fdmanana@kernel.org
-References: <bd1f9ac2-49ce-7095-7f1f-8a2f905da995@zoner.cz>
- <A77C59EB-BB88-4F12-B8FF-E0C50EBD9750@fb.com>
- <c18bc0a7-464c-6484-282a-9e8e413de104@zoner.cz>
- <9FC056C9-E0EE-4C84-9671-6C396A9617D1@fb.com>
-From: Martin Svec <martin.svec@zoner.cz>
-Message-ID: <2cd937e3-150e-222e-933b-16a7cb365296@zoner.cz>
-Date: Tue, 8 May 2018 10:47:05 +0200
+Received: from mail-it0-f51.google.com ([209.85.214.51]:52249 "EHLO
+        mail-it0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754694AbeEHLcW (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 May 2018 07:32:22 -0400
+Received: by mail-it0-f51.google.com with SMTP id y189-v6so9758071itb.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 08 May 2018 04:32:22 -0700 (PDT)
+Subject: Re: Btrfs installation advices
+To: Rolf Wald <rolf.wald@lug-balista.de>, faurepierr@gmail.com,
+        linux-btrfs@vger.kernel.org
+References: <a064411e-dcec-ecc8-98b9-98cb86284f1e@gmail.com>
+ <63a6c2b4-79ab-18bd-2e24-6acf10b2fd63@lug-balista.de>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <7d680d1c-60af-0d4e-1a91-c2814b1aa26d@gmail.com>
+Date: Tue, 8 May 2018 07:32:20 -0400
 MIME-Version: 1.0
-In-Reply-To: <9FC056C9-E0EE-4C84-9671-6C396A9617D1@fb.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <63a6c2b4-79ab-18bd-2e24-6acf10b2fd63@lug-balista.de>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello Chris,
+On 2018-05-08 03:50, Rolf Wald wrote:
+> Hello,
+> 
+> some hints inside
+> 
+> Am 08.05.2018 um 02:22 schrieb faurepierr@gmail.com:
+>> Hi,
+>>
+>> I'm curious about btrfs, and maybe considering it for my new laptop
+>> installation (a Lenovo T470).
+>> I was going to install my usual lvm+ext4+full disk encryption setup, but
+>> thought I should maybe give a try to btrfs.
+>>
+>>
+>> Is it possible to meet all these criteria?
+>> - operating system: debian sid
+>> - file system: btrfs
+>> - disk encryption (or at least of sensitives partitions)
+>> - hibernation feature (which implies a swap partition or file, and I've
+>> read btrfs is not a big fan of the latter)
+> 
+> A swap partition is not possible inside or with btrfs alone.
+> 
+> You can choose btrfs filesystem out of the box in debian install, but 
+> that would mean full-disk-encryption with lvm and btrfs. The extra layer 
+> lvm doesn't hurt, but you have two layers with many functions double, 
+> e.g. snapshotting, resize.
+Um, this isn't really as much of an issue as you might think.  LVM has 
+near zero overhead unless you're actually doing any of that stuff (as 
+long as the LV is just a simple linear mapping, it has less than 1% more 
+overhead than just using partitions).  The only real caveat here is to 
+make _ABSOLUTELY CERTAIN_ that you _DO NOT_ make LVM snapshots of _ANY_ 
+BTRFS volumes.  Doing so is a recipe for disaster, and will likely eat 
+at least your data, and possibly your children.
 
-Dne 7.5.2018 v 18:37 Chris Mason napsal(a):
->
->
-> On 7 May 2018, at 12:16, Martin Svec wrote:
->
->> Hello Chris,
+The bigger issue is that dm-crypt generally slows down device access, 
+which BTRFS is very sensitive to.  Using BTRFS with FDE works, but it's 
+slow, so I would only suggest doing it with an SSD (and if you're using 
+an SSD, you may be better off getting a TCG Opal compliant 
+self-encrypting drive and just using the self-encryption functionality 
+instead of FDE).
+> 
 >>
->> Dne 7.5.2018 v 16:49 Chris Mason napsal(a):
->>> On 7 May 2018, at 7:40, Martin Svec wrote:
->>>
->>>> Hi,
->>>>
->>>> According to man btrfs [1], I assume that metadata_ratio=1 mount option should
->>>> force allocation of one metadata chunk after every allocated data chunk. However,
->>>> when I set this option and start filling btrfs with "dd if=/dev/zero of=dummyfile.dat",
->>>> only data chunks are allocated but no metadata ones. So, how does the metadata_ratio
->>>> option really work?
->>>>
->>>> Note that I'm trying to use this option as a workaround of the bug reported here:
->>>>
->>>
->>> [ urls that FB email server eats, sorry ]
+>> If yes, how would you suggest me to achieve it?
+> 
+> Yes, there is a solution, and it works for me now several years.
+> You need to build three partitions, e.g. named boot, swap, root. The 
+> sizes choose to your need. the boot partition remains unencrypted, but 
+> the other two partitions are encrypted with cryptsetup (luks) 
+> separately. Normally there are two passphrases to type in (and to 
+> remember), but there is an option in the cryptsetup scripts 
+> (/lib/cryptsetup/scripts) decrypt_derived, which could take the key from 
+> the root partition to decrypt the swap partition also. The filesystems 
+> then on the partitions are boot with ext(2,3,4), swap with swap and root 
+> with btrfs.
+> This configuration is not reachable with a standard debian installation. 
+> Debian always choose lvm if you want full encryption. You have to do the 
+> first steps manually: make partitions, cryptsetup(luks) for the 
+> partitions swap and root, and open the encrypted partitions manually. 
+> After that you can install your OS. The manual steps you have to make 
+> from a working distro, e.g. live system (disk or stick) with a recent 
+> kernel and recent btrfs-progs (debian sid is ok for this).
+> After the install of the OS you have to made the changes for a 
+> successful (re)boot manually. Please read the advices you can find in 
+> the net. There are some nice articles.
+> 
 >>
->> It's link to "Btrfs remounted read-only due to ENOSPC in btrfs_run_delayed_refs" thread :)
->
-> Oh yeah, the link worked fine, it just goes through this url defense monster that munges it in
-> replies.
->
->>
->>>
->>>>
->>>> i.e. I want to manually preallocate metadata chunks to avoid nightly ENOSPC errors.
->>>
->>>
->>> metadata_ratio is almost but not quite what you want.  It sets a flag on the space_info to force a
->>> chunk allocation the next time we decide to call should_alloc_chunk().  Thanks to the overcommit
->>> code, we usually don't call that until the metadata we think we're going to need is bigger than
->>> the metadata space available.  In other words, by the time we're into the code that honors the
->>> force flag, reservations are already high enough to make us allocate the chunk anyway.
->>
->> Yeah, that's how I understood the code. So I think metadata_ratio man section is quite confusing
->> because it implies that btrfs guarantees given metadata to data chunk space ratio, which isn't true.
->>
->>>
->>> I tried to use metadata_ratio to experiment with forcing more metadata slop space, but really I
->>> have to tweak the overcommit code first.
->>> Omar beat me to a better solution, tracking down our transient ENOSPC problems here at FB to
->>> reservations done for orphans.  Do you have a lot of deleted files still being held open?  lsof
->>> /mntpoint | grep deleted will list them.
->>
->> I'll take a look during backup window. The initial bug report describes our rsync workload in
->> detail, for your reference. 
-
-No, there're no trailing deleted files during backup. However, I noticed something interesting in
-strace output: rsync does ftruncate() of every transferred file before closing it. In 99.9% cases
-the file is truncated to its own size, so it should be a no-op. But these ftruncates are by far the
-slowest syscalls according to strace timing and btrfs_truncate() comments itself as "indeed ugly".
-Could it be the root cause of global reservations pressure?
-
-I've found this patch from Filipe (Cc'd): https://patchwork.kernel.org/patch/10205013/. Should I
-apply it to our 4.14.y kernel and try the impact on intensive rsync workloads?
-
-Thank you
-Martin
-
+>> Thanks for your kind help.
+> 
 

@@ -1,182 +1,114 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f65.google.com ([209.85.214.65]:52092 "EHLO
-        mail-it0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S933420AbeEICL5 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 May 2018 22:11:57 -0400
-Received: by mail-it0-f65.google.com with SMTP id n202-v6so18585856ita.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 08 May 2018 19:11:56 -0700 (PDT)
-From: Howard McLauchlan <linux@hmclauchlan.com>
+Received: from synology.com ([59.124.61.242]:49203 "EHLO synology.com"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S933864AbeEIKfu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 9 May 2018 06:35:50 -0400
+From: robbieko <robbieko@synology.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        David Sterba <dsterba@suse.com>, Filipe Manana <fdmanana@suse.com>,
-        Omar Sandoval <osandov@osandov.com>,
-        Howard McLauchlan <hmclauchlan@fb.com>
-Subject: [RFC PATCH 6/6] btrfs-progs: add chattr support for send/receive
-Date: Tue,  8 May 2018 22:11:37 -0400
-Message-Id: <20180509021137.8342-6-linux@hmclauchlan.com>
-In-Reply-To: <20180509021137.8342-1-linux@hmclauchlan.com>
-References: <20180509021137.8342-1-linux@hmclauchlan.com>
+Cc: Robbie Ko <robbieko@synology.com>
+Subject: [PATCH] btrfs: fix invalid memory access with journal_info
+Date: Wed,  9 May 2018 18:35:25 +0800
+Message-Id: <1525862125-15228-1-git-send-email-robbieko@synology.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Howard McLauchlan <hmclauchlan@fb.com>
+From: Robbie Ko <robbieko@synology.com>
 
-Presently, btrfs send/receive does not propagate inode attribute flags;
-all chattr operations are effectively discarded upon transmission.
+When send process requires memory allocation, shrinker may be triggered
+due to insufficient memory.
+Then evict_inode gets called when inode is freed, and this function
+may need to start transaction.
+However, the journal_info is already points to BTRFS_SEND_TRANS_STUB, it
+passed the if condition,
+and the following use yields illegal memory access.
 
-This patch adds userspace support for inode attribute flags. Kernel
-support can be found under the commit:
+  if (current->journal_info) {
+      WARN_ON(type & TRANS_EXTWRITERS);
+      h = current->journal_info;
+      refcount_inc(&h->use_count);
+      WARN_ON(refcount_read(&h->use_count) > 2);
+      h->orig_rsv = h->block_rsv;
+      h->block_rsv = NULL;
+      goto got_it;
+  }
 
-    btrfs: add chattr support for send/receive
+Direct IO has a similar problem, journal_info will store btrfs_dio_data,
+which will lead to illegal memory access.
 
-An associated xfstest can also be found at:
+We fixed the problem by save the journal_info and restore afterwards.
 
-    btrfs: verify chattr support for send/receive test
+CallTrace looks like this:
+ BUG: unable to handle kernel NULL pointer dereference at 0000000000000021
+ IP: [<ffffffffa086f2d4>] start_transaction+0x64/0x450 [btrfs]
+ PGD 8fea4b067 PUD a33bea067 PMD 0
+ Oops: 0000 [#1] SMP
+ CPU: 3 PID: 12681 Comm: btrfs Tainted: P C O 3.10.102 #15266
+ RIP: 0010:[<ffffffffa086f2d4>] start_transaction+0x64/0x450 [btrfs]
+ Call Trace:
+ [<ffffffffa087a838>] ? btrfs_evict_inode+0x3d8/0x580 [btrfs]
+ [<ffffffff81115932>] ? evict+0xa2/0x1a0
+ [<ffffffff81112888>] ? shrink_dentry_list+0x308/0x3d0
+ [<ffffffff811137f3>] ? prune_dcache_sb+0x133/0x160
+ [<ffffffff810fa51f>] ? prune_super+0xcf/0x1a0
+ [<ffffffff810bf6bf>] ? shrink_slab+0x11f/0x1d0
+ [<ffffffff810c19f2>] ? do_try_to_free_pages+0x452/0x560
+ [<ffffffff810bf054>] ? throttle_direct_reclaim+0x74/0x240
+ [<ffffffff810c1bae>] ? try_to_free_pages+0xae/0xc0
+ [<ffffffff810ba16b>] ? __alloc_pages_nodemask+0x53b/0x9f0
+ [<ffffffff810bc89c>] ? __do_page_cache_readahead+0xec/0x270
+ [<ffffffff810bcb2b>] ? ondemand_readahead+0xbb/0x220
+ [<ffffffffa08d7c43>] ? fill_read_buf+0x2b3/0x3a0 [btrfs]
+ [<ffffffffa08dbf5e>] ? send_extent_data+0x10e/0x300 [btrfs]
+ [<ffffffffa08dc34b>] ? process_extent+0x1fb/0x1310 [btrfs]
+ [<ffffffffa08d8300>] ? iterate_dir_item.isra.28+0x1b0/0x250 [btrfs]
+ [<ffffffffa08dd500>] ? send_set_xattr+0xa0/0xa0 [btrfs]
+ [<ffffffffa08de565>] ? changed_cb+0xd5/0xc40 [btrfs]
+ [<ffffffffa08df1c2>] ? full_send_tree+0xf2/0x1a0 [btrfs]
+ [<ffffffffa08e022b>] ? btrfs_ioctl_send+0xfbb/0x1040 [btrfs]
+ [<ffffffffa08a9864>] ? btrfs_ioctl+0x1084/0x32a0 [btrfs]
 
-Signed-off-by: Howard McLauchlan <hmclauchlan@fb.com>
+Signed-off-by: Robbie Ko <robbieko@synology.com>
 ---
- cmds-receive.c | 37 +++++++++++++++++++++++++++++++++++++
- send-dump.c    |  6 ++++++
- send-stream.c  |  5 +++++
- send-stream.h  |  1 +
- send.h         |  4 ++--
- 5 files changed, 51 insertions(+), 2 deletions(-)
+ fs/btrfs/inode.c | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
 
-diff --git a/cmds-receive.c b/cmds-receive.c
-index 20e593f7..2a841bfc 100644
---- a/cmds-receive.c
-+++ b/cmds-receive.c
-@@ -40,6 +40,7 @@
- #include <sys/xattr.h>
- #include <uuid/uuid.h>
- #include <linux/falloc.h>
-+#include <linux/fs.h>
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index f534701..77aec8d 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -5295,6 +5295,7 @@ void btrfs_evict_inode(struct inode *inode)
+ 	int steal_from_global = 0;
+ 	u64 min_size;
+ 	int ret;
++	void *journal_info = NULL;
  
- #include "ctree.h"
- #include "ioctl.h"
-@@ -1201,6 +1202,41 @@ out:
- 	return ret;
+ 	trace_btrfs_inode_evict(inode);
+ 
+@@ -5303,6 +5304,16 @@ void btrfs_evict_inode(struct inode *inode)
+ 		return;
+ 	}
+ 
++	/*
++	 * Send or Direct IO may store information in journal_info.
++	 * However, this function may use start_transaction and
++	 * start_transaction will use journal_info.
++	 * To avoid accessing invalid memory, we can save the journal_info
++	 * and restore it later.
++	 */
++	journal_info = current->journal_info;
++	current->journal_info = NULL;
++
+ 	min_size = btrfs_calc_trunc_metadata_size(fs_info, 1);
+ 
+ 	evict_inode_truncate_pages(inode);
+@@ -5462,6 +5473,7 @@ void btrfs_evict_inode(struct inode *inode)
+ no_delete:
+ 	btrfs_remove_delayed_node(BTRFS_I(inode));
+ 	clear_inode(inode);
++	current->journal_info = journal_info;
  }
  
-+static int process_chattr(const char *path, u64 flags, void *user)
-+{
-+	int ret = 0;
-+	int fd = 0;
-+	int _flags = flags;
-+	struct btrfs_receive *rctx = user;
-+	char full_path[PATH_MAX];
-+
-+	ret = path_cat_out(full_path, rctx->full_subvol_path, path);
-+	if (ret < 0) {
-+		error("chattr: path invalid: %s", path);
-+		goto out;
-+	}
-+
-+	if (g_verbose >= 2)
-+		fprintf(stderr, "chattr %s - flags=0%o\n", path, (int)flags);
-+
-+	fd = open(full_path, O_RDONLY);
-+	if (fd < 0) {
-+		ret = -errno;
-+		error("cannot open %s: %s", path, strerror(-ret));
-+		goto out;
-+	}
-+
-+	ret = ioctl(fd, FS_IOC_SETFLAGS, &_flags);
-+	if (ret < 0) {
-+		ret = -errno;
-+		error("chattr %s failed: %s", path, strerror(-ret));
-+		goto out;
-+	}
-+
-+out:
-+	return ret;
-+}
-+
- static struct btrfs_send_ops send_ops = {
- 	.subvol = process_subvol,
- 	.snapshot = process_snapshot,
-@@ -1225,6 +1261,7 @@ static struct btrfs_send_ops send_ops = {
- 	.update_extent = process_update_extent,
- 	.total_data_size = process_total_data_size,
- 	.fallocate = process_fallocate,
-+	.chattr = process_chattr,
- };
- 
- static int do_receive(struct btrfs_receive *rctx, const char *tomnt,
-diff --git a/send-dump.c b/send-dump.c
-index c5a695a2..15aea402 100644
---- a/send-dump.c
-+++ b/send-dump.c
-@@ -331,6 +331,11 @@ static int print_fallocate(const char *path, u32 flags, u64 offset, u64 len,
- 			  len);
- }
- 
-+static int print_chattr(const char *path, u64 flags, void *user)
-+{
-+	return PRINT_DUMP(user, path, "chattr", "flags=%llu", flags);
-+}
-+
- struct btrfs_send_ops btrfs_print_send_ops = {
- 	.subvol = print_subvol,
- 	.snapshot = print_snapshot,
-@@ -355,4 +360,5 @@ struct btrfs_send_ops btrfs_print_send_ops = {
- 	.update_extent = print_update_extent,
- 	.total_data_size = print_total_data_size,
- 	.fallocate = print_fallocate,
-+	.chattr = print_chattr,
- };
-diff --git a/send-stream.c b/send-stream.c
-index 74ec37dd..4f26fae3 100644
---- a/send-stream.c
-+++ b/send-stream.c
-@@ -470,6 +470,11 @@ static int read_and_process_cmd(struct btrfs_send_stream *sctx)
- 						sctx->user);
- 		}
- 		break;
-+	case BTRFS_SEND_C_CHATTR:
-+		TLV_GET_STRING(sctx, BTRFS_SEND_A_PATH, &path);
-+		TLV_GET_U64(sctx, BTRFS_SEND_A_CHATTR, &tmp);
-+		ret = sctx->ops->chattr(path, tmp, sctx->user);
-+		break;
- 	case BTRFS_SEND_C_END:
- 		ret = 1;
- 		break;
-diff --git a/send-stream.h b/send-stream.h
-index 89e64043..a9f08d52 100644
---- a/send-stream.h
-+++ b/send-stream.h
-@@ -69,6 +69,7 @@ struct btrfs_send_ops {
- 	int (*total_data_size)(u64 size, void *user);
- 	int (*fallocate)(const char *path, u32 flags, u64 offset,
- 			 u64 len, void *user);
-+	int (*chattr)(const char *path, u64 flags, void *user);
- };
- 
- int btrfs_read_and_process_send_stream(int fd,
-diff --git a/send.h b/send.h
-index eb14fba3..5b5ada61 100644
---- a/send.h
-+++ b/send.h
-@@ -103,8 +103,8 @@ enum btrfs_send_cmd {
- 	 */
- 	BTRFS_SEND_C_TOTAL_DATA_SIZE,
- 	BTRFS_SEND_C_FALLOCATE,
--	BTRFS_SEND_C_INODE_SET_FLAGS,
- 	BTRFS_SEND_C_UTIMES2, /* Same as UTIMES, but it includes OTIME too. */
-+	BTRFS_SEND_C_CHATTR,
- 
- 	__BTRFS_SEND_C_MAX,
- };
-@@ -148,7 +148,7 @@ enum {
- 	 * The following attributes were added in stream version 2.
- 	 */
- 	BTRFS_SEND_A_FALLOCATE_FLAGS, /* 32 bits */
--	BTRFS_SEND_A_INODE_FLAGS,     /* 32 bits */
-+	BTRFS_SEND_A_CHATTR,	      /* 32 bits */
- 
- 	__BTRFS_SEND_A_MAX,
- };
+ /*
 -- 
-2.17.0
+1.9.1
 

@@ -1,246 +1,309 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f195.google.com ([209.85.223.195]:46227 "EHLO
-        mail-io0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932484AbeEICLt (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 May 2018 22:11:49 -0400
-Received: by mail-io0-f195.google.com with SMTP id f21-v6so40881662iob.13
-        for <linux-btrfs@vger.kernel.org>; Tue, 08 May 2018 19:11:49 -0700 (PDT)
+Received: from mail-it0-f44.google.com ([209.85.214.44]:39053 "EHLO
+        mail-it0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S933576AbeEICNs (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 May 2018 22:13:48 -0400
+Received: by mail-it0-f44.google.com with SMTP id c3-v6so18725510itj.4
+        for <linux-btrfs@vger.kernel.org>; Tue, 08 May 2018 19:13:47 -0700 (PDT)
 From: Howard McLauchlan <linux@hmclauchlan.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
         David Sterba <dsterba@suse.com>, Filipe Manana <fdmanana@suse.com>,
         Omar Sandoval <osandov@osandov.com>,
-        Filipe Manana <fdmanana@gmail.com>
-Subject: [RFC PATCH 1/6] Btrfs-progs: send, bump stream version
-Date: Tue,  8 May 2018 22:11:32 -0400
-Message-Id: <20180509021137.8342-1-linux@hmclauchlan.com>
+        Howard McLauchlan <hmclauchlan@fb.com>
+Subject: [PATCH 1/2] btrfs: add verify chattr support for send/receive test
+Date: Tue,  8 May 2018 22:13:20 -0400
+Message-Id: <20180509021321.8515-1-linux@hmclauchlan.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@gmail.com>
+From: Howard McLauchlan <hmclauchlan@fb.com>
 
-This increases the send stream version from version 1 to version 2, adding
-new commands:
+This test aims to verify correct behaviour with chattr operations and
+btrfs send/receive. The intent is to check general correctness as well
+as special interactions with troublesome flags(immutable, append only).
 
-1) total data size - used to tell the receiver how much file data the stream
-   will add or update;
+This test is motivated by a bug in btrfs which demonstrates a lack of
+chattr support in btrfs send/receive.
 
-2) fallocate - used to pre-allocate space for files and to punch holes in files;
+A kernel patch to fix this can be found at:
 
-3) inode set flags;
+    btrfs: add chattr support for send/receive
 
-4) set inode otime.
+The accompanying userspace patch can be found at:
 
-This is preparation work for subsequent changes that implement the new features.
+    btrfs-progs: add chattr support for send/receive
 
-This doesn't break compatibility with older kernels or clients. In order to get
-a version 2 send stream, new flags must be passed to the send ioctl.
-
-Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+Signed-off-by: Howard McLauchlan <hmclauchlan@fb.com>
 ---
- cmds-send.c   | 61 ++++++++++++++++++++++++++++++++++++---------------
- ioctl.h       | 15 +++++++++++++
- send-stream.c |  2 +-
- send.h        | 23 ++++++++++++++++++-
- 4 files changed, 81 insertions(+), 20 deletions(-)
+ tests/btrfs/161     | 202 ++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/161.out |  38 +++++++++
+ tests/btrfs/group   |   1 +
+ 3 files changed, 241 insertions(+)
+ create mode 100755 tests/btrfs/161
+ create mode 100644 tests/btrfs/161.out
 
-diff --git a/cmds-send.c b/cmds-send.c
-index c5ecdaa1..0ec557c7 100644
---- a/cmds-send.c
-+++ b/cmds-send.c
-@@ -52,6 +52,7 @@
-  * the 'At subvol' message.
-  */
- static int g_verbose = 1;
-+static int g_stream_version = BTRFS_SEND_STREAM_VERSION_1;
- 
- struct btrfs_send {
- 	int send_fd;
-@@ -343,6 +344,8 @@ static int do_send(struct btrfs_send *send, u64 parent_root_id,
- 		io_send.flags |= BTRFS_SEND_FLAG_OMIT_STREAM_HEADER;
- 	if (!is_last_subvol)
- 		io_send.flags |= BTRFS_SEND_FLAG_OMIT_END_CMD;
-+	if (g_stream_version == BTRFS_SEND_STREAM_VERSION_2)
-+		io_send.flags |= BTRFS_SEND_FLAG_STREAM_V2;
- 	ret = ioctl(subvol_fd, BTRFS_IOC_SEND, &io_send);
- 	if (ret < 0) {
- 		ret = -errno;
-@@ -513,7 +516,8 @@ int cmd_send(int argc, char **argv)
- 		static const struct option long_options[] = {
- 			{ "verbose", no_argument, NULL, 'v' },
- 			{ "quiet", no_argument, NULL, 'q' },
--			{ "no-data", no_argument, NULL, GETOPT_VAL_SEND_NO_DATA }
-+			{ "no-data", no_argument, NULL, GETOPT_VAL_SEND_NO_DATA },
-+			{ "stream-version", 1, NULL, 'V' },
- 		};
- 		int c = getopt_long(argc, argv, "vqec:f:i:p:", long_options, NULL);
- 
-@@ -597,6 +601,24 @@ int cmd_send(int argc, char **argv)
- 			error("option -i was removed, use -c instead");
- 			ret = 1;
- 			goto out;
-+		case 'V':
-+			if (sscanf(optarg, "%d", &g_stream_version) != 1) {
-+				fprintf(stderr,
-+					"ERROR: invalid value for stream version: %s\n",
-+					optarg);
-+				ret = 1;
-+				goto out;
-+			}
-+			if (g_stream_version <= 0 ||
-+			    g_stream_version > BTRFS_SEND_STREAM_VERSION_MAX) {
-+				fprintf(stderr,
-+					"ERROR: unsupported stream version %d, minimum: 1, maximum: %d\n",
-+					g_stream_version,
-+					BTRFS_SEND_STREAM_VERSION_MAX);
-+				ret = 1;
-+				goto out;
-+			}
-+			break;
- 		case GETOPT_VAL_SEND_NO_DATA:
- 			send_flags |= BTRFS_SEND_FLAG_NO_FILE_DATA;
- 			break;
-@@ -776,7 +798,7 @@ out:
- }
- 
- const char * const cmd_send_usage[] = {
--	"btrfs send [-ve] [-p <parent>] [-c <clone-src>] [-f <outfile>] <subvol> [<subvol>...]",
-+	"btrfs send [-ve] [--stream-version <version>] [-p <parent>] [-c <clone-src>] [-f <outfile>] <subvol> [<subvol>...]",
- 	"Send the subvolume(s) to stdout.",
- 	"Sends the subvolume(s) specified by <subvol> to stdout.",
- 	"<subvol> should be read-only here.",
-@@ -790,21 +812,24 @@ const char * const cmd_send_usage[] = {
- 	"which case 'btrfs send' will determine a suitable parent among the",
- 	"clone sources itself.",
- 	"\n",
--	"-e               If sending multiple subvols at once, use the new",
--	"                 format and omit the end-cmd between the subvols.",
--	"-p <parent>      Send an incremental stream from <parent> to",
--	"                 <subvol>.",
--	"-c <clone-src>   Use this snapshot as a clone source for an ",
--	"                 incremental send (multiple allowed)",
--	"-f <outfile>     Output is normally written to stdout. To write to",
--	"                 a file, use this option. An alternative would be to",
--	"                 use pipes.",
--	"--no-data        send in NO_FILE_DATA mode, Note: the output stream",
--	"                 does not contain any file data and thus cannot be used",
--	"                 to transfer changes. This mode is faster and useful to",
--	"                 show the differences in metadata.",
--	"-v|--verbose     enable verbose output to stderr, each occurrence of",
--	"                 this option increases verbosity",
--	"-q|--quiet       suppress all messages, except errors",
-+	"-e                          If sending multiple subvols at once, use the new",
-+	"                            format and omit the end-cmd between the subvols.",
-+	"-p <parent>                 Send an incremental stream from <parent> to",
-+	"                            <subvol>.",
-+	"-c <clone-src>              Use this snapshot as a clone source for an ",
-+	"                            incremental send (multiple allowed)",
-+	"-f <outfile>                Output is normally written to stdout. To write to",
-+	"                            a file, use this option. An alternative would be to",
-+	"                            use pipes.",
-+	"--no-data                   send in NO_FILE_DATA mode, Note: the output stream",
-+	"                            does not contain any file data and thus cannot be used",
-+	"                            to transfer changes. This mode is faster and useful to",
-+	"                            show the differences in metadata.",
-+	"-v|--verbose                enable verbose output to stderr, each occurrence of",
-+	"                            this option increases verbosity",
-+	"-q|--quiet       	     suppress all messages, except errors",
-+	"--stream-version <version>  Ask the kernel to produce a specific send stream",
-+	"                            version. More recent stream versions provide new",
-+	"                            features and better performance. Default value is 1.",
- 	NULL
- };
-diff --git a/ioctl.h b/ioctl.h
-index 709e996f..9d490aca 100644
---- a/ioctl.h
-+++ b/ioctl.h
-@@ -632,6 +632,21 @@ BUILD_ASSERT(sizeof(struct btrfs_ioctl_received_subvol_args_32) == 192);
- 	 BTRFS_SEND_FLAG_OMIT_STREAM_HEADER | \
- 	 BTRFS_SEND_FLAG_OMIT_END_CMD)
- 
-+/*
-+ * The sum of all length fields the receiver will get in write, clone and
-+ * fallocate commands.
-+ * This can be used by the receiver to compute progress, at the expense of some
-+ * initial metadata scan performed by the sender (kernel).
-+ *
-+ * Added in send stream version 2.
-+ */
-+#define BTRFS_SEND_FLAG_CALCULATE_DATA_SIZE	0x8
+diff --git a/tests/btrfs/161 b/tests/btrfs/161
+new file mode 100755
+index 00000000..6c30a5e2
+--- /dev/null
++++ b/tests/btrfs/161
+@@ -0,0 +1,202 @@
++#! /bin/bash
++# FS QA Test 161
++#
++# This test verifies the correct behaviour of chattr support for btrfs
++# send/receive; 6 cases will be tested:
++# 1. New inode created with an inode flag set
++# 2. Existing inode with BTRFS_INODE_APPEND is written to with sequence:
++#		chattr -a
++#		pwrite something
++#		chattr +a
++# 3. Existing inode with BTRFS_INODE_APPEND is written to with sequence:
++#		chattr -a
++#		pwrite something
++#		chattr +d
++# 4. Existing inode is written to with sequence:
++#		setfattr something
++#		chattr +a
++# 5. Existing inode with BTRFS_INODE_APPEND is written to with sequence:
++#		chattr -a
++#		setfattr something
++#		setfattr something else
++#		chattr +a
++# 6. As above, but with pwrite instead of setfattr
++# The goal of 5 and 6 is not to test correctness, but to ensure we
++# don't send extra chattrs that are unnecessary.
++#
++# We verify the md5sum of the snapshots in the receive directory to ensure file
++# contents have changed appropriately. We also observe the flags changing (or
++# not changing) as appropriate.
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2018 Facebook.  All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++#
 +
-+/*
-+ * Used by a client to request a version 2 of the send stream.
-+ */
-+#define BTRFS_SEND_FLAG_STREAM_V2               0x10
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
 +
- struct btrfs_ioctl_send_args {
- 	__s64 send_fd;			/* in */
- 	__u64 clone_sources_count;	/* in */
-diff --git a/send-stream.c b/send-stream.c
-index 78f2571a..86956d28 100644
---- a/send-stream.c
-+++ b/send-stream.c
-@@ -503,7 +503,7 @@ int btrfs_read_and_process_send_stream(int fd,
- 	}
- 
- 	sctx.version = le32_to_cpu(hdr.version);
--	if (sctx.version > BTRFS_SEND_STREAM_VERSION) {
-+	if (sctx.version > BTRFS_SEND_STREAM_VERSION_MAX) {
- 		ret = -EINVAL;
- 		error("stream version %d not supported, please use newer version",
- 				sctx.version);
-diff --git a/send.h b/send.h
-index fe613cbb..eb14fba3 100644
---- a/send.h
-+++ b/send.h
-@@ -27,7 +27,10 @@ extern "C" {
- #endif
- 
- #define BTRFS_SEND_STREAM_MAGIC "btrfs-stream"
--#define BTRFS_SEND_STREAM_VERSION 1
-+#define BTRFS_SEND_STREAM_VERSION_1 1
-+#define BTRFS_SEND_STREAM_VERSION_2 2
-+/* Max supported stream version. */
-+#define BTRFS_SEND_STREAM_VERSION_MAX BTRFS_SEND_STREAM_VERSION_2
- 
- #define BTRFS_SEND_BUF_SIZE SZ_64K
- #define BTRFS_SEND_READ_SIZE (1024 * 48)
-@@ -94,6 +97,15 @@ enum btrfs_send_cmd {
- 
- 	BTRFS_SEND_C_END,
- 	BTRFS_SEND_C_UPDATE_EXTENT,
++here=`pwd`
++tmp=/tmp/$$
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
 +
-+	/*
-+	 * The following commands were added in stream version 2.
-+	 */
-+	BTRFS_SEND_C_TOTAL_DATA_SIZE,
-+	BTRFS_SEND_C_FALLOCATE,
-+	BTRFS_SEND_C_INODE_SET_FLAGS,
-+	BTRFS_SEND_C_UTIMES2, /* Same as UTIMES, but it includes OTIME too. */
++_cleanup()
++{
++	cd /
++	rm -f $tmp.*
++}
 +
- 	__BTRFS_SEND_C_MAX,
- };
- #define BTRFS_SEND_C_MAX (__BTRFS_SEND_C_MAX - 1)
-@@ -132,10 +144,19 @@ enum {
- 	BTRFS_SEND_A_CLONE_OFFSET,
- 	BTRFS_SEND_A_CLONE_LEN,
- 
-+	/*
-+	 * The following attributes were added in stream version 2.
-+	 */
-+	BTRFS_SEND_A_FALLOCATE_FLAGS, /* 32 bits */
-+	BTRFS_SEND_A_INODE_FLAGS,     /* 32 bits */
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
 +
- 	__BTRFS_SEND_A_MAX,
- };
- #define BTRFS_SEND_A_MAX (__BTRFS_SEND_A_MAX - 1)
- 
-+#define BTRFS_SEND_A_FALLOCATE_FLAG_KEEP_SIZE   (1 << 0)
-+#define BTRFS_SEND_A_FALLOCATE_FLAG_PUNCH_HOLE  (1 << 1)
++# remove previous $seqres.full before test
++rm -f $seqres.full
 +
- #ifdef __KERNEL__
- long btrfs_ioctl_send(struct file *mnt_file, void __user *arg);
- #endif
++# real QA test starts here
++
++# Modify as appropriate.
++_supported_fs btrfs
++_supported_os Linux
++_require_scratch
++
++send_files_dir=$TEST_DIR/btrfs-test-$seq
++
++rm -rf $send_files_dir
++mkdir $send_files_dir
++
++_scratch_mkfs >>$seqres.full 2>&1
++_scratch_mount
++
++# Create receive directory
++mkdir $SCRATCH_MNT/receive
++
++# Create test file and set chattr flag
++_run_btrfs_util_prog subvolume create $SCRATCH_MNT/parent
++$XFS_IO_PROG -f -c "pwrite -S 0xaa 0K 32K" $SCRATCH_MNT/parent/foo | _filter_xfs_io
++$CHATTR_PROG +a $SCRATCH_MNT/parent/foo
++
++# Send/Receive initial snapshot
++_run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT/parent \
++	$SCRATCH_MNT/old_parent
++_run_btrfs_util_prog send --stream-version 2 -f $SCRATCH_MNT/out $SCRATCH_MNT/old_parent
++_run_btrfs_util_prog receive -f $SCRATCH_MNT/out $SCRATCH_MNT/receive
++
++# Verify post-send content and flags
++echo "post-send file digest for old_parent:"
++md5sum $SCRATCH_MNT/old_parent/foo | _filter_scratch
++echo "post-send file flag for old_parent:"
++lsattr $SCRATCH_MNT/receive/old_parent/foo | _filter_scratch
++
++# Make change
++$CHATTR_PROG -a $SCRATCH_MNT/parent/foo
++$XFS_IO_PROG -f -c "pwrite -S 0xab 0K 32K" $SCRATCH_MNT/parent/foo | _filter_xfs_io
++$CHATTR_PROG +a $SCRATCH_MNT/parent/foo
++
++# Send incremental change
++_run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT/parent \
++	$SCRATCH_MNT/child_1
++_run_btrfs_util_prog send --stream-version 2 -p $SCRATCH_MNT/old_parent -f $SCRATCH_MNT/out \
++$SCRATCH_MNT/child_1
++_run_btrfs_util_prog receive -f $SCRATCH_MNT/out $SCRATCH_MNT/receive
++
++# Verify
++echo "post-send file digest for child_1:"
++md5sum $SCRATCH_MNT/child_1/foo | _filter_scratch
++echo "post-send file flag for child_1:"
++lsattr $SCRATCH_MNT/receive/child_1/foo | _filter_scratch
++
++# Make change
++$CHATTR_PROG -a $SCRATCH_MNT/parent/foo
++$XFS_IO_PROG -f -c "pwrite -S 0xac 0K 32K" $SCRATCH_MNT/parent/foo | _filter_xfs_io
++$CHATTR_PROG +d $SCRATCH_MNT/parent/foo
++
++# Send incremental change
++_run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT/parent \
++	$SCRATCH_MNT/child_2
++_run_btrfs_util_prog send --stream-version 2 -p $SCRATCH_MNT/old_parent -f $SCRATCH_MNT/out \
++$SCRATCH_MNT/child_2
++_run_btrfs_util_prog receive -f $SCRATCH_MNT/out $SCRATCH_MNT/receive
++
++# Verify
++echo "post-send file digest for child_2:"
++md5sum $SCRATCH_MNT/child_2/foo | _filter_scratch
++echo "post-send file flag for child_2:"
++lsattr $SCRATCH_MNT/receive/child_2/foo | _filter_scratch
++
++# Send fattr, then chattr
++$SETFATTR_PROG -n user.test -v 0xaaaa $SCRATCH_MNT/parent/foo
++$CHATTR_PROG +a $SCRATCH_MNT/parent/foo
++
++# Send incremental change against child_2
++_run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT/parent \
++	$SCRATCH_MNT/child_3
++_run_btrfs_util_prog send --stream-version 2 -p $SCRATCH_MNT/child_2 -f $SCRATCH_MNT/out \
++$SCRATCH_MNT/child_3
++_run_btrfs_util_prog receive -f $SCRATCH_MNT/out $SCRATCH_MNT/receive
++
++# Verify
++echo "post-send file flag for child_3:"
++lsattr $SCRATCH_MNT/receive/child_3/foo | _filter_scratch
++echo "post-send xattr for child_3:"
++$GETFATTR_PROG --absolute-names -d $SCRATCH_MNT/receive/child_3/foo | _filter_scratch
++
++# chattr, send fattr, then chattr
++$CHATTR_PROG -a $SCRATCH_MNT/parent/foo
++$SETFATTR_PROG -n user.test_1 -v 0xbbbb $SCRATCH_MNT/parent/foo
++$SETFATTR_PROG -n user.test -v 0xcccc $SCRATCH_MNT/parent/foo
++$CHATTR_PROG +a $SCRATCH_MNT/parent/foo
++
++
++# Send incremental change
++_run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT/parent \
++	$SCRATCH_MNT/child_4
++_run_btrfs_util_prog send --stream-version 2 -p $SCRATCH_MNT/old_parent -f $SCRATCH_MNT/out \
++$SCRATCH_MNT/child_4
++_run_btrfs_util_prog receive -f $SCRATCH_MNT/out $SCRATCH_MNT/receive
++
++# Verify
++echo "post-send file flag for child_4:"
++lsattr $SCRATCH_MNT/receive/child_4/foo | _filter_scratch
++echo "post-send xattr for child_4:"
++$GETFATTR_PROG --absolute-names -d $SCRATCH_MNT/receive/child_4/foo | _filter_scratch
++
++# Technically we've hit this path, but to be sure...
++$CHATTR_PROG -a $SCRATCH_MNT/parent/foo
++$XFS_IO_PROG -f -c "pwrite -S 0xac 64k 128k" $SCRATCH_MNT/parent/foo | _filter_xfs_io
++$XFS_IO_PROG -f -c "pwrite -S 0xac 1024k 1056k" $SCRATCH_MNT/parent/foo | _filter_xfs_io
++$CHATTR_PROG +a $SCRATCH_MNT/parent/foo
++
++# Send incremental change
++_run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT/parent \
++	$SCRATCH_MNT/child_5
++_run_btrfs_util_prog send --stream-version 2 -p $SCRATCH_MNT/old_parent -f $SCRATCH_MNT/out \
++$SCRATCH_MNT/child_5
++_run_btrfs_util_prog receive -f $SCRATCH_MNT/out $SCRATCH_MNT/receive
++
++# Verify
++echo "post-send file flag for child_5:"
++lsattr $SCRATCH_MNT/receive/child_5/foo | _filter_scratch
++
++# optional stuff if your test has verbose output to help resolve problems
++
++#echo "If failure, check $seqres.full (this) and $seqres.full.ok (reference)"
++
++# success, all done
++status=0
++exit
+diff --git a/tests/btrfs/161.out b/tests/btrfs/161.out
+new file mode 100644
+index 00000000..945d6db5
+--- /dev/null
++++ b/tests/btrfs/161.out
+@@ -0,0 +1,38 @@
++QA output created by 161
++wrote 32768/32768 bytes at offset 0
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++post-send file digest for old_parent:
++c28418534a020122aca59fd3ff9581b5  SCRATCH_MNT/old_parent/foo
++post-send file flag for old_parent:
++-----a------------ SCRATCH_MNT/receive/old_parent/foo
++wrote 32768/32768 bytes at offset 0
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++post-send file digest for child_1:
++8e3ba8330fc5309ed7d2f447c13d9e71  SCRATCH_MNT/child_1/foo
++post-send file flag for child_1:
++-----a------------ SCRATCH_MNT/receive/child_1/foo
++wrote 32768/32768 bytes at offset 0
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++post-send file digest for child_2:
++5671126b7326949ea0f14d5a875084ac  SCRATCH_MNT/child_2/foo
++post-send file flag for child_2:
++------d----------- SCRATCH_MNT/receive/child_2/foo
++post-send file flag for child_3:
++-----ad----------- SCRATCH_MNT/receive/child_3/foo
++post-send xattr for child_3:
++# file: SCRATCH_MNT/receive/child_3/foo
++user.test=0sqqo=
++
++post-send file flag for child_4:
++-----ad----------- SCRATCH_MNT/receive/child_4/foo
++post-send xattr for child_4:
++# file: SCRATCH_MNT/receive/child_4/foo
++user.test=0szMw=
++user.test_1=0su7s=
++
++wrote 131072/131072 bytes at offset 65536
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++wrote 1081344/1081344 bytes at offset 1048576
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++post-send file flag for child_5:
++-----ad----------- SCRATCH_MNT/receive/child_5/foo
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index ba766f6b..939f1f7e 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -162,3 +162,4 @@
+ 157 auto quick raid
+ 158 auto quick raid scrub
+ 159 auto quick
++161 auto quick send
 -- 
 2.17.0
 

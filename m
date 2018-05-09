@@ -1,101 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:54593 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:57076 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750829AbeECHVR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 3 May 2018 03:21:17 -0400
+        id S934840AbeEINDK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 9 May 2018 09:03:10 -0400
 Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id C2B41AF14
-        for <linux-btrfs@vger.kernel.org>; Thu,  3 May 2018 07:21:15 +0000 (UTC)
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: qgroup: Search commit root for rescan to avoid missing extent
-Date: Thu,  3 May 2018 15:20:52 +0800
-Message-Id: <20180503072052.22002-1-wqu@suse.com>
+        by mx2.suse.de (Postfix) with ESMTP id 86C8BAEA6
+        for <linux-btrfs@vger.kernel.org>; Wed,  9 May 2018 13:03:09 +0000 (UTC)
+Date: Wed, 9 May 2018 15:00:30 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: qgroup: Finish rescan when hit the last leaf of
+ extent tree
+Message-ID: <20180509130030.GY6649@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20180504055659.1862-1-wqu@suse.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20180504055659.1862-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When doing qgroup rescan using the following script (modified from
-btrfs/017 test case), we can sometimes hit qgroup corruption.
+On Fri, May 04, 2018 at 01:56:59PM +0800, Qu Wenruo wrote:
+> Under the following case, qgroup rescan can double account cowed tree
+> blocks:
+> 
+> In this case, extent tree only has one tree block.
+> 
+> -
+> | transid=5 last committed=4
+> | btrfs_qgroup_rescan_worker()
+> | |- btrfs_start_transaction()
+> | |  transid = 5
+> | |- qgroup_rescan_leaf()
+> |    |- btrfs_search_slot_for_read() on extent tree
+> |       Get the only extent tree block from commit root (transid = 4).
+> |       Scan it, set qgroup_rescan_progress to the last
+> |       EXTENT/META_ITEM + 1
+> |       now qgroup_rescan_progress = A + 1.
+> |
+> | fs tree get CoWed, new tree block is at A + 16K
+> | transid 5 get committed
+> -
+> | transid=6 last committed=5
+> | btrfs_qgroup_rescan_worker()
+> | btrfs_qgroup_rescan_worker()
+> | |- btrfs_start_transaction()
+> | |  transid = 5
+> | |- qgroup_rescan_leaf()
+> |    |- btrfs_search_slot_for_read() on extent tree
+> |       Get the only extent tree block from commit root (transid = 5).
+> |       scan it using qgroup_rescan_progress (A + 1).
+> |       found new tree block beyong A, and it's fs tree block,
+> |       account it to increase qgroup numbers.
+> -
+> 
+> In above case, tree block A, and tree block A + 16K get accounted twice,
+> while qgroup rescan should stop when it already reach the last leaf,
+> other than continue using its qgroup_rescan_progress.
+> 
+> Such case could happen by just looping btrfs/017 and with some
+> possibility it can hit such double qgroup accounting problem.
+> 
+> Fix it by checking the path to determine if we should finish qgroup
+> rescan, other than relying on next loop to exit.
+> 
+> Reported-by: Nikolay Borisov <nborisov@suse.com>
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
 
-------
-umount $dev &> /dev/null
-umount $mnt &> /dev/null
-
-mkfs.btrfs -f -n 64k $dev
-mount $dev $mnt
-
-extent_size=8192
-
-xfs_io -f -d -c "pwrite 0 $extent_size" $mnt/foo > /dev/null
-btrfs subvolume snapshot $mnt $mnt/snap
-
-xfs_io -f -c "reflink $mnt/foo" $mnt/foo-reflink > /dev/null
-xfs_io -f -c "reflink $mnt/foo" $mnt/snap/foo-reflink > /dev/null
-xfs_io -f -c "reflink $mnt/foo" $mnt/snap/foo-reflink2 > /dev/unll
-btrfs quota enable $mnt
-
- # -W is the new option to only wait rescan while not starting new one
-btrfs quota rescan -W $mnt
-btrfs qgroup show -prce $mnt
-
- # Need to patch btrfs-progs to report qgroup mismatch as error
-btrfs check $dev || _fail
-------
-
-For fast machine, we can hit some corruption which missed accounting
-tree blocks:
-------
-qgroupid         rfer         excl     max_rfer     max_excl parent  child
---------         ----         ----     --------     -------- ------  -----
-0/5           8.00KiB        0.00B         none         none ---     ---
-0/257         8.00KiB        0.00B         none         none ---     ---
-------
-
-This is due to the fact that we're always searching commit root for
-btrfs_find_all_roots() at qgroup_rescan_leaf(), but the leaf we get is
-from current transaction, not commit root.
-
-And if our tree blocks get modified in current transaction, we won't
-find any owner in commit root, thus causing the corruption.
-
-Fix it by searching commit root for extent tree for
-qgroup_rescan_leaf().
-
-Reported-by: Nikolay Borisov <nborisov@suse.com>
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
-
-Please keep in mind that it is possible to hit another type of race
-which double accounting tree blocks:
-------
-qgroupid         rfer         excl     max_rfer     max_excl parent  child
---------         ----         ----     --------     -------- ------  -----
-0/5          136.00KiB     128.00KiB         none         none ---     ---
-0/257        136.00KiB     128.00KiB         none         none ---     ---
-------
-For this type of corruption, this patch could reduce the possibility,
-but the root cause is race between transaction commit and qgroup rescan,
-which needs to be addressed in another patch.
----
- fs/btrfs/qgroup.c | 5 +++++
- 1 file changed, 5 insertions(+)
-
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 4baa4ba2d630..829e8fe5c97e 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -2681,6 +2681,11 @@ static void btrfs_qgroup_rescan_worker(struct btrfs_work *work)
- 	path = btrfs_alloc_path();
- 	if (!path)
- 		goto out;
-+	/*
-+	 * Rescan should only search for commit root, and any later difference
-+	 * should be recorded by qgroup
-+	 */
-+	path->search_commit_root = 1;
- 
- 	err = 0;
- 	while (!err && !btrfs_fs_closing(fs_info)) {
--- 
-2.17.0
-
+Is this something for 4.17-rc ?

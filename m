@@ -1,47 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:54490 "EHLO mx2.suse.de"
+Received: from mout.gmx.net ([212.227.17.21]:60689 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932875AbeEIMhx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 9 May 2018 08:37:53 -0400
-Date: Wed, 9 May 2018 14:35:15 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Su Yue <suy.fnst@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2] btrfs-progs: tests: test mkfs.btrfs fails on small
- backing size thin provision device
-Message-ID: <20180509123515.GX6649@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20180412011028.1064-1-suy.fnst@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180412011028.1064-1-suy.fnst@cn.fujitsu.com>
+        id S934912AbeEINJM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 9 May 2018 09:09:12 -0400
+From: Chengguang Xu <cgxu519@gmx.com>
+To: clm@fb.com, jbacik@fb.com, dsterba@suse.com
+Cc: linux-btrfs@vger.kernel.org, Chengguang Xu <cgxu519@gmx.com>
+Subject: [PATCH] btrfs: return original error code when failing from option parsing
+Date: Wed,  9 May 2018 21:08:23 +0800
+Message-Id: <1525871303-87198-1-git-send-email-cgxu519@gmx.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Apr 12, 2018 at 09:10:28AM +0800, Su Yue wrote:
-> This tests is most similar to xfstests generic/405.
-> It calls device mapper to create a thin provision device with small
-> backing size and big virtual size. mkfs.btrfs should fail on such
-> devices.
-> 
-> This test should pass after commit e805b143a4fe
-> ("btrfs-progs: mkfs: return nozero value on thin provisioned device").
-> 
-> Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
+It's no good to overwrite -ENOMEM using -EINVAL when failing
+from mount option parsing, so just return original error code.
 
-Applied with some tweaks, thanks.
+Signed-off-by: Chengguang Xu <cgxu519@gmx.com>
+---
+ fs/btrfs/super.c | 1 -
+ 1 file changed, 1 deletion(-)
 
-> +	# wait for device to be fully settled
-> +	run_check $SUDO_HELPER udevadm settle
-> +	run_check $SUDO_HELPER dmsetup remove "$DMTHIN_VOL_NAME"
-> +	run_check $SUDO_HELPER dmsetup remove "$DMTHIN_POOL_NAME"
-> +	run_check $SUDO_HELPER dmsetup remove "$DMTHIN_META_NAME"
-> +	run_check $SUDO_HELPER dmsetup remove "$DMTHIN_DATA_NAME"
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 0628092..ae6447d 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -1783,7 +1783,6 @@ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
+ 
+ 	ret = btrfs_parse_options(fs_info, data, *flags);
+ 	if (ret) {
+-		ret = -EINVAL;
+ 		goto restore;
+ 	}
+ 
+-- 
+1.8.3.1
 
-extrenal utilities should be checked by check_global_prereq
-
-> +# mkfs.btrfs should fail due to the small backing device
-> +run_mustfail "should fail for small backing size thin provision device" \
-> +	     $SUDO_HELPER "$TOP/mkfs.btrfs" -f "$DMTHIN_VOL_DEV"
-
-the automatic trim will slow mkfs down, so -K

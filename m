@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pl0-f68.google.com ([209.85.160.68]:35021 "EHLO
-        mail-pl0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1756546AbeEJGVb (ORCPT
+Received: from mail-pf0-f193.google.com ([209.85.192.193]:39258 "EHLO
+        mail-pf0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1756566AbeEJGVc (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 10 May 2018 02:21:31 -0400
-Received: by mail-pl0-f68.google.com with SMTP id i5-v6so696726plt.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 09 May 2018 23:21:30 -0700 (PDT)
+        Thu, 10 May 2018 02:21:32 -0400
+Received: by mail-pf0-f193.google.com with SMTP id a22-v6so563899pfn.6
+        for <linux-btrfs@vger.kernel.org>; Wed, 09 May 2018 23:21:32 -0700 (PDT)
 From: Omar Sandoval <osandov@osandov.com>
 To: linux-btrfs@vger.kernel.org
 Cc: kernel-team@fb.com, Chris Mason <clm@fb.com>,
         Josef Bacik <josef@toxicpanda.com>
-Subject: [PATCH 05/10] Btrfs: don't release reserve or decrement orphan count if orphan item already existed
-Date: Wed,  9 May 2018 23:21:06 -0700
-Message-Id: <ea8803dda4166f74f674385d81f96c6b0e8256f5.1525932796.git.osandov@fb.com>
+Subject: [PATCH 06/10] Btrfs: don't return ino if inode item removal fails
+Date: Wed,  9 May 2018 23:21:07 -0700
+Message-Id: <62232de691b62b5eaf6f6b4912848e1e7bf65ebd.1525932796.git.osandov@fb.com>
 In-Reply-To: <cover.1525932796.git.osandov@fb.com>
 References: <cover.1525932796.git.osandov@fb.com>
 In-Reply-To: <cover.1525932796.git.osandov@fb.com>
@@ -22,50 +22,61 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Omar Sandoval <osandov@fb.com>
 
-Currently, if btrfs_insert_orphan_item() fails, we release the reserved
-space and decrement root->orphan_inodes. However, we also ignore -EEXIST
-errors, so we still want the space reservation for when we delete the
-item, and we still need to count the orphan because we're still going to
-decrement root->orphan_inodes from btrfs_orphan_del() later.
+In btrfs_evict_inode(), if btrfs_truncate_inode_items() fails, the inode
+item will still be in the tree but we still return the ino to the ino
+cache. That will blow up later when someone tries to allocate that ino,
+so don't return it to the cache.
 
-Fixes: 4ef31a45a009 ("Btrfs: fix the error handling wrt orphan items")
+Fixes: 581bb050941b ("Btrfs: Cache free inode numbers in memory")
 Signed-off-by: Omar Sandoval <osandov@fb.com>
 ---
- fs/btrfs/inode.c | 13 +++++--------
- 1 file changed, 5 insertions(+), 8 deletions(-)
+ fs/btrfs/inode.c | 25 +++++++++++++------------
+ 1 file changed, 13 insertions(+), 12 deletions(-)
 
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 1460823951d7..e77df96de642 100644
+index e77df96de642..9a6a4e626e01 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -3408,7 +3408,7 @@ int btrfs_orphan_add(struct btrfs_trans_handle *trans,
- 	/* insert an orphan item to track this unlinked file */
- 	if (insert) {
- 		ret = btrfs_insert_orphan_item(trans, root, btrfs_ino(inode));
--		if (ret) {
-+		if (ret && ret != -EEXIST) {
- 			if (reserve) {
- 				clear_bit(BTRFS_INODE_ORPHAN_META_RESERVED,
- 					  &inode->runtime_flags);
-@@ -3420,14 +3420,11 @@ int btrfs_orphan_add(struct btrfs_trans_handle *trans,
- 			 * decrease ->orphan_inodes after everything is done.
- 			 */
- 			atomic_dec(&root->orphan_inodes);
--			if (ret != -EEXIST) {
--				clear_bit(BTRFS_INODE_HAS_ORPHAN_ITEM,
--					  &inode->runtime_flags);
--				btrfs_abort_transaction(trans, ret);
--				return ret;
--			}
-+			clear_bit(BTRFS_INODE_HAS_ORPHAN_ITEM,
-+				  &inode->runtime_flags);
-+			btrfs_abort_transaction(trans, ret);
-+			return ret;
- 		}
--		ret = 0;
+@@ -5368,13 +5368,18 @@ void btrfs_evict_inode(struct inode *inode)
+ 		trans->block_rsv = rsv;
+ 
+ 		ret = btrfs_truncate_inode_items(trans, root, inode, 0, 0);
+-		if (ret != -ENOSPC && ret != -EAGAIN)
++		if (ret) {
++			trans->block_rsv = &fs_info->trans_block_rsv;
++			btrfs_end_transaction(trans);
++			btrfs_btree_balance_dirty(fs_info);
++			if (ret != -ENOSPC && ret != -EAGAIN) {
++				btrfs_orphan_del(NULL, BTRFS_I(inode));
++				btrfs_free_block_rsv(fs_info, rsv);
++				goto no_delete;
++			}
++		} else {
+ 			break;
+-
+-		trans->block_rsv = &fs_info->trans_block_rsv;
+-		btrfs_end_transaction(trans);
+-		trans = NULL;
+-		btrfs_btree_balance_dirty(fs_info);
++		}
  	}
  
- 	return 0;
+ 	btrfs_free_block_rsv(fs_info, rsv);
+@@ -5383,12 +5388,8 @@ void btrfs_evict_inode(struct inode *inode)
+ 	 * Errors here aren't a big deal, it just means we leave orphan items
+ 	 * in the tree.  They will be cleaned up on the next mount.
+ 	 */
+-	if (ret == 0) {
+-		trans->block_rsv = root->orphan_block_rsv;
+-		btrfs_orphan_del(trans, BTRFS_I(inode));
+-	} else {
+-		btrfs_orphan_del(NULL, BTRFS_I(inode));
+-	}
++	trans->block_rsv = root->orphan_block_rsv;
++	btrfs_orphan_del(trans, BTRFS_I(inode));
+ 
+ 	trans->block_rsv = &fs_info->trans_block_rsv;
+ 	if (!(root == fs_info->tree_root ||
 -- 
 2.17.0
 

@@ -1,96 +1,141 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.20]:36151 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1756268AbeEJBnY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 9 May 2018 21:43:24 -0400
-Subject: Re: [PATCH 1/2] btrfs-progs: check: Make btrfs check return error for
- qgroup mismatch
-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-References: <20180430061700.18498-1-wqu@suse.com>
- <20180508174513.GO6649@twin.jikos.cz>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <d28e1cb9-7610-89ff-4980-34a969fbe779@gmx.com>
-Date: Thu, 10 May 2018 09:43:09 +0800
+Received: from mail-pl0-f66.google.com ([209.85.160.66]:45902 "EHLO
+        mail-pl0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753901AbeEJExF (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 10 May 2018 00:53:05 -0400
+Received: by mail-pl0-f66.google.com with SMTP id bi12-v6so565715plb.12
+        for <linux-btrfs@vger.kernel.org>; Wed, 09 May 2018 21:53:05 -0700 (PDT)
+Date: Wed, 9 May 2018 21:53:03 -0700
+From: Omar Sandoval <osandov@osandov.com>
+To: robbieko <robbieko@synology.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: fix invalid memory access with journal_info
+Message-ID: <20180510045303.GA14694@vader>
+References: <1525862125-15228-1-git-send-email-robbieko@synology.com>
 MIME-Version: 1.0
-In-Reply-To: <20180508174513.GO6649@twin.jikos.cz>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="nZLF66cdCAi75C7SHv47pVzRpk8L7OiCm"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1525862125-15228-1-git-send-email-robbieko@synology.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---nZLF66cdCAi75C7SHv47pVzRpk8L7OiCm
-Content-Type: multipart/mixed; boundary="t2P9q8oZtAKV0bv2w7e1aYP69sV6Faba9";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Message-ID: <d28e1cb9-7610-89ff-4980-34a969fbe779@gmx.com>
-Subject: Re: [PATCH 1/2] btrfs-progs: check: Make btrfs check return error for
- qgroup mismatch
-References: <20180430061700.18498-1-wqu@suse.com>
- <20180508174513.GO6649@twin.jikos.cz>
-In-Reply-To: <20180508174513.GO6649@twin.jikos.cz>
+On Wed, May 09, 2018 at 06:35:25PM +0800, robbieko wrote:
+> From: Robbie Ko <robbieko@synology.com>
+> 
+> When send process requires memory allocation, shrinker may be triggered
+> due to insufficient memory.
+> Then evict_inode gets called when inode is freed, and this function
+> may need to start transaction.
+> However, the journal_info is already points to BTRFS_SEND_TRANS_STUB, it
+> passed the if condition,
+> and the following use yields illegal memory access.
+> 
+>   if (current->journal_info) {
+>       WARN_ON(type & TRANS_EXTWRITERS);
+>       h = current->journal_info;
+>       refcount_inc(&h->use_count);
+>       WARN_ON(refcount_read(&h->use_count) > 2);
+>       h->orig_rsv = h->block_rsv;
+>       h->block_rsv = NULL;
+>       goto got_it;
+>   }
 
---t2P9q8oZtAKV0bv2w7e1aYP69sV6Faba9
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+start_transaction() has
 
+    ASSERT(current->journal_info != BTRFS_SEND_TRANS_STUB);
 
+Are you saying that's wrong? Are there other cases where the shrinker
+can end up starting a transaction?
 
-On 2018=E5=B9=B405=E6=9C=8809=E6=97=A5 01:45, David Sterba wrote:
-> On Mon, Apr 30, 2018 at 02:16:59PM +0800, Qu Wenruo wrote:
->> Current btrfs-check will check qgroup consistency, but even when it
->> finds something wrong, the return value is still 0.
->>
->> Fix it by allowing report_qgroups() to return int to indicate qgroup
->> mismatch, and also add extra logical to return no error if qgroup repa=
-ir
->> is successful.
->>
->> Without this patch, fstests can't detect qgroup corruption by its fsck=
+> Direct IO has a similar problem, journal_info will store btrfs_dio_data,
+> which will lead to illegal memory access.
 
->> alone.
->>
->> Signed-off-by: Qu Wenruo <wqu@suse.com>
->=20
-> Applied, thanks. Please send the 0/N (cover letter) mail even for
-> 2-patch series.
+I have patches getting rid of this for direct I/O here:
+https://github.com/osandov/linux/tree/btrfs-journal-info-abuse
 
-Any advice on the necessity of the cover letter?
+I originally did that for btrfs swapfile support, but if it actually
+fixes an existing bug it should be easy to get merged.
 
-Is cover letter highly recommended for any patches which have any
-dependency like the 2nd test case?
+> We fixed the problem by save the journal_info and restore afterwards.
+> 
+> CallTrace looks like this:
+>  BUG: unable to handle kernel NULL pointer dereference at 0000000000000021
+>  IP: [<ffffffffa086f2d4>] start_transaction+0x64/0x450 [btrfs]
+>  PGD 8fea4b067 PUD a33bea067 PMD 0
+>  Oops: 0000 [#1] SMP
+>  CPU: 3 PID: 12681 Comm: btrfs Tainted: P C O 3.10.102 #15266
+>  RIP: 0010:[<ffffffffa086f2d4>] start_transaction+0x64/0x450 [btrfs]
+>  Call Trace:
+>  [<ffffffffa087a838>] ? btrfs_evict_inode+0x3d8/0x580 [btrfs]
+>  [<ffffffff81115932>] ? evict+0xa2/0x1a0
+>  [<ffffffff81112888>] ? shrink_dentry_list+0x308/0x3d0
+>  [<ffffffff811137f3>] ? prune_dcache_sb+0x133/0x160
+>  [<ffffffff810fa51f>] ? prune_super+0xcf/0x1a0
+>  [<ffffffff810bf6bf>] ? shrink_slab+0x11f/0x1d0
+>  [<ffffffff810c19f2>] ? do_try_to_free_pages+0x452/0x560
+>  [<ffffffff810bf054>] ? throttle_direct_reclaim+0x74/0x240
+>  [<ffffffff810c1bae>] ? try_to_free_pages+0xae/0xc0
+>  [<ffffffff810ba16b>] ? __alloc_pages_nodemask+0x53b/0x9f0
+>  [<ffffffff810bc89c>] ? __do_page_cache_readahead+0xec/0x270
+>  [<ffffffff810bcb2b>] ? ondemand_readahead+0xbb/0x220
+>  [<ffffffffa08d7c43>] ? fill_read_buf+0x2b3/0x3a0 [btrfs]
+>  [<ffffffffa08dbf5e>] ? send_extent_data+0x10e/0x300 [btrfs]
+>  [<ffffffffa08dc34b>] ? process_extent+0x1fb/0x1310 [btrfs]
+>  [<ffffffffa08d8300>] ? iterate_dir_item.isra.28+0x1b0/0x250 [btrfs]
+>  [<ffffffffa08dd500>] ? send_set_xattr+0xa0/0xa0 [btrfs]
+>  [<ffffffffa08de565>] ? changed_cb+0xd5/0xc40 [btrfs]
+>  [<ffffffffa08df1c2>] ? full_send_tree+0xf2/0x1a0 [btrfs]
+>  [<ffffffffa08e022b>] ? btrfs_ioctl_send+0xfbb/0x1040 [btrfs]
+>  [<ffffffffa08a9864>] ? btrfs_ioctl+0x1084/0x32a0 [btrfs]
+> 
+> Signed-off-by: Robbie Ko <robbieko@synology.com>
+> ---
+>  fs/btrfs/inode.c | 12 ++++++++++++
+>  1 file changed, 12 insertions(+)
+> 
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index f534701..77aec8d 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -5295,6 +5295,7 @@ void btrfs_evict_inode(struct inode *inode)
+>  	int steal_from_global = 0;
+>  	u64 min_size;
+>  	int ret;
+> +	void *journal_info = NULL;
 
-Thanks,
-Qu
+This initialization isn't necessary.
 
+>  	trace_btrfs_inode_evict(inode);
+>  
+> @@ -5303,6 +5304,16 @@ void btrfs_evict_inode(struct inode *inode)
+>  		return;
+>  	}
+>  
+> +	/*
+> +	 * Send or Direct IO may store information in journal_info.
+> +	 * However, this function may use start_transaction and
+> +	 * start_transaction will use journal_info.
+> +	 * To avoid accessing invalid memory, we can save the journal_info
+> +	 * and restore it later.
+> +	 */
+> +	journal_info = current->journal_info;
+> +	current->journal_info = NULL;
+> +
+>  	min_size = btrfs_calc_trunc_metadata_size(fs_info, 1);
+>  
+>  	evict_inode_truncate_pages(inode);
+> @@ -5462,6 +5473,7 @@ void btrfs_evict_inode(struct inode *inode)
+>  no_delete:
+>  	btrfs_remove_delayed_node(BTRFS_I(inode));
+>  	clear_inode(inode);
+> +	current->journal_info = journal_info;
+>  }
+>  
+>  /*
+> -- 
+> 1.9.1
+> 
 > --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 > the body of a message to majordomo@vger.kernel.org
 > More majordomo info at  http://vger.kernel.org/majordomo-info.html
->=20
-
-
---t2P9q8oZtAKV0bv2w7e1aYP69sV6Faba9--
-
---nZLF66cdCAi75C7SHv47pVzRpk8L7OiCm
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlrzo60ACgkQwj2R86El
-/qjOyggAiFg70IoAGEqnSJRhBDv3j0stcJzmSAQv/2bH+C2G9s3jAn1X2DFZm1Rs
-m5M6F63Cjj/08tmxUlWmXy5D50htV/G7qbXvNE6xQQPlrpsejUSjvSKzbTh7Ke02
-bQQbJ4ExQk+MqXqPOakuTBb6JPFJUyrbr3qSPUHgGJpdFkq+faZQ6xboHqakeWmI
-Xuunk8iKYZg8MIkwonkmxQgO2pamNppTuTIoooDWCy1/m0UvLADJ+fxgNNK/8ZCD
-DyVixoGeHrmfc0spnoHT6OKmjk6ljffvHvskN/y2iwfM4HK0apDoImTkGhkK8qBD
-6L/wWKAzFFBj+oq4AUSFde1plrGSGQ==
-=asi9
------END PGP SIGNATURE-----
-
---nZLF66cdCAi75C7SHv47pVzRpk8L7OiCm--

@@ -1,20 +1,20 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:52137 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:53107 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1756671AbeEJILB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 10 May 2018 04:11:01 -0400
-Subject: Re: [PATCH 03/10] Btrfs: don't BUG_ON() in
- btrfs_truncate_inode_items()
+        id S1756732AbeEJIX4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 10 May 2018 04:23:56 -0400
+Subject: Re: [PATCH 05/10] Btrfs: don't release reserve or decrement orphan
+ count if orphan item already existed
 To: Omar Sandoval <osandov@osandov.com>, linux-btrfs@vger.kernel.org
 Cc: kernel-team@fb.com, Chris Mason <clm@fb.com>,
         Josef Bacik <josef@toxicpanda.com>
 References: <cover.1525932796.git.osandov@fb.com>
- <5f6e2fe358fea83f8995a1863d3da3908e5365ec.1525932796.git.osandov@fb.com>
+ <ea8803dda4166f74f674385d81f96c6b0e8256f5.1525932796.git.osandov@fb.com>
 From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <6b069ff7-73e5-3cf2-091f-92803e4021b2@suse.com>
-Date: Thu, 10 May 2018 11:10:58 +0300
+Message-ID: <5332f05d-9f18-8165-b115-d05eab36c156@suse.com>
+Date: Thu, 10 May 2018 11:23:54 +0300
 MIME-Version: 1.0
-In-Reply-To: <5f6e2fe358fea83f8995a1863d3da3908e5365ec.1525932796.git.osandov@fb.com>
+In-Reply-To: <ea8803dda4166f74f674385d81f96c6b0e8256f5.1525932796.git.osandov@fb.com>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -24,32 +24,51 @@ List-ID: <linux-btrfs.vger.kernel.org>
 On 10.05.2018 09:21, Omar Sandoval wrote:
 > From: Omar Sandoval <osandov@fb.com>
 > 
-> btrfs_free_extent() can fail because of ENOMEM. There's no reason to
-> panic here, we can just abort the transaction.
+> Currently, if btrfs_insert_orphan_item() fails, we release the reserved
+> space and decrement root->orphan_inodes. However, we also ignore -EEXIST
+> errors, so we still want the space reservation for when we delete the
+> item, and we still need to count the orphan because we're still going to
+> decrement root->orphan_inodes from btrfs_orphan_del() later.
 > 
-> Fixes: f4b9aa8d3b87 ("btrfs_truncate")
+> Fixes: 4ef31a45a009 ("Btrfs: fix the error handling wrt orphan items")
 > Signed-off-by: Omar Sandoval <osandov@fb.com>
 
 Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 
 > ---
->  fs/btrfs/inode.c | 5 ++++-
->  1 file changed, 4 insertions(+), 1 deletion(-)
+>  fs/btrfs/inode.c | 13 +++++--------
+>  1 file changed, 5 insertions(+), 8 deletions(-)
 > 
 > diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 79d1da01a90d..bd4975476f0e 100644
+> index 1460823951d7..e77df96de642 100644
 > --- a/fs/btrfs/inode.c
 > +++ b/fs/btrfs/inode.c
-> @@ -4655,7 +4655,10 @@ int btrfs_truncate_inode_items(struct btrfs_trans_handle *trans,
->  						extent_num_bytes, 0,
->  						btrfs_header_owner(leaf),
->  						ino, extent_offset);
-> -			BUG_ON(ret);
-> +			if (ret) {
-> +				btrfs_abort_transaction(trans, ret);
-> +				break;
-> +			}
->  			if (btrfs_should_throttle_delayed_refs(trans, fs_info))
->  				btrfs_async_run_delayed_refs(fs_info,
->  					trans->delayed_ref_updates * 2,
+> @@ -3408,7 +3408,7 @@ int btrfs_orphan_add(struct btrfs_trans_handle *trans,
+>  	/* insert an orphan item to track this unlinked file */
+>  	if (insert) {
+>  		ret = btrfs_insert_orphan_item(trans, root, btrfs_ino(inode));
+> -		if (ret) {
+> +		if (ret && ret != -EEXIST) {
+>  			if (reserve) {
+>  				clear_bit(BTRFS_INODE_ORPHAN_META_RESERVED,
+>  					  &inode->runtime_flags);
+> @@ -3420,14 +3420,11 @@ int btrfs_orphan_add(struct btrfs_trans_handle *trans,
+>  			 * decrease ->orphan_inodes after everything is done.
+>  			 */
+>  			atomic_dec(&root->orphan_inodes);
+> -			if (ret != -EEXIST) {
+> -				clear_bit(BTRFS_INODE_HAS_ORPHAN_ITEM,
+> -					  &inode->runtime_flags);
+> -				btrfs_abort_transaction(trans, ret);
+> -				return ret;
+> -			}
+> +			clear_bit(BTRFS_INODE_HAS_ORPHAN_ITEM,
+> +				  &inode->runtime_flags);
+> +			btrfs_abort_transaction(trans, ret);
+> +			return ret;
+>  		}
+> -		ret = 0;
+>  	}
+>  
+>  	return 0;
 > 

@@ -1,94 +1,96 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:46655 "EHLO mx2.suse.de"
+Received: from mout.gmx.net ([212.227.17.20]:36151 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S965232AbeEIQSO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 9 May 2018 12:18:14 -0400
-Subject: Re: [PATCH v2 1/2] Btrfs: fiemap: pass correct bytenr when
- fm_extent_count is zero
-To: robbieko <robbieko@synology.com>, linux-btrfs@vger.kernel.org
-References: <1525682525-1424-1-git-send-email-robbieko@synology.com>
- <1525682525-1424-2-git-send-email-robbieko@synology.com>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <88269188-96e7-8891-698b-f757f56f5635@suse.com>
-Date: Wed, 9 May 2018 19:18:09 +0300
+        id S1756268AbeEJBnY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 9 May 2018 21:43:24 -0400
+Subject: Re: [PATCH 1/2] btrfs-progs: check: Make btrfs check return error for
+ qgroup mismatch
+To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+References: <20180430061700.18498-1-wqu@suse.com>
+ <20180508174513.GO6649@twin.jikos.cz>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <d28e1cb9-7610-89ff-4980-34a969fbe779@gmx.com>
+Date: Thu, 10 May 2018 09:43:09 +0800
 MIME-Version: 1.0
-In-Reply-To: <1525682525-1424-2-git-send-email-robbieko@synology.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <20180508174513.GO6649@twin.jikos.cz>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="nZLF66cdCAi75C7SHv47pVzRpk8L7OiCm"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--nZLF66cdCAi75C7SHv47pVzRpk8L7OiCm
+Content-Type: multipart/mixed; boundary="t2P9q8oZtAKV0bv2w7e1aYP69sV6Faba9";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Message-ID: <d28e1cb9-7610-89ff-4980-34a969fbe779@gmx.com>
+Subject: Re: [PATCH 1/2] btrfs-progs: check: Make btrfs check return error for
+ qgroup mismatch
+References: <20180430061700.18498-1-wqu@suse.com>
+ <20180508174513.GO6649@twin.jikos.cz>
+In-Reply-To: <20180508174513.GO6649@twin.jikos.cz>
+
+--t2P9q8oZtAKV0bv2w7e1aYP69sV6Faba9
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
 
-On  7.05.2018 11:42, robbieko wrote:
-> From: Robbie Ko <robbieko@synology.com>
-> 
-> [BUG]
-> fm_mapped_extents is not correct when fm_extent_count is 0
-> Like:
->    # mount /dev/vdb5 /mnt/btrfs
->    # dd if=/dev/zero bs=16K count=4 oflag=dsync of=/mnt/btrfs/file
->    # xfs_io -c "fiemap -v" /mnt/btrfs/file
->    /mnt/btrfs/file:
->    EXT: FILE-OFFSET      BLOCK-RANGE      TOTAL FLAGS
->      0: [0..127]:        25088..25215       128   0x1
-> 
-> When user space wants to get the number of file extents,
-> set fm_extent_count to 0 to run fiemap and then read fm_mapped_extents.
- "it sets fm_extent_count to 0.... and then reads fm_mapped_extents"
 
-> 
-> In the above example, fiemap will return with fm_mapped_extents set to 4,
-> but it should be 1 since there's only one entry in the output.
-> 
-> [REASON]
-> The problem seems to be that disko is only set if
-> fieinfo->fi_extents_max is set. And this member is initialized, in the
-> generic ioctl_fiemap function, to the value of used-passed
-                                                  ^^^^
-                                                  user-passed
-> fm_extent_count. So when the user passes 0 then fi_extent_max is also
-> set to zero and this causes btrfs to not initialize disko at all.
-> Eventually this leads emit_fiemap_extent being called with a bogus
-> 'phys' argument preventing proper fiemap entries merging.
-> 
-> [FIX]
-> Move the disko initialization earlier in extent_fiemap making it
-> independent of user-passed arguments, allowing emit_fiemap_extent to
-> properly handle consecutive extent entries.
-> 
-> Signed-off-by: Robbie Ko <robbieko@synology.com>
-Only a couple of minor nits w.r.t the changelog but I guess David can
-fix this on the go. In any case :
+On 2018=E5=B9=B405=E6=9C=8809=E6=97=A5 01:45, David Sterba wrote:
+> On Mon, Apr 30, 2018 at 02:16:59PM +0800, Qu Wenruo wrote:
+>> Current btrfs-check will check qgroup consistency, but even when it
+>> finds something wrong, the return value is still 0.
+>>
+>> Fix it by allowing report_qgroups() to return int to indicate qgroup
+>> mismatch, and also add extra logical to return no error if qgroup repa=
+ir
+>> is successful.
+>>
+>> Without this patch, fstests can't detect qgroup corruption by its fsck=
 
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+>> alone.
+>>
+>> Signed-off-by: Qu Wenruo <wqu@suse.com>
+>=20
+> Applied, thanks. Please send the 0/N (cover letter) mail even for
+> 2-patch series.
 
-> ---
-> V2:
-> fix comments.
-> 
->  fs/btrfs/extent_io.c | 4 +---
->  1 file changed, 1 insertion(+), 3 deletions(-)
-> 
-> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-> index 012d638..066b6df 100644
-> --- a/fs/btrfs/extent_io.c
-> +++ b/fs/btrfs/extent_io.c
-> @@ -4567,7 +4567,7 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
->  			offset_in_extent = em_start - em->start;
->  		em_end = extent_map_end(em);
->  		em_len = em_end - em_start;
-> -		disko = 0;
-> +		disko = em->block_start + offset_in_extent;
->  		flags = 0;
->  
->  		/*
-> @@ -4590,8 +4590,6 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
->  			u64 bytenr = em->block_start -
->  				(em->start - em->orig_start);
->  
-> -			disko = em->block_start + offset_in_extent;
-> -
->  			/*
->  			 * As btrfs supports shared space, this information
->  			 * can be exported to userspace tools via
-> 
+Any advice on the necessity of the cover letter?
+
+Is cover letter highly recommended for any patches which have any
+dependency like the 2nd test case?
+
+Thanks,
+Qu
+
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>=20
+
+
+--t2P9q8oZtAKV0bv2w7e1aYP69sV6Faba9--
+
+--nZLF66cdCAi75C7SHv47pVzRpk8L7OiCm
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlrzo60ACgkQwj2R86El
+/qjOyggAiFg70IoAGEqnSJRhBDv3j0stcJzmSAQv/2bH+C2G9s3jAn1X2DFZm1Rs
+m5M6F63Cjj/08tmxUlWmXy5D50htV/G7qbXvNE6xQQPlrpsejUSjvSKzbTh7Ke02
+bQQbJ4ExQk+MqXqPOakuTBb6JPFJUyrbr3qSPUHgGJpdFkq+faZQ6xboHqakeWmI
+Xuunk8iKYZg8MIkwonkmxQgO2pamNppTuTIoooDWCy1/m0UvLADJ+fxgNNK/8ZCD
+DyVixoGeHrmfc0spnoHT6OKmjk6ljffvHvskN/y2iwfM4HK0apDoImTkGhkK8qBD
+6L/wWKAzFFBj+oq4AUSFde1plrGSGQ==
+=asi9
+-----END PGP SIGNATURE-----
+
+--nZLF66cdCAi75C7SHv47pVzRpk8L7OiCm--

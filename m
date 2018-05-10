@@ -1,39 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:50736 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:52502 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751936AbeEJTtm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 10 May 2018 15:49:42 -0400
+        id S1750714AbeEJXEQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 10 May 2018 19:04:16 -0400
 Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 78B67AF31
-        for <linux-btrfs@vger.kernel.org>; Thu, 10 May 2018 19:49:41 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 42BDDACA3
+        for <linux-btrfs@vger.kernel.org>; Thu, 10 May 2018 23:04:15 +0000 (UTC)
 Subject: Re: [PATCH 1/3] btrfs: qgroups, fix rescan worker running races
 To: dsterba@suse.com, linux-btrfs@vger.kernel.org
 References: <20180502211156.9460-1-jeffm@suse.com>
  <20180502211156.9460-2-jeffm@suse.com>
 From: Jeff Mahoney <jeffm@suse.com>
-Message-ID: <5f1d1cc3-27a6-5ad8-d685-d20f8d5fd738@suse.com>
-Date: Thu, 10 May 2018 15:49:38 -0400
+Message-ID: <a3bb4d77-3783-219a-fad2-3c31ec0c8b38@suse.com>
+Date: Thu, 10 May 2018 19:04:12 -0400
 MIME-Version: 1.0
 In-Reply-To: <20180502211156.9460-2-jeffm@suse.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="icEbhbawuldbIs9yj1goUPOXzBN2GHWkL"
+ boundary="EPrW4CyC8Kb5mYbaQiQA9PBRu1sFvK6Mk"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---icEbhbawuldbIs9yj1goUPOXzBN2GHWkL
-Content-Type: multipart/mixed; boundary="s5yOcRyxMuNFBNHBJzh3YloQLi5SK2C3u";
+--EPrW4CyC8Kb5mYbaQiQA9PBRu1sFvK6Mk
+Content-Type: multipart/mixed; boundary="gwKQhz7crP900ruAy9EGIPAF8oYk8au3L";
  protected-headers="v1"
 From: Jeff Mahoney <jeffm@suse.com>
 To: dsterba@suse.com, linux-btrfs@vger.kernel.org
-Message-ID: <5f1d1cc3-27a6-5ad8-d685-d20f8d5fd738@suse.com>
+Message-ID: <a3bb4d77-3783-219a-fad2-3c31ec0c8b38@suse.com>
 Subject: Re: [PATCH 1/3] btrfs: qgroups, fix rescan worker running races
 References: <20180502211156.9460-1-jeffm@suse.com>
  <20180502211156.9460-2-jeffm@suse.com>
 In-Reply-To: <20180502211156.9460-2-jeffm@suse.com>
 
---s5yOcRyxMuNFBNHBJzh3YloQLi5SK2C3u
+--gwKQhz7crP900ruAy9EGIPAF8oYk8au3L
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
@@ -213,7 +213,15 @@ o, u64 progress_objectid,
 > +		ret =3D -EINPROGRESS;
 > +		goto err;
 >  	}
-> =20
+
+Without checking for these flags when deciding whether we want to do
+accounting, we'll end up doing the accounting until we start the rescan
+thread.  This may not matter normally, but I'm working on a patch as a
+workaround to 824d8dff8846533c9f1f9b1eabb0c03959e989ca doing all qgroup
+accounting for entire trees in single transactions.
+
+-Jeff
+
 >  	memset(&fs_info->qgroup_rescan_progress, 0,
 >  		sizeof(fs_info->qgroup_rescan_progress));
 >  	fs_info->qgroup_rescan_progress.objectid =3D progress_objectid;
@@ -270,12 +278,6 @@ ed, thus
 > +void btrfs_qgroup_rescan_resume(struct btrfs_fs_info *fs_info)
 >  {
 >  	if (fs_info->qgroup_flags & BTRFS_QGROUP_STATUS_FLAG_RESCAN)
-
-This check will never be true since the worker is now responsible for
-setting it.
-
--Jeff
-
 > -		btrfs_queue_work(fs_info->qgroup_rescan_workers,
 > -				 &fs_info->qgroup_rescan_work);
 > +		queue_rescan_worker(fs_info);
@@ -290,28 +292,28 @@ Jeff Mahoney
 SUSE Labs
 
 
---s5yOcRyxMuNFBNHBJzh3YloQLi5SK2C3u--
+--gwKQhz7crP900ruAy9EGIPAF8oYk8au3L--
 
---icEbhbawuldbIs9yj1goUPOXzBN2GHWkL
+--EPrW4CyC8Kb5mYbaQiQA9PBRu1sFvK6Mk
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQIzBAEBCAAdFiEE8wzgbmZ74SnKPwtDHntLYyF55bIFAlr0olMACgkQHntLYyF5
-5bJNOBAArqcpORcn+VaHX0aLrRCU+I7TeaM9GfJ0OsNDttGFH/OlxEqT9bspKp9k
-jcQUTzd2h/AxOoME9JbWZdLYbJlx7pKN5wNh25HOBKm0f1um5Zhao6uJ4NHWqJ+r
-h5tguokAr1dLoF3t8MujzIvdtYlkmfV8MU5Isx42VSzNtmVXn3wqH2CZWc3n/LGb
-GA9kWtaUX5MwEcQbhporXtunAowTbRVmDwTqiZFg490wg7vmAa/aOWrDY3ft+rAU
-EMJkjF/2k2uHZv92KSOvxwF6VhlXzbDW6Ky4eJy29LAbIt4bSXgEzbblCvkayhjs
-HtYmA4yqVVQdJMh0yE0ddCn970ltl8K/dlyslpQZwkK5R0vACfWnzhN5buqD2L9B
-s0X9OCnwWV5JzyC8EpxPNorGJQzdTBTH7PqQ57crojhdAeCz0LHaGDQ7fFg1V0km
-ufFzS8U5P23T53TumxBNvXBlUbb9hvgH9pLY8nIAusD6u/O2GdA0baLc6F831uKP
-NaPxEr286e/8lmk8DoTU7dd/T+dprebsG8tj+0Lfjlu2bGitlFVs85PzRkgjSb2D
-gL1z/N/DG9cC5UH17rksWi0vsnUAkT8Z92FWKsFlTcZABfp62anqNJlk7g7RbOZ7
-7vvCcBzQFtQZkFQHwA8IgpUaZv967pTnvgNoEQM55POikoXRMKc=
-=qCds
+iQIzBAEBCAAdFiEE8wzgbmZ74SnKPwtDHntLYyF55bIFAlr0z+wACgkQHntLYyF5
+5bKv4hAAoHhJV5R6VdDURV4uT6pbS7zH+MigCfNv82ZFm13lJ5RhOey6rirCJ5zE
+V8Lm2VvxNtmRI3dBYQd7OPsGiAx4/8Vn2H5xL3S0n0xIiiXx6wK5iSk2q20wRWQH
+VcN+H4gf7CQ3rW6k0HVZMONdBqMkqDYwZfC6PlD+4kCetzKTq1ih59VlcN6Td2T4
+sy1EIdZxmUCiaBncfWQOIMubB2tGkfv6jNlxlT7iT5J3/TdsIhi8GvfTvGK6UQrb
+sr6KAaWXSHruU2RWUb1nM59GqyojqaIS2YLBTFT3ccjMOYoMI+ikk0bdWtFZUK0U
+WjuYzDK+uWQJ3XPLegPYdJwGNI9YIEG5KcX2I1M5OYHTI9VWDCaCp9DPmBUKD1qZ
+bF4+R3IUI0vBbRq//AWLI4uriVI2VOQRxn+55EU82Li31iRkiK66bRUOohL7cYJs
+aKVQp7hLfuOZ/LmHDLesxkDWfBTafirEkl3Mep4NfvETeCg7zY5PcMXVY1QP+vyI
+7vV3ptONqv+rWYiibo6HP1HaQjrczmiqKwct0T20mn32oTqCxcgjljH7MDgO05dk
+u4+2YtjiZiYL+N2HLhjCBEILOrC0OUDv9isns7ZRf99yyW0hgRDxrrXfA8C6yd0C
+FsQ0OsekmgUIW+NW+mb2S4afMx3fy+ofA05x5ZdUdVtND7r/+t8=
+=uuxJ
 -----END PGP SIGNATURE-----
 
---icEbhbawuldbIs9yj1goUPOXzBN2GHWkL--
+--EPrW4CyC8Kb5mYbaQiQA9PBRu1sFvK6Mk--

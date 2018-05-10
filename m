@@ -1,141 +1,179 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pl0-f66.google.com ([209.85.160.66]:45902 "EHLO
-        mail-pl0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753901AbeEJExF (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 10 May 2018 00:53:05 -0400
-Received: by mail-pl0-f66.google.com with SMTP id bi12-v6so565715plb.12
-        for <linux-btrfs@vger.kernel.org>; Wed, 09 May 2018 21:53:05 -0700 (PDT)
-Date: Wed, 9 May 2018 21:53:03 -0700
-From: Omar Sandoval <osandov@osandov.com>
-To: robbieko <robbieko@synology.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: fix invalid memory access with journal_info
-Message-ID: <20180510045303.GA14694@vader>
-References: <1525862125-15228-1-git-send-email-robbieko@synology.com>
+Received: from synology.com ([59.124.61.242]:35343 "EHLO synology.com"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1750950AbeEJFzr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 10 May 2018 01:55:47 -0400
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1525862125-15228-1-git-send-email-robbieko@synology.com>
+Content-Type: text/plain; charset=UTF-8;
+ format=flowed
+Date: Thu, 10 May 2018 13:55:45 +0800
+From: robbieko <robbieko@synology.com>
+To: Omar Sandoval <osandov@osandov.com>
+Cc: linux-btrfs@vger.kernel.org, linux-btrfs-owner@vger.kernel.org
+Subject: Re: [PATCH] btrfs: fix invalid memory access with journal_info
+In-Reply-To: <20180510045303.GA14694@vader>
+References: <1525862125-15228-1-git-send-email-robbieko@synology.com>
+ <20180510045303.GA14694@vader>
+Message-ID: <e39bece9d4b676280c8d2fda12ba33fa@synology.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, May 09, 2018 at 06:35:25PM +0800, robbieko wrote:
-> From: Robbie Ko <robbieko@synology.com>
+Omar Sandoval 於 2018-05-10 12:53 寫到:
+> On Wed, May 09, 2018 at 06:35:25PM +0800, robbieko wrote:
+>> From: Robbie Ko <robbieko@synology.com>
+>> 
+>> When send process requires memory allocation, shrinker may be 
+>> triggered
+>> due to insufficient memory.
+>> Then evict_inode gets called when inode is freed, and this function
+>> may need to start transaction.
+>> However, the journal_info is already points to BTRFS_SEND_TRANS_STUB, 
+>> it
+>> passed the if condition,
+>> and the following use yields illegal memory access.
+>> 
+>>   if (current->journal_info) {
+>>       WARN_ON(type & TRANS_EXTWRITERS);
+>>       h = current->journal_info;
+>>       refcount_inc(&h->use_count);
+>>       WARN_ON(refcount_read(&h->use_count) > 2);
+>>       h->orig_rsv = h->block_rsv;
+>>       h->block_rsv = NULL;
+>>       goto got_it;
+>>   }
 > 
-> When send process requires memory allocation, shrinker may be triggered
-> due to insufficient memory.
-> Then evict_inode gets called when inode is freed, and this function
-> may need to start transaction.
-> However, the journal_info is already points to BTRFS_SEND_TRANS_STUB, it
-> passed the if condition,
-> and the following use yields illegal memory access.
+> start_transaction() has
 > 
->   if (current->journal_info) {
->       WARN_ON(type & TRANS_EXTWRITERS);
->       h = current->journal_info;
->       refcount_inc(&h->use_count);
->       WARN_ON(refcount_read(&h->use_count) > 2);
->       h->orig_rsv = h->block_rsv;
->       h->block_rsv = NULL;
->       goto got_it;
->   }
+>     ASSERT(current->journal_info != BTRFS_SEND_TRANS_STUB);
 
-start_transaction() has
+I didn't turn on the configuration CONFIG_BTRFS_ASSERT, so this ASSERT 
+has no effect
 
-    ASSERT(current->journal_info != BTRFS_SEND_TRANS_STUB);
+4506 #ifdef CONFIG_BTRFS_ASSERT
+4507
+4508 static inline void assfail(char *expr, char *file, int line)
+4509 {
+4510     pr_err("BTRFS: assertion failed: %s, file: %s, line: %d",
+4511            expr, file, line);
+4512     BUG();
+4513 }
+4514
+4515 #define ASSERT(expr)    \
+4516     (likely(expr) ? (void)0 : assfail(#expr, __FILE__, __LINE__))
+4517 #else
+4518 #define ASSERT(expr)    ((void)0)
+4519 #endif
 
-Are you saying that's wrong? Are there other cases where the shrinker
-can end up starting a transaction?
 
-> Direct IO has a similar problem, journal_info will store btrfs_dio_data,
-> which will lead to illegal memory access.
-
-I have patches getting rid of this for direct I/O here:
-https://github.com/osandov/linux/tree/btrfs-journal-info-abuse
-
-I originally did that for btrfs swapfile support, but if it actually
-fixes an existing bug it should be easy to get merged.
-
-> We fixed the problem by save the journal_info and restore afterwards.
 > 
-> CallTrace looks like this:
->  BUG: unable to handle kernel NULL pointer dereference at 0000000000000021
->  IP: [<ffffffffa086f2d4>] start_transaction+0x64/0x450 [btrfs]
->  PGD 8fea4b067 PUD a33bea067 PMD 0
->  Oops: 0000 [#1] SMP
->  CPU: 3 PID: 12681 Comm: btrfs Tainted: P C O 3.10.102 #15266
->  RIP: 0010:[<ffffffffa086f2d4>] start_transaction+0x64/0x450 [btrfs]
->  Call Trace:
->  [<ffffffffa087a838>] ? btrfs_evict_inode+0x3d8/0x580 [btrfs]
->  [<ffffffff81115932>] ? evict+0xa2/0x1a0
->  [<ffffffff81112888>] ? shrink_dentry_list+0x308/0x3d0
->  [<ffffffff811137f3>] ? prune_dcache_sb+0x133/0x160
->  [<ffffffff810fa51f>] ? prune_super+0xcf/0x1a0
->  [<ffffffff810bf6bf>] ? shrink_slab+0x11f/0x1d0
->  [<ffffffff810c19f2>] ? do_try_to_free_pages+0x452/0x560
->  [<ffffffff810bf054>] ? throttle_direct_reclaim+0x74/0x240
->  [<ffffffff810c1bae>] ? try_to_free_pages+0xae/0xc0
->  [<ffffffff810ba16b>] ? __alloc_pages_nodemask+0x53b/0x9f0
->  [<ffffffff810bc89c>] ? __do_page_cache_readahead+0xec/0x270
->  [<ffffffff810bcb2b>] ? ondemand_readahead+0xbb/0x220
->  [<ffffffffa08d7c43>] ? fill_read_buf+0x2b3/0x3a0 [btrfs]
->  [<ffffffffa08dbf5e>] ? send_extent_data+0x10e/0x300 [btrfs]
->  [<ffffffffa08dc34b>] ? process_extent+0x1fb/0x1310 [btrfs]
->  [<ffffffffa08d8300>] ? iterate_dir_item.isra.28+0x1b0/0x250 [btrfs]
->  [<ffffffffa08dd500>] ? send_set_xattr+0xa0/0xa0 [btrfs]
->  [<ffffffffa08de565>] ? changed_cb+0xd5/0xc40 [btrfs]
->  [<ffffffffa08df1c2>] ? full_send_tree+0xf2/0x1a0 [btrfs]
->  [<ffffffffa08e022b>] ? btrfs_ioctl_send+0xfbb/0x1040 [btrfs]
->  [<ffffffffa08a9864>] ? btrfs_ioctl+0x1084/0x32a0 [btrfs]
-> 
-> Signed-off-by: Robbie Ko <robbieko@synology.com>
-> ---
->  fs/btrfs/inode.c | 12 ++++++++++++
->  1 file changed, 12 insertions(+)
-> 
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index f534701..77aec8d 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -5295,6 +5295,7 @@ void btrfs_evict_inode(struct inode *inode)
->  	int steal_from_global = 0;
->  	u64 min_size;
->  	int ret;
-> +	void *journal_info = NULL;
+> Are you saying that's wrong? Are there other cases where the shrinker
+> can end up starting a transaction?
 
-This initialization isn't necessary.
+I'm not sure if there are other cases where shrinker might trigger 
+start_transaction.
+But I confirm that btrfs_evict_inode triggers strat_transaction
 
->  	trace_btrfs_inode_evict(inode);
->  
-> @@ -5303,6 +5304,16 @@ void btrfs_evict_inode(struct inode *inode)
->  		return;
->  	}
->  
-> +	/*
-> +	 * Send or Direct IO may store information in journal_info.
-> +	 * However, this function may use start_transaction and
-> +	 * start_transaction will use journal_info.
-> +	 * To avoid accessing invalid memory, we can save the journal_info
-> +	 * and restore it later.
-> +	 */
-> +	journal_info = current->journal_info;
-> +	current->journal_info = NULL;
-> +
->  	min_size = btrfs_calc_trunc_metadata_size(fs_info, 1);
->  
->  	evict_inode_truncate_pages(inode);
-> @@ -5462,6 +5473,7 @@ void btrfs_evict_inode(struct inode *inode)
->  no_delete:
->  	btrfs_remove_delayed_node(BTRFS_I(inode));
->  	clear_inode(inode);
-> +	current->journal_info = journal_info;
->  }
->  
->  /*
-> -- 
-> 1.9.1
+
+
 > 
+>> Direct IO has a similar problem, journal_info will store 
+>> btrfs_dio_data,
+>> which will lead to illegal memory access.
+> 
+> I have patches getting rid of this for direct I/O here:
+> https://github.com/osandov/linux/tree/btrfs-journal-info-abuse
+> 
+> I originally did that for btrfs swapfile support, but if it actually
+> fixes an existing bug it should be easy to get merged.
+> 
+>> We fixed the problem by save the journal_info and restore afterwards.
+>> 
+>> CallTrace looks like this:
+>>  BUG: unable to handle kernel NULL pointer dereference at 
+>> 0000000000000021
+>>  IP: [<ffffffffa086f2d4>] start_transaction+0x64/0x450 [btrfs]
+>>  PGD 8fea4b067 PUD a33bea067 PMD 0
+>>  Oops: 0000 [#1] SMP
+>>  CPU: 3 PID: 12681 Comm: btrfs Tainted: P C O 3.10.102 #15266
+>>  RIP: 0010:[<ffffffffa086f2d4>] start_transaction+0x64/0x450 [btrfs]
+>>  Call Trace:
+>>  [<ffffffffa087a838>] ? btrfs_evict_inode+0x3d8/0x580 [btrfs]
+>>  [<ffffffff81115932>] ? evict+0xa2/0x1a0
+>>  [<ffffffff81112888>] ? shrink_dentry_list+0x308/0x3d0
+>>  [<ffffffff811137f3>] ? prune_dcache_sb+0x133/0x160
+>>  [<ffffffff810fa51f>] ? prune_super+0xcf/0x1a0
+>>  [<ffffffff810bf6bf>] ? shrink_slab+0x11f/0x1d0
+>>  [<ffffffff810c19f2>] ? do_try_to_free_pages+0x452/0x560
+>>  [<ffffffff810bf054>] ? throttle_direct_reclaim+0x74/0x240
+>>  [<ffffffff810c1bae>] ? try_to_free_pages+0xae/0xc0
+>>  [<ffffffff810ba16b>] ? __alloc_pages_nodemask+0x53b/0x9f0
+>>  [<ffffffff810bc89c>] ? __do_page_cache_readahead+0xec/0x270
+>>  [<ffffffff810bcb2b>] ? ondemand_readahead+0xbb/0x220
+>>  [<ffffffffa08d7c43>] ? fill_read_buf+0x2b3/0x3a0 [btrfs]
+>>  [<ffffffffa08dbf5e>] ? send_extent_data+0x10e/0x300 [btrfs]
+>>  [<ffffffffa08dc34b>] ? process_extent+0x1fb/0x1310 [btrfs]
+>>  [<ffffffffa08d8300>] ? iterate_dir_item.isra.28+0x1b0/0x250 [btrfs]
+>>  [<ffffffffa08dd500>] ? send_set_xattr+0xa0/0xa0 [btrfs]
+>>  [<ffffffffa08de565>] ? changed_cb+0xd5/0xc40 [btrfs]
+>>  [<ffffffffa08df1c2>] ? full_send_tree+0xf2/0x1a0 [btrfs]
+>>  [<ffffffffa08e022b>] ? btrfs_ioctl_send+0xfbb/0x1040 [btrfs]
+>>  [<ffffffffa08a9864>] ? btrfs_ioctl+0x1084/0x32a0 [btrfs]
+>> 
+>> Signed-off-by: Robbie Ko <robbieko@synology.com>
+>> ---
+>>  fs/btrfs/inode.c | 12 ++++++++++++
+>>  1 file changed, 12 insertions(+)
+>> 
+>> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+>> index f534701..77aec8d 100644
+>> --- a/fs/btrfs/inode.c
+>> +++ b/fs/btrfs/inode.c
+>> @@ -5295,6 +5295,7 @@ void btrfs_evict_inode(struct inode *inode)
+>>  	int steal_from_global = 0;
+>>  	u64 min_size;
+>>  	int ret;
+>> +	void *journal_info = NULL;
+> 
+> This initialization isn't necessary.
+> 
+>>  	trace_btrfs_inode_evict(inode);
+>> 
+>> @@ -5303,6 +5304,16 @@ void btrfs_evict_inode(struct inode *inode)
+>>  		return;
+>>  	}
+>> 
+>> +	/*
+>> +	 * Send or Direct IO may store information in journal_info.
+>> +	 * However, this function may use start_transaction and
+>> +	 * start_transaction will use journal_info.
+>> +	 * To avoid accessing invalid memory, we can save the journal_info
+>> +	 * and restore it later.
+>> +	 */
+>> +	journal_info = current->journal_info;
+>> +	current->journal_info = NULL;
+>> +
+>>  	min_size = btrfs_calc_trunc_metadata_size(fs_info, 1);
+>> 
+>>  	evict_inode_truncate_pages(inode);
+>> @@ -5462,6 +5473,7 @@ void btrfs_evict_inode(struct inode *inode)
+>>  no_delete:
+>>  	btrfs_remove_delayed_node(BTRFS_I(inode));
+>>  	clear_inode(inode);
+>> +	current->journal_info = journal_info;
+>>  }
+>> 
+>>  /*
+>> --
+>> 1.9.1
+>> 
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" 
+>> in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 > --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" 
+> in
 > the body of a message to majordomo@vger.kernel.org
 > More majordomo info at  http://vger.kernel.org/majordomo-info.html
+

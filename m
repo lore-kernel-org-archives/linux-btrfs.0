@@ -1,19 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:44608 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:45006 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1756582AbeEJGmB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 10 May 2018 02:42:01 -0400
-Subject: Re: [PATCH v2 4/8] btrfs: rename btrfs_flags_to_ioctl to reflect
- which flags it touches
+        id S1756566AbeEJGoZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 10 May 2018 02:44:25 -0400
+Subject: Re: [PATCH v2 5/8] btrfs: add helpers for FS_XFLAG_* conversion
 To: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
 Cc: misono.tomohiro@jp.fujitsu.com
 References: <cover.1525873677.git.dsterba@suse.com>
- <b17d538148dac18c90094a542444aefb2ade12ae.1525873677.git.dsterba@suse.com>
+ <a4136c4ded65ad0c588d01357253f180ccad22f6.1525873677.git.dsterba@suse.com>
 From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <ffca9fad-4153-158e-55fe-cdd428ca7a97@suse.com>
-Date: Thu, 10 May 2018 09:41:59 +0300
+Message-ID: <e6327855-66c3-f340-84f6-d09b1c305e4f@suse.com>
+Date: Thu, 10 May 2018 09:44:23 +0300
 MIME-Version: 1.0
-In-Reply-To: <b17d538148dac18c90094a542444aefb2ade12ae.1525873677.git.dsterba@suse.com>
+In-Reply-To: <a4136c4ded65ad0c588d01357253f180ccad22f6.1525873677.git.dsterba@suse.com>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -21,57 +20,64 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 
 On  9.05.2018 16:54, David Sterba wrote:
-> Converts btrfs_inode::flags to the FS_*_FL flags.
-
-What about :
-
-btrfs_to_iflags(struct btrfs_inode *inode) or
-
-BTRFS_IFLAGS(ip) (macro) or
-
-btrfs_iflags(ip) (function).
-
-I'm more inclined towards one of the shorter function/macro variants.
-
+> Preparatory work for the FS_IOC_FSGETXATTR ioctl, basic conversions and
+> checking helpers.
 > 
 > Signed-off-by: David Sterba <dsterba@suse.com>
 > ---
->  fs/btrfs/ioctl.c | 9 +++++----
->  1 file changed, 5 insertions(+), 4 deletions(-)
+>  fs/btrfs/ioctl.c | 32 ++++++++++++++++++++++++++++++++
+>  1 file changed, 32 insertions(+)
 > 
 > diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index 0b84f9e68f86..40eeb99310d5 100644
+> index 40eeb99310d5..54dfcb851ec2 100644
 > --- a/fs/btrfs/ioctl.c
 > +++ b/fs/btrfs/ioctl.c
-> @@ -105,9 +105,10 @@ static unsigned int btrfs_mask_fsflags_for_type(struct inode *inode,
+> @@ -338,6 +338,38 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
+>  	return ret;
 >  }
 >  
->  /*
-> - * Export inode flags to the format expected by the FS_IOC_GETFLAGS ioctl.
-> + * Export internal inode flags to the format expected by the FS_IOC_GETFLAGS
-> + * ioctl.
->   */
-> -static unsigned int btrfs_flags_to_ioctl(unsigned int flags)
-> +static unsigned int btrfs_inode_flags_to_fsflags(unsigned int flags)
+> +/*
+> + * Translate btrfs internal inode flags to xflags as expected by the
+> + * FS_IOC_FSGETXATT ioctl. Filter only the supported ones, unknown flags are
+> + * silently dropped.
+> + */
+> +static unsigned int btrfs_inode_flags_to_xflags(unsigned int flags)
+> +{
+> +	unsigned int xflags = 0;
+> +
+> +	if (flags & BTRFS_INODE_APPEND)
+> +		xflags |= FS_XFLAG_APPEND;
+> +	if (flags & BTRFS_INODE_IMMUTABLE)
+> +		xflags |= FS_XFLAG_IMMUTABLE;
+> +	if (flags & BTRFS_INODE_NOATIME)
+> +		xflags |= FS_XFLAG_NOATIME;
+> +	if (flags & BTRFS_INODE_NODUMP)
+> +		xflags |= FS_XFLAG_NODUMP;
+> +	if (flags & BTRFS_INODE_SYNC)
+> +		xflags |= FS_XFLAG_SYNC;
+> +
+> +	return xflags;
+> +}
+
+same suggestion as previous patch:
+
+BTRFS_XFLAGS(ip)/btrfs_xflags(ip) (macro/function variants). Imho it
+makes sense for such function to actually take an inode. Otherwise we
+are exposing an implementation detail how we derive the iflags/xflags
+from an inode - i.e query the ->flags field. Let's keep this
+encapsulated behind whatever interface we decide.
+
+> +
+> +/* Check if @flags are a supported and valid set of FS_XFLAGS_* flags */
+> +static int check_xflags(unsigned int flags)
+> +{
+> +	if (flags & ~(FS_XFLAG_APPEND | FS_XFLAG_IMMUTABLE | FS_XFLAG_NOATIME |
+> +		      FS_XFLAG_NODUMP | FS_XFLAG_SYNC))
+> +		return -EOPNOTSUPP;
+> +	return 0;
+> +}
+> +
+>  static int btrfs_ioctl_getversion(struct file *file, int __user *arg)
 >  {
->  	unsigned int iflags = 0;
->  
-> @@ -161,7 +162,7 @@ void btrfs_sync_inode_flags_to_i_flags(struct inode *inode)
->  static int btrfs_ioctl_getflags(struct file *file, void __user *arg)
->  {
->  	struct btrfs_inode *ip = BTRFS_I(file_inode(file));
-> -	unsigned int flags = btrfs_flags_to_ioctl(ip->flags);
-> +	unsigned int flags = btrfs_inode_flags_to_fsflags(ip->flags);
->  
->  	if (copy_to_user(arg, &flags, sizeof(flags)))
->  		return -EFAULT;
-> @@ -221,7 +222,7 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
->  	mode = inode->i_mode;
->  
->  	flags = btrfs_mask_fsflags_for_type(inode, flags);
-> -	oldflags = btrfs_flags_to_ioctl(ip->flags);
-> +	oldflags = btrfs_inode_flags_to_fsflags(ip->flags);
->  	if ((flags ^ oldflags) & (FS_APPEND_FL | FS_IMMUTABLE_FL)) {
->  		if (!capable(CAP_LINUX_IMMUTABLE)) {
->  			ret = -EPERM;
+>  	struct inode *inode = file_inode(file);
 > 

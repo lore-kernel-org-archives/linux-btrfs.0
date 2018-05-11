@@ -1,17 +1,19 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:38379 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752925AbeEKK1i (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 11 May 2018 06:27:38 -0400
-Date: Fri, 11 May 2018 12:24:59 +0200
-From: David Sterba <dsterba@suse.cz>
+Received: from mail-pf0-f196.google.com ([209.85.192.196]:44713 "EHLO
+        mail-pf0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750876AbeEKR2c (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 11 May 2018 13:28:32 -0400
+Received: by mail-pf0-f196.google.com with SMTP id q22-v6so3031014pff.11
+        for <linux-btrfs@vger.kernel.org>; Fri, 11 May 2018 10:28:31 -0700 (PDT)
+Date: Fri, 11 May 2018 10:28:29 -0700
+From: Omar Sandoval <osandov@osandov.com>
 To: Nikolay Borisov <nborisov@suse.com>
-Cc: Omar Sandoval <osandov@osandov.com>, linux-btrfs@vger.kernel.org,
-        linux-fsdevel@vger.kernel.org, kernel-team@fb.com
+Cc: linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+        kernel-team@fb.com
 Subject: Re: [PATCH 0/3] Btrfs: stop abusing current->journal_info for direct
  I/O
-Message-ID: <20180511102459.GT6649@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+Message-ID: <20180511172829.GC29366@vader>
 References: <cover.1525933432.git.osandov@fb.com>
  <16e0b655-3778-990d-2cb9-abf34ea9e3ad@suse.com>
 MIME-Version: 1.0
@@ -42,4 +44,7 @@ On Fri, May 11, 2018 at 12:53:36PM +0300, Nikolay Borisov wrote:
 > ext4 stacked on top of btrfs would crash since btrfs will overwrite
 > journal_info which was set by ext4. So this change is indeed welcome :)
 
-And also this, https://lkml.org/lkml/2017/12/14/165.
+Yup, that's what I originally made these patches for. Although my latest
+idea for swap is to do something along the lines of Darrick's
+iomap_swap_activate(): https://patchwork.kernel.org/patch/10376435/,
+I'll be getting back to that soon.

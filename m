@@ -1,40 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:39313 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:41066 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751406AbeEKKkL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 11 May 2018 06:40:11 -0400
+        id S1750806AbeEKK4l (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 11 May 2018 06:56:41 -0400
 Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 8BF1EACF0
-        for <linux-btrfs@vger.kernel.org>; Fri, 11 May 2018 10:40:10 +0000 (UTC)
-Date: Fri, 11 May 2018 12:37:32 +0200
+        by mx2.suse.de (Postfix) with ESMTP id 61CBFAEA4
+        for <linux-btrfs@vger.kernel.org>; Fri, 11 May 2018 10:56:40 +0000 (UTC)
+Date: Fri, 11 May 2018 12:54:02 +0200
 From: David Sterba <dsterba@suse.cz>
-To: David Sterba <dsterba@suse.cz>
-Cc: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v3 1/3] btrfs: Move btrfs_check_super_valid() to avoid
- forward declaration
-Message-ID: <20180511103732.GU6649@twin.jikos.cz>
+To: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v3 0/3] btrfs: Add write time super block validation
+Message-ID: <20180511105402.GV6649@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 References: <20180511053527.28378-1-wqu@suse.com>
- <20180511053527.28378-2-wqu@suse.com>
- <20180511093654.GO6649@twin.jikos.cz>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180511093654.GO6649@twin.jikos.cz>
+In-Reply-To: <20180511053527.28378-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, May 11, 2018 at 11:36:54AM +0200, David Sterba wrote:
-> On Fri, May 11, 2018 at 01:35:25PM +0800, Qu Wenruo wrote:
-> > Just move btrfs_check_super_valid() before its single caller to avoid
-> > forward declaration.
+On Fri, May 11, 2018 at 01:35:24PM +0800, Qu Wenruo wrote:
+> This patchset can be fetched from github:
+> https://github.com/adam900710/linux/tree/write_time_sb_check
 > 
-> Please don't move functions just to get rid of the forward declarations.
+> We have 2 reports about corrupted btrfs super block, which has some garbage
+> in its super block, but otherwise it's completely fine and its csum even
+> matches.
 > 
-> Moving functions to make them static or if they're in a wrong .c is OK,
-> but the extra forward declaration is not that bad and moving code
-> without any change just pollutest the git history. I'll drop the patch,
-> sorry.
+> This means we develop memory corruption during btrfs mount time.
+> It's not clear whether it's caused by btrfs or some other kernel module,
+> but at least let's do write time verification to catch such corruption
+> early.
+> 
+> Current design is to do 2 different checks at mount time and super write
+> time.
+> And for write time check, it only checks the template super block
+> (fs_info->super_to_commit) other than each super blocks to be written to
+> disk, mostly to avoid duplicated checks.
+> 
+> Changelog:
+> v2:
+>   Rename btrfs_check_super_valid() to btrfs_validate_super() suggested
+>   by Nikolay and David.
+> v3:
+>   Add a new patch to move btrfs_check_super_valid() to avoid forward
+>   declaration.
+>   Refactor btrfs_check_super_valid() to provide better naming and
+>   function reusablity.
+>   Code style and comment update.
+>   Use 2 different functions, btrfs_validate_mount_super() and
+>   btrfs_validate_write_super(), for mount and write time super check.
 
-Hm, OK I now see why you did it. Fixing up the order of the related
-static functions would need new forward declarations, so I'll apply the
-patch after all.
+Added as topic branch to next, I'm still targeting 4.18 with this
+patchset so it'll end up in misc-next after some testing. Thanks.

@@ -1,33 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp2120.oracle.com ([141.146.126.78]:35320 "EHLO
-        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752165AbeEKFgT (ORCPT
+Received: from userp2130.oracle.com ([156.151.31.86]:33488 "EHLO
+        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750852AbeEKFll (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 11 May 2018 01:36:19 -0400
-Subject: Re: [PATCH v2] btrfs: Unexport and rename btrfs_invalidate_inodes
+        Fri, 11 May 2018 01:41:41 -0400
+Subject: Re: [PATCH 2/5] btrfs: Split btrfs_del_delalloc_inode into 2
+ functions
 To: Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
-References: <1524820914-30864-6-git-send-email-nborisov@suse.com>
- <1524828984-2797-1-git-send-email-nborisov@suse.com>
+References: <1524820914-30864-1-git-send-email-nborisov@suse.com>
+ <1524820914-30864-3-git-send-email-nborisov@suse.com>
 From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <4a4d8705-2a30-e7d3-bfa0-ef46bdc8666b@oracle.com>
-Date: Fri, 11 May 2018 13:38:38 +0800
+Message-ID: <7f535049-9127-7acc-f49c-4fa0b2e50919@oracle.com>
+Date: Fri, 11 May 2018 13:44:02 +0800
 MIME-Version: 1.0
-In-Reply-To: <1524828984-2797-1-git-send-email-nborisov@suse.com>
+In-Reply-To: <1524820914-30864-3-git-send-email-nborisov@suse.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On 04/27/2018 07:36 PM, Nikolay Borisov wrote:
-> This function is no longer used outside of inode.c so just make it
-> static. At the same time give a more becoming name, since it's not
-> really invalidating the inodes but just calling d_prune_alias. Last,
-> but not least - move the function above the sole caller to avoid
-> introducing yet-another-pointless forward declaration.
+On 04/27/2018 05:21 PM, Nikolay Borisov wrote:
+> This is in preparation of fixing delalloc inodes leakage on transaction
+> abort. Also export the new function.
 > 
 > Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 
-Reviewed-by: Anand Jain <anand.jain@oracle.com>
+  nit: I think we are reserving function prefix __ for some special
+  functions. I am not sure if the function name should prefix with __
+  here.
+
+Reviewed-by: Anand Jain <anand.jain@orcle.com>
 
 Thanks, Anand

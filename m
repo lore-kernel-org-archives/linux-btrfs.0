@@ -1,52 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f41.google.com ([209.85.218.41]:41204 "EHLO
-        mail-oi0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751895AbeEBWvf (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 May 2018 18:51:35 -0400
-Received: by mail-oi0-f41.google.com with SMTP id 11-v6so14444759ois.8
-        for <linux-btrfs@vger.kernel.org>; Wed, 02 May 2018 15:51:34 -0700 (PDT)
+Received: from mail-ua0-f193.google.com ([209.85.217.193]:43691 "EHLO
+        mail-ua0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751449AbeEKPp1 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 11 May 2018 11:45:27 -0400
+Received: by mail-ua0-f193.google.com with SMTP id d4-v6so3888038ual.10
+        for <linux-btrfs@vger.kernel.org>; Fri, 11 May 2018 08:45:27 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CA+EzBbB2HkAbpQhKPhm_h2qE3AqeUFvC0+EYsk=AviyfnzLu5Q@mail.gmail.com>
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <CAPaz=E+=aVagu2g3ZUiD-SjvnAAU0zb0SSaPKUitHT9CWuKW8A@mail.gmail.com>
 References: <CAPaz=E+=aVagu2g3ZUiD-SjvnAAU0zb0SSaPKUitHT9CWuKW8A@mail.gmail.com>
- <c552d9cd-5ce9-b55c-747e-3af28ec161b8@suse.com> <CA+EzBbB2HkAbpQhKPhm_h2qE3AqeUFvC0+EYsk=AviyfnzLu5Q@mail.gmail.com>
-From: Vijay Chidambaram <vvijay03@gmail.com>
-Date: Wed, 2 May 2018 17:50:54 -0500
-Message-ID: <CAPaz=EJ4SGD_RGsbxd3mh7rTARCng+FVUtZ8Hw3Y4=s_RfVD+g@mail.gmail.com>
+From: Filipe Manana <fdmanana@gmail.com>
+Date: Fri, 11 May 2018 16:45:26 +0100
+Message-ID: <CAL3q7H7XVCnA=rtK5ws3WpjxSGYft4br-vVtBr9buBvJwFKBJQ@mail.gmail.com>
 Subject: Re: Strange behavior (possible bugs) in btrfs
-To: Jayashree Mohan <jayashree2912@gmail.com>
-Cc: Jeff Mahoney <jeffm@suse.com>, Linux Btrfs <linux-btrfs@vger.kernel.org>,
+To: Vijay Chidambaram <vvijay03@gmail.com>
+Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>,
         Soujanya Ponnapalli <soujanyap95@gmail.com>,
-        Filipe Manana <fdmanana@suse.com>
+        Jayashree Mohan <jayashree2912@gmail.com>
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Apr 30, 2018 at 11:56 AM, Jayashree Mohan
-<jayashree2912@gmail.com> wrote:
-> Hi Jeff,
+On Mon, Apr 30, 2018 at 5:04 PM, Vijay Chidambaram <vvijay03@gmail.com> wrote:
+> Hi,
 >
-> On Mon, Apr 30, 2018 at 11:51 AM, Jeff Mahoney <jeffm@suse.com> wrote:
->> On 4/30/18 12:04 PM, Vijay Chidambaram wrote:
->>> Hi,
->>>
->>> We found two more cases where the btrfs behavior is a little strange.
->>> In one case, an fsync-ed file goes missing after a crash. In the
->>> other, a renamed file shows up in both directories after a crash.
->>
->> Hi Vijay -
->>
->> What kernel version did you observe these with?  These seem like bugs
->> Filipe has already fixed.
->>
->> -Jeff
->>
+> We found two more cases where the btrfs behavior is a little strange.
+> In one case, an fsync-ed file goes missing after a crash. In the
+> other, a renamed file shows up in both directories after a crash.
 >
-> These bugs were observed on Kernel 4.16.0-041600-generic.
+> Workload 1:
 >
+> mkdir A
+> mkdir B
+> mkdir A/C
+> creat B/foo
+> fsync B/foo
+> link B/foo A/C/foo
+> fsync A
+> -- crash --
+>
+> Expected state after recovery:
+> B B/foo A A/C exist
+>
+> What we find:
+> Only B B/foo exist
+>
+> A is lost even after explicit fsync to A.
+>
+> Workload 2:
+>
+> mkdir A
+> mkdir A/C
+> rename A/C B
+> touch B/bar
+> fsync B/bar
+> rename B/bar A/bar
+> rename A B (replacing B with A at this point)
+> fsync B/bar
+> -- crash --
+>
+> Expected contents after recovery:
+> A/bar
+>
+> What we find after recovery:
+> A/bar
+> B/bar
+>
+> We think this breaks rename's atomicity guarantee. bar should be
+> present in either A or B, but now it is present in both.
 
-To add on to what Jayashree said, these bugs are still present in the
-latest stable release of btrfs. We aren't sure if they have been
-patched on a development branch.
+I'll take a look at these, and all the other potential issues you
+reported in other threads, next week and let you know.
+Thanks.
 
-We should note that similar bugs have been fixed before in btrfs, but
-those patches don't seem to handle these cases.
+>
+> Thanks,
+> Vijay
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+
+
+-- 
+Filipe David Manana,
+
+“Whether you think you can, or you think you can't — you're right.”

@@ -1,19 +1,19 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pl0-f68.google.com ([209.85.160.68]:40396 "EHLO
-        mail-pl0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751764AbeEKUOF (ORCPT
+Received: from mail-pg0-f66.google.com ([74.125.83.66]:45585 "EHLO
+        mail-pg0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751928AbeEKUOD (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 11 May 2018 16:14:05 -0400
-Received: by mail-pl0-f68.google.com with SMTP id t12-v6so3867017plo.7
-        for <linux-btrfs@vger.kernel.org>; Fri, 11 May 2018 13:14:04 -0700 (PDT)
+        Fri, 11 May 2018 16:14:03 -0400
+Received: by mail-pg0-f66.google.com with SMTP id w3-v6so2862155pgv.12
+        for <linux-btrfs@vger.kernel.org>; Fri, 11 May 2018 13:14:03 -0700 (PDT)
 From: Omar Sandoval <osandov@osandov.com>
 To: linux-btrfs@vger.kernel.org
 Cc: kernel-team@fb.com, Chris Mason <clm@fb.com>,
         Josef Bacik <josef@toxicpanda.com>,
         Nikolay Borisov <nborisov@suse.com>, David Sterba <dsterba@suse.com>
-Subject: [PATCH v4 12/12] Btrfs: reserve space for O_TMPFILE orphan item deletion
-Date: Fri, 11 May 2018 13:13:40 -0700
-Message-Id: <961fff4cffd719044cf5b2f93b59b40ad3e10baa.1526069051.git.osandov@fb.com>
+Subject: [PATCH v4 11/12] Btrfs: renumber BTRFS_INODE_ runtime flags
+Date: Fri, 11 May 2018 13:13:39 -0700
+Message-Id: <c69fd5cb94b60d6b0d9e422c2340f70b3e3d3914.1526069051.git.osandov@fb.com>
 In-Reply-To: <cover.1526069051.git.osandov@fb.com>
 References: <cover.1526069051.git.osandov@fb.com>
 In-Reply-To: <cover.1526069051.git.osandov@fb.com>
@@ -23,32 +23,42 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Omar Sandoval <osandov@fb.com>
 
-btrfs_link() calls btrfs_orphan_del() if it's linking an O_TMPFILE but
-it doesn't reserve space to do so. Even before the removal of the
-orphan_block_rsv it wasn't using it.
+We got rid of BTRFS_INODE_HAS_ORPHAN_ITEM and
+BTRFS_INODE_ORPHAN_META_RESERVED, so we can renumber the flags to make
+them consecutive again.
 
-Fixes: ef3b9af50bfa ("Btrfs: implement inode_operations callback tmpfile")
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
 Signed-off-by: Omar Sandoval <osandov@fb.com>
 ---
- fs/btrfs/inode.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ fs/btrfs/btrfs_inode.h | 16 ++++++++--------
+ 1 file changed, 8 insertions(+), 8 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 5499b4e8a522..fefa665e64da 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -6465,8 +6465,9 @@ static int btrfs_link(struct dentry *old_dentry, struct inode *dir,
- 	 * 2 items for inode and inode ref
- 	 * 2 items for dir items
- 	 * 1 item for parent inode
-+	 * 1 item for orphan item deletion if O_TMPFILE
- 	 */
--	trans = btrfs_start_transaction(root, 5);
-+	trans = btrfs_start_transaction(root, inode->i_nlink ? 5 : 6);
- 	if (IS_ERR(trans)) {
- 		err = PTR_ERR(trans);
- 		trans = NULL;
+diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
+index 4807cde0313d..bbbe7f308d68 100644
+--- a/fs/btrfs/btrfs_inode.h
++++ b/fs/btrfs/btrfs_inode.h
+@@ -20,14 +20,14 @@
+  * new data the application may have written before commit.
+  */
+ #define BTRFS_INODE_ORDERED_DATA_CLOSE		0
+-#define BTRFS_INODE_DUMMY			2
+-#define BTRFS_INODE_IN_DEFRAG			3
+-#define BTRFS_INODE_HAS_ASYNC_EXTENT		5
+-#define BTRFS_INODE_NEEDS_FULL_SYNC		6
+-#define BTRFS_INODE_COPY_EVERYTHING		7
+-#define BTRFS_INODE_IN_DELALLOC_LIST		8
+-#define BTRFS_INODE_READDIO_NEED_LOCK		9
+-#define BTRFS_INODE_HAS_PROPS		        10
++#define BTRFS_INODE_DUMMY			1
++#define BTRFS_INODE_IN_DEFRAG			2
++#define BTRFS_INODE_HAS_ASYNC_EXTENT		3
++#define BTRFS_INODE_NEEDS_FULL_SYNC		4
++#define BTRFS_INODE_COPY_EVERYTHING		5
++#define BTRFS_INODE_IN_DELALLOC_LIST		6
++#define BTRFS_INODE_READDIO_NEED_LOCK		7
++#define BTRFS_INODE_HAS_PROPS		        8
+ 
+ /* in memory btrfs inode */
+ struct btrfs_inode {
 -- 
 2.17.0
 

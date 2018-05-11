@@ -1,52 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pg0-f65.google.com ([74.125.83.65]:43132 "EHLO
-        mail-pg0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1756618AbeEJGVg (ORCPT
+Received: from mail-pl0-f68.google.com ([209.85.160.68]:46832 "EHLO
+        mail-pl0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751273AbeEKALd (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 10 May 2018 02:21:36 -0400
-Received: by mail-pg0-f65.google.com with SMTP id k11-v6so498183pgo.10
-        for <linux-btrfs@vger.kernel.org>; Wed, 09 May 2018 23:21:36 -0700 (PDT)
+        Thu, 10 May 2018 20:11:33 -0400
+Received: by mail-pl0-f68.google.com with SMTP id 59-v6so2216136plc.13
+        for <linux-btrfs@vger.kernel.org>; Thu, 10 May 2018 17:11:33 -0700 (PDT)
 From: Omar Sandoval <osandov@osandov.com>
 To: linux-btrfs@vger.kernel.org
 Cc: kernel-team@fb.com, Chris Mason <clm@fb.com>,
         Josef Bacik <josef@toxicpanda.com>
-Subject: [PATCH 10/10] Btrfs: reserve space for O_TMPFILE orphan item deletion
-Date: Wed,  9 May 2018 23:21:11 -0700
-Message-Id: <35b9fda73e091d42845d5bbf34607c052da1147f.1525932796.git.osandov@fb.com>
-In-Reply-To: <cover.1525932796.git.osandov@fb.com>
-References: <cover.1525932796.git.osandov@fb.com>
-In-Reply-To: <cover.1525932796.git.osandov@fb.com>
-References: <cover.1525932796.git.osandov@fb.com>
+Subject: [PATCH v2 00/12] Btrfs: orphan and truncate fixes
+Date: Thu, 10 May 2018 17:11:10 -0700
+Message-Id: <cover.1525997057.git.osandov@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Omar Sandoval <osandov@fb.com>
 
-btrfs_link() calls btrfs_orphan_del() if it's linking an O_TMPFILE but
-it doesn't reserve space to do so. Even before the removal of the
-orphan_block_rsv it wasn't using it.
+Hi,
 
-Fixes: ef3b9af50bfa ("Btrfs: implement inode_operations callback tmpfile")
-Signed-off-by: Omar Sandoval <osandov@fb.com>
----
- fs/btrfs/inode.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+This is v2 of the fixes for the orphan item early ENOSPC issue we hit at
+Facebook.
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 88b89a48b66f..2a610a8d30c4 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -6535,8 +6535,9 @@ static int btrfs_link(struct dentry *old_dentry, struct inode *dir,
- 	 * 2 items for inode and inode ref
- 	 * 2 items for dir items
- 	 * 1 item for parent inode
-+	 * 1 item for orphan item deletion if O_TMPFILE
- 	 */
--	trans = btrfs_start_transaction(root, 5);
-+	trans = btrfs_start_transaction(root, inode->i_nlink ? 5 : 6);
- 	if (IS_ERR(trans)) {
- 		err = PTR_ERR(trans);
- 		trans = NULL;
+Changes since v1:
+
+- Added two extra cleanups, patches 10 and 11
+- Added a forgotten clear of the orphan bit in patch 8
+- Reworded titles of patches 6 and 9
+- Added people's reviewed-bys
+
+Cover letter from v1:
+
+At Facebook we hit an early ENOSPC issue which we tracked down to the
+reservations for orphan items of deleted-but-still-open files. The
+primary function of this series is to fix that bug, but I ended up
+uncovering a pile of other issues in the process, most notably that the
+orphan items we create for truncate are useless.
+
+I've also posted an xfstest that reproduces this bug.
+
+Thanks!
+
+Omar Sandoval (12):
+  Btrfs: remove stale comment referencing vmtruncate()
+  Btrfs: fix error handling in btrfs_truncate_inode_items()
+  Btrfs: don't BUG_ON() in btrfs_truncate_inode_items()
+  Btrfs: stop creating orphan items for truncate
+  Btrfs: don't release reserve or decrement orphan count if orphan item
+    already existed
+  Btrfs: don't return ino to ino cache if inode item removal fails
+  Btrfs: refactor btrfs_evict_inode() reserve refill dance
+  Btrfs: fix ENOSPC caused by orphan items reservations
+  Btrfs: get rid of root->orphan_block_rsv and root->orphan_lock
+  Btrfs: get rid of btrfs_orphan_commit_root() and root->orphan_inodes
+  Btrfs: simplify error handling in btrfs_evict_inode()
+  Btrfs: reserve space for O_TMPFILE orphan item deletion
+
+ fs/btrfs/btrfs_inode.h      |  19 +-
+ fs/btrfs/ctree.h            |   8 -
+ fs/btrfs/disk-io.c          |   9 -
+ fs/btrfs/extent-tree.c      |  38 ---
+ fs/btrfs/free-space-cache.c |   6 +-
+ fs/btrfs/inode.c            | 585 +++++++++++-------------------------
+ fs/btrfs/transaction.c      |   1 -
+ 7 files changed, 191 insertions(+), 475 deletions(-)
+
 -- 
 2.17.0
 

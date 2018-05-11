@@ -1,64 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:41495 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:44579 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S964920AbeEJMpF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 10 May 2018 08:45:05 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id A16DCACA8
-        for <linux-btrfs@vger.kernel.org>; Thu, 10 May 2018 12:45:04 +0000 (UTC)
-From: Nikolay Borisov <nborisov@suse.com>
+        id S1750751AbeEKFfa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 11 May 2018 01:35:30 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 84F40AD4D
+        for <linux-btrfs@vger.kernel.org>; Fri, 11 May 2018 05:35:29 +0000 (UTC)
+From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 17/17] btrfs: Remove fs_info argument from populate_free_space_tree
-Date: Thu, 10 May 2018 15:44:56 +0300
-Message-Id: <1525956296-32118-18-git-send-email-nborisov@suse.com>
-In-Reply-To: <1525956296-32118-1-git-send-email-nborisov@suse.com>
-References: <1525956296-32118-1-git-send-email-nborisov@suse.com>
+Subject: [PATCH v3 0/3] btrfs: Add write time super block validation
+Date: Fri, 11 May 2018 13:35:24 +0800
+Message-Id: <20180511053527.28378-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This function always takes a transaction handle which contains a
-reference to the fs_info. Use that and remove the extra argument.
+This patchset can be fetched from github:
+https://github.com/adam900710/linux/tree/write_time_sb_check
 
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
----
- fs/btrfs/free-space-tree.c | 7 +++----
- 1 file changed, 3 insertions(+), 4 deletions(-)
+We have 2 reports about corrupted btrfs super block, which has some garbage
+in its super block, but otherwise it's completely fine and its csum even
+matches.
 
-diff --git a/fs/btrfs/free-space-tree.c b/fs/btrfs/free-space-tree.c
-index 494ff0815988..b5950aacd697 100644
---- a/fs/btrfs/free-space-tree.c
-+++ b/fs/btrfs/free-space-tree.c
-@@ -1039,10 +1039,9 @@ int add_to_free_space_tree(struct btrfs_trans_handle *trans,
-  * through the normal add/remove hooks.
-  */
- static int populate_free_space_tree(struct btrfs_trans_handle *trans,
--				    struct btrfs_fs_info *fs_info,
- 				    struct btrfs_block_group_cache *block_group)
- {
--	struct btrfs_root *extent_root = fs_info->extent_root;
-+	struct btrfs_root *extent_root = trans->fs_info->extent_root;
- 	struct btrfs_path *path, *path2;
- 	struct btrfs_key key;
- 	u64 start, end;
-@@ -1102,7 +1101,7 @@ static int populate_free_space_tree(struct btrfs_trans_handle *trans,
- 			}
- 			start = key.objectid;
- 			if (key.type == BTRFS_METADATA_ITEM_KEY)
--				start += fs_info->nodesize;
-+				start += trans->fs_info->nodesize;
- 			else
- 				start += key.offset;
- 		} else if (key.type == BTRFS_BLOCK_GROUP_ITEM_KEY) {
-@@ -1158,7 +1157,7 @@ int btrfs_create_free_space_tree(struct btrfs_fs_info *fs_info)
- 	while (node) {
- 		block_group = rb_entry(node, struct btrfs_block_group_cache,
- 				       cache_node);
--		ret = populate_free_space_tree(trans, fs_info, block_group);
-+		ret = populate_free_space_tree(trans, block_group);
- 		if (ret)
- 			goto abort;
- 		node = rb_next(node);
+This means we develop memory corruption during btrfs mount time.
+It's not clear whether it's caused by btrfs or some other kernel module,
+but at least let's do write time verification to catch such corruption
+early.
+
+Current design is to do 2 different checks at mount time and super write
+time.
+And for write time check, it only checks the template super block
+(fs_info->super_to_commit) other than each super blocks to be written to
+disk, mostly to avoid duplicated checks.
+
+Changelog:
+v2:
+  Rename btrfs_check_super_valid() to btrfs_validate_super() suggested
+  by Nikolay and David.
+v3:
+  Add a new patch to move btrfs_check_super_valid() to avoid forward
+  declaration.
+  Refactor btrfs_check_super_valid() to provide better naming and
+  function reusablity.
+  Code style and comment update.
+  Use 2 different functions, btrfs_validate_mount_super() and
+  btrfs_validate_write_super(), for mount and write time super check.
+
+Qu Wenruo (3):
+  btrfs: Move btrfs_check_super_valid() to avoid forward declaration
+  btrfs: Refactor btrfs_check_super_valid()
+  btrfs: Do super block verification before writing it to disk
+
+ fs/btrfs/disk-io.c | 361 ++++++++++++++++++++++++++-------------------
+ 1 file changed, 210 insertions(+), 151 deletions(-)
+
 -- 
-2.7.4
+2.17.0
 

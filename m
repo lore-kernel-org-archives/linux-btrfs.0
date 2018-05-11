@@ -1,62 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.99]:58742 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750751AbeEJXOG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 10 May 2018 19:14:06 -0400
-From: "Luis R. Rodriguez" <mcgrof@kernel.org>
-To: viro@zeniv.linux.org.uk, darrick.wong@oracle.com, tytso@mit.edu,
-        adilger.kernel@dilger.ca, clm@fb.com, jbacik@fb.com, dsterba@suse.com
-Cc: sandeen@sandeen.net, dhowells@redhat.com, fliu@suse.com, jack@suse.cz,
-        jeffm@suse.com, nborisov@suse.com, jake.norris@suse.com,
-        mtk.manpages@gmail.com, linux-api@vger.kernel.org,
-        linux-fsdevel@vger.kernel.org, linux-xfs@vger.kernel.org,
-        linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org, "Luis R. Rodriguez" <mcgrof@kernel.org>
-Subject: [RFC v2 0/4] vfs: detect symlink corruption with attributes
-Date: Thu, 10 May 2018 16:13:55 -0700
-Message-Id: <20180510231359.16899-1-mcgrof@kernel.org>
+Received: from userp2130.oracle.com ([156.151.31.86]:56440 "EHLO
+        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750798AbeEKCU6 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 10 May 2018 22:20:58 -0400
+Date: Thu, 10 May 2018 19:20:20 -0700
+From: "Darrick J. Wong" <darrick.wong@oracle.com>
+To: "Luis R. Rodriguez" <mcgrof@kernel.org>
+Cc: viro@zeniv.linux.org.uk, tytso@mit.edu, adilger.kernel@dilger.ca,
+        clm@fb.com, jbacik@fb.com, dsterba@suse.com, sandeen@sandeen.net,
+        dhowells@redhat.com, fliu@suse.com, jack@suse.cz, jeffm@suse.com,
+        nborisov@suse.com, jake.norris@suse.com, mtk.manpages@gmail.com,
+        linux-api@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+        linux-xfs@vger.kernel.org, linux-ext4@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: Re: [RFC v2 2/4] xfs: add verifier check for symlink with
+ append/immutable flags
+Message-ID: <20180511022020.GG11261@magnolia>
+References: <20180510231359.16899-1-mcgrof@kernel.org>
+ <20180510231359.16899-3-mcgrof@kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20180510231359.16899-3-mcgrof@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Filesystems which detect symlinks with append/immutable should inform
-users their filesystem is corrupted and their respective filesystem
-checker tool should fix this.
+On Thu, May 10, 2018 at 04:13:57PM -0700, Luis R. Rodriguez wrote:
+> The Linux VFS does not allow a way to set append/immuttable attributes
+> to symlinks, this is just not possible. If this is detected we can
+> correct this with xfs_repair, so inform the user.
+> 
+> Signed-off-by: Luis R. Rodriguez <mcgrof@kernel.org>
+> ---
+>  fs/xfs/libxfs/xfs_symlink_remote.c | 5 +++++
+>  1 file changed, 5 insertions(+)
+> 
+> diff --git a/fs/xfs/libxfs/xfs_symlink_remote.c b/fs/xfs/libxfs/xfs_symlink_remote.c
+> index 5ef5f354587e..42dd81ede3d6 100644
+> --- a/fs/xfs/libxfs/xfs_symlink_remote.c
+> +++ b/fs/xfs/libxfs/xfs_symlink_remote.c
+> @@ -242,5 +242,10 @@ xfs_symlink_shortform_verify(
+>  	/* We /did/ null-terminate the buffer, right? */
+>  	if (*endp != 0)
+>  		return __this_address;
+> +
+> +	/* Immutable and append flags are not allowed on symlinks */
+> +	if (ip->i_d.di_flags & (XFS_DIFLAG_APPEND | XFS_DIFLAG_IMMUTABLE))
+> +		return __this_address;
 
-In lieu of this though users may be stuck with pesky files or
-directories which they cannot remove. We cannot expect all filesystems
-to be updated to address this, so since the VFS does not let filesystems
-set these attributes -- let the VFS enable users to remove symlink with
-these attributes, but also provide a fallback warning, in case the
-users's own filesystem does not catch it.
+This belongs in xfs_dinode_verify so that it checks all symlinks, not
+just the one shortform ones.
 
-Sending again as RFC as this just goes compile tested so far, and it
-is still unclear if this is the direction we want to go with this.
+--D
 
-v2:
-
-As per Darrick, even though the VFS should probably allow not so popular
-filesystems to delete corrupt symlinks with append/immutable -- popular
-filesystems should check for this themselves and inform the users of
-corruption. These filesystems should have their respective filesystem
-checker tools updated to correct this as well.
-
-v1:
-
-Sent out a single patch just to ignore the append/immutable attributes
-set on symlinks.
-
-Luis R. Rodriguez (4):
-  vfs: skip extra attributes check on removal for symlinks
-  xfs: add verifier check for symlink with append/immutable flags
-  ext4: add verifier check for symlink with append/immutable flags
-  btrfs: verify symlinks with append/immutable flags
-
- fs/btrfs/inode.c                   |  9 +++++++++
- fs/ext4/inode.c                    |  7 +++++++
- fs/namei.c                         | 24 ++++++++++++++++++++++--
- fs/xfs/libxfs/xfs_symlink_remote.c |  5 +++++
- 4 files changed, 43 insertions(+), 2 deletions(-)
-
--- 
-2.17.0
-
+> +
+>  	return NULL;
+>  }
+> -- 
+> 2.17.0
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-xfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

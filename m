@@ -1,136 +1,256 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwkm04.jp.fujitsu.com ([202.219.69.171]:29733 "EHLO
-        mgwkm04.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751433AbeEKH1f (ORCPT
+Received: from mgwkm03.jp.fujitsu.com ([202.219.69.170]:62687 "EHLO
+        mgwkm03.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751433AbeEKH1d (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 11 May 2018 03:27:35 -0400
+        Fri, 11 May 2018 03:27:33 -0400
 Received: from g01jpfmpwkw02.exch.g01.fujitsu.local (g01jpfmpwkw02.exch.g01.fujitsu.local [10.0.193.56])
-        by kw-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id CEE10AC01FC
-        for <linux-btrfs@vger.kernel.org>; Fri, 11 May 2018 16:27:26 +0900 (JST)
+        by kw-mxauth.gw.nic.fujitsu.com (Postfix) with ESMTP id 4D3FAAC00C0
+        for <linux-btrfs@vger.kernel.org>; Fri, 11 May 2018 16:27:28 +0900 (JST)
+Received: from g01jpexchkw35.g01.fujitsu.local (unknown [10.0.193.4])
+        by g01jpfmpwkw02.exch.g01.fujitsu.local (Postfix) with ESMTP id 7CB6B32881B
+        for <linux-btrfs@vger.kernel.org>; Fri, 11 May 2018 16:27:27 +0900 (JST)
 From: Tomohiro Misono <misono.tomohiro@jp.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-CC: Omar Sandoval <osandov@fb.com>
-Subject: [PATCH 00/11] btrfs-progs: Rework of "subvolume list/show" and relax the root privileges of them 
-Date: Fri, 11 May 2018 16:29:38 +0900
-Message-ID: <20180511072949.15269-1-misono.tomohiro@jp.fujitsu.com>
+Subject: [PATCH 01/11] btrfs-progs: ioctl/libbtrfsutil: Add 3 definitions of new unprivileged ioctl
+Date: Fri, 11 May 2018 16:29:39 +0900
+Message-ID: <20180511072949.15269-2-misono.tomohiro@jp.fujitsu.com>
+In-Reply-To: <20180511072949.15269-1-misono.tomohiro@jp.fujitsu.com>
+References: <20180511072949.15269-1-misono.tomohiro@jp.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+Add 3 definitions of new unprivileged ioctl (BTRFS_IOC_GET_SUBVOL_INFO,
+BTRFS_IOC_GET_SUBVOL_ROOTREF and BTRFS_IOC_INO_LOOKUP_USER). They will
+be used to implement the user version of "btrfs subvolume list" etc.
 
-This series is an updated version of
-  [RFC PATCH v3 0/7] btrfs-progs: Allow normal user to call "subvolume list/show" [1]
-and requires new ioctls which can be found in ML as
-  [PATCH v4 0/3] btrfs: Add three new unprivileged ioctls to allow normal users to call "sub list/show" etc.
+Signed-off-by: Tomohiro Misono <misono.tomohiro@jp.fujitsu.com>
+---
+ ioctl.h              | 86 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ libbtrfsutil/btrfs.h | 84 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 170 insertions(+)
 
-Or, code can be found at:
-  kernel ... https://github.com/t-msn/linux/tree/add-user-subvol-ioctl-misc
-  progs  ... https://github.com/t-msn/btrfs-progs/tree/rework-sub-list
-
-Since libbtrfsutil has been merged, I completely rewrote the logic using
-libbtrfsutil and reset the version number.
-
-The aim of this series is to relax the root privileges of "sub list/show"
-while keeping as much output consistency between root and non-privileged
-user. For "subvolume list", default output has been changed from current
-btrfs-progs (see below).
-
-* Behavior summary of new "sub list/show"
- - "subvolume list"
-   - The default behavior is changed to output only the subvolumes which
-     exist below the specified path (incl. the specified path itself.
-     the subvolumes mounted below the specified path is not considered yet).
-   - If kernel supports new ioctls, the path to a non-subvolume directory
-     can be specified.
-   - If kernel supports new ioctls, non-privileged user can also call it.
-     The subvolumes which cannot be accessed will be skipped.
-
-  Note that root user can get all the subvolume information in the fs
-  by using -a option just as before.
-
- - "subvolume show"
-   - No change for root.
-   - If kernel supports new ioctls, non-privileged user can also call it.
-     In that case, the path to be shown is a relative from mount point and
-     snapshots field lists snapshots which exist under mountpoint.
-
-* Patch structure
- 1st-5th update the libbtrfsutil using new ioctls:
-   - Relax the privileges of following functions if kernel supports new
-     ioctls and @top/@id is zero (i.e. the given path/fd is used instead
-     of arbitrary subvolume id).
-     - util_subvolume_info()
-     - subvolume iterator related ones (util_subvolume_iterator_next() etc.)
-   - For subvolume iterator, if kernel supports new ioctls and @top is zero,
-     non-subvolume directory can be specified as a start point. Also,
-     subvolume which cannot be accessed (either because of permission
-     error or not found (may happen if other volume is mounted in the
-     path)) will be skipped.
-
- 6th patch update the "sub list" to use libbtrfsutil (no behavior change)
-   This is a copy of non-merged following patch originally written
-   by Omar Sandoval:
-     btrfs-progs: use libbtrfsutil for subvolume list [2]
-   expect this commit keeps libbtrfs implementation which above commit
-   tries to remove.
-
-   (I suspect that the part of the reason that the original patch has not
-   been merged is it removes libbtrfs and this commits modify this. but
-   I'm completely fine with the original patch instead of this.)
-
- 7th-9th patch update the behavior of "sub list/show"
-
- 10th-11th patch is a cli-test for "sub list" of new behavior.
-
-* Future todo:
-If this approach is ok, I'd like to update the output of "sub list" more like:
-  - Consider subvolume mounted below the specified path and list them as well
-  - Remove obsolete field (i.e. top-level) from output
-
-Any comments are welcome.
-Thanks,
-Tomohiro Misono
-
-[1] https://www.spinics.net/lists/linux-btrfs/msg76008.html
-[2] https://www.spinics.net/lists/linux-btrfs/msg74917.html 
-
-
-Tomohiro Misono (11):
-  btrfs-progs: ioctl/libbtrfsutil: Add 3 definitions of new unprivileged
-    ioctl
-  btrfs-progs: libbtrfsutil: Factor out btrfs_util_subvolume_info_fd()
-  btrfs-porgs: libbtrfsutil: Relax the privileges of
-    util_subvolume_info()
-  btrfs-progs: libbtrfsuitl: Factor out
-    btrfs_util_subvolume_iterator_next()
-  btrfs-progs: libbtrfsutil: Update the behavior of subvolume iterator
-    and relax the privileges
-  btrfs-progs: sub list: Use libbtrfsuitl for subvolume list
-  btrfs-progs: sub list: Change the default behavior of "subvolume list"
-    and allow non-privileged user to call it
-  btrfs-progs: utils: Fallback to open without O_NOATIME flag in
-    find_mount_root():
-  btrfs-progs: sub show: Allow non-privileged user to call "subvolume
-    show"
-  btrfs-progs: test: Add helper function to check if test user exists
-  btrfs-porgs: test: Add cli-test/009 to check subvolume list for both
-    root and normal user
-
- Documentation/btrfs-subvolume.asciidoc     |    2 +
- cmds-subvolume.c                           | 1123 +++++++++++++++++++++++++++-
- ioctl.h                                    |   86 +++
- libbtrfsutil/btrfs.h                       |   84 +++
- libbtrfsutil/btrfsutil.h                   |   26 +-
- libbtrfsutil/errors.c                      |    8 +
- libbtrfsutil/subvolume.c                   |  429 +++++++++--
- tests/cli-tests/009-subvolume-list/test.sh |  136 ++++
- tests/common                               |   10 +
- utils.c                                    |    3 +
- 10 files changed, 1819 insertions(+), 88 deletions(-)
- create mode 100755 tests/cli-tests/009-subvolume-list/test.sh
-
+diff --git a/ioctl.h b/ioctl.h
+index 709e996f..c6624352 100644
+--- a/ioctl.h
++++ b/ioctl.h
+@@ -320,6 +320,22 @@ struct btrfs_ioctl_ino_lookup_args {
+ };
+ BUILD_ASSERT(sizeof(struct btrfs_ioctl_ino_lookup_args) == 4096);
+ 
++#define BTRFS_INO_LOOKUP_USER_PATH_MAX (4080-BTRFS_VOL_NAME_MAX-1)
++struct btrfs_ioctl_ino_lookup_user_args {
++	/* in, inode number containing the subvolume of 'subvolid' */
++	__u64 dirid;
++	/* in */
++	__u64 subvolid;
++	/* out, name of the subvolume of 'subvolid' */
++	char name[BTRFS_VOL_NAME_MAX + 1];
++	/*
++	 * out, constructed path from the directory with which
++	 * the ioctl is called to dirid
++	 */
++	char path[BTRFS_INO_LOOKUP_USER_PATH_MAX];
++};
++BUILD_ASSERT(sizeof(struct btrfs_ioctl_ino_lookup_user_args) == 4096);
++
+ struct btrfs_ioctl_search_key {
+ 	/* which root are we searching.  0 is the tree of tree roots */
+ 	__u64 tree_id;
+@@ -672,6 +688,70 @@ BUILD_ASSERT(sizeof(struct btrfs_ioctl_send_args_64) == 72);
+ 
+ #define BTRFS_IOC_SEND_64_COMPAT_DEFINED 1
+ 
++struct btrfs_ioctl_get_subvol_info_args {
++	/* All filed is out */
++	/* Id of this subvolume */
++	__u64 id;
++	/* Name of this subvolume, used to get the real name at mount point */
++	char name[BTRFS_VOL_NAME_MAX + 1];
++	/*
++	 * Id of the subvolume which contains this subvolume.
++	 * Zero for top-level subvolume or deleted subvolume
++	 */
++	__u64 parent_id;
++	/*
++	 * Inode number of the directory which contains this subvolume.
++	 * Zero for top-level subvolume or deleted subvolume
++	 */
++	__u64 dirid;
++
++	/* Latest transaction id of this subvolume */
++	__u64 generation;
++	/* Flags of this subvolume */
++	__u64 flags;
++
++	/* uuid of this subvolume */
++	__u8 uuid[BTRFS_UUID_SIZE];
++	/*
++	 * uuid of the subvolume of which this subvolume is a snapshot.
++	 * All zero for non-snapshot subvolume
++	 */
++	__u8 parent_uuid[BTRFS_UUID_SIZE];
++	/*
++	 * uuid of the subvolume from which this subvolume is received.
++	 * All zero for non-received subvolume
++	 */
++	__u8 received_uuid[BTRFS_UUID_SIZE];
++
++	/* Transaction id indicates when change/create/send/receive happens */
++	__u64 ctransid;
++	__u64 otransid;
++	__u64 stransid;
++	__u64 rtransid;
++	/* Time corresponds to c/o/s/rtransid */
++	struct btrfs_ioctl_timespec ctime;
++	struct btrfs_ioctl_timespec otime;
++	struct btrfs_ioctl_timespec stime;
++	struct btrfs_ioctl_timespec rtime;
++
++	__u64 reserved[8];
++};
++
++#define BTRFS_MAX_ROOTREF_BUFFER_NUM 255
++struct btrfs_ioctl_get_subvol_rootref_args {
++		/* in/out, min id of rootref's subvolid to be searched */
++		__u64 min_id;
++		/* out */
++		struct {
++			__u64 subvolid;
++			__u64 dirid;
++		} rootref[BTRFS_MAX_ROOTREF_BUFFER_NUM];
++		/* out, number of found items */
++		__u8 num_items;
++		__u8 align[7];
++};
++BUILD_ASSERT(sizeof(struct btrfs_ioctl_get_subvol_rootref_args) == 4096);
++
+ /* Error codes as returned by the kernel */
+ enum btrfs_err_code {
+ 	notused,
+@@ -828,6 +908,12 @@ static inline char *btrfs_err_str(enum btrfs_err_code err_code)
+                                   struct btrfs_ioctl_feature_flags[3])
+ #define BTRFS_IOC_RM_DEV_V2	_IOW(BTRFS_IOCTL_MAGIC, 58, \
+ 				   struct btrfs_ioctl_vol_args_v2)
++#define BTRFS_IOC_GET_SUBVOL_INFO _IOR(BTRFS_IOCTL_MAGIC, 60, \
++				struct btrfs_ioctl_get_subvol_info_args)
++#define BTRFS_IOC_GET_SUBVOL_ROOTREF _IOWR(BTRFS_IOCTL_MAGIC, 61, \
++				struct btrfs_ioctl_get_subvol_rootref_args)
++#define BTRFS_IOC_INO_LOOKUP_USER _IOWR(BTRFS_IOCTL_MAGIC, 62, \
++				struct btrfs_ioctl_ino_lookup_user_args)
+ #ifdef __cplusplus
+ }
+ #endif
+diff --git a/libbtrfsutil/btrfs.h b/libbtrfsutil/btrfs.h
+index c293f6bf..451e227c 100644
+--- a/libbtrfsutil/btrfs.h
++++ b/libbtrfsutil/btrfs.h
+@@ -421,6 +421,21 @@ struct btrfs_ioctl_ino_lookup_args {
+ 	char name[BTRFS_INO_LOOKUP_PATH_MAX];
+ };
+ 
++#define BTRFS_INO_LOOKUP_USER_PATH_MAX (4080-BTRFS_VOL_NAME_MAX-1)
++struct btrfs_ioctl_ino_lookup_user_args {
++	/* in, inode number containing the subvolume of 'subvolid' */
++	__u64 dirid;
++	/* in */
++	__u64 subvolid;
++	/* out, name of the subvolume of 'subvolid' */
++	char name[BTRFS_VOL_NAME_MAX + 1];
++	/*
++	 * out, constructed path from the directory with which
++	 * the ioctl is called to dirid
++	 */
++	char path[BTRFS_INO_LOOKUP_USER_PATH_MAX];
++};
++
+ /* Search criteria for the btrfs SEARCH ioctl family. */
+ struct btrfs_ioctl_search_key {
+ 	/*
+@@ -720,6 +735,69 @@ struct btrfs_ioctl_send_args {
+ 	__u64 reserved[4];		/* in */
+ };
+ 
++struct btrfs_ioctl_get_subvol_info_args {
++	/* All filed is out */
++	/* Id of this subvolume */
++	__u64 id;
++	/* Name of this subvolume, used to get the real name at mount point */
++	char name[BTRFS_VOL_NAME_MAX + 1];
++	/*
++	 * Id of the subvolume which contains this subvolume.
++	 * Zero for top-level subvolume or deleted subvolume
++	 */
++	__u64 parent_id;
++	/*
++	 * Inode number of the directory which contains this subvolume.
++	 * Zero for top-level subvolume or deleted subvolume
++	 */
++	__u64 dirid;
++
++	/* Latest transaction id of this subvolume */
++	__u64 generation;
++	/* Flags of this subvolume */
++	__u64 flags;
++
++	/* uuid of this subvolume */
++	__u8 uuid[BTRFS_UUID_SIZE];
++	/*
++	 * uuid of the subvolume of which this subvolume is a snapshot.
++	 * All zero for non-snapshot subvolume
++	 */
++	__u8 parent_uuid[BTRFS_UUID_SIZE];
++	/*
++	 * uuid of the subvolume from which this subvolume is received.
++	 * All zero for non-received subvolume
++	 */
++	__u8 received_uuid[BTRFS_UUID_SIZE];
++
++	/* Transaction id indicates when change/create/send/receive happens */
++	__u64 ctransid;
++	__u64 otransid;
++	__u64 stransid;
++	__u64 rtransid;
++	/* Time corresponds to c/o/s/rtransid */
++	struct btrfs_ioctl_timespec ctime;
++	struct btrfs_ioctl_timespec otime;
++	struct btrfs_ioctl_timespec stime;
++	struct btrfs_ioctl_timespec rtime;
++
++	__u64 reserved[8];
++};
++
++#define BTRFS_MAX_ROOTREF_BUFFER_NUM 255
++struct btrfs_ioctl_get_subvol_rootref_args {
++		/* in/out, min id of rootref's subvolid to be searched */
++		__u64 min_id;
++		/* out */
++		struct {
++			__u64 subvolid;
++			__u64 dirid;
++		} rootref[BTRFS_MAX_ROOTREF_BUFFER_NUM];
++		/* out, number of found items */
++		__u8 num_items;
++		__u8 align[7];
++};
++
+ /* Error codes as returned by the kernel */
+ enum btrfs_err_code {
+ 	BTRFS_ERROR_DEV_RAID1_MIN_NOT_MET = 1,
+@@ -836,5 +914,11 @@ enum btrfs_err_code {
+ 				   struct btrfs_ioctl_feature_flags[3])
+ #define BTRFS_IOC_RM_DEV_V2 _IOW(BTRFS_IOCTL_MAGIC, 58, \
+ 				   struct btrfs_ioctl_vol_args_v2)
++#define BTRFS_IOC_GET_SUBVOL_INFO _IOR(BTRFS_IOCTL_MAGIC, 60, \
++				struct btrfs_ioctl_get_subvol_info_args)
++#define BTRFS_IOC_GET_SUBVOL_ROOTREF _IOWR(BTRFS_IOCTL_MAGIC, 61, \
++				struct btrfs_ioctl_get_subvol_rootref_args)
++#define BTRFS_IOC_INO_LOOKUP_USER _IOWR(BTRFS_IOCTL_MAGIC, 62, \
++				struct btrfs_ioctl_ino_lookup_user_args)
+ 
+ #endif /* _LINUX_BTRFS_H */
 -- 
 2.14.3
 

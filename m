@@ -1,123 +1,120 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vk0-f65.google.com ([209.85.213.65]:43588 "EHLO
-        mail-vk0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751907AbeEKRQQ (ORCPT
+Received: from mail-pl0-f68.google.com ([209.85.160.68]:43836 "EHLO
+        mail-pl0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750711AbeEKRbw (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 11 May 2018 13:16:16 -0400
-Received: by mail-vk0-f65.google.com with SMTP id x191-v6so3681887vke.10
-        for <linux-btrfs@vger.kernel.org>; Fri, 11 May 2018 10:16:16 -0700 (PDT)
-MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <20180511164916.GC6649@twin.jikos.cz>
-References: <20180511155754.27084-1-dsterba@suse.com> <CAL3q7H7=hGCnbsVvst-+shPj3rNqkkNZkr1kQaSjB4miTr_4mA@mail.gmail.com>
- <20180511164916.GC6649@twin.jikos.cz>
-From: Filipe Manana <fdmanana@gmail.com>
-Date: Fri, 11 May 2018 18:16:15 +0100
-Message-ID: <CAL3q7H6eCie5HRq7P7eCic0R61RgG6v57vDaWyXM9krvi_jcpw@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: use kvzalloc for EXTENT_SAME temporary data
+        Fri, 11 May 2018 13:31:52 -0400
+Received: by mail-pl0-f68.google.com with SMTP id a39-v6so3652269pla.10
+        for <linux-btrfs@vger.kernel.org>; Fri, 11 May 2018 10:31:52 -0700 (PDT)
+Date: Fri, 11 May 2018 10:31:50 -0700
+From: Omar Sandoval <osandov@osandov.com>
 To: dsterba@suse.cz, Filipe Manana <fdmanana@gmail.com>,
         David Sterba <dsterba@suse.com>,
         linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Subject: Re: [PATCH] btrfs: use kvzalloc for EXTENT_SAME temporary data
+Message-ID: <20180511173150.GD29366@vader>
+References: <20180511155754.27084-1-dsterba@suse.com>
+ <CAL3q7H7=hGCnbsVvst-+shPj3rNqkkNZkr1kQaSjB4miTr_4mA@mail.gmail.com>
+ <20180511164916.GC6649@twin.jikos.cz>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20180511164916.GC6649@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, May 11, 2018 at 5:49 PM, David Sterba <dsterba@suse.cz> wrote:
+On Fri, May 11, 2018 at 06:49:16PM +0200, David Sterba wrote:
 > On Fri, May 11, 2018 at 05:25:50PM +0100, Filipe Manana wrote:
->> On Fri, May 11, 2018 at 4:57 PM, David Sterba <dsterba@suse.com> wrote:
->> > The dedupe range is 16 MiB, with 4KiB pages and 8 byte pointers, the
->> > arrays can be 32KiB large. To avoid allocation failures due to
->> > fragmented memory, use the allocation with fallback to vmalloc.
->> >
->> > Signed-off-by: David Sterba <dsterba@suse.com>
->> > ---
->> >
->> > This depends on the patches that remove the 16MiB restriction in the
->> > dedupe ioctl, but contextually can be applied to the current code too.
->> >
->> > https://patchwork.kernel.org/patch/10374941/
->> >
->> >  fs/btrfs/ioctl.c | 4 ++--
->> >  1 file changed, 2 insertions(+), 2 deletions(-)
->> >
->> > diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
->> > index b572e38b4b64..a7f517009cd7 100644
->> > --- a/fs/btrfs/ioctl.c
->> > +++ b/fs/btrfs/ioctl.c
->> > @@ -3178,8 +3178,8 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
->> >          * locking. We use an array for the page pointers. Size of the array is
->> >          * bounded by len, which is in turn bounded by BTRFS_MAX_DEDUPE_LEN.
->> >          */
->> > -       cmp.src_pages = kcalloc(num_pages, sizeof(struct page *), GFP_KERNEL);
->> > -       cmp.dst_pages = kcalloc(num_pages, sizeof(struct page *), GFP_KERNEL);
->> > +       cmp.src_pages = kvzalloc(num_pages, sizeof(struct page *), GFP_KERNEL);
->> > +       cmp.dst_pages = kvzalloc(num_pages, sizeof(struct page *), GFP_KERNEL);
->>
->> Kvzalloc should take 2 parameters and not 3.
->
+> > On Fri, May 11, 2018 at 4:57 PM, David Sterba <dsterba@suse.com> wrote:
+> > > The dedupe range is 16 MiB, with 4KiB pages and 8 byte pointers, the
+> > > arrays can be 32KiB large. To avoid allocation failures due to
+> > > fragmented memory, use the allocation with fallback to vmalloc.
+> > >
+> > > Signed-off-by: David Sterba <dsterba@suse.com>
+> > > ---
+> > >
+> > > This depends on the patches that remove the 16MiB restriction in the
+> > > dedupe ioctl, but contextually can be applied to the current code too.
+> > >
+> > > https://patchwork.kernel.org/patch/10374941/
+> > >
+> > >  fs/btrfs/ioctl.c | 4 ++--
+> > >  1 file changed, 2 insertions(+), 2 deletions(-)
+> > >
+> > > diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> > > index b572e38b4b64..a7f517009cd7 100644
+> > > --- a/fs/btrfs/ioctl.c
+> > > +++ b/fs/btrfs/ioctl.c
+> > > @@ -3178,8 +3178,8 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
+> > >          * locking. We use an array for the page pointers. Size of the array is
+> > >          * bounded by len, which is in turn bounded by BTRFS_MAX_DEDUPE_LEN.
+> > >          */
+> > > -       cmp.src_pages = kcalloc(num_pages, sizeof(struct page *), GFP_KERNEL);
+> > > -       cmp.dst_pages = kcalloc(num_pages, sizeof(struct page *), GFP_KERNEL);
+> > > +       cmp.src_pages = kvzalloc(num_pages, sizeof(struct page *), GFP_KERNEL);
+> > > +       cmp.dst_pages = kvzalloc(num_pages, sizeof(struct page *), GFP_KERNEL);
+> > 
+> > Kvzalloc should take 2 parameters and not 3.
+> 
 > And the right function is kvmalloc_array.
->
->> Also, aren't the corresponding kvfree() calls missing?
->
+> 
+> > Also, aren't the corresponding kvfree() calls missing?
+> 
 > Yes, thanks for catching it. The updated version:
->
+> 
 > From: David Sterba <dsterba@suse.com>
 > Subject: [PATCH] btrfs: use kvzalloc for EXTENT_SAME temporary data
->
+> 
 > The dedupe range is 16 MiB, with 4KiB pages and 8 byte pointers, the
 > arrays can be 32KiB large. To avoid allocation failures due to
 > fragmented memory, use the allocation with fallback to vmalloc.
->
+> 
 > Signed-off-by: David Sterba <dsterba@suse.com>
 > ---
 >  fs/btrfs/ioctl.c | 16 +++++++++-------
 >  1 file changed, 9 insertions(+), 7 deletions(-)
->
+> 
 > diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
 > index b572e38b4b64..4fcfa05ed960 100644
 > --- a/fs/btrfs/ioctl.c
 > +++ b/fs/btrfs/ioctl.c
 > @@ -3178,12 +3178,13 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
->          * locking. We use an array for the page pointers. Size of the array is
->          * bounded by len, which is in turn bounded by BTRFS_MAX_DEDUPE_LEN.
->          */
-> -       cmp.src_pages = kcalloc(num_pages, sizeof(struct page *), GFP_KERNEL);
-> -       cmp.dst_pages = kcalloc(num_pages, sizeof(struct page *), GFP_KERNEL);
-> +       cmp.src_pages = kvmalloc_array(num_pages, sizeof(struct page *),
-> +                                      GFP_KERNEL);
-> +       cmp.dst_pages = kvmalloc_array(num_pages, sizeof(struct page *),
-> +                                      GFP_KERNEL);
->         if (!cmp.src_pages || !cmp.dst_pages) {
-> -               kfree(cmp.src_pages);
-> -               kfree(cmp.dst_pages);
-> -               return -ENOMEM;
-> +               ret = -ENOMEM;
-> +               goto out_free;
->         }
->
->         if (same_inode)
+>  	 * locking. We use an array for the page pointers. Size of the array is
+>  	 * bounded by len, which is in turn bounded by BTRFS_MAX_DEDUPE_LEN.
+>  	 */
+> -	cmp.src_pages = kcalloc(num_pages, sizeof(struct page *), GFP_KERNEL);
+> -	cmp.dst_pages = kcalloc(num_pages, sizeof(struct page *), GFP_KERNEL);
+> +	cmp.src_pages = kvmalloc_array(num_pages, sizeof(struct page *),
+> +				       GFP_KERNEL);
+> +	cmp.dst_pages = kvmalloc_array(num_pages, sizeof(struct page *),
+> +				       GFP_KERNEL);
+
+kcalloc() implies __GFP_ZERO, do we need that here?
+
+>  	if (!cmp.src_pages || !cmp.dst_pages) {
+> -		kfree(cmp.src_pages);
+> -		kfree(cmp.dst_pages);
+> -		return -ENOMEM;
+> +		ret = -ENOMEM;
+> +		goto out_free;
+>  	}
+>  
+>  	if (same_inode)
 > @@ -3211,8 +3212,9 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
->         else
->                 btrfs_double_inode_unlock(src, dst);
->
-> -       kfree(cmp.src_pages);
-> -       kfree(cmp.dst_pages);
+>  	else
+>  		btrfs_double_inode_unlock(src, dst);
+>  
+> -	kfree(cmp.src_pages);
+> -	kfree(cmp.dst_pages);
 > +out_free:
-> +       kvfree(cmp.src_pages);
-> +       kvfree(cmp.dst_pages);
-
-kvfree() missing at btrfs_cmp_data_free() too.
-
->
->         return ret;
+> +	kvfree(cmp.src_pages);
+> +	kvfree(cmp.dst_pages);
+>  
+>  	return ret;
 >  }
-> --
+> -- 
 > 2.16.2
->
-
-
-
--- 
-Filipe David Manana,
-
-“Whether you think you can, or you think you can't — you're right.”
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

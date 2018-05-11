@@ -1,109 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwym02.jp.fujitsu.com ([211.128.242.41]:19085 "EHLO
-        mgwym02.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752234AbeEPIGy (ORCPT
+Received: from mgwym03.jp.fujitsu.com ([211.128.242.42]:50655 "EHLO
+        mgwym03.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752174AbeEKHYM (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 16 May 2018 04:06:54 -0400
-Received: from g01jpfmpwkw02.exch.g01.fujitsu.local (g01jpfmpwkw02.exch.g01.fujitsu.local [10.0.193.56])
-        by yt-mxoi2.gw.nic.fujitsu.com (Postfix) with ESMTP id 21E54AC0095
-        for <linux-btrfs@vger.kernel.org>; Wed, 16 May 2018 17:06:48 +0900 (JST)
-Received: from G01JPEXCHKW18.g01.fujitsu.local (G01JPEXCHKW18.g01.fujitsu.local [10.0.194.57])
-        by g01jpfmpwkw02.exch.g01.fujitsu.local (Postfix) with ESMTP id 47C913287DE
-        for <linux-btrfs@vger.kernel.org>; Wed, 16 May 2018 17:06:47 +0900 (JST)
+        Fri, 11 May 2018 03:24:12 -0400
+Received: from g01jpfmpwyt02.exch.g01.fujitsu.local (g01jpfmpwyt02.exch.g01.fujitsu.local [10.128.193.56])
+        by yt-mxoi1.gw.nic.fujitsu.com (Postfix) with ESMTP id CB5D0AC0183
+        for <linux-btrfs@vger.kernel.org>; Fri, 11 May 2018 16:24:05 +0900 (JST)
+Received: from g01jpexchyt35.g01.fujitsu.local (unknown [10.128.193.4])
+        by g01jpfmpwyt02.exch.g01.fujitsu.local (Postfix) with ESMTP id 2ECCD584247
+        for <linux-btrfs@vger.kernel.org>; Fri, 11 May 2018 16:24:05 +0900 (JST)
 From: Tomohiro Misono <misono.tomohiro@jp.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH v2 2/2] btrfs: sysfs: Add entry which shows rmdir(2) can work for subvolume
-Date: Wed, 16 May 2018 17:09:27 +0900
-Message-ID: <2eb3880232f74bb884a269264058e6d5f5337ffc.1526457206.git.misono.tomohiro@jp.fujitsu.com>
-In-Reply-To: <cover.1526457206.git.misono.tomohiro@jp.fujitsu.com>
-References: <cover.1526457206.git.misono.tomohiro@jp.fujitsu.com>
+Subject: [PATCH v4 0/3] btrfs: Add three new unprivileged ioctls to allow normal users to call "sub list/show" etc.
+Date: Fri, 11 May 2018 16:26:19 +0900
+Message-ID: <cover.1526002757.git.misono.tomohiro@jp.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Deletion of a subvolume by rmdir(2) has become allowed by the
-'commit cd2decf640b1 ("btrfs: Allow rmdir(2) to delete an empty
-subvolume")'.
+changelog:
+v3 -> v4
+  - call btrfs_next_leaf() after btrfs_search_slot() when the slot
+    position exceeds the number of items
+  - rebased to current misc-next
+v2 -> v3
+  - fix kbuild test bot warning
+v1 -> v2
+  - completely reimplement 1st/2nd ioctl to have user friendly api
+  - various cleanup, remove unnecessary goto
+===
 
-It is a kind of new feature and this commits add a sysfs entry
-  /sys/fs/btrfs/static_features/rmdir_subvol
-to indicate the availability of feature so that a user program
-(e.g. xfstests) can detect it.
+This adds three new unprivileged ioctls:
 
-Note that new sysfs directory "static_features" is created since a entry
-in /sys/fs/btrfs/features depends on feature bits of superblock (in other
-words, they may be different between each fs) and is not suitable to hold
-the features which only depend on kernel version. New attribute_group
-"btrfs_static_feature_attr_group" is created for this purpose.
+1st patch:
+  ioctl which returns subvolume information of ROOT_ITEM and ROOT_BACKREF
+2nd patch:
+  ioctl which returns subvolume information of ROOT_REF (without subvolume name)
+3rd patch: 
+  user version of ino_lookup ioctl which also performs permission check.
 
-Signed-off-by: Tomohiro Misono <misono.tomohiro@jp.fujitsu.com>
----
- fs/btrfs/sysfs.c | 29 +++++++++++++++++++++++++++++
- 1 file changed, 29 insertions(+)
+They will be used to implement user version of "subvolume list/show" etc.
+in user tools.
+See each commit log for more detals.
 
-diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index 217d401fe8ae..35b3ac567899 100644
---- a/fs/btrfs/sysfs.c
-+++ b/fs/btrfs/sysfs.c
-@@ -210,12 +210,32 @@ static struct attribute *btrfs_supported_feature_attrs[] = {
- 	NULL
- };
- 
-+/* Features which depend on feature bits and may differ between each fs */
- static const struct attribute_group btrfs_feature_attr_group = {
- 	.name = "features",
- 	.is_visible = btrfs_feature_visible,
- 	.attrs = btrfs_supported_feature_attrs,
- };
- 
-+static ssize_t rmdir_subvol_show(struct kobject *kobj,
-+				 struct kobj_attribute *ka, char *buf)
-+{
-+	/* No meaning for the value */
-+	return snprintf(buf, PAGE_SIZE, "0\n");
-+}
-+BTRFS_ATTR(static_feature, rmdir_subvol, rmdir_subvol_show);
-+
-+static struct attribute *btrfs_supported_static_feature_attrs[] = {
-+	BTRFS_ATTR_PTR(static_feature, rmdir_subvol),
-+	NULL
-+};
-+
-+/* Features which only depend on kernel version */
-+static const struct attribute_group btrfs_static_feature_attr_group = {
-+	.name = "static_features",
-+	.attrs = btrfs_supported_static_feature_attrs,
-+};
-+
- static ssize_t btrfs_show_u64(u64 *value_ptr, spinlock_t *lock, char *buf)
- {
- 	u64 val;
-@@ -901,8 +921,15 @@ int __init btrfs_init_sysfs(void)
- 	ret = sysfs_create_group(&btrfs_kset->kobj, &btrfs_feature_attr_group);
- 	if (ret)
- 		goto out2;
-+	ret = sysfs_create_group(&btrfs_kset->kobj,
-+				 &btrfs_static_feature_attr_group);
-+	if (ret)
-+		goto out3;
- 
- 	return 0;
-+
-+out3:
-+	sysfs_remove_group(&btrfs_kset->kobj, &btrfs_feature_attr_group);
- out2:
- 	debugfs_remove_recursive(btrfs_debugfs_root_dentry);
- out1:
-@@ -914,6 +941,8 @@ int __init btrfs_init_sysfs(void)
- void __cold btrfs_exit_sysfs(void)
- {
- 	sysfs_remove_group(&btrfs_kset->kobj, &btrfs_feature_attr_group);
-+	sysfs_remove_group(&btrfs_kset->kobj,
-+			   &btrfs_static_feature_attr_group);
- 	kset_unregister(btrfs_kset);
- 	debugfs_remove_recursive(btrfs_debugfs_root_dentry);
- }
+The implementation of btrfs-progs can be found in the ML titled as follows: 
+  [PATCH 0/11] btrfs-progs: Rework of "subvolume list/show" and relax the root privileges of them
+
+Tomohiro Misono (3):
+  btrfs: Add unprivileged ioctl which returns subvolume information
+  btrfs: Add unprivileged ioctl which returns subvolume's ROOT_REF
+  btrfs: Add unprivileged version of ino_lookup ioctl
+
+ fs/btrfs/ioctl.c           | 435 +++++++++++++++++++++++++++++++++++++++++++++
+ include/uapi/linux/btrfs.h |  84 +++++++++
+ 2 files changed, 519 insertions(+)
+
 -- 
 2.14.3
 

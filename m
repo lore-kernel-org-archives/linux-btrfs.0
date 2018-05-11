@@ -1,215 +1,363 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:8734 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1752481AbeEOI4W (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 15 May 2018 04:56:22 -0400
-From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Subject: [PATCH v10.2 5/5] btrfs-progs: dedupe: introduce reconfigure subcommand
-Date: Tue, 15 May 2018 16:56:06 +0800
-Message-ID: <20180515085606.18084-6-lufq.fnst@cn.fujitsu.com>
-In-Reply-To: <20180515085606.18084-1-lufq.fnst@cn.fujitsu.com>
-References: <20180515085606.18084-1-lufq.fnst@cn.fujitsu.com>
+Received: from mx2.suse.de ([195.135.220.15]:41139 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751000AbeEKEUW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 11 May 2018 00:20:22 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 3008FAF82
+        for <linux-btrfs@vger.kernel.org>; Fri, 11 May 2018 04:20:21 +0000 (UTC)
+Subject: Re: [PATCH] btrfs: push relocation recovery into a helper thread
+From: Jeff Mahoney <jeffm@suse.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <0d7559af-b5ea-f725-1859-1c561984622f@suse.com>
+Cc: David Sterba <dsterba@suse.cz>
+Message-ID: <6ab83c00-094c-0692-87a0-1527def7f1e1@suse.com>
+Date: Fri, 11 May 2018 00:20:18 -0400
 MIME-Version: 1.0
-Content-Type: text/plain
+In-Reply-To: <0d7559af-b5ea-f725-1859-1c561984622f@suse.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="YUVexQKzoFvwqr81YhRdm77W25hpZBk9z"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--YUVexQKzoFvwqr81YhRdm77W25hpZBk9z
+Content-Type: multipart/mixed; boundary="XZFsyMwKbtPDvPNeCiHf77xtqLNowHK8i";
+ protected-headers="v1"
+From: Jeff Mahoney <jeffm@suse.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Cc: David Sterba <dsterba@suse.cz>
+Message-ID: <6ab83c00-094c-0692-87a0-1527def7f1e1@suse.com>
+Subject: Re: [PATCH] btrfs: push relocation recovery into a helper thread
+References: <0d7559af-b5ea-f725-1859-1c561984622f@suse.com>
+In-Reply-To: <0d7559af-b5ea-f725-1859-1c561984622f@suse.com>
 
-Introduce reconfigure subcommand to co-operate with new kernel ioctl
-modification.
+--XZFsyMwKbtPDvPNeCiHf77xtqLNowHK8i
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
- Documentation/btrfs-dedupe-inband.asciidoc |  7 ++
- cmds-dedupe-ib.c                           | 75 +++++++++++++++++-----
- 2 files changed, 66 insertions(+), 16 deletions(-)
+On 4/17/18 2:45 PM, Jeff Mahoney wrote:
+> On a file system with many snapshots and qgroups enabled, an interrupte=
+d
+> balance can end up taking a long time to mount due to recovering the
+> relocations during mount.  It does this in the task performing the moun=
+t,
+> which can't be interrupted and may prevent mounting (and systems bootin=
+g)
+> for a long time as well.  The thing is that as part of balance, this
+> runs in the background all the time.  This patch pushes the recovery
+> into a helper thread and allows the mount to continue normally.  We hol=
+d
+> off on resuming any paused balance operation until after the relocation=
 
-diff --git a/Documentation/btrfs-dedupe-inband.asciidoc b/Documentation/btrfs-dedupe-inband.asciidoc
-index df068c31ca3a..5fc4bb0d5940 100644
---- a/Documentation/btrfs-dedupe-inband.asciidoc
-+++ b/Documentation/btrfs-dedupe-inband.asciidoc
-@@ -86,6 +86,13 @@ And compression has higher priority than in-band de-duplication, means if
- compression and de-duplication is enabled at the same time, only compression
- will work.
- 
-+*reconfigure* [options] <path>::
-+Re-configure in-band de-duplication parameters of a filesystem.
-++
-+In-band de-duplication must be enbaled first before re-configuration.
-++
-+[Options] are the same with 'btrfs dedupe-inband enable'.
-+
- *status* <path>::
- Show current in-band de-duplication status of a filesystem.
- 
-diff --git a/cmds-dedupe-ib.c b/cmds-dedupe-ib.c
-index 854cbda131a3..925d5a8f756a 100644
---- a/cmds-dedupe-ib.c
-+++ b/cmds-dedupe-ib.c
-@@ -56,7 +56,6 @@ static const char * const cmd_dedupe_ib_enable_usage[] = {
- 	NULL
- };
- 
--
- #define report_fatal_parameter(dargs, old, member, type, err_val, fmt)	\
- ({									\
- 	if (dargs->member != old->member &&				\
-@@ -88,6 +87,12 @@ static void report_parameter_error(struct btrfs_ioctl_dedupe_args *dargs,
- 		}
- 		report_option_parameter(dargs, old, flags, u8, -1, x);
- 	}
-+
-+	if (dargs->status == 0 && old->cmd == BTRFS_DEDUPE_CTL_RECONF) {
-+		error("must enable dedupe before reconfiguration");
-+		return;
-+	}
-+
- 	if (report_fatal_parameter(dargs, old, cmd, u16, -1, u) ||
- 	    report_fatal_parameter(dargs, old, blocksize, u64, -1, llu) ||
- 	    report_fatal_parameter(dargs, old, backend, u16, -1, u) ||
-@@ -100,14 +105,17 @@ static void report_parameter_error(struct btrfs_ioctl_dedupe_args *dargs,
- 		old->limit_nr, old->limit_mem);
- }
- 
--static int cmd_dedupe_ib_enable(int argc, char **argv)
-+static int enable_reconfig_dedupe(int argc, char **argv, int reconf)
- {
- 	int ret;
- 	int fd = -1;
- 	char *path;
- 	u64 blocksize = BTRFS_DEDUPE_BLOCKSIZE_DEFAULT;
-+	int blocksize_set = 0;
- 	u16 hash_algo = BTRFS_DEDUPE_HASH_SHA256;
-+	int hash_algo_set = 0;
- 	u16 backend = BTRFS_DEDUPE_BACKEND_INMEMORY;
-+	int backend_set = 0;
- 	u64 limit_nr = 0;
- 	u64 limit_mem = 0;
- 	u64 sys_mem = 0;
-@@ -129,20 +137,22 @@ static int cmd_dedupe_ib_enable(int argc, char **argv)
- 			{ NULL, 0, NULL, 0}
- 		};
- 
--		c = getopt_long(argc, argv, "s:b:a:l:m:", long_options, NULL);
-+		c = getopt_long(argc, argv, "s:b:a:l:m:f", long_options, NULL);
- 		if (c < 0)
- 			break;
- 		switch (c) {
- 		case 's':
--			if (!strcasecmp("inmemory", optarg))
-+			if (!strcasecmp("inmemory", optarg)) {
- 				backend = BTRFS_DEDUPE_BACKEND_INMEMORY;
--			else {
-+				backend_set = 1;
-+			} else {
- 				error("unsupported dedupe backend: %s", optarg);
- 				exit(1);
- 			}
- 			break;
- 		case 'b':
- 			blocksize = parse_size(optarg);
-+			blocksize_set = 1;
- 			break;
- 		case 'a':
- 			if (strcmp("sha256", optarg)) {
-@@ -226,26 +236,40 @@ static int cmd_dedupe_ib_enable(int argc, char **argv)
- 		return 1;
- 	}
- 	memset(&dargs, -1, sizeof(dargs));
--	dargs.cmd = BTRFS_DEDUPE_CTL_ENABLE;
--	dargs.blocksize = blocksize;
--	dargs.hash_algo = hash_algo;
--	dargs.limit_nr = limit_nr;
--	dargs.limit_mem = limit_mem;
--	dargs.backend = backend;
--	if (force)
--		dargs.flags |= BTRFS_DEDUPE_FLAG_FORCE;
--	else
--		dargs.flags = 0;
-+	if (reconf) {
-+		dargs.cmd = BTRFS_DEDUPE_CTL_RECONF;
-+		if (blocksize_set)
-+			dargs.blocksize = blocksize;
-+		if (hash_algo_set)
-+			dargs.hash_algo = hash_algo;
-+		if (backend_set)
-+			dargs.backend = backend;
-+		dargs.limit_nr = limit_nr;
-+		dargs.limit_mem = limit_mem;
-+	} else {
-+		dargs.cmd = BTRFS_DEDUPE_CTL_ENABLE;
-+		dargs.blocksize = blocksize;
-+		dargs.hash_algo = hash_algo;
-+		dargs.limit_nr = limit_nr;
-+		dargs.limit_mem = limit_mem;
-+		dargs.backend = backend;
-+		if (force)
-+			dargs.flags |= BTRFS_DEDUPE_FLAG_FORCE;
-+		else
-+			dargs.flags = 0;
-+	}
- 
- 	memcpy(&backup, &dargs, sizeof(dargs));
- 	ret = ioctl(fd, BTRFS_IOC_DEDUPE_CTL, &dargs);
- 	if (ret < 0) {
--		error("failed to enable inband deduplication: %s",
-+		error("failed to (%s) inband deduplication: %s",
-+		      reconf ? "reconfigure" : "enable",
- 		      strerror(errno));
- 		report_parameter_error(&dargs, &backup);
- 		ret = 1;
- 		goto out;
- 	}
-+	report_parameter_error(&dargs, &backup);
- 	ret = 0;
- mem_check:
- 	if (!force && dargs.limit_mem > sys_mem / 4) {
-@@ -261,6 +285,10 @@ out:
- 	close_file_or_dir(fd, dirstream);
- 	return ret;
- }
-+static int cmd_dedupe_ib_enable(int argc, char **argv)
-+{
-+	return enable_reconfig_dedupe(argc, argv, 0);
-+}
- 
- static const char * const cmd_dedupe_ib_disable_usage[] = {
- 	"btrfs dedupe disable <path>",
-@@ -381,6 +409,19 @@ out:
- 	return ret;
- }
- 
-+static int cmd_dedupe_ib_reconf(int argc, char **argv)
-+{
-+	return enable_reconfig_dedupe(argc, argv, 1);
-+}
-+
-+static const char * const cmd_dedupe_ib_reconf_usage[] = {
-+	"btrfs dedupe-inband reconfigure [options] <path>",
-+	"Reconfigure in-band(write time) de-duplication of a btrfs.",
-+	"",
-+	"Options are the same as 'btrfs dedupe-inband enable'",
-+	NULL
-+};
-+
- const struct cmd_group dedupe_ib_cmd_group = {
- 	dedupe_ib_cmd_group_usage, dedupe_ib_cmd_group_info, {
- 		{ "enable", cmd_dedupe_ib_enable, cmd_dedupe_ib_enable_usage,
-@@ -389,6 +430,8 @@ const struct cmd_group dedupe_ib_cmd_group = {
- 		  NULL, 0},
- 		{ "status", cmd_dedupe_ib_status, cmd_dedupe_ib_status_usage,
- 		  NULL, 0},
-+		{ "reconfigure", cmd_dedupe_ib_reconf,
-+		  cmd_dedupe_ib_reconf_usage, NULL, 0},
- 		NULL_CMD_STRUCT
- 	}
- };
--- 
-2.17.0
+> has completed, disallow any new balance operations if it's running, and=
+
+> wait for it on umount and remounting read-only.
+>=20
+> This doesn't do anything to address the relocation recovery operation
+> taking a long time but does allow the file system to mount.
+
+I'm abandoning this patch.  The right fix is to fix qgroups.  The
+workload that I was targeting takes seconds to recover without qgroups
+in the way.
+
+-Jeff
+
+> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+> ---
+>  fs/btrfs/ctree.h      |    7 +++
+>  fs/btrfs/disk-io.c    |    7 ++-
+>  fs/btrfs/relocation.c |   92 +++++++++++++++++++++++++++++++++++++++++=
+---------
+>  fs/btrfs/super.c      |    5 +-
+>  fs/btrfs/volumes.c    |    6 +++
+>  5 files changed, 97 insertions(+), 20 deletions(-)
+>=20
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -1052,6 +1052,10 @@ struct btrfs_fs_info {
+>  	struct btrfs_work qgroup_rescan_work;
+>  	bool qgroup_rescan_running;	/* protected by qgroup_rescan_lock */
+> =20
+> +	/* relocation recovery items */
+> +	bool relocation_recovery_started;
+> +	struct completion relocation_recovery_completion;
+> +
+>  	/* filesystem state */
+>  	unsigned long fs_state;
+> =20
+> @@ -3671,7 +3675,8 @@ int btrfs_init_reloc_root(struct btrfs_t
+>  			  struct btrfs_root *root);
+>  int btrfs_update_reloc_root(struct btrfs_trans_handle *trans,
+>  			    struct btrfs_root *root);
+> -int btrfs_recover_relocation(struct btrfs_root *root);
+> +int btrfs_recover_relocation(struct btrfs_fs_info *fs_info);
+> +void btrfs_wait_for_relocation_completion(struct btrfs_fs_info *fs_inf=
+o);
+>  int btrfs_reloc_clone_csums(struct inode *inode, u64 file_pos, u64 len=
+);
+>  int btrfs_reloc_cow_block(struct btrfs_trans_handle *trans,
+>  			  struct btrfs_root *root, struct extent_buffer *buf,
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -2999,7 +2999,7 @@ retry_root_backup:
+>  			goto fail_qgroup;
+> =20
+>  		mutex_lock(&fs_info->cleaner_mutex);
+> -		ret =3D btrfs_recover_relocation(tree_root);
+> +		ret =3D btrfs_recover_relocation(fs_info);
+>  		mutex_unlock(&fs_info->cleaner_mutex);
+>  		if (ret < 0) {
+>  			btrfs_warn(fs_info, "failed to recover relocation: %d",
+> @@ -3017,7 +3017,8 @@ retry_root_backup:
+>  	if (IS_ERR(fs_info->fs_root)) {
+>  		err =3D PTR_ERR(fs_info->fs_root);
+>  		btrfs_warn(fs_info, "failed to read fs tree: %d", err);
+> -		goto fail_qgroup;
+> +		close_ctree(fs_info);
+> +		return err;
+>  	}
+> =20
+>  	if (sb_rdonly(sb))
+> @@ -3778,6 +3779,8 @@ void close_ctree(struct btrfs_fs_info *f
+>  	/* wait for the qgroup rescan worker to stop */
+>  	btrfs_qgroup_wait_for_completion(fs_info, false);
+> =20
+> +	btrfs_wait_for_relocation_completion(fs_info);
+> +
+>  	/* wait for the uuid_scan task to finish */
+>  	down(&fs_info->uuid_tree_rescan_sem);
+>  	/* avoid complains from lockdep et al., set sem back to initial state=
+ */
+> --- a/fs/btrfs/relocation.c
+> +++ b/fs/btrfs/relocation.c
+> @@ -22,6 +22,7 @@
+>  #include <linux/blkdev.h>
+>  #include <linux/rbtree.h>
+>  #include <linux/slab.h>
+> +#include <linux/kthread.h>
+>  #include "ctree.h"
+>  #include "disk-io.h"
+>  #include "transaction.h"
+> @@ -4492,14 +4493,61 @@ static noinline_for_stack int mark_garba
+>  }
+> =20
+>  /*
+> - * recover relocation interrupted by system crash.
+> - *
+>   * this function resumes merging reloc trees with corresponding fs tre=
+es.
+>   * this is important for keeping the sharing of tree blocks
+>   */
+> -int btrfs_recover_relocation(struct btrfs_root *root)
+> +static int
+> +btrfs_resume_relocation(void *data)
+>  {
+> -	struct btrfs_fs_info *fs_info =3D root->fs_info;
+> +	struct btrfs_fs_info *fs_info =3D data;
+> +	struct btrfs_trans_handle *trans;
+> +	struct reloc_control *rc =3D fs_info->reloc_ctl;
+> +	int err, ret;
+> +
+> +	btrfs_info(fs_info, "resuming relocation");
+> +
+> +	BUG_ON(!rc);
+> +
+> +	mutex_lock(&fs_info->cleaner_mutex);
+> +
+> +	merge_reloc_roots(rc);
+> +
+> +	unset_reloc_control(rc);
+> +
+> +	trans =3D btrfs_join_transaction(rc->extent_root);
+> +	if (IS_ERR(trans))
+> +		err =3D PTR_ERR(trans);
+> +	else {
+> +		ret =3D btrfs_commit_transaction(trans);
+> +		if (ret < 0)
+> +			err =3D ret;
+> +	}
+> +
+> +	kfree(rc);
+> +
+> +	if (err =3D=3D 0) {
+> +		struct btrfs_root *fs_root;
+> +
+> +		/* cleanup orphan inode in data relocation tree */
+> +		fs_root =3D read_fs_root(fs_info, BTRFS_DATA_RELOC_TREE_OBJECTID);
+> +		if (IS_ERR(fs_root))
+> +			err =3D PTR_ERR(fs_root);
+> +		else
+> +			err =3D btrfs_orphan_cleanup(fs_root);
+> +	}
+> +	mutex_unlock(&fs_info->cleaner_mutex);
+> +	clear_bit(BTRFS_FS_EXCL_OP, &fs_info->flags);
+> +	complete_all(&fs_info->relocation_recovery_completion);
+> +	return err;
+> +}
+> +
+> +/*
+> + * recover relocation interrupted by system crash.
+> + * this function locates the relocation trees
+> + */
+> +int btrfs_recover_relocation(struct btrfs_fs_info *fs_info)
+> +{
+> +	struct btrfs_root *tree_root =3D fs_info->tree_root;
+>  	LIST_HEAD(reloc_roots);
+>  	struct btrfs_key key;
+>  	struct btrfs_root *fs_root;
+> @@ -4508,9 +4556,12 @@ int btrfs_recover_relocation(struct btrf
+>  	struct extent_buffer *leaf;
+>  	struct reloc_control *rc =3D NULL;
+>  	struct btrfs_trans_handle *trans;
+> +	struct task_struct *tsk;
+>  	int ret;
+>  	int err =3D 0;
+> =20
+> +	WARN_ON(!rwsem_is_locked(&fs_info->sb->s_umount));
+> +
+>  	path =3D btrfs_alloc_path();
+>  	if (!path)
+>  		return -ENOMEM;
+> @@ -4521,8 +4572,7 @@ int btrfs_recover_relocation(struct btrf
+>  	key.offset =3D (u64)-1;
+> =20
+>  	while (1) {
+> -		ret =3D btrfs_search_slot(NULL, fs_info->tree_root, &key,
+> -					path, 0, 0);
+> +		ret =3D btrfs_search_slot(NULL, tree_root, &key, path, 0, 0);
+>  		if (ret < 0) {
+>  			err =3D ret;
+>  			goto out;
+> @@ -4540,7 +4590,7 @@ int btrfs_recover_relocation(struct btrf
+>  		    key.type !=3D BTRFS_ROOT_ITEM_KEY)
+>  			break;
+> =20
+> -		reloc_root =3D btrfs_read_fs_root(root, &key);
+> +		reloc_root =3D btrfs_read_fs_root(tree_root, &key);
+>  		if (IS_ERR(reloc_root)) {
+>  			err =3D PTR_ERR(reloc_root);
+>  			goto out;
+> @@ -4620,16 +4670,21 @@ int btrfs_recover_relocation(struct btrf
+>  	if (err)
+>  		goto out_free;
+> =20
+> -	merge_reloc_roots(rc);
+> -
+> -	unset_reloc_control(rc);
+> -
+> -	trans =3D btrfs_join_transaction(rc->extent_root);
+> -	if (IS_ERR(trans)) {
+> -		err =3D PTR_ERR(trans);
+> +	tsk =3D kthread_run(btrfs_resume_relocation, fs_info,
+> +			  "relocation-recovery");
+> +	if (IS_ERR(tsk)) {
+> +		err =3D PTR_ERR(tsk);
+>  		goto out_free;
+>  	}
+> -	err =3D btrfs_commit_transaction(trans);
+> +
+> +	fs_info->relocation_recovery_started =3D true;
+> +
+> +	/* protected from racing with resume thread by the cleaner_mutex */
+> +	init_completion(&fs_info->relocation_recovery_completion);
+> +
+> +	set_bit(BTRFS_FS_EXCL_OP, &fs_info->flags);
+> +	return 0;
+> +
+>  out_free:
+>  	kfree(rc);
+>  out:
+> @@ -4649,6 +4704,13 @@ out:
+>  	return err;
+>  }
+> =20
+> +void
+> +btrfs_wait_for_relocation_completion(struct btrfs_fs_info *fs_info)
+> +{
+> +	if (fs_info->relocation_recovery_started)
+> +		wait_for_completion(&fs_info->relocation_recovery_completion);
+> +}
+> +
+>  /*
+>   * helper to add ordered checksum for data relocation.
+>   *
+> --- a/fs/btrfs/super.c
+> +++ b/fs/btrfs/super.c
+> @@ -1767,7 +1767,6 @@ static inline void btrfs_remount_cleanup
+>  static int btrfs_remount(struct super_block *sb, int *flags, char *dat=
+a)
+>  {
+>  	struct btrfs_fs_info *fs_info =3D btrfs_sb(sb);
+> -	struct btrfs_root *root =3D fs_info->tree_root;
+>  	unsigned old_flags =3D sb->s_flags;
+>  	unsigned long old_opts =3D fs_info->mount_opt;
+>  	unsigned long old_compress_type =3D fs_info->compress_type;
+> @@ -1834,6 +1833,8 @@ static int btrfs_remount(struct super_bl
+>  		btrfs_scrub_cancel(fs_info);
+>  		btrfs_pause_balance(fs_info);
+> =20
+> +		btrfs_wait_for_relocation_completion(fs_info);
+> +
+>  		ret =3D btrfs_commit_super(fs_info);
+>  		if (ret)
+>  			goto restore;
+> @@ -1867,7 +1868,7 @@ static int btrfs_remount(struct super_bl
+> =20
+>  		/* recover relocation */
+>  		mutex_lock(&fs_info->cleaner_mutex);
+> -		ret =3D btrfs_recover_relocation(root);
+> +		ret =3D btrfs_recover_relocation(fs_info);
+>  		mutex_unlock(&fs_info->cleaner_mutex);
+>  		if (ret)
+>  			goto restore;
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -4034,6 +4034,12 @@ static int balance_kthread(void *data)
+>  	struct btrfs_fs_info *fs_info =3D data;
+>  	int ret =3D 0;
+> =20
+> +	if (fs_info->relocation_recovery_started) {
+> +		btrfs_info(fs_info,
+> +			   "waiting for relocation recovery before resuming balance");
+> +		wait_for_completion(&fs_info->relocation_recovery_completion);
+> +	}
+> +
+>  	mutex_lock(&fs_info->volume_mutex);
+>  	mutex_lock(&fs_info->balance_mutex);
+> =20
+>=20
 
 
+--=20
+Jeff Mahoney
+SUSE Labs
 
+
+--XZFsyMwKbtPDvPNeCiHf77xtqLNowHK8i--
+
+--YUVexQKzoFvwqr81YhRdm77W25hpZBk9z
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQIzBAEBCAAdFiEE8wzgbmZ74SnKPwtDHntLYyF55bIFAlr1GgIACgkQHntLYyF5
+5bLvvw/9EZLlX2BfZ/tnGb7wBJo81Se8cPT6J0PrR1+Y/3cMYM/Ogtd1IH3X/GON
+B3hgMgikkWXnNJv9PGYg6PlZvZB2irs0El630quTOKE2KswFGS9zgQMAa3POJxLm
+fzXUNbbZA3Lz21eBKf7mr6D6kXqGtzlQaPJOSQLNCzChVEUe1ESsxs54Ge1HEx6E
+UBjT3jzJi7top8x42qa8DYYWdkSt8xuqt4s1N+6hKNXIQXyyC3oY5CwfdNWcb31V
+gwaLjxZ17aippxjk/ME0gasXV9TrbpRm30TIlhTvZmYnLS68EvT7EsppCjBH6Sm1
+S+EvzOQDzWqCltdamxIkPVPpSKPMaDIRdNHOxoWCrHIDs2kkNRmGlNnCzDQOeIow
++A/a/1NYa7VQU1RemLb8v4C6Nq4Mb9lUq8dYSwmYO2qL7t+AnmesWcsCHkj5CJkW
+Ij00C49dQqUtU/hvklZ5H4D7YqCsNC2MmG6Y7JxOXdEXsn5ujQcJXXxCc4XL+njE
+nGqTp1l6kj+8+9tvktwSAyqEnqQFLGg5uYE6cDuMJhKFGrqbBmt1cWtOn9G/j7HW
+QL2q2eNM6n3/KqdP0pGFqg7+7r7IXgt718S2Ktle3P8Fx4FVSaYIHoPpjIY5j3/y
+ww6ZGK7U3x2ZmxzV47E+rwn/ebL9YkGbTaiRib+/296/Fn87mJo=
+=lxXY
+-----END PGP SIGNATURE-----
+
+--YUVexQKzoFvwqr81YhRdm77W25hpZBk9z--

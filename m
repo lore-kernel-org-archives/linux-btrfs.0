@@ -1,326 +1,254 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:46612 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752908AbeENM0b (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 14 May 2018 08:26:31 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 9829CABE9
-        for <linux-btrfs@vger.kernel.org>; Mon, 14 May 2018 12:26:30 +0000 (UTC)
-From: David Sterba <dsterba@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH v3 3/3] btrfs: replace waitqueue_actvie with cond_wake_up
-Date: Mon, 14 May 2018 14:23:51 +0200
-Message-Id: <11a22bdfa6ecf5e3766251250c5ed3fee4672781.1526300425.git.dsterba@suse.com>
-In-Reply-To: <cover.1526300425.git.dsterba@suse.com>
-References: <cover.1526300425.git.dsterba@suse.com>
+Received: from mail-ua0-f193.google.com ([209.85.217.193]:43078 "EHLO
+        mail-ua0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751406AbeEKJ7b (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 11 May 2018 05:59:31 -0400
+Received: by mail-ua0-f193.google.com with SMTP id d4-v6so3222065ual.10
+        for <linux-btrfs@vger.kernel.org>; Fri, 11 May 2018 02:59:31 -0700 (PDT)
+MIME-Version: 1.0
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <1526020480-18466-1-git-send-email-robbieko@synology.com>
+References: <1526020480-18466-1-git-send-email-robbieko@synology.com>
+From: Filipe Manana <fdmanana@gmail.com>
+Date: Fri, 11 May 2018 10:59:29 +0100
+Message-ID: <CAL3q7H7gizDoR+Z4HmTRWHRPQ0cqu_U9xtT5iDgaBpS10baEtQ@mail.gmail.com>
+Subject: Re: [PATCH v2] btrfs: incremental send, fix BUG when invalid memory access
+To: robbieko <robbieko@synology.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Use the wrappers and reduce the amount of low-level details about the
-waitqueue management.
+On Fri, May 11, 2018 at 7:34 AM, robbieko <robbieko@synology.com> wrote:
+> From: Robbie Ko <robbieko@synology.com>
+>
+> [BUG]
+> btrfs incremental send BUG happens when creating a snapshot of snapshot
+> that is being used by send.
+>
+> [REASON]
+> The problem can happen if while we are doing a send one of the snapshots
+> used (parent or send) is snapshotted, because snapshoting implies COWing
+> the root of the source subvolume/snaphot.
 
-Signed-off-by: David Sterba <dsterba@suse.com>
----
- fs/btrfs/compression.c   |  7 +------
- fs/btrfs/delayed-inode.c |  9 +++------
- fs/btrfs/dev-replace.c   | 10 ++++------
- fs/btrfs/extent-tree.c   |  7 +------
- fs/btrfs/inode.c         |  9 +++------
- fs/btrfs/locking.c       | 34 +++++++++++-----------------------
- fs/btrfs/ordered-data.c  | 14 ++++----------
- fs/btrfs/transaction.c   |  7 +------
- fs/btrfs/tree-log.c      | 34 ++++++++++++----------------------
- 9 files changed, 40 insertions(+), 91 deletions(-)
+snaphot -> snapshot
 
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index 5268c9f85ca7..dcebb91e4e0c 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -990,12 +990,7 @@ static void __free_workspace(int type, struct list_head *workspace,
- 		btrfs_compress_op[idx]->free_workspace(workspace);
- 	atomic_dec(total_ws);
- wake:
--	/*
--	 * Make sure counter is updated before we wake up waiters.
--	 */
--	smp_mb();
--	if (waitqueue_active(ws_wait))
--		wake_up(ws_wait);
-+	cond_wake_up(ws_wait);
- }
- 
- static void free_workspace(int type, struct list_head *ws)
-diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-index a8d492dbd3e7..fe6caa7e698b 100644
---- a/fs/btrfs/delayed-inode.c
-+++ b/fs/btrfs/delayed-inode.c
-@@ -460,13 +460,10 @@ static void finish_one_item(struct btrfs_delayed_root *delayed_root)
- {
- 	int seq = atomic_inc_return(&delayed_root->items_seq);
- 
--	/*
--	 * atomic_dec_return implies a barrier for waitqueue_active
--	 */
-+	/* atomic_dec_return implies a barrier */
- 	if ((atomic_dec_return(&delayed_root->items) <
--	    BTRFS_DELAYED_BACKGROUND || seq % BTRFS_DELAYED_BATCH == 0) &&
--	    waitqueue_active(&delayed_root->wait))
--		wake_up(&delayed_root->wait);
-+	    BTRFS_DELAYED_BACKGROUND || seq % BTRFS_DELAYED_BATCH == 0))
-+		cond_wake_up_nomb(&delayed_root->wait);
- }
- 
- static void __btrfs_remove_delayed_item(struct btrfs_delayed_item *delayed_item)
-diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index f82be266ba4b..d33ff5b23302 100644
---- a/fs/btrfs/dev-replace.c
-+++ b/fs/btrfs/dev-replace.c
-@@ -916,9 +916,9 @@ void btrfs_dev_replace_clear_lock_blocking(
- 	ASSERT(atomic_read(&dev_replace->read_locks) > 0);
- 	ASSERT(atomic_read(&dev_replace->blocking_readers) > 0);
- 	read_lock(&dev_replace->lock);
--	if (atomic_dec_and_test(&dev_replace->blocking_readers) &&
--	    waitqueue_active(&dev_replace->read_lock_wq))
--		wake_up(&dev_replace->read_lock_wq);
-+	/* Barrier implied by atomic_dec_and_test */
-+	if (atomic_dec_and_test(&dev_replace->blocking_readers))
-+		cond_wake_up_nomb(&dev_replace->read_lock_wq);
- }
- 
- void btrfs_bio_counter_inc_noblocked(struct btrfs_fs_info *fs_info)
-@@ -929,9 +929,7 @@ void btrfs_bio_counter_inc_noblocked(struct btrfs_fs_info *fs_info)
- void btrfs_bio_counter_sub(struct btrfs_fs_info *fs_info, s64 amount)
- {
- 	percpu_counter_sub(&fs_info->bio_counter, amount);
--
--	if (waitqueue_active(&fs_info->replace_wait))
--		wake_up(&fs_info->replace_wait);
-+	cond_wake_up_nomb(&fs_info->replace_wait);
- }
- 
- void btrfs_bio_counter_inc_blocked(struct btrfs_fs_info *fs_info)
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 3871658b6ab1..94fc825a126d 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -11094,12 +11094,7 @@ int btrfs_trim_fs(struct btrfs_fs_info *fs_info, struct fstrim_range *range)
- void btrfs_end_write_no_snapshotting(struct btrfs_root *root)
- {
- 	percpu_counter_dec(&root->subv_writers->counter);
--	/*
--	 * Make sure counter is updated before we wake up waiters.
--	 */
--	smp_mb();
--	if (waitqueue_active(&root->subv_writers->wait))
--		wake_up(&root->subv_writers->wait);
-+	cond_wake_up(&root->subv_writers->wait);
- }
- 
- int btrfs_start_write_no_snapshotting(struct btrfs_root *root)
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index d241285a0d2a..cf6f2815ffee 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -1156,13 +1156,10 @@ static noinline void async_cow_submit(struct btrfs_work *work)
- 	nr_pages = (async_cow->end - async_cow->start + PAGE_SIZE) >>
- 		PAGE_SHIFT;
- 
--	/*
--	 * atomic_sub_return implies a barrier for waitqueue_active
--	 */
-+	/* atomic_sub_return implies a barrier */
- 	if (atomic_sub_return(nr_pages, &fs_info->async_delalloc_pages) <
--	    5 * SZ_1M &&
--	    waitqueue_active(&fs_info->async_submit_wait))
--		wake_up(&fs_info->async_submit_wait);
-+	    5 * SZ_1M)
-+		cond_wake_up_nomb(&fs_info->async_submit_wait);
- 
- 	if (async_cow->inode)
- 		submit_compressed_extents(async_cow->inode, async_cow);
-diff --git a/fs/btrfs/locking.c b/fs/btrfs/locking.c
-index e4faefac9d16..1da768e5ef75 100644
---- a/fs/btrfs/locking.c
-+++ b/fs/btrfs/locking.c
-@@ -66,22 +66,16 @@ void btrfs_clear_lock_blocking_rw(struct extent_buffer *eb, int rw)
- 		write_lock(&eb->lock);
- 		WARN_ON(atomic_read(&eb->spinning_writers));
- 		atomic_inc(&eb->spinning_writers);
--		/*
--		 * atomic_dec_and_test implies a barrier for waitqueue_active
--		 */
--		if (atomic_dec_and_test(&eb->blocking_writers) &&
--		    waitqueue_active(&eb->write_lock_wq))
--			wake_up(&eb->write_lock_wq);
-+		/* atomic_dec_and_test implies a barrier */
-+		if (atomic_dec_and_test(&eb->blocking_writers))
-+			cond_wake_up_nomb(&eb->write_lock_wq);
- 	} else if (rw == BTRFS_READ_LOCK_BLOCKING) {
- 		BUG_ON(atomic_read(&eb->blocking_readers) == 0);
- 		read_lock(&eb->lock);
- 		atomic_inc(&eb->spinning_readers);
--		/*
--		 * atomic_dec_and_test implies a barrier for waitqueue_active
--		 */
--		if (atomic_dec_and_test(&eb->blocking_readers) &&
--		    waitqueue_active(&eb->read_lock_wq))
--			wake_up(&eb->read_lock_wq);
-+		/* atomic_dec_and_test implies a barrier */
-+		if (atomic_dec_and_test(&eb->blocking_readers))
-+			cond_wake_up_nomb(&eb->read_lock_wq);
- 	}
- }
- 
-@@ -221,12 +215,9 @@ void btrfs_tree_read_unlock_blocking(struct extent_buffer *eb)
- 	}
- 	btrfs_assert_tree_read_locked(eb);
- 	WARN_ON(atomic_read(&eb->blocking_readers) == 0);
--	/*
--	 * atomic_dec_and_test implies a barrier for waitqueue_active
--	 */
--	if (atomic_dec_and_test(&eb->blocking_readers) &&
--	    waitqueue_active(&eb->read_lock_wq))
--		wake_up(&eb->read_lock_wq);
-+	/* atomic_dec_and_test implies a barrier */
-+	if (atomic_dec_and_test(&eb->blocking_readers))
-+		cond_wake_up_nomb(&eb->read_lock_wq);
- 	atomic_dec(&eb->read_locks);
- }
- 
-@@ -275,12 +266,9 @@ void btrfs_tree_unlock(struct extent_buffer *eb)
- 	if (blockers) {
- 		WARN_ON(atomic_read(&eb->spinning_writers));
- 		atomic_dec(&eb->blocking_writers);
--		/*
--		 * Make sure counter is updated before we wake up waiters.
--		 */
-+		/* Use the lighter barrier after atomic */
- 		smp_mb__after_atomic();
--		if (waitqueue_active(&eb->write_lock_wq))
--			wake_up(&eb->write_lock_wq);
-+		cond_wake_up_nomb(&eb->write_lock_wq);
- 	} else {
- 		WARN_ON(atomic_read(&eb->spinning_writers) != 1);
- 		atomic_dec(&eb->spinning_writers);
-diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-index 6db8bb2f2c28..2e1a1694a33d 100644
---- a/fs/btrfs/ordered-data.c
-+++ b/fs/btrfs/ordered-data.c
-@@ -343,11 +343,8 @@ int btrfs_dec_test_first_ordered_pending(struct inode *inode,
- 
- 	if (entry->bytes_left == 0) {
- 		ret = test_and_set_bit(BTRFS_ORDERED_IO_DONE, &entry->flags);
--		/*
--		 * Implicit memory barrier after test_and_set_bit
--		 */
--		if (waitqueue_active(&entry->wait))
--			wake_up(&entry->wait);
-+		/* test_and_set_bit implies a barrier */
-+		cond_wake_up_nomb(&entry->wait);
- 	} else {
- 		ret = 1;
- 	}
-@@ -410,11 +407,8 @@ int btrfs_dec_test_ordered_pending(struct inode *inode,
- 
- 	if (entry->bytes_left == 0) {
- 		ret = test_and_set_bit(BTRFS_ORDERED_IO_DONE, &entry->flags);
--		/*
--		 * Implicit memory barrier after test_and_set_bit
--		 */
--		if (waitqueue_active(&entry->wait))
--			wake_up(&entry->wait);
-+		/* test_and_set_bit implies a barrier */
-+		cond_wake_up_nomb(&entry->wait);
- 	} else {
- 		ret = 1;
- 	}
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index c944b4769e3c..ff841abb756e 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -877,12 +877,7 @@ static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
- 	atomic_dec(&cur_trans->num_writers);
- 	extwriter_counter_dec(cur_trans, trans->type);
- 
--	/*
--	 * Make sure counter is updated before we wake up waiters.
--	 */
--	smp_mb();
--	if (waitqueue_active(&cur_trans->writer_wait))
--		wake_up(&cur_trans->writer_wait);
-+	cond_wake_up(&cur_trans->writer_wait);
- 	btrfs_put_transaction(cur_trans);
- 
- 	if (current->journal_info == trans)
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index fa5b3dc5f4d5..a3ebda24ae12 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -222,11 +222,8 @@ int btrfs_pin_log_trans(struct btrfs_root *root)
- void btrfs_end_log_trans(struct btrfs_root *root)
- {
- 	if (atomic_dec_and_test(&root->log_writers)) {
--		/*
--		 * Implicit memory barrier after atomic_dec_and_test
--		 */
--		if (waitqueue_active(&root->log_writer_wait))
--			wake_up(&root->log_writer_wait);
-+		/* atomic_dec_and_test implies a barrier */
-+		cond_wake_up_nomb(&root->log_writer_wait);
- 	}
- }
- 
-@@ -2988,11 +2985,8 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
- 
- 	mutex_lock(&log_root_tree->log_mutex);
- 	if (atomic_dec_and_test(&log_root_tree->log_writers)) {
--		/*
--		 * Implicit memory barrier after atomic_dec_and_test
--		 */
--		if (waitqueue_active(&log_root_tree->log_writer_wait))
--			wake_up(&log_root_tree->log_writer_wait);
-+		/* atomic_dec_and_test implies a barrier */
-+		cond_wake_up_nomb(&log_root_tree->log_writer_wait);
- 	}
- 
- 	if (ret) {
-@@ -3116,13 +3110,11 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
- 	mutex_unlock(&log_root_tree->log_mutex);
- 
- 	/*
--	 * The barrier before waitqueue_active is needed so all the updates
--	 * above are seen by the woken threads. It might not be necessary, but
--	 * proving that seems to be hard.
-+	 * The barrier before waitqueue_active (in cond_wake_up) is needed so
-+	 * all the updates above are seen by the woken threads. It might not be
-+	 * necessary, but proving that seems to be hard.
- 	 */
--	smp_mb();
--	if (waitqueue_active(&log_root_tree->log_commit_wait[index2]))
--		wake_up(&log_root_tree->log_commit_wait[index2]);
-+	cond_wake_up(&log_root_tree->log_commit_wait[index2]);
- out:
- 	mutex_lock(&root->log_mutex);
- 	btrfs_remove_all_log_ctxs(root, index1, ret);
-@@ -3131,13 +3123,11 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
- 	mutex_unlock(&root->log_mutex);
- 
- 	/*
--	 * The barrier before waitqueue_active is needed so all the updates
--	 * above are seen by the woken threads. It might not be necessary, but
--	 * proving that seems to be hard.
-+	 * The barrier before waitqueue_active (in cond_wake_up) is needed so
-+	 * all the updates above are seen by the woken threads. It might not be
-+	 * necessary, but proving that seems to be hard.
- 	 */
--	smp_mb();
--	if (waitqueue_active(&root->log_commit_wait[index1]))
--		wake_up(&root->log_commit_wait[index1]);
-+	cond_wake_up(&root->log_commit_wait[index1]);
- 	return ret;
- }
- 
+>
+> 1. When send with the parent, the send process will get the commit roots
+>    from parent and send, and add references by extent_buffer_get.
+
+When doing an incremental send, the send process will get the commit
+roots from the parent and send snapshots,
+and add references to them through extent_buffer_get().
+
+>
+> 2. When the snapshots(parent or send) is snapshotted, the committed root
+>    of the snapshot will be modified, because snapshoting implies COWing
+>    the root of the source subvolume/snaphot.
+
+When a snapshot/subvolume is snapshotted, its root node is COWed
+(transaction.c:create_pending_snapshot()).
+
+>
+> 3. When COWing, we will allocate new space to submit root and release
+>    the old space.
+>
+> Assume that A is the old commit root.
+> __btrfs_cow_block()
+> --btrfs_free_tree_block()
+> ----btrfs_add_free_space(bytenr of A)
+
+
+3. COWing releases the space used by the node immediately, through:
+
+ __btrfs_cow_block()
+ --btrfs_free_tree_block()
+ ----btrfs_add_free_space(bytenr of node)
+
+>
+> 4. Therefore, the old commit_root space can be used when other processes
+>    need to allocate new treeblocks.
+>    However, alloc_extent_buffer is created by the bytenr.
+>    It will first find out if there is an existing extent_buffer through
+>    find_extent_buffer and cause the original extent_buffer to be modified.
+>
+> btrfs_alloc_tree_block
+> --btrfs_reserve_extent
+> ----find_free_extent (get bytenr of A)
+> --btrfs_init_new_buffer (use bytenr of A)
+> ----btrfs_find_create_tree_block
+> ------alloc_extent_buffer
+> --------find_extent_buffer (get A)
+
+
+4. Because send doesn't hold a transaction open, it's possible that
+the transaction used to create
+the snapshot commits, switches the commit root and the old space used
+by the previous root node
+gets assigned to some other node allocation. Allocation of a new node
+will use the existing extent buffer
+found in memory, which we previously got a reference through
+extent_buffer_get(), and allow the
+extent buffer's content (pages) to be modified:
+
+ btrfs_alloc_tree_block
+ --btrfs_reserve_extent
+ ----find_free_extent (get bytenr of A)
+ --btrfs_init_new_buffer (use bytenr of A)
+ ----btrfs_find_create_tree_block
+ ------alloc_extent_buffer
+ --------find_extent_buffer (get A)
+
+>
+> 5. Eventually causing send process to access illegal memory.
+
+5. So send can access invalid memory content and have unpredictable behaviour.
+
+>
+> Thus extent_buffer_get can only prevent extent_buffer from being released,
+> but it cannot prevent extent_buffer from being used by others.
+>
+> [FIX]
+> So we fixed the problem by copy commit_root to avoid accessing illegal
+> memory.
+
+So we fix the problem by copying the commit roots of the send and
+parent snapshots and use those copies.
+
+>
+> CallTrace looks like this:
+>  ------------[ cut here ]------------
+>  kernel BUG at fs/btrfs/ctree.c:1861!
+>  invalid opcode: 0000 [#1] SMP
+>  CPU: 6 PID: 24235 Comm: btrfs Tainted: P           O 3.10.105 #23721
+>  ffff88046652d680 ti: ffff88041b720000 task.ti: ffff88041b720000
+>  RIP: 0010:[<ffffffffa08dd0e8>] read_node_slot+0x108/0x110 [btrfs]
+>  RSP: 0018:ffff88041b723b68  EFLAGS: 00010246
+>  RAX: ffff88043ca6b000 RBX: ffff88041b723c50 RCX: ffff880000000000
+>  RDX: 000000000000004c RSI: ffff880314b133f8 RDI: ffff880458b24000
+>  RBP: 0000000000000000 R08: 0000000000000001 R09: ffff88041b723c66
+>  R10: 0000000000000001 R11: 0000000000001000 R12: ffff8803f3e48890
+>  R13: ffff8803f3e48880 R14: ffff880466351800 R15: 0000000000000001
+>  FS:  00007f8c321dc8c0(0000) GS:ffff88047fcc0000(0000)
+>  CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+>  R2: 00007efd1006d000 CR3: 0000000213a24000 CR4: 00000000003407e0
+>  DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+>  DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+>  Stack:
+>  ffff88041b723c50 ffff8803f3e48880 ffff8803f3e48890 ffff8803f3e48880
+>  ffff880466351800 0000000000000001 ffffffffa08dd9d7 ffff88041b723c50
+>  ffff8803f3e48880 ffff88041b723c66 ffffffffa08dde85 a9ff88042d2c4400
+>  Call Trace:
+>  [<ffffffffa08dd9d7>] ? tree_move_down.isra.33+0x27/0x50 [btrfs]
+>  [<ffffffffa08dde85>] ? tree_advance+0xb5/0xc0 [btrfs]
+>  [<ffffffffa08e83d4>] ? btrfs_compare_trees+0x2d4/0x760 [btrfs]
+>  [<ffffffffa0982050>] ? finish_inode_if_needed+0x870/0x870 [btrfs]
+>  [<ffffffffa09841ea>] ? btrfs_ioctl_send+0xeda/0x1050 [btrfs]
+>  [<ffffffffa094bd3d>] ? btrfs_ioctl+0x1e3d/0x33f0 [btrfs]
+>  [<ffffffff81111133>] ? handle_pte_fault+0x373/0x990
+>  [<ffffffff8153a096>] ? atomic_notifier_call_chain+0x16/0x20
+>  [<ffffffff81063256>] ? set_task_cpu+0xb6/0x1d0
+>  [<ffffffff811122c3>] ? handle_mm_fault+0x143/0x2a0
+>  [<ffffffff81539cc0>] ? __do_page_fault+0x1d0/0x500
+>  [<ffffffff81062f07>] ? check_preempt_curr+0x57/0x90
+>  [<ffffffff8115075a>] ? do_vfs_ioctl+0x4aa/0x990
+>  [<ffffffff81034f83>] ? do_fork+0x113/0x3b0
+>  [<ffffffff812dd7d7>] ? trace_hardirqs_off_thunk+0x3a/0x6c
+>  [<ffffffff81150cc8>] ? SyS_ioctl+0x88/0xa0
+>  [<ffffffff8153e422>] ? system_call_fastpath+0x16/0x1b
+>  ---[ end trace 29576629ee80b2e1 ]---
+>
+> Signed-off-by: Robbie Ko <robbieko@synology.com>
+> ---
+> V2:
+> fix commets
+>
+>  fs/btrfs/ctree.c | 26 ++++++++++++++++++++++++--
+>  1 file changed, 24 insertions(+), 2 deletions(-)
+>
+> diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+> index b88a79e..c9ce52f 100644
+> --- a/fs/btrfs/ctree.c
+> +++ b/fs/btrfs/ctree.c
+> @@ -5398,6 +5398,8 @@ int btrfs_compare_trees(struct btrfs_root *left_root,
+>         u64 right_blockptr;
+>         u64 left_gen;
+>         u64 right_gen;
+> +       struct extent_buffer *left_root_node = NULL;
+> +       struct extent_buffer *right_root_node = NULL;
+>
+>         left_path = btrfs_alloc_path();
+>         if (!left_path) {
+> @@ -5416,6 +5418,20 @@ int btrfs_compare_trees(struct btrfs_root *left_root,
+>                 goto out;
+>         }
+>
+> +       left_root_node = alloc_dummy_extent_buffer(left_root->fs_info, 0);
+> +       if (!left_root_node) {
+> +               ret = -ENOMEM;
+> +               goto out;
+> +       }
+> +       extent_buffer_get(left_root_node);
+> +
+> +       right_root_node = alloc_dummy_extent_buffer(left_root->fs_info, 0);
+> +       if (!right_root_node) {
+> +               ret = -ENOMEM;
+> +               goto out;
+> +       }
+> +       extent_buffer_get(right_root_node);
+> +
+>         left_path->search_commit_root = 1;
+>         left_path->skip_locking = 1;
+>         right_path->search_commit_root = 1;
+> @@ -5460,12 +5476,16 @@ int btrfs_compare_trees(struct btrfs_root *left_root,
+>         down_read(&fs_info->commit_root_sem);
+>         left_level = btrfs_header_level(left_root->commit_root);
+>         left_root_level = left_level;
+> -       left_path->nodes[left_level] = left_root->commit_root;
+> +       copy_extent_buffer_full(left_root_node, left_root->commit_root);
+> +       set_bit(EXTENT_BUFFER_UPTODATE, &left_root_node->bflags);
+> +       left_path->nodes[left_level] = left_root_node;
+>         extent_buffer_get(left_path->nodes[left_level]);
+>
+>         right_level = btrfs_header_level(right_root->commit_root);
+>         right_root_level = right_level;
+> -       right_path->nodes[right_level] = right_root->commit_root;
+> +       copy_extent_buffer_full(right_root_node, right_root->commit_root);
+> +       set_bit(EXTENT_BUFFER_UPTODATE, &right_root_node->bflags);
+> +       right_path->nodes[right_level] = right_root_node;
+
+Instead of allocating dummy extent buffer, copy the pages and then set
+the uptodate flag ourselves, we can just call
+btrfs_clone_extent_buffer(), which does all of that,
+reducing code size here and hiding complexity.
+Any reason why you didn't do that instead?
+
+thanks
+
+>         extent_buffer_get(right_path->nodes[right_level]);
+>         up_read(&fs_info->commit_root_sem);
+>
+> @@ -5613,6 +5633,8 @@ int btrfs_compare_trees(struct btrfs_root *left_root,
+>  out:
+>         btrfs_free_path(left_path);
+>         btrfs_free_path(right_path);
+> +       free_extent_buffer(left_root_node);
+> +       free_extent_buffer(right_root_node);
+>         kvfree(tmp_buf);
+>         return ret;
+>  }
+> --
+> 1.9.1
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+
+
 -- 
-2.16.2
+Filipe David Manana,
 
+“Whether you think you can, or you think you can't — you're right.”

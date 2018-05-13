@@ -1,19 +1,19 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f43.google.com ([209.85.218.43]:41944 "EHLO
-        mail-oi0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750868AbeEMF2D (ORCPT
+Received: from mail-ot0-f179.google.com ([74.125.82.179]:46820 "EHLO
+        mail-ot0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750941AbeEMLBy (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 13 May 2018 01:28:03 -0400
-Received: by mail-oi0-f43.google.com with SMTP id 11-v6so8004754ois.8
-        for <linux-btrfs@vger.kernel.org>; Sat, 12 May 2018 22:28:03 -0700 (PDT)
+        Sun, 13 May 2018 07:01:54 -0400
+Received: by mail-ot0-f179.google.com with SMTP id t1-v6so11187892ott.13
+        for <linux-btrfs@vger.kernel.org>; Sun, 13 May 2018 04:01:54 -0700 (PDT)
 MIME-Version: 1.0
 In-Reply-To: <CAJCQCtSHH_y3FaKn9a0f1kEJXNvYuFgMpW9FQhQLMkTEoHDqMQ@mail.gmail.com>
 References: <CA+X5Wn7kouUS=UrvyxfFVEA12NAoh5NrtCLGT6HY6VKq7Bss7Q@mail.gmail.com>
  <1835523.2oRAal5OEW@merkaba> <CA+X5Wn7JP_jsErt5gYOUnur0TReeeqpnF6QU5boNtmhfVeaBGQ@mail.gmail.com>
  <CAJCQCtSHH_y3FaKn9a0f1kEJXNvYuFgMpW9FQhQLMkTEoHDqMQ@mail.gmail.com>
 From: james harvey <jamespharvey20@gmail.com>
-Date: Sun, 13 May 2018 01:28:02 -0400
-Message-ID: <CA+X5Wn5gK9ZMKKXd_fSLJQUzw+NSbumSaJDH0KFf+D7Xy_mH5g@mail.gmail.com>
+Date: Sun, 13 May 2018 07:01:53 -0400
+Message-ID: <CA+X5Wn4KDSWLyGq8pbGaSiZVYhj-z+nt4QCf_-WTufE1GV1jfA@mail.gmail.com>
 Subject: Re: "decompress failed" in 1-2 files always causes kernel oops,
  check/scrub pass
 To: Chris Murphy <lists@colorremedies.com>
@@ -21,6 +21,14 @@ Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
+
+*** Disregard previous post.  I read btrfs-map-logical.c, and the
+reply below is more sensical than my last. I now understand since I
+wasn't specifying a byte size to btrfs-map-logical, it was defaulting
+to the nodesize which is 16k.  Filefrag shows the first fragment is
+128k, but below I discuss how that's compressed down to less than 4k,
+so reading 16k goes into another file and jumps to another logical
+area, forcing the extra lines to show the physical locations. ***
 
 (Conversation order changed to put program output at bottom)
 
@@ -40,14 +48,16 @@ On Sat, May 12, 2018 at 10:09 PM, Chris Murphy <lists@colorremedies.com> wrote:
 > But the compression doesn't happen twice. So if it's corruption, it's
 > corruption in transit. I think you'd come across this more often.
 
-Ahh, OK.  As filefrag shows above, the file is fragmented.  And,
-because on disk it seems to me like the first 128k is being compressed
-to within a 4k block, I'm thinking compression is being forced here on
-nocow as you mentioned.
+Ahh, OK.  As filefrag shows below, the file is fragmented.  And,
+because on disk it seems to me like 128k fragments are being
+compressed to less than 4k blocks (lzop is able to compress the
+filie's first 128k down to 2k'ish, so this is realistic) I'm thinking
+compression is being forced here on nocow as you mentioned it could
+be.
 
 I'll also mention I'm sometimes seeing the "BTRFS: decompress failed"
 crash, but sometimes seeing a "general protection fault", but it's
-still only on reading this one file.  Kernel message here:
+still only on reading this one file.  GPF style kernel message here:
 https://pastebin.com/SckjTasE
 
 >> So, I think this means the corrupted disk bit must be on disk 1.
@@ -68,7 +78,7 @@ IMO, it would be a really important feature to add, possibly to scrub,
 to compare non-checksummed data across mirrors for differences.
 Without a checksum, it couldn't fix anything, but could alert the user
 there's a problem.  So, user could determine which is corrupt, restore
-that file from backup, etc.
+that file from backup, just know something is wrong, etc.
 
 > You've definitely found a bug. A corrupt file shouldn't crash the
 > kernel. You could do regression testing and see if it happens with
@@ -76,7 +86,7 @@ that file from backup, etc.
 > built. If these are zstd compressed, then I think you can only go back
 > to 4.14.
 
-I booted my April 1, 2016 Arch ISO.  It also crashes on this file.
+I booted my April 1, 2016, Arch ISO.  It also crashes on this file.
 Linux 4.4.5.  I could download older ISOs and try further back if
 requested, but I'm thinking this likely means it's not a regression
 but always been there.
@@ -91,104 +101,39 @@ but always been there.
 > extract copy 1 and copy 2 to compare; but it might crash also if one
 > copy is corrupt. But it's another way to test.
 
-Glad to do that.  That will confirm the copies are different, and rule
-out that one disk went bad on a sector that causes a system crash.  I
-did the first fragment of one of the files as a test, and after I get
-some guidance, I can do the rest using vim & Excel to make it not as
-painful as it looks like it would be.
+Glad to do that.
 
-I'm really confused.
+I started with "filefrag -v [FILENAME]".  It shows 59 fragments.
+Except for the last one, maximum length 32, in units of 4096 byte
+blocks.
 
-I think I'm seeing a bug in btrfs-map-logical.  It's giving me 4 lines
-when I'd expect 2.
+For each fragment, I ran twice (once for each -c copy):
+"btrfs-map-logical -l [FILEFRAG'S STARTING PHYSICAL OFFSET NUMBER *
+4096 FOR BLOCKSIZE] -b 4096 -o frag[FRAGMENT NUMBER].[COPY NUMBER] -c
+[COPY NUMBER] [FILENAME]".
 
-And, I think it's showing me the mirrored copies are on disk 2&3.
-But, it's only when disk 1 is mounted that it crashes.  Degraded with
-disks 2&3 work fine.  Maybe it's disk 2 or 3's data is corrupted, and
-which mirror it reads from happens to be different when it's degraded
-with 2&3 vs any other way?
+Fragments [0-27], [29-39], and [56-58] (with 58 being a full 207 4k
+blocks) match.
 
-First, I can mount degraded with disks 2&3, and xxd the file to see
-what its contents should look like.  It starts with ASCII "LPKSHHRH",
-which google'ing this shows is how all journal files must start, as
-their signature; then it's just binary from there.
+Fragments 28, and [40-55] are completely different.
 
-I ran "filefrag -v [FILENAME]".
+Why reading 4096 for each fragment?  Well, I tried the first fragment,
+and found it has an extra 9 byte header the actual file doesn't have.
+("3a0c 0000 6b02 0000 0a".)  I'm assuming that's a btrfs-lzo header.
+Then, there's ASCII "LPKSHHRH" which happens to be journald's
+beginning of file (starting at byte 0) signature.  After the signature
+is different binary data than the actual file for about 2k, then
+zeros.  If I run lzop on the first 128k of the file, it winds up
+2k'ish.  A larger read from btrfs-map-logical, starting at 0x100 (4k)
+is a different file, with its own 9 byte header then "//Copyright
+2013... lest is based on..." which is definitely another file.  All of
+this put together is telling me these fragments are lzo compressed.
 
-I ran "btrfs-map-logical -l [FILEFRAG'S STARTING PHYSICAL OFFSET
-NUMBER * 4096 FOR BLOCKSIZE]".  I'd expect 2 lines of output, but I'm
-getting 4 lines!  The first 2 are identical except for mirror number
-and device name, and the last 2 are identical except for the same.
+(I realize that although I can see the first 128k fragment compresses
+to about 2k, other 128k fragments might compress to more than 4k, so
+there might be more differences between the mirrors than I've
+discovered.)
 
-I ran "dd if=[BTRFS-MAP-LOGICAL DEVICE NAME] of=/root/[FILENAME] bs=1
-count=[FILEFRAG'S LENGTH * 4096 FOR BLOCKSIZE]
-skip=[BTRFS-MAP-LOGICAL'S PHYSICAL NUMBER}".  I'd expect these 4 files
-(corresponding to each output line of btrfs-map-logical) to be the
-first 128K of the file.  (filefrag showing length 32, in size of
-blocks of 4096 bytes.)  Well, 2 of these files being that, and maybe 2
-of these files being random data since btrfs-map-logical seems like
-it's giving 2 invalid output lines.
-
-If I xxd the files and compare them, I see the data from disk 2 and
-disk 3 from the first 2 btrfs-map-logical lines (so both at physical
-1531469824) do have the LPKSHHRH signature, but starting at offset 9
-(so 10th byte).  The 9 bytes before it are "3a0c 0000 6b02 0000 0a".
-Googling these 9 bytes (with or without spaces) doesn't pull up
-anything.  I don't know if that's a btrfs-lzo compression header
-(don't know if there would be one per file, or if it would be per
-extent.)
-
-Anyways, after the journal LPKSHHRH signature, there are some areas
-that don't match, but some do.  Maybe if lzo compression is happening,
-we'd expect to see some bytes match and others not.  Also,
-interestingly, at 0x1000 (so 4k in) starts a binary header "ad3c 0000
-6807 0000 0f" just before "// Copyright 2013... lest is based on..."
-which is another file.  So, the first 128k of the journal file got
-compressed to be within 4k (lzop default compression does reduce the
-first 128k to 2260 bytes.)
-
-The data from the last 2 btrfs-map-logical lines has the lest
-copyright message, so I'm thinking I'd just use the first 2 lines from
-each btrfs-map-logical run, and ignore the last 2?  Maybe it's getting
-tripped up because of the lzo compression?
-
-And, is there a way to see how large each fragment will be with the
-lzo compression, so I know where to read to?
-
-
-
-
-# filefrag -v user-1000@b70add0ef010457d933fec23a2afa48a-0000000000000495-00053b6b6e65e9cf.journal
-Filesystem type is: 9123683e
-File size of user-1000@b70add0ef010457d933fec23a2afa48a-0000000000000495-00053b6b6e65e9cf.journal
-is 8388608 (2048 blocks of 4096 bytes)
- ext:     logical_offset:        physical_offset: length:   expected: flags:
-   0:        0..      31:     640902..    640933:     32:
-encoded,shared
-   1:       32..      63:     641026..    641057:     32:     640934:
-encoded,shared
-   2:       64..      95:     643303..    643334:     32:     641058:
-encoded,shared
-   3:       96..     127:     643305..    643336:     32:     643335:
-encoded,shared
-   4:      128..     159:     643418..    643449:     32:     643337:
-encoded,shared
-   5:      160..     191:     643600..    643631:     32:     643450:
-encoded,shared
-<email snip>
-  58:     1841..    2047:     662141..    662347:    207:    1446616:
-last,unwritten,shared,eof
-user-1000@b70add0ef010457d933fec23a2afa48a-0000000000000495-00053b6b6e65e9cf.journal:
-59 extents found
-
-# blockdev --getbsz /dev/lvm/newMain1
-4096 {matches filefrag saying "blocks of 4096 bytes"}
-
-# echo $[4096*640902]
-2625134592
-
-# btrfs-map-logical -l 2625134592 /dev/lvm/newMain1
-mirror 1 logical 2625134592 physical 1531469824 device /dev/mapper/lvm-newMain2
-mirror 2 logical 2625134592 physical 1531469824 device /dev/mapper/lvm-newMain3
-mirror 1 logical 2625138688 physical 1531473920 device /dev/mapper/lvm-newMain2
-mirror 2 logical 2625138688 physical 1531473920 device /dev/mapper/lvm-newMain3
+btrfs-map-logical isn't crashing, because it appears to be giving data
+in its compressed form, so isn't tripping up on invalid compressed
+data.

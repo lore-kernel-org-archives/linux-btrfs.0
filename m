@@ -1,55 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from tartarus.angband.pl ([89.206.35.136]:51158 "EHLO
-        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751830AbeEMOa3 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 13 May 2018 10:30:29 -0400
-Date: Sun, 13 May 2018 16:30:20 +0200
-From: Adam Borowski <kilobyte@angband.pl>
-To: "Darrick J. Wong" <darrick.wong@oracle.com>
-Cc: Mark Fasheh <mfasheh@suse.de>, linux-fsdevel@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, linux-xfs@vger.kernel.org
-Subject: Re: [PATCH 2/2] vfs: dedupe should return EPERM if permission is not
- granted
-Message-ID: <20180513143020.6lp7eg6pg5ckl4nn@angband.pl>
+Received: from mx2.suse.de ([195.135.220.15]:42616 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751295AbeEMSQy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 13 May 2018 14:16:54 -0400
+Date: Sun, 13 May 2018 18:16:53 +0000
+From: Mark Fasheh <mfasheh@suse.de>
+To: Adam Borowski <kilobyte@angband.pl>
+Cc: linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        linux-xfs@vger.kernel.org
+Subject: Re: [PATCH 1/2] vfs: allow dedupe of user owned read-only files
+Message-ID: <20180513181653.GD27915@wotan.suse.de>
+Reply-To: Mark Fasheh <mfasheh@suse.de>
 References: <20180511192651.21324-1-mfasheh@suse.de>
- <20180511192651.21324-3-mfasheh@suse.de>
- <20180512000634.GG9510@magnolia>
+ <20180511192651.21324-2-mfasheh@suse.de>
+ <20180512024920.i7duhoi3lnkha4yl@angband.pl>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <20180512000634.GG9510@magnolia>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20180512024920.i7duhoi3lnkha4yl@angband.pl>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, May 11, 2018 at 05:06:34PM -0700, Darrick J. Wong wrote:
-> On Fri, May 11, 2018 at 12:26:51PM -0700, Mark Fasheh wrote:
-> > Right now we return EINVAL if a process does not have permission to dedupe a
-> > file. This was an oversight on my part. EPERM gives a true description of
-> > the nature of our error, and EINVAL is already used for the case that the
-> > filesystem does not support dedupe.
+Hey Adam,
 
-> > -			info->status = -EINVAL;
-> > +			info->status = -EPERM;
+On Sat, May 12, 2018 at 04:49:20AM +0200, Adam Borowski wrote:
+> On Fri, May 11, 2018 at 12:26:50PM -0700, Mark Fasheh wrote:
+> > The permission check in vfs_dedupe_file_range() is too coarse - We
+> > only allow dedupe of the destination file if the user is root, or
+> > they have the file open for write.
+> > 
+> > This effectively limits a non-root user from deduping their own
+> > read-only files. As file data during a dedupe does not change,
+> > this is unexpected behavior and this has caused a number of issue
+> > reports. For an example, see:
+> > 
+> > https://github.com/markfasheh/duperemove/issues/129
+> > 
+> > So change the check so we allow dedupe on the target if:
+> > 
+> > - the root or admin is asking for it
+> > - the owner of the file is asking for the dedupe
+> > - the process has write access
 > 
-> Hmm, are we allowed to change this aspect of the kabi after the fact?
+> I submitted a similar patch in May 2016, yet it has never been applied
+> despite multiple pings, with no NAK.  My version allowed dedupe if:
+> - the root or admin is asking for it
+> - the file has w permission (on the inode -- ie, could have been opened rw)
+
+Ahh, yes I see that now. I did wind up acking it too :)
+
+> There was a request to include in xfstests a test case for the ETXTBSY race
+> this patch fixes, but there's no reasonable way to make such a test case:
+> the race condition is not a bug, it's write-xor-exec working as designed.
 > 
-> Granted, we're only trading one error code for another, but will the
-> existing users of this care?  xfs_io won't and I assume duperemove won't
-> either, but what about bees? :)
+> Another idea discussed was about possibly just allowing everyone who can
+> open the file to deduplicate it, as the file contents are not modified in
+> any way.  Zygo Blaxell expressed a concern that it could be used by an
+> unprivileged user who can trigger a crash to abuse writeout bugs.
+> 
+> I like this new version better than mine: "root or owner or w" is more
+> Unixy than "could have been opened w".
 
-There's more:
-https://codesearch.debian.net/search?q=FILE_EXTENT_SAME
+I agree, IMHO the behavior in this patch is intuitive. What we had before
+would surprise users.
 
-This includes only software that has been packaged for Debian (notably, not
-bees), but that gives enough interesting coverage.  And none of these cases
-discriminate between error codes -- they merely report them to the user.
+Yeah we've been careful about not letting a user dedupe some other users
+file. Data-wise it technically might be ok but I can imagine several
+scenarios where you might not want some other user deduping your files.
 
-Thus, I can't think of a downside of making the error code more accurate.
-
-
-Meow!
--- 
-⢀⣴⠾⠻⢶⣦⠀ 
-⣾⠁⢰⠒⠀⣿⡁ 
-⢿⡄⠘⠷⠚⠋⠀ Certified airhead; got the CT scan to prove that!
-⠈⠳⣄⠀⠀⠀⠀ 
+Thanks for the review,
+	--Mark

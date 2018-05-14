@@ -1,150 +1,93 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf0-f196.google.com ([209.85.192.196]:36135 "EHLO
-        mail-pf0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751402AbeENLwZ (ORCPT
+Received: from mail-ua0-f196.google.com ([209.85.217.196]:37545 "EHLO
+        mail-ua0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752293AbeENMEv (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 14 May 2018 07:52:25 -0400
-Received: by mail-pf0-f196.google.com with SMTP id w129-v6so5910798pfd.3
-        for <linux-btrfs@vger.kernel.org>; Mon, 14 May 2018 04:52:25 -0700 (PDT)
-From: Su Yue <damenly.su@gmail.com>
-Subject: Re: [PATCH 1/3] btrfs-progs: check: check symlinks with
- append/immutable flags
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>, Su Yue <suy.fnst@cn.fujitsu.com>,
-        linux-btrfs@vger.kernel.org
-References: <20180514102922.8840-1-suy.fnst@cn.fujitsu.com>
- <20180514102922.8840-2-suy.fnst@cn.fujitsu.com>
- <6250dfd4-80c3-1714-27f4-d0091ef411a6@gmx.com>
-Message-ID: <a89b4c6d-49c0-8f0c-73ab-10c70e03708e@gmail.com>
-Date: Mon, 14 May 2018 19:52:20 +0800
+        Mon, 14 May 2018 08:04:51 -0400
+Received: by mail-ua0-f196.google.com with SMTP id i3-v6so8142546uad.4
+        for <linux-btrfs@vger.kernel.org>; Mon, 14 May 2018 05:04:50 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <6250dfd4-80c3-1714-27f4-d0091ef411a6@gmx.com>
-Content-Type: multipart/mixed;
- boundary="------------56A6BFBADAA0BD52579FC11F"
+References: <20180514102922.8840-1-suy.fnst@cn.fujitsu.com>
+ <20180514102922.8840-3-suy.fnst@cn.fujitsu.com> <bc0e3a76-8975-80fd-00f3-03f1bd5680aa@suse.com>
+In-Reply-To: <bc0e3a76-8975-80fd-00f3-03f1bd5680aa@suse.com>
+From: Su Yue <damenly.su@gmail.com>
+Date: Mon, 14 May 2018 20:04:39 +0800
+Message-ID: <CABnRu571OnbsvHqFsATxVrZp-EE_ydq1ntuMJ6Bh3YjiTAS66Q@mail.gmail.com>
+Subject: Re: [PATCH 2/3] btrfs-progs: lowmem: check symlinks with
+ append/immutable flags
+To: nborisov@suse.com
+Cc: Su Yue <suy.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a multi-part message in MIME format.
---------------56A6BFBADAA0BD52579FC11F
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: quoted-printable
-
-On 2018/5/14 7:22 PM, Qu Wenruo wrote:
->=20
->=20
-> On 2018=E5=B9=B405=E6=9C=8814=E6=97=A5 18:29, Su Yue wrote:
->> Define new macro I_ERR_ODD_INODE_FLAGS to represents odd inode flags.
->>
->> Symlinks should never have append/immutable flags.
->> While processing inodes, if found a symlink with append/immutable
->> flags, mark the inode record with I_ERR_ODD_INODE_FLAGS.
->>
->> This is for original mode.
->>
->> Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
->> ---
->>  check/main.c          | 7 +++++++
->>  check/mode-original.h | 1 +
->>  2 files changed, 8 insertions(+)
->>
->> diff --git a/check/main.c b/check/main.c
->> index 68da994f7ae0..f5f52c406046 100644
->> --- a/check/main.c
->> +++ b/check/main.c
->> @@ -576,6 +576,8 @@ static void print_inode_error(struct btrfs_root *r=
-oot, struct inode_record *rec)
->>  		fprintf(stderr, ", link count wrong");
->>  	if (errors & I_ERR_FILE_EXTENT_ORPHAN)
->>  		fprintf(stderr, ", orphan file extent");
->> +	if (errors & I_ERR_ODD_INODE_FLAGS)
->> +		fprintf(stderr, ", odd inode flags");
->>  	fprintf(stderr, "\n");
->>  	/* Print the orphan extents if needed */
->>  	if (errors & I_ERR_FILE_EXTENT_ORPHAN)
->> @@ -805,6 +807,7 @@ static int process_inode_item(struct extent_buffer=
- *eb,
->>  {
->>  	struct inode_record *rec;
->>  	struct btrfs_inode_item *item;
->> +	u64 flags;
->> =20
->>  	rec =3D active_node->current;
->>  	BUG_ON(rec->ino !=3D key->objectid || rec->refs > 1);
->> @@ -822,6 +825,10 @@ static int process_inode_item(struct extent_buffe=
-r *eb,
->>  	rec->found_inode_item =3D 1;
->>  	if (rec->nlink =3D=3D 0)
->>  		rec->errors |=3D I_ERR_NO_ORPHAN_ITEM;
->> +	flags =3D btrfs_inode_flags(eb, item);
->> +	if (rec->imode & BTRFS_FT_SYMLINK &&
->> +	    flags & (BTRFS_INODE_IMMUTABLE | BTRFS_INODE_APPEND))
->> +		rec->errors =3D I_ERR_ODD_INODE_FLAGS;
->=20
-> Shouldn't it be "|=3D" instead of "=3D" ?
->=20
-> Thanks,
-> Qu
-
-Oh... Should be "|=3D".
+Indeed better. Will do it in V2.
 
 Thanks,
 Su
 
->=20
->>  	maybe_free_inode_rec(&active_node->inode_cache, rec);
->>  	return 0;
->>  }
->> diff --git a/check/mode-original.h b/check/mode-original.h
->> index 368de692fdd1..13cfa5b9e1b3 100644
->> --- a/check/mode-original.h
->> +++ b/check/mode-original.h
->> @@ -186,6 +186,7 @@ struct file_extent_hole {
->>  #define I_ERR_LINK_COUNT_WRONG		(1 << 13)
->>  #define I_ERR_FILE_EXTENT_ORPHAN	(1 << 14)
->>  #define I_ERR_FILE_EXTENT_TOO_LARGE	(1 << 15)
->> +#define I_ERR_ODD_INODE_FLAGS		(1 << 16)
->> =20
->>  struct inode_record {
->>  	struct list_head backrefs;
->>
->=20
+On Mon, May 14, 2018 at 7:19 PM Nikolay Borisov <nborisov@suse.com> wrote:
 
 
---------------56A6BFBADAA0BD52579FC11F
-Content-Type: application/pgp-keys;
- name="pEpkey.asc"
-Content-Transfer-Encoding: quoted-printable
-Content-Disposition: attachment;
- filename="pEpkey.asc"
 
------BEGIN PGP PUBLIC KEY BLOCK-----
+> On 14.05.2018 13:29, Su Yue wrote:
+> > Symlinks should never have append/immutable flags.
+> > While checking inodes, if found a symlink with append/immutable
+> > flags, report and record the fatal error.
+> >
+> > This is for lowmem mode.
+> >
+> > Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
+> > ---
+> >  check/mode-lowmem.c | 10 ++++++++++
+> >  1 file changed, 10 insertions(+)
+> >
+> > diff --git a/check/mode-lowmem.c b/check/mode-lowmem.c
+> > index 9890180d1d3c..61c4e7f23d47 100644
+> > --- a/check/mode-lowmem.c
+> > +++ b/check/mode-lowmem.c
+> > @@ -2274,6 +2274,7 @@ static int check_inode_item(struct btrfs_root
+*root, struct btrfs_path *path)
+> >       struct btrfs_key last_key;
+> >       u64 inode_id;
+> >       u32 mode;
+> > +     u64 flags;
+> >       u64 nlink;
+> >       u64 nbytes;
+> >       u64 isize;
+> > @@ -2307,10 +2308,19 @@ static int check_inode_item(struct btrfs_root
+*root, struct btrfs_path *path)
+> >       isize = btrfs_inode_size(node, ii);
+> >       nbytes = btrfs_inode_nbytes(node, ii);
+> >       mode = btrfs_inode_mode(node, ii);
+> > +     flags = btrfs_inode_flags(node, ii);
+> >       dir = imode_to_type(mode) == BTRFS_FT_DIR;
+> >       nlink = btrfs_inode_nlink(node, ii);
+> >       nodatasum = btrfs_inode_flags(node, ii) & BTRFS_INODE_NODATASUM;
+> >
+> > +     if (mode & BTRFS_FT_SYMLINK &&
+> > +         (flags & (BTRFS_INODE_IMMUTABLE | BTRFS_INODE_APPEND))) {
+> > +             err = FATAL_ERROR;
+> > +             error(
+> > +"symlinks shall never be with immutable/append, root %llu inode item
+[%llu] flags %llu may be corrupted",
 
-mQENBFrxufcBCAD0qWU6UwbZznInFAL+RMvhdcHMdhgKM7Bkq7evUxjROvEbIEdJ
-gGrmSWm7zlxZb0NPDFyzSQy/w/H0+9MTsgcUbhLORFFgbwPjyg15Z2MEFxvHspoY
-DPhKjd9qxWL/v9F15EtJ/M0zw+pibWwmFPh7PXDriZOzgVR4XGG73Nsm7bJ79N6V
-1NbfDH1eEx8Yf3KE+K7ESV1YPq0rPFNGbG5d8Fw39hPd6qeGTzQ5V9Gghg9aNH/q
-PygkPDjmJv2wP1fGSivpjiB93oRge5S4WDDaH5eedWrIUeEQZMUOKcqQSpIKqimw
-Od69nzUsXI4VwShXyvKNINEkGGjdXseezbF5ABEBAAG0HVN1IFl1ZSA8ZGFtZW5s
-eS5zdUBnbWFpbC5jb20+iQFUBBMBCAA+FiEEftbZazISzUZ3Vp++AtnXyVw95OgF
-AlrxufgCGwMFCQHhM4AFCwkIBwIGFQoJCAsCBBYCAwECHgECF4AACgkQAtnXyVw9
-5OhMLgf8CD5TPpKq9wE0Zg/XT5wSwZFTNy+rXiw2hmWaLE1AH6Slfb82GvJFthIu
-tEoXa4Yqm9SxEAI/Lk/tdtKYpLLdWp+N9iGzNW5Z3mflTcNPh3lE1/6QmjaRULfM
-nvHqWZVAmzr69ZSjslMi8kTIIZtnyHLA3r0H03eUQLUUQeuxjED57YTm4+Js7aO9
-gv6Vjn+n3+UbtWGhemHw5Xzn9KhDL3bMIkT0tA21TVdcxaqWsFwY7aU8+4FtiPt9
-SbhsE38oMzbzfhlhopMlS9srJ+yOFE8G8peZUyC7LgATl0FAa6bnzoqrNOWoRR/6
-juQA8hgsxL+LQh+CC6F8OiqFiKFnabkBDQRa8bn4AQgAu7IqCbUl7qqQqX8N5LCF
-dwjtX/hECpDyUWw+SWMOAdBOSNYYJrrvLhwN/2i+YbYtW3xMmdXUTAC9Mi25uC/O
-y6ezsfV1LMcYxB8C+IJH1Oh8gdDTtm+BVwqNYEcGUluJDtRD+NsI9oz2+3nW7T5C
-6twNABAl5b/UEMAoEh1/kG9VVM0jiC8O+0vCmFBiM4RQS2qyF3CoKknBAYS6q/GR
-/Qw6z4XHAaz1jFNz+9PP/I4ijhPNvKZXaxzsqB3AXyqUi86x04AXGJZeQbcFjCaP
-jnE0ow5gjyYkC32L7+RZUc7dNJFCNXHJn91TVC8g7x0x4S94w3xQNI7Le4xo7gD8
-6QARAQABiQE8BBgBCAAmFiEEftbZazISzUZ3Vp++AtnXyVw95OgFAlrxufgCGwwF
-CQHhM4AACgkQAtnXyVw95OjdvwgAlMCDN5LoyY/jTCeVA/PqR5FvYnpKCCjinlAn
-8C0k4/3v1hIpnxhbmT96oXGEZfN7F/7bfsfX2dzBaERP6n4iPelEzgTcl3GQxkvZ
-zAWAOhsqgwTSzujF9H0m2/IEm4QtaRRhZ2NINA3bwq6seNmDZkCQuIby/SDV6GiF
-Q9Wzb4qX62OF0SWJgHF9ddXhtUY+OT1Dtb0g6ocvr+n0cLLFuF3SrNtE+xPVzy7V
-Eett4ZzUvzuXt7CTrMmBKPl8nJjgPuEr8bubmuQbYrxSFwfb2N2AhcAbtWxZbOE8
-NyRSKHWJIxVmEAC+3vK2AsLqxf8tO3Z1UvPEm9E5fDcb67s5mg=3D=3D
-=3DUVvh
------END PGP PUBLIC KEY BLOCK-----
+> How about:
 
---------------56A6BFBADAA0BD52579FC11F--
+> "symlinks must never have immutable/append flags set, root %llu ino %llu
+flag %llu may be corrupted".
+
+> I think printing the ino number should suffice, no need for the "fancy"
+[] around the inode number.
+> > +                   root->objectid, inode_id, flags);
+> > +     }
+> > +
+> >       while (1) {
+> >               btrfs_item_key_to_cpu(path->nodes[0], &last_key,
+path->slots[0]);
+> >               ret = btrfs_next_item(root, path);
+> >
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,62 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:52662 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:46078 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751227AbeEPVjF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 16 May 2018 17:39:05 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id EB457ADA7
-        for <linux-btrfs@vger.kernel.org>; Wed, 16 May 2018 21:39:03 +0000 (UTC)
-From: jeffm@suse.com
+        id S1752634AbeENGys (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 14 May 2018 02:54:48 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id EB550ACCB
+        for <linux-btrfs@vger.kernel.org>; Mon, 14 May 2018 06:54:46 +0000 (UTC)
+From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Jeff Mahoney <jeffm@suse.com>
-Subject: [PATCH 18/18] btrfs-progs: qgroups: don't print dead qgroups
-Date: Wed, 16 May 2018 17:38:51 -0400
-Message-Id: <20180516213851.10196-19-jeffm@suse.com>
+Subject: [PATCH 0/3] btrfs-progs: Detect compressed extent without csum
+Date: Mon, 14 May 2018 14:54:41 +0800
+Message-Id: <20180514065444.26313-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
-In-Reply-To: <20180516213851.10196-1-jeffm@suse.com>
 
-From: Jeff Mahoney <jeffm@suse.com>
+Patches can be fetch from github:
+https://github.com/adam900710/btrfs-progs/tree/compress_nodatasum
 
-When qgroup items get left behind, we still print them in
-'btrfs qgroup show' even though there is nothing to show.  Since we
-now look up the pathname and that means we look up the subvolume,
-we can filter out first-level qgroups that correspond to roots
-that have been removed.  Specifying -v will still show them.
+It's based on v4.16 stable branch.
 
-Signed-off-by: Jeff Mahoney <jeffm@suse.com>
----
- qgroup.c | 10 +++++++++-
- 1 file changed, 9 insertions(+), 1 deletion(-)
+James Harvey from mail list reports a strange kernel panic, whichs show
+obviously kernel memory corruption, while after btrfs decompression
+failure.
 
-diff --git a/qgroup.c b/qgroup.c
-index 647bc2f3..08e78887 100644
---- a/qgroup.c
-+++ b/qgroup.c
-@@ -313,6 +313,13 @@ static void print_qgroup_column(struct btrfs_qgroup *qgroup,
- 	}
- }
- 
-+static bool qgroup_target_exists(const struct btrfs_qgroup *qgroup)
-+{
-+	if (btrfs_qgroup_level(qgroup->qgroupid) > 0)
-+		return true;
-+	return qgroup->pathname != NULL;
-+}
-+
- static void print_single_qgroup_table(struct btrfs_qgroup *qgroup, bool verbose)
- {
- 	int i;
-@@ -1369,7 +1376,8 @@ static void print_all_qgroups(struct qgroup_lookup *qgroup_lookup, bool verbose)
- 	n = rb_first(&qgroup_lookup->root);
- 	while (n) {
- 		entry = rb_entry(n, struct btrfs_qgroup, sort_node);
--		print_single_qgroup_table(entry, verbose);
-+		if (qgroup_target_exists(entry) || verbose)
-+			print_single_qgroup_table(entry, verbose);
- 		n = rb_next(n);
- 	}
- }
+It turns out that, some compressed extent get corrupted on-disk, while
+the inode has NODATASUM set, there is no csum to prevent corrupted
+mirror being used.
+
+Although the root cause should be buggy lzo implementation, it still
+shows that btrfs is not following the behavior defined in btrfs(5):
+
+     Note
+     If nodatacow or nodatasum are enabled, compression is disabled.
+
+So at least make btrfs check to detect such problem.
+
+Qu Wenruo (3):
+  btrfs-progs: check/lowmem: Add checks for compressed extent without
+    csum
+  btrfs-progs: check/original: Add checks for compressed extent without
+    csum
+  btrfs-progs: fsck-tests: Add test case for detecting compressed extent
+    without csum
+
+ check/main.c                                  |  10 ++++++--
+ check/mode-lowmem.c                           |  18 +++++++++++++
+ .../compressed_extent_without_csum.raw.xz     | Bin 0 -> 21996 bytes
+ .../032-compressed-nodatasum/test.sh          |  24 ++++++++++++++++++
+ 4 files changed, 50 insertions(+), 2 deletions(-)
+ create mode 100644 tests/fsck-tests/032-compressed-nodatasum/compressed_extent_without_csum.raw.xz
+ create mode 100755 tests/fsck-tests/032-compressed-nodatasum/test.sh
+
 -- 
-2.15.1
+2.17.0
 

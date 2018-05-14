@@ -1,56 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:46657 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:46845 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1754101AbeENHCN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 14 May 2018 03:02:13 -0400
+        id S932167AbeENHDO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 14 May 2018 03:03:14 -0400
 Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 57033AE35
-        for <linux-btrfs@vger.kernel.org>; Mon, 14 May 2018 07:02:12 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 5ACF0AE6C
+        for <linux-btrfs@vger.kernel.org>; Mon, 14 May 2018 07:03:13 +0000 (UTC)
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: inode: Don't compress if NODATASUM or NODATACOW set
-Date: Mon, 14 May 2018 15:02:10 +0800
-Message-Id: <20180514070210.27047-1-wqu@suse.com>
+Subject: [PATCH 1/3] btrfs-progs: check/lowmem: Add checks for compressed extent without csum
+Date: Mon, 14 May 2018 15:03:08 +0800
+Message-Id: <20180514070310.27197-2-wqu@suse.com>
+In-Reply-To: <20180514070310.27197-1-wqu@suse.com>
+References: <20180514070310.27197-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-As btrfs(5) specified:
+There is one report of compressed extent happens in btrfs, but has no
+csum and then leads to possible decompress error screwing up kernel
+memory.
 
-	Note
-	If nodatacow or nodatasum are enabled, compression is disabled.
+Although it's a kernel bug, and won't cause problem until compressed
+data get corrupted, let's catch such problem in advance.
 
-If NODATASUM or NODATACOW set, we should not compress the extent.
+This patch will catch any unexpected compressed extent with:
 
-And in fact, we have bug report about corrupted compressed extent
-leading to memory corruption in mail list.
-Although it's mostly buggy lzo implementation causing the problem, btrfs
-still needs to be fixed to meet the specification.
+1) 0 or less than expected csum
+
+2) nodatasum flag set in the inode item
+
+This is for lowmem mode.
 
 Reported-by: James Harvey <jamespharvey20@gmail.com>
+Issue: #134
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/inode.c | 8 ++++++++
- 1 file changed, 8 insertions(+)
+ check/mode-lowmem.c | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index d241285a0d2a..dbef3f404559 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -396,6 +396,14 @@ static inline int inode_need_compress(struct inode *inode, u64 start, u64 end)
- {
- 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
- 
+diff --git a/check/mode-lowmem.c b/check/mode-lowmem.c
+index dac3201b7d99..8e6d5e8de12a 100644
+--- a/check/mode-lowmem.c
++++ b/check/mode-lowmem.c
+@@ -1543,6 +1543,24 @@ static int check_file_extent(struct btrfs_root *root, struct btrfs_key *fkey,
+ 			      csum_found);
+ 		}
+ 	}
 +	/*
-+	 * Btrfs doesn't support compression without csum or CoW.
-+	 * This should have the highest priority.
++	 * Extra check for compressed extents.
++	 * Btrfs doesn't allow NODATASUM and compressed extent co-exist, thus
++	 * all compressed extent should have csum.
 +	 */
-+	if (BTRFS_I(inode)->flags & BTRFS_INODE_NODATACOW ||
-+	    BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM)
-+		return 0;
-+
- 	/* force compress */
- 	if (btrfs_test_opt(fs_info, FORCE_COMPRESS))
- 		return 1;
++	if (compressed && csum_found < search_len) {
++		error(
++"root %llu EXTENT_DATA[%llu %llu] compressed extent must have csum, but only %llu bytes has csum, expect %llu",
++		      root->objectid, fkey->objectid, fkey->offset, csum_found,
++		      search_len);
++		err |= CSUM_ITEM_MISSING;
++	}
++	if (compressed && nodatasum) {
++		error(
++"root %llu EXTENT_DATA[%llu %llu] is compressed, but inode flag doesn't allow it",
++		      root->objectid, fkey->objectid, fkey->offset);
++		err |= FILE_EXTENT_ERROR;
++	}
+ 
+ 	/* Check EXTENT_DATA hole */
+ 	if (!no_holes && *end != fkey->offset) {
 -- 
 2.17.0
 

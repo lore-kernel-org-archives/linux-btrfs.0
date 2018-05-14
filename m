@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from mail.cn.fujitsu.com ([183.91.158.132]:3707 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1752266AbeENKXc (ORCPT
+        with ESMTP id S1752259AbeENKXf (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 14 May 2018 06:23:32 -0400
+        Mon, 14 May 2018 06:23:35 -0400
 Received: from G08CNEXCHPEKD03.g08.fujitsu.local (unknown [10.167.33.85])
-        by cn.fujitsu.com (Postfix) with ESMTP id C29594B34D47
-        for <linux-btrfs@vger.kernel.org>; Mon, 14 May 2018 18:23:28 +0800 (CST)
+        by cn.fujitsu.com (Postfix) with ESMTP id 4A0464B3ED60
+        for <linux-btrfs@vger.kernel.org>; Mon, 14 May 2018 18:23:29 +0800 (CST)
 From: Su Yue <suy.fnst@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: <suy.fnst@cn.fujitsu.com>
-Subject: [PATCH 1/3] btrfs-progs: check: check symlinks with append/immutable flags
-Date: Mon, 14 May 2018 18:29:20 +0800
-Message-ID: <20180514102922.8840-2-suy.fnst@cn.fujitsu.com>
+Subject: [PATCH 2/3] btrfs-progs: lowmem: check symlinks with append/immutable flags
+Date: Mon, 14 May 2018 18:29:21 +0800
+Message-ID: <20180514102922.8840-3-suy.fnst@cn.fujitsu.com>
 In-Reply-To: <20180514102922.8840-1-suy.fnst@cn.fujitsu.com>
 References: <20180514102922.8840-1-suy.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -20,64 +20,49 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Define new macro I_ERR_ODD_INODE_FLAGS to represents odd inode flags.
-
 Symlinks should never have append/immutable flags.
-While processing inodes, if found a symlink with append/immutable
-flags, mark the inode record with I_ERR_ODD_INODE_FLAGS.
+While checking inodes, if found a symlink with append/immutable
+flags, report and record the fatal error.
 
-This is for original mode.
+This is for lowmem mode.
 
 Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
 ---
- check/main.c          | 7 +++++++
- check/mode-original.h | 1 +
- 2 files changed, 8 insertions(+)
+ check/mode-lowmem.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
-diff --git a/check/main.c b/check/main.c
-index 68da994f7ae0..f5f52c406046 100644
---- a/check/main.c
-+++ b/check/main.c
-@@ -576,6 +576,8 @@ static void print_inode_error(struct btrfs_root *root, struct inode_record *rec)
- 		fprintf(stderr, ", link count wrong");
- 	if (errors & I_ERR_FILE_EXTENT_ORPHAN)
- 		fprintf(stderr, ", orphan file extent");
-+	if (errors & I_ERR_ODD_INODE_FLAGS)
-+		fprintf(stderr, ", odd inode flags");
- 	fprintf(stderr, "\n");
- 	/* Print the orphan extents if needed */
- 	if (errors & I_ERR_FILE_EXTENT_ORPHAN)
-@@ -805,6 +807,7 @@ static int process_inode_item(struct extent_buffer *eb,
- {
- 	struct inode_record *rec;
- 	struct btrfs_inode_item *item;
+diff --git a/check/mode-lowmem.c b/check/mode-lowmem.c
+index 9890180d1d3c..61c4e7f23d47 100644
+--- a/check/mode-lowmem.c
++++ b/check/mode-lowmem.c
+@@ -2274,6 +2274,7 @@ static int check_inode_item(struct btrfs_root *root, struct btrfs_path *path)
+ 	struct btrfs_key last_key;
+ 	u64 inode_id;
+ 	u32 mode;
 +	u64 flags;
+ 	u64 nlink;
+ 	u64 nbytes;
+ 	u64 isize;
+@@ -2307,10 +2308,19 @@ static int check_inode_item(struct btrfs_root *root, struct btrfs_path *path)
+ 	isize = btrfs_inode_size(node, ii);
+ 	nbytes = btrfs_inode_nbytes(node, ii);
+ 	mode = btrfs_inode_mode(node, ii);
++	flags = btrfs_inode_flags(node, ii);
+ 	dir = imode_to_type(mode) == BTRFS_FT_DIR;
+ 	nlink = btrfs_inode_nlink(node, ii);
+ 	nodatasum = btrfs_inode_flags(node, ii) & BTRFS_INODE_NODATASUM;
  
- 	rec = active_node->current;
- 	BUG_ON(rec->ino != key->objectid || rec->refs > 1);
-@@ -822,6 +825,10 @@ static int process_inode_item(struct extent_buffer *eb,
- 	rec->found_inode_item = 1;
- 	if (rec->nlink == 0)
- 		rec->errors |= I_ERR_NO_ORPHAN_ITEM;
-+	flags = btrfs_inode_flags(eb, item);
-+	if (rec->imode & BTRFS_FT_SYMLINK &&
-+	    flags & (BTRFS_INODE_IMMUTABLE | BTRFS_INODE_APPEND))
-+		rec->errors = I_ERR_ODD_INODE_FLAGS;
- 	maybe_free_inode_rec(&active_node->inode_cache, rec);
- 	return 0;
- }
-diff --git a/check/mode-original.h b/check/mode-original.h
-index 368de692fdd1..13cfa5b9e1b3 100644
---- a/check/mode-original.h
-+++ b/check/mode-original.h
-@@ -186,6 +186,7 @@ struct file_extent_hole {
- #define I_ERR_LINK_COUNT_WRONG		(1 << 13)
- #define I_ERR_FILE_EXTENT_ORPHAN	(1 << 14)
- #define I_ERR_FILE_EXTENT_TOO_LARGE	(1 << 15)
-+#define I_ERR_ODD_INODE_FLAGS		(1 << 16)
- 
- struct inode_record {
- 	struct list_head backrefs;
++	if (mode & BTRFS_FT_SYMLINK &&
++	    (flags & (BTRFS_INODE_IMMUTABLE | BTRFS_INODE_APPEND))) {
++		err = FATAL_ERROR;
++		error(
++"symlinks shall never be with immutable/append, root %llu inode item [%llu] flags %llu may be corrupted",
++		      root->objectid, inode_id, flags);
++	}
++
+ 	while (1) {
+ 		btrfs_item_key_to_cpu(path->nodes[0], &last_key, path->slots[0]);
+ 		ret = btrfs_next_item(root, path);
 -- 
 2.17.0
 

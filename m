@@ -1,77 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:42610 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:42881 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932551AbeENQwF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 14 May 2018 12:52:05 -0400
-Date: Mon, 14 May 2018 18:49:20 +0200
+        id S1752266AbeENQyq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 14 May 2018 12:54:46 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 308D5AEB3
+        for <linux-btrfs@vger.kernel.org>; Mon, 14 May 2018 16:54:45 +0000 (UTC)
+Date: Mon, 14 May 2018 18:52:06 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Nikolay Borisov <nborisov@suse.com>
-Cc: Roman Mamedov <rm@romanrm.net>, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH] btrfs: inode: Don't compress if NODATASUM or NODATACOW
  set
-Message-ID: <20180514164920.GO6649@twin.jikos.cz>
+Message-ID: <20180514165205.GP6649@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 References: <20180514070210.27047-1-wqu@suse.com>
- <90871596-c030-930b-57ad-7db63b4f579d@suse.com>
- <20180514132004.3afec300@natsu>
- <ea90a7da-a055-6879-e64f-f0f3bca81a23@suse.com>
- <20180514143933.60b3bb76@natsu>
- <a430d610-8d97-fb92-551b-387b83ecff38@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <a430d610-8d97-fb92-551b-387b83ecff38@suse.com>
+In-Reply-To: <20180514070210.27047-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, May 14, 2018 at 12:46:31PM +0300, Nikolay Borisov wrote:
-> [Adding David to CC]
+On Mon, May 14, 2018 at 03:02:10PM +0800, Qu Wenruo wrote:
+> As btrfs(5) specified:
 > 
-> On 14.05.2018 12:39, Roman Mamedov wrote:
-> > On Mon, 14 May 2018 11:36:26 +0300
-> > Nikolay Borisov <nborisov@suse.com> wrote:
-> > 
-> >> So what made you have these expectation, is it codified somewhere
-> >> (docs/man pages etc)? I'm fine with that semantics IF this is what
-> >> people expect.
-> > 
-> > "Compression ...does not work for NOCOW files":
-> > https://btrfs.wiki.kernel.org/index.php/Compression
-> > 
-> > The mount options man page does not say that the NOCOW attribute of files will
-> > be disregarded with compress-force.  It only mentions interaction with the
-> > nodatacow and nodatasum mount options. So I'd expect the attribute to still
-> > work and prevent compression of NOCOW files.
+> 	Note
+> 	If nodatacow or nodatasum are enabled, compression is disabled.
 > 
-> I wouldn't say this is very clear, it needs to be stated explicitly.
+> If NODATASUM or NODATACOW set, we should not compress the extent.
 > 
-> > 
-> >> Now the question is why people grew up to have this expectation and not the
-> >> other way round? IMO force_compress should really disregard everything else
-> > 
-> > Both are knobs that the user needs to explicitly set, the difference is that
-> > the +C attribute is fine-grained and the mount option is global. If they are
-> > set by the user to conflicting values, it seems more useful to have the
-> > fine-grained control override the global one, not the other way round.
-> 
-> This is valid reasoning but so is mine. So I'd like to have some rules
-> on that matter such that in the future things will have consistent
-> semantics. Obviously in this case the "local options trump global ones"
-> seems to be prevalent. I don't have problem with that but this should
-> codified somewhere.
-> 
-> 
-> David, what's your take on that. Where do you think will be the best
-> place to say that local, per-inode options take precedence over global ones?
+> And in fact, we have bug report about corrupted compressed extent
+> leading to memory corruption in mail list.
 
-The order of precedence is roughly like this, whenever the respective
-containing object exits:
+Link please.
 
-- inode
-- directory
-- subvolume
-- mount options
-- filesystem defaults
+> Although it's mostly buggy lzo implementation causing the problem, btrfs
+> still needs to be fixed to meet the specification.
 
-There's some special cases for the compression, that are documented
-separately.
+That's very vague, what's the LZO bug? If the input is garbage and lzo
+decompression cannot decompress it, it's not a lzo bug.
+
+> Reported-by: James Harvey <jamespharvey20@gmail.com>
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+>  fs/btrfs/inode.c | 8 ++++++++
+>  1 file changed, 8 insertions(+)
+> 
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index d241285a0d2a..dbef3f404559 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -396,6 +396,14 @@ static inline int inode_need_compress(struct inode *inode, u64 start, u64 end)
+>  {
+>  	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+>  
+> +	/*
+> +	 * Btrfs doesn't support compression without csum or CoW.
+> +	 * This should have the highest priority.
+> +	 */
+> +	if (BTRFS_I(inode)->flags & BTRFS_INODE_NODATACOW ||
+> +	    BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM)
+> +		return 0;
+
+This is also the wrong place to fix that, NODATASUM or NODATACOW inode
+should never make it to compress_file_range (that calls
+inode_need_compress).
+
+> +
+>  	/* force compress */
+>  	if (btrfs_test_opt(fs_info, FORCE_COMPRESS))
+>  		return 1;
+> -- 
+> 2.17.0
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

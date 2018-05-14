@@ -1,48 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from zeniv.linux.org.uk ([195.92.253.2]:37894 "EHLO
-        ZenIV.linux.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751878AbeEMSDU (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 13 May 2018 14:03:20 -0400
-Date: Sun, 13 May 2018 19:03:18 +0100
-From: Al Viro <viro@ZenIV.linux.org.uk>
-To: linux-fsdevel@vger.kernel.org
-Cc: Chris Mason <clm@fb.com>, linux-btrfs@vger.kernel.org
-Subject: [RFC][PATCH] btrfs: take the last remnants of ->d_fsdata use out
-Message-ID: <20180513180317.GR30522@ZenIV.linux.org.uk>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Received: from mx2.suse.de ([195.135.220.15]:32778 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751362AbeENBiQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 13 May 2018 21:38:16 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id E260FACBC
+        for <linux-btrfs@vger.kernel.org>; Mon, 14 May 2018 01:38:14 +0000 (UTC)
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v2 0/2] btrfs: qgroup rescan fixes part 1
+Date: Mon, 14 May 2018 09:38:11 +0800
+Message-Id: <20180514013813.30763-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-[spotted while going through ->d_fsdata handling around d_splice_alias();
-don't really care which tree that goes through]
+This patchset is mainly focused on fixing qgroup rescan corruption.
 
-The only thing even looking at ->d_fsdata in there (since 2012)
-had been kfree(dentry->d_fsdata) in btrfs_dentry_delete().  Which,
-incidentally, is all btrfs_dentry_delete() does.
+Since the whole btrfs qgroup is based on the modification between 2
+transactions, it only has correct qgroup delta.
+While if the rescan can't provide a correct result from the very
+beginning, qgroup numbers are corrupted.
 
-Signed-off-by: Al Viro <viro@zeniv.linux.org.uk>
+The patchset is fixing two types of qgroup corruption which could happen
+by looping btrfs/017 with some possibility.
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index e064c49c9a9a..c6b2b0a20561 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -5842,11 +5842,6 @@ static int btrfs_dentry_delete(const struct dentry *dentry)
- 	return 0;
- }
- 
--static void btrfs_dentry_release(struct dentry *dentry)
--{
--	kfree(dentry->d_fsdata);
--}
--
- static struct dentry *btrfs_lookup(struct inode *dir, struct dentry *dentry,
- 				   unsigned int flags)
- {
-@@ -10665,5 +10660,4 @@ static const struct inode_operations btrfs_symlink_inode_operations = {
- 
- const struct dentry_operations btrfs_dentry_operations = {
- 	.d_delete	= btrfs_dentry_delete,
--	.d_release	= btrfs_dentry_release,
- };
+1) Not accounting tree blocks
+   Caused by the fact that qgroup rescan only searches commit root for
+   backref, while we're passing current extent root to search.
+   Fix it by also passing commit extent root.
+
+2) Double accounting tree blocks
+   Caused by wrong rescan exit condition.
+   Currently qgroup only exit when it can't find any leaves beyond
+   rescan progress.
+   However it could cause problem when new transaction happens after
+   last rescan, and old leaves CoWed to new location, and double
+   accounting could happen.
+   Fix it by checking and leave qgroup rescan if we have hit last leaf,
+   instead of leaving it to next leaf rescan.
+
+
+Changelog:
+v2:
+  Remove unused tree_mod_seq_elem for the 1st patch.
+  Fix double unlock in 2nd patch.
+  Thanks Jeff for the update.
+
+Qu Wenruo (2):
+  btrfs: qgroup: Search commit root for rescan to avoid missing extent
+  btrfs: qgroup: Finish rescan when hit the last leaf of extent tree
+
+ fs/btrfs/qgroup.c | 27 ++++++++++++++++++++++++---
+ 1 file changed, 24 insertions(+), 3 deletions(-)
+
+-- 
+2.17.0
+

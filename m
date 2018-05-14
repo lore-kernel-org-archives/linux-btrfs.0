@@ -1,93 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.99]:58222 "EHLO mail.kernel.org"
+Received: from mx2.suse.de ([195.135.220.15]:53956 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750711AbeEKPmr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 11 May 2018 11:42:47 -0400
-Received: from debian3.lan (bl12-226-64.dsl.telepac.pt [85.245.226.64])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 4B07A21783
-        for <linux-btrfs@vger.kernel.org>; Fri, 11 May 2018 15:42:46 +0000 (UTC)
-From: fdmanana@kernel.org
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: fix xattr loss after power failure
-Date: Fri, 11 May 2018 16:42:42 +0100
-Message-Id: <20180511154242.12904-1-fdmanana@kernel.org>
+        id S1753822AbeENNx6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 14 May 2018 09:53:58 -0400
+Date: Mon, 14 May 2018 15:51:18 +0200
+From: David Sterba <dsterba@suse.cz>
+To: fdmanana@kernel.org
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: fix xattr loss after power failure
+Message-ID: <20180514135118.GJ6649@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20180511154242.12904-1-fdmanana@kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20180511154242.12904-1-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+On Fri, May 11, 2018 at 04:42:42PM +0100, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
+> 
+> If a file has xattrs, we fsync it, to ensure we clear the flags
+> BTRFS_INODE_NEEDS_FULL_SYNC and BTRFS_INODE_COPY_EVERYTHING from its
+> inode, the current transaction commits and then we fsync it (without
+> either of those bits being set in its inode), we end up not logging
+> all its xattrs. This results in deleting all xattrs when replying the
+> log after a power failure.
+> 
+> Trivial reproducer
+> 
+>   $ mkfs.btrfs -f /dev/sdb
+>   $ mount /dev/sdb /mnt
+> 
+>   $ touch /mnt/foobar
+>   $ setfattr -n user.xa -v qwerty /mnt/foobar
+>   $ xfs_io -c "fsync" /mnt/foobar
+> 
+>   $ sync
+> 
+>   $ xfs_io -c "pwrite -S 0xab 0 64K" /mnt/foobar
+>   $ xfs_io -c "fsync" /mnt/foobar
+>   <power failure>
+> 
+>   $ mount /dev/sdb /mnt
+>   $ getfattr --absolute-names --dump /mnt/foobar
+>   <empty output>
+>   $
+> 
+> So fix this by making sure all xattrs are logged if we log a file's inode
+> item and neither the flags BTRFS_INODE_NEEDS_FULL_SYNC nor
+> BTRFS_INODE_COPY_EVERYTHING were set in the inode.
+> 
+> Fixes: 36283bf777d9 ("Btrfs: fix fsync xattr loss in the fast fsync path")
+> Cc: <stable@vger.kernel.org>
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
 
-If a file has xattrs, we fsync it, to ensure we clear the flags
-BTRFS_INODE_NEEDS_FULL_SYNC and BTRFS_INODE_COPY_EVERYTHING from its
-inode, the current transaction commits and then we fsync it (without
-either of those bits being set in its inode), we end up not logging
-all its xattrs. This results in deleting all xattrs when replying the
-log after a power failure.
-
-Trivial reproducer
-
-  $ mkfs.btrfs -f /dev/sdb
-  $ mount /dev/sdb /mnt
-
-  $ touch /mnt/foobar
-  $ setfattr -n user.xa -v qwerty /mnt/foobar
-  $ xfs_io -c "fsync" /mnt/foobar
-
-  $ sync
-
-  $ xfs_io -c "pwrite -S 0xab 0 64K" /mnt/foobar
-  $ xfs_io -c "fsync" /mnt/foobar
-  <power failure>
-
-  $ mount /dev/sdb /mnt
-  $ getfattr --absolute-names --dump /mnt/foobar
-  <empty output>
-  $
-
-So fix this by making sure all xattrs are logged if we log a file's inode
-item and neither the flags BTRFS_INODE_NEEDS_FULL_SYNC nor
-BTRFS_INODE_COPY_EVERYTHING were set in the inode.
-
-Fixes: 36283bf777d9 ("Btrfs: fix fsync xattr loss in the fast fsync path")
-Cc: <stable@vger.kernel.org>
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/tree-log.c | 7 +++++++
- 1 file changed, 7 insertions(+)
-
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 25b888df00c9..d656de8bec52 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -4916,6 +4916,7 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
- 	struct extent_map_tree *em_tree = &inode->extent_tree;
- 	u64 logged_isize = 0;
- 	bool need_log_inode_item = true;
-+	bool xattrs_logged = false;
- 
- 	path = btrfs_alloc_path();
- 	if (!path)
-@@ -5217,6 +5218,7 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
- 	err = btrfs_log_all_xattrs(trans, root, inode, path, dst_path);
- 	if (err)
- 		goto out_unlock;
-+	xattrs_logged = true;
- 	if (max_key.type >= BTRFS_EXTENT_DATA_KEY && !fast_search) {
- 		btrfs_release_path(path);
- 		btrfs_release_path(dst_path);
-@@ -5229,6 +5231,11 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
- 	btrfs_release_path(dst_path);
- 	if (need_log_inode_item) {
- 		err = log_inode_item(trans, log, dst_path, inode);
-+		if (!err && !xattrs_logged) {
-+			err = btrfs_log_all_xattrs(trans, root, inode, path,
-+						   dst_path);
-+			btrfs_release_path(path);
-+		}
- 		if (err)
- 			goto out_unlock;
- 	}
--- 
-2.11.0
-
+Added to next, thanks, and I'll probably add that to 4.17-rc too.

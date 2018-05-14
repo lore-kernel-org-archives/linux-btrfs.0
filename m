@@ -1,89 +1,92 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pl0-f46.google.com ([209.85.160.46]:44245 "EHLO
-        mail-pl0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750798AbeEKUNu (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 11 May 2018 16:13:50 -0400
-Received: by mail-pl0-f46.google.com with SMTP id e6-v6so3856445plt.11
-        for <linux-btrfs@vger.kernel.org>; Fri, 11 May 2018 13:13:49 -0700 (PDT)
-From: Omar Sandoval <osandov@osandov.com>
-To: linux-btrfs@vger.kernel.org
-Cc: kernel-team@fb.com, Chris Mason <clm@fb.com>,
+Received: from mx2.suse.de ([195.135.220.15]:33192 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S932097AbeENPUC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 14 May 2018 11:20:02 -0400
+Date: Mon, 14 May 2018 17:17:19 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Omar Sandoval <osandov@osandov.com>
+Cc: linux-btrfs@vger.kernel.org, kernel-team@fb.com, Chris Mason <clm@fb.com>,
         Josef Bacik <josef@toxicpanda.com>,
         Nikolay Borisov <nborisov@suse.com>, David Sterba <dsterba@suse.com>
-Subject: [PATCH v4 00/12] Btrfs: orphan and truncate fixes
-Date: Fri, 11 May 2018 13:13:28 -0700
-Message-Id: <cover.1526069051.git.osandov@fb.com>
+Subject: Re: [PATCH v4 11/12] Btrfs: renumber BTRFS_INODE_ runtime flags
+Message-ID: <20180514151719.GM6649@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <cover.1526069051.git.osandov@fb.com>
+ <c69fd5cb94b60d6b0d9e422c2340f70b3e3d3914.1526069051.git.osandov@fb.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <c69fd5cb94b60d6b0d9e422c2340f70b3e3d3914.1526069051.git.osandov@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Omar Sandoval <osandov@fb.com>
+On Fri, May 11, 2018 at 01:13:39PM -0700, Omar Sandoval wrote:
+> From: Omar Sandoval <osandov@fb.com>
+> 
+> We got rid of BTRFS_INODE_HAS_ORPHAN_ITEM and
+> BTRFS_INODE_ORPHAN_META_RESERVED, so we can renumber the flags to make
+> them consecutive again.
+> 
+> Signed-off-by: Omar Sandoval <osandov@fb.com>
+> ---
+>  fs/btrfs/btrfs_inode.h | 16 ++++++++--------
+>  1 file changed, 8 insertions(+), 8 deletions(-)
+> 
+> diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
+> index 4807cde0313d..bbbe7f308d68 100644
+> --- a/fs/btrfs/btrfs_inode.h
+> +++ b/fs/btrfs/btrfs_inode.h
+> @@ -20,14 +20,14 @@
+>   * new data the application may have written before commit.
+>   */
+>  #define BTRFS_INODE_ORDERED_DATA_CLOSE		0
+> -#define BTRFS_INODE_DUMMY			2
+> -#define BTRFS_INODE_IN_DEFRAG			3
+> -#define BTRFS_INODE_HAS_ASYNC_EXTENT		5
+> -#define BTRFS_INODE_NEEDS_FULL_SYNC		6
+> -#define BTRFS_INODE_COPY_EVERYTHING		7
+> -#define BTRFS_INODE_IN_DELALLOC_LIST		8
+> -#define BTRFS_INODE_READDIO_NEED_LOCK		9
+> -#define BTRFS_INODE_HAS_PROPS		        10
+> +#define BTRFS_INODE_DUMMY			1
+> +#define BTRFS_INODE_IN_DEFRAG			2
+> +#define BTRFS_INODE_HAS_ASYNC_EXTENT		3
+> +#define BTRFS_INODE_NEEDS_FULL_SYNC		4
+> +#define BTRFS_INODE_COPY_EVERYTHING		5
+> +#define BTRFS_INODE_IN_DELALLOC_LIST		6
+> +#define BTRFS_INODE_READDIO_NEED_LOCK		7
+> +#define BTRFS_INODE_HAS_PROPS		        8
 
-Hi,
+I'll update it to something like this, as we want the auto-numbering
+from enums:
 
-This is the fourth (and hopefully final) version of the orphan item
-early ENOSPC and related fixes.
-
-Changes since v3:
-
-- Changed another stale comment in patch 1
-- Moved BTRFS_INODE_ORPHAN_META_RESERVED flag removal to patch 10
-  instead of patch 9
-- Moved inode runtime flag renumbering to a separate patch (patch 11)
-- Added some more reviewed-bys
-
-Changes since v2:
-
-- Add patch 5 to get rid of BTRFS_INODE_HAS_ORPHAN_ITEM
-- Move patch 10 to patch 6
-- Got rid of patch 5; the bug goes away in the process of removing code
-  for patches 9 and 10
-- Rename patch 10 batch to what it was called in v1
-
-Changes since v1:
-
-- Added two extra cleanups, patches 10 and 11
-- Added a forgotten clear of the orphan bit in patch 8
-- Reworded titles of patches 6 and 9
-- Added people's reviewed-bys
-
-Cover letter from v1:
-
-At Facebook we hit an early ENOSPC issue which we tracked down to the
-reservations for orphan items of deleted-but-still-open files. The
-primary function of this series is to fix that bug, but I ended up
-uncovering a pile of other issues in the process, most notably that the
-orphan items we create for truncate are useless.
-
-I've also posted an xfstest that reproduces this bug.
-
-Thanks!
-
-*** BLURB HERE ***
-
-Omar Sandoval (12):
-  Btrfs: update stale comments referencing vmtruncate()
-  Btrfs: fix error handling in btrfs_truncate_inode_items()
-  Btrfs: don't BUG_ON() in btrfs_truncate_inode_items()
-  Btrfs: stop creating orphan items for truncate
-  Btrfs: get rid of BTRFS_INODE_HAS_ORPHAN_ITEM
-  Btrfs: delete dead code in btrfs_orphan_commit_root()
-  Btrfs: don't return ino to ino cache if inode item removal fails
-  Btrfs: refactor btrfs_evict_inode() reserve refill dance
-  Btrfs: fix ENOSPC caused by orphan items reservations
-  Btrfs: get rid of unused orphan infrastructure
-  Btrfs: renumber BTRFS_INODE_ runtime flags
-  Btrfs: reserve space for O_TMPFILE orphan item deletion
-
- fs/btrfs/btrfs_inode.h      |  18 +-
- fs/btrfs/ctree.h            |   8 -
- fs/btrfs/disk-io.c          |   9 -
- fs/btrfs/extent-tree.c      |  38 ---
- fs/btrfs/free-space-cache.c |   6 +-
- fs/btrfs/inode.c            | 580 ++++++++++--------------------------
- fs/btrfs/transaction.c      |   1 -
- 7 files changed, 172 insertions(+), 488 deletions(-)
-
--- 
-2.17.0
-
+--- a/fs/btrfs/btrfs_inode.h
++++ b/fs/btrfs/btrfs_inode.h
+@@ -19,17 +19,19 @@
+ * ordered operations list so that we make sure to flush out any
+ *   * new data the application may have written before commit.
+ */
+ -#define BTRFS_INODE_ORDERED_DATA_CLOSE         0
+ -#define BTRFS_INODE_ORPHAN_META_RESERVED       1
+ -#define BTRFS_INODE_DUMMY                      2
+ -#define BTRFS_INODE_IN_DEFRAG                  3
+ -#define BTRFS_INODE_HAS_ORPHAN_ITEM            4
+ -#define BTRFS_INODE_HAS_ASYNC_EXTENT           5
+ -#define BTRFS_INODE_NEEDS_FULL_SYNC            6
+ -#define BTRFS_INODE_COPY_EVERYTHING            7
+ -#define BTRFS_INODE_IN_DELALLOC_LIST           8
+ -#define BTRFS_INODE_READDIO_NEED_LOCK          9
+ -#define BTRFS_INODE_HAS_PROPS                  10
+ +enum {
+ +       BTRFS_INODE_ORDERED_DATA_CLOSE = 0,
+ +       BTRFS_INODE_ORPHAN_META_RESERVED,
+ +       BTRFS_INODE_DUMMY,
+ +       BTRFS_INODE_IN_DEFRAG,
+ +       BTRFS_INODE_HAS_ORPHAN_ITEM,
+ +       BTRFS_INODE_HAS_ASYNC_EXTENT,
+ +       BTRFS_INODE_NEEDS_FULL_SYNC,
+ +       BTRFS_INODE_COPY_EVERYTHING,
+ +       BTRFS_INODE_IN_DELALLOC_LIST,
+ +       BTRFS_INODE_READDIO_NEED_LOCK,
+ +       BTRFS_INODE_HAS_PROPS,
+ +};

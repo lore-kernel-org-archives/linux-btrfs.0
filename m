@@ -1,78 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:41120 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:41123 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752037AbeENLNl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 14 May 2018 07:13:41 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id B4F80AEFE
-        for <linux-btrfs@vger.kernel.org>; Mon, 14 May 2018 11:13:40 +0000 (UTC)
+        id S1752207AbeENLNm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 14 May 2018 07:13:42 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 1390CAD97
+        for <linux-btrfs@vger.kernel.org>; Mon, 14 May 2018 11:13:41 +0000 (UTC)
 From: Nikolay Borisov <nborisov@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 5/9] btrfs-progs: btrfs-corrupt-block: Convert -K flag argument handling to common function
-Date: Mon, 14 May 2018 14:13:30 +0300
-Message-Id: <1526296414-27638-6-git-send-email-nborisov@suse.com>
+Subject: [PATCH 6/9] btrfs-progs: btrfs-corrupt-block: Factor out common "-r" handling code
+Date: Mon, 14 May 2018 14:13:31 +0300
+Message-Id: <1526296414-27638-7-git-send-email-nborisov@suse.com>
 In-Reply-To: <1526296414-27638-1-git-send-email-nborisov@suse.com>
 References: <1526296414-27638-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There is now a common function used to parse btrfs keys triplets so
-use that one. No functional changes.
+Since more and more of the "corrupt XXX" options are going to support
+combination with -r option, let's extract the common code needed for
+this. No functional changes.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- btrfs-corrupt-block.c | 16 +++++-----------
- 1 file changed, 5 insertions(+), 11 deletions(-)
+ btrfs-corrupt-block.c | 17 +++++++----------
+ 1 file changed, 7 insertions(+), 10 deletions(-)
 
 diff --git a/btrfs-corrupt-block.c b/btrfs-corrupt-block.c
-index 4cc3528df105..7a5513c455e6 100644
+index 7a5513c455e6..8bbfe1cdb855 100644
 --- a/btrfs-corrupt-block.c
 +++ b/btrfs-corrupt-block.c
-@@ -114,7 +114,7 @@ static void print_usage(int ret)
- 	printf("\t-i   The inode item to corrupt (must also specify the field to corrupt)\n");
- 	printf("\t-x   The file extent item to corrupt (must also specify -i for the inode and -f for the field to corrupt)\n");
- 	printf("\t-m   The metadata block to corrupt (must also specify -f for the field to corrupt)\n");
--	printf("\t-K   The key to corrupt in the format <num>,<num>,<num> (must also specify -f for the field)\n");
-+	printf("\t-K <u64,u8,u64> Corrupt the given key (must also specify -f for the field)\n");
- 	printf("\t-f   The field in the item to corrupt\n");
- 	printf("\t-I <u64,u8,u64> Corrupt an item corresponding to the passed key triplet (must also specify the field to corrupt and root for the item)\n");
- 	printf("\t-D   Corrupt a dir item, must specify key and field\n");
-@@ -1129,6 +1129,7 @@ int main(int argc, char **argv)
- 	int corrupt_item = 0;
- 	int corrupt_di = 0;
- 	int delete = 0;
-+	int should_corrupt_key = 0;
- 	u64 metadata_block = 0;
- 	u64 inode = 0;
- 	u64 file_extent = (u64)-1;
-@@ -1207,15 +1208,8 @@ int main(int argc, char **argv)
- 				metadata_block = arg_strtou64(optarg);
- 				break;
- 			case 'K':
--				ret = sscanf(optarg, "%llu,%u,%llu",
--					     &key.objectid,
--					     (unsigned int *)&key.type,
--					     &key.offset);
--				if (ret != 3) {
--					fprintf(stderr, "error reading key "
--						"%d\n", errno);
--					print_usage(1);
--				}
-+				should_corrupt_key = 1;
-+				parse_key(&key.objectid, &key.type, &key.offset);
- 				break;
- 			case 'D':
- 				corrupt_di = 1;
-@@ -1370,7 +1364,7 @@ int main(int argc, char **argv)
- 		ret = delete_item(target, &key);
+@@ -1114,7 +1114,7 @@ int main(int argc, char **argv)
+ {
+ 	struct cache_tree root_cache;
+ 	struct btrfs_key key;
+-	struct btrfs_root *root;
++	struct btrfs_root *root, *target_root;
+ 	char *dev;
+ 	/* chunk offset can be 0,so change to (u64)-1 */
+ 	u64 logical = (u64)-1;
+@@ -1245,6 +1245,10 @@ int main(int argc, char **argv)
+ 		fprintf(stderr, "Open ctree failed\n");
+ 		exit(1);
+ 	}
++	target_root = root;
++	if (root_objectid)
++		target_root = open_root(root->fs_info, root_objectid);
++
+ 	if (extent_rec) {
+ 		struct btrfs_trans_handle *trans;
+ 
+@@ -1342,26 +1346,19 @@ int main(int argc, char **argv)
  		goto out_close;
  	}
--	if (key.objectid || key.offset || key.type) {
-+	if (should_corrupt_key) {
- 		if (*field == 0)
+ 	if (corrupt_item) {
+-		struct btrfs_root *target;
+ 		if (!key.objectid)
  			print_usage(1);
- 		ret = corrupt_key(root, &key, field);
+ 		if (!root_objectid)
+ 			print_usage(1);
+ 
+-		target = open_root(root->fs_info, root_objectid);
+-
+-		ret = corrupt_btrfs_item(target, &key, field);
++		ret = corrupt_btrfs_item(target_root, &key, field);
+ 		goto out_close;
+ 	}
+ 	if (delete) {
+-		struct btrfs_root *target = root;
+-
+ 		if (!key.objectid)
+ 			print_usage(1);
+-		if (root_objectid)
+-			target = open_root(root->fs_info, root_objectid);
+ 
+-		ret = delete_item(target, &key);
++		ret = delete_item(target_root, &key);
+ 		goto out_close;
+ 	}
+ 	if (should_corrupt_key) {
 -- 
 2.7.4
 

@@ -1,35 +1,29 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:53599 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:57463 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752690AbeENNsJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 14 May 2018 09:48:09 -0400
-Date: Mon, 14 May 2018 15:45:27 +0200
+        id S1752333AbeENOmM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 14 May 2018 10:42:12 -0400
+Date: Mon, 14 May 2018 16:39:30 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Filipe Manana <fdmanana@gmail.com>
-Cc: robbieko <robbieko@synology.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        David Sterba <dsterba@suse.com>
-Subject: Re: [PATCH v3] btrfs: incremental send, fix BUG when invalid memory
- access
-Message-ID: <20180514134527.GI6649@twin.jikos.cz>
+To: fdmanana@kernel.org
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: fix duplicate extents after fsync of file with
+ prealloc extents
+Message-ID: <20180514143930.GK6649@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1526266294-23121-1-git-send-email-robbieko@synology.com>
- <CAL3q7H6u-cH+zKnUkMgC-O_eWAhP4JvxOMR=b+szk5SYCo1cFQ@mail.gmail.com>
+References: <20180509150146.13331-1-fdmanana@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAL3q7H6u-cH+zKnUkMgC-O_eWAhP4JvxOMR=b+szk5SYCo1cFQ@mail.gmail.com>
+In-Reply-To: <20180509150146.13331-1-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, May 14, 2018 at 12:39:36PM +0100, Filipe Manana wrote:
-> On Mon, May 14, 2018 at 3:51 AM, robbieko <robbieko@synology.com> wrote:
-> > Signed-off-by: Robbie Ko <robbieko@synology.com>
-> Reviewed-by: Filipe Manana <fdmanana@suse.com>
-> 
-> Looks good, I would only change the subject to something like:
-> 
-> Btrfs: send, fix invalid access to commit roots due to concurrent snapshotting
-> 
-> David can probably do that when picking this patch.
+On Wed, May 09, 2018 at 04:01:46PM +0100, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
+...
+> Fixes: 471d557afed1 ("Btrfs: fix loss of prealloc extents past i_size after fsync log replay")
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
 
-Patch updated, thank you both.
+Thanks for the excellent and very educational writeup!
+
+Added to 4.17-rc queue as it fixes a regression.

@@ -1,102 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.15]:54683 "EHLO mout.gmx.net"
+Received: from rei.romanrm.net ([172.104.66.239]:35952 "EHLO rei.romanrm.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751855AbeENIYb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 14 May 2018 04:24:31 -0400
+        id S1751364AbeENI11 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 14 May 2018 04:27:27 -0400
+Date: Mon, 14 May 2018 13:20:04 +0500
+From: Roman Mamedov <rm@romanrm.net>
+To: Nikolay Borisov <nborisov@suse.com>
+Cc: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH] btrfs: inode: Don't compress if NODATASUM or NODATACOW
  set
-To: Nikolay Borisov <nborisov@suse.com>, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <20180514070210.27047-1-wqu@suse.com>
- <90871596-c030-930b-57ad-7db63b4f579d@suse.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <71cdf169-8cf9-1550-5dda-92768c822aa3@gmx.com>
-Date: Mon, 14 May 2018 16:24:18 +0800
-MIME-Version: 1.0
+Message-ID: <20180514132004.3afec300@natsu>
 In-Reply-To: <90871596-c030-930b-57ad-7db63b4f579d@suse.com>
-Content-Type: text/plain; charset=utf-8
+References: <20180514070210.27047-1-wqu@suse.com>
+        <90871596-c030-930b-57ad-7db63b4f579d@suse.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Mon, 14 May 2018 11:10:34 +0300
+Nikolay Borisov <nborisov@suse.com> wrote:
 
-
-On 2018年05月14日 16:10, Nikolay Borisov wrote:
-> 
-> 
-> On 14.05.2018 10:02, Qu Wenruo wrote:
->> As btrfs(5) specified:
->>
->> 	Note
->> 	If nodatacow or nodatasum are enabled, compression is disabled.
->>
->> If NODATASUM or NODATACOW set, we should not compress the extent.
->>
->> And in fact, we have bug report about corrupted compressed extent
->> leading to memory corruption in mail list.
->> Although it's mostly buggy lzo implementation causing the problem, btrfs
-> 
-> What does it mean "it's mostly buggy lzo implementation"? If we have bug
-> in the LZO implementation that btrfs uses shouldn't it be fixed as well ?
-
-It looks like buggy lzo decompress code which can't handle corrupted
-data and results some random kernel memory corruption.
-It's also possible that some incorrect function call in btrfs that
-caused the problem.
-
-It needs to be fixed of course, but right now, no binary dump of the
-offending data, so we can't verify or further investigate the root cause.
-
-Thanks,
-Qu
-
-> 
->> still needs to be fixed to meet the specification.
->>
->> Reported-by: James Harvey <jamespharvey20@gmail.com>
->> Signed-off-by: Qu Wenruo <wqu@suse.com>
->> ---
->>  fs/btrfs/inode.c | 8 ++++++++
->>  1 file changed, 8 insertions(+)
->>
->> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
->> index d241285a0d2a..dbef3f404559 100644
->> --- a/fs/btrfs/inode.c
->> +++ b/fs/btrfs/inode.c
->> @@ -396,6 +396,14 @@ static inline int inode_need_compress(struct inode *inode, u64 start, u64 end)
->>  {
->>  	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
->>  
->> +	/*
->> +	 * Btrfs doesn't support compression without csum or CoW.
->> +	 * This should have the highest priority.
->> +	 */
->> +	if (BTRFS_I(inode)->flags & BTRFS_INODE_NODATACOW ||
->> +	    BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM)
->> +		return 0;
->> +
->>  	/* force compress */
->>  	if (btrfs_test_opt(fs_info, FORCE_COMPRESS))
->>  		return 1;
-> 
 > But if we have mounted the fs with FORCE_COMPRESS shouldn't we disregard
-> the inode flags,
+> the inode flags, presumably the admin knows what he is doing?
 
-I'm afraid not.
-AFAIK the purpose of force compress is to bypass the compression ratio
-detection, other than generating compressed extent for NODATASUM use case.
+Please don't. Personally I always assumed chattr +C would prevent both CoW and
+compression, and used that as a way to override volume-wide compress-force for
+a particular folder. Now that it turns out this wasn't working, the patch
+would fix it to behave in line with prior expectations.
 
-Thanks,
-Qu
-
-> presumably the admin knows what he is doing? Won't it
-> be better if somewhere further in the call chain we check if
-> FORCE_COMPRESS is set and if so override any inode flags. This can be
-> implemented by _always_ calling inode_need_compress to decide if we
-> should compress or not?
-> 
->>
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+-- 
+With respect,
+Roman

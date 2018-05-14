@@ -1,71 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp2120.oracle.com ([156.151.31.85]:46210 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750747AbeELAVR (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:53634 "EHLO
+        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752169AbeENXil (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 11 May 2018 20:21:17 -0400
-Date: Fri, 11 May 2018 17:20:49 -0700
-From: "Darrick J. Wong" <darrick.wong@oracle.com>
-To: dsterba@suse.cz, Eric Sandeen <sandeen@sandeen.net>,
-        Chris Mason <clm@fb.com>, Al Viro <viro@ZenIV.linux.org.uk>,
-        Eric Sandeen <sandeen@redhat.com>,
-        fsdevel <linux-fsdevel@vger.kernel.org>, linux-btrfs@vger.kernel.org,
-        Linux API <linux-api@vger.kernel.org>
-Subject: Re: [PATCH 1/2 V2] hoist BTRFS_IOC_[SG]ET_FSLABEL to vfs
-Message-ID: <20180512002049.GH9510@magnolia>
-References: <d2979d75-5e45-b145-9ca5-2c315d8ead9c@redhat.com>
- <b8c7feca-68ce-b1a8-3a96-a99b50457a84@sandeen.net>
- <4a4f33c3-2173-9795-f4e4-1e9d338fd9a7@sandeen.net>
- <20180510191608.GR30522@ZenIV.linux.org.uk>
- <20180511141017.GZ6649@twin.jikos.cz>
- <9F0DCA90-AD82-4179-B50A-F112CF966CCB@fb.com>
- <94b5a947-d7f5-19e7-fb2b-161a5c20e85e@sandeen.net>
- <20180511144145.GA6649@twin.jikos.cz>
+        Mon, 14 May 2018 19:38:41 -0400
+Date: Mon, 14 May 2018 16:10:15 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: linux-btrfs@vger.kernel.org
+Message-ID: <20180514231015.udautml7oyffda6o@merlins.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-In-Reply-To: <20180511144145.GA6649@twin.jikos.cz>
+Content-Type: text/plain; charset=us-ascii
+Subject: 4.15.6 crash: BUG at fs/btrfs/ctree.c:1862
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, May 11, 2018 at 04:41:45PM +0200, David Sterba wrote:
-> On Fri, May 11, 2018 at 09:36:09AM -0500, Eric Sandeen wrote:
-> > On 5/11/18 9:32 AM, Chris Mason wrote:
-> > > On 11 May 2018, at 10:10, David Sterba wrote:
-> > > 
-> > >> On Thu, May 10, 2018 at 08:16:09PM +0100, Al Viro wrote:
-> > >>> On Thu, May 10, 2018 at 01:13:57PM -0500, Eric Sandeen wrote:
-> > >>>> Move the btrfs label ioctls up to the vfs for general use.
-> > >>>>
-> > >>>> This retains 256 chars as the maximum size through the interface, which
-> > >>>> is the btrfs limit and AFAIK exceeds any other filesystem's maximum
-> > >>>> label size.
-> > >>>>
-> > >>>> Signed-off-by: Eric Sandeen <sandeen@redhat.com>
-> > >>>> Reviewed-by: Andreas Dilger <adilger@dilger.ca>
-> > >>>> Reviewed-by: David Sterba <dsterba@suse.com>
-> > >>>
-> > >>> No objections (and it obviously ought to go through btrfs tree).
-> > >>
-> > >> I can take it through my tree, but Eric mentioned that there's a patch
-> > >> for xfs that depends on it. In this case it would make sense to take
-> > >> both patches at once via the xfs tree. There are no pending conflicting
-> > >> changes in btrfs.
-> > > 
-> > > Probably easiest to just have a separate pull dedicated just for this series.  That way it doesn't really matter which tree it goes through.
-> > 
-> > Actually, I just realized that the changes to include/uapi/linux/fs.h are completely
-> > independent of any btrfs changes, right - there's nothing wrong w/ redefining
-> > the common ioctl under a different name in btrfs.  So the fs.h patch could go first,
-> > through the xfs tree since it'll be using it.
-> > 
-> > Once the common ioctl definition goes in, then btrfs can change to define its ioctls to
-> > the common ioctls, or act on them directly as my patch did, etc.  Would that be
-> > a better plan?  IOWs there's no urgent need to coordinate a btrfs change.
-> 
-> Agreed, I like that plan.
+static noinline struct extent_buffer *
+read_node_slot(struct btrfs_fs_info *fs_info, struct extent_buffer *parent,
+               int slot)
+{
+        int level = btrfs_header_level(parent);
+        struct extent_buffer *eb;
 
-Ok, I'll await a new series with all the patches that Eric wants to
-squeeze through the xfs tree.  I don't mind carrying the btrfs changes
-too, so long as they're one-liners and the btrfs maintainers ack/rvb it.
+        if (slot < 0 || slot >= btrfs_header_nritems(parent))
+                return ERR_PTR(-ENOENT);
 
---D
+        BUG_ON(level == 0);
+
+
+
+BTRFS info (device dm-2): relocating block group 13404622290944 flags data
+BTRFS info (device dm-2): found 9959 extents
+BTRFS info (device dm-2): found 9959 extents
+BTRFS info (device dm-2): relocating block group 13403548549120 flags data
+------------[ cut here ]------------
+kernel BUG at fs/btrfs/ctree.c:1862!
+invalid opcode: 0000 [#1] PREEMPT SMP PTI
+CPU: 5 PID: 8103 Comm: btrfs Tainted: G     U           4.15.6-amd64-preempt-sysrq-20171018 #3
+Hardware name: System manufacturer System Product Name/P8H67-M PRO, BIOS 3904 04/27/2013
+RIP: 0010:read_node_slot+0x3c/0x9e
+RSP: 0018:ffffbecfaa0b7b58 EFLAGS: 00210246
+RAX: 00000000000000a0 RBX: 000000000000000c RCX: 0000000000000003
+RDX: 000000000000000c RSI: ffff9a60e9d9de78 RDI: 000000052f6e0000
+RBP: ffff9a60e9d9de78 R08: 0000000000000001 R09: ffffbecfaa0b7bf6
+R10: ffff9a64988bd7e9 R11: ffff9a64988bd7c8 R12: ffffe003d4bdb800
+R13: ffff9a64a4810000 R14: 0000000000000000 R15: 0000000000000000
+FS:  00007fba34c9c8c0(0000) GS:ffff9a64de340000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000000005a8b9c9a CR3: 00000001446c6004 CR4: 00000000001606e0
+Call Trace:
+ tree_advance+0xb1/0x11e
+ btrfs_compare_trees+0x1c2/0x4d6
+ ? process_extent+0xdcf/0xdcf
+ btrfs_ioctl_send+0x81e/0xc70
+ ? __kmalloc_track_caller+0xfb/0x10f
+ _btrfs_ioctl_send+0xbc/0xe6
+ ? paravirt_sched_clock+0x5/0x8
+ ? set_task_rq+0x2f/0x80
+ ? task_rq_unlock+0x22/0x36
+ btrfs_ioctl+0x162f/0x1dc8
+ ? select_task_rq_fair+0xb65/0xb7a
+ ? update_load_avg+0x16d/0x442
+ ? list_add+0x15/0x2e
+ ? cfs_rq_throttled.isra.30+0x9/0x18
+ ? vfs_ioctl+0x1b/0x28
+ vfs_ioctl+0x1b/0x28
+ do_vfs_ioctl+0x4f4/0x53f
+ ? __audit_syscall_entry+0xbf/0xe3
+ SyS_ioctl+0x52/0x76
+ do_syscall_64+0x72/0x81
+ entry_SYSCALL_64_after_hwframe+0x3d/0xa2
+RIP: 0033:0x7fba34d835e7
+RSP: 002b:00007ffc32cf4cb8 EFLAGS: 00000202 ORIG_RAX: 0000000000000010
+RAX: ffffffffffffffda RBX: 000000000000523f RCX: 00007fba34d835e7
+RDX: 00007ffc32cf4d40 RSI: 0000000040489426 RDI: 0000000000000004
+RBP: 0000000000000004 R08: 0000000000000000 R09: 00007fba34c9b700
+R10: 00007fba34c9b9d0 R11: 0000000000000202 R12: 0000000000000003
+R13: 0000563a30b87020 R14: 0000000000000001 R15: 0000000000000001
+Code: f5 53 4c 8b a6 98 00 00 00 89 d3 4c 89 e7 e8 67 fd ff ff 85 db 78 63 4c 89 e7 41 88 c6 e8 92 fb ff ff 39 d8 76 54 45 84 f6 75 02 <0f> 0b 89 de 48 89 ef e8 2e ff ff ff 89 de 49 89 c4 48 89 ef e8
+RIP: read_node_slot+0x3c/0x9e RSP: ffffbecfaa0b7b58
+---[ end trace a24e7de6b77b5cb1 ]---
+Kernel panic - not syncing: Fatal exception
+Kernel Offset: 0x19000000 from 0xffffffff81000000 (relocation range: 0xffffffff80000000-0xffffffffbfffffff)
+
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                       | PGP 7F55D5F27AAF9D08

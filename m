@@ -1,50 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:42627 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752393AbeEOHg0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 15 May 2018 03:36:26 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 9F45FAE04
-        for <linux-btrfs@vger.kernel.org>; Tue, 15 May 2018 07:36:25 +0000 (UTC)
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/2] btrfs: Enhance btrfs handling compression and
-Date: Tue, 15 May 2018 15:36:20 +0800
-Message-Id: <20180515073622.18732-1-wqu@suse.com>
+Received: from mail-yw0-f178.google.com ([209.85.161.178]:43955 "EHLO
+        mail-yw0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752256AbeEOIOL (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 15 May 2018 04:14:11 -0400
+Received: by mail-yw0-f178.google.com with SMTP id r202-v6so4400083ywg.10
+        for <linux-btrfs@vger.kernel.org>; Tue, 15 May 2018 01:14:11 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <20180514202213.GD13417@vader>
+References: <CANBHLUjcAjvcA3BCn=i4VmDvKUcxSBk4_g3qp7Jw-k84sZXx5g@mail.gmail.com>
+ <20180514202213.GD13417@vader>
+From: Dimitri John Ledkov <xnox@ubuntu.com>
+Date: Tue, 15 May 2018 09:14:09 +0100
+Message-ID: <CANBHLUiJddD5F9FBxHBVAxnEM2fBerJ6M78bUAcxhjrOEgywmw@mail.gmail.com>
+Subject: Re: Clarification needed about libbtrfs & libbtrfsutil
+To: Omar Sandoval <osandov@osandov.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-James Harvey reported one corruption where lzo compressed extent without
-data csum is causing "decompress failed" kernel message, and then
-serious random kernel memory corruption.
+On 14 May 2018 at 21:22, Omar Sandoval <osandov@osandov.com> wrote:
+> On Mon, May 14, 2018 at 09:40:19AM +0100, Dimitri John Ledkov wrote:
+>> Are both of these meant to be public libraries, installed on the user
+>> systems, and available in .so variant as well for 3rd party
+>> development and public dynamic linking?
+>>
+>> Or are these private internal libraries, which are installed as public
+>> runtime only, simply to share code between the utils, but otherwise
+>> provide no abi stability and will forever remain libfoo.so.0?
+>
+> They're both meant to be public. In fact, libbtrfsutil is already 1.0.0.
+>
 
-For the "decrompress failed" kernel message, it's indeed corrupted
-compressed data.
-However we can still harden btrfs lzo callers by do extra check on the
-lzo compressed data before really decompress it.
-It's done mostly based on the total length recorded in the first 4 bytes
-of a compressed extent.
+Ack. Will ship them as such.
 
-It should catch such corruption early.
-However the random kernel memory corruption still can't be reproduced
-even with the same binary dump.
+>> Or should these even be a noinst_ libraries (~= Libtool Convenience
+>> Libraries), and are simply intermediate by-products?
+>>
+>> I'm asking because despite compiling shared & static variants of these
+>> libraries, and "shared linked" and "static linked" variants of the
+>> utils, it appears that all utilities are statically linking against
+>> libbtrfs/libbtrfsutils. Thus no binaries nor bindings, dynamically
+>> link against neither libbtrfs nor libbtrfsutil.
+>>
+>> Tweaking the makefile to use libs_shared variable instead of libs or
+>> libs_static, results in slightly smaller binaries, dynamically linked
+>> against libbtrfs/libbtrfsutil.
+>>
+>> But it is hard to tell if this is a bug/mistake, or an intentional feature.
+>
+> I'm not sure why we statically link libbtrfs into the the tools, and I
+> just copied that for libbtrfsutil.
 
-On the other hand, even btrfs(5) only specifies that nodatacow or
-nodatasum will disable compression, it should also work on the same
-inode flags level.
-For NODATACOW, it's working as epxected, but for NODATASUM alone, it's
-not working properly, the 2nd patch will enhance such check so even for
-NODATASUM inode, compressio will also be disabled.
-
-Qu Wenruo (2):
-  btrfs: inode: Don't compress if NODATASUM or NODATACOW set
-  btrfs: lzo: Avoid decompressing obviously corrupted data
-
- fs/btrfs/compression.h | 1 +
- fs/btrfs/inode.c       | 8 ++++++++
- fs/btrfs/lzo.c         | 4 ++++
- 3 files changed, 13 insertions(+)
+OK. I guess I can prepare a patch to dynamically link
+libbtrfs/libbtrfsutil and see how that will go through review.
 
 -- 
-2.17.0
+Regards,
 
+Dimitri.

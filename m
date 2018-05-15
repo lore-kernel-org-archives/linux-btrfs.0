@@ -1,88 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp2130.oracle.com ([156.151.31.86]:48152 "EHLO
-        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S937114AbeE3Gzx (ORCPT
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:46591 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1752417AbeEOI4P (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 30 May 2018 02:55:53 -0400
-Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
-        by userp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w4U6ovVv031695
-        for <linux-btrfs@vger.kernel.org>; Wed, 30 May 2018 06:55:52 GMT
-Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
-        by userp2130.oracle.com with ESMTP id 2j9ev890fd-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 30 May 2018 06:55:52 +0000
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id w4U6tq5E004279
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 30 May 2018 06:55:52 GMT
-Received: from abhmp0007.oracle.com (abhmp0007.oracle.com [141.146.116.13])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w4U6tpVE024089
-        for <linux-btrfs@vger.kernel.org>; Wed, 30 May 2018 06:55:51 GMT
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 5/6] btrfs: fix btrfs_free_stale_devices() with needed locks
-Date: Wed, 30 May 2018 14:58:20 +0800
-Message-Id: <20180530065821.28385-6-anand.jain@oracle.com>
-In-Reply-To: <20180530065821.28385-1-anand.jain@oracle.com>
-References: <20180530065821.28385-1-anand.jain@oracle.com>
+        Tue, 15 May 2018 04:56:15 -0400
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
+        by cn.fujitsu.com (Postfix) with ESMTP id 4B6484B3ED60
+        for <linux-btrfs@vger.kernel.org>; Tue, 15 May 2018 16:56:12 +0800 (CST)
+From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH v10.2 0/5] In-band de-duplication for btrfs-progs
+Date: Tue, 15 May 2018 16:56:01 +0800
+Message-ID: <20180515085606.18084-1-lufq.fnst@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs_free_stale_devices() finds the stale (not opened) matching
-device path in the fs_uuid list. We are already under uuid_mutex
-so when we check for each fs_devices, hold the respective
-device_list_mutex.
+Patchset can be fetched from github:
+https://github.com/littleroad/btrfs-progs.git dedupe_latest
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- fs/btrfs/volumes.c | 25 +++++++++++++++----------
- 1 file changed, 15 insertions(+), 10 deletions(-)
+Inband dedupe(in-memory backend only) ioctl support for btrfs-progs.
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index fd656eb75225..a6a23b0185e5 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -643,8 +643,11 @@ static void btrfs_free_stale_devices(const char *path,
- 	list_for_each_entry_safe(fs_devices, tmp_fs_devices, &fs_uuids,
- 				 fs_list) {
- 
--		if (fs_devices->opened)
-+		mutex_lock(&fs_devices->device_list_mutex);
-+		if (fs_devices->opened) {
-+			mutex_unlock(&fs_devices->device_list_mutex);
- 			continue;
-+		}
- 
- 		list_for_each_entry_safe(device, tmp_device,
- 					 &fs_devices->devices, dev_list) {
-@@ -664,16 +667,18 @@ static void btrfs_free_stale_devices(const char *path,
- 				continue;
- 
- 			/* delete the stale device */
--			if (fs_devices->num_devices == 1) {
--				btrfs_sysfs_remove_fsid(fs_devices);
--				list_del(&fs_devices->fs_list);
--				free_fs_devices(fs_devices);
-+			fs_devices->num_devices--;
-+			list_del(&device->dev_list);
-+			btrfs_free_device(device);
-+
-+			if (fs_devices->num_devices == 0)
- 				break;
--			} else {
--				fs_devices->num_devices--;
--				list_del(&device->dev_list);
--				btrfs_free_device(device);
--			}
-+		}
-+		mutex_unlock(&fs_devices->device_list_mutex);
-+		if (fs_devices->num_devices == 0) {
-+			btrfs_sysfs_remove_fsid(fs_devices);
-+			list_del(&fs_devices->fs_list);
-+			free_fs_devices(fs_devices);
- 		}
- 	}
- }
+v7 changes:
+   Update ctree.h to follow kernel structure change
+   Update print-tree to follow kernel structure change
+V8 changes:
+   Move dedup props and on-disk backend support out of the patchset
+   Change command group name to "dedupe-inband", to avoid confusion with
+   possible out-of-band dedupe. Suggested by Mark.
+   Rebase to latest devel branch.
+V9 changes:
+   Follow kernels ioctl change to support FORCE flag, new reconf ioctl,
+   and more precious error reporting.
+v10 changes:
+   Rebase to v4.10.
+   Add BUILD_ASSERT for btrfs_ioctl_dedupe_args
+v10.1 changes:
+   Rebase to v4.14.
+v10.2 changes:
+   Rebase to v4.16.1.
+
+Qu Wenruo (5):
+  btrfs-progs: Basic framework for dedupe-inband command group
+  btrfs-progs: dedupe: Add enable command for dedupe command group
+  btrfs-progs: dedupe: Add disable support for inband dedupelication
+  btrfs-progs: dedupe: Add status subcommand
+  btrfs-progs: dedupe: introduce reconfigure subcommand
+
+ Documentation/Makefile.in                  |   1 +
+ Documentation/btrfs-dedupe-inband.asciidoc | 167 ++++++++
+ Documentation/btrfs.asciidoc               |   4 +
+ Makefile                                   |   3 +-
+ btrfs-completion                           |   6 +-
+ btrfs.c                                    |   2 +
+ cmds-dedupe-ib.c                           | 442 +++++++++++++++++++++
+ commands.h                                 |   2 +
+ dedupe-ib.h                                |  28 ++
+ ioctl.h                                    |  38 ++
+ 10 files changed, 691 insertions(+), 2 deletions(-)
+ create mode 100644 Documentation/btrfs-dedupe-inband.asciidoc
+ create mode 100644 cmds-dedupe-ib.c
+ create mode 100644 dedupe-ib.h
+
 -- 
-2.7.0
+2.17.0
+
+
 

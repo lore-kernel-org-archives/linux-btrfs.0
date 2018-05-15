@@ -1,33 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:44760 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752304AbeEOSRt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 15 May 2018 14:17:49 -0400
-Date: Tue, 15 May 2018 20:15:08 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Liu Bo <bo.liu@linux.alibaba.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 0/6] btrfs_search_slot cleanups
-Message-ID: <20180515181508.GX6649@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1526406728-109055-1-git-send-email-bo.liu@linux.alibaba.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Received: from out30-133.freemail.mail.aliyun.com ([115.124.30.133]:39621 "EHLO
+        out30-133.freemail.mail.aliyun.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1753610AbeEORwW (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 15 May 2018 13:52:22 -0400
+From: Liu Bo <bo.liu@linux.alibaba.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH 1/6] Btrfs: remove superfluous free_extent_buffer
+Date: Wed, 16 May 2018 01:52:03 +0800
+Message-Id: <1526406728-109055-2-git-send-email-bo.liu@linux.alibaba.com>
 In-Reply-To: <1526406728-109055-1-git-send-email-bo.liu@linux.alibaba.com>
+References: <1526406728-109055-1-git-send-email-bo.liu@linux.alibaba.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, May 16, 2018 at 01:52:02AM +0800, Liu Bo wrote:
-> These're the cleanups I made for btrfs_search_slot() and its callees.
+@tmp must be NULL at this point, free_extent_buffer is not needed at all.
 
-All the patches have very terse changelog and I have no idea why you
-think the code change is correct so I can compare my review against
-that.
+Signed-off-by: Liu Bo <bo.liu@linux.alibaba.com>
+---
+ fs/btrfs/ctree.c | 1 -
+ 1 file changed, 1 deletion(-)
 
-It's touching code around locking that's never bad to be more
-verbose and introduce a bit of the context, the simple sentence is maybe
-clear to you when you go through the code, but imagine you read the
-changelog in a week or month or a year. It still needs to make sense or
-give enough pointers to find out from the code.
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index b3f6f300e492..9fa3d77c98d4 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -2432,7 +2432,6 @@ noinline void btrfs_unlock_up_safe(struct btrfs_path *path, int level)
+ 	btrfs_unlock_up_safe(p, level + 1);
+ 	btrfs_set_path_blocking(p);
+ 
+-	free_extent_buffer(tmp);
+ 	if (p->reada != READA_NONE)
+ 		reada_for_search(fs_info, p, level, slot, key->objectid);
+ 
+-- 
+1.8.3.1
 
-Please update and resend, thanks.

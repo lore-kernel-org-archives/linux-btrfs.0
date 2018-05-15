@@ -1,74 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:42630 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752196AbeEOHg1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 15 May 2018 03:36:27 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 9C5C6ADFF
-        for <linux-btrfs@vger.kernel.org>; Tue, 15 May 2018 07:36:26 +0000 (UTC)
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/2] btrfs: inode: Don't compress if NODATASUM or NODATACOW set
-Date: Tue, 15 May 2018 15:36:21 +0800
-Message-Id: <20180515073622.18732-2-wqu@suse.com>
-In-Reply-To: <20180515073622.18732-1-wqu@suse.com>
-References: <20180515073622.18732-1-wqu@suse.com>
+Received: from mail-it0-f67.google.com ([209.85.214.67]:52123 "EHLO
+        mail-it0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752967AbeEOMHA (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 15 May 2018 08:07:00 -0400
+Received: by mail-it0-f67.google.com with SMTP id n202-v6so740442ita.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 15 May 2018 05:07:00 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <99A8759B-68EA-480F-A95D-DF2496B5E767@fb.com>
+References: <20180514143510.x5hwstlzm2lpeiqx@US-160370MP2.local> <99A8759B-68EA-480F-A95D-DF2496B5E767@fb.com>
+From: Liu Bo <obuil.liubo@gmail.com>
+Date: Tue, 15 May 2018 20:06:59 +0800
+Message-ID: <CANQeFDBXjTFe9Y+ifuSP_8FFRQfkWau+SkF9m2ZwL+sy9gNgbQ@mail.gmail.com>
+Subject: Re: verify key failure
+To: Chris Mason <clm@fb.com>
+Cc: Liu Bo <bo.liu@linux.alibaba.com>, Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-As btrfs(5) specified:
+On Tue, May 15, 2018 at 12:10 AM, Chris Mason <clm@fb.com> wrote:
+>
+>
+> On 14 May 2018, at 10:35, Liu Bo wrote:
+>
+>> Hi,
+>>
+>> I got another warning of verify_level_key by running btrfs/124 in a loop,
+>> I'm testing against 4.17-rc3.
+>>
+>> Not sure if it's false positive.
+>
+>
+> How long does this take to trigger?
+>
 
-	Note
-	If nodatacow or nodatasum are enabled, compression is disabled.
 
-If NODATASUM or NODATACOW set, we should not compress the extent.
+btrfs/124 takes ~24s on my box, and it took 10 ~ 15 runs to hit.
 
-Normally NODATACOW is detected properly in run_delalloc_range() so
-compression won't happen for NODATACOW.
 
-However for NODATASUM we don't have any check, and it can cause
-compressed extent without csum pretty easily, just by:
-------
-mkfs.btrfs -f $dev
-mount $dev $mnt -o nodatasum
-touch $mnt/foobar
-mount -o remount,datasum,compress $mnt
-xfs_io -f -c "pwrite 0 128K" $mnt/foobar
-------
+thanks,
+liubo
 
-And in fact, we have bug report about corrupted compressed extent
-without proper data checksum so even RAID1 can't recover the corruption.
-(https://bugzilla.kernel.org/show_bug.cgi?id=199707)
-
-Running compression without proper checksum could cause more damage when
-corruption happens, so there is no need to allow compression for
-NODATACSUM.
-
-Reported-by: James Harvey <jamespharvey20@gmail.com>
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/inode.c | 8 ++++++++
- 1 file changed, 8 insertions(+)
-
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index d241285a0d2a..dbef3f404559 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -396,6 +396,14 @@ static inline int inode_need_compress(struct inode *inode, u64 start, u64 end)
- {
- 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
- 
-+	/*
-+	 * Btrfs doesn't support compression without csum or CoW.
-+	 * This should have the highest priority.
-+	 */
-+	if (BTRFS_I(inode)->flags & BTRFS_INODE_NODATACOW ||
-+	    BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM)
-+		return 0;
-+
- 	/* force compress */
- 	if (btrfs_test_opt(fs_info, FORCE_COMPRESS))
- 		return 1;
--- 
-2.17.0
-
+> -chris
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

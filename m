@@ -1,121 +1,147 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.21]:36397 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.17.20]:45697 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752031AbeEOB3n (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 14 May 2018 21:29:43 -0400
-Subject: Re: verify key failure
-To: bo.liu@linux.alibaba.com
-Cc: linux-btrfs@vger.kernel.org
-References: <20180514143510.x5hwstlzm2lpeiqx@US-160370MP2.local>
+        id S1752060AbeEOBfq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 14 May 2018 21:35:46 -0400
+Subject: Re: [PATCH] btrfs: inode: Don't compress if NODATASUM or NODATACOW
+ set
+To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+References: <20180514070210.27047-1-wqu@suse.com>
+ <20180514165205.GP6649@twin.jikos.cz>
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <38fa12a6-79bf-51f7-2d27-97429f5b3fa2@gmx.com>
-Date: Tue, 15 May 2018 09:29:33 +0800
+Message-ID: <9a66b208-f458-73d0-0e61-a74ed7fabde2@gmx.com>
+Date: Tue, 15 May 2018 09:35:32 +0800
 MIME-Version: 1.0
-In-Reply-To: <20180514143510.x5hwstlzm2lpeiqx@US-160370MP2.local>
+In-Reply-To: <20180514165205.GP6649@twin.jikos.cz>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="2Ba18Mxyw3boEVnpBapCGs7E1XEhRqVOo"
+ boundary="Jzq4OpDNwbxo5204jdgOEsYmIeLhCN586"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---2Ba18Mxyw3boEVnpBapCGs7E1XEhRqVOo
-Content-Type: multipart/mixed; boundary="F4bZqXIkV5rHz2CTJmbZuExxw3aZ5peLM";
+--Jzq4OpDNwbxo5204jdgOEsYmIeLhCN586
+Content-Type: multipart/mixed; boundary="uIGqB9i36tG7EC8qbWNXNsUAGJROgHvZM";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: bo.liu@linux.alibaba.com
-Cc: linux-btrfs@vger.kernel.org
-Message-ID: <38fa12a6-79bf-51f7-2d27-97429f5b3fa2@gmx.com>
-Subject: Re: verify key failure
-References: <20180514143510.x5hwstlzm2lpeiqx@US-160370MP2.local>
-In-Reply-To: <20180514143510.x5hwstlzm2lpeiqx@US-160370MP2.local>
+To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Message-ID: <9a66b208-f458-73d0-0e61-a74ed7fabde2@gmx.com>
+Subject: Re: [PATCH] btrfs: inode: Don't compress if NODATASUM or NODATACOW
+ set
+References: <20180514070210.27047-1-wqu@suse.com>
+ <20180514165205.GP6649@twin.jikos.cz>
+In-Reply-To: <20180514165205.GP6649@twin.jikos.cz>
 
---F4bZqXIkV5rHz2CTJmbZuExxw3aZ5peLM
+--uIGqB9i36tG7EC8qbWNXNsUAGJROgHvZM
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
 
 
-On 2018=E5=B9=B405=E6=9C=8814=E6=97=A5 22:35, Liu Bo wrote:
-> Hi,
+On 2018=E5=B9=B405=E6=9C=8815=E6=97=A5 00:52, David Sterba wrote:
+> On Mon, May 14, 2018 at 03:02:10PM +0800, Qu Wenruo wrote:
+>> As btrfs(5) specified:
+>>
+>> 	Note
+>> 	If nodatacow or nodatasum are enabled, compression is disabled.
+>>
+>> If NODATASUM or NODATACOW set, we should not compress the extent.
+>>
+>> And in fact, we have bug report about corrupted compressed extent
+>> leading to memory corruption in mail list.
 >=20
-> I got another warning of verify_level_key by running btrfs/124 in a loo=
-p, I'm testing against 4.17-rc3.
+> Link please.
 >=20
-> Not sure if it's false positive.
+>> Although it's mostly buggy lzo implementation causing the problem, btr=
+fs
+>> still needs to be fixed to meet the specification.
 >=20
-> [101414.336691] WARNING: CPU: 3 PID: 30194 at fs/btrfs/disk-io.c:455 bt=
-ree_read_extent_buffer_pages+0x183/0x220 [btrfs]
-> [101414.340372] Modules linked in: btrfs(O) xor zstd_decompress zstd_co=
-mpress xxhash zlib_inflate lzo_compress lzo_decompress zlib_deflate raid6=
-_pq dm_flakey [last unloaded: xor]
-> [101414.345713] CPU: 3 PID: 30194 Comm: btrfs Tainted: G        W  O   =
-   4.17.0-rc3-liubo+ #35
-> [101414.348501] RIP: 0010:btree_read_extent_buffer_pages+0x183/0x220 [b=
-trfs]
-> ...
-> [101414.369713] Call Trace:
-> [101414.370477]  read_tree_block+0x3d/0x60 [btrfs]
-> [101414.371946]  read_block_for_search.isra.11+0x19c/0x350 [btrfs]
-> [101414.373915]  btrfs_search_slot+0x4a0/0xa60 [btrfs]
-> [101414.375489]  ? trace_hardirqs_on_caller+0x12/0x1c0
-> [101414.377080]  ? btrfs_lookup_ordered_extent+0x8b/0xd0 [btrfs]
-> [101414.379007]  btrfs_lookup_csum+0x42/0x130 [btrfs]
-> [101414.380456]  __btrfs_lookup_bio_sums+0x2fb/0x6a0 [btrfs]
-> [101414.381554]  btrfs_submit_bio_hook+0xbb/0x180 [btrfs]
-> [101414.382598]  submit_one_bio+0x57/0x80 [btrfs]
-> [101414.383509]  submit_extent_page+0xd5/0x1f0 [btrfs]
-> [101414.384507]  __do_readpage+0x2a6/0x770 [btrfs]
-> [101414.385449]  ? btrfs_create_repair_bio+0x100/0x100 [btrfs]
-> [101414.386576]  ? btrfs_direct_IO+0x3a0/0x3a0 [btrfs]
-> [101414.387569]  ? btrfs_direct_IO+0x3a0/0x3a0 [btrfs]
-> [101414.388562]  __extent_readpages+0x2e2/0x330 [btrfs]
-> [101414.389584]  extent_readpages+0x10e/0x1a0 [btrfs]
-> [101414.390565]  __do_page_cache_readahead+0x283/0x340
-> [101414.391550]  ? ondemand_readahead+0x207/0x460
-> [101414.392451]  ondemand_readahead+0x207/0x460
-> [101414.393353]  relocate_file_extent_cluster+0x364/0x4c0 [btrfs]
-> [101414.394546]  relocate_block_group+0x5d4/0x6e0 [btrfs]
-> ...
-> [101414.432616] BTRFS error (device sdb): tree first key mismatch detec=
-ted, bytenr=3D30523392 key expected=3D(18446744073709551606, 128, 1120665=
-600) has=3D(1, 204, 22020096)
+> That's very vague, what's the LZO bug? If the input is garbage and lzo
+> decompression cannot decompress it, it's not a lzo bug.
 
-The expected key is completely fine, while the found one obviously
-belongs to extent tree.
+Still digging.
+Would update this content in next version.
 
-Maybe that's the bug which I'm always chasing.
+>=20
+>> Reported-by: James Harvey <jamespharvey20@gmail.com>
+>> Signed-off-by: Qu Wenruo <wqu@suse.com>
+>> ---
+>>  fs/btrfs/inode.c | 8 ++++++++
+>>  1 file changed, 8 insertions(+)
+>>
+>> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+>> index d241285a0d2a..dbef3f404559 100644
+>> --- a/fs/btrfs/inode.c
+>> +++ b/fs/btrfs/inode.c
+>> @@ -396,6 +396,14 @@ static inline int inode_need_compress(struct inod=
+e *inode, u64 start, u64 end)
+>>  {
+>>  	struct btrfs_fs_info *fs_info =3D btrfs_sb(inode->i_sb);
+>> =20
+>> +	/*
+>> +	 * Btrfs doesn't support compression without csum or CoW.
+>> +	 * This should have the highest priority.
+>> +	 */
+>> +	if (BTRFS_I(inode)->flags & BTRFS_INODE_NODATACOW ||
+>> +	    BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM)
+>> +		return 0;
+>=20
+> This is also the wrong place to fix that, NODATASUM or NODATACOW inode
+> should never make it to compress_file_range (that calls
+> inode_need_compress).
 
-Can you reproduce it again with btrfs_print_tree() added to provide more
-info?
+Nope, in run_delalloc_range(), we calls inode_need_compress() to
+determine if we goes to normal cow routine or goes to async routine
+(compression).
+
+So inode_need_compress() looks like a pretty valid location.
+
+Just mount with nodatasum and create an inode, then remount to
+datasum,compress, write something to that inode, you could hit the behavi=
+or.
 
 Thanks,
 Qu
 
 >=20
-> thanks,
-> -liubo
+>> +
+>>  	/* force compress */
+>>  	if (btrfs_test_opt(fs_info, FORCE_COMPRESS))
+>>  		return 1;
+>> --=20
+>> 2.17.0
+>>
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs"=
+ in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 >=20
 
 
---F4bZqXIkV5rHz2CTJmbZuExxw3aZ5peLM--
+--uIGqB9i36tG7EC8qbWNXNsUAGJROgHvZM--
 
---2Ba18Mxyw3boEVnpBapCGs7E1XEhRqVOo
+--Jzq4OpDNwbxo5204jdgOEsYmIeLhCN586
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlr6N/4ACgkQwj2R86El
-/qh37Af9GXdLCLPQSj1izrOHYeO0fAwLtb8ISb/OgudH4zI2fdiVbkOKQacRB7mU
-Lb/9tozXiSEWx+LKnCuGlMjxdGyLUM3bKttIwRkyIjU1rXLl4eIbALpyQx7r/7b0
-74nCQW6/E4UYFjO1SzWow0fZeBRsx5ecDju8A7q/VRsd5wlczBSnDSByneH7JgnP
-tXMkpQVX+eO7IslZCOdJAJaWvA3608P8COjCOhxn2D6KpHBGQcIhnVIylF66+PoP
-AF1oQZoonPIwejwFRqqJteqSq0QcOCU+CKdDulu0n+I2QvB95flRfER9YOO2lzov
-TphZgAfwmyshwmj3KBVOeXksXNtxfw==
-=dVWu
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlr6OWQACgkQwj2R86El
+/qg4Wwf/Sh/qM20olFWDldzMMM66jqpkGNijMHBWhkN6YxoCquxtLwTtZ4vRODrG
+C+8vaHUWJn++eIfJ1+/ID5ZL24oINfzpMh0xD5LDwK7dGK+my7WEDW3DFaPZTHKi
+1H+9gwXlXdeskokahFKEbLLk5vAkCGopzJV7L6e8RyAEdDZWRh07rbuoGAOp66AX
+yNAGwuN6XcFzeV0hkKce3a0IGkUQfNtsdUg3GD6Vq+Gpjei/CUSAJtDoUQHZTouV
+x5iAG46Lpc+5F/wDvYLqTATLy0Hx9Bpj/OlWJzz9E6zN6aibryBq9R5Hi0XoGZhU
+OFsk8M+GyIuTEAfnScVOcGVM/crdUw==
+=LJ3u
 -----END PGP SIGNATURE-----
 
---2Ba18Mxyw3boEVnpBapCGs7E1XEhRqVOo--
+--Jzq4OpDNwbxo5204jdgOEsYmIeLhCN586--

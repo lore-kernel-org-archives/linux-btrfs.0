@@ -1,158 +1,160 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f66.google.com ([209.85.214.66]:51930 "EHLO
-        mail-it0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752939AbeE1CSd (ORCPT
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:33943 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1752129AbeEOIwM (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 27 May 2018 22:18:33 -0400
-Received: by mail-it0-f66.google.com with SMTP id d10-v6so13192962itj.1
-        for <linux-btrfs@vger.kernel.org>; Sun, 27 May 2018 19:18:33 -0700 (PDT)
-From: Howard McLauchlan <linux@hmclauchlan.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        David Sterba <dsterba@suse.com>, Filipe Manana <fdmanana@suse.com>,
-        Omar Sandoval <osandov@osandov.com>
-Subject: [PATCH v2 6/6] btrfs-progs: add chattr support for send/receive
-Date: Sun, 27 May 2018 22:14:41 -0400
-Message-Id: <20180528021443.13923-13-linux@hmclauchlan.com>
-In-Reply-To: <20180528021443.13923-1-linux@hmclauchlan.com>
-References: <20180528021443.13923-1-linux@hmclauchlan.com>
+        Tue, 15 May 2018 04:52:12 -0400
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
+        by cn.fujitsu.com (Postfix) with ESMTP id C295A49F19D1
+        for <linux-btrfs@vger.kernel.org>; Tue, 15 May 2018 16:52:09 +0800 (CST)
+From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH v14.6 00/14] Btrfs In-band De-duplication
+Date: Tue, 15 May 2018 16:51:49 +0800
+Message-ID: <20180515085203.17470-1-lufq.fnst@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Howard McLauchlan <hmclauchlan@fb.com>
+This patchset can be fetched from github:
+https://github.com/littleroad/linux.git dedupe_latest
 
-Presently, btrfs send/receive does not propagate inode attribute flags;
-all chattr operations are effectively discarded upon transmission.
+This is just a normal rebase update.
+Now the new base is v4.17-rc5
 
-This patch adds userspace support for inode attribute flags. Kernel
-support can be found under the commit:
+Normal test cases from auto group exposes no regression, and ib-dedupe
+group can pass without problem.
 
-    btrfs: add chattr support for send/receive
+Changelog:
+v2:
+  Totally reworked to handle multiple backends
+v3:
+  Fix a stupid but deadly on-disk backend bug
+  Add handle for multiple hash on same bytenr corner case to fix abort
+  trans error
+  Increase dedup rate by enhancing delayed ref handler for both backend.
+  Move dedup_add() to run_delayed_ref() time, to fix abort trans error.
+  Increase dedup block size up limit to 8M.
+v4:
+  Add dedup prop for disabling dedup for given files/dirs.
+  Merge inmem_search() and ondisk_search() into generic_search() to save
+  some code
+  Fix another delayed_ref related bug.
+  Use the same mutex for both inmem and ondisk backend.
+  Move dedup_add() back to btrfs_finish_ordered_io() to increase dedup
+  rate.
+v5:
+  Reuse compress routine for much simpler dedup function.
+  Slightly improved performance due to above modification.
+  Fix race between dedup enable/disable
+  Fix for false ENOSPC report
+v6:
+  Further enable/disable race window fix.
+  Minor format change according to checkpatch.
+v7:
+  Fix one concurrency bug with balance.
+  Slightly modify return value from -EINVAL to -EOPNOTSUPP for
+  btrfs_dedup_ioctl() to allow progs to distinguish unsupported commands
+  and wrong parameter.
+  Rebased to integration-4.6.
+v8:
+  Rename 'dedup' to 'dedupe'.
+  Add support to allow dedupe and compression work at the same time.
+  Fix several balance related bugs. Special thanks to Satoru Takeuchi,
+  who exposed most of them.
+  Small dedupe hit case performance improvement.
+v9:
+  Re-order the patchset to completely separate pure in-memory and any
+  on-disk format change.
+  Fold bug fixes into its original patch.
+v10:
+  Adding back missing bug fix patch.
+  Reduce on-disk item size.
+  Hide dedupe ioctl under CONFIG_BTRFS_DEBUG.
+v11:
+  Remove other backend and props support to focus on the framework and
+  in-memory backend. Suggested by David.
+  Better disable and buffered write race protection.
+  Comprehensive fix to dedupe metadata ENOSPC problem.
+v12:
+  Stateful 'enable' ioctl and new 'reconf' ioctl
+  New FORCE flag for enable ioctl to allow stateless ioctl
+  Precise error report and extendable ioctl structure.
+v12.1
+  Rebase to David's for-next-20160704 branch
+  Add co-ordinate patch for subpage and dedupe patchset.
+v12.2
+  Rebase to David's for-next-20160715 branch
+  Add co-ordinate patch for other patchset.
+v13
+  Rebase to David's for-next-20160906 branch
+  Fix a reserved space leak bug, which only frees quota reserved space
+  but not space_info->byte_may_use.
+v13.1
+  Rebase to Chris' for-linux-4.9 branch
+v14
+  Use generic ENOSPC fix for both compression and dedupe.
+v14.1
+  Further split ENOSPC fix.
+v14.2
+  Rebase to v4.11-rc2.
+  Co-operate with count_max_extent() to calculate num_extents.
+  No longer rely on qgroup fixes.
+v14.3
+  Rebase to v4.12-rc1.
+v14.4
+  Rebase to kdave/for-4.13-part1.
+v14.5
+  Rebase to v4.15-rc3.
+v14.6
+  Rebase to v4.17-rc5.
 
-An associated xfstest can also be found at:
+Qu Wenruo (4):
+  btrfs: delayed-ref: Add support for increasing data ref under spinlock
+  btrfs: dedupe: Inband in-memory only de-duplication implement
+  btrfs: relocation: Enhance error handling to avoid BUG_ON
+  btrfs: dedupe: Introduce new reconfigure ioctl
 
-    btrfs: verify chattr support for send/receive test
+Wang Xiaoguang (10):
+  btrfs: introduce type based delalloc metadata reserve
+  btrfs: Introduce COMPRESS reserve type to fix false enospc for
+    compression
+  btrfs: dedupe: Introduce dedupe framework and its header
+  btrfs: dedupe: Introduce function to initialize dedupe info
+  btrfs: dedupe: Introduce function to add hash into in-memory tree
+  btrfs: dedupe: Introduce function to remove hash from in-memory tree
+  btrfs: dedupe: Introduce function to search for an existing hash
+  btrfs: dedupe: Implement btrfs_dedupe_calc_hash interface
+  btrfs: ordered-extent: Add support for dedupe
+  btrfs: dedupe: Add ioctl for inband deduplication
 
-Signed-off-by: Howard McLauchlan <hmclauchlan@fb.com>
----
- cmds-receive.c | 37 +++++++++++++++++++++++++++++++++++++
- send-dump.c    |  6 ++++++
- send-stream.c  |  5 +++++
- send-stream.h  |  1 +
- 4 files changed, 49 insertions(+)
+ fs/btrfs/Makefile            |   2 +-
+ fs/btrfs/ctree.h             |  54 ++-
+ fs/btrfs/dedupe.c            | 813 +++++++++++++++++++++++++++++++++++
+ fs/btrfs/dedupe.h            | 183 +++++++-
+ fs/btrfs/delayed-ref.c       |  37 +-
+ fs/btrfs/delayed-ref.h       |  10 +
+ fs/btrfs/disk-io.c           |   4 +
+ fs/btrfs/extent-tree.c       |  69 ++-
+ fs/btrfs/extent_io.c         |   8 +-
+ fs/btrfs/extent_io.h         |   2 +
+ fs/btrfs/file.c              |  36 +-
+ fs/btrfs/free-space-cache.c  |   6 +-
+ fs/btrfs/inode-map.c         |   9 +-
+ fs/btrfs/inode.c             | 479 +++++++++++++++++----
+ fs/btrfs/ioctl.c             | 106 ++++-
+ fs/btrfs/ordered-data.c      |  52 ++-
+ fs/btrfs/ordered-data.h      |  16 +-
+ fs/btrfs/relocation.c        |  64 ++-
+ fs/btrfs/sysfs.c             |   2 +
+ fs/btrfs/tests/inode-tests.c |  15 +-
+ include/uapi/linux/btrfs.h   |  55 +++
+ 21 files changed, 1854 insertions(+), 168 deletions(-)
+ create mode 100644 fs/btrfs/dedupe.c
 
-diff --git a/cmds-receive.c b/cmds-receive.c
-index 20e593f7..2a841bfc 100644
---- a/cmds-receive.c
-+++ b/cmds-receive.c
-@@ -40,6 +40,7 @@
- #include <sys/xattr.h>
- #include <uuid/uuid.h>
- #include <linux/falloc.h>
-+#include <linux/fs.h>
- 
- #include "ctree.h"
- #include "ioctl.h"
-@@ -1201,6 +1202,41 @@ out:
- 	return ret;
- }
- 
-+static int process_chattr(const char *path, u64 flags, void *user)
-+{
-+	int ret = 0;
-+	int fd = 0;
-+	int _flags = flags;
-+	struct btrfs_receive *rctx = user;
-+	char full_path[PATH_MAX];
-+
-+	ret = path_cat_out(full_path, rctx->full_subvol_path, path);
-+	if (ret < 0) {
-+		error("chattr: path invalid: %s", path);
-+		goto out;
-+	}
-+
-+	if (g_verbose >= 2)
-+		fprintf(stderr, "chattr %s - flags=0%o\n", path, (int)flags);
-+
-+	fd = open(full_path, O_RDONLY);
-+	if (fd < 0) {
-+		ret = -errno;
-+		error("cannot open %s: %s", path, strerror(-ret));
-+		goto out;
-+	}
-+
-+	ret = ioctl(fd, FS_IOC_SETFLAGS, &_flags);
-+	if (ret < 0) {
-+		ret = -errno;
-+		error("chattr %s failed: %s", path, strerror(-ret));
-+		goto out;
-+	}
-+
-+out:
-+	return ret;
-+}
-+
- static struct btrfs_send_ops send_ops = {
- 	.subvol = process_subvol,
- 	.snapshot = process_snapshot,
-@@ -1225,6 +1261,7 @@ static struct btrfs_send_ops send_ops = {
- 	.update_extent = process_update_extent,
- 	.total_data_size = process_total_data_size,
- 	.fallocate = process_fallocate,
-+	.chattr = process_chattr,
- };
- 
- static int do_receive(struct btrfs_receive *rctx, const char *tomnt,
-diff --git a/send-dump.c b/send-dump.c
-index c5a695a2..15aea402 100644
---- a/send-dump.c
-+++ b/send-dump.c
-@@ -331,6 +331,11 @@ static int print_fallocate(const char *path, u32 flags, u64 offset, u64 len,
- 			  len);
- }
- 
-+static int print_chattr(const char *path, u64 flags, void *user)
-+{
-+	return PRINT_DUMP(user, path, "chattr", "flags=%llu", flags);
-+}
-+
- struct btrfs_send_ops btrfs_print_send_ops = {
- 	.subvol = print_subvol,
- 	.snapshot = print_snapshot,
-@@ -355,4 +360,5 @@ struct btrfs_send_ops btrfs_print_send_ops = {
- 	.update_extent = print_update_extent,
- 	.total_data_size = print_total_data_size,
- 	.fallocate = print_fallocate,
-+	.chattr = print_chattr,
- };
-diff --git a/send-stream.c b/send-stream.c
-index 74ec37dd..4f26fae3 100644
---- a/send-stream.c
-+++ b/send-stream.c
-@@ -470,6 +470,11 @@ static int read_and_process_cmd(struct btrfs_send_stream *sctx)
- 						sctx->user);
- 		}
- 		break;
-+	case BTRFS_SEND_C_CHATTR:
-+		TLV_GET_STRING(sctx, BTRFS_SEND_A_PATH, &path);
-+		TLV_GET_U64(sctx, BTRFS_SEND_A_CHATTR, &tmp);
-+		ret = sctx->ops->chattr(path, tmp, sctx->user);
-+		break;
- 	case BTRFS_SEND_C_END:
- 		ret = 1;
- 		break;
-diff --git a/send-stream.h b/send-stream.h
-index 89e64043..a9f08d52 100644
---- a/send-stream.h
-+++ b/send-stream.h
-@@ -69,6 +69,7 @@ struct btrfs_send_ops {
- 	int (*total_data_size)(u64 size, void *user);
- 	int (*fallocate)(const char *path, u32 flags, u64 offset,
- 			 u64 len, void *user);
-+	int (*chattr)(const char *path, u64 flags, void *user);
- };
- 
- int btrfs_read_and_process_send_stream(int fd,
 -- 
 2.17.0
+
+
 

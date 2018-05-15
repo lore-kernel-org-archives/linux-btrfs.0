@@ -1,82 +1,223 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f68.google.com ([209.85.214.68]:34919 "EHLO
-        mail-it0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753121AbeEOMKQ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 15 May 2018 08:10:16 -0400
-Received: by mail-it0-f68.google.com with SMTP id q72-v6so834987itc.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 15 May 2018 05:10:16 -0700 (PDT)
+Received: from sandeen.net ([63.231.237.45]:57902 "EHLO sandeen.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752425AbeEOPWj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 15 May 2018 11:22:39 -0400
+Subject: [PATCH V3] test online label ioctl
+To: Eric Sandeen <sandeen@redhat.com>, fstests <fstests@vger.kernel.org>,
+        linux-xfs <linux-xfs@vger.kernel.org>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+References: <2a743318-585d-9eb1-5430-2b07246348ab@redhat.com>
+From: Eric Sandeen <sandeen@sandeen.net>
+Message-ID: <d65893a4-c6d8-1d85-4650-e63d04e8366a@sandeen.net>
+Date: Tue, 15 May 2018 10:22:37 -0500
 MIME-Version: 1.0
-In-Reply-To: <38fa12a6-79bf-51f7-2d27-97429f5b3fa2@gmx.com>
-References: <20180514143510.x5hwstlzm2lpeiqx@US-160370MP2.local> <38fa12a6-79bf-51f7-2d27-97429f5b3fa2@gmx.com>
-From: Liu Bo <obuil.liubo@gmail.com>
-Date: Tue, 15 May 2018 20:10:15 +0800
-Message-ID: <CANQeFDBDMp+6459dzngheBdMp8j_MatObUPFkJXWS_2g4wvPoA@mail.gmail.com>
-Subject: Re: verify key failure
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: Liu Bo <bo.liu@linux.alibaba.com>, linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <2a743318-585d-9eb1-5430-2b07246348ab@redhat.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, May 15, 2018 at 9:29 AM, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
->
->
-> On 2018年05月14日 22:35, Liu Bo wrote:
->> Hi,
->>
->> I got another warning of verify_level_key by running btrfs/124 in a loop, I'm testing against 4.17-rc3.
->>
->> Not sure if it's false positive.
->>
->> [101414.336691] WARNING: CPU: 3 PID: 30194 at fs/btrfs/disk-io.c:455 btree_read_extent_buffer_pages+0x183/0x220 [btrfs]
->> [101414.340372] Modules linked in: btrfs(O) xor zstd_decompress zstd_compress xxhash zlib_inflate lzo_compress lzo_decompress zlib_deflate raid6_pq dm_flakey [last unloaded: xor]
->> [101414.345713] CPU: 3 PID: 30194 Comm: btrfs Tainted: G        W  O      4.17.0-rc3-liubo+ #35
->> [101414.348501] RIP: 0010:btree_read_extent_buffer_pages+0x183/0x220 [btrfs]
->> ...
->> [101414.369713] Call Trace:
->> [101414.370477]  read_tree_block+0x3d/0x60 [btrfs]
->> [101414.371946]  read_block_for_search.isra.11+0x19c/0x350 [btrfs]
->> [101414.373915]  btrfs_search_slot+0x4a0/0xa60 [btrfs]
->> [101414.375489]  ? trace_hardirqs_on_caller+0x12/0x1c0
->> [101414.377080]  ? btrfs_lookup_ordered_extent+0x8b/0xd0 [btrfs]
->> [101414.379007]  btrfs_lookup_csum+0x42/0x130 [btrfs]
->> [101414.380456]  __btrfs_lookup_bio_sums+0x2fb/0x6a0 [btrfs]
->> [101414.381554]  btrfs_submit_bio_hook+0xbb/0x180 [btrfs]
->> [101414.382598]  submit_one_bio+0x57/0x80 [btrfs]
->> [101414.383509]  submit_extent_page+0xd5/0x1f0 [btrfs]
->> [101414.384507]  __do_readpage+0x2a6/0x770 [btrfs]
->> [101414.385449]  ? btrfs_create_repair_bio+0x100/0x100 [btrfs]
->> [101414.386576]  ? btrfs_direct_IO+0x3a0/0x3a0 [btrfs]
->> [101414.387569]  ? btrfs_direct_IO+0x3a0/0x3a0 [btrfs]
->> [101414.388562]  __extent_readpages+0x2e2/0x330 [btrfs]
->> [101414.389584]  extent_readpages+0x10e/0x1a0 [btrfs]
->> [101414.390565]  __do_page_cache_readahead+0x283/0x340
->> [101414.391550]  ? ondemand_readahead+0x207/0x460
->> [101414.392451]  ondemand_readahead+0x207/0x460
->> [101414.393353]  relocate_file_extent_cluster+0x364/0x4c0 [btrfs]
->> [101414.394546]  relocate_block_group+0x5d4/0x6e0 [btrfs]
->> ...
->> [101414.432616] BTRFS error (device sdb): tree first key mismatch detected, bytenr=30523392 key expected=(18446744073709551606, 128, 1120665600) has=(1, 204, 22020096)
->
-> The expected key is completely fine, while the found one obviously
-> belongs to extent tree.
->
-> Maybe that's the bug which I'm always chasing.
->
+This tests the online label ioctl that btrfs has, which has been
+recently proposed for XFS.
 
-The following patch is already in 4.17-rc3,
+To run, it requires an updated xfs_io with the label command and a
+filesystem that supports it
 
-btrfs: Fix wrong first_key parameter in replace_path
+A slight change here to _require_xfs_io_command as well, so that tests
+which simply fail with "Inappropriate ioctl" can be caught in the
+common case.
 
-> Can you reproduce it again with btrfs_print_tree() added to provide more
-> info?
->
+Signed-off-by: Eric Sandeen <sandeen@redhat.com>
+---
 
-Not sure if I'd have time working on this one, but I'll let you know
-if I get it again.
+(urgh send as proper new thread, sorry)
 
-My test box is nothing special, just a plain kvm VM.
+This passes on btrfs, _notruns on xfs/ext4 of yore, and passes
+on xfs w/ my online label patchset (as long as xfs_io has the new
+capability)
 
-thanks,
-liubo
+V2: Add a max label length helper
+     Set the proper btrfs max label length o_O oops
+     Filter trailing whitespace from blkid output
+
+V3: lowercase local vars, simplify max label len function
+
+
+
+diff --git a/common/rc b/common/rc
+index ffe53236..333cfb82 100644
+--- a/common/rc
++++ b/common/rc
+@@ -2144,6 +2144,9 @@ _require_xfs_io_command()
+  		echo $testio | grep -q "Inappropriate ioctl" && \
+  			_notrun "xfs_io $command support is missing"
+  		;;
++	"label")
++		testio=`$XFS_IO_PROG -c "label" $TEST_DIR 2>&1`
++		;;
+  	"open")
+  		# -c "open $f" is broken in xfs_io <= 4.8. Along with the fix,
+  		# a new -C flag was introduced to execute one shot commands.
+@@ -2182,7 +2185,7 @@ _require_xfs_io_command()
+  	rm -f $testfile 2>&1 > /dev/null
+  	echo $testio | grep -q "not found" && \
+  		_notrun "xfs_io $command support is missing"
+-	echo $testio | grep -q "Operation not supported" && \
++	echo $testio | grep -q "Operation not supported\|Inappropriate ioctl" && \
+  		_notrun "xfs_io $command failed (old kernel/wrong fs?)"
+  	echo $testio | grep -q "Invalid" && \
+  		_notrun "xfs_io $command failed (old kernel/wrong fs/bad args?)"
+@@ -3788,6 +3791,29 @@ _require_scratch_feature()
+  	esac
+  }
+  
++# The maximum filesystem label length, /not/ including terminating NULL
++_label_get_max()
++{
++	case $FSTYP in
++	xfs)
++		echo 12
++		;;
++	btrfs)
++		echo 255
++		;;
++	*)
++		_notrun "$FSTYP does not define maximum label length"
++		;;
++	esac
++}
++
++# Helper to check above early in a script
++_require_label_get_max()
++{
++	# Just call _label_get_max which will notrun if appropriate
++	dummy=$(_label_get_max)
++}
++
+  init_rc
+  
+  ################################################################################
+diff --git a/tests/generic/479 b/tests/generic/479
+old mode 100644
+new mode 100755
+diff --git a/tests/generic/488 b/tests/generic/488
+new file mode 100755
+index 00000000..9521c5ba
+--- /dev/null
++++ b/tests/generic/488
+@@ -0,0 +1,90 @@
++#! /bin/bash
++# FS QA Test 488
++#
++# Test the online filesystem label set/get ioctls
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2018 Red Hat, Inc.  All Rights Reserved.
++# Author: Eric Sandeen <sandeen@redhat.com>
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++#
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++	cd /
++	rm -f $tmp.*
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++
++# remove previous $seqres.full before test
++rm -f $seqres.full
++
++# real QA test starts here
++
++_supported_fs generic
++_supported_os Linux
++_require_scratch
++_require_xfs_io_command "label"
++_require_label_get_max
++
++_scratch_mkfs > $seqres.full 2>&1
++_scratch_mount
++
++# Make sure we can set & clear the label
++$XFS_IO_PROG -c "label label.$seq" $SCRATCH_MNT
++$XFS_IO_PROG -c "label" $SCRATCH_MNT
++
++# And that userspace can see it now, while mounted
++# NB: some blkid has trailing whitespace, filter it out here
++blkid -s LABEL $SCRATCH_DEV | _filter_scratch | sed -e "s/ $//g"
++
++# And that the it is still there when it's unmounted
++_scratch_unmount
++blkid -s LABEL $SCRATCH_DEV | _filter_scratch | sed -e "s/ $//g"
++
++# And that it persists after a remount
++_scratch_mount
++$XFS_IO_PROG -c "label" $SCRATCH_MNT
++
++# And that a too-long label is rejected, beyond the interface max:
++fs_label=$(perl -e "print 'l' x 257;")
++$XFS_IO_PROG -c "label $fs_label" $SCRATCH_MNT
++
++# And it succeeds right at the filesystem max:
++max_label_len=$(_label_get_max)
++fs_label=$(perl -e "print 'o' x $max_label_len;")
++$XFS_IO_PROG -c "label $fs_label" $SCRATCH_MNT | sed -e 's/o\+/MAXLABEL/'
++
++# And that it fails past the filesystem max:
++let toolong_label_len=max_label_len+1
++fs_label=$(perl -e "print 'o' x $toolong_label_len;")
++$XFS_IO_PROG -c "label $fs_label " $SCRATCH_MNT
++
++# success, all done
++status=0
++exit
+diff --git a/tests/generic/488.out b/tests/generic/488.out
+new file mode 100644
+index 00000000..3c70a15f
+--- /dev/null
++++ b/tests/generic/488.out
+@@ -0,0 +1,9 @@
++QA output created by 488
++label = "label.488"
++label = "label.488"
++SCRATCH_DEV: LABEL="label.488"
++SCRATCH_DEV: LABEL="label.488"
++label = "label.488"
++label: Invalid argument
++label = "MAXLABEL"
++label: Invalid argument
+diff --git a/tests/generic/group b/tests/generic/group
+index dc637c96..6266213e 100644
+--- a/tests/generic/group
++++ b/tests/generic/group
+@@ -490,3 +490,4 @@
+  485 auto quick insert
+  486 auto quick attr
+  487 auto quick
++488 auto quick
+

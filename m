@@ -1,44 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:45408 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752385AbeEOIDg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 15 May 2018 04:03:36 -0400
+Received: from mgwkm04.jp.fujitsu.com ([202.219.69.171]:60217 "EHLO
+        mgwkm04.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752129AbeEOIKP (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 15 May 2018 04:10:15 -0400
+Received: from g01jpfmpwyt01.exch.g01.fujitsu.local (g01jpfmpwyt01.exch.g01.fujitsu.local [10.128.193.38])
+        by kw-mxoi1.gw.nic.fujitsu.com (Postfix) with ESMTP id 40494AC00D6
+        for <linux-btrfs@vger.kernel.org>; Tue, 15 May 2018 17:10:09 +0900 (JST)
 Subject: Re: [PATCH 0/2] btrfs: sysfs: Add entry which shows rmdir(2) can work
  for subvolume
-To: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>,
+To: Nikolay Borisov <nborisov@suse.com>,
         linux-btrfs <linux-btrfs@vger.kernel.org>
 References: <a8c4cc11-99f4-2390-b489-340bdc941464@jp.fujitsu.com>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <234bbf21-794a-454a-b7d0-3f68e6a6f88a@suse.com>
-Date: Tue, 15 May 2018 11:03:33 +0300
+ <234bbf21-794a-454a-b7d0-3f68e6a6f88a@suse.com>
+From: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
+Message-ID: <5c3eb596-5802-2410-8969-bc1d658a929b@jp.fujitsu.com>
+Date: Tue, 15 May 2018 17:09:27 +0900
 MIME-Version: 1.0
-In-Reply-To: <a8c4cc11-99f4-2390-b489-340bdc941464@jp.fujitsu.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <234bbf21-794a-454a-b7d0-3f68e6a6f88a@suse.com>
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On 2018/05/15 17:03, Nikolay Borisov wrote:
+> 
+> 
+> On 15.05.2018 10:30, Misono Tomohiro wrote:
+>> [based on current misc-next]
+>>
+>> This adds new sysfs entry
+>>   /sys/fs/btrfs/features/rmdir_subvol
+>> to indicate that the kernel can delete a subvolume by rmdir(2),
+>> which is allowed by: https://www.spinics.net/lists/linux-btrfs/msg76938.html
+>>
+>> The first patch is a cleanup and the second one is a main part.
+> 
+> Why do we need this - for enabling testing or something else?
 
-
-On 15.05.2018 10:30, Misono Tomohiro wrote:
-> [based on current misc-next]
-> 
-> This adds new sysfs entry
->   /sys/fs/btrfs/features/rmdir_subvol
-> to indicate that the kernel can delete a subvolume by rmdir(2),
-> which is allowed by: https://www.spinics.net/lists/linux-btrfs/msg76938.html
-> 
-> The first patch is a cleanup and the second one is a main part.
-
-Why do we need this - for enabling testing or something else?
+Yes, I want to skip xfstest if the feature does not exist.
 
 > 
-> Tomohiro Misono (2):
->   btrfs: sysfs: Use enum/define value intead of magic number
->   btrfs: sysfs: Add entry which shows rmdir(2) can work for subvolume
+>>
+>> Tomohiro Misono (2):
+>>   btrfs: sysfs: Use enum/define value intead of magic number
+>>   btrfs: sysfs: Add entry which shows rmdir(2) can work for subvolume
+>>
+>>  fs/btrfs/ctree.h           |  6 ++++++
+>>  fs/btrfs/sysfs.c           | 39 +++++++++++++++++++++++++++++----------
+>>  fs/btrfs/sysfs.h           |  5 ++++-
+>>  include/uapi/linux/btrfs.h |  2 ++
+>>  4 files changed, 41 insertions(+), 11 deletions(-)
+>>
 > 
->  fs/btrfs/ctree.h           |  6 ++++++
->  fs/btrfs/sysfs.c           | 39 +++++++++++++++++++++++++++++----------
->  fs/btrfs/sysfs.h           |  5 ++++-
->  include/uapi/linux/btrfs.h |  2 ++
->  4 files changed, 41 insertions(+), 11 deletions(-)
-> 
+

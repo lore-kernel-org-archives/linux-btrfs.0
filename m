@@ -1,85 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:49815 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S936494AbeE1QNt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 28 May 2018 12:13:49 -0400
-Received: from relay2.suse.de (charybdis-ext-too.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 4828BAE88
-        for <linux-btrfs@vger.kernel.org>; Mon, 28 May 2018 16:13:47 +0000 (UTC)
-From: Nikolay Borisov <nborisov@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 11/11] btrfs-progs: Remove fs_info argument from write_ctree_super
-Date: Mon, 28 May 2018 09:36:50 +0300
-Message-Id: <1527489410-3564-12-git-send-email-nborisov@suse.com>
-In-Reply-To: <1527489410-3564-1-git-send-email-nborisov@suse.com>
-References: <1527489410-3564-1-git-send-email-nborisov@suse.com>
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:30849 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1752057AbeEOB1f (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 14 May 2018 21:27:35 -0400
+Received: from G08CNEXCHPEKD03.g08.fujitsu.local (unknown [10.167.33.85])
+        by cn.fujitsu.com (Postfix) with ESMTP id 02F3949F19D1
+        for <linux-btrfs@vger.kernel.org>; Tue, 15 May 2018 09:27:30 +0800 (CST)
+From: Su Yue <suy.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: <suy.fnst@cn.fujitsu.com>
+Subject: [PATCH v2 0/3] btrfs-progs: check: verify symlinks with append/immutable flags
+Date: Tue, 15 May 2018 09:33:21 +0800
+Message-ID: <20180515013324.18838-1-suy.fnst@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This function already takes a transaction handle which has a reference
-to the fs_info, so use that to obtain it.
+This patchset can be fetch from my github:
+https://github.com/Damenly/btrfs-progs/commits/odd_inode_flags
+It's based on devel.
 
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+symlinks should never have append/immutable attributes.
+This patchset enables btrfs check to verify such corruption.
+
+PATCH[1] is for original mode.
+PATCH[2] is for original mode.
+
+PATCH[3] adds a test image.
+For further use, the directory is called bad-inode-flags.
+
+#issue 133
+
 ---
- disk-io.c     | 6 +++---
- disk-io.h     | 3 +--
- transaction.c | 2 +-
- 3 files changed, 5 insertions(+), 6 deletions(-)
+Changelog:
+v2:
+  Use "rec->errors |=" instead of "rec->errors =" in patch[1].
+  Define new error bit of invalid inode flags in lowmem mode.
+  Adjust print message in patch[2]. Thanks, Qu and Nikolay.
+  Rename test directory from odd-inode-flags to bad-inode-flags.
 
-diff --git a/disk-io.c b/disk-io.c
-index 456b354cb727..4a609a892be7 100644
---- a/disk-io.c
-+++ b/disk-io.c
-@@ -1606,10 +1606,10 @@ int write_all_supers(struct btrfs_fs_info *fs_info)
- 	return 0;
- }
- 
--int write_ctree_super(struct btrfs_trans_handle *trans,
--		      struct btrfs_fs_info *fs_info)
-+int write_ctree_super(struct btrfs_trans_handle *trans)
- {
- 	int ret;
-+	struct btrfs_fs_info *fs_info = trans->fs_info;
- 	struct btrfs_root *tree_root = fs_info->tree_root;
- 	struct btrfs_root *chunk_root = fs_info->chunk_root;
- 
-@@ -1657,7 +1657,7 @@ int close_ctree_fs_info(struct btrfs_fs_info *fs_info)
- 		BUG_ON(ret);
- 		ret = __commit_transaction(trans, root);
- 		BUG_ON(ret);
--		write_ctree_super(trans, fs_info);
-+		write_ctree_super(trans);
- 		kfree(trans);
- 	}
- 
-diff --git a/disk-io.h b/disk-io.h
-index 36fb68cdb86a..fefdb0a75d07 100644
---- a/disk-io.h
-+++ b/disk-io.h
-@@ -164,8 +164,7 @@ static inline int close_ctree(struct btrfs_root *root)
- }
- 
- int write_all_supers(struct btrfs_fs_info *fs_info);
--int write_ctree_super(struct btrfs_trans_handle *trans,
--		      struct btrfs_fs_info *fs_info);
-+int write_ctree_super(struct btrfs_trans_handle *trans);
- int btrfs_read_dev_super(int fd, struct btrfs_super_block *sb, u64 sb_bytenr,
- 		unsigned sbflags);
- int btrfs_map_bh_to_logical(struct btrfs_root *root, struct extent_buffer *bh,
-diff --git a/transaction.c b/transaction.c
-index ad70572838c1..9619265ef6e8 100644
---- a/transaction.c
-+++ b/transaction.c
-@@ -168,7 +168,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
- 	BUG_ON(ret);
- 	ret = __commit_transaction(trans, root);
- 	BUG_ON(ret);
--	write_ctree_super(trans, fs_info);
-+	write_ctree_super(trans);
- 	btrfs_finish_extent_commit(trans, fs_info->extent_root,
- 			           &fs_info->pinned_extents);
- 	kfree(trans);
+Su Yue (3):
+  btrfs-progs: check: check symlinks with append/immutable flags
+  btrfs-progs: lowmem: check symlinks with append/immutable flags
+  btrfs-progs: fsck-tests: add test case to check symlinks with bad
+    flags
+
+ check/main.c                                     |   7 +++++++
+ check/mode-lowmem.c                              |  10 ++++++++++
+ check/mode-lowmem.h                              |   1 +
+ check/mode-original.h                            |   1 +
+ .../034-bad-inode-flags/default_case.img         | Bin 0 -> 4096 bytes
+ tests/fsck-tests/034-bad-inode-flags/test.sh     |  15 +++++++++++++++
+ 6 files changed, 34 insertions(+)
+ create mode 100644 tests/fsck-tests/034-bad-inode-flags/default_case.img
+ create mode 100755 tests/fsck-tests/034-bad-inode-flags/test.sh
+
 -- 
-2.7.4
+2.17.0
+
+
 

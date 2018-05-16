@@ -1,45 +1,128 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([198.137.202.133]:56460 "EHLO
-        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751213AbeEPFny (ORCPT
+Received: from mail-wm0-f66.google.com ([74.125.82.66]:34641 "EHLO
+        mail-wm0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752338AbeEPJxH (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 16 May 2018 01:43:54 -0400
-From: Christoph Hellwig <hch@lst.de>
-To: Souptick Joarder <jrdr.linux@gmail.com>,
-        Matthew Wilcox <willy@infradead.org>
-Cc: linux-fsdevel@vger.kernel.org, linux-mm@kvack.org,
-        linux-kernel@vger.kernel.org, devel@lists.orangefs.org,
-        ceph-devel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        linux-ext4@vger.kernel.org, ocfs2-devel@oss.oracle.com,
-        linux-mtd@lists.infradead.org, dri-devel@lists.freedesktop.org,
-        lustre-devel@lists.lustre.org, linux-arm-kernel@lists.infradead.org,
-        linux-s390@vger.kernel.org
-Subject: vm_fault_t conversion, for real
-Date: Wed, 16 May 2018 07:43:34 +0200
-Message-Id: <20180516054348.15950-1-hch@lst.de>
+        Wed, 16 May 2018 05:53:07 -0400
+Received: by mail-wm0-f66.google.com with SMTP id a137-v6so214425wme.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 16 May 2018 02:53:07 -0700 (PDT)
+Date: Wed, 16 May 2018 11:53:03 +0200
+From: Daniel Vetter <daniel@ffwll.ch>
+To: Christoph Hellwig <hch@lst.de>
+Cc: Souptick Joarder <jrdr.linux@gmail.com>,
+        Matthew Wilcox <willy@infradead.org>, linux-fsdevel@vger.kernel.org,
+        linux-mm@kvack.org, linux-kernel@vger.kernel.org,
+        devel@lists.orangefs.org, ceph-devel@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
+        ocfs2-devel@oss.oracle.com, linux-mtd@lists.infradead.org,
+        dri-devel@lists.freedesktop.org, lustre-devel@lists.lustre.org,
+        linux-arm-kernel@lists.infradead.org, linux-s390@vger.kernel.org
+Subject: Re: [PATCH 10/14] vgem: separate errno from VM_FAULT_* values
+Message-ID: <20180516095303.GH3438@phenom.ffwll.local>
+References: <20180516054348.15950-1-hch@lst.de>
+ <20180516054348.15950-11-hch@lst.de>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20180516054348.15950-11-hch@lst.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all,
+On Wed, May 16, 2018 at 07:43:44AM +0200, Christoph Hellwig wrote:
+> And streamline the code in vgem_fault with early returns so that it is
+> a little bit more readable.
+> 
+> Signed-off-by: Christoph Hellwig <hch@lst.de>
+> ---
+>  drivers/gpu/drm/vgem/vgem_drv.c | 51 +++++++++++++++------------------
+>  1 file changed, 23 insertions(+), 28 deletions(-)
+> 
+> diff --git a/drivers/gpu/drm/vgem/vgem_drv.c b/drivers/gpu/drm/vgem/vgem_drv.c
+> index 2524ff116f00..a261e0aab83a 100644
+> --- a/drivers/gpu/drm/vgem/vgem_drv.c
+> +++ b/drivers/gpu/drm/vgem/vgem_drv.c
+> @@ -61,12 +61,13 @@ static void vgem_gem_free_object(struct drm_gem_object *obj)
+>  	kfree(vgem_obj);
+>  }
+>  
+> -static int vgem_gem_fault(struct vm_fault *vmf)
+> +static vm_fault_t vgem_gem_fault(struct vm_fault *vmf)
+>  {
+>  	struct vm_area_struct *vma = vmf->vma;
+>  	struct drm_vgem_gem_object *obj = vma->vm_private_data;
+>  	/* We don't use vmf->pgoff since that has the fake offset */
+>  	unsigned long vaddr = vmf->address;
+> +	struct page *page;
+>  	int ret;
+>  	loff_t num_pages;
+>  	pgoff_t page_offset;
+> @@ -85,35 +86,29 @@ static int vgem_gem_fault(struct vm_fault *vmf)
+>  		ret = 0;
+>  	}
+>  	mutex_unlock(&obj->pages_lock);
+> -	if (ret) {
+> -		struct page *page;
+> -
+> -		page = shmem_read_mapping_page(
+> -					file_inode(obj->base.filp)->i_mapping,
+> -					page_offset);
+> -		if (!IS_ERR(page)) {
+> -			vmf->page = page;
+> -			ret = 0;
+> -		} else switch (PTR_ERR(page)) {
+> -			case -ENOSPC:
+> -			case -ENOMEM:
+> -				ret = VM_FAULT_OOM;
+> -				break;
+> -			case -EBUSY:
+> -				ret = VM_FAULT_RETRY;
+> -				break;
+> -			case -EFAULT:
+> -			case -EINVAL:
+> -				ret = VM_FAULT_SIGBUS;
+> -				break;
+> -			default:
+> -				WARN_ON(PTR_ERR(page));
+> -				ret = VM_FAULT_SIGBUS;
+> -				break;
+> -		}
+> +	if (!ret)
+> +		return 0;
+> +
+> +	page = shmem_read_mapping_page(file_inode(obj->base.filp)->i_mapping,
+> +			page_offset);
+> +	if (!IS_ERR(page)) {
+> +		vmf->page = page;
+> +		return 0;
+> +	}
+>  
+> +	switch (PTR_ERR(page)) {
+> +	case -ENOSPC:
+> +	case -ENOMEM:
+> +		return VM_FAULT_OOM;
+> +	case -EBUSY:
+> +		return VM_FAULT_RETRY;
+> +	case -EFAULT:
+> +	case -EINVAL:
+> +		return VM_FAULT_SIGBUS;
+> +	default:
+> +		WARN_ON(PTR_ERR(page));
+> +		return VM_FAULT_SIGBUS;
+>  	}
+> -	return ret;
 
-this series tries to actually turn vm_fault_t into a type that can be
-typechecked and checks the fallout instead of sprinkling random
-annotations without context.
+Reviewed-by: Daniel Vetter <daniel.vetter@ffwll.ch>
 
-The first one fixes a real bug in orangefs, the second and third fix
-mismatched existing vm_fault_t annotations on the same function, the
-fourth removes an unused export that was in the chain.  The remainder
-until the last one do some not quite trivial conversions, and the last
-one does the trivial mass annotation and flips vm_fault_t to a __bitwise
-unsigned int - the unsigned means we also get plain compiler type
-checking for the new ->fault signature even without sparse.
+Want me to merge this through drm-misc or plan to pick it up yourself?
+-Daniel
 
-This has survived an x86 allyesconfig build, and got a SUCCESS from the
-buildbot that I don't really trust - I'm pretty sure there are bits
-and pieces hiding in other architectures that it hasn't caught up to.
+>  }
+>  
+>  static const struct vm_operations_struct vgem_gem_vm_ops = {
+> -- 
+> 2.17.0
+> 
 
-The sparse annotations are manuall verified for the core MM code and
-a few other interesting bits (e.g. DAX and the x86 fault code)
-
-The series is against linux-next as of 2018/05/15 to make sure any
-annotations in subsystem trees are picked up.
+-- 
+Daniel Vetter
+Software Engineer, Intel Corporation
+http://blog.ffwll.ch

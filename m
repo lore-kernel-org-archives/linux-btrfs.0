@@ -1,90 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ua0-f193.google.com ([209.85.217.193]:43691 "EHLO
-        mail-ua0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751449AbeEKPp1 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 11 May 2018 11:45:27 -0400
-Received: by mail-ua0-f193.google.com with SMTP id d4-v6so3888038ual.10
-        for <linux-btrfs@vger.kernel.org>; Fri, 11 May 2018 08:45:27 -0700 (PDT)
+Received: from mx2.suse.de ([195.135.220.15]:49061 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752321AbeEPOhu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 16 May 2018 10:37:50 -0400
+Date: Wed, 16 May 2018 16:35:08 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2] btrfs: fix BUG trying to resume balance without
+ resume flag
+Message-ID: <20180516143508.GB6649@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20180430094845.26229-1-anand.jain@oracle.com>
 MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <CAPaz=E+=aVagu2g3ZUiD-SjvnAAU0zb0SSaPKUitHT9CWuKW8A@mail.gmail.com>
-References: <CAPaz=E+=aVagu2g3ZUiD-SjvnAAU0zb0SSaPKUitHT9CWuKW8A@mail.gmail.com>
-From: Filipe Manana <fdmanana@gmail.com>
-Date: Fri, 11 May 2018 16:45:26 +0100
-Message-ID: <CAL3q7H7XVCnA=rtK5ws3WpjxSGYft4br-vVtBr9buBvJwFKBJQ@mail.gmail.com>
-Subject: Re: Strange behavior (possible bugs) in btrfs
-To: Vijay Chidambaram <vvijay03@gmail.com>
-Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>,
-        Soujanya Ponnapalli <soujanyap95@gmail.com>,
-        Jayashree Mohan <jayashree2912@gmail.com>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20180430094845.26229-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Apr 30, 2018 at 5:04 PM, Vijay Chidambaram <vvijay03@gmail.com> wrote:
-> Hi,
->
-> We found two more cases where the btrfs behavior is a little strange.
-> In one case, an fsync-ed file goes missing after a crash. In the
-> other, a renamed file shows up in both directories after a crash.
->
-> Workload 1:
->
-> mkdir A
-> mkdir B
-> mkdir A/C
-> creat B/foo
-> fsync B/foo
-> link B/foo A/C/foo
-> fsync A
-> -- crash --
->
-> Expected state after recovery:
-> B B/foo A A/C exist
->
-> What we find:
-> Only B B/foo exist
->
-> A is lost even after explicit fsync to A.
->
-> Workload 2:
->
-> mkdir A
-> mkdir A/C
-> rename A/C B
-> touch B/bar
-> fsync B/bar
-> rename B/bar A/bar
-> rename A B (replacing B with A at this point)
-> fsync B/bar
-> -- crash --
->
-> Expected contents after recovery:
-> A/bar
->
-> What we find after recovery:
-> A/bar
-> B/bar
->
-> We think this breaks rename's atomicity guarantee. bar should be
-> present in either A or B, but now it is present in both.
+On Mon, Apr 30, 2018 at 05:48:45PM +0800, Anand Jain wrote:
+> We set the BTRFS_BALANCE_RESUME flag in the btrfs_recover_balance(),
+> which is not called during the remount. So when resuming from the
+> paused balance we hit BUG.
+> 
+>  kernel: kernel BUG at fs/btrfs/volumes.c:3890!
+>  ::
+>  kernel:  balance_kthread+0x51/0x60 [btrfs]
+>  kernel:  kthread+0x111/0x130
+>  ::
+>  kernel: RIP: btrfs_balance+0x12e1/0x1570 [btrfs] RSP: ffffba7d0090bde8
+> 
+> Reproducer:
+>   On a mounted BTRFS.
+> 
+>   btrfs balance start --full-balance /btrfs
+>   btrfs balance pause /btrfs
+>   mount -o remount,ro /dev/sdb /btrfs
+>   mount -o remount,rw /dev/sdb /btrfs
+> 
+> To fix this set the BTRFS_BALANCE_RESUME flag in btrfs_resume_balance_async()
+> instead of btrfs_recover_balance().
+> 
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> ---
+> v1->v2: btrfs_resume_balance_async() can be called only from remount or
+> mount, we don't need to hold fs_info->balance_lock.
 
-I'll take a look at these, and all the other potential issues you
-reported in other threads, next week and let you know.
-Thanks.
-
->
-> Thanks,
-> Vijay
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+For mount it's ok, there's nothing that can run in parallel, but remount
+ro->rw that resumes the balance can be run with the ioctl that checks
+balance status in parallel, at any time. As the fs_info::balance_ctl is
+set up, btrfs_ioctl_balance_progress will proceed and return the current
+status.
 
 
+> Strictly speaking we should rather keep the balance at the paused state
+> unless it is resumed by the user again, that means neither mount nor
+> remount-rw should resume the balance automatically, former case needs
+> writing balance status to the disk. Which needs compatibility
+> verification.  So for now just avoid BUG. 
+> 
+>  fs/btrfs/volumes.c | 3 ++-
+>  1 file changed, 2 insertions(+), 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index 3e6983a169c4..64bcaf25908b 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -4115,6 +4115,8 @@ int btrfs_resume_balance_async(struct btrfs_fs_info *fs_info)
+>  		return 0;
+>  	}
+>  
+> +	fs_info->balance_ctl->b_flags |= BTRFS_BALANCE_RESUME;
 
--- 
-Filipe David Manana,
+Though there's no update operation on flags, I think it's still better
+to add the locks that set the resume status. And a comment why it's
+here.
 
-“Whether you think you can, or you think you can't — you're right.”
+> +
+>  	tsk = kthread_run(balance_kthread, fs_info, "btrfs-balance");
+>  	return PTR_ERR_OR_ZERO(tsk);
+>  }
+> @@ -4156,7 +4158,6 @@ int btrfs_recover_balance(struct btrfs_fs_info *fs_info)
+>  
+>  	bctl->fs_info = fs_info;
+>  	bctl->flags = btrfs_balance_flags(leaf, item);
+> -	bctl->flags |= BTRFS_BALANCE_RESUME;
+
+Also, it does not hurt to leave this here, as it logically matches what
+the function does: we found the balance item, thus we set the status
+accordingly.
+
+Please update and resend, I'd like to push this to 4.17-rc as it's a
+crash fix with a reproducer. Thanks.

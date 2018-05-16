@@ -1,84 +1,97 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp2120.oracle.com ([141.146.126.78]:51516 "EHLO
-        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751471AbeEPFKN (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 16 May 2018 01:10:13 -0400
-Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
-        by aserp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w4G57LZ2084102
-        for <linux-btrfs@vger.kernel.org>; Wed, 16 May 2018 05:10:12 GMT
-Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
-        by aserp2120.oracle.com with ESMTP id 2hx29w330s-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 16 May 2018 05:10:12 +0000
-Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
-        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id w4G5ACwd009256
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 16 May 2018 05:10:12 GMT
-Received: from abhmp0006.oracle.com (abhmp0006.oracle.com [141.146.116.12])
-        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w4G5ABVV005041
-        for <linux-btrfs@vger.kernel.org>; Wed, 16 May 2018 05:10:11 GMT
-From: Anand Jain <anand.jain@oracle.com>
+Received: from mx2.suse.de ([195.135.220.15]:52641 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751132AbeEPVjD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 16 May 2018 17:39:03 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id E32BAAF3E
+        for <linux-btrfs@vger.kernel.org>; Wed, 16 May 2018 21:39:01 +0000 (UTC)
+From: jeffm@suse.com
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2] btrfs: update uuid_mutex and device_list_mutex comments
-Date: Wed, 16 May 2018 13:12:39 +0800
-Message-Id: <20180516051239.18861-1-anand.jain@oracle.com>
+Cc: Jeff Mahoney <jeffm@suse.com>
+Subject: [PATCH v3 00/18] btrfs-progs: qgroups-usability
+Date: Wed, 16 May 2018 17:38:33 -0400
+Message-Id: <20180516213851.10196-1-jeffm@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Make the uuid_mutex and device_list_mutex comments inline with
-the changes.
+From: Jeff Mahoney <jeffm@suse.com>
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
-v1->v2: Fix typo. fs_devs -> fs_uuids
+Changes since v2:
+- Updated Reviewed-by tags were provided.
+- Fixed the typoed commands that I commented on in the previous posting.
+- Dropped the btrfs_cleanup_root_info since it's unnecessary with the
+  switch to libbtrfsutil.
+- Updated the qgroups pathname patch to use libbtrfsutil
+- Added a mini-filter to skip dead qgroups in 'qgroup show' output
+  unless -v is specified.
 
- fs/btrfs/volumes.c | 21 +++++++++------------
- 1 file changed, 9 insertions(+), 12 deletions(-)
+The most notable change is that this posting doesn't include the JSON
+format patches since there was still some open discussion there.  The
+plumbing for passing global options around to commands is there, so we
+really just need to decide on how we want to handle alternative formats.
+For some commands, the formatting library that coreutils uses will
+probably work but for qgroups show to represent nested groups, it's
+unsuitable.
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 9dbc5b97fd94..81fb38884cac 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -147,16 +147,11 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
-  *
-  * uuid_mutex (global lock)
-  * ------------------------
-- * protects the fs_uuids list that tracks all per-fs fs_devices, resulting from
-+ * Protects the fs_uuids list that tracks all per-fs fs_devices, resulting from
-  * the SCAN_DEV ioctl registration or from mount either implicitly (the first
-- * device) or requested by the device= mount option
-+ * device) or requested by the device= mount option.
-  *
-- * the mutex can be very coarse and can cover long-running operations
-- *
-- * protects: updates to fs_devices counters like missing devices, rw devices,
-- * seeding, structure cloning, openning/closing devices at mount/umount time
-- *
-- * global::fs_devs - add, remove, updates to the global list
-+ * global::fs_uuids - add, remove, updates to the global list.
-  *
-  * does not protect: manipulation of the fs_devices::devices list!
-  *
-@@ -164,12 +159,14 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
-  *
-  * fs_devices::device_list_mutex (per-fs, with RCU)
-  * ------------------------------------------------
-- * protects updates to fs_devices::devices, ie. adding and deleting
-+ * Protects updates to fs_devices::devices, ie. adding and deleting , and its
-+ * counters like missing devices, rw devices, seeding, structure cloning,
-+ * openning/closing devices at mount/umount time.
-  *
-- * simple list traversal with read-only actions can be done with RCU protection
-+ * Simple list traversal with read-only actions can be done with RCU protection.
-  *
-- * may be used to exclude some operations from running concurrently without any
-- * modifications to the list (see write_all_supers)
-+ * May be used to exclude some operations from running concurrently without any
-+ * modifications to the list (see write_all_supers).
-  *
-  * balance_mutex
-  * -------------
+I've also posted this as a pull request to the devel branch:
+
+https://github.com/kdave/btrfs-progs/pull/139
+
+Jeff Mahoney (18):
+  btrfs-progs: quota: Add -W option to rescan to wait without starting
+    rescan
+  btrfs-progs: qgroups: fix misleading index check
+  btrfs-progs: constify pathnames passed as arguments
+  btrfs-progs: btrfs-list: add rb_entry helpers for root_info
+  btrfs-progs: qgroups: add pathname to show output
+  btrfs-progs: qgroups: introduce and use info and limit structures
+  btrfs-progs: qgroups: introduce btrfs_qgroup_query
+  btrfs-progs: subvolume: add quota info to btrfs sub show
+  btrfs-progs: help: convert ints used as bools to bool
+  btrfs-progs: reorder placement of help declarations for send/receive
+  btrfs-progs: filesystem balance: split out special handling
+  btrfs-progs: use cmd_struct as command entry point
+  btrfs-progs: pass cmd_struct to command callback function
+  btrfs-progs: pass cmd_struct to clean_args_no_options{,_relaxed}
+  btrfs-progs: pass cmd_struct to usage()
+  btrfs-progs: add support for output formats
+  btrfs-progs: handle command groups directly for common case
+  btrfs-progs: qgroups: don't print dead qgroups
+
+ Documentation/btrfs-qgroup.asciidoc |   4 +
+ Documentation/btrfs-quota.asciidoc  |  10 +-
+ btrfs-list.c                        |  30 ++-
+ btrfs.c                             | 174 +++++++++++-----
+ check/main.c                        |  10 +-
+ chunk-recover.c                     |   4 +-
+ cmds-balance.c                      |  74 ++++---
+ cmds-device.c                       |  96 +++++----
+ cmds-fi-du.c                        |  11 +-
+ cmds-fi-usage.c                     |  17 +-
+ cmds-filesystem.c                   | 113 +++++++----
+ cmds-inspect-dump-super.c           |  11 +-
+ cmds-inspect-dump-tree.c            |  11 +-
+ cmds-inspect-tree-stats.c           |  11 +-
+ cmds-inspect.c                      |  78 ++++----
+ cmds-property.c                     |  55 +++---
+ cmds-qgroup.c                       | 107 ++++++----
+ cmds-quota.c                        |  63 +++---
+ cmds-receive.c                      |  70 +++----
+ cmds-replace.c                      |  45 +++--
+ cmds-rescue.c                       |  60 +++---
+ cmds-restore.c                      |  12 +-
+ cmds-scrub.c                        |  64 +++---
+ cmds-send.c                         |  74 +++----
+ cmds-subvolume.c                    | 163 ++++++++++-----
+ commands.h                          | 152 ++++++++------
+ help.c                              |  98 ++++++---
+ help.h                              |  14 +-
+ kerncompat.h                        |   1 +
+ qgroup.c                            | 384 +++++++++++++++++++++++++++---------
+ qgroup.h                            |  19 +-
+ 31 files changed, 1325 insertions(+), 710 deletions(-)
+
 -- 
-2.15.0
+2.15.1
 

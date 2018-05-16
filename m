@@ -1,58 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:33002 "EHLO mx1.redhat.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750846AbeEPOmS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 16 May 2018 10:42:18 -0400
-Subject: Re: [PATCH V3] test online label ioctl
-To: Dave Chinner <david@fromorbit.com>, Eric Sandeen <sandeen@sandeen.net>
-Cc: fstests <fstests@vger.kernel.org>, linux-xfs <linux-xfs@vger.kernel.org>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <2a743318-585d-9eb1-5430-2b07246348ab@redhat.com>
- <d65893a4-c6d8-1d85-4650-e63d04e8366a@sandeen.net>
- <20180516005139.GI10363@dastard>
-From: Eric Sandeen <sandeen@redhat.com>
-Message-ID: <505eba27-476e-2bb7-9d72-11d64d31e6c3@redhat.com>
-Date: Wed, 16 May 2018 09:42:17 -0500
-MIME-Version: 1.0
-In-Reply-To: <20180516005139.GI10363@dastard>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Received: from aserp2120.oracle.com ([141.146.126.78]:51516 "EHLO
+        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751471AbeEPFKN (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 16 May 2018 01:10:13 -0400
+Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
+        by aserp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w4G57LZ2084102
+        for <linux-btrfs@vger.kernel.org>; Wed, 16 May 2018 05:10:12 GMT
+Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
+        by aserp2120.oracle.com with ESMTP id 2hx29w330s-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Wed, 16 May 2018 05:10:12 +0000
+Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
+        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id w4G5ACwd009256
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Wed, 16 May 2018 05:10:12 GMT
+Received: from abhmp0006.oracle.com (abhmp0006.oracle.com [141.146.116.12])
+        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w4G5ABVV005041
+        for <linux-btrfs@vger.kernel.org>; Wed, 16 May 2018 05:10:11 GMT
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v2] btrfs: update uuid_mutex and device_list_mutex comments
+Date: Wed, 16 May 2018 13:12:39 +0800
+Message-Id: <20180516051239.18861-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 5/15/18 7:51 PM, Dave Chinner wrote:
-> On Tue, May 15, 2018 at 10:22:37AM -0500, Eric Sandeen wrote:
->> This tests the online label ioctl that btrfs has, which has been
->> recently proposed for XFS.
->>
->> To run, it requires an updated xfs_io with the label command and a
->> filesystem that supports it
->>
->> A slight change here to _require_xfs_io_command as well, so that tests
->> which simply fail with "Inappropriate ioctl" can be caught in the
->> common case.
->>
->> Signed-off-by: Eric Sandeen<sandeen@redhat.com>
->> ---
->>
->> (urgh send as proper new thread, sorry)
->>
->> This passes on btrfs, _notruns on xfs/ext4 of yore, and passes
->> on xfs w/ my online label patchset (as long as xfs_io has the new
->> capability)
->>
->> V2: Add a max label length helper
->>      Set the proper btrfs max label length o_O oops
->>      Filter trailing whitespace from blkid output
->>
->> V3: lowercase local vars, simplify max label len function
-> Looks good now, but I wondered about one thing the test doesn't
-> cover: can you clear the label by setting it to a null string?
-> i.e you check max length bounds, but don't check empty string
-> behaviour...
+Make the uuid_mutex and device_list_mutex comments inline with
+the changes.
 
-hohum, yes.  I'll fix that, which will also require a change to xfs_io
-to be able to set a null string.
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+v1->v2: Fix typo. fs_devs -> fs_uuids
 
-Will send a V3 in a bit.
+ fs/btrfs/volumes.c | 21 +++++++++------------
+ 1 file changed, 9 insertions(+), 12 deletions(-)
 
--Eric
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 9dbc5b97fd94..81fb38884cac 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -147,16 +147,11 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
+  *
+  * uuid_mutex (global lock)
+  * ------------------------
+- * protects the fs_uuids list that tracks all per-fs fs_devices, resulting from
++ * Protects the fs_uuids list that tracks all per-fs fs_devices, resulting from
+  * the SCAN_DEV ioctl registration or from mount either implicitly (the first
+- * device) or requested by the device= mount option
++ * device) or requested by the device= mount option.
+  *
+- * the mutex can be very coarse and can cover long-running operations
+- *
+- * protects: updates to fs_devices counters like missing devices, rw devices,
+- * seeding, structure cloning, openning/closing devices at mount/umount time
+- *
+- * global::fs_devs - add, remove, updates to the global list
++ * global::fs_uuids - add, remove, updates to the global list.
+  *
+  * does not protect: manipulation of the fs_devices::devices list!
+  *
+@@ -164,12 +159,14 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
+  *
+  * fs_devices::device_list_mutex (per-fs, with RCU)
+  * ------------------------------------------------
+- * protects updates to fs_devices::devices, ie. adding and deleting
++ * Protects updates to fs_devices::devices, ie. adding and deleting , and its
++ * counters like missing devices, rw devices, seeding, structure cloning,
++ * openning/closing devices at mount/umount time.
+  *
+- * simple list traversal with read-only actions can be done with RCU protection
++ * Simple list traversal with read-only actions can be done with RCU protection.
+  *
+- * may be used to exclude some operations from running concurrently without any
+- * modifications to the list (see write_all_supers)
++ * May be used to exclude some operations from running concurrently without any
++ * modifications to the list (see write_all_supers).
+  *
+  * balance_mutex
+  * -------------
+-- 
+2.15.0
+

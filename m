@@ -1,51 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from tartarus.angband.pl ([89.206.35.136]:42828 "EHLO
-        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751021AbeEUO6x (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 21 May 2018 10:58:53 -0400
-From: Adam Borowski <kilobyte@angband.pl>
-To: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.cz>
-Cc: Adam Borowski <kilobyte@angband.pl>
-Date: Mon, 21 May 2018 16:58:43 +0200
-Message-Id: <20180521145843.16622-1-kilobyte@angband.pl>
-In-Reply-To: <20180521144515.16501-1-kilobyte@angband.pl>
-References: <20180521144515.16501-1-kilobyte@angband.pl>
-Subject: [PATCH] defrag: open files RO
+Received: from mx2.suse.de ([195.135.220.15]:52662 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751227AbeEPVjF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 16 May 2018 17:39:05 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id EB457ADA7
+        for <linux-btrfs@vger.kernel.org>; Wed, 16 May 2018 21:39:03 +0000 (UTC)
+From: jeffm@suse.com
+To: linux-btrfs@vger.kernel.org
+Cc: Jeff Mahoney <jeffm@suse.com>
+Subject: [PATCH 18/18] btrfs-progs: qgroups: don't print dead qgroups
+Date: Wed, 16 May 2018 17:38:51 -0400
+Message-Id: <20180516213851.10196-19-jeffm@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
+In-Reply-To: <20180516213851.10196-1-jeffm@suse.com>
 
-NOT FOR MERGING -- requires kernel versioning
+From: Jeff Mahoney <jeffm@suse.com>
 
-Fixes EXTXBSY races.
+When qgroup items get left behind, we still print them in
+'btrfs qgroup show' even though there is nothing to show.  Since we
+now look up the pathname and that means we look up the subvolume,
+we can filter out first-level qgroups that correspond to roots
+that have been removed.  Specifying -v will still show them.
 
-Signed-off-by: Adam Borowski <kilobyte@angband.pl>
+Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- cmds-filesystem.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ qgroup.c | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
 
-diff --git a/cmds-filesystem.c b/cmds-filesystem.c
-index 30a50bf5..7eb6b7bb 100644
---- a/cmds-filesystem.c
-+++ b/cmds-filesystem.c
-@@ -876,7 +876,7 @@ static int defrag_callback(const char *fpath, const struct stat *sb,
- 	if ((typeflag == FTW_F) && S_ISREG(sb->st_mode)) {
- 		if (defrag_global_verbose)
- 			printf("%s\n", fpath);
--		fd = open(fpath, O_RDWR);
-+		fd = open(fpath, O_RDONLY);
- 		if (fd < 0) {
- 			goto error;
- 		}
-@@ -1012,7 +1012,7 @@ static int cmd_filesystem_defrag(int argc, char **argv)
- 		int defrag_err = 0;
+diff --git a/qgroup.c b/qgroup.c
+index 647bc2f3..08e78887 100644
+--- a/qgroup.c
++++ b/qgroup.c
+@@ -313,6 +313,13 @@ static void print_qgroup_column(struct btrfs_qgroup *qgroup,
+ 	}
+ }
  
- 		dirstream = NULL;
--		fd = open_file_or_dir(argv[i], &dirstream);
-+		fd = open_file_or_dir3(argv[i], &dirstream, O_RDONLY);
- 		if (fd < 0) {
- 			error("cannot open %s: %m", argv[i]);
- 			ret = -errno;
++static bool qgroup_target_exists(const struct btrfs_qgroup *qgroup)
++{
++	if (btrfs_qgroup_level(qgroup->qgroupid) > 0)
++		return true;
++	return qgroup->pathname != NULL;
++}
++
+ static void print_single_qgroup_table(struct btrfs_qgroup *qgroup, bool verbose)
+ {
+ 	int i;
+@@ -1369,7 +1376,8 @@ static void print_all_qgroups(struct qgroup_lookup *qgroup_lookup, bool verbose)
+ 	n = rb_first(&qgroup_lookup->root);
+ 	while (n) {
+ 		entry = rb_entry(n, struct btrfs_qgroup, sort_node);
+-		print_single_qgroup_table(entry, verbose);
++		if (qgroup_target_exists(entry) || verbose)
++			print_single_qgroup_table(entry, verbose);
+ 		n = rb_next(n);
+ 	}
+ }
 -- 
-2.17.0
+2.15.1
 

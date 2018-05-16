@@ -1,97 +1,125 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:52641 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:52636 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751132AbeEPVjD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1750953AbeEPVjD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Wed, 16 May 2018 17:39:03 -0400
 Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id E32BAAF3E
+        by mx2.suse.de (Postfix) with ESMTP id C77F3ACBF
         for <linux-btrfs@vger.kernel.org>; Wed, 16 May 2018 21:39:01 +0000 (UTC)
 From: jeffm@suse.com
 To: linux-btrfs@vger.kernel.org
 Cc: Jeff Mahoney <jeffm@suse.com>
-Subject: [PATCH v3 00/18] btrfs-progs: qgroups-usability
-Date: Wed, 16 May 2018 17:38:33 -0400
-Message-Id: <20180516213851.10196-1-jeffm@suse.com>
+Subject: [PATCH 01/18] btrfs-progs: quota: Add -W option to rescan to wait without starting rescan
+Date: Wed, 16 May 2018 17:38:34 -0400
+Message-Id: <20180516213851.10196-2-jeffm@suse.com>
+In-Reply-To: <20180516213851.10196-1-jeffm@suse.com>
+References: <20180516213851.10196-1-jeffm@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Jeff Mahoney <jeffm@suse.com>
 
-Changes since v2:
-- Updated Reviewed-by tags were provided.
-- Fixed the typoed commands that I commented on in the previous posting.
-- Dropped the btrfs_cleanup_root_info since it's unnecessary with the
-  switch to libbtrfsutil.
-- Updated the qgroups pathname patch to use libbtrfsutil
-- Added a mini-filter to skip dead qgroups in 'qgroup show' output
-  unless -v is specified.
+This patch adds a new -W option to wait for a rescan without starting a
+new operation.  This is useful for things like xfstests where we want
+do to do a "btrfs quota enable" and not continue until the subsequent
+rescan has finished.
 
-The most notable change is that this posting doesn't include the JSON
-format patches since there was still some open discussion there.  The
-plumbing for passing global options around to commands is there, so we
-really just need to decide on how we want to handle alternative formats.
-For some commands, the formatting library that coreutils uses will
-probably work but for qgroups show to represent nested groups, it's
-unsuitable.
+In addition to documenting the new option in the man page, I've cleaned
+up the rescan entry to document the -w option a bit better.
 
-I've also posted this as a pull request to the devel branch:
+Reviewed-by: Qu Wenruo <wqu@suse.com>
+Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+---
+ Documentation/btrfs-quota.asciidoc | 10 +++++++---
+ cmds-quota.c                       | 20 ++++++++++++++------
+ 2 files changed, 21 insertions(+), 9 deletions(-)
 
-https://github.com/kdave/btrfs-progs/pull/139
-
-Jeff Mahoney (18):
-  btrfs-progs: quota: Add -W option to rescan to wait without starting
-    rescan
-  btrfs-progs: qgroups: fix misleading index check
-  btrfs-progs: constify pathnames passed as arguments
-  btrfs-progs: btrfs-list: add rb_entry helpers for root_info
-  btrfs-progs: qgroups: add pathname to show output
-  btrfs-progs: qgroups: introduce and use info and limit structures
-  btrfs-progs: qgroups: introduce btrfs_qgroup_query
-  btrfs-progs: subvolume: add quota info to btrfs sub show
-  btrfs-progs: help: convert ints used as bools to bool
-  btrfs-progs: reorder placement of help declarations for send/receive
-  btrfs-progs: filesystem balance: split out special handling
-  btrfs-progs: use cmd_struct as command entry point
-  btrfs-progs: pass cmd_struct to command callback function
-  btrfs-progs: pass cmd_struct to clean_args_no_options{,_relaxed}
-  btrfs-progs: pass cmd_struct to usage()
-  btrfs-progs: add support for output formats
-  btrfs-progs: handle command groups directly for common case
-  btrfs-progs: qgroups: don't print dead qgroups
-
- Documentation/btrfs-qgroup.asciidoc |   4 +
- Documentation/btrfs-quota.asciidoc  |  10 +-
- btrfs-list.c                        |  30 ++-
- btrfs.c                             | 174 +++++++++++-----
- check/main.c                        |  10 +-
- chunk-recover.c                     |   4 +-
- cmds-balance.c                      |  74 ++++---
- cmds-device.c                       |  96 +++++----
- cmds-fi-du.c                        |  11 +-
- cmds-fi-usage.c                     |  17 +-
- cmds-filesystem.c                   | 113 +++++++----
- cmds-inspect-dump-super.c           |  11 +-
- cmds-inspect-dump-tree.c            |  11 +-
- cmds-inspect-tree-stats.c           |  11 +-
- cmds-inspect.c                      |  78 ++++----
- cmds-property.c                     |  55 +++---
- cmds-qgroup.c                       | 107 ++++++----
- cmds-quota.c                        |  63 +++---
- cmds-receive.c                      |  70 +++----
- cmds-replace.c                      |  45 +++--
- cmds-rescue.c                       |  60 +++---
- cmds-restore.c                      |  12 +-
- cmds-scrub.c                        |  64 +++---
- cmds-send.c                         |  74 +++----
- cmds-subvolume.c                    | 163 ++++++++++-----
- commands.h                          | 152 ++++++++------
- help.c                              |  98 ++++++---
- help.h                              |  14 +-
- kerncompat.h                        |   1 +
- qgroup.c                            | 384 +++++++++++++++++++++++++++---------
- qgroup.h                            |  19 +-
- 31 files changed, 1325 insertions(+), 710 deletions(-)
-
+diff --git a/Documentation/btrfs-quota.asciidoc b/Documentation/btrfs-quota.asciidoc
+index 85ebf729..0b64a69b 100644
+--- a/Documentation/btrfs-quota.asciidoc
++++ b/Documentation/btrfs-quota.asciidoc
+@@ -238,15 +238,19 @@ Disable subvolume quota support for a filesystem.
+ *enable* <path>::
+ Enable subvolume quota support for a filesystem.
+ 
+-*rescan* [-s] <path>::
++*rescan* [-s|-w|-W] <path>::
+ Trash all qgroup numbers and scan the metadata again with the current config.
+ +
+ `Options`
+ +
+ -s::::
+-show status of a running rescan operation.
++Show status of a running rescan operation.
++
+ -w::::
+-wait for rescan operation to finish(can be already in progress).
++Start rescan operation and wait until it has finished before exiting.  If a rescan is already running, wait until it finishes and then exit without starting a new one.
++
++-W::::
++Wait for rescan operation to finish and then exit.  If a rescan is not already running, exit silently.
+ 
+ EXIT STATUS
+ -----------
+diff --git a/cmds-quota.c b/cmds-quota.c
+index 745889d1..7f933495 100644
+--- a/cmds-quota.c
++++ b/cmds-quota.c
+@@ -120,14 +120,20 @@ static int cmd_quota_rescan(int argc, char **argv)
+ 	int wait_for_completion = 0;
+ 
+ 	while (1) {
+-		int c = getopt(argc, argv, "sw");
++		int c = getopt(argc, argv, "swW");
+ 		if (c < 0)
+ 			break;
+ 		switch (c) {
+ 		case 's':
+ 			ioctlnum = BTRFS_IOC_QUOTA_RESCAN_STATUS;
+ 			break;
++		case 'W':
++			ioctlnum = 0;
++			wait_for_completion = 1;
++			break;
+ 		case 'w':
++			/* Reset it in case the user did both -W and -w */
++			ioctlnum = BTRFS_IOC_QUOTA_RESCAN;
+ 			wait_for_completion = 1;
+ 			break;
+ 		default:
+@@ -135,8 +141,8 @@ static int cmd_quota_rescan(int argc, char **argv)
+ 		}
+ 	}
+ 
+-	if (ioctlnum != BTRFS_IOC_QUOTA_RESCAN && wait_for_completion) {
+-		error("switch -w cannot be used with -s");
++	if (ioctlnum == BTRFS_IOC_QUOTA_RESCAN_STATUS && wait_for_completion) {
++		error("switches -w/-W cannot be used with -s");
+ 		return 1;
+ 	}
+ 
+@@ -150,8 +156,10 @@ static int cmd_quota_rescan(int argc, char **argv)
+ 	if (fd < 0)
+ 		return 1;
+ 
+-	ret = ioctl(fd, ioctlnum, &args);
+-	e = errno;
++	if (ioctlnum) {
++		ret = ioctl(fd, ioctlnum, &args);
++		e = errno;
++	}
+ 
+ 	if (ioctlnum == BTRFS_IOC_QUOTA_RESCAN_STATUS) {
+ 		close_file_or_dir(fd, dirstream);
+@@ -167,7 +175,7 @@ static int cmd_quota_rescan(int argc, char **argv)
+ 		return 0;
+ 	}
+ 
+-	if (ret == 0) {
++	if (ioctlnum == BTRFS_IOC_QUOTA_RESCAN && ret == 0) {
+ 		printf("quota rescan started\n");
+ 		fflush(stdout);
+ 	} else if (ret < 0 && (!wait_for_completion || e != EINPROGRESS)) {
 -- 
 2.15.1
 

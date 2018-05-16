@@ -1,9 +1,9 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([198.137.202.133]:58256 "EHLO
+Received: from bombadil.infradead.org ([198.137.202.133]:58206 "EHLO
         bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752508AbeEPFo7 (ORCPT
+        with ESMTP id S1752684AbeEPFo5 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 16 May 2018 01:44:59 -0400
+        Wed, 16 May 2018 01:44:57 -0400
 From: Christoph Hellwig <hch@lst.de>
 To: Souptick Joarder <jrdr.linux@gmail.com>,
         Matthew Wilcox <willy@infradead.org>
@@ -14,105 +14,129 @@ Cc: linux-fsdevel@vger.kernel.org, linux-mm@kvack.org,
         linux-mtd@lists.infradead.org, dri-devel@lists.freedesktop.org,
         lustre-devel@lists.lustre.org, linux-arm-kernel@lists.infradead.org,
         linux-s390@vger.kernel.org
-Subject: [PATCH 13/14] mm: move arch specific VM_FAULT_* flags to mm.h
-Date: Wed, 16 May 2018 07:43:47 +0200
-Message-Id: <20180516054348.15950-14-hch@lst.de>
+Subject: [PATCH 12/14] lustre: separate errno from VM_FAULT_* values
+Date: Wed, 16 May 2018 07:43:46 +0200
+Message-Id: <20180516054348.15950-13-hch@lst.de>
 In-Reply-To: <20180516054348.15950-1-hch@lst.de>
 References: <20180516054348.15950-1-hch@lst.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Various architectures define their own internal flags.  Not sure a public
-header like mm.h is a good place, but keeping them inside the arch code
-with possible conflicts also seems like a bad idea.  Maybe we just need
-to stop overloading the value instead.
-
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- arch/arm/mm/fault.c       | 3 ---
- arch/arm64/mm/fault.c     | 3 ---
- arch/s390/mm/fault.c      | 6 ------
- arch/unicore32/mm/fault.c | 3 ---
- include/linux/mm.h        | 7 +++++++
- 5 files changed, 7 insertions(+), 15 deletions(-)
+ .../staging/lustre/lustre/llite/llite_mmap.c  | 37 +++++++------------
+ .../lustre/lustre/llite/vvp_internal.h        |  2 +-
+ 2 files changed, 14 insertions(+), 25 deletions(-)
 
-diff --git a/arch/arm/mm/fault.c b/arch/arm/mm/fault.c
-index 32034543f49c..b696eabccf60 100644
---- a/arch/arm/mm/fault.c
-+++ b/arch/arm/mm/fault.c
-@@ -201,9 +201,6 @@ void do_bad_area(unsigned long addr, unsigned int fsr, struct pt_regs *regs)
+diff --git a/drivers/staging/lustre/lustre/llite/llite_mmap.c b/drivers/staging/lustre/lustre/llite/llite_mmap.c
+index 214b07554e62..061d98871959 100644
+--- a/drivers/staging/lustre/lustre/llite/llite_mmap.c
++++ b/drivers/staging/lustre/lustre/llite/llite_mmap.c
+@@ -231,23 +231,18 @@ static int ll_page_mkwrite0(struct vm_area_struct *vma, struct page *vmpage,
+ 	return result;
  }
  
- #ifdef CONFIG_MMU
--#define VM_FAULT_BADMAP		0x010000
--#define VM_FAULT_BADACCESS	0x020000
--
- /*
-  * Check that the permissions on the VMA allow for the fault which occurred.
-  * If we encountered a write fault, we must have write permission, otherwise
-diff --git a/arch/arm64/mm/fault.c b/arch/arm64/mm/fault.c
-index 91c53a7d2575..3d0b1f8eacce 100644
---- a/arch/arm64/mm/fault.c
-+++ b/arch/arm64/mm/fault.c
-@@ -318,9 +318,6 @@ static void do_bad_area(unsigned long addr, unsigned int esr, struct pt_regs *re
+-static inline int to_fault_error(int result)
++static inline vm_fault_t to_fault_error(int result)
+ {
+ 	switch (result) {
+ 	case 0:
+-		result = VM_FAULT_LOCKED;
+-		break;
++		return VM_FAULT_LOCKED;
+ 	case -EFAULT:
+-		result = VM_FAULT_NOPAGE;
+-		break;
++		return VM_FAULT_NOPAGE;
+ 	case -ENOMEM:
+-		result = VM_FAULT_OOM;
+-		break;
++		return VM_FAULT_OOM;
+ 	default:
+-		result = VM_FAULT_SIGBUS;
+-		break;
++		return VM_FAULT_SIGBUS;
  	}
+-	return result;
  }
  
--#define VM_FAULT_BADMAP		0x010000
--#define VM_FAULT_BADACCESS	0x020000
--
- static int __do_page_fault(struct mm_struct *mm, unsigned long addr,
- 			   unsigned int mm_flags, unsigned long vm_flags,
- 			   struct task_struct *tsk)
-diff --git a/arch/s390/mm/fault.c b/arch/s390/mm/fault.c
-index e074480d3598..48c781ae25d0 100644
---- a/arch/s390/mm/fault.c
-+++ b/arch/s390/mm/fault.c
-@@ -44,12 +44,6 @@
- #define __SUBCODE_MASK 0x0600
- #define __PF_RES_FIELD 0x8000000000000000ULL
+ /**
+@@ -261,7 +256,7 @@ static inline int to_fault_error(int result)
+  * \retval VM_FAULT_ERROR on general error
+  * \retval NOPAGE_OOM not have memory for allocate new page
+  */
+-static int ll_fault0(struct vm_area_struct *vma, struct vm_fault *vmf)
++static vm_fault_t ll_fault0(struct vm_area_struct *vma, struct vm_fault *vmf)
+ {
+ 	struct lu_env	   *env;
+ 	struct cl_io	    *io;
+@@ -269,7 +264,7 @@ static int ll_fault0(struct vm_area_struct *vma, struct vm_fault *vmf)
+ 	struct page	     *vmpage;
+ 	unsigned long	    ra_flags;
+ 	int		      result = 0;
+-	int		      fault_ret = 0;
++	vm_fault_t	      fault_ret = 0;
+ 	u16 refcheck;
  
--#define VM_FAULT_BADCONTEXT	0x010000
--#define VM_FAULT_BADMAP		0x020000
--#define VM_FAULT_BADACCESS	0x040000
--#define VM_FAULT_SIGNAL		0x080000
--#define VM_FAULT_PFAULT		0x100000
--
- enum fault_type {
- 	KERNEL_FAULT,
- 	USER_FAULT,
-diff --git a/arch/unicore32/mm/fault.c b/arch/unicore32/mm/fault.c
-index 381473412937..6c3c1a82925f 100644
---- a/arch/unicore32/mm/fault.c
-+++ b/arch/unicore32/mm/fault.c
-@@ -148,9 +148,6 @@ void do_bad_area(unsigned long addr, unsigned int fsr, struct pt_regs *regs)
- 		__do_kernel_fault(mm, addr, fsr, regs);
+ 	env = cl_env_get(&refcheck);
+@@ -323,7 +318,7 @@ static int ll_fault0(struct vm_area_struct *vma, struct vm_fault *vmf)
+ 	return fault_ret;
  }
  
--#define VM_FAULT_BADMAP		0x010000
--#define VM_FAULT_BADACCESS	0x020000
--
- /*
-  * Check that the permissions on the VMA allow for the fault which occurred.
-  * If we encountered a write fault, we must have write permission, otherwise
-diff --git a/include/linux/mm.h b/include/linux/mm.h
-index 338b8a1afb02..64d09e3afc24 100644
---- a/include/linux/mm.h
-+++ b/include/linux/mm.h
-@@ -1250,6 +1250,13 @@ static inline void clear_page_pfmemalloc(struct page *page)
- 					 * and needs fsync() to complete (for
- 					 * synchronous page faults in DAX) */
+-static int ll_fault(struct vm_fault *vmf)
++static vm_fault_t ll_fault(struct vm_fault *vmf)
+ {
+ 	int count = 0;
+ 	bool printed = false;
+@@ -364,7 +359,7 @@ static int ll_fault(struct vm_fault *vmf)
+ 	return result;
+ }
  
-+/* Only for use in architecture specific page fault handling: */
-+#define VM_FAULT_BADMAP		0x010000
-+#define VM_FAULT_BADACCESS	0x020000
-+#define VM_FAULT_BADCONTEXT	0x040000
-+#define VM_FAULT_SIGNAL		0x080000
-+#define VM_FAULT_PFAULT		0x100000
-+
- #define VM_FAULT_ERROR	(VM_FAULT_OOM | VM_FAULT_SIGBUS | VM_FAULT_SIGSEGV | \
- 			 VM_FAULT_HWPOISON | VM_FAULT_HWPOISON_LARGE | \
- 			 VM_FAULT_FALLBACK)
+-static int ll_page_mkwrite(struct vm_fault *vmf)
++static vm_fault_t ll_page_mkwrite(struct vm_fault *vmf)
+ {
+ 	struct vm_area_struct *vma = vmf->vma;
+ 	int count = 0;
+@@ -390,22 +385,16 @@ static int ll_page_mkwrite(struct vm_fault *vmf)
+ 	switch (result) {
+ 	case 0:
+ 		LASSERT(PageLocked(vmf->page));
+-		result = VM_FAULT_LOCKED;
+-		break;
++		return VM_FAULT_LOCKED;
+ 	case -ENODATA:
+ 	case -EAGAIN:
+ 	case -EFAULT:
+-		result = VM_FAULT_NOPAGE;
+-		break;
++		return VM_FAULT_NOPAGE;
+ 	case -ENOMEM:
+-		result = VM_FAULT_OOM;
+-		break;
++		return VM_FAULT_OOM;
+ 	default:
+-		result = VM_FAULT_SIGBUS;
+-		break;
++		return VM_FAULT_SIGBUS;
+ 	}
+-
+-	return result;
+ }
+ 
+ /**
+diff --git a/drivers/staging/lustre/lustre/llite/vvp_internal.h b/drivers/staging/lustre/lustre/llite/vvp_internal.h
+index 7d3abb43584a..c194966a3d82 100644
+--- a/drivers/staging/lustre/lustre/llite/vvp_internal.h
++++ b/drivers/staging/lustre/lustre/llite/vvp_internal.h
+@@ -83,7 +83,7 @@ struct vvp_io {
+ 			/**
+ 			 * fault API used bitflags for return code.
+ 			 */
+-			unsigned int    ft_flags;
++			vm_fault_t    ft_flags;
+ 			/**
+ 			 * check that flags are from filemap_fault
+ 			 */
 -- 
 2.17.0
 

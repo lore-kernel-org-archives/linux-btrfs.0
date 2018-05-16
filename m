@@ -1,9 +1,9 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([198.137.202.133]:58206 "EHLO
+Received: from bombadil.infradead.org ([198.137.202.133]:58014 "EHLO
         bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752684AbeEPFo5 (ORCPT
+        with ESMTP id S1752508AbeEPFot (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 16 May 2018 01:44:57 -0400
+        Wed, 16 May 2018 01:44:49 -0400
 From: Christoph Hellwig <hch@lst.de>
 To: Souptick Joarder <jrdr.linux@gmail.com>,
         Matthew Wilcox <willy@infradead.org>
@@ -14,9 +14,9 @@ Cc: linux-fsdevel@vger.kernel.org, linux-mm@kvack.org,
         linux-mtd@lists.infradead.org, dri-devel@lists.freedesktop.org,
         lustre-devel@lists.lustre.org, linux-arm-kernel@lists.infradead.org,
         linux-s390@vger.kernel.org
-Subject: [PATCH 12/14] lustre: separate errno from VM_FAULT_* values
-Date: Wed, 16 May 2018 07:43:46 +0200
-Message-Id: <20180516054348.15950-13-hch@lst.de>
+Subject: [PATCH 08/14] ocfs2: separate errno from VM_FAULT_* values
+Date: Wed, 16 May 2018 07:43:42 +0200
+Message-Id: <20180516054348.15950-9-hch@lst.de>
 In-Reply-To: <20180516054348.15950-1-hch@lst.de>
 References: <20180516054348.15950-1-hch@lst.de>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -24,119 +24,107 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- .../staging/lustre/lustre/llite/llite_mmap.c  | 37 +++++++------------
- .../lustre/lustre/llite/vvp_internal.h        |  2 +-
- 2 files changed, 14 insertions(+), 25 deletions(-)
+ fs/ocfs2/mmap.c | 36 +++++++++++++++++++-----------------
+ 1 file changed, 19 insertions(+), 17 deletions(-)
 
-diff --git a/drivers/staging/lustre/lustre/llite/llite_mmap.c b/drivers/staging/lustre/lustre/llite/llite_mmap.c
-index 214b07554e62..061d98871959 100644
---- a/drivers/staging/lustre/lustre/llite/llite_mmap.c
-+++ b/drivers/staging/lustre/lustre/llite/llite_mmap.c
-@@ -231,23 +231,18 @@ static int ll_page_mkwrite0(struct vm_area_struct *vma, struct page *vmpage,
- 	return result;
- }
+diff --git a/fs/ocfs2/mmap.c b/fs/ocfs2/mmap.c
+index fb9a20e3d608..e75c1fc5333e 100644
+--- a/fs/ocfs2/mmap.c
++++ b/fs/ocfs2/mmap.c
+@@ -44,11 +44,11 @@
+ #include "ocfs2_trace.h"
  
--static inline int to_fault_error(int result)
-+static inline vm_fault_t to_fault_error(int result)
- {
- 	switch (result) {
- 	case 0:
--		result = VM_FAULT_LOCKED;
--		break;
-+		return VM_FAULT_LOCKED;
- 	case -EFAULT:
--		result = VM_FAULT_NOPAGE;
--		break;
-+		return VM_FAULT_NOPAGE;
- 	case -ENOMEM:
--		result = VM_FAULT_OOM;
--		break;
-+		return VM_FAULT_OOM;
- 	default:
--		result = VM_FAULT_SIGBUS;
--		break;
-+		return VM_FAULT_SIGBUS;
- 	}
--	return result;
- }
  
- /**
-@@ -261,7 +256,7 @@ static inline int to_fault_error(int result)
-  * \retval VM_FAULT_ERROR on general error
-  * \retval NOPAGE_OOM not have memory for allocate new page
-  */
--static int ll_fault0(struct vm_area_struct *vma, struct vm_fault *vmf)
-+static vm_fault_t ll_fault0(struct vm_area_struct *vma, struct vm_fault *vmf)
- {
- 	struct lu_env	   *env;
- 	struct cl_io	    *io;
-@@ -269,7 +264,7 @@ static int ll_fault0(struct vm_area_struct *vma, struct vm_fault *vmf)
- 	struct page	     *vmpage;
- 	unsigned long	    ra_flags;
- 	int		      result = 0;
--	int		      fault_ret = 0;
-+	vm_fault_t	      fault_ret = 0;
- 	u16 refcheck;
- 
- 	env = cl_env_get(&refcheck);
-@@ -323,7 +318,7 @@ static int ll_fault0(struct vm_area_struct *vma, struct vm_fault *vmf)
- 	return fault_ret;
- }
- 
--static int ll_fault(struct vm_fault *vmf)
-+static vm_fault_t ll_fault(struct vm_fault *vmf)
- {
- 	int count = 0;
- 	bool printed = false;
-@@ -364,7 +359,7 @@ static int ll_fault(struct vm_fault *vmf)
- 	return result;
- }
- 
--static int ll_page_mkwrite(struct vm_fault *vmf)
-+static vm_fault_t ll_page_mkwrite(struct vm_fault *vmf)
+-static int ocfs2_fault(struct vm_fault *vmf)
++static vm_fault_t ocfs2_fault(struct vm_fault *vmf)
  {
  	struct vm_area_struct *vma = vmf->vma;
- 	int count = 0;
-@@ -390,22 +385,16 @@ static int ll_page_mkwrite(struct vm_fault *vmf)
- 	switch (result) {
- 	case 0:
- 		LASSERT(PageLocked(vmf->page));
--		result = VM_FAULT_LOCKED;
--		break;
-+		return VM_FAULT_LOCKED;
- 	case -ENODATA:
- 	case -EAGAIN:
- 	case -EFAULT:
--		result = VM_FAULT_NOPAGE;
--		break;
-+		return VM_FAULT_NOPAGE;
- 	case -ENOMEM:
--		result = VM_FAULT_OOM;
--		break;
-+		return VM_FAULT_OOM;
- 	default:
--		result = VM_FAULT_SIGBUS;
--		break;
-+		return VM_FAULT_SIGBUS;
- 	}
--
--	return result;
+ 	sigset_t oldset;
+-	int ret;
++	vm_fault_t ret;
+ 
+ 	ocfs2_block_signals(&oldset);
+ 	ret = filemap_fault(vmf);
+@@ -59,10 +59,10 @@ static int ocfs2_fault(struct vm_fault *vmf)
+ 	return ret;
  }
  
- /**
-diff --git a/drivers/staging/lustre/lustre/llite/vvp_internal.h b/drivers/staging/lustre/lustre/llite/vvp_internal.h
-index 7d3abb43584a..c194966a3d82 100644
---- a/drivers/staging/lustre/lustre/llite/vvp_internal.h
-+++ b/drivers/staging/lustre/lustre/llite/vvp_internal.h
-@@ -83,7 +83,7 @@ struct vvp_io {
- 			/**
- 			 * fault API used bitflags for return code.
- 			 */
--			unsigned int    ft_flags;
-+			vm_fault_t    ft_flags;
- 			/**
- 			 * check that flags are from filemap_fault
- 			 */
+-static int __ocfs2_page_mkwrite(struct file *file, struct buffer_head *di_bh,
+-				struct page *page)
++static vm_fault_t __ocfs2_page_mkwrite(struct file *file,
++		struct buffer_head *di_bh, struct page *page)
+ {
+-	int ret = VM_FAULT_NOPAGE;
++	vm_fault_t ret = VM_FAULT_NOPAGE;
+ 	struct inode *inode = file_inode(file);
+ 	struct address_space *mapping = inode->i_mapping;
+ 	loff_t pos = page_offset(page);
+@@ -71,6 +71,7 @@ static int __ocfs2_page_mkwrite(struct file *file, struct buffer_head *di_bh,
+ 	struct page *locked_page = NULL;
+ 	void *fsdata;
+ 	loff_t size = i_size_read(inode);
++	int err;
+ 
+ 	last_index = (size - 1) >> PAGE_SHIFT;
+ 
+@@ -105,12 +106,12 @@ static int __ocfs2_page_mkwrite(struct file *file, struct buffer_head *di_bh,
+ 	if (page->index == last_index)
+ 		len = ((size - 1) & ~PAGE_MASK) + 1;
+ 
+-	ret = ocfs2_write_begin_nolock(mapping, pos, len, OCFS2_WRITE_MMAP,
++	err = ocfs2_write_begin_nolock(mapping, pos, len, OCFS2_WRITE_MMAP,
+ 				       &locked_page, &fsdata, di_bh, page);
+-	if (ret) {
+-		if (ret != -ENOSPC)
+-			mlog_errno(ret);
+-		if (ret == -ENOMEM)
++	if (err) {
++		if (err != -ENOSPC)
++			mlog_errno(err);
++		if (err == -ENOMEM)
+ 			ret = VM_FAULT_OOM;
+ 		else
+ 			ret = VM_FAULT_SIGBUS;
+@@ -121,20 +122,21 @@ static int __ocfs2_page_mkwrite(struct file *file, struct buffer_head *di_bh,
+ 		ret = VM_FAULT_NOPAGE;
+ 		goto out;
+ 	}
+-	ret = ocfs2_write_end_nolock(mapping, pos, len, len, fsdata);
+-	BUG_ON(ret != len);
++	err = ocfs2_write_end_nolock(mapping, pos, len, len, fsdata);
++	BUG_ON(err != len);
+ 	ret = VM_FAULT_LOCKED;
+ out:
+ 	return ret;
+ }
+ 
+-static int ocfs2_page_mkwrite(struct vm_fault *vmf)
++static vm_fault_t ocfs2_page_mkwrite(struct vm_fault *vmf)
+ {
+ 	struct page *page = vmf->page;
+ 	struct inode *inode = file_inode(vmf->vma->vm_file);
+ 	struct buffer_head *di_bh = NULL;
+ 	sigset_t oldset;
+-	int ret;
++	vm_fault_t ret = 0;
++	int err;
+ 
+ 	sb_start_pagefault(inode->i_sb);
+ 	ocfs2_block_signals(&oldset);
+@@ -144,10 +146,10 @@ static int ocfs2_page_mkwrite(struct vm_fault *vmf)
+ 	 * node. Taking the data lock will also ensure that we don't
+ 	 * attempt page truncation as part of a downconvert.
+ 	 */
+-	ret = ocfs2_inode_lock(inode, &di_bh, 1);
+-	if (ret < 0) {
++	err = ocfs2_inode_lock(inode, &di_bh, 1);
++	if (err < 0) {
+ 		mlog_errno(ret);
+-		if (ret == -ENOMEM)
++		if (err == -ENOMEM)
+ 			ret = VM_FAULT_OOM;
+ 		else
+ 			ret = VM_FAULT_SIGBUS;
 -- 
 2.17.0
 

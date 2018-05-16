@@ -1,78 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp2120.oracle.com ([141.146.126.78]:34942 "EHLO
-        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752234AbeEPKBk (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 16 May 2018 06:01:40 -0400
-Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
-        by aserp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w4G9ttM1088394
-        for <linux-btrfs@vger.kernel.org>; Wed, 16 May 2018 10:01:40 GMT
-Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
-        by aserp2120.oracle.com with ESMTP id 2hx29w446n-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 16 May 2018 10:01:39 +0000
-Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id w4GA1dQa024347
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 16 May 2018 10:01:39 GMT
-Received: from abhmp0001.oracle.com (abhmp0001.oracle.com [141.146.116.7])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w4GA1cdO029010
-        for <linux-btrfs@vger.kernel.org>; Wed, 16 May 2018 10:01:38 GMT
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 3/3] btrfs: read_mirror_policy ability to reset
-Date: Wed, 16 May 2018 18:03:59 +0800
-Message-Id: <20180516100359.7752-4-anand.jain@oracle.com>
-In-Reply-To: <20180516100359.7752-1-anand.jain@oracle.com>
-References: <20180516100359.7752-1-anand.jain@oracle.com>
+Received: from mx1.redhat.com ([209.132.183.28]:33002 "EHLO mx1.redhat.com"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1750846AbeEPOmS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 16 May 2018 10:42:18 -0400
+Subject: Re: [PATCH V3] test online label ioctl
+To: Dave Chinner <david@fromorbit.com>, Eric Sandeen <sandeen@sandeen.net>
+Cc: fstests <fstests@vger.kernel.org>, linux-xfs <linux-xfs@vger.kernel.org>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+References: <2a743318-585d-9eb1-5430-2b07246348ab@redhat.com>
+ <d65893a4-c6d8-1d85-4650-e63d04e8366a@sandeen.net>
+ <20180516005139.GI10363@dastard>
+From: Eric Sandeen <sandeen@redhat.com>
+Message-ID: <505eba27-476e-2bb7-9d72-11d64d31e6c3@redhat.com>
+Date: Wed, 16 May 2018 09:42:17 -0500
+MIME-Version: 1.0
+In-Reply-To: <20180516005139.GI10363@dastard>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Adds an ability to change the read_mirror_policy at remount.
+On 5/15/18 7:51 PM, Dave Chinner wrote:
+> On Tue, May 15, 2018 at 10:22:37AM -0500, Eric Sandeen wrote:
+>> This tests the online label ioctl that btrfs has, which has been
+>> recently proposed for XFS.
+>>
+>> To run, it requires an updated xfs_io with the label command and a
+>> filesystem that supports it
+>>
+>> A slight change here to _require_xfs_io_command as well, so that tests
+>> which simply fail with "Inappropriate ioctl" can be caught in the
+>> common case.
+>>
+>> Signed-off-by: Eric Sandeen<sandeen@redhat.com>
+>> ---
+>>
+>> (urgh send as proper new thread, sorry)
+>>
+>> This passes on btrfs, _notruns on xfs/ext4 of yore, and passes
+>> on xfs w/ my online label patchset (as long as xfs_io has the new
+>> capability)
+>>
+>> V2: Add a max label length helper
+>>      Set the proper btrfs max label length o_O oops
+>>      Filter trailing whitespace from blkid output
+>>
+>> V3: lowercase local vars, simplify max label len function
+> Looks good now, but I wondered about one thing the test doesn't
+> cover: can you clear the label by setting it to a null string?
+> i.e you check max length bounds, but don't check empty string
+> behaviour...
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- fs/btrfs/super.c | 19 ++++++++++++++++---
- 1 file changed, 16 insertions(+), 3 deletions(-)
+hohum, yes.  I'll fix that, which will also require a change to xfs_io
+to be able to set a null string.
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 7ddecf4178a6..e70592036b95 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -856,6 +856,12 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
- 			intarg = 0;
- 			if (match_int(&args[0], &intarg) == 0) {
- 				struct btrfs_device *device;
-+				int clear = 0;
-+
-+				if (intarg < 0) {
-+					clear = 1;
-+					intarg = -intarg;
-+				}
- 
- 				device = btrfs_find_device(info, intarg,
- 							   NULL, NULL);
-@@ -866,10 +872,17 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
- 					ret = -EINVAL;
- 					goto out;
- 				}
--				info->read_mirror_policy =
-+
-+				if (clear) {
-+					info->read_mirror_policy = 0;
-+					clear_bit(BTRFS_DEV_STATE_READ_MIRROR,
-+						&device->dev_state);
-+				} else {
-+					info->read_mirror_policy =
- 						BTRFS_READ_MIRROR_BY_DEV;
--				set_bit(BTRFS_DEV_STATE_READ_MIRROR,
--					&device->dev_state);
-+					set_bit(BTRFS_DEV_STATE_READ_MIRROR,
-+						  &device->dev_state);
-+				}
- 				break;
- 			}
- 
--- 
-2.7.0
+Will send a V3 in a bit.
 
+-Eric

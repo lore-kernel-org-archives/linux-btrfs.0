@@ -1,9 +1,9 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([198.137.202.133]:58082 "EHLO
+Received: from bombadil.infradead.org ([198.137.202.133]:57896 "EHLO
         bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751389AbeEPFox (ORCPT
+        with ESMTP id S1752508AbeEPFop (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 16 May 2018 01:44:53 -0400
+        Wed, 16 May 2018 01:44:45 -0400
 From: Christoph Hellwig <hch@lst.de>
 To: Souptick Joarder <jrdr.linux@gmail.com>,
         Matthew Wilcox <willy@infradead.org>
@@ -14,98 +14,126 @@ Cc: linux-fsdevel@vger.kernel.org, linux-mm@kvack.org,
         linux-mtd@lists.infradead.org, dri-devel@lists.freedesktop.org,
         lustre-devel@lists.lustre.org, linux-arm-kernel@lists.infradead.org,
         linux-s390@vger.kernel.org
-Subject: [PATCH 10/14] vgem: separate errno from VM_FAULT_* values
-Date: Wed, 16 May 2018 07:43:44 +0200
-Message-Id: <20180516054348.15950-11-hch@lst.de>
+Subject: [PATCH 07/14] ext4: separate errno from VM_FAULT_* values
+Date: Wed, 16 May 2018 07:43:41 +0200
+Message-Id: <20180516054348.15950-8-hch@lst.de>
 In-Reply-To: <20180516054348.15950-1-hch@lst.de>
 References: <20180516054348.15950-1-hch@lst.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-And streamline the code in vgem_fault with early returns so that it is
-a little bit more readable.
-
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- drivers/gpu/drm/vgem/vgem_drv.c | 51 +++++++++++++++------------------
- 1 file changed, 23 insertions(+), 28 deletions(-)
+ fs/ext4/ext4.h  |  4 ++--
+ fs/ext4/inode.c | 30 +++++++++++++++---------------
+ 2 files changed, 17 insertions(+), 17 deletions(-)
 
-diff --git a/drivers/gpu/drm/vgem/vgem_drv.c b/drivers/gpu/drm/vgem/vgem_drv.c
-index 2524ff116f00..a261e0aab83a 100644
---- a/drivers/gpu/drm/vgem/vgem_drv.c
-+++ b/drivers/gpu/drm/vgem/vgem_drv.c
-@@ -61,12 +61,13 @@ static void vgem_gem_free_object(struct drm_gem_object *obj)
- 	kfree(vgem_obj);
+diff --git a/fs/ext4/ext4.h b/fs/ext4/ext4.h
+index fa52b7dd4542..48592d0edf3e 100644
+--- a/fs/ext4/ext4.h
++++ b/fs/ext4/ext4.h
+@@ -2463,8 +2463,8 @@ extern int ext4_writepage_trans_blocks(struct inode *);
+ extern int ext4_chunk_trans_blocks(struct inode *, int nrblocks);
+ extern int ext4_zero_partial_blocks(handle_t *handle, struct inode *inode,
+ 			     loff_t lstart, loff_t lend);
+-extern int ext4_page_mkwrite(struct vm_fault *vmf);
+-extern int ext4_filemap_fault(struct vm_fault *vmf);
++extern vm_fault_t ext4_page_mkwrite(struct vm_fault *vmf);
++extern vm_fault_t ext4_filemap_fault(struct vm_fault *vmf);
+ extern qsize_t *ext4_get_reserved_space(struct inode *inode);
+ extern int ext4_get_projid(struct inode *inode, kprojid_t *projid);
+ extern void ext4_da_update_reserve_space(struct inode *inode,
+diff --git a/fs/ext4/inode.c b/fs/ext4/inode.c
+index 95bc48f5c88b..fe49045a2832 100644
+--- a/fs/ext4/inode.c
++++ b/fs/ext4/inode.c
+@@ -6106,27 +6106,27 @@ static int ext4_bh_unmapped(handle_t *handle, struct buffer_head *bh)
+ 	return !buffer_mapped(bh);
  }
  
--static int vgem_gem_fault(struct vm_fault *vmf)
-+static vm_fault_t vgem_gem_fault(struct vm_fault *vmf)
+-int ext4_page_mkwrite(struct vm_fault *vmf)
++vm_fault_t ext4_page_mkwrite(struct vm_fault *vmf)
  {
  	struct vm_area_struct *vma = vmf->vma;
- 	struct drm_vgem_gem_object *obj = vma->vm_private_data;
- 	/* We don't use vmf->pgoff since that has the fake offset */
- 	unsigned long vaddr = vmf->address;
-+	struct page *page;
- 	int ret;
- 	loff_t num_pages;
- 	pgoff_t page_offset;
-@@ -85,35 +86,29 @@ static int vgem_gem_fault(struct vm_fault *vmf)
- 		ret = 0;
- 	}
- 	mutex_unlock(&obj->pages_lock);
--	if (ret) {
--		struct page *page;
--
--		page = shmem_read_mapping_page(
--					file_inode(obj->base.filp)->i_mapping,
--					page_offset);
--		if (!IS_ERR(page)) {
--			vmf->page = page;
--			ret = 0;
--		} else switch (PTR_ERR(page)) {
--			case -ENOSPC:
--			case -ENOMEM:
--				ret = VM_FAULT_OOM;
--				break;
--			case -EBUSY:
--				ret = VM_FAULT_RETRY;
--				break;
--			case -EFAULT:
--			case -EINVAL:
--				ret = VM_FAULT_SIGBUS;
--				break;
--			default:
--				WARN_ON(PTR_ERR(page));
--				ret = VM_FAULT_SIGBUS;
--				break;
--		}
-+	if (!ret)
-+		return 0;
-+
-+	page = shmem_read_mapping_page(file_inode(obj->base.filp)->i_mapping,
-+			page_offset);
-+	if (!IS_ERR(page)) {
-+		vmf->page = page;
-+		return 0;
-+	}
+ 	struct page *page = vmf->page;
+ 	loff_t size;
+ 	unsigned long len;
+-	int ret;
++	vm_fault_t ret;
+ 	struct file *file = vma->vm_file;
+ 	struct inode *inode = file_inode(file);
+ 	struct address_space *mapping = inode->i_mapping;
+ 	handle_t *handle;
+ 	get_block_t *get_block;
+-	int retries = 0;
++	int retries = 0, err;
  
-+	switch (PTR_ERR(page)) {
-+	case -ENOSPC:
-+	case -ENOMEM:
-+		return VM_FAULT_OOM;
-+	case -EBUSY:
-+		return VM_FAULT_RETRY;
-+	case -EFAULT:
-+	case -EINVAL:
-+		return VM_FAULT_SIGBUS;
-+	default:
-+		WARN_ON(PTR_ERR(page));
-+		return VM_FAULT_SIGBUS;
+ 	sb_start_pagefault(inode->i_sb);
+ 	file_update_time(vma->vm_file);
+ 
+ 	down_read(&EXT4_I(inode)->i_mmap_sem);
+ 
+-	ret = ext4_convert_inline_data(inode);
+-	if (ret)
++	err = ext4_convert_inline_data(inode);
++	if (err)
+ 		goto out_ret;
+ 
+ 	/* Delalloc case is easy... */
+@@ -6134,9 +6134,9 @@ int ext4_page_mkwrite(struct vm_fault *vmf)
+ 	    !ext4_should_journal_data(inode) &&
+ 	    !ext4_nonda_switch(inode->i_sb)) {
+ 		do {
+-			ret = block_page_mkwrite(vma, vmf,
++			err = block_page_mkwrite(vma, vmf,
+ 						   ext4_da_get_block_prep);
+-		} while (ret == -ENOSPC &&
++		} while (err == -ENOSPC &&
+ 		       ext4_should_retry_alloc(inode->i_sb, &retries));
+ 		goto out_ret;
  	}
--	return ret;
+@@ -6181,8 +6181,8 @@ int ext4_page_mkwrite(struct vm_fault *vmf)
+ 		ret = VM_FAULT_SIGBUS;
+ 		goto out;
+ 	}
+-	ret = block_page_mkwrite(vma, vmf, get_block);
+-	if (!ret && ext4_should_journal_data(inode)) {
++	err = block_page_mkwrite(vma, vmf, get_block);
++	if (!err && ext4_should_journal_data(inode)) {
+ 		if (ext4_walk_page_buffers(handle, page_buffers(page), 0,
+ 			  PAGE_SIZE, NULL, do_journal_get_write_access)) {
+ 			unlock_page(page);
+@@ -6193,24 +6193,24 @@ int ext4_page_mkwrite(struct vm_fault *vmf)
+ 		ext4_set_inode_state(inode, EXT4_STATE_JDATA);
+ 	}
+ 	ext4_journal_stop(handle);
+-	if (ret == -ENOSPC && ext4_should_retry_alloc(inode->i_sb, &retries))
++	if (err == -ENOSPC && ext4_should_retry_alloc(inode->i_sb, &retries))
+ 		goto retry_alloc;
+ out_ret:
+-	ret = block_page_mkwrite_return(ret);
++	ret = block_page_mkwrite_return(err);
+ out:
+ 	up_read(&EXT4_I(inode)->i_mmap_sem);
+ 	sb_end_pagefault(inode->i_sb);
+ 	return ret;
  }
  
- static const struct vm_operations_struct vgem_gem_vm_ops = {
+-int ext4_filemap_fault(struct vm_fault *vmf)
++vm_fault_t ext4_filemap_fault(struct vm_fault *vmf)
+ {
+ 	struct inode *inode = file_inode(vmf->vma->vm_file);
+-	int err;
++	vm_fault_t ret;
+ 
+ 	down_read(&EXT4_I(inode)->i_mmap_sem);
+-	err = filemap_fault(vmf);
++	ret = filemap_fault(vmf);
+ 	up_read(&EXT4_I(inode)->i_mmap_sem);
+ 
+-	return err;
++	return ret;
+ }
 -- 
 2.17.0
 

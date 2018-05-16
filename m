@@ -1,18 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:58616 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:59930 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751859AbeEPGnN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 16 May 2018 02:43:13 -0400
-Subject: Re: [PATCH 2/6] Btrfs: use more straightforward
- extent_buffer_uptodate
+        id S1752351AbeEPGru (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 16 May 2018 02:47:50 -0400
+Subject: Re: [PATCH 6/6] Btrfs: remove always true check in unlock_up
 To: Liu Bo <bo.liu@linux.alibaba.com>, linux-btrfs@vger.kernel.org
 References: <1526406728-109055-1-git-send-email-bo.liu@linux.alibaba.com>
- <1526406728-109055-3-git-send-email-bo.liu@linux.alibaba.com>
+ <1526406728-109055-7-git-send-email-bo.liu@linux.alibaba.com>
 From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <cd21247d-06b9-6154-c151-be37e0d9a1da@suse.com>
-Date: Wed, 16 May 2018 09:43:10 +0300
+Message-ID: <a9d10243-012b-a517-3fe9-1821a096cad7@suse.com>
+Date: Wed, 16 May 2018 09:47:47 +0300
 MIME-Version: 1.0
-In-Reply-To: <1526406728-109055-3-git-send-email-bo.liu@linux.alibaba.com>
+In-Reply-To: <1526406728-109055-7-git-send-email-bo.liu@linux.alibaba.com>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -20,34 +19,36 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 
 On 15.05.2018 20:52, Liu Bo wrote:
-> In read_block_for_search(), it's straightforward to use
-> extent_buffer_uptodate() instead since 0 is passed as parent transid to
+> @path->lock[i] is always true at this point.
 
-"instead of the more heavyweight btrfs_buffer_update"
+You must explain why it's true. The reason is since at the beginning of
+the for loop the check is performed :
 
-> btrfs_buffer_uptodate(), which means the check for parent transid is not
-> needed.
-> 
-> Signed-off-by: Liu Bo <bo.liu@linux.alibaba.com>
+   if (!path->locks[i])
+      break;
 
-Codewise LGTM:
+
+Codewise it's ok:
 
 Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+
+> 
+> Signed-off-by: Liu Bo <bo.liu@linux.alibaba.com>
 > ---
 >  fs/btrfs/ctree.c | 2 +-
 >  1 file changed, 1 insertion(+), 1 deletion(-)
 > 
 > diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-> index 9fa3d77c98d4..a96d308c51b8 100644
+> index f7c3f581f647..16d28a4ec54f 100644
 > --- a/fs/btrfs/ctree.c
 > +++ b/fs/btrfs/ctree.c
-> @@ -2445,7 +2445,7 @@ noinline void btrfs_unlock_up_safe(struct btrfs_path *path, int level)
->  		 * and give up so that our caller doesn't loop forever
->  		 * on our EAGAINs.
->  		 */
-> -		if (!btrfs_buffer_uptodate(tmp, 0, 0))
-> +		if (!extent_buffer_uptodate(tmp))
->  			ret = -EIO;
->  		free_extent_buffer(tmp);
->  	} else {
+> @@ -2330,7 +2330,7 @@ static noinline void unlock_up(struct btrfs_path *path, int level,
+>  			no_skips = 1;
+>  
+>  		t = path->nodes[i];
+> -		if (i >= lowest_unlock && i > skip_level && path->locks[i]) {
+> +		if (i >= lowest_unlock && i > skip_level) {
+>  			btrfs_tree_unlock_rw(t, path->locks[i]);
+>  			path->locks[i] = 0;
+>  			if (write_lock_level &&
 > 

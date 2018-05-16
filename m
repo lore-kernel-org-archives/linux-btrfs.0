@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:59930 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:60555 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752351AbeEPGru (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 16 May 2018 02:47:50 -0400
-Subject: Re: [PATCH 6/6] Btrfs: remove always true check in unlock_up
+        id S1750810AbeEPGzB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 16 May 2018 02:55:01 -0400
+Subject: Re: [PATCH 3/6] Btrfs: move get root of btrfs_search_slot to a helper
 To: Liu Bo <bo.liu@linux.alibaba.com>, linux-btrfs@vger.kernel.org
 References: <1526406728-109055-1-git-send-email-bo.liu@linux.alibaba.com>
- <1526406728-109055-7-git-send-email-bo.liu@linux.alibaba.com>
+ <1526406728-109055-4-git-send-email-bo.liu@linux.alibaba.com>
 From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <a9d10243-012b-a517-3fe9-1821a096cad7@suse.com>
-Date: Wed, 16 May 2018 09:47:47 +0300
+Message-ID: <aef6bb75-af61-3f74-3059-d7900bed1e28@suse.com>
+Date: Wed, 16 May 2018 09:54:58 +0300
 MIME-Version: 1.0
-In-Reply-To: <1526406728-109055-7-git-send-email-bo.liu@linux.alibaba.com>
+In-Reply-To: <1526406728-109055-4-git-send-email-bo.liu@linux.alibaba.com>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -19,36 +19,165 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 
 On 15.05.2018 20:52, Liu Bo wrote:
-> @path->lock[i] is always true at this point.
+> It's good to have a helper instead of having all get-root details
+> open-coded.
+> 
+> The new helper locks (if necessary) and sets root node of the path.
+> 
+> There is no functional change in this commit.
+> 
+> Signed-off-by: Liu Bo <bo.liu@linux.alibaba.com>
 
-You must explain why it's true. The reason is since at the beginning of
-the for loop the check is performed :
+Codewise it looks ok, you've inverted the conditional so as to give a
+more linear flow of the code. I've checked all the various branches and
+they seem semantically identical to the open coded version. One minor
+nit is that I don't think this is the most suitable name for this
+function but I don't really have a better suggestions which would be
+more specific.
 
-   if (!path->locks[i])
-      break;
-
-
-Codewise it's ok:
+For the code (the changelog should be more explicit):
 
 Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 
-> 
-> Signed-off-by: Liu Bo <bo.liu@linux.alibaba.com>
 > ---
->  fs/btrfs/ctree.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
+>  fs/btrfs/ctree.c | 112 +++++++++++++++++++++++++++++++++----------------------
+>  1 file changed, 67 insertions(+), 45 deletions(-)
 > 
 > diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-> index f7c3f581f647..16d28a4ec54f 100644
+> index a96d308c51b8..399839df7a8f 100644
 > --- a/fs/btrfs/ctree.c
 > +++ b/fs/btrfs/ctree.c
-> @@ -2330,7 +2330,7 @@ static noinline void unlock_up(struct btrfs_path *path, int level,
->  			no_skips = 1;
+> @@ -2598,6 +2598,72 @@ int btrfs_find_item(struct btrfs_root *fs_root, struct btrfs_path *path,
+>  	return 0;
+>  }
 >  
->  		t = path->nodes[i];
-> -		if (i >= lowest_unlock && i > skip_level && path->locks[i]) {
-> +		if (i >= lowest_unlock && i > skip_level) {
->  			btrfs_tree_unlock_rw(t, path->locks[i]);
->  			path->locks[i] = 0;
->  			if (write_lock_level &&
+> +static struct extent_buffer *btrfs_search_slot_get_root(struct btrfs_root *root,
+> +							struct btrfs_path *p,
+> +							int write_lock_level)
+> +{
+> +	struct btrfs_fs_info *fs_info = root->fs_info;
+> +	struct extent_buffer *b;
+> +	int root_lock;
+> +	int level = 0;
+> +
+> +	/*
+> +	 * we try very hard to do read locks on the root
+> +	 */
+> +	root_lock = BTRFS_READ_LOCK;
+> +
+> +	if (p->search_commit_root) {
+> +		/*
+> +		 * the commit roots are read only so we always do read locks
+> +		 */
+> +		if (p->need_commit_sem)
+> +			down_read(&fs_info->commit_root_sem);
+> +		b = root->commit_root;
+> +		extent_buffer_get(b);
+> +		level = btrfs_header_level(b);
+> +		if (p->need_commit_sem)
+> +			up_read(&fs_info->commit_root_sem);
+> +		if (!p->skip_locking)
+> +			btrfs_tree_read_lock(b);
+> +
+> +		goto out;
+> +	}
+> +
+> +	if (p->skip_locking) {
+> +		b = btrfs_root_node(root);
+> +		level = btrfs_header_level(b);
+> +		goto out;
+> +	}
+> +
+> +	/*
+> +	 * we don't know the level of the root node until we actually
+> +	 * have it read locked
+> +	 */
+> +	b = btrfs_read_lock_root_node(root);
+> +	level = btrfs_header_level(b);
+> +	if (level > write_lock_level)
+> +		goto out;
+> +
+> +	/*
+> +	 * whoops, must trade for write lock
+> +	 */
+> +	btrfs_tree_read_unlock(b);
+> +	free_extent_buffer(b);
+> +	b = btrfs_lock_root_node(root);
+> +	root_lock = BTRFS_WRITE_LOCK;
+> +	/*
+> +	 * the level might have changed, check again
+> +	 */
+> +	level = btrfs_header_level(b);
+> +
+> +out:
+> +	p->nodes[level] = b;
+> +	if (!p->skip_locking)
+> +		p->locks[level] = root_lock;
+> +	return b;
+> +}
+> +
+> +
+>  /*
+>   * btrfs_search_slot - look for a key in a tree and perform necessary
+>   * modifications to preserve tree invariants.
+> @@ -2634,7 +2700,6 @@ int btrfs_search_slot(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+>  	int err;
+>  	int level;
+>  	int lowest_unlock = 1;
+> -	int root_lock;
+>  	/* everything at write_lock_level or lower must be write locked */
+>  	int write_lock_level = 0;
+>  	u8 lowest_level = 0;
+> @@ -2672,50 +2737,7 @@ int btrfs_search_slot(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+>  
+>  again:
+>  	prev_cmp = -1;
+> -	/*
+> -	 * we try very hard to do read locks on the root
+> -	 */
+> -	root_lock = BTRFS_READ_LOCK;
+> -	level = 0;
+> -	if (p->search_commit_root) {
+> -		/*
+> -		 * the commit roots are read only
+> -		 * so we always do read locks
+> -		 */
+> -		if (p->need_commit_sem)
+> -			down_read(&fs_info->commit_root_sem);
+> -		b = root->commit_root;
+> -		extent_buffer_get(b);
+> -		level = btrfs_header_level(b);
+> -		if (p->need_commit_sem)
+> -			up_read(&fs_info->commit_root_sem);
+> -		if (!p->skip_locking)
+> -			btrfs_tree_read_lock(b);
+> -	} else {
+> -		if (p->skip_locking) {
+> -			b = btrfs_root_node(root);
+> -			level = btrfs_header_level(b);
+> -		} else {
+> -			/* we don't know the level of the root node
+> -			 * until we actually have it read locked
+> -			 */
+> -			b = btrfs_read_lock_root_node(root);
+> -			level = btrfs_header_level(b);
+> -			if (level <= write_lock_level) {
+> -				/* whoops, must trade for write lock */
+> -				btrfs_tree_read_unlock(b);
+> -				free_extent_buffer(b);
+> -				b = btrfs_lock_root_node(root);
+> -				root_lock = BTRFS_WRITE_LOCK;
+> -
+> -				/* the level might have changed, check again */
+> -				level = btrfs_header_level(b);
+> -			}
+> -		}
+> -	}
+> -	p->nodes[level] = b;
+> -	if (!p->skip_locking)
+> -		p->locks[level] = root_lock;
+> +	b = btrfs_search_slot_get_root(root, p, write_lock_level);
+>  
+>  	while (b) {
+>  		level = btrfs_header_level(b);
 > 

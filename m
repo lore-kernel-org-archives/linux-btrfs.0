@@ -1,50 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:44984 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753689AbeEOSVh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 15 May 2018 14:21:37 -0400
-Date: Tue, 15 May 2018 20:18:56 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Timofey Titovets <nefelim4ag@gmail.com>
-Cc: David Sterba <dsterba@suse.cz>, wqu@suse.com,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] btrfs: inode: Don't compress if NODATASUM or NODATACOW
- set
-Message-ID: <20180515181856.GY6649@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20180514070210.27047-1-wqu@suse.com>
- <20180514165205.GP6649@twin.jikos.cz>
- <CAGqmi75S-ceHKpG0fsocFnQfgBbbP7W=FrNHgwjcXJMn3SDWsQ@mail.gmail.com>
+Received: from ipmail06.adl6.internode.on.net ([150.101.137.145]:52019 "EHLO
+        ipmail06.adl6.internode.on.net" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1751402AbeEPAvm (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 15 May 2018 20:51:42 -0400
+Date: Wed, 16 May 2018 10:51:39 +1000
+From: Dave Chinner <david@fromorbit.com>
+To: Eric Sandeen <sandeen@sandeen.net>
+Cc: Eric Sandeen <sandeen@redhat.com>, fstests <fstests@vger.kernel.org>,
+        linux-xfs <linux-xfs@vger.kernel.org>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH V3] test online label ioctl
+Message-ID: <20180516005139.GI10363@dastard>
+References: <2a743318-585d-9eb1-5430-2b07246348ab@redhat.com>
+ <d65893a4-c6d8-1d85-4650-e63d04e8366a@sandeen.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAGqmi75S-ceHKpG0fsocFnQfgBbbP7W=FrNHgwjcXJMn3SDWsQ@mail.gmail.com>
+In-Reply-To: <d65893a4-c6d8-1d85-4650-e63d04e8366a@sandeen.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, May 14, 2018 at 11:46:09PM +0300, Timofey Titovets wrote:
-> > > @@ -396,6 +396,14 @@ static inline int inode_need_compress(struct inode
-> *inode, u64 start, u64 end)
-> > >  {
-> > >       struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
-> > >
-> > > +     /*
-> > > +      * Btrfs doesn't support compression without csum or CoW.
-> > > +      * This should have the highest priority.
-> > > +      */
-> > > +     if (BTRFS_I(inode)->flags & BTRFS_INODE_NODATACOW ||
-> > > +         BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM)
-> > > +             return 0;
+On Tue, May 15, 2018 at 10:22:37AM -0500, Eric Sandeen wrote:
+> This tests the online label ioctl that btrfs has, which has been
+> recently proposed for XFS.
 > 
-> > This is also the wrong place to fix that, NODATASUM or NODATACOW inode
-> > should never make it to compress_file_range (that calls
-> > inode_need_compress).
+> To run, it requires an updated xfs_io with the label command and a
+> filesystem that supports it
 > 
+> A slight change here to _require_xfs_io_command as well, so that tests
+> which simply fail with "Inappropriate ioctl" can be caught in the
+> common case.
 > 
-> David, i've talk about that some time ago:
-> https://www.spinics.net/lists/linux-btrfs/msg73137.html
+> Signed-off-by: Eric Sandeen <sandeen@redhat.com>
+> ---
 > 
-> NoCow files can be *easy* compressed.
+> (urgh send as proper new thread, sorry)
+> 
+> This passes on btrfs, _notruns on xfs/ext4 of yore, and passes
+> on xfs w/ my online label patchset (as long as xfs_io has the new
+> capability)
+> 
+> V2: Add a max label length helper
+>     Set the proper btrfs max label length o_O oops
+>     Filter trailing whitespace from blkid output
+> 
+> V3: lowercase local vars, simplify max label len function
 
-I missed your previous mail, the issue with compression and nocow/nosum
-is there. Seems like some of the combinations are not properly handled
-when it's mount option vs defrag.
+Looks good now, but I wondered about one thing the test doesn't
+cover: can you clear the label by setting it to a null string?
+i.e you check max length bounds, but don't check empty string
+behaviour...
+
+Cheers,
+
+Dave.
+-- 
+Dave Chinner
+david@fromorbit.com

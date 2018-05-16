@@ -1,10 +1,10 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([198.137.202.133]:43872 "EHLO
+Received: from bombadil.infradead.org ([198.137.202.133]:34178 "EHLO
         bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752774AbeEPNNH (ORCPT
+        with ESMTP id S1751510AbeEPNW6 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 16 May 2018 09:13:07 -0400
-Date: Wed, 16 May 2018 06:13:04 -0700
+        Wed, 16 May 2018 09:22:58 -0400
+Date: Wed, 16 May 2018 06:22:56 -0700
 From: Matthew Wilcox <willy@infradead.org>
 To: Christoph Hellwig <hch@lst.de>
 Cc: Souptick Joarder <jrdr.linux@gmail.com>, linux-fsdevel@vger.kernel.org,
@@ -14,26 +14,35 @@ Cc: Souptick Joarder <jrdr.linux@gmail.com>, linux-fsdevel@vger.kernel.org,
         ocfs2-devel@oss.oracle.com, linux-mtd@lists.infradead.org,
         dri-devel@lists.freedesktop.org, lustre-devel@lists.lustre.org,
         linux-arm-kernel@lists.infradead.org, linux-s390@vger.kernel.org
-Subject: Re: [PATCH 10/14] vgem: separate errno from VM_FAULT_* values
-Message-ID: <20180516131304.GF20670@bombadil.infradead.org>
+Subject: Re: vm_fault_t conversion, for real
+Message-ID: <20180516132256.GG20670@bombadil.infradead.org>
 References: <20180516054348.15950-1-hch@lst.de>
- <20180516054348.15950-11-hch@lst.de>
- <20180516095303.GH3438@phenom.ffwll.local>
- <20180516130159.GA32454@lst.de>
+ <20180516112347.GB20670@bombadil.infradead.org>
+ <20180516130309.GB32454@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180516130159.GA32454@lst.de>
+In-Reply-To: <20180516130309.GB32454@lst.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, May 16, 2018 at 03:01:59PM +0200, Christoph Hellwig wrote:
-> On Wed, May 16, 2018 at 11:53:03AM +0200, Daniel Vetter wrote:
-> > Reviewed-by: Daniel Vetter <daniel.vetter@ffwll.ch>
+On Wed, May 16, 2018 at 03:03:09PM +0200, Christoph Hellwig wrote:
+> On Wed, May 16, 2018 at 04:23:47AM -0700, Matthew Wilcox wrote:
+> > On Wed, May 16, 2018 at 07:43:34AM +0200, Christoph Hellwig wrote:
+> > > this series tries to actually turn vm_fault_t into a type that can be
+> > > typechecked and checks the fallout instead of sprinkling random
+> > > annotations without context.
 > > 
-> > Want me to merge this through drm-misc or plan to pick it up yourself?
+> > Yes, why should we have small tasks that newcomers can do when the mighty
+> > Christoph Hellwig can swoop in and take over from them?  Seriously,
+> > can't your talents find a better use than this?
 > 
-> For now I just want a honest discussion if people really actually
-> want the vm_fault_t change with the whole picture in place.
+> I've spent less time on this than trying to argue to you and Souptick
+> that these changes are only to get ignored and yelled at as an
+> "asshole maintainer".  So yes, I could have done more productive things
+> if you hadn't forced this escalation.
 
-That discussion already happened on the -mm mailing list.  And again
-at LSFMM.  Both times the answer was yes.
+Perhaps you should try being less of an arsehole if you don't want to
+get yelled at?  I don't mind when you're an arsehole towards me, but I
+do mind when you're an arsehole towards newcomers.  How are we supposed
+to attract and retain new maintainers when you're so rude?
+

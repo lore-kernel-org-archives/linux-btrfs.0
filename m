@@ -1,29 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:45915 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:52635 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1754304AbeEaMFz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 31 May 2018 08:05:55 -0400
-Received: from relay1.suse.de (charybdis-ext-too.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 77840ACBF
-        for <linux-btrfs@vger.kernel.org>; Thu, 31 May 2018 12:05:54 +0000 (UTC)
-Date: Thu, 31 May 2018 14:03:10 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 0/1] btrfs-progs: dump-tree: allow -b multiple times
-Message-ID: <20180531120310.GT3539@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20180406061202.6529-1-wqu@suse.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180406061202.6529-1-wqu@suse.com>
+        id S1751013AbeEPVjD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 16 May 2018 17:39:03 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id C7A48ADA7
+        for <linux-btrfs@vger.kernel.org>; Wed, 16 May 2018 21:39:01 +0000 (UTC)
+From: jeffm@suse.com
+To: linux-btrfs@vger.kernel.org
+Cc: Jeff Mahoney <jeffm@suse.com>
+Subject: [PATCH 02/18] btrfs-progs: qgroups: fix misleading index check
+Date: Wed, 16 May 2018 17:38:35 -0400
+Message-Id: <20180516213851.10196-3-jeffm@suse.com>
+In-Reply-To: <20180516213851.10196-1-jeffm@suse.com>
+References: <20180516213851.10196-1-jeffm@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Apr 06, 2018 at 02:12:01PM +0800, Qu Wenruo wrote:
-> Although just one patch, it needs the extent buffer cleanup code as
-> basis, so please fetch it from my github repo:
-> https://github.com/adam900710/btrfs-progs/tree/dump_tree_multi_blocks
+From: Jeff Mahoney <jeffm@suse.com>
 
-Could you please refresh the patch on a recent devel? The branches have
-diverged too much over time, sorry.
+In print_single_qgroup_table we check the loop index against
+BTRFS_QGROUP_CHILD, but what we really mean is "last column."  Since
+we have an enum value to indicate the last value, use that instead
+of assuming that BTRFS_QGROUP_CHILD is always last.
+
+Reviewed-by: Qu Wenruo <wqu@suse.com>
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+---
+ qgroup.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/qgroup.c b/qgroup.c
+index 267cd7f1..3269feb2 100644
+--- a/qgroup.c
++++ b/qgroup.c
+@@ -267,7 +267,7 @@ static void print_single_qgroup_table(struct btrfs_qgroup *qgroup)
+ 			continue;
+ 		print_qgroup_column(qgroup, i);
+ 
+-		if (i != BTRFS_QGROUP_CHILD)
++		if (i != BTRFS_QGROUP_ALL - 1)
+ 			printf(" ");
+ 	}
+ 	printf("\n");
+-- 
+2.15.1
+

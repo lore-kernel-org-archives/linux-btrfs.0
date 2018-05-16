@@ -1,9 +1,9 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([198.137.202.133]:56520 "EHLO
+Received: from bombadil.infradead.org ([198.137.202.133]:56460 "EHLO
         bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751213AbeEPFoA (ORCPT
+        with ESMTP id S1751213AbeEPFny (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 16 May 2018 01:44:00 -0400
+        Wed, 16 May 2018 01:43:54 -0400
 From: Christoph Hellwig <hch@lst.de>
 To: Souptick Joarder <jrdr.linux@gmail.com>,
         Matthew Wilcox <willy@infradead.org>
@@ -14,46 +14,32 @@ Cc: linux-fsdevel@vger.kernel.org, linux-mm@kvack.org,
         linux-mtd@lists.infradead.org, dri-devel@lists.freedesktop.org,
         lustre-devel@lists.lustre.org, linux-arm-kernel@lists.infradead.org,
         linux-s390@vger.kernel.org
-Subject: [PATCH 01/14] orangefs: don't return errno values from ->fault
-Date: Wed, 16 May 2018 07:43:35 +0200
-Message-Id: <20180516054348.15950-2-hch@lst.de>
-In-Reply-To: <20180516054348.15950-1-hch@lst.de>
-References: <20180516054348.15950-1-hch@lst.de>
+Subject: vm_fault_t conversion, for real
+Date: Wed, 16 May 2018 07:43:34 +0200
+Message-Id: <20180516054348.15950-1-hch@lst.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
----
- fs/orangefs/file.c | 10 ++++------
- 1 file changed, 4 insertions(+), 6 deletions(-)
+Hi all,
 
-diff --git a/fs/orangefs/file.c b/fs/orangefs/file.c
-index 26358efbf794..b4a25cd4f3fa 100644
---- a/fs/orangefs/file.c
-+++ b/fs/orangefs/file.c
-@@ -528,18 +528,16 @@ static long orangefs_ioctl(struct file *file, unsigned int cmd, unsigned long ar
- 	return ret;
- }
- 
--static int orangefs_fault(struct vm_fault *vmf)
-+static vm_fault_t orangefs_fault(struct vm_fault *vmf)
- {
- 	struct file *file = vmf->vma->vm_file;
- 	int rc;
--	rc = orangefs_inode_getattr(file->f_mapping->host, 0, 1,
--	    STATX_SIZE);
--	if (rc == -ESTALE)
--		rc = -EIO;
-+
-+	rc = orangefs_inode_getattr(file->f_mapping->host, 0, 1, STATX_SIZE);
- 	if (rc) {
- 		gossip_err("%s: orangefs_inode_getattr failed, "
- 		    "rc:%d:.\n", __func__, rc);
--		return rc;
-+		return VM_FAULT_SIGBUS;
- 	}
- 	return filemap_fault(vmf);
- }
--- 
-2.17.0
+this series tries to actually turn vm_fault_t into a type that can be
+typechecked and checks the fallout instead of sprinkling random
+annotations without context.
 
+The first one fixes a real bug in orangefs, the second and third fix
+mismatched existing vm_fault_t annotations on the same function, the
+fourth removes an unused export that was in the chain.  The remainder
+until the last one do some not quite trivial conversions, and the last
+one does the trivial mass annotation and flips vm_fault_t to a __bitwise
+unsigned int - the unsigned means we also get plain compiler type
+checking for the new ->fault signature even without sparse.
+
+This has survived an x86 allyesconfig build, and got a SUCCESS from the
+buildbot that I don't really trust - I'm pretty sure there are bits
+and pieces hiding in other architectures that it hasn't caught up to.
+
+The sparse annotations are manuall verified for the core MM code and
+a few other interesting bits (e.g. DAX and the x86 fault code)
+
+The series is against linux-next as of 2018/05/15 to make sure any
+annotations in subsystem trees are picked up.

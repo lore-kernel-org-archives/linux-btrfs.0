@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:52679 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:52681 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751474AbeEPVjF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 16 May 2018 17:39:05 -0400
+        id S1751481AbeEPVjG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 16 May 2018 17:39:06 -0400
 Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 13E7CAF5E
-        for <linux-btrfs@vger.kernel.org>; Wed, 16 May 2018 21:39:03 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 0ED17AED2
+        for <linux-btrfs@vger.kernel.org>; Wed, 16 May 2018 21:39:04 +0000 (UTC)
 From: jeffm@suse.com
 To: linux-btrfs@vger.kernel.org
 Cc: Jeff Mahoney <jeffm@suse.com>
-Subject: [PATCH 14/18] btrfs-progs: pass cmd_struct to clean_args_no_options{,_relaxed}
-Date: Wed, 16 May 2018 17:38:47 -0400
-Message-Id: <20180516213851.10196-15-jeffm@suse.com>
+Subject: [PATCH 15/18] btrfs-progs: pass cmd_struct to usage()
+Date: Wed, 16 May 2018 17:38:48 -0400
+Message-Id: <20180516213851.10196-16-jeffm@suse.com>
 In-Reply-To: <20180516213851.10196-1-jeffm@suse.com>
 References: <20180516213851.10196-1-jeffm@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -19,407 +19,1046 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Jeff Mahoney <jeffm@suse.com>
 
-Now that we have a cmd_struct everywhere, we can pass it to
-clean_args_no_options and have it resolve the usage string from
-it there.  This is necessary for it to pass the cmd_struct to
-usage() in the next patch.
+Now that every call site has a cmd_struct, we can just pass the cmd_struct
+to usage to print the usager information.  This allows us to interpret
+the format flags we'll add later in this series to inform the user of
+which output formats any given command supports.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- cmds-balance.c    |  6 +++---
- cmds-device.c     |  9 +++++----
- cmds-filesystem.c |  8 ++++----
- cmds-inspect.c    |  4 ++--
- cmds-qgroup.c     | 16 ++++++++--------
- cmds-quota.c      |  4 ++--
- cmds-rescue.c     |  4 ++--
- cmds-scrub.c      | 15 ++++++++-------
- cmds-subvolume.c  |  6 +++---
- help.c            |  9 +++++----
- help.h            |  6 ++++--
- 11 files changed, 46 insertions(+), 41 deletions(-)
+ check/main.c              |  4 ++--
+ cmds-balance.c            | 14 +++++++-------
+ cmds-device.c             | 19 +++++++++----------
+ cmds-fi-du.c              |  4 ++--
+ cmds-fi-usage.c           |  4 ++--
+ cmds-filesystem.c         | 18 +++++++++---------
+ cmds-inspect-dump-super.c |  4 ++--
+ cmds-inspect-dump-tree.c  |  4 ++--
+ cmds-inspect-tree-stats.c |  4 ++--
+ cmds-inspect.c            | 16 ++++++++--------
+ cmds-property.c           | 22 +++++++++-------------
+ cmds-qgroup.c             | 18 +++++++++---------
+ cmds-quota.c              |  8 ++++----
+ cmds-receive.c            |  4 ++--
+ cmds-replace.c            | 12 ++++++------
+ cmds-rescue.c             | 12 ++++++------
+ cmds-restore.c            |  8 ++++----
+ cmds-scrub.c              | 25 ++++++++++---------------
+ cmds-send.c               |  2 +-
+ cmds-subvolume.c          | 30 +++++++++++++++---------------
+ help.c                    |  6 +++---
+ help.h                    |  2 +-
+ 22 files changed, 115 insertions(+), 125 deletions(-)
 
+diff --git a/check/main.c b/check/main.c
+index 0375eec3..49ccdf2f 100644
+--- a/check/main.c
++++ b/check/main.c
+@@ -9483,7 +9483,7 @@ static int cmd_check(const struct cmd_struct *cmd, int argc, char **argv)
+ 				break;
+ 			case '?':
+ 			case 'h':
+-				usage(cmd_check_usage);
++				usage(cmd);
+ 			case GETOPT_VAL_REPAIR:
+ 				printf("enabling repair mode\n");
+ 				repair = 1;
+@@ -9534,7 +9534,7 @@ static int cmd_check(const struct cmd_struct *cmd, int argc, char **argv)
+ 	}
+ 
+ 	if (check_argc_exact(argc - optind, 1))
+-		usage(cmd_check_usage);
++		usage(cmd);
+ 
+ 	if (ctx.progress_enabled) {
+ 		ctx.tp = TASK_NOTHING;
 diff --git a/cmds-balance.c b/cmds-balance.c
-index 1bd7b3ce..488fffcc 100644
+index 488fffcc..c639459f 100644
 --- a/cmds-balance.c
 +++ b/cmds-balance.c
-@@ -689,7 +689,7 @@ static int cmd_balance_pause(const struct cmd_struct *cmd,
- 	int ret;
- 	DIR *dirstream = NULL;
- 
--	clean_args_no_options(argc, argv, cmd_balance_pause_usage);
-+	clean_args_no_options(cmd, argc, argv);
- 
- 	if (check_argc_exact(argc - optind, 1))
- 		usage(cmd_balance_pause_usage);
-@@ -729,7 +729,7 @@ static int cmd_balance_cancel(const struct cmd_struct *cmd,
- 	int ret;
- 	DIR *dirstream = NULL;
- 
--	clean_args_no_options(argc, argv, cmd_balance_cancel_usage);
-+	clean_args_no_options(cmd, argc, argv);
+@@ -585,12 +585,12 @@ static int cmd_balance_start(const struct cmd_struct *cmd,
+ 			background = 1;
+ 			break;
+ 		default:
+-			usage(cmd_balance_start_usage);
++			usage(cmd);
+ 		}
+ 	}
  
  	if (check_argc_exact(argc - optind, 1))
- 		usage(cmd_balance_cancel_usage);
-@@ -770,7 +770,7 @@ static int cmd_balance_resume(const struct cmd_struct *cmd,
- 	int fd;
- 	int ret;
+-		usage(cmd_balance_start_usage);
++		usage(cmd);
  
--	clean_args_no_options(argc, argv, cmd_balance_resume_usage);
-+	clean_args_no_options(cmd, argc, argv);
+ 	/*
+ 	 * allow -s only under --force, otherwise do with system chunks
+@@ -692,7 +692,7 @@ static int cmd_balance_pause(const struct cmd_struct *cmd,
+ 	clean_args_no_options(cmd, argc, argv);
  
  	if (check_argc_exact(argc - optind, 1))
- 		usage(cmd_balance_resume_usage);
+-		usage(cmd_balance_pause_usage);
++		usage(cmd);
+ 
+ 	path = argv[optind];
+ 
+@@ -732,7 +732,7 @@ static int cmd_balance_cancel(const struct cmd_struct *cmd,
+ 	clean_args_no_options(cmd, argc, argv);
+ 
+ 	if (check_argc_exact(argc - optind, 1))
+-		usage(cmd_balance_cancel_usage);
++		usage(cmd);
+ 
+ 	path = argv[optind];
+ 
+@@ -773,7 +773,7 @@ static int cmd_balance_resume(const struct cmd_struct *cmd,
+ 	clean_args_no_options(cmd, argc, argv);
+ 
+ 	if (check_argc_exact(argc - optind, 1))
+-		usage(cmd_balance_resume_usage);
++		usage(cmd);
+ 
+ 	path = argv[optind];
+ 
+@@ -856,12 +856,12 @@ static int cmd_balance_status(const struct cmd_struct *cmd,
+ 			verbose = 1;
+ 			break;
+ 		default:
+-			usage(cmd_balance_status_usage);
++			usage(cmd);
+ 		}
+ 	}
+ 
+ 	if (check_argc_exact(argc - optind, 1))
+-		usage(cmd_balance_status_usage);
++		usage(cmd);
+ 
+ 	path = argv[optind];
+ 
 diff --git a/cmds-device.c b/cmds-device.c
-index feb53f68..5be748f7 100644
+index 5be748f7..6c74ca8e 100644
 --- a/cmds-device.c
 +++ b/cmds-device.c
-@@ -149,11 +149,12 @@ static int _cmd_device_remove(const struct cmd_struct *cmd,
+@@ -77,12 +77,12 @@ static int cmd_device_add(const struct cmd_struct *cmd,
+ 			force = 1;
+ 			break;
+ 		default:
+-			usage(cmd_device_add_usage);
++			usage(cmd);
+ 		}
+ 	}
+ 
+ 	if (check_argc_min(argc - optind, 2))
+-		usage(cmd_device_add_usage);
++		usage(cmd);
+ 
+ 	last_dev = argc - 1;
+ 	mntpnt = argv[last_dev];
+@@ -149,12 +149,11 @@ static int _cmd_device_remove(const struct cmd_struct *cmd,
  	char	*mntpnt;
  	int i, fdmnt, ret = 0;
  	DIR	*dirstream = NULL;
-+	const char * const *usagestr = cmd->usagestr;
+-	const char * const *usagestr = cmd->usagestr;
  
--	clean_args_no_options(argc, argv, cmd->usagestr);
-+	clean_args_no_options(cmd, argc, argv);
+ 	clean_args_no_options(cmd, argc, argv);
  
  	if (check_argc_min(argc - optind, 2))
--		usage(cmd->usagestr);
-+		usage(usagestr);
+-		usage(usagestr);
++		usage(cmd);
  
  	mntpnt = argv[argc - 1];
  
-@@ -347,7 +348,7 @@ static int cmd_device_ready(const struct cmd_struct *cmd, int argc, char **argv)
- 	int	ret;
- 	char	*path;
- 
--	clean_args_no_options(argc, argv, cmd->usagestr);
-+	clean_args_no_options(cmd, argc, argv);
- 
- 	if (check_argc_exact(argc - optind, 1))
- 		usage(cmd_device_ready_usage);
-@@ -573,7 +574,7 @@ static int cmd_device_usage(const struct cmd_struct *cmd, int argc, char **argv)
- 
- 	unit_mode = get_unit_mode_from_arg(&argc, argv, 1);
- 
--	clean_args_no_options(argc, argv, cmd->usagestr);
-+	clean_args_no_options(cmd, argc, argv);
- 
- 	if (check_argc_min(argc - optind, 1))
- 		usage(cmd_device_usage_usage);
-diff --git a/cmds-filesystem.c b/cmds-filesystem.c
-index 649d97a9..2a9f530d 100644
---- a/cmds-filesystem.c
-+++ b/cmds-filesystem.c
-@@ -129,7 +129,7 @@ static int cmd_filesystem_df(const struct cmd_struct *cmd,
- 
- 	unit_mode = get_unit_mode_from_arg(&argc, argv, 1);
- 
--	clean_args_no_options(argc, argv, cmd_filesystem_df_usage);
-+	clean_args_no_options(cmd, argc, argv);
- 
- 	if (check_argc_exact(argc - optind, 1))
- 		usage(cmd_filesystem_df_usage);
-@@ -822,7 +822,7 @@ static int cmd_filesystem_sync(const struct cmd_struct *cmd,
- {
- 	enum btrfs_util_error err;
- 
--	clean_args_no_options(argc, argv, cmd_filesystem_sync_usage);
-+	clean_args_no_options(cmd, argc, argv);
- 
- 	if (check_argc_exact(argc - optind, 1))
- 		usage(cmd_filesystem_sync_usage);
-@@ -1095,7 +1095,7 @@ static int cmd_filesystem_resize(const struct cmd_struct *cmd,
- 	DIR	*dirstream = NULL;
- 	struct stat st;
- 
--	clean_args_no_options_relaxed(argc, argv);
-+	clean_args_no_options_relaxed(cmd, argc, argv);
- 
- 	if (check_argc_exact(argc - optind, 2))
- 		usage(cmd_filesystem_resize_usage);
-@@ -1168,7 +1168,7 @@ static const char * const cmd_filesystem_label_usage[] = {
- static int cmd_filesystem_label(const struct cmd_struct *cmd,
- 				int argc, char **argv)
- {
--	clean_args_no_options(argc, argv, cmd_filesystem_label_usage);
-+	clean_args_no_options(cmd, argc, argv);
- 
- 	if (check_argc_min(argc - optind, 1) ||
- 			check_argc_max(argc - optind, 2))
-diff --git a/cmds-inspect.c b/cmds-inspect.c
-index 46ea5551..b6d045a3 100644
---- a/cmds-inspect.c
-+++ b/cmds-inspect.c
-@@ -277,7 +277,7 @@ static int cmd_inspect_subvolid_resolve(const struct cmd_struct *cmd,
- 	char path[PATH_MAX];
- 	DIR *dirstream = NULL;
- 
--	clean_args_no_options(argc, argv, cmd_inspect_subvolid_resolve_usage);
-+	clean_args_no_options(cmd, argc, argv);
- 
- 	if (check_argc_exact(argc - optind, 2))
- 		usage(cmd_inspect_subvolid_resolve_usage);
-@@ -320,7 +320,7 @@ static int cmd_inspect_rootid(const struct cmd_struct *cmd,
- 	u64 rootid;
- 	DIR *dirstream = NULL;
- 
--	clean_args_no_options(argc, argv, cmd_inspect_rootid_usage);
-+	clean_args_no_options(cmd, argc, argv);
- 
- 	if (check_argc_exact(argc - optind, 1))
- 		usage(cmd_inspect_rootid_usage);
-diff --git a/cmds-qgroup.c b/cmds-qgroup.c
-index 5426c8fe..2b220224 100644
---- a/cmds-qgroup.c
-+++ b/cmds-qgroup.c
-@@ -35,8 +35,8 @@ static const char * const qgroup_cmd_group_usage[] = {
- 	NULL
- };
- 
--static int _cmd_qgroup_assign(int assign, int argc, char **argv,
--		const char * const *usage_str)
-+static int _cmd_qgroup_assign(const struct cmd_struct *cmd, int assign,
-+			      int argc, char **argv)
- {
- 	int ret = 0;
- 	int fd;
-@@ -72,11 +72,11 @@ static int _cmd_qgroup_assign(int assign, int argc, char **argv,
- 			}
+@@ -290,13 +289,13 @@ static int cmd_device_scan(const struct cmd_struct *cmd, int argc, char **argv)
+ 			all = 1;
+ 			break;
+ 		default:
+-			usage(cmd_device_scan_usage);
++			usage(cmd);
  		}
- 	} else {
--		clean_args_no_options(argc, argv, usage_str);
-+		clean_args_no_options(cmd, argc, argv);
  	}
+ 	devstart = optind;
  
- 	if (check_argc_exact(argc - optind, 3))
--		usage(usage_str);
-+		usage(cmd->usagestr);
+ 	if (all && check_argc_max(argc - optind, 1))
+-		usage(cmd_device_scan_usage);
++		usage(cmd);
  
- 	memset(&args, 0, sizeof(args));
- 	args.assign = assign;
-@@ -220,7 +220,7 @@ static const char * const cmd_qgroup_assign_usage[] = {
- static int cmd_qgroup_assign(const struct cmd_struct *cmd,
- 			     int argc, char **argv)
- {
--	return _cmd_qgroup_assign(1, argc, argv, cmd_qgroup_assign_usage);
-+	return _cmd_qgroup_assign(cmd, 1, argc, argv);
- }
- static DEFINE_SIMPLE_COMMAND(qgroup_assign, "assign");
+ 	if (all || argc - optind == 0) {
+ 		printf("Scanning for Btrfs filesystems\n");
+@@ -351,7 +350,7 @@ static int cmd_device_ready(const struct cmd_struct *cmd, int argc, char **argv)
+ 	clean_args_no_options(cmd, argc, argv);
  
-@@ -233,7 +233,7 @@ static const char * const cmd_qgroup_remove_usage[] = {
- static int cmd_qgroup_remove(const struct cmd_struct *cmd,
- 			     int argc, char **argv)
- {
--	return _cmd_qgroup_assign(0, argc, argv, cmd_qgroup_remove_usage);
-+	return _cmd_qgroup_assign(cmd, 0, argc, argv);
- }
- static DEFINE_SIMPLE_COMMAND(qgroup_remove, "remove");
+ 	if (check_argc_exact(argc - optind, 1))
+-		usage(cmd_device_ready_usage);
++		usage(cmd);
  
-@@ -248,7 +248,7 @@ static int cmd_qgroup_create(const struct cmd_struct *cmd,
- {
- 	int ret;
- 
--	clean_args_no_options(argc, argv, cmd_qgroup_create_usage);
-+	clean_args_no_options(cmd, argc, argv);
- 
- 	ret = _cmd_qgroup_create(1, argc, argv);
- 
-@@ -269,7 +269,7 @@ static int cmd_qgroup_destroy(const struct cmd_struct *cmd,
- {
- 	int ret;
- 
--	clean_args_no_options(argc, argv, cmd_qgroup_destroy_usage);
-+	clean_args_no_options(cmd, argc, argv);
- 
- 	ret = _cmd_qgroup_create(0, argc, argv);
- 
-diff --git a/cmds-quota.c b/cmds-quota.c
-index a6e7a6f6..23757f9a 100644
---- a/cmds-quota.c
-+++ b/cmds-quota.c
-@@ -71,7 +71,7 @@ static int cmd_quota_enable(const struct cmd_struct *cmd, int argc, char **argv)
- {
- 	int ret;
- 
--	clean_args_no_options(argc, argv, cmd_quota_enable_usage);
-+	clean_args_no_options(cmd, argc, argv);
- 
- 	ret = quota_ctl(BTRFS_QUOTA_CTL_ENABLE, argc, argv);
- 
-@@ -92,7 +92,7 @@ static int cmd_quota_disable(const struct cmd_struct *cmd,
- {
- 	int ret;
- 
--	clean_args_no_options(argc, argv, cmd_quota_disable_usage);
-+	clean_args_no_options(cmd, argc, argv);
- 
- 	ret = quota_ctl(BTRFS_QUOTA_CTL_DISABLE, argc, argv);
- 
-diff --git a/cmds-rescue.c b/cmds-rescue.c
-index f5a618e1..975ff05a 100644
---- a/cmds-rescue.c
-+++ b/cmds-rescue.c
-@@ -170,7 +170,7 @@ static int cmd_rescue_zero_log(const struct cmd_struct *cmd,
- 	char *devname;
- 	int ret;
- 
--	clean_args_no_options(argc, argv, cmd_rescue_zero_log_usage);
-+	clean_args_no_options(cmd, argc, argv);
- 
- 	if (check_argc_exact(argc, 2))
- 		usage(cmd_rescue_zero_log_usage);
-@@ -223,7 +223,7 @@ static int cmd_rescue_fix_device_size(const struct cmd_struct *cmd,
- 	char *devname;
- 	int ret;
- 
--	clean_args_no_options(argc, argv, cmd_rescue_fix_device_size_usage);
-+	clean_args_no_options(cmd, argc, argv);
- 
- 	if (check_argc_exact(argc, 2))
- 		usage(cmd_rescue_fix_device_size_usage);
-diff --git a/cmds-scrub.c b/cmds-scrub.c
-index a421047b..b07ff2e3 100644
---- a/cmds-scrub.c
-+++ b/cmds-scrub.c
-@@ -1095,8 +1095,7 @@ static int is_scrub_running_in_kernel(int fd,
- static const char * const cmd_scrub_start_usage[];
- static const char * const cmd_scrub_resume_usage[];
- 
--static int scrub_start(const struct cmd_struct *cmd, int argc, char **argv,
--		       bool resume)
-+static int scrub_start(int argc, char **argv, bool resume)
- {
- 	int fdmnt;
- 	int prg_fd = -1;
-@@ -1175,14 +1174,16 @@ static int scrub_start(const struct cmd_struct *cmd, int argc, char **argv,
+ 	fd = open("/dev/btrfs-control", O_RDWR);
+ 	if (fd < 0) {
+@@ -434,12 +433,12 @@ static int cmd_device_stats(const struct cmd_struct *cmd, int argc, char **argv)
  			break;
  		case '?':
  		default:
--			usage(cmd->usagestr);
-+			usage(resume ? cmd_scrub_resume_usage :
-+						cmd_scrub_start_usage);
+-			usage(cmd_device_stats_usage);
++			usage(cmd);
+ 		}
+ 	}
+ 
+ 	if (check_argc_exact(argc - optind, 1))
+-		usage(cmd_device_stats_usage);
++		usage(cmd);
+ 
+ 	dev_path = argv[optind];
+ 
+@@ -577,7 +576,7 @@ static int cmd_device_usage(const struct cmd_struct *cmd, int argc, char **argv)
+ 	clean_args_no_options(cmd, argc, argv);
+ 
+ 	if (check_argc_min(argc - optind, 1))
+-		usage(cmd_device_usage_usage);
++		usage(cmd);
+ 
+ 	for (i = optind; i < argc; i++) {
+ 		int fd;
+diff --git a/cmds-fi-du.c b/cmds-fi-du.c
+index 67d65519..9635866a 100644
+--- a/cmds-fi-du.c
++++ b/cmds-fi-du.c
+@@ -580,12 +580,12 @@ static int cmd_filesystem_du(const struct cmd_struct *cmd,
+ 			summarize = 1;
+ 			break;
+ 		default:
+-			usage(cmd_filesystem_du_usage);
++			usage(cmd);
+ 		}
+ 	}
+ 
+ 	if (check_argc_min(argc - optind, 1))
+-		usage(cmd_filesystem_du_usage);
++		usage(cmd);
+ 
+ 	kernel_version = get_running_kernel_version();
+ 
+diff --git a/cmds-fi-usage.c b/cmds-fi-usage.c
+index c01b677a..a14d0017 100644
+--- a/cmds-fi-usage.c
++++ b/cmds-fi-usage.c
+@@ -987,12 +987,12 @@ static int cmd_filesystem_usage(const struct cmd_struct *cmd,
+ 			tabular = 1;
+ 			break;
+ 		default:
+-			usage(cmd_filesystem_usage_usage);
++			usage(cmd);
+ 		}
+ 	}
+ 
+ 	if (check_argc_min(argc - optind, 1))
+-		usage(cmd_filesystem_usage_usage);
++		usage(cmd);
+ 
+ 	for (i = optind; i < argc; i++) {
+ 		int fd;
+diff --git a/cmds-filesystem.c b/cmds-filesystem.c
+index 2a9f530d..d8290968 100644
+--- a/cmds-filesystem.c
++++ b/cmds-filesystem.c
+@@ -132,7 +132,7 @@ static int cmd_filesystem_df(const struct cmd_struct *cmd,
+ 	clean_args_no_options(cmd, argc, argv);
+ 
+ 	if (check_argc_exact(argc - optind, 1))
+-		usage(cmd_filesystem_df_usage);
++		usage(cmd);
+ 
+ 	path = argv[optind];
+ 
+@@ -707,17 +707,17 @@ static int cmd_filesystem_show(const struct cmd_struct *cmd,
+ 			where = BTRFS_SCAN_MOUNTED;
+ 			break;
+ 		default:
+-			usage(cmd_filesystem_show_usage);
++			usage(cmd);
+ 		}
+ 	}
+ 
+ 	if (check_argc_max(argc, optind + 1))
+-		usage(cmd_filesystem_show_usage);
++		usage(cmd);
+ 
+ 	if (argc > optind) {
+ 		search = argv[optind];
+ 		if (*search == 0)
+-			usage(cmd_filesystem_show_usage);
++			usage(cmd);
+ 		type = check_arg_type(search);
+ 
+ 		/*
+@@ -825,7 +825,7 @@ static int cmd_filesystem_sync(const struct cmd_struct *cmd,
+ 	clean_args_no_options(cmd, argc, argv);
+ 
+ 	if (check_argc_exact(argc - optind, 1))
+-		usage(cmd_filesystem_sync_usage);
++		usage(cmd);
+ 
+ 	err = btrfs_util_sync(argv[optind]);
+ 	if (err) {
+@@ -967,12 +967,12 @@ static int cmd_filesystem_defrag(const struct cmd_struct *cmd,
+ 			recursive = 1;
+ 			break;
+ 		default:
+-			usage(cmd_filesystem_defrag_usage);
++			usage(cmd);
+ 		}
+ 	}
+ 
+ 	if (check_argc_min(argc - optind, 1))
+-		usage(cmd_filesystem_defrag_usage);
++		usage(cmd);
+ 
+ 	memset(&defrag_global_range, 0, sizeof(defrag_global_range));
+ 	defrag_global_range.start = start;
+@@ -1098,7 +1098,7 @@ static int cmd_filesystem_resize(const struct cmd_struct *cmd,
+ 	clean_args_no_options_relaxed(cmd, argc, argv);
+ 
+ 	if (check_argc_exact(argc - optind, 2))
+-		usage(cmd_filesystem_resize_usage);
++		usage(cmd);
+ 
+ 	amount = argv[optind];
+ 	path = argv[optind + 1];
+@@ -1172,7 +1172,7 @@ static int cmd_filesystem_label(const struct cmd_struct *cmd,
+ 
+ 	if (check_argc_min(argc - optind, 1) ||
+ 			check_argc_max(argc - optind, 2))
+-		usage(cmd_filesystem_label_usage);
++		usage(cmd);
+ 
+ 	if (argc - optind > 1) {
+ 		return set_label(argv[optind], argv[optind + 1]);
+diff --git a/cmds-inspect-dump-super.c b/cmds-inspect-dump-super.c
+index 49df12eb..bc2eedb5 100644
+--- a/cmds-inspect-dump-super.c
++++ b/cmds-inspect-dump-super.c
+@@ -576,12 +576,12 @@ static int cmd_inspect_dump_super(const struct cmd_struct *cmd,
+ 			all = 0;
+ 			break;
+ 		default:
+-			usage(cmd_inspect_dump_super_usage);
++			usage(cmd);
+ 		}
+ 	}
+ 
+ 	if (check_argc_min(argc - optind, 1))
+-		usage(cmd_inspect_dump_super_usage);
++		usage(cmd);
+ 
+ 	for (i = optind; i < argc; i++) {
+ 		filename = argv[i];
+diff --git a/cmds-inspect-dump-tree.c b/cmds-inspect-dump-tree.c
+index 97f5ea46..b4f413a4 100644
+--- a/cmds-inspect-dump-tree.c
++++ b/cmds-inspect-dump-tree.c
+@@ -304,12 +304,12 @@ static int cmd_inspect_dump_tree(const struct cmd_struct *cmd,
+ 			follow = true;
+ 			break;
+ 		default:
+-			usage(cmd_inspect_dump_tree_usage);
++			usage(cmd);
+ 		}
+ 	}
+ 
+ 	if (check_argc_exact(argc - optind, 1))
+-		usage(cmd_inspect_dump_tree_usage);
++		usage(cmd);
+ 
+ 	ret = check_arg_type(argv[optind]);
+ 	if (ret != BTRFS_ARG_BLKDEV && ret != BTRFS_ARG_REG) {
+diff --git a/cmds-inspect-tree-stats.c b/cmds-inspect-tree-stats.c
+index 64ca3d0b..e5e68562 100644
+--- a/cmds-inspect-tree-stats.c
++++ b/cmds-inspect-tree-stats.c
+@@ -444,12 +444,12 @@ static int cmd_inspect_tree_stats(const struct cmd_struct *cmd,
+ 			no_pretty = 1;
+ 			break;
+ 		default:
+-			usage(cmd_inspect_tree_stats_usage);
++			usage(cmd);
+ 		}
+ 	}
+ 
+ 	if (check_argc_exact(argc - optind, 1)) {
+-		usage(cmd_inspect_tree_stats_usage);
++		usage(cmd);
+ 	}
+ 
+ 	ret = check_mounted(argv[optind]);
+diff --git a/cmds-inspect.c b/cmds-inspect.c
+index b6d045a3..b191939c 100644
+--- a/cmds-inspect.c
++++ b/cmds-inspect.c
+@@ -105,12 +105,12 @@ static int cmd_inspect_inode_resolve(const struct cmd_struct *cmd,
+ 			verbose = 1;
+ 			break;
+ 		default:
+-			usage(cmd_inspect_inode_resolve_usage);
++			usage(cmd);
+ 		}
+ 	}
+ 
+ 	if (check_argc_exact(argc - optind, 2))
+-		usage(cmd_inspect_inode_resolve_usage);
++		usage(cmd);
+ 
+ 	fd = btrfs_open_dir(argv[optind + 1], &dirstream, 1);
+ 	if (fd < 0)
+@@ -167,12 +167,12 @@ static int cmd_inspect_logical_resolve(const struct cmd_struct *cmd,
+ 			size = arg_strtou64(optarg);
+ 			break;
+ 		default:
+-			usage(cmd_inspect_logical_resolve_usage);
++			usage(cmd);
+ 		}
+ 	}
+ 
+ 	if (check_argc_exact(argc - optind, 2))
+-		usage(cmd_inspect_logical_resolve_usage);
++		usage(cmd);
+ 
+ 	size = min(size, (u64)SZ_64K);
+ 	inodes = malloc(size);
+@@ -280,7 +280,7 @@ static int cmd_inspect_subvolid_resolve(const struct cmd_struct *cmd,
+ 	clean_args_no_options(cmd, argc, argv);
+ 
+ 	if (check_argc_exact(argc - optind, 2))
+-		usage(cmd_inspect_subvolid_resolve_usage);
++		usage(cmd);
+ 
+ 	fd = btrfs_open_dir(argv[optind + 1], &dirstream, 1);
+ 	if (fd < 0) {
+@@ -323,7 +323,7 @@ static int cmd_inspect_rootid(const struct cmd_struct *cmd,
+ 	clean_args_no_options(cmd, argc, argv);
+ 
+ 	if (check_argc_exact(argc - optind, 1))
+-		usage(cmd_inspect_rootid_usage);
++		usage(cmd);
+ 
+ 	fd = btrfs_open_file_or_dir(argv[optind], &dirstream, 1);
+ 	if (fd < 0) {
+@@ -617,11 +617,11 @@ static int cmd_inspect_min_dev_size(const struct cmd_struct *cmd,
+ 			devid = arg_strtou64(optarg);
+ 			break;
+ 		default:
+-			usage(cmd_inspect_min_dev_size_usage);
++			usage(cmd);
+ 		}
+ 	}
+ 	if (check_argc_exact(argc - optind, 1))
+-		usage(cmd_inspect_min_dev_size_usage);
++		usage(cmd);
+ 
+ 	fd = btrfs_open_dir(argv[optind], &dirstream, 1);
+ 	if (fd < 0) {
+diff --git a/cmds-property.c b/cmds-property.c
+index 5684443c..4aa2f18f 100644
+--- a/cmds-property.c
++++ b/cmds-property.c
+@@ -256,8 +256,7 @@ out:
+ 
+ }
+ 
+-static void parse_args(int argc, char **argv,
+-		       const char * const *usage_str,
++static void parse_args(const struct cmd_struct *cmd, int argc, char **argv,
+ 		       int *types, char **object,
+ 		       char **name, char **value, int min_nonopt_args)
+ {
+@@ -276,7 +275,7 @@ static void parse_args(int argc, char **argv,
+ 			type_str = optarg;
+ 			break;
+ 		default:
+-			usage(usage_str);
++			usage(cmd);
+ 		}
+ 	}
+ 
+@@ -287,7 +286,7 @@ static void parse_args(int argc, char **argv,
+ 
+ 	if (check_argc_min(argc - optind, min_nonopt_args) ||
+ 	    check_argc_max(argc - optind, max_nonopt_args))
+-		usage(usage_str);
++		usage(cmd);
+ 
+ 	*types = 0;
+ 	if (type_str) {
+@@ -304,7 +303,7 @@ static void parse_args(int argc, char **argv,
+ 			*types = prop_object_dev;
+ 		} else {
+ 			error("invalid object type: %s", type_str);
+-			usage(usage_str);
++			usage(cmd);
+ 		}
+ 	}
+ 
+@@ -319,11 +318,11 @@ static void parse_args(int argc, char **argv,
+ 		if (ret < 0) {
+ 			error("failed to detect object type: %s",
+ 				strerror(-ret));
+-			usage(usage_str);
++			usage(cmd);
+ 		}
+ 		if (!*types) {
+ 			error("object is not a btrfs object: %s", *object);
+-			usage(usage_str);
++			usage(cmd);
+ 		}
+ 	}
+ }
+@@ -349,8 +348,7 @@ static int cmd_property_get(const struct cmd_struct *cmd,
+ 	char *name = NULL;
+ 	int types = 0;
+ 
+-	parse_args(argc, argv, cmd_property_get_usage, &types, &object, &name,
+-		   NULL, 1);
++	parse_args(cmd, argc, argv, &types, &object, &name, NULL, 1);
+ 
+ 	if (name)
+ 		ret = setget_prop(types, object, name, NULL);
+@@ -378,8 +376,7 @@ static int cmd_property_set(const struct cmd_struct *cmd,
+ 	char *value = NULL;
+ 	int types = 0;
+ 
+-	parse_args(argc, argv, cmd_property_set_usage, &types,
+-		   &object, &name, &value, 3);
++	parse_args(cmd, argc, argv, &types, &object, &name, &value, 3);
+ 
+ 	ret = setget_prop(types, object, name, value);
+ 
+@@ -402,8 +399,7 @@ static int cmd_property_list(const struct cmd_struct *cmd,
+ 	char *object = NULL;
+ 	int types = 0;
+ 
+-	parse_args(argc, argv, cmd_property_list_usage,
+-		   &types, &object, NULL, NULL, 1);
++	parse_args(cmd, argc, argv, &types, &object, NULL, NULL, 1);
+ 
+ 	ret = dump_props(types, object, 1);
+ 
+diff --git a/cmds-qgroup.c b/cmds-qgroup.c
+index 2b220224..0ee578ff 100644
+--- a/cmds-qgroup.c
++++ b/cmds-qgroup.c
+@@ -76,7 +76,7 @@ static int _cmd_qgroup_assign(const struct cmd_struct *cmd, int assign,
+ 	}
+ 
+ 	if (check_argc_exact(argc - optind, 3))
+-		usage(cmd->usagestr);
++		usage(cmd);
+ 
+ 	memset(&args, 0, sizeof(args));
+ 	args.assign = assign;
+@@ -253,7 +253,7 @@ static int cmd_qgroup_create(const struct cmd_struct *cmd,
+ 	ret = _cmd_qgroup_create(1, argc, argv);
+ 
+ 	if (ret < 0)
+-		usage(cmd_qgroup_create_usage);
++		usage(cmd);
+ 	return ret;
+ }
+ static DEFINE_SIMPLE_COMMAND(qgroup_create, "create");
+@@ -274,7 +274,7 @@ static int cmd_qgroup_destroy(const struct cmd_struct *cmd,
+ 	ret = _cmd_qgroup_create(0, argc, argv);
+ 
+ 	if (ret < 0)
+-		usage(cmd_qgroup_destroy_usage);
++		usage(cmd);
+ 	return ret;
+ }
+ static DEFINE_SIMPLE_COMMAND(qgroup_destroy, "destroy");
+@@ -369,7 +369,7 @@ static int cmd_qgroup_show(const struct cmd_struct *cmd, int argc, char **argv)
+ 			ret = btrfs_qgroup_parse_sort_string(optarg,
+ 							     &comparer_set);
+ 			if (ret)
+-				usage(cmd_qgroup_show_usage);
++				usage(cmd);
+ 			break;
+ 		case GETOPT_VAL_SYNC:
+ 			sync = 1;
+@@ -378,13 +378,13 @@ static int cmd_qgroup_show(const struct cmd_struct *cmd, int argc, char **argv)
+ 			verbose = true;
+ 			break;
+ 		default:
+-			usage(cmd_qgroup_show_usage);
++			usage(cmd);
+ 		}
+ 	}
+ 	btrfs_qgroup_setup_units(unit_mode);
+ 
+ 	if (check_argc_exact(argc - optind, 1))
+-		usage(cmd_qgroup_show_usage);
++		usage(cmd);
+ 
+ 	path = argv[optind];
+ 	fd = btrfs_open_dir(path, &dirstream, 1);
+@@ -462,12 +462,12 @@ static int cmd_qgroup_limit(const struct cmd_struct *cmd, int argc, char **argv)
+ 			exclusive = 1;
+ 			break;
+ 		default:
+-			usage(cmd_qgroup_limit_usage);
++			usage(cmd);
+ 		}
+ 	}
+ 
+ 	if (check_argc_min(argc - optind, 2))
+-		usage(cmd_qgroup_limit_usage);
++		usage(cmd);
+ 
+ 	if (!parse_limit(argv[optind], &size)) {
+ 		error("invalid size argument: %s", argv[optind]);
+@@ -502,7 +502,7 @@ static int cmd_qgroup_limit(const struct cmd_struct *cmd, int argc, char **argv)
+ 		args.qgroupid = parse_qgroupid(argv[optind + 1]);
+ 		path = argv[optind + 2];
+ 	} else
+-		usage(cmd_qgroup_limit_usage);
++		usage(cmd);
+ 
+ 	fd = btrfs_open_dir(path, &dirstream, 1);
+ 	if (fd < 0)
+diff --git a/cmds-quota.c b/cmds-quota.c
+index 23757f9a..c634c4e9 100644
+--- a/cmds-quota.c
++++ b/cmds-quota.c
+@@ -76,7 +76,7 @@ static int cmd_quota_enable(const struct cmd_struct *cmd, int argc, char **argv)
+ 	ret = quota_ctl(BTRFS_QUOTA_CTL_ENABLE, argc, argv);
+ 
+ 	if (ret < 0)
+-		usage(cmd_quota_enable_usage);
++		usage(cmd);
+ 	return ret;
+ }
+ static DEFINE_SIMPLE_COMMAND(quota_enable, "enable");
+@@ -97,7 +97,7 @@ static int cmd_quota_disable(const struct cmd_struct *cmd,
+ 	ret = quota_ctl(BTRFS_QUOTA_CTL_DISABLE, argc, argv);
+ 
+ 	if (ret < 0)
+-		usage(cmd_quota_disable_usage);
++		usage(cmd);
+ 	return ret;
+ }
+ static DEFINE_SIMPLE_COMMAND(quota_disable, "disable");
+@@ -140,7 +140,7 @@ static int cmd_quota_rescan(const struct cmd_struct *cmd, int argc, char **argv)
+ 			wait_for_completion = 1;
+ 			break;
+ 		default:
+-			usage(cmd_quota_rescan_usage);
++			usage(cmd);
+ 		}
+ 	}
+ 
+@@ -150,7 +150,7 @@ static int cmd_quota_rescan(const struct cmd_struct *cmd, int argc, char **argv)
+ 	}
+ 
+ 	if (check_argc_exact(argc - optind, 1))
+-		usage(cmd_quota_rescan_usage);
++		usage(cmd);
+ 
+ 	memset(&args, 0, sizeof(args));
+ 
+diff --git a/cmds-receive.c b/cmds-receive.c
+index 93c1838d..5429c607 100644
+--- a/cmds-receive.c
++++ b/cmds-receive.c
+@@ -1352,9 +1352,9 @@ static int cmd_receive(const struct cmd_struct *cmd, int argc, char **argv)
+ 	}
+ 
+ 	if (dump && check_argc_exact(argc - optind, 0))
+-		usage(cmd_receive_usage);
++		usage(cmd);
+ 	if (!dump && check_argc_exact(argc - optind, 1))
+-		usage(cmd_receive_usage);
++		usage(cmd);
+ 
+ 	tomnt = argv[optind];
+ 
+diff --git a/cmds-replace.c b/cmds-replace.c
+index f1e76bdf..2057d69e 100644
+--- a/cmds-replace.c
++++ b/cmds-replace.c
+@@ -148,7 +148,7 @@ static int cmd_replace_start(const struct cmd_struct *cmd,
+ 			break;
+ 		case '?':
+ 		default:
+-			usage(cmd_replace_start_usage);
++			usage(cmd);
+ 		}
+ 	}
+ 
+@@ -157,7 +157,7 @@ static int cmd_replace_start(const struct cmd_struct *cmd,
+ 		 BTRFS_IOCTL_DEV_REPLACE_CONT_READING_FROM_SRCDEV_MODE_AVOID :
+ 		 BTRFS_IOCTL_DEV_REPLACE_CONT_READING_FROM_SRCDEV_MODE_ALWAYS;
+ 	if (check_argc_exact(argc - optind, 3))
+-		usage(cmd_replace_start_usage);
++		usage(cmd);
+ 	path = argv[optind + 2];
+ 
+ 	fdmnt = open_path_or_dev_mnt(path, &dirstream, 1);
+@@ -343,12 +343,12 @@ static int cmd_replace_status(const struct cmd_struct *cmd,
+ 			break;
+ 		case '?':
+ 		default:
+-			usage(cmd_replace_status_usage);
++			usage(cmd);
+ 		}
+ 	}
+ 
+ 	if (check_argc_exact(argc - optind, 1))
+-		usage(cmd_replace_status_usage);
++		usage(cmd);
+ 
+ 	path = argv[optind];
+ 	fd = btrfs_open_dir(path, &dirstream, 1);
+@@ -510,12 +510,12 @@ static int cmd_replace_cancel(const struct cmd_struct *cmd,
+ 		switch (c) {
+ 		case '?':
+ 		default:
+-			usage(cmd_replace_cancel_usage);
++			usage(cmd);
+ 		}
+ 	}
+ 
+ 	if (check_argc_exact(argc - optind, 1))
+-		usage(cmd_replace_cancel_usage);
++		usage(cmd);
+ 
+ 	path = argv[optind];
+ 	fd = btrfs_open_dir(path, &dirstream, 1);
+diff --git a/cmds-rescue.c b/cmds-rescue.c
+index 975ff05a..f96d8010 100644
+--- a/cmds-rescue.c
++++ b/cmds-rescue.c
+@@ -66,12 +66,12 @@ static int cmd_rescue_chunk_recover(const struct cmd_struct *cmd,
+ 			break;
+ 		case 'h':
+ 		default:
+-			usage(cmd_rescue_chunk_recover_usage);
++			usage(cmd);
+ 		}
+ 	}
+ 
+ 	if (check_argc_exact(argc - optind, 1))
+-		usage(cmd_rescue_chunk_recover_usage);
++		usage(cmd);
+ 
+ 	file = argv[optind];
+ 
+@@ -134,11 +134,11 @@ static int cmd_rescue_super_recover(const struct cmd_struct *cmd,
+ 			yes = 1;
+ 			break;
+ 		default:
+-			usage(cmd_rescue_super_recover_usage);
++			usage(cmd);
+ 		}
+ 	}
+ 	if (check_argc_exact(argc - optind, 1))
+-		usage(cmd_rescue_super_recover_usage);
++		usage(cmd);
+ 
+ 	dname = argv[optind];
+ 	ret = check_mounted(dname);
+@@ -173,7 +173,7 @@ static int cmd_rescue_zero_log(const struct cmd_struct *cmd,
+ 	clean_args_no_options(cmd, argc, argv);
+ 
+ 	if (check_argc_exact(argc, 2))
+-		usage(cmd_rescue_zero_log_usage);
++		usage(cmd);
+ 
+ 	devname = argv[optind];
+ 	ret = check_mounted(devname);
+@@ -226,7 +226,7 @@ static int cmd_rescue_fix_device_size(const struct cmd_struct *cmd,
+ 	clean_args_no_options(cmd, argc, argv);
+ 
+ 	if (check_argc_exact(argc, 2))
+-		usage(cmd_rescue_fix_device_size_usage);
++		usage(cmd);
+ 
+ 	devname = argv[optind];
+ 	ret = check_mounted(devname);
+diff --git a/cmds-restore.c b/cmds-restore.c
+index e1e58ac2..0afcc376 100644
+--- a/cmds-restore.c
++++ b/cmds-restore.c
+@@ -1422,7 +1422,7 @@ static const char * const cmd_restore_usage[] = {
+ 	NULL
+ };
+ 
+-static int cmd_restore(const struct cmd_struct *unused, int argc, char **argv)
++static int cmd_restore(const struct cmd_struct *cmd, int argc, char **argv)
+ {
+ 	struct btrfs_root *root;
+ 	struct btrfs_key key;
+@@ -1525,14 +1525,14 @@ static int cmd_restore(const struct cmd_struct *unused, int argc, char **argv)
+ 				get_xattrs = 1;
+ 				break;
+ 			default:
+-				usage(cmd_restore_usage);
++				usage(cmd);
+ 		}
+ 	}
+ 
+ 	if (!list_roots && check_argc_min(argc - optind, 2))
+-		usage(cmd_restore_usage);
++		usage(cmd);
+ 	else if (list_roots && check_argc_min(argc - optind, 1))
+-		usage(cmd_restore_usage);
++		usage(cmd);
+ 
+ 	if (fs_location && root_objectid) {
+ 		fprintf(stderr, "don't use -f and -r at the same time.\n");
+diff --git a/cmds-scrub.c b/cmds-scrub.c
+index b07ff2e3..d3ca59a9 100644
+--- a/cmds-scrub.c
++++ b/cmds-scrub.c
+@@ -1092,10 +1092,8 @@ static int is_scrub_running_in_kernel(int fd,
+ 	return 0;
+ }
+ 
+-static const char * const cmd_scrub_start_usage[];
+-static const char * const cmd_scrub_resume_usage[];
+-
+-static int scrub_start(int argc, char **argv, bool resume)
++static int scrub_start(const struct cmd_struct *cmd, int argc, char **argv,
++		       bool resume)
+ {
+ 	int fdmnt;
+ 	int prg_fd = -1;
+@@ -1174,17 +1172,14 @@ static int scrub_start(int argc, char **argv, bool resume)
+ 			break;
+ 		case '?':
+ 		default:
+-			usage(resume ? cmd_scrub_resume_usage :
+-						cmd_scrub_start_usage);
++			usage(cmd);
  		}
  	}
  
  	/* try to catch most error cases before forking */
  
- 	if (check_argc_exact(argc - optind, 1)) {
--		usage(cmd->usagestr);
-+		usage(resume ? cmd_scrub_resume_usage :
-+					cmd_scrub_start_usage);
- 	}
+-	if (check_argc_exact(argc - optind, 1)) {
+-		usage(resume ? cmd_scrub_resume_usage :
+-					cmd_scrub_start_usage);
+-	}
++	if (check_argc_exact(argc - optind, 1))
++		usage(cmd);
  
  	spc.progress = NULL;
-@@ -1575,7 +1576,7 @@ static const char * const cmd_scrub_start_usage[] = {
+ 	if (do_quiet && do_print)
+@@ -1576,7 +1571,7 @@ static const char * const cmd_scrub_start_usage[] = {
  
  static int cmd_scrub_start(const struct cmd_struct *cmd, int argc, char **argv)
  {
--	return scrub_start(cmd, argc, argv, false);
-+	return scrub_start(argc, argv, false);
+-	return scrub_start(argc, argv, false);
++	return scrub_start(cmd, argc, argv, false);
  }
  static DEFINE_SIMPLE_COMMAND(scrub_start, "start");
  
-@@ -1592,7 +1593,7 @@ static int cmd_scrub_cancel(const struct cmd_struct *cmd, int argc, char **argv)
- 	int fdmnt = -1;
- 	DIR *dirstream = NULL;
- 
--	clean_args_no_options(argc, argv, cmd_scrub_cancel_usage);
-+	clean_args_no_options(cmd, argc, argv);
+@@ -1596,7 +1591,7 @@ static int cmd_scrub_cancel(const struct cmd_struct *cmd, int argc, char **argv)
+ 	clean_args_no_options(cmd, argc, argv);
  
  	if (check_argc_exact(argc - optind, 1))
- 		usage(cmd_scrub_cancel_usage);
-@@ -1642,7 +1643,7 @@ static const char * const cmd_scrub_resume_usage[] = {
+-		usage(cmd_scrub_cancel_usage);
++		usage(cmd);
+ 
+ 	path = argv[optind];
+ 
+@@ -1643,7 +1638,7 @@ static const char * const cmd_scrub_resume_usage[] = {
  
  static int cmd_scrub_resume(const struct cmd_struct *cmd, int argc, char **argv)
  {
--	return scrub_start(cmd, argc, argv, true);
-+	return scrub_start(argc, argv, true);
+-	return scrub_start(argc, argv, true);
++	return scrub_start(cmd, argc, argv, true);
  }
  static DEFINE_SIMPLE_COMMAND(scrub_resume, "resume");
  
-diff --git a/cmds-subvolume.c b/cmds-subvolume.c
-index f00503b5..dc065ea7 100644
---- a/cmds-subvolume.c
-+++ b/cmds-subvolume.c
-@@ -784,7 +784,7 @@ static int cmd_subvol_get_default(const struct cmd_struct *cmd,
- 	struct btrfs_util_subvolume_info subvol;
- 	char *path;
- 
--	clean_args_no_options(argc, argv, cmd_subvol_get_default_usage);
-+	clean_args_no_options(cmd, argc, argv);
+@@ -1689,12 +1684,12 @@ static int cmd_scrub_status(const struct cmd_struct *cmd, int argc, char **argv)
+ 			break;
+ 		case '?':
+ 		default:
+-			usage(cmd_scrub_status_usage);
++			usage(cmd);
+ 		}
+ 	}
  
  	if (check_argc_exact(argc - optind, 1))
- 		usage(cmd_subvol_get_default_usage);
-@@ -846,7 +846,7 @@ static int cmd_subvol_set_default(const struct cmd_struct *cmd,
- 	char *path;
- 	enum btrfs_util_error err;
+-		usage(cmd_scrub_status_usage);
++		usage(cmd);
  
--	clean_args_no_options(argc, argv, cmd_subvol_set_default_usage);
-+	clean_args_no_options(cmd, argc, argv);
+ 	path = argv[optind];
+ 
+diff --git a/cmds-send.c b/cmds-send.c
+index bd501576..e2d87785 100644
+--- a/cmds-send.c
++++ b/cmds-send.c
+@@ -643,7 +643,7 @@ static int cmd_send(const struct cmd_struct *cmd, int argc, char **argv)
+ 	}
+ 
+ 	if (check_argc_min(argc - optind, 1))
+-		usage(cmd_send_usage);
++		usage(cmd);
+ 
+ 	if (outname[0]) {
+ 		int tmpfd;
+diff --git a/cmds-subvolume.c b/cmds-subvolume.c
+index dc065ea7..6b01569f 100644
+--- a/cmds-subvolume.c
++++ b/cmds-subvolume.c
+@@ -124,12 +124,12 @@ static int cmd_subvol_create(const struct cmd_struct *cmd,
+ 			}
+ 			break;
+ 		default:
+-			usage(cmd_subvol_create_usage);
++			usage(cmd);
+ 		}
+ 	}
+ 
+ 	if (check_argc_exact(argc - optind, 1))
+-		usage(cmd_subvol_create_usage);
++		usage(cmd);
+ 
+ 	dst = argv[optind];
+ 
+@@ -275,12 +275,12 @@ static int cmd_subvol_delete(const struct cmd_struct *cmd,
+ 			verbose++;
+ 			break;
+ 		default:
+-			usage(cmd_subvol_delete_usage);
++			usage(cmd);
+ 		}
+ 	}
+ 
+ 	if (check_argc_min(argc - optind, 1))
+-		usage(cmd_subvol_delete_usage);
++		usage(cmd);
+ 
+ 	if (verbose > 0) {
+ 		printf("Transaction commit: %s\n",
+@@ -607,7 +607,7 @@ out:
+ 	if (comparer_set)
+ 		free(comparer_set);
+ 	if (uerr)
+-		usage(cmd_subvol_list_usage);
++		usage(cmd);
+ 	return !!ret;
+ }
+ static DEFINE_SIMPLE_COMMAND(subvol_list, "list");
+@@ -673,12 +673,12 @@ static int cmd_subvol_snapshot(const struct cmd_struct *cmd,
+ 			}
+ 			break;
+ 		default:
+-			usage(cmd_subvol_snapshot_usage);
++			usage(cmd);
+ 		}
+ 	}
+ 
+ 	if (check_argc_exact(argc - optind, 2))
+-		usage(cmd_subvol_snapshot_usage);
++		usage(cmd);
+ 
+ 	subvol = argv[optind];
+ 	dst = argv[optind + 1];
+@@ -787,7 +787,7 @@ static int cmd_subvol_get_default(const struct cmd_struct *cmd,
+ 	clean_args_no_options(cmd, argc, argv);
+ 
+ 	if (check_argc_exact(argc - optind, 1))
+-		usage(cmd_subvol_get_default_usage);
++		usage(cmd);
+ 
+ 	fd = btrfs_open_dir(argv[1], &dirstream, 1);
+ 	if (fd < 0)
+@@ -850,7 +850,7 @@ static int cmd_subvol_set_default(const struct cmd_struct *cmd,
  
  	if (check_argc_min(argc - optind, 1) ||
  			check_argc_max(argc - optind, 2))
-@@ -887,7 +887,7 @@ static int cmd_subvol_find_new(const struct cmd_struct *cmd,
- 	DIR *dirstream = NULL;
- 	enum btrfs_util_error err;
+-		usage(cmd_subvol_set_default_usage);
++		usage(cmd);
  
--	clean_args_no_options(argc, argv, cmd_subvol_find_new_usage);
-+	clean_args_no_options(cmd, argc, argv);
+ 	if (argc - optind == 1) {
+ 		/* path to the subvolume is specified */
+@@ -890,7 +890,7 @@ static int cmd_subvol_find_new(const struct cmd_struct *cmd,
+ 	clean_args_no_options(cmd, argc, argv);
  
  	if (check_argc_exact(argc - optind, 2))
- 		usage(cmd_subvol_find_new_usage);
+-		usage(cmd_subvol_find_new_usage);
++		usage(cmd);
+ 
+ 	subvol = argv[optind];
+ 	last_gen = arg_strtou64(argv[optind + 1]);
+@@ -976,17 +976,17 @@ static int cmd_subvol_show(const struct cmd_struct *cmd, int argc, char **argv)
+ 			by_uuid = 1;
+ 			break;
+ 		default:
+-			usage(cmd_subvol_show_usage);
++			usage(cmd);
+ 		}
+ 	}
+ 
+ 	if (check_argc_exact(argc - optind, 1))
+-		usage(cmd_subvol_show_usage);
++		usage(cmd);
+ 
+ 	if (by_rootid && by_uuid) {
+ 		error(
+ 		"options --rootid and --uuid cannot be used at the same time");
+-		usage(cmd_subvol_show_usage);
++		usage(cmd);
+ 	}
+ 
+ 	fullpath = realpath(argv[optind], NULL);
+@@ -1211,12 +1211,12 @@ static int cmd_subvol_sync(const struct cmd_struct *cmd, int argc, char **argv)
+ 			}
+ 			break;
+ 		default:
+-			usage(cmd_subvol_sync_usage);
++			usage(cmd);
+ 		}
+ 	}
+ 
+ 	if (check_argc_min(argc - optind, 1))
+-		usage(cmd_subvol_sync_usage);
++		usage(cmd);
+ 
+ 	fd = btrfs_open_dir(argv[optind], &dirstream, 1);
+ 	if (fd < 0) {
 diff --git a/help.c b/help.c
-index 2c0d8d71..23d6ea8f 100644
+index 23d6ea8f..6ee93161 100644
 --- a/help.c
 +++ b/help.c
-@@ -86,7 +86,7 @@ int check_argc_max(int nargs, int expected)
-  * Unknown short and long options are reported, optionally the @usage is printed
-  * before exit.
-  */
--void clean_args_no_options(int argc, char *argv[], const char * const *usagestr)
-+void clean_args_no_options(const struct cmd_struct *cmd, int argc, char *argv[])
- {
- 	static const struct option long_options[] = {
- 		{NULL, 0, NULL, 0}
-@@ -100,8 +100,8 @@ void clean_args_no_options(int argc, char *argv[], const char * const *usagestr)
- 
+@@ -101,7 +101,7 @@ void clean_args_no_options(const struct cmd_struct *cmd, int argc, char *argv[])
  		switch (c) {
  		default:
--			if (usagestr)
--				usage(usagestr);
-+			if (cmd->usagestr)
-+				usage(cmd->usagestr);
+ 			if (cmd->usagestr)
+-				usage(cmd->usagestr);
++				usage(cmd);
  		}
  	}
  }
-@@ -115,7 +115,8 @@ void clean_args_no_options(int argc, char *argv[], const char * const *usagestr)
-  * - "-- option1 option2 ..."
-  * - "option1 option2 ..."
-  */
--void clean_args_no_options_relaxed(int argc, char *argv[])
-+void clean_args_no_options_relaxed(const struct cmd_struct *cmd,
-+				   int argc, char *argv[])
+@@ -240,9 +240,9 @@ void usage_command(const struct cmd_struct *cmd, bool full, bool err)
+ }
+ 
+ __attribute__((noreturn))
+-void usage(const char * const *usagestr)
++void usage(const struct cmd_struct *cmd)
  {
- 	if (argc <= 1)
- 		return;
+-	usage_command_usagestr(usagestr, NULL, true, true);
++	usage_command_usagestr(cmd->usagestr, NULL, true, true);
+ 	exit(1);
+ }
+ 
 diff --git a/help.h b/help.h
-index 322b910a..e642f58d 100644
+index e642f58d..7468cf8b 100644
 --- a/help.h
 +++ b/help.h
-@@ -71,8 +71,10 @@ void help_command_group(const struct cmd_group *grp, int argc, char **argv);
- int check_argc_exact(int nargs, int expected);
- int check_argc_min(int nargs, int expected);
- int check_argc_max(int nargs, int expected);
--void clean_args_no_options(int argc, char *argv[], const char * const *usage);
--void clean_args_no_options_relaxed(int argc, char *argv[]);
-+void clean_args_no_options(const struct cmd_struct *cmd,
-+			   int argc, char *argv[]);
-+void clean_args_no_options_relaxed(const struct cmd_struct *cmd,
-+				   int argc, char *argv[]);
+@@ -56,7 +56,7 @@ struct cmd_struct;
+ struct cmd_group;
  
- void fixup_argv0(char **argv, const char *token);
- void set_argv0(char **argv);
+ __attribute__((noreturn))
+-void usage(const char * const *usagestr);
++void usage(const struct cmd_struct *cmd);
+ void usage_command(const struct cmd_struct *cmd, bool full, bool err);
+ void usage_command_group(const struct cmd_group *grp, bool all, bool err);
+ void usage_command_group_short(const struct cmd_group *grp);
 -- 
 2.15.1
 

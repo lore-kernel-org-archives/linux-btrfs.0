@@ -1,35 +1,29 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:42405 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:52705 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751182AbeEPIbL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 16 May 2018 04:31:11 -0400
+        id S1751096AbeEPPNr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 16 May 2018 11:13:47 -0400
+Date: Wed, 16 May 2018 17:11:05 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Ethan Lien <ethanlien@synology.com>
+Cc: linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH] btrfs: Skip some btrfs_cross_ref_exist() check in nocow
  path
-To: Ethan Lien <ethanlien@synology.com>, linux-btrfs@vger.kernel.org
+Message-ID: <20180516151105.GC6649@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <20180516082854.29254-1-ethanlien@synology.com>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <1fa48d67-813e-c909-93a8-830fc1c3391f@suse.com>
-Date: Wed, 16 May 2018 11:31:09 +0300
 MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 In-Reply-To: <20180516082854.29254-1-ethanlien@synology.com>
-Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-On 16.05.2018 11:28, Ethan Lien wrote:
+On Wed, May 16, 2018 at 04:28:54PM +0800, Ethan Lien wrote:
 > In nocow path, we check if the extent is snapshotted in
 > btrfs_cross_ref_exist(). We can do the similar check earlier and avoid
 > unnecessary search into extent tree.
 > 
 > Signed-off-by: Ethan Lien <ethanlien@synology.com>
-
-If this is supposed to be a performance improvement do you have any
-measurements that prove that this is indeed the case?
-
-
-
 > ---
 >  fs/btrfs/inode.c | 7 +++++++
 >  1 file changed, 7 insertions(+)
@@ -55,8 +49,5 @@ measurements that prove that this is indeed the case?
 > +	if (btrfs_file_extent_generation(leaf, fi) <=
 > +	    btrfs_root_last_snapshot(&root->root_item))
 > +		goto out;
-> +
->  	backref_offset = btrfs_file_extent_offset(leaf, fi);
->  
->  	if (orig_start) {
-> 
+
+Please add some brief comment why we're taking a shortcut here, thanks.

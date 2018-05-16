@@ -1,9 +1,9 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([198.137.202.133]:58014 "EHLO
+Received: from bombadil.infradead.org ([198.137.202.133]:58124 "EHLO
         bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752508AbeEPFot (ORCPT
+        with ESMTP id S1752627AbeEPFoy (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 16 May 2018 01:44:49 -0400
+        Wed, 16 May 2018 01:44:54 -0400
 From: Christoph Hellwig <hch@lst.de>
 To: Souptick Joarder <jrdr.linux@gmail.com>,
         Matthew Wilcox <willy@infradead.org>
@@ -14,9 +14,9 @@ Cc: linux-fsdevel@vger.kernel.org, linux-mm@kvack.org,
         linux-mtd@lists.infradead.org, dri-devel@lists.freedesktop.org,
         lustre-devel@lists.lustre.org, linux-arm-kernel@lists.infradead.org,
         linux-s390@vger.kernel.org
-Subject: [PATCH 08/14] ocfs2: separate errno from VM_FAULT_* values
-Date: Wed, 16 May 2018 07:43:42 +0200
-Message-Id: <20180516054348.15950-9-hch@lst.de>
+Subject: [PATCH 11/14] ttm: separate errno from VM_FAULT_* values
+Date: Wed, 16 May 2018 07:43:45 +0200
+Message-Id: <20180516054348.15950-12-hch@lst.de>
 In-Reply-To: <20180516054348.15950-1-hch@lst.de>
 References: <20180516054348.15950-1-hch@lst.de>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -24,107 +24,126 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- fs/ocfs2/mmap.c | 36 +++++++++++++++++++-----------------
- 1 file changed, 19 insertions(+), 17 deletions(-)
+ drivers/gpu/drm/ttm/ttm_bo_vm.c | 42 +++++++++++++++++----------------
+ 1 file changed, 22 insertions(+), 20 deletions(-)
 
-diff --git a/fs/ocfs2/mmap.c b/fs/ocfs2/mmap.c
-index fb9a20e3d608..e75c1fc5333e 100644
---- a/fs/ocfs2/mmap.c
-+++ b/fs/ocfs2/mmap.c
-@@ -44,11 +44,11 @@
- #include "ocfs2_trace.h"
+diff --git a/drivers/gpu/drm/ttm/ttm_bo_vm.c b/drivers/gpu/drm/ttm/ttm_bo_vm.c
+index 8eba95b3c737..255e7801f62c 100644
+--- a/drivers/gpu/drm/ttm/ttm_bo_vm.c
++++ b/drivers/gpu/drm/ttm/ttm_bo_vm.c
+@@ -43,10 +43,11 @@
  
+ #define TTM_BO_VM_NUM_PREFAULT 16
  
--static int ocfs2_fault(struct vm_fault *vmf)
-+static vm_fault_t ocfs2_fault(struct vm_fault *vmf)
+-static int ttm_bo_vm_fault_idle(struct ttm_buffer_object *bo,
++static vm_fault_t ttm_bo_vm_fault_idle(struct ttm_buffer_object *bo,
+ 				struct vm_fault *vmf)
+ {
+-	int ret = 0;
++	vm_fault_t ret = 0;
++	int err = 0;
+ 
+ 	if (likely(!bo->moving))
+ 		goto out_unlock;
+@@ -77,8 +78,8 @@ static int ttm_bo_vm_fault_idle(struct ttm_buffer_object *bo,
+ 	/*
+ 	 * Ordinary wait.
+ 	 */
+-	ret = dma_fence_wait(bo->moving, true);
+-	if (unlikely(ret != 0)) {
++	err = dma_fence_wait(bo->moving, true);
++	if (unlikely(err != 0)) {
+ 		ret = (ret != -ERESTARTSYS) ? VM_FAULT_SIGBUS :
+ 			VM_FAULT_NOPAGE;
+ 		goto out_unlock;
+@@ -104,7 +105,7 @@ static unsigned long ttm_bo_io_mem_pfn(struct ttm_buffer_object *bo,
+ 		+ page_offset;
+ }
+ 
+-static int ttm_bo_vm_fault(struct vm_fault *vmf)
++static vm_fault_t ttm_bo_vm_fault(struct vm_fault *vmf)
  {
  	struct vm_area_struct *vma = vmf->vma;
- 	sigset_t oldset;
+ 	struct ttm_buffer_object *bo = (struct ttm_buffer_object *)
+@@ -115,7 +116,8 @@ static int ttm_bo_vm_fault(struct vm_fault *vmf)
+ 	unsigned long pfn;
+ 	struct ttm_tt *ttm = NULL;
+ 	struct page *page;
 -	int ret;
 +	vm_fault_t ret;
- 
- 	ocfs2_block_signals(&oldset);
- 	ret = filemap_fault(vmf);
-@@ -59,10 +59,10 @@ static int ocfs2_fault(struct vm_fault *vmf)
- 	return ret;
- }
- 
--static int __ocfs2_page_mkwrite(struct file *file, struct buffer_head *di_bh,
--				struct page *page)
-+static vm_fault_t __ocfs2_page_mkwrite(struct file *file,
-+		struct buffer_head *di_bh, struct page *page)
- {
--	int ret = VM_FAULT_NOPAGE;
-+	vm_fault_t ret = VM_FAULT_NOPAGE;
- 	struct inode *inode = file_inode(file);
- 	struct address_space *mapping = inode->i_mapping;
- 	loff_t pos = page_offset(page);
-@@ -71,6 +71,7 @@ static int __ocfs2_page_mkwrite(struct file *file, struct buffer_head *di_bh,
- 	struct page *locked_page = NULL;
- 	void *fsdata;
- 	loff_t size = i_size_read(inode);
 +	int err;
- 
- 	last_index = (size - 1) >> PAGE_SHIFT;
- 
-@@ -105,12 +106,12 @@ static int __ocfs2_page_mkwrite(struct file *file, struct buffer_head *di_bh,
- 	if (page->index == last_index)
- 		len = ((size - 1) & ~PAGE_MASK) + 1;
- 
--	ret = ocfs2_write_begin_nolock(mapping, pos, len, OCFS2_WRITE_MMAP,
-+	err = ocfs2_write_begin_nolock(mapping, pos, len, OCFS2_WRITE_MMAP,
- 				       &locked_page, &fsdata, di_bh, page);
--	if (ret) {
--		if (ret != -ENOSPC)
--			mlog_errno(ret);
--		if (ret == -ENOMEM)
-+	if (err) {
-+		if (err != -ENOSPC)
-+			mlog_errno(err);
-+		if (err == -ENOMEM)
- 			ret = VM_FAULT_OOM;
- 		else
- 			ret = VM_FAULT_SIGBUS;
-@@ -121,20 +122,21 @@ static int __ocfs2_page_mkwrite(struct file *file, struct buffer_head *di_bh,
- 		ret = VM_FAULT_NOPAGE;
- 		goto out;
- 	}
--	ret = ocfs2_write_end_nolock(mapping, pos, len, len, fsdata);
--	BUG_ON(ret != len);
-+	err = ocfs2_write_end_nolock(mapping, pos, len, len, fsdata);
-+	BUG_ON(err != len);
- 	ret = VM_FAULT_LOCKED;
- out:
- 	return ret;
- }
- 
--static int ocfs2_page_mkwrite(struct vm_fault *vmf)
-+static vm_fault_t ocfs2_page_mkwrite(struct vm_fault *vmf)
- {
- 	struct page *page = vmf->page;
- 	struct inode *inode = file_inode(vmf->vma->vm_file);
- 	struct buffer_head *di_bh = NULL;
- 	sigset_t oldset;
--	int ret;
-+	vm_fault_t ret = 0;
-+	int err;
- 
- 	sb_start_pagefault(inode->i_sb);
- 	ocfs2_block_signals(&oldset);
-@@ -144,10 +146,10 @@ static int ocfs2_page_mkwrite(struct vm_fault *vmf)
- 	 * node. Taking the data lock will also ensure that we don't
- 	 * attempt page truncation as part of a downconvert.
+ 	int i;
+ 	unsigned long address = vmf->address;
+ 	struct ttm_mem_type_manager *man =
+@@ -128,9 +130,9 @@ static int ttm_bo_vm_fault(struct vm_fault *vmf)
+ 	 * for reserve, and if it fails, retry the fault after waiting
+ 	 * for the buffer to become unreserved.
  	 */
--	ret = ocfs2_inode_lock(inode, &di_bh, 1);
--	if (ret < 0) {
-+	err = ocfs2_inode_lock(inode, &di_bh, 1);
-+	if (err < 0) {
- 		mlog_errno(ret);
--		if (ret == -ENOMEM)
-+		if (err == -ENOMEM)
- 			ret = VM_FAULT_OOM;
+-	ret = ttm_bo_reserve(bo, true, true, NULL);
+-	if (unlikely(ret != 0)) {
+-		if (ret != -EBUSY)
++	err = ttm_bo_reserve(bo, true, true, NULL);
++	if (unlikely(err != 0)) {
++		if (err != -EBUSY)
+ 			return VM_FAULT_NOPAGE;
+ 
+ 		if (vmf->flags & FAULT_FLAG_ALLOW_RETRY) {
+@@ -162,8 +164,8 @@ static int ttm_bo_vm_fault(struct vm_fault *vmf)
+ 	}
+ 
+ 	if (bdev->driver->fault_reserve_notify) {
+-		ret = bdev->driver->fault_reserve_notify(bo);
+-		switch (ret) {
++		err = bdev->driver->fault_reserve_notify(bo);
++		switch (err) {
+ 		case 0:
+ 			break;
+ 		case -EBUSY:
+@@ -191,13 +193,13 @@ static int ttm_bo_vm_fault(struct vm_fault *vmf)
+ 		goto out_unlock;
+ 	}
+ 
+-	ret = ttm_mem_io_lock(man, true);
+-	if (unlikely(ret != 0)) {
++	err = ttm_mem_io_lock(man, true);
++	if (unlikely(err != 0)) {
+ 		ret = VM_FAULT_NOPAGE;
+ 		goto out_unlock;
+ 	}
+-	ret = ttm_mem_io_reserve_vm(bo);
+-	if (unlikely(ret != 0)) {
++	err = ttm_mem_io_reserve_vm(bo);
++	if (unlikely(err != 0)) {
+ 		ret = VM_FAULT_SIGBUS;
+ 		goto out_io_unlock;
+ 	}
+@@ -265,21 +267,21 @@ static int ttm_bo_vm_fault(struct vm_fault *vmf)
+ 		}
+ 
+ 		if (vma->vm_flags & VM_MIXEDMAP)
+-			ret = vm_insert_mixed(&cvma, address,
++			err = vm_insert_mixed(&cvma, address,
+ 					__pfn_to_pfn_t(pfn, PFN_DEV));
  		else
- 			ret = VM_FAULT_SIGBUS;
+-			ret = vm_insert_pfn(&cvma, address, pfn);
++			err = vm_insert_pfn(&cvma, address, pfn);
+ 
+ 		/*
+ 		 * Somebody beat us to this PTE or prefaulting to
+ 		 * an already populated PTE, or prefaulting error.
+ 		 */
+ 
+-		if (unlikely((ret == -EBUSY) || (ret != 0 && i > 0)))
++		if (unlikely((err == -EBUSY) || (err != 0 && i > 0)))
+ 			break;
+-		else if (unlikely(ret != 0)) {
++		else if (unlikely(err != 0)) {
+ 			ret =
+-			    (ret == -ENOMEM) ? VM_FAULT_OOM : VM_FAULT_SIGBUS;
++			    (err == -ENOMEM) ? VM_FAULT_OOM : VM_FAULT_SIGBUS;
+ 			goto out_io_unlock;
+ 		}
+ 
 -- 
 2.17.0
 

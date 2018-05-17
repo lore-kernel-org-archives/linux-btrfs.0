@@ -1,40 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.21]:49113 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.17.20]:37309 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751642AbeEQGtB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 17 May 2018 02:49:01 -0400
-Subject: Re: [PATCH v5 2/3] btrfs: Add unprivileged ioctl which returns
- subvolume's ROOT_REF
+        id S1751409AbeEQG44 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 17 May 2018 02:56:56 -0400
+Subject: Re: [PATCH v5 0/3] btrfs: Add three new unprivileged ioctls to allow
+ normal users to call "sub list/show" etc.
 To: Tomohiro Misono <misono.tomohiro@jp.fujitsu.com>,
         linux-btrfs@vger.kernel.org
 References: <cover.1526446338.git.misono.tomohiro@jp.fujitsu.com>
- <af4638e0d17097f4270e9fea655ca6488ad3a2c6.1526446338.git.misono.tomohiro@jp.fujitsu.com>
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <a2278ef4-ae33-3d1d-d04e-36bb3d6fa71c@gmx.com>
-Date: Thu, 17 May 2018 14:48:51 +0800
+Message-ID: <1de3700b-47ef-979a-3c72-8897601b2214@gmx.com>
+Date: Thu, 17 May 2018 14:56:45 +0800
 MIME-Version: 1.0
-In-Reply-To: <af4638e0d17097f4270e9fea655ca6488ad3a2c6.1526446338.git.misono.tomohiro@jp.fujitsu.com>
+In-Reply-To: <cover.1526446338.git.misono.tomohiro@jp.fujitsu.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="xgAAgCNypCXz5H7s9C6DUHuxZZ9JXJB8i"
+ boundary="mPwCWBTHc76umHybKU6vXIkDw3doIa9dO"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---xgAAgCNypCXz5H7s9C6DUHuxZZ9JXJB8i
-Content-Type: multipart/mixed; boundary="rNTt2xoYygZUlEyRKIAWcDNh6zTWXWjFs";
+--mPwCWBTHc76umHybKU6vXIkDw3doIa9dO
+Content-Type: multipart/mixed; boundary="KEmRhb2vLx5xN0tf1fZVNATk2rxfsTSgB";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 To: Tomohiro Misono <misono.tomohiro@jp.fujitsu.com>,
  linux-btrfs@vger.kernel.org
-Message-ID: <a2278ef4-ae33-3d1d-d04e-36bb3d6fa71c@gmx.com>
-Subject: Re: [PATCH v5 2/3] btrfs: Add unprivileged ioctl which returns
- subvolume's ROOT_REF
+Message-ID: <1de3700b-47ef-979a-3c72-8897601b2214@gmx.com>
+Subject: Re: [PATCH v5 0/3] btrfs: Add three new unprivileged ioctls to allow
+ normal users to call "sub list/show" etc.
 References: <cover.1526446338.git.misono.tomohiro@jp.fujitsu.com>
- <af4638e0d17097f4270e9fea655ca6488ad3a2c6.1526446338.git.misono.tomohiro@jp.fujitsu.com>
-In-Reply-To: <af4638e0d17097f4270e9fea655ca6488ad3a2c6.1526446338.git.misono.tomohiro@jp.fujitsu.com>
+In-Reply-To: <cover.1526446338.git.misono.tomohiro@jp.fujitsu.com>
 
---rNTt2xoYygZUlEyRKIAWcDNh6zTWXWjFs
+--KEmRhb2vLx5xN0tf1fZVNATk2rxfsTSgB
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
@@ -42,222 +40,92 @@ Content-Transfer-Encoding: quoted-printable
 
 
 On 2018=E5=B9=B405=E6=9C=8816=E6=97=A5 13:49, Tomohiro Misono wrote:
-> Add unprivileged ioctl BTRFS_IOC_GET_SUBVOL_ROOTREF which
-> returns ROOT_REF information of the subvolume containing this inode
-> except the subvolume name (this is because to prevent potential name
-> leak). The subvolume name will be gained by user version of ino_lookup
-> ioctl (BTRFS_IOC_INO_LOOKUP_USER) which also performs permission check.=
-
+> [based on current misc-next]
 >=20
-> The min id of root ref's subvolume to be searched is specified by
-> @min_id in struct btrfs_ioctl_get_subvol_rootref_args. After the search=
-
-> ends, @min_id is set to the last searched root ref's subvolid + 1. Also=
-,
-> if there are more root refs than BTRFS_MAX_ROOTREF_BUFFER_NUM, -EOVERFL=
-OW
-> is returned. Therefore the caller can just call this ioctl again withou=
-t
-> changing the argument to continue search.
+> changelog:
+> v4 -> v5
+>   - Update error handling of 1st/2nd patch. See each log for details
+>   - Fix misspelling
+> v3 -> v4
+>   - call btrfs_next_leaf() after btrfs_search_slot() when the slot
+>     position exceeds the number of items
+>   - rebased to current misc-next
+> v2 -> v3
+>   - fix kbuild test bot warning
+> v1 -> v2
+>   - completely reimplement 1st/2nd ioctl to have user friendly api
+>   - various cleanup, remove unnecessary goto
+> =3D=3D=3D
 >=20
-> Signed-off-by: Tomohiro Misono <misono.tomohiro@jp.fujitsu.com>
-
-Looks good.
-
-Reviewed-by: Qu Wenruo <wqu@suse.com>
-
-Just a little off-topic nitpick below, no need to address in this patch.
-
-> ---
->  v4 -> v5
->     - Update error handling of btrfs_next_leaf() to cover all cases
->     - Use btrfs_next_item() to reduce the call of btrfs_search_slot()
+> This adds three new unprivileged ioctls:
 >=20
->  fs/btrfs/ioctl.c           | 102 +++++++++++++++++++++++++++++++++++++=
-++++++++
->  include/uapi/linux/btrfs.h |  16 +++++++
->  2 files changed, 118 insertions(+)
->=20
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index c1c9ae9a937d..db5de77540e1 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -2386,6 +2386,106 @@ static noinline int btrfs_ioctl_get_subvol_info=
-(struct file *file,
->  	return ret;
->  }
-> =20
-> +/*
-> + * Return ROOT_REF information of the subvolume containing this inode
-> + * except the subvolume name.
-> + */
-> +static noinline int btrfs_ioctl_get_subvol_rootref(struct file *file,
-> +					   void __user *argp)
-> +{
-> +	struct btrfs_ioctl_get_subvol_rootref_args *rootrefs;
-> +	struct btrfs_root_ref *rref;
-> +	struct btrfs_root *root;
-> +	struct btrfs_path *path;
-> +	struct btrfs_key key;
-> +
-> +	struct extent_buffer *l;
-> +	int slot;
-> +
-> +	struct inode *inode;
-> +	int ret;
-> +	u64 objectid;
-> +	u8 found;
-> +
-> +	path =3D btrfs_alloc_path();
-> +	if (!path)
-> +		return -ENOMEM;
-> +
-> +	rootrefs =3D memdup_user(argp, sizeof(*rootrefs));
-> +	if (!rootrefs) {
-> +		btrfs_free_path(path);
-> +		return -ENOMEM;
-> +	}
-> +
-> +	inode =3D file_inode(file);
-> +	root =3D BTRFS_I(inode)->root->fs_info->tree_root;
-> +	objectid =3D BTRFS_I(inode)->root->root_key.objectid;
-> +
-> +	key.objectid =3D objectid;
-> +	key.type =3D BTRFS_ROOT_REF_KEY;
-> +	key.offset =3D rootrefs->min_id;
-> +	found =3D 0;
-> +
-> +	ret =3D btrfs_search_slot(NULL, root, &key, path, 0, 0);
-> +	if (ret < 0) {
-> +		goto out;
-> +	} else if (path->slots[0] >=3D
-> +			btrfs_header_nritems(path->nodes[0])) {
-> +		ret =3D btrfs_next_leaf(root, path);
-> +		if (ret < 0) {
-> +			goto out;
-> +		} else if (ret > 0) {
-> +			ret =3D -ENOENT;
-> +			goto out;
-> +		}
-> +	}
-> +	while (1) {
-> +		l =3D path->nodes[0];
-> +		slot =3D path->slots[0];
-> +
-> +		btrfs_item_key_to_cpu(l, &key, slot);
-> +		if (key.objectid !=3D objectid ||
-> +		    key.type !=3D BTRFS_ROOT_REF_KEY) {
-> +			ret =3D 0;
-> +			goto out;
-> +		}
-> +
-> +		if (found =3D=3D BTRFS_MAX_ROOTREF_BUFFER_NUM) {
-> +			ret =3D -EOVERFLOW;
-> +			goto out;
-> +		}
-> +
-> +		rref =3D btrfs_item_ptr(l, slot, struct btrfs_root_ref);
-> +		rootrefs->rootref[found].subvolid =3D key.offset;
-> +		rootrefs->rootref[found].dirid =3D
-> +				  btrfs_root_ref_dirid(l, rref);
-> +		found++;
-> +
-> +		ret =3D btrfs_next_item(root, path);
-> +		if (ret < 0) {
-> +			goto out;
-> +		} else if (ret > 0) {
-> +			ret =3D -ENOENT;
-> +			goto out;
-> +		}
-> +	}
-> +
-> +out:
-> +	if (!ret || ret =3D=3D -EOVERFLOW) {
-> +		rootrefs->num_items =3D found;
-> +		/* update min_id for next search */
-> +		if (found)
-> +			rootrefs->min_id =3D
-> +				rootrefs->rootref[found - 1].subvolid + 1;
-> +		if (copy_to_user(argp, rootrefs, sizeof(*rootrefs)))
-> +			ret =3D -EFAULT;
-> +	}
-> +
-> +	btrfs_free_path(path);
-> +	kfree(rootrefs);
-> +	return ret;
-> +}
-> +
->  static noinline int btrfs_ioctl_snap_destroy(struct file *file,
->  					     void __user *arg)
->  {
-> @@ -5520,6 +5620,8 @@ long btrfs_ioctl(struct file *file, unsigned int
->  		return btrfs_ioctl_set_features(file, argp);
->  	case BTRFS_IOC_GET_SUBVOL_INFO:
->  		return btrfs_ioctl_get_subvol_info(file, argp);
-> +	case BTRFS_IOC_GET_SUBVOL_ROOTREF:
-> +		return btrfs_ioctl_get_subvol_rootref(file, argp);
->  	}
-> =20
->  	return -ENOTTY;
-> diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
-> index 02cd1f1994e8..b6633f5d4847 100644
-> --- a/include/uapi/linux/btrfs.h
-> +++ b/include/uapi/linux/btrfs.h
-> @@ -774,6 +774,20 @@ struct btrfs_ioctl_get_subvol_info_args {
->  	__u64 reserved[8];
->  };
-> =20
-> +#define BTRFS_MAX_ROOTREF_BUFFER_NUM 255
-> +struct btrfs_ioctl_get_subvol_rootref_args {
-> +		/* in/out, min id of rootref's subvolid to be searched */
-> +		__u64 min_id;
-> +		/* out */
-> +		struct {
-> +			__u64 subvolid;
-> +			__u64 dirid;
-> +		} rootref[BTRFS_MAX_ROOTREF_BUFFER_NUM];
-> +		/* out, number of found items */
-> +		__u8 num_items;
-> +		__u8 align[7];
-> +};
-> +
+> 1st patch:
+>   ioctl which returns subvolume information of ROOT_ITEM and ROOT_BACKR=
+EF
+> 2nd patch:
+>   ioctl which returns subvolume information of ROOT_REF (without subvol=
+ume name)
 
-What about some BUILD_BUG_ON() to verify the structure size?
+First 2 patches looks mostly fine.
+
+> 3rd patch:=20
+>   user version of ino_lookup ioctl which also performs permission check=
+=2E
+
+I'm a little concerned about this.
+
+What will happen in the following scenario?
+- Environment is container whose rootfs is a subvolume of btrfs
+- The root and normal use try to call subvolume list on their rootfs
+
+Will it leak the real subvolume layout to the container root/normal user?=
+
+
+Or it will leak anyway even without the unprivileged ioctl?
 
 Thanks,
 Qu
 
->  /* Error codes as returned by the kernel */
->  enum btrfs_err_code {
->  	BTRFS_ERROR_DEV_RAID1_MIN_NOT_MET =3D 1,
-> @@ -894,5 +908,7 @@ enum btrfs_err_code {
->  					struct btrfs_ioctl_logical_ino_args)
->  #define BTRFS_IOC_GET_SUBVOL_INFO _IOR(BTRFS_IOCTL_MAGIC, 60, \
->  				struct btrfs_ioctl_get_subvol_info_args)
-> +#define BTRFS_IOC_GET_SUBVOL_ROOTREF _IOWR(BTRFS_IOCTL_MAGIC, 61, \
-> +				struct btrfs_ioctl_get_subvol_rootref_args)
-> =20
->  #endif /* _UAPI_LINUX_BTRFS_H */
+>=20
+> They will be used to implement user version of "subvolume list/show" et=
+c.
+> in user tools.
+> See each commit log for more detals.
+>=20
+> The implementation of btrfs-progs can be found in the ML titled as foll=
+ows:=20
+>   [PATCH 0/11] btrfs-progs: Rework of "subvolume list/show" and relax t=
+he root privileges of them
+>=20
+> Tomohiro Misono (3):
+>   btrfs: Add unprivileged ioctl which returns subvolume information
+>   btrfs: Add unprivileged ioctl which returns subvolume's ROOT_REF
+>   btrfs: Add unprivileged version of ino_lookup ioctl
+>=20
+>  fs/btrfs/ioctl.c           | 452 +++++++++++++++++++++++++++++++++++++=
+++++++++
+>  include/uapi/linux/btrfs.h |  84 +++++++++
+>  2 files changed, 536 insertions(+)
 >=20
 
 
---rNTt2xoYygZUlEyRKIAWcDNh6zTWXWjFs--
+--KEmRhb2vLx5xN0tf1fZVNATk2rxfsTSgB--
 
---xgAAgCNypCXz5H7s9C6DUHuxZZ9JXJB8i
+--mPwCWBTHc76umHybKU6vXIkDw3doIa9dO
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlr9JdMACgkQwj2R86El
-/qj59wgApNNubsBA+rsI/2n/O8kmOlvNZkAr0PSeeFcUzRmj2mp3fEM9zNqce9Yf
-1OGvqho0V7stwsIIOCtyMLV6nB3cm5ZD4Yy0cjko/66T9yLeEogPraVDbHdJ0C8/
-T0p07a6oLSVnvmfOlbXjmW1tgBR5uMRVFgysAeyH6W78uIayySehNi0O0mB+W4Ws
-PJLSv2hOf1yFjriNQdfPEDl0ZQSEgMnvv9ctQTCckwy3rPBWhehv5lfYD8pqi8cq
-8n1I62/ir0NLeq7uozu6XmEsgoSJ/9S6IqSgyNLJs+5Ctp+TGo32zzB/qBZm6hbD
-7DlEnILtoD1c56rsZTB1W7yFSwpHPQ==
-=CnV9
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlr9J60ACgkQwj2R86El
+/qhQyAf/aRxfnzhkBJ5uv/4C4WFLH3w3nqW75iIx4oyhcwXuRoFKGfs/JdQ9R+YW
+RcJNWK12POcjAtUTGz+roKYtHqxOX1I+yLTN0JY4ddDR0qaUih7Ci6A5spsj0Fmt
+si843Bx6e0QfC9Q0baeRGH2M0hMH0UdSU0BgtX8fczhRqbq5vw9lhcBiWe4vblOh
+AG3IFmaHstLs5LMHQJngWnpWJtJjKwyzCjLl1wwjr0itbEqdZU0rE5HU2jJilrJF
+57wuCBzT7ahz6bc793xravfSfvsRv9Rb56B3BVdEGG0OxszPmIZVu+wCOgDZ/TKQ
+mcO0tprwNRtTTktzv+1nYF6q6GAJ0g==
+=ptPq
 -----END PGP SIGNATURE-----
 
---xgAAgCNypCXz5H7s9C6DUHuxZZ9JXJB8i--
+--mPwCWBTHc76umHybKU6vXIkDw3doIa9dO--

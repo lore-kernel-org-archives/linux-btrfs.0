@@ -1,128 +1,232 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:44614 "EHLO mx2.suse.de"
+Received: from sandeen.net ([63.231.237.45]:46918 "EHLO sandeen.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751468AbeEQOqi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 17 May 2018 10:46:38 -0400
-Subject: Re: [PATCH v2 0/3] btrfs: add read mirror policy
-To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
-        Anand Jain <anand.jain@oracle.com>, dsterba@suse.cz,
-        linux-btrfs@vger.kernel.org
-References: <20180516100359.7752-1-anand.jain@oracle.com>
- <20180516223523.GG6649@twin.jikos.cz>
- <0ff3604a-4d67-4421-560f-40a87fe4001d@oracle.com>
- <157ec7fa-e271-ed60-d22b-290db8122734@gmail.com>
-From: Jeff Mahoney <jeffm@suse.com>
-Message-ID: <854f0e3c-9bc5-768b-1f85-b0de79ee5a73@suse.com>
-Date: Thu, 17 May 2018 10:46:35 -0400
+        id S1752346AbeEQP21 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 17 May 2018 11:28:27 -0400
+Subject: [PATCH V4] test online label ioctl
+To: Eric Sandeen <sandeen@redhat.com>, fstests <fstests@vger.kernel.org>,
+        linux-xfs <linux-xfs@vger.kernel.org>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+References: <2a743318-585d-9eb1-5430-2b07246348ab@redhat.com>
+From: Eric Sandeen <sandeen@sandeen.net>
+Message-ID: <f912f4ae-20b1-d19e-3b38-317b9ef46a6d@sandeen.net>
+Date: Thu, 17 May 2018 10:28:26 -0500
 MIME-Version: 1.0
-In-Reply-To: <157ec7fa-e271-ed60-d22b-290db8122734@gmail.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="DKKoYHlUCXJyTNITUmff191lt0n748EOf"
+In-Reply-To: <2a743318-585d-9eb1-5430-2b07246348ab@redhat.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---DKKoYHlUCXJyTNITUmff191lt0n748EOf
-Content-Type: multipart/mixed; boundary="Ux1ZTaTGWQVafa97MitNC4jL9ZEON5I2I";
- protected-headers="v1"
-From: Jeff Mahoney <jeffm@suse.com>
-To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
- Anand Jain <anand.jain@oracle.com>, dsterba@suse.cz,
- linux-btrfs@vger.kernel.org
-Message-ID: <854f0e3c-9bc5-768b-1f85-b0de79ee5a73@suse.com>
-Subject: Re: [PATCH v2 0/3] btrfs: add read mirror policy
-References: <20180516100359.7752-1-anand.jain@oracle.com>
- <20180516223523.GG6649@twin.jikos.cz>
- <0ff3604a-4d67-4421-560f-40a87fe4001d@oracle.com>
- <157ec7fa-e271-ed60-d22b-290db8122734@gmail.com>
-In-Reply-To: <157ec7fa-e271-ed60-d22b-290db8122734@gmail.com>
+This tests the online label ioctl that btrfs has, which has been
+recently proposed for XFS.
 
---Ux1ZTaTGWQVafa97MitNC4jL9ZEON5I2I
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+To run, it requires an updated xfs_io with the label command and a
+filesystem that supports it
 
-On 5/17/18 8:25 AM, Austin S. Hemmelgarn wrote:
-> On 2018-05-16 22:32, Anand Jain wrote:
->>
->>
->> On 05/17/2018 06:35 AM, David Sterba wrote:
->>> On Wed, May 16, 2018 at 06:03:56PM +0800, Anand Jain wrote:
->>>> Not yet ready for the integration. As I need to introduce
->>>> -o no_read_mirror_policy instead of -o read_mirror_policy=3D-<devid>=
+A slight change here to _require_xfs_io_command as well, so that tests
+which simply fail with "Inappropriate ioctl" can be caught in the
+common case.
 
->>>
->>> Mount option is mostly likely not the right interface for setting suc=
-h
->>> options, as usual.
->>
->> =C2=A0=C2=A0I am ok to make it ioctl for the final. What do you think?=
+Signed-off-by: Eric Sandeen <sandeen@redhat.com>
+---
 
->>
->>
->> =C2=A0=C2=A0But to reproduce the bug posted in
->> =C2=A0=C2=A0=C2=A0 Btrfs: fix the corruption by reading stale btree bl=
-ocks
->> =C2=A0=C2=A0It needs to be a mount option, as randomly the pid can
->> =C2=A0=C2=A0still pick the disk specified in the mount option.
->>
-> Personally, I'd vote for filesystem property (thus handled through the
-> standard `btrfs property` command) that can be overridden by a mount
-> option.=C2=A0 With that approach, no new tool (or change to an existing=
- tool)
-> would be needed, existing volumes could be converted to use it in a
-> backwards compatible manner (old kernels would just ignore the
-> property), and you could still have the behavior you want in tests (and=
+Now with new and improved sequential V4 versioning!
 
-> in theory it could easily be adapted to be a per-subvolume setting if w=
-e
-> ever get per-subvolume chunk profile support).
+This passes on btrfs, _notruns on xfs/ext4 of yore, and passes
+on xfs w/ my online label patchset (as long as xfs_io has the new
+capability)
 
-Properties are a combination of interfaces presented through a single
-command.  Although the kernel API would allow a direct-to-property
-interface via the btrfs.* extended attributes, those are currently
-limited to a single inode.  The label property is set via ioctl and
-stored in the superblock.  The read-only subvolume property is also set
-by ioctl but stored in the root flags.
+V2: Add a max label length helper
+     Set the proper btrfs max label length o_O oops
+     Filter trailing whitespace from blkid output
 
-As it stands, every property is explicitly defined in the tools, so any
-addition would require tools changes.  This is a bigger discussion,
-though.  We *could* use the xattr interface to access per-root or
-fs-global properties, but we'd need to define that interface.
-btrfs_listxattr could get interesting, though I suppose we could
-simplify it by only allowing the per-subvolume and fs-global operations
-on root inodes.
+V3: lowercase local vars, simplify max label len function
 
--Jeff
+V4: use/test new -s / -c options to set and clear
 
---=20
-Jeff Mahoney
-SUSE Labs
+diff --git a/common/rc b/common/rc
+index ffe53236..333cfb82 100644
+--- a/common/rc
++++ b/common/rc
+@@ -2144,6 +2144,9 @@ _require_xfs_io_command()
+  		echo $testio | grep -q "Inappropriate ioctl" && \
+  			_notrun "xfs_io $command support is missing"
+  		;;
++	"label")
++		testio=`$XFS_IO_PROG -c "label" $TEST_DIR 2>&1`
++		;;
+  	"open")
+  		# -c "open $f" is broken in xfs_io <= 4.8. Along with the fix,
+  		# a new -C flag was introduced to execute one shot commands.
+@@ -2182,7 +2185,7 @@ _require_xfs_io_command()
+  	rm -f $testfile 2>&1 > /dev/null
+  	echo $testio | grep -q "not found" && \
+  		_notrun "xfs_io $command support is missing"
+-	echo $testio | grep -q "Operation not supported" && \
++	echo $testio | grep -q "Operation not supported\|Inappropriate ioctl" && \
+  		_notrun "xfs_io $command failed (old kernel/wrong fs?)"
+  	echo $testio | grep -q "Invalid" && \
+  		_notrun "xfs_io $command failed (old kernel/wrong fs/bad args?)"
+@@ -3788,6 +3791,29 @@ _require_scratch_feature()
+  	esac
+  }
+  
++# The maximum filesystem label length, /not/ including terminating NULL
++_label_get_max()
++{
++	case $FSTYP in
++	xfs)
++		echo 12
++		;;
++	btrfs)
++		echo 255
++		;;
++	*)
++		_notrun "$FSTYP does not define maximum label length"
++		;;
++	esac
++}
++
++# Helper to check above early in a script
++_require_label_get_max()
++{
++	# Just call _label_get_max which will notrun if appropriate
++	dummy=$(_label_get_max)
++}
++
+  init_rc
+  
+  ################################################################################
+diff --git a/tests/generic/488 b/tests/generic/488
+new file mode 100755
+index 00000000..3616522d
+--- /dev/null
++++ b/tests/generic/488
+@@ -0,0 +1,95 @@
++#! /bin/bash
++# FS QA Test 488
++#
++# Test the online filesystem label set/get ioctls
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2018 Red Hat, Inc.  All Rights Reserved.
++# Author: Eric Sandeen <sandeen@redhat.com>
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++#
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++	cd /
++	rm -f $tmp.*
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++
++# remove previous $seqres.full before test
++rm -f $seqres.full
++
++# real QA test starts here
++
++_supported_fs generic
++_supported_os Linux
++_require_scratch
++_require_xfs_io_command "label"
++_require_label_get_max
++
++_scratch_mkfs > $seqres.full 2>&1
++_scratch_mount
++
++# Make sure we can set & clear the label
++$XFS_IO_PROG -c "label -s label.$seq" $SCRATCH_MNT
++$XFS_IO_PROG -c "label" $SCRATCH_MNT
++
++$XFS_IO_PROG -c "label -c" $SCRATCH_MNT
++$XFS_IO_PROG -c "label" $SCRATCH_MNT
++
++# And that userspace can see it now, while mounted
++# NB: some blkid has trailing whitespace, filter it out here
++$XFS_IO_PROG -c "label -s label.$seq" $SCRATCH_MNT
++$XFS_IO_PROG -c "label" $SCRATCH_MNT
++blkid -s LABEL $SCRATCH_DEV | _filter_scratch | sed -e "s/ $//g"
++
++# And that the it is still there when it's unmounted
++_scratch_unmount
++blkid -s LABEL $SCRATCH_DEV | _filter_scratch | sed -e "s/ $//g"
++
++# And that it persists after a remount
++_scratch_mount
++$XFS_IO_PROG -c "label" $SCRATCH_MNT
++
++# And that a too-long label is rejected, beyond the interface max:
++fs_label=$(perl -e "print 'l' x 257;")
++$XFS_IO_PROG -c "label -s $fs_label" $SCRATCH_MNT
++
++# And it succeeds right at the filesystem max:
++max_label_len=$(_label_get_max)
++fs_label=$(perl -e "print 'o' x $max_label_len;")
++$XFS_IO_PROG -c "label -s $fs_label" $SCRATCH_MNT | sed -e 's/o\+/MAXLABEL/'
++
++# And that it fails past the filesystem max:
++let toolong_label_len=max_label_len+1
++fs_label=$(perl -e "print 'o' x $toolong_label_len;")
++$XFS_IO_PROG -c "label -s $fs_label " $SCRATCH_MNT
++
++# success, all done
++status=0
++exit
+diff --git a/tests/generic/488.out b/tests/generic/488.out
+new file mode 100644
+index 00000000..70691af4
+--- /dev/null
++++ b/tests/generic/488.out
+@@ -0,0 +1,13 @@
++QA output created by 488
++label = "label.488"
++label = "label.488"
++label = ""
++label = ""
++label = "label.488"
++label = "label.488"
++SCRATCH_DEV: LABEL="label.488"
++SCRATCH_DEV: LABEL="label.488"
++label = "label.488"
++label: Invalid argument
++label = "MAXLABEL"
++label: Invalid argument
+diff --git a/tests/generic/group b/tests/generic/group
+index dc637c96..6266213e 100644
+--- a/tests/generic/group
++++ b/tests/generic/group
+@@ -490,3 +490,4 @@
+  485 auto quick insert
+  486 auto quick attr
+  487 auto quick
++488 auto quick
 
 
---Ux1ZTaTGWQVafa97MitNC4jL9ZEON5I2I--
 
---DKKoYHlUCXJyTNITUmff191lt0n748EOf
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
 
------BEGIN PGP SIGNATURE-----
-
-iQIzBAEBCAAdFiEE8wzgbmZ74SnKPwtDHntLYyF55bIFAlr9lcsACgkQHntLYyF5
-5bK9Pw//Vudkk/hOH/j1okNMgYugqq9P24cIWwzZYTMLg/9Juf/G3Y4dBlXVz61N
-TStr9auRKELyPx/uckUcWEocD8OlqPCRqCiUO+oefp/h5d8hw5HUWoChSPeB/VFZ
-bZ+Gl3cgxAr60/CKEbry1ZgMrcQkBmkG9TiEOoRwFvXG0SOpYJJv2UufSAs/WHkv
-9twu0IMc7wlxOp+uuQ46hJlo/zJGXbVD49d6fpiOYWvYUSFOJXqX+LLfPP++bqpK
-4KjGt7lSM/a9Eq/v7v1cG4GctTJlKp1lhw74NwYwPsikaMvWf9DkW3YjIdVb6O84
-9j6EvhsXifq1SBFPB1BVdxorEF9sDNj0QXArkhwzDoj/Rr04W078SCI1ZnLPJ2A7
-gaUL2QnZgp8Fv0bxOKW/+tl3g7sjgqDQRwkD1/nP591/93NzJZV9V3mIy9Ejs3XL
-wbz3T2hxUVHSgPzJ1slY0XT/AjcPlAuqXkJXwMJNMNZT98iXPgV4l9iOptMB5fYH
-ORWZqCJ94Wen3KYqyAx4ILjX1qay2wnhIROMP+CLYtIFG7OhqgWU1CtnKbmVUjUX
-VSsW2HfNWujVHbv1yR4jeg36CwbNhr1xnZZ1o5UsvAp+3Kw4eZXfE0/3xPjVL6p+
-XfjKri5zrvUVBMjQOnao2rHDKtlTim9J3LDsHWdTeYINCP9y+0c=
-=7ao1
------END PGP SIGNATURE-----
-
---DKKoYHlUCXJyTNITUmff191lt0n748EOf--

@@ -1,42 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([198.137.202.133]:57332 "EHLO
-        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750957AbeERPxb (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 18 May 2018 11:53:31 -0400
-Date: Fri, 18 May 2018 08:53:30 -0700
-From: Christoph Hellwig <hch@infradead.org>
-To: Matthew Wilcox <willy@infradead.org>
-Cc: Kent Overstreet <kent.overstreet@gmail.com>, linux-kernel@vger.kernel.org,
-        linux-fsdevel@vger.kernel.org,
-        Andrew Morton <akpm@linux-foundation.org>,
-        Dave Chinner <dchinner@redhat.com>, darrick.wong@oracle.com,
-        tytso@mit.edu, linux-btrfs@vger.kernel.org, clm@fb.com, jbacik@fb.com,
-        viro@zeniv.linux.org.uk, peterz@infradead.org
-Subject: Re: [PATCH 01/10] mm: pagecache add lock
-Message-ID: <20180518155330.GA16931@infradead.org>
-References: <20180518074918.13816-1-kent.overstreet@gmail.com>
- <20180518074918.13816-3-kent.overstreet@gmail.com>
- <20180518131305.GA6361@bombadil.infradead.org>
+Received: from mx2.suse.de ([195.135.220.15]:50181 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751888AbeEQPsv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 17 May 2018 11:48:51 -0400
+Subject: Re: [PATCH v2] btrfs: use kvzalloc for EXTENT_SAME temporary data
+To: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+Cc: fdmanana@gmail.com, nefelim4ag@gmail.com
+References: <20180517154110.29362-1-dsterba@suse.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <8a301366-871b-4bc2-dadb-724d9037ad57@suse.com>
+Date: Thu, 17 May 2018 18:48:49 +0300
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180518131305.GA6361@bombadil.infradead.org>
+In-Reply-To: <20180517154110.29362-1-dsterba@suse.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, May 18, 2018 at 06:13:06AM -0700, Matthew Wilcox wrote:
-> > Historically, the only problematic case has been direct IO, and people
-> > have been willing to say "well, if you mix buffered and direct IO you
-> > get what you deserve", and that's probably not unreasonable. But now we
-> > have fallocate insert range and collapse range, and those are broken in
-> > ways I frankly don't want to think about if they can't ensure consistency
-> > with the page cache.
-> 
-> ext4 manages collapse-vs-pagefault with the ext4-specific i_mmap_sem.
-> You may get pushback on the grounds that this ought to be a
-> filesystem-specific lock rather than one embedded in the generic inode.
 
-Honestly I think this probably should be in the core.  But IFF we move
-it to the core the existing users of per-fs locks need to be moved
-over first.  E.g. XFS as the very first one, and at least ext4 and f2fs
-that copied the approach, and probably more if you audit deep enough.
+
+On 17.05.2018 18:41, David Sterba wrote:
+> The dedupe range is 16 MiB, with 4 KiB pages and 8 byte pointers, the
+> arrays can be 32KiB large. To avoid allocation failures due to
+> fragmented memory, use the allocation with fallback to vmalloc.
+> 
+> The arrays are allocated and freed only inside btrfs_extent_same and
+> reused for all the ranges.
+> 
+> Signed-off-by: David Sterba <dsterba@suse.com>
+
+LGTM:
+
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+> ---
+> 
+> Based on git://github.com/kdave/btrfs-devel.git ext/timofey/dedupe-16mb-limit
+> 
+> v2:
+> - use kvmalloc_array
+> - use __GFP_ZERO, as there's no kvzalloc_array
+> - check that there are no other frees missed,
+>   see https://patchwork.kernel.org/patch/10374941/ for reference
+> 
+>  fs/btrfs/ioctl.c | 16 +++++++++-------
+>  1 file changed, 9 insertions(+), 7 deletions(-)
+> 
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index b572e38b4b64..20751829104d 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -3178,12 +3178,13 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
+>  	 * locking. We use an array for the page pointers. Size of the array is
+>  	 * bounded by len, which is in turn bounded by BTRFS_MAX_DEDUPE_LEN.
+>  	 */
+> -	cmp.src_pages = kcalloc(num_pages, sizeof(struct page *), GFP_KERNEL);
+> -	cmp.dst_pages = kcalloc(num_pages, sizeof(struct page *), GFP_KERNEL);
+> +	cmp.src_pages = kvmalloc_array(num_pages, sizeof(struct page *),
+> +				       GFP_KERNEL | __GFP_ZERO);
+> +	cmp.dst_pages = kvmalloc_array(num_pages, sizeof(struct page *),
+> +				       GFP_KERNEL | __GFP_ZERO);
+>  	if (!cmp.src_pages || !cmp.dst_pages) {
+> -		kfree(cmp.src_pages);
+> -		kfree(cmp.dst_pages);
+> -		return -ENOMEM;
+> +		ret = -ENOMEM;
+> +		goto out_free;
+>  	}
+>  
+>  	if (same_inode)
+> @@ -3211,8 +3212,9 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
+>  	else
+>  		btrfs_double_inode_unlock(src, dst);
+>  
+> -	kfree(cmp.src_pages);
+> -	kfree(cmp.dst_pages);
+> +out_free:
+> +	kvfree(cmp.src_pages);
+> +	kvfree(cmp.dst_pages);
+>  
+>  	return ret;
+>  }
+> 

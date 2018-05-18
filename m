@@ -1,66 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qt0-f193.google.com ([209.85.216.193]:44929 "EHLO
-        mail-qt0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751030AbeETWp2 (ORCPT
+Received: from out30-131.freemail.mail.aliyun.com ([115.124.30.131]:56921 "EHLO
+        out30-131.freemail.mail.aliyun.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1752080AbeERNPb (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 20 May 2018 18:45:28 -0400
-Date: Sun, 20 May 2018 18:45:24 -0400
-From: Kent Overstreet <kent.overstreet@gmail.com>
-To: Christoph Hellwig <hch@infradead.org>
-Cc: Matthew Wilcox <willy@infradead.org>, linux-kernel@vger.kernel.org,
-        linux-fsdevel@vger.kernel.org,
-        Andrew Morton <akpm@linux-foundation.org>,
-        Dave Chinner <dchinner@redhat.com>, darrick.wong@oracle.com,
-        tytso@mit.edu, linux-btrfs@vger.kernel.org, clm@fb.com, jbacik@fb.com,
-        viro@zeniv.linux.org.uk, peterz@infradead.org
-Subject: Re: [PATCH 01/10] mm: pagecache add lock
-Message-ID: <20180520224524.GC11495@kmo-pixel>
-References: <20180518074918.13816-1-kent.overstreet@gmail.com>
- <20180518074918.13816-3-kent.overstreet@gmail.com>
- <20180518131305.GA6361@bombadil.infradead.org>
- <20180518155330.GA16931@infradead.org>
+        Fri, 18 May 2018 09:15:31 -0400
+Date: Fri, 18 May 2018 21:15:16 +0800
+From: Liu Bo <bo.liu@linux.alibaba.com>
+To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: fix the corruption by reading stale btree blocks
+Message-ID: <20180518131515.n23ysksu5x24kchb@US-160370MP2.local>
+Reply-To: bo.liu@linux.alibaba.com
+References: <1526405857-88702-1-git-send-email-bo.liu@linux.alibaba.com>
+ <880e75c4-10fa-8487-7bed-29c7c8c380fc@suse.com>
+ <20180516141221.GA6649@twin.jikos.cz>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180518155330.GA16931@infradead.org>
+In-Reply-To: <20180516141221.GA6649@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, May 18, 2018 at 08:53:30AM -0700, Christoph Hellwig wrote:
-> On Fri, May 18, 2018 at 06:13:06AM -0700, Matthew Wilcox wrote:
-> > > Historically, the only problematic case has been direct IO, and people
-> > > have been willing to say "well, if you mix buffered and direct IO you
-> > > get what you deserve", and that's probably not unreasonable. But now we
-> > > have fallocate insert range and collapse range, and those are broken in
-> > > ways I frankly don't want to think about if they can't ensure consistency
-> > > with the page cache.
+On Wed, May 16, 2018 at 04:12:21PM +0200, David Sterba wrote:
+> On Wed, May 16, 2018 at 11:00:14AM +0300, Nikolay Borisov wrote:
 > > 
-> > ext4 manages collapse-vs-pagefault with the ext4-specific i_mmap_sem.
-> > You may get pushback on the grounds that this ought to be a
-> > filesystem-specific lock rather than one embedded in the generic inode.
+> > 
+> > On 15.05.2018 20:37, Liu Bo wrote:
+> > > If a btree block, aka. extent buffer, is not available in the extent
+> > > buffer cache, it'll be read out from the disk instead, i.e.
+> > > 
+> > > btrfs_search_slot()
+> > >   read_block_for_search()  # hold parent and its lock, go to read child
+> > >     btrfs_release_path()
+> > >     read_tree_block()  # read child
+> > > 
+> > > Unfortunately, the parent lock got released before reading child, so
+> > > commit 5bdd3536cbbe ("Btrfs: Fix block generation verification race") had
+> > > used 0 as parent transid to read the child block.  It forces
+> > > read_tree_block() not to check if parent transid is different with the
+> > > generation id of the child that it reads out from disk.
+> > > 
+> > > A simple PoC is included in btrfs/124,
+> > > 
+> > > 0. A two-disk raid1 btrfs,
+> > > 
+> > > 1. Right after mkfs.btrfs, block A is allocated to be device tree's root.
+> > > 
+> > > 2. Mount this filesystem and put it in use, after a while, device tree's
+> > >    root got COW but block A hasn't been allocated/overwritten yet.
+> > > 
+> > > 3. Umount it and reload the btrfs module to remove both disks from the
+> > >    global @fs_devices list.
+> > > 
+> > > 4. mount -odegraded dev1 and write some data, so now block A is allocated
+> > >    to be a leaf in checksum tree.  Note that only dev1 has the latest
+> > >    metadata of this filesystem.
+> > > 
+> > > 5. Umount it and mount it again normally (with both disks), since raid1
+> > >    can pick up one disk by the writer task's pid, if btrfs_search_slot()
+> > >    needs to read block A, dev2 which does NOT have the latest metadata
+> > >    might be read for block A, then we got a stale block A.
+> > > 
+> > > 6. As parent transid is not checked, block A is marked as uptodate and
+> > >    put into the extent buffer cache, so the future search won't bother
+> > >    to read disk again, which means it'll make changes on this stale
+> > >    one and make it dirty and flush it onto disk.
+> > > 
+> > > To avoid the problem, parent transid needs to be passed to
+> > > read_tree_block().
+> > > 
+> > > In order to get a valid parent transid, we need to hold the parent's
+> > > lock until finish reading child.
+> > > 
+> > > Signed-off-by: Liu Bo <bo.liu@linux.alibaba.com>
+> > 
+> > Doesn't this warrant a stable tag and
+> > Fixes: 5bdd3536cbbe ("Btrfs: Fix block generation verification race")
 > 
-> Honestly I think this probably should be in the core.  But IFF we move
-> it to the core the existing users of per-fs locks need to be moved
-> over first.  E.g. XFS as the very first one, and at least ext4 and f2fs
-> that copied the approach, and probably more if you audit deep enough.
+> The patch will not apply to < 4.16 as it depends on the addition of
+> &first_key check from 581c1760415c4, but yes we need it for stable.
 
-I'm not going to go and redo locking in XFS and ext4 as a prerequisite to
-merging bcachefs. Sorry, but that's a bit crazy.
+True, we can easily fix the conflicts by removing @first_key, can't
+we?
 
-I am more than happy to work on the locking itself if we can agree on what
-semantics we want out of it. We have two possible approaches, and we're going to
-have to pick one first: the locking can be done at the top of the IO stack (like
-ext4 and I'm guessing xfs), but then we're adding locking overhead to buffered
-reads and writes that don't need it because they're only touching pages that are
-already in cache.
+The problem does exist before it.
 
-Or we can go with my approach, pushing down the locking to only when we need to
-add pages to the page cache. I think if we started out by merging my approach,
-it would be pretty easy to have it make use of Mathew's fancy xarray based range
-locking when that goes in, the semantics should be similar enough.
-
-If people are ok with and willing to use my approach, I can polish it up - add
-lockdep support and whatever else I can think of, and attempt to get rid of the
-stupid recursive part.
-
-But that's got to be decided first, where in the call stack the locking should
-be done.
+thanks,
+-liubo

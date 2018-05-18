@@ -1,102 +1,145 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:41691 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752572AbeEUPsP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 21 May 2018 11:48:15 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 3AA04AEDF
-        for <linux-btrfs@vger.kernel.org>; Mon, 21 May 2018 15:48:14 +0000 (UTC)
-From: David Sterba <dsterba@suse.com>
+Received: from mail-pl0-f66.google.com ([209.85.160.66]:34808 "EHLO
+        mail-pl0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751009AbeERVyv (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 18 May 2018 17:54:51 -0400
+Received: by mail-pl0-f66.google.com with SMTP id ay10-v6so5321858plb.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 18 May 2018 14:54:51 -0700 (PDT)
+Date: Fri, 18 May 2018 14:54:49 -0700
+From: Omar Sandoval <osandov@osandov.com>
 To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>
-Subject: Next btrfs development cycle open - 4.19
-Date: Mon, 21 May 2018 17:45:29 +0200
-Message-Id: <20180521154529.12620-1-dsterba@suse.com>
+Cc: kernel-team@fb.com, Chris Mason <clm@fb.com>,
+        Josef Bacik <josef@toxicpanda.com>, David Sterba <dsterba@suse.com>,
+        Jun Wu <quark@fb.com>
+Subject: Re: [PATCH] Btrfs: fix error handling in btrfs_truncate()
+Message-ID: <20180518215449.GB1125@vader>
+References: <e59e9745f1c052ae0df24378455ad3e74eed7f3a.1526679483.git.osandov@fb.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <e59e9745f1c052ae0df24378455ad3e74eed7f3a.1526679483.git.osandov@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: David Sterba <dsterba@suse.cz>
+On Fri, May 18, 2018 at 02:43:02PM -0700, Omar Sandoval wrote:
+> From: Omar Sandoval <osandov@fb.com>
+> 
+> Jun Wu at Facebook reported that an internal service was seeing a return
+> value of 1 from ftruncate() on Btrfs when compression is enabled. This
+> is coming from the NEED_TRUNCATE_BLOCK return value from
+> btrfs_truncate_inode_items().
+> 
+> btrfs_truncate() uses two variables for error handling, ret and err (if
+> this sounds familiar, it's because btrfs_truncate_inode_items() does
+> something similar). When btrfs_truncate_inode_items() returns non-zero,
+> we set err to the return value, but we don't reset it to zero in the
+> successful NEED_TRUNCATE_BLOCK case. We only have err because we don't
+> want to mask an error if we call btrfs_update_inode() and
+> btrfs_end_transaction(), so let's make that its own scoped return
+> variable and use ret everywhere else.
 
-Hi,
+To expand on this, this is bad because userspace that checks for a
+non-zero return value will think the truncate failed even though it
+succeeded, and we also end up not creating an inotify event for the
+truncate.
 
-a friendly reminder of the timetable and what's expected at this phase.
-
-4.16 - current
-4.17 - upcoming, urgent regression fixes only
-4.18 - development closed, pull request in prep, fixes or regressions only
-4.19 - development open, until 4.18-rc5 (at least)
-
-(https://btrfs.wiki.kernel.org/index.php/Developer%27s_FAQ#Development_schedule)
-
-
-Current status
---------------
-
-What's in misc-next is going to be merged to 4.18, unless something really
-serious pops out.
-
-Branches that have been part of for-next are eligible but may need some
-last reviews and testing, because the for-next is mainly meant for early
-warnings and fstests report way more failures compared to master or
-misc-next.
-
-
-List of things with earlier ack for 4.18
-----------------------------------------
-
-* ioctl for listing subvolumes -- probably ok, the security review is
-  still open
-* ioctl CLEAR_FREE -- probably yes
-* patchsets sent until about last week that have been reviewed
-
-I want to focus on stabilization of misc-next in the upcoming weeks so
-patches that are not going make things better may be postponed. We can
-do some cleanup rounds, update messages or do other obviously low-risk
-changes.
-
-
-List of things pushed to 4.19 or later
---------------------------------------
-
-* send v2 updates
-* in-band dedupe
-* the rest not mentioned above
-
-
-Workflow
---------
-
-Let's see how many people actually read these mails: if you have a
-public git repository, please send a link to the branch with your
-patchset in the cover letter when you send the patches to mailinglist.
-If you already do, great.
-
-The branch will not be pulled, but it can help me integrate the branch
-faster to for-next which in turn improves testing and tracking of
-pending patchsets.
-
-Note that mailinglist is still the primary source of patches, the git is
-optional.
-
-
-The usual points
-----------------
-
-* the current patch queue (as is in misc-next) looks stable, so no big
-  changes are going to be applied at this time. The usual exceptions are
-  bugfixes or obvious cleanups.
-
-* the base of the patches should be the last announced pull request,
-  which is going to be named 'for-4.18' in my k.org tree.  Reviewed
-  patches will be collected in a branch that's usually named 'misc-next'
-  in my devel git repos and is part of the for-next at k.org git repo.
-
-* repositories
-  k.org: https://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git
-  devel1: http://repo.or.cz/linux-2.6/btrfs-unstable.git
-  devel2: https://github.com/kdave/btrfs-devel
-
-* merging of new patches to misc-next will be slow during the
-  merge window, also because there's a btrfs-progs release scheduled
-
-* everybody is encouraged to review or test other's patches
+> Fixes: ddfae63cc8e0 ("btrfs: move btrfs_truncate_block out of trans handle")
+> Reported-by: Jun Wu <quark@fb.com>
+> Signed-off-by: Omar Sandoval <osandov@fb.com>
+> ---
+> This is based on Linus' master rather than my orphan ENOSPC fixes
+> because I think we want to get this in for v4.17 and stable, and rebase
+> my fixes on top of this.
+> 
+>  fs/btrfs/inode.c | 34 ++++++++++++++--------------------
+>  1 file changed, 14 insertions(+), 20 deletions(-)
+> 
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index d241285a0d2a..d4a47ae36ed8 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -9031,8 +9031,7 @@ static int btrfs_truncate(struct inode *inode, bool skip_writeback)
+>  	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+>  	struct btrfs_root *root = BTRFS_I(inode)->root;
+>  	struct btrfs_block_rsv *rsv;
+> -	int ret = 0;
+> -	int err = 0;
+> +	int ret;
+>  	struct btrfs_trans_handle *trans;
+>  	u64 mask = fs_info->sectorsize - 1;
+>  	u64 min_size = btrfs_calc_trunc_metadata_size(fs_info, 1);
+> @@ -9092,7 +9091,7 @@ static int btrfs_truncate(struct inode *inode, bool skip_writeback)
+>  	 */
+>  	trans = btrfs_start_transaction(root, 2);
+>  	if (IS_ERR(trans)) {
+> -		err = PTR_ERR(trans);
+> +		ret = PTR_ERR(trans);
+>  		goto out;
+>  	}
+>  
+> @@ -9116,23 +9115,19 @@ static int btrfs_truncate(struct inode *inode, bool skip_writeback)
+>  						 inode->i_size,
+>  						 BTRFS_EXTENT_DATA_KEY);
+>  		trans->block_rsv = &fs_info->trans_block_rsv;
+> -		if (ret != -ENOSPC && ret != -EAGAIN) {
+> -			err = ret;
+> +		if (ret != -ENOSPC && ret != -EAGAIN)
+>  			break;
+> -		}
+>  
+>  		ret = btrfs_update_inode(trans, root, inode);
+> -		if (ret) {
+> -			err = ret;
+> +		if (ret)
+>  			break;
+> -		}
+>  
+>  		btrfs_end_transaction(trans);
+>  		btrfs_btree_balance_dirty(fs_info);
+>  
+>  		trans = btrfs_start_transaction(root, 2);
+>  		if (IS_ERR(trans)) {
+> -			ret = err = PTR_ERR(trans);
+> +			ret = PTR_ERR(trans);
+>  			trans = NULL;
+>  			break;
+>  		}
+> @@ -9168,26 +9163,25 @@ static int btrfs_truncate(struct inode *inode, bool skip_writeback)
+>  	if (ret == 0 && inode->i_nlink > 0) {
+>  		trans->block_rsv = root->orphan_block_rsv;
+>  		ret = btrfs_orphan_del(trans, BTRFS_I(inode));
+> -		if (ret)
+> -			err = ret;
+>  	}
+>  
+>  	if (trans) {
+> +		int ret2;
+> +
+>  		trans->block_rsv = &fs_info->trans_block_rsv;
+> -		ret = btrfs_update_inode(trans, root, inode);
+> -		if (ret && !err)
+> -			err = ret;
+> +		ret2 = btrfs_update_inode(trans, root, inode);
+> +		if (ret2 && !ret)
+> +			ret = ret2;
+>  
+> -		ret = btrfs_end_transaction(trans);
+> +		ret2 = btrfs_end_transaction(trans);
+> +		if (ret2 && !ret)
+> +			ret = ret2;
+>  		btrfs_btree_balance_dirty(fs_info);
+>  	}
+>  out:
+>  	btrfs_free_block_rsv(fs_info, rsv);
+>  
+> -	if (ret && !err)
+> -		err = ret;
+> -
+> -	return err;
+> +	return ret;
+>  }
+>  
+>  /*
+> -- 
+> 2.17.0
+> 

@@ -1,54 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pl0-f66.google.com ([209.85.160.66]:36047 "EHLO
-        mail-pl0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752510AbeEKH4c (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 11 May 2018 03:56:32 -0400
-Received: by mail-pl0-f66.google.com with SMTP id v24-v6so2846274plo.3
-        for <linux-btrfs@vger.kernel.org>; Fri, 11 May 2018 00:56:32 -0700 (PDT)
-From: Omar Sandoval <osandov@osandov.com>
-To: linux-btrfs@vger.kernel.org
-Cc: kernel-team@fb.com, Chris Mason <clm@fb.com>,
+Received: from mx2.suse.de ([195.135.220.15]:54315 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751844AbeERPRR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 18 May 2018 11:17:17 -0400
+Date: Fri, 18 May 2018 17:14:35 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Omar Sandoval <osandov@osandov.com>
+Cc: linux-btrfs@vger.kernel.org, kernel-team@fb.com, Chris Mason <clm@fb.com>,
         Josef Bacik <josef@toxicpanda.com>,
-        Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH v3 11/11] Btrfs: reserve space for O_TMPFILE orphan item deletion
-Date: Fri, 11 May 2018 00:56:16 -0700
-Message-Id: <b09d6b4eed91637c18c00559af62b80aeabefed7.1526025007.git.osandov@fb.com>
-In-Reply-To: <cover.1526025007.git.osandov@fb.com>
-References: <cover.1526025007.git.osandov@fb.com>
-In-Reply-To: <cover.1526025007.git.osandov@fb.com>
-References: <cover.1526025007.git.osandov@fb.com>
+        Nikolay Borisov <nborisov@suse.com>, David Sterba <dsterba@suse.com>
+Subject: Re: [PATCH v4 00/12] Btrfs: orphan and truncate fixes
+Message-ID: <20180518151435.GP6649@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <cover.1526069051.git.osandov@fb.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <cover.1526069051.git.osandov@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Omar Sandoval <osandov@fb.com>
+On Fri, May 11, 2018 at 01:13:28PM -0700, Omar Sandoval wrote:
+> This is the fourth (and hopefully final) version of the orphan item
+> early ENOSPC and related fixes.
+> 
+> Changes since v3:
+> 
+> - Changed another stale comment in patch 1
+> - Moved BTRFS_INODE_ORPHAN_META_RESERVED flag removal to patch 10
+>   instead of patch 9
+> - Moved inode runtime flag renumbering to a separate patch (patch 11)
+> - Added some more reviewed-bys
 
-btrfs_link() calls btrfs_orphan_del() if it's linking an O_TMPFILE but
-it doesn't reserve space to do so. Even before the removal of the
-orphan_block_rsv it wasn't using it.
+Patchset added to misc-next, thanks. Besides fstests, I've hammered it
+with some stress testing, all fine.
 
-Fixes: ef3b9af50bfa ("Btrfs: implement inode_operations callback tmpfile")
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
-Signed-off-by: Omar Sandoval <osandov@fb.com>
----
- fs/btrfs/inode.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+> Changes since v2:
+> 
+> - Add patch 5 to get rid of BTRFS_INODE_HAS_ORPHAN_ITEM
+> - Move patch 10 to patch 6
+> - Got rid of patch 5; the bug goes away in the process of removing code
+>   for patches 9 and 10
+> - Rename patch 10 batch to what it was called in v1
+> 
+> Changes since v1:
+> 
+> - Added two extra cleanups, patches 10 and 11
+> - Added a forgotten clear of the orphan bit in patch 8
+> - Reworded titles of patches 6 and 9
+> - Added people's reviewed-bys
+> 
+> Cover letter from v1:
+> 
+> At Facebook we hit an early ENOSPC issue which we tracked down to the
+> reservations for orphan items of deleted-but-still-open files. The
+> primary function of this series is to fix that bug, but I ended up
+> uncovering a pile of other issues in the process, most notably that the
+> orphan items we create for truncate are useless.
+> 
+> I've also posted an xfstest that reproduces this bug.
+> 
+> Thanks!
+> 
+> *** BLURB HERE ***
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 1edb4148ec74..98cf08944552 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -6465,8 +6465,9 @@ static int btrfs_link(struct dentry *old_dentry, struct inode *dir,
- 	 * 2 items for inode and inode ref
- 	 * 2 items for dir items
- 	 * 1 item for parent inode
-+	 * 1 item for orphan item deletion if O_TMPFILE
- 	 */
--	trans = btrfs_start_transaction(root, 5);
-+	trans = btrfs_start_transaction(root, inode->i_nlink ? 5 : 6);
- 	if (IS_ERR(trans)) {
- 		err = PTR_ERR(trans);
- 		trans = NULL;
--- 
-2.17.0
-
+Blurb!

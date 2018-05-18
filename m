@@ -1,60 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:35198 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S966464AbeEYP6Q (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 25 May 2018 11:58:16 -0400
-Date: Fri, 25 May 2018 17:55:30 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Anand Jain <anand.jain@oracle.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v3] btrfs: drop uuid_mutex in btrfs_free_extra_devids()
-Message-ID: <20180525155530.GP6649@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20180412022938.8257-11-anand.jain@oracle.com>
- <20180523025422.32572-1-anand.jain@oracle.com>
+Received: from mgwkm04.jp.fujitsu.com ([202.219.69.171]:19494 "EHLO
+        mgwkm04.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751734AbeERCws (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 17 May 2018 22:52:48 -0400
+Received: from g01jpfmpwkw01.exch.g01.fujitsu.local (g01jpfmpwkw01.exch.g01.fujitsu.local [10.0.193.38])
+        by kw-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id 802BDAC02E7
+        for <linux-btrfs@vger.kernel.org>; Fri, 18 May 2018 11:52:44 +0900 (JST)
+Received: from G01JPEXCHKW17.g01.fujitsu.local (G01JPEXCHKW17.g01.fujitsu.local [10.0.194.56])
+        by g01jpfmpwkw01.exch.g01.fujitsu.local (Postfix) with ESMTP id EA466692440
+        for <linux-btrfs@vger.kernel.org>; Fri, 18 May 2018 11:52:43 +0900 (JST)
+From: Tomohiro Misono <misono.tomohiro@jp.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH v6 0/3] btrfs: Add three new unprivileged ioctls to allow normal users to call "sub list/show" etc.
+Date: Fri, 18 May 2018 11:54:45 +0900
+Message-ID: <cover.1526610386.git.misono.tomohiro@jp.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180523025422.32572-1-anand.jain@oracle.com>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, May 23, 2018 at 10:54:22AM +0800, Anand Jain wrote:
-> btrfs_free_extra_devids() is called only in the mount context which
-> traverses through the fs_devices::devices and frees the orphan devices
-> devices in the given %fs_devices if any. As the search for the orphan
-> device is limited to fs_devices::devices so we don't need the global
-> uuid_mutex.
-> 
-> There can't be any mount-point based ioctl threads in this context as
-> the mount thread is not yet returned. But there can be the btrfs-control
-> based scan ioctls thread which calls device_list_add().
-> 
-> Here in the mount thread the fs_devices::opened is incremented way before
-> btrfs_free_extra_devids() is called and in the scan context the fs_devices
-> which are already opened neither be freed or alloc-able at
-> device_list_add().
-> 
-> But lets say you change the device-path and call the scan again, then scan
-> would update the new device path and this operation could race against the
-> btrfs_free_extra_devids() thread, which might be in the process of
-> free-ing the same device. So synchronize it by using the
-> device_list_mutex.
-> 
-> This scenario is a very corner case, and practically the scan and mount
-> are anyway serialized by the usage so unless the race is instrumented its
-> very difficult to achieve.
-> 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+changelog:
+v5 -> v6
+  - Update 1st patch by using btrfs_fs_root_no_name()
+  - Return -EUCLEAN when btrfs_next_leaf/next_item() should not fail
+  - Add Reviewed-by tag
+v4 -> v5
+  - Update error handling of 1st/2nd patch. See each log for details
+  - Fix misspelling
+v3 -> v4
+  - call btrfs_next_leaf() after btrfs_search_slot() when the slot
+    position exceeds the number of items
+  - rebased to current misc-next
+v2 -> v3
+  - fix kbuild test bot warning
+v1 -> v2
+  - completely reimplement 1st/2nd ioctl to have user friendly api
+  - various cleanup, remove unnecessary goto
+===
 
-Thanks, this explanation is much better and addresses the questions I
-have while reading the code.
+This adds three new unprivileged ioctls:
 
-Reviewed-by: David Sterba <dsterba@suse.com>
+1st patch:
+  ioctl which returns subvolume information of ROOT_ITEM and ROOT_BACKREF
+2nd patch:
+  ioctl which returns subvolume information of ROOT_REF (without subvolume name)
+3rd patch: 
+  user version of ino_lookup ioctl which also performs permission check.
 
-> ---
-> Currently device_list_add() is very lean on its device_list_mutex usage,
-> a cleanup and fix is wip.
+They will be used to implement user version of "subvolume list/show" etc.
+in user tools.
+See each commit log for more detals.
 
-I also have a WIP patch to rewrite device_list_add. There were quite
-some changes around the device locking so I'd need to refresh it on top
-of current code first, it's not in a shape to be posted yet.
+The implementation of btrfs-progs can be found in the ML titled as follows: 
+  [PATCH 0/11] btrfs-progs: Rework of "subvolume list/show" and relax the root privileges of them
+
+Tomohiro Misono (3):
+  btrfs: Add unprivileged ioctl which returns subvolume information
+  btrfs: Add unprivileged ioctl which returns subvolume's ROOT_REF
+  btrfs: Add unprivileged version of ino_lookup ioctl
+
+ fs/btrfs/ioctl.c           | 431 +++++++++++++++++++++++++++++++++++++++++++++
+ include/uapi/linux/btrfs.h |  84 +++++++++
+ 2 files changed, 515 insertions(+)
+
+-- 
+2.14.3
+
+

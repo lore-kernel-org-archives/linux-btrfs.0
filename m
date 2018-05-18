@@ -1,30 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:49640 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S933479AbeE1QNr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 28 May 2018 12:13:47 -0400
-Date: Mon, 28 May 2018 14:16:25 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: drop unused space_info parameter from
- create_space_info
-Message-ID: <20180528121625.GV6649@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20180528063027.4527-1-lufq.fnst@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180528063027.4527-1-lufq.fnst@cn.fujitsu.com>
+Received: from out30-132.freemail.mail.aliyun.com ([115.124.30.132]:43994 "EHLO
+        out30-132.freemail.mail.aliyun.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1751844AbeERDAk (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 17 May 2018 23:00:40 -0400
+From: Liu Bo <bo.liu@linux.alibaba.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH v2 0/6] btrfs_search_slot cleanups
+Date: Fri, 18 May 2018 11:00:18 +0800
+Message-Id: <1526612424-97061-1-git-send-email-bo.liu@linux.alibaba.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, May 28, 2018 at 02:30:27PM +0800, Lu Fengqi wrote:
-> Since commit dc2d3005d27d ("btrfs: remove dead create_space_info
-> calls"), there is only one caller btrfs_init_space_info. However, it
-> doesn't need create_space_info to return space_info at all.
-> 
-> Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+Here are a collection of patches I did for btrfs_search_slot().
 
-Reviewed-by: David Sterba <dsterba@suse.com>
+v2: more explicit commit log for each patch.
 
-Added to 4.18 queue, thanks.
+Liu Bo (6):
+  Btrfs: remove superfluous free_extent_buffer
+  Btrfs: use more straightforward extent_buffer_uptodate
+  Btrfs: move get root of btrfs_search_slot to a helper
+  Btrfs: remove unused check of skip_locking
+  Btrfs: grab write lock directly if write_lock_level is the max level
+  Btrfs: remove always true check in unlock_up
+
+ fs/btrfs/ctree.c | 121 +++++++++++++++++++++++++++++++++----------------------
+ 1 file changed, 73 insertions(+), 48 deletions(-)
+
+-- 
+1.8.3.1
+

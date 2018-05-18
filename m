@@ -1,32 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwym04.jp.fujitsu.com ([211.128.242.43]:55869 "EHLO
-        mgwym04.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751844AbeERC7B (ORCPT
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:63554 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1750841AbeERFLP (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 17 May 2018 22:59:01 -0400
-Received: from g01jpfmpwkw01.exch.g01.fujitsu.local (g01jpfmpwkw01.exch.g01.fujitsu.local [10.0.193.38])
-        by yt-mxauth.gw.nic.fujitsu.com (Postfix) with ESMTP id 09DC6AC049B
-        for <linux-btrfs@vger.kernel.org>; Fri, 18 May 2018 11:58:58 +0900 (JST)
-Received: from G01JPEXCHKW13.g01.fujitsu.local (G01JPEXCHKW13.g01.fujitsu.local [10.0.194.52])
-        by g01jpfmpwkw01.exch.g01.fujitsu.local (Postfix) with ESMTP id 1F4D169274D
-        for <linux-btrfs@vger.kernel.org>; Fri, 18 May 2018 11:58:57 +0900 (JST)
-Subject: Re: [PATCH v6 1/3] btrfs: Add unprivileged ioctl which returns
+        Fri, 18 May 2018 01:11:15 -0400
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
+        by cn.fujitsu.com (Postfix) with ESMTP id 423C94B40410
+        for <linux-btrfs@vger.kernel.org>; Fri, 18 May 2018 13:11:10 +0800 (CST)
+From: "Gu, Jinxiang" <gujx@cn.fujitsu.com>
+To: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: RE: [PATCH v6 1/3] btrfs: Add unprivileged ioctl which returns
  subvolume information
-From: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
+Date: Fri, 18 May 2018 05:11:10 +0000
+Message-ID: <516DDBE5B1D92D42BCF7A2E37F045A5D01A85130AD@G08CNEXMBPEKD02.g08.fujitsu.local>
 References: <cover.1526610386.git.misono.tomohiro@jp.fujitsu.com>
  <e2fc1540ff03b368bd0c055370ecd74095afc7dc.1526610386.git.misono.tomohiro@jp.fujitsu.com>
-Message-ID: <d2d79aa0-07f4-66ec-55f1-13b283cec774@jp.fujitsu.com>
-Date: Fri, 18 May 2018 11:58:43 +0900
-MIME-Version: 1.0
 In-Reply-To: <e2fc1540ff03b368bd0c055370ecd74095afc7dc.1526610386.git.misono.tomohiro@jp.fujitsu.com>
-Content-Type: text/plain; charset="utf-8"
+Content-Type: text/plain; charset="gb2312"
+MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2018/05/18 11:54, Tomohiro Misono wrote:
-> Add new unprivileged ioctl BTRFS_IOC_GET_SUBVOL_INFO which returns
-> the information of subvolume containing this inode.
+
+
+> -----Original Message-----
+> From: linux-btrfs-owner@vger.kernel.org [mailto:linux-btrfs-owner@vger.kernel.org] On Behalf Of Tomohiro Misono
+> Sent: Friday, May 18, 2018 10:55 AM
+> To: linux-btrfs@vger.kernel.org
+> Subject: [PATCH v6 1/3] btrfs: Add unprivileged ioctl which returns subvolume information
+> 
+> Add new unprivileged ioctl BTRFS_IOC_GET_SUBVOL_INFO which returns the information of subvolume containing this inode.
 > (i.e. returns the information in ROOT_ITEM and ROOT_BACKREF.)
 > 
 > Signed-off-by: Tomohiro Misono <misono.tomohiro@jp.fujitsu.com>
@@ -42,16 +46,15 @@ On 2018/05/18 11:54, Tomohiro Misono wrote:
 >  include/uapi/linux/btrfs.h |  51 ++++++++++++++++++
 >  2 files changed, 176 insertions(+)
 > 
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index 48e2ddff32bd..31af6e91c614 100644
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c index 48e2ddff32bd..31af6e91c614 100644
 > --- a/fs/btrfs/ioctl.c
 > +++ b/fs/btrfs/ioctl.c
 > @@ -2242,6 +2242,129 @@ static noinline int btrfs_ioctl_ino_lookup(struct file *file,
 >  	return ret;
 >  }
->  
-> +/* Get the subvolume information in BTRFS_ROOT_ITEM and BTRFS_ROOT_BACKREF */
-> +static noinline int btrfs_ioctl_get_subvol_info(struct file *file,
+> 
+> +/* Get the subvolume information in BTRFS_ROOT_ITEM and
+> +BTRFS_ROOT_BACKREF */ static noinline int btrfs_ioctl_get_subvol_info(struct file *file,
 > +					   void __user *argp)
 > +{
 > +	struct btrfs_ioctl_get_subvol_info_args *subvol_info;
@@ -108,21 +111,23 @@ On 2018/05/18 11:54, Tomohiro Misono wrote:
 > +
 > +	subvol_info->ctransid = btrfs_root_ctransid(root_item);
 > +	subvol_info->ctime.sec = btrfs_stack_timespec_sec(&root_item->otime);
-                                                          obviously ->ctime, sorry for messed up.
-
-> +	subvol_info->ctime.nsec = btrfs_stack_timespec_nsec(&root_item->ctime);
+> +	subvol_info->ctime.nsec =
+> +btrfs_stack_timespec_nsec(&root_item->ctime);
 > +
 > +	subvol_info->otransid = btrfs_root_otransid(root_item);
 > +	subvol_info->otime.sec = btrfs_stack_timespec_sec(&root_item->otime);
-> +	subvol_info->otime.nsec = btrfs_stack_timespec_nsec(&root_item->otime);
+> +	subvol_info->otime.nsec =
+> +btrfs_stack_timespec_nsec(&root_item->otime);
 > +
 > +	subvol_info->stransid = btrfs_root_stransid(root_item);
 > +	subvol_info->stime.sec = btrfs_stack_timespec_sec(&root_item->stime);
-> +	subvol_info->stime.nsec = btrfs_stack_timespec_nsec(&root_item->stime);
+> +	subvol_info->stime.nsec =
+> +btrfs_stack_timespec_nsec(&root_item->stime);
 > +
 > +	subvol_info->rtransid = btrfs_root_rtransid(root_item);
 > +	subvol_info->rtime.sec = btrfs_stack_timespec_sec(&root_item->rtime);
-> +	subvol_info->rtime.nsec = btrfs_stack_timespec_nsec(&root_item->rtime);
+> +	subvol_info->rtime.nsec =
+> +btrfs_stack_timespec_nsec(&root_item->rtime);
 > +
 > +	if (key.objectid != BTRFS_FS_TREE_OBJECTID) {
 > +		/* Search root tree for ROOT_BACKREF of this subvolume */
@@ -185,16 +190,15 @@ On 2018/05/18 11:54, Tomohiro Misono wrote:
 > +	case BTRFS_IOC_GET_SUBVOL_INFO:
 > +		return btrfs_ioctl_get_subvol_info(file, argp);
 >  	}
->  
+> 
 >  	return -ENOTTY;
-> diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
-> index c8d99b9ca550..02cd1f1994e8 100644
+> diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h index c8d99b9ca550..02cd1f1994e8 100644
 > --- a/include/uapi/linux/btrfs.h
 > +++ b/include/uapi/linux/btrfs.h
 > @@ -725,6 +725,55 @@ struct btrfs_ioctl_send_args {
 >  	__u64 reserved[4];		/* in */
 >  };
->  
+> 
 > +struct btrfs_ioctl_get_subvol_info_args {
 > +	/* All field is out */
 > +	/* Id of this subvolume */
@@ -244,16 +248,29 @@ On 2018/05/18 11:54, Tomohiro Misono wrote:
 > +	__u64 reserved[8];
 > +};
 > +
->  /* Error codes as returned by the kernel */
->  enum btrfs_err_code {
->  	BTRFS_ERROR_DEV_RAID1_MIN_NOT_MET = 1,
-> @@ -843,5 +892,7 @@ enum btrfs_err_code {
+>  /* Error codes as returned by the kernel */  enum btrfs_err_code {
+>  	BTRFS_ERROR_DEV_RAID1_MIN_NOT_MET = 1, @@ -843,5 +892,7 @@ enum btrfs_err_code {
 >  				   struct btrfs_ioctl_vol_args_v2)
 >  #define BTRFS_IOC_LOGICAL_INO_V2 _IOWR(BTRFS_IOCTL_MAGIC, 59, \
 >  					struct btrfs_ioctl_logical_ino_args)
 > +#define BTRFS_IOC_GET_SUBVOL_INFO _IOR(BTRFS_IOCTL_MAGIC, 60, \
 > +				struct btrfs_ioctl_get_subvol_info_args)
->  
+> 
 >  #endif /* _UAPI_LINUX_BTRFS_H */
+> --
+
+Looks good to me.
+Reviewed-by: Gu Jinxiang <gujx@cn.fujitsu.com>
+
+> 2.14.3
+> 
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 > 
 
+
+
+ÿôèº{.nÇ+‰·Ÿ®‰­†+%ŠËÿ±éİ¶¥Šwÿº{.nÇ+‰·¥Š{±ı»k~ÏâØ^n‡r¡ö¦zËëh™¨è­Ú&£ûàz¿äz¹Ş—ú+€Ê+zf£¢·hšˆ§~†­†Ûiÿÿïêÿ‘êçz_è®æj:+v‰¨ş)ß£øm

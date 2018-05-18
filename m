@@ -1,62 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:29150 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751278AbeEVJrK (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 22 May 2018 05:47:10 -0400
-From: Gu Jinxiang <gujx@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: <nborisov@suse.com>
-Subject: [PATCH 2/2] btrfs: propagate failures of __exclude_logged_extent to upper caller
-Date: Tue, 22 May 2018 17:46:51 +0800
-Message-ID: <1526982411-9243-2-git-send-email-gujx@cn.fujitsu.com>
-In-Reply-To: <1526982411-9243-1-git-send-email-gujx@cn.fujitsu.com>
-References: <1526982411-9243-1-git-send-email-gujx@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from mx2.suse.de ([195.135.220.15]:38483 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1750957AbeERNMz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 18 May 2018 09:12:55 -0400
+From: Nikolay Borisov <nborisov@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: jeffm@suse.com, josef@toxicpanda.com, Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH] btrfs: Document __btrfs_inc_extent_ref
+Date: Fri, 18 May 2018 16:12:50 +0300
+Message-Id: <1526649170-29815-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Function btrfs_exclude_logged_extents may call __exclude_logged_extent
-which may fail.
-Propagate the failures of __exclude_logged_extent to upper caller.
+Here is a doc-only patch which tires to deobfuscate the terra-incognita
+that arguments for delayed refs are.
 
-Signed-off-by: Gu Jinxiang <gujx@cn.fujitsu.com>
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/extent-tree.c | 9 +++++++--
- 1 file changed, 7 insertions(+), 2 deletions(-)
+Hello, 
+
+This patch needs revieweing since I'm not entirely sure I managed to capture 
+the semantics of the "parent" and "owner" arguments. Specifically, parent is 
+passed "ref->parent" only if we have a shared block, however looking at the 
+code where parent is passed to the add delayed tree/data refs, it seems that 
+parent is set to the eb->Start only if the tree where this extent comes from is 
+the data_reloc_tree, i.e the code in replace_path/replace_file_extents/do_relocation
+__btrfs_cow_block.
+
+For the "owner" argument in case of data extents it'set to the ino, for metadata
+extents it's a bit trickier, what I think it always contains for such extents 
+is the level of the parent block in the tree. 
+
+
+If this function is documented correctly then it wil be fairly trivial to 
+document btrfs_add_delayed(tree|data)_ref ones as well. 
+
+ fs/btrfs/extent-tree.c | 29 +++++++++++++++++++++++++++++
+ 1 file changed, 29 insertions(+)
 
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 2e85e99b5e6f..28fd71579141 100644
+index 2ce32f05812f..5a2f4a86dc71 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -6468,6 +6468,7 @@ int btrfs_exclude_logged_extents(struct btrfs_fs_info *fs_info,
- 	struct btrfs_key key;
- 	int found_type;
- 	int i;
-+	int ret = 0;
- 
- 	if (!btrfs_fs_incompat(fs_info, MIXED_GROUPS))
- 		return 0;
-@@ -6484,10 +6485,14 @@ int btrfs_exclude_logged_extents(struct btrfs_fs_info *fs_info,
- 			continue;
- 		key.objectid = btrfs_file_extent_disk_bytenr(eb, item);
- 		key.offset = btrfs_file_extent_disk_num_bytes(eb, item);
--		__exclude_logged_extent(fs_info, key.objectid, key.offset);
-+		ret = __exclude_logged_extent(fs_info, key.objectid,
-+				key.offset);
-+		if (ret)
-+			goto out;
- 	}
- 
--	return 0;
-+out:
-+	return ret;
+@@ -2207,6 +2207,35 @@ int btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
+ 	return ret;
  }
  
- static void
++/*
++ * __btrfs_inc_extent_ref - insert backreference for a given extent
++ *
++ * @trans:	    Handle of transaction
++ *
++ * @node:	    The delayed ref node used to get the bytenr/length for
++ *		    extent
++ *
++ * @parent:	    If this is a shared extent (BTRFS_SHARED_DATA_REF_KEY/
++ *		    BTRFS_SHARED_BLOCK_REF_KEY) then parent *may* hold the
++ *		    logical bytenr of the parent block.
++ *
++ * @root_objectid: The id of the root where this modification has originated,
++ *		    this can be either one of the well-known metadata trees or
++ *		    the subvolume id which references this extent.
++ *
++ * @owner:	    For data extents it is the inode number of the owning file.
++ *		    For metadata extents this parameter holds the level in the
++ *		    tree of the parent block.
++ *
++ * @offset:	    For metadata extents this is always 0. For data extents it
++ *		    is the fileoffset this extent belongs to.
++ *
++ * @refs_to_add    Number of references to add
++ *
++ * @extent_op      Pointer to a structure, holding information necessary when
++ *                 updating a tree block's flags
++ *
++ */
+ static int __btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
+ 				  struct btrfs_delayed_ref_node *node,
+ 				  u64 parent, u64 root_objectid,
 -- 
-1.9.1
-
-
+2.7.4
 

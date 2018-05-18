@@ -1,36 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.20]:41961 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.17.21]:49933 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750841AbeERF2A (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 18 May 2018 01:28:00 -0400
-Subject: Re: [PATCH v2 4/6] Btrfs: remove unused check of skip_locking
+        id S1750763AbeERFbY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 18 May 2018 01:31:24 -0400
+Subject: Re: [PATCH v2 6/6] Btrfs: remove always true check in unlock_up
 To: Liu Bo <bo.liu@linux.alibaba.com>, linux-btrfs@vger.kernel.org
 References: <1526612424-97061-1-git-send-email-bo.liu@linux.alibaba.com>
- <1526612424-97061-5-git-send-email-bo.liu@linux.alibaba.com>
+ <1526612424-97061-7-git-send-email-bo.liu@linux.alibaba.com>
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <36bc953d-f9c7-fb58-d31e-09f610ad90be@gmx.com>
-Date: Fri, 18 May 2018 13:27:50 +0800
+Message-ID: <a57a50ed-30b3-8274-ef91-4e1d2cb64ede@gmx.com>
+Date: Fri, 18 May 2018 13:31:16 +0800
 MIME-Version: 1.0
-In-Reply-To: <1526612424-97061-5-git-send-email-bo.liu@linux.alibaba.com>
+In-Reply-To: <1526612424-97061-7-git-send-email-bo.liu@linux.alibaba.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="fcJcEEKBLxXSUvR9EJ4ofZW5TvDf2Ckdo"
+ boundary="DmQy2EoejkEu5vjcKtYlVFm5ObyGwYV1d"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---fcJcEEKBLxXSUvR9EJ4ofZW5TvDf2Ckdo
-Content-Type: multipart/mixed; boundary="7aUIXrQnZlllnGEN39AvAIvTuGdBuwIei";
+--DmQy2EoejkEu5vjcKtYlVFm5ObyGwYV1d
+Content-Type: multipart/mixed; boundary="Eg0rIr8qaYcbd02fJd2In2tEAuF3NWoEB";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 To: Liu Bo <bo.liu@linux.alibaba.com>, linux-btrfs@vger.kernel.org
-Message-ID: <36bc953d-f9c7-fb58-d31e-09f610ad90be@gmx.com>
-Subject: Re: [PATCH v2 4/6] Btrfs: remove unused check of skip_locking
+Message-ID: <a57a50ed-30b3-8274-ef91-4e1d2cb64ede@gmx.com>
+Subject: Re: [PATCH v2 6/6] Btrfs: remove always true check in unlock_up
 References: <1526612424-97061-1-git-send-email-bo.liu@linux.alibaba.com>
- <1526612424-97061-5-git-send-email-bo.liu@linux.alibaba.com>
-In-Reply-To: <1526612424-97061-5-git-send-email-bo.liu@linux.alibaba.com>
+ <1526612424-97061-7-git-send-email-bo.liu@linux.alibaba.com>
+In-Reply-To: <1526612424-97061-7-git-send-email-bo.liu@linux.alibaba.com>
 
---7aUIXrQnZlllnGEN39AvAIvTuGdBuwIei
+--Eg0rIr8qaYcbd02fJd2In2tEAuF3NWoEB
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
@@ -38,58 +38,63 @@ Content-Transfer-Encoding: quoted-printable
 
 
 On 2018=E5=B9=B405=E6=9C=8818=E6=97=A5 11:00, Liu Bo wrote:
-> The check is superfluous since all of callers who set search_for_commit=
-
-> also have skip_locking set.
+> As unlock_up() is written as
+>=20
+> for () {
+>    if (!path->locks[i])
+>        break;
+>    ...
+>    if (... && path->locks[i]) {
+>    }
+> }
+>=20
+> Apparently, @path->locks[i] is always true at this 'if'.
 >=20
 > Signed-off-by: Liu Bo <bo.liu@linux.alibaba.com>
 
 Reviewed-by: Qu Wenruo <wqu@suse.com>
 
-Although more obvious comment about search_commit_root and skip_locking
-in ctree.h will be much better.
-
 Thanks,
 Qu
 
 > ---
->  fs/btrfs/ctree.c | 2 --
->  1 file changed, 2 deletions(-)
+>  fs/btrfs/ctree.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
 >=20
 > diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-> index d12fc0474e21..8d3b09038f37 100644
+> index e619f7e01794..65dbebb8cc59 100644
 > --- a/fs/btrfs/ctree.c
 > +++ b/fs/btrfs/ctree.c
-> @@ -2623,8 +2623,6 @@ static struct extent_buffer *btrfs_search_slot_ge=
-t_root(struct btrfs_root *root,
->  		level =3D btrfs_header_level(b);
->  		if (p->need_commit_sem)
->  			up_read(&fs_info->commit_root_sem);
-> -		if (!p->skip_locking)
-> -			btrfs_tree_read_lock(b);
+> @@ -2330,7 +2330,7 @@ static noinline void unlock_up(struct btrfs_path =
+*path, int level,
+>  			no_skips =3D 1;
 > =20
->  		goto out;
->  	}
+>  		t =3D path->nodes[i];
+> -		if (i >=3D lowest_unlock && i > skip_level && path->locks[i]) {
+> +		if (i >=3D lowest_unlock && i > skip_level) {
+>  			btrfs_tree_unlock_rw(t, path->locks[i]);
+>  			path->locks[i] =3D 0;
+>  			if (write_lock_level &&
 >=20
 
 
---7aUIXrQnZlllnGEN39AvAIvTuGdBuwIei--
+--Eg0rIr8qaYcbd02fJd2In2tEAuF3NWoEB--
 
---fcJcEEKBLxXSUvR9EJ4ofZW5TvDf2Ckdo
+--DmQy2EoejkEu5vjcKtYlVFm5ObyGwYV1d
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlr+ZFYACgkQwj2R86El
-/qgnPQf9Gq3dh1WkWzSLeoKW8iILqLTKlEKguo9mXHPuU5bzvPG8Zfhp9kGXTZ44
-4iTtBiKpxPOprOSs6JpHRnK6+CtFzilHlYXnonDQ9Xf7UWVLyCcPjCFRvRyhaubM
-YMRfQFvwLsp0bP5qL4yM8aqwrAG/qm4XNxK2+lD6Bl4QYC4KGXZdO+CJ8pDLQJn0
-X7Wyr0B6opeTCo5NOhc7/ahBZWMqjTU5tN/0lNnZTdnfHwed8LJNYGwjfR0jgLXp
-VE/UigMiz5gU/2OggyyKsTyV/19t4WUCjk55FYhk7Wr4bRQ31Ww8S8YI3kQy8aQ/
-bKgODokuksJjBZVWHFcIBGOmbwrP7Q==
-=PvOp
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlr+ZSQACgkQwj2R86El
+/qh1fQgAjeyMYkgIwe7XIdCgAWoc9psIE5DMOFViEjBYT1BouG6f5+jdF9DZRVMX
+8UNEKKhUEl9vWBzvPy8WTtTPgBQwIf6AAV6Xk2smxGt2maS0qo+CiAHHqY/p0cTq
+yYBgQn52Npq3jccMKd8Mah42yjB0Em+c2H9yqVlFt/Kk545+HTlHJH1aN0H7Be+C
+ZDxZLMj+urp2n/81fyxusLfQJKDlHb5cpUjAQvT2SA+SGedr7OZ9efA12joAYixo
+GkV17fS0II3oJ/kjEE8cD92JZac15E4XsPMhH+nUhu5k2K3KC1l+gA4ZmhxqI4HB
+VyfRf0zcsaJhw9FhZucndGsmW9BrxA==
+=FBok
 -----END PGP SIGNATURE-----
 
---fcJcEEKBLxXSUvR9EJ4ofZW5TvDf2Ckdo--
+--DmQy2EoejkEu5vjcKtYlVFm5ObyGwYV1d--

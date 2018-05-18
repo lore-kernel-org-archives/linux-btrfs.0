@@ -1,488 +1,454 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwym02.jp.fujitsu.com ([211.128.242.41]:62322 "EHLO
-        mgwym02.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750763AbeEREzp (ORCPT
+Received: from smtp-out-no.shaw.ca ([64.59.134.13]:53558 "EHLO
+        smtp-out-no.shaw.ca" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751281AbeERFbg (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 18 May 2018 00:55:45 -0400
-Received: from g01jpfmpwkw02.exch.g01.fujitsu.local (g01jpfmpwkw02.exch.g01.fujitsu.local [10.0.193.56])
-        by yt-mxoi2.gw.nic.fujitsu.com (Postfix) with ESMTP id 5EF76AC0262
-        for <linux-btrfs@vger.kernel.org>; Fri, 18 May 2018 13:55:38 +0900 (JST)
-Subject: Re: [PATCH 05/18] btrfs-progs: qgroups: add pathname to show output
-To: <jeffm@suse.com>, <linux-btrfs@vger.kernel.org>
-References: <20180516213851.10196-1-jeffm@suse.com>
- <20180516213851.10196-6-jeffm@suse.com>
-From: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
-Message-ID: <624a48be-b3a5-f99b-b694-756f67d4008c@jp.fujitsu.com>
-Date: Fri, 18 May 2018 13:55:12 +0900
+        Fri, 18 May 2018 01:31:36 -0400
+To: linux-btrfs@vger.kernel.org
+From: Steve Leung <sjleung@shaw.ca>
+Subject: off-by-one uncompressed invalid ram_bytes corruptions
+Message-ID: <b262fdfc-16b2-21d0-4d7b-745ef106b555@shaw.ca>
+Date: Thu, 17 May 2018 23:23:26 -0600
 MIME-Version: 1.0
-In-Reply-To: <20180516213851.10196-6-jeffm@suse.com>
-Content-Type: text/plain; charset="utf-8"
+Content-Type: multipart/mixed;
+ boundary="------------8B551A760CCA768CB08A5DD5"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2018/05/17 6:38, jeffm@suse.com wrote:
-> From: Jeff Mahoney <jeffm@suse.com>
-> 
-> The btrfs qgroup show command currently only exports qgroup IDs,
-> forcing the user to resolve which subvolume each corresponds to.
-> 
-> This patch adds pathname resolution to qgroup show so that when
-> the -P option is used, the last column contains the pathname of
-> the root of the subvolume it describes.  In the case of nested
-> qgroups, it will show the number of member qgroups or the paths
-> of the members if the -v option is used.
-> 
-> Pathname can also be used as a sort parameter.
-> 
-> Reviewed-by: Qu Wenruo <wqu@suse.com>
-> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
-> ---
->  Documentation/btrfs-qgroup.asciidoc |   4 +
->  cmds-qgroup.c                       |  18 ++++-
->  kerncompat.h                        |   1 +
->  qgroup.c                            | 149 ++++++++++++++++++++++++++++++++----
->  qgroup.h                            |   4 +-
->  5 files changed, 157 insertions(+), 19 deletions(-)
-> 
-> diff --git a/Documentation/btrfs-qgroup.asciidoc b/Documentation/btrfs-qgroup.asciidoc
-> index 3108457c..360b3269 100644
-> --- a/Documentation/btrfs-qgroup.asciidoc
-> +++ b/Documentation/btrfs-qgroup.asciidoc
-> @@ -97,10 +97,14 @@ print child qgroup id.
->  print limit of referenced size of qgroup.
->  -e::::
->  print limit of exclusive size of qgroup.
-> +-P::::
-> +print pathname to the root of the subvolume managed by qgroup.  For nested qgroups, the number of members will be printed unless -v is specified.
->  -F::::
->  list all qgroups which impact the given path(include ancestral qgroups)
->  -f::::
->  list all qgroups which impact the given path(exclude ancestral qgroups)
-> +-v::::
-> +Be more verbose.  Print pathnames of member qgroups when nested.
->  --raw::::
->  raw numbers in bytes, without the 'B' suffix.
->  --human-readable::::
-> diff --git a/cmds-qgroup.c b/cmds-qgroup.c
-> index 93206900..33053725 100644
-> --- a/cmds-qgroup.c
-> +++ b/cmds-qgroup.c
-> @@ -282,8 +282,11 @@ static const char * const cmd_qgroup_show_usage[] = {
->  	"               (including ancestral qgroups)",
->  	"-f             list all qgroups which impact the given path",
->  	"               (excluding ancestral qgroups)",
-> +	"-P             print first-level qgroups using pathname",
-> +	"               - nested qgroups will be reported as a count",
-> +	"-v             verbose, prints pathnames for all nested qgroups",
->  	HELPINFO_UNITS_LONG,
-> -	"--sort=qgroupid,rfer,excl,max_rfer,max_excl",
-> +	"--sort=qgroupid,rfer,excl,max_rfer,max_excl,pathname",
->  	"               list qgroups sorted by specified items",
->  	"               you can use '+' or '-' in front of each item.",
->  	"               (+:ascending, -:descending, ascending default)",
-> @@ -302,6 +305,7 @@ static int cmd_qgroup_show(int argc, char **argv)
->  	unsigned unit_mode;
->  	int sync = 0;
->  	enum btrfs_util_error err;
-> +	bool verbose = false;
->  
->  	struct btrfs_qgroup_comparer_set *comparer_set;
->  	struct btrfs_qgroup_filter_set *filter_set;
-> @@ -319,10 +323,11 @@ static int cmd_qgroup_show(int argc, char **argv)
->  		static const struct option long_options[] = {
->  			{"sort", required_argument, NULL, GETOPT_VAL_SORT},
->  			{"sync", no_argument, NULL, GETOPT_VAL_SYNC},
-> +			{"verbose", no_argument, NULL, 'v'},
->  			{ NULL, 0, NULL, 0 }
->  		};
->  
-> -		c = getopt_long(argc, argv, "pcreFf", long_options, NULL);
-> +		c = getopt_long(argc, argv, "pPcreFfv", long_options, NULL);
->  		if (c < 0)
->  			break;
->  		switch (c) {
-> @@ -330,6 +335,10 @@ static int cmd_qgroup_show(int argc, char **argv)
->  			btrfs_qgroup_setup_print_column(
->  				BTRFS_QGROUP_PARENT);
->  			break;
-> +		case 'P':
-> +			btrfs_qgroup_setup_print_column(
-> +				BTRFS_QGROUP_PATHNAME);
-> +			break;
->  		case 'c':
->  			btrfs_qgroup_setup_print_column(
->  				BTRFS_QGROUP_CHILD);
-> @@ -357,6 +366,9 @@ static int cmd_qgroup_show(int argc, char **argv)
->  		case GETOPT_VAL_SYNC:
->  			sync = 1;
->  			break;
-> +		case 'v':
-> +			verbose = true;
-> +			break;
->  		default:
->  			usage(cmd_qgroup_show_usage);
->  		}
-> @@ -398,7 +410,7 @@ static int cmd_qgroup_show(int argc, char **argv)
->  					BTRFS_QGROUP_FILTER_PARENT,
->  					qgroupid);
->  	}
-> -	ret = btrfs_show_qgroups(fd, filter_set, comparer_set);
-> +	ret = btrfs_show_qgroups(fd, filter_set, comparer_set, verbose);
->  	close_file_or_dir(fd, dirstream);
->  	free(filter_set);
->  	free(comparer_set);
-> diff --git a/kerncompat.h b/kerncompat.h
-> index fa96715f..f97495ee 100644
-> --- a/kerncompat.h
-> +++ b/kerncompat.h
-> @@ -29,6 +29,7 @@
->  #include <stddef.h>
->  #include <linux/types.h>
->  #include <stdint.h>
-> +#include <stdbool.h>
->  
->  #include <features.h>
->  
-> diff --git a/qgroup.c b/qgroup.c
-> index 3269feb2..d8baca33 100644
-> --- a/qgroup.c
-> +++ b/qgroup.c
-> @@ -21,6 +21,7 @@
->  #include "ctree.h"
->  #include "ioctl.h"
->  #include "utils.h"
-> +#include "btrfsutil.h"
->  #include <errno.h>
->  
->  #define BTRFS_QGROUP_NFILTERS_INCREASE (2 * BTRFS_QGROUP_FILTER_MAX)
-> @@ -40,6 +41,9 @@ struct btrfs_qgroup {
->  	struct rb_node all_parent_node;
->  	u64 qgroupid;
->  
-> +	/* NULL for qgroups with level > 0 */
-> +	const char *pathname;
-> +
->  	/*
->  	 * info_item
->  	 */
-> @@ -133,6 +137,13 @@ static struct {
->  		.unit_mode	= 0,
->  		.max_len	= 5,
->  	},
-> +	{
-> +		.name		= "pathname",
-> +		.column_name	= "pathname",
-> +		.need_print	= 0,
-> +		.unit_mode	= 0,
-> +		.max_len	= 10,
-> +	},
->  	{
->  		.name		= NULL,
->  		.column_name	= NULL,
-> @@ -210,8 +221,50 @@ static void print_qgroup_column_add_blank(enum btrfs_qgroup_column_enum column,
->  		printf(" ");
->  }
->  
-> +void print_pathname_column(struct btrfs_qgroup *qgroup, bool verbose)
-> +{
-> +	struct btrfs_qgroup_list *list = NULL;
-> +
-> +	fputs("  ", stdout);
-> +	if (btrfs_qgroup_level(qgroup->qgroupid) > 0) {
-> +		int count = 0;
-> +
+This is a multi-part message in MIME format.
+--------------8B551A760CCA768CB08A5DD5
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Transfer-Encoding: 7bit
 
-Shouldn't this be:
-> +		list_for_each_entry(list, &qgroup->qgroups,
-                                                 ->members
-> +				    next_qgroup) {
-                                    next_members
-> +			if (verbose) {
-> +				struct btrfs_qgroup *member = list->qgroup;
-                                                                  ->member
-to print child qgroups instead of parents?
+Hi list,
 
-> +				u64 qgroupid = member->qgroupid;
-> +				u64 level = btrfs_qgroup_level(qgroupid);
-> +				u64 sid = btrfs_qgroup_subvid(qgroupid);
-> +
-> +				if (count)
-> +					fputs(" ", stdout);
-> +				if (level == 0) {
-> +					const char *path = member->pathname;
-> +
-> +					if (!path)
-> +						path = "<missing>";
-> +					fputs(path, stdout);
-                               Maybe we should add <FS_TREE>/ here too.
+I've got 3-device raid1 btrfs filesystem that's throwing up some
+"corrupt leaf" errors in dmesg.  This is a uniquified list I've
+observed lately:
 
-> +				} else
-> +					printf("%llu/%llu", level, sid);
-> +			}
-> +			count++;
-> +		}
-> +		if (!count)
-> +			fputs("<empty>", stdout);
-> +		else if (!verbose)
-> +			printf("<%u member qgroup%c>", count,
-> +			       count != 1 ? 's' : '\0');
-> +	} else if (qgroup->pathname)
-> +		printf("<FS_ROOT>%s%s", *qgroup->pathname ? "/" : "",
-> +		       qgroup->pathname);
-> +	else
-> +		fputs("<missing>", stdout);
-> +}
-> +
->  static void print_qgroup_column(struct btrfs_qgroup *qgroup,
-> -				enum btrfs_qgroup_column_enum column)
-> +				enum btrfs_qgroup_column_enum column,
-> +				bool verbose)
->  {
->  	int len;
->  	int unit_mode = btrfs_qgroup_columns[column].unit_mode;
-> @@ -253,19 +306,22 @@ static void print_qgroup_column(struct btrfs_qgroup *qgroup,
->  		len = print_child_column(qgroup);
->  		print_qgroup_column_add_blank(BTRFS_QGROUP_CHILD, len);
->  		break;
-> +	case BTRFS_QGROUP_PATHNAME:
-> +		print_pathname_column(qgroup, verbose);
-> +		break;
->  	default:
->  		break;
->  	}
->  }
->  
-> -static void print_single_qgroup_table(struct btrfs_qgroup *qgroup)
-> +static void print_single_qgroup_table(struct btrfs_qgroup *qgroup, bool verbose)
->  {
->  	int i;
->  
->  	for (i = 0; i < BTRFS_QGROUP_ALL; i++) {
->  		if (!btrfs_qgroup_columns[i].need_print)
->  			continue;
-> -		print_qgroup_column(qgroup, i);
-> +		print_qgroup_column(qgroup, i, verbose);
->  
->  		if (i != BTRFS_QGROUP_ALL - 1)
->  			printf(" ");
-> @@ -338,6 +394,47 @@ static int comp_entry_with_qgroupid(struct btrfs_qgroup *entry1,
->  	return is_descending ? -ret : ret;
->  }
->  
-> +/* Sorts first-level qgroups by pathname and nested qgroups by qgroupid */
-> +static int comp_entry_with_pathname(struct btrfs_qgroup *entry1,
-> +				    struct btrfs_qgroup *entry2,
-> +				    int is_descending)
-> +{
-> +	int ret = 0;
-> +	const char *p1 = entry1->pathname;
-> +	const char *p2 = entry2->pathname;
-> +
-> +	u64 level1 = btrfs_qgroup_level(entry1->qgroupid);
-> +	u64 level2 = btrfs_qgroup_level(entry2->qgroupid);
-> +
-> +	if (level1 != level2) {
-> +		if (entry1->qgroupid > entry2->qgroupid)
-> +			ret = 1;
-> +		else if (entry1->qgroupid < entry2->qgroupid)
-> +			ret = -1;
-> +	}
-> +
-> +	if (ret)
-> +		goto out;
-> +
-> +	while (*p1 && *p2) {
-> +		if (*p1 != *p2)
-> +			break;
-> +		p1++;
-> +		p2++;
-> +	}
-> +
-> +	if (*p1 == '/')
-> +		ret = 1;
-> +	else if (*p2 == '/')
-> +		ret = -1;
-> +	else if (*p1 > *p2)
-> +		ret = 1;
-> +	else if (*p1 < *p2)
-> +		ret = -1;
-> +out:
-> +	return is_descending ? -ret : ret;
-> +}
-> +
->  static int comp_entry_with_rfer(struct btrfs_qgroup *entry1,
->  				struct btrfs_qgroup *entry2,
->  				int is_descending)
-> @@ -404,6 +501,7 @@ static int comp_entry_with_max_excl(struct btrfs_qgroup *entry1,
->  
->  static btrfs_qgroup_comp_func all_comp_funcs[] = {
->  	[BTRFS_QGROUP_COMP_QGROUPID]	= comp_entry_with_qgroupid,
-> +	[BTRFS_QGROUP_COMP_PATHNAME]	= comp_entry_with_pathname,
->  	[BTRFS_QGROUP_COMP_RFER]	= comp_entry_with_rfer,
->  	[BTRFS_QGROUP_COMP_EXCL]	= comp_entry_with_excl,
->  	[BTRFS_QGROUP_COMP_MAX_RFER]	= comp_entry_with_max_rfer,
-> @@ -412,6 +510,7 @@ static btrfs_qgroup_comp_func all_comp_funcs[] = {
->  
->  static char *all_sort_items[] = {
->  	[BTRFS_QGROUP_COMP_QGROUPID]	= "qgroupid",
-> +	[BTRFS_QGROUP_COMP_PATHNAME]	= "pathname",
->  	[BTRFS_QGROUP_COMP_RFER]	= "rfer",
->  	[BTRFS_QGROUP_COMP_EXCL]	= "excl",
->  	[BTRFS_QGROUP_COMP_MAX_RFER]	= "max_rfer",
-> @@ -588,7 +687,7 @@ static struct btrfs_qgroup *qgroup_tree_search(struct qgroup_lookup *root_tree,
->   * Return the pointer to the btrfs_qgroup if found or if inserted successfully.
->   * Return ERR_PTR if any error occurred.
->   */
-> -static struct btrfs_qgroup *get_or_add_qgroup(
-> +static struct btrfs_qgroup *get_or_add_qgroup(int fd,
->  		struct qgroup_lookup *qgroup_lookup, u64 qgroupid)
->  {
->  	struct btrfs_qgroup *bq;
-> @@ -608,6 +707,23 @@ static struct btrfs_qgroup *get_or_add_qgroup(
->  	INIT_LIST_HEAD(&bq->qgroups);
->  	INIT_LIST_HEAD(&bq->members);
->  
-> +	if (btrfs_qgroup_level(qgroupid) == 0) {
-> +		enum btrfs_util_error uret;
-> +		char *pathname;
-> +
-> +		uret = btrfs_util_subvolume_path_fd(fd, qgroupid, &pathname);
-> +		if (uret == BTRFS_UTIL_OK)
-> +			bq->pathname = pathname;
-> +		/* Ignore stale qgroup items */
-> +		else if (uret != BTRFS_UTIL_ERROR_SUBVOLUME_NOT_FOUND) {
-> +			error("%s", btrfs_util_strerror(uret));
-> +			if (uret == BTRFS_UTIL_ERROR_NO_MEMORY)
-> +				return ERR_PTR(-ENOMEM);
-> +			else
-> +				return ERR_PTR(-EIO);
-> +		}
-> +	}
-> +
->  	ret = qgroup_tree_insert(qgroup_lookup, bq);
->  	if (ret) {
->  		error("failed to insert %llu into tree: %s",
-> @@ -619,12 +735,12 @@ static struct btrfs_qgroup *get_or_add_qgroup(
->  	return bq;
->  }
->  
-> -static int update_qgroup_info(struct qgroup_lookup *qgroup_lookup, u64 qgroupid,
-> -			      struct btrfs_qgroup_info_item *info)
-> +static int update_qgroup_info(int fd, struct qgroup_lookup *qgroup_lookup,
-> +			      u64 qgroupid, struct btrfs_qgroup_info_item *info)
->  {
->  	struct btrfs_qgroup *bq;
->  
-> -	bq = get_or_add_qgroup(qgroup_lookup, qgroupid);
-> +	bq = get_or_add_qgroup(fd, qgroup_lookup, qgroupid);
->  	if (IS_ERR_OR_NULL(bq))
->  		return PTR_ERR(bq);
->  
-> @@ -637,13 +753,13 @@ static int update_qgroup_info(struct qgroup_lookup *qgroup_lookup, u64 qgroupid,
->  	return 0;
->  }
->  
-> -static int update_qgroup_limit(struct qgroup_lookup *qgroup_lookup,
-> +static int update_qgroup_limit(int fd, struct qgroup_lookup *qgroup_lookup,
->  			       u64 qgroupid,
->  			       struct btrfs_qgroup_limit_item *limit)
->  {
->  	struct btrfs_qgroup *bq;
->  
-> -	bq = get_or_add_qgroup(qgroup_lookup, qgroupid);
-> +	bq = get_or_add_qgroup(fd, qgroup_lookup, qgroupid);
->  	if (IS_ERR_OR_NULL(bq))
->  		return PTR_ERR(bq);
->  
-> @@ -712,6 +828,8 @@ static void __free_btrfs_qgroup(struct btrfs_qgroup *bq)
->  		list_del(&list->next_member);
->  		free(list);
->  	}
-> +	if (bq->pathname)
-> +		free((void *)bq->pathname);
->  	free(bq);
->  }
->  
-> @@ -1107,7 +1225,7 @@ static int __qgroups_search(int fd, struct qgroup_lookup *qgroup_lookup)
->  				info = (struct btrfs_qgroup_info_item *)
->  				       (args.buf + off);
->  
-> -				ret = update_qgroup_info(qgroup_lookup,
-> +				ret = update_qgroup_info(fd, qgroup_lookup,
->  							 qgroupid, info);
->  				break;
->  			case BTRFS_QGROUP_LIMIT_KEY:
-> @@ -1115,7 +1233,7 @@ static int __qgroups_search(int fd, struct qgroup_lookup *qgroup_lookup)
->  				limit = (struct btrfs_qgroup_limit_item *)
->  					(args.buf + off);
->  
-> -				ret = update_qgroup_limit(qgroup_lookup,
-> +				ret = update_qgroup_limit(fd, qgroup_lookup,
->  							  qgroupid, limit);
->  				break;
->  			case BTRFS_QGROUP_RELATION_KEY:
-> @@ -1159,7 +1277,7 @@ static int __qgroups_search(int fd, struct qgroup_lookup *qgroup_lookup)
->  	return ret;
->  }
->  
-> -static void print_all_qgroups(struct qgroup_lookup *qgroup_lookup)
-> +static void print_all_qgroups(struct qgroup_lookup *qgroup_lookup, bool verbose)
->  {
->  
->  	struct rb_node *n;
-> @@ -1170,14 +1288,15 @@ static void print_all_qgroups(struct qgroup_lookup *qgroup_lookup)
->  	n = rb_first(&qgroup_lookup->root);
->  	while (n) {
->  		entry = rb_entry(n, struct btrfs_qgroup, sort_node);
-> -		print_single_qgroup_table(entry);
-> +		print_single_qgroup_table(entry, verbose);
->  		n = rb_next(n);
->  	}
->  }
->  
->  int btrfs_show_qgroups(int fd,
->  		       struct btrfs_qgroup_filter_set *filter_set,
-> -		       struct btrfs_qgroup_comparer_set *comp_set)
-> +		       struct btrfs_qgroup_comparer_set *comp_set,
-> +		       bool verbose)
->  {
->  
->  	struct qgroup_lookup qgroup_lookup;
-> @@ -1189,7 +1308,7 @@ int btrfs_show_qgroups(int fd,
->  		return ret;
->  	__filter_and_sort_qgroups(&qgroup_lookup, &sort_tree,
->  				  filter_set, comp_set);
-> -	print_all_qgroups(&sort_tree);
-> +	print_all_qgroups(&sort_tree, verbose);
->  
->  	__free_all_qgroups(&qgroup_lookup);
->  	return ret;
-> diff --git a/qgroup.h b/qgroup.h
-> index 875fbdf3..f7ab7de5 100644
-> --- a/qgroup.h
-> +++ b/qgroup.h
-> @@ -59,11 +59,13 @@ enum btrfs_qgroup_column_enum {
->  	BTRFS_QGROUP_MAX_EXCL,
->  	BTRFS_QGROUP_PARENT,
->  	BTRFS_QGROUP_CHILD,
-> +	BTRFS_QGROUP_PATHNAME,
->  	BTRFS_QGROUP_ALL,
->  };
->  
->  enum btrfs_qgroup_comp_enum {
->  	BTRFS_QGROUP_COMP_QGROUPID,
-> +	BTRFS_QGROUP_COMP_PATHNAME,
->  	BTRFS_QGROUP_COMP_RFER,
->  	BTRFS_QGROUP_COMP_EXCL,
->  	BTRFS_QGROUP_COMP_MAX_RFER,
-> @@ -80,7 +82,7 @@ enum btrfs_qgroup_filter_enum {
->  int btrfs_qgroup_parse_sort_string(const char *opt_arg,
->  				struct btrfs_qgroup_comparer_set **comps);
->  int btrfs_show_qgroups(int fd, struct btrfs_qgroup_filter_set *,
-> -		       struct btrfs_qgroup_comparer_set *);
-> +		       struct btrfs_qgroup_comparer_set *, bool verbose);
->  void btrfs_qgroup_setup_print_column(enum btrfs_qgroup_column_enum column);
->  void btrfs_qgroup_setup_units(unsigned unit_mode);
->  struct btrfs_qgroup_filter_set *btrfs_qgroup_alloc_filter_set(void);
-> 
+   BTRFS critical (device sda1): corrupt leaf: root=1 
+block=4970196795392 slot=307 ino=206231 file_offset=0, invalid ram_bytes 
+for uncompressed inline extent, have 3468 expect 3469
+   BTRFS critical (device sda1): corrupt leaf: root=1 
+block=4970552426496 slot=91 ino=209736 file_offset=0, invalid ram_bytes 
+for uncompressed inline extent, have 3496 expect 3497
+   BTRFS critical (device sda1): corrupt leaf: root=1 
+block=4970712399872 slot=221 ino=205230 file_offset=0, invalid ram_bytes 
+for uncompressed inline extent, have 1790 expect 1791
+   BTRFS critical (device sda1): corrupt leaf: root=1 
+block=4970803920896 slot=368 ino=205732 file_offset=0, invalid ram_bytes 
+for uncompressed inline extent, have 2475 expect 2476
+   BTRFS critical (device sda1): corrupt leaf: root=1 
+block=4970987945984 slot=236 ino=208896 file_offset=0, invalid ram_bytes 
+for uncompressed inline extent, have 490 expect 491
 
+All of them seem to be 1 short of the expected value.
+
+Some files do seem to be inaccessible on the filesystem, and btrfs
+inspect-internal on any of those inode numbers fails with:
+
+  ERROR: ino paths ioctl: Input/output error
+
+and another message for that inode appears.
+
+'btrfs check' (output attached) seems to notice these corruptions (among 
+a few others, some of which seem to be related to a problematic attempt 
+to build Android I posted about some months ago).
+
+Other information:
+
+Arch Linux x86-64, kernel 4.16.6, btrfs-progs 4.16.  The filesystem has 
+about 25 snapshots at the moment, only a handful of compressed files, 
+and nothing fancy like qgroups enabled.
+
+btrfs fi show:
+
+  Label: none  uuid: 9d4db9e3-b9c3-4f6d-8cb4-60ff55e96d82
+          Total devices 4 FS bytes used 2.48TiB
+          devid    1 size 1.36TiB used 1.13TiB path /dev/sdd1
+          devid    2 size 464.73GiB used 230.00GiB path /dev/sdc1
+          devid    3 size 1.36TiB used 1.13TiB path /dev/sdb1
+          devid    4 size 3.49TiB used 2.49TiB path /dev/sda1
+
+btrfs fi df:
+
+  Data, RAID1: total=2.49TiB, used=2.48TiB
+  System, RAID1: total=32.00MiB, used=416.00KiB
+  Metadata, RAID1: total=7.00GiB, used=5.29GiB
+  GlobalReserve, single: total=512.00MiB, used=0.00B
+
+dmesg output attached as well.
+
+Thanks in advance for any assistance!  I have backups of all the 
+important stuff here but it would be nice to fix the corruptions in place.
+
+Steve
+
+--------------8B551A760CCA768CB08A5DD5
+Content-Type: application/gzip;
+ name="btrfs-check.txt.gz"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment;
+ filename="btrfs-check.txt.gz"
+
+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
+0wN35VICQHrgrlzyAKYH7solA3B6yPPKpdFgU9ZDOVcuJcMWpQeh7jWdAJAehLrXtAcwPQh1
+r2kPYHoQ6l7TCQDpQah7TScApAeh7jWdAogehLrXdAJAehDqXtMWoPQgWd5rejzYhPUgxdxr
+Oh22LD1w1bQHMD1w1bQDQD1w1bQDQD1w1bQHMD1w1bQHMD1w1XQCQHrgqmkPYHrgqmkDcHrI
+s5oeDTZlPZRTTSfDlqWHwOohsHoIrB4Cq4fA6iGwegisHgKrh8DqIbB6CKweAquHwOohsHoI
+rB7CWXoIueohXPSQnkQJegjF6oF7x1YPYHrg3rHVAaAeuHdsdQCoB+4dWz2A6YF7x1YPYHrg
+3rE1ASA9cO/Y6gFMD9w7thqA00Oe79g6GmzKeijnHVuTYcvSA5vFCZvFCZvFCZvFCZvFCZvF
+CZvFCZvFCZvFCZvFCZvFCZvFCZvFCZvFCZvFyVlZnOSaxcklixudRAl6KDaLEzaLEzaLEzaL
+EzaLEzaLEzaLEzaLEzaLEzaLEzaLEzaLEzaLEzaLEzaLEzaLk7OyOMk1i5NLFjc6iRL0UGwW
+9/h9o/QQWT1EVg+R1UNk9RBZPURWD5HVQ2T1EFk9RFYPkdVDZPUQWT1EVg/xLD3EXPUQL3pI
+T6IEPcRi9cBW08JW08JW08JW08JW08JW08JW08JW08JW08JW08JW08JW08JW08JW08JW03JW
+NS25VtNyqaZHJ1GCHoqtpoWtpoWtpoWtpoWtpoWtpoWtpoWtpoWtpoWtpoWtpoWtpoWtpoWt
+poWtpoWtpuWsalpyrablUk2PTqIEPRRbTZP3e/AApge2mibv9+AAUA9sNU3e78EDmB7Yapq8
+34MHMD2w1TR5vwcPYHpgq+lz7veQUFnp4VJNj06iBD0UW00rW00rW00rW00rW00rW00rW00r
+W00rW00rW00rW00rW00rW00rW00rW00rW03rWdW05lpN66WaHp1EAXrQYqtpZatpZatpZatp
+ZatpZatpZatpZatpZatpZatpZatpZatpZatpZatpZatpZatpPaua1lyrab1U06OTKEEPxVbT
+ylbTFsD0wFbTBgD1wFbTBgD1wFbTFsD0wFbTFsD0wFbTDoD0wFbTFsD0wFbTrwCnh1yr6WSw
+KeuhpGraDVuWHthq2gKYHthq2gCgHthq2gCgHthq2gKYHthq2gKYHthq2gGQHthq2gKYHthq
++hXg9JBrNZ0MNmU9lFRNu2HL0gNbTStbTStbTStbTStbTStbTStbTStbTStbTStbTStbTStb
+TStbTStbTStbTetZ1bTmWk3rpZoenUQJeii2mla2mla2mla2mla2mla2mla2mla2mla2mla2
+mla2mla2mla2mla2mla2mla2mtazqmnNtZrWSzU9OokS9FBsNa1sNW0BTA9sNW0AUA9sNW0A
+UA9sNW0BTA9sNW0BTA9sNe0ASA9sNW0BTA9sNf0KcHrItZpOBpuyHkqqpt2wZemBraaVraaV
+raaVraaVraaVraaVraaVraaVraaVraaVraaVraaVraaVraaVrab1rGpac62m9VJNj06iBD0U
+W00rW00rW00rW00rW00rW00rW00rW00rW00rW00rW00rW00rW00rW00rW00rW03rWdW05lpN
+66WaHp1ECXoorpp+/+HDvz+8e/nUm+EltRo+Wt3sq4fntL/6/XO//LJ+ftz99/3wCNV2U/26
+6v/6db9azK/+/POff7yrupWurrte3lx3S3mjN3H1pl1e65s4u7mp676LqzZcPT16aEJXR53X
+83bWVk8/y/fDk/jlaYi/7//xNMbVYXtY3FbL/f3Xp896V4VYt22ct0GfP3jY9f3LB+vYxXZ4
+1NnLB4fnYD8+uLtu63nTxOeP998O/fAD5D8nNvPZMOHV9eNf7+8Wy+GltRie9suntMNvsDrU
+3ezq4USq1eKwqK5vt8sv+2pxO/w5vGpW76p56GYaJOpMh19fVw9H3e/6zXL4bkvz8It/HoZ/
+4uzqfzR36Vt28AAA
+--------------8B551A760CCA768CB08A5DD5
+Content-Type: application/gzip;
+ name="dmesg.txt.gz"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment;
+ filename="dmesg.txt.gz"
+
+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
+3a1GEGZI+dt/AR+auLRl1wAA
+--------------8B551A760CCA768CB08A5DD5--

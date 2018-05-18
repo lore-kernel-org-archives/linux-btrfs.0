@@ -1,53 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp2130.oracle.com ([156.151.31.86]:59618 "EHLO
-        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751367AbeEQNWq (ORCPT
+Received: from mail-pg0-f68.google.com ([74.125.83.68]:42335 "EHLO
+        mail-pg0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751450AbeERRio (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 17 May 2018 09:22:46 -0400
-Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
-        by userp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w4HDLWjl129936
-        for <linux-btrfs@vger.kernel.org>; Thu, 17 May 2018 13:22:45 GMT
-Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
-        by userp2130.oracle.com with ESMTP id 2hx29wh6e3-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Thu, 17 May 2018 13:22:45 +0000
-Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w4HDMj2G022161
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Thu, 17 May 2018 13:22:45 GMT
-Received: from abhmp0008.oracle.com (abhmp0008.oracle.com [141.146.116.14])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w4HDMjuE006177
-        for <linux-btrfs@vger.kernel.org>; Thu, 17 May 2018 13:22:45 GMT
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: fix describe_relocation string pointer
-Date: Thu, 17 May 2018 21:25:12 +0800
-Message-Id: <20180517132512.16377-1-anand.jain@oracle.com>
+        Fri, 18 May 2018 13:38:44 -0400
+Received: by mail-pg0-f68.google.com with SMTP id p9-v6so3604980pgc.9
+        for <linux-btrfs@vger.kernel.org>; Fri, 18 May 2018 10:38:44 -0700 (PDT)
+Date: Fri, 18 May 2018 10:38:40 -0700
+From: Omar Sandoval <osandov@osandov.com>
+To: dsterba@suse.cz, linux-btrfs@vger.kernel.org, kernel-team@fb.com,
+        Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        Nikolay Borisov <nborisov@suse.com>, David Sterba <dsterba@suse.com>
+Subject: Re: [PATCH v4 00/12] Btrfs: orphan and truncate fixes
+Message-ID: <20180518173840.GA1125@vader>
+References: <cover.1526069051.git.osandov@fb.com>
+ <20180518151435.GP6649@twin.jikos.cz>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20180518151435.GP6649@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Looks like the original idea was to print the hex of the flags which
-is not coded with their flag name. So use the current buf pointer bp
-instead of buf.
+On Fri, May 18, 2018 at 05:14:35PM +0200, David Sterba wrote:
+> On Fri, May 11, 2018 at 01:13:28PM -0700, Omar Sandoval wrote:
+> > This is the fourth (and hopefully final) version of the orphan item
+> > early ENOSPC and related fixes.
+> > 
+> > Changes since v3:
+> > 
+> > - Changed another stale comment in patch 1
+> > - Moved BTRFS_INODE_ORPHAN_META_RESERVED flag removal to patch 10
+> >   instead of patch 9
+> > - Moved inode runtime flag renumbering to a separate patch (patch 11)
+> > - Added some more reviewed-bys
+> 
+> Patchset added to misc-next, thanks. Besides fstests, I've hammered it
+> with some stress testing, all fine.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- fs/btrfs/relocation.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Thanks, Dave!
 
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 74656d79e511..879b76fa881a 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -4344,7 +4344,7 @@ static void describe_relocation(struct btrfs_fs_info *fs_info,
- 		DESCRIBE_FLAG(RAID5,    "raid5");
- 		DESCRIBE_FLAG(RAID6,    "raid6");
- 		if (flags)
--			snprintf(buf, buf - bp + sizeof(buf), "|0x%llx", flags);
-+			snprintf(bp, buf - bp + sizeof(buf), "|0x%llx", flags);
- #undef DESCRIBE_FLAG
- 	}
- 
--- 
-2.15.0
+> > Changes since v2:
+> > 
+> > - Add patch 5 to get rid of BTRFS_INODE_HAS_ORPHAN_ITEM
+> > - Move patch 10 to patch 6
+> > - Got rid of patch 5; the bug goes away in the process of removing code
+> >   for patches 9 and 10
+> > - Rename patch 10 batch to what it was called in v1
+> > 
+> > Changes since v1:
+> > 
+> > - Added two extra cleanups, patches 10 and 11
+> > - Added a forgotten clear of the orphan bit in patch 8
+> > - Reworded titles of patches 6 and 9
+> > - Added people's reviewed-bys
+> > 
+> > Cover letter from v1:
+> > 
+> > At Facebook we hit an early ENOSPC issue which we tracked down to the
+> > reservations for orphan items of deleted-but-still-open files. The
+> > primary function of this series is to fix that bug, but I ended up
+> > uncovering a pile of other issues in the process, most notably that the
+> > orphan items we create for truncate are useless.
+> > 
+> > I've also posted an xfstest that reproduces this bug.
+> > 
+> > Thanks!
+> > 
+> > *** BLURB HERE ***
+> 
+> Blurb!
 
+Oops ;)

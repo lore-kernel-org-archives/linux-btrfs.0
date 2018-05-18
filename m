@@ -1,30 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:43014 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1425204AbeE1Pxt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 28 May 2018 11:53:49 -0400
-Date: Mon, 28 May 2018 15:29:56 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Omar Sandoval <osandov@osandov.com>
-Cc: linux-btrfs@vger.kernel.org, kernel-team@fb.com,
-        linux-fsdevel@vger.kernel.org, Tejun Heo <tj@kernel.org>
-Subject: Re: [RFC PATCH v4 3/6] Btrfs: push EXCL_OP set into btrfs_rm_device()
-Message-ID: <20180528132955.GX6649@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <cover.1527197312.git.osandov@fb.com>
- <d87c19f340768141b564cec3af1deda6e921eaa5.1527197312.git.osandov@fb.com>
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:17344 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1751452AbeERKAd (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 18 May 2018 06:00:33 -0400
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
+        by cn.fujitsu.com (Postfix) with ESMTP id 918AB4B402E7
+        for <linux-btrfs@vger.kernel.org>; Fri, 18 May 2018 18:00:29 +0800 (CST)
+From: Gu Jinxiang <gujx@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Gu JinXiang <gujx@cn.fujitsu.com>
+Subject: [PATCH] btrfs-progs: Add DEBUG_CFLAGS_INTERNAL for libbtrfsutil
+Date: Fri, 18 May 2018 17:41:08 +0800
+Message-ID: <1526636468-29840-1-git-send-email-gujx@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <d87c19f340768141b564cec3af1deda6e921eaa5.1527197312.git.osandov@fb.com>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, May 24, 2018 at 02:41:27PM -0700, Omar Sandoval wrote:
-> From: Omar Sandoval <osandov@fb.com>
-> 
-> btrfs_ioctl_rm_dev() and btrfs_ioctl_rm_dev_v2() both manipulate this
-> bit. Let's move it into the common btrfs_rm_device(), which also makes
-> the following change to deal with swap files easier.
+From: Gu JinXiang <gujx@cn.fujitsu.com>
 
-I'd rather keep it in both places as it's clear where the EXCL_OP
-context starts in the ioctl handlers, not in some helper function.
+Add DEBUG_CFLAGS_INTERNAL to LIBBTRFSUTIL_CFLAGS for libbtrfsutil's
+build.
+
+Signed-off-by: Gu JinXiang <gujx@cn.fujitsu.com>
+---
+ Makefile | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/Makefile b/Makefile
+index cbd85533..1e38a56f 100644
+--- a/Makefile
++++ b/Makefile
+@@ -85,6 +85,7 @@ LIBBTRFSUTIL_CFLAGS = $(SUBST_CFLAGS) \
+ 		      -fvisibility=hidden \
+ 		      -I$(TOPDIR)/libbtrfsutil \
+ 		      $(EXTRAWARN_CFLAGS) \
++		      $(DEBUG_CFLAGS_INTERNAL) \
+ 		      $(EXTRA_CFLAGS)
+ 
+ LDFLAGS = $(SUBST_LDFLAGS) \
+-- 
+2.17.0
+
+
+

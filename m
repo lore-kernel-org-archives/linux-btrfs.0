@@ -1,98 +1,102 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.15]:59887 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751221AbeERJ43 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 18 May 2018 05:56:29 -0400
-Subject: Re: off-by-one uncompressed invalid ram_bytes corruptions
-To: james harvey <jamespharvey20@gmail.com>
-Cc: Steve Leung <sjleung@shaw.ca>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <b262fdfc-16b2-21d0-4d7b-745ef106b555@shaw.ca>
- <2dab827b-2c68-ea5c-6730-485037727c36@gmx.com>
- <CA+X5Wn51gEdshKO+g-o+UQtjTtMsBwV02ziyHjOQ2R4Anh=Dzw@mail.gmail.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <6088eb00-2530-eabd-0e8a-fade3822924b@gmx.com>
-Date: Fri, 18 May 2018 17:56:16 +0800
+Received: from mail-it0-f66.google.com ([209.85.214.66]:52124 "EHLO
+        mail-it0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752470AbeERMgx (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 18 May 2018 08:36:53 -0400
+Received: by mail-it0-f66.google.com with SMTP id n202-v6so12949705ita.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 18 May 2018 05:36:53 -0700 (PDT)
+Subject: Re: [PATCH v2 0/3] btrfs: add read mirror policy
+To: Anand Jain <anand.jain@oracle.com>, Jeff Mahoney <jeffm@suse.com>,
+        dsterba@suse.cz, linux-btrfs@vger.kernel.org
+References: <20180516100359.7752-1-anand.jain@oracle.com>
+ <20180516223523.GG6649@twin.jikos.cz>
+ <0ff3604a-4d67-4421-560f-40a87fe4001d@oracle.com>
+ <157ec7fa-e271-ed60-d22b-290db8122734@gmail.com>
+ <854f0e3c-9bc5-768b-1f85-b0de79ee5a73@suse.com>
+ <792af75a-ece2-4734-2b68-e940092e7407@oracle.com>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <51d2dd75-9b8f-6a74-b06a-4cf3e004440a@gmail.com>
+Date: Fri, 18 May 2018 08:36:51 -0400
 MIME-Version: 1.0
-In-Reply-To: <CA+X5Wn51gEdshKO+g-o+UQtjTtMsBwV02ziyHjOQ2R4Anh=Dzw@mail.gmail.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="jCsYWULKwpBMkkPJHuUzMhSORIAXKdCv2"
+In-Reply-To: <792af75a-ece2-4734-2b68-e940092e7407@oracle.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---jCsYWULKwpBMkkPJHuUzMhSORIAXKdCv2
-Content-Type: multipart/mixed; boundary="9M97W19uFerXpgeARwbyRbTjNrOaJjn45";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: james harvey <jamespharvey20@gmail.com>
-Cc: Steve Leung <sjleung@shaw.ca>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Message-ID: <6088eb00-2530-eabd-0e8a-fade3822924b@gmx.com>
-Subject: Re: off-by-one uncompressed invalid ram_bytes corruptions
-References: <b262fdfc-16b2-21d0-4d7b-745ef106b555@shaw.ca>
- <2dab827b-2c68-ea5c-6730-485037727c36@gmx.com>
- <CA+X5Wn51gEdshKO+g-o+UQtjTtMsBwV02ziyHjOQ2R4Anh=Dzw@mail.gmail.com>
-In-Reply-To: <CA+X5Wn51gEdshKO+g-o+UQtjTtMsBwV02ziyHjOQ2R4Anh=Dzw@mail.gmail.com>
+On 2018-05-18 04:06, Anand Jain wrote:
+> 
+> 
+> Thanks Austin and Jeff for the suggestion.
+> 
+> I am not particularly a fan of mount option either mainly because
+> those options aren't persistent and host independent luns will
+> have tough time to have them synchronize manually.
+> 
+> Properties are better as it is persistent. And we can apply this
+> read_mirror_policy property on the fsid object.
+> 
+> But if we are talking about the properties then it can be stored
+> as extended attributes or ondisk key value pair, and I am doubt
+> if ondisk key value pair will get a nod.
+> I can explore the extended attribute approach but appreciate more
+> comments.
 
---9M97W19uFerXpgeARwbyRbTjNrOaJjn45
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
-
-
-
-On 2018=E5=B9=B405=E6=9C=8818=E6=97=A5 17:42, james harvey wrote:
-> On Fri, May 18, 2018 at 1:49 AM, Qu Wenruo <quwenruo.btrfs@gmx.com> wro=
-te:
->> And btrfs check doesn't report the same problem as the default origina=
-l
->> mode doesn't have such check.
+Hmm, thinking a bit further, might it be easier to just keep this as a 
+mount option, and add something that lets you embed default mount 
+options in the volume in a free-form manner?  Then, you could set this 
+persistently there, and could specify any others you want too.  Doing 
+that would also give very well defined behavior for exactly when changes 
+would apply (the next time you mount or remount the volume), though 
+handling of whether or not an option came from there or was specified on 
+the command-line might be a bit complicated.
+> 
+> 
+> On 05/17/2018 10:46 PM, Jeff Mahoney wrote:
+>> On 5/17/18 8:25 AM, Austin S. Hemmelgarn wrote:
+>>> On 2018-05-16 22:32, Anand Jain wrote:
+>>>>
+>>>>
+>>>> On 05/17/2018 06:35 AM, David Sterba wrote:
+>>>>> On Wed, May 16, 2018 at 06:03:56PM +0800, Anand Jain wrote:
+>>>>>> Not yet ready for the integration. As I need to introduce
+>>>>>> -o no_read_mirror_policy instead of -o read_mirror_policy=-<devid>
+>>>>>
+>>>>> Mount option is mostly likely not the right interface for setting such
+>>>>> options, as usual.
+>>>>
+>>>>    I am ok to make it ioctl for the final. What do you think?
+>>>>
+>>>>
+>>>>    But to reproduce the bug posted in
+>>>>      Btrfs: fix the corruption by reading stale btree blocks
+>>>>    It needs to be a mount option, as randomly the pid can
+>>>>    still pick the disk specified in the mount option.
+>>>>
+>>> Personally, I'd vote for filesystem property (thus handled through the
+>>> standard `btrfs property` command) that can be overridden by a mount
+>>> option.  With that approach, no new tool (or change to an existing tool)
+>>> would be needed, existing volumes could be converted to use it in a
+>>> backwards compatible manner (old kernels would just ignore the
+>>> property), and you could still have the behavior you want in tests (and
+>>> in theory it could easily be adapted to be a per-subvolume setting if we
+>>> ever get per-subvolume chunk profile support).
 >>
->> Please also post the result of "btrfs check --mode=3Dlowmem /dev/sda1"=
+>> Properties are a combination of interfaces presented through a single
+>> command.  Although the kernel API would allow a direct-to-property
+>> interface via the btrfs.* extended attributes, those are currently
+>> limited to a single inode.  The label property is set via ioctl and
+>> stored in the superblock.  The read-only subvolume property is also set
+>> by ioctl but stored in the root flags.
+>>
+>> As it stands, every property is explicitly defined in the tools, so any
+>> addition would require tools changes.  This is a bigger discussion,
+>> though.  We *could* use the xattr interface to access per-root or
+>> fs-global properties, but we'd need to define that interface.
+>> btrfs_listxattr could get interesting, though I suppose we could
+>> simplify it by only allowing the per-subvolume and fs-global operations
+>> on root inodes.
+>>
+>> -Jeff
+>>
 
->=20
-> Are you saying "--mode=3Dlowmem" does more checks than without it?
-
-Sometimes it does more check.
-
->  "man
-> btrfs check" says it's experimental and the difference is just
-> original is unoptimized regarding memory consumption and can run out
-> of memory, and low memory addresses this with increased IO cost from
-> re-reading blocks increasing run time.  It doesn't indicate lowmem is
-> a better check.
-
-Well, due to the fact original mode and lowmem mode use completely
-different way to check, you'd better consider lowmem mode as a
-completely rework.
-Thus sometimes it will cause different result. (Although most of the
-time lowmem is causing false alerts)
-
-Here in this particular case, lowmem does indeed do extra check.
-
-And overall, lowmem mode provides more human readable error output.
-
-Thanks,
-Qu
-
-
---9M97W19uFerXpgeARwbyRbTjNrOaJjn45--
-
---jCsYWULKwpBMkkPJHuUzMhSORIAXKdCv2
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlr+o0AACgkQwj2R86El
-/qiRdQf8Dz/Avq3cSzAi6zt7Z1FReVd4UL2n1k+3zyGycJdbbysBSUsG/RVjYvz6
-OoGUdviTD7rc6c0SaQvsFCu0g6Lzfaq5IqA1IYfPOjpiG1KiRIUG+lrV2w7sSu/1
-OEuo/AwtuKJQV73awGXxmXyRh3PB0YKLParYSPq6Dui7zBfTc3r+d/3NW0Cy44T+
-PLoagv6wVHZtVk26n3A1sOW4uXPihknnNLbLGl1cL675fGEObxsOokaHDiEr7CQZ
-dWzk+YYBwX5ZvdvY04DG3yuODndlxPtPREIeH7rhh6ocN/QrptPt2JXi5WO9uH9Q
-k3HGy6a9EI7LDz9N2nsMcLxYVxBq5w==
-=07dX
------END PGP SIGNATURE-----
-
---jCsYWULKwpBMkkPJHuUzMhSORIAXKdCv2--

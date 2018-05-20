@@ -1,9 +1,9 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f194.google.com ([209.85.220.194]:36569 "EHLO
-        mail-qk0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752654AbeETW0j (ORCPT
+Received: from mail-qk0-f193.google.com ([209.85.220.193]:33000 "EHLO
+        mail-qk0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751902AbeETW0l (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 20 May 2018 18:26:39 -0400
+        Sun, 20 May 2018 18:26:41 -0400
 From: Kent Overstreet <kent.overstreet@gmail.com>
 To: linux-kernel@vger.kernel.org, linux-block@vger.kernel.org, axboe@kernel.dk,
         hch@infradead.org, colyli@suse.de, snitzer@redhat.com,
@@ -12,91 +12,129 @@ To: linux-kernel@vger.kernel.org, linux-block@vger.kernel.org, axboe@kernel.dk,
         linux-btrfs@vger.kernel.org, linux-raid@vger.kernel.org,
         neilb@suse.com
 Cc: Kent Overstreet <kent.overstreet@gmail.com>
-Subject: [PATCH 11/12] xfs: convert to bioset_init()/mempool_init()
-Date: Sun, 20 May 2018 18:25:57 -0400
-Message-Id: <20180520222558.7053-12-kent.overstreet@gmail.com>
+Subject: [PATCH 12/12] block: Drop bioset_create()
+Date: Sun, 20 May 2018 18:25:58 -0400
+Message-Id: <20180520222558.7053-13-kent.overstreet@gmail.com>
 In-Reply-To: <20180520222558.7053-1-kent.overstreet@gmail.com>
 References: <20180520222558.7053-1-kent.overstreet@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+All users have been converted to bioset_init()
+
 Signed-off-by: Kent Overstreet <kent.overstreet@gmail.com>
 ---
- fs/xfs/xfs_aops.c  |  2 +-
- fs/xfs/xfs_aops.h  |  2 +-
- fs/xfs/xfs_super.c | 11 +++++------
- 3 files changed, 7 insertions(+), 8 deletions(-)
+ block/bio.c         | 61 ++++++++++-----------------------------------
+ include/linux/bio.h |  6 ++---
+ 2 files changed, 15 insertions(+), 52 deletions(-)
 
-diff --git a/fs/xfs/xfs_aops.c b/fs/xfs/xfs_aops.c
-index 0ab824f574..102463543d 100644
---- a/fs/xfs/xfs_aops.c
-+++ b/fs/xfs/xfs_aops.c
-@@ -594,7 +594,7 @@ xfs_alloc_ioend(
- 	struct xfs_ioend	*ioend;
- 	struct bio		*bio;
- 
--	bio = bio_alloc_bioset(GFP_NOFS, BIO_MAX_PAGES, xfs_ioend_bioset);
-+	bio = bio_alloc_bioset(GFP_NOFS, BIO_MAX_PAGES, &xfs_ioend_bioset);
- 	xfs_init_bio_from_bh(bio, bh);
- 
- 	ioend = container_of(bio, struct xfs_ioend, io_inline_bio);
-diff --git a/fs/xfs/xfs_aops.h b/fs/xfs/xfs_aops.h
-index 69346d460d..694c85b038 100644
---- a/fs/xfs/xfs_aops.h
-+++ b/fs/xfs/xfs_aops.h
-@@ -18,7 +18,7 @@
- #ifndef __XFS_AOPS_H__
- #define __XFS_AOPS_H__
- 
--extern struct bio_set *xfs_ioend_bioset;
-+extern struct bio_set xfs_ioend_bioset;
- 
- /*
-  * Types of I/O for bmap clustering and I/O completion tracking.
-diff --git a/fs/xfs/xfs_super.c b/fs/xfs/xfs_super.c
-index d714240529..f643d76db5 100644
---- a/fs/xfs/xfs_super.c
-+++ b/fs/xfs/xfs_super.c
-@@ -63,7 +63,7 @@
- #include <linux/parser.h>
- 
- static const struct super_operations xfs_super_operations;
--struct bio_set *xfs_ioend_bioset;
-+struct bio_set xfs_ioend_bioset;
- 
- static struct kset *xfs_kset;		/* top-level xfs sysfs dir */
- #ifdef DEBUG
-@@ -1845,10 +1845,9 @@ MODULE_ALIAS_FS("xfs");
- STATIC int __init
- xfs_init_zones(void)
- {
--	xfs_ioend_bioset = bioset_create(4 * MAX_BUF_PER_PAGE,
-+	if (bioset_init(&xfs_ioend_bioset, 4 * MAX_BUF_PER_PAGE,
- 			offsetof(struct xfs_ioend, io_inline_bio),
--			BIOSET_NEED_BVECS);
--	if (!xfs_ioend_bioset)
-+			BIOSET_NEED_BVECS))
- 		goto out;
- 
- 	xfs_log_ticket_zone = kmem_zone_init(sizeof(xlog_ticket_t),
-@@ -1997,7 +1996,7 @@ xfs_init_zones(void)
-  out_destroy_log_ticket_zone:
- 	kmem_zone_destroy(xfs_log_ticket_zone);
-  out_free_ioend_bioset:
--	bioset_free(xfs_ioend_bioset);
-+	bioset_exit(&xfs_ioend_bioset);
-  out:
- 	return -ENOMEM;
+diff --git a/block/bio.c b/block/bio.c
+index 0a4df92cd6..595663e028 100644
+--- a/block/bio.c
++++ b/block/bio.c
+@@ -1908,22 +1908,26 @@ void bioset_exit(struct bio_set *bs)
  }
-@@ -2029,7 +2028,7 @@ xfs_destroy_zones(void)
- 	kmem_zone_destroy(xfs_btree_cur_zone);
- 	kmem_zone_destroy(xfs_bmap_free_item_zone);
- 	kmem_zone_destroy(xfs_log_ticket_zone);
--	bioset_free(xfs_ioend_bioset);
-+	bioset_exit(&xfs_ioend_bioset);
+ EXPORT_SYMBOL(bioset_exit);
+ 
+-void bioset_free(struct bio_set *bs)
+-{
+-	bioset_exit(bs);
+-	kfree(bs);
+-}
+-EXPORT_SYMBOL(bioset_free);
+-
+ /**
+  * bioset_init - Initialize a bio_set
++ * @bs:		pool to initialize
+  * @pool_size:	Number of bio and bio_vecs to cache in the mempool
+  * @front_pad:	Number of bytes to allocate in front of the returned bio
+  * @flags:	Flags to modify behavior, currently %BIOSET_NEED_BVECS
+  *              and %BIOSET_NEED_RESCUER
+  *
+- * Similar to bioset_create(), but initializes a passed-in bioset instead of
+- * separately allocating it.
++ * Description:
++ *    Set up a bio_set to be used with @bio_alloc_bioset. Allows the caller
++ *    to ask for a number of bytes to be allocated in front of the bio.
++ *    Front pad allocation is useful for embedding the bio inside
++ *    another structure, to avoid allocating extra data to go with the bio.
++ *    Note that the bio must be embedded at the END of that structure always,
++ *    or things will break badly.
++ *    If %BIOSET_NEED_BVECS is set in @flags, a separate pool will be allocated
++ *    for allocating iovecs.  This pool is not needed e.g. for bio_clone_fast().
++ *    If %BIOSET_NEED_RESCUER is set, a workqueue is created which can be used to
++ *    dispatch queued requests when the mempool runs out of space.
++ *
+  */
+ int bioset_init(struct bio_set *bs,
+ 		unsigned int pool_size,
+@@ -1963,45 +1967,6 @@ int bioset_init(struct bio_set *bs,
+ }
+ EXPORT_SYMBOL(bioset_init);
+ 
+-/**
+- * bioset_create  - Create a bio_set
+- * @pool_size:	Number of bio and bio_vecs to cache in the mempool
+- * @front_pad:	Number of bytes to allocate in front of the returned bio
+- * @flags:	Flags to modify behavior, currently %BIOSET_NEED_BVECS
+- *              and %BIOSET_NEED_RESCUER
+- *
+- * Description:
+- *    Set up a bio_set to be used with @bio_alloc_bioset. Allows the caller
+- *    to ask for a number of bytes to be allocated in front of the bio.
+- *    Front pad allocation is useful for embedding the bio inside
+- *    another structure, to avoid allocating extra data to go with the bio.
+- *    Note that the bio must be embedded at the END of that structure always,
+- *    or things will break badly.
+- *    If %BIOSET_NEED_BVECS is set in @flags, a separate pool will be allocated
+- *    for allocating iovecs.  This pool is not needed e.g. for bio_clone_fast().
+- *    If %BIOSET_NEED_RESCUER is set, a workqueue is created which can be used to
+- *    dispatch queued requests when the mempool runs out of space.
+- *
+- */
+-struct bio_set *bioset_create(unsigned int pool_size,
+-			      unsigned int front_pad,
+-			      int flags)
+-{
+-	struct bio_set *bs;
+-
+-	bs = kzalloc(sizeof(*bs), GFP_KERNEL);
+-	if (!bs)
+-		return NULL;
+-
+-	if (bioset_init(bs, pool_size, front_pad, flags)) {
+-		kfree(bs);
+-		return NULL;
+-	}
+-
+-	return bs;
+-}
+-EXPORT_SYMBOL(bioset_create);
+-
+ #ifdef CONFIG_BLK_CGROUP
+ 
+ /**
+diff --git a/include/linux/bio.h b/include/linux/bio.h
+index 5e472fcafa..810a8bee8f 100644
+--- a/include/linux/bio.h
++++ b/include/linux/bio.h
+@@ -410,14 +410,12 @@ static inline struct bio *bio_next_split(struct bio *bio, int sectors,
+ 	return bio_split(bio, sectors, gfp, bs);
  }
  
- STATIC int __init
+-extern int bioset_init(struct bio_set *, unsigned int, unsigned int, int flags);
+-extern void bioset_exit(struct bio_set *);
+-extern struct bio_set *bioset_create(unsigned int, unsigned int, int flags);
+ enum {
+ 	BIOSET_NEED_BVECS = BIT(0),
+ 	BIOSET_NEED_RESCUER = BIT(1),
+ };
+-extern void bioset_free(struct bio_set *);
++extern int bioset_init(struct bio_set *, unsigned int, unsigned int, int flags);
++extern void bioset_exit(struct bio_set *);
+ extern int biovec_init_pool(mempool_t *pool, int pool_entries);
+ 
+ extern struct bio *bio_alloc_bioset(gfp_t, unsigned int, struct bio_set *);
 -- 
 2.17.0
 

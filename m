@@ -1,9 +1,9 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f181.google.com ([209.85.220.181]:43562 "EHLO
-        mail-qk0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752569AbeETW0Y (ORCPT
+Received: from mail-qk0-f195.google.com ([209.85.220.195]:33825 "EHLO
+        mail-qk0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751556AbeETW02 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 20 May 2018 18:26:24 -0400
+        Sun, 20 May 2018 18:26:28 -0400
 From: Kent Overstreet <kent.overstreet@gmail.com>
 To: linux-kernel@vger.kernel.org, linux-block@vger.kernel.org, axboe@kernel.dk,
         hch@infradead.org, colyli@suse.de, snitzer@redhat.com,
@@ -12,9 +12,9 @@ To: linux-kernel@vger.kernel.org, linux-block@vger.kernel.org, axboe@kernel.dk,
         linux-btrfs@vger.kernel.org, linux-raid@vger.kernel.org,
         neilb@suse.com
 Cc: Kent Overstreet <kent.overstreet@gmail.com>
-Subject: [PATCH 03/12] pktcdvd: convert to bioset_init()/mempool_init()
-Date: Sun, 20 May 2018 18:25:49 -0400
-Message-Id: <20180520222558.7053-4-kent.overstreet@gmail.com>
+Subject: [PATCH 05/12] bcache: convert to bioset_init()/mempool_init()
+Date: Sun, 20 May 2018 18:25:51 -0400
+Message-Id: <20180520222558.7053-6-kent.overstreet@gmail.com>
 In-Reply-To: <20180520222558.7053-1-kent.overstreet@gmail.com>
 References: <20180520222558.7053-1-kent.overstreet@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -22,159 +22,307 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 Signed-off-by: Kent Overstreet <kent.overstreet@gmail.com>
 ---
- drivers/block/pktcdvd.c | 50 ++++++++++++++++++++---------------------
- include/linux/pktcdvd.h |  2 +-
- 2 files changed, 26 insertions(+), 26 deletions(-)
+ drivers/md/bcache/bcache.h  | 10 +++++-----
+ drivers/md/bcache/bset.c    | 13 ++++---------
+ drivers/md/bcache/bset.h    |  2 +-
+ drivers/md/bcache/btree.c   |  4 ++--
+ drivers/md/bcache/io.c      |  4 ++--
+ drivers/md/bcache/request.c | 18 +++++++++---------
+ drivers/md/bcache/super.c   | 38 ++++++++++++++-----------------------
+ 7 files changed, 37 insertions(+), 52 deletions(-)
 
-diff --git a/drivers/block/pktcdvd.c b/drivers/block/pktcdvd.c
-index d8aff7f325..69875f5580 100644
---- a/drivers/block/pktcdvd.c
-+++ b/drivers/block/pktcdvd.c
-@@ -97,8 +97,8 @@ static int pktdev_major;
- static int write_congestion_on  = PKT_WRITE_CONGESTION_ON;
- static int write_congestion_off = PKT_WRITE_CONGESTION_OFF;
- static struct mutex ctl_mutex;	/* Serialize open/close/setup/teardown */
--static mempool_t *psd_pool;
--static struct bio_set *pkt_bio_set;
-+static mempool_t psd_pool;
-+static struct bio_set pkt_bio_set;
+diff --git a/drivers/md/bcache/bcache.h b/drivers/md/bcache/bcache.h
+index 3a0cfb237a..3050438761 100644
+--- a/drivers/md/bcache/bcache.h
++++ b/drivers/md/bcache/bcache.h
+@@ -269,7 +269,7 @@ struct bcache_device {
+ 	atomic_t		*stripe_sectors_dirty;
+ 	unsigned long		*full_dirty_stripes;
  
- static struct class	*class_pktcdvd = NULL;    /* /sys/class/pktcdvd */
- static struct dentry	*pkt_debugfs_root = NULL; /* /sys/kernel/debug/pktcdvd */
-@@ -631,7 +631,7 @@ static inline struct pkt_rb_node *pkt_rbtree_next(struct pkt_rb_node *node)
- static void pkt_rbtree_erase(struct pktcdvd_device *pd, struct pkt_rb_node *node)
- {
- 	rb_erase(&node->rb_node, &pd->bio_queue);
--	mempool_free(node, pd->rb_pool);
-+	mempool_free(node, &pd->rb_pool);
- 	pd->bio_queue_size--;
- 	BUG_ON(pd->bio_queue_size < 0);
- }
-@@ -2303,14 +2303,14 @@ static void pkt_end_io_read_cloned(struct bio *bio)
- 	psd->bio->bi_status = bio->bi_status;
- 	bio_put(bio);
- 	bio_endio(psd->bio);
--	mempool_free(psd, psd_pool);
-+	mempool_free(psd, &psd_pool);
- 	pkt_bio_finished(pd);
- }
+-	struct bio_set		*bio_split;
++	struct bio_set		bio_split;
  
- static void pkt_make_request_read(struct pktcdvd_device *pd, struct bio *bio)
- {
--	struct bio *cloned_bio = bio_clone_fast(bio, GFP_NOIO, pkt_bio_set);
--	struct packet_stacked_data *psd = mempool_alloc(psd_pool, GFP_NOIO);
-+	struct bio *cloned_bio = bio_clone_fast(bio, GFP_NOIO, &pkt_bio_set);
-+	struct packet_stacked_data *psd = mempool_alloc(&psd_pool, GFP_NOIO);
+ 	unsigned		data_csum:1;
  
- 	psd->pd = pd;
- 	psd->bio = bio;
-@@ -2381,7 +2381,7 @@ static void pkt_make_request_write(struct request_queue *q, struct bio *bio)
- 	/*
- 	 * No matching packet found. Store the bio in the work queue.
+@@ -528,9 +528,9 @@ struct cache_set {
+ 	struct closure		sb_write;
+ 	struct semaphore	sb_write_mutex;
+ 
+-	mempool_t		*search;
+-	mempool_t		*bio_meta;
+-	struct bio_set		*bio_split;
++	mempool_t		search;
++	mempool_t		bio_meta;
++	struct bio_set		bio_split;
+ 
+ 	/* For the btree cache */
+ 	struct shrinker		shrink;
+@@ -655,7 +655,7 @@ struct cache_set {
+ 	 * A btree node on disk could have too many bsets for an iterator to fit
+ 	 * on the stack - have to dynamically allocate them
  	 */
--	node = mempool_alloc(pd->rb_pool, GFP_NOIO);
-+	node = mempool_alloc(&pd->rb_pool, GFP_NOIO);
- 	node->bio = bio;
- 	spin_lock(&pd->lock);
- 	BUG_ON(pd->bio_queue_size < 0);
-@@ -2451,7 +2451,7 @@ static blk_qc_t pkt_make_request(struct request_queue *q, struct bio *bio)
+-	mempool_t		*fill_iter;
++	mempool_t		fill_iter;
  
- 			split = bio_split(bio, last_zone -
- 					  bio->bi_iter.bi_sector,
--					  GFP_NOIO, pkt_bio_set);
-+					  GFP_NOIO, &pkt_bio_set);
- 			bio_chain(split, bio);
- 		} else {
- 			split = bio;
-@@ -2707,9 +2707,9 @@ static int pkt_setup_dev(dev_t dev, dev_t* pkt_dev)
- 	if (!pd)
- 		goto out_mutex;
+ 	struct bset_sort_state	sort;
  
--	pd->rb_pool = mempool_create_kmalloc_pool(PKT_RB_POOL_SIZE,
--						  sizeof(struct pkt_rb_node));
--	if (!pd->rb_pool)
-+	ret = mempool_init_kmalloc_pool(&pd->rb_pool, PKT_RB_POOL_SIZE,
-+					sizeof(struct pkt_rb_node));
-+	if (ret)
- 		goto out_mem;
+diff --git a/drivers/md/bcache/bset.c b/drivers/md/bcache/bset.c
+index 579c696a5f..f3403b45bc 100644
+--- a/drivers/md/bcache/bset.c
++++ b/drivers/md/bcache/bset.c
+@@ -1118,8 +1118,7 @@ struct bkey *bch_btree_iter_next_filter(struct btree_iter *iter,
  
- 	INIT_LIST_HEAD(&pd->cdrw.pkt_free_list);
-@@ -2766,7 +2766,7 @@ static int pkt_setup_dev(dev_t dev, dev_t* pkt_dev)
- out_mem2:
- 	put_disk(disk);
- out_mem:
--	mempool_destroy(pd->rb_pool);
-+	mempool_exit(&pd->rb_pool);
- 	kfree(pd);
- out_mutex:
- 	mutex_unlock(&ctl_mutex);
-@@ -2817,7 +2817,7 @@ static int pkt_remove_dev(dev_t pkt_dev)
- 	blk_cleanup_queue(pd->disk->queue);
- 	put_disk(pd->disk);
+ void bch_bset_sort_state_free(struct bset_sort_state *state)
+ {
+-	if (state->pool)
+-		mempool_destroy(state->pool);
++	mempool_exit(&state->pool);
+ }
  
--	mempool_destroy(pd->rb_pool);
-+	mempool_exit(&pd->rb_pool);
- 	kfree(pd);
+ int bch_bset_sort_state_init(struct bset_sort_state *state, unsigned page_order)
+@@ -1129,11 +1128,7 @@ int bch_bset_sort_state_init(struct bset_sort_state *state, unsigned page_order)
+ 	state->page_order = page_order;
+ 	state->crit_factor = int_sqrt(1 << page_order);
  
- 	/* This is safe: open() is still holding a reference. */
-@@ -2914,14 +2914,14 @@ static int __init pkt_init(void)
- 
- 	mutex_init(&ctl_mutex);
- 
--	psd_pool = mempool_create_kmalloc_pool(PSD_POOL_SIZE,
--					sizeof(struct packet_stacked_data));
--	if (!psd_pool)
+-	state->pool = mempool_create_page_pool(1, page_order);
+-	if (!state->pool)
 -		return -ENOMEM;
--	pkt_bio_set = bioset_create(BIO_POOL_SIZE, 0, 0);
--	if (!pkt_bio_set) {
--		mempool_destroy(psd_pool);
--		return -ENOMEM;
-+	ret = mempool_init_kmalloc_pool(&psd_pool, PSD_POOL_SIZE,
-+				    sizeof(struct packet_stacked_data));
-+	if (ret)
-+		return ret;
-+	ret = bioset_init(&pkt_bio_set, BIO_POOL_SIZE, 0, 0);
-+	if (ret) {
-+		mempool_exit(&psd_pool);
-+		return ret;
+-
+-	return 0;
++	return mempool_init_page_pool(&state->pool, 1, page_order);
+ }
+ EXPORT_SYMBOL(bch_bset_sort_state_init);
+ 
+@@ -1191,7 +1186,7 @@ static void __btree_sort(struct btree_keys *b, struct btree_iter *iter,
+ 
+ 		BUG_ON(order > state->page_order);
+ 
+-		outp = mempool_alloc(state->pool, GFP_NOIO);
++		outp = mempool_alloc(&state->pool, GFP_NOIO);
+ 		out = page_address(outp);
+ 		used_mempool = true;
+ 		order = state->page_order;
+@@ -1220,7 +1215,7 @@ static void __btree_sort(struct btree_keys *b, struct btree_iter *iter,
  	}
  
- 	ret = register_blkdev(pktdev_major, DRIVER_NAME);
-@@ -2954,8 +2954,8 @@ static int __init pkt_init(void)
+ 	if (used_mempool)
+-		mempool_free(virt_to_page(out), state->pool);
++		mempool_free(virt_to_page(out), &state->pool);
+ 	else
+ 		free_pages((unsigned long) out, order);
+ 
+diff --git a/drivers/md/bcache/bset.h b/drivers/md/bcache/bset.h
+index 0c24280f3b..b867f22004 100644
+--- a/drivers/md/bcache/bset.h
++++ b/drivers/md/bcache/bset.h
+@@ -347,7 +347,7 @@ static inline struct bkey *bch_bset_search(struct btree_keys *b,
+ /* Sorting */
+ 
+ struct bset_sort_state {
+-	mempool_t		*pool;
++	mempool_t		pool;
+ 
+ 	unsigned		page_order;
+ 	unsigned		crit_factor;
+diff --git a/drivers/md/bcache/btree.c b/drivers/md/bcache/btree.c
+index 17936b2dc7..2a0968c04e 100644
+--- a/drivers/md/bcache/btree.c
++++ b/drivers/md/bcache/btree.c
+@@ -204,7 +204,7 @@ void bch_btree_node_read_done(struct btree *b)
+ 	struct bset *i = btree_bset_first(b);
+ 	struct btree_iter *iter;
+ 
+-	iter = mempool_alloc(b->c->fill_iter, GFP_NOIO);
++	iter = mempool_alloc(&b->c->fill_iter, GFP_NOIO);
+ 	iter->size = b->c->sb.bucket_size / b->c->sb.block_size;
+ 	iter->used = 0;
+ 
+@@ -271,7 +271,7 @@ void bch_btree_node_read_done(struct btree *b)
+ 		bch_bset_init_next(&b->keys, write_block(b),
+ 				   bset_magic(&b->c->sb));
  out:
- 	unregister_blkdev(pktdev_major, DRIVER_NAME);
- out2:
--	mempool_destroy(psd_pool);
--	bioset_free(pkt_bio_set);
-+	mempool_exit(&psd_pool);
-+	bioset_exit(&pkt_bio_set);
- 	return ret;
+-	mempool_free(iter, b->c->fill_iter);
++	mempool_free(iter, &b->c->fill_iter);
+ 	return;
+ err:
+ 	set_btree_node_io_error(b);
+diff --git a/drivers/md/bcache/io.c b/drivers/md/bcache/io.c
+index 2ddf8515e6..9612873afe 100644
+--- a/drivers/md/bcache/io.c
++++ b/drivers/md/bcache/io.c
+@@ -17,12 +17,12 @@
+ void bch_bbio_free(struct bio *bio, struct cache_set *c)
+ {
+ 	struct bbio *b = container_of(bio, struct bbio, bio);
+-	mempool_free(b, c->bio_meta);
++	mempool_free(b, &c->bio_meta);
  }
  
-@@ -2968,8 +2968,8 @@ static void __exit pkt_exit(void)
- 	pkt_sysfs_cleanup();
+ struct bio *bch_bbio_alloc(struct cache_set *c)
+ {
+-	struct bbio *b = mempool_alloc(c->bio_meta, GFP_NOIO);
++	struct bbio *b = mempool_alloc(&c->bio_meta, GFP_NOIO);
+ 	struct bio *bio = &b->bio;
  
- 	unregister_blkdev(pktdev_major, DRIVER_NAME);
--	mempool_destroy(psd_pool);
--	bioset_free(pkt_bio_set);
-+	mempool_exit(&psd_pool);
-+	bioset_exit(&pkt_bio_set);
+ 	bio_init(bio, bio->bi_inline_vecs, bucket_pages(c));
+diff --git a/drivers/md/bcache/request.c b/drivers/md/bcache/request.c
+index 8e3e8655ed..ae67f5fa80 100644
+--- a/drivers/md/bcache/request.c
++++ b/drivers/md/bcache/request.c
+@@ -213,7 +213,7 @@ static void bch_data_insert_start(struct closure *cl)
+ 	do {
+ 		unsigned i;
+ 		struct bkey *k;
+-		struct bio_set *split = op->c->bio_split;
++		struct bio_set *split = &op->c->bio_split;
+ 
+ 		/* 1 for the device pointer and 1 for the chksum */
+ 		if (bch_keylist_realloc(&op->insert_keys,
+@@ -548,7 +548,7 @@ static int cache_lookup_fn(struct btree_op *op, struct btree *b, struct bkey *k)
+ 
+ 	n = bio_next_split(bio, min_t(uint64_t, INT_MAX,
+ 				      KEY_OFFSET(k) - bio->bi_iter.bi_sector),
+-			   GFP_NOIO, s->d->bio_split);
++			   GFP_NOIO, &s->d->bio_split);
+ 
+ 	bio_key = &container_of(n, struct bbio, bio)->key;
+ 	bch_bkey_copy_single_ptr(bio_key, k, ptr);
+@@ -707,7 +707,7 @@ static void search_free(struct closure *cl)
+ 
+ 	bio_complete(s);
+ 	closure_debug_destroy(cl);
+-	mempool_free(s, s->d->c->search);
++	mempool_free(s, &s->d->c->search);
  }
  
- MODULE_DESCRIPTION("Packet writing layer for CD/DVD drives");
-diff --git a/include/linux/pktcdvd.h b/include/linux/pktcdvd.h
-index 93d142ad15..174601554b 100644
---- a/include/linux/pktcdvd.h
-+++ b/include/linux/pktcdvd.h
-@@ -186,7 +186,7 @@ struct pktcdvd_device
- 	sector_t		current_sector;	/* Keep track of where the elevator is */
- 	atomic_t		scan_queue;	/* Set to non-zero when pkt_handle_queue */
- 						/* needs to be run. */
--	mempool_t		*rb_pool;	/* mempool for pkt_rb_node allocations */
-+	mempool_t		rb_pool;	/* mempool for pkt_rb_node allocations */
+ static inline struct search *search_alloc(struct bio *bio,
+@@ -715,7 +715,7 @@ static inline struct search *search_alloc(struct bio *bio,
+ {
+ 	struct search *s;
  
- 	struct packet_iosched   iosched;
- 	struct gendisk		*disk;
+-	s = mempool_alloc(d->c->search, GFP_NOIO);
++	s = mempool_alloc(&d->c->search, GFP_NOIO);
+ 
+ 	closure_init(&s->cl, NULL);
+ 	do_bio_hook(s, bio, request_endio);
+@@ -864,7 +864,7 @@ static int cached_dev_cache_miss(struct btree *b, struct search *s,
+ 	s->cache_missed = 1;
+ 
+ 	if (s->cache_miss || s->iop.bypass) {
+-		miss = bio_next_split(bio, sectors, GFP_NOIO, s->d->bio_split);
++		miss = bio_next_split(bio, sectors, GFP_NOIO, &s->d->bio_split);
+ 		ret = miss == bio ? MAP_DONE : MAP_CONTINUE;
+ 		goto out_submit;
+ 	}
+@@ -887,14 +887,14 @@ static int cached_dev_cache_miss(struct btree *b, struct search *s,
+ 
+ 	s->iop.replace = true;
+ 
+-	miss = bio_next_split(bio, sectors, GFP_NOIO, s->d->bio_split);
++	miss = bio_next_split(bio, sectors, GFP_NOIO, &s->d->bio_split);
+ 
+ 	/* btree_search_recurse()'s btree iterator is no good anymore */
+ 	ret = miss == bio ? MAP_DONE : -EINTR;
+ 
+ 	cache_bio = bio_alloc_bioset(GFP_NOWAIT,
+ 			DIV_ROUND_UP(s->insert_bio_sectors, PAGE_SECTORS),
+-			dc->disk.bio_split);
++			&dc->disk.bio_split);
+ 	if (!cache_bio)
+ 		goto out_submit;
+ 
+@@ -1008,7 +1008,7 @@ static void cached_dev_write(struct cached_dev *dc, struct search *s)
+ 			struct bio *flush;
+ 
+ 			flush = bio_alloc_bioset(GFP_NOIO, 0,
+-						 dc->disk.bio_split);
++						 &dc->disk.bio_split);
+ 			if (!flush) {
+ 				s->iop.status = BLK_STS_RESOURCE;
+ 				goto insert_data;
+@@ -1021,7 +1021,7 @@ static void cached_dev_write(struct cached_dev *dc, struct search *s)
+ 			closure_bio_submit(s->iop.c, flush, cl);
+ 		}
+ 	} else {
+-		s->iop.bio = bio_clone_fast(bio, GFP_NOIO, dc->disk.bio_split);
++		s->iop.bio = bio_clone_fast(bio, GFP_NOIO, &dc->disk.bio_split);
+ 		/* I/O request sent to backing device */
+ 		bio->bi_end_io = backing_request_endio;
+ 		closure_bio_submit(s->iop.c, bio, cl);
+diff --git a/drivers/md/bcache/super.c b/drivers/md/bcache/super.c
+index 3dea06b41d..862b575827 100644
+--- a/drivers/md/bcache/super.c
++++ b/drivers/md/bcache/super.c
+@@ -766,8 +766,7 @@ static void bcache_device_free(struct bcache_device *d)
+ 		put_disk(d->disk);
+ 	}
+ 
+-	if (d->bio_split)
+-		bioset_free(d->bio_split);
++	bioset_exit(&d->bio_split);
+ 	kvfree(d->full_dirty_stripes);
+ 	kvfree(d->stripe_sectors_dirty);
+ 
+@@ -809,9 +808,8 @@ static int bcache_device_init(struct bcache_device *d, unsigned block_size,
+ 	if (idx < 0)
+ 		return idx;
+ 
+-	if (!(d->bio_split = bioset_create(4, offsetof(struct bbio, bio),
+-					   BIOSET_NEED_BVECS |
+-					   BIOSET_NEED_RESCUER)) ||
++	if (bioset_init(&d->bio_split, 4, offsetof(struct bbio, bio),
++			BIOSET_NEED_BVECS|BIOSET_NEED_RESCUER) ||
+ 	    !(d->disk = alloc_disk(BCACHE_MINORS))) {
+ 		ida_simple_remove(&bcache_device_idx, idx);
+ 		return -ENOMEM;
+@@ -1465,14 +1463,10 @@ static void cache_set_free(struct closure *cl)
+ 
+ 	if (c->moving_gc_wq)
+ 		destroy_workqueue(c->moving_gc_wq);
+-	if (c->bio_split)
+-		bioset_free(c->bio_split);
+-	if (c->fill_iter)
+-		mempool_destroy(c->fill_iter);
+-	if (c->bio_meta)
+-		mempool_destroy(c->bio_meta);
+-	if (c->search)
+-		mempool_destroy(c->search);
++	bioset_exit(&c->bio_split);
++	mempool_exit(&c->fill_iter);
++	mempool_exit(&c->bio_meta);
++	mempool_exit(&c->search);
+ 	kfree(c->devices);
+ 
+ 	mutex_lock(&bch_register_lock);
+@@ -1683,21 +1677,17 @@ struct cache_set *bch_cache_set_alloc(struct cache_sb *sb)
+ 	INIT_LIST_HEAD(&c->btree_cache_freed);
+ 	INIT_LIST_HEAD(&c->data_buckets);
+ 
+-	c->search = mempool_create_slab_pool(32, bch_search_cache);
+-	if (!c->search)
+-		goto err;
+-
+ 	iter_size = (sb->bucket_size / sb->block_size + 1) *
+ 		sizeof(struct btree_iter_set);
+ 
+ 	if (!(c->devices = kzalloc(c->nr_uuids * sizeof(void *), GFP_KERNEL)) ||
+-	    !(c->bio_meta = mempool_create_kmalloc_pool(2,
+-				sizeof(struct bbio) + sizeof(struct bio_vec) *
+-				bucket_pages(c))) ||
+-	    !(c->fill_iter = mempool_create_kmalloc_pool(1, iter_size)) ||
+-	    !(c->bio_split = bioset_create(4, offsetof(struct bbio, bio),
+-					   BIOSET_NEED_BVECS |
+-					   BIOSET_NEED_RESCUER)) ||
++	    mempool_init_slab_pool(&c->search, 32, bch_search_cache) ||
++	    mempool_init_kmalloc_pool(&c->bio_meta, 2,
++				      sizeof(struct bbio) + sizeof(struct bio_vec) *
++				      bucket_pages(c)) ||
++	    mempool_init_kmalloc_pool(&c->fill_iter, 1, iter_size) ||
++	    bioset_init(&c->bio_split, 4, offsetof(struct bbio, bio),
++			BIOSET_NEED_BVECS|BIOSET_NEED_RESCUER) ||
+ 	    !(c->uuids = alloc_bucket_pages(GFP_KERNEL, c)) ||
+ 	    !(c->moving_gc_wq = alloc_workqueue("bcache_gc",
+ 						WQ_MEM_RECLAIM, 0)) ||
 -- 
 2.17.0
 

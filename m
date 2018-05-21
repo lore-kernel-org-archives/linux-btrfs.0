@@ -1,27 +1,25 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pl0-f66.google.com ([209.85.160.66]:34808 "EHLO
-        mail-pl0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751009AbeERVyv (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 18 May 2018 17:54:51 -0400
-Received: by mail-pl0-f66.google.com with SMTP id ay10-v6so5321858plb.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 18 May 2018 14:54:51 -0700 (PDT)
-Date: Fri, 18 May 2018 14:54:49 -0700
-From: Omar Sandoval <osandov@osandov.com>
-To: linux-btrfs@vger.kernel.org
-Cc: kernel-team@fb.com, Chris Mason <clm@fb.com>,
-        Josef Bacik <josef@toxicpanda.com>, David Sterba <dsterba@suse.com>,
-        Jun Wu <quark@fb.com>
+Received: from mx2.suse.de ([195.135.220.15]:41077 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751019AbeEUIrt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 21 May 2018 04:47:49 -0400
 Subject: Re: [PATCH] Btrfs: fix error handling in btrfs_truncate()
-Message-ID: <20180518215449.GB1125@vader>
+To: Omar Sandoval <osandov@osandov.com>, linux-btrfs@vger.kernel.org
+Cc: kernel-team@fb.com, Chris Mason <clm@fb.com>,
+        Josef Bacik <josef@toxicpanda.com>, David Sterba <dsterba@suse.com>
 References: <e59e9745f1c052ae0df24378455ad3e74eed7f3a.1526679483.git.osandov@fb.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <f4040f83-9664-90a6-19c2-4b0b71bd5a92@suse.com>
+Date: Mon, 21 May 2018 11:47:46 +0300
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
 In-Reply-To: <e59e9745f1c052ae0df24378455ad3e74eed7f3a.1526679483.git.osandov@fb.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, May 18, 2018 at 02:43:02PM -0700, Omar Sandoval wrote:
+
+
+On 19.05.2018 00:43, Omar Sandoval wrote:
 > From: Omar Sandoval <osandov@fb.com>
 > 
 > Jun Wu at Facebook reported that an internal service was seeing a return
@@ -37,15 +35,12 @@ On Fri, May 18, 2018 at 02:43:02PM -0700, Omar Sandoval wrote:
 > want to mask an error if we call btrfs_update_inode() and
 > btrfs_end_transaction(), so let's make that its own scoped return
 > variable and use ret everywhere else.
-
-To expand on this, this is bad because userspace that checks for a
-non-zero return value will think the truncate failed even though it
-succeeded, and we also end up not creating an inotify event for the
-truncate.
-
+> 
 > Fixes: ddfae63cc8e0 ("btrfs: move btrfs_truncate_block out of trans handle")
 > Reported-by: Jun Wu <quark@fb.com>
 > Signed-off-by: Omar Sandoval <osandov@fb.com>
+
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 > ---
 > This is based on Linus' master rather than my orphan ENOSPC fixes
 > because I think we want to get this in for v4.17 and stable, and rebase
@@ -140,6 +135,4 @@ truncate.
 >  }
 >  
 >  /*
-> -- 
-> 2.17.0
 > 

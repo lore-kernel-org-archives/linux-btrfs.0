@@ -1,72 +1,115 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx3-rdu2.redhat.com ([66.187.233.73]:45344 "EHLO mx1.redhat.com"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1750781AbeEUSYe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 21 May 2018 14:24:34 -0400
-Date: Mon, 21 May 2018 14:24:32 -0400
-From: Mike Snitzer <snitzer@redhat.com>
+Received: from userp2120.oracle.com ([156.151.31.85]:36960 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750930AbeEUSke (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 21 May 2018 14:40:34 -0400
+Date: Mon, 21 May 2018 11:39:36 -0700
+From: "Darrick J. Wong" <darrick.wong@oracle.com>
 To: Kent Overstreet <kent.overstreet@gmail.com>
-Cc: Jens Axboe <axboe@kernel.dk>, linux-kernel@vger.kernel.org,
-        linux-block@vger.kernel.org, hch@infradead.org, colyli@suse.de,
-        darrick.wong@oracle.com, clm@fb.com, bacik@fb.com,
-        linux-xfs@vger.kernel.org, drbd-dev@lists.linbit.com,
+Cc: linux-kernel@vger.kernel.org, linux-block@vger.kernel.org, axboe@kernel.dk,
+        hch@infradead.org, colyli@suse.de, snitzer@redhat.com, clm@fb.com,
+        bacik@fb.com, linux-xfs@vger.kernel.org, drbd-dev@lists.linbit.com,
         linux-btrfs@vger.kernel.org, linux-raid@vger.kernel.org,
         neilb@suse.com
-Subject: Re: [PATCH 00/13] convert block layer to bioset_init()/mempool_init()
-Message-ID: <20180521182427.GA20013@redhat.com>
-References: <20180521143132.GB19194@redhat.com>
- <2bbeeb1a-8b99-b06a-eb9b-eb8523c16460@kernel.dk>
- <20180521144703.GA19303@redhat.com>
- <4b343aef-e11c-73ba-1d88-7e73ca838cad@kernel.dk>
- <20180521150439.GA19379@redhat.com>
- <61e30dcf-a01c-f47d-087a-12930caf9aef@kernel.dk>
- <20180521151817.GA19454@redhat.com>
- <d01a150a-7752-f6ce-78f2-17a65c1e6fa5@kernel.dk>
- <20180521160907.GA19553@redhat.com>
- <20180521173724.GG11495@kmo-pixel>
+Subject: Re: [PATCH 11/12] xfs: convert to bioset_init()/mempool_init()
+Message-ID: <20180521183936.GJ23858@magnolia>
+References: <20180520222558.7053-1-kent.overstreet@gmail.com>
+ <20180520222558.7053-12-kent.overstreet@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180521173724.GG11495@kmo-pixel>
+In-Reply-To: <20180520222558.7053-12-kent.overstreet@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, May 21 2018 at  1:37pm -0400,
-Kent Overstreet <kent.overstreet@gmail.com> wrote:
+On Sun, May 20, 2018 at 06:25:57PM -0400, Kent Overstreet wrote:
+> Signed-off-by: Kent Overstreet <kent.overstreet@gmail.com>
 
+Looks ok, I guess...
+Acked-by: Darrick J. Wong <darrick.wong@oracle.com>
+
+--D
+
+> ---
+>  fs/xfs/xfs_aops.c  |  2 +-
+>  fs/xfs/xfs_aops.h  |  2 +-
+>  fs/xfs/xfs_super.c | 11 +++++------
+>  3 files changed, 7 insertions(+), 8 deletions(-)
 > 
-> Uh, you came across as upset and paranoid to me too. Chalk it up to email? :)
-
-Awesome.  See how easy it is to make someone with purely constructive
-questions and feedback come off as upset and paranoid?
-
-The tipping point occurs when bait is set with:
-"It's not like <insert complete non sequitur>".
-Then:
-"Let's focus on getting it reviewed, rather than pontificate on what
-could potentially go all wrong with this."
-
-Message received: less pontificating, more doing!
-
-And here I thought that focusing on what could go wrong (across all code
-touched) was review.  But OK, I'm the one that made this all weird ;)
-
-It is what it is at this point.
-
-> I personally don't care, I have no horse in this race. This particular patch
-> series wasn't my idea, Christoph wanted all these conversions done so
-> bioset_create() could be deleted. If you want us to hold off on the dm patch for
-> awhile until someone can get around to testing it or whatever (since I don't
-> have tests for everything I pushed) that would be perfectly fine by me.
-
-As I clarified already: this isn't about DM.
-
-Every single data structure change in this series should be reviewed for
-unforeseen alignment consequences.  Jens seemed to say that is
-worthwhile.  Not sure if he'll do it or we divide it up.  If we divide
-it up a temp topic branch should be published for others to inspect.
-
-Could be alignment hasn't been a historic concern for a bunch of the
-data structures changed in this series.. if so then all we can do is fix
-up any obvious potential for false sharing.
-
-Mike
+> diff --git a/fs/xfs/xfs_aops.c b/fs/xfs/xfs_aops.c
+> index 0ab824f574..102463543d 100644
+> --- a/fs/xfs/xfs_aops.c
+> +++ b/fs/xfs/xfs_aops.c
+> @@ -594,7 +594,7 @@ xfs_alloc_ioend(
+>  	struct xfs_ioend	*ioend;
+>  	struct bio		*bio;
+>  
+> -	bio = bio_alloc_bioset(GFP_NOFS, BIO_MAX_PAGES, xfs_ioend_bioset);
+> +	bio = bio_alloc_bioset(GFP_NOFS, BIO_MAX_PAGES, &xfs_ioend_bioset);
+>  	xfs_init_bio_from_bh(bio, bh);
+>  
+>  	ioend = container_of(bio, struct xfs_ioend, io_inline_bio);
+> diff --git a/fs/xfs/xfs_aops.h b/fs/xfs/xfs_aops.h
+> index 69346d460d..694c85b038 100644
+> --- a/fs/xfs/xfs_aops.h
+> +++ b/fs/xfs/xfs_aops.h
+> @@ -18,7 +18,7 @@
+>  #ifndef __XFS_AOPS_H__
+>  #define __XFS_AOPS_H__
+>  
+> -extern struct bio_set *xfs_ioend_bioset;
+> +extern struct bio_set xfs_ioend_bioset;
+>  
+>  /*
+>   * Types of I/O for bmap clustering and I/O completion tracking.
+> diff --git a/fs/xfs/xfs_super.c b/fs/xfs/xfs_super.c
+> index d714240529..f643d76db5 100644
+> --- a/fs/xfs/xfs_super.c
+> +++ b/fs/xfs/xfs_super.c
+> @@ -63,7 +63,7 @@
+>  #include <linux/parser.h>
+>  
+>  static const struct super_operations xfs_super_operations;
+> -struct bio_set *xfs_ioend_bioset;
+> +struct bio_set xfs_ioend_bioset;
+>  
+>  static struct kset *xfs_kset;		/* top-level xfs sysfs dir */
+>  #ifdef DEBUG
+> @@ -1845,10 +1845,9 @@ MODULE_ALIAS_FS("xfs");
+>  STATIC int __init
+>  xfs_init_zones(void)
+>  {
+> -	xfs_ioend_bioset = bioset_create(4 * MAX_BUF_PER_PAGE,
+> +	if (bioset_init(&xfs_ioend_bioset, 4 * MAX_BUF_PER_PAGE,
+>  			offsetof(struct xfs_ioend, io_inline_bio),
+> -			BIOSET_NEED_BVECS);
+> -	if (!xfs_ioend_bioset)
+> +			BIOSET_NEED_BVECS))
+>  		goto out;
+>  
+>  	xfs_log_ticket_zone = kmem_zone_init(sizeof(xlog_ticket_t),
+> @@ -1997,7 +1996,7 @@ xfs_init_zones(void)
+>   out_destroy_log_ticket_zone:
+>  	kmem_zone_destroy(xfs_log_ticket_zone);
+>   out_free_ioend_bioset:
+> -	bioset_free(xfs_ioend_bioset);
+> +	bioset_exit(&xfs_ioend_bioset);
+>   out:
+>  	return -ENOMEM;
+>  }
+> @@ -2029,7 +2028,7 @@ xfs_destroy_zones(void)
+>  	kmem_zone_destroy(xfs_btree_cur_zone);
+>  	kmem_zone_destroy(xfs_bmap_free_item_zone);
+>  	kmem_zone_destroy(xfs_log_ticket_zone);
+> -	bioset_free(xfs_ioend_bioset);
+> +	bioset_exit(&xfs_ioend_bioset);
+>  }
+>  
+>  STATIC int __init
+> -- 
+> 2.17.0
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-xfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

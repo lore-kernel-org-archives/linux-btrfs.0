@@ -1,52 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:64073 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S935883AbeE3GnQ (ORCPT
+Received: from aserp2130.oracle.com ([141.146.126.79]:55272 "EHLO
+        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750970AbeEUGfS (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 30 May 2018 02:43:16 -0400
-Received: from G08CNEXCHPEKD03.g08.fujitsu.local (unknown [10.167.33.85])
-        by cn.fujitsu.com (Postfix) with ESMTP id 4C59E4B41E69
-        for <linux-btrfs@vger.kernel.org>; Wed, 30 May 2018 14:43:06 +0800 (CST)
-From: Su Yue <suy.fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: <suy.fnst@cn.fujitsu.com>
-Subject: [PATCH v2] btrfs: returns -ENOMEM if path allocation failed in btrfs_cross_ref_exist()
-Date: Wed, 30 May 2018 14:49:10 +0800
-Message-ID: <20180530064910.8724-1-suy.fnst@cn.fujitsu.com>
-In-Reply-To: <20180530020752.23788-1-suy.fnst@cn.fujitsu.com>
-References: <20180530020752.23788-1-suy.fnst@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+        Mon, 21 May 2018 02:35:18 -0400
+Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
+        by aserp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w4L6VHaj074934
+        for <linux-btrfs@vger.kernel.org>; Mon, 21 May 2018 06:35:18 GMT
+Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
+        by aserp2130.oracle.com with ESMTP id 2j29eyb4ar-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Mon, 21 May 2018 06:35:18 +0000
+Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
+        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w4L6ZHrb021438
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Mon, 21 May 2018 06:35:17 GMT
+Received: from abhmp0016.oracle.com (abhmp0016.oracle.com [141.146.116.22])
+        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w4L6ZHY5008943
+        for <linux-btrfs@vger.kernel.org>; Mon, 21 May 2018 06:35:17 GMT
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v3 0/3] btrfs: balance: improve kernel logs
+Date: Mon, 21 May 2018 14:37:42 +0800
+Message-Id: <20180521063745.29343-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs_alloc_path() may fail due to no enough memory,
-so let the function return -ENOMEM instead of -ENOENT is better.
+Based on misc-next.
 
-Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
----
-Changelog:
-v2:
-  Add commit message to describe the patch. Thanks Nikolay.
-  
- fs/btrfs/extent-tree.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+v2->v3:
+  Inspried by describe_relocation(), improves it, makes it a helper
+  function and use it to log the balance operations.
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 44093f92a532..99df6199dffc 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3311,7 +3311,7 @@ int btrfs_cross_ref_exist(struct btrfs_root *root, u64 objectid, u64 offset,
- 
- 	path = btrfs_alloc_path();
- 	if (!path)
--		return -ENOENT;
-+		return -ENOMEM;
- 
- 	do {
- 		ret = check_committed_ref(root, path, objectid,
+Kernel logs are very important for the forensic investigations of the
+issues, these patchs make balance logs easy to review.
+
+Anand Jain (3):
+  btrfs: add helper function describe_block_group()
+  btrfs: balance: add args info during start and resume
+  btrfs: balance: add kernel log for end or paused
+
+ fs/btrfs/relocation.c |  30 +---------
+ fs/btrfs/volumes.c    | 157 +++++++++++++++++++++++++++++++++++++++++++++++++-
+ fs/btrfs/volumes.h    |   1 +
+ 3 files changed, 158 insertions(+), 30 deletions(-)
+
 -- 
-2.17.0
-
-
+2.7.0
 

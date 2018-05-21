@@ -1,56 +1,102 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf0-f196.google.com ([209.85.192.196]:46133 "EHLO
-        mail-pf0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751196AbeEVQsN (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 22 May 2018 12:48:13 -0400
-Received: by mail-pf0-f196.google.com with SMTP id p12-v6so9038536pff.13
-        for <linux-btrfs@vger.kernel.org>; Tue, 22 May 2018 09:48:13 -0700 (PDT)
-From: Omar Sandoval <osandov@osandov.com>
+Received: from mx2.suse.de ([195.135.220.15]:41691 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752572AbeEUPsP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 21 May 2018 11:48:15 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 3AA04AEDF
+        for <linux-btrfs@vger.kernel.org>; Mon, 21 May 2018 15:48:14 +0000 (UTC)
+From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: kernel-team@fb.com, David Sterba <dsterba@suse.com>, Jun Wu <quark@fb.com>
-Subject: [PATCH v2] Btrfs: fix error handling in btrfs_truncate()
-Date: Tue, 22 May 2018 09:47:58 -0700
-Message-Id: <d181fa0f3fc581208a0258132c8dc3305b01be1a.1527007575.git.osandov@fb.com>
+Cc: David Sterba <dsterba@suse.cz>
+Subject: Next btrfs development cycle open - 4.19
+Date: Mon, 21 May 2018 17:45:29 +0200
+Message-Id: <20180521154529.12620-1-dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Omar Sandoval <osandov@fb.com>
+From: David Sterba <dsterba@suse.cz>
 
-Jun Wu at Facebook reported that an internal service was seeing a return
-value of 1 from ftruncate() on Btrfs in some cases. This is coming from
-the NEED_TRUNCATE_BLOCK return value from btrfs_truncate_inode_items().
+Hi,
 
-btrfs_truncate() uses two variables for error handling, ret and err.
-When btrfs_truncate_inode_items() returns non-zero, we set err to the
-return value. However, NEED_TRUNCATE_BLOCK is not an error. Make sure we
-only set err if ret is an error (i.e., negative).
+a friendly reminder of the timetable and what's expected at this phase.
 
-Fixes: ddfae63cc8e0 ("btrfs: move btrfs_truncate_block out of trans handle")
-Reported-by: Jun Wu <quark@fb.com>
-Cc: stable@vger.kernel.org
-Signed-off-by: Omar Sandoval <osandov@fb.com>
----
-This version makes the minimal fix which should be good for v4.17 and
-stable. I'll submit a cleanup separately.
+4.16 - current
+4.17 - upcoming, urgent regression fixes only
+4.18 - development closed, pull request in prep, fixes or regressions only
+4.19 - development open, until 4.18-rc5 (at least)
 
- fs/btrfs/inode.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+(https://btrfs.wiki.kernel.org/index.php/Developer%27s_FAQ#Development_schedule)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index d241285a0d2a..f276da70f659 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -9117,7 +9117,8 @@ static int btrfs_truncate(struct inode *inode, bool skip_writeback)
- 						 BTRFS_EXTENT_DATA_KEY);
- 		trans->block_rsv = &fs_info->trans_block_rsv;
- 		if (ret != -ENOSPC && ret != -EAGAIN) {
--			err = ret;
-+			if (ret < 0)
-+				err = ret;
- 			break;
- 		}
- 
--- 
-2.17.0
 
+Current status
+--------------
+
+What's in misc-next is going to be merged to 4.18, unless something really
+serious pops out.
+
+Branches that have been part of for-next are eligible but may need some
+last reviews and testing, because the for-next is mainly meant for early
+warnings and fstests report way more failures compared to master or
+misc-next.
+
+
+List of things with earlier ack for 4.18
+----------------------------------------
+
+* ioctl for listing subvolumes -- probably ok, the security review is
+  still open
+* ioctl CLEAR_FREE -- probably yes
+* patchsets sent until about last week that have been reviewed
+
+I want to focus on stabilization of misc-next in the upcoming weeks so
+patches that are not going make things better may be postponed. We can
+do some cleanup rounds, update messages or do other obviously low-risk
+changes.
+
+
+List of things pushed to 4.19 or later
+--------------------------------------
+
+* send v2 updates
+* in-band dedupe
+* the rest not mentioned above
+
+
+Workflow
+--------
+
+Let's see how many people actually read these mails: if you have a
+public git repository, please send a link to the branch with your
+patchset in the cover letter when you send the patches to mailinglist.
+If you already do, great.
+
+The branch will not be pulled, but it can help me integrate the branch
+faster to for-next which in turn improves testing and tracking of
+pending patchsets.
+
+Note that mailinglist is still the primary source of patches, the git is
+optional.
+
+
+The usual points
+----------------
+
+* the current patch queue (as is in misc-next) looks stable, so no big
+  changes are going to be applied at this time. The usual exceptions are
+  bugfixes or obvious cleanups.
+
+* the base of the patches should be the last announced pull request,
+  which is going to be named 'for-4.18' in my k.org tree.  Reviewed
+  patches will be collected in a branch that's usually named 'misc-next'
+  in my devel git repos and is part of the for-next at k.org git repo.
+
+* repositories
+  k.org: https://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git
+  devel1: http://repo.or.cz/linux-2.6/btrfs-unstable.git
+  devel2: https://github.com/kdave/btrfs-devel
+
+* merging of new patches to misc-next will be slow during the
+  merge window, also because there's a btrfs-progs release scheduled
+
+* everybody is encouraged to review or test other's patches

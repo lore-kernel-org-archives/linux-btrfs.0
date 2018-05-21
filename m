@@ -1,50 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:38952 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:57655 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750711AbeEKQAf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 11 May 2018 12:00:35 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 1D65CACF9
-        for <linux-btrfs@vger.kernel.org>; Fri, 11 May 2018 16:00:34 +0000 (UTC)
-From: David Sterba <dsterba@suse.com>
+        id S1750822AbeEUFTb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 21 May 2018 01:19:31 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id AFC89AD4E
+        for <linux-btrfs@vger.kernel.org>; Mon, 21 May 2018 05:19:29 +0000 (UTC)
+From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH] btrfs: use kvzalloc for EXTENT_SAME temporary data
-Date: Fri, 11 May 2018 17:57:54 +0200
-Message-Id: <20180511155754.27084-1-dsterba@suse.com>
+Subject: [PATCH v2 0/4] btrfs: lzo: Harden decompression callers to avoid kernel memory corruption.
+Date: Mon, 21 May 2018 13:19:23 +0800
+Message-Id: <20180521051927.3715-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The dedupe range is 16 MiB, with 4KiB pages and 8 byte pointers, the
-arrays can be 32KiB large. To avoid allocation failures due to
-fragmented memory, use the allocation with fallback to vmalloc.
+This patchset can be fetched from github:
+https://github.com/adam900710/linux/tree/lzo_corruption
+Which is based on v4.17-rc5.
 
-Signed-off-by: David Sterba <dsterba@suse.com>
----
+James Harvey reported pretty strange kernel misbehavior where after
+reading certain btrfs compressed data, kernel crash with unrelated
+calltrace.
+(https://bugzilla.kernel.org/show_bug.cgi?id=199707 and
+ https://www.spinics.net/lists/linux-btrfs/msg77971.html)
 
-This depends on the patches that remove the 16MiB restriction in the
-dedupe ioctl, but contextually can be applied to the current code too.
+Thanks for his comprehensive debug help, we located the problem to:
 
-https://patchwork.kernel.org/patch/10374941/
+1) Bad lzo decompression verification check
+   The direct cause.
+   The lzo decompression code involves memory copy for compressed data
+   who crosses page boundary.
+   And if corrupted segment header contains invalid length, btrfs will
+   do memory copy and then corrupt kernel memory.
 
- fs/btrfs/ioctl.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+   Fix it by add header length check for each segment, and just in case,
+   also add uncompressed data length check. (Patch 3)
+   The full explanation and kasan output can also be found in that patch.
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index b572e38b4b64..a7f517009cd7 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -3178,8 +3178,8 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
- 	 * locking. We use an array for the page pointers. Size of the array is
- 	 * bounded by len, which is in turn bounded by BTRFS_MAX_DEDUPE_LEN.
- 	 */
--	cmp.src_pages = kcalloc(num_pages, sizeof(struct page *), GFP_KERNEL);
--	cmp.dst_pages = kcalloc(num_pages, sizeof(struct page *), GFP_KERNEL);
-+	cmp.src_pages = kvzalloc(num_pages, sizeof(struct page *), GFP_KERNEL);
-+	cmp.dst_pages = kvzalloc(num_pages, sizeof(struct page *), GFP_KERNEL);
- 	if (!cmp.src_pages || !cmp.dst_pages) {
- 		kfree(cmp.src_pages);
- 		kfree(cmp.dst_pages);
+2) Compressed extent created for NODATASUM inode
+   The root cause.
+   Will be addressed in another patchset.
+
+Other patches are mostly cosmetic, like adding extra include for
+compression.h, to avoid later compiling error. (Patch 1)
+Or adding comment of how btrfs organise its compressed data (Patch 2)
+And adding extra check for inlined compressed data even it's not really
+possible to happen (Patch 4)
+
+Changelog:
+v2:
+  Cosmetic updates. Mostly for comment and gramma.
+  Comment and gramma fixes suggested by Nikolay.
+  One 4 bytes <-> LE32 convert fixes in comment.
+  Added reviewed-by tag for the 1st patch.
+
+Qu Wenruo (4):
+  btrfs: compression: Add linux/sizes.h for compression.h
+  btrfs: lzo: Add comment about the how btrfs records its lzo compressed
+    data
+  btrfs: lzo: Add header length check to avoid slab out of bounds access
+  btrfs: lzo: Harden inline lzo compressed extent decompression
+
+ fs/btrfs/compression.h |  1 +
+ fs/btrfs/lzo.c         | 63 +++++++++++++++++++++++++++++++++++++++++-
+ 2 files changed, 63 insertions(+), 1 deletion(-)
+
 -- 
-2.16.2
+2.17.0
 

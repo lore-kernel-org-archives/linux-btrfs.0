@@ -1,61 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwkm04.jp.fujitsu.com ([202.219.69.171]:35857 "EHLO
-        mgwkm04.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750873AbeEUE5t (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 21 May 2018 00:57:49 -0400
-Received: from g01jpfmpwkw02.exch.g01.fujitsu.local (g01jpfmpwkw02.exch.g01.fujitsu.local [10.0.193.56])
-        by kw-mxauth.gw.nic.fujitsu.com (Postfix) with ESMTP id 8C98AAC0132
-        for <linux-btrfs@vger.kernel.org>; Mon, 21 May 2018 13:57:43 +0900 (JST)
-Received: from G01JPEXCHKW14.g01.fujitsu.local (G01JPEXCHKW14.g01.fujitsu.local [10.0.194.53])
-        by g01jpfmpwkw02.exch.g01.fujitsu.local (Postfix) with ESMTP id BEFDA328618
-        for <linux-btrfs@vger.kernel.org>; Mon, 21 May 2018 13:57:42 +0900 (JST)
-From: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
-Subject: [PATCH] btrfs: Fix to use original error code of
- btrfs_read_fs_root_no_name()
-References: <cover.1526878216.git.misono.tomohiro@jp.fujitsu.com>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Message-ID: <f73cd334-4ff3-9f56-941a-eaba6c528ba2@jp.fujitsu.com>
-Date: Mon, 21 May 2018 13:57:27 +0900
+Received: from mx2.suse.de ([195.135.220.15]:44353 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751134AbeEUJlX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 21 May 2018 05:41:23 -0400
+Subject: Re: [PATCH] btrfs: remove unnecessary if judge
+To: Gu Jinxiang <gujx@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+References: <1526895134-1714-1-git-send-email-gujx@cn.fujitsu.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <30512197-9d5b-1d97-6306-dba0246e6192@suse.com>
+Date: Mon, 21 May 2018 12:41:21 +0300
 MIME-Version: 1.0
-In-Reply-To: <cover.1526878216.git.misono.tomohiro@jp.fujitsu.com>
-Content-Type: text/plain; charset="utf-8"
+In-Reply-To: <1526895134-1714-1-git-send-email-gujx@cn.fujitsu.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs_read_fs_root_no_name() may return ERR_PTR(-ENOENT) or
-ERR_PTR(-ENOMEM) and therefore search_ioctl() and
-btrfs_search_path_in_tree() should use PTR_ERR() instead of -ENOENT,
-which all other callers of btrfs_read_fs_root_no_name() does.
-
-Signed-off-by: Tomohiro Misono <misono.tomohiro@jp.fujitsu.com>
----
- fs/btrfs/ioctl.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 8f7c1b9a2db7..0f90e68ca512 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2155,7 +2155,7 @@ static noinline int search_ioctl(struct inode *inode,
- 		root = btrfs_read_fs_root_no_name(info, &key);
- 		if (IS_ERR(root)) {
- 			btrfs_free_path(path);
--			return -ENOENT;
-+			return PTR_ERR(root);
- 		}
- 	}
- 
-@@ -2290,7 +2290,7 @@ static noinline int btrfs_search_path_in_tree(struct btrfs_fs_info *info,
- 	root = btrfs_read_fs_root_no_name(info, &key);
- 	if (IS_ERR(root)) {
- 		btrfs_err(info, "could not find root %llu", tree_id);
--		ret = -ENOENT;
-+		ret = PTR_ERR(root);
- 		goto out;
- 	}
- 
--- 
-2.14.3
 
 
+On 21.05.2018 12:32, Gu Jinxiang wrote:
+> Since add_excluded_extent always returns 0,
+> no need to judge ret.
+
+This patch is conceptually wrong because:
+
+a). Currently exclude_super_stripes is in fact buggy since it calls
+set_extent_bits which *may* fail, yet the return value is completely
+ignored. I think the best fix is to actually handle the failures from
+set_extent_bit inside add_excluded_extent and actually propagate them to
+callers.
+
+b) If it's deemed appropriate (which I think it's not) to ignore the
+return value then add_excluded_extent should be turned into a function
+which returns void.
+
+
+> 
+> Signed-off-by: Gu Jinxiang <gujx@cn.fujitsu.com>
+> ---
+>  fs/btrfs/extent-tree.c | 6 ------
+>  1 file changed, 6 deletions(-)
+> 
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index 75cfb80d2551..4d876b32e136 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -249,8 +249,6 @@ static int exclude_super_stripes(struct btrfs_fs_info *fs_info,
+>  		cache->bytes_super += stripe_len;
+>  		ret = add_excluded_extent(fs_info, cache->key.objectid,
+>  					  stripe_len);
+> -		if (ret)
+> -			return ret;
+>  	}
+>  
+>  	for (i = 0; i < BTRFS_SUPER_MIRROR_MAX; i++) {
+> @@ -282,10 +280,6 @@ static int exclude_super_stripes(struct btrfs_fs_info *fs_info,
+>  
+>  			cache->bytes_super += len;
+>  			ret = add_excluded_extent(fs_info, start, len);
+> -			if (ret) {
+> -				kfree(logical);
+> -				return ret;
+> -			}
+>  		}
+>  
+>  		kfree(logical);
+> 

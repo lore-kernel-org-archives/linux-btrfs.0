@@ -1,38 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f54.google.com ([209.85.214.54]:53578 "EHLO
-        mail-it0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752398AbeEUOUx (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 21 May 2018 10:20:53 -0400
-Received: by mail-it0-f54.google.com with SMTP id n64-v6so21223923itb.3
-        for <linux-btrfs@vger.kernel.org>; Mon, 21 May 2018 07:20:53 -0700 (PDT)
-Subject: Re: [PATCH 00/13] convert block layer to bioset_init()/mempool_init()
-To: Kent Overstreet <kent.overstreet@gmail.com>, linux-kernel@vger.kernel.org,
+Received: from mx3-rdu2.redhat.com ([66.187.233.73]:36594 "EHLO mx1.redhat.com"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1751504AbeEUObg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 21 May 2018 10:31:36 -0400
+Date: Mon, 21 May 2018 10:31:35 -0400
+From: Mike Snitzer <snitzer@redhat.com>
+To: Jens Axboe <axboe@kernel.dk>
+Cc: Kent Overstreet <kent.overstreet@gmail.com>, linux-kernel@vger.kernel.org,
         linux-block@vger.kernel.org, hch@infradead.org, colyli@suse.de,
-        snitzer@redhat.com, darrick.wong@oracle.com, clm@fb.com, bacik@fb.com,
+        darrick.wong@oracle.com, clm@fb.com, bacik@fb.com,
         linux-xfs@vger.kernel.org, drbd-dev@lists.linbit.com,
         linux-btrfs@vger.kernel.org, linux-raid@vger.kernel.org,
         neilb@suse.com
+Subject: Re: [PATCH 00/13] convert block layer to bioset_init()/mempool_init()
+Message-ID: <20180521143132.GB19194@redhat.com>
 References: <20180520222558.7053-1-kent.overstreet@gmail.com>
-From: Jens Axboe <axboe@kernel.dk>
-Message-ID: <dd30e115-f1c7-aa13-bb82-bffece8d07d7@kernel.dk>
-Date: Mon, 21 May 2018 08:20:50 -0600
+ <20180521140348.GA19069@redhat.com>
+ <686d7df6-c7d1-48a6-b7ff-48dc8aff6a62@kernel.dk>
 MIME-Version: 1.0
-In-Reply-To: <20180520222558.7053-1-kent.overstreet@gmail.com>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <686d7df6-c7d1-48a6-b7ff-48dc8aff6a62@kernel.dk>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 5/20/18 4:25 PM, Kent Overstreet wrote:
-> Jens - this series does the rest of the conversions that Christoph wanted, and
-> drops bioset_create().
+On Mon, May 21 2018 at 10:19am -0400,
+Jens Axboe <axboe@kernel.dk> wrote:
+
+> On 5/21/18 8:03 AM, Mike Snitzer wrote:
+> > On Sun, May 20 2018 at  6:25pm -0400,
+> > Kent Overstreet <kent.overstreet@gmail.com> wrote:
+> > 
+> >> Jens - this series does the rest of the conversions that Christoph wanted, and
+> >> drops bioset_create().
+> >>
+> >> Only lightly tested, but the changes are pretty mechanical. Based on your
+> >> for-next tree.
+> > 
+> > By switching 'mempool_t *' to 'mempool_t' and 'bio_set *' to 'bio_set'
+> > you've altered the alignment of members in data structures.  So I'll
+> > need to audit all the data structures you've modified in DM.
+> > 
+> > Could we get the backstory on _why_ you're making this change?
+> > Would go a long way to helping me appreciate why this is a good use of
+> > anyone's time.
 > 
-> Only lightly tested, but the changes are pretty mechanical. Based on your
-> for-next tree.
+> Yeah, it's in the first series, it gets rid of a pointer indirection.
 
-Looks good to me. I'll let it simmer for a bit to give folks a chance
-to comment on it.
+"Allows mempools to be embedded in other structs, getting rid of a
+pointer indirection from allocation fastpaths."
 
--- 
-Jens Axboe
+So this is about using contiguous memory or avoiding partial allocation
+failure?  Or both?
 
+Or more to it?  Just trying to fully appreciate the theory behind the
+perceived associated benefit.
+
+I do think the increased risk of these embedded bio_set and mempool_t
+themselves crossing cachelines, or struct members that follow them doing
+so, really detracts from these types of changes.
+
+Thanks,
+Mike

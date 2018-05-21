@@ -1,48 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from tartarus.angband.pl ([89.206.35.136]:41982 "EHLO
+Received: from tartarus.angband.pl ([89.206.35.136]:41986 "EHLO
         tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751021AbeEUOpw (ORCPT
+        with ESMTP id S1752247AbeEUOpx (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 21 May 2018 10:45:52 -0400
+        Mon, 21 May 2018 10:45:53 -0400
 From: Adam Borowski <kilobyte@angband.pl>
 To: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.cz>
 Cc: Adam Borowski <kilobyte@angband.pl>
-Date: Mon, 21 May 2018 16:45:14 +0200
-Message-Id: <20180521144515.16501-1-kilobyte@angband.pl>
-In-Reply-To: <20180521144254.4zdxt6jtxoeca26o@angband.pl>
+Date: Mon, 21 May 2018 16:45:15 +0200
+Message-Id: <20180521144515.16501-2-kilobyte@angband.pl>
+In-Reply-To: <20180521144515.16501-1-kilobyte@angband.pl>
 References: <20180521144254.4zdxt6jtxoeca26o@angband.pl>
-Subject: [PATCH 1/2] btrfs: allow defrag on a file opened ro that has rw permissions
+ <20180521144515.16501-1-kilobyte@angband.pl>
+Subject: [PATCH 2/2] btrfs: defrag: return EPERM not EINVAL when only permissions fail
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Requiring a rw descriptor conflicts both ways with exec, returning ETXTBSY
-whenever you try to defrag a program that's currently being run, or
-causing intermittent exec failures on a live system being defragged.
+We give EINVAL when the request is invalid; here it's ok but merely the
+user has insufficient privileges.  Thus, this return value reflects the
+error better -- as discussed in the identical case for dedupe.
 
-As defrag doesn't change the file's contents in any way, there's no reason
-to consider it a rw operation.  Thus, let's check only whether the file
-could have been opened rw.  Such access control is still needed as
-currently defrag can use extra disk space, and might trigger bugs.
+According to codesearch.debian.net, no userspace program distinguishes
+these values beyond strerror().
 
 Signed-off-by: Adam Borowski <kilobyte@angband.pl>
 ---
- fs/btrfs/ioctl.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ fs/btrfs/ioctl.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 632e26d6f7ce..b75db9d72106 100644
+index b75db9d72106..ae6a110987a7 100644
 --- a/fs/btrfs/ioctl.c
 +++ b/fs/btrfs/ioctl.c
-@@ -2561,7 +2561,8 @@ static int btrfs_ioctl_defrag(struct file *file, void __user *argp)
- 		ret = btrfs_defrag_root(root);
- 		break;
+@@ -2563,7 +2563,7 @@ static int btrfs_ioctl_defrag(struct file *file, void __user *argp)
  	case S_IFREG:
--		if (!(file->f_mode & FMODE_WRITE)) {
-+		if (!capable(CAP_SYS_ADMIN) &&
-+		    inode_permission(inode, MAY_WRITE)) {
- 			ret = -EINVAL;
+ 		if (!capable(CAP_SYS_ADMIN) &&
+ 		    inode_permission(inode, MAY_WRITE)) {
+-			ret = -EINVAL;
++			ret = -EPERM;
  			goto out;
  		}
+ 
 -- 
 2.17.0
 

@@ -1,64 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwkm03.jp.fujitsu.com ([202.219.69.170]:63035 "EHLO
-        mgwkm03.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750910AbeEaE1B (ORCPT
+Received: from mgwym04.jp.fujitsu.com ([211.128.242.43]:55951 "EHLO
+        mgwym04.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751686AbeEUBHJ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 31 May 2018 00:27:01 -0400
-Received: from g01jpfmpwyt01.exch.g01.fujitsu.local (g01jpfmpwyt01.exch.g01.fujitsu.local [10.128.193.38])
-        by kw-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id AA67BAC00A2
-        for <linux-btrfs@vger.kernel.org>; Thu, 31 May 2018 13:26:57 +0900 (JST)
-Subject: Re: [bug report] btrfs: Add unprivileged version of ino_lookup ioctl
-To: Dan Carpenter <dan.carpenter@oracle.com>
-CC: <linux-btrfs@vger.kernel.org>
-References: <20180530101906.bsnokgp5w2rfh3oh@kili.mountain>
-From: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
-Message-ID: <03e49e86-3120-e3c3-0c66-0de156b6beb7@jp.fujitsu.com>
-Date: Thu, 31 May 2018 13:26:47 +0900
+        Sun, 20 May 2018 21:07:09 -0400
+Received: from g01jpfmpwkw01.exch.g01.fujitsu.local (g01jpfmpwkw01.exch.g01.fujitsu.local [10.0.193.38])
+        by yt-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id 8EB9CAC00B3
+        for <linux-btrfs@vger.kernel.org>; Mon, 21 May 2018 10:07:02 +0900 (JST)
+Received: from G01JPEXCHKW18.g01.fujitsu.local (G01JPEXCHKW18.g01.fujitsu.local [10.0.194.57])
+        by g01jpfmpwkw01.exch.g01.fujitsu.local (Postfix) with ESMTP id A2EDB6923DB
+        for <linux-btrfs@vger.kernel.org>; Mon, 21 May 2018 10:07:00 +0900 (JST)
+From: Tomohiro Misono <misono.tomohiro@jp.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH v7 0/3] btrfs: Add three new unprivileged ioctls to allow normal users to call "sub list/show" etc.
+Date: Mon, 21 May 2018 10:09:41 +0900
+Message-ID: <cover.1526863497.git.misono.tomohiro@jp.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <20180530101906.bsnokgp5w2rfh3oh@kili.mountain>
-Content-Type: text/plain; charset="utf-8"
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thanks for the reporting.
-I will update the patch.
+changelog:
+v6 -> v7
+  - Rebase to current misc-next again
+  - Fix 1st patch where otime is wrongly set instead of ctime
+  - Add reviewed-by/tested-by tag
+v5 -> v6
+  - Update 1st patch by using btrfs_fs_root_no_name()
+  - Return -EUCLEAN when btrfs_next_leaf/next_item() should not fail
+  - Add Reviewed-by tag
+v4 -> v5
+  - Update error handling of 1st/2nd patch. See each log for details
+  - Fix misspelling
+v3 -> v4
+  - call btrfs_next_leaf() after btrfs_search_slot() when the slot
+    position exceeds the number of items
+  - rebased to current misc-next
+v2 -> v3
+  - fix kbuild test bot warning
+v1 -> v2
+  - completely reimplement 1st/2nd ioctl to have user friendly api
+  - various cleanup, remove unnecessary goto
+===
 
-Regards,
-Tomohiro Misono
+This adds three new unprivileged ioctls:
 
-On 2018/05/30 19:19, Dan Carpenter wrote:
-> Hello Tomohiro Misono,
-> 
-> The patch 56bfce6502b7: "btrfs: Add unprivileged version of
-> ino_lookup ioctl" from May 16, 2018, leads to the following static
-> checker warning:
-> 
-> 	fs/btrfs/ioctl.c:2478 btrfs_search_path_in_tree_user()
-> 	error: 'temp_inode' dereferencing possible ERR_PTR()
-> 
-> fs/btrfs/ioctl.c
->   2469                          l = path->nodes[0];
->   2470                          slot = path->slots[0];
->   2471                          btrfs_item_key_to_cpu(l, &key2, slot);
->   2472                          if (key2.objectid != dirid) {
->   2473                                  ret = -ENOENT;
->   2474                                  goto out;
->   2475                          }
->   2476  
->   2477                          temp_inode = btrfs_iget(sb, &key2, root, NULL);
->                                 ^^^^^^^^^^^^^^^^^^^^^^^
->   2478                          ret = inode_permission(temp_inode, MAY_READ | MAY_EXEC);
->                                                        ^^^^^^^^^^
->   2479                          iput(temp_inode);
->   2480                          if (ret) {
->   2481                                  ret = -EACCES;
->   2482                                  goto out;
->   2483                          }
->   2484  
-> 
-> 
-> regards,
-> dan carpenter
-> 
-> 
+1st patch:
+  ioctl which returns subvolume information of ROOT_ITEM and ROOT_BACKREF
+2nd patch:
+  ioctl which returns subvolume information of ROOT_REF (without subvolume name)
+3rd patch: 
+  user version of ino_lookup ioctl which also performs permission check.
+
+They will be used to implement user version of "subvolume list/show" etc.
+in user tools.
+See each commit log for more detals.
+
+The implementation of btrfs-progs can be found in the ML titled as follows: 
+  [PATCH 0/11] btrfs-progs: Rework of "subvolume list/show" and relax the root privileges of them
+
+Tomohiro Misono (3):
+  btrfs: Add unprivileged ioctl which returns subvolume information
+  btrfs: Add unprivileged ioctl which returns subvolume's ROOT_REF
+  btrfs: Add unprivileged version of ino_lookup ioctl
+
+ fs/btrfs/ioctl.c           | 431 +++++++++++++++++++++++++++++++++++++++++++++
+ include/uapi/linux/btrfs.h |  84 +++++++++
+ 2 files changed, 515 insertions(+)
+
+-- 
+2.14.3
+
 

@@ -1,101 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f46.google.com ([209.85.214.46]:33220 "EHLO
-        mail-it0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751055AbeEUTWB (ORCPT
+Received: from userp2120.oracle.com ([156.151.31.85]:59486 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750709AbeEVJ14 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 21 May 2018 15:22:01 -0400
-Received: by mail-it0-f46.google.com with SMTP id e185-v6so9460701ita.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 21 May 2018 12:22:01 -0700 (PDT)
-Subject: Re: Any chance to get snapshot-aware defragmentation?
-To: dsterba@suse.cz,
-        =?UTF-8?Q?Niccol=c3=b2_Belli?= <darkbasic@linuxsystems.it>,
-        linux-btrfs@vger.kernel.org, gotar@polanet.pl
-References: <4428b2eb-796a-4c1b-8527-a05532436da4@linuxsystems.it>
- <20180518162051.GS6649@twin.jikos.cz>
- <99d57070-a1df-45ef-8f7e-df832bd7ad92@linuxsystems.it>
- <de7adf73-ba0b-9154-e3d1-b4e468ad3c96@gmail.com>
- <20180521174331.GZ6649@suse.cz>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <61aa1fea-7d07-4f0b-f177-340971106df1@gmail.com>
-Date: Mon, 21 May 2018 15:22:00 -0400
-MIME-Version: 1.0
-In-Reply-To: <20180521174331.GZ6649@suse.cz>
-Content-Type: text/plain; charset=utf-8; format=flowed
+        Tue, 22 May 2018 05:27:56 -0400
+Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
+        by userp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w4M9Km1I044257
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 May 2018 09:27:55 GMT
+Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
+        by userp2120.oracle.com with ESMTP id 2j2ck9fmmf-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 May 2018 09:27:55 +0000
+Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
+        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id w4M9RslV020755
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 May 2018 09:27:54 GMT
+Received: from abhmp0015.oracle.com (abhmp0015.oracle.com [141.146.116.21])
+        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w4M9Rr6A012801
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 May 2018 09:27:53 GMT
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v2] btrfs: drop uuid_mutex in close_fs_devices()
+Date: Tue, 22 May 2018 17:30:25 +0800
+Message-Id: <20180522093025.12125-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2018-05-21 13:43, David Sterba wrote:
-> On Fri, May 18, 2018 at 01:10:02PM -0400, Austin S. Hemmelgarn wrote:
->> On 2018-05-18 12:36, Niccolò Belli wrote:
->>> On venerdì 18 maggio 2018 18:20:51 CEST, David Sterba wrote:
->>>> Josef started working on that in 2014 and did not finish it. The patches
->>>> can be still found in his tree. The problem is in excessive memory
->>>> consumption when there are many snapshots that need to be tracked during
->>>> the defragmentation, so there are measures to avoid OOM. There's
->>>> infrastructure ready for use (shrinkers), there are maybe some problems
->>>> but fundamentally is should work.
->>>>
->>>> I'd like to get the snapshot-aware working again too, we'd need to find
->>>> a volunteer to resume the work on the patchset.
->>>
->>> Yeah I know of Josef's work, but 4 years had passed since then without
->>> any news on this front.
->>>
->>> What I would really like to know is why nobody resumed his work: is it
->>> because it's impossible to implement snapshot-aware degram without
->>> excessive ram usage or is it simply because nobody is interested?
->> I think it's because nobody who is interested has both the time and the
->> coding skills to tackle it.
->>
->> Personally though, I think the biggest issue with what was done was not
->> the memory consumption, but the fact that there was no switch to turn it
->> on or off.  Making defrag unconditionally snapshot aware removes one of
->> the easiest ways to forcibly unshare data without otherwise altering the
->> files (which, as stupid as it sounds, is actually really useful for some
->> storage setups), and also forces the people who have ridiculous numbers
->> of snapshots to deal with the memory usage or never defrag.
-> 
-> Good points. The logic of the sharing-aware is a technical detail,
-> what's being discussed is the usecase and I think this would be good to
-> clarify.
-> 
-> 1) always -- the old (and now disabled) way, unconditionally (ie. no
->     option for the user), problems with memory consumption
-> 
-> 2) more fine grained:
-> 
-> 2.1) defragment only the non-shared extents, ie. no sharing awareness
->       needed, shared extents will be silently skipped
-> 
-> 2.2) defragment only within the given subvolume -- like 1) but by user's choice
-> 
-> The naive dedup, that Tomasz (CCed) mentions in another mail, would be
-> probably beyond the defrag purpose and would make things more
-> complicated.
-> 
-> I'd vote for keeping complexity of the ioctl interface and defrag
-> implementation low, so if it's simply saying "do forcible defrag" or
-> "skip shared", then it sounds ok.
-> 
-> If there's eg. "keep sharing only on this <list> subvolunes", then it
-> would need to read the snapshot ids from ioctl structure, then enumerate
-> all extent owners and do some magic to unshare/defrag/share. That's a
-> quick idea, lots of details would need to be clarified.
-> 
- From my perspective, I see two things to consider that are somewhat 
-orthogonal to each other:
+close_fs_devices() closes devices of a given fsid, and it is limited
+to all the devices of a fsid, so we don't have to hold the global
+uuid_mutex, instead we need the device_list_mutex as the device state is
+being changed.
 
-1. Whether to recurse into subvolumes or not (IIRC, we currently do not 
-do so, because we see them like a mount point).
-2. Whether to use the simple (not reflink-aware) defrag, the reflink 
-aware one, or to base it on the extent/file type (use old simpler one 
-for unshared extents, and new reflink aware one for shared extents).
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+v1->v2: Add comment why we don't need uuid_mutex when touching seed.
 
-This second set of options is what I'd like to see the most (possibly 
-without the option to base it on file or extent sharing automatically), 
-though the first one would be nice to have.
+ fs/btrfs/volumes.c | 14 +++++++++-----
+ 1 file changed, 9 insertions(+), 5 deletions(-)
 
-Better yet, having that second set of options and making the new 
-reflink-aware defrag opt-in would allow people who really want it to use 
-it, and those of us who don't need it for our storage setups to not need 
-to worry about it.
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index b1e5ac419ca8..f4afd2e78e92 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1025,7 +1025,6 @@ static void btrfs_prepare_close_one_device(struct btrfs_device *device)
+ 					device->uuid);
+ 	BUG_ON(IS_ERR(new_device)); /* -ENOMEM */
+ 
+-	/* Safe because we are under uuid_mutex */
+ 	if (device->name) {
+ 		name = rcu_string_strdup(device->name->str, GFP_NOFS);
+ 		BUG_ON(!name); /* -ENOMEM */
+@@ -1043,10 +1042,12 @@ static int close_fs_devices(struct btrfs_fs_devices *fs_devices)
+ 
+ 	INIT_LIST_HEAD(&pending_put);
+ 
+-	if (--fs_devices->opened > 0)
++	mutex_lock(&fs_devices->device_list_mutex);
++	if (--fs_devices->opened > 0) {
++		mutex_unlock(&fs_devices->device_list_mutex);
+ 		return 0;
++	}
+ 
+-	mutex_lock(&fs_devices->device_list_mutex);
+ 	list_for_each_entry_safe(device, tmp, &fs_devices->devices, dev_list) {
+ 		btrfs_prepare_close_one_device(device);
+ 		list_add(&device->dev_list, &pending_put);
+@@ -1080,14 +1081,17 @@ int btrfs_close_devices(struct btrfs_fs_devices *fs_devices)
+ 	struct btrfs_fs_devices *seed_devices = NULL;
+ 	int ret;
+ 
+-	mutex_lock(&uuid_mutex);
+ 	ret = close_fs_devices(fs_devices);
+ 	if (!fs_devices->opened) {
+ 		seed_devices = fs_devices->seed;
+ 		fs_devices->seed = NULL;
+ 	}
+-	mutex_unlock(&uuid_mutex);
+ 
++	/*
++	 * As fs_devices::seed is a cloned (and then opned) local copy,
++	 * of the actual seed fs_uuids::fs_devices. So we don't need the
++	 * uuid_mutex.
++	 */
+ 	while (seed_devices) {
+ 		fs_devices = seed_devices;
+ 		seed_devices = fs_devices->seed;
+-- 
+2.7.0
+

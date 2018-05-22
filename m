@@ -1,56 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:57664 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750823AbeEUFTf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 21 May 2018 01:19:35 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 90646AD4E
-        for <linux-btrfs@vger.kernel.org>; Mon, 21 May 2018 05:19:34 +0000 (UTC)
-From: Qu Wenruo <wqu@suse.com>
+Received: from mail-pf0-f195.google.com ([209.85.192.195]:38936 "EHLO
+        mail-pf0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753085AbeEVWCU (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 22 May 2018 18:02:20 -0400
+Received: by mail-pf0-f195.google.com with SMTP id a22-v6so9415800pfn.6
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 May 2018 15:02:20 -0700 (PDT)
+From: Omar Sandoval <osandov@osandov.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 4/4] btrfs: lzo: Harden inline lzo compressed extent decompression
-Date: Mon, 21 May 2018 13:19:27 +0800
-Message-Id: <20180521051927.3715-5-wqu@suse.com>
-In-Reply-To: <20180521051927.3715-1-wqu@suse.com>
-References: <20180521051927.3715-1-wqu@suse.com>
+Cc: kernel-team@fb.com, David Sterba <dsterba@suse.com>,
+        Timofey Titovets <nefelim4ag@gmail.com>
+Subject: [PATCH 0/2] Btrfs: fix partly checksummed file races
+Date: Tue, 22 May 2018 15:02:11 -0700
+Message-Id: <cover.1527026445.git.osandov@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Unlike regular lzo compressed extent, inline extent doesn't have Header
-and only has one Segment.
-And further more, inlined extent always has csum in its leaf header,
-it's less possible to have corrupted data.
+From: Omar Sandoval <osandov@fb.com>
 
-Anyway, still add extra segment header length check.
+Clone and dedupe both have checks to make sure that we're not mixing
+checksummed and not checksummed extents in a single file. However, both
+checks are racy; we need to have the inodes locked or else the flags can
+change after we check. The clone check has always been wrong. The dedupe
+check was previously correct but is broken in kdave/for-next.
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/lzo.c | 5 +++++
- 1 file changed, 5 insertions(+)
+Based on kdave/for-next. Note that there's a Fixes: tag in there
+referencing a commit in the for-next branch, so that would have to be
+updated if the commit gets rebased. These patches are also available at
+https://github.com/osandov/linux/tree/btrfs-nodatasum-race.
 
-diff --git a/fs/btrfs/lzo.c b/fs/btrfs/lzo.c
-index 4c75dcba3f04..28788f6f0add 100644
---- a/fs/btrfs/lzo.c
-+++ b/fs/btrfs/lzo.c
-@@ -425,6 +425,7 @@ static int lzo_decompress(struct list_head *ws, unsigned char *data_in,
- 	struct workspace *workspace = list_entry(ws, struct workspace, list);
- 	size_t in_len;
- 	size_t out_len;
-+	size_t max_segment_len = lzo1x_worst_compress(PAGE_SIZE);
- 	int ret = 0;
- 	char *kaddr;
- 	unsigned long bytes;
-@@ -434,6 +435,10 @@ static int lzo_decompress(struct list_head *ws, unsigned char *data_in,
- 	data_in += LZO_LEN;
- 
- 	in_len = read_compress_length(data_in);
-+	if (in_len > max_segment_len) {
-+		ret = -EUCLEAN;
-+		goto out;
-+	}
- 	data_in += LZO_LEN;
- 
- 	out_len = PAGE_SIZE;
+Thanks!
+
+Omar Sandoval (2):
+  Btrfs: fix clone vs chattr NODATASUM race
+  Btrfs: fix dedupe vs chattr NODATASUM race
+
+ fs/btrfs/ioctl.c | 25 ++++++++++++++-----------
+ 1 file changed, 14 insertions(+), 11 deletions(-)
+
 -- 
 2.17.0
 

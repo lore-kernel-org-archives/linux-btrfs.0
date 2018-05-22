@@ -1,106 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f68.google.com ([209.85.215.68]:43557 "EHLO
-        mail-lf0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750954AbeEBFPw (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 May 2018 01:15:52 -0400
-Received: by mail-lf0-f68.google.com with SMTP id g12-v6so18975891lfb.10
-        for <linux-btrfs@vger.kernel.org>; Tue, 01 May 2018 22:15:52 -0700 (PDT)
-From: Timofey Titovets <nefelim4ag@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Timofey Titovets <nefelim4ag@gmail.com>
-Subject: [PATCH V3 2/3] Btrfs: btrfs_dedupe_file_range() ioctl, remove 16MiB restriction
-Date: Wed,  2 May 2018 08:15:37 +0300
-Message-Id: <20180502051538.26432-3-nefelim4ag@gmail.com>
-In-Reply-To: <20180502051538.26432-1-nefelim4ag@gmail.com>
-References: <20180502051538.26432-1-nefelim4ag@gmail.com>
+Received: from mx2.suse.de ([195.135.220.15]:57286 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751585AbeEVQa5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 22 May 2018 12:30:57 -0400
+Date: Tue, 22 May 2018 18:28:10 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Ethan Lien <ethanlien@synology.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: balance dirty metadata pages in
+ btrfs_finish_ordered_io
+Message-ID: <20180522162810.GV6649@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20180427070524.12188-1-ethanlien@synology.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20180427070524.12188-1-ethanlien@synology.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-At now btrfs_dedupe_file_range() restricted to 16MiB range for
-limit locking time and memory requirement for dedup ioctl()
+On Fri, Apr 27, 2018 at 03:05:24PM +0800, Ethan Lien wrote:
+> We should balance dirty metadata pages at the end of
+> btrfs_finish_ordered_io, since a small, unmergeable random write can
+> potentially produce dirty metadata which is multiple times larger than
+> the data itself. For example, a small, unmergeable 4KiB write may
+> produce:
+> 
+>     16KiB dirty leaf (and possibly 16KiB dirty node) in subvolume tree
+>     16KiB dirty leaf (and possibly 16KiB dirty node) in checksum tree
+>     16KiB dirty leaf (and possibly 16KiB dirty node) in extent tree
+> 
+> Although we do call balance dirty pages in write side, but in the
+> buffered write path, most metadata are dirtied only after we reach the
+> dirty background limit (which by far onlys counts dirty data pages) and
+> wakeup the flusher thread. If there are many small, unmergeable random
+> writes spread in a large btree, we'll find a burst of dirty pages
+> exceeds the dirty_bytes limit after we wakeup the flusher thread - which
+> is not what we expect. In our machine, it caused out-of-memory problem
+> since a page cannot be dropped if it is marked dirty.
+> 
+> Someone may worry about we may sleep in btrfs_btree_balance_dirty(), but
+> since we do btrfs_finish_ordered_io in a separate worker, it will not
+> stop the flusher consuming dirty pages. Also, we use different worker for
+> metadata writeback endio, sleep in btrfs_finish_ordered_io help us
+> throttle the size of dirty metadata pages.
 
-For too big input range code silently set range to 16MiB
+The described scenario sounds interesting. Do you have some scripted
+steps to reproduce it?
 
-Let's remove that restriction by do iterating over dedup range.
-That's backward compatible and will not change anything for request
-less then 16MiB.
+btrfs_btree_balance_dirty detects congestion and can skip the balancing
+eventually, so the case when it actually does something and waits is the
+point where things can go bad. From the last paragraph, it is clear that
+you have considered that, that's good.
 
-Changes:
-  v3:
-    - Splited from one to 3 patches
+Have you also considered calling __btrfs_btree_balance_dirty with
+flush_delayed=0 ? This would avoid the waiting and I'm not sure if it's
+really required here to get out of the situation.
 
-Signed-off-by: Timofey Titovets <nefelim4ag@gmail.com>
----
- fs/btrfs/ioctl.c | 25 +++++++++++++++++++------
- 1 file changed, 19 insertions(+), 6 deletions(-)
-
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index fb8beedb0359..38ce990e9b4c 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2983,11 +2983,14 @@ static int __btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
- 	return ret;
- }
- 
-+#define BTRFS_MAX_DEDUPE_LEN	SZ_16M
-+
- static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
- 			     struct inode *dst, u64 dst_loff)
- {
- 	int ret;
- 	bool same_inode = (src == dst);
-+	u64 i, tail_len, chunk_count;
- 
- 	if (olen == 0)
- 		return 0;
-@@ -2998,13 +3001,28 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
- 		return -EINVAL;
- 	}
- 
-+	tail_len = olen % BTRFS_MAX_DEDUPE_LEN;
-+	chunk_count = div_u64(olen, BTRFS_MAX_DEDUPE_LEN);
-+
- 	if (same_inode)
- 		inode_lock(src);
- 	else
- 		btrfs_double_inode_lock(src, dst);
- 
--	ret = __btrfs_extent_same(src, loff, olen, dst, dst_loff);
-+	for (i = 0; i < chunk_count; i++) {
-+		ret = __btrfs_extent_same(src, loff, BTRFS_MAX_DEDUPE_LEN,
-+					  dst, dst_loff);
-+		if (ret)
-+			goto out;
-+
-+		loff += BTRFS_MAX_DEDUPE_LEN;
-+		dst_loff += BTRFS_MAX_DEDUPE_LEN;
-+	}
-+
-+	if (tail_len > 0)
-+		ret = __btrfs_extent_same(src, loff, tail_len, dst, dst_loff);
- 
-+out:
- 	if (same_inode)
- 		inode_unlock(src);
- 	else
-@@ -3013,8 +3031,6 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
- 	return ret;
- }
- 
--#define BTRFS_MAX_DEDUPE_LEN	SZ_16M
--
- ssize_t btrfs_dedupe_file_range(struct file *src_file, u64 loff, u64 olen,
- 				struct file *dst_file, u64 dst_loff)
- {
-@@ -3023,9 +3039,6 @@ ssize_t btrfs_dedupe_file_range(struct file *src_file, u64 loff, u64 olen,
- 	u64 bs = BTRFS_I(src)->root->fs_info->sb->s_blocksize;
- 	ssize_t res;
- 
--	if (olen > BTRFS_MAX_DEDUPE_LEN)
--		olen = BTRFS_MAX_DEDUPE_LEN;
--
- 	if (WARN_ON_ONCE(bs < PAGE_SIZE)) {
- 		/*
- 		 * Btrfs does not support blocksize < page_size. As a
--- 
-2.17.0
+Anyway, I'll add the patch to for-next for more testing.

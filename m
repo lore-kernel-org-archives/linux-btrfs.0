@@ -1,17 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pl0-f66.google.com ([209.85.160.66]:34720 "EHLO
-        mail-pl0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751196AbeEVR2p (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 22 May 2018 13:28:45 -0400
-Received: by mail-pl0-f66.google.com with SMTP id ay10-v6so11316833plb.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 22 May 2018 10:28:45 -0700 (PDT)
-Date: Tue, 22 May 2018 10:28:43 -0700
-From: Omar Sandoval <osandov@osandov.com>
+Received: from mx2.suse.de ([195.135.220.15]:33896 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751495AbeEVRdl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 22 May 2018 13:33:41 -0400
+Date: Tue, 22 May 2018 19:11:03 +0200
+From: David Sterba <dsterba@suse.cz>
 To: robbieko <robbieko@synology.com>
 Cc: linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH] Btrfs: implement unlocked buffered write
-Message-ID: <20180522172843.GA9536@vader>
+Message-ID: <20180522171103.GX6649@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <1526442757-7167-1-git-send-email-robbieko@synology.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=iso-8859-1
@@ -29,24 +27,7 @@ On Wed, May 16, 2018 at 11:52:37AM +0800, robbieko wrote:
 > 
 > We needn't worry about the race between buffered write and truncate,
 > because the truncate need wait until all the buffered write end.
-
-I'm not convinced that this race isn't an issue. Consider this:
-
-__btrfs_buffered_write()	btrfs_setsize()
-inode_dio_begin()
-inode_unlock()
-				inode_lock()
-				truncate_setsize() /* Updates i_size */
-				truncate_pagecache() /* Locks and unlocks pages */
-				inode_dio_wait()
-prepare_pages() /* Locks pages */
-btrfs_dirty_pages() /* Updates i_size without i_rwsem! */
-
-I think moving inode_dio_wait() to before truncate_setsize() in
-btrfs_setsize() would close this race, but I haven't thought about it
-long enough to determine whether that still works for the original
-reason the inode_dio_wait() was added.
-
+> 
 > And we also needn't worry about the race between dio write and punch hole,
 > because we have extent lock to protect our operation.
 > 
@@ -77,7 +58,9 @@ reason the inode_dio_wait() was added.
 > == result (iops) ==
 > lock     = 68470
 > unlocked = 94242
-> 
+
+This looks impressive.
+
 > == result (clat) ==
 > lock
 >  lat (usec): min=184, max=1209.9K, avg=3738.35, stdev=20869.49
@@ -96,7 +79,9 @@ reason the inode_dio_wait() was added.
 >   | 70.00th=[  916], 80.00th=[ 5024], 90.00th=[ 5664], 95.00th=[10048],
 >   | 99.00th=[29568], 99.50th=[39168], 99.90th=[54016], 99.95th=[59648],
 >   | 99.99th=[78336]
-> 
+
+The latencies are better, nice.
+
 > Signed-off-by: Robbie Ko <robbieko@synology.com>
 > ---
 >  fs/btrfs/file.c | 17 +++++++++++++++++
@@ -119,10 +104,7 @@ reason the inode_dio_wait() was added.
 >  		return -ENOMEM;
 >  
 > +	inode_dio_begin(inode);
-
-This would need a comment as to why we're using inode_dio_begin() for
-buffered I/O.
-
+> +
 > +	/*
 > +	 * If the write is beyond the EOF, we need update
 > +	 * the isize, but it is protected by i_mutex. So we can
@@ -132,25 +114,11 @@ buffered I/O.
 > +		inode_unlock(inode);
 > +		relock = true;
 > +	}
-> +
->  	while (iov_iter_count(i) > 0) {
->  		size_t offset = pos & (PAGE_SIZE - 1);
->  		size_t sector_offset;
-> @@ -1808,6 +1821,10 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
->  		}
->  	}
->  
-> +	inode_dio_end(inode);
-> +	if (relock)
-> +		inode_lock(inode);
-> +
->  	extent_changeset_free(data_reserved);
->  	return num_written ? num_written : ret;
->  }
-> -- 
-> 1.9.1
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+And this looks scary :)
+
+The reasons why this should be safe given in the changelog sound good to
+me, but I haven't done a closer review. The patch is ok for addition to
+for-next so we'll see if it breaks something, I'd rather be a bit
+conservative about merging so no promises that it's going to land in
+4.18. More reviews are welcome.

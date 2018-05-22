@@ -1,108 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:49873 "EHLO
-        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750909AbeEBF2U (ORCPT
-        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Wed, 2 May 2018 01:28:20 -0400
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: qgroup: More meaningful qgroup_rescan_init error message
-Date: Wed,  2 May 2018 13:28:03 +0800
-Message-Id: <20180502052803.4222-1-wqu@suse.com>
+Received: from mx2.suse.de ([195.135.220.15]:32951 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751272AbeEVRUd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 22 May 2018 13:20:33 -0400
+Date: Tue, 22 May 2018 19:17:48 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Omar Sandoval <osandov@osandov.com>
+Cc: linux-btrfs@vger.kernel.org, kernel-team@fb.com,
+        David Sterba <dsterba@suse.com>, Jun Wu <quark@fb.com>
+Subject: Re: [PATCH v2] Btrfs: fix error handling in btrfs_truncate()
+Message-ID: <20180522171748.GY6649@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <d181fa0f3fc581208a0258132c8dc3305b01be1a.1527007575.git.osandov@fb.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <d181fa0f3fc581208a0258132c8dc3305b01be1a.1527007575.git.osandov@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Error message from qgroup_rescan_init() mostly looks like:
+On Tue, May 22, 2018 at 09:47:58AM -0700, Omar Sandoval wrote:
+> From: Omar Sandoval <osandov@fb.com>
+> 
+> Jun Wu at Facebook reported that an internal service was seeing a return
+> value of 1 from ftruncate() on Btrfs in some cases.
 
-------
-BTRFS info (device nvme0n1p1): qgroup_rescan_init failed with -115
-------
+Do you have a reproducer? To estimate how likely is to hit the problem
+in practice.
 
-Which is far from meaningful, and sometimes confusing as for above
--EINPROGRESS it's mostly (despite the init race) harmless, but sometimes
-it can also indicates problem if return value is -EINVAL.
-
-Change it to some more meaningful messages like:
-
-------
-BTRFS info (device nvme0n1p1): qgroup rescan is already in progress
-------
-
-And
-
-------
-BTRFS err(device nvme0n1p1): qgroup_rescan_init failed, qgroup is not enabled
-------
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/qgroup.c | 34 +++++++++++++++++++---------------
- 1 file changed, 19 insertions(+), 15 deletions(-)
-
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index ec2339a49ec3..a5742e9e9a14 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -2760,26 +2760,37 @@ qgroup_rescan_init(struct btrfs_fs_info *fs_info, u64 progress_objectid,
- {
- 	int ret = 0;
- 
--	if (!init_flags &&
--	    (!(fs_info->qgroup_flags & BTRFS_QGROUP_STATUS_FLAG_RESCAN) ||
--	     !(fs_info->qgroup_flags & BTRFS_QGROUP_STATUS_FLAG_ON))) {
--		ret = -EINVAL;
--		goto err;
-+	if (!init_flags) {
-+		/* we're resuming qgroup rescan at mount time */
-+		if (!(fs_info->qgroup_flags & BTRFS_QGROUP_STATUS_FLAG_RESCAN))
-+			btrfs_err(fs_info, "%s failed, qgroup is not enabled",
-+				  __func__);
-+		else if (!(fs_info->qgroup_flags & BTRFS_QGROUP_STATUS_FLAG_ON))
-+			btrfs_err(fs_info,
-+				  "%s failed, qgroup rescan is not queued",
-+				  __func__);
-+		return -EINVAL;
- 	}
- 
- 	mutex_lock(&fs_info->qgroup_rescan_lock);
- 	spin_lock(&fs_info->qgroup_lock);
- 
- 	if (init_flags) {
--		if (fs_info->qgroup_flags & BTRFS_QGROUP_STATUS_FLAG_RESCAN)
-+		if (fs_info->qgroup_flags & BTRFS_QGROUP_STATUS_FLAG_RESCAN) {
-+			btrfs_info(fs_info,
-+				   "qgroup rescan is already in progress");
- 			ret = -EINPROGRESS;
--		else if (!(fs_info->qgroup_flags & BTRFS_QGROUP_STATUS_FLAG_ON))
-+		} else if (!(fs_info->qgroup_flags &
-+			     BTRFS_QGROUP_STATUS_FLAG_ON)) {
-+			btrfs_err(fs_info, "%s failed, qgroup is not enabled",
-+				  __func__);
- 			ret = -EINVAL;
-+		}
- 
- 		if (ret) {
- 			spin_unlock(&fs_info->qgroup_lock);
- 			mutex_unlock(&fs_info->qgroup_rescan_lock);
--			goto err;
-+			return ret;
- 		}
- 		fs_info->qgroup_flags |= BTRFS_QGROUP_STATUS_FLAG_RESCAN;
- 	}
-@@ -2798,13 +2809,6 @@ qgroup_rescan_init(struct btrfs_fs_info *fs_info, u64 progress_objectid,
- 	btrfs_init_work(&fs_info->qgroup_rescan_work,
- 			btrfs_qgroup_rescan_helper,
- 			btrfs_qgroup_rescan_worker, NULL, NULL);
--
--	if (ret) {
--err:
--		btrfs_info(fs_info, "qgroup_rescan_init failed with %d", ret);
--		return ret;
--	}
--
- 	return 0;
- }
- 
--- 
-2.17.0
-
+> This is coming from
+> the NEED_TRUNCATE_BLOCK return value from btrfs_truncate_inode_items().
+> 
+> btrfs_truncate() uses two variables for error handling, ret and err.
+> When btrfs_truncate_inode_items() returns non-zero, we set err to the
+> return value. However, NEED_TRUNCATE_BLOCK is not an error. Make sure we
+> only set err if ret is an error (i.e., negative).
+> 
+> Fixes: ddfae63cc8e0 ("btrfs: move btrfs_truncate_block out of trans handle")
+> Reported-by: Jun Wu <quark@fb.com>
+> Cc: stable@vger.kernel.org
+> Signed-off-by: Omar Sandoval <osandov@fb.com>
+> ---
+> This version makes the minimal fix which should be good for v4.17 and
+> stable. I'll submit a cleanup separately.
+> 
+>  fs/btrfs/inode.c | 3 ++-
+>  1 file changed, 2 insertions(+), 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index d241285a0d2a..f276da70f659 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -9117,7 +9117,8 @@ static int btrfs_truncate(struct inode *inode, bool skip_writeback)
+>  						 BTRFS_EXTENT_DATA_KEY);
+>  		trans->block_rsv = &fs_info->trans_block_rsv;
+>  		if (ret != -ENOSPC && ret != -EAGAIN) {
+> -			err = ret;
+> +			if (ret < 0)
+> +				err = ret;
+>  			break;
+>  		}

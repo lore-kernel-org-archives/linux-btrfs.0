@@ -1,90 +1,153 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:52824 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751719AbeEVDvs (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 21 May 2018 23:51:48 -0400
-From: Gu Jinxiang <gujx@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: <nborisov@suse.com>
-Subject: [PATCH] btrfs: handle failures of set_extent_bits in add_excluded_extent
-Date: Tue, 22 May 2018 11:51:39 +0800
-Message-ID: <1526961099-5922-1-git-send-email-gujx@cn.fujitsu.com>
+Received: from mx2.suse.de ([195.135.220.15]:58929 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1750753AbeEVHhx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 22 May 2018 03:37:53 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id A453EACCD
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 May 2018 07:37:52 +0000 (UTC)
+Subject: Re: [PATCH] btrfs: Use btrfs_add_unused_bgs() to replace open code
+To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+References: <20180522072914.27301-1-wqu@suse.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <c56276ee-1491-f2c1-9575-0bbc68b83b82@suse.com>
+Date: Tue, 22 May 2018 10:37:49 +0300
 MIME-Version: 1.0
-Content-Type: text/plain
+In-Reply-To: <20180522072914.27301-1-wqu@suse.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-set_extent_bits may return 0/-EEXIST, so return the result in
-add_excluded_extent. And handle the failures in upper callers.
-
-Caller of add_excluded_extent and failure process currently:
-exclude_super_stripes
-	<- btrfs_make_block_group  //handles the failure
-	<- btrfs_read_block_groups //handles the failure
-__exclude_logged_extent
-	<- btrfs_exclude_logged_extents
-	<- btrfs_alloc_logged_file_extent //propagate failure to upper
-					caller
-Add logic of propagate return value of __exclude_logged_extent to
-btrfs_exclude_logged_extents.
-
-Signed-off-by: Gu Jinxiang <gujx@cn.fujitsu.com>
----
- fs/btrfs/extent-tree.c | 20 +++++++++++++++-----
- 1 file changed, 15 insertions(+), 5 deletions(-)
-
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 75cfb80d2551..28fd71579141 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -215,11 +215,16 @@ static int add_excluded_extent(struct btrfs_fs_info *fs_info,
- 			       u64 start, u64 num_bytes)
- {
- 	u64 end = start + num_bytes - 1;
--	set_extent_bits(&fs_info->freed_extents[0],
-+	int ret = 0;
-+
-+	ret = set_extent_bits(&fs_info->freed_extents[0],
- 			start, end, EXTENT_UPTODATE);
--	set_extent_bits(&fs_info->freed_extents[1],
-+	if (ret)
-+		goto out;
-+	ret = set_extent_bits(&fs_info->freed_extents[1],
- 			start, end, EXTENT_UPTODATE);
--	return 0;
-+out:
-+	return ret;
- }
- 
- static void free_excluded_extents(struct btrfs_fs_info *fs_info,
-@@ -6463,6 +6468,7 @@ int btrfs_exclude_logged_extents(struct btrfs_fs_info *fs_info,
- 	struct btrfs_key key;
- 	int found_type;
- 	int i;
-+	int ret = 0;
- 
- 	if (!btrfs_fs_incompat(fs_info, MIXED_GROUPS))
- 		return 0;
-@@ -6479,10 +6485,14 @@ int btrfs_exclude_logged_extents(struct btrfs_fs_info *fs_info,
- 			continue;
- 		key.objectid = btrfs_file_extent_disk_bytenr(eb, item);
- 		key.offset = btrfs_file_extent_disk_num_bytes(eb, item);
--		__exclude_logged_extent(fs_info, key.objectid, key.offset);
-+		ret = __exclude_logged_extent(fs_info, key.objectid,
-+				key.offset);
-+		if (ret)
-+			goto out;
- 	}
- 
--	return 0;
-+out:
-+	return ret;
- }
- 
- static void
--- 
-1.9.1
 
 
+On 22.05.2018 10:29, Qu Wenruo wrote:
+> Introduce a small helper, btrfs_add_unused_bgs(), to accquire needed
 
+This function name sounds a bit awkard, mainly because you use the
+plural form. How about btrfs_mark_bg_unused() ? The name seems more
+unambiguous.
+
+> locks and add a block group to unused_bgs list.
+> 
+> No functional modification, and only 3 callers are involved.
+> 
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+> This patch should provide the basis for later block group auto-removal
+> to get more info (mostly transid) to determine should one block group
+> being removed in current trans.
+> ---
+>  fs/btrfs/ctree.h       |  1 +
+>  fs/btrfs/extent-tree.c | 35 ++++++++++++++++-------------------
+>  fs/btrfs/scrub.c       |  9 +--------
+>  3 files changed, 18 insertions(+), 27 deletions(-)
+> 
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index bbb358143ded..701a52034ec6 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -2827,6 +2827,7 @@ void check_system_chunk(struct btrfs_trans_handle *trans,
+>  			struct btrfs_fs_info *fs_info, const u64 type);
+>  u64 add_new_free_space(struct btrfs_block_group_cache *block_group,
+>  		       u64 start, u64 end);
+> +void btrfs_add_unused_bgs(struct btrfs_block_group_cache *bg);
+>  
+>  /* ctree.c */
+>  int btrfs_bin_search(struct extent_buffer *eb, const struct btrfs_key *key,
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index ccf2690f7ca1..484c9d11e5b6 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -6312,16 +6312,8 @@ static int update_block_group(struct btrfs_trans_handle *trans,
+>  		 * dirty list to avoid races between cleaner kthread and space
+>  		 * cache writeout.
+>  		 */
+> -		if (!alloc && old_val == 0) {
+> -			spin_lock(&info->unused_bgs_lock);
+> -			if (list_empty(&cache->bg_list)) {
+> -				btrfs_get_block_group(cache);
+> -				trace_btrfs_add_unused_block_group(cache);
+> -				list_add_tail(&cache->bg_list,
+> -					      &info->unused_bgs);
+> -			}
+> -			spin_unlock(&info->unused_bgs_lock);
+> -		}
+> +		if (!alloc && old_val == 0)
+> +			btrfs_add_unused_bgs(cache);
+>  
+>  		btrfs_put_block_group(cache);
+>  		total -= num_bytes;
+> @@ -10144,15 +10136,7 @@ int btrfs_read_block_groups(struct btrfs_fs_info *info)
+>  		if (btrfs_chunk_readonly(info, cache->key.objectid)) {
+>  			inc_block_group_ro(cache, 1);
+>  		} else if (btrfs_block_group_used(&cache->item) == 0) {
+> -			spin_lock(&info->unused_bgs_lock);
+> -			/* Should always be true but just in case. */
+> -			if (list_empty(&cache->bg_list)) {
+> -				btrfs_get_block_group(cache);
+> -				trace_btrfs_add_unused_block_group(cache);
+> -				list_add_tail(&cache->bg_list,
+> -					      &info->unused_bgs);
+> -			}
+> -			spin_unlock(&info->unused_bgs_lock);
+> +			btrfs_add_unused_bgs(cache);
+>  		}
+>  	}
+>  
+> @@ -11071,3 +11055,16 @@ void btrfs_wait_for_snapshot_creation(struct btrfs_root *root)
+>  			       !atomic_read(&root->will_be_snapshotted));
+>  	}
+>  }
+> +
+> +void btrfs_add_unused_bgs(struct btrfs_block_group_cache *bg)
+> +{
+> +	struct btrfs_fs_info *fs_info = bg->fs_info;
+> +
+> +	spin_lock(&fs_info->unused_bgs_lock);
+> +	if (list_empty(&bg->bg_list)) {
+
+Given the comment in btrfs_read_block_groups:
+
+/* Should always be true but just in case. */
+
+How about you make it ASSERT(list_empty(&bg->bg_list));
+
+/* code to add the bg */
+
+So right now either :
+
+a) The comment is bogus and it is indeed required to check if this bg
+has already been marked unused.
+
+or
+
+b) The comment is correct and it's in fact a bug to try and mark a bg as
+unused twice.
+
+> +		btrfs_get_block_group(bg);
+> +		trace_btrfs_add_unused_block_group(bg);
+> +		list_add_tail(&bg->bg_list, &fs_info->unused_bgs);
+> +	}
+> +	spin_unlock(&fs_info->unused_bgs_lock);
+> +}
+> diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+> index a59005862010..1044ab2fc71c 100644
+> --- a/fs/btrfs/scrub.c
+> +++ b/fs/btrfs/scrub.c
+> @@ -3981,14 +3981,7 @@ int scrub_enumerate_chunks(struct scrub_ctx *sctx,
+>  		if (!cache->removed && !cache->ro && cache->reserved == 0 &&
+>  		    btrfs_block_group_used(&cache->item) == 0) {
+>  			spin_unlock(&cache->lock);
+> -			spin_lock(&fs_info->unused_bgs_lock);
+> -			if (list_empty(&cache->bg_list)) {
+> -				btrfs_get_block_group(cache);
+> -				trace_btrfs_add_unused_block_group(cache);
+> -				list_add_tail(&cache->bg_list,
+> -					      &fs_info->unused_bgs);
+> -			}
+> -			spin_unlock(&fs_info->unused_bgs_lock);
+> +			btrfs_add_unused_bgs(cache);
+>  		} else {
+>  			spin_unlock(&cache->lock);
+>  		}
+> 

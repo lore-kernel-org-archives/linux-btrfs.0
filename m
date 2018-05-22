@@ -1,54 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:56927 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:43747 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752489AbeEQG2V (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 17 May 2018 02:28:21 -0400
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: jamespharvey20@gmail.com
-Subject: [PATCH 4/4] btrfs: lzo: Hardern inline lzo compressed extent decompression
-Date: Thu, 17 May 2018 14:27:53 +0800
-Message-Id: <20180517062753.25973-5-wqu@suse.com>
-In-Reply-To: <20180517062753.25973-1-wqu@suse.com>
+        id S1751339AbeEVORV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 22 May 2018 10:17:21 -0400
+Date: Tue, 22 May 2018 16:14:38 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Nikolay Borisov <nborisov@suse.com>
+Cc: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
+        jamespharvey20@gmail.com
+Subject: Re: [PATCH 3/4] btrfs: lzo: Add header length check to avoid slab
+ out of bounds access
+Message-ID: <20180522141438.GM6649@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <20180517062753.25973-1-wqu@suse.com>
+ <20180517062753.25973-4-wqu@suse.com>
+ <fb4e4d06-81c1-1e1d-d8b6-c2b249fb2750@suse.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <fb4e4d06-81c1-1e1d-d8b6-c2b249fb2750@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Unlike regular lzo compressed extent, inline extent doesn't have Header
-and only has one Segment.
-And further more, inlined extent always has csum in its leaf header,
-it's less possible to have corrupted data.
+On Thu, May 17, 2018 at 11:14:46AM +0300, Nikolay Borisov wrote:
+> srclen  comes from the async_extent struct, which in turns is
+> initialized in compress_file_range with the value of "total_compressed",
+> and the value there is actually initialized by
+> btrfs_compress_pages->lzo_compress_pages (that code makes me wanna sing
+> "You spin me right round, baby Right round like a record, baby").
 
-Anyway, still add extra segment header length check.
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/lzo.c | 5 +++++
- 1 file changed, 5 insertions(+)
-
-diff --git a/fs/btrfs/lzo.c b/fs/btrfs/lzo.c
-index 78ebc809072f..077851a9f498 100644
---- a/fs/btrfs/lzo.c
-+++ b/fs/btrfs/lzo.c
-@@ -425,6 +425,7 @@ static int lzo_decompress(struct list_head *ws, unsigned char *data_in,
- 	struct workspace *workspace = list_entry(ws, struct workspace, list);
- 	size_t in_len;
- 	size_t out_len;
-+	size_t max_segment_len = lzo1x_worst_compress(PAGE_SIZE);
- 	int ret = 0;
- 	char *kaddr;
- 	unsigned long bytes;
-@@ -434,6 +435,10 @@ static int lzo_decompress(struct list_head *ws, unsigned char *data_in,
- 	data_in += LZO_LEN;
- 
- 	in_len = read_compress_length(data_in);
-+	if (in_len > max_segment_len) {
-+		ret = -EUCLEAN;
-+		goto out;
-+	}
- 	data_in += LZO_LEN;
- 
- 	out_len = PAGE_SIZE;
--- 
-2.17.0
-
+I have a dusted patch that reworks the whole loop to something more
+understandable, I can post it with some other pending compression
+updates.

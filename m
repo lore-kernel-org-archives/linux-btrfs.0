@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:33896 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751495AbeEVRdl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 22 May 2018 13:33:41 -0400
-Date: Tue, 22 May 2018 19:11:03 +0200
-From: David Sterba <dsterba@suse.cz>
+Received: from bombadil.infradead.org ([198.137.202.133]:33420 "EHLO
+        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751278AbeEVSIa (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 22 May 2018 14:08:30 -0400
+Date: Tue, 22 May 2018 11:08:28 -0700
+From: Christoph Hellwig <hch@infradead.org>
 To: robbieko <robbieko@synology.com>
 Cc: linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH] Btrfs: implement unlocked buffered write
-Message-ID: <20180522171103.GX6649@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+Message-ID: <20180522180828.GA8340@infradead.org>
 References: <1526442757-7167-1-git-send-email-robbieko@synology.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=iso-8859-1
@@ -58,9 +58,7 @@ On Wed, May 16, 2018 at 11:52:37AM +0800, robbieko wrote:
 > == result (iops) ==
 > lock     = 68470
 > unlocked = 94242
-
-This looks impressive.
-
+> 
 > == result (clat) ==
 > lock
 >  lat (usec): min=184, max=1209.9K, avg=3738.35, stdev=20869.49
@@ -79,9 +77,7 @@ This looks impressive.
 >   | 70.00th=[  916], 80.00th=[ 5024], 90.00th=[ 5664], 95.00th=[10048],
 >   | 99.00th=[29568], 99.50th=[39168], 99.90th=[54016], 99.95th=[59648],
 >   | 99.99th=[78336]
-
-The latencies are better, nice.
-
+> 
 > Signed-off-by: Robbie Ko <robbieko@synology.com>
 > ---
 >  fs/btrfs/file.c | 17 +++++++++++++++++
@@ -112,13 +108,5 @@ The latencies are better, nice.
 > +	 */
 > +	if (pos + iov_iter_count(i) <= i_size_read(inode)) {
 > +		inode_unlock(inode);
-> +		relock = true;
-> +	}
 
-And this looks scary :)
-
-The reasons why this should be safe given in the changelog sound good to
-me, but I haven't done a closer review. The patch is ok for addition to
-for-next so we'll see if it breaks something, I'd rather be a bit
-conservative about merging so no promises that it's going to land in
-4.18. More reviews are welcome.
+And what protects two writes from interleaving their results now?

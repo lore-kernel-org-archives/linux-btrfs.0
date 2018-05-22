@@ -1,91 +1,133 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.21]:56703 "EHLO mout.gmx.net"
+Received: from mx2.suse.de ([195.135.220.15]:38654 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1032485AbeE0BZn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 26 May 2018 21:25:43 -0400
-Subject: Re: [PATCH v2] btrfs: Use btrfs_mark_bg_unused() to replace open code
-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-References: <20180522084347.3381-1-wqu@suse.com>
- <20180522121455.GH6649@twin.jikos.cz>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <be92bc31-f617-254b-a1b8-2f92de764295@gmx.com>
-Date: Sun, 27 May 2018 09:25:25 +0800
-MIME-Version: 1.0
-In-Reply-To: <20180522121455.GH6649@twin.jikos.cz>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="59RqMedD296KLOsvmBrOwTY9BXbFa9xwJ"
+        id S1751240AbeEVInu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 22 May 2018 04:43:50 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 8B607ADDA
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 May 2018 08:43:49 +0000 (UTC)
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v2] btrfs: Use btrfs_mark_bg_unused() to replace open code
+Date: Tue, 22 May 2018 16:43:47 +0800
+Message-Id: <20180522084347.3381-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---59RqMedD296KLOsvmBrOwTY9BXbFa9xwJ
-Content-Type: multipart/mixed; boundary="SCyL9gGyGVaWCZN6vRZ6HuqFWc4EIcEjZ";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Message-ID: <be92bc31-f617-254b-a1b8-2f92de764295@gmx.com>
-Subject: Re: [PATCH v2] btrfs: Use btrfs_mark_bg_unused() to replace open code
-References: <20180522084347.3381-1-wqu@suse.com>
- <20180522121455.GH6649@twin.jikos.cz>
-In-Reply-To: <20180522121455.GH6649@twin.jikos.cz>
+Introduce a small helper, btrfs_mark_bg_unused(), to accquire needed
+locks and add a block group to unused_bgs list.
 
---SCyL9gGyGVaWCZN6vRZ6HuqFWc4EIcEjZ
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+No functional modification, and only 3 callers are involved.
 
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+This patch should provide the basis for later block group auto-removal
+to get more info (mostly transid) to determine should one block group
+being removed in current trans.
 
+changelog:
+v2:
+  Add ASSERT() for btrfs_read_block_groups(), as in that call site a
+  block group should not be added to other list (new_bgs or
+  deleted_bgs).
+  Rename the function to btrfs_mark_bg_unused().
+  Both suggested by Nikolay.
+---
+ fs/btrfs/ctree.h       |  1 +
+ fs/btrfs/extent-tree.c | 36 +++++++++++++++++-------------------
+ fs/btrfs/scrub.c       |  9 +--------
+ 3 files changed, 19 insertions(+), 27 deletions(-)
 
-On 2018=E5=B9=B405=E6=9C=8822=E6=97=A5 20:14, David Sterba wrote:
-> On Tue, May 22, 2018 at 04:43:47PM +0800, Qu Wenruo wrote:
->> Introduce a small helper, btrfs_mark_bg_unused(), to accquire needed
->> locks and add a block group to unused_bgs list.
->=20
-> The helper is nice but hides that there's a reference taken on the 'bg'=
-=2E
-> This would be good to add at least to the function comment or somehow
-> squeeze it into the function name itself, like
-> btrfs_get_and_mark_bg_unused.
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index bbb358143ded..4a34bc443fe4 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -2827,6 +2827,7 @@ void check_system_chunk(struct btrfs_trans_handle *trans,
+ 			struct btrfs_fs_info *fs_info, const u64 type);
+ u64 add_new_free_space(struct btrfs_block_group_cache *block_group,
+ 		       u64 start, u64 end);
++void btrfs_mark_bg_unused(struct btrfs_block_group_cache *bg);
+ 
+ /* ctree.c */
+ int btrfs_bin_search(struct extent_buffer *eb, const struct btrfs_key *key,
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index ccf2690f7ca1..33f046103073 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -6312,16 +6312,8 @@ static int update_block_group(struct btrfs_trans_handle *trans,
+ 		 * dirty list to avoid races between cleaner kthread and space
+ 		 * cache writeout.
+ 		 */
+-		if (!alloc && old_val == 0) {
+-			spin_lock(&info->unused_bgs_lock);
+-			if (list_empty(&cache->bg_list)) {
+-				btrfs_get_block_group(cache);
+-				trace_btrfs_add_unused_block_group(cache);
+-				list_add_tail(&cache->bg_list,
+-					      &info->unused_bgs);
+-			}
+-			spin_unlock(&info->unused_bgs_lock);
+-		}
++		if (!alloc && old_val == 0)
++			btrfs_mark_bg_unused(cache);
+ 
+ 		btrfs_put_block_group(cache);
+ 		total -= num_bytes;
+@@ -10144,15 +10136,8 @@ int btrfs_read_block_groups(struct btrfs_fs_info *info)
+ 		if (btrfs_chunk_readonly(info, cache->key.objectid)) {
+ 			inc_block_group_ro(cache, 1);
+ 		} else if (btrfs_block_group_used(&cache->item) == 0) {
+-			spin_lock(&info->unused_bgs_lock);
+-			/* Should always be true but just in case. */
+-			if (list_empty(&cache->bg_list)) {
+-				btrfs_get_block_group(cache);
+-				trace_btrfs_add_unused_block_group(cache);
+-				list_add_tail(&cache->bg_list,
+-					      &info->unused_bgs);
+-			}
+-			spin_unlock(&info->unused_bgs_lock);
++			ASSERT(list_empty(&cache->bg_list));
++			btrfs_mark_bg_unused(cache);
+ 		}
+ 	}
+ 
+@@ -11071,3 +11056,16 @@ void btrfs_wait_for_snapshot_creation(struct btrfs_root *root)
+ 			       !atomic_read(&root->will_be_snapshotted));
+ 	}
+ }
++
++void btrfs_mark_bg_unused(struct btrfs_block_group_cache *bg)
++{
++	struct btrfs_fs_info *fs_info = bg->fs_info;
++
++	spin_lock(&fs_info->unused_bgs_lock);
++	if (list_empty(&bg->bg_list)) {
++		btrfs_get_block_group(bg);
++		trace_btrfs_add_unused_block_group(bg);
++		list_add_tail(&bg->bg_list, &fs_info->unused_bgs);
++	}
++	spin_unlock(&fs_info->unused_bgs_lock);
++}
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index a59005862010..40086b47a65f 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -3981,14 +3981,7 @@ int scrub_enumerate_chunks(struct scrub_ctx *sctx,
+ 		if (!cache->removed && !cache->ro && cache->reserved == 0 &&
+ 		    btrfs_block_group_used(&cache->item) == 0) {
+ 			spin_unlock(&cache->lock);
+-			spin_lock(&fs_info->unused_bgs_lock);
+-			if (list_empty(&cache->bg_list)) {
+-				btrfs_get_block_group(cache);
+-				trace_btrfs_add_unused_block_group(cache);
+-				list_add_tail(&cache->bg_list,
+-					      &fs_info->unused_bgs);
+-			}
+-			spin_unlock(&fs_info->unused_bgs_lock);
++			btrfs_mark_bg_unused(cache);
+ 		} else {
+ 			spin_unlock(&cache->lock);
+ 		}
+-- 
+2.17.0
 
-That btrfs_get_block_group() call is only for later removal.
-The reference will be removed in btrfs_delete_unused_bgs().
-
-So I don't think the function name needs the "_get" part.
-
-Although I could add more comment about the btrfs_get_block_group() call.=
-
-
-How do you think about this?
-
-Thanks,
-Qu
-
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->=20
-
-
---SCyL9gGyGVaWCZN6vRZ6HuqFWc4EIcEjZ--
-
---59RqMedD296KLOsvmBrOwTY9BXbFa9xwJ
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlsKCQUACgkQwj2R86El
-/qhqfQf+PYzBR1rgvUlG9XbwEvCx8QKY8BaSq9vaU2/nr2yQWfks/NDseGMwqSzW
-YZUoy2GCXx7rwxU35QVwgsFZsmyEtnj8Dfw2sCTQydUoJHxaF1h/XoT3ZQ7Rxipp
-ulF7BRg1R3GFa/d13E1TpzV9c1OReR/YrZNTNdD+r6dWl4IKO3HCy5iQ1MxQKYV/
-RDDoZvFMad4vXp0G1T8j70twmY1duiz3vtTOvIVVO+IABQmUJSTzuWZUQk4z+csU
-oF2pohl2zQ/YJz38mB6QOPXpEUvSZjoaY6jQL80B42rUakzZ8lbaQzavGoaaDJmO
-GpYJoNuGuvf3xHeGnhARbNttgiv5yg==
-=hqVF
------END PGP SIGNATURE-----
-
---59RqMedD296KLOsvmBrOwTY9BXbFa9xwJ--

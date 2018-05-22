@@ -1,70 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:57655 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:42426 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750822AbeEUFTb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 21 May 2018 01:19:31 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id AFC89AD4E
-        for <linux-btrfs@vger.kernel.org>; Mon, 21 May 2018 05:19:29 +0000 (UTC)
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 0/4] btrfs: lzo: Harden decompression callers to avoid kernel memory corruption.
-Date: Mon, 21 May 2018 13:19:23 +0800
-Message-Id: <20180521051927.3715-1-wqu@suse.com>
+        id S1751196AbeEVOCt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 22 May 2018 10:02:49 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 7BE99ADCB
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 May 2018 14:02:48 +0000 (UTC)
+Date: Tue, 22 May 2018 16:00:05 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2 2/4] btrfs: lzo: Add comment about the how btrfs
+ records its lzo compressed data
+Message-ID: <20180522140005.GL6649@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20180521051927.3715-1-wqu@suse.com>
+ <20180521051927.3715-3-wqu@suse.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20180521051927.3715-3-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patchset can be fetched from github:
-https://github.com/adam900710/linux/tree/lzo_corruption
-Which is based on v4.17-rc5.
+On Mon, May 21, 2018 at 01:19:25PM +0800, Qu Wenruo wrote:
+> Although it's not that complex, but such comment could still save
+> several minutes for newer reader/reviewer.
+> 
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+>  fs/btrfs/lzo.c | 23 +++++++++++++++++++++++
+>  1 file changed, 23 insertions(+)
+> 
+> diff --git a/fs/btrfs/lzo.c b/fs/btrfs/lzo.c
+> index 0667ea07f766..d0c6789ff78f 100644
+> --- a/fs/btrfs/lzo.c
+> +++ b/fs/btrfs/lzo.c
+> @@ -17,6 +17,29 @@
+>  
+>  #define LZO_LEN	4
+>  
+> +/*
+> + * Btrfs LZO compression format
+> + *
+> + * Regular LZO compressed data extent consists of:
+> + * 1.  Header
+> + *     Fixed size. LZO_LEN (4) bytes long, LE32.
+> + *     Records the total size (*includes* the header) of real compressed data.
+> + *
+> + * 2.  Segment(s)
+> + *     Variable size. Includes one segment header, and then data payload.
+> + *     One regular LZO compressed extent can have one or more segments.
+> + *
+> + * 2.1 Segment header
+> + *     Fixed size. LZO_LEN (4) bytes long, LE32.
+> + *     Records the total size of the segment (*excludes* the header).
+> + *
+> + * 2.2 Data Payload
+> + *     Variable size. Size up limit should be lzo1x_worst_compress(PAGE_SIZE).
+> + *
+> + * While for inlined LZO compressed data extent, it doesn't have Header, just
+> + * *ONE* Segment.
 
-James Harvey reported pretty strange kernel misbehavior where after
-reading certain btrfs compressed data, kernel crash with unrelated
-calltrace.
-(https://bugzilla.kernel.org/show_bug.cgi?id=199707 and
- https://www.spinics.net/lists/linux-btrfs/msg77971.html)
+It does have header that has the same value as the 1st segment header so
+it's skipped.
 
-Thanks for his comprehensive debug help, we located the problem to:
-
-1) Bad lzo decompression verification check
-   The direct cause.
-   The lzo decompression code involves memory copy for compressed data
-   who crosses page boundary.
-   And if corrupted segment header contains invalid length, btrfs will
-   do memory copy and then corrupt kernel memory.
-
-   Fix it by add header length check for each segment, and just in case,
-   also add uncompressed data length check. (Patch 3)
-   The full explanation and kasan output can also be found in that patch.
-
-2) Compressed extent created for NODATASUM inode
-   The root cause.
-   Will be addressed in another patchset.
-
-Other patches are mostly cosmetic, like adding extra include for
-compression.h, to avoid later compiling error. (Patch 1)
-Or adding comment of how btrfs organise its compressed data (Patch 2)
-And adding extra check for inlined compressed data even it's not really
-possible to happen (Patch 4)
-
-Changelog:
-v2:
-  Cosmetic updates. Mostly for comment and gramma.
-  Comment and gramma fixes suggested by Nikolay.
-  One 4 bytes <-> LE32 convert fixes in comment.
-  Added reviewed-by tag for the 1st patch.
-
-Qu Wenruo (4):
-  btrfs: compression: Add linux/sizes.h for compression.h
-  btrfs: lzo: Add comment about the how btrfs records its lzo compressed
-    data
-  btrfs: lzo: Add header length check to avoid slab out of bounds access
-  btrfs: lzo: Harden inline lzo compressed extent decompression
-
- fs/btrfs/compression.h |  1 +
- fs/btrfs/lzo.c         | 63 +++++++++++++++++++++++++++++++++++++++++-
- 2 files changed, 63 insertions(+), 1 deletion(-)
-
--- 
-2.17.0
-
+There's also one catch in the format that if there's a less then 4 bytes
+left to the page size, the new segment starts on the new page.

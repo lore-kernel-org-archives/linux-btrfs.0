@@ -1,206 +1,156 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ipmail06.adl6.internode.on.net ([150.101.137.145]:1373 "EHLO
-        ipmail06.adl6.internode.on.net" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S933733AbeEIGlI (ORCPT
+Received: from mail-pl0-f66.google.com ([209.85.160.66]:34720 "EHLO
+        mail-pl0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751196AbeEVR2p (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 9 May 2018 02:41:08 -0400
-Date: Wed, 9 May 2018 16:41:03 +1000
-From: Dave Chinner <david@fromorbit.com>
-To: Jeff Mahoney <jeffm@suse.com>
-Cc: Mark Fasheh <mfasheh@suse.de>, linux-fsdevel@vger.kernel.org,
-        linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org
-Subject: Re: [RFC][PATCH 0/76] vfs: 'views' for filesystems with more than
- one root
-Message-ID: <20180509064103.GP10363@dastard>
-References: <20180508180436.716-1-mfasheh@suse.de>
- <20180508233840.GM10363@dastard>
- <e6698201-a4a6-2146-d4c9-9e26c18ad828@suse.com>
+        Tue, 22 May 2018 13:28:45 -0400
+Received: by mail-pl0-f66.google.com with SMTP id ay10-v6so11316833plb.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 May 2018 10:28:45 -0700 (PDT)
+Date: Tue, 22 May 2018 10:28:43 -0700
+From: Omar Sandoval <osandov@osandov.com>
+To: robbieko <robbieko@synology.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: implement unlocked buffered write
+Message-ID: <20180522172843.GA9536@vader>
+References: <1526442757-7167-1-git-send-email-robbieko@synology.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <e6698201-a4a6-2146-d4c9-9e26c18ad828@suse.com>
+Content-Type: text/plain; charset=iso-8859-1
+In-Reply-To: <1526442757-7167-1-git-send-email-robbieko@synology.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, May 08, 2018 at 10:06:44PM -0400, Jeff Mahoney wrote:
-> On 5/8/18 7:38 PM, Dave Chinner wrote:
-> > On Tue, May 08, 2018 at 11:03:20AM -0700, Mark Fasheh wrote:
-> >> Hi,
-> >>
-> >> The VFS's super_block covers a variety of filesystem functionality. In
-> >> particular we have a single structure representing both I/O and
-> >> namespace domains.
-> >>
-> >> There are requirements to de-couple this functionality. For example,
-> >> filesystems with more than one root (such as btrfs subvolumes) can
-> >> have multiple inode namespaces. This starts to confuse userspace when
-> >> it notices multiple inodes with the same inode/device tuple on a
-> >> filesystem.
-> > 
-> > Devil's Advocate - I'm not looking at the code, I'm commenting on
-> > architectural issues I see here.
-> > 
-> > The XFS subvolume work I've been doing explicitly uses a superblock
-> > per subvolume. That's because subvolumes are designed to be
-> > completely independent of the backing storage - they know nothing
-> > about the underlying storage except to share a BDI for writeback
-> > purposes and write to whatever block device the remapping layer
-> > gives them at IO time.  Hence XFS subvolumes have (at this point)
-> > their own unique s_dev, on-disk format configuration, journal, space
-> > accounting, etc. i.e. They are fully independent filesystems in
-> > their own right, and as such we do not have multiple inode
-> > namespaces per superblock.
+On Wed, May 16, 2018 at 11:52:37AM +0800, robbieko wrote:
+> From: Robbie Ko <robbieko@synology.com>
 > 
-> That's a fundamental difference between how your XFS subvolumes work and
-> how btrfs subvolumes do.
-
-Yup, you've just proved my point: this is not a "subvolume problem";
-but rather a "multiple namespace per root" problem.
-
-> There is no independence among btrfs
-> subvolumes.  When a snapshot is created, it has a few new blocks but
-> otherwise shares the metadata of the source subvolume.  The metadata
-> trees are shared across all of the subvolumes and there are several
-> internal trees used to manage all of it.
-
-I don't need btrfs 101 stuff explained to me. :/
-
-> a single transaction engine.  There are housekeeping and maintenance
-> tasks that operate across the entire file system internally.  I
-> understand that there are several problems you need to solve at the VFS
-> layer to get your version of subvolumes up and running, but trying to
-> shoehorn one into the other is bound to fail.
-
-Actually, the VFS has provided everything I need for XFS subvolumes
-so far without requiring any sort of modifications. That's the
-perspective I'm approaching this from - if the VFS can do what we
-need for XFS subvolumes, as well as overlay (which are effectively
-VFS-based COW subvolumes), then lets see if we can make that work
-for btrfs too.
-
-> > So this doesn't sound like a "subvolume problem" - it's a "how do we
-> > sanely support multiple independent namespaces per superblock"
-> > problem. AFAICT, this same problem exists with bind mounts and mount
-> > namespaces - they are effectively multiple roots on a single
-> > superblock, but it's done at the vfsmount level and so the
-> > superblock knows nothing about them.
+> This idea is from direct io. By this patch, we can make the buffered
+> write parallel, and improve the performance and latency. But because we
+> can not update isize without i_mutex, the unlocked buffered write just
+> can be done in front of the EOF.
 > 
-> In this case, you're talking about the user-visible file system
-> hierarchy namespace that has no bearing on the underlying file system
-> outside of per-mount flags.
+> We needn't worry about the race between buffered write and truncate,
+> because the truncate need wait until all the buffered write end.
 
-Except that it tracks and provides infrastructure that allows user
-visible  "multiple namespace per root" constructs. Subvolumes - as a
-user visible namespace construct - are little different to bind
-mounts in behaviour and functionality. 
+I'm not convinced that this race isn't an issue. Consider this:
 
-How the underlying filesystem implements subvolumes is really up to
-the filesystem, but we should be trying to implement a clean model
-for "multiple namespaces on a single root" at the VFS so we have
-consistent behaviour across all filesystems that implement similar
-functionality.
+__btrfs_buffered_write()	btrfs_setsize()
+inode_dio_begin()
+inode_unlock()
+				inode_lock()
+				truncate_setsize() /* Updates i_size */
+				truncate_pagecache() /* Locks and unlocks pages */
+				inode_dio_wait()
+prepare_pages() /* Locks pages */
+btrfs_dirty_pages() /* Updates i_size without i_rwsem! */
 
-FWIW, bind mounts and overlay also have similar inode number
-namespace problems to what Mark describes for btrfs subvolumes.
-e.g. overlay recently introduce the "xino" mount option to separate
-the user presented inode number namespace for overlay inode from the
-underlying parent filesystem inodes. How is that different to btrfs
-subvolumes needing to present different inode number namespaces from
-the underlying parent?
+I think moving inode_dio_wait() to before truncate_setsize() in
+btrfs_setsize() would close this race, but I haven't thought about it
+long enough to determine whether that still works for the original
+reason the inode_dio_wait() was added.
 
-This sort of "namespace shifting" is needed for several different
-pieces of information the kernel reports to userspace. The VFS
-replacement for shiftfs is an example of this. So is inode number
-remapping. I'm sure there's more.
-
-My point is that if we are talking about infrastructure to remap
-what userspace sees from different mountpoint views into a
-filesystem, then it should be done above the filesystem layers in
-the VFS so all filesystems behave the same way. And in this case,
-the vfsmount maps exactly to the "fs_view" that Mark has proposed we
-add to the superblock.....
-
-> It makes sense for that to be above the
-> superblock because the file system doesn't care about them.  We're
-> interested in the inode namespace, which for every other file system can
-> be described using an inode and a superblock pair, but btrfs has another
-> layer in the middle: inode -> btrfs_root -> superblock. 
-
-Which seems to me to be irrelevant if there's a vfsmount per
-subvolume that can hold per-subvolume information.
-
-> > So this kinda feel like there's still a impedence mismatch between
-> > btrfs subvolumes being mounted as subtrees on the underlying root
-> > vfsmount rather than being created as truly independent vfs
-> > namespaces that share a superblock. To put that as a question: why
-> > aren't btrfs subvolumes vfsmounts in their own right, and the unique
-> > information subvolume information get stored in (or obtained from)
-> > the vfsmount?
+> And we also needn't worry about the race between dio write and punch hole,
+> because we have extent lock to protect our operation.
 > 
-> Those are two separate problems.   Using a vfsmount to export the
-> btrfs_root is on my roadmap.  I have a WIP patch set that automounts the
-> subvolumes when stepping into a new one, but it's to fix a longstanding
-> UX wart.
-
-IMO that's more than a UX wart - th elack of vfsmounts for internal
-subvolume mount point traversals could be considered the root cause
-of the issues we are discussing here. Extending the mounted
-namespace should trigger vfs mounts, not be hidden deep inside the
-filesystem. Hence I'd suggest this needs changing before anything
-else....
-
-> >> During the discussion, one question did come up - why can't
-> >> filesystems like Btrfs use a superblock per subvolume? There's a
-> >> couple of problems with that:
-> >>
-> >> - It's common for a single Btrfs filesystem to have thousands of
-> >>   subvolumes. So keeping a superblock for each subvol in memory would
-> >>   get prohibively expensive - imagine having 8000 copies of struct
-> >>   super_block for a file system just because we wanted some separation
-> >>   of say, s_dev.
-> > 
-> > That's no different to using individual overlay mounts for the
-> > thousands of containers that are on the system. This doesn't seem to
-> > be a major problem...
+> I ran fio to test the performance of this feature.
 > 
-> Overlay mounts are indepedent of one another and don't need coordination
-> among them.  The memory usage is relatively unimportant.  The important
-> part is having a bunch of superblocks that all correspond to the same
-> resources and coordinating them at the VFS level.  Your assumptions
-> below follow how your XFS subvolumes work, where there's a clear
-> hierarchy between the subvolumes and the master filesystem with a
-> mapping layer between them.  Btrfs subvolumes have no such hierarchy.
-> Everything is shared. 
+> == Hardware ==
+> CPU: Intel® Xeon® D-1531
+> SSD: Intel S3710 200G
+> Volume : RAID 5 , SSD * 6
+> 
+> == config file ==
+> [global]
+> group_reporting
+> time_based
+> thread=1
+> norandommap
+> ioengine=libaio
+> bs=4k
+> iodepth=32
+> size=16G
+> runtime=180
+> numjobs=8
+> rw=randwrite
+> 
+> [file1]
+> filename=/mnt/btrfs/nocow/testfile
+> 
+> == result (iops) ==
+> lock     = 68470
+> unlocked = 94242
+> 
+> == result (clat) ==
+> lock
+>  lat (usec): min=184, max=1209.9K, avg=3738.35, stdev=20869.49
+>  clat percentiles (usec):
+>   |  1.00th=[  322],  5.00th=[  330], 10.00th=[  334], 20.00th=[  346],
+>   | 30.00th=[  370], 40.00th=[  386], 50.00th=[  406], 60.00th=[  446],
+>   | 70.00th=[  516], 80.00th=[  612], 90.00th=[  828], 95.00th=[10432],
+>   | 99.00th=[84480], 99.50th=[117248], 99.90th=[226304], 99.95th=[333824],
+>   | 99.99th=[692224]
+> 
+> unlocked
+>  lat (usec): min=10, max=218208, avg=2691.44, stdev=5380.82
+>  clat percentiles (usec):
+>   |  1.00th=[  302],  5.00th=[  390], 10.00th=[  442], 20.00th=[  502],
+>   | 30.00th=[  548], 40.00th=[  596], 50.00th=[  652], 60.00th=[  724],
+>   | 70.00th=[  916], 80.00th=[ 5024], 90.00th=[ 5664], 95.00th=[10048],
+>   | 99.00th=[29568], 99.50th=[39168], 99.90th=[54016], 99.95th=[59648],
+>   | 99.99th=[78336]
+> 
+> Signed-off-by: Robbie Ko <robbieko@synology.com>
+> ---
+>  fs/btrfs/file.c | 17 +++++++++++++++++
+>  1 file changed, 17 insertions(+)
+> 
+> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+> index 41ab907..8eac540 100644
+> --- a/fs/btrfs/file.c
+> +++ b/fs/btrfs/file.c
+> @@ -1600,6 +1600,7 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
+>  	int ret = 0;
+>  	bool only_release_metadata = false;
+>  	bool force_page_uptodate = false;
+> +	bool relock = false;
+>  
+>  	nrptrs = min(DIV_ROUND_UP(iov_iter_count(i), PAGE_SIZE),
+>  			PAGE_SIZE / (sizeof(struct page *)));
+> @@ -1609,6 +1610,18 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
+>  	if (!pages)
+>  		return -ENOMEM;
+>  
+> +	inode_dio_begin(inode);
 
-Yup, that's the impedence mismatch between the VFS infrastructure
-and btrfs that I was talking about. What I'm trying to communicate
-is that I think the proposal is attacking the impedence mismatch
-from the wrong direction.
+This would need a comment as to why we're using inode_dio_begin() for
+buffered I/O.
 
-i.e. The proposal is to modify btrfs code to propagate stuff that
-btrfs needs to know to deal with it's internal "everything is
-shared" problems up into the VFS where it's probably not useful to
-anything other than btrfs. We already have the necessary construct
-in the VFS - I think we should be trying to use the information held
-by the generic VFS infrastructure to solve the solve the specific
-btrfs issue at hand....
-
-> So while we could use a writeback hierarchy to
-> merge all of the inode lists before doing writeback on the 'master'
-> superblock, we'd gain nothing by it.  Handling anything involving
-> s_umount with a superblock per subvolume would be a nightmare.
-> Ultimately, it would be a ton of effort that amounts to working around
-> the VFS instead of with it.
-
-I'm not suggesting that btrfs needs to use a superblock per
-subvolume. Please don't confuse my statements along the lines of
-"this doesn't seem to be a problem for others" with "you must change
-btrfs to do this". I'm just saying that the problems arising from
-using a superblock per subvolume are not as dire as is being
-implied.
-
-Cheers,
-
-Dave.
--- 
-Dave Chinner
-david@fromorbit.com
+> +	/*
+> +	 * If the write is beyond the EOF, we need update
+> +	 * the isize, but it is protected by i_mutex. So we can
+> +	 * not unlock the i_mutex at this case.
+> +	 */
+> +	if (pos + iov_iter_count(i) <= i_size_read(inode)) {
+> +		inode_unlock(inode);
+> +		relock = true;
+> +	}
+> +
+>  	while (iov_iter_count(i) > 0) {
+>  		size_t offset = pos & (PAGE_SIZE - 1);
+>  		size_t sector_offset;
+> @@ -1808,6 +1821,10 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
+>  		}
+>  	}
+>  
+> +	inode_dio_end(inode);
+> +	if (relock)
+> +		inode_lock(inode);
+> +
+>  	extent_changeset_free(data_reserved);
+>  	return num_written ? num_written : ret;
+>  }
+> -- 
+> 1.9.1
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

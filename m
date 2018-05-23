@@ -1,43 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf0-f195.google.com ([209.85.192.195]:38936 "EHLO
-        mail-pf0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753085AbeEVWCU (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 22 May 2018 18:02:20 -0400
-Received: by mail-pf0-f195.google.com with SMTP id a22-v6so9415800pfn.6
-        for <linux-btrfs@vger.kernel.org>; Tue, 22 May 2018 15:02:20 -0700 (PDT)
-From: Omar Sandoval <osandov@osandov.com>
-To: linux-btrfs@vger.kernel.org
+Received: from mx2.suse.de ([195.135.220.15]:50041 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751085AbeEWGHX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 23 May 2018 02:07:23 -0400
+Subject: Re: [PATCH 1/2] Btrfs: fix clone vs chattr NODATASUM race
+To: Omar Sandoval <osandov@osandov.com>, linux-btrfs@vger.kernel.org
 Cc: kernel-team@fb.com, David Sterba <dsterba@suse.com>,
         Timofey Titovets <nefelim4ag@gmail.com>
-Subject: [PATCH 0/2] Btrfs: fix partly checksummed file races
-Date: Tue, 22 May 2018 15:02:11 -0700
-Message-Id: <cover.1527026445.git.osandov@fb.com>
+References: <cover.1527026445.git.osandov@fb.com>
+ <d8b7c9b717e879eff65bb01e4247696811e975f1.1527026445.git.osandov@fb.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <eb0a1c1b-b521-c90f-4d07-3dcfb97e5af7@suse.com>
+Date: Wed, 23 May 2018 09:07:18 +0300
+MIME-Version: 1.0
+In-Reply-To: <d8b7c9b717e879eff65bb01e4247696811e975f1.1527026445.git.osandov@fb.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Omar Sandoval <osandov@fb.com>
 
-Clone and dedupe both have checks to make sure that we're not mixing
-checksummed and not checksummed extents in a single file. However, both
-checks are racy; we need to have the inodes locked or else the flags can
-change after we check. The clone check has always been wrong. The dedupe
-check was previously correct but is broken in kdave/for-next.
 
-Based on kdave/for-next. Note that there's a Fixes: tag in there
-referencing a commit in the for-next branch, so that would have to be
-updated if the commit gets rebased. These patches are also available at
-https://github.com/osandov/linux/tree/btrfs-nodatasum-race.
+On 23.05.2018 01:02, Omar Sandoval wrote:
+> From: Omar Sandoval <osandov@fb.com>
+> 
+> In btrfs_clone_files(), we must check the NODATASUM flag while the
+> inodes are locked. Otherwise, it's possible that btrfs_ioctl_setflags()
+> will change the flags after we check and we can end up with a party
+> checksummed file.
+> 
+> Fixes: 0e7b824c4ef9 ("Btrfs: don't make a file partly checksummed through file clone")
+> Signed-off-by: Omar Sandoval <osandov@fb.com>
 
-Thanks!
-
-Omar Sandoval (2):
-  Btrfs: fix clone vs chattr NODATASUM race
-  Btrfs: fix dedupe vs chattr NODATASUM race
-
- fs/btrfs/ioctl.c | 25 ++++++++++++++-----------
- 1 file changed, 14 insertions(+), 11 deletions(-)
-
--- 
-2.17.0
-
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+> ---
+>  fs/btrfs/ioctl.c | 12 +++++++-----
+>  1 file changed, 7 insertions(+), 5 deletions(-)
+> 
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index cf0d3bc6f625..784e267aad32 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -4280,11 +4280,6 @@ static noinline int btrfs_clone_files(struct file *file, struct file *file_src,
+>  	    src->i_sb != inode->i_sb)
+>  		return -EXDEV;
+>  
+> -	/* don't make the dst file partly checksummed */
+> -	if ((BTRFS_I(src)->flags & BTRFS_INODE_NODATASUM) !=
+> -	    (BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM))
+> -		return -EINVAL;
+> -
+>  	if (S_ISDIR(src->i_mode) || S_ISDIR(inode->i_mode))
+>  		return -EISDIR;
+>  
+> @@ -4294,6 +4289,13 @@ static noinline int btrfs_clone_files(struct file *file, struct file *file_src,
+>  		inode_lock(src);
+>  	}
+>  
+> +	/* don't make the dst file partly checksummed */
+> +	if ((BTRFS_I(src)->flags & BTRFS_INODE_NODATASUM) !=
+> +	    (BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM)) {
+> +		ret = -EINVAL;
+> +		goto out_unlock;
+> +	}
+> +
+>  	/* determine range to clone */
+>  	ret = -EINVAL;
+>  	if (off + len > src->i_size || off + len < off)
+> 

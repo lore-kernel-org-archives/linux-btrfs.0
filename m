@@ -1,30 +1,30 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp2120.oracle.com ([141.146.126.78]:49850 "EHLO
-        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752810AbeEYDC4 (ORCPT
+Received: from aserp2130.oracle.com ([141.146.126.79]:55846 "EHLO
+        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754043AbeEWGcn (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 24 May 2018 23:02:56 -0400
-Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
-        by aserp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w4P326xM046288
-        for <linux-btrfs@vger.kernel.org>; Fri, 25 May 2018 03:02:56 GMT
-Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
-        by aserp2120.oracle.com with ESMTP id 2j62sw9fdc-1
+        Wed, 23 May 2018 02:32:43 -0400
+Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
+        by aserp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w4N6PuNi017804
+        for <linux-btrfs@vger.kernel.org>; Wed, 23 May 2018 06:32:42 GMT
+Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
+        by aserp2130.oracle.com with ESMTP id 2j4nh7afh3-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Fri, 25 May 2018 03:02:56 +0000
+        for <linux-btrfs@vger.kernel.org>; Wed, 23 May 2018 06:32:42 +0000
 Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w4P32tbJ022192
+        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w4N6Wfmn030928
         (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Fri, 25 May 2018 03:02:55 GMT
-Received: from abhmp0018.oracle.com (abhmp0018.oracle.com [141.146.116.24])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w4P32tpY006427
-        for <linux-btrfs@vger.kernel.org>; Fri, 25 May 2018 03:02:55 GMT
+        for <linux-btrfs@vger.kernel.org>; Wed, 23 May 2018 06:32:41 GMT
+Received: from abhmp0014.oracle.com (abhmp0014.oracle.com [141.146.116.20])
+        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w4N6WfA1007275
+        for <linux-btrfs@vger.kernel.org>; Wed, 23 May 2018 06:32:41 GMT
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v4.1a 2/3] btrfs: balance: add args info during start and resume
-Date: Fri, 25 May 2018 11:05:29 +0800
-Message-Id: <20180525030529.23301-1-anand.jain@oracle.com>
-In-Reply-To: <20180523063508.18695-3-anand.jain@oracle.com>
-References: <20180523063508.18695-3-anand.jain@oracle.com>
+Subject: [PATCH v4 2/3] btrfs: balance: add args info during start and resume
+Date: Wed, 23 May 2018 14:35:07 +0800
+Message-Id: <20180523063508.18695-3-anand.jain@oracle.com>
+In-Reply-To: <20180523063508.18695-1-anand.jain@oracle.com>
+References: <20180523063508.18695-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -32,16 +32,13 @@ Balance arg info is an important information to be reviewed for the
 system audit. So this patch adds them to the kernel log.
 
 Example:
-->btrfs bal start -f -mprofiles=raid1,convert=single,soft -dlimit=10..20,usage=50 /btrfs
 
-kernel: BTRFS info (device sdb): balance: start force D:usage=50,limit=10..20 M:soft,profiles=raid1,convert=single S:soft,profiles=raid1,convert=single
+->btrfs bal start --full-balance -f -mprofiles=raid1,convert=single,soft -dlimit=10..20,usage=50 /btrfs
+
+ kernel: BTRFS info (device sdc): balance: start -f -d usage=50,limit=10..20 -m soft,profiles=raid1,convert=single -s soft,profiles=raid1,convert=single
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
-v4->v4.1a: Rename last missed sz to size_buf.
-	   Allocate at least (64*3) 192 bytes for tmp_buf.
-	   Log format change: Use CAPS abbreviate for group type,
-	    as in the above Example.
 v3->v4: Change log updated with new example.
 	Log format is changed to almost match with the cli.
 	snprintf drop %s for inline string.
@@ -61,10 +58,10 @@ v1->v2: Change log update.
  1 file changed, 104 insertions(+), 3 deletions(-)
 
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index e858882a98eb..833dde6168de 100644
+index 44f4799bf06f..85f954f7f93e 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -3809,6 +3809,108 @@ static inline int validate_convert_profile(struct btrfs_balance_args *bctl_arg,
+@@ -3806,6 +3806,108 @@ static inline int validate_convert_profile(struct btrfs_balance_args *bctl_arg,
  		 (bctl_arg->target & ~allowed)));
  }
  
@@ -133,33 +130,33 @@ index e858882a98eb..833dde6168de 100644
 +
 +static void describe_balance_start_or_resume(struct btrfs_fs_info *fs_info)
 +{
-+	u32 size_buf = 1024;
-+	char tmp_buf[192];
++	u32 sz = 1024;
++	char tmp_buf[64];
 +	char *buf;
 +	char *bp;
 +	struct btrfs_balance_control *bctl = fs_info->balance_ctl;
 +
-+	buf = kzalloc(size_buf, GFP_KERNEL);
++	buf = kzalloc(sz, GFP_KERNEL);
 +	if (!buf)
 +		return;
 +
 +	bp = buf;
 +	if (bctl->flags & BTRFS_BALANCE_FORCE)
-+		bp += snprintf(bp, buf - bp + size_buf, "force ");
++		bp += snprintf(bp, buf - bp + sz, "-f ");
 +
 +	if (bctl->flags & BTRFS_BALANCE_DATA) {
 +		describe_balance_args(&bctl->data, tmp_buf, sizeof(tmp_buf));
-+		bp += snprintf(bp, buf - bp + size_buf, "D:%s ", tmp_buf);
++		bp += snprintf(bp, buf - bp + sz, "-d %s ", tmp_buf);
 +	}
 +
 +	if (bctl->flags & BTRFS_BALANCE_METADATA) {
 +		describe_balance_args(&bctl->meta, tmp_buf, sizeof(tmp_buf));
-+		bp += snprintf(bp, buf - bp + size_buf, "M:%s ", tmp_buf);
++		bp += snprintf(bp, buf - bp + sz, "-m %s ", tmp_buf);
 +	}
 +
 +	if (bctl->flags & BTRFS_BALANCE_SYSTEM) {
 +		describe_balance_args(&bctl->sys, tmp_buf, sizeof(tmp_buf));
-+		bp += snprintf(bp, buf - bp + size_buf, "S:%s ", tmp_buf);
++		bp += snprintf(bp, buf - bp + sz, "-s %s ", tmp_buf);
 +	}
 +
 +	buf[bp - buf - 1] = '\0'; /* remove last " "*/
@@ -173,7 +170,7 @@ index e858882a98eb..833dde6168de 100644
  /*
   * Should be called with balance mutexe held
   */
-@@ -3953,6 +4055,7 @@ int btrfs_balance(struct btrfs_fs_info *fs_info,
+@@ -3950,6 +4052,7 @@ int btrfs_balance(struct btrfs_fs_info *fs_info,
  
  	ASSERT(!test_bit(BTRFS_FS_BALANCE_RUNNING, &fs_info->flags));
  	set_bit(BTRFS_FS_BALANCE_RUNNING, &fs_info->flags);
@@ -181,7 +178,7 @@ index e858882a98eb..833dde6168de 100644
  	mutex_unlock(&fs_info->balance_mutex);
  
  	ret = __btrfs_balance(fs_info);
-@@ -3990,10 +4093,8 @@ static int balance_kthread(void *data)
+@@ -3987,10 +4090,8 @@ static int balance_kthread(void *data)
  	int ret = 0;
  
  	mutex_lock(&fs_info->balance_mutex);

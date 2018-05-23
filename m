@@ -1,144 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:60052 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:60044 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1754356AbeEWIXI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 23 May 2018 04:23:08 -0400
+        id S1754369AbeEWIXK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 23 May 2018 04:23:10 -0400
 Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id A618AAF07
-        for <linux-btrfs@vger.kernel.org>; Wed, 23 May 2018 08:23:07 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 2C0CDAEDF
+        for <linux-btrfs@vger.kernel.org>; Wed, 23 May 2018 08:23:09 +0000 (UTC)
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 3/4] btrfs: lzo: Add header length check to avoid slab out of bounds access
-Date: Wed, 23 May 2018 16:23:00 +0800
-Message-Id: <20180523082301.29874-4-wqu@suse.com>
+Subject: [PATCH v3 4/4] btrfs: lzo: Harden inline lzo compressed extent decompression
+Date: Wed, 23 May 2018 16:23:01 +0800
+Message-Id: <20180523082301.29874-5-wqu@suse.com>
 In-Reply-To: <20180523082301.29874-1-wqu@suse.com>
 References: <20180523082301.29874-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-James Harvey reported that some corrupted compressed extent data can
-lead to various kernel memory corruption.
+For inlined extent, we only have one segment, thus less thing to check.
+And further more, inlined extent always has csum in its leaf header,
+it's less possible to have corrupted data.
 
-Such corrupted extent data belongs to inode with NODATASUM flags, thus
-data csum won't help us detecting such bug.
+Anyway, still check header and segment header.
 
-If lucky enough, kasan could catch it like:
-==================================================================
-BUG: KASAN: slab-out-of-bounds in lzo_decompress_bio+0x384/0x7a0 [btrfs]
-Write of size 4096 at addr ffff8800606cb0f8 by task kworker/u16:0/2338
-
-CPU: 3 PID: 2338 Comm: kworker/u16:0 Tainted: G           O      4.17.0-rc5-custom+ #50
-Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 0.0.0 02/06/2015
-Workqueue: btrfs-endio btrfs_endio_helper [btrfs]
-Call Trace:
- dump_stack+0xc2/0x16b
- print_address_description+0x6a/0x270
- kasan_report+0x260/0x380
- memcpy+0x34/0x50
- lzo_decompress_bio+0x384/0x7a0 [btrfs]
- end_compressed_bio_read+0x99f/0x10b0 [btrfs]
- bio_endio+0x32e/0x640
- normal_work_helper+0x15a/0xea0 [btrfs]
- process_one_work+0x7e3/0x1470
- worker_thread+0x1b0/0x1170
- kthread+0x2db/0x390
- ret_from_fork+0x22/0x40
-...
-==================================================================
-
-The offending compressed data has the following info:
-
-Header:			length 32768		(Looks completely valid)
-Segment 0 Header:	length 3472882419	(Obvious out of bounds)
-
-Then when handling segment 0, since it's over the current page, we need
-the compressed data to workspace, then such large size would trigger
-out-of-bounds memory access, screwing up the whole kernel.
-
-Fix it by adding extra checks on header and segment headers to ensure we
-won't access out-of-bounds, and even checks the decompressed data won't
-be out-of-bounds.
-
-Reported-by: James Harvey <jamespharvey20@gmail.com>
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/lzo.c | 35 ++++++++++++++++++++++++++++++++++-
- 1 file changed, 34 insertions(+), 1 deletion(-)
+ fs/btrfs/lzo.c | 11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/lzo.c b/fs/btrfs/lzo.c
-index ec5db393c758..4f4de460b08d 100644
+index 4f4de460b08d..8604f6bc0a29 100644
 --- a/fs/btrfs/lzo.c
 +++ b/fs/btrfs/lzo.c
-@@ -293,6 +293,7 @@ static int lzo_decompress_bio(struct list_head *ws, struct compressed_bio *cb)
- 	unsigned long working_bytes;
+@@ -437,15 +437,24 @@ static int lzo_decompress(struct list_head *ws, unsigned char *data_in,
+ 	struct workspace *workspace = list_entry(ws, struct workspace, list);
  	size_t in_len;
  	size_t out_len;
 +	size_t max_segment_len = lzo1x_worst_compress(PAGE_SIZE);
- 	unsigned long in_offset;
- 	unsigned long in_page_bytes_left;
- 	unsigned long tot_in;
-@@ -306,6 +307,18 @@ static int lzo_decompress_bio(struct list_head *ws, struct compressed_bio *cb)
+ 	int ret = 0;
+ 	char *kaddr;
+ 	unsigned long bytes;
  
- 	data_in = kmap(pages_in[0]);
- 	tot_len = read_compress_length(data_in);
-+	/*
-+	 * Compressed data header check.
-+	 *
-+	 * The real compressed size can't exceed extent length, and all pages
-+	 * should be used (a full pending page is not possible).
-+	 * If this happens it means the compressed extent is corrupted.
-+	 */
-+	if (tot_len > min_t(size_t, BTRFS_MAX_COMPRESSED, srclen) ||
-+	    tot_len < srclen - PAGE_SIZE) {
+-	BUG_ON(srclen < LZO_LEN);
++	if (srclen < LZO_LEN || srclen > max_segment_len + LZO_LEN * 2)
++		return -EUCLEAN;
+ 
++	in_len = read_compress_length(data_in);
++	if (in_len != srclen)
++		return -EUCLEAN;
+ 	data_in += LZO_LEN;
+ 
+ 	in_len = read_compress_length(data_in);
++	if (in_len != srclen - LZO_LEN * 2) {
 +		ret = -EUCLEAN;
-+		goto done;
++		goto out;
 +	}
+ 	data_in += LZO_LEN;
  
- 	tot_in = LZO_LEN;
- 	in_offset = LZO_LEN;
-@@ -320,6 +333,17 @@ static int lzo_decompress_bio(struct list_head *ws, struct compressed_bio *cb)
- 		in_offset += LZO_LEN;
- 		tot_in += LZO_LEN;
- 
-+		/*
-+		 * Segment header check.
-+		 *
-+		 * The segment length must not exceed max lzo compression
-+		 * size, nor the total compressed size
-+		 */
-+		if (in_len > max_segment_len || tot_in + in_len > tot_len) {
-+			ret = -EUCLEAN;
-+			goto done;
-+		}
-+
- 		tot_in += in_len;
- 		working_bytes = in_len;
- 		may_late_unmap = need_unmap = false;
-@@ -370,7 +394,7 @@ static int lzo_decompress_bio(struct list_head *ws, struct compressed_bio *cb)
- 			}
- 		}
- 
--		out_len = lzo1x_worst_compress(PAGE_SIZE);
-+		out_len = max_segment_len;
- 		ret = lzo1x_decompress_safe(buf, in_len, workspace->buf,
- 					    &out_len);
- 		if (need_unmap)
-@@ -380,6 +404,15 @@ static int lzo_decompress_bio(struct list_head *ws, struct compressed_bio *cb)
- 			ret = -EIO;
- 			break;
- 		}
-+		/*
-+		 * Decompressed data length check.
-+		 * The uncompressed data should not exceed uncompressed extent
-+		 * size.
-+		 */
-+		if (tot_out + out_len > cb->len) {
-+			ret = -EUCLEAN;
-+			break;
-+		}
- 
- 		buf_start = tot_out;
- 		tot_out += out_len;
+ 	out_len = PAGE_SIZE;
 -- 
 2.17.0
 

@@ -1,90 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ua0-f193.google.com ([209.85.217.193]:37977 "EHLO
-        mail-ua0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932282AbeEWKoQ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 23 May 2018 06:44:16 -0400
-MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <CAPaz=E+=aVagu2g3ZUiD-SjvnAAU0zb0SSaPKUitHT9CWuKW8A@mail.gmail.com>
-References: <CAPaz=E+=aVagu2g3ZUiD-SjvnAAU0zb0SSaPKUitHT9CWuKW8A@mail.gmail.com>
-From: Filipe Manana <fdmanana@gmail.com>
-Date: Wed, 23 May 2018 11:44:14 +0100
-Message-ID: <CAL3q7H7n9cTZyhdbvfLUXZ7u7W7ed5FLXBQBEQyTE9SrUWK3tw@mail.gmail.com>
-Subject: Re: Strange behavior (possible bugs) in btrfs
-To: Vijay Chidambaram <vvijay03@gmail.com>
-Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>,
-        Soujanya Ponnapalli <soujanyap95@gmail.com>,
-        Jayashree Mohan <jayashree2912@gmail.com>, linux-xfs@vger.kernel.org,
-        Dave Chinner <david@fromorbit.com>
-Content-Type: text/plain; charset="UTF-8"
+Received: from mx2.suse.de ([195.135.220.15]:60031 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1754285AbeEWIXE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 23 May 2018 04:23:04 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 5A9B8AEDF
+        for <linux-btrfs@vger.kernel.org>; Wed, 23 May 2018 08:23:03 +0000 (UTC)
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v3 0/4] btrfs: lzo: Harden decompression callers to avoid kernel memory corruption.
+Date: Wed, 23 May 2018 16:22:57 +0800
+Message-Id: <20180523082301.29874-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Apr 30, 2018 at 5:04 PM, Vijay Chidambaram <vvijay03@gmail.com> wrote:
-> Hi,
->
-> We found two more cases where the btrfs behavior is a little strange.
-> In one case, an fsync-ed file goes missing after a crash. In the
-> other, a renamed file shows up in both directories after a crash.
->
-> Workload 1:
->
-> mkdir A
-> mkdir B
-> mkdir A/C
-> creat B/foo
-> fsync B/foo
-> link B/foo A/C/foo
-> fsync A
-> -- crash --
->
-> Expected state after recovery:
-> B B/foo A A/C exist
+This patchset can be fetched from github:
+https://github.com/adam900710/linux/tree/lzo_corruption
+Which is based on v4.17-rc5.
 
-Why don't you expect A/C/foo as well? I would expect it to be persisted.
-With xfs we don't get A/C/foo persisted, but it's persisted with ext4 and f2fs.
+James Harvey reported pretty strange kernel misbehavior where after
+reading certain btrfs compressed data, kernel crash with unrelated
+calltrace.
+(https://bugzilla.kernel.org/show_bug.cgi?id=199707 and
+ https://www.spinics.net/lists/linux-btrfs/msg77971.html)
 
-Adding xfs folks in cc to confirm the expected behaviour.
+Thanks for his comprehensive debug help, we located the problem to:
 
->
-> What we find:
-> Only B B/foo exist
->
-> A is lost even after explicit fsync to A.
->
-> Workload 2:
->
-> mkdir A
-> mkdir A/C
-> rename A/C B
-> touch B/bar
-> fsync B/bar
-> rename B/bar A/bar
-> rename A B (replacing B with A at this point)
-> fsync B/bar
-> -- crash --
->
-> Expected contents after recovery:
-> A/bar
->
-> What we find after recovery:
-> A/bar
-> B/bar
->
-> We think this breaks rename's atomicity guarantee. bar should be
-> present in either A or B, but now it is present in both.
->
-> Thanks,
-> Vijay
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+1) Bad lzo decompression verification check
+   The direct cause.
+   The lzo decompression code involves memory copy for compressed data
+   who crosses page boundary.
+   And if corrupted segment header contains invalid length, btrfs will
+   do memory copy and then corrupt kernel memory.
 
+   Fix it by add header length check for each segment, and just in case,
+   also add uncompressed data length check. (Patch 3)
+   The full explanation and kasan output can also be found in that patch.
 
+2) Compressed extent created for NODATASUM inode
+   The root cause.
+   Will be addressed in another patchset.
+
+Other patches are mostly cosmetic, like adding extra include for
+compression.h, to avoid later compiling error. (Patch 1)
+Or adding comment of how btrfs organise its compressed data (Patch 2)
+And adding extra check for inlined compressed data even it's not really
+possible to happen (Patch 4)
+
+Changelog:
+v2:
+  Cosmetic updates. Mostly for comment and gramma.
+  Comment and gramma fixes suggested by Nikolay.
+  One 4 bytes <-> LE32 convert fixes in comment.
+  Added reviewed-by tag for the 1st patch.
+
+v3:
+  Fix comment error for inlined lzo compressed extent. (Still has
+  header), thanks David for pointing this out.
+  Add example ascii graph as an example.
+  Enhance inlined extent check, as header length must match with segment
+  header length + LZO_LEN * 2.
+
+Qu Wenruo (4):
+  btrfs: compression: Add linux/sizes.h for compression.h
+  btrfs: lzo: Add comment about the how btrfs records its lzo compressed
+    data
+  btrfs: lzo: Add header length check to avoid slab out of bounds access
+  btrfs: lzo: Harden inline lzo compressed extent decompression
+
+ fs/btrfs/compression.h |  1 +
+ fs/btrfs/lzo.c         | 81 ++++++++++++++++++++++++++++++++++++++++--
+ 2 files changed, 80 insertions(+), 2 deletions(-)
 
 -- 
-Filipe David Manana,
+2.17.0
 
-“Whether you think you can, or you think you can't — you're right.”

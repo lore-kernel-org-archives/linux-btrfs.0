@@ -1,63 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:36160 "EHLO
-        mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1751278AbeEVScQ (ORCPT
+Received: from bombadil.infradead.org ([198.137.202.133]:33390 "EHLO
+        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753985AbeEWGhQ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 22 May 2018 14:32:16 -0400
-From: Chris Mason <clm@fb.com>
-To: Christoph Hellwig <hch@infradead.org>
-CC: robbieko <robbieko@synology.com>, <linux-btrfs@vger.kernel.org>
+        Wed, 23 May 2018 02:37:16 -0400
+Date: Tue, 22 May 2018 23:37:13 -0700
+From: Christoph Hellwig <hch@infradead.org>
+To: Chris Mason <clm@fb.com>
+Cc: Christoph Hellwig <hch@infradead.org>, robbieko <robbieko@synology.com>,
+        linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH] Btrfs: implement unlocked buffered write
-Date: Tue, 22 May 2018 14:31:36 -0400
-Message-ID: <D87124BA-3EEC-480F-8520-EBD3B5A33C04@fb.com>
-In-Reply-To: <20180522180828.GA8340@infradead.org>
+Message-ID: <20180523063713.GA18285@infradead.org>
 References: <1526442757-7167-1-git-send-email-robbieko@synology.com>
  <20180522180828.GA8340@infradead.org>
+ <D87124BA-3EEC-480F-8520-EBD3B5A33C04@fb.com>
 MIME-Version: 1.0
-Content-Type: text/plain; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <D87124BA-3EEC-480F-8520-EBD3B5A33C04@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 22 May 2018, at 14:08, Christoph Hellwig wrote:
+On Tue, May 22, 2018 at 02:31:36PM -0400, Chris Mason wrote:
+> > And what protects two writes from interleaving their results now?
+> 
+> page locks...ish, we at least won't have results interleaved in a single
+> page.  For btrfs it'll actually be multiple pages since we try to do more
+> than one at a time.
 
-> On Wed, May 16, 2018 at 11:52:37AM +0800, robbieko wrote:
->> From: Robbie Ko <robbieko@synology.com>
->>
->> This idea is from direct io. By this patch, we can make the buffered
->> write parallel, and improve the performance and latency. But because 
->> we
->> can not update isize without i_mutex, the unlocked buffered write 
->> just
->> can be done in front of the EOF.
->>
->> We needn't worry about the race between buffered write and truncate,
->> because the truncate need wait until all the buffered write end.
->>
->> And we also needn't worry about the race between dio write and punch 
->> hole,
->> because we have extent lock to protect our operation.
->>
->> I ran fio to test the performance of this feature.
->
-> And what protects two writes from interleaving their results now?
+I think you are going to break just about every assumption people
+have that any single write is going to be atomic vs another write.
 
-page locks...ish, we at least won't have results interleaved in a single 
-page.  For btrfs it'll actually be multiple pages since we try to do 
-more than one at a time.
+E.g. this comes from the posix read definition reference by the
+write definition:
 
-I haven't verified all the assumptions around truncate and fallocate and 
-friends expecting the dio special locking to be inside i_size.  In 
-general this makes me a little uncomfortable.
+"I/O is intended to be atomic to ordinary files and pipes and FIFOs.
+Atomic means that all the bytes from a single operation that started out
+together end up together, without interleaving from other I/O
+operations. It is a known attribute of terminals that this is not
+honored, and terminals are explicitly (and implicitly permanently)
+excepted, making the behavior unspecified. The behavior for other device
+types is also left unspecified, but the wording is intended to imply
+that future standards might choose to specify atomicity (or not).
+"
 
-But we're not avoiding the inode lock completely, we're just dropping it 
-for the expensive parts of writing to the file.  A quick guess about 
-what the expensive parts are:
+Without taking the inode lock (or some sort of range lock) you can
+easily interleave data from two write requests.
 
-1) balance_dirty_pages()
-2) btrfs_btree_balance_dirty()
-3) metadata reservations/enospc waiting.
+> But we're not avoiding the inode lock completely, we're just dropping it for
+> the expensive parts of writing to the file.  A quick guess about what the
+> expensive parts are:
 
-Can I bribe you to benchmark how much each of those things is impacting 
-the iops/latency benefits?
-
--chris
+The way I read the patch it basically 'avoids' the inode lock for almost
+the whole write call, just minus some setup.

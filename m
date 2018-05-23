@@ -1,142 +1,91 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:54897 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:60121 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S935371AbeEYEnd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 25 May 2018 00:43:33 -0400
-Received: from relay2.suse.de (charybdis-ext-too.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id F2DAFAC42
-        for <linux-btrfs@vger.kernel.org>; Fri, 25 May 2018 04:43:31 +0000 (UTC)
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v4 3/3] btrfs: Do super block verification before writing it to disk
-Date: Fri, 25 May 2018 12:43:25 +0800
-Message-Id: <20180525044325.3365-4-wqu@suse.com>
-In-Reply-To: <20180525044325.3365-1-wqu@suse.com>
-References: <20180525044325.3365-1-wqu@suse.com>
+        id S932117AbeEWIXt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 23 May 2018 04:23:49 -0400
+Subject: Re: [PATCH] btrfs: delayed-ref: simplify btrfs_add_delayed_tree_ref()
+To: Su Yue <suy.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+References: <20180523080650.28286-1-suy.fnst@cn.fujitsu.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <ca6309fc-e925-f33f-1352-d13cf2a1c710@suse.com>
+Date: Wed, 23 May 2018 11:22:20 +0300
+MIME-Version: 1.0
+In-Reply-To: <20180523080650.28286-1-suy.fnst@cn.fujitsu.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There are already 2 reports about strangely corrupted super blocks,
-where csum still matches but extra garbage gets slipped into super block.
 
-The corruption would looks like:
-------
-superblock: bytenr=65536, device=/dev/sdc1
----------------------------------------------------------
-csum_type               41700 (INVALID)
-csum                    0x3b252d3a [match]
-bytenr                  65536
-flags                   0x1
-                        ( WRITTEN )
-magic                   _BHRfS_M [match]
-...
-incompat_flags          0x5b22400000000169
-                        ( MIXED_BACKREF |
-                          COMPRESS_LZO |
-                          BIG_METADATA |
-                          EXTENDED_IREF |
-                          SKINNY_METADATA |
-                          unknown flag: 0x5b22400000000000 )
-...
-------
-Or
-------
-superblock: bytenr=65536, device=/dev/mapper/x
----------------------------------------------------------
-csum_type              35355 (INVALID)
-csum_size              32
-csum                   0xf0dbeddd [match]
-bytenr                 65536
-flags                  0x1
-                       ( WRITTEN )
-magic                  _BHRfS_M [match]
-...
-incompat_flags         0x176d200000000169
-                       ( MIXED_BACKREF |
-                         COMPRESS_LZO |
-                         BIG_METADATA |
-                         EXTENDED_IREF |
-                         SKINNY_METADATA |
-                         unknown flag: 0x176d200000000000 )
-------
 
-Obviously, csum_type and incompat_flags get some garbage, but its csum
-still matches, which means kernel calculates the csum based on corrupted
-super block memory.
-And after manually fixing these values, the filesystem is completely
-healthy without any problem exposed by btrfs check.
+On 23.05.2018 11:06, Su Yue wrote:
+> Commit 5a5003df98d5 ("btrfs: delayed-ref: double free in
+> btrfs_add_delayed_tree_ref()") fixed double free problem by creating
+> an unnessesary label to jump.
+> The elegant way is just to change "ref" to "head_ref" and keep
+> btrfs_add_delayed_tree_ref() and btrfs_add_delayed_data_ref() in
+> similar structure.
 
-Although the cause is still unknown, at least detect it and prevent further
-corruption.
+I agree, personally I'm a fan of multiple returns rather than jump
+labels, because at this point you know the function terminates and
+that's it.
 
-Reported-by: Ken Swenson <flat@imo.uto.moe>
-Reported-by: Ben Parsons <9parsonsb@gmail.com>
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/disk-io.c | 43 +++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 43 insertions(+)
+> 
+> This patch reverts commit 5a5003df98d5 ("btrfs: delayed-ref: double
+> free in btrfs_add_delayed_tree_ref()") and frees the right head_ref.
+> No functional change.
+> 
+> Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index b981ecc4b6f9..d6c0cee627d9 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2610,6 +2610,41 @@ static int btrfs_validate_mount_super(struct btrfs_fs_info *fs_info)
- 	return __validate_super(fs_info, fs_info->super_copy, 0);
- }
- 
-+/*
-+ * Check the validation of super block at write time.
-+ * Some checks like bytenr check will be skipped as their values will be
-+ * overwritten soon.
-+ * Extra checks like csum type and incompact flags will be executed here.
-+ */
-+static int btrfs_validate_write_super(struct btrfs_fs_info *fs_info,
-+				      struct btrfs_super_block *sb)
-+{
-+	int ret;
-+
-+	ret = __validate_super(fs_info, sb, -1);
-+	if (ret < 0)
-+		goto out;
-+	if (btrfs_super_csum_type(sb) != BTRFS_CSUM_TYPE_CRC32) {
-+		ret = -EUCLEAN;
-+		btrfs_err(fs_info, "invalid csum type, has %u want %u",
-+			  btrfs_super_csum_type(sb), BTRFS_CSUM_TYPE_CRC32);
-+		goto out;
-+	}
-+	if (btrfs_super_incompat_flags(sb) & ~BTRFS_FEATURE_INCOMPAT_SUPP) {
-+		ret = -EUCLEAN;
-+		btrfs_err(fs_info,
-+		"invalid incompact flags, has 0x%llu valid mask 0x%llu",
-+			  btrfs_super_incompat_flags(sb),
-+			  BTRFS_FEATURE_INCOMPAT_SUPP);
-+		goto out;
-+	}
-+out:
-+	if (ret < 0)
-+		btrfs_err(fs_info,
-+		"super block corruption detected before writing it to disk");
-+	return ret;
-+}
-+
- int open_ctree(struct super_block *sb,
- 	       struct btrfs_fs_devices *fs_devices,
- 	       char *options)
-@@ -3770,6 +3805,14 @@ int write_all_supers(struct btrfs_fs_info *fs_info, int max_mirrors)
- 		flags = btrfs_super_flags(sb);
- 		btrfs_set_super_flags(sb, flags | BTRFS_HEADER_FLAG_WRITTEN);
- 
-+		ret = btrfs_validate_write_super(fs_info, sb);
-+		if (ret < 0) {
-+			mutex_unlock(&fs_info->fs_devices->device_list_mutex);
-+			btrfs_handle_fs_error(fs_info, -EUCLEAN,
-+				"unexpected superblock corruption detected");
-+			return -EUCLEAN;
-+		}
-+
- 		ret = write_dev_supers(dev, sb, max_mirrors);
- 		if (ret)
- 			total_errors++;
--- 
-2.17.0
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 
+> ---
+> This patch is based on for-next to avoid conflicts with patches
+> already in for-next.
+> 
+>  fs/btrfs/delayed-ref.c | 21 ++++++++++-----------
+>  1 file changed, 10 insertions(+), 11 deletions(-)
+> 
+> diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
+> index 03dec673d12a..38f8d5d549ed 100644
+> --- a/fs/btrfs/delayed-ref.c
+> +++ b/fs/btrfs/delayed-ref.c
+> @@ -741,14 +741,20 @@ int btrfs_add_delayed_tree_ref(struct btrfs_fs_info *fs_info,
+>  	ref->level = level;
+>  
+>  	head_ref = kmem_cache_alloc(btrfs_delayed_ref_head_cachep, GFP_NOFS);
+> -	if (!head_ref)
+> -		goto free_ref;
+> +	if (!head_ref) {
+> +		kmem_cache_free(btrfs_delayed_tree_ref_cachep, ref);
+> +		return -ENOMEM;
+> +	}
+>  
+>  	if (test_bit(BTRFS_FS_QUOTA_ENABLED, &fs_info->flags) &&
+>  	    is_fstree(ref_root)) {
+>  		record = kmalloc(sizeof(*record), GFP_NOFS);
+> -		if (!record)
+> -			goto free_head_ref;
+> +		if (!record) {
+> +			kmem_cache_free(btrfs_delayed_tree_ref_cachep, ref);
+> +			kmem_cache_free(btrfs_delayed_ref_head_cachep,
+> +					head_ref);
+> +			return -ENOMEM;
+> +		}
+>  	}
+>  
+>  	init_delayed_ref_head(head_ref, record, bytenr, num_bytes,
+> @@ -779,13 +785,6 @@ int btrfs_add_delayed_tree_ref(struct btrfs_fs_info *fs_info,
+>  		btrfs_qgroup_trace_extent_post(fs_info, record);
+>  
+>  	return 0;
+> -
+> -free_head_ref:
+> -	kmem_cache_free(btrfs_delayed_ref_head_cachep, head_ref);
+> -free_ref:
+> -	kmem_cache_free(btrfs_delayed_tree_ref_cachep, ref);
+> -
+> -	return -ENOMEM;
+>  }
+>  
+>  /*
+> 

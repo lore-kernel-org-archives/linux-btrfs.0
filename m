@@ -1,223 +1,178 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp2130.oracle.com ([156.151.31.86]:50002 "EHLO
-        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751085AbeEWGL7 (ORCPT
+Received: from userp2120.oracle.com ([156.151.31.85]:35534 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753875AbeEWGNY (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 23 May 2018 02:11:59 -0400
-Subject: Re: [PATCH v3 2/3] btrfs: balance: add args info during start and
- resume
+        Wed, 23 May 2018 02:13:24 -0400
+Subject: Re: [PATCH v3 1/3] btrfs: add helper function describe_block_group()
 To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
 References: <20180521063745.29343-1-anand.jain@oracle.com>
- <20180521063745.29343-3-anand.jain@oracle.com>
- <20180522123510.GJ6649@twin.jikos.cz>
+ <20180521063745.29343-2-anand.jain@oracle.com>
+ <20180522122647.GI6649@twin.jikos.cz>
 From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <d33b36da-a945-60d2-212b-12d12d53c229@oracle.com>
-Date: Wed, 23 May 2018 14:14:26 +0800
+Message-ID: <f70473e0-9bb5-6e26-69ae-96df27d6b37a@oracle.com>
+Date: Wed, 23 May 2018 14:15:55 +0800
 MIME-Version: 1.0
-In-Reply-To: <20180522123510.GJ6649@twin.jikos.cz>
+In-Reply-To: <20180522122647.GI6649@twin.jikos.cz>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On 05/22/2018 08:35 PM, David Sterba wrote:
-> On Mon, May 21, 2018 at 02:37:44PM +0800, Anand Jain wrote:
->> Balance arg info is an important information to be reviewed for the
->> system audit. So this patch adds them to the kernel log.
+On 05/22/2018 08:26 PM, David Sterba wrote:
+> On Mon, May 21, 2018 at 02:37:43PM +0800, Anand Jain wrote:
+>> Improve on describe_relocation() add a common helper function to describe
+>> the block groups.
 >>
->> Example:
->>
->> -> btrfs bal start -dprofiles='raid1|single',convert=raid5 -mprofiles='raid1|single',convert=raid5 /btrfs
->>   kernel: BTRFS info (device sdb): balance: start data<profiles=single|raid1,convert=raid5>|metadata<profiles=single|raid1,convert=raid5>|system<profiles=single|raid1,convert=raid5>
->>
->> -> btrfs bal start -f -dprofiles=raid5,convert=single -mprofiles='raid1|single',convert=raid5 --background /btrfs
->>   kernel: BTRFS info (device sdb): balance: start force|data<profiles=raid5,convert=single>|metadata<profiles=single|raid1,convert=raid5>|system<profiles=single|raid1,convert=raid5>
-> 
-> I think the output formatting should be suitable for copy&paste to the
-> commandline, the example would be ok, but the other filters need more
-> adjustments, see below.
-> 
-> I'm not sure enclosing the data or metadata inside < ... > is a good
-> idea so I suggest to use ( and ) as it does not have an ambiguous
-> meaning like < (less than).
-
-  Thanks for suggesting. I think new one as below is much better
-  format..
-
-  ->btrfs bal start --full-balance -f 
--mprofiles=raid1,convert=single,soft -dlimit=10..20,usage=50 /btrfs
-
-kernel: BTRFS info (device sdc): balance: start -f -d 
-usage=50,limit=10..20 -m soft,profiles=raid1,convert=single -s 
-soft,profiles=raid1,convert=single
-
-
 >> Signed-off-by: Anand Jain <anand.jain@oracle.com>
 >> ---
->> v2->v3: Change log updated.
->>          Make use of describe_block_group() added in 1/4
->>          Drop using strcat instead use snprintf.
->>          Logs string format updated as shown in the example above.
+>> v3: Born.
 >>
->> v1->v2: Change log update.
->>          Move adding the logs for balance complete and end to a new patch
+>>   fs/btrfs/relocation.c | 30 +++---------------------------
+>>   fs/btrfs/volumes.c    | 44 ++++++++++++++++++++++++++++++++++++++++++++
+>>   fs/btrfs/volumes.h    |  1 +
+>>   3 files changed, 48 insertions(+), 27 deletions(-)
 >>
->>   fs/btrfs/volumes.c | 106 +++++++++++++++++++++++++++++++++++++++++++++++++++--
->>   1 file changed, 103 insertions(+), 3 deletions(-)
->>
->> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
->> index 02b1d14f510d..d2e6b81f7874 100644
->> --- a/fs/btrfs/volumes.c
->> +++ b/fs/btrfs/volumes.c
->> @@ -3810,6 +3810,107 @@ static inline int validate_convert_profile(struct btrfs_balance_args *bctl_arg,
->>   		 (bctl_arg->target & ~allowed)));
+>> diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+>> index 879b76fa881a..b9b32b0e4ba4 100644
+>> --- a/fs/btrfs/relocation.c
+>> +++ b/fs/btrfs/relocation.c
+>> @@ -4320,37 +4320,13 @@ static struct reloc_control *alloc_reloc_control(void)
+>>   static void describe_relocation(struct btrfs_fs_info *fs_info,
+>>   				struct btrfs_block_group_cache *block_group)
+>>   {
+>> -	char buf[128];		/* prefixed by a '|' that'll be dropped */
+>> -	u64 flags = block_group->flags;
+>> +	char buf[128];
+>>   
+>> -	/* Shouldn't happen */
+>> -	if (!flags) {
+>> -		strcpy(buf, "|NONE");
+>> -	} else {
+>> -		char *bp = buf;
+>> -
+>> -#define DESCRIBE_FLAG(f, d) \
+>> -		if (flags & BTRFS_BLOCK_GROUP_##f) { \
+>> -			bp += snprintf(bp, buf - bp + sizeof(buf), "|%s", d); \
+>> -			flags &= ~BTRFS_BLOCK_GROUP_##f; \
+>> -		}
+>> -		DESCRIBE_FLAG(DATA,     "data");
+>> -		DESCRIBE_FLAG(SYSTEM,   "system");
+>> -		DESCRIBE_FLAG(METADATA, "metadata");
+>> -		DESCRIBE_FLAG(RAID0,    "raid0");
+>> -		DESCRIBE_FLAG(RAID1,    "raid1");
+>> -		DESCRIBE_FLAG(DUP,      "dup");
+>> -		DESCRIBE_FLAG(RAID10,   "raid10");
+>> -		DESCRIBE_FLAG(RAID5,    "raid5");
+>> -		DESCRIBE_FLAG(RAID6,    "raid6");
+>> -		if (flags)
+>> -			snprintf(bp, buf - bp + sizeof(buf), "|0x%llx", flags);
+>> -#undef DESCRIBE_FLAG
+>> -	}
+>> +	describe_block_groups(block_group->flags, buf, sizeof(buf));
+>>   
+>>   	btrfs_info(fs_info,
+>>   		   "relocating block group %llu flags %s",
+>> -		   block_group->key.objectid, buf + 1);
+>> +		   block_group->key.objectid, buf);
 >>   }
 >>   
->> +static u32 describe_balance_args(struct btrfs_balance_args *bargs, char *buf,
->> +				 u32 sz)
+>>   /*
+>> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+>> index 43bd65395106..02b1d14f510d 100644
+>> --- a/fs/btrfs/volumes.c
+>> +++ b/fs/btrfs/volumes.c
+>> @@ -126,6 +126,50 @@ const char *get_raid_name(enum btrfs_raid_types type)
+>>   	return btrfs_raid_array[type].raid_name;
+>>   }
+>>   
+>> +u32 describe_block_groups(u64 bg_flags, char *describe, u32 sz)
 >> +{
->> +	char *bp = buf;
->> +	u64 flags = bargs->flags;
->> +	char tmp_buf[128];
+>> +	int i;
+>> +	u32 ret;
+>> +	char *dp = describe;
+>> +	u64 flags = bg_flags;
 >> +
 >> +	if (!flags)
->> +		return 0;
+>> +		return snprintf(dp, sz, "%s", "NONE");
 >> +
->> +	if (flags & BTRFS_BALANCE_ARGS_PROFILES) {
->> +		describe_block_groups(bargs->profiles, tmp_buf,
->> +				      sizeof(tmp_buf));
->> +		bp += snprintf(bp, buf - bp + sz, "%s%s,", "profiles=",
+>> +#define DESCRIBE_FLAG(f, d) \
+>> +	do { \
+>> +		if (flags & BTRFS_BLOCK_GROUP_##f) { \
+>> +			dp += snprintf(dp, describe - dp + sz, "%s|", d); \
+>> +			flags &= ~BTRFS_BLOCK_GROUP_##f; \
+>> +		} \
+>> +	} while (0)
+>> +	DESCRIBE_FLAG(DATA,     "data");
+>> +	DESCRIBE_FLAG(SYSTEM,   "system");
+>> +	DESCRIBE_FLAG(METADATA, "metadata");
+>> +#undef DESCRIBE_FLAG
 > 
-> You don't need to use %s for existing strings
+> Adding the convenience macro for 3 uses and then opencoding it 2 times
+> does not make much sense to me. Why don't you change that to use the 1st
+> argument as the exact flag to mask out and the 2nd argument as the
+> string to print?
 
-  My bad. I fixed it here and at other places. Thanks.
-
->> +			       tmp_buf);
+>> +
+>> +	if (flags & BTRFS_AVAIL_ALLOC_BIT_SINGLE) {
+>> +		dp += snprintf(dp, describe - dp + sz,
+>> +			       "%s|", "single");
+>> +		flags &= ~BTRFS_AVAIL_ALLOC_BIT_SINGLE;
 >> +	}
 >> +
->> +	if (flags & BTRFS_BALANCE_ARGS_USAGE)
->> +		bp += snprintf(bp, buf - bp + sz, "usage=%llu,", bargs->usage);
->> +
->> +	if (flags & BTRFS_BALANCE_ARGS_USAGE_RANGE)
->> +		bp += snprintf(bp, buf - bp + sz, "usage_min=%uusage_max=%u,",
+>> +	for (i = 0; i < BTRFS_NR_RAID_TYPES; i++) {
 > 
-> Why don't you add spaces or commas between the values?
+> And this would work inside the loop too.
 
-  Now the range is printed just as the cli.  =min..max
+fixed it.
 
->> +			       bargs->usage_min, bargs->usage_max);
->> +
->> +	if (flags & BTRFS_BALANCE_ARGS_DEVID)
->> +		bp += snprintf(bp, buf - bp + sz, "devid=%llu,", bargs->devid);
->> +
->> +	if (flags & BTRFS_BALANCE_ARGS_DRANGE)
->> +		bp += snprintf(bp, buf - bp + sz, "pstart=%llupend=%llu,",
->> +			       bargs->pstart, bargs->pend);
->> +
->> +	if (flags & BTRFS_BALANCE_ARGS_VRANGE)
->> +		bp += snprintf(bp, buf - bp + sz, "vstart=%lluvend %llu,",
->> +			       bargs->vstart, bargs->vend);
->> +
->> +	if (flags & BTRFS_BALANCE_ARGS_LIMIT)
->> +		bp += snprintf(bp, buf - bp + sz, "limit=%llu,", bargs->limit);
->> +
->> +	if (flags & BTRFS_BALANCE_ARGS_LIMIT_RANGE)
->> +		bp += snprintf(bp, buf - bp + sz, "limit_min=%ulimit_max=%u,",
->> +			       bargs->limit_min, bargs->limit_max);
->> +
->> +	if (flags & BTRFS_BALANCE_ARGS_STRIPES_RANGE)
->> +		bp += snprintf(bp, buf - bp + sz,
->> +			       "stripes_min=%ustripes_max=%u,",
->> +			       bargs->stripes_min, bargs->stripes_max);
->> +
->> +	if (flags & BTRFS_BALANCE_ARGS_CONVERT) {
->> +		int index = btrfs_bg_flags_to_raid_index(bargs->target);
->> +
->> +		bp += snprintf(bp, buf - bp + sz, "convert=%s,",
->> +			       get_raid_name(index));
+
+>> +		if (flags & btrfs_raid_array[i].bg_flag) {
+>> +			dp += snprintf(dp, describe - dp + sz,
+>> +				       "%s|", btrfs_raid_array[i].raid_name);
+>> +			flags &= ~btrfs_raid_array[i].bg_flag;
+>> +		}
 >> +	}
 >> +
->> +	buf[bp - buf - 1] = '\0'; /* remove last , */
->> +	return bp - buf - 1;
+>> +	if (flags)
+>> +		dp += snprintf(dp, describe - dp + sz, "0x%llx|", flags);
+>> +
+>> +	ret = dp - describe - 1;
+>> +	describe[ret] = '\0'; /* remove last | */
+>> +	return ret;
 >> +}
 >> +
->> +static void describe_balance_start_or_resume(struct btrfs_fs_info *fs_info)
->> +{
->> +	u32 sz = 1024;
->> +	char tmp_buf[64];
->> +	char *buf;
->> +	char *bp;
->> +	struct btrfs_balance_control *bctl = fs_info->balance_ctl;
->> +
->> +	buf = kzalloc(sz, GFP_KERNEL);
->> +	if (!buf)
->> +		return;
->> +
->> +	bp = buf;
->> +	if (bctl->flags & BTRFS_BALANCE_ARGS_SOFT)
->> +		bp += snprintf(bp, buf - bp + sz, "%s|", "soft");
->> +
->> +	if (bctl->flags & BTRFS_BALANCE_FORCE)
->> +		bp += snprintf(bp, buf - bp + sz, "%s|", "force");
+>>   static int init_first_rw_device(struct btrfs_trans_handle *trans,
+>>   				struct btrfs_fs_info *fs_info);
+>>   static int btrfs_relocate_sys_chunks(struct btrfs_fs_info *fs_info);
+>> diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+>> index 5139ec8daf4c..52ac258daa17 100644
+>> --- a/fs/btrfs/volumes.h
+>> +++ b/fs/btrfs/volumes.h
+>> @@ -433,6 +433,7 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *path);
+>>   int btrfs_balance(struct btrfs_fs_info *fs_info,
+>>   		  struct btrfs_balance_control *bctl,
+>>   		  struct btrfs_ioctl_balance_args *bargs);
+>> +u32 describe_block_groups(u64 flags, char *describe, u32 sz);
 > 
-> Force is a global option affecting all profiles, but 'soft' is applied
-> per profile so it needs to be in the data/metadata/system group.
+> Please prefix an exported function with btrfs_ and don't use the overly
+> abbreviated variable names like 'sz'.
 
-  Yep. Thanks. Now I have replace force as "-f". Looks better now.
-
-  Pls find v4.
+Yes. Also I have dropped the return u32 to void in V4 in the ML.
 
 Thanks, Anand
 
->> +
->> +	if (bctl->flags & BTRFS_BALANCE_DATA) {
->> +		describe_balance_args(&bctl->data, tmp_buf, sizeof(tmp_buf));
->> +		bp += snprintf(bp, buf - bp + sz, "%s<%s>|", "data", tmp_buf);
->> +	}
->> +
->> +	if (bctl->flags & BTRFS_BALANCE_METADATA) {
->> +		describe_balance_args(&bctl->meta, tmp_buf, sizeof(tmp_buf));
->> +		bp += snprintf(bp, buf - bp + sz, "%s<%s>|", "metadata",
->> +			       tmp_buf);
->> +	}
->> +
->> +	if (bctl->flags & BTRFS_BALANCE_SYSTEM) {
->> +		describe_balance_args(&bctl->sys, tmp_buf, sizeof(tmp_buf));
->> +		bp += snprintf(bp, buf - bp + sz, "%s<%s>|", "system", tmp_buf);
->> +	}
->> +
->> +	buf[bp - buf - 1] = '\0'; /* remove last | */
->> +	btrfs_info(fs_info, "%s %s",
->> +		   bctl->flags & BTRFS_BALANCE_RESUME ?
->> +		   "balance: resume":"balance: start", buf);
->> +
->> +	kfree(buf);
->> +}
->> +
->>   /*
->>    * Should be called with balance mutexe held
->>    */
->> @@ -3954,6 +4055,7 @@ int btrfs_balance(struct btrfs_fs_info *fs_info,
->>   
->>   	ASSERT(!test_bit(BTRFS_FS_BALANCE_RUNNING, &fs_info->flags));
->>   	set_bit(BTRFS_FS_BALANCE_RUNNING, &fs_info->flags);
->> +	describe_balance_start_or_resume(fs_info);
->>   	mutex_unlock(&fs_info->balance_mutex);
->>   
->>   	ret = __btrfs_balance(fs_info);
->> @@ -3991,10 +4093,8 @@ static int balance_kthread(void *data)
->>   	int ret = 0;
->>   
->>   	mutex_lock(&fs_info->balance_mutex);
->> -	if (fs_info->balance_ctl) {
->> -		btrfs_info(fs_info, "balance: resuming");
->> +	if (fs_info->balance_ctl)
->>   		ret = btrfs_balance(fs_info, fs_info->balance_ctl, NULL);
->> -	}
->>   	mutex_unlock(&fs_info->balance_mutex);
->>   
->>   	return ret;
+>>   int btrfs_resume_balance_async(struct btrfs_fs_info *fs_info);
+>>   int btrfs_recover_balance(struct btrfs_fs_info *fs_info);
+>>   int btrfs_pause_balance(struct btrfs_fs_info *fs_info);
+>> -- 
+>> 2.7.0
+>>
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 > --
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 > the body of a message to majordomo@vger.kernel.org

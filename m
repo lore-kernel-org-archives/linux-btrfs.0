@@ -1,66 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:35248 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1754294AbeEaJuc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 31 May 2018 05:50:32 -0400
-Date: Thu, 31 May 2018 11:47:47 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Anand Jain <anand.jain@oracle.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v4.1b 2/3] btrfs: balance: add args info during start and
- resume
-Message-ID: <20180531094747.GM3539@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20180523063508.18695-3-anand.jain@oracle.com>
- <20180525030547.23367-1-anand.jain@oracle.com>
+Received: from bombadil.infradead.org ([198.137.202.133]:48054 "EHLO
+        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S933282AbeEWPWm (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 23 May 2018 11:22:42 -0400
+Date: Wed, 23 May 2018 08:22:39 -0700
+From: Christoph Hellwig <hch@infradead.org>
+To: Kent Overstreet <kent.overstreet@gmail.com>
+Cc: Christoph Hellwig <hch@infradead.org>,
+        Matthew Wilcox <willy@infradead.org>, linux-kernel@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org,
+        Andrew Morton <akpm@linux-foundation.org>,
+        Dave Chinner <dchinner@redhat.com>, darrick.wong@oracle.com,
+        tytso@mit.edu, linux-btrfs@vger.kernel.org, clm@fb.com, jbacik@fb.com,
+        viro@zeniv.linux.org.uk, peterz@infradead.org
+Subject: Re: [PATCH 01/10] mm: pagecache add lock
+Message-ID: <20180523152239.GA2425@infradead.org>
+References: <20180518074918.13816-1-kent.overstreet@gmail.com>
+ <20180518074918.13816-3-kent.overstreet@gmail.com>
+ <20180518131305.GA6361@bombadil.infradead.org>
+ <20180518155330.GA16931@infradead.org>
+ <20180520224524.GC11495@kmo-pixel>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180525030547.23367-1-anand.jain@oracle.com>
+In-Reply-To: <20180520224524.GC11495@kmo-pixel>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, May 25, 2018 at 11:05:47AM +0800, Anand Jain wrote:
-> Balance arg info is an important information to be reviewed for the
-> system audit. So this patch adds them to the kernel log.
+On Sun, May 20, 2018 at 06:45:24PM -0400, Kent Overstreet wrote:
+> > 
+> > Honestly I think this probably should be in the core.  But IFF we move
+> > it to the core the existing users of per-fs locks need to be moved
+> > over first.  E.g. XFS as the very first one, and at least ext4 and f2fs
+> > that copied the approach, and probably more if you audit deep enough.
 > 
-> Example:
-> ->btrfs bal start -f -mprofiles=raid1,convert=single,soft -dlimit=10..20,usage=50 /btrfs
-> 
-> kernel: BTRFS info (device sdb): balance: start -f -dusage=50,limit=10..20 -msoft,profiles=raid1,convert=single -ssoft,profiles=raid1,convert=single
-> 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> ---
-> v4->v4.1b: Rename last missed sz to size_buf.
+> I'm not going to go and redo locking in XFS and ext4 as a prerequisite to
+> merging bcachefs. Sorry, but that's a bit crazy.
 
-Please send a full version instead of the incremental bumps to
-individual patches. I try to take the last version but am never sure
-what exactly gets merged.
+It isn't crazy at all.  In general we expect people to do their fair
+share of core work to get their pet feature in.  How much is acceptable
+is a difficult question and not black and white.
 
-> +static u32 describe_balance_args(struct btrfs_balance_args *bargs, char *buf,
-> +				 u32 size_buf)
-> +{
-> +	char *bp = buf;
-> +	u64 flags = bargs->flags;
-> +	char tmp_buf[128];
-> +
-> +	if (!flags)
-> +		return 0;
-> +
-> +	if (flags & BTRFS_BALANCE_ARGS_SOFT)
-> +		bp += snprintf(bp, buf - bp + size_buf, "soft,");
+But if you want to grow a critical core structure you better take a stab
+at converting existing users.  Without that the tradeoff of growing
+that core structure is simply not given.
 
-I have some suspicion that this snprintf conscturct is not safe when the
-value of 'buf - bp + size_buf' becomes accidentally negative. A quick
-test showed that a sequence of snprintf and incremented bp does not stop
-writing when the size_buf limit is hit and happily overwrites the
-memory.
-
-We'd have to check that the negative value is never passed to snprintf.
-The patches are potponed until the issue is resolved, either to verify
-that it's a false alert or the bounds are correctly checked.
-
-The bug should not be in the original code as the buffer is known to be
-large enough for all the printed bg flags.
-
-I'm sorry to delay the patches, the log messages are useful, but I want
-to be sure that there are no random memory overwrites introduced.
+Or to put it in words for this exact feature:  unless your new field
+is also used by mainstream file systems it is not going to be added.

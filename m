@@ -1,70 +1,142 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:54116 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S964821AbeEYOxk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 25 May 2018 10:53:40 -0400
-Date: Fri, 25 May 2018 16:50:55 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Omar Sandoval <osandov@osandov.com>
-Cc: linux-btrfs@vger.kernel.org, kernel-team@fb.com,
-        linux-fsdevel@vger.kernel.org, Tejun Heo <tj@kernel.org>
-Subject: Re: [RFC PATCH v4 4/6] Btrfs: prevent ioctls from interfering with a
- swap file
-Message-ID: <20180525145055.GN6649@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+Received: from mail-pl0-f67.google.com ([209.85.160.67]:37679 "EHLO
+        mail-pl0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S971626AbeEXVll (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 24 May 2018 17:41:41 -0400
+Received: by mail-pl0-f67.google.com with SMTP id w19-v6so1829701plq.4
+        for <linux-btrfs@vger.kernel.org>; Thu, 24 May 2018 14:41:41 -0700 (PDT)
+From: Omar Sandoval <osandov@osandov.com>
+To: linux-btrfs@vger.kernel.org
+Cc: kernel-team@fb.com, linux-fsdevel@vger.kernel.org,
+        Tejun Heo <tj@kernel.org>
+Subject: [RFC PATCH v4 1/6] mm: split SWP_FILE into SWP_ACTIVATED and SWP_FS
+Date: Thu, 24 May 2018 14:41:25 -0700
+Message-Id: <289f334fa8e5d1239eab667415d287edf0e13f14.1527197312.git.osandov@fb.com>
+In-Reply-To: <cover.1527197312.git.osandov@fb.com>
 References: <cover.1527197312.git.osandov@fb.com>
- <296f04a07350c9cc2032e03f78c1a7284747fb50.1527197312.git.osandov@fb.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <296f04a07350c9cc2032e03f78c1a7284747fb50.1527197312.git.osandov@fb.com>
+In-Reply-To: <cover.1527197312.git.osandov@fb.com>
+References: <cover.1527197312.git.osandov@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, May 24, 2018 at 02:41:28PM -0700, Omar Sandoval wrote:
-> From: Omar Sandoval <osandov@fb.com>
-> 
-> When a swap file is active, we must make sure that the extents of the
-> file are not moved and that they don't become shared. That means that
-> the following are not safe:
-> 
-> - chattr +c (enable compression)
-> - reflink
-> - dedupe
-> - snapshot
-> - defrag
-> - balance
-> - device remove/replace/resize
-> 
-> Don't allow those to happen on an active swap file. Balance and device
-> remove/replace/resize in particular are disallowed entirely; in the
-> future, we can relax this so that relocation skips/errors out only on
-> chunks containing an active swap file.
+From: Omar Sandoval <osandov@fb.com>
 
-Hm, disabling the entire balance is too intrusive. It's clear that the
-swapfile causes a lot of trouble when it goes against the dynamic
-capabilities of btrfs (relocation and the functionality that builds on
-it).
+The SWP_FILE flag serves two purposes: to make swap_{read,write}page()
+go through the filesystem, and to make swapoff() call
+->swap_deactivate(). For Btrfs, we want the latter but not the former,
+so split this flag into two. This makes us always call
+->swap_deactivate() if ->swap_activate() succeeded, not just if it
+didn't add any swap extents itself.
 
-Skipping the swapfile extents should be implemented at minimum. We can
-add some heuristics that will group the swap extents to a small number
-of chunks so the impact of unmovable chunks is limited.
+This also resolves the issue of the very misleading name of SWP_FILE,
+which is only used for swap files over NFS.
 
-I haven't looked at the implementation, but it might be possible to
-internally find a different location for the swap extent once it's not
-used for the actual paged data.
+Signed-off-by: Omar Sandoval <osandov@fb.com>
+---
+ include/linux/swap.h | 13 +++++++------
+ mm/page_io.c         |  6 +++---
+ mm/swapfile.c        | 13 ++++++++-----
+ 3 files changed, 18 insertions(+), 14 deletions(-)
 
-In an ideal case, the swap extents could span entire chunks (1G) and not
-mix with regular data/metadata.
+diff --git a/include/linux/swap.h b/include/linux/swap.h
+index 2417d288e016..29dfd436435c 100644
+--- a/include/linux/swap.h
++++ b/include/linux/swap.h
+@@ -167,13 +167,14 @@ enum {
+ 	SWP_SOLIDSTATE	= (1 << 4),	/* blkdev seeks are cheap */
+ 	SWP_CONTINUED	= (1 << 5),	/* swap_map has count continuation */
+ 	SWP_BLKDEV	= (1 << 6),	/* its a block device */
+-	SWP_FILE	= (1 << 7),	/* set after swap_activate success */
+-	SWP_AREA_DISCARD = (1 << 8),	/* single-time swap area discards */
+-	SWP_PAGE_DISCARD = (1 << 9),	/* freed swap page-cluster discards */
+-	SWP_STABLE_WRITES = (1 << 10),	/* no overwrite PG_writeback pages */
+-	SWP_SYNCHRONOUS_IO = (1 << 11),	/* synchronous IO is efficient */
++	SWP_ACTIVATED	= (1 << 7),	/* set after swap_activate success */
++	SWP_FS		= (1 << 8),	/* swap file goes through fs */
++	SWP_AREA_DISCARD = (1 << 9),	/* single-time swap area discards */
++	SWP_PAGE_DISCARD = (1 << 10),	/* freed swap page-cluster discards */
++	SWP_STABLE_WRITES = (1 << 11),	/* no overwrite PG_writeback pages */
++	SWP_SYNCHRONOUS_IO = (1 << 12),	/* synchronous IO is efficient */
+ 					/* add others here before... */
+-	SWP_SCANNING	= (1 << 12),	/* refcount in scan_swap_map */
++	SWP_SCANNING	= (1 << 13),	/* refcount in scan_swap_map */
+ };
+ 
+ #define SWAP_CLUSTER_MAX 32UL
+diff --git a/mm/page_io.c b/mm/page_io.c
+index b41cf9644585..f2d06c1d0cc1 100644
+--- a/mm/page_io.c
++++ b/mm/page_io.c
+@@ -283,7 +283,7 @@ int __swap_writepage(struct page *page, struct writeback_control *wbc,
+ 	struct swap_info_struct *sis = page_swap_info(page);
+ 
+ 	VM_BUG_ON_PAGE(!PageSwapCache(page), page);
+-	if (sis->flags & SWP_FILE) {
++	if (sis->flags & SWP_FS) {
+ 		struct kiocb kiocb;
+ 		struct file *swap_file = sis->swap_file;
+ 		struct address_space *mapping = swap_file->f_mapping;
+@@ -364,7 +364,7 @@ int swap_readpage(struct page *page, bool synchronous)
+ 		goto out;
+ 	}
+ 
+-	if (sis->flags & SWP_FILE) {
++	if (sis->flags & SWP_FS) {
+ 		struct file *swap_file = sis->swap_file;
+ 		struct address_space *mapping = swap_file->f_mapping;
+ 
+@@ -422,7 +422,7 @@ int swap_set_page_dirty(struct page *page)
+ {
+ 	struct swap_info_struct *sis = page_swap_info(page);
+ 
+-	if (sis->flags & SWP_FILE) {
++	if (sis->flags & SWP_FS) {
+ 		struct address_space *mapping = sis->swap_file->f_mapping;
+ 
+ 		VM_BUG_ON_PAGE(!PageSwapCache(page), page);
+diff --git a/mm/swapfile.c b/mm/swapfile.c
+index cc2cf04d9018..886c9d89b144 100644
+--- a/mm/swapfile.c
++++ b/mm/swapfile.c
+@@ -973,7 +973,7 @@ int get_swap_pages(int n_goal, bool cluster, swp_entry_t swp_entries[])
+ 			goto nextsi;
+ 		}
+ 		if (cluster) {
+-			if (!(si->flags & SWP_FILE))
++			if (!(si->flags & SWP_FS))
+ 				n_ret = swap_alloc_cluster(si, swp_entries);
+ 		} else
+ 			n_ret = scan_swap_map_slots(si, SWAP_HAS_CACHE,
+@@ -2327,12 +2327,13 @@ static void destroy_swap_extents(struct swap_info_struct *sis)
+ 		kfree(se);
+ 	}
+ 
+-	if (sis->flags & SWP_FILE) {
++	if (sis->flags & SWP_ACTIVATED) {
+ 		struct file *swap_file = sis->swap_file;
+ 		struct address_space *mapping = swap_file->f_mapping;
+ 
+-		sis->flags &= ~SWP_FILE;
+-		mapping->a_ops->swap_deactivate(swap_file);
++		sis->flags &= ~SWP_ACTIVATED;
++		if (mapping->a_ops->swap_deactivate)
++			mapping->a_ops->swap_deactivate(swap_file);
+ 	}
+ }
+ 
+@@ -2428,8 +2429,10 @@ static int setup_swap_extents(struct swap_info_struct *sis, sector_t *span)
+ 
+ 	if (mapping->a_ops->swap_activate) {
+ 		ret = mapping->a_ops->swap_activate(sis, swap_file, span);
++		if (ret >= 0)
++			sis->flags |= SWP_ACTIVATED;
+ 		if (!ret) {
+-			sis->flags |= SWP_FILE;
++			sis->flags |= SWP_FS;
+ 			ret = add_swap_extent(sis, 0, sis->max, 0);
+ 			*span = sis->pages;
+ 		}
+-- 
+2.17.0
 
-> Note that we don't have to worry about chattr -C (disable nocow), which
-> we ignore for non-empty files, because an active swapfile must be
-> non-empty and can't be truncated. We also don't have to worry about
-> autodefrag because it's only done on COW files. Truncate and fallocate
-> are already taken care of by the generic code. Device add doesn't do
-> relocation so it's not an issue, either.
-
-Ok, fine the remaining easy cases are covered.
-
-I don't know if you mentioned that elsewhere (as design questions are
-in this patch), the allocation profile is single, or is it also possible
-to have striped or duplicated swap extents?

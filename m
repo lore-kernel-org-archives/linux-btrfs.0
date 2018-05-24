@@ -1,126 +1,144 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from synology.com ([59.124.61.242]:55876 "EHLO synology.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750810AbeEPDww (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 15 May 2018 23:52:52 -0400
-From: robbieko <robbieko@synology.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Robbie Ko <robbieko@synology.com>
-Subject: [PATCH] Btrfs: implement unlocked buffered write
-Date: Wed, 16 May 2018 11:52:37 +0800
-Message-Id: <1526442757-7167-1-git-send-email-robbieko@synology.com>
+Received: from mail-ua0-f179.google.com ([209.85.217.179]:46354 "EHLO
+        mail-ua0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1030500AbeEXKtF (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 24 May 2018 06:49:05 -0400
+Received: by mail-ua0-f179.google.com with SMTP id e8-v6so757884uam.13
+        for <linux-btrfs@vger.kernel.org>; Thu, 24 May 2018 03:49:05 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <20180523155836.4622-1-josef@toxicpanda.com>
+References: <20180523155836.4622-1-josef@toxicpanda.com>
+From: Filipe Manana <fdmanana@gmail.com>
+Date: Thu, 24 May 2018 11:49:04 +0100
+Message-ID: <CAL3q7H4efWBiovBP3XQtTQVP1tSL+a3hBtaOm36H=ss_F0mCFw@mail.gmail.com>
+Subject: Re: [PATCH 1/4] btrfs: always wait on ordered extents at fsync time
+To: Josef Bacik <josef@toxicpanda.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>, kernel-team@fb.com,
+        Josef Bacik <jbacik@fb.com>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Robbie Ko <robbieko@synology.com>
+On Wed, May 23, 2018 at 4:58 PM, Josef Bacik <josef@toxicpanda.com> wrote:
+> From: Josef Bacik <jbacik@fb.com>
+>
+> There's a priority inversion that exists currently with btrfs fsync.  In
+> some cases we will collect outstanding ordered extents onto a list and
+> only wait on them at the very last second.  However this "very last
+> second" falls inside of a transaction handle, so if we are in a lower
+> priority cgroup we can end up holding the transaction open for longer
+> than needed, so if a high priority cgroup is also trying to fsync()
+> it'll see latency.
+>
+> Signed-off-by: Josef Bacik <jbacik@fb.com>
+> ---
+>  fs/btrfs/file.c | 56 ++++----------------------------------------------------
+>  1 file changed, 4 insertions(+), 52 deletions(-)
+>
+> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+> index 5772f0cbedef..2b1c36612384 100644
+> --- a/fs/btrfs/file.c
+> +++ b/fs/btrfs/file.c
+> @@ -2069,53 +2069,12 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
+>         atomic_inc(&root->log_batch);
+>         full_sync = test_bit(BTRFS_INODE_NEEDS_FULL_SYNC,
+>                              &BTRFS_I(inode)->runtime_flags);
+> +
+>         /*
+> -        * We might have have had more pages made dirty after calling
+> -        * start_ordered_ops and before acquiring the inode's i_mutex.
+> +        * We have to do this here to avoid the priority inversion of waiting on
+> +        * IO of a lower priority task while holding a transaciton open.
+>          */
+> -       if (full_sync) {
+> -               /*
+> -                * For a full sync, we need to make sure any ordered operations
+> -                * start and finish before we start logging the inode, so that
+> -                * all extents are persisted and the respective file extent
+> -                * items are in the fs/subvol btree.
+> -                */
+> -               ret = btrfs_wait_ordered_range(inode, start, len);
+> -       } else {
+> -               /*
+> -                * Start any new ordered operations before starting to log the
+> -                * inode. We will wait for them to finish in btrfs_sync_log().
+> -                *
+> -                * Right before acquiring the inode's mutex, we might have new
+> -                * writes dirtying pages, which won't immediately start the
+> -                * respective ordered operations - that is done through the
+> -                * fill_delalloc callbacks invoked from the writepage and
+> -                * writepages address space operations. So make sure we start
+> -                * all ordered operations before starting to log our inode. Not
+> -                * doing this means that while logging the inode, writeback
+> -                * could start and invoke writepage/writepages, which would call
+> -                * the fill_delalloc callbacks (cow_file_range,
+> -                * submit_compressed_extents). These callbacks add first an
+> -                * extent map to the modified list of extents and then create
+> -                * the respective ordered operation, which means in
+> -                * tree-log.c:btrfs_log_inode() we might capture all existing
+> -                * ordered operations (with btrfs_get_logged_extents()) before
+> -                * the fill_delalloc callback adds its ordered operation, and by
+> -                * the time we visit the modified list of extent maps (with
+> -                * btrfs_log_changed_extents()), we see and process the extent
+> -                * map they created. We then use the extent map to construct a
+> -                * file extent item for logging without waiting for the
+> -                * respective ordered operation to finish - this file extent
+> -                * item points to a disk location that might not have yet been
+> -                * written to, containing random data - so after a crash a log
+> -                * replay will make our inode have file extent items that point
+> -                * to disk locations containing invalid data, as we returned
+> -                * success to userspace without waiting for the respective
+> -                * ordered operation to finish, because it wasn't captured by
+> -                * btrfs_get_logged_extents().
+> -                */
+> -               ret = start_ordered_ops(inode, start, end);
+> -       }
+> +       ret = btrfs_wait_ordered_range(inode, start, len);
+>         if (ret) {
+>                 inode_unlock(inode);
+>                 goto out;
+> @@ -2240,13 +2199,6 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
+>                                 goto out;
+>                         }
+>                 }
+> -               if (!full_sync) {
+> -                       ret = btrfs_wait_ordered_range(inode, start, len);
+> -                       if (ret) {
+> -                               btrfs_end_transaction(trans);
+> -                               goto out;
+> -                       }
+> -               }
+>                 ret = btrfs_commit_transaction(trans);
+>         } else {
+>                 ret = btrfs_end_transaction(trans);
 
-This idea is from direct io. By this patch, we can make the buffered
-write parallel, and improve the performance and latency. But because we
-can not update isize without i_mutex, the unlocked buffered write just
-can be done in front of the EOF.
+There's more code in this function that can go away after this.
+The logic to check if the inode is already in the log can now be
+simplified since we always for the ordered extents to complete before
+deciding whether the inode needs to be blogged. The big commet about
+it can go away too:
 
-We needn't worry about the race between buffered write and truncate,
-because the truncate need wait until all the buffered write end.
+https://friendpaste.com/5MHqvkBmdIQgrySryhhjMy
 
-And we also needn't worry about the race between dio write and punch hole,
-because we have extent lock to protect our operation.
+Will you integrate this?
 
-I ran fio to test the performance of this feature.
+Thanks! This difference in handling ordered extents brought many nasty
+bugs in the past.
 
-== Hardware ==
-CPU: Intel® Xeon® D-1531
-SSD: Intel S3710 200G
-Volume : RAID 5 , SSD * 6
 
-== config file ==
-[global]
-group_reporting
-time_based
-thread=1
-norandommap
-ioengine=libaio
-bs=4k
-iodepth=32
-size=16G
-runtime=180
-numjobs=8
-rw=randwrite
+> --
+> 2.14.3
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-[file1]
-filename=/mnt/btrfs/nocow/testfile
 
-== result (iops) ==
-lock     = 68470
-unlocked = 94242
 
-== result (clat) ==
-lock
- lat (usec): min=184, max=1209.9K, avg=3738.35, stdev=20869.49
- clat percentiles (usec):
-  |  1.00th=[  322],  5.00th=[  330], 10.00th=[  334], 20.00th=[  346],
-  | 30.00th=[  370], 40.00th=[  386], 50.00th=[  406], 60.00th=[  446],
-  | 70.00th=[  516], 80.00th=[  612], 90.00th=[  828], 95.00th=[10432],
-  | 99.00th=[84480], 99.50th=[117248], 99.90th=[226304], 99.95th=[333824],
-  | 99.99th=[692224]
-
-unlocked
- lat (usec): min=10, max=218208, avg=2691.44, stdev=5380.82
- clat percentiles (usec):
-  |  1.00th=[  302],  5.00th=[  390], 10.00th=[  442], 20.00th=[  502],
-  | 30.00th=[  548], 40.00th=[  596], 50.00th=[  652], 60.00th=[  724],
-  | 70.00th=[  916], 80.00th=[ 5024], 90.00th=[ 5664], 95.00th=[10048],
-  | 99.00th=[29568], 99.50th=[39168], 99.90th=[54016], 99.95th=[59648],
-  | 99.99th=[78336]
-
-Signed-off-by: Robbie Ko <robbieko@synology.com>
----
- fs/btrfs/file.c | 17 +++++++++++++++++
- 1 file changed, 17 insertions(+)
-
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 41ab907..8eac540 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1600,6 +1600,7 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
- 	int ret = 0;
- 	bool only_release_metadata = false;
- 	bool force_page_uptodate = false;
-+	bool relock = false;
- 
- 	nrptrs = min(DIV_ROUND_UP(iov_iter_count(i), PAGE_SIZE),
- 			PAGE_SIZE / (sizeof(struct page *)));
-@@ -1609,6 +1610,18 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
- 	if (!pages)
- 		return -ENOMEM;
- 
-+	inode_dio_begin(inode);
-+
-+	/*
-+	 * If the write is beyond the EOF, we need update
-+	 * the isize, but it is protected by i_mutex. So we can
-+	 * not unlock the i_mutex at this case.
-+	 */
-+	if (pos + iov_iter_count(i) <= i_size_read(inode)) {
-+		inode_unlock(inode);
-+		relock = true;
-+	}
-+
- 	while (iov_iter_count(i) > 0) {
- 		size_t offset = pos & (PAGE_SIZE - 1);
- 		size_t sector_offset;
-@@ -1808,6 +1821,10 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
- 		}
- 	}
- 
-+	inode_dio_end(inode);
-+	if (relock)
-+		inode_lock(inode);
-+
- 	extent_changeset_free(data_reserved);
- 	return num_written ? num_written : ret;
- }
 -- 
-1.9.1
+Filipe David Manana,
 
+“Whether you think you can, or you think you can't — you're right.”

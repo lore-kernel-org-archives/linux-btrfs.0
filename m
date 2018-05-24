@@ -1,85 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:55480 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:50601 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S965756AbeEXRjK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 24 May 2018 13:39:10 -0400
-Date: Thu, 24 May 2018 19:36:22 +0200
+        id S1030888AbeEXQp7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 24 May 2018 12:45:59 -0400
+Received: from relay1.suse.de (charybdis-ext-too.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 241F4AEE2
+        for <linux-btrfs@vger.kernel.org>; Thu, 24 May 2018 16:45:58 +0000 (UTC)
+Date: Thu, 24 May 2018 18:43:14 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Omar Sandoval <osandov@osandov.com>
-Cc: linux-btrfs@vger.kernel.org, kernel-team@fb.com,
-        David Sterba <dsterba@suse.com>
-Subject: Re: [PATCH] Btrfs: fix memory and mount leak in
- btrfs_ioctl_rm_dev_v2()
-Message-ID: <20180524173622.GJ6649@twin.jikos.cz>
+To: Qu Wenruo <wqu@suse.de>
+Cc: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2 3/4] btrfs: lzo: Add header length check to avoid slab
+ out of bounds access
+Message-ID: <20180524164313.GH6649@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <78fcd50378fec419da9f60086ce8331e12c7563d.1527028634.git.osandov@fb.com>
+References: <20180521051927.3715-1-wqu@suse.com>
+ <20180521051927.3715-4-wqu@suse.com>
+ <20180522150636.GN6649@twin.jikos.cz>
+ <34f13170-f2cb-4efe-7f11-72ce7aa5c622@suse.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <78fcd50378fec419da9f60086ce8331e12c7563d.1527028634.git.osandov@fb.com>
+In-Reply-To: <34f13170-f2cb-4efe-7f11-72ce7aa5c622@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, May 22, 2018 at 03:44:01PM -0700, Omar Sandoval wrote:
-> From: Omar Sandoval <osandov@fb.com>
+On Wed, May 23, 2018 at 07:38:28AM +0800, Qu Wenruo wrote:
+> >> --- a/fs/btrfs/lzo.c
+> >> +++ b/fs/btrfs/lzo.c
+> >> @@ -281,6 +281,7 @@ static int lzo_decompress_bio(struct list_head *ws, struct compressed_bio *cb)
+> >>  	unsigned long working_bytes;
+> >>  	size_t in_len;
+> >>  	size_t out_len;
+> >> +	size_t max_segment_len = lzo1x_worst_compress(PAGE_SIZE);
+> > 
+> > The value is a compile-time constant, it does not need to be stored in a
+> > variable.
 > 
-> If we have invalid flags set, when we error out we must drop our writer
-> counter and free the buffer we allocated for the arguments. This bug is
-> trivially reproduced with the following program:
-> 
-> 	#include <fcntl.h>
-> 	#include <stdint.h>
-> 	#include <stdio.h>
-> 	#include <stdlib.h>
-> 	#include <unistd.h>
-> 	#include <sys/ioctl.h>
-> 	#include <sys/stat.h>
-> 	#include <sys/types.h>
-> 	#include <linux/btrfs.h>
-> 	#include <linux/btrfs_tree.h>
-> 
-> 	int main(int argc, char **argv)
-> 	{
-> 		struct btrfs_ioctl_vol_args_v2 vol_args = {
-> 			.flags = UINT64_MAX,
-> 		};
-> 		int ret;
-> 		int fd;
-> 
-> 		if (argc != 2) {
-> 			fprintf(stderr, "usage: %s PATH\n", argv[0]);
-> 			return EXIT_FAILURE;
-> 		}
-> 
-> 		fd = open(argv[1], O_WRONLY);
-> 		if (fd == -1) {
-> 			perror("open");
-> 			return EXIT_FAILURE;
-> 		}
-> 
-> 		ret = ioctl(fd, BTRFS_IOC_RM_DEV_V2, &vol_args);
-> 		if (ret == -1)
-> 			perror("ioctl");
-> 
-> 		close(fd);
-> 		return EXIT_SUCCESS;
-> 	}
-> 
-> When unmounting the filesystem, we'll hit the
-> WARN_ON(mnt_get_writers(mnt)) in cleanup_mnt().
-> 
-> Fixes: 6b526ed70cf1 ("btrfs: introduce device delete by devid")
-> Signed-off-by: Omar Sandoval <osandov@fb.com>
+> Just to save some long lines, as it's used several times.
 
-Reviewed-by: David Sterba <dsterba@suse.com>
+My concern is about the eventual stack consumption by the variable. I
+haven't measured that as the stack-bloat-script is now somehow broken so
+I'm basing this on my previous evaluations. The long term plan is to
+remove unnecessary variables or at least help the compiler to optimize
+them out, every few bytes help and we hope for the cumulative effect.
 
-> ---
-> Sigh, I keep stepping in these ioctl bugs just trying to get my swap
-> file series ready.
+The replacement by local variable sort of does not need to be in this
+patch as it's not used for the header length check itself.
 
-This was the last one, pinky swear.
+> >> @@ -294,6 +295,18 @@ static int lzo_decompress_bio(struct list_head *ws, struct compressed_bio *cb)
+> >>  
+> >>  	data_in = kmap(pages_in[0]);
+> >>  	tot_len = read_compress_length(data_in);
+> >> +	/*
+> >> +	 * Compressed data header check.
+> >> +	 *
+> >> +	 * The real compressed size can't exceed extent length, and all pages
+> >> +	 * should be used (a full pending page is not possible).
+> >> +	 * If this happens it means the compressed extent is corrupted.
+> >> +	 */
+> >> +	if (tot_len > min_t(size_t, BTRFS_MAX_COMPRESSED, srclen) ||
+> >> +	    tot_len < srclen - PAGE_SIZE) {
+> > 
+> > All such conditions can be put into unlikely() as this is an error
+> > handling shortcut.
+> 
+> I'm OK to put it into unlikely().
+> 
+> I'll update this in next version.
 
-> This one is based on top of my "Btrfs: fix partly
-> checksummed file races" series, although it should apply to for-next
-> without it +/- some moved lines.
+I don't see the unlikely() in the most recent version but after some
+considerations, I don't think it's needed. I'd rather look at the final
+assembly if the compiler is smart enough to recognize the pattern.
 
-Applies cleanly, thanks.
+Adding likely/unlikely without some proof is not welcome in general,
+though in this case it's the allowed "jump to error handling".

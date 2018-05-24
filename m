@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pl0-f67.google.com ([209.85.160.67]:37679 "EHLO
-        mail-pl0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S971626AbeEXVll (ORCPT
+Received: from mail-pl0-f66.google.com ([209.85.160.66]:36349 "EHLO
+        mail-pl0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S971630AbeEXVln (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 24 May 2018 17:41:41 -0400
-Received: by mail-pl0-f67.google.com with SMTP id w19-v6so1829701plq.4
-        for <linux-btrfs@vger.kernel.org>; Thu, 24 May 2018 14:41:41 -0700 (PDT)
+        Thu, 24 May 2018 17:41:43 -0400
+Received: by mail-pl0-f66.google.com with SMTP id v24-v6so1831975plo.3
+        for <linux-btrfs@vger.kernel.org>; Thu, 24 May 2018 14:41:42 -0700 (PDT)
 From: Omar Sandoval <osandov@osandov.com>
 To: linux-btrfs@vger.kernel.org
 Cc: kernel-team@fb.com, linux-fsdevel@vger.kernel.org,
         Tejun Heo <tj@kernel.org>
-Subject: [RFC PATCH v4 1/6] mm: split SWP_FILE into SWP_ACTIVATED and SWP_FS
-Date: Thu, 24 May 2018 14:41:25 -0700
-Message-Id: <289f334fa8e5d1239eab667415d287edf0e13f14.1527197312.git.osandov@fb.com>
+Subject: [RFC PATCH v4 2/6] vfs: update swap_{,de}activate documentation
+Date: Thu, 24 May 2018 14:41:26 -0700
+Message-Id: <4578bf3c7543f6f9a95b14a0523f2066f58ad43d.1527197312.git.osandov@fb.com>
 In-Reply-To: <cover.1527197312.git.osandov@fb.com>
 References: <cover.1527197312.git.osandov@fb.com>
 In-Reply-To: <cover.1527197312.git.osandov@fb.com>
@@ -22,121 +22,94 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Omar Sandoval <osandov@fb.com>
 
-The SWP_FILE flag serves two purposes: to make swap_{read,write}page()
-go through the filesystem, and to make swapoff() call
-->swap_deactivate(). For Btrfs, we want the latter but not the former,
-so split this flag into two. This makes us always call
-->swap_deactivate() if ->swap_activate() succeeded, not just if it
-didn't add any swap extents itself.
+The documentation for these functions is wrong in several ways:
 
-This also resolves the issue of the very misleading name of SWP_FILE,
-which is only used for swap files over NFS.
+- swap_activate() is called with the inode locked
+- swap_activate() takes a swap_info_struct * and a sector_t *
+- swap_activate() can also return a positive number of extents it added
+  itself
+- swap_deactivate() does not return anything
 
 Signed-off-by: Omar Sandoval <osandov@fb.com>
 ---
- include/linux/swap.h | 13 +++++++------
- mm/page_io.c         |  6 +++---
- mm/swapfile.c        | 13 ++++++++-----
- 3 files changed, 18 insertions(+), 14 deletions(-)
+ Documentation/filesystems/Locking | 17 +++++++----------
+ Documentation/filesystems/vfs.txt | 12 ++++++++----
+ 2 files changed, 15 insertions(+), 14 deletions(-)
 
-diff --git a/include/linux/swap.h b/include/linux/swap.h
-index 2417d288e016..29dfd436435c 100644
---- a/include/linux/swap.h
-+++ b/include/linux/swap.h
-@@ -167,13 +167,14 @@ enum {
- 	SWP_SOLIDSTATE	= (1 << 4),	/* blkdev seeks are cheap */
- 	SWP_CONTINUED	= (1 << 5),	/* swap_map has count continuation */
- 	SWP_BLKDEV	= (1 << 6),	/* its a block device */
--	SWP_FILE	= (1 << 7),	/* set after swap_activate success */
--	SWP_AREA_DISCARD = (1 << 8),	/* single-time swap area discards */
--	SWP_PAGE_DISCARD = (1 << 9),	/* freed swap page-cluster discards */
--	SWP_STABLE_WRITES = (1 << 10),	/* no overwrite PG_writeback pages */
--	SWP_SYNCHRONOUS_IO = (1 << 11),	/* synchronous IO is efficient */
-+	SWP_ACTIVATED	= (1 << 7),	/* set after swap_activate success */
-+	SWP_FS		= (1 << 8),	/* swap file goes through fs */
-+	SWP_AREA_DISCARD = (1 << 9),	/* single-time swap area discards */
-+	SWP_PAGE_DISCARD = (1 << 10),	/* freed swap page-cluster discards */
-+	SWP_STABLE_WRITES = (1 << 11),	/* no overwrite PG_writeback pages */
-+	SWP_SYNCHRONOUS_IO = (1 << 12),	/* synchronous IO is efficient */
- 					/* add others here before... */
--	SWP_SCANNING	= (1 << 12),	/* refcount in scan_swap_map */
-+	SWP_SCANNING	= (1 << 13),	/* refcount in scan_swap_map */
+diff --git a/Documentation/filesystems/Locking b/Documentation/filesystems/Locking
+index 75d2d57e2c44..7f009e98fa3c 100644
+--- a/Documentation/filesystems/Locking
++++ b/Documentation/filesystems/Locking
+@@ -211,8 +211,9 @@ prototypes:
+ 	int (*launder_page)(struct page *);
+ 	int (*is_partially_uptodate)(struct page *, unsigned long, unsigned long);
+ 	int (*error_remove_page)(struct address_space *, struct page *);
+-	int (*swap_activate)(struct file *);
+-	int (*swap_deactivate)(struct file *);
++	int (*swap_activate)(struct swap_info_struct *, struct file *,
++			     sector_t *);
++	void (*swap_deactivate)(struct file *);
+ 
+ locking rules:
+ 	All except set_page_dirty and freepage may block
+@@ -236,8 +237,8 @@ putback_page:		yes
+ launder_page:		yes
+ is_partially_uptodate:	yes
+ error_remove_page:	yes
+-swap_activate:		no
+-swap_deactivate:	no
++swap_activate:					yes
++swap_deactivate:				no
+ 
+ 	->write_begin(), ->write_end() and ->readpage() may be called from
+ the request handler (/dev/loop).
+@@ -334,14 +335,10 @@ cleaned, or an error value if not. Note that in order to prevent the page
+ getting mapped back in and redirtied, it needs to be kept locked
+ across the entire operation.
+ 
+-	->swap_activate will be called with a non-zero argument on
+-files backing (non block device backed) swapfiles. A return value
+-of zero indicates success, in which case this file can be used for
+-backing swapspace. The swapspace operations will be proxied to the
+-address space operations.
++	->swap_activate is called from sys_swapon() with the inode locked.
+ 
+ 	->swap_deactivate() will be called in the sys_swapoff()
+-path after ->swap_activate() returned success.
++path after ->swap_activate() returned success. The inode is not locked.
+ 
+ ----------------------- file_lock_operations ------------------------------
+ prototypes:
+diff --git a/Documentation/filesystems/vfs.txt b/Documentation/filesystems/vfs.txt
+index 5fd325df59e2..0149109d94d1 100644
+--- a/Documentation/filesystems/vfs.txt
++++ b/Documentation/filesystems/vfs.txt
+@@ -650,8 +650,9 @@ struct address_space_operations {
+ 					unsigned long);
+ 	void (*is_dirty_writeback) (struct page *, bool *, bool *);
+ 	int (*error_remove_page) (struct mapping *mapping, struct page *page);
+-	int (*swap_activate)(struct file *);
+-	int (*swap_deactivate)(struct file *);
++	int (*swap_activate)(struct swap_info_struct *, struct file *,
++			     sector_t *);
++	void (*swap_deactivate)(struct file *);
  };
  
- #define SWAP_CLUSTER_MAX 32UL
-diff --git a/mm/page_io.c b/mm/page_io.c
-index b41cf9644585..f2d06c1d0cc1 100644
---- a/mm/page_io.c
-+++ b/mm/page_io.c
-@@ -283,7 +283,7 @@ int __swap_writepage(struct page *page, struct writeback_control *wbc,
- 	struct swap_info_struct *sis = page_swap_info(page);
+   writepage: called by the VM to write a dirty page to backing store.
+@@ -828,8 +829,11 @@ struct address_space_operations {
  
- 	VM_BUG_ON_PAGE(!PageSwapCache(page), page);
--	if (sis->flags & SWP_FILE) {
-+	if (sis->flags & SWP_FS) {
- 		struct kiocb kiocb;
- 		struct file *swap_file = sis->swap_file;
- 		struct address_space *mapping = swap_file->f_mapping;
-@@ -364,7 +364,7 @@ int swap_readpage(struct page *page, bool synchronous)
- 		goto out;
- 	}
+   swap_activate: Called when swapon is used on a file to allocate
+ 	space if necessary and pin the block lookup information in
+-	memory. A return value of zero indicates success,
+-	in which case this file can be used to back swapspace.
++	memory. If this returns zero, the swap system will call the address
++	space operations ->readpage() and ->direct_IO(). Alternatively, this
++	may call add_swap_extent() and return the number of extents added, in
++	which case the swap system will use the provided blocks directly
++	instead of going through the filesystem.
  
--	if (sis->flags & SWP_FILE) {
-+	if (sis->flags & SWP_FS) {
- 		struct file *swap_file = sis->swap_file;
- 		struct address_space *mapping = swap_file->f_mapping;
- 
-@@ -422,7 +422,7 @@ int swap_set_page_dirty(struct page *page)
- {
- 	struct swap_info_struct *sis = page_swap_info(page);
- 
--	if (sis->flags & SWP_FILE) {
-+	if (sis->flags & SWP_FS) {
- 		struct address_space *mapping = sis->swap_file->f_mapping;
- 
- 		VM_BUG_ON_PAGE(!PageSwapCache(page), page);
-diff --git a/mm/swapfile.c b/mm/swapfile.c
-index cc2cf04d9018..886c9d89b144 100644
---- a/mm/swapfile.c
-+++ b/mm/swapfile.c
-@@ -973,7 +973,7 @@ int get_swap_pages(int n_goal, bool cluster, swp_entry_t swp_entries[])
- 			goto nextsi;
- 		}
- 		if (cluster) {
--			if (!(si->flags & SWP_FILE))
-+			if (!(si->flags & SWP_FS))
- 				n_ret = swap_alloc_cluster(si, swp_entries);
- 		} else
- 			n_ret = scan_swap_map_slots(si, SWAP_HAS_CACHE,
-@@ -2327,12 +2327,13 @@ static void destroy_swap_extents(struct swap_info_struct *sis)
- 		kfree(se);
- 	}
- 
--	if (sis->flags & SWP_FILE) {
-+	if (sis->flags & SWP_ACTIVATED) {
- 		struct file *swap_file = sis->swap_file;
- 		struct address_space *mapping = swap_file->f_mapping;
- 
--		sis->flags &= ~SWP_FILE;
--		mapping->a_ops->swap_deactivate(swap_file);
-+		sis->flags &= ~SWP_ACTIVATED;
-+		if (mapping->a_ops->swap_deactivate)
-+			mapping->a_ops->swap_deactivate(swap_file);
- 	}
- }
- 
-@@ -2428,8 +2429,10 @@ static int setup_swap_extents(struct swap_info_struct *sis, sector_t *span)
- 
- 	if (mapping->a_ops->swap_activate) {
- 		ret = mapping->a_ops->swap_activate(sis, swap_file, span);
-+		if (ret >= 0)
-+			sis->flags |= SWP_ACTIVATED;
- 		if (!ret) {
--			sis->flags |= SWP_FILE;
-+			sis->flags |= SWP_FS;
- 			ret = add_swap_extent(sis, 0, sis->max, 0);
- 			*span = sis->pages;
- 		}
+   swap_deactivate: Called during swapoff on files where swap_activate
+ 	was successful.
 -- 
 2.17.0
 

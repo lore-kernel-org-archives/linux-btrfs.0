@@ -1,131 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from synology.com ([59.124.61.242]:35931 "EHLO synology.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S965061AbeEXIqZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 24 May 2018 04:46:25 -0400
-MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8;
- format=flowed
-Date: Thu, 24 May 2018 16:46:23 +0800
-From: robbieko <robbieko@synology.com>
-To: Chris Mason <clm@fb.com>
-Cc: Christoph Hellwig <hch@infradead.org>, linux-btrfs@vger.kernel.org,
-        linux-btrfs-owner@vger.kernel.org
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:42316 "EHLO
+        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S967396AbeEXPH5 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 24 May 2018 11:07:57 -0400
+From: Chris Mason <clm@fb.com>
+To: robbieko <robbieko@synology.com>
+CC: Christoph Hellwig <hch@infradead.org>, <linux-btrfs@vger.kernel.org>,
+        <linux-btrfs-owner@vger.kernel.org>
 Subject: Re: [PATCH] Btrfs: implement unlocked buffered write
-In-Reply-To: <B0E81709-76C1-45C1-AC3E-C52072A9FE15@fb.com>
+Date: Thu, 24 May 2018 11:05:55 -0400
+Message-ID: <3DB5CC2A-415A-43E1-B339-2AD6FD7420F7@fb.com>
+In-Reply-To: <7b0a74b32bb7d0e5ea0f9dbf0b764101@synology.com>
 References: <1526442757-7167-1-git-send-email-robbieko@synology.com>
  <20180522180828.GA8340@infradead.org>
  <D87124BA-3EEC-480F-8520-EBD3B5A33C04@fb.com>
  <7ceaa6253162b32bf23e57e1763647de@synology.com>
  <B0E81709-76C1-45C1-AC3E-C52072A9FE15@fb.com>
-Message-ID: <7b0a74b32bb7d0e5ea0f9dbf0b764101@synology.com>
+ <7b0a74b32bb7d0e5ea0f9dbf0b764101@synology.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Mason 於 2018-05-23 23:56 寫到:
-> On 23 May 2018, at 3:26, robbieko wrote:
-> 
->> Chris Mason 於 2018-05-23 02:31 寫到:
->>> On 22 May 2018, at 14:08, Christoph Hellwig wrote:
->>> 
->>>> On Wed, May 16, 2018 at 11:52:37AM +0800, robbieko wrote:
->>>>> From: Robbie Ko <robbieko@synology.com>
->>>>> 
->>>>> This idea is from direct io. By this patch, we can make the 
->>>>> buffered
->>>>> write parallel, and improve the performance and latency. But 
->>>>> because we
->>>>> can not update isize without i_mutex, the unlocked buffered write 
->>>>> just
->>>>> can be done in front of the EOF.
->>>>> 
->>>>> We needn't worry about the race between buffered write and 
->>>>> truncate,
->>>>> because the truncate need wait until all the buffered write end.
->>>>> 
->>>>> And we also needn't worry about the race between dio write and 
->>>>> punch hole,
->>>>> because we have extent lock to protect our operation.
->>>>> 
->>>>> I ran fio to test the performance of this feature.
->>>> 
->>>> And what protects two writes from interleaving their results now?
->>> 
->>> page locks...ish, we at least won't have results interleaved in a
->>> single page.  For btrfs it'll actually be multiple pages since we try
->>> to do more than one at a time.
->>> 
->>> I haven't verified all the assumptions around truncate and fallocate
->>> and friends expecting the dio special locking to be inside i_size.  
->>> In
->>> general this makes me a little uncomfortable.
->>> 
->>> But we're not avoiding the inode lock completely, we're just dropping
->>> it for the expensive parts of writing to the file.  A quick guess
->>> about what the expensive parts are:
->>> 
->>> 1) balance_dirty_pages()
->>> 2) btrfs_btree_balance_dirty()
->>> 3) metadata reservations/enospc waiting.
->>> 
->> 
->> The expensive part of buffered_write are:
->> 1. prepare_pages()
->>     --wait_on_page_writeback()
->>     Because writeback submit page to PG_writeback.
->>     We must wait until the page writeback IO ends.
-> 
-> Is this based on timing the fio job or something else?  We can trigger
-> a stable page prep run before we take the mutex, but stable pages
-> shouldn't be part of random IO workloads unless we're doing random IO
-> inside a file that mostly fits in ram.
-> 
+On 24 May 2018, at 4:46, robbieko wrote:
 
-This problem is easily encountered in the context of VMs and File-based 
-iSCSI LUNs.
-Most of them are random write pattern.
-Fio can quickly simulate the problem.
+> Chris Mason 於 2018-05-23 23:56 寫到:
+>> On 23 May 2018, at 3:26, robbieko wrote:
+>>>>
+>>>> But we're not avoiding the inode lock completely, we're just 
+>>>> dropping
+>>>> it for the expensive parts of writing to the file.  A quick guess
+>>>> about what the expensive parts are:
+>>>>
+>>>> 1) balance_dirty_pages()
+>>>> 2) btrfs_btree_balance_dirty()
+>>>> 3) metadata reservations/enospc waiting.
+>>>>
+>>>
+>>> The expensive part of buffered_write are:
+>>> 1. prepare_pages()
+>>>     --wait_on_page_writeback()
+>>>     Because writeback submit page to PG_writeback.
+>>>     We must wait until the page writeback IO ends.
+>>
+>> Is this based on timing the fio job or something else?  We can 
+>> trigger
+>> a stable page prep run before we take the mutex, but stable pages
+>> shouldn't be part of random IO workloads unless we're doing random IO
+>> inside a file that mostly fits in ram.
+>>
+>
+> This problem is easily encountered in the context of VMs and 
+> File-based iSCSI LUNs.
+> Most of them are random write pattern.
+> Fio can quickly simulate the problem.
 
-So which is the best way?
-1. unlocked buffered write (like direct-io)
-2. stable page prep
-3. Or is there any way to completely avoid stable pages?
+With really random IO, to a device bigger than memory, the chances of us 
+writing to the same block twice with it still in flight are pretty 
+small.  With VMs and other virtual block devices backed by btrfs, it's 
+easier to hit stable pages because filesystems try pretty hard to be 
+less than completely random.
 
-> balance_dirty_pages() is a much more common waiting point, and doing
-> that with the inode lock held definitely adds contention.
+>
+> So which is the best way?
+> 1. unlocked buffered write (like direct-io)
+> 2. stable page prep
+> 3. Or is there any way to completely avoid stable pages?
+>
+>> balance_dirty_pages() is a much more common waiting point, and doing
+>> that with the inode lock held definitely adds contention.
+>
+> Yes. I agree.
+> But for latency, balance_dirty_pages is usually a relatively smooth 
+> latency,
+> lock_and_cleanup_extent_if_need and prepare_pages are dependent on IO,
+> so the latency is a multiple of growth.
 
-Yes. I agree.
-But for latency, balance_dirty_pages is usually a relatively smooth 
-latency,
-lock_and_cleanup_extent_if_need and prepare_pages are dependent on IO,
-so the latency is a multiple of growth.
+I think the best way is to peel out a stable page write wait before the 
+inode lock is taken, and only when the write is inside i_size.  We'll 
+need to keep the existing stable page wait as well, but waiting before 
+the inode lock is taken should handle the vast majority of IO in flight.
 
-Thanks.
-Robbie Ko
+I'd also push the balance_dirty_pages() outside the inode lock, as long 
+as the write is relatively small.
 
-> 
->> 
->> 2. lock_and_cleanup_extent_if_need
->>     --btrfs_start_ordered_extent
->>     When a large number of ordered_extent queue is in 
->> endio_write_workers workqueue.
->>     Buffered_write assumes that ordered_extent is the last one in the 
->> endio_write_workers workqueue,
->>     and waits for all ordered_extents to be processed before because 
->> the workqueue is a FIFO.
->> 
-> 
-> This isn't completely accurate, but it falls into the stable pages
-> bucket as well.  We can push a lighter version of the stable page wait
-> before the inode lock when the IO is inside of i_size.  It won't
-> completely remove the possibility that someone else dirties those
-> pages again, but if the workload is random or really splitting up the
-> file, it'll make the work done with the lock held much less.
-> 
-> -chris
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" 
-> in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+For really getting rid of stable pages, that's a bigger project ;)
 
+-chris

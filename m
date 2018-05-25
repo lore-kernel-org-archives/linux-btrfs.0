@@ -1,153 +1,198 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp2120.oracle.com ([141.146.126.78]:58706 "EHLO
+Received: from aserp2120.oracle.com ([141.146.126.78]:49850 "EHLO
         aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754040AbeEWGcl (ORCPT
+        with ESMTP id S1752810AbeEYDC4 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 23 May 2018 02:32:41 -0400
+        Thu, 24 May 2018 23:02:56 -0400
 Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
-        by aserp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w4N6Q2wi146476
-        for <linux-btrfs@vger.kernel.org>; Wed, 23 May 2018 06:32:40 GMT
-Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
-        by aserp2120.oracle.com with ESMTP id 2j4nh7tg90-1
+        by aserp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w4P326xM046288
+        for <linux-btrfs@vger.kernel.org>; Fri, 25 May 2018 03:02:56 GMT
+Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
+        by aserp2120.oracle.com with ESMTP id 2j62sw9fdc-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 23 May 2018 06:32:40 +0000
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id w4N6WdZ5008866
+        for <linux-btrfs@vger.kernel.org>; Fri, 25 May 2018 03:02:56 +0000
+Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
+        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w4P32tbJ022192
         (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 23 May 2018 06:32:40 GMT
-Received: from abhmp0014.oracle.com (abhmp0014.oracle.com [141.146.116.20])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w4N6WdHe015683
-        for <linux-btrfs@vger.kernel.org>; Wed, 23 May 2018 06:32:39 GMT
+        for <linux-btrfs@vger.kernel.org>; Fri, 25 May 2018 03:02:55 GMT
+Received: from abhmp0018.oracle.com (abhmp0018.oracle.com [141.146.116.24])
+        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w4P32tpY006427
+        for <linux-btrfs@vger.kernel.org>; Fri, 25 May 2018 03:02:55 GMT
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v4 1/3] btrfs: add helper function describe_block_group()
-Date: Wed, 23 May 2018 14:35:06 +0800
-Message-Id: <20180523063508.18695-2-anand.jain@oracle.com>
-In-Reply-To: <20180523063508.18695-1-anand.jain@oracle.com>
-References: <20180523063508.18695-1-anand.jain@oracle.com>
+Subject: [PATCH v4.1a 2/3] btrfs: balance: add args info during start and resume
+Date: Fri, 25 May 2018 11:05:29 +0800
+Message-Id: <20180525030529.23301-1-anand.jain@oracle.com>
+In-Reply-To: <20180523063508.18695-3-anand.jain@oracle.com>
+References: <20180523063508.18695-3-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Improve on describe_relocation() add a common helper function to describe
-the block groups.
+Balance arg info is an important information to be reviewed for the
+system audit. So this patch adds them to the kernel log.
+
+Example:
+->btrfs bal start -f -mprofiles=raid1,convert=single,soft -dlimit=10..20,usage=50 /btrfs
+
+kernel: BTRFS info (device sdb): balance: start force D:usage=50,limit=10..20 M:soft,profiles=raid1,convert=single S:soft,profiles=raid1,convert=single
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
-v3->v4: Just pass full flag name in the define DESCRIBE_FLAG(flag,..),
-	 so that it can be used at couple of more places.
-	Rename describe_block_groups() to btrfs_describe_block_groups().
-	Drop useless return u32.
-v3:	Born.
+v4->v4.1a: Rename last missed sz to size_buf.
+	   Allocate at least (64*3) 192 bytes for tmp_buf.
+	   Log format change: Use CAPS abbreviate for group type,
+	    as in the above Example.
+v3->v4: Change log updated with new example.
+	Log format is changed to almost match with the cli.
+	snprintf drop %s for inline string.
+	Print range as =%u..%u instead of min=%umax=%u.
+	soft is under the args now.
+	force is printed as -f.
 
- fs/btrfs/relocation.c | 30 +++---------------------------
- fs/btrfs/volumes.c    | 36 ++++++++++++++++++++++++++++++++++++
- fs/btrfs/volumes.h    |  1 +
- 3 files changed, 40 insertions(+), 27 deletions(-)
+v2->v3: Change log updated.
+        Make use of describe_block_group() added in 1/4
+        Drop using strcat instead use snprintf.
+        Logs string format updated as shown in the example above.
 
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 879b76fa881a..0434cebc2ea2 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -4320,37 +4320,13 @@ static struct reloc_control *alloc_reloc_control(void)
- static void describe_relocation(struct btrfs_fs_info *fs_info,
- 				struct btrfs_block_group_cache *block_group)
- {
--	char buf[128];		/* prefixed by a '|' that'll be dropped */
--	u64 flags = block_group->flags;
-+	char buf[128];
- 
--	/* Shouldn't happen */
--	if (!flags) {
--		strcpy(buf, "|NONE");
--	} else {
--		char *bp = buf;
--
--#define DESCRIBE_FLAG(f, d) \
--		if (flags & BTRFS_BLOCK_GROUP_##f) { \
--			bp += snprintf(bp, buf - bp + sizeof(buf), "|%s", d); \
--			flags &= ~BTRFS_BLOCK_GROUP_##f; \
--		}
--		DESCRIBE_FLAG(DATA,     "data");
--		DESCRIBE_FLAG(SYSTEM,   "system");
--		DESCRIBE_FLAG(METADATA, "metadata");
--		DESCRIBE_FLAG(RAID0,    "raid0");
--		DESCRIBE_FLAG(RAID1,    "raid1");
--		DESCRIBE_FLAG(DUP,      "dup");
--		DESCRIBE_FLAG(RAID10,   "raid10");
--		DESCRIBE_FLAG(RAID5,    "raid5");
--		DESCRIBE_FLAG(RAID6,    "raid6");
--		if (flags)
--			snprintf(bp, buf - bp + sizeof(buf), "|0x%llx", flags);
--#undef DESCRIBE_FLAG
--	}
-+	btrfs_describe_block_groups(block_group->flags, buf, sizeof(buf));
- 
- 	btrfs_info(fs_info,
- 		   "relocating block group %llu flags %s",
--		   block_group->key.objectid, buf + 1);
-+		   block_group->key.objectid, buf);
- }
- 
- /*
+v1->v2: Change log update.
+        Move adding the logs for balance complete and end to a new patch
+
+ fs/btrfs/volumes.c | 107 +++++++++++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 104 insertions(+), 3 deletions(-)
+
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index b6757b53c297..44f4799bf06f 100644
+index e858882a98eb..833dde6168de 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -126,6 +126,42 @@ const char *get_raid_name(enum btrfs_raid_types type)
- 	return btrfs_raid_array[type].raid_name;
+@@ -3809,6 +3809,108 @@ static inline int validate_convert_profile(struct btrfs_balance_args *bctl_arg,
+ 		 (bctl_arg->target & ~allowed)));
  }
  
-+void btrfs_describe_block_groups(u64 bg_flags, char *buf, u32 size_buf)
++static u32 describe_balance_args(struct btrfs_balance_args *bargs, char *buf,
++				 u32 size_buf)
 +{
-+	int i;
-+	u32 ret;
 +	char *bp = buf;
-+	u64 flags = bg_flags;
++	u64 flags = bargs->flags;
++	char tmp_buf[128];
 +
-+	if (!flags) {
-+		snprintf(bp, size_buf, "%s", "NONE");
-+		return;
++	if (!flags)
++		return 0;
++
++	if (flags & BTRFS_BALANCE_ARGS_SOFT)
++		bp += snprintf(bp, buf - bp + size_buf, "soft,");
++
++	if (flags & BTRFS_BALANCE_ARGS_PROFILES) {
++		btrfs_describe_block_groups(bargs->profiles, tmp_buf,
++					    sizeof(tmp_buf));
++		bp += snprintf(bp, buf - bp + size_buf, "profiles=%s,",
++			       tmp_buf);
 +	}
 +
-+#define DESCRIBE_FLAG(f, d) \
-+	do { \
-+		if (flags & f) { \
-+			bp += snprintf(bp, buf - bp + size_buf, "%s|", d); \
-+			flags &= ~f; \
-+		} \
-+	} while (0)
++	if (flags & BTRFS_BALANCE_ARGS_USAGE)
++		bp += snprintf(bp, buf - bp + size_buf, "usage=%llu,",
++			       bargs->usage);
 +
-+	DESCRIBE_FLAG(BTRFS_BLOCK_GROUP_DATA, "data");
-+	DESCRIBE_FLAG(BTRFS_BLOCK_GROUP_SYSTEM, "system");
-+	DESCRIBE_FLAG(BTRFS_BLOCK_GROUP_METADATA, "metadata");
-+	DESCRIBE_FLAG(BTRFS_AVAIL_ALLOC_BIT_SINGLE, "single");
-+	for (i = 0; i < BTRFS_NR_RAID_TYPES; i++)
-+		DESCRIBE_FLAG(btrfs_raid_array[i].bg_flag,
-+			      btrfs_raid_array[i].raid_name);
-+#undef DESCRIBE_FLAG
++	if (flags & BTRFS_BALANCE_ARGS_USAGE_RANGE)
++		bp += snprintf(bp, buf - bp + size_buf, "usage=%u..%u,",
++			       bargs->usage_min, bargs->usage_max);
 +
-+	if (flags)
-+		bp += snprintf(bp, buf - bp + size_buf, "0x%llx|", flags);
++	if (flags & BTRFS_BALANCE_ARGS_DEVID)
++		bp += snprintf(bp, buf - bp + size_buf, "devid=%llu,",
++			       bargs->devid);
 +
-+	ret = bp - buf - 1;
-+	buf[ret] = '\0'; /* remove last | */
++	if (flags & BTRFS_BALANCE_ARGS_DRANGE)
++		bp += snprintf(bp, buf - bp + size_buf, "drange=%llu..%llu,",
++			       bargs->pstart, bargs->pend);
++
++	if (flags & BTRFS_BALANCE_ARGS_VRANGE)
++		bp += snprintf(bp, buf - bp + size_buf, "vrange%llu..%llu,",
++			       bargs->vstart, bargs->vend);
++
++	if (flags & BTRFS_BALANCE_ARGS_LIMIT)
++		bp += snprintf(bp, buf - bp + size_buf, "limit=%llu,",
++			       bargs->limit);
++
++	if (flags & BTRFS_BALANCE_ARGS_LIMIT_RANGE)
++		bp += snprintf(bp, buf - bp + size_buf, "limit=%u..%u,",
++			       bargs->limit_min, bargs->limit_max);
++
++	if (flags & BTRFS_BALANCE_ARGS_STRIPES_RANGE)
++		bp += snprintf(bp, buf - bp + size_buf, "stripes=%u..%u,",
++			       bargs->stripes_min, bargs->stripes_max);
++
++	if (flags & BTRFS_BALANCE_ARGS_CONVERT) {
++		int index = btrfs_bg_flags_to_raid_index(bargs->target);
++
++		bp += snprintf(bp, buf - bp + size_buf, "convert=%s,",
++			       get_raid_name(index));
++	}
++
++	buf[bp - buf - 1] = '\0'; /* remove last , */
++	return bp - buf - 1;
 +}
 +
- static int init_first_rw_device(struct btrfs_trans_handle *trans,
- 				struct btrfs_fs_info *fs_info);
- static int btrfs_relocate_sys_chunks(struct btrfs_fs_info *fs_info);
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 5139ec8daf4c..5b9637a3ed48 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -433,6 +433,7 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *path);
- int btrfs_balance(struct btrfs_fs_info *fs_info,
- 		  struct btrfs_balance_control *bctl,
- 		  struct btrfs_ioctl_balance_args *bargs);
-+void btrfs_describe_block_groups(u64 flags, char *buf, u32 size_buf);
- int btrfs_resume_balance_async(struct btrfs_fs_info *fs_info);
- int btrfs_recover_balance(struct btrfs_fs_info *fs_info);
- int btrfs_pause_balance(struct btrfs_fs_info *fs_info);
++static void describe_balance_start_or_resume(struct btrfs_fs_info *fs_info)
++{
++	u32 size_buf = 1024;
++	char tmp_buf[192];
++	char *buf;
++	char *bp;
++	struct btrfs_balance_control *bctl = fs_info->balance_ctl;
++
++	buf = kzalloc(size_buf, GFP_KERNEL);
++	if (!buf)
++		return;
++
++	bp = buf;
++	if (bctl->flags & BTRFS_BALANCE_FORCE)
++		bp += snprintf(bp, buf - bp + size_buf, "force ");
++
++	if (bctl->flags & BTRFS_BALANCE_DATA) {
++		describe_balance_args(&bctl->data, tmp_buf, sizeof(tmp_buf));
++		bp += snprintf(bp, buf - bp + size_buf, "D:%s ", tmp_buf);
++	}
++
++	if (bctl->flags & BTRFS_BALANCE_METADATA) {
++		describe_balance_args(&bctl->meta, tmp_buf, sizeof(tmp_buf));
++		bp += snprintf(bp, buf - bp + size_buf, "M:%s ", tmp_buf);
++	}
++
++	if (bctl->flags & BTRFS_BALANCE_SYSTEM) {
++		describe_balance_args(&bctl->sys, tmp_buf, sizeof(tmp_buf));
++		bp += snprintf(bp, buf - bp + size_buf, "S:%s ", tmp_buf);
++	}
++
++	buf[bp - buf - 1] = '\0'; /* remove last " "*/
++	btrfs_info(fs_info, "%s %s",
++		   bctl->flags & BTRFS_BALANCE_RESUME ?
++		   "balance: resume":"balance: start", buf);
++
++	kfree(buf);
++}
++
+ /*
+  * Should be called with balance mutexe held
+  */
+@@ -3953,6 +4055,7 @@ int btrfs_balance(struct btrfs_fs_info *fs_info,
+ 
+ 	ASSERT(!test_bit(BTRFS_FS_BALANCE_RUNNING, &fs_info->flags));
+ 	set_bit(BTRFS_FS_BALANCE_RUNNING, &fs_info->flags);
++	describe_balance_start_or_resume(fs_info);
+ 	mutex_unlock(&fs_info->balance_mutex);
+ 
+ 	ret = __btrfs_balance(fs_info);
+@@ -3990,10 +4093,8 @@ static int balance_kthread(void *data)
+ 	int ret = 0;
+ 
+ 	mutex_lock(&fs_info->balance_mutex);
+-	if (fs_info->balance_ctl) {
+-		btrfs_info(fs_info, "balance: resuming");
++	if (fs_info->balance_ctl)
+ 		ret = btrfs_balance(fs_info, fs_info->balance_ctl, NULL);
+-	}
+ 	mutex_unlock(&fs_info->balance_mutex);
+ 
+ 	return ret;
 -- 
 2.7.0
 

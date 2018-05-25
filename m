@@ -1,100 +1,142 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:54893 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:54897 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S935329AbeEYEnb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 25 May 2018 00:43:31 -0400
+        id S935371AbeEYEnd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 25 May 2018 00:43:33 -0400
 Received: from relay2.suse.de (charybdis-ext-too.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 98089AC42
-        for <linux-btrfs@vger.kernel.org>; Fri, 25 May 2018 04:43:30 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id F2DAFAC42
+        for <linux-btrfs@vger.kernel.org>; Fri, 25 May 2018 04:43:31 +0000 (UTC)
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v4 2/3] btrfs: Refactor btrfs_check_super_valid()
-Date: Fri, 25 May 2018 12:43:24 +0800
-Message-Id: <20180525044325.3365-3-wqu@suse.com>
+Subject: [PATCH v4 3/3] btrfs: Do super block verification before writing it to disk
+Date: Fri, 25 May 2018 12:43:25 +0800
+Message-Id: <20180525044325.3365-4-wqu@suse.com>
 In-Reply-To: <20180525044325.3365-1-wqu@suse.com>
 References: <20180525044325.3365-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Refactor btrfs_check_super_valid() by the ways:
+There are already 2 reports about strangely corrupted super blocks,
+where csum still matches but extra garbage gets slipped into super block.
 
-1) Rename it to btrfs_validate_mount_super()
-   Now it's more obvious when the function should be called.
+The corruption would looks like:
+------
+superblock: bytenr=65536, device=/dev/sdc1
+---------------------------------------------------------
+csum_type               41700 (INVALID)
+csum                    0x3b252d3a [match]
+bytenr                  65536
+flags                   0x1
+                        ( WRITTEN )
+magic                   _BHRfS_M [match]
+...
+incompat_flags          0x5b22400000000169
+                        ( MIXED_BACKREF |
+                          COMPRESS_LZO |
+                          BIG_METADATA |
+                          EXTENDED_IREF |
+                          SKINNY_METADATA |
+                          unknown flag: 0x5b22400000000000 )
+...
+------
+Or
+------
+superblock: bytenr=65536, device=/dev/mapper/x
+---------------------------------------------------------
+csum_type              35355 (INVALID)
+csum_size              32
+csum                   0xf0dbeddd [match]
+bytenr                 65536
+flags                  0x1
+                       ( WRITTEN )
+magic                  _BHRfS_M [match]
+...
+incompat_flags         0x176d200000000169
+                       ( MIXED_BACKREF |
+                         COMPRESS_LZO |
+                         BIG_METADATA |
+                         EXTENDED_IREF |
+                         SKINNY_METADATA |
+                         unknown flag: 0x176d200000000000 )
+------
 
-2) Extract core check routine into __validate_super()
-   So later write time check can reuse it, and if needed, we could also
-   use __validate_super() to check each super block.
+Obviously, csum_type and incompat_flags get some garbage, but its csum
+still matches, which means kernel calculates the csum based on corrupted
+super block memory.
+And after manually fixing these values, the filesystem is completely
+healthy without any problem exposed by btrfs check.
 
-3) Add more comment about btrfs_validate_mount_super()
-   Mostly of what it doesn't check and when it should be called.
+Although the cause is still unknown, at least detect it and prevent further
+corruption.
 
+Reported-by: Ken Swenson <flat@imo.uto.moe>
+Reported-by: Ben Parsons <9parsonsb@gmail.com>
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/disk-io.c | 29 +++++++++++++++++++++++++----
- 1 file changed, 25 insertions(+), 4 deletions(-)
+ fs/btrfs/disk-io.c | 43 +++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 43 insertions(+)
 
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 13c5f90995aa..b981ecc4b6f9 100644
+index b981ecc4b6f9..d6c0cee627d9 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
-@@ -2440,9 +2440,19 @@ static int btrfs_read_roots(struct btrfs_fs_info *fs_info)
- 	return ret;
- }
- 
--static int btrfs_check_super_valid(struct btrfs_fs_info *fs_info)
-+/*
-+ * Real super block validation check
-+ * NOTE: super csum type and incompat features will not be checked here.
-+ *
-+ * @sb:		super block to check
-+ * @mirror_num:	the super block number to check its bytenr:
-+ * 		0 means the primary (1st) sb,
-+ * 		1 and 2 means 2nd and 3rd backup copy
-+ * 		-1 means to skip bytenr check
-+ */
-+static int __validate_super(struct btrfs_fs_info *fs_info,
-+			    struct btrfs_super_block *sb, int mirror_num)
- {
--	struct btrfs_super_block *sb = fs_info->super_copy;
- 	u64 nodesize = btrfs_super_nodesize(sb);
- 	u64 sectorsize = btrfs_super_sectorsize(sb);
- 	int ret = 0;
-@@ -2545,7 +2555,8 @@ static int btrfs_check_super_valid(struct btrfs_fs_info *fs_info)
- 		ret = -EINVAL;
- 	}
- 
--	if (btrfs_super_bytenr(sb) != BTRFS_SUPER_INFO_OFFSET) {
-+	if (mirror_num >= 0 &&
-+	    btrfs_super_bytenr(sb) != btrfs_sb_offset(mirror_num)) {
- 		btrfs_err(fs_info, "super offset mismatch %llu != %u",
- 			  btrfs_super_bytenr(sb), BTRFS_SUPER_INFO_OFFSET);
- 		ret = -EINVAL;
-@@ -2589,6 +2600,16 @@ static int btrfs_check_super_valid(struct btrfs_fs_info *fs_info)
- 	return ret;
+@@ -2610,6 +2610,41 @@ static int btrfs_validate_mount_super(struct btrfs_fs_info *fs_info)
+ 	return __validate_super(fs_info, fs_info->super_copy, 0);
  }
  
 +/*
-+ * Check the validation of super block at mount time.
-+ * Some checks already done by early mount, like csum type and incompat flags
-+ * will be skipped.
++ * Check the validation of super block at write time.
++ * Some checks like bytenr check will be skipped as their values will be
++ * overwritten soon.
++ * Extra checks like csum type and incompact flags will be executed here.
 + */
-+static int btrfs_validate_mount_super(struct btrfs_fs_info *fs_info)
++static int btrfs_validate_write_super(struct btrfs_fs_info *fs_info,
++				      struct btrfs_super_block *sb)
 +{
-+	return __validate_super(fs_info, fs_info->super_copy, 0);
++	int ret;
++
++	ret = __validate_super(fs_info, sb, -1);
++	if (ret < 0)
++		goto out;
++	if (btrfs_super_csum_type(sb) != BTRFS_CSUM_TYPE_CRC32) {
++		ret = -EUCLEAN;
++		btrfs_err(fs_info, "invalid csum type, has %u want %u",
++			  btrfs_super_csum_type(sb), BTRFS_CSUM_TYPE_CRC32);
++		goto out;
++	}
++	if (btrfs_super_incompat_flags(sb) & ~BTRFS_FEATURE_INCOMPAT_SUPP) {
++		ret = -EUCLEAN;
++		btrfs_err(fs_info,
++		"invalid incompact flags, has 0x%llu valid mask 0x%llu",
++			  btrfs_super_incompat_flags(sb),
++			  BTRFS_FEATURE_INCOMPAT_SUPP);
++		goto out;
++	}
++out:
++	if (ret < 0)
++		btrfs_err(fs_info,
++		"super block corruption detected before writing it to disk");
++	return ret;
 +}
 +
  int open_ctree(struct super_block *sb,
  	       struct btrfs_fs_devices *fs_devices,
  	       char *options)
-@@ -2814,7 +2835,7 @@ int open_ctree(struct super_block *sb,
+@@ -3770,6 +3805,14 @@ int write_all_supers(struct btrfs_fs_info *fs_info, int max_mirrors)
+ 		flags = btrfs_super_flags(sb);
+ 		btrfs_set_super_flags(sb, flags | BTRFS_HEADER_FLAG_WRITTEN);
  
- 	memcpy(fs_info->fsid, fs_info->super_copy->fsid, BTRFS_FSID_SIZE);
- 
--	ret = btrfs_check_super_valid(fs_info);
-+	ret = btrfs_validate_mount_super(fs_info);
- 	if (ret) {
- 		btrfs_err(fs_info, "superblock contains fatal errors");
- 		err = -EINVAL;
++		ret = btrfs_validate_write_super(fs_info, sb);
++		if (ret < 0) {
++			mutex_unlock(&fs_info->fs_devices->device_list_mutex);
++			btrfs_handle_fs_error(fs_info, -EUCLEAN,
++				"unexpected superblock corruption detected");
++			return -EUCLEAN;
++		}
++
+ 		ret = write_dev_supers(dev, sb, max_mirrors);
+ 		if (ret)
+ 			total_errors++;
 -- 
 2.17.0
 

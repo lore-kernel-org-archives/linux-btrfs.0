@@ -1,154 +1,159 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:18815 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1752085AbeEYFJ6 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 25 May 2018 01:09:58 -0400
-Subject: Re: [PATCH v4 2/3] btrfs: Refactor btrfs_check_super_valid()
-To: Qu Wenruo <wqu@suse.com>, <linux-btrfs@vger.kernel.org>
+Received: from mx2.suse.de ([195.135.220.15]:34298 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S935235AbeEYGdG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 25 May 2018 02:33:06 -0400
+Received: from relay2.suse.de (charybdis-ext-too.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 5462AAF52
+        for <linux-btrfs@vger.kernel.org>; Fri, 25 May 2018 06:33:05 +0000 (UTC)
+Subject: Re: [PATCH v4 3/3] btrfs: Do super block verification before writing
+ it to disk
+To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
 References: <20180525044325.3365-1-wqu@suse.com>
- <20180525044325.3365-3-wqu@suse.com>
-From: Su Yue <suy.fnst@cn.fujitsu.com>
-Message-ID: <c66dd544-2818-37f5-0d3b-0e9cd168256c@cn.fujitsu.com>
-Date: Fri, 25 May 2018 13:15:55 +0800
+ <20180525044325.3365-4-wqu@suse.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <f6f5ebde-d61d-c10f-fa06-5df5d6171c3b@suse.com>
+Date: Fri, 25 May 2018 09:33:04 +0300
 MIME-Version: 1.0
-In-Reply-To: <20180525044325.3365-3-wqu@suse.com>
-Content-Type: multipart/mixed;
-        boundary="------------12FAF502636B379A55989DC0"
+In-Reply-To: <20180525044325.3365-4-wqu@suse.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---------------12FAF502636B379A55989DC0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: quoted-printable
 
 
-
-On 05/25/2018 12:43 PM, Qu Wenruo wrote:
-> Refactor btrfs_check_super_valid() by the ways:
->=20
-> 1) Rename it to btrfs_validate_mount_super()
->    Now it's more obvious when the function should be called.
->=20
-> 2) Extract core check routine into __validate_super()
->    So later write time check can reuse it, and if needed, we could also
->    use __validate_super() to check each super block.
->=20
-> 3) Add more comment about btrfs_validate_mount_super()
->    Mostly of what it doesn't check and when it should be called.
->=20
+On 25.05.2018 07:43, Qu Wenruo wrote:
+> There are already 2 reports about strangely corrupted super blocks,
+> where csum still matches but extra garbage gets slipped into super block.
+> 
+> The corruption would looks like:
+> ------
+> superblock: bytenr=65536, device=/dev/sdc1
+> ---------------------------------------------------------
+> csum_type               41700 (INVALID)
+> csum                    0x3b252d3a [match]
+> bytenr                  65536
+> flags                   0x1
+>                         ( WRITTEN )
+> magic                   _BHRfS_M [match]
+> ...
+> incompat_flags          0x5b22400000000169
+>                         ( MIXED_BACKREF |
+>                           COMPRESS_LZO |
+>                           BIG_METADATA |
+>                           EXTENDED_IREF |
+>                           SKINNY_METADATA |
+>                           unknown flag: 0x5b22400000000000 )
+> ...
+> ------
+> Or
+> ------
+> superblock: bytenr=65536, device=/dev/mapper/x
+> ---------------------------------------------------------
+> csum_type              35355 (INVALID)
+> csum_size              32
+> csum                   0xf0dbeddd [match]
+> bytenr                 65536
+> flags                  0x1
+>                        ( WRITTEN )
+> magic                  _BHRfS_M [match]
+> ...
+> incompat_flags         0x176d200000000169
+>                        ( MIXED_BACKREF |
+>                          COMPRESS_LZO |
+>                          BIG_METADATA |
+>                          EXTENDED_IREF |
+>                          SKINNY_METADATA |
+>                          unknown flag: 0x176d200000000000 )
+> ------
+> 
+> Obviously, csum_type and incompat_flags get some garbage, but its csum
+> still matches, which means kernel calculates the csum based on corrupted
+> super block memory.
+> And after manually fixing these values, the filesystem is completely
+> healthy without any problem exposed by btrfs check.
+> 
+> Although the cause is still unknown, at least detect it and prevent further
+> corruption.
+> 
+> Reported-by: Ken Swenson <flat@imo.uto.moe>
+> Reported-by: Ben Parsons <9parsonsb@gmail.com>
 > Signed-off-by: Qu Wenruo <wqu@suse.com>
 
-Reviewed-by: Su Yue <suy.fnst@cn.fujitsu.com>
+Reviewed-by: Nikolay Borisov <nborisov@suse.com> , however 1 question
+see below
 
 > ---
->  fs/btrfs/disk-io.c | 29 +++++++++++++++++++++++++----
->  1 file changed, 25 insertions(+), 4 deletions(-)
->=20
+>  fs/btrfs/disk-io.c | 43 +++++++++++++++++++++++++++++++++++++++++++
+>  1 file changed, 43 insertions(+)
+> 
 > diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index 13c5f90995aa..b981ecc4b6f9 100644
+> index b981ecc4b6f9..d6c0cee627d9 100644
 > --- a/fs/btrfs/disk-io.c
 > +++ b/fs/btrfs/disk-io.c
-> @@ -2440,9 +2440,19 @@ static int btrfs_read_roots(struct btrfs_fs_info *=
-fs_info)
->  	return ret;
+> @@ -2610,6 +2610,41 @@ static int btrfs_validate_mount_super(struct btrfs_fs_info *fs_info)
+>  	return __validate_super(fs_info, fs_info->super_copy, 0);
 >  }
->=20=20
-> -static int btrfs_check_super_valid(struct btrfs_fs_info *fs_info)
+>  
 > +/*
-> + * Real super block validation check
-> + * NOTE: super csum type and incompat features will not be checked here.
-> + *
-> + * @sb:		super block to check
-> + * @mirror_num:	the super block number to check its bytenr:
-> + * 		0 means the primary (1st) sb,
-> + * 		1 and 2 means 2nd and 3rd backup copy
-> + * 		-1 means to skip bytenr check
+> + * Check the validation of super block at write time.
+> + * Some checks like bytenr check will be skipped as their values will be
+> + * overwritten soon.
+> + * Extra checks like csum type and incompact flags will be executed here.
 > + */
-> +static int __validate_super(struct btrfs_fs_info *fs_info,
-> +			    struct btrfs_super_block *sb, int mirror_num)
->  {
-> -	struct btrfs_super_block *sb =3D fs_info->super_copy;
->  	u64 nodesize =3D btrfs_super_nodesize(sb);
->  	u64 sectorsize =3D btrfs_super_sectorsize(sb);
->  	int ret =3D 0;
-> @@ -2545,7 +2555,8 @@ static int btrfs_check_super_valid(struct btrfs_fs_=
-info *fs_info)
->  		ret =3D -EINVAL;
->  	}
->=20=20
-> -	if (btrfs_super_bytenr(sb) !=3D BTRFS_SUPER_INFO_OFFSET) {
-> +	if (mirror_num >=3D 0 &&
-> +	    btrfs_super_bytenr(sb) !=3D btrfs_sb_offset(mirror_num)) {
->  		btrfs_err(fs_info, "super offset mismatch %llu !=3D %u",
->  			  btrfs_super_bytenr(sb), BTRFS_SUPER_INFO_OFFSET);
->  		ret =3D -EINVAL;
-> @@ -2589,6 +2600,16 @@ static int btrfs_check_super_valid(struct btrfs_fs=
-_info *fs_info)
->  	return ret;
->  }
->=20=20
-> +/*
-> + * Check the validation of super block at mount time.
-> + * Some checks already done by early mount, like csum type and incompat =
-flags
-> + * will be skipped.
-> + */
-> +static int btrfs_validate_mount_super(struct btrfs_fs_info *fs_info)
+
+Is this comment correct though, since this function is called right
+before write_dev_supers which is performing the actual write and doesn't
+really modify anything on the superblock ? Why would they be
+overwritten? Perhaps it's somewhat stale since I see in the old version
+(the one which is in misc-next now) we call btrfs_validate_write_super
+before going into the loop which writes the super on each dev.
+
+> +static int btrfs_validate_write_super(struct btrfs_fs_info *fs_info,
+> +				      struct btrfs_super_block *sb)
 > +{
-> +	return __validate_super(fs_info, fs_info->super_copy, 0);
+> +	int ret;
+> +
+> +	ret = __validate_super(fs_info, sb, -1);
+> +	if (ret < 0)
+> +		goto out;
+> +	if (btrfs_super_csum_type(sb) != BTRFS_CSUM_TYPE_CRC32) {
+> +		ret = -EUCLEAN;
+> +		btrfs_err(fs_info, "invalid csum type, has %u want %u",
+> +			  btrfs_super_csum_type(sb), BTRFS_CSUM_TYPE_CRC32);
+> +		goto out;
+> +	}
+> +	if (btrfs_super_incompat_flags(sb) & ~BTRFS_FEATURE_INCOMPAT_SUPP) {
+> +		ret = -EUCLEAN;
+> +		btrfs_err(fs_info,
+> +		"invalid incompact flags, has 0x%llu valid mask 0x%llu",
+> +			  btrfs_super_incompat_flags(sb),
+> +			  BTRFS_FEATURE_INCOMPAT_SUPP);
+> +		goto out;
+> +	}
+> +out:
+> +	if (ret < 0)
+> +		btrfs_err(fs_info,
+> +		"super block corruption detected before writing it to disk");
+> +	return ret;
 > +}
 > +
 >  int open_ctree(struct super_block *sb,
 >  	       struct btrfs_fs_devices *fs_devices,
 >  	       char *options)
-> @@ -2814,7 +2835,7 @@ int open_ctree(struct super_block *sb,
->=20=20
->  	memcpy(fs_info->fsid, fs_info->super_copy->fsid, BTRFS_FSID_SIZE);
->=20=20
-> -	ret =3D btrfs_check_super_valid(fs_info);
-> +	ret =3D btrfs_validate_mount_super(fs_info);
->  	if (ret) {
->  		btrfs_err(fs_info, "superblock contains fatal errors");
->  		err =3D -EINVAL;
->=20
-
-
-
---------------12FAF502636B379A55989DC0
-Content-Type: application/pgp-keys; name="pEpkey.asc"
-Content-Transfer-Encoding: quoted-printable
-Content-Disposition: attachment; filename="pEpkey.asc"
-
------BEGIN PGP PUBLIC KEY BLOCK-----=0A=
-=0A=
-mQENBFrxafoBCADL54g5EnHtuYig32iQtOWgPqZlnBDgdSD+fMxnpMr6zZ7VNT9l=0A=
-Pv7BNy4lUHkWff1TbLuZQIoxYKEbmkajwg1rEjBfQ+6RBQWGzsjfprPdEC6kf6Ch=0A=
-sVKrfAfJArEgEvkMOCWZE1T5wNl/mNhlWfOYWadfLTIsQCKD5D1PhD9ZgKMwulGn=0A=
-OhQfeRuu/X+7zijjrpT1Nvq/Qiya/ANCq7nCu2ZTXDgQR6GSe2qgn0oVC44HKTRl=0A=
-PK+47CQ8LFnKeBuTygdOpfAWUi28SCMqwkfZhGtfQQU446HJPNz/bCNRok9l9dZi=0A=
-3EEyxMamd/tVmtsOBvtUrYIIIxNAOB87h1+PABEBAAG0IFN1IFl1ZSA8c3V5LmZu=0A=
-c3RAY24uZnVqaXRzdS5jb20+iQFUBBMBCAA+FiEE12oP3cNSLnn02mf3AOFqSFGv=0A=
-ypwFAlrxafoCGwMFCQHhM4AFCwkIBwIGFQoJCAsCBBYCAwECHgECF4AACgkQAOFq=0A=
-SFGvypwZaAf8D8gcRk4atpfgKd1nB0UuDcJNPLpzrGxQz3u2UBeNjxGUXsVsQMsy=0A=
-Ln+xd/5pbC7tk5D8/+XIZGtLc3Nb0G9D6kdSHjvlpRMo3GtnDJL/kp4TPBlcXM9V=0A=
-xzPmbBECdo8Th5+P66H3MNl3S0B48kDEcj5i7M0dZDOeQjKxzt8j++bwEdXVgBvM=0A=
-O5W8Qnd5CxbXnjme8/qyJtup1hYAKpf8Yi9bldPM0ri+uWbLtSx8/EvCxsFFMiM+=0A=
-zk1fzPqsu+lhI+lBAKR9qvH6mVCictFxA6TM7BH+lcQezHunEJDSO1obLXpjQTwh=0A=
-UpU7USyzmE0hx/O2unA6imv1O1fuafCsGLkBDQRa8Wn6AQgAtxCl1ghY/W/lP66b=0A=
-27rYgz8otwQ5TaLLwb83qwVOv7AOiMu16ikNcG2Fn0ePj3kv4/iYcsAIq6UHka25=0A=
-4UXMdwn8j8lN7dYuuJpFBjW45mHMH9gTNspp456ftqlvgTqJtPmRmcN62IGaI5OD=0A=
-/L36v7nMY5iBPecK8hIZd7BFJcBV1jntzy3XTGrvyQXx7LxqIj9uKRj1vTYTLK+9=0A=
-uaQFna1+SR7XKtkUg89YObQGXDD3D8qohk9SSmpQGkPPOdC1456Vpn/5FH057W0I=0A=
-UC/udC6AKsbYrlEqYihMY0/5FkpTusPOxw+LHpAwJppQ95JNsjtq22HgyFMpGFCW=0A=
-bSMMEwARAQABiQE8BBgBCAAmFiEE12oP3cNSLnn02mf3AOFqSFGvypwFAlrxafoC=0A=
-GwwFCQHhM4AACgkQAOFqSFGvypwMlQf+NhF3GTn+VE7MgOBJdnYkcp8QjxAJXRVp=0A=
-T9QHcJj37BiNJbCxKIac35rFsPe8BaFDM+W6aqe5+zayVd2Zx771imCbimCqgtTB=0A=
-/ScbarN/fgTP1sodDBuVLJmJWPIisYrX4jQx26OfbnZHNYKEHumh5+YghSnNGd6U=0A=
-zS/F+k2PEQZ6rbGQeyHYNDegzq7Nieg9aNoV7qvPAwbG/9KrXBQdh+X0w1Fs/Gye=0A=
-wi1vrOIWtTE2ORTJZb8y76wy6M6oOWv2PnQ0TLHM+8wTTX+dgU/IjQNO6ikqLqI8=0A=
-PN8qtLmiy6GAQETDZO//XSxcpHQJVIU/+jHKZYuHJ1IMCcaC9vvjzg=3D=3D=0A=
-=3DDxgD=0A=
------END PGP PUBLIC KEY BLOCK-----=0A=
-
---------------12FAF502636B379A55989DC0--
+> @@ -3770,6 +3805,14 @@ int write_all_supers(struct btrfs_fs_info *fs_info, int max_mirrors)
+>  		flags = btrfs_super_flags(sb);
+>  		btrfs_set_super_flags(sb, flags | BTRFS_HEADER_FLAG_WRITTEN);
+>  
+> +		ret = btrfs_validate_write_super(fs_info, sb);
+> +		if (ret < 0) {
+> +			mutex_unlock(&fs_info->fs_devices->device_list_mutex);
+> +			btrfs_handle_fs_error(fs_info, -EUCLEAN,
+> +				"unexpected superblock corruption detected");
+> +			return -EUCLEAN;
+> +		}
+> +
+>  		ret = write_dev_supers(dev, sb, max_mirrors);
+>  		if (ret)
+>  			total_errors++;
+> 

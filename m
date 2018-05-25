@@ -1,180 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:54431 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:54116 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S935638AbeEYKHD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 25 May 2018 06:07:03 -0400
-Subject: Re: [RFC PATCH v4 6/6] Btrfs: support swap files
-To: Omar Sandoval <osandov@osandov.com>, linux-btrfs@vger.kernel.org
-Cc: kernel-team@fb.com, linux-fsdevel@vger.kernel.org,
-        Tejun Heo <tj@kernel.org>
+        id S964821AbeEYOxk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 25 May 2018 10:53:40 -0400
+Date: Fri, 25 May 2018 16:50:55 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Omar Sandoval <osandov@osandov.com>
+Cc: linux-btrfs@vger.kernel.org, kernel-team@fb.com,
+        linux-fsdevel@vger.kernel.org, Tejun Heo <tj@kernel.org>
+Subject: Re: [RFC PATCH v4 4/6] Btrfs: prevent ioctls from interfering with a
+ swap file
+Message-ID: <20180525145055.GN6649@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <cover.1527197312.git.osandov@fb.com>
- <cafafebe2e9aa01251e761093199966499127fe0.1527197312.git.osandov@fb.com>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <bc13c9f8-34b0-3566-5d4d-a2cb5040e0fa@suse.com>
-Date: Fri, 25 May 2018 13:07:00 +0300
+ <296f04a07350c9cc2032e03f78c1a7284747fb50.1527197312.git.osandov@fb.com>
 MIME-Version: 1.0
-In-Reply-To: <cafafebe2e9aa01251e761093199966499127fe0.1527197312.git.osandov@fb.com>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <296f04a07350c9cc2032e03f78c1a7284747fb50.1527197312.git.osandov@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-On 25.05.2018 00:41, Omar Sandoval wrote:
+On Thu, May 24, 2018 at 02:41:28PM -0700, Omar Sandoval wrote:
 > From: Omar Sandoval <osandov@fb.com>
 > 
-> Implement the swap file a_ops on Btrfs. Activation needs to make sure
-> that the file can be used as a swap file, which currently means it must
-> be fully allocated as nocow with no compression on one device. It also
-> sets up the swap extents directly with add_swap_extent(), so export it.
+> When a swap file is active, we must make sure that the extents of the
+> file are not moved and that they don't become shared. That means that
+> the following are not safe:
 > 
-> Signed-off-by: Omar Sandoval <osandov@fb.com>
-
-What testing (apart form the xfstest patches you sent) have this code
-seen? Have you run it with lockdep enabled (I'm asking because when I
-picked up your v3 there was quite a bunch of deadlock warnings). Also
-see some inline questions below.
-
-> ---
->  fs/btrfs/inode.c | 220 +++++++++++++++++++++++++++++++++++++++++++++++
->  mm/swapfile.c    |   1 +
->  2 files changed, 221 insertions(+)
+> - chattr +c (enable compression)
+> - reflink
+> - dedupe
+> - snapshot
+> - defrag
+> - balance
+> - device remove/replace/resize
 > 
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 9228cb866115..6cca8529e307 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -10526,6 +10526,224 @@ void btrfs_set_range_writeback(void *private_data, u64 start, u64 end)
->  	}
->  }
->  
-<snip>
-> +static int btrfs_swap_activate(struct swap_info_struct *sis, struct file *file,
-> +			       sector_t *span)
-> +{
-> +	struct inode *inode = file_inode(file);
-> +	struct btrfs_fs_info *fs_info = BTRFS_I(inode)->root->fs_info;
-> +	struct extent_io_tree *io_tree = &BTRFS_I(inode)->io_tree;
-> +	struct extent_state *cached_state = NULL;
-> +	struct extent_map *em = NULL;
-> +	struct btrfs_device *device = NULL;
-> +	struct btrfs_swap_info bsi = {
-> +		.lowest_ppage = (sector_t)-1ULL,
-> +	};
-> +	int ret = 0;
-> +	u64 isize = inode->i_size;
-> +	u64 start;
-> +
-> +	/*
-> +	 * The inode is locked, so these flags won't change after we check them.
-> +	 */
-> +	if (BTRFS_I(inode)->flags & BTRFS_INODE_COMPRESS) {
-> +		btrfs_err(fs_info, "swapfile is compressed");
-> +		return -EINVAL;
-> +	}
-> +	if (!(BTRFS_I(inode)->flags & BTRFS_INODE_NODATACOW)) {
-> +		btrfs_err(fs_info, "swapfile is copy-on-write");
-> +		return -EINVAL;
-> +	}
-> +
-> +	/*
-> +	 * Balance or device remove/replace/resize can move stuff around from
-> +	 * under us. The EXCL_OP flag makes sure they aren't running/won't run
-> +	 * concurrently while we are mapping the swap extents, and the fs_info
-> +	 * nr_swapfiles counter prevents them from running while the swap file
-> +	 * is active and moving the extents. Note that this also prevents a
-> +	 * concurrent device add which isn't actually necessary, but it's not
-> +	 * really worth the trouble to allow it.
-> +	 */
-> +	if (test_and_set_bit(BTRFS_FS_EXCL_OP, &fs_info->flags))
-> +		return -EBUSY;
-> +	atomic_inc(&fs_info->nr_swapfiles);
-> +	/*
-> +	 * Snapshots can create extents which require COW even if NODATACOW is
-> +	 * set. We use this counter to prevent snapshots. We must increment it
-> +	 * before walking the extents because we don't want a concurrent
-> +	 * snapshot to run after we've already checked the extents.
-> +	 */
-> +	atomic_inc(&BTRFS_I(inode)->root->nr_swapfiles);
-> +
-> +	lock_extent_bits(io_tree, 0, isize - 1, &cached_state);
-> +	start = 0;
-> +	while (start < isize) {
-> +		u64 end, logical_block_start, physical_block_start;
-> +		u64 len = isize - start;
-> +
-> +		em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, start, len, 0);
-> +		if (IS_ERR(em)) {
-> +			ret = PTR_ERR(em);
-> +			goto out;
-> +		}
-> +		end = extent_map_end(em);
-> +
-> +		if (em->block_start == EXTENT_MAP_HOLE) {
-> +			btrfs_err(fs_info, "swapfile has holes");
-> +			ret = -EINVAL;
-> +			goto out;
-> +		}
-> +		if (em->block_start == EXTENT_MAP_INLINE) {
-> +			/*
-> +			 * It's unlikely we'll ever actually find ourselves
-> +			 * here, as a file small enough to fit inline won't be
-> +			 * big enough to store more than the swap header, but in
-> +			 * case something changes in the future, let's catch it
-> +			 * here rather than later.
-> +			 */
-> +			btrfs_err(fs_info, "swapfile is inline");
-> +			ret = -EINVAL;
-> +			goto out;
-> +		}
-> +		if (test_bit(EXTENT_FLAG_COMPRESSED, &em->flags)) {
-> +			btrfs_err(fs_info, "swapfile is compressed");
-> +			ret = -EINVAL;
-> +			goto out;
-> +		}
+> Don't allow those to happen on an active swap file. Balance and device
+> remove/replace/resize in particular are disallowed entirely; in the
+> future, we can relax this so that relocation skips/errors out only on
+> chunks containing an active swap file.
 
-Isn't this implied by the earlier BTRFS_I(inode)->flags &
-BTRFS_INODE_COMPRESS check ?
-> +
-> +		logical_block_start = em->block_start + (start - em->start);
+Hm, disabling the entire balance is too intrusive. It's clear that the
+swapfile causes a lot of trouble when it goes against the dynamic
+capabilities of btrfs (relocation and the functionality that builds on
+it).
 
-So which offset are you calculating by doing the start - em->start
-calculation? start is really the ending logical address of the previous
-extent but isn't this always < em->start of the next extent ?
+Skipping the swapfile extents should be implemented at minimum. We can
+add some heuristics that will group the swap extents to a small number
+of chunks so the impact of unmovable chunks is limited.
 
-> +		len = min(len, em->len - (start - em->start));
-> +		free_extent_map(em);
-> +		em = NULL;
-> +
-> +		ret = can_nocow_extent(inode, start, &len, NULL, NULL, NULL);
-> +		if (ret < 0) {
-> +			goto out;
-> +		} else if (ret) {
-> +			ret = 0;
-> +		} else {
-> +			btrfs_err(fs_info, "swapfile is copy-on-write");
-> +			ret = -EINVAL;
-> +			goto out;
-> +		}
-> +
-> +		em = btrfs_get_chunk_map(fs_info, logical_block_start, len);
-> +		if (IS_ERR(em)) {
-> +			ret = PTR_ERR(em);
-> +			goto out;
-> +		}
-> +
-> +		if (em->map_lookup->type & BTRFS_BLOCK_GROUP_PROFILE_MASK) {
-> +			btrfs_err(fs_info, "swapfile data profile is not single");
-> +			ret = -EINVAL;
-> +			goto out;
-> +		}
-> +
-> +		if (device == NULL) {
-> +			device = em->map_lookup->stripes[0].dev;
-> +		} else if (device != em->map_lookup->stripes[0].dev) {
-> +			btrfs_err(fs_info, "swapfile is on multiple devices");
-> +			ret = -EINVAL;
-> +			goto out;
-> +		}
-> +
-<snip>
+I haven't looked at the implementation, but it might be possible to
+internally find a different location for the swap extent once it's not
+used for the actual paged data.
+
+In an ideal case, the swap extents could span entire chunks (1G) and not
+mix with regular data/metadata.
+
+> Note that we don't have to worry about chattr -C (disable nocow), which
+> we ignore for non-empty files, because an active swapfile must be
+> non-empty and can't be truncated. We also don't have to worry about
+> autodefrag because it's only done on COW files. Truncate and fallocate
+> are already taken care of by the generic code. Device add doesn't do
+> relocation so it's not an issue, either.
+
+Ok, fine the remaining easy cases are covered.
+
+I don't know if you mentioned that elsewhere (as design questions are
+in this patch), the allocation profile is single, or is it also possible
+to have striped or duplicated swap extents?

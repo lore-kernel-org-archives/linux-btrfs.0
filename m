@@ -1,319 +1,97 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwym04.jp.fujitsu.com ([211.128.242.43]:61621 "EHLO
-        mgwym04.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752234AbeEPFrJ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 16 May 2018 01:47:09 -0400
-Received: from g01jpfmpwkw02.exch.g01.fujitsu.local (g01jpfmpwkw02.exch.g01.fujitsu.local [10.0.193.56])
-        by yt-mxoi2.gw.nic.fujitsu.com (Postfix) with ESMTP id EABCEAC0256
-        for <linux-btrfs@vger.kernel.org>; Wed, 16 May 2018 14:47:04 +0900 (JST)
-Received: from G01JPEXCHKW18.g01.fujitsu.local (G01JPEXCHKW18.g01.fujitsu.local [10.0.194.57])
-        by g01jpfmpwkw02.exch.g01.fujitsu.local (Postfix) with ESMTP id 180233287CF
-        for <linux-btrfs@vger.kernel.org>; Wed, 16 May 2018 14:47:04 +0900 (JST)
-From: Tomohiro Misono <misono.tomohiro@jp.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH v5 3/3] btrfs: Add unprivileged version of ino_lookup ioctl
-Date: Wed, 16 May 2018 14:49:39 +0900
-Message-ID: <4f0222b394d0da197f42fdbaa54bcbb724a3120e.1526446339.git.misono.tomohiro@jp.fujitsu.com>
-In-Reply-To: <cover.1526446338.git.misono.tomohiro@jp.fujitsu.com>
-References: <cover.1526446338.git.misono.tomohiro@jp.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from synology.com ([59.124.61.242]:36618 "EHLO synology.com"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1753227AbeE1Fsl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 28 May 2018 01:48:41 -0400
+From: Ethan Lien <ethanlien@synology.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Ethan Lien <ethanlien@synology.com>
+Subject: [PATCH v2] btrfs: balance dirty metadata pages in btrfs_finish_ordered_io
+Date: Mon, 28 May 2018 13:48:20 +0800
+Message-Id: <20180528054821.9092-1-ethanlien@synology.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add unprivileged version of ino_lookup ioctl BTRFS_IOC_INO_LOOKUP_USER
-to allow normal users to call "btrfs subvololume list/show" etc. in
-combination with BTRFS_IOC_GET_SUBVOL_INFO/BTRFS_IOC_GET_SUBVOL_ROOTREF.
+[Problem description and how we fix it]
+We should balance dirty metadata pages at the end of
+btrfs_finish_ordered_io, since a small, unmergeable random write can
+potentially produce dirty metadata which is multiple times larger than
+the data itself. For example, a small, unmergeable 4KiB write may
+produce:
 
-This can be used like BTRFS_IOC_INO_LOOKUP but the argument is
-different. This is  because it always searches the fs/file tree
-correspoinding to the fd with which this ioctl is called and also
-returns the name of bottom subvolume.
+    16KiB dirty leaf (and possibly 16KiB dirty node) in subvolume tree
+    16KiB dirty leaf (and possibly 16KiB dirty node) in checksum tree
+    16KiB dirty leaf (and possibly 16KiB dirty node) in extent tree
 
-The main differences from original ino_lookup ioctl are:
-  1. Read + Exec permission will be checked using inode_permission()
-     during path construction. -EACCES will be returned in case
-     of failure.
-  2. Path construction will be stopped at the inode number which
-     corresponds to the fd with which this ioctl is called. If
-     constructed path does not exist under fd's inode, -EACCES
-     will be returned.
-  3. The name of bottom subvolume is also searched and filled.
+Although we do call balance dirty pages in write side, but in the
+buffered write path, most metadata are dirtied only after we reach the
+dirty background limit (which by far only counts dirty data pages) and
+wakeup the flusher thread. If there are many small, unmergeable random
+writes spread in a large btree, we'll find a burst of dirty pages
+exceeds the dirty_bytes limit after we wakeup the flusher thread - which
+is not what we expect. In our machine, it caused out-of-memory problem
+since a page cannot be dropped if it is marked dirty.
 
-Note that the maximum length of path is shorter 256 (BTRFS_VOL_NAME_MAX+1)
-bytes than ino_lookup ioctl because of space of subvolume's name.
+Someone may worry about we may sleep in btrfs_btree_balance_dirty_nodelay,
+but since we do btrfs_finish_ordered_io in a separate worker, it will not
+stop the flusher consuming dirty pages. Also, we use different worker for
+metadata writeback endio, sleep in btrfs_finish_ordered_io help us throttle
+the size of dirty metadata pages.
 
-Signed-off-by: Tomohiro Misono <misono.tomohiro@jp.fujitsu.com>
+[Reproduce steps]
+To reproduce the problem, we need to do 4KiB write randomly spread in a
+large btree. In our 2GiB RAM machine:
+1) Create 4 subvolumes.
+2) Run fio on each subvolume:
+
+   [global]
+   direct=0
+   rw=randwrite
+   ioengine=libaio
+   bs=4k
+   iodepth=16
+   numjobs=1
+   group_reporting
+   size=128G
+   runtime=1800
+   norandommap
+   time_based
+   randrepeat=0
+
+3) Take snapshot on each subvolume and repeat fio on existing files.
+4) Repeat step (3) until we get large btrees.
+   In our case, by observing btrfs_root_item->bytes_used, we have 2GiB of
+   metadata in each subvolume tree and 12GiB of metadata in extent tree.
+5) Stop all fio, take snapshot again, and wait until all delayed work is
+   completed.
+6) Start all fio. Few seconds later we hit OOM when the flusher starts
+   to work.
+
+It can be reproduced even when using nocow write.
+
+Signed-off-by: Ethan Lien <ethanlien@synology.com>
 ---
- fs/btrfs/ioctl.c           | 204 +++++++++++++++++++++++++++++++++++++++++++++
- include/uapi/linux/btrfs.h |  17 ++++
- 2 files changed, 221 insertions(+)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index db5de77540e1..5120e934f602 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2200,6 +2200,166 @@ static noinline int btrfs_search_path_in_tree(struct btrfs_fs_info *info,
+V2:
+	Replace btrfs_btree_balance_dirty with btrfs_btree_balance_dirty_nodelay.
+	Add reproduce steps.
+
+ fs/btrfs/inode.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 8e604e7071f1..e54547df24ee 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -3158,6 +3158,8 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)
+ 	/* once for the tree */
+ 	btrfs_put_ordered_extent(ordered_extent);
+ 
++	btrfs_btree_balance_dirty_nodelay(fs_info);
++
  	return ret;
  }
  
-+static noinline int btrfs_search_path_in_tree_user(struct inode *inode,
-+				struct btrfs_ioctl_ino_lookup_user_args *args)
-+{
-+	struct btrfs_fs_info *fs_info = BTRFS_I(inode)->root->fs_info;
-+	struct super_block *sb = inode->i_sb;
-+	struct btrfs_key upper_limit = BTRFS_I(inode)->location;
-+	u64 treeid = BTRFS_I(inode)->root->root_key.objectid;
-+	u64 dirid = args->dirid;
-+
-+	unsigned long item_off;
-+	unsigned long item_len;
-+	struct btrfs_inode_ref *iref;
-+	struct btrfs_root_ref *rref;
-+	struct btrfs_root *root;
-+	struct btrfs_path *path;
-+	struct btrfs_key key, key2;
-+	struct extent_buffer *l;
-+	struct inode *temp_inode;
-+	char *ptr;
-+	int slot;
-+	int len;
-+	int total_len = 0;
-+	int ret;
-+
-+	path = btrfs_alloc_path();
-+	if (!path)
-+		return -ENOMEM;
-+
-+	/*
-+	 * If the bottom subvolume does not exist directly under upper_limit,
-+	 * construct the path in bottomup way.
-+	 */
-+	if (dirid != upper_limit.objectid) {
-+		ptr = &args->path[BTRFS_INO_LOOKUP_USER_PATH_MAX - 1];
-+
-+		key.objectid = treeid;
-+		key.type = BTRFS_ROOT_ITEM_KEY;
-+		key.offset = (u64)-1;
-+		root = btrfs_read_fs_root_no_name(fs_info, &key);
-+		if (IS_ERR(root)) {
-+			ret = -ENOENT;
-+			goto out;
-+		}
-+
-+		key.objectid = dirid;
-+		key.type = BTRFS_INODE_REF_KEY;
-+		key.offset = (u64)-1;
-+		while (1) {
-+			ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
-+			if (ret < 0) {
-+				goto out;
-+			} else if (ret > 0) {
-+				ret = btrfs_previous_item(root, path, dirid,
-+							  BTRFS_INODE_REF_KEY);
-+				if (ret < 0) {
-+					goto out;
-+				} else if (ret > 0) {
-+					ret = -ENOENT;
-+					goto out;
-+				}
-+			}
-+
-+			l = path->nodes[0];
-+			slot = path->slots[0];
-+			btrfs_item_key_to_cpu(l, &key, slot);
-+
-+			iref = btrfs_item_ptr(l, slot, struct btrfs_inode_ref);
-+			len = btrfs_inode_ref_name_len(l, iref);
-+			ptr -= len + 1;
-+			total_len += len + 1;
-+			if (ptr < args->path) {
-+				ret = -ENAMETOOLONG;
-+				goto out;
-+			}
-+
-+			*(ptr + len) = '/';
-+			read_extent_buffer(l, ptr,
-+			    (unsigned long)(iref + 1), len);
-+
-+			/* Check the read+exec permission of this directory */
-+			ret = btrfs_previous_item(root, path, dirid,
-+						  BTRFS_INODE_ITEM_KEY);
-+			if (ret < 0) {
-+				goto out;
-+			} else if (ret > 0) {
-+				ret = -ENOENT;
-+				goto out;
-+			}
-+
-+			l = path->nodes[0];
-+			slot = path->slots[0];
-+			btrfs_item_key_to_cpu(l, &key2, slot);
-+			if (key2.objectid != dirid) {
-+				ret = -ENOENT;
-+				goto out;
-+			}
-+
-+			temp_inode = btrfs_iget(sb, &key2, root, NULL);
-+			ret = inode_permission(temp_inode, MAY_READ | MAY_EXEC);
-+			iput(temp_inode);
-+			if (ret) {
-+				ret = -EACCES;
-+				goto out;
-+			}
-+
-+			if (key.offset == upper_limit.objectid)
-+				break;
-+			if (key.objectid == BTRFS_FIRST_FREE_OBJECTID) {
-+				ret = -EACCES;
-+				goto out;
-+			}
-+
-+			btrfs_release_path(path);
-+			key.objectid = key.offset;
-+			key.offset = (u64)-1;
-+			dirid = key.objectid;
-+		}
-+
-+		memmove(args->path, ptr, total_len);
-+		args->path[total_len] = '\0';
-+		btrfs_release_path(path);
-+	}
-+
-+	/* get the bottom subvolume's name from ROOT_REF */
-+	root = fs_info->tree_root;
-+	key.objectid = treeid;
-+	key.type = BTRFS_ROOT_REF_KEY;
-+	key.offset = args->subvolid;
-+	ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
-+	if (ret < 0) {
-+		goto out;
-+	} else if (ret > 0) {
-+		ret = -ENOENT;
-+		goto out;
-+	}
-+
-+	l = path->nodes[0];
-+	slot = path->slots[0];
-+	btrfs_item_key_to_cpu(l, &key, slot);
-+
-+	item_off = btrfs_item_ptr_offset(l, slot);
-+	item_len = btrfs_item_size_nr(l, slot);
-+	/* check if dirid in ROOT_REF corresponds to passed dirid */
-+	rref = btrfs_item_ptr(l, slot, struct btrfs_root_ref);
-+	if (args->dirid != btrfs_root_ref_dirid(l, rref)) {
-+		ret = -EINVAL;
-+		goto out;
-+	}
-+
-+	/* copy subvolume's name */
-+	item_off += sizeof(struct btrfs_root_ref);
-+	item_len -= sizeof(struct btrfs_root_ref);
-+	read_extent_buffer(l, args->name, item_off, item_len);
-+	args->name[item_len] = '\0';
-+
-+out:
-+	btrfs_free_path(path);
-+	return ret;
-+}
-+
- static noinline int btrfs_ioctl_ino_lookup(struct file *file,
- 					   void __user *argp)
- {
-@@ -2242,6 +2402,48 @@ static noinline int btrfs_ioctl_ino_lookup(struct file *file,
- 	return ret;
- }
- 
-+/*
-+ * User version of ino_lookup ioctl (unprivileged)
-+ *
-+ * The main differences from original ino_lookup ioctl are:
-+ *   1. Read + Exec permission will be checked using inode_permission()
-+ *      during path construction. -EACCES will be returned in case
-+ *      of failure.
-+ *   2. Path construction will be stopped at the inode number which
-+ *      corresponds to the fd with which this ioctl is called. If
-+ *      constructed path does not exist under fd's inode, -EACCES
-+ *      will be returned.
-+ *   3. The name of bottom subvolume is also searched and filled.
-+ */
-+static noinline int btrfs_ioctl_ino_lookup_user(struct file *file,
-+					   void __user *argp)
-+{
-+	struct btrfs_ioctl_ino_lookup_user_args *args;
-+	struct inode *inode;
-+	int ret;
-+
-+	args = memdup_user(argp, sizeof(*args));
-+	if (IS_ERR(args))
-+		return PTR_ERR(args);
-+
-+	inode = file_inode(file);
-+
-+	if (args->dirid == BTRFS_FIRST_FREE_OBJECTID &&
-+	    BTRFS_I(inode)->location.objectid != BTRFS_FIRST_FREE_OBJECTID) {
-+	/* The subvolume does not exist under fd with which this is called */
-+		kfree(args);
-+		return -EACCES;
-+	}
-+
-+	ret = btrfs_search_path_in_tree_user(inode, args);
-+
-+	if (ret == 0 && copy_to_user(argp, args, sizeof(*args)))
-+		ret = -EFAULT;
-+
-+	kfree(args);
-+	return ret;
-+}
-+
- /* Get the subvolume information in BTRFS_ROOT_ITEM and BTRFS_ROOT_BACKREF */
- static noinline int btrfs_ioctl_get_subvol_info(struct file *file,
- 					   void __user *argp)
-@@ -5622,6 +5824,8 @@ long btrfs_ioctl(struct file *file, unsigned int
- 		return btrfs_ioctl_get_subvol_info(file, argp);
- 	case BTRFS_IOC_GET_SUBVOL_ROOTREF:
- 		return btrfs_ioctl_get_subvol_rootref(file, argp);
-+	case BTRFS_IOC_INO_LOOKUP_USER:
-+		return btrfs_ioctl_ino_lookup_user(file, argp);
- 	}
- 
- 	return -ENOTTY;
-diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
-index b6633f5d4847..177447c4d4c6 100644
---- a/include/uapi/linux/btrfs.h
-+++ b/include/uapi/linux/btrfs.h
-@@ -422,6 +422,21 @@ struct btrfs_ioctl_ino_lookup_args {
- 	char name[BTRFS_INO_LOOKUP_PATH_MAX];
- };
- 
-+#define BTRFS_INO_LOOKUP_USER_PATH_MAX (4080-BTRFS_VOL_NAME_MAX-1)
-+struct btrfs_ioctl_ino_lookup_user_args {
-+	/* in, inode number containing the subvolume of 'subvolid' */
-+	__u64 dirid;
-+	/* in */
-+	__u64 subvolid;
-+	/* out, name of the subvolume of 'subvolid' */
-+	char name[BTRFS_VOL_NAME_MAX + 1];
-+	/*
-+	 * out, constructed path from the directory with which
-+	 * the ioctl is called to dirid
-+	 */
-+	char path[BTRFS_INO_LOOKUP_USER_PATH_MAX];
-+};
-+
- /* Search criteria for the btrfs SEARCH ioctl family. */
- struct btrfs_ioctl_search_key {
- 	/*
-@@ -910,5 +925,7 @@ enum btrfs_err_code {
- 				struct btrfs_ioctl_get_subvol_info_args)
- #define BTRFS_IOC_GET_SUBVOL_ROOTREF _IOWR(BTRFS_IOCTL_MAGIC, 61, \
- 				struct btrfs_ioctl_get_subvol_rootref_args)
-+#define BTRFS_IOC_INO_LOOKUP_USER _IOWR(BTRFS_IOCTL_MAGIC, 62, \
-+				struct btrfs_ioctl_ino_lookup_user_args)
- 
- #endif /* _UAPI_LINUX_BTRFS_H */
 -- 
-2.14.3
-
+2.17.0
 

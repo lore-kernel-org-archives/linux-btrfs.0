@@ -1,57 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f194.google.com ([209.85.223.194]:34982 "EHLO
-        mail-io0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752937AbeE1CSV (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 27 May 2018 22:18:21 -0400
-Received: by mail-io0-f194.google.com with SMTP id g1-v6so12489158iob.2
-        for <linux-btrfs@vger.kernel.org>; Sun, 27 May 2018 19:18:21 -0700 (PDT)
-From: Howard McLauchlan <linux@hmclauchlan.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        David Sterba <dsterba@suse.com>, Filipe Manana <fdmanana@suse.com>,
-        Omar Sandoval <osandov@osandov.com>
-Subject: [RFC PATCH v2 0/6] btrfs send stream version 2
-Date: Sun, 27 May 2018 22:14:29 -0400
-Message-Id: <20180528021443.13923-1-linux@hmclauchlan.com>
+Received: from mx2.suse.de ([195.135.220.15]:44010 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1425264AbeE1PyQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 28 May 2018 11:54:16 -0400
+Date: Mon, 28 May 2018 13:29:45 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Howard McLauchlan <linux@hmclauchlan.com>
+Cc: linux-btrfs@vger.kernel.org, Chris Mason <clm@fb.com>,
+        Josef Bacik <jbacik@fb.com>, Omar Sandoval <osandov@osandov.com>,
+        Filipe Manana <FdManana@suse.com>
+Subject: Re: [RFC PATCH v2 0/6] btrfs send stream version 2
+Message-ID: <20180528112945.GT6649@suse.cz>
+Reply-To: dsterba@suse.cz
+References: <20180528021443.13923-1-linux@hmclauchlan.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20180528021443.13923-1-linux@hmclauchlan.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is v2 of send stream version 2. The goal is to provide proper
-versioning/compatibility as new features are implemented. v1 can be found here
-[1].
+On Sun, May 27, 2018 at 10:14:29PM -0400, Howard McLauchlan wrote:
+> This is v2 of send stream version 2. The goal is to provide proper
+> versioning/compatibility as new features are implemented. v1 can be found here
+> [1].
 
-v2 adds BTRFS_SEND_C_WRITE_COMPRESSED to patch 1 and style fixes/logic
-simplifications to patches 5,6.
+We need to decide the overall approach to the versioning updates. The
+wiki page has several problems with v1 that I don't see addressed in
+this patchset. So the question is:
 
-v2 also updates btrfs-progs to reflect BTRFS_SEND_C_WRITE_COMPRESSED and updates
-the pertinent xfstests to also test the total size command.
+1) fix everything we know about now in send protocol v2
 
-As of 4.17-rc7, these changes pass all "send" group xfstests
+2) incremental fixes (eg. this patchset) and version bumps as the missing
+   features/bugs get fixed
 
-Cheers,
-
-1: https://patchwork.kernel.org/patch/10388003/
-
-Filipe David Borba Manana (5):
-  btrfs: send, bump stream version
-  btrfs: send, implement total data size command to allow for progress
-    estimation
-  btrfs: send, use fallocate command to punch holes
-  btrfs: send, use fallocate command to allocate extents
-  btrfs: add send_stream_version attribute to sysfs
-
-Howard McLauchlan (1):
-  btrfs: add chattr support for send/receive
-
- fs/btrfs/ctree.h           |   2 +
- fs/btrfs/ioctl.c           |   2 +-
- fs/btrfs/send.c            | 495 +++++++++++++++++++++++++++++++------
- fs/btrfs/send.h            |  27 +-
- fs/btrfs/sysfs.c           |  27 ++
- include/uapi/linux/btrfs.h |  21 +-
- 6 files changed, 493 insertions(+), 81 deletions(-)
-
--- 
-2.17.0
-
+I'd vote for 1 because 2 is likely to cause usability problems with
+kernel and clients with different version support. But eg. rsync has
+protocol version 30 and maybe more so handful of versions does not need
+to be an issue in the end. We should be ready with version updates for
+btrfs but at this moment I haven't thought about all the usability
+issues for 2).

@@ -1,96 +1,155 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp2130.oracle.com ([156.151.31.86]:45780 "EHLO
-        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1161302AbeE1Okz (ORCPT
+Received: from mail-wm0-f66.google.com ([74.125.82.66]:55910 "EHLO
+        mail-wm0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932206AbeE1Qvx (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 28 May 2018 10:40:55 -0400
-Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
-        by userp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w4SEesTG190363
-        for <linux-btrfs@vger.kernel.org>; Mon, 28 May 2018 14:40:54 GMT
-Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
-        by userp2130.oracle.com with ESMTP id 2j6y185ksa-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 28 May 2018 14:40:54 +0000
-Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w4SEerBV025327
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 28 May 2018 14:40:53 GMT
-Received: from abhmp0005.oracle.com (abhmp0005.oracle.com [141.146.116.11])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w4SEeruu009275
-        for <linux-btrfs@vger.kernel.org>; Mon, 28 May 2018 14:40:53 GMT
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 2nd try v4] btrfs: drop uuid_mutex in btrfs_free_extra_devids()
-Date: Mon, 28 May 2018 22:43:29 +0800
-Message-Id: <20180528144329.7790-1-anand.jain@oracle.com>
+        Mon, 28 May 2018 12:51:53 -0400
+Received: by mail-wm0-f66.google.com with SMTP id a8-v6so33594276wmg.5
+        for <linux-btrfs@vger.kernel.org>; Mon, 28 May 2018 09:51:53 -0700 (PDT)
+Subject: Re: csum failed root raveled during balance
+To: Nikolay Borisov <nborisov@suse.com>,
+        Andrei Borzenkov <arvidjaar@gmail.com>, linux-btrfs@vger.kernel.org
+References: <5B047817.3040106@gmail.com>
+ <e04ab862-abe3-7187-1519-b89776df9362@suse.com>
+ <66a664ef-63a3-d897-744f-57d6f7d6975f@gmail.com>
+ <c39be3aa-e45e-daad-9342-f35959def35c@suse.com>
+From: ein <ein.net@gmail.com>
+Message-ID: <0b9ecc90-b12c-f2a9-fe29-37a3ba75f411@gmail.com>
+Date: Mon, 28 May 2018 18:51:50 +0200
+MIME-Version: 1.0
+In-Reply-To: <c39be3aa-e45e-daad-9342-f35959def35c@suse.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs_free_extra_devids() is called only in the mount context which
-traverses through the fs_devices::devices and frees the orphan devices
-devices in the given %fs_devices if any. As the search for the orphan
-device is limited to fs_devices::devices so we don't need the global
-uuid_mutex.
+On 05/27/2018 11:41 AM, Nikolay Borisov wrote:
+> 
+> 
+> On 27.05.2018 08:50, Andrei Borzenkov wrote:
+>> 23.05.2018 09:32, Nikolay Borisov пишет:
+>>>
+>>>
+>>> On 22.05.2018 23:05, ein wrote:
+>>>> Hello devs,
+>>>>
+>>>> I tested BTRFS in production for about a month:
+>>>>
+>>>> 21:08:17 up 34 days,  2:21,  3 users,  load average: 0.06, 0.02, 0.00
+>>>>
+>>>> Without power blackout, hardware failure, SSD's SMART is flawless etc.
+>>>> The tests ended with:
+>>>>
+>>>> root@node0:~# dmesg | grep BTRFS | grep warn
+>>>> 185:980:[2927472.393557] BTRFS warning (device dm-0): csum failed root
+>>>> -9 ino 312 off 608284672 csum 0x7d03a376 expected csum 0x3163a9b7 mirror 1
+>>>> 186:981:[2927472.394158] BTRFS warning (device dm-0): csum failed root
+>>>> -9 ino 312 off 608284672 csum 0x7da1b152 expected csum 0x3163a9b7 mirror 1
+>>>> 191:986:[2928224.169814] BTRFS warning (device dm-0): csum failed root
+>>>> -9 ino 314 off 608284672 csum 0x7d03a376 expected csum 0x3163a9b7 mirror 1
+>>>> 192:987:[2928224.171433] BTRFS warning (device dm-0): csum failed root
+>>>> -9 ino 314 off 608284672 csum 0x7da1b152 expected csum 0x3163a9b7 mirror 1
+>>>> 206:1001:[2928298.039516] BTRFS warning (device dm-0): csum failed root
+>>>> -9 ino 319 off 608284672 csum 0x7d03a376 expected csum 0x3163a9b7 mirror 1
+>>>> 207:1002:[2928298.043103] BTRFS warning (device dm-0): csum failed root
+>>>> -9 ino 319 off 608284672 csum 0x7d03a376 expected csum 0x3163a9b7 mirror 1
+>>>> 208:1004:[2932213.513424] BTRFS warning (device dm-0): csum failed root
+>>>> 5 ino 219962 off 4564959232 csum 0xc616afb4 expected csum 0x5425e489
+>>>> mirror 1
+>>>> 209:1005:[2932235.666368] BTRFS warning (device dm-0): csum failed root
+>>>> 5 ino 219962 off 16989835264 csum 0xd63ed5da expected csum 0x7429caa1
+>>>> mirror 1
+>>>> 210:1072:[2936767.229277] BTRFS warning (device dm-0): csum failed root
+>>>> 5 ino 219915 off 82318458880 csum 0x83614341 expected csum 0x0b8706f8
+>>>> mirror 1
+>>>> 211:1073:[2936767.276229] BTRFS warning (device dm-0): csum failed root
+>>>> 5 ino 219915 off 82318458880 csum 0x83614341 expected csum 0x0b8706f8
+>>>> mirror 1
+>>>>
+>>>> Above has been revealed during below command and quite high IO usage by
+>>>> few VMs (Linux on top Ext4 with firebird database, lots of random
+>>>> read/writes, two others with Windows 2016 and Windows Update in the
+>>>> background):
+>>>
+>>> I believe you are hitting the issue described here:
+>>>
+>>> https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg25656.html
+>>>
+>>> Essentially the way qemu operates on vm images atop btrfs is prone to
+>>> producing such errors. As a matter of fact, other filesystems also
+>>> suffer from this(i.e pages modified while being written, however due to
+>>> lack of CRC on the data they don't detect it). Can you confirm that
+>>> those inodes (312/314/319/219962/219915) belong to vm images files?
+>>>
+>>> IMHO the best course of action would be to disable checksumming for you
+>>> vm files.
+>>>
+>>>
+>>> For some background I suggest you read the following LWN articles:
+>>>
+>>> https://lwn.net/Articles/486311/
+>>> https://lwn.net/Articles/442355/
+>>>
+>>
+>> Hmm ... according to these articles, "pages under writeback are marked
+>> as not being writable; any process attempting to write to such a page
+>> will block until the writeback completes". And it says this feature is
+>> available since 3.0 and btrfs has it. So how comes it still happens?
+>> Were stable patches removed since then?
+> 
+> If you are using buffered writes, then yes you won't have the problem.
+> However qemu by default bypasses host's page cache and instead uses DIO:
+> 
+> https://btrfs.wiki.kernel.org/index.php/Gotchas#Direct_IO_and_CRCs
 
-There can't be any mount-point based ioctl threads in this context as
-the mount thread is not yet returned. But there can be the btrfs-control
-based scan ioctls thread which calls device_list_add().
+I can confirm that writing data to the filesystem on guest side is not
+buffered at host with config:
 
-Here in the mount thread the fs_devices::opened is incremented way before
-btrfs_free_extra_devids() is called and in the scan context the fs_devices
-which are already opened neither be freed or alloc-able at
-device_list_add().
+<disk type='file' device='disk'>
+      <driver name='qemu' type='raw' cache='none' io='native'/>
+      <source file='/var/lib/libvirt/images/db.raw'/>
+      <target dev='vda' bus='virtio'/>
+      [...]
+</disk>
 
-But lets say you change the device-path and call the scan again, then scan
-would update the new device path and this operation could race against the
-btrfs_free_extra_devids() thread, which might be in the process of
-free-ing the same device. So synchronize it by using the
-device_list_mutex.
+Because buff/cache memory usage stays unchanged at host during high
+sequential writing and there's no kworker/flush process committing the
+data. How qemu can avoid dirty page buffering? There's nothing else
+than:ppoll, read, io_sumbit and write in strace:
 
-This scenario is a very corner case, and practically the scan and mount
-are anyway serialized by the usage so unless the race is instrumented its
-very difficult to achieve.
+read(52, "\1\0\0\0\0\0\0\0", 512)       = 8
+io_submit(0x7f35367f7000, 2, [{pwritev, fildes=19,
+iovec=[{iov_base="\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"...,
+iov_len=368640}, {iov_base="\0\0\0\0\0\0
+\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"...,
+iov_len=368640},
+{iov_base="\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"...,
+iov_len=679
+\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"..., iov_len=368640},
+{iov_base="\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"...,
+iov_len=679936}, {iov_bas
+\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"..., iov_len=368640},
+{iov_base="\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"...,
+iov_len=679936}, {iov_base="\0\0\0\0\0\
+1048576},
+{iov_base="\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"...,
+iov_len=1048576},
+{iov_base="\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
+read(38, "\3\0\0\0\0\0\0\0", 512)       = 8
+ppoll([{fd=52, events=POLLIN|POLLERR|POLLHUP}, {fd=38,
+events=POLLIN|POLLERR|POLLHUP}, {fd=10, events=POLLIN|POLLERR|POLLHUP}],
+3, NULL, NULL, 8) = 1 ([{fd=52, revents=POLLIN}])
+read(52, "\1\0\0\0\0\0\0\0", 512)       = 8
+io_submit(0x7f35367f7000, 1, [{pwritev, fildes=19,
+iovec=[{iov_base="\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"...,
+iov_len=368640}, {iov_base="\0\0\0\0\0\0
+\0\0\0\0\0\0\0\0\0\0"..., iov_len=1048576},
+{iov_base="\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"...,
+iov_len=368640}, {iov_base="\0\0\0\0\0\0\0\0\0\0\0\0\0
+ppoll([{fd=52, events=POLLIN|POLLERR|POLLHUP}, {fd=38,
+events=POLLIN|POLLERR|POLLHUP}, {fd=10, events=POLLIN|POLLERR|POLLHUP}],
+3, {tv_sec=0, tv_nsec=0}, NULL, 8) = 2 ([{fd=52, re
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
-(I didn't see this email in the mailing list, so trying again).
-v3->v4: As we traverse through the seed device, fs_device gets updated with
-	the child seed fs_devices, so make sure we use the same fs_devices
-	pointer for the mutex_unlock as used for the mutex_lock.
-v2->v3: Update change log.
-	(Currently device_list_add() is very lean on its device_list_mutex usage,
-	a cleanup and fix is wip. Given the practicality of the above race
-	condition this patch is good to merge).
-v1->v2: replace uuid_mutex with device_list_mutex instead of delete.
-	change log updated.
- fs/btrfs/volumes.c | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
-
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index b6757b53c297..f03719221fca 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -924,8 +924,9 @@ void btrfs_free_extra_devids(struct btrfs_fs_devices *fs_devices, int step)
- {
- 	struct btrfs_device *device, *next;
- 	struct btrfs_device *latest_dev = NULL;
-+	struct btrfs_fs_devices *parent_fs_devices = fs_devices;
- 
--	mutex_lock(&uuid_mutex);
-+	mutex_lock(&parent_fs_devices->device_list_mutex);
- again:
- 	/* This is the initialized path, it is safe to release the devices. */
- 	list_for_each_entry_safe(device, next, &fs_devices->devices, dev_list) {
-@@ -979,8 +980,7 @@ void btrfs_free_extra_devids(struct btrfs_fs_devices *fs_devices, int step)
- 	}
- 
- 	fs_devices->latest_bdev = latest_dev->bdev;
--
--	mutex_unlock(&uuid_mutex);
-+	mutex_unlock(&parent_fs_devices->device_list_mutex);
- }
- 
- static void free_device_rcu(struct rcu_head *head)
 -- 
-2.7.0
-
+PGP Public Key (RSA/4096b):
+ID: 0xF2C6EA10
+SHA-1: 51DA 40EE 832A 0572 5AD8 B3C0 7AFF 69E1 F2C6 EA10

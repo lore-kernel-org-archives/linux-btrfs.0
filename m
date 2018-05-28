@@ -1,100 +1,145 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:43546 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:49641 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1425226AbeE1PyG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 28 May 2018 11:54:06 -0400
-Received: from relay1.suse.de (charybdis-ext-too.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 556AFAE7C
-        for <linux-btrfs@vger.kernel.org>; Mon, 28 May 2018 15:54:04 +0000 (UTC)
+        id S933478AbeE1QNr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 28 May 2018 12:13:47 -0400
+Received: from relay2.suse.de (charybdis-ext-too.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 7647BADCA
+        for <linux-btrfs@vger.kernel.org>; Mon, 28 May 2018 16:13:45 +0000 (UTC)
 From: Nikolay Borisov <nborisov@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 02/11] btrfs-progs: check: Remove root parameter from btrfs_fix_block_accounting
-Date: Mon, 28 May 2018 09:36:41 +0300
-Message-Id: <1527489410-3564-3-git-send-email-nborisov@suse.com>
+Subject: [PATCH 03/11] btrfs-progs: check: Remove root parameter from del_pending_extents
+Date: Mon, 28 May 2018 09:36:42 +0300
+Message-Id: <1527489410-3564-4-git-send-email-nborisov@suse.com>
 In-Reply-To: <1527489410-3564-1-git-send-email-nborisov@suse.com>
 References: <1527489410-3564-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It's always set to extent_root and the function already takes a
-transaction handle where fs_info could be referenced and in turn
-the extent_tree.
+This function always operates on the extent root which can be
+referenced from trans->fs_info. Do that to simplify function's
+signature.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- check/main.c        | 2 +-
- check/mode-lowmem.c | 2 +-
- ctree.h             | 3 +--
- extent-tree.c       | 8 +++-----
- 4 files changed, 6 insertions(+), 9 deletions(-)
+ extent-tree.c | 26 +++++++++++++-------------
+ 1 file changed, 13 insertions(+), 13 deletions(-)
 
-diff --git a/check/main.c b/check/main.c
-index 4cf243d9b379..71cc16735443 100644
---- a/check/main.c
-+++ b/check/main.c
-@@ -7671,7 +7671,7 @@ static int check_extent_refs(struct btrfs_root *root,
- 				goto repair_abort;
- 			}
- 
--			ret = btrfs_fix_block_accounting(trans, root);
-+			ret = btrfs_fix_block_accounting(trans);
- 			if (ret)
- 				goto repair_abort;
- 			ret = btrfs_commit_transaction(trans, root);
-diff --git a/check/mode-lowmem.c b/check/mode-lowmem.c
-index 9890180d1d3c..410c5f635d4e 100644
---- a/check/mode-lowmem.c
-+++ b/check/mode-lowmem.c
-@@ -556,7 +556,7 @@ static int repair_block_accounting(struct btrfs_fs_info *fs_info)
- 		return ret;
- 	}
- 
--	ret = btrfs_fix_block_accounting(trans, root);
-+	ret = btrfs_fix_block_accounting(trans);
- 	btrfs_commit_transaction(trans, root);
- 	return ret;
- }
-diff --git a/ctree.h b/ctree.h
-index 697895a9e098..c833ad6998b9 100644
---- a/ctree.h
-+++ b/ctree.h
-@@ -2500,8 +2500,7 @@ int btrfs_reserve_extent(struct btrfs_trans_handle *trans,
- 			 u64 num_bytes, u64 empty_size,
- 			 u64 hint_byte, u64 search_end,
- 			 struct btrfs_key *ins, bool is_data);
--int btrfs_fix_block_accounting(struct btrfs_trans_handle *trans,
--				 struct btrfs_root *root);
-+int btrfs_fix_block_accounting(struct btrfs_trans_handle *trans);
- void btrfs_pin_extent(struct btrfs_fs_info *fs_info, u64 bytenr, u64 num_bytes);
- void btrfs_unpin_extent(struct btrfs_fs_info *fs_info,
- 			u64 bytenr, u64 num_bytes);
 diff --git a/extent-tree.c b/extent-tree.c
-index 1b8a4f8cb1c3..3132ccc8d44f 100644
+index 3132ccc8d44f..e950ba6de3cc 100644
 --- a/extent-tree.c
 +++ b/extent-tree.c
-@@ -3788,8 +3788,7 @@ int btrfs_free_block_group(struct btrfs_trans_handle *trans,
-  * Fixup block accounting. The initial block accounting created by
-  * make_block_groups isn't accuracy in this case.
-  */
--int btrfs_fix_block_accounting(struct btrfs_trans_handle *trans,
--			       struct btrfs_root *root)
-+int btrfs_fix_block_accounting(struct btrfs_trans_handle *trans)
+@@ -56,8 +56,7 @@ static int __free_extent(struct btrfs_trans_handle *trans,
+ 			 u64 owner_offset, int refs_to_drop);
+ static int finish_current_insert(struct btrfs_trans_handle *trans, struct
+ 				 btrfs_root *extent_root);
+-static int del_pending_extents(struct btrfs_trans_handle *trans, struct
+-			       btrfs_root *extent_root);
++static int del_pending_extents(struct btrfs_trans_handle *trans);
+ static struct btrfs_block_group_cache *
+ btrfs_find_block_group(struct btrfs_root *root, struct btrfs_block_group_cache
+ 		       *hint, u64 search_start, int data, int owner);
+@@ -1423,7 +1422,7 @@ int btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
+ out:
+ 	btrfs_free_path(path);
+ 	finish_current_insert(trans, root->fs_info->extent_root);
+-	del_pending_extents(trans, root->fs_info->extent_root);
++	del_pending_extents(trans);
+ 	BUG_ON(err);
+ 	return err;
+ }
+@@ -1432,7 +1431,7 @@ int btrfs_extent_post_op(struct btrfs_trans_handle *trans,
+ 			 struct btrfs_root *root)
  {
- 	int ret = 0;
- 	int slot;
-@@ -3799,9 +3798,8 @@ int btrfs_fix_block_accounting(struct btrfs_trans_handle *trans,
- 	struct btrfs_key key;
- 	struct extent_buffer *leaf;
- 	struct btrfs_block_group_cache *cache;
--	struct btrfs_fs_info *fs_info = root->fs_info;
--
--	root = root->fs_info->extent_root;
-+	struct btrfs_fs_info *fs_info = trans->fs_info;
-+	struct btrfs_root *root = fs_info->extent_root;
+ 	finish_current_insert(trans, root->fs_info->extent_root);
+-	del_pending_extents(trans, root->fs_info->extent_root);
++	del_pending_extents(trans);
+ 	return 0;
+ }
  
- 	while(extent_root_pending_ops(fs_info)) {
+@@ -1612,7 +1611,7 @@ int btrfs_set_block_flags(struct btrfs_trans_handle *trans,
+ out:
+ 	btrfs_free_path(path);
+ 	finish_current_insert(trans, root->fs_info->extent_root);
+-	del_pending_extents(trans, root->fs_info->extent_root);
++	del_pending_extents(trans);
+ 	return ret;
+ }
+ 
+@@ -1728,7 +1727,7 @@ static int write_one_cache_group(struct btrfs_trans_handle *trans,
+ 	btrfs_release_path(path);
+ fail:
+ 	finish_current_insert(trans, extent_root);
+-	pending_ret = del_pending_extents(trans, extent_root);
++	pending_ret = del_pending_extents(trans);
+ 	if (ret)
+ 		return ret;
+ 	if (pending_ret)
+@@ -2397,8 +2396,7 @@ static int __free_extent(struct btrfs_trans_handle *trans,
+  * find all the blocks marked as pending in the radix tree and remove
+  * them from the extent map
+  */
+-static int del_pending_extents(struct btrfs_trans_handle *trans, struct
+-			       btrfs_root *extent_root)
++static int del_pending_extents(struct btrfs_trans_handle *trans)
+ {
+ 	int ret;
+ 	int err = 0;
+@@ -2408,6 +2406,8 @@ static int del_pending_extents(struct btrfs_trans_handle *trans, struct
+ 	struct extent_io_tree *pending_del;
+ 	struct extent_io_tree *extent_ins;
+ 	struct pending_extent_op *extent_op;
++	struct btrfs_fs_info *fs_info = trans->fs_info;
++	struct btrfs_root *extent_root = fs_info->extent_root;
+ 
+ 	extent_ins = &extent_root->fs_info->extent_ins;
+ 	pending_del = &extent_root->fs_info->pending_del;
+@@ -2497,7 +2497,7 @@ int btrfs_free_extent(struct btrfs_trans_handle *trans,
+ 	}
+ 	ret = __free_extent(trans, root, bytenr, num_bytes, parent,
+ 			    root_objectid, owner, offset, 1);
+-	pending_ret = del_pending_extents(trans, root->fs_info->extent_root);
++	pending_ret = del_pending_extents(trans);
+ 	return ret ? ret : pending_ret;
+ }
+ 
+@@ -2790,7 +2790,7 @@ static int alloc_tree_block(struct btrfs_trans_handle *trans,
+ 						generation, flags,
+ 						key, level, ins);
+ 		finish_current_insert(trans, root->fs_info->extent_root);
+-		del_pending_extents(trans, root->fs_info->extent_root);
++		del_pending_extents(trans);
+ 	}
+ 	return ret;
+ }
+@@ -3318,7 +3318,7 @@ int btrfs_make_block_group(struct btrfs_trans_handle *trans,
+ 
+ 	ret = finish_current_insert(trans, extent_root);
+ 	BUG_ON(ret);
+-	ret = del_pending_extents(trans, extent_root);
++	ret = del_pending_extents(trans);
+ 	BUG_ON(ret);
+ 
+ 	return 0;
+@@ -3417,7 +3417,7 @@ int btrfs_make_block_groups(struct btrfs_trans_handle *trans,
+ 		BUG_ON(ret);
+ 
+ 		finish_current_insert(trans, extent_root);
+-		ret = del_pending_extents(trans, extent_root);
++		ret = del_pending_extents(trans);
+ 		BUG_ON(ret);
+ 
+ 		cur_start = cache->key.objectid + cache->key.offset;
+@@ -3805,7 +3805,7 @@ int btrfs_fix_block_accounting(struct btrfs_trans_handle *trans)
  		ret = finish_current_insert(trans, root);
+ 		if (ret)
+ 			return ret;
+-		ret = del_pending_extents(trans, root);
++		ret = del_pending_extents(trans);
+ 		if (ret)
+ 			return ret;
+ 	}
 -- 
 2.7.4
 

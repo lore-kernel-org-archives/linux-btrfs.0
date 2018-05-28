@@ -1,40 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from out30-131.freemail.mail.aliyun.com ([115.124.30.131]:34869 "EHLO
-        out30-131.freemail.mail.aliyun.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1751734AbeERDAb (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 17 May 2018 23:00:31 -0400
-From: Liu Bo <bo.liu@linux.alibaba.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH v2 4/6] Btrfs: remove unused check of skip_locking
-Date: Fri, 18 May 2018 11:00:22 +0800
-Message-Id: <1526612424-97061-5-git-send-email-bo.liu@linux.alibaba.com>
-In-Reply-To: <1526612424-97061-1-git-send-email-bo.liu@linux.alibaba.com>
+Received: from mx2.suse.de ([195.135.220.15]:56409 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1033723AbeE1PJT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 28 May 2018 11:09:19 -0400
+Date: Mon, 28 May 2018 16:40:28 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Liu Bo <bo.liu@linux.alibaba.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2 0/6] btrfs_search_slot cleanups
+Message-ID: <20180528144028.GC6649@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <1526612424-97061-1-git-send-email-bo.liu@linux.alibaba.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1526612424-97061-1-git-send-email-bo.liu@linux.alibaba.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The check is superfluous since all of callers who set search_for_commit
-also have skip_locking set.
+On Fri, May 18, 2018 at 11:00:18AM +0800, Liu Bo wrote:
+> Here are a collection of patches I did for btrfs_search_slot().
+> 
+> v2: more explicit commit log for each patch.
+> 
+> Liu Bo (6):
+>   Btrfs: remove superfluous free_extent_buffer
+>   Btrfs: use more straightforward extent_buffer_uptodate
+>   Btrfs: move get root of btrfs_search_slot to a helper
+>   Btrfs: remove unused check of skip_locking
+>   Btrfs: grab write lock directly if write_lock_level is the max level
+>   Btrfs: remove always true check in unlock_up
 
-Signed-off-by: Liu Bo <bo.liu@linux.alibaba.com>
----
- fs/btrfs/ctree.c | 2 --
- 1 file changed, 2 deletions(-)
-
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index d12fc0474e21..8d3b09038f37 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -2623,8 +2623,6 @@ static struct extent_buffer *btrfs_search_slot_get_root(struct btrfs_root *root,
- 		level = btrfs_header_level(b);
- 		if (p->need_commit_sem)
- 			up_read(&fs_info->commit_root_sem);
--		if (!p->skip_locking)
--			btrfs_tree_read_lock(b);
- 
- 		goto out;
- 	}
--- 
-1.8.3.1
-
+1,2,4,5,6 merged. Please update patch 3 and add the ASSERT. Thanks.

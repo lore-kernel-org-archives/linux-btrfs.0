@@ -1,75 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:54801 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1755808AbeE2BGV (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 28 May 2018 21:06:21 -0400
-Date: Tue, 29 May 2018 09:06:14 +0800
-From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-To: Nikolay Borisov <nborisov@suse.com>
-CC: <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 00/11] Summer argument cleanup
-Message-ID: <20180529010613.GA27632@fnst.localdomain>
-References: <1527489410-3564-1-git-send-email-nborisov@suse.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Received: from mx2.suse.de ([195.135.220.15]:49831 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S936896AbeE1QNu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 28 May 2018 12:13:50 -0400
+Received: from relay2.suse.de (charybdis-ext-too.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 93182AE65
+        for <linux-btrfs@vger.kernel.org>; Mon, 28 May 2018 16:13:47 +0000 (UTC)
+From: Nikolay Borisov <nborisov@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH 01/11] btrfs-progs: check: Remove root argument from delete_extent_records
+Date: Mon, 28 May 2018 09:36:40 +0300
+Message-Id: <1527489410-3564-2-git-send-email-nborisov@suse.com>
 In-Reply-To: <1527489410-3564-1-git-send-email-nborisov@suse.com>
+References: <1527489410-3564-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, May 28, 2018 at 09:36:39AM +0300, Nikolay Borisov wrote:
->Hello, 
->
->Here is yet another series removing a bunch of extraneous argument. The series 
->constitutes no functional changes. Some of the function actually have a kernel 
->counterpart (btrfs_lookup_extent_info/clean_tree_block). However the former's 
->userspace signature differs and the patch in this series makes it identical to 
->the kernel one. 
+This function is always passed the extent_root as "root" parameter. In
+turn it uses the root parameter to mostly access fs_info and performs
+only a single call to btrfs_update_block_group where it passses the
+passed root. This is all redundant since fs_info can be referenced
+from the transaction handle and in turn extent_root can be referenced
+from the fs_info. So do that to simplify the function's signature.
 
-This series looks good to me.
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+---
+ check/main.c | 17 ++++++++---------
+ 1 file changed, 8 insertions(+), 9 deletions(-)
 
-Reviewed-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-
+diff --git a/check/main.c b/check/main.c
+index 68da994f7ae0..4cf243d9b379 100644
+--- a/check/main.c
++++ b/check/main.c
+@@ -6295,10 +6295,10 @@ static int free_extent_hook(struct btrfs_trans_handle *trans,
+ }
+ 
+ static int delete_extent_records(struct btrfs_trans_handle *trans,
+-				 struct btrfs_root *root,
+ 				 struct btrfs_path *path,
+ 				 u64 bytenr)
+ {
++	struct btrfs_fs_info *fs_info = trans->fs_info;
+ 	struct btrfs_key key;
+ 	struct btrfs_key found_key;
+ 	struct extent_buffer *leaf;
+@@ -6311,8 +6311,8 @@ static int delete_extent_records(struct btrfs_trans_handle *trans,
+ 	key.offset = (u64)-1;
+ 
+ 	while (1) {
+-		ret = btrfs_search_slot(trans, root->fs_info->extent_root,
+-					&key, path, 0, 1);
++		ret = btrfs_search_slot(trans, fs_info->extent_root, &key,
++					path, 0, 1);
+ 		if (ret < 0)
+ 			break;
+ 
+@@ -6354,7 +6354,7 @@ static int delete_extent_records(struct btrfs_trans_handle *trans,
+ 			"repair deleting extent record: key [%llu,%u,%llu]\n",
+ 			found_key.objectid, found_key.type, found_key.offset);
+ 
+-		ret = btrfs_del_item(trans, root->fs_info->extent_root, path);
++		ret = btrfs_del_item(trans, fs_info->extent_root, path);
+ 		if (ret)
+ 			break;
+ 		btrfs_release_path(path);
+@@ -6362,10 +6362,10 @@ static int delete_extent_records(struct btrfs_trans_handle *trans,
+ 		if (found_key.type == BTRFS_EXTENT_ITEM_KEY ||
+ 		    found_key.type == BTRFS_METADATA_ITEM_KEY) {
+ 			u64 bytes = (found_key.type == BTRFS_EXTENT_ITEM_KEY) ?
+-				found_key.offset : root->fs_info->nodesize;
++				found_key.offset : fs_info->nodesize;
+ 
+-			ret = btrfs_update_block_group(root, bytenr,
+-						       bytes, 0, 0);
++			ret = btrfs_update_block_group(fs_info->extent_root,
++						       bytenr, bytes, 0, 0);
+ 			if (ret)
+ 				break;
+ 		}
+@@ -7293,8 +7293,7 @@ static int fixup_extent_refs(struct btrfs_fs_info *info,
+ 	}
+ 
+ 	/* step two, delete all the existing records */
+-	ret = delete_extent_records(trans, info->extent_root, &path,
+-				    rec->start);
++	ret = delete_extent_records(trans, &path, rec->start);
+ 
+ 	if (ret < 0)
+ 		goto out;
 -- 
-Thanks,
-Lu
-
->
->Nikolay Borisov (11):
->  btrfs-progs: check: Remove root argument from delete_extent_records
->  btrfs-progs: check: Remove root parameter from
->    btrfs_fix_block_accounting
->  btrfs-progs: check: Remove root parameter from del_pending_extents
->  btrfs-progs: check: Remove root argument from finish_current_insert
->  btrfs-progs: check: Make update_pinned_extents take btrfs_fs_info
->  btrfs-progs: Remove unused argument from clean_tree_block
->  btrfs-progs: check: Remove unused root argument from
->    btrfs_extent_post_op
->  btrfs-progs: Change btrfs_root to btrfs_fs_info argument in
->    btrfs_lookup_extent_info
->  btrfs-progs: Remove root argument from btrfs_set_block_flags
->  btrfs-progs: Remove root argument from write_one_cache_group
->  btrfs-progs: Remove fs_info argument from write_ctree_super
->
-> check/main.c        |  31 +++++++-------
-> check/mode-lowmem.c |   6 +--
-> ctree.c             |  17 ++++----
-> ctree.h             |  13 +++---
-> disk-io.c           |   9 ++--
-> disk-io.h           |   6 +--
-> extent-tree.c       | 121 ++++++++++++++++++++++++----------------------------
-> free-space-tree.c   |   2 +-
-> transaction.c       |   2 +-
-> 9 files changed, 96 insertions(+), 111 deletions(-)
->
->-- 
->2.7.4
->
->--
->To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->the body of a message to majordomo@vger.kernel.org
->More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
->
-
+2.7.4
 

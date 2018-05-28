@@ -1,19 +1,19 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f68.google.com ([209.85.214.68]:53472 "EHLO
-        mail-it0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752989AbeE1CS3 (ORCPT
+Received: from mail-it0-f65.google.com ([209.85.214.65]:50952 "EHLO
+        mail-it0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753033AbeE1CSa (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 27 May 2018 22:18:29 -0400
-Received: by mail-it0-f68.google.com with SMTP id n64-v6so13174400itb.3
-        for <linux-btrfs@vger.kernel.org>; Sun, 27 May 2018 19:18:28 -0700 (PDT)
+        Sun, 27 May 2018 22:18:30 -0400
+Received: by mail-it0-f65.google.com with SMTP id p3-v6so13195253itc.0
+        for <linux-btrfs@vger.kernel.org>; Sun, 27 May 2018 19:18:29 -0700 (PDT)
 From: Howard McLauchlan <linux@hmclauchlan.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
         David Sterba <dsterba@suse.com>, Filipe Manana <fdmanana@suse.com>,
         Omar Sandoval <osandov@osandov.com>
-Subject: [PATCH v2 1/6] Btrfs-progs: send, bump stream version
-Date: Sun, 27 May 2018 22:14:36 -0400
-Message-Id: <20180528021443.13923-8-linux@hmclauchlan.com>
+Subject: [PATCH v2 2/6] Btrfs-progs: send, implement total data size callback and progress report
+Date: Sun, 27 May 2018 22:14:37 -0400
+Message-Id: <20180528021443.13923-9-linux@hmclauchlan.com>
 In-Reply-To: <20180528021443.13923-1-linux@hmclauchlan.com>
 References: <20180528021443.13923-1-linux@hmclauchlan.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -21,231 +21,304 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Filipe Manana <fdmanana@gmail.com>
 
-This increases the send stream version from version 1 to version 2, adding
-new commands:
+This is a followup to the kernel patch titled:
 
-1) total data size - used to tell the receiver how much file data the stream
-   will add or update;
+    Btrfs: send, implement total data size command to allow for progress estimation
 
-2) fallocate - used to pre-allocate space for files and to punch holes in files;
+This makes the btrfs send and receive commands aware of the new send flag,
+named BTRFS_SEND_C_TOTAL_DATA_SIZE, which tells us the amount of file data
+that is new between the parent and send snapshots/roots. As this command
+immediately follows the commands to start a snapshot/subvolume, it can be
+used to report and compute progress, by keeping a counter that is incremented
+with the data length of each write, clone and fallocate command that is received
+from the stream.
 
-3) inode set flags (chattr);
+Example:
 
-4) set inode otime;
+    $ btrfs send -s --stream-version 2 /mnt/sdd/snap_base | btrfs receive /mnt/sdc
+    At subvol /mnt/sdd/snap_base
+    At subvol snap_base
+    About to receive 9212392667 bytes
+    Subvolume /mnt/sdc//snap_base, 4059722426 / 9212392667 bytes received, 44.07%, 40.32MB/s
 
-5) sending compressed writes
+    $ btrfs send -s --stream-version 2 -p /mnt/sdd/snap_base /mnt/sdd/snap_incr | btrfs receive /mnt/sdc
+    At subvol /mnt/sdd/snap_incr
+    At subvol snap_incr
+    About to receive 9571342213 bytes
+    Subvolume /mnt/sdc//snap_incr, 6557345221 / 9571342213 bytes received, 68.51%, 51.04MB/s
 
-This is preparation work for subsequent changes that implement the new features.
-
-This doesn't break compatibility with older kernels or clients. In order to get
-a version 2 send stream, new flags must be passed to the send ioctl.
+At the moment progress is only reported by btrfs-receive, but it is possible and simple
+to do it for btrfs-send too, so that we can get progress report when not piping btrfs-send
+output to btrfs-receive (directly to a file).
 
 Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
 ---
- cmds-send.c   | 61 ++++++++++++++++++++++++++++++++++++---------------
- ioctl.h       | 15 +++++++++++++
- send-stream.c |  2 +-
- send.h        | 24 +++++++++++++++++++-
- 4 files changed, 82 insertions(+), 20 deletions(-)
+ cmds-receive.c | 91 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ cmds-send.c    | 23 +++++++++++--
+ send-stream.c  |  4 +++
+ send-stream.h  |  1 +
+ 4 files changed, 117 insertions(+), 2 deletions(-)
 
+diff --git a/cmds-receive.c b/cmds-receive.c
+index 68123a31..d8ff5194 100644
+--- a/cmds-receive.c
++++ b/cmds-receive.c
+@@ -30,6 +30,7 @@
+ #include <assert.h>
+ #include <getopt.h>
+ #include <limits.h>
++#include <time.h>
+ 
+ #include <sys/stat.h>
+ #include <sys/types.h>
+@@ -79,6 +80,14 @@ struct btrfs_receive
+ 
+ 	int honor_end_cmd;
+ 
++	/* For the subvolume/snapshot we're currently receiving. */
++	u64 total_data_size;
++	u64 bytes_received;
++	time_t last_progress_update;
++	u64 bytes_received_last_update;
++	float progress;
++	const char *target;
++
+ 	/*
+ 	 * Buffer to store capabilities from security.capabilities xattr,
+ 	 * usually 20 bytes, but make same room for potentially larger
+@@ -156,6 +165,16 @@ out:
+ 	return ret;
+ }
+ 
++static void reset_progress(struct btrfs_receive *rctx, const char *dest)
++{
++	rctx->total_data_size = 0;
++	rctx->bytes_received = 0;
++	rctx->progress = 0.0;
++	rctx->last_progress_update = 0;
++	rctx->bytes_received_last_update = 0;
++	rctx->target = dest;
++}
++
+ static int process_subvol(const char *path, const u8 *uuid, u64 ctransid,
+ 			  void *user)
+ {
+@@ -180,6 +199,7 @@ static int process_subvol(const char *path, const u8 *uuid, u64 ctransid,
+ 		ret = -EINVAL;
+ 		goto out;
+ 	}
++	reset_progress(rctx, "Subvolume");
+ 
+ 	if (*rctx->dest_dir_path == 0) {
+ 		strncpy_null(rctx->cur_subvol_path, path);
+@@ -249,6 +269,7 @@ static int process_snapshot(const char *path, const u8 *uuid, u64 ctransid,
+ 		ret = -EINVAL;
+ 		goto out;
+ 	}
++	reset_progress(rctx, "Snapshot");
+ 
+ 	if (*rctx->dest_dir_path == 0) {
+ 		strncpy_null(rctx->cur_subvol_path, path);
+@@ -388,6 +409,73 @@ out:
+ 	return ret;
+ }
+ 
++static int process_total_data_size(u64 size, void *user)
++{
++	struct btrfs_receive *rctx = user;
++
++	rctx->total_data_size = size;
++	fprintf(stdout, "About to receive %llu bytes\n", size);
++
++	return 0;
++}
++
++static void update_progress(struct btrfs_receive *rctx, u64 bytes)
++{
++	float new_progress;
++	time_t now;
++	time_t tdiff;
++
++	if (rctx->total_data_size == 0)
++		return;
++
++	rctx->bytes_received += bytes;
++
++	now = time(NULL);
++	tdiff = now - rctx->last_progress_update;
++	if (tdiff < 1) {
++		if (rctx->bytes_received == rctx->total_data_size)
++			fprintf(stdout, "\n");
++		return;
++	}
++
++	new_progress = ((float)rctx->bytes_received / rctx->total_data_size) * 100.0;
++
++	if ((int)(new_progress * 100) > (int)(rctx->progress * 100) ||
++	    rctx->bytes_received == rctx->total_data_size) {
++		char line[5000];
++		float rate = rctx->bytes_received - rctx->bytes_received_last_update;
++		const char *rate_units;
++
++		rate /= tdiff;
++		if (rate > (1024 * 1024)) {
++			rate_units = "MB/s";
++			rate /= 1024 * 1024;
++		} else if (rate > 1024) {
++			rate_units = "KB/s";
++			rate /= 1024;
++		} else {
++			rate_units = "B/s";
++		}
++
++		snprintf(line, sizeof(line),
++			 "%s%s %s, %llu / %llu bytes received, %5.2f%%, %5.2f%s%s",
++			 (g_verbose ? "" : "\r"),
++			 rctx->target,
++			 rctx->full_subvol_path,
++			 rctx->bytes_received, rctx->total_data_size,
++			 new_progress, rate, rate_units,
++			 (g_verbose ? "\n" : ""));
++		fprintf(stdout, "%s%s", line, (g_verbose ? "" : "        "));
++		fflush(stdout);
++	}
++
++	if (rctx->bytes_received == rctx->total_data_size)
++		fprintf(stdout, "\n");
++	rctx->progress = new_progress;
++	rctx->last_progress_update = now;
++	rctx->bytes_received_last_update = rctx->bytes_received;
++}
++
+ static int process_mkfile(const char *path, void *user)
+ {
+ 	int ret;
+@@ -722,6 +810,7 @@ static int process_write(const char *path, const void *data, u64 offset,
+ 		}
+ 		pos += w;
+ 	}
++	update_progress(rctx, len);
+ 
+ out:
+ 	return ret;
+@@ -827,6 +916,7 @@ static int process_clone(const char *path, u64 offset, u64 len,
+ 				path, strerror(-ret));
+ 		goto out;
+ 	}
++	update_progress(rctx, len);
+ 
+ out:
+ 	if (si) {
+@@ -1081,6 +1171,7 @@ static struct btrfs_send_ops send_ops = {
+ 	.chown = process_chown,
+ 	.utimes = process_utimes,
+ 	.update_extent = process_update_extent,
++	.total_data_size = process_total_data_size,
+ };
+ 
+ static int do_receive(struct btrfs_receive *rctx, const char *tomnt,
 diff --git a/cmds-send.c b/cmds-send.c
-index c5ecdaa1..0ec557c7 100644
+index 0ec557c7..45e30f53 100644
 --- a/cmds-send.c
 +++ b/cmds-send.c
-@@ -52,6 +52,7 @@
-  * the 'At subvol' message.
+@@ -53,6 +53,7 @@
   */
  static int g_verbose = 1;
-+static int g_stream_version = BTRFS_SEND_STREAM_VERSION_1;
+ static int g_stream_version = BTRFS_SEND_STREAM_VERSION_1;
++static int g_total_data_size = 0;
  
  struct btrfs_send {
  	int send_fd;
-@@ -343,6 +344,8 @@ static int do_send(struct btrfs_send *send, u64 parent_root_id,
- 		io_send.flags |= BTRFS_SEND_FLAG_OMIT_STREAM_HEADER;
- 	if (!is_last_subvol)
+@@ -346,6 +347,8 @@ static int do_send(struct btrfs_send *send, u64 parent_root_id,
  		io_send.flags |= BTRFS_SEND_FLAG_OMIT_END_CMD;
-+	if (g_stream_version == BTRFS_SEND_STREAM_VERSION_2)
-+		io_send.flags |= BTRFS_SEND_FLAG_STREAM_V2;
+ 	if (g_stream_version == BTRFS_SEND_STREAM_VERSION_2)
+ 		io_send.flags |= BTRFS_SEND_FLAG_STREAM_V2;
++	if (g_total_data_size)
++		io_send.flags |= BTRFS_SEND_FLAG_CALCULATE_DATA_SIZE;
  	ret = ioctl(subvol_fd, BTRFS_IOC_SEND, &io_send);
  	if (ret < 0) {
  		ret = -errno;
-@@ -513,7 +516,8 @@ int cmd_send(int argc, char **argv)
- 		static const struct option long_options[] = {
- 			{ "verbose", no_argument, NULL, 'v' },
- 			{ "quiet", no_argument, NULL, 'q' },
--			{ "no-data", no_argument, NULL, GETOPT_VAL_SEND_NO_DATA }
-+			{ "no-data", no_argument, NULL, GETOPT_VAL_SEND_NO_DATA },
-+			{ "stream-version", 1, NULL, 'V' },
+@@ -519,7 +522,7 @@ int cmd_send(int argc, char **argv)
+ 			{ "no-data", no_argument, NULL, GETOPT_VAL_SEND_NO_DATA },
+ 			{ "stream-version", 1, NULL, 'V' },
  		};
- 		int c = getopt_long(argc, argv, "vqec:f:i:p:", long_options, NULL);
+-		int c = getopt_long(argc, argv, "vqec:f:i:p:", long_options, NULL);
++		int c = getopt_long(argc, argv, "vqesc:f:i:p:", long_options, NULL);
  
-@@ -597,6 +601,24 @@ int cmd_send(int argc, char **argv)
- 			error("option -i was removed, use -c instead");
- 			ret = 1;
- 			goto out;
-+		case 'V':
-+			if (sscanf(optarg, "%d", &g_stream_version) != 1) {
-+				fprintf(stderr,
-+					"ERROR: invalid value for stream version: %s\n",
-+					optarg);
-+				ret = 1;
-+				goto out;
-+			}
-+			if (g_stream_version <= 0 ||
-+			    g_stream_version > BTRFS_SEND_STREAM_VERSION_MAX) {
-+				fprintf(stderr,
-+					"ERROR: unsupported stream version %d, minimum: 1, maximum: %d\n",
-+					g_stream_version,
-+					BTRFS_SEND_STREAM_VERSION_MAX);
-+				ret = 1;
-+				goto out;
-+			}
+ 		if (c < 0)
+ 			break;
+@@ -619,6 +622,9 @@ int cmd_send(int argc, char **argv)
+ 				goto out;
+ 			}
+ 			break;
++		case 's':
++			g_total_data_size = 1;
 +			break;
  		case GETOPT_VAL_SEND_NO_DATA:
  			send_flags |= BTRFS_SEND_FLAG_NO_FILE_DATA;
  			break;
-@@ -776,7 +798,7 @@ out:
+@@ -633,6 +639,14 @@ int cmd_send(int argc, char **argv)
+ 	if (check_argc_min(argc - optind, 1))
+ 		usage(cmd_send_usage);
+ 
++	if (g_total_data_size &&
++	    g_stream_version < BTRFS_SEND_STREAM_VERSION_2) {
++		fprintf(stderr,
++			"ERROR: option total data size (-s) requires use of the send stream version 2 or higher\n");
++		ret = 1;
++		goto out;
++	}
++
+ 	if (outname[0]) {
+ 		int tmpfd;
+ 
+@@ -798,7 +812,7 @@ out:
  }
  
  const char * const cmd_send_usage[] = {
--	"btrfs send [-ve] [-p <parent>] [-c <clone-src>] [-f <outfile>] <subvol> [<subvol>...]",
-+	"btrfs send [-ve] [--stream-version <version>] [-p <parent>] [-c <clone-src>] [-f <outfile>] <subvol> [<subvol>...]",
+-	"btrfs send [-ve] [--stream-version <version>] [-p <parent>] [-c <clone-src>] [-f <outfile>] <subvol> [<subvol>...]",
++	"btrfs send [-ves] [--stream-version <version>] [-p <parent>] [-c <clone-src>] [-f <outfile>] <subvol> [<subvol>...]",
  	"Send the subvolume(s) to stdout.",
  	"Sends the subvolume(s) specified by <subvol> to stdout.",
  	"<subvol> should be read-only here.",
-@@ -790,21 +812,24 @@ const char * const cmd_send_usage[] = {
- 	"which case 'btrfs send' will determine a suitable parent among the",
- 	"clone sources itself.",
- 	"\n",
--	"-e               If sending multiple subvols at once, use the new",
--	"                 format and omit the end-cmd between the subvols.",
--	"-p <parent>      Send an incremental stream from <parent> to",
--	"                 <subvol>.",
--	"-c <clone-src>   Use this snapshot as a clone source for an ",
--	"                 incremental send (multiple allowed)",
--	"-f <outfile>     Output is normally written to stdout. To write to",
--	"                 a file, use this option. An alternative would be to",
--	"                 use pipes.",
--	"--no-data        send in NO_FILE_DATA mode, Note: the output stream",
--	"                 does not contain any file data and thus cannot be used",
--	"                 to transfer changes. This mode is faster and useful to",
--	"                 show the differences in metadata.",
--	"-v|--verbose     enable verbose output to stderr, each occurrence of",
--	"                 this option increases verbosity",
--	"-q|--quiet       suppress all messages, except errors",
-+	"-e                          If sending multiple subvols at once, use the new",
-+	"                            format and omit the end-cmd between the subvols.",
-+	"-p <parent>                 Send an incremental stream from <parent> to",
-+	"                            <subvol>.",
-+	"-c <clone-src>              Use this snapshot as a clone source for an ",
-+	"                            incremental send (multiple allowed)",
-+	"-f <outfile>                Output is normally written to stdout. To write to",
-+	"                            a file, use this option. An alternative would be to",
-+	"                            use pipes.",
-+	"--no-data                   send in NO_FILE_DATA mode, Note: the output stream",
-+	"                            does not contain any file data and thus cannot be used",
-+	"                            to transfer changes. This mode is faster and useful to",
-+	"                            show the differences in metadata.",
-+	"-v|--verbose                enable verbose output to stderr, each occurrence of",
-+	"                            this option increases verbosity",
-+	"-q|--quiet       	     suppress all messages, except errors",
-+	"--stream-version <version>  Ask the kernel to produce a specific send stream",
-+	"                            version. More recent stream versions provide new",
-+	"                            features and better performance. Default value is 1.",
+@@ -831,5 +845,10 @@ const char * const cmd_send_usage[] = {
+ 	"--stream-version <version>  Ask the kernel to produce a specific send stream",
+ 	"                            version. More recent stream versions provide new",
+ 	"                            features and better performance. Default value is 1.",
++	"-s                          Obtain the total data size for each subvolume or ",
++	"                            snapshot to send. This demands additional processing",
++	"                            (mostly IO bound) but is useful for the receive ",
++	"                            command to report progress. This option requires use",
++	"                            of the send stream version 2 or higher.",
  	NULL
  };
-diff --git a/ioctl.h b/ioctl.h
-index 709e996f..9d490aca 100644
---- a/ioctl.h
-+++ b/ioctl.h
-@@ -632,6 +632,21 @@ BUILD_ASSERT(sizeof(struct btrfs_ioctl_received_subvol_args_32) == 192);
- 	 BTRFS_SEND_FLAG_OMIT_STREAM_HEADER | \
- 	 BTRFS_SEND_FLAG_OMIT_END_CMD)
- 
-+/*
-+ * The sum of all length fields the receiver will get in write, clone and
-+ * fallocate commands.
-+ * This can be used by the receiver to compute progress, at the expense of some
-+ * initial metadata scan performed by the sender (kernel).
-+ *
-+ * Added in send stream version 2.
-+ */
-+#define BTRFS_SEND_FLAG_CALCULATE_DATA_SIZE	0x8
-+
-+/*
-+ * Used by a client to request a version 2 of the send stream.
-+ */
-+#define BTRFS_SEND_FLAG_STREAM_V2               0x10
-+
- struct btrfs_ioctl_send_args {
- 	__s64 send_fd;			/* in */
- 	__u64 clone_sources_count;	/* in */
 diff --git a/send-stream.c b/send-stream.c
-index 78f2571a..86956d28 100644
+index 86956d28..d30fd5a7 100644
 --- a/send-stream.c
 +++ b/send-stream.c
-@@ -503,7 +503,7 @@ int btrfs_read_and_process_send_stream(int fd,
- 	}
- 
- 	sctx.version = le32_to_cpu(hdr.version);
--	if (sctx.version > BTRFS_SEND_STREAM_VERSION) {
-+	if (sctx.version > BTRFS_SEND_STREAM_VERSION_MAX) {
- 		ret = -EINVAL;
- 		error("stream version %d not supported, please use newer version",
- 				sctx.version);
-diff --git a/send.h b/send.h
-index fe613cbb..c9752bb8 100644
---- a/send.h
-+++ b/send.h
-@@ -27,7 +27,10 @@ extern "C" {
- #endif
- 
- #define BTRFS_SEND_STREAM_MAGIC "btrfs-stream"
--#define BTRFS_SEND_STREAM_VERSION 1
-+#define BTRFS_SEND_STREAM_VERSION_1 1
-+#define BTRFS_SEND_STREAM_VERSION_2 2
-+/* Max supported stream version. */
-+#define BTRFS_SEND_STREAM_VERSION_MAX BTRFS_SEND_STREAM_VERSION_2
- 
- #define BTRFS_SEND_BUF_SIZE SZ_64K
- #define BTRFS_SEND_READ_SIZE (1024 * 48)
-@@ -94,6 +97,16 @@ enum btrfs_send_cmd {
- 
- 	BTRFS_SEND_C_END,
- 	BTRFS_SEND_C_UPDATE_EXTENT,
-+
-+	/*
-+	 * The following commands were added in stream version 2.
-+	 */
-+	BTRFS_SEND_C_TOTAL_DATA_SIZE,
-+	BTRFS_SEND_C_FALLOCATE,
-+	BTRFS_SEND_C_CHATTR,
-+	BTRFS_SEND_C_UTIMES2, /* Same as UTIMES, but it includes OTIME too. */
-+	BTRFS_SEND_C_WRITE_COMPRESSED, /* to be implemented */
-+
- 	__BTRFS_SEND_C_MAX,
+@@ -453,6 +453,10 @@ static int read_and_process_cmd(struct btrfs_send_stream *sctx)
+ 		TLV_GET_U64(sctx, BTRFS_SEND_A_SIZE, &tmp);
+ 		ret = sctx->ops->update_extent(path, offset, tmp, sctx->user);
+ 		break;
++	case BTRFS_SEND_C_TOTAL_DATA_SIZE:
++		TLV_GET_U64(sctx, BTRFS_SEND_A_SIZE, &tmp);
++		ret = sctx->ops->total_data_size(tmp, sctx->user);
++		break;
+ 	case BTRFS_SEND_C_END:
+ 		ret = 1;
+ 		break;
+diff --git a/send-stream.h b/send-stream.h
+index 39901f86..5b244ab6 100644
+--- a/send-stream.h
++++ b/send-stream.h
+@@ -66,6 +66,7 @@ struct btrfs_send_ops {
+ 		      struct timespec *mt, struct timespec *ct,
+ 		      void *user);
+ 	int (*update_extent)(const char *path, u64 offset, u64 len, void *user);
++	int (*total_data_size)(u64 size, void *user);
  };
- #define BTRFS_SEND_C_MAX (__BTRFS_SEND_C_MAX - 1)
-@@ -132,10 +145,19 @@ enum {
- 	BTRFS_SEND_A_CLONE_OFFSET,
- 	BTRFS_SEND_A_CLONE_LEN,
  
-+	/*
-+	 * The following attributes were added in stream version 2.
-+	 */
-+	BTRFS_SEND_A_FALLOCATE_FLAGS, /* 32 bits */
-+	BTRFS_SEND_A_CHATTR,	      /* 32 bits */
-+
- 	__BTRFS_SEND_A_MAX,
- };
- #define BTRFS_SEND_A_MAX (__BTRFS_SEND_A_MAX - 1)
- 
-+#define BTRFS_SEND_A_FALLOCATE_FLAG_KEEP_SIZE   (1 << 0)
-+#define BTRFS_SEND_A_FALLOCATE_FLAG_PUNCH_HOLE  (1 << 1)
-+
- #ifdef __KERNEL__
- long btrfs_ioctl_send(struct file *mnt_file, void __user *arg);
- #endif
+ int btrfs_read_and_process_send_stream(int fd,
 -- 
 2.17.0
 

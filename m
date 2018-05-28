@@ -1,33 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:56409 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:32824 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1033723AbeE1PJT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 28 May 2018 11:09:19 -0400
-Date: Mon, 28 May 2018 16:40:28 +0200
+        id S1033368AbeE1PWL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 28 May 2018 11:22:11 -0400
+Date: Mon, 28 May 2018 16:21:07 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Liu Bo <bo.liu@linux.alibaba.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2 0/6] btrfs_search_slot cleanups
-Message-ID: <20180528144028.GC6649@twin.jikos.cz>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: Liu Bo <bo.liu@linux.alibaba.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2 4/6] Btrfs: remove unused check of skip_locking
+Message-ID: <20180528142107.GA6649@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 References: <1526612424-97061-1-git-send-email-bo.liu@linux.alibaba.com>
+ <1526612424-97061-5-git-send-email-bo.liu@linux.alibaba.com>
+ <36bc953d-f9c7-fb58-d31e-09f610ad90be@gmx.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1526612424-97061-1-git-send-email-bo.liu@linux.alibaba.com>
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <36bc953d-f9c7-fb58-d31e-09f610ad90be@gmx.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, May 18, 2018 at 11:00:18AM +0800, Liu Bo wrote:
-> Here are a collection of patches I did for btrfs_search_slot().
+On Fri, May 18, 2018 at 01:27:50PM +0800, Qu Wenruo wrote:
 > 
-> v2: more explicit commit log for each patch.
 > 
-> Liu Bo (6):
->   Btrfs: remove superfluous free_extent_buffer
->   Btrfs: use more straightforward extent_buffer_uptodate
->   Btrfs: move get root of btrfs_search_slot to a helper
->   Btrfs: remove unused check of skip_locking
->   Btrfs: grab write lock directly if write_lock_level is the max level
->   Btrfs: remove always true check in unlock_up
+> On 2018年05月18日 11:00, Liu Bo wrote:
+> > The check is superfluous since all of callers who set search_for_commit
+> > also have skip_locking set.
+> > 
+> > Signed-off-by: Liu Bo <bo.liu@linux.alibaba.com>
+> 
+> Reviewed-by: Qu Wenruo <wqu@suse.com>
+> 
+> Although more obvious comment about search_commit_root and skip_locking
+> in ctree.h will be much better.
 
-1,2,4,5,6 merged. Please update patch 3 and add the ASSERT. Thanks.
+Not only a comment but also an ASSERT, this is too easy to get wrong.
+That all currenct callers do search_commit_root + skip_locking will not
+catch any future callers. And there was an example reported.

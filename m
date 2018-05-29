@@ -1,45 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from out30-133.freemail.mail.aliyun.com ([115.124.30.133]:53867 "EHLO
-        out30-133.freemail.mail.aliyun.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1755252AbeE2I1P (ORCPT
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:11630 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1754609AbeE2HCM (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 29 May 2018 04:27:15 -0400
-Date: Tue, 29 May 2018 16:27:01 +0800
-From: Liu Bo <bo.liu@linux.alibaba.com>
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2 0/6] btrfs_search_slot cleanups
-Message-ID: <20180529082700.434f3gi3bec6iyts@rsjd01523.et2sqa>
-Reply-To: bo.liu@linux.alibaba.com
-References: <1526612424-97061-1-git-send-email-bo.liu@linux.alibaba.com>
- <20180528144028.GC6649@twin.jikos.cz>
- <20180528161718.GF6649@twin.jikos.cz>
+        Tue, 29 May 2018 03:02:12 -0400
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
+        by cn.fujitsu.com (Postfix) with ESMTP id 0F8ED4B41E6E
+        for <linux-btrfs@vger.kernel.org>; Tue, 29 May 2018 15:02:05 +0800 (CST)
+From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH 0/2] UUID tree fs_info cleanup
+Date: Tue, 29 May 2018 15:01:52 +0800
+Message-ID: <20180529070154.20560-1-lufq.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180528161718.GF6649@twin.jikos.cz>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, May 28, 2018 at 06:17:18PM +0200, David Sterba wrote:
-> On Mon, May 28, 2018 at 04:40:28PM +0200, David Sterba wrote:
-> > On Fri, May 18, 2018 at 11:00:18AM +0800, Liu Bo wrote:
-> > > Here are a collection of patches I did for btrfs_search_slot().
-> > > 
-> > > v2: more explicit commit log for each patch.
-> > > 
-> > > Liu Bo (6):
-> > >   Btrfs: remove superfluous free_extent_buffer
-> > >   Btrfs: use more straightforward extent_buffer_uptodate
-> > >   Btrfs: move get root of btrfs_search_slot to a helper
-> > >   Btrfs: remove unused check of skip_locking
-> > >   Btrfs: grab write lock directly if write_lock_level is the max level
-> > >   Btrfs: remove always true check in unlock_up
-> > 
-> > 1,2,4,5,6 merged. Please update patch 3 and add the ASSERT. Thanks.
-> 
-> Sorry, it's the 4/6 that's not merged and I'm awaiting an updated
-> versino. Thanks.
+Just remove the redundant fs_info argument from uuid_tree functions
+because these functions have already taken transaction which has a
+reference to the fs_info.
 
-Thank you, David, I'll update it.
+No functional change.
 
-thanks,
--liubo
+Lu Fengqi (2):
+  btrfs: Remove fs_info argument from btrfs_uuid_tree_add
+  btrfs: Remove fs_info argument from btrfs_uuid_tree_rem
+
+ fs/btrfs/ctree.h       |  6 ++----
+ fs/btrfs/inode.c       |  5 ++---
+ fs/btrfs/ioctl.c       |  9 ++++-----
+ fs/btrfs/transaction.c |  7 +++----
+ fs/btrfs/uuid-tree.c   | 10 +++++-----
+ fs/btrfs/volumes.c     |  5 ++---
+ 6 files changed, 18 insertions(+), 24 deletions(-)
+
+-- 
+2.17.0
+
+
+

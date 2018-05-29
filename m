@@ -1,36 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f68.google.com ([74.125.82.68]:54751 "EHLO
-        mail-wm0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S933444AbeE2N1L (ORCPT
+Received: from mail-wm0-f44.google.com ([74.125.82.44]:51473 "EHLO
+        mail-wm0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S934136AbeE2Ne1 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 29 May 2018 09:27:11 -0400
-Received: by mail-wm0-f68.google.com with SMTP id f6-v6so40574726wmc.4
-        for <linux-btrfs@vger.kernel.org>; Tue, 29 May 2018 06:27:11 -0700 (PDT)
+        Tue, 29 May 2018 09:34:27 -0400
 MIME-Version: 1.0
 From: shankarapailoor <shankarapailoor@gmail.com>
-Date: Tue, 29 May 2018 06:27:10 -0700
-Message-ID: <CAB+yDaZe_8Lxi15g8t-t3PBAOsk5TcLpmp3zBb-kSva=R1hxTQ@mail.gmail.com>
-Subject: Possible deadlock in btrfs_alloc_data_chunk_ondemand
-To: clm@fb.com, dsterba@suse.com
-Cc: linux-btrfs@vger.kernel.org
+Date: Tue, 29 May 2018 06:34:25 -0700
+Message-ID: <CAB+yDaZ1SCDWs7budkTDh0OL0Pvmpf0Eh94koT8+B=8p5c3Dyg@mail.gmail.com>
+Subject: 2 BUG_ON crashes
+To: clm@fb.com, jbacik@fb.com
+Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 Hi,
 
-I am fuzzing 4.17-rc4 with BTRFS using Syzkaller and found a possible
-deadlock. This crash has happened 3 times in an hour.
+I have been fuzzing linux 4.17-rc4 with Syzkaller and it triggered the
+following BUG_ONs.
 
-Stack Trace: https://pastebin.com/1mjA9fzv
-Kernel Configs: https://pastebin.com/6J1KMczH
+1. kernel BUG at fs/btrfs/file.c:997
+(https://elixir.bootlin.com/linux/v4.17-rc4/source/fs/btrfs/file.c#L997)
 
+Stack Trace: https://pastebin.com/QZeDnRvm
 
-I don't have a reproducer yet, unfortunately.
+2. kernel BUG at fs/btrfs/extent_io.c:4049
+(https://elixir.bootlin.com/linux/v4.17-rc4/source/fs/btrfs/extent_io.c#L4049)
 
+Stack Trace: https://pastebin.com/qZN5qF3e
+
+Both bugs appear to be triggered by fault injections but can the
+BUG_ON's be changed to Warnings?
 
 Regards,
 Shankara Pailoor
-
-P.S. sorry if you received this email twice. First time I forgot to
-make the email plain text and it was rejected.

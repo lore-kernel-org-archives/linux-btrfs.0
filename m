@@ -1,38 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f48.google.com ([209.85.215.48]:36139 "EHLO
-        mail-lf0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S965010AbeE2Rch (ORCPT
+Received: from smtp.dpl.mendix.net ([83.96.177.10]:40135 "EHLO
+        smtp.dpl.mendix.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S965669AbeE2S4u (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 29 May 2018 13:32:37 -0400
+        Tue, 29 May 2018 14:56:50 -0400
+Subject: Re: off-by-one uncompressed invalid ram_bytes corruptions
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>, Steve Leung <sjleung@shaw.ca>,
+        linux-btrfs@vger.kernel.org
+References: <b262fdfc-16b2-21d0-4d7b-745ef106b555@shaw.ca>
+ <2dab827b-2c68-ea5c-6730-485037727c36@gmx.com>
+ <0b8e2626-fb00-1e82-4f22-c400cea57533@shaw.ca>
+ <5093c14b-5d6d-0827-0c04-bf2fd73af0bd@gmx.com>
+ <e0854da8-0d3e-946a-5709-7a329175bad3@shaw.ca>
+ <de65fc60-fc23-f7d5-1f58-52687d4859e8@gmx.com>
+From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+Message-ID: <c0ff94a7-2465-ef57-9aab-09d8adf7c8f1@mendix.com>
+Date: Tue, 29 May 2018 20:49:42 +0200
 MIME-Version: 1.0
-From: shankarapailoor <shankarapailoor@gmail.com>
-Date: Tue, 29 May 2018 10:32:35 -0700
-Message-ID: <CAB+yDaaXoeQ_hVVVvQ6y+gpa+XSH2YScwp1gR-Rz-2aSQUj74g@mail.gmail.com>
-Subject: BUG in mm/page-writeback.c:2652
-To: Chris Mason <clm@fb.com>, jbacik@fb.com, dsterba@suse.com
-Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <de65fc60-fc23-f7d5-1f58-52687d4859e8@gmx.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On 05/21/2018 03:07 AM, Qu Wenruo wrote:
+> 
+> [...]
+> 
+> And the problem of wrong "root=" output also makes me pretty curious.
+Yeah, there a bunch of error messages in the kernel with always say
+root=1, regardless of the actual root the tree block is in.
 
-I am fuzzing linux 4.17-rc4 with BTRFS and I encountered a BUG in
-mm/page-writeback.c error described below. This bug has occured 3
-times in our fuzzing campaign.
+I think I once tried to find out why, but apparently it wasn't a really
+obvious error somewhere.
 
-Here is the full stack trace: https://pastebin.com/QcDi9xA2
-
-Truncated Stack Trace: https://pastebin.com/GWRNmhmC
-
-Here is a C reproducer: https://pastebin.com/xTAVB3L2
-
-My linux configs: https://pastebin.com/6J1KMczH
-
-It appears that there is a fault injection inside of create_io_em
-during the slab allocation for the path. After that
-extent_clear_unlock_delalloc gets called. I don't know if the
-extent_map start and end are well defined in this case.
-
-Regards,
-Shankara Pailoor
+-- 
+Hans van Kranenburg

@@ -1,56 +1,28 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:2274 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1754466AbeE2GuN (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 29 May 2018 02:50:13 -0400
-From: Gu Jinxiang <gujx@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: <anand.jain@oracle.com>, Gu JinXiang <gujx@cn.fujitsu.com>
-Subject: [PATCH] btrfs: set device state reappearing missing device
-Date: Tue, 29 May 2018 14:50:09 +0800
-Message-ID: <1527576609-9347-1-git-send-email-gujx@cn.fujitsu.com>
+Received: from mx2.suse.de ([195.135.220.15]:34405 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S964838AbeE2PvS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 29 May 2018 11:51:18 -0400
+Date: Tue, 29 May 2018 17:48:32 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Gu Jinxiang <gujx@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org, anand.jain@oracle.com
+Subject: Re: [PATCH] btrfs: set device state reappearing missing device
+Message-ID: <20180529154832.GC4325@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1527576609-9347-1-git-send-email-gujx@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1527576609-9347-1-git-send-email-gujx@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Gu JinXiang <gujx@cn.fujitsu.com>
+On Tue, May 29, 2018 at 02:50:09PM +0800, Gu Jinxiang wrote:
+> From: Gu JinXiang <gujx@cn.fujitsu.com>
+> 
+> patch for commit 921518924084
+> ("btrfs: handle dynamically reappearing missing device").
 
-patch for commit 921518924084
-("btrfs: handle dynamically reappearing missing device").
-
-Since BTRFS_DEV_STATE_IN_FS_METADATA will be clear in
-btrfs_open_one_device, and when alloc a new chunk in
-__btrfs_alloc_chunk, device with BTRFS_DEV_STATE_IN_FS_METADATA
-not be set will be skipped, so it can not alloc chunk correctly.
-
-And from the source logic, BTRFS_DEV_STATE_IN_FS_METADATA should
-be also set when reapearing a missing device.
-
-And with this patch, xfstests-dev/tests/btrfs/154 should run
-successfully.
-
-Signed-off-by: Gu JinXiang <gujx@cn.fujitsu.com>
----
- fs/btrfs/volumes.c | 2 ++
- 1 file changed, 2 insertions(+)
-
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 8699080ef505..bf8a41b2847e 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -849,6 +849,8 @@ static noinline struct btrfs_device *device_list_add(const char *path,
- 
- 			fs_devices->missing_devices--;
- 			clear_bit(BTRFS_DEV_STATE_MISSING, &device->dev_state);
-+			set_bit(BTRFS_DEV_STATE_IN_FS_METADATA,
-+					&device->dev_state);
- 
- 			if (test_bit(BTRFS_DEV_STATE_WRITEABLE,
- 				     &device->dev_state) &&
--- 
-2.17.0
-
-
-
+The commit is not in any of the development branches and I only found
+the patch in the mailinglist, so this is for something still in
+development and I'll leave it to Anand.

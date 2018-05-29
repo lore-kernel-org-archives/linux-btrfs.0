@@ -1,265 +1,308 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:57381 "EHLO mx2.suse.de"
+Received: from mout.gmx.net ([212.227.17.22]:51885 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751668AbeE2GUm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 29 May 2018 02:20:42 -0400
-Received: from relay1.suse.de (charybdis-ext-too.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 9EFBCAF3E
-        for <linux-btrfs@vger.kernel.org>; Tue, 29 May 2018 06:20:40 +0000 (UTC)
+        id S1751800AbeE2GbC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 29 May 2018 02:31:02 -0400
 Subject: Re: [PATCH 3/3] btrfs: Delayed empty block group auto removal to next
  transaction
-To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+To: Nikolay Borisov <nborisov@suse.com>, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org
 References: <20180528092009.32562-1-wqu@suse.com>
  <20180528092009.32562-4-wqu@suse.com>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <2342afea-78e3-9a22-745e-f67cd1c176cf@suse.com>
-Date: Tue, 29 May 2018 09:20:39 +0300
+ <2342afea-78e3-9a22-745e-f67cd1c176cf@suse.com>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <d463d316-bb3a-bdac-9377-b545f7176e7a@gmx.com>
+Date: Tue, 29 May 2018 14:30:44 +0800
 MIME-Version: 1.0
-In-Reply-To: <20180528092009.32562-4-wqu@suse.com>
+In-Reply-To: <2342afea-78e3-9a22-745e-f67cd1c176cf@suse.com>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On 28.05.2018 12:20, Qu Wenruo wrote:
-> Under certain KVM load and LTP tests, we are possible to hit the
-> following calltrace if quota is enabled:
-> ------
-> BTRFS critical (device vda2): unable to find logical 8820195328 length 4096
-> BTRFS critical (device vda2): unable to find logical 8820195328 length 4096
-> ------------[ cut here ]------------
-> WARNING: CPU: 0 PID: 49 at ../block/blk-core.c:172 blk_status_to_errno+0x1a/0x30
-> CPU: 0 PID: 49 Comm: kworker/u2:1 Not tainted 4.12.14-15-default #1 SLE15 (unreleased)
-> Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS 1.0.0-prebuilt.qemu-project.org 04/01/2014
-> Workqueue: btrfs-endio-write btrfs_endio_write_helper [btrfs]
-> task: ffff9f827b340bc0 task.stack: ffffb4f8c0304000
-> RIP: 0010:blk_status_to_errno+0x1a/0x30
-> Call Trace:
->  submit_extent_page+0x191/0x270 [btrfs]
->  ? btrfs_create_repair_bio+0x130/0x130 [btrfs]
->  __do_readpage+0x2d2/0x810 [btrfs]
->  ? btrfs_create_repair_bio+0x130/0x130 [btrfs]
->  ? run_one_async_done+0xc0/0xc0 [btrfs]
->  __extent_read_full_page+0xe7/0x100 [btrfs]
->  ? run_one_async_done+0xc0/0xc0 [btrfs]
->  read_extent_buffer_pages+0x1ab/0x2d0 [btrfs]
->  ? run_one_async_done+0xc0/0xc0 [btrfs]
->  btree_read_extent_buffer_pages+0x94/0xf0 [btrfs]
->  read_tree_block+0x31/0x60 [btrfs]
->  read_block_for_search.isra.35+0xf0/0x2e0 [btrfs]
->  btrfs_search_slot+0x46b/0xa00 [btrfs]
->  ? kmem_cache_alloc+0x1a8/0x510
->  ? btrfs_get_token_32+0x5b/0x120 [btrfs]
->  find_parent_nodes+0x11d/0xeb0 [btrfs]
->  ? leaf_space_used+0xb8/0xd0 [btrfs]
->  ? btrfs_leaf_free_space+0x49/0x90 [btrfs]
->  ? btrfs_find_all_roots_safe+0x93/0x100 [btrfs]
->  btrfs_find_all_roots_safe+0x93/0x100 [btrfs]
->  btrfs_find_all_roots+0x45/0x60 [btrfs]
->  btrfs_qgroup_trace_extent_post+0x20/0x40 [btrfs]
->  btrfs_add_delayed_data_ref+0x1a3/0x1d0 [btrfs]
->  btrfs_alloc_reserved_file_extent+0x38/0x40 [btrfs]
->  insert_reserved_file_extent.constprop.71+0x289/0x2e0 [btrfs]
->  btrfs_finish_ordered_io+0x2f4/0x7f0 [btrfs]
->  ? pick_next_task_fair+0x2cd/0x530
->  ? __switch_to+0x92/0x4b0
->  btrfs_worker_helper+0x81/0x300 [btrfs]
->  process_one_work+0x1da/0x3f0
->  worker_thread+0x2b/0x3f0
->  ? process_one_work+0x3f0/0x3f0
->  kthread+0x11a/0x130
->  ? kthread_create_on_node+0x40/0x40
->  ret_from_fork+0x35/0x40
-> Code: 00 00 5b c3 0f 1f 00 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 44 00 00 40 80 ff 0c 40 0f b6 c7 77 0b 48 c1 e0 04 8b 80 00 bf c8 bd c3 <0f> 0b b8 fb ff ff ff c3 0f 1f 40 00 66 2e 0f 1f 84 00 00 00 00
-> ---[ end trace f079fb809e7a862b ]---
-> BTRFS critical (device vda2): unable to find logical 8820195328 length 16384
-> BTRFS: error (device vda2) in btrfs_finish_ordered_io:3023: errno=-5 IO failure
-> BTRFS info (device vda2): forced readonly
-> BTRFS error (device vda2): pending csums is 2887680
-> ------
+On 2018年05月29日 14:20, Nikolay Borisov wrote:
 > 
-> Although we haven't hit the same bug in real world, it shows that since
-> qgroup is heavily relying on commit root, if block group auto removal
-> happens and removed the empty block group, qgroup could failed to find
-> its old referencers.
 > 
-> This patch will add a new member for btrfs_transaction,
-> pending_unused_bgs.
-> Now unused bgs will go trans->transaction->pending_unused_bgs, then
-> fs_info->unused_bgs, and finally get removed by
-> btrfs_deleted_unused_bgs().
+> On 28.05.2018 12:20, Qu Wenruo wrote:
+>> Under certain KVM load and LTP tests, we are possible to hit the
+>> following calltrace if quota is enabled:
+>> ------
+>> BTRFS critical (device vda2): unable to find logical 8820195328 length 4096
+>> BTRFS critical (device vda2): unable to find logical 8820195328 length 4096
+>> ------------[ cut here ]------------
+>> WARNING: CPU: 0 PID: 49 at ../block/blk-core.c:172 blk_status_to_errno+0x1a/0x30
+>> CPU: 0 PID: 49 Comm: kworker/u2:1 Not tainted 4.12.14-15-default #1 SLE15 (unreleased)
+>> Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS 1.0.0-prebuilt.qemu-project.org 04/01/2014
+>> Workqueue: btrfs-endio-write btrfs_endio_write_helper [btrfs]
+>> task: ffff9f827b340bc0 task.stack: ffffb4f8c0304000
+>> RIP: 0010:blk_status_to_errno+0x1a/0x30
+>> Call Trace:
+>>  submit_extent_page+0x191/0x270 [btrfs]
+>>  ? btrfs_create_repair_bio+0x130/0x130 [btrfs]
+>>  __do_readpage+0x2d2/0x810 [btrfs]
+>>  ? btrfs_create_repair_bio+0x130/0x130 [btrfs]
+>>  ? run_one_async_done+0xc0/0xc0 [btrfs]
+>>  __extent_read_full_page+0xe7/0x100 [btrfs]
+>>  ? run_one_async_done+0xc0/0xc0 [btrfs]
+>>  read_extent_buffer_pages+0x1ab/0x2d0 [btrfs]
+>>  ? run_one_async_done+0xc0/0xc0 [btrfs]
+>>  btree_read_extent_buffer_pages+0x94/0xf0 [btrfs]
+>>  read_tree_block+0x31/0x60 [btrfs]
+>>  read_block_for_search.isra.35+0xf0/0x2e0 [btrfs]
+>>  btrfs_search_slot+0x46b/0xa00 [btrfs]
+>>  ? kmem_cache_alloc+0x1a8/0x510
+>>  ? btrfs_get_token_32+0x5b/0x120 [btrfs]
+>>  find_parent_nodes+0x11d/0xeb0 [btrfs]
+>>  ? leaf_space_used+0xb8/0xd0 [btrfs]
+>>  ? btrfs_leaf_free_space+0x49/0x90 [btrfs]
+>>  ? btrfs_find_all_roots_safe+0x93/0x100 [btrfs]
+>>  btrfs_find_all_roots_safe+0x93/0x100 [btrfs]
+>>  btrfs_find_all_roots+0x45/0x60 [btrfs]
+>>  btrfs_qgroup_trace_extent_post+0x20/0x40 [btrfs]
+>>  btrfs_add_delayed_data_ref+0x1a3/0x1d0 [btrfs]
+>>  btrfs_alloc_reserved_file_extent+0x38/0x40 [btrfs]
+>>  insert_reserved_file_extent.constprop.71+0x289/0x2e0 [btrfs]
+>>  btrfs_finish_ordered_io+0x2f4/0x7f0 [btrfs]
+>>  ? pick_next_task_fair+0x2cd/0x530
+>>  ? __switch_to+0x92/0x4b0
+>>  btrfs_worker_helper+0x81/0x300 [btrfs]
+>>  process_one_work+0x1da/0x3f0
+>>  worker_thread+0x2b/0x3f0
+>>  ? process_one_work+0x3f0/0x3f0
+>>  kthread+0x11a/0x130
+>>  ? kthread_create_on_node+0x40/0x40
+>>  ret_from_fork+0x35/0x40
+>> Code: 00 00 5b c3 0f 1f 00 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 44 00 00 40 80 ff 0c 40 0f b6 c7 77 0b 48 c1 e0 04 8b 80 00 bf c8 bd c3 <0f> 0b b8 fb ff ff ff c3 0f 1f 40 00 66 2e 0f 1f 84 00 00 00 00
+>> ---[ end trace f079fb809e7a862b ]---
+>> BTRFS critical (device vda2): unable to find logical 8820195328 length 16384
+>> BTRFS: error (device vda2) in btrfs_finish_ordered_io:3023: errno=-5 IO failure
+>> BTRFS info (device vda2): forced readonly
+>> BTRFS error (device vda2): pending csums is 2887680
+>> ------
+>>
+>> Although we haven't hit the same bug in real world, it shows that since
+>> qgroup is heavily relying on commit root, if block group auto removal
+>> happens and removed the empty block group, qgroup could failed to find
+>> its old referencers.
+>>
+>> This patch will add a new member for btrfs_transaction,
+>> pending_unused_bgs.
+>> Now unused bgs will go trans->transaction->pending_unused_bgs, then
+>> fs_info->unused_bgs, and finally get removed by
+>> btrfs_deleted_unused_bgs().
+>>
+>> Signed-off-by: Qu Wenruo <wqu@suse.com>
 > 
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-
-Overall looks good and simple, couple of minor nits which are not really
-critical.
-> ---
->  fs/btrfs/ctree.h       |  3 ++-
->  fs/btrfs/extent-tree.c | 34 ++++++++++++++++++++++++++++++----
->  fs/btrfs/scrub.c       |  2 +-
->  fs/btrfs/transaction.c |  7 +++++++
->  fs/btrfs/transaction.h | 10 ++++++++++
->  5 files changed, 50 insertions(+), 6 deletions(-)
+> Overall looks good and simple, couple of minor nits which are not really
+> critical.
+>> ---
+>>  fs/btrfs/ctree.h       |  3 ++-
+>>  fs/btrfs/extent-tree.c | 34 ++++++++++++++++++++++++++++++----
+>>  fs/btrfs/scrub.c       |  2 +-
+>>  fs/btrfs/transaction.c |  7 +++++++
+>>  fs/btrfs/transaction.h | 10 ++++++++++
+>>  5 files changed, 50 insertions(+), 6 deletions(-)
+>>
+>> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+>> index b19b673485fd..19d7532fa4cf 100644
+>> --- a/fs/btrfs/ctree.h
+>> +++ b/fs/btrfs/ctree.h
+>> @@ -2829,7 +2829,8 @@ void check_system_chunk(struct btrfs_trans_handle *trans,
+>>  			struct btrfs_fs_info *fs_info, const u64 type);
+>>  u64 add_new_free_space(struct btrfs_block_group_cache *block_group,
+>>  		       struct btrfs_fs_info *info, u64 start, u64 end);
+>> -void btrfs_mark_bg_unused(struct btrfs_block_group_cache *bg);
+>> +void btrfs_mark_bg_unused(struct btrfs_block_group_cache *bg,
+>> +			  struct btrfs_trans_handle *trans);
+>>  
+>>  /* ctree.c */
+>>  int btrfs_bin_search(struct extent_buffer *eb, const struct btrfs_key *key,
+>> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+>> index f0d7e19feca7..80e17bd99f8e 100644
+>> --- a/fs/btrfs/extent-tree.c
+>> +++ b/fs/btrfs/extent-tree.c
+>> @@ -6351,7 +6351,7 @@ static int update_block_group(struct btrfs_trans_handle *trans,
+>>  		 * cache writeout.
+>>  		 */
+>>  		if (!alloc && old_val == 0)
+>> -			btrfs_mark_bg_unused(cache);
+>> +			btrfs_mark_bg_unused(cache, trans);
+>>  
+>>  		btrfs_put_block_group(cache);
+>>  		total -= num_bytes;
+>> @@ -10194,7 +10194,7 @@ int btrfs_read_block_groups(struct btrfs_fs_info *info)
+>>  			inc_block_group_ro(cache, 1);
+>>  		} else if (btrfs_block_group_used(&cache->item) == 0) {
+>>  			ASSERT(list_empty(&cache->bg_list));
+>> -			btrfs_mark_bg_unused(cache);
+>> +			btrfs_mark_bg_unused(cache, NULL);
 > 
-> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-> index b19b673485fd..19d7532fa4cf 100644
-> --- a/fs/btrfs/ctree.h
-> +++ b/fs/btrfs/ctree.h
-> @@ -2829,7 +2829,8 @@ void check_system_chunk(struct btrfs_trans_handle *trans,
->  			struct btrfs_fs_info *fs_info, const u64 type);
->  u64 add_new_free_space(struct btrfs_block_group_cache *block_group,
->  		       struct btrfs_fs_info *info, u64 start, u64 end);
-> -void btrfs_mark_bg_unused(struct btrfs_block_group_cache *bg);
-> +void btrfs_mark_bg_unused(struct btrfs_block_group_cache *bg,
-> +			  struct btrfs_trans_handle *trans);
->  
->  /* ctree.c */
->  int btrfs_bin_search(struct extent_buffer *eb, const struct btrfs_key *key,
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index f0d7e19feca7..80e17bd99f8e 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -6351,7 +6351,7 @@ static int update_block_group(struct btrfs_trans_handle *trans,
->  		 * cache writeout.
->  		 */
->  		if (!alloc && old_val == 0)
-> -			btrfs_mark_bg_unused(cache);
-> +			btrfs_mark_bg_unused(cache, trans);
->  
->  		btrfs_put_block_group(cache);
->  		total -= num_bytes;
-> @@ -10194,7 +10194,7 @@ int btrfs_read_block_groups(struct btrfs_fs_info *info)
->  			inc_block_group_ro(cache, 1);
->  		} else if (btrfs_block_group_used(&cache->item) == 0) {
->  			ASSERT(list_empty(&cache->bg_list));
-> -			btrfs_mark_bg_unused(cache);
-> +			btrfs_mark_bg_unused(cache, NULL);
+> nit: btrfs_mark_bg_unused(cache, false); looks better than passing NULL,
+> see below for full sugestion.
+> 
+>>  		}
+>>  	}
+>>  
+>> @@ -11119,15 +11119,41 @@ void btrfs_wait_for_snapshot_creation(struct btrfs_root *root)
+>>  	}
+>>  }
+>>  
+>> -void btrfs_mark_bg_unused(struct btrfs_block_group_cache *bg)
+>> +/*
+>> + * Get a block group cache and mark it as unused (if not already
+>> + * unused/deleted)
+>> + *
+>> + * NOTE:
+>> + * Since qgroup could search commit root at any time, we can't just
+>> + * delete the block group and its chunk mapping in current trans.
+>> + * So we record bgs to be deleted in trans->transaction and then
+>> + * queue them into fs_info->unused_bgs.
+>> + *
+>> + * @bg:		The block group cache
+>> + * @trans:	The trans handler
+>> + */
+>> +void btrfs_mark_bg_unused(struct btrfs_block_group_cache *bg,
+>> +			  struct btrfs_trans_handle *trans)
+>>  {
+>>  	struct btrfs_fs_info *fs_info = bg->fs_info;
+>>  
+>>  	spin_lock(&fs_info->unused_bgs_lock);
+> 
+> With this patch fs_info->unused_bgs_lock actually become sort-of global,
+> since it protects the fs_info->unused_bgs, but it also protects the
+> per-transaction pending_unused_bgs.
 
-nit: btrfs_mark_bg_unused(cache, false); looks better than passing NULL,
-see below for full sugestion.
+Yep, that's true.
 
->  		}
->  	}
->  
-> @@ -11119,15 +11119,41 @@ void btrfs_wait_for_snapshot_creation(struct btrfs_root *root)
->  	}
->  }
->  
-> -void btrfs_mark_bg_unused(struct btrfs_block_group_cache *bg)
-> +/*
-> + * Get a block group cache and mark it as unused (if not already
-> + * unused/deleted)
-> + *
-> + * NOTE:
-> + * Since qgroup could search commit root at any time, we can't just
-> + * delete the block group and its chunk mapping in current trans.
-> + * So we record bgs to be deleted in trans->transaction and then
-> + * queue them into fs_info->unused_bgs.
-> + *
-> + * @bg:		The block group cache
-> + * @trans:	The trans handler
-> + */
-> +void btrfs_mark_bg_unused(struct btrfs_block_group_cache *bg,
-> +			  struct btrfs_trans_handle *trans)
->  {
->  	struct btrfs_fs_info *fs_info = bg->fs_info;
->  
->  	spin_lock(&fs_info->unused_bgs_lock);
+> I guess there shouldn't be much
+> contention for that lock since we don't really delete that many unused bgs.
 
-With this patch fs_info->unused_bgs_lock actually become sort-of global,
-since it protects the fs_info->unused_bgs, but it also protects the
-per-transaction pending_unused_bgs. I guess there shouldn't be much
-contention for that lock since we don't really delete that many unused bgs.
+Right, that's one of the reasons I'm reusing the lock.
+Another problem is introducing new lock will increase the possibility
+about ABBA deadlock.
+Since it's not really performance critical, I prefer using the global
+lock other than introducing a new one.
 
->  	if (list_empty(&bg->bg_list)) {
-> +		/*
-> +		 * Get one reference, will be freed at btrfs_delete_unused_bgs()
-> +		 */
-nit: Why not make the coment a single line /* text */
+> 
+>>  	if (list_empty(&bg->bg_list)) {
+>> +		/*
+>> +		 * Get one reference, will be freed at btrfs_delete_unused_bgs()
+>> +		 */
+> nit: Why not make the coment a single line /* text */
 
->  		btrfs_get_block_group(bg);
->  		trace_btrfs_add_unused_block_group(bg);
-> -		list_add_tail(&bg->bg_list, &fs_info->unused_bgs);
-> +
-> +		/*
-> +		 * If we don't have a trans, it means we are at mount time.
-> +		 * It's completely fine to mark it ready to be deleted.
-> +		 */
-> +		if (!trans)
-Since you don't really use the transaction struct, perhaps make this
-parameter a boolean and name it something like fast_delete or
-direct_delete or quick_delete or some such? Then you can put this
-comment as the description of the parameter rather than in the code.
-> +			list_add_tail(&bg->bg_list, &fs_info->unused_bgs);
-> +		else
-> +			list_add_tail(&bg->bg_list,
-> +				      &trans->transaction->pending_unused_bgs);
->  	}
->  	spin_unlock(&fs_info->unused_bgs_lock);
->  }
-> diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-> index 40086b47a65f..d9e2420da457 100644
-> --- a/fs/btrfs/scrub.c
-> +++ b/fs/btrfs/scrub.c
-> @@ -3981,7 +3981,7 @@ int scrub_enumerate_chunks(struct scrub_ctx *sctx,
->  		if (!cache->removed && !cache->ro && cache->reserved == 0 &&
->  		    btrfs_block_group_used(&cache->item) == 0) {
->  			spin_unlock(&cache->lock);
-> -			btrfs_mark_bg_unused(cache);
-> +			btrfs_mark_bg_unused(cache, NULL);
->  		} else {
->  			spin_unlock(&cache->lock);
->  		}
-> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-> index c944b4769e3c..5518215fc388 100644
-> --- a/fs/btrfs/transaction.c
-> +++ b/fs/btrfs/transaction.c
-> @@ -264,6 +264,7 @@ static noinline int join_transaction(struct btrfs_fs_info *fs_info,
->  
->  	INIT_LIST_HEAD(&cur_trans->pending_snapshots);
->  	INIT_LIST_HEAD(&cur_trans->pending_chunks);
-> +	INIT_LIST_HEAD(&cur_trans->pending_unused_bgs);
->  	INIT_LIST_HEAD(&cur_trans->switch_commits);
->  	INIT_LIST_HEAD(&cur_trans->dirty_bgs);
->  	INIT_LIST_HEAD(&cur_trans->io_bgs);
-> @@ -2269,6 +2270,12 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
->  	wake_up(&cur_trans->commit_wait);
->  	clear_bit(BTRFS_FS_NEED_ASYNC_COMMIT, &fs_info->flags);
->  
-> +	/* transaction is done, queue pending unused bgs to cleaner */
-> +	spin_lock(&fs_info->unused_bgs_lock);
-> +	list_splice_tail_init(&cur_trans->pending_unused_bgs,
-> +			      &fs_info->unused_bgs);
-> +	spin_unlock(&fs_info->unused_bgs_lock);
-> +
->  	spin_lock(&fs_info->trans_lock);
->  	list_del_init(&cur_trans->list);
->  	spin_unlock(&fs_info->trans_lock);
-> diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
-> index d8c0826bc2c7..9f160e1811f7 100644
-> --- a/fs/btrfs/transaction.h
-> +++ b/fs/btrfs/transaction.h
-> @@ -57,6 +57,16 @@ struct btrfs_transaction {
->  	struct list_head switch_commits;
->  	struct list_head dirty_bgs;
->  
-> +	/*
-> +	 * Unused block groups waiting to be deleted after current transaction.
-> +	 * Protected by fs_info->unused_bgs_lock.
+IIRC it's over 80 chars if single lined.
+The last ')' is just the 80th character.
 
-I think the right way to document the lock protecting the list would be
-: btrfs_fs_info::unuused_bgs_lock, since you want to refer to the type
-and not a de-factor naming standard (which might as well change in the
-future).
-> +	 *
-> +	 * Since qgroup could search commit root, we can't delete unused block
-> +	 * group in the same trans when it get emptied, but delay it to next
-> +	 * transaction (or next mount if power loss happens)
-> +	 */
-> +	struct list_head pending_unused_bgs;
-> +
->  	/*
->  	 * There is no explicit lock which protects io_bgs, rather its
->  	 * consistency is implied by the fact that all the sites which modify
+> 
+>>  		btrfs_get_block_group(bg);
+>>  		trace_btrfs_add_unused_block_group(bg);
+>> -		list_add_tail(&bg->bg_list, &fs_info->unused_bgs);
+>> +
+>> +		/*
+>> +		 * If we don't have a trans, it means we are at mount time.
+>> +		 * It's completely fine to mark it ready to be deleted.
+>> +		 */
+>> +		if (!trans)
+> Since you don't really use the transaction struct, perhaps make this
+> parameter a boolean and name it something like fast_delete or
+> direct_delete or quick_delete or some such? Then you can put this
+> comment as the description of the parameter rather than in the code.
+
+I also considered this, however the problem here is we need extra
+function calls to get current transaction and need to keep an eye on the
+other call sites like in btrfs_read_block_groups().
+
+Where if we're trying to start a transaction at improper time, it could
+cause extra problem.
+
+Thus here using transaction handler provides a good balance for caller
+and the complexity of the function.
+For caller, they don't really care about too much thing, if you have a
+trans handler, pass it.
+If not, pass NULL. Pretty instinctive.
+In fact, it's even better than a bool, in which case caller needs to
+determine which bool should be passed.
+
+And the function has no need to try to start/get a transaction.
+
+Thanks,
+Qu
+
+>> +			list_add_tail(&bg->bg_list, &fs_info->unused_bgs);
+>> +		else
+>> +			list_add_tail(&bg->bg_list,
+>> +				      &trans->transaction->pending_unused_bgs);
+>>  	}
+>>  	spin_unlock(&fs_info->unused_bgs_lock);
+>>  }
+>> diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+>> index 40086b47a65f..d9e2420da457 100644
+>> --- a/fs/btrfs/scrub.c
+>> +++ b/fs/btrfs/scrub.c
+>> @@ -3981,7 +3981,7 @@ int scrub_enumerate_chunks(struct scrub_ctx *sctx,
+>>  		if (!cache->removed && !cache->ro && cache->reserved == 0 &&
+>>  		    btrfs_block_group_used(&cache->item) == 0) {
+>>  			spin_unlock(&cache->lock);
+>> -			btrfs_mark_bg_unused(cache);
+>> +			btrfs_mark_bg_unused(cache, NULL);
+>>  		} else {
+>>  			spin_unlock(&cache->lock);
+>>  		}
+>> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+>> index c944b4769e3c..5518215fc388 100644
+>> --- a/fs/btrfs/transaction.c
+>> +++ b/fs/btrfs/transaction.c
+>> @@ -264,6 +264,7 @@ static noinline int join_transaction(struct btrfs_fs_info *fs_info,
+>>  
+>>  	INIT_LIST_HEAD(&cur_trans->pending_snapshots);
+>>  	INIT_LIST_HEAD(&cur_trans->pending_chunks);
+>> +	INIT_LIST_HEAD(&cur_trans->pending_unused_bgs);
+>>  	INIT_LIST_HEAD(&cur_trans->switch_commits);
+>>  	INIT_LIST_HEAD(&cur_trans->dirty_bgs);
+>>  	INIT_LIST_HEAD(&cur_trans->io_bgs);
+>> @@ -2269,6 +2270,12 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
+>>  	wake_up(&cur_trans->commit_wait);
+>>  	clear_bit(BTRFS_FS_NEED_ASYNC_COMMIT, &fs_info->flags);
+>>  
+>> +	/* transaction is done, queue pending unused bgs to cleaner */
+>> +	spin_lock(&fs_info->unused_bgs_lock);
+>> +	list_splice_tail_init(&cur_trans->pending_unused_bgs,
+>> +			      &fs_info->unused_bgs);
+>> +	spin_unlock(&fs_info->unused_bgs_lock);
+>> +
+>>  	spin_lock(&fs_info->trans_lock);
+>>  	list_del_init(&cur_trans->list);
+>>  	spin_unlock(&fs_info->trans_lock);
+>> diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
+>> index d8c0826bc2c7..9f160e1811f7 100644
+>> --- a/fs/btrfs/transaction.h
+>> +++ b/fs/btrfs/transaction.h
+>> @@ -57,6 +57,16 @@ struct btrfs_transaction {
+>>  	struct list_head switch_commits;
+>>  	struct list_head dirty_bgs;
+>>  
+>> +	/*
+>> +	 * Unused block groups waiting to be deleted after current transaction.
+>> +	 * Protected by fs_info->unused_bgs_lock.
+> 
+> I think the right way to document the lock protecting the list would be
+> : btrfs_fs_info::unuused_bgs_lock, since you want to refer to the type
+> and not a de-factor naming standard (which might as well change in the
+> future).
+>> +	 *
+>> +	 * Since qgroup could search commit root, we can't delete unused block
+>> +	 * group in the same trans when it get emptied, but delay it to next
+>> +	 * transaction (or next mount if power loss happens)
+>> +	 */
+>> +	struct list_head pending_unused_bgs;
+>> +
+>>  	/*
+>>  	 * There is no explicit lock which protects io_bgs, rather its
+>>  	 * consistency is implied by the fact that all the sites which modify
+>>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 > 

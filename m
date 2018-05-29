@@ -1,37 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp.dpl.mendix.net ([83.96.177.10]:40135 "EHLO
-        smtp.dpl.mendix.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S965669AbeE2S4u (ORCPT
+Received: from mail-ot0-f195.google.com ([74.125.82.195]:41957 "EHLO
+        mail-ot0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S965759AbeE2T0P (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 29 May 2018 14:56:50 -0400
-Subject: Re: off-by-one uncompressed invalid ram_bytes corruptions
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>, Steve Leung <sjleung@shaw.ca>,
-        linux-btrfs@vger.kernel.org
-References: <b262fdfc-16b2-21d0-4d7b-745ef106b555@shaw.ca>
- <2dab827b-2c68-ea5c-6730-485037727c36@gmx.com>
- <0b8e2626-fb00-1e82-4f22-c400cea57533@shaw.ca>
- <5093c14b-5d6d-0827-0c04-bf2fd73af0bd@gmx.com>
- <e0854da8-0d3e-946a-5709-7a329175bad3@shaw.ca>
- <de65fc60-fc23-f7d5-1f58-52687d4859e8@gmx.com>
-From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
-Message-ID: <c0ff94a7-2465-ef57-9aab-09d8adf7c8f1@mendix.com>
-Date: Tue, 29 May 2018 20:49:42 +0200
+        Tue, 29 May 2018 15:26:15 -0400
+Received: by mail-ot0-f195.google.com with SMTP id t1-v6so18319944oth.8
+        for <linux-btrfs@vger.kernel.org>; Tue, 29 May 2018 12:26:15 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <de65fc60-fc23-f7d5-1f58-52687d4859e8@gmx.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <20180529074527.7333-1-wqu@suse.com>
+References: <20180529074527.7333-1-wqu@suse.com>
+From: james harvey <jamespharvey20@gmail.com>
+Date: Tue, 29 May 2018 15:26:13 -0400
+Message-ID: <CA+X5Wn6Ltx02naOh2BjZwzu2A2c74G47QAceMipt-XsoCS2k+A@mail.gmail.com>
+Subject: Re: [PATCH] btrfs-progs: check: Also compare data between mirrors to
+ detect corruption for NODATASUM extents
+To: Qu Wenruo <wqu@suse.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 05/21/2018 03:07 AM, Qu Wenruo wrote:
-> 
-> [...]
-> 
-> And the problem of wrong "root=" output also makes me pretty curious.
-Yeah, there a bunch of error messages in the kernel with always say
-root=1, regardless of the actual root the tree block is in.
+On Tue, May 29, 2018 at 3:45 AM, Qu Wenruo <wqu@suse.com> wrote:
+> As the lzo corruption reported by James Harvey, for data extents without
+> checksum, neither btrfs check nor kernel scrub could detect anything
+> wrong.
+>
+> However if our profile supports duplication, we still have a chance to
+> detect such corruption, as in that case the mirrors will mismatch with
+> each other.
+>
+> So enhance --check-data-csum option to do such check, and this could
+> help us to detect such corruption in an autonomous test case.
+>
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
 
-I think I once tried to find out why, but apparently it wasn't a really
-obvious error somewhere.
+I think it's good to have check --check-data-csum do such check.
 
--- 
-Hans van Kranenburg
+I also think there should be a check option that only checks the
+mirrored copies, so it could be ran without taking the time to check
+everything that scrub looks at.  (If the feature isn't also added to
+scrub as I argue for below, one could run this option every time they
+scrub.)
+
+IMO, it is important to also add this to scrub.  First reason is to
+allow online scanning, since check is recommended not to run with
+--force on a quiescent/read-only fs.  Second, I think users expect
+scrub to ensure mirrored data integrity, and this goes along with
+that, of course without automatic correction.  I think without doing
+so, users who periodically run scrub would be surprised if they had
+data corruption, that it hadn't been being checked all along.
+
+It's recommended many places that users setup scrub to run
+automatically on a periodic basis, but I'm not sure if I've seen
+anywhere recommend setting up check to do so as well, especially as
+doing so on a mounted filesystem is discouraged and potentially will
+crash.
+
+I haven't looked at this specifically, but I'm thinking this would be
+better in the btrfs-progs side of scrub after it runs the kernel side
+real scrub.
+
+I have to head out for a while.  I haven't looked over or tried the
+code yet, but will later.

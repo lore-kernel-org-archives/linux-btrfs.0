@@ -1,26 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:34647 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932515AbeE2J2G (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 29 May 2018 05:28:06 -0400
-Date: Tue, 29 May 2018 11:25:17 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 0/2] UUID tree fs_info cleanup
-Message-ID: <20180529092517.GI6649@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20180529070154.20560-1-lufq.fnst@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180529070154.20560-1-lufq.fnst@cn.fujitsu.com>
+Received: from out30-130.freemail.mail.aliyun.com ([115.124.30.130]:56926 "EHLO
+        out30-130.freemail.mail.aliyun.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S933444AbeE2N10 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 29 May 2018 09:27:26 -0400
+From: Liu Bo <bo.liu@linux.alibaba.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH v3] Btrfs: remove unused check of skip_locking
+Date: Tue, 29 May 2018 21:27:06 +0800
+Message-Id: <1527600426-131024-1-git-send-email-bo.liu@linux.alibaba.com>
+In-Reply-To: <1526612424-97061-5-git-send-email-bo.liu@linux.alibaba.com>
+References: <1526612424-97061-5-git-send-email-bo.liu@linux.alibaba.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, May 29, 2018 at 03:01:52PM +0800, Lu Fengqi wrote:
-> Just remove the redundant fs_info argument from uuid_tree functions
-> because these functions have already taken transaction which has a
-> reference to the fs_info.
+The check is superfluous since all of callers who set search_for_commit
+also have skip_locking set.
 
-Thanks. I've also renamed the function btrfs_uuid_tree_rem to
-btrfs_uuid_tree_remove.
+ASSERT() is put in place to ensure skip_locking is set by callers.
+
+Reviewed-by: Qu Wenruo <wqu@suse.com>
+Signed-off-by: Liu Bo <bo.liu@linux.alibaba.com>
+---
+v3: Add assertion and comments to ensure skip_locking is not forgot by callers.
+v2: Rebase.
+
+ fs/btrfs/ctree.c | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index a2bcfdf85726..9c4f6b919d51 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -2623,8 +2623,11 @@ static struct extent_buffer *btrfs_search_slot_get_root(struct btrfs_root *root,
+ 		level = btrfs_header_level(b);
+ 		if (p->need_commit_sem)
+ 			up_read(&fs_info->commit_root_sem);
+-		if (!p->skip_locking)
+-			btrfs_tree_read_lock(b);
++		/*
++		 * Ensure that all callers have set skip_locking when
++		 * p->search_commit_root = 1.
++		 */
++		ASSERT(p->skip_locking == 1);
+ 
+ 		goto out;
+ 	}
+-- 
+1.8.3.1
+

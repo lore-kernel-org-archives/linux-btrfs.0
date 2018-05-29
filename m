@@ -1,97 +1,195 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp2120.oracle.com ([156.151.31.85]:39466 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S936692AbeE1KMA (ORCPT
+Received: from mgwym02.jp.fujitsu.com ([211.128.242.41]:13855 "EHLO
+        mgwym02.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754942AbeE2IbF (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 28 May 2018 06:12:00 -0400
-Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w4SAAxNa032228
-        for <linux-btrfs@vger.kernel.org>; Mon, 28 May 2018 10:11:59 GMT
-Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
-        by userp2120.oracle.com with ESMTP id 2j7084vu4p-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 28 May 2018 10:11:59 +0000
-Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w4SABwbL009332
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 28 May 2018 10:11:58 GMT
-Received: from abhmp0013.oracle.com (abhmp0013.oracle.com [141.146.116.19])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w4SABwNW023901
-        for <linux-btrfs@vger.kernel.org>; Mon, 28 May 2018 10:11:58 GMT
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v4] btrfs: drop uuid_mutex in btrfs_free_extra_devids()
-Date: Mon, 28 May 2018 18:14:34 +0800
-Message-Id: <20180528101434.32491-1-anand.jain@oracle.com>
-In-Reply-To: <20180412022938.8257-11-anand.jain@oracle.com>
-References: <20180412022938.8257-11-anand.jain@oracle.com>
+        Tue, 29 May 2018 04:31:05 -0400
+Received: from g01jpfmpwyt03.exch.g01.fujitsu.local (g01jpfmpwyt03.exch.g01.fujitsu.local [10.128.193.57])
+        by yt-mxoi1.gw.nic.fujitsu.com (Postfix) with ESMTP id 7EC99AC01C6
+        for <linux-btrfs@vger.kernel.org>; Tue, 29 May 2018 17:31:02 +0900 (JST)
+Subject: Re: [PATCH v3 3/4] btrfs: lzo: Add header length check to avoid slab
+ out of bounds access
+To: Qu Wenruo <wqu@suse.com>, <linux-btrfs@vger.kernel.org>
+References: <20180523082301.29874-1-wqu@suse.com>
+ <20180523082301.29874-4-wqu@suse.com>
+From: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
+Message-ID: <826ebc88-4fe8-2298-f022-1c3a9f49151c@jp.fujitsu.com>
+Date: Tue, 29 May 2018 17:30:35 +0900
+MIME-Version: 1.0
+In-Reply-To: <20180523082301.29874-4-wqu@suse.com>
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs_free_extra_devids() is called only in the mount context which
-traverses through the fs_devices::devices and frees the orphan devices
-devices in the given %fs_devices if any. As the search for the orphan
-device is limited to fs_devices::devices so we don't need the global
-uuid_mutex.
+On 2018/05/23 17:23, Qu Wenruo wrote:
+> James Harvey reported that some corrupted compressed extent data can
+> lead to various kernel memory corruption.
+> 
+> Such corrupted extent data belongs to inode with NODATASUM flags, thus
+> data csum won't help us detecting such bug.
+> 
+> If lucky enough, kasan could catch it like:
+> ==================================================================
+> BUG: KASAN: slab-out-of-bounds in lzo_decompress_bio+0x384/0x7a0 [btrfs]
+> Write of size 4096 at addr ffff8800606cb0f8 by task kworker/u16:0/2338
+> 
+> CPU: 3 PID: 2338 Comm: kworker/u16:0 Tainted: G           O      4.17.0-rc5-custom+ #50
+> Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 0.0.0 02/06/2015
+> Workqueue: btrfs-endio btrfs_endio_helper [btrfs]
+> Call Trace:
+>  dump_stack+0xc2/0x16b
+>  print_address_description+0x6a/0x270
+>  kasan_report+0x260/0x380
+>  memcpy+0x34/0x50
+>  lzo_decompress_bio+0x384/0x7a0 [btrfs]
+>  end_compressed_bio_read+0x99f/0x10b0 [btrfs]
+>  bio_endio+0x32e/0x640
+>  normal_work_helper+0x15a/0xea0 [btrfs]
+>  process_one_work+0x7e3/0x1470
+>  worker_thread+0x1b0/0x1170
+>  kthread+0x2db/0x390
+>  ret_from_fork+0x22/0x40
+> ...
+> ==================================================================
+> 
+> The offending compressed data has the following info:
+> 
+> Header:			length 32768		(Looks completely valid)
+> Segment 0 Header:	length 3472882419	(Obvious out of bounds)
+> 
+> Then when handling segment 0, since it's over the current page, we need
+> the compressed data to workspace, then such large size would trigger
+> out-of-bounds memory access, screwing up the whole kernel.
+> 
+> Fix it by adding extra checks on header and segment headers to ensure we
+> won't access out-of-bounds, and even checks the decompressed data won't
+> be out-of-bounds.
+> 
+> Reported-by: James Harvey <jamespharvey20@gmail.com>
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+>  fs/btrfs/lzo.c | 35 ++++++++++++++++++++++++++++++++++-
+>  1 file changed, 34 insertions(+), 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/lzo.c b/fs/btrfs/lzo.c
+> index ec5db393c758..4f4de460b08d 100644
+> --- a/fs/btrfs/lzo.c
+> +++ b/fs/btrfs/lzo.c
+> @@ -293,6 +293,7 @@ static int lzo_decompress_bio(struct list_head *ws, struct compressed_bio *cb)
+>  	unsigned long working_bytes;
+>  	size_t in_len;
+>  	size_t out_len;
+> +	size_t max_segment_len = lzo1x_worst_compress(PAGE_SIZE);
+>  	unsigned long in_offset;
+>  	unsigned long in_page_bytes_left;
+>  	unsigned long tot_in;
+> @@ -306,6 +307,18 @@ static int lzo_decompress_bio(struct list_head *ws, struct compressed_bio *cb)
+>  
+>  	data_in = kmap(pages_in[0]);
+>  	tot_len = read_compress_length(data_in);
+> +	/*
+> +	 * Compressed data header check.
+> +	 *
+> +	 * The real compressed size can't exceed extent length, and all pages
+> +	 * should be used (a full pending page is not possible).
+> +	 * If this happens it means the compressed extent is corrupted.
+> +	 */
+> +	if (tot_len > min_t(size_t, BTRFS_MAX_COMPRESSED, srclen) ||
+> +	    tot_len < srclen - PAGE_SIZE) {
+> +		ret = -EUCLEAN;
+> +		goto done;
+> +	}
+>  
+>  	tot_in = LZO_LEN;
+>  	in_offset = LZO_LEN;
+> @@ -320,6 +333,17 @@ static int lzo_decompress_bio(struct list_head *ws, struct compressed_bio *cb)
+>  		in_offset += LZO_LEN;
+>  		tot_in += LZO_LEN;
+>  
+> +		/*
+> +		 * Segment header check.
+> +		 *
+> +		 * The segment length must not exceed max lzo compression
+> +		 * size, nor the total compressed size
+> +		 */
+> +		if (in_len > max_segment_len || tot_in + in_len > tot_len) {
+> +			ret = -EUCLEAN;
+> +			goto done;
+> +		}
+> +
+>  		tot_in += in_len;
+>  		working_bytes = in_len;
+>  		may_late_unmap = need_unmap = false;
+> @@ -370,7 +394,7 @@ static int lzo_decompress_bio(struct list_head *ws, struct compressed_bio *cb)
+>  			}
+>  		}
+>  
+> -		out_len = lzo1x_worst_compress(PAGE_SIZE);
+> +		out_len = max_segment_len;
+>  		ret = lzo1x_decompress_safe(buf, in_len, workspace->buf,
+>  					    &out_len);
+>  		if (need_unmap)
+> @@ -380,6 +404,15 @@ static int lzo_decompress_bio(struct list_head *ws, struct compressed_bio *cb)
+>  			ret = -EIO;
+>  			break;
+>  		}
 
-There can't be any mount-point based ioctl threads in this context as
-the mount thread is not yet returned. But there can be the btrfs-control
-based scan ioctls thread which calls device_list_add().
 
-Here in the mount thread the fs_devices::opened is incremented way before
-btrfs_free_extra_devids() is called and in the scan context the fs_devices
-which are already opened neither be freed or alloc-able at
-device_list_add().
+> +		/*
+> +		 * Decompressed data length check.
+> +		 * The uncompressed data should not exceed uncompressed extent
+> +		 * size.
+> +		 */
+> +		if (tot_out + out_len > cb->len) {
+> +			ret = -EUCLEAN;
+> +			break;
+> +		}
 
-But lets say you change the device-path and call the scan again, then scan
-would update the new device path and this operation could race against the
-btrfs_free_extra_devids() thread, which might be in the process of
-free-ing the same device. So synchronize it by using the
-device_list_mutex.
+I observed this part causes some failure of lzo related xfstests (038, 056, 103, 138).
 
-This scenario is a very corner case, and practically the scan and mount
-are anyway serialized by the usage so unless the race is instrumented its
-very difficult to achieve.
+It seems that when pages to be read start from middle of (shared) extents,
+they needs to be decompressed from the beginning, and therefore (tot_out + out_len)
+can exceeds cb->len.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
-v3->v4: As we traverse through the seed device, fs_device gets updated with
-	the child seed fs_devices, so make sure we use the top most
-	fs_devices pointer.
-v2->v3: Update change log.
-	(Currently device_list_add() is very lean on its device_list_mutex usage,
-	a cleanup and fix is wip. Given the practicality of the above race
-	condition this patch is good to merge).
-v1->v2: replace uuid_mutex with device_list_mutex instead of delete.
-	change log updated.
- fs/btrfs/volumes.c | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+Simplified version of btrfs/103 can be used to observe this:
+=====
+ CLONER=/path/to/xfstest/src/cloner
+ mkfs.btrfs -fq $DEV
+ mount -o compress=lzo $DEV /mnt
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index b6757b53c297..f03719221fca 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -924,8 +924,9 @@ void btrfs_free_extra_devids(struct btrfs_fs_devices *fs_devices, int step)
- {
- 	struct btrfs_device *device, *next;
- 	struct btrfs_device *latest_dev = NULL;
-+	struct btrfs_fs_devices *parent_fs_devices = fs_devices;
- 
--	mutex_lock(&uuid_mutex);
-+	mutex_lock(&parent_fs_devices->device_list_mutex);
- again:
- 	/* This is the initialized path, it is safe to release the devices. */
- 	list_for_each_entry_safe(device, next, &fs_devices->devices, dev_list) {
-@@ -979,8 +980,7 @@ void btrfs_free_extra_devids(struct btrfs_fs_devices *fs_devices, int step)
- 	}
- 
- 	fs_devices->latest_bdev = latest_dev->bdev;
--
--	mutex_unlock(&uuid_mutex);
-+	mutex_unlock(&parent_fs_devices->device_list_mutex);
- }
- 
- static void free_device_rcu(struct rcu_head *head)
--- 
-2.7.0
+ # make 1 extent (skip 1st 4k)
+ xfs_io -f \
+   -c "pwrite -S 0xaa 4096 4096" \
+   -c "pwrite -S 0xbb 8192 4096" \
+   /mnt/bar > /dev/null 2>&1
+ # clone second half of above extent to beginning of the file
+ $CLONER -s 8192 -d 0 -l 4096 /mnt/foo /mnt/foo
+
+ umount /mnt
+ mount $DEV /mnt
+
+ # Input/Output error happens
+ od -t x1 /mnt/foo
+=====
+
+btrfs_decompress_buf2page() skips copy if decompressed region is not
+a part of pages to be read. Also, it will copy at most bio->bi_iter.bi_size as code says:
+
+(compression.c)
+1183     bio_advance(bio, bytes);
+1184     if (!bio->bi_iter.bi_size)
+1185       return 0;
+
+cb->len is set to bio->bi_iter.bi_size in btrfs_submit_compressed_read().
+
+So, I think it is ok to remove above "if (tot_out + out_len > cb->len)".
+Or, should other conditions be checked?
+
+Thanks,
+Tomohiro Misono
+
+>  
+>  		buf_start = tot_out;
+>  		tot_out += out_len;
+> 
 

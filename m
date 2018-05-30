@@ -1,83 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qt0-f194.google.com ([209.85.216.194]:36999 "EHLO
-        mail-qt0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751932AbeEVRrZ (ORCPT
+Received: from userp2120.oracle.com ([156.151.31.85]:43012 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S968263AbeE3Gzr (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 22 May 2018 13:47:25 -0400
-Received: by mail-qt0-f194.google.com with SMTP id q13-v6so24532759qtp.4
-        for <linux-btrfs@vger.kernel.org>; Tue, 22 May 2018 10:47:25 -0700 (PDT)
-From: Josef Bacik <josef@toxicpanda.com>
-To: linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Cc: Josef Bacik <jbacik@fb.com>
-Subject: [PATCH 1/2] btrfs: kill btrfs_write_inode
-Date: Tue, 22 May 2018 13:47:22 -0400
-Message-Id: <20180522174723.13620-1-josef@toxicpanda.com>
+        Wed, 30 May 2018 02:55:47 -0400
+Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
+        by userp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w4U6oujl044803
+        for <linux-btrfs@vger.kernel.org>; Wed, 30 May 2018 06:55:46 GMT
+Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
+        by userp2120.oracle.com with ESMTP id 2j9ev810q6-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Wed, 30 May 2018 06:55:46 +0000
+Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
+        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id w4U6tkkK004033
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Wed, 30 May 2018 06:55:46 GMT
+Received: from abhmp0007.oracle.com (abhmp0007.oracle.com [141.146.116.13])
+        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w4U6tj7g019375
+        for <linux-btrfs@vger.kernel.org>; Wed, 30 May 2018 06:55:46 GMT
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/6] btrfs: do btrfs_free_stale_devices() outside of device_list_add()
+Date: Wed, 30 May 2018 14:58:16 +0800
+Message-Id: <20180530065821.28385-2-anand.jain@oracle.com>
+In-Reply-To: <20180530065821.28385-1-anand.jain@oracle.com>
+References: <20180530065821.28385-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Josef Bacik <jbacik@fb.com>
+btrfs_free_stale_devices() looks for device path reused for another
+fsid, and deletes the older fs_devices::device entry.
 
-We don't actually need this.  It used to be in place for O_SYNC writes,
-but we've used the normal fsync() path for that for years now.  The
-other case we hit this is through sync(), which will commit the
-transaction anyway.  All this does is make us commit the transaction a
-bunch for no reason, and it could deadlock with delayed iput's.
+In preparation to handle proper locks in the device_list_add(),
+move the btrfs_free_stale_devices() outside of the device_list_add()
+as these two functions has two distinct purpose.
 
-Signed-off-by: Josef Bacik <jbacik@fb.com>
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- fs/btrfs/inode.c | 26 --------------------------
- fs/btrfs/super.c |  1 -
- 2 files changed, 27 deletions(-)
+ fs/btrfs/volumes.c | 15 ++++++++++-----
+ 1 file changed, 10 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 92b629212c81..5d47206604ca 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -6263,32 +6263,6 @@ static int btrfs_real_readdir(struct file *file, struct dir_context *ctx)
- 	return ret;
- }
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 0a47b4162d12..4edba7c5c050 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -750,7 +750,8 @@ static int btrfs_open_one_device(struct btrfs_fs_devices *fs_devices,
+  * error pointer when failed
+  */
+ static noinline struct btrfs_device *device_list_add(const char *path,
+-			   struct btrfs_super_block *disk_super)
++			   struct btrfs_super_block *disk_super,
++			   bool *new_device_added)
+ {
+ 	struct btrfs_device *device;
+ 	struct btrfs_fs_devices *fs_devices;
+@@ -796,7 +797,7 @@ static noinline struct btrfs_device *device_list_add(const char *path,
+ 		mutex_unlock(&fs_devices->device_list_mutex);
  
--int btrfs_write_inode(struct inode *inode, struct writeback_control *wbc)
--{
--	struct btrfs_root *root = BTRFS_I(inode)->root;
--	struct btrfs_trans_handle *trans;
--	int ret = 0;
--	bool nolock = false;
--
--	if (test_bit(BTRFS_INODE_DUMMY, &BTRFS_I(inode)->runtime_flags))
--		return 0;
--
--	if (btrfs_fs_closing(root->fs_info) &&
--			btrfs_is_free_space_inode(BTRFS_I(inode)))
--		nolock = true;
--
--	if (wbc->sync_mode == WB_SYNC_ALL) {
--		if (nolock)
--			trans = btrfs_join_transaction_nolock(root);
--		else
--			trans = btrfs_join_transaction(root);
--		if (IS_ERR(trans))
--			return PTR_ERR(trans);
--		ret = btrfs_commit_transaction(trans);
--	}
--	return ret;
--}
--
- /*
-  * This is somewhat expensive, updating the tree every time the
-  * inode changes.  But, it is most likely to find the inode in cache.
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 4a584a7ad371..0a4fb69e0ddf 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -2331,7 +2331,6 @@ static const struct super_operations btrfs_super_ops = {
- 	.sync_fs	= btrfs_sync_fs,
- 	.show_options	= btrfs_show_options,
- 	.show_devname	= btrfs_show_devname,
--	.write_inode	= btrfs_write_inode,
- 	.alloc_inode	= btrfs_alloc_inode,
- 	.destroy_inode	= btrfs_destroy_inode,
- 	.statfs		= btrfs_statfs,
+ 		device->fs_devices = fs_devices;
+-		btrfs_free_stale_devices(path, device);
++		*new_device_added = true;
+ 
+ 		if (disk_super->label[0])
+ 			pr_info("BTRFS: device label %s devid %llu transid %llu %s\n",
+@@ -1223,6 +1224,7 @@ int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
+ 			  struct btrfs_fs_devices **fs_devices_ret)
+ {
+ 	struct btrfs_super_block *disk_super;
++	bool new_device_added = false;
+ 	struct btrfs_device *device;
+ 	struct block_device *bdev;
+ 	struct page *page;
+@@ -1248,11 +1250,14 @@ int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
+ 	}
+ 
+ 	mutex_lock(&uuid_mutex);
+-	device = device_list_add(path, disk_super);
+-	if (IS_ERR(device))
++	device = device_list_add(path, disk_super, &new_device_added);
++	if (IS_ERR(device)) {
+ 		ret = PTR_ERR(device);
+-	else
++	} else {
+ 		*fs_devices_ret = device->fs_devices;
++		if (new_device_added)
++			btrfs_free_stale_devices(path, device);
++	}
+ 	mutex_unlock(&uuid_mutex);
+ 
+ 	btrfs_release_disk_super(page);
 -- 
-2.14.3
+2.7.0
 

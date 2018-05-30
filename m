@@ -1,38 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:49200 "EHLO
-        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S932320AbeE3VbW (ORCPT
+Received: from mail-pl0-f65.google.com ([209.85.160.65]:44760 "EHLO
+        mail-pl0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932457AbeE3WYJ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 30 May 2018 17:31:22 -0400
-From: Chris Mason <clm@fb.com>
-To: Kent Overstreet <kent.overstreet@gmail.com>
-CC: <linux-kernel@vger.kernel.org>, <linux-block@vger.kernel.org>,
-        <axboe@kernel.dk>, <hch@infradead.org>, <colyli@suse.de>,
-        <snitzer@redhat.com>, <darrick.wong@oracle.com>, <bacik@fb.com>,
-        <linux-xfs@vger.kernel.org>, <drbd-dev@lists.linbit.com>,
-        <linux-btrfs@vger.kernel.org>, <linux-raid@vger.kernel.org>,
-        <neilb@suse.com>
-Subject: Re: [PATCH 10/12] btrfs: convert to bioset_init()/mempool_init()
-Date: Wed, 30 May 2018 17:30:35 -0400
-Message-ID: <630E6353-552E-433D-8022-D1FAA93B0209@fb.com>
-In-Reply-To: <20180520222558.7053-11-kent.overstreet@gmail.com>
+        Wed, 30 May 2018 18:24:09 -0400
+Received: by mail-pl0-f65.google.com with SMTP id z9-v6so8587442plk.11
+        for <linux-btrfs@vger.kernel.org>; Wed, 30 May 2018 15:24:09 -0700 (PDT)
+From: Jens Axboe <axboe@kernel.dk>
+Subject: Re: [PATCH 00/13] convert block layer to bioset_init()/mempool_init()
+To: Kent Overstreet <kent.overstreet@gmail.com>, linux-kernel@vger.kernel.org,
+        linux-block@vger.kernel.org, hch@infradead.org, colyli@suse.de,
+        snitzer@redhat.com, darrick.wong@oracle.com, clm@fb.com, bacik@fb.com,
+        linux-xfs@vger.kernel.org, drbd-dev@lists.linbit.com,
+        linux-btrfs@vger.kernel.org, linux-raid@vger.kernel.org,
+        neilb@suse.com
 References: <20180520222558.7053-1-kent.overstreet@gmail.com>
- <20180520222558.7053-11-kent.overstreet@gmail.com>
+Message-ID: <234774e0-38d8-77ea-ca40-88da8b3c5ec6@kernel.dk>
+Date: Wed, 30 May 2018 16:24:03 -0600
 MIME-Version: 1.0
-Content-Type: text/plain; format=flowed
+In-Reply-To: <20180520222558.7053-1-kent.overstreet@gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 20 May 2018, at 18:25, Kent Overstreet wrote:
+On 5/20/18 4:25 PM, Kent Overstreet wrote:
+> Jens - this series does the rest of the conversions that Christoph wanted, and
+> drops bioset_create().
+> 
+> Only lightly tested, but the changes are pretty mechanical. Based on your
+> for-next tree.
+> 
+> It's also in the for-jens branch at https://evilpiepirate.org/git/bcachefs.git
+> 
+> Kent Overstreet (12):
+>   block: convert bounce, q->bio_split to bioset_init()/mempool_init()
+>   drbd: convert to bioset_init()/mempool_init()
+>   pktcdvd: convert to bioset_init()/mempool_init()
+>   lightnvm: convert to bioset_init()/mempool_init()
+>   bcache: convert to bioset_init()/mempool_init()
+>   md: convert to bioset_init()/mempool_init()
+>   dm: convert to bioset_init()/mempool_init()
+>   target: convert to bioset_init()/mempool_init()
+>   fs: convert block_dev.c to bioset_init()
+>   btrfs: convert to bioset_init()/mempool_init()
+>   xfs: convert to bioset_init()/mempool_init()
+>   block: Drop bioset_create()
 
-> Signed-off-by: Kent Overstreet <kent.overstreet@gmail.com>
-> ---
->  fs/btrfs/extent_io.c | 25 +++++++++++--------------
->  1 file changed, 11 insertions(+), 14 deletions(-)
->
+With the reviews, I've queued this up for 4.18.
 
-Assuming the rest of the comments/questions for the series get worked 
-out, the btrfs side of this looks fine.
-
-Acked-by: Chris Mason <clm@fb.com>
+-- 
+Jens Axboe
 

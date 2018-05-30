@@ -1,91 +1,96 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:56178 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:60320 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S936083AbeE3HBI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 30 May 2018 03:01:08 -0400
-Subject: Re: [PATCH 2/2] btrfs-progs: ins: dump-tree: Print tree name for tree
- block backref
+        id S935163AbeE3H3z (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 30 May 2018 03:29:55 -0400
+Subject: Re: [PATCH v2 2/2] btrfs-progs: ins: dump-tree: Print tree name for
+ extent data/tree block backref
 To: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>,
         linux-btrfs@vger.kernel.org
 References: <cover.1527655420.git.misono.tomohiro@jp.fujitsu.com>
  <f6cac4991b513c3c4b00781414d422b3f4c87f6e.1527655420.git.misono.tomohiro@jp.fujitsu.com>
- <ee3f5cfe-0b7c-d38e-e602-d5671d80713f@suse.com>
- <d56cfca8-c6f9-971c-315f-cdde23a71baf@jp.fujitsu.com>
+ <5f258c66-ffde-e7e0-4640-9e3465203c95@jp.fujitsu.com>
 From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <b0d357ec-3374-6b4a-4861-d681cdb48528@suse.com>
-Date: Wed, 30 May 2018 10:01:06 +0300
+Message-ID: <5e6575e5-f5a3-3ec0-4a10-4f426c8380e0@suse.com>
+Date: Wed, 30 May 2018 10:29:52 +0300
 MIME-Version: 1.0
-In-Reply-To: <d56cfca8-c6f9-971c-315f-cdde23a71baf@jp.fujitsu.com>
+In-Reply-To: <5f258c66-ffde-e7e0-4640-9e3465203c95@jp.fujitsu.com>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On 30.05.2018 09:55, Misono Tomohiro wrote:
-> On 2018/05/30 15:28, Nikolay Borisov wrote:
->>
->>
->> On 30.05.2018 07:55, Misono Tomohiro wrote:
->>> Print tree name instead of number to make output more readable.
->>>
->>> Signed-off-by: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
->>> ---
->>>  print-tree.c | 5 +++--
->>>  1 file changed, 3 insertions(+), 2 deletions(-)
->>>
->>> diff --git a/print-tree.c b/print-tree.c
->>> index 90173c2b..8d551d09 100644
->>> --- a/print-tree.c
->>> +++ b/print-tree.c
->>> @@ -470,8 +470,9 @@ void print_extent_item(struct extent_buffer *eb, int slot, int metadata)
->>>  		offset = btrfs_extent_inline_ref_offset(eb, iref);
->>>  		switch (type) {
->>>  		case BTRFS_TREE_BLOCK_REF_KEY:
->>> -			printf("\t\ttree block backref root %llu\n",
->>> -			       (unsigned long long)offset);
->>> +			printf("\t\ttree block backref root ");
->>> +			print_objectid(stdout, offset, 0);
->>> +			printf("\n");
->>
->> So this is a good change, yet one thing I'd like to know is if I'm
->> inspecting the extent tree with say "btrfs inspect-internal dump-tree -t
->> 2" and I see a record :
->>
->>         item 14 key (14540800 EXTENT_ITEM 4096) itemoff 15488 itemsize 53
->>                 refs 1 gen 12 flags DATA
->>                 extent data backref root 5 objectid 479 offset 0 count 1
->>
->> it will in fact be "root FS_TREE" or some such.
+On 30.05.2018 10:25, Misono Tomohiro wrote:
+> Print tree name instead of number to make output more readable.
 > 
-> I overlooked it. So I will update the patch.
+> Example:
+> [before]
+>    extent data backref root 5 objectid 257 offset 16384 count 1
+>    
+>    tree block backref root 18446744073709551607
 > 
-> So the question is will
->> I bee able to use the printed string as an argument to -t ? Because on
->> one hand I as a user would like to make sense of the output I'm seeing
->> (hence the string is welcomed) at the same time I'd like to know that i
->> can reference the tree with -t option without having to go and figure
->> out what's the numeric id?
+> [after]
+>    extent data backref root FS_TREE objectid 257 offset 16384 count 1
+>    
+>    tree block backref root DATA_RELOC_TREE
 > 
-> I looked the code and just now realized that we can already use tree name
-> for -t like "btrfs ins dump-tree -t EXTNET $DEV".
-> Please see treeid_from_string() in inspect-dump-tree.c.
+> Signed-off-by: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
 
-I know we can use tree names what I wanted to know is that the strings
-printed from print_objectid aer going to be compatible with that. I will
-take your reply as a "yes" in that case.
+LGTM:
 
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+
+> ---
+>  v1 -> v2
+>    - Update extent data backref too
+>    - Add output example
 > 
->>
->>>  			break;
->>>  		case BTRFS_SHARED_BLOCK_REF_KEY:
->>>  			printf("\t\tshared block backref parent %llu\n",
->>>
->>
->>
+>  print-tree.c | 19 +++++++++++--------
+>  1 file changed, 11 insertions(+), 8 deletions(-)
 > 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> diff --git a/print-tree.c b/print-tree.c
+> index 90173c2b..c5be5e6c 100644
+> --- a/print-tree.c
+> +++ b/print-tree.c
+> @@ -470,8 +470,9 @@ void print_extent_item(struct extent_buffer *eb, int slot, int metadata)
+>  		offset = btrfs_extent_inline_ref_offset(eb, iref);
+>  		switch (type) {
+>  		case BTRFS_TREE_BLOCK_REF_KEY:
+> -			printf("\t\ttree block backref root %llu\n",
+> -			       (unsigned long long)offset);
+> +			printf("\t\ttree block backref root ");
+> +			print_objectid(stdout, offset, 0);
+> +			printf("\n");
+>  			break;
+>  		case BTRFS_SHARED_BLOCK_REF_KEY:
+>  			printf("\t\tshared block backref parent %llu\n",
+> @@ -479,9 +480,10 @@ void print_extent_item(struct extent_buffer *eb, int slot, int metadata)
+>  			break;
+>  		case BTRFS_EXTENT_DATA_REF_KEY:
+>  			dref = (struct btrfs_extent_data_ref *)(&iref->offset);
+> -			printf("\t\textent data backref root %llu "
+> -			       "objectid %llu offset %lld count %u\n",
+> -			       (unsigned long long)btrfs_extent_data_ref_root(eb, dref),
+> +			printf("\t\textent data backref root ");
+> +			print_objectid(stdout,
+> +		(unsigned long long)btrfs_extent_data_ref_root(eb, dref), 0);
+> +			printf(" objectid %llu offset %lld count %u\n",
+>  			       (unsigned long long)btrfs_extent_data_ref_objectid(eb, dref),
+>  			       btrfs_extent_data_ref_offset(eb, dref),
+>  			       btrfs_extent_data_ref_count(eb, dref));
+> @@ -1018,9 +1020,10 @@ static void print_extent_data_ref(struct extent_buffer *eb, int slot)
+>  	struct btrfs_extent_data_ref *dref;
+>  
+>  	dref = btrfs_item_ptr(eb, slot, struct btrfs_extent_data_ref);
+> -	printf("\t\textent data backref root %llu "
+> -		"objectid %llu offset %llu count %u\n",
+> -		(unsigned long long)btrfs_extent_data_ref_root(eb, dref),
+> +	printf("\t\textent data backref root ");
+> +	print_objectid(stdout,
+> +		(unsigned long long)btrfs_extent_data_ref_root(eb, dref), 0);
+> +	printf(" objectid %llu offset %llu count %u\n",
+>  		(unsigned long long)btrfs_extent_data_ref_objectid(eb, dref),
+>  		(unsigned long long)btrfs_extent_data_ref_offset(eb, dref),
+>  		btrfs_extent_data_ref_count(eb, dref));
 > 

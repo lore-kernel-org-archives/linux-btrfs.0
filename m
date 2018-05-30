@@ -1,299 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f195.google.com ([209.85.220.195]:37702 "EHLO
-        mail-qk0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752655AbeEWP6o (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 23 May 2018 11:58:44 -0400
-Received: by mail-qk0-f195.google.com with SMTP id r28-v6so15574761qkk.4
-        for <linux-btrfs@vger.kernel.org>; Wed, 23 May 2018 08:58:43 -0700 (PDT)
-From: Josef Bacik <josef@toxicpanda.com>
-To: linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Cc: Josef Bacik <jbacik@fb.com>
-Subject: [PATCH 4/4] btrfs: remove the logged extents infrastructure
-Date: Wed, 23 May 2018 11:58:36 -0400
-Message-Id: <20180523155836.4622-4-josef@toxicpanda.com>
-In-Reply-To: <20180523155836.4622-1-josef@toxicpanda.com>
-References: <20180523155836.4622-1-josef@toxicpanda.com>
+Received: from mx2.suse.de ([195.135.220.15]:44519 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1750762AbeE3Ek1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 30 May 2018 00:40:27 -0400
+Received: from relay2.suse.de (charybdis-ext-too.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 0507BADD3
+        for <linux-btrfs@vger.kernel.org>; Wed, 30 May 2018 04:40:26 +0000 (UTC)
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH REBASED 0/2] btrfs: Delay block group auto removal to avoid interfering qgroups
+Date: Wed, 30 May 2018 12:40:21 +0800
+Message-Id: <20180530044023.9192-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Josef Bacik <jbacik@fb.com>
+The patchset can be fetched from github:
+https://github.com/adam900710/linux/tree/delayed_bg_removal
 
-This is no longer used anywhere, remove all of it.
+It's based on David's misc-next branch, HEAD is:
+commit c77a75861d82a497bd1a26054588cd9af59eb5db (david/misc-next)
+Author: Ethan Lien <ethanlien@synology.com>
+Date:   Mon May 28 13:48:20 2018 +0800
 
-Signed-off-by: Josef Bacik <jbacik@fb.com>
----
- fs/btrfs/ordered-data.c      | 123 -------------------------------------------
- fs/btrfs/ordered-data.h      |  20 ++-----
- fs/btrfs/tree-log.c          |  16 ------
- include/trace/events/btrfs.h |   1 -
- 4 files changed, 3 insertions(+), 157 deletions(-)
+    btrfs: balance dirty metadata pages in btrfs_finish_ordered_io
 
-diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-index 6db8bb2f2c28..88f858baf87d 100644
---- a/fs/btrfs/ordered-data.c
-+++ b/fs/btrfs/ordered-data.c
-@@ -427,129 +427,6 @@ int btrfs_dec_test_ordered_pending(struct inode *inode,
- 	return ret == 0;
- }
- 
--/* Needs to either be called under a log transaction or the log_mutex */
--void btrfs_get_logged_extents(struct btrfs_inode *inode,
--			      struct list_head *logged_list,
--			      const loff_t start,
--			      const loff_t end)
--{
--	struct btrfs_ordered_inode_tree *tree;
--	struct btrfs_ordered_extent *ordered;
--	struct rb_node *n;
--	struct rb_node *prev;
--
--	tree = &inode->ordered_tree;
--	spin_lock_irq(&tree->lock);
--	n = __tree_search(&tree->tree, end, &prev);
--	if (!n)
--		n = prev;
--	for (; n; n = rb_prev(n)) {
--		ordered = rb_entry(n, struct btrfs_ordered_extent, rb_node);
--		if (ordered->file_offset > end)
--			continue;
--		if (entry_end(ordered) <= start)
--			break;
--		if (test_and_set_bit(BTRFS_ORDERED_LOGGED, &ordered->flags))
--			continue;
--		list_add(&ordered->log_list, logged_list);
--		refcount_inc(&ordered->refs);
--	}
--	spin_unlock_irq(&tree->lock);
--}
--
--void btrfs_put_logged_extents(struct list_head *logged_list)
--{
--	struct btrfs_ordered_extent *ordered;
--
--	while (!list_empty(logged_list)) {
--		ordered = list_first_entry(logged_list,
--					   struct btrfs_ordered_extent,
--					   log_list);
--		list_del_init(&ordered->log_list);
--		btrfs_put_ordered_extent(ordered);
--	}
--}
--
--void btrfs_submit_logged_extents(struct list_head *logged_list,
--				 struct btrfs_root *log)
--{
--	int index = log->log_transid % 2;
--
--	spin_lock_irq(&log->log_extents_lock[index]);
--	list_splice_tail(logged_list, &log->logged_list[index]);
--	spin_unlock_irq(&log->log_extents_lock[index]);
--}
--
--void btrfs_wait_logged_extents(struct btrfs_trans_handle *trans,
--			       struct btrfs_root *log, u64 transid)
--{
--	struct btrfs_ordered_extent *ordered;
--	int index = transid % 2;
--
--	spin_lock_irq(&log->log_extents_lock[index]);
--	while (!list_empty(&log->logged_list[index])) {
--		struct inode *inode;
--		ordered = list_first_entry(&log->logged_list[index],
--					   struct btrfs_ordered_extent,
--					   log_list);
--		list_del_init(&ordered->log_list);
--		inode = ordered->inode;
--		spin_unlock_irq(&log->log_extents_lock[index]);
--
--		if (!test_bit(BTRFS_ORDERED_IO_DONE, &ordered->flags) &&
--		    !test_bit(BTRFS_ORDERED_DIRECT, &ordered->flags)) {
--			u64 start = ordered->file_offset;
--			u64 end = ordered->file_offset + ordered->len - 1;
--
--			WARN_ON(!inode);
--			filemap_fdatawrite_range(inode->i_mapping, start, end);
--		}
--		wait_event(ordered->wait, test_bit(BTRFS_ORDERED_IO_DONE,
--						   &ordered->flags));
--
--		/*
--		 * In order to keep us from losing our ordered extent
--		 * information when committing the transaction we have to make
--		 * sure that any logged extents are completed when we go to
--		 * commit the transaction.  To do this we simply increase the
--		 * current transactions pending_ordered counter and decrement it
--		 * when the ordered extent completes.
--		 */
--		if (!test_bit(BTRFS_ORDERED_COMPLETE, &ordered->flags)) {
--			struct btrfs_ordered_inode_tree *tree;
--
--			tree = &BTRFS_I(inode)->ordered_tree;
--			spin_lock_irq(&tree->lock);
--			if (!test_bit(BTRFS_ORDERED_COMPLETE, &ordered->flags)) {
--				set_bit(BTRFS_ORDERED_PENDING, &ordered->flags);
--				atomic_inc(&trans->transaction->pending_ordered);
--			}
--			spin_unlock_irq(&tree->lock);
--		}
--		btrfs_put_ordered_extent(ordered);
--		spin_lock_irq(&log->log_extents_lock[index]);
--	}
--	spin_unlock_irq(&log->log_extents_lock[index]);
--}
--
--void btrfs_free_logged_extents(struct btrfs_root *log, u64 transid)
--{
--	struct btrfs_ordered_extent *ordered;
--	int index = transid % 2;
--
--	spin_lock_irq(&log->log_extents_lock[index]);
--	while (!list_empty(&log->logged_list[index])) {
--		ordered = list_first_entry(&log->logged_list[index],
--					   struct btrfs_ordered_extent,
--					   log_list);
--		list_del_init(&ordered->log_list);
--		spin_unlock_irq(&log->log_extents_lock[index]);
--		btrfs_put_ordered_extent(ordered);
--		spin_lock_irq(&log->log_extents_lock[index]);
--	}
--	spin_unlock_irq(&log->log_extents_lock[index]);
--}
--
- /*
-  * used to drop a reference on an ordered extent.  This will free
-  * the extent if the last reference is dropped
-diff --git a/fs/btrfs/ordered-data.h b/fs/btrfs/ordered-data.h
-index 3be443fb3001..b2d3f6a091f7 100644
---- a/fs/btrfs/ordered-data.h
-+++ b/fs/btrfs/ordered-data.h
-@@ -54,15 +54,11 @@ struct btrfs_ordered_sum {
- #define BTRFS_ORDERED_UPDATED_ISIZE 7 /* indicates whether this ordered extent
- 				       * has done its due diligence in updating
- 				       * the isize. */
--#define BTRFS_ORDERED_LOGGED_CSUM 8 /* We've logged the csums on this ordered
--				       ordered extent */
--#define BTRFS_ORDERED_TRUNCATED 9 /* Set when we have to truncate an extent */
-+#define BTRFS_ORDERED_TRUNCATED 8 /* Set when we have to truncate an extent */
- 
--#define BTRFS_ORDERED_LOGGED 10 /* Set when we've waited on this ordered extent
--				 * in the logging code. */
--#define BTRFS_ORDERED_PENDING 11 /* We are waiting for this ordered extent to
-+#define BTRFS_ORDERED_PENDING 9 /* We are waiting for this ordered extent to
- 				  * complete in the current transaction. */
--#define BTRFS_ORDERED_REGULAR 12 /* Regular IO for COW */
-+#define BTRFS_ORDERED_REGULAR 10 /* Regular IO for COW */
- 
- struct btrfs_ordered_extent {
- 	/* logical offset in the file */
-@@ -193,16 +189,6 @@ u64 btrfs_wait_ordered_extents(struct btrfs_root *root, u64 nr,
- 			       const u64 range_start, const u64 range_len);
- u64 btrfs_wait_ordered_roots(struct btrfs_fs_info *fs_info, u64 nr,
- 			      const u64 range_start, const u64 range_len);
--void btrfs_get_logged_extents(struct btrfs_inode *inode,
--			      struct list_head *logged_list,
--			      const loff_t start,
--			      const loff_t end);
--void btrfs_put_logged_extents(struct list_head *logged_list);
--void btrfs_submit_logged_extents(struct list_head *logged_list,
--				 struct btrfs_root *log);
--void btrfs_wait_logged_extents(struct btrfs_trans_handle *trans,
--			       struct btrfs_root *log, u64 transid);
--void btrfs_free_logged_extents(struct btrfs_root *log, u64 transid);
- int __init ordered_data_init(void);
- void __cold ordered_data_exit(void);
- 
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index ef1b1a071bba..ab9461a07fc6 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -2936,7 +2936,6 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
- 	/* bail out if we need to do a full commit */
- 	if (btrfs_need_log_full_commit(fs_info, trans)) {
- 		ret = -EAGAIN;
--		btrfs_free_logged_extents(log, log_transid);
- 		mutex_unlock(&root->log_mutex);
- 		goto out;
- 	}
-@@ -2954,7 +2953,6 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
- 	if (ret) {
- 		blk_finish_plug(&plug);
- 		btrfs_abort_transaction(trans, ret);
--		btrfs_free_logged_extents(log, log_transid);
- 		btrfs_set_log_full_commit(fs_info, trans);
- 		mutex_unlock(&root->log_mutex);
- 		goto out;
-@@ -3008,7 +3006,6 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
- 			goto out;
- 		}
- 		btrfs_wait_tree_log_extents(log, mark);
--		btrfs_free_logged_extents(log, log_transid);
- 		mutex_unlock(&log_root_tree->log_mutex);
- 		ret = -EAGAIN;
- 		goto out;
-@@ -3026,7 +3023,6 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
- 	if (atomic_read(&log_root_tree->log_commit[index2])) {
- 		blk_finish_plug(&plug);
- 		ret = btrfs_wait_tree_log_extents(log, mark);
--		btrfs_wait_logged_extents(trans, log, log_transid);
- 		wait_log_commit(log_root_tree,
- 				root_log_ctx.log_transid);
- 		mutex_unlock(&log_root_tree->log_mutex);
-@@ -3051,7 +3047,6 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
- 	if (btrfs_need_log_full_commit(fs_info, trans)) {
- 		blk_finish_plug(&plug);
- 		btrfs_wait_tree_log_extents(log, mark);
--		btrfs_free_logged_extents(log, log_transid);
- 		mutex_unlock(&log_root_tree->log_mutex);
- 		ret = -EAGAIN;
- 		goto out_wake_log_root;
-@@ -3064,7 +3059,6 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
- 	if (ret) {
- 		btrfs_set_log_full_commit(fs_info, trans);
- 		btrfs_abort_transaction(trans, ret);
--		btrfs_free_logged_extents(log, log_transid);
- 		mutex_unlock(&log_root_tree->log_mutex);
- 		goto out_wake_log_root;
- 	}
-@@ -3074,11 +3068,9 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
- 						  EXTENT_NEW | EXTENT_DIRTY);
- 	if (ret) {
- 		btrfs_set_log_full_commit(fs_info, trans);
--		btrfs_free_logged_extents(log, log_transid);
- 		mutex_unlock(&log_root_tree->log_mutex);
- 		goto out_wake_log_root;
- 	}
--	btrfs_wait_logged_extents(trans, log, log_transid);
- 
- 	btrfs_set_super_log_root(fs_info->super_for_commit,
- 				 log_root_tree->node->start);
-@@ -3163,14 +3155,6 @@ static void free_log_tree(struct btrfs_trans_handle *trans,
- 				  EXTENT_DIRTY | EXTENT_NEW | EXTENT_NEED_WAIT);
- 	}
- 
--	/*
--	 * We may have short-circuited the log tree with the full commit logic
--	 * and left ordered extents on our list, so clear these out to keep us
--	 * from leaking inodes and memory.
--	 */
--	btrfs_free_logged_extents(log, 0);
--	btrfs_free_logged_extents(log, 1);
--
- 	free_extent_buffer(log->node);
- 	kfree(log);
- }
-diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
-index 29f9b14412ad..b3c246353f8e 100644
---- a/include/trace/events/btrfs.h
-+++ b/include/trace/events/btrfs.h
-@@ -433,7 +433,6 @@ DEFINE_EVENT(
- 		{ (1 << BTRFS_ORDERED_DIRECT),	 	"DIRECT" 	}, \
- 		{ (1 << BTRFS_ORDERED_IOERR), 		"IOERR" 	}, \
- 		{ (1 << BTRFS_ORDERED_UPDATED_ISIZE), 	"UPDATED_ISIZE"	}, \
--		{ (1 << BTRFS_ORDERED_LOGGED_CSUM), 	"LOGGED_CSUM"	}, \
- 		{ (1 << BTRFS_ORDERED_TRUNCATED), 	"TRUNCATED"	})
- 
- 
+
+This bug is reported from SUSE openQA, although it's pretty hard to hit
+in real world (even real world VM), it's believed block group auto
+removal (anyway, there isn't much thing can remove a chunk mapping in
+btrfs) could interfere with qgroup's search on commit root.
+
+Full details can be found in the 2rd patch.
+
+The patchset uses 1 submitted cleanup/refactor patches as basis, and the
+2nd patch will ensure unused block group will only be deleted after
+current transaction is done.
+
+
+Qu Wenruo (2):
+  btrfs: Use btrfs_mark_bg_unused() to replace open code
+  btrfs: Delayed empty block group auto removal to next transaction
+
+ fs/btrfs/ctree.h       |  2 ++
+ fs/btrfs/extent-tree.c | 62 +++++++++++++++++++++++++++++-------------
+ fs/btrfs/scrub.c       |  9 +-----
+ fs/btrfs/transaction.c |  7 +++++
+ fs/btrfs/transaction.h | 10 +++++++
+ 5 files changed, 63 insertions(+), 27 deletions(-)
+
 -- 
-2.14.3
+2.17.0
 

@@ -1,35 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:60778 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752705AbeE3PgX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 30 May 2018 11:36:23 -0400
-Date: Wed, 30 May 2018 17:33:38 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Su Yue <suy.fnst@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2] btrfs: returns -ENOMEM if path allocation failed in
- btrfs_cross_ref_exist()
-Message-ID: <20180530153338.GF3539@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20180530020752.23788-1-suy.fnst@cn.fujitsu.com>
- <20180530064910.8724-1-suy.fnst@cn.fujitsu.com>
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:35188 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S968600AbeE3CB7 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 29 May 2018 22:01:59 -0400
+Received: from G08CNEXCHPEKD03.g08.fujitsu.local (unknown [10.167.33.85])
+        by cn.fujitsu.com (Postfix) with ESMTP id 38D6E4B41E82
+        for <linux-btrfs@vger.kernel.org>; Wed, 30 May 2018 10:01:54 +0800 (CST)
+From: Su Yue <suy.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: <suy.fnst@cn.fujitsu.com>
+Subject: [PATCH 1/2] btrfs: returns -ENOMEM if path allocation failed in btrfs_cross_ref_exist()
+Date: Wed, 30 May 2018 10:07:52 +0800
+Message-ID: <20180530020752.23788-1-suy.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180530064910.8724-1-suy.fnst@cn.fujitsu.com>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, May 30, 2018 at 02:49:10PM +0800, Su Yue wrote:
-> btrfs_alloc_path() may fail due to no enough memory,
-> so let the function return -ENOMEM instead of -ENOENT is better.
-> 
-> Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
+Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
+---
+ fs/btrfs/extent-tree.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Reviewed-by: David Sterba <dsterba@suse.com>
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 44093f92a532..99df6199dffc 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3311,7 +3311,7 @@ int btrfs_cross_ref_exist(struct btrfs_root *root, u64 objectid, u64 offset,
+ 
+ 	path = btrfs_alloc_path();
+ 	if (!path)
+-		return -ENOENT;
++		return -ENOMEM;
+ 
+ 	do {
+ 		ret = check_committed_ref(root, path, objectid,
+-- 
+2.17.0
 
-Thanks. I've audited all return codes after failed path allocation, this
-was the only one not matching.
 
-The return code of btrfs_cross_ref_exist should be also distinguished at
-the call sites, as both places expect only the ENOENT but should not
-react to ENOMEM as if it were ENOENT.
+

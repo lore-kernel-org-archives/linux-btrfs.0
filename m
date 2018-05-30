@@ -1,64 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ot0-f195.google.com ([74.125.82.195]:41957 "EHLO
-        mail-ot0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S965759AbeE2T0P (ORCPT
+Received: from userp2130.oracle.com ([156.151.31.86]:48110 "EHLO
+        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S968467AbeE3Gzq (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 29 May 2018 15:26:15 -0400
-Received: by mail-ot0-f195.google.com with SMTP id t1-v6so18319944oth.8
-        for <linux-btrfs@vger.kernel.org>; Tue, 29 May 2018 12:26:15 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <20180529074527.7333-1-wqu@suse.com>
-References: <20180529074527.7333-1-wqu@suse.com>
-From: james harvey <jamespharvey20@gmail.com>
-Date: Tue, 29 May 2018 15:26:13 -0400
-Message-ID: <CA+X5Wn6Ltx02naOh2BjZwzu2A2c74G47QAceMipt-XsoCS2k+A@mail.gmail.com>
-Subject: Re: [PATCH] btrfs-progs: check: Also compare data between mirrors to
- detect corruption for NODATASUM extents
-To: Qu Wenruo <wqu@suse.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+        Wed, 30 May 2018 02:55:46 -0400
+Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
+        by userp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w4U6pOZk032090
+        for <linux-btrfs@vger.kernel.org>; Wed, 30 May 2018 06:55:45 GMT
+Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
+        by userp2130.oracle.com with ESMTP id 2j9ev890f2-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Wed, 30 May 2018 06:55:45 +0000
+Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
+        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id w4U6ti2S016819
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Wed, 30 May 2018 06:55:44 GMT
+Received: from abhmp0007.oracle.com (abhmp0007.oracle.com [141.146.116.13])
+        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w4U6tied017313
+        for <linux-btrfs@vger.kernel.org>; Wed, 30 May 2018 06:55:44 GMT
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 0/6] fix device_list_mutex usage and cleanups in device_list_add()
+Date: Wed, 30 May 2018 14:58:15 +0800
+Message-Id: <20180530065821.28385-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, May 29, 2018 at 3:45 AM, Qu Wenruo <wqu@suse.com> wrote:
-> As the lzo corruption reported by James Harvey, for data extents without
-> checksum, neither btrfs check nor kernel scrub could detect anything
-> wrong.
->
-> However if our profile supports duplication, we still have a chance to
-> detect such corruption, as in that case the mirrors will mismatch with
-> each other.
->
-> So enhance --check-data-csum option to do such check, and this could
-> help us to detect such corruption in an autonomous test case.
->
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
+Patch 1/6 is a preparatory patch to add the required device_list_mutex
+in device_list_add() in the patch 2/6.
 
-I think it's good to have check --check-data-csum do such check.
+Patch 3/6 updates the comments on device_list_mutex.
 
-I also think there should be a check option that only checks the
-mirrored copies, so it could be ran without taking the time to check
-everything that scrub looks at.  (If the feature isn't also added to
-scrub as I argue for below, one could run this option every time they
-scrub.)
+Patch 4/6 is just a cleanup patch no functional changes.
 
-IMO, it is important to also add this to scrub.  First reason is to
-allow online scanning, since check is recommended not to run with
---force on a quiescent/read-only fs.  Second, I think users expect
-scrub to ensure mirrored data integrity, and this goes along with
-that, of course without automatic correction.  I think without doing
-so, users who periodically run scrub would be surprised if they had
-data corruption, that it hadn't been being checked all along.
+Patch 5/6 adds the required device_list_mutex in
+btrfs_free_stale_device().
 
-It's recommended many places that users setup scrub to run
-automatically on a periodic basis, but I'm not sure if I've seen
-anywhere recommend setting up check to do so as well, especially as
-doing so on a mounted filesystem is discouraged and potentially will
-crash.
+Patch 6/6 renames btrfs_free_stale_device() to free_stale_device(), no
+functional changes.
 
-I haven't looked at this specifically, but I'm thinking this would be
-better in the btrfs-progs side of scrub after it runs the kernel side
-real scrub.
+Anand Jain (6):
+  btrfs: do btrfs_free_stale_devices() outside of device_list_add()
+  btrfs: fix device_list_add() missing device_list_mutex()
+  btrfs: update device_list_mutex protected items
+  btrfs: btrfs_free_stale_devices() rename local variables
+  btrfs: fix btrfs_free_stale_devices() with needed locks
+  btrfs: rename btrfs_free_stale_devices drop btrfs prefix
 
-I have to head out for a while.  I haven't looked over or tried the
-code yet, but will later.
+ fs/btrfs/volumes.c | 80 ++++++++++++++++++++++++++++++++++--------------------
+ 1 file changed, 50 insertions(+), 30 deletions(-)
+
+-- 
+2.7.0
+

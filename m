@@ -1,30 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:52537 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:54560 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S935258AbeE3GY0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 30 May 2018 02:24:26 -0400
-Subject: Re: [PATCH 1/2] btrfs: returns -ENOMEM if path allocation failed in
+        id S935883AbeE3GoT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 30 May 2018 02:44:19 -0400
+Subject: Re: [PATCH v2] btrfs: returns -ENOMEM if path allocation failed in
  btrfs_cross_ref_exist()
 To: Su Yue <suy.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
 References: <20180530020752.23788-1-suy.fnst@cn.fujitsu.com>
+ <20180530064910.8724-1-suy.fnst@cn.fujitsu.com>
 From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <c739075f-9505-d117-983a-91f4e8d686bb@suse.com>
-Date: Wed, 30 May 2018 09:24:22 +0300
+Message-ID: <5a25b5cf-b38a-2498-2a6d-d3f5fa729bd3@suse.com>
+Date: Wed, 30 May 2018 09:44:16 +0300
 MIME-Version: 1.0
-In-Reply-To: <20180530020752.23788-1-suy.fnst@cn.fujitsu.com>
+In-Reply-To: <20180530064910.8724-1-suy.fnst@cn.fujitsu.com>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On 30.05.2018 05:07, Su Yue wrote:
+On 30.05.2018 09:49, Su Yue wrote:
+> btrfs_alloc_path() may fail due to no enough memory,
+> so let the function return -ENOMEM instead of -ENOENT is better.
+> 
 > Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
 
-Generally we discourage commit log messages. I understand this patch is
-very obvious but put a sentence saying that btrfs_alloc_path can fail
-due to enomem hence returning enomem is the right ting to do here.
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 > ---
+> Changelog:
+> v2:
+>   Add commit message to describe the patch. Thanks Nikolay.
+>   
 >  fs/btrfs/extent-tree.c | 2 +-
 >  1 file changed, 1 insertion(+), 1 deletion(-)
 > 

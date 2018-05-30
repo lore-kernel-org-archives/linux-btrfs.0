@@ -1,52 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:34045 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1754222AbeEaJci (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 31 May 2018 05:32:38 -0400
-Date: Thu, 31 May 2018 11:29:52 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Nikolay Borisov <nborisov@suse.com>
-Cc: dsterba@suse.cz, Qu Wenruo <wqu@suse.de>,
-        Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 2/2] btrfs: Refactor running of delayed inode items
- during transaction commit
-Message-ID: <20180531092952.GK3539@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1518531409-31625-1-git-send-email-nborisov@suse.com>
- <1518531409-31625-2-git-send-email-nborisov@suse.com>
- <ffd02095-4489-6d90-a47f-93f4020ab097@jp.fujitsu.com>
- <995d8c20-c619-c4e6-cb3e-2a9196289775@suse.com>
- <94a829c6-378b-6d10-d8e9-b79d856fe381@suse.com>
- <87881c8f-e3f1-30ce-bd76-e99c0fd30c1b@suse.de>
- <72f979be-5ced-bc8e-7cc1-582ca1c23fc3@suse.com>
- <20180528161228.GE6649@twin.jikos.cz>
- <eccbc8ad-5377-0d68-c2bb-f1d8f1c6194b@suse.com>
+Received: from mail-it0-f46.google.com ([209.85.214.46]:50474 "EHLO
+        mail-it0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932098AbeE3Szv (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 30 May 2018 14:55:51 -0400
+Received: by mail-it0-f46.google.com with SMTP id p3-v6so24486022itc.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 30 May 2018 11:55:51 -0700 (PDT)
+Subject: Re: [PATCH 00/13] convert block layer to bioset_init()/mempool_init()
+To: Mike Snitzer <snitzer@redhat.com>
+Cc: Kent Overstreet <kent.overstreet@gmail.com>, linux-kernel@vger.kernel.org,
+        linux-block@vger.kernel.org, hch@infradead.org, colyli@suse.de,
+        darrick.wong@oracle.com, clm@fb.com, bacik@fb.com,
+        linux-xfs@vger.kernel.org, drbd-dev@lists.linbit.com,
+        linux-btrfs@vger.kernel.org, linux-raid@vger.kernel.org,
+        neilb@suse.com
+References: <20180521143132.GB19194@redhat.com>
+ <2bbeeb1a-8b99-b06a-eb9b-eb8523c16460@kernel.dk>
+ <20180521144703.GA19303@redhat.com>
+ <4b343aef-e11c-73ba-1d88-7e73ca838cad@kernel.dk>
+ <20180521150439.GA19379@redhat.com>
+ <61e30dcf-a01c-f47d-087a-12930caf9aef@kernel.dk>
+ <20180521151817.GA19454@redhat.com>
+ <d01a150a-7752-f6ce-78f2-17a65c1e6fa5@kernel.dk>
+ <20180521160907.GA19553@redhat.com>
+ <f9e3714c-b7c9-d5f6-4018-2a87dd5babb2@kernel.dk>
+ <20180530133629.GC5157@redhat.com>
+From: Jens Axboe <axboe@kernel.dk>
+Message-ID: <f654ad69-aa90-9580-4731-a05d0604f353@kernel.dk>
+Date: Wed, 30 May 2018 12:55:48 -0600
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <eccbc8ad-5377-0d68-c2bb-f1d8f1c6194b@suse.com>
+In-Reply-To: <20180530133629.GC5157@redhat.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, May 31, 2018 at 12:32:03AM +0300, Nikolay Borisov wrote:
-> On 28.05.2018 19:12, David Sterba wrote:
-> > On Mon, May 28, 2018 at 03:26:58PM +0300, Nikolay Borisov wrote:
-> >>>>>> dmesg looks like:
-> >>>>>> [    6.649213] WARNING: CPU: 0 PID: 2838 at fs/btrfs/transaction.c:303 record_root_in_trans+0x38/0xd0
-> > 
-> > Found in the logs. I reported it to the patch that added the assertion
-> > but I did not suspect your patches.
-> > 
-> >>>>>> [    6.662909]  create_pending_snapshot+0x1ab/0xd00
-> > 
-> >> So the answer to your question is "yes", in which case indeed this patch
-> >> will have to be reverted.
-> > 
-> > Both patches removed from misc-next.
-> 
-> I think 1/2 is actually safe, it's removing something from the
-> transaction path without affecting the overall logic which should be a
-> small win.
+On 5/30/18 7:36 AM, Mike Snitzer wrote:
+> So revisiting this patchset: are you inclined to take these changes (I
+> assume yes)?  If so, what would you need in order to get them staged for
+> 4.18?  I'll start with offering my review in reply to the DM patch.  I'd
+> much prefer to see this level of change go in sooner rather than later.
 
-Yeah, but right now we're too close to merge window, please resend them
-for the next cycle.
+Yeah I'd like to take the changes, but we might have to wait for
+4.19 at this point. It'd certainly help to have the dm bits reviewed,
+as they are some of the larger ones. The grunt of the others are mostly
+trivial and smaller in scope.
+
+-- 
+Jens Axboe
+

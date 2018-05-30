@@ -1,50 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f46.google.com ([209.85.214.46]:50474 "EHLO
-        mail-it0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932098AbeE3Szv (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 30 May 2018 14:55:51 -0400
-Received: by mail-it0-f46.google.com with SMTP id p3-v6so24486022itc.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 30 May 2018 11:55:51 -0700 (PDT)
-Subject: Re: [PATCH 00/13] convert block layer to bioset_init()/mempool_init()
-To: Mike Snitzer <snitzer@redhat.com>
-Cc: Kent Overstreet <kent.overstreet@gmail.com>, linux-kernel@vger.kernel.org,
-        linux-block@vger.kernel.org, hch@infradead.org, colyli@suse.de,
-        darrick.wong@oracle.com, clm@fb.com, bacik@fb.com,
-        linux-xfs@vger.kernel.org, drbd-dev@lists.linbit.com,
+Received: from mx3-rdu2.redhat.com ([66.187.233.73]:53032 "EHLO mx1.redhat.com"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S932076AbeE3T1u (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 30 May 2018 15:27:50 -0400
+Date: Wed, 30 May 2018 15:27:48 -0400
+From: Mike Snitzer <snitzer@redhat.com>
+To: Kent Overstreet <kent.overstreet@gmail.com>
+Cc: linux-kernel@vger.kernel.org, linux-block@vger.kernel.org, axboe@kernel.dk,
+        hch@infradead.org, colyli@suse.de, darrick.wong@oracle.com, clm@fb.com,
+        bacik@fb.com, linux-xfs@vger.kernel.org, drbd-dev@lists.linbit.com,
         linux-btrfs@vger.kernel.org, linux-raid@vger.kernel.org,
         neilb@suse.com
-References: <20180521143132.GB19194@redhat.com>
- <2bbeeb1a-8b99-b06a-eb9b-eb8523c16460@kernel.dk>
- <20180521144703.GA19303@redhat.com>
- <4b343aef-e11c-73ba-1d88-7e73ca838cad@kernel.dk>
- <20180521150439.GA19379@redhat.com>
- <61e30dcf-a01c-f47d-087a-12930caf9aef@kernel.dk>
- <20180521151817.GA19454@redhat.com>
- <d01a150a-7752-f6ce-78f2-17a65c1e6fa5@kernel.dk>
- <20180521160907.GA19553@redhat.com>
- <f9e3714c-b7c9-d5f6-4018-2a87dd5babb2@kernel.dk>
- <20180530133629.GC5157@redhat.com>
-From: Jens Axboe <axboe@kernel.dk>
-Message-ID: <f654ad69-aa90-9580-4731-a05d0604f353@kernel.dk>
-Date: Wed, 30 May 2018 12:55:48 -0600
+Subject: Re: [PATCH 07/12] dm: convert to bioset_init()/mempool_init()
+Message-ID: <20180530192747.GA6568@redhat.com>
+References: <20180520222558.7053-1-kent.overstreet@gmail.com>
+ <20180520222558.7053-8-kent.overstreet@gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <20180530133629.GC5157@redhat.com>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20180520222558.7053-8-kent.overstreet@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 5/30/18 7:36 AM, Mike Snitzer wrote:
-> So revisiting this patchset: are you inclined to take these changes (I
-> assume yes)?  If so, what would you need in order to get them staged for
-> 4.18?  I'll start with offering my review in reply to the DM patch.  I'd
-> much prefer to see this level of change go in sooner rather than later.
+On Sun, May 20 2018 at  6:25pm -0400,
+Kent Overstreet <kent.overstreet@gmail.com> wrote:
 
-Yeah I'd like to take the changes, but we might have to wait for
-4.19 at this point. It'd certainly help to have the dm bits reviewed,
-as they are some of the larger ones. The grunt of the others are mostly
-trivial and smaller in scope.
+> Signed-off-by: Kent Overstreet <kent.overstreet@gmail.com>
+> ---
+>  drivers/md/dm-bio-prison-v1.c      | 13 ++++---
+>  drivers/md/dm-bio-prison-v2.c      | 13 ++++---
+>  drivers/md/dm-cache-target.c       | 25 ++++++-------
+>  drivers/md/dm-core.h               |  4 +-
+>  drivers/md/dm-crypt.c              | 60 ++++++++++++++----------------
+>  drivers/md/dm-integrity.c          | 15 ++++----
+>  drivers/md/dm-io.c                 | 29 ++++++++-------
+>  drivers/md/dm-kcopyd.c             | 22 ++++++-----
+>  drivers/md/dm-log-userspace-base.c | 19 +++++-----
+>  drivers/md/dm-region-hash.c        | 23 ++++++------
+>  drivers/md/dm-rq.c                 |  2 +-
+>  drivers/md/dm-snap.c               | 17 ++++-----
+>  drivers/md/dm-thin.c               | 32 ++++++++--------
+>  drivers/md/dm-verity-fec.c         | 55 +++++++++++++--------------
+>  drivers/md/dm-verity-fec.h         |  8 ++--
+>  drivers/md/dm-zoned-target.c       | 13 +++----
+>  drivers/md/dm.c                    | 53 ++++++++++++--------------
+>  17 files changed, 197 insertions(+), 206 deletions(-)
 
--- 
-Jens Axboe
+In general I think each of these driver patches in the series needs a
+one-line summary in the description, e.g.:
+Embed bioset and mempool_t to avoid pointer indirection in the fast IO path.
 
+But that aside, on a code level, I had to double check bioset_exit() is
+safe to call even if bioset_init() failed.  AFter confirming it is (and
+double checking by chatting with Kent) I like how the code is simpler
+(not having to check if the bioset is set before calling it).
+
+Nice job Kent, like you said: mostly mechnical.  But even the changes
+that weren't purely mechnical (e.g. passing r to ERR_PTR, rather than
+using old hardcode) were fixed up nicely.
+
+Acked-by: Mike Snitzer <snitzer@redhat.com>

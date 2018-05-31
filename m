@@ -1,91 +1,168 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:8950 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S932570AbeEaCCX (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 30 May 2018 22:02:23 -0400
-Subject: Re: [PATCH v2] btrfs: returns -ENOMEM if path allocation failed in
- btrfs_cross_ref_exist()
-To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
-References: <20180530020752.23788-1-suy.fnst@cn.fujitsu.com>
- <20180530064910.8724-1-suy.fnst@cn.fujitsu.com>
- <20180530153338.GF3539@twin.jikos.cz>
-From: Su Yue <suy.fnst@cn.fujitsu.com>
-Message-ID: <2efb5186-ab23-dbe4-1569-c62f49acf276@cn.fujitsu.com>
-Date: Thu, 31 May 2018 10:08:17 +0800
+Received: from mout.gmx.net ([212.227.17.20]:60955 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1753825AbeEaG6S (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 31 May 2018 02:58:18 -0400
+Subject: Re: btrfs device replace can cause silent or noisy corruption on
+ compressed NOCOW/NODATASUM
+To: james harvey <jamespharvey20@gmail.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <CA+X5Wn7pOa0+1ur9Twr7MoQCweaX7BXtWuWwfECW6z+=be44_w@mail.gmail.com>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <6519aedf-66e7-1af6-4a89-3c0b610d9426@gmx.com>
+Date: Thu, 31 May 2018 14:58:08 +0800
 MIME-Version: 1.0
-In-Reply-To: <20180530153338.GF3539@twin.jikos.cz>
-Content-Type: multipart/mixed;
-        boundary="------------C5DDF7820AE6C5DFE6A34A5D"
+In-Reply-To: <CA+X5Wn7pOa0+1ur9Twr7MoQCweaX7BXtWuWwfECW6z+=be44_w@mail.gmail.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="nmOjZOkCMXzUk0ZEWSIB53cfW93wyvECD"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---------------C5DDF7820AE6C5DFE6A34A5D
-Content-Type: text/plain; charset="utf-8"
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--nmOjZOkCMXzUk0ZEWSIB53cfW93wyvECD
+Content-Type: multipart/mixed; boundary="EVzj39o6KjyvvNK1Dd0F3wxYNqlCtzZRm";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: james harvey <jamespharvey20@gmail.com>,
+ Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Message-ID: <6519aedf-66e7-1af6-4a89-3c0b610d9426@gmx.com>
+Subject: Re: btrfs device replace can cause silent or noisy corruption on
+ compressed NOCOW/NODATASUM
+References: <CA+X5Wn7pOa0+1ur9Twr7MoQCweaX7BXtWuWwfECW6z+=be44_w@mail.gmail.com>
+In-Reply-To: <CA+X5Wn7pOa0+1ur9Twr7MoQCweaX7BXtWuWwfECW6z+=be44_w@mail.gmail.com>
+
+--EVzj39o6KjyvvNK1Dd0F3wxYNqlCtzZRm
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
 
 
-On 05/30/2018 11:33 PM, David Sterba wrote:
-> On Wed, May 30, 2018 at 02:49:10PM +0800, Su Yue wrote:
->> btrfs_alloc_path() may fail due to no enough memory,
->> so let the function return -ENOMEM instead of -ENOENT is better.
->>
->> Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
+On 2018=E5=B9=B405=E6=9C=8817=E6=97=A5 17:46, james harvey wrote:
+> Looks like Qu may have taken care of corrupted compressed data with
+> NODATASUM from causing causing random kernel memory corruption.
 >=20
-> Reviewed-by: David Sterba <dsterba@suse.com>
+> As long as the compressed data was valid and could be uncompressed,
+> there were no problems, even on data marked NOCOW/NODATASUM.  If the
+> data being sent to be uncompressed was invalid and failed
+> decompression, it would sometimes give an I/O error, and sometimes
+> cause random kernel memory corruption.
 >=20
-> Thanks. I've audited all return codes after failed path allocation, this
-> was the only one not matching.
+> I retraced my steps to try to figure out how my data got corrupted in
+> the first place.  The pattern of corruption didn't make any sense for
+> this to be hardware related, or a user-caused badly executed dd.
 >=20
-> The return code of btrfs_cross_ref_exist should be also distinguished at
-> the call sites, as both places expect only the ENOENT but should not
-> react to ENOMEM as if it were ENOENT.
+> In short, "btrfs device replace" caused it.  When it copies data to a
+> new drive, and encounters NOCOW/NODATASUM compressed data, it copies
+> the data in uncompressed form to the new drive, leaving it in
+> compressed form on the other mirror, leaving it all marked as
+> compressed.  I don't know how it handles the longer length.  I don't
+> know if it only writes out the compressed length, if it writes out the
+> uncompressed length possibly overwriting other data its writing out or
+> even worse other file extents, etc.
 >=20
-Not quite understand the last paragraph. Is necessary to send patches to
-make the two callers to distinguish ENOMEM and ENOENT?
+> To rule out anything else, I started in a fresh VM with the May 1,
+> 2018, Arch installation ISO.  That's kernel 4.16.5, btrfs-progs 4.16.
+>=20
+> Starting with a freshly partitioned disk with (3) 10GB partitions, a
+> fairly minimal reproducing case with lots of explaining comments can
+> be read here:
+>=20
+> https://pastebin.com/VvNk90Wa
+
+Thanks for the reproducer.
+
+After digging into the code, the bug is more or less straightforward now.=
+
+
+The direct cause is, for any data extent without csum, btrfs just goes
+to copy_nocow_pages(), which will try to use pages of inode to write it
+back to disk.
+
+While for pages of an inode, all the data is uncompressed.
+Thus it explains why it writes uncompressed data back to disk.
+
+And this is not the only place where scrub will try to use uncompressed
+data to write back to disk.
+
+For scrub_fixup_readpage() will also try to do the same thing.
+
+
+I'll try to fix it since it affects all compression user with nodatasum,
+but it is a little tricky to fix.
+(And if we have defined how compression should work with nodatasum, all
+these hassle can be avoided.)
 
 Thanks,
-Su
+Qu
 
+>=20
+> I of course don't know the extent of this.  I don't know all of the
+> situations where NOCOW/NODATASUM extents are compressed anyway.  In my
+> real world case, it was journald logs.  We know journald/systemd
+> submits those for defragmentation.  I haven't verified if it submits
+> the defragmentation asking for compression.  In my reproducing example
+> linked above, I had to defragment the file asking for compression to
+> cause the file to be compressed.  If that's the extent of the bug,
+> probably lots of journald logs out there that have been through a
+> replace have corruption, but hopefully no databases.  I don't think
+> any databases, and not many database administrators, are going to
+> submit the files for defragmentation with compression.  But, if
+> compression can be triggered in more situations than this, it's
+> possible there's a lot of corruption (sometimes silent) out there on
+> important things like databases.
+>=20
+> Obviously, btrfs device replace or something it depends on needs
+> fixing.  It's above my pay grade on if some type of alert should be
+> sent out saying not to use replace on btrfs-progs less than a new
+> version that hasn't come out yet.  Probably depends on how big the
+> extent of the bug is.
+>=20
+> I also submit that even with corrupted compressed data no longer being
+> submitted for decompression, and even with btrfs device replace soon
+> being patched, that there should be a way for all NODATASUM data that
+> is mirrored to have the mirrored copies compared, regardless of if
+> compression is involved.  I think check or scrub should gain this
+> functionality.  Obviously, without a checksum, no automatic repair can
+> happen, but the user can at least be alerted that something is wrong.
+> As the example will show, if the corruption happens on the mirrored
+> copy that isn't read, it's silent corruption, unless that good copy
+> goes bad someday.  Btrfs has a chance to give NODATASUM data extra
+> protection over other filesystems, somewhere between mirrored copies
+> just really protecting against a disk failure like most
+> implementations and like btrfs does with NODATASUM data now, and
+> between btrfs' checksummed mirrors that guard against bit rot and
+> one-mirror accidental corruption.
+>=20
+> I'd even be interested in writing such an addon to check or scrub, if
+> it would be accepted, assuming it was written well and worked of
+> course.  If someone else wants to do it, that's OK too.
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 >=20
 
 
+--EVzj39o6KjyvvNK1Dd0F3wxYNqlCtzZRm--
 
---------------C5DDF7820AE6C5DFE6A34A5D
-Content-Type: application/pgp-keys; name="pEpkey.asc"
-Content-Transfer-Encoding: quoted-printable
-Content-Disposition: attachment; filename="pEpkey.asc"
+--nmOjZOkCMXzUk0ZEWSIB53cfW93wyvECD
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
 
------BEGIN PGP PUBLIC KEY BLOCK-----=0A=
-=0A=
-mQENBFrxafoBCADL54g5EnHtuYig32iQtOWgPqZlnBDgdSD+fMxnpMr6zZ7VNT9l=0A=
-Pv7BNy4lUHkWff1TbLuZQIoxYKEbmkajwg1rEjBfQ+6RBQWGzsjfprPdEC6kf6Ch=0A=
-sVKrfAfJArEgEvkMOCWZE1T5wNl/mNhlWfOYWadfLTIsQCKD5D1PhD9ZgKMwulGn=0A=
-OhQfeRuu/X+7zijjrpT1Nvq/Qiya/ANCq7nCu2ZTXDgQR6GSe2qgn0oVC44HKTRl=0A=
-PK+47CQ8LFnKeBuTygdOpfAWUi28SCMqwkfZhGtfQQU446HJPNz/bCNRok9l9dZi=0A=
-3EEyxMamd/tVmtsOBvtUrYIIIxNAOB87h1+PABEBAAG0IFN1IFl1ZSA8c3V5LmZu=0A=
-c3RAY24uZnVqaXRzdS5jb20+iQFUBBMBCAA+FiEE12oP3cNSLnn02mf3AOFqSFGv=0A=
-ypwFAlrxafoCGwMFCQHhM4AFCwkIBwIGFQoJCAsCBBYCAwECHgECF4AACgkQAOFq=0A=
-SFGvypwZaAf8D8gcRk4atpfgKd1nB0UuDcJNPLpzrGxQz3u2UBeNjxGUXsVsQMsy=0A=
-Ln+xd/5pbC7tk5D8/+XIZGtLc3Nb0G9D6kdSHjvlpRMo3GtnDJL/kp4TPBlcXM9V=0A=
-xzPmbBECdo8Th5+P66H3MNl3S0B48kDEcj5i7M0dZDOeQjKxzt8j++bwEdXVgBvM=0A=
-O5W8Qnd5CxbXnjme8/qyJtup1hYAKpf8Yi9bldPM0ri+uWbLtSx8/EvCxsFFMiM+=0A=
-zk1fzPqsu+lhI+lBAKR9qvH6mVCictFxA6TM7BH+lcQezHunEJDSO1obLXpjQTwh=0A=
-UpU7USyzmE0hx/O2unA6imv1O1fuafCsGLkBDQRa8Wn6AQgAtxCl1ghY/W/lP66b=0A=
-27rYgz8otwQ5TaLLwb83qwVOv7AOiMu16ikNcG2Fn0ePj3kv4/iYcsAIq6UHka25=0A=
-4UXMdwn8j8lN7dYuuJpFBjW45mHMH9gTNspp456ftqlvgTqJtPmRmcN62IGaI5OD=0A=
-/L36v7nMY5iBPecK8hIZd7BFJcBV1jntzy3XTGrvyQXx7LxqIj9uKRj1vTYTLK+9=0A=
-uaQFna1+SR7XKtkUg89YObQGXDD3D8qohk9SSmpQGkPPOdC1456Vpn/5FH057W0I=0A=
-UC/udC6AKsbYrlEqYihMY0/5FkpTusPOxw+LHpAwJppQ95JNsjtq22HgyFMpGFCW=0A=
-bSMMEwARAQABiQE8BBgBCAAmFiEE12oP3cNSLnn02mf3AOFqSFGvypwFAlrxafoC=0A=
-GwwFCQHhM4AACgkQAOFqSFGvypwMlQf+NhF3GTn+VE7MgOBJdnYkcp8QjxAJXRVp=0A=
-T9QHcJj37BiNJbCxKIac35rFsPe8BaFDM+W6aqe5+zayVd2Zx771imCbimCqgtTB=0A=
-/ScbarN/fgTP1sodDBuVLJmJWPIisYrX4jQx26OfbnZHNYKEHumh5+YghSnNGd6U=0A=
-zS/F+k2PEQZ6rbGQeyHYNDegzq7Nieg9aNoV7qvPAwbG/9KrXBQdh+X0w1Fs/Gye=0A=
-wi1vrOIWtTE2ORTJZb8y76wy6M6oOWv2PnQ0TLHM+8wTTX+dgU/IjQNO6ikqLqI8=0A=
-PN8qtLmiy6GAQETDZO//XSxcpHQJVIU/+jHKZYuHJ1IMCcaC9vvjzg=3D=3D=0A=
-=3DDxgD=0A=
------END PGP PUBLIC KEY BLOCK-----=0A=
+-----BEGIN PGP SIGNATURE-----
 
---------------C5DDF7820AE6C5DFE6A34A5D--
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlsPnQAACgkQwj2R86El
+/qjcfAf/Z+0O+/Ek1NA8/ZXmvk1Ljy3yuk5WbL7WEAycO9JODRh9iQYfSOpEvVAp
+VLoI8SPO2DKdAxnYd8Pz89YeetwxGgXhqz7wIf2dzWcGrSX+8F8GovlRR/fUpZaP
+BYKq2COumDLLCMBDBimwUGxQSHUYI3TaemffjeM5Evy/Yb766oRNKQhBUJfzHvWL
+XX6cKwOxV3mUYANJBGbQXRYYMKtwuVCDFg1eCH1ZRg5S26pwHLL+5TYOG9HdKN7F
+/nBGntnoBIhN35CqvAgqwNEn9tFz3R789IGJX8mSI2kuYJAxrzFZp9XcBTBF1f3B
+UbsUMMADBb1ubsvT+nP8Dh/ARt46oQ==
+=4Bhe
+-----END PGP SIGNATURE-----
+
+--nmOjZOkCMXzUk0ZEWSIB53cfW93wyvECD--

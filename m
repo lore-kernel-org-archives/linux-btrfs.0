@@ -1,60 +1,28 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:46863 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:47127 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1754197AbeEaMVD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 31 May 2018 08:21:03 -0400
-Received: from relay2.suse.de (charybdis-ext-too.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 24A6AAEAD
-        for <linux-btrfs@vger.kernel.org>; Thu, 31 May 2018 12:21:02 +0000 (UTC)
-Date: Thu, 31 May 2018 14:18:17 +0200
+        id S1754733AbeEaMYo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 31 May 2018 08:24:44 -0400
+Date: Thu, 31 May 2018 14:21:59 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Nikolay Borisov <nborisov@suse.com>
+To: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 0/9] Overhaul btrfs-corrupt-block
-Message-ID: <20180531121817.GW3539@twin.jikos.cz>
+Subject: Re: [PATCH] btrfs-progs: print-tree: remove dead code from
+ btrfs_print_tree
+Message-ID: <20180531122158.GX3539@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1526296414-27638-1-git-send-email-nborisov@suse.com>
+References: <20180409064044.1699-1-lufq.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1526296414-27638-1-git-send-email-nborisov@suse.com>
+In-Reply-To: <20180409064044.1699-1-lufq.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, May 14, 2018 at 02:13:25PM +0300, Nikolay Borisov wrote:
-> btrfs-corrupt-block is a very useful tool albeit very neglected. This series 
-> aims to give it much needed attention. There is a mix of code-improvements and 
-> bug fixes. Code improvement mainly consists of factoring our duplicated code 
-> (Patch 1,3,6) and improving the interface of some options (4,5,8,9). The
-> recurring topic here is that instead of having to pass 
+On Mon, Apr 09, 2018 at 02:40:44PM +0800, Lu Fengqi wrote:
+> Since the out label has been deleted, this free_extent_buffer will never
+> be executed.
 > 
-> btrfs-corrupt-block -K <key> -f <field> -<SOME OPTION WHICH CORRUPTS AN ITEM, 
-> POINTED TO BY K> 
-> 
-> make each corrupting option to take the key as an argument to it. Say we want
-> to corrupt an item field (-I options) we now do: 
->  
->  btrfs-corrupt-block -I <key> -r <root> /dev/blah 
-> 
->  instead of 
-> 
->  btrfs-corrupt-block -I -K <key> -r <root> /dev/blah 
-> 
-> Some patches also incorporate fixes for bugs (patch 2,7 and 9) I found during 
-> my testing. Those usability improvements are needed to enable me to produce 
-> tests for the pending free space tree support in userspace. 
-> 
-> 
-> Nikolay Borisov (9):
->   btrfs-progs: btrfs-corrupt-block: Factor out specific-root code
->   btrfs-progs: btrfs-corrupt-block: Correctly handle -r when passing -I
->   btrfs-progs: btrfs-corrupt-block: Factor out key parsing function
->   btrfs-progs: btrfs-corrupt-block: Change -I flag parameter format
->   btrfs-progs: btrfs-corrupt-block: Convert -K flag argument handling to
->     common function
->   btrfs-progs: btrfs-corrupt-block: Factor out common "-r" handling code
->   btrfs-progs: btrfs-corrupt-block: Add support for handling specific
->     root when using -K option
->   btrfs-progs: btrfs-corrupt-block: Change format of -d option
->   btrfs-progs: btrfs-corrupt-block: Fix -D option
+> Fixes: f37ae8d275c2 ("btrfs-progs: print-tree: Enhance warning on tree block level mismatch and error handling")
+> Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 
 Applied, thanks.

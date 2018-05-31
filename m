@@ -1,65 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:59775 "EHLO mx2.suse.de"
+Received: from mout.gmx.net ([212.227.17.22]:36741 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751246AbeEBN6c (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 2 May 2018 09:58:32 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id A439AAE76
-        for <linux-btrfs@vger.kernel.org>; Wed,  2 May 2018 13:58:31 +0000 (UTC)
-Subject: Re: [PATCH 1/3] btrfs: qgroups, fix rescan worker running races
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-References: <20180426192351.473-1-jeffm@suse.com>
- <20180502102928.GX21272@twin.jikos.cz> <20180502131543.GY21272@twin.jikos.cz>
-From: Jeff Mahoney <jeffm@suse.com>
-Message-ID: <504675d4-2a5c-2972-afd7-17dfdad71845@suse.com>
-Date: Wed, 2 May 2018 09:58:29 -0400
+        id S1750714AbeEaXhV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 31 May 2018 19:37:21 -0400
+Subject: Re: [PATCH 0/1] btrfs-progs: dump-tree: allow -b multiple times
+To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+References: <20180406061202.6529-1-wqu@suse.com>
+ <20180531120310.GT3539@twin.jikos.cz>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <f8308a83-f17b-b571-4a32-89ba03cb9fa8@gmx.com>
+Date: Fri, 1 Jun 2018 07:37:02 +0800
 MIME-Version: 1.0
-In-Reply-To: <20180502131543.GY21272@twin.jikos.cz>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <20180531120310.GT3539@twin.jikos.cz>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="t7TGXFsGb7PoYXdP1twjsVCQqzvIQDkLV"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 5/2/18 9:15 AM, David Sterba wrote:
-> On Wed, May 02, 2018 at 12:29:28PM +0200, David Sterba wrote:
->> On Thu, Apr 26, 2018 at 03:23:49PM -0400, jeffm@suse.com wrote:
->>> From: Jeff Mahoney <jeffm@suse.com>
->>> +static void queue_rescan_worker(struct btrfs_fs_info *fs_info)
->>> +{
->>> +	mutex_lock(&fs_info->qgroup_rescan_lock);
->>> +	if (btrfs_fs_closing(fs_info)) {
->>> +		mutex_unlock(&fs_info->qgroup_rescan_lock);
->>> +		return;
->>> +	}
->>> +	if (WARN_ON(fs_info->qgroup_rescan_running)) {
->>
->> The warning is quite noisy, I see it after tests btrfs/ 017, 022, 124,
->> 139, 153. Is it necessary for non-debugging builds?
->>
->> The tested branch was full for-next so it could be your patchset
->> interacting with other fixes, but the warning noise level question still
->> stands.
-> 
-> So it must be something with the rest of misc-next or for-next patches,
-> current for 4.17 queue does show the warning at all, and the patch is ok
-> for merge.
->
-You might have something that causes it to be more noisy but it looks
-like it should be possible to hit on 4.16.  The warning is supposed to
-detect and complain about multiple rescan threads starting.  What I
-think it's doing here is (correctly) identifying a different race: at
-the end of btrfs_qgroup_rescan_worker, we clear the rescan status flag,
-drop the lock, commit the status item transaction, and then update
-->qgroup_rescan_running.  If a rescan is requested before the lock is
-reacquired, we'll try to start it up and then hit that warning.
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--t7TGXFsGb7PoYXdP1twjsVCQqzvIQDkLV
+Content-Type: multipart/mixed; boundary="EDFsmPygjx5UAv72BqkJforssVVZxfmWF";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Message-ID: <f8308a83-f17b-b571-4a32-89ba03cb9fa8@gmx.com>
+Subject: Re: [PATCH 0/1] btrfs-progs: dump-tree: allow -b multiple times
+References: <20180406061202.6529-1-wqu@suse.com>
+ <20180531120310.GT3539@twin.jikos.cz>
+In-Reply-To: <20180531120310.GT3539@twin.jikos.cz>
 
-So, the warning is doing its job.  Please hold off on merging this patch.
+--EDFsmPygjx5UAv72BqkJforssVVZxfmWF
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-IMO the root cause is overloading fs_info->qgroup_flags to correspond to
-the on-disk item and control runtime behavior.  I've been meaning to fix
-that for a while, so I'll do that now.
 
--Jeff
 
--- 
-Jeff Mahoney
-SUSE Labs
+On 2018=E5=B9=B405=E6=9C=8831=E6=97=A5 20:03, David Sterba wrote:
+> On Fri, Apr 06, 2018 at 02:12:01PM +0800, Qu Wenruo wrote:
+>> Although just one patch, it needs the extent buffer cleanup code as
+>> basis, so please fetch it from my github repo:
+>> https://github.com/adam900710/btrfs-progs/tree/dump_tree_multi_blocks
+>=20
+> Could you please refresh the patch on a recent devel? The branches have=
+
+> diverged too much over time, sorry.
+
+Not a problem at all.
+
+For such case just ask and I'll handle it.
+
+Thanks,
+Qu
+
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>=20
+
+
+--EDFsmPygjx5UAv72BqkJforssVVZxfmWF--
+
+--t7TGXFsGb7PoYXdP1twjsVCQqzvIQDkLV
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlsQhx4ACgkQwj2R86El
+/qiR6AgAox+kPNYcaBGCYEIVd73TPlISI/HB9h0gSiF7Si27TilgzzOlG7BQarIz
+ya+oyUWqxiu4Unw47qdMhi68zs3wd6YGAxyXw/7jfNerYtfh+vOLDB0d70mAzBzM
+ohYofy1o+HT/os4h7NzKidGd/bCHtesgQFkhzaz1LxfeEyczeZlFcL51cYIW2+71
+/pDVXGHB3re8E4oxOaByyljRas0SFoy8H0t8W2rt9Y/6wF7ChjAIdATrmmDSd8ZX
+XKZDDeSGNSLZs8wH5cZCPIni6Ttb8EegQwh1oXRboEBgmiGMLv821IJyhCqT+H4q
+45ttMcXaLgf46hJVUJX8X/XEF9908Q==
+=rFKZ
+-----END PGP SIGNATURE-----
+
+--t7TGXFsGb7PoYXdP1twjsVCQqzvIQDkLV--

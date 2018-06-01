@@ -1,245 +1,128 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.22]:43487 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751726AbeFELje (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 5 Jun 2018 07:39:34 -0400
-Subject: Re: [PATCH] fstests: btrfs: Test if btrfs will corrupt nodatasum
- compressed extent when replacing device
-To: Anand Jain <anand.jain@oracle.com>, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org, fstests@vger.kernel.org
-References: <20180601013448.22450-1-wqu@suse.com>
- <ab3e01d0-5171-eb6d-d7cc-a14ce1f55db3@oracle.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <59e06aba-3071-1f34-8095-a27ee1df77d4@gmx.com>
-Date: Tue, 5 Jun 2018 19:39:16 +0800
-MIME-Version: 1.0
-In-Reply-To: <ab3e01d0-5171-eb6d-d7cc-a14ce1f55db3@oracle.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="r2IM2rIkIcO23TJqIyDXH9aD8Eyj0Aljs"
+Received: from userp2120.oracle.com ([156.151.31.85]:56726 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752661AbeFAP0t (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Jun 2018 11:26:49 -0400
+Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
+        by userp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w51FQ6gw114189
+        for <linux-btrfs@vger.kernel.org>; Fri, 1 Jun 2018 15:26:48 GMT
+Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
+        by userp2120.oracle.com with ESMTP id 2janjedb4x-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Fri, 01 Jun 2018 15:26:48 +0000
+Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
+        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w51FQlOY032288
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Fri, 1 Jun 2018 15:26:47 GMT
+Received: from abhmp0003.oracle.com (abhmp0003.oracle.com [141.146.116.9])
+        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w51FQlkg027885
+        for <linux-btrfs@vger.kernel.org>; Fri, 1 Jun 2018 15:26:47 GMT
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs: drop uuid_mutex in btrfs_rm_device()
+Date: Fri,  1 Jun 2018 23:29:25 +0800
+Message-Id: <20180601152925.19144-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---r2IM2rIkIcO23TJqIyDXH9aD8Eyj0Aljs
-Content-Type: multipart/mixed; boundary="hnqEqOu2yWf9HaaFZY2hC0JIDXdNp8R1v";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Anand Jain <anand.jain@oracle.com>, Qu Wenruo <wqu@suse.com>,
- linux-btrfs@vger.kernel.org, fstests@vger.kernel.org
-Message-ID: <59e06aba-3071-1f34-8095-a27ee1df77d4@gmx.com>
-Subject: Re: [PATCH] fstests: btrfs: Test if btrfs will corrupt nodatasum
- compressed extent when replacing device
-References: <20180601013448.22450-1-wqu@suse.com>
- <ab3e01d0-5171-eb6d-d7cc-a14ce1f55db3@oracle.com>
-In-Reply-To: <ab3e01d0-5171-eb6d-d7cc-a14ce1f55db3@oracle.com>
+uuid_mutex in btrfs_rm_device() is pointless- 1. btrfs_rm_device() can
+only delete the device of a mounted fs 2. the btrfs_control interface
+doesn't add or free_stale device if the device is mounted. 3. the
+contending device operations such as add/replace.. are synchronized
+using the atomic BTRFS_FS_EXCL_OP flag. 4. moreover as uuid_mutex
+protects the global fs_uuid list it serializes the device delete across
+fsids which is pointless.
 
---hnqEqOu2yWf9HaaFZY2hC0JIDXdNp8R1v
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+btrfs_rm_device() is already holding the device_list_mutex when it
+updates the fs_devices::dev_list, so we don't need any other locks here.
 
-
-
-On 2018=E5=B9=B406=E6=9C=8805=E6=97=A5 18:42, Anand Jain wrote:
->=20
->=20
-> On 06/01/2018 09:34 AM, Qu Wenruo wrote:
->> This is a long existing bug (from 2012) but exposed by a reporter
->> recently, that when compressed extent without data csum get written to=
-
->> device-replace target device, the written data is in fact uncompressed=
-
->> data
->> other than the original compressed data.
->>
->> And since btrfs still consider the data is compressed and will try to
->> read it
->> as compressed, it can cause read error.
->>
->> The root cause is located, and one RFC patch already sent to fix it,
->> titled "[PATCH RFC] btrfs: scrub: Don't use inode pages for device
->> replace".
->> (The RFC is only for the extra possible way to fix the bug, the fix
->> itself should work without problem)
->>
->> Reported-by: James Harvey <jamespharvey20@gmail.com>
->> Signed-off-by: Qu Wenruo <wqu@suse.com>
->> ---
->> =C2=A0 tests/btrfs/161=C2=A0=C2=A0=C2=A0=C2=A0 | 91 ++++++++++++++++++=
-+++++++++++++++++++++++++++
->> =C2=A0 tests/btrfs/161.out |=C2=A0 2 +
->> =C2=A0 tests/btrfs/group=C2=A0=C2=A0 |=C2=A0 1 +
->> =C2=A0 3 files changed, 94 insertions(+)
->> =C2=A0 create mode 100755 tests/btrfs/161
->> =C2=A0 create mode 100644 tests/btrfs/161.out
->>
->> diff --git a/tests/btrfs/161 b/tests/btrfs/161
->> new file mode 100755
->> index 00000000..d4a2b474
->> --- /dev/null
->> +++ b/tests/btrfs/161
->> @@ -0,0 +1,91 @@
->> +#! /bin/bash
->> +# FS QA Test 161
->> +#
->> +# Test if btrfs will corrupt compressed data extent without data csum=
-
->> +# by replacing it with uncompressed data, when doing replacing device=
-=2E
->> +#
->> +# This could be fixed by the following RFC patch:
->> +# "[PATCH RFC] btrfs: scrub: Don't use inode pages for device replace=
-"
->> +#
->> +#--------------------------------------------------------------------=
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
->> +# Copyright (C) 2018 SUSE Linux Products GmbH. All Rights Reserved.
->> +#
->> +# This program is free software; you can redistribute it and/or
->> +# modify it under the terms of the GNU General Public License as
->> +# published by the Free Software Foundation.
->> +#
->> +# This program is distributed in the hope that it would be useful,
->> +# but WITHOUT ANY WARRANTY; without even the implied warranty of
->> +# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.=C2=A0 See the
->> +# GNU General Public License for more details.
->> +#
->> +# You should have received a copy of the GNU General Public License
->> +# along with this program; if not, write the Free Software Foundation=
-,
->> +# Inc.,=C2=A0 51 Franklin St, Fifth Floor, Boston, MA=C2=A0 02110-130=
-1=C2=A0 USA
->> +#--------------------------------------------------------------------=
----
->> +#
->> +
->> +seq=3D`basename $0`
->> +seqres=3D$RESULT_DIR/$seq
->> +echo "QA output created by $seq"
->> +
->> +here=3D`pwd`
->> +tmp=3D/tmp/$$
->> +status=3D1=C2=A0=C2=A0=C2=A0 # failure is the default!
->> +trap "_cleanup; exit \$status" 0 1 2 3 15
->> +
->> +_cleanup()
->> +{
->> +=C2=A0=C2=A0=C2=A0 cd /
->> +=C2=A0=C2=A0=C2=A0 rm -f $tmp.*
->> +}
->> +
->> +# get standard environment, filters and checks
->> +. ./common/rc
->> +. ./common/filter
->> +
->> +# remove previous $seqres.full before test
->> +rm -f $seqres.full
->> +
->> +# real QA test starts here
->> +
->> +# Modify as appropriate.
->> +_supported_fs btrfs
->> +_supported_os Linux
->> +_require_test
->> +_require_scratch_dev_pool 2
->> +_require_scratch_dev_pool_equal_size
->> +
->> +
->> +_scratch_dev_pool_get 1
->> +_spare_dev_get
->> +_scratch_pool_mkfs >> $seqres.full 2>&1
->> +
->> +# Create nodatasum inode
->> +_scratch_mount "-o nodatasum"
->> +touch $SCRATCH_MNT/nodatasum_file
->> +_scratch_remount "datasum,compress"
->> +_pwrite_byte 0xcd 0 128K $SCRATCH_MNT/nodatasum_file > /dev/null
->> +
->> +# Write the compressed data back to disk
->> +sync
->> +
->> +# Replace the device
->> +_run_btrfs_util_prog replace start -Bf 1 $SPARE_DEV $SCRATCH_MNT
->> +
->> +_scratch_unmount
->> +
->> +_mount $SPARE_DEV $SCRATCH_MNT
->> +
->> +# Since now the compressed extent contains *UNCOMPRESSED* data,
->> reading it will
->> +# easily trigger a EIO error
->=20
-> =C2=A0This sentence is confusing. Are you referring to the bug?
+The changes here are on top the patch other btrfs_rm_device patches..
+ [PATCH 1/2] btrfs: fix parent in memory total_devices after seed delete
+ [PATCH 2/2] btrfs: fix missing superblock update in the device delete commit transaction
+But they are not related.
 
-Yes.
+ fs/btrfs/volumes.c | 18 ++++++------------
+ 1 file changed, 6 insertions(+), 12 deletions(-)
 
-> =C2=A0what is compressed extent containing uncompressed data?
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 60a6486090d3..75638e267d8b 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1953,7 +1953,7 @@ void btrfs_assign_next_active_device(struct btrfs_fs_info *fs_info,
+ }
+ 
+ int btrfs_rm_device(struct btrfs_fs_info *fs_info, const char *device_path,
+-		u64 devid)
++		    u64 devid)
+ {
+ 	struct btrfs_device *device;
+ 	struct btrfs_trans_handle *trans;
+@@ -1963,8 +1963,6 @@ int btrfs_rm_device(struct btrfs_fs_info *fs_info, const char *device_path,
+ 	u64 num_devices;
+ 	int ret = 0;
+ 
+-	mutex_lock(&uuid_mutex);
+-
+ 	num_devices = fs_devices->num_devices;
+ 	btrfs_dev_replace_read_lock(&fs_info->dev_replace);
+ 	if (btrfs_dev_replace_is_ongoing(&fs_info->dev_replace)) {
+@@ -1975,22 +1973,22 @@ int btrfs_rm_device(struct btrfs_fs_info *fs_info, const char *device_path,
+ 
+ 	ret = btrfs_check_raid_min_devices(fs_info, num_devices - 1);
+ 	if (ret)
+-		goto out;
++		return ret;
+ 
+ 	ret = btrfs_find_device_by_devspec(fs_info, devid, device_path,
+ 					   &device);
+ 	if (ret)
+-		goto out;
++		return ret;
+ 
+ 	if (test_bit(BTRFS_DEV_STATE_REPLACE_TGT, &device->dev_state)) {
+ 		ret = BTRFS_ERROR_DEV_TGT_REPLACE;
+-		goto out;
++		return ret;
+ 	}
+ 
+ 	if (test_bit(BTRFS_DEV_STATE_WRITEABLE, &device->dev_state) &&
+ 	    fs_info->fs_devices->rw_devices == 1) {
+ 		ret = BTRFS_ERROR_DEV_ONLY_WRITABLE;
+-		goto out;
++		return ret;
+ 	}
+ 
+ 	if (test_bit(BTRFS_DEV_STATE_WRITEABLE, &device->dev_state)) {
+@@ -2000,9 +1998,7 @@ int btrfs_rm_device(struct btrfs_fs_info *fs_info, const char *device_path,
+ 		mutex_unlock(&fs_info->chunk_mutex);
+ 	}
+ 
+-	mutex_unlock(&uuid_mutex);
+ 	ret = btrfs_shrink_device(device, 0);
+-	mutex_lock(&uuid_mutex);
+ 	if (ret)
+ 		goto error_undo;
+ 
+@@ -2092,8 +2088,6 @@ int btrfs_rm_device(struct btrfs_fs_info *fs_info, const char *device_path,
+ 	}
+ 
+ 	ret = btrfs_commit_transaction(trans);
+-out:
+-	mutex_unlock(&uuid_mutex);
+ 	return ret;
+ 
+ error_undo:
+@@ -2104,7 +2098,7 @@ int btrfs_rm_device(struct btrfs_fs_info *fs_info, const char *device_path,
+ 		device->fs_devices->rw_devices++;
+ 		mutex_unlock(&fs_info->chunk_mutex);
+ 	}
+-	goto out;
++	return ret;
+ }
+ 
+ void btrfs_rm_dev_replace_remove_srcdev(struct btrfs_fs_info *fs_info,
+-- 
+2.7.0
 
-The data extent has lzo compression flag.
-While its on-disk data is in fact the uncompressed data.
-
-With the test case, just check the on-disk data extent, you'll find
-that's all 0xcd, other the lzo compressed data.
-
-Thanks,
-Qu
-
->=20
-> Thanks, Anand
->=20
->> +cat $SCRATCH_MNT/nodatasum_file > /dev/null
->> +
->> +_scratch_unmount
->> +_spare_dev_put
->> +_scratch_dev_pool_put
->> +
->> +echo "Silence is golden"
->> +# success, all done
->> +status=3D0
->> +exit
->> diff --git a/tests/btrfs/161.out b/tests/btrfs/161.out
->> new file mode 100644
->> index 00000000..1752a243
->> --- /dev/null
->> +++ b/tests/btrfs/161.out
->> @@ -0,0 +1,2 @@
->> +QA output created by 161
->> +Silence is golden
->> diff --git a/tests/btrfs/group b/tests/btrfs/group
->> index f04ee8d5..f900b3d0 100644
->> --- a/tests/btrfs/group
->> +++ b/tests/btrfs/group
->> @@ -163,3 +163,4 @@
->> =C2=A0 158 auto quick raid scrub
->> =C2=A0 159 auto quick
->> =C2=A0 160 auto quick
->> +161 auto quick replace
->>
-> --=20
-> To unsubscribe from this list: send the line "unsubscribe fstests" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at=C2=A0 http://vger.kernel.org/majordomo-info.html=
-
-
-
---hnqEqOu2yWf9HaaFZY2hC0JIDXdNp8R1v--
-
---r2IM2rIkIcO23TJqIyDXH9aD8Eyj0Aljs
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlsWdmQACgkQwj2R86El
-/qhNJwf/cSfHDV/l9A347sTZbk6JipsjL0OsJSabRWcCeqSksggllezXFJpWVYja
-VPkyCQB0GyuZieGbiM0YtmnbxcDzSb8JG+ngAcOLuHlhaPxNG9ua77fOKE4A5WQL
-m4PrDGgev7k54u6KjbOJJCw343w6tVAqlOJVE7egIiuW5EK0bwWiDZQYcOtBOQO4
-kHwjehpUOvJhw0LWePIE0gNzdrZwtzix1EZ3XzFEEeXOd+j+rYSpOZfxPlCghXdW
-4wsiHmFwHR6yk15/HKBibp47jnb/bmLYnAqk397yb4n5npeQuu8hRYtN/E3x47P2
-LDA9/wQEPCc2w3hA/tnYjH23WOrGdQ==
-=rtFa
------END PGP SIGNATURE-----
-
---r2IM2rIkIcO23TJqIyDXH9aD8Eyj0Aljs--

@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:38363 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:45466 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750758AbeFAFPb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 1 Jun 2018 01:15:31 -0400
-Received: from relay2.suse.de (charybdis-ext-too.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 0EC40ADE5
-        for <linux-btrfs@vger.kernel.org>; Fri,  1 Jun 2018 05:15:30 +0000 (UTC)
+        id S1750861AbeFAI1u (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 1 Jun 2018 04:27:50 -0400
+Received: from relay1.suse.de (charybdis-ext-too.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 47468AE28
+        for <linux-btrfs@vger.kernel.org>; Fri,  1 Jun 2018 08:27:49 +0000 (UTC)
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH REBASED 1/1] btrfs-progs: inspect-dump-tree: Allow '-b|--block' to be specified multiple times
-Date: Fri,  1 Jun 2018 13:15:26 +0800
-Message-Id: <20180601051526.19564-2-wqu@suse.com>
-In-Reply-To: <20180601051526.19564-1-wqu@suse.com>
-References: <20180601051526.19564-1-wqu@suse.com>
+Subject: [PATCH v1.1] btrfs-progs: inspect-dump-tree: Allow '-b|--block' to be specified multiple times
+Date: Fri,  1 Jun 2018 16:27:46 +0800
+Message-Id: <20180601082746.3638-1-wqu@suse.com>
+In-Reply-To: <20180601051526.19564-2-wqu@suse.com>
+References: <20180601051526.19564-2-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -44,14 +44,14 @@ index e2db64660b9a..ba8529f57660 100644
  use with '-b', print all children tree blocks of '<block_num>'
  -t <tree_id>::::
 diff --git a/cmds-inspect-dump-tree.c b/cmds-inspect-dump-tree.c
-index 92a2a45b267e..abb9a2bcc7cb 100644
+index 92a2a45b267e..d67406141394 100644
 --- a/cmds-inspect-dump-tree.c
 +++ b/cmds-inspect-dump-tree.c
 @@ -198,11 +198,92 @@ const char * const cmd_inspect_dump_tree_usage[] = {
  	"-R|--backups           same as --roots plus print backup root info",
  	"-u|--uuid              print only the uuid tree",
  	"-b|--block <block_num> print info from the specified block only",
-+	"                       can be specified multile times",
++	"                       can be specified multiple times",
  	"-t|--tree <tree_id>    print only tree with the given id (string or number)",
  	"--follow               use with -b, to show all children tree blocks of <block_num>",
  	NULL

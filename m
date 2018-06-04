@@ -1,37 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:49654 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751637AbeFEONj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 5 Jun 2018 10:13:39 -0400
-Date: Tue, 5 Jun 2018 16:10:53 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.cz>
-Subject: Re: [PATCH] btrfs: Check error of btrfs_iget() in
+Received: from mgwym04.jp.fujitsu.com ([211.128.242.43]:56317 "EHLO
+        mgwym04.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751097AbeFDHmV (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Jun 2018 03:42:21 -0400
+Received: from g01jpfmpwyt02.exch.g01.fujitsu.local (g01jpfmpwyt02.exch.g01.fujitsu.local [10.128.193.56])
+        by yt-mxauth.gw.nic.fujitsu.com (Postfix) with ESMTP id 6CEF7AC01EF
+        for <linux-btrfs@vger.kernel.org>; Mon,  4 Jun 2018 16:42:15 +0900 (JST)
+From: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
+Subject: [PATCH] btrfs: Check error of btrfs_iget() in
  btrfs_search_path_in_tree_user()
-Message-ID: <20180605141052.GC3539@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
 References: <cover.1528076364.git.misono.tomohiro@jp.fujitsu.com>
- <c88f81e3-1dff-35a8-89ce-d9d3050be101@jp.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>, David Sterba <dsterba@suse.cz>
+Message-ID: <c88f81e3-1dff-35a8-89ce-d9d3050be101@jp.fujitsu.com>
+Date: Mon, 4 Jun 2018 16:41:07 +0900
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <c88f81e3-1dff-35a8-89ce-d9d3050be101@jp.fujitsu.com>
+In-Reply-To: <cover.1528076364.git.misono.tomohiro@jp.fujitsu.com>
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jun 04, 2018 at 04:41:07PM +0900, Misono Tomohiro wrote:
-> Signed-off-by: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
-> ---
-> 
-> Hi david,
-> 
-> It seems that v8 patch I sent last week is missed and commit in misc-next
-> tree is also a bit updated from v7, so I resend the fix as a separate patch.
-> 
-> Please fold this patch to current misc-next (head is the commit to be fixed:
-> "btrfs: Add unprivileged version of ino_lookup ioctl").
+Signed-off-by: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
+---
 
-Somehow it got lost on the way to the pull request branch, there were
-several other things to fix in the patch so I forgot that one. This also
-means I cannot fold it so it needs to be separate, based on this patch.
-Thanks.
+Hi david,
+
+It seems that v8 patch I sent last week is missed and commit in misc-next
+tree is also a bit updated from v7, so I resend the fix as a separate patch.
+
+Please fold this patch to current misc-next (head is the commit to be fixed:
+"btrfs: Add unprivileged version of ino_lookup ioctl").
+
+Thanks,
+Tomohiro Misono
+
+ fs/btrfs/ioctl.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index d29992f7dc63..5556e9ea2a4b 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -2438,6 +2438,10 @@ static int btrfs_search_path_in_tree_user(struct inode *inode,
+ 			}
+ 
+ 			temp_inode = btrfs_iget(sb, &key2, root, NULL);
++			if (IS_ERR(temp_inode)) {
++				ret = PTR_ERR(temp_inode);
++				goto out;
++			}
+ 			ret = inode_permission(temp_inode, MAY_READ | MAY_EXEC);
+ 			iput(temp_inode);
+ 			if (ret) {
+-- 
+2.14.3
+
+

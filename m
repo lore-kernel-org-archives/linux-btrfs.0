@@ -1,129 +1,166 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.21]:50429 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751497AbeFEFbA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 5 Jun 2018 01:31:00 -0400
-Subject: Re: off-by-one uncompressed invalid ram_bytes corruptions
-To: Steve Leung <sjleung@shaw.ca>, linux-btrfs@vger.kernel.org
-References: <b262fdfc-16b2-21d0-4d7b-745ef106b555@shaw.ca>
- <2dab827b-2c68-ea5c-6730-485037727c36@gmx.com>
- <0b8e2626-fb00-1e82-4f22-c400cea57533@shaw.ca>
- <5093c14b-5d6d-0827-0c04-bf2fd73af0bd@gmx.com>
- <e0854da8-0d3e-946a-5709-7a329175bad3@shaw.ca>
- <de65fc60-fc23-f7d5-1f58-52687d4859e8@gmx.com>
- <b9ac2d21-93aa-e69a-5994-a1839114cfbb@shaw.ca>
- <53d68efd-21fa-3e18-c35e-89a043605471@gmx.com>
- <f50de27a-bb18-ce30-8694-d5f76684846e@shaw.ca>
- <ac13c732-29a3-89c7-0fe2-f3222e7cb6ee@gmx.com> <87lgc2mrud.fsf@shaw.ca>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <5eac8b95-b6cd-87ef-2f16-573be326ef37@gmx.com>
-Date: Tue, 5 Jun 2018 13:30:50 +0800
+Received: from aserp2120.oracle.com ([141.146.126.78]:53632 "EHLO
+        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751786AbeFEKje (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Jun 2018 06:39:34 -0400
+Subject: Re: [PATCH] fstests: btrfs: Test if btrfs will corrupt nodatasum
+ compressed extent when replacing device
+To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
+        fstests@vger.kernel.org
+References: <20180601013448.22450-1-wqu@suse.com>
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <ab3e01d0-5171-eb6d-d7cc-a14ce1f55db3@oracle.com>
+Date: Tue, 5 Jun 2018 18:42:16 +0800
 MIME-Version: 1.0
-In-Reply-To: <87lgc2mrud.fsf@shaw.ca>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="NNnRjgR73xNWORTSe3eOPZG3nHjunhOPd"
+In-Reply-To: <20180601013448.22450-1-wqu@suse.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---NNnRjgR73xNWORTSe3eOPZG3nHjunhOPd
-Content-Type: multipart/mixed; boundary="7NyxJ8nnT7Wk0f7OUTPYjF3MTpWE6RKeT";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Steve Leung <sjleung@shaw.ca>, linux-btrfs@vger.kernel.org
-Message-ID: <5eac8b95-b6cd-87ef-2f16-573be326ef37@gmx.com>
-Subject: Re: off-by-one uncompressed invalid ram_bytes corruptions
-References: <b262fdfc-16b2-21d0-4d7b-745ef106b555@shaw.ca>
- <2dab827b-2c68-ea5c-6730-485037727c36@gmx.com>
- <0b8e2626-fb00-1e82-4f22-c400cea57533@shaw.ca>
- <5093c14b-5d6d-0827-0c04-bf2fd73af0bd@gmx.com>
- <e0854da8-0d3e-946a-5709-7a329175bad3@shaw.ca>
- <de65fc60-fc23-f7d5-1f58-52687d4859e8@gmx.com>
- <b9ac2d21-93aa-e69a-5994-a1839114cfbb@shaw.ca>
- <53d68efd-21fa-3e18-c35e-89a043605471@gmx.com>
- <f50de27a-bb18-ce30-8694-d5f76684846e@shaw.ca>
- <ac13c732-29a3-89c7-0fe2-f3222e7cb6ee@gmx.com> <87lgc2mrud.fsf@shaw.ca>
-In-Reply-To: <87lgc2mrud.fsf@shaw.ca>
-
---7NyxJ8nnT7Wk0f7OUTPYjF3MTpWE6RKeT
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
 
 
+On 06/01/2018 09:34 AM, Qu Wenruo wrote:
+> This is a long existing bug (from 2012) but exposed by a reporter
+> recently, that when compressed extent without data csum get written to
+> device-replace target device, the written data is in fact uncompressed data
+> other than the original compressed data.
+> 
+> And since btrfs still consider the data is compressed and will try to read it
+> as compressed, it can cause read error.
+> 
+> The root cause is located, and one RFC patch already sent to fix it,
+> titled "[PATCH RFC] btrfs: scrub: Don't use inode pages for device replace".
+> (The RFC is only for the extra possible way to fix the bug, the fix
+> itself should work without problem)
+> 
+> Reported-by: James Harvey <jamespharvey20@gmail.com>
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+>   tests/btrfs/161     | 91 +++++++++++++++++++++++++++++++++++++++++++++
+>   tests/btrfs/161.out |  2 +
+>   tests/btrfs/group   |  1 +
+>   3 files changed, 94 insertions(+)
+>   create mode 100755 tests/btrfs/161
+>   create mode 100644 tests/btrfs/161.out
+> 
+> diff --git a/tests/btrfs/161 b/tests/btrfs/161
+> new file mode 100755
+> index 00000000..d4a2b474
+> --- /dev/null
+> +++ b/tests/btrfs/161
+> @@ -0,0 +1,91 @@
+> +#! /bin/bash
+> +# FS QA Test 161
+> +#
+> +# Test if btrfs will corrupt compressed data extent without data csum
+> +# by replacing it with uncompressed data, when doing replacing device.
+> +#
+> +# This could be fixed by the following RFC patch:
+> +# "[PATCH RFC] btrfs: scrub: Don't use inode pages for device replace"
+> +#
+> +#-----------------------------------------------------------------------
+> +# Copyright (C) 2018 SUSE Linux Products GmbH. All Rights Reserved.
+> +#
+> +# This program is free software; you can redistribute it and/or
+> +# modify it under the terms of the GNU General Public License as
+> +# published by the Free Software Foundation.
+> +#
+> +# This program is distributed in the hope that it would be useful,
+> +# but WITHOUT ANY WARRANTY; without even the implied warranty of
+> +# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+> +# GNU General Public License for more details.
+> +#
+> +# You should have received a copy of the GNU General Public License
+> +# along with this program; if not, write the Free Software Foundation,
+> +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+> +#-----------------------------------------------------------------------
+> +#
+> +
+> +seq=`basename $0`
+> +seqres=$RESULT_DIR/$seq
+> +echo "QA output created by $seq"
+> +
+> +here=`pwd`
+> +tmp=/tmp/$$
+> +status=1	# failure is the default!
+> +trap "_cleanup; exit \$status" 0 1 2 3 15
+> +
+> +_cleanup()
+> +{
+> +	cd /
+> +	rm -f $tmp.*
+> +}
+> +
+> +# get standard environment, filters and checks
+> +. ./common/rc
+> +. ./common/filter
+> +
+> +# remove previous $seqres.full before test
+> +rm -f $seqres.full
+> +
+> +# real QA test starts here
+> +
+> +# Modify as appropriate.
+> +_supported_fs btrfs
+> +_supported_os Linux
+> +_require_test
+> +_require_scratch_dev_pool 2
+> +_require_scratch_dev_pool_equal_size
+> +
+> +
+> +_scratch_dev_pool_get 1
+> +_spare_dev_get
+> +_scratch_pool_mkfs >> $seqres.full 2>&1
+> +
+> +# Create nodatasum inode
+> +_scratch_mount "-o nodatasum"
+> +touch $SCRATCH_MNT/nodatasum_file
+> +_scratch_remount "datasum,compress"
+> +_pwrite_byte 0xcd 0 128K $SCRATCH_MNT/nodatasum_file > /dev/null
+> +
+> +# Write the compressed data back to disk
+> +sync
+> +
+> +# Replace the device
+> +_run_btrfs_util_prog replace start -Bf 1 $SPARE_DEV $SCRATCH_MNT
+> +
+> +_scratch_unmount
+> +
+> +_mount $SPARE_DEV $SCRATCH_MNT
+> +
+> +# Since now the compressed extent contains *UNCOMPRESSED* data, reading it will
+> +# easily trigger a EIO error
 
-On 2018=E5=B9=B405=E6=9C=8829=E6=97=A5 22:58, Steve Leung wrote:
-> Qu Wenruo <quwenruo.btrfs@gmx.com> writes:
->=20
->> On 2018=E5=B9=B405=E6=9C=8828=E6=97=A5 11:47, Steve Leung wrote:
->>> On 05/26/2018 06:57 PM, Qu Wenruo wrote:
->>>>
->>>>
-[snip]
->> Still nope.
->> What about encrypt it and upload it to some public storage provider li=
-ke
->> google drive/dropbox?
->=20
-> Ok, uploaded to Google Drive.  You'll need to request access to it.
->=20
->   https://drive.google.com/file/d/16NM1NVoMVgkJ_JiePi8VfAzit5_Onz2H/vie=
-w?usp=3Dsharing
->=20
-> sha256sum for the file should be:
->=20
->   ea0abc21fcbc3a71c68b7307d57b26763ac711bd3437a60e32db3144facfeb3f
-Sorry for the slow reply.
+  This sentence is confusing. Are you referring to the bug?
+  what is compressed extent containing uncompressed data?
 
-After all the testing, the result is a little surprising.
+Thanks, Anand
 
-It's indeed *CORRUPTED*! And tree-checker code exposed it.
-
-It's just btrfs-progs and kernel print-tree code doesn't use correct
-ram_bytes to output, thus pretty tricky to expose.
-
-The problem is the ram_bytes of that inlined extent, it's indeed larger
-than it should, just by one byte.
-
-I'm not completely sure how it's happened, but according to the
-timestamp it's 4 years ago and I think some kernel off-by-one error
-happens and fixed.
-
-And current kernel can handle it pretty well without reading out the
-last byte.
-However it's still a corruption.
-
-Although it's not a big problem, and can be fixed easily.
-I'll submit a btrfs-progs patch to allow btrfs-check to fix in this week.=
-
-
-Thanks,
-Qu
-
-> Thanks!
->=20
-> Steve
->=20
-
-
---7NyxJ8nnT7Wk0f7OUTPYjF3MTpWE6RKeT--
-
---NNnRjgR73xNWORTSe3eOPZG3nHjunhOPd
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlsWIAoACgkQwj2R86El
-/qhTRAgAp8sGaqn8Ni6nhcJWu6buGs01Wd1UZRQXG3p2ppOEkF2bA7MX7Ujx3TEA
-hdmvRQimEA4DCYWmIQh9UGINi6vJLlK6FBn7c3LDMlWHN5Byz4CXQxAmvNZYh7wa
-88SR4KG6nsk+7EBMYWGR25ysTfKq6YXcXUxSmWisXdmFtJKEuWxx7CQwoLx0e5Jp
-90emzzmpKoPJcZofFUF07UUR0Ej7jwvUshZGEAX0nsg4EY42xyStZN04cXAE+VDH
-JYpfCUYbgAid5zNy1PLUDviO2Kdc3FDAkOKS3c3DwGRYKimVsSWv38kjAJLRbCcV
-hqaDs5Z/CZKI7zjdd1qTeo91j1R6pQ==
-=7aGR
------END PGP SIGNATURE-----
-
---NNnRjgR73xNWORTSe3eOPZG3nHjunhOPd--
+> +cat $SCRATCH_MNT/nodatasum_file > /dev/null
+> +
+> +_scratch_unmount
+> +_spare_dev_put
+> +_scratch_dev_pool_put
+> +
+> +echo "Silence is golden"
+> +# success, all done
+> +status=0
+> +exit
+> diff --git a/tests/btrfs/161.out b/tests/btrfs/161.out
+> new file mode 100644
+> index 00000000..1752a243
+> --- /dev/null
+> +++ b/tests/btrfs/161.out
+> @@ -0,0 +1,2 @@
+> +QA output created by 161
+> +Silence is golden
+> diff --git a/tests/btrfs/group b/tests/btrfs/group
+> index f04ee8d5..f900b3d0 100644
+> --- a/tests/btrfs/group
+> +++ b/tests/btrfs/group
+> @@ -163,3 +163,4 @@
+>   158 auto quick raid scrub
+>   159 auto quick
+>   160 auto quick
+> +161 auto quick replace
+> 

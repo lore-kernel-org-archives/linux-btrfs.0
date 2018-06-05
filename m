@@ -1,116 +1,149 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.linuxfoundation.org ([140.211.169.12]:56054 "EHLO
-        mail.linuxfoundation.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751959AbeFEUDb (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Jun 2018 16:03:31 -0400
-Date: Tue, 5 Jun 2018 13:03:29 -0700
-From: Andrew Morton <akpm@linux-foundation.org>
-To: Chris Mason <clm@fb.com>, Michal Hocko <mhocko@suse.com>,
-        Tetsuo Handa <penguin-kernel@i-love.sakura.ne.jp>
+Received: from www262.sakura.ne.jp ([202.181.97.72]:53385 "EHLO
+        www262.sakura.ne.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752003AbeFEVWh (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Jun 2018 17:22:37 -0400
+Subject: Re: [Bug 199931] New: systemd/rtorrent file data corruption when
+ using echo 3 >/proc/sys/vm/drop_caches
+To: Andrew Morton <akpm@linux-foundation.org>, Chris Mason <clm@fb.com>,
+        Michal Hocko <mhocko@suse.com>
 Cc: bugzilla-daemon@bugzilla.kernel.org, bugzilla.kernel.org@plan9.de,
         linux-btrfs@vger.kernel.org, linux-mm@kvack.org,
         Jan Kara <jack@suse.cz>
-Subject: Re: [Bug 199931] New: systemd/rtorrent file data corruption when
- using echo 3 >/proc/sys/vm/drop_caches
-Message-Id: <20180605130329.f7069e01c5faacc08a10996c@linux-foundation.org>
-In-Reply-To: <bug-199931-27@https.bugzilla.kernel.org/>
 References: <bug-199931-27@https.bugzilla.kernel.org/>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+ <20180605130329.f7069e01c5faacc08a10996c@linux-foundation.org>
+From: Tetsuo Handa <penguin-kernel@i-love.sakura.ne.jp>
+Message-ID: <34c7a73b-15d5-4d67-fa7c-0630b30a4c1c@i-love.sakura.ne.jp>
+Date: Wed, 6 Jun 2018 06:22:25 +0900
+MIME-Version: 1.0
+In-Reply-To: <20180605130329.f7069e01c5faacc08a10996c@linux-foundation.org>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On 2018/06/06 5:03, Andrew Morton wrote:
+> 
+> (switched to email.  Please respond via emailed reply-to-all, not via the
+> bugzilla web interface).
+> 
+> On Tue, 05 Jun 2018 18:01:36 +0000 bugzilla-daemon@bugzilla.kernel.org wrote:
+> 
+>> https://bugzilla.kernel.org/show_bug.cgi?id=199931
+>>
+>>             Bug ID: 199931
+>>            Summary: systemd/rtorrent file data corruption when using echo
+>>                     3 >/proc/sys/vm/drop_caches
+> 
+> A long tale of woe here.  Chris, do you think the pagecache corruption
+> is a general thing, or is it possible that btrfs is contributing?
 
-(switched to email.  Please respond via emailed reply-to-all, not via the
-bugzilla web interface).
+According to timestamp of my testcases, I was observing corrupted-bytes issue upon OOM-kill
+(without using btrfs) as of 2017 Aug 11. Thus, I don't think that this is specific to btrfs.
+But I can't find which patch fixed this issue.
 
-On Tue, 05 Jun 2018 18:01:36 +0000 bugzilla-daemon@bugzilla.kernel.org wrote:
+----------------------------------------
+#define _GNU_SOURCE
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <sched.h>
+#include <signal.h>
 
-> https://bugzilla.kernel.org/show_bug.cgi?id=199931
-> 
->             Bug ID: 199931
->            Summary: systemd/rtorrent file data corruption when using echo
->                     3 >/proc/sys/vm/drop_caches
+#define NUMTHREADS 512
+#define STACKSIZE 8192
 
-A long tale of woe here.  Chris, do you think the pagecache corruption
-is a general thing, or is it possible that btrfs is contributing?
+static int pipe_fd[2] = { EOF, EOF };
+static int file_writer(void *i)
+{
+        char buffer[4096] = { };
+        int fd;
+        snprintf(buffer, sizeof(buffer), "/tmp/file.%lu", (unsigned long) i);
+        fd = open(buffer, O_WRONLY | O_CREAT | O_APPEND, 0600);
+        memset(buffer, 0xFF, sizeof(buffer));
+        read(pipe_fd[0], buffer, 1);
+        while (write(fd, buffer, sizeof(buffer)) == sizeof(buffer));
+        return 0;
+}
 
-Also, that 4.4 oom-killer regression sounds very serious.
+int main(int argc, char *argv[])
+{
+        char *buf = NULL;
+        unsigned long size;
+        unsigned long i;
+        char *stack;
+        if (pipe(pipe_fd))
+                return 1;
+        stack = malloc(STACKSIZE * NUMTHREADS);
+        for (size = 1048576; size < 512UL * (1 << 30); size <<= 1) {
+                char *cp = realloc(buf, size);
+                if (!cp) {
+                        size >>= 1;
+                        break;
+                }
+                buf = cp;
+        }
+        for (i = 0; i < NUMTHREADS; i++)
+                if (clone(file_writer, stack + (i + 1) * STACKSIZE,
+                          CLONE_THREAD | CLONE_SIGHAND | CLONE_VM | CLONE_FS |
+                          CLONE_FILES, (void *) i) == -1)
+                        break;
+        close(pipe_fd[1]);
+        /* Will cause OOM due to overcommit; if not use SysRq-f */
+        for (i = 0; i < size; i += 4096)
+                buf[i] = 0;
+        kill(-1, SIGKILL);
+        return 0;
+}
+----------------------------------------
 
->            Product: Memory Management
->            Version: 2.5
->     Kernel Version: 4.14.33
->           Hardware: All
->                 OS: Linux
->               Tree: Mainline
->             Status: NEW
->           Severity: normal
->           Priority: P1
->          Component: Other
->           Assignee: akpm@linux-foundation.org
->           Reporter: bugzilla.kernel.org@plan9.de
->         Regression: No
-> 
-> We found that
-> 
->    echo 3 >/proc/sys/vm/drop_caches
-> 
-> causes file data corruption. We found this because we saw systemd journal
-> corruption (https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=897266) and
-> tracked this to a cron job dropping caches every hour. The filesystem in use is
-> btrfs, but I don't know if it only happens with this filesystem. btrfs scrub
-> reports no problems, so this is not filesystem metdata corruption.
-> 
-> Basically:
-> 
->    # journalctl --verify
->    [everything fine at this point]
->    # echo 3 >/proc/sys/vm/drop_caches
->    # journalctl --verify
->    [journalctl now reporting corruption problems]
-> 
-> This is not always reproducible, but when deleting our journal, creating log
-> messages for a few hours and then doing the above manually has a ~50% chance of
-> corrupting the journal.
-> 
-> After investigating we found that rtorrent also suffers from corrupted
-> downloads when using the above echo - basically, downloading torrents is fine,
-> except when executing the above echo a few times during a download, after which
-> rtorrent very likely reports a failed hash check.
-> 
-> All of this is reproducible on two different boxes, so is unlikely to be a
-> hardware issue.
-> 
-> On one affected server we have over 50TB of files, many that have been created
-> with the cronjob in place, and none of them are corrupted (we have md5sums of
-> everything), so it seems to be related to something that systemd and rtorrent
-> do, rather than a generic file corruption issue.
-> 
-> I also was able to "cmp -l" two corrupted files with their correct version, and
-> the corruption manifests itself as streaks of ~100-3000 zero bytes instead of
-> the real data. The start offset sems random, but the end offset seems to be
-> always aligned to a 4K offset - speculating without the hindrance of knowledge
-> this feels like a race somewhere between writing to a mmapped area and freeing
-> it, or so.
-> 
-> Here is the output of cmp -l between a working and a corrupted file, for two
-> files:
-> 
-> http://data.plan9.de/01.cmp.txt
-> http://data.plan9.de/02.cmp.txt
-> 
-> We also have a mysql database with hundreds of gigabytes of writes per day on
-> one server which also does not seem to suffer from any corruption.
-> 
-> As for why we would do something silly as dropping the caches every hour (in a
-> cronjob), we started doing this recently because after kernel 4.4, we got
-> frequent OOM kills despite having gigabytes of available memory (e.g. 12GB in
-> use, 20GB page cache and 16GB empty swap and bang, mysql gets killed). We found
-> that that the debian 4.9 kernel is unusable, and 4.14 works, *iff* we use the
-> above as an hourly cron job, so we did that, and afterwards run into
-> rtorrent/journald corruption issues. Without the echo in place, mysql usually
-> gets oom-killed after a few days of uptime.
-> 
-> -- 
-> You are receiving this mail because:
-> You are the assignee for the bug.
+----------------------------------------
+#include <stdio.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+
+int main(int argc, char *argv[])
+{
+        char buffer2[64] = { };
+        int ret = 0;
+        int i;
+        for (i = 0; i < 1024; i++) {
+                 int flag = 0;
+                 int fd;
+                 unsigned int byte[256];
+                 int j;
+                 snprintf(buffer2, sizeof(buffer2), "/tmp/file.%u", i);
+                 fd = open(buffer2, O_RDONLY);
+                 if (fd == EOF)
+                         continue;
+                 lseek(fd, -4096, SEEK_END);
+                 memset(byte, 0, sizeof(byte));
+                 while (1) {
+                         static unsigned char buffer[1048576];
+                         int len = read(fd, (char *) buffer, sizeof(buffer));
+                         if (len <= 0)
+                                 break;
+                         for (j = 0; j < len; j++)
+                                 if (buffer[j] != 0xFF)
+                                         byte[buffer[j]]++;
+                 }
+                 close(fd);
+                 for (j = 0; j < 255; j++)
+                         if (byte[j]) {
+                                 printf("ERROR: %u %u in %s\n", byte[j], j, buffer2);
+                                 flag = 1;
+                         }
+                 if (flag == 0)
+                         unlink(buffer2);
+                 else
+                         ret = 1;
+        }
+        return ret;
+}
+----------------------------------------

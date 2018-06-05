@@ -1,149 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from www262.sakura.ne.jp ([202.181.97.72]:53385 "EHLO
-        www262.sakura.ne.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752003AbeFEVWh (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Jun 2018 17:22:37 -0400
-Subject: Re: [Bug 199931] New: systemd/rtorrent file data corruption when
- using echo 3 >/proc/sys/vm/drop_caches
-To: Andrew Morton <akpm@linux-foundation.org>, Chris Mason <clm@fb.com>,
-        Michal Hocko <mhocko@suse.com>
-Cc: bugzilla-daemon@bugzilla.kernel.org, bugzilla.kernel.org@plan9.de,
+Received: from mail.linuxfoundation.org ([140.211.169.12]:44308 "EHLO
+        mail.linuxfoundation.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751619AbeFEVir (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Jun 2018 17:38:47 -0400
+Date: Tue, 5 Jun 2018 14:38:46 -0700
+From: Andrew Morton <akpm@linux-foundation.org>
+To: Tetsuo Handa <penguin-kernel@i-love.sakura.ne.jp>
+Cc: Chris Mason <clm@fb.com>, Michal Hocko <mhocko@suse.com>,
+        bugzilla-daemon@bugzilla.kernel.org, bugzilla.kernel.org@plan9.de,
         linux-btrfs@vger.kernel.org, linux-mm@kvack.org,
         Jan Kara <jack@suse.cz>
+Subject: Re: [Bug 199931] New: systemd/rtorrent file data corruption when
+ using echo 3 >/proc/sys/vm/drop_caches
+Message-Id: <20180605143846.ec86323745ead25c74bc4c37@linux-foundation.org>
+In-Reply-To: <34c7a73b-15d5-4d67-fa7c-0630b30a4c1c@i-love.sakura.ne.jp>
 References: <bug-199931-27@https.bugzilla.kernel.org/>
- <20180605130329.f7069e01c5faacc08a10996c@linux-foundation.org>
-From: Tetsuo Handa <penguin-kernel@i-love.sakura.ne.jp>
-Message-ID: <34c7a73b-15d5-4d67-fa7c-0630b30a4c1c@i-love.sakura.ne.jp>
-Date: Wed, 6 Jun 2018 06:22:25 +0900
-MIME-Version: 1.0
-In-Reply-To: <20180605130329.f7069e01c5faacc08a10996c@linux-foundation.org>
-Content-Type: text/plain; charset=utf-8
+        <20180605130329.f7069e01c5faacc08a10996c@linux-foundation.org>
+        <34c7a73b-15d5-4d67-fa7c-0630b30a4c1c@i-love.sakura.ne.jp>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2018/06/06 5:03, Andrew Morton wrote:
+On Wed, 6 Jun 2018 06:22:25 +0900 Tetsuo Handa <penguin-kernel@i-love.sakura.ne.jp> wrote:
+
+> On 2018/06/06 5:03, Andrew Morton wrote:
+> > 
+> > (switched to email.  Please respond via emailed reply-to-all, not via the
+> > bugzilla web interface).
+> > 
+> > On Tue, 05 Jun 2018 18:01:36 +0000 bugzilla-daemon@bugzilla.kernel.org wrote:
+> > 
+> >> https://bugzilla.kernel.org/show_bug.cgi?id=199931
+> >>
+> >>             Bug ID: 199931
+> >>            Summary: systemd/rtorrent file data corruption when using echo
+> >>                     3 >/proc/sys/vm/drop_caches
+> > 
+> > A long tale of woe here.  Chris, do you think the pagecache corruption
+> > is a general thing, or is it possible that btrfs is contributing?
 > 
-> (switched to email.  Please respond via emailed reply-to-all, not via the
-> bugzilla web interface).
-> 
-> On Tue, 05 Jun 2018 18:01:36 +0000 bugzilla-daemon@bugzilla.kernel.org wrote:
-> 
->> https://bugzilla.kernel.org/show_bug.cgi?id=199931
->>
->>             Bug ID: 199931
->>            Summary: systemd/rtorrent file data corruption when using echo
->>                     3 >/proc/sys/vm/drop_caches
-> 
-> A long tale of woe here.  Chris, do you think the pagecache corruption
-> is a general thing, or is it possible that btrfs is contributing?
+> According to timestamp of my testcases, I was observing corrupted-bytes issue upon OOM-kill
+> (without using btrfs) as of 2017 Aug 11. Thus, I don't think that this is specific to btrfs.
+> But I can't find which patch fixed this issue.
 
-According to timestamp of my testcases, I was observing corrupted-bytes issue upon OOM-kill
-(without using btrfs) as of 2017 Aug 11. Thus, I don't think that this is specific to btrfs.
-But I can't find which patch fixed this issue.
+That sounds different.  Here, the corruption is caused by performing
+drop_caches, not by an oom-killing.
 
-----------------------------------------
-#define _GNU_SOURCE
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <sched.h>
-#include <signal.h>
-
-#define NUMTHREADS 512
-#define STACKSIZE 8192
-
-static int pipe_fd[2] = { EOF, EOF };
-static int file_writer(void *i)
-{
-        char buffer[4096] = { };
-        int fd;
-        snprintf(buffer, sizeof(buffer), "/tmp/file.%lu", (unsigned long) i);
-        fd = open(buffer, O_WRONLY | O_CREAT | O_APPEND, 0600);
-        memset(buffer, 0xFF, sizeof(buffer));
-        read(pipe_fd[0], buffer, 1);
-        while (write(fd, buffer, sizeof(buffer)) == sizeof(buffer));
-        return 0;
-}
-
-int main(int argc, char *argv[])
-{
-        char *buf = NULL;
-        unsigned long size;
-        unsigned long i;
-        char *stack;
-        if (pipe(pipe_fd))
-                return 1;
-        stack = malloc(STACKSIZE * NUMTHREADS);
-        for (size = 1048576; size < 512UL * (1 << 30); size <<= 1) {
-                char *cp = realloc(buf, size);
-                if (!cp) {
-                        size >>= 1;
-                        break;
-                }
-                buf = cp;
-        }
-        for (i = 0; i < NUMTHREADS; i++)
-                if (clone(file_writer, stack + (i + 1) * STACKSIZE,
-                          CLONE_THREAD | CLONE_SIGHAND | CLONE_VM | CLONE_FS |
-                          CLONE_FILES, (void *) i) == -1)
-                        break;
-        close(pipe_fd[1]);
-        /* Will cause OOM due to overcommit; if not use SysRq-f */
-        for (i = 0; i < size; i += 4096)
-                buf[i] = 0;
-        kill(-1, SIGKILL);
-        return 0;
-}
-----------------------------------------
-
-----------------------------------------
-#include <stdio.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
-
-int main(int argc, char *argv[])
-{
-        char buffer2[64] = { };
-        int ret = 0;
-        int i;
-        for (i = 0; i < 1024; i++) {
-                 int flag = 0;
-                 int fd;
-                 unsigned int byte[256];
-                 int j;
-                 snprintf(buffer2, sizeof(buffer2), "/tmp/file.%u", i);
-                 fd = open(buffer2, O_RDONLY);
-                 if (fd == EOF)
-                         continue;
-                 lseek(fd, -4096, SEEK_END);
-                 memset(byte, 0, sizeof(byte));
-                 while (1) {
-                         static unsigned char buffer[1048576];
-                         int len = read(fd, (char *) buffer, sizeof(buffer));
-                         if (len <= 0)
-                                 break;
-                         for (j = 0; j < len; j++)
-                                 if (buffer[j] != 0xFF)
-                                         byte[buffer[j]]++;
-                 }
-                 close(fd);
-                 for (j = 0; j < 255; j++)
-                         if (byte[j]) {
-                                 printf("ERROR: %u %u in %s\n", byte[j], j, buffer2);
-                                 flag = 1;
-                         }
-                 if (flag == 0)
-                         unlink(buffer2);
-                 else
-                         ret = 1;
-        }
-        return ret;
-}
-----------------------------------------

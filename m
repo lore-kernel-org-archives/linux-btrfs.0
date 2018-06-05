@@ -1,73 +1,106 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:56815 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S933579AbeFKRk6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 11 Jun 2018 13:40:58 -0400
-Date: Mon, 11 Jun 2018 19:38:05 +0200
-From: David Sterba <dsterba@suse.cz>
-To: syzbot <syzbot+abf707d7ccbb3244f34e@syzkaller.appspotmail.com>
-Cc: linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
-        syzkaller-bugs@googlegroups.com, viro@zeniv.linux.org.uk,
-        linux-btrfs@vger.kernel.org
-Subject: Re: KASAN: use-after-free Read in getname_kernel
-Message-ID: <20180611173805.wx2varcyneqrvvsp@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <00000000000037c4d2056e5740c3@google.com>
+Received: from mail-it0-f70.google.com ([209.85.214.70]:50959 "EHLO
+        mail-it0-f70.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751894AbeFENRE (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Jun 2018 09:17:04 -0400
+Received: by mail-it0-f70.google.com with SMTP id v3-v6so2291473itb.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 05 Jun 2018 06:17:03 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <00000000000037c4d2056e5740c3@google.com>
+Date: Tue, 05 Jun 2018 06:17:03 -0700
+Message-ID: <000000000000b9e25a056de4dd10@google.com>
+Subject: WARNING in close_fs_devices
+From: syzbot <syzbot+ceb2606025ec1cc3479c@syzkaller.appspotmail.com>
+To: clm@fb.com, dsterba@suse.com, jbacik@fb.com, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org, syzkaller-bugs@googlegroups.com
+Content-Type: text/plain; charset="UTF-8"; format=flowed; delsp=yes
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Jun 10, 2018 at 10:45:02PM -0700, syzbot wrote:
-> Hello,
-> 
-> syzbot found the following crash on:
-> 
-> HEAD commit:    3ca24ce9ff76 Merge branch 'proc-cmdline'
-> git tree:       upstream
-> console output: https://syzkaller.appspot.com/x/log.txt?x=15ed37d7800000
-> kernel config:  https://syzkaller.appspot.com/x/.config?x=314f2150f36c16ca
-> dashboard link: https://syzkaller.appspot.com/bug?extid=abf707d7ccbb3244f34e
-> compiler:       gcc (GCC) 8.0.1 20180413 (experimental)
-> 
-> Unfortunately, I don't have any reproducer for this crash yet.
-> 
-> IMPORTANT: if you fix the bug, please add the following tag to the commit:
-> Reported-by: syzbot+abf707d7ccbb3244f34e@syzkaller.appspotmail.com
-> 
-> ==================================================================
-> BUG: KASAN: use-after-free in memcpy include/linux/string.h:345 [inline]
-> BUG: KASAN: use-after-free in getname_kernel+0x123/0x370 fs/namei.c:241
-> Read of size 11 at addr ffff8801d8053310 by task syz-executor5/15925
-> 
-> CPU: 0 PID: 15925 Comm: syz-executor5 Not tainted 4.17.0+ #94
-> Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS
-> Google 01/01/2011
-> Call Trace:
->  __dump_stack lib/dump_stack.c:77 [inline]
->  dump_stack+0x1b9/0x294 lib/dump_stack.c:113
->  print_address_description+0x6c/0x20b mm/kasan/report.c:256
->  kasan_report_error mm/kasan/report.c:354 [inline]
->  kasan_report.cold.7+0x242/0x2fe mm/kasan/report.c:412
->  check_memory_region_inline mm/kasan/kasan.c:260 [inline]
->  check_memory_region+0x13e/0x1b0 mm/kasan/kasan.c:267
->  memcpy+0x23/0x50 mm/kasan/kasan.c:302
->  memcpy include/linux/string.h:345 [inline]
->  getname_kernel+0x123/0x370 fs/namei.c:241
->  kern_path+0x1e/0x40 fs/namei.c:2410
->  lookup_bdev+0xfa/0x240 fs/block_dev.c:2084
->  blkdev_get_by_path+0x1f/0xe0 fs/block_dev.c:1687
->  btrfs_get_bdev_and_sb+0x38/0x300 fs/btrfs/volumes.c:392
->  btrfs_open_one_device fs/btrfs/volumes.c:695 [inline]
->  open_fs_devices+0x6a5/0xc60 fs/btrfs/volumes.c:1112
->  btrfs_open_devices+0xc0/0xd0 fs/btrfs/volumes.c:1155
+Hello,
 
-I think it's another manifestation of the bug syzbot reported against
-btrfs_open_devices
+syzbot found the following crash on:
 
-https://lkml.kernel.org/r/000000000000832e70056df8fb38@google.com
+HEAD commit:    716a685fdb89 Merge branch 'x86-hyperv-for-linus' of git://..
+git tree:       upstream
+console output: https://syzkaller.appspot.com/x/log.txt?x=15c5f46f800000
+kernel config:  https://syzkaller.appspot.com/x/.config?x=4f65cd4286737868
+dashboard link: https://syzkaller.appspot.com/bug?extid=ceb2606025ec1cc3479c
+compiler:       gcc (GCC) 8.0.1 20180413 (experimental)
+syzkaller repro:https://syzkaller.appspot.com/x/repro.syz?x=1251799f800000
+C reproducer:   https://syzkaller.appspot.com/x/repro.c?x=177f3edf800000
 
-Currently proposed fix is to revert
-542c5908abfe84f7b4c1717492ecc92ea0ea328d, that's going to be merged post
-rc1.
+IMPORTANT: if you fix the bug, please add the following tag to the commit:
+Reported-by: syzbot+ceb2606025ec1cc3479c@syzkaller.appspotmail.com
+
+WARNING: CPU: 1 PID: 4499 at fs/btrfs/volumes.c:1071  
+close_fs_devices+0xbc7/0xfa0 fs/btrfs/volumes.c:1071
+Kernel panic - not syncing: panic_on_warn set ...
+
+CPU: 1 PID: 4499 Comm: syz-executor921 Not tainted 4.17.0+ #84
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS  
+Google 01/01/2011
+Call Trace:
+  __dump_stack lib/dump_stack.c:77 [inline]
+  dump_stack+0x1b9/0x294 lib/dump_stack.c:113
+  panic+0x22f/0x4de kernel/panic.c:184
+  __warn.cold.8+0x163/0x1b3 kernel/panic.c:536
+  report_bug+0x252/0x2d0 lib/bug.c:186
+  fixup_bug arch/x86/kernel/traps.c:178 [inline]
+  do_error_trap+0x1fc/0x4d0 arch/x86/kernel/traps.c:296
+  do_invalid_op+0x1b/0x20 arch/x86/kernel/traps.c:316
+  invalid_op+0x14/0x20 arch/x86/entry/entry_64.S:992
+RIP: 0010:close_fs_devices+0xbc7/0xfa0 fs/btrfs/volumes.c:1071
+Code: a0 b4 fe 0f 0b e8 89 a0 b4 fe 0f 0b 48 89 f7 e8 8f 10 f1 fe e9 f6 f5  
+ff ff e8 75 a0 b4 fe 0f 0b e9 fd fd ff ff e8 69 a0 b4 fe <0f> 0b e9 a8 fd  
+ff ff 48 8b bd 58 fd ff ff e8 26 11 f1 fe e9 35 fd
+RSP: 0018:ffff8801ad45e530 EFLAGS: 00010293
+RAX: ffff8801adb96200 RBX: 0000000000000001 RCX: ffffffff82c4ae3d
+RDX: 0000000000000000 RSI: ffffffff82c4b097 RDI: 0000000000000007
+RBP: ffff8801ad45e830 R08: ffff8801adb96200 R09: 0000000000000006
+R10: ffff8801adb96200 R11: 0000000000000000 R12: ffffed0035a8bcc1
+R13: 1ffff10035a8bcf9 R14: ffff8801ad45e7c8 R15: ffff8801b4431688
+  btrfs_close_devices+0x29/0x150 fs/btrfs/volumes.c:1085
+  open_ctree+0x589/0x7898 fs/btrfs/disk-io.c:3358
+  btrfs_fill_super fs/btrfs/super.c:1202 [inline]
+  btrfs_mount_root+0x16df/0x1e70 fs/btrfs/super.c:1593
+  mount_fs+0xae/0x328 fs/super.c:1277
+  vfs_kern_mount.part.34+0xd4/0x4d0 fs/namespace.c:1037
+  vfs_kern_mount+0x40/0x60 fs/namespace.c:1027
+  btrfs_mount+0x4a1/0x213e fs/btrfs/super.c:1661
+  mount_fs+0xae/0x328 fs/super.c:1277
+  vfs_kern_mount.part.34+0xd4/0x4d0 fs/namespace.c:1037
+  vfs_kern_mount fs/namespace.c:1027 [inline]
+  do_new_mount fs/namespace.c:2518 [inline]
+  do_mount+0x564/0x30b0 fs/namespace.c:2848
+  ksys_mount+0x12d/0x140 fs/namespace.c:3064
+  __do_sys_mount fs/namespace.c:3078 [inline]
+  __se_sys_mount fs/namespace.c:3075 [inline]
+  __x64_sys_mount+0xbe/0x150 fs/namespace.c:3075
+  do_syscall_64+0x1b1/0x800 arch/x86/entry/common.c:287
+  entry_SYSCALL_64_after_hwframe+0x49/0xbe
+RIP: 0033:0x4431da
+Code: b8 08 00 00 00 0f 05 48 3d 01 f0 ff ff 0f 83 fd e5 fb ff c3 66 2e 0f  
+1f 84 00 00 00 00 00 66 90 49 89 ca b8 a5 00 00 00 0f 05 <48> 3d 01 f0 ff  
+ff 0f 83 da e5 fb ff c3 66 0f 1f 84 00 00 00 00 00
+RSP: 002b:00007ffe426bfd28 EFLAGS: 00000286 ORIG_RAX: 00000000000000a5
+RAX: ffffffffffffffda RBX: 0000000000000003 RCX: 00000000004431da
+RDX: 0000000020000000 RSI: 0000000020000100 RDI: 00007ffe426bfd40
+RBP: 0000000000000004 R08: 00000000200006c0 R09: 000000000000000a
+R10: 0000000000000001 R11: 0000000000000286 R12: 0000000000000010
+R13: 0000000008100000 R14: 0031656c69662f2e R15: fe03f80fe03f80ff
+Dumping ftrace buffer:
+    (ftrace buffer empty)
+Kernel Offset: disabled
+Rebooting in 86400 seconds..
+
+
+---
+This bug is generated by a bot. It may contain errors.
+See https://goo.gl/tpsmEJ for more information about syzbot.
+syzbot engineers can be reached at syzkaller@googlegroups.com.
+
+syzbot will keep track of this bug report. See:
+https://goo.gl/tpsmEJ#bug-status-tracking for how to communicate with  
+syzbot.
+syzbot can test patches for this bug, for details see:
+https://goo.gl/tpsmEJ#testing-patches

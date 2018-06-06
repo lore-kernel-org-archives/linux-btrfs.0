@@ -1,127 +1,118 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pg0-f67.google.com ([74.125.83.67]:37018 "EHLO
-        mail-pg0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751907AbeFFOW0 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Jun 2018 10:22:26 -0400
-Date: Wed, 6 Jun 2018 19:54:44 +0530
-From: Souptick Joarder <jrdr.linux@gmail.com>
-To: willy@infradead.org, clm@fb.com, jbacik@fb.com, dsterba@suse.com,
-        dsterba@suse.cz
-Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: [PATCH v2] fs: btrfs: Change return type to vm_fault_t
-Message-ID: <20180606142444.GA3806@jordon-HP-15-Notebook-PC>
+Received: from mail-io0-f197.google.com ([209.85.223.197]:41574 "EHLO
+        mail-io0-f197.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751912AbeFFNbD (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Jun 2018 09:31:03 -0400
+Received: by mail-io0-f197.google.com with SMTP id v4-v6so4775784iol.8
+        for <linux-btrfs@vger.kernel.org>; Wed, 06 Jun 2018 06:31:03 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Date: Wed, 06 Jun 2018 06:31:02 -0700
+Message-ID: <00000000000096009b056df92dc1@google.com>
+Subject: kernel BUG at fs/btrfs/volumes.c:LINE!
+From: syzbot <syzbot+5b658d997a83984507a6@syzkaller.appspotmail.com>
+To: clm@fb.com, dsterba@suse.com, jbacik@fb.com, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org, syzkaller-bugs@googlegroups.com
+Content-Type: text/plain; charset="UTF-8"; format=flowed; delsp=yes
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Use new return type vm_fault_t for fault handler. For
-now, this is just documenting that the function returns
-a VM_FAULT value rather than an errno. Once all instances
-are converted, vm_fault_t will become a distinct type.
+Hello,
 
-Ref-> commit 1c8f422059ae ("mm: change return type to vm_fault_t")
+syzbot found the following crash on:
 
-vmf_error() is the newly introduce inline function
-in 4.17-rc6.
+HEAD commit:    af6c5d5e01ad Merge branch 'for-4.18' of git://git.kernel.o..
+git tree:       upstream
+console output: https://syzkaller.appspot.com/x/log.txt?x=15f700af800000
+kernel config:  https://syzkaller.appspot.com/x/.config?x=12ff770540994680
+dashboard link: https://syzkaller.appspot.com/bug?extid=5b658d997a83984507a6
+compiler:       gcc (GCC) 8.0.1 20180413 (experimental)
 
-Signed-off-by: Souptick Joarder <jrdr.linux@gmail.com>
+Unfortunately, I don't have any reproducer for this crash yet.
+
+IMPORTANT: if you fix the bug, please add the following tag to the commit:
+Reported-by: syzbot+5b658d997a83984507a6@syzkaller.appspotmail.com
+
+RDX: 0000000020000080 RSI: 0000000020000040 RDI: 00007f787067fbf0
+RBP: 0000000000000001 R08: 00000000200000c0 R09: 0000000020000080
+R10: 0000000000000000 R11: 0000000000000202 R12: 0000000000000014
+R13: 0000000000000001 R14: 0000000000700008 R15: 0000000000000043
+------------[ cut here ]------------
+kernel BUG at fs/btrfs/volumes.c:1032!
+invalid opcode: 0000 [#1] SMP KASAN
+CPU: 1 PID: 22303 Comm: syz-executor1 Not tainted 4.17.0+ #86
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS  
+Google 01/01/2011
+RIP: 0010:btrfs_prepare_close_one_device fs/btrfs/volumes.c:1032 [inline]
+RIP: 0010:close_fs_devices+0xba7/0xfa0 fs/btrfs/volumes.c:1052
+Code: 56 18 48 89 f8 48 c1 e8 03 80 3c 18 00 0f 85 2b 03 00 00 49 83 6c 24  
+30 01 e9 25 f8 ff ff e8 90 f4 b3 fe 0f 0b e8 89 f4 b3 fe <0f> 0b 48 89 f7  
+e8 ef 64 f0 fe e9 f6 f5 ff ff e8 75 f4 b3 fe 0f 0b
+RSP: 0018:ffff8801af6ff050 EFLAGS: 00010246
+RAX: 0000000000040000 RBX: dffffc0000000000 RCX: ffffc9000c70c000
+RDX: 0000000000040000 RSI: ffffffff82c56437 RDI: 0000000000000286
+RBP: ffff8801af6ff350 R08: ffffed003b5e46d7 R09: ffffed003b5e46d6
+R10: ffffed003b5e46d6 R11: ffff8801daf236b3 R12: ffff8801c58ac190
+R13: 0000000000000000 R14: ffff8801b1a6a940 R15: ffff8801b4d7d680
+FS:  00007f7870680700(0000) GS:ffff8801daf00000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000000000704094 CR3: 00000001c51e8000 CR4: 00000000001406e0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+  btrfs_close_devices+0x29/0x150 fs/btrfs/volumes.c:1085
+  btrfs_mount_root+0x1419/0x1e70 fs/btrfs/super.c:1610
+  mount_fs+0xae/0x328 fs/super.c:1277
+  vfs_kern_mount.part.34+0xd4/0x4d0 fs/namespace.c:1037
+  vfs_kern_mount+0x40/0x60 fs/namespace.c:1027
+  btrfs_mount+0x4a1/0x213e fs/btrfs/super.c:1661
+  mount_fs+0xae/0x328 fs/super.c:1277
+  vfs_kern_mount.part.34+0xd4/0x4d0 fs/namespace.c:1037
+  vfs_kern_mount fs/namespace.c:1027 [inline]
+  do_new_mount fs/namespace.c:2518 [inline]
+  do_mount+0x564/0x30b0 fs/namespace.c:2848
+  ksys_mount+0x12d/0x140 fs/namespace.c:3064
+  __do_sys_mount fs/namespace.c:3078 [inline]
+  __se_sys_mount fs/namespace.c:3075 [inline]
+  __x64_sys_mount+0xbe/0x150 fs/namespace.c:3075
+  do_syscall_64+0x1b1/0x800 arch/x86/entry/common.c:287
+  entry_SYSCALL_64_after_hwframe+0x49/0xbe
+RIP: 0033:0x45843a
+Code: b8 a6 00 00 00 0f 05 48 3d 01 f0 ff ff 0f 83 dd 8f fb ff c3 66 2e 0f  
+1f 84 00 00 00 00 00 66 90 49 89 ca b8 a5 00 00 00 0f 05 <48> 3d 01 f0 ff  
+ff 0f 83 ba 8f fb ff c3 66 0f 1f 84 00 00 00 00 00
+RSP: 002b:00007f787067fba8 EFLAGS: 00000202 ORIG_RAX: 00000000000000a5
+RAX: ffffffffffffffda RBX: 0000000020000080 RCX: 000000000045843a
+RDX: 0000000020000080 RSI: 0000000020000040 RDI: 00007f787067fbf0
+RBP: 0000000000000001 R08: 00000000200000c0 R09: 0000000020000080
+R10: 0000000000000000 R11: 0000000000000202 R12: 0000000000000014
+R13: 0000000000000001 R14: 0000000000700008 R15: 0000000000000043
+Modules linked in:
+Dumping ftrace buffer:
+    (ftrace buffer empty)
+---[ end trace 383b0406a01f2edd ]---
+RIP: 0010:btrfs_prepare_close_one_device fs/btrfs/volumes.c:1032 [inline]
+RIP: 0010:close_fs_devices+0xba7/0xfa0 fs/btrfs/volumes.c:1052
+Code: 56 18 48 89 f8 48 c1 e8 03 80 3c 18 00 0f 85 2b 03 00 00 49 83 6c 24  
+30 01 e9 25 f8 ff ff e8 90 f4 b3 fe 0f 0b e8 89 f4 b3 fe <0f> 0b 48 89 f7  
+e8 ef 64 f0 fe e9 f6 f5 ff ff e8 75 f4 b3 fe 0f 0b
+RSP: 0018:ffff8801af6ff050 EFLAGS: 00010246
+RAX: 0000000000040000 RBX: dffffc0000000000 RCX: ffffc9000c70c000
+RDX: 0000000000040000 RSI: ffffffff82c56437 RDI: 0000000000000286
+RBP: ffff8801af6ff350 R08: ffffed003b5e46d7 R09: ffffed003b5e46d6
+R10: ffffed003b5e46d6 R11: ffff8801daf236b3 R12: ffff8801c58ac190
+R13: 0000000000000000 R14: ffff8801b1a6a940 R15: ffff8801b4d7d680
+FS:  00007f7870680700(0000) GS:ffff8801daf00000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000000000704094 CR3: 00000001c51e8000 CR4: 00000000001406e0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+
+
 ---
-v2: ret2 is the new temp variable to handle
-    temporary return value within btrfs_page_mkwrite
+This bug is generated by a bot. It may contain errors.
+See https://goo.gl/tpsmEJ for more information about syzbot.
+syzbot engineers can be reached at syzkaller@googlegroups.com.
 
- fs/btrfs/ctree.h |  2 +-
- fs/btrfs/inode.c | 26 ++++++++++++--------------
- 2 files changed, 13 insertions(+), 15 deletions(-)
-
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 0d422c9..1f52d9fd 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3218,7 +3218,7 @@ int btrfs_merge_bio_hook(struct page *page, unsigned long offset,
- 			 size_t size, struct bio *bio,
- 			 unsigned long bio_flags);
- void btrfs_set_range_writeback(void *private_data, u64 start, u64 end);
--int btrfs_page_mkwrite(struct vm_fault *vmf);
-+vm_fault_t btrfs_page_mkwrite(struct vm_fault *vmf);
- int btrfs_readpage(struct file *file, struct page *page);
- void btrfs_evict_inode(struct inode *inode);
- int btrfs_write_inode(struct inode *inode, struct writeback_control *wbc);
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 0b86cf1..d9c21e0 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -8873,7 +8873,7 @@ static void btrfs_invalidatepage(struct page *page, unsigned int offset,
-  * beyond EOF, then the page is guaranteed safe against truncation until we
-  * unlock the page.
-  */
--int btrfs_page_mkwrite(struct vm_fault *vmf)
-+vm_fault_t btrfs_page_mkwrite(struct vm_fault *vmf)
- {
- 	struct page *page = vmf->page;
- 	struct inode *inode = file_inode(vmf->vma->vm_file);
-@@ -8885,8 +8885,9 @@ int btrfs_page_mkwrite(struct vm_fault *vmf)
- 	char *kaddr;
- 	unsigned long zero_start;
- 	loff_t size;
--	int ret;
-+	int ret2;
- 	int reserved = 0;
-+	vm_fault_t ret;
- 	u64 reserved_space;
- 	u64 page_start;
- 	u64 page_end;
-@@ -8907,17 +8908,14 @@ int btrfs_page_mkwrite(struct vm_fault *vmf)
- 	 * end up waiting indefinitely to get a lock on the page currently
- 	 * being processed by btrfs_page_mkwrite() function.
- 	 */
--	ret = btrfs_delalloc_reserve_space(inode, &data_reserved, page_start,
-+	ret2 = btrfs_delalloc_reserve_space(inode, &data_reserved, page_start,
- 					   reserved_space);
--	if (!ret) {
--		ret = file_update_time(vmf->vma->vm_file);
-+	if (!ret2) {
-+		ret2 = file_update_time(vmf->vma->vm_file);
- 		reserved = 1;
- 	}
--	if (ret) {
--		if (ret == -ENOMEM)
--			ret = VM_FAULT_OOM;
--		else /* -ENOSPC, -EIO, etc */
--			ret = VM_FAULT_SIGBUS;
-+	if (ret2) {
-+		ret = vmf_error(ret2);
- 		if (reserved)
- 			goto out;
- 		goto out_noreserve;
-@@ -8976,15 +8974,15 @@ int btrfs_page_mkwrite(struct vm_fault *vmf)
- 			  EXTENT_DO_ACCOUNTING | EXTENT_DEFRAG,
- 			  0, 0, &cached_state);
- 
--	ret = btrfs_set_extent_delalloc(inode, page_start, end, 0,
-+	ret2 = btrfs_set_extent_delalloc(inode, page_start, end, 0,
- 					&cached_state, 0);
--	if (ret) {
-+	if (ret2) {
- 		unlock_extent_cached(io_tree, page_start, page_end,
- 				     &cached_state);
- 		ret = VM_FAULT_SIGBUS;
- 		goto out_unlock;
- 	}
--	ret = 0;
-+	ret2 = 0;
- 
- 	/* page is wholly or partially inside EOF */
- 	if (page_start + PAGE_SIZE > size)
-@@ -9009,7 +9007,7 @@ int btrfs_page_mkwrite(struct vm_fault *vmf)
- 	unlock_extent_cached(io_tree, page_start, page_end, &cached_state);
- 
- out_unlock:
--	if (!ret) {
-+	if (!ret2) {
- 		btrfs_delalloc_release_extents(BTRFS_I(inode), PAGE_SIZE, true);
- 		sb_end_pagefault(inode->i_sb);
- 		extent_changeset_free(data_reserved);
--- 
-1.9.1
-
+syzbot will keep track of this bug report. See:
+https://goo.gl/tpsmEJ#bug-status-tracking for how to communicate with  
+syzbot.

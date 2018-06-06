@@ -1,75 +1,120 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-out-no.shaw.ca ([64.59.134.9]:49162 "EHLO
-        smtp-out-no.shaw.ca" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750713AbeFFEGO (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Jun 2018 00:06:14 -0400
-Subject: Re: off-by-one uncompressed invalid ram_bytes corruptions
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
-References: <b262fdfc-16b2-21d0-4d7b-745ef106b555@shaw.ca>
- <2dab827b-2c68-ea5c-6730-485037727c36@gmx.com>
- <0b8e2626-fb00-1e82-4f22-c400cea57533@shaw.ca>
- <5093c14b-5d6d-0827-0c04-bf2fd73af0bd@gmx.com>
- <e0854da8-0d3e-946a-5709-7a329175bad3@shaw.ca>
- <de65fc60-fc23-f7d5-1f58-52687d4859e8@gmx.com>
- <b9ac2d21-93aa-e69a-5994-a1839114cfbb@shaw.ca>
- <53d68efd-21fa-3e18-c35e-89a043605471@gmx.com>
- <f50de27a-bb18-ce30-8694-d5f76684846e@shaw.ca>
- <ac13c732-29a3-89c7-0fe2-f3222e7cb6ee@gmx.com> <87lgc2mrud.fsf@shaw.ca>
- <5eac8b95-b6cd-87ef-2f16-573be326ef37@gmx.com>
-From: Steve Leung <sjleung@shaw.ca>
-Message-ID: <13819df6-07eb-23db-1202-310f1b84b7f8@shaw.ca>
-Date: Tue, 5 Jun 2018 22:06:11 -0600
+Received: from smtp.sws.net.au ([46.4.88.250]:50878 "EHLO smtp.sws.net.au"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S932335AbeFFKWO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 6 Jun 2018 06:22:14 -0400
+Received: from liv.localnet (localhost [127.0.0.1])
+        by smtp.sws.net.au (Postfix) with ESMTP id BFE88ED5C
+        for <linux-btrfs@vger.kernel.org>; Wed,  6 Jun 2018 20:22:11 +1000 (AEST)
+From: Russell Coker <russell@coker.com.au>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: BTRFS losing SE Linux labels on power failure or "reboot -nffd"
+Date: Wed, 06 Jun 2018 20:22:06 +1000
+Message-ID: <26351796.2uh6Zv1ANr@liv>
+In-Reply-To: <1598911.AOxyaR8aoy@liv>
+References: <1598911.AOxyaR8aoy@liv>
 MIME-Version: 1.0
-In-Reply-To: <5eac8b95-b6cd-87ef-2f16-573be326ef37@gmx.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset="iso-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 06/04/2018 11:30 PM, Qu Wenruo wrote:
-> 
-> 
-> On 2018年05月29日 22:58, Steve Leung wrote:
->> Qu Wenruo <quwenruo.btrfs@gmx.com> writes:
->>
->>> On 2018年05月28日 11:47, Steve Leung wrote:
->>>> On 05/26/2018 06:57 PM, Qu Wenruo wrote:
->>>>>
->>>>>
-> [snip]
->>> Still nope.
->>> What about encrypt it and upload it to some public storage provider like
->>> google drive/dropbox?
->>
->> Ok, uploaded to Google Drive.  You'll need to request access to it.
->>
->>    https://drive.google.com/file/d/16NM1NVoMVgkJ_JiePi8VfAzit5_Onz2H/view?usp=sharing
->>
->> sha256sum for the file should be:
->>
->>    ea0abc21fcbc3a71c68b7307d57b26763ac711bd3437a60e32db3144facfeb3f
-> Sorry for the slow reply.
-> 
-> After all the testing, the result is a little surprising.
-> 
-> It's indeed *CORRUPTED*! And tree-checker code exposed it.
-> 
-> It's just btrfs-progs and kernel print-tree code doesn't use correct
-> ram_bytes to output, thus pretty tricky to expose.
-> 
-> The problem is the ram_bytes of that inlined extent, it's indeed larger
-> than it should, just by one byte.
-> 
-> I'm not completely sure how it's happened, but according to the
-> timestamp it's 4 years ago and I think some kernel off-by-one error
-> happens and fixed.
-> 
-> And current kernel can handle it pretty well without reading out the
-> last byte.
-> However it's still a corruption.
-> 
-> Although it's not a big problem, and can be fixed easily.
-> I'll submit a btrfs-progs patch to allow btrfs-check to fix in this week.
+https://www.spinics.net/lists/linux-btrfs/msg77927.html
 
-Ok great to hear!  I'll give it a test whenver you have it.
+Thanks to Hans van Kranenburg and Holger Hoffst�tte, the above has the link to 
+a message with the patch for this which was already included in kernel 4.16.11 
+which was uploaded to Debian on the 27th of May and got into testing about the 
+time that my message got to the SE Linux list.
 
-Steve
+The kernel from Debian/Stable still has the issue.  So using a testing kernel 
+might be a good option to deal with this problem at the moment.
+
+On Monday, 4 June 2018 11:14:52 PM AEST Russell Coker wrote:
+> The command "reboot -nffd" (kernel reboot without flushing kernel buffers or
+> writing status) when run on a BTRFS system with SE Linux will often result
+> in /var/log/audit/audit.log being unlabeled.  It also results in some
+> systemd- journald files like
+> /var/log/journal/c195779d29154ed8bcb4e8444c4a1728/ system.journal being
+> unlabeled but that is rarer.  I think that the same problem afflicts both
+> systemd-journald and auditd but it's a race condition that on my systems
+> (both production and test) is more likely to affect auditd.
+> 
+> root@stretch:/# xattr -l /var/log/audit/audit.log
+> security.selinux:
+> 0000   73 79 73 74 65 6D 5F 75 3A 6F 62 6A 65 63 74 5F    system_u:object_
+> 0010   72 3A 61 75 64 69 74 64 5F 6C 6F 67 5F 74 3A 73    r:auditd_log_t:s
+> 0020   30 00                                              0.
+> 
+> SE Linux uses the xattr "security.selinux", you can see what it's doing with
+> xattr(1) but generally using "ls -Z" is easiest.
+> 
+> If this issue just affected "reboot -nffd" then a solution might be to just
+> not run that command.  However this affects systems after a power outage.
+> 
+> I have reproduced this bug with kernel 4.9.0-6-amd64 (the latest security
+> update for Debian/Stretch which is the latest supported release of Debian). 
+> I have also reproduced it in an identical manner with kernel 4.16.0-1-amd64
+> (the latest from Debian/Unstable).  For testing I reproduced this with a 4G
+> filesystem in a VM, but in production it has happened on BTRFS RAID-1
+> arrays, both SSD and HDD.
+> 
+> #!/bin/bash
+> set -e
+> COUNT=$(ps aux|grep [s]bin/auditd|wc -l)
+> date
+> if [ "$COUNT" = "1" ]; then
+>  echo "all good"
+> else
+>  echo "failed"
+>  exit 1
+> fi
+> 
+> Firstly the above is the script /usr/local/sbin/testit, I test for auditd
+> running because it aborts if the context on it's log file is wrong.  When SE
+> Linux is in enforcing mode an incorrect/missing label on the audit.log file
+> causes auditd to abort.
+> 
+> root@stretch:~# ls -liZ /var/log/audit/audit.log
+> 37952 -rw-------. 1 root root system_u:object_r:auditd_log_t:s0 4385230 Jun 
+> 1 12:23 /var/log/audit/audit.log
+> Above is before I do the tests.
+> 
+> while ssh stretch /usr/local/sbin/testit ; do
+>  ssh btrfs-local "reboot -nffd" > /dev/null 2>&1 &
+>  sleep 20
+> done
+> Above is the shell code I run to do the tests.  Note that the VM in question
+> runs on SSD storage which is why it can consistently boot in less than 20
+> seconds.
+> 
+> Fri  1 Jun 12:26:13 UTC 2018
+> all good
+> Fri  1 Jun 12:26:33 UTC 2018
+> failed
+> Above is the output from the shell code in question.  After the first reboot
+> it fails.  The probability of failure on my test system is greater than
+> 50%.
+> 
+> root@stretch:~# ls -liZ /var/log/audit/audit.log
+> 37952 -rw-------. 1 root root system_u:object_r:unlabeled_t:s0 4396803 Jun 
+> 1 12:26 /var/log/audit/audit.log
+> Now the result.  Note that the Inode has not changed.  I could understand a
+> newly created file missing an xattr, but this is an existing file which
+> shouldn't have had it's xattr changed.  But somehow it gets corrupted.
+> 
+> The first possibility I considered was that SE Linux code might be at fault.
+> I asked on the SE Linux mailing list (I haven't been involved in SE Linux
+> kernel code for about 15 years) and was informed that this isn't likely at
+> all.  There have been no problems like this reported with other
+> filesystems.
+> 
+> Does anyone have any ideas of other tests I should run?  Anyone want me to
+> try a different kernel?  I can give root on a VM to anyone who wants to
+> poke at it.
+
+
+-- 
+My Main Blog         http://etbe.coker.com.au/
+My Documents Blog    http://doc.coker.com.au/
+
+
+

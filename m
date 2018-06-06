@@ -1,39 +1,99 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:42434 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932597AbeFFIqB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 6 Jun 2018 04:46:01 -0400
-Date: Wed, 6 Jun 2018 10:45:59 +0200
-From: Michal Hocko <mhocko@kernel.org>
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: Chris Mason <clm@fb.com>,
+Received: from mail-io0-f193.google.com ([209.85.223.193]:36544 "EHLO
+        mail-io0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751864AbeFFNi1 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Jun 2018 09:38:27 -0400
+Received: by mail-io0-f193.google.com with SMTP id d73-v6so7634292iog.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 06 Jun 2018 06:38:27 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <9C514595-AA27-4794-9831-BEF3A8A6787E@fb.com>
+References: <bug-199931-27@https.bugzilla.kernel.org/> <20180605130329.f7069e01c5faacc08a10996c@linux-foundation.org>
+ <9C514595-AA27-4794-9831-BEF3A8A6787E@fb.com>
+From: Liu Bo <obuil.liubo@gmail.com>
+Date: Wed, 6 Jun 2018 21:38:25 +0800
+Message-ID: <CANQeFDBZp5b5MV_uk63ZPhvB2fnWc0hqsTCL6-7v8e-9LULVpQ@mail.gmail.com>
+Subject: Re: [Bug 199931] New: systemd/rtorrent file data corruption when
+ using echo 3 >/proc/sys/vm/drop_caches
+To: Chris Mason <clm@fb.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>, Michal Hocko <mhocko@suse.com>,
         Tetsuo Handa <penguin-kernel@i-love.sakura.ne.jp>,
         bugzilla-daemon@bugzilla.kernel.org, bugzilla.kernel.org@plan9.de,
         linux-btrfs@vger.kernel.org, linux-mm@kvack.org,
         Jan Kara <jack@suse.cz>
-Subject: Re: [Bug 199931] New: systemd/rtorrent file data corruption when
- using echo 3 >/proc/sys/vm/drop_caches
-Message-ID: <20180606084559.GD32433@dhcp22.suse.cz>
-References: <bug-199931-27@https.bugzilla.kernel.org/>
- <20180605130329.f7069e01c5faacc08a10996c@linux-foundation.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180605130329.f7069e01c5faacc08a10996c@linux-foundation.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue 05-06-18 13:03:29, Andrew Morton wrote:
-[...]
-> > As for why we would do something silly as dropping the caches every hour (in a
-> > cronjob), we started doing this recently because after kernel 4.4, we got
-> > frequent OOM kills despite having gigabytes of available memory (e.g. 12GB in
-> > use, 20GB page cache and 16GB empty swap and bang, mysql gets killed). We found
-> > that that the debian 4.9 kernel is unusable, and 4.14 works, *iff* we use the
-> > above as an hourly cron job, so we did that, and afterwards run into
-> > rtorrent/journald corruption issues. Without the echo in place, mysql usually
-> > gets oom-killed after a few days of uptime.
+On Wed, Jun 6, 2018 at 8:18 AM, Chris Mason <clm@fb.com> wrote:
+>
+>
+> On 5 Jun 2018, at 16:03, Andrew Morton wrote:
+>
+>> (switched to email.  Please respond via emailed reply-to-all, not via the
+>> bugzilla web interface).
+>>
+>> On Tue, 05 Jun 2018 18:01:36 +0000 bugzilla-daemon@bugzilla.kernel.org
+>> wrote:
+>>
+>>> https://bugzilla.kernel.org/show_bug.cgi?id=199931
+>>>
+>>>             Bug ID: 199931
+>>>            Summary: systemd/rtorrent file data corruption when using echo
+>>>                     3 >/proc/sys/vm/drop_caches
+>>
+>>
+>> A long tale of woe here.  Chris, do you think the pagecache corruption
+>> is a general thing, or is it possible that btrfs is contributing?
+>>
+>> Also, that 4.4 oom-killer regression sounds very serious.
+>
+>
+> This week I found a bug in btrfs file write with how we handle stable pages.
+> Basically it works like this:
+>
+> write(fd, some bytes less than a page)
+> write(fd, some bytes into the same page)
+>     btrfs prefaults the userland page
+>     lock_and_cleanup_extent_if_need()   <- stable pages
+>                 wait for writeback()
+>                 clear_page_dirty_for_io()
+>
+> At this point we have a page that was dirty and is now clean.  That's
+> normally fine, unless our prefaulted page isn't in ram anymore.
+>
+>         iov_iter_copy_from_user_atomic() <--- uh oh
+>
+> If the copy_from_user fails, we drop all our locks and retry.  But along the
+> way, we completely lost the dirty bit on the page.  If the page is dropped
+> by drop_caches, the writes are lost.  We'll just read back the stale
+> contents of that page during the retry loop.  This won't result in crc
+> errors because the bytes we lost were never crc'd.
+>
 
-Do you have any oom reports to share?
--- 
-Michal Hocko
-SUSE Labs
+So we're going to carefully redirty the page under the page lock, right?
+
+> It could result in zeros in the file because we're basically reading a hole,
+> and those zeros could move around in the page depending on which part of the
+> page was dirty when the writes were lost.
+>
+
+I got a question, while re-reading this page, wouldn't it read
+old/stale on-disk data?
+
+thanks,
+liubo
+
+> I spent a morning trying to trigger this with drop_caches and couldn't make
+> it happen, even with schedule_timeout()s inserted and other tricks.  But I
+> was able to get corruptions if I manually invalidated pages in the critical
+> section.
+>
+> I'm working on a patch, and I'll check and see if any of the other recent
+> fixes Dave integrated may have a less exotic explanation.
+>
+> -chris
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,120 +1,243 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp.sws.net.au ([46.4.88.250]:50878 "EHLO smtp.sws.net.au"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932335AbeFFKWO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 6 Jun 2018 06:22:14 -0400
-Received: from liv.localnet (localhost [127.0.0.1])
-        by smtp.sws.net.au (Postfix) with ESMTP id BFE88ED5C
-        for <linux-btrfs@vger.kernel.org>; Wed,  6 Jun 2018 20:22:11 +1000 (AEST)
-From: Russell Coker <russell@coker.com.au>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: BTRFS losing SE Linux labels on power failure or "reboot -nffd"
-Date: Wed, 06 Jun 2018 20:22:06 +1000
-Message-ID: <26351796.2uh6Zv1ANr@liv>
-In-Reply-To: <1598911.AOxyaR8aoy@liv>
-References: <1598911.AOxyaR8aoy@liv>
+Received: from mail-oi0-f65.google.com ([209.85.218.65]:42694 "EHLO
+        mail-oi0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752574AbeFFDBG (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Jun 2018 23:01:06 -0400
+Received: by mail-oi0-f65.google.com with SMTP id k190-v6so4074069oib.9
+        for <linux-btrfs@vger.kernel.org>; Tue, 05 Jun 2018 20:01:06 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
+From: james harvey <jamespharvey20@gmail.com>
+Date: Tue, 5 Jun 2018 23:01:05 -0400
+Message-ID: <CA+X5Wn6RPxGkqa61qYkO6qUe5C=Z0GbwkH4kYE=OHOMqBUq=Sg@mail.gmail.com>
+Subject: [PATCH v2] btrfs-progs: device: Added verbose option to scan
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-https://www.spinics.net/lists/linux-btrfs/msg77927.html
+Only works when device(s) not specified.
 
-Thanks to Hans van Kranenburg and Holger Hoffstätte, the above has the link to 
-a message with the patch for this which was already included in kernel 4.16.11 
-which was uploaded to Debian on the 27th of May and got into testing about the 
-time that my message got to the SE Linux list.
+At verbose level 1, for each registered btrfs filesystem, compactly show fs
+uuid, and for each of its devices, the device id, name, and uuid.
 
-The kernel from Debian/Stable still has the issue.  So using a testing kernel 
-might be a good option to deal with this problem at the moment.
+At verbose level 2, show everything for the fs and its devices.
 
-On Monday, 4 June 2018 11:14:52 PM AEST Russell Coker wrote:
-> The command "reboot -nffd" (kernel reboot without flushing kernel buffers or
-> writing status) when run on a BTRFS system with SE Linux will often result
-> in /var/log/audit/audit.log being unlabeled.  It also results in some
-> systemd- journald files like
-> /var/log/journal/c195779d29154ed8bcb4e8444c4a1728/ system.journal being
-> unlabeled but that is rarer.  I think that the same problem afflicts both
-> systemd-journald and auditd but it's a race condition that on my systems
-> (both production and test) is more likely to affect auditd.
-> 
-> root@stretch:/# xattr -l /var/log/audit/audit.log
-> security.selinux:
-> 0000   73 79 73 74 65 6D 5F 75 3A 6F 62 6A 65 63 74 5F    system_u:object_
-> 0010   72 3A 61 75 64 69 74 64 5F 6C 6F 67 5F 74 3A 73    r:auditd_log_t:s
-> 0020   30 00                                              0.
-> 
-> SE Linux uses the xattr "security.selinux", you can see what it's doing with
-> xattr(1) but generally using "ls -Z" is easiest.
-> 
-> If this issue just affected "reboot -nffd" then a solution might be to just
-> not run that command.  However this affects systems after a power outage.
-> 
-> I have reproduced this bug with kernel 4.9.0-6-amd64 (the latest security
-> update for Debian/Stretch which is the latest supported release of Debian). 
-> I have also reproduced it in an identical manner with kernel 4.16.0-1-amd64
-> (the latest from Debian/Unstable).  For testing I reproduced this with a 4G
-> filesystem in a VM, but in production it has happened on BTRFS RAID-1
-> arrays, both SSD and HDD.
-> 
-> #!/bin/bash
-> set -e
-> COUNT=$(ps aux|grep [s]bin/auditd|wc -l)
-> date
-> if [ "$COUNT" = "1" ]; then
->  echo "all good"
-> else
->  echo "failed"
->  exit 1
-> fi
-> 
-> Firstly the above is the script /usr/local/sbin/testit, I test for auditd
-> running because it aborts if the context on it's log file is wrong.  When SE
-> Linux is in enforcing mode an incorrect/missing label on the audit.log file
-> causes auditd to abort.
-> 
-> root@stretch:~# ls -liZ /var/log/audit/audit.log
-> 37952 -rw-------. 1 root root system_u:object_r:auditd_log_t:s0 4385230 Jun 
-> 1 12:23 /var/log/audit/audit.log
-> Above is before I do the tests.
-> 
-> while ssh stretch /usr/local/sbin/testit ; do
->  ssh btrfs-local "reboot -nffd" > /dev/null 2>&1 &
->  sleep 20
-> done
-> Above is the shell code I run to do the tests.  Note that the VM in question
-> runs on SSD storage which is why it can consistently boot in less than 20
-> seconds.
-> 
-> Fri  1 Jun 12:26:13 UTC 2018
-> all good
-> Fri  1 Jun 12:26:33 UTC 2018
-> failed
-> Above is the output from the shell code in question.  After the first reboot
-> it fails.  The probability of failure on my test system is greater than
-> 50%.
-> 
-> root@stretch:~# ls -liZ /var/log/audit/audit.log
-> 37952 -rw-------. 1 root root system_u:object_r:unlabeled_t:s0 4396803 Jun 
-> 1 12:26 /var/log/audit/audit.log
-> Now the result.  Note that the Inode has not changed.  I could understand a
-> newly created file missing an xattr, but this is an existing file which
-> shouldn't have had it's xattr changed.  But somehow it gets corrupted.
-> 
-> The first possibility I considered was that SE Linux code might be at fault.
-> I asked on the SE Linux mailing list (I haven't been involved in SE Linux
-> kernel code for about 15 years) and was informed that this isn't likely at
-> all.  There have been no problems like this reported with other
-> filesystems.
-> 
-> Does anyone have any ideas of other tests I should run?  Anyone want me to
-> try a different kernel?  I can give root on a VM to anyone who wants to
-> poke at it.
+Previous behavior of print_all_devices(), which is used by chunk-recover and
+super-recover, is unaffected.  (diff doesn't show the patch most optimally.)
 
+Signed-off-by: James Harvey <jamespharvey20@gmail.com>
+---
+ cmds-device.c | 20 ++++++++++++---
+ utils.c       | 70 ++++++++++++++++++++++++++++++++++++++++++++++-----
+ utils.h       |  5 ++--
+ 3 files changed, 84 insertions(+), 11 deletions(-)
 
--- 
-My Main Blog         http://etbe.coker.com.au/
-My Documents Blog    http://doc.coker.com.au/
+diff --git a/cmds-device.c b/cmds-device.c
+index 86459d1b..a2ed71ab 100644
+--- a/cmds-device.c
++++ b/cmds-device.c
+@@ -254,9 +254,13 @@ static int cmd_device_delete(int argc, char **argv)
+ }
 
+ static const char * const cmd_device_scan_usage[] = {
+-       "btrfs device scan [(-d|--all-devices)|<device> [<device>...]]",
++       "btrfs device scan [([-v] -d|--all-devices)|<device> [<device>...]]",
+        "Scan devices for a btrfs filesystem",
+        " -d|--all-devices (deprecated)",
++       " -v|--verbose (For each registered btrfs filesystem, show fs
+uuid, and for",
++       "               each of its devices, show device id, name, and
+uuid.  May",
++       "               be given a second time to show more
+information.  Only works",
++       "               when device(s) not specified.)",
+        NULL
+ };
 
+@@ -265,22 +269,27 @@ static int cmd_device_scan(int argc, char **argv)
+        int i;
+        int devstart;
+        int all = 0;
++       int verbose = 0;
+        int ret = 0;
 
+        while (1) {
+                int c;
+                static const struct option long_options[] = {
+                        { "all-devices", no_argument, NULL, 'd'},
++                       { "verbose", no_argument, NULL, 'v'},
+                        { NULL, 0, NULL, 0}
+                };
+
+-               c = getopt_long(argc, argv, "d", long_options, NULL);
++               c = getopt_long(argc, argv, "dv", long_options, NULL);
+                if (c < 0)
+                        break;
+                switch (c) {
+                case 'd':
+                        all = 1;
+                        break;
++               case 'v':
++                       ++verbose;
++                       break;
+                default:
+                        usage(cmd_device_scan_usage);
+                }
+@@ -290,11 +299,16 @@ static int cmd_device_scan(int argc, char **argv)
+        if (all && check_argc_max(argc - optind, 1))
+                usage(cmd_device_scan_usage);
+
++       if (devstart < argc) {
++               printf("Verbose mode does not work when device(s) are
+specified\n\n");
++               usage(cmd_device_scan_usage);
++       }
++
+        if (all || argc - optind == 0) {
+                printf("Scanning for Btrfs filesystems\n");
+                ret = btrfs_scan_devices();
+                error_on(ret, "error %d while scanning", ret);
+-               ret = btrfs_register_all_devices();
++               ret = btrfs_register_all_devices(verbose);
+                error_on(ret, "there are %d errors while registering
+devices", ret);
+                goto out;
+        }
+diff --git a/utils.c b/utils.c
+index d81d4980..b5ee08a3 100644
+--- a/utils.c
++++ b/utils.c
+@@ -1004,7 +1004,7 @@ int btrfs_register_one_device(const char *fname)
+  * Register all devices in the fs_uuid list created in the user
+  * space. Ensure btrfs_scan_devices() is called before this func.
+  */
+-int btrfs_register_all_devices(void)
++int btrfs_register_all_devices(int verbose)
+ {
+        int err = 0;
+        int ret = 0;
+@@ -1015,7 +1015,15 @@ int btrfs_register_all_devices(void)
+        all_uuids = btrfs_scanned_uuids();
+
+        list_for_each_entry(fs_devices, all_uuids, list) {
++               if (verbose == 2)
++
+printf("--------------------------------------------------\n");
++               if (verbose)
++                       print_fs_devices_info(fs_devices, verbose);
+                list_for_each_entry(device, &fs_devices->devices, dev_list) {
++                       if (verbose == 2)
++                               printf("\n");
++                       if (verbose)
++                               print_device_info(device, "   ", verbose);
+                        if (*device->name)
+                                err = btrfs_register_one_device(device->name);
+
+@@ -1023,6 +1031,9 @@ int btrfs_register_all_devices(void)
+                                ret++;
+                }
+        }
++       /* Separate possible ERROR summary. (May be unnecessary.) */
++       if (verbose == 2)
++               printf("--------------------------------------------------\n");
+
+        return ret;
+ }
+@@ -2573,12 +2584,59 @@ unsigned long total_memory(void)
+         return si.totalram * si.mem_unit;       /* bytes */
+ }
+
+-void print_device_info(struct btrfs_device *device, char *prefix)
++void print_fs_devices_info(struct btrfs_fs_devices *fs_devices, int mode)
+ {
+-       if (prefix)
++        char fs_uuid[BTRFS_UUID_UNPARSED_SIZE];
++
++        uuid_unparse(fs_devices->fsid, fs_uuid);
++
++        if (mode <= 1) {
++                printf("fs uuid %-36s\n", *fs_uuid ? fs_uuid : "<NULL>");
++        } else {
++               printf("fs uuid: %-36s\n", *fs_uuid ? fs_uuid : "<NULL>");
++               printf("latest_devid: %llu\n", fs_devices->latest_devid);
++               printf("latest_trans: %llu\n", fs_devices->latest_trans);
++               printf("lowest_devid: %llu\n", fs_devices->lowest_devid);
++               printf("latest_bdev: %d\n", fs_devices->latest_bdev);
++               printf("lowest_bdev: %d\n", fs_devices->lowest_bdev);
++               printf("seeding: %d\n", fs_devices->seeding);
++        }
++}
++
++void print_device_info(struct btrfs_device *device, char *prefix, int mode)
++{
++       char dev_uuid[BTRFS_UUID_UNPARSED_SIZE];
++
++       if (prefix && mode <= 1)
+                printf("%s", prefix);
+-       printf("Device: id = %llu, name = %s\n",
+-              device->devid, device->name);
++       if (mode <= 0) {
++               printf("Device: id = %llu, name = %s\n",
++                      device->devid, device->name ? device->name : "<NULL>");
++       } else if (mode == 1) {
++               uuid_unparse(device->uuid, dev_uuid);
++               printf("devid %llu (%s, uuid %-36ss)\n", device->devid,
++                      device->name ? device->name : "<NULL>",
++                      *dev_uuid ? dev_uuid : "<NULL>");
++       } else {
++               uuid_unparse(device->uuid, dev_uuid);
++               printf("devid: %llu\n", device->devid);
++               printf("name: %s\n", device->name ? device->name : "<NULL>");
++               printf("device uuid: %s\n", *dev_uuid ? dev_uuid : "<NULL>");
++               printf("generation (trans): %llu\n", device->generation);
++               printf("total_ios: %llu\n", device->total_ios);
++               printf("fd: %d\n", device->fd);
++               printf("writeable: %d\n", device->writeable);
++               printf("label: %s\n", device->label ? device->label : "<NULL>");
++               printf("total_devs: %llu\n", device->total_devs);
++               printf("super_bytes_used: %llu\n", device->super_bytes_used);
++               printf("total_bytes (size in memory): %llu\n",
++                      device->total_bytes);
++               printf("bytes_used: %llu\n", device->bytes_used);
++               printf("io_align: %lu\n", (unsigned long) device->io_align);
++               printf("io_width: %lu\n", (unsigned long) device->io_width);
++               printf("sector_size: %lu\n", (unsigned long)
+device->sector_size);
++               printf("type: %llu\n", device->type);
++       }
+ }
+
+ void print_all_devices(struct list_head *devices)
+@@ -2587,6 +2645,6 @@ void print_all_devices(struct list_head *devices)
+
+        printf("All Devices:\n");
+        list_for_each_entry(dev, devices, dev_list)
+-               print_device_info(dev, "\t");
++               print_device_info(dev, "\t", 0);
+        printf("\n");
+ }
+diff --git a/utils.h b/utils.h
+index 403de481..9203f52b 100644
+--- a/utils.h
++++ b/utils.h
+@@ -87,7 +87,7 @@ int btrfs_add_to_fsid(struct btrfs_trans_handle *trans,
+                      u32 sectorsize);
+ int btrfs_scan_for_fsid(int run_ioctls);
+ int btrfs_register_one_device(const char *fname);
+-int btrfs_register_all_devices(void);
++int btrfs_register_all_devices(int verbose);
+ char *canonicalize_dm_name(const char *ptname);
+ char *canonicalize_path(const char *path);
+ int check_mounted(const char *devicename);
+@@ -167,7 +167,8 @@ int prefixcmp(const char *str, const char *prefix);
+
+ unsigned long total_memory(void);
+
+-void print_device_info(struct btrfs_device *device, char *prefix);
++void print_fs_devices_info(struct btrfs_fs_devices *fs_devices, int mode);
++void print_device_info(struct btrfs_device *device, char *prefix, int mode);
+ void print_all_devices(struct list_head *devices);
+
+ /*
+--
+2.17.0

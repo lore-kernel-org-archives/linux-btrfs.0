@@ -1,247 +1,117 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:33366 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752411AbeFHOtk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 8 Jun 2018 10:49:40 -0400
-Received: from relay2.suse.de (charybdis-ext-too.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 19957AC29
-        for <linux-btrfs@vger.kernel.org>; Fri,  8 Jun 2018 14:49:39 +0000 (UTC)
-From: Nikolay Borisov <nborisov@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 15/15 v2] btrfs-progs: Remove old delayed refs infrastructure
-Date: Fri,  8 Jun 2018 17:49:37 +0300
-Message-Id: <1528469377-439-1-git-send-email-nborisov@suse.com>
-In-Reply-To: <1528462078-24490-16-git-send-email-nborisov@suse.com>
-References: <1528462078-24490-16-git-send-email-nborisov@suse.com>
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:25904 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S932185AbeFFAdU (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Jun 2018 20:33:20 -0400
+Subject: Re: [PATCH] btrfs-progs: check: Fix wrong error message in case of
+ corrupted extent
+To: Nikolay Borisov <nborisov@suse.com>, <linux-btrfs@vger.kernel.org>
+References: <1528198750-27840-1-git-send-email-nborisov@suse.com>
+From: Su Yue <suy.fnst@cn.fujitsu.com>
+Message-ID: <665a3869-34ec-181b-3c0e-898547e5b34a@cn.fujitsu.com>
+Date: Wed, 6 Jun 2018 08:39:24 +0800
+MIME-Version: 1.0
+In-Reply-To: <1528198750-27840-1-git-send-email-nborisov@suse.com>
+Content-Type: multipart/mixed;
+        boundary="------------2513059E322EDA16D2FD938C"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Given that the new delayed refs infrastructure is implemented and
-wired up, there is no point in keeping the old code. So just remove it.
+--------------2513059E322EDA16D2FD938C
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
 
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
----
 
-V2: 
 
- * Remove fs_info->pending_del references in disk-io.c . This prevented 
- compilation. 
+On 06/05/2018 07:39 PM, Nikolay Borisov wrote:
+> When btrfs check detects a freespace tree extent which ends beyond the
+> blockgroup containing it a misleading error messages is printed. For
+> example if we have the following extent in the freespace tree:
+>=20
+>     item 5 key (30408704 FREE_SPACE_INFO 1073741824) itemoff 16259 itemsi=
+ze 8
+>             free space info extent count 3 flags 0
+>     item 6 key (30425088 FREE_SPACE_EXTENT 49152) itemoff 16259 itemsize 0
+>             free space extent
+>     item 7 key (30507008 FREE_SPACE_EXTENT 65536) itemoff 16259 itemsize 0
+>             free space extent
+>     item 8 key (30654464 FREE_SPACE_EXTENT 14524648038063310901) itemoff =
+16259 itemsize 0
+>=20
+> Clearly the last extent is corrupted so we should print something
+> along the lines of:
+>=20
+> free space extent ends at 14524648038063310901, beyond end of block group=
+ 30408704-1104150528
+>=20
+> Instead currently this is printed:
+>=20
+> free space extent ends at 30654464, beyond end of block group 30408704-11=
+04150528
+>=20
+> So instead of printing the actual erroneous end, we print the beginning
+> of the extent. Fix this by printing the actual corrupted end.
+>=20
+> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 
- ctree.h       |   2 -
- disk-io.c     |   2 -
- extent-tree.c | 137 ----------------------------------------------------------
- 3 files changed, 141 deletions(-)
+Reviewed-by: Su Yue <suy.fnst@cn.fujitsu.com>
 
-diff --git a/ctree.h b/ctree.h
-index d1ea45571d1e..3e9ca2ca8432 100644
---- a/ctree.h
-+++ b/ctree.h
-@@ -1098,7 +1098,6 @@ struct btrfs_fs_info {
- 	struct extent_io_tree free_space_cache;
- 	struct extent_io_tree block_group_cache;
- 	struct extent_io_tree pinned_extents;
--	struct extent_io_tree pending_del;
- 	struct extent_io_tree extent_ins;
- 	struct extent_io_tree *excluded_extents;
- 
-@@ -2503,7 +2502,6 @@ int btrfs_fix_block_accounting(struct btrfs_trans_handle *trans);
- void btrfs_pin_extent(struct btrfs_fs_info *fs_info, u64 bytenr, u64 num_bytes);
- void btrfs_unpin_extent(struct btrfs_fs_info *fs_info,
- 			u64 bytenr, u64 num_bytes);
--int btrfs_extent_post_op(struct btrfs_trans_handle *trans);
- struct btrfs_block_group_cache *btrfs_lookup_block_group(struct
- 							 btrfs_fs_info *info,
- 							 u64 bytenr);
-diff --git a/disk-io.c b/disk-io.c
-index 4a609a892be7..8da6e3ce5fc8 100644
---- a/disk-io.c
-+++ b/disk-io.c
-@@ -726,7 +726,6 @@ struct btrfs_fs_info *btrfs_new_fs_info(int writable, u64 sb_bytenr)
- 	extent_io_tree_init(&fs_info->free_space_cache);
- 	extent_io_tree_init(&fs_info->block_group_cache);
- 	extent_io_tree_init(&fs_info->pinned_extents);
--	extent_io_tree_init(&fs_info->pending_del);
- 	extent_io_tree_init(&fs_info->extent_ins);
- 	fs_info->excluded_extents = NULL;
- 
-@@ -984,7 +983,6 @@ void btrfs_cleanup_all_caches(struct btrfs_fs_info *fs_info)
- 	extent_io_tree_cleanup(&fs_info->free_space_cache);
- 	extent_io_tree_cleanup(&fs_info->block_group_cache);
- 	extent_io_tree_cleanup(&fs_info->pinned_extents);
--	extent_io_tree_cleanup(&fs_info->pending_del);
- 	extent_io_tree_cleanup(&fs_info->extent_ins);
- }
- 
-diff --git a/extent-tree.c b/extent-tree.c
-index 9d085158f2d8..b9d51b388c9a 100644
---- a/extent-tree.c
-+++ b/extent-tree.c
-@@ -52,8 +52,6 @@ static int __free_extent(struct btrfs_trans_handle *trans,
- 			 u64 bytenr, u64 num_bytes, u64 parent,
- 			 u64 root_objectid, u64 owner_objectid,
- 			 u64 owner_offset, int refs_to_drop);
--static int finish_current_insert(struct btrfs_trans_handle *trans);
--static int del_pending_extents(struct btrfs_trans_handle *trans);
- static struct btrfs_block_group_cache *
- btrfs_find_block_group(struct btrfs_root *root, struct btrfs_block_group_cache
- 		       *hint, u64 search_start, int data, int owner);
-@@ -1422,13 +1420,6 @@ int btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
- 	return err;
- }
- 
--int btrfs_extent_post_op(struct btrfs_trans_handle *trans)
--{
--	finish_current_insert(trans);
--	del_pending_extents(trans);
--	return 0;
--}
--
- int btrfs_lookup_extent_info(struct btrfs_trans_handle *trans,
- 			     struct btrfs_fs_info *fs_info, u64 bytenr,
- 			     u64 offset, int metadata, u64 *refs, u64 *flags)
-@@ -2013,74 +2004,6 @@ int btrfs_finish_extent_commit(struct btrfs_trans_handle *trans,
- 	return 0;
- }
- 
--static int extent_root_pending_ops(struct btrfs_fs_info *info)
--{
--	u64 start;
--	u64 end;
--	int ret;
--
--	ret = find_first_extent_bit(&info->extent_ins, 0, &start,
--				    &end, EXTENT_LOCKED);
--	if (!ret) {
--		ret = find_first_extent_bit(&info->pending_del, 0, &start, &end,
--					    EXTENT_LOCKED);
--	}
--	return ret == 0;
--
--}
--static int finish_current_insert(struct btrfs_trans_handle *trans)
--{
--	u64 start;
--	u64 end;
--	u64 priv;
--	struct btrfs_fs_info *info = trans->fs_info;
--	struct btrfs_root *extent_root = info->extent_root;
--	struct pending_extent_op *extent_op;
--	struct btrfs_key key;
--	int ret;
--	int skinny_metadata =
--		btrfs_fs_incompat(extent_root->fs_info, SKINNY_METADATA);
--
--
--	while(1) {
--		ret = find_first_extent_bit(&info->extent_ins, 0, &start,
--					    &end, EXTENT_LOCKED);
--		if (ret)
--			break;
--
--		ret = get_state_private(&info->extent_ins, start, &priv);
--		BUG_ON(ret);
--		extent_op = (struct pending_extent_op *)(unsigned long)priv;
--
--		if (extent_op->type == PENDING_EXTENT_INSERT) {
--			key.objectid = start;
--			if (skinny_metadata) {
--				key.offset = extent_op->level;
--				key.type = BTRFS_METADATA_ITEM_KEY;
--			} else {
--				key.offset = extent_op->num_bytes;
--				key.type = BTRFS_EXTENT_ITEM_KEY;
--			}
--
--			ret = alloc_reserved_tree_block(trans,
--						extent_root->root_key.objectid,
--						trans->transid,
--						extent_op->flags,
--						&extent_op->key,
--						extent_op->level, &key);
--			BUG_ON(ret);
--		} else {
--			BUG_ON(1);
--		}
--
--
--		printf("shouldn't be executed\n");
--		clear_extent_bits(&info->extent_ins, start, end, EXTENT_LOCKED);
--		kfree(extent_op);
--	}
--	return 0;
--}
--
- static int pin_down_bytes(struct btrfs_trans_handle *trans, u64 bytenr,
- 			  u64 num_bytes, int is_data)
- {
-@@ -2377,66 +2300,6 @@ static int __free_extent(struct btrfs_trans_handle *trans,
- 	return ret;
- }
- 
--/*
-- * find all the blocks marked as pending in the radix tree and remove
-- * them from the extent map
-- */
--static int del_pending_extents(struct btrfs_trans_handle *trans)
--{
--	int ret;
--	int err = 0;
--	u64 start;
--	u64 end;
--	u64 priv;
--	struct extent_io_tree *pending_del;
--	struct extent_io_tree *extent_ins;
--	struct pending_extent_op *extent_op;
--	struct btrfs_fs_info *fs_info = trans->fs_info;
--	struct btrfs_root *extent_root = fs_info->extent_root;
--
--	extent_ins = &extent_root->fs_info->extent_ins;
--	pending_del = &extent_root->fs_info->pending_del;
--
--	while(1) {
--		ret = find_first_extent_bit(pending_del, 0, &start, &end,
--					    EXTENT_LOCKED);
--		if (ret)
--			break;
--
--		ret = get_state_private(pending_del, start, &priv);
--		BUG_ON(ret);
--		extent_op = (struct pending_extent_op *)(unsigned long)priv;
--
--		clear_extent_bits(pending_del, start, end, EXTENT_LOCKED);
--
--		if (!test_range_bit(extent_ins, start, end,
--				    EXTENT_LOCKED, 0)) {
--			ret = __free_extent(trans, start, end + 1 - start, 0,
--					    extent_root->root_key.objectid,
--					    extent_op->level, 0, 1);
--			kfree(extent_op);
--		} else {
--			kfree(extent_op);
--			ret = get_state_private(extent_ins, start, &priv);
--			BUG_ON(ret);
--			extent_op = (struct pending_extent_op *)
--							(unsigned long)priv;
--
--			clear_extent_bits(extent_ins, start, end,
--					  EXTENT_LOCKED);
--
--			if (extent_op->type == PENDING_BACKREF_UPDATE)
--				BUG_ON(1);
--
--			kfree(extent_op);
--		}
--		if (ret)
--			err = ret;
--	}
--	return err;
--}
--
--
- int btrfs_free_tree_block(struct btrfs_trans_handle *trans,
- 			  struct btrfs_root *root,
- 			  struct extent_buffer *buf,
--- 
-2.7.4
+> ---
+>  free-space-tree.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+>=20
+> diff --git a/free-space-tree.c b/free-space-tree.c
+> index 69a4eca8a74f..747f8778e610 100644
+> --- a/free-space-tree.c
+> +++ b/free-space-tree.c
+> @@ -276,7 +276,7 @@ static int load_free_space_extents(struct btrfs_fs_in=
+fo *fs_info,
+>  		if (key.objectid + key.offset > end) {
+>  			fprintf(stderr,
+>  	"free space extent ends at %llu, beyond end of block group %llu-%llu\n",
+> -				key.objectid, start, end);
+> +				key.objectid+key.offset, start, end);
+>  			(*errors)++;
+>  			break;
+>  		}
+>=20
 
+
+
+--------------2513059E322EDA16D2FD938C
+Content-Type: application/pgp-keys; name="pEpkey.asc"
+Content-Transfer-Encoding: quoted-printable
+Content-Disposition: attachment; filename="pEpkey.asc"
+
+-----BEGIN PGP PUBLIC KEY BLOCK-----=0A=
+=0A=
+mQENBFrxafoBCADL54g5EnHtuYig32iQtOWgPqZlnBDgdSD+fMxnpMr6zZ7VNT9l=0A=
+Pv7BNy4lUHkWff1TbLuZQIoxYKEbmkajwg1rEjBfQ+6RBQWGzsjfprPdEC6kf6Ch=0A=
+sVKrfAfJArEgEvkMOCWZE1T5wNl/mNhlWfOYWadfLTIsQCKD5D1PhD9ZgKMwulGn=0A=
+OhQfeRuu/X+7zijjrpT1Nvq/Qiya/ANCq7nCu2ZTXDgQR6GSe2qgn0oVC44HKTRl=0A=
+PK+47CQ8LFnKeBuTygdOpfAWUi28SCMqwkfZhGtfQQU446HJPNz/bCNRok9l9dZi=0A=
+3EEyxMamd/tVmtsOBvtUrYIIIxNAOB87h1+PABEBAAG0IFN1IFl1ZSA8c3V5LmZu=0A=
+c3RAY24uZnVqaXRzdS5jb20+iQFUBBMBCAA+FiEE12oP3cNSLnn02mf3AOFqSFGv=0A=
+ypwFAlrxafoCGwMFCQHhM4AFCwkIBwIGFQoJCAsCBBYCAwECHgECF4AACgkQAOFq=0A=
+SFGvypwZaAf8D8gcRk4atpfgKd1nB0UuDcJNPLpzrGxQz3u2UBeNjxGUXsVsQMsy=0A=
+Ln+xd/5pbC7tk5D8/+XIZGtLc3Nb0G9D6kdSHjvlpRMo3GtnDJL/kp4TPBlcXM9V=0A=
+xzPmbBECdo8Th5+P66H3MNl3S0B48kDEcj5i7M0dZDOeQjKxzt8j++bwEdXVgBvM=0A=
+O5W8Qnd5CxbXnjme8/qyJtup1hYAKpf8Yi9bldPM0ri+uWbLtSx8/EvCxsFFMiM+=0A=
+zk1fzPqsu+lhI+lBAKR9qvH6mVCictFxA6TM7BH+lcQezHunEJDSO1obLXpjQTwh=0A=
+UpU7USyzmE0hx/O2unA6imv1O1fuafCsGLkBDQRa8Wn6AQgAtxCl1ghY/W/lP66b=0A=
+27rYgz8otwQ5TaLLwb83qwVOv7AOiMu16ikNcG2Fn0ePj3kv4/iYcsAIq6UHka25=0A=
+4UXMdwn8j8lN7dYuuJpFBjW45mHMH9gTNspp456ftqlvgTqJtPmRmcN62IGaI5OD=0A=
+/L36v7nMY5iBPecK8hIZd7BFJcBV1jntzy3XTGrvyQXx7LxqIj9uKRj1vTYTLK+9=0A=
+uaQFna1+SR7XKtkUg89YObQGXDD3D8qohk9SSmpQGkPPOdC1456Vpn/5FH057W0I=0A=
+UC/udC6AKsbYrlEqYihMY0/5FkpTusPOxw+LHpAwJppQ95JNsjtq22HgyFMpGFCW=0A=
+bSMMEwARAQABiQE8BBgBCAAmFiEE12oP3cNSLnn02mf3AOFqSFGvypwFAlrxafoC=0A=
+GwwFCQHhM4AACgkQAOFqSFGvypwMlQf+NhF3GTn+VE7MgOBJdnYkcp8QjxAJXRVp=0A=
+T9QHcJj37BiNJbCxKIac35rFsPe8BaFDM+W6aqe5+zayVd2Zx771imCbimCqgtTB=0A=
+/ScbarN/fgTP1sodDBuVLJmJWPIisYrX4jQx26OfbnZHNYKEHumh5+YghSnNGd6U=0A=
+zS/F+k2PEQZ6rbGQeyHYNDegzq7Nieg9aNoV7qvPAwbG/9KrXBQdh+X0w1Fs/Gye=0A=
+wi1vrOIWtTE2ORTJZb8y76wy6M6oOWv2PnQ0TLHM+8wTTX+dgU/IjQNO6ikqLqI8=0A=
+PN8qtLmiy6GAQETDZO//XSxcpHQJVIU/+jHKZYuHJ1IMCcaC9vvjzg=3D=3D=0A=
+=3DDxgD=0A=
+-----END PGP PUBLIC KEY BLOCK-----=0A=
+
+--------------2513059E322EDA16D2FD938C--

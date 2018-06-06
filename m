@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f65.google.com ([209.85.218.65]:42694 "EHLO
-        mail-oi0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752574AbeFFDBG (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Jun 2018 23:01:06 -0400
-Received: by mail-oi0-f65.google.com with SMTP id k190-v6so4074069oib.9
-        for <linux-btrfs@vger.kernel.org>; Tue, 05 Jun 2018 20:01:06 -0700 (PDT)
+Received: from mail-oi0-f67.google.com ([209.85.218.67]:41094 "EHLO
+        mail-oi0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752786AbeFFCwr (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Jun 2018 22:52:47 -0400
+Received: by mail-oi0-f67.google.com with SMTP id a141-v6so4057043oii.8
+        for <linux-btrfs@vger.kernel.org>; Tue, 05 Jun 2018 19:52:46 -0700 (PDT)
 MIME-Version: 1.0
 From: james harvey <jamespharvey20@gmail.com>
-Date: Tue, 5 Jun 2018 23:01:05 -0400
-Message-ID: <CA+X5Wn6RPxGkqa61qYkO6qUe5C=Z0GbwkH4kYE=OHOMqBUq=Sg@mail.gmail.com>
-Subject: [PATCH v2] btrfs-progs: device: Added verbose option to scan
+Date: Tue, 5 Jun 2018 22:52:45 -0400
+Message-ID: <CA+X5Wn7JF2Kr8JnJmL4Vzk4Z3vW8fSqkiQ5akKyrUJfepdEtHw@mail.gmail.com>
+Subject: [PATCH] Added verbose option to btrfs device scan
 To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -24,8 +24,6 @@ At verbose level 2, show everything for the fs and its devices.
 
 Previous behavior of print_all_devices(), which is used by chunk-recover and
 super-recover, is unaffected.  (diff doesn't show the patch most optimally.)
-
-Signed-off-by: James Harvey <jamespharvey20@gmail.com>
 ---
  cmds-device.c | 20 ++++++++++++---
  utils.c       | 70 ++++++++++++++++++++++++++++++++++++++++++++++-----

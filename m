@@ -1,75 +1,127 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:33691 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S933090AbeFGP30 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 7 Jun 2018 11:29:26 -0400
-Date: Thu, 7 Jun 2018 17:26:39 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Matthew Wilcox <willy@infradead.org>
-Cc: dsterba@suse.cz, Souptick Joarder <jrdr.linux@gmail.com>, clm@fb.com,
-        jbacik@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Subject: Re: [PATCH v2] fs: btrfs: Change return type to vm_fault_t
-Message-ID: <20180607152639.su36dt3xjpigumw4@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20180606142444.GA3806@jordon-HP-15-Notebook-PC>
- <20180606155347.GL3539@twin.jikos.cz>
- <20180606175049.GB12439@bombadil.infradead.org>
+Received: from mail-pg0-f67.google.com ([74.125.83.67]:37018 "EHLO
+        mail-pg0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751907AbeFFOW0 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Jun 2018 10:22:26 -0400
+Date: Wed, 6 Jun 2018 19:54:44 +0530
+From: Souptick Joarder <jrdr.linux@gmail.com>
+To: willy@infradead.org, clm@fb.com, jbacik@fb.com, dsterba@suse.com,
+        dsterba@suse.cz
+Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: [PATCH v2] fs: btrfs: Change return type to vm_fault_t
+Message-ID: <20180606142444.GA3806@jordon-HP-15-Notebook-PC>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180606175049.GB12439@bombadil.infradead.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jun 06, 2018 at 10:50:49AM -0700, Matthew Wilcox wrote:
-> On Wed, Jun 06, 2018 at 05:53:47PM +0200, David Sterba wrote:
-> > On Wed, Jun 06, 2018 at 07:54:44PM +0530, Souptick Joarder wrote:
-> > > @@ -9009,7 +9007,7 @@ int btrfs_page_mkwrite(struct vm_fault *vmf)
-> > >  	unlock_extent_cached(io_tree, page_start, page_end, &cached_state);
-> > >  
-> > >  out_unlock:
-> > > -	if (!ret) {
-> > > +	if (!ret2) {
-> > >  		btrfs_delalloc_release_extents(BTRFS_I(inode), PAGE_SIZE, true);
-> > >  		sb_end_pagefault(inode->i_sb);
-> > >  		extent_changeset_free(data_reserved);
-> > 
-> > 9013                 return VM_FAULT_LOCKED;
-> > 9014         }
-> > 9015         unlock_page(page);
-> > 9016 out:
-> > 9017         btrfs_delalloc_release_extents(BTRFS_I(inode), PAGE_SIZE, (ret != 0));
-> > 9018         btrfs_delalloc_release_space(inode, data_reserved, page_start,
-> > 9019                                      reserved_space, (ret != 0));
-> > 
-> > I've noticed that there's 'ret' used on lines 9017 and 19, comparing to
-> > a raw number. Is this going to be ok once vm_fault_t is it's own type?
-> > 
-> > There's no corresponding define for 0 among the VM_FAULT_* values, I'd
-> > expect 0 to work interchangeably, similar to the blk_status_t type:
-> > 
-> > https://elixir.bootlin.com/linux/latest/source/include/linux/blk_types.h#L30
-> > 
-> > #define	BLK_STS_OK 0
-> > #define BLK_STS_NOTSUPP		((__force blk_status_t)1)
-> > #define BLK_STS_TIMEOUT		((__force blk_status_t)2)
-> > #define BLK_STS_NOSPC		((__force blk_status_t)3)
-> > ...
-> > 
-> > Your patch is otherwise ok, I'm just curious if this is something to
-> > watch for once vmfault type is switched.
-> 
-> Yes, sparse treats 0 specially for these kinds of types.  It goes back to
-> the original use of __bitwise to mean "this is a special-endian type",
-> but it's also meaningful for types which aren't _numbers_ so much as a
-> collection of bits.
+Use new return type vm_fault_t for fault handler. For
+now, this is just documenting that the function returns
+a VM_FAULT value rather than an errno. Once all instances
+are converted, vm_fault_t will become a distinct type.
 
-Ok, thanks.
+Ref-> commit 1c8f422059ae ("mm: change return type to vm_fault_t")
 
-> By the way, do you really think it improves this function to use 'ret' and
-> 'ret2' like this?  It's your code, and you're entitled to adopt whatever
-> stylistic preferences you like, but I personally find it easier to read
-> with 'err' being an errno and 'ret' being the vm_fault_t.
+vmf_error() is the newly introduce inline function
+in 4.17-rc6.
 
-The ret/err pattern caused some confusion so we're going to unify that a
-bit and use 'ret' for the function scope return.
+Signed-off-by: Souptick Joarder <jrdr.linux@gmail.com>
+---
+v2: ret2 is the new temp variable to handle
+    temporary return value within btrfs_page_mkwrite
+
+ fs/btrfs/ctree.h |  2 +-
+ fs/btrfs/inode.c | 26 ++++++++++++--------------
+ 2 files changed, 13 insertions(+), 15 deletions(-)
+
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 0d422c9..1f52d9fd 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -3218,7 +3218,7 @@ int btrfs_merge_bio_hook(struct page *page, unsigned long offset,
+ 			 size_t size, struct bio *bio,
+ 			 unsigned long bio_flags);
+ void btrfs_set_range_writeback(void *private_data, u64 start, u64 end);
+-int btrfs_page_mkwrite(struct vm_fault *vmf);
++vm_fault_t btrfs_page_mkwrite(struct vm_fault *vmf);
+ int btrfs_readpage(struct file *file, struct page *page);
+ void btrfs_evict_inode(struct inode *inode);
+ int btrfs_write_inode(struct inode *inode, struct writeback_control *wbc);
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 0b86cf1..d9c21e0 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -8873,7 +8873,7 @@ static void btrfs_invalidatepage(struct page *page, unsigned int offset,
+  * beyond EOF, then the page is guaranteed safe against truncation until we
+  * unlock the page.
+  */
+-int btrfs_page_mkwrite(struct vm_fault *vmf)
++vm_fault_t btrfs_page_mkwrite(struct vm_fault *vmf)
+ {
+ 	struct page *page = vmf->page;
+ 	struct inode *inode = file_inode(vmf->vma->vm_file);
+@@ -8885,8 +8885,9 @@ int btrfs_page_mkwrite(struct vm_fault *vmf)
+ 	char *kaddr;
+ 	unsigned long zero_start;
+ 	loff_t size;
+-	int ret;
++	int ret2;
+ 	int reserved = 0;
++	vm_fault_t ret;
+ 	u64 reserved_space;
+ 	u64 page_start;
+ 	u64 page_end;
+@@ -8907,17 +8908,14 @@ int btrfs_page_mkwrite(struct vm_fault *vmf)
+ 	 * end up waiting indefinitely to get a lock on the page currently
+ 	 * being processed by btrfs_page_mkwrite() function.
+ 	 */
+-	ret = btrfs_delalloc_reserve_space(inode, &data_reserved, page_start,
++	ret2 = btrfs_delalloc_reserve_space(inode, &data_reserved, page_start,
+ 					   reserved_space);
+-	if (!ret) {
+-		ret = file_update_time(vmf->vma->vm_file);
++	if (!ret2) {
++		ret2 = file_update_time(vmf->vma->vm_file);
+ 		reserved = 1;
+ 	}
+-	if (ret) {
+-		if (ret == -ENOMEM)
+-			ret = VM_FAULT_OOM;
+-		else /* -ENOSPC, -EIO, etc */
+-			ret = VM_FAULT_SIGBUS;
++	if (ret2) {
++		ret = vmf_error(ret2);
+ 		if (reserved)
+ 			goto out;
+ 		goto out_noreserve;
+@@ -8976,15 +8974,15 @@ int btrfs_page_mkwrite(struct vm_fault *vmf)
+ 			  EXTENT_DO_ACCOUNTING | EXTENT_DEFRAG,
+ 			  0, 0, &cached_state);
+ 
+-	ret = btrfs_set_extent_delalloc(inode, page_start, end, 0,
++	ret2 = btrfs_set_extent_delalloc(inode, page_start, end, 0,
+ 					&cached_state, 0);
+-	if (ret) {
++	if (ret2) {
+ 		unlock_extent_cached(io_tree, page_start, page_end,
+ 				     &cached_state);
+ 		ret = VM_FAULT_SIGBUS;
+ 		goto out_unlock;
+ 	}
+-	ret = 0;
++	ret2 = 0;
+ 
+ 	/* page is wholly or partially inside EOF */
+ 	if (page_start + PAGE_SIZE > size)
+@@ -9009,7 +9007,7 @@ int btrfs_page_mkwrite(struct vm_fault *vmf)
+ 	unlock_extent_cached(io_tree, page_start, page_end, &cached_state);
+ 
+ out_unlock:
+-	if (!ret) {
++	if (!ret2) {
+ 		btrfs_delalloc_release_extents(BTRFS_I(inode), PAGE_SIZE, true);
+ 		sb_end_pagefault(inode->i_sb);
+ 		extent_changeset_free(data_reserved);
+-- 
+1.9.1
+

@@ -1,117 +1,92 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f65.google.com ([209.85.214.65]:53685 "EHLO
-        mail-it0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751982AbeFFNzS (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Jun 2018 09:55:18 -0400
-Received: by mail-it0-f65.google.com with SMTP id a195-v6so8229694itd.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 06 Jun 2018 06:55:18 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <0909E1D8-D024-4667-A0E8-C1CF40E77683@fb.com>
-References: <bug-199931-27@https.bugzilla.kernel.org/> <20180605130329.f7069e01c5faacc08a10996c@linux-foundation.org>
- <9C514595-AA27-4794-9831-BEF3A8A6787E@fb.com> <CANQeFDBZp5b5MV_uk63ZPhvB2fnWc0hqsTCL6-7v8e-9LULVpQ@mail.gmail.com>
- <0909E1D8-D024-4667-A0E8-C1CF40E77683@fb.com>
-From: Liu Bo <obuil.liubo@gmail.com>
-Date: Wed, 6 Jun 2018 21:55:16 +0800
-Message-ID: <CANQeFDAe5LOaTief5KBxtWb9ewJmRjmHvSnkdY_LrCX7-1rdkw@mail.gmail.com>
-Subject: Re: [Bug 199931] New: systemd/rtorrent file data corruption when
- using echo 3 >/proc/sys/vm/drop_caches
-To: Chris Mason <clm@fb.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>, Michal Hocko <mhocko@suse.com>,
+Received: from mail.nethype.de ([5.9.56.24]:42523 "EHLO mail.nethype.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751853AbeFFTW0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 6 Jun 2018 15:22:26 -0400
+Date: Wed, 6 Jun 2018 21:06:35 +0200
+From: Marc Lehmann <schmorp@schmorp.de>
+To: james harvey <jamespharvey20@gmail.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>, Chris Mason <clm@fb.com>,
+        Michal Hocko <mhocko@suse.com>,
         Tetsuo Handa <penguin-kernel@i-love.sakura.ne.jp>,
         bugzilla-daemon@bugzilla.kernel.org, bugzilla.kernel.org@plan9.de,
-        linux-btrfs@vger.kernel.org, linux-mm@kvack.org,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>, linux-mm@kvack.org,
         Jan Kara <jack@suse.cz>
-Content-Type: text/plain; charset="UTF-8"
+Subject: Re: [Bug 199931] New: systemd/rtorrent file data corruption when
+ using echo 3 >/proc/sys/vm/drop_caches
+Message-ID: <20180606190635.meodcz3mchhtqprb@schmorp.de>
+References: <bug-199931-27@https.bugzilla.kernel.org/>
+ <20180605130329.f7069e01c5faacc08a10996c@linux-foundation.org>
+ <CA+X5Wn5_iJYS9MLFdArG9sDHQO2n=BkZmaYAOexhdoVc+tQnmw@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CA+X5Wn5_iJYS9MLFdArG9sDHQO2n=BkZmaYAOexhdoVc+tQnmw@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jun 6, 2018 at 9:44 PM, Chris Mason <clm@fb.com> wrote:
-> On 6 Jun 2018, at 9:38, Liu Bo wrote:
->
->> On Wed, Jun 6, 2018 at 8:18 AM, Chris Mason <clm@fb.com> wrote:
->>>
->>>
->>>
->>> On 5 Jun 2018, at 16:03, Andrew Morton wrote:
->>>
->>>> (switched to email.  Please respond via emailed reply-to-all, not via
->>>> the
->>>> bugzilla web interface).
->>>>
->>>> On Tue, 05 Jun 2018 18:01:36 +0000 bugzilla-daemon@bugzilla.kernel.org
->>>> wrote:
->>>>
->>>>> https://bugzilla.kernel.org/show_bug.cgi?id=199931
->>>>>
->>>>>             Bug ID: 199931
->>>>>            Summary: systemd/rtorrent file data corruption when using
->>>>> echo
->>>>>                     3 >/proc/sys/vm/drop_caches
->>>>
->>>>
->>>>
->>>> A long tale of woe here.  Chris, do you think the pagecache corruption
->>>> is a general thing, or is it possible that btrfs is contributing?
->>>>
->>>> Also, that 4.4 oom-killer regression sounds very serious.
->>>
->>>
->>>
->>> This week I found a bug in btrfs file write with how we handle stable
->>> pages.
->>> Basically it works like this:
->>>
->>> write(fd, some bytes less than a page)
->>> write(fd, some bytes into the same page)
->>>     btrfs prefaults the userland page
->>>     lock_and_cleanup_extent_if_need()   <- stable pages
->>>                 wait for writeback()
->>>                 clear_page_dirty_for_io()
->>>
->>> At this point we have a page that was dirty and is now clean.  That's
->>> normally fine, unless our prefaulted page isn't in ram anymore.
->>>
->>>         iov_iter_copy_from_user_atomic() <--- uh oh
->>>
->>> If the copy_from_user fails, we drop all our locks and retry.  But along
->>> the
->>> way, we completely lost the dirty bit on the page.  If the page is
->>> dropped
->>> by drop_caches, the writes are lost.  We'll just read back the stale
->>> contents of that page during the retry loop.  This won't result in crc
->>> errors because the bytes we lost were never crc'd.
->>>
->>
->> So we're going to carefully redirty the page under the page lock, right?
->
->
-> I don't think we actually need to clean it.  We have the page locked,
-> writeback won't start until we unlock.
->
+On Tue, Jun 05, 2018 at 05:52:38PM -0400, james harvey <jamespharvey20@gmail.com> wrote:
+> >> This is not always reproducible, but when deleting our journal, creating log
+> >> messages for a few hours and then doing the above manually has a ~50% chance of
+> >> corrupting the journal.
+> ...
+> 
+> My strong bet is you have a hardware issue.
 
-My concern is that the buggy thing is similar to compression path,
-where we also did the trick of clear_page_dirty_for_io and
-redirty_pages to avoid any faults wandering in and changing pages
-underneath, but seems here we're fine if pages get changed in between.
+Strange, what kind of harwdare bug would affect multiple very different
+computers in exactly the same way?
 
->>
->>> It could result in zeros in the file because we're basically reading a
->>> hole,
->>> and those zeros could move around in the page depending on which part of
->>> the
->>> page was dirty when the writes were lost.
->>>
->>
->> I got a question, while re-reading this page, wouldn't it read
->> old/stale on-disk data?
->
->
-> If it was never written we should be treating it like a hole, but I'll
-> double check.
->
+> going bad, bad cables, bad port, etc.  My strong bet is you're also
+> using BTRFS mirroring.
 
-Okay, I think this would also happen in the overwrite case, where
-stale data lies on disk.
+Not sure what exactly you mean with btrfs mirroring (there are many btrfs
+features this could refer to), but the closest thing to that that I use is
+dup for metadata (which is always checksummed), data is always single. All
+btrfs filesystems are on lvm (not mirrored), and most (but not all) are
+encrypted. One affected fs is on a hardware raid controller, one is on an
+ssd. I have a single btrfs fs in that box with raid1 for metadata, as an
+experiment, but I haven't used it for testing yet.
 
-thanks,
-liubo
+> You're describing intermittent data corruption on files that I'm
+> thinking all have NOCOW turned on.
+
+The systemd journal files are nocow (I re-enabled that after I turned it
+off for a while), but the rtorrent directory (and the files in it) are
+not.
+
+I did experiment (a year ago) with nocow for torrent files and, more
+importantly, vm images, but it didn't really solve the "millions of
+fragments slow down" problem with btrfs, so I figured I can keep them cow
+and regularly copy them to defragment them. Thats why I am quite sure cow
+is switched on long before I booted my first 4.14 kernel (and it still
+is).
+
+> it's done writing to a journal file, but in a way that guarantees it
+> to fail.  This has been reported to systemd at
+> https://github.com/systemd/systemd/issues/9112 but poettering has
+
+I am aware that systemd tries to turn on nocow, and I think this is actually
+a bug, but this wouldn't have an an effect on rtorrent, which has corruption
+problems on a different fs. And boy would it be wonderufl if Debian switched
+away form systemd, I feel I personally ran into every single bug that
+exists...
+
+However, no matter how much systemd plays with btrfs flags, it shouldn't
+corrupt data.
+
+> The context I ran into this problem was with several other bugs
+> interacting, that "btrfs replace" has been guaranteed to corrupt
+> non-checksummed (NOCOW) compressed data, which the combination of
+> those shouldn't happen, but does in some defragmentation situations
+> due to another bug.  In my situation, I don't have a hardware issue.
+
+Yeah, btrfs is full of bugs that I constantly run into, but most of them
+are containable, unlikely this problem, which might or might not be a
+btrfs bug - especially since all your bets seem to be wrong here.
+
+-- 
+                The choice of a       Deliantra, the free code+content MORPG
+      -----==-     _GNU_              http://www.deliantra.net
+      ----==-- _       generation
+      ---==---(_)__  __ ____  __      Marc Lehmann
+      --==---/ / _ \/ // /\ \/ /      schmorp@schmorp.de
+      -=====/_/_//_/\_,_/ /_/\_\

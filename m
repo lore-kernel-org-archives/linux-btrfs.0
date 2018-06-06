@@ -1,60 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f65.google.com ([209.85.218.65]:36603 "EHLO
-        mail-oi0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S933198AbeFGR2H (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Jun 2018 13:28:07 -0400
-Received: by mail-oi0-f65.google.com with SMTP id 14-v6so9363557oie.3
-        for <linux-btrfs@vger.kernel.org>; Thu, 07 Jun 2018 10:28:06 -0700 (PDT)
+Received: from mail-oi0-f68.google.com ([209.85.218.68]:45124 "EHLO
+        mail-oi0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932097AbeFFGam (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Jun 2018 02:30:42 -0400
+Received: by mail-oi0-f68.google.com with SMTP id b130-v6so4380335oif.12
+        for <linux-btrfs@vger.kernel.org>; Tue, 05 Jun 2018 23:30:42 -0700 (PDT)
 MIME-Version: 1.0
 From: james harvey <jamespharvey20@gmail.com>
-Date: Thu, 7 Jun 2018 13:28:05 -0400
-Message-ID: <CA+X5Wn7U_8cdO-fDzgfKmKvBqavzamQUNz6sDX7pePSWd-pcjg@mail.gmail.com>
-Subject: [PATCH v3 (Only) 1/3] btrfs-progs: map-logical: look at next leaf if
- slot > items
+Date: Wed, 6 Jun 2018 02:30:41 -0400
+Message-ID: <CA+X5Wn6h8sot6Z7OQVvehD_T4XxHOiss=gT18s_d6EJPZrUhQA@mail.gmail.com>
+Subject: [PATCH] btrfs-progs: btrfs_close_devices(): only fsync() if device->writeable
 To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs-map-logical -l 10955980800 -b 4096 <path>
-No extent found at range [10955980800,10955984896)
+Prevent unnecessary error from failing fsync(), if opened read only.
 
-But, this extent exists.  btrfs-debug-tree shows:
+Performed 'grep "writeable = " *.h *.c' to make sure there were no odd
+situations where fsync() might still be desired here.  They're all straight-
+forward.  The only situation where writeable will be 0 is if btrfs_open_devices
+is given flags without O_RDWR.  There is no situation where a writeable volume
+temporarily becomes unwriteable, or anything like that.  Given that it's being
+opened O_RDWR, there's no reason to attempt fsync().
 
-   item 202 key (10955976704 EXTENT_ITEM 4096) itemoff 8772 itemsize 37
-           refs 1 gen 62656 flags DATA
-           shared data backref parent 142655488 count 1
-...
-   item 0 key (10955980800 EXTENT_ITEM 4096) itemoff 16246 itemsize 37
-           refs 1 gen 62656 flags DATA
-           shared data backref parent 128958464 count 1
+utils.c
 
-The code searches for (logical, 0, 0), and looks forward then backward.  It
-needs to go to the next leaf when slot > number of items on this leaf.
+   int btrfs_add_to_fsid() {
+      ...
+      device->writeable = 1;
+
+volumes.c
+
+   int btrfs_close_devices() {
+      ...
+      while (!list_empty(&fs_devices->devices)) {
+         ...
+         // just after the fsync() being patched
+267:     device->writeable = 0;
+   ...
+   int btrfs_open_devices() {
+      ...
+      list_for_each_entry(device, &fs_devices->devices, dev_list) {
+         ...
+         if (flags & O_RDWR)
+332:        device->writeable = 1
+
+kernel btrfs_close_devices() does not have a corresponding fsync() that I see.
 
 Signed-off-by: James Harvey <jamespharvey20@gmail.com>
 ---
- btrfs-map-logical.c | 8 ++++++++
- 1 file changed, 8 insertions(+)
+ volumes.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/btrfs-map-logical.c b/btrfs-map-logical.c
-index 7a8bcff9..8a4228a4 100644
---- a/btrfs-map-logical.c
-+++ b/btrfs-map-logical.c
-@@ -65,6 +65,14 @@ static int map_one_extent(struct btrfs_fs_info *fs_info,
-        BUG_ON(ret == 0);
-        ret = 0;
-
-+       if (path->slots[0] >= btrfs_header_nritems(path->nodes[0])) {
-+               ret = btrfs_next_leaf(fs_info->extent_root, path);
-+               if (ret > 0)
-+                       ret = -ENOENT;
-+               if (ret)
-+                       goto out;
-+       }
-+
- again:
-        btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
-        if ((search_foward && key.objectid < logical) ||
+diff --git a/volumes.c b/volumes.c
+index c6e34321..36d1bde6 100644
+--- a/volumes.c
++++ b/volumes.c
+@@ -254,7 +254,7 @@ again:
+                device = list_entry(fs_devices->devices.next,
+                                    struct btrfs_device, dev_list);
+                if (device->fd != -1) {
+-                       if (fsync(device->fd) == -1) {
++                       if (device->writeable && fsync(device->fd) == -1) {
+                                warning("fsync on device %llu failed: %m",
+                                        device->devid);
+                                ret = -errno;
 --
 2.17.0

@@ -1,137 +1,185 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:38527 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:60362 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932553AbeFFI0K (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 6 Jun 2018 04:26:10 -0400
+        id S932279AbeFFH1Z (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 6 Jun 2018 03:27:25 -0400
 Received: from relay2.suse.de (charybdis-ext-too.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 93AF9AD9C
-        for <linux-btrfs@vger.kernel.org>; Wed,  6 Jun 2018 08:26:09 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 553BEAD8D
+        for <linux-btrfs@vger.kernel.org>; Wed,  6 Jun 2018 07:27:24 +0000 (UTC)
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 3/6] btrfs-progs: check/original: Detect and repair wrong inline ram_bytes
-Date: Wed,  6 Jun 2018 16:26:07 +0800
-Message-Id: <20180606082607.9885-1-wqu@suse.com>
-In-Reply-To: <20180606072717.28854-4-wqu@suse.com>
-References: <20180606072717.28854-4-wqu@suse.com>
+Subject: [PATCH 4/6] btrfs-progs: check/lowmem: Prepare check_file_extent() to handle repair
+Date: Wed,  6 Jun 2018 15:27:15 +0800
+Message-Id: <20180606072717.28854-5-wqu@suse.com>
+In-Reply-To: <20180606072717.28854-1-wqu@suse.com>
+References: <20180606072717.28854-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It looks like that around 2014, btrfs kernel has a regression that would
-cause offset-by-one ram_bytes for inline extent.
+Current check_file_extent() doesn't support later repair work, since it
+doesn't accept btrfs_path structure as parameter, thus it can't modify
+btrfs trees, or later check will still use the old and wrong path.
 
-Add the ability to repair it in original mode.
+Use btrfs_path to replace btrfs_key, extent_buffer and slot parameters,
+so we can modify @path directly for repair, and reduce the number of
+parameters for check_file_extent().
 
-Reported-by: Steve Leung <sjleung@shaw.ca>
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
-changelog:
-v2:
-  Add extra output for print_inode_error().
-  Reword the repair output message.
-  Clear the error bitmap if repaired.
----
- check/main.c          | 47 +++++++++++++++++++++++++++++++++++++++++--
- check/mode-original.h |  1 +
- 2 files changed, 46 insertions(+), 2 deletions(-)
+ check/mode-lowmem.c | 45 +++++++++++++++++++++++----------------------
+ 1 file changed, 23 insertions(+), 22 deletions(-)
 
-diff --git a/check/main.c b/check/main.c
-index 52ef181add61..c739c094cef3 100644
---- a/check/main.c
-+++ b/check/main.c
-@@ -578,6 +578,8 @@ static void print_inode_error(struct btrfs_root *root, struct inode_record *rec)
- 		fprintf(stderr, ", orphan file extent");
- 	if (errors & I_ERR_ODD_INODE_FLAGS)
- 		fprintf(stderr, ", odd inode flags");
-+	if (errors & I_ERR_INLINE_RAM_BYTES_WRONG)
-+		fprintf(stderr, ", invalid inline ram bytes");
- 	fprintf(stderr, "\n");
- 	/* Print the orphan extents if needed */
- 	if (errors & I_ERR_FILE_EXTENT_ORPHAN)
-@@ -1483,6 +1485,9 @@ static int process_file_extent(struct btrfs_root *root,
- 		} else {
- 			if (num_bytes > max_inline_size)
- 				rec->errors |= I_ERR_FILE_EXTENT_TOO_LARGE;
-+			if (btrfs_file_extent_inline_item_len(eb, item) !=
-+			    num_bytes)
-+				rec->errors |= I_ERR_INLINE_RAM_BYTES_WRONG;
- 		}
- 		rec->found_size += num_bytes;
- 		num_bytes = (num_bytes + mask) & ~mask;
-@@ -2534,6 +2539,41 @@ out:
- 	return ret;
- }
- 
-+static int repair_inline_ram_bytes(struct btrfs_trans_handle *trans,
-+				   struct btrfs_root *root,
-+				   struct btrfs_path *path,
-+				   struct inode_record *rec)
-+{
-+	struct btrfs_key key;
-+	struct btrfs_file_extent_item *fi;
-+	struct btrfs_item *i;
-+	u64 on_disk_item_len;
-+	int ret;
-+
-+	key.objectid = rec->ino;
-+	key.offset = 0;
-+	key.type = BTRFS_EXTENT_DATA_KEY;
-+
-+	ret = btrfs_search_slot(trans, root, &key, path, 0, 1);
-+	if (ret > 0)
-+		ret = -ENOENT;
-+	if (ret < 0)
-+		goto out;
-+
-+	i = btrfs_item_nr(path->slots[0]);
-+	on_disk_item_len = btrfs_file_extent_inline_item_len(path->nodes[0], i);
-+	fi = btrfs_item_ptr(path->nodes[0], path->slots[0],
-+			    struct btrfs_file_extent_item);
-+	btrfs_set_file_extent_ram_bytes(path->nodes[0], fi, on_disk_item_len);
-+	btrfs_mark_buffer_dirty(path->nodes[0]);
-+	printf("Repaired inline ram_bytes for root %llu ino %llu\n",
-+		root->objectid, rec->ino);
-+	rec->errors &= ~I_ERR_INLINE_RAM_BYTES_WRONG;
-+out:
-+	btrfs_release_path(path);
-+	return ret;
-+}
-+
- static int try_repair_inode(struct btrfs_root *root, struct inode_record *rec)
+diff --git a/check/mode-lowmem.c b/check/mode-lowmem.c
+index b3198fffa250..3280591396bd 100644
+--- a/check/mode-lowmem.c
++++ b/check/mode-lowmem.c
+@@ -1740,18 +1740,18 @@ static int punch_extent_hole(struct btrfs_root *root, u64 ino, u64 start,
+  * check and update the last offset of the file extent.
+  *
+  * @root:	the root of fs/file tree.
+- * @fkey:	the key of the file extent.
+  * @nodatasum:	INODE_NODATASUM feature.
+  * @size:	the sum of all EXTENT_DATA items size for this inode.
+  * @end:	the offset of the last extent.
+  *
+  * Return 0 if no error occurred.
+  */
+-static int check_file_extent(struct btrfs_root *root, struct btrfs_key *fkey,
+-			     struct extent_buffer *node, int slot,
++static int check_file_extent(struct btrfs_root *root, struct btrfs_path *path,
+ 			     unsigned int nodatasum, u64 *size, u64 *end)
  {
- 	struct btrfs_trans_handle *trans;
-@@ -2545,8 +2585,9 @@ static int try_repair_inode(struct btrfs_root *root, struct inode_record *rec)
- 			     I_ERR_LINK_COUNT_WRONG |
- 			     I_ERR_NO_INODE_ITEM |
- 			     I_ERR_FILE_EXTENT_ORPHAN |
--			     I_ERR_FILE_EXTENT_DISCOUNT|
--			     I_ERR_FILE_NBYTES_WRONG)))
-+			     I_ERR_FILE_EXTENT_DISCOUNT |
-+			     I_ERR_FILE_NBYTES_WRONG |
-+			     I_ERR_INLINE_RAM_BYTES_WRONG)))
- 		return rec->errors;
+ 	struct btrfs_file_extent_item *fi;
++	struct btrfs_key fkey;
++	struct extent_buffer *node = path->nodes[0];
+ 	u64 disk_bytenr;
+ 	u64 disk_num_bytes;
+ 	u64 extent_num_bytes;
+@@ -1763,10 +1763,12 @@ static int check_file_extent(struct btrfs_root *root, struct btrfs_key *fkey,
+ 				BTRFS_MAX_INLINE_DATA_SIZE(root->fs_info));
+ 	unsigned int extent_type;
+ 	unsigned int is_hole;
++	int slot = path->slots[0];
+ 	int compressed = 0;
+ 	int ret;
+ 	int err = 0;
  
- 	/*
-@@ -2575,6 +2616,8 @@ static int try_repair_inode(struct btrfs_root *root, struct inode_record *rec)
- 		ret = repair_inode_nlinks(trans, root, &path, rec);
- 	if (!ret && rec->errors & I_ERR_FILE_NBYTES_WRONG)
- 		ret = repair_inode_nbytes(trans, root, &path, rec);
-+	if (!ret && rec->errors & I_ERR_INLINE_RAM_BYTES_WRONG)
-+		ret = repair_inline_ram_bytes(trans, root, &path, rec);
- 	btrfs_commit_transaction(trans, root);
- 	btrfs_release_path(&path);
- 	return ret;
-diff --git a/check/mode-original.h b/check/mode-original.h
-index 13cfa5b9e1b3..ec2842e0b3be 100644
---- a/check/mode-original.h
-+++ b/check/mode-original.h
-@@ -187,6 +187,7 @@ struct file_extent_hole {
- #define I_ERR_FILE_EXTENT_ORPHAN	(1 << 14)
- #define I_ERR_FILE_EXTENT_TOO_LARGE	(1 << 15)
- #define I_ERR_ODD_INODE_FLAGS		(1 << 16)
-+#define I_ERR_INLINE_RAM_BYTES_WRONG	(1 << 17)
++	btrfs_item_key_to_cpu(node, &fkey, slot);
+ 	fi = btrfs_item_ptr(node, slot, struct btrfs_file_extent_item);
  
- struct inode_record {
- 	struct list_head backrefs;
+ 	/* Check inline extent */
+@@ -1781,23 +1783,23 @@ static int check_file_extent(struct btrfs_root *root, struct btrfs_key *fkey,
+ 		if (extent_num_bytes == 0) {
+ 			error(
+ 		"root %llu EXTENT_DATA[%llu %llu] has empty inline extent",
+-				root->objectid, fkey->objectid, fkey->offset);
++				root->objectid, fkey.objectid, fkey.offset);
+ 			err |= FILE_EXTENT_ERROR;
+ 		}
+ 		if (compressed) {
+ 			if (extent_num_bytes > root->fs_info->sectorsize) {
+ 				error(
+ "root %llu EXTENT_DATA[%llu %llu] too large inline extent ram size, have %llu, max: %u",
+-					root->objectid, fkey->objectid,
+-					fkey->offset, extent_num_bytes,
++					root->objectid, fkey.objectid,
++					fkey.offset, extent_num_bytes,
+ 					root->fs_info->sectorsize - 1);
+ 				err |= FILE_EXTENT_ERROR;
+ 			}
+ 			if (item_inline_len > max_inline_extent_size) {
+ 				error(
+ "root %llu EXTENT_DATA[%llu %llu] too large inline extent on-disk size, have %u, max: %u",
+-					root->objectid, fkey->objectid,
+-					fkey->offset, item_inline_len,
++					root->objectid, fkey.objectid,
++					fkey.offset, item_inline_len,
+ 					max_inline_extent_size);
+ 				err |= FILE_EXTENT_ERROR;
+ 			}
+@@ -1805,7 +1807,7 @@ static int check_file_extent(struct btrfs_root *root, struct btrfs_key *fkey,
+ 			if (extent_num_bytes > max_inline_extent_size) {
+  			error(
+  "root %llu EXTENT_DATA[%llu %llu] too large inline extent size, have %llu, max: %u",
+- 				root->objectid, fkey->objectid, fkey->offset,
++ 				root->objectid, fkey.objectid, fkey.offset,
+  				extent_num_bytes, max_inline_extent_size);
+ 				err |= FILE_EXTENT_ERROR;
+ 			}
+@@ -1813,7 +1815,7 @@ static int check_file_extent(struct btrfs_root *root, struct btrfs_key *fkey,
+ 		if (!compressed && extent_num_bytes != item_inline_len) {
+ 			error(
+ 		"root %llu EXTENT_DATA[%llu %llu] wrong inline size, have: %llu, expected: %u",
+-				root->objectid, fkey->objectid, fkey->offset,
++				root->objectid, fkey.objectid, fkey.offset,
+ 				extent_num_bytes, item_inline_len);
+ 			err |= FILE_EXTENT_ERROR;
+ 		}
+@@ -1827,7 +1829,7 @@ static int check_file_extent(struct btrfs_root *root, struct btrfs_key *fkey,
+ 			extent_type != BTRFS_FILE_EXTENT_PREALLOC) {
+ 		err |= FILE_EXTENT_ERROR;
+ 		error("root %llu EXTENT_DATA[%llu %llu] type bad",
+-		      root->objectid, fkey->objectid, fkey->offset);
++		      root->objectid, fkey.objectid, fkey.offset);
+ 		return err;
+ 	}
+ 
+@@ -1864,12 +1866,12 @@ static int check_file_extent(struct btrfs_root *root, struct btrfs_key *fkey,
+ 	if (csum_found > 0 && nodatasum) {
+ 		err |= ODD_CSUM_ITEM;
+ 		error("root %llu EXTENT_DATA[%llu %llu] nodatasum shouldn't have datasum",
+-		      root->objectid, fkey->objectid, fkey->offset);
++		      root->objectid, fkey.objectid, fkey.offset);
+ 	} else if (extent_type == BTRFS_FILE_EXTENT_REG && !nodatasum &&
+ 		   !is_hole && (ret < 0 || csum_found < search_len)) {
+ 		err |= CSUM_ITEM_MISSING;
+ 		error("root %llu EXTENT_DATA[%llu %llu] csum missing, have: %llu, expected: %llu",
+-		      root->objectid, fkey->objectid, fkey->offset,
++		      root->objectid, fkey.objectid, fkey.offset,
+ 		      csum_found, search_len);
+ 	} else if (extent_type == BTRFS_FILE_EXTENT_PREALLOC &&
+ 		   csum_found > 0) {
+@@ -1881,22 +1883,22 @@ static int check_file_extent(struct btrfs_root *root, struct btrfs_key *fkey,
+ 			err |= ODD_CSUM_ITEM;
+ 			error(
+ "root %llu EXTENT_DATA[%llu %llu] prealloc shouldn't have csum, but has: %llu",
+-			      root->objectid, fkey->objectid, fkey->offset,
++			      root->objectid, fkey.objectid, fkey.offset,
+ 			      csum_found);
+ 		}
+ 	}
+ 
+ 	/* Check EXTENT_DATA hole */
+-	if (!no_holes && *end != fkey->offset) {
++	if (!no_holes && *end != fkey.offset) {
+ 		if (repair)
+-			ret = punch_extent_hole(root, fkey->objectid,
+-						*end, fkey->offset - *end);
++			ret = punch_extent_hole(root, fkey.objectid,
++						*end, fkey.offset - *end);
+ 		if (!repair || ret) {
+ 			err |= FILE_EXTENT_ERROR;
+ 			error(
+ "root %llu EXTENT_DATA[%llu %llu] gap exists, expected: EXTENT_DATA[%llu %llu]",
+-				root->objectid, fkey->objectid, fkey->offset,
+-				fkey->objectid, *end);
++				root->objectid, fkey.objectid, fkey.offset,
++				fkey.objectid, *end);
+ 		}
+ 	}
+ 
+@@ -2374,9 +2376,8 @@ static int check_inode_item(struct btrfs_root *root, struct btrfs_path *path)
+ 					root->objectid, inode_id, key.objectid,
+ 					key.offset);
+ 			}
+-			ret = check_file_extent(root, &key, node, slot,
+-						nodatasum, &extent_size,
+-						&extent_end);
++			ret = check_file_extent(root, path, nodatasum,
++						&extent_size, &extent_end);
+ 			err |= ret;
+ 			break;
+ 		case BTRFS_XATTR_ITEM_KEY:
 -- 
 2.17.1
 

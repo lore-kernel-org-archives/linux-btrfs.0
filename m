@@ -1,109 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:24918 "EHLO
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:41265 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1752960AbeFGDrG (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Jun 2018 23:47:06 -0400
-Received: from G08CNEXCHPEKD03.g08.fujitsu.local (unknown [10.167.33.85])
-        by cn.fujitsu.com (Postfix) with ESMTP id 0CAF74B41E79
-        for <linux-btrfs@vger.kernel.org>; Thu,  7 Jun 2018 11:46:57 +0800 (CST)
-Subject: Re: [PATCH v2 1/3] btrfs-progs: check: check symlinks with
+        with ESMTP id S1751797AbeFGGxO (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Jun 2018 02:53:14 -0400
+Subject: Re: [PATCH v2 0/3] btrfs-progs: check: verify symlinks with
  append/immutable flags
-To: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>,
-        <linux-btrfs@vger.kernel.org>
+To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
 References: <20180515013324.18838-1-suy.fnst@cn.fujitsu.com>
- <20180515013324.18838-2-suy.fnst@cn.fujitsu.com>
- <ee67d0b0-567f-efa3-5d7f-667bbb098e8c@jp.fujitsu.com>
+ <20180531114031.GP3539@twin.jikos.cz>
 From: Su Yue <suy.fnst@cn.fujitsu.com>
-Message-ID: <5ed43d8e-cd04-9433-d245-51438f613ee5@cn.fujitsu.com>
-Date: Thu, 7 Jun 2018 11:53:09 +0800
+Message-ID: <7274f886-2635-6bc0-5689-0e4ebffda3db@cn.fujitsu.com>
+Date: Thu, 7 Jun 2018 14:59:23 +0800
 MIME-Version: 1.0
-In-Reply-To: <ee67d0b0-567f-efa3-5d7f-667bbb098e8c@jp.fujitsu.com>
-Content-Type: text/plain; charset="utf-8"
+In-Reply-To: <20180531114031.GP3539@twin.jikos.cz>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On 06/07/2018 10:45 AM, Misono Tomohiro wrote:
-> 
-> 
-> On 2018/05/15 10:33, Su Yue wrote:
->> Define new macro I_ERR_ODD_INODE_FLAGS to represents odd inode flags.
+On 05/31/2018 07:40 PM, David Sterba wrote:
+> On Tue, May 15, 2018 at 09:33:21AM +0800, Su Yue wrote:
+>> This patchset can be fetch from my github:
+>> https://github.com/Damenly/btrfs-progs/commits/odd_inode_flags
+>> It's based on devel.
 >>
->> Symlinks should never have append/immutable flags.
->> While processing inodes, if found a symlink with append/immutable
->> flags, mark the inode record with I_ERR_ODD_INODE_FLAGS.
+>> symlinks should never have append/immutable attributes.
+>> This patchset enables btrfs check to verify such corruption.
 >>
->> This is for original mode.
+>> PATCH[1] is for original mode.
+>> PATCH[2] is for original mode.
 >>
->> Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
+>> PATCH[3] adds a test image.
+>> For further use, the directory is called bad-inode-flags.
+>>
+>> #issue 133
+>>
 >> ---
->>  check/main.c          | 7 +++++++
->>  check/mode-original.h | 1 +
->>  2 files changed, 8 insertions(+)
+>> Changelog:
+>> v2:
+>>    Use "rec->errors |=" instead of "rec->errors =" in patch[1].
+>>    Define new error bit of invalid inode flags in lowmem mode.
+>>    Adjust print message in patch[2]. Thanks, Qu and Nikolay.
+>>    Rename test directory from odd-inode-flags to bad-inode-flags.
 >>
->> diff --git a/check/main.c b/check/main.c
->> index 68da994f7ae0..c764fc011ded 100644
->> --- a/check/main.c
->> +++ b/check/main.c
->> @@ -576,6 +576,8 @@ static void print_inode_error(struct btrfs_root *root, struct inode_record *rec)
->>  		fprintf(stderr, ", link count wrong");
->>  	if (errors & I_ERR_FILE_EXTENT_ORPHAN)
->>  		fprintf(stderr, ", orphan file extent");
->> +	if (errors & I_ERR_ODD_INODE_FLAGS)
->> +		fprintf(stderr, ", odd inode flags");
->>  	fprintf(stderr, "\n");
->>  	/* Print the orphan extents if needed */
->>  	if (errors & I_ERR_FILE_EXTENT_ORPHAN)
->> @@ -805,6 +807,7 @@ static int process_inode_item(struct extent_buffer *eb,
->>  {
->>  	struct inode_record *rec;
->>  	struct btrfs_inode_item *item;
->> +	u64 flags;
->>  
->>  	rec = active_node->current;
->>  	BUG_ON(rec->ino != key->objectid || rec->refs > 1);
->> @@ -822,6 +825,10 @@ static int process_inode_item(struct extent_buffer *eb,
->>  	rec->found_inode_item = 1;
->>  	if (rec->nlink == 0)
->>  		rec->errors |= I_ERR_NO_ORPHAN_ITEM;
->> +	flags = btrfs_inode_flags(eb, item);
->> +	if (rec->imode & BTRFS_FT_SYMLINK &&
+>> Su Yue (3):
+>>    btrfs-progs: check: check symlinks with append/immutable flags
+>>    btrfs-progs: lowmem: check symlinks with append/immutable flags
+>>    btrfs-progs: fsck-tests: add test case to check symlinks with bad
+>>      flags
 > 
-> Hello,
-> 
-> I observed that this commit causes test-convert/009 in current kdave/devel branch.
-> Since rec->imode uses S_IFLNK (0xa000) for symbolic link and BTRFS_FT_SYMLINK is 7,
-> above statement does not work well. Shouldn't we use S_ISLNK(rec->imode) instead?
-> 
+> Applied, thanks.
 
-Oh.. Yep, my bad.
-Since the test case is created by hand, the whole patchset should be
-modified in next version.
-Thanks a lot.
+Hi David,
+	Could you replace this patchset with new V3? It fixes the problem 
+reported by Misono.
 
+Thanks,
 Su
 
-> Thanks,
-> Tomohiro Misono
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 > 
->> +	    flags & (BTRFS_INODE_IMMUTABLE | BTRFS_INODE_APPEND))
->> +		rec->errors |= I_ERR_ODD_INODE_FLAGS;
->>  	maybe_free_inode_rec(&active_node->inode_cache, rec);
->>  	return 0;
->>  }
->> diff --git a/check/mode-original.h b/check/mode-original.h
->> index 368de692fdd1..13cfa5b9e1b3 100644
->> --- a/check/mode-original.h
->> +++ b/check/mode-original.h
->> @@ -186,6 +186,7 @@ struct file_extent_hole {
->>  #define I_ERR_LINK_COUNT_WRONG		(1 << 13)
->>  #define I_ERR_FILE_EXTENT_ORPHAN	(1 << 14)
->>  #define I_ERR_FILE_EXTENT_TOO_LARGE	(1 << 15)
->> +#define I_ERR_ODD_INODE_FLAGS		(1 << 16)
->>  
->>  struct inode_record {
->>  	struct list_head backrefs;
->>
+> 
 
 

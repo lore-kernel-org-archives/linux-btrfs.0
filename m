@@ -1,60 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwym01.jp.fujitsu.com ([211.128.242.40]:36883 "EHLO
-        mgwym01.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752336AbeFGCuV (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Jun 2018 22:50:21 -0400
-Received: from g01jpfmpwyt02.exch.g01.fujitsu.local (g01jpfmpwyt02.exch.g01.fujitsu.local [10.128.193.56])
-        by yt-mxoi2.gw.nic.fujitsu.com (Postfix) with ESMTP id 36620AC00D5
-        for <linux-btrfs@vger.kernel.org>; Thu,  7 Jun 2018 11:50:14 +0900 (JST)
-Received: from G01JPEXCHYT14.g01.fujitsu.local (G01JPEXCHYT14.g01.fujitsu.local [10.128.194.53])
-        by g01jpfmpwyt02.exch.g01.fujitsu.local (Postfix) with ESMTP id 5DD5658425C
-        for <linux-btrfs@vger.kernel.org>; Thu,  7 Jun 2018 11:50:13 +0900 (JST)
-From: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
-Subject: [PATCH] btrfs-progs: check: Initialize all filed of btrfs_inode_item
- in insert_inode_item()
-References: <cover.1528339598.git.misono.tomohiro@jp.fujitsu.com>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Message-ID: <a9e2495c-6085-4efb-5257-f58a5019e2b7@jp.fujitsu.com>
-Date: Thu, 7 Jun 2018 11:49:58 +0900
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:8526 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1753190AbeFGIpb (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Jun 2018 04:45:31 -0400
+Subject: Re: [PATCH v2 3/3] Fix misspelling of forward
+To: james harvey <jamespharvey20@gmail.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <CA+X5Wn5J-gF9VTYCvT=J7SQA3n3DP0PTExf7Zf8AcLzkkpG6OQ@mail.gmail.com>
+From: Su Yue <suy.fnst@cn.fujitsu.com>
+Message-ID: <711bd032-8ee0-4451-9402-f8fbee329360@cn.fujitsu.com>
+Date: Thu, 7 Jun 2018 16:51:29 +0800
 MIME-Version: 1.0
-In-Reply-To: <cover.1528339598.git.misono.tomohiro@jp.fujitsu.com>
-Content-Type: text/plain; charset="utf-8"
+In-Reply-To: <CA+X5Wn5J-gF9VTYCvT=J7SQA3n3DP0PTExf7Zf8AcLzkkpG6OQ@mail.gmail.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Initialize all filed of btrfs_inode_item to zero in order to prevent
-having some garbage, especially for flags field.
 
-Signed-off-by: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
----
- check/mode-common.c | 6 +-----
- 1 file changed, 1 insertion(+), 5 deletions(-)
 
-diff --git a/check/mode-common.c b/check/mode-common.c
-index db9e4299..15e2bbd1 100644
---- a/check/mode-common.c
-+++ b/check/mode-common.c
-@@ -379,18 +379,14 @@ int insert_inode_item(struct btrfs_trans_handle *trans,
- 	time_t now = time(NULL);
- 	int ret;
- 
-+	memset(&ii, 0, sizeof(ii));
- 	btrfs_set_stack_inode_size(&ii, size);
- 	btrfs_set_stack_inode_nbytes(&ii, nbytes);
- 	btrfs_set_stack_inode_nlink(&ii, nlink);
- 	btrfs_set_stack_inode_mode(&ii, mode);
- 	btrfs_set_stack_inode_generation(&ii, trans->transid);
--	btrfs_set_stack_timespec_nsec(&ii.atime, 0);
- 	btrfs_set_stack_timespec_sec(&ii.ctime, now);
--	btrfs_set_stack_timespec_nsec(&ii.ctime, 0);
- 	btrfs_set_stack_timespec_sec(&ii.mtime, now);
--	btrfs_set_stack_timespec_nsec(&ii.mtime, 0);
--	btrfs_set_stack_timespec_sec(&ii.otime, 0);
--	btrfs_set_stack_timespec_nsec(&ii.otime, 0);
- 
- 	ret = btrfs_insert_inode(trans, root, ino, &ii);
- 	ASSERT(!ret);
--- 
-2.14.4
+On 06/07/2018 03:20 PM, james harvey wrote:
+> Signed-off-by: James Harvey <jamespharvey20@gmail.com>
+
+Reviewed-by: Su Yue <suy.fnst@cn.fujitsu.com>
+
+> ---
+>   btrfs-map-logical.c | 8 ++++----
+>   1 file changed, 4 insertions(+), 4 deletions(-)
+> 
+> diff --git a/btrfs-map-logical.c b/btrfs-map-logical.c
+> index 8a41b037..59ba731b 100644
+> --- a/btrfs-map-logical.c
+> +++ b/btrfs-map-logical.c
+> @@ -39,7 +39,7 @@
+>   static FILE *info_file;
+> 
+>   static int map_one_extent(struct btrfs_fs_info *fs_info,
+> -                         u64 *logical_ret, u64 *len_ret, int search_foward)
+> +                         u64 *logical_ret, u64 *len_ret, int search_forward)
+>   {
+>          struct btrfs_path *path;
+>          struct btrfs_key key;
+> @@ -75,11 +75,11 @@ static int map_one_extent(struct btrfs_fs_info *fs_info,
+> 
+>   again:
+>          btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
+> -       if ((search_foward && key.objectid < logical) ||
+> -           (!search_foward && key.objectid > logical) ||
+> +       if ((search_forward && key.objectid < logical) ||
+> +           (!search_forward && key.objectid > logical) ||
+>              (key.type != BTRFS_EXTENT_ITEM_KEY &&
+>               key.type != BTRFS_METADATA_ITEM_KEY)) {
+> -               if (!search_foward)
+> +               if (!search_forward)
+>                          ret = btrfs_previous_extent_item(fs_info->extent_root,
+>                                                           path, 0);
+>                  else
+> --
+> 2.17.0
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+> 
 
 

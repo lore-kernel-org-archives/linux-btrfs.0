@@ -1,66 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ot0-f195.google.com ([74.125.82.195]:43948 "EHLO
-        mail-ot0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753429AbeFGUid (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Jun 2018 16:38:33 -0400
-Received: by mail-ot0-f195.google.com with SMTP id i19-v6so13131934otk.10
-        for <linux-btrfs@vger.kernel.org>; Thu, 07 Jun 2018 13:38:33 -0700 (PDT)
+Received: from mail-ot0-f172.google.com ([74.125.82.172]:44281 "EHLO
+        mail-ot0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932479AbeFGUu2 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Jun 2018 16:50:28 -0400
+Received: by mail-ot0-f172.google.com with SMTP id w13-v6so13149971ote.11
+        for <linux-btrfs@vger.kernel.org>; Thu, 07 Jun 2018 13:50:28 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAHac6AspsJ5iu+HECOr1ytVRjqB1JyVtqKVwxBF-H+t_18-Tnw@mail.gmail.com>
+In-Reply-To: <CAJCQCtStcPseu+2KNYQN2C3wKkAenuQm59yiK_X8jOsfAA-Myg@mail.gmail.com>
 References: <CAHac6AspsJ5iu+HECOr1ytVRjqB1JyVtqKVwxBF-H+t_18-Tnw@mail.gmail.com>
+ <CAJCQCtStcPseu+2KNYQN2C3wKkAenuQm59yiK_X8jOsfAA-Myg@mail.gmail.com>
 From: Chris Murphy <lists@colorremedies.com>
-Date: Thu, 7 Jun 2018 14:38:32 -0600
-Message-ID: <CAJCQCtStcPseu+2KNYQN2C3wKkAenuQm59yiK_X8jOsfAA-Myg@mail.gmail.com>
+Date: Thu, 7 Jun 2018 14:50:27 -0600
+Message-ID: <CAJCQCtTsWq_wZP-MO2-aXmzFAyR-QoT8147NFEiMqyGa7bbDNQ@mail.gmail.com>
 Subject: Re: Bad superblock when mounting rw, ro mount works
-To: Daniel Underwood <daniel.underwood13@gmail.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Daniel Underwood <daniel.underwood13@gmail.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-So you zero'd the log? Why? You need to slow down and stop making
-changes to your file system unless you hate your data and want to lose
-it. The log is there to help protect your data, you don't zero the log
-except under very specific situations, none of which appear to apply
-to your situation.
-
-'btrfs check' is safe, --repair may or may not be safe, you didn't say
-what version of btrfs-progs you're using, I would consider 4.14.1 at
-the oldest, it should be straightforward with any distro to get
-something relatively new, maybe from a testing repo. Current is 4.16.
-
-And good god don't use --init-extent-tree, that's a hammer. The
-absolute safest way to troubleshoot Btrfs problems is using newer
-kernel versions, even though 4.15 is not old, there are still tons of
-bug fixes in every release.
-
-Suspicious items from your dmesg:
-
-[95639.492347] BTRFS error (device dm-11): pending csums is 44810240
-[95639.492791] BTRFS error (device dm-11): cleaner transaction attach
-returned -30
-[95639.609171] BTRFS error (device dm-11): open_ctree failed
-[96614.907963] BTRFS info (device dm-11): disk space caching is enabled
-[96614.907965] BTRFS info (device dm-11): has skinny extents
-[96615.207692] BTRFS info (device dm-11): bdev /dev/mapper/em3 errs:
-wr 0, rd 0, flush 0, corrupt 0, gen 3
-[96615.207702] BTRFS info (device dm-11): bdev /dev/mapper/em5 errs:
-wr 164286, rd 3444262, flush 2110, corrupt 3, gen 181
-
-OK so it's a multiple device Btrfs volume, and you have one device
-missing a metric done of reads and writes and flushes, with a few
-corruptions and generation mismatches. What's wrong with
-/dev/mapper/em5? Have you done any troubleshooting to figure out what
-that problem is? Because Btrfs can't fix it, and it can't make up for
-it. That looks like the device was missing for a long time, and writes
-were only going to em3. So what's the backstory?
-
-Your very first task right now is to mount ro, and update your
-backups. Don't do anything else until you've done that. It's a
-testimony to Btrfs that this file system mounts at all, even ro, so
-take advantage of this fact before you can't mount it anymore.
+On Thu, Jun 7, 2018 at 2:38 PM, Chris Murphy <lists@colorremedies.com> wrote:
 
 
+> Your very first task right now is to mount ro, and update your
+> backups. Don't do anything else until you've done that. It's a
+> testimony to Btrfs that this file system mounts at all, even ro, so
+> take advantage of this fact before you can't mount it anymore.
 
---
+After you've done the backup, you need to find out why one of these
+devices is being so unreliable. That has to be fixed first. You can
+recreate a new Btrfs or some other file system, and you'll just run
+into the exact same problem down the road. Next, it might be useful to
+see the output from btrfs-progs 4.16.1 'btrfs check' and 'btrfs check
+--mode=lowmem'  both of which are slow, the second one is really slow
+but is a different implementation so it's helpful to see both outputs.
+That's safe as long as you do not use --repair.
+
+Also we need to see the output from 'btrfs fi us <mountpoint>' with
+the volume mounted (ro). Off  hand I think the most likely outcome is
+that you get a backup from the ro mounted file system, and you'll have
+to recreate it from scratch and restore from backups. In other words,
+no matter what you need a current backup.
+
+-- 
 Chris Murphy

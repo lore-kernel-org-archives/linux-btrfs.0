@@ -1,87 +1,136 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yb0-f170.google.com ([209.85.213.170]:45695 "EHLO
-        mail-yb0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750837AbeFHGpC (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Jun 2018 02:45:02 -0400
-MIME-Version: 1.0
-In-Reply-To: <20180607210642.GC28053@wotan.suse.de>
-References: <20180606213807.GE9445@wotan.suse.de> <CAOQ4uxjT5U=cMvfDUBiHbmM-Wk0qp8Zo8DnzgYiKkkCUSo+nBA@mail.gmail.com>
- <20180607210642.GC28053@wotan.suse.de>
-From: Amir Goldstein <amir73il@gmail.com>
-Date: Fri, 8 Jun 2018 09:45:00 +0300
-Message-ID: <CAOQ4uxjXA-todXfxXKh=iXpVuhH55A6xx_4WXahaHoyaS0QpRw@mail.gmail.com>
-Subject: Re: Exporting a unique ino/dev pair to user space
-To: Mark Fasheh <mfasheh@suse.de>
-Cc: Al Viro <viro@zeniv.linux.org.uk>,
+Received: from mx2.suse.de ([195.135.220.15]:37950 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1750892AbeFGUoa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 7 Jun 2018 16:44:30 -0400
+Date: Thu, 7 Jun 2018 22:44:28 +0200
+From: Mark Fasheh <mfasheh@suse.de>
+To: Amir Goldstein <amir73il@gmail.com>
+Cc: Jeff Mahoney <jeffm@suse.com>, Dave Chinner <david@fromorbit.com>,
         linux-fsdevel <linux-fsdevel@vger.kernel.org>,
+        linux-kernel <linux-kernel@vger.kernel.org>,
         Linux Btrfs <linux-btrfs@vger.kernel.org>,
-        overlayfs <linux-unionfs@vger.kernel.org>,
-        Dave Chinner <david@fromorbit.com>, Jeff Mahoney <jeffm@suse.com>,
-        "J. Bruce Fields" <bfields@fieldses.org>,
-        Jeff Layton <jlayton@kernel.org>, Miklos Szeredi <miklos@szeredi.hu>,
-        David Howells <dhowells@redhat.com>
-Content-Type: text/plain; charset="UTF-8"
+        Miklos Szeredi <miklos@szeredi.hu>,
+        David Howells <dhowells@redhat.com>, Jan Kara <jack@suse.cz>
+Subject: Re: [RFC][PATCH 0/76] vfs: 'views' for filesystems with more than
+ one root
+Message-ID: <20180607204428.GA28053@wotan.suse.de>
+Reply-To: Mark Fasheh <mfasheh@suse.de>
+References: <20180508180436.716-1-mfasheh@suse.de>
+ <20180508233840.GM10363@dastard>
+ <e6698201-a4a6-2146-d4c9-9e26c18ad828@suse.com>
+ <20180509064103.GP10363@dastard>
+ <5b2ae799-1595-c262-7b65-41b10c11906d@suse.com>
+ <CAOQ4uxjUwi7dhTbNk1mK6_=rb_+L0JB1GG_mkGSDrudtocXScg@mail.gmail.com>
+ <20180606204215.GD9445@wotan.suse.de>
+ <CAOQ4uxgiUu8Vv__uYP+g5Q+c1Ng=_v0mx4t0A6D8fNsA6usbMg@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAOQ4uxgiUu8Vv__uYP+g5Q+c1Ng=_v0mx4t0A6D8fNsA6usbMg@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jun 8, 2018 at 12:06 AM, Mark Fasheh <mfasheh@suse.de> wrote:
-[...]
+On Thu, Jun 07, 2018 at 09:06:04AM +0300, Amir Goldstein wrote:
+> On Wed, Jun 6, 2018 at 11:42 PM, Mark Fasheh <mfasheh@suse.de> wrote:
+> > Hi Amir, thanks for the comments!
+> >
+> 
+> Hi Mark,
+> 
+> [...]
+> >
+> > Btw, sorry that the name is confusing. I've never been good at picking them.
+> 
+> Didn't say that it was confusing. It might very well be the perfect name...
+> if I only knew what sort of thing we are trying to name...
 
->> >  2c) I don't think we can really use a dedicated callback without
->> >      passing the vfsmount through since Overlayfs ->getattr might call
->> >      the lower fs ->getattr. At that point we might as well use getattr.
->> >
->>
->> Didn't get the Overlayfs lower fs getattr argument.
->> Overlayfs doesn't use the vfsmount passed into getattr
->> and it could very well pass a dentry to lower fs getattr.
->
-> My main point in 2c) is that, from my understanding, Overlayfs may need to
-> call down to one of the filesystem ->getattr() calls. Since those take a
-> vfsmount we don't gain anything by having a unique callback from this - the
-> plumbing work would be the same.
->
+Fair enough :)
 
-I guess I don't understand what you mean by "dedicated callback", but I
-think we both in agreement that changing fs getattr() to take dentry is
-preferred.
 
->
->> As a matter of fact, out of 35 getattr implementations in the kernel:
->> (git grep "\s\.getattr\s" fs| awk '{print $4}'| sort -u|grep -v
->> "nfs.*_proc_getattr"|wc -l)
->> there is only one using the vfsmount - nfs_getattr() for MNT_NOATIME
->> check and most of them only ever use d_inode(path->dentry).
->>
->> This API seems quite odd.
->> Maybe it should be fixed so more in kernel call sites could call getattr
->> without a vfsmount.
->> Not sure what would be the best way to handle nfs_getattr().
->
-> Yeah I saw that nfs_getattr() is the only user of the vfsmount. I totally
-> agree that this would be tons easier if we didn't have to pass the vfsmount
-> (and like you said, there's only the ONE user).
->
-> This is a bit hacky, but I wonder if we could blow the function signature
-> back out to a dentry + vfsmount and make the vfsmount optional when getattr
-> is called only for ino/dev. It's a bit ugly to have optional arguments like
-> that but nfs would work with just a line or two change and the other fs
-> would never even care.
+> > That said, if you have a minute to check out the first patch or two you'll
+> > see that the patches are basically putting a struct in between the super
+> > block and the inode.
+> >
+> >
+> > One thing I'd like to politely suggest is that anyone now following this
+> > conversation to please read the at least the first patch. It's an easy read
+> > and I feel like the conversation overall would be much more clear if
+> > everyone understood what we're going for. I worry that I didn't do a
+> > particularly good job explaining the actual code changes.
+> >
+> > https://www.spinics.net/lists/linux-fsdevel/msg125492.html
+> >
+> 
+> 
+> I did look at the patches. They look simple and clean and they solve A problem.
+> All I'm saying is that we should look at the set of problems that we know of
+> before we design an abstraction layer.
 
-OR.. change the signature of fs getattr() and vfs_getattr_nosec() to dentry
-and set a kernel query_flag AT_STATX_NO_REMOTE_ATIME from
-vfs_getattr(). No need to pass vfsmount to nfs.
+Agreed, I think my more recent e-mail does a much better job of laying out
+the issues we're seeing here.
 
-Then users that access i_ino/s_dev can call vfs_getattr_nosec() with a
-bonus of not having to go through security modules (which now they don't).
 
-The only current user of vfs_getattr_nosec() expfs.c queries STATX_INO,
-so change is safe.
+> >> And what is the SUSE way?
+> >
+> > At SUSE, we carry a version of this patch:
+> >
+> > https://marc.info/?l=linux-btrfs&m=130532890824992&w=2
+> >
+> > Essentially a callback which was rejected for various reasons.
+> >
+> 
+> Don't see a patch here. Wrong link?
 
-Overlayfs doesn't need to get vfsmount in ovl_getattr() - it knows the
-lower fs vfsmount for calling vfs_getattr() regardless and in other
-places overlayfs just needs to query  STATX_INO, so it may also
-use the light vfs_getattr_nosec() callback.
+That was the 0/2 mail in the patch series. Here are the next two, which
+contain the actual patches:
+
+https://marc.info/?l=linux-btrfs&m=130532892525016&w=2
+https://marc.info/?l=linux-btrfs&m=130532899325091&w=2
+
+Keep in mind that the patch has evolved since then though it's essentially
+the same idea - use a callback where we need to get the correct device.
+
+
+> > The fs_view work was intended to replace that patch with an upstream
+> > solution.
+> >
+> >
+> 
+> [...]
+> 
+> >>
+> >> FYI, the Overlayfs file/inode mapping is about to change with many
+> >> VFS hacks queued for removal, so stay tuned.
+> >>
+> >> [...]
+> >
+> > Actually, would you mind giving me a pointer to this work? I'd be very
+> > interested to see what exactly might be changing.
+> >
+> 
+> Mostly, less VFS code is going to be exposed to underlying inode:
+> 
+> https://marc.info/?l=linux-fsdevel&m=152760014530531&w=2
+> 
+> [...]
+
+Awesome, thanks for the link Amir.
+
+
+> > I'm not sure whether fs_view works for this. Taking a quick look at
+> > fsnotify, the state is already on the inode? If there's a globabl fsnotify
+> > state that needs to be per subtree than yes we could move that to the
+> > fs_view and you'd simply deref it from the inode struct.
+> >
+> 
+> That was my thinking. I have patches to attach an fsnotify mark
+> to super block. If fs_view could have a root that is different than
+> super block's root and if file system can guaranty that objects
+> cannot be moved outside of fs_view root, then fsnotify mark
+> could be attached to fs_view.
+
+Ahh yeah so in that case we could have the mark on the fs_view instead of
+the superblock and you'd deref it from the inode to get to that inodes root.
 
 Thanks,
-Amir.
+	--Mark

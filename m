@@ -1,136 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:37950 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:44503 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750892AbeFGUoa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 7 Jun 2018 16:44:30 -0400
-Date: Thu, 7 Jun 2018 22:44:28 +0200
+        id S933021AbeFGRjN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 7 Jun 2018 13:39:13 -0400
 From: Mark Fasheh <mfasheh@suse.de>
-To: Amir Goldstein <amir73il@gmail.com>
-Cc: Jeff Mahoney <jeffm@suse.com>, Dave Chinner <david@fromorbit.com>,
-        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-        linux-kernel <linux-kernel@vger.kernel.org>,
-        Linux Btrfs <linux-btrfs@vger.kernel.org>,
-        Miklos Szeredi <miklos@szeredi.hu>,
-        David Howells <dhowells@redhat.com>, Jan Kara <jack@suse.cz>
-Subject: Re: [RFC][PATCH 0/76] vfs: 'views' for filesystems with more than
- one root
-Message-ID: <20180607204428.GA28053@wotan.suse.de>
-Reply-To: Mark Fasheh <mfasheh@suse.de>
-References: <20180508180436.716-1-mfasheh@suse.de>
- <20180508233840.GM10363@dastard>
- <e6698201-a4a6-2146-d4c9-9e26c18ad828@suse.com>
- <20180509064103.GP10363@dastard>
- <5b2ae799-1595-c262-7b65-41b10c11906d@suse.com>
- <CAOQ4uxjUwi7dhTbNk1mK6_=rb_+L0JB1GG_mkGSDrudtocXScg@mail.gmail.com>
- <20180606204215.GD9445@wotan.suse.de>
- <CAOQ4uxgiUu8Vv__uYP+g5Q+c1Ng=_v0mx4t0A6D8fNsA6usbMg@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAOQ4uxgiUu8Vv__uYP+g5Q+c1Ng=_v0mx4t0A6D8fNsA6usbMg@mail.gmail.com>
+To: Al Viro <viro@ZenIV.linux.org.uk>
+Cc: linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        linux-xfs@vger.kernel.org,
+        "Darrick J . Wong" <darrick.wong@oracle.com>,
+        Adam Borowski <kilobyte@angband.pl>, David Sterba <dsterba@suse.cz>
+Subject: [PATCH v3 0/2] vfs: better dedupe permission check
+Date: Thu,  7 Jun 2018 10:38:52 -0700
+Message-Id: <20180607173854.15747-1-mfasheh@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jun 07, 2018 at 09:06:04AM +0300, Amir Goldstein wrote:
-> On Wed, Jun 6, 2018 at 11:42 PM, Mark Fasheh <mfasheh@suse.de> wrote:
-> > Hi Amir, thanks for the comments!
-> >
-> 
-> Hi Mark,
-> 
-> [...]
-> >
-> > Btw, sorry that the name is confusing. I've never been good at picking them.
-> 
-> Didn't say that it was confusing. It might very well be the perfect name...
-> if I only knew what sort of thing we are trying to name...
+Hi Al,
 
-Fair enough :)
+The following patches fix a couple of issues with the permission check
+we do in vfs_dedupe_file_range(). I sent them out for review twice, a
+changelog is attached. If they look ok to you, I'd appreciate them
+being pushed upstream.
+
+You can get them from git if you like:
+
+git pull https://github.com/markfasheh/linux dedupe-perms
 
 
-> > That said, if you have a minute to check out the first patch or two you'll
-> > see that the patches are basically putting a struct in between the super
-> > block and the inode.
-> >
-> >
-> > One thing I'd like to politely suggest is that anyone now following this
-> > conversation to please read the at least the first patch. It's an easy read
-> > and I feel like the conversation overall would be much more clear if
-> > everyone understood what we're going for. I worry that I didn't do a
-> > particularly good job explaining the actual code changes.
-> >
-> > https://www.spinics.net/lists/linux-fsdevel/msg125492.html
-> >
-> 
-> 
-> I did look at the patches. They look simple and clean and they solve A problem.
-> All I'm saying is that we should look at the set of problems that we know of
-> before we design an abstraction layer.
+The first patch expands our check to allow dedupe of a file if the
+user owns it or otherwise would be allowed to write to it.
 
-Agreed, I think my more recent e-mail does a much better job of laying out
-the issues we're seeing here.
+Current behavior is that we'll allow dedupe only if:
 
+- the user is an admin (root)
+- the user has the file open for write
 
-> >> And what is the SUSE way?
-> >
-> > At SUSE, we carry a version of this patch:
-> >
-> > https://marc.info/?l=linux-btrfs&m=130532890824992&w=2
-> >
-> > Essentially a callback which was rejected for various reasons.
-> >
-> 
-> Don't see a patch here. Wrong link?
+This makes it impossible for a user to dedupe their own file set
+unless they do it as root, or ensure that all files have write
+permission. There's a couple of duperemove bugs open for this:
 
-That was the 0/2 mail in the patch series. Here are the next two, which
-contain the actual patches:
+https://github.com/markfasheh/duperemove/issues/129
+https://github.com/markfasheh/duperemove/issues/86
 
-https://marc.info/?l=linux-btrfs&m=130532892525016&w=2
-https://marc.info/?l=linux-btrfs&m=130532899325091&w=2
+The other problem we have is also related to forcing the user to open
+target files for write - A process trying to exec a file currently
+being deduped gets ETXTBUSY. The answer (as above) is to allow them to
+open the targets ro - root can already do this. There was a patch from
+Adam Borowski to fix this back in 2016:
 
-Keep in mind that the patch has evolved since then though it's essentially
-the same idea - use a callback where we need to get the correct device.
+https://lkml.org/lkml/2016/7/17/130
+
+which I have incorporated into my changes.
 
 
-> > The fs_view work was intended to replace that patch with an upstream
-> > solution.
-> >
-> >
-> 
-> [...]
-> 
-> >>
-> >> FYI, the Overlayfs file/inode mapping is about to change with many
-> >> VFS hacks queued for removal, so stay tuned.
-> >>
-> >> [...]
-> >
-> > Actually, would you mind giving me a pointer to this work? I'd be very
-> > interested to see what exactly might be changing.
-> >
-> 
-> Mostly, less VFS code is going to be exposed to underlying inode:
-> 
-> https://marc.info/?l=linux-fsdevel&m=152760014530531&w=2
-> 
-> [...]
+The 2nd patch fixes our return code for permission denied to be
+EPERM. For some reason we're returning EINVAL - I think that's
+probably my fault. At any rate, we need to be returning something
+descriptive of the actual problem, otherwise callers see EINVAL and
+can't really make a valid determination of what's gone wrong.
 
-Awesome, thanks for the link Amir.
+This has also popped up in duperemove, mostly in the form of cryptic
+error messages. Because this is a code returned to userspace, I did
+check the other users of extent-same that I could find. Both 'bees'
+and 'rust-btrfs' do the same as duperemove and simply report the error
+(as they should).
 
-
-> > I'm not sure whether fs_view works for this. Taking a quick look at
-> > fsnotify, the state is already on the inode? If there's a globabl fsnotify
-> > state that needs to be per subtree than yes we could move that to the
-> > fs_view and you'd simply deref it from the inode struct.
-> >
-> 
-> That was my thinking. I have patches to attach an fsnotify mark
-> to super block. If fs_view could have a root that is different than
-> super block's root and if file system can guaranty that objects
-> cannot be moved outside of fs_view root, then fsnotify mark
-> could be attached to fs_view.
-
-Ahh yeah so in that case we could have the mark on the fs_view instead of
-the superblock and you'd deref it from the inode to get to that inodes root.
+Please apply.
 
 Thanks,
-	--Mark
+  --Mark
+
+Changes from V2 to V3:
+- Return bool from allow_file_dedupe
+- V2 discussion: https://www.spinics.net/lists/linux-btrfs/msg78421.html
+
+Changes from V1 to V2:
+- Add inode_permission check as suggested by Adam Borowski
+- V1 discussion: https://marc.info/?l=linux-xfs&m=152606684017965&w=2

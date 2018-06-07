@@ -1,97 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yb0-f195.google.com ([209.85.213.195]:34369 "EHLO
-        mail-yb0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750897AbeFGGR3 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Jun 2018 02:17:29 -0400
+Received: from mgwkm01.jp.fujitsu.com ([202.219.69.168]:59986 "EHLO
+        mgwkm01.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752973AbeFGCqG (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Jun 2018 22:46:06 -0400
+Received: from g01jpfmpwyt02.exch.g01.fujitsu.local (g01jpfmpwyt02.exch.g01.fujitsu.local [10.128.193.56])
+        by kw-mxauth.gw.nic.fujitsu.com (Postfix) with ESMTP id CBF15AC0050
+        for <linux-btrfs@vger.kernel.org>; Thu,  7 Jun 2018 11:45:57 +0900 (JST)
+Received: from G01JPEXCHYT14.g01.fujitsu.local (G01JPEXCHYT14.g01.fujitsu.local [10.128.194.53])
+        by g01jpfmpwyt02.exch.g01.fujitsu.local (Postfix) with ESMTP id D3B09584321
+        for <linux-btrfs@vger.kernel.org>; Thu,  7 Jun 2018 11:45:56 +0900 (JST)
+Subject: Re: [PATCH v2 1/3] btrfs-progs: check: check symlinks with
+ append/immutable flags
+To: Su Yue <suy.fnst@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
+References: <20180515013324.18838-1-suy.fnst@cn.fujitsu.com>
+ <20180515013324.18838-2-suy.fnst@cn.fujitsu.com>
+From: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
+Message-ID: <ee67d0b0-567f-efa3-5d7f-667bbb098e8c@jp.fujitsu.com>
+Date: Thu, 7 Jun 2018 11:45:47 +0900
 MIME-Version: 1.0
-In-Reply-To: <7e983476-df86-2624-ee6d-7c5415ea349a@suse.com>
-References: <20180508180436.716-1-mfasheh@suse.de> <20180508233840.GM10363@dastard>
- <e6698201-a4a6-2146-d4c9-9e26c18ad828@suse.com> <20180509064103.GP10363@dastard>
- <5b2ae799-1595-c262-7b65-41b10c11906d@suse.com> <CAOQ4uxjUwi7dhTbNk1mK6_=rb_+L0JB1GG_mkGSDrudtocXScg@mail.gmail.com>
- <7e983476-df86-2624-ee6d-7c5415ea349a@suse.com>
-From: Amir Goldstein <amir73il@gmail.com>
-Date: Thu, 7 Jun 2018 09:17:26 +0300
-Message-ID: <CAOQ4uxisMcY4WxaudRts52PLzC42A3VhVUW4SisxwXihGix7kg@mail.gmail.com>
-Subject: Re: [RFC][PATCH 0/76] vfs: 'views' for filesystems with more than one root
-To: Jeff Mahoney <jeffm@suse.com>
-Cc: Dave Chinner <david@fromorbit.com>, Mark Fasheh <mfasheh@suse.de>,
-        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-        linux-kernel <linux-kernel@vger.kernel.org>,
-        Linux Btrfs <linux-btrfs@vger.kernel.org>,
-        Miklos Szeredi <miklos@szeredi.hu>,
-        David Howells <dhowells@redhat.com>, Jan Kara <jack@suse.cz>
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <20180515013324.18838-2-suy.fnst@cn.fujitsu.com>
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jun 7, 2018 at 12:19 AM, Jeff Mahoney <jeffm@suse.com> wrote:
-[...]
->>
->> FYI, the Overlayfs file/inode mapping is about to change with many
->> VFS hacks queued for removal, so stay tuned.
->>
->> [...]
->
-> I have to admit I'm curious how this will work.  I've heard rumor of
-> using overlayfs inodes and calling the underlying file system's
-> inode_operations.  If part of that work removes the danger of overlayfs
-> inode numbers colliding with xino mode, I'm definitely interested.
 
-See https://marc.info/?l=linux-fsdevel&m=152760014530531&w=2
 
-It doesn't remove the need to maintain a unique and persistent inode
-number namespace in overlayfs. It just reduces exposure of the underlying
-inode to VFS.
+On 2018/05/15 10:33, Su Yue wrote:
+> Define new macro I_ERR_ODD_INODE_FLAGS to represents odd inode flags.
+> 
+> Symlinks should never have append/immutable flags.
+> While processing inodes, if found a symlink with append/immutable
+> flags, mark the inode record with I_ERR_ODD_INODE_FLAGS.
+> 
+> This is for original mode.
+> 
+> Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
+> ---
+>  check/main.c          | 7 +++++++
+>  check/mode-original.h | 1 +
+>  2 files changed, 8 insertions(+)
+> 
+> diff --git a/check/main.c b/check/main.c
+> index 68da994f7ae0..c764fc011ded 100644
+> --- a/check/main.c
+> +++ b/check/main.c
+> @@ -576,6 +576,8 @@ static void print_inode_error(struct btrfs_root *root, struct inode_record *rec)
+>  		fprintf(stderr, ", link count wrong");
+>  	if (errors & I_ERR_FILE_EXTENT_ORPHAN)
+>  		fprintf(stderr, ", orphan file extent");
+> +	if (errors & I_ERR_ODD_INODE_FLAGS)
+> +		fprintf(stderr, ", odd inode flags");
+>  	fprintf(stderr, "\n");
+>  	/* Print the orphan extents if needed */
+>  	if (errors & I_ERR_FILE_EXTENT_ORPHAN)
+> @@ -805,6 +807,7 @@ static int process_inode_item(struct extent_buffer *eb,
+>  {
+>  	struct inode_record *rec;
+>  	struct btrfs_inode_item *item;
+> +	u64 flags;
+>  
+>  	rec = active_node->current;
+>  	BUG_ON(rec->ino != key->objectid || rec->refs > 1);
+> @@ -822,6 +825,10 @@ static int process_inode_item(struct extent_buffer *eb,
+>  	rec->found_inode_item = 1;
+>  	if (rec->nlink == 0)
+>  		rec->errors |= I_ERR_NO_ORPHAN_ITEM;
+> +	flags = btrfs_inode_flags(eb, item);
+> +	if (rec->imode & BTRFS_FT_SYMLINK &&
 
-[...]
+Hello,
 
->>> - Audit.  As it happens, most of audit has a path or file that can be
->>> used.  We do run into problems with fsnotify.  fsnotify_move is called
->>> from vfs_rename which turns into a can of worms pretty quickly.
->>>
->>
->> Can you please elaborate on that problem.
->> Do you mean when watching a directory for changes, you need to
->> be able to tell in which fs_view the directory inode that is being watched?
->
-> I was investigating whether Dave's suggestion of using a vfsmount was
-> feasible.  When following the audit call graph up, I found
-> fsnotify_move, called by vfs_rename.  Piping a vfsmount into the vfs_*
-> operations has historically been rejected by Al (see Apparmor
-> discussions, among others), and with good reason.  The file system
-> implementation shouldn't care about where it's mounted.  While piping it
-> into vfs_rename doesn't seem too invasive, it's called by various file
-> systems' ->rename callback, so then we're stuck piping vfsmounts into
-> inode_operations, which is what Al's been wanting to avoid for years.
->
-
-Yes, I've heard about this objection, thought didn't have a reference.
-
-[...]
->>
->> I have an interest of solving another problem.
->> In VFS operations where only inode is available, I would like to be able to
->> report fsnotify events (e.g. fsnotify_move()) only in directories under a
->> certain subtree root. That could be achieved either by bind mount the subtree
->> root and passing vfsmount into vfs_rename() or by defining an fs_view on the
->> subtree and mounting that fs_view.
->
-> I'm not sure there's a lot of overlap, but I expect that this will end
-> up running into the same review feedback that Al gave during the
-> AppArmor merge: vfsmounts have no business at the lower level and you
-> can get the same behavior by hooking in at a higher level.  See
-> security_path_* vs security_inode_* for how that was resolved.
->
-> What you're talking about isn't really what we had in mind for the
-> fs_view.  In our case, it sits between the inode and superblock, which
-> would be at too low a level for determining whether an inode is under a
-> certain subtree.  In any event, wouldn't you need a path instead of an
-> inode to do what you're proposing?
->
-
-Not if the fs_view could have a root that is different than sb root
-then I could attach fsnotify mark to fs_view instead of say vfsmount
-and I have the information I need inside fsnotify_move().
+I observed that this commit causes test-convert/009 in current kdave/devel branch.
+Since rec->imode uses S_IFLNK (0xa000) for symbolic link and BTRFS_FT_SYMLINK is 7,
+above statement does not work well. Shouldn't we use S_ISLNK(rec->imode) instead?
 
 Thanks,
-Amir.
+Tomohiro Misono
+
+> +	    flags & (BTRFS_INODE_IMMUTABLE | BTRFS_INODE_APPEND))
+> +		rec->errors |= I_ERR_ODD_INODE_FLAGS;
+>  	maybe_free_inode_rec(&active_node->inode_cache, rec);
+>  	return 0;
+>  }
+> diff --git a/check/mode-original.h b/check/mode-original.h
+> index 368de692fdd1..13cfa5b9e1b3 100644
+> --- a/check/mode-original.h
+> +++ b/check/mode-original.h
+> @@ -186,6 +186,7 @@ struct file_extent_hole {
+>  #define I_ERR_LINK_COUNT_WRONG		(1 << 13)
+>  #define I_ERR_FILE_EXTENT_ORPHAN	(1 << 14)
+>  #define I_ERR_FILE_EXTENT_TOO_LARGE	(1 << 15)
+> +#define I_ERR_ODD_INODE_FLAGS		(1 << 16)
+>  
+>  struct inode_record {
+>  	struct list_head backrefs;
+> 
+

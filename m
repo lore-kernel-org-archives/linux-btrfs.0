@@ -1,57 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:60139 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1753387AbeFGIom (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Jun 2018 04:44:42 -0400
-Subject: Re: [PATCH v2 2/3] btrfs-progs: map-logical: Use
- btrfs_next_extent_item()
-To: james harvey <jamespharvey20@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <CA+X5Wn4GAp9cLqCKUiu4H6PSAvi9e0quDsQOjarZbS5EDWmspA@mail.gmail.com>
-From: Su Yue <suy.fnst@cn.fujitsu.com>
-Message-ID: <9d281216-5184-96cc-6b87-923b7b674bb1@cn.fujitsu.com>
-Date: Thu, 7 Jun 2018 16:50:47 +0800
+Received: from mail-oi0-f68.google.com ([209.85.218.68]:36113 "EHLO
+        mail-oi0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753197AbeFGHUD (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Jun 2018 03:20:03 -0400
+Received: by mail-oi0-f68.google.com with SMTP id 14-v6so7691838oie.3
+        for <linux-btrfs@vger.kernel.org>; Thu, 07 Jun 2018 00:20:03 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CA+X5Wn4GAp9cLqCKUiu4H6PSAvi9e0quDsQOjarZbS5EDWmspA@mail.gmail.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+From: james harvey <jamespharvey20@gmail.com>
+Date: Thu, 7 Jun 2018 03:20:02 -0400
+Message-ID: <CA+X5Wn4GAp9cLqCKUiu4H6PSAvi9e0quDsQOjarZbS5EDWmspA@mail.gmail.com>
+Subject: [PATCH v2 2/3] btrfs-progs: map-logical: Use btrfs_next_extent_item()
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+btrfs_next_extent_item() looks for BTRFS_EXTENT_ITEM_KEY and BTRFS_METADATA_KEY,
+which are the types we're looking for.
 
+Signed-off-by: James Harvey <jamespharvey20@gmail.com>
+---
+ btrfs-map-logical.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-On 06/07/2018 03:20 PM, james harvey wrote:
-> btrfs_next_extent_item() looks for BTRFS_EXTENT_ITEM_KEY and BTRFS_METADATA_KEY,
-> which are the types we're looking for.
-> 
-> Signed-off-by: James Harvey <jamespharvey20@gmail.com>
-
-Reviewed-by: Su Yue <suy.fnst@cn.fujitsu.com>
-
-> ---
->   btrfs-map-logical.c | 3 ++-
->   1 file changed, 2 insertions(+), 1 deletion(-)
-> 
-> diff --git a/btrfs-map-logical.c b/btrfs-map-logical.c
-> index 2451012b..8a41b037 100644
-> --- a/btrfs-map-logical.c
-> +++ b/btrfs-map-logical.c
-> @@ -83,7 +83,8 @@ again:
->                          ret = btrfs_previous_extent_item(fs_info->extent_root,
->                                                           path, 0);
->                  else
-> -                       ret = btrfs_next_item(fs_info->extent_root, path);
-> +                       ret = btrfs_next_extent_item(fs_info->extent_root,
-> +                                                    path);
->                  if (ret)
->                          goto out;
->                  goto again;
-> --
-> 2.17.0
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-> 
-
-
+diff --git a/btrfs-map-logical.c b/btrfs-map-logical.c
+index 2451012b..8a41b037 100644
+--- a/btrfs-map-logical.c
++++ b/btrfs-map-logical.c
+@@ -83,7 +83,8 @@ again:
+                        ret = btrfs_previous_extent_item(fs_info->extent_root,
+                                                         path, 0);
+                else
+-                       ret = btrfs_next_item(fs_info->extent_root, path);
++                       ret = btrfs_next_extent_item(fs_info->extent_root,
++                                                    path);
+                if (ret)
+                        goto out;
+                goto again;
+--
+2.17.0

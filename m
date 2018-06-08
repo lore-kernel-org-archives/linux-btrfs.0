@@ -1,19 +1,19 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:44274 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:33366 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752769AbeFHMsG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 8 Jun 2018 08:48:06 -0400
-Received: from relay1.suse.de (charybdis-ext-too.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id AC476AF8F
-        for <linux-btrfs@vger.kernel.org>; Fri,  8 Jun 2018 12:48:05 +0000 (UTC)
+        id S1752411AbeFHOtk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 8 Jun 2018 10:49:40 -0400
+Received: from relay2.suse.de (charybdis-ext-too.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 19957AC29
+        for <linux-btrfs@vger.kernel.org>; Fri,  8 Jun 2018 14:49:39 +0000 (UTC)
 From: Nikolay Borisov <nborisov@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 15/15] btrfs-progs: Remove old delayed refs infrastructure
-Date: Fri,  8 Jun 2018 15:47:58 +0300
-Message-Id: <1528462078-24490-16-git-send-email-nborisov@suse.com>
-In-Reply-To: <1528462078-24490-1-git-send-email-nborisov@suse.com>
-References: <1528462078-24490-1-git-send-email-nborisov@suse.com>
+Subject: [PATCH 15/15 v2] btrfs-progs: Remove old delayed refs infrastructure
+Date: Fri,  8 Jun 2018 17:49:37 +0300
+Message-Id: <1528469377-439-1-git-send-email-nborisov@suse.com>
+In-Reply-To: <1528462078-24490-16-git-send-email-nborisov@suse.com>
+References: <1528462078-24490-16-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -22,9 +22,16 @@ wired up, there is no point in keeping the old code. So just remove it.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
+
+V2: 
+
+ * Remove fs_info->pending_del references in disk-io.c . This prevented 
+ compilation. 
+
  ctree.h       |   2 -
+ disk-io.c     |   2 -
  extent-tree.c | 137 ----------------------------------------------------------
- 2 files changed, 139 deletions(-)
+ 3 files changed, 141 deletions(-)
 
 diff --git a/ctree.h b/ctree.h
 index d1ea45571d1e..3e9ca2ca8432 100644
@@ -46,6 +53,26 @@ index d1ea45571d1e..3e9ca2ca8432 100644
  struct btrfs_block_group_cache *btrfs_lookup_block_group(struct
  							 btrfs_fs_info *info,
  							 u64 bytenr);
+diff --git a/disk-io.c b/disk-io.c
+index 4a609a892be7..8da6e3ce5fc8 100644
+--- a/disk-io.c
++++ b/disk-io.c
+@@ -726,7 +726,6 @@ struct btrfs_fs_info *btrfs_new_fs_info(int writable, u64 sb_bytenr)
+ 	extent_io_tree_init(&fs_info->free_space_cache);
+ 	extent_io_tree_init(&fs_info->block_group_cache);
+ 	extent_io_tree_init(&fs_info->pinned_extents);
+-	extent_io_tree_init(&fs_info->pending_del);
+ 	extent_io_tree_init(&fs_info->extent_ins);
+ 	fs_info->excluded_extents = NULL;
+ 
+@@ -984,7 +983,6 @@ void btrfs_cleanup_all_caches(struct btrfs_fs_info *fs_info)
+ 	extent_io_tree_cleanup(&fs_info->free_space_cache);
+ 	extent_io_tree_cleanup(&fs_info->block_group_cache);
+ 	extent_io_tree_cleanup(&fs_info->pinned_extents);
+-	extent_io_tree_cleanup(&fs_info->pending_del);
+ 	extent_io_tree_cleanup(&fs_info->extent_ins);
+ }
+ 
 diff --git a/extent-tree.c b/extent-tree.c
 index 9d085158f2d8..b9d51b388c9a 100644
 --- a/extent-tree.c

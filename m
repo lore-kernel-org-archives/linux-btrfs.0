@@ -1,47 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:61125 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S935733AbeFNCef (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 13 Jun 2018 22:34:35 -0400
-Received: from G08CNEXCHPEKD03.g08.fujitsu.local (unknown [10.167.33.85])
-        by cn.fujitsu.com (Postfix) with ESMTP id E45F24B41EC6
-        for <linux-btrfs@vger.kernel.org>; Thu, 14 Jun 2018 10:34:27 +0800 (CST)
-From: Su Yue <suy.fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: <suy.fnst@cn.fujitsu.com>
-Subject: [PATCH] btrfs-progs: print bytenr of tree block in print_tree_block_error()
-Date: Thu, 14 Jun 2018 10:40:39 +0800
-Message-ID: <20180614024039.18229-1-suy.fnst@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from mx2.suse.de ([195.135.220.15]:44245 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752682AbeFHMsC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 8 Jun 2018 08:48:02 -0400
+Received: from relay1.suse.de (charybdis-ext-too.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 4204EAF8D
+        for <linux-btrfs@vger.kernel.org>; Fri,  8 Jun 2018 12:48:01 +0000 (UTC)
+From: Nikolay Borisov <nborisov@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH 00/15] Add delayed-refs support to btrfs-progs
+Date: Fri,  8 Jun 2018 15:47:43 +0300
+Message-Id: <1528462078-24490-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-For easier debug, let print_tree_block_error() print bytenr of
-tree block.
+Hello,                                                                          
+                                                                                
+Here is a series which adds support for delayed refs. This is needed to enable  
+later work on adding freespace tree repair code. Additionally, it results in  
+more code sharing between kernel/user space.
 
-Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
----
- disk-io.c | 3 +++
- 1 file changed, 3 insertions(+)
+Patches 1-9 are simple prep patches removing some arguments, causing problems
+later. They can go independently of the delayed refs work. They don't introduce
+any functional changes. Next, patches 10-13 introduce the needed infrastructure
+to for delayed refs without actually activating it. Patch 14 finally wires it
+up by adding the necessary call outs to btrfs_run_delayed refs and reworking the
+extent addition/freeing functions. With all of this done, patch 15 finally
+removes the old code.
 
-diff --git a/disk-io.c b/disk-io.c
-index 4a609a892be7..6ee65190f251 100644
---- a/disk-io.c
-+++ b/disk-io.c
-@@ -94,6 +94,9 @@ static void print_tree_block_error(struct btrfs_fs_info *fs_info,
- 	char found_uuid[BTRFS_UUID_UNPARSED_SIZE] = {'\0'};
- 	u8 buf[BTRFS_UUID_SIZE];
- 
-+	if (!err)
-+		return;
-+	fprintf(stderr, "bad tree block %llu, ", eb->start);
- 	switch (err) {
- 	case BTRFS_BAD_FSID:
- 		read_extent_buffer(eb, buf, btrfs_header_fsid(),
+This series passes all btrfs progs fsck and misc tests + fuzz tests apart from
+fuzz-003/007/009 - but those fail without this series so it's unlikely it's
+caused by it.
+
+Nikolay Borisov (15):
+  btrfs-progs: Remove root argument from pin_down_bytes
+  btrfs-progs: Remove root argument from btrfs_del_csums
+  btrfs-progs: Add functions to modify the used space by a root
+  btrfs-progs: Refactor the root used bytes are updated
+  btrfs-progs: Make update_block_group take fs_info instead of root
+  btrfs-progs: check: Drop trans/root arguments from free_extent_hook
+  btrfs-progs: Remove root argument from __free_extent
+  btrfs-progs: Remove root argument from alloc_reserved_tree_block
+  btrfs-progs: Always pass 0 for offset when calling btrfs_free_extent
+    for btree blocks.
+  btrfs-progs: Add boolean to signal whether we are re-initing extent
+    tree
+  btrfs-progs: Add delayed refs infrastructure
+  btrfs-progs: Add __free_extent2 function
+  btrfs-progs: Add alloc_reserved_tree_block2 function
+  btrfs-progs: Wire up delayed refs
+  btrfs-progs: Remove old delayed refs infrastructure
+
+ Makefile              |   3 +-
+ btrfs-corrupt-block.c |   2 +-
+ check/main.c          |   8 +-
+ ctree.c               |  29 ++-
+ ctree.h               |  11 +-
+ delayed-ref.c         | 608 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ delayed-ref.h         | 225 +++++++++++++++++++
+ extent-tree.c         | 604 +++++++++++++++++++++++++++++--------------------
+ file-item.c           |  20 +-
+ kerncompat.h          |   8 +
+ transaction.c         |  25 +++
+ transaction.h         |   5 +
+ 12 files changed, 1280 insertions(+), 268 deletions(-)
+ create mode 100644 delayed-ref.c
+ create mode 100644 delayed-ref.h
+
 -- 
-2.17.1
-
-
+2.7.4
 

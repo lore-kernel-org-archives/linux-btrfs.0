@@ -1,194 +1,116 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f67.google.com ([209.85.218.67]:42481 "EHLO
-        mail-oi0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752566AbeFGDdH (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Jun 2018 23:33:07 -0400
-Received: by mail-oi0-f67.google.com with SMTP id k190-v6so7280057oib.9
-        for <linux-btrfs@vger.kernel.org>; Wed, 06 Jun 2018 20:33:07 -0700 (PDT)
+Received: from scc-mailout-kit-01.scc.kit.edu ([129.13.231.81]:52657 "EHLO
+        scc-mailout-kit-01.scc.kit.edu" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1753422AbeFIMhm (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 9 Jun 2018 08:37:42 -0400
+Received: from kit-msx-32.kit.edu ([2a00:1398:9:f612::32])
+        by scc-mailout-kit-01.scc.kit.edu with esmtps (TLS1.2:ECDHE_RSA_AES_256_CBC_SHA384:256)
+        (envelope-from <simon.kaiser@kit.edu>)
+        id 1fRcsk-0007WU-RN
+        for linux-btrfs@vger.kernel.org; Sat, 09 Jun 2018 14:22:12 +0200
+From: Simon Kaiser <simon.kaiser@kit.edu>
+To: <linux-btrfs@vger.kernel.org>
+Subject: corrupt leaf; unaligned key offset for csum item 
+Date: Sat, 9 Jun 2018 14:22:20 +0200
+Message-ID: <87lgboxi83.fsf@int-nb-181.i-did-not-set--mail-host-address--so-tickle-me>
 MIME-Version: 1.0
-From: james harvey <jamespharvey20@gmail.com>
-Date: Wed, 6 Jun 2018 23:33:06 -0400
-Message-ID: <CA+X5Wn5iV-q3jfDBPjGgvjtO4j+DCs0nifjFsya6GfLG9eNYWA@mail.gmail.com>
-Subject: [PATCH RFC] btrfs-progs: map-logical: look at next leaf if slot > items
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-=====[ NOTE ]=====
+Hi all,
 
-I think I found a buffer over-read error that will come up other places, unless
-EACH caller checks bounds themselves.  See "Bonus bug, LEFT FOR READER" below.
+I'm having trouble with my btrfs volume on a Samsung SSD 840 pro.  On
+startup I immediately get the error
 
-=====[ PROBLEM ]=====
+BTRFS critical (device sda5): corrupt leaf: root=1 block=73263579136
+slot=105, unaligned key offset for csum item, have 1271496708 should be
+aligned to 4096
 
-Using btrfs-progs v4.16:
+I used to make regular backups, but slacked off recently.  Fixing the
+filesystem isn't essential in any way, but would save me quite some time
+on config tinkering and weeding out vacation photos.  The second of
+which I don't enjoy at all...
 
-No extent found at range [10955980800,10955984896)
+On similar issues faulty RAM seemed to be the most prominent cause.  I
+added a third memory module quite recently which could have caused this,
+but I couldn't run memtest long enough yet to verify.
 
-But, this extent exists.  btrfs-debug-tree shows:
-...
-extent tree key (EXTENT_TREE ROOT_ITEM 0)
-...
-leaf 316456960 items 203 free space 3697 generation 84225 owner EXTENT_TREE
-...
-        item 197 key (10955931648 EXTENT_ITEM 28672) itemoff 8957 itemsize 37
-                refs 1 gen 62656 flags DATA
-                shared data backref parent 142622720 count 1
-        item 198 key (10955960320 EXTENT_ITEM 4096) itemoff 8920 itemsize 37
-                refs 1 gen 62656 flags DATA
-                shared data backref parent 142622720 count 1
-        item 199 key (10955964416 EXTENT_ITEM 4096) itemoff 8883 itemsize 37
-                refs 1 gen 62656 flags DATA
-                shared data backref parent 142622720 count 1
-        item 200 key (10955968512 EXTENT_ITEM 4096) itemoff 8846 itemsize 37
-                refs 1 gen 62656 flags DATA
-                shared data backref parent 142622720 count 1
-        item 201 key (10955972608 EXTENT_ITEM 4096) itemoff 8809 itemsize 37
-                refs 1 gen 62656 flags DATA
-                shared data backref parent 142655488 count 1
-        item 202 key (10955976704 EXTENT_ITEM 4096) itemoff 8772 itemsize 37
-                refs 1 gen 62656 flags DATA
-                shared data backref parent 142655488 count 1
-...
-leaf 316489728 items 208 free space 3387 generation 84225 owner EXTENT_TREE
-...
-        item 0 key (10955980800 EXTENT_ITEM 4096) itemoff 16246 itemsize 37
-                refs 1 gen 62656 flags DATA
-                shared data backref parent 128958464 count 1
-...
-checksum tree key (CSUM_TREE ROOT_ITEM 0)
-...
-        item 412 key (EXTENT_CSUM EXTENT_CSUM 10955980800) itemoff 10647
-                   itemsize 4
-                range start 10955980800 end 10955984896 length 4096
-....
-file tree key (3038 ROOT_ITEM 80009)
-...
-leaf 128958464 items 37 free space 6032 generation 62656 owner FS_TREE
-...
-        item 1 key (997645 INODE_ITEM 0) itemoff 15220 itemsize 160
-                generation 62656 transid 62656 size 4943 nbytes 8192
-                block group 0 mode 100644 links 1 uid 0 gid 0 rdev 0
-                sequence 5 flags 0x0(none)
-                atime 1478246492.0 (2016-11-04 08:01:32)
-                ctime 1478246493.129060242 (2016-11-04 08:01:33)
-                mtime 1477487995.0 (2016-10-26 13:19:55)
-                otime 1478246493.129060242 (2016-11-04 08:01:33)
-        item 2 key (997645 INODE_REF 299949) itemoff 15200 itemsize 20
-                index 13 namelen 10 name: as_map.hpp
-        item 3 key (997645 EXTENT_DATA 0) itemoff 15147 itemsize 53
-                generation 62656 type 1 (regular)
-                extent data disk byte 10955980800 nr 4096
-                extent data offset 0 nr 8192 ram 8192
-                extent compression 2 (lzo)
-...
+Here's the trimmed dmesg output (full output at
+https://pastebin.com/7XF9i09K)
 
-=====[ CAUSE ]=====
+[    4.062748] BTRFS critical (device sda5): corrupt leaf: root=1 block=73263579136 slot=105, unaligned key offset for csum item, have 1271496708 should be aligned to 4096
+[    4.063806] BTRFS info (device sda5): no csum found for inode 7810710 start 0
+[    4.064260] BTRFS warning (device sda5): csum failed root 257 ino 7810710 off 109201939968 csum 0x5307fa6f expected csum 0x00000000 mirror 1
+[    4.075834] BTRFS info (device sdb3): use lzo compression, level 0
+[    4.075836] BTRFS info (device sdb3): enabling auto defrag
+[    4.075837] BTRFS info (device sdb3): disk space caching is enabled
 
-In main's first call to map_one_extent(10955980800, 4096, 0):
+`brfs inspect-internal dump-tree -b 73263579136 /dev/sda5` (trimmed,
+full output at https://pastebin.com/dqBJ3b6D)
 
-* btrfs_search_slot() looks for (10955980800, 0, 0), and:
-** returns 1 because it doesn't exist
-** sets path->slots[0] to 203 (for leaf 316456960), where it should go if
-   inserted (pointing after the last existing item)
-* ret is reset to 0
-* btrfs_item_key_to_cpu sets key to (10955960320, BTRFS_EXTENT_ITEM_KEY, 4096)
-!!! Bonus bug, LEFT FOR READER.  Why is this item #197, 5 items before the 203
-    given?  I think no bounds checking causes a buffer over-read here.
-    btrfs_item_key_to_cpu() calls btrfs_item_key(), which uses the macro
-    read_eb_member() to call read_extent_buffer() which memcpy's using an out
-    of range index, at least for this leaf.
-* With (!search_forward && key.objectid > logical) being false, the code calling
-  btrfs_next_item() is not run.
-* logical is set to this too-low key.objectid
-* !ret, so set *logical_ret and *len_ret with the new values
+btrfs-progs v4.16.1
+leaf 73263579136 items 194 free space 4089 generation 530006 owner CSUM_TREE
+leaf 73263579136 flags 0x1(WRITTEN) backref revision 1
+fs uuid 95b4974b-a798-44b3-99aa-a4eef990aeeb
+chunk uuid 9c8f46c3-ba51-4175-857c-8041543fa813
+	item 0 key (EXTENT_CSUM EXTENT_CSUM 1268850688) itemoff 16263 itemsize 20
+		range start 1268850688 end 1268871168 length 20480
+	item 1 key (EXTENT_CSUM EXTENT_CSUM 1268871168) itemoff 16259 itemsize 4
+		range start 1268871168 end 1268875264 length 4096
+	item 2 key (EXTENT_CSUM EXTENT_CSUM 1268875264) itemoff 16255 itemsize 4
+		range start 1268875264 end 1268879360 length 4096
+	item 3 key (EXTENT_CSUM EXTENT_CSUM 1268879360) itemoff 16239 itemsize 16
+		range start 1268879360 end 1268895744 length 16384
+	item 4 key (EXTENT_CSUM EXTENT_CSUM 1268895744) itemoff 16235 itemsize 4
+		range start 1268895744 end 1268899840 length 4096
+	item 5 key (EXTENT_CSUM EXTENT_CSUM 1268899840) itemoff 16223 itemsize 12
+		range start 1268899840 end 1268912128 length 12288
+[...]
+	item 100 key (EXTENT_CSUM EXTENT_CSUM 1271410688) itemoff 13827 itemsize 8
+		range start 1271410688 end 1271418880 length 8192
+	item 101 key (EXTENT_CSUM EXTENT_CSUM 1271418880) itemoff 13811 itemsize 16
+		range start 1271418880 end 1271435264 length 16384
+	item 102 key (EXTENT_CSUM EXTENT_CSUM 1271435264) itemoff 13807 itemsize 4
+		range start 1271435264 end 1271439360 length 4096
+	item 103 key (EXTENT_CSUM EXTENT_CSUM 1271439360) itemoff 13771 itemsize 36
+		range start 1271439360 end 1271476224 length 36864
+	item 104 key (EXTENT_CSUM EXTENT_CSUM 1271488512) itemoff 13763 itemsize 8
+		range start 1271488512 end 1271496704 length 8192
+	item 105 key (EXTENT_CSUM EXTENT_CSUM 1271496708) itemoff 13403 itemsize 360
+		range start 1271496708 end 1271865348 length 368640
+	item 106 key (EXTENT_CSUM EXTENT_CSUM 1271873536) itemoff 13399 itemsize 4
+		range start 1271873536 end 1271877632 length 4096
+	item 107 key (EXTENT_CSUM EXTENT_CSUM 1271877632) itemoff 13379 itemsize 20
+		range start 1271877632 end 1271898112 length 20480
+	item 108 key (EXTENT_CSUM EXTENT_CSUM 1271898112) itemoff 13375 itemsize 4
+		range start 1271898112 end 1271902208 length 4096
+	item 109 key (EXTENT_CSUM EXTENT_CSUM 1271918592) itemoff 13363 itemsize 12
+		range start 1271918592 end 1271930880 length 12288
+	item 110 key (EXTENT_CSUM EXTENT_CSUM 1271930880) itemoff 13351 itemsize 12
+		range start 1271930880 end 1271943168 length 12288
+[...]
 
-Back in main:
+`uname -a`
 
-* ret is 0, so don't print the first error
-* ret is still 0, so don't run map_one_extent() with search_forward=1
-* At the while loop, (10955960320 + 4096 >= 10955980800 && 10955960320 <
-  10955980800 + 4096) (10955964416 >= 10955980800 && 10955960320 < 10955984896)
-  (false && true) (false), so don't call map_one_extent() with search_forward=1
-  here, either.
-* In the while loop, now call map_one_extent() with search_forward=1
-* !found, so print (somewhat deceptive) error only mentioning the user-given
-  logical without mentioning it looked elsewhere, and give up.
+Linux hostname 4.16.12-1-ARCH #1 SMP PREEMPT Fri May 25 23:30:31 UTC 2018 x86_64 GNU/Linux
 
-=====[ FIX ]=====
+`btrfs fi show`
 
-btrfs-map-logical and I are not friends.  The "least code" fix for this
-situation is this patch.
+Label: 'arch'  uuid: 95b4974b-a798-44b3-99aa-a4eef990aeeb
+	Total devices 1 FS bytes used 78.10GiB
+	devid    1 size 100.00GiB used 94.05GiB path /dev/sda5
 
-Qu's "btrfs-progs: check: Also compare data between mirrors to detect corruption
-for NODATASUM extents" uses a simpler way, which makes me wonder if that should
-just be modified to replace how btrfs-map-logical works.  But, I'll admit I do
-not have my head around the entire way everything is done in btrfs-map-logical,
-and there could be reasons for it needing to be different here.
+`btrfs fi df`
 
-This doesn't touch what I think is the buffer over-read error described above.
+Data, single: total=90.01GiB, used=76.32GiB
+System, single: total=32.00MiB, used=16.00KiB
+Metadata, single: total=4.01GiB, used=1.78GiB
+GlobalReserve, single: total=512.00MiB, used=0.00B
 
-With this fix, btrfs_item_key_to_cpu() is not asked to read out of bounds, so
-map_one_extent() leaves cur_logical and cur_len unmodified because they don't
-need to be.  (Both the first time it's ran with search_forward=0, and in the
-while loop when it's ran with search_forward=1.)
+Is there any chance this can be fixed?  Your help would be greatly
+apperciated!
 
-Also updated call from btrfs_next_item() to btrfs_next_extent_item().  I can't
-see any reason not to, while this area's being modified.  It looks for both
-BTRFS_EXTENT_ITEM_KEY and BTRFS_METADATA_ITEM_KEY, which is what we need.
-(Granted, inside, it's just calling btrfs_next_item().)
-
-Also fixed misspelling of "foward" to "forward".
-
-Signed-off-by: James Harvey <jamespharvey20@gmail.com>
----
- btrfs-map-logical.c | 18 +++++++++++++-----
- 1 file changed, 13 insertions(+), 5 deletions(-)
-
-diff --git a/btrfs-map-logical.c b/btrfs-map-logical.c
-index 7a8bcff9..1c30b22b 100644
---- a/btrfs-map-logical.c
-+++ b/btrfs-map-logical.c
-@@ -39,7 +39,7 @@
- static FILE *info_file;
-
- static int map_one_extent(struct btrfs_fs_info *fs_info,
--                         u64 *logical_ret, u64 *len_ret, int search_foward)
-+                         u64 *logical_ret, u64 *len_ret, int search_forward)
- {
-        struct btrfs_path *path;
-        struct btrfs_key key;
-@@ -65,17 +65,25 @@ static int map_one_extent(struct btrfs_fs_info *fs_info,
-        BUG_ON(ret == 0);
-        ret = 0;
-
-+       if (path->slots[0] >= btrfs_header_nritems(path->nodes[0])) {
-+               ret = btrfs_next_leaf(fs_info->extent_root, path);
-+               if (ret != 0) {
-+                       ret = -1;
-+                       goto out;
-+               }
-+       }
-+
- again:
-        btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
--       if ((search_foward && key.objectid < logical) ||
--           (!search_foward && key.objectid > logical) ||
-+       if ((search_forward && key.objectid < logical) ||
-+           (!search_forward && key.objectid > logical) ||
-            (key.type != BTRFS_EXTENT_ITEM_KEY &&
-             key.type != BTRFS_METADATA_ITEM_KEY)) {
--               if (!search_foward)
-+               if (!search_forward)
-                        ret = btrfs_previous_extent_item(fs_info->extent_root,
-                                                         path, 0);
-                else
--                       ret = btrfs_next_item(fs_info->extent_root, path);
-+                       ret =
-btrfs_next_extent_item(fs_info->extent_root, path);
-                if (ret)
-                        goto out;
-                goto again;
---
-2.17.0
+Yours,
+Simon

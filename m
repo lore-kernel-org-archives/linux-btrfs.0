@@ -1,56 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f42.google.com ([209.85.218.42]:44088 "EHLO
-        mail-oi0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752170AbeFJVa4 (ORCPT
+Received: from mail-ot0-f195.google.com ([74.125.82.195]:43591 "EHLO
+        mail-ot0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752386AbeFJVor (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 10 Jun 2018 17:30:56 -0400
-Received: by mail-oi0-f42.google.com with SMTP id c128-v6so16222554oig.11
-        for <linux-btrfs@vger.kernel.org>; Sun, 10 Jun 2018 14:30:55 -0700 (PDT)
+        Sun, 10 Jun 2018 17:44:47 -0400
+Received: by mail-ot0-f195.google.com with SMTP id i19-v6so21603806otk.10
+        for <linux-btrfs@vger.kernel.org>; Sun, 10 Jun 2018 14:44:46 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <87wov63gnq.fsf@int-nb-181.i-did-not-set--mail-host-address--so-tickle-me>
-References: <87lgboxi83.fsf@int-nb-181.i-did-not-set--mail-host-address--so-tickle-me>
- <31a293a5-6cad-cd42-b70b-bb23c02233bf@gmx.com> <CAJCQCtQzd=pKySzt1aJoABHw3kEYxUnJMqCAZhBnmxSNV43=EQ@mail.gmail.com>
- <aa02c8c9-7ce7-eb8d-18e8-d810532083d8@gmx.com> <87wov63gnq.fsf@int-nb-181.i-did-not-set--mail-host-address--so-tickle-me>
+In-Reply-To: <9C0633CD-D4FC-4A93-9A6F-1EF185F4205D@gmail.com>
+References: <9C0633CD-D4FC-4A93-9A6F-1EF185F4205D@gmail.com>
 From: Chris Murphy <lists@colorremedies.com>
-Date: Sun, 10 Jun 2018 15:30:54 -0600
-Message-ID: <CAJCQCtSrxUk0HBBVADKn202LpAhxhxxTek8Dycxv9gd8fJmsUQ@mail.gmail.com>
-Subject: Re: corrupt leaf; unaligned key offset for csum item
-To: Simon Kaiser <simon.kaiser@kit.edu>
-Cc: Qu Wenruo <quwenruo.btrfs@gmx.com>, Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Date: Sun, 10 Jun 2018 15:44:46 -0600
+Message-ID: <CAJCQCtSmWzXKRmJv2Wk=7eb1txAfX6y1Ap+_a+CfziaoNZe9nw@mail.gmail.com>
+Subject: Re: Filesystem read-only (btrbk, bad metadata, unable to find ref byte)
+To: Vote 539 <vote539@gmail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Jun 10, 2018 at 7:38 AM, Simon Kaiser <simon.kaiser@kit.edu> wrote:
-> Qu Wenruo <quwenruo.btrfs@gmx.com> writes:
+On Sun, Jun 10, 2018 at 12:42 PM, Vote 539 <vote539@gmail.com> wrote:
+> I have a btrfs filesystem that I use as a target for send/receive incremental snapshots.  I use btrbk to perform hourly backups.
 >
->> On 2018年06月10日 11:53, Chris Murphy wrote:
->>> On Sat, Jun 9, 2018 at 7:56 PM, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
->>>>
->>>> Indeed, the corrupted bytenr is 0x4bc98004.
->>>> Looks pretty like a bit flip in the 3rd lowest bit.
->>>>
->>>> It can be fixed by manually patching the corrupted leaf to get rid of
->>>> the bitflip.
->>>> I could provide a special branch of btrfs-progs to fix it easily.
->>>>
->>>> But before that, it's better to do a scrub to see if there is other
->>>> similar problems, so I could fix them all.
->>>>
+> The target filesystem was offline for a few days.  When I mounted it today, the filesystem was read-only, with dmesg errors:
 >
-> Online scrub `btrfs scrub start -B -r /mnt/` (`mount -o ro,norecovery`)
+>     …
+>     [  167.004684] BTRFS error (device sda2): unable to find ref byte nr 40366194688 parent 0 root 6894  owner 1 offset 0
+>     [  167.004722] ------------[ cut here ]------------
+>     [  167.004735] WARNING: CPU: 0 PID: 1273 at /build/linux-E14mqW/linux-4.4.0/fs/btrfs/extent-tree.c:6553 __btrfs_free_extent.isra.68+0x8ff/0xd30 [btrfs]()
+>     [  167.004736] BTRFS: Transaction aborted (error -2)
+>     …
+>     [  167.005011] BTRFS: error (device sda2) in __btrfs_free_extent:6553: errno=-2 No such entry
+>     [  167.005041] BTRFS info (device sda2): forced readonly
+>     [  167.005044] BTRFS: error (device sda2) in btrfs_run_delayed_refs:2930: errno=-2 No such entry
+>     …
 >
-> ERROR: scrubbing /mnt/ failed for device id 1: ret=-1, errno=5 (Input/output error)
-> scrub canceled for 95b4974b-a798-44b3-99aa-a4eef990aeeb
->         scrub started at Sun Jun 10 13:25:37 2018 and was aborted after 00:00:03
->         total bytes scrubbed: 1.09GiB with 0 errors
+> Full dmesg: https://pastebin.com/XNKJbN15
 
-Is there any kernel message at the time of this i/o error? Either
-Btrfs or device error?
+I suggest trying a more recent kernel and see if that can handle the
+problem better, 4.14.48 or newer.
 
+>
+> I unmounted the filesystem and ran btrfs check.  I let it run overnight.  Output:
 
-
+The crossing stripe boundaries message sounds like messages we saw
+with an older btrfs-progs. What version are you using? I suggest
+4.16.2 and running 'btrfs check --mode=lowmem' option. It will be slow
+but it's a different implementation than the default.
 
 -- 
 Chris Murphy

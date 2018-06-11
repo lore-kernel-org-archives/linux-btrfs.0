@@ -1,82 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.22]:51907 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.17.21]:52283 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752326AbeFHOVM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 8 Jun 2018 10:21:12 -0400
-Subject: Re: [PATCH 00/15] Add delayed-refs support to btrfs-progs
+        id S1753750AbeFKEmL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 11 Jun 2018 00:42:11 -0400
+Subject: Re: [PATCH 01/15] btrfs-progs: Remove root argument from
+ pin_down_bytes
 To: Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
 References: <1528462078-24490-1-git-send-email-nborisov@suse.com>
- <e5b7b849-7d31-b563-0285-919b5732fc04@gmx.com>
- <1fe286cc-af72-86e4-743e-1bfb4bff1028@suse.com>
+ <1528462078-24490-2-git-send-email-nborisov@suse.com>
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <3498190a-58e7-1c1d-aa24-3ddbccb8e85d@gmx.com>
-Date: Fri, 8 Jun 2018 22:21:00 +0800
+Message-ID: <d497b2e5-a7ed-b4f9-051e-6ce775dc9831@gmx.com>
+Date: Mon, 11 Jun 2018 12:41:56 +0800
 MIME-Version: 1.0
-In-Reply-To: <1fe286cc-af72-86e4-743e-1bfb4bff1028@suse.com>
+In-Reply-To: <1528462078-24490-2-git-send-email-nborisov@suse.com>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On 2018年06月08日 22:08, Nikolay Borisov wrote:
+On 2018年06月08日 20:47, Nikolay Borisov wrote:
+> This argument is used to obtain a reference to fs_info, which can
+> already be done from the passed trans handle, so use that instead.
+> This is in preparation for delayed refs support.
 > 
-> 
-> On  8.06.2018 16:50, Qu Wenruo wrote:
->>  details?
->> Personally speaking, I'd like to avoid introducing complex delayed-ref
->> into btrfs-progs if possible.
->>
->> And in my (possibly wrong) understanding, the main purpose of
->> delayed-ref is to reduce the race on extent tree, thus to improve
->> performance.
->> However in btrfs-progs, it's the least important aspect.
->>
->> So extra comment on this is appreciated.
-> 
-> So in order to have freespace tree repair code working I needed to hook
-> up its add_to_free_space_tree/remove_from_free_space_tree to
-> alloc_reserved_tree_block/__free_extent. In my testing this lead to a
-> very deep recursion - it crashed on 58k call frames. So the idea was to
-> have delayed refs which would record and accumulate modifications and
-> then the freespace tree freeing code would piggy back on them to rely on
-> correct operation.
+> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 
-In fact, I have a pretty nasty idea on this problem.
-Mark one or more metadata chunks without free space tree cache.
-
-Then at least recursion could be easily resolved (although need extra
-extent allocation hook to handle fst allocation)
-
-> 
-> I guess I could try and debug the freespace code and see why I was going
-> into this infinite recursion so to speak.
-> 
-> Also the delayed refs code in progs is actually a lot simpler than the
-> kernel counterpart due to the lack of locking.
-
-Right.
-And no need to do the async delayed ref execution should also makes
-things easier.
-
-> One more benefit of
-> having this code in progs is the fact one can go through it with a
-> debugger and really inspect/understand how it works
-
-Indeed, this makes a lot of sense.
-
-I'll take some time to do more review on this patchset, and dig deeper
-into delayed-ref facility.
+Reviewed-by: Qu Wenruo <wqu@suse.com>
 
 Thanks,
 Qu
 
-> - i.e addition of
-> refs, selection of refs etc. Furthermore, it at least unifies the logic
-> between kernel and userspace, since right now there is code which mimics
-> the delayed refs - check the code being removed in the last patch.
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> ---
+>  extent-tree.c | 9 ++++-----
+>  1 file changed, 4 insertions(+), 5 deletions(-)
+> 
+> diff --git a/extent-tree.c b/extent-tree.c
+> index 0643815bd41c..cbc022f6cef6 100644
+> --- a/extent-tree.c
+> +++ b/extent-tree.c
+> @@ -2098,9 +2098,8 @@ static int finish_current_insert(struct btrfs_trans_handle *trans)
+>  	return 0;
+>  }
+>  
+> -static int pin_down_bytes(struct btrfs_trans_handle *trans,
+> -			  struct btrfs_root *root,
+> -			  u64 bytenr, u64 num_bytes, int is_data)
+> +static int pin_down_bytes(struct btrfs_trans_handle *trans, u64 bytenr,
+> +			  u64 num_bytes, int is_data)
+>  {
+>  	int err = 0;
+>  	struct extent_buffer *buf;
+> @@ -2108,7 +2107,7 @@ static int pin_down_bytes(struct btrfs_trans_handle *trans,
+>  	if (is_data)
+>  		goto pinit;
+>  
+> -	buf = btrfs_find_tree_block(root->fs_info, bytenr, num_bytes);
+> +	buf = btrfs_find_tree_block(trans->fs_info, bytenr, num_bytes);
+>  	if (!buf)
+>  		goto pinit;
+>  
+> @@ -2360,7 +2359,7 @@ static int __free_extent(struct btrfs_trans_handle *trans,
+>  		}
+>  
+>  		if (pin) {
+> -			ret = pin_down_bytes(trans, root, bytenr, num_bytes,
+> +			ret = pin_down_bytes(trans, bytenr, num_bytes,
+>  					     is_data);
+>  			if (ret > 0)
+>  				mark_free = 1;
 > 

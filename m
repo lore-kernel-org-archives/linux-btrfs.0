@@ -1,63 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:46704 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:56815 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S933381AbeFKQTt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 11 Jun 2018 12:19:49 -0400
-Date: Mon, 11 Jun 2018 18:16:28 +0200
+        id S933579AbeFKRk6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 11 Jun 2018 13:40:58 -0400
+Date: Mon, 11 Jun 2018 19:38:05 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Filipe Manana <fdmanana@gmail.com>
-Cc: Anand Jain <anand.jain@oracle.com>, David Sterba <dsterba@suse.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [GIT PULL] Btrfs updates for 4.18
-Message-ID: <20180611161508.GA24375@twin.jikos.cz>
+To: syzbot <syzbot+abf707d7ccbb3244f34e@syzkaller.appspotmail.com>
+Cc: linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
+        syzkaller-bugs@googlegroups.com, viro@zeniv.linux.org.uk,
+        linux-btrfs@vger.kernel.org
+Subject: Re: KASAN: use-after-free Read in getname_kernel
+Message-ID: <20180611173805.wx2varcyneqrvvsp@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <cover.1528125657.git.dsterba@suse.com>
- <CAL3q7H7iLCPxA01811RJK-bEiRPAGJdTrHLogJr2a3Sq1g0k4g@mail.gmail.com>
- <e315b073-05f9-7280-d1ee-4d0456085720@oracle.com>
- <CAL3q7H6EwxMVCM7-cfwb119eCaYAaVo3Go64jE99Z9y04igV5w@mail.gmail.com>
+References: <00000000000037c4d2056e5740c3@google.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAL3q7H6EwxMVCM7-cfwb119eCaYAaVo3Go64jE99Z9y04igV5w@mail.gmail.com>
+In-Reply-To: <00000000000037c4d2056e5740c3@google.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jun 11, 2018 at 10:50:54AM +0100, Filipe Manana wrote:
-> >>>        btrfs: replace uuid_mutex by device_list_mutex in
-> >>> btrfs_open_devices
-
-> >>   *
-> >>   * the mutex can be very coarse and can cover long-running operations
-> >>   *
-> >>   * protects: updates to fs_devices counters like missing devices, rw
-> >> devices,
-> >>   * seeding, structure cloning, openning/closing devices at mount/umount
-> >> time
-> >>
-> >> generates some confusion since btrfs_open_devices(), after that
-> >> commit, no longer takes the uuid_mutex and it
-> >> updates some fs_devices counters (opened, open_devices, etc).
-> >
-> >  As uuid_mutex is a global fs_uuids lock for the per fsid operations
-> >  doesn't make any sense.
-> >
-> >  This problem is reproducible only for-4.18, misc-next if fine.
-> >  I am looking deeper.
+On Sun, Jun 10, 2018 at 10:45:02PM -0700, syzbot wrote:
+> Hello,
 > 
-> What about the unprotected updates (increments) to fs_devices->opened
-> and fs_devices->open_devices?
-> Other functions are accessing/updating them while holding the uuid mutex.
+> syzbot found the following crash on:
+> 
+> HEAD commit:    3ca24ce9ff76 Merge branch 'proc-cmdline'
+> git tree:       upstream
+> console output: https://syzkaller.appspot.com/x/log.txt?x=15ed37d7800000
+> kernel config:  https://syzkaller.appspot.com/x/.config?x=314f2150f36c16ca
+> dashboard link: https://syzkaller.appspot.com/bug?extid=abf707d7ccbb3244f34e
+> compiler:       gcc (GCC) 8.0.1 20180413 (experimental)
+> 
+> Unfortunately, I don't have any reproducer for this crash yet.
+> 
+> IMPORTANT: if you fix the bug, please add the following tag to the commit:
+> Reported-by: syzbot+abf707d7ccbb3244f34e@syzkaller.appspotmail.com
+> 
+> ==================================================================
+> BUG: KASAN: use-after-free in memcpy include/linux/string.h:345 [inline]
+> BUG: KASAN: use-after-free in getname_kernel+0x123/0x370 fs/namei.c:241
+> Read of size 11 at addr ffff8801d8053310 by task syz-executor5/15925
+> 
+> CPU: 0 PID: 15925 Comm: syz-executor5 Not tainted 4.17.0+ #94
+> Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS
+> Google 01/01/2011
+> Call Trace:
+>  __dump_stack lib/dump_stack.c:77 [inline]
+>  dump_stack+0x1b9/0x294 lib/dump_stack.c:113
+>  print_address_description+0x6c/0x20b mm/kasan/report.c:256
+>  kasan_report_error mm/kasan/report.c:354 [inline]
+>  kasan_report.cold.7+0x242/0x2fe mm/kasan/report.c:412
+>  check_memory_region_inline mm/kasan/kasan.c:260 [inline]
+>  check_memory_region+0x13e/0x1b0 mm/kasan/kasan.c:267
+>  memcpy+0x23/0x50 mm/kasan/kasan.c:302
+>  memcpy include/linux/string.h:345 [inline]
+>  getname_kernel+0x123/0x370 fs/namei.c:241
+>  kern_path+0x1e/0x40 fs/namei.c:2410
+>  lookup_bdev+0xfa/0x240 fs/block_dev.c:2084
+>  blkdev_get_by_path+0x1f/0xe0 fs/block_dev.c:1687
+>  btrfs_get_bdev_and_sb+0x38/0x300 fs/btrfs/volumes.c:392
+>  btrfs_open_one_device fs/btrfs/volumes.c:695 [inline]
+>  open_fs_devices+0x6a5/0xc60 fs/btrfs/volumes.c:1112
+>  btrfs_open_devices+0xc0/0xd0 fs/btrfs/volumes.c:1155
 
-The goal is to reduce usage of uuid_mutex only to protect search or
-update of the fs_uuids list, everything else should be protected by the
-device_list_mutex.
+I think it's another manifestation of the bug syzbot reported against
+btrfs_open_devices
 
-The commit 542c5908abfe84f7 (use device_list_mutex in
-btrfs_open_devices) implements that but then the access to the ->opened
-member is not protected consistently. There are patches that convert the
-use to device_list_mutex but haven't been merged due to refinements or
-pending review.
+https://lkml.kernel.org/r/000000000000832e70056df8fb38@google.com
 
-At this point I think we should revert the one commit 542c5908abfe84f7
-as it introduces the locking problems and revisit the whole fs_devices
-locking scheme again in the dex dev cycle. That will be post rc1 as
-there might be more to revert.
+Currently proposed fix is to revert
+542c5908abfe84f7b4c1717492ecc92ea0ea328d, that's going to be merged post
+rc1.

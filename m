@@ -1,111 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:34503 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:34744 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753998AbeFKHEo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 11 Jun 2018 03:04:44 -0400
-Subject: Re: [PATCH 06/15] btrfs-progs: check: Drop trans/root arguments from
- free_extent_hook
+        id S1753998AbeFKHGc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 11 Jun 2018 03:06:32 -0400
+Subject: Re: [PATCH 07/15] btrfs-progs: Remove root argument from
+ __free_extent
 To: Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
 References: <1528462078-24490-1-git-send-email-nborisov@suse.com>
- <1528462078-24490-7-git-send-email-nborisov@suse.com>
- <2e649653-aa2d-c40a-139d-dbebfeb6f76d@gmx.com>
+ <1528462078-24490-8-git-send-email-nborisov@suse.com>
+ <b912f17a-41ce-861a-a87b-f1e118a57ccd@gmx.com>
 From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <54427a0d-9d23-9cec-2aa6-6ed4f638b701@suse.com>
-Date: Mon, 11 Jun 2018 10:04:41 +0300
+Message-ID: <ddb84b34-100d-c9b6-96cf-f76683d89be6@suse.com>
+Date: Mon, 11 Jun 2018 10:06:29 +0300
 MIME-Version: 1.0
-In-Reply-To: <2e649653-aa2d-c40a-139d-dbebfeb6f76d@gmx.com>
+In-Reply-To: <b912f17a-41ce-861a-a87b-f1e118a57ccd@gmx.com>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On 11.06.2018 07:55, Qu Wenruo wrote:
+On 11.06.2018 07:58, Qu Wenruo wrote:
 > 
 > 
 > On 2018年06月08日 20:47, Nikolay Borisov wrote:
->> They are not really needed, what free_extent_hook wants is really a
->> pointer to fs_info so give it to it directly. This is in preparation
->> of delayed refs code.
+>> This argument is no longer used in this function so remove it.
 > 
-> Looks good, since free_extent_hook is only used by original mode and it
-> doesn't involve any tree operation at all, it's a valid modification.
+> The same concern about the aggressive removal of fs_info.
 > 
-> Although I can't really see the relationship with delayed refs, hopes I
-> could find it out when reviewing the rest patches.
+> I would completely accept if it's only convert root to fs_info, but
+> removing it completely and rely on trans to get fs_info, I'm still not
+> 100% sure.
 
-I guess I failed to explain that in the cover letter, for more details
-see my previous reply to your comments regarding 2/15. In short - I
-wanted to remove the root argument from __free_extent in order to do
-that I first had to remove it from its callees.
+Freeing an extent is now related to running delayed refs, which are
+keyed off a valid transaction and a valid transaction must have access
+to fs_info so I think it's fine.
 
-> 
->>
->> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
-> 
-> Reviewed-by: Qu Wenruo <wqu@suse.com>
 > 
 > Thanks,
 > Qu
 > 
->> ---
->>  check/main.c  | 5 ++---
->>  ctree.h       | 3 +--
->>  extent-tree.c | 4 ++--
->>  3 files changed, 5 insertions(+), 7 deletions(-)
 >>
->> diff --git a/check/main.c b/check/main.c
->> index 9a1f238800b0..b84903acdb25 100644
->> --- a/check/main.c
->> +++ b/check/main.c
->> @@ -6234,8 +6234,7 @@ static int add_root_to_pending(struct extent_buffer *buf,
->>   * we're tracking for repair.  This hook makes sure we
->>   * remove any backrefs for blocks as we are fixing them.
->>   */
->> -static int free_extent_hook(struct btrfs_trans_handle *trans,
->> -			    struct btrfs_root *root,
->> +static int free_extent_hook(struct btrfs_fs_info *fs_info,
->>  			    u64 bytenr, u64 num_bytes, u64 parent,
->>  			    u64 root_objectid, u64 owner, u64 offset,
->>  			    int refs_to_drop)
->> @@ -6243,7 +6242,7 @@ static int free_extent_hook(struct btrfs_trans_handle *trans,
->>  	struct extent_record *rec;
->>  	struct cache_extent *cache;
->>  	int is_data;
->> -	struct cache_tree *extent_cache = root->fs_info->fsck_extent_cache;
->> +	struct cache_tree *extent_cache = fs_info->fsck_extent_cache;
->>  
->>  	is_data = owner >= BTRFS_FIRST_FREE_OBJECTID;
->>  	cache = lookup_cache_extent(extent_cache, bytenr, num_bytes);
->> diff --git a/ctree.h b/ctree.h
->> index 082726238b91..b30a946658ce 100644
->> --- a/ctree.h
->> +++ b/ctree.h
->> @@ -1143,8 +1143,7 @@ struct btrfs_fs_info {
->>  
->>  	int transaction_aborted;
->>  
->> -	int (*free_extent_hook)(struct btrfs_trans_handle *trans,
->> -				struct btrfs_root *root,
->> +	int (*free_extent_hook)(struct btrfs_fs_info *fs_info,
->>  				u64 bytenr, u64 num_bytes, u64 parent,
->>  				u64 root_objectid, u64 owner, u64 offset,
->>  				int refs_to_drop);
+>> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+>> ---
+>>  extent-tree.c | 7 ++-----
+>>  1 file changed, 2 insertions(+), 5 deletions(-)
+>>
 >> diff --git a/extent-tree.c b/extent-tree.c
->> index 6e7a19323efc..9132cb3f8e15 100644
+>> index 9132cb3f8e15..c16bd85e92be 100644
 >> --- a/extent-tree.c
 >> +++ b/extent-tree.c
->> @@ -2163,8 +2163,8 @@ static int __free_extent(struct btrfs_trans_handle *trans,
->>  	int skinny_metadata =
->>  		btrfs_fs_incompat(extent_root->fs_info, SKINNY_METADATA);
+>> @@ -50,7 +50,6 @@ static int alloc_reserved_tree_block(struct btrfs_trans_handle *trans,
+>>  				     u64 flags, struct btrfs_disk_key *key,
+>>  				     int level, struct btrfs_key *ins);
+>>  static int __free_extent(struct btrfs_trans_handle *trans,
+>> -			 struct btrfs_root *root,
+>>  			 u64 bytenr, u64 num_bytes, u64 parent,
+>>  			 u64 root_objectid, u64 owner_objectid,
+>>  			 u64 owner_offset, int refs_to_drop);
+>> @@ -2141,7 +2140,6 @@ void btrfs_unpin_extent(struct btrfs_fs_info *fs_info,
+>>   * remove an extent from the root, returns 0 on success
+>>   */
+>>  static int __free_extent(struct btrfs_trans_handle *trans,
+>> -			 struct btrfs_root *root,
+>>  			 u64 bytenr, u64 num_bytes, u64 parent,
+>>  			 u64 root_objectid, u64 owner_objectid,
+>>  			 u64 owner_offset, int refs_to_drop)
+>> @@ -2149,7 +2147,7 @@ static int __free_extent(struct btrfs_trans_handle *trans,
 >>  
->> -	if (root->fs_info->free_extent_hook) {
->> -		root->fs_info->free_extent_hook(trans, root, bytenr, num_bytes,
->> +	if (trans->fs_info->free_extent_hook) {
->> +		trans->fs_info->free_extent_hook(trans->fs_info, bytenr, num_bytes,
->>  						parent, root_objectid, owner_objectid,
->>  						owner_offset, refs_to_drop);
+>>  	struct btrfs_key key;
+>>  	struct btrfs_path *path;
+>> -	struct btrfs_root *extent_root = root->fs_info->extent_root;
+>> +	struct btrfs_root *extent_root = trans->fs_info->extent_root;
+>>  	struct extent_buffer *leaf;
+>>  	struct btrfs_extent_item *ei;
+>>  	struct btrfs_extent_inline_ref *iref;
+>> @@ -2409,8 +2407,7 @@ static int del_pending_extents(struct btrfs_trans_handle *trans)
 >>  
+>>  		if (!test_range_bit(extent_ins, start, end,
+>>  				    EXTENT_LOCKED, 0)) {
+>> -			ret = __free_extent(trans, extent_root,
+>> -					    start, end + 1 - start, 0,
+>> +			ret = __free_extent(trans, start, end + 1 - start, 0,
+>>  					    extent_root->root_key.objectid,
+>>  					    extent_op->level, 0, 1);
+>>  			kfree(extent_op);
 >>
 > --
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in

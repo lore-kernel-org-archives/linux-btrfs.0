@@ -1,146 +1,182 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.22]:60689 "EHLO mout.gmx.net"
+Received: from mx2.suse.de ([195.135.220.15]:34326 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752103AbeFKFU5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 11 Jun 2018 01:20:57 -0400
-Subject: Re: [PATCH 11/15] btrfs-progs: Add delayed refs infrastructure
-To: Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
+        id S932395AbeFKHCl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 11 Jun 2018 03:02:41 -0400
+Subject: Re: [PATCH 02/15] btrfs-progs: Remove root argument from
+ btrfs_del_csums
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
 References: <1528462078-24490-1-git-send-email-nborisov@suse.com>
- <1528462078-24490-12-git-send-email-nborisov@suse.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <091f70e9-e31f-2a03-cc90-6697803f8c3c@gmx.com>
-Date: Mon, 11 Jun 2018 13:20:44 +0800
+ <1528462078-24490-3-git-send-email-nborisov@suse.com>
+ <15794890-c9d4-a2da-d507-8836407c4bae@gmx.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <5cf49c2c-15c6-762a-f0a0-156b309c7b03@suse.com>
+Date: Mon, 11 Jun 2018 10:02:38 +0300
 MIME-Version: 1.0
-In-Reply-To: <1528462078-24490-12-git-send-email-nborisov@suse.com>
+In-Reply-To: <15794890-c9d4-a2da-d507-8836407c4bae@gmx.com>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On 2018年06月08日 20:47, Nikolay Borisov wrote:
-> This commit pulls those portions of the kernel implementation of
-> delayed refs which are necessary to have them working in user-space.
-> I've done the following modifications:
+On 11.06.2018 07:46, Qu Wenruo wrote:
 > 
-> 1. Replaced all kmem_cache_alloc calls to kmalloc.
 > 
-> 2. Removed all locking-related code, since we are single threaded in
-> userspace.
+> On 2018年06月08日 20:47, Nikolay Borisov wrote:
+>> It's not needed, since we can obtain a reference to fs_info from the
+>> passed transaction handle. This is needed by delayed refs code.
 > 
-> 3. Removed code which deals with data refs - delayed refs in user space
-> are going to be used only for cowonly trees.
+> This looks a little too aggressive to me.
+> 
+> Normally we would expect parameters like @trans then @fs_info.
+> Although @trans only let us get @fs_info, under certain case @trans
+> could be NULL (like btrfs_search_slot).
+> 
+> Although for btrfs_del_csums() @tran can be NULL, I still prefer the
+> @trans, @fs_info parameters.
 
-That's pretty good, although still some data ref related
-structures/functions are left.
+The reason I'm making those prep patches i because I would like to get
+rid of the root argument from _free_extent, since if you look at the
+later delayed refs patches - patch 12/15 you'd see that the adapter
+function __free_extent2 doesn't really have a root pointer as an
+argument. If you also take a look at 10/15 (add delayed refs
+infrastructure), the functions which create the delayed refs also don't
+take a struct btrfs_root as an argument.
+
+Alternatively I can perhaps wire up a call to btrfs_read_fs_root in
+__free_extent which will be using the "ref->root" id to obtain struct
+btrfs_root. However, due to the way FST fixup is implemented (I still
+haven't sent that code) it's possible that we call __free_extent2 with
+the freespace root set to 0 so if btrfs_read_fs_root is called it will
+return an -ENOENT.
+
+In conclusion what you suggest *could* be done but it will require
+re-engineering the currently-tested FST code + delayed refs code. Given
+the purpose of the root argument in this callchain I'd rather eliminate
+it altogether and not bother with it.
 
 > 
-> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
-> ---
->  Makefile      |   3 +-
->  ctree.h       |   3 +
->  delayed-ref.c | 608 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
->  delayed-ref.h | 225 ++++++++++++++++++++++
->  extent-tree.c | 228 ++++++++++++++++++++++
->  kerncompat.h  |   8 +
->  transaction.h |   4 +
->  7 files changed, 1078 insertions(+), 1 deletion(-)
->  create mode 100644 delayed-ref.c
->  create mode 100644 delayed-ref.h
+> Thanks,
+> Qu
 > 
-> diff --git a/Makefile b/Makefile
-> index 544410e6440c..9508ad4f11e6 100644
-> --- a/Makefile
-> +++ b/Makefile
-> @@ -116,7 +116,8 @@ objects = ctree.o disk-io.o kernel-lib/radix-tree.o extent-tree.o print-tree.o \
->  	  qgroup.o free-space-cache.o kernel-lib/list_sort.o props.o \
->  	  kernel-shared/ulist.o qgroup-verify.o backref.o string-table.o task-utils.o \
->  	  inode.o file.o find-root.o free-space-tree.o help.o send-dump.o \
-> -	  fsfeatures.o kernel-lib/tables.o kernel-lib/raid56.o transaction.o
-> +	  fsfeatures.o kernel-lib/tables.o kernel-lib/raid56.o transaction.o \
-> +	  delayed-ref.o
->  cmds_objects = cmds-subvolume.o cmds-filesystem.o cmds-device.o cmds-scrub.o \
->  	       cmds-inspect.o cmds-balance.o cmds-send.o cmds-receive.o \
->  	       cmds-quota.o cmds-qgroup.o cmds-replace.o check/main.o \
-> diff --git a/ctree.h b/ctree.h
-> index b30a946658ce..d1ea45571d1e 100644
-> --- a/ctree.h
-> +++ b/ctree.h
-> @@ -2812,4 +2812,7 @@ int btrfs_punch_hole(struct btrfs_trans_handle *trans,
->  int btrfs_read_file(struct btrfs_root *root, u64 ino, u64 start, int len,
->  		    char *dest);
->  
-> +
-> +/* extent-tree.c */
-> +int btrfs_run_delayed_refs(struct btrfs_trans_handle *trans, unsigned long nr);
->  #endif
-> diff --git a/delayed-ref.c b/delayed-ref.c
-> new file mode 100644
-> index 000000000000..f3fa50239380
-> --- /dev/null
-> +++ b/delayed-ref.c
-> @@ -0,0 +1,608 @@
-> +// SPDX-License-Identifier: GPL-2.0
-> +/*
-> + * Copyright (C) 2009 Oracle.  All rights reserved.
-> + */
-> +
-> +#include "ctree.h"
-> +#include "btrfs-list.h"
-> +#include "delayed-ref.h"
-> +#include "transaction.h"
-> +
-> +/*
-> + * delayed back reference update tracking.  For subvolume trees
-> + * we queue up extent allocations and backref maintenance for
-> + * delayed processing.   This avoids deep call chains where we
-> + * add extents in the middle of btrfs_search_slot, and it allows
-> + * us to buffer up frequently modified backrefs in an rb tree instead
-> + * of hammering updates on the extent allocation tree.
-> + */
-
-A little more explanation on how delayed ref works will be more appricated.
-
-[snip]
-> +struct btrfs_delayed_tree_ref {
-> +	struct btrfs_delayed_ref_node node;
-> +	u64 root;
-> +	u64 parent;
-> +	int level;
-> +};
-> +
-> +struct btrfs_delayed_data_ref {
-> +	struct btrfs_delayed_ref_node node;
-> +	u64 root;
-> +	u64 parent;
-> +	u64 objectid;
-> +	u64 offset;
-> +};
-
-Since we don't use this structure and don't support data ref yet, what
-about just removing this definiation?
-
-[snip]
-
-> +struct btrfs_delayed_ref_head *
-> +btrfs_select_ref_head(struct btrfs_trans_handle *trans);
-> +
-> +/*
-> + * helper functions to cast a node into its container
-> + */
-> +static inline struct btrfs_delayed_tree_ref *
-> +btrfs_delayed_node_to_tree_ref(struct btrfs_delayed_ref_node *node)
-> +{
-> +	return container_of(node, struct btrfs_delayed_tree_ref, node);
-> +}
-> +
-> +static inline struct btrfs_delayed_data_ref *
-> +btrfs_delayed_node_to_data_ref(struct btrfs_delayed_ref_node *node)
-> +{
-> +	return container_of(node, struct btrfs_delayed_data_ref, node);
-> +}
-
-So is the only user of btrfs_delayed_data_ref structure.
-
-Thanks,
-Qu
+> 
+>>
+>> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+>> ---
+>>  btrfs-corrupt-block.c |  2 +-
+>>  ctree.h               |  3 +--
+>>  extent-tree.c         |  2 +-
+>>  file-item.c           | 20 ++++++++++----------
+>>  4 files changed, 13 insertions(+), 14 deletions(-)
+>>
+>> diff --git a/btrfs-corrupt-block.c b/btrfs-corrupt-block.c
+>> index 4fbea26cda20..3add8e63b7bb 100644
+>> --- a/btrfs-corrupt-block.c
+>> +++ b/btrfs-corrupt-block.c
+>> @@ -926,7 +926,7 @@ static int delete_csum(struct btrfs_root *root, u64 bytenr, u64 bytes)
+>>  		return PTR_ERR(trans);
+>>  	}
+>>  
+>> -	ret = btrfs_del_csums(trans, root, bytenr, bytes);
+>> +	ret = btrfs_del_csums(trans, bytenr, bytes);
+>>  	if (ret)
+>>  		fprintf(stderr, "Error deleting csums %d\n", ret);
+>>  	btrfs_commit_transaction(trans, root);
+>> diff --git a/ctree.h b/ctree.h
+>> index de4b1b7e6416..082726238b91 100644
+>> --- a/ctree.h
+>> +++ b/ctree.h
+>> @@ -2752,8 +2752,7 @@ int btrfs_del_inode_ref(struct btrfs_trans_handle *trans,
+>>  			u64 ino, u64 parent_ino, u64 *index);
+>>  
+>>  /* file-item.c */
+>> -int btrfs_del_csums(struct btrfs_trans_handle *trans,
+>> -		    struct btrfs_root *root, u64 bytenr, u64 len);
+>> +int btrfs_del_csums(struct btrfs_trans_handle *trans, u64 bytenr, u64 len);
+>>  int btrfs_insert_file_extent(struct btrfs_trans_handle *trans,
+>>  			     struct btrfs_root *root,
+>>  			     u64 objectid, u64 pos, u64 offset,
+>> diff --git a/extent-tree.c b/extent-tree.c
+>> index cbc022f6cef6..c6f09b52800f 100644
+>> --- a/extent-tree.c
+>> +++ b/extent-tree.c
+>> @@ -2372,7 +2372,7 @@ static int __free_extent(struct btrfs_trans_handle *trans,
+>>  		btrfs_release_path(path);
+>>  
+>>  		if (is_data) {
+>> -			ret = btrfs_del_csums(trans, root, bytenr, num_bytes);
+>> +			ret = btrfs_del_csums(trans, bytenr, num_bytes);
+>>  			BUG_ON(ret);
+>>  		}
+>>  
+>> diff --git a/file-item.c b/file-item.c
+>> index 7b0ff3585509..71d4e89f78d1 100644
+>> --- a/file-item.c
+>> +++ b/file-item.c
+>> @@ -394,8 +394,7 @@ static noinline int truncate_one_csum(struct btrfs_root *root,
+>>   * deletes the csum items from the csum tree for a given
+>>   * range of bytes.
+>>   */
+>> -int btrfs_del_csums(struct btrfs_trans_handle *trans,
+>> -		    struct btrfs_root *root, u64 bytenr, u64 len)
+>> +int btrfs_del_csums(struct btrfs_trans_handle *trans, u64 bytenr, u64 len)
+>>  {
+>>  	struct btrfs_path *path;
+>>  	struct btrfs_key key;
+>> @@ -403,11 +402,10 @@ int btrfs_del_csums(struct btrfs_trans_handle *trans,
+>>  	u64 csum_end;
+>>  	struct extent_buffer *leaf;
+>>  	int ret;
+>> -	u16 csum_size =
+>> -		btrfs_super_csum_size(root->fs_info->super_copy);
+>> -	int blocksize = root->fs_info->sectorsize;
+>> +	u16 csum_size = btrfs_super_csum_size(trans->fs_info->super_copy);
+>> +	int blocksize = trans->fs_info->sectorsize;
+>> +	struct btrfs_root *csum_root = trans->fs_info->csum_root;
+>>  
+>> -	root = root->fs_info->csum_root;
+>>  
+>>  	path = btrfs_alloc_path();
+>>  	if (!path)
+>> @@ -418,7 +416,7 @@ int btrfs_del_csums(struct btrfs_trans_handle *trans,
+>>  		key.offset = end_byte - 1;
+>>  		key.type = BTRFS_EXTENT_CSUM_KEY;
+>>  
+>> -		ret = btrfs_search_slot(trans, root, &key, path, -1, 1);
+>> +		ret = btrfs_search_slot(trans, csum_root, &key, path, -1, 1);
+>>  		if (ret > 0) {
+>>  			if (path->slots[0] == 0)
+>>  				goto out;
+>> @@ -445,7 +443,7 @@ int btrfs_del_csums(struct btrfs_trans_handle *trans,
+>>  
+>>  		/* delete the entire item, it is inside our range */
+>>  		if (key.offset >= bytenr && csum_end <= end_byte) {
+>> -			ret = btrfs_del_item(trans, root, path);
+>> +			ret = btrfs_del_item(trans, csum_root, path);
+>>  			BUG_ON(ret);
+>>  		} else if (key.offset < bytenr && csum_end > end_byte) {
+>>  			unsigned long offset;
+>> @@ -485,12 +483,14 @@ int btrfs_del_csums(struct btrfs_trans_handle *trans,
+>>  			 * btrfs_split_item returns -EAGAIN when the
+>>  			 * item changed size or key
+>>  			 */
+>> -			ret = btrfs_split_item(trans, root, path, &key, offset);
+>> +			ret = btrfs_split_item(trans, csum_root, path, &key,
+>> +					       offset);
+>>  			BUG_ON(ret && ret != -EAGAIN);
+>>  
+>>  			key.offset = end_byte - 1;
+>>  		} else {
+>> -			ret = truncate_one_csum(root, path, &key, bytenr, len);
+>> +			ret = truncate_one_csum(csum_root, path, &key, bytenr,
+>> +						len);
+>>  			BUG_ON(ret);
+>>  		}
+>>  		btrfs_release_path(path);
+>>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 

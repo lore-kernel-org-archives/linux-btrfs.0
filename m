@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.20]:52909 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.17.20]:36539 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752735AbeFKEqU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 11 Jun 2018 00:46:20 -0400
-Subject: Re: [PATCH 02/15] btrfs-progs: Remove root argument from
- btrfs_del_csums
+        id S1753750AbeFKEsA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 11 Jun 2018 00:48:00 -0400
+Subject: Re: [PATCH 03/15] btrfs-progs: Add functions to modify the used space
+ by a root
 To: Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
 References: <1528462078-24490-1-git-send-email-nborisov@suse.com>
- <1528462078-24490-3-git-send-email-nborisov@suse.com>
+ <1528462078-24490-4-git-send-email-nborisov@suse.com>
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <15794890-c9d4-a2da-d507-8836407c4bae@gmx.com>
-Date: Mon, 11 Jun 2018 12:46:05 +0800
+Message-ID: <6708d279-2257-8164-6ec6-05061fcc2e06@gmx.com>
+Date: Mon, 11 Jun 2018 12:47:46 +0800
 MIME-Version: 1.0
-In-Reply-To: <1528462078-24490-3-git-send-email-nborisov@suse.com>
+In-Reply-To: <1528462078-24490-4-git-send-email-nborisov@suse.com>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -20,133 +20,44 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 
 On 2018年06月08日 20:47, Nikolay Borisov wrote:
-> It's not needed, since we can obtain a reference to fs_info from the
-> passed transaction handle. This is needed by delayed refs code.
+> Pull the necessary function, excluding locking. Required to enable
+> integration of delayed refs.
+> 
+> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+> ---
+>  ctree.c | 12 ++++++++++++
+>  1 file changed, 12 insertions(+)
+> 
+> diff --git a/ctree.c b/ctree.c
+> index 2c51580fec65..7b74716bf92f 100644
+> --- a/ctree.c
+> +++ b/ctree.c
+> @@ -76,6 +76,18 @@ void add_root_to_dirty_list(struct btrfs_root *root)
+>  	}
+>  }
+>  
+> +static void root_add_used(struct btrfs_root *root, u32 size)
+> +{
+> +        btrfs_set_root_used(&root->root_item,
+> +                            btrfs_root_used(&root->root_item) + size);
+> +}
+> +
+> +static void root_sub_used(struct btrfs_root *root, u32 size)
+> +{
+> +        btrfs_set_root_used(&root->root_item,
+> +                            btrfs_root_used(&root->root_item) - size);
+> +}
+> +
 
-This looks a little too aggressive to me.
+So small that it can be included into the patch which uses this.
 
-Normally we would expect parameters like @trans then @fs_info.
-Although @trans only let us get @fs_info, under certain case @trans
-could be NULL (like btrfs_search_slot).
-
-Although for btrfs_del_csums() @tran can be NULL, I still prefer the
-@trans, @fs_info parameters.
+BTW, it would be better to do some basic underflow check here.
+No need to return int, but some WARN_ON() would definitely help.
 
 Thanks,
 Qu
 
-
-> 
-> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
-> ---
->  btrfs-corrupt-block.c |  2 +-
->  ctree.h               |  3 +--
->  extent-tree.c         |  2 +-
->  file-item.c           | 20 ++++++++++----------
->  4 files changed, 13 insertions(+), 14 deletions(-)
-> 
-> diff --git a/btrfs-corrupt-block.c b/btrfs-corrupt-block.c
-> index 4fbea26cda20..3add8e63b7bb 100644
-> --- a/btrfs-corrupt-block.c
-> +++ b/btrfs-corrupt-block.c
-> @@ -926,7 +926,7 @@ static int delete_csum(struct btrfs_root *root, u64 bytenr, u64 bytes)
->  		return PTR_ERR(trans);
->  	}
->  
-> -	ret = btrfs_del_csums(trans, root, bytenr, bytes);
-> +	ret = btrfs_del_csums(trans, bytenr, bytes);
->  	if (ret)
->  		fprintf(stderr, "Error deleting csums %d\n", ret);
->  	btrfs_commit_transaction(trans, root);
-> diff --git a/ctree.h b/ctree.h
-> index de4b1b7e6416..082726238b91 100644
-> --- a/ctree.h
-> +++ b/ctree.h
-> @@ -2752,8 +2752,7 @@ int btrfs_del_inode_ref(struct btrfs_trans_handle *trans,
->  			u64 ino, u64 parent_ino, u64 *index);
->  
->  /* file-item.c */
-> -int btrfs_del_csums(struct btrfs_trans_handle *trans,
-> -		    struct btrfs_root *root, u64 bytenr, u64 len);
-> +int btrfs_del_csums(struct btrfs_trans_handle *trans, u64 bytenr, u64 len);
->  int btrfs_insert_file_extent(struct btrfs_trans_handle *trans,
->  			     struct btrfs_root *root,
->  			     u64 objectid, u64 pos, u64 offset,
-> diff --git a/extent-tree.c b/extent-tree.c
-> index cbc022f6cef6..c6f09b52800f 100644
-> --- a/extent-tree.c
-> +++ b/extent-tree.c
-> @@ -2372,7 +2372,7 @@ static int __free_extent(struct btrfs_trans_handle *trans,
->  		btrfs_release_path(path);
->  
->  		if (is_data) {
-> -			ret = btrfs_del_csums(trans, root, bytenr, num_bytes);
-> +			ret = btrfs_del_csums(trans, bytenr, num_bytes);
->  			BUG_ON(ret);
->  		}
->  
-> diff --git a/file-item.c b/file-item.c
-> index 7b0ff3585509..71d4e89f78d1 100644
-> --- a/file-item.c
-> +++ b/file-item.c
-> @@ -394,8 +394,7 @@ static noinline int truncate_one_csum(struct btrfs_root *root,
->   * deletes the csum items from the csum tree for a given
->   * range of bytes.
->   */
-> -int btrfs_del_csums(struct btrfs_trans_handle *trans,
-> -		    struct btrfs_root *root, u64 bytenr, u64 len)
-> +int btrfs_del_csums(struct btrfs_trans_handle *trans, u64 bytenr, u64 len)
->  {
->  	struct btrfs_path *path;
->  	struct btrfs_key key;
-> @@ -403,11 +402,10 @@ int btrfs_del_csums(struct btrfs_trans_handle *trans,
->  	u64 csum_end;
->  	struct extent_buffer *leaf;
->  	int ret;
-> -	u16 csum_size =
-> -		btrfs_super_csum_size(root->fs_info->super_copy);
-> -	int blocksize = root->fs_info->sectorsize;
-> +	u16 csum_size = btrfs_super_csum_size(trans->fs_info->super_copy);
-> +	int blocksize = trans->fs_info->sectorsize;
-> +	struct btrfs_root *csum_root = trans->fs_info->csum_root;
->  
-> -	root = root->fs_info->csum_root;
->  
->  	path = btrfs_alloc_path();
->  	if (!path)
-> @@ -418,7 +416,7 @@ int btrfs_del_csums(struct btrfs_trans_handle *trans,
->  		key.offset = end_byte - 1;
->  		key.type = BTRFS_EXTENT_CSUM_KEY;
->  
-> -		ret = btrfs_search_slot(trans, root, &key, path, -1, 1);
-> +		ret = btrfs_search_slot(trans, csum_root, &key, path, -1, 1);
->  		if (ret > 0) {
->  			if (path->slots[0] == 0)
->  				goto out;
-> @@ -445,7 +443,7 @@ int btrfs_del_csums(struct btrfs_trans_handle *trans,
->  
->  		/* delete the entire item, it is inside our range */
->  		if (key.offset >= bytenr && csum_end <= end_byte) {
-> -			ret = btrfs_del_item(trans, root, path);
-> +			ret = btrfs_del_item(trans, csum_root, path);
->  			BUG_ON(ret);
->  		} else if (key.offset < bytenr && csum_end > end_byte) {
->  			unsigned long offset;
-> @@ -485,12 +483,14 @@ int btrfs_del_csums(struct btrfs_trans_handle *trans,
->  			 * btrfs_split_item returns -EAGAIN when the
->  			 * item changed size or key
->  			 */
-> -			ret = btrfs_split_item(trans, root, path, &key, offset);
-> +			ret = btrfs_split_item(trans, csum_root, path, &key,
-> +					       offset);
->  			BUG_ON(ret && ret != -EAGAIN);
->  
->  			key.offset = end_byte - 1;
->  		} else {
-> -			ret = truncate_one_csum(root, path, &key, bytenr, len);
-> +			ret = truncate_one_csum(csum_root, path, &key, bytenr,
-> +						len);
->  			BUG_ON(ret);
->  		}
->  		btrfs_release_path(path);
+>  int btrfs_copy_root(struct btrfs_trans_handle *trans,
+>  		      struct btrfs_root *root,
+>  		      struct extent_buffer *buf,
 > 

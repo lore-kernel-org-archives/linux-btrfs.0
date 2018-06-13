@@ -1,83 +1,163 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:42819 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:59306 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932249AbeFYQlR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Jun 2018 12:41:17 -0400
+        id S935994AbeFMPts (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 13 Jun 2018 11:49:48 -0400
 Received: from relay1.suse.de (charybdis-ext-too.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id DF450AE03
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Jun 2018 16:41:15 +0000 (UTC)
-From: David Sterba <dsterba@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH] btrfs: remove warnings superseded by refcount_t usage
-Date: Mon, 25 Jun 2018 18:38:22 +0200
-Message-Id: <20180625163822.25681-1-dsterba@suse.com>
+        by mx2.suse.de (Postfix) with ESMTP id 6CD06AECA
+        for <linux-btrfs@vger.kernel.org>; Wed, 13 Jun 2018 15:49:47 +0000 (UTC)
+Subject: Re: [PATCH v2] btrfs: Rewrite retry logic in do_chunk_alloc
+To: dsterba@suse.cz
+Cc: linux-btrfs@vger.kernel.org
+References: <20180416185321.GW21272@twin.jikos.cz>
+ <1524036477-23203-1-git-send-email-nborisov@suse.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <0947bb0d-acb7-5451-f7dd-ab2193b6f921@suse.com>
+Date: Wed, 13 Jun 2018 18:49:45 +0300
+MIME-Version: 1.0
+In-Reply-To: <1524036477-23203-1-git-send-email-nborisov@suse.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There are several WARN_ON calls that catch incrorrect reference counter
-updates, but this is what the refcount_t does already:
 
-* refcount_inc from 0 will warn
-* refcount_dec_and_test from 0 will warn
 
-Signed-off-by: David Sterba <dsterba@suse.com>
----
- fs/btrfs/delayed-ref.h | 1 -
- fs/btrfs/extent_map.c  | 2 +-
- fs/btrfs/transaction.c | 1 -
- fs/btrfs/volumes.c     | 1 -
- 4 files changed, 1 insertion(+), 4 deletions(-)
+On 18.04.2018 10:27, Nikolay Borisov wrote:
+> do_chunk_alloc implements logic to detect whether there is currently
+> pending chunk allocation  (by means of space_info->chunk_alloc being
+> set) and if so it loops around to the 'again' label. Additionally,
+> based on the state of the space_info (e.g. whether it's full or not)
+> and the return value of should_alloc_chunk() it decides whether this
+> is a "hard" error (ENOSPC) or we can just return 0.
+> 
+> This patch refactors all of this:
+> 
+> 1. Put order to the scattered ifs handling the various cases in an
+> easy-to-read if {} else if{} branches. This makes clear the various
+> cases we are interested in handling.
+> 
+> 2. Call should_alloc_chunk only once and use the result in the
+> if/else if constructs. All of this is done under space_info->lock, so
+> even before multiple calls of should_alloc_chunk were unnecessary.
+> 
+> 3. Rewrite the "do {} while()" loop currently implemented via label
+> into an explicit loop construct.
+> 
+> 4. Move the mutex locking for the case where the caller is the one doing the 
+> allocation. For the case where the caller needs to wait a concurrent allocation, 
+> introduce a pair of mutex_lock/mutex_unlock to act as a barrier and reword the 
+> comment. 
+> 
+> 5. Switch local vars to bool type where pertinent.
+> 
+> All in all this shouldn't introduce any functional changes.
+> 
+> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+> ---
+> 
+> v2: 
+>  * Introduce missing logic in the case where we have to loop. The correct 
+>  behavior when a concurrent allocation is executing is to acquire/release the 
+>  mutex and loop to check if it makes sense to continue with our allocation try. 
+> 
 
-diff --git a/fs/btrfs/delayed-ref.h b/fs/btrfs/delayed-ref.h
-index ea1aecb6a50d..16ee92c541bf 100644
---- a/fs/btrfs/delayed-ref.h
-+++ b/fs/btrfs/delayed-ref.h
-@@ -210,7 +210,6 @@ btrfs_free_delayed_extent_op(struct btrfs_delayed_extent_op *op)
- 
- static inline void btrfs_put_delayed_ref(struct btrfs_delayed_ref_node *ref)
- {
--	WARN_ON(refcount_read(&ref->refs) == 0);
- 	if (refcount_dec_and_test(&ref->refs)) {
- 		WARN_ON(ref->in_tree);
- 		switch (ref->type) {
-diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
-index 6648d55e5339..6808ad4ed3c9 100644
---- a/fs/btrfs/extent_map.c
-+++ b/fs/btrfs/extent_map.c
-@@ -72,7 +72,7 @@ void free_extent_map(struct extent_map *em)
- {
- 	if (!em)
- 		return;
--	WARN_ON(refcount_read(&em->refs) == 0);
-+
- 	if (refcount_dec_and_test(&em->refs)) {
- 		WARN_ON(extent_map_in_tree(em));
- 		WARN_ON(!list_empty(&em->list));
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 4485eae41e88..f6b68099b767 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -41,7 +41,6 @@ static const unsigned int btrfs_blocked_trans_types[TRANS_STATE_MAX] = {
- 
- void btrfs_put_transaction(struct btrfs_transaction *transaction)
- {
--	WARN_ON(refcount_read(&transaction->use_count) == 0);
- 	if (refcount_dec_and_test(&transaction->use_count)) {
- 		BUG_ON(!list_empty(&transaction->list));
- 		WARN_ON(!RB_EMPTY_ROOT(&transaction->delayed_refs.href_root));
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index e034ad9e23b4..f64d26b4f278 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -5330,7 +5330,6 @@ static struct btrfs_bio *alloc_btrfs_bio(int total_stripes, int real_stripes)
- 
- void btrfs_get_bbio(struct btrfs_bio *bbio)
- {
--	WARN_ON(!refcount_read(&bbio->refs));
- 	refcount_inc(&bbio->refs);
- }
- 
--- 
-2.17.0
+Ping
 
+>  fs/btrfs/extent-tree.c | 73 +++++++++++++++++++++++++-------------------------
+>  1 file changed, 36 insertions(+), 37 deletions(-)
+> 
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index 7bfc03494c39..bfb19bcdeee3 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -4601,7 +4601,8 @@ static int do_chunk_alloc(struct btrfs_trans_handle *trans,
+>  			  struct btrfs_fs_info *fs_info, u64 flags, int force)
+>  {
+>  	struct btrfs_space_info *space_info;
+> -	int wait_for_alloc = 0;
+> +	bool wait_for_alloc = false;
+> +	bool should_alloc = false;
+>  	int ret = 0;
+>  
+>  	/* Don't re-enter if we're already allocating a chunk */
+> @@ -4611,45 +4612,43 @@ static int do_chunk_alloc(struct btrfs_trans_handle *trans,
+>  	space_info = __find_space_info(fs_info, flags);
+>  	ASSERT(space_info);
+>  
+> -again:
+> -	spin_lock(&space_info->lock);
+> -	if (force < space_info->force_alloc)
+> -		force = space_info->force_alloc;
+> -	if (space_info->full) {
+> -		if (should_alloc_chunk(fs_info, space_info, force))
+> -			ret = -ENOSPC;
+> -		else
+> -			ret = 0;
+> -		spin_unlock(&space_info->lock);
+> -		return ret;
+> -	}
+> -
+> -	if (!should_alloc_chunk(fs_info, space_info, force)) {
+> -		spin_unlock(&space_info->lock);
+> -		return 0;
+> -	} else if (space_info->chunk_alloc) {
+> -		wait_for_alloc = 1;
+> -	} else {
+> -		space_info->chunk_alloc = 1;
+> -	}
+> -
+> -	spin_unlock(&space_info->lock);
+> -
+> -	mutex_lock(&fs_info->chunk_mutex);
+> +	do {
+> +		spin_lock(&space_info->lock);
+> +		if (force < space_info->force_alloc)
+> +			force = space_info->force_alloc;
+> +		should_alloc = should_alloc_chunk(fs_info, space_info, force);
+> +		if (space_info->full) {
+> +			/* No more free physical space */
+> +			if (should_alloc)
+> +				ret = -ENOSPC;
+> +			else
+> +				ret = 0;
+> +			spin_unlock(&space_info->lock);
+> +			return ret;
+> +		} else if (!should_alloc) {
+> +			spin_unlock(&space_info->lock);
+> +			return 0;
+> +		} else if (space_info->chunk_alloc) {
+> +			/* Someone is already allocating, so we need to block
+> +			 * while this someone is finished and then loop, to
+> +			 * recheck if we should continue with our allocation
+> +			 * try
+> +			 */
+> +			wait_for_alloc = true;
+> +			spin_unlock(&space_info->lock);
+> +			mutex_lock(&fs_info->chunk_mutex);
+> +			mutex_unlock(&fs_info->chunk_mutex);
+> +		} else {
+> +			/* Proceed with allocation */
+> +			space_info->chunk_alloc = 1;
+> +			wait_for_alloc = false;
+> +			spin_unlock(&space_info->lock);
+> +		}
+>  
+> -	/*
+> -	 * The chunk_mutex is held throughout the entirety of a chunk
+> -	 * allocation, so once we've acquired the chunk_mutex we know that the
+> -	 * other guy is done and we need to recheck and see if we should
+> -	 * allocate.
+> -	 */
+> -	if (wait_for_alloc) {
+> -		mutex_unlock(&fs_info->chunk_mutex);
+> -		wait_for_alloc = 0;
+>  		cond_resched();
+> -		goto again;
+> -	}
+> +	} while (wait_for_alloc);
+>  
+> +	mutex_lock(&fs_info->chunk_mutex);
+>  	trans->allocating_chunk = true;
+>  
+>  	/*
+> 

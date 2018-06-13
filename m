@@ -1,113 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.15]:47447 "EHLO mout.gmx.net"
+Received: from mx2.suse.de ([195.135.220.15]:55882 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S933381AbeFRLky (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 18 Jun 2018 07:40:54 -0400
-Subject: Re: About more loose parameter sequence requirement
-To: dsterba@suse.cz,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <dbd36f90-fb00-0da1-b38f-567575c5b02f@gmx.com>
- <20180618113432.GJ24375@twin.jikos.cz>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <f746bf72-148d-9fc3-6d0d-c7e07f00c099@gmx.com>
-Date: Mon, 18 Jun 2018 19:40:44 +0800
-MIME-Version: 1.0
-In-Reply-To: <20180618113432.GJ24375@twin.jikos.cz>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="sgobbgeuMf6NgJjcTUdr8bev2IGKp6qZp"
+        id S964870AbeFMPOH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 13 Jun 2018 11:14:07 -0400
+From: David Sterba <dsterba@suse.com>
+To: torvalds@linux-foundation.org
+Cc: David Sterba <dsterba@suse.com>, clm@fb.com, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+Subject: [GIT PULL] Btrfs updates for 4.18, part 2
+Date: Wed, 13 Jun 2018 17:11:17 +0200
+Message-Id: <cover.1528881676.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---sgobbgeuMf6NgJjcTUdr8bev2IGKp6qZp
-Content-Type: multipart/mixed; boundary="9b0ZD2L4wLWxqVOiNbsKwDXWiaMopO1Ck";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: dsterba@suse.cz, "linux-btrfs@vger.kernel.org"
- <linux-btrfs@vger.kernel.org>
-Message-ID: <f746bf72-148d-9fc3-6d0d-c7e07f00c099@gmx.com>
-Subject: Re: About more loose parameter sequence requirement
-References: <dbd36f90-fb00-0da1-b38f-567575c5b02f@gmx.com>
- <20180618113432.GJ24375@twin.jikos.cz>
-In-Reply-To: <20180618113432.GJ24375@twin.jikos.cz>
+Hi,
 
---9b0ZD2L4wLWxqVOiNbsKwDXWiaMopO1Ck
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+a handful of minor updates that would fit the 1st pull but were in next
+at that time or arrived last week and there's no reason to delay them
+for later rc.
 
+Please pull thanks.
 
+- error handling fixup for one of the new ioctls from 1st pull
+- fix for device-replace that incorrectly uses inode pages and can mess up
+  compressed extents in some cases
+- fiemap fix for reporting incorrect number of extents
+- vm_fault_t type conversion
 
-On 2018=E5=B9=B406=E6=9C=8818=E6=97=A5 19:34, David Sterba wrote:
-> On Thu, Jun 14, 2018 at 03:17:45PM +0800, Qu Wenruo wrote:
->> I understand that btrfs-progs introduced restrict parameter/option ord=
-er
->> to distinguish global and sub-command parameter/option.
->>
->> However it's really annoying if one just want to append some new optio=
-ns
->> to previous command:
->>
->> E.g.
->> # btrfs check /dev/data/btrfs
->> # !! --check-data-csum
->>
->> The last command will fail as current btrfs-progs doesn't allow any
->> option after parameter.
->>
->>
->> Despite the requirement to distinguish global and subcommand
->> option/parameter, is there any other requirement for such restrict
->> option-first-parameter-last policy?
->=20
-> I'd say that it's a common and recommended pattern. Getopt is able to
-> reorder the parameters so mixed options and non-options are accepted,
-> unless POSIXLY_CORRECT (see man getopt(3)) is not set. With the more
-> strict requirement, 'btrfs' option parser works the same regardless of
-> that.
+----------------------------------------------------------------
+The following changes since commit 23d0b79dfaed2305b500b0215b0421701ada6b1a:
 
-But currently it doesn't work.
-Just as the example, btrfs check /dev/data/btrfs --check-data-sum won't
-work.
-It's different from a lot of other common programs.
+  btrfs: Add unprivileged version of ino_lookup ioctl (2018-05-31 11:35:24 +0200)
 
->=20
->> If I could implement a enhanced getopt to allow more loose order insid=
-e
->> subcomand while still can distinguish global option, will it be accept=
-ed
->> (if it's quality is acceptable) ?
->=20
-> I think it's not worth updating the parser just to support an IMHO
-> narrow usecase.
+are available in the Git repository at:
 
-I'll try to use the getopt() and keeps the current structure if possible.=
+  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-4.18-part2-tag
 
+for you to fetch changes up to ac0b4145d662a3b9e34085dea460fb06ede9b69b:
 
-Thanks,
-Qu
+  btrfs: scrub: Don't use inode pages for device replace (2018-06-11 15:59:14 +0200)
 
->=20
+----------------------------------------------------------------
+Misono Tomohiro (1):
+      btrfs: Check error of btrfs_iget in btrfs_search_path_in_tree_user
 
+Qu Wenruo (1):
+      btrfs: scrub: Don't use inode pages for device replace
 
---9b0ZD2L4wLWxqVOiNbsKwDXWiaMopO1Ck--
+Robbie Ko (1):
+      Btrfs: fiemap: pass correct bytenr when fm_extent_count is zero
 
---sgobbgeuMf6NgJjcTUdr8bev2IGKp6qZp
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
+Souptick Joarder (1):
+      btrfs: change return type of btrfs_page_mkwrite to vm_fault_t
 
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlsnmjwACgkQwj2R86El
-/qh6oQgAj6yLHAtkZuxw4t2aKXgBtaYzJ7sIlT1NXBD5f621iE7k5Q4C61kL5S14
-tp4Bjxrkw9uIk++rYldrny9Nqw9J+qq++nUM6xxXz5rmOgnzXK2PPsjOV56yGjPE
-Ocw5ZjSYBHb6ck+w6P4uZ6zEl0fhEn3ImsWEPdEvsv0sVIQ1aQ1OsYk97spq7UBJ
-c0sM44dRCa/zuMh6ZqiVcvo0zkNEvsanQHTNjraRUrIVPqNSUvEl8LNtUqyh+Yfs
-DOlRzmZHp2Q8Eb1IoRmGTNBlNglZJ8W6CZ5pHD0sp2W9HKBJzVo2Gv/MTM7Qjk8c
-Oc97jBrjrqbx2lBr1uXeW+Bd+JbQBg==
-=glJl
------END PGP SIGNATURE-----
-
---sgobbgeuMf6NgJjcTUdr8bev2IGKp6qZp--
+ fs/btrfs/ctree.h     |  2 +-
+ fs/btrfs/extent_io.c |  4 +---
+ fs/btrfs/inode.c     | 26 ++++++++++++--------------
+ fs/btrfs/ioctl.c     |  4 ++++
+ fs/btrfs/scrub.c     |  2 +-
+ 5 files changed, 19 insertions(+), 19 deletions(-)

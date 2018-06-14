@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:47011 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:37656 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S965039AbeFNW6O (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 14 Jun 2018 18:58:14 -0400
-Received: from relay1.suse.de (charybdis-ext-too.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 38C43AD03
-        for <linux-btrfs@vger.kernel.org>; Thu, 14 Jun 2018 22:58:13 +0000 (UTC)
+        id S1752689AbeFNGE5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 14 Jun 2018 02:04:57 -0400
+Received: from relay2.suse.de (charybdis-ext-too.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id C06CEAC98
+        for <linux-btrfs@vger.kernel.org>; Thu, 14 Jun 2018 06:04:55 +0000 (UTC)
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2] btrfs: Don't remove block group still has pinned down bytes
-Date: Fri, 15 Jun 2018 06:58:11 +0800
-Message-Id: <20180614225811.6204-1-wqu@suse.com>
+Subject: [PATCH] btrfs: Don't remove block group still has pinned down bytes
+Date: Thu, 14 Jun 2018 14:04:53 +0800
+Message-Id: <20180614060453.3523-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -73,28 +73,21 @@ BTRFS error (device vda2): pending csums is 2887680
 
 [CAUSE]
 The problem is due to the fact that, btrfs block group auto removal only
-checks if a block group is unused by checking used_bytes and reserved of
-its block group item.
+checks if a block group is unused by checking used_bytes of its block
+group item.
 
 However it's possible to have metadata block group whose used bytes is 0,
-but has pinned down bytes, which is used by btrfs metadata CoW to
-indicates some range still used by commit root.
+but has pinned down bytes by delalloc.
 
-In such situation, if the pinned down range is used by some fs tree or
-extent tree, and quota initializes a backref walk on commit root, it
-will cause above "unable to find logical" error message and cause quota
-failure.
+In that case, when the delalloc work is ran and quota is enabled, quota
+will try to resolve the parents, which could lead to read on tree blocks
+in the deleted block group.
 
 [FIX]
 Just teach btrfs_delete_unused_bgs() to skip block group who still has
 pinned bytes.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
----
-changelog:
-v2:
-  Commit message update, to better indicate how pinned byte is used in
-  btrfs and why it's related to quota.
 ---
  fs/btrfs/extent-tree.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)

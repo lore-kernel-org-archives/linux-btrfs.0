@@ -1,82 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:54699 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S965616AbeFOLGL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 15 Jun 2018 07:06:11 -0400
-From: Nikolay Borisov <nborisov@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: osandov@osandov.com, Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 0/6] Freespace tree repair support
-Date: Fri, 15 Jun 2018 14:05:56 +0300
-Message-Id: <1529060762-4372-1-git-send-email-nborisov@suse.com>
+Received: from mail-lf0-f42.google.com ([209.85.215.42]:38227 "EHLO
+        mail-lf0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S965641AbeFOLd1 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 15 Jun 2018 07:33:27 -0400
+Received: by mail-lf0-f42.google.com with SMTP id i83-v6so14155071lfh.5
+        for <linux-btrfs@vger.kernel.org>; Fri, 15 Jun 2018 04:33:26 -0700 (PDT)
+Received: from [10.1.1.2] (89-69-130-4.dynamic.chello.pl. [89.69.130.4])
+        by smtp.gmail.com with ESMTPSA id s5-v6sm1413786ljh.9.2018.06.15.04.33.24
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Fri, 15 Jun 2018 04:33:24 -0700 (PDT)
+To: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
+From: ein <ein.net@gmail.com>
+Subject: ntfs -> qemu -> raw-image -> btrfs -> iscsi
+Message-ID: <336a1d5a-708f-f7e3-8fdf-6898fc68140a@gmail.com>
+Date: Fri, 15 Jun 2018 13:33:23 +0200
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello, 
+Hello group,
 
-This patchset adds support to btrfs check to repair corrupted freespace tree. 
-Once this has been merged then we can start thinking of making the freespace
-tree the default freespace cache and deprecate the existing v1 cache in new 
-filesystems. 
+does anyone have had any luck with hosting qemu kvm images resided on BTRFS filesystem while serving
+the volume via iSCSI?
 
-This series depend on the already sent delayed refs. In order to facilitate 
-testing the 2 series have been integrated and posted at :
+I encouraged some unidentified problem and I am able to replicate it. Basically the NTFS filesystem
+inside RAW image gets corrupted every time when Windows guest boots. What is weired is that changing
+filesystem for ext4 or xfs solves the issue.
 
-   https://github.com/lorddoskias/btrfs-progs.git dev/delayed-refs-fst
+The problem replication looks as follows:
+1) run chkdsk on the guest to make sure the filesystem structure is in good shape,
+2) shut down the VM via libvirtd,
+3) rsync changes between source and backup image,
+4) generate SHA1 for backup and original and compare it,
+5) try to run guest on the backup image, I was able to boot windows once for ten times, every time
+after reboot NTFS' chkdsk finds problems with filesystem and the VM is unable to boot again.
 
-The main thing with this code is that the repair will always regenerate the 
-FST with extents since it I haven't ported the code which deals with 
-detecting that bitmaps are more space efficient. This is not a big deal since 
-the kernel will do it.
+What am I missing?
 
-The first patch is here for completeness' sake and was only used in a previous 
-incarnation of this code but since I've re-worked the way the code is supposed 
-to work it can be dropped. I don't have strong opinions either way. It just 
-teaches btrfs_read_fs_root to return the freespace root
+VM disk config:
 
-Patch 2 adds some low-level bit manipulation primitives which are necessary to 
-support bitmap based FST. My initial idea was to completely ommit the bitmap 
-support but in testing it turned out to be less pain to just include it from 
-the get-go. Otherwise the filesystem created in the test case in patch 6 
-couldn't be worked on. 
+    <disk type='file' device='disk'>
+      <driver name='qemu' type='raw' cache='none' io='native'/>
+      <source file='/var/lib/libvirt/images/windows2012r2.img'/>
+      <target dev='vda' bus='virtio'/>
+      <boot order='1'/>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x05' function='0x0'/>
+    </disk>
 
-Patch 3 is mostly copy/paste from the kernel code bringin in necessary 
-functions to repair the freespace tree. I've only omitted locking code since 
-in userspace we are always single-threaded, also there is no support currently 
-when regenerating FST to convert it to bitmap.
+Initiator side:
 
-Patch 4 updates the compat_ro bitmask to allow reading an FST filesystem in 
-repair mode.
+root@initiator:~# btrfs version
+btrfs-progs v4.13.3
+root@initiator:~# uname -a
+Linux initiator 4.15.0-0.bpo.2-amd64 #1 SMP Debian 4.15.11-1~bpo9+1 (2018-04-07) x86_64 GNU/Linux
+root@initiator:~# btrfs version
+btrfs-progs v4.13.3
+root@initiator:~# cat /etc/debian_version
+9.4
+root@initiator:~# iscsid -v
+iscsid version 2.0-874
 
-Patch 5 adds the core code which utilizes everything added up until this point. 
-It's not that big and should be fairly easy to review. 
+BTRFS mount options:
+_netdev,noatime,nodiratime,compress=lzo
 
-Patch 6 is a test-case which creates a filesystem with FST enabled, populates it 
-with some files and then corrupts a bitmap and an extent records and tries to 
-repair them. It's passing for me. 
+Target side:
+
+root@target:~# dpkg -l | grep iscsi
+ii  iscsitarget                     1.4.20.2-10.1                  armel        iSCSI Enterprise
+Target userland tools
+root@target:~# uname -a
+Linux target 2.6.31.8 Mon Nov 23 04:30:20 CET 2015 v0.0.9 Mon Nov 23 04:30:20 CET 2015 armv5tel
+GNU/Linux
+
+PS. There's nothing interesting in dmsg, besides (target side):
+iscsi_trgt: scsi_cmnd_start(1045) Unsupported 85
+iscsi_trgt: cmnd_skip_pdu(459) 5e000000 1c 85 0
+Which seems to be harmless and is probably generated by smartd.
 
 
-Nikolay Borisov (6):
-  btrfs-progs: Add support for freespace tree in btrfs_read_fs_root
-  btrfs-progs: Add extent buffer bitmap manipulation infrastructure
-  btrfs-progs: Pull free space tree related code from kernel
-  btrfs-progs: Add freespace tree as compat_ro supported feature
-  btrfs-progs: check: Add support for freespace tree fixing
-  btrfs-progs: tests: Test for FST corruption detection/repair
 
- check/main.c                                      |  61 +-
- ctree.c                                           |  77 ++
- ctree.h                                           |   8 +-
- disk-io.c                                         |   3 +
- extent-tree.c                                     |   9 +
- extent_io.c                                       |  39 +
- extent_io.h                                       |  15 +
- free-space-tree.c                                 | 893 +++++++++++++++++++++-
- free-space-tree.h                                 |  10 +-
- tests/fsck-tests/035-freespacetree-repair/test.sh |  79 ++
- 10 files changed, 1163 insertions(+), 31 deletions(-)
- create mode 100755 tests/fsck-tests/035-freespacetree-repair/test.sh
-
--- 
-2.7.4
 

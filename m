@@ -1,68 +1,97 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:35057 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S934393AbeFRMEv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 18 Jun 2018 08:04:51 -0400
-Date: Mon, 18 Jun 2018 14:02:00 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: dsterba@suse.cz,
+Received: from frost.carfax.org.uk ([85.119.82.111]:44890 "EHLO
+        frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S933501AbeFRMTy (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 18 Jun 2018 08:19:54 -0400
+Date: Mon, 18 Jun 2018 11:44:08 +0000
+From: Hugo Mills <hugo@carfax.org.uk>
+To: dsterba@suse.cz, Qu Wenruo <quwenruo.btrfs@gmx.com>,
         "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Subject: Re: About more loose parameter sequence requirement
-Message-ID: <20180618120200.GK24375@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+Message-ID: <20180618114408.GB28972@carfax.org.uk>
 References: <dbd36f90-fb00-0da1-b38f-567575c5b02f@gmx.com>
  <20180618113432.GJ24375@twin.jikos.cz>
- <f746bf72-148d-9fc3-6d0d-c7e07f00c099@gmx.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <f746bf72-148d-9fc3-6d0d-c7e07f00c099@gmx.com>
+Content-Type: multipart/signed; micalg=pgp-sha1;
+        protocol="application/pgp-signature"; boundary="azLHFNyN32YCQGCU"
+In-Reply-To: <20180618113432.GJ24375@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jun 18, 2018 at 07:40:44PM +0800, Qu Wenruo wrote:
-> 
-> 
-> On 2018年06月18日 19:34, David Sterba wrote:
-> > On Thu, Jun 14, 2018 at 03:17:45PM +0800, Qu Wenruo wrote:
-> >> I understand that btrfs-progs introduced restrict parameter/option order
-> >> to distinguish global and sub-command parameter/option.
-> >>
-> >> However it's really annoying if one just want to append some new options
-> >> to previous command:
-> >>
-> >> E.g.
-> >> # btrfs check /dev/data/btrfs
-> >> # !! --check-data-csum
-> >>
-> >> The last command will fail as current btrfs-progs doesn't allow any
-> >> option after parameter.
-> >>
-> >>
-> >> Despite the requirement to distinguish global and subcommand
-> >> option/parameter, is there any other requirement for such restrict
-> >> option-first-parameter-last policy?
+
+--azLHFNyN32YCQGCU
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+
+On Mon, Jun 18, 2018 at 01:34:32PM +0200, David Sterba wrote:
+> On Thu, Jun 14, 2018 at 03:17:45PM +0800, Qu Wenruo wrote:
+> > I understand that btrfs-progs introduced restrict parameter/option order
+> > to distinguish global and sub-command parameter/option.
 > > 
-> > I'd say that it's a common and recommended pattern. Getopt is able to
-> > reorder the parameters so mixed options and non-options are accepted,
-> > unless POSIXLY_CORRECT (see man getopt(3)) is not set. With the more
-> > strict requirement, 'btrfs' option parser works the same regardless of
-> > that.
+> > However it's really annoying if one just want to append some new options
+> > to previous command:
+> > 
+> > E.g.
+> > # btrfs check /dev/data/btrfs
+> > # !! --check-data-csum
+> > 
+> > The last command will fail as current btrfs-progs doesn't allow any
+> > option after parameter.
+> > 
+> > 
+> > Despite the requirement to distinguish global and subcommand
+> > option/parameter, is there any other requirement for such restrict
+> > option-first-parameter-last policy?
 > 
-> But currently it doesn't work.
-> Just as the example, btrfs check /dev/data/btrfs --check-data-sum won't
-> work.
-> It's different from a lot of other common programs.
+> I'd say that it's a common and recommended pattern. Getopt is able to
+> reorder the parameters so mixed options and non-options are accepted,
+> unless POSIXLY_CORRECT (see man getopt(3)) is not set. With the more
+> strict requirement, 'btrfs' option parser works the same regardless of
+> that.
 
-With POSIXLY_CORRECT set, it expectedly won't work. With POSIXLY_CORRECT
-unset, it would work in general, but not for 'btrfs'.
+   I got bitten by this the other day. I put an option flag at the end
+of the line, after the mountpoint, and it refused to work.
 
-As this is per-application decision I find it ok, besides that I also
-find the 'options anywhere' pattern bad. Does it really save you that
-much time while typing the commands with new arguments? There are
-movement shortcuts to jump by words, you get the previous command by
-up-arrow. About the same number of keystrokes.
+   I would definitely prefer it if it parsed options in any
+position. (Or at least, any position after the group/command
+parameters).
 
-New code needs to be tested, documented and maintained, that's the cost
-I find too high for something that's convenience for people who are used
-to some shell builtins.
+   Hugo.
+
+> > If I could implement a enhanced getopt to allow more loose order inside
+> > subcomand while still can distinguish global option, will it be accepted
+> > (if it's quality is acceptable) ?
+> 
+> I think it's not worth updating the parser just to support an IMHO
+> narrow usecase.
+
+-- 
+Hugo Mills             | Turning, pages turning in the widening bath,
+hugo@... carfax.org.uk | The spine cannot bear the humidity.
+http://carfax.org.uk/  | Books fall apart; the binding cannot hold.
+PGP: E2AB1DE4          | Page 129 is loosed upon the world.               Zarf
+
+--azLHFNyN32YCQGCU
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iQIcBAEBAgAGBQJbJ5sIAAoJEFheFHXiqx3k5LQP/jBpNHEkzBpr5x/fIxaD6V5Z
+uh26Bch4LYedJAWkXKmEw6+ZKThl0+5vlNA7VlIzN3Yw6gJ5kcbZabbeNVEHP4dS
+w1PLMWZ+pKzVZRzXgMvzHsxspQaU6WDYBujJG9BMUWSJ5L8BzZB2VuWtpzYay/fG
+PLypnSUU3U6ROLtwJt9Eg62WI+BEG/V+I6Gf3F986prwjVMHoGpYQNZP888ovfjn
+XvAnxTOZn6NLJpw9OXg7mMgKABBxVGWT1rJKTLi3/CzrVXODd8XidfmcZLZbvh8C
+L5ShwbdKqvq3bkACT5lJHoYJKugO5l3mdDrbTJggNZQ07o/7KWzq4GaJgW8aKFOF
+DbXDbdyBlTlPUuDFd6nl2XBGemWHW6MRzsifxlqjEG3Q/CxWl5LpGuz0uqyHiQMo
+SeH70LGjf/l/dtZgSIUY8MsBxpmvY8KjNshnZsC6n6LpgHSjmK5jTlVNZ/BhEjyc
+F5+JCrRRUwCIELCROk34DlmeeQe+3800Xvo6RWxtXF4akgJ6LgCC846nVGGJJntT
+OZL8jW8nTJt550GLyIWbH7n3ngLq/zoc50WXGzixRro022hA4Sv5zrI4yq8/VDJj
+SQ5LTY/NIcpSytNhr41yzSlqhl2hrun2qIN6x4EGPjFg7MH/LXxi65sJKTn8Riqp
+wuHiSSjDMH8+8TNQShYe
+=jKap
+-----END PGP SIGNATURE-----
+
+--azLHFNyN32YCQGCU--

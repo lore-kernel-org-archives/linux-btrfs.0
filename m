@@ -1,20 +1,20 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwym04.jp.fujitsu.com ([211.128.242.43]:28216 "EHLO
+Received: from mgwym04.jp.fujitsu.com ([211.128.242.43]:28217 "EHLO
         mgwym04.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S968216AbeFRIiT (ORCPT
+        with ESMTP id S968214AbeFRIiT (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Mon, 18 Jun 2018 04:38:19 -0400
-Received: from g01jpfmpwkw03.exch.g01.fujitsu.local (g01jpfmpwkw03.exch.g01.fujitsu.local [10.0.193.57])
-        by yt-mxoi2.gw.nic.fujitsu.com (Postfix) with ESMTP id 916B6AC0139
+Received: from g01jpfmpwkw02.exch.g01.fujitsu.local (g01jpfmpwkw02.exch.g01.fujitsu.local [10.0.193.56])
+        by yt-mxauth.gw.nic.fujitsu.com (Postfix) with ESMTP id C8A7AAC0246
         for <linux-btrfs@vger.kernel.org>; Mon, 18 Jun 2018 17:38:09 +0900 (JST)
 Received: from g01jpexchkw33.g01.fujitsu.local (unknown [10.0.193.4])
-        by g01jpfmpwkw03.exch.g01.fujitsu.local (Postfix) with ESMTP id B07DBBD65F4
+        by g01jpfmpwkw02.exch.g01.fujitsu.local (Postfix) with ESMTP id D9CCB3286F9
         for <linux-btrfs@vger.kernel.org>; Mon, 18 Jun 2018 17:38:08 +0900 (JST)
 From: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH v2 06/20] btrfs-progs: libbtrfsutil: Relax the privileges of subvolume iterator
-Date: Mon, 18 Jun 2018 17:40:54 +0900
-Message-ID: <abb3e6cdf8368571516b75482ba1f8cc1fb7387f.1529310485.git.misono.tomohiro@jp.fujitsu.com>
+Subject: [PATCH v2 07/20] btrfs-progs: sub list: Use libbtrfsuitl for subvolume list
+Date: Mon, 18 Jun 2018 17:40:55 +0900
+Message-ID: <be836acfb080e3e4453e95064c27580c27bbef96.1529310485.git.misono.tomohiro@jp.fujitsu.com>
 In-Reply-To: <cover.1529310485.git.misono.tomohiro@jp.fujitsu.com>
 References: <cover.1529310485.git.misono.tomohiro@jp.fujitsu.com>
 MIME-Version: 1.0
@@ -22,558 +22,1080 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This commit relax the privileges of subvolume iterator when the kernel
-supports new ioctls (BTRFS_IOC_GET_SUBVOL_ROOTREF and
-BTRFS_IOC_INO_LOOKUP_USER).
+This is a copy of non-merged following patch originally written
+by Omar Sandoval:
+  btrfs-progs: use libbtrfsutil for subvolume list
+expect this commit keeps libbtrfs implementation which above commit
+tries to remove (therefore this adds suffix _v2 for struct/function).
 
-For older kernel (< 4.18), the behavior is the same.
-
-Non-privileged user can use subvolume iterator only if new ioctls are
-supported and btrfs_util_create_subvolume_iterator() is called with @top
-zero (i.e. if the iterator is created from given path/fd). In this case:
- - an iterator can be created from non-subvolume directory
- - subvolume will be skipped if
-   - it does not exist nor has different id from the found subvolume
-     by INO_LOOKUP_USER (may happen if a dir in the path is being mounted)
-   - it cannot be opened due to permission error
-
-Note that this commit also allows root user to specify non-subvolume
-direcotry when @top is zero. Only in that case, root's code path is
-the same as user.
-
+Original Author: Omar Sandoval <osandov@fb.com>
 Signed-off-by: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
 ---
- libbtrfsutil/btrfsutil.h |  18 ++-
- libbtrfsutil/errors.c    |   6 +
- libbtrfsutil/subvolume.c | 380 +++++++++++++++++++++++++++++++++++++++++++----
- 3 files changed, 377 insertions(+), 27 deletions(-)
+ cmds-subvolume.c | 963 +++++++++++++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 936 insertions(+), 27 deletions(-)
 
-diff --git a/libbtrfsutil/btrfsutil.h b/libbtrfsutil/btrfsutil.h
-index 3f21d163..49454a63 100644
---- a/libbtrfsutil/btrfsutil.h
-+++ b/libbtrfsutil/btrfsutil.h
-@@ -65,6 +65,10 @@ enum btrfs_util_error {
- 	BTRFS_UTIL_ERROR_WAIT_SYNC_FAILED,
- 	BTRFS_UTIL_ERROR_INVALID_ARGUMENT_FOR_USER,
- 	BTRFS_UTIL_ERROR_GET_SUBVOL_INFO_FAILED,
-+	BTRFS_UTIL_ERROR_GET_SUBVOL_ROOTREF_FAILED,
-+	BTRFS_UTIL_ERROR_INO_LOOKUP_USER_FAILED,
-+	BTRFS_UTIL_ERROR_DUP_FAILED,
-+	BTRFS_UTIL_ERROR_CHDIR_FAILED,
- };
- 
- /**
-@@ -510,6 +514,14 @@ struct btrfs_util_subvolume_iterator;
-  * @flags: Bitmask of BTRFS_UTIL_SUBVOLUME_ITERATOR_* flags.
-  * @ret: Returned iterator.
-  *
-+ * Using subvolume iterator requires appropriate privilege (CAP_SYS_ADMIN) for
-+ * kernel < 4.18. From kenrel >= 4.18 which supports
-+ * BTRFS_IOC_GET_SUBVOL_ROOTREF and BTRFS_IOC_INO_LOOKUP_USER, non-previleged
-+ * user can use it too (in that case @top must be zero). Also from kernel
-+ * >=4.18, if @top is zero, the specified path can be non-subvolume directory
-+ * and subvolumes which cannot be accessed will be skipped (either due to
-+ * permission error or path is hidden by other mount).
-+ *
-  * The returned iterator must be freed with
-  * btrfs_util_destroy_subvolume_iterator().
-  *
-@@ -558,7 +570,8 @@ int btrfs_util_subvolume_iterator_fd(const struct btrfs_util_subvolume_iterator
-  * Must be freed with free().
-  * @id_ret: Returned subvolume ID. May be %NULL.
-  *
-- * This requires appropriate privilege (CAP_SYS_ADMIN).
-+ * This requires appropriate privilege (CAP_SYS_ADMIN) for kernel < 4.18.
-+ * See the comment of btrfs_util_create_subvolume_iterator()
-  *
-  * Return: %BTRFS_UTIL_OK on success, %BTRFS_UTIL_ERROR_STOP_ITERATION if there
-  * are no more subvolumes, non-zero error code on failure.
-@@ -577,7 +590,8 @@ enum btrfs_util_error btrfs_util_subvolume_iterator_next(struct btrfs_util_subvo
-  * This convenience function basically combines
-  * btrfs_util_subvolume_iterator_next() and btrfs_util_subvolume_info().
-  *
-- * This requires appropriate privilege (CAP_SYS_ADMIN).
-+ * This requires appropriate privilege (CAP_SYS_ADMIN) for kernel < 4.18.
-+ * See the comment of btrfs_util_create_subvolume_iterator()
-  *
-  * Return: See btrfs_util_subvolume_iterator_next().
-  */
-diff --git a/libbtrfsutil/errors.c b/libbtrfsutil/errors.c
-index f196fa71..c77407bf 100644
---- a/libbtrfsutil/errors.c
-+++ b/libbtrfsutil/errors.c
-@@ -49,6 +49,12 @@ static const char * const error_messages[] = {
- 		"Non-root user cannot specify subvolume id",
- 	[BTRFS_UTIL_ERROR_GET_SUBVOL_INFO_FAILED] =
- 	"Could not get subvolume information by BTRFS_IOC_GET_SUBVOL_INFO",
-+	[BTRFS_UTIL_ERROR_GET_SUBVOL_ROOTREF_FAILED] =
-+	"Could not get rootref information by BTRRFS_IOC_GET_SUBVOL_ROOTREF",
-+	[BTRFS_UTIL_ERROR_INO_LOOKUP_USER_FAILED] =
-+	"Could not resolve subvolume path by BTRFS_IOC_INO_LOOKUP_USER",
-+	[BTRFS_UTIL_ERROR_DUP_FAILED] = "Could not dup",
-+	[BTRFS_UTIL_ERROR_CHDIR_FAILED] = "Could not chdir",
- };
- 
- PUBLIC const char *btrfs_util_strerror(enum btrfs_util_error err)
-diff --git a/libbtrfsutil/subvolume.c b/libbtrfsutil/subvolume.c
-index 73471d4f..ae39d5c8 100644
---- a/libbtrfsutil/subvolume.c
-+++ b/libbtrfsutil/subvolume.c
-@@ -760,13 +760,21 @@ PUBLIC enum btrfs_util_error btrfs_util_create_subvolume_fd(int parent_fd,
- #define BTRFS_UTIL_SUBVOLUME_ITERATOR_CLOSE_FD (1 << 30)
- 
- struct search_stack_entry {
-+	/* below are used for subvolume_iterator_next_user */
-+	uint64_t id;
-+	struct btrfs_ioctl_get_subvol_rootref_args rootref_args;
-+	/* below is used for subvolume_iterator_next_root */
- 	struct btrfs_ioctl_search_args search;
-+	/* below are used for both */
- 	size_t items_pos, buf_off;
- 	size_t path_len;
- };
- 
- struct btrfs_util_subvolume_iterator {
-+	bool use_tree_search;
- 	int fd;
-+	/* cur_fd is only used for subvolume_iterator_next_user */
-+	int cur_fd;
- 	int flags;
- 
- 	struct search_stack_entry *search_stack;
-@@ -799,22 +807,28 @@ static enum btrfs_util_error append_to_search_stack(struct btrfs_util_subvolume_
- 
- 	entry = &iter->search_stack[iter->search_stack_len++];
- 
--	memset(&entry->search, 0, sizeof(entry->search));
--	entry->search.key.tree_id = BTRFS_ROOT_TREE_OBJECTID;
--	entry->search.key.min_objectid = tree_id;
--	entry->search.key.max_objectid = tree_id;
--	entry->search.key.min_type = BTRFS_ROOT_REF_KEY;
--	entry->search.key.max_type = BTRFS_ROOT_REF_KEY;
--	entry->search.key.min_offset = 0;
--	entry->search.key.max_offset = UINT64_MAX;
--	entry->search.key.min_transid = 0;
--	entry->search.key.max_transid = UINT64_MAX;
--	entry->search.key.nr_items = 0;
--
--	entry->items_pos = 0;
--	entry->buf_off = 0;
--
--	entry->path_len = path_len;
-+	if (iter->use_tree_search) {
-+		memset(&entry->search, 0, sizeof(entry->search));
-+		entry->search.key.tree_id = BTRFS_ROOT_TREE_OBJECTID;
-+		entry->search.key.min_objectid = tree_id;
-+		entry->search.key.max_objectid = tree_id;
-+		entry->search.key.min_type = BTRFS_ROOT_REF_KEY;
-+		entry->search.key.max_type = BTRFS_ROOT_REF_KEY;
-+		entry->search.key.min_offset = 0;
-+		entry->search.key.max_offset = UINT64_MAX;
-+		entry->search.key.min_transid = 0;
-+		entry->search.key.max_transid = UINT64_MAX;
-+		entry->search.key.nr_items = 0;
-+
-+		entry->items_pos = 0;
-+		entry->buf_off = 0;
-+
-+		entry->path_len = path_len;
-+	} else {
-+		memset(entry, 0, sizeof(*entry));
-+		entry->path_len = path_len;
-+		entry->id = tree_id;
-+	}
- 
- 	return BTRFS_UTIL_OK;
- }
-@@ -847,20 +861,32 @@ PUBLIC enum btrfs_util_error btrfs_util_create_subvolume_iterator_fd(int fd,
- {
- 	struct btrfs_util_subvolume_iterator *iter;
- 	enum btrfs_util_error err;
-+	bool use_tree_search = true;
- 
- 	if (flags & ~BTRFS_UTIL_SUBVOLUME_ITERATOR_MASK) {
- 		errno = EINVAL;
- 		return BTRFS_UTIL_ERROR_INVALID_ARGUMENT;
- 	}
- 
--	if (top == 0) {
--		err = btrfs_util_is_subvolume_fd(fd);
--		if (err)
--			return err;
-+	if (is_root()) {
-+		if (top == 0) {
-+			err = btrfs_util_is_subvolume_fd(fd);
-+			if (err == BTRFS_UTIL_ERROR_NOT_SUBVOLUME) {
-+				use_tree_search = false;
-+			} else {
-+				if (err)
-+					return err;
- 
--		err = btrfs_util_subvolume_id_fd(fd, &top);
--		if (err)
--			return err;
-+				err = btrfs_util_subvolume_id_fd(fd, &top);
-+				if (err)
-+					return err;
-+			}
-+		}
-+	} else {
-+		if (top != 0)
-+			return BTRFS_UTIL_ERROR_INVALID_ARGUMENT_FOR_USER;
-+
-+		use_tree_search = false;
- 	}
- 
- 	iter = malloc(sizeof(*iter));
-@@ -868,7 +894,15 @@ PUBLIC enum btrfs_util_error btrfs_util_create_subvolume_iterator_fd(int fd,
- 		return BTRFS_UTIL_ERROR_NO_MEMORY;
- 
- 	iter->fd = fd;
-+	if (!use_tree_search) {
-+		iter->cur_fd = dup(fd);
-+		if (iter->cur_fd < 0) {
-+			err = BTRFS_UTIL_ERROR_DUP_FAILED;
-+			goto out_iter;
-+		}
-+	}
- 	iter->flags = flags;
-+	iter->use_tree_search = use_tree_search;
- 
- 	iter->search_stack_len = 0;
- 	iter->search_stack_capacity = 4;
-@@ -1179,6 +1213,8 @@ PUBLIC void btrfs_util_destroy_subvolume_iterator(struct btrfs_util_subvolume_it
- 		free(iter->search_stack);
- 		if (iter->flags & BTRFS_UTIL_SUBVOLUME_ITERATOR_CLOSE_FD)
- 			SAVE_ERRNO_AND_CLOSE(iter->fd);
-+		if (iter->cur_fd)
-+			SAVE_ERRNO_AND_CLOSE(iter->cur_fd);
- 		free(iter);
- 	}
- }
-@@ -1255,6 +1291,74 @@ static enum btrfs_util_error build_subvol_path(struct btrfs_util_subvolume_itera
- 	return BTRFS_UTIL_OK;
+diff --git a/cmds-subvolume.c b/cmds-subvolume.c
+index 45363a5a..c54a8003 100644
+--- a/cmds-subvolume.c
++++ b/cmds-subvolume.c
+@@ -404,6 +404,915 @@ keep_fd:
+ 	return ret;
  }
  
-+static enum btrfs_util_error build_subvol_path_user(struct btrfs_util_subvolume_iterator *iter,
-+						    int fd,
-+						    size_t *path_len_ret)
++#define BTRFS_LIST_NFILTERS_INCREASE	(2 * BTRFS_LIST_FILTER_MAX)
++#define BTRFS_LIST_NCOMPS_INCREASE	(2 * BTRFS_LIST_COMP_MAX)
++
++struct listed_subvol {
++	struct btrfs_util_subvolume_info info;
++	char *path;
++};
++
++struct subvol_list {
++	size_t num;
++	struct listed_subvol subvols[];
++};
++
++typedef int (*btrfs_list_filter_func_v2)(struct listed_subvol *, uint64_t);
++typedef int (*btrfs_list_comp_func_v2)(const struct listed_subvol *,
++				    const struct listed_subvol *,
++				    int);
++
++struct btrfs_list_filter_v2 {
++	btrfs_list_filter_func_v2 filter_func;
++	u64 data;
++};
++
++struct btrfs_list_comparer_v2 {
++	btrfs_list_comp_func_v2 comp_func;
++	int is_descending;
++};
++
++struct btrfs_list_filter_set_v2 {
++	int total;
++	int nfilters;
++	int only_deleted;
++	struct btrfs_list_filter_v2 filters[0];
++};
++
++struct btrfs_list_comparer_set_v2 {
++	int total;
++	int ncomps;
++	struct btrfs_list_comparer_v2 comps[0];
++};
++
++static struct {
++	char	*name;
++	char	*column_name;
++	int	need_print;
++} btrfs_list_columns[] = {
++	{
++		.name		= "ID",
++		.column_name	= "ID",
++		.need_print	= 0,
++	},
++	{
++		.name		= "gen",
++		.column_name	= "Gen",
++		.need_print	= 0,
++	},
++	{
++		.name		= "cgen",
++		.column_name	= "CGen",
++		.need_print	= 0,
++	},
++	{
++		.name		= "parent",
++		.column_name	= "Parent",
++		.need_print	= 0,
++	},
++	{
++		.name		= "top level",
++		.column_name	= "Top Level",
++		.need_print	= 0,
++	},
++	{
++		.name		= "otime",
++		.column_name	= "OTime",
++		.need_print	= 0,
++	},
++	{
++		.name		= "parent_uuid",
++		.column_name	= "Parent UUID",
++		.need_print	= 0,
++	},
++	{
++		.name		= "received_uuid",
++		.column_name	= "Received UUID",
++		.need_print	= 0,
++	},
++	{
++		.name		= "uuid",
++		.column_name	= "UUID",
++		.need_print	= 0,
++	},
++	{
++		.name		= "path",
++		.column_name	= "Path",
++		.need_print	= 0,
++	},
++	{
++		.name		= NULL,
++		.column_name	= NULL,
++		.need_print	= 0,
++	},
++};
++
++static btrfs_list_filter_func_v2 all_filter_funcs[];
++static btrfs_list_comp_func_v2 all_comp_funcs[];
++
++static void btrfs_list_setup_print_column_v2(enum btrfs_list_column_enum column)
 +{
-+	struct search_stack_entry *top = top_search_stack_entry(iter);
-+	struct btrfs_ioctl_ino_lookup_user_args args;
-+	uint64_t dirid, treeid;
-+	size_t dir_len, name_len, path_len;
-+	char *p;
-+	int ret;
++	int i;
 +
-+	dirid = top->rootref_args.rootref[top->items_pos].dirid;
-+	treeid = top->rootref_args.rootref[top->items_pos].treeid;
++	ASSERT(0 <= column && column <= BTRFS_LIST_ALL);
 +
-+	memset(&args, 0, sizeof(args));
-+	args.dirid = dirid;
-+	args.treeid = treeid;
-+
-+	ret = ioctl(fd, BTRFS_IOC_INO_LOOKUP_USER, &args);
-+	if (ret < 0)
-+		return BTRFS_UTIL_ERROR_INO_LOOKUP_USER_FAILED;
-+
-+	dir_len = strlen(args.path);
-+	name_len = strlen(args.name);
-+	path_len = top->path_len;
-+	/*
-+	 * We need a joining slash if we have a current path and a subdirectory.
-+	 */
-+	if (top->path_len && dir_len)
-+		path_len++;
-+	path_len += dir_len;
-+	/*
-+	 * We need another joining slash if we have a current path and a name,
-+	 * but not if we have a subdirectory, because the lookup ioctl includes
-+	 * a trailing slash.
-+	 */
-+	if (top->path_len && !dir_len && name_len)
-+		path_len++;
-+	path_len += name_len;
-+
-+	if (path_len > iter->cur_path_capacity) {
-+		/*
-+		 * Allocate one more byte for NULL as we call open() in
-+		 * subvolume_iterator_next_user()
-+		 */
-+		char *tmp = realloc(iter->cur_path, path_len + 1);
-+
-+		if (!tmp)
-+			return BTRFS_UTIL_ERROR_NO_MEMORY;
-+		iter->cur_path = tmp;
-+		iter->cur_path_capacity = path_len;
++	if (column < BTRFS_LIST_ALL) {
++		btrfs_list_columns[column].need_print = 1;
++		return;
 +	}
 +
-+	p = iter->cur_path + top->path_len;
-+	if (top->path_len && dir_len)
-+		*p++ = '/';
-+	memcpy(p, args.path, dir_len);
-+	p += dir_len;
-+	if (top->path_len && !dir_len && name_len)
-+		*p++ = '/';
-+	memcpy(p, args.name, name_len);
-+	p += name_len;
-+
-+	*path_len_ret = path_len;
-+
-+	return BTRFS_UTIL_OK;
++	for (i = 0; i < BTRFS_LIST_ALL; i++)
++		btrfs_list_columns[i].need_print = 1;
 +}
 +
- static enum btrfs_util_error subvolume_iterator_next_root(struct btrfs_util_subvolume_iterator *iter,
- 							  char **path_ret,
- 							  uint64_t *id_ret)
-@@ -1331,11 +1435,234 @@ out:
- 	return BTRFS_UTIL_OK;
- }
- 
-+static enum btrfs_util_error chdir_to_parent_subvolume(struct btrfs_util_subvolume_iterator *iter,
-+						       struct search_stack_entry *top)
++static int comp_entry_with_rootid_v2(const struct listed_subvol *entry1,
++				  const struct listed_subvol *entry2,
++				  int is_descending)
 +{
-+	size_t start, end;
 +	int ret;
 +
-+	/* end indicates name length of current subvolume */
-+	end = top->path_len;
++	if (entry1->info.id > entry2->info.id)
++		ret = 1;
++	else if (entry1->info.id < entry2->info.id)
++		ret = -1;
++	else
++		ret = 0;
 +
-+	/* start indicates name length of current's parent subvolume */
-+	top = top_search_stack_entry(iter);
-+	start = top->path_len;
-+	if (start)
-+		start++;
-+
-+	/* move up directory as many times '/' appear */
-+	while (start < end) {
-+		if (iter->cur_path[start] == '/') {
-+			ret = chdir("..");
-+			if (ret)
-+				return BTRFS_UTIL_ERROR_CHDIR_FAILED;
-+		}
-+		start++;
-+	}
-+	ret = chdir("..");
-+	if (ret)
-+		return BTRFS_UTIL_ERROR_CHDIR_FAILED;
-+
-+	iter->cur_fd = open(".", O_RDONLY);
-+	if (iter->cur_fd < 0)
-+		return BTRFS_UTIL_ERROR_OPEN_FAILED;
-+
-+	return BTRFS_UTIL_OK;
++	return is_descending ? -ret : ret;
 +}
 +
-+static enum btrfs_util_error subvolume_iterator_next_user(struct btrfs_util_subvolume_iterator *iter,
-+							  char **path_ret,
-+							  uint64_t *id_ret)
++static int comp_entry_with_gen_v2(const struct listed_subvol *entry1,
++			       const struct listed_subvol *entry2,
++			       int is_descending)
 +{
-+	struct search_stack_entry *top;
-+	size_t path_len;
++	int ret;
++
++	if (entry1->info.generation > entry2->info.generation)
++		ret = 1;
++	else if (entry1->info.generation < entry2->info.generation)
++		ret = -1;
++	else
++		ret = 0;
++
++	return is_descending ? -ret : ret;
++}
++
++static int comp_entry_with_ogen_v2(const struct listed_subvol *entry1,
++				const struct listed_subvol *entry2,
++				int is_descending)
++{
++	int ret;
++
++	if (entry1->info.otransid > entry2->info.otransid)
++		ret = 1;
++	else if (entry1->info.otransid < entry2->info.otransid)
++		ret = -1;
++	else
++		ret = 0;
++
++	return is_descending ? -ret : ret;
++}
++
++static int comp_entry_with_path_v2(const struct listed_subvol *entry1,
++				const struct listed_subvol *entry2,
++				int is_descending)
++{
++	int ret;
++
++	if (strcmp(entry1->path, entry2->path) > 0)
++		ret = 1;
++	else if (strcmp(entry1->path, entry2->path) < 0)
++		ret = -1;
++	else
++		ret = 0;
++
++	return is_descending ? -ret : ret;
++}
++
++static btrfs_list_comp_func_v2 all_comp_funcs[] = {
++	[BTRFS_LIST_COMP_ROOTID]	= comp_entry_with_rootid_v2,
++	[BTRFS_LIST_COMP_OGEN]		= comp_entry_with_ogen_v2,
++	[BTRFS_LIST_COMP_GEN]		= comp_entry_with_gen_v2,
++	[BTRFS_LIST_COMP_PATH]		= comp_entry_with_path_v2,
++};
++
++static char *all_sort_items[] = {
++	[BTRFS_LIST_COMP_ROOTID]	= "rootid",
++	[BTRFS_LIST_COMP_OGEN]		= "ogen",
++	[BTRFS_LIST_COMP_GEN]		= "gen",
++	[BTRFS_LIST_COMP_PATH]		= "path",
++	[BTRFS_LIST_COMP_MAX]		= NULL,
++};
++
++static int btrfs_list_get_sort_item(char *sort_name)
++{
++	int i;
++
++	for (i = 0; i < BTRFS_LIST_COMP_MAX; i++) {
++		if (strcmp(sort_name, all_sort_items[i]) == 0)
++			return i;
++	}
++	return -1;
++}
++
++static struct btrfs_list_comparer_set_v2 *btrfs_list_alloc_comparer_set_v2(void)
++{
++	struct btrfs_list_comparer_set_v2 *set;
++	int size;
++
++	size = sizeof(struct btrfs_list_comparer_set_v2) +
++		BTRFS_LIST_NCOMPS_INCREASE *
++		sizeof(struct btrfs_list_comparer_v2);
++	set = calloc(1, size);
++	if (!set) {
++		fprintf(stderr, "memory allocation failed\n");
++		exit(1);
++	}
++
++	set->total = BTRFS_LIST_NCOMPS_INCREASE;
++
++	return set;
++}
++
++static int btrfs_list_setup_comparer_v2(struct btrfs_list_comparer_set_v2 **comp_set,
++				     enum btrfs_list_comp_enum comparer,
++				     int is_descending)
++{
++	struct btrfs_list_comparer_set_v2 *set = *comp_set;
++	int size;
++
++	ASSERT(set != NULL);
++	ASSERT(comparer < BTRFS_LIST_COMP_MAX);
++	ASSERT(set->ncomps <= set->total);
++
++	if (set->ncomps == set->total) {
++		void *tmp;
++
++		size = set->total + BTRFS_LIST_NCOMPS_INCREASE;
++		size = sizeof(*set) +
++			size * sizeof(struct btrfs_list_comparer_v2);
++		tmp = set;
++		set = realloc(set, size);
++		if (!set) {
++			fprintf(stderr, "memory allocation failed\n");
++			free(tmp);
++			exit(1);
++		}
++
++		memset(&set->comps[set->total], 0,
++		       BTRFS_LIST_NCOMPS_INCREASE *
++		       sizeof(struct btrfs_list_comparer_v2));
++		set->total += BTRFS_LIST_NCOMPS_INCREASE;
++		*comp_set = set;
++	}
++
++	ASSERT(set->comps[set->ncomps].comp_func == NULL);
++
++	set->comps[set->ncomps].comp_func = all_comp_funcs[comparer];
++	set->comps[set->ncomps].is_descending = is_descending;
++	set->ncomps++;
++	return 0;
++}
++
++static int subvol_comp(const void *entry1, const void *entry2, void *arg)
++{
++	const struct btrfs_list_comparer_set_v2 * const set = arg;
++	int rootid_compared = 0;
++	int ret;
++	int i;
++
++	for (i = 0; set && i < set->ncomps; i++) {
++		if (!set->comps[i].comp_func)
++			break;
++
++		ret = set->comps[i].comp_func(entry1, entry2,
++					      set->comps[i].is_descending);
++		if (ret)
++			return ret;
++
++		if (set->comps[i].comp_func == comp_entry_with_rootid_v2)
++			rootid_compared = 1;
++	}
++
++	if (!rootid_compared)
++		return comp_entry_with_rootid_v2(entry1, entry2, 0);
++
++	return 0;
++}
++
++static void sort_subvols(struct btrfs_list_comparer_set_v2 *comp_set,
++			 struct subvol_list *subvols)
++{
++	qsort_r(subvols->subvols, subvols->num, sizeof(subvols->subvols[0]),
++		subvol_comp, comp_set);
++}
++
++static int filter_by_rootid(struct listed_subvol *subvol, uint64_t data)
++{
++	return subvol->info.id == data;
++}
++
++static int filter_snapshot(struct listed_subvol *subvol, uint64_t data)
++{
++	return !uuid_is_null(subvol->info.parent_uuid);
++}
++
++static int filter_flags(struct listed_subvol *subvol, uint64_t data)
++{
++	return subvol->info.flags & data;
++}
++
++static int filter_gen_more(struct listed_subvol *subvol, uint64_t data)
++{
++	return subvol->info.generation >= data;
++}
++
++static int filter_gen_less(struct listed_subvol *subvol, uint64_t data)
++{
++	return subvol->info.generation <= data;
++}
++
++static int filter_gen_equal(struct listed_subvol *subvol, uint64_t data)
++{
++	return subvol->info.generation == data;
++}
++
++static int filter_cgen_more(struct listed_subvol *subvol, uint64_t data)
++{
++	return subvol->info.otransid >= data;
++}
++
++static int filter_cgen_less(struct listed_subvol *subvol, uint64_t data)
++{
++	return subvol->info.otransid <= data;
++}
++
++static int filter_cgen_equal(struct listed_subvol *subvol, uint64_t data)
++{
++	return subvol->info.otransid == data;
++}
++
++static int filter_topid_equal(struct listed_subvol *subvol, uint64_t data)
++{
++	/* See the comment in print_subvolume_column() about top level. */
++	return subvol->info.parent_id == data;
++}
++
++static int filter_full_path(struct listed_subvol *subvol, uint64_t data)
++{
++	/*
++	 * This implements the same behavior as before the conversion to
++	 * libbtrfsutil, which is mostly nonsensical.
++	 */
++	if (subvol->info.parent_id != data) {
++		char *tmp;
++		int ret;
++
++		ret = asprintf(&tmp, "<FS_TREE>/%s", subvol->path);
++		if (ret == -1) {
++			error("out of memory");
++			exit(1);
++		}
++
++		free(subvol->path);
++		subvol->path = tmp;
++	}
++	return 1;
++}
++
++static int filter_by_parent(struct listed_subvol *subvol, uint64_t data)
++{
++	return !uuid_compare(subvol->info.parent_uuid,
++			     (u8 *)(unsigned long)data);
++}
++
++static btrfs_list_filter_func_v2 all_filter_funcs[] = {
++	[BTRFS_LIST_FILTER_ROOTID]		= filter_by_rootid,
++	[BTRFS_LIST_FILTER_SNAPSHOT_ONLY]	= filter_snapshot,
++	[BTRFS_LIST_FILTER_FLAGS]		= filter_flags,
++	[BTRFS_LIST_FILTER_GEN_MORE]		= filter_gen_more,
++	[BTRFS_LIST_FILTER_GEN_LESS]		= filter_gen_less,
++	[BTRFS_LIST_FILTER_GEN_EQUAL]           = filter_gen_equal,
++	[BTRFS_LIST_FILTER_CGEN_MORE]		= filter_cgen_more,
++	[BTRFS_LIST_FILTER_CGEN_LESS]		= filter_cgen_less,
++	[BTRFS_LIST_FILTER_CGEN_EQUAL]          = filter_cgen_equal,
++	[BTRFS_LIST_FILTER_TOPID_EQUAL]		= filter_topid_equal,
++	[BTRFS_LIST_FILTER_FULL_PATH]		= filter_full_path,
++	[BTRFS_LIST_FILTER_BY_PARENT]		= filter_by_parent,
++};
++
++static struct btrfs_list_filter_set_v2 *btrfs_list_alloc_filter_set_v2(void)
++{
++	struct btrfs_list_filter_set_v2 *set;
++	int size;
++
++	size = sizeof(struct btrfs_list_filter_set_v2) +
++		BTRFS_LIST_NFILTERS_INCREASE *
++		sizeof(struct btrfs_list_filter_v2);
++	set = calloc(1, size);
++	if (!set) {
++		fprintf(stderr, "memory allocation failed\n");
++		exit(1);
++	}
++
++	set->total = BTRFS_LIST_NFILTERS_INCREASE;
++
++	return set;
++}
++
++/*
++ * Setup list filters. Exit if there's not enough memory, as we can't continue
++ * without the structures set up properly.
++ */
++static void btrfs_list_setup_filter_v2(struct btrfs_list_filter_set_v2 **filter_set,
++				    enum btrfs_list_filter_enum filter,
++				    u64 data)
++{
++	struct btrfs_list_filter_set_v2 *set = *filter_set;
++	int size;
++
++	ASSERT(set != NULL);
++	ASSERT(filter < BTRFS_LIST_FILTER_MAX);
++	ASSERT(set->nfilters <= set->total);
++
++	if (set->nfilters == set->total) {
++		void *tmp;
++
++		size = set->total + BTRFS_LIST_NFILTERS_INCREASE;
++		size = sizeof(*set) +
++			size * sizeof(struct btrfs_list_filter_v2);
++		tmp = set;
++		set = realloc(set, size);
++		if (!set) {
++			fprintf(stderr, "memory allocation failed\n");
++			free(tmp);
++			exit(1);
++		}
++
++		memset(&set->filters[set->total], 0,
++		       BTRFS_LIST_NFILTERS_INCREASE *
++		       sizeof(struct btrfs_list_filter_v2));
++		set->total += BTRFS_LIST_NFILTERS_INCREASE;
++		*filter_set = set;
++	}
++
++	ASSERT(set->filters[set->nfilters].filter_func == NULL);
++
++	if (filter == BTRFS_LIST_FILTER_DELETED) {
++		set->only_deleted = 1;
++	} else {
++		set->filters[set->nfilters].filter_func =
++					all_filter_funcs[filter];
++		set->filters[set->nfilters].data = data;
++		set->nfilters++;
++	}
++}
++
++static int filters_match(struct listed_subvol *subvol,
++			 struct btrfs_list_filter_set_v2 *set)
++{
++	int i, ret;
++
++	if (!set)
++		return 1;
++
++	for (i = 0; i < set->nfilters; i++) {
++		if (!set->filters[i].filter_func)
++			break;
++		ret = set->filters[i].filter_func(subvol, set->filters[i].data);
++		if (!ret)
++			return 0;
++	}
++	return 1;
++}
++
++static void print_subvolume_column(struct listed_subvol *subvol,
++				   enum btrfs_list_column_enum column)
++{
++	char tstr[256];
++	char uuidparse[BTRFS_UUID_UNPARSED_SIZE];
++
++	ASSERT(0 <= column && column < BTRFS_LIST_ALL);
++
++	switch (column) {
++	case BTRFS_LIST_OBJECTID:
++		printf("%" PRIu64, subvol->info.id);
++		break;
++	case BTRFS_LIST_GENERATION:
++		printf("%" PRIu64, subvol->info.generation);
++		break;
++	case BTRFS_LIST_OGENERATION:
++		printf("%" PRIu64, subvol->info.otransid);
++		break;
++	case BTRFS_LIST_PARENT:
++	/*
++	 * Top level used to mean something else, but since 4f5ebb3ef553
++	 * ("Btrfs-progs: fix to make list specified directory's subvolumes
++	 * work") it was always set to the parent ID. See
++	 * https://www.spinics.net/lists/linux-btrfs/msg69820.html.
++	 */
++	case BTRFS_LIST_TOP_LEVEL:
++		printf("%" PRIu64, subvol->info.parent_id);
++		break;
++	case BTRFS_LIST_OTIME:
++		if (subvol->info.otime.tv_sec) {
++			struct tm tm;
++
++			localtime_r(&subvol->info.otime.tv_sec, &tm);
++			strftime(tstr, sizeof(tstr), "%Y-%m-%d %X", &tm);
++		} else
++			strcpy(tstr, "-");
++		printf("%s", tstr);
++		break;
++	case BTRFS_LIST_UUID:
++		if (uuid_is_null(subvol->info.uuid))
++			strcpy(uuidparse, "-");
++		else
++			uuid_unparse(subvol->info.uuid, uuidparse);
++		printf("%-36s", uuidparse);
++		break;
++	case BTRFS_LIST_PUUID:
++		if (uuid_is_null(subvol->info.parent_uuid))
++			strcpy(uuidparse, "-");
++		else
++			uuid_unparse(subvol->info.parent_uuid, uuidparse);
++		printf("%-36s", uuidparse);
++		break;
++	case BTRFS_LIST_RUUID:
++		if (uuid_is_null(subvol->info.received_uuid))
++			strcpy(uuidparse, "-");
++		else
++			uuid_unparse(subvol->info.received_uuid, uuidparse);
++		printf("%-36s", uuidparse);
++		break;
++	case BTRFS_LIST_PATH:
++		printf("%s", subvol->path);
++		break;
++	default:
++		break;
++	}
++}
++
++static void print_one_subvol_info_raw(struct listed_subvol *subvol,
++				      const char *raw_prefix)
++{
++	int i;
++
++	for (i = 0; i < BTRFS_LIST_ALL; i++) {
++		if (!btrfs_list_columns[i].need_print)
++			continue;
++
++		if (raw_prefix)
++			printf("%s", raw_prefix);
++
++		print_subvolume_column(subvol, i);
++	}
++	printf("\n");
++}
++
++static void print_one_subvol_info_table(struct listed_subvol *subvol)
++{
++	int i;
++
++	for (i = 0; i < BTRFS_LIST_ALL; i++) {
++		if (!btrfs_list_columns[i].need_print)
++			continue;
++
++		print_subvolume_column(subvol, i);
++
++		if (i != BTRFS_LIST_PATH)
++			printf("\t");
++
++		if (i == BTRFS_LIST_TOP_LEVEL)
++			printf("\t");
++	}
++	printf("\n");
++}
++
++static void print_one_subvol_info_default(struct listed_subvol *subvol)
++{
++	int i;
++
++	for (i = 0; i < BTRFS_LIST_ALL; i++) {
++		if (!btrfs_list_columns[i].need_print)
++			continue;
++
++		printf("%s ", btrfs_list_columns[i].name);
++		print_subvolume_column(subvol, i);
++
++		if (i != BTRFS_LIST_PATH)
++			printf(" ");
++	}
++	printf("\n");
++}
++
++static void print_all_subvol_info_tab_head(void)
++{
++	int i;
++	int len;
++	char barrier[20];
++
++	for (i = 0; i < BTRFS_LIST_ALL; i++) {
++		if (btrfs_list_columns[i].need_print)
++			printf("%s\t", btrfs_list_columns[i].name);
++
++		if (i == BTRFS_LIST_ALL-1)
++			printf("\n");
++	}
++
++	for (i = 0; i < BTRFS_LIST_ALL; i++) {
++		memset(barrier, 0, sizeof(barrier));
++
++		if (btrfs_list_columns[i].need_print) {
++			len = strlen(btrfs_list_columns[i].name);
++			while (len--)
++				strcat(barrier, "-");
++
++			printf("%s\t", barrier);
++		}
++		if (i == BTRFS_LIST_ALL-1)
++			printf("\n");
++	}
++}
++
++static void print_all_subvol_info(struct subvol_list *subvols,
++				  enum btrfs_list_layout layout,
++				  const char *raw_prefix)
++{
++	size_t i;
++
++	if (layout == BTRFS_LIST_LAYOUT_TABLE)
++		print_all_subvol_info_tab_head();
++
++	for (i = 0; i < subvols->num; i++) {
++		struct listed_subvol *subvol = &subvols->subvols[i];
++
++		switch (layout) {
++		case BTRFS_LIST_LAYOUT_DEFAULT:
++			print_one_subvol_info_default(subvol);
++			break;
++		case BTRFS_LIST_LAYOUT_TABLE:
++			print_one_subvol_info_table(subvol);
++			break;
++		case BTRFS_LIST_LAYOUT_RAW:
++			print_one_subvol_info_raw(subvol, raw_prefix);
++			break;
++		}
++	}
++}
++
++static void free_subvol_list(struct subvol_list *subvols)
++{
++	size_t i;
++
++	if (subvols) {
++		for (i = 0; i < subvols->num; i++)
++			free(subvols->subvols[i].path);
++		free(subvols);
++	}
++}
++
++static struct subvol_list *btrfs_list_deleted_subvols(int fd,
++						      struct btrfs_list_filter_set_v2 *filter_set)
++{
++	struct subvol_list *subvols = NULL;
++	uint64_t *ids = NULL;
++	size_t i, n;
 +	enum btrfs_util_error err;
-+	char *temp;
-+	int child_fd, orig_fd;
-+	int ret;
++	int ret = -1;
 +
-+	/* Remember current working directry to reset at return */
-+	orig_fd = open(".", O_RDONLY);
-+	if (orig_fd < 0)
-+		return BTRFS_UTIL_ERROR_OPEN_FAILED;
-+
-+	/*
-+	 * Change working directory as traversing iterator,
-+	 * in order to prevent ENAMETOOLONG error at open()
-+	 */
-+	ret = fchdir(iter->cur_fd);
-+	if (ret) {
-+		SAVE_ERRNO_AND_CLOSE(orig_fd);
-+		return BTRFS_UTIL_ERROR_CHDIR_FAILED;
++	err = btrfs_util_deleted_subvolumes_fd(fd, &ids, &n);
++	if (err) {
++		error_btrfs_util(err);
++		return NULL;
 +	}
-+	if (iter->flags & BTRFS_UTIL_SUBVOLUME_ITERATOR_POST_ORDER &&
-+	    iter->search_stack_len > 1) {
-+		SAVE_ERRNO_AND_CLOSE(iter->cur_fd);
-+		top = top_search_stack_entry(iter);
-+		iter->search_stack_len--;
 +
-+		err = chdir_to_parent_subvolume(iter, top);
++	subvols = malloc(sizeof(*subvols) + n * sizeof(subvols->subvols[0]));
++	if (!subvols) {
++		error("out of memory");
++		goto out;
++	}
++
++	subvols->num = 0;
++	for (i = 0; i < n; i++) {
++		struct listed_subvol *subvol = &subvols->subvols[subvols->num];
++
++		err = btrfs_util_subvolume_info_fd(fd, ids[i], &subvol->info);
 +		if (err) {
-+			SAVE_ERRNO_AND_CLOSE(orig_fd);
-+			return err;
++			error_btrfs_util(err);
++			goto out;
 +		}
++
++		subvol->path = strdup("DELETED");
++		if (!subvol->path)
++			goto out;
++
++		if (!filters_match(subvol, filter_set)) {
++			free(subvol->path);
++			continue;
++		}
++
++		subvols->num++;
++	}
++
++	ret = 0;
++out:
++	if (ret) {
++		free_subvol_list(subvols);
++		subvols = NULL;
++		free(ids);
++	}
++	return subvols;
++}
++
++static struct subvol_list *btrfs_list_subvols(int fd,
++					      struct btrfs_list_filter_set_v2 *filter_set)
++{
++	struct subvol_list *subvols;
++	size_t capacity = 0;
++	struct btrfs_util_subvolume_iterator *iter;
++	enum btrfs_util_error err;
++	int ret = -1;
++
++	subvols = malloc(sizeof(*subvols));
++	if (!subvols) {
++		error("out of memory");
++		return NULL;
++	}
++	subvols->num = 0;
++
++	err = btrfs_util_create_subvolume_iterator_fd(fd,
++						      BTRFS_FS_TREE_OBJECTID, 0,
++						      &iter);
++	if (err) {
++		iter = NULL;
++		error_btrfs_util(err);
++		goto out;
 +	}
 +
 +	for (;;) {
-+		for (;;) {
-+			if (iter->search_stack_len == 0) {
-+				ret = fchdir(orig_fd);
-+				SAVE_ERRNO_AND_CLOSE(orig_fd);
-+				if (ret)
-+					return BTRFS_UTIL_ERROR_CHDIR_FAILED;
-+				return BTRFS_UTIL_ERROR_STOP_ITERATION;
-+			}
++		struct listed_subvol subvol;
 +
-+			top = top_search_stack_entry(iter);
-+
-+			if (top->items_pos < top->rootref_args.num_items) {
-+				break;
-+			} else {
-+				top->items_pos = 0;
-+				ret = ioctl(iter->cur_fd, BTRFS_IOC_GET_SUBVOL_ROOTREF,
-+						&top->rootref_args);
-+				if (ret < 0) {
-+					if (errno != EOVERFLOW) {
-+						SAVE_ERRNO_AND_CLOSE(orig_fd);
-+						return BTRFS_UTIL_ERROR_GET_SUBVOL_ROOTREF_FAILED;
-+					}
-+				} else {
-+					if (top->rootref_args.num_items == 0) {
-+						if (iter->flags & BTRFS_UTIL_SUBVOLUME_ITERATOR_POST_ORDER) {
-+							if (iter->search_stack_len == 1) {
-+								ret = fchdir(orig_fd);
-+								SAVE_ERRNO_AND_CLOSE(orig_fd);
-+								if (ret)
-+									return BTRFS_UTIL_ERROR_CHDIR_FAILED;
-+								return BTRFS_UTIL_ERROR_STOP_ITERATION;
-+							}
-+							goto out;
-+						}
-+
-+						iter->search_stack_len--;
-+						SAVE_ERRNO_AND_CLOSE(iter->cur_fd);
-+
-+						err = chdir_to_parent_subvolume(iter, top);
-+						if (err) {
-+							SAVE_ERRNO_AND_CLOSE(orig_fd);
-+							return err;
-+						}
-+					}
-+				}
-+			}
-+		}
-+
-+		err = build_subvol_path_user(iter, iter->cur_fd,
-+				&path_len);
-+		top->id = top->rootref_args.rootref[top->items_pos].treeid;
-+		top->items_pos++;
-+
-+		/* Skip if permission error happens during path construction */
-+		if (err) {
-+			if (errno == EACCES)
-+				continue;
-+			SAVE_ERRNO_AND_CLOSE(orig_fd);
-+			return err;
-+		}
-+
-+		/* Extra check to the constructed path */
-+		iter->cur_path[path_len] = '\0';
-+		temp = &iter->cur_path[top->path_len];
-+		if (*temp == '/')
-+			temp++;
-+		child_fd = open(temp, O_RDONLY);
-+		if (child_fd < 0) {
-+			/*
-+			 * Skip if
-+			 *  1. the path does not exist
-+			 *     (may happen if a dir in the path is mounted)
-+			 *  2. cannot open the path due to permission error
-+			 */
-+			if (errno == ENOENT || errno == EACCES)
-+				continue;
-+			SAVE_ERRNO_AND_CLOSE(orig_fd);
-+			return BTRFS_UTIL_ERROR_OPEN_FAILED;
-+		} else {
-+			uint64_t temp_id;
-+
-+			/*
-+			 * Check the subvolume status and skip if other volume
-+			 * is mounted
-+			 */
-+			err = btrfs_util_is_subvolume_fd(child_fd);
-+			if (err) {
-+				SAVE_ERRNO_AND_CLOSE(child_fd);
-+				if (err == BTRFS_UTIL_ERROR_NOT_BTRFS ||
-+				    err == BTRFS_UTIL_ERROR_NOT_SUBVOLUME)
-+					continue;
-+				SAVE_ERRNO_AND_CLOSE(orig_fd);
-+				return err;
-+			}
-+			err = btrfs_util_subvolume_id_fd(child_fd, &temp_id);
-+			if (err) {
-+				SAVE_ERRNO_AND_CLOSE(orig_fd);
-+				SAVE_ERRNO_AND_CLOSE(child_fd);
-+				return err;
-+			}
-+			if (top->id != temp_id) {
-+				SAVE_ERRNO_AND_CLOSE(child_fd);
-+				continue;
-+			}
-+		}
-+
-+		err = append_to_search_stack(iter, top->id, path_len);
-+		if (err) {
-+			SAVE_ERRNO_AND_CLOSE(orig_fd);
-+			SAVE_ERRNO_AND_CLOSE(child_fd);
-+			return err;
-+		}
-+
-+		SAVE_ERRNO_AND_CLOSE(iter->cur_fd);
-+		iter->cur_fd = child_fd;
-+
-+		if (!(iter->flags & BTRFS_UTIL_SUBVOLUME_ITERATOR_POST_ORDER)) {
-+			top = top_search_stack_entry(iter);
++		err = btrfs_util_subvolume_iterator_next_info(iter,
++							      &subvol.path,
++							      &subvol.info);
++		if (err == BTRFS_UTIL_ERROR_STOP_ITERATION) {
++			break;
++		} else if (err) {
++			error_btrfs_util(err);
 +			goto out;
-+		} else {
-+			ret = fchdir(iter->cur_fd);
-+			if (ret) {
-+				SAVE_ERRNO_AND_CLOSE(orig_fd);
-+				return BTRFS_UTIL_ERROR_CHDIR_FAILED;
-+			}
 +		}
++
++		if (!filters_match(&subvol, filter_set)) {
++			free(subvol.path);
++			continue;
++		}
++
++		if (subvols->num >= capacity) {
++			struct subvol_list *new_subvols;
++			size_t new_capacity = max_t(size_t, 1, capacity * 2);
++
++			new_subvols = realloc(subvols,
++					      sizeof(*new_subvols) +
++					      new_capacity *
++					      sizeof(new_subvols->subvols[0]));
++			if (!new_subvols) {
++				error("out of memory");
++				goto out;
++			}
++
++			subvols = new_subvols;
++			capacity = new_capacity;
++		}
++
++		subvols->subvols[subvols->num] = subvol;
++		subvols->num++;
 +	}
 +
++	ret = 0;
 +out:
-+	ret = fchdir(orig_fd);
-+	SAVE_ERRNO_AND_CLOSE(orig_fd);
-+	if (ret)
-+		return BTRFS_UTIL_ERROR_CHDIR_FAILED;
-+
-+	if (path_ret) {
-+		*path_ret = malloc(top->path_len + 1);
-+		if (!*path_ret)
-+			return BTRFS_UTIL_ERROR_NO_MEMORY;
-+		memcpy(*path_ret, iter->cur_path, top->path_len);
-+		(*path_ret)[top->path_len] = '\0';
++	if (iter)
++		btrfs_util_destroy_subvolume_iterator(iter);
++	if (ret) {
++		free_subvol_list(subvols);
++		subvols = NULL;
 +	}
-+	if (id_ret)
-+		*id_ret = top->id;
-+	return BTRFS_UTIL_OK;
++	return subvols;
 +}
 +
- PUBLIC enum btrfs_util_error btrfs_util_subvolume_iterator_next(struct btrfs_util_subvolume_iterator *iter,
- 								char **path_ret,
- 								uint64_t *id_ret)
++static int btrfs_list_subvols_print_v2(int fd,
++				    struct btrfs_list_filter_set_v2 *filter_set,
++				    struct btrfs_list_comparer_set_v2 *comp_set,
++				    enum btrfs_list_layout layout,
++				    int full_path, const char *raw_prefix)
++{
++	struct subvol_list *subvols;
++
++	/*
++	 * full_path hasn't done anything since 4f5ebb3ef553 ("Btrfs-progs: fix
++	 * to make list specified directory's subvolumes work"). See
++	 * https://www.spinics.net/lists/linux-btrfs/msg69820.html
++	 */
++
++	if (filter_set->only_deleted)
++		subvols = btrfs_list_deleted_subvols(fd, filter_set);
++	else
++		subvols = btrfs_list_subvols(fd, filter_set);
++	if (!subvols)
++		return -1;
++
++	sort_subvols(comp_set, subvols);
++
++	print_all_subvol_info(subvols, layout, raw_prefix);
++
++	free_subvol_list(subvols);
++
++	return 0;
++}
++
++static int btrfs_list_parse_sort_string_v2(char *opt_arg,
++					struct btrfs_list_comparer_set_v2 **comps)
++{
++	int order;
++	int flag;
++	char *p;
++	char **ptr_argv;
++	int what_to_sort;
++
++	while ((p = strtok(opt_arg, ",")) != NULL) {
++		flag = 0;
++		ptr_argv = all_sort_items;
++
++		while (*ptr_argv) {
++			if (strcmp(*ptr_argv, p) == 0) {
++				flag = 1;
++				break;
++			} else {
++				p++;
++				if (strcmp(*ptr_argv, p) == 0) {
++					flag = 1;
++					p--;
++					break;
++				}
++				p--;
++			}
++			ptr_argv++;
++		}
++
++		if (flag == 0)
++			return -1;
++
++		else {
++			if (*p == '+') {
++				order = 0;
++				p++;
++			} else if (*p == '-') {
++				order = 1;
++				p++;
++			} else
++				order = 0;
++
++			what_to_sort = btrfs_list_get_sort_item(p);
++			btrfs_list_setup_comparer_v2(comps,
++						what_to_sort, order);
++		}
++		opt_arg = NULL;
++	}
++
++	return 0;
++}
++
++static int btrfs_list_parse_filter_string_v2(char *opt_arg,
++					  struct btrfs_list_filter_set_v2 **filters,
++					  enum btrfs_list_filter_enum type)
++{
++
++	u64 arg;
++
++	switch (*(opt_arg++)) {
++	case '+':
++		arg = arg_strtou64(opt_arg);
++		type += 2;
++
++		btrfs_list_setup_filter_v2(filters, type, arg);
++		break;
++	case '-':
++		arg = arg_strtou64(opt_arg);
++		type += 1;
++
++		btrfs_list_setup_filter_v2(filters, type, arg);
++		break;
++	default:
++		opt_arg--;
++		arg = arg_strtou64(opt_arg);
++
++		btrfs_list_setup_filter_v2(filters, type, arg);
++		break;
++	}
++
++	return 0;
++}
++
+ /*
+  * Naming of options:
+  * - uppercase for filters and sort options
+@@ -451,8 +1360,8 @@ static const char * const cmd_subvol_list_usage[] = {
+ 
+ static int cmd_subvol_list(int argc, char **argv)
  {
--	return subvolume_iterator_next_root(iter, path_ret, id_ret);
-+	if (iter->use_tree_search)
-+		return subvolume_iterator_next_root(iter, path_ret, id_ret);
-+	else
-+		return subvolume_iterator_next_user(iter, path_ret, id_ret);
- }
+-	struct btrfs_list_filter_set *filter_set;
+-	struct btrfs_list_comparer_set *comparer_set;
++	struct btrfs_list_filter_set_v2 *filter_set;
++	struct btrfs_list_comparer_set_v2 *comparer_set;
+ 	u64 flags = 0;
+ 	int fd = -1;
+ 	u64 top_id;
+@@ -463,8 +1372,8 @@ static int cmd_subvol_list(int argc, char **argv)
+ 	DIR *dirstream = NULL;
+ 	enum btrfs_list_layout layout = BTRFS_LIST_LAYOUT_DEFAULT;
  
- PUBLIC enum btrfs_util_error btrfs_util_subvolume_iterator_next_info(struct btrfs_util_subvolume_iterator *iter,
-@@ -1349,7 +1676,10 @@ PUBLIC enum btrfs_util_error btrfs_util_subvolume_iterator_next_info(struct btrf
- 	if (err)
- 		return err;
+-	filter_set = btrfs_list_alloc_filter_set();
+-	comparer_set = btrfs_list_alloc_comparer_set();
++	filter_set = btrfs_list_alloc_filter_set_v2();
++	comparer_set = btrfs_list_alloc_comparer_set_v2();
  
--	return btrfs_util_subvolume_info_fd(iter->fd, id, subvol);
-+	if (iter->use_tree_search)
-+		return btrfs_util_subvolume_info_fd(iter->fd, id, subvol);
-+	else
-+		return btrfs_util_subvolume_info_fd(iter->cur_fd, 0, subvol);
- }
+ 	while(1) {
+ 		int c;
+@@ -480,21 +1389,21 @@ static int cmd_subvol_list(int argc, char **argv)
  
- PUBLIC enum btrfs_util_error btrfs_util_deleted_subvolumes(const char *path,
+ 		switch(c) {
+ 		case 'p':
+-			btrfs_list_setup_print_column(BTRFS_LIST_PARENT);
++			btrfs_list_setup_print_column_v2(BTRFS_LIST_PARENT);
+ 			break;
+ 		case 'a':
+ 			is_list_all = 1;
+ 			break;
+ 		case 'c':
+-			btrfs_list_setup_print_column(BTRFS_LIST_OGENERATION);
++			btrfs_list_setup_print_column_v2(BTRFS_LIST_OGENERATION);
+ 			break;
+ 		case 'd':
+-			btrfs_list_setup_filter(&filter_set,
++			btrfs_list_setup_filter_v2(&filter_set,
+ 						BTRFS_LIST_FILTER_DELETED,
+ 						0);
+ 			break;
+ 		case 'g':
+-			btrfs_list_setup_print_column(BTRFS_LIST_GENERATION);
++			btrfs_list_setup_print_column_v2(BTRFS_LIST_GENERATION);
+ 			break;
+ 		case 'o':
+ 			is_only_in_path = 1;
+@@ -503,27 +1412,27 @@ static int cmd_subvol_list(int argc, char **argv)
+ 			layout = BTRFS_LIST_LAYOUT_TABLE;
+ 			break;
+ 		case 's':
+-			btrfs_list_setup_filter(&filter_set,
++			btrfs_list_setup_filter_v2(&filter_set,
+ 						BTRFS_LIST_FILTER_SNAPSHOT_ONLY,
+ 						0);
+-			btrfs_list_setup_print_column(BTRFS_LIST_OGENERATION);
+-			btrfs_list_setup_print_column(BTRFS_LIST_OTIME);
++			btrfs_list_setup_print_column_v2(BTRFS_LIST_OGENERATION);
++			btrfs_list_setup_print_column_v2(BTRFS_LIST_OTIME);
+ 			break;
+ 		case 'u':
+-			btrfs_list_setup_print_column(BTRFS_LIST_UUID);
++			btrfs_list_setup_print_column_v2(BTRFS_LIST_UUID);
+ 			break;
+ 		case 'q':
+-			btrfs_list_setup_print_column(BTRFS_LIST_PUUID);
++			btrfs_list_setup_print_column_v2(BTRFS_LIST_PUUID);
+ 			break;
+ 		case 'R':
+-			btrfs_list_setup_print_column(BTRFS_LIST_RUUID);
++			btrfs_list_setup_print_column_v2(BTRFS_LIST_RUUID);
+ 			break;
+ 		case 'r':
+ 			flags |= BTRFS_ROOT_SUBVOL_RDONLY;
+ 			break;
+ 		case 'G':
+-			btrfs_list_setup_print_column(BTRFS_LIST_GENERATION);
+-			ret = btrfs_list_parse_filter_string(optarg,
++			btrfs_list_setup_print_column_v2(BTRFS_LIST_GENERATION);
++			ret = btrfs_list_parse_filter_string_v2(optarg,
+ 							&filter_set,
+ 							BTRFS_LIST_FILTER_GEN);
+ 			if (ret) {
+@@ -533,8 +1442,8 @@ static int cmd_subvol_list(int argc, char **argv)
+ 			break;
+ 
+ 		case 'C':
+-			btrfs_list_setup_print_column(BTRFS_LIST_OGENERATION);
+-			ret = btrfs_list_parse_filter_string(optarg,
++			btrfs_list_setup_print_column_v2(BTRFS_LIST_OGENERATION);
++			ret = btrfs_list_parse_filter_string_v2(optarg,
+ 							&filter_set,
+ 							BTRFS_LIST_FILTER_CGEN);
+ 			if (ret) {
+@@ -543,7 +1452,7 @@ static int cmd_subvol_list(int argc, char **argv)
+ 			}
+ 			break;
+ 		case 'S':
+-			ret = btrfs_list_parse_sort_string(optarg,
++			ret = btrfs_list_parse_sort_string_v2(optarg,
+ 							   &comparer_set);
+ 			if (ret) {
+ 				uerr = 1;
+@@ -571,7 +1480,7 @@ static int cmd_subvol_list(int argc, char **argv)
+ 	}
+ 
+ 	if (flags)
+-		btrfs_list_setup_filter(&filter_set, BTRFS_LIST_FILTER_FLAGS,
++		btrfs_list_setup_filter_v2(&filter_set, BTRFS_LIST_FILTER_FLAGS,
+ 					flags);
+ 
+ 	ret = btrfs_list_get_path_rootid(fd, &top_id);
+@@ -579,21 +1488,21 @@ static int cmd_subvol_list(int argc, char **argv)
+ 		goto out;
+ 
+ 	if (is_list_all)
+-		btrfs_list_setup_filter(&filter_set,
++		btrfs_list_setup_filter_v2(&filter_set,
+ 					BTRFS_LIST_FILTER_FULL_PATH,
+ 					top_id);
+ 	else if (is_only_in_path)
+-		btrfs_list_setup_filter(&filter_set,
++		btrfs_list_setup_filter_v2(&filter_set,
+ 					BTRFS_LIST_FILTER_TOPID_EQUAL,
+ 					top_id);
+ 
+ 	/* by default we shall print the following columns*/
+-	btrfs_list_setup_print_column(BTRFS_LIST_OBJECTID);
+-	btrfs_list_setup_print_column(BTRFS_LIST_GENERATION);
+-	btrfs_list_setup_print_column(BTRFS_LIST_TOP_LEVEL);
+-	btrfs_list_setup_print_column(BTRFS_LIST_PATH);
++	btrfs_list_setup_print_column_v2(BTRFS_LIST_OBJECTID);
++	btrfs_list_setup_print_column_v2(BTRFS_LIST_GENERATION);
++	btrfs_list_setup_print_column_v2(BTRFS_LIST_TOP_LEVEL);
++	btrfs_list_setup_print_column_v2(BTRFS_LIST_PATH);
+ 
+-	ret = btrfs_list_subvols_print(fd, filter_set, comparer_set,
++	ret = btrfs_list_subvols_print_v2(fd, filter_set, comparer_set,
+ 			layout, !is_list_all && !is_only_in_path, NULL);
+ 
+ out:
 -- 
 2.14.4
 

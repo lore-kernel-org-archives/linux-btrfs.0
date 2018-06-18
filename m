@@ -1,20 +1,20 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwym03.jp.fujitsu.com ([211.128.242.42]:18222 "EHLO
-        mgwym03.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S968173AbeFRIiN (ORCPT
+Received: from mgwym04.jp.fujitsu.com ([211.128.242.43]:28214 "EHLO
+        mgwym04.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S968188AbeFRIiS (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 18 Jun 2018 04:38:13 -0400
-Received: from g01jpfmpwkw02.exch.g01.fujitsu.local (g01jpfmpwkw02.exch.g01.fujitsu.local [10.0.193.56])
-        by yt-mxauth.gw.nic.fujitsu.com (Postfix) with ESMTP id 5D190AC0272
+        Mon, 18 Jun 2018 04:38:18 -0400
+Received: from g01jpfmpwkw03.exch.g01.fujitsu.local (g01jpfmpwkw03.exch.g01.fujitsu.local [10.0.193.57])
+        by yt-mxauth.gw.nic.fujitsu.com (Postfix) with ESMTP id 731A1AC0267
         for <linux-btrfs@vger.kernel.org>; Mon, 18 Jun 2018 17:38:10 +0900 (JST)
 Received: from g01jpexchkw33.g01.fujitsu.local (unknown [10.0.193.4])
-        by g01jpfmpwkw02.exch.g01.fujitsu.local (Postfix) with ESMTP id 77E9B3286FA
+        by g01jpfmpwkw03.exch.g01.fujitsu.local (Postfix) with ESMTP id AAD1DBD65F4
         for <linux-btrfs@vger.kernel.org>; Mon, 18 Jun 2018 17:38:09 +0900 (JST)
 From: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH v2 10/20] btrfs-progs: sub list: Add -A option to output path in absolute path
-Date: Mon, 18 Jun 2018 17:40:58 +0900
-Message-ID: <5bd335d05f69173a7cf126cd5dcd836092280855.1529310485.git.misono.tomohiro@jp.fujitsu.com>
+Subject: [PATCH v2 11/20] btrfs-progs: sub list: Add -f option to follow mounted subvolumes below the path
+Date: Mon, 18 Jun 2018 17:40:59 +0900
+Message-ID: <84d06767762b4285ddefec0392ee16e2d7e06f62.1529310485.git.misono.tomohiro@jp.fujitsu.com>
 In-Reply-To: <cover.1529310485.git.misono.tomohiro@jp.fujitsu.com>
 References: <cover.1529310485.git.misono.tomohiro@jp.fujitsu.com>
 MIME-Version: 1.0
@@ -22,203 +22,275 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-By default, the printed path is relative to the specified path.
-Let's add option to print absolute path with -A option.
+Add -f option to follow mounted subvolumes below the specified path, only
+if it is the same filesystem.
 
 [Example]
  $ mkfs.btrfs -f $DEV
+ $ mkfs.btrfs -f $DEV2
  $ mount $DEV /mnt
 
  $ btrfs subvolume create /mnt/AAA
+ $ btrfs subvolume create /mnt/BBB
+ $ btrfs subvolume create /mnt/CCC
+ $ mkdir /mnt/AAA/bbb
+ $ mkdir /mnt/AAA/ccc
+ $ mkdir /mnt/AAA/other
+
+ $ umount /mnt
+ $ mount -o subvol=AAA $DEV /mnt
+ $ mount -o subvol=BBB $DEV /mnt/bbb
+ $ mount -o subvol=CCC $DEV /mnt/ccc
+ $ mount -o $DEV2 /mnt/other
 
  $ btrfs subvolume list /mnt
- ID 256 gen 6 top level 5 path AAA
+ ID 256 gen 9 top level 5 path .
 
- $ btrfs subvolume list -A /mnt
- ID 256 gen 6 top level 5 path /mnt/AAA
+ $ btrfs subvolume list -f /mnt
+ ID 256 gen 9 top level 5 path .
+ ID 258 gen 7 top level 5 path bbb
+ ID 259 gen 8 top level 5 path ccc
+
+Note that this option lists top-level subvolume if it is mounted in the
+way.
 
 Signed-off-by: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
 ---
- Documentation/btrfs-subvolume.asciidoc |  2 +
- cmds-subvolume.c                       | 73 +++++++++++++++++++++++++++++-----
- 2 files changed, 66 insertions(+), 9 deletions(-)
+ Documentation/btrfs-subvolume.asciidoc |   4 ++
+ cmds-subvolume.c                       | 116 +++++++++++++++++++++++++++++++--
+ 2 files changed, 113 insertions(+), 7 deletions(-)
 
 diff --git a/Documentation/btrfs-subvolume.asciidoc b/Documentation/btrfs-subvolume.asciidoc
-index 99fff977..fec4b769 100644
+index fec4b769..b2461398 100644
 --- a/Documentation/btrfs-subvolume.asciidoc
 +++ b/Documentation/btrfs-subvolume.asciidoc
-@@ -148,6 +148,8 @@ list deleted subvolumes that are not yet cleaned.
- Other;;
- -t::::
- print the result as a table.
-+-A::::
-+print path in absolute path.
+@@ -120,6 +120,10 @@ print only subvolumes below specified <path>.
+ -a::::
+ print all the subvolumes in the filesystem and distinguish between
+ absolute and relative path with respect to the given <path>.
++-f::::
++follow mounted subvolumes below <path> recursively and list them too
++(only if it is the same filesystem). If top-level subvolume is mounted
++in the way, it is also listed.
  
- Sorting;;
- -G [+|-]<value>::::
+ Field selection;;
+ -p::::
 diff --git a/cmds-subvolume.c b/cmds-subvolume.c
-index 23596c17..ea341d50 100644
+index ea341d50..4ebe0377 100644
 --- a/cmds-subvolume.c
 +++ b/cmds-subvolume.c
-@@ -1156,7 +1156,8 @@ static void get_subvols_info(struct subvol_list **subvols,
- 			     struct btrfs_list_filter_set_v2 *filter_set,
+@@ -28,6 +28,7 @@
+ #include <getopt.h>
+ #include <uuid/uuid.h>
+ #include <linux/magic.h>
++#include <mntent.h>
+ 
+ #include <btrfsutil.h>
+ 
+@@ -1157,7 +1158,8 @@ static void get_subvols_info(struct subvol_list **subvols,
  			     int fd,
  			     int tree_id,
--			     size_t *capacity)
-+			     size_t *capacity,
-+			     const char *prefix)
+ 			     size_t *capacity,
+-			     const char *prefix)
++			     const char *prefix,
++			     int show_top)
  {
  	struct btrfs_util_subvolume_iterator *iter;
  	enum btrfs_util_error err;
-@@ -1206,7 +1207,10 @@ static void get_subvols_info(struct subvol_list **subvols,
+@@ -1195,7 +1197,7 @@ static void get_subvols_info(struct subvol_list **subvols,
+ 			ret = -1;
  			goto out;
  		}
- 
--		subvol.path = strdup(".");
-+		if (prefix)
-+			subvol.path = strdup(prefix);
-+		else
-+			subvol.path = strdup(".");
- 		if (!filters_match(&subvol, filter_set)) {
- 			free(subvol.path);
- 		} else {
-@@ -1231,6 +1235,29 @@ skip:
- 			goto out;
- 		}
- 
-+		if (prefix) {
-+			char *temp = subvol.path;
-+
-+			subvol.path = malloc(strlen(prefix) +
-+					     strlen(subvol.path) + 2);
-+			if (!subvol.path) {
-+				error("out of memory");
-+				subvol.path = temp;
-+				ret = -1;
-+				goto out;
-+			}
-+
-+			strcpy(subvol.path, prefix);
-+			if (strlen(prefix) == 1) {
-+				strcpy(subvol.path + 1, temp);
-+			} else {
-+				subvol.path[strlen(prefix)] = '/';
-+				strcpy(subvol.path + strlen(prefix) + 1, temp);
-+			}
-+
-+			free(temp);
-+		}
-+
- 		if (!filters_match(&subvol, filter_set)) {
- 			free(subvol.path);
- 		} else {
-@@ -1252,6 +1279,7 @@ out:
- 
+-		if (id == BTRFS_FS_TREE_OBJECTID) {
++		if (!show_top && id == BTRFS_FS_TREE_OBJECTID) {
+ 			/* Skip top level subvolume */
+ 			ret = 0;
+ 			goto skip;
+@@ -1280,6 +1282,7 @@ out:
  static struct subvol_list *btrfs_list_subvols(int fd,
  					      int is_list_all,
-+					      int absolute_path,
+ 					      int absolute_path,
++					      int follow_mount,
  					      const char *path,
  					      struct btrfs_list_filter_set_v2 *filter_set)
  {
-@@ -1265,11 +1293,24 @@ static struct subvol_list *btrfs_list_subvols(int fd,
- 	}
- 	subvols->num = 0;
+@@ -1295,7 +1298,8 @@ static struct subvol_list *btrfs_list_subvols(int fd,
  
--	if (is_list_all)
-+	if (is_list_all) {
+ 	if (is_list_all) {
  		get_subvols_info(&subvols, filter_set, fd,
--				BTRFS_FS_TREE_OBJECTID, &capacity);
--	else
--		get_subvols_info(&subvols, filter_set, fd, 0, &capacity);
-+				BTRFS_FS_TREE_OBJECTID, &capacity, NULL);
-+	} else {
-+		char *fullpath;
-+
-+		fullpath = realpath(path, NULL);
-+		if (!fullpath) {
-+			error("cannot find real path for '%s': %m", path);
-+			free_subvol_list(subvols);
+-				BTRFS_FS_TREE_OBJECTID, &capacity, NULL);
++				BTRFS_FS_TREE_OBJECTID, &capacity, NULL,
++				false);
+ 	} else {
+ 		char *fullpath;
+ 
+@@ -1307,8 +1311,92 @@ static struct subvol_list *btrfs_list_subvols(int fd,
+ 		}
+ 
+ 		get_subvols_info(&subvols, filter_set, fd, 0, &capacity,
+-				(absolute_path ? fullpath : NULL));
++				(absolute_path ? fullpath : NULL), false);
+ 
++		if (subvols == NULL) {
++			free(fullpath);
 +			return NULL;
 +		}
 +
-+		get_subvols_info(&subvols, filter_set, fd, 0, &capacity,
-+				(absolute_path ? fullpath : NULL));
++		/* Follow mounted subvolumes below @path */
++		if (follow_mount) {
++			struct mntent *mnt;
++			FILE *f;
++			DIR *dirstream;
++			u8 fsid[BTRFS_FSID_SIZE];
++			u8 fsid2[BTRFS_FSID_SIZE];
++			char *c;
++			int fd2;
++			int ret;
 +
-+		free(fullpath);
-+	}
++			ret = get_fsid(path, fsid, 0);
++			if (ret < 0) {
++				error("failed to get fsid: %m");
++				free(fullpath);
++				free_subvol_list(subvols);
++				return NULL;
++			}
++
++			f = setmntent("/proc/self/mounts", "r");
++			if (f == NULL) {
++				error("failed to read mount entry: %m");
++				free(fullpath);
++				free_subvol_list(subvols);
++				return NULL;
++			}
++
++			/* Iterate for each mount entry */
++			while ((mnt = getmntent(f)) != NULL) {
++				if (strcmp(mnt->mnt_type, "btrfs"))
++					continue;
++
++				if (!strcmp(mnt->mnt_dir, fullpath))
++					continue;
++
++				c = strstr(mnt->mnt_dir, fullpath);
++				if (c != mnt->mnt_dir)
++					continue;
++
++				/* If fsid is different, skip it */
++				ret = get_fsid(mnt->mnt_dir, fsid2, 1);
++				if (ret < 0) {
++					/*
++					 * ENOENT may happen when mount is
++					 * stacked
++					 */
++					if (errno == EACCES || errno == ENOENT)
++						continue;
++					error("failed to get fsid: %m");
++					free(fullpath);
++					free_subvol_list(subvols);
++					return NULL;
++				}
++				if (uuid_compare(fsid, fsid2))
++					continue;
++
++				fd2 = btrfs_open_dir(mnt->mnt_dir,
++						     &dirstream, 1);
++				if (fd2 < 0) {
++					error("cannot open '%s': %m",
++							mnt->mnt_dir);
++					free(fullpath);
++					free_subvol_list(subvols);
++					return NULL;
++				}
++				get_subvols_info(&subvols, filter_set,
++						fd2, 0, &capacity,
++						(absolute_path ? mnt->mnt_dir :
++							(strlen(fullpath) == 1 ?
++							 mnt->mnt_dir + 1 :
++							 mnt->mnt_dir + strlen(fullpath) + 1)),
++						true);
++				close_file_or_dir(fd2, dirstream);
++				if (subvols == NULL) {
++					free(fullpath);
++					return NULL;
++				}
++			}
++		}
+ 		free(fullpath);
+ 	}
  
- 	return subvols;
- }
-@@ -1279,6 +1320,7 @@ static int btrfs_list_subvols_print_v2(int fd,
- 				    struct btrfs_list_comparer_set_v2 *comp_set,
+@@ -1321,6 +1409,7 @@ static int btrfs_list_subvols_print_v2(int fd,
  				    enum btrfs_list_layout layout,
  				    int is_list_all,
-+				    int absolute_path,
+ 				    int absolute_path,
++				    int follow_mount,
  				    const char *path,
  				    const char *raw_prefix)
  {
-@@ -1287,7 +1329,8 @@ static int btrfs_list_subvols_print_v2(int fd,
- 	if (filter_set->only_deleted)
+@@ -1330,7 +1419,7 @@ static int btrfs_list_subvols_print_v2(int fd,
  		subvols = btrfs_list_deleted_subvols(fd, filter_set);
  	else
--		subvols = btrfs_list_subvols(fd, is_list_all, path, filter_set);
-+		subvols = btrfs_list_subvols(fd, is_list_all, absolute_path,
-+					     path, filter_set);
+ 		subvols = btrfs_list_subvols(fd, is_list_all, absolute_path,
+-					     path, filter_set);
++					     follow_mount, path, filter_set);
  	if (!subvols)
  		return -1;
  
-@@ -1427,6 +1470,8 @@ static const char * const cmd_subvol_list_usage[] = {
+@@ -1454,6 +1543,8 @@ static const char * const cmd_subvol_list_usage[] = {
+ 	"-a           print all the subvolumes in the filesystem and",
+ 	"             distinguish absolute and relative path with respect",
+ 	"             to the given <path> (require root privileges)",
++	"-f           follow mounted subvolumes below the specified path",
++	"             and list them too (only if it is the same filesystem)",
  	"",
- 	"Other:",
- 	"-t           print the result as a table",
-+	"-A           print path in absolute path",
-+	"             (default is a relative to the specified path)",
- 	"",
- 	"Sorting:",
- 	"-G [+|-]value",
-@@ -1453,6 +1498,7 @@ static int cmd_subvol_list(int argc, char **argv)
+ 	"Field selection:",
+ 	"-p           print parent ID",
+@@ -1497,6 +1588,7 @@ static int cmd_subvol_list(int argc, char **argv)
+ 	int ret = -1, uerr = 0;
  	char *subvol;
  	int is_list_all = 0;
++	int follow_mount = 0;
  	int is_only_in_path = 0;
-+	int absolute_path = 0;
+ 	int absolute_path = 0;
  	DIR *dirstream = NULL;
- 	enum btrfs_list_layout layout = BTRFS_LIST_LAYOUT_DEFAULT;
- 
-@@ -1467,11 +1513,14 @@ static int cmd_subvol_list(int argc, char **argv)
+@@ -1513,7 +1605,7 @@ static int cmd_subvol_list(int argc, char **argv)
  		};
  
  		c = getopt_long(argc, argv,
--				    "acdgopqsurRG:C:t", long_options, NULL);
-+				    "acdgopqsurARG:C:t", long_options, NULL);
+-				    "acdgopqsurARG:C:t", long_options, NULL);
++				    "acdfgopqsurARG:C:t", long_options, NULL);
  		if (c < 0)
  			break;
  
- 		switch(c) {
-+		case 'A':
-+			absolute_path = 1;
-+			break;
- 		case 'p':
- 			btrfs_list_setup_print_column_v2(BTRFS_LIST_PARENT);
+@@ -1527,6 +1619,9 @@ static int cmd_subvol_list(int argc, char **argv)
+ 		case 'a':
+ 			is_list_all = 1;
  			break;
-@@ -1561,6 +1610,12 @@ static int cmd_subvol_list(int argc, char **argv)
++		case 'f':
++			follow_mount = 1;
++			break;
+ 		case 'c':
+ 			btrfs_list_setup_print_column_v2(BTRFS_LIST_OGENERATION);
+ 			break;
+@@ -1616,6 +1711,12 @@ static int cmd_subvol_list(int argc, char **argv)
  		goto out;
  	}
  
-+	if (is_list_all && absolute_path) {
++	if (follow_mount && (is_list_all || is_only_in_path)) {
 +		ret = -1;
-+		error("cannot use -a with -A option");
++		error("cannot use -f with -a or -o option");
 +		goto out;
 +	}
 +
  	subvol = argv[optind];
  	fd = btrfs_open_dir(subvol, &dirstream, 1);
  	if (fd < 0) {
-@@ -1593,7 +1648,7 @@ static int cmd_subvol_list(int argc, char **argv)
+@@ -1648,7 +1749,8 @@ static int cmd_subvol_list(int argc, char **argv)
  	btrfs_list_setup_print_column_v2(BTRFS_LIST_PATH);
  
  	ret = btrfs_list_subvols_print_v2(fd, filter_set, comparer_set,
--			layout, is_list_all, subvol, NULL);
-+			layout, is_list_all, absolute_path, subvol, NULL);
+-			layout, is_list_all, absolute_path, subvol, NULL);
++			layout, is_list_all, absolute_path, follow_mount,
++			subvol, NULL);
  
  out:
  	close_file_or_dir(fd, dirstream);

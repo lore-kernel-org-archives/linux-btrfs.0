@@ -1,209 +1,183 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:45466 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750861AbeFAI1u (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 1 Jun 2018 04:27:50 -0400
-Received: from relay1.suse.de (charybdis-ext-too.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 47468AE28
-        for <linux-btrfs@vger.kernel.org>; Fri,  1 Jun 2018 08:27:49 +0000 (UTC)
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v1.1] btrfs-progs: inspect-dump-tree: Allow '-b|--block' to be specified multiple times
-Date: Fri,  1 Jun 2018 16:27:46 +0800
-Message-Id: <20180601082746.3638-1-wqu@suse.com>
-In-Reply-To: <20180601051526.19564-2-wqu@suse.com>
-References: <20180601051526.19564-2-wqu@suse.com>
+Received: from mgwym03.jp.fujitsu.com ([211.128.242.42]:18223 "EHLO
+        mgwym03.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S968195AbeFRIiN (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 18 Jun 2018 04:38:13 -0400
+Received: from g01jpfmpwkw03.exch.g01.fujitsu.local (g01jpfmpwkw03.exch.g01.fujitsu.local [10.0.193.57])
+        by yt-mxoi1.gw.nic.fujitsu.com (Postfix) with ESMTP id B103BAC0185
+        for <linux-btrfs@vger.kernel.org>; Mon, 18 Jun 2018 17:38:08 +0900 (JST)
+Received: from g01jpexchkw33.g01.fujitsu.local (unknown [10.0.193.4])
+        by g01jpfmpwkw03.exch.g01.fujitsu.local (Postfix) with ESMTP id D4F2ABD65F4
+        for <linux-btrfs@vger.kernel.org>; Mon, 18 Jun 2018 17:38:07 +0900 (JST)
+From: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH v2 01/20] btrfs-progs: doc: Update man btrfs subvolume
+Date: Mon, 18 Jun 2018 17:40:49 +0900
+Message-ID: <812810057f55e9942516b3d4984a2647b90b2209.1529310485.git.misono.tomohiro@jp.fujitsu.com>
+In-Reply-To: <cover.1529310485.git.misono.tomohiro@jp.fujitsu.com>
+References: <cover.1529310485.git.misono.tomohiro@jp.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Reuse extent-cache facility to record multiple bytenr so '-b|--block'
-can be specified multiple times.
+Some information is obsolete and updated as follows:
+ - Add missing explanations of some options
+ - Remove outdated explanation of "subvolrootid" mount option
+ - Reorder/group options of "sub list" to corresponds help message
+ - Add explanation about different meaning of parent in "parent ID/UUID"
+ - Fix indent/misspelling
+ - Add missing comma
 
-Despite that, add a sector size alignment check before we try to print a
-tree block.
-(Please note that, nodesize alignment check is not suitable here as meta
-chunk start bytenr could be unaligned to nodesize)
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
+Signed-off-by: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
 ---
- Documentation/btrfs-inspect-internal.asciidoc |   2 +-
- cmds-inspect-dump-tree.c                      | 109 +++++++++++++++---
- 2 files changed, 91 insertions(+), 20 deletions(-)
+ Documentation/btrfs-subvolume.asciidoc | 77 ++++++++++++++++++++++++----------
+ 1 file changed, 55 insertions(+), 22 deletions(-)
 
-diff --git a/Documentation/btrfs-inspect-internal.asciidoc b/Documentation/btrfs-inspect-internal.asciidoc
-index e2db64660b9a..ba8529f57660 100644
---- a/Documentation/btrfs-inspect-internal.asciidoc
-+++ b/Documentation/btrfs-inspect-internal.asciidoc
-@@ -86,7 +86,7 @@ the respective tree root block offset
- -u|--uuid::::
- print only the uuid tree information, empty output if the tree does not exist
- -b <block_num>::::
--print info of the specified block only
-+print info of the specified block only, can be specified multiple times.
- --follow::::
- use with '-b', print all children tree blocks of '<block_num>'
- -t <tree_id>::::
-diff --git a/cmds-inspect-dump-tree.c b/cmds-inspect-dump-tree.c
-index 92a2a45b267e..d67406141394 100644
---- a/cmds-inspect-dump-tree.c
-+++ b/cmds-inspect-dump-tree.c
-@@ -198,11 +198,92 @@ const char * const cmd_inspect_dump_tree_usage[] = {
- 	"-R|--backups           same as --roots plus print backup root info",
- 	"-u|--uuid              print only the uuid tree",
- 	"-b|--block <block_num> print info from the specified block only",
-+	"                       can be specified multiple times",
- 	"-t|--tree <tree_id>    print only tree with the given id (string or number)",
- 	"--follow               use with -b, to show all children tree blocks of <block_num>",
- 	NULL
- };
+diff --git a/Documentation/btrfs-subvolume.asciidoc b/Documentation/btrfs-subvolume.asciidoc
+index a8c4af4b..f3eb4e26 100644
+--- a/Documentation/btrfs-subvolume.asciidoc
++++ b/Documentation/btrfs-subvolume.asciidoc
+@@ -77,13 +77,16 @@ safely stored on the device.
+ `Options`
+ +
+ -c|--commit-after::::
+-wait for transaction commit at the end of the operation
++wait for transaction commit at the end of the operation.
+ +
+ -C|--commit-each::::
+-wait for transaction commit after deleting each subvolume
++wait for transaction commit after deleting each subvolume.
+++
++-v|--verbose::::
++verbose output of operations.
  
-+/*
-+ * Helper function to record all tree block bytenr so we don't need to put
-+ * all code into deep indent.
-+ *
-+ * Return >0 if we hit a duplicated bytenr (already recorded)
-+ * Return 0 if nothing went wrong
-+ * Return <0 if error happens (ENOMEM)
-+ *
-+ * For != 0 return value, all warning/error will be outputted by this function.
-+ */
-+static int dump_add_tree_block(struct cache_tree *tree, u64 bytenr)
-+{
-+	int ret;
-+
-+	/*
-+	 * We don't really care about the size and we don't have
-+	 * nodesize before we open the fs, so just use 1 as size here.
-+	 */
-+	ret = add_cache_extent(tree, bytenr, 1);
-+	if (ret == -EEXIST) {
-+		warning("tree block bytenr %llu is duplicated", bytenr);
-+		return 1;
-+	}
-+	if (ret < 0) {
-+		error("failed to record tree block bytenr %llu: %d(%s)",
-+			bytenr, ret, strerror(-ret));
-+		return ret;
-+	}
-+	return ret;
-+}
-+
-+/*
-+ * Print all tree blocks recorded.
-+ * All tree block bytenr record will also be freed in this function.
-+ *
-+ * Return 0 if nothing wrong happened for *each* tree blocks
-+ * Return <0 if anything wrong happened, and return value will be the last
-+ * error.
-+ */
-+static int dump_print_tree_blocks(struct btrfs_fs_info *fs_info,
-+				  struct cache_tree *tree, bool follow)
-+{
-+	struct cache_extent *ce;
-+	struct extent_buffer *eb;
-+	u64 bytenr;
-+	int ret = 0;
-+
-+	ce = first_cache_extent(tree);
-+	while (ce) {
-+		bytenr = ce->start;
-+
-+		/*
-+		 * Please note that here we can't check it against nodesize,
-+		 * as it's possible a chunk is just aligned to sectorsize but
-+		 * not aligned to nodesize.
-+		 */
-+		if (!IS_ALIGNED(bytenr, fs_info->sectorsize)) {
-+			error(
-+		"tree block bytenr %llu is not aligned to sectorsize %u",
-+			      bytenr, fs_info->sectorsize);
-+			ret = -EINVAL;
-+			goto next;
-+		}
-+
-+		eb = read_tree_block(fs_info, bytenr, 0);
-+		if (!extent_buffer_uptodate(eb)) {
-+			error("failed to read tree block %llu", bytenr);
-+			ret = -EIO;
-+			goto next;
-+		}
-+		btrfs_print_tree(eb, follow);
-+		free_extent_buffer(eb);
-+next:
-+		remove_cache_extent(tree, ce);
-+		free(ce);
-+		ce = first_cache_extent(tree);
-+	}
-+	return ret;
-+}
-+
- int cmd_inspect_dump_tree(int argc, char **argv)
- {
- 	struct btrfs_root *root;
-@@ -213,6 +294,7 @@ int cmd_inspect_dump_tree(int argc, char **argv)
- 	struct extent_buffer *leaf;
- 	struct btrfs_disk_key disk_key;
- 	struct btrfs_key found_key;
-+	struct cache_tree block_root;	/* for multiple --block parameters */
- 	char uuidbuf[BTRFS_UUID_UNPARSED_SIZE];
- 	int ret;
- 	int slot;
-@@ -222,7 +304,7 @@ int cmd_inspect_dump_tree(int argc, char **argv)
- 	int roots_only = 0;
- 	int root_backups = 0;
- 	unsigned open_ctree_flags;
--	u64 block_only = 0;
-+	u64 block_bytenr;
- 	struct btrfs_root *tree_root_scan;
- 	u64 tree_id = 0;
- 	bool follow = false;
-@@ -235,6 +317,7 @@ int cmd_inspect_dump_tree(int argc, char **argv)
- 	 * tree blocks as possible.
- 	 */
- 	open_ctree_flags = OPEN_CTREE_PARTIAL | OPEN_CTREE_NO_BLOCK_GROUPS;
-+	cache_tree_init(&block_root);
- 	while (1) {
- 		int c;
- 		enum { GETOPT_VAL_FOLLOW = 256 };
-@@ -276,7 +359,10 @@ int cmd_inspect_dump_tree(int argc, char **argv)
- 			 * other than chunk root
- 			 */
- 			open_ctree_flags |= __OPEN_CTREE_RETURN_CHUNK_ROOT;
--			block_only = arg_strtou64(optarg);
-+			block_bytenr = arg_strtou64(optarg);
-+			ret = dump_add_tree_block(&block_root, block_bytenr);
-+			if (ret < 0)
-+				goto out;
- 			break;
- 		case 't': {
- 			const char *end = NULL;
-@@ -324,24 +410,9 @@ int cmd_inspect_dump_tree(int argc, char **argv)
- 		goto out;
- 	}
+ *find-new* <subvolume> <last_gen>::
+-List the recently modified files in a subvolume, after <last_gen> ID.
++List the recently modified files in a subvolume, after <last_gen> generation.
  
--	if (block_only) {
-+	if (!cache_tree_empty(&block_root)) {
- 		root = info->chunk_root;
--		leaf = read_tree_block(info, block_only, 0);
--		if (extent_buffer_uptodate(leaf) &&
--		    btrfs_header_level(leaf) != 0) {
--			free_extent_buffer(leaf);
--			leaf = NULL;
--		}
+ *get-default* <path>::
+ Get the default subvolume of the filesystem <path>.
+@@ -93,40 +96,54 @@ The output format is similar to *subvolume list* command.
+ *list* [options] [-G [\+|-]<value>] [-C [+|-]<value>] [--sort=rootid,gen,ogen,path] <path>::
+ List the subvolumes present in the filesystem <path>.
+ +
+-For every subvolume the following information is shown by default. +
+-ID <ID> top level <ID> path <path> +
+-where path is the relative path of the subvolume to the top level subvolume.
++For every subvolume the following information is shown by default:
+++
++ID <ID> gen <generation> top level <ID> path <path>
+++
++where ID is subvolume's id, gen is an internal counter which is updated
++every transaction, top level is the same as parent subvolume's id, and
++path is the relative path of the subvolume to the top level subvolume.
+ The subvolume's ID may be used by the subvolume set-default command,
+ or at mount time via the subvolid= option.
+-If `-p` is given, then parent <ID> is added to the output between ID
+-and top level. The parent's ID may be used at mount time via the
+-`subvolrootid=` option.
+ +
+ `Options`
+ +
+--p::::
+-print parent ID.
++Path filtering;;
++-o::::
++print only subvolumes below specified <path>.
+ -a::::
+ print all the subvolumes in the filesystem and distinguish between
+ absolute and relative path with respect to the given <path>.
++
++Field selection;;
++-p::::
++print the parent ID
++('parent' here means the subvolume which contains this subvolume).
+ -c::::
+ print the ogeneration of the subvolume, aliases: ogen or origin generation.
+ -g::::
+-print the generation of the subvolume.
+--o::::
+-print only subvolumes below specified <path>.
++print the generation of the subvolume (default).
+ -u::::
+ print the UUID of the subvolume.
+ -q::::
+-print the parent uuid of subvolumes (and snapshots).
++print the parent UUID of the subvolume
++('parent' here means subvolume of which this subvolume is a snapshot).
+ -R::::
+-print the UUID of the sent subvolume, where the subvolume is the result of a receive operation
+--t::::
+-print the result as a table.
++print the UUID of the sent subvolume, where the subvolume is the result of a receive operation.
++
++Type filtering;;
+ -s::::
+ only snapshot subvolumes in the filesystem will be listed.
+ -r::::
+ only readonly subvolumes in the filesystem will be listed.
++-d::::
++list deleted subvolumes that are not yet cleaned.
++
++Other;;
++-t::::
++print the result as a table.
++
++Sorting;;
+ -G [+|-]<value>::::
+ list subvolumes in the filesystem that its generation is
+ >=, \<= or = value. \'\+' means >= value, \'-' means \<= value, If there is
+@@ -144,9 +161,9 @@ for --sort you can combine some items together by \',', just like
+ 
+ *set-default* [<subvolume>|<id> <path>]::
+ Set the default subvolume for the (mounted) filesystem.
 -
--		if (!leaf)
--			leaf = read_tree_block(info, block_only, 0);
--		if (!extent_buffer_uptodate(leaf)) {
--			error("failed to read %llu",
--				(unsigned long long)block_only);
--			goto close_root;
--		}
--		btrfs_print_tree(leaf, follow);
--		free_extent_buffer(leaf);
-+		ret = dump_print_tree_blocks(info, &block_root, follow);
- 		goto close_root;
- 	}
+++
+ Set the default subvolume for the (mounted) filesystem at <path>. This will hide
+-the top-level subvolume (ie. the one mounted with 'subvol=/' or 'subvolid=5').
++the top-level subvolume (i.e. the one mounted with 'subvol=/' or 'subvolid=5').
+ Takes action on next mount.
+ +
+ There are two ways how to specify the subvolume, by <id> or by the <subvolume>
+@@ -154,10 +171,22 @@ path.
+ The id can be obtained from *btrfs subvolume list*, *btrfs subvolume show* or
+ *btrfs inspect-internal rootid*.
  
+-*show* <path>::
++*show* [options] <path>|<mnt>::
+ Show information of a given subvolume in the <path>.
+++
++`Options`
+++
++-r|--rootid::::
++rootid of the subvolume.
++-u|--uuid:::
++UUID of the subvolume.
++
+++
++If no option is specified, subvolume information of <path> is shown,
++otherwise the subvolume information of rootid or UUID in the filesystem
++is shown.
+ 
+-*snapshot* [-r] <source> <dest>|[<dest>/]<name>::
++*snapshot* [-r|-i <qgroupid>] <source> <dest>|[<dest>/]<name>::
+ Create a snapshot of the subvolume <source> with the
+ name <name> in the <dest> directory.
+ +
+@@ -168,6 +197,10 @@ If <source> is not a subvolume, btrfs returns an error.
+ +
+ -r::::
+ Make the new snapshot read only.
+++
++-i <qgroupid>::::
++Add the newly created subvolume to a qgroup. This option can be given multiple
++times.
+ 
+ *sync* <path> [subvolid...]::
+ Wait until given subvolume(s) are completely removed from the filesystem after
 -- 
-2.17.1
+2.14.4
+
 

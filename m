@@ -1,66 +1,105 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:43502 "EHLO mx2.suse.de"
+Received: from mout.gmx.net ([212.227.17.21]:59555 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S935908AbeFSFMd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 19 Jun 2018 01:12:33 -0400
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz, Paul Jones <paul@pauljones.id.au>,
-        Hugo Mills <hugo@carfax.org.uk>
-Subject: [PATCH] btrfs-progs: Fix wrong optind re-initialization to allow mixed option and non-option
-Date: Tue, 19 Jun 2018 13:12:24 +0800
-Message-Id: <20180619051224.21876-1-wqu@suse.com>
+        id S1751003AbeFSXSg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 19 Jun 2018 19:18:36 -0400
+Subject: Re: About more loose parameter sequence requirement
+To: dsterba@suse.cz,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+References: <dbd36f90-fb00-0da1-b38f-567575c5b02f@gmx.com>
+ <20180618113432.GJ24375@twin.jikos.cz>
+ <f746bf72-148d-9fc3-6d0d-c7e07f00c099@gmx.com>
+ <20180618120200.GK24375@twin.jikos.cz>
+ <48a89b08-3859-e635-1da2-ce7c9e842d8a@gmx.com>
+ <20180619144758.GR24375@twin.jikos.cz>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <81f3b209-e11a-17b0-8e4f-a7e8df02f448@gmx.com>
+Date: Wed, 20 Jun 2018 07:18:21 +0800
+MIME-Version: 1.0
+In-Reply-To: <20180619144758.GR24375@twin.jikos.cz>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="OIkDRNjX5a4e3QGruzgmOz5ERUujVfbLA"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In function handle_global_options(), we reset @optind to 1.
-However according to man page of getopt(3) NOTES section, if we need to
-rescan options later, @optind should be reset to 0 to initialize the
-internal variables correctly.
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--OIkDRNjX5a4e3QGruzgmOz5ERUujVfbLA
+Content-Type: multipart/mixed; boundary="YKhZO6FxWE3zMUBP0BKVYO7I1I8S1vEEe";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: dsterba@suse.cz, "linux-btrfs@vger.kernel.org"
+ <linux-btrfs@vger.kernel.org>
+Message-ID: <81f3b209-e11a-17b0-8e4f-a7e8df02f448@gmx.com>
+Subject: Re: About more loose parameter sequence requirement
+References: <dbd36f90-fb00-0da1-b38f-567575c5b02f@gmx.com>
+ <20180618113432.GJ24375@twin.jikos.cz>
+ <f746bf72-148d-9fc3-6d0d-c7e07f00c099@gmx.com>
+ <20180618120200.GK24375@twin.jikos.cz>
+ <48a89b08-3859-e635-1da2-ce7c9e842d8a@gmx.com>
+ <20180619144758.GR24375@twin.jikos.cz>
+In-Reply-To: <20180619144758.GR24375@twin.jikos.cz>
 
-This explains the reason why in cmd_check(), getopt_long() doesn't
-handle the following command correctly:
-"btrfs check /dev/data/btrfs --check-data-csum"
+--YKhZO6FxWE3zMUBP0BKVYO7I1I8S1vEEe
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-While mkfs.btrfs handles mixed non-option and option correctly:
-"mkfs.btrfs -f /dev/data/disk1 --data raid1 /dev/data/disk2"
 
-Cc: Paul Jones <paul@pauljones.id.au>
-Cc: Hugo Mills <hugo@carfax.org.uk>
-Fixes: 010ceab56e06 ("btrfs-progs: rework option parser to use getopt for global options")
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- btrfs.c | 10 ++++++++--
- 1 file changed, 8 insertions(+), 2 deletions(-)
 
-diff --git a/btrfs.c b/btrfs.c
-index 2d39f2ced3e8..ebc4a507165d 100644
---- a/btrfs.c
-+++ b/btrfs.c
-@@ -169,7 +169,7 @@ static int cmd_version(int argc, char **argv)
-  * Parse global options, between binary name and first non-option argument
-  * after processing all valid options (including those with arguments).
-  *
-- * Returns index to argv where parsting stopped, optind is reset to 1
-+ * Returns index to argv where parsting stopped, optind is reset to 0
-  */
- static int handle_global_options(int argc, char **argv)
- {
-@@ -205,7 +205,13 @@ static int handle_global_options(int argc, char **argv)
- 	}
- 
- 	shift = optind;
--	optind = 1;
-+	/*
-+	 * optind must to be init to 0 other than 1.
-+	 * Since later subcommand will call getopt_long() again, we need
-+	 * to re-initialize the internal variables correct.
-+	 * Check getopt(3) NOTES sections.
-+	 */
-+	optind = 0;
- 
- 	return shift;
- }
--- 
-2.17.1
+On 2018=E5=B9=B406=E6=9C=8819=E6=97=A5 22:47, David Sterba wrote:
+> On Mon, Jun 18, 2018 at 09:05:59PM +0800, Qu Wenruo wrote:
+>>> New code needs to be tested, documented and maintained, that's the co=
+st
+>>> I find too high for something that's convenience for people who are u=
+sed
+>>> to some shell builtins.
+>>
+>> The biggest problem is, the behavior isn't even consistent across
+>> btrfs-progs.
+>> mkfs.btrfs accept such out-of-order parameters while btrfs not.
+>>
+>> And most common tools, like commands provided by coretutil, they don't=
 
+>> care about the order.
+>> The only daily exception is 'scp', which I found it pretty unhandy.
+>>
+>> And just as Paul and Hugo, I think there are quite some users preferri=
+ng
+>> out-of-order parameter/options.
+>=20
+> Because of the feedback and interest of the relaxed mixed
+> option/argument syntax, I don't object anymore.
+
+And in fact, the behavior of btrfs is caused by @optind wrongly initializ=
+ed.
+The fix is just one line (along some comments).
+
+https://patchwork.kernel.org/patch/10473173/
+
+So no or little pressure on maintenance.
+
+Thanks,
+Qu
+
+
+--YKhZO6FxWE3zMUBP0BKVYO7I1I8S1vEEe--
+
+--OIkDRNjX5a4e3QGruzgmOz5ERUujVfbLA
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlspjz4ACgkQwj2R86El
+/qiVIwf9GYQeZbZZcRtjCu6R9P0IlvqhJwPVmWGZQzfFQsAQvOw7iVM+84GwGjRT
+Lvd68Gpj/vwkq4lSrJW60Faa7xSNPjBLTZspAxypKg/PWMs08k2RQbnTnBVImXRP
+Z/sDhTmq9Dga9B79tUO4sEMOxIl8FPdl6eD/+zW5zFnCn7er5VYSOYEJmCNG24bc
+YxL5OvcOKcBtLYWpGj/SAMSFWxX9NhS9BA9SoRJCgm+KSDw5oMQwDETK8mpGun+y
+HqvGD1+kQGJkxVUVMkEE266xxtZwXkNTu/RevqiQhQ38w77QxV1HfVjpaeXtORGA
+YtlFkz6KsAZWHIFEz42fxXj4N2SuBA==
+=kRzo
+-----END PGP SIGNATURE-----
+
+--OIkDRNjX5a4e3QGruzgmOz5ERUujVfbLA--

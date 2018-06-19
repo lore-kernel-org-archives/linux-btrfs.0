@@ -1,84 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:37825 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932851AbeFGQPV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 7 Jun 2018 12:15:21 -0400
-Date: Thu, 7 Jun 2018 18:12:34 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Anand Jain <anand.jain@oracle.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: fix race between free_stale_devices and
- close_fs_devices
-Message-ID: <20180607161234.GG3215@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <000000000000b9e25a056de4dd10@google.com>
- <20180606160109.10177-1-anand.jain@oracle.com>
+Received: from mail-io0-f197.google.com ([209.85.223.197]:41889 "EHLO
+        mail-io0-f197.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1030225AbeFSRSI (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 19 Jun 2018 13:18:08 -0400
+Received: by mail-io0-f197.google.com with SMTP id v4-v6so643036iol.8
+        for <linux-btrfs@vger.kernel.org>; Tue, 19 Jun 2018 10:18:08 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180606160109.10177-1-anand.jain@oracle.com>
+Date: Tue, 19 Jun 2018 10:18:07 -0700
+In-Reply-To: <20180619171513.GT24375@twin.jikos.cz>
+Message-ID: <000000000000a63ad7056f01dd32@google.com>
+Subject: Re: Re: WARNING in close_fs_devices
+From: syzbot <syzbot+ceb2606025ec1cc3479c@syzkaller.appspotmail.com>
+To: David Sterba <dsterba@suse.cz>
+Cc: clm@fb.com, dsterba@suse.com, dsterba@suse.cz, jbacik@fb.com,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+        syzkaller-bugs@googlegroups.com
+Content-Type: text/plain; charset="UTF-8"; format=flowed; delsp=yes
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jun 07, 2018 at 12:01:09AM +0800, Anand Jain wrote:
-> %fs_devices can be free-ed by btrfs_free_stale_devices() when the
-> close_fs_devices() drops fs_devices::opened to zero, but close_fs_devices
-> tries to access the %fs_devices again without the device_list_mutex.
-> 
-> Fix this by bringing the %fs_devices access with in the device_list_mutex.
-> 
-> Stack trace as below.
-> 
-> HEAD commit:    716a685fdb89 Merge branch 'x86-hyperv-for-linus' of git://..
-> ::
-> CPU: 1 PID: 4499 Comm: syz-executor921 Not tainted 4.17.0+ #84
-> ::
-> WARNING: CPU: 1 PID: 4499 at fs/btrfs/volumes.c:1071 close_fs_devices+0xbc7/0xfa0 fs/btrfs/volumes.c:1071
-> Kernel panic - not syncing: panic_on_warn set ...
-> ::
-> RIP: 0010:close_fs_devices+0xbc7/0xfa0 fs/btrfs/volumes.c:1071
-> ::
->  btrfs_close_devices+0x29/0x150 fs/btrfs/volumes.c:1085
->  open_ctree+0x589/0x7898 fs/btrfs/disk-io.c:3358
->  btrfs_fill_super fs/btrfs/super.c:1202 [inline]
->  btrfs_mount_root+0x16df/0x1e70 fs/btrfs/super.c:1593
->  mount_fs+0xae/0x328 fs/super.c:1277
->  vfs_kern_mount.part.34+0xd4/0x4d0 fs/namespace.c:1037
->  vfs_kern_mount+0x40/0x60 fs/namespace.c:1027
->  btrfs_mount+0x4a1/0x213e fs/btrfs/super.c:1661
->  mount_fs+0xae/0x328 fs/super.c:1277
-> 
-> Reported-by: syzbot+ceb2606025ec1cc3479c@syzkaller.appspotmail.com
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> ---
->  fs/btrfs/volumes.c | 11 ++++++-----
->  1 file changed, 6 insertions(+), 5 deletions(-)
-> 
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index c2b7d66192e8..32fba4e24027 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -1153,6 +1153,12 @@ static int close_fs_devices(struct btrfs_fs_devices *fs_devices)
->  		btrfs_prepare_close_one_device(device);
->  		list_add(&device->dev_list, &pending_put);
->  	}
-> +
-> +	WARN_ON(fs_devices->open_devices);
-> +	WARN_ON(fs_devices->rw_devices);
-> +	fs_devices->opened = 0;
-> +	clear_bit(BTRFS_VOLUME_STATE_SEEDING, &fs_devices->volume_state);
+> On Tue, Jun 05, 2018 at 06:17:03AM -0700, syzbot wrote:
+>> syzbot found the following crash on:
 
-This is from some other patch.
+>> HEAD commit:    716a685fdb89 Merge branch 'x86-hyperv-for-linus' of  
+>> git://..
+>> git tree:       upstream
+>> console output: https://syzkaller.appspot.com/x/log.txt?x=15c5f46f800000
+>> kernel config:   
+>> https://syzkaller.appspot.com/x/.config?x=4f65cd4286737868
+>> dashboard link:  
+>> https://syzkaller.appspot.com/bug?extid=ceb2606025ec1cc3479c
+>> compiler:       gcc (GCC) 8.0.1 20180413 (experimental)
+>> syzkaller  
+>> repro:https://syzkaller.appspot.com/x/repro.syz?x=1251799f800000
+>> C reproducer:   https://syzkaller.appspot.com/x/repro.c?x=177f3edf800000
 
-Moving that to the protected section should fix it but we'd also need to
-extend the critical section to:
+>> IMPORTANT: if you fix the bug, please add the following tag to the  
+>> commit:
+>> Reported-by: syzbot+ceb2606025ec1cc3479c@syzkaller.appspotmail.com
 
-1047         if (--fs_devices->opened > 0)
-1048                 return 0;
+> #syz test git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git  
+> test-syzbot-fs-devices
 
-Otherwise I think there are still some cornercases to fix as the
-fs_devices members are not accessed properly everywhere. This patch
-should be enough to fix the parallel mount and stale device freeing
-races though, so I'll queue it up.
+unknown command "test"
 
-> +
->  	mutex_unlock(&fs_devices->device_list_mutex);
+
+> The patches are work in progress but pass fstests and should address
+> these syzbot reports:
+
+> https://syzkaller.appspot.com/bug?extid=ceb2606025ec1cc3479c
+> syzbot+ceb2606025ec1cc3479c@syzkaller.appspotmail.com
+
+> https://syzkaller.appspot.com/bug?extid=909a5177749d7990ffa4
+> syzbot+909a5177749d7990ffa4@syzkaller.appspotmail.com
+
+> https://syzkaller.appspot.com/bug?extid=923aa93978c7ad27a9b1
+> syzbot+923aa93978c7ad27a9b1@syzkaller.appspotmail.com
+
+> --
+> You received this message because you are subscribed to the Google  
+> Groups "syzkaller-bugs" group.
+> To unsubscribe from this group and stop receiving emails from it, send an  
+> email to syzkaller-bugs+unsubscribe@googlegroups.com.
+> To view this discussion on the web visit  
+> https://groups.google.com/d/msgid/syzkaller-bugs/20180619171513.GT24375%40twin.jikos.cz.
+> For more options, visit https://groups.google.com/d/optout.

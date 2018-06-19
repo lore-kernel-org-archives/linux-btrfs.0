@@ -1,78 +1,222 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.20]:54883 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751025AbeFZGKN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 26 Jun 2018 02:10:13 -0400
-From: Chengguang Xu <cgxu519@gmx.com>
-To: clm@fb.com, jbacik@fb.com, dsterba@suse.com
-Cc: linux-btrfs@vger.kernel.org, Chengguang Xu <cgxu519@gmx.com>
-Subject: [PATCH v3] btrfs: code cleanups for btrfs_get_acl()
-Date: Tue, 26 Jun 2018 14:08:27 +0800
-Message-Id: <20180626060827.21121-1-cgxu519@gmx.com>
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:55244 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S937005AbeFSCMH (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 18 Jun 2018 22:12:07 -0400
+Subject: Re: [PATCH] btrfs-progs: Check factor out root parsing from
+ check_chunks_and_extents
+To: Nikolay Borisov <nborisov@suse.com>, <linux-btrfs@vger.kernel.org>
+References: <1529320258-23095-1-git-send-email-nborisov@suse.com>
+From: Su Yue <suy.fnst@cn.fujitsu.com>
+Message-ID: <ca369d20-3a41-165d-9ae9-5000aea31a1b@cn.fujitsu.com>
+Date: Tue, 19 Jun 2018 10:18:20 +0800
+MIME-Version: 1.0
+In-Reply-To: <1529320258-23095-1-git-send-email-nborisov@suse.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There is no chance to get into -ERANGE error condition because
-we first call btrfs_getxattr to get the length of the attribute,
-then we do a subsequent call with the size from the first call.
-Between the 2 calls the size shouldn't change. So remove the
-unnecessary -ERANGE error check and meanwhile fix some other
-bad practices as well.
 
-Detail fixes in this patch.
-- return ERR_PTR(-EINVAL) instead of crashing kernel in default
-case of switch.
-- return original error code when failing from btrfs_getxattr().
-- remove unnecessary bracket.
-- remove unnecessary -ERANGE check.
 
-Signed-off-by: Chengguang Xu <cgxu519@gmx.com>
----
-v3:
-- Fix some other bad practices.
-- Add more information to commit log.
+On 06/18/2018 07:10 PM, Nikolay Borisov wrote:
+> check_chunks_and_extents does quite a number of distinct things. The
+> first of those is going through all root items in the root tree and
+> classify every root depending on whether they have a dropping operation
+> in progress or not. Lets factor out this code and move the variables
+> specific to this in a separate function so clean up check_chunks_and_extents
+> a bit. Accidentally, this patch fixes some reference leaks since
+> in error conditions in the loop the code does "goto out" but at that
+> label we don't really release the path. Having this code extracted in a
+> separate function which always releases the path avoids this problem
+> entirely.
+> 
+> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 
-v2:
-- Avoid errno overriding instead of print error message in error case.
-- Change commit log for better understanding.
+Code looks okay. One nitpick belows.
 
- fs/btrfs/acl.c | 13 ++++++-------
- 1 file changed, 6 insertions(+), 7 deletions(-)
+> ---
+>   check/main.c | 141 +++++++++++++++++++++++++++++++++++------------------------
+>   1 file changed, 85 insertions(+), 56 deletions(-)
+> 
+> diff --git a/check/main.c b/check/main.c
+> index a4d6855dccbf..fb5c86df21c9 100644
+> --- a/check/main.c
+> +++ b/check/main.c
+> @@ -8069,6 +8069,89 @@ static int deal_root_from_list(struct list_head *list,
+>   	return ret;
+>   }
+>   
+> +/**
+> + * parse_tree_roots - Go over all roots in the tree root and add each one to
+> + *		      a list.
+> + *
+> + * @fs_info        - pointer to fs_info struct of the file system.
+> + *
+> + * @normal_trees   - list to contains all roots which don't have a drop
+> + *		     operation in progress
+> + *
+> + * @dropping_trees - list containing all roots which have a drop operation
+> + *		     pending
+> + *
+> + * Returns 0 on success or a negative value indicating an error.
+> + *
+> + */
+> +static int parse_tree_roots(struct btrfs_fs_info *fs_info,
+> +			   struct list_head *normal_trees,
+> +			   struct list_head *dropping_trees)
+> +{
+> +	struct btrfs_path path;
+> +	struct btrfs_key key;
+> +	struct btrfs_key found_key;
+> +	struct btrfs_root_item ri;
+> +	struct extent_buffer *leaf;
+> +	int slot;
+> +	int ret = 0;
+> +
+> +	btrfs_init_path(&path);
+> +	key.offset = 0;
+> +	key.objectid = 0;
+> +	key.type = BTRFS_ROOT_ITEM_KEY;
+> +	ret = btrfs_search_slot(NULL, fs_info->tree_root, &key, &path, 0, 0);
+> +	if (ret < 0)
+> +		goto out;
+> +	while (1) {
+> +		leaf = path.nodes[0];
+> +		slot = path.slots[0];
+> +		if (slot >= btrfs_header_nritems(path.nodes[0])) {
+> +			ret = btrfs_next_leaf(fs_info->tree_root, &path);
+> +			if (ret != 0)
+> +				break;
+> +			leaf = path.nodes[0];
+> +			slot = path.slots[0];
+> +		}
 
-diff --git a/fs/btrfs/acl.c b/fs/btrfs/acl.c
-index 15e1dfef56a5..3b66c957ea6f 100644
---- a/fs/btrfs/acl.c
-+++ b/fs/btrfs/acl.c
-@@ -30,23 +30,22 @@ struct posix_acl *btrfs_get_acl(struct inode *inode, int type)
- 		name = XATTR_NAME_POSIX_ACL_DEFAULT;
- 		break;
- 	default:
--		BUG();
-+		return ERR_PTR(-EINVAL);
- 	}
- 
--	size = btrfs_getxattr(inode, name, "", 0);
-+	size = btrfs_getxattr(inode, name, NULL, 0);
- 	if (size > 0) {
- 		value = kzalloc(size, GFP_KERNEL);
- 		if (!value)
- 			return ERR_PTR(-ENOMEM);
- 		size = btrfs_getxattr(inode, name, value, size);
- 	}
--	if (size > 0) {
-+	if (size > 0)
- 		acl = posix_acl_from_xattr(&init_user_ns, value, size);
--	} else if (size == -ERANGE || size == -ENODATA || size == 0) {
-+	else if (size == -ENODATA || size == 0)
- 		acl = NULL;
--	} else {
--		acl = ERR_PTR(-EIO);
--	}
-+	else
-+		acl = ERR_PTR(size);
- 	kfree(value);
- 
- 	return acl;
--- 
-2.17.1
+Nit:
+I know the segment is just moved. The @slot is unused.
+> +		btrfs_item_key_to_cpu(leaf, &found_key, path.slots[0]);
+> +		if (found_key.type == BTRFS_ROOT_ITEM_KEY) {
+> +			unsigned long offset;
+> +			u64 last_snapshot;
+> +			u8 level;
+> +
+> +			offset = btrfs_item_ptr_offset(leaf, path.slots[0]);
+> +			read_extent_buffer(leaf, &ri, offset, sizeof(ri));
+> +			last_snapshot = btrfs_root_last_snapshot(&ri);
+> +			level = btrfs_root_level(&ri);
+> +			if (btrfs_disk_key_objectid(&ri.drop_progress) == 0) {
+> +				ret = add_root_item_to_list(normal_trees,
+> +						found_key.objectid,
+> +						btrfs_root_bytenr(&ri),
+> +						last_snapshot, level,
+> +						0, NULL);
+> +				if (ret < 0)
+> +					break;
+> +			} else {
+> +				u64 objectid = found_key.objectid;
+> +				btrfs_disk_key_to_cpu(&found_key,
+> +						      &ri.drop_progress);
+> +				ret = add_root_item_to_list(dropping_trees,
+> +						objectid,
+> +						btrfs_root_bytenr(&ri),
+> +						last_snapshot, level,
+> +						ri.drop_level, &found_key);
+> +				if (ret < 0)
+> +					break;
+> +			}
+> +		}
+> +		path.slots[0]++;
+> +	}
+> +
+> +out:
+> +	btrfs_release_path(&path);
+> +	return ret;
+> +}
+> +
+>   static int check_chunks_and_extents(struct btrfs_fs_info *fs_info)
+>   {
+>   	struct rb_root dev_cache;
+> @@ -8082,20 +8165,13 @@ static int check_chunks_and_extents(struct btrfs_fs_info *fs_info)
+>   	struct cache_tree nodes;
+>   	struct extent_io_tree excluded_extents;
+>   	struct cache_tree corrupt_blocks;
+> -	struct btrfs_path path;
+> -	struct btrfs_key key;
+> -	struct btrfs_key found_key;
+>   	int ret, err = 0;
+>   	struct block_info *bits;
+>   	int bits_nr;
+> -	struct extent_buffer *leaf;
+> -	int slot;
+> -	struct btrfs_root_item ri;
+>   	struct list_head dropping_trees;
+>   	struct list_head normal_trees;
+>   	struct btrfs_root *root1;
+>   	struct btrfs_root *root;
+> -	u64 objectid;
+>   	u8 level;
+>   
+>   	root = fs_info->fs_root;
+> @@ -8146,57 +8222,10 @@ static int check_chunks_and_extents(struct btrfs_fs_info *fs_info)
+>   				    root1->node->start, 0, level, 0, NULL);
+>   	if (ret < 0)
+>   		goto out;
+> -	btrfs_init_path(&path);
+> -	key.offset = 0;
+> -	key.objectid = 0;
+> -	key.type = BTRFS_ROOT_ITEM_KEY;
+> -	ret = btrfs_search_slot(NULL, fs_info->tree_root, &key, &path, 0, 0);
+> +
+> +	ret = parse_tree_roots(fs_info, &normal_trees, &dropping_trees);
+>   	if (ret < 0)
+>   		goto out;
+> -	while (1) {
+> -		leaf = path.nodes[0];
+> -		slot = path.slots[0];
+> -		if (slot >= btrfs_header_nritems(path.nodes[0])) {
+> -			ret = btrfs_next_leaf(fs_info->tree_root, &path);
+> -			if (ret != 0)
+> -				break;
+> -			leaf = path.nodes[0];
+> -			slot = path.slots[0];
+> -		}
+> -		btrfs_item_key_to_cpu(leaf, &found_key, path.slots[0]);
+> -		if (found_key.type == BTRFS_ROOT_ITEM_KEY) {
+> -			unsigned long offset;
+> -			u64 last_snapshot;
+> -
+> -			offset = btrfs_item_ptr_offset(leaf, path.slots[0]);
+> -			read_extent_buffer(leaf, &ri, offset, sizeof(ri));
+> -			last_snapshot = btrfs_root_last_snapshot(&ri);
+> -			if (btrfs_disk_key_objectid(&ri.drop_progress) == 0) {
+> -				level = btrfs_root_level(&ri);
+> -				ret = add_root_item_to_list(&normal_trees,
+> -						found_key.objectid,
+> -						btrfs_root_bytenr(&ri),
+> -						last_snapshot, level,
+> -						0, NULL);
+> -				if (ret < 0)
+> -					goto out;
+> -			} else {
+> -				level = btrfs_root_level(&ri);
+> -				objectid = found_key.objectid;
+> -				btrfs_disk_key_to_cpu(&found_key,
+> -						      &ri.drop_progress);
+> -				ret = add_root_item_to_list(&dropping_trees,
+> -						objectid,
+> -						btrfs_root_bytenr(&ri),
+> -						last_snapshot, level,
+> -						ri.drop_level, &found_key);
+> -				if (ret < 0)
+> -					goto out;
+> -			}
+> -		}
+> -		path.slots[0]++;
+> -	}
+> -	btrfs_release_path(&path);
+>   
+>   	/*
+>   	 * check_block can return -EAGAIN if it fixes something, please keep
+> 
+
 

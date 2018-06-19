@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.18]:34971 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.17.21]:50219 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753962AbeFRNGI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 18 Jun 2018 09:06:08 -0400
+        id S1750941AbeFSEew (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 19 Jun 2018 00:34:52 -0400
 Subject: Re: About more loose parameter sequence requirement
 To: dsterba@suse.cz,
         "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
@@ -11,24 +11,24 @@ References: <dbd36f90-fb00-0da1-b38f-567575c5b02f@gmx.com>
  <f746bf72-148d-9fc3-6d0d-c7e07f00c099@gmx.com>
  <20180618120200.GK24375@twin.jikos.cz>
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <48a89b08-3859-e635-1da2-ce7c9e842d8a@gmx.com>
-Date: Mon, 18 Jun 2018 21:05:59 +0800
+Message-ID: <c0e6891d-7ec3-87fe-5eb7-ca6178b9ec50@gmx.com>
+Date: Tue, 19 Jun 2018 12:34:43 +0800
 MIME-Version: 1.0
 In-Reply-To: <20180618120200.GK24375@twin.jikos.cz>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="9EHGN8Y2odSd0UASN4z8ZZ8ov4KCpY9MQ"
+ boundary="fWPoMfR7dn6TxXKZbdQ0kdw4z8lW3leKX"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---9EHGN8Y2odSd0UASN4z8ZZ8ov4KCpY9MQ
-Content-Type: multipart/mixed; boundary="QgvLTPVeR8VE25w2b1pTGetoOfPhIJrpV";
+--fWPoMfR7dn6TxXKZbdQ0kdw4z8lW3leKX
+Content-Type: multipart/mixed; boundary="Ed0JYzbDE26t35vvzqazT9oEHQKFSqOOn";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 To: dsterba@suse.cz, "linux-btrfs@vger.kernel.org"
  <linux-btrfs@vger.kernel.org>
-Message-ID: <48a89b08-3859-e635-1da2-ce7c9e842d8a@gmx.com>
+Message-ID: <c0e6891d-7ec3-87fe-5eb7-ca6178b9ec50@gmx.com>
 Subject: Re: About more loose parameter sequence requirement
 References: <dbd36f90-fb00-0da1-b38f-567575c5b02f@gmx.com>
  <20180618113432.GJ24375@twin.jikos.cz>
@@ -36,7 +36,7 @@ References: <dbd36f90-fb00-0da1-b38f-567575c5b02f@gmx.com>
  <20180618120200.GK24375@twin.jikos.cz>
 In-Reply-To: <20180618120200.GK24375@twin.jikos.cz>
 
---QgvLTPVeR8VE25w2b1pTGetoOfPhIJrpV
+--Ed0JYzbDE26t35vvzqazT9oEHQKFSqOOn
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
@@ -90,61 +90,152 @@ T
 >=20
 > As this is per-application decision I find it ok, besides that I also
 > find the 'options anywhere' pattern bad. Does it really save you that
-> much time while typing the commands with new arguments?
-
-Personally speaking, yes.
-
-> There are
+> much time while typing the commands with new arguments? There are
 > movement shortcuts to jump by words, you get the previous command by
 > up-arrow. About the same number of keystrokes.
-
-Not really, normally just "!! <new options>", where I don't even need to
-move my fingers to arrow keys.
-(I'm all ears about extra bash shortcuts on this)
-
 >=20
 > New code needs to be tested, documented and maintained, that's the cost=
 
 > I find too high for something that's convenience for people who are use=
 d
 > to some shell builtins.
+>=20
 
-The biggest problem is, the behavior isn't even consistent across
-btrfs-progs.
-mkfs.btrfs accept such out-of-order parameters while btrfs not.
+Well, after some testing, the result looks pretty strange on my side.
 
-And most common tools, like commands provided by coretutil, they don't
-care about the order.
-The only daily exception is 'scp', which I found it pretty unhandy.
+With the testing code (*), mostly just copied from check/main.c, it
+works to detect the final --check-data-csum without problem.
 
-And just as Paul and Hugo, I think there are quite some users preferring
-out-of-order parameter/options.
+I'm originally planning to use '-' to make getopt_long() to keep the
+original order, but the experiment I did shows it unnecessary.
 
+And furthermore, even changing the optstring of btrfs check
+getopt_long() with leading '-', it still doesn't work as expected to
+detect non-option parameter.
 
-I also understand the maintenance burden, but at least let's try if
-there are better solution for this.
+Is there anything wrong/special in btrfs-progs getopt_long() usage?
 
 Thanks,
 Qu
 
+*:
+---
+#include <stdio.h>
+#include <getopt.h>
+#include <unistd.h>
 
---QgvLTPVeR8VE25w2b1pTGetoOfPhIJrpV--
+int main(int argc, char** argv)
+{
+	char *real_argv[] =3D { "btrfs check", "device", "--check-data-csum" , N=
+ULL};
+	int real_argc =3D sizeof(real_argv) / sizeof(char *) - 1;
 
---9EHGN8Y2odSd0UASN4z8ZZ8ov4KCpY9MQ
+	while (1) {
+		enum { GETOPT_VAL_REPAIR =3D 257, GETOPT_VAL_INIT_CSUM,
+			GETOPT_VAL_INIT_EXTENT, GETOPT_VAL_CHECK_CSUM,
+			GETOPT_VAL_READONLY, GETOPT_VAL_CHUNK_TREE,
+			GETOPT_VAL_MODE, GETOPT_VAL_CLEAR_SPACE_CACHE,
+			GETOPT_VAL_FORCE };
+		static const struct option long_options[] =3D {
+			{ "super", required_argument, NULL, 's' },
+			{ "repair", no_argument, NULL, GETOPT_VAL_REPAIR },
+			{ "readonly", no_argument, NULL, GETOPT_VAL_READONLY },
+			{ "init-csum-tree", no_argument, NULL,
+				GETOPT_VAL_INIT_CSUM },
+			{ "init-extent-tree", no_argument, NULL,
+				GETOPT_VAL_INIT_EXTENT },
+			{ "check-data-csum", no_argument, NULL,
+				GETOPT_VAL_CHECK_CSUM },
+			{ "backup", no_argument, NULL, 'b' },
+			{ "subvol-extents", required_argument, NULL, 'E' },
+			{ "qgroup-report", no_argument, NULL, 'Q' },
+			{ "tree-root", required_argument, NULL, 'r' },
+			{ "chunk-root", required_argument, NULL,
+				GETOPT_VAL_CHUNK_TREE },
+			{ "progress", no_argument, NULL, 'p' },
+			{ "mode", required_argument, NULL,
+				GETOPT_VAL_MODE },
+			{ "clear-space-cache", required_argument, NULL,
+				GETOPT_VAL_CLEAR_SPACE_CACHE},
+			{ "force", no_argument, NULL, GETOPT_VAL_FORCE },
+			{ NULL, 0, NULL, 0}
+		};
+		int c;
+
+		c =3D getopt_long(real_argc, real_argv, "as:br:pEQ", long_options, NULL=
+);
+		if (c < 0)
+			break;
+		switch (c) {
+			case 'a':
+			case 'b':
+			case 'Q':
+			case 'E':
+			case 'p':
+				printf("option: %c\n", c);
+				break;
+			case 's':
+			case 'r':
+				printf("option: %c %s\n", c, optarg);
+				break;
+			case GETOPT_VAL_CHUNK_TREE:
+				printf("option: chunk tree %s\n", optarg);
+				break;
+			case '?':
+			case 'h':
+				printf("option: help\n");
+				break;
+			case GETOPT_VAL_REPAIR:
+				printf("option: repair\n");
+				break;
+			case GETOPT_VAL_READONLY:
+				printf("option: readonly\n");
+				break;
+			case GETOPT_VAL_INIT_CSUM:
+				printf("option: init cum tree\n");
+				break;
+			case GETOPT_VAL_INIT_EXTENT:
+				printf("option: init extent tree\n");
+				break;
+			case GETOPT_VAL_CHECK_CSUM:
+				printf("option: check csum\n");
+				break;
+			case GETOPT_VAL_MODE:
+				printf("option: mode %s\n", optarg);
+				break;
+			case GETOPT_VAL_CLEAR_SPACE_CACHE:
+				printf("option: clear space cache %s\n", optarg);
+				break;
+			case GETOPT_VAL_FORCE:
+				printf("option: force\n");
+				break;
+			default:
+				printf("unknown option %d\n", c);
+				break;
+		}
+	}
+	return 0;
+}
+---
+
+
+--Ed0JYzbDE26t35vvzqazT9oEHQKFSqOOn--
+
+--fWPoMfR7dn6TxXKZbdQ0kdw4z8lW3leKX
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlsnrjcACgkQwj2R86El
-/qgm5ggAh04Wzrp37EuBvnp5tqHr+WO7dIa3urF87ABzlcJiZC012DNCd217zPDy
-l2J5u4mcBVQpYTWTQ6Wzw2bBLFxy1gGL+InsL0gwe5s3To9dAX7TZ8hJdgm1SWal
-cNjjezNfae4iCuTlqH+JH1HZRcCNKZ3mfeO0zb0u/svlv/UXWg4+sqk1B6CDmX/T
-amO2HocBx2c5Qxn3Yj8TvL8edAOz2w/6lz6dR9z6jhq2Ni35HkhAReKZIdV0F6WK
-olHt7wOnCpn4SdeWG2+RHB5ssO4sLiiHe8bEr+EIvpg2lxFMV5Rj8ny9i240/DaR
-DiarjMFMoq1BhOtBNR9Tnk+POz7A4Q==
-=dHdD
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlsoh+QACgkQwj2R86El
+/qiUHAgAhKtUGOHTKr7AOMkX5nldpY62E+w6e3tgikkmexBUn9laEioP6ra74SR4
+rfRFNKOsyHcSwii7Kvhjde3Z1IFfHuVNNS806QwxkHA4VM5bl6UxU8NdcD6SzmCw
+CIfhEEd05aWUQIQnrhvCSNkBpAsLaB+Ze5xp8p7tIAzuNxxhUtJl2KKULoFy9DJ7
+4SLAgFdVNA1ktHYYVnFRMysfJg8q/M3PD4DEwc47lomV4uE+vS4XwzFBzwTN7pJ1
+K7UUAkfvbaNIBOv72fhkd+28ZglGMHeRd35tC029B1XyyYHz6mREFbiilgFkgR1N
+rHjbKACZ8IO5K+jCytUXgrJGmNNyQQ==
+=VHhF
 -----END PGP SIGNATURE-----
 
---9EHGN8Y2odSd0UASN4z8ZZ8ov4KCpY9MQ--
+--fWPoMfR7dn6TxXKZbdQ0kdw4z8lW3leKX--

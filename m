@@ -1,44 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pl0-f66.google.com ([209.85.160.66]:41801 "EHLO
-        mail-pl0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932368AbeFGRDo (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Jun 2018 13:03:44 -0400
-Received: by mail-pl0-f66.google.com with SMTP id az12-v6so6510390plb.8
-        for <linux-btrfs@vger.kernel.org>; Thu, 07 Jun 2018 10:03:44 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <0dff7b42-65d2-a29e-2086-938031859004@oracle.com>
-References: <000000000000832e70056df8fb38@google.com> <0dff7b42-65d2-a29e-2086-938031859004@oracle.com>
-From: Dmitry Vyukov <dvyukov@google.com>
-Date: Thu, 7 Jun 2018 19:03:23 +0200
-Message-ID: <CACT4Y+Yv4_TjyJtNxso9CLBZPXCUkYZy_1RG_o6ASJdTsLO2Ng@mail.gmail.com>
+Received: from mx2.suse.de ([195.135.220.15]:42246 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1030309AbeFSSIb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 19 Jun 2018 14:08:31 -0400
+Date: Tue, 19 Jun 2018 20:05:39 +0200
+From: David Sterba <dsterba@suse.cz>
+To: syzbot <syzbot+909a5177749d7990ffa4@syzkaller.appspotmail.com>
+Cc: clm@fb.com, dsterba@suse.com, jbacik@fb.com, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org, syzkaller-bugs@googlegroups.com
 Subject: Re: general protection fault in open_fs_devices
-To: Anand Jain <anand.jain@oracle.com>
-Cc: syzbot <syzbot+909a5177749d7990ffa4@syzkaller.appspotmail.com>, clm@fb.com,
-        dsterba@suse.com, Josef Bacik <jbacik@fb.com>,
-        linux-btrfs@vger.kernel.org, LKML <linux-kernel@vger.kernel.org>,
-        syzkaller-bugs <syzkaller-bugs@googlegroups.com>
-Content-Type: text/plain; charset="UTF-8"
+Message-ID: <20180619180539.GV24375@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <000000000000832e70056df8fb38@google.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <000000000000832e70056df8fb38@google.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jun 6, 2018 at 6:28 PM, Anand Jain <anand.jain@oracle.com> wrote:
->
->
-> On 06/06/2018 09:17 PM, syzbot wrote:
->
->
->
->  Which means there was some other thread which freed our %fs_devices.
->  As this thread is still in open_ctree() so the contending thread can't
->  be the ioctl(). So btrfs_free_stale_devices() is the only thread which
->  can free our %fs_devices in this case.
->
->  This is fixed in [1] in the mailing list.
->
->  [1]
->    [PATCH 3/3] btrfs: fix race between mkfs and mount
+On Wed, Jun 06, 2018 at 06:17:02AM -0700, syzbot wrote:
+> Hello,
+> 
+> syzbot found the following crash on:
+> 
+> HEAD commit:    af6c5d5e01ad Merge branch 'for-4.18' of git://git.kernel.o..
+> git tree:       upstream
+> console output: https://syzkaller.appspot.com/x/log.txt?x=1732a6f7800000
+> kernel config:  https://syzkaller.appspot.com/x/.config?x=12ff770540994680
+> dashboard link: https://syzkaller.appspot.com/bug?extid=909a5177749d7990ffa4
+> compiler:       gcc (GCC) 8.0.1 20180413 (experimental)
+> syzkaller repro:https://syzkaller.appspot.com/x/repro.syz?x=16ba31f7800000
+> C reproducer:   https://syzkaller.appspot.com/x/repro.c?x=16d4ac8f800000
+> 
+> IMPORTANT: if you fix the bug, please add the following tag to the commit:
+> Reported-by: syzbot+909a5177749d7990ffa4@syzkaller.appspotmail.com
 
-
-Let's tell about this syzbot:
-
-#syz fix: btrfs: fix race between mkfs and mount
+#syz test: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git test-syzbot-fs-devices

@@ -1,75 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:33639 "EHLO mx2.suse.de"
+Received: from mout.gmx.net ([212.227.15.19]:60341 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S933079AbeFRL7c (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 18 Jun 2018 07:59:32 -0400
-Received: from relay2.suse.de (charybdis-ext-too.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id CF085ADCD
-        for <linux-btrfs@vger.kernel.org>; Mon, 18 Jun 2018 11:59:31 +0000 (UTC)
-From: Nikolay Borisov <nborisov@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: jeffm@suse.com, Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 2/3] btrfs: Document __btrfs_inc_extent_ref
-Date: Mon, 18 Jun 2018 14:59:25 +0300
-Message-Id: <1529323166-29931-3-git-send-email-nborisov@suse.com>
-In-Reply-To: <1529323166-29931-1-git-send-email-nborisov@suse.com>
+        id S1750941AbeFSFYk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 19 Jun 2018 01:24:40 -0400
+Subject: Re: [PATCH 1/3] btrfs: Remove fs_info argument from
+ __btrfs_inc_extent_ref
+To: Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
+Cc: jeffm@suse.com
 References: <1529323166-29931-1-git-send-email-nborisov@suse.com>
+ <1529323166-29931-2-git-send-email-nborisov@suse.com>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <c1c0611a-a46c-14e9-3a23-510fa8c7e8ff@gmx.com>
+Date: Tue, 19 Jun 2018 13:24:28 +0800
+MIME-Version: 1.0
+In-Reply-To: <1529323166-29931-2-git-send-email-nborisov@suse.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Here is a doc-only patch which tires to deobfuscate the terra-incognita
-that arguments for delayed refs are.
 
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
----
- fs/btrfs/extent-tree.c | 34 ++++++++++++++++++++++++++++++++++
- 1 file changed, 34 insertions(+)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 59645ced6fbc..39d0652bf3f3 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -2207,6 +2207,40 @@ int btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
- 	return ret;
- }
- 
-+/*
-+ * __btrfs_inc_extent_ref - insert backreference for a given extent
-+ *
-+ * @trans:	    Handle of transaction
-+ *
-+ * @node:	    The delayed ref node used to get the bytenr/length for
-+ *		    extent whose references are incremented.
-+ *
-+ * @parent:	    If this is a shared extent (BTRFS_SHARED_DATA_REF_KEY/
-+ *		    BTRFS_SHARED_BLOCK_REF_KEY) then it holds the logical
-+ *		    bytenr of the parent block. Since new extents are always
-+ *		    created with indirect references, this will only be the case
-+ *		    when relocating a shared extent. In that case, root_objectid
-+ *		    will be BTRFS_TREE_RELOC_OBJECTID. Otheriwse, parent must
-+ *		    be 0
-+ *
-+ * @root_objectid:  The id of the root where this modification has originated,
-+ *		    this can be either one of the well-known metadata trees or
-+ *		    the subvolume id which references this extent.
-+ *
-+ * @owner:	    For data extents it is the inode number of the owning file.
-+ *		    For metadata extents this parameter holds the level in the
-+ *		    tree of the extent.
-+ *
-+ * @offset:	    For metadata extents the offset is ignored and is currently
-+ *		    always passed as 0. For data extents it is the fileoffset
-+ *		    this extent belongs to.
-+ *
-+ * @refs_to_add     Number of references to add
-+ *
-+ * @extent_op       Pointer to a structure, holding information necessary when
-+ *                  updating a tree block's flags
-+ *
-+ */
- static int __btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
- 				  struct btrfs_delayed_ref_node *node,
- 				  u64 parent, u64 root_objectid,
--- 
-2.7.4
+On 2018年06月18日 19:59, Nikolay Borisov wrote:
+> This function already takes a transaction which holds a reference to
+> the fs_info struct. Use that reference and remove the extra arg. No
+> functional changes.
+> 
+> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 
+Reviewed-by: Qu Wenruo <wqu@suse.com>
+
+Thanks,
+Qu
+
+> ---
+>  fs/btrfs/extent-tree.c | 15 ++++++---------
+>  1 file changed, 6 insertions(+), 9 deletions(-)
+> 
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index 4850e538ab10..59645ced6fbc 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -2208,12 +2208,12 @@ int btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
+>  }
+>  
+>  static int __btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
+> -				  struct btrfs_fs_info *fs_info,
+>  				  struct btrfs_delayed_ref_node *node,
+>  				  u64 parent, u64 root_objectid,
+>  				  u64 owner, u64 offset, int refs_to_add,
+>  				  struct btrfs_delayed_extent_op *extent_op)
+>  {
+> +	struct btrfs_fs_info *fs_info = trans->fs_info;
+>  	struct btrfs_path *path;
+>  	struct extent_buffer *leaf;
+>  	struct btrfs_extent_item *item;
+> @@ -2297,10 +2297,9 @@ static int run_delayed_data_ref(struct btrfs_trans_handle *trans,
+>  						 ref->objectid, ref->offset,
+>  						 &ins, node->ref_mod);
+>  	} else if (node->action == BTRFS_ADD_DELAYED_REF) {
+> -		ret = __btrfs_inc_extent_ref(trans, fs_info, node, parent,
+> -					     ref_root, ref->objectid,
+> -					     ref->offset, node->ref_mod,
+> -					     extent_op);
+> +		ret = __btrfs_inc_extent_ref(trans, node, parent, ref_root,
+> +					     ref->objectid, ref->offset,
+> +					     node->ref_mod, extent_op);
+>  	} else if (node->action == BTRFS_DROP_DELAYED_REF) {
+>  		ret = __btrfs_free_extent(trans, fs_info, node, parent,
+>  					  ref_root, ref->objectid,
+> @@ -2450,10 +2449,8 @@ static int run_delayed_tree_ref(struct btrfs_trans_handle *trans,
+>  		BUG_ON(!extent_op || !extent_op->update_flags);
+>  		ret = alloc_reserved_tree_block(trans, node, extent_op);
+>  	} else if (node->action == BTRFS_ADD_DELAYED_REF) {
+> -		ret = __btrfs_inc_extent_ref(trans, fs_info, node,
+> -					     parent, ref_root,
+> -					     ref->level, 0, 1,
+> -					     extent_op);
+> +		ret = __btrfs_inc_extent_ref(trans, node, parent, ref_root,
+> +					     ref->level, 0, 1, extent_op);
+>  	} else if (node->action == BTRFS_DROP_DELAYED_REF) {
+>  		ret = __btrfs_free_extent(trans, fs_info, node,
+>  					  parent, ref_root,
+> 

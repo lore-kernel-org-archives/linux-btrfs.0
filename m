@@ -1,28 +1,141 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:39687 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:40191 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S965961AbeFSNC2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 19 Jun 2018 09:02:28 -0400
-Date: Tue, 19 Jun 2018 14:59:34 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Allen Pais <allen.lkml@gmail.com>
-Cc: linux-btrfs@vger.kernel.org, clm@fb.com, jbackik@fb.com, dsterba@suse.com,
-        linux-kernel@vger.kernel.org
+        id S1755616AbeFSNHY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 19 Jun 2018 09:07:24 -0400
 Subject: Re: [PATCH] btrfs: stop using get_seconds()
-Message-ID: <20180619125934.GM24375@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+To: Allen Pais <allen.lkml@gmail.com>, linux-btrfs@vger.kernel.org
+Cc: clm@fb.com, jbackik@fb.com, dsterba@suse.com, linux-kernel@vger.kernel.org
 References: <1528804105-24100-1-git-send-email-allen.lkml@gmail.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <b40f794f-16b6-0369-cb0d-bbb5b12aa46a@suse.com>
+Date: Tue, 19 Jun 2018 16:07:21 +0300
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
 In-Reply-To: <1528804105-24100-1-git-send-email-allen.lkml@gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jun 12, 2018 at 05:18:25PM +0530, Allen Pais wrote:
+
+
+On 12.06.2018 14:48, Allen Pais wrote:
 > The get_seconds() function is deprecated as it truncates
 > the timestamp to 32 bits. Change to either ktime_get_seconds()
 > or ktime_get_real_seconds()
+
+nit: In your patch you are only changing them to get-real-seconds. So
+the "ktime_get_seconds() or" part of the changelog is unnecessary.
 > 
 > Signed-off-by: Allen Pais <allen.lkml@gmail.com>
-
-Reviewed-by: David Sterba <dsterba@suse.com>
+> ---
+>  fs/btrfs/ctree.h       | 4 ++--
+>  fs/btrfs/dev-replace.c | 8 ++++----
+>  fs/btrfs/disk-io.c     | 4 ++--
+>  fs/btrfs/transaction.c | 2 +-
+>  fs/btrfs/transaction.h | 2 +-
+>  5 files changed, 10 insertions(+), 10 deletions(-)
+> 
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index 118346a..e671a1f 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -342,8 +342,8 @@ struct btrfs_path {
+>  					sizeof(struct btrfs_item))
+>  struct btrfs_dev_replace {
+>  	u64 replace_state;	/* see #define above */
+> -	u64 time_started;	/* seconds since 1-Jan-1970 */
+> -	u64 time_stopped;	/* seconds since 1-Jan-1970 */
+> +	time64_t time_started;	/* seconds since 1-Jan-1970 */
+> +	time64_t time_stopped;	/* seconds since 1-Jan-1970 */
+>  	atomic64_t num_write_errors;
+>  	atomic64_t num_uncorrectable_read_errors;
+>  
+> diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+> index e2ba041..1b30c38 100644
+> --- a/fs/btrfs/dev-replace.c
+> +++ b/fs/btrfs/dev-replace.c
+> @@ -465,7 +465,7 @@ int btrfs_dev_replace_start(struct btrfs_fs_info *fs_info,
+>  	 * go to the tgtdev as well (refer to btrfs_map_block()).
+>  	 */
+>  	dev_replace->replace_state = BTRFS_IOCTL_DEV_REPLACE_STATE_STARTED;
+> -	dev_replace->time_started = get_seconds();
+> +	dev_replace->time_started = ktime_get_real_seconds();
+>  	dev_replace->cursor_left = 0;
+>  	dev_replace->committed_cursor_left = 0;
+>  	dev_replace->cursor_left_last_write_of_item = 0;
+> @@ -618,7 +618,7 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
+>  			  : BTRFS_IOCTL_DEV_REPLACE_STATE_FINISHED;
+>  	dev_replace->tgtdev = NULL;
+>  	dev_replace->srcdev = NULL;
+> -	dev_replace->time_stopped = get_seconds();
+> +	dev_replace->time_stopped = ktime_get_real_seconds();
+>  	dev_replace->item_needs_writeback = 1;
+>  
+>  	/* replace old device with new one in mapping tree */
+> @@ -807,7 +807,7 @@ int btrfs_dev_replace_cancel(struct btrfs_fs_info *fs_info)
+>  		break;
+>  	}
+>  	dev_replace->replace_state = BTRFS_IOCTL_DEV_REPLACE_STATE_CANCELED;
+> -	dev_replace->time_stopped = get_seconds();
+> +	dev_replace->time_stopped = ktime_get_real_seconds();
+>  	dev_replace->item_needs_writeback = 1;
+>  	btrfs_dev_replace_write_unlock(dev_replace);
+>  	btrfs_scrub_cancel(fs_info);
+> @@ -848,7 +848,7 @@ void btrfs_dev_replace_suspend_for_unmount(struct btrfs_fs_info *fs_info)
+>  	case BTRFS_IOCTL_DEV_REPLACE_STATE_STARTED:
+>  		dev_replace->replace_state =
+>  			BTRFS_IOCTL_DEV_REPLACE_STATE_SUSPENDED;
+> -		dev_replace->time_stopped = get_seconds();
+> +		dev_replace->time_stopped = ktime_get_real_seconds();
+>  		dev_replace->item_needs_writeback = 1;
+>  		btrfs_info(fs_info, "suspending dev_replace for unmount");
+>  		break;
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index 205092d..f3224e2 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -1803,7 +1803,7 @@ static int transaction_kthread(void *arg)
+>  	struct btrfs_trans_handle *trans;
+>  	struct btrfs_transaction *cur;
+>  	u64 transid;
+> -	unsigned long now;
+> +	time64_t now;
+>  	unsigned long delay;
+>  	bool cannot_commit;
+>  
+> @@ -1819,7 +1819,7 @@ static int transaction_kthread(void *arg)
+>  			goto sleep;
+>  		}
+>  
+> -		now = get_seconds();
+> +		now = ktime_get_real_seconds();
+>  		if (cur->state < TRANS_STATE_BLOCKED &&
+>  		    !test_bit(BTRFS_FS_NEED_ASYNC_COMMIT, &fs_info->flags) &&
+>  		    (now < cur->start_time ||
+> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+> index ff5f6c7..56c8bab 100644
+> --- a/fs/btrfs/transaction.c
+> +++ b/fs/btrfs/transaction.c
+> @@ -241,7 +241,7 @@ static noinline int join_transaction(struct btrfs_fs_info *fs_info,
+>  	refcount_set(&cur_trans->use_count, 2);
+>  	atomic_set(&cur_trans->pending_ordered, 0);
+>  	cur_trans->flags = 0;
+> -	cur_trans->start_time = get_seconds();
+> +	cur_trans->start_time = ktime_get_real_seconds();
+>  
+>  	memset(&cur_trans->delayed_refs, 0, sizeof(cur_trans->delayed_refs));
+>  
+> diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
+> index 9443948..4cbb1b5 100644
+> --- a/fs/btrfs/transaction.h
+> +++ b/fs/btrfs/transaction.h
+> @@ -48,7 +48,7 @@ struct btrfs_transaction {
+>  	int aborted;
+>  	struct list_head list;
+>  	struct extent_io_tree dirty_pages;
+> -	unsigned long start_time;
+> +	time64_t start_time;
+>  	wait_queue_head_t writer_wait;
+>  	wait_queue_head_t commit_wait;
+>  	wait_queue_head_t pending_wait;
+> 

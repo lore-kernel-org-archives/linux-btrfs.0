@@ -1,40 +1,167 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:48536 "EHLO
-        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-        by vger.kernel.org with ESMTP id S1752798AbeFTO5B (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:60786 "EHLO
+        mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1754002AbeFTO4h (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 20 Jun 2018 10:57:01 -0400
-Received: from pps.filterd (m0001303.ppops.net [127.0.0.1])
-        by m0001303.ppops.net (8.16.0.22/8.16.0.22) with SMTP id w5KEqNrF004747
-        for <linux-btrfs@vger.kernel.org>; Wed, 20 Jun 2018 07:57:01 -0700
+        Wed, 20 Jun 2018 10:56:37 -0400
+Received: from pps.filterd (m0148460.ppops.net [127.0.0.1])
+        by mx0a-00082601.pphosted.com (8.16.0.22/8.16.0.22) with SMTP id w5KEn7pU005462
+        for <linux-btrfs@vger.kernel.org>; Wed, 20 Jun 2018 07:56:37 -0700
 Received: from mail.thefacebook.com ([199.201.64.23])
-        by m0001303.ppops.net with ESMTP id 2jq9w124rn-4
+        by mx0a-00082601.pphosted.com with ESMTP id 2jqrj703db-4
         (version=TLSv1 cipher=ECDHE-RSA-AES256-SHA bits=256 verify=NOT)
-        for <linux-btrfs@vger.kernel.org>; Wed, 20 Jun 2018 07:57:00 -0700
+        for <linux-btrfs@vger.kernel.org>; Wed, 20 Jun 2018 07:56:37 -0700
 From: Chris Mason <clm@fb.com>
 To: <dsterba@suse.com>
 CC: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH RFC 0/2] Btrfs: fix file data corruptions due to lost dirty bits
-Date: Wed, 20 Jun 2018 07:56:10 -0700
-Message-ID: <20180620145612.1644763-1-clm@fb.com>
+Subject: [PATCH 2/2] Btrfs: keep pages dirty when using btrfs_writepage_fixup_worker
+Date: Wed, 20 Jun 2018 07:56:12 -0700
+Message-ID: <20180620145612.1644763-3-clm@fb.com>
+In-Reply-To: <20180620145612.1644763-1-clm@fb.com>
+References: <20180620145612.1644763-1-clm@fb.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We've been hunting the root cause of data crc errors here at FB for a while.
-We'd find one or two corrupted files, usually displaying crc errors without any
-corresponding IO errors from the storage.  The bug was rare enough that we'd
-need to watch a large number of machines for a few days just to catch it
-happening.
+For COW, btrfs expects pages dirty pages to have been through a few setup
+steps.  This includes reserving space for the new block allocations and marking
+the range in the state tree for delayed allocation.
 
-We're still running these patches through testing, but the fixup worker bug
-seems to account for the vast majority of crc errors we're seeing in the fleet.
-It's cleaning pages that were dirty, and creating a window where they can be
-reclaimed before we finish processing the page.
+A few places outside btrfs will dirty pages directly, especially when unmapping
+mmap'd pages.  In order for these to properly go through COW, we run them
+through a fixup worker to wait for stable pages, and do the delalloc prep.
 
-btrfs_file_write() has a similar bug when copy_from_user catches a page fault
-and we're writing to a page that was already dirty when file_write started.
-This one is much harder to trigger, and I haven't confirmed yet that we're
-seeing it in the fleet.
+87826df0ec36 added a window where the dirty pages were cleaned, but pending
+more action from the fixup worker.  During this window, page migration can jump
+in and relocate the page.  Once our fixup work actually starts, it finds
+page->mapping is NULL and we end up freeing the page without ever writing it.
+
+This leads to crc errors and other exciting problems, since it screws up the
+whole statemachine for waiting for ordered extents.  The fix here is to keep
+the page dirty while we're waiting for the fixup worker to get to work.  This
+also makes sure the error handling in btrfs_writepage_fixup_worker does the
+right thing with dirty bits when we run out of space.
+
+Signed-off-by: Chris Mason <clm@fb.com>
+---
+ fs/btrfs/inode.c | 67 +++++++++++++++++++++++++++++++++++++++++---------------
+ 1 file changed, 49 insertions(+), 18 deletions(-)
+
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 0b86cf1..5538900 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2100,11 +2100,21 @@ static void btrfs_writepage_fixup_worker(struct btrfs_work *work)
+ 	page = fixup->page;
+ again:
+ 	lock_page(page);
+-	if (!page->mapping || !PageDirty(page) || !PageChecked(page)) {
+-		ClearPageChecked(page);
++
++	/*
++	 * before we queued this fixup, we took a reference on the page.
++	 * page->mapping may go NULL, but it shouldn't be moved to a
++	 * different address space.
++	 */
++	if (!page->mapping || !PageDirty(page) || !PageChecked(page))
+ 		goto out_page;
+-	}
+ 
++	/*
++	 * we keep the PageChecked() bit set until we're done with the
++	 * btrfs_start_ordered_extent() dance that we do below.  That
++	 * drops and retakes the page lock, so we don't want new
++	 * fixup workers queued for this page during the churn.
++	 */
+ 	inode = page->mapping->host;
+ 	page_start = page_offset(page);
+ 	page_end = page_offset(page) + PAGE_SIZE - 1;
+@@ -2129,33 +2139,46 @@ static void btrfs_writepage_fixup_worker(struct btrfs_work *work)
+ 
+ 	ret = btrfs_delalloc_reserve_space(inode, &data_reserved, page_start,
+ 					   PAGE_SIZE);
+-	if (ret) {
+-		mapping_set_error(page->mapping, ret);
+-		end_extent_writepage(page, ret, page_start, page_end);
+-		ClearPageChecked(page);
+-		goto out;
+-	 }
++	if (ret)
++		goto out_error;
+ 
+ 	ret = btrfs_set_extent_delalloc(inode, page_start, page_end, 0,
+ 					&cached_state, 0);
+-	if (ret) {
+-		mapping_set_error(page->mapping, ret);
+-		end_extent_writepage(page, ret, page_start, page_end);
+-		ClearPageChecked(page);
+-		goto out;
+-	}
++	if (ret)
++		goto out_error;
+ 
+-	ClearPageChecked(page);
+-	set_page_dirty(page);
+ 	btrfs_delalloc_release_extents(BTRFS_I(inode), PAGE_SIZE, false);
++
++	/*
++	 * everything went as planned, we're now the proud owners of a
++	 * Dirty page with delayed allocation bits set and space reserved
++	 * for our COW destination.
++	 *
++	 * The page was dirty when we started, nothing should have cleaned it.
++	 */
++	BUG_ON(!PageDirty(page));
++
+ out:
+ 	unlock_extent_cached(&BTRFS_I(inode)->io_tree, page_start, page_end,
+ 			     &cached_state);
+ out_page:
++	ClearPageChecked(page);
+ 	unlock_page(page);
+ 	put_page(page);
+ 	kfree(fixup);
+ 	extent_changeset_free(data_reserved);
++	return;
++
++out_error:
++	/*
++	 * We hit ENOSPC or other errors.  Update the mapping and page to
++	 * reflect the errors and clean the page.
++	 */
++	mapping_set_error(page->mapping, ret);
++	end_extent_writepage(page, ret, page_start, page_end);
++	clear_page_dirty_for_io(page);
++	SetPageError(page);
++	goto out;
+ }
+ 
+ /*
+@@ -2179,6 +2202,13 @@ static int btrfs_writepage_start_hook(struct page *page, u64 start, u64 end)
+ 	if (TestClearPagePrivate2(page))
+ 		return 0;
+ 
++	/*
++	 * PageChecked is set below when we create a fixup worker for this page,
++	 * don't try to create another one if we're already PageChecked()
++	 *
++	 * The extent_io writepage code will redirty the page if we send
++	 * back EAGAIN.
++	 */
+ 	if (PageChecked(page))
+ 		return -EAGAIN;
+ 
+@@ -2192,7 +2222,8 @@ static int btrfs_writepage_start_hook(struct page *page, u64 start, u64 end)
+ 			btrfs_writepage_fixup_worker, NULL, NULL);
+ 	fixup->page = page;
+ 	btrfs_queue_work(fs_info->fixup_workers, &fixup->work);
+-	return -EBUSY;
++
++	return -EAGAIN;
+ }
+ 
+ static int insert_reserved_file_extent(struct btrfs_trans_handle *trans,
+-- 
+2.9.5
 

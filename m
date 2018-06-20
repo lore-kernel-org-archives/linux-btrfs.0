@@ -1,75 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.kundenserver.de ([212.227.17.24]:58661 "EHLO
+Received: from mout.kundenserver.de ([212.227.17.24]:57985 "EHLO
         mout.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752856AbeFTOfR (ORCPT
+        with ESMTP id S1752856AbeFTOf6 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 20 Jun 2018 10:35:17 -0400
+        Wed, 20 Jun 2018 10:35:58 -0400
 From: Arnd Bergmann <arnd@arndb.de>
 To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
         David Sterba <dsterba@suse.com>
 Cc: y2038@lists.linaro.org, Arnd Bergmann <arnd@arndb.de>,
-        Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org,
+        Nikolay Borisov <nborisov@suse.com>, Omar Sandoval <osandov@fb.com>,
+        Liu Bo <bo.li.liu@oracle.com>, linux-btrfs@vger.kernel.org,
         linux-kernel@vger.kernel.org
-Subject: [PATCH 2/3] btrfs: use 64-bit timestamps for struct btrfs_dev_replace_item
-Date: Wed, 20 Jun 2018 16:34:33 +0200
-Message-Id: <20180620143448.44388-2-arnd@arndb.de>
+Subject: [PATCH 3/3] btrfs: use timespec64 for i_otime
+Date: Wed, 20 Jun 2018 16:34:34 +0200
+Message-Id: <20180620143448.44388-3-arnd@arndb.de>
 In-Reply-To: <20180620143448.44388-1-arnd@arndb.de>
 References: <20180620143448.44388-1-arnd@arndb.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The structure already has 64-bit fields for the timestamps, but
-calling get_seconds() may truncate and risk overflow on 32-bit
-architectures.
-
-This changes the dev-replace code to use ktime_get_real_seconds()
-instead, which always returns 64-bit timestamps.
+While the regular inode timestamps all use timespec64 now, the
+i_otime field is btrfs specific and still needs to be converted
+to correctly represent times beyond 2038.
 
 Signed-off-by: Arnd Bergmann <arnd@arndb.de>
 ---
- fs/btrfs/dev-replace.c | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+ fs/btrfs/btrfs_inode.h | 2 +-
+ fs/btrfs/inode.c       | 4 ++--
+ 2 files changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index e2ba0419297a..1b30c38d05c9 100644
---- a/fs/btrfs/dev-replace.c
-+++ b/fs/btrfs/dev-replace.c
-@@ -465,7 +465,7 @@ int btrfs_dev_replace_start(struct btrfs_fs_info *fs_info,
- 	 * go to the tgtdev as well (refer to btrfs_map_block()).
- 	 */
- 	dev_replace->replace_state = BTRFS_IOCTL_DEV_REPLACE_STATE_STARTED;
--	dev_replace->time_started = get_seconds();
-+	dev_replace->time_started = ktime_get_real_seconds();
- 	dev_replace->cursor_left = 0;
- 	dev_replace->committed_cursor_left = 0;
- 	dev_replace->cursor_left_last_write_of_item = 0;
-@@ -618,7 +618,7 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
- 			  : BTRFS_IOCTL_DEV_REPLACE_STATE_FINISHED;
- 	dev_replace->tgtdev = NULL;
- 	dev_replace->srcdev = NULL;
--	dev_replace->time_stopped = get_seconds();
-+	dev_replace->time_stopped = ktime_get_real_seconds();
- 	dev_replace->item_needs_writeback = 1;
+diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
+index 7e075343daa5..1343ac57b438 100644
+--- a/fs/btrfs/btrfs_inode.h
++++ b/fs/btrfs/btrfs_inode.h
+@@ -178,7 +178,7 @@ struct btrfs_inode {
+ 	struct btrfs_delayed_node *delayed_node;
  
- 	/* replace old device with new one in mapping tree */
-@@ -807,7 +807,7 @@ int btrfs_dev_replace_cancel(struct btrfs_fs_info *fs_info)
- 		break;
- 	}
- 	dev_replace->replace_state = BTRFS_IOCTL_DEV_REPLACE_STATE_CANCELED;
--	dev_replace->time_stopped = get_seconds();
-+	dev_replace->time_stopped = ktime_get_real_seconds();
- 	dev_replace->item_needs_writeback = 1;
- 	btrfs_dev_replace_write_unlock(dev_replace);
- 	btrfs_scrub_cancel(fs_info);
-@@ -848,7 +848,7 @@ void btrfs_dev_replace_suspend_for_unmount(struct btrfs_fs_info *fs_info)
- 	case BTRFS_IOCTL_DEV_REPLACE_STATE_STARTED:
- 		dev_replace->replace_state =
- 			BTRFS_IOCTL_DEV_REPLACE_STATE_SUSPENDED;
--		dev_replace->time_stopped = get_seconds();
-+		dev_replace->time_stopped = ktime_get_real_seconds();
- 		dev_replace->item_needs_writeback = 1;
- 		btrfs_info(fs_info, "suspending dev_replace for unmount");
- 		break;
+ 	/* File creation time. */
+-	struct timespec i_otime;
++	struct timespec64 i_otime;
+ 
+ 	/* Hook into fs_info->delayed_iputs */
+ 	struct list_head delayed_iput;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index e9482f0db9d0..22dcc8afd38f 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -5745,7 +5745,7 @@ static struct inode *new_simple_dir(struct super_block *s,
+ 	inode->i_mtime = current_time(inode);
+ 	inode->i_atime = inode->i_mtime;
+ 	inode->i_ctime = inode->i_mtime;
+-	BTRFS_I(inode)->i_otime = timespec64_to_timespec(inode->i_mtime);
++	BTRFS_I(inode)->i_otime = inode->i_mtime;
+ 
+ 	return inode;
+ }
+@@ -6349,7 +6349,7 @@ static struct inode *btrfs_new_inode(struct btrfs_trans_handle *trans,
+ 	inode->i_mtime = current_time(inode);
+ 	inode->i_atime = inode->i_mtime;
+ 	inode->i_ctime = inode->i_mtime;
+-	BTRFS_I(inode)->i_otime = timespec64_to_timespec(inode->i_mtime);
++	BTRFS_I(inode)->i_otime = inode->i_mtime;
+ 
+ 	inode_item = btrfs_item_ptr(path->nodes[0], path->slots[0],
+ 				  struct btrfs_inode_item);
 -- 
 2.9.0
 

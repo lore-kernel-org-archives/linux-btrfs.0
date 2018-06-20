@@ -1,53 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:50600 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:46647 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932234AbeF0Isn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 27 Jun 2018 04:48:43 -0400
-From: Qu Wenruo <wqu@suse.com>
+        id S1754144AbeFTRyS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 20 Jun 2018 13:54:18 -0400
+From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: misono.tomohiro@jp.fujitsu.com
-Subject: [PATCH] btrfs: quota: Reset rescan progress if we hit last leaf
-Date: Wed, 27 Jun 2018 16:48:40 +0800
-Message-Id: <20180627084840.32033-1-wqu@suse.com>
+Cc: anand.jain@oracle.com, David Sterba <dsterba@suse.com>
+Subject: [PATCH 0/7] Fix locking when scanning devices
+Date: Wed, 20 Jun 2018 19:51:25 +0200
+Message-Id: <cover.1529516226.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Commit ff3d27a048d9 ("btrfs: qgroup: Finish rescan when hit the last leaf of extent tree")
-added a new exit for rescan finish.
+This patchset fixes the bugs recently reported by syzbot. I've tried to
+use patches from Anand [1] to fix that but in the end there were fixes
+not suitable for merging to 4.18 and my final fix took a different
+approach.
 
-However after finishing quota rescan, we set
-fs_info->qgroup_rescan_progress to (u64)-1, as qgroup_rescan_progress is also
-used to determine whether we should account dirty extents.
-Since if dirty extents is after qgroup_rescan_progress, we don't need to
-account it as rescan will account them later.
+In short, fs_devices::opened is protected by uuid_mutex and this mutex
+can be used to exclude mount and scanning to interfere.
 
-Without properly setting qgroup_rescan_progress to (u64)-1, all later
-dirty extents after qgroup_rescan_progress will be ignored, thus
-screwing up the whole quota accounting.
+The fstests pass and 2 syzbot reproducers reported no problems. I'd like
+to push the patchset to 4.18 but not rc2 as it's too close. I'll add the
+patchset to for-next soon if there are no major problems found, but
+otherwise I'm open to comments.
 
-Reported-by: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
-Fixes: ff3d27a048d9 ("btrfs: qgroup: Finish rescan when hit the last leaf of extent tree")
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/qgroup.c | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
+[1]
+https://patchwork.kernel.org/patch/10446779/
+https://patchwork.kernel.org/patch/10437707/ 1-6
 
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 1874a6d2e6f5..99f2b9ce0f15 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -2680,8 +2680,10 @@ qgroup_rescan_leaf(struct btrfs_fs_info *fs_info, struct btrfs_path *path,
- 		free_extent_buffer(scratch_leaf);
- 	}
- 
--	if (done && !ret)
-+	if (done && !ret) {
- 		ret = 1;
-+		fs_info->qgroup_rescan_progress.objectid = (u64)-1;
-+	}
- 	return ret;
- }
- 
+David Sterba (7):
+  btrfs: restore uuid_mutex in btrfs_open_devices
+  btrfs: extend critical section when scanning a new device
+  btrfs: lift uuid_mutex to callers of btrfs_scan_one_device
+  btrfs: lift uuid_mutex to callers of btrfs_open_devices
+  btrfs: lift uuid_mutex to callers of btrfs_parse_early_options
+  btrfs: reorder initialization before the mount locks uuid_mutex
+  btrfs: fix mount and ioctl device scan ioctl race
+
+ fs/btrfs/super.c   | 38 +++++++++++++++++++++++++-------------
+ fs/btrfs/volumes.c | 11 ++++++-----
+ 2 files changed, 31 insertions(+), 18 deletions(-)
+
 -- 
-2.18.0
+2.17.0
 

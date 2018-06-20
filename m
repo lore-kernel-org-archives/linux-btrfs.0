@@ -1,18 +1,20 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.99]:56322 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.99]:48300 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S937396AbeFSLbr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 19 Jun 2018 07:31:47 -0400
+        id S932620AbeFTJCe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 20 Jun 2018 05:02:34 -0400
 Received: from debian3.lan (bl11-80-66.dsl.telepac.pt [85.244.80.66])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 7A37C2083D
-        for <linux-btrfs@vger.kernel.org>; Tue, 19 Jun 2018 11:31:46 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id 55C7920872
+        for <linux-btrfs@vger.kernel.org>; Wed, 20 Jun 2018 09:02:33 +0000 (UTC)
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: fix physical offset reported by fiemap for inline extents
-Date: Tue, 19 Jun 2018 12:31:42 +0100
-Message-Id: <20180619113142.9020-1-fdmanana@kernel.org>
+Subject: [PATCH v2] Btrfs: fix physical offset reported by fiemap for inline extents
+Date: Wed, 20 Jun 2018 10:02:30 +0100
+Message-Id: <20180620090230.10757-1-fdmanana@kernel.org>
+In-Reply-To: <20180619113142.9020-1-fdmanana@kernel.org>
+References: <20180619113142.9020-1-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -20,10 +22,11 @@ From: Filipe Manana <fdmanana@suse.com>
 
 Commit 9d311e11fc1f ("Btrfs: fiemap: pass correct bytenr when
 fm_extent_count is zero") introduced a regression where we no longer
-report 0 as the physical offset for inline extents. This is because it
-always sets the variable used to report the physical offset ("disko")
-as em->block_start plus some offset, and em->block_start has the value
-18446744073709551614 ((u64) -2) for inline extents.
+report 0 as the physical offset for inline extents (and other extents
+with a special block_start value). This is because it always sets the
+variable used to report the physical offset ("disko") as em->block_start
+plus some offset, and em->block_start has the value 18446744073709551614
+((u64) -2) for inline extents.
 
 This made the btrfs test 004 (from fstests) often fail, for example, for
 a file with an inline extent we have the following items in the subvolume
@@ -75,26 +78,35 @@ value is the result from the filter passed to perl which multiplies the
 physical offset by the block size reported by fiemap.
 
 So fix this by ensuring the physical offset is always set to 0 when we
-are processing an inline extent.
+are processing an extent with a special block_start value.
 
 Fixes: 9d311e11fc1f ("Btrfs: fiemap: pass correct bytenr when fm_extent_count is zero")
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/extent_io.c | 1 +
- 1 file changed, 1 insertion(+)
+
+v2: Set the physical offset to 0 for other extent maps with a special
+    block_start value as well.
+
+ fs/btrfs/extent_io.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 8e4a7cdbc9f5..978327d98fc5 100644
+index 8e4a7cdbc9f5..1aa91d57404a 100644
 --- a/fs/btrfs/extent_io.c
 +++ b/fs/btrfs/extent_io.c
-@@ -4559,6 +4559,7 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
- 			end = 1;
- 			flags |= FIEMAP_EXTENT_LAST;
- 		} else if (em->block_start == EXTENT_MAP_INLINE) {
+@@ -4545,8 +4545,11 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
+ 			offset_in_extent = em_start - em->start;
+ 		em_end = extent_map_end(em);
+ 		em_len = em_end - em_start;
+-		disko = em->block_start + offset_in_extent;
+ 		flags = 0;
++		if (em->block_start < EXTENT_MAP_LAST_BYTE)
++			disko = em->block_start + offset_in_extent;
++		else
 +			disko = 0;
- 			flags |= (FIEMAP_EXTENT_DATA_INLINE |
- 				  FIEMAP_EXTENT_NOT_ALIGNED);
- 		} else if (em->block_start == EXTENT_MAP_DELALLOC) {
+ 
+ 		/*
+ 		 * bump off for our next call to get_extent
 -- 
 2.11.0
 

@@ -1,68 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:58345 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932269AbeFTIos (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 20 Jun 2018 04:44:48 -0400
-Subject: Re: RAID56
-To: Gandalf Corvotempesta <gandalf.corvotempesta@gmail.com>,
-        waxhead@dirtcellar.net
-Cc: linux-btrfs@vger.kernel.org
-References: <CAJH6TXhoL+HLEp8ioMMt06fvykEjM3Usq7OMAk9VwpcsfTBHpA@mail.gmail.com>
- <2a4b8e37-60c2-bb67-a646-fe61dfe1410f@dirtcellar.net>
- <CAJH6TXgmbvfimGU_bX-T4-0Yomz0YsJR3xsc_dFT5H5OZ6A4GA@mail.gmail.com>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <edd1172b-687b-872e-6647-3c2de9a8c344@suse.com>
-Date: Wed, 20 Jun 2018 11:44:45 +0300
-MIME-Version: 1.0
-In-Reply-To: <CAJH6TXgmbvfimGU_bX-T4-0Yomz0YsJR3xsc_dFT5H5OZ6A4GA@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
+Received: from [195.159.176.226] ([195.159.176.226]:47470 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S933199AbeFTI5o (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 20 Jun 2018 04:57:44 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-3@m.gmane.org>)
+        id 1fVYtl-0001Jr-Pg
+        for linux-btrfs@vger.kernel.org; Wed, 20 Jun 2018 10:55:29 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: btrfs balance did not progress after 12H
+Date: Wed, 20 Jun 2018 08:55:23 +0000 (UTC)
+Message-ID: <pan$2d3f1$510af9e4$2a3856f6$1a419b18@cox.net>
+References: <20180618130055.3rzngk5a5sktfp7p@merlins.org>
+        <20180619154730.fblylttw2nyps4cp@merlins.org>
+        <CA+X5Wn5_TEH5zwWS8cihnadK_hFg9CL6NcT9Q28mDxtZK97Beg@mail.gmail.com>
+        <ab17f789-d475-9812-9c76-83702fc2bd65@gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Austin S. Hemmelgarn posted on Tue, 19 Jun 2018 12:58:44 -0400 as
+excerpted:
 
+> That said, I would question the value of repacking chunks that are
+> already more than half full.  Anything above a 50% usage filter
+> generally takes a long time, and has limited value in most cases (higher
+> values are less likely to reduce the total number of allocated chunks).
+> With `-duszge=50` or less, you're guaranteed to reduce the number of
+> chunk if at least two match, and it isn't very time consuming for the
+> allocator, all because you can pack at least two matching chunks into
+> one 'new' chunk (new in quotes because it may re-pack them into existing
+> slack space on the FS). Additionally, `-dusage=50` is usually sufficient
+> to mitigate the typical ENOSPC issues that regular balancing is supposed
+> to help with.
 
-On 20.06.2018 10:34, Gandalf Corvotempesta wrote:
-> Il giorno mer 20 giu 2018 alle ore 02:06 waxhead
-> <waxhead@dirtcellar.net> ha scritto:
->> First of all: I am not a BTRFS developer, but I follow the mailing list
->> closely and I too have a particular interest in the "RAID"5/6 feature
->> which realistically is probably about 3-4 years (if not more) in the future.
-> 
-> Ok.
-> 
-> [cut]
-> 
->> Now keep in mind that this is just a humble users analysis of the
->> situation based on whatever I have picked up from the mailing list which
->> may or may not be entirely accurate so take it for what it is!
-> 
-> I wasn't aware of all of these "restrictions".
-> If this is true, now I understand why redhat lost interest in BTRFS.
-> 3-4 years more for a "working" RAID56 is absolutely too much, in this case,
-> ZFS support for RAID-Z expansion/reduction (actively being worked on)
-> will be released
-> much earlier (probably, a test working-version later this year and a
-> stable version next year)
-> 
-> RAID-Z single disk espansion/removal is probably the real missing feature in ZFS
-> allowing it to be considered a general-purpose FS.
-> 
-> Device removal was added some months ago and now is possible (so, if
-> you add a single disk to a mirrored vdev,
-> you don't have to destroy the whole pool to remove the accidentally-added disk)
-> 
-> In 3-4 years, maybe oracle release ZFS as GPL-compatible (solaris is
-> dying, latest release is 3 years ago,
-> so there is no need to keep a FS opensource compatible only with a died OS)
-> 
-> Keep in mind that i'm not a ZFS-fan (honestly, I don't like it) but
-> with these 2 features added and tons of restriction in BTRFS,
-> there is no other choise.
+While I used to agree, 50% for best efficiency, perhaps 66 or 70% if 
+you're really pressed for space, now that the allocator can repack into 
+existing chunks more efficiently than it used to (at least in ssd mode, 
+which all my storage is now), I've seen higher values result in practical/
+noticeable recovery of space to unallocated as well.
 
-Of course btrfs is open source and new contributors are always welcome.
+In fact, I routinely use usage=70 these days, and sometimes use higher, 
+to 99 or even 100%[1].  But of course I'm on ssd so it's far faster, and 
+partition it up with the biggest partitions being under 100 GiB, so even 
+full unfiltered balances are normally under 10 minutes and normal 
+filtered balances under a minute, to the point I usually issue the 
+balance command and actually wait for completion, so it's a far different 
+ball game than issuing a balance command on a multi-TB hard drive and 
+expecting it to take hours or even days.  In that case, yeah, a 50% cap 
+arguably makes sense, tho he was using 60, which still shouldn't (sans 
+bugs like we seem to have here) be /too/ bad.
 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+---
+[1] usage=100: -musage=1..100 is the only way I've found to balance 
+metadata without rebalancing system as well, with the unfortunate penalty 
+for rebalancing system on small filesystems being an increase of the 
+system chunk size from 8 MB original mkfs.btrfs size to 32 MB... only a 
+few KiB used! =:^(
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

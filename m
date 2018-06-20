@@ -1,132 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp2130.oracle.com ([141.146.126.79]:43792 "EHLO
-        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932558AbeFZJcS (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 26 Jun 2018 05:32:18 -0400
-Subject: Re: [PATCH 7/7] btrfs: fix mount and ioctl device scan ioctl race
-To: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+Received: from mx2.suse.de ([195.135.220.15]:46656 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1754144AbeFTRyW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 20 Jun 2018 13:54:22 -0400
+From: David Sterba <dsterba@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: anand.jain@oracle.com, David Sterba <dsterba@suse.com>
+Subject: [PATCH 2/7] btrfs: extend critical section when scanning a new device
+Date: Wed, 20 Jun 2018 19:51:31 +0200
+Message-Id: <92caa5382783c709d6ddab7d06747327bd7c120c.1529516228.git.dsterba@suse.com>
+In-Reply-To: <cover.1529516226.git.dsterba@suse.com>
 References: <cover.1529516226.git.dsterba@suse.com>
- <4c223e9ba6d3ab54f9b41678bade731e5554d0a6.1529516229.git.dsterba@suse.com>
-From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <0e96eded-7920-bcaa-5b82-f90d0c1e8f82@oracle.com>
-Date: Tue, 26 Jun 2018 17:33:21 +0800
-MIME-Version: 1.0
-In-Reply-To: <4c223e9ba6d3ab54f9b41678bade731e5554d0a6.1529516229.git.dsterba@suse.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+The stale device list removal needs to be protected by device_list_mutex
+too as this could delete from the list and could race with another list
+modification and cause crash.
 
+The device needs to be fully initialized before it's added to the list
+so the fs_devices also need to be set under the mutex.
 
-On 06/21/2018 01:51 AM, David Sterba wrote:
-> Technically this extends the critical section covered by uuid_mutex to:
-> 
-> - parse early mount options -- here we can call device scan on paths
->    that can be passed as 'device=/dev/...'
-> 
-> - scan the device passed to mount
-> 
-> - open the devices related to the fs_devices -- this increases
->    fs_devices::opened
-> 
-> The race can happen when mount calls one of the scans and there's
-> another one called eg. by mkfs or 'btrfs dev scan':
-> 
-> Mount                                  Scan
-> -----                                  ----
-> scan_one_device (dev1, fsid1)
->                                         scan_one_device (dev2, fsid2)
-                                                            ^^^^
-                                                            dev1
-typo?
+Signed-off-by: David Sterba <dsterba@suse.com>
+---
+ fs/btrfs/volumes.c | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
 
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 1da162928d1a..02246f9af0a3 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -791,12 +791,11 @@ static noinline struct btrfs_device *device_list_add(const char *path,
+ 		rcu_assign_pointer(device->name, name);
+ 
+ 		mutex_lock(&fs_devices->device_list_mutex);
++		device->fs_devices = fs_devices;
+ 		list_add_rcu(&device->dev_list, &fs_devices->devices);
+ 		fs_devices->num_devices++;
+-		mutex_unlock(&fs_devices->device_list_mutex);
+-
+-		device->fs_devices = fs_devices;
+ 		btrfs_free_stale_devices(path, device);
++		mutex_unlock(&fs_devices->device_list_mutex);
+ 
+ 		if (disk_super->label[0])
+ 			pr_info("BTRFS: device label %s devid %llu transid %llu %s\n",
+-- 
+2.17.0
 
-> 				           add the device
-> 					   free stale devices
-> 					       fsid1 fs_devices::opened == 0
-> 					           find fsid1:dev1
-> 					           free fsid1:dev1
-> 					           if it's the last one,
-> 					            free fs_devices of fsid1
-> 						    too
-> 
-> open_devices (dev1, fsid1)
->     dev1 not found
-> 
-> When fixed, the uuid mutex will make sure that mount will increase
-> fs_devices::opened and this will not be touched by the racing scan
-> ioctl.
-
-  Using uuid_mutex will unnecessarily serialize mount across different
-  fsids.
-
-  Unfortunately we don't have a test case to measure concurrency across
-  btrfs fsids. When we have that, this shall fail.
-
-  Expecting different fsids to be able to mount concurrently is a fair
-  expectation. And is certainly important for large servers running
-  btrfs on few luns which shall start to mount at bootup.
-
-  These changes is kind of going in an opposite direction as I
-  originally planned to improve concurrency (across fsids) by reducing
-  the unnecessary uuid_mutex footprints.
-
-  And fix the other necessaries using the fsid local atomic volume
-  exclusive operations flag. Which in the long term can replace
-  fs_info::BTRFS_FS_EXCL_OP as well.
-
-  As both of these approaches fix the issue, its a trade off between the
-  concerns of atomic volume exclusive operations flag (except for the
-  -EBUSY part [1]) VS serialize mount across different fsids, and IMO,
-  its better to make sure different fsids are concurrent in their
-  scan-mount operations as it is critical to the boot-up time.
-
-  [1]
-  Though returning -EBUSY (for one of the racing mount, scan and or ready
-  threads) is theoretically correct but its blunt, and it may wrongly
-  categorize as regression, let me try to fix that part and ask for
-  comments.
-
-Thanks, Anand
-
-
-> Reported-and-tested-by: syzbot+909a5177749d7990ffa4@syzkaller.appspotmail.com
-> Reported-and-tested-by: syzbot+ceb2606025ec1cc3479c@syzkaller.appspotmail.com
- >
-> Signed-off-by: David Sterba <dsterba@suse.com>
-> ---
->   fs/btrfs/super.c | 12 ++++++------
->   1 file changed, 6 insertions(+), 6 deletions(-)
-> 
-> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-> index 1780eb41f203..b13b871bc584 100644
-> --- a/fs/btrfs/super.c
-> +++ b/fs/btrfs/super.c
-> @@ -1557,19 +1557,19 @@ static struct dentry *btrfs_mount_root(struct file_system_type *fs_type,
->   
->   	mutex_lock(&uuid_mutex);
->   	error = btrfs_parse_early_options(data, mode, fs_type, &fs_devices);
-> -	mutex_unlock(&uuid_mutex);
-> -	if (error)
-> +	if (error) {
-> +		mutex_unlock(&uuid_mutex);
->   		goto error_fs_info;
-> +	}
->   
-> -	mutex_lock(&uuid_mutex);
->   	error = btrfs_scan_one_device(device_name, mode, fs_type, &fs_devices);
-> -	mutex_unlock(&uuid_mutex);
-> -	if (error)
-> +	if (error) {
-> +		mutex_unlock(&uuid_mutex);
->   		goto error_fs_info;
-> +	}
->   
->   	fs_info->fs_devices = fs_devices;
->   
-> -	mutex_lock(&uuid_mutex);
->   	error = btrfs_open_devices(fs_devices, mode, fs_type);
->   	mutex_unlock(&uuid_mutex);
->   	if (error)
-> 

@@ -1,33 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:51553 "EHLO mx2.suse.de"
+Received: from mout.gmx.net ([212.227.17.20]:55519 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S933308AbeFUNdv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 21 Jun 2018 09:33:51 -0400
-Received: from relay1.suse.de (charybdis-ext-too.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 5C91CAC21
-        for <linux-btrfs@vger.kernel.org>; Thu, 21 Jun 2018 13:33:50 +0000 (UTC)
-Date: Thu, 21 Jun 2018 15:31:00 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Nikolay Borisov <nborisov@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 00/34] fs_info cleanup of extent-tree.c
-Message-ID: <20180621133100.GO24375@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1529498956-4241-1-git-send-email-nborisov@suse.com>
+        id S1750827AbeFTGgt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 20 Jun 2018 02:36:49 -0400
+To: Liu Bo <bo.liu@linux.alibaba.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        David Sterba <dsterba@suse.cz>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Subject: About commit f8f84b2dfda5 ("btrfs: index check-integrity state hash
+ by a dev_t")
+Message-ID: <6c249625-8cb9-c220-a145-b5fec7d6caf4@gmx.com>
+Date: Wed, 20 Jun 2018 14:36:35 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1529498956-4241-1-git-send-email-nborisov@suse.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="NmOn6QAjV8sCLbnYQfPdSivhWJL5DXoK4"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jun 20, 2018 at 03:48:42PM +0300, Nikolay Borisov wrote:
-> Overall this series is a win both in code density as well as stack usage and 
-> brings us closer to completely eliminating the chaotic spread ot fs_info in 
-> the code base. 
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--NmOn6QAjV8sCLbnYQfPdSivhWJL5DXoK4
+Content-Type: multipart/mixed; boundary="hLoTquj95T32BqWIx4rIZugBhq0hrTZbD";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: Liu Bo <bo.liu@linux.alibaba.com>,
+ "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+ David Sterba <dsterba@suse.cz>
+Message-ID: <6c249625-8cb9-c220-a145-b5fec7d6caf4@gmx.com>
+Subject: About commit f8f84b2dfda5 ("btrfs: index check-integrity state hash
+ by a dev_t")
 
-The fs_info provided by the transaction handle is a recent addition,
-previously everything had to pass fs_info around so they were
-duplicated, until now.
+--hLoTquj95T32BqWIx4rIZugBhq0hrTZbD
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-The gains in saved stack space and code size are small but every bit
-counts, thanks. Patches added to misc-next.
+Hi Liu and David,
+
+I see mainline kernel merged commit f8f84b2dfda5 ("btrfs: index
+check-integrity state hash by a dev_t"), and you reviewed it but I can't
+find the mail in mail list, nor it's signed by David.
+
+Is this btrfs related commit merged without review from btrfs community?
+(Well, at least Liu reviewed it, but at least the mail is not CCed to
+btrfs mail list)
+
+And in fact this patch is causing check_int mount option fail to mount
+any fs degraded, by triggering a NULL pointer de-reference.
+
+Since in btrfsci_map_block() device->bdev can be NULL for missing
+device, no wonder device->bdev->bd_dev will trigger a NULL pointer
+dereference.
+
+I'm planning to fix the problem by using devid, but I'm a little
+surprised that such patch is not even CCed to btrfs mail list.
+
+Thanks,
+Qu
+
+
+--hLoTquj95T32BqWIx4rIZugBhq0hrTZbD--
+
+--NmOn6QAjV8sCLbnYQfPdSivhWJL5DXoK4
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlsp9fMACgkQwj2R86El
+/qjkwwf/ZS6I3HbbmJI+Phx0368boMF1550orjXomTpxkPhUlv1lGKcafm5Ma3VL
+0e3NL2osZ2XwCdwq1sCfd8W8h1qHIh6YNBqAiOojndWlb8Y7+Czac1L7s4FFrj6u
+uCygNbHtJzaw0DveUvMosX8j4IzAepTlqyQc+lFwXUDOx3GVjRk9zwENZHSuFI1d
+BN6cx284ekm2b4zDuRsu+Lc+3RmR5ZMoBXrntR3DZoAj26UjY67+UwU7j3DeO0wu
+/XEx6HVpnkKgSnDLYjYyQX3Ky/RFzHtSYphs5+pRl+RRPjy6b34gY2OXugnXz5Or
+xQeo77+9LrFepkDXMa61uYwTe0PPBQ==
+=Mzbx
+-----END PGP SIGNATURE-----
+
+--NmOn6QAjV8sCLbnYQfPdSivhWJL5DXoK4--

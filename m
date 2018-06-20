@@ -1,34 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:58692 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:55498 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751955AbeFSWgU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 19 Jun 2018 18:36:20 -0400
-Received: from relay2.suse.de (charybdis-ext-too.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id E40A9AD2A
-        for <linux-btrfs@vger.kernel.org>; Tue, 19 Jun 2018 22:36:18 +0000 (UTC)
-Subject: Re: [PATCH 1/3] btrfs: Remove fs_info argument from
- __btrfs_inc_extent_ref
-To: Jeff Mahoney <jeffm@suse.com>, linux-btrfs@vger.kernel.org
-References: <1529323166-29931-1-git-send-email-nborisov@suse.com>
- <1529323166-29931-2-git-send-email-nborisov@suse.com>
- <cad42e02-c494-a10e-5e12-f21cd209579c@suse.com>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <9d325596-3c03-c5f5-4e6c-75898e5ef9b4@suse.com>
-Date: Wed, 20 Jun 2018 01:36:17 +0300
+        id S1750852AbeFTNpM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 20 Jun 2018 09:45:12 -0400
+Date: Wed, 20 Jun 2018 15:42:21 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Josef Bacik <josef@toxicpanda.com>
+Cc: linux-btrfs@vger.kernel.org, kernel-team@fb.com,
+        Josef Bacik <jbacik@fb.com>, fdmanana@gmail.com
+Subject: Re: [PATCH 1/4] btrfs: always wait on ordered extents at fsync time
+Message-ID: <20180620134221.GX24375@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20180523155836.4622-1-josef@toxicpanda.com>
 MIME-Version: 1.0
-In-Reply-To: <cad42e02-c494-a10e-5e12-f21cd209579c@suse.com>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20180523155836.4622-1-josef@toxicpanda.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Wed, May 23, 2018 at 11:58:33AM -0400, Josef Bacik wrote:
+> From: Josef Bacik <jbacik@fb.com>
+> 
+> There's a priority inversion that exists currently with btrfs fsync.  In
+> some cases we will collect outstanding ordered extents onto a list and
+> only wait on them at the very last second.  However this "very last
+> second" falls inside of a transaction handle, so if we are in a lower
+> priority cgroup we can end up holding the transaction open for longer
+> than needed, so if a high priority cgroup is also trying to fsync()
+> it'll see latency.
+> 
+> Signed-off-by: Josef Bacik <jbacik@fb.com>
 
-
-On 19.06.2018 22:31, Jeff Mahoney wrote:
-> I like the idea here.  I wasn't sold at first, but I think if we can
-> standardize on taking only a trans handle when one is required and both
-> a trans and fs_info when it's optional, it'll make the code clearer.
-> This cleanup can percolate up the stack to cover pretty much all of
-> delayed refs.
-
-I have a 25-something patches which do exactly this. Still WIP, will
-likely send it tomorrow.
+1-4 added to misc-next, with Filipe's reviewed-by from the first
+iteration.

@@ -1,89 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:48963 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:48966 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753321AbeFTMt3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 20 Jun 2018 08:49:29 -0400
-Received: from relay2.suse.de (charybdis-ext-too.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 2EB23AE90
+        id S1754137AbeFTMta (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 20 Jun 2018 08:49:30 -0400
+Received: from relay1.suse.de (charybdis-ext-too.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 442B5AEC7
         for <linux-btrfs@vger.kernel.org>; Wed, 20 Jun 2018 12:49:29 +0000 (UTC)
 From: Nikolay Borisov <nborisov@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 32/34] btrfs: Remove fs_info from btrfs_inc_block_group_ro
-Date: Wed, 20 Jun 2018 15:49:14 +0300
-Message-Id: <1529498956-4241-33-git-send-email-nborisov@suse.com>
+Subject: [PATCH 33/34] btrfs: Remove fs_info from btrfs_force_chunk_alloc
+Date: Wed, 20 Jun 2018 15:49:15 +0300
+Message-Id: <1529498956-4241-34-git-send-email-nborisov@suse.com>
 In-Reply-To: <1529498956-4241-1-git-send-email-nborisov@suse.com>
 References: <1529498956-4241-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It can be referenced from the passed bg cache.
+It can be referenced from the passed transaction handle.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
  fs/btrfs/ctree.h       | 3 +--
- fs/btrfs/extent-tree.c | 4 ++--
- fs/btrfs/relocation.c  | 2 +-
- fs/btrfs/scrub.c       | 2 +-
- 4 files changed, 5 insertions(+), 6 deletions(-)
+ fs/btrfs/extent-tree.c | 5 ++---
+ fs/btrfs/relocation.c  | 3 +--
+ fs/btrfs/volumes.c     | 2 +-
+ 4 files changed, 5 insertions(+), 8 deletions(-)
 
 diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index eba0b1530843..caeca7592013 100644
+index caeca7592013..2062b393e3fd 100644
 --- a/fs/btrfs/ctree.h
 +++ b/fs/btrfs/ctree.h
-@@ -2801,8 +2801,7 @@ int btrfs_cond_migrate_bytes(struct btrfs_fs_info *fs_info,
- void btrfs_block_rsv_release(struct btrfs_fs_info *fs_info,
- 			     struct btrfs_block_rsv *block_rsv,
- 			     u64 num_bytes);
--int btrfs_inc_block_group_ro(struct btrfs_fs_info *fs_info,
--			     struct btrfs_block_group_cache *cache);
-+int btrfs_inc_block_group_ro(struct btrfs_block_group_cache *cache);
- void btrfs_dec_block_group_ro(struct btrfs_block_group_cache *cache);
- void btrfs_put_block_group_cache(struct btrfs_fs_info *info);
- u64 btrfs_account_ro_block_groups_free_space(struct btrfs_space_info *sinfo);
+@@ -2809,8 +2809,7 @@ int btrfs_error_unpin_extent_range(struct btrfs_fs_info *fs_info,
+ 				   u64 start, u64 end);
+ int btrfs_discard_extent(struct btrfs_fs_info *fs_info, u64 bytenr,
+ 			 u64 num_bytes, u64 *actual_bytes);
+-int btrfs_force_chunk_alloc(struct btrfs_trans_handle *trans,
+-			    struct btrfs_fs_info *fs_info, u64 type);
++int btrfs_force_chunk_alloc(struct btrfs_trans_handle *trans, u64 type);
+ int btrfs_trim_fs(struct btrfs_fs_info *fs_info, struct fstrim_range *range);
+ 
+ int btrfs_init_space_info(struct btrfs_fs_info *fs_info);
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 06823f69637b..d6f82a5c79d3 100644
+index d6f82a5c79d3..c3c3e6f3b72c 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -9392,10 +9392,10 @@ static int inc_block_group_ro(struct btrfs_block_group_cache *cache, int force)
+@@ -9463,10 +9463,9 @@ int btrfs_inc_block_group_ro(struct btrfs_block_group_cache *cache)
  	return ret;
  }
  
--int btrfs_inc_block_group_ro(struct btrfs_fs_info *fs_info,
--			     struct btrfs_block_group_cache *cache)
-+int btrfs_inc_block_group_ro(struct btrfs_block_group_cache *cache)
- 
+-int btrfs_force_chunk_alloc(struct btrfs_trans_handle *trans,
+-			    struct btrfs_fs_info *fs_info, u64 type)
++int btrfs_force_chunk_alloc(struct btrfs_trans_handle *trans, u64 type)
  {
-+	struct btrfs_fs_info *fs_info = cache->fs_info;
- 	struct btrfs_trans_handle *trans;
- 	u64 alloc_flags;
- 	int ret;
+-	u64 alloc_flags = get_alloc_profile(fs_info, type);
++	u64 alloc_flags = get_alloc_profile(trans->fs_info, type);
+ 
+ 	return do_chunk_alloc(trans, alloc_flags, CHUNK_ALLOC_FORCE);
+ }
 diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 879b76fa881a..ef1b5aad035e 100644
+index ef1b5aad035e..22214033a4a2 100644
 --- a/fs/btrfs/relocation.c
 +++ b/fs/btrfs/relocation.c
-@@ -4375,7 +4375,7 @@ int btrfs_relocate_block_group(struct btrfs_fs_info *fs_info, u64 group_start)
- 	rc->block_group = btrfs_lookup_block_group(fs_info, group_start);
- 	BUG_ON(!rc->block_group);
+@@ -4169,8 +4169,7 @@ static noinline_for_stack int relocate_block_group(struct reloc_control *rc)
+ 		}
+ 	}
+ 	if (trans && progress && err == -ENOSPC) {
+-		ret = btrfs_force_chunk_alloc(trans, fs_info,
+-					      rc->block_group->flags);
++		ret = btrfs_force_chunk_alloc(trans, rc->block_group->flags);
+ 		if (ret == 1) {
+ 			err = 0;
+ 			progress = 0;
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 36225e5b16e5..5bd6f3a40f9c 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -3057,7 +3057,7 @@ static int btrfs_may_alloc_data_chunk(struct btrfs_fs_info *fs_info,
+ 			if (IS_ERR(trans))
+ 				return PTR_ERR(trans);
  
--	ret = btrfs_inc_block_group_ro(fs_info, rc->block_group);
-+	ret = btrfs_inc_block_group_ro(rc->block_group);
- 	if (ret) {
- 		err = ret;
- 		goto out;
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 572306036477..7599c4ff950e 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -3862,7 +3862,7 @@ int scrub_enumerate_chunks(struct scrub_ctx *sctx,
- 		 * -> btrfs_scrub_pause()
- 		 */
- 		scrub_pause_on(fs_info);
--		ret = btrfs_inc_block_group_ro(fs_info, cache);
-+		ret = btrfs_inc_block_group_ro(cache);
- 		if (!ret && is_dev_replace) {
- 			/*
- 			 * If we are doing a device replace wait for any tasks
+-			ret = btrfs_force_chunk_alloc(trans, fs_info,
++			ret = btrfs_force_chunk_alloc(trans,
+ 						      BTRFS_BLOCK_GROUP_DATA);
+ 			btrfs_end_transaction(trans);
+ 			if (ret < 0)
 -- 
 2.7.4
 

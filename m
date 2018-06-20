@@ -1,104 +1,91 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f67.google.com ([209.85.214.67]:51076 "EHLO
-        mail-it0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S966578AbeFSQ6s (ORCPT
+Received: from smtp.domeneshop.no ([194.63.252.55]:37373 "EHLO
+        smtp.domeneshop.no" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751422AbeFTAGo (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 19 Jun 2018 12:58:48 -0400
-Received: by mail-it0-f67.google.com with SMTP id u4-v6so1401940itg.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 19 Jun 2018 09:58:48 -0700 (PDT)
-Subject: Re: btrfs balance did not progress after 12H
-To: james harvey <jamespharvey20@gmail.com>, Marc MERLIN <marc@merlins.org>
-Cc: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
-References: <20180618130055.3rzngk5a5sktfp7p@merlins.org>
- <20180619154730.fblylttw2nyps4cp@merlins.org>
- <CA+X5Wn5_TEH5zwWS8cihnadK_hFg9CL6NcT9Q28mDxtZK97Beg@mail.gmail.com>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <ab17f789-d475-9812-9c76-83702fc2bd65@gmail.com>
-Date: Tue, 19 Jun 2018 12:58:44 -0400
+        Tue, 19 Jun 2018 20:06:44 -0400
+Reply-To: waxhead@dirtcellar.net
+Subject: Re: RAID56
+To: Gandalf Corvotempesta <gandalf.corvotempesta@gmail.com>,
+        linux-btrfs@vger.kernel.org
+References: <CAJH6TXhoL+HLEp8ioMMt06fvykEjM3Usq7OMAk9VwpcsfTBHpA@mail.gmail.com>
+From: waxhead <waxhead@dirtcellar.net>
+Message-ID: <2a4b8e37-60c2-bb67-a646-fe61dfe1410f@dirtcellar.net>
+Date: Wed, 20 Jun 2018 02:06:41 +0200
 MIME-Version: 1.0
-In-Reply-To: <CA+X5Wn5_TEH5zwWS8cihnadK_hFg9CL6NcT9Q28mDxtZK97Beg@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <CAJH6TXhoL+HLEp8ioMMt06fvykEjM3Usq7OMAk9VwpcsfTBHpA@mail.gmail.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2018-06-19 12:30, james harvey wrote:
-> On Tue, Jun 19, 2018 at 11:47 AM, Marc MERLIN <marc@merlins.org> wrote:
->> On Mon, Jun 18, 2018 at 06:00:55AM -0700, Marc MERLIN wrote:
->>> So, I ran this:
->>> gargamel:/mnt/btrfs_pool2# btrfs balance start -dusage=60 -v .  &
->>> [1] 24450
->>> Dumping filters: flags 0x1, state 0x0, force is off
->>>    DATA (flags 0x2): balancing, usage=60
->>> gargamel:/mnt/btrfs_pool2# while :; do btrfs balance status .; sleep 60; done
->>> 0 out of about 0 chunks balanced (0 considered), -nan% left
+Gandalf Corvotempesta wrote:
+> Another kernel release was made.
+> Any improvements in RAID56?
 > 
-> This (0/0/0, -nan%) seems alarming.  I had this output once when the
-> system spontaneously rebooted during a balance.  I didn't have any bad
-> effects afterward.
+> I didn't see any changes in that sector, is something still being
+> worked on or it's stuck waiting for something ?
 > 
->>> Balance on '.' is running
->>> 0 out of about 73 chunks balanced (2 considered), 100% left
->>> Balance on '.' is running
->>>
->>> After about 20mn, it changed to this:
->>> 1 out of about 73 chunks balanced (6724 considered),  99% left
+> Based on official BTRFS status page, RAID56 is the only "unstable"
+> item marked in red.
+> No interested from Suse in fixing that?
 > 
-> This seems alarming.  I wouldn't think # considered should ever exceed
-> # chunks.  Although, it does say "about", so maybe it can a little
-> bit, but I wouldn't expect it to exceed it by this much.
-Actually, output like this is not unusual.  In the above line, the 1 is 
-how many chunks have been actually processed, the 73 is how many the 
-command expects to process (that is, the count of chunks that fit the 
-filtering requirements, in this case, ones which are 60% or less full), 
-and the 6724 is how many it has checked against the filtering 
-requirements.  So, if you've got a very large number of chunks, and are 
-selecting a small number with filters, then the considered value is 
-likely to be significantly higher than the first two.
-> 
->>> Balance on '.' is running
->>>
->>> Now, 12H later, it's still there, only 1 out of 73.
->>>
->>> gargamel:/mnt/btrfs_pool2# btrfs fi show .
->>> Label: 'dshelf2'  uuid: 0f1a0c9f-4e54-4fa7-8736-fd50818ff73d
->>>          Total devices 1 FS bytes used 12.72TiB
->>>          devid    1 size 14.55TiB used 13.81TiB path /dev/mapper/dshelf2
->>>
->>> gargamel:/mnt/btrfs_pool2# btrfs fi df .
->>> Data, single: total=13.57TiB, used=12.60TiB
->>> System, DUP: total=32.00MiB, used=1.55MiB
->>> Metadata, DUP: total=121.50GiB, used=116.53GiB
->>> GlobalReserve, single: total=512.00MiB, used=848.00KiB
->>>
->>> kernel: 4.16.8
->>>
->>> Is that expected? Should I be ready to wait days possibly for this
->>> balance to finish?
->>
->> It's now beeen 2 days, and it's still stuck at 1%
->> 1 out of about 73 chunks balanced (6724 considered),  99% left
-> 
-> First, my disclaimer.  I'm not a btrfs developer, and although I've
-> ran balance many times, I haven't really studied its output beyond the
-> % left.  I don't know why it says "about", and I don't know if it
-> should ever be that far off.
-> 
-> In your situation, I would run "btrfs pause <path>", wait to hear from
-> a btrfs developer, and not use the volume whatsoever in the meantime.
-I would say this is probably good advice.  I don't really know what's 
-going on here myself actually, though it looks like the balance got 
-stuck (the output hasn't changed for over 36 hours, unless you've got an 
-insanely slow storage array, that's extremely unusual (it should only be 
-moving at most 3GB of data per chunk)).
+> I think it's the real missing part for a feature-complete filesystem.
+> Nowadays parity raid is mandatory, we can't only rely on mirroring.
 
-That said, I would question the value of repacking chunks that are 
-already more than half full.  Anything above a 50% usage filter 
-generally takes a long time, and has limited value in most cases (higher 
-values are less likely to reduce the total number of allocated chunks). 
-With `-duszge=50` or less, you're guaranteed to reduce the number of 
-chunk if at least two match, and it isn't very time consuming for the 
-allocator, all because you can pack at least two matching chunks into 
-one 'new' chunk (new in quotes because it may re-pack them into existing 
-slack space on the FS).  Additionally, `-dusage=50` is usually 
-sufficient to mitigate the typical ENOSPC issues that regular balancing 
-is supposed to help with.
+First of all: I am not a BTRFS developer, but I follow the mailing list 
+closely and I too have a particular interest in the "RAID"5/6 feature 
+which realistically is probably about 3-4 years (if not more) in the future.
+
+ From what I am able to understand the pesky write hole is one of the 
+major obstacles for having BTRFS "RAID"5/6 work reliably. There was 
+patches to fix this a while ago, but if these patches are to be 
+classified as a workaround or actually as "the darn thing done right" is 
+perhaps up for discussion.
+
+In general there seems to be a lot more momentum on the "RAID"5/6 
+feature now compared to earlier. There also seem to be a lot of focus on 
+fixing bugs and running tests as well. This is why I am guessing that 
+3-4 years ahead is a absolute minimum until "RAID"5/6 might be somewhat 
+reliable and usable.
+
+There are a few other basics missing that may be acceptable for you as 
+long as you know about it. For example as far as I know BTRFS does still 
+not use the "device-id" or "BTRFS internal number" for storage devices 
+to keep track of the storage device.
+
+This means that if you have a multi storage device filesystem with for 
+example /dev/sda /dev/sdb /dev/sdc etc... and /dev/sdc disappears and 
+show up again as /dev/sdx then BTRFS would not recoginize this and 
+happily try to continue to write on /dev/sdc even if it does not exist.
+
+...and perhaps even worse - I can imagine that if you swap device 
+ordering and a different device takes /dev/sdc's place then BTRFS 
+*could* overwrite data on this device - possibly making a real mess of 
+things. I am not sure if this holds true, but if it does it's for sure a 
+real nugget of basic functionality missing right there.
+
+BTRFS also so far have no automatic "drop device" function e.g. it will 
+not automatically kick out a storage device that is throwing lots of 
+errors and causing delays etc. There may be benefits to keeping this 
+design of course, but for some dropping the device might be desirable.
+
+And no hot-spare "or hot-(reserved-)space" (which would be more accurate 
+in BTRFS terms) is implemented either, and that is one good reason to 
+keep an eye on your storage pool.
+
+What you *might* consider is to have your metadata in "RAID"1 or 
+"RAID"10 and your data in "RAID5" or even "RAID6" so that if you run 
+into problems then you might in worst case loose some data, but since 
+"RAID"1/10 is beginning to be rather mature then it is likely that your 
+filesystem might survive a disk failure.
+
+So if you are prepared to perhaps loose a file or two, but want to feel 
+confident that your filesystem is surviving and will give you a report 
+about what file(s) are toast then this may be acceptable for you as you 
+can always restore from backups (because you do have backups right? If 
+not, read 'any' of Duncan's posts - he explains better than most people 
+why you need and should have backups!)
+
+Now keep in mind that this is just a humble users analysis of the 
+situation based on whatever I have picked up from the mailing list which 
+may or may not be entirely accurate so take it for what it is!

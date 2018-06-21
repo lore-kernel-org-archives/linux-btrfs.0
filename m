@@ -1,34 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:53257 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:54634 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932797AbeFUNwE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 21 Jun 2018 09:52:04 -0400
-Date: Thu, 21 Jun 2018 15:49:11 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: Liu Bo <bo.liu@linux.alibaba.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        David Sterba <dsterba@suse.cz>
-Subject: Re: About commit f8f84b2dfda5 ("btrfs: index check-integrity state
- hash by a dev_t")
-Message-ID: <20180621134911.GP24375@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <6c249625-8cb9-c220-a145-b5fec7d6caf4@gmx.com>
+        id S932341AbeFUOIz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 21 Jun 2018 10:08:55 -0400
+Subject: Re: [PATCH] btrfs: check-integrity: Fix NULL pointer dereference for
+ degraded mount
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>, dsterba@suse.cz,
+        Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+References: <20180620073858.10794-1-wqu@suse.com>
+ <20180621135809.GQ24375@twin.jikos.cz>
+ <c5d09030-cd4f-914a-0d22-689592ba3be5@gmx.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <4e67e607-83f6-536e-0029-3ef8389288d8@suse.com>
+Date: Thu, 21 Jun 2018 17:08:52 +0300
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <6c249625-8cb9-c220-a145-b5fec7d6caf4@gmx.com>
+In-Reply-To: <c5d09030-cd4f-914a-0d22-689592ba3be5@gmx.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jun 20, 2018 at 02:36:35PM +0800, Qu Wenruo wrote:
-> I see mainline kernel merged commit f8f84b2dfda5 ("btrfs: index
-> check-integrity state hash by a dev_t"), and you reviewed it but I can't
-> find the mail in mail list, nor it's signed by David.
-> 
-> Is this btrfs related commit merged without review from btrfs community?
-> (Well, at least Liu reviewed it, but at least the mail is not CCed to
-> btrfs mail list)
 
-IIRC the patch was part of some series and went through the block layer
-tree as it was change in the API and not of btrfs code, but was CCed to
-btrfs list as you found out.
+
+On 21.06.2018 17:02, Qu Wenruo wrote:
+> 
+> 
+> On 2018年06月21日 21:58, David Sterba wrote:
+>> On Wed, Jun 20, 2018 at 03:38:58PM +0800, Qu Wenruo wrote:
+>>> Commit f8f84b2dfda5 ("btrfs: index check-integrity state hash by a dev_t")
+>>> changed how btrfsic how we index device state hash.
+>>>
+>>> Now we need to access device->bdev->bd_dev, while for degraded mount
+>>> it's completely possible to have device->bdev as NULL, thus it will
+>>> trigger a NULL pointer dereference at mount time.
+>>>
+>>> Fix it by checking if the device is degraded before accessing
+>>> device->bdev->bd_dev.
+>>>
+>>> There are a lot of other places accessing device->bdev->bd_dev, however
+>>> the other call sites have either checked device->bdev, or the
+>>> device->bdev is passed from btrfsic_map_block(), so it won't cause harm.
+>>>
+>>> Fixes: f8f84b2dfda5 ("btrfs: index check-integrity state hash by a dev_t")
+>>> Signed-off-by: Qu Wenruo <wqu@suse.com>
+>>
+>> Added to misc-next. As it is a fix it could go to 4.18 but I'd rather
+>> have a good reason for that because it's in a debugging feature.
+> 
+> No need to push it to 4.18.
+> 
+> Indeed it's a debug feature, and furthermore, there are tons of bugs
+> exposed by fstests, so it's better to fix it as a large serious patchset.
+> 
+
+If buffer heads are eliminated from btrfs then we can remove a
+substantial portion of the integrity checking code.

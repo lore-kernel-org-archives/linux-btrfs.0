@@ -1,51 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:32905 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751128AbeFHI6H (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Jun 2018 04:58:07 -0400
-Subject: Re: [PATCH] btrfs-progs: check: Initialize all filed of
- btrfs_inode_item in insert_inode_item()
-To: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>, <dsterba@suse.cz>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <cover.1528339598.git.misono.tomohiro@jp.fujitsu.com>
- <a9e2495c-6085-4efb-5257-f58a5019e2b7@jp.fujitsu.com>
- <20180607122246.GB3215@twin.jikos.cz>
- <56d8305a-8d52-49ad-fdff-61269e01192a@jp.fujitsu.com>
-From: Su Yue <suy.fnst@cn.fujitsu.com>
-Message-ID: <8bfb2fb7-f70d-7bb8-b351-01dd6dacf4a0@cn.fujitsu.com>
-Date: Fri, 8 Jun 2018 17:04:09 +0800
+Received: from mx2.suse.de ([195.135.220.15]:45358 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S932666AbeFUJY4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 21 Jun 2018 05:24:56 -0400
+Received: from relay1.suse.de (charybdis-ext-too.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 59BACAB46
+        for <linux-btrfs@vger.kernel.org>; Thu, 21 Jun 2018 09:24:55 +0000 (UTC)
+Date: Thu, 21 Jun 2018 11:22:05 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Nikolay Borisov <nborisov@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [RFC PATCH] btrfs: Remove V0 extent support
+Message-ID: <20180621092205.GJ24375@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1529563500-1714-1-git-send-email-nborisov@suse.com>
 MIME-Version: 1.0
-In-Reply-To: <56d8305a-8d52-49ad-fdff-61269e01192a@jp.fujitsu.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1529563500-1714-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Thu, Jun 21, 2018 at 09:45:00AM +0300, Nikolay Borisov wrote:
+> The v0 compat code was introduced in commit 5d4f98a28c7d
+> ("Btrfs: Mixed back reference  (FORWARD ROLLING FORMAT CHANGE)") 9
+> years ago, which was merged in 2.6.31. This means that the code is
+> there to support filesystems which are _VERY_ old and if you are using
+> btrfs on such an old kernel, you have much bigger problems. This coupled
+> with the fact that no one is likely testing/maintining this code likely
+> means it has bugs lurking. All things considered I think 43 kernel
+> releases later it's high time this remnant of the past got removed.
 
+Ack. Given the age of the format and nearly zero chance of such
+filesystem to be still in use it should be ok to remove it directly and
+not add some sort of warning when such filesystem is found.
 
-On 06/08/2018 08:43 AM, Misono Tomohiro wrote:
-> On 2018/06/07 21:22, David Sterba wrote:
->> On Thu, Jun 07, 2018 at 11:49:58AM +0900, Misono Tomohiro wrote:
->>> Initialize all filed of btrfs_inode_item to zero in order to prevent
->>> having some garbage, especially for flags field.
->>
->> Have you observed in practice or is it a matter of precaution?
-> 
-> I saw failure of fsck-test/010 in yesterday's devel branch and
-> made this patch. It turned out that root cause was wrong flag comparison
-> in btrfs check.
-> (https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg77758.html)
-> 
-> With Su's fix, failure of fsck-test/010 is also gone without this patch,
-> but it is better to initialize the variables anyway.
-> 
-Agreed. I saw odd flags reported by btrfs check too.
-The callers of insert_inode_item() don't set inode flags manully.
+> This patch removes all code wrapped in #ifdefs but leaves the BUG_ONs in case
+> we have a v0 with no support intact as a sort of safety-net. 
 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-> 
-
-
+I think there should be some verbose way to report what happened and
+possibly do proper error handling and go to read-only eventually.
+The type of checks for v0 do not seem to be something that could be done
+at mount time.

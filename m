@@ -1,64 +1,643 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:55656 "EHLO
-        mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1751130AbeFURu3 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 21 Jun 2018 13:50:29 -0400
-From: Chris Mason <clm@fb.com>
-To: David Sterba <dsterba@suse.cz>
-CC: Nikolay Borisov <nborisov@suse.com>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [RFC PATCH] btrfs: Remove V0 extent support
-Date: Thu, 21 Jun 2018 13:50:03 -0400
-Message-ID: <BC2C78B9-20F5-4C14-A9DE-E4DA8D9C3B7E@fb.com>
-In-Reply-To: <20180621092205.GJ24375@twin.jikos.cz>
-References: <1529563500-1714-1-git-send-email-nborisov@suse.com>
- <20180621092205.GJ24375@twin.jikos.cz>
-MIME-Version: 1.0
-Content-Type: text/plain; format=flowed
+Received: from mx2.suse.de ([195.135.220.15]:53280 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S932241AbeFUGpD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 21 Jun 2018 02:45:03 -0400
+Received: from relay2.suse.de (charybdis-ext-too.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 962E6AC61
+        for <linux-btrfs@vger.kernel.org>; Thu, 21 Jun 2018 06:45:02 +0000 (UTC)
+From: Nikolay Borisov <nborisov@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Nikolay Borisov <nborisov@suse.com>
+Subject: [RFC PATCH] btrfs: Remove V0 extent support
+Date: Thu, 21 Jun 2018 09:45:00 +0300
+Message-Id: <1529563500-1714-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+The v0 compat code was introduced in commit 5d4f98a28c7d
+("Btrfs: Mixed back reference  (FORWARD ROLLING FORMAT CHANGE)") 9
+years ago, which was merged in 2.6.31. This means that the code is
+there to support filesystems which are _VERY_ old and if you are using
+btrfs on such an old kernel, you have much bigger problems. This coupled
+with the fact that no one is likely testing/maintining this code likely
+means it has bugs lurking. All things considered I think 43 kernel
+releases later it's high time this remnant of the past got removed.
 
+This patch removes all code wrapped in #ifdefs but leaves the BUG_ONs in case
+we have a v0 with no support intact as a sort of safety-net. 
 
-On 21 Jun 2018, at 5:22, David Sterba wrote:
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+---
+ fs/btrfs/ctree.c       |   6 +-
+ fs/btrfs/ctree.h       |   2 -
+ fs/btrfs/extent-tree.c | 209 +------------------------------------------------
+ fs/btrfs/print-tree.c  |  30 +------
+ fs/btrfs/relocation.c  | 151 +----------------------------------
+ 5 files changed, 4 insertions(+), 394 deletions(-)
 
-> On Thu, Jun 21, 2018 at 09:45:00AM +0300, Nikolay Borisov wrote:
->> The v0 compat code was introduced in commit 5d4f98a28c7d
->> ("Btrfs: Mixed back reference  (FORWARD ROLLING FORMAT CHANGE)") 9
->> years ago, which was merged in 2.6.31. This means that the code is
->> there to support filesystems which are _VERY_ old and if you are 
->> using
->> btrfs on such an old kernel, you have much bigger problems. This 
->> coupled
->> with the fact that no one is likely testing/maintining this code 
->> likely
->> means it has bugs lurking. All things considered I think 43 kernel
->> releases later it's high time this remnant of the past got removed.
->
-> Ack. Given the age of the format and nearly zero chance of such
-> filesystem to be still in use it should be ok to remove it directly 
-> and
-> not add some sort of warning when such filesystem is found.
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index 6879697520d5..d1273ec2e0d5 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -888,11 +888,7 @@ int btrfs_block_can_be_shared(struct btrfs_root *root,
+ 	     btrfs_root_last_snapshot(&root->root_item) ||
+ 	     btrfs_header_flag(buf, BTRFS_HEADER_FLAG_RELOC)))
+ 		return 1;
+-#ifdef BTRFS_COMPAT_EXTENT_TREE_V0
+-	if (test_bit(BTRFS_ROOT_REF_COWS, &root->state) &&
+-	    btrfs_header_backref_rev(buf) < BTRFS_MIXED_BACKREF_REV)
+-		return 1;
+-#endif
++
+ 	return 0;
+ }
+ 
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index e671a1fcbbec..bc52bf7ac572 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -55,8 +55,6 @@ struct btrfs_ordered_sum;
+ 
+ #define BTRFS_OLDEST_GENERATION	0ULL
+ 
+-#define BTRFS_COMPAT_EXTENT_TREE_V0
+-
+ /*
+  * the max metadata block size.  This limit is somewhat artificial,
+  * but the memmove costs go through the roof for larger blocks.
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 0f7e797236dc..4129831523a2 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -870,17 +870,7 @@ int btrfs_lookup_extent_info(struct btrfs_trans_handle *trans,
+ 			num_refs = btrfs_extent_refs(leaf, ei);
+ 			extent_flags = btrfs_extent_flags(leaf, ei);
+ 		} else {
+-#ifdef BTRFS_COMPAT_EXTENT_TREE_V0
+-			struct btrfs_extent_item_v0 *ei0;
+-			BUG_ON(item_size != sizeof(*ei0));
+-			ei0 = btrfs_item_ptr(leaf, path->slots[0],
+-					     struct btrfs_extent_item_v0);
+-			num_refs = btrfs_extent_refs_v0(leaf, ei0);
+-			/* FIXME: this isn't correct for data */
+-			extent_flags = BTRFS_BLOCK_FLAG_FULL_BACKREF;
+-#else
+ 			BUG();
+-#endif
+ 		}
+ 		BUG_ON(num_refs == 0);
+ 	} else {
+@@ -1039,89 +1029,6 @@ int btrfs_lookup_extent_info(struct btrfs_trans_handle *trans,
+  * tree block info structure.
+  */
+ 
+-#ifdef BTRFS_COMPAT_EXTENT_TREE_V0
+-static int convert_extent_item_v0(struct btrfs_trans_handle *trans,
+-				  struct btrfs_fs_info *fs_info,
+-				  struct btrfs_path *path,
+-				  u64 owner, u32 extra_size)
+-{
+-	struct btrfs_root *root = fs_info->extent_root;
+-	struct btrfs_extent_item *item;
+-	struct btrfs_extent_item_v0 *ei0;
+-	struct btrfs_extent_ref_v0 *ref0;
+-	struct btrfs_tree_block_info *bi;
+-	struct extent_buffer *leaf;
+-	struct btrfs_key key;
+-	struct btrfs_key found_key;
+-	u32 new_size = sizeof(*item);
+-	u64 refs;
+-	int ret;
+-
+-	leaf = path->nodes[0];
+-	BUG_ON(btrfs_item_size_nr(leaf, path->slots[0]) != sizeof(*ei0));
+-
+-	btrfs_item_key_to_cpu(leaf, &key, path->slots[0]);
+-	ei0 = btrfs_item_ptr(leaf, path->slots[0],
+-			     struct btrfs_extent_item_v0);
+-	refs = btrfs_extent_refs_v0(leaf, ei0);
+-
+-	if (owner == (u64)-1) {
+-		while (1) {
+-			if (path->slots[0] >= btrfs_header_nritems(leaf)) {
+-				ret = btrfs_next_leaf(root, path);
+-				if (ret < 0)
+-					return ret;
+-				BUG_ON(ret > 0); /* Corruption */
+-				leaf = path->nodes[0];
+-			}
+-			btrfs_item_key_to_cpu(leaf, &found_key,
+-					      path->slots[0]);
+-			BUG_ON(key.objectid != found_key.objectid);
+-			if (found_key.type != BTRFS_EXTENT_REF_V0_KEY) {
+-				path->slots[0]++;
+-				continue;
+-			}
+-			ref0 = btrfs_item_ptr(leaf, path->slots[0],
+-					      struct btrfs_extent_ref_v0);
+-			owner = btrfs_ref_objectid_v0(leaf, ref0);
+-			break;
+-		}
+-	}
+-	btrfs_release_path(path);
+-
+-	if (owner < BTRFS_FIRST_FREE_OBJECTID)
+-		new_size += sizeof(*bi);
+-
+-	new_size -= sizeof(*ei0);
+-	ret = btrfs_search_slot(trans, root, &key, path,
+-				new_size + extra_size, 1);
+-	if (ret < 0)
+-		return ret;
+-	BUG_ON(ret); /* Corruption */
+-
+-	btrfs_extend_item(fs_info, path, new_size);
+-
+-	leaf = path->nodes[0];
+-	item = btrfs_item_ptr(leaf, path->slots[0], struct btrfs_extent_item);
+-	btrfs_set_extent_refs(leaf, item, refs);
+-	/* FIXME: get real generation */
+-	btrfs_set_extent_generation(leaf, item, 0);
+-	if (owner < BTRFS_FIRST_FREE_OBJECTID) {
+-		btrfs_set_extent_flags(leaf, item,
+-				       BTRFS_EXTENT_FLAG_TREE_BLOCK |
+-				       BTRFS_BLOCK_FLAG_FULL_BACKREF);
+-		bi = (struct btrfs_tree_block_info *)(item + 1);
+-		/* FIXME: get first key of the block */
+-		memzero_extent_buffer(leaf, (unsigned long)bi, sizeof(*bi));
+-		btrfs_set_tree_block_level(leaf, bi, (int)owner);
+-	} else {
+-		btrfs_set_extent_flags(leaf, item, BTRFS_EXTENT_FLAG_DATA);
+-	}
+-	btrfs_mark_buffer_dirty(leaf);
+-	return 0;
+-}
+-#endif
+-
+ /*
+  * is_data == BTRFS_REF_TYPE_BLOCK, tree block type is required,
+  * is_data == BTRFS_REF_TYPE_DATA, data type is requried,
+@@ -1251,17 +1158,6 @@ static noinline int lookup_extent_data_ref(struct btrfs_trans_handle *trans,
+ 	if (parent) {
+ 		if (!ret)
+ 			return 0;
+-#ifdef BTRFS_COMPAT_EXTENT_TREE_V0
+-		key.type = BTRFS_EXTENT_REF_V0_KEY;
+-		btrfs_release_path(path);
+-		ret = btrfs_search_slot(trans, root, &key, path, -1, 1);
+-		if (ret < 0) {
+-			err = ret;
+-			goto fail;
+-		}
+-		if (!ret)
+-			return 0;
+-#endif
+ 		goto fail;
+ 	}
+ 
+@@ -1406,13 +1302,6 @@ static noinline int remove_extent_data_ref(struct btrfs_trans_handle *trans,
+ 		ref2 = btrfs_item_ptr(leaf, path->slots[0],
+ 				      struct btrfs_shared_data_ref);
+ 		num_refs = btrfs_shared_data_ref_count(leaf, ref2);
+-#ifdef BTRFS_COMPAT_EXTENT_TREE_V0
+-	} else if (key.type == BTRFS_EXTENT_REF_V0_KEY) {
+-		struct btrfs_extent_ref_v0 *ref0;
+-		ref0 = btrfs_item_ptr(leaf, path->slots[0],
+-				      struct btrfs_extent_ref_v0);
+-		num_refs = btrfs_ref_count_v0(leaf, ref0);
+-#endif
+ 	} else {
+ 		BUG();
+ 	}
+@@ -1428,14 +1317,6 @@ static noinline int remove_extent_data_ref(struct btrfs_trans_handle *trans,
+ 			btrfs_set_extent_data_ref_count(leaf, ref1, num_refs);
+ 		else if (key.type == BTRFS_SHARED_DATA_REF_KEY)
+ 			btrfs_set_shared_data_ref_count(leaf, ref2, num_refs);
+-#ifdef BTRFS_COMPAT_EXTENT_TREE_V0
+-		else {
+-			struct btrfs_extent_ref_v0 *ref0;
+-			ref0 = btrfs_item_ptr(leaf, path->slots[0],
+-					struct btrfs_extent_ref_v0);
+-			btrfs_set_ref_count_v0(leaf, ref0, num_refs);
+-		}
+-#endif
+ 		btrfs_mark_buffer_dirty(leaf);
+ 	}
+ 	return ret;
+@@ -1475,13 +1356,6 @@ static noinline u32 extent_data_ref_count(struct btrfs_path *path,
+ 		ref2 = btrfs_item_ptr(leaf, path->slots[0],
+ 				      struct btrfs_shared_data_ref);
+ 		num_refs = btrfs_shared_data_ref_count(leaf, ref2);
+-#ifdef BTRFS_COMPAT_EXTENT_TREE_V0
+-	} else if (key.type == BTRFS_EXTENT_REF_V0_KEY) {
+-		struct btrfs_extent_ref_v0 *ref0;
+-		ref0 = btrfs_item_ptr(leaf, path->slots[0],
+-				      struct btrfs_extent_ref_v0);
+-		num_refs = btrfs_ref_count_v0(leaf, ref0);
+-#endif
+ 	} else {
+ 		WARN_ON(1);
+ 	}
+@@ -1510,15 +1384,6 @@ static noinline int lookup_tree_block_ref(struct btrfs_trans_handle *trans,
+ 	ret = btrfs_search_slot(trans, root, &key, path, -1, 1);
+ 	if (ret > 0)
+ 		ret = -ENOENT;
+-#ifdef BTRFS_COMPAT_EXTENT_TREE_V0
+-	if (ret == -ENOENT && parent) {
+-		btrfs_release_path(path);
+-		key.type = BTRFS_EXTENT_REF_V0_KEY;
+-		ret = btrfs_search_slot(trans, root, &key, path, -1, 1);
+-		if (ret > 0)
+-			ret = -ENOENT;
+-	}
+-#endif
+ 	return ret;
+ }
+ 
+@@ -1684,22 +1549,6 @@ int lookup_inline_extent_backref(struct btrfs_trans_handle *trans,
+ 
+ 	leaf = path->nodes[0];
+ 	item_size = btrfs_item_size_nr(leaf, path->slots[0]);
+-#ifdef BTRFS_COMPAT_EXTENT_TREE_V0
+-	if (item_size < sizeof(*ei)) {
+-		if (!insert) {
+-			err = -ENOENT;
+-			goto out;
+-		}
+-		ret = convert_extent_item_v0(trans, fs_info, path, owner,
+-					     extra_size);
+-		if (ret < 0) {
+-			err = ret;
+-			goto out;
+-		}
+-		leaf = path->nodes[0];
+-		item_size = btrfs_item_size_nr(leaf, path->slots[0]);
+-	}
+-#endif
+ 	BUG_ON(item_size < sizeof(*ei));
+ 
+ 	ei = btrfs_item_ptr(leaf, path->slots[0], struct btrfs_extent_item);
+@@ -2433,17 +2282,6 @@ static int run_delayed_extent_op(struct btrfs_trans_handle *trans,
+ 
+ 	leaf = path->nodes[0];
+ 	item_size = btrfs_item_size_nr(leaf, path->slots[0]);
+-#ifdef BTRFS_COMPAT_EXTENT_TREE_V0
+-	if (item_size < sizeof(*ei)) {
+-		ret = convert_extent_item_v0(trans, fs_info, path, (u64)-1, 0);
+-		if (ret < 0) {
+-			err = ret;
+-			goto out;
+-		}
+-		leaf = path->nodes[0];
+-		item_size = btrfs_item_size_nr(leaf, path->slots[0]);
+-	}
+-#endif
+ 	BUG_ON(item_size < sizeof(*ei));
+ 	ei = btrfs_item_ptr(leaf, path->slots[0], struct btrfs_extent_item);
+ 	__run_delayed_extent_op(extent_op, leaf, ei);
+@@ -3258,12 +3096,6 @@ static noinline int check_committed_ref(struct btrfs_root *root,
+ 
+ 	ret = 1;
+ 	item_size = btrfs_item_size_nr(leaf, path->slots[0]);
+-#ifdef BTRFS_COMPAT_EXTENT_TREE_V0
+-	if (item_size < sizeof(*ei)) {
+-		WARN_ON(item_size != sizeof(struct btrfs_extent_item_v0));
+-		goto out;
+-	}
+-#endif
+ 	ei = btrfs_item_ptr(leaf, path->slots[0], struct btrfs_extent_item);
+ 
+ 	if (item_size != sizeof(*ei) +
+@@ -6907,11 +6739,7 @@ static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
+ 				break;
+ 			extent_slot--;
+ 		}
+-#ifdef BTRFS_COMPAT_EXTENT_TREE_V0
+-		item_size = btrfs_item_size_nr(path->nodes[0], extent_slot);
+-		if (found_extent && item_size < sizeof(*ei))
+-			found_extent = 0;
+-#endif
++
+ 		if (!found_extent) {
+ 			BUG_ON(iref);
+ 			ret = remove_extent_backref(trans, info, path, NULL,
+@@ -6987,41 +6815,6 @@ static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
+ 
+ 	leaf = path->nodes[0];
+ 	item_size = btrfs_item_size_nr(leaf, extent_slot);
+-#ifdef BTRFS_COMPAT_EXTENT_TREE_V0
+-	if (item_size < sizeof(*ei)) {
+-		BUG_ON(found_extent || extent_slot != path->slots[0]);
+-		ret = convert_extent_item_v0(trans, info, path, owner_objectid,
+-					     0);
+-		if (ret < 0) {
+-			btrfs_abort_transaction(trans, ret);
+-			goto out;
+-		}
+-
+-		btrfs_release_path(path);
+-		path->leave_spinning = 1;
+-
+-		key.objectid = bytenr;
+-		key.type = BTRFS_EXTENT_ITEM_KEY;
+-		key.offset = num_bytes;
+-
+-		ret = btrfs_search_slot(trans, extent_root, &key, path,
+-					-1, 1);
+-		if (ret) {
+-			btrfs_err(info,
+-				  "umm, got %d back from search, was looking for %llu",
+-				ret, bytenr);
+-			btrfs_print_leaf(path->nodes[0]);
+-		}
+-		if (ret < 0) {
+-			btrfs_abort_transaction(trans, ret);
+-			goto out;
+-		}
+-
+-		extent_slot = path->slots[0];
+-		leaf = path->nodes[0];
+-		item_size = btrfs_item_size_nr(leaf, extent_slot);
+-	}
+-#endif
+ 	BUG_ON(item_size < sizeof(*ei));
+ 	ei = btrfs_item_ptr(leaf, extent_slot,
+ 			    struct btrfs_extent_item);
+diff --git a/fs/btrfs/print-tree.c b/fs/btrfs/print-tree.c
+index a4e11cf04671..b03040b84fe9 100644
+--- a/fs/btrfs/print-tree.c
++++ b/fs/btrfs/print-tree.c
+@@ -52,18 +52,8 @@ static void print_extent_item(struct extent_buffer *eb, int slot, int type)
+ 	u64 offset;
+ 	int ref_index = 0;
+ 
+-	if (item_size < sizeof(*ei)) {
+-#ifdef BTRFS_COMPAT_EXTENT_TREE_V0
+-		struct btrfs_extent_item_v0 *ei0;
+-		BUG_ON(item_size != sizeof(*ei0));
+-		ei0 = btrfs_item_ptr(eb, slot, struct btrfs_extent_item_v0);
+-		pr_info("\t\textent refs %u\n",
+-		       btrfs_extent_refs_v0(eb, ei0));
+-		return;
+-#else
++	if (item_size < sizeof(*ei))
+ 		BUG();
+-#endif
+-	}
+ 
+ 	ei = btrfs_item_ptr(eb, slot, struct btrfs_extent_item);
+ 	flags = btrfs_extent_flags(eb, ei);
+@@ -133,20 +123,6 @@ static void print_extent_item(struct extent_buffer *eb, int slot, int type)
+ 	WARN_ON(ptr > end);
+ }
+ 
+-#ifdef BTRFS_COMPAT_EXTENT_TREE_V0
+-static void print_extent_ref_v0(struct extent_buffer *eb, int slot)
+-{
+-	struct btrfs_extent_ref_v0 *ref0;
+-
+-	ref0 = btrfs_item_ptr(eb, slot, struct btrfs_extent_ref_v0);
+-	printk("\t\textent back ref root %llu gen %llu owner %llu num_refs %lu\n",
+-		btrfs_ref_root_v0(eb, ref0),
+-		btrfs_ref_generation_v0(eb, ref0),
+-		btrfs_ref_objectid_v0(eb, ref0),
+-		(unsigned long)btrfs_ref_count_v0(eb, ref0));
+-}
+-#endif
+-
+ static void print_uuid_item(struct extent_buffer *l, unsigned long offset,
+ 			    u32 item_size)
+ {
+@@ -280,11 +256,7 @@ void btrfs_print_leaf(struct extent_buffer *l)
+ 			       btrfs_file_extent_ram_bytes(l, fi));
+ 			break;
+ 		case BTRFS_EXTENT_REF_V0_KEY:
+-#ifdef BTRFS_COMPAT_EXTENT_TREE_V0
+-			print_extent_ref_v0(l, i);
+-#else
+ 			BUG();
+-#endif
+ 			break;
+ 		case BTRFS_BLOCK_GROUP_ITEM_KEY:
+ 			bi = btrfs_item_ptr(l, i,
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 879b76fa881a..52c1e3e6802d 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -586,29 +586,6 @@ static struct btrfs_root *read_fs_root(struct btrfs_fs_info *fs_info,
+ 	return btrfs_get_fs_root(fs_info, &key, false);
+ }
+ 
+-#ifdef BTRFS_COMPAT_EXTENT_TREE_V0
+-static noinline_for_stack
+-struct btrfs_root *find_tree_root(struct reloc_control *rc,
+-				  struct extent_buffer *leaf,
+-				  struct btrfs_extent_ref_v0 *ref0)
+-{
+-	struct btrfs_root *root;
+-	u64 root_objectid = btrfs_ref_root_v0(leaf, ref0);
+-	u64 generation = btrfs_ref_generation_v0(leaf, ref0);
+-
+-	BUG_ON(root_objectid == BTRFS_TREE_RELOC_OBJECTID);
+-
+-	root = read_fs_root(rc->extent_root->fs_info, root_objectid);
+-	BUG_ON(IS_ERR(root));
+-
+-	if (test_bit(BTRFS_ROOT_REF_COWS, &root->state) &&
+-	    generation != btrfs_root_generation(&root->root_item))
+-		return NULL;
+-
+-	return root;
+-}
+-#endif
+-
+ static noinline_for_stack
+ int find_inline_backref(struct extent_buffer *leaf, int slot,
+ 			unsigned long *ptr, unsigned long *end)
+@@ -621,12 +598,6 @@ int find_inline_backref(struct extent_buffer *leaf, int slot,
+ 	btrfs_item_key_to_cpu(leaf, &key, slot);
+ 
+ 	item_size = btrfs_item_size_nr(leaf, slot);
+-#ifdef BTRFS_COMPAT_EXTENT_TREE_V0
+-	if (item_size < sizeof(*ei)) {
+-		WARN_ON(item_size != sizeof(struct btrfs_extent_item_v0));
+-		return 1;
+-	}
+-#endif
+ 	ei = btrfs_item_ptr(leaf, slot, struct btrfs_extent_item);
+ 	WARN_ON(!(btrfs_extent_flags(leaf, ei) &
+ 		  BTRFS_EXTENT_FLAG_TREE_BLOCK));
+@@ -811,29 +782,8 @@ struct backref_node *build_backref_tree(struct reloc_control *rc,
+ 			goto next;
+ 		}
+ 
+-#ifdef BTRFS_COMPAT_EXTENT_TREE_V0
+-		if (key.type == BTRFS_SHARED_BLOCK_REF_KEY ||
+-		    key.type == BTRFS_EXTENT_REF_V0_KEY) {
+-			if (key.type == BTRFS_EXTENT_REF_V0_KEY) {
+-				struct btrfs_extent_ref_v0 *ref0;
+-				ref0 = btrfs_item_ptr(eb, path1->slots[0],
+-						struct btrfs_extent_ref_v0);
+-				if (key.objectid == key.offset) {
+-					root = find_tree_root(rc, eb, ref0);
+-					if (root && !should_ignore_root(root))
+-						cur->root = root;
+-					else
+-						list_add(&cur->list, &useless);
+-					break;
+-				}
+-				if (is_cowonly_root(btrfs_ref_root_v0(eb,
+-								      ref0)))
+-					cur->cowonly = 1;
+-			}
+-#else
+ 		ASSERT(key.type != BTRFS_EXTENT_REF_V0_KEY);
+ 		if (key.type == BTRFS_SHARED_BLOCK_REF_KEY) {
+-#endif
+ 			if (key.objectid == key.offset) {
+ 				/*
+ 				 * only root blocks of reloc trees use
+@@ -3333,48 +3283,6 @@ int relocate_data_extent(struct inode *inode, struct btrfs_key *extent_key,
+ 	return 0;
+ }
+ 
+-#ifdef BTRFS_COMPAT_EXTENT_TREE_V0
+-static int get_ref_objectid_v0(struct reloc_control *rc,
+-			       struct btrfs_path *path,
+-			       struct btrfs_key *extent_key,
+-			       u64 *ref_objectid, int *path_change)
+-{
+-	struct btrfs_key key;
+-	struct extent_buffer *leaf;
+-	struct btrfs_extent_ref_v0 *ref0;
+-	int ret;
+-	int slot;
+-
+-	leaf = path->nodes[0];
+-	slot = path->slots[0];
+-	while (1) {
+-		if (slot >= btrfs_header_nritems(leaf)) {
+-			ret = btrfs_next_leaf(rc->extent_root, path);
+-			if (ret < 0)
+-				return ret;
+-			BUG_ON(ret > 0);
+-			leaf = path->nodes[0];
+-			slot = path->slots[0];
+-			if (path_change)
+-				*path_change = 1;
+-		}
+-		btrfs_item_key_to_cpu(leaf, &key, slot);
+-		if (key.objectid != extent_key->objectid)
+-			return -ENOENT;
+-
+-		if (key.type != BTRFS_EXTENT_REF_V0_KEY) {
+-			slot++;
+-			continue;
+-		}
+-		ref0 = btrfs_item_ptr(leaf, slot,
+-				struct btrfs_extent_ref_v0);
+-		*ref_objectid = btrfs_ref_objectid_v0(leaf, ref0);
+-		break;
+-	}
+-	return 0;
+-}
+-#endif
+-
+ /*
+  * helper to add a tree block to the list.
+  * the major work is getting the generation and level of the block
+@@ -3408,22 +3316,7 @@ static int add_tree_block(struct reloc_control *rc,
+ 		}
+ 		generation = btrfs_extent_generation(eb, ei);
+ 	} else {
+-#ifdef BTRFS_COMPAT_EXTENT_TREE_V0
+-		u64 ref_owner;
+-		int ret;
+-
+-		BUG_ON(item_size != sizeof(struct btrfs_extent_item_v0));
+-		ret = get_ref_objectid_v0(rc, path, extent_key,
+-					  &ref_owner, NULL);
+-		if (ret < 0)
+-			return ret;
+-		BUG_ON(ref_owner >= BTRFS_MAX_LEVEL);
+-		level = (int)ref_owner;
+-		/* FIXME: get real generation */
+-		generation = 0;
+-#else
+ 		BUG();
+-#endif
+ 	}
+ 
+ 	btrfs_release_path(path);
+@@ -3781,12 +3674,7 @@ int add_data_references(struct reloc_control *rc,
+ 	eb = path->nodes[0];
+ 	ptr = btrfs_item_ptr_offset(eb, path->slots[0]);
+ 	end = ptr + btrfs_item_size_nr(eb, path->slots[0]);
+-#ifdef BTRFS_COMPAT_EXTENT_TREE_V0
+-	if (ptr + sizeof(struct btrfs_extent_item_v0) == end)
+-		ptr = end;
+-	else
+-#endif
+-		ptr += sizeof(struct btrfs_extent_item);
++	ptr += sizeof(struct btrfs_extent_item);
+ 
+ 	while (ptr < end) {
+ 		iref = (struct btrfs_extent_inline_ref *)ptr;
+@@ -3832,13 +3720,8 @@ int add_data_references(struct reloc_control *rc,
+ 		if (key.objectid != extent_key->objectid)
+ 			break;
+ 
+-#ifdef BTRFS_COMPAT_EXTENT_TREE_V0
+-		if (key.type == BTRFS_SHARED_DATA_REF_KEY ||
+-		    key.type == BTRFS_EXTENT_REF_V0_KEY) {
+-#else
+ 		BUG_ON(key.type == BTRFS_EXTENT_REF_V0_KEY);
+ 		if (key.type == BTRFS_SHARED_DATA_REF_KEY) {
+-#endif
+ 			ret = __add_tree_block(rc, key.offset, blocksize,
+ 					       blocks);
+ 		} else if (key.type == BTRFS_EXTENT_DATA_REF_KEY) {
+@@ -4086,39 +3969,7 @@ static noinline_for_stack int relocate_block_group(struct reloc_control *rc)
+ 			BUG_ON(ret);
+ 
+ 		} else {
+-#ifdef BTRFS_COMPAT_EXTENT_TREE_V0
+-			u64 ref_owner;
+-			int path_change = 0;
+-
+-			BUG_ON(item_size !=
+-			       sizeof(struct btrfs_extent_item_v0));
+-			ret = get_ref_objectid_v0(rc, path, &key, &ref_owner,
+-						  &path_change);
+-			if (ret < 0) {
+-				err = ret;
+-				break;
+-			}
+-			if (ref_owner < BTRFS_FIRST_FREE_OBJECTID)
+-				flags = BTRFS_EXTENT_FLAG_TREE_BLOCK;
+-			else
+-				flags = BTRFS_EXTENT_FLAG_DATA;
+-
+-			if (path_change) {
+-				btrfs_release_path(path);
+-
+-				path->search_commit_root = 1;
+-				path->skip_locking = 1;
+-				ret = btrfs_search_slot(NULL, rc->extent_root,
+-							&key, path, 0, 0);
+-				if (ret < 0) {
+-					err = ret;
+-					break;
+-				}
+-				BUG_ON(ret > 0);
+-			}
+-#else
+ 			BUG();
+-#endif
+ 		}
+ 
+ 		if (flags & BTRFS_EXTENT_FLAG_TREE_BLOCK) {
+-- 
+2.7.4
 
-Agreed, it seems very unlikely to me that we have happy v0 users.
-
->
->> This patch removes all code wrapped in #ifdefs but leaves the BUG_ONs 
->> in case
->> we have a v0 with no support intact as a sort of safety-net.
->
-> I think there should be some verbose way to report what happened and
-> possibly do proper error handling and go to read-only eventually.
-> The type of checks for v0 do not seem to be something that could be 
-> done
-> at mount time.
-
-Yeah, with the code we have right now, it's really obvious the BUG()s 
-are for V0 extents.  With all the ifdefs removed its much less clear.  
-I'd swap them out for a transaction abort with a message about the v0 
-extents.
-
-Also, there's at least one ASSERT() left over in a #else, which I would 
-also turn into a more explicit abort or at least comment.
-
--chris

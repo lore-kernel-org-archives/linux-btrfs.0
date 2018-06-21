@@ -1,79 +1,185 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:43098 "EHLO
-        mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S932747AbeFUPBS (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 21 Jun 2018 11:01:18 -0400
-From: Chris Mason <clm@fb.com>
-To: David Sterba <dsterba@suse.cz>
-CC: <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH RFC 0/2] Btrfs: fix file data corruptions due to lost
- dirty bits
-Date: Thu, 21 Jun 2018 11:01:06 -0400
-Message-ID: <D8C57277-E51B-47C7-9371-66EF2B5623E9@fb.com>
-In-Reply-To: <20180620193310.GG24375@twin.jikos.cz>
-References: <20180620145612.1644763-1-clm@fb.com>
- <20180620193310.GG24375@twin.jikos.cz>
+Received: from mout.gmx.net ([212.227.17.22]:38691 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S932879AbeFUPD3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 21 Jun 2018 11:03:29 -0400
+Subject: Re: (about compiler optimization) [PATCH 00/34] fs_info cleanup of
+ extent-tree.c
+To: Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
+References: <1529498956-4241-1-git-send-email-nborisov@suse.com>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <7b267bf0-7bcc-a346-5518-e03fa468c204@gmx.com>
+Date: Thu, 21 Jun 2018 23:03:08 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; format=flowed
+In-Reply-To: <1529498956-4241-1-git-send-email-nborisov@suse.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On 20 Jun 2018, at 15:33, David Sterba wrote:
+On 2018年06月20日 20:48, Nikolay Borisov wrote:
+> Hello, 
+> 
+> This series aims at removing all the redundant btrfs_fs_info args being 
+> passed to functions in extent-tree.c. Each patch removes the arg from a 
+> one function hence it should be fairly easy to review each one of those 
+> patches. I'm mainly exploiting the fact that most of the time we have a 
+> function which takes a transaction handle, which is always valid (ie can't be 
+> null) and at the same time we are passing an fs_info. The former actually 
+> contains a reference to the fs info so can be referenced directly from the 
+> transaction. Additionally, 2 patches also exploit the fact that block group 
+> cache structs also hold a reference to fs_info so there is no point in 
+> passing it there as well. 
+> 
+> To spice things up a bit, here is the output of stackdelta before/after the 
+> patch set is applied: 
+> 
+> ./fs/btrfs/extent-tree.c	__btrfs_inc_extent_ref	152	144	-8
+> ./fs/btrfs/extent-tree.c	__btrfs_run_delayed_refs	256	248	-8
+> ./fs/btrfs/extent-tree.c	alloc_reserved_file_extent	128	136	+8
 
-> On Wed, Jun 20, 2018 at 07:56:10AM -0700, Chris Mason wrote:
->> We've been hunting the root cause of data crc errors here at FB for a 
->> while.
->> We'd find one or two corrupted files, usually displaying crc errors 
->> without any
->> corresponding IO errors from the storage.  The bug was rare enough 
->> that we'd
->> need to watch a large number of machines for a few days just to catch 
->> it
->> happening.
->>
->> We're still running these patches through testing, but the fixup 
->> worker bug
->> seems to account for the vast majority of crc errors we're seeing in 
->> the fleet.
->> It's cleaning pages that were dirty, and creating a window where they 
->> can be
->> reclaimed before we finish processing the page.
->
-> I'm having flashbacks when I see 'fixup worker', and the test 
-> generic/208 does
-> not make it better:
->
-> generic/095		[18:07:03][ 3769.317862] run fstests generic/095 at 
-> 2018-06-20 18:07:03
-> [ 3774.849685] BTRFS: device fsid 3acffad9-28e5-43ce-80e1-f5032e334cba 
-> devid 1 transid 5 /dev/vdb
-> [ 3774.875409] BTRFS info (device vdb): disk space caching is enabled
-> [ 3774.877723] BTRFS info (device vdb): has skinny extents
-> [ 3774.879371] BTRFS info (device vdb): flagging fs with big metadata 
-> feature
-> [ 3774.885020] BTRFS info (device vdb): checking UUID tree
-> [ 3775.593329] Page cache invalidation failure on direct I/O.  
-> Possible data corruption due to collision with buffered I/O!
-> [ 3775.596979] File: /tmp/scratch/file2 PID: 12031 Comm: kworker/1:1
-> [ 3776.642812] Page cache invalidation failure on direct I/O.  
-> Possible data corruption due to collision with buffered I/O!
-> [ 3776.645041] File: /tmp/scratch/file2 PID: 12033 Comm: kworker/3:0
-> [ 3776.920634] WARNING: CPU: 0 PID: 12036 at fs/btrfs/inode.c:9319 
-> btrfs_destroy_inode+0x1d5/0x290 [btrfs]
-> [ 3776.924182] Modules linked in: btrfs libcrc32c xor zstd_decompress 
-> zstd_compress xxhash raid6_pq loop [last unloaded: libcrc32c]
-> [ 3776.927703] CPU: 0 PID: 12036 Comm: umount Not tainted 
-> 4.17.0-rc7-default+ #153
-> [ 3776.929164] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), 
-> BIOS 1.0.0-prebuilt.qemu-project.org 04/01/2014
-> [ 3776.931006] RIP: 0010:btrfs_destroy_inode+0x1d5/0x290 [btrfs]
 
-Running generic/095 on current Linus git (without my patches), I'm 
-seeing this same warning.  This makes me a little happy because I have 
-my patches in prod, but mostly sad because it's easier to find when the 
-suspect pool is small.  I'll bisect.
+Just want to "hijack" the thread to get more ideas on the compiler
+optimization.
 
--chris
+1) About compiler detecting such parameter duplication:
+
+Using this function as an example, since it's just an ordinary static
+function without any fancy qualifiers.
+
+For human, we could easily know the @fs_info passed in is just
+@trans->fs_info, but I'm wondering if there is any chance that a
+compiler could detect and reduce the call stack usage?
+
+Without the human oriented naming hint nor any special parameter
+qualifiers, compiler needs to climb the abstract syntax tree for a long
+long distance to determine if these @fs_info are the same.
+But it should still be possible (in theory at least) for compiler to
+detect such parameter duplication.
+
+At least if compiler could give us some hint, it would make such cleanup
+easier.
+(CPU time is always less expensive than human hours)
+
+2) About why the stack usage of this particular function increased?
+Since we're reducing the parameter, as long as we're using stack to
+passing the parameter, it should reduce the call stack for the function.
+I'm wondering why the call stack of this function get increased.
+Is the compiler doing some extra optimization?
+
+Thanks,
+Qu
+
+> ./fs/btrfs/extent-tree.c	btrfs_alloc_logged_file_extent	104	88	-16
+> ./fs/btrfs/extent-tree.c	btrfs_alloc_reserved_file_extent	56	48	-8
+> ./fs/btrfs/extent-tree.c	btrfs_alloc_tree_block	176	168	-8
+> ./fs/btrfs/extent-tree.c	btrfs_force_chunk_alloc	24	16	-8
+> ./fs/btrfs/extent-tree.c	btrfs_free_extent	104	96	-8
+> ./fs/btrfs/extent-tree.c	btrfs_free_tree_block	112	104	-8
+> ./fs/btrfs/extent-tree.c	btrfs_inc_block_group_ro	56	48	-8
+> ./fs/btrfs/extent-tree.c	btrfs_inc_extent_ref	112	104	-8
+> ./fs/btrfs/extent-tree.c	caching_thread	216	208	-8
+> ./fs/btrfs/extent-tree.c	convert_extent_item_v0	120	112	-8
+> ./fs/btrfs/extent-tree.c	insert_inline_extent_backref	120	112	-8
+> ./fs/btrfs/extent-tree.c	lookup_inline_extent_backref	176	184	+8
+> ./fs/btrfs/extent-tree.c	remove_extent_data_ref	104	96	-8
+> 
+> Also the output of bloat-o-meter : 
+> 
+> add/remove: 5/5 grow/shrink: 6/24 up/down: 2275/-2554 (-279)
+> Function                                     old     new   delta
+> insert_extent_data_ref                         -     738    +738
+> lookup_extent_data_ref                         -     613    +613
+> remove_extent_data_ref                         -     535    +535
+> lookup_tree_block_ref                          -     227    +227
+> insert_tree_block_ref                          -     139    +139
+> btrfs_inc_extent_ref                         235     242      +7
+> btrfs_make_block_group                       831     837      +6
+> update_inline_extent_backref                 681     685      +4
+> exclude_super_stripes                        356     360      +4
+> free_excluded_extents                         95      96      +1
+> alloc_reserved_file_extent                   954     955      +1
+> check_system_chunk                           362     361      -1
+> insert_inline_extent_backref                 224     221      -3
+> flush_space                                 1691    1688      -3
+> cache_block_group                           1132    1129      -3
+> btrfs_free_block_groups                     1140    1137      -3
+> btrfs_alloc_tree_block                      1024    1021      -3
+> remove_extent_backref                        104     100      -4
+> find_free_extent                            5436    5431      -5
+> convert_extent_item_v0                       735     730      -5
+> do_chunk_alloc                               846     838      -8
+> btrfs_remove_block_group                    2805    2797      -8
+> btrfs_free_extent                            306     298      -8
+> btrfs_alloc_data_chunk_ondemand             1242    1234      -8
+> btrfs_free_tree_block                        862     853      -9
+> btrfs_force_chunk_alloc                       45      35     -10
+> btrfs_read_block_groups                     2245    2233     -12
+> btrfs_alloc_logged_file_extent               249     237     -12
+> btrfs_alloc_reserved_file_extent              70      57     -13
+> btrfs_inc_block_group_ro                     352     338     -14
+> lookup_inline_extent_backref                1532    1516     -16
+> caching_thread                              1465    1446     -19
+> __btrfs_run_delayed_refs                    5469    5446     -23
+> __btrfs_inc_extent_ref.isra                  608     566     -42
+> __btrfs_free_extent.isra                    3136    3082     -54
+> insert_tree_block_ref.isra                   131       -    -131
+> lookup_tree_block_ref.isra                   216       -    -216
+> remove_extent_data_ref.isra                  543       -    -543
+> lookup_extent_data_ref.isra                  649       -    -649
+> insert_extent_data_ref.isra                  729       -    -729
+> Total: Before=91208, After=90929, chg -0.31%
+> 
+> Overall this series is a win both in code density as well as stack usage and 
+> brings us closer to completely eliminating the chaotic spread ot fs_info in 
+> the code base. 
+> 
+> Nikolay Borisov (34):
+>   btrfs: Remove fs_info from insert_tree_block_ref
+>   btrfs: Remove fs_info from insert_extent_data_ref
+>   btrfs: Remove fs_info argument from insert_extent_backref
+>   btrfs: Remove fs_info from remove_extent_data_ref
+>   btrfs: Remove fs_info from fixup_low_keys
+>   btrfs: Remove fs_info from lookup_inline_extent_backref
+>   btrfs: Remove fs_info argument from update_inline_extent_backref
+>   btrfs: Remove fs_info argument from lookup_tree_block_ref
+>   btrfs: Remove fs_info argument from lookup_extent_data_ref
+>   btrfs: Remove fs_info from lookup_extent_backref
+>   btrfs: Remove fs_info from btrfs_add_delayed_tree_ref
+>   btrfs: Remove fs_info from btrfs_add_delayed_data_ref
+>   btrfs: Remove fs_info from btrfs_make_block_group
+>   btrfs: Remove fs_info from btrfs_remove_block_group
+>   btrfs: Remove fs_info from __btrfs_free_extent
+>   btrfs: Remove fs_info from alloc_reserved_file_extent
+>   btrfs: Remove fs_info argument from __btrfs_inc_extent_ref
+>   btrfs: Remove fs_info from run_delayed_data_ref
+>   btrfs: Remove fs_info from run_delayed_extent_op
+>   btrfs: Remove unused fs_info from cleanup_extent_op
+>   btrfs: Remove fs_info from cleanup_ref_head
+>   btrfs: Remove fs_info from run_delayed_tree_ref
+>   btrfs: Remove fs_info from do_chunk_alloc
+>   btrfs: Remove fs_info from btrfs_alloc_chunk
+>   btrfs: Remove fs_info from check_system_chunk
+>   btrfs: Remove fs_info from free_excluded_extents
+>   btrfs: Remove fs_info from exclude_super_stripes
+>   btrfs: Remove fs_info from insert_inline_extent_backref
+>   btrfs: Remove fs_info from run_one_delayed_ref
+>   btrfs: Remove fs_info from remove_extent_backref
+>   btrfs: Remove fs_info from btrfs_alloc_logged_file_extent
+>   btrfs: Remove fs_info from btrfs_inc_block_group_ro
+>   btrfs: Remove fs_info from btrfs_force_chunk_alloc
+>   btrfs: Remove fs_info from convert_extent_item_v0
+> 
+>  fs/btrfs/ctree.c       |  18 ++--
+>  fs/btrfs/ctree.h       |  17 ++-
+>  fs/btrfs/delayed-ref.c |   8 +-
+>  fs/btrfs/delayed-ref.h |   6 +-
+>  fs/btrfs/extent-tree.c | 287 ++++++++++++++++++++++---------------------------
+>  fs/btrfs/relocation.c  |   5 +-
+>  fs/btrfs/scrub.c       |   2 +-
+>  fs/btrfs/tree-log.c    |   1 -
+>  fs/btrfs/volumes.c     |  17 ++-
+>  fs/btrfs/volumes.h     |   3 +-
+>  10 files changed, 161 insertions(+), 203 deletions(-)
+> 

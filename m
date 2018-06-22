@@ -1,112 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.99]:48300 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932620AbeFTJCe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 20 Jun 2018 05:02:34 -0400
-Received: from debian3.lan (bl11-80-66.dsl.telepac.pt [85.244.80.66])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 55C7920872
-        for <linux-btrfs@vger.kernel.org>; Wed, 20 Jun 2018 09:02:33 +0000 (UTC)
-From: fdmanana@kernel.org
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2] Btrfs: fix physical offset reported by fiemap for inline extents
-Date: Wed, 20 Jun 2018 10:02:30 +0100
-Message-Id: <20180620090230.10757-1-fdmanana@kernel.org>
-In-Reply-To: <20180619113142.9020-1-fdmanana@kernel.org>
-References: <20180619113142.9020-1-fdmanana@kernel.org>
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:60199 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S934214AbeFVBqH (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 21 Jun 2018 21:46:07 -0400
+Received: from G08CNEXCHPEKD03.g08.fujitsu.local (unknown [10.167.33.85])
+        by cn.fujitsu.com (Postfix) with ESMTP id DAA0F4B41EE5
+        for <linux-btrfs@vger.kernel.org>; Fri, 22 Jun 2018 09:46:03 +0800 (CST)
+From: Su Yue <suy.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: <suy.fnst@cn.fujitsu.com>
+Subject: [PATCH] btrfs: Add more details while checking tree block
+Date: Fri, 22 Jun 2018 09:52:15 +0800
+Message-ID: <20180622015215.31812-1-suy.fnst@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+For easier debug, print eb->start if level is invalid.
+Also make print clear if bytenr found is not expected.
 
-Commit 9d311e11fc1f ("Btrfs: fiemap: pass correct bytenr when
-fm_extent_count is zero") introduced a regression where we no longer
-report 0 as the physical offset for inline extents (and other extents
-with a special block_start value). This is because it always sets the
-variable used to report the physical offset ("disko") as em->block_start
-plus some offset, and em->block_start has the value 18446744073709551614
-((u64) -2) for inline extents.
-
-This made the btrfs test 004 (from fstests) often fail, for example, for
-a file with an inline extent we have the following items in the subvolume
-tree:
-
-    item 101 key (418 INODE_ITEM 0) itemoff 11029 itemsize 160
-           generation 25 transid 38 size 1525 nbytes 1525
-           block group 0 mode 100666 links 1 uid 0 gid 0 rdev 0
-           sequence 0 flags 0x2(none)
-           atime 1529342058.461891730 (2018-06-18 18:14:18)
-           ctime 1529342058.461891730 (2018-06-18 18:14:18)
-           mtime 1529342058.461891730 (2018-06-18 18:14:18)
-           otime 1529342055.869892885 (2018-06-18 18:14:15)
-    item 102 key (418 INODE_REF 264) itemoff 11016 itemsize 13
-           index 25 namelen 3 name: fc7
-    item 103 key (418 EXTENT_DATA 0) itemoff 9470 itemsize 1546
-           generation 38 type 0 (inline)
-           inline extent data size 1525 ram_bytes 1525 compression 0 (none)
-
-Then when test 004 invoked fiemap against the file it got a non-zero
-physical offset:
-
- $ filefrag -v /mnt/p0/d4/d7/fc7
- Filesystem type is: 9123683e
- File size of /mnt/p0/d4/d7/fc7 is 1525 (1 block of 4096 bytes)
-  ext:     logical_offset:        physical_offset: length:   expected: flags:
-    0:        0..    4095: 18446744073709551614..      4093:   4096:             last,not_aligned,inline,eof
- /mnt/p0/d4/d7/fc7: 1 extent found
-
-This resulted in the test failing like this:
-
-btrfs/004 49s ... [failed, exit status 1]- output mismatch (see /home/fdmanana/git/hub/xfstests/results//btrfs/004.out.bad)
-    --- tests/btrfs/004.out	2016-08-23 10:17:35.027012095 +0100
-    +++ /home/fdmanana/git/hub/xfstests/results//btrfs/004.out.bad	2018-06-18 18:15:02.385872155 +0100
-    @@ -1,3 +1,10 @@
-     QA output created by 004
-     *** test backref walking
-    -*** done
-    +./tests/btrfs/004: line 227: [: 7.55578637259143e+22: integer expression expected
-    +ERROR: 7.55578637259143e+22 is not a valid numeric value.
-    +unexpected output from
-    +	/home/fdmanana/git/hub/btrfs-progs/btrfs inspect-internal logical-resolve -s 65536 -P 7.55578637259143e+22 /home/fdmanana/btrfs-tests/scratch_1
-    ...
-    (Run 'diff -u tests/btrfs/004.out /home/fdmanana/git/hub/xfstests/results//btrfs/004.out.bad'  to see the entire diff)
-Ran: btrfs/004
-
-The large number in scientific notation reported as an invalid numeric
-value is the result from the filter passed to perl which multiplies the
-physical offset by the block size reported by fiemap.
-
-So fix this by ensuring the physical offset is always set to 0 when we
-are processing an extent with a special block_start value.
-
-Fixes: 9d311e11fc1f ("Btrfs: fiemap: pass correct bytenr when fm_extent_count is zero")
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
+Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
 ---
+ fs/btrfs/disk-io.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
-v2: Set the physical offset to 0 for other extent maps with a special
-    block_start value as well.
-
- fs/btrfs/extent_io.c | 5 ++++-
- 1 file changed, 4 insertions(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 8e4a7cdbc9f5..1aa91d57404a 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -4545,8 +4545,11 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
- 			offset_in_extent = em_start - em->start;
- 		em_end = extent_map_end(em);
- 		em_len = em_end - em_start;
--		disko = em->block_start + offset_in_extent;
- 		flags = 0;
-+		if (em->block_start < EXTENT_MAP_LAST_BYTE)
-+			disko = em->block_start + offset_in_extent;
-+		else
-+			disko = 0;
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index c3504b4d281b..a90dab84f41b 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -615,8 +615,8 @@ static int btree_readpage_end_io_hook(struct btrfs_io_bio *io_bio,
  
- 		/*
- 		 * bump off for our next call to get_extent
+ 	found_start = btrfs_header_bytenr(eb);
+ 	if (found_start != eb->start) {
+-		btrfs_err_rl(fs_info, "bad tree block start %llu %llu",
+-			     found_start, eb->start);
++		btrfs_err_rl(fs_info, "bad tree block start want %llu have %llu",
++			     eb->start, found_start);
+ 		ret = -EIO;
+ 		goto err;
+ 	}
+@@ -628,8 +628,8 @@ static int btree_readpage_end_io_hook(struct btrfs_io_bio *io_bio,
+ 	}
+ 	found_level = btrfs_header_level(eb);
+ 	if (found_level >= BTRFS_MAX_LEVEL) {
+-		btrfs_err(fs_info, "bad tree block level %d",
+-			  (int)btrfs_header_level(eb));
++		btrfs_err(fs_info, "bad tree block level %d on %llu",
++			  (int)btrfs_header_level(eb), eb->start);
+ 		ret = -EIO;
+ 		goto err;
+ 	}
 -- 
-2.11.0
+2.17.1
+
+
 

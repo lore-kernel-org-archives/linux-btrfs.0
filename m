@@ -1,26 +1,27 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ua0-f194.google.com ([209.85.217.194]:46867 "EHLO
-        mail-ua0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751285AbeFVJaR (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 22 Jun 2018 05:30:17 -0400
-Received: by mail-ua0-f194.google.com with SMTP id d7-v6so3878734uam.13
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Jun 2018 02:30:17 -0700 (PDT)
-MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <20180622043500.717-1-wqu@suse.com>
-References: <20180622043500.717-1-wqu@suse.com>
-From: Filipe Manana <fdmanana@gmail.com>
-Date: Fri, 22 Jun 2018 10:30:14 +0100
-Message-ID: <CAL3q7H6udo8eEjp-hVauy6aKSgiK2KKB-i1w1Y3DYn1aQNqgFw@mail.gmail.com>
-Subject: Re: [PATCH v4] btrfs: Don't remove block group still has pinned down bytes
+Received: from mx2.suse.de ([195.135.220.15]:58502 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751369AbeFVJzB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 22 Jun 2018 05:55:01 -0400
+Received: from relay1.suse.de (charybdis-ext-too.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 0FD01AE5C
+        for <linux-btrfs@vger.kernel.org>; Fri, 22 Jun 2018 09:55:00 +0000 (UTC)
+Date: Fri, 22 Jun 2018 11:52:08 +0200
+From: David Sterba <dsterba@suse.cz>
 To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v4] btrfs: Don't remove block group still has pinned down
+ bytes
+Message-ID: <20180622095208.GX24375@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20180622043500.717-1-wqu@suse.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20180622043500.717-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jun 22, 2018 at 5:35 AM, Qu Wenruo <wqu@suse.com> wrote:
+On Fri, Jun 22, 2018 at 12:35:00PM +0800, Qu Wenruo wrote:
 > [BUG]
 > Under certain KVM load and LTP tests, we are possible to hit the
 > following calltrace if quota is enabled:
@@ -77,7 +78,7 @@ On Fri, Jun 22, 2018 at 5:35 AM, Qu Wenruo <wqu@suse.com> wrote:
 > BTRFS info (device vda2): forced readonly
 > BTRFS error (device vda2): pending csums is 2887680
 > ------
->
+> 
 > [CAUSE]
 > It's caused by race with block group auto removal like the following
 > case:
@@ -94,59 +95,20 @@ On Fri, Jun 22, 2018 at 5:35 AM, Qu Wenruo <wqu@suse.com> wrote:
 >   Quota needs to get the original reference of the extent, which will
 >   reads tree blocks of commit root of 257.
 >   Then since the chunk map get removed, above warning get triggered.
->
+> 
 > [FIX]
 > Just teach btrfs_delete_unused_bgs() to skip block group who still has
 > pinned bytes.
->
+> 
 > However there is a minor side effect, since currently we only queue
 > empty blocks at update_block_group(), and such empty block group with
 > pinned bytes won't go through update_block_group() again, such block
 > group won't be removed, until it get new extent allocated and removed.
->
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
 
-thanks
+So this cannot lead to free block groups that will not get cleaned for
+some longer period of time, right? After the bytes are unpinned and
+cleaner thread has a chance to run, the bg will not be blocked for
+deletion anymore.
 
-> ---
-> changelog:
-> v2:
->   Commit message update, to better indicate how pinned byte is used in
->   btrfs and why it's related to quota.
-> v3:
->   Commit message update, further explaining the bug with an example.
->   And added the side effect of the fix, and possible further fix.
-> v4:
->   Remove unrelated and confusing commit message.
-> ---
->  fs/btrfs/extent-tree.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
->
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index f190023386a9..7d14c4ca8232 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -10675,7 +10675,7 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
->                 /* Don't want to race with allocators so take the groups_sem */
->                 down_write(&space_info->groups_sem);
->                 spin_lock(&block_group->lock);
-> -               if (block_group->reserved ||
-> +               if (block_group->reserved || block_group->pinned ||
->                     btrfs_block_group_used(&block_group->item) ||
->                     block_group->ro ||
->                     list_is_singular(&block_group->list)) {
-> --
-> 2.17.1
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
-
-
--- 
-Filipe David Manana,
-
-“Whether you think you can, or you think you can't — you're right.”
+The visible effect of that is that the deletion might be slightly
+delayed.

@@ -1,109 +1,99 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f195.google.com ([209.85.223.195]:41205 "EHLO
-        mail-io0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S933878AbeFVS1c (ORCPT
+Received: from mail-ua0-f182.google.com ([209.85.217.182]:46021 "EHLO
+        mail-ua0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751551AbeFVVUL (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 22 Jun 2018 14:27:32 -0400
-Received: by mail-io0-f195.google.com with SMTP id k16-v6so4177138ioa.8
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Jun 2018 11:27:31 -0700 (PDT)
+        Fri, 22 Jun 2018 17:20:11 -0400
+Received: by mail-ua0-f182.google.com with SMTP id k14-v6so5134260uao.12
+        for <linux-btrfs@vger.kernel.org>; Fri, 22 Jun 2018 14:20:10 -0700 (PDT)
 MIME-Version: 1.0
-References: <20180622015215.31812-1-suy.fnst@cn.fujitsu.com>
- <7b34f539-ef57-ecb3-37c8-7b3759874249@suse.com> <06086fd3-f28b-5cc7-f3c6-3fca659b2fa0@mendix.com>
- <trinity-79615ff6-1782-43b2-b564-19a911272004-1529684276139@3c-app-mailcom-bs09>
- <1d838113-c2be-c80a-4238-8d2c52b3663c@suse.com> <109e834a-09af-e3dd-f03e-955a58b12f30@mendix.com>
-In-Reply-To: <109e834a-09af-e3dd-f03e-955a58b12f30@mendix.com>
-From: Noah Massey <noah.massey@gmail.com>
-Date: Fri, 22 Jun 2018 14:26:55 -0400
-Message-ID: <CADfjVrgK5d-ucRG1XNBA_4FEw8+ipYckj2CpdC-7C_CcD5EBFw@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: Add more details while checking tree block
-To: hans.van.kranenburg@mendix.com
-Cc: Nikolay Borisov <nborisov@suse.com>, Damenly_Su@gmx.com,
-        suy.fnst@cn.fujitsu.com, linux-btrfs <linux-btrfs@vger.kernel.org>
+In-Reply-To: <10e17ab5-0a17-e5c4-a648-37faa75ccb3e@gmx.com>
+References: <CAHac6AspsJ5iu+HECOr1ytVRjqB1JyVtqKVwxBF-H+t_18-Tnw@mail.gmail.com>
+ <CAJCQCtStcPseu+2KNYQN2C3wKkAenuQm59yiK_X8jOsfAA-Myg@mail.gmail.com>
+ <CAJCQCtTsWq_wZP-MO2-aXmzFAyR-QoT8147NFEiMqyGa7bbDNQ@mail.gmail.com>
+ <CAHac6AtGU1VprzTqD-zaqEuBQBg_stZPVRZt5RcdQ6vaKemGVQ@mail.gmail.com> <10e17ab5-0a17-e5c4-a648-37faa75ccb3e@gmx.com>
+From: Daniel Underwood <daniel.underwood13@gmail.com>
+Date: Fri, 22 Jun 2018 17:20:09 -0400
+Message-ID: <CAHac6Av1L-LWKHat3aePEGBZ0LTW9yb2U+9rdezc774a8fiEhg@mail.gmail.com>
+Subject: Re: Bad superblock when mounting rw, ro mount works
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jun 22, 2018 at 12:32 PM Hans van Kranenburg
-<hans.van.kranenburg@mendix.com> wrote:
->
-> On 06/22/2018 06:25 PM, Nikolay Borisov wrote:
-> >
-> >
-> > On 22.06.2018 19:17, Su Yue wrote:
-> >>
-> >>
-> >>
-> >>> Sent: Friday, June 22, 2018 at 11:26 PM
-> >>> From: "Hans van Kranenburg" <hans.van.kranenburg@mendix.com>
-> >>> To: "Nikolay Borisov" <nborisov@suse.com>, "Su Yue" <suy.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-> >>> Subject: Re: [PATCH] btrfs: Add more details while checking tree block
-> >>>
-> >>> On 06/22/2018 01:48 PM, Nikolay Borisov wrote:
-> >>>>
-> >>>>
-> >>>> On 22.06.2018 04:52, Su Yue wrote:
-> >>>>> For easier debug, print eb->start if level is invalid.
-> >>>>> Also make print clear if bytenr found is not expected.
-> >>>>>
-> >>>>> Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
-> >>>>> ---
-> >>>>>  fs/btrfs/disk-io.c | 8 ++++----
-> >>>>>  1 file changed, 4 insertions(+), 4 deletions(-)
-> >>>>>
-> >>>>> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> >>>>> index c3504b4d281b..a90dab84f41b 100644
-> >>>>> --- a/fs/btrfs/disk-io.c
-> >>>>> +++ b/fs/btrfs/disk-io.c
-> >>>>> @@ -615,8 +615,8 @@ static int btree_readpage_end_io_hook(struct btrfs_io_bio *io_bio,
-> >>>>>
-> >>>>>   found_start = btrfs_header_bytenr(eb);
-> >>>>>   if (found_start != eb->start) {
-> >>>>> -         btrfs_err_rl(fs_info, "bad tree block start %llu %llu",
-> >>>>> -                      found_start, eb->start);
-> >>>>> +         btrfs_err_rl(fs_info, "bad tree block start want %llu have %llu",
-> >>>>
-> >>>> nit: I'd rather have the want/have in brackets (want %llu have% llu)
-> >>>
-> >>> From a user support point of view, this text should really be improved.
-> >>> There are a few places where 'want' and 'have' are reported in error
-> >>> strings, and it's totally unclear what they mean.
-> >>>
-> >> Yes. The strings are too concise for users to understand errors.
-> >> Developers always prefer to avoid "unnecessary" words in logs.
-> >>
-> >>> Intuitively I'd say when checking a csum, the "want" would be what's on
-> >>> disk now, since you want that to be correct, and the "have" would be
-> >>> what you have calculated, but it's actually the other way round, or
-> >>> wasn't it? Or was it?
-> >> For csum, you are right at all.
-> >>
-> >> In this situation, IIRC bytenr of "have" is read from disk.
-> >> Bytenr of "want" is assigned while constructing eb, from parent ptr
-> >> , root item and other things which are also read from disk.
-> >>>
-> >>> Every time someone pastes such a message when we help on IRC for
-> >>> example, there's confusion, and I have to look up the source again,
-> >>> because I always forget.
-> >>
-> >> Me too.
-> >>>
-> >>> What about (%llu stored on disk, %llu calculated now) or something similar?
-> >
-> > Wha tabout expected got
->
-> No, that's just as horrible as want and found.
->
-> Did you 'expect' the same checksum to be on disk disk as what you 'get'
-> when calculating one? Or did you 'expect' the same thing after
-> calculation as what you 'got' when reading from disk?
->
-> /o\
->
+Thanks for the help, I started `check --repair --init-extent-tree`
+right around a week ago as a last effort before restoring from backup.
+Unfortunately, that command is still running. It does seem to be using
+about half of the system's RAM (8 of 16GB) and 100% load on a single
+core. Is this type of run time expected for an 8TB drive? The byte
+numbers it's referencing seem to be a bit odd to me as they're larger
+than the number of bytes on the drive. Here's the head and tail of the
+current run (separated by -----) if that's indicative of progress:
 
-So it's "read | archived | recorded" versus "calculated | generated |
-computed" ?
+btrfs unable to find ref byte nr 49673574858752 parent 0 root 1  owner
+2 offset 0
+btrfs unable to find ref byte nr 49673719529472 parent 0 root 1  owner
+1 offset 1
+btrfs unable to find ref byte nr 62243448012800 parent 0 root 1  owner
+0 offset 1
+btrfs unable to find ref byte nr 49673575120896 parent 0 root 1  owner
+1 offset 1
+btrfs unable to find ref byte nr 49673575251968 parent 0 root 1  owner
+0 offset 1
+checking extents
+ref mismatch on [49218307751936 67108864] extent item 0, found 1
+data backref 49218307751936 root 5 owner 1359193 offset 536870912
+num_refs 0 not found in extent tree
+incorrect local backref count on 49218307751936 root 5 owner 1359193
+offset 536870912 found 1 wanted 0 back 0x5583559bd790
+backpointer mismatch on [49218307751936 67108864]
+-----------------
+data backref 49230998138880 root 5 owner 1409678 offset 7408779264
+num_refs 0 not found in extent tree
+incorrect local backref count on 49230998138880 root 5 owner 1409678
+offset 7408779264 found 1 wanted 0 back 0x5583b95f0e20
+backpointer mismatch on [49230998138880 16384]
+adding new data backref on 49230998138880 root 5 owner 1409678 offset
+7408779264 found 1
+Repaired extent references for 49230998138880
+ref mismatch on [49230998155264 16384] extent item 0, found 1
+data backref 49230998155264 root 5 owner 669291 offset 3905650688
+num_refs 0 not found in extent tree
+incorrect local backref count on 49230998155264 root 5 owner 669291
+offset 3905650688 found 1 wanted 0 back 0x5582efb12930
+backpointer mismatch on [49230998155264 16384]
+adding new data backref on 49230998155264 root 5 owner 669291 offset
+3905650688 found 1
 
-If we want to be succinct, it's "then" versus "now", but that's not as
-descriptive.
+Thanks,
+Daniel
 
-~ Noah
+
+On Thu, Jun 14, 2018 at 10:43 AM, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
+> From the output, specially the lowmem mode output since original mode
+> handles extent tree corruption poorly and aborted, it's your extent tree
+> corrupted and causing the bug.
+>
+> Thus, you should be able to mount the fs RO and copy all the data back
+> without much hassle.
+> Just need to pay attention for csum error.
+>
+> And considering how many extent tree corruption, I don't think it's a
+> good idea to manually fix the fs.
+>
+> The last chance is, to try --repair --init-extent-tree as your last
+> chance, if you still want to salvage the filesystem.
+> The lowmem mode shows no extra bug, thus it's possible for
+> --init-extent-tree to re-init extent tree and save the day.
+>
+> But personally speaking I'm not fully confident of the operation, thus
+> it may fail and you may need to use the backup.
+>
+> BTW, even --init-extent-tree succeeded, you may still need to run btrfs
+> check again to check if all the bugs are fixed.
+> But at least from the lowmem output, the remaining errors are all fixable.
+>
+> Thanks,
+> Qu

@@ -1,48 +1,108 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:54874 "EHLO mx2.suse.de"
+Received: from mout.gmx.net ([212.227.15.15]:55853 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751516AbeF0M6P (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 27 Jun 2018 08:58:15 -0400
-Date: Wed, 27 Jun 2018 14:58:14 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Su Yue <suy.fnst@cn.fujitsu.com>
-Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2] btrfs: return EUCLEAN if extent_inline_ref type is
- invalid
-Message-ID: <20180627125814.GD2287@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20180622075349.17976-1-suy.fnst@cn.fujitsu.com>
- <20180622081801.19891-1-suy.fnst@cn.fujitsu.com>
- <20180622094038.GW24375@twin.jikos.cz>
- <7a864047-c1e8-0044-8660-e3862b5df78d@cn.fujitsu.com>
+        id S1750931AbeFVGMO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 22 Jun 2018 02:12:14 -0400
+Subject: Re: [PATCH] btrfs: treat -ERANGE as an error case in btrfs_get_acl()
+To: Chengguang Xu <cgxu519@gmx.com>, clm@fb.com, jbacik@fb.com,
+        dsterba@suse.com
+Cc: linux-btrfs@vger.kernel.org
+References: <20180622025816.29239-1-cgxu519@gmx.com>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <88554c7b-f495-0295-574f-094a5181d9f1@gmx.com>
+Date: Fri, 22 Jun 2018 13:59:55 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <7a864047-c1e8-0044-8660-e3862b5df78d@cn.fujitsu.com>
+In-Reply-To: <20180622025816.29239-1-cgxu519@gmx.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="9iT8Hxj13Yu0Gap5f2QRRsZyZM0p2uwvX"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jun 25, 2018 at 09:28:32AM +0800, Su Yue wrote:
-> 
-> 
-> On 06/22/2018 05:40 PM, David Sterba wrote:
-> > On Fri, Jun 22, 2018 at 04:18:01PM +0800, Su Yue wrote:
-> >> If type of extent_inline_ref found is not expected, filesystem may have
-> >> been corrupted, should return EUCLEAN instead of EINVAL.
-> >> No functional changes.
-> >>
-> >> Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
-> >> ---
-> >> Changelog:
-> >> v2:
-> >>   Add changes in build_backref_tree, get_extent_inline_ref and
-> >>     add_inline_refs.
-> > 
-> > v2 looks good. I saw one implicit check for invalid ref in
-> > add_data_references that still returns -EINVAL.
-> > 
-> > The implicit check is located in relocation.c:3804. I changed
-> it in v1 which is not listed in changedlog.
-> Did I need to sent v3 to list all functions in commit message?
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--9iT8Hxj13Yu0Gap5f2QRRsZyZM0p2uwvX
+Content-Type: multipart/mixed; boundary="qfZDsA7IVHdez2FslmuYoNWIpCojBhlTU";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: Chengguang Xu <cgxu519@gmx.com>, clm@fb.com, jbacik@fb.com,
+ dsterba@suse.com
+Cc: linux-btrfs@vger.kernel.org
+Message-ID: <88554c7b-f495-0295-574f-094a5181d9f1@gmx.com>
+Subject: Re: [PATCH] btrfs: treat -ERANGE as an error case in btrfs_get_acl()
+References: <20180622025816.29239-1-cgxu519@gmx.com>
+In-Reply-To: <20180622025816.29239-1-cgxu519@gmx.com>
 
-No, the change is in the patch, I must have overlooked it, sorry. Added
-to misc-next now, thanks.
+--qfZDsA7IVHdez2FslmuYoNWIpCojBhlTU
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
+
+
+
+On 2018=E5=B9=B406=E6=9C=8822=E6=97=A5 10:58, Chengguang Xu wrote:
+> Currently, when encoutering -ERANGE in btrfs_get_acl(),
+> just set acl to NULL so that we cannot get proper
+> acl information but the operation looks successful.
+>=20
+> This patch treats -ERANGE as an error case and meanwhile
+> print real errno before translating errno to -EIO.
+>=20
+> Signed-off-by: Chengguang Xu <cgxu519@gmx.com>
+> ---
+>  fs/btrfs/acl.c | 3 ++-
+>  1 file changed, 2 insertions(+), 1 deletion(-)
+>=20
+> diff --git a/fs/btrfs/acl.c b/fs/btrfs/acl.c
+> index 15e1dfef56a5..7b3a83dd917c 100644
+> --- a/fs/btrfs/acl.c
+> +++ b/fs/btrfs/acl.c
+> @@ -42,9 +42,10 @@ struct posix_acl *btrfs_get_acl(struct inode *inode,=
+ int type)
+>  	}
+>  	if (size > 0) {
+>  		acl =3D posix_acl_from_xattr(&init_user_ns, value, size);
+> -	} else if (size =3D=3D -ERANGE || size =3D=3D -ENODATA || size =3D=3D=
+ 0) {
+> +	} else if (size =3D=3D -ENODATA || size =3D=3D 0) {
+>  		acl =3D NULL;
+>  	} else {
+> +		pr_err_ratelimited("BTRFS: get acl failed, err=3D%d\n", size);
+
+Is there any special reason to output this message even it's rate limited=
+?
+This looks much like a debug output, no to mention we have
+btrfs_err/warn/info() wrapper to output with proper fs UUID.
+
+>  		acl =3D ERR_PTR(-EIO);
+
+in fact we should let @acl to contain the correct error code from
+btrfs_getxattr(), other than overriding it with -EIO.
+
+Thanks,
+Qu
+
+>  	}
+>  	kfree(value);
+>=20
+
+
+--qfZDsA7IVHdez2FslmuYoNWIpCojBhlTU--
+
+--9iT8Hxj13Yu0Gap5f2QRRsZyZM0p2uwvX
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlsskFsACgkQwj2R86El
+/qh8aAf+P9aIKeIfADhxmzrrjbYH7faBKWdPua543JYtOpNBVwZ7dST8BZVXIIIN
+VPKkdLpsNFerAVNHHaIqNGb8XEvDKPEnY62z4stfoeKnhzDFk0flwQ30fOgkMsw2
+mQl2P3vGI9clLBNq3L8JuRi1KbpymNpM4iSmYG3sROiJnIT4jAujC9o12w5fGx/m
+iQTCouJ/qLZs2Y+o1CvFX2yljlUfEOsUeD4CT9eU5Kywz8hqSf/QJOo6zCuILjjM
+fHtqWp1YINF4VWnAQlgrKfRE0kdmQZk3mDFpgWclXVL4Szx8Tkrmj9mmGnH0aQJS
+so/OkeiFSnKrl3jilNuYsnT43+A/bQ==
+=7CkE
+-----END PGP SIGNATURE-----
+
+--9iT8Hxj13Yu0Gap5f2QRRsZyZM0p2uwvX--

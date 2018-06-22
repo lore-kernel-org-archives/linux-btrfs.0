@@ -1,84 +1,152 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:57526 "EHLO
-        mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1754918AbeFYRDx (ORCPT
+Received: from mail-ua0-f194.google.com ([209.85.217.194]:46867 "EHLO
+        mail-ua0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751285AbeFVJaR (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Jun 2018 13:03:53 -0400
-Received: from pps.filterd (m0148460.ppops.net [127.0.0.1])
-        by mx0a-00082601.pphosted.com (8.16.0.22/8.16.0.22) with SMTP id w5PGx7tT023543
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Jun 2018 10:03:52 -0700
-Received: from mail.thefacebook.com ([199.201.64.23])
-        by mx0a-00082601.pphosted.com with ESMTP id 2ju3s004kw-2
-        (version=TLSv1 cipher=ECDHE-RSA-AES256-SHA bits=256 verify=NOT)
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Jun 2018 10:03:52 -0700
-From: Chris Mason <clm@fb.com>
-To: <dsterba@suse.cz>
-CC: <linux-btrfs@vger.kernel.org>, Chris Mason <clm@fb.com>
-Subject: [PATCH v2] Btrfs: fix regression in btrfs_page_mkwrite() from vm_fault_t conversion
-Date: Mon, 25 Jun 2018 10:03:41 -0700
-Message-ID: <20180625170341.101319-1-clm@fb.com>
+        Fri, 22 Jun 2018 05:30:17 -0400
+Received: by mail-ua0-f194.google.com with SMTP id d7-v6so3878734uam.13
+        for <linux-btrfs@vger.kernel.org>; Fri, 22 Jun 2018 02:30:17 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <20180622043500.717-1-wqu@suse.com>
+References: <20180622043500.717-1-wqu@suse.com>
+From: Filipe Manana <fdmanana@gmail.com>
+Date: Fri, 22 Jun 2018 10:30:14 +0100
+Message-ID: <CAL3q7H6udo8eEjp-hVauy6aKSgiK2KKB-i1w1Y3DYn1aQNqgFw@mail.gmail.com>
+Subject: Re: [PATCH v4] btrfs: Don't remove block group still has pinned down bytes
+To: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The vm_fault_t conversion commit introduced a ret2 variable for tracking
-the integer return values from internal btrfs functions.  It was
-sometimes returning VM_FAULT_LOCKED for pages that were actually invalid
-and had been removed from the radix.  Something like this:
+On Fri, Jun 22, 2018 at 5:35 AM, Qu Wenruo <wqu@suse.com> wrote:
+> [BUG]
+> Under certain KVM load and LTP tests, we are possible to hit the
+> following calltrace if quota is enabled:
+> ------
+> BTRFS critical (device vda2): unable to find logical 8820195328 length 4096
+> BTRFS critical (device vda2): unable to find logical 8820195328 length 4096
+> ------------[ cut here ]------------
+> WARNING: CPU: 0 PID: 49 at ../block/blk-core.c:172 blk_status_to_errno+0x1a/0x30
+> CPU: 0 PID: 49 Comm: kworker/u2:1 Not tainted 4.12.14-15-default #1 SLE15 (unreleased)
+> Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS 1.0.0-prebuilt.qemu-project.org 04/01/2014
+> Workqueue: btrfs-endio-write btrfs_endio_write_helper [btrfs]
+> task: ffff9f827b340bc0 task.stack: ffffb4f8c0304000
+> RIP: 0010:blk_status_to_errno+0x1a/0x30
+> Call Trace:
+>  submit_extent_page+0x191/0x270 [btrfs]
+>  ? btrfs_create_repair_bio+0x130/0x130 [btrfs]
+>  __do_readpage+0x2d2/0x810 [btrfs]
+>  ? btrfs_create_repair_bio+0x130/0x130 [btrfs]
+>  ? run_one_async_done+0xc0/0xc0 [btrfs]
+>  __extent_read_full_page+0xe7/0x100 [btrfs]
+>  ? run_one_async_done+0xc0/0xc0 [btrfs]
+>  read_extent_buffer_pages+0x1ab/0x2d0 [btrfs]
+>  ? run_one_async_done+0xc0/0xc0 [btrfs]
+>  btree_read_extent_buffer_pages+0x94/0xf0 [btrfs]
+>  read_tree_block+0x31/0x60 [btrfs]
+>  read_block_for_search.isra.35+0xf0/0x2e0 [btrfs]
+>  btrfs_search_slot+0x46b/0xa00 [btrfs]
+>  ? kmem_cache_alloc+0x1a8/0x510
+>  ? btrfs_get_token_32+0x5b/0x120 [btrfs]
+>  find_parent_nodes+0x11d/0xeb0 [btrfs]
+>  ? leaf_space_used+0xb8/0xd0 [btrfs]
+>  ? btrfs_leaf_free_space+0x49/0x90 [btrfs]
+>  ? btrfs_find_all_roots_safe+0x93/0x100 [btrfs]
+>  btrfs_find_all_roots_safe+0x93/0x100 [btrfs]
+>  btrfs_find_all_roots+0x45/0x60 [btrfs]
+>  btrfs_qgroup_trace_extent_post+0x20/0x40 [btrfs]
+>  btrfs_add_delayed_data_ref+0x1a3/0x1d0 [btrfs]
+>  btrfs_alloc_reserved_file_extent+0x38/0x40 [btrfs]
+>  insert_reserved_file_extent.constprop.71+0x289/0x2e0 [btrfs]
+>  btrfs_finish_ordered_io+0x2f4/0x7f0 [btrfs]
+>  ? pick_next_task_fair+0x2cd/0x530
+>  ? __switch_to+0x92/0x4b0
+>  btrfs_worker_helper+0x81/0x300 [btrfs]
+>  process_one_work+0x1da/0x3f0
+>  worker_thread+0x2b/0x3f0
+>  ? process_one_work+0x3f0/0x3f0
+>  kthread+0x11a/0x130
+>  ? kthread_create_on_node+0x40/0x40
+>  ret_from_fork+0x35/0x40
+> Code: 00 00 5b c3 0f 1f 00 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 44 00 00 40 80 ff 0c 40 0f b6 c7 77 0b 48 c1 e0 04 8b 80 00 bf c8 bd c3 <0f> 0b b8 fb ff ff ff c3 0f 1f 40 00 66 2e 0f 1f 84 00 00 00 00
+> ---[ end trace f079fb809e7a862b ]---
+> BTRFS critical (device vda2): unable to find logical 8820195328 length 16384
+> BTRFS: error (device vda2) in btrfs_finish_ordered_io:3023: errno=-5 IO failure
+> BTRFS info (device vda2): forced readonly
+> BTRFS error (device vda2): pending csums is 2887680
+> ------
+>
+> [CAUSE]
+> It's caused by race with block group auto removal like the following
+> case:
+> - There is a meta block group X, which has only one tree block
+>   The tree block belongs to fs tree 257.
+> - In current transaction, some operation modified fs tree 257
+>   The tree block get CoWed, so the block group X is empty, and marked as
+>   unused, queued to be deleted.
+> - Some workload (like fsync) wakes up cleaner_kthread()
+>   Which will call btrfs_deleted_unused_bgs() to remove unused block
+>   groups.
+>   So block group X along its chunk map get removed.
+> - Some delalloc work finished for fs tree 257
+>   Quota needs to get the original reference of the extent, which will
+>   reads tree blocks of commit root of 257.
+>   Then since the chunk map get removed, above warning get triggered.
+>
+> [FIX]
+> Just teach btrfs_delete_unused_bgs() to skip block group who still has
+> pinned bytes.
+>
+> However there is a minor side effect, since currently we only queue
+> empty blocks at update_block_group(), and such empty block group with
+> pinned bytes won't go through update_block_group() again, such block
+> group won't be removed, until it get new extent allocated and removed.
+>
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+Reviewed-by: Filipe Manana <fdmanana@suse.com>
 
-    ret2 = btrfs_delalloc_reserve_space() // returns zero on success
+thanks
 
-    lock_page(page)
-    if (page->mapping != inode->i_mapping)
-	goto out_unlock;
+> ---
+> changelog:
+> v2:
+>   Commit message update, to better indicate how pinned byte is used in
+>   btrfs and why it's related to quota.
+> v3:
+>   Commit message update, further explaining the bug with an example.
+>   And added the side effect of the fix, and possible further fix.
+> v4:
+>   Remove unrelated and confusing commit message.
+> ---
+>  fs/btrfs/extent-tree.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+>
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index f190023386a9..7d14c4ca8232 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -10675,7 +10675,7 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
+>                 /* Don't want to race with allocators so take the groups_sem */
+>                 down_write(&space_info->groups_sem);
+>                 spin_lock(&block_group->lock);
+> -               if (block_group->reserved ||
+> +               if (block_group->reserved || block_group->pinned ||
+>                     btrfs_block_group_used(&block_group->item) ||
+>                     block_group->ro ||
+>                     list_is_singular(&block_group->list)) {
+> --
+> 2.17.1
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-...
 
-out_unlock:
-    if (!ret2) {
-	    ...
-	    return VM_FAULT_LOCKED;
-    }
 
-This ends up triggering this WARNING in btrfs_destroy_inode()
-    WARN_ON(BTRFS_I(inode)->block_rsv.size);
-
-xfstests generic/095 was able to reliably reproduce the errors.
-
-Since out_unlock: is only used for errors, this fix moves it below the
-if (!ret2) check we use to return VM_FAULT_LOCKED for success.
-
-Fixes: a528a2415087 (btrfs: change return type of btrfs_page_mkwrite to vm_fault_t)
-Signed-off-by: Chris Mason <clm@fb.com>
----
-
- Changes since v1: don't set the vmfault_t 'ret' to zero, just move our
- goto taret around around instead.
-
- fs/btrfs/inode.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 193f933..63f713a 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -9036,13 +9036,14 @@ vm_fault_t btrfs_page_mkwrite(struct vm_fault *vmf)
- 
- 	unlock_extent_cached(io_tree, page_start, page_end, &cached_state);
- 
--out_unlock:
- 	if (!ret2) {
- 		btrfs_delalloc_release_extents(BTRFS_I(inode), PAGE_SIZE, true);
- 		sb_end_pagefault(inode->i_sb);
- 		extent_changeset_free(data_reserved);
- 		return VM_FAULT_LOCKED;
- 	}
-+
-+out_unlock:
- 	unlock_page(page);
- out:
- 	btrfs_delalloc_release_extents(BTRFS_I(inode), PAGE_SIZE, (ret != 0));
 -- 
-2.9.5
+Filipe David Manana,
 
+“Whether you think you can, or you think you can't — you're right.”

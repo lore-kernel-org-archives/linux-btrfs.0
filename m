@@ -1,40 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp.domeneshop.no ([194.63.252.55]:44974 "EHLO
-        smtp.domeneshop.no" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S933729AbeFUXNd (ORCPT
+Received: from mail-ot0-f170.google.com ([74.125.82.170]:46143 "EHLO
+        mail-ot0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S933932AbeFVCjv (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 21 Jun 2018 19:13:33 -0400
-Received: from 0.79-161-197.customer.lyse.net ([79.161.197.0]:20098 helo=[10.0.0.10])
-        by smtp.domeneshop.no with esmtpsa (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128)
-        (Exim 4.84_2)
-        (envelope-from <waxhead@dirtcellar.net>)
-        id 1fW8lf-0006jt-Tu
-        for linux-btrfs@vger.kernel.org; Fri, 22 Jun 2018 01:13:31 +0200
-To: linux-btrfs@vger.kernel.org
-Reply-To: waxhead@dirtcellar.net
-From: waxhead <waxhead@dirtcellar.net>
-Subject: unsolvable technical issues?
-Message-ID: <b255d0fb-5cee-36c5-d49f-5f014d20e518@dirtcellar.net>
-Date: Fri, 22 Jun 2018 01:13:31 +0200
+        Thu, 21 Jun 2018 22:39:51 -0400
+Received: by mail-ot0-f170.google.com with SMTP id v24-v6so5864872otk.13
+        for <linux-btrfs@vger.kernel.org>; Thu, 21 Jun 2018 19:39:50 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8; format=flowed
+In-Reply-To: <b255d0fb-5cee-36c5-d49f-5f014d20e518@dirtcellar.net>
+References: <b255d0fb-5cee-36c5-d49f-5f014d20e518@dirtcellar.net>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Thu, 21 Jun 2018 20:39:49 -0600
+Message-ID: <CAJCQCtTjHktJsWRqV3TbFyrVX+_wwMr8=EqWHA43-_-TyNabwQ@mail.gmail.com>
+Subject: Re: unsolvable technical issues?
+To: waxhead <waxhead@dirtcellar.net>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-According to this:
+On Thu, Jun 21, 2018 at 5:13 PM, waxhead <waxhead@dirtcellar.net> wrote:
+> According to this:
+>
+> https://stratis-storage.github.io/StratisSoftwareDesign.pdf
+> Page 4 , section 1.2
+>
+> It claims that BTRFS still have significant technical issues that may never
+> be resolved.
+> Could someone shed some light on exactly what these technical issues might
+> be?! What are BTRFS biggest technical problems?
 
-https://stratis-storage.github.io/StratisSoftwareDesign.pdf
-Page 4 , section 1.2
 
-It claims that BTRFS still have significant technical issues that may 
-never be resolved.
-Could someone shed some light on exactly what these technical issues 
-might be?! What are BTRFS biggest technical problems?
+I think it's appropriate to file an issue and ask what they're
+referring to. It very well might be use case specific to Red Hat.
+https://github.com/stratis-storage/stratis-storage.github.io/issues
 
-If you forget about the "RAID"5/6 like features then the only annoyances 
-that I have with BTRFS so far is...
+I also think it's appropriate to crosslink: include URL for the start
+of this thread in the issue, and the issue URL to this thread.
 
-1. Lack of per subvolume "RAID" levels
-2. Lack of not using the deviceid to re-discover and re-add dropped devices
 
-And that's about it really...
+
+-- 
+Chris Murphy

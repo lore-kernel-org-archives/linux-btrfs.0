@@ -1,181 +1,95 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.21]:54511 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S933839AbeFWACS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 22 Jun 2018 20:02:18 -0400
-Subject: Re: Bad superblock when mounting rw, ro mount works
-To: Daniel Underwood <daniel.underwood13@gmail.com>
-Cc: Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <CAHac6AspsJ5iu+HECOr1ytVRjqB1JyVtqKVwxBF-H+t_18-Tnw@mail.gmail.com>
- <CAJCQCtStcPseu+2KNYQN2C3wKkAenuQm59yiK_X8jOsfAA-Myg@mail.gmail.com>
- <CAJCQCtTsWq_wZP-MO2-aXmzFAyR-QoT8147NFEiMqyGa7bbDNQ@mail.gmail.com>
- <CAHac6AtGU1VprzTqD-zaqEuBQBg_stZPVRZt5RcdQ6vaKemGVQ@mail.gmail.com>
- <10e17ab5-0a17-e5c4-a648-37faa75ccb3e@gmx.com>
- <CAHac6Av1L-LWKHat3aePEGBZ0LTW9yb2U+9rdezc774a8fiEhg@mail.gmail.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <d0978796-0000-6060-761e-706ffe127e8b@gmx.com>
-Date: Sat, 23 Jun 2018 08:02:07 +0800
+Received: from mail-lj1-f179.google.com ([209.85.208.179]:46370 "EHLO
+        mail-lj1-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S933977AbeFWBoY (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 22 Jun 2018 21:44:24 -0400
 MIME-Version: 1.0
-In-Reply-To: <CAHac6Av1L-LWKHat3aePEGBZ0LTW9yb2U+9rdezc774a8fiEhg@mail.gmail.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="nbzz7BwEML6kPm1THNJybfZaP6DjLyeJ5"
+From: shankarapailoor <shankarapailoor@gmail.com>
+Date: Fri, 22 Jun 2018 18:44:22 -0700
+Message-ID: <CAB+yDaa3OycpeiEbFEGCOMoCmNoXH2By8aC87HCNaDL+O6SDJA@mail.gmail.com>
+Subject: Task Hung in btrfs_start_ordered_extent
+To: Chris Mason <clm@fb.com>, jbacik@fb.com, dsterba@suse.com
+Cc: LKML <linux-kernel@vger.kernel.org>, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---nbzz7BwEML6kPm1THNJybfZaP6DjLyeJ5
-Content-Type: multipart/mixed; boundary="Nd0YAsXxlOTkpmvFgmn5znXHH3s0cFRcB";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Daniel Underwood <daniel.underwood13@gmail.com>
-Cc: Chris Murphy <lists@colorremedies.com>,
- Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Message-ID: <d0978796-0000-6060-761e-706ffe127e8b@gmx.com>
-Subject: Re: Bad superblock when mounting rw, ro mount works
-References: <CAHac6AspsJ5iu+HECOr1ytVRjqB1JyVtqKVwxBF-H+t_18-Tnw@mail.gmail.com>
- <CAJCQCtStcPseu+2KNYQN2C3wKkAenuQm59yiK_X8jOsfAA-Myg@mail.gmail.com>
- <CAJCQCtTsWq_wZP-MO2-aXmzFAyR-QoT8147NFEiMqyGa7bbDNQ@mail.gmail.com>
- <CAHac6AtGU1VprzTqD-zaqEuBQBg_stZPVRZt5RcdQ6vaKemGVQ@mail.gmail.com>
- <10e17ab5-0a17-e5c4-a648-37faa75ccb3e@gmx.com>
- <CAHac6Av1L-LWKHat3aePEGBZ0LTW9yb2U+9rdezc774a8fiEhg@mail.gmail.com>
-In-Reply-To: <CAHac6Av1L-LWKHat3aePEGBZ0LTW9yb2U+9rdezc774a8fiEhg@mail.gmail.com>
+Hi,
 
---Nd0YAsXxlOTkpmvFgmn5znXHH3s0cFRcB
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+I am using Syzkaller to fuzz linux 4.18.0-rc1 with btrfs and I found
+the following task hung bug. This is reproducible and I have a C
+program to reproduce the bug here: https://pastebin.com/dMfR6yZx
 
+Syzkaller hit 'INFO: task hung in btrfs_start_ordered_extent' bug.
 
+random: sshd: uninitialized urandom read (32 bytes read)
+random: sshd: uninitialized urandom read (32 bytes read)
+random: sshd: uninitialized urandom read (32 bytes read)
+random: sshd: uninitialized urandom read (32 bytes read)
+random: sshd: uninitialized urandom read (32 bytes read)
+INFO: task syz-executor329:3499 blocked for more than 120 seconds.
+      Not tainted 4.18.0-rc1+ #35
+"echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+syz-executor329 D23328  3499   3498 0x00000000
+Call Trace:
+ context_switch kernel/sched/core.c:2862 [inline]
+ __schedule+0x8cd/0x1d20 kernel/sched/core.c:3504
+ schedule+0x7c/0x1a0 kernel/sched/core.c:3548
+ btrfs_start_ordered_extent+0x366/0x510 fs/btrfs/ordered-data.c:784
+ __do_contiguous_readpages fs/btrfs/extent_io.c:3113 [inline]
+ __extent_readpages+0x1c3/0x6b0 fs/btrfs/extent_io.c:3158
+ extent_readpages+0x1f5/0x6d0 fs/btrfs/extent_io.c:4153
+ btrfs_readpages+0x25/0x30 fs/btrfs/inode.c:8724
+ read_pages+0x10d/0x500 mm/readahead.c:121
+ __do_page_cache_readahead+0x4ab/0x590 mm/readahead.c:209
+ ra_submit mm/internal.h:66 [inline]
+ do_sync_mmap_readahead mm/filemap.c:2444 [inline]
+ filemap_fault+0x939/0x1b20 mm/filemap.c:2520
+ __do_fault+0x84/0x1a0 mm/memory.c:3231
+ do_read_fault mm/memory.c:3641 [inline]
+ do_fault mm/memory.c:3741 [inline]
+ handle_pte_fault mm/memory.c:3972 [inline]
+ __handle_mm_fault+0x1931/0x2b40 mm/memory.c:4096
+ handle_mm_fault+0x3a4/0xa10 mm/memory.c:4133
+ faultin_page mm/gup.c:518 [inline]
+ __get_user_pages+0x3dc/0x11f0 mm/gup.c:718
+ __get_user_pages_locked mm/gup.c:889 [inline]
+ get_user_pages_unlocked+0x25a/0x390 mm/gup.c:1012
+ get_user_pages_fast+0x163/0x310 mm/gup.c:1865
+ iov_iter_get_pages+0x235/0xd70 lib/iov_iter.c:1129
+ dio_refill_pages fs/direct-io.c:170 [inline]
+ dio_get_page fs/direct-io.c:214 [inline]
+ do_direct_IO fs/direct-io.c:980 [inline]
+ do_blockdev_direct_IO+0x33c2/0x7800 fs/direct-io.c:1331
+ __blockdev_direct_IO+0x9d/0xc6 fs/direct-io.c:1417
+ btrfs_direct_IO+0x3c6/0xbf0 fs/btrfs/inode.c:8629
+ generic_file_direct_write+0x1e6/0x440 mm/filemap.c:3042
+ __btrfs_direct_write fs/btrfs/file.c:1813 [inline]
+ btrfs_file_write_iter+0x770/0x166a fs/btrfs/file.c:1954
+ call_write_iter include/linux/fs.h:1795 [inline]
+ new_sync_write fs/read_write.c:474 [inline]
+ __vfs_write+0x4e8/0x660 fs/read_write.c:487
+ vfs_write+0x189/0x510 fs/read_write.c:549
+ ksys_write+0xd8/0x1b0 fs/read_write.c:598
+ __do_sys_write fs/read_write.c:610 [inline]
+ __se_sys_write fs/read_write.c:607 [inline]
+ __x64_sys_write+0x73/0xb0 fs/read_write.c:607
+ do_syscall_64+0xda/0x560 arch/x86/entry/common.c:290
+ entry_SYSCALL_64_after_hwframe+0x49/0xbe
+RIP: 0033:0x440799
+Code: Bad RIP value.
+RSP: 002b:00007ffdf3c66738 EFLAGS: 00000217 ORIG_RAX: 0000000000000001
+RAX: ffffffffffffffda RBX: 0000000000000000 RCX: 0000000000440799
+RDX: 00000000d996d7aa RSI: 0000000020000000 RDI: 0000000000000003
+RBP: 00000000006cb018 R08: 0000000000004000 R09: 0000000000004000
+R10: 0000000000000004 R11: 0000000000000217 R12: 0000000000401c20
+R13: 0000000000401cb0 R14: 0000000000000000 R15: 0000000000000000
 
-On 2018=E5=B9=B406=E6=9C=8823=E6=97=A5 05:20, Daniel Underwood wrote:
-> Thanks for the help, I started `check --repair --init-extent-tree`
-> right around a week ago as a last effort before restoring from backup.
-> Unfortunately, that command is still running. It does seem to be using
-> about half of the system's RAM (8 of 16GB) and 100% load on a single
-> core. Is this type of run time expected for an 8TB drive?
+My kernel configs: https://pastebin.com/KFcaLxhj
 
-It depends.
-Since it will iterate the whole disk serval times, it takes a long time,
-especially if you have a lot of used space of that 8T drive.
+Please let me know if I can provide more information
 
-To determine if it's doing dead loop, we need to verify the output is
-not duplicating itself.
-
-> The byte
-> numbers it's referencing seem to be a bit odd to me as they're larger
-> than the number of bytes on the drive.
-
-Completely valid.
-As btrfs is using logical address, it's completely valid that logical
-bytenr is larger than your device if you have balanced the device
-several times before.
-
-> Here's the head and tail of the
-> current run (separated by -----) if that's indicative of progress:
->=20
-> btrfs unable to find ref byte nr 49673574858752 parent 0 root 1  owner
-> 2 offset 0
-> btrfs unable to find ref byte nr 49673719529472 parent 0 root 1  owner
-> 1 offset 1
-> btrfs unable to find ref byte nr 62243448012800 parent 0 root 1  owner
-> 0 offset 1
-> btrfs unable to find ref byte nr 49673575120896 parent 0 root 1  owner
-> 1 offset 1
-> btrfs unable to find ref byte nr 49673575251968 parent 0 root 1  owner
-> 0 offset 1
-> checking extents
-> ref mismatch on [49218307751936 67108864] extent item 0, found 1
-> data backref 49218307751936 root 5 owner 1359193 offset 536870912
-> num_refs 0 not found in extent tree
-> incorrect local backref count on 49218307751936 root 5 owner 1359193
-> offset 536870912 found 1 wanted 0 back 0x5583559bd790
-> backpointer mismatch on [49218307751936 67108864]
-> -----------------
-> data backref 49230998138880 root 5 owner 1409678 offset 7408779264
-> num_refs 0 not found in extent tree
-> incorrect local backref count on 49230998138880 root 5 owner 1409678
-> offset 7408779264 found 1 wanted 0 back 0x5583b95f0e20
-> backpointer mismatch on [49230998138880 16384]
-> adding new data backref on 49230998138880 root 5 owner 1409678 offset
-> 7408779264 found 1
-> Repaired extent references for 49230998138880
-> ref mismatch on [49230998155264 16384] extent item 0, found 1
-> data backref 49230998155264 root 5 owner 669291 offset 3905650688
-> num_refs 0 not found in extent tree
-> incorrect local backref count on 49230998155264 root 5 owner 669291
-> offset 3905650688 found 1 wanted 0 back 0x5582efb12930
-> backpointer mismatch on [49230998155264 16384]
-> adding new data backref on 49230998155264 root 5 owner 669291 offset
-> 3905650688 found 1
-
-Looks it's processing.
-But it's better to keep all the output and verify the same section of
-bytenr doesn't re-appear too many times.
-
->=20
-> Thanks,
-> Daniel
->=20
->=20
-> On Thu, Jun 14, 2018 at 10:43 AM, Qu Wenruo <quwenruo.btrfs@gmx.com> wr=
-ote:
->> From the output, specially the lowmem mode output since original mode
->> handles extent tree corruption poorly and aborted, it's your extent tr=
-ee
->> corrupted and causing the bug.
->>
->> Thus, you should be able to mount the fs RO and copy all the data back=
-
->> without much hassle.
->> Just need to pay attention for csum error.
->>
->> And considering how many extent tree corruption, I don't think it's a
->> good idea to manually fix the fs.
->>
->> The last chance is, to try --repair --init-extent-tree as your last
->> chance, if you still want to salvage the filesystem.
->> The lowmem mode shows no extra bug, thus it's possible for
->> --init-extent-tree to re-init extent tree and save the day.
->>
->> But personally speaking I'm not fully confident of the operation, thus=
-
->> it may fail and you may need to use the backup.
->>
->> BTW, even --init-extent-tree succeeded, you may still need to run btrf=
-s
->> check again to check if all the bugs are fixed.
->> But at least from the lowmem output, the remaining errors are all fixa=
-ble.
->>
->> Thanks,
->> Qu
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->=20
-
-
---Nd0YAsXxlOTkpmvFgmn5znXHH3s0cFRcB--
-
---nbzz7BwEML6kPm1THNJybfZaP6DjLyeJ5
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlstjf8ACgkQwj2R86El
-/qjh+AgAngjG06/E8tM8NlyaQfcmzogMgUt/J3y4aAAb6KdU+btNBXqSxW47uax6
-iVsWLc5JpesmegjFFPnxsObTBGboO76GH6/rvTx8B4+dh+z9iMYwZkBVJy+pRoMe
-P04P+1RT2GZFjMAj9KFEQ7cw0H2gVLP1gF/mD18BUVoWcSUa3JXNPFio63dFKM/4
-+ILn2uN76AJ8nug3XhzBRmyEhg9WykSSQZyH4qm+pfquE2e70g/qF4OmDI4p3UF1
-0pOCbcOeR+ErmWt+CdUloLgrkBU24NiCJ2Tt0YGaV137w8n2W2RLJ4tjgPUEXS1T
-erVc8I2FeJBgOeI0K6XMu12OqnpAGA==
-=JRTX
------END PGP SIGNATURE-----
-
---nbzz7BwEML6kPm1THNJybfZaP6DjLyeJ5--
+-- 
+Regards,
+Shankara Pailoor

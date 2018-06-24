@@ -1,141 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-17-i6.italiaonline.it ([213.209.14.17]:34559 "EHLO
-        libero.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751689AbeFXUbA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 24 Jun 2018 16:31:00 -0400
-Reply-To: kreijack@inwind.it
-Subject: Re: unsolvable technical issues?
-To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
-References: <b255d0fb-5cee-36c5-d49f-5f014d20e518@dirtcellar.net>
- <pan$11f2c$c623d7b0$5173b25$c7594479@cox.net>
-From: Goffredo Baroncelli <kreijack@libero.it>
-Message-ID: <646f0c52-4726-7a7d-0242-4412950bf002@libero.it>
-Date: Sun, 24 Jun 2018 22:22:47 +0200
+Received: from mail-lf0-f65.google.com ([209.85.215.65]:35467 "EHLO
+        mail-lf0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751575AbeFXUyh (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 24 Jun 2018 16:54:37 -0400
 MIME-Version: 1.0
-In-Reply-To: <pan$11f2c$c623d7b0$5173b25$c7594479@cox.net>
-Content-Type: text/plain; charset=utf-8
+From: shankarapailoor <shankarapailoor@gmail.com>
+Date: Sun, 24 Jun 2018 13:54:35 -0700
+Message-ID: <CAB+yDaahqHTh7Mka5e28iMhdBnCegXisK5xiv_0jDrYS9qhvSw@mail.gmail.com>
+Subject: WARNING in btrfs_destroy_inode
+To: Chris Mason <clm@fb.com>, jbacik@fb.com, dsterba@suse.com
+Cc: linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+        LKML <linux-kernel@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 06/23/2018 07:11 AM, Duncan wrote:
-> waxhead posted on Fri, 22 Jun 2018 01:13:31 +0200 as excerpted:
-> 
->> According to this:
->>
->> https://stratis-storage.github.io/StratisSoftwareDesign.pdf Page 4 ,
->> section 1.2
->>
->> It claims that BTRFS still have significant technical issues that may
->> never be resolved.
->> Could someone shed some light on exactly what these technical issues
->> might be?! What are BTRFS biggest technical problems?
->>
->> If you forget about the "RAID"5/6 like features then the only annoyances
->> that I have with BTRFS so far is...
->>
->> 1. Lack of per subvolume "RAID" levels
->> 2. Lack of not using the deviceid to re-discover and re-add dropped
->> devices
->>
->> And that's about it really...
-> 
-> ... And those both have solutions on the roadmap, with RFC patches 
-> already posted for #2 (tho I'm not sure they use devid) altho 
-> realistically they're likely to take years to appear and be tested to 
-> stability.  Meanwhile...
-> 
-> While as the others have said you really need to go to the author to get 
-> what was referred to, and I agree, I can speculate a bit.  While this 
-> *is* speculation, admittedly somewhat uninformed as I don't claim to be a 
-> dev, and I'd actually be interested in what others think so don't be 
-> afraid to tell me I haven't a clue, as long as you say why... based on 
-> several years reading the list now...
-> 
-> 1) When I see btrfs "technical issue that may never be resolved", the #1 
-> first thing I think of, that AFAIK there are _definitely_ no plans to 
-> resolve, because it's very deeply woven into the btrfs core by now, is...
-> 
-> Filesystem UUID Identification.  Btrfs takes the UU bit of Universally 
-> Unique quite literally, assuming they really *are* unique, at least on 
-> that system, and uses them to identify the possibly multiple devices that 
-> may be components of the filesystem, a problem most filesystems don't 
-> have to deal with since they're single-device-only.  Because btrfs uses 
-> this supposedly unique ID to ID devices that belong to the filesystem, it 
-> can get *very* mixed up, with results possibly including dataloss, if it 
-> sees devices that don't actually belong to a filesystem with the same UUID 
-> as a mounted filesystem.
+Hi,
 
-As partial workaround you can disable udev btrfs rules and then do a "btrfs dev scan" manually only for the device which you need. The you can mount the filesystem. Unfortunately you cannot mount two filesystem with the same UUID. However I have to point out that also LVM/dm might have problems if you clone a PV....
+I'm using Syzkaller to fuzz linux 4.18.0-rc1 with btrfs and found the
+following WARNING crash. I have a C program that reproduces it here:
+https://pastebin.com/bBzmrGFH
 
-[...]
-der say 3-5 (or 5-7, or whatever) 
-> years.  These could arguably include:
-> 
-> 2) Subvolume and (more technically) reflink-aware defrag.
-> 
-> It was there for a couple kernel versions some time ago, but "impossibly" 
-> slow, so it was disabled until such time as btrfs could be made to scale 
-> rather better in this regard.
+WARNING: CPU: 1 PID: 12788 at fs/btrfs/inode.c:9288
+btrfs_destroy_inode+0x545/0x720  fs/btrfs/inode.c:9288
 
-Did you try something like that with XFS+DM snapshot ? No you can't, because defrag in XFS cannot traverse snapshot (and I have to suppose that defrag cannot be effective on a dm-snapshot at all)..
-What I am trying to point out is that even tough btrfs is not the fastest filesystem (and for some workload is VERY slow), when you compare it when few snapshots were presents LVM/dm is a lot slower.
-
-IMHO most of the complaint which affect BTRFS, are due to the fact that with BTRFS an user can quite easily exploit a lot of features and their combinations. When a the slowness issue appears when some advance features combinations are used (i.e. multiple disks profile and (a lot of ) snapshots), this is reported as a BTRFS failure. But in fact even LVM/dm is very slow when the snapshot is used. 
+Kernel panic - not syncing: panic_on_warn set ...CPU: 1 PID: 12788
+Comm: syz-executor5 Not tainted 4.18.0-rc1+ #35
+Hardware name: Google Google Compute Engine/Google Compute Engine,
+BIOS Google 01/01/2011
+Call Trace:
+   __dump_stack lib/dump_stack.c:77 [inline] dump_stack+0x148/0x1b5
+lib/dump_stack.c:113
+   panic+0x200/0x42c kernel/panic.c:184
+   __warn+0x1ea/0x200 kernel/panic.c:536
+   report_bug+0x1f4/0x2b0 lib/bug.c:186
+   fixup_bug.part.10+0x37/0x80 arch/x86/kernel/traps.c:178
+   fixup_bug arch/x86/kernel/traps.c:248 [inline]
+   do_error_trap+0x288/0x2e0 arch/x86/kernel/traps.c:296
+   do_invalid_op+0x1b/0x20 arch/x86/kernel/traps.c:316
+    invalid_op+0x14/0x20 arch/x86/entry/entry_64.S:992
+RIP: 0010:btrfs_destroy_inode+0x545/0x720 fs/btrfs/inode.c:9288
+Code: ff e8 4f 6c 52 ff 0f 0b e9 ed fb ff ff e8 43 6c 52 ff 0f 0b e9
+c8 fc ff ff e8 37 6c 52 ff 0f 0b e9 f2 fc ff ff e8 2b 6c 52 ff <0f> 0b
+e9 93 fb ff ff e8 1f 6c 52 ff 0f 0b e9 38 fc ff ff e8 13 6c
+RSP: 0018:ffff880091287c68 EFLAGS: 00010293
+RAX: ffff88009d0a8340 RBX: ffff8800a65c36a8 RCX: ffffffff820ef895
+RDX: 0000000000000000 RSI: 0000000000000008 RDI: ffff8800a65c3598
+RBP: ffff880091287cb0 R08: ffffed00169d02bf R09: 0000000000000001
+R10: ffffed00169d02be R11: ffff8800b4e815f7 R12: ffff8800a65c3240
+R13: ffff8800b448c1c0 R14: ffff8800a65c3878 R15: ffffffff855cbc40
+    destroy_inode+0xc3/0x120 fs/inode.c:267
+    evict+0x3d4/0x620 fs/inode.c:575
+    iput_final fs/inode.c:1506 [inline]
+    iput+0x4e8/0x760 fs/inode.c:1532
+    do_unlinkat+0x398/0x670 fs/namei.c:4079
+    __do_sys_unlink fs/namei.c:4120 [inline]
+    __se_sys_unlink fs/namei.c:4118 [inline]
+    __x64_sys_unlink+0x42/0x50 fs/namei.c:4118
+    do_syscall_64+0xda/0x560 arch/x86/entry/common.c:290
+    entry_SYSCALL_64_after_hwframe+0x49/0xbe
+RIP: 0033:0x455757
+Code: 0f 1f 00 b8 58 00 00 00 0f 05 48 3d 01 f0 ff ff 0f 83 bd bc fb
+ff c3 66 2e 0f 1f 84 00 00 00 00 00 66 90 b8 57 00 00 00 0f 05 <48> 3d
+01 f0 ff ff 0f 83 9d bc fb ff c3 66 2e 0f 1f 84 00 00 00 00
+RSP: 002b:00007fffe629f058 EFLAGS: 00000202 ORIG_RAX: 0000000000000057
+RAX: ffffffffffffffda RBX: 0000000000000000 RCX: 0000000000455757
+RDX: 0000000002980a13 RSI: 00007fffe629f0f0 RDI: 00007fffe629f0f0
+RBP: 00007fffe62a0e00 R08: 0000000000000000 R09: 000000000000000a
+R10: 0000000000000005 R11: 0000000000000202 R12: 0000000002980940
+R13: 0000000000000000 R14: 0000000000000117 R15: 000000000008e36d
 
 
-> 
-> There's no hint yet as to when that might actually be, if it will _ever_ 
-> be, so this can arguably be validly added to the "may never be resolved" 
-> list.
-> 
-> 3) N-way-mirroring.
-> 
-[...]
-This is not an issue, but a not implemented feature
-> 
-> 4) (Until relatively recently, and still in terms of scaling) Quotas.
-> 
-> Until relatively recently, quotas could arguably be added to the list.  
-> They were rewritten multiple times, and until recently, appeared to be 
-> effectively eternally broken.
+My kernel configs: https://pastebin.com/KFcaLxhj
 
-Even tough what you are reporting is correct, I have to point out that the quota in BTRFS is more complex than the equivalent one of the other FS. In fact it handles (good or bad) quota of gorup of subvolumes. How this concept could be translated in terms of "stratis"
-
-
-[...]
-> 
-> As for stratis, supposedly they're deliberately taking existing proven in 
-> multi-layer-form technology and simply exposing it in unified form.  They 
-> claim this dramatically lessens the required new code and shortens time-
-> to-stability to something reasonable, in contrast to the about a decade 
-> btrfs has taken already, without yet reaching a full feature set and full 
-> stability.  IMO they may well have a point, tho AFAIK they're still new 
-> and immature themselves and (I believe) don't have it either, so it's a 
-> point that AFAIK has yet to be fully demonstrated.
-> 
-> We'll see how they evolve.  I do actually expect them to move faster than 
-> btrfs, but also expect the interface may not be as smooth and unified as 
-> they'd like to present as I expect there to remain some hiccups in 
-> smoothing over the layering issues.  Also, because they've deliberately 
-> chosen to go with existing technology where possible in ordered to evolve 
-> to stability faster, by the same token they're deliberately limiting the 
-> evolution to incremental over existing technology, and I expect there's 
-> some stuff btrfs will do better as a result... at least until btrfs (or a 
-> successor) becomes stable enough for them to integrate (parts of?) it as 
-> existing demonstrated-stable technology.
-
-I fully agree with the above sentences...
-> 
-> The other difference, AFAIK, is that stratis is specifically a 
-> corporation making it a/the main money product, whereas btrfs was always 
-> something the btrfs devs used at their employers (oracle, facebook), who 
-> have other things as their main product.  As such, stratis is much more 
-> likely to prioritize things like raid status monitors, hot-spares, etc, 
-> that can be part of the product they sell, where they've been lower 
-> priority for btrfs.
-> 
-
+Please let me know if I can provide more information.
 
 -- 
-gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+Regards,
+Shankara Pailoor

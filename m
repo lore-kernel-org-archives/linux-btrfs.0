@@ -1,95 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:40353 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:35766 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1754336AbeFUIjX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 21 Jun 2018 04:39:23 -0400
-Received: from relay1.suse.de (charybdis-ext-too.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 392CDADFA
-        for <linux-btrfs@vger.kernel.org>; Thu, 21 Jun 2018 08:39:22 +0000 (UTC)
-From: Nikolay Borisov <nborisov@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH] btrfs: Streamline memory allocation failure handling in btrfs_add_delayed_tree_ref
-Date: Thu, 21 Jun 2018 11:39:20 +0300
-Message-Id: <1529570360-9260-1-git-send-email-nborisov@suse.com>
+        id S1751482AbeFXPWv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 24 Jun 2018 11:22:51 -0400
+From: David Sterba <dsterba@suse.com>
+To: torvalds@linux-foundation.org
+Cc: David Sterba <dsterba@suse.com>, clm@fb.com, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+Subject: [GIT PULL] Btrfs fixes for 4.18-rc1
+Date: Sun, 24 Jun 2018 17:19:58 +0200
+Message-Id: <cover.1529853141.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Currently the function uses 2 goto labels to properly handle allocation
-failures. This could be simplified by simply re-arranging the code so
-that allocations are the in the beginning of the function. This allows
-to use simple return statements. No function changes.
+Hi,
 
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
-Suggested-by: Su Yue <suy.fnst@cn.fujitsu.com>
-Suggested-by: David Sterba <dsterba@suse.com>
----
- fs/btrfs/delayed-ref.c | 35 +++++++++++++++++------------------
- 1 file changed, 17 insertions(+), 18 deletions(-)
+there are 2 regression fixes and an incorrect error value propagation
+fix from 'rename exchange'. Please pull, thanks.
 
-diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
-index 03dec673d12a..c2c2634693e1 100644
---- a/fs/btrfs/delayed-ref.c
-+++ b/fs/btrfs/delayed-ref.c
-@@ -730,27 +730,33 @@ int btrfs_add_delayed_tree_ref(struct btrfs_fs_info *fs_info,
- 	if (!ref)
- 		return -ENOMEM;
- 
-+	head_ref = kmem_cache_alloc(btrfs_delayed_ref_head_cachep, GFP_NOFS);
-+	if (!head_ref) {
-+		kmem_cache_free(btrfs_delayed_tree_ref_cachep, ref);
-+		return -ENOMEM;
-+	}
-+
-+	if (test_bit(BTRFS_FS_QUOTA_ENABLED, &fs_info->flags) &&
-+	    is_fstree(ref_root)) {
-+		record = kmalloc(sizeof(*record), GFP_NOFS);
-+		if (!record) {
-+			kmem_cache_free(btrfs_delayed_tree_ref_cachep, ref);
-+			kmem_cache_free(btrfs_delayed_ref_head_cachep, head_ref);
-+			return -ENOMEM;
-+		}
-+	}
-+
- 	if (parent)
- 		ref_type = BTRFS_SHARED_BLOCK_REF_KEY;
- 	else
- 		ref_type = BTRFS_TREE_BLOCK_REF_KEY;
-+
- 	init_delayed_ref_common(fs_info, &ref->node, bytenr, num_bytes,
- 				ref_root, action, ref_type);
- 	ref->root = ref_root;
- 	ref->parent = parent;
- 	ref->level = level;
- 
--	head_ref = kmem_cache_alloc(btrfs_delayed_ref_head_cachep, GFP_NOFS);
--	if (!head_ref)
--		goto free_ref;
--
--	if (test_bit(BTRFS_FS_QUOTA_ENABLED, &fs_info->flags) &&
--	    is_fstree(ref_root)) {
--		record = kmalloc(sizeof(*record), GFP_NOFS);
--		if (!record)
--			goto free_head_ref;
--	}
--
- 	init_delayed_ref_head(head_ref, record, bytenr, num_bytes,
- 			      ref_root, 0, action, false, is_system);
- 	head_ref->extent_op = extent_op;
-@@ -779,13 +785,6 @@ int btrfs_add_delayed_tree_ref(struct btrfs_fs_info *fs_info,
- 		btrfs_qgroup_trace_extent_post(fs_info, record);
- 
- 	return 0;
--
--free_head_ref:
--	kmem_cache_free(btrfs_delayed_ref_head_cachep, head_ref);
--free_ref:
--	kmem_cache_free(btrfs_delayed_tree_ref_cachep, ref);
--
--	return -ENOMEM;
- }
- 
- /*
--- 
-2.7.4
+----------------------------------------------------------------
+The following changes since commit ac0b4145d662a3b9e34085dea460fb06ede9b69b:
 
+  btrfs: scrub: Don't use inode pages for device replace (2018-06-11 15:59:14 +0200)
+
+are available in the Git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-4.18-rc1
+
+for you to fetch changes up to c5b4a50b74018b3677098151ec5f4fce07d5e6a0:
+
+  Btrfs: fix return value on rename exchange failure (2018-06-22 12:59:08 +0200)
+
+----------------------------------------------------------------
+Filipe Manana (2):
+      Btrfs: fix physical offset reported by fiemap for inline extents
+      Btrfs: fix return value on rename exchange failure
+
+Lu Fengqi (1):
+      btrfs: fix invalid-free in btrfs_extent_same
+
+ fs/btrfs/extent_io.c |  5 ++++-
+ fs/btrfs/inode.c     |  4 +++-
+ fs/btrfs/ioctl.c     | 10 +++++-----
+ 3 files changed, 12 insertions(+), 7 deletions(-)

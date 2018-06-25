@@ -1,87 +1,104 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:59666 "EHLO
-        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1755409AbeFYN41 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Jun 2018 09:56:27 -0400
-From: Chris Mason <clm@fb.com>
-To: David Sterba <dsterba@suse.cz>
-CC: <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH RFC 0/2] Btrfs: fix file data corruptions due to lost
- dirty bits
-Date: Mon, 25 Jun 2018 09:55:45 -0400
-Message-ID: <8F312F94-B007-410D-A873-8DC959088368@fb.com>
-In-Reply-To: <20180625111031.GA27958@suse.cz>
-References: <20180620145612.1644763-1-clm@fb.com>
- <20180620193310.GG24375@twin.jikos.cz>
- <36F766B7-6388-4B93-A39F-A977F6F805D3@fb.com>
- <20180620202431.GH24375@suse.cz>
- <EFA3EBA7-D9B0-472E-8D70-96B756AE1677@fb.com>
- <20180625111031.GA27958@suse.cz>
+Received: from mx2.suse.de ([195.135.220.15]:56921 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1755588AbeFYOXI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 25 Jun 2018 10:23:08 -0400
+Date: Mon, 25 Jun 2018 16:20:15 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Duncan <1i5t5.duncan@cox.net>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: unsolvable technical issues?
+Message-ID: <20180625142015.GE27958@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <b255d0fb-5cee-36c5-d49f-5f014d20e518@dirtcellar.net>
+ <pan$11f2c$c623d7b0$5173b25$c7594479@cox.net>
 MIME-Version: 1.0
-Content-Type: text/plain; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <pan$11f2c$c623d7b0$5173b25$c7594479@cox.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 25 Jun 2018, at 7:10, David Sterba wrote:
+On Sat, Jun 23, 2018 at 05:11:52AM +0000, Duncan wrote:
+> > According to this:
+> > 
+> > https://stratis-storage.github.io/StratisSoftwareDesign.pdf Page 4 ,
+> > section 1.2
+> > 
+> > It claims that BTRFS still have significant technical issues that may
+> > never be resolved.
+> > Could someone shed some light on exactly what these technical issues
+> > might be?! What are BTRFS biggest technical problems?
+> > 
+> > If you forget about the "RAID"5/6 like features then the only annoyances
+> > that I have with BTRFS so far is...
+> > 
+> > 1. Lack of per subvolume "RAID" levels
+> > 2. Lack of not using the deviceid to re-discover and re-add dropped
+> > devices
+> > 
+> > And that's about it really...
+> 
+> ... And those both have solutions on the roadmap, with RFC patches 
+> already posted for #2 (tho I'm not sure they use devid) altho 
+> realistically they're likely to take years to appear and be tested to 
+> stability.  Meanwhile...
+> 
+> While as the others have said you really need to go to the author to get 
+> what was referred to, and I agree, I can speculate a bit.  While this 
+> *is* speculation, admittedly somewhat uninformed as I don't claim to be a 
+> dev, and I'd actually be interested in what others think so don't be 
+> afraid to tell me I haven't a clue, as long as you say why... based on 
+> several years reading the list now...
+> 
+> 1) When I see btrfs "technical issue that may never be resolved", the #1 
+> first thing I think of, that AFAIK there are _definitely_ no plans to 
+> resolve, because it's very deeply woven into the btrfs core by now, is...
+> 
+> Filesystem UUID Identification.
 
-> On Fri, Jun 22, 2018 at 05:25:54PM -0400, Chris Mason wrote:
->> The bug came here:
->>
->> commit a528a24150870c5c16cbbbec69dba7e992b08456
->> Author: Souptick Joarder <jrdr.linux@gmail.com>
->> Date:   Wed Jun 6 19:54:44 2018 +0530
->>
->>      btrfs: change return type of btrfs_page_mkwrite to vm_fault_t
->>
->> When page->mapping != mapping, we improperly return success because 
->> ret2
->> is zero on goto out_unlock.
->>
->> I'm running a fix through a full xfstests and I'll post soon.
->
-> The ret/ret2 pattern is IMO used in the wrong way, the ret2 is some
-> temporary value and it should be set and tested next to each other, 
-> not
-> holding the state accross the function.
->
-> The fix I'd propose is to avoid relying on it and add a separate exit
-> block, similar to out_noreserve:
->
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -8981,7 +8981,6 @@ vm_fault_t btrfs_page_mkwrite(struct vm_fault 
-> *vmf)
->                 ret = VM_FAULT_SIGBUS;
->                 goto out_unlock;
->         }
-> -       ret2 = 0;
->
->         /* page is wholly or partially inside EOF */
->         if (page_start + PAGE_SIZE > size)
-> @@ -9004,14 +9003,6 @@ vm_fault_t btrfs_page_mkwrite(struct vm_fault 
-> *vmf)
->         BTRFS_I(inode)->last_log_commit = 
-> BTRFS_I(inode)->root->last_log_commit;
->
->         unlock_extent_cached(io_tree, page_start, page_end, 
-> &cached_state);
-> -
-> -out_unlock:
-> -       if (!ret2) {
-> -               btrfs_delalloc_release_extents(BTRFS_I(inode), 
-> PAGE_SIZE, true);
-> -               sb_end_pagefault(inode->i_sb);
-> -               extent_changeset_free(data_reserved);
-> -               return VM_FAULT_LOCKED;
-> -       }
->         unlock_page(page);
+> Btrfs takes the UU bit of Universally 
+> Unique quite literally, assuming they really *are* unique, at least on 
+> that system, and uses them to identify the possibly multiple devices that 
+> may be components of the filesystem, a problem most filesystems don't 
+> have to deal with since they're single-device-only.  Because btrfs uses 
+> this supposedly unique ID to ID devices that belong to the filesystem, it 
+> can get *very* mixed up, with results possibly including dataloss, if it 
+> sees devices that don't actually belong to a filesystem with the same UUID 
+> as a mounted filesystem.
+> 
+> But technologies such as LVM allow cloning devices and these additional 
+> devices naturally have the same filesystem metadata, including filesystem 
+> UUID, as the original.  Making the problem worse is udev with its plug-n-
+> play style detection, which will normally trigger a btrfs device scan, 
+> thus making btrfs aware of new devices containing (a component of) a 
+> btrfs, as soon as udev detects the device.
 
-VM_FAULT_LOCKED is where we return success.  The out_unlock goto is 
-confusing because it's actually only used for failure, but the goto 
-lands right above the if (everything actually worked) {} test.
+The automatic scanning is partially making it hard and would require
+either extending the scanning mechanim to distinguish automatic and
+manual scan, and using that information in kernel.
 
-On top of the patch I sent today, moving out_unlock: after the if would 
-make it more clear.
+Right now, a cloned device will not be added to the filesystem UUID set
+if the fs is mounted, but otherwise it's up to the administrator. The
+misisng bit is possibly a way to tell the kernel module to 'forget' a
+device (forget and never auto-scan).
 
--chris
+> 2) Subvolume and (more technically) reflink-aware defrag.
+
+There was a discussion in the mailinglist recently, some additions to
+the interface were requested. The code to avoid the OOM exists but the
+original author is not apparently interested and noone else has that
+high enough in the todo list.
+
+> 3) N-way-mirroring.
+
+I have a prototype code for that, 3-copy and 4-copy type of profile.
+Doning a fully dynamic N-way would become a messs once thre are mixed
+N-way chunks for different N. Adding N=5 would not be too hard, but I'm
+not sure if this makes sense.
+
+The raid5 write-hole log will build on top of that, but the code has not
+been written yet, other than the separate device logging sent by Liu Bo. 
+
+> 4) (Until relatively recently, and still in terms of scaling) Quotas.
+
+That's ongoing WIP, as qgroups touch the core parts.

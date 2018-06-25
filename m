@@ -1,90 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:35961 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:52343 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S934072AbeFZMVz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 26 Jun 2018 08:21:55 -0400
-Date: Tue, 26 Jun 2018 14:19:01 +0200
+        id S933144AbeFYN5E (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 25 Jun 2018 09:57:04 -0400
+Date: Mon, 25 Jun 2018 15:54:11 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Anand Jain <anand.jain@oracle.com>
+To: Chris Mason <clm@fb.com>
 Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 3/3] btrfs: fix race between mkfs and mount
-Message-ID: <20180626121900.GI27958@twin.jikos.cz>
+Subject: Re: [PATCH] Btrfs: fix regression in btrfs_page_mkwrite() from
+ vm_fault_t conversion
+Message-ID: <20180625135411.GD27958@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <20180604150030.12883-1-anand.jain@oracle.com>
- <20180604150030.12883-3-anand.jain@oracle.com>
- <20180607163931.GH3215@twin.jikos.cz>
- <20180619135301.GQ24375@twin.jikos.cz>
- <eca302a1-5400-504e-f43f-3b8bfcb74e80@oracle.com>
+References: <20180625134532.3889459-1-clm@fb.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <eca302a1-5400-504e-f43f-3b8bfcb74e80@oracle.com>
+In-Reply-To: <20180625134532.3889459-1-clm@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jun 26, 2018 at 02:25:11PM +0800, Anand Jain wrote:
+On Mon, Jun 25, 2018 at 06:45:32AM -0700, Chris Mason wrote:
+> The vm_fault_t conversion commit introduced a ret2 variable for
+> tracking the integer return values from internal btrfs functions.  It
+> was sometimes returning VM_FAULT_LOCKED for pages that were actually
+> invalid and had been removed from the radix.  Something like this:
 > 
+> 	ret2 = btrfs_delalloc_reserve_space() // returns zero on success
 > 
-> (sorry for the delay in reply due to my vacation and, other
->   urgent things took my priority too).
+> 	lock_page(page)
+> 	if (page->mapping != inode->i_mapping)
+> 	    goto out_unlock;
 > 
->   Please see inline below.
+> ...
 > 
-> On 06/19/2018 09:53 PM, David Sterba wrote:
-> > On Thu, Jun 07, 2018 at 06:39:32PM +0200, David Sterba wrote:
-> >> On Mon, Jun 04, 2018 at 11:00:30PM +0800, Anand Jain wrote:
-> >>> In an instrumented testing it is possible that the mount and
-> >>> a newer mkfs.btrfs thread on the same device can race and if the new
-> >>> mkfs.btrfs wins it will free the older fs_devices, then the mount thread
-> >>> will lead to oops.
-> >>>
-> >>> Thread1						Thread2
-> >>> -------						-------
-> >>> mkfs.btrfs -fq /dev/sdb
-> >>> mount /dev/sdb /btrfs
-> >>> |_btrfs_mount_root()
-> >>>    |_btrfs_scan_one_device(... &fs_devices)
-> >>>
-> >>> 						mkfs.btrfs -fq /dev/sdb
-> >>> 						|_btrfs_contol_ioctl()
-> >>> 						  |_btrfs_scan_one_device(... &fs_devices)
-> >>> 						    |_::
-> >>> 						      |_btrfs_free_stale_devices()
-> >>>
-> >>>    |_btrfs_open_devices(fs_devices ..) <-- stale fs_devices.
-> >>>
-> >>> Fix this with a mutually exclusive flag BTRFS_VOL_FLAG_EXCL_OPS.
-> >>
-> >> I'm not sure this is the right way to fix it, adding another bit to the
-> >> uuid_mutex and device_list_mutex combo.
+> out_unlock:
+> 	if (!ret2) {
+> 		...
+> 		return VM_FAULT_LOCKED;
+> 	}
 > 
->   Hmm I wonder why?
+> This ends up triggering this WARNING in btrfs_destroy_inode()
+> 	WARN_ON(BTRFS_I(inode)->block_rsv.size);
 > 
-> >> To fix the race between mount and mkfs we can add a bit of logic to the
-> >> device scanning so that mount calling scan will track the purpose and
-> >> mkfs scan will not be allowed to free that device.
+> The fix used here is to use ret instead of ret2 in our check for success.
 > 
->   Right. To implement such a logic requisites are..
->    #1 The lock must be FSID local so that concurrent mount and or scan
->       of two independent FSID+DEV is possible.
->    #2 It should not return EBUSY when either of scan or mount is in
->       progress but smart enough to complete the (re)scan and or mount
->       in parallel
+> Fixes: a528a2415087 (btrfs: change return type of btrfs_page_mkwrite to vm_fault_t)
+> Signed-off-by: Chris Mason <clm@fb.com>
+> ---
+>  fs/btrfs/inode.c | 3 ++-
+>  1 file changed, 2 insertions(+), 1 deletion(-)
 > 
->   #1 is must, but #2 is good to have and if EBUSY is returned its not
->   wrong as well.
-> 
-> 
-> > Last version of the proposed fix is to extend the uuid_mutex over the
-> > whole mount callback and use it around calls to btrfs_scan_one_device.
-> > That way we'll be sure the mount will always get to the device it
-> > scanned and that will not be freed by the parallel scan.
-> 
->   That will break the requisite #1 as above.
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 193f933..38403aa 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -9013,6 +9013,7 @@ vm_fault_t btrfs_page_mkwrite(struct vm_fault *vmf)
+>  		goto out_unlock;
+>  	}
+>  	ret2 = 0;
+> +	ret = 0;
 
-I don't see how it breaks 'mount and or scan of two independent fsid+dev
-is possible'. It is possible, but the lock does not need to be
-filesystem local.
+That's something I'd rather avoid, now there are two error values that
+need to be tracked. Shouldn't the 'ret2 = 0' be removed completely?
 
-Concurrent mount or scan will block on the uuid_mutex, so all callers
-will proceed once the lock is released and there's no unexpected
-behaviour.
+>  
+>  	/* page is wholly or partially inside EOF */
+>  	if (page_start + PAGE_SIZE > size)
+> @@ -9037,7 +9038,7 @@ vm_fault_t btrfs_page_mkwrite(struct vm_fault *vmf)
+>  	unlock_extent_cached(io_tree, page_start, page_end, &cached_state);
+>  
+>  out_unlock:
+> -	if (!ret2) {
+> +	if (!ret) {
+
+I'm not sure is safe, the new ret is one of the VM_FAULT_ values and
+it's not 0 by default and in fact I don't see anything that would set it
+to 0 directly or indirectly. Which means that the code in the out: label
+also needs to be revisited:
+
+9016 out:
+9017         btrfs_delalloc_release_extents(BTRFS_I(inode), PAGE_SIZE, (ret != 0));
+9018         btrfs_delalloc_release_space(inode, data_reserved, page_start,
+9019                                      reserved_space, (ret != 0));
+
+>  		btrfs_delalloc_release_extents(BTRFS_I(inode), PAGE_SIZE, true);
+>  		sb_end_pagefault(inode->i_sb);
+>  		extent_changeset_free(data_reserved);

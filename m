@@ -1,104 +1,100 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:56921 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1755588AbeFYOXI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Jun 2018 10:23:08 -0400
-Date: Mon, 25 Jun 2018 16:20:15 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Duncan <1i5t5.duncan@cox.net>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: unsolvable technical issues?
-Message-ID: <20180625142015.GE27958@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <b255d0fb-5cee-36c5-d49f-5f014d20e518@dirtcellar.net>
- <pan$11f2c$c623d7b0$5173b25$c7594479@cox.net>
+Received: from magic.merlins.org ([209.81.13.136]:55722 "EHLO
+        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754627AbeFYQHL (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 25 Jun 2018 12:07:11 -0400
+Date: Mon, 25 Jun 2018 09:07:06 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Cc: james harvey <jamespharvey20@gmail.com>,
+        Linux fs Btrfs <linux-btrfs@vger.kernel.org>
+Message-ID: <20180625160706.qnd22zgdv2kwq6dz@merlins.org>
+References: <20180618130055.3rzngk5a5sktfp7p@merlins.org>
+ <20180619154730.fblylttw2nyps4cp@merlins.org>
+ <CA+X5Wn5_TEH5zwWS8cihnadK_hFg9CL6NcT9Q28mDxtZK97Beg@mail.gmail.com>
+ <ab17f789-d475-9812-9c76-83702fc2bd65@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <pan$11f2c$c623d7b0$5173b25$c7594479@cox.net>
+In-Reply-To: <ab17f789-d475-9812-9c76-83702fc2bd65@gmail.com>
+Subject: Re: btrfs balance did not progress after 12H, hang on reboot, btrfs
+ check --repair kills the system still
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Jun 23, 2018 at 05:11:52AM +0000, Duncan wrote:
-> > According to this:
-> > 
-> > https://stratis-storage.github.io/StratisSoftwareDesign.pdf Page 4 ,
-> > section 1.2
-> > 
-> > It claims that BTRFS still have significant technical issues that may
-> > never be resolved.
-> > Could someone shed some light on exactly what these technical issues
-> > might be?! What are BTRFS biggest technical problems?
-> > 
-> > If you forget about the "RAID"5/6 like features then the only annoyances
-> > that I have with BTRFS so far is...
-> > 
-> > 1. Lack of per subvolume "RAID" levels
-> > 2. Lack of not using the deviceid to re-discover and re-add dropped
-> > devices
-> > 
-> > And that's about it really...
-> 
-> ... And those both have solutions on the roadmap, with RFC patches 
-> already posted for #2 (tho I'm not sure they use devid) altho 
-> realistically they're likely to take years to appear and be tested to 
-> stability.  Meanwhile...
-> 
-> While as the others have said you really need to go to the author to get 
-> what was referred to, and I agree, I can speculate a bit.  While this 
-> *is* speculation, admittedly somewhat uninformed as I don't claim to be a 
-> dev, and I'd actually be interested in what others think so don't be 
-> afraid to tell me I haven't a clue, as long as you say why... based on 
-> several years reading the list now...
-> 
-> 1) When I see btrfs "technical issue that may never be resolved", the #1 
-> first thing I think of, that AFAIK there are _definitely_ no plans to 
-> resolve, because it's very deeply woven into the btrfs core by now, is...
-> 
-> Filesystem UUID Identification.
+On Tue, Jun 19, 2018 at 12:58:44PM -0400, Austin S. Hemmelgarn wrote:
+> > In your situation, I would run "btrfs pause <path>", wait to hear from
+> > a btrfs developer, and not use the volume whatsoever in the meantime.
+> I would say this is probably good advice.  I don't really know what's going
+> on here myself actually, though it looks like the balance got stuck (the
+> output hasn't changed for over 36 hours, unless you've got an insanely slow
+> storage array, that's extremely unusual (it should only be moving at most
+> 3GB of data per chunk)).
 
-> Btrfs takes the UU bit of Universally 
-> Unique quite literally, assuming they really *are* unique, at least on 
-> that system, and uses them to identify the possibly multiple devices that 
-> may be components of the filesystem, a problem most filesystems don't 
-> have to deal with since they're single-device-only.  Because btrfs uses 
-> this supposedly unique ID to ID devices that belong to the filesystem, it 
-> can get *very* mixed up, with results possibly including dataloss, if it 
-> sees devices that don't actually belong to a filesystem with the same UUID 
-> as a mounted filesystem.
-> 
-> But technologies such as LVM allow cloning devices and these additional 
-> devices naturally have the same filesystem metadata, including filesystem 
-> UUID, as the original.  Making the problem worse is udev with its plug-n-
-> play style detection, which will normally trigger a btrfs device scan, 
-> thus making btrfs aware of new devices containing (a component of) a 
-> btrfs, as soon as udev detects the device.
+I didn't hear from any developer, so I had to continue.
+- btrfs scrub cancel did not work (hang)
+- at reboot mounting the filesystem hung, even with 4.17, which is
+  disappointing (it should not hang)
+- mount -o recovery still hung
+- mount -o ro did not hang though
 
-The automatic scanning is partially making it hard and would require
-either extending the scanning mechanim to distinguish automatic and
-manual scan, and using that information in kernel.
+Sigh, why is my FS corrupted again?
+Anyway, back to 
+btrfs check --repair
+and, it took all my 32GB of RAM on a system I can't add more RAM to, so
+I'm hosed. I'll note in passing (and it's not ok at all) that check
+--repair after a 20 to 30mn pause, takes all the kernel RAM more quickly
+than the system can OOM or log anything, and just deadlocks it.
+This is repeateable and totally not ok :(
 
-Right now, a cloned device will not be added to the filesystem UUID set
-if the fs is mounted, but otherwise it's up to the administrator. The
-misisng bit is possibly a way to tell the kernel module to 'forget' a
-device (forget and never auto-scan).
+I'm now left with btrfs-progs git master, and lowmem which finally does
+a bit of repair.
+So far:
+gargamel:~# btrfs check --mode=lowmem --repair -p /dev/mapper/dshelf2  
+enabling repair mode  
+WARNING: low-memory mode repair support is only partial  
+Checking filesystem on /dev/mapper/dshelf2  
+UUID: 0f1a0c9f-4e54-4fa7-8736-fd50818ff73d  
+Fixed 0 roots.  
+ERROR: extent[84302495744, 69632] referencer count mismatch (root: 21872, owner: 374857, offset: 3407872) wanted: 3, have: 4
+Created new chunk [18457780224000 1073741824]
+Delete backref in extent [84302495744 69632]
+ERROR: extent[84302495744, 69632] referencer count mismatch (root: 22911, owner: 374857, offset: 3407872) wanted: 3, have: 4
+Delete backref in extent [84302495744 69632]
+ERROR: extent[125712527360, 12214272] referencer count mismatch (root: 21872, owner: 374857, offset: 114540544) wanted: 181, have: 240
+Delete backref in extent [125712527360 12214272]
+ERROR: extent[125730848768, 5111808] referencer count mismatch (root: 21872, owner: 374857, offset: 126754816) wanted: 68, have: 115
+Delete backref in extent [125730848768 5111808]
+ERROR: extent[125730848768, 5111808] referencer count mismatch (root: 22911, owner: 374857, offset: 126754816) wanted: 68, have: 115
+Delete backref in extent [125730848768 5111808]
+ERROR: extent[125736914944, 6037504] referencer count mismatch (root: 21872, owner: 374857, offset: 131866624) wanted: 115, have: 143
+Delete backref in extent [125736914944 6037504]
+ERROR: extent[125736914944, 6037504] referencer count mismatch (root: 22911, owner: 374857, offset: 131866624) wanted: 115, have: 143
+Delete backref in extent [125736914944 6037504]
+ERROR: extent[129952120832, 20242432] referencer count mismatch (root: 21872, owner: 374857, offset: 148234240) wanted: 302, have: 431
+Delete backref in extent [129952120832 20242432]
+ERROR: extent[129952120832, 20242432] referencer count mismatch (root: 22911, owner: 374857, offset: 148234240) wanted: 356, have: 433
+Delete backref in extent [129952120832 20242432]
+ERROR: extent[134925357056, 11829248] referencer count mismatch (root: 21872, owner: 374857, offset: 180371456) wanted: 161, have: 240
+Delete backref in extent [134925357056 11829248]
+ERROR: extent[134925357056, 11829248] referencer count mismatch (root: 22911, owner: 374857, offset: 180371456) wanted: 162, have: 240
+Delete backref in extent [134925357056 11829248]
+ERROR: extent[147895111680, 12345344] referencer count mismatch (root: 21872, owner: 374857, offset: 192200704) wanted: 170, have: 249
+Delete backref in extent [147895111680 12345344]
+ERROR: extent[147895111680, 12345344] referencer count mismatch (root: 22911, owner: 374857, offset: 192200704) wanted: 172, have: 251
+Delete backref in extent [147895111680 12345344]
+ERROR: extent[150850146304, 17522688] referencer count mismatch (root: 21872, owner: 374857, offset: 217653248) wanted: 348, have: 418
+Delete backref in extent [150850146304 17522688]
+ERROR: extent[156909494272, 55320576] referencer count mismatch (root: 22911, owner: 374857, offset: 235175936) wanted: 555, have: 1449
+Deleted root 2 item[156909494272, 178, 5476627808561673095]
+ERROR: extent[156909494272, 55320576] referencer count mismatch (root: 21872, owner: 374857, offset: 235175936) wanted: 556, have: 1452
+Deleted root 2 item[156909494272, 178, 7338474132555182983]
 
-> 2) Subvolume and (more technically) reflink-aware defrag.
+At the rate it's going, it'll probably take days though, it's already been 36H
 
-There was a discussion in the mailinglist recently, some additions to
-the interface were requested. The code to avoid the OOM exists but the
-original author is not apparently interested and noone else has that
-high enough in the todo list.
-
-> 3) N-way-mirroring.
-
-I have a prototype code for that, 3-copy and 4-copy type of profile.
-Doning a fully dynamic N-way would become a messs once thre are mixed
-N-way chunks for different N. Adding N=5 would not be too hard, but I'm
-not sure if this makes sense.
-
-The raid5 write-hole log will build on top of that, but the code has not
-been written yet, other than the separate device logging sent by Liu Bo. 
-
-> 4) (Until relatively recently, and still in terms of scaling) Quotas.
-
-That's ongoing WIP, as qgroups touch the core parts.
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                       | PGP 7F55D5F27AAF9D08

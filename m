@@ -1,80 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp2130.oracle.com ([156.151.31.86]:48704 "EHLO
-        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751181AbeFZGfW (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 26 Jun 2018 02:35:22 -0400
-Subject: Re: [PATCH 3/3] btrfs: fix race between mkfs and mount
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-References: <20180604150030.12883-1-anand.jain@oracle.com>
- <20180604150030.12883-3-anand.jain@oracle.com>
- <20180620140608.GB24375@twin.jikos.cz>
-From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <5c3e3f18-d745-b4f8-0de7-71858ba4c038@oracle.com>
-Date: Tue, 26 Jun 2018 14:38:26 +0800
+Received: from mx2.suse.de ([195.135.220.15]:48733 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S934104AbeFYSGg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 25 Jun 2018 14:06:36 -0400
+Date: Mon, 25 Jun 2018 13:06:32 -0500
+From: Goldwyn Rodrigues <rgoldwyn@suse.de>
+To: dsterba@suse.cz, Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>,
+        linux-btrfs@vger.kernel.org, Goldwyn Rodrigues <rgoldwyn@suse.com>
+Subject: Re: [PATCH] btrfs: Use iocb to derive pos instead of passing a
+ separate parameter
+Message-ID: <20180625180632.aexsmtpfksfyn3hr@merlin>
+References: <20180617173947.818-1-rgoldwyn@suse.de>
+ <5678d4d9-cc58-e07f-9592-07caa4deb59b@jp.fujitsu.com>
+ <20180625162037.GG27958@twin.jikos.cz>
 MIME-Version: 1.0
-In-Reply-To: <20180620140608.GB24375@twin.jikos.cz>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20180625162037.GG27958@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On 06-25 18:20, David Sterba wrote:
+> On Mon, Jun 25, 2018 at 01:58:58PM +0900, Misono Tomohiro wrote:
+> > So, this is the updated version of https://patchwork.kernel.org/patch/10063039/
+> > 
+> > This time xfstest is ok and
+> >  Reviewed-by: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
 
+Yes, thats right.
 
-On 06/20/2018 10:06 PM, David Sterba wrote:
-> On Mon, Jun 04, 2018 at 11:00:30PM +0800, Anand Jain wrote:
->> In an instrumented testing it is possible that the mount and
->> a newer mkfs.btrfs thread on the same device can race and if the new
->> mkfs.btrfs wins it will free the older fs_devices, then the mount thread
->> will lead to oops.
->>
->> Thread1						Thread2
->> -------						-------
->> mkfs.btrfs -fq /dev/sdb
->> mount /dev/sdb /btrfs
->> |_btrfs_mount_root()
->>    |_btrfs_scan_one_device(... &fs_devices)
->>
->> 						mkfs.btrfs -fq /dev/sdb
->> 						|_btrfs_contol_ioctl()
->> 						  |_btrfs_scan_one_device(... &fs_devices)
->> 						    |_::
->> 						      |_btrfs_free_stale_devices()
->>
->>    |_btrfs_open_devices(fs_devices ..) <-- stale fs_devices.
->>
->> Fix this with a mutually exclusive flag BTRFS_VOL_FLAG_EXCL_OPS.
->>
->> Signed-off-by: Anand Jain <anand.jain@oracle.com>
->> ---
->>   fs/btrfs/super.c   |  6 ++++++
->>   fs/btrfs/volumes.c | 10 +++++++++-
->>   fs/btrfs/volumes.h |  1 +
->>   3 files changed, 16 insertions(+), 1 deletion(-)
->>
->> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
->> index f0c13defc9eb..b60e7cbe39f5 100644
->> --- a/fs/btrfs/super.c
->> +++ b/fs/btrfs/super.c
->> @@ -1565,7 +1565,13 @@ static struct dentry *btrfs_mount_root(struct file_system_type *fs_type,
->>   		goto error_fs_info;
->>   	}
->>   
->> +	if (test_and_set_bit(BTRFS_VOLUME_STATE_EXCL_OPS, &fs_devices->volume_state)) {
->> +		error = -EBUSY;
 > 
-> We'd need to wait until the bit is not set instead of BUSY, as the
-> parallel scan is not really a reason to fail the whole mount.
+> Your comment about invalidate_mapping_pages is also ok, right? As
+> filemap_fdatawait_range and invalidate_mapping_pages use the same
+> start/end of the range.
 
-> I'll post the patch series to address this problem today, it utilizes
-> the uuid_mutex in a similar way you try to do with the new bit, but it
-> will not lead to EBUSY.
+I did not mess around with other functions which are affected by
+iocb->ki_pos (as opposed to local pos). So, this should be safe with
+respect to invalidate_mapping_pages().
 
-  Ok. Shall review.
-
-Thanks, Anand
-
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+-- 
+Goldwyn

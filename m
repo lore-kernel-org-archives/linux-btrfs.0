@@ -1,58 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:34400 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1752804AbeF2Lqb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 29 Jun 2018 07:46:31 -0400
-Date: Fri, 29 Jun 2018 13:46:29 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Nikolay Borisov <nborisov@suse.com>
-Cc: Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2] Revert "btrfs: fix a possible umount deadlock"
-Message-ID: <20180629114629.GO2287@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1530249965-24746-1-git-send-email-nborisov@suse.com>
- <1b4173b5-857c-f261-7e69-656d47aa0bcb@oracle.com>
- <de9adc8b-3131-c310-e17e-247ec375475b@suse.com>
+Received: from mx2.suse.de ([195.135.220.15]:54101 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752465AbeFYIo0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 25 Jun 2018 04:44:26 -0400
+Subject: Re: [PATCH v2] btrfs: remove -ERANGE check and avoid errno overriding
+ in btrfs_get_acl()
+To: Chengguang Xu <cgxu519@gmx.com>, clm@fb.com, jbacik@fb.com,
+        dsterba@suse.com
+Cc: linux-btrfs@vger.kernel.org
+References: <20180623063858.10395-1-cgxu519@gmx.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <c4c195c6-8a80-3823-ca2b-dd4791cd07d2@suse.com>
+Date: Mon, 25 Jun 2018 11:44:24 +0300
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-In-Reply-To: <de9adc8b-3131-c310-e17e-247ec375475b@suse.com>
+In-Reply-To: <20180623063858.10395-1-cgxu519@gmx.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jun 29, 2018 at 10:13:44AM +0300, Nikolay Borisov wrote:
-> On 29.06.2018 10:11, Anand Jain wrote:
-> > 
-> > On 06/29/2018 01:26 PM, Nikolay Borisov wrote:
-> >> Since commit 88c14590cdd6 ("btrfs: use RCU in btrfs_show_devname for
-> >> device list traversal") btrfs_show_devname no longer takes
-> >> device_list_mutex. As such the deadlock that 0ccd05285e7f ("btrfs: fix
-> >> a possible umount deadlock") aimed to fix no longer exists. So remove
-> >> the extra code that commit added.
-> >>
-> >> This reverts commit 0ccd05285e7f5a8e297e1d6dfc41e7c65757d6fa.
-> > 
-> >  Its not exactly a revert.
-> > 
-> >  Because before 88c14590cdd6 was written, 0ccd05285e7f was already their
-> >  for the right purpose OR a new title is even better.
+
+
+On 23.06.2018 09:38, Chengguang Xu wrote:
+> Remove -ERANGE error check because there is no chance to get into
+> this condition and meanwhile avoid overriding errno to -EIO in
+> btrfs_get_acl().
+
+This is way too terse. The reason why we can't get an ERANGE error is
+because we first call btrfs_getxattr to get the length of the attribute,
+then we do a subsequent call with the size from the first call. Between
+the 2 calls the size shouldn't change.
+
+Furthermore, I see one more bad practice in this code - the first call
+to btrfs_getxattr is not using the value buffer hence it should be
+passing NULL to make this obvious, instead it's passing an empty string
+form the rodata section.
+
 > 
-> What I'm saying is that commit 88c14590cdd6 obsoleted 0ccd05285e7f,
-> hence this patch reverts the latter. I've literally generated it with
-> git revert 0ccd05285e7f + minor fixups.
-
-I do not recommend to do a revert here.  Even if a patch reverts
-functionality because it's not needed anymore, then it's a "forward"
-change.  There are also other changes that may affect the behaviour and
-in this case it's 47dba17171a76ea2a2a71 that removes rcu barrier, so the
-patch has to be put into the context of current code.
-
-The commit is almost 2 years old, the idea of reverts is IMHO more to
-provide an easy way do a small step back during one devlopment cycle
-when the moving parts are still in sight.
-
-Back then the commit fixed a deadlock, a revert here would read as 'ok,
-we want the deadlock back'.
-
-So, the code is ok. The subject needs to drop the word 'revert' and
-changelg maybe mention a few more references why the logic is not needed
-anymore.
+> Signed-off-by: Chengguang Xu <cgxu519@gmx.com>
+> ---
+> v2:
+> - Avoid errno overriding instead of print error message in error case.
+> - Change commit log for better understanding.
+> 
+>  fs/btrfs/acl.c | 10 +++++-----
+>  1 file changed, 5 insertions(+), 5 deletions(-)
+> 
+> diff --git a/fs/btrfs/acl.c b/fs/btrfs/acl.c
+> index 15e1dfef56a5..b71a875036af 100644
+> --- a/fs/btrfs/acl.c
+> +++ b/fs/btrfs/acl.c
+> @@ -40,13 +40,13 @@ struct posix_acl *btrfs_get_acl(struct inode *inode, int type)
+>  			return ERR_PTR(-ENOMEM);
+>  		size = btrfs_getxattr(inode, name, value, size);
+>  	}
+> -	if (size > 0) {
+> +	if (size > 0)
+>  		acl = posix_acl_from_xattr(&init_user_ns, value, size);
+> -	} else if (size == -ERANGE || size == -ENODATA || size == 0) {
+> +	else if (size == -ENODATA || size == 0)
+>  		acl = NULL;
+> -	} else {
+> -		acl = ERR_PTR(-EIO);
+> -	}
+> +	else
+> +		acl = ERR_PTR(size);
+> +
+>  	kfree(value);
+>  
+>  	return acl;
+> 

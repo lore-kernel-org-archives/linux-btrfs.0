@@ -1,78 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:59862 "EHLO
-        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1755442AbeFYNqS (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Jun 2018 09:46:18 -0400
-Received: from pps.filterd (m0044010.ppops.net [127.0.0.1])
-        by mx0a-00082601.pphosted.com (8.16.0.22/8.16.0.22) with SMTP id w5PDjWbw007771
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Jun 2018 06:46:17 -0700
-Received: from mail.thefacebook.com ([199.201.64.23])
-        by mx0a-00082601.pphosted.com with ESMTP id 2ju064r73p-1
-        (version=TLSv1 cipher=ECDHE-RSA-AES256-SHA bits=256 verify=NOT)
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Jun 2018 06:46:17 -0700
-From: Chris Mason <clm@fb.com>
-To: <dsterba@suse.cz>
-CC: <linux-btrfs@vger.kernel.org>, Chris Mason <clm@fb.com>
-Subject: [PATCH] Btrfs: fix regression in btrfs_page_mkwrite() from vm_fault_t conversion
-Date: Mon, 25 Jun 2018 06:45:32 -0700
-Message-ID: <20180625134532.3889459-1-clm@fb.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from mx2.suse.de ([195.135.220.15]:52968 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751469AbeFYIYy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 25 Jun 2018 04:24:54 -0400
+Received: from relay1.suse.de (charybdis-ext-too.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 8DF5BAC56
+        for <linux-btrfs@vger.kernel.org>; Mon, 25 Jun 2018 08:24:53 +0000 (UTC)
+From: Nikolay Borisov <nborisov@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH 0/2] Remove v0 extent support 
+Date: Mon, 25 Jun 2018 11:24:48 +0300
+Message-Id: <1529915090-11095-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The vm_fault_t conversion commit introduced a ret2 variable for
-tracking the integer return values from internal btrfs functions.  It
-was sometimes returning VM_FAULT_LOCKED for pages that were actually
-invalid and had been removed from the radix.  Something like this:
+It's unlikely there is anyone using that or even if they are they have bigger 
+problems than this patchset :). After all, v0 was introduced 9 years ago and 
+it was already conditionally compiled by the time BTRFS was merged in the
+upstream kernel. The patches themselves are really simple - patch 1 removes 
+all the code within ifdef guards. Patch 2, in turn, ads graceful handling by 
+aborting transaction where it makes sense or calling btrfs_handle_fs_error and 
+printing an informative error message. 
 
-	ret2 = btrfs_delalloc_reserve_space() // returns zero on success
+Nikolay Borisov (2):
+  btrfs: Remove V0 extent support
+  btrfs: Add graceful handling of V0 extents
 
-	lock_page(page)
-	if (page->mapping != inode->i_mapping)
-	    goto out_unlock;
+ fs/btrfs/ctree.c       |   6 +-
+ fs/btrfs/ctree.h       |   2 -
+ fs/btrfs/extent-tree.c | 239 +++++++------------------------------------------
+ fs/btrfs/print-tree.c  |  35 ++------
+ fs/btrfs/relocation.c  | 181 ++++++-------------------------------
+ 5 files changed, 70 insertions(+), 393 deletions(-)
 
-...
-
-out_unlock:
-	if (!ret2) {
-		...
-		return VM_FAULT_LOCKED;
-	}
-
-This ends up triggering this WARNING in btrfs_destroy_inode()
-	WARN_ON(BTRFS_I(inode)->block_rsv.size);
-
-The fix used here is to use ret instead of ret2 in our check for success.
-
-Fixes: a528a2415087 (btrfs: change return type of btrfs_page_mkwrite to vm_fault_t)
-Signed-off-by: Chris Mason <clm@fb.com>
----
- fs/btrfs/inode.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 193f933..38403aa 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -9013,6 +9013,7 @@ vm_fault_t btrfs_page_mkwrite(struct vm_fault *vmf)
- 		goto out_unlock;
- 	}
- 	ret2 = 0;
-+	ret = 0;
- 
- 	/* page is wholly or partially inside EOF */
- 	if (page_start + PAGE_SIZE > size)
-@@ -9037,7 +9038,7 @@ vm_fault_t btrfs_page_mkwrite(struct vm_fault *vmf)
- 	unlock_extent_cached(io_tree, page_start, page_end, &cached_state);
- 
- out_unlock:
--	if (!ret2) {
-+	if (!ret) {
- 		btrfs_delalloc_release_extents(BTRFS_I(inode), PAGE_SIZE, true);
- 		sb_end_pagefault(inode->i_sb);
- 		extent_changeset_free(data_reserved);
 -- 
-2.9.5
+2.7.4
 

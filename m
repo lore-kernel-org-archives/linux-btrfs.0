@@ -1,121 +1,93 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp.dpl.mendix.net ([83.96.177.10]:38549 "EHLO
-        smtp.dpl.mendix.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1755346AbeFYQYl (ORCPT
+Received: from smtp.domeneshop.no ([194.63.252.55]:34881 "EHLO
+        smtp.domeneshop.no" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S933863AbeFYQnl (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Jun 2018 12:24:41 -0400
-Subject: Re: btrfs balance did not progress after 12H, hang on reboot, btrfs
- check --repair kills the system still
-To: Marc MERLIN <marc@merlins.org>
-Cc: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
-References: <20180618130055.3rzngk5a5sktfp7p@merlins.org>
- <20180619154730.fblylttw2nyps4cp@merlins.org>
- <CA+X5Wn5_TEH5zwWS8cihnadK_hFg9CL6NcT9Q28mDxtZK97Beg@mail.gmail.com>
- <ab17f789-d475-9812-9c76-83702fc2bd65@gmail.com>
- <20180625160706.qnd22zgdv2kwq6dz@merlins.org>
-From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
-Message-ID: <58d9fd8d-48b9-669f-05f1-82da9ce0c510@mendix.com>
-Date: Mon, 25 Jun 2018 18:24:37 +0200
+        Mon, 25 Jun 2018 12:43:41 -0400
+Reply-To: waxhead@dirtcellar.net
+Subject: Re: unsolvable technical issues?
+To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+References: <b255d0fb-5cee-36c5-d49f-5f014d20e518@dirtcellar.net>
+ <20180625133611.GC27958@twin.jikos.cz>
+From: waxhead <waxhead@dirtcellar.net>
+Message-ID: <5d76bd89-a209-2197-5eec-9cd88774f1a2@dirtcellar.net>
+Date: Mon, 25 Jun 2018 18:43:38 +0200
 MIME-Version: 1.0
-In-Reply-To: <20180625160706.qnd22zgdv2kwq6dz@merlins.org>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <20180625133611.GC27958@twin.jikos.cz>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 06/25/2018 06:07 PM, Marc MERLIN wrote:
-> On Tue, Jun 19, 2018 at 12:58:44PM -0400, Austin S. Hemmelgarn wrote:
->>> In your situation, I would run "btrfs pause <path>", wait to hear from
->>> a btrfs developer, and not use the volume whatsoever in the meantime.
->> I would say this is probably good advice.  I don't really know what's going
->> on here myself actually, though it looks like the balance got stuck (the
->> output hasn't changed for over 36 hours, unless you've got an insanely slow
->> storage array, that's extremely unusual (it should only be moving at most
->> 3GB of data per chunk)).
+
+
+David Sterba wrote:
+> On Fri, Jun 22, 2018 at 01:13:31AM +0200, waxhead wrote:
+>> According to this:
+>>
+>> https://stratis-storage.github.io/StratisSoftwareDesign.pdf
+>> Page 4 , section 1.2
+>>
+>> It claims that BTRFS still have significant technical issues that may
+>> never be resolved.
+>> Could someone shed some light on exactly what these technical issues
+>> might be?! What are BTRFS biggest technical problems?
 > 
-> I didn't hear from any developer, so I had to continue.
-> - btrfs scrub cancel did not work (hang)
-
-Did you mean balance cancel? It waits until the current block group is
-finished.
-
-> - at reboot mounting the filesystem hung, even with 4.17, which is
->   disappointing (it should not hang)
-> - mount -o recovery still hung
-> - mount -o ro did not hang though
+> The subject you write is 'unsolvable', which I read as 'impossible to
+> solve', eg. on the design level. I'm not aware of such issues.
 > 
-> Sigh, why is my FS corrupted again?
+Alright , so I interpret this as there is no showstopper regarding 
+implementation of existing and planned features...
 
-Again? Do you think balance is corrupting the filesystem? Or have there
-been previous btrfs check --repair operations which made smaller
-problems bigger in the past?
-
-> Anyway, back to 
-> btrfs check --repair
-> and, it took all my 32GB of RAM on a system I can't add more RAM to, so
-> I'm hosed. I'll note in passing (and it's not ok at all) that check
-> --repair after a 20 to 30mn pause, takes all the kernel RAM more quickly
-> than the system can OOM or log anything, and just deadlocks it.
-> This is repeateable and totally not ok :(
+> If this is about issues that are difficult either to implement or
+> getting right, there are a few known ones.
 > 
-> I'm now left with btrfs-progs git master, and lowmem which finally does
-> a bit of repair.
-> So far:
-> gargamel:~# btrfs check --mode=lowmem --repair -p /dev/mapper/dshelf2  
-> enabling repair mode  
-> WARNING: low-memory mode repair support is only partial  
-> Checking filesystem on /dev/mapper/dshelf2  
-> UUID: 0f1a0c9f-4e54-4fa7-8736-fd50818ff73d  
-> Fixed 0 roots.  
+Alright again, and I interpret this as there might be some code that is 
+not flexible enough and changing that might affect working / stable 
+parts of the code so therefore other solutions are looked at which is 
+not that uncommon for software. Apart from not listing the known issues 
+I think I got my questions answered :) and now it is perhaps finally 
+appropriate to file a request at the Stratis bugtracker to ask what 
+specifically they are referring to.
 
-Am I right to interpret the messages below, and see that you have
-extents that are referenced hundreds of times?
-
-Is there heavy snapshotting or deduping going on in this filesystem? If
-so, it's not surprising balance will get a hard time moving extents
-around, since it has to update all of the metadata for each extent again
-in hundreds of places.
-
-Did you investigate what balance was doing if it takes long? Is is using
-cpu all the time, or is it reading from disk slowly (random reads) or is
-it writing to disk all the time at full speed?
-
-K
-
-> ERROR: extent[84302495744, 69632] referencer count mismatch (root: 21872, owner: 374857, offset: 3407872) wanted: 3, have: 4
-> Created new chunk [18457780224000 1073741824]
-> Delete backref in extent [84302495744 69632]
-> ERROR: extent[84302495744, 69632] referencer count mismatch (root: 22911, owner: 374857, offset: 3407872) wanted: 3, have: 4
-> Delete backref in extent [84302495744 69632]
-> ERROR: extent[125712527360, 12214272] referencer count mismatch (root: 21872, owner: 374857, offset: 114540544) wanted: 181, have: 240
-> Delete backref in extent [125712527360 12214272]
-> ERROR: extent[125730848768, 5111808] referencer count mismatch (root: 21872, owner: 374857, offset: 126754816) wanted: 68, have: 115
-> Delete backref in extent [125730848768 5111808]
-> ERROR: extent[125730848768, 5111808] referencer count mismatch (root: 22911, owner: 374857, offset: 126754816) wanted: 68, have: 115
-> Delete backref in extent [125730848768 5111808]
-> ERROR: extent[125736914944, 6037504] referencer count mismatch (root: 21872, owner: 374857, offset: 131866624) wanted: 115, have: 143
-> Delete backref in extent [125736914944 6037504]
-> ERROR: extent[125736914944, 6037504] referencer count mismatch (root: 22911, owner: 374857, offset: 131866624) wanted: 115, have: 143
-> Delete backref in extent [125736914944 6037504]
-> ERROR: extent[129952120832, 20242432] referencer count mismatch (root: 21872, owner: 374857, offset: 148234240) wanted: 302, have: 431
-> Delete backref in extent [129952120832 20242432]
-> ERROR: extent[129952120832, 20242432] referencer count mismatch (root: 22911, owner: 374857, offset: 148234240) wanted: 356, have: 433
-> Delete backref in extent [129952120832 20242432]
-> ERROR: extent[134925357056, 11829248] referencer count mismatch (root: 21872, owner: 374857, offset: 180371456) wanted: 161, have: 240
-> Delete backref in extent [134925357056 11829248]
-> ERROR: extent[134925357056, 11829248] referencer count mismatch (root: 22911, owner: 374857, offset: 180371456) wanted: 162, have: 240
-> Delete backref in extent [134925357056 11829248]
-> ERROR: extent[147895111680, 12345344] referencer count mismatch (root: 21872, owner: 374857, offset: 192200704) wanted: 170, have: 249
-> Delete backref in extent [147895111680 12345344]
-> ERROR: extent[147895111680, 12345344] referencer count mismatch (root: 22911, owner: 374857, offset: 192200704) wanted: 172, have: 251
-> Delete backref in extent [147895111680 12345344]
-> ERROR: extent[150850146304, 17522688] referencer count mismatch (root: 21872, owner: 374857, offset: 217653248) wanted: 348, have: 418
-> Delete backref in extent [150850146304 17522688]
-> ERROR: extent[156909494272, 55320576] referencer count mismatch (root: 22911, owner: 374857, offset: 235175936) wanted: 555, have: 1449
-> Deleted root 2 item[156909494272, 178, 5476627808561673095]
-> ERROR: extent[156909494272, 55320576] referencer count mismatch (root: 21872, owner: 374857, offset: 235175936) wanted: 556, have: 1452
-> Deleted root 2 item[156909494272, 178, 7338474132555182983]
+>> If you forget about the "RAID"5/6 like features then the only annoyances
+>> that I have with BTRFS so far is...
+>>
+>> 1. Lack of per subvolume "RAID" levels
+>> 2. Lack of not using the deviceid to re-discover and re-add dropped devices
+>>
+>> And that's about it really...
 > 
-> At the rate it's going, it'll probably take days though, it's already been 36H
+> This could quickly turn into 'my faviourite bug/feature' list that can
+> be very long. The most asked for are raid56, and performance of qgroups.
+> 
+> Qu Wenruo improved some of the core problems and Jeff is working on the
+> performance problem. So there are people working on that.
+> 
+> On the raid56 front, there were some recent updates that fixed some
+> bugs, but the fix for write hole is still missing so we can't raise the
+> status yet.  I have some some good news but nobody should get too
+> excited until the code lands.
+> 
+> I have prototype for the N-copy raid (where N is 3 or 4).  This will
+> provide the underlying infrastructure for the raid5/6 logging mechanism,
+> the rest can be taken from Liu Bo's patchset sent some time ago.  In the
+> end the N-copy can be used for data and metadata too, independently and
+> flexibly switched via the balance filters. This will cost one
+> incompatibility bit.
 
--- 
-Hans van Kranenburg
+I hope I am not asking for too much (but I know I probably am), but I 
+suggest that having a small snippet of information on the status page 
+showing a little bit about what is either currently the development 
+focus , or what people are known for working at would be very valuable 
+for users and it may of course work both ways, such as exciting people 
+or calming them down. ;)
+
+For example something simple like a "development focus" list...
+2018-Q4: (planned) Renaming the grotesque "RAID" terminology
+2018-Q3: (planned) Magical feature X
+2018-Q2: N-Way mirroring
+2018-Q1: Feature work "RAID"5/6
+
+I think it would be good for people living their lives outside as it 
+would perhaps spark some attention from developers and perhaps even 
+media as well.

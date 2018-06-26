@@ -1,55 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:36721 "EHLO mx2.suse.de"
+Received: from mail.kernel.org ([198.145.29.99]:49048 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752747AbeFTAit (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 19 Jun 2018 20:38:49 -0400
-Received: from relay2.suse.de (charybdis-ext-too.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 316AAABCC
-        for <linux-btrfs@vger.kernel.org>; Wed, 20 Jun 2018 00:38:48 +0000 (UTC)
-From: Qu Wenruo <wqu@suse.com>
+        id S1752144AbeF0O3v (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 27 Jun 2018 10:29:51 -0400
+Received: from debian3.lan (bl11-80-66.dsl.telepac.pt [85.244.80.66])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id A4CEC208A3
+        for <linux-btrfs@vger.kernel.org>; Wed, 27 Jun 2018 14:29:50 +0000 (UTC)
+From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH 2/2] btrfs-progs: misc-tests: Fix 029 test cases for sudo test environment
-Date: Wed, 20 Jun 2018 08:38:39 +0800
-Message-Id: <20180620003839.10629-2-wqu@suse.com>
-In-Reply-To: <20180620003839.10629-1-wqu@suse.com>
-References: <20180620003839.10629-1-wqu@suse.com>
+Subject: [PATCH] Btrfs: fix mount failure when qgroup rescan is in progress
+Date: Wed, 27 Jun 2018 00:43:15 +0100
+Message-Id: <20180626234315.15643-1-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Test misc/029 only works if the test case is executed as root, while for
-sudo usage, it doesn't work as initial mkdir and final cleanup doesn't
-use $SUDO_HELPER.
+From: Filipe Manana <fdmanana@suse.com>
 
-Add "run_check $SUDO_HELPER" for such cases to allow it works under sudo
-usage.
+If a power failure happens while the qgroup rescan kthread is running,
+the next mount operation will always fail. This is because of a recent
+regression that makes qgroup_rescan_init() incorrectly return -EINVAL
+when we are mounting the filesystem (through btrfs_read_qgroup_config()).
+This causes the -EINVAL error to be returned regardless of any qgroup
+flags being set instead of returning the error only when neither of
+the flags BTRFS_QGROUP_STATUS_FLAG_RESCAN nor BTRFS_QGROUP_STATUS_FLAG_ON
+are set.
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
+A test case for fstests follows up soon.
+
+Fixes: 9593bf49675e ("btrfs: qgroup: show more meaningful qgroup_rescan_init error message")
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- tests/misc-tests/029-send-p-different-mountpoints/test.sh | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+ fs/btrfs/qgroup.c | 13 ++++++++++---
+ 1 file changed, 10 insertions(+), 3 deletions(-)
 
-diff --git a/tests/misc-tests/029-send-p-different-mountpoints/test.sh b/tests/misc-tests/029-send-p-different-mountpoints/test.sh
-index 0b42b772e3d7..90465e1d08fd 100755
---- a/tests/misc-tests/029-send-p-different-mountpoints/test.sh
-+++ b/tests/misc-tests/029-send-p-different-mountpoints/test.sh
-@@ -14,7 +14,7 @@ prepare_test_dev
- SUBVOL_MNT="$TEST_MNT/subvol"
- TOPLEVEL_MNT="$TEST_MNT/toplevel"
- TEST_MNT="$TOPLEVEL_MNT"
--mkdir -p "$TOPLEVEL_MNT" "$SUBVOL_MNT"
-+run_check $SUDO_HELPER mkdir -p "$TOPLEVEL_MNT" "$SUBVOL_MNT"
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index 1874a6d2e6f5..d4171de93087 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -2784,13 +2784,20 @@ qgroup_rescan_init(struct btrfs_fs_info *fs_info, u64 progress_objectid,
  
- run_check $SUDO_HELPER "$TOP/mkfs.btrfs" -f "$TEST_DEV"
- run_check_mount_test_dev
-@@ -47,5 +47,5 @@ run_mustfail_stdout "send -p on 2 mount points" \
- run_check_umount_test_dev "$SUBVOL_MNT"
- run_check_umount_test_dev "$TOPLEVEL_MNT"
+ 	if (!init_flags) {
+ 		/* we're resuming qgroup rescan at mount time */
+-		if (!(fs_info->qgroup_flags & BTRFS_QGROUP_STATUS_FLAG_RESCAN))
++		if (!(fs_info->qgroup_flags &
++		      BTRFS_QGROUP_STATUS_FLAG_RESCAN)) {
+ 			btrfs_warn(fs_info,
+ 			"qgroup rescan init failed, qgroup is not enabled");
+-		else if (!(fs_info->qgroup_flags & BTRFS_QGROUP_STATUS_FLAG_ON))
++			ret = -EINVAL;
++		} else if (!(fs_info->qgroup_flags &
++			     BTRFS_QGROUP_STATUS_FLAG_ON)) {
+ 			btrfs_warn(fs_info,
+ 			"qgroup rescan init failed, qgroup rescan is not queued");
+-		return -EINVAL;
++			ret = -EINVAL;
++		}
++
++		if (ret)
++			return ret;
+ 	}
  
--rmdir "$SUBVOL_MNT"
--rmdir "$TOPLEVEL_MNT"
-+run_check $SUDO_HELPER rmdir "$SUBVOL_MNT"
-+run_check $SUDO_HELPER rmdir "$TOPLEVEL_MNT"
+ 	mutex_lock(&fs_info->qgroup_rescan_lock);
 -- 
-2.17.1
+2.11.0
 

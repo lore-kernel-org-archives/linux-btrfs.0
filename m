@@ -1,191 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from synology.com ([59.124.61.242]:33896 "EHLO synology.com"
+Received: from mx2.suse.de ([195.135.220.15]:50600 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S934776AbeF2I1f (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 29 Jun 2018 04:27:35 -0400
-From: Ethan Lien <ethanlien@synology.com>
+        id S932234AbeF0Isn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 27 Jun 2018 04:48:43 -0400
+From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Ethan Lien <ethanlien@synology.com>
-Subject: [PATCH] btrfs: use customized batch size for total_bytes_pinned
-Date: Fri, 29 Jun 2018 16:27:25 +0800
-Message-Id: <20180629082725.12934-1-ethanlien@synology.com>
+Cc: misono.tomohiro@jp.fujitsu.com
+Subject: [PATCH] btrfs: quota: Reset rescan progress if we hit last leaf
+Date: Wed, 27 Jun 2018 16:48:40 +0800
+Message-Id: <20180627084840.32033-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We use percpu_counter to reduce lock contention of frequently updated
-counter. But the default 32 batch size is suitable only for inc/dec
-update, not for sector size update. The end result is we still acquire
-spin lock for every percpu_counter_add(). So use customized batch size
-for total_bytes_pinned as we already done for dirty_metadata_bytes
-and delalloc_bytes. Also we fix dirty_metadata_bytes to use
-__percpu_counter_compare of customized batch so we get precise value of
-dirty_metadata_bytes.
+Commit ff3d27a048d9 ("btrfs: qgroup: Finish rescan when hit the last leaf of extent tree")
+added a new exit for rescan finish.
 
-Signed-off-by: Ethan Lien <ethanlien@synology.com>
+However after finishing quota rescan, we set
+fs_info->qgroup_rescan_progress to (u64)-1, as qgroup_rescan_progress is also
+used to determine whether we should account dirty extents.
+Since if dirty extents is after qgroup_rescan_progress, we don't need to
+account it as rescan will account them later.
+
+Without properly setting qgroup_rescan_progress to (u64)-1, all later
+dirty extents after qgroup_rescan_progress will be ignored, thus
+screwing up the whole quota accounting.
+
+Reported-by: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
+Fixes: ff3d27a048d9 ("btrfs: qgroup: Finish rescan when hit the last leaf of extent tree")
+Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/ctree.h       |  1 +
- fs/btrfs/disk-io.c     | 10 ++++++----
- fs/btrfs/extent-tree.c | 43 +++++++++++++++++++++++++++---------------
- 3 files changed, 35 insertions(+), 19 deletions(-)
+ fs/btrfs/qgroup.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 118346aceea9..df682a521635 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -422,6 +422,7 @@ struct btrfs_space_info {
- 	 * time the transaction commits.
- 	 */
- 	struct percpu_counter total_bytes_pinned;
-+	s32 total_bytes_pinned_batch;
- 
- 	struct list_head list;
- 	/* Protected by the spinlock 'lock'. */
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 205092dc9390..dfed08e70ec1 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -961,8 +961,9 @@ static int btree_writepages(struct address_space *mapping,
- 
- 		fs_info = BTRFS_I(mapping->host)->root->fs_info;
- 		/* this is a bit racy, but that's ok */
--		ret = percpu_counter_compare(&fs_info->dirty_metadata_bytes,
--					     BTRFS_DIRTY_METADATA_THRESH);
-+		ret = __percpu_counter_compare(&fs_info->dirty_metadata_bytes,
-+					     BTRFS_DIRTY_METADATA_THRESH,
-+					     fs_info->dirty_metadata_batch);
- 		if (ret < 0)
- 			return 0;
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index 1874a6d2e6f5..99f2b9ce0f15 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -2680,8 +2680,10 @@ qgroup_rescan_leaf(struct btrfs_fs_info *fs_info, struct btrfs_path *path,
+ 		free_extent_buffer(scratch_leaf);
  	}
-@@ -4150,8 +4151,9 @@ static void __btrfs_btree_balance_dirty(struct btrfs_fs_info *fs_info,
- 	if (flush_delayed)
- 		btrfs_balance_delayed_items(fs_info);
  
--	ret = percpu_counter_compare(&fs_info->dirty_metadata_bytes,
--				     BTRFS_DIRTY_METADATA_THRESH);
-+	ret = __percpu_counter_compare(&fs_info->dirty_metadata_bytes,
-+				     BTRFS_DIRTY_METADATA_THRESH,
-+				     fs_info->dirty_metadata_batch);
- 	if (ret > 0) {
- 		balance_dirty_pages_ratelimited(fs_info->btree_inode->i_mapping);
- 	}
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 3d9fe58c0080..a067c047904c 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -758,7 +758,8 @@ static void add_pinned_bytes(struct btrfs_fs_info *fs_info, s64 num_bytes,
- 
- 	space_info = __find_space_info(fs_info, flags);
- 	ASSERT(space_info);
--	percpu_counter_add(&space_info->total_bytes_pinned, num_bytes);
-+	percpu_counter_add_batch(&space_info->total_bytes_pinned, num_bytes,
-+		    space_info->total_bytes_pinned_batch);
+-	if (done && !ret)
++	if (done && !ret) {
+ 		ret = 1;
++		fs_info->qgroup_rescan_progress.objectid = (u64)-1;
++	}
+ 	return ret;
  }
  
- /*
-@@ -2598,8 +2599,9 @@ static int cleanup_ref_head(struct btrfs_trans_handle *trans,
- 			flags = BTRFS_BLOCK_GROUP_METADATA;
- 		space_info = __find_space_info(fs_info, flags);
- 		ASSERT(space_info);
--		percpu_counter_add(&space_info->total_bytes_pinned,
--				   -head->num_bytes);
-+		percpu_counter_add_batch(&space_info->total_bytes_pinned,
-+				   -head->num_bytes,
-+				   space_info->total_bytes_pinned_batch);
- 
- 		if (head->is_data) {
- 			spin_lock(&delayed_refs->lock);
-@@ -4035,6 +4037,10 @@ static int create_space_info(struct btrfs_fs_info *info, u64 flags)
- 	INIT_LIST_HEAD(&space_info->ro_bgs);
- 	INIT_LIST_HEAD(&space_info->tickets);
- 	INIT_LIST_HEAD(&space_info->priority_tickets);
-+	if (flags & BTRFS_BLOCK_GROUP_DATA)
-+		space_info->total_bytes_pinned_batch = info->delalloc_batch;
-+	else
-+		space_info->total_bytes_pinned_batch = info->dirty_metadata_batch;
- 
- 	ret = kobject_init_and_add(&space_info->kobj, &space_info_ktype,
- 				    info->space_info_kobj, "%s",
-@@ -4309,9 +4315,10 @@ int btrfs_alloc_data_chunk_ondemand(struct btrfs_inode *inode, u64 bytes)
- 		 * allocation, and no removed chunk in current transaction,
- 		 * don't bother committing the transaction.
- 		 */
--		have_pinned_space = percpu_counter_compare(
-+		have_pinned_space = __percpu_counter_compare(
- 			&data_sinfo->total_bytes_pinned,
--			used + bytes - data_sinfo->total_bytes);
-+			used + bytes - data_sinfo->total_bytes,
-+			data_sinfo->total_bytes_pinned_batch);
- 		spin_unlock(&data_sinfo->lock);
- 
- 		/* commit the current transaction and try again */
-@@ -4912,8 +4919,9 @@ static int may_commit_transaction(struct btrfs_fs_info *fs_info,
- 		return 0;
- 
- 	/* See if there is enough pinned space to make this reservation */
--	if (percpu_counter_compare(&space_info->total_bytes_pinned,
--				   bytes) >= 0)
-+	if (__percpu_counter_compare(&space_info->total_bytes_pinned,
-+				   bytes,
-+				   space_info->total_bytes_pinned_batch) >= 0)
- 		goto commit;
- 
- 	/*
-@@ -4930,8 +4938,9 @@ static int may_commit_transaction(struct btrfs_fs_info *fs_info,
- 		bytes -= delayed_rsv->size;
- 	spin_unlock(&delayed_rsv->lock);
- 
--	if (percpu_counter_compare(&space_info->total_bytes_pinned,
--				   bytes) < 0) {
-+	if (__percpu_counter_compare(&space_info->total_bytes_pinned,
-+				   bytes,
-+				   space_info->total_bytes_pinned_batch) < 0) {
- 		return -ENOSPC;
- 	}
- 
-@@ -6268,8 +6277,9 @@ static int update_block_group(struct btrfs_trans_handle *trans,
- 			trace_btrfs_space_reservation(info, "pinned",
- 						      cache->space_info->flags,
- 						      num_bytes, 1);
--			percpu_counter_add(&cache->space_info->total_bytes_pinned,
--					   num_bytes);
-+			percpu_counter_add_batch(&cache->space_info->total_bytes_pinned,
-+					   num_bytes,
-+					   cache->space_info->total_bytes_pinned_batch);
- 			set_extent_dirty(info->pinned_extents,
- 					 bytenr, bytenr + num_bytes - 1,
- 					 GFP_NOFS | __GFP_NOFAIL);
-@@ -6347,7 +6357,8 @@ static int pin_down_extent(struct btrfs_fs_info *fs_info,
- 
- 	trace_btrfs_space_reservation(fs_info, "pinned",
- 				      cache->space_info->flags, num_bytes, 1);
--	percpu_counter_add(&cache->space_info->total_bytes_pinned, num_bytes);
-+	percpu_counter_add_batch(&cache->space_info->total_bytes_pinned,
-+		    num_bytes, cache->space_info->total_bytes_pinned_batch);
- 	set_extent_dirty(fs_info->pinned_extents, bytenr,
- 			 bytenr + num_bytes - 1, GFP_NOFS | __GFP_NOFAIL);
- 	return 0;
-@@ -6711,7 +6722,8 @@ static int unpin_extent_range(struct btrfs_fs_info *fs_info,
- 		trace_btrfs_space_reservation(fs_info, "pinned",
- 					      space_info->flags, len, 0);
- 		space_info->max_extent_size = 0;
--		percpu_counter_add(&space_info->total_bytes_pinned, -len);
-+		percpu_counter_add_batch(&space_info->total_bytes_pinned,
-+			    -len, space_info->total_bytes_pinned_batch);
- 		if (cache->ro) {
- 			space_info->bytes_readonly += len;
- 			readonly = true;
-@@ -10764,8 +10776,9 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
- 
- 		space_info->bytes_pinned -= block_group->pinned;
- 		space_info->bytes_readonly += block_group->pinned;
--		percpu_counter_add(&space_info->total_bytes_pinned,
--				   -block_group->pinned);
-+		percpu_counter_add_batch(&space_info->total_bytes_pinned,
-+				   -block_group->pinned,
-+				   space_info->total_bytes_pinned_batch);
- 		block_group->pinned = 0;
- 
- 		spin_unlock(&block_group->lock);
 -- 
-2.17.1
+2.18.0
 

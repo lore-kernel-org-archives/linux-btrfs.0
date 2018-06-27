@@ -1,47 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:56972 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1752768AbeF2NxK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 29 Jun 2018 09:53:10 -0400
-Date: Fri, 29 Jun 2018 15:53:08 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 3/4] btrfs: Rename EXTENT_BUFFER_DUMMY to
- EXTENT_BUFFER_PRIVATE
-Message-ID: <20180629135308.GS2287@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+Received: from mx2.suse.de ([195.135.220.15]:60218 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S933849AbeF0Nid (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 27 Jun 2018 09:38:33 -0400
+Received: from relay2.suse.de (charybdis-ext-too.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id CB6F4ABF3
+        for <linux-btrfs@vger.kernel.org>; Wed, 27 Jun 2018 13:38:32 +0000 (UTC)
+From: Nikolay Borisov <nborisov@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH 1/4] btrfs: Refactor loop in btrfs_release_extent_buffer_page
+Date: Wed, 27 Jun 2018 16:38:22 +0300
+Message-Id: <1530106705-27186-2-git-send-email-nborisov@suse.com>
+In-Reply-To: <1530106705-27186-1-git-send-email-nborisov@suse.com>
 References: <1530106705-27186-1-git-send-email-nborisov@suse.com>
- <1530106705-27186-4-git-send-email-nborisov@suse.com>
- <20180629124633.GR2287@twin.jikos.cz>
- <97349690-b129-1b5b-17c5-4363fe2a879d@gmx.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <97349690-b129-1b5b-17c5-4363fe2a879d@gmx.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jun 29, 2018 at 09:07:12PM +0800, Qu Wenruo wrote:
-> >> @@ -5117,7 +5117,7 @@ void free_extent_buffer(struct extent_buffer *eb)
-> >>  
-> >>  	spin_lock(&eb->refs_lock);
-> >>  	if (atomic_read(&eb->refs) == 2 &&
-> >> -	    test_bit(EXTENT_BUFFER_DUMMY, &eb->bflags))
-> >> +	    test_bit(EXTENT_BUFFER_PRIVATE, &eb->bflags))
-> >>  		atomic_dec(&eb->refs);
-> 
-> Also discussed in off list mail, this extra atomic_dec for cloned eb
-> looks confusing.
-> (That also explains why after cloning the eb, we call
-> extent_buffer_get() and only frees it once, and still no eb leaking)
-> What about just removing such special handling?
+The purpose of the function is to free all the pages comprising an
+extent buffer. This can be achieved with a simple for loop rather than
+the slitghly more involved 'do {} while' construct. So rewrite the
+loop using a 'for' construct. Additionally we can never have an
+extent_buffer that is 0 pages so remove the check for index == 0. No
+functional changes.
 
-The extent_buffer_get can be moved to the cloning function, all callers
-increase the reference but the missing dec is indeed confusing. However
-I don't think we can remove it completely. We need to keep the eb::refs
-at the same level for all eb types (regular, STALE, DUMMY), so we can
-use eg. free_extent_buffer.
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+---
+ fs/btrfs/extent_io.c | 13 ++++---------
+ 1 file changed, 4 insertions(+), 9 deletions(-)
 
-There may be other way how to clean it that I don't see now, so if you
-think you can improve the reference handling, then go for it.
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index cce6087d6880..4180a3b7e725 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -4641,19 +4641,14 @@ int extent_buffer_under_io(struct extent_buffer *eb)
+  */
+ static void btrfs_release_extent_buffer_page(struct extent_buffer *eb)
+ {
+-	unsigned long index;
+-	struct page *page;
++	int i;
+ 	int mapped = !test_bit(EXTENT_BUFFER_DUMMY, &eb->bflags);
+ 
+ 	BUG_ON(extent_buffer_under_io(eb));
+ 
+-	index = num_extent_pages(eb->start, eb->len);
+-	if (index == 0)
+-		return;
++	for (i = 0; i < num_extent_pages(eb->start, eb->len); i++) {
++		struct page *page = eb->pages[i];
+ 
+-	do {
+-		index--;
+-		page = eb->pages[index];
+ 		if (!page)
+ 			continue;
+ 		if (mapped)
+@@ -4685,7 +4680,7 @@ static void btrfs_release_extent_buffer_page(struct extent_buffer *eb)
+ 
+ 		/* One for when we allocated the page */
+ 		put_page(page);
+-	} while (index != 0);
++	}
+ }
+ 
+ /*
+-- 
+2.7.4
+

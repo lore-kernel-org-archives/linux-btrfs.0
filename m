@@ -1,149 +1,183 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f68.google.com ([209.85.214.68]:55882 "EHLO
-        mail-it0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932544AbeFZL4J (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 26 Jun 2018 07:56:09 -0400
-Received: by mail-it0-f68.google.com with SMTP id 16-v6so1876275itl.5
-        for <linux-btrfs@vger.kernel.org>; Tue, 26 Jun 2018 04:56:09 -0700 (PDT)
-Subject: Re: btrfs raid10 performance
-To: Sterling Windmill <swindmill@gmail.com>, linux-btrfs@vger.kernel.org
-References: <CAMOu_z3dhfSVPKFGiZYfDzQx-C-TXRqJ-HJDTm1-DENVYhCwXA@mail.gmail.com>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <81879d2b-fcda-15f8-de0a-602cbf4f55de@gmail.com>
-Date: Tue, 26 Jun 2018 07:56:06 -0400
+Received: from mx2.suse.de ([195.135.220.15]:48235 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752144AbeF0MHK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 27 Jun 2018 08:07:10 -0400
+Received: from relay2.suse.de (charybdis-ext-too.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 677B6AC0D
+        for <linux-btrfs@vger.kernel.org>; Wed, 27 Jun 2018 12:07:09 +0000 (UTC)
+Date: Wed, 27 Jun 2018 14:06:58 +0200
+From: David Sterba <dsterba@suse.cz>
+To: linux-btrfs@vger.kernel.org
+Subject: fstests/btrfs/011 lockdep warning in 4.18-rc
+Message-ID: <20180627120523.GA2287@suse.cz>
+Reply-To: dsterba@suse.cz
 MIME-Version: 1.0
-In-Reply-To: <CAMOu_z3dhfSVPKFGiZYfDzQx-C-TXRqJ-HJDTm1-DENVYhCwXA@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2018-06-25 21:05, Sterling Windmill wrote:
-> I am running a single btrfs RAID10 volume of eight LUKS devices, each
-> using a 2TB SATA hard drive as a backing store. The SATA drives are a
-> mixture of Seagate and Western Digital drives, some with RPMs ranging
-> from 5400 to 7200. Each seems to individually performance test where I
-> would expect for drives of this caliber. They are all attached to an
-> LSI PCIe SAS controller and configured in JBOD.
-> 
-> I have a relatively beefy quad core Xeon CPU that supports AES-NI and
-> don't think LUKS is my bottleneck.
-> 
-> Here's some info from the resulting filesystem:
-> 
->    btrfs fi df /storage
->    Data, RAID10: total=6.30TiB, used=6.29TiB
->    System, RAID10: total=8.00MiB, used=560.00KiB
->    Metadata, RAID10: total=9.00GiB, used=7.64GiB
->    GlobalReserve, single: total=512.00MiB, used=0.00B
-> 
-> In general I see good performance, especially read performance which
-> is enough to regularly saturate my gigabit network when copying files
-> from this host via samba. Reads are definitely taking advantage of the
-> multiple copies of data available and spreading the load among all
-> drives.
-> 
-> Writes aren't quite as rosy, however.
-> 
-> When writing files using dd like in this example:
-> 
->    dd if=/dev/zero of=tempfile bs=1M count=10240 conv=fdatasync,notrun
-> c status=progress
-> 
-> And running a command like:
-> 
->    iostat -m 1
-> 
-> to monitor disk I/O, writes seem to only focus on one of the eight
-> disks at a time, moving from one drive to the next. This results in a
-> sustained 55-90 MB/sec throughput depending on which disk is being
-> written to (remember, some have faster spindle speed than others).
-> 
-> Am I wrong to expect btrfs' RAID10 mode to write to multiple disks
-> simultaneously and to break larger writes into smaller stripes across
-> my four pairs of disks?
-> 
-> I had trouble identifying whether btrfs RAID10 is writing (64K?)
-> stripes or (1GB?) blocks to disk in this mode. The latter might make
-> more sense based upon what I'm seeing?
-> 
-> Anything else I should be trying to narrow down the bottleneck?
-First, you're probably incorrect that the disk access is being 
-parallelized.  Given that BTRFS still doesn't parallelize writes in 
-raid1 mode, I very much doubt it does so in raid10 mode.  Parallelizing 
-writes is a performance optimization that still hasn't really been 
-tackled by anyone.  Realistically, BTRFS writes to exactly one disk at a 
-time.  So, in a four disk raid10 array, it first writes to disk 1, waits 
-for that to finish, then writes to disk 2, waits for that to finish, 
-then 3, waits, and then four.  Overall, this makes writes rather slow.
+Hi,
 
-As far as striping across multiple disks, yes, that does happen.  The 
-specifics of this are a bit complicated though, and require explaining a 
-bit about how BTRFS works in general.
+I've seen the following lockdep warning after the 4.18 merges, it's
+probably a cross-subsystem locking issue so I waited some time if this
+will not go away after merge window.
 
-BTRFS uses a two-stage allocator, first allocating 'large' regions of 
-disk space to be used for a specific type of data called chunks, and 
-then allocating blocks out of those regions to actually store the data. 
-There are three chunk types, data (used for storing actual file 
-contents), metadata (used for storing things like filenames, access 
-times, directory structure, etc), and system (used to store the 
-allocation information for all the other chunks in the filesystem). 
-Data chunks are typically 1 GB in size, metadata are typically 256 MB in 
-size, and system chunks are highly variable but don't really matter for 
-this explanation.  The chunk level is where the actual replication and 
-striping happen, and the chunk size represents what is exposed to the 
-block allocator (so every 1 GB data chunk exposes 1 GB of space to the 
-block allocator).
+Slab shrinker calls evict inode, in parallel there's an unmount in
+progress and at some point locks get taken in the wrong order.
 
-Now, replicated (raid1 or dup profiles) chunks work just like you would 
-expect, each of the two allocations for the chunk is 1 GB, and each byte 
-is stored as-is in both.  Striped (raid0 or raid10 profiles) are 
-somewhat more complicated, and I actually don't know exactly how they 
-end up allocated at the lower level.  However, I do know how the 
-striping works.  In short, you can treat each striped set (either a full 
-raid0 chunk, or half a raid10 chunk) as being functionally identical in 
-operation to a conventional RAID0 array, striping occurs at a small 
-block granularity (I think it's equal to the block size, which would be 
-4k in most cases), which unfortunately compounds the performance issues 
-caused by BTRFS only writing to one disk at a time.
-
-As far as improving the performance, I've got two suggestions for 
-alternative storage arrangements:
-
-* If you want to just stick with only BTRFS for storage, try just using 
-raid1 mode.  It will give you the same theoretical total capacity as 
-raid10 does and will slow down reads somewhat, but should speed up 
-writes significantly (because you're only writing to two devices, not 
-striping across two sets of four).
-
-* If you're willing to try something a bit different, convert your 
-storage array to two LVM or MD RAID0 volumes composed of four devices 
-each, and then run BTRFS in raid1 mode on top of those.  This sounds 
-stupid, but it actually gets significantly better write performance than 
-running BTRFS in raid10 mode, and may get better read performance 
-depending on your access patterns.  It also is no more dangerous than 
-using BTRFS in raid10 mode.  The only significant disadvantage here is 
-that it's somewhat more complicated to reshape the array.
-
-Beyond that, there are some other things you can do that might improve 
-performance to a limited degree with your existing arrangement:
-
-* Turn off autodefrag if it's on.  In my limited experience, autodefrag 
-is is a serious performance killer when using BTRFS raid10, and you 
-realistically shouldn't need it unless you're doing lots of in-place 
-partial rewrites of files (not replace by rename like most sane UNIX 
-apps do, but actual in-place rewrites).
-
-* Look into using in-line compression in BTRFS.  If you've got a new 
-enough kernel and userspace, zstd is the preferred compression method as 
-it gets significantly better ratios in most cases than zlib, and is not 
-much slower than lzo.  Otherwise, I would suggest lzo.  Assuming your 
-CPU and memory are really good compared to your storage devices, this 
-can significantly reduce the time it takes to read and write data 
-because you're reading and writing less data.  Using `compress-force` 
-instead of `compress` is also likely to help here (the names are 
-unfortunate, but the first one just tells BTRFS to ignore hints it's 
-stored in the inodes that say that a given file won't compress well). 
-Note that this probably won't help if you've got nice NVMe storage 
-devices, as they're fast enough that the difference in data transfer 
-times will be negligible.
+[  635.423621] ======================================================
+[  635.429802] WARNING: possible circular locking dependency detected
+[  635.432211] 4.18.0-rc1-default+ #164 Not tainted
+[  635.434006] ------------------------------------------------------
+[  635.436888] kswapd0/77 is trying to acquire lock:
+[  635.438777] 00000000f6fa0d1f (&delayed_node->mutex){+.+.}, at: __btrfs_release_delayed_node+0x49/0x2b0 [btrfs]
+[  635.440579] 
+[  635.440579] but task is already holding lock:
+[  635.441636] 0000000025dee6ec (fs_reclaim){+.+.}, at: __fs_reclaim_acquire+0x5/0x30
+[  635.442851] 
+[  635.442851] which lock already depends on the new lock.
+[  635.442851] 
+[  635.444221] 
+[  635.444221] the existing dependency chain (in reverse order) is:
+[  635.445398] 
+[  635.445398] -> #3 (fs_reclaim){+.+.}:
+[  635.446499]        fs_reclaim_acquire.part.111+0x29/0x30
+[  635.447332]        kmem_cache_alloc+0x29/0x2b0
+[  635.448066]        btrfs_alloc_inode+0x24/0x260 [btrfs]
+[  635.448889]        alloc_inode+0x18/0x80
+[  635.449549]        new_inode_pseudo+0xc/0x60
+[  635.450304]        new_inode+0x12/0x30
+[  635.451601]        iget5_locked+0xb1/0xf0
+[  635.452524]        btrfs_iget+0x57/0xf0 [btrfs]
+[  635.453276]        __lookup_free_space_inode+0xd8/0x150 [btrfs]
+[  635.454205]        lookup_free_space_inode+0x63/0xc0 [btrfs]
+[  635.455058]        load_free_space_cache+0x6e/0x190 [btrfs]
+[  635.455949]        cache_block_group+0x1c6/0x460 [btrfs]
+[  635.456793]        find_free_extent+0x889/0x14e0 [btrfs]
+[  635.457640]        btrfs_reserve_extent+0x9b/0x180 [btrfs]
+[  635.458463]        btrfs_alloc_tree_block+0x1e8/0x440 [btrfs]
+[  635.459204]        __btrfs_cow_block+0x109/0x700 [btrfs]
+[  635.460124]        btrfs_cow_block+0x129/0x2f0 [btrfs]
+[  635.460938]        btrfs_search_slot+0x22f/0xa70 [btrfs]
+[  635.461977]        btrfs_lookup_inode+0x3a/0xc0 [btrfs]
+[  635.463158]        __btrfs_update_delayed_inode+0x75/0x270 [btrfs]
+[  635.464032]        __btrfs_run_delayed_items+0x147/0x1d0 [btrfs]
+[  635.464825]        btrfs_commit_transaction+0x18a/0x9e0 [btrfs]
+[  635.465737]        sync_filesystem+0x6b/0x90
+[  635.466439]        generic_shutdown_super+0x22/0x100
+[  635.467229]        kill_anon_super+0xe/0x20
+[  635.467994]        btrfs_kill_super+0x12/0xa0 [btrfs]
+[  635.468827]        deactivate_locked_super+0x29/0x60
+[  635.469622]        cleanup_mnt+0x3b/0x70
+[  635.470363]        task_work_run+0x9b/0xd0
+[  635.471479]        exit_to_usermode_loop+0xbb/0xc0
+[  635.472519]        do_syscall_64+0x16c/0x170
+[  635.473329]        entry_SYSCALL_64_after_hwframe+0x49/0xbe
+[  635.474309] 
+[  635.474309] -> #2 (&caching_ctl->mutex){+.+.}:
+[  635.475430]        __mutex_lock+0x86/0x9c0
+[  635.476206]        cache_block_group+0x1bb/0x460 [btrfs]
+[  635.477152]        find_free_extent+0x889/0x14e0 [btrfs]
+[  635.478101]        btrfs_reserve_extent+0x9b/0x180 [btrfs]
+[  635.479074]        btrfs_alloc_tree_block+0x1e8/0x440 [btrfs]
+[  635.480081]        __btrfs_cow_block+0x109/0x700 [btrfs]
+[  635.481028]        btrfs_cow_block+0x129/0x2f0 [btrfs]
+[  635.482020]        btrfs_search_slot+0x22f/0xa70 [btrfs]
+[  635.482733]        btrfs_insert_empty_items+0x67/0xc0 [btrfs]
+[  635.483459]        btrfs_uuid_tree_add+0x1d2/0x2e0 [btrfs]
+[  635.484158]        btrfs_uuid_scan_kthread+0x159/0x340 [btrfs]
+[  635.484880]        kthread+0x11b/0x140
+[  635.485443]        ret_from_fork+0x24/0x30
+[  635.486075] 
+[  635.486075] -> #1 (&space_info->groups_sem){++++}:
+[  635.486931]        down_read+0x3b/0x60
+[  635.487456]        find_free_extent+0x992/0x14e0 [btrfs]
+[  635.488137]        btrfs_reserve_extent+0x9b/0x180 [btrfs]
+[  635.488833]        btrfs_alloc_tree_block+0x1e8/0x440 [btrfs]
+[  635.489639]        __btrfs_cow_block+0x109/0x700 [btrfs]
+[  635.490440]        btrfs_cow_block+0x129/0x2f0 [btrfs]
+[  635.491102]        btrfs_search_slot+0x22f/0xa70 [btrfs]
+[  635.491782]        btrfs_insert_empty_items+0x67/0xc0 [btrfs]
+[  635.492508]        btrfs_insert_delayed_items+0x86/0x490 [btrfs]
+[  635.493305]        __btrfs_run_delayed_items+0x96/0x1d0 [btrfs]
+[  635.494200]        btrfs_commit_transaction+0x297/0x9e0 [btrfs]
+[  635.494989]        btrfs_mksubvol+0x4e8/0x530 [btrfs]
+[  635.495651]        btrfs_ioctl_snap_create_transid+0x170/0x180 [btrfs]
+[  635.496458]        btrfs_ioctl_snap_create_v2+0x124/0x180 [btrfs]
+[  635.497224]        btrfs_ioctl+0xc35/0x31a0 [btrfs]
+[  635.498003]        do_vfs_ioctl+0xa2/0x6b0
+[  635.498680]        ksys_ioctl+0x3a/0x70
+[  635.499331]        __x64_sys_ioctl+0x16/0x20
+[  635.500032]        do_syscall_64+0x5a/0x170
+[  635.500715]        entry_SYSCALL_64_after_hwframe+0x49/0xbe
+[  635.501574] 
+[  635.501574] -> #0 (&delayed_node->mutex){+.+.}:
+[  635.502470]        lock_acquire+0x9e/0x1d0
+[  635.503018]        __mutex_lock+0x86/0x9c0
+[  635.503581]        __btrfs_release_delayed_node+0x49/0x2b0 [btrfs]
+[  635.504352]        btrfs_evict_inode+0x24e/0x5f0 [btrfs]
+[  635.505022]        evict+0xcd/0x190
+[  635.505515]        dispose_list+0x51/0x80
+[  635.506056]        prune_icache_sb+0x52/0x70
+[  635.506622]        super_cache_scan+0x123/0x1a0
+[  635.507213]        shrink_slab.part.50+0x1c0/0x580
+[  635.507831]        shrink_node+0x2f2/0x340
+[  635.508379]        balance_pgdat+0x1dc/0x310
+[  635.508944]        kswapd+0x195/0x540
+[  635.509511]        kthread+0x11b/0x140
+[  635.510132]        ret_from_fork+0x24/0x30
+[  635.510790] 
+[  635.510790] other info that might help us debug this:
+[  635.510790] 
+[  635.512112] Chain exists of:
+[  635.512112]   &delayed_node->mutex --> &caching_ctl->mutex --> fs_reclaim
+[  635.512112] 
+[  635.513826]  Possible unsafe locking scenario:
+[  635.513826] 
+[  635.514799]        CPU0                    CPU1
+[  635.515501]        ----                    ----
+[  635.516211]   lock(fs_reclaim);
+[  635.516741]                                lock(&caching_ctl->mutex);
+[  635.517662]                                lock(fs_reclaim);
+[  635.518498]   lock(&delayed_node->mutex);
+[  635.519158] 
+[  635.519158]  *** DEADLOCK ***
+[  635.519158] 
+[  635.520211] 3 locks held by kswapd0/77:
+[  635.520831]  #0: 0000000025dee6ec (fs_reclaim){+.+.}, at: __fs_reclaim_acquire+0x5/0x30
+[  635.522092]  #1: 000000009cc3bd11 (shrinker_rwsem){++++}, at: shrink_slab.part.50+0x40/0x580
+[  635.523308]  #2: 00000000e9e0ce72 (&type->s_umount_key#26){++++}, at: trylock_super+0x16/0x50
+[  635.524387] 
+[  635.524387] stack backtrace:
+[  635.525055] CPU: 1 PID: 77 Comm: kswapd0 Not tainted 4.18.0-rc1-default+ #164
+[  635.526078] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS 1.0.0-prebuilt.qemu-project.org 04/01/2014
+[  635.527360] Call Trace:
+[  635.527753]  dump_stack+0x85/0xc0
+[  635.528228]  print_circular_bug.isra.36.cold.52+0x15c/0x195
+[  635.528925]  check_prev_add.constprop.43+0x529/0x780
+[  635.529564]  ? unwind_next_frame+0x54/0x430
+[  635.530126]  __lock_acquire+0x9f4/0xf60
+[  635.530652]  lock_acquire+0x9e/0x1d0
+[  635.531519]  ? __btrfs_release_delayed_node+0x49/0x2b0 [btrfs]
+[  635.532416]  ? __btrfs_release_delayed_node+0x49/0x2b0 [btrfs]
+[  635.533292]  __mutex_lock+0x86/0x9c0
+[  635.533900]  ? __btrfs_release_delayed_node+0x49/0x2b0 [btrfs]
+[  635.534770]  ? __lock_acquire+0x9f4/0xf60
+[  635.535428]  ? __btrfs_release_delayed_node+0x49/0x2b0 [btrfs]
+[  635.536314]  __btrfs_release_delayed_node+0x49/0x2b0 [btrfs]
+[  635.537178]  btrfs_evict_inode+0x24e/0x5f0 [btrfs]
+[  635.537921]  evict+0xcd/0x190
+[  635.538441]  dispose_list+0x51/0x80
+[  635.539009]  prune_icache_sb+0x52/0x70
+[  635.539613]  super_cache_scan+0x123/0x1a0
+[  635.540251]  shrink_slab.part.50+0x1c0/0x580
+[  635.540867]  shrink_node+0x2f2/0x340
+[  635.541441]  balance_pgdat+0x1dc/0x310
+[  635.542040]  kswapd+0x195/0x540
+[  635.542530]  ? __schedule+0x306/0x940
+[  635.543039]  ? finish_wait+0x80/0x80
+[  635.543539]  ? balance_pgdat+0x310/0x310
+[  635.544073]  kthread+0x11b/0x140
+[  635.544540]  ? kthread_create_worker_on_cpu+0x70/0x70
+[  635.545188]  ret_from_fork+0x24/0x30

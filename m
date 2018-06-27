@@ -1,196 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwkm01.jp.fujitsu.com ([202.219.69.168]:33728 "EHLO
-        mgwkm01.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S934056AbeF1IK6 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 28 Jun 2018 04:10:58 -0400
-Received: from g01jpfmpwkw01.exch.g01.fujitsu.local (g01jpfmpwkw01.exch.g01.fujitsu.local [10.0.193.38])
-        by kw-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id D3A34AC0387
-        for <linux-btrfs@vger.kernel.org>; Thu, 28 Jun 2018 17:10:51 +0900 (JST)
-Subject: Re: Enabling quota may not correctly rescan on 4.17
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>, Nikolay Borisov <nborisov@suse.com>
-CC: linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <0ced0e29-9ecc-01fb-b0a5-9de32966666e@jp.fujitsu.com>
- <bceb24d5-fa2f-b019-fc60-146fa7a62844@gmx.com>
- <9f158a77-fb11-1b77-d67a-e64f42e67e51@jp.fujitsu.com>
- <fd81f784-4c2e-5911-421a-39738c99177f@gmx.com>
-From: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
-Message-ID: <50806075-6faa-db22-1508-450c5d5b6e34@jp.fujitsu.com>
-Date: Thu, 28 Jun 2018 17:10:20 +0900
-MIME-Version: 1.0
-In-Reply-To: <fd81f784-4c2e-5911-421a-39738c99177f@gmx.com>
-Content-Type: multipart/mixed;
-        boundary="------------84E7603425879D5488744D0A"
+Received: from mx2.suse.de ([195.135.220.15]:33541 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752035AbeF0KT7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 27 Jun 2018 06:19:59 -0400
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: misono.tomohiro@jp.fujitsu.com
+Subject: [PATCH v1] btrfs: quota: Set rescan progress to (u64)-1 if we hit last leaf
+Date: Wed, 27 Jun 2018 18:19:55 +0800
+Message-Id: <20180627101955.12034-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---------------84E7603425879D5488744D0A
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
+Commit ff3d27a048d9 ("btrfs: qgroup: Finish rescan when hit the last leaf
+of extent tree") added a new exit for rescan finish.
 
-On 2018/06/28 16:12, Qu Wenruo wrote:
-> 
-> 
-> On 2018年06月27日 16:25, Misono Tomohiro wrote:
->> On 2018/06/27 17:10, Qu Wenruo wrote:
->>>
->>>
->>> On 2018年06月26日 14:00, Misono Tomohiro wrote:
->>>> Hello Nikolay,
->>>>
->>>> I noticed that commit 5d23515be669 ("btrfs: Move qgroup rescan
->>>> on quota enable to btrfs_quota_enable") in 4.17 sometimes causes
->>>> to fail correctly rescanning quota when quota is enabled.
->>>>
->>>> Simple reproducer:
->>>>
->>>> $ mkfs.btrfs -f $DEV
->>>> $ mount $DEV /mnt
->>>> $ dd if=/dev/urandom of=/mnt/file bs=1000 count=1000
->>>> $ btrfs quota enbale /mnt
->>>> $ umount /mnt
->>>> $ btrfs check $DEV
->>>> ...
-> Unfortunately in my environment, btrfs/114 failed to reprocduce it with
-> 1024 runs overnight, with v4.18-rc1 kernel.
-> 
-> Would you please provide the whole btrfs-image dump of the corrupted fs?
+However after finishing quota rescan, we set
+fs_info->qgroup_rescan_progress to (u64)-1 before we exit through the
+original exit path.
+While we missed that assignment of (u64)-1 in the new exit path.
 
-Yes.
-The attached file is an image-dump of above reproducer (kernel 4.17.0, progs 4.17)
-as the dump of btrfs/114 is a bit large for mail.
+The end result is, the quota status item doesn't have the same value.
+(-1 vs the last bytenr + 1)
+Although it doesn't affect quota accounting, it's still better to keep
+the original behavior.
 
-Though this does not always happen, I see the failure both on 4.17.0 or 4.18-rc2.
+Reported-by: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
+Fixes: ff3d27a048d9 ("btrfs: qgroup: Finish rescan when hit the last leaf of extent tree")
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+changelog:
+v2:
+  Commit message update, as the bug only changes the resulting quota status
+  item without impacting the behavior.
+---
+ fs/btrfs/qgroup.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
-Thanks,
-Tomohiro Misono
-
-> 
-> There are several different assumptions on how the bug happens, with
-> your btrfs-image dump, it would help a lot to rule out some assumption.
-> 
-> Thanks,
-> Qu
-
---------------84E7603425879D5488744D0A
-Content-Type: application/octet-stream; name="btrfs-image"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment; filename="btrfs-image"
-
-i2aVcuIlXL0AAAAAAAAAAAgAAAABAAABAAAAAAADAQAAAEBQAQAAAAALAQAA
-AEDQAQAAAADLAAAAAEDRAQAAAACzAAAAAADTAQAAAADUAAAAAIDTAQAAAACD
-AQAAAMDUAQAAAACxBwAAAADQAAAAAABgAQAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHjayy9ICWDAA/zy
-76XIbvWIaWTk8GkxUpFkYGAEizNC5eOdPILSguN9OWAaDlyBSDkEMOIwsoEd
-RE4QBXPYoIJwxQIgvVAMZDcCKVYcBiUi28CIbgFDQyPcQBjGC85WOD3/3+52
-eK/4Or4Fkk92Y3p9ZAMONHrEAWgSe8LAAEvbDWCSCU2FEgqfEZz0mFCSKEQ/
-eoJDyF/AKk8PC0bBKBgFo2AUjIJRgNZwvcSI3GSFNXHhzdMDaPINF1D5DJfR
-+BfBfBb0lqsDG3qLljTgAGmCs+NyJwOafMNlVD66Ow+gy6M24cl2J7SrwIHT
-nVdR5Qm5swFNPbXcOQpGwXAFALmNXQR42u3bP0tCURjH8efJJFtEWsShJWxo
-SXAQWlLuYAkhd3JyimitRdBNIegNOBqEiKObkzi1BYFjk5MQvQr/3KOXey+3
-G+7fD5z7nHOec+7vFZxBLdeTCNWn+cPp+Lbe0cTdSz6bkZKtm301bX28KDSG
-5+W37mflpH9z2Yhv78W29dBzWL53k6uiyL2nsxCZOZPfaxHb3zB5rXXjOXDD
-mR7vGgAAAAAAAAAAAAAAAAAAAAAAAAAAAACAvZQ2nwN3aZ5zZ33r9UiZM+ru
-286Vr6b1s3wtf0zTo+R7ZjHx9K2wvkhbwvLO/s/T6LyZ7pOnIXnq2zfP3//O
-k/aRKR2npDwjUvCPwff8KxIAWHV42u3OvQuBURTH8XO99SiTiSKDl7I8g2TU
-Y/FSMlgZZTX5A5SSwcaoZPAfmO0mA4NFGWSSP8CAJ9RDIebvZ7nnd865t9uN
-hBzyQamxqQWn+WpLacV2IuIXY6HMvrqNVT2eak6i2WF/XvCOc3rTdb/nvp92
-sW4/Xj2lRUaWjudRHNNmEFmtA7FzudA6zbZGZ7fshffXgSYAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAHznfMk20XX7u2XjOSpLfcj8/wffIFn5pb4AIWUiS3ja
-7c2vTkJRHAfwc4BAIJEw0DRQbnCMjcKgqGyOF8DIqKb7AGw8AkY3ZvANfASL
-jRfwDdzdLAaD7O5yt0vQTWf8fNL39++c4fN7Fn4wu31ddJ+ublaxeb0+Pz0J
-413M+7EYx2VvkD6eXdxvXqbth8skbRzuPr4KtVDdLl/9HIWwrXRaZchGeQEA
-AAAAAAAAAAAAAAAAAAD/qBaSpP7dcHxcxkp+m/z9z85df/6bvAdkKiE3eNrt
-270OwWAUxvFTpDEzGWwkJCJiMCIkPhKRXoBRrAbpTrgEK4PBDYjdLIYmdour
-sGnrbXxUGomI5f8b2id93vMO3U8utFtKgO7w1E9uW72JFu3MiqmEyFFzvmu3
-WhtkS+Y63VjM9+3Yqpk3dTUXUW/98bKLmpJRRSRzv0UOIpYb6nZReC4MN8f9
-heXmc9k/EXLC5k1Rc8JUFQAAAAAAAAAAAAAAAAAAAAAAAAAAAACAPwh7wVsH
-V+vjtqrzeN1j//68odJYfnPekqDzn/6XKwt1Pyl42u3bz0sCQRQH8DdqtlBk
-dLJDBJKHLptFhQiJFfQDJIK6FVjqChvLCuqA3RI6S4c6BhERUef+CSE6JHTr
-0qVLdOkWQTu0Y8uulnT+fi7z5r3ZmXl6nliz3qBfrBWf8iO3K9s1pqQPp8aG
-6eCBiTz7LrPC+Cy/jC6dHjdWh86XVd5rf9djjwo5V8tdP5JEZ45MvwzekmLy
-U9h8Pxo1RXBnFSKOwo7P3urGLjD3GX32Gcx9xucc0YCjEF5M159FcG0VNhwF
-Q27FrcIMAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/JN8iU3roVaO
-ETU9ybZzKWiPURokpazleEmv7KtlzdBNXuVmrmgWdFPLZ3iimN3TcpVMKcFN
-YzerGVaykijHSD7UDlBBN7Sg63aphVDbCzBHfFHz3uvF392vEDmZ3hJj9X5i
-Usbxq8e2sVjjeUYebG0VICY6+HuFnPpIVf2uRYospqhjv6/z3j5Yl/962O6l
-U+8idq75Avd2U7d42u3daVgTZwIH8AlHguW0eGCLCgoI5ShylhI1VoL4LAHk
-EBDELQKVpwq2iqHQrUF91FoOpaAorVhgFawKYsvlAQotGmAXBBRQFFgVUREU
-uZRjo8lEMhSka9tdt//fB+bN/N9j5p15Mk8+vMOVzJJBYgwOwdf9pv9o5x1B
-k7PfaqI1jSispj3bTxPGtAA9i5BD2rbfxvGXvJm82ChETtROlBNKz/5IiT5s
-JXu9OY8gcgRVZKiBIVMYyIo+K9BFBXVBMJF4EYhb+L8vbEGnDEz8ZEUQB4kX
-gbirPEGgMCxwvXS+IOpZIU4QaAu2DOoYDZbCMeSogY6FMJhADYLNhIF4nsjg
-n6bCoyL3rCGD/YLAXLDtGhISFCue1/lEEOgJtj2iQDxG/lzRGAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAA8KdGXV4gTRZYo9drW/jHHZ8M9QBYlZKHzBrfeVG7
-+z+5buLTJFeuMCj15H7h1AWNKkaZDxmJRiMbK4w6ybyIF+W3qTfTr6ATb+b1
-bFvlwXptb1r6iJu24lVuWjq+pv4QctQdrJpXuWxyeET8dy4bD5eNGLaQcujF
-gkPxQ0LKzz/gw5A1G8g9UoSR0ajf1r/TdVYTfdOPt/wb3Ic8yXn4bTGoB8Cr
-epX7kOyupk5dZ8h5SURBE2v7reqo2eM+jFFoi6a0YVGx1fDp/b0xCNE999o8
-vcWq8PR+DR8DBB4DAmGTL1wfKx+x/l80bS9b/08u+VcSboQ/KNLIXwoBC4SL
-3cmgUPBtKBxOEKg9L1WLWjgpPy9ME7dwokm0oJEtWMIgnTzyxvkEoSkcg2wh
-vMYX5pMtKiRbHCZbiH5EioNt4q6qJAN/MuBRAhsyEL0uQRzMFndVIxlIiQen
-BE3zyDEoQSEZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADAnwi5Bp66
-uDuT8bIKci+rIPWyCjRKBQa1giylAp1aQYZSQYZagfzP6qP2MEE8E1ISXWlR
-epalNhzxEgRRzVmjnBT5OUt8UrRfuBJOqhK1aaNMobgzGvU6DvuY7cUe8xUf
-I9b/s8a3/p/cSrw1poMshC8gCI1hwSPyfF0Ege6w4DEZ6FMCAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAgP8F5BsDCCflMbejvRRA9MqDoWlpjsfH
-GmfE+n/e+Nb/S7zRoFs0GI8gqp/vLbEWlKRxFQEAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAA/nN/s8134S1/aO2/YMUdr3Umt9Mjp268zRrcu+dh7hQn
-D7W9vdLzvD1k4xuPFgX7ZhiHrjSon6jIf8/2SHGbzWnHYNWgnIxTXAMPDlNL
-w0szrS7tPtfbun/rWs/+lOMPHD7SN/NOT7e+tD+R9rX2hyvNVExdg4Kkfey6
-E7POMs77rT0fe/jYrbxllXYzFmouMgwzDp6Vm8H96y7po/ox6r0zO5deuXcv
-be0cRTtLD/ZP/fJR7BPshT0TzsqUZfmqd+jJuJ1r17i/7cvm6NTCnd0Z0prX
-f/68VMvfvOCzZm27q4lcVuDFqkhT/QHeqqaIoAzdtwwbjGgFrm4HF89QmZvS
-NsPahFEX0s1zqK1ct/50d97Tjs3dKVnF8lMPzcnz9LjV3aByNMg9tcdm29dK
-Jata6pjlN9hHnnyXMz9ln1nPD4wvT5oUK3+g0dGqXO3mdDbpLdNEj3/IJO0c
-yOrLYJ7u1Qr03Lf7gLXO4uxr2yN3vB/QuDH94RnfmnQWy6Vy4ua6+tS89uDP
-9zAz597dE7rgqNJdRfMzm5L0tyZLe3sd/Jn/6JgHg1sxcKy8VOVfnunMmbND
-tMNO3Z8iH/DOx6FcPaXCU484zpzoWm6LpZVJwsmrkTGWG4c415gKitGtertp
-Mms81R3O0vlS9wvsAw84aLp9YH87odaZ+/28hlmrl/ll3yjiJJ/MXCY/fbul
-zyexzrqhGlNcH+SHlK6/lPZENShsRtll5fj2WHbtG09XWCc4mpvZugbEds6t
-ad5Cr37gaRPMDP27v9nkvn6rCGZfe11X6qavmj8avNzY+97UmvBWdqxJFGNH
-osUXTp92Fu0kUopr6rNtSxLe2KDQ1xsfvqIrP7Cc1q6hFtBzPMXxUW7Y7NLV
-i5Ylvd3WZGDcN/PgCT/1u9F/2V+i6+S9OCo5prWynt5Y9n1uR+qBtmyfbg4/
-zCI83s1wsHXdqZhdxnmtgUlS1e4X3hyo4BjZJ1tmdPa7G7hPDtSzZTEyP7PQ
-IpT97mnOT6lPUYnU5izdn/HgmLWynuo5rS/Ccxq1d8Ub3sxVNMnhyxs8Pqx4
-iM4t6uo7eY19ZnXrja6PJ8dUv1vlNEFh7WB+ablPQkJZ0+n8yuPuLk169Jab
-5++FXZxT73Ep8fGn/CjZ3CXZ3XfKS/1K6xw6N/FjrkifMLb3kS4yZPetfNc3
-/kjrufYyTpvLk8dx/JW1Kc09UziTWJuy96lXxrlOuvhNa2JUz1Nne3n9QZu9
-GZU7tiRYtajuVrvDjktv+dGtl+52wLhxYNWNr2p9HRuvmrbpuH5Tb7G04PJm
-3bxJy8OvdvlNN/+WM1C3fNp3c9hbmNF26iGHNlRF8Fent4TMXG/l/m/QEeXe
-eNrty8EJwjAUgOE8vDiVVBzAleqxG3QGzw7QESriMNJLoXktxQkEvw+SkD95
-02V8dOdP/6/rWFZjLEdTb1HaDMMWnjW0kaF5fY0M7wz3qKHcDvXtesofOVJi
-twMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADAr5kBluWipwAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
-
---------------84E7603425879D5488744D0A--
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index 1874a6d2e6f5..99f2b9ce0f15 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -2680,8 +2680,10 @@ qgroup_rescan_leaf(struct btrfs_fs_info *fs_info, struct btrfs_path *path,
+ 		free_extent_buffer(scratch_leaf);
+ 	}
+ 
+-	if (done && !ret)
++	if (done && !ret) {
+ 		ret = 1;
++		fs_info->qgroup_rescan_progress.objectid = (u64)-1;
++	}
+ 	return ret;
+ }
+ 
+-- 
+2.18.0
 

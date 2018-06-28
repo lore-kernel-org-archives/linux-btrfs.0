@@ -1,50 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp.domeneshop.no ([194.63.252.55]:56802 "EHLO
-        smtp.domeneshop.no" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S965779AbeF0SuO (ORCPT
+Received: from out1-smtp.messagingengine.com ([66.111.4.25]:39653 "EHLO
+        out1-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1751177AbeF1Bm4 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 27 Jun 2018 14:50:14 -0400
-Reply-To: waxhead@dirtcellar.net
-Subject: Re: unsolvable technical issues?
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <b255d0fb-5cee-36c5-d49f-5f014d20e518@dirtcellar.net>
- <CAJCQCtTjHktJsWRqV3TbFyrVX+_wwMr8=EqWHA43-_-TyNabwQ@mail.gmail.com>
-From: waxhead <waxhead@dirtcellar.net>
-Message-ID: <a47b82b6-b58f-e881-b563-e60a8f6bef9c@dirtcellar.net>
-Date: Wed, 27 Jun 2018 20:50:11 +0200
+        Wed, 27 Jun 2018 21:42:56 -0400
+Received: from compute2.internal (compute2.nyi.internal [10.202.2.42])
+        by mailout.nyi.internal (Postfix) with ESMTP id 3796521AE5
+        for <linux-btrfs@vger.kernel.org>; Wed, 27 Jun 2018 21:42:56 -0400 (EDT)
+Received: from [10.0.0.6] (cpe00248caf16e4-cmbc4dfbde0a70.cpe.net.cable.rogers.com [99.240.134.203])
+        by mail.messagingengine.com (Postfix) with ESMTPA id B83CD1025C
+        for <linux-btrfs@vger.kernel.org>; Wed, 27 Jun 2018 21:42:55 -0400 (EDT)
+To: linux-btrfs@vger.kernel.org
+From: Remi Gauvin <remi@georgianit.com>
+Subject: Major design flaw with BTRFS Raid, temporary device drop will corrupt
+ nodatacow files
+Message-ID: <66d30a90-a571-a110-749d-8a3fd6ccb9d5@georgianit.com>
+Date: Wed, 27 Jun 2018 21:42:55 -0400
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtTjHktJsWRqV3TbFyrVX+_wwMr8=EqWHA43-_-TyNabwQ@mail.gmail.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Type: multipart/mixed;
+ boundary="------------9F9FF6FE4F67A82DAB2979B5"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This is a multi-part message in MIME format.
+--------------9F9FF6FE4F67A82DAB2979B5
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: 8bit
+
+There seems to be a major design flaw with BTRFS that needs to be better
+documented, to avoid massive data loss.
+
+Tested with Raid 1 on Ubuntu Kernel 4.15
+
+The use case being tested was a Virtualbox VDI file created with
+NODATACOW attribute, (as is often suggested, due to the painful
+performance penalty of COW on these files.)
+
+However, if a device is temporarily dropped (this in case, tested by
+disconnecting drives.) and re-connects automatically next boot, BTRFS
+does not in any way synchronize the VDI file, or have any means to know
+that one of copy is out of date and bad.
+
+The result of trying to use said VDI file is.... interestingly insane.
+Scrub did not do anything to rectify the situation.
 
 
-Chris Murphy wrote:
-> On Thu, Jun 21, 2018 at 5:13 PM, waxhead <waxhead@dirtcellar.net> wrote:
->> According to this:
->>
->> https://stratis-storage.github.io/StratisSoftwareDesign.pdf
->> Page 4 , section 1.2
->>
->> It claims that BTRFS still have significant technical issues that may never
->> be resolved.
->> Could someone shed some light on exactly what these technical issues might
->> be?! What are BTRFS biggest technical problems?
-> 
-> 
-> I think it's appropriate to file an issue and ask what they're
-> referring to. It very well might be use case specific to Red Hat.
-> https://github.com/stratis-storage/stratis-storage.github.io/issues
-> 
-> I also think it's appropriate to crosslink: include URL for the start
-> of this thread in the issue, and the issue URL to this thread.
-> 
-> 
-> 
-https://github.com/stratis-storage/stratis-storage.github.io/issues/1
 
-Apparently the author have toned down the wording a bit, this confirm 
-that the claim was without basis and probably based on "popular myth".
-The document the PDF links to is not yet updated.
+--------------9F9FF6FE4F67A82DAB2979B5
+Content-Type: text/x-vcard; charset=utf-8;
+ name="remi.vcf"
+Content-Transfer-Encoding: quoted-printable
+Content-Disposition: attachment;
+ filename="remi.vcf"
+
+begin:vcard
+fn:Remi Gauvin
+n:Gauvin;Remi
+org:Georgian Infotech
+adr:;;3-51 Sykes St. N.;Meaford;ON;N4L 1X3;Canada
+email;internet:remi@georgianit.com
+tel;work:226-256-1545
+version:2.1
+end:vcard
+
+
+--------------9F9FF6FE4F67A82DAB2979B5--

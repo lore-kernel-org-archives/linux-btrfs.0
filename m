@@ -1,177 +1,199 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f194.google.com ([209.85.223.194]:33608 "EHLO
-        mail-io0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751855AbeF1MUD (ORCPT
+Received: from mailgw-02.dd24.net ([193.46.215.43]:39448 "EHLO
+        mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S965653AbeF1NTp (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 28 Jun 2018 08:20:03 -0400
-Received: by mail-io0-f194.google.com with SMTP id d185-v6so5045664ioe.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 28 Jun 2018 05:20:03 -0700 (PDT)
-Subject: Re: Major design flaw with BTRFS Raid, temporary device drop will
- corrupt nodatacow files
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>, Andrei Borzenkov <arvidjaar@gmail.com>
-Cc: remi@georgianit.com, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <66d30a90-a571-a110-749d-8a3fd6ccb9d5@georgianit.com>
- <5cb96201-e856-e780-7382-dae2ca68f445@gmx.com>
- <3cac9d11-27f4-2d1f-c980-09cfeafa6003@georgianit.com>
- <4852d583-4bdb-bb43-76a3-d14c9ef3f66e@gmx.com>
- <1530155643.1842027.1422969944.6697CF24@webmail.messagingengine.com>
- <fb26f3cc-fa80-222e-e403-0eead6f5e575@gmx.com>
- <CAA91j0VTewHifyxBisMgiOw0ufmSWM7m-Cm4=5d0DP4kppSK6w@mail.gmail.com>
- <3ac88a8e-f12e-5477-1e44-ea1037a1d5de@gmx.com>
- <3adf52c1-735d-9e0c-52a5-107e2d88af8f@gmail.com>
- <e6fca2e3-4126-5a3d-7c7d-9b274742f639@gmx.com>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <bf03fce2-8885-adc7-3c46-34dc575a25f3@gmail.com>
-Date: Thu, 28 Jun 2018 08:20:00 -0400
-MIME-Version: 1.0
-In-Reply-To: <e6fca2e3-4126-5a3d-7c7d-9b274742f639@gmx.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+        Thu, 28 Jun 2018 09:19:45 -0400
+Received: from mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-01.live.igb.homer.key-systems.net [192.168.1.26])
+        by mailgw-02.dd24.net (Postfix) with ESMTP id A24415FB5B
+        for <linux-btrfs@vger.kernel.org>; Thu, 28 Jun 2018 13:19:43 +0000 (UTC)
+Received: from mailgw-02.dd24.net ([192.168.1.36])
+        by mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-01.live.igb.homer.key-systems.net [192.168.1.25]) (amavisd-new, port 10236)
+        with ESMTP id pHiYC20Bj_ec for <linux-btrfs@vger.kernel.org>;
+        Thu, 28 Jun 2018 13:19:41 +0000 (UTC)
+Received: from gar-nb-etp06.garching.physik.uni-muenchen.de (unknown [141.84.41.131])
+        (using TLSv1.2 with cipher DHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by mailgw-02.dd24.net (Postfix) with ESMTPSA
+        for <linux-btrfs@vger.kernel.org>; Thu, 28 Jun 2018 13:19:41 +0000 (UTC)
+Message-ID: <50443c666dc4509d74f9f23d7012080845a20940.camel@scientia.net>
+Subject: call trace: WARNING:  at
+ /build/linux-uwVqDp/linux-4.16.16/fs/btrfs/ctree.h:1565 btrfs_update_device
+From: Christoph Anton Mitterer <calestyo@scientia.net>
+To: linux-btrfs@vger.kernel.org
+Date: Thu, 28 Jun 2018 15:19:40 +0200
+Content-Type: text/plain; charset="UTF-8"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2018-06-28 07:46, Qu Wenruo wrote:
-> 
-> 
-> On 2018年06月28日 19:12, Austin S. Hemmelgarn wrote:
->> On 2018-06-28 05:15, Qu Wenruo wrote:
->>>
->>>
->>> On 2018年06月28日 16:16, Andrei Borzenkov wrote:
->>>> On Thu, Jun 28, 2018 at 8:39 AM, Qu Wenruo <quwenruo.btrfs@gmx.com>
->>>> wrote:
->>>>>
->>>>>
->>>>> On 2018年06月28日 11:14, remi@georgianit.com wrote:
->>>>>>
->>>>>>
->>>>>> On Wed, Jun 27, 2018, at 10:55 PM, Qu Wenruo wrote:
->>>>>>
->>>>>>>
->>>>>>> Please get yourself clear of what other raid1 is doing.
->>>>>>
->>>>>> A drive failure, where the drive is still there when the computer
->>>>>> reboots, is a situation that *any* raid 1, (or for that matter,
->>>>>> raid 5, raid 6, anything but raid 0) will recover from perfectly
->>>>>> without raising a sweat. Some will rebuild the array automatically,
->>>>>
->>>>> WOW, that's black magic, at least for RAID1.
->>>>> The whole RAID1 has no idea of which copy is correct unlike btrfs who
->>>>> has datasum.
->>>>>
->>>>> Don't bother other things, just tell me how to determine which one is
->>>>> correct?
->>>>>
->>>>
->>>> When one drive fails, it is recorded in meta-data on remaining drives;
->>>> probably configuration generation number is increased. Next time drive
->>>> with older generation is not incorporated. Hardware controllers also
->>>> keep this information in NVRAM and so do not even depend on scanning
->>>> of other disks.
->>>
->>> Yep, the only possible way to determine such case is from external info.
->>>
->>> For device generation, it's possible to enhance btrfs, but at least we
->>> could start from detect and refuse to RW mount to avoid possible further
->>> corruption.
->>> But anyway, if one really cares about such case, hardware RAID
->>> controller seems to be the only solution as other software may have the
->>> same problem.
->> LVM doesn't.  It detects that one of the devices was gone for some
->> period of time and marks the volume as degraded (and _might_, depending
->> on how you have things configured, automatically re-sync).  Not sure
->> about MD, but I am willing to bet it properly detects this type of
->> situation too.
->>>
->>> And the hardware solution looks pretty interesting, is the write to
->>> NVRAM 100% atomic? Even at power loss?
->> On a proper RAID controller, it's battery backed, and that battery
->> backing provides enough power to also make sure that the state change is
->> properly recorded in the event of power loss.
-> 
-> Well, that explains a lot of thing.
-> 
-> So hardware RAID controller can be considered having a special battery
-> (always atomic) journal device.
-> If we can't provide UPS for the whole system, a battery powered journal
-> device indeed makes sense.
-> 
->>>
->>>>
->>>>> The only possibility is that, the misbehaved device missed several
->>>>> super
->>>>> block update so we have a chance to detect it's out-of-date.
->>>>> But that's not always working.
->>>>>
->>>>
->>>> Why it should not work as long as any write to array is suspended
->>>> until superblock on remaining devices is updated?
->>>
->>> What happens if there is no generation gap in device superblock?
->>>
->>> If one device got some of its (nodatacow) data written to disk, while
->>> the other device doesn't get data written, and neither of them reached
->>> super block update, there is no difference in device superblock, thus no
->>> way to detect which is correct.
->> Yes, but that should be a very small window (at least, once we finally
->> quit serializing writes across devices), and it's a problem on existing
->> RAID1 implementations too (and therefore isn't something we should be
->> using as an excuse for not doing this).
->>>
->>>>
->>>>> If you're talking about missing generation check for btrfs, that's
->>>>> valid, but it's far from a "major design flaw", as there are a lot of
->>>>> cases where other RAID1 (mdraid or LVM mirrored) can also be affected
->>>>> (the brain-split case).
->>>>>
->>>>
->>>> That's different. Yes, with software-based raid there is usually no
->>>> way to detect outdated copy if no other copies are present. Having
->>>> older valid data is still very different from corrupting newer data.
->>>
->>> While for VDI case (or any VM image file format other than raw), older
->>> valid data normally means corruption.
->>> Unless they have their own write-ahead log.
->>>
->>> Some file format may detect such problem by themselves if they have
->>> internal checksum, but anyway, older data normally means corruption,
->>> especially when partial new and partial old.
->>>
->>> On the other hand, with data COW and csum, btrfs can ensure the whole
->>> filesystem update is atomic (at least for single device).
->>> So the title, especially the "major design flaw" can't be wrong any more.
->> The title is excessive, but I'd agree it's a design flaw that BTRFS
->> doesn't at least notice that the generation ID's are different and
->> preferentially trust the device with the newer generation ID.
-> 
-> Well, a design flaw should be something that can't be easily fixed
-> without *huge* on-disk format or behavior change.
-> Flaw in btrfs' one-subvolume-per-tree metadata design or current extent
-> booking behavior could be called design flaw.
-That would be a structural design flaw.  it's a result of how the 
-software is structured.  There are other types of design flaws though.
-> 
-> While for things like this, just as the submitted RFC patch, less than
-> 100 lines could change the behavior.
-I would still consider this case a design flaw (a purely behavioral one 
-not tied to how things are structured) because it defies user 
-expectations in a pretty significant (and potentially dangerous) way.
+Hey.
 
-Arguably though, the actual flaw here is that naming for multi-device 
-profiles uses the term 'raid', which has very well defined semantics, 
-but does not behave like pretty much any other 'raid' implementation, 
-not that BTRFS is behaving in this manner (it's bad that it's doing 
-this, but without that naming issue it's largely just a bug in that it's 
-not safe and not documented).
-> 
->> The only
->> special handling I can see that would be needed is around volumes
->> mounted with the `nodatacow` option, which may not see generation
->> changes for a very long time otherwise.
-> 
-> Nodatacow shouldn't cause much difference.
-> We still have commit interval, and metadata CoW.
-> Any btrfs metadata change or filesystem metadata change (inode change
-> etc) will still leads to a new generation.
-Ah, I forgot that an inode change will trigger it.  So pretty much 
-provided that writes are still happening and thus mtime is being 
-updated, the generation ID will update.
+On a 4.16.16 kernel with a RAID 1 btrfs I got the following messages
+since today.
+
+Data seems still to be readable (correctly)... and there are no other
+errors (like SATA errors) in the kernel log.
+
+Any idea what these could mean?
+
+Thanks,
+Chris.
+
+
+[   72.168662] WARNING: CPU: 0 PID: 242 at /build/linux-uwVqDp/linux-4.16.16/fs/btrfs/ctree.h:1565 btrfs_update_device+0x1b2/0x1c0 [btrfs]
+[   72.168701] Modules linked in: cpufreq_userspace cpufreq_powersave cpufreq_conservative snd_hda_codec_hdmi ip6t_REJECT nf_reject_ipv6 nf_conntrack_ipv6 nf_defrag_ipv6 ip6table_filter ip6_tables xt_policy ipt_REJECT nf_reject_ipv4 xt_comment xt_tcpudp nf_conntrack_ipv4 powernow_k8 nf_defrag_ipv4 edac_mce_amd snd_hda_intel kvm_amd snd_hda_codec ccp rng_core snd_hda_core kvm snd_hwdep irqbypass snd_pcm wmi_bmof radeon snd_timer ttm xt_multiport snd pcspkr soundcore drm_kms_helper k8temp ohci_pci ata_generic pata_atiixp ohci_hcd ehci_pci sg wmi xt_conntrack drm nf_conntrack i2c_algo_bit ehci_hcd usbcore button sp5100_tco usb_common shpchp i2c_piix4 iptable_filter binfmt_misc sunrpc hwmon_vid ip_tables x_tables autofs4 btrfs zstd_decompress zstd_compress xxhash sd_mod raid10 raid456 async_raid6_recov
+[   72.168776]  async_memcpy async_pq async_xor async_tx libcrc32c crc32c_generic xor raid6_pq raid1 raid0 multipath linear md_mod evdev ahci libahci serio_raw libata r8169 mii scsi_mod
+[   72.168820] CPU: 0 PID: 242 Comm: btrfs-cleaner Not tainted 4.16.0-2-amd64 #1 Debian 4.16.16-2
+[   72.168852] Hardware name: MICRO-STAR INTERNATIONAL CO.,LTD MS-7551/KA780G (MS-7551), BIOS V16.6 05/12/2010
+[   72.168907] RIP: 0010:btrfs_update_device+0x1b2/0x1c0 [btrfs]
+[   72.168939] RSP: 0018:ffffbd5a810a3d60 EFLAGS: 00010206
+[   72.168973] RAX: 0000000000000fff RBX: ffff938e847f8000 RCX: 000000e8a0db1e00
+[   72.169006] RDX: 0000000000001000 RSI: 0000000000003f5c RDI: ffff938e7a8015e0
+[   72.169040] RBP: ffff938e8fb97a00 R08: ffffbd5a810a3d10 R09: ffffbd5a810a3d18
+[   72.169073] R10: 0000000000000003 R11: 0000000000003000 R12: 0000000000000000
+[   72.169106] R13: 0000000000003f3c R14: ffff938e7a8015e0 R15: ffff938e8f0c6328
+[   72.169140] FS:  0000000000000000(0000) GS:ffff938e9dc00000(0000) knlGS:0000000000000000
+[   72.169177] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[   72.169210] CR2: 00007fcff92ce000 CR3: 000000020575e000 CR4: 00000000000006f0
+[   72.169243] Call Trace:
+[   72.169304]  btrfs_remove_chunk+0x2a9/0x8c0 [btrfs]
+[   72.169359]  btrfs_delete_unused_bgs+0x323/0x3f0 [btrfs]
+[   72.169415]  ? __btree_submit_bio_start+0x20/0x20 [btrfs]
+[   72.169469]  cleaner_kthread+0x152/0x160 [btrfs]
+[   72.169506]  kthread+0x113/0x130
+[   72.169540]  ? kthread_create_worker_on_cpu+0x70/0x70
+[   72.169575]  ? SyS_exit_group+0x10/0x10
+[   72.169610]  ret_from_fork+0x35/0x40
+[   72.169643] Code: 4c 89 f7 45 31 c0 ba 10 00 00 00 4c 89 ee e8 16 23 ff ff 4c 89 f7 e8 9e ef fc ff e9 de fe ff ff 41 bc f4 ff ff ff e9 db fe ff ff <0f> 0b eb b7 e8 85 4c 1a c5 0f 1f 44 00 00 66 66 66 66 90 41 55 
+[   72.169705] ---[ end trace ed549af9d9cf6190 ]---
+[   72.170009] WARNING: CPU: 0 PID: 242 at /build/linux-uwVqDp/linux-4.16.16/fs/btrfs/ctree.h:1565 btrfs_update_device+0x1b2/0x1c0 [btrfs]
+[   72.170050] Modules linked in: cpufreq_userspace cpufreq_powersave cpufreq_conservative snd_hda_codec_hdmi ip6t_REJECT nf_reject_ipv6 nf_conntrack_ipv6 nf_defrag_ipv6 ip6table_filter ip6_tables xt_policy ipt_REJECT nf_reject_ipv4 xt_comment xt_tcpudp nf_conntrack_ipv4 powernow_k8 nf_defrag_ipv4 edac_mce_amd snd_hda_intel kvm_amd snd_hda_codec ccp rng_core snd_hda_core kvm snd_hwdep irqbypass snd_pcm wmi_bmof radeon snd_timer ttm xt_multiport snd pcspkr soundcore drm_kms_helper k8temp ohci_pci ata_generic pata_atiixp ohci_hcd ehci_pci sg wmi xt_conntrack drm nf_conntrack i2c_algo_bit ehci_hcd usbcore button sp5100_tco usb_common shpchp i2c_piix4 iptable_filter binfmt_misc sunrpc hwmon_vid ip_tables x_tables autofs4 btrfs zstd_decompress zstd_compress xxhash sd_mod raid10 raid456 async_raid6_recov
+[   72.170152]  async_memcpy async_pq async_xor async_tx libcrc32c crc32c_generic xor raid6_pq raid1 raid0 multipath linear md_mod evdev ahci libahci serio_raw libata r8169 mii scsi_mod
+[   72.170204] CPU: 0 PID: 242 Comm: btrfs-cleaner Tainted: G        W        4.16.0-2-amd64 #1 Debian 4.16.16-2
+[   72.170241] Hardware name: MICRO-STAR INTERNATIONAL CO.,LTD MS-7551/KA780G (MS-7551), BIOS V16.6 05/12/2010
+[   72.170300] RIP: 0010:btrfs_update_device+0x1b2/0x1c0 [btrfs]
+[   72.170333] RSP: 0018:ffffbd5a810a3d60 EFLAGS: 00010206
+[   72.170367] RAX: 0000000000000fff RBX: ffff938e847f8000 RCX: 000000e8a0db1e00
+[   72.170401] RDX: 0000000000001000 RSI: 0000000000003f5c RDI: ffff938e7a8015e0
+[   72.170434] RBP: ffff938e8fb97a00 R08: ffffbd5a810a3d10 R09: ffffbd5a810a3d18
+[   72.170468] R10: 0000000000000003 R11: 0000000000003000 R12: 0000000000000000
+[   72.170501] R13: 0000000000003f3c R14: ffff938e7a8015e0 R15: ffff938e8f0c6328
+[   72.170535] FS:  0000000000000000(0000) GS:ffff938e9dc00000(0000) knlGS:0000000000000000
+[   72.170571] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[   72.170604] CR2: 00007fcff92ce000 CR3: 000000020575e000 CR4: 00000000000006f0
+[   72.170638] Call Trace:
+[   72.170696]  btrfs_remove_chunk+0x2a9/0x8c0 [btrfs]
+[   72.170751]  btrfs_delete_unused_bgs+0x323/0x3f0 [btrfs]
+[   72.170806]  ? __btree_submit_bio_start+0x20/0x20 [btrfs]
+[   72.170861]  cleaner_kthread+0x152/0x160 [btrfs]
+[   72.170897]  kthread+0x113/0x130
+[   72.170930]  ? kthread_create_worker_on_cpu+0x70/0x70
+[   72.170966]  ? SyS_exit_group+0x10/0x10
+[   72.171000]  ret_from_fork+0x35/0x40
+[   72.171033] Code: 4c 89 f7 45 31 c0 ba 10 00 00 00 4c 89 ee e8 16 23 ff ff 4c 89 f7 e8 9e ef fc ff e9 de fe ff ff 41 bc f4 ff ff ff e9 db fe ff ff <0f> 0b eb b7 e8 85 4c 1a c5 0f 1f 44 00 00 66 66 66 66 90 41 55 
+[   72.171097] ---[ end trace ed549af9d9cf6191 ]---
+[  967.276408] WARNING: CPU: 0 PID: 242 at /build/linux-uwVqDp/linux-4.16.16/fs/btrfs/ctree.h:1565 btrfs_update_device+0x1b2/0x1c0 [btrfs]
+[  967.276452] Modules linked in: cpufreq_userspace cpufreq_powersave cpufreq_conservative snd_hda_codec_hdmi ip6t_REJECT nf_reject_ipv6 nf_conntrack_ipv6 nf_defrag_ipv6 ip6table_filter ip6_tables xt_policy ipt_REJECT nf_reject_ipv4 xt_comment xt_tcpudp nf_conntrack_ipv4 powernow_k8 nf_defrag_ipv4 edac_mce_amd snd_hda_intel kvm_amd snd_hda_codec ccp rng_core snd_hda_core kvm snd_hwdep irqbypass snd_pcm wmi_bmof radeon snd_timer ttm xt_multiport snd pcspkr soundcore drm_kms_helper k8temp ohci_pci ata_generic pata_atiixp ohci_hcd ehci_pci sg wmi xt_conntrack drm nf_conntrack i2c_algo_bit ehci_hcd usbcore button sp5100_tco usb_common shpchp i2c_piix4 iptable_filter binfmt_misc sunrpc hwmon_vid ip_tables x_tables autofs4 btrfs zstd_decompress zstd_compress xxhash sd_mod raid10 raid456 async_raid6_recov
+[  967.276554]  async_memcpy async_pq async_xor async_tx libcrc32c crc32c_generic xor raid6_pq raid1 raid0 multipath linear md_mod evdev ahci libahci serio_raw libata r8169 mii scsi_mod
+[  967.276606] CPU: 0 PID: 242 Comm: btrfs-cleaner Tainted: G        W        4.16.0-2-amd64 #1 Debian 4.16.16-2
+[  967.276642] Hardware name: MICRO-STAR INTERNATIONAL CO.,LTD MS-7551/KA780G (MS-7551), BIOS V16.6 05/12/2010
+[  967.276703] RIP: 0010:btrfs_update_device+0x1b2/0x1c0 [btrfs]
+[  967.276737] RSP: 0018:ffffbd5a810a3d60 EFLAGS: 00010206
+[  967.276771] RAX: 0000000000000fff RBX: ffff938de01509a0 RCX: 000000e8a0db1e00
+[  967.276804] RDX: 0000000000001000 RSI: 0000000000003f5c RDI: ffff938e177fc7a8
+[  967.276838] RBP: ffff938e8fb97a00 R08: ffffbd5a810a3d10 R09: ffffbd5a810a3d18
+[  967.276872] R10: 0000000000000003 R11: 0000000000003000 R12: 0000000000000000
+[  967.276906] R13: 0000000000003f3c R14: ffff938e177fc7a8 R15: ffff938e8f0c6328
+[  967.276940] FS:  0000000000000000(0000) GS:ffff938e9dc00000(0000) knlGS:0000000000000000
+[  967.276976] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[  967.277010] CR2: 0000563538320878 CR3: 00000002114dc000 CR4: 00000000000006f0
+[  967.277044] Call Trace:
+[  967.277104]  btrfs_remove_chunk+0x2a9/0x8c0 [btrfs]
+[  967.277161]  btrfs_delete_unused_bgs+0x323/0x3f0 [btrfs]
+[  967.277217]  ? __btree_submit_bio_start+0x20/0x20 [btrfs]
+[  967.277272]  cleaner_kthread+0x152/0x160 [btrfs]
+[  967.277310]  kthread+0x113/0x130
+[  967.277344]  ? kthread_create_worker_on_cpu+0x70/0x70
+[  967.277379]  ? SyS_exit_group+0x10/0x10
+[  967.277414]  ret_from_fork+0x35/0x40
+[  967.277447] Code: 4c 89 f7 45 31 c0 ba 10 00 00 00 4c 89 ee e8 16 23 ff ff 4c 89 f7 e8 9e ef fc ff e9 de fe ff ff 41 bc f4 ff ff ff e9 db fe ff ff <0f> 0b eb b7 e8 85 4c 1a c5 0f 1f 44 00 00 66 66 66 66 90 41 55 
+[  967.277510] ---[ end trace ed549af9d9cf6192 ]---
+[  967.277747] WARNING: CPU: 0 PID: 242 at /build/linux-uwVqDp/linux-4.16.16/fs/btrfs/ctree.h:1565 btrfs_update_device+0x1b2/0x1c0 [btrfs]
+[  967.277786] Modules linked in: cpufreq_userspace cpufreq_powersave cpufreq_conservative snd_hda_codec_hdmi ip6t_REJECT nf_reject_ipv6 nf_conntrack_ipv6 nf_defrag_ipv6 ip6table_filter ip6_tables xt_policy ipt_REJECT nf_reject_ipv4 xt_comment xt_tcpudp nf_conntrack_ipv4 powernow_k8 nf_defrag_ipv4 edac_mce_amd snd_hda_intel kvm_amd snd_hda_codec ccp rng_core snd_hda_core kvm snd_hwdep irqbypass snd_pcm wmi_bmof radeon snd_timer ttm xt_multiport snd pcspkr soundcore drm_kms_helper k8temp ohci_pci ata_generic pata_atiixp ohci_hcd ehci_pci sg wmi xt_conntrack drm nf_conntrack i2c_algo_bit ehci_hcd usbcore button sp5100_tco usb_common shpchp i2c_piix4 iptable_filter binfmt_misc sunrpc hwmon_vid ip_tables x_tables autofs4 btrfs zstd_decompress zstd_compress xxhash sd_mod raid10 raid456 async_raid6_recov
+[  967.277886]  async_memcpy async_pq async_xor async_tx libcrc32c crc32c_generic xor raid6_pq raid1 raid0 multipath linear md_mod evdev ahci libahci serio_raw libata r8169 mii scsi_mod
+[  967.277936] CPU: 0 PID: 242 Comm: btrfs-cleaner Tainted: G        W        4.16.0-2-amd64 #1 Debian 4.16.16-2
+[  967.277972] Hardware name: MICRO-STAR INTERNATIONAL CO.,LTD MS-7551/KA780G (MS-7551), BIOS V16.6 05/12/2010
+[  967.278033] RIP: 0010:btrfs_update_device+0x1b2/0x1c0 [btrfs]
+[  967.278066] RSP: 0018:ffffbd5a810a3d60 EFLAGS: 00010206
+[  967.278100] RAX: 0000000000000fff RBX: ffff938de01509a0 RCX: 000000e8a0db1e00
+[  967.278134] RDX: 0000000000001000 RSI: 0000000000003f5c RDI: ffff938e177fc7a8
+[  967.278168] RBP: ffff938e8fb97a00 R08: ffffbd5a810a3d10 R09: ffffbd5a810a3d18
+[  967.278202] R10: 0000000000000003 R11: 0000000000003000 R12: 0000000000000000
+[  967.278236] R13: 0000000000003f3c R14: ffff938e177fc7a8 R15: ffff938e8f0c6328
+[  967.278270] FS:  0000000000000000(0000) GS:ffff938e9dc00000(0000) knlGS:0000000000000000
+[  967.278307] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[  967.278340] CR2: 0000563538320878 CR3: 00000002114dc000 CR4: 00000000000006f0
+[  967.278374] Call Trace:
+[  967.278432]  btrfs_remove_chunk+0x2a9/0x8c0 [btrfs]
+[  967.278489]  btrfs_delete_unused_bgs+0x323/0x3f0 [btrfs]
+[  967.278545]  ? __btree_submit_bio_start+0x20/0x20 [btrfs]
+[  967.278600]  cleaner_kthread+0x152/0x160 [btrfs]
+[  967.278635]  kthread+0x113/0x130
+[  967.278669]  ? kthread_create_worker_on_cpu+0x70/0x70
+[  967.278703]  ? SyS_exit_group+0x10/0x10
+[  967.278738]  ret_from_fork+0x35/0x40
+[  967.278771] Code: 4c 89 f7 45 31 c0 ba 10 00 00 00 4c 89 ee e8 16 23 ff ff 4c 89 f7 e8 9e ef fc ff e9 de fe ff ff 41 bc f4 ff ff ff e9 db fe ff ff <0f> 0b eb b7 e8 85 4c 1a c5 0f 1f 44 00 00 66 66 66 66 90 41 55 
+[  967.278836] ---[ end trace ed549af9d9cf6193 ]---
+[  967.279036] WARNING: CPU: 0 PID: 242 at /build/linux-uwVqDp/linux-4.16.16/fs/btrfs/ctree.h:1565 btrfs_update_device+0x1b2/0x1c0 [btrfs]
+[  967.279074] Modules linked in: cpufreq_userspace cpufreq_powersave cpufreq_conservative snd_hda_codec_hdmi ip6t_REJECT nf_reject_ipv6 nf_conntrack_ipv6 nf_defrag_ipv6 ip6table_filter ip6_tables xt_policy ipt_REJECT nf_reject_ipv4 xt_comment xt_tcpudp nf_conntrack_ipv4 powernow_k8 nf_defrag_ipv4 edac_mce_amd snd_hda_intel kvm_amd snd_hda_codec ccp rng_core snd_hda_core kvm snd_hwdep irqbypass snd_pcm wmi_bmof radeon snd_timer ttm xt_multiport snd pcspkr soundcore drm_kms_helper k8temp ohci_pci ata_generic pata_atiixp ohci_hcd ehci_pci sg wmi xt_conntrack drm nf_conntrack i2c_algo_bit ehci_hcd usbcore button sp5100_tco usb_common shpchp i2c_piix4 iptable_filter binfmt_misc sunrpc hwmon_vid ip_tables x_tables autofs4 btrfs zstd_decompress zstd_compress xxhash sd_mod raid10 raid456 async_raid6_recov
+[  967.279175]  async_memcpy async_pq async_xor async_tx libcrc32c crc32c_generic xor raid6_pq raid1 raid0 multipath linear md_mod evdev ahci libahci serio_raw libata r8169 mii scsi_mod
+[  967.279224] CPU: 0 PID: 242 Comm: btrfs-cleaner Tainted: G        W        4.16.0-2-amd64 #1 Debian 4.16.16-2
+[  967.279261] Hardware name: MICRO-STAR INTERNATIONAL CO.,LTD MS-7551/KA780G (MS-7551), BIOS V16.6 05/12/2010
+[  967.279321] RIP: 0010:btrfs_update_device+0x1b2/0x1c0 [btrfs]
+[  967.279355] RSP: 0018:ffffbd5a810a3d60 EFLAGS: 00010206
+[  967.279388] RAX: 0000000000000fff RBX: ffff938de01509a0 RCX: 000000e8a0db1e00
+[  967.279422] RDX: 0000000000001000 RSI: 0000000000003f5c RDI: ffff938e177fc7a8
+[  967.279456] RBP: ffff938e8fb97a00 R08: ffffbd5a810a3d10 R09: ffffbd5a810a3d18
+[  967.280145] R10: 0000000000000003 R11: 0000000000003000 R12: 0000000000000000
+[  967.280169] R13: 0000000000003f3c R14: ffff938e177fc7a8 R15: ffff938e8f0c6328
+[  967.280169] FS:  0000000000000000(0000) GS:ffff938e9dc00000(0000) knlGS:0000000000000000
+[  967.280169] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[  967.280169] CR2: 0000563538320878 CR3: 00000002114dc000 CR4: 00000000000006f0
+[  967.280169] Call Trace:
+[  967.280169]  btrfs_remove_chunk+0x2a9/0x8c0 [btrfs]
+[  967.280169]  btrfs_delete_unused_bgs+0x323/0x3f0 [btrfs]
+[  967.280169]  ? __btree_submit_bio_start+0x20/0x20 [btrfs]
+[  967.280169]  cleaner_kthread+0x152/0x160 [btrfs]
+[  967.280169]  kthread+0x113/0x130
+[  967.280169]  ? kthread_create_worker_on_cpu+0x70/0x70
+[  967.280169]  ? SyS_exit_group+0x10/0x10
+[  967.280169]  ret_from_fork+0x35/0x40
+[  967.280169] Code: 4c 89 f7 45 31 c0 ba 10 00 00 00 4c 89 ee e8 16 23 ff ff 4c 89 f7 e8 9e ef fc ff e9 de fe ff ff 41 bc f4 ff ff ff e9 db fe ff ff <0f> 0b eb b7 e8 85 4c 1a c5 0f 1f 44 00 00 66 66 66 66 90 41 55 
+[  967.280169] ---[ end trace ed549af9d9cf6194 ]---
+[ 1516.410609] WARNING: CPU: 1 PID: 242 at /build/linux-uwVqDp/linux-4.16.16/fs/btrfs/ctree.h:1565 btrfs_update_device+0x1b2/0x1c0 [btrfs]
+[ 1516.410647] Modules linked in: cpufreq_userspace cpufreq_powersave cpufreq_conservative snd_hda_codec_hdmi ip6t_REJECT nf_reject_ipv6 nf_conntrack_ipv6 nf_defrag_ipv6 ip6table_filter ip6_tables xt_policy ipt_REJECT nf_reject_ipv4 xt_comment xt_tcpudp nf_conntrack_ipv4 powernow_k8 nf_defrag_ipv4 edac_mce_amd snd_hda_intel kvm_amd snd_hda_codec ccp rng_core snd_hda_core kvm snd_hwdep irqbypass snd_pcm wmi_bmof radeon snd_timer ttm xt_multiport snd pcspkr soundcore drm_kms_helper k8temp ohci_pci ata_generic pata_atiixp ohci_hcd ehci_pci sg wmi xt_conntrack drm nf_conntrack i2c_algo_bit ehci_hcd usbcore button sp5100_tco usb_common shpchp i2c_piix4 iptable_filter binfmt_misc sunrpc hwmon_vid ip_tables x_tables autofs4 btrfs zstd_decompress zstd_compress xxhash sd_mod raid10 raid456 async_raid6_recov
+[ 1516.410757]  async_memcpy async_pq async_xor async_tx libcrc32c crc32c_generic xor raid6_pq raid1 raid0 multipath linear md_mod evdev ahci libahci serio_raw libata r8169 mii scsi_mod
+[ 1516.410826] CPU: 1 PID: 242 Comm: btrfs-cleaner Tainted: G        W        4.16.0-2-amd64 #1 Debian 4.16.16-2
+[ 1516.410861] Hardware name: MICRO-STAR INTERNATIONAL CO.,LTD MS-7551/KA780G (MS-7551), BIOS V16.6 05/12/2010
+[ 1516.410941] RIP: 0010:btrfs_update_device+0x1b2/0x1c0 [btrfs]
+[ 1516.410975] RSP: 0018:ffffbd5a810a3d60 EFLAGS: 00010206
+[ 1516.411008] RAX: 0000000000000fff RBX: ffff938dbbafd380 RCX: 000000e8a0db1e00
+[ 1516.411043] RDX: 0000000000001000 RSI: 0000000000003f5c RDI: ffff938e30d156f8
+[ 1516.411076] RBP: ffff938e8fb97a00 R08: ffffbd5a810a3d10 R09: ffffbd5a810a3d18
+[ 1516.411110] R10: 0000000000000003 R11: 0000000000003000 R12: 0000000000000000
+[ 1516.411144] R13: 0000000000003f3c R14: ffff938e30d156f8 R15: ffff938e8f0c6328
+[ 1516.411178] FS:  0000000000000000(0000) GS:ffff938e9dc40000(0000) knlGS:0000000000000000
+[ 1516.411214] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[ 1516.411247] CR2: 00007f2041f7c018 CR3: 00000002114dc000 CR4: 00000000000006e0
+[ 1516.411280] Call Trace:
+[ 1516.411340]  btrfs_remove_chunk+0x2a9/0x8c0 [btrfs]
+[ 1516.411396]  btrfs_delete_unused_bgs+0x323/0x3f0 [btrfs]
+[ 1516.411451]  ? __btree_submit_bio_start+0x20/0x20 [btrfs]
+[ 1516.411505]  cleaner_kthread+0x152/0x160 [btrfs]
+[ 1516.411542]  kthread+0x113/0x130
+[ 1516.411576]  ? kthread_create_worker_on_cpu+0x70/0x70
+[ 1516.411611]  ? SyS_exit_group+0x10/0x10
+[ 1516.411646]  ret_from_fork+0x35/0x40
+[ 1516.411679] Code: 4c 89 f7 45 31 c0 ba 10 00 00 00 4c 89 ee e8 16 23 ff ff 4c 89 f7 e8 9e ef fc ff e9 de fe ff ff 41 bc f4 ff ff ff e9 db fe ff ff <0f> 0b eb b7 e8 85 4c 1a c5 0f 1f 44 00 00 66 66 66 66 90 41 55 
+[ 1516.411742] ---[ end trace ed549af9d9cf6195 ]---

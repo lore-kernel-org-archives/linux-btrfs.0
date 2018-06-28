@@ -1,56 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ot0-f181.google.com ([74.125.82.181]:41664 "EHLO
-        mail-ot0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S965506AbeF1ORb (ORCPT
+Received: from mailgw-01.dd24.net ([193.46.215.41]:41034 "EHLO
+        mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S965506AbeF1ORd (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 28 Jun 2018 10:17:31 -0400
-Received: by mail-ot0-f181.google.com with SMTP id d19-v6so6297572oti.8
-        for <linux-btrfs@vger.kernel.org>; Thu, 28 Jun 2018 07:17:31 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <9bbde3a8-2498-a538-5744-c857f5a57947@oracle.com>
-References: <66d30a90-a571-a110-749d-8a3fd6ccb9d5@georgianit.com> <9bbde3a8-2498-a538-5744-c857f5a57947@oracle.com>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Thu, 28 Jun 2018 08:17:30 -0600
-Message-ID: <CAJCQCtSuKpcn2Or3LiCYqeFMFFoRU09BFQE_n8FAhQ2Vo+83PA@mail.gmail.com>
-Subject: Re: Major design flaw with BTRFS Raid, temporary device drop will
- corrupt nodatacow files
-To: Anand Jain <anand.jain@oracle.com>
-Cc: Remi Gauvin <remi@georgianit.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+        Thu, 28 Jun 2018 10:17:33 -0400
+Message-ID: <f86948875cb746c6a8c74526913017052153d1bf.camel@scientia.net>
+Subject: Re: call trace: WARNING: at
+ /build/linux-uwVqDp/linux-4.16.16/fs/btrfs/ctree.h:1565 btrfs_update_device
+From: Christoph Anton Mitterer <calestyo@scientia.net>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
+Date: Thu, 28 Jun 2018 16:17:29 +0200
+In-Reply-To: <f9d51250-28aa-318e-502f-c5b3526969a0@gmx.com>
+References: <50443c666dc4509d74f9f23d7012080845a20940.camel@scientia.net>
+         <f9d51250-28aa-318e-502f-c5b3526969a0@gmx.com>
 Content-Type: text/plain; charset="UTF-8"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The problems are known with Btrfs raid1, but I think they bear
-repeating because they are really not OK.
+On Thu, 2018-06-28 at 22:09 +0800, Qu Wenruo wrote:
+> > [   72.168662] WARNING: CPU: 0 PID: 242 at /build/linux-
+> > uwVqDp/linux-4.16.16/fs/btrfs/ctree.h:1565
+> > btrfs_update_device+0x1b2/0x1c0It
+> looks like it's the old WARN_ON() for unaligned device size.
+> Would you please verify if it is the case?
 
-In the exact same described scenario: a simple clear cut drop off of a
-member device, which then later clearly reappears (no transient
-failure).
-
-Both mdadm and LVM based raid1 would have re-added the missing device
-and resynced it because internal bitmap is the default (on > 100G
-arrays for mdadm and always with lvm). Only the new data would be
-propagated to user space. Both mdadm and lvm have metadata to know
-which drive has stale data in this common scenario.
-
-Btrfs does two, maybe three, bad things:
-1. No automatic resync. This is a net worse behavior than mdadm and
-lvm, putting data at risk.
-2. The new data goes in a single chunk; even if the user does a manual
-balance (resync) their data isn't replicated. They must know to do a
--dconvert balance to replicate the new data. Again this is a net worse
-behavior than mdadm out of the box, putting user data at risk.
-3. Apparently if nodatacow, given a file with two copies of different
-transid, Btrfs won't always pick the higher transid copy? If true
-that's terrible, and again not at all what mdadm/lvm are doing.
+# blockdev --getsize64 /dev/sdb2 /dev/sda2
+999131127296
+999131127296
 
 
-Btrfs can do better because it has more information available to make
-unambiguous decisions about data. But it needs to always do at least
-as good a job as mdadm/lvm and as reported, that didn't happen. So
-some tested is needed in particular case #3 above with nodatacow.
-That's a huge bug, if it's true.
+Since getsize64 returns bytes and not sectors, I suppose it would need
+to be aligned to 1024 by the least?
+
+999131127296 / 1024 = 975713991,5
+
+So it's not.
 
 
-Chris Murphy
+> If so, "btrfs rescue fix-device-size" should handle it pretty well.
+
+I guess this needs to be done with the fs unmounted?
+Anything to consider since I have RAID1 (except from running it on both
+devices)?
+
+
+Also, it's a bit strange that this error occurred never before (though
+the btrfs-restore manpage says the kernel would check for this since
+4.11).
+
+It would further be nice if btrfs-check would warn about this.
+
+
+Thanks,
+Chris.

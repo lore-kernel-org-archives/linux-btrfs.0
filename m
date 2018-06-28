@@ -1,56 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-01.dd24.net ([193.46.215.41]:41034 "EHLO
-        mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S965506AbeF1ORd (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 28 Jun 2018 10:17:33 -0400
-Message-ID: <f86948875cb746c6a8c74526913017052153d1bf.camel@scientia.net>
-Subject: Re: call trace: WARNING: at
- /build/linux-uwVqDp/linux-4.16.16/fs/btrfs/ctree.h:1565 btrfs_update_device
-From: Christoph Anton Mitterer <calestyo@scientia.net>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
-Date: Thu, 28 Jun 2018 16:17:29 +0200
-In-Reply-To: <f9d51250-28aa-318e-502f-c5b3526969a0@gmx.com>
-References: <50443c666dc4509d74f9f23d7012080845a20940.camel@scientia.net>
-         <f9d51250-28aa-318e-502f-c5b3526969a0@gmx.com>
-Content-Type: text/plain; charset="UTF-8"
-Mime-Version: 1.0
+Received: from mail-oln040092068064.outbound.protection.outlook.com ([40.92.68.64]:20820
+        "EHLO EUR02-HE1-obe.outbound.protection.outlook.com"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S966488AbeF1OfB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 28 Jun 2018 10:35:01 -0400
+From: Alberto Bursi <alberto.bursi@outlook.it>
+To: Qu Wenruo <wqu@suse.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH RFC] btrfs: Do extra device generation check at mount time
+Date: Thu, 28 Jun 2018 14:34:58 +0000
+Message-ID: <VI1PR08MB086262F7BE2EFD778F0A415A924F0@VI1PR08MB0862.eurprd08.prod.outlook.com>
+References: <20180628070443.23421-1-wqu@suse.com>
+In-Reply-To: <20180628070443.23421-1-wqu@suse.com>
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 2018-06-28 at 22:09 +0800, Qu Wenruo wrote:
-> > [   72.168662] WARNING: CPU: 0 PID: 242 at /build/linux-
-> > uwVqDp/linux-4.16.16/fs/btrfs/ctree.h:1565
-> > btrfs_update_device+0x1b2/0x1c0It
-> looks like it's the old WARN_ON() for unaligned device size.
-> Would you please verify if it is the case?
-
-# blockdev --getsize64 /dev/sdb2 /dev/sda2
-999131127296
-999131127296
 
 
-Since getsize64 returns bytes and not sectors, I suppose it would need
-to be aligned to 1024 by the least?
+On 28/06/2018 09:04, Qu Wenruo wrote:
+> Despite his incorrect expectation, btrfs indeed doesn't handle device
+> generation mismatch well.
+>
+> This means if one devices missed and re-appeared, even its generation
+> no longer matches with the rest device pool, btrfs does nothing to it,
+> but treat it as normal good device.
+>
+> At least let's detect such generation mismatch and avoid mounting the
+> fs.
+> Currently there is no automatic rebuild yet, which means if users find
+> device generation mismatch error message, they can only mount the fs
+> using "device" and "degraded" mount option (if possible), then replace
+> the offending device to manually "rebuild" the fs.
+>
 
-999131127296 / 1024 = 975713991,5
+Yes. This is a long-standing issue, handling it this way is similar to 
+what mdadm
+(software raid) also does.
 
-So it's not.
+Please get this merged fast, don't get bogged down too much with 
+integrating with
+Anand Jain's branch as this is a big issue and should get at least this 
+basic mitigation asap.
 
-
-> If so, "btrfs rescue fix-device-size" should handle it pretty well.
-
-I guess this needs to be done with the fs unmounted?
-Anything to consider since I have RAID1 (except from running it on both
-devices)?
-
-
-Also, it's a bit strange that this error occurred never before (though
-the btrfs-restore manpage says the kernel would check for this since
-4.11).
-
-It would further be nice if btrfs-check would warn about this.
-
-
-Thanks,
-Chris.
+-Alberto
+ÿôèº{.nÇ+‰·Ÿ®‰­†+%ŠËÿ±éİ¶¥Šwÿº{.nÇ+‰·¥Š{±ı»k~ÏâØ^n‡r¡ö¦zËëh™¨è­Ú&£ûàz¿äz¹Ş—ú+€Ê+zf£¢·hšˆ§~†­†Ûiÿÿïêÿ‘êçz_è®æj:+v‰¨ş)ß£øm

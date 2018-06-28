@@ -1,74 +1,119 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:38486 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S967158AbeF1TDe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 28 Jun 2018 15:03:34 -0400
-Subject: Re: call trace: WARNING: at
- /build/linux-uwVqDp/linux-4.16.16/fs/btrfs/ctree.h:1565 btrfs_update_device
-To: Christoph Anton Mitterer <calestyo@scientia.net>,
-        Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
-References: <50443c666dc4509d74f9f23d7012080845a20940.camel@scientia.net>
- <f9d51250-28aa-318e-502f-c5b3526969a0@gmx.com>
- <f86948875cb746c6a8c74526913017052153d1bf.camel@scientia.net>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <b100c06f-597d-048d-50bc-ff07c829ebc9@suse.com>
-Date: Thu, 28 Jun 2018 17:25:35 +0300
+Received: from mail-wr0-f171.google.com ([209.85.128.171]:41303 "EHLO
+        mail-wr0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S933391AbeF1UJR (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 28 Jun 2018 16:09:17 -0400
+Received: by mail-wr0-f171.google.com with SMTP id h10-v6so6680246wrq.8
+        for <linux-btrfs@vger.kernel.org>; Thu, 28 Jun 2018 13:09:16 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <f86948875cb746c6a8c74526913017052153d1bf.camel@scientia.net>
-Content-Type: text/plain; charset=utf-8
+From: Hannes Schweizer <schweizer.hannes@gmail.com>
+Date: Thu, 28 Jun 2018 22:09:04 +0200
+Message-ID: <CAOfGOYyT2F-6jtKgpgm6iX5aK-kP1Ryuz_rcTFs=s05_FeAPoQ@mail.gmail.com>
+Subject: Incremental send/receive broken after snapshot restore
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi,
+
+Here's my environment:
+Linux diablo 4.17.0-gentoo #5 SMP Mon Jun 25 00:26:55 CEST 2018 x86_64
+Intel(R) Core(TM) i5 CPU 760 @ 2.80GHz GenuineIntel GNU/Linux
+btrfs-progs v4.17
+
+Label: 'online'  uuid: e4dc6617-b7ed-4dfb-84a6-26e3952c8390
+        Total devices 2 FS bytes used 3.16TiB
+        devid    1 size 1.82TiB used 1.58TiB path /dev/mapper/online0
+        devid    2 size 1.82TiB used 1.58TiB path /dev/mapper/online1
+Data, RAID0: total=3.16TiB, used=3.15TiB
+System, RAID0: total=16.00MiB, used=240.00KiB
+Metadata, RAID0: total=7.00GiB, used=4.91GiB
+GlobalReserve, single: total=512.00MiB, used=0.00B
+
+Label: 'offline'  uuid: 5b449116-93e5-473e-aaf5-bf3097b14f29
+        Total devices 2 FS bytes used 3.52TiB
+        devid    1 size 5.46TiB used 3.53TiB path /dev/mapper/offline0
+        devid    2 size 5.46TiB used 3.53TiB path /dev/mapper/offline1
+Data, RAID1: total=3.52TiB, used=3.52TiB
+System, RAID1: total=8.00MiB, used=512.00KiB
+Metadata, RAID1: total=6.00GiB, used=5.11GiB
+GlobalReserve, single: total=512.00MiB, used=0.00B
+
+Label: 'external'  uuid: 8bf13621-01f0-4f09-95c7-2c157d3087d0
+        Total devices 1 FS bytes used 3.65TiB
+        devid    1 size 5.46TiB used 3.66TiB path
+/dev/mapper/luks-3c196e96-d46c-4a9c-9583-b79c707678fc
+Data, single: total=3.64TiB, used=3.64TiB
+System, DUP: total=32.00MiB, used=448.00KiB
+Metadata, DUP: total=11.00GiB, used=9.72GiB
+GlobalReserve, single: total=512.00MiB, used=0.00B
 
 
-On 28.06.2018 17:17, Christoph Anton Mitterer wrote:
-> On Thu, 2018-06-28 at 22:09 +0800, Qu Wenruo wrote:
->>> [   72.168662] WARNING: CPU: 0 PID: 242 at /build/linux-
->>> uwVqDp/linux-4.16.16/fs/btrfs/ctree.h:1565
->>> btrfs_update_device+0x1b2/0x1c0It
->> looks like it's the old WARN_ON() for unaligned device size.
->> Would you please verify if it is the case?
-> 
-> # blockdev --getsize64 /dev/sdb2 /dev/sda2
-> 999131127296
-> 999131127296
-> 
-> 
-> Since getsize64 returns bytes and not sectors, I suppose it would need
-> to be aligned to 1024 by the least?
-> 
-> 999131127296 / 1024 = 975713991,5
-> 
-> So it's not.
-> 
-> 
->> If so, "btrfs rescue fix-device-size" should handle it pretty well.
-> 
-> I guess this needs to be done with the fs unmounted?
-> Anything to consider since I have RAID1 (except from running it on both
-> devices)?
-> 
-> 
-> Also, it's a bit strange that this error occurred never before (though
-> the btrfs-restore manpage says the kernel would check for this since
-> 4.11).
+The following automatic backup scheme is in place:
+hourly:
+btrfs sub snap -r online/root online/root.<date>
 
-Was this an old FS or a fresh one? Looking at the callstack this seems
-to have occured due to "btrfs_set_device_total_bytes(leaf, dev_item,
-btrfs_device_get_disk_total_bytes(device));" call. Meaning the total
-bytes of the disk were unalgined. Perhaps this has been like that for
-quite some time, then you did a couple of kernel upgrades (this WARN_ON
-was added later than 4.11) and just now you happened to delete a chunk
-which would trigger a device update on-disk ?
+daily:
+btrfs sub snap -r online/root online/root.<new_offline_reference>
+btrfs send -c online/root.<old_offline_reference>
+online/root.<new_offline_reference> | btrfs receive offline
+btrfs sub del -c online/root.<old_offline_reference>
 
-> 
-> It would further be nice if btrfs-check would warn about this.
-> 
-> 
-> Thanks,
-> Chris.
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+monthly:
+btrfs sub snap -r online/root online/root.<new_external_reference>
+btrfs send -c online/root.<old_external_reference>
+online/root.<new_external_reference> | btrfs receive external
+btrfs sub del -c online/root.<old_external_reference>
+
+Now here are the commands leading up to my problem:
+After the online filesystem suddenly went ro, and btrfs check showed
+massive problems, I decided to start the online array from scratch:
+1: mkfs.btrfs -f -d raid0 -m raid0 -L "online" /dev/mapper/online0
+/dev/mapper/online1
+
+As you can see from the backup commands above, the snapshots of
+offline and external are not related, so in order to at least keep the
+extensive backlog of the external snapshot set (including all
+reflinks), I decided to restore the latest snapshot from external.
+2: btrfs send external/root.<external_reference> | btrfs receive online
+
+I wanted to ensure I can restart the incremental backup flow from
+online to external, so I did this
+3: mv online/root.<external_reference> online/root
+4: btrfs sub snap -r online/root online/root.<external_reference>
+5: btrfs property set online/root ro false
+
+Now, I naively expected a simple restart of my automatic backups for
+external should work.
+However after running
+6: btrfs sub snap -r online/root online/root.<new_external_reference>
+7: btrfs send -c online/root.<old_external_reference>
+online/root.<new_external_reference> | btrfs receive external
+I see the following error:
+ERROR: unlink root/.ssh/agent-diablo-_dev_pts_3 failed. No such file
+or directory
+
+Which is unfortunate, but the second problem actually encouraged me to
+post this message.
+As planned, I had to start the offline array from scratch as well,
+because I no longer had any reference snapshot for incremental backups
+on other devices:
+8: mkfs.btrfs -f -d raid1 -m raid1 -L "offline" /dev/mapper/offline0
+/dev/mapper/offline1
+
+However restarting the automatic daily backup flow bails out with a
+similar error, although no potentially problematic previous
+incremental snapshots should be involved here!
+ERROR: unlink o925031-987-0/2139527549 failed. No such file or directory
+
+I'm a bit lost now. The only thing I could image which might be
+confusing for btrfs,
+is the residual "Received UUID" of online/root.<external_reference>
+after command 2.
+What's the recommended way to restore snapshots with send/receive
+without breaking subsequent incremental backups (including reflinks of
+existing backups)?
+
+Any hints appreciated...

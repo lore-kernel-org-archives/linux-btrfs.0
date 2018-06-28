@@ -1,132 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:41500 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:40676 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1030624AbeF1TD6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 28 Jun 2018 15:03:58 -0400
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 81CFCADD1
-        for <linux-btrfs@vger.kernel.org>; Thu, 28 Jun 2018 19:03:55 +0000 (UTC)
-Subject: Re: [PATCH RFC] btrfs: Do extra device generation check at mount time
-To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-References: <20180628070443.23421-1-wqu@suse.com>
+        id S968043AbeF1TD4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 28 Jun 2018 15:03:56 -0400
+Subject: Re: call trace: WARNING: at
+ /build/linux-uwVqDp/linux-4.16.16/fs/btrfs/ctree.h:1565 btrfs_update_device
+To: Christoph Anton Mitterer <calestyo@scientia.net>,
+        linux-btrfs@vger.kernel.org
+References: <50443c666dc4509d74f9f23d7012080845a20940.camel@scientia.net>
 From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <9c960707-c067-b023-5075-d770d963e477@suse.com>
-Date: Thu, 28 Jun 2018 11:04:42 +0300
+Message-ID: <a80da87b-6c38-3b37-542c-17718bad8d5c@suse.com>
+Date: Thu, 28 Jun 2018 16:25:57 +0300
 MIME-Version: 1.0
-In-Reply-To: <20180628070443.23421-1-wqu@suse.com>
+In-Reply-To: <50443c666dc4509d74f9f23d7012080845a20940.camel@scientia.net>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On 28.06.2018 10:04, Qu Wenruo wrote:
-> There is a reporter considering btrfs raid1 has a major design flaw
-> which can't handle nodatasum files.
+On 28.06.2018 16:19, Christoph Anton Mitterer wrote:
+> Hey.
 > 
-> Despite his incorrect expectation, btrfs indeed doesn't handle device
-> generation mismatch well.
+> On a 4.16.16 kernel with a RAID 1 btrfs I got the following messages
+> since today.
+> 
+> Data seems still to be readable (correctly)... and there are no other
+> errors (like SATA errors) in the kernel log.
+> 
+> Any idea what these could mean?
 
-I think this is getting a bit personal, no need for that. Just say that
-btrfs doesn't handle this particular case and that's it. Though I agree
-the reporter's attitude wasn't exactly nice...
+It means you have a device, whose size is not aligned to 4k. You can fix
+this either by resizing the device to be properly aligned to a 4k
+boundary (if you are on x86) or better yet, just run :
+
+
+btrfs rescue fix-device-size /dev/<device to fix>
 
 > 
-> This means if one devices missed and re-appeared, even its generation
-> no longer matches with the rest device pool, btrfs does nothing to it,
-> but treat it as normal good device.
-> 
-> At least let's detect such generation mismatch and avoid mounting the
-> fs.
-> Currently there is no automatic rebuild yet, which means if users find
-> device generation mismatch error message, they can only mount the fs
-> using "device" and "degraded" mount option (if possible), then replace
-> the offending device to manually "rebuild" the fs.
-> 
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> ---
-> I totally understand that, generation based solution can't handle
-> split-brain case (where 2 RAID1 devices get mounted degraded separately)
-> at all, but at least let's handle what we can do.
-> 
-> The best way to solve the problem is to make btrfs treat such lower gen
-> devices as some kind of missing device, and queue an automatic scrub for
-> that device.
-> But that's a lot of extra work, at least let's start from detecting such
-> problem first.
-> ---
->  fs/btrfs/volumes.c | 50 ++++++++++++++++++++++++++++++++++++++++++++++
->  1 file changed, 50 insertions(+)
-> 
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index e034ad9e23b4..80a7c44993bc 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -6467,6 +6467,49 @@ static void btrfs_report_missing_device(struct btrfs_fs_info *fs_info,
->  			      devid, uuid);
->  }
->  
-> +static int verify_devices_generation(struct btrfs_fs_info *fs_info,
-> +				     struct btrfs_device *dev)
-> +{
-> +	struct btrfs_fs_devices *fs_devices = dev->fs_devices;
-> +	struct btrfs_device *cur;
-> +	bool warn_only = false;
-> +	int ret = 0;
-> +
-> +	if (!fs_devices || fs_devices->seeding || !dev->generation)
-> +		return 0;
-> +
-> +	/*
-> +	 * If we're not replaying log, we're completely safe to allow
-> +	 * generation mismatch as it won't write anything to disks, nor
-> +	 * remount to rw.
-> +	 */
-> +	if (btrfs_test_opt(fs_info, NOLOGREPLAY))
-> +		warn_only = true;
-> +
-> +	rcu_read_lock();
-> +	list_for_each_entry_rcu(cur, &fs_devices->devices, dev_list) {> +		if (cur->generation && cur->generation != dev->generation) {
-> +			if (warn_only) {
-> +				btrfs_warn_rl_in_rcu(fs_info,
-> +	"devid %llu has unexpected generation, has %llu expected %llu",
-> +						     dev->devid,
-> +						     dev->generation,
-> +						     cur->generation);
-> +			} else {
-> +				btrfs_err_rl_in_rcu(fs_info,
-> +	"devid %llu has unexpected generation, has %llu expected %llu",
-> +						     dev->devid,
-> +						     dev->generation,
-> +						     cur->generation);
-> +				ret = -EINVAL;
-> +				break;
-> +			}
-> +		}
-> +	}
-> +	rcu_read_unlock();
-> +	return ret;
-> +}
-> +
->  static int read_one_chunk(struct btrfs_fs_info *fs_info, struct btrfs_key *key,
->  			  struct extent_buffer *leaf,
->  			  struct btrfs_chunk *chunk)
-> @@ -6552,6 +6595,13 @@ static int read_one_chunk(struct btrfs_fs_info *fs_info, struct btrfs_key *key,
->  				return PTR_ERR(map->stripes[i].dev);
->  			}
->  			btrfs_report_missing_device(fs_info, devid, uuid, false);
-> +		} else {
-> +			ret = verify_devices_generation(fs_info,
-> +							map->stripes[i].dev);
-> +			if (ret < 0) {
-> +				free_extent_map(em);
-> +				return ret;
-> +			}
-
-So this will be executed when doing mount. What about one device
-disappearing, while the filesystem is still mounted and then later
-re-appears. This code won't be executed in this case, no ?
->  		}
->  		set_bit(BTRFS_DEV_STATE_IN_FS_METADATA,
->  				&(map->stripes[i].dev->dev_state));
-> 
+> Thanks,
+> Chris.

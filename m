@@ -1,88 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.19]:39543 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S965506AbeF1OJ4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 28 Jun 2018 10:09:56 -0400
-Subject: Re: call trace: WARNING: at
- /build/linux-uwVqDp/linux-4.16.16/fs/btrfs/ctree.h:1565 btrfs_update_device
-To: Christoph Anton Mitterer <calestyo@scientia.net>,
-        linux-btrfs@vger.kernel.org
-References: <50443c666dc4509d74f9f23d7012080845a20940.camel@scientia.net>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <f9d51250-28aa-318e-502f-c5b3526969a0@gmx.com>
-Date: Thu, 28 Jun 2018 22:09:48 +0800
+Received: from mail-ot0-f181.google.com ([74.125.82.181]:41664 "EHLO
+        mail-ot0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S965506AbeF1ORb (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 28 Jun 2018 10:17:31 -0400
+Received: by mail-ot0-f181.google.com with SMTP id d19-v6so6297572oti.8
+        for <linux-btrfs@vger.kernel.org>; Thu, 28 Jun 2018 07:17:31 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <50443c666dc4509d74f9f23d7012080845a20940.camel@scientia.net>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="nWaWsdkhznTdyz8z8sImyCx4WSme7BpVu"
+In-Reply-To: <9bbde3a8-2498-a538-5744-c857f5a57947@oracle.com>
+References: <66d30a90-a571-a110-749d-8a3fd6ccb9d5@georgianit.com> <9bbde3a8-2498-a538-5744-c857f5a57947@oracle.com>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Thu, 28 Jun 2018 08:17:30 -0600
+Message-ID: <CAJCQCtSuKpcn2Or3LiCYqeFMFFoRU09BFQE_n8FAhQ2Vo+83PA@mail.gmail.com>
+Subject: Re: Major design flaw with BTRFS Raid, temporary device drop will
+ corrupt nodatacow files
+To: Anand Jain <anand.jain@oracle.com>
+Cc: Remi Gauvin <remi@georgianit.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---nWaWsdkhznTdyz8z8sImyCx4WSme7BpVu
-Content-Type: multipart/mixed; boundary="v9soa3XLbNGOWy5kV6CAdXhClIqXMX1Ji";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Christoph Anton Mitterer <calestyo@scientia.net>,
- linux-btrfs@vger.kernel.org
-Message-ID: <f9d51250-28aa-318e-502f-c5b3526969a0@gmx.com>
-Subject: Re: call trace: WARNING: at
- /build/linux-uwVqDp/linux-4.16.16/fs/btrfs/ctree.h:1565 btrfs_update_device
-References: <50443c666dc4509d74f9f23d7012080845a20940.camel@scientia.net>
-In-Reply-To: <50443c666dc4509d74f9f23d7012080845a20940.camel@scientia.net>
+The problems are known with Btrfs raid1, but I think they bear
+repeating because they are really not OK.
 
---v9soa3XLbNGOWy5kV6CAdXhClIqXMX1Ji
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+In the exact same described scenario: a simple clear cut drop off of a
+member device, which then later clearly reappears (no transient
+failure).
 
+Both mdadm and LVM based raid1 would have re-added the missing device
+and resynced it because internal bitmap is the default (on > 100G
+arrays for mdadm and always with lvm). Only the new data would be
+propagated to user space. Both mdadm and lvm have metadata to know
+which drive has stale data in this common scenario.
 
-
-On 2018=E5=B9=B406=E6=9C=8828=E6=97=A5 21:19, Christoph Anton Mitterer wr=
-ote:
-> Hey.
->=20
-> On a 4.16.16 kernel with a RAID 1 btrfs I got the following messages
-> since today.
->=20
-> Data seems still to be readable (correctly)... and there are no other
-> errors (like SATA errors) in the kernel log.
->=20
-> Any idea what these could mean?
->=20
-> Thanks,
-> Chris.
->=20
->=20
-> [   72.168662] WARNING: CPU: 0 PID: 242 at /build/linux-uwVqDp/linux-4.=
-16.16/fs/btrfs/ctree.h:1565 btrfs_update_device+0x1b2/0x1c0It looks like =
-it's the old WARN_ON() for unaligned device size.
-
-Would you please verify if it is the case?
-If so, "btrfs rescue fix-device-size" should handle it pretty well.
-
-Thanks,
-Qu
+Btrfs does two, maybe three, bad things:
+1. No automatic resync. This is a net worse behavior than mdadm and
+lvm, putting data at risk.
+2. The new data goes in a single chunk; even if the user does a manual
+balance (resync) their data isn't replicated. They must know to do a
+-dconvert balance to replicate the new data. Again this is a net worse
+behavior than mdadm out of the box, putting user data at risk.
+3. Apparently if nodatacow, given a file with two copies of different
+transid, Btrfs won't always pick the higher transid copy? If true
+that's terrible, and again not at all what mdadm/lvm are doing.
 
 
---v9soa3XLbNGOWy5kV6CAdXhClIqXMX1Ji--
+Btrfs can do better because it has more information available to make
+unambiguous decisions about data. But it needs to always do at least
+as good a job as mdadm/lvm and as reported, that didn't happen. So
+some tested is needed in particular case #3 above with nodatacow.
+That's a huge bug, if it's true.
 
---nWaWsdkhznTdyz8z8sImyCx4WSme7BpVu
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
 
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAls07CwACgkQwj2R86El
-/qhGbAgAqKfrNFrlIi8P3ZmJV9j7amX/1FNxMgSKI55OgvmNrs0G4W2hUMorZo6R
-nX0vq1Q9erNgwJtNRICWb+wi9r+4efIoTPo/6tX05kZG14qb43/rzoL3doBQEnPv
-uDZvZX29QK3pXVTGkIcvlx4R5izZGfNJAYPYBBkRxmNoj/sA3K9f/VpVJep6Ee4A
-39SdOHlRbI9Wpteds2NrSYbrMg3duVFO04QiGtpedsuMCiFLAYkR6Q3F8Xs3Wy5s
-lDXUzlE9poqo5E5VUB0EUEspehEoE62Q/kj/TNxptXecJn8n5y2G5ovT7+xR4OYc
-z02/VTDg58gI0IKbdxRbM2vlKdSSgg==
-=WjMQ
------END PGP SIGNATURE-----
-
---nWaWsdkhznTdyz8z8sImyCx4WSme7BpVu--
+Chris Murphy

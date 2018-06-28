@@ -1,215 +1,149 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:40894 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:38590 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S968017AbeF1TD4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 28 Jun 2018 15:03:56 -0400
-Date: Thu, 28 Jun 2018 16:03:55 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Chris Mason <clm@fb.com>
-Cc: dsterba@suse.com, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 2/2] Btrfs: keep pages dirty when using
- btrfs_writepage_fixup_worker
-Message-ID: <20180628140355.GH2287@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20180620145612.1644763-1-clm@fb.com>
- <20180620145612.1644763-3-clm@fb.com>
+        id S967176AbeF1TDf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 28 Jun 2018 15:03:35 -0400
+Subject: Re: [PATCH RFC] btrfs: Do extra device generation check at mount time
+To: Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org,
+        Anand Jain <anand.jain@oracle.com>
+References: <20180628070443.23421-1-wqu@suse.com>
+ <9c960707-c067-b023-5075-d770d963e477@suse.com>
+From: Qu Wenruo <wqu@suse.de>
+Message-ID: <d4d47f35-c63b-c3ce-06fb-d538e0b0014f@suse.de>
+Date: Thu, 28 Jun 2018 18:58:58 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180620145612.1644763-3-clm@fb.com>
+In-Reply-To: <9c960707-c067-b023-5075-d770d963e477@suse.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jun 20, 2018 at 07:56:12AM -0700, Chris Mason wrote:
-> For COW, btrfs expects pages dirty pages to have been through a few setup
-> steps.  This includes reserving space for the new block allocations and marking
-> the range in the state tree for delayed allocation.
+
+
+On 2018年06月28日 16:04, Nikolay Borisov wrote:
 > 
-> A few places outside btrfs will dirty pages directly, especially when unmapping
-> mmap'd pages.  In order for these to properly go through COW, we run them
-> through a fixup worker to wait for stable pages, and do the delalloc prep.
 > 
-> 87826df0ec36 added a window where the dirty pages were cleaned, but pending
-> more action from the fixup worker.
-
-Can you please be more specific about the window, where it starts and
-ends?
-
-> During this window, page migration can jump
-> in and relocate the page.  Once our fixup work actually starts, it finds
-> page->mapping is NULL and we end up freeing the page without ever writing it.
-
-AFAICS the old and new code do the same sequence of calls from the first
-mapping check:
-ClearPageChecked, ulock_page, put_page, kfree, extent_changeset_free
-
-
-> This leads to crc errors and other exciting problems, since it screws up the
-> whole statemachine for waiting for ordered extents.  The fix here is to keep
-> the page dirty while we're waiting for the fixup worker to get to work.  This
-> also makes sure the error handling in btrfs_writepage_fixup_worker does the
-> right thing with dirty bits when we run out of space.
-
-So this would need to find the mapping first to be not NULL, go until
-btrfs_start_ordered_extent where the lock is droppend and back to again:, check
-for mapping that's now NULL?
-
-But I still don't see how this is making things different.
-
-In the remaining sequence
-
-btrfs_lookup_ordered_range, btrfs_delalloc_reserve_space,
-btrfs_set_extent_delalloc (without any errors), the clear page checked
-comes after the extent is unlocked.
-
-> Signed-off-by: Chris Mason <clm@fb.com>
-> ---
->  fs/btrfs/inode.c | 67 +++++++++++++++++++++++++++++++++++++++++---------------
->  1 file changed, 49 insertions(+), 18 deletions(-)
+> On 28.06.2018 10:04, Qu Wenruo wrote:
+>> There is a reporter considering btrfs raid1 has a major design flaw
+>> which can't handle nodatasum files.
+>>
+>> Despite his incorrect expectation, btrfs indeed doesn't handle device
+>> generation mismatch well.
 > 
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 0b86cf1..5538900 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -2100,11 +2100,21 @@ static void btrfs_writepage_fixup_worker(struct btrfs_work *work)
->  	page = fixup->page;
->  again:
->  	lock_page(page);
-> -	if (!page->mapping || !PageDirty(page) || !PageChecked(page)) {
-> -		ClearPageChecked(page);
-> +
-> +	/*
-> +	 * before we queued this fixup, we took a reference on the page.
-> +	 * page->mapping may go NULL, but it shouldn't be moved to a
-> +	 * different address space.
-> +	 */
-> +	if (!page->mapping || !PageDirty(page) || !PageChecked(page))
->  		goto out_page;
-> -	}
->  
-> +	/*
-> +	 * we keep the PageChecked() bit set until we're done with the
-> +	 * btrfs_start_ordered_extent() dance that we do below.  That
-> +	 * drops and retakes the page lock, so we don't want new
-> +	 * fixup workers queued for this page during the churn.
-> +	 */
->  	inode = page->mapping->host;
->  	page_start = page_offset(page);
->  	page_end = page_offset(page) + PAGE_SIZE - 1;
-> @@ -2129,33 +2139,46 @@ static void btrfs_writepage_fixup_worker(struct btrfs_work *work)
->  
->  	ret = btrfs_delalloc_reserve_space(inode, &data_reserved, page_start,
->  					   PAGE_SIZE);
-> -	if (ret) {
-> -		mapping_set_error(page->mapping, ret);
-> -		end_extent_writepage(page, ret, page_start, page_end);
-> -		ClearPageChecked(page);
-> -		goto out;
-> -	 }
-> +	if (ret)
-> +		goto out_error;
->  
->  	ret = btrfs_set_extent_delalloc(inode, page_start, page_end, 0,
->  					&cached_state, 0);
-> -	if (ret) {
-> -		mapping_set_error(page->mapping, ret);
-> -		end_extent_writepage(page, ret, page_start, page_end);
-> -		ClearPageChecked(page);
-> -		goto out;
-> -	}
-> +	if (ret)
-> +		goto out_error;
->  
-> -	ClearPageChecked(page);
-> -	set_page_dirty(page);
+> I think this is getting a bit personal, no need for that. Just say that
+> btrfs doesn't handle this particular case and that's it. Though I agree
+> the reporter's attitude wasn't exactly nice...
+> 
+>>
+>> This means if one devices missed and re-appeared, even its generation
+>> no longer matches with the rest device pool, btrfs does nothing to it,
+>> but treat it as normal good device.
+>>
+>> At least let's detect such generation mismatch and avoid mounting the
+>> fs.
+>> Currently there is no automatic rebuild yet, which means if users find
+>> device generation mismatch error message, they can only mount the fs
+>> using "device" and "degraded" mount option (if possible), then replace
+>> the offending device to manually "rebuild" the fs.
+>>
+>> Signed-off-by: Qu Wenruo <wqu@suse.com>
+>> ---
+>> I totally understand that, generation based solution can't handle
+>> split-brain case (where 2 RAID1 devices get mounted degraded separately)
+>> at all, but at least let's handle what we can do.
+>>
+>> The best way to solve the problem is to make btrfs treat such lower gen
+>> devices as some kind of missing device, and queue an automatic scrub for
+>> that device.
+>> But that's a lot of extra work, at least let's start from detecting such
+>> problem first.
+>> ---
+>>  fs/btrfs/volumes.c | 50 ++++++++++++++++++++++++++++++++++++++++++++++
+>>  1 file changed, 50 insertions(+)
+>>
+>> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+>> index e034ad9e23b4..80a7c44993bc 100644
+>> --- a/fs/btrfs/volumes.c
+>> +++ b/fs/btrfs/volumes.c
+>> @@ -6467,6 +6467,49 @@ static void btrfs_report_missing_device(struct btrfs_fs_info *fs_info,
+>>  			      devid, uuid);
+>>  }
+>>  
+>> +static int verify_devices_generation(struct btrfs_fs_info *fs_info,
+>> +				     struct btrfs_device *dev)
+>> +{
+>> +	struct btrfs_fs_devices *fs_devices = dev->fs_devices;
+>> +	struct btrfs_device *cur;
+>> +	bool warn_only = false;
+>> +	int ret = 0;
+>> +
+>> +	if (!fs_devices || fs_devices->seeding || !dev->generation)
+>> +		return 0;
+>> +
+>> +	/*
+>> +	 * If we're not replaying log, we're completely safe to allow
+>> +	 * generation mismatch as it won't write anything to disks, nor
+>> +	 * remount to rw.
+>> +	 */
+>> +	if (btrfs_test_opt(fs_info, NOLOGREPLAY))
+>> +		warn_only = true;
+>> +
+>> +	rcu_read_lock();
+>> +	list_for_each_entry_rcu(cur, &fs_devices->devices, dev_list) {> +		if (cur->generation && cur->generation != dev->generation) {
+>> +			if (warn_only) {
+>> +				btrfs_warn_rl_in_rcu(fs_info,
+>> +	"devid %llu has unexpected generation, has %llu expected %llu",
+>> +						     dev->devid,
+>> +						     dev->generation,
+>> +						     cur->generation);
+>> +			} else {
+>> +				btrfs_err_rl_in_rcu(fs_info,
+>> +	"devid %llu has unexpected generation, has %llu expected %llu",
+>> +						     dev->devid,
+>> +						     dev->generation,
+>> +						     cur->generation);
+>> +				ret = -EINVAL;
+>> +				break;
+>> +			}
+>> +		}
+>> +	}
+>> +	rcu_read_unlock();
+>> +	return ret;
+>> +}
+>> +
+>>  static int read_one_chunk(struct btrfs_fs_info *fs_info, struct btrfs_key *key,
+>>  			  struct extent_buffer *leaf,
+>>  			  struct btrfs_chunk *chunk)
+>> @@ -6552,6 +6595,13 @@ static int read_one_chunk(struct btrfs_fs_info *fs_info, struct btrfs_key *key,
+>>  				return PTR_ERR(map->stripes[i].dev);
+>>  			}
+>>  			btrfs_report_missing_device(fs_info, devid, uuid, false);
+>> +		} else {
+>> +			ret = verify_devices_generation(fs_info,
+>> +							map->stripes[i].dev);
+>> +			if (ret < 0) {
+>> +				free_extent_map(em);
+>> +				return ret;
+>> +			}
+> 
+> So this will be executed when doing mount. What about one device
+> disappearing, while the filesystem is still mounted and then later
+> re-appears. This code won't be executed in this case, no ?
 
-Hm, so previously the page was dirty, unconditionally calling down to
-set_page_dirty that could call btree_set_page_dirty and
-__set_page_dirty_nobuffers. If the dirty bit is set there, it'll do
-nothing.
+This depends on how the re-appear happens.
 
-So this should be equivalent to the new code but looks strange to say at
-least.
+If just several bio fails, it shouldn't be a big problem.
+If it really re-appears, I'm not pretty sure how btrfs will handle it,
+since there will be a new device with new device id.
 
->  	btrfs_delalloc_release_extents(BTRFS_I(inode), PAGE_SIZE, false);
-> +
-> +	/*
-> +	 * everything went as planned, we're now the proud owners of a
-> +	 * Dirty page with delayed allocation bits set and space reserved
-> +	 * for our COW destination.
-> +	 *
-> +	 * The page was dirty when we started, nothing should have cleaned it.
-> +	 */
-> +	BUG_ON(!PageDirty(page));
-> +
->  out:
->  	unlock_extent_cached(&BTRFS_I(inode)->io_tree, page_start, page_end,
->  			     &cached_state);
->  out_page:
-> +	ClearPageChecked(page);
->  	unlock_page(page);
->  	put_page(page);
->  	kfree(fixup);
->  	extent_changeset_free(data_reserved);
-> +	return;
-> +
-> +out_error:
-> +	/*
-> +	 * We hit ENOSPC or other errors.  Update the mapping and page to
-> +	 * reflect the errors and clean the page.
-> +	 */
-> +	mapping_set_error(page->mapping, ret);
-> +	end_extent_writepage(page, ret, page_start, page_end);
-> +	clear_page_dirty_for_io(page);
-> +	SetPageError(page);
-> +	goto out;
->  }
->  
->  /*
-> @@ -2179,6 +2202,13 @@ static int btrfs_writepage_start_hook(struct page *page, u64 start, u64 end)
->  	if (TestClearPagePrivate2(page))
->  		return 0;
->  
-> +	/*
-> +	 * PageChecked is set below when we create a fixup worker for this page,
-> +	 * don't try to create another one if we're already PageChecked()
-> +	 *
-> +	 * The extent_io writepage code will redirty the page if we send
-> +	 * back EAGAIN.
-> +	 */
->  	if (PageChecked(page))
->  		return -EAGAIN;
->  
-> @@ -2192,7 +2222,8 @@ static int btrfs_writepage_start_hook(struct page *page, u64 start, u64 end)
->  			btrfs_writepage_fixup_worker, NULL, NULL);
->  	fixup->page = page;
->  	btrfs_queue_work(fs_info->fixup_workers, &fixup->work);
-> -	return -EBUSY;
-> +
-> +	return -EAGAIN;
+If btrfs currently just replace the block device on-the-fly, this patch
+can't handle it at all, just as you stated.
 
-So now this will redirty unconditionally in __extent_writepage_io:
+I think Anand Jain is more experienced in such situation.
 
-3338                         /* Fixup worker will requeue */
-3339                         if (ret == -EBUSY)
-3340                                 wbc->pages_skipped++;
-3341                         else
-3342                                 redirty_page_for_writepage(wbc, page);
+Thanks,
+Qu
 
-The referred patch 87826df0ec36 changed that to avoid some pointless
-redirty loops under ENOSPC and a potential crash in
-drop_outstanding_extents, but IIRC this has been reworked in the
-meanwhile so this might not apply anymore.
-
-
-In summary, I feel like there are still not enough comments around to at
-least give some directions where to lool. The reasons why the page is
-dirtied besides the normal paths is unclear and was in the past too. I
-remember that 'zap page range' can do that but was never able to follow
-the exact callchain not to say reproduce it reliably.
-
-Now you mention page migration that can in the end do the same but maybe
-not, which means the fixup worker has to deal with more weird corner
-cases.
-
-Leaving the Checked bit until the last moment can save some trouble, but
-its semantics are also quite unclear.
+>>  		}
+>>  		set_bit(BTRFS_DEV_STATE_IN_FS_METADATA,
+>>  				&(map->stripes[i].dev->dev_state));
+>>

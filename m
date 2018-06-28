@@ -1,119 +1,138 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wr0-f171.google.com ([209.85.128.171]:41303 "EHLO
-        mail-wr0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S933391AbeF1UJR (ORCPT
+Received: from out1-smtp.messagingengine.com ([66.111.4.25]:55739 "EHLO
+        out1-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S966732AbeF1WAS (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 28 Jun 2018 16:09:17 -0400
-Received: by mail-wr0-f171.google.com with SMTP id h10-v6so6680246wrq.8
-        for <linux-btrfs@vger.kernel.org>; Thu, 28 Jun 2018 13:09:16 -0700 (PDT)
-MIME-Version: 1.0
-From: Hannes Schweizer <schweizer.hannes@gmail.com>
-Date: Thu, 28 Jun 2018 22:09:04 +0200
-Message-ID: <CAOfGOYyT2F-6jtKgpgm6iX5aK-kP1Ryuz_rcTFs=s05_FeAPoQ@mail.gmail.com>
-Subject: Incremental send/receive broken after snapshot restore
+        Thu, 28 Jun 2018 18:00:18 -0400
+Received: from compute2.internal (compute2.nyi.internal [10.202.2.42])
+        by mailout.nyi.internal (Postfix) with ESMTP id D6A6721D1E
+        for <linux-btrfs@vger.kernel.org>; Thu, 28 Jun 2018 18:00:17 -0400 (EDT)
+Received: from [10.0.0.6] (cpe00248caf16e4-cmbc4dfbde0a70.cpe.net.cable.rogers.com [99.240.134.203])
+        by mail.messagingengine.com (Postfix) with ESMTPA id 10E3610269
+        for <linux-btrfs@vger.kernel.org>; Thu, 28 Jun 2018 18:00:17 -0400 (EDT)
+Subject: Re: Major design flaw with BTRFS Raid, temporary device drop will
+ corrupt nodatacow files
 To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+References: <66d30a90-a571-a110-749d-8a3fd6ccb9d5@georgianit.com>
+ <5cb96201-e856-e780-7382-dae2ca68f445@gmx.com>
+ <3cac9d11-27f4-2d1f-c980-09cfeafa6003@georgianit.com>
+ <4852d583-4bdb-bb43-76a3-d14c9ef3f66e@gmx.com>
+ <1530155643.1842027.1422969944.6697CF24@webmail.messagingengine.com>
+ <fb26f3cc-fa80-222e-e403-0eead6f5e575@gmx.com>
+ <CAA91j0VTewHifyxBisMgiOw0ufmSWM7m-Cm4=5d0DP4kppSK6w@mail.gmail.com>
+ <3ac88a8e-f12e-5477-1e44-ea1037a1d5de@gmx.com>
+From: Remi Gauvin <remi@georgianit.com>
+Message-ID: <6741f78c-0a25-ea52-9e37-0a8bb3c01140@georgianit.com>
+Date: Thu, 28 Jun 2018 18:00:15 -0400
+MIME-Version: 1.0
+In-Reply-To: <3ac88a8e-f12e-5477-1e44-ea1037a1d5de@gmx.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="R5BjNhJ8jypbSSQNfl14XbzI8fkQsh84t"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--R5BjNhJ8jypbSSQNfl14XbzI8fkQsh84t
+Content-Type: multipart/mixed; boundary="tgXDFlHKa4yfZ7vq5IKMW2mKhk6ytjPro";
+ protected-headers="v1"
+From: Remi Gauvin <remi@georgianit.com>
+To: linux-btrfs@vger.kernel.org
+Message-ID: <6741f78c-0a25-ea52-9e37-0a8bb3c01140@georgianit.com>
+Subject: Re: Major design flaw with BTRFS Raid, temporary device drop will
+ corrupt nodatacow files
+References: <66d30a90-a571-a110-749d-8a3fd6ccb9d5@georgianit.com>
+ <5cb96201-e856-e780-7382-dae2ca68f445@gmx.com>
+ <3cac9d11-27f4-2d1f-c980-09cfeafa6003@georgianit.com>
+ <4852d583-4bdb-bb43-76a3-d14c9ef3f66e@gmx.com>
+ <1530155643.1842027.1422969944.6697CF24@webmail.messagingengine.com>
+ <fb26f3cc-fa80-222e-e403-0eead6f5e575@gmx.com>
+ <CAA91j0VTewHifyxBisMgiOw0ufmSWM7m-Cm4=5d0DP4kppSK6w@mail.gmail.com>
+ <3ac88a8e-f12e-5477-1e44-ea1037a1d5de@gmx.com>
+In-Reply-To: <3ac88a8e-f12e-5477-1e44-ea1037a1d5de@gmx.com>
 
-Here's my environment:
-Linux diablo 4.17.0-gentoo #5 SMP Mon Jun 25 00:26:55 CEST 2018 x86_64
-Intel(R) Core(TM) i5 CPU 760 @ 2.80GHz GenuineIntel GNU/Linux
-btrfs-progs v4.17
+--tgXDFlHKa4yfZ7vq5IKMW2mKhk6ytjPro
+Content-Type: multipart/mixed;
+ boundary="------------80ED944B3AFE99089E2F9507"
+Content-Language: en-US
 
-Label: 'online'  uuid: e4dc6617-b7ed-4dfb-84a6-26e3952c8390
-        Total devices 2 FS bytes used 3.16TiB
-        devid    1 size 1.82TiB used 1.58TiB path /dev/mapper/online0
-        devid    2 size 1.82TiB used 1.58TiB path /dev/mapper/online1
-Data, RAID0: total=3.16TiB, used=3.15TiB
-System, RAID0: total=16.00MiB, used=240.00KiB
-Metadata, RAID0: total=7.00GiB, used=4.91GiB
-GlobalReserve, single: total=512.00MiB, used=0.00B
-
-Label: 'offline'  uuid: 5b449116-93e5-473e-aaf5-bf3097b14f29
-        Total devices 2 FS bytes used 3.52TiB
-        devid    1 size 5.46TiB used 3.53TiB path /dev/mapper/offline0
-        devid    2 size 5.46TiB used 3.53TiB path /dev/mapper/offline1
-Data, RAID1: total=3.52TiB, used=3.52TiB
-System, RAID1: total=8.00MiB, used=512.00KiB
-Metadata, RAID1: total=6.00GiB, used=5.11GiB
-GlobalReserve, single: total=512.00MiB, used=0.00B
-
-Label: 'external'  uuid: 8bf13621-01f0-4f09-95c7-2c157d3087d0
-        Total devices 1 FS bytes used 3.65TiB
-        devid    1 size 5.46TiB used 3.66TiB path
-/dev/mapper/luks-3c196e96-d46c-4a9c-9583-b79c707678fc
-Data, single: total=3.64TiB, used=3.64TiB
-System, DUP: total=32.00MiB, used=448.00KiB
-Metadata, DUP: total=11.00GiB, used=9.72GiB
-GlobalReserve, single: total=512.00MiB, used=0.00B
+This is a multi-part message in MIME format.
+--------------80ED944B3AFE99089E2F9507
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
 
 
-The following automatic backup scheme is in place:
-hourly:
-btrfs sub snap -r online/root online/root.<date>
+> Acceptable, but not really apply to software based RAID1.
+>=20
 
-daily:
-btrfs sub snap -r online/root online/root.<new_offline_reference>
-btrfs send -c online/root.<old_offline_reference>
-online/root.<new_offline_reference> | btrfs receive offline
-btrfs sub del -c online/root.<old_offline_reference>
+Which completely disregards the minor detail that all the software
+Raid's I know of can handle exactly this kind of situation without
+loosing or corrupting a single byte of data, (Errors on the remaining
+hard drive notwithstanding.)
 
-monthly:
-btrfs sub snap -r online/root online/root.<new_external_reference>
-btrfs send -c online/root.<old_external_reference>
-online/root.<new_external_reference> | btrfs receive external
-btrfs sub del -c online/root.<old_external_reference>
+Exactly what methods they employ to do so I'm not an expert at,, but it
+*does* work, contrary to your repeated assertions otherwise.
 
-Now here are the commands leading up to my problem:
-After the online filesystem suddenly went ro, and btrfs check showed
-massive problems, I decided to start the online array from scratch:
-1: mkfs.btrfs -f -d raid0 -m raid0 -L "online" /dev/mapper/online0
-/dev/mapper/online1
+In any case, thank you the for the patch you wrote.  I will, however,
+propose a different solution.
 
-As you can see from the backup commands above, the snapshots of
-offline and external are not related, so in order to at least keep the
-extensive backlog of the external snapshot set (including all
-reflinks), I decided to restore the latest snapshot from external.
-2: btrfs send external/root.<external_reference> | btrfs receive online
+Given the reliance of BTRFS on csum, and the lack of any
+resynchronization, (no matter how the drives got out of sync, doesn't
+matter.).  I think NoDataCow should just be ignored in the case of RAID,
+just like the data blocks would get copied if there was a snapshot.
 
-I wanted to ensure I can restart the incremental backup flow from
-online to external, so I did this
-3: mv online/root.<external_reference> online/root
-4: btrfs sub snap -r online/root online/root.<external_reference>
-5: btrfs property set online/root ro false
+In the current implementation of RAID on btrfs, RAID and nodatacow are
+effectively mutually exclusive.  Consider the kinds of use cases
+nodatacow is usually recommended for,  VM images and databases.   Even
+though those files should have their own mechanisms for dealing with
+incomplete writes, and data verification, BTRFS RAID creates a unique
+situation where parts of the file can be inconsistent, with different
+data being read depending on which device is doing the reading.
 
-Now, I naively expected a simple restart of my automatic backups for
-external should work.
-However after running
-6: btrfs sub snap -r online/root online/root.<new_external_reference>
-7: btrfs send -c online/root.<old_external_reference>
-online/root.<new_external_reference> | btrfs receive external
-I see the following error:
-ERROR: unlink root/.ssh/agent-diablo-_dev_pts_3 failed. No such file
-or directory
+Regardless of which method, short term and long term, developers choose
+to address this, this next part I have stress I consider very important.
 
-Which is unfortunate, but the second problem actually encouraged me to
-post this message.
-As planned, I had to start the offline array from scratch as well,
-because I no longer had any reference snapshot for incremental backups
-on other devices:
-8: mkfs.btrfs -f -d raid1 -m raid1 -L "offline" /dev/mapper/offline0
-/dev/mapper/offline1
+The status page really needs to be updated to reflect this gotchya.  It
+*will* bite people in ways they do not expect, and disastrously.
 
-However restarting the automatic daily backup flow bails out with a
-similar error, although no potentially problematic previous
-incremental snapshots should be involved here!
-ERROR: unlink o925031-987-0/2139527549 failed. No such file or directory
 
-I'm a bit lost now. The only thing I could image which might be
-confusing for btrfs,
-is the residual "Received UUID" of online/root.<external_reference>
-after command 2.
-What's the recommended way to restore snapshots with send/receive
-without breaking subsequent incremental backups (including reflinks of
-existing backups)?
+--------------80ED944B3AFE99089E2F9507
+Content-Type: text/x-vcard; charset=utf-8;
+ name="remi.vcf"
+Content-Transfer-Encoding: quoted-printable
+Content-Disposition: attachment;
+ filename="remi.vcf"
 
-Any hints appreciated...
+begin:vcard
+fn:Remi Gauvin
+n:Gauvin;Remi
+org:Georgian Infotech
+adr:;;3-51 Sykes St. N.;Meaford;ON;N4L 1X3;Canada
+email;internet:remi@georgianit.com
+tel;work:226-256-1545
+version:2.1
+end:vcard
+
+
+--------------80ED944B3AFE99089E2F9507--
+
+--tgXDFlHKa4yfZ7vq5IKMW2mKhk6ytjPro--
+
+--R5BjNhJ8jypbSSQNfl14XbzI8fkQsh84t
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iQEcBAEBCAAGBQJbNVpwAAoJEO9Tn/JHRWptXUAIAIwGDNRZXGKMbdmC8mx/8EPY
+PpMjyVdAIEgq3++86c7pBnPfRQ6oiJDVnjkQtdL9Nt3fIoMW8ifbzJnd90G0SeEq
+x0CH3tU8jX+urUyIWkXvr3KWazCUDYYuoI/WDY/EjRvJpgJQcYS9gTPMnroRcb+o
+eaajbNR5Vw3f+bf3FuMqfuEwwUaQywo+ik/mO07QX/lDZ5yb5eYLPBg4CLqg1I7b
+jijGhfdmQmtRVm7Lw8JT/qjbcvUWs7uMTwt0DrfLxur+WlvlNKNQIe7LcXEhp35u
+hvfb1i9d2oSmNDDpbxGmjhqdL6xZ48o0CuWeXrk+cBa1zKL47JFWQ0ceauO9/PM=
+=uIiT
+-----END PGP SIGNATURE-----
+
+--R5BjNhJ8jypbSSQNfl14XbzI8fkQsh84t--

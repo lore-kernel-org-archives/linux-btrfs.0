@@ -1,229 +1,224 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from einhorn-mail.in-berlin.de ([217.197.80.20]:40074 "EHLO
-        einhorn-mail.in-berlin.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S936809AbeF2WLb (ORCPT
+Received: from mail-ot0-f193.google.com ([74.125.82.193]:41904 "EHLO
+        mail-ot0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S934025AbeF2Xj3 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 29 Jun 2018 18:11:31 -0400
-Subject: Re: btrfs suddenly think's it's raid6
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
-References: <80f0c6f7-ede1-e522-551c-ec2446bb79ea@hamburg.ccc.de>
- <4f7902e3-d176-5395-55f1-72bdffab7d47@gmx.com>
-From: marble <marble@hamburg.ccc.de>
-Message-ID: <f120f53c-5bb5-5ba9-fd72-a5cedf3baca1@hamburg.ccc.de>
-Date: Sat, 30 Jun 2018 00:11:30 +0200
+        Fri, 29 Jun 2018 19:39:29 -0400
+Received: by mail-ot0-f193.google.com with SMTP id d19-v6so11653036oti.8
+        for <linux-btrfs@vger.kernel.org>; Fri, 29 Jun 2018 16:39:28 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <4f7902e3-d176-5395-55f1-72bdffab7d47@gmx.com>
-Content-Type: multipart/mixed;
- boundary="------------580B9284D74B9184FE9F38D4"
+In-Reply-To: <028df9e3bc13286d08fade17fe90b179@livingrock.ca>
+References: <028df9e3bc13286d08fade17fe90b179@livingrock.ca>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Fri, 29 Jun 2018 17:39:27 -0600
+Message-ID: <CAJCQCtRmr21vUkcFhT52eTokei8eSBpapzxzd47xWAFY40-U1Q@mail.gmail.com>
+Subject: Re: Removed Disk - Super Error - Scrub did not fix - next steps?
+To: j@livingrock.ca
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a multi-part message in MIME format.
---------------580B9284D74B9184FE9F38D4
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: 7bit
+On Fri, Jun 29, 2018 at 11:55 AM,  <j@livingrock.ca> wrote:
+> Hello,
+>
+> I recently was mounting some drives in the free drive bays of my server and
+> accidentally removed one of my drives from my raid1 btrfs array.  I
+> immediately put it back in - but whatever damage that would have caused
+> seems to be already done.
+>
+> I got these log errors [dmesg -T] and after reading up it seemed that all I
+> *probably* needed to do was a scrub:
+>
+> Finally - the original logs I found by running "dmesg -T|grep -i btrfs" -
+> from where the log started to where the scrub begain:
+>
+> [Tue Jun 26 18:30:08 2018] BTRFS error (device sdb): bdev /dev/sdh errs: wr
+> 40547, rd 42808, flush 2, corrupt 0, gen 0
+>
+> [Tue Jun 26 18:33:19 2018] btrfs_dev_stat_print_on_error: 2056 callbacks
+> suppressed
+>
+> A bunch of these errors...
+>
+> Then later:
+>
+> [Tue Jun 26 19:19:52 2018] BTRFS warning (device sdb): lost page write due
+> to IO error on /dev/sdh
+>
+> I think this is where I unmounted/remounted /mnt/titan:
+>
+> [Tue Jun 26 19:49:18 2018] BTRFS info (device sdb): disk space caching is
+> enabled
+> [Tue Jun 26 19:49:18 2018] BTRFS info (device sdb): has skinny extents
+> [Tue Jun 26 19:49:18 2018] BTRFS info (device sdb): bdev /dev/sdh errs: wr
+> 55907, rd 59133, flush 2, corrupt 0, gen 0
+> [Tue Jun 26 19:49:57 2018] btrfs_dev_stat_print_on_error: 49 callbacks
+> suppressed
+> [Tue Jun 26 19:49:57 2018] BTRFS error (device sdb): bdev /dev/sdh errs: wr
+> 55907, rd 59133, flush 2, corrupt 0, gen 1
+> [Tue Jun 26 19:49:57 2018] BTRFS error (device sdb): bdev /dev/sdh errs: wr
+> 55907, rd 59133, flush 2, corrupt 0, gen 2
+> [Tue Jun 26 19:49:57 2018] BTRFS error (device sdb): bdev /dev/sdh errs: wr
+> 55907, rd 59133, flush 2, corrupt 0, gen 3
+> [Tue Jun 26 19:50:09 2018] BTRFS error (device sdb): parent transid verify
+> failed on 9081264963584 wanted 8663 found 8321
+> [Tue Jun 26 19:50:09 2018] BTRFS info (device sdb): read error corrected:
+> ino 0 off 9081264963584 (dev /dev/sdh sector 17728418112)
+> [Tue Jun 26 19:50:09 2018] BTRFS info (device sdb): read error corrected:
+> ino 0 off 9081264967680 (dev /dev/sdh sector 17728418120)
+> [Tue Jun 26 19:50:09 2018] BTRFS info (device sdb): read error corrected:
+> ino 0 off 9081264971776 (dev /dev/sdh sector 17728418128)
+> [Tue Jun 26 19:50:09 2018] BTRFS info (device sdb): read error corrected:
+> ino 0 off 9081264975872 (dev /dev/sdh sector 17728418136)
+> [Tue Jun 26 19:50:09 2018] BTRFS error (device sdb): parent transid verify
+> failed on 9081265356800 wanted 8663 found 8321
+> [Tue Jun 26 19:50:09 2018] BTRFS info (device sdb): read error corrected:
+> ino 0 off 9081265356800 (dev /dev/sdh sector 17728418880)
+> [Tue Jun 26 19:50:09 2018] BTRFS info (device sdb): read error corrected:
+> ino 0 off 9081265360896 (dev /dev/sdh sector 17728418888)
+> [Tue Jun 26 19:50:09 2018] BTRFS info (device sdb): read error corrected:
+> ino 0 off 9081265364992 (dev /dev/sdh sector 17728418896)
+> [Tue Jun 26 19:50:09 2018] BTRFS info (device sdb): read error corrected:
+> ino 0 off 9081265369088 (dev /dev/sdh sector 17728418904)
 
-Hey,
-Thanks for the quick reply :-)
 
-> Is there anything like unexpected power loss happens?
-Power loss may have happened.
-> And would you provide the following data for debugging?
-> 
-> # btrfs ins dump-super -fFa /dev/mapper/black
-I attached it.
-> And further more, what's the device mapper setup for /dev/mapper/black?
-> Is there anything like RAID here?
-I think this is the result of luks. "black" is the name I passed to
-cryptsetup open.
-> Thanks,
-> Qu
-Cheers,
-marble
 
---------------580B9284D74B9184FE9F38D4
-Content-Type: text/plain; charset=UTF-8;
- name="dump-super.stdout"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment;
- filename="dump-super.stdout"
+These are passive fixups that succeed.
 
-c3VwZXJibG9jazogYnl0ZW5yPTY1NTM2LCBkZXZpY2U9L2Rldi9tYXBwZXIvYmxhY2sKLS0t
-LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t
-CmNzdW1fdHlwZQkJMCAoY3JjMzJjKQpjc3VtX3NpemUJCTQKY3N1bQkJCTB4OTgxNDc0NGMg
-W21hdGNoXQpieXRlbnIJCQk2NTUzNgpmbGFncwkJCTB4MQoJCQkoIFdSSVRURU4gKQptYWdp
-YwkJCV9CSFJmU19NIFttYXRjaF0KZnNpZAkJCTlmZWE5MWM3LTdiMGItNGVmOS1hODNiLWUy
-NGNjZjI1ODZiNQpsYWJlbAkJCWJsYWNrCmdlbmVyYXRpb24JCTM1Mgpyb290CQkJMzA3MzYz
-ODQKc3lzX2FycmF5X3NpemUJCTEyOQpjaHVua19yb290X2dlbmVyYXRpb24JMTQ1CnJvb3Rf
-bGV2ZWwJCTEKY2h1bmtfcm9vdAkJMjIwMjAwOTYKY2h1bmtfcm9vdF9sZXZlbAkxCmxvZ19y
-b290CQkwCmxvZ19yb290X3RyYW5zaWQJMApsb2dfcm9vdF9sZXZlbAkJMAp0b3RhbF9ieXRl
-cwkJNTAwMTA1NzY0ODY0CmJ5dGVzX3VzZWQJCTE1Mzk1NDY5MzEyMApzZWN0b3JzaXplCQk0
-MDk2Cm5vZGVzaXplCQkxNjM4NApsZWFmc2l6ZSAoZGVwcmVjYXRlZCkJCTE2Mzg0CnN0cmlw
-ZXNpemUJCTQwOTYKcm9vdF9kaXIJCTYKbnVtX2RldmljZXMJCTEKY29tcGF0X2ZsYWdzCQkw
-eDAKY29tcGF0X3JvX2ZsYWdzCQkweDAKaW5jb21wYXRfZmxhZ3MJCTB4MTYxCgkJCSggTUlY
-RURfQkFDS1JFRiB8CgkJCSAgQklHX01FVEFEQVRBIHwKCQkJICBFWFRFTkRFRF9JUkVGIHwK
-CQkJICBTS0lOTllfTUVUQURBVEEgKQpjYWNoZV9nZW5lcmF0aW9uCTE4Nwp1dWlkX3RyZWVf
-Z2VuZXJhdGlvbgkxODcKZGV2X2l0ZW0udXVpZAkJY2JmMmEyY2UtOTQ4Ny00YzJkLTk4ZTkt
-NWNjNjlhZTU5YjI2CmRldl9pdGVtLmZzaWQJCTlmZWE5MWM3LTdiMGItNGVmOS1hODNiLWUy
-NGNjZjI1ODZiNSBbbWF0Y2hdCmRldl9pdGVtLnR5cGUJCTAKZGV2X2l0ZW0udG90YWxfYnl0
-ZXMJNTAwMTA1NzY0ODY0CmRldl9pdGVtLmJ5dGVzX3VzZWQJMTg0NzA4NzU5NTUyCmRldl9p
-dGVtLmlvX2FsaWduCTQwOTYKZGV2X2l0ZW0uaW9fd2lkdGgJNDA5NgpkZXZfaXRlbS5zZWN0
-b3Jfc2l6ZQk0MDk2CmRldl9pdGVtLmRldmlkCQkxCmRldl9pdGVtLmRldl9ncm91cAkwCmRl
-dl9pdGVtLnNlZWtfc3BlZWQJMApkZXZfaXRlbS5iYW5kd2lkdGgJMApkZXZfaXRlbS5nZW5l
-cmF0aW9uCTAKc3lzX2NodW5rX2FycmF5WzIwNDhdOgoJaXRlbSAwIGtleSAoRklSU1RfQ0hV
-TktfVFJFRSBDSFVOS19JVEVNIDIyMDIwMDk2KQoJCWxlbmd0aCA4Mzg4NjA4IG93bmVyIDIg
-c3RyaXBlX2xlbiA2NTUzNiB0eXBlIFNZU1RFTXxEVVAKCQlpb19hbGlnbiA2NTUzNiBpb193
-aWR0aCA2NTUzNiBzZWN0b3Jfc2l6ZSA0MDk2CgkJbnVtX3N0cmlwZXMgMiBzdWJfc3RyaXBl
-cyAwCgkJCXN0cmlwZSAwIGRldmlkIDEgb2Zmc2V0IDIyMDIwMDk2CgkJCWRldl91dWlkIGNi
-ZjJhMmNlLTk0ODctNGMyZC05OGU5LTVjYzY5YWU1OWIyNgoJCQlzdHJpcGUgMSBkZXZpZCAx
-IG9mZnNldCAzMDQwODcwNAoJCQlkZXZfdXVpZCBjYmYyYTJjZS05NDg3LTRjMmQtOThlOS01
-Y2M2OWFlNTliMjYKYmFja3VwX3Jvb3RzWzRdOgoJYmFja3VwIDA6CgkJYmFja3VwX3RyZWVf
-cm9vdDoJMTA4NDc1MTg3MglnZW46IDE4NwlsZXZlbDogMQoJCWJhY2t1cF9jaHVua19yb290
-OgkyMjAyMDA5NglnZW46IDE0NQlsZXZlbDogMQoJCWJhY2t1cF9leHRlbnRfcm9vdDoJMTA4
-NDcwMjcyMAlnZW46IDE4NwlsZXZlbDogMgoJCWJhY2t1cF9mc19yb290OgkJMTA4NDY1MzU2
-OAlnZW46IDE4NwlsZXZlbDogMgoJCWJhY2t1cF9kZXZfcm9vdDoJMTA4MTY1NTI5NglnZW46
-IDE3OAlsZXZlbDogMAoJCWJhY2t1cF9jc3VtX3Jvb3Q6CTEwODQ4MTc0MDgJZ2VuOiAxODcJ
-bGV2ZWw6IDIKCQliYWNrdXBfdG90YWxfYnl0ZXM6CTUwMDEwNTc2NDg2NAoJCWJhY2t1cF9i
-eXRlc191c2VkOgkxNTM5NTcyOTgxNzYKCQliYWNrdXBfbnVtX2RldmljZXM6CTEKCgliYWNr
-dXAgMToKCQliYWNrdXBfdHJlZV9yb290OgkxMDgzODAxNjAwCWdlbjogMTg0CWxldmVsOiAx
-CgkJYmFja3VwX2NodW5rX3Jvb3Q6CTIyMDIwMDk2CWdlbjogMTQ1CWxldmVsOiAxCgkJYmFj
-a3VwX2V4dGVudF9yb290OgkxMDgzNzUyNDQ4CWdlbjogMTg0CWxldmVsOiAyCgkJYmFja3Vw
-X2ZzX3Jvb3Q6CQkxMDgzNjA0OTkyCWdlbjogMTg0CWxldmVsOiAyCgkJYmFja3VwX2Rldl9y
-b290OgkxMDgxNjU1Mjk2CWdlbjogMTc4CWxldmVsOiAwCgkJYmFja3VwX2NzdW1fcm9vdDoJ
-MTA4Mzg2NzEzNglnZW46IDE4NAlsZXZlbDogMgoJCWJhY2t1cF90b3RhbF9ieXRlczoJNTAw
-MTA1NzY0ODY0CgkJYmFja3VwX2J5dGVzX3VzZWQ6CTE1Mzk1NzI5ODE3NgoJCWJhY2t1cF9u
-dW1fZGV2aWNlczoJMQoKCWJhY2t1cCAyOgoJCWJhY2t1cF90cmVlX3Jvb3Q6CTEwODQxNDU2
-NjQJZ2VuOiAxODUJbGV2ZWw6IDEKCQliYWNrdXBfY2h1bmtfcm9vdDoJMjIwMjAwOTYJZ2Vu
-OiAxNDUJbGV2ZWw6IDEKCQliYWNrdXBfZXh0ZW50X3Jvb3Q6CTEwODQwODAxMjgJZ2VuOiAx
-ODUJbGV2ZWw6IDIKCQliYWNrdXBfZnNfcm9vdDoJCTEwODM5ODE4MjQJZ2VuOiAxODUJbGV2
-ZWw6IDIKCQliYWNrdXBfZGV2X3Jvb3Q6CTEwODE2NTUyOTYJZ2VuOiAxNzgJbGV2ZWw6IDAK
-CQliYWNrdXBfY3N1bV9yb290OgkxMDg0MjExMjAwCWdlbjogMTg1CWxldmVsOiAyCgkJYmFj
-a3VwX3RvdGFsX2J5dGVzOgk1MDAxMDU3NjQ4NjQKCQliYWNrdXBfYnl0ZXNfdXNlZDoJMTUz
-OTU3Mjk4MTc2CgkJYmFja3VwX251bV9kZXZpY2VzOgkxCgoJYmFja3VwIDM6CgkJYmFja3Vw
-X3RyZWVfcm9vdDoJMTA4NDQ3MzM0NAlnZW46IDE4NglsZXZlbDogMQoJCWJhY2t1cF9jaHVu
-a19yb290OgkyMjAyMDA5NglnZW46IDE0NQlsZXZlbDogMQoJCWJhY2t1cF9leHRlbnRfcm9v
-dDoJMTA4NDQyNDE5MglnZW46IDE4NglsZXZlbDogMgoJCWJhY2t1cF9mc19yb290OgkJMTA4
-NDMyNTg4OAlnZW46IDE4NglsZXZlbDogMgoJCWJhY2t1cF9kZXZfcm9vdDoJMTA4MTY1NTI5
-NglnZW46IDE3OAlsZXZlbDogMAoJCWJhY2t1cF9jc3VtX3Jvb3Q6CTEwODQ1Mzg4ODAJZ2Vu
-OiAxODYJbGV2ZWw6IDIKCQliYWNrdXBfdG90YWxfYnl0ZXM6CTUwMDEwNTc2NDg2NAoJCWJh
-Y2t1cF9ieXRlc191c2VkOgkxNTM5NTcyOTgxNzYKCQliYWNrdXBfbnVtX2RldmljZXM6CTEK
-CgpzdXBlcmJsb2NrOiBieXRlbnI9NjcxMDg4NjQsIGRldmljZT0vZGV2L21hcHBlci9ibGFj
-awotLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t
-LS0tLS0KY3N1bV90eXBlCQkwIChjcmMzMmMpCmNzdW1fc2l6ZQkJNApjc3VtCQkJMHgzODc1
-NWM4MiBbbWF0Y2hdCmJ5dGVucgkJCTY3MTA4ODY0CmZsYWdzCQkJMHgxCgkJCSggV1JJVFRF
-TiApCm1hZ2ljCQkJX0JIUmZTX00gW21hdGNoXQpmc2lkCQkJOWZlYTkxYzctN2IwYi00ZWY5
-LWE4M2ItZTI0Y2NmMjU4NmI1CmxhYmVsCQkJYmxhY2sKZ2VuZXJhdGlvbgkJMzUyCnJvb3QJ
-CQkzMDczNjM4NApzeXNfYXJyYXlfc2l6ZQkJMTI5CmNodW5rX3Jvb3RfZ2VuZXJhdGlvbgkx
-NDUKcm9vdF9sZXZlbAkJMQpjaHVua19yb290CQkyMjAyMDA5NgpjaHVua19yb290X2xldmVs
-CTEKbG9nX3Jvb3QJCTAKbG9nX3Jvb3RfdHJhbnNpZAkwCmxvZ19yb290X2xldmVsCQkwCnRv
-dGFsX2J5dGVzCQk1MDAxMDU3NjQ4NjQKYnl0ZXNfdXNlZAkJMTUzOTU0NjkzMTIwCnNlY3Rv
-cnNpemUJCTQwOTYKbm9kZXNpemUJCTE2Mzg0CmxlYWZzaXplIChkZXByZWNhdGVkKQkJMTYz
-ODQKc3RyaXBlc2l6ZQkJNDA5Ngpyb290X2RpcgkJNgpudW1fZGV2aWNlcwkJMQpjb21wYXRf
-ZmxhZ3MJCTB4MApjb21wYXRfcm9fZmxhZ3MJCTB4MAppbmNvbXBhdF9mbGFncwkJMHgxNjEK
-CQkJKCBNSVhFRF9CQUNLUkVGIHwKCQkJICBCSUdfTUVUQURBVEEgfAoJCQkgIEVYVEVOREVE
-X0lSRUYgfAoJCQkgIFNLSU5OWV9NRVRBREFUQSApCmNhY2hlX2dlbmVyYXRpb24JMTg3CnV1
-aWRfdHJlZV9nZW5lcmF0aW9uCTE4NwpkZXZfaXRlbS51dWlkCQljYmYyYTJjZS05NDg3LTRj
-MmQtOThlOS01Y2M2OWFlNTliMjYKZGV2X2l0ZW0uZnNpZAkJOWZlYTkxYzctN2IwYi00ZWY5
-LWE4M2ItZTI0Y2NmMjU4NmI1IFttYXRjaF0KZGV2X2l0ZW0udHlwZQkJMApkZXZfaXRlbS50
-b3RhbF9ieXRlcwk1MDAxMDU3NjQ4NjQKZGV2X2l0ZW0uYnl0ZXNfdXNlZAkxODQ3MDg3NTk1
-NTIKZGV2X2l0ZW0uaW9fYWxpZ24JNDA5NgpkZXZfaXRlbS5pb193aWR0aAk0MDk2CmRldl9p
-dGVtLnNlY3Rvcl9zaXplCTQwOTYKZGV2X2l0ZW0uZGV2aWQJCTEKZGV2X2l0ZW0uZGV2X2dy
-b3VwCTAKZGV2X2l0ZW0uc2Vla19zcGVlZAkwCmRldl9pdGVtLmJhbmR3aWR0aAkwCmRldl9p
-dGVtLmdlbmVyYXRpb24JMApzeXNfY2h1bmtfYXJyYXlbMjA0OF06CglpdGVtIDAga2V5IChG
-SVJTVF9DSFVOS19UUkVFIENIVU5LX0lURU0gMjIwMjAwOTYpCgkJbGVuZ3RoIDgzODg2MDgg
-b3duZXIgMiBzdHJpcGVfbGVuIDY1NTM2IHR5cGUgU1lTVEVNfERVUAoJCWlvX2FsaWduIDY1
-NTM2IGlvX3dpZHRoIDY1NTM2IHNlY3Rvcl9zaXplIDQwOTYKCQludW1fc3RyaXBlcyAyIHN1
-Yl9zdHJpcGVzIDAKCQkJc3RyaXBlIDAgZGV2aWQgMSBvZmZzZXQgMjIwMjAwOTYKCQkJZGV2
-X3V1aWQgY2JmMmEyY2UtOTQ4Ny00YzJkLTk4ZTktNWNjNjlhZTU5YjI2CgkJCXN0cmlwZSAx
-IGRldmlkIDEgb2Zmc2V0IDMwNDA4NzA0CgkJCWRldl91dWlkIGNiZjJhMmNlLTk0ODctNGMy
-ZC05OGU5LTVjYzY5YWU1OWIyNgpiYWNrdXBfcm9vdHNbNF06CgliYWNrdXAgMDoKCQliYWNr
-dXBfdHJlZV9yb290OgkxMDg0NzUxODcyCWdlbjogMTg3CWxldmVsOiAxCgkJYmFja3VwX2No
-dW5rX3Jvb3Q6CTIyMDIwMDk2CWdlbjogMTQ1CWxldmVsOiAxCgkJYmFja3VwX2V4dGVudF9y
-b290OgkxMDg0NzAyNzIwCWdlbjogMTg3CWxldmVsOiAyCgkJYmFja3VwX2ZzX3Jvb3Q6CQkx
-MDg0NjUzNTY4CWdlbjogMTg3CWxldmVsOiAyCgkJYmFja3VwX2Rldl9yb290OgkxMDgxNjU1
-Mjk2CWdlbjogMTc4CWxldmVsOiAwCgkJYmFja3VwX2NzdW1fcm9vdDoJMTA4NDgxNzQwOAln
-ZW46IDE4NwlsZXZlbDogMgoJCWJhY2t1cF90b3RhbF9ieXRlczoJNTAwMTA1NzY0ODY0CgkJ
-YmFja3VwX2J5dGVzX3VzZWQ6CTE1Mzk1NzI5ODE3NgoJCWJhY2t1cF9udW1fZGV2aWNlczoJ
-MQoKCWJhY2t1cCAxOgoJCWJhY2t1cF90cmVlX3Jvb3Q6CTEwODM4MDE2MDAJZ2VuOiAxODQJ
-bGV2ZWw6IDEKCQliYWNrdXBfY2h1bmtfcm9vdDoJMjIwMjAwOTYJZ2VuOiAxNDUJbGV2ZWw6
-IDEKCQliYWNrdXBfZXh0ZW50X3Jvb3Q6CTEwODM3NTI0NDgJZ2VuOiAxODQJbGV2ZWw6IDIK
-CQliYWNrdXBfZnNfcm9vdDoJCTEwODM2MDQ5OTIJZ2VuOiAxODQJbGV2ZWw6IDIKCQliYWNr
-dXBfZGV2X3Jvb3Q6CTEwODE2NTUyOTYJZ2VuOiAxNzgJbGV2ZWw6IDAKCQliYWNrdXBfY3N1
-bV9yb290OgkxMDgzODY3MTM2CWdlbjogMTg0CWxldmVsOiAyCgkJYmFja3VwX3RvdGFsX2J5
-dGVzOgk1MDAxMDU3NjQ4NjQKCQliYWNrdXBfYnl0ZXNfdXNlZDoJMTUzOTU3Mjk4MTc2CgkJ
-YmFja3VwX251bV9kZXZpY2VzOgkxCgoJYmFja3VwIDI6CgkJYmFja3VwX3RyZWVfcm9vdDoJ
-MTA4NDE0NTY2NAlnZW46IDE4NQlsZXZlbDogMQoJCWJhY2t1cF9jaHVua19yb290OgkyMjAy
-MDA5NglnZW46IDE0NQlsZXZlbDogMQoJCWJhY2t1cF9leHRlbnRfcm9vdDoJMTA4NDA4MDEy
-OAlnZW46IDE4NQlsZXZlbDogMgoJCWJhY2t1cF9mc19yb290OgkJMTA4Mzk4MTgyNAlnZW46
-IDE4NQlsZXZlbDogMgoJCWJhY2t1cF9kZXZfcm9vdDoJMTA4MTY1NTI5NglnZW46IDE3OAls
-ZXZlbDogMAoJCWJhY2t1cF9jc3VtX3Jvb3Q6CTEwODQyMTEyMDAJZ2VuOiAxODUJbGV2ZWw6
-IDIKCQliYWNrdXBfdG90YWxfYnl0ZXM6CTUwMDEwNTc2NDg2NAoJCWJhY2t1cF9ieXRlc191
-c2VkOgkxNTM5NTcyOTgxNzYKCQliYWNrdXBfbnVtX2RldmljZXM6CTEKCgliYWNrdXAgMzoK
-CQliYWNrdXBfdHJlZV9yb290OgkxMDg0NDczMzQ0CWdlbjogMTg2CWxldmVsOiAxCgkJYmFj
-a3VwX2NodW5rX3Jvb3Q6CTIyMDIwMDk2CWdlbjogMTQ1CWxldmVsOiAxCgkJYmFja3VwX2V4
-dGVudF9yb290OgkxMDg0NDI0MTkyCWdlbjogMTg2CWxldmVsOiAyCgkJYmFja3VwX2ZzX3Jv
-b3Q6CQkxMDg0MzI1ODg4CWdlbjogMTg2CWxldmVsOiAyCgkJYmFja3VwX2Rldl9yb290Ogkx
-MDgxNjU1Mjk2CWdlbjogMTc4CWxldmVsOiAwCgkJYmFja3VwX2NzdW1fcm9vdDoJMTA4NDUz
-ODg4MAlnZW46IDE4NglsZXZlbDogMgoJCWJhY2t1cF90b3RhbF9ieXRlczoJNTAwMTA1NzY0
-ODY0CgkJYmFja3VwX2J5dGVzX3VzZWQ6CTE1Mzk1NzI5ODE3NgoJCWJhY2t1cF9udW1fZGV2
-aWNlczoJMQoKCnN1cGVyYmxvY2s6IGJ5dGVucj0yNzQ4Nzc5MDY5NDQsIGRldmljZT0vZGV2
-L21hcHBlci9ibGFjawotLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t
-LS0tLS0tLS0tLS0tLS0tLS0KY3N1bV90eXBlCQkwIChjcmMzMmMpCmNzdW1fc2l6ZQkJNApj
-c3VtCQkJMHhjNWYyMGFiMyBbbWF0Y2hdCmJ5dGVucgkJCTI3NDg3NzkwNjk0NApmbGFncwkJ
-CTB4MQoJCQkoIFdSSVRURU4gKQptYWdpYwkJCV9CSFJmU19NIFttYXRjaF0KZnNpZAkJCTlm
-ZWE5MWM3LTdiMGItNGVmOS1hODNiLWUyNGNjZjI1ODZiNQpsYWJlbAkJCWJsYWNrCmdlbmVy
-YXRpb24JCTM1Mgpyb290CQkJMzA3MzYzODQKc3lzX2FycmF5X3NpemUJCTEyOQpjaHVua19y
-b290X2dlbmVyYXRpb24JMTQ1CnJvb3RfbGV2ZWwJCTEKY2h1bmtfcm9vdAkJMjIwMjAwOTYK
-Y2h1bmtfcm9vdF9sZXZlbAkxCmxvZ19yb290CQkwCmxvZ19yb290X3RyYW5zaWQJMApsb2df
-cm9vdF9sZXZlbAkJMAp0b3RhbF9ieXRlcwkJNTAwMTA1NzY0ODY0CmJ5dGVzX3VzZWQJCTE1
-Mzk1NDY5MzEyMApzZWN0b3JzaXplCQk0MDk2Cm5vZGVzaXplCQkxNjM4NApsZWFmc2l6ZSAo
-ZGVwcmVjYXRlZCkJCTE2Mzg0CnN0cmlwZXNpemUJCTQwOTYKcm9vdF9kaXIJCTYKbnVtX2Rl
-dmljZXMJCTEKY29tcGF0X2ZsYWdzCQkweDAKY29tcGF0X3JvX2ZsYWdzCQkweDAKaW5jb21w
-YXRfZmxhZ3MJCTB4MTYxCgkJCSggTUlYRURfQkFDS1JFRiB8CgkJCSAgQklHX01FVEFEQVRB
-IHwKCQkJICBFWFRFTkRFRF9JUkVGIHwKCQkJICBTS0lOTllfTUVUQURBVEEgKQpjYWNoZV9n
-ZW5lcmF0aW9uCTE4Nwp1dWlkX3RyZWVfZ2VuZXJhdGlvbgkxODcKZGV2X2l0ZW0udXVpZAkJ
-Y2JmMmEyY2UtOTQ4Ny00YzJkLTk4ZTktNWNjNjlhZTU5YjI2CmRldl9pdGVtLmZzaWQJCTlm
-ZWE5MWM3LTdiMGItNGVmOS1hODNiLWUyNGNjZjI1ODZiNSBbbWF0Y2hdCmRldl9pdGVtLnR5
-cGUJCTAKZGV2X2l0ZW0udG90YWxfYnl0ZXMJNTAwMTA1NzY0ODY0CmRldl9pdGVtLmJ5dGVz
-X3VzZWQJMTg0NzA4NzU5NTUyCmRldl9pdGVtLmlvX2FsaWduCTQwOTYKZGV2X2l0ZW0uaW9f
-d2lkdGgJNDA5NgpkZXZfaXRlbS5zZWN0b3Jfc2l6ZQk0MDk2CmRldl9pdGVtLmRldmlkCQkx
-CmRldl9pdGVtLmRldl9ncm91cAkwCmRldl9pdGVtLnNlZWtfc3BlZWQJMApkZXZfaXRlbS5i
-YW5kd2lkdGgJMApkZXZfaXRlbS5nZW5lcmF0aW9uCTAKc3lzX2NodW5rX2FycmF5WzIwNDhd
-OgoJaXRlbSAwIGtleSAoRklSU1RfQ0hVTktfVFJFRSBDSFVOS19JVEVNIDIyMDIwMDk2KQoJ
-CWxlbmd0aCA4Mzg4NjA4IG93bmVyIDIgc3RyaXBlX2xlbiA2NTUzNiB0eXBlIFNZU1RFTXxE
-VVAKCQlpb19hbGlnbiA2NTUzNiBpb193aWR0aCA2NTUzNiBzZWN0b3Jfc2l6ZSA0MDk2CgkJ
-bnVtX3N0cmlwZXMgMiBzdWJfc3RyaXBlcyAwCgkJCXN0cmlwZSAwIGRldmlkIDEgb2Zmc2V0
-IDIyMDIwMDk2CgkJCWRldl91dWlkIGNiZjJhMmNlLTk0ODctNGMyZC05OGU5LTVjYzY5YWU1
-OWIyNgoJCQlzdHJpcGUgMSBkZXZpZCAxIG9mZnNldCAzMDQwODcwNAoJCQlkZXZfdXVpZCBj
-YmYyYTJjZS05NDg3LTRjMmQtOThlOS01Y2M2OWFlNTliMjYKYmFja3VwX3Jvb3RzWzRdOgoJ
-YmFja3VwIDA6CgkJYmFja3VwX3RyZWVfcm9vdDoJMTA4NDc1MTg3MglnZW46IDE4NwlsZXZl
-bDogMQoJCWJhY2t1cF9jaHVua19yb290OgkyMjAyMDA5NglnZW46IDE0NQlsZXZlbDogMQoJ
-CWJhY2t1cF9leHRlbnRfcm9vdDoJMTA4NDcwMjcyMAlnZW46IDE4NwlsZXZlbDogMgoJCWJh
-Y2t1cF9mc19yb290OgkJMTA4NDY1MzU2OAlnZW46IDE4NwlsZXZlbDogMgoJCWJhY2t1cF9k
-ZXZfcm9vdDoJMTA4MTY1NTI5NglnZW46IDE3OAlsZXZlbDogMAoJCWJhY2t1cF9jc3VtX3Jv
-b3Q6CTEwODQ4MTc0MDgJZ2VuOiAxODcJbGV2ZWw6IDIKCQliYWNrdXBfdG90YWxfYnl0ZXM6
-CTUwMDEwNTc2NDg2NAoJCWJhY2t1cF9ieXRlc191c2VkOgkxNTM5NTcyOTgxNzYKCQliYWNr
-dXBfbnVtX2RldmljZXM6CTEKCgliYWNrdXAgMToKCQliYWNrdXBfdHJlZV9yb290OgkxMDgz
-ODAxNjAwCWdlbjogMTg0CWxldmVsOiAxCgkJYmFja3VwX2NodW5rX3Jvb3Q6CTIyMDIwMDk2
-CWdlbjogMTQ1CWxldmVsOiAxCgkJYmFja3VwX2V4dGVudF9yb290OgkxMDgzNzUyNDQ4CWdl
-bjogMTg0CWxldmVsOiAyCgkJYmFja3VwX2ZzX3Jvb3Q6CQkxMDgzNjA0OTkyCWdlbjogMTg0
-CWxldmVsOiAyCgkJYmFja3VwX2Rldl9yb290OgkxMDgxNjU1Mjk2CWdlbjogMTc4CWxldmVs
-OiAwCgkJYmFja3VwX2NzdW1fcm9vdDoJMTA4Mzg2NzEzNglnZW46IDE4NAlsZXZlbDogMgoJ
-CWJhY2t1cF90b3RhbF9ieXRlczoJNTAwMTA1NzY0ODY0CgkJYmFja3VwX2J5dGVzX3VzZWQ6
-CTE1Mzk1NzI5ODE3NgoJCWJhY2t1cF9udW1fZGV2aWNlczoJMQoKCWJhY2t1cCAyOgoJCWJh
-Y2t1cF90cmVlX3Jvb3Q6CTEwODQxNDU2NjQJZ2VuOiAxODUJbGV2ZWw6IDEKCQliYWNrdXBf
-Y2h1bmtfcm9vdDoJMjIwMjAwOTYJZ2VuOiAxNDUJbGV2ZWw6IDEKCQliYWNrdXBfZXh0ZW50
-X3Jvb3Q6CTEwODQwODAxMjgJZ2VuOiAxODUJbGV2ZWw6IDIKCQliYWNrdXBfZnNfcm9vdDoJ
-CTEwODM5ODE4MjQJZ2VuOiAxODUJbGV2ZWw6IDIKCQliYWNrdXBfZGV2X3Jvb3Q6CTEwODE2
-NTUyOTYJZ2VuOiAxNzgJbGV2ZWw6IDAKCQliYWNrdXBfY3N1bV9yb290OgkxMDg0MjExMjAw
-CWdlbjogMTg1CWxldmVsOiAyCgkJYmFja3VwX3RvdGFsX2J5dGVzOgk1MDAxMDU3NjQ4NjQK
-CQliYWNrdXBfYnl0ZXNfdXNlZDoJMTUzOTU3Mjk4MTc2CgkJYmFja3VwX251bV9kZXZpY2Vz
-OgkxCgoJYmFja3VwIDM6CgkJYmFja3VwX3RyZWVfcm9vdDoJMTA4NDQ3MzM0NAlnZW46IDE4
-NglsZXZlbDogMQoJCWJhY2t1cF9jaHVua19yb290OgkyMjAyMDA5NglnZW46IDE0NQlsZXZl
-bDogMQoJCWJhY2t1cF9leHRlbnRfcm9vdDoJMTA4NDQyNDE5MglnZW46IDE4NglsZXZlbDog
-MgoJCWJhY2t1cF9mc19yb290OgkJMTA4NDMyNTg4OAlnZW46IDE4NglsZXZlbDogMgoJCWJh
-Y2t1cF9kZXZfcm9vdDoJMTA4MTY1NTI5NglnZW46IDE3OAlsZXZlbDogMAoJCWJhY2t1cF9j
-c3VtX3Jvb3Q6CTEwODQ1Mzg4ODAJZ2VuOiAxODYJbGV2ZWw6IDIKCQliYWNrdXBfdG90YWxf
-Ynl0ZXM6CTUwMDEwNTc2NDg2NAoJCWJhY2t1cF9ieXRlc191c2VkOgkxNTM5NTcyOTgxNzYK
-CQliYWNrdXBfbnVtX2RldmljZXM6CTEKCgo=
---------------580B9284D74B9184FE9F38D4--
+
+>
+> According to btrfs scrub status this is when the scrub began...
+>
+> [Tue Jun 26 19:50:29 2018] BTRFS error (device sdb): parent transid verify
+> failed on 9081265061888 wanted 8663 found 8321
+> [Tue Jun 26 19:50:29 2018] BTRFS info (device sdb): read error corrected:
+> ino 0 off 9081265061888 (dev /dev/sdh sector 17728418304)
+> [Tue Jun 26 19:50:29 2018] BTRFS info (device sdb): read error corrected:
+> ino 0 off 9081265065984 (dev /dev/sdh sector 17728418312)
+> [Tue Jun 26 19:50:29 2018] BTRFS info (device sdb): read error corrected:
+> ino 0 off 9081265070080 (dev /dev/sdh sector 17728418320)
+> [Tue Jun 26 19:50:29 2018] BTRFS info (device sdb): read error corrected:
+> ino 0 off 9081265074176 (dev /dev/sdh sector 17728418328)
+> [Tue Jun 26 19:50:29 2018] BTRFS error (device sdb): parent transid verify
+> failed on 9081263046656 wanted 8664 found 8662
+> [Tue Jun 26 19:50:29 2018] BTRFS info (device sdb): read error corrected:
+> ino 0 off 9081263046656 (dev /dev/sdh sector 17728414368)
+> [Tue Jun 26 19:50:29 2018] BTRFS info (device sdb): read error corrected:
+> ino 0 off 9081263050752 (dev /dev/sdh sector 17728414376)
+> [Tue Jun 26 19:50:29 2018] BTRFS info (device sdb): read error corrected:
+> ino 0 off 9081263054848 (dev /dev/sdh sector 17728414384)
+> [Tue Jun 26 19:50:29 2018] BTRFS info (device sdb): read error corrected:
+> ino 0 off 9081263058944 (dev /dev/sdh sector 17728414392)
+> [Tue Jun 26 19:50:29 2018] BTRFS error (device sdb): parent transid verify
+> failed on 9081263194112 wanted 8664 found 8662
+> [Tue Jun 26 19:50:29 2018] BTRFS info (device sdb): read error corrected:
+> ino 0 off 9081263194112 (dev /dev/sdh sector 17728414656)
+> [Tue Jun 26 19:50:29 2018] BTRFS info (device sdb): read error corrected:
+> ino 0 off 9081263198208 (dev /dev/sdh sector 17728414664)
+> [Tue Jun 26 19:50:29 2018] BTRFS error (device sdb): parent transid verify
+> failed on 9081264128000 wanted 8664 found 8662
+> [Tue Jun 26 19:50:29 2018] BTRFS error (device sdb): parent transid verify
+> failed on 9081265520640 wanted 8665 found 8321
+
+Fixups during scrub also succeed.
+
+
+>
+> So I ran btrfs scrub and this was my post-scrub status:
+>
+> Idoru:/ # btrfs scrub status -d /mnt/titan
+> scrub status for e7c494fc-ac4e-4644-a2f2-66f25543708b
+> scrub device /dev/sdb (id 1) history
+>     scrub started at Tue Jun 26 19:50:29 2018 and finished after 16:10:04
+>     total bytes scrubbed: 8.57TiB with 0 errors
+> scrub device /dev/sdh (id 2) history
+>     scrub started at Tue Jun 26 19:50:29 2018 and finished after 16:13:31
+>     total bytes scrubbed: 8.57TiB with 3 errors
+>     error details: super=3
+>     corrected errors: 0, uncorrectable errors: 0, unverified errors: 0
+>
+> On a side note - I'm not sure if it matters (or why it might/could/would) -
+> but I actually used entire drives [as opposed to making partitions and using
+> them] to create my mirror.
+
+Doesn't matter.
+
+
+
+> I unmounted again and ran btrfs check [without repair] again - after doing
+> scrub:
+>
+> Idoru:/ # btrfs check /dev/sdh
+> Checking filesystem on /dev/sdh
+> UUID: e7c494fc-ac4e-4644-a2f2-66f25543708b
+> checking extents
+> checking free space cache
+> checking fs roots
+> checking only csum items (without verifying data)
+> checking root refs
+> found 9414630215796 bytes used, no error found
+> total csum bytes: 9191775488
+> total tree bytes: 12803850240
+> total fs tree bytes: 3054665728
+> total extent tree bytes: 230211584
+> btree space waste bytes: 782320214
+> file data blocks allocated: 132510269804544
+>  referenced 132509780557824
+>
+> Idoru:/ # btrfs check /dev/sdb
+> Checking filesystem on /dev/sdb
+> UUID: e7c494fc-ac4e-4644-a2f2-66f25543708b
+> checking extents
+> checking free space cache
+> checking fs roots
+> checking only csum items (without verifying data)
+> checking root refs
+> found 9414630215796 bytes used, no error found
+> total csum bytes: 9191775488
+> total tree bytes: 12803850240
+> total fs tree bytes: 3054665728
+> total extent tree bytes: 230211584
+> btree space waste bytes: 782320214
+> file data blocks allocated: 132510269804544
+>  referenced 132509780557824
+
+
+FWIW you only need to check once. It doesn't matter which device you
+pass to btrfs check, it finds the other devices and they all get
+checked.
+
+
+
+
+>
+> Everything seems identical [and OK].
+>
+> So I tried remounting and found the following in my dmesg log:
+>
+> Fri Jun 29 13:27:21 2018] BTRFS info (device sdb): disk space caching is
+> enabled
+> [Fri Jun 29 13:27:21 2018] BTRFS info (device sdb): has skinny extents
+> [Fri Jun 29 13:27:21 2018] BTRFS info (device sdb): bdev /dev/sdh errs: wr
+> 55907, rd 59133, flush 2, corrupt 0, gen 3
+>
+> So I still seem to have a problem...
+
+
+The bdev stats is a counter, not an active error message. If you want
+to zero out the counter, use -z option with btrfs dev stats.
+
+
+
+> I guess I'm wondering why the super errors were not corrected in the scrub
+> [uncorrectable errors:0 - super but it didn't correct - or even try to -
+> correct the super errors]?
+
+You can use 'btrfs rescue super -v' to check all the supers separately
+from any other check. But the supers would have been fixed
+automatically right off the bat with a normal mount in this case.
+
+
+
+-- 
+Chris Murphy

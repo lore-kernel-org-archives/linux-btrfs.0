@@ -1,25 +1,25 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from einhorn-mail.in-berlin.de ([217.197.80.20]:45819 "EHLO
+Received: from einhorn-mail.in-berlin.de ([217.197.80.20]:40074 "EHLO
         einhorn-mail.in-berlin.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S934366AbeF2WJb (ORCPT
+        with ESMTP id S936809AbeF2WLb (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 29 Jun 2018 18:09:31 -0400
+        Fri, 29 Jun 2018 18:11:31 -0400
 Subject: Re: btrfs suddenly think's it's raid6
 To: Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
 References: <80f0c6f7-ede1-e522-551c-ec2446bb79ea@hamburg.ccc.de>
  <4f7902e3-d176-5395-55f1-72bdffab7d47@gmx.com>
 From: marble <marble@hamburg.ccc.de>
-Message-ID: <30ad064e-99e0-4398-2af7-d97f9577ff8f@hamburg.ccc.de>
-Date: Sat, 30 Jun 2018 00:09:29 +0200
+Message-ID: <f120f53c-5bb5-5ba9-fd72-a5cedf3baca1@hamburg.ccc.de>
+Date: Sat, 30 Jun 2018 00:11:30 +0200
 MIME-Version: 1.0
 In-Reply-To: <4f7902e3-d176-5395-55f1-72bdffab7d47@gmx.com>
 Content-Type: multipart/mixed;
- boundary="------------04E130EFEFF9FDF3858C7D7B"
+ boundary="------------580B9284D74B9184FE9F38D4"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is a multi-part message in MIME format.
---------------04E130EFEFF9FDF3858C7D7B
+--------------580B9284D74B9184FE9F38D4
 Content-Type: text/plain; charset=utf-8
 Content-Transfer-Encoding: 7bit
 
@@ -27,19 +27,21 @@ Hey,
 Thanks for the quick reply :-)
 
 > Is there anything like unexpected power loss happens?
-Power loos may have happened. It was power via a RPi.
+Power loss may have happened.
 > And would you provide the following data for debugging?
 > 
 > # btrfs ins dump-super -fFa /dev/mapper/black
-See attachment.
+I attached it.
 > And further more, what's the device mapper setup for /dev/mapper/black?
 > Is there anything like RAID here?
-This is due to LUKS I think. "black" is the name I gave to cryptsetup open.
-
+I think this is the result of luks. "black" is the name I passed to
+cryptsetup open.
+> Thanks,
+> Qu
 Cheers,
 marble
 
---------------04E130EFEFF9FDF3858C7D7B
+--------------580B9284D74B9184FE9F38D4
 Content-Type: text/plain; charset=UTF-8;
  name="dump-super.stdout"
 Content-Transfer-Encoding: base64
@@ -224,4 +226,4 @@ Y2t1cF9kZXZfcm9vdDoJMTA4MTY1NTI5NglnZW46IDE3OAlsZXZlbDogMAoJCWJhY2t1cF9j
 c3VtX3Jvb3Q6CTEwODQ1Mzg4ODAJZ2VuOiAxODYJbGV2ZWw6IDIKCQliYWNrdXBfdG90YWxf
 Ynl0ZXM6CTUwMDEwNTc2NDg2NAoJCWJhY2t1cF9ieXRlc191c2VkOgkxNTM5NTcyOTgxNzYK
 CQliYWNrdXBfbnVtX2RldmljZXM6CTEKCgo=
---------------04E130EFEFF9FDF3858C7D7B--
+--------------580B9284D74B9184FE9F38D4--

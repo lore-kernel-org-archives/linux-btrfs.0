@@ -1,153 +1,142 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:29585 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1752881AbeF2F4C (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:34202 "EHLO
+        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S933429AbeF2GHE (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 29 Jun 2018 01:56:02 -0400
-Subject: Re: So, does btrfs check lowmem take days? weeks?
-To: Marc MERLIN <marc@merlins.org>, Qu Wenruo <quwenruo.btrfs@gmx.com>
-CC: <linux-btrfs@vger.kernel.org>
+        Fri, 29 Jun 2018 02:07:04 -0400
+Date: Thu, 28 Jun 2018 23:06:57 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: linux-btrfs@vger.kernel.org
+Message-ID: <20180629060657.qrtcxfcy22zkstfw@merlins.org>
 References: <20180629042707.vrjwbytg6bxmrgjg@merlins.org>
  <6658a593-3b4a-f1ef-f550-2fb951b2517d@gmx.com>
  <20180629052825.tifg2aw7oy3qyyvw@merlins.org>
-From: Su Yue <suy.fnst@cn.fujitsu.com>
-Message-ID: <02ba7ad4-b618-85f0-a99f-c43b25d367de@cn.fujitsu.com>
-Date: Fri, 29 Jun 2018 14:02:19 +0800
+ <3b240898-a96d-77f6-efb9-f0af81ee0cd1@gmx.com>
 MIME-Version: 1.0
-In-Reply-To: <20180629052825.tifg2aw7oy3qyyvw@merlins.org>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <3b240898-a96d-77f6-efb9-f0af81ee0cd1@gmx.com>
+Subject: Re: So, does btrfs check lowmem take days? weeks?
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Fri, Jun 29, 2018 at 01:48:17PM +0800, Qu Wenruo wrote:
+> Just normal btrfs check, and post the output.
+> If normal check eats up all your memory, btrfs check --mode=lowmem.
+ 
+Does check without --repair eat less RAM?
 
+> --repair should be considered as the last method.
 
-On 06/29/2018 01:28 PM, Marc MERLIN wrote:
-> On Fri, Jun 29, 2018 at 01:07:20PM +0800, Qu Wenruo wrote:
->>> lowmem repair seems to be going still, but it's been days and -p seems
->>> to do absolutely nothing.
->>
->> I'm a afraid you hit a bug in lowmem repair code.
->> By all means, --repair shouldn't really be used unless you're pretty
->> sure the problem is something btrfs check can handle.
->>
->> That's also why --repair is still marked as dangerous.
->> Especially when it's combined with experimental lowmem mode.
+If --repair doesn't work, check is useless to me sadly. I know that for
+FS analysis and bug reporting, you want to have the FS without changing
+it to something maybe worse, but for my use, if it can't be mounted and
+can't be fixed, then it gets deleted which is even worse than check
+doing the wrong thing.
+
+> > The last two ERROR lines took over a day to get generated, so I'm not sure if it's still working, but just slowly.
 > 
-> Understood, but btrfs got corrupted (by itself or not, I don't know)
-> I cannot mount the filesystem read/write
-> I cannot btrfs check --repair it since that code will kill my machine
-> What do I have left?
+> OK, that explains something.
 > 
->>> My filesystem is "only" 10TB or so, albeit with a lot of files.
->>
->> Unless you have tons of snapshots and reflinked (deduped) files, it
->> shouldn't take so long.
+> One extent is referred hundreds times, no wonder it will take a long time.
 > 
-> I may have a fair amount.
-> gargamel:~# btrfs check --mode=lowmem --repair -p /dev/mapper/dshelf2
-> enabling repair mode
-> WARNING: low-memory mode repair support is only partial
-> Checking filesystem on /dev/mapper/dshelf2
-> UUID: 0f1a0c9f-4e54-4fa7-8736-fd50818ff73d
-> Fixed 0 roots.
-> ERROR: extent[84302495744, 69632] referencer count mismatch (root: 21872, owner: 374857, offset: 3407872) wanted: 3, have: 4
-> Created new chunk [18457780224000 1073741824]
-> Delete backref in extent [84302495744 69632]
-> ERROR: extent[84302495744, 69632] referencer count mismatch (root: 22911, owner: 374857, offset: 3407872) wanted: 3, have: 4
-> Delete backref in extent [84302495744 69632]
-> ERROR: extent[125712527360, 12214272] referencer count mismatch (root: 21872, owner: 374857, offset: 114540544) wanted: 181, have: 240
-> Delete backref in extent [125712527360 12214272]
-> ERROR: extent[125730848768, 5111808] referencer count mismatch (root: 21872, owner: 374857, offset: 126754816) wanted: 68, have: 115
-> Delete backref in extent [125730848768 5111808]
-> ERROR: extent[125730848768, 5111808] referencer count mismatch (root: 22911, owner: 374857, offset: 126754816) wanted: 68, have: 115
-> Delete backref in extent [125730848768 5111808]
-> ERROR: extent[125736914944, 6037504] referencer count mismatch (root: 21872, owner: 374857, offset: 131866624) wanted: 115, have: 143
-> Delete backref in extent [125736914944 6037504]
-> ERROR: extent[125736914944, 6037504] referencer count mismatch (root: 22911, owner: 374857, offset: 131866624) wanted: 115, have: 143
-> Delete backref in extent [125736914944 6037504]
-> ERROR: extent[129952120832, 20242432] referencer count mismatch (root: 21872, owner: 374857, offset: 148234240) wanted: 302, have: 431
-> Delete backref in extent [129952120832 20242432]
-> ERROR: extent[129952120832, 20242432] referencer count mismatch (root: 22911, owner: 374857, offset: 148234240) wanted: 356, have: 433
-> Delete backref in extent [129952120832 20242432]
-> ERROR: extent[134925357056, 11829248] referencer count mismatch (root: 21872, owner: 374857, offset: 180371456) wanted: 161, have: 240
-> Delete backref in extent [134925357056 11829248]
-> ERROR: extent[134925357056, 11829248] referencer count mismatch (root: 22911, owner: 374857, offset: 180371456) wanted: 162, have: 240
-> Delete backref in extent [134925357056 11829248]
-> ERROR: extent[147895111680, 12345344] referencer count mismatch (root: 21872, owner: 374857, offset: 192200704) wanted: 170, have: 249
-> Delete backref in extent [147895111680 12345344]
-> ERROR: extent[147895111680, 12345344] referencer count mismatch (root: 22911, owner: 374857, offset: 192200704) wanted: 172, have: 251
-> Delete backref in extent [147895111680 12345344]
-> ERROR: extent[150850146304, 17522688] referencer count mismatch (root: 21872, owner: 374857, offset: 217653248) wanted: 348, have: 418
-> Delete backref in extent [150850146304 17522688]
-> ERROR: extent[156909494272, 55320576] referencer count mismatch (root: 22911, owner: 374857, offset: 235175936) wanted: 555, have: 1449
-> Deleted root 2 item[156909494272, 178, 5476627808561673095]
-> ERROR: extent[156909494272, 55320576] referencer count mismatch (root: 21872, owner: 374857, offset: 235175936) wanted: 556, have: 1452
-> Deleted root 2 item[156909494272, 178, 7338474132555182983]
-> ERROR: file extent[374857 235184128] root 21872 owner 21872 backref lost
-> Add one extent data backref [156909494272 55320576]
-> ERROR: file extent[374857 235184128] root 22911 owner 22911 backref lost
-> Add one extent data backref [156909494272 55320576]
+> Just one tip here, there are really too many snapshots/reflinked files.
+> It's highly recommended to keep the number of snapshots to a reasonable
+> number (lower two digits).
+> Although btrfs snapshot is super fast, it puts a lot of pressure on its
+> extent tree, so there is no free lunch here.
+ 
+Agreed, I doubt I have over or much over 100 snapshots though (but I
+can't check right now).
+Sadly I'm not allowed to mount even read only while check is running:
+gargamel:~# mount -o ro /dev/mapper/dshelf2 /mnt/mnt2
+mount: /dev/mapper/dshelf2 already mounted or /mnt/mnt2 busy
+
+> > I see. Is there any reasonably easy way to check on this running process?
 > 
-My bad.
-It's almost possiblelly a bug about extent of lowmem check which
-was reported by Chris too.
-The extent check was wrong, the the repair did wrong things.
+> GDB attach would be good.
+> Interrupt and check the inode number if it's checking fs tree.
+> Check the extent bytenr number if it's checking extent tree.
+> 
+> But considering how many snapshots there are, it's really hard to determine.
+> 
+> In this case, the super large extent tree is causing a lot of problem,
+> maybe it's a good idea to allow btrfs check to skip extent tree check?
 
-I have figured out the bug is lowmem check can't deal with shared tree 
-block in reloc tree. The fix is simple, you can try the follow repo:
+I only see --init-extent-tree in the man page, which option did you have
+in mind?
 
-https://github.com/Damenly/btrfs-progs/tree/tmp1
+> > Then again, maybe it already fixed enough that I can mount my filesystem again.
+> 
+> This needs the initial btrfs check report and the kernel messages how it
+> fails to mount.
 
-Please run lowmem check "without =--repair" first to be sure whether
-your filesystem is fine.
+mount command hangs, kernel does not show anything special outside of disk access hanging.
 
-Though the bug and phenomenon are clear enough, before sending my patch,
-I have to make a test image. I have spent a week to study btrfs balance
-but it seems a liitle hard for me.
+Jun 23 17:23:26 gargamel kernel: [  341.802696] BTRFS warning (device dm-2): 'recovery' is deprecated, use 'useback
+uproot' instead
+Jun 23 17:23:26 gargamel kernel: [  341.828743] BTRFS info (device dm-2): trying to use backup root at mount time
+Jun 23 17:23:26 gargamel kernel: [  341.850180] BTRFS info (device dm-2): disk space caching is enabled
+Jun 23 17:23:26 gargamel kernel: [  341.869014] BTRFS info (device dm-2): has skinny extents
+Jun 23 17:23:26 gargamel kernel: [  342.206289] BTRFS info (device dm-2): bdev /dev/mapper/dshelf2 errs: wr 0, rd 0 , flush 0, corrupt 2, gen 0
+Jun 23 17:26:26 gargamel kernel: [  521.571392] BTRFS info (device dm-2): enabling ssd optimizations
+Jun 23 17:55:58 gargamel kernel: [ 2293.914867] perf: interrupt took too long (2507 > 2500), lowering kernel.perf_event_max_sample_rate to 79750
+Jun 23 17:56:22 gargamel kernel: [ 2317.718406] BTRFS info (device dm-2): disk space caching is enabled
+Jun 23 17:56:22 gargamel kernel: [ 2317.737277] BTRFS info (device dm-2): has skinny extents
+Jun 23 17:56:22 gargamel kernel: [ 2318.069461] BTRFS info (device dm-2): bdev /dev/mapper/dshelf2 errs: wr 0, rd 0 , flush 0, corrupt 2, gen 0
+Jun 23 17:59:22 gargamel kernel: [ 2498.256167] BTRFS info (device dm-2): enabling ssd optimizations
+Jun 23 18:05:23 gargamel kernel: [ 2859.107057] BTRFS info (device dm-2): disk space caching is enabled
+Jun 23 18:05:23 gargamel kernel: [ 2859.125883] BTRFS info (device dm-2): has skinny extents
+Jun 23 18:05:24 gargamel kernel: [ 2859.448018] BTRFS info (device dm-2): bdev /dev/mapper/dshelf2 errs: wr 0, rd 0 , flush 0, corrupt 2, gen 0
+Jun 23 18:08:23 gargamel kernel: [ 3039.023305] BTRFS info (device dm-2): enabling ssd optimizations
+Jun 23 18:13:41 gargamel kernel: [ 3356.626037] perf: interrupt took too long (3143 > 3133), lowering kernel.perf_event_max_sample_rate to 63500
+Jun 23 18:17:23 gargamel kernel: [ 3578.937225] Process accounting resumed
+Jun 23 18:33:47 gargamel kernel: [ 4563.356252] JFS: nTxBlock = 8192, nTxLock = 65536
+Jun 23 18:33:48 gargamel kernel: [ 4563.446715] ntfs: driver 2.1.32 [Flags: R/W MODULE].
+Jun 23 18:42:20 gargamel kernel: [ 5075.995254] INFO: task sync:20253 blocked for more than 120 seconds.
+Jun 23 18:42:20 gargamel kernel: [ 5076.015729]       Not tainted 4.17.2-amd64-preempt-sysrq-20180817 #1
+Jun 23 18:42:20 gargamel kernel: [ 5076.036141] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+Jun 23 18:42:20 gargamel kernel: [ 5076.060637] sync            D    0 20253  15327 0x20020080
+Jun 23 18:42:20 gargamel kernel: [ 5076.078032] Call Trace:
+Jun 23 18:42:20 gargamel kernel: [ 5076.086366]  ? __schedule+0x53e/0x59b
+Jun 23 18:42:20 gargamel kernel: [ 5076.098311]  schedule+0x7f/0x98
+Jun 23 18:42:20 gargamel kernel: [ 5076.108665]  __rwsem_down_read_failed_common+0x127/0x1a8
+Jun 23 18:42:20 gargamel kernel: [ 5076.125565]  ? sync_fs_one_sb+0x20/0x20
+Jun 23 18:42:20 gargamel kernel: [ 5076.137982]  ? call_rwsem_down_read_failed+0x14/0x30
+Jun 23 18:42:20 gargamel kernel: [ 5076.154081]  call_rwsem_down_read_failed+0x14/0x30
+Jun 23 18:42:20 gargamel kernel: [ 5076.169429]  down_read+0x13/0x25
+Jun 23 18:42:20 gargamel kernel: [ 5076.180444]  iterate_supers+0x57/0xbe
+Jun 23 18:42:20 gargamel kernel: [ 5076.192619]  ksys_sync+0x40/0xa4
+Jun 23 18:42:20 gargamel kernel: [ 5076.203192]  __ia32_sys_sync+0xa/0xd
+Jun 23 18:42:20 gargamel kernel: [ 5076.214774]  do_fast_syscall_32+0xaf/0xf3
+Jun 23 18:42:20 gargamel kernel: [ 5076.227740]  entry_SYSENTER_compat+0x7f/0x91
+Jun 23 18:44:21 gargamel kernel: [ 5196.828764] INFO: task sync:20253 blocked for more than 120 seconds.
+Jun 23 18:44:21 gargamel kernel: [ 5196.848724]       Not tainted 4.17.2-amd64-preempt-sysrq-20180817 #1
+Jun 23 18:44:21 gargamel kernel: [ 5196.868789] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+Jun 23 18:44:21 gargamel kernel: [ 5196.893615] sync            D    0 20253  15327 0x20020080
+
+> > But back to the main point, it's sad that after so many years, the
+> > repair situation is still so suboptimal, especially when it's apparently
+> > pretty easy for btrfs to get damaged (through its own fault or not, hard
+> > to say).
+> 
+> Unfortunately, yes.
+> Especially the extent tree is pretty fragile and hard to repair.
+
+So, I don't know the code, but if I may make a suggestion (which maybe
+is totally wrong, if so forgive me):
+I would love for a repair mode that gives me a back a fixed
+filesystem. I don't really care how much data is lost (although ideally
+it would give me a list of files lost), but I want a working filesystem
+at the end. I can then decide if there is enough data left on it to
+restore what's missing or if I'm better off starting from scratch.
+
+Is that possible at all?
 
 Thanks,
-Su
-
-> The last two ERROR lines took over a day to get generated, so I'm not sure if it's still working, but just slowly.
-> For what it's worth non lowmem check used to take 12 to 24H on that filesystem back when it still worked.
-> 
->>> 2 things that come to mind
->>> 1) can lowmem have some progress working so that I know if I'm looking
->>> at days, weeks, or even months before it will be done?
->>
->> It's hard to estimate, especially when every cross check involves a lot
->> of disk IO.
->> But at least, we could add such indicator to show we're doing something.
-> 
-> Yes, anything to show that I should still wait is still good :)
-> 
->>> 2) non lowmem is more efficient obviously when it doesn't completely
->>> crash your machine, but could lowmem be given an amount of memory to use
->>> for caching, or maybe use some heuristics based on RAM free so that it's
->>> not so excrutiatingly slow?
->>
->> IIRC recent commit has added the ability.
->> a5ce5d219822 ("btrfs-progs: extent-cache: actually cache extent buffers")
->   
-> Oh, good.
-> 
->> That's already included in btrfs-progs v4.13.2.
->> So it should be a dead loop which lowmem repair code can't handle.
-> 
-> I see. Is there any reasonably easy way to check on this running process?
-> 
-> Both top and iotop show that it's working, but of course I can't tell if
-> it's looping, or not.
-> 
-> Then again, maybe it already fixed enough that I can mount my filesystem again.
-> 
-> But back to the main point, it's sad that after so many years, the
-> repair situation is still so suboptimal, especially when it's apparently
-> pretty easy for btrfs to get damaged (through its own fault or not, hard
-> to say).
-> 
-> Thanks,
-> Marc
-> 
-
-
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                       | PGP 7F55D5F27AAF9D08

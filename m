@@ -1,178 +1,159 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.19]:59791 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932676AbeF2Mlw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 29 Jun 2018 08:41:52 -0400
-Subject: Re: btrfs suddenly think's it's raid6
-To: marble <marble@hamburg.ccc.de>, linux-btrfs@vger.kernel.org
-References: <80f0c6f7-ede1-e522-551c-ec2446bb79ea@hamburg.ccc.de>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <4f7902e3-d176-5395-55f1-72bdffab7d47@gmx.com>
-Date: Fri, 29 Jun 2018 20:41:42 +0800
+Received: from mx2.suse.de ([195.135.220.15]:45100 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1753639AbeF2Ms1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 29 Jun 2018 08:48:27 -0400
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id ABE58AE00
+        for <linux-btrfs@vger.kernel.org>; Fri, 29 Jun 2018 12:48:26 +0000 (UTC)
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>, Qu Wenruo <wqu@suse.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Subject: lockdep splat between fsync and DIO
+Message-ID: <09ccd44e-4a72-2468-c21b-d5b22890a341@suse.com>
+Date: Fri, 29 Jun 2018 15:48:25 +0300
 MIME-Version: 1.0
-In-Reply-To: <80f0c6f7-ede1-e522-551c-ec2446bb79ea@hamburg.ccc.de>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="uTERpPbkC4KQOvChfUQPMlDdUFNeNfE7N"
+Content-Type: text/plain; charset=utf-8
+To: unlisted-recipients:; (no To-header on input)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---uTERpPbkC4KQOvChfUQPMlDdUFNeNfE7N
-Content-Type: multipart/mixed; boundary="cazHdDNPGIdjlUSX59IAUQSFwFJdyd017";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: marble <marble@hamburg.ccc.de>, linux-btrfs@vger.kernel.org
-Message-ID: <4f7902e3-d176-5395-55f1-72bdffab7d47@gmx.com>
-Subject: Re: btrfs suddenly think's it's raid6
-References: <80f0c6f7-ede1-e522-551c-ec2446bb79ea@hamburg.ccc.de>
-In-Reply-To: <80f0c6f7-ede1-e522-551c-ec2446bb79ea@hamburg.ccc.de>
+Running xfstest on today's misc-next revealed the following lockdep splat
+(but the machine didn't lock up): 
 
---cazHdDNPGIdjlUSX59IAUQSFwFJdyd017
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+[ 1477.192040] ======================================================
+[ 1477.192226] WARNING: possible circular locking dependency detected
+[ 1477.192393] 4.18.0-rc1-nbor #755 Not tainted
+[ 1477.192522] ------------------------------------------------------
+[ 1477.192686] fsstress/4314 is trying to acquire lock:
+[ 1477.192827] 000000003e0774ac (sb_internal#2){.+.+}, at: start_transaction+0x2e8/0x4b0
+[ 1477.193027] 
+               but task is already holding lock:
+[ 1477.193191] 00000000ef79de77 (&ei->dio_sem){++++}, at: btrfs_direct_IO+0x3bb/0x450
+[ 1477.193395] 
+               which lock already depends on the new lock.
 
+[ 1477.193589] 
+               the existing dependency chain (in reverse order) is:
+[ 1477.193774] 
+               -> #2 (&ei->dio_sem){++++}:
+[ 1477.193928]        btrfs_log_changed_extents.isra.5+0x6e/0x9e0
+[ 1477.194143]        btrfs_log_inode+0x96c/0xf10
+[ 1477.194344]        btrfs_log_inode_parent+0x295/0xb10
+[ 1477.194540]        btrfs_log_dentry_safe+0x4a/0x70
+[ 1477.194743]        btrfs_sync_file+0x3eb/0x580
+[ 1477.194928]        do_fsync+0x38/0x60
+[ 1477.195114]        __x64_sys_fsync+0x10/0x20
+[ 1477.195320]        do_syscall_64+0x5a/0x1a0
+[ 1477.195496]        entry_SYSCALL_64_after_hwframe+0x49/0xbe
+[ 1477.195698] 
+               -> #1 (&ei->log_mutex){+.+.}:
+[ 1477.196001]        btrfs_record_unlink_dir+0x2a/0xa0
+[ 1477.196225]        btrfs_unlink+0x5e/0xd0
+[ 1477.196401]        vfs_unlink+0xc4/0x190
+[ 1477.196602]        do_unlinkat+0x2ab/0x310
+[ 1477.196774]        do_syscall_64+0x5a/0x1a0
+[ 1477.197016]        entry_SYSCALL_64_after_hwframe+0x49/0xbe
+[ 1477.197230] 
+               -> #0 (sb_internal#2){.+.+}:
+[ 1477.197480]        __sb_start_write+0x126/0x1a0
+[ 1477.197662]        start_transaction+0x2e8/0x4b0
+[ 1477.197845]        find_free_extent+0x10c1/0x1430
+[ 1477.198027]        btrfs_reserve_extent+0x9b/0x180
+[ 1477.198224]        btrfs_get_blocks_direct+0x38d/0x700
+[ 1477.198419]        __blockdev_direct_IO+0xb2f/0x39c7
+[ 1477.198611]        btrfs_direct_IO+0x190/0x450
+[ 1477.198790]        generic_file_direct_write+0x9d/0x160
+[ 1477.198986]        btrfs_file_write_iter+0x217/0x60b
+[ 1477.199179]        aio_write+0x136/0x1f0
+[ 1477.199359]        io_submit_one+0x584/0x6d0
+[ 1477.199543]        __se_sys_io_submit+0x91/0x220
+[ 1477.199789]        do_syscall_64+0x5a/0x1a0
+[ 1477.199964]        entry_SYSCALL_64_after_hwframe+0x49/0xbe
+[ 1477.200163] 
+               other info that might help us debug this:
 
+[ 1477.200522] Chain exists of:
+                 sb_internal#2 --> &ei->log_mutex --> &ei->dio_sem
 
-On 2018=E5=B9=B406=E6=9C=8829=E6=97=A5 19:04, marble wrote:
-> Hello,
-> I have an external HDD. The HDD contains no partition.
-> I use the whole HDD as a LUKS container. Inside that LUKS is a btrfs.
-> It's used to store some media files.
-> The HDD was hooked up to a Raspberry Pi running up-to-date Arch Linux
-> to play music from the drive.
->=20
-> After disconnecting the drive from the Pi and connecting it to my lapto=
-p
-> again, I couldn't mount it anymore. If I read the dmesg right, it now
-> thinks that it's part of a raid6.
+[ 1477.200891]  Possible unsafe locking scenario:
 
-Don't panic, the raid6 module is always loaded by btrfs, no matter if
-btrfs uses or not.
+[ 1477.201137]        CPU0                    CPU1
+[ 1477.201356]        ----                    ----
+[ 1477.201533]   lock(&ei->dio_sem);
+[ 1477.201687]                                lock(&ei->log_mutex);
+[ 1477.201887]                                lock(&ei->dio_sem);
+[ 1477.202088]   lock(sb_internal#2);
+[ 1477.202290] 
+                *** DEADLOCK ***
 
->=20
-> btrfs check --repair also didn't help.
+[ 1477.202581] 1 lock held by fsstress/4314:
+[ 1477.202745]  #0: 00000000ef79de77 (&ei->dio_sem){++++}, at: btrfs_direct_IO+0x3bb/0x450
+[ 1477.203039] 
+               stack backtrace:
+[ 1477.203312] CPU: 0 PID: 4314 Comm: fsstress Not tainted 4.18.0-rc1-nbor #755
+[ 1477.203537] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS Ubuntu-1.8.2-1ubuntu1 04/01/2014
+[ 1477.203850] Call Trace:
+[ 1477.203992]  dump_stack+0x85/0xcb
+[ 1477.204151]  print_circular_bug.isra.19+0x1c8/0x2b0
+[ 1477.204383]  __lock_acquire+0x182e/0x1900
+[ 1477.204551]  ? lock_acquire+0xa3/0x210
+[ 1477.204715]  lock_acquire+0xa3/0x210
+[ 1477.204889]  ? start_transaction+0x2e8/0x4b0
+[ 1477.205065]  __sb_start_write+0x126/0x1a0
+[ 1477.205271]  ? start_transaction+0x2e8/0x4b0
+[ 1477.205455]  start_transaction+0x2e8/0x4b0
+[ 1477.205631]  find_free_extent+0x10c1/0x1430
+[ 1477.205806]  btrfs_reserve_extent+0x9b/0x180
+[ 1477.205980]  btrfs_get_blocks_direct+0x38d/0x700
+[ 1477.206193]  __blockdev_direct_IO+0xb2f/0x39c7
+[ 1477.206397]  ? __lock_acquire+0x2b6/0x1900
+[ 1477.206571]  ? __lock_acquire+0x2b6/0x1900
+[ 1477.206744]  ? can_nocow_extent+0x480/0x480
+[ 1477.206921]  ? btrfs_run_delalloc_work+0x40/0x40
+[ 1477.207107]  ? btrfs_direct_IO+0x190/0x450
+[ 1477.207322]  btrfs_direct_IO+0x190/0x450
+[ 1477.207492]  ? btrfs_run_delalloc_work+0x40/0x40
+[ 1477.207678]  generic_file_direct_write+0x9d/0x160
+[ 1477.207862]  btrfs_file_write_iter+0x217/0x60b
+[ 1477.208044]  aio_write+0x136/0x1f0
+[ 1477.208244]  ? lock_acquire+0xa3/0x210
+[ 1477.208415]  ? __might_fault+0x3e/0x90
+[ 1477.208580]  ? io_submit_one+0x584/0x6d0
+[ 1477.208749]  io_submit_one+0x584/0x6d0
+[ 1477.208917]  ? lock_acquire+0xa3/0x210
+[ 1477.209086]  __se_sys_io_submit+0x91/0x220
+[ 1477.209296]  ? do_syscall_64+0x5a/0x1a0
+[ 1477.209468]  do_syscall_64+0x5a/0x1a0
+[ 1477.209636]  entry_SYSCALL_64_after_hwframe+0x49/0xbe
+[ 1477.209826] RIP: 0033:0x7fa509cee697
+[ 1477.209988] Code: 00 75 08 8b 47 0c 39 47 08 74 08 e9 c3 ff ff ff 0f 1f 00 31 c0 c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 00 b8 d1 00 00 00 0f 05 <c3> 0f 1f 84 00 00 00 00 00 b8 d2 00 00 00 0f 05 c3 0f 1f 84 00 00 
+[ 1477.210587] RSP: 002b:00007ffc03046688 EFLAGS: 00000246 ORIG_RAX: 00000000000000d1
+[ 1477.210872] RAX: ffffffffffffffda RBX: 00007ffc030466f0 RCX: 00007fa509cee697
+[ 1477.211098] RDX: 00007ffc03046730 RSI: 0000000000000001 RDI: 00007fa50a315000
+[ 1477.211361] RBP: 0000000000000001 R08: 0000000000000015 R09: 0000000000000000
+[ 1477.211591] R10: 00007fa509acbb78 R11: 0000000000000246 R12: 000000000000032a
+[ 1477.211818] R13: 0000000000000003 R14: 0000000000140000 R15: 0000000000017000
 
-Normally you shouldn't try it anyway.
+I think it considers the following scenario a possible deadlock: 
 
->=20
-> ```
-> marble@archlinux ~ % uname -a
-> Linux archlinux 4.17.2-1-ARCH #1 SMP PREEMPT Sat Jun 16 11:08:59 UTC
-> 2018 x86_64 GNU/Linux
->=20
-> marble@archlinux ~ % btrfs --version
-> btrfs-progs v4.16.1
->=20
-> marble@archlinux ~ % sudo cryptsetup open /dev/sda black
-> [sudo] password for marble:
-> Enter passphrase for /dev/sda:
->=20
-> marble@archlinux ~ % mkdir /tmp/black
-> marble@archlinux ~ % sudo mount /dev/mapper/black /tmp/black
-> mount: /tmp/black: can't read superblock on /dev/mapper/black.
->=20
-> marble@archlinux ~ % sudo btrfs fi show
-> Label: 'black'  uuid: 9fea91c7-7b0b-4ef9-a83b-e24ccf2586b5
->         Total devices 1 FS bytes used 143.38GiB
->         devid    1 size 465.76GiB used 172.02GiB path /dev/mapper/black=
-
->=20
-> marble@archlinux ~ % sudo btrfs check --repair /dev/mapper/black
-> enabling repair mode
-> Checking filesystem on /dev/mapper/black
-> UUID: 9fea91c7-7b0b-4ef9-a83b-e24ccf2586b5
-> Fixed 0 roots.
-> checking extents
-> checksum verify failed on 1082114048 found D7CA51C8 wanted E6334CB3
-> checksum verify failed on 1082114048 found D7CA51C8 wanted E6334CB3
-> checksum verify failed on 1082114048 found 1A9EFC07 wanted 204A6979
-> checksum verify failed on 1082114048 found D7CA51C8 wanted E6334CB3
-
-This means, both copies for logical bytenr 1082114048 are corrupted.
-
-> bytenr mismatch, want=3D1082114048, have=3D9385453728028469028
-> owner ref check failed [1082114048 16384]
-> repair deleting extent record: key [1082114048,168,16384]
-
-You shouldn't really use --repair here.
-Your extent tree is corrupted, --repair could make things worse here.
-
-> adding new tree backref on start 1082114048 len 16384 parent 0 root 5
-> Repaired extent references for 1082114048
-> ref mismatch on [59038556160 4096] extent item 1, found 0
-> checksum verify failed on 1082114048 found D7CA51C8 wanted E6334CB3
-> checksum verify failed on 1082114048 found D7CA51C8 wanted E6334CB3
-> checksum verify failed on 1082114048 found 1A9EFC07 wanted 204A6979
-> checksum verify failed on 1082114048 found D7CA51C8 wanted E6334CB3
-> bytenr mismatch, want=3D1082114048, have=3D9385453728028469028
-> incorrect local backref count on 59038556160 root 5 owner 334393 offset=
-
-> 0 found 0 wanted 1 back 0x56348aee5de0
-> backref disk bytenr does not match extent record, bytenr=3D59038556160,=
-
-> ref bytenr=3D0
-> backpointer mismatch on [59038556160 4096]
-> owner ref check failed [59038556160 4096]
-> checksum verify failed on 1082114048 found D7CA51C8 wanted E6334CB3
-> checksum verify failed on 1082114048 found D7CA51C8 wanted E6334CB3
-> checksum verify failed on 1082114048 found 1A9EFC07 wanted 204A6979
-> checksum verify failed on 1082114048 found D7CA51C8 wanted E6334CB3
-> bytenr mismatch, want=3D1082114048, have=3D9385453728028469028
-> failed to repair damaged filesystem, aborting
->=20
-> marble@archlinux ~ % dmesg > /tmp/dmesg.log
-
-This is the root cause:
-[  124.544439] BTRFS error (device dm-1): bad tree block start
-9385453728028469028 1082114048
-[  124.555229] BTRFS error (device dm-1): bad tree block start
-2365503423870651471 1082114048
-[  124.555275] BTRFS warning (device dm-1): failed to read fs tree: -5
-
-Your fs tree is corrupted.
-I'm not sure how it's corrupted, but corruption to fs tree is a little ra=
-re.
-
-Is there anything like unexpected power loss happens?
-And would you provide the following data for debugging?
-
-# btrfs ins dump-super -fFa /dev/mapper/black
-
-And further more, what's the device mapper setup for /dev/mapper/black?
-Is there anything like RAID here?
-
-Thanks,
-Qu
-
-
-> ```
->=20
-> Any clues?
->=20
-> Best regards,
-> marble
->=20
+T1:                                                                         T2:
+do_fsync                                                             
+  btrfs_sync_file                                                      
+    start_transaction (acquire sb_intwrite)             generic_file_direct_write                               
+    btrfs_log_inode_parent                                 btrfs_direct_IO (acquire dio_sem)           
+      btrfs_log_inode					        __blockdev_direct_IO
+        							  btrfs_get_blocks_direct
+								    btrfs_reserve_extent
+								       find_free_extent
+ 									 start_transaction (acquire intwrite, block on T1)
+														
 
 
---cazHdDNPGIdjlUSX59IAUQSFwFJdyd017--
+          btrfs_log_changed_extents (acquire dio_sem, block on T2)
 
---uTERpPbkC4KQOvChfUQPMlDdUFNeNfE7N
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
 
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAls2KQYACgkQwj2R86El
-/qj1HQgAi2SdhU3ejYI4LHzNJyqWFec4Yh/P+Q0ymYZaO41rJrqvym2uJr2BedcP
-bQcy3eOeJH0x5Reh5P8zfP6yyittqMAEYQlusawMRGaNHiafWG1xNZ3DzT9ik8kQ
-UtLR+j+nzq3Sv3QKrl/RdPtjqrUfAQzQO1Hpzm06bvxV2n8kQhpwcYqn7nSlW+R+
-WcQOOWvHRcauu+1+Y3DoYbV95VcXeAfUwrIVD5l39WZ+uekRHaq7i2568ukUGRNY
-w15P4TFEW0e8IBUA8yKMv+iATvo8yhHXSqqmXKjBmcndzGMJRem584F7oaGHMFOc
-lYtoadZzN8bRxYfixAwrOkc4NdAiGw==
-=D6if
------END PGP SIGNATURE-----
-
---uTERpPbkC4KQOvChfUQPMlDdUFNeNfE7N--
+The allocator (find_free_extent) will try to allocate a chunk, thus start a 
+transaction under dio_sem, whereas we can have an alternative thread doing fsync, 
+that has already acquired sb_intwrite and will want to acquire dio_sem. However, 
+it seems this is false-positive since both threads take sb_intwrite (that's the 
+per-cpu rw semaphore comprising the freeze protection) in read mode. 

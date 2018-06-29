@@ -1,41 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-02.dd24.net ([193.46.215.43]:38375 "EHLO
-        mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S934758AbeF2Mza (ORCPT
+Received: from mail-oi0-f68.google.com ([209.85.218.68]:36201 "EHLO
+        mail-oi0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S936466AbeF2PPN (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 29 Jun 2018 08:55:30 -0400
-Message-ID: <c0f6da0fdd5e50569eae3ae6c5b200e686b94605.camel@scientia.net>
-Subject: Re: call trace: WARNING: at
- /build/linux-uwVqDp/linux-4.16.16/fs/btrfs/ctree.h:1565 btrfs_update_device
-From: Christoph Anton Mitterer <calestyo@scientia.net>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
-Cc: Nikolay Borisov <nborisov@suse.com>
-Date: Fri, 29 Jun 2018 14:55:26 +0200
-In-Reply-To: <530a3014-52a2-0e82-425c-7648abd86ac6@gmx.com>
-References: <50443c666dc4509d74f9f23d7012080845a20940.camel@scientia.net>
-         <f9d51250-28aa-318e-502f-c5b3526969a0@gmx.com>
-         <f86948875cb746c6a8c74526913017052153d1bf.camel@scientia.net>
-         <43a3fb8f-d8a8-7e2f-a143-207bd3ba8c74@gmx.com>
-         <236b95bb46abce6e40040765b24199169541a1d2.camel@scientia.net>
-         <530a3014-52a2-0e82-425c-7648abd86ac6@gmx.com>
+        Fri, 29 Jun 2018 11:15:13 -0400
+Received: by mail-oi0-f68.google.com with SMTP id r16-v6so8247779oie.3
+        for <linux-btrfs@vger.kernel.org>; Fri, 29 Jun 2018 08:15:12 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <CAJCQCtRUgoQPNwcM54hXnNSqcm5+0d9Ks1aWw_2VYChMxWWnEg@mail.gmail.com>
+References: <66d30a90-a571-a110-749d-8a3fd6ccb9d5@georgianit.com>
+ <9bbde3a8-2498-a538-5744-c857f5a57947@oracle.com> <CAJCQCtSuKpcn2Or3LiCYqeFMFFoRU09BFQE_n8FAhQ2Vo+83PA@mail.gmail.com>
+ <93a74ac2-c271-accd-d0c7-4822c0f75f80@libero.it> <CAJCQCtRUgoQPNwcM54hXnNSqcm5+0d9Ks1aWw_2VYChMxWWnEg@mail.gmail.com>
+From: james harvey <jamespharvey20@gmail.com>
+Date: Fri, 29 Jun 2018 11:15:11 -0400
+Message-ID: <CA+X5Wn5JdervhGob5MGWRtYLt+Av5nYhTkKdAUQFgcxPUdMAsA@mail.gmail.com>
+Subject: Re: Major design flaw with BTRFS Raid, temporary device drop will
+ corrupt nodatacow files
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Goffredo Baroncelli <kreijack@inwind.it>,
+        Anand Jain <anand.jain@oracle.com>, Remi Gauvin <remi@georgianit.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
-Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 2018-06-29 at 09:10 +0800, Qu Wenruo wrote:
-> Maybe it's the old mkfs causing the problem?
-> Although mkfs.btrfs added device size alignment much earlier than
-> kernel, it's still possible that the old mkfs doesn't handle the
-> initial
-> device and extra device (mkfs.btrfs will always create a temporary fs
-> on
-> the first device, then add all the other devices to the system) the
-> same
-> way.
+On Thu, Jun 28, 2018 at 6:27 PM, Chris Murphy <lists@colorremedies.com> wrote:
+> And an open question I have about scrub is weather it only ever is
+> checking csums, meaning nodatacow files are never scrubbed, or if the
+> copies are at least compared to each other?
 
-Well who knows,.. at least now everything's fine again :-)
+Scrub never looks at nodatacow files.  It does not compare the copies
+to each other.
 
-Thanks guys!
+Qu submitted a patch to make check compare the copies:
+https://patchwork.kernel.org/patch/10434509/
 
-Chris.
+This hasn't been added to btrfs-progs git yet.
+
+IMO, I think the offline check should look at nodatacow copies like
+this, but I still think this also needs to be added to scrub.  In the
+patch thread, I discuss my reasons why.  In brief: online scanning;
+this goes along with user's expectation of scrub ensuring mirrored
+data integrity; and recommendations to setup scrub on periodic basis
+to me means it's the place to put it.

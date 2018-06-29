@@ -1,55 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:34062 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:34070 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S966320AbeF2I5J (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 29 Jun 2018 04:57:09 -0400
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id B3816AD66
-        for <linux-btrfs@vger.kernel.org>; Fri, 29 Jun 2018 08:57:08 +0000 (UTC)
+        id S964930AbeF2I5M (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 29 Jun 2018 04:57:12 -0400
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 1F15EAD66
+        for <linux-btrfs@vger.kernel.org>; Fri, 29 Jun 2018 08:57:11 +0000 (UTC)
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 13/14] btrfs: raid56: don't lock stripe cache table when freeing
-Date: Fri, 29 Jun 2018 10:57:07 +0200
-Message-Id: <6c508b165cc727f07137f0208ce68ce3ce70c2c9.1530262400.git.dsterba@suse.com>
+Subject: [PATCH 14/14] btrfs: raid56: catch errors from full_stripe_write
+Date: Fri, 29 Jun 2018 10:57:10 +0200
+Message-Id: <36443b465be8eb96582313c8bf75ceeb0d717a5e.1530262400.git.dsterba@suse.com>
 In-Reply-To: <cover.1530262400.git.dsterba@suse.com>
 References: <cover.1530262400.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is called either at the end of the mount or if the mount fails.
-In both cases, there's nothing running that can use the table so the
-lock is pointless.
+Add fall-back code to catch failure of full_stripe_write. Proper error
+handling from inside run_plug would need more code restructuring as it's
+called at arbitrary points by io scheduler.
 
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/raid56.c | 3 ---
- 1 file changed, 3 deletions(-)
+ fs/btrfs/raid56.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-index 272acd9b1192..0840b054e4b7 100644
+index 0840b054e4b7..84889d10d5b0 100644
 --- a/fs/btrfs/raid56.c
 +++ b/fs/btrfs/raid56.c
-@@ -407,19 +407,16 @@ static void remove_rbio_from_cache(struct btrfs_raid_bio *rbio)
- static void btrfs_clear_rbio_cache(struct btrfs_fs_info *info)
- {
- 	struct btrfs_stripe_hash_table *table;
--	unsigned long flags;
- 	struct btrfs_raid_bio *rbio;
+@@ -1683,8 +1683,11 @@ static void run_plug(struct btrfs_plug_cb *plug)
+ 		list_del_init(&cur->plug_list);
  
- 	table = info->stripe_hash_table;
- 
--	spin_lock_irqsave(&table->cache_lock, flags);
- 	while (!list_empty(&table->stripe_cache)) {
- 		rbio = list_entry(table->stripe_cache.next,
- 				  struct btrfs_raid_bio,
- 				  stripe_cache);
- 		__remove_rbio_from_cache(rbio);
- 	}
--	spin_unlock_irqrestore(&table->cache_lock, flags);
- }
- 
- /*
+ 		if (rbio_is_full(cur)) {
++			int ret;
++
+ 			/* we have a full stripe, send it down */
+-			full_stripe_write(cur);
++			ret = full_stripe_write(cur);
++			BUG_ON(ret);
+ 			continue;
+ 		}
+ 		if (last) {
 -- 
 2.17.1
 

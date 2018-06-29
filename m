@@ -1,70 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f68.google.com ([209.85.218.68]:45124 "EHLO
-        mail-oi0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932097AbeFFGam (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Jun 2018 02:30:42 -0400
-Received: by mail-oi0-f68.google.com with SMTP id b130-v6so4380335oif.12
-        for <linux-btrfs@vger.kernel.org>; Tue, 05 Jun 2018 23:30:42 -0700 (PDT)
+Received: from mx2.suse.de ([195.135.220.15]:43424 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S932676AbeF2MfK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 29 Jun 2018 08:35:10 -0400
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 9DACCAE00
+        for <linux-btrfs@vger.kernel.org>; Fri, 29 Jun 2018 12:35:09 +0000 (UTC)
+Date: Fri, 29 Jun 2018 14:35:08 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Nikolay Borisov <nborisov@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/4] btrfs: Refactor loop in
+ btrfs_release_extent_buffer_page
+Message-ID: <20180629123508.GQ2287@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1530106705-27186-1-git-send-email-nborisov@suse.com>
+ <1530106705-27186-2-git-send-email-nborisov@suse.com>
 MIME-Version: 1.0
-From: james harvey <jamespharvey20@gmail.com>
-Date: Wed, 6 Jun 2018 02:30:41 -0400
-Message-ID: <CA+X5Wn6h8sot6Z7OQVvehD_T4XxHOiss=gT18s_d6EJPZrUhQA@mail.gmail.com>
-Subject: [PATCH] btrfs-progs: btrfs_close_devices(): only fsync() if device->writeable
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1530106705-27186-2-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Prevent unnecessary error from failing fsync(), if opened read only.
+On Wed, Jun 27, 2018 at 04:38:22PM +0300, Nikolay Borisov wrote:
+> The purpose of the function is to free all the pages comprising an
+> extent buffer. This can be achieved with a simple for loop rather than
+> the slitghly more involved 'do {} while' construct. So rewrite the
+> loop using a 'for' construct. Additionally we can never have an
+> extent_buffer that is 0 pages so remove the check for index == 0. No
+> functional changes.
 
-Performed 'grep "writeable = " *.h *.c' to make sure there were no odd
-situations where fsync() might still be desired here.  They're all straight-
-forward.  The only situation where writeable will be 0 is if btrfs_open_devices
-is given flags without O_RDWR.  There is no situation where a writeable volume
-temporarily becomes unwriteable, or anything like that.  Given that it's being
-opened O_RDWR, there's no reason to attempt fsync().
+The reversed loop makes sense, the first page is special and used for
+locking the whole extent buffer's pages, as can be seen eg.
+897ca6e9b4fef86d5dfb6b31 or 4f2de97acee6532b36dd6e99 . Also see current
+alloc_extent_buffer for the locking and managing the private bit.
 
-utils.c
+So you can still rewrite it as a for loop but would have to preserve the
+logic or provide the reason that it's correct to iterate from 0 to
+num_pages. There are some subltle races regarding pages and extents and
+their presence in various trees, so I'd rather be careful here.
 
-   int btrfs_add_to_fsid() {
-      ...
-      device->writeable = 1;
+> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+> ---
+>  fs/btrfs/extent_io.c | 13 ++++---------
+>  1 file changed, 4 insertions(+), 9 deletions(-)
+> 
+> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> index cce6087d6880..4180a3b7e725 100644
+> --- a/fs/btrfs/extent_io.c
+> +++ b/fs/btrfs/extent_io.c
+> @@ -4641,19 +4641,14 @@ int extent_buffer_under_io(struct extent_buffer *eb)
+>   */
+>  static void btrfs_release_extent_buffer_page(struct extent_buffer *eb)
+>  {
+> -	unsigned long index;
+> -	struct page *page;
+> +	int i;
+>  	int mapped = !test_bit(EXTENT_BUFFER_DUMMY, &eb->bflags);
+>  
+>  	BUG_ON(extent_buffer_under_io(eb));
+>  
+> -	index = num_extent_pages(eb->start, eb->len);
+> -	if (index == 0)
+> -		return;
 
-volumes.c
+This check does seem to be redundant.
 
-   int btrfs_close_devices() {
-      ...
-      while (!list_empty(&fs_devices->devices)) {
-         ...
-         // just after the fsync() being patched
-267:     device->writeable = 0;
-   ...
-   int btrfs_open_devices() {
-      ...
-      list_for_each_entry(device, &fs_devices->devices, dev_list) {
-         ...
-         if (flags & O_RDWR)
-332:        device->writeable = 1
+> +	for (i = 0; i < num_extent_pages(eb->start, eb->len); i++) {
 
-kernel btrfs_close_devices() does not have a corresponding fsync() that I see.
+I think that the num_extent_pages(...) would be better put to a
+temporary variable so it's not evaluated each time the loop termination
+condition is checked.
 
-Signed-off-by: James Harvey <jamespharvey20@gmail.com>
----
- volumes.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/volumes.c b/volumes.c
-index c6e34321..36d1bde6 100644
---- a/volumes.c
-+++ b/volumes.c
-@@ -254,7 +254,7 @@ again:
-                device = list_entry(fs_devices->devices.next,
-                                    struct btrfs_device, dev_list);
-                if (device->fd != -1) {
--                       if (fsync(device->fd) == -1) {
-+                       if (device->writeable && fsync(device->fd) == -1) {
-                                warning("fsync on device %llu failed: %m",
-                                        device->devid);
-                                ret = -errno;
---
-2.17.0
+> +		struct page *page = eb->pages[i];
+>  
+> -	do {
+> -		index--;
+> -		page = eb->pages[index];
+>  		if (!page)
+>  			continue;
+>  		if (mapped)

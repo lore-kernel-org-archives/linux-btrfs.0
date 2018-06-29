@@ -1,128 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:54824 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:56972 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S935810AbeF2Nmp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 29 Jun 2018 09:42:45 -0400
+        id S1752768AbeF2NxK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 29 Jun 2018 09:53:10 -0400
+Date: Fri, 29 Jun 2018 15:53:08 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
+        linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH 3/4] btrfs: Rename EXTENT_BUFFER_DUMMY to
  EXTENT_BUFFER_PRIVATE
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>, dsterba@suse.cz,
-        linux-btrfs@vger.kernel.org
+Message-ID: <20180629135308.GS2287@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <1530106705-27186-1-git-send-email-nborisov@suse.com>
  <1530106705-27186-4-git-send-email-nborisov@suse.com>
  <20180629124633.GR2287@twin.jikos.cz>
  <97349690-b129-1b5b-17c5-4363fe2a879d@gmx.com>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <c175a9b1-e13f-34e4-65dc-3957c09cb2b5@suse.com>
-Date: Fri, 29 Jun 2018 16:42:41 +0300
 MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 In-Reply-To: <97349690-b129-1b5b-17c5-4363fe2a879d@gmx.com>
-Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-On 29.06.2018 16:07, Qu Wenruo wrote:
-> 
-> 
-> On 2018年06月29日 20:46, David Sterba wrote:
->> On Wed, Jun 27, 2018 at 04:38:24PM +0300, Nikolay Borisov wrote:
->>> EXTENT_BUFFER_DUMMY is an awful name for this flag. Buffers which have
->>> this flag set are not in any way dummy. Rather, they are private in
->>> the sense that are not linked to the global buffer tree. This flag has
->>> subtle implications to the way free_extent_buffer work for example, as
->>> well as controls whether page->mapping->private_lock is held during
->>> extent_buffer release. Pages for a private buffer cannot be under io,
->>> nor can they be written by a 3rd party so taking the lock is
->>> unnecessary.
->>>
->>> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
->>> ---
->>>  fs/btrfs/disk-io.c   |  2 +-
->>>  fs/btrfs/extent_io.c | 10 +++++-----
->>>  fs/btrfs/extent_io.h |  2 +-
->>>  3 files changed, 7 insertions(+), 7 deletions(-)
->>>
->>> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
->>> index 8a469f70d5ee..1c655be92690 100644
->>> --- a/fs/btrfs/disk-io.c
->>> +++ b/fs/btrfs/disk-io.c
->>> @@ -4093,7 +4093,7 @@ void btrfs_mark_buffer_dirty(struct extent_buffer *buf)
->>>  	 * enabled.  Normal people shouldn't be marking dummy buffers as dirty
->>>  	 * outside of the sanity tests.
->>>  	 */
->>> -	if (unlikely(test_bit(EXTENT_BUFFER_DUMMY, &buf->bflags)))
->>> +	if (unlikely(test_bit(EXTENT_BUFFER_PRIVATE, &buf->bflags)))
->>
->> This is going to be confusing. There's page Private bit,
->> PAGE_SET_PRIVATE2 and EXTENT_PAGE_PRIVATE, that are somehow logically
->> connected.
->>
->> I'd suggest EXTENT_BUFFER_CLONED or _UNMAPPED as it's created by
->> btrfs_clone_extent_buffer or used in the disconnected way (ie. without
->> the mapping).
-> 
-> UNMAPPED looks good to me.
-> (Or ANONYMOUS?)
-
-I'm more leaning towards UNMAPPED at this point.
-
-> 
->>
->>>  		return;
->>>  #endif
->>>  	root = BTRFS_I(buf->pages[0]->mapping->host)->root;
->>> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
->>> index 6ac15804bab1..6611207e8e1f 100644
->>> --- a/fs/btrfs/extent_io.c
->>> +++ b/fs/btrfs/extent_io.c
->>> @@ -4642,7 +4642,7 @@ int extent_buffer_under_io(struct extent_buffer *eb)
->>>  static void btrfs_release_extent_buffer_page(struct extent_buffer *eb)
->>>  {
->>>  	int i;
->>> -	int mapped = !test_bit(EXTENT_BUFFER_DUMMY, &eb->bflags);
->>> +	int mapped = !test_bit(EXTENT_BUFFER_PRIVATE, &eb->bflags);
->>>  
->>>  	BUG_ON(extent_buffer_under_io(eb));
->>>  
->>> @@ -4755,7 +4755,7 @@ struct extent_buffer *btrfs_clone_extent_buffer(struct extent_buffer *src)
->>>  	}
->>>  
->>>  	set_bit(EXTENT_BUFFER_UPTODATE, &new->bflags);
->>> -	set_bit(EXTENT_BUFFER_DUMMY, &new->bflags);
->>> +	set_bit(EXTENT_BUFFER_PRIVATE, &new->bflags);
->>>  
->>>  	return new;
->>>  }
->>> @@ -4780,7 +4780,7 @@ struct extent_buffer *__alloc_dummy_extent_buffer(struct btrfs_fs_info *fs_info,
->>
->> Would be good to sync the new name with the helpers:
->> __alloc_dummy_extent_buffer and alloc_dummy_extent_buffer then.
->>
->>>  	}
->>>  	set_extent_buffer_uptodate(eb);
->>>  	btrfs_set_header_nritems(eb, 0);
->>> -	set_bit(EXTENT_BUFFER_DUMMY, &eb->bflags);
->>> +	set_bit(EXTENT_BUFFER_PRIVATE, &eb->bflags);
->>>  
->>>  	return eb;
->>>  err:
->>> @@ -5086,7 +5086,7 @@ static int release_extent_buffer(struct extent_buffer *eb)
->>>  		/* Should be safe to release our pages at this point */
->>>  		btrfs_release_extent_buffer_page(eb);
->>>  #ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
->>> -		if (unlikely(test_bit(EXTENT_BUFFER_DUMMY, &eb->bflags))) {
->>> +		if (unlikely(test_bit(EXTENT_BUFFER_PRIVATE, &eb->bflags))) {
->>>  			__free_extent_buffer(eb);
->>>  			return 1;
->>>  		}
->>> @@ -5117,7 +5117,7 @@ void free_extent_buffer(struct extent_buffer *eb)
->>>  
->>>  	spin_lock(&eb->refs_lock);
->>>  	if (atomic_read(&eb->refs) == 2 &&
->>> -	    test_bit(EXTENT_BUFFER_DUMMY, &eb->bflags))
->>> +	    test_bit(EXTENT_BUFFER_PRIVATE, &eb->bflags))
->>>  		atomic_dec(&eb->refs);
+On Fri, Jun 29, 2018 at 09:07:12PM +0800, Qu Wenruo wrote:
+> >> @@ -5117,7 +5117,7 @@ void free_extent_buffer(struct extent_buffer *eb)
+> >>  
+> >>  	spin_lock(&eb->refs_lock);
+> >>  	if (atomic_read(&eb->refs) == 2 &&
+> >> -	    test_bit(EXTENT_BUFFER_DUMMY, &eb->bflags))
+> >> +	    test_bit(EXTENT_BUFFER_PRIVATE, &eb->bflags))
+> >>  		atomic_dec(&eb->refs);
 > 
 > Also discussed in off list mail, this extra atomic_dec for cloned eb
 > looks confusing.
@@ -130,54 +37,11 @@ I'm more leaning towards UNMAPPED at this point.
 > extent_buffer_get() and only frees it once, and still no eb leaking)
 > What about just removing such special handling?
 
-I think this special handling is not needed if we consider the fact that
-allocating a new eb already has ref1. In this case the code that
-allocated the buffer really "hands over" the reference when putting it
-on a btrfs_path struct.
+The extent_buffer_get can be moved to the cloning function, all callers
+increase the reference but the missing dec is indeed confusing. However
+I don't think we can remove it completely. We need to keep the eb::refs
+at the same level for all eb types (regular, STALE, DUMMY), so we can
+use eg. free_extent_buffer.
 
-Let's take btrfs_search_old_slot as an example. It calls
-tree_mod_log_rewind which rewinds the passed in extent buffer by cloning
-it and doing an extra extent_buffer_get and "publishing" it to the given
-btrfs_path struct. But really this buffer should have only a single
-reference since it's only in the btrfs_path. Then this buffer should be
-released when btrfs_release_path is called on the path.
-
-Again, in btrfs_search_old_slot we have the same usage scenario in
-get_old_root.
-
-> 
-> Thanks,
-> Qu
-> 
->>>  
->>>  	if (atomic_read(&eb->refs) == 2 &&
->>> diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
->>> index 0bfd4aeb822d..bfccaec2c89a 100644
->>> --- a/fs/btrfs/extent_io.h
->>> +++ b/fs/btrfs/extent_io.h
->>> @@ -46,7 +46,7 @@
->>>  #define EXTENT_BUFFER_STALE 6
->>>  #define EXTENT_BUFFER_WRITEBACK 7
->>>  #define EXTENT_BUFFER_READ_ERR 8        /* read IO error */
->>> -#define EXTENT_BUFFER_DUMMY 9
->>> +#define EXTENT_BUFFER_PRIVATE 9
->>>  #define EXTENT_BUFFER_IN_TREE 10
->>>  #define EXTENT_BUFFER_WRITE_ERR 11    /* write IO error */
->>>  
->>> -- 
->>> 2.7.4
->>>
->>> --
->>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->>> the body of a message to majordomo@vger.kernel.org
->>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+There may be other way how to clean it that I don't see now, so if you
+think you can improve the reference handling, then go for it.

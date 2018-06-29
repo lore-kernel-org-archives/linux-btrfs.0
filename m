@@ -1,82 +1,136 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:43424 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:44946 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S932676AbeF2MfK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 29 Jun 2018 08:35:10 -0400
+        id S933949AbeF2Mqf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 29 Jun 2018 08:46:35 -0400
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 9DACCAE00
-        for <linux-btrfs@vger.kernel.org>; Fri, 29 Jun 2018 12:35:09 +0000 (UTC)
-Date: Fri, 29 Jun 2018 14:35:08 +0200
+        by mx1.suse.de (Postfix) with ESMTP id 4BBBAAE00
+        for <linux-btrfs@vger.kernel.org>; Fri, 29 Jun 2018 12:46:34 +0000 (UTC)
+Date: Fri, 29 Jun 2018 14:46:33 +0200
 From: David Sterba <dsterba@suse.cz>
 To: Nikolay Borisov <nborisov@suse.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/4] btrfs: Refactor loop in
- btrfs_release_extent_buffer_page
-Message-ID: <20180629123508.GQ2287@twin.jikos.cz>
+Subject: Re: [PATCH 3/4] btrfs: Rename EXTENT_BUFFER_DUMMY to
+ EXTENT_BUFFER_PRIVATE
+Message-ID: <20180629124633.GR2287@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 References: <1530106705-27186-1-git-send-email-nborisov@suse.com>
- <1530106705-27186-2-git-send-email-nborisov@suse.com>
+ <1530106705-27186-4-git-send-email-nborisov@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1530106705-27186-2-git-send-email-nborisov@suse.com>
+In-Reply-To: <1530106705-27186-4-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jun 27, 2018 at 04:38:22PM +0300, Nikolay Borisov wrote:
-> The purpose of the function is to free all the pages comprising an
-> extent buffer. This can be achieved with a simple for loop rather than
-> the slitghly more involved 'do {} while' construct. So rewrite the
-> loop using a 'for' construct. Additionally we can never have an
-> extent_buffer that is 0 pages so remove the check for index == 0. No
-> functional changes.
-
-The reversed loop makes sense, the first page is special and used for
-locking the whole extent buffer's pages, as can be seen eg.
-897ca6e9b4fef86d5dfb6b31 or 4f2de97acee6532b36dd6e99 . Also see current
-alloc_extent_buffer for the locking and managing the private bit.
-
-So you can still rewrite it as a for loop but would have to preserve the
-logic or provide the reason that it's correct to iterate from 0 to
-num_pages. There are some subltle races regarding pages and extents and
-their presence in various trees, so I'd rather be careful here.
-
+On Wed, Jun 27, 2018 at 04:38:24PM +0300, Nikolay Borisov wrote:
+> EXTENT_BUFFER_DUMMY is an awful name for this flag. Buffers which have
+> this flag set are not in any way dummy. Rather, they are private in
+> the sense that are not linked to the global buffer tree. This flag has
+> subtle implications to the way free_extent_buffer work for example, as
+> well as controls whether page->mapping->private_lock is held during
+> extent_buffer release. Pages for a private buffer cannot be under io,
+> nor can they be written by a 3rd party so taking the lock is
+> unnecessary.
+> 
 > Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 > ---
->  fs/btrfs/extent_io.c | 13 ++++---------
->  1 file changed, 4 insertions(+), 9 deletions(-)
+>  fs/btrfs/disk-io.c   |  2 +-
+>  fs/btrfs/extent_io.c | 10 +++++-----
+>  fs/btrfs/extent_io.h |  2 +-
+>  3 files changed, 7 insertions(+), 7 deletions(-)
 > 
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index 8a469f70d5ee..1c655be92690 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -4093,7 +4093,7 @@ void btrfs_mark_buffer_dirty(struct extent_buffer *buf)
+>  	 * enabled.  Normal people shouldn't be marking dummy buffers as dirty
+>  	 * outside of the sanity tests.
+>  	 */
+> -	if (unlikely(test_bit(EXTENT_BUFFER_DUMMY, &buf->bflags)))
+> +	if (unlikely(test_bit(EXTENT_BUFFER_PRIVATE, &buf->bflags)))
+
+This is going to be confusing. There's page Private bit,
+PAGE_SET_PRIVATE2 and EXTENT_PAGE_PRIVATE, that are somehow logically
+connected.
+
+I'd suggest EXTENT_BUFFER_CLONED or _UNMAPPED as it's created by
+btrfs_clone_extent_buffer or used in the disconnected way (ie. without
+the mapping).
+
+>  		return;
+>  #endif
+>  	root = BTRFS_I(buf->pages[0]->mapping->host)->root;
 > diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-> index cce6087d6880..4180a3b7e725 100644
+> index 6ac15804bab1..6611207e8e1f 100644
 > --- a/fs/btrfs/extent_io.c
 > +++ b/fs/btrfs/extent_io.c
-> @@ -4641,19 +4641,14 @@ int extent_buffer_under_io(struct extent_buffer *eb)
->   */
+> @@ -4642,7 +4642,7 @@ int extent_buffer_under_io(struct extent_buffer *eb)
 >  static void btrfs_release_extent_buffer_page(struct extent_buffer *eb)
 >  {
-> -	unsigned long index;
-> -	struct page *page;
-> +	int i;
->  	int mapped = !test_bit(EXTENT_BUFFER_DUMMY, &eb->bflags);
+>  	int i;
+> -	int mapped = !test_bit(EXTENT_BUFFER_DUMMY, &eb->bflags);
+> +	int mapped = !test_bit(EXTENT_BUFFER_PRIVATE, &eb->bflags);
 >  
 >  	BUG_ON(extent_buffer_under_io(eb));
 >  
-> -	index = num_extent_pages(eb->start, eb->len);
-> -	if (index == 0)
-> -		return;
-
-This check does seem to be redundant.
-
-> +	for (i = 0; i < num_extent_pages(eb->start, eb->len); i++) {
-
-I think that the num_extent_pages(...) would be better put to a
-temporary variable so it's not evaluated each time the loop termination
-condition is checked.
-
-> +		struct page *page = eb->pages[i];
+> @@ -4755,7 +4755,7 @@ struct extent_buffer *btrfs_clone_extent_buffer(struct extent_buffer *src)
+>  	}
 >  
-> -	do {
-> -		index--;
-> -		page = eb->pages[index];
->  		if (!page)
->  			continue;
->  		if (mapped)
+>  	set_bit(EXTENT_BUFFER_UPTODATE, &new->bflags);
+> -	set_bit(EXTENT_BUFFER_DUMMY, &new->bflags);
+> +	set_bit(EXTENT_BUFFER_PRIVATE, &new->bflags);
+>  
+>  	return new;
+>  }
+> @@ -4780,7 +4780,7 @@ struct extent_buffer *__alloc_dummy_extent_buffer(struct btrfs_fs_info *fs_info,
+
+Would be good to sync the new name with the helpers:
+__alloc_dummy_extent_buffer and alloc_dummy_extent_buffer then.
+
+>  	}
+>  	set_extent_buffer_uptodate(eb);
+>  	btrfs_set_header_nritems(eb, 0);
+> -	set_bit(EXTENT_BUFFER_DUMMY, &eb->bflags);
+> +	set_bit(EXTENT_BUFFER_PRIVATE, &eb->bflags);
+>  
+>  	return eb;
+>  err:
+> @@ -5086,7 +5086,7 @@ static int release_extent_buffer(struct extent_buffer *eb)
+>  		/* Should be safe to release our pages at this point */
+>  		btrfs_release_extent_buffer_page(eb);
+>  #ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
+> -		if (unlikely(test_bit(EXTENT_BUFFER_DUMMY, &eb->bflags))) {
+> +		if (unlikely(test_bit(EXTENT_BUFFER_PRIVATE, &eb->bflags))) {
+>  			__free_extent_buffer(eb);
+>  			return 1;
+>  		}
+> @@ -5117,7 +5117,7 @@ void free_extent_buffer(struct extent_buffer *eb)
+>  
+>  	spin_lock(&eb->refs_lock);
+>  	if (atomic_read(&eb->refs) == 2 &&
+> -	    test_bit(EXTENT_BUFFER_DUMMY, &eb->bflags))
+> +	    test_bit(EXTENT_BUFFER_PRIVATE, &eb->bflags))
+>  		atomic_dec(&eb->refs);
+>  
+>  	if (atomic_read(&eb->refs) == 2 &&
+> diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+> index 0bfd4aeb822d..bfccaec2c89a 100644
+> --- a/fs/btrfs/extent_io.h
+> +++ b/fs/btrfs/extent_io.h
+> @@ -46,7 +46,7 @@
+>  #define EXTENT_BUFFER_STALE 6
+>  #define EXTENT_BUFFER_WRITEBACK 7
+>  #define EXTENT_BUFFER_READ_ERR 8        /* read IO error */
+> -#define EXTENT_BUFFER_DUMMY 9
+> +#define EXTENT_BUFFER_PRIVATE 9
+>  #define EXTENT_BUFFER_IN_TREE 10
+>  #define EXTENT_BUFFER_WRITE_ERR 11    /* write IO error */
+>  
+> -- 
+> 2.7.4
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

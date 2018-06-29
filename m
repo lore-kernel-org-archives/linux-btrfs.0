@@ -1,94 +1,289 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f68.google.com ([209.85.214.68]:36450 "EHLO
-        mail-it0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S934268AbeF2SbI (ORCPT
+Received: from bosmailout04.eigbox.net ([66.96.187.4]:52495 "EHLO
+        bosmailout04.eigbox.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S934268AbeF2SbL (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 29 Jun 2018 14:31:08 -0400
-Received: by mail-it0-f68.google.com with SMTP id j135-v6so4157896itj.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 29 Jun 2018 11:31:08 -0700 (PDT)
-Subject: Re: Major design flaw with BTRFS Raid, temporary device drop will
- corrupt nodatacow files
-To: james harvey <jamespharvey20@gmail.com>
-Cc: Chris Murphy <lists@colorremedies.com>,
-        Goffredo Baroncelli <kreijack@inwind.it>,
-        Anand Jain <anand.jain@oracle.com>, Remi Gauvin <remi@georgianit.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <66d30a90-a571-a110-749d-8a3fd6ccb9d5@georgianit.com>
- <9bbde3a8-2498-a538-5744-c857f5a57947@oracle.com>
- <CAJCQCtSuKpcn2Or3LiCYqeFMFFoRU09BFQE_n8FAhQ2Vo+83PA@mail.gmail.com>
- <93a74ac2-c271-accd-d0c7-4822c0f75f80@libero.it>
- <CAJCQCtRUgoQPNwcM54hXnNSqcm5+0d9Ks1aWw_2VYChMxWWnEg@mail.gmail.com>
- <CA+X5Wn5JdervhGob5MGWRtYLt+Av5nYhTkKdAUQFgcxPUdMAsA@mail.gmail.com>
- <a6210485-1d7d-2543-8a1f-f43ba7eda34e@gmail.com>
- <CA+X5Wn7jVZS5USHnmj1SrHh87V1O6vgzRcLM64di4ALc81hjmQ@mail.gmail.com>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <f76a93ba-05c8-967f-d7c0-8fdc0a618a7e@gmail.com>
-Date: Fri, 29 Jun 2018 14:31:04 -0400
+        Fri, 29 Jun 2018 14:31:11 -0400
+Received: from bosmailscan09.eigbox.net ([10.20.15.9])
+        by bosmailout04.eigbox.net with esmtp (Exim)
+        id 1fYxcb-0007lv-Fr
+        for linux-btrfs@vger.kernel.org; Fri, 29 Jun 2018 13:55:49 -0400
+Received: from [10.115.3.32] (helo=bosimpout12)
+        by bosmailscan09.eigbox.net with esmtp (Exim)
+        id 1fYxcb-000168-CV
+        for linux-btrfs@vger.kernel.org; Fri, 29 Jun 2018 13:55:49 -0400
+Received: from [127.0.0.1] (helo=ipage)
+        by boswebmail13.eigbox.net with esmtp (Exim)
+        id 1fYxcY-0006KQ-4V
+        for linux-btrfs@vger.kernel.org; Fri, 29 Jun 2018 13:55:46 -0400
 MIME-Version: 1.0
-In-Reply-To: <CA+X5Wn7jVZS5USHnmj1SrHh87V1O6vgzRcLM64di4ALc81hjmQ@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=US-ASCII;
+ format=flowed
+Date: Fri, 29 Jun 2018 13:55:46 -0400
+From: j@livingrock.ca
+To: linux-btrfs@vger.kernel.org
+Subject: Removed Disk - Super Error - Scrub did not fix - next steps?
+Message-ID: <028df9e3bc13286d08fade17fe90b179@livingrock.ca>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2018-06-29 13:58, james harvey wrote:
-> On Fri, Jun 29, 2018 at 1:09 PM, Austin S. Hemmelgarn
-> <ahferroin7@gmail.com> wrote:
->> On 2018-06-29 11:15, james harvey wrote:
->>>
->>> On Thu, Jun 28, 2018 at 6:27 PM, Chris Murphy <lists@colorremedies.com>
->>> wrote:
->>>>
->>>> And an open question I have about scrub is weather it only ever is
->>>> checking csums, meaning nodatacow files are never scrubbed, or if the
->>>> copies are at least compared to each other?
->>>
->>>
->>> Scrub never looks at nodatacow files.  It does not compare the copies
->>> to each other.
->>>
->>> Qu submitted a patch to make check compare the copies:
->>> https://patchwork.kernel.org/patch/10434509/
->>>
->>> This hasn't been added to btrfs-progs git yet.
->>>
->>> IMO, I think the offline check should look at nodatacow copies like
->>> this, but I still think this also needs to be added to scrub.  In the
->>> patch thread, I discuss my reasons why.  In brief: online scanning;
->>> this goes along with user's expectation of scrub ensuring mirrored
->>> data integrity; and recommendations to setup scrub on periodic basis
->>> to me means it's the place to put it.
->>
->> That said, it can't sanely fix things if there is a mismatch. At least, not
->> unless BTRFS gets proper generational tracking to handle temporarily missing
->> devices.  As of right now, sanely fixing things requires significant manual
->> intervention, as you have to bypass the device read selection algorithm to
->> be able to look at the state of the individual copies so that you can pick
->> one to use and forcibly rewrite the whole file by hand.
-> 
-> Absolutely.  User would need to use manual intervention as you
-> describe, or restore the single file(s) from backup.  But, it's a good
-> opportunity to tell the user they had partial data corruption, even if
-> it can't be auto-fixed.  Otherwise they get intermittent data
-> corruption, depending on which copies are read.
-The thing is though, as things stand right now, you need to manually 
-edit the data on-disk directly or restore the file from a backup to fix 
-the file.  While it's technically true that you can manually repair this 
-type of thing, both of the cases for doing it without those patches I 
-mentioned, it's functionally impossible for a regular user to do it 
-without potentially losing some data.
+Hello,
 
-Unless that changes, scrub telling you it's corrupt is not going to help 
-much aside from making sure you don't make things worse by trying to use 
-it.  Given this, it would make sense to have a (disabled by default) 
-option to have scrub repair it by just using the newer or older copy of 
-the data.  That would require classic RAID generational tracking though, 
-which BTRFS doesn't have yet.
+I recently was mounting some drives in the free drive bays of my server 
+and accidentally removed one of my drives from my raid1 btrfs array.  I 
+immediately put it back in - but whatever damage that would have caused 
+seems to be already done.
 
->> A while back, Anand Jain posted some patches that would let you select a
->> particular device to direct all reads to via a mount option, but I don't
->> think they ever got merged.  That would have made manual recovery in cases
->> like this exponentially easier (mount read-only with one device selected,
->> copy the file out somewhere, remount read-only with the other device, drop
->> caches, copy the file out again, compare and reconcile the two copies, then
->> remount the volume writable and write out the repaired file).
+I got these log errors [dmesg -T] and after reading up it seemed that 
+all I *probably* needed to do was a scrub:
 
+Finally - the original logs I found by running "dmesg -T|grep -i btrfs" 
+- from where the log started to where the scrub begain:
+
+[Tue Jun 26 18:30:08 2018] BTRFS error (device sdb): bdev /dev/sdh errs: 
+wr 40547, rd 42808, flush 2, corrupt 0, gen 0
+
+[Tue Jun 26 18:33:19 2018] btrfs_dev_stat_print_on_error: 2056 callbacks 
+suppressed
+
+A bunch of these errors...
+
+Then later:
+
+[Tue Jun 26 19:19:52 2018] BTRFS warning (device sdb): lost page write 
+due to IO error on /dev/sdh
+
+I think this is where I unmounted/remounted /mnt/titan:
+
+[Tue Jun 26 19:49:18 2018] BTRFS info (device sdb): disk space caching 
+is enabled
+[Tue Jun 26 19:49:18 2018] BTRFS info (device sdb): has skinny extents
+[Tue Jun 26 19:49:18 2018] BTRFS info (device sdb): bdev /dev/sdh errs: 
+wr 55907, rd 59133, flush 2, corrupt 0, gen 0
+[Tue Jun 26 19:49:57 2018] btrfs_dev_stat_print_on_error: 49 callbacks 
+suppressed
+[Tue Jun 26 19:49:57 2018] BTRFS error (device sdb): bdev /dev/sdh errs: 
+wr 55907, rd 59133, flush 2, corrupt 0, gen 1
+[Tue Jun 26 19:49:57 2018] BTRFS error (device sdb): bdev /dev/sdh errs: 
+wr 55907, rd 59133, flush 2, corrupt 0, gen 2
+[Tue Jun 26 19:49:57 2018] BTRFS error (device sdb): bdev /dev/sdh errs: 
+wr 55907, rd 59133, flush 2, corrupt 0, gen 3
+[Tue Jun 26 19:50:09 2018] BTRFS error (device sdb): parent transid 
+verify failed on 9081264963584 wanted 8663 found 8321
+[Tue Jun 26 19:50:09 2018] BTRFS info (device sdb): read error 
+corrected: ino 0 off 9081264963584 (dev /dev/sdh sector 17728418112)
+[Tue Jun 26 19:50:09 2018] BTRFS info (device sdb): read error 
+corrected: ino 0 off 9081264967680 (dev /dev/sdh sector 17728418120)
+[Tue Jun 26 19:50:09 2018] BTRFS info (device sdb): read error 
+corrected: ino 0 off 9081264971776 (dev /dev/sdh sector 17728418128)
+[Tue Jun 26 19:50:09 2018] BTRFS info (device sdb): read error 
+corrected: ino 0 off 9081264975872 (dev /dev/sdh sector 17728418136)
+[Tue Jun 26 19:50:09 2018] BTRFS error (device sdb): parent transid 
+verify failed on 9081265356800 wanted 8663 found 8321
+[Tue Jun 26 19:50:09 2018] BTRFS info (device sdb): read error 
+corrected: ino 0 off 9081265356800 (dev /dev/sdh sector 17728418880)
+[Tue Jun 26 19:50:09 2018] BTRFS info (device sdb): read error 
+corrected: ino 0 off 9081265360896 (dev /dev/sdh sector 17728418888)
+[Tue Jun 26 19:50:09 2018] BTRFS info (device sdb): read error 
+corrected: ino 0 off 9081265364992 (dev /dev/sdh sector 17728418896)
+[Tue Jun 26 19:50:09 2018] BTRFS info (device sdb): read error 
+corrected: ino 0 off 9081265369088 (dev /dev/sdh sector 17728418904)
+
+According to btrfs scrub status this is when the scrub began...
+
+[Tue Jun 26 19:50:29 2018] BTRFS error (device sdb): parent transid 
+verify failed on 9081265061888 wanted 8663 found 8321
+[Tue Jun 26 19:50:29 2018] BTRFS info (device sdb): read error 
+corrected: ino 0 off 9081265061888 (dev /dev/sdh sector 17728418304)
+[Tue Jun 26 19:50:29 2018] BTRFS info (device sdb): read error 
+corrected: ino 0 off 9081265065984 (dev /dev/sdh sector 17728418312)
+[Tue Jun 26 19:50:29 2018] BTRFS info (device sdb): read error 
+corrected: ino 0 off 9081265070080 (dev /dev/sdh sector 17728418320)
+[Tue Jun 26 19:50:29 2018] BTRFS info (device sdb): read error 
+corrected: ino 0 off 9081265074176 (dev /dev/sdh sector 17728418328)
+[Tue Jun 26 19:50:29 2018] BTRFS error (device sdb): parent transid 
+verify failed on 9081263046656 wanted 8664 found 8662
+[Tue Jun 26 19:50:29 2018] BTRFS info (device sdb): read error 
+corrected: ino 0 off 9081263046656 (dev /dev/sdh sector 17728414368)
+[Tue Jun 26 19:50:29 2018] BTRFS info (device sdb): read error 
+corrected: ino 0 off 9081263050752 (dev /dev/sdh sector 17728414376)
+[Tue Jun 26 19:50:29 2018] BTRFS info (device sdb): read error 
+corrected: ino 0 off 9081263054848 (dev /dev/sdh sector 17728414384)
+[Tue Jun 26 19:50:29 2018] BTRFS info (device sdb): read error 
+corrected: ino 0 off 9081263058944 (dev /dev/sdh sector 17728414392)
+[Tue Jun 26 19:50:29 2018] BTRFS error (device sdb): parent transid 
+verify failed on 9081263194112 wanted 8664 found 8662
+[Tue Jun 26 19:50:29 2018] BTRFS info (device sdb): read error 
+corrected: ino 0 off 9081263194112 (dev /dev/sdh sector 17728414656)
+[Tue Jun 26 19:50:29 2018] BTRFS info (device sdb): read error 
+corrected: ino 0 off 9081263198208 (dev /dev/sdh sector 17728414664)
+[Tue Jun 26 19:50:29 2018] BTRFS error (device sdb): parent transid 
+verify failed on 9081264128000 wanted 8664 found 8662
+[Tue Jun 26 19:50:29 2018] BTRFS error (device sdb): parent transid 
+verify failed on 9081265520640 wanted 8665 found 8321
+
+So I ran btrfs scrub and this was my post-scrub status:
+
+Idoru:/ # btrfs scrub status -d /mnt/titan
+scrub status for e7c494fc-ac4e-4644-a2f2-66f25543708b
+scrub device /dev/sdb (id 1) history
+     scrub started at Tue Jun 26 19:50:29 2018 and finished after 
+16:10:04
+     total bytes scrubbed: 8.57TiB with 0 errors
+scrub device /dev/sdh (id 2) history
+     scrub started at Tue Jun 26 19:50:29 2018 and finished after 
+16:13:31
+     total bytes scrubbed: 8.57TiB with 3 errors
+     error details: super=3
+     corrected errors: 0, uncorrectable errors: 0, unverified errors: 0
+
+On a side note - I'm not sure if it matters (or why it 
+might/could/would) - but I actually used entire drives [as opposed to 
+making partitions and using them] to create my mirror.
+
+Idoru:/ # gdisk -l /dev/sdb
+GPT fdisk (gdisk) version 1.0.1
+
+Partition table scan:
+   MBR: not present
+   BSD: not present
+   APM: not present
+   GPT: not present
+
+Creating new GPT entries.
+Disk /dev/sdb: 19532873728 sectors, 9.1 TiB
+Logical sector size: 512 bytes
+Disk identifier (GUID): DEDB0F7A-93A7-45C9-8235-828492422559
+Partition table holds up to 128 entries
+First usable sector is 34, last usable sector is 19532873694
+Partitions will be aligned on 2048-sector boundaries
+Total free space is 19532873661 sectors (9.1 TiB)
+
+Number  Start (sector)    End (sector)  Size       Code  Name
+
+Also, here is the device usage - post scrub [it seems to be the same 
+byte for byte]:
+
+Idoru:/ # btrfs device usage -b /mnt/titan
+/dev/sdb, ID: 1
+    Device size:          10000831348736
+    Device slack:                  0
+    Data,RAID1:           9428526956544
+    Metadata,RAID1:       13958643712
+    System,RAID1:            8388608
+    Unallocated:          558337359872
+
+/dev/sdh, ID: 2
+    Device size:          10000831348736
+    Device slack:                  0
+    Data,RAID1:           9428526956544
+    Metadata,RAID1:       13958643712
+    System,RAID1:            8388608
+    Unallocated:          558337359872
+
+I unmounted again and ran btrfs check [without repair] again - after 
+doing scrub:
+
+Idoru:/ # btrfs check /dev/sdh
+Checking filesystem on /dev/sdh
+UUID: e7c494fc-ac4e-4644-a2f2-66f25543708b
+checking extents
+checking free space cache
+checking fs roots
+checking only csum items (without verifying data)
+checking root refs
+found 9414630215796 bytes used, no error found
+total csum bytes: 9191775488
+total tree bytes: 12803850240
+total fs tree bytes: 3054665728
+total extent tree bytes: 230211584
+btree space waste bytes: 782320214
+file data blocks allocated: 132510269804544
+  referenced 132509780557824
+
+Idoru:/ # btrfs check /dev/sdb
+Checking filesystem on /dev/sdb
+UUID: e7c494fc-ac4e-4644-a2f2-66f25543708b
+checking extents
+checking free space cache
+checking fs roots
+checking only csum items (without verifying data)
+checking root refs
+found 9414630215796 bytes used, no error found
+total csum bytes: 9191775488
+total tree bytes: 12803850240
+total fs tree bytes: 3054665728
+total extent tree bytes: 230211584
+btree space waste bytes: 782320214
+file data blocks allocated: 132510269804544
+  referenced 132509780557824
+
+Everything seems identical [and OK].
+
+So I tried remounting and found the following in my dmesg log:
+
+Fri Jun 29 13:27:21 2018] BTRFS info (device sdb): disk space caching is 
+enabled
+[Fri Jun 29 13:27:21 2018] BTRFS info (device sdb): has skinny extents
+[Fri Jun 29 13:27:21 2018] BTRFS info (device sdb): bdev /dev/sdh errs: 
+wr 55907, rd 59133, flush 2, corrupt 0, gen 3
+
+So I still seem to have a problem...
+
+I guess I'm wondering why the super errors were not corrected in the 
+scrub [uncorrectable errors:0 - super but it didn't correct - or even 
+try to - correct the super errors]?
+
+Is there an easy way to tell the drive I removed to "resync" to the 
+drive that was not removed?  I actually assumed [yes - I know what they 
+say about assumptions] that the OS would know which drive was valid in 
+event of disagreement and would *easily* catch and correct this.
+
+Since that doesn't seem to be the case - I'm wondering if there is a 
+command I'm overlooking or if I need to break and rebuild the entire 
+mirror again?  Or is this something that btrfs check -repair is for (it 
+doesn't seem to be saying anything is wrong when run without -repair)?  
+Is there a way to revalidate and repair only the superblock [perhaps by 
+using the superblock from the drive that wasn't removed]?  I definitely 
+don't want "btrfs check -repair" deciding there's a problem with my 
+"good drive" and breaking it in the process of fixing things - lol.
+
+It's also more than a bit scary that "btrfs check -repair" is always 
+mentioned "as a last resort" - thus my writing and hoping to avoid it 
+[unless it's the proper next step?]
+
+Apologies for the long post - I'm hoping it's enough information to 
+assist me without being overwhelmingly useless.
+
+Thank you to any and all who can help :)
+
+J
+
+P.S:  Requisite info requested from 
+https://btrfs.wiki.kernel.org/index.php/Btrfs_mailing_list
+
+Idoru:/ # uname -a
+Linux Idoru 4.16.12-2-default #1 SMP PREEMPT Fri May 25 18:40:19 UTC 
+2018 (39c7522) x86_64 x86_64 x86_64 GNU/Linux
+
+Idoru:/ # btrfs --version
+btrfs-progs v4.17 [I'm running openSUSE tumbleweed and I noticed a 
+kernel update has occured without reboot so I suspect I may have 
+originally been running btrfs scrub from v4.16 tools instead]
+
+Idoru:/ # btrfs fi show /mnt/titan
+Label: 'Titan A.E.'  uuid: e7c494fc-ac4e-4644-a2f2-66f25543708b
+     Total devices 2 FS bytes used 8.57TiB
+     devid    1 size 9.10TiB used 8.59TiB path /dev/sdb
+     devid    2 size 9.10TiB used 8.59TiB path /dev/sdh [was /dev/sdc 
+before removal + reinsertion]
+
+Idoru:/boot # btrfs fi df /mnt/titan/
+Data, RAID1: total=8.58TiB, used=8.56TiB
+System, RAID1: total=8.00MiB, used=1.19MiB
+Metadata, RAID1: total=13.00GiB, used=11.92GiB
+GlobalReserve, single: total=512.00MiB, used=0.00
+
+Re: dmesg - I am hoping there is enough relevance in the dmesg info I 
+have already included - I would only rather include the log if 
+*absolutely* necessary - thank you :)

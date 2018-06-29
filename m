@@ -1,97 +1,138 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:56974 "EHLO
-        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932446AbeF2RKx (ORCPT
+Received: from mail-lf0-f45.google.com ([209.85.215.45]:41610 "EHLO
+        mail-lf0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752231AbeF2RoK (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 29 Jun 2018 13:10:53 -0400
-Date: Fri, 29 Jun 2018 10:10:44 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>, suy.fnst@cn.fujitsu.com
-Cc: linux-btrfs@vger.kernel.org
-Message-ID: <20180629171044.yudgzzwpgpetim5q@merlins.org>
-References: <20180629042707.vrjwbytg6bxmrgjg@merlins.org>
- <6658a593-3b4a-f1ef-f550-2fb951b2517d@gmx.com>
- <20180629052825.tifg2aw7oy3qyyvw@merlins.org>
- <3b240898-a96d-77f6-efb9-f0af81ee0cd1@gmx.com>
- <20180629060657.qrtcxfcy22zkstfw@merlins.org>
- <e9264580-7853-fbfc-2c90-e28e8a45daf5@gmx.com>
- <20180629065903.xgwpvaa2vuiys75r@merlins.org>
- <6a86d5d5-1d67-f34b-f809-b4e534485f3e@gmx.com>
- <20180629072831.qocyipdvmcm6cbo7@merlins.org>
+        Fri, 29 Jun 2018 13:44:10 -0400
+Received: by mail-lf0-f45.google.com with SMTP id y127-v6so7360965lfc.8
+        for <linux-btrfs@vger.kernel.org>; Fri, 29 Jun 2018 10:44:09 -0700 (PDT)
+Subject: Re: Incremental send/receive broken after snapshot restore
+To: Hannes Schweizer <schweizer.hannes@gmail.com>, linux-btrfs@vger.kernel.org
+References: <CAOfGOYyT2F-6jtKgpgm6iX5aK-kP1Ryuz_rcTFs=s05_FeAPoQ@mail.gmail.com>
+From: Andrei Borzenkov <arvidjaar@gmail.com>
+Message-ID: <1115fcb3-4e07-6fd9-17cb-56a8ba46a7ab@gmail.com>
+Date: Fri, 29 Jun 2018 20:44:06 +0300
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180629072831.qocyipdvmcm6cbo7@merlins.org>
-Subject: Re: So, does btrfs check lowmem take days? weeks?
+In-Reply-To: <CAOfGOYyT2F-6jtKgpgm6iX5aK-kP1Ryuz_rcTFs=s05_FeAPoQ@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jun 29, 2018 at 12:28:31AM -0700, Marc MERLIN wrote:
-> So, I rebooted, and will now run Su's btrfs check without repair and
-> report back.
+28.06.2018 23:09, Hannes Schweizer пишет:
+> Hi,
+> 
+> Here's my environment:
+> Linux diablo 4.17.0-gentoo #5 SMP Mon Jun 25 00:26:55 CEST 2018 x86_64
+> Intel(R) Core(TM) i5 CPU 760 @ 2.80GHz GenuineIntel GNU/Linux
+> btrfs-progs v4.17
+> 
+> Label: 'online'  uuid: e4dc6617-b7ed-4dfb-84a6-26e3952c8390
+>         Total devices 2 FS bytes used 3.16TiB
+>         devid    1 size 1.82TiB used 1.58TiB path /dev/mapper/online0
+>         devid    2 size 1.82TiB used 1.58TiB path /dev/mapper/online1
+> Data, RAID0: total=3.16TiB, used=3.15TiB
+> System, RAID0: total=16.00MiB, used=240.00KiB
+> Metadata, RAID0: total=7.00GiB, used=4.91GiB
+> GlobalReserve, single: total=512.00MiB, used=0.00B
+> 
+> Label: 'offline'  uuid: 5b449116-93e5-473e-aaf5-bf3097b14f29
+>         Total devices 2 FS bytes used 3.52TiB
+>         devid    1 size 5.46TiB used 3.53TiB path /dev/mapper/offline0
+>         devid    2 size 5.46TiB used 3.53TiB path /dev/mapper/offline1
+> Data, RAID1: total=3.52TiB, used=3.52TiB
+> System, RAID1: total=8.00MiB, used=512.00KiB
+> Metadata, RAID1: total=6.00GiB, used=5.11GiB
+> GlobalReserve, single: total=512.00MiB, used=0.00B
+> 
+> Label: 'external'  uuid: 8bf13621-01f0-4f09-95c7-2c157d3087d0
+>         Total devices 1 FS bytes used 3.65TiB
+>         devid    1 size 5.46TiB used 3.66TiB path
+> /dev/mapper/luks-3c196e96-d46c-4a9c-9583-b79c707678fc
+> Data, single: total=3.64TiB, used=3.64TiB
+> System, DUP: total=32.00MiB, used=448.00KiB
+> Metadata, DUP: total=11.00GiB, used=9.72GiB
+> GlobalReserve, single: total=512.00MiB, used=0.00B
+> 
+> 
+> The following automatic backup scheme is in place:
+> hourly:
+> btrfs sub snap -r online/root online/root.<date>
+> 
+> daily:
+> btrfs sub snap -r online/root online/root.<new_offline_reference>
+> btrfs send -c online/root.<old_offline_reference>
+> online/root.<new_offline_reference> | btrfs receive offline
+> btrfs sub del -c online/root.<old_offline_reference>
+> 
+> monthly:
+> btrfs sub snap -r online/root online/root.<new_external_reference>
+> btrfs send -c online/root.<old_external_reference>
+> online/root.<new_external_reference> | btrfs receive external
+> btrfs sub del -c online/root.<old_external_reference>
+> 
+> Now here are the commands leading up to my problem:
+> After the online filesystem suddenly went ro, and btrfs check showed
+> massive problems, I decided to start the online array from scratch:
+> 1: mkfs.btrfs -f -d raid0 -m raid0 -L "online" /dev/mapper/online0
+> /dev/mapper/online1
+> 
+> As you can see from the backup commands above, the snapshots of
+> offline and external are not related, so in order to at least keep the
+> extensive backlog of the external snapshot set (including all
+> reflinks), I decided to restore the latest snapshot from external.
+> 2: btrfs send external/root.<external_reference> | btrfs receive online
+> 
+> I wanted to ensure I can restart the incremental backup flow from
+> online to external, so I did this
+> 3: mv online/root.<external_reference> online/root
+> 4: btrfs sub snap -r online/root online/root.<external_reference>
+> 5: btrfs property set online/root ro false
+> 
+> Now, I naively expected a simple restart of my automatic backups for
+> external should work.
+> However after running
+> 6: btrfs sub snap -r online/root online/root.<new_external_reference>
+> 7: btrfs send -c online/root.<old_external_reference>
+> online/root.<new_external_reference> | btrfs receive external
 
-As expected, it will likely still take days, here's the start:
+You just recreated your "online" filesystem from scratch. Where
+"old_external_reference" comes from? You did not show steps used to
+create it.
 
-gargamel:~# btrfs check --mode=lowmem  -p /dev/mapper/dshelf2  
-Checking filesystem on /dev/mapper/dshelf2 
-UUID: 0f1a0c9f-4e54-4fa7-8736-fd50818ff73d 
-ERROR: extent[84302495744, 69632] referencer count mismatch (root: 21872, owner: 374857, offset: 3407872) wanted: 2, have: 4
-ERROR: extent[84302495744, 69632] referencer count mismatch (root: 22911, owner: 374857, offset: 3407872) wanted: 2, have: 4
-ERROR: extent[125712527360, 12214272] referencer count mismatch (root: 21872, owner: 374857, offset: 114540544) wanted: 180, have: 240
-ERROR: extent[125730848768, 5111808] referencer count mismatch (root: 21872, owner: 374857, offset: 126754816) wanted: 67, have: 115
-ERROR: extent[125730848768, 5111808] referencer count mismatch (root: 22911, owner: 374857, offset: 126754816) wanted: 67, have: 115
-ERROR: extent[125736914944, 6037504] referencer count mismatch (root: 21872, owner: 374857, offset: 131866624) wanted: 114, have: 143
-ERROR: extent[125736914944, 6037504] referencer count mismatch (root: 22911, owner: 374857, offset: 131866624) wanted: 114, have: 143
-ERROR: extent[129952120832, 20242432] referencer count mismatch (root: 21872, owner: 374857, offset: 148234240) wanted: 301, have: 431
-ERROR: extent[129952120832, 20242432] referencer count mismatch (root: 22911, owner: 374857, offset: 148234240) wanted: 355, have: 433
-ERROR: extent[134925357056, 11829248] referencer count mismatch (root: 21872, owner: 374857, offset: 180371456) wanted: 160, have: 240
-ERROR: extent[134925357056, 11829248] referencer count mismatch (root: 22911, owner: 374857, offset: 180371456) wanted: 161, have: 240
-ERROR: extent[147895111680, 12345344] referencer count mismatch (root: 21872, owner: 374857, offset: 192200704) wanted: 169, have: 249
-ERROR: extent[147895111680, 12345344] referencer count mismatch (root: 22911, owner: 374857, offset: 192200704) wanted: 171, have: 251
-ERROR: extent[150850146304, 17522688] referencer count mismatch (root: 21872, owner: 374857, offset: 217653248) wanted: 347, have: 418
-ERROR: extent[156909494272, 55320576] referencer count mismatch (root: 22911, owner: 374857, offset: 235175936) wanted: 1, have: 1449
-ERROR: extent[156909494272, 55320576] referencer count mismatch (root: 21872, owner: 374857, offset: 235175936) wanted: 1, have: 1452
+> I see the following error:
+> ERROR: unlink root/.ssh/agent-diablo-_dev_pts_3 failed. No such file
+> or directory
+> 
+> Which is unfortunate, but the second problem actually encouraged me to
+> post this message.
+> As planned, I had to start the offline array from scratch as well,
+> because I no longer had any reference snapshot for incremental backups
+> on other devices:
+> 8: mkfs.btrfs -f -d raid1 -m raid1 -L "offline" /dev/mapper/offline0
+> /dev/mapper/offline1
+> 
+> However restarting the automatic daily backup flow bails out with a
+> similar error, although no potentially problematic previous
+> incremental snapshots should be involved here!
+> ERROR: unlink o925031-987-0/2139527549 failed. No such file or directory
+> 
 
-Mmmh, these look similar (but not identical) to the last run earlier in this thread:
-ERROR: extent[84302495744, 69632] referencer count mismatch (root: 21872, owner: 374857, offset: 3407872) wanted: 3, have: 4
-Created new chunk [18457780224000 1073741824]
-Delete backref in extent [84302495744 69632]
-ERROR: extent[84302495744, 69632] referencer count mismatch (root: 22911, owner: 374857, offset: 3407872) wanted: 3, have: 4
-Delete backref in extent [84302495744 69632]
-ERROR: extent[125712527360, 12214272] referencer count mismatch (root: 21872, owner: 374857, offset: 114540544) wanted: 181, have: 240
-Delete backref in extent [125712527360 12214272]
-ERROR: extent[125730848768, 5111808] referencer count mismatch (root: 21872, owner: 374857, offset: 126754816) wanted: 68, have: 115
-Delete backref in extent [125730848768 5111808]
-ERROR: extent[125730848768, 5111808] referencer count mismatch (root: 22911, owner: 374857, offset: 126754816) wanted: 68, have: 115
-Delete backref in extent [125730848768 5111808]
-ERROR: extent[125736914944, 6037504] referencer count mismatch (root: 21872, owner: 374857, offset: 131866624) wanted: 115, have: 143
-Delete backref in extent [125736914944 6037504]
-ERROR: extent[125736914944, 6037504] referencer count mismatch (root: 22911, owner: 374857, offset: 131866624) wanted: 115, have: 143
-Delete backref in extent [125736914944 6037504]
-ERROR: extent[129952120832, 20242432] referencer count mismatch (root: 21872, owner: 374857, offset: 148234240) wanted: 302, have: 431
-Delete backref in extent [129952120832 20242432]
-ERROR: extent[129952120832, 20242432] referencer count mismatch (root: 22911, owner: 374857, offset: 148234240) wanted: 356, have: 433
-Delete backref in extent [129952120832 20242432]
-ERROR: extent[134925357056, 11829248] referencer count mismatch (root: 21872, owner: 374857, offset: 180371456) wanted: 161, have: 240
-Delete backref in extent [134925357056 11829248]
-ERROR: extent[134925357056, 11829248] referencer count mismatch (root: 22911, owner: 374857, offset: 180371456) wanted: 162, have: 240
-Delete backref in extent [134925357056 11829248]
-ERROR: extent[147895111680, 12345344] referencer count mismatch (root: 21872, owner: 374857, offset: 192200704) wanted: 170, have: 249
-Delete backref in extent [147895111680 12345344]
-ERROR: extent[147895111680, 12345344] referencer count mismatch (root: 22911, owner: 374857, offset: 192200704) wanted: 172, have: 251
-Delete backref in extent [147895111680 12345344]
-ERROR: extent[150850146304, 17522688] referencer count mismatch (root: 21872, owner: 374857, offset: 217653248) wanted: 348, have: 418
-Delete backref in extent [150850146304 17522688]
-ERROR: extent[156909494272, 55320576] referencer count mismatch (root: 22911, owner: 374857, offset: 235175936) wanted: 555, have: 1449
-Deleted root 2 item[156909494272, 178, 5476627808561673095]
-ERROR: extent[156909494272, 55320576] referencer count mismatch (root: 21872, owner: 374857, offset: 235175936) wanted: 556, have: 1452
-Deleted root 2 item[156909494272, 178, 7338474132555182983]
+Again - before you can *re*start incremental-forever sequence you need
+initial full copy. How exactly did you restart it if no snapshots exist
+either on source or on destination?
 
-I guess the last repair didn't repair things in a way that they're working now?
+> I'm a bit lost now. The only thing I could image which might be
+> confusing for btrfs,
+> is the residual "Received UUID" of online/root.<external_reference>
+> after command 2.
+> What's the recommended way to restore snapshots with send/receive
+> without breaking subsequent incremental backups (including reflinks of
+> existing backups)?
+> 
+> Any hints appreciated...
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
 
-Thanks,
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/                       | PGP 7F55D5F27AAF9D08

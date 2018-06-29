@@ -1,73 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:34056 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:34062 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S966316AbeF2I5H (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 29 Jun 2018 04:57:07 -0400
+        id S966320AbeF2I5J (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 29 Jun 2018 04:57:09 -0400
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 7E277AD67
-        for <linux-btrfs@vger.kernel.org>; Fri, 29 Jun 2018 08:57:06 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id B3816AD66
+        for <linux-btrfs@vger.kernel.org>; Fri, 29 Jun 2018 08:57:08 +0000 (UTC)
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 12/14] btrfs: raid56: merge rbio_is_full helpers
-Date: Fri, 29 Jun 2018 10:57:05 +0200
-Message-Id: <23f86f58e6ac35db671c90cb2e4cb9e95c0b8ac1.1530262400.git.dsterba@suse.com>
+Subject: [PATCH 13/14] btrfs: raid56: don't lock stripe cache table when freeing
+Date: Fri, 29 Jun 2018 10:57:07 +0200
+Message-Id: <6c508b165cc727f07137f0208ce68ce3ce70c2c9.1530262400.git.dsterba@suse.com>
 In-Reply-To: <cover.1530262400.git.dsterba@suse.com>
 References: <cover.1530262400.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There's only one call site of the unlocked helper so it can be folded
-into the caller.
+This is called either at the end of the mount or if the mount fails.
+In both cases, there's nothing running that can use the table so the
+lock is pointless.
 
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/raid56.c | 23 ++++++-----------------
- 1 file changed, 6 insertions(+), 17 deletions(-)
+ fs/btrfs/raid56.c | 3 ---
+ 1 file changed, 3 deletions(-)
 
 diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-index 339cce0878d1..272acd9b1192 100644
+index 272acd9b1192..0840b054e4b7 100644
 --- a/fs/btrfs/raid56.c
 +++ b/fs/btrfs/raid56.c
-@@ -507,32 +507,21 @@ static void run_xor(void **pages, int src_cnt, ssize_t len)
+@@ -407,19 +407,16 @@ static void remove_rbio_from_cache(struct btrfs_raid_bio *rbio)
+ static void btrfs_clear_rbio_cache(struct btrfs_fs_info *info)
+ {
+ 	struct btrfs_stripe_hash_table *table;
+-	unsigned long flags;
+ 	struct btrfs_raid_bio *rbio;
+ 
+ 	table = info->stripe_hash_table;
+ 
+-	spin_lock_irqsave(&table->cache_lock, flags);
+ 	while (!list_empty(&table->stripe_cache)) {
+ 		rbio = list_entry(table->stripe_cache.next,
+ 				  struct btrfs_raid_bio,
+ 				  stripe_cache);
+ 		__remove_rbio_from_cache(rbio);
+ 	}
+-	spin_unlock_irqrestore(&table->cache_lock, flags);
  }
  
  /*
-- * returns true if the bio list inside this rbio
-- * covers an entire stripe (no rmw required).
-- * Must be called with the bio list lock held, or
-- * at a time when you know it is impossible to add
-- * new bios into the list
-+ * Returns true if the bio list inside this rbio covers an entire stripe (no
-+ * rmw required).
-  */
--static int __rbio_is_full(struct btrfs_raid_bio *rbio)
-+static int rbio_is_full(struct btrfs_raid_bio *rbio)
- {
-+	unsigned long flags;
- 	unsigned long size = rbio->bio_list_bytes;
- 	int ret = 1;
- 
-+	spin_lock_irqsave(&rbio->bio_list_lock, flags);
- 	if (size != rbio->nr_data * rbio->stripe_len)
- 		ret = 0;
--
- 	BUG_ON(size > rbio->nr_data * rbio->stripe_len);
--	return ret;
--}
--
--static int rbio_is_full(struct btrfs_raid_bio *rbio)
--{
--	unsigned long flags;
--	int ret;
--
--	spin_lock_irqsave(&rbio->bio_list_lock, flags);
--	ret = __rbio_is_full(rbio);
- 	spin_unlock_irqrestore(&rbio->bio_list_lock, flags);
-+
- 	return ret;
- }
- 
 -- 
 2.17.1
 

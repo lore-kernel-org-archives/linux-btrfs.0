@@ -1,33 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ot0-f181.google.com ([74.125.82.181]:42063 "EHLO
-        mail-ot0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932140AbeF2DZP (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:59292 "EHLO
+        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751991AbeF2E1M (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 28 Jun 2018 23:25:15 -0400
-Received: by mail-ot0-f181.google.com with SMTP id n24-v6so8465045otl.9
-        for <linux-btrfs@vger.kernel.org>; Thu, 28 Jun 2018 20:25:15 -0700 (PDT)
+        Fri, 29 Jun 2018 00:27:12 -0400
+Date: Thu, 28 Jun 2018 21:27:07 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: linux-btrfs@vger.kernel.org
+Message-ID: <20180629042707.vrjwbytg6bxmrgjg@merlins.org>
 MIME-Version: 1.0
-In-Reply-To: <55c3e4a3-c7c4-0f4b-9767-7eeccd733cae@gmx.com>
-References: <20180628070443.23421-1-wqu@suse.com> <c5fc1287-cf27-75c0-3175-33d71014fe78@suse.com>
- <55c3e4a3-c7c4-0f4b-9767-7eeccd733cae@gmx.com>
-From: james harvey <jamespharvey20@gmail.com>
-Date: Thu, 28 Jun 2018 23:25:14 -0400
-Message-ID: <CA+X5Wn4a2sPjaYhU5qp9XCO5CKyP9mzsFh45yZ_V8fjcFmg4Uw@mail.gmail.com>
-Subject: Re: [PATCH RFC] btrfs: Do extra device generation check at mount time
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: Nikolay Borisov <nborisov@suse.com>, Qu Wenruo <wqu@suse.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=us-ascii
+Subject: So, does btrfs check lowmem take days? weeks?
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jun 28, 2018 at 3:15 AM, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
-> I'd like to make sure everyone, including developers and end-users, are
-> fine with the restrict error-out behavior.
+Regular btrfs check --repair has a nice progress option. It wasn't
+perfect, but it showed something.
 
-Yes, please error out, as a start.  Requesting this was on my
-btrfs-to-do list.  A device generation mismatch from a drive going
-offline until forced reboot was what ultimately sent me on the path of
-problems I had.  Had parent transid errors, which I realized was due
-to this, and decided to replace the outdated lvm partition with a new
-one.  (Hiding the bad one to prevent UUID problems of course.)
+But then it also takes all your memory quicker than the linux kernel can
+defend itself and reliably completely kills my 32GB server quicker than
+it can OOM anything.
+
+lowmem repair seems to be going still, but it's been days and -p seems
+to do absolutely nothing.
+
+My filesystem is "only" 10TB or so, albeit with a lot of files.
+
+2 things that come to mind
+1) can lowmem have some progress working so that I know if I'm looking
+at days, weeks, or even months before it will be done?
+
+2) non lowmem is more efficient obviously when it doesn't completely
+crash your machine, but could lowmem be given an amount of memory to use
+for caching, or maybe use some heuristics based on RAM free so that it's
+not so excrutiatingly slow?
+
+Thanks,
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                       | PGP 7F55D5F27AAF9D08

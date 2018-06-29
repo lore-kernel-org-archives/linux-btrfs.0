@@ -1,47 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:34032 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:34038 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S932263AbeF2I46 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 29 Jun 2018 04:56:58 -0400
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 4F602AD66
-        for <linux-btrfs@vger.kernel.org>; Fri, 29 Jun 2018 08:56:57 +0000 (UTC)
+        id S966221AbeF2I5A (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 29 Jun 2018 04:57:00 -0400
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id AA12BAD66
+        for <linux-btrfs@vger.kernel.org>; Fri, 29 Jun 2018 08:56:59 +0000 (UTC)
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 08/14] btrfs: raid56: add new helper for starting async work
-Date: Fri, 29 Jun 2018 10:56:56 +0200
-Message-Id: <893bfb0617d66960810ec4ec7176949b7fa28957.1530262400.git.dsterba@suse.com>
+Subject: [PATCH 09/14] btrfs: raid56: use new helper for async_rmw_stripe
+Date: Fri, 29 Jun 2018 10:56:58 +0200
+Message-Id: <5517fa2c3be29eb257e46802c8befb892fc508be.1530262400.git.dsterba@suse.com>
 In-Reply-To: <cover.1530262400.git.dsterba@suse.com>
 References: <cover.1530262400.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add helper that schedules a given function to run on the rmw workqueue.
-This will replace several standalone helpers.
-
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/raid56.c | 6 ++++++
- 1 file changed, 6 insertions(+)
+ fs/btrfs/raid56.c | 11 ++---------
+ 1 file changed, 2 insertions(+), 9 deletions(-)
 
 diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-index 1a1b7d6c44cb..f30d847baf07 100644
+index f30d847baf07..96a7d3445623 100644
 --- a/fs/btrfs/raid56.c
 +++ b/fs/btrfs/raid56.c
-@@ -174,6 +174,12 @@ static noinline void finish_parity_scrub(struct btrfs_raid_bio *rbio,
- 					 int need_check);
- static void async_scrub_parity(struct btrfs_raid_bio *rbio);
+@@ -162,7 +162,6 @@ static int __raid56_parity_recover(struct btrfs_raid_bio *rbio);
+ static noinline void finish_rmw(struct btrfs_raid_bio *rbio);
+ static void rmw_work(struct btrfs_work *work);
+ static void read_rebuild_work(struct btrfs_work *work);
+-static void async_rmw_stripe(struct btrfs_raid_bio *rbio);
+ static void async_read_rebuild(struct btrfs_raid_bio *rbio);
+ static int fail_bio_stripe(struct btrfs_raid_bio *rbio, struct bio *bio);
+ static int fail_rbio_index(struct btrfs_raid_bio *rbio, int failed);
+@@ -811,7 +810,7 @@ static noinline void unlock_stripe(struct btrfs_raid_bio *rbio)
+ 				async_read_rebuild(next);
+ 			} else if (next->operation == BTRFS_RBIO_WRITE) {
+ 				steal_rbio(rbio, next);
+-				async_rmw_stripe(next);
++				start_async_work(next, rmw_work);
+ 			} else if (next->operation == BTRFS_RBIO_PARITY_SCRUB) {
+ 				steal_rbio(rbio, next);
+ 				async_scrub_parity(next);
+@@ -1501,12 +1500,6 @@ static void raid_rmw_end_io(struct bio *bio)
+ 	rbio_orig_end_io(rbio, BLK_STS_IOERR);
+ }
  
-+static void start_async_work(struct btrfs_raid_bio *rbio, btrfs_func_t work_func)
-+{
-+	btrfs_init_work(&rbio->work, btrfs_rmw_helper, work_func, NULL, NULL);
-+	btrfs_queue_work(rbio->fs_info->rmw_workers, &rbio->work);
-+}
-+
- /*
-  * the stripe hash table is used for locking, and to collect
-  * bios in hopes of making a full stripe
+-static void async_rmw_stripe(struct btrfs_raid_bio *rbio)
+-{
+-	btrfs_init_work(&rbio->work, btrfs_rmw_helper, rmw_work, NULL, NULL);
+-	btrfs_queue_work(rbio->fs_info->rmw_workers, &rbio->work);
+-}
+-
+ static void async_read_rebuild(struct btrfs_raid_bio *rbio)
+ {
+ 	btrfs_init_work(&rbio->work, btrfs_rmw_helper,
+@@ -1645,7 +1638,7 @@ static int partial_stripe_write(struct btrfs_raid_bio *rbio)
+ 
+ 	ret = lock_stripe_add(rbio);
+ 	if (ret == 0)
+-		async_rmw_stripe(rbio);
++		start_async_work(rbio, rmw_work);
+ 	return 0;
+ }
+ 
 -- 
 2.17.1
 

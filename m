@@ -1,54 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f48.google.com ([209.85.218.48]:39723 "EHLO
-        mail-oi0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S936131AbeF3ABo (ORCPT
+Received: from mail-ot0-f179.google.com ([74.125.82.179]:45371 "EHLO
+        mail-ot0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932449AbeF3AEw (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 29 Jun 2018 20:01:44 -0400
-Received: by mail-oi0-f48.google.com with SMTP id d189-v6so1221944oib.6
-        for <linux-btrfs@vger.kernel.org>; Fri, 29 Jun 2018 17:01:44 -0700 (PDT)
+        Fri, 29 Jun 2018 20:04:52 -0400
+Received: by mail-ot0-f179.google.com with SMTP id k3-v6so11681767otl.12
+        for <linux-btrfs@vger.kernel.org>; Fri, 29 Jun 2018 17:04:52 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <30ad064e-99e0-4398-2af7-d97f9577ff8f@hamburg.ccc.de>
-References: <80f0c6f7-ede1-e522-551c-ec2446bb79ea@hamburg.ccc.de>
- <4f7902e3-d176-5395-55f1-72bdffab7d47@gmx.com> <30ad064e-99e0-4398-2af7-d97f9577ff8f@hamburg.ccc.de>
+In-Reply-To: <20180629171044.yudgzzwpgpetim5q@merlins.org>
+References: <20180629042707.vrjwbytg6bxmrgjg@merlins.org> <6658a593-3b4a-f1ef-f550-2fb951b2517d@gmx.com>
+ <20180629052825.tifg2aw7oy3qyyvw@merlins.org> <3b240898-a96d-77f6-efb9-f0af81ee0cd1@gmx.com>
+ <20180629060657.qrtcxfcy22zkstfw@merlins.org> <e9264580-7853-fbfc-2c90-e28e8a45daf5@gmx.com>
+ <20180629065903.xgwpvaa2vuiys75r@merlins.org> <6a86d5d5-1d67-f34b-f809-b4e534485f3e@gmx.com>
+ <20180629072831.qocyipdvmcm6cbo7@merlins.org> <20180629171044.yudgzzwpgpetim5q@merlins.org>
 From: Chris Murphy <lists@colorremedies.com>
-Date: Fri, 29 Jun 2018 18:01:43 -0600
-Message-ID: <CAJCQCtTV8UFdQUA8xKRzfQmKABsNCYFwR9XdvbD3br_cJ-Dp2w@mail.gmail.com>
-Subject: Re: btrfs suddenly think's it's raid6
-To: marble <marble@hamburg.ccc.de>
-Cc: Qu Wenruo <quwenruo.btrfs@gmx.com>,
+Date: Fri, 29 Jun 2018 18:04:51 -0600
+Message-ID: <CAJCQCtQ1YuEpG0CXUVir5ZbADHxyB-NPDd7u8sFEtzJPmMOeMg@mail.gmail.com>
+Subject: Re: So, does btrfs check lowmem take days? weeks?
+To: Marc MERLIN <marc@merlins.org>
+Cc: Qu Wenruo <quwenruo.btrfs@gmx.com>, Su Yue <suy.fnst@cn.fujitsu.com>,
         Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jun 29, 2018 at 4:09 PM, marble <marble@hamburg.ccc.de> wrote:
-> Hey,
-> Thanks for the quick reply :-)
->
->> Is there anything like unexpected power loss happens?
-> Power loos may have happened. It was power via a RPi.
->> And would you provide the following data for debugging?
->>
->> # btrfs ins dump-super -fFa /dev/mapper/black
-> See attachment.
->> And further more, what's the device mapper setup for /dev/mapper/black?
->> Is there anything like RAID here?
-> This is due to LUKS I think. "black" is the name I gave to cryptsetup open.
-
-No log_root* in the super. So no fsyncing at the time? What was
-happening at the time of the power loss?
-
-Pretty weird, all three supers are OK and yet two copies of the fs
-tree are corrupt. Why doesn't it fall back automatically to one of the
-other roots?
-
-You could try 'mount -o usebackuproot,ro' and see if that's permissive
-enough to succeed.
-
-I wonder if the drive firmware reordered things contrary to Btrfs
-expectation right at the powerfail - or even if the powerfail caused
-the drive firmware to do the writes in the wrong order?
+I've got about 1/2 the snapshots and less than 1/10th the data...but
+my btrfs check times are much shorter than either: 15 minutes and 65
+minutes (lowmem).
 
 
--- 
+[chris@f28s ~]$ sudo btrfs fi us /mnt/first
+Overall:
+    Device size:        1024.00GiB
+    Device allocated:         774.12GiB
+    Device unallocated:         249.87GiB
+    Device missing:             0.00B
+    Used:             760.48GiB
+    Free (estimated):         256.95GiB    (min: 132.01GiB)
+    Data ratio:                  1.00
+    Metadata ratio:              2.00
+    Global reserve:         512.00MiB    (used: 0.00B)
+
+Data,single: Size:761.00GiB, Used:753.93GiB
+   /dev/mapper/first     761.00GiB
+
+Metadata,DUP: Size:6.50GiB, Used:3.28GiB
+   /dev/mapper/first      13.00GiB
+
+System,DUP: Size:64.00MiB, Used:112.00KiB
+   /dev/mapper/first     128.00MiB
+
+Unallocated:
+   /dev/mapper/first     249.87GiB
+
+
+146 subvolumes
+137 snapshots
+
+total csum bytes: 790549924
+total tree bytes: 3519250432
+total fs tree bytes: 2546073600
+total extent tree bytes: 131350528
+
+
+Original mode check takes ~15 minutes
+Lowmem mode takes ~65 minutes
+
+RAM: 4G
+CPU: Intel(R) Pentium(R) CPU  N3700  @ 1.60GHz
+
+
+
 Chris Murphy

@@ -1,79 +1,113 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:40935 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1752046AbeF3IU1 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 30 Jun 2018 04:20:27 -0400
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-3@m.gmane.org>)
-        id 1fZB5A-0001BU-D7
-        for linux-btrfs@vger.kernel.org; Sat, 30 Jun 2018 10:18:12 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: btrfs send/receive vs rsync
-Date: Sat, 30 Jun 2018 08:18:06 +0000 (UTC)
-Message-ID: <pan$459f7$e799c140$81f1419d$ea68563a@cox.net>
-References: <20180629042707.vrjwbytg6bxmrgjg@merlins.org>
-        <6658a593-3b4a-f1ef-f550-2fb951b2517d@gmx.com>
-        <20180629052825.tifg2aw7oy3qyyvw@merlins.org>
-        <3b240898-a96d-77f6-efb9-f0af81ee0cd1@gmx.com>
-        <20180629060657.qrtcxfcy22zkstfw@merlins.org>
-        <e9264580-7853-fbfc-2c90-e28e8a45daf5@gmx.com>
-        <20180629065903.xgwpvaa2vuiys75r@merlins.org>
-        <20180629120954.4bbcd174@natsu>
-        <20180629072210.nxvtwbokblol7xcb@merlins.org>
-        <f693b8c8-1b3c-4847-b5f5-3990e3b8389a@bouton.name>
-        <20180629162420.xszjxquo7gtrwtxz@merlins.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from mout.gmx.net ([212.227.15.18]:43485 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751155AbeF3Oo7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 30 Jun 2018 10:44:59 -0400
+Subject: Re: btrfs suddenly think's it's raid6
+To: marble <marble@hamburg.ccc.de>, linux-btrfs@vger.kernel.org
+References: <80f0c6f7-ede1-e522-551c-ec2446bb79ea@hamburg.ccc.de>
+ <4f7902e3-d176-5395-55f1-72bdffab7d47@gmx.com>
+ <f120f53c-5bb5-5ba9-fd72-a5cedf3baca1@hamburg.ccc.de>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <c3ab4d25-4642-f208-26de-1696d45615d9@gmx.com>
+Date: Sat, 30 Jun 2018 22:44:51 +0800
+MIME-Version: 1.0
+In-Reply-To: <f120f53c-5bb5-5ba9-fd72-a5cedf3baca1@hamburg.ccc.de>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="8kc3FsVzbHo5PZSkqH6CUyBasJ2sdOPGi"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Marc MERLIN posted on Fri, 29 Jun 2018 09:24:20 -0700 as excerpted:
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--8kc3FsVzbHo5PZSkqH6CUyBasJ2sdOPGi
+Content-Type: multipart/mixed; boundary="2Kj4fgkp0AwzpEDoRoyZxfVVbAUqbFmnS";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: marble <marble@hamburg.ccc.de>, linux-btrfs@vger.kernel.org
+Message-ID: <c3ab4d25-4642-f208-26de-1696d45615d9@gmx.com>
+Subject: Re: btrfs suddenly think's it's raid6
+References: <80f0c6f7-ede1-e522-551c-ec2446bb79ea@hamburg.ccc.de>
+ <4f7902e3-d176-5395-55f1-72bdffab7d47@gmx.com>
+ <f120f53c-5bb5-5ba9-fd72-a5cedf3baca1@hamburg.ccc.de>
+In-Reply-To: <f120f53c-5bb5-5ba9-fd72-a5cedf3baca1@hamburg.ccc.de>
 
->> If instead of using a single BTRFS filesystem you used LVM volumes
->> (maybe with Thin provisioning and monitoring of the volume group free
->> space) for each of your servers to backup with one BTRFS filesystem per
->> volume you would have less snapshots per filesystem and isolate
->> problems in case of corruption. If you eventually decide to start from
->> scratch again this might help a lot in your case.
-> 
-> So, I already have problems due to too many block layers:
-> - raid 5 + ssd - bcache - dmcrypt - btrfs
-> 
-> I get occasional deadlocks due to upper layers sending more data to the
-> lower layer (bcache) than it can process. I'm a bit warry of adding yet
-> another layer (LVM), but you're otherwise correct than keeping smaller
-> btrfs filesystems would help with performance and containing possible
-> damage.
-> 
-> Has anyone actually done this? :)
+--2Kj4fgkp0AwzpEDoRoyZxfVVbAUqbFmnS
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-So I definitely use (and advocate!) the split-em-up strategy, and I use 
-btrfs, but that's pretty much all the similarity we have.
 
-I'm all ssd, having left spinning rust behind.  My strategy avoids 
-unnecessary layers like lvm (tho crypt can arguably be necessary), 
-preferring direct on-device (gpt) partitioning for simplicity of 
-management and disaster recovery.  And my backup and recovery strategy is 
-an equally simple mkfs and full-filesystem-fileset copy to an identically 
-sized filesystem, with backups easily bootable/mountable in place of the 
-working copy if necessary, and multiple backups so if disaster takes out 
-the backup I was writing at the same time as the working copy, I still 
-have a backup to fall back to.
 
-So it's different enough I'm not sure how much my experience will help 
-you.  But I /can/ say the subdivision is nice, as it means I can keep my 
-root filesystem read-only by default for reliability, my most-at-risk log 
-filesystem tiny for near-instant scrub/balance/check, and my also at risk 
-home small as well, with the big media files being on a different 
-filesystem that's mostly read-only, so less at risk and needing less 
-frequent backups.  The tiny boot and large updates (distro repo, sources, 
-ccache) are also separate, and mounted only for boot maintenance or 
-updates.
+On 2018=E5=B9=B406=E6=9C=8830=E6=97=A5 06:11, marble wrote:
+> Hey,
+> Thanks for the quick reply :-)
+>=20
+>> Is there anything like unexpected power loss happens?
+> Power loss may have happened.
+>> And would you provide the following data for debugging?
+>>
+>> # btrfs ins dump-super -fFa /dev/mapper/black
+> I attached it.
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+Looks pretty good.
+Then we could go through normal salvage routine.
 
+Please try the following commands and especially keep an eye on the
+stderr output:
+
+(The follow option is added in recent btrfs-progs releases, so please
+ensure your btrfs-progs is up to date)
+# btrfs ins dump-tree -b 1084653568 --follow /dev/mapper/black
+# btrfs ins dump-tree -b 1083604992 --follow /dev/mapper/black
+# btrfs ins dump-tree -b 1083981824 --follow /dev/mapper/black
+# btrfs ins dump-tree -b 1084325888 --follow /dev/mapper/black
+
+Or just use old roots and let btrfs check to judge:
+# btrfs check --tree-root 1084751872 /dev/mapper/black
+# btrfs check --tree-root 1083801600 /dev/mapper/black
+# btrfs check --tree-root 1084145664 /dev/mapper/black
+# btrfs check --tree-root 1084473344 /dev/mapper/black
+
+
+>> And further more, what's the device mapper setup for /dev/mapper/black=
+?
+>> Is there anything like RAID here?
+> I think this is the result of luks. "black" is the name I passed to
+> cryptsetup open.
+
+Maybe some powerloss screwed up encryption?
+I'm not pretty sure how things will happen when power loss happens.
+
+Anyway, let's see how above btrfs check and dump-tree ends.
+
+Thanks,
+Qu
+
+>> Thanks,
+>> Qu
+> Cheers,
+> marble
+>=20
+
+
+--2Kj4fgkp0AwzpEDoRoyZxfVVbAUqbFmnS--
+
+--8kc3FsVzbHo5PZSkqH6CUyBasJ2sdOPGi
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAls3l2MACgkQwj2R86El
+/qgNsAf+IbbVgfXhGyb/LfyzYyKlDbqb82XDyivDxcSlVEGLi3ISDu9vHP3WBYKG
+QGBk5EDvEdVRuhw74qw/fdYmy7nRKdXBFOIgvA1UahXlyIF+B/9p08Epzx0LWECH
+yAIZCsCx0kS/oKOwV0GpLkUcyCkCDzuHHjYPyF++hStd6LAuSv/AuIc0CBdwiDpD
+MEKwcM9pI6zEqB/sx7qrjFMKzGsMA27nfo6WZykKjHutNjUegPqabl5PmVDIf20p
+jqS3KJooZ7Ms8njgdKFGiCWlRy7lXgtLJPOQYL6UVYxXZmiFy2Y5GJEvafRkw3XW
+8nGxdoW9TYh71qmXOzlbDK1DQyScPg==
+=AmRs
+-----END PGP SIGNATURE-----
+
+--8kc3FsVzbHo5PZSkqH6CUyBasJ2sdOPGi--

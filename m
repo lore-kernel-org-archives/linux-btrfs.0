@@ -1,181 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp2130.oracle.com ([141.146.126.79]:60442 "EHLO
-        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932618AbeF3CNZ (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:47010 "EHLO
+        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S933794AbeF3Co0 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 29 Jun 2018 22:13:25 -0400
-Subject: Re: [PATCH 3/3] btrfs: fix race between mkfs and mount
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-References: <20180604150030.12883-1-anand.jain@oracle.com>
- <20180604150030.12883-3-anand.jain@oracle.com>
- <20180607163931.GH3215@twin.jikos.cz> <20180619135301.GQ24375@twin.jikos.cz>
- <eca302a1-5400-504e-f43f-3b8bfcb74e80@oracle.com>
- <20180626121900.GI27958@twin.jikos.cz>
- <b3eca86e-db7a-41fc-e8f9-150d0418ffe8@oracle.com>
- <20180629120627.GP2287@twin.jikos.cz>
-From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <8d45e08f-5fd1-6b67-74e0-6a0ddae0c002@oracle.com>
-Date: Sat, 30 Jun 2018 10:16:33 +0800
+        Fri, 29 Jun 2018 22:44:26 -0400
+Date: Fri, 29 Jun 2018 19:44:19 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>, suy.fnst@cn.fujitsu.com
+Cc: linux-btrfs@vger.kernel.org
+Message-ID: <20180630024419.tzupddsw627iyhaz@merlins.org>
+References: <20180629042707.vrjwbytg6bxmrgjg@merlins.org>
+ <6658a593-3b4a-f1ef-f550-2fb951b2517d@gmx.com>
+ <20180629052825.tifg2aw7oy3qyyvw@merlins.org>
+ <3b240898-a96d-77f6-efb9-f0af81ee0cd1@gmx.com>
+ <20180629060657.qrtcxfcy22zkstfw@merlins.org>
+ <e9264580-7853-fbfc-2c90-e28e8a45daf5@gmx.com>
+ <20180629065903.xgwpvaa2vuiys75r@merlins.org>
+ <6a86d5d5-1d67-f34b-f809-b4e534485f3e@gmx.com>
+ <20180629072831.qocyipdvmcm6cbo7@merlins.org>
+ <20180629171044.yudgzzwpgpetim5q@merlins.org>
 MIME-Version: 1.0
-In-Reply-To: <20180629120627.GP2287@twin.jikos.cz>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20180629171044.yudgzzwpgpetim5q@merlins.org>
+Subject: Re: So, does btrfs check lowmem take days? weeks?
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Well, there goes that. After about 18H:
+ERROR: extent[156909494272, 55320576] referencer count mismatch (root: 21872, owner: 374857, offset: 235175936) wanted: 1, have: 1452 
+backref.c:466: __add_missing_keys: Assertion `ref->root_id` failed, value 0 
+btrfs(+0x3a232)[0x56091704f232] 
+btrfs(+0x3ab46)[0x56091704fb46] 
+btrfs(+0x3b9f5)[0x5609170509f5] 
+btrfs(btrfs_find_all_roots+0x9)[0x560917050a45] 
+btrfs(+0x572ff)[0x56091706c2ff] 
+btrfs(+0x60b13)[0x560917075b13] 
+btrfs(cmd_check+0x2634)[0x56091707d431] 
+btrfs(main+0x88)[0x560917027260] 
+/lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xf1)[0x7f93aa508561] 
+btrfs(_start+0x2a)[0x560917026dfa] 
+Aborted 
 
+That's https://github.com/Damenly/btrfs-progs.git
 
-On 06/29/2018 08:06 PM, David Sterba wrote:
-> On Tue, Jun 26, 2018 at 10:42:32PM +0800, Anand Jain wrote:
->>>>> Last version of the proposed fix is to extend the uuid_mutex over the
->>>>> whole mount callback and use it around calls to btrfs_scan_one_device.
->>>>> That way we'll be sure the mount will always get to the device it
->>>>> scanned and that will not be freed by the parallel scan.
->>>>
->>>>     That will break the requisite #1 as above.
->>>
->>> I don't see how it breaks 'mount and or scan of two independent fsid+dev
->>> is possible'. It is possible, but the lock does not need to be
->>> filesystem local.
->>>
->>> Concurrent mount or scan will block on the uuid_mutex,
->>
->>    As uuid_mutex is global, if fsid1 is being mounted, the fsid2 mount
->>    will wait upto certain extent with this code.
-> 
-> Yes it will wait a bit, but the critical section is short. There's some
-> IO done and it's reading of 4K in btrfs_read_disk_super. The rest is
-> cpu-bound and hardly measurable in practice, in context of concurrent
-> mount and scanning.
-> 
-> I took the approach to fix the bug first and then make it faster or
-> cleaner, also to fix it in a way that's still acceptable for current
-> development cycle.
->>    My efforts here was to
->>    use uuid_mutex only to protect the fs_uuid update part, in this way
->>    there is concurrency in the mount process of fsid1 and fsid2 and
->>    provides shorter bootup time when the user uses the mount at boot
->>    option.
-> 
-> The locking can be still improved but the uuid_mutex is not a contended
-> lock, mount is an operation that does not happen thousand times a
-> second, same for the scanning.
+Whoops, I didn't use the tmp1 branch, let me try again with that and
+report back, although the problem above is still going to be there since
+I think the only difference will be this, correct?
+https://github.com/Damenly/btrfs-progs/commit/b5851513a12237b3e19a3e71f3ad00b966d25b3a
 
-  My concern is about the boot up time when there are larger number of
-  LUN configured with independent btrfs FSIDs to mount at boot. Since
-  BTRFS is a kind of infrastructure for the servers, we can't rule out
-  that these kind of configuration won't exists at all. Anyway as you
-  said we can use uuid_mutex for the current development cycle.
-
-  However a review on [1] which does fix your earlier concern of
-  returning -EBUSY is appreciated. And pls let me know if going ahead
-  with this approach would be accepted in the current development cycle.?
-
-> So even if there are several mounts happening during boot, it's just a
-> few and the delay is IMO unnoticeable. If the boot time is longer by
-> say 100ms at worst, I'm still ok with my patches as a fix.
-> 
-> But not as a final fix, so the updates to locking you mentioned are
-> still possible. We now have a point of reference where syzbot does is
-> not able to reproduce the bugs.
-
-
-[1]
-----------------------------------
-When %fs_devices::opened > 0 the device is mounted, %fs_devices is never
-freed so its safe to use %fs_devices and it does not need any locks or
-flags.
-
-However, when %fs_devices::opened == 0 (idle) that means device is not
-yet mounted, and it can be either transition to opened or freed. When
-it transitions to freed, fs_devices gets freed and any pointer accessing
-will endup with UAF error.
-
-Here are places where we access fs_devcies and it needs locking and
-using uuid_mutex is one of method
-
-1.
-READY ioctl
-
-2.
-Mount
-
-3.
-SCAN ioctl
-
-4.
-Stale cleanup during SCAN
-
-5.
-planned device FORGET ioctl
-
-#4 and #5 may free the fs_devices while #1, #2, and #3 are still
-accessing the fs_devices.
-
-using uuid_mutex is one choice however it would slow down the mount
-at boot when there are larger number of independent btrfs fsid being
-mounted at boot.
-
-Proposed Fix
--------------
-
-This does not return the -EBUSY. If there is any better way
-I am ok to use it.
-
-struct btrfs_fs_devices
-{
-::
-    int ref_count;
-::
-}
-
-To acquire a fs_devices..
-
-volume_devices_excl_state_enter(x)
-{
-  fs_devices = NULL
-  lock uuid_mutex
-    if (fs_devices = find fs_devices(x))
-         fs_devices::ref_count++
-  unlock uuid_mutex
-  return fs_devices
-}
-
-
-To release a fs_devices..
-
-volume_devices_excl_state_exit(fs_devices)
-{
-   lock uuid_mutex
-     fs_devices::ref_count--
-   unlock uuid_mutex
-}
-
-
-To delete a fs_devices..
-
-again:
-  lock uuid_mutex
-    find fs_devices
-    if (fs_devices::ref_count != 0) {
-       unlock uuid_mutex
-       goto agin;
-    }
-    if (fs_devices->opened > 0) {
-      unlock uuid_mutex
-      return -EBUSY
-    }
-
-    free_fs_devices()
-  unlock uuid_mutex
-
-------------------------------------------
-
-
-Thanks, Anand
-
-
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                       | PGP 7F55D5F27AAF9D08

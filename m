@@ -1,51 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qt0-f194.google.com ([209.85.216.194]:38630 "EHLO
-        mail-qt0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1731999AbeGSPeC (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 19 Jul 2018 11:34:02 -0400
-Received: by mail-qt0-f194.google.com with SMTP id y19-v6so7408468qto.5
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jul 2018 07:50:31 -0700 (PDT)
-From: Josef Bacik <josef@toxicpanda.com>
-To: linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 17/22] btrfs: don't take the dio_sem in the fsync path
-Date: Thu, 19 Jul 2018 10:50:01 -0400
-Message-Id: <20180719145006.17532-17-josef@toxicpanda.com>
-In-Reply-To: <20180719145006.17532-1-josef@toxicpanda.com>
-References: <20180719145006.17532-1-josef@toxicpanda.com>
+Received: from mx2.suse.de ([195.135.220.15]:59142 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1752344AbeGANH5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 1 Jul 2018 09:07:57 -0400
+From: David Sterba <dsterba@suse.com>
+To: torvalds@linux-foundation.org
+Cc: David Sterba <dsterba@suse.com>, clm@fb.com, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+Subject: [GIT PULL] Btrfs fixes for 4.18-rc2
+Date: Sun,  1 Jul 2018 15:07:45 +0200
+Message-Id: <cover.1530449809.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Since we've changed the fsync() path to always run ordered extents
-before doing the tree log we no longer need to take the dio_sem in the
-tree log path.  This gets rid of a lockdep splat that I was seeing with
-the AIO tests.
+Hi,
 
-Signed-off-by: Josef Bacik <josef@toxicpanda.com>
----
- fs/btrfs/tree-log.c | 2 --
- 1 file changed, 2 deletions(-)
+we have a few regression fixes for qgroup rescan status tracking and the
+vm_fault_t conversion that mixed up the error values.
 
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index f8220ec02036..aa06e1954b84 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -4439,7 +4439,6 @@ static int btrfs_log_changed_extents(struct btrfs_trans_handle *trans,
- 
- 	INIT_LIST_HEAD(&extents);
- 
--	down_write(&inode->dio_sem);
- 	write_lock(&tree->lock);
- 	test_gen = root->fs_info->last_trans_committed;
- 	logged_start = start;
-@@ -4520,7 +4519,6 @@ static int btrfs_log_changed_extents(struct btrfs_trans_handle *trans,
- 	}
- 	WARN_ON(!list_empty(&extents));
- 	write_unlock(&tree->lock);
--	up_write(&inode->dio_sem);
- 
- 	btrfs_release_path(path);
- 	if (!ret)
--- 
-2.14.3
+Please pull, thanks.
 
+----------------------------------------------------------------
+The following changes since commit c5b4a50b74018b3677098151ec5f4fce07d5e6a0:
+
+  Btrfs: fix return value on rename exchange failure (2018-06-22 12:59:08 +0200)
+
+are available in the Git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-4.18-rc2-tag
+
+for you to fetch changes up to e4e7ede739f7fb468686dfffa2d1e35dca35bacd:
+
+  Btrfs: fix mount failure when qgroup rescan is in progress (2018-06-28 11:30:57 +0200)
+
+----------------------------------------------------------------
+Chris Mason (1):
+      Btrfs: fix regression in btrfs_page_mkwrite() from vm_fault_t conversion
+
+Filipe Manana (1):
+      Btrfs: fix mount failure when qgroup rescan is in progress
+
+Qu Wenruo (1):
+      btrfs: quota: Set rescan progress to (u64)-1 if we hit last leaf
+
+ fs/btrfs/inode.c  |  3 ++-
+ fs/btrfs/qgroup.c | 17 +++++++++++++----
+ 2 files changed, 15 insertions(+), 5 deletions(-)

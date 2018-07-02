@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from mail.cn.fujitsu.com ([183.91.158.132]:25975 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1753849AbeGBJWG (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 Jul 2018 05:22:06 -0400
+        with ESMTP id S1753911AbeGBJWJ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 Jul 2018 05:22:09 -0400
 Received: from G08CNEXCHPEKD03.g08.fujitsu.local (unknown [10.167.33.85])
-        by cn.fujitsu.com (Postfix) with ESMTP id C47E24B43D5E
-        for <linux-btrfs@vger.kernel.org>; Mon,  2 Jul 2018 17:22:00 +0800 (CST)
+        by cn.fujitsu.com (Postfix) with ESMTP id AEB654B43D4B
+        for <linux-btrfs@vger.kernel.org>; Mon,  2 Jul 2018 17:22:01 +0800 (CST)
 From: Su Yue <suy.fnst@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: <suy.fnst@cn.fujitsu.com>
-Subject: [PATCH RFC 1/3] btrfs-progs: lowmem: delay before lowmem repair starts
-Date: Mon, 2 Jul 2018 17:28:18 +0800
-Message-ID: <20180702092820.16285-2-suy.fnst@cn.fujitsu.com>
+Subject: [PATCH RFC 2/3] btrfs-progs: lowmem: force to start without delay with option '--force-repair-lowmem'
+Date: Mon, 2 Jul 2018 17:28:19 +0800
+Message-ID: <20180702092820.16285-3-suy.fnst@cn.fujitsu.com>
 In-Reply-To: <20180702092820.16285-1-suy.fnst@cn.fujitsu.com>
 References: <20180702092820.16285-1-suy.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -19,60 +19,90 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Since lowmem mode repair is so dangerous, delay 10 seconds before
-start.
+Add an option '--force-repair-lowmem' to start check without any delay.
 
 Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
 ---
- check/main.c | 28 ++++++++++++++++++++++------
- 1 file changed, 22 insertions(+), 6 deletions(-)
+ check/main.c | 17 +++++++++++++++--
+ 1 file changed, 15 insertions(+), 2 deletions(-)
 
 diff --git a/check/main.c b/check/main.c
-index 3190b5d4f293..b9997460162f 100644
+index b9997460162f..3c9dc242f3db 100644
 --- a/check/main.c
 +++ b/check/main.c
-@@ -9553,12 +9553,6 @@ int cmd_check(int argc, char **argv)
- 		exit(1);
+@@ -9377,6 +9377,7 @@ const char * const cmd_check_usage[] = {
+ 	"-s|--super <superblock>     use this superblock copy",
+ 	"-b|--backup                 use the first valid backup root copy",
+ 	"--force                     skip mount checks, repair is not possible",
++	"--force-repair-lowmem       start to check and repair in lowmem mode without delay",
+ 	"--repair                    try to repair the filesystem",
+ 	"--readonly                  run in read-only mode (default)",
+ 	"--init-csum-tree            create a new CRC tree",
+@@ -9419,6 +9420,7 @@ int cmd_check(int argc, char **argv)
+ 	int qgroup_report_ret;
+ 	unsigned ctree_flags = OPEN_CTREE_EXCLUSIVE;
+ 	int force = 0;
++	int force_repair_lowmem = 0;
+ 
+ 	while(1) {
+ 		int c;
+@@ -9426,7 +9428,7 @@ int cmd_check(int argc, char **argv)
+ 			GETOPT_VAL_INIT_EXTENT, GETOPT_VAL_CHECK_CSUM,
+ 			GETOPT_VAL_READONLY, GETOPT_VAL_CHUNK_TREE,
+ 			GETOPT_VAL_MODE, GETOPT_VAL_CLEAR_SPACE_CACHE,
+-			GETOPT_VAL_FORCE };
++			GETOPT_VAL_FORCE, GETOPT_VAL_FORCE_REPAIR_LOWMEM };
+ 		static const struct option long_options[] = {
+ 			{ "super", required_argument, NULL, 's' },
+ 			{ "repair", no_argument, NULL, GETOPT_VAL_REPAIR },
+@@ -9449,6 +9451,8 @@ int cmd_check(int argc, char **argv)
+ 			{ "clear-space-cache", required_argument, NULL,
+ 				GETOPT_VAL_CLEAR_SPACE_CACHE},
+ 			{ "force", no_argument, NULL, GETOPT_VAL_FORCE },
++			{"force-repair-lowmem", no_argument, NULL,
++				GETOPT_VAL_FORCE_REPAIR_LOWMEM},
+ 			{ NULL, 0, NULL, 0}
+ 		};
+ 
+@@ -9536,6 +9540,9 @@ int cmd_check(int argc, char **argv)
+ 			case GETOPT_VAL_FORCE:
+ 				force = 1;
+ 				break;
++			case GETOPT_VAL_FORCE_REPAIR_LOWMEM:
++				force_repair_lowmem = 1;
++				break;
+ 		}
  	}
  
--	/*
--	 * experimental and dangerous
--	 */
--	if (repair && check_mode == CHECK_MODE_LOWMEM)
--		warning("low-memory mode repair support is only partial");
--
+@@ -9552,6 +9559,11 @@ int cmd_check(int argc, char **argv)
+ 		error("repair options are not compatible with --readonly");
+ 		exit(1);
+ 	}
++	if (force_repair_lowmem &&
++	    (!repair || check_mode != CHECK_MODE_LOWMEM)) {
++		error("--force-repair-lowmem only works with --mode=lowmem and --repair");
++		exit(1);
++	}
+ 
  	radix_tree_init();
  	cache_tree_init(&root_cache);
+@@ -9597,7 +9609,7 @@ int cmd_check(int argc, char **argv)
+ 	/*
+ 	 * experimental and dangerous
+ 	 */
+-	if (repair && check_mode == CHECK_MODE_LOWMEM) {
++	if (repair && check_mode == CHECK_MODE_LOWMEM && !force_repair_lowmem) {
+ 		int delay = 10;
  
-@@ -9600,6 +9594,28 @@ int cmd_check(int argc, char **argv)
- 	if (repair)
- 		ctree_flags |= OPEN_CTREE_PARTIAL;
+ 		printf("WARNING:\n\n");
+@@ -9605,6 +9617,7 @@ int cmd_check(int argc, char **argv)
+ 		printf("\tIt's experimental and very dangerous.\n");
+ 		printf("\tIt may run slow or crash unexpectedly.\n");
+ 		printf("\tPlease backup device before running low-memory mode repair.\n");
++		printf("\tUse option'--force-repair-lowmem' option to skip this warning.\n");
+ 		printf("\tThe operation will start in %d seconds.\n", delay);
+ 		printf("\tUse Ctrl-C to stop it.\n");
  
-+	/*
-+	 * experimental and dangerous
-+	 */
-+	if (repair && check_mode == CHECK_MODE_LOWMEM) {
-+		int delay = 10;
-+
-+		printf("WARNING:\n\n");
-+		printf("\tLow-memory mode repair support is only partial.\n");
-+		printf("\tIt's experimental and very dangerous.\n");
-+		printf("\tIt may run slow or crash unexpectedly.\n");
-+		printf("\tPlease backup device before running low-memory mode repair.\n");
-+		printf("\tThe operation will start in %d seconds.\n", delay);
-+		printf("\tUse Ctrl-C to stop it.\n");
-+
-+		while (delay) {
-+			printf("%2d", delay--);
-+			fflush(stdout);
-+			sleep(1);
-+		}
-+		printf("\nStarting to check and repair filesystem.\n");
-+	}
-+
- 	info = open_ctree_fs_info(argv[optind], bytenr, tree_root_bytenr,
- 				  chunk_root_bytenr, ctree_flags);
- 	if (!info) {
 -- 
 2.17.1
 

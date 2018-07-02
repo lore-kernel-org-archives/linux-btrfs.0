@@ -1,191 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f45.google.com ([209.85.214.45]:50959 "EHLO
-        mail-it0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752816AbeGBMDM (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 Jul 2018 08:03:12 -0400
-Received: by mail-it0-f45.google.com with SMTP id u4-v6so11772405itg.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 02 Jul 2018 05:03:12 -0700 (PDT)
-Received: from [191.9.206.254] (rrcs-70-62-41-24.central.biz.rr.com. [70.62.41.24])
-        by smtp.gmail.com with ESMTPSA id o64-v6sm1194437ioe.30.2018.07.02.05.03.09
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Mon, 02 Jul 2018 05:03:10 -0700 (PDT)
-Subject: Re: Major design flaw with BTRFS Raid, temporary device drop will
- corrupt nodatacow files
-To: linux-btrfs@vger.kernel.org
-References: <66d30a90-a571-a110-749d-8a3fd6ccb9d5@georgianit.com>
- <9bbde3a8-2498-a538-5744-c857f5a57947@oracle.com>
- <CAJCQCtSuKpcn2Or3LiCYqeFMFFoRU09BFQE_n8FAhQ2Vo+83PA@mail.gmail.com>
- <93a74ac2-c271-accd-d0c7-4822c0f75f80@libero.it>
- <CAJCQCtRUgoQPNwcM54hXnNSqcm5+0d9Ks1aWw_2VYChMxWWnEg@mail.gmail.com>
- <CA+X5Wn5JdervhGob5MGWRtYLt+Av5nYhTkKdAUQFgcxPUdMAsA@mail.gmail.com>
- <a6210485-1d7d-2543-8a1f-f43ba7eda34e@gmail.com>
- <CA+X5Wn7jVZS5USHnmj1SrHh87V1O6vgzRcLM64di4ALc81hjmQ@mail.gmail.com>
- <f76a93ba-05c8-967f-d7c0-8fdc0a618a7e@gmail.com>
- <pan$d561f$1f780d41$c875436f$9e055ce0@cox.net>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <6118a37a-487d-cc04-8686-db8a691b164c@gmail.com>
-Date: Mon, 2 Jul 2018 08:03:10 -0400
+Received: from magic.merlins.org ([209.81.13.136]:41342 "EHLO
+        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752110AbeGBOFe (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 Jul 2018 10:05:34 -0400
+Date: Mon, 2 Jul 2018 07:05:27 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: Su Yue <suy.fnst@cn.fujitsu.com>
+Cc: Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
+Message-ID: <20180702140527.wfbq5jenm67fvvjg@merlins.org>
+References: <6658a593-3b4a-f1ef-f550-2fb951b2517d@gmx.com>
+ <20180629052825.tifg2aw7oy3qyyvw@merlins.org>
+ <02ba7ad4-b618-85f0-a99f-c43b25d367de@cn.fujitsu.com>
+ <20180629061001.kkmgvdgqfhz23kll@merlins.org>
+ <a0099769-1622-c428-d47a-0e243f66a8b0@cn.fujitsu.com>
+ <20180629064354.kbaepro5ccmm6lkn@merlins.org>
+ <20180701232202.vehg7amgyvz3hpxc@merlins.org>
+ <5a603d3d-620b-6cb3-106c-9d38e3ca6d02@cn.fujitsu.com>
+ <20180702032259.GD5567@merlins.org>
+ <9fbd4b39-fa75-4c30-eea8-e789fd3e4dd5@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <pan$d561f$1f780d41$c875436f$9e055ce0@cox.net>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <9fbd4b39-fa75-4c30-eea8-e789fd3e4dd5@cn.fujitsu.com>
+Subject: Re: So, does btrfs check lowmem take days? weeks?
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2018-06-30 02:33, Duncan wrote:
-> Austin S. Hemmelgarn posted on Fri, 29 Jun 2018 14:31:04 -0400 as
-> excerpted:
+On Mon, Jul 02, 2018 at 02:22:20PM +0800, Su Yue wrote:
+> > Ok, that's 29MB, so it doesn't fit on pastebin:
+> > http://marc.merlins.org/tmp/dshelf2_inspect.txt
+> > 
+> Sorry Marc. After offline communication with Qu, both
+> of us think the filesystem is hard to repair.
+> The filesystem is too large to debug step by step.
+> Every time check and debug spent is too expensive.
+> And it already costs serveral days.
 > 
->> On 2018-06-29 13:58, james harvey wrote:
->>> On Fri, Jun 29, 2018 at 1:09 PM, Austin S. Hemmelgarn
->>> <ahferroin7@gmail.com> wrote:
->>>> On 2018-06-29 11:15, james harvey wrote:
->>>>>
->>>>> On Thu, Jun 28, 2018 at 6:27 PM, Chris Murphy
->>>>> <lists@colorremedies.com>
->>>>> wrote:
->>>>>>
->>>>>> And an open question I have about scrub is weather it only ever is
->>>>>> checking csums, meaning nodatacow files are never scrubbed, or if
->>>>>> the copies are at least compared to each other?
->>>>>
->>>>>
->>>>> Scrub never looks at nodatacow files.  It does not compare the copies
->>>>> to each other.
->>>>>
->>>>> Qu submitted a patch to make check compare the copies:
->>>>> https://patchwork.kernel.org/patch/10434509/
->>>>>
->>>>> This hasn't been added to btrfs-progs git yet.
->>>>>
->>>>> IMO, I think the offline check should look at nodatacow copies like
->>>>> this, but I still think this also needs to be added to scrub.  In the
->>>>> patch thread, I discuss my reasons why.  In brief: online scanning;
->>>>> this goes along with user's expectation of scrub ensuring mirrored
->>>>> data integrity; and recommendations to setup scrub on periodic basis
->>>>> to me means it's the place to put it.
->>>>
->>>> That said, it can't sanely fix things if there is a mismatch. At
->>>> least,
->>>> not unless BTRFS gets proper generational tracking to handle
->>>> temporarily missing devices.  As of right now, sanely fixing things
->>>> requires significant manual intervention, as you have to bypass the
->>>> device read selection algorithm to be able to look at the state of the
->>>> individual copies so that you can pick one to use and forcibly rewrite
->>>> the whole file by hand.
->>>
->>> Absolutely.  User would need to use manual intervention as you
->>> describe, or restore the single file(s) from backup.  But, it's a good
->>> opportunity to tell the user they had partial data corruption, even if
->>> it can't be auto-fixed.  Otherwise they get intermittent data
->>> corruption, depending on which copies are read.
+> Sadly, I am afarid that you have to recreate filesystem
+> and reback up your data. :(
 > 
->> The thing is though, as things stand right now, you need to manually
->> edit the data on-disk directly or restore the file from a backup to fix
->> the file.  While it's technically true that you can manually repair this
->> type of thing, both of the cases for doing it without those patches I
->> mentioned, it's functionally impossible for a regular user to do it
->> without potentially losing some data.
-> 
-> [Usual backups rant, user vs. admin variant, nowcow/tmpfs edition.
-> Regulars can skip as the rest is already predicted from past posts, for
-> them. =;^]
-> 
-> "Regular user"?
-> 
-> "Regular users" don't need to bother with this level of detail.  They
-> simply get their "admin" to do it, even if that "admin" is their kid, or
-> the kid from next door that's good with computers, or the geek squad (aka
-> nsa-agent-squad) guy/gal, doing it... or telling them to install "a real
-> OS", meaning whatever MS/Apple/Google something that they know how to
-> deal with.
-> 
-> If the "user" is dealing with setting nocow, choosing btrfs in the first
-> place, etc, then they're _not_ a "regular user" by definition, they're
-> already an admin.I'd argue that that's not always true.  'Regular users' also bli9ndly 
-follow advice they find online about how to make their system run 
-better, and quite often don't keep backups.
-> 
-> And as any admin learns rather quickly, the value of data is defined by
-> the number of backups it's worth having of that data.
-> 
-> Which means it's not a problem.  Either the data had a backup and it's
-> (reasonably) trivial to restore the data from that backup, or the data
-> was defined by lack of having that backup as of only trivial value, so
-> low as to not be worth the time/trouble/resources necessary to make that
-> backup in the first place.
-> 
-> Which of course means what was defined as of most value, either the data
-> of there was a backup, or the time/trouble/resources that would have gone
-> into creating it if not, is *always* saved.
-> 
-> (And of course the same goes for "I had a backup, but it's old", except
-> in this case it's the value of the data delta between the backup and
-> current.  As soon as it's worth more than the time/trouble/hassle of
-> updating the backup, it will by definition be updated.  Not having a
-> newer backup available thus simply means the value of the data that
-> changed between the last backup and current was simply not enough to
-> justify updating the backup, and again, what was of most value is
-> *always* saved, either the data, or the time that would have otherwise
-> gone into making the newer backup.)
-> 
-> Because while a "regular user" may not know it because it's not his /job/
-> to know it, if there's anything an admin knows *well* it's that the
-> working copy of data **WILL** be damaged.  It's not a matter of if, but
-> of when, and of whether it'll be a fat-finger mistake, or a hardware or
-> software failure, or wetware (theft, ransomware, etc), or wetware (flood,
-> fire and the water that put it out damage, etc), tho none of that
-> actually matters after all, because in the end, the only thing that
-> matters was how the value of that data was defined by the number of
-> backups made of it, and how quickly and conveniently at least one of
-> those backups can be retrieved and restored.
-> 
-> 
-> Meanwhile, an admin worth the label will also know the relative risk
-> associated with various options they might use, including nocow, and
-> knowing that downgrades the stability rating of the storage approximately
-> to the same degree that raid0 does, they'll already be aware that in such
-> a case the working copy can only be defined as "throw-away" level in case
-> of problems in the first place, and will thus not even consider their
-> working copy to be a permanent copy at all, just a temporary garbage
-> copy, only slightly more reliable than one stored on tmpfs, and will thus
-> consider the first backup thereof the true working copy, with an
-> additional level of backup beyond what they'd normally have thrown in to
-> account for that fact.
-> 
-> So in case of problems people can simply restore nocow files from a near-
-> line stable working copy, much as they'd do after reboot or a umount/
-> remount cycle for a file stored in tmpfs.  And if they didn't have even a
-> stable working copy let alone a backup... well, much like that file in
-> tmpfs, what did they expect?  They *really* defined that data as of no
-> more than trivial value, didn't they?
-> 
-> 
-> All that said, making the NOCOW warning labels a bit more bold print
-> couldn't hurt; and making scrub in the nocow case at least compare copies
-> and report differences, simply makes it easier for people to know they
-> need to reach for that near-line stable working copy, or mkfs and start
-> from scratch if they defined the data value as not worth the trouble of
-> (in this case) even a stable working copy, let alone a backup, so that'd
-> be a good thing too. =:^)
-> 
-There are two things this rant ignores though:
+> Sorry again and thanks for you reports and patient.
 
-1. Restoring from a backup is usually slow.  Even if you have a good 
-backup system.  As a really specific example, where I work, it takes me 
-about 5 minutes to find a single file in our backups.  Beyond that, the 
-backup software has to pull together the whole archive form the 
-individual pieces, decompress it, and then extract the file.  On 
-average, for a file the size of a VM image, this all takes at least half 
-an hour.
+I appreciate your help. Honestly I only wanted to help you find why the
+tools aren't working. Fixing filesystems by hand (and remotely via Email
+on top of that), is way too time consuming like you said.
 
-2. Backups are usually daily.  In most cases, it's much preferred to not 
-lose all the day's work on a given file.
+Is the btrfs design flawed in a way that repair tools just cannot repair
+on their own? 
+I understand that data can be lost, but I don't understand how the tools
+just either keep crashing for me, go in infinite loops, or otherwise
+fail to give me back a stable filesystem, even if some data is missing
+after that.
 
-Given both points, I'd much rather be able to take 90 seconds to fix a 
-file and have it probably work, with the ability to restore from a 
-backup if it doesn't.  Currently, despite the fact that I actually know 
-(just barely) enough to fix this particular type of issue by hand, I end 
-up just restoring files from backup all the time, because that 30 minute 
-wait is still better than the hour plus amount of time it takes for me 
-to repair it by hand.
+Thanks,
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                       | PGP 7F55D5F27AAF9D08

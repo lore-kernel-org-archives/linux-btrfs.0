@@ -1,43 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f194.google.com ([209.85.220.194]:46595 "EHLO
-        mail-qk0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753118AbeGCABD (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 Jul 2018 20:01:03 -0400
-Received: by mail-qk0-f194.google.com with SMTP id o2-v6so78264qkc.13
-        for <linux-btrfs@vger.kernel.org>; Mon, 02 Jul 2018 17:01:02 -0700 (PDT)
-From: Zhihui Zhang <zzhsuny@gmail.com>
-To: jbacik@fb.com, dsterba@suse.com
-Cc: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: make sure there is always room for generation number
-Date: Mon,  2 Jul 2018 20:00:54 -0400
-Message-Id: <1530576054-12837-1-git-send-email-zzhsuny@gmail.com>
+Received: from mx2.suse.de ([195.135.220.15]:44616 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S932809AbeGBLCg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 2 Jul 2018 07:02:36 -0400
+Subject: Re: [PATCH] btrfs: qgroups: Move transaction managed inside
+ btrfs_quota_enable
+To: linux-btrfs@vger.kernel.org
+Cc: misono.tomohiro@jp.fujitsu.com, wqu@suse.com
+References: <1530529234-13170-1-git-send-email-nborisov@suse.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <75b8baf7-61c9-68ff-6917-a6679d056458@suse.com>
+Date: Mon, 2 Jul 2018 14:02:34 +0300
+MIME-Version: 1.0
+In-Reply-To: <1530529234-13170-1-git-send-email-nborisov@suse.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-io_ctl_set_generation() assumes that the generation number shares
-the same page with inline CRCs. Let's make sure this is always true.
 
-Signed-off-by: Zhihui Zhang <zzhsuny@gmail.com>
----
- fs/btrfs/free-space-cache.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index d5f80cb300be..9aa0fbf16515 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -300,9 +300,9 @@ static int io_ctl_init(struct btrfs_io_ctl *io_ctl, struct inode *inode,
- 	if (btrfs_ino(BTRFS_I(inode)) != BTRFS_FREE_INO_OBJECTID)
- 		check_crcs = 1;
- 
--	/* Make sure we can fit our crcs into the first page */
-+	/* Make sure we can fit our crcs and generation # into the first page */
- 	if (write && check_crcs &&
--	    (num_pages * sizeof(u32)) >= PAGE_SIZE)
-+	    (num_pages * sizeof(u32) + sizeof(u64)) > PAGE_SIZE)
- 		return -ENOSPC;
- 
- 	memset(io_ctl, 0, sizeof(struct btrfs_io_ctl));
--- 
-2.17.1
+On  2.07.2018 14:00, Nikolay Borisov wrote:
+> Commit 5d23515be669 ("btrfs: Move qgroup rescan on quota enable to
+> btrfs_quota_enable") not only resulted in an easier to follow code but
+> it also introduced a subtle bug. It changed the timing when the initial
+> transaction rescan was happening - before the commit it would happen
+> after transaction commit had occured but after the commit it might happen
+> before the transaction was committed. This results in failure to
+> correctly rescan the quota since there could be data which is still not
+> committed on disk.
+> 
+> This patch aims to fix this by movign the transaction creation/commit
+> inside btrfs_quota_enable, which allows to schedule the quota commit
+> after the transaction has been committed.
+> 
+> Fixes: 5d23515be669 ("btrfs: Move qgroup rescan on quota enable to btrfs_quota_enable")
+> Link: https://marc.info/?l=linux-btrfs&m=152999289017582
+> Reported-by: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
+> Reviewed-by: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
+> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 
+David,
+
+This is a fix for an issue which Misono is seeing. So far neither I nor
+Qu were able to reproduce it. Imho it should be material for this RC.

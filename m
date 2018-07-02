@@ -1,64 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.19]:56279 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752596AbeGBOBg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 2 Jul 2018 10:01:36 -0400
-MIME-Version: 1.0
-Message-ID: <trinity-d938775a-abc7-4647-9ffc-0d69a56e37e7-1530540086745@3c-app-mailcom-bs10>
-From: "Su Yue" <Damenly_Su@gmx.com>
-To: "Nikolay Borisov" <nborisov@suse.com>
-Cc: "Su Yue" <suy.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH RFC 0/3] btrfs-progs: lowmem: delay before lowmem repair
-Content-Type: text/plain; charset=UTF-8
-Date: Mon, 2 Jul 2018 16:01:26 +0200
-In-Reply-To: <93c08062-8368-616f-f8c6-5ff8616aad08@suse.com>
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:25975 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1753849AbeGBJWG (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 Jul 2018 05:22:06 -0400
+Received: from G08CNEXCHPEKD03.g08.fujitsu.local (unknown [10.167.33.85])
+        by cn.fujitsu.com (Postfix) with ESMTP id C47E24B43D5E
+        for <linux-btrfs@vger.kernel.org>; Mon,  2 Jul 2018 17:22:00 +0800 (CST)
+From: Su Yue <suy.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: <suy.fnst@cn.fujitsu.com>
+Subject: [PATCH RFC 1/3] btrfs-progs: lowmem: delay before lowmem repair starts
+Date: Mon, 2 Jul 2018 17:28:18 +0800
+Message-ID: <20180702092820.16285-2-suy.fnst@cn.fujitsu.com>
+In-Reply-To: <20180702092820.16285-1-suy.fnst@cn.fujitsu.com>
 References: <20180702092820.16285-1-suy.fnst@cn.fujitsu.com>
- <93c08062-8368-616f-f8c6-5ff8616aad08@suse.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Since lowmem mode repair is so dangerous, delay 10 seconds before
+start.
+
+Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
+---
+ check/main.c | 28 ++++++++++++++++++++++------
+ 1 file changed, 22 insertions(+), 6 deletions(-)
+
+diff --git a/check/main.c b/check/main.c
+index 3190b5d4f293..b9997460162f 100644
+--- a/check/main.c
++++ b/check/main.c
+@@ -9553,12 +9553,6 @@ int cmd_check(int argc, char **argv)
+ 		exit(1);
+ 	}
+ 
+-	/*
+-	 * experimental and dangerous
+-	 */
+-	if (repair && check_mode == CHECK_MODE_LOWMEM)
+-		warning("low-memory mode repair support is only partial");
+-
+ 	radix_tree_init();
+ 	cache_tree_init(&root_cache);
+ 
+@@ -9600,6 +9594,28 @@ int cmd_check(int argc, char **argv)
+ 	if (repair)
+ 		ctree_flags |= OPEN_CTREE_PARTIAL;
+ 
++	/*
++	 * experimental and dangerous
++	 */
++	if (repair && check_mode == CHECK_MODE_LOWMEM) {
++		int delay = 10;
++
++		printf("WARNING:\n\n");
++		printf("\tLow-memory mode repair support is only partial.\n");
++		printf("\tIt's experimental and very dangerous.\n");
++		printf("\tIt may run slow or crash unexpectedly.\n");
++		printf("\tPlease backup device before running low-memory mode repair.\n");
++		printf("\tThe operation will start in %d seconds.\n", delay);
++		printf("\tUse Ctrl-C to stop it.\n");
++
++		while (delay) {
++			printf("%2d", delay--);
++			fflush(stdout);
++			sleep(1);
++		}
++		printf("\nStarting to check and repair filesystem.\n");
++	}
++
+ 	info = open_ctree_fs_info(argv[optind], bytenr, tree_root_bytenr,
+ 				  chunk_root_bytenr, ctree_flags);
+ 	if (!info) {
+-- 
+2.17.1
 
 
-> Sent: Monday, July 02, 2018 at 5:43 PM
-> From: "Nikolay Borisov" <nborisov@suse.com>
-> To: "Su Yue" <suy.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-> Subject: Re: [PATCH RFC 0/3] btrfs-progs: lowmem: delay before lowmem repair
->
-> 
-> 
-> On  2.07.2018 12:28, Su Yue wrote:
-> > Since lowmem repair is dangerous, it should remind user more obviously.
-> > The patchset add 10 seconds delay like btrfs balance and add am option
-> > '--force-repair-lowmem' to skip the delay.
-> 
-> IMO this is the wrong way to approach a dangerous option. If it's so
-> dangerous it needs to be written in the documentation explicitly this is
-> so. If someone wants to use lowmem then they should explicitly set
-> --mode lowmem. So I'm inclined to NACK this patch.
-> 
-OK. After some considerations, I thinks the patchset is indeed appropriate.
-Droping it is fine.
 
-Thanks,
-Su
-> > 
-> > ---
-> > I don't whether it's a good idea to add delay and the option only for
-> > lowmem repair is acceptable, so make it RFC.
-> > 
-> > Su Yue (3):
-> >   btrfs-progs: lowmem: delay before lowmem repair starts
-> >   btrfs-progs: lowmem: force to start without delay with option
-> >     '--force-repair-lowmem'
-> >   btrfs-progs: tests: append '--force-repair-lowmem' if lowmem repair is
-> >     enabled
-> > 
-> >  check/main.c       | 43 ++++++++++++++++++++++++++++++++++++-------
-> >  tests/common.local |  1 +
-> >  2 files changed, 37 insertions(+), 7 deletions(-)
-> > 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 

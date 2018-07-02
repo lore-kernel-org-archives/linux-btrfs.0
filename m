@@ -1,127 +1,191 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f195.google.com ([209.85.223.195]:45617 "EHLO
-        mail-io0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753009AbeGBLtH (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 Jul 2018 07:49:07 -0400
-Received: by mail-io0-f195.google.com with SMTP id l25-v6so14442964ioh.12
-        for <linux-btrfs@vger.kernel.org>; Mon, 02 Jul 2018 04:49:07 -0700 (PDT)
-Subject: Re: unsolvable technical issues?
-To: Andrei Borzenkov <arvidjaar@gmail.com>, Duncan <1i5t5.duncan@cox.net>,
-        linux-btrfs@vger.kernel.org
-References: <b255d0fb-5cee-36c5-d49f-5f014d20e518@dirtcellar.net>
- <pan$11f2c$c623d7b0$5173b25$c7594479@cox.net>
- <646f0c52-4726-7a7d-0242-4412950bf002@libero.it>
- <64876ad1-9f63-f6f0-9d55-0fa4999f0bf5@gmail.com>
- <pan$15832$609432db$876d9a8a$e5840f46@cox.net>
- <9b482289-c96f-dac3-d2e7-db6a32596334@gmail.com>
+Received: from mail-it0-f45.google.com ([209.85.214.45]:50959 "EHLO
+        mail-it0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752816AbeGBMDM (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 Jul 2018 08:03:12 -0400
+Received: by mail-it0-f45.google.com with SMTP id u4-v6so11772405itg.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 02 Jul 2018 05:03:12 -0700 (PDT)
+Received: from [191.9.206.254] (rrcs-70-62-41-24.central.biz.rr.com. [70.62.41.24])
+        by smtp.gmail.com with ESMTPSA id o64-v6sm1194437ioe.30.2018.07.02.05.03.09
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Mon, 02 Jul 2018 05:03:10 -0700 (PDT)
+Subject: Re: Major design flaw with BTRFS Raid, temporary device drop will
+ corrupt nodatacow files
+To: linux-btrfs@vger.kernel.org
+References: <66d30a90-a571-a110-749d-8a3fd6ccb9d5@georgianit.com>
+ <9bbde3a8-2498-a538-5744-c857f5a57947@oracle.com>
+ <CAJCQCtSuKpcn2Or3LiCYqeFMFFoRU09BFQE_n8FAhQ2Vo+83PA@mail.gmail.com>
+ <93a74ac2-c271-accd-d0c7-4822c0f75f80@libero.it>
+ <CAJCQCtRUgoQPNwcM54hXnNSqcm5+0d9Ks1aWw_2VYChMxWWnEg@mail.gmail.com>
+ <CA+X5Wn5JdervhGob5MGWRtYLt+Av5nYhTkKdAUQFgcxPUdMAsA@mail.gmail.com>
+ <a6210485-1d7d-2543-8a1f-f43ba7eda34e@gmail.com>
+ <CA+X5Wn7jVZS5USHnmj1SrHh87V1O6vgzRcLM64di4ALc81hjmQ@mail.gmail.com>
+ <f76a93ba-05c8-967f-d7c0-8fdc0a618a7e@gmail.com>
+ <pan$d561f$1f780d41$c875436f$9e055ce0@cox.net>
 From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <ea1a9c9b-7132-87f1-04fc-85b278975925@gmail.com>
-Date: Mon, 2 Jul 2018 07:49:05 -0400
+Message-ID: <6118a37a-487d-cc04-8686-db8a691b164c@gmail.com>
+Date: Mon, 2 Jul 2018 08:03:10 -0400
 MIME-Version: 1.0
-In-Reply-To: <9b482289-c96f-dac3-d2e7-db6a32596334@gmail.com>
+In-Reply-To: <pan$d561f$1f780d41$c875436f$9e055ce0@cox.net>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2018-06-30 01:32, Andrei Borzenkov wrote:
-> 30.06.2018 06:22, Duncan пишет:
->> Austin S. Hemmelgarn posted on Mon, 25 Jun 2018 07:26:41 -0400 as
->> excerpted:
->>
->>> On 2018-06-24 16:22, Goffredo Baroncelli wrote:
->>>> On 06/23/2018 07:11 AM, Duncan wrote:
->>>>> waxhead posted on Fri, 22 Jun 2018 01:13:31 +0200 as excerpted:
+On 2018-06-30 02:33, Duncan wrote:
+> Austin S. Hemmelgarn posted on Fri, 29 Jun 2018 14:31:04 -0400 as
+> excerpted:
+> 
+>> On 2018-06-29 13:58, james harvey wrote:
+>>> On Fri, Jun 29, 2018 at 1:09 PM, Austin S. Hemmelgarn
+>>> <ahferroin7@gmail.com> wrote:
+>>>> On 2018-06-29 11:15, james harvey wrote:
 >>>>>
->>>>>> According to this:
+>>>>> On Thu, Jun 28, 2018 at 6:27 PM, Chris Murphy
+>>>>> <lists@colorremedies.com>
+>>>>> wrote:
 >>>>>>
->>>>>> https://stratis-storage.github.io/StratisSoftwareDesign.pdf Page 4 ,
->>>>>> section 1.2
->>>>>>
->>>>>> It claims that BTRFS still have significant technical issues that may
->>>>>> never be resolved.
+>>>>>> And an open question I have about scrub is weather it only ever is
+>>>>>> checking csums, meaning nodatacow files are never scrubbed, or if
+>>>>>> the copies are at least compared to each other?
 >>>>>
->>>>> I can speculate a bit.
 >>>>>
->>>>> 1) When I see btrfs "technical issue that may never be resolved", the
->>>>> #1 first thing I think of, that AFAIK there are _definitely_ no plans
->>>>> to resolve, because it's very deeply woven into the btrfs core by now,
->>>>> is...
+>>>>> Scrub never looks at nodatacow files.  It does not compare the copies
+>>>>> to each other.
 >>>>>
->>>>> [1)] Filesystem UUID Identification.  Btrfs takes the UU bit of
->>>>> Universally Unique quite literally, assuming they really *are*
->>>>> unique, at least on that system[.]  Because
->>>>> btrfs uses this supposedly unique ID to ID devices that belong to the
->>>>> filesystem, it can get *very* mixed up, with results possibly
->>>>> including dataloss, if it sees devices that don't actually belong to a
->>>>> filesystem with the same UUID as a mounted filesystem.
+>>>>> Qu submitted a patch to make check compare the copies:
+>>>>> https://patchwork.kernel.org/patch/10434509/
+>>>>>
+>>>>> This hasn't been added to btrfs-progs git yet.
+>>>>>
+>>>>> IMO, I think the offline check should look at nodatacow copies like
+>>>>> this, but I still think this also needs to be added to scrub.  In the
+>>>>> patch thread, I discuss my reasons why.  In brief: online scanning;
+>>>>> this goes along with user's expectation of scrub ensuring mirrored
+>>>>> data integrity; and recommendations to setup scrub on periodic basis
+>>>>> to me means it's the place to put it.
 >>>>
->>>> As partial workaround you can disable udev btrfs rules and then do a
->>>> "btrfs dev scan" manually only for the device which you need.
->>
->>> You don't even need `btrfs dev scan` if you just specify the exact set
->>> of devices in the mount options.  The `device=` mount option tells the
->>> kernel to check that device during the mount process.
->>
->> Not that lvm does any better in this regard[1], but has btrfs ever solved
->> the bug where only one device= in the kernel commandline's rootflags=
->> would take effect, effectively forcing initr* on people (like me) who
->> would otherwise not need them and prefer to do without them, if they're
->> using a multi-device btrfs as root?
->>
+>>>> That said, it can't sanely fix things if there is a mismatch. At
+>>>> least,
+>>>> not unless BTRFS gets proper generational tracking to handle
+>>>> temporarily missing devices.  As of right now, sanely fixing things
+>>>> requires significant manual intervention, as you have to bypass the
+>>>> device read selection algorithm to be able to look at the state of the
+>>>> individual copies so that you can pick one to use and forcibly rewrite
+>>>> the whole file by hand.
+>>>
+>>> Absolutely.  User would need to use manual intervention as you
+>>> describe, or restore the single file(s) from backup.  But, it's a good
+>>> opportunity to tell the user they had partial data corruption, even if
+>>> it can't be auto-fixed.  Otherwise they get intermittent data
+>>> corruption, depending on which copies are read.
 > 
-> This requires in-kernel device scanning; I doubt we will ever see it.
+>> The thing is though, as things stand right now, you need to manually
+>> edit the data on-disk directly or restore the file from a backup to fix
+>> the file.  While it's technically true that you can manually repair this
+>> type of thing, both of the cases for doing it without those patches I
+>> mentioned, it's functionally impossible for a regular user to do it
+>> without potentially losing some data.
 > 
->> Not to mention the fact that as kernel people will tell you, device
->> enumeration isn't guaranteed to be in the same order every boot, so
->> device=/dev/* can't be relied upon and shouldn't be used -- but of course
->> device=LABEL= and device=UUID= and similar won't work without userspace,
->> basically udev (if they work at all, IDK if they actually do).
->>
->> Tho in practice from what I've seen, device enumeration order tends to be
->> dependable /enough/ for at least those without enterprise-level numbers
->> of devices to enumerate.
+> [Usual backups rant, user vs. admin variant, nowcow/tmpfs edition.
+> Regulars can skip as the rest is already predicted from past posts, for
+> them. =;^]
 > 
-> Just boot with USB stick/eSATA drive plugged in, there are good chances
-> it changes device order.
-It really depends on your particular hardware.  If your USB controllers 
-are at lower PCI addresses than your primary disk controllers, then yes, 
-this will cause an issue.  Same for whatever SATA controller your eSATA 
-port is on (or stupid systems where the eSATA port is port 0 on the main 
-SATA controller).
+> "Regular user"?
+> 
+> "Regular users" don't need to bother with this level of detail.  They
+> simply get their "admin" to do it, even if that "admin" is their kid, or
+> the kid from next door that's good with computers, or the geek squad (aka
+> nsa-agent-squad) guy/gal, doing it... or telling them to install "a real
+> OS", meaning whatever MS/Apple/Google something that they know how to
+> deal with.
+> 
+> If the "user" is dealing with setting nocow, choosing btrfs in the first
+> place, etc, then they're _not_ a "regular user" by definition, they're
+> already an admin.I'd argue that that's not always true.  'Regular users' also bli9ndly 
+follow advice they find online about how to make their system run 
+better, and quite often don't keep backups.
+> 
+> And as any admin learns rather quickly, the value of data is defined by
+> the number of backups it's worth having of that data.
+> 
+> Which means it's not a problem.  Either the data had a backup and it's
+> (reasonably) trivial to restore the data from that backup, or the data
+> was defined by lack of having that backup as of only trivial value, so
+> low as to not be worth the time/trouble/resources necessary to make that
+> backup in the first place.
+> 
+> Which of course means what was defined as of most value, either the data
+> of there was a backup, or the time/trouble/resources that would have gone
+> into creating it if not, is *always* saved.
+> 
+> (And of course the same goes for "I had a backup, but it's old", except
+> in this case it's the value of the data delta between the backup and
+> current.  As soon as it's worth more than the time/trouble/hassle of
+> updating the backup, it will by definition be updated.  Not having a
+> newer backup available thus simply means the value of the data that
+> changed between the last backup and current was simply not enough to
+> justify updating the backup, and again, what was of most value is
+> *always* saved, either the data, or the time that would have otherwise
+> gone into making the newer backup.)
+> 
+> Because while a "regular user" may not know it because it's not his /job/
+> to know it, if there's anything an admin knows *well* it's that the
+> working copy of data **WILL** be damaged.  It's not a matter of if, but
+> of when, and of whether it'll be a fat-finger mistake, or a hardware or
+> software failure, or wetware (theft, ransomware, etc), or wetware (flood,
+> fire and the water that put it out damage, etc), tho none of that
+> actually matters after all, because in the end, the only thing that
+> matters was how the value of that data was defined by the number of
+> backups made of it, and how quickly and conveniently at least one of
+> those backups can be retrieved and restored.
+> 
+> 
+> Meanwhile, an admin worth the label will also know the relative risk
+> associated with various options they might use, including nocow, and
+> knowing that downgrades the stability rating of the storage approximately
+> to the same degree that raid0 does, they'll already be aware that in such
+> a case the working copy can only be defined as "throw-away" level in case
+> of problems in the first place, and will thus not even consider their
+> working copy to be a permanent copy at all, just a temporary garbage
+> copy, only slightly more reliable than one stored on tmpfs, and will thus
+> consider the first backup thereof the true working copy, with an
+> additional level of backup beyond what they'd normally have thrown in to
+> account for that fact.
+> 
+> So in case of problems people can simply restore nocow files from a near-
+> line stable working copy, much as they'd do after reboot or a umount/
+> remount cycle for a file stored in tmpfs.  And if they didn't have even a
+> stable working copy let alone a backup... well, much like that file in
+> tmpfs, what did they expect?  They *really* defined that data as of no
+> more than trivial value, didn't they?
+> 
+> 
+> All that said, making the NOCOW warning labels a bit more bold print
+> couldn't hurt; and making scrub in the nocow case at least compare copies
+> and report differences, simply makes it easier for people to know they
+> need to reach for that near-line stable working copy, or mkfs and start
+> from scratch if they defined the data value as not worth the trouble of
+> (in this case) even a stable working copy, let alone a backup, so that'd
+> be a good thing too. =:^)
+> 
+There are two things this rant ignores though:
 
-Notably, most Intel systems I've seen have the SATA controllers in the 
-chipset enumerate after the USB controllers, and the whole chipset 
-enumerates after add-in cards (so they almost always have this issue), 
-while most AMD systems I've seen demonstrate the exact opposite 
-behavior, they enumerate the SATA controller from the chipset before the 
-USB controllers, and then enumerate the chipset before all the add-in 
-cards (so they almost never have this issue).
+1. Restoring from a backup is usually slow.  Even if you have a good 
+backup system.  As a really specific example, where I work, it takes me 
+about 5 minutes to find a single file in our backups.  Beyond that, the 
+backup software has to pull together the whole archive form the 
+individual pieces, decompress it, and then extract the file.  On 
+average, for a file the size of a VM image, this all takes at least half 
+an hour.
 
-That said, one of the constraints for them remaining consistent is that 
-you don't change hardware.
-> 
->>   True, it /does/ change from time to time with a
->> new kernel, but anybody sane keeps a tested-dependable old kernel around
->> to boot to until they know the new one works as expected, and that sort
->> of change is seldom enough that users can boot to the old kernel and
->> adjust their settings for the new one as necessary when it does happen.
->> So as "don't do it that way because it's not reliable" as it might indeed
->> be in theory, in practice, just using an ordered /dev/* in kernel
->> commandlines does tend to "just work"... provided one is ready for the
->> occasion when that device parameter might need a bit of adjustment, of
->> course.
->>
-> ...
->>
->> ---
->> [1] LVM is userspace code on top of the kernelspace devicemapper, and
->> therefore requires an initr* if root is on lvm, regardless.  So btrfs
->> actually does a bit better here, only requiring it for multi-device btrfs.
->>
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+2. Backups are usually daily.  In most cases, it's much preferred to not 
+lose all the day's work on a given file.
 
+Given both points, I'd much rather be able to take 90 seconds to fix a 
+file and have it probably work, with the ability to restore from a 
+backup if it doesn't.  Currently, despite the fact that I actually know 
+(just barely) enough to fix this particular type of issue by hand, I end 
+up just restoring files from backup all the time, because that 30 minute 
+wait is still better than the hour plus amount of time it takes for me 
+to repair it by hand.

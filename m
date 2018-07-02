@@ -1,156 +1,101 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:46188 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:46818 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S933534AbeGBIeS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 2 Jul 2018 04:34:18 -0400
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 4D0FCAD1E
-        for <linux-btrfs@vger.kernel.org>; Mon,  2 Jul 2018 08:34:16 +0000 (UTC)
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2] btrfs: tree-checker: Verify block_group_item
-Date: Mon,  2 Jul 2018 16:34:14 +0800
-Message-Id: <20180702083414.13670-1-wqu@suse.com>
+        id S964876AbeGBIfz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 2 Jul 2018 04:35:55 -0400
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id C4F97AD1E
+        for <linux-btrfs@vger.kernel.org>; Mon,  2 Jul 2018 08:35:53 +0000 (UTC)
+Subject: Re: [PATCH] btrfs: Do extra chunk block group mapping check at mount
+To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+References: <20180702082907.12258-1-wqu@suse.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <cf4a1d93-39b6-2c89-2234-dcca543ca9e4@suse.com>
+Date: Mon, 2 Jul 2018 11:35:51 +0300
+MIME-Version: 1.0
+In-Reply-To: <20180702082907.12258-1-wqu@suse.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-As reported in https://bugzilla.kernel.org/show_bug.cgi?id=199849,
-a crafted image with invalid block group items could make free space cache
-code to cause panic.
 
-We could early detect such invalid block group item by checking:
-1) Size (key)
-   We have a up limit on block group item (10G)
-2) Chunk objectid
-3) Type
-   Exactly 1 bit set for type and no more than 1 bit set for profile
-4) Used space
-   No more than block group size.
 
-This should allow btrfs to detect and refuse to mount the crafted image.
-
-Reported-by: Xu Wen <wen.xu@gatech.edu>
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
-changelog:
-v2:
-  Format change for if() code block, added one new line for each block.
-  Use "hweight64() > 1" to detect profile error, replacing the bloated
-  !(flags & MASK == 0 || hweight64() == 1) condition.
----
- fs/btrfs/tree-checker.c | 92 +++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 92 insertions(+)
-
-diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
-index 8d40e7dd8c30..d4f872682668 100644
---- a/fs/btrfs/tree-checker.c
-+++ b/fs/btrfs/tree-checker.c
-@@ -353,6 +353,95 @@ static int check_dir_item(struct btrfs_fs_info *fs_info,
- 	return 0;
- }
- 
-+__printf(4, 5)
-+__cold
-+static void block_group_err(const struct btrfs_fs_info *fs_info,
-+			    const struct extent_buffer *eb, int slot,
-+			    const char *fmt, ...)
-+{
-+	struct btrfs_key key;
-+	struct va_format vaf;
-+	va_list args;
-+
-+	btrfs_item_key_to_cpu(eb, &key, slot);
-+	va_start(args, fmt);
-+
-+	vaf.fmt = fmt;
-+	vaf.va = &args;
-+
-+	btrfs_crit(fs_info,
-+	"corrupt %s: root=%llu block=%llu slot=%d bg_start=%llu bg_len=%llu, %pV",
-+		btrfs_header_level(eb) == 0 ? "leaf" : "node",
-+		btrfs_header_owner(eb), btrfs_header_bytenr(eb), slot,
-+		key.objectid, key.offset, &vaf);
-+	va_end(args);
-+}
-+
-+static int check_block_group_item(struct btrfs_fs_info *fs_info,
-+				  struct extent_buffer *leaf,
-+				  struct btrfs_key *key, int slot)
-+{
-+	struct btrfs_block_group_item bgi;
-+	u32 item_size = btrfs_item_size_nr(leaf, slot);
-+	u64 flags;
-+
-+	/*
-+	 * Here we don't really care about unalignment since extent allocator
-+	 * can handle it.
-+	 * We care more about the size, as if one block group is larger than
-+	 * maximum size, it's must be some obvious corruption
-+	 */
-+	if (key->offset > 10ULL * SZ_1G) {
-+		block_group_err(fs_info, leaf, slot,
-+			"invalid block group size, have %llu expect (0, %llu)",
-+				key->offset, 10ULL * SZ_1G);
-+		return -EUCLEAN;
-+	}
-+
-+	if (item_size != sizeof(bgi)) {
-+		block_group_err(fs_info, leaf, slot,
-+			"invalid item size, have %u expect %lu",
-+				item_size, sizeof(bgi));
-+		return -EUCLEAN;
-+	}
-+
-+	read_extent_buffer(leaf, &bgi, btrfs_item_ptr_offset(leaf, slot),
-+			   sizeof(bgi));
-+	if (btrfs_block_group_chunk_objectid(&bgi) !=
-+	    BTRFS_FIRST_CHUNK_TREE_OBJECTID) {
-+		block_group_err(fs_info, leaf, slot,
-+		"invalid block group chunk objectid, have %llu expect %llu",
-+				btrfs_block_group_chunk_objectid(&bgi),
-+				BTRFS_FIRST_CHUNK_TREE_OBJECTID);
-+		return -EUCLEAN;
-+	}
-+
-+	if (btrfs_block_group_used(&bgi) > key->offset) {
-+		block_group_err(fs_info, leaf, slot,
-+			"invalid block group used, have %llu expect [0, %llu)",
-+				btrfs_block_group_used(&bgi), key->offset);
-+		return -EUCLEAN;
-+	}
-+
-+	flags = btrfs_block_group_flags(&bgi);
-+	if (hweight64(flags & BTRFS_BLOCK_GROUP_PROFILE_MASK) > 1) {
-+		block_group_err(fs_info, leaf, slot,
-+"invalid profile flags, have 0x%llx (%lu bits set) expect no more than 1 bit set",
-+			flags & BTRFS_BLOCK_GROUP_PROFILE_MASK,
-+			hweight64(flags & BTRFS_BLOCK_GROUP_PROFILE_MASK));
-+		return -EUCLEAN;
-+	}
-+
-+	if (hweight64(flags & BTRFS_BLOCK_GROUP_TYPE_MASK) != 1) {
-+		block_group_err(fs_info, leaf, slot,
-+"invalid type flags, have 0x%llx (%lu bits set) expect exactly 1 bit set",
-+			flags & BTRFS_BLOCK_GROUP_TYPE_MASK,
-+			hweight64(flags & BTRFS_BLOCK_GROUP_TYPE_MASK));
-+		return -EUCLEAN;
-+	}
-+	return 0;
-+}
-+
- /*
-  * Common point to switch the item-specific validation.
-  */
-@@ -374,6 +463,9 @@ static int check_leaf_item(struct btrfs_fs_info *fs_info,
- 	case BTRFS_XATTR_ITEM_KEY:
- 		ret = check_dir_item(fs_info, leaf, key, slot);
- 		break;
-+	case BTRFS_BLOCK_GROUP_ITEM_KEY:
-+		ret = check_block_group_item(fs_info, leaf, key, slot);
-+		break;
- 	}
- 	return ret;
- }
--- 
-2.18.0
-
+On  2.07.2018 11:29, Qu Wenruo wrote:
+> Reported in https://bugzilla.kernel.org/show_bug.cgi?id=199837, if a
+> crafted btrfs with incorrect chunk<->block group mapping, it could leads
+> to a lot of unexpected behavior.
+> 
+> Although the crafted image can be catched by block group item checker
+> added in "[PATCH] btrfs: tree-checker: Verify block_group_item", if one
+> crafted a valid enough block group item which can pass above check but
+> still mismatch with existing chunk, it could cause a lot of undefined
+> behavior.
+> 
+> This patch will add extra chunk<->block group mapping check at mount
+> time, so such problem can be detected early and cause no harm.
+> 
+> Reported-by: Xu Wen <wen.xu@gatech.edu>
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+>  fs/btrfs/extent-tree.c | 38 ++++++++++++++++++++++++++++++++++++++
+>  1 file changed, 38 insertions(+)
+> 
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index 3d9fe58c0080..7a11dc76cd6d 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -10003,6 +10003,31 @@ btrfs_create_block_group_cache(struct btrfs_fs_info *fs_info,
+>  	return cache;
+>  }
+>  
+> +static int verify_chunk_block_group_mapping(struct btrfs_fs_info *fs_info,
+> +					    u64 start, u64 len)
+> +{
+> +	struct btrfs_mapping_tree *map_tree = &fs_info->mapping_tree;
+> +	struct extent_map *em;
+> +	int ret;
+> +
+> +	read_lock(&map_tree->map_tree.lock);
+> +	em = lookup_extent_mapping(&map_tree->map_tree, start, len);
+> +	read_unlock(&map_tree->map_tree.lock);
+> +
+> +	if (!em) {
+> +		ret = -ENOENT;
+> +		goto out;
+> +	}
+> +	if (em->start != start || em->len != len) {
+> +		ret = -ENOENT;
+> +		goto out;
+> +	}
+> +	ret = 0;
+> +out:
+> +	free_extent_map(em);
+> +	return ret;
+> +}
+> +
+>  int btrfs_read_block_groups(struct btrfs_fs_info *info)
+>  {
+>  	struct btrfs_path *path;
+> @@ -10045,6 +10070,19 @@ int btrfs_read_block_groups(struct btrfs_fs_info *info)
+>  		leaf = path->nodes[0];
+>  		btrfs_item_key_to_cpu(leaf, &found_key, path->slots[0]);
+>  
+> +		/*
+> +		 * Since block group and chunks are 1:1 mapped and are core
+> +		 * infrastructure of btrfs, we need to do extra verification.
+> +		 */
+nit: I'd rephrase that to just document the invariant that bg and chunks
+must have 1:1 mapping.
+> +		ret = verify_chunk_block_group_mapping(info,
+> +					found_key.objectid, found_key.offset);
+> +		if (ret < 0) {
+> +			btrfs_err_rl(info,
+> +		"block group start=%llu len=%llu doesn't have matched chunk",
+> +				     found_key.objectid, found_key.offset);
+> +			goto error;
+> +		}
+> +
+>  		cache = btrfs_create_block_group_cache(info, found_key.objectid,
+>  						       found_key.offset);
+>  		if (!cache) {
+> 

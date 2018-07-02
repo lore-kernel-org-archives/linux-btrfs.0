@@ -1,25 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:50726 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727498AbeGPQzh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 16 Jul 2018 12:55:37 -0400
-Date: Mon, 16 Jul 2018 18:27:21 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Su Yue <suy.fnst@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/2] btrfs-progs: lowmem: fix false alerts of referencer
- count mismatch for blocks relocated
-Message-ID: <20180716162720.GQ3126@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20180703075851.8346-1-suy.fnst@cn.fujitsu.com>
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:25975 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1753550AbeGBJWE (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 Jul 2018 05:22:04 -0400
+Received: from G08CNEXCHPEKD03.g08.fujitsu.local (unknown [10.167.33.85])
+        by cn.fujitsu.com (Postfix) with ESMTP id D833B4B43D4F
+        for <linux-btrfs@vger.kernel.org>; Mon,  2 Jul 2018 17:21:59 +0800 (CST)
+From: Su Yue <suy.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: <suy.fnst@cn.fujitsu.com>
+Subject: [PATCH RFC 0/3] btrfs-progs: lowmem: delay before lowmem repair
+Date: Mon, 2 Jul 2018 17:28:17 +0800
+Message-ID: <20180702092820.16285-1-suy.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180703075851.8346-1-suy.fnst@cn.fujitsu.com>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jul 03, 2018 at 03:58:50PM +0800, Su Yue wrote:
-> Btrfs lowmem check reports such false alerts:
-...
+Since lowmem repair is dangerous, it should remind user more obviously.
+The patchset add 10 seconds delay like btrfs balance and add am option
+'--force-repair-lowmem' to skip the delay.
 
-1 and 2 applied, thanks.
+---
+I don't whether it's a good idea to add delay and the option only for
+lowmem repair is acceptable, so make it RFC.
+
+Su Yue (3):
+  btrfs-progs: lowmem: delay before lowmem repair starts
+  btrfs-progs: lowmem: force to start without delay with option
+    '--force-repair-lowmem'
+  btrfs-progs: tests: append '--force-repair-lowmem' if lowmem repair is
+    enabled
+
+ check/main.c       | 43 ++++++++++++++++++++++++++++++++++++-------
+ tests/common.local |  1 +
+ 2 files changed, 37 insertions(+), 7 deletions(-)
+
+-- 
+2.17.1
+
+
+

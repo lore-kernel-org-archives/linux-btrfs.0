@@ -1,48 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:59142 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1752344AbeGANH5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 1 Jul 2018 09:07:57 -0400
-From: David Sterba <dsterba@suse.com>
-To: torvalds@linux-foundation.org
-Cc: David Sterba <dsterba@suse.com>, clm@fb.com, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Subject: [GIT PULL] Btrfs fixes for 4.18-rc2
-Date: Sun,  1 Jul 2018 15:07:45 +0200
-Message-Id: <cover.1530449809.git.dsterba@suse.com>
+Received: from mgwkm01.jp.fujitsu.com ([202.219.69.168]:22112 "EHLO
+        mgwkm01.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753183AbeGBIRy (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 Jul 2018 04:17:54 -0400
+Received: from g01jpfmpwyt03.exch.g01.fujitsu.local (g01jpfmpwyt03.exch.g01.fujitsu.local [10.128.193.57])
+        by kw-mxauth.gw.nic.fujitsu.com (Postfix) with ESMTP id 0B989AC00CD
+        for <linux-btrfs@vger.kernel.org>; Mon,  2 Jul 2018 17:17:49 +0900 (JST)
+Subject: Re: Enabling quota may not correctly rescan on 4.17
+To: Nikolay Borisov <nborisov@suse.com>, Qu Wenruo <quwenruo.btrfs@gmx.com>
+CC: linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <0ced0e29-9ecc-01fb-b0a5-9de32966666e@jp.fujitsu.com>
+ <bceb24d5-fa2f-b019-fc60-146fa7a62844@gmx.com>
+ <9f158a77-fb11-1b77-d67a-e64f42e67e51@jp.fujitsu.com>
+ <fd81f784-4c2e-5911-421a-39738c99177f@gmx.com>
+ <50806075-6faa-db22-1508-450c5d5b6e34@jp.fujitsu.com>
+ <80e72414-325c-61f1-a466-d5aaafe2a65b@suse.com>
+From: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
+Message-ID: <d0dc55a2-4eb9-bf1d-d69f-7c9b28fd4a9b@jp.fujitsu.com>
+Date: Mon, 2 Jul 2018 17:15:38 +0900
+MIME-Version: 1.0
+In-Reply-To: <80e72414-325c-61f1-a466-d5aaafe2a65b@suse.com>
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+> Misono,
+> 
+> Can you please try the attached patch?
+> 
 
-we have a few regression fixes for qgroup rescan status tracking and the
-vm_fault_t conversion that mixed up the error values.
+I tried and it works (on 4.18.0-rc3).
 
-Please pull, thanks.
+Committing transaction before starting rescan worker is
+what btrfs_qgroup_resan() does, so it looks fine. 
 
-----------------------------------------------------------------
-The following changes since commit c5b4a50b74018b3677098151ec5f4fce07d5e6a0:
+(though I'm not sure why you don't see the problem in your machine.)
 
-  Btrfs: fix return value on rename exchange failure (2018-06-22 12:59:08 +0200)
+Reviewed-by: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
+Thanks.
 
-are available in the Git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-4.18-rc2-tag
-
-for you to fetch changes up to e4e7ede739f7fb468686dfffa2d1e35dca35bacd:
-
-  Btrfs: fix mount failure when qgroup rescan is in progress (2018-06-28 11:30:57 +0200)
-
-----------------------------------------------------------------
-Chris Mason (1):
-      Btrfs: fix regression in btrfs_page_mkwrite() from vm_fault_t conversion
-
-Filipe Manana (1):
-      Btrfs: fix mount failure when qgroup rescan is in progress
-
-Qu Wenruo (1):
-      btrfs: quota: Set rescan progress to (u64)-1 if we hit last leaf
-
- fs/btrfs/inode.c  |  3 ++-
- fs/btrfs/qgroup.c | 17 +++++++++++++----
- 2 files changed, 15 insertions(+), 5 deletions(-)

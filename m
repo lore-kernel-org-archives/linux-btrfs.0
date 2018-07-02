@@ -1,19 +1,19 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:41970 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S964773AbeGBIFk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 2 Jul 2018 04:05:40 -0400
+Received: from mout.gmx.net ([212.227.15.19]:37943 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1753264AbeGBIPA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 2 Jul 2018 04:15:00 -0400
 Subject: Re: [PATCH] btrfs: relocation: Only remove reloc rb_trees if reloc
  control has been initialized
-From: Nikolay Borisov <nborisov@suse.com>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>, Qu Wenruo <wqu@suse.com>,
+To: Nikolay Borisov <nborisov@suse.com>, Qu Wenruo <wqu@suse.com>,
         linux-btrfs@vger.kernel.org
 References: <20180702062538.30794-1-wqu@suse.com>
  <341231a6-8464-d8ee-4e79-fe9066747384@suse.com>
  <6e41f3cb-9b20-246b-dfc8-ddd5f3ad7441@gmx.com>
  <69a2803a-af4f-a5ca-bc01-3d500b2152b2@suse.com>
-Message-ID: <554cd3ee-460b-d0f2-a357-2f1c11880fab@suse.com>
-Date: Mon, 2 Jul 2018 11:05:37 +0300
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <0d3ab2f6-71f5-7aa2-a000-3d7f6c953c92@gmx.com>
+Date: Mon, 2 Jul 2018 16:14:49 +0800
 MIME-Version: 1.0
 In-Reply-To: <69a2803a-af4f-a5ca-bc01-3d500b2152b2@suse.com>
 Content-Type: text/plain; charset=utf-8
@@ -22,7 +22,7 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On  2.07.2018 11:01, Nikolay Borisov wrote:
+On 2018年07月02日 16:01, Nikolay Borisov wrote:
 > 
 > 
 > On  2.07.2018 10:53, Qu Wenruo wrote:
@@ -80,12 +80,14 @@ On  2.07.2018 11:01, Nikolay Borisov wrote:
 > But then isn't the function buggy even with your patch because if node
 > is not initialised then we exit at if (!node) return.
 
-Ah, so you've moved the if (!node) check inside the if (rc) branch. Then
-it will work as you said. Fair enough.
+That means node->data isn't initialized nor its root->root_list.
+
+The patch only needs to call list_del_init() if @rc is not initialized.
+
+Thanks,
+Qu
 
 >>
-
-
 >> Thanks,
 >> Qu
 >>
@@ -117,3 +119,8 @@ it will work as you said. Fair enough.
 >>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 >>>
 >>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 

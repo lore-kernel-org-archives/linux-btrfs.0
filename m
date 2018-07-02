@@ -1,43 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:41236 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:60922 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S932093AbeGBX0y (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 2 Jul 2018 19:26:54 -0400
-Date: Tue, 3 Jul 2018 01:26:47 +0200
+        id S1752715AbeGBWM0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 2 Jul 2018 18:12:26 -0400
+Date: Tue, 3 Jul 2018 00:12:17 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Steve Leung <sjleung@shaw.ca>
-Cc: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 0/6] btrfs-progs: Fixes inline ram_bytes related bugs
-Message-ID: <20180702232647.GJ3126@twin.jikos.cz>
+To: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz,
+        Paul Jones <paul@pauljones.id.au>, Hugo Mills <hugo@carfax.org.uk>
+Subject: Re: [PATCH v2 1/2] btrfs-progs: Fix wrong optind re-initialization
+ to allow mixed option and non-option
+Message-ID: <20180702221217.GD3126@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <20180606072717.28854-1-wqu@suse.com>
- <d0ab3c91-3f19-49ee-165c-4dd11a74c4de@shaw.ca>
+References: <20180620003839.10629-1-wqu@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <d0ab3c91-3f19-49ee-165c-4dd11a74c4de@shaw.ca>
+In-Reply-To: <20180620003839.10629-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jun 07, 2018 at 10:37:16PM -0600, Steve Leung wrote:
-> On 06/06/2018 01:27 AM, Qu Wenruo wrote:
-> > The patchset can be fetched from github (*):
-> > https://github.com/adam900710/btrfs-progs/tree/inline_ram_bytes
-> > 
-> > It's based on David's devel branch, whose HEAD is:
-> > commit 0d1c5812e28e286648781c7b35b542311cc01aa4 (david/devel)
-> > Author: Matthias Benkard <matthias.benkard@egym.de>
-> > Date:   Wed Apr 25 16:34:54 2018 +0200
-> > 
-> >      btrfs-progs: mkfs: traverse_directory: Reset error code on continue
-> > 
-> > Reported-by Steve Leung <sjleung@shaw.ca>, his old btrfs (at least
-> > offending inodes are from 2014) has inline uncompressed extent, while
-> > its ram_bytes mismatch with item size.
+On Wed, Jun 20, 2018 at 08:38:38AM +0800, Qu Wenruo wrote:
+> In function handle_global_options(), we reset @optind to 1.
+> However according to man page of getopt(3) NOTES section, if we need to
+> rescan options later, @optind should be reset to 0 to initialize the
+> internal variables correctly.
 > 
-> Took a while to run, but:
+> This explains the reason why in cmd_check(), getopt_long() doesn't
+> handle the following command correctly:
+> "btrfs check /dev/data/btrfs --check-data-csum"
 > 
-> Tested-by: Steve Leung <sjleung@shaw.ca>
+> While mkfs.btrfs handles mixed non-option and option correctly:
+> "mkfs.btrfs -f /dev/data/disk1 --data raid1 /dev/data/disk2"
 > 
-> Verifying everything against backups now, but things look good so far.
+> Cc: Paul Jones <paul@pauljones.id.au>
+> Cc: Hugo Mills <hugo@carfax.org.uk>
+> Fixes: 010ceab56e06 ("btrfs-progs: rework option parser to use getopt for global options")
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+> changelog:
+> v2:
+>   Instead of resetting @optind at handle_global_options(), reset @optind
+>   before each later getopt() call. Since there are cases uses @optind and
+>   expects it to be starting from 1.
 
-Thank you very much for testing!
+So it's not possible to set it once before the callbacks are called in
+btrfs.c:main() due to the exceptions that need it to be set to 1. Ok,
+can you please send a separate patch that makes the optind = 1 explicit?
+Even it might be redundant in the context, it's a way to document the
+expected behaviour of getopt and also we would not have to think if the
+optind setting is missing or not before the getopts. Thanks.

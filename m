@@ -1,77 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:52370 "EHLO
-        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752562AbeGBTkU (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 Jul 2018 15:40:20 -0400
-Date: Mon, 2 Jul 2018 12:40:15 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Cc: Qu Wenruo <quwenruo.btrfs@gmx.com>, Su Yue <suy.fnst@cn.fujitsu.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: how to best segment a big block device in resizeable btrfs filesystems?
-Message-ID: <20180702194015.GC9859@merlins.org>
-References: <20180701232202.vehg7amgyvz3hpxc@merlins.org> <5a603d3d-620b-6cb3-106c-9d38e3ca6d02@cn.fujitsu.com> <20180702032259.GD5567@merlins.org> <9fbd4b39-fa75-4c30-eea8-e789fd3e4dd5@cn.fujitsu.com> <20180702140527.wfbq5jenm67fvvjg@merlins.org> <3728d88c-29c1-332b-b698-31a0b3d36e2b@gmx.com> <20180702151853.mwlrinipbihq46zu@merlins.org> <e8e78a5b-1db2-ddf0-f8ea-38f8ac9be654@gmail.com> <20180702173438.7c2vhflvtncfb5gz@merlins.org> <8de54b29-c718-0230-09b2-f849e3ad01df@gmail.com>
+Received: from mail-oi0-f49.google.com ([209.85.218.49]:40386 "EHLO
+        mail-oi0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752789AbeGCAbq (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 Jul 2018 20:31:46 -0400
+Received: by mail-oi0-f49.google.com with SMTP id w126-v6so401328oie.7
+        for <linux-btrfs@vger.kernel.org>; Mon, 02 Jul 2018 17:31:45 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <8de54b29-c718-0230-09b2-f849e3ad01df@gmail.com>
+In-Reply-To: <3728d88c-29c1-332b-b698-31a0b3d36e2b@gmx.com>
+References: <6658a593-3b4a-f1ef-f550-2fb951b2517d@gmx.com> <20180629052825.tifg2aw7oy3qyyvw@merlins.org>
+ <02ba7ad4-b618-85f0-a99f-c43b25d367de@cn.fujitsu.com> <20180629061001.kkmgvdgqfhz23kll@merlins.org>
+ <a0099769-1622-c428-d47a-0e243f66a8b0@cn.fujitsu.com> <20180629064354.kbaepro5ccmm6lkn@merlins.org>
+ <20180701232202.vehg7amgyvz3hpxc@merlins.org> <5a603d3d-620b-6cb3-106c-9d38e3ca6d02@cn.fujitsu.com>
+ <20180702032259.GD5567@merlins.org> <9fbd4b39-fa75-4c30-eea8-e789fd3e4dd5@cn.fujitsu.com>
+ <20180702140527.wfbq5jenm67fvvjg@merlins.org> <3728d88c-29c1-332b-b698-31a0b3d36e2b@gmx.com>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Mon, 2 Jul 2018 18:31:43 -0600
+Message-ID: <CAJCQCtQsNnebkZ-vOfw5WABUj2vOChaE2yyeTBDKVyUcPMgcCg@mail.gmail.com>
+Subject: Re: So, does btrfs check lowmem take days? weeks?
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: Marc MERLIN <marc@merlins.org>, Su Yue <suy.fnst@cn.fujitsu.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jul 02, 2018 at 02:35:19PM -0400, Austin S. Hemmelgarn wrote:
-> >I kind of linked the thin provisioning idea because it's hands off,
-> >which is appealing. Any reason against it?
-> No, not currently, except that it adds a whole lot more stuff between 
-> BTRFS and whatever layer is below it.  That increase in what's being 
-> done adds some overhead (it's noticeable on 7200 RPM consumer SATA 
-> drives, but not on decent consumer SATA SSD's).
-> 
-> There used to be issues running BTRFS on top of LVM thin targets which 
-> had zero mode turned off, but AFAIK, all of those problems were fixed 
-> long ago (before 4.0).
+On Mon, Jul 2, 2018 at 8:42 AM, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
+>
+>
+> On 2018年07月02日 22:05, Marc MERLIN wrote:
+>> On Mon, Jul 02, 2018 at 02:22:20PM +0800, Su Yue wrote:
+>>>> Ok, that's 29MB, so it doesn't fit on pastebin:
+>>>> http://marc.merlins.org/tmp/dshelf2_inspect.txt
+>>>>
+>>> Sorry Marc. After offline communication with Qu, both
+>>> of us think the filesystem is hard to repair.
+>>> The filesystem is too large to debug step by step.
+>>> Every time check and debug spent is too expensive.
+>>> And it already costs serveral days.
+>>>
+>>> Sadly, I am afarid that you have to recreate filesystem
+>>> and reback up your data. :(
+>>>
+>>> Sorry again and thanks for you reports and patient.
+>>
+>> I appreciate your help. Honestly I only wanted to help you find why the
+>> tools aren't working. Fixing filesystems by hand (and remotely via Email
+>> on top of that), is way too time consuming like you said.
+>>
+>> Is the btrfs design flawed in a way that repair tools just cannot repair
+>> on their own?
+>
+> For short and for your case, yes, you can consider repair tool just a
+> garbage and don't use them at any production system.
 
-I see, thanks for the heads up.
+So the idea behind journaled file systems is that journal replay
+enabled mount time "repair" that's faster than an fsck. Already Btrfs
+use cases with big, but not huge, file systems makes btrfs check a
+problem. Either running out of memory or it takes too long. So already
+it isn't scaling as well as ext4 or XFS in this regard.
 
-> >Does LVM do built in raid5 now? Is it as good/trustworthy as mdadm
-> >radi5?
-> Actually, it uses MD's RAID5 implementation as a back-end.  Same for 
-> RAID6, and optionally for RAID0, RAID1, and RAID10.
- 
-Ok, that makes me feel a bit better :)
+So what's the future hold? It seems like the goal is that the problems
+must be avoided in the first place rather than to repair them after
+the fact.
 
-> >But yeah, if it's incompatible with thin provisioning, it's not that
-> >useful.
-> It's technically not incompatible, just a bit of a pain.  Last time I 
-> tried to use it, you had to jump through hoops to repair a damaged RAID 
-> volume that was serving as an underlying volume in a thin pool, and it 
-> required keeping the thin pool offline for the entire duration of the 
-> rebuild.
+Are the problem's Marc is running into understood well enough that
+there can eventually be a fix, maybe even an on-disk format change,
+that prevents such problems from happening in the first place?
 
-Argh, not good :( / thanks for the heads up.
+Or does it make sense for him to be running with btrfs debug or some
+subset of btrfs integrity checking mask to try to catch the problems
+in the act of them happening?
 
-> If you do go with thin provisioning, I would encourage you to make 
-> certain to call fstrim on the BTRFS volumes on a semi regular basis so 
-> that the thin pool doesn't get filled up with old unused blocks, 
 
-That's a very good point/reminder, thanks for that. I guess it's like
-running on an ssd :)
 
-> preferably when you are 100% certain that there are no ongoing writes on 
-> them (trimming blocks on BTRFS gets rid of old root trees, so it's a bit 
-> dangerous to do it while writes are happening).
- 
-Argh, that will be harder, but I'll try.
-
-Given what you said, it sounds like I'll still be best off with separate
-layers to avoid the rebuild problem you mentioned.
-So it'll be
-swraid5 / dmcrypt / bcache / lvm dm thin / btrfs
-
-Hopefully that will work well enough.
-
-Thanks,
-Marc
 -- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/  
+Chris Murphy

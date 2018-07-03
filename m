@@ -1,207 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:60142 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:53720 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S932950AbeGCGfI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 3 Jul 2018 02:35:08 -0400
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 6154CACC1
-        for <linux-btrfs@vger.kernel.org>; Tue,  3 Jul 2018 06:35:07 +0000 (UTC)
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v3] btrfs: tree-checker: Verify block_group_item
-Date: Tue,  3 Jul 2018 14:35:05 +0800
-Message-Id: <20180703063505.17131-1-wqu@suse.com>
+        id S1753306AbeGCF6T (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 3 Jul 2018 01:58:19 -0400
+Subject: Re: [PATCH 2/2] btrfs: drop devices declare in
+ btrfs_init_new_device()
+To: Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
+References: <20180703051451.3673-1-anand.jain@oracle.com>
+ <20180703051451.3673-2-anand.jain@oracle.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <92f4200f-10fb-971f-e369-26f8a837f82d@suse.com>
+Date: Tue, 3 Jul 2018 08:58:16 +0300
+MIME-Version: 1.0
+In-Reply-To: <20180703051451.3673-2-anand.jain@oracle.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-As reported in https://bugzilla.kernel.org/show_bug.cgi?id=199849,
-a crafted image with invalid block group items could make free space cache
-code to cause panic.
 
-We could early detect such invalid block group item by checking:
-1) Item size
-   Fixed value.
-2) Block group size (key.offset)
-   We have a up limit on block group item (10G)
-3) Chunk objectid
-   Fixed value.
-4) Type
-   Only 4 valid type values, DATA, METADATA, SYSTEM and DATA|METADATA.
-   No more than 1 bit set for profile type.
-5) Used space
-   No more than block group size.
 
-This should allow btrfs to detect and refuse to mount the crafted image.
+On  3.07.2018 08:14, Anand Jain wrote:
+> There is only one usage of the declared devices variable, instead
+> use its value directly.
+> 
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
 
-Reported-by: Xu Wen <wen.xu@gatech.edu>
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
-changelog:
-v2:
-  Format change for if() code block, added one new line for each block.
-  Use "hweight64() > 1" to detect profile error, replacing the bloated
-  !(flags & MASK == 0 || hweight64() == 1) condition.
-v3:
-  Allow special case for mixed block groups (type == (DATA | METADATA)).
-  Use constant define for max data chunk size.
----
- fs/btrfs/tree-checker.c | 101 ++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/volumes.c      |   2 +-
- fs/btrfs/volumes.h      |   2 +
- 3 files changed, 104 insertions(+), 1 deletion(-)
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 
-diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
-index 8d40e7dd8c30..1cd735b099df 100644
---- a/fs/btrfs/tree-checker.c
-+++ b/fs/btrfs/tree-checker.c
-@@ -19,6 +19,7 @@
- #include "tree-checker.h"
- #include "disk-io.h"
- #include "compression.h"
-+#include "volumes.h"
- 
- /*
-  * Error message should follow the following format:
-@@ -353,6 +354,103 @@ static int check_dir_item(struct btrfs_fs_info *fs_info,
- 	return 0;
- }
- 
-+__printf(4, 5)
-+__cold
-+static void block_group_err(const struct btrfs_fs_info *fs_info,
-+			    const struct extent_buffer *eb, int slot,
-+			    const char *fmt, ...)
-+{
-+	struct btrfs_key key;
-+	struct va_format vaf;
-+	va_list args;
-+
-+	btrfs_item_key_to_cpu(eb, &key, slot);
-+	va_start(args, fmt);
-+
-+	vaf.fmt = fmt;
-+	vaf.va = &args;
-+
-+	btrfs_crit(fs_info,
-+	"corrupt %s: root=%llu block=%llu slot=%d bg_start=%llu bg_len=%llu, %pV",
-+		btrfs_header_level(eb) == 0 ? "leaf" : "node",
-+		btrfs_header_owner(eb), btrfs_header_bytenr(eb), slot,
-+		key.objectid, key.offset, &vaf);
-+	va_end(args);
-+}
-+
-+static int check_block_group_item(struct btrfs_fs_info *fs_info,
-+				  struct extent_buffer *leaf,
-+				  struct btrfs_key *key, int slot)
-+{
-+	struct btrfs_block_group_item bgi;
-+	u32 item_size = btrfs_item_size_nr(leaf, slot);
-+	u64 flags;
-+	u64 type_flags;
-+
-+	/*
-+	 * Here we don't really care about unalignment since extent allocator
-+	 * can handle it.
-+	 * We care more about the size, as if one block group is larger than
-+	 * maximum size, it's must be some obvious corruption
-+	 */
-+	if (key->offset > BTRFS_MAX_DATA_CHUNK_SIZE || key->offset == 0) {
-+		block_group_err(fs_info, leaf, slot,
-+			"invalid block group size, have %llu expect (0, %llu]",
-+				key->offset, 10ULL * SZ_1G);
-+		return -EUCLEAN;
-+	}
-+
-+	if (item_size != sizeof(bgi)) {
-+		block_group_err(fs_info, leaf, slot,
-+			"invalid item size, have %u expect %lu",
-+				item_size, sizeof(bgi));
-+		return -EUCLEAN;
-+	}
-+
-+	read_extent_buffer(leaf, &bgi, btrfs_item_ptr_offset(leaf, slot),
-+			   sizeof(bgi));
-+	if (btrfs_block_group_chunk_objectid(&bgi) !=
-+	    BTRFS_FIRST_CHUNK_TREE_OBJECTID) {
-+		block_group_err(fs_info, leaf, slot,
-+		"invalid block group chunk objectid, have %llu expect %llu",
-+				btrfs_block_group_chunk_objectid(&bgi),
-+				BTRFS_FIRST_CHUNK_TREE_OBJECTID);
-+		return -EUCLEAN;
-+	}
-+
-+	if (btrfs_block_group_used(&bgi) > key->offset) {
-+		block_group_err(fs_info, leaf, slot,
-+			"invalid block group used, have %llu expect [0, %llu)",
-+				btrfs_block_group_used(&bgi), key->offset);
-+		return -EUCLEAN;
-+	}
-+
-+	flags = btrfs_block_group_flags(&bgi);
-+	if (hweight64(flags & BTRFS_BLOCK_GROUP_PROFILE_MASK) > 1) {
-+		block_group_err(fs_info, leaf, slot,
-+"invalid profile flags, have 0x%llx (%lu bits set) expect no more than 1 bit set",
-+			flags & BTRFS_BLOCK_GROUP_PROFILE_MASK,
-+			hweight64(flags & BTRFS_BLOCK_GROUP_PROFILE_MASK));
-+		return -EUCLEAN;
-+	}
-+
-+	type_flags = flags & BTRFS_BLOCK_GROUP_TYPE_MASK;
-+	if (type_flags != BTRFS_BLOCK_GROUP_DATA &&
-+	    type_flags != BTRFS_BLOCK_GROUP_METADATA &&
-+	    type_flags != BTRFS_BLOCK_GROUP_SYSTEM &&
-+	    type_flags != (BTRFS_BLOCK_GROUP_METADATA |
-+			   BTRFS_BLOCK_GROUP_DATA)) {
-+		block_group_err(fs_info, leaf, slot,
-+"invalid type flags, have 0x%llx (%lu bits set) expect either 0x%llx, 0x%llx, 0x%llu or 0x%llx",
-+			type_flags, hweight64(type_flags),
-+			BTRFS_BLOCK_GROUP_DATA, BTRFS_BLOCK_GROUP_METADATA,
-+			BTRFS_BLOCK_GROUP_SYSTEM,
-+			BTRFS_BLOCK_GROUP_METADATA | BTRFS_BLOCK_GROUP_DATA);
-+		return -EUCLEAN;
-+	}
-+	return 0;
-+}
-+
- /*
-  * Common point to switch the item-specific validation.
-  */
-@@ -374,6 +472,9 @@ static int check_leaf_item(struct btrfs_fs_info *fs_info,
- 	case BTRFS_XATTR_ITEM_KEY:
- 		ret = check_dir_item(fs_info, leaf, key, slot);
- 		break;
-+	case BTRFS_BLOCK_GROUP_ITEM_KEY:
-+		ret = check_block_group_item(fs_info, leaf, key, slot);
-+		break;
- 	}
- 	return ret;
- }
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index e034ad9e23b4..b33bf29130b6 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -4690,7 +4690,7 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- 
- 	if (type & BTRFS_BLOCK_GROUP_DATA) {
- 		max_stripe_size = SZ_1G;
--		max_chunk_size = 10 * max_stripe_size;
-+		max_chunk_size = BTRFS_MAX_DATA_CHUNK_SIZE;
- 		if (!devs_max)
- 			devs_max = BTRFS_MAX_DEVS(info);
- 	} else if (type & BTRFS_BLOCK_GROUP_METADATA) {
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 5139ec8daf4c..77e6004b6cb9 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -11,6 +11,8 @@
- #include <linux/btrfs.h>
- #include "async-thread.h"
- 
-+#define BTRFS_MAX_DATA_CHUNK_SIZE	(10ULL * SZ_1G)
-+
- extern struct mutex uuid_mutex;
- 
- #define BTRFS_STRIPE_LEN	SZ_64K
--- 
-2.18.0
-
+> ---
+>  fs/btrfs/volumes.c | 5 +----
+>  1 file changed, 1 insertion(+), 4 deletions(-)
+> 
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index f7fa0ea26e9c..124bd8728c37 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -2406,7 +2406,6 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
+>  	struct btrfs_trans_handle *trans;
+>  	struct btrfs_device *device;
+>  	struct block_device *bdev;
+> -	struct list_head *devices;
+>  	struct super_block *sb = fs_info->sb;
+>  	struct rcu_string *name;
+>  	struct btrfs_fs_devices *fs_devices = fs_info->fs_devices;
+> @@ -2431,10 +2430,8 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
+>  
+>  	filemap_write_and_wait(bdev->bd_inode->i_mapping);
+>  
+> -	devices = &fs_devices->devices;
+> -
+>  	mutex_lock(&fs_devices->device_list_mutex);
+> -	list_for_each_entry(device, devices, dev_list) {
+> +	list_for_each_entry(device, &fs_devices->devices, dev_list) {
+>  		if (device->bdev == bdev) {
+>  			ret = -EEXIST;
+>  			mutex_unlock(
+> 

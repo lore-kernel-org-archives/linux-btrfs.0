@@ -1,71 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.21]:50531 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753259AbeGCBh7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 2 Jul 2018 21:37:59 -0400
-Subject: Re: how to best segment a big block device in resizeable btrfs
- filesystems?
-To: Marc MERLIN <marc@merlins.org>
-Cc: Su Yue <suy.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-References: <02ba7ad4-b618-85f0-a99f-c43b25d367de@cn.fujitsu.com>
- <20180629061001.kkmgvdgqfhz23kll@merlins.org>
- <a0099769-1622-c428-d47a-0e243f66a8b0@cn.fujitsu.com>
- <20180629064354.kbaepro5ccmm6lkn@merlins.org>
- <20180701232202.vehg7amgyvz3hpxc@merlins.org>
- <5a603d3d-620b-6cb3-106c-9d38e3ca6d02@cn.fujitsu.com>
- <20180702032259.GD5567@merlins.org>
- <9fbd4b39-fa75-4c30-eea8-e789fd3e4dd5@cn.fujitsu.com>
- <20180702140527.wfbq5jenm67fvvjg@merlins.org>
- <3728d88c-29c1-332b-b698-31a0b3d36e2b@gmx.com>
- <20180702151853.mwlrinipbihq46zu@merlins.org>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <ee8ff481-0aac-54ec-b496-f28feab2227b@gmx.com>
-Date: Tue, 3 Jul 2018 09:37:47 +0800
+Received: from magic.merlins.org ([209.81.13.136]:40956 "EHLO
+        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750716AbeGCEGw (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Jul 2018 00:06:52 -0400
+Date: Mon, 2 Jul 2018 21:06:50 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: Paul Jones <paul@pauljones.id.au>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: how to best segment a big block device in resizeable btrfs filesystems?
+Message-ID: <20180703040650.GG5567@merlins.org>
+References: <a0099769-1622-c428-d47a-0e243f66a8b0@cn.fujitsu.com> <20180629064354.kbaepro5ccmm6lkn@merlins.org> <20180701232202.vehg7amgyvz3hpxc@merlins.org> <5a603d3d-620b-6cb3-106c-9d38e3ca6d02@cn.fujitsu.com> <20180702032259.GD5567@merlins.org> <9fbd4b39-fa75-4c30-eea8-e789fd3e4dd5@cn.fujitsu.com> <20180702140527.wfbq5jenm67fvvjg@merlins.org> <3728d88c-29c1-332b-b698-31a0b3d36e2b@gmx.com> <20180702151853.mwlrinipbihq46zu@merlins.org> <MEXPR01MB12088F15449EA6CCC6FDDA0D9E420@MEXPR01MB1208.ausprd01.prod.outlook.com>
 MIME-Version: 1.0
-In-Reply-To: <20180702151853.mwlrinipbihq46zu@merlins.org>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <MEXPR01MB12088F15449EA6CCC6FDDA0D9E420@MEXPR01MB1208.ausprd01.prod.outlook.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Tue, Jul 03, 2018 at 12:51:30AM +0000, Paul Jones wrote:
+> You could combine bcache and lvm if you are happy to use dm-cache instead (which lvm uses).
+> I use it myself (but without thin provisioning) and it works well.
 
+Interesting point. So, I used to use lvm and then lvm2 many years ago until
+I got tired with its performance, especially as asoon as I took even a
+single snapshot.
+But that was a long time ago now, just saying that I'm a bit rusty on LVM
+itself.
 
-On 2018年07月02日 23:18, Marc MERLIN wrote:
-> Hi Qu,
-> 
-> I'll split this part into a new thread:
-> 
->> 2) Don't keep unrelated snapshots in one btrfs.
->>    I totally understand that maintain different btrfs would hugely add
->>    maintenance pressure, but as explains, all snapshots share one
->>    fragile extent tree.
-> 
-> Yes, I understand that this is what I should do given what you
-> explained.
-> My main problem is knowing how to segment things so I don't end up with
-> filesystems that are full while others are almost empty :)
-> 
-> Am I supposed to put LVM thin volumes underneath so that I can share
-> the same single 10TB raid5?
-> 
-> If I do this, I would have
-> software raid 5 < dmcrypt < bcache < lvm < btrfs
-> That's a lot of layers, and that's also starting to make me nervous :)
+That being said, if I have
+raid5
+dm-cache
+dm-crypt
+dm-thin
 
-If you could keep the number of snapshots to minimal (less than 10) for
-each btrfs (and the number of send source is less than 5), one big btrfs
-may work in that case.
+That's still 4 block layers under btrfs.
+Am I any better off using dm-cache instead of bcache, my understanding is
+that it only replaces one block layer with another one and one codebase with
+another.
 
-BTW, IMHO the bcache is not really helping for backup system, which is
-more write oriented.
+Mmmh, a bit of reading shows that dm-cache is now used as lvmcache, which
+might change things, or not.
+I'll admit that setting up and maintaining bcache is a bit of a pain, I only
+used it at the time because it seemed more ready then, but we're a few years
+later now.
+
+So, what do you recommend nowadays, assuming you've used both?
+(given that it's literally going to take days to recreate my array, I'd
+rather do it once and the right way the first time :) )
 
 Thanks,
-Qu
-
-> 
-> Is there any other way that does not involve me creating smaller block
-> devices for multiple btrfs filesystems and hope that they are the right
-> size because I won't be able to change it later?
-> 
-> Thanks,
-> Marc
-> 
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/  

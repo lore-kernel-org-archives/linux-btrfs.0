@@ -1,51 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:55220 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1753213AbeGCHhv (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Jul 2018 03:37:51 -0400
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-3@m.gmane.org>)
-        id 1faFqc-0005dk-5t
-        for linux-btrfs@vger.kernel.org; Tue, 03 Jul 2018 09:35:38 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: unsolvable technical issues?
-Date: Tue, 3 Jul 2018 07:35:30 +0000 (UTC)
-Message-ID: <pan$f3f7b$53185d9e$ee073b92$d7d590bf@cox.net>
-References: <b255d0fb-5cee-36c5-d49f-5f014d20e518@dirtcellar.net>
-        <pan$11f2c$c623d7b0$5173b25$c7594479@cox.net>
-        <646f0c52-4726-7a7d-0242-4412950bf002@libero.it>
-        <64876ad1-9f63-f6f0-9d55-0fa4999f0bf5@gmail.com>
-        <pan$15832$609432db$876d9a8a$e5840f46@cox.net>
-        <9b482289-c96f-dac3-d2e7-db6a32596334@gmail.com>
-        <ea1a9c9b-7132-87f1-04fc-85b278975925@gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:10542 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S932169AbeGCI2U (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Jul 2018 04:28:20 -0400
+Subject: Re: So, does btrfs check lowmem take days? weeks?
+To: Marc MERLIN <marc@merlins.org>, Chris Murphy <lists@colorremedies.com>
+CC: Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <20180629061001.kkmgvdgqfhz23kll@merlins.org>
+ <a0099769-1622-c428-d47a-0e243f66a8b0@cn.fujitsu.com>
+ <20180629064354.kbaepro5ccmm6lkn@merlins.org>
+ <20180701232202.vehg7amgyvz3hpxc@merlins.org>
+ <5a603d3d-620b-6cb3-106c-9d38e3ca6d02@cn.fujitsu.com>
+ <20180702032259.GD5567@merlins.org>
+ <9fbd4b39-fa75-4c30-eea8-e789fd3e4dd5@cn.fujitsu.com>
+ <20180702140527.wfbq5jenm67fvvjg@merlins.org>
+ <3728d88c-29c1-332b-b698-31a0b3d36e2b@gmx.com>
+ <CAJCQCtQsNnebkZ-vOfw5WABUj2vOChaE2yyeTBDKVyUcPMgcCg@mail.gmail.com>
+ <20180703042241.GI5567@merlins.org>
+From: Su Yue <suy.fnst@cn.fujitsu.com>
+Message-ID: <704a82af-7cef-7981-b620-0e63a35620b3@cn.fujitsu.com>
+Date: Tue, 3 Jul 2018 16:34:38 +0800
+MIME-Version: 1.0
+In-Reply-To: <20180703042241.GI5567@merlins.org>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Austin S. Hemmelgarn posted on Mon, 02 Jul 2018 07:49:05 -0400 as
-excerpted:
 
-> Notably, most Intel systems I've seen have the SATA controllers in the
-> chipset enumerate after the USB controllers, and the whole chipset
-> enumerates after add-in cards (so they almost always have this issue),
-> while most AMD systems I've seen demonstrate the exact opposite
-> behavior,
-> they enumerate the SATA controller from the chipset before the USB
-> controllers, and then enumerate the chipset before all the add-in cards
-> (so they almost never have this issue).
 
-Thanks.  That's a difference I wasn't aware of, and would (because I tend 
-to favor amd) explain why I've never seen a change in enumeration order 
-unless I've done something like unplug my sata cables for maintenance and 
-forget which ones I had plugged in where -- random USB stuff left plugged 
-in doesn't seem to matter, even choosing different boot media from the 
-bios doesn't seem to matter by the time the kernel runs (I'm less sure 
-about grub).
+On 07/03/2018 12:22 PM, Marc MERLIN wrote:
+> On Mon, Jul 02, 2018 at 06:31:43PM -0600, Chris Murphy wrote:
+>> So the idea behind journaled file systems is that journal replay
+>> enabled mount time "repair" that's faster than an fsck. Already Btrfs
+>> use cases with big, but not huge, file systems makes btrfs check a
+>> problem. Either running out of memory or it takes too long. So already
+>> it isn't scaling as well as ext4 or XFS in this regard.
+>>
+>> So what's the future hold? It seems like the goal is that the problems
+>> must be avoided in the first place rather than to repair them after
+>> the fact.
+>>
+>> Are the problem's Marc is running into understood well enough that
+>> there can eventually be a fix, maybe even an on-disk format change,
+>> that prevents such problems from happening in the first place?
+>>
+>> Or does it make sense for him to be running with btrfs debug or some
+>> subset of btrfs integrity checking mask to try to catch the problems
+>> in the act of them happening?
+> 
+> Those are all good questions.
+> To be fair, I cannot claim that btrfs was at fault for whatever filesystem
+> damage I ended up with. It's very possible that it happened due to a flaky
+> Sata card that kicked drives off the bus when it shouldn't have.
+> Sure in theory a journaling filesystem can recover from unexpected power
+> loss and drives dropping off at bad times, but I'm going to guess that
+> btrfs' complexity also means that it has data structures (extent tree?) that
+> need to be updated completely "or else".
+> 
+Yes, extent tree is the hardest part for lowmem mode. I'm quite
+confident the tool can deal well with file trees(which records metadata
+about file and directory name, relationships).
+As for extent tree, I have few confidence due to its complexity.
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+> I'm obviously ok with a filesystem check being necessary to recover in cases
+> like this, afterall I still occasionally have to run e2fsck on ext4 too, but
+> I'm a lot less thrilled with the btrfs situation where basically the repair
+> tools can either completely crash your kernel, or take days and then either
+> get stuck in an infinite loop or hit an algorithm that can't scale if you
+> have too many hardlinks/snapshots.
+> 
+It's not surprising that real world filesytems have many snapshots.
+Original mode repair eats large memory space, so lowmem mode is created
+to save memory but costs time. The latter is just not robust to handle
+complex situations.
+
+> It sounds like there may not be a fix to this problem with the filesystem's
+> design, outside of "do not get there, or else".
+> It would even be useful for btrfs tools to start computing heuristics and
+> output warnings like "you have more than 100 snapshots on this filesystem,
+> this is not recommended, please read http://url/"
+> 
+> Qu, Su, does that sound both reasonable and doable?
+> 
+> Thanks,
+> Marc
+> 
+
 

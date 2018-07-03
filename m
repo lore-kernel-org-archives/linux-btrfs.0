@@ -1,11 +1,11 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:10542 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S932169AbeGCI2U (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Jul 2018 04:28:20 -0400
+Received: from mout.gmx.net ([212.227.17.22]:35451 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S932683AbeGCIvD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 3 Jul 2018 04:51:03 -0400
 Subject: Re: So, does btrfs check lowmem take days? weeks?
 To: Marc MERLIN <marc@merlins.org>, Chris Murphy <lists@colorremedies.com>
-CC: Qu Wenruo <quwenruo.btrfs@gmx.com>,
+Cc: Su Yue <suy.fnst@cn.fujitsu.com>,
         Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 References: <20180629061001.kkmgvdgqfhz23kll@merlins.org>
  <a0099769-1622-c428-d47a-0e243f66a8b0@cn.fujitsu.com>
@@ -18,18 +18,18 @@ References: <20180629061001.kkmgvdgqfhz23kll@merlins.org>
  <3728d88c-29c1-332b-b698-31a0b3d36e2b@gmx.com>
  <CAJCQCtQsNnebkZ-vOfw5WABUj2vOChaE2yyeTBDKVyUcPMgcCg@mail.gmail.com>
  <20180703042241.GI5567@merlins.org>
-From: Su Yue <suy.fnst@cn.fujitsu.com>
-Message-ID: <704a82af-7cef-7981-b620-0e63a35620b3@cn.fujitsu.com>
-Date: Tue, 3 Jul 2018 16:34:38 +0800
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <e72a5fe6-a6fc-ee70-870e-f98d4c7b8221@gmx.com>
+Date: Tue, 3 Jul 2018 16:50:48 +0800
 MIME-Version: 1.0
 In-Reply-To: <20180703042241.GI5567@merlins.org>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On 07/03/2018 12:22 PM, Marc MERLIN wrote:
+On 2018年07月03日 12:22, Marc MERLIN wrote:
 > On Mon, Jul 02, 2018 at 06:31:43PM -0600, Chris Murphy wrote:
 >> So the idea behind journaled file systems is that journal replay
 >> enabled mount time "repair" that's faster than an fsck. Already Btrfs
@@ -53,38 +53,64 @@ On 07/03/2018 12:22 PM, Marc MERLIN wrote:
 > To be fair, I cannot claim that btrfs was at fault for whatever filesystem
 > damage I ended up with. It's very possible that it happened due to a flaky
 > Sata card that kicked drives off the bus when it shouldn't have.
+
+However this still doesn't explain the problem you hit.
+
+In theory (well, it's theory by all means), btrfs is fully atomic for
+its transaction, even for its data (with csum and cow).
+So even a powerloss/data corruption happens between transactions, we
+should get the previous trans.
+
+There must be something wrong, however due to the size of the fs, and
+the complexity of extent tree, I can't tell.
+
 > Sure in theory a journaling filesystem can recover from unexpected power
 > loss and drives dropping off at bad times, but I'm going to guess that
 > btrfs' complexity also means that it has data structures (extent tree?) that
 > need to be updated completely "or else".
-> 
-Yes, extent tree is the hardest part for lowmem mode. I'm quite
-confident the tool can deal well with file trees(which records metadata
-about file and directory name, relationships).
-As for extent tree, I have few confidence due to its complexity.
 
+I'm wondering if we have some hidden bug somewhere.
+For extent tree, it's metadata, and is protected by mandatory CoW, it
+shouldn't be corrupted, unless we have bug in the already complex
+delayed reference code, or some unexpected behavior (flush/fua failure)
+due to so many layers (dmcrypt + mdraid).
+
+Anyway, if we can't reproduce it in a controlled environment (my VM with
+pretty small and plain fs), it's really hard to locate the bug.
+
+> 
 > I'm obviously ok with a filesystem check being necessary to recover in cases
 > like this, afterall I still occasionally have to run e2fsck on ext4 too, but
 > I'm a lot less thrilled with the btrfs situation where basically the repair
 > tools can either completely crash your kernel, or take days and then either
 > get stuck in an infinite loop or hit an algorithm that can't scale if you
 > have too many hardlinks/snapshots.
-> 
-It's not surprising that real world filesytems have many snapshots.
-Original mode repair eats large memory space, so lowmem mode is created
-to save memory but costs time. The latter is just not robust to handle
-complex situations.
 
+Unfortunately, all the price is paid for the super fast snapshot creation.
+The tradeoff can not be easily solved.
+
+(Another way to implement snapshot is like LVM thin provision, each time
+a snapshot is created we need to iterate all allocated blocks of the
+thin LV, which can't scale very well when the fs grows, but makes its
+mapping management pretty easy. But I think LVM guys have done some
+trick to improve the performance)
+
+> 
 > It sounds like there may not be a fix to this problem with the filesystem's
 > design, outside of "do not get there, or else".
 > It would even be useful for btrfs tools to start computing heuristics and
 > output warnings like "you have more than 100 snapshots on this filesystem,
 > this is not recommended, please read http://url/"
+
+This looks pretty doable, but maybe it's better to add some warning at
+btrfs progs (both "subvolume snapshot" and "receive").
+
+Thanks,
+Qu
+
 > 
 > Qu, Su, does that sound both reasonable and doable?
 > 
 > Thanks,
 > Marc
 > 
-
-

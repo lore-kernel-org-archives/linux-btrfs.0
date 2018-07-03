@@ -1,120 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.19]:33727 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752251AbeGCLaC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 3 Jul 2018 07:30:02 -0400
-Subject: Re: how to best segment a big block device in resizeable btrfs
- filesystems?
-To: Paul Jones <paul@pauljones.id.au>, Marc MERLIN <marc@merlins.org>
-Cc: Su Yue <suy.fnst@cn.fujitsu.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <a0099769-1622-c428-d47a-0e243f66a8b0@cn.fujitsu.com>
- <20180629064354.kbaepro5ccmm6lkn@merlins.org>
- <20180701232202.vehg7amgyvz3hpxc@merlins.org>
- <5a603d3d-620b-6cb3-106c-9d38e3ca6d02@cn.fujitsu.com>
- <20180702032259.GD5567@merlins.org>
- <9fbd4b39-fa75-4c30-eea8-e789fd3e4dd5@cn.fujitsu.com>
- <20180702140527.wfbq5jenm67fvvjg@merlins.org>
- <3728d88c-29c1-332b-b698-31a0b3d36e2b@gmx.com>
- <20180702151853.mwlrinipbihq46zu@merlins.org>
- <ee8ff481-0aac-54ec-b496-f28feab2227b@gmx.com>
- <20180703041550.GH5567@merlins.org>
- <MEXPR01MB1208F79F27CD83BBAB2AE3D29E420@MEXPR01MB1208.ausprd01.prod.outlook.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <22beb493-0fd3-3bd1-fe1d-fddd6885f3df@gmx.com>
-Date: Tue, 3 Jul 2018 19:29:48 +0800
+Received: from mail-io0-f181.google.com ([209.85.223.181]:41991 "EHLO
+        mail-io0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752067AbeGCLyQ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Jul 2018 07:54:16 -0400
+Received: by mail-io0-f181.google.com with SMTP id r24-v6so1441189ioh.9
+        for <linux-btrfs@vger.kernel.org>; Tue, 03 Jul 2018 04:54:16 -0700 (PDT)
+Received: from [191.9.206.254] (rrcs-70-62-41-24.central.biz.rr.com. [70.62.41.24])
+        by smtp.gmail.com with ESMTPSA id d13-v6sm460349itj.30.2018.07.03.04.54.14
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Tue, 03 Jul 2018 04:54:14 -0700 (PDT)
+Subject: Re: unsolvable technical issues?
+To: linux-btrfs@vger.kernel.org
+References: <b255d0fb-5cee-36c5-d49f-5f014d20e518@dirtcellar.net>
+ <pan$11f2c$c623d7b0$5173b25$c7594479@cox.net>
+ <646f0c52-4726-7a7d-0242-4412950bf002@libero.it>
+ <64876ad1-9f63-f6f0-9d55-0fa4999f0bf5@gmail.com>
+ <pan$15832$609432db$876d9a8a$e5840f46@cox.net>
+ <9b482289-c96f-dac3-d2e7-db6a32596334@gmail.com>
+ <ea1a9c9b-7132-87f1-04fc-85b278975925@gmail.com>
+ <pan$f3f7b$53185d9e$ee073b92$d7d590bf@cox.net>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <0ef3c37b-d8a3-2134-d39e-5aa7605c498c@gmail.com>
+Date: Tue, 3 Jul 2018 07:54:14 -0400
 MIME-Version: 1.0
-In-Reply-To: <MEXPR01MB1208F79F27CD83BBAB2AE3D29E420@MEXPR01MB1208.ausprd01.prod.outlook.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <pan$f3f7b$53185d9e$ee073b92$d7d590bf@cox.net>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-On 2018年07月03日 17:55, Paul Jones wrote:
->> -----Original Message-----
->> From: linux-btrfs-owner@vger.kernel.org <linux-btrfs-
->> owner@vger.kernel.org> On Behalf Of Marc MERLIN
->> Sent: Tuesday, 3 July 2018 2:16 PM
->> To: Qu Wenruo <quwenruo.btrfs@gmx.com>
->> Cc: Su Yue <suy.fnst@cn.fujitsu.com>; linux-btrfs@vger.kernel.org
->> Subject: Re: how to best segment a big block device in resizeable btrfs
->> filesystems?
->>
->> On Tue, Jul 03, 2018 at 09:37:47AM +0800, Qu Wenruo wrote:
->>>> If I do this, I would have
->>>> software raid 5 < dmcrypt < bcache < lvm < btrfs That's a lot of
->>>> layers, and that's also starting to make me nervous :)
->>>
->>> If you could keep the number of snapshots to minimal (less than 10)
->>> for each btrfs (and the number of send source is less than 5), one big
->>> btrfs may work in that case.
->>
->> Well, we kind of discussed this already. If btrfs falls over if you reach
->> 100 snapshots or so, and it sure seems to in my case, I won't be much better
->> off.
->> Having btrfs check --repair fail because 32GB of RAM is not enough, and it's
->> unable to use swap, is a big deal in my case. You also confirmed that btrfs
->> check lowmem does not scale to filesystems like mine, so this translates into
->> "if regular btrfs check repair can't fit in 32GB, I am completely out of luck if
->> anything happens to the filesystem"
+On 2018-07-03 03:35, Duncan wrote:
+> Austin S. Hemmelgarn posted on Mon, 02 Jul 2018 07:49:05 -0400 as
+> excerpted:
 > 
-> Just out of curiosity I had a look at my backup filesystem.
-> vm-server /media/backup # btrfs fi us /media/backup/
-> Overall:
->     Device size:                   5.46TiB
->     Device allocated:              3.42TiB
->     Device unallocated:            2.04TiB
->     Device missing:                  0.00B
->     Used:                          1.80TiB
->     Free (estimated):              1.83TiB      (min: 1.83TiB)
->     Data ratio:                       2.00
->     Metadata ratio:                   2.00
->     Global reserve:              512.00MiB      (used: 0.00B)
+>> Notably, most Intel systems I've seen have the SATA controllers in the
+>> chipset enumerate after the USB controllers, and the whole chipset
+>> enumerates after add-in cards (so they almost always have this issue),
+>> while most AMD systems I've seen demonstrate the exact opposite
+>> behavior,
+>> they enumerate the SATA controller from the chipset before the USB
+>> controllers, and then enumerate the chipset before all the add-in cards
+>> (so they almost never have this issue).
 > 
-> Data,RAID1: Size:1.69TiB, Used:906.26GiB
-
-It doesn't affect how fast check run at all.
-Unless --check-data-csum is specified.
-
-And even --check-data-csum is specified, most read will still be
-sequential, and deduped/reflink won't affect the csum verification speed.
-
->    /dev/mapper/a-backup--a         1.69TiB
->    /dev/mapper/b-backup--b         1.69TiB
+> Thanks.  That's a difference I wasn't aware of, and would (because I tend
+> to favor amd) explain why I've never seen a change in enumeration order
+> unless I've done something like unplug my sata cables for maintenance and
+> forget which ones I had plugged in where -- random USB stuff left plugged
+> in doesn't seem to matter, even choosing different boot media from the
+> bios doesn't seem to matter by the time the kernel runs (I'm less sure
+> about grub).
 > 
-> Metadata,RAID1: Size:19.00GiB, Used:16.90GiB
-
-This is the main factor contributing to btrfs check time.
-Just consider it as the minimal amount of data btrfs check needs to read.
-
->    /dev/mapper/a-backup--a        19.00GiB
->    /dev/mapper/b-backup--b        19.00GiB
-> 
-> System,RAID1: Size:64.00MiB, Used:336.00KiB
->    /dev/mapper/a-backup--a        64.00MiB
->    /dev/mapper/b-backup--b        64.00MiB
-> 
-> Unallocated:
->    /dev/mapper/a-backup--a         1.02TiB
->    /dev/mapper/b-backup--b         1.02TiB
-> 
-> compress=zstd,space_cache=v2
-> 202 snapshots, heavily de-duplicated
-> 551G / 361,000 files in latest snapshot
-
-No wonder it's so slow for lowmem mode.
-
-> 
-> Btrfs check normal mode took 12 mins and 11.5G ram
-> Lowmem mode I stopped after 4 hours, max memory usage was around 3.9G
-
-For lowmem, btrfs check will use 25% of your total memory as cache to
-speed up it a little. (but as you can see, it's still slow)
-Maybe we could add some option to modify how many bytes we could use for
-lowmem mode.
-
-Thanks,
-Qu
-
-> 
+Additionally though, if you in some way make sure SATA drivers are 
+loaded before USB ones, you will also never see this issue because of 
+USB devices (same goes for GRUB).  A lot of laptops that use connections 
+other than USB for the keyboard and mouse behave like this if you use a 
+properly stripped down initramfs because you won't have USB drivers in 
+the initramfs (and therefore the SATA drivers always load first).

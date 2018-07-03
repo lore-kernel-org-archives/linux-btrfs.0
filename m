@@ -1,24 +1,28 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:49300 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1752324AbeGBPkq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 2 Jul 2018 11:40:46 -0400
-Date: Mon, 2 Jul 2018 17:40:36 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Nikolay Borisov <nborisov@suse.com>
-Cc: linux-btrfs@vger.kernel.org, misono.tomohiro@jp.fujitsu.com, wqu@suse.com
+Received: from mgwkm01.jp.fujitsu.com ([202.219.69.168]:28715 "EHLO
+        mgwkm01.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754041AbeGCG1q (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Jul 2018 02:27:46 -0400
+Received: from g01jpfmpwyt03.exch.g01.fujitsu.local (g01jpfmpwyt03.exch.g01.fujitsu.local [10.128.193.57])
+        by kw-mxoi1.gw.nic.fujitsu.com (Postfix) with ESMTP id A02B6AC00F1
+        for <linux-btrfs@vger.kernel.org>; Tue,  3 Jul 2018 15:27:40 +0900 (JST)
 Subject: Re: [PATCH] btrfs: qgroups: Move transaction managed inside
  btrfs_quota_enable
-Message-ID: <20180702154036.GB3126@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+To: Nikolay Borisov <nborisov@suse.com>, <linux-btrfs@vger.kernel.org>
+CC: <wqu@suse.com>
 References: <1530529234-13170-1-git-send-email-nborisov@suse.com>
+From: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
+Message-ID: <5b88a8ec-399e-f548-58c3-f9980fb927a0@jp.fujitsu.com>
+Date: Tue, 3 Jul 2018 15:27:17 +0900
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
 In-Reply-To: <1530529234-13170-1-git-send-email-nborisov@suse.com>
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jul 02, 2018 at 02:00:34PM +0300, Nikolay Borisov wrote:
+
+
+On 2018/07/02 20:00, Nikolay Borisov wrote:
 > Commit 5d23515be669 ("btrfs: Move qgroup rescan on quota enable to
 > btrfs_quota_enable") not only resulted in an easier to follow code but
 > it also introduced a subtle bug. It changed the timing when the initial
@@ -34,9 +38,6 @@ On Mon, Jul 02, 2018 at 02:00:34PM +0300, Nikolay Borisov wrote:
 > 
 > Fixes: 5d23515be669 ("btrfs: Move qgroup rescan on quota enable to btrfs_quota_enable")
 > Link: https://marc.info/?l=linux-btrfs&m=152999289017582
-
-Please use https://lkml.kernel.org/r/<message-id>
-
 > Reported-by: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
 > Reviewed-by: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
 > Signed-off-by: Nikolay Borisov <nborisov@suse.com>
@@ -118,15 +119,12 @@ Please use https://lkml.kernel.org/r/<message-id>
 >  		goto out;
 >  
 > +	trans = btrfs_start_transaction(tree_root, 2);
-
-Please document what transaction items are requested.
-
 > +	if (IS_ERR(trans)) {
 > +		ret = PTR_ERR(trans);
 > +		goto out;
 > +	}
 > +
->  	fs_info->qgroup_ulist = ulist_alloc(GFP_KERNEL);
+	fs_info->qgroup_ulist = ulist_alloc(GFP_KERNEL);
 >  	if (!fs_info->qgroup_ulist) {
 >  		ret = -ENOMEM;
 > @@ -987,6 +993,11 @@ int btrfs_quota_enable(struct btrfs_trans_handle *trans,
@@ -138,6 +136,9 @@ Please document what transaction items are requested.
 > +	if (ret)
 > +		goto out_free_path;
 > +
+
+I realized that some error paths also need to finish transaction (continue to below). 
+
 >  	ret = qgroup_rescan_init(fs_info, 0, 1);
 >  	if (!ret) {
 >  	        qgroup_rescan_zero_tracking(fs_info);
@@ -158,9 +159,6 @@ Please document what transaction items are requested.
 >  		goto out;
 > +
 > +	trans = btrfs_start_transaction(fs_info->tree_root, 2);
-
-Same here.
-
 > +	if (IS_ERR(trans)) {
 > +		ret = PTR_ERR(trans);
 > +		goto out;
@@ -176,6 +174,12 @@ Same here.
 > -	if (ret)
 > +	if (ret) {
 > +		btrfs_abort_transaction(trans, ret);
+
+And btrfs_end_transaction() is needed here and below.
+
+Thanks,
+Misono
+
 >  		goto out;
 > +	}
 >  
@@ -203,9 +207,6 @@ Same here.
 >  	extent_changeset_init(&changeset);
 > -	ret = clear_record_extent_bits(&BTRFS_I(inode)->io_tree, start, 
 > +	ret = clear_record_extent_bits(&BTRFS_I(inode)->io_tree, start,
-
-I see an unrelated whitespace change
-
 >  			start + len -1, EXTENT_QGROUP_RESERVED, &changeset);
 >  	if (ret < 0)
 >  		goto out;
@@ -226,3 +227,5 @@ I see an unrelated whitespace change
 >  int btrfs_qgroup_rescan(struct btrfs_fs_info *fs_info);
 >  void btrfs_qgroup_rescan_resume(struct btrfs_fs_info *fs_info);
 >  int btrfs_qgroup_wait_for_completion(struct btrfs_fs_info *fs_info,
+> 
+

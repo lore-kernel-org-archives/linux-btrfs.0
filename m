@@ -1,111 +1,132 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:49560 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S932212AbeGCIIf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 3 Jul 2018 04:08:35 -0400
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id AE9E2AD91
-        for <linux-btrfs@vger.kernel.org>; Tue,  3 Jul 2018 08:08:34 +0000 (UTC)
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 2/2] btrfs: Verify every chunk has corresponding block group at mount time
-Date: Tue,  3 Jul 2018 16:08:30 +0800
-Message-Id: <20180703080830.8300-2-wqu@suse.com>
-In-Reply-To: <20180703080830.8300-1-wqu@suse.com>
-References: <20180703080830.8300-1-wqu@suse.com>
+Received: from mout.gmx.net ([212.227.17.20]:60775 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1754041AbeGCG16 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 3 Jul 2018 02:27:58 -0400
+Subject: Re: [PATCH v2] btrfs: Add chunk type check in read a chunk
+To: Gu Jinxiang <gujx@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+Cc: wen.xu@gatech.edu, xuwen.sjtu@gmail.com
+References: <1530598800-9174-1-git-send-email-gujx@cn.fujitsu.com>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <6b0a3307-1b9a-cdaf-d483-be0530435e73@gmx.com>
+Date: Tue, 3 Jul 2018 14:27:43 +0800
+MIME-Version: 1.0
+In-Reply-To: <1530598800-9174-1-git-send-email-gujx@cn.fujitsu.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="AKZJ2ttlEqu0kC25IjcHMc3m40mqNmrcr"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Reported in https://bugzilla.kernel.org/show_bug.cgi?id=199847, the
-image has empty extent tree.
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--AKZJ2ttlEqu0kC25IjcHMc3m40mqNmrcr
+Content-Type: multipart/mixed; boundary="SubMPLF6a6TYVRRYJLOmYr0QkQaLoAlz5";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: Gu Jinxiang <gujx@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+Cc: wen.xu@gatech.edu, xuwen.sjtu@gmail.com
+Message-ID: <6b0a3307-1b9a-cdaf-d483-be0530435e73@gmx.com>
+Subject: Re: [PATCH v2] btrfs: Add chunk type check in read a chunk
+References: <1530598800-9174-1-git-send-email-gujx@cn.fujitsu.com>
+In-Reply-To: <1530598800-9174-1-git-send-email-gujx@cn.fujitsu.com>
 
-Although that image also has empty root tree, thus can be catched by
-tree checker on empty leaves, but if a crafted btrfs has missing block
-group items, it could still cause problem.
+--SubMPLF6a6TYVRRYJLOmYr0QkQaLoAlz5
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-This patch will do extra check to ensure each chunk has its
-corresponding block group.
 
-Reported-by: Xu Wen <wen.xu@gatech.edu>
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
-changelog:
-v2:
-  Newly added
----
- fs/btrfs/extent-tree.c | 52 +++++++++++++++++++++++++++++++++++++++++-
- 1 file changed, 51 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 82b446f014b9..746095034ca2 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -10038,6 +10038,56 @@ static int check_exist_chunk(struct btrfs_fs_info *fs_info, u64 start, u64 len,
- 	return ret;
- }
- 
-+/*
-+ * Iterate all chunks and verify each of them has corresponding block group
-+ */
-+static int check_chunk_block_group_mappings(struct btrfs_fs_info *fs_info)
-+{
-+	struct btrfs_mapping_tree *map_tree = &fs_info->mapping_tree;
-+	struct extent_map *em;
-+	struct btrfs_block_group_cache *bg;
-+	u64 start = 0;
-+	int ret = 0;
-+
-+	while (1) {
-+		read_lock(&map_tree->map_tree.lock);
-+		em = lookup_extent_mapping(&map_tree->map_tree, start,
-+					   (u64)-1 - start);
-+		read_unlock(&map_tree->map_tree.lock);
-+		if (!em)
-+			break;
-+
-+		bg = btrfs_lookup_block_group(fs_info, em->start);
-+		if (!bg) {
-+			btrfs_err_rl(fs_info,
-+	"chunk start=%llu len=%llu doesn't have corresponding block group",
-+				     em->start, em->len);
-+			ret = -ENOENT;
-+			free_extent_map(em);
-+			break;
-+		}
-+		if (bg->key.objectid != em->start ||
-+		    bg->key.offset != em->len ||
-+		    (bg->flags & BTRFS_BLOCK_GROUP_TYPE_MASK) !=
-+		    (em->map_lookup->type & BTRFS_BLOCK_GROUP_TYPE_MASK)) {
-+			btrfs_err_rl(fs_info,
-+"chunk start=%llu len=%llu flags=0x%llx doesn't match with block group start=%llu len=%llu flags=0x%llx",
-+				em->start, em->len,
-+				em->map_lookup->type & BTRFS_BLOCK_GROUP_TYPE_MASK,
-+				bg->key.objectid, bg->key.offset,
-+				bg->flags & BTRFS_BLOCK_GROUP_TYPE_MASK);
-+			ret = -EUCLEAN;
-+			free_extent_map(em);
-+			btrfs_put_block_group(bg);
-+			break;
-+		}
-+		start = em->start + em->len;
-+		free_extent_map(em);
-+		btrfs_put_block_group(bg);
-+	}
-+	return ret;
-+}
-+
- int btrfs_read_block_groups(struct btrfs_fs_info *info)
- {
- 	struct btrfs_path *path;
-@@ -10227,7 +10277,7 @@ int btrfs_read_block_groups(struct btrfs_fs_info *info)
- 
- 	btrfs_add_raid_kobjects(info);
- 	init_global_block_rsv(info);
--	ret = 0;
-+	ret = check_chunk_block_group_mappings(info);
- error:
- 	btrfs_free_path(path);
- 	return ret;
--- 
-2.18.0
+On 2018=E5=B9=B407=E6=9C=8803=E6=97=A5 14:20, Gu Jinxiang wrote:
+> Reported in https://bugzilla.kernel.org/show_bug.cgi?id=3D199839,
+> which has a invalid chunk, not return error opportunlly.
+>=20
+> Add chunk type check in btrfs_check_chunk_valid,
+> to make error be returned in advance.
+>=20
+> Reported-by: Xu Wen <wen.xu@gatech.edu>
+> Signed-off-by: Gu Jinxiang <gujx@cn.fujitsu.com>
 
+Reviewed-by: Qu Wenruo <wqu@suse.com>
+
+Thanks,
+Qu
+
+> ---
+> changelog:
+> v2:
+> deal with comment by Qu, add precise check for chunk type.
+>=20
+>  fs/btrfs/volumes.c | 27 +++++++++++++++++++++++++++
+>  1 file changed, 27 insertions(+)
+>=20
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index e034ad9e23b4..fcdb1a75d653 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -6401,6 +6401,8 @@ static int btrfs_check_chunk_valid(struct btrfs_f=
+s_info *fs_info,
+>  	u16 num_stripes;
+>  	u16 sub_stripes;
+>  	u64 type;
+> +	u64 features;
+> +	int mixed =3D 0;
+> =20
+>  	length =3D btrfs_chunk_length(leaf, chunk);
+>  	stripe_len =3D btrfs_chunk_stripe_len(leaf, chunk);
+> @@ -6439,6 +6441,31 @@ static int btrfs_check_chunk_valid(struct btrfs_=
+fs_info *fs_info,
+>  			  btrfs_chunk_type(leaf, chunk));
+>  		return -EIO;
+>  	}
+> +
+> +	if (!(type & BTRFS_BLOCK_GROUP_TYPE_MASK)) {
+> +		btrfs_err(fs_info, "missing chunk type flag: %llu", type);
+> +		return -EIO;
+> +	}
+> +
+> +	if ((type & BTRFS_BLOCK_GROUP_SYSTEM) &&
+> +	(type & (BTRFS_BLOCK_GROUP_METADATA | BTRFS_BLOCK_GROUP_DATA))) {
+> +		btrfs_err(fs_info, "duplicate chunk type flag: %llu", type);
+> +		return -EIO;
+> +	}
+> +
+> +	features =3D btrfs_super_incompat_flags(fs_info->super_copy);
+> +	if (features & BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS)
+> +		mixed =3D 1;
+> +
+> +	if (!mixed) {
+> +		if (type &
+> +		(BTRFS_BLOCK_GROUP_METADATA & BTRFS_BLOCK_GROUP_DATA)) {
+> +			btrfs_err(fs_info,
+> +			"mixed chunk type flag in non-mixed mode: %llu", type);
+> +			return -EIO;
+> +		}
+> +	}
+> +
+>  	if ((type & BTRFS_BLOCK_GROUP_RAID10 && sub_stripes !=3D 2) ||
+>  	    (type & BTRFS_BLOCK_GROUP_RAID1 && num_stripes < 1) ||
+>  	    (type & BTRFS_BLOCK_GROUP_RAID5 && num_stripes < 2) ||
+>=20
+
+
+--SubMPLF6a6TYVRRYJLOmYr0QkQaLoAlz5--
+
+--AKZJ2ttlEqu0kC25IjcHMc3m40mqNmrcr
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAls7F18ACgkQwj2R86El
+/qjYzwf/auAs1F2Vl/M69N2i9gn8pBCbuS8fyX+hHkDCJ3lSWJgr8eYEY7Q9cDvs
+8zNHtB2LELPprWPxwaOHbiPBgTKmuL/wWHDkU2jCsLmAu38U4KFpvUAFXJFVK/5y
+VUwAz8sNjhCIbrUoDjUHPzysqCkfCzQZCQ6v3UY21nTOASkJMxLABF2jQ66OiUP4
+LgQwHbCe5EYYGij45CC7WNqeKACRYqBGgQ0z+s6Jt+nVGRl/L6doobIN4GZ6SYdo
+s2s9YaXLAfI5taH1vuvPMw2v0IIudgSnCTxfFJl6jmGydYfFpQXyxjzmsnLs1miE
+crISn2Cnk34lUKsQoxR+OYcQYexU0A==
+=TGIm
+-----END PGP SIGNATURE-----
+
+--AKZJ2ttlEqu0kC25IjcHMc3m40mqNmrcr--

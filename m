@@ -1,65 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:59576 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1753973AbeGCJHc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 3 Jul 2018 05:07:32 -0400
-Subject: Re: [PATCH 2/2] btrfs: fix missing superblock update in the device
- delete commit transaction
-To: Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
-References: <20180703051259.2745-1-anand.jain@oracle.com>
- <20180703051259.2745-2-anand.jain@oracle.com>
- <f78d6d0c-40b0-4716-497d-01a5404dd8aa@suse.com>
- <ea80daee-9411-40d0-6909-6d34810e5839@oracle.com>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <5598187a-b281-b05c-364e-4afd00cca91a@suse.com>
-Date: Tue, 3 Jul 2018 12:07:28 +0300
-MIME-Version: 1.0
-In-Reply-To: <ea80daee-9411-40d0-6909-6d34810e5839@oracle.com>
-Content-Type: text/plain; charset=utf-8
+Received: from userp2120.oracle.com ([156.151.31.85]:34296 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753723AbeGCFJx (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Jul 2018 01:09:53 -0400
+Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
+        by userp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w6354u9n022650
+        for <linux-btrfs@vger.kernel.org>; Tue, 3 Jul 2018 05:09:52 GMT
+Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
+        by userp2120.oracle.com with ESMTP id 2jx2gpxv4b-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Tue, 03 Jul 2018 05:09:52 +0000
+Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
+        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w6359p20001576
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Tue, 3 Jul 2018 05:09:51 GMT
+Received: from abhmp0006.oracle.com (abhmp0006.oracle.com [141.146.116.12])
+        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w6359pHb026515
+        for <linux-btrfs@vger.kernel.org>; Tue, 3 Jul 2018 05:09:51 GMT
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH RESEND 1/2] btrfs: fix parent in memory total_devices after seed delete
+Date: Tue,  3 Jul 2018 13:12:58 +0800
+Message-Id: <20180703051259.2745-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+In case of deleting the seed device the %cur_devices (seed)
+and the %fs_devices (parent) are different. Now, as the parent
+fs_devices::total_devices also maintains the total number of devices
+including the seed device, so decrement its in-memory value for the
+successful seed delete. We are already updating its corresponding on-disk
+btrfs_super_block::number_devices value.
 
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+ fs/btrfs/volumes.c | 3 +++
+ 1 file changed, 3 insertions(+)
 
-On  3.07.2018 12:07, Anand Jain wrote:
-> 
-> 
-> On 07/03/2018 01:56 PM, Nikolay Borisov wrote:
->>
->>
->> On  3.07.2018 08:12, Anand Jain wrote:
->>> When a device is deleted, the btrfs_super_block::number_devices is
->>> reduced by 1, but we do that after the commit transaction, so this
->>> change did not made it to the disk and waits for the next commit
->>> transaction whenever it happens.
->>>
->>> This can be easily demonstrated using the following test case where I
->>> use the btrfs device ready cli to read the disk and report.
->>>
->>>    mkfs.btrfs -fq -dsingle -msingle $dev1 $dev2
->>>    mount $dev1 /btrfs
->>>    btrfs dev del $dev2 /btrfs
->>>    btrfs dev ready $dev1; echo RESULT=$? <-- 1
->>>     Without this patch RESULT returns 1, indicating not ready!
->>>
->>>    Testing with a seed device:
->>>
->>>    mkfs.btrfs -fq $dev1
->>>    btrfstune -S1 $dev1
->>>    mount $dev1 /btrfs
->>>    btrfs dev add -f $dev2 /btrfs
->>>    umount /btrfs
->>>    mount $dev2 /btrfs
->>>    btrfs dev del $dev1 /btrfs
->>>    btrfs dev ready $dev2; echo RESULT=$? <-- 1
->>
->> Turn those into fully fledged xfstests
-> 
->  Thanks for the review. Though that popped-up in my mind I
->  didn't do it as because its one off bug test. Anyway as you
->  think its a good idea I sent one in the ML.
-
-IMO every bug which can be tested should be tested for. This enables
-having a wide range of regressions tests and future changes passing
-those regressions test will bear higher confidence of correctness.
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 5bd6f3a40f9c..6b807b166ca3 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -2027,6 +2027,9 @@ int btrfs_rm_device(struct btrfs_fs_info *fs_info, const char *device_path,
+ 
+ 	cur_devices->num_devices--;
+ 	cur_devices->total_devices--;
++	/* Update total_devices for the parent fs_devices if its seed */
++	if (cur_devices != fs_devices)
++		fs_devices->total_devices--;
+ 
+ 	if (test_bit(BTRFS_DEV_STATE_MISSING, &device->dev_state))
+ 		cur_devices->missing_devices--;
+-- 
+2.15.0
 

@@ -1,54 +1,102 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:43336 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S933113AbeGDMRb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 4 Jul 2018 08:17:31 -0400
-Date: Wed, 4 Jul 2018 14:17:28 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs-progs: Don't BUG_ON() if we failed to load one
- device or one chunk
-Message-ID: <20180704121727.GP3126@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20180703134040.8108-1-wqu@suse.com>
- <20180704115823.GN3126@twin.jikos.cz>
- <4a6e9f34-d57f-61a8-6ab8-4bd07952d237@gmx.com>
+Received: from mout.gmx.net ([212.227.17.21]:44611 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1753484AbeGCFSQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 3 Jul 2018 01:18:16 -0400
+Subject: Re: [PATCH] btrfs: Add chunk type check in read a chunk
+To: Gu Jinxiang <gujx@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+Cc: wen.xu@gatech.edu, xuwen.sjtu@gmail.com
+References: <1530592056-7940-1-git-send-email-gujx@cn.fujitsu.com>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <3bece067-d0e1-7e16-1d27-34926a2e2a0a@gmx.com>
+Date: Tue, 3 Jul 2018 13:17:52 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <4a6e9f34-d57f-61a8-6ab8-4bd07952d237@gmx.com>
+In-Reply-To: <1530592056-7940-1-git-send-email-gujx@cn.fujitsu.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="t0PrMikU4PU9JhGBEGPFdpYz1o7YFVfDy"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jul 04, 2018 at 08:01:11PM +0800, Qu Wenruo wrote:
-> 
-> 
-> On 2018年07月04日 19:58, David Sterba wrote:
-> > On Tue, Jul 03, 2018 at 09:40:40PM +0800, Qu Wenruo wrote:
-> >> Don't panic for btrfs_read_chunk_tree() if one device or chunk is
-> >> corrupted.
-> >> Caller can already handle it pretty well.
-> >>
-> >> Link: https://bugzilla.kernel.org/show_bug.cgi?id=199839
-> >> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> > 
-> > Applied, thanks.
-> > 
-> > In case there's a fuzzed image, please send it too. There are example
-> > commits how to name, format and document it. Thanks.
-> 
-> Sorry for forgetting the image.
-> 
-> However, I'm puzzled by the fact that, even for some fuzzed image which
-> is originally designed to detect kernel misbehavior, it's still added
-> into btrfs-progs test cases.
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--t0PrMikU4PU9JhGBEGPFdpYz1o7YFVfDy
+Content-Type: multipart/mixed; boundary="mSIWemAo9lKxgfGBbeDBEfPCnmOs9w5R0";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: Gu Jinxiang <gujx@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+Cc: wen.xu@gatech.edu, xuwen.sjtu@gmail.com
+Message-ID: <3bece067-d0e1-7e16-1d27-34926a2e2a0a@gmx.com>
+Subject: Re: [PATCH] btrfs: Add chunk type check in read a chunk
+References: <1530592056-7940-1-git-send-email-gujx@cn.fujitsu.com>
+In-Reply-To: <1530592056-7940-1-git-send-email-gujx@cn.fujitsu.com>
 
-The kernel tests of the fuzzed images are considered dangerous and the
-mount test is intentionally missing from the progs for now.  As the
-testsuite can be exported and used outside of the git repository, the
-actual mount tests can be run in an environment where the crashes don't
-matter. We'd need to add the script and some way to skip it by default.
+--mSIWemAo9lKxgfGBbeDBEfPCnmOs9w5R0
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-The fuzzed images should also pass the userspace tools, for better
-testing coverage eg. for the error handling so they're kept in one
-place.
+
+
+On 2018=E5=B9=B407=E6=9C=8803=E6=97=A5 12:27, Gu Jinxiang wrote:
+> Reported in https://bugzilla.kernel.org/show_bug.cgi?id=3D199839,
+> which has a invalid chunk, not return error opportunlly.
+>=20
+> Add chunk type check in btrfs_check_chunk_valid,
+> to make error be returned in advance.
+>=20
+> Signed-off-by: Gu Jinxiang <gujx@cn.fujitsu.com>
+> ---
+>  fs/btrfs/volumes.c | 6 ++++++
+>  1 file changed, 6 insertions(+)
+>=20
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index e034ad9e23b4..67732c910c3d 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -6439,6 +6439,12 @@ static int btrfs_check_chunk_valid(struct btrfs_=
+fs_info *fs_info,
+>  			  btrfs_chunk_type(leaf, chunk));
+>  		return -EIO;
+>  	}
+> +
+> +	if (!(type & BTRFS_BLOCK_GROUP_TYPE_MASK)) {
+> +		btrfs_err(fs_info, "missing chunk type flag: %llu", type);
+> +		return -EIO;
+> +	}
+
+This is not good enough to catch case like DATA | METADATA | SYSTEM.
+
+You patch reminds me that my block group type check is not good enough.
+We allow either single bit set in TYPE_MASK or DATA | METADATA for mixed
+block group.
+
+Thanks,
+Qu
+
+> +
+>  	if ((type & BTRFS_BLOCK_GROUP_RAID10 && sub_stripes !=3D 2) ||
+>  	    (type & BTRFS_BLOCK_GROUP_RAID1 && num_stripes < 1) ||
+>  	    (type & BTRFS_BLOCK_GROUP_RAID5 && num_stripes < 2) ||
+>=20
+
+
+--mSIWemAo9lKxgfGBbeDBEfPCnmOs9w5R0--
+
+--t0PrMikU4PU9JhGBEGPFdpYz1o7YFVfDy
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAls7BwAACgkQwj2R86El
+/qgICwf+KAU82aImOWc2UM9WYq+3NmAu1aVWcjAi0X8Zzs7jdbUyuyRtop7pbcmK
+y09uUv0T5h0QFI30ZXjwqXEHz+uvDele8jxejOlofx3L+BtsR6EU67X/wjI3YGwU
+q/77qztYjB2uITw492rbUiNrl1whU92FLAX/8YlN4bpi+RM01p83oq/XoauSuDhr
+KWAx3hN9xOx1IjVWcJaLGIDRrcRXQkaDgnIvkoYHRmXVyVGUQUeIAeEkX3v804bw
+C0tZO4NKwLwwY2tu2CIRHhnGaDHbDmGgeA0G/BM/gaQgwHlVjgxxdya9IxA5B3wr
+Uuzyl+XeEtr9Nz6lIv5pcYKtVB1eSw==
+=P4fp
+-----END PGP SIGNATURE-----
+
+--t0PrMikU4PU9JhGBEGPFdpYz1o7YFVfDy--

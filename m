@@ -1,47 +1,132 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:50356 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:49554 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1752381AbeGDPpW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 4 Jul 2018 11:45:22 -0400
-Date: Wed, 4 Jul 2018 17:45:20 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Nikolay Borisov <nborisov@suse.com>, Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2 1/2] btrfs: Check each block group has corresponding
- chunk at mount time
-Message-ID: <20180704154520.GY3126@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20180703080830.8300-1-wqu@suse.com>
- <034ca6af-0f07-f9b8-86c0-463333bb41f5@suse.com>
- <e606ab9c-f855-b237-2426-56f3f100bae9@gmx.com>
- <b30b48c9-7e31-bde0-ea9d-10545a4ba613@suse.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <b30b48c9-7e31-bde0-ea9d-10545a4ba613@suse.com>
+        id S932126AbeGCIIe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 3 Jul 2018 04:08:34 -0400
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 69988AD87
+        for <linux-btrfs@vger.kernel.org>; Tue,  3 Jul 2018 08:08:33 +0000 (UTC)
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v2 1/2] btrfs: Check each block group has corresponding chunk at mount time
+Date: Tue,  3 Jul 2018 16:08:29 +0800
+Message-Id: <20180703080830.8300-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jul 03, 2018 at 12:08:02PM +0300, Nikolay Borisov wrote:
-> >> Also for evry patch which fixes a specific issue from one of the
-> >> reported on bugzilla.kernel.org just use the Link: tag to point to the
-> >> original report on bugzilla that will make it easier to relate the
-> >> fixes to the original report.
-> > 
-> > Never heard of "Link:" tag.
-> > Maybe it's a good idea to added it to "submitting-patches.rst"?
-> 
-> I guess it's not officially documented but if you do git log --grep
-> "Link:" you'd see quite a lot of patches actually have a Link pointing
-> to the original thread if it has sparked some pertinent discussion. In
-> this case those patches are a direct result of a bugzilla bugreport so
-> having a Link: tag makes sense.
+Reported in https://bugzilla.kernel.org/show_bug.cgi?id=199837, if a
+crafted btrfs with incorrect chunk<->block group mapping, it could leads
+to a lot of unexpected behavior.
 
-The tag section of the commit has some predefined tags that could be
-somehow "legally binding" like the Signed-off, other can help to gather
-statistics about the devlopment process (reviewed, reported, tested) and
-the rest is basically free-form that should make sense to a human
-reader. So Link: or Bugzilla: would work. There were suggestions to
-formalize the links to email discussions but there was also opposition
-to formalize too much. Also, the important bits should be in the
-changelog as the mail archives are volatile as we've seen already.
+Although the crafted image can be catched by block group item checker
+added in "[PATCH] btrfs: tree-checker: Verify block_group_item", if one
+crafted a valid enough block group item which can pass above check but
+still mismatch with existing chunk, it could cause a lot of undefined
+behavior.
+
+This patch will add extra block group -> chunk mapping check, to ensure
+we have a completely matching (start, len, flags) chunk for each block
+group at mount time.
+
+Reported-by: Xu Wen <wen.xu@gatech.edu>
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+changelog:
+v2:
+  Add better error message for each mismatch case.
+  Rename function name, to co-operate with later patch.
+  Add flags mismatch check.
+---
+ fs/btrfs/extent-tree.c | 55 ++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 53 insertions(+), 2 deletions(-)
+
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 3d9fe58c0080..82b446f014b9 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -10003,6 +10003,41 @@ btrfs_create_block_group_cache(struct btrfs_fs_info *fs_info,
+ 	return cache;
+ }
+ 
++static int check_exist_chunk(struct btrfs_fs_info *fs_info, u64 start, u64 len,
++			     u64 flags)
++{
++	struct btrfs_mapping_tree *map_tree = &fs_info->mapping_tree;
++	struct extent_map *em;
++	int ret;
++
++	read_lock(&map_tree->map_tree.lock);
++	em = lookup_extent_mapping(&map_tree->map_tree, start, len);
++	read_unlock(&map_tree->map_tree.lock);
++
++	if (!em) {
++		btrfs_err_rl(fs_info,
++	"block group start=%llu len=%llu doesn't have corresponding chunk",
++			     start, len);
++		ret = -ENOENT;
++		goto out;
++	}
++	if (em->start != start || em->len != len ||
++	    (em->map_lookup->type & BTRFS_BLOCK_GROUP_TYPE_MASK) !=
++	    (flags & BTRFS_BLOCK_GROUP_TYPE_MASK)) {
++		btrfs_err_rl(fs_info,
++"block group start=%llu len=%llu flags=0x%llx doesn't match with chunk start=%llu len=%llu flags=0x%llx",
++			     start, len , flags & BTRFS_BLOCK_GROUP_TYPE_MASK,
++			     em->start, em->len, em->map_lookup->type &
++			     BTRFS_BLOCK_GROUP_TYPE_MASK);
++		ret = -EUCLEAN;
++		goto out;
++	}
++	ret = 0;
++out:
++	free_extent_map(em);
++	return ret;
++}
++
+ int btrfs_read_block_groups(struct btrfs_fs_info *info)
+ {
+ 	struct btrfs_path *path;
+@@ -10036,6 +10071,9 @@ int btrfs_read_block_groups(struct btrfs_fs_info *info)
+ 		need_clear = 1;
+ 
+ 	while (1) {
++		struct btrfs_block_group_item bg;
++		int slot;
++
+ 		ret = find_first_block_group(info, path, &key);
+ 		if (ret > 0)
+ 			break;
+@@ -10043,7 +10081,20 @@ int btrfs_read_block_groups(struct btrfs_fs_info *info)
+ 			goto error;
+ 
+ 		leaf = path->nodes[0];
+-		btrfs_item_key_to_cpu(leaf, &found_key, path->slots[0]);
++		slot = path->slots[0];
++		btrfs_item_key_to_cpu(leaf, &found_key, slot);
++
++		read_extent_buffer(leaf, &bg, btrfs_item_ptr_offset(leaf, slot),
++				   sizeof(bg));
++		/*
++		 * Chunk and block group must have 1:1 mapping.
++		 * So there must be a chunk for this block group.
++		 */
++		ret = check_exist_chunk(info, found_key.objectid,
++					found_key.offset,
++					btrfs_block_group_flags(&bg));
++		if (ret < 0)
++			goto error;
+ 
+ 		cache = btrfs_create_block_group_cache(info, found_key.objectid,
+ 						       found_key.offset);
+@@ -10068,7 +10119,7 @@ int btrfs_read_block_groups(struct btrfs_fs_info *info)
+ 		}
+ 
+ 		read_extent_buffer(leaf, &cache->item,
+-				   btrfs_item_ptr_offset(leaf, path->slots[0]),
++				   btrfs_item_ptr_offset(leaf, slot),
+ 				   sizeof(cache->item));
+ 		cache->flags = btrfs_block_group_flags(&cache->item);
+ 		if (!mixed &&
+-- 
+2.18.0
+

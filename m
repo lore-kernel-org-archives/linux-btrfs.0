@@ -1,72 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:59982 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:48352 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1754096AbeGCJKR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 3 Jul 2018 05:10:17 -0400
+        id S932302AbeGCH5w (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 3 Jul 2018 03:57:52 -0400
 Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id EE856AD79
-        for <linux-btrfs@vger.kernel.org>; Tue,  3 Jul 2018 09:10:15 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id C9253B00F
+        for <linux-btrfs@vger.kernel.org>; Tue,  3 Jul 2018 07:57:51 +0000 (UTC)
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 3/5] btrfs: relocation: Only remove reloc rb_trees if reloc control has been initialized
-Date: Tue,  3 Jul 2018 17:10:07 +0800
-Message-Id: <20180703091009.16399-4-wqu@suse.com>
-In-Reply-To: <20180703091009.16399-1-wqu@suse.com>
-References: <20180703091009.16399-1-wqu@suse.com>
+Subject: [PATCH] btrfs: tree-checker: Detect invalid empty essential tree
+Date: Tue,  3 Jul 2018 15:57:40 +0800
+Message-Id: <20180703075740.6028-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Invalid tree reloc tree can cause kernel NULL pointer dereference when
-btrfs does some cleanup for reloc roots.
+Reported in https://bugzilla.kernel.org/show_bug.cgi?id=199847, where
+the crafted image has empty root tree block, which will cause later NULL
+pointer dereference.
 
-It turns out that fs_info->reloc_ctl can be NULL in
-btrfs_recover_relocation() as we allocate relocation control after all
-reloc roots are verified.
-So when we hit out: tag, we haven't call set_reloc_control() thus
-fs_info->reloc_ctl is still NULL.
+The following trees should never be empty:
+1) Tree root
+   Must contain at least root items for extent tree, device tree and fs
+   tree
 
-Link: https://bugzilla.kernel.org/show_bug.cgi?id=199833
+2) Chunk tree
+   Or we can't even bootstrap.
+
+3) Fs tree
+   At least inode item for top level inode (.).
+
+4) Device tree
+   Dev extents for chunks
+
+5) Extent tree
+   Must has corresponding extent for each chunk.
+
+If any is empty, we are sure the fs is corrupted and no need to mount
+it.
+
 Reported-by: Xu Wen <wen.xu@gatech.edu>
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/relocation.c | 23 ++++++++++++-----------
- 1 file changed, 12 insertions(+), 11 deletions(-)
+ fs/btrfs/tree-checker.c | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
 
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 879b76fa881a..be94c65bb4d2 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -1321,18 +1321,19 @@ static void __del_reloc_root(struct btrfs_root *root)
- 	struct mapping_node *node = NULL;
- 	struct reloc_control *rc = fs_info->reloc_ctl;
+diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
+index 1cd735b099df..3a307efab46b 100644
+--- a/fs/btrfs/tree-checker.c
++++ b/fs/btrfs/tree-checker.c
+@@ -497,8 +497,20 @@ static int check_leaf(struct btrfs_fs_info *fs_info, struct extent_buffer *leaf,
+ 	 * skip this check for relocation trees.
+ 	 */
+ 	if (nritems == 0 && !btrfs_header_flag(leaf, BTRFS_HEADER_FLAG_RELOC)) {
++		u64 owner = btrfs_header_owner(leaf);
+ 		struct btrfs_root *check_root;
  
--	spin_lock(&rc->reloc_root_tree.lock);
--	rb_node = tree_search(&rc->reloc_root_tree.rb_root,
--			      root->node->start);
--	if (rb_node) {
--		node = rb_entry(rb_node, struct mapping_node, rb_node);
--		rb_erase(&node->rb_node, &rc->reloc_root_tree.rb_root);
-+	if (rc) {
-+		spin_lock(&rc->reloc_root_tree.lock);
-+		rb_node = tree_search(&rc->reloc_root_tree.rb_root,
-+				      root->node->start);
-+		if (rb_node) {
-+			node = rb_entry(rb_node, struct mapping_node, rb_node);
-+			rb_erase(&node->rb_node, &rc->reloc_root_tree.rb_root);
++		/* These trees should never be empty */
++		if (owner == BTRFS_ROOT_TREE_OBJECTID ||
++		    owner == BTRFS_CHUNK_TREE_OBJECTID ||
++		    owner == BTRFS_EXTENT_TREE_OBJECTID ||
++		    owner == BTRFS_DEV_TREE_OBJECTID ||
++		    owner == BTRFS_FS_TREE_OBJECTID) {
++			generic_err(fs_info, leaf, 0,
++			"invalid root, root %llu should never be empty",
++				    owner);
++			return -EUCLEAN;
 +		}
-+		spin_unlock(&rc->reloc_root_tree.lock);
-+		if (!node)
-+			return;
-+		BUG_ON((struct btrfs_root *)node->data != root);
- 	}
--	spin_unlock(&rc->reloc_root_tree.lock);
--
--	if (!node)
--		return;
--	BUG_ON((struct btrfs_root *)node->data != root);
- 
- 	spin_lock(&fs_info->trans_lock);
- 	list_del_init(&root->root_list);
+ 		key.objectid = btrfs_header_owner(leaf);
+ 		key.type = BTRFS_ROOT_ITEM_KEY;
+ 		key.offset = (u64)-1;
 -- 
 2.18.0
 

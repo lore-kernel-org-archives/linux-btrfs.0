@@ -1,14 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.22]:35451 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932683AbeGCIvD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 3 Jul 2018 04:51:03 -0400
-Subject: Re: So, does btrfs check lowmem take days? weeks?
-To: Marc MERLIN <marc@merlins.org>, Chris Murphy <lists@colorremedies.com>
-Cc: Su Yue <suy.fnst@cn.fujitsu.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <20180629061001.kkmgvdgqfhz23kll@merlins.org>
- <a0099769-1622-c428-d47a-0e243f66a8b0@cn.fujitsu.com>
+Received: from mail-sy3aus01on0067.outbound.protection.outlook.com ([104.47.117.67]:38640
+        "EHLO AUS01-SY3-obe.outbound.protection.outlook.com"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1754602AbeGCJzR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 3 Jul 2018 05:55:17 -0400
+From: Paul Jones <paul@pauljones.id.au>
+To: Marc MERLIN <marc@merlins.org>, Qu Wenruo <quwenruo.btrfs@gmx.com>
+CC: Su Yue <suy.fnst@cn.fujitsu.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: RE: how to best segment a big block device in resizeable btrfs
+ filesystems?
+Date: Tue, 3 Jul 2018 09:55:13 +0000
+Message-ID: <MEXPR01MB1208F79F27CD83BBAB2AE3D29E420@MEXPR01MB1208.ausprd01.prod.outlook.com>
+References: <a0099769-1622-c428-d47a-0e243f66a8b0@cn.fujitsu.com>
  <20180629064354.kbaepro5ccmm6lkn@merlins.org>
  <20180701232202.vehg7amgyvz3hpxc@merlins.org>
  <5a603d3d-620b-6cb3-106c-9d38e3ca6d02@cn.fujitsu.com>
@@ -16,101 +20,74 @@ References: <20180629061001.kkmgvdgqfhz23kll@merlins.org>
  <9fbd4b39-fa75-4c30-eea8-e789fd3e4dd5@cn.fujitsu.com>
  <20180702140527.wfbq5jenm67fvvjg@merlins.org>
  <3728d88c-29c1-332b-b698-31a0b3d36e2b@gmx.com>
- <CAJCQCtQsNnebkZ-vOfw5WABUj2vOChaE2yyeTBDKVyUcPMgcCg@mail.gmail.com>
- <20180703042241.GI5567@merlins.org>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <e72a5fe6-a6fc-ee70-870e-f98d4c7b8221@gmx.com>
-Date: Tue, 3 Jul 2018 16:50:48 +0800
+ <20180702151853.mwlrinipbihq46zu@merlins.org>
+ <ee8ff481-0aac-54ec-b496-f28feab2227b@gmx.com>
+ <20180703041550.GH5567@merlins.org>
+In-Reply-To: <20180703041550.GH5567@merlins.org>
+Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
-In-Reply-To: <20180703042241.GI5567@merlins.org>
-Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-On 2018年07月03日 12:22, Marc MERLIN wrote:
-> On Mon, Jul 02, 2018 at 06:31:43PM -0600, Chris Murphy wrote:
->> So the idea behind journaled file systems is that journal replay
->> enabled mount time "repair" that's faster than an fsck. Already Btrfs
->> use cases with big, but not huge, file systems makes btrfs check a
->> problem. Either running out of memory or it takes too long. So already
->> it isn't scaling as well as ext4 or XFS in this regard.
->>
->> So what's the future hold? It seems like the goal is that the problems
->> must be avoided in the first place rather than to repair them after
->> the fact.
->>
->> Are the problem's Marc is running into understood well enough that
->> there can eventually be a fix, maybe even an on-disk format change,
->> that prevents such problems from happening in the first place?
->>
->> Or does it make sense for him to be running with btrfs debug or some
->> subset of btrfs integrity checking mask to try to catch the problems
->> in the act of them happening?
+> -----Original Message-----
+> From: linux-btrfs-owner@vger.kernel.org <linux-btrfs-
+> owner@vger.kernel.org> On Behalf Of Marc MERLIN
+> Sent: Tuesday, 3 July 2018 2:16 PM
+> To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+> Cc: Su Yue <suy.fnst@cn.fujitsu.com>; linux-btrfs@vger.kernel.org
+> Subject: Re: how to best segment a big block device in resizeable btrfs
+> filesystems?
 > 
-> Those are all good questions.
-> To be fair, I cannot claim that btrfs was at fault for whatever filesystem
-> damage I ended up with. It's very possible that it happened due to a flaky
-> Sata card that kicked drives off the bus when it shouldn't have.
-
-However this still doesn't explain the problem you hit.
-
-In theory (well, it's theory by all means), btrfs is fully atomic for
-its transaction, even for its data (with csum and cow).
-So even a powerloss/data corruption happens between transactions, we
-should get the previous trans.
-
-There must be something wrong, however due to the size of the fs, and
-the complexity of extent tree, I can't tell.
-
-> Sure in theory a journaling filesystem can recover from unexpected power
-> loss and drives dropping off at bad times, but I'm going to guess that
-> btrfs' complexity also means that it has data structures (extent tree?) that
-> need to be updated completely "or else".
-
-I'm wondering if we have some hidden bug somewhere.
-For extent tree, it's metadata, and is protected by mandatory CoW, it
-shouldn't be corrupted, unless we have bug in the already complex
-delayed reference code, or some unexpected behavior (flush/fua failure)
-due to so many layers (dmcrypt + mdraid).
-
-Anyway, if we can't reproduce it in a controlled environment (my VM with
-pretty small and plain fs), it's really hard to locate the bug.
-
+> On Tue, Jul 03, 2018 at 09:37:47AM +0800, Qu Wenruo wrote:
+> > > If I do this, I would have
+> > > software raid 5 < dmcrypt < bcache < lvm < btrfs That's a lot of
+> > > layers, and that's also starting to make me nervous :)
+> >
+> > If you could keep the number of snapshots to minimal (less than 10)
+> > for each btrfs (and the number of send source is less than 5), one big
+> > btrfs may work in that case.
 > 
-> I'm obviously ok with a filesystem check being necessary to recover in cases
-> like this, afterall I still occasionally have to run e2fsck on ext4 too, but
-> I'm a lot less thrilled with the btrfs situation where basically the repair
-> tools can either completely crash your kernel, or take days and then either
-> get stuck in an infinite loop or hit an algorithm that can't scale if you
-> have too many hardlinks/snapshots.
+> Well, we kind of discussed this already. If btrfs falls over if you reach
+> 100 snapshots or so, and it sure seems to in my case, I won't be much better
+> off.
+> Having btrfs check --repair fail because 32GB of RAM is not enough, and it's
+> unable to use swap, is a big deal in my case. You also confirmed that btrfs
+> check lowmem does not scale to filesystems like mine, so this translates into
+> "if regular btrfs check repair can't fit in 32GB, I am completely out of luck if
+> anything happens to the filesystem"
 
-Unfortunately, all the price is paid for the super fast snapshot creation.
-The tradeoff can not be easily solved.
+Just out of curiosity I had a look at my backup filesystem.
+vm-server /media/backup # btrfs fi us /media/backup/
+Overall:
+    Device size:                   5.46TiB
+    Device allocated:              3.42TiB
+    Device unallocated:            2.04TiB
+    Device missing:                  0.00B
+    Used:                          1.80TiB
+    Free (estimated):              1.83TiB      (min: 1.83TiB)
+    Data ratio:                       2.00
+    Metadata ratio:                   2.00
+    Global reserve:              512.00MiB      (used: 0.00B)
 
-(Another way to implement snapshot is like LVM thin provision, each time
-a snapshot is created we need to iterate all allocated blocks of the
-thin LV, which can't scale very well when the fs grows, but makes its
-mapping management pretty easy. But I think LVM guys have done some
-trick to improve the performance)
+Data,RAID1: Size:1.69TiB, Used:906.26GiB
+   /dev/mapper/a-backup--a         1.69TiB
+   /dev/mapper/b-backup--b         1.69TiB
 
-> 
-> It sounds like there may not be a fix to this problem with the filesystem's
-> design, outside of "do not get there, or else".
-> It would even be useful for btrfs tools to start computing heuristics and
-> output warnings like "you have more than 100 snapshots on this filesystem,
-> this is not recommended, please read http://url/"
+Metadata,RAID1: Size:19.00GiB, Used:16.90GiB
+   /dev/mapper/a-backup--a        19.00GiB
+   /dev/mapper/b-backup--b        19.00GiB
 
-This looks pretty doable, but maybe it's better to add some warning at
-btrfs progs (both "subvolume snapshot" and "receive").
+System,RAID1: Size:64.00MiB, Used:336.00KiB
+   /dev/mapper/a-backup--a        64.00MiB
+   /dev/mapper/b-backup--b        64.00MiB
 
-Thanks,
-Qu
+Unallocated:
+   /dev/mapper/a-backup--a         1.02TiB
+   /dev/mapper/b-backup--b         1.02TiB
 
-> 
-> Qu, Su, does that sound both reasonable and doable?
-> 
-> Thanks,
-> Marc
-> 
+compress=zstd,space_cache=v2
+202 snapshots, heavily de-duplicated
+551G / 361,000 files in latest snapshot
+
+Btrfs check normal mode took 12 mins and 11.5G ram
+Lowmem mode I stopped after 4 hours, max memory usage was around 3.9G

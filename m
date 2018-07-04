@@ -1,94 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:17891 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S932420AbeGDFXw (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Jul 2018 01:23:52 -0400
-From: "Gu, Jinxiang" <gujx@cn.fujitsu.com>
-To: Qu Wenruo <wqu@suse.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: RE: [PATCH 3/5] btrfs: relocation: Only remove reloc rb_trees if
- reloc control has been initialized
-Date: Wed, 4 Jul 2018 05:23:46 +0000
-Message-ID: <516DDBE5B1D92D42BCF7A2E37F045A5D01A8557B30@G08CNEXMBPEKD02.g08.fujitsu.local>
+Received: from mx2.suse.de ([195.135.220.15]:40404 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S932386AbeGDFyU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 4 Jul 2018 01:54:20 -0400
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 7553DADC9
+        for <linux-btrfs@vger.kernel.org>; Wed,  4 Jul 2018 05:54:19 +0000 (UTC)
+Subject: Re: [PATCH 1/5] btrfs: tree-checker: Verify block_group_item
+To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
 References: <20180703091009.16399-1-wqu@suse.com>
- <20180703091009.16399-4-wqu@suse.com>
-In-Reply-To: <20180703091009.16399-4-wqu@suse.com>
-Content-Type: text/plain; charset="gb2312"
+ <20180703091009.16399-2-wqu@suse.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <a2ce3e7c-ef70-123f-426b-6f4c0945e793@suse.com>
+Date: Wed, 4 Jul 2018 08:54:17 +0300
 MIME-Version: 1.0
+In-Reply-To: <20180703091009.16399-2-wqu@suse.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-> -----Original Message-----
-> From: linux-btrfs-owner@vger.kernel.org [mailto:linux-btrfs-owner@vger.kernel.org] On Behalf Of Qu Wenruo
-> Sent: Tuesday, July 03, 2018 5:10 PM
-> To: linux-btrfs@vger.kernel.org
-> Subject: [PATCH 3/5] btrfs: relocation: Only remove reloc rb_trees if reloc control has been initialized
+On  3.07.2018 12:10, Qu Wenruo wrote:
+> A crafted image with invalid block group items could make free space cache
+> code to cause panic.
 > 
-> Invalid tree reloc tree can cause kernel NULL pointer dereference when
-> btrfs does some cleanup for reloc roots.
+> We could early detect such invalid block group item by checking:
+> 1) Item size
+>    Fixed value.
+> 2) Block group size (key.offset)
+>    We have a up limit on block group item (10G)
+> 3) Chunk objectid
+>    Fixed value.
+> 4) Type
+>    Only 4 valid type values, DATA, METADATA, SYSTEM and DATA|METADATA.
+>    No more than 1 bit set for profile type.
+> 5) Used space
+>    No more than block group size.
 > 
-> It turns out that fs_info->reloc_ctl can be NULL in
-> btrfs_recover_relocation() as we allocate relocation control after all
-> reloc roots are verified.
-> So when we hit out: tag, we haven't call set_reloc_control() thus
-> fs_info->reloc_ctl is still NULL.
+> This should allow btrfs to detect and refuse to mount the crafted image.
 > 
-> Link: https://bugzilla.kernel.org/show_bug.cgi?id=199833
+> Link: https://bugzilla.kernel.org/show_bug.cgi?id=199849
 > Reported-by: Xu Wen <wen.xu@gatech.edu>
 > Signed-off-by: Qu Wenruo <wqu@suse.com>
-> ---
->  fs/btrfs/relocation.c | 23 ++++++++++++-----------
->  1 file changed, 12 insertions(+), 11 deletions(-)
-> 
-> diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-> index 879b76fa881a..be94c65bb4d2 100644
-> --- a/fs/btrfs/relocation.c
-> +++ b/fs/btrfs/relocation.c
-> @@ -1321,18 +1321,19 @@ static void __del_reloc_root(struct btrfs_root *root)
->  	struct mapping_node *node = NULL;
->  	struct reloc_control *rc = fs_info->reloc_ctl;
-> 
-> -	spin_lock(&rc->reloc_root_tree.lock);
-> -	rb_node = tree_search(&rc->reloc_root_tree.rb_root,
-> -			      root->node->start);
-> -	if (rb_node) {
-> -		node = rb_entry(rb_node, struct mapping_node, rb_node);
-> -		rb_erase(&node->rb_node, &rc->reloc_root_tree.rb_root);
-> +	if (rc) {
-> +		spin_lock(&rc->reloc_root_tree.lock);
-> +		rb_node = tree_search(&rc->reloc_root_tree.rb_root,
-> +				      root->node->start);
-> +		if (rb_node) {
-> +			node = rb_entry(rb_node, struct mapping_node, rb_node);
-> +			rb_erase(&node->rb_node, &rc->reloc_root_tree.rb_root);
-> +		}
-> +		spin_unlock(&rc->reloc_root_tree.lock);
-> +		if (!node)
-> +			return;
-> +		BUG_ON((struct btrfs_root *)node->data != root);
->  	}
-> -	spin_unlock(&rc->reloc_root_tree.lock);
-> -
-> -	if (!node)
-> -		return;
-> -	BUG_ON((struct btrfs_root *)node->data != root);
-> 
->  	spin_lock(&fs_info->trans_lock);
->  	list_del_init(&root->root_list);
-> --
 
-Reviewed-by: Gu Jinxiang <gujx@cn.fujitsu.com>
-
-> 2.18.0
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-
-
-
-ÿôèº{.nÇ+‰·Ÿ®‰­†+%ŠËÿ±éİ¶¥Šwÿº{.nÇ+‰·¥Š{±ı»k~ÏâØ^n‡r¡ö¦zËëh™¨è­Ú&£ûàz¿äz¹Ş—ú+€Ê+zf£¢·hšˆ§~†­†Ûiÿÿïêÿ‘êçz_è®æj:+v‰¨ş)ß£øm
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>

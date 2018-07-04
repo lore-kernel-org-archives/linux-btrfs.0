@@ -1,46 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:34780 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:40208 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1753554AbeGBWYO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 2 Jul 2018 18:24:14 -0400
-Date: Tue, 3 Jul 2018 00:24:07 +0200
+        id S932745AbeGDL6Z (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 4 Jul 2018 07:58:25 -0400
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id AD32BAD24
+        for <linux-btrfs@vger.kernel.org>; Wed,  4 Jul 2018 11:58:24 +0000 (UTC)
+Date: Wed, 4 Jul 2018 13:58:23 +0200
 From: David Sterba <dsterba@suse.cz>
 To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz,
-        Paul Jones <paul@pauljones.id.au>, Hugo Mills <hugo@carfax.org.uk>
-Subject: Re: [PATCH v2 1/2] btrfs-progs: Fix wrong optind re-initialization
- to allow mixed option and non-option
-Message-ID: <20180702222407.GH3126@twin.jikos.cz>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs-progs: Don't BUG_ON() if we failed to load one
+ device or one chunk
+Message-ID: <20180704115823.GN3126@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <20180620003839.10629-1-wqu@suse.com>
+References: <20180703134040.8108-1-wqu@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180620003839.10629-1-wqu@suse.com>
+In-Reply-To: <20180703134040.8108-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jun 20, 2018 at 08:38:38AM +0800, Qu Wenruo wrote:
-> In function handle_global_options(), we reset @optind to 1.
-> However according to man page of getopt(3) NOTES section, if we need to
-> rescan options later, @optind should be reset to 0 to initialize the
-> internal variables correctly.
+On Tue, Jul 03, 2018 at 09:40:40PM +0800, Qu Wenruo wrote:
+> Don't panic for btrfs_read_chunk_tree() if one device or chunk is
+> corrupted.
+> Caller can already handle it pretty well.
 > 
-> This explains the reason why in cmd_check(), getopt_long() doesn't
-> handle the following command correctly:
-> "btrfs check /dev/data/btrfs --check-data-csum"
-> 
-> While mkfs.btrfs handles mixed non-option and option correctly:
-> "mkfs.btrfs -f /dev/data/disk1 --data raid1 /dev/data/disk2"
-> 
-> Cc: Paul Jones <paul@pauljones.id.au>
-> Cc: Hugo Mills <hugo@carfax.org.uk>
-> Fixes: 010ceab56e06 ("btrfs-progs: rework option parser to use getopt for global options")
+> Link: https://bugzilla.kernel.org/show_bug.cgi?id=199839
 > Signed-off-by: Qu Wenruo <wqu@suse.com>
-> ---
-> changelog:
-> v2:
->   Instead of resetting @optind at handle_global_options(), reset @optind
->   before each later getopt() call. Since there are cases uses @optind and
->   expects it to be starting from 1.
 
-1 and 2 applied, thanks.
+Applied, thanks.
+
+In case there's a fuzzed image, please send it too. There are example
+commits how to name, format and document it. Thanks.

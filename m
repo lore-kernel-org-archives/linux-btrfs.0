@@ -1,31 +1,28 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:15994 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S932270AbeGDFpZ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Jul 2018 01:45:25 -0400
-From: "Gu, Jinxiang" <gujx@cn.fujitsu.com>
-To: Qu Wenruo <wqu@suse.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: RE: [PATCH 4/5] btrfs: Check each block group has corresponding
- chunk at mount time
-Date: Wed, 4 Jul 2018 05:45:20 +0000
-Message-ID: <516DDBE5B1D92D42BCF7A2E37F045A5D01A8557B53@G08CNEXMBPEKD02.g08.fujitsu.local>
+Received: from mx2.suse.de ([195.135.220.15]:41718 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1753466AbeGDGCg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 4 Jul 2018 02:02:36 -0400
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 42DCAAFE5
+        for <linux-btrfs@vger.kernel.org>; Wed,  4 Jul 2018 06:02:35 +0000 (UTC)
+Subject: Re: [PATCH 4/5] btrfs: Check each block group has corresponding chunk
+ at mount time
+To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
 References: <20180703091009.16399-1-wqu@suse.com>
  <20180703091009.16399-5-wqu@suse.com>
-In-Reply-To: <20180703091009.16399-5-wqu@suse.com>
-Content-Type: text/plain; charset="gb2312"
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <6c7c32f7-9559-6f24-388f-df59abc89dc6@suse.com>
+Date: Wed, 4 Jul 2018 09:02:34 +0300
 MIME-Version: 1.0
+In-Reply-To: <20180703091009.16399-5-wqu@suse.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-> -----Original Message-----
-> From: linux-btrfs-owner@vger.kernel.org [mailto:linux-btrfs-owner@vger.kernel.org] On Behalf Of Qu Wenruo
-> Sent: Tuesday, July 03, 2018 5:10 PM
-> To: linux-btrfs@vger.kernel.org
-> Subject: [PATCH 4/5] btrfs: Check each block group has corresponding chunk at mount time
-> 
+On  3.07.2018 12:10, Qu Wenruo wrote:
 > A crafted btrfs with incorrect chunk<->block group mapping, it could leads
 > to a lot of unexpected behavior.
 > 
@@ -42,6 +39,11 @@ List-ID: <linux-btrfs.vger.kernel.org>
 > Link: https://bugzilla.kernel.org/show_bug.cgi?id=199837
 > Reported-by: Xu Wen <wen.xu@gatech.edu>
 > Signed-off-by: Qu Wenruo <wqu@suse.com>
+
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+
+Just one minor nit below.
+
 > ---
 >  fs/btrfs/extent-tree.c | 55 ++++++++++++++++++++++++++++++++++++++++--
 >  1 file changed, 53 insertions(+), 2 deletions(-)
@@ -53,7 +55,7 @@ List-ID: <linux-btrfs.vger.kernel.org>
 > @@ -10003,6 +10003,41 @@ btrfs_create_block_group_cache(struct btrfs_fs_info *fs_info,
 >  	return cache;
 >  }
-> 
+>  
 > +static int check_exist_chunk(struct btrfs_fs_info *fs_info, u64 start, u64 len,
 > +			     u64 flags)
 > +{
@@ -72,10 +74,6 @@ List-ID: <linux-btrfs.vger.kernel.org>
 > +		ret = -ENOENT;
 > +		goto out;
 > +	}
-
-This check has been done in find_first_block_group which has been called before
-check_exist_chunk be called.
-
 > +	if (em->start != start || em->len != len ||
 > +	    (em->map_lookup->type & BTRFS_BLOCK_GROUP_TYPE_MASK) !=
 > +	    (flags & BTRFS_BLOCK_GROUP_TYPE_MASK)) {
@@ -87,9 +85,11 @@ check_exist_chunk be called.
 > +		ret = -EUCLEAN;
 > +		goto out;
 > +	}
-Should this check also be added to find_first_block_group?
-
 > +	ret = 0;
+
+nit: I'd rather the ret be initialised when it's defined, it's changed
+only if there is an error so it actually saves a line and makes it
+obvious that we start with an assumption that the check should pass.
 > +out:
 > +	free_extent_map(em);
 > +	return ret;
@@ -100,7 +100,7 @@ Should this check also be added to find_first_block_group?
 >  	struct btrfs_path *path;
 > @@ -10036,6 +10071,9 @@ int btrfs_read_block_groups(struct btrfs_fs_info *info)
 >  		need_clear = 1;
-> 
+>  
 >  	while (1) {
 > +		struct btrfs_block_group_item bg;
 > +		int slot;
@@ -110,7 +110,7 @@ Should this check also be added to find_first_block_group?
 >  			break;
 > @@ -10043,7 +10081,20 @@ int btrfs_read_block_groups(struct btrfs_fs_info *info)
 >  			goto error;
-> 
+>  
 >  		leaf = path->nodes[0];
 > -		btrfs_item_key_to_cpu(leaf, &found_key, path->slots[0]);
 > +		slot = path->slots[0];
@@ -127,27 +127,16 @@ Should this check also be added to find_first_block_group?
 > +					btrfs_block_group_flags(&bg));
 > +		if (ret < 0)
 > +			goto error;
-> 
+>  
 >  		cache = btrfs_create_block_group_cache(info, found_key.objectid,
 >  						       found_key.offset);
 > @@ -10068,7 +10119,7 @@ int btrfs_read_block_groups(struct btrfs_fs_info *info)
 >  		}
-> 
+>  
 >  		read_extent_buffer(leaf, &cache->item,
 > -				   btrfs_item_ptr_offset(leaf, path->slots[0]),
 > +				   btrfs_item_ptr_offset(leaf, slot),
 >  				   sizeof(cache->item));
 >  		cache->flags = btrfs_block_group_flags(&cache->item);
 >  		if (!mixed &&
-> --
-> 2.18.0
 > 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-
-
-
-ÿôèº{.nÇ+‰·Ÿ®‰­†+%ŠËÿ±éİ¶¥Šwÿº{.nÇ+‰·¥Š{±ı»k~ÏâØ^n‡r¡ö¦zËëh™¨è­Ú&£ûàz¿äz¹Ş—ú+€Ê+zf£¢·hšˆ§~†­†Ûiÿÿïêÿ‘êçz_è®æj:+v‰¨ş)ß£øm

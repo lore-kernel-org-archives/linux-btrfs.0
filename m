@@ -1,62 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp2130.oracle.com ([141.146.126.79]:55786 "EHLO
-        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753725AbeGIIao (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Jul 2018 04:30:44 -0400
-Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
-        by aserp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w698SQY3052482
-        for <linux-btrfs@vger.kernel.org>; Mon, 9 Jul 2018 08:30:43 GMT
-Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
-        by aserp2130.oracle.com with ESMTP id 2k2p75k3d4-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 09 Jul 2018 08:30:43 +0000
-Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id w698UgLl004103
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 9 Jul 2018 08:30:42 GMT
-Received: from abhmp0004.oracle.com (abhmp0004.oracle.com [141.146.116.10])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w698UgMB006268
-        for <linux-btrfs@vger.kernel.org>; Mon, 9 Jul 2018 08:30:42 GMT
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/2] btrfs: use fs_devices instead of the dereference
-Date: Mon,  9 Jul 2018 16:33:53 +0800
-Message-Id: <20180709083353.14517-2-anand.jain@oracle.com>
-In-Reply-To: <20180709083353.14517-1-anand.jain@oracle.com>
-References: <20180709083353.14517-1-anand.jain@oracle.com>
+Received: from mail-bl2nam02on0119.outbound.protection.outlook.com ([104.47.38.119]:5646
+        "EHLO NAM02-BL2-obe.outbound.protection.outlook.com"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1752607AbeGDRy7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 4 Jul 2018 13:54:59 -0400
+From: "Xu, Wen" <wen.xu@gatech.edu>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+CC: "jbacik@fb.com" <jbacik@fb.com>, "dsterba@suse.com" <dsterba@suse.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: A list of new findings when fuzzing Linux btrfs module
+Date: Wed, 4 Jul 2018 17:54:56 +0000
+Message-ID: <011B0D79-F8E6-46F1-9D82-8D60A4F3E925@gatech.edu>
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We have assigned the %fs_info->fs_devices in %fs_devices as its not
-modified just use it for the mutex_lock().
+Hi BTRFS developers,
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- fs/btrfs/volumes.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+Here are a list of new issues I found:
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 0e92969b1adc..781c79a2ff7a 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -2297,7 +2297,7 @@ static int btrfs_prepare_sprout(struct btrfs_fs_info *fs_info)
- 	INIT_LIST_HEAD(&seed_devices->alloc_list);
- 	mutex_init(&seed_devices->device_list_mutex);
- 
--	mutex_lock(&fs_info->fs_devices->device_list_mutex);
-+	mutex_lock(&fs_devices->device_list_mutex);
- 	list_splice_init_rcu(&fs_devices->devices, &seed_devices->devices,
- 			      synchronize_rcu);
- 	list_for_each_entry(device, &seed_devices->devices, dev_list)
-@@ -2317,7 +2317,7 @@ static int btrfs_prepare_sprout(struct btrfs_fs_info *fs_info)
- 	generate_random_uuid(fs_devices->fsid);
- 	memcpy(fs_info->fsid, fs_devices->fsid, BTRFS_FSID_SIZE);
- 	memcpy(disk_super->fsid, fs_devices->fsid, BTRFS_FSID_SIZE);
--	mutex_unlock(&fs_info->fs_devices->device_list_mutex);
-+	mutex_unlock(&fs_devices->device_list_mutex);
- 
- 	super_flags = btrfs_super_flags(disk_super) &
- 		      ~BTRFS_SUPER_FLAG_SEEDING;
--- 
-2.7.0
+200403	BUG() triggered in btrfs_free_dev_extent() when un-mounting a btrfs image
+https://bugzilla.kernel.org/show_bug.cgi?id=200403
 
+200405	Potential deadlock in btrfs_tree_lock() when perform writing to btrfs filesystem
+https://bugzilla.kernel.org/show_bug.cgi?id=200405
+
+200407	Potential deadlock when mount a btrfs image
+https://bugzilla.kernel.org/show_bug.cgi?id=200407
+
+200409	BUG() triggered in read_one_chunk() when mount a btrfs filesystem
+https://bugzilla.kernel.org/show_bug.cgi?id=200409
+
+200411	BUG() triggered in walk_up_proc() when mount a btrfs image
+https://bugzilla.kernel.org/show_bug.cgi?id=200411
+
+>From my testing, these issues cannot be corrected by latest introduced checks. Thanks!
+
+-Wen

@@ -1,69 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:38974 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:56726 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1752183AbeGBHtt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 2 Jul 2018 03:49:49 -0400
+        id S1752165AbeGDQ0p (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 4 Jul 2018 12:26:45 -0400
+Date: Wed, 4 Jul 2018 18:26:43 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Ethan Lien <ethanlien@synology.com>
+Cc: linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH] btrfs: use correct compare function of
  dirty_metadata_bytes
-To: Ethan Lien <ethanlien@synology.com>, linux-btrfs@vger.kernel.org
+Message-ID: <20180704162643.GZ3126@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <20180702074458.16270-1-ethanlien@synology.com>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <068bb6e1-78b9-ed1c-f9e2-08e90de5e928@suse.com>
-Date: Mon, 2 Jul 2018 10:49:46 +0300
 MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 In-Reply-To: <20180702074458.16270-1-ethanlien@synology.com>
-Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-On  2.07.2018 10:44, Ethan Lien wrote:
+On Mon, Jul 02, 2018 at 03:44:58PM +0800, Ethan Lien wrote:
 > We use customized, nodesize batch value to update dirty_metadata_bytes.
 > We should also use batch version of compare function or we will easily
 > goto fast path and get false result from percpu_counter_compare().
 > 
 > Signed-off-by: Ethan Lien <ethanlien@synology.com>
 
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+This looks like it could have some observable effects. The default batch
+is 32 * cpus online, while the one supplied by btrfs is much higher as
+it's a multiple of nodesize.
 
-Also this needs the following tag: 
+The BTRFS_DIRTY_METADATA_THRESH is 32MiB so the comparision is likely to
+be off scale in some if not most cases. I got lost in the callchains and
+how the return values of writepage are interpreted.
 
-Fixes: e2d845211eda ("Btrfs: use percpu counter for dirty metadata count")
+The effect I see is: there are many pages batched (by the _add_batch
+calls) but none of the compare calls dects that and exits early. So
+there are more metadata being built up in memory and will have to be
+synced later.
 
-And perhaps stable from 4.4 onwards. But David will take care
-of that. So the patch is good. 
+The change looks correct to me, we have to compare the numbers of the
+same units. I'll add it to misc-next for testing, maybe the 0day bot
+would detect some changes in performance.
 
-> ---
->  fs/btrfs/disk-io.c | 10 ++++++----
->  1 file changed, 6 insertions(+), 4 deletions(-)
-> 
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index 205092dc9390..dfed08e70ec1 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -961,8 +961,9 @@ static int btree_writepages(struct address_space *mapping,
->  
->  		fs_info = BTRFS_I(mapping->host)->root->fs_info;
->  		/* this is a bit racy, but that's ok */
-> -		ret = percpu_counter_compare(&fs_info->dirty_metadata_bytes,
-> -					     BTRFS_DIRTY_METADATA_THRESH);
-> +		ret = __percpu_counter_compare(&fs_info->dirty_metadata_bytes,
-> +					     BTRFS_DIRTY_METADATA_THRESH,
-> +					     fs_info->dirty_metadata_batch);
->  		if (ret < 0)
->  			return 0;
->  	}
-> @@ -4150,8 +4151,9 @@ static void __btrfs_btree_balance_dirty(struct btrfs_fs_info *fs_info,
->  	if (flush_delayed)
->  		btrfs_balance_delayed_items(fs_info);
->  
-> -	ret = percpu_counter_compare(&fs_info->dirty_metadata_bytes,
-> -				     BTRFS_DIRTY_METADATA_THRESH);
-> +	ret = __percpu_counter_compare(&fs_info->dirty_metadata_bytes,
-> +				     BTRFS_DIRTY_METADATA_THRESH,
-> +				     fs_info->dirty_metadata_batch);
->  	if (ret > 0) {
->  		balance_dirty_pages_ratelimited(fs_info->btree_inode->i_mapping);
->  	}
-> 
+Please let me know if you have further insights or clarifications to
+what's written above, the changelog could use some update as the change
+has some unobvious consequences.

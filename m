@@ -1,87 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:53534 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:53544 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1753002AbeGEHhh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 5 Jul 2018 03:37:37 -0400
+        id S1753335AbeGEHhi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 5 Jul 2018 03:37:38 -0400
 Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 6E9BEAF53
-        for <linux-btrfs@vger.kernel.org>; Thu,  5 Jul 2018 07:37:36 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id BFC2DAD6C
+        for <linux-btrfs@vger.kernel.org>; Thu,  5 Jul 2018 07:37:37 +0000 (UTC)
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/4] btrfs-progs: transaction: Error out other than panic when committing transaction
-Date: Thu,  5 Jul 2018 15:37:29 +0800
-Message-Id: <20180705073731.18459-3-wqu@suse.com>
+Subject: [PATCH 3/4] btrfs-progs: check/original: Avoid infinite loop when failed to repair inode
+Date: Thu,  5 Jul 2018 15:37:30 +0800
+Message-Id: <20180705073731.18459-4-wqu@suse.com>
 In-Reply-To: <20180705073731.18459-1-wqu@suse.com>
 References: <20180705073731.18459-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There are cases that btrfs_commit_transaction() itself can fail, mostly
-due to ENOSPC when allocating space.
+Exposed by fuzz-tests/003-multi-check-unmounted/ on fuzzed image
+bko-161811.raw.xz.
 
-Don't panic out in this case.
+It's caused by the fact when check_fs_roots() finds tree root is
+modified, it re-search tree root by goto again: tag.
+However again: tag will also reset root objectid to 0.
+If we failed to repair one fs root but still modified tree root, we will
+go into such infinite loop.
+
+Fix it by record which root we should skip for repair mode.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- transaction.c | 19 +++++++++++++------
- 1 file changed, 13 insertions(+), 6 deletions(-)
+ check/main.c | 19 +++++++++++++++++--
+ 1 file changed, 17 insertions(+), 2 deletions(-)
 
-diff --git a/transaction.c b/transaction.c
-index 9619265ef6e8..b82d346b52c8 100644
---- a/transaction.c
-+++ b/transaction.c
-@@ -73,7 +73,8 @@ static int update_cowonly_root(struct btrfs_trans_handle *trans,
- 		ret = btrfs_update_root(trans, tree_root,
- 					&root->root_key,
- 					&root->root_item);
--		BUG_ON(ret);
-+		if (ret < 0)
-+			return ret;
- 		btrfs_write_dirty_block_groups(trans, root);
- 	}
- 	return 0;
-@@ -101,9 +102,11 @@ int commit_tree_roots(struct btrfs_trans_handle *trans,
- 		next = fs_info->dirty_cowonly_roots.next;
- 		list_del_init(next);
- 		root = list_entry(next, struct btrfs_root, dirty_list);
--		update_cowonly_root(trans, root);
-+		ret = update_cowonly_root(trans, root);
- 		free_extent_buffer(root->commit_root);
- 		root->commit_root = NULL;
-+		if (ret < 0)
-+			return ret;
- 	}
+diff --git a/check/main.c b/check/main.c
+index c8c347236543..2b5abb2d025b 100644
+--- a/check/main.c
++++ b/check/main.c
+@@ -3380,6 +3380,7 @@ static int check_fs_roots(struct btrfs_fs_info *fs_info,
+ 	struct extent_buffer *leaf, *tree_node;
+ 	struct btrfs_root *tmp_root;
+ 	struct btrfs_root *tree_root = fs_info->tree_root;
++	u64 skip_root = 0;
+ 	int ret;
+ 	int err = 0;
  
- 	return 0;
-@@ -162,12 +165,15 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
- 	root->root_item.level = btrfs_header_level(root->node);
- 	ret = btrfs_update_root(trans, root->fs_info->tree_root,
- 				&root->root_key, &root->root_item);
--	BUG_ON(ret);
-+	if (ret < 0)
-+		goto out;
- commit_tree:
- 	ret = commit_tree_roots(trans, fs_info);
--	BUG_ON(ret);
-+	if (ret < 0)
-+		goto out;
- 	ret = __commit_transaction(trans, root);
--	BUG_ON(ret);
-+	if (ret < 0)
-+		goto out;
- 	write_ctree_super(trans);
- 	btrfs_finish_extent_commit(trans, fs_info->extent_root,
- 			           &fs_info->pinned_extents);
-@@ -176,7 +182,8 @@ commit_tree:
- 	root->commit_root = NULL;
- 	fs_info->running_transaction = NULL;
- 	fs_info->last_trans_committed = transid;
--	return 0;
-+out:
-+	return ret;
- }
+@@ -3400,7 +3401,10 @@ static int check_fs_roots(struct btrfs_fs_info *fs_info,
  
- void btrfs_abort_transaction(struct btrfs_trans_handle *trans, int error)
+ again:
+ 	key.offset = 0;
+-	key.objectid = 0;
++	if (skip_root)
++		key.objectid = skip_root + 1;
++	else
++		key.objectid = 0;
+ 	key.type = BTRFS_ROOT_ITEM_KEY;
+ 	ret = btrfs_search_slot(NULL, tree_root, &key, &path, 0, 0);
+ 	if (ret < 0) {
+@@ -3409,6 +3413,7 @@ again:
+ 	}
+ 	tree_node = tree_root->node;
+ 	while (1) {
++
+ 		if (tree_node != tree_root->node) {
+ 			free_root_recs_tree(root_cache);
+ 			btrfs_release_path(&path);
+@@ -3445,8 +3450,18 @@ again:
+ 				btrfs_release_path(&path);
+ 				goto again;
+ 			}
+-			if (ret)
++			if (ret) {
+ 				err = 1;
++
++				/*
++				 * We failed to repair this root but modified tree
++				 * root, after again: tag we will still hit this
++				 * root and fail to repair, must skip this root to
++				 * avoid infinite loop
++				 */
++				if (repair)
++					skip_root = key.objectid;
++			}
+ 			if (key.objectid == BTRFS_TREE_RELOC_OBJECTID)
+ 				btrfs_free_fs_root(tmp_root);
+ 		} else if (key.type == BTRFS_ROOT_REF_KEY ||
 -- 
 2.18.0
 

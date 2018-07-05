@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:55631 "EHLO
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:13459 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1752458AbeGEIuZ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 Jul 2018 04:50:25 -0400
+        with ESMTP id S1752802AbeGEJd2 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 Jul 2018 05:33:28 -0400
 From: "Gu, Jinxiang" <gujx@cn.fujitsu.com>
 To: Qu Wenruo <wqu@suse.com>,
         "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: RE: [PATCH 1/4] btrfs-progs: check: Remove the ability to rebuild
- root overwritting existing tree blocks
-Date: Thu, 5 Jul 2018 08:50:21 +0000
-Message-ID: <516DDBE5B1D92D42BCF7A2E37F045A5D01A856B640@G08CNEXMBPEKD03.g08.fujitsu.local>
+Subject: RE: [PATCH 2/4] btrfs-progs: transaction: Error out other than
+ panic when committing transaction
+Date: Thu, 5 Jul 2018 09:33:21 +0000
+Message-ID: <516DDBE5B1D92D42BCF7A2E37F045A5D01A856C6AA@G08CNEXMBPEKD03.g08.fujitsu.local>
 References: <20180705073731.18459-1-wqu@suse.com>
- <20180705073731.18459-2-wqu@suse.com>
-In-Reply-To: <20180705073731.18459-2-wqu@suse.com>
+ <20180705073731.18459-3-wqu@suse.com>
+In-Reply-To: <20180705073731.18459-3-wqu@suse.com>
 Content-Type: text/plain; charset="gb2312"
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -24,107 +24,77 @@ List-ID: <linux-btrfs.vger.kernel.org>
 > From: linux-btrfs-owner@vger.kernel.org [mailto:linux-btrfs-owner@vger.kernel.org] On Behalf Of Qu Wenruo
 > Sent: Thursday, July 05, 2018 3:37 PM
 > To: linux-btrfs@vger.kernel.org
-> Subject: [PATCH 1/4] btrfs-progs: check: Remove the ability to rebuild root overwritting existing tree blocks
+> Subject: [PATCH 2/4] btrfs-progs: transaction: Error out other than panic when committing transaction
 > 
-> We have function btrfs_fsck_reinit_root() to reinit csum or extent tree.
-
-Nit£º
-or fs/file tree
-
-> However this function allows us to let it overwrite existing tree blocks
-> using @overwrite parameter.
+> There are cases that btrfs_commit_transaction() itself can fail, mostly
+> due to ENOSPC when allocating space.
 > 
-> Such behavior is pretty dangerous while no caller is using this feature
-> explicitly.
-> 
-> So just remove @overwrite parameter and allow btrfs_fsck_reinit_root()
-> to error out when it fails to allocate tree block.
+> Don't panic out in this case.
 > 
 > Signed-off-by: Qu Wenruo <wqu@suse.com>
 > ---
->  check/main.c | 26 ++++++++------------------
->  1 file changed, 8 insertions(+), 18 deletions(-)
+>  transaction.c | 19 +++++++++++++------
+>  1 file changed, 13 insertions(+), 6 deletions(-)
 > 
-> diff --git a/check/main.c b/check/main.c
-> index 8db300abb825..c8c347236543 100644
-> --- a/check/main.c
-> +++ b/check/main.c
-> @@ -8379,7 +8379,7 @@ static int do_check_chunks_and_extents(struct btrfs_fs_info *fs_info)
+> diff --git a/transaction.c b/transaction.c
+> index 9619265ef6e8..b82d346b52c8 100644
+> --- a/transaction.c
+> +++ b/transaction.c
+> @@ -73,7 +73,8 @@ static int update_cowonly_root(struct btrfs_trans_handle *trans,
+>  		ret = btrfs_update_root(trans, tree_root,
+>  					&root->root_key,
+>  					&root->root_item);
+> -		BUG_ON(ret);
+> +		if (ret < 0)
+> +			return ret;
+>  		btrfs_write_dirty_block_groups(trans, root);
+>  	}
+>  	return 0;
+> @@ -101,9 +102,11 @@ int commit_tree_roots(struct btrfs_trans_handle *trans,
+>  		next = fs_info->dirty_cowonly_roots.next;
+>  		list_del_init(next);
+>  		root = list_entry(next, struct btrfs_root, dirty_list);
+> -		update_cowonly_root(trans, root);
+> +		ret = update_cowonly_root(trans, root);
+>  		free_extent_buffer(root->commit_root);
+>  		root->commit_root = NULL;
+> +		if (ret < 0)
+> +			return ret;
+>  	}
+> 
+>  	return 0;
+> @@ -162,12 +165,15 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+>  	root->root_item.level = btrfs_header_level(root->node);
+>  	ret = btrfs_update_root(trans, root->fs_info->tree_root,
+>  				&root->root_key, &root->root_item);
+> -	BUG_ON(ret);
+> +	if (ret < 0)
+> +		goto out;
+>  commit_tree:
+>  	ret = commit_tree_roots(trans, fs_info);
+> -	BUG_ON(ret);
+> +	if (ret < 0)
+> +		goto out;
+>  	ret = __commit_transaction(trans, root);
+> -	BUG_ON(ret);
+> +	if (ret < 0)
+> +		goto out;
+>  	write_ctree_super(trans);
+>  	btrfs_finish_extent_commit(trans, fs_info->extent_root,
+>  			           &fs_info->pinned_extents);
+> @@ -176,7 +182,8 @@ commit_tree:
+>  	root->commit_root = NULL;
+>  	fs_info->running_transaction = NULL;
+>  	fs_info->last_trans_committed = transid;
+> -	return 0;
+> +out:
+> +	return ret;
 >  }
 > 
->  static int btrfs_fsck_reinit_root(struct btrfs_trans_handle *trans,
-> -			   struct btrfs_root *root, int overwrite)
-> +				  struct btrfs_root *root)
->  {
->  	struct extent_buffer *c;
->  	struct extent_buffer *old = root->node;
-> @@ -8389,21 +8389,13 @@ static int btrfs_fsck_reinit_root(struct btrfs_trans_handle *trans,
-> 
->  	level = 0;
-> 
-> -	if (overwrite) {
-> -		c = old;
-> -		extent_buffer_get(c);
-> -		goto init;
-> -	}
->  	c = btrfs_alloc_free_block(trans, root,
->  				   root->fs_info->nodesize,
->  				   root->root_key.objectid,
->  				   &disk_key, level, 0, 0);
-> -	if (IS_ERR(c)) {
-> -		c = old;
-> -		extent_buffer_get(c);
-> -		overwrite = 1;
-> -	}
-> -init:
-> +	if (IS_ERR(c))
-> +		return PTR_ERR(c);
-> +
->  	memset_extent_buffer(c, 0, 0, sizeof(struct btrfs_header));
->  	btrfs_set_header_level(c, level);
->  	btrfs_set_header_bytenr(c, c->start);
-> @@ -8422,9 +8414,7 @@ init:
->  	/*
->  	 * this case can happen in the following case:
->  	 *
-> -	 * 1.overwrite previous root.
-> -	 *
-> -	 * 2.reinit reloc data root, this is because we skip pin
-> +	 * reinit reloc data root, this is because we skip pin
->  	 * down reloc data tree before which means we can allocate
->  	 * same block bytenr here.
->  	 */
-> @@ -8609,7 +8599,7 @@ reinit_data_reloc:
->  		goto out;
->  	}
->  	record_root_in_trans(trans, root);
-> -	ret = btrfs_fsck_reinit_root(trans, root, 0);
-> +	ret = btrfs_fsck_reinit_root(trans, root);
->  	if (ret)
->  		goto out;
->  	ret = btrfs_make_root_dir(trans, root, BTRFS_FIRST_FREE_OBJECTID);
-> @@ -8675,7 +8665,7 @@ again:
->  	}
-> 
->  	/* Ok we can allocate now, reinit the extent root */
-> -	ret = btrfs_fsck_reinit_root(trans, fs_info->extent_root, 0);
-> +	ret = btrfs_fsck_reinit_root(trans, fs_info->extent_root);
->  	if (ret) {
->  		fprintf(stderr, "extent root initialization failed\n");
->  		/*
-> @@ -9764,7 +9754,7 @@ int cmd_check(int argc, char **argv)
-> 
->  		if (init_csum_tree) {
->  			printf("Reinitialize checksum tree\n");
-> -			ret = btrfs_fsck_reinit_root(trans, info->csum_root, 0);
-> +			ret = btrfs_fsck_reinit_root(trans, info->csum_root);
->  			if (ret) {
->  				error("checksum tree initialization failed: %d",
->  						ret);
+>  void btrfs_abort_transaction(struct btrfs_trans_handle *trans, int error)
 > --
 
 Reviewed-by: Gu Jinxiang <gujx@cn.fujitsu.com>
-
 
 > 2.18.0
 > 

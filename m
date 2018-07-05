@@ -1,64 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:37698 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:33204 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1729643AbeGMNJm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 13 Jul 2018 09:09:42 -0400
-Date: Fri, 13 Jul 2018 14:55:04 +0200
+        id S1753492AbeGEPzs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 5 Jul 2018 11:55:48 -0400
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 84625AD65
+        for <linux-btrfs@vger.kernel.org>; Thu,  5 Jul 2018 15:55:47 +0000 (UTC)
+Date: Thu, 5 Jul 2018 17:55:45 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Anand Jain <anand.jain@oracle.com>
-Cc: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 2/7] btrfs: extend critical section when scanning a new
- device
-Message-ID: <20180713125504.GU3126@twin.jikos.cz>
+To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: remove warnings superseded by refcount_t usage
+Message-ID: <20180705155545.GK3126@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <cover.1529516226.git.dsterba@suse.com>
- <92caa5382783c709d6ddab7d06747327bd7c120c.1529516228.git.dsterba@suse.com>
- <d5b69aad-2ffb-4322-9c8d-e0003056b430@oracle.com>
+References: <20180625163822.25681-1-dsterba@suse.com>
+ <fae25e89-52c5-25ea-65ad-7405fedb0a68@suse.com>
+ <20180629140540.GT2287@twin.jikos.cz>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <d5b69aad-2ffb-4322-9c8d-e0003056b430@oracle.com>
+In-Reply-To: <20180629140540.GT2287@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jul 04, 2018 at 04:18:09PM +0800, Anand Jain wrote:
-> 
-> 
-> On 06/21/2018 01:51 AM, David Sterba wrote:
-> > The stale device list removal needs to be protected by device_list_mutex
-> > too as this could delete from the list and could race with another list
-> > modification and cause crash.
+On Fri, Jun 29, 2018 at 04:05:40PM +0200, David Sterba wrote:
+> On Tue, Jun 26, 2018 at 05:00:46PM +0300, Nikolay Borisov wrote:
+> > On 25.06.2018 19:38, David Sterba wrote:
+> > > There are several WARN_ON calls that catch incrorrect reference counter
+> > > updates, but this is what the refcount_t does already:
+> > > 
+> > > * refcount_inc from 0 will warn
+> > > * refcount_dec_and_test from 0 will warn
+> > > 
 > > 
-> > The device needs to be fully initialized before it's added to the list
-> > so the fs_devices also need to be set under the mutex.
-> > 
-> > Signed-off-by: David Sterba <dsterba@suse.com>
-> > ---
-> >   fs/btrfs/volumes.c | 5 ++---
-> >   1 file changed, 2 insertions(+), 3 deletions(-)
-> > 
-> > diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> > index 1da162928d1a..02246f9af0a3 100644
-> > --- a/fs/btrfs/volumes.c
-> > +++ b/fs/btrfs/volumes.c
-> > @@ -791,12 +791,11 @@ static noinline struct btrfs_device *device_list_add(const char *path,
-> >   		rcu_assign_pointer(device->name, name);
-> >   
-> >   		mutex_lock(&fs_devices->device_list_mutex);
-> > +		device->fs_devices = fs_devices;
-> >   		list_add_rcu(&device->dev_list, &fs_devices->devices);
-> >   		fs_devices->num_devices++;
-> > -		mutex_unlock(&fs_devices->device_list_mutex);
-> > -
-> > -		device->fs_devices = fs_devices;
-> >   		btrfs_free_stale_devices(path, device);
+> > But these warnings are only going to be triggered in the case of
+> > CONFIG_REFCOUNT_FULL otherwise refcount falls back to plain atomic
+> > operations.
 > 
-> 
-> This is not correct.
-> 
-> btrfs_free_stale_devices need the per fs_devices local device_list_mutex
-> lock as it traverses through the fs_uuids list. Holding just the lock of
-> the %fs_devices which is being scanned or mounted is not correct.
+> Right, I'm for REFCOUNT_FULL on by default obviously, but we need to
+> take handle the case where it's not. And there isn't a refcount type
+> with the full semantics.
 
-I see, ok. The use of fs_devs is not very visible in
-btrfs_free_stale_devices but at least the function comment hints that
-all devices are being traversed.
+There refcount helpers will be extended to allow the full check
+semantics so I'll use them and drop the WARN_ONs once the patch gets
+merged.
+
+https://lore.kernel.org/lkml/20180703100102.16615-1-mark.rutland@arm.com/

@@ -1,59 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:41886 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:45288 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1753722AbeGELxG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 5 Jul 2018 07:53:06 -0400
+        id S1753401AbeGEO3b (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 5 Jul 2018 10:29:31 -0400
+Date: Thu, 5 Jul 2018 16:29:29 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Nikolay Borisov <nborisov@suse.com>
+Cc: linux-btrfs@vger.kernel.org, wqu@suse.com, misono.tomohiro@jp.fujitsu.com
 Subject: Re: [PATCH v2] btrfs: qgroups: Move transaction management inside
  btrfs_quota_enable/disable
-To: linux-btrfs@vger.kernel.org
-Cc: wqu@suse.com, misono.tomohiro@jp.fujitsu.com
+Message-ID: <20180705142929.GF3126@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <1530791448-12743-1-git-send-email-nborisov@suse.com>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <d4c2f2d7-f640-514b-37ce-f699243ce0f2@suse.com>
-Date: Thu, 5 Jul 2018 14:53:03 +0300
 MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 In-Reply-To: <1530791448-12743-1-git-send-email-nborisov@suse.com>
-Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Thu, Jul 05, 2018 at 02:50:48PM +0300, Nikolay Borisov wrote:
+> @@ -921,8 +938,10 @@ int btrfs_quota_enable(struct btrfs_trans_handle *trans,
+>  
+>  	ret = btrfs_insert_empty_item(trans, quota_root, path, &key,
+>  				      sizeof(*ptr));
+> -	if (ret)
+> +	if (ret) {
+>  		goto out_free_path;
+> +		btrfs_abort_transaction(trans, ret);
 
+Strange that gcc does not warn about that, and there's no warning switch
+to detect dead code.
 
-On  5.07.2018 14:50, Nikolay Borisov wrote:
-> Commit 5d23515be669 ("btrfs: Move qgroup rescan on quota enable to
-> btrfs_quota_enable") not only resulted in an easier to follow code but
-> it also introduced a subtle bug. It changed the timing when the initial
-> transaction rescan was happening - before the commit it would happen
-> after transaction commit had occured but after the commit it might happen
-> before the transaction was committed. This results in failure to
-> correctly rescan the quota since there could be data which is still not
-> committed on disk.
-> 
-> This patch aims to fix this by movign the transaction creation/commit
-> inside btrfs_quota_enable, which allows to schedule the quota commit
-> after the transaction has been committed.
-> 
-> Fixes: 5d23515be669 ("btrfs: Move qgroup rescan on quota enable to btrfs_quota_enable")
-> Reported-by: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
-> Link: https://marc.info/?l=linux-btrfs&m=152999289017582
-> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
-> ---
-> 
-> Hello, 
-> 
-> One open-ended question this patch puts is how many items should be reserved
-> to guarantee successful qgroup disable. Before this patch quota disable was 
-> always using the arbitrary reservation of 2 items. Since this patch makes the 
-> the transaction for enable/disable independent we have a chance to actually 
-> set appropriate values for both transactions. In any case this patch doesn't 
-> make things worse than before. 
-> 
->  fs/btrfs/ioctl.c  | 15 ++--------
->  fs/btrfs/qgroup.c | 86 ++++++++++++++++++++++++++++++++++++++++++++++---------
->  fs/btrfs/qgroup.h |  6 ++--
->  3 files changed, 76 insertions(+), 31 deletions(-)
->
+> @@ -3070,7 +3128,7 @@ static int __btrfs_qgroup_release_data(struct inode *inode,
+>  	if (free && reserved)
+>  		return qgroup_free_reserved_data(inode, reserved, start, len);
+>  	extent_changeset_init(&changeset);
+> -	ret = clear_record_extent_bits(&BTRFS_I(inode)->io_tree, start, 
+> +	ret = clear_record_extent_bits(&BTRFS_I(inode)->io_tree, start,
 
-Changes since v2:
+So the whitespace hunk still there?
 
-* Actually implemented proper transaction unwiding in both functions.
+>  			start + len -1, EXTENT_QGROUP_RESERVED, &changeset);
+>  	if (ret < 0)
+>  		goto out;

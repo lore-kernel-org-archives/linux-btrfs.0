@@ -1,81 +1,128 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lj1-f182.google.com ([209.85.208.182]:46102 "EHLO
-        mail-lj1-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753912AbeGFE2w (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Jul 2018 00:28:52 -0400
-Received: by mail-lj1-f182.google.com with SMTP id u6-v6so8165844lju.13
-        for <linux-btrfs@vger.kernel.org>; Thu, 05 Jul 2018 21:28:51 -0700 (PDT)
-Subject: Re: how to best segment a big block device in resizeable btrfs
- filesystems?
-To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
-References: <a0099769-1622-c428-d47a-0e243f66a8b0@cn.fujitsu.com>
- <20180629064354.kbaepro5ccmm6lkn@merlins.org>
- <20180701232202.vehg7amgyvz3hpxc@merlins.org>
- <5a603d3d-620b-6cb3-106c-9d38e3ca6d02@cn.fujitsu.com>
- <20180702032259.GD5567@merlins.org>
- <9fbd4b39-fa75-4c30-eea8-e789fd3e4dd5@cn.fujitsu.com>
- <20180702140527.wfbq5jenm67fvvjg@merlins.org>
- <3728d88c-29c1-332b-b698-31a0b3d36e2b@gmx.com>
- <20180702151853.mwlrinipbihq46zu@merlins.org>
- <e8e78a5b-1db2-ddf0-f8ea-38f8ac9be654@gmail.com>
- <20180702173438.7c2vhflvtncfb5gz@merlins.org>
- <8de54b29-c718-0230-09b2-f849e3ad01df@gmail.com>
- <9e79a4b4-af3c-20bf-ff8e-748b9ab46bf6@gmail.com>
- <pan$3326b$1b5189ef$d6f2b03e$a3db8011@cox.net>
-From: Andrei Borzenkov <arvidjaar@gmail.com>
-Message-ID: <293ab6d6-f609-0e9b-3d33-053336e43744@gmail.com>
-Date: Fri, 6 Jul 2018 07:28:48 +0300
+Received: from mail.automatix.de ([213.131.255.221]:48581 "EHLO
+        mail.automatix.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751480AbeGFInk (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Jul 2018 04:43:40 -0400
+Received: from [192.168.11.16] (statdsl-085-016-075-093.ewe-ip-backbone.de [85.16.75.93])
+        (using TLSv1 with cipher DHE-RSA-AES128-SHA (128/128 bits))
+        (No client certificate requested)
+        (Authenticated sender: jojo@automatix.de)
+        by mail.automatix.de (Postfix) with ESMTPSA id 1C0A06006A
+        for <linux-btrfs@vger.kernel.org>; Fri,  6 Jul 2018 10:38:03 +0200 (CEST)
+To: linux-btrfs@vger.kernel.org
+From: Juergen Sauer <juergen.sauer@automatix.de>
+Subject: Issue on BTRFS/copy of really huge files
+Message-ID: <918a550f-2782-7549-6a75-3e1c6dd7fab9@automatix.de>
+Date: Fri, 6 Jul 2018 10:37:57 +0200
 MIME-Version: 1.0
-In-Reply-To: <pan$3326b$1b5189ef$d6f2b03e$a3db8011@cox.net>
-Content-Type: text/plain; charset=utf-8
+Content-Type: multipart/signed; micalg=pgp-sha1;
+ protocol="application/pgp-signature";
+ boundary="RyNCvMc3swbq5N3JZEzhohjzStzKixaTc"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-03.07.2018 10:15, Duncan пишет:
-> Andrei Borzenkov posted on Tue, 03 Jul 2018 07:25:14 +0300 as excerpted:
-> 
->> 02.07.2018 21:35, Austin S. Hemmelgarn пишет:
->>> them (trimming blocks on BTRFS gets rid of old root trees, so it's a
->>> bit dangerous to do it while writes are happening).
->>
->> Could you please elaborate? Do you mean btrfs can trim data before new
->> writes are actually committed to disk?
-> 
-> No.
-> 
-> But normally old roots aren't rewritten for some time simply due to odds 
-> (fuller filesystems will of course recycle them sooner), and the btrfs 
-> mount option usebackuproot (formerly recovery, until the norecovery mount 
-> option that parallels that of other filesystems was added and this option 
-> was renamed to avoid confusion) can be used to try an older root if the 
-> current root is too damaged to successfully mount.
-> > But other than simply by odds not using them again immediately, btrfs has
-> no special protection for those old roots, and trim/discard will recover 
-> them to hardware-unused as it does any other unused space, tho whether it 
-> simply marks them for later processing or actually processes them 
-> immediately is up to the individual implementation -- some do it 
-> immediately, killing all chances at using the backup root because it's 
-> already zeroed out, some don't.
-> 
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--RyNCvMc3swbq5N3JZEzhohjzStzKixaTc
+Content-Type: multipart/mixed; boundary="5AiiHslJaiHnBtJYpQu4ffrXgi8BAWkdY";
+ protected-headers="v1"
+From: Juergen Sauer <juergen.sauer@automatix.de>
+To: linux-btrfs@vger.kernel.org
+Message-ID: <918a550f-2782-7549-6a75-3e1c6dd7fab9@automatix.de>
+Subject: Issue on BTRFS/copy of really huge files
 
-How is it relevant to "while writes are happening"? Will trimming old
-tress immediately after writes have stopped be any different? Why?
+--5AiiHslJaiHnBtJYpQu4ffrXgi8BAWkdY
+Content-Type: text/plain; charset=utf-8
+Content-Language: de-DE
+Content-Transfer-Encoding: quoted-printable
 
-> In the context of the discard mount option, that can mean there's never 
-> any old roots available ever, as they've already been cleaned up by the 
-> hardware due to the discard option telling the hardware to do it.
-> 
-> But even not using that mount option, and simply doing the trims 
-> periodically, as done weekly by for instance the systemd fstrim timer and 
-> service units, or done manually if you prefer, obviously potentially 
-> wipes the old roots at that point.  If the system's effectively idle at 
-> the time, not much risk as the current commit is likely to represent a 
-> filesystem in full stasis, but if there's lots of writes going on at that 
-> moment *AND* the system happens to crash at just the wrong time, before 
-> additional commits have recreated at least a bit of root history, again, 
-> you'll potentially be left without any old roots for the usebackuproot 
-> mount option to try to fall back to, should it actually be necessary.
-> 
+Hi!
 
-Sorry? You are just saying that "previous state can be discarded before
-new state is committed", just more verbosely.
+I found an issue since kernel 4.1.17.x.
+My setup for dealing with virtual machines is:
+btrfs SSD/raid1 	[sda, sdb] ca. 250 GiB as OS Root [Arch Linux]
+btrfs Rotational/Raid5 	[sdc, sdd, sde] ca. 12 GiB as virt. Machie store
+
+My Work flow:
+If a very I/O intensive operation on a virtual machine is to be done I
+move this onto a subvol on the rootfs wich has a fast raid1 sdd setup.
+
+Working on the ssd and rotational btrfs stack is fine and performant
+(nowcow used).
+
+But now the little issue.
+
+Moving a virtual machine from ssd/raid1 subvolume (nocow) into the
+rotational big store (noocow) fails.
+After filling up the cachememory (ram) the data flow cuts down to zero
+0 kb/sec.
+In fatal result the copy of an huge file hangs does not proceed any
+more, load raises infinite, iops falling to zero. In kernel log I find:
+
+[  491.151952] INFO: task kworker/u16:28:1027 blocked for more than 120
+seconds.
+[  491.151953]       Tainted: P           O      4.17.3-1-ARCH #1
+[  491.151953] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs"
+disables this message.
+[  491.151953] kworker/u16:28  D    0  1027      2 0x80000000
+[  491.151965] Workqueue: btrfs-endio-raid56 btrfs_endio_raid56_helper
+[btrfs]
+[  491.151965] Call Trace:
+[  491.151967]  ? __schedule+0x282/0x890
+[  491.151969]  schedule+0x32/0x90
+[  491.151970]  io_schedule+0x12/0x40
+[  491.151971]  blk_mq_get_tag+0x146/0x2a0
+[  491.151972]  ? wait_woken+0x80/0x80
+[  491.151974]  blk_mq_get_request+0x342/0x420
+[  491.151975]  blk_mq_make_request+0x121/0x670
+[  491.151976]  generic_make_request+0x187/0x370
+[  491.151977]  submit_bio+0x45/0x140
+[  491.151988]  ? rbio_orig_end_io+0xd0/0xd0 [btrfs]
+[  491.151998]  finish_rmw+0x392/0x530 [btrfs]
+[  491.152009]  normal_work_helper+0xbd/0x350 [btrfs]
+[  491.152010]  process_one_work+0x1d1/0x3b0
+[  491.152011]  worker_thread+0x2b/0x3d0
+[  491.152012]  ? process_one_work+0x3b0/0x3b0
+[  491.152014]  kthread+0x112/0x130
+[  491.152015]  ? kthread_flush_work_fn+0x10/0x10
+[  491.152016]  ret_from_fork+0x35/0x40
+[root@pc6 ~]#
+
+Scheduler was on ssd disc deadline, on rotational bfq.
+
+After this "copy data flow Zero Rate" event copying to the big raid
+fails, sync never ccomes back. The machine load raises up to 50 .. 60 ..
+80 .. (seen in top).
+I/O Load seen in iotop is zero.
+
+Rebooting via SysReq Key works, system comes back and is working fine.
+
+After I switched the scheduler to "kyber" on all discs (including the
+rotational discs) the issue does not occour. ?!?
+
+with kind regards
+J=C3=BCrgen Sauer
+--=20
+J=C3=BCrgen Sauer - automatiX GmbH,
++49-4209-4699, juergen.sauer@automatix.de
+Gesch=C3=A4ftsf=C3=BChrer: J=C3=BCrgen Sauer,
+Gerichtstand: Amtsgericht Walsrode =E2=80=A2 HRB 120986
+Ust-Id: DE191468481 =E2=80=A2 St.Nr.: 36/211/08000
+GPG Public Key zur Signaturpr=C3=BCfung:
+http://www.automatix.de/juergen_sauer_publickey.gpg
+
+
+--5AiiHslJaiHnBtJYpQu4ffrXgi8BAWkdY--
+
+--RyNCvMc3swbq5N3JZEzhohjzStzKixaTc
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iF0EARECAB0WIQTXnJOAsmrKYVtqq/xbtQoj0SpqsQUCWz8qagAKCRBbtQoj0Spq
+sWEoAJ9g3gZDGmSh6crAQTxGrWGxHZtLHwCfcrD9POkaLfNRw5y5+EZJ/OXXBvY=
+=tiMB
+-----END PGP SIGNATURE-----
+
+--RyNCvMc3swbq5N3JZEzhohjzStzKixaTc--

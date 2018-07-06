@@ -1,21 +1,19 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:15395 "EHLO
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:64052 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1753483AbeGFBx1 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 Jul 2018 21:53:27 -0400
+        with ESMTP id S1753852AbeGFDWy (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 Jul 2018 23:22:54 -0400
 From: "Gu, Jinxiang" <gujx@cn.fujitsu.com>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>, Qu Wenruo <wqu@suse.com>,
+To: Qu Wenruo <wqu@suse.com>,
         "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: RE: [PATCH 1/4] btrfs-progs: check: Remove the ability to rebuild
- root overwritting existing tree blocks
-Date: Fri, 6 Jul 2018 01:53:24 +0000
-Message-ID: <516DDBE5B1D92D42BCF7A2E37F045A5D01A8A278D1@G08CNEXMBPEKD02.g08.fujitsu.local>
+Subject: RE: [PATCH 3/4] btrfs-progs: check/original: Avoid infinite loop
+ when failed to repair inode
+Date: Fri, 6 Jul 2018 03:22:49 +0000
+Message-ID: <516DDBE5B1D92D42BCF7A2E37F045A5D01A8A29974@G08CNEXMBPEKD02.g08.fujitsu.local>
 References: <20180705073731.18459-1-wqu@suse.com>
- <20180705073731.18459-2-wqu@suse.com>
- <516DDBE5B1D92D42BCF7A2E37F045A5D01A856B640@G08CNEXMBPEKD03.g08.fujitsu.local>
- <2a81613c-fdad-f7c9-7d12-bab4a67f8353@gmx.com>
-In-Reply-To: <2a81613c-fdad-f7c9-7d12-bab4a67f8353@gmx.com>
-Content-Type: text/plain; charset="utf-8"
+ <20180705073731.18459-4-wqu@suse.com>
+In-Reply-To: <20180705073731.18459-4-wqu@suse.com>
+Content-Type: text/plain; charset="gb2312"
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -23,146 +21,91 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 
 > -----Original Message-----
-> From: Qu Wenruo [mailto:quwenruo.btrfs@gmx.com]
-> Sent: Thursday, July 05, 2018 5:41 PM
-> To: Gu, Jinxiang/顾 金香 <gujx@cn.fujitsu.com>; Qu Wenruo <wqu@suse.com>; linux-btrfs@vger.kernel.org
-> Subject: Re: [PATCH 1/4] btrfs-progs: check: Remove the ability to rebuild root overwritting existing tree blocks
+> From: linux-btrfs-owner@vger.kernel.org [mailto:linux-btrfs-owner@vger.kernel.org] On Behalf Of Qu Wenruo
+> Sent: Thursday, July 05, 2018 3:38 PM
+> To: linux-btrfs@vger.kernel.org
+> Subject: [PATCH 3/4] btrfs-progs: check/original: Avoid infinite loop when failed to repair inode
 > 
+> Exposed by fuzz-tests/003-multi-check-unmounted/ on fuzzed image
+> bko-161811.raw.xz.
 > 
+> It's caused by the fact when check_fs_roots() finds tree root is
+> modified, it re-search tree root by goto again: tag.
+> However again: tag will also reset root objectid to 0.
+> If we failed to repair one fs root but still modified tree root, we will
+> go into such infinite loop.
 > 
-> On 2018年07月05日 16:50, Gu, Jinxiang wrote:
-> >
-> >
-> >> -----Original Message-----
-> >> From: linux-btrfs-owner@vger.kernel.org [mailto:linux-btrfs-owner@vger.kernel.org] On Behalf Of Qu Wenruo
-> >> Sent: Thursday, July 05, 2018 3:37 PM
-> >> To: linux-btrfs@vger.kernel.org
-> >> Subject: [PATCH 1/4] btrfs-progs: check: Remove the ability to rebuild root overwritting existing tree blocks
-> >>
-> >> We have function btrfs_fsck_reinit_root() to reinit csum or extent tree.
-> >
-> > Nit：
-> > or fs/file tree
+> Fix it by record which root we should skip for repair mode.
 > 
-> Nope, btrfs check is only capable of reinit csum or extent tree.
-Sorry, not fs/file tree. But DATA RELOC TREE.
-Call stack is reset_balance -> btrfs_fsck_reinit_root, and the root is get by
-btrfs_read_fs_root(fs_info, &key), which key is
-(BTRFS_DATA_RELOC_TREE_OBJECTID, BTRFS_ROOT_ITEM_KEY , (u64)-1)
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+>  check/main.c | 19 +++++++++++++++++--
+>  1 file changed, 17 insertions(+), 2 deletions(-)
+> 
+> diff --git a/check/main.c b/check/main.c
+> index c8c347236543..2b5abb2d025b 100644
+> --- a/check/main.c
+> +++ b/check/main.c
+> @@ -3380,6 +3380,7 @@ static int check_fs_roots(struct btrfs_fs_info *fs_info,
+>  	struct extent_buffer *leaf, *tree_node;
+>  	struct btrfs_root *tmp_root;
+>  	struct btrfs_root *tree_root = fs_info->tree_root;
+> +	u64 skip_root = 0;
+>  	int ret;
+>  	int err = 0;
+> 
+> @@ -3400,7 +3401,10 @@ static int check_fs_roots(struct btrfs_fs_info *fs_info,
+> 
+>  again:
+>  	key.offset = 0;
+> -	key.objectid = 0;
+> +	if (skip_root)
+> +		key.objectid = skip_root + 1;
+> +	else
+> +		key.objectid = 0;
+>  	key.type = BTRFS_ROOT_ITEM_KEY;
+>  	ret = btrfs_search_slot(NULL, tree_root, &key, &path, 0, 0);
+>  	if (ret < 0) {
+> @@ -3409,6 +3413,7 @@ again:
+>  	}
+>  	tree_node = tree_root->node;
+>  	while (1) {
+> +
+>  		if (tree_node != tree_root->node) {
+>  			free_root_recs_tree(root_cache);
+>  			btrfs_release_path(&path);
+> @@ -3445,8 +3450,18 @@ again:
+>  				btrfs_release_path(&path);
+>  				goto again;
+>  			}
+> -			if (ret)
+> +			if (ret) {
+>  				err = 1;
+> +
+> +				/*
+> +				 * We failed to repair this root but modified tree
+> +				 * root, after again: tag we will still hit this
+> +				 * root and fail to repair, must skip this root to
+> +				 * avoid infinite loop
+> +				 */
+> +				if (repair)
+> +					skip_root = key.objectid;
+> +			}
+>  			if (key.objectid == BTRFS_TREE_RELOC_OBJECTID)
+>  				btrfs_free_fs_root(tmp_root);
+>  		} else if (key.type == BTRFS_ROOT_REF_KEY ||
+> --
 
+Reviewed-by: Gu Jinxiang <gujx@cn.fujitsu.com>
+
+
+> 2.18.0
 > 
-> Thanks,
-> Qu
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 > 
-> >
-> >> However this function allows us to let it overwrite existing tree blocks
-> >> using @overwrite parameter.
-> >>
-> >> Such behavior is pretty dangerous while no caller is using this feature
-> >> explicitly.
-> >>
-> >> So just remove @overwrite parameter and allow btrfs_fsck_reinit_root()
-> >> to error out when it fails to allocate tree block.
-> >>
-> >> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> >> ---
-> >>  check/main.c | 26 ++++++++------------------
-> >>  1 file changed, 8 insertions(+), 18 deletions(-)
-> >>
-> >> diff --git a/check/main.c b/check/main.c
-> >> index 8db300abb825..c8c347236543 100644
-> >> --- a/check/main.c
-> >> +++ b/check/main.c
-> >> @@ -8379,7 +8379,7 @@ static int do_check_chunks_and_extents(struct btrfs_fs_info *fs_info)
-> >>  }
-> >>
-> >>  static int btrfs_fsck_reinit_root(struct btrfs_trans_handle *trans,
-> >> -			   struct btrfs_root *root, int overwrite)
-> >> +				  struct btrfs_root *root)
-> >>  {
-> >>  	struct extent_buffer *c;
-> >>  	struct extent_buffer *old = root->node;
-> >> @@ -8389,21 +8389,13 @@ static int btrfs_fsck_reinit_root(struct btrfs_trans_handle *trans,
-> >>
-> >>  	level = 0;
-> >>
-> >> -	if (overwrite) {
-> >> -		c = old;
-> >> -		extent_buffer_get(c);
-> >> -		goto init;
-> >> -	}
-> >>  	c = btrfs_alloc_free_block(trans, root,
-> >>  				   root->fs_info->nodesize,
-> >>  				   root->root_key.objectid,
-> >>  				   &disk_key, level, 0, 0);
-> >> -	if (IS_ERR(c)) {
-> >> -		c = old;
-> >> -		extent_buffer_get(c);
-> >> -		overwrite = 1;
-> >> -	}
-> >> -init:
-> >> +	if (IS_ERR(c))
-> >> +		return PTR_ERR(c);
-> >> +
-> >>  	memset_extent_buffer(c, 0, 0, sizeof(struct btrfs_header));
-> >>  	btrfs_set_header_level(c, level);
-> >>  	btrfs_set_header_bytenr(c, c->start);
-> >> @@ -8422,9 +8414,7 @@ init:
-> >>  	/*
-> >>  	 * this case can happen in the following case:
-> >>  	 *
-> >> -	 * 1.overwrite previous root.
-> >> -	 *
-> >> -	 * 2.reinit reloc data root, this is because we skip pin
-> >> +	 * reinit reloc data root, this is because we skip pin
-> >>  	 * down reloc data tree before which means we can allocate
-> >>  	 * same block bytenr here.
-> >>  	 */
-> >> @@ -8609,7 +8599,7 @@ reinit_data_reloc:
-> >>  		goto out;
-> >>  	}
-> >>  	record_root_in_trans(trans, root);
-> >> -	ret = btrfs_fsck_reinit_root(trans, root, 0);
-> >> +	ret = btrfs_fsck_reinit_root(trans, root);
-> >>  	if (ret)
-> >>  		goto out;
-> >>  	ret = btrfs_make_root_dir(trans, root, BTRFS_FIRST_FREE_OBJECTID);
-> >> @@ -8675,7 +8665,7 @@ again:
-> >>  	}
-> >>
-> >>  	/* Ok we can allocate now, reinit the extent root */
-> >> -	ret = btrfs_fsck_reinit_root(trans, fs_info->extent_root, 0);
-> >> +	ret = btrfs_fsck_reinit_root(trans, fs_info->extent_root);
-> >>  	if (ret) {
-> >>  		fprintf(stderr, "extent root initialization failed\n");
-> >>  		/*
-> >> @@ -9764,7 +9754,7 @@ int cmd_check(int argc, char **argv)
-> >>
-> >>  		if (init_csum_tree) {
-> >>  			printf("Reinitialize checksum tree\n");
-> >> -			ret = btrfs_fsck_reinit_root(trans, info->csum_root, 0);
-> >> +			ret = btrfs_fsck_reinit_root(trans, info->csum_root);
-> >>  			if (ret) {
-> >>  				error("checksum tree initialization failed: %d",
-> >>  						ret);
-> >> --
-> >
-> > Reviewed-by: Gu Jinxiang <gujx@cn.fujitsu.com>
-> >
-> >
-> >> 2.18.0
-> >>
-> >> --
-> >> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> >> the body of a message to majordomo@vger.kernel.org
-> >> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> >>
-> >
-> >
-> >
-> > N嫥叉靣笡y氊b瞂千v豝�)藓{.n�+壏{眓谶�)韰骅w*jg�秹殠娸/侁鋤罐枈�2娹櫒璀�&�)摺玜囤瓽珴閔�鎗:+v墾
-> 妛鑶佶
-> >
 
 
 

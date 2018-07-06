@@ -1,228 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwkm04.jp.fujitsu.com ([202.219.69.171]:39929 "EHLO
-        mgwkm04.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932290AbeGDIPN (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Jul 2018 04:15:13 -0400
-Received: from g01jpfmpwkw01.exch.g01.fujitsu.local (g01jpfmpwkw01.exch.g01.fujitsu.local [10.0.193.38])
-        by kw-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id 12096AC0111
-        for <linux-btrfs@vger.kernel.org>; Wed,  4 Jul 2018 17:15:10 +0900 (JST)
-From: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
-Subject: Re: [PATCH v2 00/20] btrfs-progs: Rework of "subvolume list/show" and
- relax the root privileges of them
-To: <linux-btrfs@vger.kernel.org>
-CC: Omar Sandoval <osandov@fb.com>
-References: <cover.1529310485.git.misono.tomohiro@jp.fujitsu.com>
-Message-ID: <c462edc0-ef91-0a1b-bc4e-45e868e32604@jp.fujitsu.com>
-Date: Wed, 4 Jul 2018 17:14:59 +0900
+Received: from mail-lj1-f182.google.com ([209.85.208.182]:46102 "EHLO
+        mail-lj1-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753912AbeGFE2w (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Jul 2018 00:28:52 -0400
+Received: by mail-lj1-f182.google.com with SMTP id u6-v6so8165844lju.13
+        for <linux-btrfs@vger.kernel.org>; Thu, 05 Jul 2018 21:28:51 -0700 (PDT)
+Subject: Re: how to best segment a big block device in resizeable btrfs
+ filesystems?
+To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
+References: <a0099769-1622-c428-d47a-0e243f66a8b0@cn.fujitsu.com>
+ <20180629064354.kbaepro5ccmm6lkn@merlins.org>
+ <20180701232202.vehg7amgyvz3hpxc@merlins.org>
+ <5a603d3d-620b-6cb3-106c-9d38e3ca6d02@cn.fujitsu.com>
+ <20180702032259.GD5567@merlins.org>
+ <9fbd4b39-fa75-4c30-eea8-e789fd3e4dd5@cn.fujitsu.com>
+ <20180702140527.wfbq5jenm67fvvjg@merlins.org>
+ <3728d88c-29c1-332b-b698-31a0b3d36e2b@gmx.com>
+ <20180702151853.mwlrinipbihq46zu@merlins.org>
+ <e8e78a5b-1db2-ddf0-f8ea-38f8ac9be654@gmail.com>
+ <20180702173438.7c2vhflvtncfb5gz@merlins.org>
+ <8de54b29-c718-0230-09b2-f849e3ad01df@gmail.com>
+ <9e79a4b4-af3c-20bf-ff8e-748b9ab46bf6@gmail.com>
+ <pan$3326b$1b5189ef$d6f2b03e$a3db8011@cox.net>
+From: Andrei Borzenkov <arvidjaar@gmail.com>
+Message-ID: <293ab6d6-f609-0e9b-3d33-053336e43744@gmail.com>
+Date: Fri, 6 Jul 2018 07:28:48 +0300
 MIME-Version: 1.0
-In-Reply-To: <cover.1529310485.git.misono.tomohiro@jp.fujitsu.com>
-Content-Type: text/plain; charset="utf-8"
+In-Reply-To: <pan$3326b$1b5189ef$d6f2b03e$a3db8011@cox.net>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Gentle ping, as this is related to the new ioctls merged in 4.18-rc1.
-
-On 2018/06/18 17:40, Misono Tomohiro wrote:
-> Changelog
->  
->  v1 -> v2: 
->   generally update whole patch set, especially:
->    - rebased to progs 4.17
->    - Improve error handling
->    - Update man/help/commit message
->    - Add/Update several options of sub list:
->       -f ... follow mounted subvolumes
->       -a ... remove meaningless filter
->       -A ... print path in absolute path
->       --nosort ... output results incrementally
->      Please see below examples
-> =====
-> github:  https://github.com/t-msn/btrfs-progs/tree/rework-sub-list
+03.07.2018 10:15, Duncan пишет:
+> Andrei Borzenkov posted on Tue, 03 Jul 2018 07:25:14 +0300 as excerpted:
 > 
-> Hello,
+>> 02.07.2018 21:35, Austin S. Hemmelgarn пишет:
+>>> them (trimming blocks on BTRFS gets rid of old root trees, so it's a
+>>> bit dangerous to do it while writes are happening).
+>>
+>> Could you please elaborate? Do you mean btrfs can trim data before new
+>> writes are actually committed to disk?
 > 
-> This series requires some new ioctls which are now in kernel 4.18-rc1. 
+> No.
 > 
-> The aim of this series is to relax the root privileges of "sub list/show"
-> while keeping as much output consistency between root and non-privileged
-> user. For "subvolume list", default output has been changed from current
-> btrfs-progs (in both old and new kernel) and some options are newly added.
-> For "subvolume show", root's output is the same as before but there are
-> some difference from non-privileged user's output. 
-> 
-> Please see below examples.
-> 
-> 
-> * Behavior summary of new "sub list"
->   - default (no option)
->     - lists subvolumes below the specified path (inc. path itself)
->     - If new ioctls exists
->       - the path can be non-subvolume directory
->       - non-privileged user can call it
->         (subvolumes to which the user cannot access will be skipped)
-> 
->   - -f
->     - follow mounted subvolume below the specified path and list them too 
->       (only if it is the same filesystem)
-> 
->   - -a
->     - updated to remove filter. i.e. the output is the same as current progs
->       without option (require root privileges)
-> 
->   - -A
->     - print path in absolute path
-> 
->   -- nosort
->     - output results incrementally without loading information to memory
-> 
->  [Example]
->   $ mkfs.btrfs -f $DEV
->   $ mkfs.btrfs -f $DEV2
->   $ mount $DEV $MNT
-> 
->   $ btrfs subvolume create $MNT/AAA
->   $ btrfs subvolume create $MNT/BBB
->   $ btrfs subvolume create $MNT/CCC
->   $ btrfs subvolume create $MNT/DDD
->   $ mkdir $MNT/AAA/bbb
->   $ mkdir $MNT/AAA/ccc
->   $ mkdir $MNT/AAA/other
-> 
->   $ umount $MNT
->   $ mount -o subvol=AAA $DEV $MNT
->   $ mount -o subvol=BBB $DEV $MNT/bbb
->   $ mount -o subvol=CCC $DEV $MNT/ccc
->   $ mount -o $DEV2 $MNT/other
-> 
->   $ btrfs subvolume list $MNT # print subvolumes below the path
->   ID 256 gen 10 top level 5 path .
-> 
->   $ btrfs subvolume list -A $MNT # print path in absolute path
->   ID 256 gen 10 top level 5 path /mnt
-> 
->   $ btrfs subvolume list -f $MNT # follow mounted subvolumes too
->   ID 256 gen 10 top level 5 path .
->   ID 258 gen 7 top level 5 path bbb
->   ID 259 gen 8 top level 5 path ccc
-> 
->   $ btrfs subvolume list -a $MNT
->   # print all subvolumes in the fs. same output as progs<=4.17 without option
->   ID 256 gen 10 top level 5 path AAA
->   ID 258 gen 7 top level 5 path BBB
->   ID 259 gen 8 top level 5 path CCC
->   ID 260 gen 9 top level 5 path DDD
-> 
->  More details are in each commit log.
-> 
-> 
-> * Behavior summary of new "sub show"
->   - No change for root's output
->   - If new ioctls exists, non-privileged user can call it
->     - In that case, path to be shown is absolute path
->       (for root, it is relative to top-level subvolume)
->       Also, snapshots to be shown are to which the user can
->       access from current mount point.
->       (for root, all snapshots in the fs)
-> 
-> 
-> * Patch structure
-> The first several patches update libbtrfsutil and the latter patches update
-> sub list/show command.
-> 
->  1st patch is independent and updates man doc of btrfs-subvolume
-> 
->  2nd-6th update the libbtrfsutil using new ioctls:
->    - Relax the privileges of following functions if kernel supports new
->      ioctls and @top/@id is zero (i.e. the given path/fd is used instead
->      of arbitrary subvolume id).
->      - util_subvolume_info()
->      - subvolume iterator related ones (util_subvolume_iterator_next() etc.)
-> 
->    - For subvolume iterator, if kernel supports new ioctls and @top is zero,
->      non-subvolume directory can be specified as a start point. Also,
->      subvolume which cannot be accessed (either because of permission
->      error or not found (may happen if other volume is mounted in the
->      path) will be skipped for non-privileged user.
-> 
->    - Code path of root and non-privileged user is different. While root uses
->      TREE_SEARCH ioctl as before, non-privileged user uses newly added
->      ioctls. However, There is only one exception and when subvolume
->      iterator is created from non-subvolume directory, code path of both is
->      the same (and thus both use new ioctls).
-> 
->  7th patch update the "sub list" to use libbtrfsutil (no behavior change yet)
->    This is a copy of non-merged following patch originally written
->    by Omar Sandoval:
->      btrfs-progs: use libbtrfsutil for subvolume list [1]
->    expect this commit keeps libbtrfs implementation which above commit
->    tries to remove.
-> 
->    (I suspect that the part of the reason that the original patch has not
->    been merged is it removes libbtrfs and this commits modify this. but
->    I'm completely fine with the original patch instead of this.)
-> 
->  8th-15th patch update the behavior of "sub list"
-> 
->  16th-17th patch update the behavior of "sub show"
-> 
->  18th-20th patch are cli-test for "sub list" of new behavior.
-> 
-> 
-> * Future todo:
-> If this approach is ok, I'd like to update the output of "sub list" more like:
->   - Remove obsolete field (i.e. top-level) from output
-> 
-> Any comments are welcome.
-> Thanks,
-> Tomohiro Misono
-> 
-> [1] https://www.spinics.net/lists/linux-btrfs/msg74917.html 
-> 
-> Misono Tomohiro (20):
->   btrfs-progs: doc: Update man btrfs subvolume
->   btrfs-progs: ioctl/libbtrfsutil: Add 3 definitions of new unprivileged
->     ioctl
->   btrfs-progs: libbtrfsutil: Factor out btrfs_util_subvolume_info_fd()
->   btrfs-porgs: libbtrfsutil: Relax the privileges of
->     util_subvolume_info()
->   btrfs-progs: libbtrfsuitl: Factor out
->     btrfs_util_subvolume_iterator_next()
->   btrfs-progs: libbtrfsutil: Relax the privileges of subvolume iterator
->   btrfs-progs: sub list: Use libbtrfsuitl for subvolume list
->   btrfs-progs: sub list: factor out main part of btrfs_list_subvols
->   btrfs-progs: sub list: Change the default behavior of "subvolume list"
->     and allow non-privileged user to call it
->   btrfs-progs: sub list: Add -A option to output path in absolute path
->   btrfs-progs: sub list: Add -f option to follow mounted subvolumes
->     below the path
->   btrfs-progs: sub list: Add --nosort option to output incrementally
->     without sort
->   btrfs-progs: sub list: Update -a option and remove meaningless filter
->   btrfs-progs: sub list: Update help message of -o option
->   btrfs-progs: sub list: Update help message of -d option
->   btrfs-progs: utils: Fallback to open without O_NOATIME flag in
->     find_mount_root():
->   btrfs-progs: sub show: Allow non-privileged user to call "subvolume
->     show"
->   btrfs-progs: test: Add helper function to check if test user exists
->   btrfs-porgs: test: Add cli-test/009 to check subvolume list for both
->     root and normal user
->   btrfs-progs: test: Add cli-test/010 to check "subvolume list -f"
->     option
-> 
->  Documentation/btrfs-subvolume.asciidoc            |  108 +-
->  cmds-subvolume.c                                  | 1372 ++++++++++++++++++++-
->  ioctl.h                                           |   99 ++
->  libbtrfsutil/btrfs.h                              |   97 ++
->  libbtrfsutil/btrfsutil.h                          |   25 +-
->  libbtrfsutil/errors.c                             |   10 +
->  libbtrfsutil/subvolume.c                          |  494 +++++++-
->  tests/cli-tests/009-subvolume-list/test.sh        |  134 ++
->  tests/cli-tests/010-subvolume-list-follow/test.sh |   86 ++
->  tests/common                                      |   10 +
->  utils.c                                           |    3 +
->  11 files changed, 2315 insertions(+), 123 deletions(-)
->  create mode 100755 tests/cli-tests/009-subvolume-list/test.sh
->  create mode 100755 tests/cli-tests/010-subvolume-list-follow/test.sh
+> But normally old roots aren't rewritten for some time simply due to odds 
+> (fuller filesystems will of course recycle them sooner), and the btrfs 
+> mount option usebackuproot (formerly recovery, until the norecovery mount 
+> option that parallels that of other filesystems was added and this option 
+> was renamed to avoid confusion) can be used to try an older root if the 
+> current root is too damaged to successfully mount.
+> > But other than simply by odds not using them again immediately, btrfs has
+> no special protection for those old roots, and trim/discard will recover 
+> them to hardware-unused as it does any other unused space, tho whether it 
+> simply marks them for later processing or actually processes them 
+> immediately is up to the individual implementation -- some do it 
+> immediately, killing all chances at using the backup root because it's 
+> already zeroed out, some don't.
 > 
 
+How is it relevant to "while writes are happening"? Will trimming old
+tress immediately after writes have stopped be any different? Why?
+
+> In the context of the discard mount option, that can mean there's never 
+> any old roots available ever, as they've already been cleaned up by the 
+> hardware due to the discard option telling the hardware to do it.
+> 
+> But even not using that mount option, and simply doing the trims 
+> periodically, as done weekly by for instance the systemd fstrim timer and 
+> service units, or done manually if you prefer, obviously potentially 
+> wipes the old roots at that point.  If the system's effectively idle at 
+> the time, not much risk as the current commit is likely to represent a 
+> filesystem in full stasis, but if there's lots of writes going on at that 
+> moment *AND* the system happens to crash at just the wrong time, before 
+> additional commits have recreated at least a bit of root history, again, 
+> you'll potentially be left without any old roots for the usebackuproot 
+> mount option to try to fall back to, should it actually be necessary.
+> 
+
+Sorry? You are just saying that "previous state can be discarded before
+new state is committed", just more verbosely.

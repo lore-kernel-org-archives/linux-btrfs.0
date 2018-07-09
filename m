@@ -1,104 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp2120.oracle.com ([141.146.126.78]:50152 "EHLO
-        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1732263AbeGJUnV (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 10 Jul 2018 16:43:21 -0400
-Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
-        by aserp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w6AIDrK0096201
-        for <linux-btrfs@vger.kernel.org>; Tue, 10 Jul 2018 18:15:02 GMT
-Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
-        by aserp2120.oracle.com with ESMTP id 2k2p7du4f5-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Tue, 10 Jul 2018 18:15:02 +0000
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w6AIF1X6022214
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Tue, 10 Jul 2018 18:15:01 GMT
-Received: from abhmp0004.oracle.com (abhmp0004.oracle.com [141.146.116.10])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w6AIF1tQ028654
-        for <linux-btrfs@vger.kernel.org>; Tue, 10 Jul 2018 18:15:01 GMT
-From: Anand Jain <anand.jain@oracle.com>
+Received: from mx2.suse.de ([195.135.220.15]:53672 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1750996AbeGIGmG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 9 Jul 2018 02:42:06 -0400
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 96D2EACBB
+        for <linux-btrfs@vger.kernel.org>; Mon,  9 Jul 2018 06:42:05 +0000 (UTC)
+From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: do device clone using the btrfs_scan_one_device
-Date: Wed, 11 Jul 2018 02:18:18 +0800
-Message-Id: <20180710181818.23413-1-anand.jain@oracle.com>
+Subject: [PATCH 0/2] btrfs: chunk and dev-extent related error handler enhancement
+Date: Mon,  9 Jul 2018 14:42:01 +0800
+Message-Id: <20180709064203.32409-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When we add a device to the RO mounted seed device, it becomes a
-RW sprout FS. The following steps are used to hold the seed and
-sprout fs_devices.
- (first two steps are not mandatory for the sprouting, they are there
-  to ensure the seed device remains in the scanned state)
-  . Clone the (mounted) fs_devices, lets call it as old_devices
-  . Now add old_devices to fs_uuids (yeah, there is duplicate fsid in the
-    list, as we are under uuid_mutex so its fine).
+Can be fetched with all existing tree-checker/bg<->chunk error detector
+from github:
+https://github.com/adam900710/linux/tree/tree_checker_enhance
 
-  . Alloc a new fs_devices, lets call it as seed_devices
-  . Copy fs_devices into the seed_devices
-  . Move fs_devices::devices into seed_devices::devices
-  . Bring seed_devices to under fs_devices::seed
-    (fs_devices->seed = seed_devices)
-  . Assign a new FSID to the fs_devices and add the new writable device
-    to the fs_devices.
+Still some fuzzed images reported from Xu Wen.
+This time, 2 can be fixed by chunk <-> dev extent mapping verification.
+One BUG_ON() can be removed.
 
-This patch makes the following changes..
-As we clone fs_devices to make sure the device remains scanned after the
-sprouting. So use the btrfs_scan_one_device() code instead. And do it
-at the end of the sprouting.
+The remaining 2 images are all mostly about extent tree corruption,
+which is not as easy to detect, since extent tree has way more complex
+reference relationship.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- fs/btrfs/volumes.c | 21 ++++++++++++---------
- 1 file changed, 12 insertions(+), 9 deletions(-)
+At least, fix what we can first.
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index b63aae267ebe..5bfc3feb715a 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -2266,7 +2266,7 @@ int btrfs_find_device_by_devspec(struct btrfs_fs_info *fs_info, u64 devid,
- static int btrfs_prepare_sprout(struct btrfs_fs_info *fs_info)
- {
- 	struct btrfs_fs_devices *fs_devices = fs_info->fs_devices;
--	struct btrfs_fs_devices *old_devices;
-+	struct btrfs_fs_devices *old_fs_devices;
- 	struct btrfs_fs_devices *seed_devices;
- 	struct btrfs_super_block *disk_super = fs_info->super_copy;
- 	struct btrfs_device *device;
-@@ -2280,14 +2280,6 @@ static int btrfs_prepare_sprout(struct btrfs_fs_info *fs_info)
- 	if (IS_ERR(seed_devices))
- 		return PTR_ERR(seed_devices);
- 
--	old_devices = clone_fs_devices(fs_devices);
--	if (IS_ERR(old_devices)) {
--		kfree(seed_devices);
--		return PTR_ERR(old_devices);
--	}
--
--	list_add(&old_devices->fs_list, &fs_uuids);
--
- 	memcpy(seed_devices, fs_devices, sizeof(*seed_devices));
- 	seed_devices->opened = 1;
- 	INIT_LIST_HEAD(&seed_devices->devices);
-@@ -2320,6 +2312,17 @@ static int btrfs_prepare_sprout(struct btrfs_fs_info *fs_info)
- 		      ~BTRFS_SUPER_FLAG_SEEDING;
- 	btrfs_set_super_flags(disk_super, super_flags);
- 
-+	/*
-+	 * As the above code hijacked the original seed fs_devices, now
-+	 * create a new one for the original seed FSID.
-+	 */
-+	list_for_each_entry(device, &fs_devices->seed->devices, dev_list) {
-+		if (!device->name)
-+			continue;
-+		btrfs_scan_one_device(device->name->str, FMODE_READ,
-+				      fs_info->bdev_holder, &old_fs_devices);
-+	}
-+
- 	return 0;
- }
- 
+And for chunk <-> dev extent mapping verification, it will trigger
+read on the whole device tree, to iterate through all DEV_EXTENT items.
+This will introduce an extra overhead on mount.
+
+However since device tree is pretty small (the same level as chunk tree),
+and according to previous analyse on mount time, chunk tree iteration is
+only a pretty small fraction of the whole mount time (less than 5%), it
+shouldn't bring obvious impact to users.
+
+Qu Wenruo (2):
+  btrfs: Introduce mount time chunk <-> dev extent mapping check
+  btrfs: Exit gracefully when failed to add chunk map
+
+ fs/btrfs/disk-io.c |   7 ++
+ fs/btrfs/volumes.c | 181 ++++++++++++++++++++++++++++++++++++++++++++-
+ fs/btrfs/volumes.h |   2 +
+ 3 files changed, 188 insertions(+), 2 deletions(-)
+
 -- 
-2.7.0
+2.18.0
 

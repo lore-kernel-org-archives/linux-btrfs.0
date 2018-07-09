@@ -1,71 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp2130.oracle.com ([156.151.31.86]:44468 "EHLO
-        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751048AbeGIIan (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Jul 2018 04:30:43 -0400
-Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
-        by userp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w698SlRx017244
-        for <linux-btrfs@vger.kernel.org>; Mon, 9 Jul 2018 08:30:42 GMT
-Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
-        by userp2130.oracle.com with ESMTP id 2k2p75u30b-1
+Received: from aserp2130.oracle.com ([141.146.126.79]:55786 "EHLO
+        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753725AbeGIIao (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Jul 2018 04:30:44 -0400
+Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
+        by aserp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w698SQY3052482
+        for <linux-btrfs@vger.kernel.org>; Mon, 9 Jul 2018 08:30:43 GMT
+Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
+        by aserp2130.oracle.com with ESMTP id 2k2p75k3d4-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 09 Jul 2018 08:30:42 +0000
+        for <linux-btrfs@vger.kernel.org>; Mon, 09 Jul 2018 08:30:43 +0000
 Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id w698UfrN017333
+        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id w698UgLl004103
         (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 9 Jul 2018 08:30:41 GMT
+        for <linux-btrfs@vger.kernel.org>; Mon, 9 Jul 2018 08:30:42 GMT
 Received: from abhmp0004.oracle.com (abhmp0004.oracle.com [141.146.116.10])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w698Ue88006258
-        for <linux-btrfs@vger.kernel.org>; Mon, 9 Jul 2018 08:30:40 GMT
+        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w698UgMB006268
+        for <linux-btrfs@vger.kernel.org>; Mon, 9 Jul 2018 08:30:42 GMT
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/2] btrfs: code reorder in btrfs_prepare_sprout
-Date: Mon,  9 Jul 2018 16:33:52 +0800
-Message-Id: <20180709083353.14517-1-anand.jain@oracle.com>
+Subject: [PATCH 2/2] btrfs: use fs_devices instead of the dereference
+Date: Mon,  9 Jul 2018 16:33:53 +0800
+Message-Id: <20180709083353.14517-2-anand.jain@oracle.com>
+In-Reply-To: <20180709083353.14517-1-anand.jain@oracle.com>
+References: <20180709083353.14517-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-No functional change, bring the clone of fs_devices and its
-operations closer, so that it indicates its purpose.
-
-Also add a comment to indicate why we clone the fs_devices.
+We have assigned the %fs_info->fs_devices in %fs_devices as its not
+modified just use it for the mutex_lock().
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- fs/btrfs/volumes.c | 13 ++++++++-----
- 1 file changed, 8 insertions(+), 5 deletions(-)
+ fs/btrfs/volumes.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index b63aae267ebe..0e92969b1adc 100644
+index 0e92969b1adc..781c79a2ff7a 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -2276,18 +2276,21 @@ static int btrfs_prepare_sprout(struct btrfs_fs_info *fs_info)
- 	if (!fs_devices->seeding)
- 		return -EINVAL;
+@@ -2297,7 +2297,7 @@ static int btrfs_prepare_sprout(struct btrfs_fs_info *fs_info)
+ 	INIT_LIST_HEAD(&seed_devices->alloc_list);
+ 	mutex_init(&seed_devices->device_list_mutex);
  
--	seed_devices = alloc_fs_devices(NULL);
--	if (IS_ERR(seed_devices))
--		return PTR_ERR(seed_devices);
--
-+	/*
-+	 * This step ensures the scanned seed device remains scanned,
-+	 * its not a must for the sprout operation though.
-+	 */
- 	old_devices = clone_fs_devices(fs_devices);
- 	if (IS_ERR(old_devices)) {
- 		kfree(seed_devices);
- 		return PTR_ERR(old_devices);
- 	}
--
- 	list_add(&old_devices->fs_list, &fs_uuids);
+-	mutex_lock(&fs_info->fs_devices->device_list_mutex);
++	mutex_lock(&fs_devices->device_list_mutex);
+ 	list_splice_init_rcu(&fs_devices->devices, &seed_devices->devices,
+ 			      synchronize_rcu);
+ 	list_for_each_entry(device, &seed_devices->devices, dev_list)
+@@ -2317,7 +2317,7 @@ static int btrfs_prepare_sprout(struct btrfs_fs_info *fs_info)
+ 	generate_random_uuid(fs_devices->fsid);
+ 	memcpy(fs_info->fsid, fs_devices->fsid, BTRFS_FSID_SIZE);
+ 	memcpy(disk_super->fsid, fs_devices->fsid, BTRFS_FSID_SIZE);
+-	mutex_unlock(&fs_info->fs_devices->device_list_mutex);
++	mutex_unlock(&fs_devices->device_list_mutex);
  
-+	seed_devices = alloc_fs_devices(NULL);
-+	if (IS_ERR(seed_devices))
-+		return PTR_ERR(seed_devices);
-+
- 	memcpy(seed_devices, fs_devices, sizeof(*seed_devices));
- 	seed_devices->opened = 1;
- 	INIT_LIST_HEAD(&seed_devices->devices);
+ 	super_flags = btrfs_super_flags(disk_super) &
+ 		      ~BTRFS_SUPER_FLAG_SEEDING;
 -- 
 2.7.0
 

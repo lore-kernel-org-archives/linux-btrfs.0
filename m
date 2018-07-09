@@ -1,215 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:64827 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1726701AbeGLBch (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 11 Jul 2018 21:32:37 -0400
-From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Subject: [PATCH v10.3 5/5] btrfs-progs: dedupe: introduce reconfigure subcommand
-Date: Thu, 12 Jul 2018 09:25:17 +0800
-Message-ID: <20180712012517.29374-6-lufq.fnst@cn.fujitsu.com>
-In-Reply-To: <20180712012517.29374-1-lufq.fnst@cn.fujitsu.com>
-References: <20180712012517.29374-1-lufq.fnst@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from mx2.suse.de ([195.135.220.15]:54796 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1750952AbeGIGu5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 9 Jul 2018 02:50:57 -0400
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id B9AA9ACBB
+        for <linux-btrfs@vger.kernel.org>; Mon,  9 Jul 2018 06:50:56 +0000 (UTC)
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/2] btrfs-progs: Exit gracefully when overlap chunks are detected
+Date: Mon,  9 Jul 2018 14:50:53 +0800
+Message-Id: <20180709065054.1392-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+BUG_ON() can be triggered if some image contains overlap chunks.
+volumes.c:1930: read_one_chunk: BUG_ON `ret` triggered, value -17
+btrfs(+0x2cf12)[0x5601efa17f12]
+btrfs(+0x2fd8b)[0x5601efa1ad8b]
+btrfs(btrfs_read_chunk_tree+0x2bf)[0x5601efa1b30f]
+btrfs(btrfs_setup_chunk_tree_and_device_map+0xe8)[0x5601efa07718]
+btrfs(+0x1c944)[0x5601efa07944]
+btrfs(open_ctree_fs_info+0x90)[0x5601efa07b90]
+btrfs(cmd_check+0x4d7)[0x5601efa4f8c7]
+btrfs(main+0x88)[0x5601ef9fd768]
+/usr/lib/libc.so.6(__libc_start_main+0xeb)[0x7f3c7787306b]
+btrfs(_start+0x2a)[0x5601ef9fd88a]
 
-Introduce reconfigure subcommand to co-operate with new kernel ioctl
-modification.
+Extent cache code can already detect it without problem, we only need to
+remove the BUG_ON() and exit gracefully.
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Reported-by: Xu Wen <wen.xu@gatech.edu>
+Link: https://bugzilla.kernel.org/show_bug.cgi?id=200409
+Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- Documentation/btrfs-dedupe-inband.asciidoc |  7 ++
- cmds-dedupe-ib.c                           | 75 +++++++++++++++++-----
- 2 files changed, 66 insertions(+), 16 deletions(-)
+ volumes.c | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
 
-diff --git a/Documentation/btrfs-dedupe-inband.asciidoc b/Documentation/btrfs-dedupe-inband.asciidoc
-index df068c31ca3a..5fc4bb0d5940 100644
---- a/Documentation/btrfs-dedupe-inband.asciidoc
-+++ b/Documentation/btrfs-dedupe-inband.asciidoc
-@@ -86,6 +86,13 @@ And compression has higher priority than in-band de-duplication, means if
- compression and de-duplication is enabled at the same time, only compression
- will work.
+diff --git a/volumes.c b/volumes.c
+index 24eb3e8b2578..21a1fc31fcba 100644
+--- a/volumes.c
++++ b/volumes.c
+@@ -1924,9 +1924,12 @@ static int read_one_chunk(struct btrfs_fs_info *fs_info, struct btrfs_key *key,
  
-+*reconfigure* [options] <path>::
-+Re-configure in-band de-duplication parameters of a filesystem.
-++
-+In-band de-duplication must be enbaled first before re-configuration.
-++
-+[Options] are the same with 'btrfs dedupe-inband enable'.
-+
- *status* <path>::
- Show current in-band de-duplication status of a filesystem.
- 
-diff --git a/cmds-dedupe-ib.c b/cmds-dedupe-ib.c
-index 854cbda131a3..925d5a8f756a 100644
---- a/cmds-dedupe-ib.c
-+++ b/cmds-dedupe-ib.c
-@@ -56,7 +56,6 @@ static const char * const cmd_dedupe_ib_enable_usage[] = {
- 	NULL
- };
- 
--
- #define report_fatal_parameter(dargs, old, member, type, err_val, fmt)	\
- ({									\
- 	if (dargs->member != old->member &&				\
-@@ -88,6 +87,12 @@ static void report_parameter_error(struct btrfs_ioctl_dedupe_args *dargs,
- 		}
- 		report_option_parameter(dargs, old, flags, u8, -1, x);
  	}
-+
-+	if (dargs->status == 0 && old->cmd == BTRFS_DEDUPE_CTL_RECONF) {
-+		error("must enable dedupe before reconfiguration");
-+		return;
-+	}
-+
- 	if (report_fatal_parameter(dargs, old, cmd, u16, -1, u) ||
- 	    report_fatal_parameter(dargs, old, blocksize, u64, -1, llu) ||
- 	    report_fatal_parameter(dargs, old, backend, u16, -1, u) ||
-@@ -100,14 +105,17 @@ static void report_parameter_error(struct btrfs_ioctl_dedupe_args *dargs,
- 		old->limit_nr, old->limit_mem);
- }
- 
--static int cmd_dedupe_ib_enable(int argc, char **argv)
-+static int enable_reconfig_dedupe(int argc, char **argv, int reconf)
- {
- 	int ret;
- 	int fd = -1;
- 	char *path;
- 	u64 blocksize = BTRFS_DEDUPE_BLOCKSIZE_DEFAULT;
-+	int blocksize_set = 0;
- 	u16 hash_algo = BTRFS_DEDUPE_HASH_SHA256;
-+	int hash_algo_set = 0;
- 	u16 backend = BTRFS_DEDUPE_BACKEND_INMEMORY;
-+	int backend_set = 0;
- 	u64 limit_nr = 0;
- 	u64 limit_mem = 0;
- 	u64 sys_mem = 0;
-@@ -129,20 +137,22 @@ static int cmd_dedupe_ib_enable(int argc, char **argv)
- 			{ NULL, 0, NULL, 0}
- 		};
- 
--		c = getopt_long(argc, argv, "s:b:a:l:m:", long_options, NULL);
-+		c = getopt_long(argc, argv, "s:b:a:l:m:f", long_options, NULL);
- 		if (c < 0)
- 			break;
- 		switch (c) {
- 		case 's':
--			if (!strcasecmp("inmemory", optarg))
-+			if (!strcasecmp("inmemory", optarg)) {
- 				backend = BTRFS_DEDUPE_BACKEND_INMEMORY;
--			else {
-+				backend_set = 1;
-+			} else {
- 				error("unsupported dedupe backend: %s", optarg);
- 				exit(1);
- 			}
- 			break;
- 		case 'b':
- 			blocksize = parse_size(optarg);
-+			blocksize_set = 1;
- 			break;
- 		case 'a':
- 			if (strcmp("sha256", optarg)) {
-@@ -226,26 +236,40 @@ static int cmd_dedupe_ib_enable(int argc, char **argv)
- 		return 1;
- 	}
- 	memset(&dargs, -1, sizeof(dargs));
--	dargs.cmd = BTRFS_DEDUPE_CTL_ENABLE;
--	dargs.blocksize = blocksize;
--	dargs.hash_algo = hash_algo;
--	dargs.limit_nr = limit_nr;
--	dargs.limit_mem = limit_mem;
--	dargs.backend = backend;
--	if (force)
--		dargs.flags |= BTRFS_DEDUPE_FLAG_FORCE;
--	else
--		dargs.flags = 0;
-+	if (reconf) {
-+		dargs.cmd = BTRFS_DEDUPE_CTL_RECONF;
-+		if (blocksize_set)
-+			dargs.blocksize = blocksize;
-+		if (hash_algo_set)
-+			dargs.hash_algo = hash_algo;
-+		if (backend_set)
-+			dargs.backend = backend;
-+		dargs.limit_nr = limit_nr;
-+		dargs.limit_mem = limit_mem;
-+	} else {
-+		dargs.cmd = BTRFS_DEDUPE_CTL_ENABLE;
-+		dargs.blocksize = blocksize;
-+		dargs.hash_algo = hash_algo;
-+		dargs.limit_nr = limit_nr;
-+		dargs.limit_mem = limit_mem;
-+		dargs.backend = backend;
-+		if (force)
-+			dargs.flags |= BTRFS_DEDUPE_FLAG_FORCE;
-+		else
-+			dargs.flags = 0;
+ 	ret = insert_cache_extent(&map_tree->cache_tree, &map->ce);
+-	BUG_ON(ret);
++	if (ret < 0) {
++		error("failed to add chunk map start=%llu len=%llu: %d (%s)",
++		      map->ce.start, map->ce.size, ret, strerror(-ret));
 +	}
  
- 	memcpy(&backup, &dargs, sizeof(dargs));
- 	ret = ioctl(fd, BTRFS_IOC_DEDUPE_CTL, &dargs);
- 	if (ret < 0) {
--		error("failed to enable inband deduplication: %s",
-+		error("failed to (%s) inband deduplication: %s",
-+		      reconf ? "reconfigure" : "enable",
- 		      strerror(errno));
- 		report_parameter_error(&dargs, &backup);
- 		ret = 1;
- 		goto out;
- 	}
-+	report_parameter_error(&dargs, &backup);
- 	ret = 0;
- mem_check:
- 	if (!force && dargs.limit_mem > sys_mem / 4) {
-@@ -261,6 +285,10 @@ out:
- 	close_file_or_dir(fd, dirstream);
- 	return ret;
- }
-+static int cmd_dedupe_ib_enable(int argc, char **argv)
-+{
-+	return enable_reconfig_dedupe(argc, argv, 0);
-+}
- 
- static const char * const cmd_dedupe_ib_disable_usage[] = {
- 	"btrfs dedupe disable <path>",
-@@ -381,6 +409,19 @@ out:
- 	return ret;
+-	return 0;
++	return ret;
  }
  
-+static int cmd_dedupe_ib_reconf(int argc, char **argv)
-+{
-+	return enable_reconfig_dedupe(argc, argv, 1);
-+}
-+
-+static const char * const cmd_dedupe_ib_reconf_usage[] = {
-+	"btrfs dedupe-inband reconfigure [options] <path>",
-+	"Reconfigure in-band(write time) de-duplication of a btrfs.",
-+	"",
-+	"Options are the same as 'btrfs dedupe-inband enable'",
-+	NULL
-+};
-+
- const struct cmd_group dedupe_ib_cmd_group = {
- 	dedupe_ib_cmd_group_usage, dedupe_ib_cmd_group_info, {
- 		{ "enable", cmd_dedupe_ib_enable, cmd_dedupe_ib_enable_usage,
-@@ -389,6 +430,8 @@ const struct cmd_group dedupe_ib_cmd_group = {
- 		  NULL, 0},
- 		{ "status", cmd_dedupe_ib_status, cmd_dedupe_ib_status_usage,
- 		  NULL, 0},
-+		{ "reconfigure", cmd_dedupe_ib_reconf,
-+		  cmd_dedupe_ib_reconf_usage, NULL, 0},
- 		NULL_CMD_STRUCT
- 	}
- };
+ static int fill_device_from_item(struct extent_buffer *leaf,
 -- 
 2.18.0
-
-
 

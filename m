@@ -1,156 +1,151 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:59279 "EHLO
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:14477 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1754597AbeGJB1f (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Jul 2018 21:27:35 -0400
-Subject: Re: Fwd: Re: So, does btrfs check lowmem take days? weeks?
+        with ESMTP id S1754597AbeGJBay (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Jul 2018 21:30:54 -0400
+Subject: Re: So, does btrfs check lowmem take days? weeks?
+To: Marc MERLIN <marc@merlins.org>, Su Yue <Damenly_Su@gmx.com>
+References: <94caf6c5-77e1-3da0-d026-a29edb08d410@cn.fujitsu.com>
+ <CAKhhfD6svMo=28_UX=ZjRRmF6zNadd3H+8vVZKGX4zjqVr-giw@mail.gmail.com>
+ <3a83cb3c-de2b-e803-f07e-31f7de0ee25f@cn.fujitsu.com>
+ <b1b2d361-eb1a-f172-45d3-409abd131d2b@cn.fujitsu.com>
+ <20180705153023.GA30566@merlins.org>
+ <trinity-d028b6bd-31d9-41c0-a091-47bcb810cdc3-1530808069711@msvc-mesg-gmx023>
+ <20180705165049.t56dvqpz7ljjan5c@merlins.org>
+ <trinity-79578bdf-a849-4342-a082-f2b882f2251e-1530810500266@msvc-mesg-gmx024>
+ <20180706160523.kxwxjzwneseaamnt@merlins.org>
+ <20180706175636.53ebp7drifiqu5b7@merlins.org>
+ <20180707172114.bfc26eoahullffgg@merlins.org>
+CC: linux-btrfs <linux-btrfs@vger.kernel.org>,
+        Qu Wenruo <quwenruo.btrfs@gmx.com>
 From: Su Yue <suy.fnst@cn.fujitsu.com>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-CC: Qu Wenruo <quwenruo.btrfs@gmx.com>, Marc MERLIN <marc@merlins.org>
-References: <20180709174818.wq2d4awmgasxgwad@merlins.org>
- <ca6355da-86fc-6007-44ff-171ddb692c6f@cn.fujitsu.com>
-Message-ID: <c8c68d2c-99ff-8cb3-56f6-918d15ddf42c@cn.fujitsu.com>
-Date: Tue, 10 Jul 2018 09:33:58 +0800
+Message-ID: <4176efa9-0753-ed28-cf15-69f0b1f1a09b@cn.fujitsu.com>
+Date: Tue, 10 Jul 2018 09:37:16 +0800
 MIME-Version: 1.0
-In-Reply-To: <ca6355da-86fc-6007-44ff-171ddb692c6f@cn.fujitsu.com>
-Content-Type: text/plain; charset="windows-1252"; format=flowed
+In-Reply-To: <20180707172114.bfc26eoahullffgg@merlins.org>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Forgot to CC Marc.
+[CC to linux-btrfs]
 
-On 07/10/2018 09:33 AM, Su Yue wrote:
-> [FWD to linux-btrfs]
-> Thanks to Marc's patient of running and tests btrfsck lowmem mode
-> in recent days.
-> The FS has a large extent tree but luckily few are corrupted, they are
-> all fixed by special version. Reloc trees were cleaned too.
-> So the FS can be mounted with RW.
+Here is the log of wrong extent data.
+
+On 07/08/2018 01:21 AM, Marc MERLIN wrote:
+> On Fri, Jul 06, 2018 at 10:56:36AM -0700, Marc MERLIN wrote:
+>> On Fri, Jul 06, 2018 at 09:05:23AM -0700, Marc MERLIN wrote:
+>>> Ok, this is where I am now:
+>>> WARNING: debug: end of checking extent item[18457780273152 169 1] type: 176 offset: 2
+>>> checking extent items [18457780273152/18457780273152]
+>>> ERROR: errors found in extent allocation tree or chunk allocation
+>>> checking fs roots
+>>> ERROR: root 17592 EXTENT_DATA[25937109 4096] gap exists, expected: EXTENT_DATA[25937109 4033]
+>>> ERROR: root 17592 EXTENT_DATA[25937109 8192] gap exists, expected: EXTENT_DATA[25937109 8129]
+>>> ERROR: root 17592 EXTENT_DATA[25937109 20480] gap exists, expected: EXTENT_DATA[25937109 20417]
+>>> ERROR: root 17592 EXTENT_DATA[25937493 4096] gap exists, expected: EXTENT_DATA[25937493 3349]
+>>> ERROR: root 17592 EXTENT_DATA[25937493 8192] gap exists, expected: EXTENT_DATA[25937493 7445]
+>>> ERROR: root 17592 EXTENT_DATA[25937493 12288] gap exists, expected: EXTENT_DATA[25937493 11541]
+>>> ERROR: root 17592 EXTENT_DATA[25941335 4096] gap exists, expected: EXTENT_DATA[25941335 4091]
+>>> ERROR: root 17592 EXTENT_DATA[25941335 8192] gap exists, expected: EXTENT_DATA[25941335 8187]
+>>> ERROR: root 17592 EXTENT_DATA[25942002 4096] gap exists, expected: EXTENT_DATA[25942002 4093]
+>>> ERROR: root 17592 EXTENT_DATA[25942790 4096] gap exists, expected: EXTENT_DATA[25942790 4094]
+>>> ERROR: root 17592 EXTENT_DATA[25945819 4096] gap exists, expected: EXTENT_DATA[25945819 4093]
+>>> ERROR: root 17592 EXTENT_DATA[26064834 4096] gap exists, expected: EXTENT_DATA[26064834 129]
+>>> ERROR: root 17592 EXTENT_DATA[26064834 135168] gap exists, expected: EXTENT_DATA[26064834 131201]
+>>> ERROR: root 17592 EXTENT_DATA[26064834 266240] gap exists, expected: EXTENT_DATA[26064834 262273]
+>>> ERROR: root 17592 EXTENT_DATA[26064834 397312] gap exists, expected: EXTENT_DATA[26064834 393345]
+>>> ERROR: root 17592 EXTENT_DATA[26064834 528384] gap exists, expected: EXTENT_DATA[26064834 524417]
+>>> ERROR: root 17592 EXTENT_DATA[26064834 659456] gap exists, expected: EXTENT_DATA[26064834 655489]
+>>> ERROR: root 17592 EXTENT_DATA[26064834 790528] gap exists, expected: EXTENT_DATA[26064834 786561]
+>>> ERROR: root 17592 EXTENT_DATA[26064834 921600] gap exists, expected: EXTENT_DATA[26064834 917633]
+>>> ERROR: root 17592 EXTENT_DATA[26064834 929792] gap exists, expected: EXTENT_DATA[26064834 925825]
+>>> ERROR: root 17592 EXTENT_DATA[26064834 1224704] gap exists, expected: EXTENT_DATA[26064834 1220737]
+>>>
+>>> I'm not sure how long it's been stuck on that line. I'll watch it today.
+>>
+>> Ok, it's been stuck there for 2H.
 > 
-> However, the remaining errors of extent data in file trees are 
-> unresloved, they are all about holes.
-> Since I'm not familiar with kernel code, not sure how serious those 
-> errors are and what result could be during write/read those wrong
-> items.
+> Well, it's now the next day and it's finished running:
 > 
-> Marc also has some questions in the part forwarded, replies are
-> always welcome.
+> checking extent items [18457780273152/18457780273152]
+> ERROR: errors found in extent allocation tree or chunk allocation
+> checking fs roots
+> ERROR: root 17592 EXTENT_DATA[25937109 4096] gap exists, expected: EXTENT_DATA[25937109 4033]
+> ERROR: root 17592 EXTENT_DATA[25937109 8192] gap exists, expected: EXTENT_DATA[25937109 8129]
+> ERROR: root 17592 EXTENT_DATA[25937109 20480] gap exists, expected: EXTENT_DATA[25937109 20417]
+> ERROR: root 17592 EXTENT_DATA[25937493 4096] gap exists, expected: EXTENT_DATA[25937493 3349]
+> ERROR: root 17592 EXTENT_DATA[25937493 8192] gap exists, expected: EXTENT_DATA[25937493 7445]
+> ERROR: root 17592 EXTENT_DATA[25937493 12288] gap exists, expected: EXTENT_DATA[25937493 11541]
+> ERROR: root 17592 EXTENT_DATA[25941335 4096] gap exists, expected: EXTENT_DATA[25941335 4091]
+> ERROR: root 17592 EXTENT_DATA[25941335 8192] gap exists, expected: EXTENT_DATA[25941335 8187]
+> ERROR: root 17592 EXTENT_DATA[25942002 4096] gap exists, expected: EXTENT_DATA[25942002 4093]
+> ERROR: root 17592 EXTENT_DATA[25942790 4096] gap exists, expected: EXTENT_DATA[25942790 4094]
+> ERROR: root 17592 EXTENT_DATA[25945819 4096] gap exists, expected: EXTENT_DATA[25945819 4093]
+> ERROR: root 17592 EXTENT_DATA[26064834 4096] gap exists, expected: EXTENT_DATA[26064834 129]
+> ERROR: root 17592 EXTENT_DATA[26064834 135168] gap exists, expected: EXTENT_DATA[26064834 131201]
+> ERROR: root 17592 EXTENT_DATA[26064834 266240] gap exists, expected: EXTENT_DATA[26064834 262273]
+> ERROR: root 17592 EXTENT_DATA[26064834 397312] gap exists, expected: EXTENT_DATA[26064834 393345]
+> ERROR: root 17592 EXTENT_DATA[26064834 528384] gap exists, expected: EXTENT_DATA[26064834 524417]
+> ERROR: root 17592 EXTENT_DATA[26064834 659456] gap exists, expected: EXTENT_DATA[26064834 655489]
+> ERROR: root 17592 EXTENT_DATA[26064834 790528] gap exists, expected: EXTENT_DATA[26064834 786561]
+> ERROR: root 17592 EXTENT_DATA[26064834 921600] gap exists, expected: EXTENT_DATA[26064834 917633]
+> ERROR: root 17592 EXTENT_DATA[26064834 929792] gap exists, expected: EXTENT_DATA[26064834 925825]
+> ERROR: root 17592 EXTENT_DATA[26064834 1224704] gap exists, expected: EXTENT_DATA[26064834 1220737]
+> ERROR: root 21322 EXTENT_DATA[25320803 4096] gap exists, expected: EXTENT_DATA[25320803 56]
+> ERROR: root 21322 EXTENT_DATA[25320803 143360] gap exists, expected: EXTENT_DATA[25320803 139320]
+> ERROR: root 21322 EXTENT_DATA[25320803 151552] gap exists, expected: EXTENT_DATA[25320803 147512]
+> ERROR: root 21322 EXTENT_DATA[25320803 290816] gap exists, expected: EXTENT_DATA[25320803 286776]
+> ERROR: root 21322 EXTENT_DATA[25320803 294912] gap exists, expected: EXTENT_DATA[25320803 290872]
+> ERROR: root 21322 EXTENT_DATA[25320803 2949120] gap exists, expected: EXTENT_DATA[25320803 2945080]
+> ERROR: root 21322 EXTENT_DATA[25320803 2953216] gap exists, expected: EXTENT_DATA[25320803 2949176]
+> ERROR: root 21322 EXTENT_DATA[25320803 5836800] gap exists, expected: EXTENT_DATA[25320803 5832760]
+> ERROR: root 22870 EXTENT_DATA[26062114 4096] gap exists, expected: EXTENT_DATA[26062114 89]
+> ERROR: root 22870 EXTENT_DATA[26062114 16384] gap exists, expected: EXTENT_DATA[26062114 12377]
+> ERROR: root 22870 EXTENT_DATA[26062114 20480] gap exists, expected: EXTENT_DATA[26062114 16473]
+> (many lines skipped)
+> ERROR: root 23124 EXTENT_DATA[26064190 390852608] gap exists, expected: EXTENT_DATA[26064190 390848601]
+> ERROR: root 23124 EXTENT_DATA[26064190 390983680] gap exists, expected: EXTENT_DATA[26064190 390979673]
+> ERROR: root 23124 EXTENT_DATA[26064190 391114752] gap exists, expected: EXTENT_DATA[26064190 391110745]
+> ERROR: root 23124 EXTENT_DATA[26064190 391245824] gap exists, expected: EXTENT_DATA[26064190 391241817]
+> ERROR: root 23124 EXTENT_DATA[26064190 391376896] gap exists, expected: EXTENT_DATA[26064190 391372889]
+> ERROR: root 23124 EXTENT_DATA[26064190 391507968] gap exists, expected: EXTENT_DATA[26064190 391503961]
+> ERROR: root 23124 EXTENT_DATA[26064190 391639040] gap exists, expected: EXTENT_DATA[26064190 391635033]
+> ERROR: root 23124 EXTENT_DATA[26064190 391770112] gap exists, expected: EXTENT_DATA[26064190 391766105]
+> ERROR: root 23124 EXTENT_DATA[26064190 391901184] gap exists, expected: EXTENT_DATA[26064190 391897177]
+> ERROR: root 23124 EXTENT_DATA[26064190 392032256] gap exists, expected: EXTENT_DATA[26064190 392028249]
+> ERROR: root 23124 EXTENT_DATA[26064190 392163328] gap exists, expected: EXTENT_DATA[26064190 392159321]
+> ERROR: root 23124 EXTENT_DATA[26064190 392294400] gap exists, expected: EXTENT_DATA[26064190 392290393]
+> ERROR: root 23124 EXTENT_DATA[26064190 392425472] gap exists, expected: EXTENT_DATA[26064190 392421465]
+> ERROR: root 23124 EXTENT_DATA[26064190 392556544] gap exists, expected: EXTENT_DATA[26064190 392552537]
+> ERROR: root 23124 EXTENT_DATA[26064190 392687616] gap exists, expected: EXTENT_DATA[26064190 392683609]
+> ERROR: root 23124 EXTENT_DATA[26064190 392818688] gap exists, expected: EXTENT_DATA[26064190 392814681]
+> ERROR: root 23124 EXTENT_DATA[26064190 392949760] gap exists, expected: EXTENT_DATA[26064190 392945753]
+> ERROR: root 23186 EXTENT_DATA[26064834 4096] gap exists, expected: EXTENT_DATA[26064834 129]
+> ERROR: root 23186 EXTENT_DATA[26064834 135168] gap exists, expected: EXTENT_DATA[26064834 131201]
+> ERROR: root 23186 EXTENT_DATA[26064834 266240] gap exists, expected: EXTENT_DATA[26064834 262273]
+> ERROR: root 23186 EXTENT_DATA[26064834 397312] gap exists, expected: EXTENT_DATA[26064834 393345]
+> ERROR: root 23186 EXTENT_DATA[26064834 528384] gap exists, expected: EXTENT_DATA[26064834 524417]
+> ERROR: root 23186 EXTENT_DATA[26064834 659456] gap exists, expected: EXTENT_DATA[26064834 655489]
+> ERROR: root 23186 EXTENT_DATA[26064834 790528] gap exists, expected: EXTENT_DATA[26064834 786561]
+> ERROR: root 23186 EXTENT_DATA[26064834 921600] gap exists, expected: EXTENT_DATA[26064834 917633]
+> ERROR: root 23186 EXTENT_DATA[26064834 929792] gap exists, expected: EXTENT_DATA[26064834 925825]
+> ERROR: root 23186 EXTENT_DATA[26064834 1224704] gap exists, expected: EXTENT_DATA[26064834 1220737]
+> ERROR: errors found in fs roots
+> cache and super generation don't match, space cache will be invalidated
+> found 13697056956416 bytes used, error(s) found
+> total csum bytes: 0
+> total tree bytes: 10282598400
+> total fs tree bytes: 0
+> total extent tree bytes: 10282598400
+> btree space waste bytes: 2742975592
+> file data blocks allocated: 0
+>   referenced 0
 > 
-> Error messages are showed in the last.
 > 
-> 
-> -------- Forwarded Message --------
-> Subject: Re: So, does btrfs check lowmem take days? weeks?
-> Date: Mon, 9 Jul 2018 10:48:18 -0700
-> From: Marc MERLIN <marc@merlins.org>
-> To: Su Yue <Damenly_Su@gmx.com>
-> CC: quwenruo.btrfs@gmx.com, Su Yue <suy.fnst@cn.fujitsu.com>
-> 
-> Success!
-> Well done Su, this is a huge improvement to the lowmem code. It went 
-> from days to less than 3 hours.
-> 
-> I'll paste the logs below.
-> 
-> Questions:
-> 1) I assume I first need to delete a lot of snapshots. What is the limit 
-> in your opinion?
-> 100? 150? other?
-> 
-> 2) my filesystem is somewhat misbalanced. Which balance options do you 
-> think are safe to use?
-> 
-> 3) Should I start a scrub now (takes about 1 day) or anything else to
-> check that the filesystem is hopefully not damaged anymore?
-> 
-> 4) should btrfs check reset the corrupt counter?
-> bdev /dev/mapper/dshelf2 errs: wr 0, rd 0, flush 0, corrupt 2, gen 0
-> for now, should I reset it manually?
+> What do I do next?
 > 
 > Thanks,
 > Marc
-> 
-> 
-> gargamel:/var/local/src/btrfs-progs.sy# ./btrfsck --mode=lowmem -q 
-> --repair /dev/mapper/dshelf2
-> enabling repair mode
-> WARNING: low-memory mode repair support is only partial
-> Checking filesystem on /dev/mapper/dshelf2
-> UUID: 0f1a0c9f-4e54-4fa7-8736-fd50818ff73d
-> Created new chunk [18460145811456 1073741824]
-> Add one extent data backref [84302495744 69632]
-> Add one extent data backref [84302495744 69632]
-> Add one extent data backref [125712527360 12214272]
-> Add one extent data backref [125730848768 5111808]
-> Add one extent data backref [125730848768 5111808]
-> Add one extent data backref [125736914944 6037504]
-> Add one extent data backref [125736914944 6037504]
-> Add one extent data backref [129952120832 20242432]
-> Add one extent data backref [129952120832 20242432]
-> Add one extent data backref [134925357056 11829248]
-> Add one extent data backref [134925357056 11829248]
-> Add one extent data backref [147895111680 12345344]
-> Add one extent data backref [147895111680 12345344]
-> Add one extent data backref [150850146304 17522688]
-> Add one extent data backref [156909494272 55320576]
-> Add one extent data backref [156909494272 55320576]
-> good luck!
-> found 0 bytes used, no error found
-> total csum bytes: 0
-> total tree bytes: 0
-> total fs tree bytes: 0
-> total extent tree bytes: 0
-> btree space waste bytes: 0
-> file data blocks allocated: 0
->   referenced 0
-> gargamel:/var/local/src/btrfs-progs.sy# ./btrfsck --mode=lowmem -q 
-> /dev/mapper/dshelf2
-> Checking filesystem on /dev/mapper/dshelf2
-> UUID: 0f1a0c9f-4e54-4fa7-8736-fd50818ff73d
-> good luck!
-> found 251650048 bytes used, no error found
-> total csum bytes: 0
-> total tree bytes: 0
-> total fs tree bytes: 0
-> total extent tree bytes: 0
-> btree space waste bytes: 0
-> file data blocks allocated: 0
->   referenced 0
-> gargamel:/var/local/src/btrfs-progs.sy# ./btrfsck -c /dev/mapper/dshelf2
-> Checking filesystem on /dev/mapper/dshelf2
-> UUID: 0f1a0c9f-4e54-4fa7-8736-fd50818ff73d
-> found 0 bytes used, no error found
-> total csum bytes: 0
-> total tree bytes: 0
-> total fs tree bytes: 0
-> total extent tree bytes: 0
-> btree space waste bytes: 0
-> file data blocks allocated: 0
->   referenced 0
-> gargamel:/var/local/src/btrfs-progs.sy# mount /dev/mapper/dshelf2 /mnt/mnt
-> [671283.314558] BTRFS info (device dm-2): disk space caching is enabled
-> [671283.334226] BTRFS info (device dm-2): has skinny extents
-> [671285.191740] BTRFS info (device dm-2): bdev /dev/mapper/dshelf2 errs: 
-> wr 0, rd 0, flush 0, corrupt 2, gen 0
-> [671395.371313] BTRFS info (device dm-2): enabling ssd optimizations
-> [671400.884013] BTRFS info (device dm-2): checking UUID tree
-> (hung about 2-3mn but worked eventually)
-> 
-> gargamel:/mnt/mnt# btrfs fi show .
-> Label: 'dshelf2'  uuid: 0f1a0c9f-4e54-4fa7-8736-fd50818ff73d
->          Total devices 1 FS bytes used 12.59TiB
->          devid    1 size 14.55TiB used 13.81TiB path /dev/mapper/dshelf2
-> 
-> gargamel:/mnt/mnt# btrfs fi df .
-> Data, single: total=13.57TiB, used=12.48TiB
-> System, DUP: total=32.00MiB, used=1.55MiB
-> Metadata, DUP: total=124.50GiB, used=116.92GiB
-> Metadata, single: total=216.00MiB, used=0.00B
-> GlobalReserve, single: total=512.00MiB, used=42.62MiB
-> 
-> gargamel:/mnt/mnt# btrfs subvolume list . | wc -l
-> 270
-> 
 > 
 
 

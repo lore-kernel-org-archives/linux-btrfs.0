@@ -1,138 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp2120.oracle.com ([156.151.31.85]:45370 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726627AbeGPFjj (ORCPT
+Received: from aserp2120.oracle.com ([141.146.126.78]:53442 "EHLO
+        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1732518AbeGJSTf (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 16 Jul 2018 01:39:39 -0400
-Subject: Re: [PATCH 2/3] btrfs: add helper btrfs_num_devices() to deduce
- num_devices
-To: Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
-References: <20180710182241.23754-1-anand.jain@oracle.com>
- <20180710182241.23754-2-anand.jain@oracle.com>
- <0547e58c-3142-9338-474e-780a8eb0eef6@suse.com>
- <dc69c139-dcf6-6ed7-7453-ef8f64f78b68@oracle.com>
- <2ce4bc42-02b8-48b8-aeec-cb60bb39bff5@suse.com>
+        Tue, 10 Jul 2018 14:19:35 -0400
+Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
+        by aserp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w6AIJEoS100066
+        for <linux-btrfs@vger.kernel.org>; Tue, 10 Jul 2018 18:19:26 GMT
+Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
+        by aserp2120.oracle.com with ESMTP id 2k2p7du4xb-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Tue, 10 Jul 2018 18:19:26 +0000
+Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
+        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id w6AIJQUj000766
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Tue, 10 Jul 2018 18:19:26 GMT
+Received: from abhmp0006.oracle.com (abhmp0006.oracle.com [141.146.116.12])
+        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w6AIJQqm031710
+        for <linux-btrfs@vger.kernel.org>; Tue, 10 Jul 2018 18:19:26 GMT
 From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <c91fe391-7e4c-c9d6-380c-64eba711ffe2@oracle.com>
-Date: Mon, 16 Jul 2018 13:17:14 +0800
-MIME-Version: 1.0
-In-Reply-To: <2ce4bc42-02b8-48b8-aeec-cb60bb39bff5@suse.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/3] btrfs: warn for num_devices below 0
+Date: Wed, 11 Jul 2018 02:22:39 +0800
+Message-Id: <20180710182241.23754-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+In preparation to de-duplicate a section of code where we deduce the
+num_devices, use warn instead of bug.
 
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+ fs/btrfs/volumes.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-On 07/13/2018 07:17 PM, Nikolay Borisov wrote:
-> 
-> 
-> On 13.07.2018 14:17, Anand Jain wrote:
->>
->>
->> On 07/12/2018 03:31 PM, Nikolay Borisov wrote:
->>>
->>>
->>> On 10.07.2018 21:22, Anand Jain wrote:
->>>> When the replace is running the fs_devices::num_devices also includes
->>>> the replace device, however in some operations like device delete and
->>>> balance it needs the actual num_devices without the repalce devices, so
->>>> now the function btrfs_num_devices() just provides that.
->>
->>>> Signed-off-by: Anand Jain <anand.jain@oracle.com>
->>>> ---
->>>>    fs/btrfs/volumes.c | 31 +++++++++++++++++--------------
->>>>    1 file changed, 17 insertions(+), 14 deletions(-)
->>>>
->>>> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
->>>> index ce6faeb8bcf8..59a6d8f42c98 100644
->>>> --- a/fs/btrfs/volumes.c
->>>> +++ b/fs/btrfs/volumes.c
->>>> @@ -1931,6 +1931,20 @@ void btrfs_assign_next_active_device(struct
->>>> btrfs_fs_info *fs_info,
->>>>            fs_info->fs_devices->latest_bdev = next_device->bdev;
->>>>    }
->>>>    
->>>
->>> Put a comment above the function saying it returns the number of devices
->>> minus the replace device (in case replace is working) otherwise one have
->>> to go and 'git blame' it
->>
->> good idea will rename it to btrfs_num_devices_minus_replace(), (will
->> wait to see if there is any better suggested).
-> 
-> Unfortunately I don't have a better name yet but
-> num_devices_minus_replace is way too verbose so don't use that...
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index eb78bb8d1108..ce6faeb8bcf8 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -3813,7 +3813,7 @@ int btrfs_balance(struct btrfs_fs_info *fs_info,
+ 	num_devices = fs_info->fs_devices->num_devices;
+ 	btrfs_dev_replace_read_lock(&fs_info->dev_replace);
+ 	if (btrfs_dev_replace_is_ongoing(&fs_info->dev_replace)) {
+-		BUG_ON(num_devices < 1);
++		WARN_ON(num_devices < 1);
+ 		num_devices--;
+ 	}
+ 	btrfs_dev_replace_read_unlock(&fs_info->dev_replace);
+-- 
+2.7.0
 
-  Ok will just add comment. The function name will remain as
-  btrfs_num_devices()
-
-Thanks, Anand
-
->>
->> Thanks, Anand
->>
->>
->>
->>>> +static inline u64 btrfs_num_devices(struct btrfs_fs_info *fs_info)
->>>> +{
->>>> +    u64 num_devices = fs_info->fs_devices->num_devices;
->>>> +
->>>> +    btrfs_dev_replace_read_lock(&fs_info->dev_replace);
->>>> +    if (btrfs_dev_replace_is_ongoing(&fs_info->dev_replace)) {
->>>> +        WARN_ON(num_devices < 1);
->>>> +        num_devices--;
->>>> +    }
->>>> +    btrfs_dev_replace_read_unlock(&fs_info->dev_replace);
->>>> +
->>>> +    return num_devices;
->>>> +}
->>>> +
->>>>    int btrfs_rm_device(struct btrfs_fs_info *fs_info, const char
->>>> *device_path,
->>>>            u64 devid)
->>>>    {
->>>> @@ -1944,13 +1958,7 @@ int btrfs_rm_device(struct btrfs_fs_info
->>>> *fs_info, const char *device_path,
->>>>          mutex_lock(&uuid_mutex);
->>>>    -    num_devices = fs_devices->num_devices;
->>>> -    btrfs_dev_replace_read_lock(&fs_info->dev_replace);
->>>> -    if (btrfs_dev_replace_is_ongoing(&fs_info->dev_replace)) {
->>>> -        WARN_ON(num_devices < 1);
->>>> -        num_devices--;
->>>> -    }
->>>> -    btrfs_dev_replace_read_unlock(&fs_info->dev_replace);
->>>> +    num_devices = btrfs_num_devices(fs_info);
->>>>          ret = btrfs_check_raid_min_devices(fs_info, num_devices - 1);
->>>>        if (ret)
->>>> @@ -3810,13 +3818,8 @@ int btrfs_balance(struct btrfs_fs_info *fs_info,
->>>>            }
->>>>        }
->>>>    -    num_devices = fs_info->fs_devices->num_devices;
->>>> -    btrfs_dev_replace_read_lock(&fs_info->dev_replace);
->>>> -    if (btrfs_dev_replace_is_ongoing(&fs_info->dev_replace)) {
->>>> -        WARN_ON(num_devices < 1);
->>>> -        num_devices--;
->>>> -    }
->>>> -    btrfs_dev_replace_read_unlock(&fs_info->dev_replace);
->>>> +    num_devices = btrfs_num_devices(fs_info);
->>>> +
->>>>        allowed = BTRFS_AVAIL_ALLOC_BIT_SINGLE | BTRFS_BLOCK_GROUP_DUP;
->>>>        if (num_devices > 1)
->>>>            allowed |= (BTRFS_BLOCK_GROUP_RAID0 |
->>>> BTRFS_BLOCK_GROUP_RAID1);
->>>>
->>> -- 
->>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->>> the body of a message to majordomo@vger.kernel.org
->>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>>
->> -- 
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 

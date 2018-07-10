@@ -1,122 +1,95 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.99]:41832 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726370AbeGLJrs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 12 Jul 2018 05:47:48 -0400
-Received: from debian3.lan (bl11-80-66.dsl.telepac.pt [85.244.80.66])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 9669320875
-        for <linux-btrfs@vger.kernel.org>; Thu, 12 Jul 2018 09:39:00 +0000 (UTC)
-From: fdmanana@kernel.org
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: file data corruption after cloning a range and fsync
-Date: Thu, 12 Jul 2018 01:32:58 +0100
-Message-Id: <20180712003258.16209-1-fdmanana@kernel.org>
+Received: from mx2.suse.de ([195.135.220.15]:54450 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1750937AbeGJHAU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 10 Jul 2018 03:00:20 -0400
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id CD803AE80
+        for <linux-btrfs@vger.kernel.org>; Tue, 10 Jul 2018 07:00:18 +0000 (UTC)
+Subject: Re: [PATCH RFC 1/2] btrfs: scrub: Don't use inode page cache in
+ scrub_handle_errored_block()
+To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+References: <20180710055751.13309-1-wqu@suse.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <1565461a-2079-5236-0db7-efd9953e122a@suse.com>
+Date: Tue, 10 Jul 2018 10:00:16 +0300
+MIME-Version: 1.0
+In-Reply-To: <20180710055751.13309-1-wqu@suse.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
 
-When we clone a range into a file we can end up dropping existing
-extent maps (or trimming them) and replacing them with new ones if the
-range to be cloned overlaps with a range in the destination inode.
-When that happens we add the new extent maps to the  list of modified
-extents in the inode's extent map tree, so that a "fast" fsync (the flag
-BTRFS_INODE_NEEDS_FULL_SYNC not set in the inode) will see the extent maps
-and log corresponding extent items. However, at the end of range cloning
-operation we do truncate all the pages in the affected range (in order to
-ensure future reads will not get stale data). Sometimes this truncation
-will release the corresponding extent maps besides the pages from the page
-cache. If this happens, then a "fast" fsync operation will miss logging
-some extent items, because it relies exclusively on the extent maps being
-present in the inode's extent tree, leading to data loss/corruption if
-the fsync ends up using the same transaction used by the clone operation
-(that transaction was not committed in the meanwhile). An extent map is
-released through the callback btrfs_invalidatepage(), which gets called by
-truncate_inode_pages_range(), and it calls __btrfs_releasepage(). The
-later ends up calling try_release_extent_mapping() which will release the
-extent map if some conditions are met, like the file size being greater
-than 16Mb, gfp flags allow blocking and the range not being locked (which
-is the case during the clone operation) nor being the extent map flagged
-as pinned (also the case for cloning).
 
-The following example, turned into a test for fstests, reproduces the
-issue:
+On 10.07.2018 08:57, Qu Wenruo wrote:
+> When we need to fixup error blocks during scrub/dev-replace for
+> nodatasum extents, we still goes through the inode page cache and write
+> them back onto disk.
+> 
+> It's already proved that such usage of on-disk data could lead to
+> serious data corruption for compressed extent.
+> So here we also need to avoid such case, so avoid any calling to
+> scrub_fixup_nodatasum().
+> 
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
 
-  $ mkfs.btrfs -f /dev/sdb
-  $ mount /dev/sdb /mnt
+Is this patch supposed to replace the 'if (0 ...' one that is in 4.18 -
+if not, then the small fix should be reverted as we are introducing a
+regression in 4.18 and then your full fix should go into 4.19.
 
-  $ xfs_io -f -c "pwrite -S 0x18 9000K 6908K" /mnt/foo
-  $ xfs_io -f -c "pwrite -S 0x20 2572K 156K" /mnt/bar
+I kind of lost the end of the whole nodatasum mess but your references
+are really vague, if you have described somewhere (i.e in a mailing list
+post or another, merged patch) how the corruption happens if we use the
+page cache then put a reference in the changelog - either with a commit
+id or use the Link: tag for the email thread.
+> ---
+>  fs/btrfs/scrub.c | 18 ++++++++++--------
+>  1 file changed, 10 insertions(+), 8 deletions(-)
+> 
+> diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+> index 572306036477..328232fa5646 100644
+> --- a/fs/btrfs/scrub.c
+> +++ b/fs/btrfs/scrub.c
+> @@ -1151,11 +1151,6 @@ static int scrub_handle_errored_block(struct scrub_block *sblock_to_check)
+>  		return ret;
+>  	}
+>  
+> -	if (sctx->is_dev_replace && !is_metadata && !have_csum) {
+> -		sblocks_for_recheck = NULL;
+> -		goto nodatasum_case;
+> -	}
+> -
+>  	/*
+>  	 * read all mirrors one after the other. This includes to
+>  	 * re-read the extent or metadata block that failed (that was
+> @@ -1268,13 +1263,20 @@ static int scrub_handle_errored_block(struct scrub_block *sblock_to_check)
+>  		goto out;
+>  	}
+>  
+> -	if (!is_metadata && !have_csum) {
+> +	/*
+> +	 * NOTE: Even for nodatasum data case, it's still possible that it's
+> +	 * compressed data extent, thus scrub_fixup_nodatasum(), which
+> +	 * write inode page cache onto disk, could cause serious data
+> +	 * corruption.
+> +	 *
+> +	 * So here we could only read from disk, and hopes our recovery
+> +	 * could reach disk before newer write.
 
-  $ xfs_io -c "fsync" /mnt/bar
-  # reflink destination offset corresponds to the size of file bar,
-  # 2728Kb minus 4Kb.
-  $ xfs_io -c ""reflink ${SCRATCH_MNT}/foo 0 2724K 15908K" /mnt/bar
-  $ xfs_io -c "fsync" /mnt/bar
+If this code relies on 'hope' then I NACK it since hope cannot be
+quantified hence the effect of this patch cannot be quantified. It
+either fixes the problem or doesn't fix it. Sorry but this, coupled with
+the vague changelog I'd rather not have it committed.
 
-  $ md5sum /mnt/bar
-  95a95813a8c2abc9aa75a6c2914a077e  /mnt/bar
-
-  <power fail>
-
-  $ mount /dev/sdb /mnt
-  $ md5sum /mnt/bar
-  207fd8d0b161be8a84b945f0df8d5f8d  /mnt/bar
-  # digest should be 95a95813a8c2abc9aa75a6c2914a077e like before the
-  # power failure
-
-In the above example, the destination offset of the clone operation
-corresponds to the size of the "bar" file minus 4Kb. So during the clone
-operation, the extent map covering the range from 2572Kb to 2728Kb gets
-trimmed so that it ends at offset 2724Kb, and a new extent map covering
-the range from 2724Kb to 11724Kb is created. So at the end of the clone
-operation when we ask to truncate the pages in the range from 2724Kb to
-2724Kb + 15908Kb, the page invalidation callback ends up removing the new
-extent map (through try_release_extent_mapping()) when the page at offset
-2724Kb is passed to that callback.
-
-Fix this by setting the bit BTRFS_INODE_NEEDS_FULL_SYNC whenever an extent
-map is removed at try_release_extent_mapping(), forcing the next fsync to
-search for modified extents in the fs/subvolume tree instead of relying on
-the presence of extent maps in memory. This way we can continue doing a
-"fast" fsync if the destination range of a clone operation does not
-overlap with an existing range or if any of the criteria necessary to
-remove an extent map at try_release_extent_mapping() is not met (file
-size not bigger then 16Mb or gfp flags do not allow blocking).
-
-CC: stable@vger.kernel.org # 3.16+
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/extent_io.c | 7 +++++--
- 1 file changed, 5 insertions(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index e55843f536bc..b3e45714d28f 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -4238,8 +4238,9 @@ int try_release_extent_mapping(struct page *page, gfp_t mask)
- 	struct extent_map *em;
- 	u64 start = page_offset(page);
- 	u64 end = start + PAGE_SIZE - 1;
--	struct extent_io_tree *tree = &BTRFS_I(page->mapping->host)->io_tree;
--	struct extent_map_tree *map = &BTRFS_I(page->mapping->host)->extent_tree;
-+	struct btrfs_inode *btrfs_inode = BTRFS_I(page->mapping->host);
-+	struct extent_io_tree *tree = &btrfs_inode->io_tree;
-+	struct extent_map_tree *map = &btrfs_inode->extent_tree;
- 
- 	if (gfpflags_allow_blocking(mask) &&
- 	    page->mapping->host->i_size > SZ_16M) {
-@@ -4262,6 +4263,8 @@ int try_release_extent_mapping(struct page *page, gfp_t mask)
- 					    extent_map_end(em) - 1,
- 					    EXTENT_LOCKED | EXTENT_WRITEBACK,
- 					    0, NULL)) {
-+				set_bit(BTRFS_INODE_NEEDS_FULL_SYNC,
-+					&btrfs_inode->runtime_flags);
- 				remove_extent_mapping(map, em);
- 				/* once for the rb tree */
- 				free_extent_map(em);
--- 
-2.11.0
-
+> +	 */
+> +	if (0 && !is_metadata && !have_csum) {
+>  		struct scrub_fixup_nodatasum *fixup_nodatasum;
+>  
+>  		WARN_ON(sctx->is_dev_replace);
+>  
+> -nodatasum_case:
+> -
+>  		/*
+>  		 * !is_metadata and !have_csum, this means that the data
+>  		 * might not be COWed, that it might be modified
+> 

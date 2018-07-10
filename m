@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from mail.cn.fujitsu.com ([183.91.158.132]:3659 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751250AbeGJK1i (ORCPT
+        with ESMTP id S1751332AbeGJK1k (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 10 Jul 2018 06:27:38 -0400
+        Tue, 10 Jul 2018 06:27:40 -0400
 From: Gu Jinxiang <gujx@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: <nborisov@suse.com>
-Subject: [PATCH v2 2/2] btrfs: get fs_devices pointer form btrfs_scan_one_device
-Date: Tue, 10 Jul 2018 18:27:21 +0800
-Message-ID: <1531218442-12885-2-git-send-email-gujx@cn.fujitsu.com>
+Subject: [PATCH 2/2] btrfs: get fs_devices pointer form btrfs_scan_one_device
+Date: Tue, 10 Jul 2018 18:27:22 +0800
+Message-ID: <1531218442-12885-3-git-send-email-gujx@cn.fujitsu.com>
 In-Reply-To: <1531218442-12885-1-git-send-email-gujx@cn.fujitsu.com>
 References: <1531218442-12885-1-git-send-email-gujx@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -22,10 +22,6 @@ btrfs_scan_one_device, better to make it as a return value.
 
 Signed-off-by: Gu Jinxiang <gujx@cn.fujitsu.com>
 ---
-
-changelog:
-v2: as comment by Nikolay, use ERR_CAST instead of cast type manually.
-
  fs/btrfs/super.c   | 29 ++++++++++++++++++-----------
  fs/btrfs/volumes.c | 14 +++++++-------
  fs/btrfs/volumes.h |  4 ++--

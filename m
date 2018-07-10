@@ -1,17 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp2130.oracle.com ([141.146.126.79]:52158 "EHLO
+Received: from aserp2130.oracle.com ([141.146.126.79]:56010 "EHLO
         aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2389739AbeGJSkq (ORCPT
+        with ESMTP id S2389334AbeGJSpg (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 10 Jul 2018 14:40:46 -0400
+        Tue, 10 Jul 2018 14:45:36 -0400
 Subject: Re: general protection fault in open_fs_devices
 To: syzbot <syzbot+909a5177749d7990ffa4@syzkaller.appspotmail.com>
 References: <000000000000832e70056df8fb38@google.com>
-Cc: dsterba@suse.com, linux-btrfs@vger.kernel.org,
-        syzkaller-bugs@googlegroups.com
+Cc: linux-btrfs@vger.kernel.org, syzkaller-bugs@googlegroups.com
 From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <ef7c85cb-9be9-a63e-0002-e56af773646b@oracle.com>
-Date: Wed, 11 Jul 2018 02:43:45 +0800
+Message-ID: <1485a21d-cc34-1872-a1bd-c5d383656357@oracle.com>
+Date: Wed, 11 Jul 2018 02:48:34 +0800
 MIME-Version: 1.0
 In-Reply-To: <000000000000832e70056df8fb38@google.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
@@ -19,8 +18,7 @@ Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-
-#syz test: git://git@github.com:asj/btrfs-devel.git misc-next
+#syz test: https://github.com/asj/btrfs-devel.git misc-next
 
 
 On 06/06/2018 09:17 PM, syzbot wrote:

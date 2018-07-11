@@ -1,217 +1,143 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp2130.oracle.com ([156.151.31.86]:58526 "EHLO
-        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726438AbeGKHuE (ORCPT
+Received: from mx01.maketank.net ([144.76.146.236]:33646 "EHLO
+        mx01.maketank.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1732665AbeGKPvR (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 11 Jul 2018 03:50:04 -0400
-Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
-        by userp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w6B7iVES012443
-        for <linux-btrfs@vger.kernel.org>; Wed, 11 Jul 2018 07:47:05 GMT
-Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
-        by userp2130.oracle.com with ESMTP id 2k2p7651mj-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 11 Jul 2018 07:47:05 +0000
-Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id w6B7l5iK005311
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 11 Jul 2018 07:47:05 GMT
-Received: from abhmp0010.oracle.com (abhmp0010.oracle.com [141.146.116.16])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w6B7l5k5023081
-        for <linux-btrfs@vger.kernel.org>; Wed, 11 Jul 2018 07:47:05 GMT
-From: Anand Jain <anand.jain@oracle.com>
-Subject: [DOC] BTRFS Volume operations, Device Lists and Locks all in one page
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Cc: Anand Jain <anand.jain@oracle.com>
-Message-ID: <4fba8087-ebbe-1d05-1f72-e1683981235e@oracle.com>
-Date: Wed, 11 Jul 2018 15:50:25 +0800
+        Wed, 11 Jul 2018 11:51:17 -0400
+Received: from localhost (milter01.int.lan [10.200.0.47])
+        by mx01.maketank.net (Postfix) with ESMTP id 95856FF787
+        for <linux-btrfs@vger.kernel.org>; Wed, 11 Jul 2018 17:37:22 +0200 (CEST)
+Received: from mx01.maketank.net ([10.200.0.41])
+        by localhost (milter01.int.lan [10.200.0.47]) (amavisd-new, port 10021)
+        with ESMTP id dmbknsEuoPC3 for <linux-btrfs@vger.kernel.org>;
+        Wed, 11 Jul 2018 17:37:14 +0200 (CEST)
+Received: from [192.168.2.126] (p54A4F4C5.dip0.t-ipconnect.de [84.164.244.197])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mx01.maketank.net (Postfix) with ESMTPSA id A5AA8FF735
+        for <linux-btrfs@vger.kernel.org>; Wed, 11 Jul 2018 17:37:04 +0200 (CEST)
+To: linux-btrfs@vger.kernel.org
+From: Udo Waechter <root@zoide.net>
+Subject: Corrupted FS with "open_ctree failed" and "failed to recover balance:
+ -5"
+Message-ID: <db79af86-4346-84c2-940d-b988e91c2652@zoide.net>
+Date: Wed, 11 Jul 2018 17:37:00 +0200
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: multipart/signed; micalg=pgp-sha512;
+ protocol="application/pgp-signature";
+ boundary="cDUZUaVmfUnJD2aScP5O5OW8AkeCqnM5h"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--cDUZUaVmfUnJD2aScP5O5OW8AkeCqnM5h
+Content-Type: multipart/mixed; boundary="KXmu6ryAPPedPKnpyfisiCTlLSiIvk6Ml";
+ protected-headers="v1"
+From: Udo Waechter <root@zoide.net>
+To: linux-btrfs@vger.kernel.org
+Message-ID: <db79af86-4346-84c2-940d-b988e91c2652@zoide.net>
+Subject: Corrupted FS with "open_ctree failed" and "failed to recover balance:
+ -5"
+
+--KXmu6ryAPPedPKnpyfisiCTlLSiIvk6Ml
+Content-Type: text/plain; charset=utf-8
+Content-Language: de-DE
+Content-Transfer-Encoding: quoted-printable
+
+Hello everyone,
+
+I have a corrupted filesystem which I can't seem to recover.
+
+The machine is:
+Debian Linux, kernel 4.9 and btrfs-progs v4.13.3
+
+I have a HDD RAID5 with LVM and the volume in question is a LVM volume.
+On top of that I had a RAID1 SSD cache with lvm-cache.
+
+Yesterday both! SSDs died within minutes. This lead to the corruped
+filesystem that I have now.
+
+I hope I followed the procedure correctly.
+
+What I tried so far:
+* "mount -o usebackuproot,ro " and "nospace_cache" "clear_cache" and all
+permutations of these mount options
+
+I'm getting:
+
+[96926.830400] BTRFS info (device dm-2): trying to use backup root at
+mount time
+[96926.830406] BTRFS info (device dm-2): disk space caching is enabled
+[96926.927978] BTRFS error (device dm-2): parent transid verify failed
+on 321269628928 wanted 3276017 found 3275985
+[96926.938619] BTRFS error (device dm-2): parent transid verify failed
+on 321269628928 wanted 3276017 found 3275985
+[96926.940705] BTRFS error (device dm-2): failed to recover balance: -5
+[96926.985801] BTRFS error (device dm-2): open_ctree failed
+
+The weird thing is that I can't really find information about the
+"failed to recover balance: -5" error. - There was no rebalancing
+running when during the crash.
+
+* btrfs-find-root: https://pastebin.com/qkjnSUF7 - It bothers me that I
+don't see any "good generations" as described here:
+https://btrfs.wiki.kernel.org/index.php/Restore
+
+* "btrfs rescue" - it starts, then goes to "looping on XYZ" then stops
+
+* "btrfs rescue super-recover -v" gives:
+
+All Devices:
+	Device: id =3D 1, name =3D /dev/vg00/...
+Before Recovering:
+	[All good supers]:
+		device name =3D /dev/vg00/...
+		superblock bytenr =3D 65536
+
+		device name =3D /dev/vg00/...
+		superblock bytenr =3D 67108864
+
+		device name =3D /dev/vg00/...
+		superblock bytenr =3D 274877906944
+
+	[All bad supers]:
+
+All supers are valid, no need to recover
 
 
-BTRFS Volume operations, Device Lists and Locks all in one page:
-
-Devices are managed in two contexts, the scan context and the mounted 
-context. In scan context the threads originate from the btrfs_control 
-ioctl and in the mounted context the threads originates from the mount 
-point ioctl.
-Apart from these two context, there also can be two transient state 
-where device state are transitioning from the scan to the mount context 
-or from the mount to the scan context.
-
-Device List and Locks:-
-
-  Count: btrfs_fs_devices::num_devices
-  List : btrfs_fs_devices::devices -> btrfs_devices::dev_list
-  Lock : btrfs_fs_devices::device_list_mutex
-
-  Count: btrfs_fs_devices::rw_devices
-  List : btrfs_fs_devices::alloc_list -> btrfs_devices::dev_alloc_list
-  Lock : btrfs_fs_info::chunk_mutex
-
-  Lock: set_bit btrfs_fs_info::flags::BTRFS_FS_EXCL_OP
-
-FSID List and Lock:-
-
-  Count : None
-  HEAD  : Global::fs_uuids -> btrfs_fs_devices::fs_list
-  Lock  : Global::uuid_mutex
+* Unfortunatly I did a "btrfs rescue zero-log" at some point :( - As it
+turns out that might have been a bad idea
 
 
-After the fs_devices is mounted, the btrfs_fs_devices::opened > 0.
+* Also, a "btrfs  check --init-extent-tree" - https://pastebin.com/jATDCF=
+Zy
 
-In the scan context we have the following device operations..
+The volume contained qcow2 images for VMs. I need only one of those,
+since one piece of important software decided to not do backups :(
 
-Device SCAN:-  which creates the btrfs_fs_devices and its corresponding 
-btrfs_device entries, also checks and frees the duplicate device entries.
-Lock: uuid_mutex
-   SCAN
-   if (found_duplicate && btrfs_fs_devices::opened == 0)
-      Free_duplicate
-Unlock: uuid_mutex
+Any help is highly appreciated.
 
-Device READY:- check if the volume is ready. Also does an implicit scan 
-and duplicate device free as in Device SCAN.
-Lock: uuid_mutex
-   SCAN
-   if (found_duplicate && btrfs_fs_devices::opened == 0)
-      Free_duplicate
-   Check READY
-Unlock: uuid_mutex
-
-Device FORGET:- (planned) free a given or all unmounted devices and 
-empty fs_devices if any.
-Lock: uuid_mutex
-   if (found_duplicate && btrfs_fs_devices::opened == 0)
-     Free duplicate
-Unlock: uuid_mutex
-
-Device mount operation -> A Transient state leading to the mounted context
-Lock: uuid_mutex
-  Find, SCAN, btrfs_fs_devices::opened++
-Unlock: uuid_mutex
-
-Device umount operation -> A transient state leading to the unmounted 
-context or scan context
-Lock: uuid_mutex
-   btrfs_fs_devices::opened--
-Unlock: uuid_mutex
+Many thanks,
+udo.
 
 
-In the mounted context we have the following device operations..
+--KXmu6ryAPPedPKnpyfisiCTlLSiIvk6Ml--
 
-Device Rename through SCAN:- This is a special case where the device 
-path gets renamed after its been mounted. (Ubuntu changes the boot path 
-during boot up so we need this feature). Currently, this is part of 
-Device SCAN as above. And we need the locks as below, because the 
-dynamic disappearing device might cleanup the btrfs_device::name
-Lock: btrfs_fs_devices::device_list_mutex
-    Rename
-Unlock: btrfs_fs_devices::device_list_mutex
+--cDUZUaVmfUnJD2aScP5O5OW8AkeCqnM5h
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
 
-Commit Transaction:- Write All supers.
-Lock: btrfs_fs_devices::device_list_mutex
-   Write all super of btrfs_devices::dev_list
-Unlock: btrfs_fs_devices::device_list_mutex
+-----BEGIN PGP SIGNATURE-----
 
-Device add:- Add a new device to the existing mounted volume.
-set_bit: btrfs_fs_info::flags::BTRFS_FS_EXCL_OP
-Lock: btrfs_fs_devices::device_list_mutex
-Lock: btrfs_fs_info::chunk_mutex
-    List_add btrfs_devices::dev_list
-    List_add btrfs_devices::dev_alloc_list
-Unlock: btrfs_fs_info::chunk_mutex
-Unlock: btrfs_fs_devices::device_list_mutex
+iQEzBAEBCgAdFiEEKvHlGi1zjN9ykHKEyMU4ySCz1VEFAltGJB8ACgkQyMU4ySCz
+1VGFBQgAgMHkTiSwl3QqaDrnOrSf2yGUfFKRc1F7MTeXDFQ09hFnsH7nL+FnVChz
+S3vzQK7ljqkOwL4l5AQFsGMamYY3j/3JEusUgRwaEsbjHjuSRTExhIuYn+5yY5ta
+TRKCC1MJg6oDb6pkdVM51Sr3likMo/Ex7PnY1V98ObKd6gra1sKtnBLc5AGrIosf
+rQs+OwU08G39JGG5XuEVOAG7XtkiGa9d+kUdt8e0OldD251VAu8dZdVid791TpFY
+IQgRY50FnejDalS3gTyBTS0+WR7MWfI7JLvxqWn4b7ELWpeLjNIqluLA3GG9vTm3
+uO4mLnF/3+Q1Wb+ZI9YQZJ2yspib1A==
+=nnwQ
+-----END PGP SIGNATURE-----
 
-Device remove:- Remove a device from the mounted volume.
-set_bit: btrfs_fs_info::flags::BTRFS_FS_EXCL_OP
-Lock: btrfs_fs_devices::device_list_mutex
-Lock: btrfs_fs_info::chunk_mutex
-    List_del btrfs_devices::dev_list
-    List_del btrfs_devices::dev_alloc_list
-Unlock: btrfs_fs_info::chunk_mutex
-Unlock: btrfs_fs_devices::device_list_mutex
-
-Device Replace:- Replace a device.
-set_bit: btrfs_fs_info::flags::BTRFS_FS_EXCL_OP
-Lock: btrfs_fs_devices::device_list_mutex
-Lock: btrfs_fs_info::chunk_mutex
-    List_update btrfs_devices::dev_list
-    List_update btrfs_devices::dev_alloc_list
-Unlock: btrfs_fs_info::chunk_mutex
-Unlock: btrfs_fs_devices::device_list_mutex
-
-Sprouting:- Add a RW device to the mounted RO seed device, so to make 
-the mount point writable.
-The following steps are used to hold the seed and sprout fs_devices.
-(first two steps are not necessary for the sprouting, they are there to 
-ensure the seed device remains scanned, and it might change)
-. Clone the (mounted) fs_devices, lets call it as old_devices
-. Now add old_devices to fs_uuids (yeah, there is duplicate fsid in the 
-list but we change the other fsid before we release the uuid_mutex, so 
-its fine).
-
-. Alloc a new fs_devices, lets call it as seed_devices
-. Copy fs_devices into the seed_devices
-. Move fs_deviecs devices list into seed_devices
-. Bring seed_devices to under fs_devices (fs_devices->seed = seed_devices)
-. Assign a new FSID to the fs_devices and add the new writable device to 
-the fs_devices.
-
-In the unmounted context the fs_devices::seed is always NULL.
-We alloc the fs_devices::seed only at the time of mount and or at 
-sprouting. And free at the time of umount or if the seed device is 
-replaced or deleted.
-
-Locks: Sprouting:
-Lock: uuid_mutex <-- because fsid rename and Device SCAN
-Reuses Device Add code
-
-Locks: Splitting: (Delete OR Replace a seed device)
-uuid_mutex is not required as fs_devices::seed which is local to 
-fs_devices is being altered.
-Reuses Device replace code
-
-
-Device resize:- Resize the given volume or device.
-Lock: btrfs_fs_info::chunk_mutex
-    Update
-Unlock: btrfs_fs_info::chunk_mutex
-
-
-(Planned) Dynamic Device missing/reappearing:- A missing device might 
-reappear after its volume been mounted, we have the same btrfs_control 
-ioctl which does the scan of the reappearing device but in the mounted 
-context. In the contrary a device of a volume in a mounted context can 
-go missing as well, and still the volume will continue in the mounted 
-context.
-Missing:
-Lock: btrfs_fs_devices::device_list_mutex
-Lock: btrfs_fs_info::chunk_mutex
-   List_del: btrfs_devices::dev_alloc_list
-   Close_bdev
-   btrfs_device::bdev == NULL
-   btrfs_device::name = NULL
-   set_bit BTRFS_DEV_STATE_MISSING
-   set_bit BTRFS_VOL_STATE_DEGRADED
-Unlock: btrfs_fs_info::chunk_mutex
-Unlock: btrfs_fs_devices::device_list_mutex
-
-Reappearing:
-Lock: btrfs_fs_devices::device_list_mutex
-Lock: btrfs_fs_info::chunk_mutex
-   Open_bdev
-   btrfs_device::name = PATH
-   clear_bit BTRFS_DEV_STATE_MISSING
-   clear_bit BTRFS_VOL_STATE_DEGRADED
-   List_add: btrfs_devices::dev_alloc_list
-   set_bit BTRFS_VOL_STATE_RESILVERING
-   kthread_run HEALTH_CHECK
-Unlock: btrfs_fs_info::chunk_mutex
-Unlock: btrfs_fs_devices::device_list_mutex
-
------------------------------------------------------------------------
-
-Thanks, Anand
+--cDUZUaVmfUnJD2aScP5O5OW8AkeCqnM5h--

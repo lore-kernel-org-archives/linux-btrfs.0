@@ -1,223 +1,113 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-01.dd24.net ([193.46.215.41]:34593 "EHLO
-        mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2387690AbeGMAAr (ORCPT
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:52389 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1726289AbeGKJFp (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 12 Jul 2018 20:00:47 -0400
-Message-ID: <6e333f11e847e8e7dbb9a169a56e1169b52dffe3.camel@scientia.net>
-Subject: Re: [PATCH v2 1/2] btrfs-progs: Rename OPEN_CTREE_FS_PARTIAL to
- OPEN_CTREE_TEMPORARY_SUPER
-From: Christoph Anton Mitterer <calestyo@scientia.net>
-To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Date: Fri, 13 Jul 2018 01:48:50 +0200
-In-Reply-To: <20180411072936.12915-1-wqu@suse.com>
-References: <20180411072936.12915-1-wqu@suse.com>
-Content-Type: text/plain; charset="UTF-8"
-Mime-Version: 1.0
+        Wed, 11 Jul 2018 05:05:45 -0400
+Date: Wed, 11 Jul 2018 17:02:20 +0800
+From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: <fdmanana@suse.com>
+Subject: About hung task on generic/041
+Message-ID: <20180711090220.GA21770@fnst.localdomain>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hey.
+Hi,
 
-Better late than never ;-)
+When I run generic/041 with v4.18-rc3 (turn on kasan and hung task
+detection), btrfs-transaction kthread will trigger the hung task timeout
+(stall at wait_event in btrfs_commit_transaction). At the same time, you
+can see that xfs_io -c fsync will occupy 100% of the CPU. I am not sure
+whether this is a problem. Any suggestion?
 
-Just to confirm: At least since 4.16.1, I could btrfs-restore from the
-broken fs image again (that I've described in "spurious full btrfs
-corruption" from around mid March).
+[Wed Jul 11 15:50:08 2018] INFO: task btrfs-transacti:1053 blocked for more than 120 seconds.
+[Wed Jul 11 15:50:08 2018]       Not tainted 4.18.0-rc3-custom #14
+[Wed Jul 11 15:50:08 2018] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+[Wed Jul 11 15:50:08 2018] btrfs-transacti D    0  1053      2 0x80000000
+[Wed Jul 11 15:50:08 2018] Call Trace:
+[Wed Jul 11 15:50:08 2018]  ? __schedule+0x5b2/0x1380
+[Wed Jul 11 15:50:08 2018]  ? check_flags.part.23+0x240/0x240
+[Wed Jul 11 15:50:08 2018]  ? firmware_map_remove+0x187/0x187
+[Wed Jul 11 15:50:08 2018]  ? ___preempt_schedule+0x16/0x18
+[Wed Jul 11 15:50:08 2018]  ? mark_held_locks+0x6e/0x90
+[Wed Jul 11 15:50:08 2018]  ? _raw_spin_unlock_irqrestore+0x59/0x70
+[Wed Jul 11 15:50:08 2018]  ? preempt_count_sub+0x14/0xc0
+[Wed Jul 11 15:50:08 2018]  ? _raw_spin_unlock_irqrestore+0x46/0x70
+[Wed Jul 11 15:50:08 2018]  ? prepare_to_wait_event+0x191/0x410
+[Wed Jul 11 15:50:08 2018]  ? prepare_to_wait_exclusive+0x210/0x210
+[Wed Jul 11 15:50:08 2018]  ? print_usage_bug+0x3a0/0x3a0
+[Wed Jul 11 15:50:08 2018]  ? do_raw_spin_unlock+0x10f/0x1e0
+[Wed Jul 11 15:50:08 2018]  ? do_raw_spin_trylock+0x120/0x120
+[Wed Jul 11 15:50:08 2018]  schedule+0xca/0x260
+[Wed Jul 11 15:50:08 2018]  ? rcu_lockdep_current_cpu_online+0x12b/0x160
+[Wed Jul 11 15:50:08 2018]  ? __schedule+0x1380/0x1380
+[Wed Jul 11 15:50:08 2018]  ? ___might_sleep+0x126/0x370
+[Wed Jul 11 15:50:08 2018]  ? init_wait_entry+0xc7/0x100
+[Wed Jul 11 15:50:08 2018]  ? __wake_up_locked_key_bookmark+0x20/0x20
+[Wed Jul 11 15:50:08 2018]  ? __btrfs_run_delayed_items+0x1e5/0x280 [btrfs]
+[Wed Jul 11 15:50:08 2018]  ? __might_sleep+0x31/0xd0
+[Wed Jul 11 15:50:08 2018]  btrfs_commit_transaction+0x122a/0x1640 [btrfs]
+[Wed Jul 11 15:50:08 2018]  ? btrfs_apply_pending_changes+0x90/0x90 [btrfs]
+[Wed Jul 11 15:50:08 2018]  ? wait_woken+0x150/0x150
+[Wed Jul 11 15:50:08 2018]  ? ret_from_fork+0x27/0x50
+[Wed Jul 11 15:50:08 2018]  ? ret_from_fork+0x27/0x50
+[Wed Jul 11 15:50:08 2018]  ? deref_stack_reg+0xe0/0xe0
+[Wed Jul 11 15:50:08 2018]  ? __module_text_address+0x63/0xa0
+[Wed Jul 11 15:50:08 2018]  ? preempt_count_sub+0x14/0xc0
+[Wed Jul 11 15:50:08 2018]  ? transaction_kthread+0x161/0x240 [btrfs]
+[Wed Jul 11 15:50:08 2018]  ? is_module_text_address+0x2b/0x50
+[Wed Jul 11 15:50:08 2018]  ? transaction_kthread+0x1d9/0x240 [btrfs]
+[Wed Jul 11 15:50:08 2018]  ? kernel_text_address+0x5a/0x100
+[Wed Jul 11 15:50:08 2018]  ? deactivate_slab.isra.27+0x64f/0x7a0
+[Wed Jul 11 15:50:08 2018]  ? __save_stack_trace+0x82/0x100
+[Wed Jul 11 15:50:08 2018]  ? kasan_kmalloc+0x142/0x170
+[Wed Jul 11 15:50:08 2018]  ? kmem_cache_alloc+0xfc/0x2e0
+[Wed Jul 11 15:50:08 2018]  ? start_transaction+0x596/0x930 [btrfs]
+[Wed Jul 11 15:50:08 2018]  ? transaction_kthread+0x1d9/0x240 [btrfs]
+[Wed Jul 11 15:50:08 2018]  ? kthread+0x1b9/0x1e0
+[Wed Jul 11 15:50:08 2018]  ? ret_from_fork+0x27/0x50
+[Wed Jul 11 15:50:08 2018]  ? deactivate_slab.isra.27+0x64f/0x7a0
+[Wed Jul 11 15:50:08 2018]  ? mark_lock+0x149/0xa80
+[Wed Jul 11 15:50:08 2018]  ? init_object+0x6b/0x80
+[Wed Jul 11 15:50:08 2018]  ? print_usage_bug+0x3a0/0x3a0
+[Wed Jul 11 15:50:08 2018]  ? ___slab_alloc+0x62a/0x690
+[Wed Jul 11 15:50:08 2018]  ? ___slab_alloc+0x62a/0x690
+[Wed Jul 11 15:50:08 2018]  ? __lock_is_held+0x8c/0xe0
+[Wed Jul 11 15:50:08 2018]  ? start_transaction+0x596/0x930 [btrfs]
+[Wed Jul 11 15:50:08 2018]  ? preempt_count_sub+0x14/0xc0
+[Wed Jul 11 15:50:08 2018]  ? rcu_lockdep_current_cpu_online+0x12b/0x160
+[Wed Jul 11 15:50:08 2018]  ? rcu_oom_callback+0x40/0x40
+[Wed Jul 11 15:50:08 2018]  ? __lock_is_held+0x8c/0xe0
+[Wed Jul 11 15:50:08 2018]  ? start_transaction+0x596/0x930 [btrfs]
+[Wed Jul 11 15:50:08 2018]  ? rcu_read_lock_sched_held+0x8f/0xa0
+[Wed Jul 11 15:50:08 2018]  ? btrfs_record_root_in_trans+0x1f/0xa0 [btrfs]
+[Wed Jul 11 15:50:08 2018]  ? start_transaction+0x26b/0x930 [btrfs]
+[Wed Jul 11 15:50:08 2018]  ? btrfs_commit_transaction+0x1640/0x1640 [btrfs]
+[Wed Jul 11 15:50:08 2018]  ? check_flags.part.23+0x240/0x240
+[Wed Jul 11 15:50:08 2018]  ? lock_downgrade+0x380/0x380
+[Wed Jul 11 15:50:08 2018]  ? do_raw_spin_unlock+0x10f/0x1e0
+[Wed Jul 11 15:50:08 2018]  ? do_raw_spin_unlock+0x10f/0x1e0
+[Wed Jul 11 15:50:08 2018]  ? do_raw_spin_trylock+0x120/0x120
+[Wed Jul 11 15:50:08 2018]  transaction_kthread+0x219/0x240 [btrfs]
+[Wed Jul 11 15:50:08 2018]  ? btrfs_cleanup_transaction+0x6f0/0x6f0 [btrfs]
+[Wed Jul 11 15:50:08 2018]  kthread+0x1b9/0x1e0
+[Wed Jul 11 15:50:08 2018]  ? kthread_flush_work_fn+0x10/0x10
+[Wed Jul 11 15:50:08 2018]  ret_from_fork+0x27/0x50
+[Wed Jul 11 15:50:08 2018] 
+                           Showing all locks held in the system:
+[Wed Jul 11 15:50:08 2018] 1 lock held by khungtaskd/72:
+[Wed Jul 11 15:50:08 2018]  #0: 000000006461a1cc (rcu_read_lock){....}, at: debug_show_all_locks+0xa9/0x3d0
+[Wed Jul 11 15:50:08 2018] 1 lock held by btrfs-transacti/1053:
+[Wed Jul 11 15:50:08 2018]  #0: 000000005d73d46a (&fs_info->transaction_kthread_mutex){+.+.}, at: transaction_kthread+0x92/0x240 [btrfs]
+[Wed Jul 11 15:50:08 2018] 1 lock held by dmesg/1066:
+[Wed Jul 11 15:50:08 2018]  #0: 000000003e5d6fc4 (&user->lock){+.+.}, at: devkmsg_read+0xa5/0x4f0
+[Wed Jul 11 15:50:08 2018] 4 locks held by xfs_io/7075:
 
-So the regression in btrfsprogs has in fact been fixed by these
-patches, it seems.
-
-
+-- 
 Thanks,
-Chris.
+Lu
 
-On Wed, 2018-04-11 at 15:29 +0800, Qu Wenruo wrote:
-> The old flag OPEN_CTREE_FS_PARTIAL is in fact quite easy to be
-> confused
-> with OPEN_CTREE_PARTIAL, which allow btrfs-progs to open damaged
-> filesystem (like corrupted extent/csum tree).
-> 
-> However OPEN_CTREE_FS_PARTIAL, unlike its name, is just allowing
-> btrfs-progs to open fs with temporary superblocks (which only has 6
-> basic trees on SINGLE meta/sys chunks).
-> 
-> The usage of FS_PARTIAL is really confusing here.
-> 
-> So rename OPEN_CTREE_FS_PARTIAL to OPEN_CTREE_TEMPORARY_SUPER, and
-> add
-> extra comment for its behavior.
-> Also rename BTRFS_MAGIC_PARTIAL to BTRFS_MAGIC_TEMPORARY to keep the
-> naming consistent.
-> 
-> And with above comment, the usage of FS_PARTIAL in dump-tree is
-> obviously incorrect, fix it.
-> 
-> Fixes: 8698a2b9ba89 ("btrfs-progs: Allow inspect dump-tree to show
-> specified tree block even some tree roots are corrupted")
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> ---
-> changelog:
-> v2:
->   New patch
-> ---
->  cmds-inspect-dump-tree.c |  2 +-
->  convert/main.c           |  4 ++--
->  ctree.h                  |  8 +++++---
->  disk-io.c                | 12 ++++++------
->  disk-io.h                | 10 +++++++---
->  mkfs/main.c              |  2 +-
->  6 files changed, 22 insertions(+), 16 deletions(-)
-> 
-> diff --git a/cmds-inspect-dump-tree.c b/cmds-inspect-dump-tree.c
-> index 0802b31e9596..e6510851e8f4 100644
-> --- a/cmds-inspect-dump-tree.c
-> +++ b/cmds-inspect-dump-tree.c
-> @@ -220,7 +220,7 @@ int cmd_inspect_dump_tree(int argc, char **argv)
->  	int uuid_tree_only = 0;
->  	int roots_only = 0;
->  	int root_backups = 0;
-> -	unsigned open_ctree_flags = OPEN_CTREE_FS_PARTIAL;
-> +	unsigned open_ctree_flags = OPEN_CTREE_PARTIAL;
->  	u64 block_only = 0;
->  	struct btrfs_root *tree_root_scan;
->  	u64 tree_id = 0;
-> diff --git a/convert/main.c b/convert/main.c
-> index 6bdfab40d0b0..80f3bed84c84 100644
-> --- a/convert/main.c
-> +++ b/convert/main.c
-> @@ -1140,7 +1140,7 @@ static int do_convert(const char *devname, u32
-> convert_flags, u32 nodesize,
->  	}
->  
->  	root = open_ctree_fd(fd, devname, mkfs_cfg.super_bytenr,
-> -			     OPEN_CTREE_WRITES |
-> OPEN_CTREE_FS_PARTIAL);
-> +			     OPEN_CTREE_WRITES |
-> OPEN_CTREE_TEMPORARY_SUPER);
->  	if (!root) {
->  		error("unable to open ctree");
->  		goto fail;
-> @@ -1230,7 +1230,7 @@ static int do_convert(const char *devname, u32
-> convert_flags, u32 nodesize,
->  	}
->  
->  	root = open_ctree_fd(fd, devname, 0,
-> -			OPEN_CTREE_WRITES | OPEN_CTREE_FS_PARTIAL);
-> +			     OPEN_CTREE_WRITES |
-> OPEN_CTREE_TEMPORARY_SUPER);
->  	if (!root) {
->  		error("unable to open ctree for finalization");
->  		goto fail;
-> diff --git a/ctree.h b/ctree.h
-> index fa861ba0b4c3..80d4e59a66ce 100644
-> --- a/ctree.h
-> +++ b/ctree.h
-> @@ -45,10 +45,12 @@ struct btrfs_free_space_ctl;
->  #define BTRFS_MAGIC 0x4D5F53665248425FULL /* ascii _BHRfS_M, no null
-> */
->  
->  /*
-> - * Fake signature for an unfinalized filesystem, structures might be
-> partially
-> - * created or missing.
-> + * Fake signature for an unfinalized filesystem, which only has
-> barebone tree
-> + * structures (normally 6 near empty trees, on SINGLE meta/sys
-> temporary chunks)
-> + *
-> + * ascii !BHRfS_M, no null
->   */
-> -#define BTRFS_MAGIC_PARTIAL 0x4D5F536652484221ULL /* ascii !BHRfS_M,
-> no null */
-> +#define BTRFS_MAGIC_TEMPORARY 0x4D5F536652484221ULL
->  
->  #define BTRFS_MAX_MIRRORS 3
->  
-> diff --git a/disk-io.c b/disk-io.c
-> index 58eae709e0e8..9e8b1e9d295c 100644
-> --- a/disk-io.c
-> +++ b/disk-io.c
-> @@ -1117,14 +1117,14 @@ static struct btrfs_fs_info
-> *__open_ctree_fd(int fp, const char *path,
->  		fs_info->ignore_chunk_tree_error = 1;
->  
->  	if ((flags & OPEN_CTREE_RECOVER_SUPER)
-> -	     && (flags & OPEN_CTREE_FS_PARTIAL)) {
-> +	     && (flags & OPEN_CTREE_TEMPORARY_SUPER)) {
->  		fprintf(stderr,
-> -		    "cannot open a partially created filesystem for
-> recovery");
-> +	"cannot open a filesystem with temporary super block for
-> recovery");
->  		goto out;
->  	}
->  
-> -	if (flags & OPEN_CTREE_FS_PARTIAL)
-> -		sbflags = SBREAD_PARTIAL;
-> +	if (flags & OPEN_CTREE_TEMPORARY_SUPER)
-> +		sbflags = SBREAD_TEMPORARY;
->  
->  	ret = btrfs_scan_fs_devices(fp, path, &fs_devices,
-> sb_bytenr, sbflags,
->  			(flags & OPEN_CTREE_NO_DEVICES));
-> @@ -1285,8 +1285,8 @@ static int check_super(struct btrfs_super_block
-> *sb, unsigned sbflags)
->  	int csum_size;
->  
->  	if (btrfs_super_magic(sb) != BTRFS_MAGIC) {
-> -		if (btrfs_super_magic(sb) == BTRFS_MAGIC_PARTIAL) {
-> -			if (!(sbflags & SBREAD_PARTIAL)) {
-> +		if (btrfs_super_magic(sb) == BTRFS_MAGIC_TEMPORARY)
-> {
-> +			if (!(sbflags & SBREAD_TEMPORARY)) {
->  				error("superblock magic doesn't
-> match");
->  				return -EIO;
->  			}
-> diff --git a/disk-io.h b/disk-io.h
-> index f6a422f2a773..c4496155771f 100644
-> --- a/disk-io.h
-> +++ b/disk-io.h
-> @@ -73,8 +73,12 @@ enum btrfs_open_ctree_flags {
->  	 */
->  	OPEN_CTREE_IGNORE_CHUNK_TREE_ERROR = (1U << 11),
->  
-> -	/* Allow to open a partially created filesystem */
-> -	OPEN_CTREE_FS_PARTIAL = (1U << 12),
-> +	/*
-> +	 * Allow to open fs with temporary superblock
-> (BTRFS_MAGIC_PARTIAL),
-> +	 * such fs contains very basic tree layout, just able to be
-> opened.
-> +	 * Such temporary super is used for mkfs or convert.
-> +	 */
-> +	OPEN_CTREE_TEMPORARY_SUPER = (1U << 12),
->  
->  	/*
->  	 * Invalidate the free space tree (i.e., clear the
-> FREE_SPACE_TREE_VALID
-> @@ -95,7 +99,7 @@ enum btrfs_read_sb_flags {
->  	 * Read superblock with the fake signature, cannot be used
-> with
->  	 * SBREAD_RECOVER
->  	 */
-> -	SBREAD_PARTIAL		= (1 << 1),
-> +	SBREAD_TEMPORARY = (1 << 1),
->  };
->  
->  /*
-> diff --git a/mkfs/main.c b/mkfs/main.c
-> index b65b18ddf2f3..7ac587b77383 100644
-> --- a/mkfs/main.c
-> +++ b/mkfs/main.c
-> @@ -1099,7 +1099,7 @@ int main(int argc, char **argv)
->  	}
->  
->  	fs_info = open_ctree_fs_info(file, 0, 0, 0,
-> -			OPEN_CTREE_WRITES | OPEN_CTREE_FS_PARTIAL);
-> +			OPEN_CTREE_WRITES |
-> OPEN_CTREE_TEMPORARY_SUPER);
->  	if (!fs_info) {
->  		error("open ctree failed");
->  		goto error;
+

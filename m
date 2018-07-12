@@ -1,66 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:42488 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727595AbeGPQID (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 16 Jul 2018 12:08:03 -0400
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 9E9F5AED4
-        for <linux-btrfs@vger.kernel.org>; Mon, 16 Jul 2018 15:40:03 +0000 (UTC)
-Date: Mon, 16 Jul 2018 17:39:57 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Nikolay Borisov <nborisov@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 00/15] Add delayed-refs support to btrfs-progs
-Message-ID: <20180716153956.GL3126@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1528462078-24490-1-git-send-email-nborisov@suse.com>
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:64827 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1726701AbeGLBcb (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 11 Jul 2018 21:32:31 -0400
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
+        by cn.fujitsu.com (Postfix) with ESMTP id C09884B473FE
+        for <linux-btrfs@vger.kernel.org>; Thu, 12 Jul 2018 09:25:26 +0800 (CST)
+From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH v10.3 0/5] In-band de-duplication for btrfs-progs
+Date: Thu, 12 Jul 2018 09:25:12 +0800
+Message-ID: <20180712012517.29374-1-lufq.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1528462078-24490-1-git-send-email-nborisov@suse.com>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jun 08, 2018 at 03:47:43PM +0300, Nikolay Borisov wrote:
-> Hello,                                                                          
->                                                                                 
-> Here is a series which adds support for delayed refs. This is needed to enable  
-> later work on adding freespace tree repair code. Additionally, it results in  
-> more code sharing between kernel/user space.
-> 
-> Patches 1-9 are simple prep patches removing some arguments, causing problems
-> later. They can go independently of the delayed refs work. They don't introduce
-> any functional changes. Next, patches 10-13 introduce the needed infrastructure
-> to for delayed refs without actually activating it. Patch 14 finally wires it
-> up by adding the necessary call outs to btrfs_run_delayed refs and reworking the
-> extent addition/freeing functions. With all of this done, patch 15 finally
-> removes the old code.
-> 
-> This series passes all btrfs progs fsck and misc tests + fuzz tests apart from
-> fuzz-003/007/009 - but those fail without this series so it's unlikely it's
-> caused by it.
-> 
-> Nikolay Borisov (15):
->   btrfs-progs: Remove root argument from pin_down_bytes
->   btrfs-progs: Remove root argument from btrfs_del_csums
->   btrfs-progs: Add functions to modify the used space by a root
->   btrfs-progs: Refactor the root used bytes are updated
->   btrfs-progs: Make update_block_group take fs_info instead of root
->   btrfs-progs: check: Drop trans/root arguments from free_extent_hook
->   btrfs-progs: Remove root argument from __free_extent
->   btrfs-progs: Remove root argument from alloc_reserved_tree_block
->   btrfs-progs: Always pass 0 for offset when calling btrfs_free_extent
->     for btree blocks.
->   btrfs-progs: Add boolean to signal whether we are re-initing extent
->     tree
->   btrfs-progs: Add delayed refs infrastructure
->   btrfs-progs: Add __free_extent2 function
->   btrfs-progs: Add alloc_reserved_tree_block2 function
->   btrfs-progs: Wire up delayed refs
->   btrfs-progs: Remove old delayed refs infrastructure
+Patchset can be fetched from github:
+https://github.com/littleroad/btrfs-progs.git dedupe_latest
 
-Added to devel. There were some patch-to-patch compilation issues,
-function alloc_reserved_tree_block2 used earlier than defined so I
-reordered the patches to fix that.
+Inband dedupe(in-memory backend only) ioctl support for btrfs-progs.
 
-The CI fails at test check/020-extent-ref-cases but it works on my
-machine so it's not caused by the patchset.
+v7 changes:
+   Update ctree.h to follow kernel structure change
+   Update print-tree to follow kernel structure change
+V8 changes:
+   Move dedup props and on-disk backend support out of the patchset
+   Change command group name to "dedupe-inband", to avoid confusion with
+   possible out-of-band dedupe. Suggested by Mark.
+   Rebase to latest devel branch.
+V9 changes:
+   Follow kernels ioctl change to support FORCE flag, new reconf ioctl,
+   and more precious error reporting.
+v10 changes:
+   Rebase to v4.10.
+   Add BUILD_ASSERT for btrfs_ioctl_dedupe_args
+v10.1 changes:
+   Rebase to v4.14.
+v10.2 changes:
+   Rebase to v4.16.1.
+v10.3 changes:
+   Rebase to v4.17.
+
+Qu Wenruo (5):
+  btrfs-progs: Basic framework for dedupe-inband command group
+  btrfs-progs: dedupe: Add enable command for dedupe command group
+  btrfs-progs: dedupe: Add disable support for inband dedupelication
+  btrfs-progs: dedupe: Add status subcommand
+  btrfs-progs: dedupe: introduce reconfigure subcommand
+
+ Documentation/Makefile.in                  |   1 +
+ Documentation/btrfs-dedupe-inband.asciidoc | 167 ++++++++
+ Documentation/btrfs.asciidoc               |   4 +
+ Makefile                                   |   3 +-
+ btrfs-completion                           |   6 +-
+ btrfs.c                                    |   2 +
+ cmds-dedupe-ib.c                           | 442 +++++++++++++++++++++
+ commands.h                                 |   2 +
+ dedupe-ib.h                                |  28 ++
+ ioctl.h                                    |  38 ++
+ 10 files changed, 691 insertions(+), 2 deletions(-)
+ create mode 100644 Documentation/btrfs-dedupe-inband.asciidoc
+ create mode 100644 cmds-dedupe-ib.c
+ create mode 100644 dedupe-ib.h
+
+-- 
+2.18.0
+
+
+

@@ -1,167 +1,122 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:50987 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1732278AbeGKBYw (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 10 Jul 2018 21:24:52 -0400
-From: Gu Jinxiang <gujx@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: <nborisov@suse.com>
-Subject: [PATCH v3 2/2] btrfs: get fs_devices pointer form btrfs_scan_one_device
-Date: Wed, 11 Jul 2018 09:22:58 +0800
-Message-ID: <1531272178-17471-2-git-send-email-gujx@cn.fujitsu.com>
-In-Reply-To: <1531272178-17471-1-git-send-email-gujx@cn.fujitsu.com>
-References: <1531272178-17471-1-git-send-email-gujx@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from mail.kernel.org ([198.145.29.99]:41832 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726370AbeGLJrs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 12 Jul 2018 05:47:48 -0400
+Received: from debian3.lan (bl11-80-66.dsl.telepac.pt [85.244.80.66])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id 9669320875
+        for <linux-btrfs@vger.kernel.org>; Thu, 12 Jul 2018 09:39:00 +0000 (UTC)
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: file data corruption after cloning a range and fsync
+Date: Thu, 12 Jul 2018 01:32:58 +0100
+Message-Id: <20180712003258.16209-1-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Instead of pointer to btrfs_fs_devices as an arg in
-btrfs_scan_one_device, better to make it as a return value.
+From: Filipe Manana <fdmanana@suse.com>
 
-Signed-off-by: Gu Jinxiang <gujx@cn.fujitsu.com>
+When we clone a range into a file we can end up dropping existing
+extent maps (or trimming them) and replacing them with new ones if the
+range to be cloned overlaps with a range in the destination inode.
+When that happens we add the new extent maps to the  list of modified
+extents in the inode's extent map tree, so that a "fast" fsync (the flag
+BTRFS_INODE_NEEDS_FULL_SYNC not set in the inode) will see the extent maps
+and log corresponding extent items. However, at the end of range cloning
+operation we do truncate all the pages in the affected range (in order to
+ensure future reads will not get stale data). Sometimes this truncation
+will release the corresponding extent maps besides the pages from the page
+cache. If this happens, then a "fast" fsync operation will miss logging
+some extent items, because it relies exclusively on the extent maps being
+present in the inode's extent tree, leading to data loss/corruption if
+the fsync ends up using the same transaction used by the clone operation
+(that transaction was not committed in the meanwhile). An extent map is
+released through the callback btrfs_invalidatepage(), which gets called by
+truncate_inode_pages_range(), and it calls __btrfs_releasepage(). The
+later ends up calling try_release_extent_mapping() which will release the
+extent map if some conditions are met, like the file size being greater
+than 16Mb, gfp flags allow blocking and the range not being locked (which
+is the case during the clone operation) nor being the extent map flagged
+as pinned (also the case for cloning).
+
+The following example, turned into a test for fstests, reproduces the
+issue:
+
+  $ mkfs.btrfs -f /dev/sdb
+  $ mount /dev/sdb /mnt
+
+  $ xfs_io -f -c "pwrite -S 0x18 9000K 6908K" /mnt/foo
+  $ xfs_io -f -c "pwrite -S 0x20 2572K 156K" /mnt/bar
+
+  $ xfs_io -c "fsync" /mnt/bar
+  # reflink destination offset corresponds to the size of file bar,
+  # 2728Kb minus 4Kb.
+  $ xfs_io -c ""reflink ${SCRATCH_MNT}/foo 0 2724K 15908K" /mnt/bar
+  $ xfs_io -c "fsync" /mnt/bar
+
+  $ md5sum /mnt/bar
+  95a95813a8c2abc9aa75a6c2914a077e  /mnt/bar
+
+  <power fail>
+
+  $ mount /dev/sdb /mnt
+  $ md5sum /mnt/bar
+  207fd8d0b161be8a84b945f0df8d5f8d  /mnt/bar
+  # digest should be 95a95813a8c2abc9aa75a6c2914a077e like before the
+  # power failure
+
+In the above example, the destination offset of the clone operation
+corresponds to the size of the "bar" file minus 4Kb. So during the clone
+operation, the extent map covering the range from 2572Kb to 2728Kb gets
+trimmed so that it ends at offset 2724Kb, and a new extent map covering
+the range from 2724Kb to 11724Kb is created. So at the end of the clone
+operation when we ask to truncate the pages in the range from 2724Kb to
+2724Kb + 15908Kb, the page invalidation callback ends up removing the new
+extent map (through try_release_extent_mapping()) when the page at offset
+2724Kb is passed to that callback.
+
+Fix this by setting the bit BTRFS_INODE_NEEDS_FULL_SYNC whenever an extent
+map is removed at try_release_extent_mapping(), forcing the next fsync to
+search for modified extents in the fs/subvolume tree instead of relying on
+the presence of extent maps in memory. This way we can continue doing a
+"fast" fsync if the destination range of a clone operation does not
+overlap with an existing range or if any of the criteria necessary to
+remove an extent map at try_release_extent_mapping() is not met (file
+size not bigger then 16Mb or gfp flags do not allow blocking).
+
+CC: stable@vger.kernel.org # 3.16+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
+ fs/btrfs/extent_io.c | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
 
-Changelog:
-v3: as comment by robot, use PTR_ERR_OR_ZERO, and rebase to misc-next.
-v2: as comment by Nikolay, use ERR_CAST instead of cast type manually.
-
- fs/btrfs/super.c   | 29 ++++++++++++++++++-----------
- fs/btrfs/volumes.c | 14 +++++++-------
- fs/btrfs/volumes.h |  4 ++--
- 3 files changed, 27 insertions(+), 20 deletions(-)
-
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 78b5d51c7bc7..20e1ee338a95 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -916,11 +916,13 @@ static int btrfs_parse_early_options(const char *options, fmode_t flags,
- 				error = -ENOMEM;
- 				goto out;
- 			}
--			error = btrfs_scan_one_device(device_name,
--					flags, holder, &fs_devices);
-+			fs_devices = btrfs_scan_one_device(device_name,
-+					flags, holder);
- 			kfree(device_name);
--			if (error)
-+			if (IS_ERR(fs_devices)) {
-+				error = PTR_ERR(fs_devices);
- 				goto out;
-+			}
- 		}
- 	}
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index e55843f536bc..b3e45714d28f 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -4238,8 +4238,9 @@ int try_release_extent_mapping(struct page *page, gfp_t mask)
+ 	struct extent_map *em;
+ 	u64 start = page_offset(page);
+ 	u64 end = start + PAGE_SIZE - 1;
+-	struct extent_io_tree *tree = &BTRFS_I(page->mapping->host)->io_tree;
+-	struct extent_map_tree *map = &BTRFS_I(page->mapping->host)->extent_tree;
++	struct btrfs_inode *btrfs_inode = BTRFS_I(page->mapping->host);
++	struct extent_io_tree *tree = &btrfs_inode->io_tree;
++	struct extent_map_tree *map = &btrfs_inode->extent_tree;
  
-@@ -1537,9 +1539,11 @@ static struct dentry *btrfs_mount_root(struct file_system_type *fs_type,
- 			return ERR_PTR(error);
- 	}
- 
--	error = btrfs_scan_one_device(device_name, mode, fs_type, &fs_devices);
--	if (error)
-+	fs_devices = btrfs_scan_one_device(device_name, mode, fs_type);
-+	if (IS_ERR(fs_devices)) {
-+		error = PTR_ERR(fs_devices);
- 		goto error_sec_opts;
-+	}
- 
- 	/*
- 	 * Setup a dummy root and fs_info for test/set super.  This is because
-@@ -2220,7 +2224,7 @@ static long btrfs_control_ioctl(struct file *file, unsigned int cmd,
- 				unsigned long arg)
- {
- 	struct btrfs_ioctl_vol_args *vol;
--	struct btrfs_fs_devices *fs_devices;
-+	struct btrfs_fs_devices *fs_devices = NULL;
- 	int ret = -ENOTTY;
- 
- 	if (!capable(CAP_SYS_ADMIN))
-@@ -2232,14 +2236,17 @@ static long btrfs_control_ioctl(struct file *file, unsigned int cmd,
- 
- 	switch (cmd) {
- 	case BTRFS_IOC_SCAN_DEV:
--		ret = btrfs_scan_one_device(vol->name, FMODE_READ,
--					    &btrfs_root_fs_type, &fs_devices);
-+		fs_devices = btrfs_scan_one_device(vol->name, FMODE_READ,
-+					    &btrfs_root_fs_type);
-+		ret = PTR_ERR_OR_ZERO(fs_devices);
- 		break;
- 	case BTRFS_IOC_DEVICES_READY:
--		ret = btrfs_scan_one_device(vol->name, FMODE_READ,
--					    &btrfs_root_fs_type, &fs_devices);
--		if (ret)
-+		fs_devices = btrfs_scan_one_device(vol->name, FMODE_READ,
-+					    &btrfs_root_fs_type);
-+		if (IS_ERR(fs_devices)) {
-+			ret = PTR_ERR(fs_devices);
- 			break;
-+		}
- 		ret = !(fs_devices->num_devices == fs_devices->total_devices);
- 		break;
- 	case BTRFS_IOC_GET_SUPPORTED_FEATURES:
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index af2704de9ff9..6a6321e41f1b 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1212,14 +1212,14 @@ static int btrfs_read_disk_super(struct block_device *bdev, u64 bytenr,
-  * and we are not allowed to call set_blocksize during the scan. The superblock
-  * is read via pagecache
-  */
--int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
--			  struct btrfs_fs_devices **fs_devices_ret)
-+struct btrfs_fs_devices *btrfs_scan_one_device(const char *path, fmode_t flags,
-+		void *holder)
- {
- 	struct btrfs_super_block *disk_super;
- 	struct btrfs_device *device;
- 	struct block_device *bdev;
- 	struct page *page;
--	int ret = 0;
-+	struct btrfs_fs_devices *ret = NULL;
- 	u64 bytenr;
- 
- 	/*
-@@ -1233,19 +1233,19 @@ int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
- 
- 	bdev = blkdev_get_by_path(path, flags, holder);
- 	if (IS_ERR(bdev))
--		return PTR_ERR(bdev);
-+		return ERR_CAST(bdev);
- 
- 	if (btrfs_read_disk_super(bdev, bytenr, &page, &disk_super)) {
--		ret = -EINVAL;
-+		ret = ERR_PTR(-EINVAL);
- 		goto error_bdev_put;
- 	}
- 
- 	mutex_lock(&uuid_mutex);
- 	device = device_list_add(path, disk_super);
- 	if (IS_ERR(device))
--		ret = PTR_ERR(device);
-+		ret = ERR_CAST(device);
- 	else
--		*fs_devices_ret = device->fs_devices;
-+		ret = device->fs_devices;
- 	mutex_unlock(&uuid_mutex);
- 
- 	btrfs_release_disk_super(page);
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 275c31c730cf..d8f0b6f85e35 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -405,8 +405,8 @@ blk_status_t btrfs_map_bio(struct btrfs_fs_info *fs_info, struct bio *bio,
- 			   int mirror_num, int async_submit);
- int btrfs_open_devices(struct btrfs_fs_devices *fs_devices,
- 		       fmode_t flags, void *holder);
--int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
--			  struct btrfs_fs_devices **fs_devices_ret);
-+struct btrfs_fs_devices *btrfs_scan_one_device(const char *path, fmode_t flags,
-+		void *holder);
- int btrfs_close_devices(struct btrfs_fs_devices *fs_devices);
- void btrfs_free_extra_devids(struct btrfs_fs_devices *fs_devices, int step);
- void btrfs_assign_next_active_device(struct btrfs_fs_info *fs_info,
+ 	if (gfpflags_allow_blocking(mask) &&
+ 	    page->mapping->host->i_size > SZ_16M) {
+@@ -4262,6 +4263,8 @@ int try_release_extent_mapping(struct page *page, gfp_t mask)
+ 					    extent_map_end(em) - 1,
+ 					    EXTENT_LOCKED | EXTENT_WRITEBACK,
+ 					    0, NULL)) {
++				set_bit(BTRFS_INODE_NEEDS_FULL_SYNC,
++					&btrfs_inode->runtime_flags);
+ 				remove_extent_mapping(map, em);
+ 				/* once for the rb tree */
+ 				free_extent_map(em);
 -- 
-2.17.1
-
-
+2.11.0
 

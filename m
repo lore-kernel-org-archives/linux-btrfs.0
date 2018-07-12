@@ -1,44 +1,819 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:33522 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727329AbeGPPYw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 16 Jul 2018 11:24:52 -0400
-Date: Mon, 16 Jul 2018 16:56:57 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Omar Sandoval <osandov@osandov.com>
-Cc: linux-btrfs@vger.kernel.org, kernel-team@fb.com,
-        David Sterba <dsterba@suse.com>
-Subject: Re: [PATCH RESEND 2/2] btrfs-progs: make all programs and libraries
- optional
-Message-ID: <20180716145657.GK3126@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+Received: from mail-pl0-f68.google.com ([209.85.160.68]:39698 "EHLO
+        mail-pl0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1733207AbeGLXXN (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 12 Jul 2018 19:23:13 -0400
+Received: by mail-pl0-f68.google.com with SMTP id p23-v6so45106plo.6
+        for <linux-btrfs@vger.kernel.org>; Thu, 12 Jul 2018 16:11:28 -0700 (PDT)
+From: Omar Sandoval <osandov@osandov.com>
+To: linux-btrfs@vger.kernel.org
+Cc: kernel-team@fb.com, David Sterba <dsterba@suse.com>
+Subject: [PATCH RESEND 1/2] btrfs-progs: remove stale dir-test and quick-test
+Date: Thu, 12 Jul 2018 16:11:18 -0700
+Message-Id: <38850f2972a4bb5b37261c34b67f235fcbf679e7.1531436967.git.osandov@fb.com>
+In-Reply-To: <cover.1531436967.git.osandov@fb.com>
 References: <cover.1531436967.git.osandov@fb.com>
- <116774c27511a8186b837f82053fbeba2a50d75c.1531436967.git.osandov@fb.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <116774c27511a8186b837f82053fbeba2a50d75c.1531436967.git.osandov@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jul 12, 2018 at 04:11:19PM -0700, Omar Sandoval wrote:
-> From: Omar Sandoval <osandov@fb.com>
-> 
-> We have a build system internally which only needs to build the
-> libraries out of a repository, not any binaries. I looked at how this
-> works with other projects, and the best example was util-linux, which
-> makes it possible to enable or disable everything individually. This is
-> nice and really flexible, so let's do the same. This way, if you only
-> want to build and install libbtrfsutil, you can simply do
-> 
->   ./configure --disable-documentation --disable-all-programs --enable-libbtrfsutil
->   make
->   make install
+From: Omar Sandoval <osandov@fb.com>
 
-I think this is an overkill and abusing the --enable-XXX options.  You
-want to avoid building the tools by default, so adding an option for
-that is fine. Selectively building only certain tools can utilize that
-option too and just follow with 'make btrfs-image' etc.
+These don't build anymore and don't appear to be used for anything.
 
-The number of --enable-* will stay minimal and we don't even have to
-discuss how to find a good naming scheme (that works for util-linux but
-looks a bit confusing for btrfs-progs).
+Signed-off-by: Omar Sandoval <osandov@fb.com>
+---
+ Makefile     |  10 +-
+ dir-test.c   | 518 ---------------------------------------------------
+ quick-test.c | 226 ----------------------
+ 3 files changed, 1 insertion(+), 753 deletions(-)
+ delete mode 100644 dir-test.c
+ delete mode 100644 quick-test.c
+
+diff --git a/Makefile b/Makefile
+index 544410e6..62102baf 100644
+--- a/Makefile
++++ b/Makefile
+@@ -495,14 +495,6 @@ btrfs-convert.static: $(static_convert_objects) $(static_objects) $(static_libbt
+ 	@echo "    [LD]     $@"
+ 	$(Q)$(CC) -o $@ $^ $(STATIC_LDFLAGS) $(btrfs_convert_libs) $(STATIC_LIBS)
+ 
+-dir-test: dir-test.o $(objects) $(libs)
+-	@echo "    [LD]     $@"
+-	$(Q)$(CC) -o $@ $^ $(LDFLAGS) $(LIBS)
+-
+-quick-test: quick-test.o $(objects) $(libs)
+-	@echo "    [LD]     $@"
+-	$(Q)$(CC) -o $@ $^ $(LDFLAGS) $(LIBS)
+-
+ ioctl-test.o: ioctl-test.c ioctl.h kerncompat.h ctree.h
+ 	@echo "    [CC]   $@"
+ 	$(Q)$(CC) $(CFLAGS) -c $< -o $@
+@@ -603,7 +595,7 @@ clean: $(CLEANDIRS)
+ 		image/*.o image/*.o.d \
+ 		convert/*.o convert/*.o.d \
+ 		mkfs/*.o mkfs/*.o.d check/*.o check/*.o.d \
+-	      dir-test ioctl-test quick-test library-test library-test-static \
++	      ioctl-test library-test library-test-static \
+               mktables btrfs.static mkfs.btrfs.static fssum \
+ 	      $(check_defs) \
+ 	      $(libs) $(lib_links) \
+diff --git a/dir-test.c b/dir-test.c
+deleted file mode 100644
+index cfb77f2a..00000000
+--- a/dir-test.c
++++ /dev/null
+@@ -1,518 +0,0 @@
+-/*
+- * Copyright (C) 2007 Oracle.  All rights reserved.
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public
+- * License v2 as published by the Free Software Foundation.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+- * General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public
+- * License along with this program; if not, write to the
+- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+- * Boston, MA 021110-1307, USA.
+- */
+-
+-#include <stdio.h>
+-#include <stdlib.h>
+-#include <signal.h>
+-#include <sys/types.h>
+-#include <sys/stat.h>
+-#include <unistd.h>
+-#include "kerncompat.h"
+-#include "radix-tree.h"
+-#include "ctree.h"
+-#include "disk-io.h"
+-#include "print-tree.h"
+-#include "hash.h"
+-#include "transaction.h"
+-
+-int keep_running = 1;
+-struct btrfs_super_block super;
+-static u64 dir_oid = 0;
+-static u64 file_oid = 33778;
+-
+-static int find_num(struct radix_tree_root *root, unsigned long *num_ret,
+-		     int exists)
+-{
+-	unsigned long num = rand();
+-	unsigned long res[2];
+-	int ret;
+-
+-again:
+-	ret = radix_tree_gang_lookup(root, (void **)res, num, 2);
+-	if (exists) {
+-		if (ret == 0)
+-			return -1;
+-		num = res[0];
+-	} else if (ret != 0 && num == res[0]) {
+-		num++;
+-		if (ret > 1 && num == res[1]) {
+-			num++;
+-			goto again;
+-		}
+-	}
+-	*num_ret = num;
+-	return 0;
+-}
+-
+-static void initial_inode_init(struct btrfs_root *root,
+-			       struct btrfs_inode_item *inode_item)
+-{
+-	memset(inode_item, 0, sizeof(*inode_item));
+-	btrfs_set_inode_generation(inode_item, root->fs_info->generation);
+-	btrfs_set_inode_mode(inode_item, S_IFREG | 0700);
+-}
+-
+-static int ins_one(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+-		   struct radix_tree_root *radix)
+-{
+-	int ret;
+-	char buf[128];
+-	unsigned long oid;
+-	u64 objectid;
+-	struct btrfs_path path;
+-	struct btrfs_key inode_map;
+-	struct btrfs_inode_item inode_item;
+-
+-	find_num(radix, &oid, 0);
+-	sprintf(buf, "str-%lu", oid);
+-
+-	ret = btrfs_find_free_objectid(trans, root, dir_oid + 1, &objectid);
+-	if (ret)
+-		goto error;
+-
+-	inode_map.objectid = objectid;
+-	inode_map.flags = 0;
+-	inode_map.type = BTRFS_INODE_ITEM_KEY;
+-	inode_map.offset = 0;
+-
+-	initial_inode_init(root, &inode_item);
+-	ret = btrfs_insert_inode(trans, root, objectid, &inode_item);
+-	if (ret)
+-		goto error;
+-	ret = btrfs_insert_dir_item(trans, root, buf, strlen(buf), dir_oid,
+-				    &inode_map, BTRFS_FT_UNKNOWN);
+-	if (ret)
+-		goto error;
+-
+-	radix_tree_preload(GFP_KERNEL);
+-	ret = radix_tree_insert(radix, oid, (void *)oid);
+-	radix_tree_preload_end();
+-	if (ret)
+-		goto error;
+-	return ret;
+-error:
+-	if (ret != -EEXIST)
+-		goto fatal;
+-
+-	/*
+-	 * if we got an EEXIST, it may be due to hash collision, double
+-	 * check
+-	 */
+-	btrfs_init_path(&path);
+-	ret = btrfs_lookup_dir_item(trans, root, &path, dir_oid, buf,
+-				    strlen(buf), 0);
+-	if (ret)
+-		goto fatal_release;
+-	if (!btrfs_match_dir_item_name(root, &path, buf, strlen(buf))) {
+-		struct btrfs_dir_item *di;
+-		char *found;
+-		u32 found_len;
+-		u64 myhash;
+-		u64 foundhash;
+-
+-		di = btrfs_item_ptr(&path.nodes[0]->leaf, path.slots[0],
+-				    struct btrfs_dir_item);
+-		found = (char *)(di + 1);
+-		found_len = btrfs_dir_name_len(di);
+-		myhash = btrfs_name_hash(buf, strlen(buf));
+-		foundhash = btrfs_name_hash(found, found_len);
+-		if (myhash != foundhash)
+-			goto fatal_release;
+-		btrfs_release_path(&path);
+-		return 0;
+-	}
+-fatal_release:
+-	btrfs_release_path(&path);
+-fatal:
+-	printf("failed to insert %lu ret %d\n", oid, ret);
+-	return ret;
+-}
+-
+-static int insert_dup(struct btrfs_trans_handle *trans, struct btrfs_root
+-		      *root, struct radix_tree_root *radix)
+-{
+-	int ret;
+-	char buf[128];
+-	unsigned long oid;
+-	struct btrfs_key key;
+-
+-	ret = find_num(radix, &oid, 1);
+-	if (ret < 0)
+-		return 0;
+-	sprintf(buf, "str-%lu", oid);
+-
+-	key.objectid = file_oid;
+-	key.flags = 0;
+-	key.type = BTRFS_INODE_ITEM_KEY;
+-	key.offset = 0;
+-	ret = btrfs_insert_dir_item(trans, root, buf, strlen(buf), dir_oid,
+-				    &key, BTRFS_FT_UNKNOWN);
+-	if (ret != -EEXIST) {
+-		printf("insert on %s gave us %d\n", buf, ret);
+-		return 1;
+-	}
+-	return 0;
+-}
+-
+-static int del_dir_item(struct btrfs_trans_handle *trans,
+-			struct btrfs_root *root,
+-			struct radix_tree_root *radix,
+-			unsigned long radix_index,
+-			struct btrfs_path *path)
+-{
+-	int ret;
+-	unsigned long *ptr;
+-	u64 file_objectid;
+-	struct btrfs_dir_item *di;
+-
+-	/* find the inode number of the file */
+-	di = btrfs_item_ptr(&path->nodes[0]->leaf, path->slots[0],
+-			    struct btrfs_dir_item);
+-	file_objectid = btrfs_disk_key_objectid(&di->location);
+-
+-	/* delete the directory item */
+-	ret = btrfs_del_item(trans, root, path);
+-	if (ret)
+-		goto out_release;
+-	btrfs_release_path(path);
+-
+-	/* delete the inode */
+-	btrfs_init_path(path);
+-	ret = btrfs_lookup_inode(trans, root, path, file_objectid, -1);
+-	if (ret)
+-		goto out_release;
+-	ret = btrfs_del_item(trans, root, path);
+-	if (ret)
+-		goto out_release;
+-	btrfs_release_path(path);
+-
+-	if (root->fs_info->last_inode_alloc > file_objectid)
+-		root->fs_info->last_inode_alloc = file_objectid;
+-	ptr = radix_tree_delete(radix, radix_index);
+-	if (!ptr) {
+-		ret = -5555;
+-		goto out;
+-	}
+-	return 0;
+-out_release:
+-	btrfs_release_path(path);
+-out:
+-	printf("failed to delete %lu %d\n", radix_index, ret);
+-	return ret;
+-}
+-
+-static int del_one(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+-		   struct radix_tree_root *radix)
+-{
+-	int ret;
+-	char buf[128];
+-	unsigned long oid;
+-	struct btrfs_path path;
+-
+-	ret = find_num(radix, &oid, 1);
+-	if (ret < 0)
+-		return 0;
+-	sprintf(buf, "str-%lu", oid);
+-	btrfs_init_path(&path);
+-	ret = btrfs_lookup_dir_item(trans, root, &path, dir_oid, buf,
+-				    strlen(buf), -1);
+-	if (ret)
+-		goto out_release;
+-
+-	ret = del_dir_item(trans, root, radix, oid, &path);
+-	if (ret)
+-		goto out_release;
+-	return ret;
+-out_release:
+-	btrfs_release_path(&path);
+-	printf("failed to delete %lu %d\n", oid, ret);
+-	return ret;
+-}
+-
+-static int lookup_item(struct btrfs_trans_handle *trans, struct btrfs_root
+-		       *root, struct radix_tree_root *radix)
+-{
+-	struct btrfs_path path;
+-	char buf[128];
+-	int ret;
+-	unsigned long oid;
+-	u64 objectid;
+-	struct btrfs_dir_item *di;
+-
+-	ret = find_num(radix, &oid, 1);
+-	if (ret < 0)
+-		return 0;
+-	sprintf(buf, "str-%lu", oid);
+-	btrfs_init_path(&path);
+-	ret = btrfs_lookup_dir_item(trans, root, &path, dir_oid, buf,
+-				    strlen(buf), 0);
+-	if (!ret) {
+-		di = btrfs_item_ptr(&path.nodes[0]->leaf, path.slots[0],
+-				    struct btrfs_dir_item);
+-		objectid = btrfs_disk_key_objectid(&di->location);
+-	}
+-	btrfs_release_path(&path);
+-	if (ret) {
+-		printf("unable to find key %lu\n", oid);
+-		return ret;
+-	}
+-	return 0;
+-}
+-
+-static int lookup_enoent(struct btrfs_trans_handle *trans, struct btrfs_root
+-			 *root, struct radix_tree_root *radix)
+-{
+-	struct btrfs_path path;
+-	char buf[128];
+-	int ret;
+-	unsigned long oid;
+-
+-	ret = find_num(radix, &oid, 0);
+-	if (ret < 0)
+-		return 0;
+-	sprintf(buf, "str-%lu", oid);
+-	btrfs_init_path(&path);
+-	ret = btrfs_lookup_dir_item(trans, root, &path, dir_oid, buf,
+-				    strlen(buf), 0);
+-	btrfs_release_path(&path);
+-	if (!ret) {
+-		printf("able to find key that should not exist %lu\n", oid);
+-		return ret;
+-	}
+-	return 0;
+-}
+-
+-static int empty_tree(struct btrfs_trans_handle *trans, struct btrfs_root
+-		      *root, struct radix_tree_root *radix, int nr)
+-{
+-	struct btrfs_path path;
+-	struct btrfs_key key;
+-	unsigned long found = 0;
+-	u32 found_len;
+-	int ret;
+-	int slot;
+-	int count = 0;
+-	char buf[128];
+-	struct btrfs_dir_item *di;
+-
+-	key.offset = (u64)-1;
+-	key.flags = 0;
+-	key.type = BTRFS_DIR_ITEM_KEY;
+-	key.objectid = dir_oid;
+-	while(nr-- >= 0) {
+-		btrfs_init_path(&path);
+-		ret = btrfs_search_slot(trans, root, &key, &path, -1, 1);
+-		if (ret < 0) {
+-			btrfs_release_path(&path);
+-			return ret;
+-		}
+-		if (ret != 0) {
+-			if (path.slots[0] == 0) {
+-				btrfs_release_path(&path);
+-				break;
+-			}
+-			path.slots[0] -= 1;
+-		}
+-		slot = path.slots[0];
+-		di = btrfs_item_ptr(&path.nodes[0]->leaf, slot,
+-				    struct btrfs_dir_item);
+-		found_len = btrfs_dir_name_len(di);
+-		memcpy(buf, (char *)(di + 1), found_len);
+-		BUG_ON(found_len > 128);
+-		buf[found_len] = '\0';
+-		found = atoi(buf + 4);
+-		ret = del_dir_item(trans, root, radix, found, &path);
+-		count++;
+-		if (ret) {
+-			fprintf(stderr,
+-				"failed to remove %lu from tree\n",
+-				found);
+-			return ret;
+-		}
+-		if (!keep_running)
+-			break;
+-	}
+-	return 0;
+-	fprintf(stderr, "failed to delete from the radix %lu\n", found);
+-	return ret;
+-}
+-
+-static int fill_tree(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+-		     struct radix_tree_root *radix, int count)
+-{
+-	int i;
+-	int ret = 0;
+-	for (i = 0; i < count; i++) {
+-		ret = ins_one(trans, root, radix);
+-		if (ret) {
+-			fprintf(stderr, "fill failed\n");
+-			goto out;
+-		}
+-		if (i % 1000 == 0) {
+-			ret = btrfs_commit_transaction(trans, root, &super);
+-			if (ret) {
+-				fprintf(stderr, "fill commit failed\n");
+-				return ret;
+-			}
+-		}
+-		if (i && i % 10000 == 0) {
+-			printf("bigfill %d\n", i);
+-		}
+-		if (!keep_running)
+-			break;
+-	}
+-out:
+-	return ret;
+-}
+-
+-static int bulk_op(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+-		   struct radix_tree_root *radix)
+-{
+-	int ret;
+-	int nr = rand() % 5000;
+-	static int run_nr = 0;
+-
+-	/* do the bulk op much less frequently */
+-	if (run_nr++ % 100)
+-		return 0;
+-	ret = empty_tree(trans, root, radix, nr);
+-	if (ret)
+-		return ret;
+-	ret = fill_tree(trans, root, radix, nr);
+-	if (ret)
+-		return ret;
+-	return 0;
+-}
+-
+-
+-int (*ops[])(struct btrfs_trans_handle *trans, struct btrfs_root *root, struct
+-	     radix_tree_root *radix) =
+-	{ ins_one, insert_dup, del_one, lookup_item,
+-	  lookup_enoent, bulk_op };
+-
+-void sigstopper(int ignored)
+-{
+-	keep_running = 0;
+-	fprintf(stderr, "caught exit signal, stopping\n");
+-}
+-
+-int print_usage(void)
+-{
+-	printf("usage: tester [-ih] [-c count] [-f count]\n");
+-	printf("\t -c count -- iteration count after filling\n");
+-	printf("\t -f count -- run this many random inserts before starting\n");
+-	printf("\t -i       -- only do initial fill\n");
+-	printf("\t -h       -- this help text\n");
+-	exit(1);
+-}
+-int main(int ac, char **av)
+-{
+-	RADIX_TREE(radix, GFP_KERNEL);
+-	struct btrfs_root *root;
+-	int i;
+-	int ret;
+-	int count;
+-	int op;
+-	int iterations = 20000;
+-	int init_fill_count = 800000;
+-	int err = 0;
+-	int initial_only = 0;
+-	struct btrfs_trans_handle *trans;
+-	radix_tree_init();
+-
+-	root = open_ctree(av[ac-1], &super, 0);
+-
+-	if (!root) {
+-		fprintf(stderr, "Open ctree failed\n");
+-		return 1;
+-	}
+-
+-	trans = btrfs_start_transaction(root, 1);
+-	BUG_ON(IS_ERR(trans));
+-
+-	dir_oid = btrfs_super_root_dir(&super);
+-
+-	signal(SIGTERM, sigstopper);
+-	signal(SIGINT, sigstopper);
+-
+-	for (i = 1 ; i < ac - 1; i++) {
+-		if (strcmp(av[i], "-i") == 0) {
+-			initial_only = 1;
+-		} else if (strcmp(av[i], "-c") == 0) {
+-			iterations = atoi(av[i+1]);
+-			i++;
+-		} else if (strcmp(av[i], "-f") == 0) {
+-			init_fill_count = atoi(av[i+1]);
+-			i++;
+-		} else {
+-			print_usage();
+-		}
+-	}
+-	printf("initial fill\n");
+-	ret = fill_tree(trans, root, &radix, init_fill_count);
+-	printf("starting run\n");
+-	if (ret) {
+-		err = ret;
+-		goto out;
+-	}
+-	if (initial_only == 1) {
+-		goto out;
+-	}
+-	for (i = 0; i < iterations; i++) {
+-		op = rand() % ARRAY_SIZE(ops);
+-		count = rand() % 128;
+-		if (i % 2000 == 0) {
+-			printf("%d\n", i);
+-			fflush(stdout);
+-		}
+-		if (i && i % 5000 == 0) {
+-			printf("open & close, root level %d nritems %d\n",
+-				btrfs_header_level(&root->node->node.header),
+-				btrfs_header_nritems(&root->node->node.header));
+-			close_ctree(root, &super);
+-			root = open_ctree("dbfile", &super, 0);
+-
+-			if (!root) {
+-				fprintf(stderr, "Open ctree failed\n");
+-				return 1;
+-			}
+-		}
+-		while(count--) {
+-			ret = ops[op](trans, root, &radix);
+-			if (ret) {
+-				fprintf(stderr, "op %d failed %d:%d\n",
+-					op, i, iterations);
+-				btrfs_print_tree(root, root->node, 1);
+-				fprintf(stderr, "op %d failed %d:%d\n",
+-					op, i, iterations);
+-				err = ret;
+-				goto out;
+-			}
+-			if (ops[op] == bulk_op)
+-				break;
+-			if (keep_running == 0) {
+-				err = 0;
+-				goto out;
+-			}
+-		}
+-	}
+-out:
+-	close_ctree(root, &super);
+-	return !!err;
+-}
+-
+diff --git a/quick-test.c b/quick-test.c
+deleted file mode 100644
+index 5da47c32..00000000
+--- a/quick-test.c
++++ /dev/null
+@@ -1,226 +0,0 @@
+-/*
+- * Copyright (C) 2007 Oracle.  All rights reserved.
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public
+- * License v2 as published by the Free Software Foundation.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+- * General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public
+- * License along with this program; if not, write to the
+- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+- * Boston, MA 021110-1307, USA.
+- */
+-
+-#include <stdio.h>
+-#include <stdlib.h>
+-#include <fcntl.h>
+-#include "kerncompat.h"
+-#include "radix-tree.h"
+-#include "ctree.h"
+-#include "disk-io.h"
+-#include "print-tree.h"
+-#include "transaction.h"
+-
+-/* for testing only */
+-static int next_key(int i, int max_key) {
+-	return rand() % max_key;
+-	// return i;
+-}
+-
+-int main(int ac, char **av) {
+-	struct btrfs_key ins;
+-	struct btrfs_key last = { (u64)-1, 0, 0};
+-	char *buf;
+-	int i;
+-	int num;
+-	int ret;
+-	int run_size = 300000;
+-	int max_key =  100000000;
+-	int tree_size = 2;
+-	struct btrfs_path path;
+-	struct btrfs_root *root;
+-	struct btrfs_trans_handle *trans;
+-
+-	buf = calloc(1, 512);
+-
+-	radix_tree_init();
+-
+-	root = open_ctree(av[1], BTRFS_SUPER_INFO_OFFSET, OPEN_CTREE_WRITES);
+-	if (!root) {
+-		fprintf(stderr, "Open ctree failed\n");
+-		exit(1);
+-	}
+-	trans = btrfs_start_transaction(root, 1);
+-	BUG_ON(IS_ERR(trans));
+-	srand(55);
+-	ins.type = BTRFS_STRING_ITEM_KEY;
+-	for (i = 0; i < run_size; i++) {
+-		num = next_key(i, max_key);
+-		// num = i;
+-		sprintf(buf, "string-%d", num);
+-		if (i % 10000 == 0)
+-			fprintf(stderr, "insert %d:%d\n", num, i);
+-		ins.objectid = num;
+-		ins.offset = 0;
+-		ret = btrfs_insert_item(trans, root, &ins, buf, 512);
+-		if (!ret)
+-			tree_size++;
+-		if (i == run_size - 5) {
+-			btrfs_commit_transaction(trans, root);
+-			trans = btrfs_start_transaction(root, 1);
+-			BUG_ON(IS_ERR(trans));
+-		}
+-	}
+-	btrfs_commit_transaction(trans, root);
+-	close_ctree(root);
+-	exit(1);
+-	root = open_ctree(av[1], BTRFS_SUPER_INFO_OFFSET, OPEN_CTREE_WRITES);
+-	if (!root) {
+-		fprintf(stderr, "Open ctree failed\n");
+-		exit(1);
+-	}
+-	printf("starting search\n");
+-	srand(55);
+-	for (i = 0; i < run_size; i++) {
+-		num = next_key(i, max_key);
+-		ins.objectid = num;
+-		btrfs_init_path(&path);
+-		if (i % 10000 == 0)
+-			fprintf(stderr, "search %d:%d\n", num, i);
+-		ret = btrfs_search_slot(NULL, root, &ins, &path, 0, 0);
+-		if (ret) {
+-			btrfs_print_tree(root, root->node, 1);
+-			printf("unable to find %d\n", num);
+-			exit(1);
+-		}
+-		btrfs_release_path(&path);
+-	}
+-	close_ctree(root);
+-
+-	root = open_ctree(av[1], BTRFS_SUPER_INFO_OFFSET, OPEN_CTREE_WRITES);
+-	if (!root) {
+-		fprintf(stderr, "Open ctree failed\n");
+-		exit(1);
+-	}
+-	printf("node %p level %d total ptrs %d free spc %lu\n", root->node,
+-	        btrfs_header_level(root->node),
+-		btrfs_header_nritems(root->node),
+-		(unsigned long)BTRFS_NODEPTRS_PER_BLOCK(root->fs_info) -
+-		btrfs_header_nritems(root->node));
+-	printf("all searches good, deleting some items\n");
+-	i = 0;
+-	srand(55);
+-	trans = btrfs_start_transaction(root, 1);
+-	BUG_ON(IS_ERR(trans));
+-	for (i = 0 ; i < run_size/4; i++) {
+-		num = next_key(i, max_key);
+-		ins.objectid = num;
+-		btrfs_init_path(&path);
+-		ret = btrfs_search_slot(trans, root, &ins, &path, -1, 1);
+-		if (!ret) {
+-			if (i % 10000 == 0)
+-				fprintf(stderr, "del %d:%d\n", num, i);
+-			ret = btrfs_del_item(trans, root, &path);
+-			if (ret != 0)
+-				BUG();
+-			tree_size--;
+-		}
+-		btrfs_release_path(&path);
+-	}
+-	btrfs_commit_transaction(trans, root);
+-	close_ctree(root);
+-
+-	root = open_ctree(av[1], BTRFS_SUPER_INFO_OFFSET, OPEN_CTREE_WRITES);
+-	if (!root) {
+-		fprintf(stderr, "Open ctree failed\n");
+-		exit(1);
+-	}
+-	trans = btrfs_start_transaction(root, 1);
+-	BUG_ON(IS_ERR(trans));
+-	srand(128);
+-	for (i = 0; i < run_size; i++) {
+-		num = next_key(i, max_key);
+-		sprintf(buf, "string-%d", num);
+-		ins.objectid = num;
+-		if (i % 10000 == 0)
+-			fprintf(stderr, "insert %d:%d\n", num, i);
+-		ret = btrfs_insert_item(trans, root, &ins, buf, 512);
+-		if (!ret)
+-			tree_size++;
+-	}
+-	btrfs_commit_transaction(trans, root);
+-	close_ctree(root);
+-
+-	root = open_ctree(av[1], BTRFS_SUPER_INFO_OFFSET, OPEN_CTREE_WRITES);
+-	if (!root) {
+-		fprintf(stderr, "Open ctree failed\n");
+-		exit(1);
+-	}
+-	srand(128);
+-	printf("starting search2\n");
+-	for (i = 0; i < run_size; i++) {
+-		num = next_key(i, max_key);
+-		ins.objectid = num;
+-		btrfs_init_path(&path);
+-		if (i % 10000 == 0)
+-			fprintf(stderr, "search %d:%d\n", num, i);
+-		ret = btrfs_search_slot(NULL, root, &ins, &path, 0, 0);
+-		if (ret) {
+-			btrfs_print_tree(root, root->node, 1);
+-			printf("unable to find %d\n", num);
+-			exit(1);
+-		}
+-		btrfs_release_path(&path);
+-	}
+-	printf("starting big long delete run\n");
+-	trans = btrfs_start_transaction(root, 1);
+-	BUG_ON(IS_ERR(trans));
+-	while(root->node && btrfs_header_nritems(root->node) > 0) {
+-		struct extent_buffer *leaf;
+-		int slot;
+-		ins.objectid = (u64)-1;
+-		btrfs_init_path(&path);
+-		ret = btrfs_search_slot(trans, root, &ins, &path, -1, 1);
+-		if (ret == 0)
+-			BUG();
+-
+-		leaf = path.nodes[0];
+-		slot = path.slots[0];
+-		if (slot != btrfs_header_nritems(leaf))
+-			BUG();
+-		while(path.slots[0] > 0) {
+-			path.slots[0] -= 1;
+-			slot = path.slots[0];
+-			leaf = path.nodes[0];
+-
+-			btrfs_item_key_to_cpu(leaf, &last, slot);
+-
+-			if (tree_size % 10000 == 0)
+-				printf("big del %d:%d\n", tree_size, i);
+-			ret = btrfs_del_item(trans, root, &path);
+-			if (ret != 0) {
+-				printf("del_item returned %d\n", ret);
+-				BUG();
+-			}
+-			tree_size--;
+-		}
+-		btrfs_release_path(&path);
+-	}
+-	/*
+-	printf("previous tree:\n");
+-	btrfs_print_tree(root, root->commit_root);
+-	printf("map before commit\n");
+-	btrfs_print_tree(root->extent_root, root->extent_root->node);
+-	*/
+-	btrfs_commit_transaction(trans, root);
+-	printf("tree size is now %d\n", tree_size);
+-	printf("root %p commit root %p\n", root->node, root->commit_root);
+-	btrfs_print_tree(root, root->node, 1);
+-	close_ctree(root);
+-	return 0;
+-}
+-- 
+2.18.0
+

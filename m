@@ -1,45 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from know-smtprelay-omc-3.server.virginmedia.net ([80.0.253.67]:43541
-        "EHLO know-smtprelay-omc-3.server.virginmedia.net"
+Received: from mout.gmx.net ([212.227.15.18]:55809 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S2388336AbeGKVFm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 11 Jul 2018 17:05:42 -0400
-Subject: Re: Transaction aborted (error -28)
- btrfs_run_delayed_refs*0x163/0x190
-To: Martin Raiber <martin@urbackup.org>, linux-btrfs@vger.kernel.org
-References: <c641cf2f-1b94-f7ed-3bb5-95a0c4bd2493@petezilla.co.uk>
- <010201648357d71c-04a86c88-517f-4aca-904b-ba94aae5d99f-000000@eu-west-1.amazonses.com>
-From: Pete <pete@petezilla.co.uk>
-Message-ID: <d8905b5a-a2cc-605c-a5c8-e295a683d8b9@petezilla.co.uk>
-Date: Wed, 11 Jul 2018 21:59:30 +0100
+        id S1725786AbeGLFet (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 12 Jul 2018 01:34:49 -0400
+Subject: Why original mode doesn't use swap? (Original: Re: btrfs check
+ lowmem, take 2)
+To: Chris Murphy <lists@colorremedies.com>, Marc MERLIN <marc@merlins.org>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>, Su Yue <Damenly_Su@gmx.com>,
+        Su Yue <suy.fnst@cn.fujitsu.com>
+References: <20180710180915.onnxuak7vb7uywyn@merlins.org>
+ <CAJCQCtRQdg56Hxk=U2JMXbE35Jj_Q5Ock_gn43jWxci4Nbs5UA@mail.gmail.com>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <e0de5098-05ce-28f8-591c-39b87dea63fe@gmx.com>
+Date: Thu, 12 Jul 2018 13:26:41 +0800
 MIME-Version: 1.0
-In-Reply-To: <010201648357d71c-04a86c88-517f-4aca-904b-ba94aae5d99f-000000@eu-west-1.amazonses.com>
+In-Reply-To: <CAJCQCtRQdg56Hxk=U2JMXbE35Jj_Q5Ock_gn43jWxci4Nbs5UA@mail.gmail.com>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 07/10/2018 09:38 AM, Martin Raiber wrote:
 
-> This is probably a known issue. See
-> https://www.spinics.net/lists/linux-btrfs/msg75647.html
-> You could apply the patch in this thread and mount with enospc_debug to
-> confirm it is the same issue.
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+On 2018年07月12日 01:09, Chris Murphy wrote:
+> On Tue, Jul 10, 2018 at 12:09 PM, Marc MERLIN <marc@merlins.org> wrote:
+>> Thanks to Su and Qu, I was able to get my filesystem to a point that
+>> it's mountable.
+>> I then deleted loads of snapshots and I'm down to 26.
+>>
+>> IT now looks like this:
+>> gargamel:~# btrfs fi show /mnt/mnt
+>> Label: 'dshelf2'  uuid: 0f1a0c9f-4e54-4fa7-8736-fd50818ff73d
+>>         Total devices 1 FS bytes used 12.30TiB
+>>         devid    1 size 14.55TiB used 13.81TiB path /dev/mapper/dshelf2
+>>
+>> gargamel:~# btrfs fi df /mnt/mnt
+>> Data, single: total=13.57TiB, used=12.19TiB
+>> System, DUP: total=32.00MiB, used=1.55MiB
+>> Metadata, DUP: total=124.50GiB, used=115.62GiB
+>> Metadata, single: total=216.00MiB, used=0.00B
+>> GlobalReserve, single: total=512.00MiB, used=0.00B
+>>
+>>
+>> Problems
+>> 1) btrfs check --repair _still_ takes all 32GB of RAM and crashes the
+>> server, despite my deleting lots of snapshots.
+>> Is it because I have too many files then?
 > 
+> I think originally needs most of metdata in memory.
+> 
+> I'm not understanding why btrfs check won't use swap like at least
+> xfs_repair and pretty sure e2fsck will as well.
 
-OK, I've applied the patch, by hand, and hopefully put it in the right
-place.  Need to learn to patch better.
+I don't understand either.
 
-Booted the (rebuilt with make ; make modules_install syslinux etc)
-kernel with the option enospc_debug for the two btrfs file systems (1st
-entry for each in fstb.  I was not expecting to get the issue to appear
-quickly as it took several days to hit previously.  However, on checking
-I see another error, not sure if it is related, still is in extent-tree.c.
+Isn't memory from malloc() swappable?
 
-https://drive.google.com/file/d/1K12MfpWFB1aHSXBga1Rym5terbmHeDfI/view?usp=sharing
+Thanks,
+Qu
 
-
-Pete
+> 
+> Using 128G swap on nvme with original check is still gonna be faster
+> than lowmem mode.
+> 
+> 
+> 
+> 

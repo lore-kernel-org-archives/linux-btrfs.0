@@ -1,16 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:49068 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:53546 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725992AbeGLHVS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 12 Jul 2018 03:21:18 -0400
-Subject: Re: [PATCH 1/3] btrfs: warn for num_devices below 0
+        id S1726041AbeGLHkH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 12 Jul 2018 03:40:07 -0400
+Subject: Re: [PATCH 2/3] btrfs: add helper btrfs_num_devices() to deduce
+ num_devices
 To: Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
 References: <20180710182241.23754-1-anand.jain@oracle.com>
+ <20180710182241.23754-2-anand.jain@oracle.com>
 From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <8a7b78aa-1a7f-9edd-e30b-d97d15a35331@suse.com>
-Date: Thu, 12 Jul 2018 10:13:01 +0300
+Message-ID: <0547e58c-3142-9338-474e-780a8eb0eef6@suse.com>
+Date: Thu, 12 Jul 2018 10:31:46 +0300
 MIME-Version: 1.0
-In-Reply-To: <20180710182241.23754-1-anand.jain@oracle.com>
+In-Reply-To: <20180710182241.23754-2-anand.jain@oracle.com>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -18,30 +20,75 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 
 On 10.07.2018 21:22, Anand Jain wrote:
-> In preparation to de-duplicate a section of code where we deduce the
-> num_devices, use warn instead of bug.
+> When the replace is running the fs_devices::num_devices also includes
+> the replace device, however in some operations like device delete and
+> balance it needs the actual num_devices without the repalce devices, so
+> now the function btrfs_num_devices() just provides that.
 > 
 > Signed-off-by: Anand Jain <anand.jain@oracle.com>
 > ---
->  fs/btrfs/volumes.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
+>  fs/btrfs/volumes.c | 31 +++++++++++++++++--------------
+>  1 file changed, 17 insertions(+), 14 deletions(-)
 > 
 > diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index eb78bb8d1108..ce6faeb8bcf8 100644
+> index ce6faeb8bcf8..59a6d8f42c98 100644
 > --- a/fs/btrfs/volumes.c
 > +++ b/fs/btrfs/volumes.c
-> @@ -3813,7 +3813,7 @@ int btrfs_balance(struct btrfs_fs_info *fs_info,
->  	num_devices = fs_info->fs_devices->num_devices;
->  	btrfs_dev_replace_read_lock(&fs_info->dev_replace);
->  	if (btrfs_dev_replace_is_ongoing(&fs_info->dev_replace)) {
-> -		BUG_ON(num_devices < 1);
+> @@ -1931,6 +1931,20 @@ void btrfs_assign_next_active_device(struct btrfs_fs_info *fs_info,
+>  		fs_info->fs_devices->latest_bdev = next_device->bdev;
+>  }
+>  
+
+Put a comment above the function saying it returns the number of devices
+minus the replace device (in case replace is working) otherwise one have
+to go and 'git blame' it
+
+> +static inline u64 btrfs_num_devices(struct btrfs_fs_info *fs_info)
+> +{
+> +	u64 num_devices = fs_info->fs_devices->num_devices;
+> +
+> +	btrfs_dev_replace_read_lock(&fs_info->dev_replace);
+> +	if (btrfs_dev_replace_is_ongoing(&fs_info->dev_replace)) {
 > +		WARN_ON(num_devices < 1);
-
-Isn't dev_replace_is_ongoing && num_devices < 1 indeed a logical bug
-situation? Under what condition can it happen that you deem "non
-critical" ?
-
->  		num_devices--;
+> +		num_devices--;
+> +	}
+> +	btrfs_dev_replace_read_unlock(&fs_info->dev_replace);
+> +
+> +	return num_devices;
+> +}
+> +
+>  int btrfs_rm_device(struct btrfs_fs_info *fs_info, const char *device_path,
+>  		u64 devid)
+>  {
+> @@ -1944,13 +1958,7 @@ int btrfs_rm_device(struct btrfs_fs_info *fs_info, const char *device_path,
+>  
+>  	mutex_lock(&uuid_mutex);
+>  
+> -	num_devices = fs_devices->num_devices;
+> -	btrfs_dev_replace_read_lock(&fs_info->dev_replace);
+> -	if (btrfs_dev_replace_is_ongoing(&fs_info->dev_replace)) {
+> -		WARN_ON(num_devices < 1);
+> -		num_devices--;
+> -	}
+> -	btrfs_dev_replace_read_unlock(&fs_info->dev_replace);
+> +	num_devices = btrfs_num_devices(fs_info);
+>  
+>  	ret = btrfs_check_raid_min_devices(fs_info, num_devices - 1);
+>  	if (ret)
+> @@ -3810,13 +3818,8 @@ int btrfs_balance(struct btrfs_fs_info *fs_info,
+>  		}
 >  	}
->  	btrfs_dev_replace_read_unlock(&fs_info->dev_replace);
+>  
+> -	num_devices = fs_info->fs_devices->num_devices;
+> -	btrfs_dev_replace_read_lock(&fs_info->dev_replace);
+> -	if (btrfs_dev_replace_is_ongoing(&fs_info->dev_replace)) {
+> -		WARN_ON(num_devices < 1);
+> -		num_devices--;
+> -	}
+> -	btrfs_dev_replace_read_unlock(&fs_info->dev_replace);
+> +	num_devices = btrfs_num_devices(fs_info);
+> +
+>  	allowed = BTRFS_AVAIL_ALLOC_BIT_SINGLE | BTRFS_BLOCK_GROUP_DUP;
+>  	if (num_devices > 1)
+>  		allowed |= (BTRFS_BLOCK_GROUP_RAID0 | BTRFS_BLOCK_GROUP_RAID1);
 > 

@@ -1,75 +1,173 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mga14.intel.com ([192.55.52.115]:24862 "EHLO mga14.intel.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S2387938AbeGMCHb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 12 Jul 2018 22:07:31 -0400
-From: "Huang\, Ying" <ying.huang@intel.com>
-To: Chris Mason <clm@fb.com>
-Cc: Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>, <lkp@01.org>,
-        <linux-btrfs@vger.kernel.org>
-Subject: Re: [LKP] [lkp-robot] [mm] 9092c71bb7: blogbench.write_score -12.3% regression
-References: <20180408015739.GN3845@yexl-desktop>
-        <876036apgx.fsf@yhuang-dev.intel.com>
-        <878t7t3k3s.fsf@yhuang-dev.intel.com>
-        <87h8m6m9ld.fsf@yhuang-dev.intel.com>
-        <878t7ai08v.fsf@yhuang-dev.intel.com>
-        <B33D77FE-E654-4BB3-A7F3-CEBCE93C6589@fb.com>
-Date: Fri, 13 Jul 2018 09:55:11 +0800
-In-Reply-To: <B33D77FE-E654-4BB3-A7F3-CEBCE93C6589@fb.com> (Chris Mason's
-        message of "Wed, 20 Jun 2018 08:38:45 -0400")
-Message-ID: <87zhyvew74.fsf@yhuang-dev.intel.com>
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:19696 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S2389528AbeGLBdH (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 11 Jul 2018 21:33:07 -0400
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
+        by cn.fujitsu.com (Postfix) with ESMTP id E43CE4B473E7
+        for <linux-btrfs@vger.kernel.org>; Thu, 12 Jul 2018 09:26:00 +0800 (CST)
+From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH v14.8 00/14] Btrfs In-band De-duplication
+Date: Thu, 12 Jul 2018 09:25:39 +0800
+Message-ID: <20180712012553.29431-1-lufq.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=ascii
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi, Chris,
+This patchset can be fetched from github:
+https://github.com/littleroad/linux.git dedupe_latest
 
-Chris Mason <clm@fb.com> writes:
+This is just a normal rebase update.
+Now the new base is v4.18-rc4
 
-> On 19 Jun 2018, at 23:51, Huang, Ying wrote:
->>>> "Huang, Ying" <ying.huang@intel.com> writes:
->>>>
->>>>> Hi, Josef,
->>>>>
->>>>> Do you have time to take a look at the regression?
->>>>>
->>>>> kernel test robot <xiaolong.ye@intel.com> writes:
->>>>>
->>>>>> Greeting,
->>>>>>
->>>>>> FYI, we noticed a -12.3% regression of blogbench.write_score and
->>>>>> a +9.6% improvement
->>>>>> of blogbench.read_score due to commit:
->>>>>>
->>>>>>
->>>>>> commit: 9092c71bb724dba2ecba849eae69e5c9d39bd3d2 ("mm: use
->>>>>> sc->priority for slab shrink targets")
->>>>>> https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git
->>>>>> master
->>>>>>
->>>>>> in testcase: blogbench
->>>>>> on test machine: 16 threads Intel(R) Xeon(R) CPU D-1541 @
->>>>>> 2.10GHz with 8G memory
->>>>>> with following parameters:
->>>>>>
->>>>>> 	disk: 1SSD
->>>>>> 	fs: btrfs
->>>>>> 	cpufreq_governor: performance
->>>>>>
->>>>>> test-description: Blogbench is a portable filesystem benchmark
->>>>>> that tries to reproduce the load of a real-world busy file
->>>>>> server.
->>>>>> test-url:
->
-> I'm surprised, this patch is a big win in production here at FB.  I'll
-> have to reproduce these results to better understand what is going on.
-> My first guess is that since we have fewer inodes in slab, we're
-> reading more inodes from disk in order to do the writes.
->
-> But that should also make our read scores lower.
+Normal test cases from auto group exposes no regression, and ib-dedupe
+group can pass without problem.
 
-Any update on this?
+xfstests ib-dedupe group can be fetched from github:
+https://github.com/littleroad/xfstests-dev.git btrfs_dedupe_latest
 
-Best Regards,
-Huang, Ying
+Changelog:
+v2:
+  Totally reworked to handle multiple backends
+v3:
+  Fix a stupid but deadly on-disk backend bug
+  Add handle for multiple hash on same bytenr corner case to fix abort
+  trans error
+  Increase dedup rate by enhancing delayed ref handler for both backend.
+  Move dedup_add() to run_delayed_ref() time, to fix abort trans error.
+  Increase dedup block size up limit to 8M.
+v4:
+  Add dedup prop for disabling dedup for given files/dirs.
+  Merge inmem_search() and ondisk_search() into generic_search() to save
+  some code
+  Fix another delayed_ref related bug.
+  Use the same mutex for both inmem and ondisk backend.
+  Move dedup_add() back to btrfs_finish_ordered_io() to increase dedup
+  rate.
+v5:
+  Reuse compress routine for much simpler dedup function.
+  Slightly improved performance due to above modification.
+  Fix race between dedup enable/disable
+  Fix for false ENOSPC report
+v6:
+  Further enable/disable race window fix.
+  Minor format change according to checkpatch.
+v7:
+  Fix one concurrency bug with balance.
+  Slightly modify return value from -EINVAL to -EOPNOTSUPP for
+  btrfs_dedup_ioctl() to allow progs to distinguish unsupported commands
+  and wrong parameter.
+  Rebased to integration-4.6.
+v8:
+  Rename 'dedup' to 'dedupe'.
+  Add support to allow dedupe and compression work at the same time.
+  Fix several balance related bugs. Special thanks to Satoru Takeuchi,
+  who exposed most of them.
+  Small dedupe hit case performance improvement.
+v9:
+  Re-order the patchset to completely separate pure in-memory and any
+  on-disk format change.
+  Fold bug fixes into its original patch.
+v10:
+  Adding back missing bug fix patch.
+  Reduce on-disk item size.
+  Hide dedupe ioctl under CONFIG_BTRFS_DEBUG.
+v11:
+  Remove other backend and props support to focus on the framework and
+  in-memory backend. Suggested by David.
+  Better disable and buffered write race protection.
+  Comprehensive fix to dedupe metadata ENOSPC problem.
+v12:
+  Stateful 'enable' ioctl and new 'reconf' ioctl
+  New FORCE flag for enable ioctl to allow stateless ioctl
+  Precise error report and extendable ioctl structure.
+v12.1
+  Rebase to David's for-next-20160704 branch
+  Add co-ordinate patch for subpage and dedupe patchset.
+v12.2
+  Rebase to David's for-next-20160715 branch
+  Add co-ordinate patch for other patchset.
+v13
+  Rebase to David's for-next-20160906 branch
+  Fix a reserved space leak bug, which only frees quota reserved space
+  but not space_info->byte_may_use.
+v13.1
+  Rebase to Chris' for-linux-4.9 branch
+v14
+  Use generic ENOSPC fix for both compression and dedupe.
+v14.1
+  Further split ENOSPC fix.
+v14.2
+  Rebase to v4.11-rc2.
+  Co-operate with count_max_extent() to calculate num_extents.
+  No longer rely on qgroup fixes.
+v14.3
+  Rebase to v4.12-rc1.
+v14.4
+  Rebase to kdave/for-4.13-part1.
+v14.5
+  Rebase to v4.15-rc3.
+v14.6
+  Rebase to v4.17-rc5.
+v14.7
+  Replace SHASH_DESC_ON_STACK with kmalloc to remove VLA.
+  Fixed the following errors by switching to div_u64.
+  ├── arm-allmodconfig
+  │   └── ERROR:__aeabi_uldivmod-fs-btrfs-btrfs.ko-undefined
+  └── i386-allmodconfig
+      └── ERROR:__udivdi3-fs-btrfs-btrfs.ko-undefined
+v14.8
+  Rebase to v4.18-rc4.
+
+
+Qu Wenruo (4):
+  btrfs: delayed-ref: Add support for increasing data ref under spinlock
+  btrfs: dedupe: Inband in-memory only de-duplication implement
+  btrfs: relocation: Enhance error handling to avoid BUG_ON
+  btrfs: dedupe: Introduce new reconfigure ioctl
+
+Wang Xiaoguang (10):
+  btrfs: introduce type based delalloc metadata reserve
+  btrfs: Introduce COMPRESS reserve type to fix false enospc for
+    compression
+  btrfs: dedupe: Introduce dedupe framework and its header
+  btrfs: dedupe: Introduce function to initialize dedupe info
+  btrfs: dedupe: Introduce function to add hash into in-memory tree
+  btrfs: dedupe: Introduce function to remove hash from in-memory tree
+  btrfs: dedupe: Introduce function to search for an existing hash
+  btrfs: dedupe: Implement btrfs_dedupe_calc_hash interface
+  btrfs: ordered-extent: Add support for dedupe
+  btrfs: dedupe: Add ioctl for inband deduplication
+
+ fs/btrfs/Makefile            |   2 +-
+ fs/btrfs/ctree.h             |  54 ++-
+ fs/btrfs/dedupe.c            | 836 +++++++++++++++++++++++++++++++++++
+ fs/btrfs/dedupe.h            | 183 +++++++-
+ fs/btrfs/delayed-ref.c       |  49 +-
+ fs/btrfs/delayed-ref.h       |  16 +
+ fs/btrfs/disk-io.c           |   4 +
+ fs/btrfs/extent-tree.c       |  69 ++-
+ fs/btrfs/extent_io.c         |   8 +-
+ fs/btrfs/extent_io.h         |   2 +
+ fs/btrfs/file.c              |  36 +-
+ fs/btrfs/free-space-cache.c  |   6 +-
+ fs/btrfs/inode-map.c         |   9 +-
+ fs/btrfs/inode.c             | 479 ++++++++++++++++----
+ fs/btrfs/ioctl.c             | 106 ++++-
+ fs/btrfs/ordered-data.c      |  52 ++-
+ fs/btrfs/ordered-data.h      |  16 +-
+ fs/btrfs/relocation.c        |  64 ++-
+ fs/btrfs/sysfs.c             |   2 +
+ fs/btrfs/tests/inode-tests.c |  15 +-
+ include/uapi/linux/btrfs.h   |  55 +++
+ 21 files changed, 1889 insertions(+), 174 deletions(-)
+ create mode 100644 fs/btrfs/dedupe.c
+
+-- 
+2.18.0
+
+
+

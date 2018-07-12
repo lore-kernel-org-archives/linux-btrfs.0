@@ -1,46 +1,125 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lj1-f193.google.com ([209.85.208.193]:35210 "EHLO
-        mail-lj1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1729706AbeGQQfz (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 17 Jul 2018 12:35:55 -0400
-MIME-Version: 1.0
-In-Reply-To: <dbbb1882-65bf-dda9-eb26-a6217b240def@gmx.com>
-References: <20180717135236.3673195-1-arnd@arndb.de> <dbbb1882-65bf-dda9-eb26-a6217b240def@gmx.com>
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Tue, 17 Jul 2018 18:02:31 +0200
-Message-ID: <CAK8P3a17Mik-J-PzjP2g7OzX-0ozTGnRxfw8tB4c+pKiRWoEaA@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: fix size_t format string
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        David Sterba <dsterba@suse.com>, Qu Wenruo <wqu@suse.com>,
-        Nikolay Borisov <nborisov@suse.com>, Su Yue <suy.fnst@cn.fujitsu.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Received: from mail.kernel.org ([198.145.29.99]:42396 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726505AbeGLJvc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 12 Jul 2018 05:51:32 -0400
+Received: from debian3.lan (bl11-80-66.dsl.telepac.pt [85.244.80.66])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id C35CD20875
+        for <linux-btrfs@vger.kernel.org>; Thu, 12 Jul 2018 09:42:43 +0000 (UTC)
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v2] Btrfs: fix file data corruption after cloning a range and fsync
+Date: Thu, 12 Jul 2018 01:36:43 +0100
+Message-Id: <20180712003643.16439-1-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jul 17, 2018 at 4:33 PM, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
->
->
-> On 2018年07月17日 21:52, Arnd Bergmann wrote:
->> The newly added check_block_group_item() function causes a build warning
->> on 32-bit architectures:
->>
->> fs/btrfs/tree-checker.c: In function 'check_block_group_item':
->> fs/btrfs/tree-checker.c:404:41: error: format '%lu' expects argument of type 'long unsigned int', but argument 6 has type 'unsigned int' [-Werror=format=]
->>
->> The type of a sizeof() expression is size_t, which is correctly printed
->> using the %zu format string.
->>
->> Fixes: 9dc16aad5660 ("btrfs: tree-checker: Verify block_group_item")
->
-> My fault again. :(
->
-> Is there anyway to make gcc report such problem even under x86_64?
+From: Filipe Manana <fdmanana@suse.com>
 
-I don't think so. However, if you post a patch to the mainling list, the
-0-day bot should report any build regressions within a day.
+When we clone a range into a file we can end up dropping existing
+extent maps (or trimming them) and replacing them with new ones if the
+range to be cloned overlaps with a range in the destination inode.
+When that happens we add the new extent maps to the  list of modified
+extents in the inode's extent map tree, so that a "fast" fsync (the flag
+BTRFS_INODE_NEEDS_FULL_SYNC not set in the inode) will see the extent maps
+and log corresponding extent items. However, at the end of range cloning
+operation we do truncate all the pages in the affected range (in order to
+ensure future reads will not get stale data). Sometimes this truncation
+will release the corresponding extent maps besides the pages from the page
+cache. If this happens, then a "fast" fsync operation will miss logging
+some extent items, because it relies exclusively on the extent maps being
+present in the inode's extent tree, leading to data loss/corruption if
+the fsync ends up using the same transaction used by the clone operation
+(that transaction was not committed in the meanwhile). An extent map is
+released through the callback btrfs_invalidatepage(), which gets called by
+truncate_inode_pages_range(), and it calls __btrfs_releasepage(). The
+later ends up calling try_release_extent_mapping() which will release the
+extent map if some conditions are met, like the file size being greater
+than 16Mb, gfp flags allow blocking and the range not being locked (which
+is the case during the clone operation) nor being the extent map flagged
+as pinned (also the case for cloning).
 
-      Arnd
+The following example, turned into a test for fstests, reproduces the
+issue:
+
+  $ mkfs.btrfs -f /dev/sdb
+  $ mount /dev/sdb /mnt
+
+  $ xfs_io -f -c "pwrite -S 0x18 9000K 6908K" /mnt/foo
+  $ xfs_io -f -c "pwrite -S 0x20 2572K 156K" /mnt/bar
+
+  $ xfs_io -c "fsync" /mnt/bar
+  # reflink destination offset corresponds to the size of file bar,
+  # 2728Kb minus 4Kb.
+  $ xfs_io -c ""reflink ${SCRATCH_MNT}/foo 0 2724K 15908K" /mnt/bar
+  $ xfs_io -c "fsync" /mnt/bar
+
+  $ md5sum /mnt/bar
+  95a95813a8c2abc9aa75a6c2914a077e  /mnt/bar
+
+  <power fail>
+
+  $ mount /dev/sdb /mnt
+  $ md5sum /mnt/bar
+  207fd8d0b161be8a84b945f0df8d5f8d  /mnt/bar
+  # digest should be 95a95813a8c2abc9aa75a6c2914a077e like before the
+  # power failure
+
+In the above example, the destination offset of the clone operation
+corresponds to the size of the "bar" file minus 4Kb. So during the clone
+operation, the extent map covering the range from 2572Kb to 2728Kb gets
+trimmed so that it ends at offset 2724Kb, and a new extent map covering
+the range from 2724Kb to 11724Kb is created. So at the end of the clone
+operation when we ask to truncate the pages in the range from 2724Kb to
+2724Kb + 15908Kb, the page invalidation callback ends up removing the new
+extent map (through try_release_extent_mapping()) when the page at offset
+2724Kb is passed to that callback.
+
+Fix this by setting the bit BTRFS_INODE_NEEDS_FULL_SYNC whenever an extent
+map is removed at try_release_extent_mapping(), forcing the next fsync to
+search for modified extents in the fs/subvolume tree instead of relying on
+the presence of extent maps in memory. This way we can continue doing a
+"fast" fsync if the destination range of a clone operation does not
+overlap with an existing range or if any of the criteria necessary to
+remove an extent map at try_release_extent_mapping() is not met (file
+size not bigger then 16Mb or gfp flags do not allow blocking).
+
+CC: stable@vger.kernel.org # 3.16+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+
+V2: Added missing "fix" word to subject only.
+
+ fs/btrfs/extent_io.c | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index e55843f536bc..b3e45714d28f 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -4238,8 +4238,9 @@ int try_release_extent_mapping(struct page *page, gfp_t mask)
+ 	struct extent_map *em;
+ 	u64 start = page_offset(page);
+ 	u64 end = start + PAGE_SIZE - 1;
+-	struct extent_io_tree *tree = &BTRFS_I(page->mapping->host)->io_tree;
+-	struct extent_map_tree *map = &BTRFS_I(page->mapping->host)->extent_tree;
++	struct btrfs_inode *btrfs_inode = BTRFS_I(page->mapping->host);
++	struct extent_io_tree *tree = &btrfs_inode->io_tree;
++	struct extent_map_tree *map = &btrfs_inode->extent_tree;
+ 
+ 	if (gfpflags_allow_blocking(mask) &&
+ 	    page->mapping->host->i_size > SZ_16M) {
+@@ -4262,6 +4263,8 @@ int try_release_extent_mapping(struct page *page, gfp_t mask)
+ 					    extent_map_end(em) - 1,
+ 					    EXTENT_LOCKED | EXTENT_WRITEBACK,
+ 					    0, NULL)) {
++				set_bit(BTRFS_INODE_NEEDS_FULL_SYNC,
++					&btrfs_inode->runtime_flags);
+ 				remove_extent_mapping(map, em);
+ 				/* once for the rb tree */
+ 				free_extent_map(em);
+-- 
+2.11.0
+

@@ -1,166 +1,226 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.20]:39065 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.17.20]:39017 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1732740AbeGMAfK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 12 Jul 2018 20:35:10 -0400
-Subject: Re: Why original mode doesn't use swap? (Original: Re: btrfs check
- lowmem, take 2)
-To: Marc MERLIN <marc@merlins.org>
-Cc: Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>, Su Yue <Damenly_Su@gmx.com>,
-        Su Yue <suy.fnst@cn.fujitsu.com>
-References: <20180710180915.onnxuak7vb7uywyn@merlins.org>
- <CAJCQCtRQdg56Hxk=U2JMXbE35Jj_Q5Ock_gn43jWxci4Nbs5UA@mail.gmail.com>
- <e0de5098-05ce-28f8-591c-39b87dea63fe@gmx.com>
- <20180712231431.u4yxi2c2kyv773td@merlins.org>
+        id S2387972AbeGMCTo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 12 Jul 2018 22:19:44 -0400
+Subject: Re: [DOC] BTRFS Volume operations, Device Lists and Locks all in one
+ page
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <18595227-394c-f278-2cda-ecda4cacd2f3@gmx.com>
-Date: Fri, 13 Jul 2018 08:22:59 +0800
+To: Anand Jain <anand.jain@oracle.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <4fba8087-ebbe-1d05-1f72-e1683981235e@oracle.com>
+ <db352d50-ce1b-f5fe-afbb-57bdd322b5fb@gmx.com>
+ <49fc4dbb-5e02-ab13-d7f1-7e52bf8868d6@oracle.com>
+ <e968020c-f68a-16f2-521b-6aaa08e9d654@gmx.com>
+ <940b5763-3144-954b-ee90-71270a348b21@oracle.com>
+ <84f4c573-9831-8c2f-0370-78ea3018b569@gmx.com>
+Message-ID: <445da3ad-2bdc-696d-3e5d-a731f14a9f91@gmx.com>
+Date: Fri, 13 Jul 2018 10:07:15 +0800
 MIME-Version: 1.0
-In-Reply-To: <20180712231431.u4yxi2c2kyv773td@merlins.org>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <84f4c573-9831-8c2f-0370-78ea3018b569@gmx.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="7IEleQfPpnjin4mSoIm53pwxuJYmhelvO"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--7IEleQfPpnjin4mSoIm53pwxuJYmhelvO
+Content-Type: multipart/mixed; boundary="5evsYFNn1bvqIE5mqqd9dkkByd408ab6g";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: Anand Jain <anand.jain@oracle.com>,
+ linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-ID: <445da3ad-2bdc-696d-3e5d-a731f14a9f91@gmx.com>
+Subject: Re: [DOC] BTRFS Volume operations, Device Lists and Locks all in one
+ page
+References: <4fba8087-ebbe-1d05-1f72-e1683981235e@oracle.com>
+ <db352d50-ce1b-f5fe-afbb-57bdd322b5fb@gmx.com>
+ <49fc4dbb-5e02-ab13-d7f1-7e52bf8868d6@oracle.com>
+ <e968020c-f68a-16f2-521b-6aaa08e9d654@gmx.com>
+ <940b5763-3144-954b-ee90-71270a348b21@oracle.com>
+ <84f4c573-9831-8c2f-0370-78ea3018b569@gmx.com>
+In-Reply-To: <84f4c573-9831-8c2f-0370-78ea3018b569@gmx.com>
+
+--5evsYFNn1bvqIE5mqqd9dkkByd408ab6g
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
 
-On 2018年07月13日 07:14, Marc MERLIN wrote:
-> On Thu, Jul 12, 2018 at 01:26:41PM +0800, Qu Wenruo wrote:
+
+On 2018=E5=B9=B407=E6=9C=8813=E6=97=A5 08:20, Qu Wenruo wrote:
+>=20
+>=20
+> [snip]
+>>> In this case, it depends on when and how we mark the device resilveri=
+ng.
+>>> If we record the generation of write error happens, then just initial=
+ a
+>>> scrub for generation greater than that generation.
 >>
+>> =C2=A0If we record all the degraded transactions then yes. Not just th=
+e last
+>> =C2=A0failed transaction.
+>=20
+> The last successful generation won't be upgraded until the scrub succes=
+s.
+>=20
 >>
->> On 2018年07月12日 01:09, Chris Murphy wrote:
->>> On Tue, Jul 10, 2018 at 12:09 PM, Marc MERLIN <marc@merlins.org> wrote:
->>>> Thanks to Su and Qu, I was able to get my filesystem to a point that
->>>> it's mountable.
->>>> I then deleted loads of snapshots and I'm down to 26.
->>>>
->>>> IT now looks like this:
->>>> gargamel:~# btrfs fi show /mnt/mnt
->>>> Label: 'dshelf2'  uuid: 0f1a0c9f-4e54-4fa7-8736-fd50818ff73d
->>>>         Total devices 1 FS bytes used 12.30TiB
->>>>         devid    1 size 14.55TiB used 13.81TiB path /dev/mapper/dshelf2
->>>>
->>>> gargamel:~# btrfs fi df /mnt/mnt
->>>> Data, single: total=13.57TiB, used=12.19TiB
->>>> System, DUP: total=32.00MiB, used=1.55MiB
->>>> Metadata, DUP: total=124.50GiB, used=115.62GiB
->>>> Metadata, single: total=216.00MiB, used=0.00B
->>>> GlobalReserve, single: total=512.00MiB, used=0.00B
->>>>
->>>>
->>>> Problems
->>>> 1) btrfs check --repair _still_ takes all 32GB of RAM and crashes the
->>>> server, despite my deleting lots of snapshots.
->>>> Is it because I have too many files then?
+>>> In the list, some guys mentioned that for LVM/mdraid they will record=
+
+>>> the generation when some device(s) get write error or missing, and do=
+
+>>> self cure.
 >>>
->>> I think originally needs most of metdata in memory.
+>>>>
+>>>> =C2=A0=C2=A0I have been scratching on fix for this [3] for some time=
+ now. Thanks
+>>>> =C2=A0=C2=A0for the participation. In my understanding we are missin=
+g across-tree
+>>>> =C2=A0=C2=A0parent transid verification at the lowest possible granu=
+lar OR
 >>>
->>> I'm not understanding why btrfs check won't use swap like at least
->>> xfs_repair and pretty sure e2fsck will as well.
+>>> Maybe the newly added first_key and level check could help detect suc=
+h
+>>> mismatch?
+>>>
+>>>> =C2=A0=C2=A0other approach is to modify Liubo approach to provide a =
+list of
+>>>> =C2=A0=C2=A0degraded chunks but without a journal disk.
+>>>
+>>> Currently, DEV_ITEM::generation is seldom used. (only for seed sprout=
+
+>>> case)
+>>> Maybe we could reuse that member to record the last successful writte=
+n
+>>> transaction to that device and do above purposed LVM/mdraid style sel=
+f
+>>> cure?
 >>
->> I don't understand either.
+>> =C2=A0Record of just the last successful transaction won't help. OR it=
+s an
+>> =C2=A0overkill to fix a write hole.
 >>
->> Isn't memory from malloc() swappable?
-> 
-> I never looked at the code and why/how it crashes, but my guess was
-> that it somehow causes the kernel to grab a lot of memory in the btrfs
-> driver and that is what is what is crashing the system.
+>> =C2=A0Transactions: 10 11 [12] [13] [14] <---- write hole ----> [19] [=
+20]
+>> =C2=A0In the above example
+>> =C2=A0 disk disappeared at transaction 11 and when it reappeared at
+>> =C2=A0 the transaction 19, there were new writes as well as the resilv=
+er
+>> =C2=A0 writes,
+>=20
+> Then the last good generation will be 11 and we will commit current
+> transaction as soon as we find a device disappear, and won't upgrade th=
+e
+> last good generation until the scrub finishes.
+>=20
+>> so we were able to write 12 13 14 and 19 20 and then
+>> =C2=A0 the disk disappears again leaving a write hole.
+>=20
+> Only if in above transactions, the auto scrub finishes, the device will=
 
-Btrfs check is done completely at user space, so it should not be
-related to kernel btrfs module.
+> has generation updated, or it will stay generation 11.
+>=20
+>> Now next time when
+>> =C2=A0 disk reappears the last transaction indicates 20 on both-disks
+>> =C2=A0 but leaving a write hole in one of disk.
+>=20
+> That will only happens if auto-scrub finishes in transaction 20, or its=
 
-> If it were just malloc() the btrfs user space tool, it should be both
-> swappable like you said, and should also get OOM'ed.
+> last successful generation will stay 11.
+>=20
+>> But if you are planning to
+>> =C2=A0 record and start at transaction [14] then its an overkill becau=
+se
+>> =C2=A0 transaction [19 and [20] are already in the disk.
+>=20
+> Yes, I'm doing it overkilled.
+> But it's already much better than scrub all block groups (my original p=
+lan).
 
-That's the case, but then why xfs/ext check tool could take up tons of
-swap without get killed by OOM?
-
-> 
-> I suppose I can still be completely wrong, but I can't find another
-> logical explanation.
-> 
-> I just tried running it again to trigger the problem, but because I
-> freed a lot of snapshots, btrfs check --repair goes back to only using
-> 10GB instead of 32GB, so I wasn't able to replicate OOM for you.
-
-At least it's a good news for you.
-
-> 
-> Incidently, it died with:
-> gargamel:~# btrfs check --repair /dev/mapper/dshelf2
-> enabling repair mode
-> Checking filesystem on /dev/mapper/dshelf2
-> UUID: 0f1a0c9f-4e54-4fa7-8736-fd50818ff73d
-> root 18446744073709551607 has a root item with a more recent gen (143376) compared to the found
->  root node (139061)
-> ERROR: failed to repair root items: Invalid argument
-> 
-> That said, when it was using a fair amount of RAM, I captured this:
-> USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
-> root      1376  1.4 25.2 8256368 8240392 pts/18 R+  14:52   1:07 btrfs check --repair /dev/mapper/dshelf2
-> 
-> I don't know how to read /proc/meminfo, but that's what it said:
-> MemTotal:       32643792 kB
-> MemFree:         1367516 kB
-> MemAvailable:   15554836 kB
-> Buffers:         3491672 kB
-> Cached:         15900320 kB
-> SwapCached:         2092 kB
-> Active:         14577228 kB
-> Inactive:       15028608 kB
-> Active(anon):   12122180 kB
-> Inactive(anon):  2643176 kB
-> Active(file):    2455048 kB
-> Inactive(file): 12385432 kB
-> Unevictable:        8068 kB
-> Mlocked:            8068 kB
-> SwapTotal:      15616764 kB   < swap was totally unused and stays unused when I get the system to crash 
-> SwapFree:       15578020 kB
-> Dirty:             71956 kB
-> Writeback:            64 kB
-> AnonPages:      10219976 kB
-> Mapped:          4033568 kB
-> Shmem:           4545552 kB
-> Slab:             713300 kB
-> SReclaimable:     395508 kB
-> SUnreclaim:       317792 kB
-> KernelStack:       11788 kB
-> PageTables:        52592 kB
-> NFS_Unstable:          0 kB
-> Bounce:                0 kB
-> WritebackTmp:          0 kB
-> CommitLimit:    31938660 kB
-> Committed_AS:   20070736 kB
-> VmallocTotal:   34359738367 kB
-> VmallocUsed:           0 kB
-> VmallocChunk:          0 kB
-> HardwareCorrupted:     0 kB
-> AnonHugePages:         0 kB
-> ShmemHugePages:        0 kB
-> ShmemPmdMapped:        0 kB
-> CmaTotal:          16384 kB
-> CmaFree:               0 kB
-> HugePages_Total:       0
-> HugePages_Free:        0
-> HugePages_Rsvd:        0
-> HugePages_Surp:        0
-> Hugepagesize:       2048 kB
-> Hugetlb:               0 kB
-> DirectMap4k:     1207572 kB
-> DirectMap2M:    32045056 kB
-> 
-> Does it help figure out where the memory was going and wehther kernel
-> memory was being used?
-
-Not really, much similar to what I observed.
-
-I also tried to over-commit my memory usage on my system, however it
-just freeze for several seconds and then get killed by OOM, failed to
-capture any useful info during that freeze.
+Well, my idea has a major problem, that's we don't have generation for
+block group item, that's to say either we use free space cache
+generation or add new BLOCK_GROUP_ITEM member for generation detection.
 
 Thanks,
 Qu
 
-> 
-> Marc
-> 
+>=20
+> Thanks,
+> Qu
+>=20
+>>
+>> Thanks, Anand
+>>
+>>
+>>> Thanks,
+>>> Qu
+>>>
+>>>> =C2=A0=C2=A0=C2=A0 [3] https://patchwork.kernel.org/patch/10403311/
+>>>>
+>>>> =C2=A0=C2=A0Further, as we do a self adapting chunk allocation in RA=
+ID1, it needs
+>>>> =C2=A0=C2=A0balance-convert to fix. IMO at some point we have to pro=
+vide degraded
+>>>> =C2=A0=C2=A0raid1 chunk allocation and also modify the scrub to be c=
+hunk granular.
+>>>>
+>>>> Thanks, Anand
+>>>>
+>>>>> Any idea on this?
+>>>>>
+>>>>> Thanks,
+>>>>> Qu
+>>>>>
+>>>>>> Unlock: btrfs_fs_info::chunk_mutex
+>>>>>> Unlock: btrfs_fs_devices::device_list_mutex
+>>>>>>
+>>>>>> ------------------------------------------------------------------=
+-----
+>>>>>>
+>>>>>>
+>>>>>> Thanks, Anand
+>>>>>> --=C2=A0
+>>>>>> To unsubscribe from this list: send the line "unsubscribe
+>>>>>> linux-btrfs" in
+>>>>>> the body of a message to majordomo@vger.kernel.org
+>>>>>> More majordomo info at=C2=A0 http://vger.kernel.org/majordomo-info=
+=2Ehtml
+>>>>>
+>>>> --=C2=A0
+>>>> To unsubscribe from this list: send the line "unsubscribe
+>>>> linux-btrfs" in
+>>>> the body of a message to majordomo@vger.kernel.org
+>>>> More majordomo info at=C2=A0 http://vger.kernel.org/majordomo-info.h=
+tml
+>>>
+>> --=20
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs"=
+ in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at=C2=A0 http://vger.kernel.org/majordomo-info.htm=
+l
+>=20
+
+
+--5evsYFNn1bvqIE5mqqd9dkkByd408ab6g--
+
+--7IEleQfPpnjin4mSoIm53pwxuJYmhelvO
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAltICVMACgkQwj2R86El
+/qhM9Qf+NWKR6IpI+Rlc9fXla+mzm9/l5uDUyto3W667pRpLjge+1aN8kH3piA8G
+GbtO6C8n61YKCWSi9j/ilC76T8ZQ/i69z8bEe5jfh+z9Wx/ROg3qrO+kLur0eWXH
+6mxIMf6WykLduujd66/jtxqkE+9D25uz3q3k05d6uNgsKqq4arhuyjBvpV9qa2sw
+3LKG5oO/vGc0tIJ0AXYTCv713jAQUrq7Tw15JIwg3OXfxldB1mClEM8wBNz3SpVj
+oP/4lPbEGYysQX3RTfjuoRP++/WMQCqmrVOqPFvG/gC3hBtXR/5STUslHx4RO1oz
+G3CYypMBPKvuoDzmAB5N++B3mCguBA==
+=zB5/
+-----END PGP SIGNATURE-----
+
+--7IEleQfPpnjin4mSoIm53pwxuJYmhelvO--

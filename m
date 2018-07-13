@@ -1,38 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:37228 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:37698 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1728140AbeGMNEa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 13 Jul 2018 09:04:30 -0400
-Date: Fri, 13 Jul 2018 14:49:53 +0200
+        id S1729643AbeGMNJm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 13 Jul 2018 09:09:42 -0400
+Date: Fri, 13 Jul 2018 14:55:04 +0200
 From: David Sterba <dsterba@suse.cz>
 To: Anand Jain <anand.jain@oracle.com>
 Cc: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/7] btrfs: restore uuid_mutex in btrfs_open_devices
-Message-ID: <20180713124953.GT3126@twin.jikos.cz>
+Subject: Re: [PATCH 2/7] btrfs: extend critical section when scanning a new
+ device
+Message-ID: <20180713125504.GU3126@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 References: <cover.1529516226.git.dsterba@suse.com>
- <953899caf13686e1f128748ef3220281a1b9a47e.1529516228.git.dsterba@suse.com>
- <e439cf5c-df8f-dbbb-736d-c07a03d34e83@oracle.com>
+ <92caa5382783c709d6ddab7d06747327bd7c120c.1529516228.git.dsterba@suse.com>
+ <d5b69aad-2ffb-4322-9c8d-e0003056b430@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <e439cf5c-df8f-dbbb-736d-c07a03d34e83@oracle.com>
+In-Reply-To: <d5b69aad-2ffb-4322-9c8d-e0003056b430@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jul 04, 2018 at 04:09:50PM +0800, Anand Jain wrote:
+On Wed, Jul 04, 2018 at 04:18:09PM +0800, Anand Jain wrote:
+> 
+> 
 > On 06/21/2018 01:51 AM, David Sterba wrote:
-> > Commit 542c5908abfe84f7b4c1 ("btrfs: replace uuid_mutex by
-> > device_list_mutex in btrfs_open_devices") switched to device_list_mutex
-> > as we need that for the device list traversal, but we also need
-> > uuid_mutex to protect access to fs_devices::opened to be consistent with
-> > other users of that item.
+> > The stale device list removal needs to be protected by device_list_mutex
+> > too as this could delete from the list and could race with another list
+> > modification and cause crash.
 > > 
-> > CC: Anand Jain <anand.jain@oracle.com>
+> > The device needs to be fully initialized before it's added to the list
+> > so the fs_devices also need to be set under the mutex.
+> > 
 > > Signed-off-by: David Sterba <dsterba@suse.com>
+> > ---
+> >   fs/btrfs/volumes.c | 5 ++---
+> >   1 file changed, 2 insertions(+), 3 deletions(-)
+> > 
+> > diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> > index 1da162928d1a..02246f9af0a3 100644
+> > --- a/fs/btrfs/volumes.c
+> > +++ b/fs/btrfs/volumes.c
+> > @@ -791,12 +791,11 @@ static noinline struct btrfs_device *device_list_add(const char *path,
+> >   		rcu_assign_pointer(device->name, name);
+> >   
+> >   		mutex_lock(&fs_devices->device_list_mutex);
+> > +		device->fs_devices = fs_devices;
+> >   		list_add_rcu(&device->dev_list, &fs_devices->devices);
+> >   		fs_devices->num_devices++;
+> > -		mutex_unlock(&fs_devices->device_list_mutex);
+> > -
+> > -		device->fs_devices = fs_devices;
+> >   		btrfs_free_stale_devices(path, device);
 > 
->   I am optimize the uuid_mutex for fsids concurrency on top these set of 
-> patches, so.
 > 
->   Reviewed-by: Anand Jain <anand.jain@oracle.com>
+> This is not correct.
+> 
+> btrfs_free_stale_devices need the per fs_devices local device_list_mutex
+> lock as it traverses through the fs_uuids list. Holding just the lock of
+> the %fs_devices which is being scanned or mounted is not correct.
 
-So this should go to 4.18, instead of reverting 542c5908abfe8.
+I see, ok. The use of fs_devs is not very visible in
+btrfs_free_stale_devices but at least the function comment hints that
+all devices are being traversed.

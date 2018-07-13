@@ -1,86 +1,116 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:60574 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:60600 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1730017AbeGMTCe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 13 Jul 2018 15:02:34 -0400
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 64F79AD0C
-        for <linux-btrfs@vger.kernel.org>; Fri, 13 Jul 2018 18:46:43 +0000 (UTC)
+        id S1730017AbeGMTCm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 13 Jul 2018 15:02:42 -0400
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 1100FAD0C
+        for <linux-btrfs@vger.kernel.org>; Fri, 13 Jul 2018 18:46:52 +0000 (UTC)
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 0/4] 3- and 4- copy RAID1
-Date: Fri, 13 Jul 2018 20:46:28 +0200
-Message-Id: <cover.1531503452.git.dsterba@suse.com>
+Subject: [PATCH 4/4] btrfs: add incompatibility bit for extended raid features
+Date: Fri, 13 Jul 2018 20:46:33 +0200
+Message-Id: <dde6771cc629b39f8073cf979e6e05ecb06841cc.1531503452.git.dsterba@suse.com>
+In-Reply-To: <cover.1531503452.git.dsterba@suse.com>
+References: <cover.1531503452.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+This bit will cover all newly added features of RAID:
 
-I have some goodies that go into the RAID56 problem, although not
-implementing all the remaining features, it can be useful independently.
+- 3 copy replication
+- 4 copy replication
+- configurable stripe length
+- triple parity
+- raid56 log
 
-This time my hackweek project
+Signed-off-by: David Sterba <dsterba@suse.com>
+---
+ fs/btrfs/ctree.h           | 1 +
+ fs/btrfs/sysfs.c           | 2 ++
+ fs/btrfs/volumes.c         | 9 +++++++++
+ include/uapi/linux/btrfs.h | 8 ++++++++
+ 4 files changed, 20 insertions(+)
 
-https://hackweek.suse.com/17/projects/do-something-about-btrfs-and-raid56
-
-aimed to implement the fix for the write hole problem but I spent more
-time with analysis and design of the solution and don't have a working
-prototype for that yet.
-
-This patchset brings a feature that will be used by the raid56 log, the
-log has to be on the same redundancy level and thus we need a 3-copy
-replication for raid6. As it was easy to extend to higher replication,
-I've added a 4-copy replication, that would allow triple copy raid (that
-does not have a standardized name).
-
-The number of copies is fixed, so it's not N-copy for an arbitrary N.
-This would complicate the implementation too much, though I'd be willing
-to add a 5-copy replication for a small bribe.
-
-The new raid profiles and covered by an incompatibility bit, called
-extended_raid, the (idealistic) plan is to stuff as many new
-raid-related features as possible. The patch 4/4 mentions the 3- 4- copy
-raid1, configurable stripe length, write hole log and triple parity.
-If the plan turns out to be too ambitious, the ready and implemented
-features will be split and merged.
-
-An interesting question is the naming of the extended profiles. I picked
-something that can be easily understood but it's not a final proposal.
-Years ago, Hugo proposed a naming scheme that described the
-non-standard raid varieties of the btrfs flavor:
-
-https://marc.info/?l=linux-btrfs&m=136286324417767
-
-Switching to this naming would be a good addition to the extended raid.
-
-Regarding the missing raid56 features, I'll continue working on them as
-time permits in the following weeks/months, as I'm not aware of anybody
-working on that actively enough so to speak.
-
-Anyway, git branches with the patches:
-
-kernel: git://github.com/kdave/btrfs-devel dev/extended-raid-ncopies
-progs:  git://github.com/kdave/btrfs-progs dev/extended-raid-ncopies
-
-David Sterba (4):
-  btrfs: refactor block group replication factor calculation to a helper
-  btrfs: add support for 3-copy replication (raid1c3)
-  btrfs: add support for 4-copy replication (raid1c4)
-  btrfs: add incompatibility bit for extended raid features
-
- fs/btrfs/ctree.h                |  1 +
- fs/btrfs/extent-tree.c          | 45 +++++++-----------
- fs/btrfs/relocation.c           |  1 +
- fs/btrfs/scrub.c                |  4 +-
- fs/btrfs/super.c                | 17 +++----
- fs/btrfs/sysfs.c                |  2 +
- fs/btrfs/volumes.c              | 84 ++++++++++++++++++++++++++++++---
- fs/btrfs/volumes.h              |  6 +++
- include/uapi/linux/btrfs.h      | 12 ++++-
- include/uapi/linux/btrfs_tree.h |  6 +++
- 10 files changed, 134 insertions(+), 44 deletions(-)
-
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 118346aceea9..d734a0d7a3a9 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -265,6 +265,7 @@ struct btrfs_super_block {
+ 	 BTRFS_FEATURE_INCOMPAT_RAID56 |		\
+ 	 BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF |		\
+ 	 BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA |	\
++	 BTRFS_FEATURE_INCOMPAT_EXTENDED_RAID |		\
+ 	 BTRFS_FEATURE_INCOMPAT_NO_HOLES)
+ 
+ #define BTRFS_FEATURE_INCOMPAT_SAFE_SET			\
+diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+index 4a4e960c7c66..f67824fbbab4 100644
+--- a/fs/btrfs/sysfs.c
++++ b/fs/btrfs/sysfs.c
+@@ -194,6 +194,7 @@ BTRFS_FEAT_ATTR_INCOMPAT(raid56, RAID56);
+ BTRFS_FEAT_ATTR_INCOMPAT(skinny_metadata, SKINNY_METADATA);
+ BTRFS_FEAT_ATTR_INCOMPAT(no_holes, NO_HOLES);
+ BTRFS_FEAT_ATTR_COMPAT_RO(free_space_tree, FREE_SPACE_TREE);
++BTRFS_FEAT_ATTR_INCOMPAT(extended_raid, EXTENDED_RAID);
+ 
+ static struct attribute *btrfs_supported_feature_attrs[] = {
+ 	BTRFS_FEAT_ATTR_PTR(mixed_backref),
+@@ -207,6 +208,7 @@ static struct attribute *btrfs_supported_feature_attrs[] = {
+ 	BTRFS_FEAT_ATTR_PTR(skinny_metadata),
+ 	BTRFS_FEAT_ATTR_PTR(no_holes),
+ 	BTRFS_FEAT_ATTR_PTR(free_space_tree),
++	BTRFS_FEAT_ATTR_PTR(extended_raid),
+ 	NULL
+ };
+ 
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 62a8d8844dd4..bf52b2b4c6a4 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -4663,6 +4663,14 @@ static void check_raid56_incompat_flag(struct btrfs_fs_info *info, u64 type)
+ 	btrfs_set_fs_incompat(info, RAID56);
+ }
+ 
++static void check_extended_raid_incompat_flag(struct btrfs_fs_info *info, u64 type)
++{
++	if (!(type & (BTRFS_BLOCK_GROUP_RAID1C3 | BTRFS_BLOCK_GROUP_RAID1C4)))
++		return;
++
++	btrfs_set_fs_incompat(info, EXTENDED_RAID);
++}
++
+ #define BTRFS_MAX_DEVS(info) ((BTRFS_MAX_ITEM_SIZE(info)	\
+ 			- sizeof(struct btrfs_chunk))		\
+ 			/ sizeof(struct btrfs_stripe) + 1)
+@@ -4945,6 +4953,7 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
+ 
+ 	free_extent_map(em);
+ 	check_raid56_incompat_flag(info, type);
++	check_extended_raid_incompat_flag(info, type);
+ 
+ 	kfree(devices_info);
+ 	return 0;
+diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+index 229ef2e135ac..490cc3e66b94 100644
+--- a/include/uapi/linux/btrfs.h
++++ b/include/uapi/linux/btrfs.h
+@@ -270,6 +270,14 @@ struct btrfs_ioctl_fs_info_args {
+ #define BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA	(1ULL << 8)
+ #define BTRFS_FEATURE_INCOMPAT_NO_HOLES		(1ULL << 9)
+ 
++/*
++ * More RAID features:
++ * - RAID1C3 - 3-copy mirroring
++ * - RAID1C4 - 4-copy mirroring
++ * - ...
++ */
++#define BTRFS_FEATURE_INCOMPAT_EXTENDED_RAID	(1ULL << 10)
++
+ struct btrfs_ioctl_feature_flags {
+ 	__u64 compat_flags;
+ 	__u64 compat_ro_flags;
 -- 
 2.18.0
 

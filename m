@@ -1,102 +1,118 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp2120.oracle.com ([156.151.31.85]:54706 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727610AbeGPO4p (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 16 Jul 2018 10:56:45 -0400
-Subject: Re: [PATCH 2nd try v4] btrfs: drop uuid_mutex in
- btrfs_free_extra_devids()
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-References: <20180528144329.7790-1-anand.jain@oracle.com>
- <20180528154030.GD6649@twin.jikos.cz>
- <6daefb49-195a-71c1-7f9f-4c8b13136e31@oracle.com>
- <b3f91646-39a5-81cd-f2a0-fce91e7991a1@oracle.com>
- <20180529111929.GJ6649@twin.jikos.cz>
-From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <6924ea4b-0b20-a93d-dcca-1ed325e21635@oracle.com>
-Date: Mon, 16 Jul 2018 22:32:22 +0800
+Received: from smtp-34-i6.italiaonline.it ([213.209.14.34]:59837 "EHLO
+        libero.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1727809AbeGPS63 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 16 Jul 2018 14:58:29 -0400
+Reply-To: kreijack@inwind.it
+Subject: Re: [PATCH 0/4] 3- and 4- copy RAID1
+To: waxhead@dirtcellar.net, David Sterba <dsterba@suse.com>,
+        linux-btrfs@vger.kernel.org
+References: <cover.1531503452.git.dsterba@suse.com>
+ <9945d460-99b5-a927-a614-c797bbc7862d@dirtcellar.net>
+From: Goffredo Baroncelli <kreijack@libero.it>
+Message-ID: <d340ce28-6c93-22d4-0f56-73de8e55f1f6@libero.it>
+Date: Mon, 16 Jul 2018 20:29:46 +0200
 MIME-Version: 1.0
-In-Reply-To: <20180529111929.GJ6649@twin.jikos.cz>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <9945d460-99b5-a927-a614-c797bbc7862d@dirtcellar.net>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-On 05/29/2018 07:19 PM, David Sterba wrote:
-> On Tue, May 29, 2018 at 01:40:34PM +0800, Anand Jain wrote:
->>>>> v3->v4: As we traverse through the seed device, fs_device gets
->>>>> updated with
->>>>>      the child seed fs_devices, so make sure we use the same fs_devices
->>>>>      pointer for the mutex_unlock as used for the mutex_lock.
->>>>
->>>> Well, now that I see the change, shouldn't we always hold the
->>>> device_list_mutex of the fs_devices that's being processed? Ie. each
->>>> time it's switched, the previous is unlocked and new one locked.
->>>
->>>    No David. That's because we organize seed device under its parent
->>>    fs_devices ((fs_devices::seed)::seed)..so on, and they are a local
->>>    cloned copy of the original seed fs_devices. So parent's
->>>    fs_devices::device_list_mutex lock will suffice.
+On 07/15/2018 04:37 PM, waxhead wrote:
+> David Sterba wrote:
+>> An interesting question is the naming of the extended profiles. I picked
+>> something that can be easily understood but it's not a final proposal.
+>> Years ago, Hugo proposed a naming scheme that described the
+>> non-standard raid varieties of the btrfs flavor:
 >>
->>    On the 2nd thought, though theoretically you are right. But practically
->>    there isn't any use case which can benefit by using the intricate
->>    locking as you suggested above.
+>> https://marc.info/?l=linux-btrfs&m=136286324417767
+>>
+>> Switching to this naming would be a good addition to the extended raid.
+>>
+> As just a humble BTRFS user I agree and really think it is about time to move far away from the RAID terminology. However adding some more descriptive profile names (or at least some aliases) would be much better for the commoners (such as myself).
 > 
-> I don't think it's intricate or complex, just lock the fs_devices that
-> can be potentially modified in the following loop.
+> For example:
 > 
-> Schematically:
-> 
-> function called with some fs_devices
-> 
-> again:
-> 	lock fs_devices->device_list_mutex
-> 	foreach device in fs_devices
-> 		if ...
-> 			fs_devices counters get changed after device
-> 			deletion
-> 	endfor
-> 
-> 	if (fs_devices->seed)
-> 		unlock fs_devices->device_list_mutex
-> 		fs_devices = fs_devices->seed
-> 		lock fs_devices->device_list_mutex      <-- lock the new one
-> 		goto again
-> 	endif
-> 
-> 	unlock fs_devices->device_list_mutex            <-- correctly unlock
-> endfunc
-> 
->>    I am following the following method:-
->>    By holding the parent fs_devices (which is also the mounted fs_devices
->>    lock) it would imply to lock its dependent cloned seed fs_devices, as
->>    to reach the cloned seed device, first we need to traverse from the
->>    parent fs_devices.
-> 
-> Locking the parent fs_devices might be the right scheme, but if any
-> child fs_devices pointer gets passed to a random function that will
-> change it, then the locking will not protect it.
-
-If its not holding the parent fs_devices lock then it would a bug and
-if its already holding the parent lock then child lock isn't necessary
-at all.
-
-Also sent the
-   [DOC] BTRFS Volume operations, Device Lists and Locks all in one page
-to have a holistic vewi.
-
-Its not too convincing to me the approach of using the per fs_devices
-lock when fs_devices::seed is traversed its not necessary.
-
-Thanks, Anand
+> Old format / New Format / My suggested alias
+> SINGLE  / 1C     / SINGLE
+> DUP     / 2CD    / DUP (or even MIRRORLOCAL1)
+> RAID0   / 1CmS   / STRIPE
 
 
-> This might need a deeper audit how the seeding device is done and maybe
-> add some helpers that eg. lock the whole chain so all of them are
-> protected.
-> --
+> RAID1   / 2C     / MIRROR1
+> RAID1c3 / 3C     / MIRROR2
+> RAID1c4 / 4C     / MIRROR3
+> RAID10  / 2CmS   / STRIPE.MIRROR1
+
+Striping and mirroring/pairing are orthogonal properties; mirror and parity are mutually exclusive. What about
+
+RAID1 -> MIRROR1
+RAID10 -> MIRROR1S
+RAID1c3 -> MIRROR2
+RAID1c3+striping -> MIRROR2S
+
+and so on...
+
+> RAID5   / 1CmS1P / STRIPE.PARITY1
+> RAID6   / 1CmS2P / STRIPE.PARITY2
+
+To me these should be called something like
+
+RAID5 -> PARITY1S
+RAID6 -> PARITY2S
+
+The S final is due to the fact that usually RAID5/6 spread the data on all available disks
+
+Question #1: for "parity" profiles, does make sense to limit the maximum disks number where the data may be spread ? If the answer is not, we could omit the last S. IMHO it should. 
+Question #2: historically RAID10 is requires 4 disks. However I am guessing if the stripe could be done on a different number of disks: What about RAID1+Striping on 3 (or 5 disks) ? The key of striping is that every 64k, the data are stored on a different disk....
+
+
+
+
+
+
+
+> 
+> I find that writing something like "btrfs balance start -dconvert=stripe5.parity2 /mnt" is far less confusing and therefore less error prone than writing "-dconvert=1C5S2P".
+> 
+> While Hugo's suggestion is compact and to the point I would call for expanding that so it is a bit more descriptive and human readable.
+> 
+> So for example : STRIPE<num> where <num> obviously is the same as Hugo proposed - the number of storage devices for the stripe and no <num> would be best to mean 'use max devices'.
+> For PARITY then <num> is obviously required
+> 
+> Keep in mind that most people (...and I am willing to bet even Duncan which probably HAS backups ;) ) get a bit stressed when their storage system is degraded. With that in mind I hope for more elaborate, descriptive and human readable profile names to be used to avoid making mistakes using the "compact" layout.
+> 
+> ...and yes, of course this could go both ways. A more compact (and dare I say cryptic) variant can cause people to stop and think before doing something and thus avoid errors,
+> 
+> Now that I made my point I can't help being a bit extra hash, obnoxious and possibly difficult so I would also suggest that Hugo's format could have been changed (dare I say improved?) from....
+> 
+> numCOPIESnumSTRIPESnumPARITY
+> 
+> to.....
+> 
+> REPLICASnum.STRIPESnum.PARITYnum
+> 
+> Which would make the above table look like so:
+> 
+> Old format / My Format / My suggested alias
+> SINGLE  / R0.S0.P0 / SINGLE
+> DUP     / R1.S1.P0 / DUP (or even MIRRORLOCAL1)
+> RAID0   / R0.Sm.P0 / STRIPE
+> RAID1   / R1.S0.P0 / MIRROR1
+> RAID1c3 / R2.S0.P0 / MIRROR2
+> RAID1c4 / R3.S0.P0 / MIRROR3
+> RAID10  / R1.Sm.P0 / STRIPE.MIRROR1
+> RAID5   / R1.Sm.P1 / STRIPE.PARITY1
+> RAID6   / R1.Sm.P2 / STRIPE.PARITY2
+> 
+> And i think this is much more readable, but others may disagree. And as a side note... from a (hobby) coders perspective this is probably simpler to parse as well.
+> -- 
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 > the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 > 
+
+
+-- 
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

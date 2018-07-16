@@ -1,195 +1,361 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwkm03.jp.fujitsu.com ([202.219.69.170]:16641 "EHLO
-        mgwkm03.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727168AbeGSGAS (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 19 Jul 2018 02:00:18 -0400
-Received: from g01jpfmpwyt01.exch.g01.fujitsu.local (g01jpfmpwyt01.exch.g01.fujitsu.local [10.128.193.38])
-        by kw-mxauth.gw.nic.fujitsu.com (Postfix) with ESMTP id 3E56FAC00D6
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jul 2018 14:18:56 +0900 (JST)
-Received: from g01jpexchyt37.g01.fujitsu.local (unknown [10.128.193.4])
-        by g01jpfmpwyt01.exch.g01.fujitsu.local (Postfix) with ESMTP id 9039B6D67AD
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jul 2018 14:18:55 +0900 (JST)
-From: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
-Subject: [PATCH] btrfs-progs: ins: Add v2 ioctl support in logical-resolve
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Message-ID: <fe355417-0516-b27f-1114-a3777916fb87@jp.fujitsu.com>
-Date: Thu, 19 Jul 2018 14:15:50 +0900
+Received: from p3nlsmtpcp01-02.prod.phx3.secureserver.net ([184.168.200.140]:38548
+        "EHLO p3nlsmtpcp01-02.prod.phx3.secureserver.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1727262AbeGPDuq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 15 Jul 2018 23:50:46 -0400
+Date: Mon, 16 Jul 2018 08:46:50 +0530
+From: "Lakshmipathi.G" <Lakshmipathi.Ganapathi@collabora.co.uk>
+To: linux-btrfs@vger.kernel.org
+Cc: lakshmipathi.g@giis.co.in
+Subject: [PATCH] v2: btrfs-progs: Introduce 'btrfs inspect-internal
+ dump-csum' option
+Message-ID: <20180716031650.GA8385@giis.co.in>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add -i (ignore offset) option to logical-resolve command
-to show how BTRFS_IOC_LOGICAL_INO_V2 ioctl works
-(returns every ref to the extent of given logical address).
+Dump csum for a given file.
 
-[Example]
-$ mkfs.btrfs -f $DEV
-$ mount $DEV /mnt
+Sample usage:
+btrfs inspect-internal dump-csum /btrfs/50gbfile /dev/sda4
+csum for /btrfs/50gbfile dumped to /btrfs/50gbfile.csumdump
 
-$ dd if=/dev/urandom of=/mnt/file bs=4k count=100
-# split above extent
-$ dd if=/dev/urandom of=/mnt/file bs=4k seek=10 count=1 conv=notrunc
-$ btrfs filesystem sync
-
-# v1
-$ btrfs inspect-internal logical-resolve -P 13631488 /mnt
-inode 257 offset 0 root 5
-
-# v2
-$ btrfs inspect-internal logical-resolve -iP 13631488 /mnt
-inode 257 offset 0 root 5
-inode 257 offset 45056 root 5
-
-Signed-off-by: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
+Signed-off-by: Lakshmipathi.G <Lakshmipathi.Ganapathi@collabora.co.uk>
 ---
- Documentation/btrfs-inspect-internal.asciidoc |  4 ++++
- cmds-inspect.c                                | 17 +++++++++++++++--
- ioctl.h                                       | 10 +++++++++-
- libbtrfsutil/btrfs.h                          | 10 +++++++++-
- 4 files changed, 37 insertions(+), 4 deletions(-)
+ Makefile                 |   2 +-
+ cmds-inspect-dump-csum.c | 256 +++++++++++++++++++++++++++++++++++++++++++++++
+ cmds-inspect-dump-csum.h |  22 ++++
+ cmds-inspect.c           |   3 +
+ 4 files changed, 282 insertions(+), 1 deletion(-)
+ create mode 100644 cmds-inspect-dump-csum.c
+ create mode 100644 cmds-inspect-dump-csum.h
 
-diff --git a/Documentation/btrfs-inspect-internal.asciidoc b/Documentation/btrfs-inspect-internal.asciidoc
-index e2db6466..a55c9add 100644
---- a/Documentation/btrfs-inspect-internal.asciidoc
-+++ b/Documentation/btrfs-inspect-internal.asciidoc
-@@ -125,6 +125,10 @@ skip the path resolving and print the inodes instead
- verbose mode, print count of returned paths and all ioctl() return values
- -s <bufsize>::::
- set internal buffer for storing the file names to 'bufsize', default is 4096, maximum 64k
-+-i::::
-+ignore offset and return all the ref information
-+which points to the extent containing given logical address.
-+This requires version 2 ioctl support (BTRFS_IOC_LOGICAL_INO_V2, since 4.15).
- 
- *min-dev-size* [options] <path>::
- (needs root privileges)
-diff --git a/cmds-inspect.c b/cmds-inspect.c
-index 2fc50c1a..d47eeacb 100644
---- a/cmds-inspect.c
-+++ b/cmds-inspect.c
-@@ -131,6 +131,9 @@ static const char * const cmd_inspect_logical_resolve_usage[] = {
- 	"-s bufsize  set inode container's size. This is used to increase inode",
- 	"            container's size in case it is not enough to read all the ",
- 	"            resolved results. The max value one can set is 64k",
-+	"-i          ignore offset and return all the ref information",
-+	"            which points to the extent containing given logical address",
-+	"            (requires version 2 ioctl support)",
- 	NULL
- };
- 
-@@ -142,7 +145,9 @@ static int cmd_inspect_logical_resolve(int argc, char **argv)
- 	int verbose = 0;
- 	int getpath = 1;
- 	int bytes_left;
-+	int ignore_offset = 0;
- 	struct btrfs_ioctl_logical_ino_args loi;
-+	unsigned long ioctl_num = BTRFS_IOC_LOGICAL_INO;
- 	struct btrfs_data_container *inodes;
- 	u64 size = 4096;
- 	char full_path[PATH_MAX];
-@@ -151,7 +156,7 @@ static int cmd_inspect_logical_resolve(int argc, char **argv)
- 
- 	optind = 0;
- 	while (1) {
--		int c = getopt(argc, argv, "Pvs:");
-+		int c = getopt(argc, argv, "Pvs:i");
- 		if (c < 0)
- 			break;
- 
-@@ -165,6 +170,9 @@ static int cmd_inspect_logical_resolve(int argc, char **argv)
- 		case 's':
- 			size = arg_strtou64(optarg);
- 			break;
-+		case 'i':
-+			ignore_offset = 1;
-+			break;
- 		default:
- 			usage(cmd_inspect_logical_resolve_usage);
- 		}
-@@ -183,13 +191,18 @@ static int cmd_inspect_logical_resolve(int argc, char **argv)
- 	loi.size = size;
- 	loi.inodes = ptr_to_u64(inodes);
- 
-+	if (ignore_offset) {
-+		loi.flags = BTRFS_LOGICAL_INO_ARGS_IGNORE_OFFSET;
-+		ioctl_num = BTRFS_IOC_LOGICAL_INO_V2;
+diff --git a/Makefile b/Makefile
+index 544410e..8ad2801 100644
+--- a/Makefile
++++ b/Makefile
+@@ -122,7 +122,7 @@ cmds_objects = cmds-subvolume.o cmds-filesystem.o cmds-device.o cmds-scrub.o \
+ 	       cmds-quota.o cmds-qgroup.o cmds-replace.o check/main.o \
+ 	       cmds-restore.o cmds-rescue.o chunk-recover.o super-recover.o \
+ 	       cmds-property.o cmds-fi-usage.o cmds-inspect-dump-tree.o \
+-	       cmds-inspect-dump-super.o cmds-inspect-tree-stats.o cmds-fi-du.o \
++	       cmds-inspect-dump-super.o cmds-inspect-tree-stats.o cmds-fi-du.o cmds-inspect-dump-csum.o \
+ 	       mkfs/common.o check/mode-common.o check/mode-lowmem.o
+ libbtrfs_objects = send-stream.o send-utils.o kernel-lib/rbtree.o btrfs-list.o \
+ 		   kernel-lib/crc32c.o messages.o \
+diff --git a/cmds-inspect-dump-csum.c b/cmds-inspect-dump-csum.c
+new file mode 100644
+index 0000000..38afcc3
+--- /dev/null
++++ b/cmds-inspect-dump-csum.c
+@@ -0,0 +1,256 @@
++/*
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public
++ * License v2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public
++ * License along with this program; if not, write to the
++ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
++ * Boston, MA 021110-1307, USA.
++ */
++
++#include "kerncompat.h"
++#include <stdio.h>
++#include <stdlib.h>
++#include <unistd.h>
++#include <fcntl.h>
++#include <sys/stat.h>
++#include <ctype.h>
++#include <uuid/uuid.h>
++#include <errno.h>
++#include <getopt.h>
++
++#include "ctree.h"
++#include "disk-io.h"
++#include "print-tree.h"
++#include "transaction.h"
++#include "list.h"
++#include "utils.h"
++#include "commands.h"
++#include "crc32c.h"
++#include "cmds-inspect-dump-csum.h"
++#include "help.h"
++#include "volumes.h"
++
++
++const char * const cmd_inspect_dump_csum_usage[] = {
++	"btrfs inspect-internal dump-csum <path/to/file> <device>",
++	"Get csums for the given file.",
++	NULL
++};
++
++int btrfs_lookup_csums(struct btrfs_trans_handle *trans, struct btrfs_root *root,
++	struct btrfs_path *path, u64 bytenr, int cow, int total_csums, FILE *fp)
++{
++	int ret;
++	int i;
++	int start_pos = 0;
++	struct btrfs_key file_key;
++	struct btrfs_key found_key;
++	struct btrfs_csum_item *item;
++	struct extent_buffer *leaf;
++	u64 csum_offset = 0;
++	u16 csum_size =
++		btrfs_super_csum_size(root->fs_info->super_copy);
++	int csums_in_item = 0;
++	unsigned int tree_csum = 0;
++	int pending_csums = total_csums;
++	static int cnt=1;
++
++	file_key.objectid = BTRFS_EXTENT_CSUM_OBJECTID;
++	file_key.offset = bytenr;
++	file_key.type = BTRFS_EXTENT_CSUM_KEY;
++	ret = btrfs_search_slot(trans, root, &file_key, path, 0, cow);
++	if (ret < 0)
++		goto fail;
++	while(1){
++		leaf = path->nodes[0];
++		if (ret > 0) {
++			ret = 1;
++			if (path->slots[0] == 0)
++				goto fail; 
++			path->slots[0]--;
++			btrfs_item_key_to_cpu(leaf, &found_key, path->slots[0]);
++			if (found_key.type != BTRFS_EXTENT_CSUM_KEY){
++				fprintf(stderr, "\nInvalid key found.");
++				goto fail;
++			}
++
++			csum_offset = ((bytenr - found_key.offset) / root->fs_info->sectorsize) * csum_size;
++			csums_in_item = btrfs_item_size_nr(leaf, path->slots[0]);
++			csums_in_item /= csum_size;
++			csums_in_item -= ( bytenr - found_key.offset ) / root->fs_info->sectorsize;
++			start_pos=csum_offset;
++		}
++		if (path->slots[0] >= btrfs_header_nritems(leaf)) {
++			if (pending_csums > 0){
++				ret = btrfs_next_leaf(root, path);
++				if (ret == 0)
++				      continue;
++			}
++		}
++		item = btrfs_item_ptr(leaf, path->slots[0], struct btrfs_csum_item);
++		btrfs_item_key_to_cpu(leaf, &found_key, path->slots[0]);
++		if (!ret){
++			start_pos=0;
++			csum_offset = ( bytenr - found_key.offset ) / root->fs_info->sectorsize;
++			csums_in_item = btrfs_item_size_nr(leaf, path->slots[0]);
++			csums_in_item /= csum_size;
++		}
++		if (csums_in_item > pending_csums){
++			//possibly,some other csums on this item.
++			for(i = 0; i < pending_csums; i++, cnt++){
++			read_extent_buffer(leaf, &tree_csum, 
++					(unsigned long)item + ((i*4)+start_pos) , csum_size);
++			fprintf(fp, "%x ", tree_csum);
++			if (cnt % 8 == 0)
++				fprintf(fp, "\n");
++			}
++			pending_csums = 0;
++			return 0;
++		}else{
++			for(i = 0; i < csums_in_item; i++, cnt++){
++			read_extent_buffer(leaf, &tree_csum, 
++					(unsigned long)item+((i*4)+start_pos), csum_size);
++			fprintf(fp, "%x ", tree_csum);
++			if (cnt % 8 == 0)
++				fprintf(fp, "\n");
++			}
++		}
++		pending_csums -= csums_in_item;
++		ret = 0;
++		if (pending_csums > 0){
++			path->slots[0]++;
++
++		}else
++			return 0; 
++	
++	}
++fail:
++	fprintf(stderr, "btrfs_lookup_csums search failed.");
++	if (ret > 0)
++		ret = -ENOENT;
++	return ret;
++}
++
++int btrfs_lookup_extent(struct btrfs_fs_info *info, struct btrfs_path *path,
++		u64 ino, int cow, FILE *fp){
++	struct btrfs_key key;
++	struct btrfs_key found_key;
++	struct btrfs_file_extent_item *fi;
++	struct extent_buffer *leaf;
++	struct btrfs_root *fs_root;
++	int ret = -1;
++	int slot;
++	int total_csums = 0;
++	u64 bytenr;
++	u64 itemnum = 0;
++	struct btrfs_path *path1 = NULL;
++
++	fs_root = info->fs_root;
++	key.objectid = ino;
++	key.type = BTRFS_EXTENT_DATA_KEY;
++	key.offset = 0;
++	ret = btrfs_search_slot(NULL,fs_root,&key,path,0,0);
++
++	if(ret < 0)
++		goto error;
++
++	if (ret > 1){
++		fprintf(stderr, "Unable to find the entry");
++		return ret;
 +	}
 +
- 	fd = btrfs_open_dir(argv[optind + 1], &dirstream, 1);
- 	if (fd < 0) {
- 		ret = 12;
- 		goto out;
++	while(1){
++		leaf = path->nodes[0];
++		slot = path->slots[0];
++		if (slot >=  btrfs_header_nritems(leaf)){
++		       ret = btrfs_next_leaf(fs_root, path);
++			       if (ret == 0)
++				      continue;
++			       if (ret < 0)
++				      goto error;
++		}
++		btrfs_item_key_to_cpu(leaf, &found_key, slot);
++		if (found_key.type != BTRFS_EXTENT_DATA_KEY){
++			btrfs_release_path(path);
++			return -EINVAL;
++		}
++
++		fi = btrfs_item_ptr(leaf, slot, struct btrfs_file_extent_item);
++		bytenr = btrfs_file_extent_disk_bytenr(leaf, fi);
++		total_csums=(btrfs_file_extent_num_bytes(leaf, fi) / 1024) / 4;
++		path->slots[0]++;
++		itemnum++;
++		path1 = btrfs_alloc_path();
++	 	ret = btrfs_lookup_csums(NULL,info->csum_root, path1, bytenr, 0,
++			       	total_csums, fp);
++		btrfs_release_path(path1);
++		if (ret) {
++			fprintf(stderr, "\n Error: btrfs_lookup_csum");
++			return 1;
++		}
++	}
++
++error:
++	btrfs_release_path(path);
++	return ret;
++}
++
++int cmd_inspect_dump_csum(int argc, char **argv)
++{
++	struct btrfs_fs_info *info;
++	int ret;
++	struct btrfs_path path;
++	FILE *fp;
++	struct stat st;
++	char *filename;
++	char *outfile;
++
++	if (check_argc_exact(argc, 3))
++		usage(cmd_inspect_dump_csum_usage);
++
++	filename = argv[1];
++	info = open_ctree_fs_info(argv[2], 0, 0, 0, OPEN_CTREE_PARTIAL);
++	if (!info) {
++		fprintf(stderr, "unable to open %s\n", argv[2]);
++	        exit(1);
++	}
++
++	ret = stat(filename, &st);
++	if (ret < 0)	{
++		fprintf(stderr, "unable to open %s\n", filename);
++		exit(1);
++	}
++
++	if(st.st_size < 1024){
++		fprintf(stderr, "file less than 1KB.abort%lu", (st.st_size ));
++		exit(1);
++	}
++
++	btrfs_init_path(&path);
++	ret = asprintf(&outfile, "%s.csumdump", filename);
++	if (ret == -1){
++		fprintf(stderr, "memory allocation failed.");
++		return -1;
++	}
++	fp = fopen(outfile, "w+");
++	if (NULL == fp) {
++		fprintf(stderr, "Unable to open %s file", outfile);
++		free(outfile);
++		return -1;
++	}
++	ret = btrfs_lookup_extent(info, &path, st.st_ino, 0, fp);
++	fclose(fp);
++	ret = close_ctree(info->fs_root);
++	btrfs_close_all_devices();
++
++	fprintf(stdout, "csum for %s dumped to %s\n ", filename, outfile);
++	free(outfile);
++	return ret;
++}
+diff --git a/cmds-inspect-dump-csum.h b/cmds-inspect-dump-csum.h
+new file mode 100644
+index 0000000..338fa67
+--- /dev/null
++++ b/cmds-inspect-dump-csum.h
+@@ -0,0 +1,22 @@
++/*
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public
++ * License v2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public
++ * License along with this program; if not, write to the
++ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
++ * Boston, MA 021110-1307, USA.
++ *
++ * Authors: Lakshmipathi.G <lakshmipathi.ganapathi@collabora.co.uk>
++ */
++
++
++int cmd_inspect_dump_csum(int argc, char **argv);
++
++extern const char * const cmd_inspect_dump_csum_usage[];
+diff --git a/cmds-inspect.c b/cmds-inspect.c
+index afd7fe4..c0d59c6 100644
+--- a/cmds-inspect.c
++++ b/cmds-inspect.c
+@@ -32,6 +32,7 @@
+ #include "commands.h"
+ #include "btrfs-list.h"
+ #include "help.h"
++#include "cmds-inspect-dump-csum.h"
+ 
+ static const char * const inspect_cmd_group_usage[] = {
+ 	"btrfs inspect-internal <command> <args>",
+@@ -647,6 +648,8 @@ const struct cmd_group inspect_cmd_group = {
+ 				cmd_inspect_dump_super_usage, NULL, 0 },
+ 		{ "tree-stats", cmd_inspect_tree_stats,
+ 				cmd_inspect_tree_stats_usage, NULL, 0 },
++		{ "dump-csum", cmd_inspect_dump_csum,
++				cmd_inspect_dump_csum_usage, NULL, 0 },
+ 		NULL_CMD_STRUCT
  	}
- 
--	ret = ioctl(fd, BTRFS_IOC_LOGICAL_INO, &loi);
-+	ret = ioctl(fd, ioctl_num, &loi);
- 	if (ret < 0) {
- 		error("logical ino ioctl: %m");
- 		goto out;
-diff --git a/ioctl.h b/ioctl.h
-index 709e996f..74f30c20 100644
---- a/ioctl.h
-+++ b/ioctl.h
-@@ -491,10 +491,16 @@ BUILD_ASSERT(sizeof(struct btrfs_ioctl_ino_path_args) == 56);
- struct btrfs_ioctl_logical_ino_args {
- 	__u64				logical;	/* in */
- 	__u64				size;		/* in */
--	__u64				reserved[4];
-+	__u64				reserved[3];	/* must be 0 for now */
-+	__u64				flags;		/* in, v2 only */
- 	/* struct btrfs_data_container	*inodes;	out   */
- 	__u64				inodes;
  };
-+/*
-+ * Return every ref to the extent, not just those containing logical block.
-+ * Requires logical == extent bytenr.
-+ */
-+#define BTRFS_LOGICAL_INO_ARGS_IGNORE_OFFSET	(1ULL << 0)
- 
- enum btrfs_dev_stat_values {
- 	/* disk I/O failure stats */
-@@ -828,6 +834,8 @@ static inline char *btrfs_err_str(enum btrfs_err_code err_code)
-                                   struct btrfs_ioctl_feature_flags[3])
- #define BTRFS_IOC_RM_DEV_V2	_IOW(BTRFS_IOCTL_MAGIC, 58, \
- 				   struct btrfs_ioctl_vol_args_v2)
-+#define BTRFS_IOC_LOGICAL_INO_V2 _IOWR(BTRFS_IOCTL_MAGIC, 59, \
-+					struct btrfs_ioctl_logical_ino_args)
- #ifdef __cplusplus
- }
- #endif
-diff --git a/libbtrfsutil/btrfs.h b/libbtrfsutil/btrfs.h
-index c293f6bf..b4debba7 100644
---- a/libbtrfsutil/btrfs.h
-+++ b/libbtrfsutil/btrfs.h
-@@ -609,10 +609,16 @@ struct btrfs_ioctl_ino_path_args {
- struct btrfs_ioctl_logical_ino_args {
- 	__u64				logical;	/* in */
- 	__u64				size;		/* in */
--	__u64				reserved[4];
-+	__u64				reserved[3];	/* must be 0 for now */
-+	__u64				flags;		/* in, v2 only */
- 	/* struct btrfs_data_container	*inodes;	out   */
- 	__u64				inodes;
- };
-+/*
-+ * Return every ref to the extent, not just those containing logical block.
-+ * Requires logical == extent bytenr.
-+ */
-+#define BTRFS_LOGICAL_INO_ARGS_IGNORE_OFFSET	(1ULL << 0)
- 
- enum btrfs_dev_stat_values {
- 	/* disk I/O failure stats */
-@@ -836,5 +842,7 @@ enum btrfs_err_code {
- 				   struct btrfs_ioctl_feature_flags[3])
- #define BTRFS_IOC_RM_DEV_V2 _IOW(BTRFS_IOCTL_MAGIC, 58, \
- 				   struct btrfs_ioctl_vol_args_v2)
-+#define BTRFS_IOC_LOGICAL_INO_V2 _IOWR(BTRFS_IOCTL_MAGIC, 59, \
-+					struct btrfs_ioctl_logical_ino_args)
- 
- #endif /* _LINUX_BTRFS_H */
 -- 
-2.14.4
-
+1.9.3
 

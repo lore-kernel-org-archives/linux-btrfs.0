@@ -1,45 +1,30 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pl0-f67.google.com ([209.85.160.67]:35341 "EHLO
-        mail-pl0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1733207AbeGLXXM (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 12 Jul 2018 19:23:12 -0400
-Received: by mail-pl0-f67.google.com with SMTP id k1-v6so11304765plt.2
-        for <linux-btrfs@vger.kernel.org>; Thu, 12 Jul 2018 16:11:26 -0700 (PDT)
-From: Omar Sandoval <osandov@osandov.com>
-To: linux-btrfs@vger.kernel.org
-Cc: kernel-team@fb.com, David Sterba <dsterba@suse.com>
-Subject: [PATCH RESEND 0/2] btrfs-progs: build improvements
-Date: Thu, 12 Jul 2018 16:11:17 -0700
-Message-Id: <cover.1531436967.git.osandov@fb.com>
+Received: from mx2.suse.de ([195.135.220.15]:58766 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1727150AbeGPPIW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 16 Jul 2018 11:08:22 -0400
+Date: Mon, 16 Jul 2018 16:40:29 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Omar Sandoval <osandov@osandov.com>
+Cc: linux-btrfs@vger.kernel.org, kernel-team@fb.com,
+        David Sterba <dsterba@suse.com>
+Subject: Re: [PATCH RESEND 1/2] btrfs-progs: remove stale dir-test and
+ quick-test
+Message-ID: <20180716144029.GJ3126@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <cover.1531436967.git.osandov@fb.com>
+ <38850f2972a4bb5b37261c34b67f235fcbf679e7.1531436967.git.osandov@fb.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <38850f2972a4bb5b37261c34b67f235fcbf679e7.1531436967.git.osandov@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Omar Sandoval <osandov@fb.com>
+On Thu, Jul 12, 2018 at 04:11:18PM -0700, Omar Sandoval wrote:
+> From: Omar Sandoval <osandov@fb.com>
+> 
+> These don't build anymore and don't appear to be used for anything.
 
-Hi, Dave,
-
-This is a resend of a couple of patches I sent back in April, rebased on
-the current devel branch. Patch 1 cleans up some stale build targets,
-and patch 2 makes the btrfs-progs build more flexible, so that it's
-possible to pick and choose what gets built. Please consider these for
-the next progs release.
-
-Thanks!
-
-Omar Sandoval (2):
-  btrfs-progs: remove stale dir-test and quick-test
-  btrfs-progs: make all programs and libraries optional
-
- Makefile        | 139 ++++++++-----
- Makefile.inc.in |  16 +-
- configure.ac    | 138 +++++++++++--
- dir-test.c      | 518 ------------------------------------------------
- quick-test.c    | 226 ---------------------
- 5 files changed, 227 insertions(+), 810 deletions(-)
- delete mode 100644 dir-test.c
- delete mode 100644 quick-test.c
-
--- 
-2.18.0
-
+I've fixed build of quick-test and will keep the code for now, it can be
+used for some stress testing. The dir-test does not seem to be even
+potentially useful in the fucute, so it's dropped now.

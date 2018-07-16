@@ -1,41 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ns211617.ip-188-165-215.eu ([188.165.215.42]:54872 "EHLO
-        mx.speed47.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1752889AbeGDTcD (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Jul 2018 15:32:03 -0400
-From: =?UTF-8?q?St=C3=A9phane=20Lesimple?= <stephane_btrfs@lesimple.fr>
-To: linux-btrfs@vger.kernel.org
-Cc: =?UTF-8?q?St=C3=A9phane=20Lesimple?= <stephane_btrfs@lesimple.fr>
-Subject: [PATCH 1/2] btrfs-progs: fix nanosecs in task_period_start
-Date: Wed,  4 Jul 2018 21:20:13 +0200
-Message-Id: <1530732014-5449-2-git-send-email-stephane_btrfs@lesimple.fr>
-In-Reply-To: <1530732014-5449-1-git-send-email-stephane_btrfs@lesimple.fr>
-References: <1530732014-5449-1-git-send-email-stephane_btrfs@lesimple.fr>
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:15316 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1728079AbeGPKFQ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 16 Jul 2018 06:05:16 -0400
+From: Gu Jinxiang <gujx@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: <anand.jain@oracle.com>
+Subject: [PATCH v5 0/2] btrfs: do some parameters optimization
+Date: Mon, 16 Jul 2018 17:34:16 +0800
+Message-ID: <1531733656-23806-1-git-send-email-gujx@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a single-line fix on the preexisting task_period_start function.
+Do parameters optimization for function btrfs_parse_early_options
+and btrfs_scan_one_device.
 
-Signed-off-by: Stéphane Lesimple <stephane_btrfs@lesimple.fr>
----
- task-utils.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Gu Jinxiang (2):
+  btrfs: make fs_devices to be a local variable
+  btrfs: get device pointer from btrfs_scan_one_device
 
-diff --git a/task-utils.c b/task-utils.c
-index 12b0002..284cbb3 100644
---- a/task-utils.c
-+++ b/task-utils.c
-@@ -102,7 +102,7 @@ int task_period_start(struct task_info *info, unsigned int period_ms)
- 	info->periodic.wakeups_missed = 0;
- 
- 	sec = period_ms / 1000;
--	ns = (period_ms - (sec * 1000)) * 1000;
-+	ns = (period_ms - (sec * 1000)) * 1000 * 1000;
- 	itval.it_interval.tv_sec = sec;
- 	itval.it_interval.tv_nsec = ns;
- 	itval.it_value.tv_sec = sec;
+ fs/btrfs/super.c   | 38 ++++++++++++++++++++++++--------------
+ fs/btrfs/volumes.c | 22 ++++++++--------------
+ fs/btrfs/volumes.h |  4 ++--
+ 3 files changed, 34 insertions(+), 30 deletions(-)
+
 -- 
-2.7.4
+2.17.1
+
+
 

@@ -1,24 +1,24 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.22]:57243 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726851AbeGPKQO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 16 Jul 2018 06:16:14 -0400
+Received: from mx2.suse.de ([195.135.220.15]:47052 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1728075AbeGPQeO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 16 Jul 2018 12:34:14 -0400
+Date: Mon, 16 Jul 2018 18:05:59 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Su Yue <suy.fnst@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH v2] btrfs-progs: inspect-internal: add option '-k
  u64,u8,u64' of dump-tree
-To: Su Yue <suy.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+Message-ID: <20180716160559.GN3126@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <20180716091325.12621-1-suy.fnst@cn.fujitsu.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <bd5d5ffb-3897-c63b-1eb5-6bee045aff78@gmx.com>
-Date: Mon, 16 Jul 2018 17:49:28 +0800
 MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 In-Reply-To: <20180716091325.12621-1-suy.fnst@cn.fujitsu.com>
-Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-On 2018年07月16日 17:13, Su Yue wrote:
+On Mon, Jul 16, 2018 at 05:13:25PM +0800, Su Yue wrote:
 > For big filesystems, there are many items in trees(extent tree
 > specially).
 > For example, to dump one extent, we usually dump extent tree then pipe
@@ -31,14 +31,6 @@ On 2018年07月16日 17:13, Su Yue wrote:
 > The search of the key costs most time of this way.
 > 
 > Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
-
-Looks pretty good, just small nitpicks.
-
-Basically you could add my reviewed-by tag:
-
-Reviewed-by: Qu Wenruo <wqu@suse.com>
-
-
 > ---
 > Change log:
 > v2:
@@ -65,10 +57,22 @@ Reviewed-by: Qu Wenruo <wqu@suse.com>
 > +static int parse_key(struct btrfs_key *key)
 > +{
 > +
+
+Extra newline.
+
 > +	int ret = sscanf(optarg, "%llu,%hhu,%llu", &key->objectid,
 > +			 &key->type, &key->offset);
+
+Please don't do complex initializations in the declaration block.
+
+And use of the global variable 'optarg' is not good, pass the scanned
+string as a parameter.
+
 > +	if (ret != 3) {
 > +		error("error parsing key '%s'\n", optarg);
+
+no "\n" at the end of the string in error(...)
+
 > +		ret = -EINVAL;
 > +	} else {
 > +		ret = 0;
@@ -86,8 +90,9 @@ Reviewed-by: Qu Wenruo <wqu@suse.com>
 >  	"-t|--tree <tree_id>    print only tree with the given id (string or number)",
 > +	"-k|--key <u64,u8,u64>  search the specific key then print path, must with -t(conflicts with others)",
 
-What are the "others"?
-At least for me, other includes -r and -b.
+As there are more conflicting options, it would be better to group them
+and just put a note about that. The message as you write it does not
+provide clear usage instructions.
 
 >  	"--follow               use with -b, to show all children tree blocks of <block_num>",
 >  	NULL
@@ -125,6 +130,9 @@ At least for me, other includes -r and -b.
 > +			if (ret)
 > +				exit(1);
 > +			is_spec_key_set = true;
+
+What if the key is already set?
+
 > +			break;
 >  		case GETOPT_VAL_FOLLOW:
 >  			follow = true;
@@ -136,12 +144,6 @@ At least for me, other includes -r and -b.
 > +	if (!tree_id && is_spec_key_set)
 > +		usage(cmd_inspect_dump_tree_usage);
 > +
-
-And options conflict should also be done here.
-
-Thanks,
-Qu
-
 >  	if (check_argc_exact(argc - optind, 1))
 >  		usage(cmd_inspect_dump_tree_usage);
 >  
@@ -224,6 +226,13 @@ Qu
 > +
 > +	level = btrfs_header_level(root->node);
 > +	for (; level >= 0 ; level--) {
+
+Why isn't this written as
+
+	for (level = btrfs_header_level(root->node); level >= 0; level--) {
+
+?
+
 > +		eb = path.nodes[level];
 > +		next = path.nodes[level - 1];
 > +
@@ -234,6 +243,9 @@ Qu
 > +		if (btrfs_header_level(next) != btrfs_header_level(eb) - 1) {
 > +			warning(
 > +				"eb corrupted: parent bytenr %llu slot %d level %d child bytenr %llu level has %d expect %d, skipping the slot",
+
+Unindent strings to the left
+
 > +				btrfs_header_bytenr(eb), path.slots[level],
 > +				btrfs_header_level(eb),
 > +				btrfs_header_bytenr(next),
@@ -258,5 +270,7 @@ Qu
 >  void print_key_type(FILE *stream, u64 objectid, u8 type);
 > +void btrfs_search_print_path(struct btrfs_fs_info *info, u64 root_objectid,
 > +			     struct btrfs_key *key);
+
+Newline before #endif please.
+
 >  #endif
-> 

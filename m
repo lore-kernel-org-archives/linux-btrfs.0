@@ -1,49 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:47587 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1753867AbeGBJWG (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 Jul 2018 05:22:06 -0400
-Received: from G08CNEXCHPEKD03.g08.fujitsu.local (unknown [10.167.33.85])
-        by cn.fujitsu.com (Postfix) with ESMTP id 476B14B43D4C
-        for <linux-btrfs@vger.kernel.org>; Mon,  2 Jul 2018 17:22:02 +0800 (CST)
-From: Su Yue <suy.fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: <suy.fnst@cn.fujitsu.com>
-Subject: [PATCH RFC 3/3] btrfs-progs: tests: append '--force-repair-lowmem' if lowmem repair is enabled
-Date: Mon, 2 Jul 2018 17:28:20 +0800
-Message-ID: <20180702092820.16285-4-suy.fnst@cn.fujitsu.com>
-In-Reply-To: <20180702092820.16285-1-suy.fnst@cn.fujitsu.com>
-References: <20180702092820.16285-1-suy.fnst@cn.fujitsu.com>
+Received: from mail-pl0-f67.google.com ([209.85.160.67]:34001 "EHLO
+        mail-pl0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727479AbeGPSNW (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 16 Jul 2018 14:13:22 -0400
+Received: by mail-pl0-f67.google.com with SMTP id f6-v6so1655344plo.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 16 Jul 2018 10:44:54 -0700 (PDT)
+Date: Mon, 16 Jul 2018 10:44:52 -0700
+From: Omar Sandoval <osandov@osandov.com>
+To: dsterba@suse.cz, linux-btrfs@vger.kernel.org, kernel-team@fb.com,
+        David Sterba <dsterba@suse.com>
+Subject: Re: [PATCH RESEND 2/2] btrfs-progs: make all programs and libraries
+ optional
+Message-ID: <20180716174452.GA19219@vader>
+References: <cover.1531436967.git.osandov@fb.com>
+ <116774c27511a8186b837f82053fbeba2a50d75c.1531436967.git.osandov@fb.com>
+ <20180716145657.GK3126@twin.jikos.cz>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20180716145657.GK3126@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Since commit 62785de7c107 ("btrfs-progs: lowmem: force to start
-without delay with option '--force-repair-lowmem'") delays repair in
-lowmem mode.
-For tests which repair in lowmem mode, append '--force-repair-lowmem'
-to force them to start without delay.
+On Mon, Jul 16, 2018 at 04:56:57PM +0200, David Sterba wrote:
+> On Thu, Jul 12, 2018 at 04:11:19PM -0700, Omar Sandoval wrote:
+> > From: Omar Sandoval <osandov@fb.com>
+> > 
+> > We have a build system internally which only needs to build the
+> > libraries out of a repository, not any binaries. I looked at how this
+> > works with other projects, and the best example was util-linux, which
+> > makes it possible to enable or disable everything individually. This is
+> > nice and really flexible, so let's do the same. This way, if you only
+> > want to build and install libbtrfsutil, you can simply do
+> > 
+> >   ./configure --disable-documentation --disable-all-programs --enable-libbtrfsutil
+> >   make
+> >   make install
+> 
+> I think this is an overkill and abusing the --enable-XXX options.  You
+> want to avoid building the tools by default, so adding an option for
+> that is fine. Selectively building only certain tools can utilize that
+> option too and just follow with 'make btrfs-image' etc.
 
-Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
----
- tests/common.local | 1 +
- 1 file changed, 1 insertion(+)
+Yeah, it's easy to build stuff selectively, but `make install` will
+still try to build everything, that's the part I'm more concerned with.
 
-diff --git a/tests/common.local b/tests/common.local
-index f5e96f5b73ac..4facc5482ef7 100644
---- a/tests/common.local
-+++ b/tests/common.local
-@@ -29,6 +29,7 @@ _skip_spec()
- 	   echo "$@" | grep -q -- '--repair'; then
- 		dir="$(dirname ${@: -1})"
- 		if [ -f ${dir}/${beacon} ]; then
-+			TEST_ARGS_CHECK+=" --force-repair-lowmem"
- 			return 1;
- 		fi
- 		return 0;
--- 
-2.17.1
+> The number of --enable-* will stay minimal and we don't even have to
+> discuss how to find a good naming scheme (that works for util-linux but
+> looks a bit confusing for btrfs-progs).
 
-
-
+Ok, I can collapse these into just --disable-programs/--enable-programs,
+and --disable-libraries/--enable-libraries? That would be enough for me.

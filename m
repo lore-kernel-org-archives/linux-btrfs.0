@@ -1,47 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:33204 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:58026 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1753492AbeGEPzs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 5 Jul 2018 11:55:48 -0400
+        id S1728025AbeGPMg1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 16 Jul 2018 08:36:27 -0400
 Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 84625AD65
-        for <linux-btrfs@vger.kernel.org>; Thu,  5 Jul 2018 15:55:47 +0000 (UTC)
-Date: Thu, 5 Jul 2018 17:55:45 +0200
+        by mx1.suse.de (Postfix) with ESMTP id E41A7ADC8
+        for <linux-btrfs@vger.kernel.org>; Mon, 16 Jul 2018 12:09:17 +0000 (UTC)
+Date: Mon, 16 Jul 2018 14:09:12 +0200
 From: David Sterba <dsterba@suse.cz>
-To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: remove warnings superseded by refcount_t usage
-Message-ID: <20180705155545.GK3126@twin.jikos.cz>
+To: Nikolay Borisov <nborisov@suse.com>
+Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2] btrfs: Rewrite retry logic in do_chunk_alloc
+Message-ID: <20180716120912.GD3126@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <20180625163822.25681-1-dsterba@suse.com>
- <fae25e89-52c5-25ea-65ad-7405fedb0a68@suse.com>
- <20180629140540.GT2287@twin.jikos.cz>
+References: <20180416185321.GW21272@twin.jikos.cz>
+ <1524036477-23203-1-git-send-email-nborisov@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180629140540.GT2287@twin.jikos.cz>
+In-Reply-To: <1524036477-23203-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jun 29, 2018 at 04:05:40PM +0200, David Sterba wrote:
-> On Tue, Jun 26, 2018 at 05:00:46PM +0300, Nikolay Borisov wrote:
-> > On 25.06.2018 19:38, David Sterba wrote:
-> > > There are several WARN_ON calls that catch incrorrect reference counter
-> > > updates, but this is what the refcount_t does already:
-> > > 
-> > > * refcount_inc from 0 will warn
-> > > * refcount_dec_and_test from 0 will warn
-> > > 
-> > 
-> > But these warnings are only going to be triggered in the case of
-> > CONFIG_REFCOUNT_FULL otherwise refcount falls back to plain atomic
-> > operations.
+On Wed, Apr 18, 2018 at 10:27:57AM +0300, Nikolay Borisov wrote:
+> do_chunk_alloc implements logic to detect whether there is currently
+> pending chunk allocation  (by means of space_info->chunk_alloc being
+> set) and if so it loops around to the 'again' label. Additionally,
+> based on the state of the space_info (e.g. whether it's full or not)
+> and the return value of should_alloc_chunk() it decides whether this
+> is a "hard" error (ENOSPC) or we can just return 0.
 > 
-> Right, I'm for REFCOUNT_FULL on by default obviously, but we need to
-> take handle the case where it's not. And there isn't a refcount type
-> with the full semantics.
+> This patch refactors all of this:
+> 
+> 1. Put order to the scattered ifs handling the various cases in an
+> easy-to-read if {} else if{} branches. This makes clear the various
+> cases we are interested in handling.
+> 
+> 2. Call should_alloc_chunk only once and use the result in the
+> if/else if constructs. All of this is done under space_info->lock, so
+> even before multiple calls of should_alloc_chunk were unnecessary.
+> 
+> 3. Rewrite the "do {} while()" loop currently implemented via label
+> into an explicit loop construct.
+> 
+> 4. Move the mutex locking for the case where the caller is the one doing the 
+> allocation. For the case where the caller needs to wait a concurrent allocation, 
+> introduce a pair of mutex_lock/mutex_unlock to act as a barrier and reword the 
+> comment. 
+> 
+> 5. Switch local vars to bool type where pertinent.
+> 
+> All in all this shouldn't introduce any functional changes.
+> 
+> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 
-There refcount helpers will be extended to allow the full check
-semantics so I'll use them and drop the WARN_ONs once the patch gets
-merged.
-
-https://lore.kernel.org/lkml/20180703100102.16615-1-mark.rutland@arm.com/
+Reviewed-by: David Sterba <dsterba@suse.com>

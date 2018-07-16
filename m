@@ -1,94 +1,112 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f68.google.com ([209.85.214.68]:39696 "EHLO
-        mail-it0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728202AbeGPTSM (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 16 Jul 2018 15:18:12 -0400
-Received: by mail-it0-f68.google.com with SMTP id 198-v6so14696353ite.4
-        for <linux-btrfs@vger.kernel.org>; Mon, 16 Jul 2018 11:49:30 -0700 (PDT)
-Subject: Re: [PATCH 0/4] 3- and 4- copy RAID1
-To: kreijack@inwind.it, waxhead@dirtcellar.net,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-References: <cover.1531503452.git.dsterba@suse.com>
- <9945d460-99b5-a927-a614-c797bbc7862d@dirtcellar.net>
- <d340ce28-6c93-22d4-0f56-73de8e55f1f6@libero.it>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <1f32e709-4505-9f04-ff6c-41894761cd84@gmail.com>
-Date: Mon, 16 Jul 2018 14:49:26 -0400
+Received: from wolfsden.cz ([37.205.8.62]:50556 "EHLO wolfsden.cz"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1729601AbeGPVcc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 16 Jul 2018 17:32:32 -0400
+Received: from localhost (unknown [128.0.188.242])
+        by wolfsden.cz (Postfix) with ESMTPSA id 213D76D266
+        for <linux-btrfs@vger.kernel.org>; Mon, 16 Jul 2018 20:58:10 +0000 (UTC)
+Date: Mon, 16 Jul 2018 22:58:09 +0200
+From: Wolf <wolf@wolfsden.cz>
+To: linux-btrfs@vger.kernel.org
+Subject: Healthy amount of free space?
+Message-ID: <20180716205809.42jywfvuxwuuqixd@wolfsden.cz>
 MIME-Version: 1.0
-In-Reply-To: <d340ce28-6c93-22d4-0f56-73de8e55f1f6@libero.it>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: multipart/signed; micalg=pgp-sha512;
+        protocol="application/pgp-signature"; boundary="52aacrwa7otadmh6"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2018-07-16 14:29, Goffredo Baroncelli wrote:
-> On 07/15/2018 04:37 PM, waxhead wrote:
->> David Sterba wrote:
->>> An interesting question is the naming of the extended profiles. I picked
->>> something that can be easily understood but it's not a final proposal.
->>> Years ago, Hugo proposed a naming scheme that described the
->>> non-standard raid varieties of the btrfs flavor:
->>>
->>> https://marc.info/?l=linux-btrfs&m=136286324417767
->>>
->>> Switching to this naming would be a good addition to the extended raid.
->>>
->> As just a humble BTRFS user I agree and really think it is about time to move far away from the RAID terminology. However adding some more descriptive profile names (or at least some aliases) would be much better for the commoners (such as myself).
->>
->> For example:
->>
->> Old format / New Format / My suggested alias
->> SINGLE  / 1C     / SINGLE
->> DUP     / 2CD    / DUP (or even MIRRORLOCAL1)
->> RAID0   / 1CmS   / STRIPE
-> 
-> 
->> RAID1   / 2C     / MIRROR1
->> RAID1c3 / 3C     / MIRROR2
->> RAID1c4 / 4C     / MIRROR3
->> RAID10  / 2CmS   / STRIPE.MIRROR1
-> 
-> Striping and mirroring/pairing are orthogonal properties; mirror and parity are mutually exclusive. What about
-> 
-> RAID1 -> MIRROR1
-> RAID10 -> MIRROR1S
-> RAID1c3 -> MIRROR2
-> RAID1c3+striping -> MIRROR2S
-> 
-> and so on...
-> 
->> RAID5   / 1CmS1P / STRIPE.PARITY1
->> RAID6   / 1CmS2P / STRIPE.PARITY2
-> 
-> To me these should be called something like
-> 
-> RAID5 -> PARITY1S
-> RAID6 -> PARITY2S
-> 
-> The S final is due to the fact that usually RAID5/6 spread the data on all available disks
-> 
-> Question #1: for "parity" profiles, does make sense to limit the maximum disks number where the data may be spread ? If the answer is not, we could omit the last S. IMHO it should.
-Currently, there is no ability to cap the number of disks that striping 
-can happen across.  Ideally, that will change in the future, in which 
-case not only the S will be needed, but also a number indicating how 
-wide the stripe is.
 
-> Question #2: historically RAID10 is requires 4 disks. However I am guessing if the stripe could be done on a different number of disks: What about RAID1+Striping on 3 (or 5 disks) ? The key of striping is that every 64k, the data are stored on a different disk....
-This is what MD and LVM RAID10 do.  They work somewhat differently from 
-what BTRFS calls raid10 (actually, what we currently call raid1 works 
-almost identically to MD and LVM RAID10 when more than 3 disks are 
-involved, except that the chunk size is 1G or larger).  Short of drastic 
-internal changes to how that profile works, this isn't likely to happen.
+--52aacrwa7otadmh6
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-In spite of both of these, there is practical need for indicating the 
-stripe width.  Depending on the configuration of the underlying storage, 
-it's fully possible (and sometimes even certain) that you will see 
-chunks with differing stripe widths, so properly reporting the stripe 
-width (in devices, not bytes) is useful for monitoring purposes).
+Greetings,
+I would like to ask what what is healthy amount of free space to keep on
+each device for btrfs to be happy?
 
-Consider for example a 6-device array using what's currently called a 
-raid10 profile where 2 of the disks are smaller than the other four.  On 
-such an array, chunks will span all six disks (resulting in 2 copies 
-striped across 3 disks each) until those two smaller disks are full, at 
-which point new chunks will span only the remaining four disks 
-(resulting in 2 copies striped across 2 disks each).
+This is how my disk array currently looks like
+
+    [root@dennas ~]# btrfs fi usage /raid
+    Overall:
+        Device size:                  29.11TiB
+        Device allocated:             21.26TiB
+        Device unallocated:            7.85TiB
+        Device missing:                  0.00B
+        Used:                         21.18TiB
+        Free (estimated):              3.96TiB      (min: 3.96TiB)
+        Data ratio:                       2.00
+        Metadata ratio:                   2.00
+        Global reserve:              512.00MiB      (used: 0.00B)
+
+    Data,RAID1: Size:10.61TiB, Used:10.58TiB
+       /dev/mapper/data1       1.75TiB
+       /dev/mapper/data2       1.75TiB
+       /dev/mapper/data3     856.00GiB
+       /dev/mapper/data4     856.00GiB
+       /dev/mapper/data5       1.75TiB
+       /dev/mapper/data6       1.75TiB
+       /dev/mapper/data7       6.29TiB
+       /dev/mapper/data8       6.29TiB
+
+    Metadata,RAID1: Size:15.00GiB, Used:13.00GiB
+       /dev/mapper/data1       2.00GiB
+       /dev/mapper/data2       3.00GiB
+       /dev/mapper/data3       1.00GiB
+       /dev/mapper/data4       1.00GiB
+       /dev/mapper/data5       3.00GiB
+       /dev/mapper/data6       1.00GiB
+       /dev/mapper/data7       9.00GiB
+       /dev/mapper/data8      10.00GiB
+
+    System,RAID1: Size:64.00MiB, Used:1.50MiB
+       /dev/mapper/data2      32.00MiB
+       /dev/mapper/data6      32.00MiB
+       /dev/mapper/data7      32.00MiB
+       /dev/mapper/data8      32.00MiB
+
+    Unallocated:
+       /dev/mapper/data1    1004.52GiB
+       /dev/mapper/data2    1004.49GiB
+       /dev/mapper/data3    1006.01GiB
+       /dev/mapper/data4    1006.01GiB
+       /dev/mapper/data5    1004.52GiB
+       /dev/mapper/data6    1004.49GiB
+       /dev/mapper/data7    1005.00GiB
+       /dev/mapper/data8    1005.00GiB
+
+Btrfs does quite good job of evenly using space on all devices. No, how
+low can I let that go? In other words, with how much space
+free/unallocated remaining space should I consider adding new disk?
+
+Thanks for advice :)
+
+W.
+
+--=20
+There are only two hard things in Computer Science:
+cache invalidation, naming things and off-by-one errors.
+
+--52aacrwa7otadmh6
+Content-Type: application/pgp-signature; name="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQIzBAEBCgAdFiEEKUV4RjubkPramXVZs4umGUJTxRIFAltNBuEACgkQs4umGUJT
+xRIFJQ/+N5yeAlV1WU7XfrceTCG54f78LEa78h9tagoqC9NP4CSyREL5nbjtHvaw
+dOsXcflBDM151yiSVQJhjsMSZLhT9+Qt7gDcnuHwlSnQSeEE9JUrn+rOqACoIj1e
+3Un24xgn4BlCQ7jODwaXQWG4s/9sa3V79m6GWSQsgVaBQzDeeIIwkGDsCm9fOKS9
+6QrxinS/b/mjbbAydSB/Qf0uJ/ljmlCU/230EmhZaS4JR2SaXNGSu1CcIf0NJEiX
+QqDesZ8uy1UsLJNOMlG3hJTtZ3kJZVQjJiy6ViAeOJLohJpcEyfBmCb6f+85jw27
+WuA9if7As+0V1rMpB70C443boiiJ1nnwT6VUz0mHV928fseyTBd5J03ozjlsBIVB
+jJwcJniu0rFjxE6ETF7itR8USsG/5UYur4dy1ROFP5bYAU0aYkOIOiOLS213W4ra
+RtmM12K1t9SD3t0HaCTx/2QkFyCVvByhHj2FFa+Y4rnexGQvJR65wCoKBOrwF+67
+szwiLHHT/zGFhzkxzu0m5+HT/x/X/eOjOAojOE85CE3g5yI+RNUV83OgYrVaw1QQ
+Pb2kce8nNkhciW/vkRYKlamPZfGL6X/HjX72y1swPLpVhPZP9pzrrilptfiiWOQh
+kh6rUHJOz7cFGSHn1n+LdqzRAlCv2TEJ59cUfqKUvb+VQAugv/M=
+=UP4d
+-----END PGP SIGNATURE-----
+
+--52aacrwa7otadmh6--

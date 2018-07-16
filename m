@@ -1,34 +1,102 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from p3nlsmtpcp01-03.prod.phx3.secureserver.net ([184.168.200.142]:54838
-        "EHLO p3nlsmtpcp01-03.prod.phx3.secureserver.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1728246AbeGPLGR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 16 Jul 2018 07:06:17 -0400
-Date: Mon, 16 Jul 2018 16:00:46 +0530
-From: "Lakshmipathi.G" <lakshmipathi.g@giis.co.in>
-To: Su Yue <suy.fnst@cn.fujitsu.com>
-Cc: Lakshmipathi.Ganapathi@collabora.co.uk,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] v2: btrfs-progs: Introduce 'btrfs inspect-internal
- dump-csum' option
-Message-ID: <20180716103046.GA20821@giis.co.in>
-References: <612cc1b7-1593-478e-ff9f-21784d387a96@cn.fujitsu.com>
- <9b443693-3219-5f62-8a79-aa3c67f93c20@cn.fujitsu.com>
+Received: from userp2120.oracle.com ([156.151.31.85]:54706 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727610AbeGPO4p (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 16 Jul 2018 10:56:45 -0400
+Subject: Re: [PATCH 2nd try v4] btrfs: drop uuid_mutex in
+ btrfs_free_extra_devids()
+To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+References: <20180528144329.7790-1-anand.jain@oracle.com>
+ <20180528154030.GD6649@twin.jikos.cz>
+ <6daefb49-195a-71c1-7f9f-4c8b13136e31@oracle.com>
+ <b3f91646-39a5-81cd-f2a0-fce91e7991a1@oracle.com>
+ <20180529111929.GJ6649@twin.jikos.cz>
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <6924ea4b-0b20-a93d-dcca-1ed325e21635@oracle.com>
+Date: Mon, 16 Jul 2018 22:32:22 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <9b443693-3219-5f62-8a79-aa3c67f93c20@cn.fujitsu.com>
+In-Reply-To: <20180529111929.GJ6649@twin.jikos.cz>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> >Sample usage:
-> >btrfs inspect-internal dump-csum /btrfs/50gbfile /dev/sda4
-> I'm not like the way to pass a filename as a argument.
-> Just print content to stdout, let users decides where to redirect.
-> And it will decrease amount of codes(part of checking and opening files).
+
+
+On 05/29/2018 07:19 PM, David Sterba wrote:
+> On Tue, May 29, 2018 at 01:40:34PM +0800, Anand Jain wrote:
+>>>>> v3->v4: As we traverse through the seed device, fs_device gets
+>>>>> updated with
+>>>>>      the child seed fs_devices, so make sure we use the same fs_devices
+>>>>>      pointer for the mutex_unlock as used for the mutex_lock.
+>>>>
+>>>> Well, now that I see the change, shouldn't we always hold the
+>>>> device_list_mutex of the fs_devices that's being processed? Ie. each
+>>>> time it's switched, the previous is unlocked and new one locked.
+>>>
+>>>    No David. That's because we organize seed device under its parent
+>>>    fs_devices ((fs_devices::seed)::seed)..so on, and they are a local
+>>>    cloned copy of the original seed fs_devices. So parent's
+>>>    fs_devices::device_list_mutex lock will suffice.
+>>
+>>    On the 2nd thought, though theoretically you are right. But practically
+>>    there isn't any use case which can benefit by using the intricate
+>>    locking as you suggested above.
 > 
+> I don't think it's intricate or complex, just lock the fs_devices that
+> can be potentially modified in the following loop.
+> 
+> Schematically:
+> 
+> function called with some fs_devices
+> 
+> again:
+> 	lock fs_devices->device_list_mutex
+> 	foreach device in fs_devices
+> 		if ...
+> 			fs_devices counters get changed after device
+> 			deletion
+> 	endfor
+> 
+> 	if (fs_devices->seed)
+> 		unlock fs_devices->device_list_mutex
+> 		fs_devices = fs_devices->seed
+> 		lock fs_devices->device_list_mutex      <-- lock the new one
+> 		goto again
+> 	endif
+> 
+> 	unlock fs_devices->device_list_mutex            <-- correctly unlock
+> endfunc
+> 
+>>    I am following the following method:-
+>>    By holding the parent fs_devices (which is also the mounted fs_devices
+>>    lock) it would imply to lock its dependent cloned seed fs_devices, as
+>>    to reach the cloned seed device, first we need to traverse from the
+>>    parent fs_devices.
+> 
+> Locking the parent fs_devices might be the right scheme, but if any
+> child fs_devices pointer gets passed to a random function that will
+> change it, then the locking will not protect it.
 
-Ok, will remove default output file creation part (filename.csumdump) and
-print the content to stdout. 
+If its not holding the parent fs_devices lock then it would a bug and
+if its already holding the parent lock then child lock isn't necessary
+at all.
 
-Cheers.
-Lakshmipathi.G
+Also sent the
+   [DOC] BTRFS Volume operations, Device Lists and Locks all in one page
+to have a holistic vewi.
+
+Its not too convincing to me the approach of using the per fs_devices
+lock when fs_devices::seed is traversed its not necessary.
+
+Thanks, Anand
+
+
+> This might need a deeper audit how the seeding device is done and maybe
+> add some helpers that eg. lock the whole chain so all of them are
+> protected.
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 

@@ -1,83 +1,138 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp2130.oracle.com ([141.146.126.79]:49724 "EHLO
-        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726343AbeGPFgm (ORCPT
+Received: from userp2120.oracle.com ([156.151.31.85]:45370 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726627AbeGPFjj (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 16 Jul 2018 01:36:42 -0400
-Subject: Re: [PATCH 3/3] btrfs: add helper function check device delete able
+        Mon, 16 Jul 2018 01:39:39 -0400
+Subject: Re: [PATCH 2/3] btrfs: add helper btrfs_num_devices() to deduce
+ num_devices
 To: Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
 References: <20180710182241.23754-1-anand.jain@oracle.com>
- <20180710182241.23754-3-anand.jain@oracle.com>
- <caf594a1-0c04-ef34-a653-50b7210cf340@suse.com>
- <bda57fbe-9451-42f4-391d-a6b5eb52dfa8@oracle.com>
- <1bacfda8-7975-c422-3891-73c8743e2739@suse.com>
+ <20180710182241.23754-2-anand.jain@oracle.com>
+ <0547e58c-3142-9338-474e-780a8eb0eef6@suse.com>
+ <dc69c139-dcf6-6ed7-7453-ef8f64f78b68@oracle.com>
+ <2ce4bc42-02b8-48b8-aeec-cb60bb39bff5@suse.com>
 From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <71206ed3-0ac5-d7da-463d-80e7c18ddca2@oracle.com>
-Date: Mon, 16 Jul 2018 13:14:19 +0800
+Message-ID: <c91fe391-7e4c-c9d6-380c-64eba711ffe2@oracle.com>
+Date: Mon, 16 Jul 2018 13:17:14 +0800
 MIME-Version: 1.0
-In-Reply-To: <1bacfda8-7975-c422-3891-73c8743e2739@suse.com>
+In-Reply-To: <2ce4bc42-02b8-48b8-aeec-cb60bb39bff5@suse.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On 07/13/2018 07:28 PM, Nikolay Borisov wrote:
+On 07/13/2018 07:17 PM, Nikolay Borisov wrote:
 > 
 > 
-> On 13.07.2018 14:27, Anand Jain wrote:
+> On 13.07.2018 14:17, Anand Jain wrote:
 >>
 >>
->> On 07/12/2018 03:43 PM, Nikolay Borisov wrote:
+>> On 07/12/2018 03:31 PM, Nikolay Borisov wrote:
 >>>
 >>>
 >>> On 10.07.2018 21:22, Anand Jain wrote:
->>>> Move the section of the code which performs the check if the device is
->>>> indelible, move that into a helper function.
->>>>
+>>>> When the replace is running the fs_devices::num_devices also includes
+>>>> the replace device, however in some operations like device delete and
+>>>> balance it needs the actual num_devices without the repalce devices, so
+>>>> now the function btrfs_num_devices() just provides that.
+>>
 >>>> Signed-off-by: Anand Jain <anand.jain@oracle.com>
 >>>> ---
->>>>    fs/btrfs/volumes.c | 49
->>>> ++++++++++++++++++++++++++++++-------------------
->>>>    1 file changed, 30 insertions(+), 19 deletions(-)
+>>>>    fs/btrfs/volumes.c | 31 +++++++++++++++++--------------
+>>>>    1 file changed, 17 insertions(+), 14 deletions(-)
 >>>>
 >>>> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
->>>> index 59a6d8f42c98..feb29c5b44f6 100644
+>>>> index ce6faeb8bcf8..59a6d8f42c98 100644
 >>>> --- a/fs/btrfs/volumes.c
 >>>> +++ b/fs/btrfs/volumes.c
->>>> @@ -1945,6 +1945,33 @@ static inline u64 btrfs_num_devices(struct
->>>> btrfs_fs_info *fs_info)
->>>>        return num_devices;
+>>>> @@ -1931,6 +1931,20 @@ void btrfs_assign_next_active_device(struct
+>>>> btrfs_fs_info *fs_info,
+>>>>            fs_info->fs_devices->latest_bdev = next_device->bdev;
 >>>>    }
->>>>    +static struct btrfs_device *btrfs_device_delete_able(
+>>>>    
 >>>
->>> Ugliest name ever! So this function is not really a predicate, rather
->>> it's used to fetch the struct btrfs_device * to delete. So a more
->>> becoming name would be:
->>>
->>> btrfs_get_device_for_delete - though this a bit verbose.
->>>
->>> I guess btrfs_can_delete_device is more suitable if you want to follow
->>> this predicate style. At the very least, though, the correct form of the
->>> adjective is deletable so it should be btrfs_device_deletable. But as I
->>> said this function is not really used as a predicate.
+>>> Put a comment above the function saying it returns the number of devices
+>>> minus the replace device (in case replace is working) otherwise one have
+>>> to go and 'git blame' it
 >>
->>   Its a predicate, return of the device pointer is just a by-product.
->>   Will use btrfs_device_deletable().
+>> good idea will rename it to btrfs_num_devices_minus_replace(), (will
+>> wait to see if there is any better suggested).
+> 
+> Unfortunately I don't have a better name yet but
+> num_devices_minus_replace is way too verbose so don't use that...
 
-> Then it's fundamentally wrong, a predicate should really return true or
-> false. This function actually tries to acquire a device which will only
-> happen if it meets certain criterion, so I'm inclined to say it's not
-> really a predicate but rather tries to acquire a reference to a device
-> which meets certain criteria.
-
-  Ok. Will rename it, so that it won't look like predicate. However as
-  btrfs_device.. should come fist based on the other functions, will
-  use,  btrfs_device_get_for_delete()
+  Ok will just add comment. The function name will remain as
+  btrfs_num_devices()
 
 Thanks, Anand
 
-
-> 
-> <snip>
+>>
+>> Thanks, Anand
+>>
+>>
+>>
+>>>> +static inline u64 btrfs_num_devices(struct btrfs_fs_info *fs_info)
+>>>> +{
+>>>> +    u64 num_devices = fs_info->fs_devices->num_devices;
+>>>> +
+>>>> +    btrfs_dev_replace_read_lock(&fs_info->dev_replace);
+>>>> +    if (btrfs_dev_replace_is_ongoing(&fs_info->dev_replace)) {
+>>>> +        WARN_ON(num_devices < 1);
+>>>> +        num_devices--;
+>>>> +    }
+>>>> +    btrfs_dev_replace_read_unlock(&fs_info->dev_replace);
+>>>> +
+>>>> +    return num_devices;
+>>>> +}
+>>>> +
+>>>>    int btrfs_rm_device(struct btrfs_fs_info *fs_info, const char
+>>>> *device_path,
+>>>>            u64 devid)
+>>>>    {
+>>>> @@ -1944,13 +1958,7 @@ int btrfs_rm_device(struct btrfs_fs_info
+>>>> *fs_info, const char *device_path,
+>>>>          mutex_lock(&uuid_mutex);
+>>>>    -    num_devices = fs_devices->num_devices;
+>>>> -    btrfs_dev_replace_read_lock(&fs_info->dev_replace);
+>>>> -    if (btrfs_dev_replace_is_ongoing(&fs_info->dev_replace)) {
+>>>> -        WARN_ON(num_devices < 1);
+>>>> -        num_devices--;
+>>>> -    }
+>>>> -    btrfs_dev_replace_read_unlock(&fs_info->dev_replace);
+>>>> +    num_devices = btrfs_num_devices(fs_info);
+>>>>          ret = btrfs_check_raid_min_devices(fs_info, num_devices - 1);
+>>>>        if (ret)
+>>>> @@ -3810,13 +3818,8 @@ int btrfs_balance(struct btrfs_fs_info *fs_info,
+>>>>            }
+>>>>        }
+>>>>    -    num_devices = fs_info->fs_devices->num_devices;
+>>>> -    btrfs_dev_replace_read_lock(&fs_info->dev_replace);
+>>>> -    if (btrfs_dev_replace_is_ongoing(&fs_info->dev_replace)) {
+>>>> -        WARN_ON(num_devices < 1);
+>>>> -        num_devices--;
+>>>> -    }
+>>>> -    btrfs_dev_replace_read_unlock(&fs_info->dev_replace);
+>>>> +    num_devices = btrfs_num_devices(fs_info);
+>>>> +
+>>>>        allowed = BTRFS_AVAIL_ALLOC_BIT_SINGLE | BTRFS_BLOCK_GROUP_DUP;
+>>>>        if (num_devices > 1)
+>>>>            allowed |= (BTRFS_BLOCK_GROUP_RAID0 |
+>>>> BTRFS_BLOCK_GROUP_RAID1);
+>>>>
+>>> -- 
+>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>>> the body of a message to majordomo@vger.kernel.org
+>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>>
+>> -- 
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 > 

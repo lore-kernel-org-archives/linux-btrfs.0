@@ -1,128 +1,178 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:59988 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1754576AbeGCJKS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 3 Jul 2018 05:10:18 -0400
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 3AC53AD6F
-        for <linux-btrfs@vger.kernel.org>; Tue,  3 Jul 2018 09:10:17 +0000 (UTC)
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 4/5] btrfs: Check each block group has corresponding chunk at mount time
-Date: Tue,  3 Jul 2018 17:10:08 +0800
-Message-Id: <20180703091009.16399-5-wqu@suse.com>
-In-Reply-To: <20180703091009.16399-1-wqu@suse.com>
+Received: from mout.gmx.net ([212.227.17.22]:52139 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1727581AbeGPOZd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 16 Jul 2018 10:25:33 -0400
+Subject: Re: [PATCH 5/5] btrfs: Verify every chunk has corresponding block
+ group at mount time
+To: dsterba@suse.cz, Qu Wenruo <wqu@suse.de>, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org
 References: <20180703091009.16399-1-wqu@suse.com>
+ <20180703091009.16399-6-wqu@suse.com> <20180705151804.GH3126@twin.jikos.cz>
+ <fc9a063d-27d9-dbe7-db6f-b780cf59a6f6@suse.de>
+ <20180716131622.GI3126@twin.jikos.cz>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <153199b2-0e2b-cbe7-7c35-f42e470e9a4e@gmx.com>
+Date: Mon, 16 Jul 2018 21:57:43 +0800
+MIME-Version: 1.0
+In-Reply-To: <20180716131622.GI3126@twin.jikos.cz>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="6qfl5c8SkrRYETKZXVl1sxpTlE4SYVvM5"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-A crafted btrfs with incorrect chunk<->block group mapping, it could leads
-to a lot of unexpected behavior.
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--6qfl5c8SkrRYETKZXVl1sxpTlE4SYVvM5
+Content-Type: multipart/mixed; boundary="NMKCIbYeN7NK9UvwzIN8HOCbKDokkTftg";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: dsterba@suse.cz, Qu Wenruo <wqu@suse.de>, Qu Wenruo <wqu@suse.com>,
+ linux-btrfs@vger.kernel.org
+Message-ID: <153199b2-0e2b-cbe7-7c35-f42e470e9a4e@gmx.com>
+Subject: Re: [PATCH 5/5] btrfs: Verify every chunk has corresponding block
+ group at mount time
+References: <20180703091009.16399-1-wqu@suse.com>
+ <20180703091009.16399-6-wqu@suse.com> <20180705151804.GH3126@twin.jikos.cz>
+ <fc9a063d-27d9-dbe7-db6f-b780cf59a6f6@suse.de>
+ <20180716131622.GI3126@twin.jikos.cz>
+In-Reply-To: <20180716131622.GI3126@twin.jikos.cz>
 
-Although the crafted image can be catched by block group item checker
-added in "[PATCH] btrfs: tree-checker: Verify block_group_item", if one
-crafted a valid enough block group item which can pass above check but
-still mismatch with existing chunk, it could cause a lot of undefined
-behavior.
+--NMKCIbYeN7NK9UvwzIN8HOCbKDokkTftg
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-This patch will add extra block group -> chunk mapping check, to ensure
-we have a completely matching (start, len, flags) chunk for each block
-group at mount time.
 
-Link: https://bugzilla.kernel.org/show_bug.cgi?id=199837
-Reported-by: Xu Wen <wen.xu@gatech.edu>
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/extent-tree.c | 55 ++++++++++++++++++++++++++++++++++++++++--
- 1 file changed, 53 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 3d9fe58c0080..82b446f014b9 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -10003,6 +10003,41 @@ btrfs_create_block_group_cache(struct btrfs_fs_info *fs_info,
- 	return cache;
- }
- 
-+static int check_exist_chunk(struct btrfs_fs_info *fs_info, u64 start, u64 len,
-+			     u64 flags)
-+{
-+	struct btrfs_mapping_tree *map_tree = &fs_info->mapping_tree;
-+	struct extent_map *em;
-+	int ret;
-+
-+	read_lock(&map_tree->map_tree.lock);
-+	em = lookup_extent_mapping(&map_tree->map_tree, start, len);
-+	read_unlock(&map_tree->map_tree.lock);
-+
-+	if (!em) {
-+		btrfs_err_rl(fs_info,
-+	"block group start=%llu len=%llu doesn't have corresponding chunk",
-+			     start, len);
-+		ret = -ENOENT;
-+		goto out;
-+	}
-+	if (em->start != start || em->len != len ||
-+	    (em->map_lookup->type & BTRFS_BLOCK_GROUP_TYPE_MASK) !=
-+	    (flags & BTRFS_BLOCK_GROUP_TYPE_MASK)) {
-+		btrfs_err_rl(fs_info,
-+"block group start=%llu len=%llu flags=0x%llx doesn't match with chunk start=%llu len=%llu flags=0x%llx",
-+			     start, len , flags & BTRFS_BLOCK_GROUP_TYPE_MASK,
-+			     em->start, em->len, em->map_lookup->type &
-+			     BTRFS_BLOCK_GROUP_TYPE_MASK);
-+		ret = -EUCLEAN;
-+		goto out;
-+	}
-+	ret = 0;
-+out:
-+	free_extent_map(em);
-+	return ret;
-+}
-+
- int btrfs_read_block_groups(struct btrfs_fs_info *info)
- {
- 	struct btrfs_path *path;
-@@ -10036,6 +10071,9 @@ int btrfs_read_block_groups(struct btrfs_fs_info *info)
- 		need_clear = 1;
- 
- 	while (1) {
-+		struct btrfs_block_group_item bg;
-+		int slot;
-+
- 		ret = find_first_block_group(info, path, &key);
- 		if (ret > 0)
- 			break;
-@@ -10043,7 +10081,20 @@ int btrfs_read_block_groups(struct btrfs_fs_info *info)
- 			goto error;
- 
- 		leaf = path->nodes[0];
--		btrfs_item_key_to_cpu(leaf, &found_key, path->slots[0]);
-+		slot = path->slots[0];
-+		btrfs_item_key_to_cpu(leaf, &found_key, slot);
-+
-+		read_extent_buffer(leaf, &bg, btrfs_item_ptr_offset(leaf, slot),
-+				   sizeof(bg));
-+		/*
-+		 * Chunk and block group must have 1:1 mapping.
-+		 * So there must be a chunk for this block group.
-+		 */
-+		ret = check_exist_chunk(info, found_key.objectid,
-+					found_key.offset,
-+					btrfs_block_group_flags(&bg));
-+		if (ret < 0)
-+			goto error;
- 
- 		cache = btrfs_create_block_group_cache(info, found_key.objectid,
- 						       found_key.offset);
-@@ -10068,7 +10119,7 @@ int btrfs_read_block_groups(struct btrfs_fs_info *info)
- 		}
- 
- 		read_extent_buffer(leaf, &cache->item,
--				   btrfs_item_ptr_offset(leaf, path->slots[0]),
-+				   btrfs_item_ptr_offset(leaf, slot),
- 				   sizeof(cache->item));
- 		cache->flags = btrfs_block_group_flags(&cache->item);
- 		if (!mixed &&
--- 
-2.18.0
+On 2018=E5=B9=B407=E6=9C=8816=E6=97=A5 21:16, David Sterba wrote:
+> On Fri, Jul 06, 2018 at 07:44:37AM +0800, Qu Wenruo wrote:
+>>
+>>
+>> On 2018=E5=B9=B407=E6=9C=8805=E6=97=A5 23:18, David Sterba wrote:
+>>> On Tue, Jul 03, 2018 at 05:10:09PM +0800, Qu Wenruo wrote:
+>>>> If a crafted btrfs has missing block group items, it could cause
+>>>> unexpected behavior and breaks our expectation on 1:1
+>>>> chunk<->block group mapping.
+>>>>
+>>>> Although we added block group -> chunk mapping check, we still need
+>>>> chunk -> block group mapping check.
+>>>>
+>>>> This patch will do extra check to ensure each chunk has its
+>>>> corresponding block group.
+>>>>
+>>>> Link: https://bugzilla.kernel.org/show_bug.cgi?id=3D199847
+>>>> Reported-by: Xu Wen <wen.xu@gatech.edu>
+>>>> Signed-off-by: Qu Wenruo <wqu@suse.com>
+>>>> ---
+>>>>  fs/btrfs/extent-tree.c | 52 +++++++++++++++++++++++++++++++++++++++=
+++-
+>>>>  1 file changed, 51 insertions(+), 1 deletion(-)
+>>>>
+>>>> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+>>>> index 82b446f014b9..746095034ca2 100644
+>>>> --- a/fs/btrfs/extent-tree.c
+>>>> +++ b/fs/btrfs/extent-tree.c
+>>>> @@ -10038,6 +10038,56 @@ static int check_exist_chunk(struct btrfs_f=
+s_info *fs_info, u64 start, u64 len,
+>>>>  	return ret;
+>>>>  }
+>>>> =20
+>>>> +/*
+>>>> + * Iterate all chunks and verify each of them has corresponding blo=
+ck group
+>>>> + */
+>>>> +static int check_chunk_block_group_mappings(struct btrfs_fs_info *f=
+s_info)
+>>>> +{
+>>>> +	struct btrfs_mapping_tree *map_tree =3D &fs_info->mapping_tree;
+>>>> +	struct extent_map *em;
+>>>> +	struct btrfs_block_group_cache *bg;
+>>>> +	u64 start =3D 0;
+>>>> +	int ret =3D 0;
+>>>> +
+>>>> +	while (1) {
+>>>> +		read_lock(&map_tree->map_tree.lock);
+>>>> +		em =3D lookup_extent_mapping(&map_tree->map_tree, start,
+>>>> +					   (u64)-1 - start);
+>>>
+>>> This needs a comment.
+>>
+>> For the @len part?
+>=20
+> Yes, for the expression how it's calculated.
+>=20
+>>>
+>>>> +		read_unlock(&map_tree->map_tree.lock);
+>>>> +		if (!em)
+>>>> +			break;
+>>>> +
+>>>> +		bg =3D btrfs_lookup_block_group(fs_info, em->start);
+>>>> +		if (!bg) {
+>>>> +			btrfs_err_rl(fs_info,
+>>>> +	"chunk start=3D%llu len=3D%llu doesn't have corresponding block gr=
+oup",
+>>>> +				     em->start, em->len);
+>>>> +			ret =3D -ENOENT;
+>>>
+>>> -EUCLEAN ?
+>>
+>> Either works for me.
+>=20
+> That's not just a cosmetic change, there's a semantic difference betwee=
+n
+> the error codes, I maybe make that more explicit and not expect that th=
+is
+> is obvious.
+>=20
+> ENOENT does not make much sense in this context, the caller (mount in
+> this case) cannot do anything about a code that says 'some internal
+> structure not found'.
 
+The point here is, if every self-checker should only return -EUCLEAN, it
+won't really indicate what's going wrong, except points to some
+self-checker (and such self-checkers are growing larger than our
+expectation already).
+
+My practice here is, put some human readable and meaningful error
+message. No matter what we choose to return, the error message should
+tell us what's going wrong.
+
+In this case, I don't really care the return value. If it's explicitly
+needed to return -EUCLEAN, I could make all existing checker (from
+tree-checker to chunk/bg/dev-extent checker) to return -EUCLEAN if
+anything is wrong (and save several "ret =3D -EUCLEAN" lines).
+The return value doesn't really have much meaning nowadays, it's the
+error message important now.
+
+Thanks,
+Qu
+
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>=20
+
+
+--NMKCIbYeN7NK9UvwzIN8HOCbKDokkTftg--
+
+--6qfl5c8SkrRYETKZXVl1sxpTlE4SYVvM5
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAltMpFgACgkQwj2R86El
+/qiS1Af/QWRYxThesiok7hVKxRtn/5bvTPv1FWFGrOHSLkgyfmsz4R3cbYq+jLKa
+tFyPbg8Qr/ur1+edatPK/dtWrlA1lit7SUytTKFMOti44cGofL/38/5wAj8hZRz1
+1PckVFQjA74hPfX5hFmUqSNck5TM4i3r/UQvpjW3euuxnsKpFCYFwG7WEDvWwMyb
+gYao6wr/SHZmEk3B4F28weCU1JCB4vSSpig4XOCvEfQu85nMe0tnlRzy5MeBC8rL
+LcoApdPOmESI0s0hAPHsrLosneIx4ZjBgIIk0EUc362hM54SKWDvCP4sU4yIDYz3
+9hYlB5RlBDgwN99iPQGHAhKrYhmz+w==
+=VuxS
+-----END PGP SIGNATURE-----
+
+--6qfl5c8SkrRYETKZXVl1sxpTlE4SYVvM5--

@@ -1,100 +1,169 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:32788 "EHLO
-        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1729713AbeGQSY0 (ORCPT
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:36305 "EHLO
+        mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1729688AbeGQS2p (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 17 Jul 2018 14:24:26 -0400
-Date: Tue, 17 Jul 2018 10:50:32 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: Su Yue <Damenly_Su@gmx.com>
-Cc: Su Yue <suy.fnst@cn.fujitsu.com>, quwenruo.btrfs@gmx.com,
-        linux-btrfs@vger.kernel.org
-Message-ID: <20180717175032.ri3n53rftepxqxqd@merlins.org>
+        Tue, 17 Jul 2018 14:28:45 -0400
+From: Martin Steigerwald <martin@lichtvoll.de>
+To: Nikolay Borisov <nborisov@suse.com>
+Cc: Wolf <wolf@wolfsden.cz>, linux-btrfs@vger.kernel.org
+Subject: Re: Healthy amount of free space?
+Date: Tue, 17 Jul 2018 19:54:57 +0200
+Message-ID: <1736761.B5nO4FXixV@merkaba>
+In-Reply-To: <9ea19b13-3c46-666f-fa79-f40bd1ae7658@suse.com>
+References: <20180716205809.42jywfvuxwuuqixd@wolfsden.cz> <2197534.TZSffJRfLT@merkaba> <9ea19b13-3c46-666f-fa79-f40bd1ae7658@suse.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <7706c2db-fce8-f24c-4294-a312a987b58c@gmx.com>
-Subject: task btrfs-transacti:921 blocked for more than 120 seconds during
- check repair
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I got the following on 4.17.6 while running btrfs check --repair on an
-unmounted filesystem (not the lowmem version)
+Nikolay Borisov - 17.07.18, 10:16:
+> On 17.07.2018 11:02, Martin Steigerwald wrote:
+> > Nikolay Borisov - 17.07.18, 09:20:
+> >> On 16.07.2018 23:58, Wolf wrote:
+> >>> Greetings,
+> >>> I would like to ask what what is healthy amount of free space to
+> >>> keep on each device for btrfs to be happy?
+> >>> 
+> >>> This is how my disk array currently looks like
+> >>> 
+> >>>     [root@dennas ~]# btrfs fi usage /raid
+> >>>     
+> >>>     Overall:
+> >>>         Device size:                  29.11TiB
+> >>>         Device allocated:             21.26TiB
+> >>>         Device unallocated:            7.85TiB
+> >>>         Device missing:                  0.00B
+> >>>         Used:                         21.18TiB
+> >>>         Free (estimated):              3.96TiB      (min: 3.96TiB)
+> >>>         Data ratio:                       2.00
+> >>>         Metadata ratio:                   2.00
+> >>>         Global reserve:              512.00MiB      (used: 0.00B)
+> > 
+> > […]
+> > 
+> >>> Btrfs does quite good job of evenly using space on all devices.
+> >>> No,
+> >>> how low can I let that go? In other words, with how much space
+> >>> free/unallocated remaining space should I consider adding new
+> >>> disk?
+> >> 
+> >> Btrfs will start running into problems when you run out of
+> >> unallocated space. So the best advice will be monitor your device
+> >> unallocated, once it gets really low - like 2-3 gb I will suggest
+> >> you run balance which will try to free up unallocated space by
+> >> rewriting data more compactly into sparsely populated block
+> >> groups. If after running balance you haven't really freed any
+> >> space then you should consider adding a new drive and running
+> >> balance to even out the spread of data/metadata.
+> > 
+> > What are these issues exactly?
+> 
+> For example if you have plenty of data space but your metadata is full
+> then you will be getting ENOSPC.
 
-I understand that btrfs check is userland only, although it seems that
-it caused these FS hangs on a different filesystem (the trace of course
-does not provide info on which FS)
+Of that one I am aware.
 
-Any idea what happened here?
-I'm going to wait a few hours without running btrfs check to see if it
-happens again and then if running btrfs check will re-create this issue,
-but other suggestions (if any), are welcome:
+This just did not happen so far.
 
-[ 2538.566952] Workqueue: btrfs-endio-write btrfs_endio_write_helper
-[ 2538.616484] Call Trace:
-[ 2538.623828]  ? __schedule+0x53e/0x59b
-[ 2538.634802]  schedule+0x7f/0x98
-[ 2538.644214]  wait_current_trans+0x9b/0xd8
-[ 2538.656229]  ? add_wait_queue+0x3a/0x3a
-[ 2538.668239]  start_transaction+0x1ce/0x325
-[ 2538.680556]  btrfs_finish_ordered_io+0x240/0x5d3
-[ 2538.694414]  normal_work_helper+0x118/0x277
-[ 2538.706984]  process_one_work+0x19c/0x281
-[ 2538.719036]  ? rescuer_thread+0x279/0x279
-[ 2538.731064]  worker_thread+0x197/0x246
-[ 2538.742322]  kthread+0xeb/0xf0
-[ 2538.751492]  ? kthread_create_worker_on_cpu+0x66/0x66
-[ 2538.766666]  ret_from_fork+0x35/0x40
-[ 2538.777403] INFO: task kworker/u16:11:369 blocked for more than 120 seconds.
-[ 2538.799025]       Not tainted 4.17.6-amd64-preempt-sysrq-20180818 #4
-[ 2538.818109] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
-[ 2538.841640] kworker/u16:11  D    0   369      2 0x80000000
-[ 2538.858112] Workqueue: btrfs-endio-write btrfs_endio_write_helper
-[ 2538.876401] Call Trace:
-[ 2538.883770]  ? __schedule+0x53e/0x59b
-[ 2538.894760]  schedule+0x7f/0x98
-[ 2538.904192]  wait_current_trans+0x9b/0xd8
-[ 2538.916242]  ? add_wait_queue+0x3a/0x3a
-[ 2538.927772]  start_transaction+0x1ce/0x325
-[ 2538.940081]  btrfs_finish_ordered_io+0x240/0x5d3
-[ 2538.953973]  normal_work_helper+0x118/0x277
-[ 2538.966523]  process_one_work+0x19c/0x281
-[ 2538.978546]  ? rescuer_thread+0x279/0x279
-[ 2538.990560]  worker_thread+0x197/0x246
-[ 2539.001797]  kthread+0xeb/0xf0
-[ 2539.010986]  ? kthread_create_worker_on_cpu+0x66/0x66
-[ 2539.026137]  ret_from_fork+0x35/0x40
-[ 2539.037666] INFO: task btrfs-transacti:921 blocked for more than 120 seconds.
-[ 2539.059851]       Not tainted 4.17.6-amd64-preempt-sysrq-20180818 #4
-[ 2539.079733] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
-[ 2539.104007] btrfs-transacti D    0   921      2 0x80000000
-[ 2539.121257] Call Trace:
-[ 2539.129377]  ? __schedule+0x53e/0x59b
-[ 2539.141171]  schedule+0x7f/0x98
-[ 2539.151370]  btrfs_tree_lock+0xa6/0x19d
-[ 2539.163621]  ? add_wait_queue+0x3a/0x3a
-[ 2539.175876]  btrfs_search_slot+0x5aa/0x756
-[ 2539.188899]  lookup_inline_extent_backref+0x11a/0x485
-[ 2539.204781]  ? fixup_slab_list.isra.43+0x1b/0x72
-[ 2539.219360]  __btrfs_free_extent+0xf1/0xa72
-[ 2539.232597]  ? btrfs_merge_delayed_refs+0x18b/0x1a7
-[ 2539.247922]  ? __mutex_trylock_or_owner+0x43/0x54
-[ 2539.262708]  __btrfs_run_delayed_refs+0xad8/0xc40
-[ 2539.277504]  btrfs_run_delayed_refs+0x6e/0x16a
-[ 2539.291519]  btrfs_commit_transaction+0x42/0x710
-[ 2539.306043]  ? start_transaction+0x295/0x325
-[ 2539.319516]  transaction_kthread+0xc9/0x135
-[ 2539.332757]  ? btrfs_cleanup_transaction+0x3ee/0x3ee
-[ 2539.348327]  kthread+0xeb/0xf0
-[ 2539.358155]  ? kthread_create_worker_on_cpu+0x66/0x66
-[ 2539.373977]  ret_from_fork+0x35/0x40
-[ 2539.385394] INFO: task vnstatd:6338 blocked for more than 120 seconds.
-[ 2539.405667]       Not tainted 4.17.6-amd64-preempt-sysrq-20180818 #4
+I did not yet add it explicitly to the training slides, but I just make 
+myself a note to do that.
+
+Anything else?
+
+> > I have
+> > 
+> > % btrfs fi us -T /home
+> > 
+> > Overall:
+> >     Device size:                 340.00GiB
+> >     Device allocated:            340.00GiB
+> >     Device unallocated:            2.00MiB
+> >     Device missing:                  0.00B
+> >     Used:                        308.37GiB
+> >     Free (estimated):             14.65GiB      (min: 14.65GiB)
+> >     Data ratio:                       2.00
+> >     Metadata ratio:                   2.00
+> >     Global reserve:              512.00MiB      (used: 0.00B)
+> >     
+> >                           Data      Metadata System
+> > 
+> > Id Path                   RAID1     RAID1    RAID1    Unallocated
+> > -- ---------------------- --------- -------- -------- -----------
+> > 
+> >  1 /dev/mapper/msata-home 165.89GiB  4.08GiB 32.00MiB     1.00MiB
+> >  2 /dev/mapper/sata-home  165.89GiB  4.08GiB 32.00MiB     1.00MiB
+> > 
+> > -- ---------------------- --------- -------- -------- -----------
+> > 
+> >    Total                  165.89GiB  4.08GiB 32.00MiB     2.00MiB
+> >    Used                   151.24GiB  2.95GiB 48.00KiB
+>
+> You already have only 33% of your metadata full so if your workload
+> turned out to actually be making more metadata-heavy changed i.e
+> snapshots you could exhaust this and get ENOSPC, despite having around
+> 14gb of free data space. Furthermore this data space is spread around
+> multiple data chunks, depending on how populated they are a balance
+> could be able to free up unallocated space which later could be
+> re-purposed for metadata (again, depending on what you are doing).
+
+The filesystem above IMO is not fit for snapshots. It would fill up 
+rather quickly, I think even when I balance metadata. Actually I tried 
+this and as I remember it took at most a day until it was full.
+
+If I read above figures currently at maximum I could gain one additional 
+GiB by balancing metadata. That would not make a huge difference.
+
+I bet I am already running this filesystem beyond recommendation, as I 
+bet many would argue it is to full already for regular usage… I do not 
+see the benefit of squeezing the last free space out of it just to fit 
+in another GiB.
+
+So I still do not get the point why it would make sense to balance it at 
+this point in time. Especially as this 1 GiB I could regain is not even 
+needed. And I do not see the point of balancing it weekly. I would 
+regain about 1 GiB of metadata space every now and then, but the cost 
+would be a lot of additional I/O to the SSD. They still take it very 
+nicely so far, but I think, right now, there is simply no point in 
+balancing, at least not regularly, unless…
+
+there would be an performance gain. Whenever I balanced a complete 
+filesystem with data and metadata I however saw a cross drop in 
+performance, like doubling the boot time for example (no scientific 
+measurement, just my personal observation). I admit I did not do this 
+for a long time and the balancing might have gotten better during the 
+last few years of kernel development, but I am not yet convinced of 
+that.
+
+So is balancing this filesystem likely to improve the performance of it? 
+And if so, why?
+
+What it could improve, I think, is allocating new data, cause BTRFS due 
+to the balancing might have freed some chunks, so in case lots of new 
+data is written it does not have to search inside existing chunks which 
+are likely to fragment their free space over time.
+
+I just like to understand this better. Right now I am quite confused at 
+what recommendations to give about balancing.
+
+I bet SLES developers had a good reason for going with weekly balancing. 
+Right now I just don´t get it. And as you work at SUSE, I thought I just 
+ask about it.
+
+I am aware of some earlier threads, but I did not read everything that 
+has been discussed so far. In case there is a good summary, feel free to 
+point me to it.
+
+I bet a page in BTRFS wiki about performance aspects would be a nice 
+idea. I would even create one, if I still can access the wiki.
+
+> > on a RAID-1 filesystem one, part of the time two Plasma desktops +
+> > KDEPIM and Akonadi + Baloo desktop search + you name it write to
+> > like
+> > mad.
 
 Thanks,
-Marc
 -- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/                       | PGP 7F55D5F27AAF9D08
+Martin
+
+

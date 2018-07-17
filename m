@@ -1,91 +1,145 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:52194 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1729208AbeGQHwE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 17 Jul 2018 03:52:04 -0400
-Subject: Re: Healthy amount of free space?
-To: Wolf <wolf@wolfsden.cz>, linux-btrfs@vger.kernel.org
-References: <20180716205809.42jywfvuxwuuqixd@wolfsden.cz>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <1dd72720-1beb-a5e6-5bd4-88d6af5f02bd@suse.com>
-Date: Tue, 17 Jul 2018 10:20:49 +0300
+Received: from mx02.maketank.net ([144.76.88.81]:40339 "EHLO mx02.maketank.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1728102AbeGQIbn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 17 Jul 2018 04:31:43 -0400
+Subject: Re: Corrupted FS with "open_ctree failed" and "failed to recover
+ balance: -5"
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
+References: <db79af86-4346-84c2-940d-b988e91c2652@zoide.net>
+ <d45fac2d-fe1b-07d6-4d12-187e55a58d87@zoide.net>
+ <effecc0d-c835-c690-522f-ccd0214a61db@gmx.com>
+From: Udo Waechter <root@zoide.net>
+Message-ID: <aead107b-8d03-eaee-05ea-f13f64a3a7e0@zoide.net>
+Date: Tue, 17 Jul 2018 10:00:00 +0200
 MIME-Version: 1.0
-In-Reply-To: <20180716205809.42jywfvuxwuuqixd@wolfsden.cz>
-Content-Type: text/plain; charset=windows-1252
+In-Reply-To: <effecc0d-c835-c690-522f-ccd0214a61db@gmx.com>
+Content-Type: multipart/signed; micalg=pgp-sha512;
+ protocol="application/pgp-signature";
+ boundary="e9unI47z8NQo6cpMgDH2mnfilhbch75zE"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--e9unI47z8NQo6cpMgDH2mnfilhbch75zE
+Content-Type: multipart/mixed; boundary="7Ghhtv8vLGdQpLBIYPlAqv0sGNHkO6l1e";
+ protected-headers="v1"
+From: Udo Waechter <root@zoide.net>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
+Message-ID: <aead107b-8d03-eaee-05ea-f13f64a3a7e0@zoide.net>
+Subject: Re: Corrupted FS with "open_ctree failed" and "failed to recover
+ balance: -5"
+References: <db79af86-4346-84c2-940d-b988e91c2652@zoide.net>
+ <d45fac2d-fe1b-07d6-4d12-187e55a58d87@zoide.net>
+ <effecc0d-c835-c690-522f-ccd0214a61db@gmx.com>
+In-Reply-To: <effecc0d-c835-c690-522f-ccd0214a61db@gmx.com>
+
+--7Ghhtv8vLGdQpLBIYPlAqv0sGNHkO6l1e
+Content-Type: text/plain; charset=utf-8
+Content-Language: de-DE
+Content-Transfer-Encoding: quoted-printable
+
+Thanks for the answer.
+
+On 16/07/18 10:32, Qu Wenruo wrote:
+>=20
+>=20
+> On 2018=E5=B9=B407=E6=9C=8816=E6=97=A5 16:15, Udo Waechter wrote:
+>>> The weird thing is that I can't really find information about the
+>>> "failed to recover balance: -5" error. - There was no rebalancing
+>>> running when during the crash.
+>=20
+> Can only be determined by tree dump.
+>=20
+> # btrfs ins dump-tree -t root <device>
+This gives me:
+
+btrfs-progs v4.13.3
+parent transid verify failed on 321265147904 wanted 3276017 found 3273915=
+
+parent transid verify failed on 321265147904 wanted 3276017 found 3273915=
+
+parent transid verify failed on 321265147904 wanted 3276017 found 3263707=
+
+parent transid verify failed on 321265147904 wanted 3276017 found 3273915=
+
+Ignoring transid failure
+leaf parent key incorrect 321265147904
+ERROR: unable to open /dev/vg00/var_....
+
+>>> * Unfortunatly I did a "btrfs rescue zero-log" at some point :( - As =
+it
+>>> turns out that might have been a bad idea
+>>>
+>>>
+>>> * Also, a "btrfs  check --init-extent-tree" - https://pastebin.com/jA=
+TDCFZy
+>=20
+> Then it is making things worse, fortunately it should terminate before
+> it causes more damage.
+>=20
+> I'm just curious why people doesn't try the safest "btrfs check" withou=
+t
+> any options, but goes the most dangerous option.
+>=20
+> And "btrfs check" output please.
+> If possible, "btrfs check --mode=3Dlowmem" is also good for debug.
+>=20
+Same thing here:
+
+parent transid verify failed on 321265147904 wanted 3276017 found 3273915=
+
+parent transid verify failed on 321265147904 wanted 3276017 found 3273915=
+
+parent transid verify failed on 321265147904 wanted 3276017 found 3263707=
+
+parent transid verify failed on 321265147904 wanted 3276017 found 3273915=
+
+Ignoring transid failure
+leaf parent key incorrect 321265147904
+ERROR: cannot open file system
 
 
-On 16.07.2018 23:58, Wolf wrote:
-> Greetings,
-> I would like to ask what what is healthy amount of free space to keep on
-> each device for btrfs to be happy?
-> 
-> This is how my disk array currently looks like
-> 
->     [root@dennas ~]# btrfs fi usage /raid
->     Overall:
->         Device size:                  29.11TiB
->         Device allocated:             21.26TiB
->         Device unallocated:            7.85TiB
->         Device missing:                  0.00B
->         Used:                         21.18TiB
->         Free (estimated):              3.96TiB      (min: 3.96TiB)
->         Data ratio:                       2.00
->         Metadata ratio:                   2.00
->         Global reserve:              512.00MiB      (used: 0.00B)
-> 
->     Data,RAID1: Size:10.61TiB, Used:10.58TiB
->        /dev/mapper/data1       1.75TiB
->        /dev/mapper/data2       1.75TiB
->        /dev/mapper/data3     856.00GiB
->        /dev/mapper/data4     856.00GiB
->        /dev/mapper/data5       1.75TiB
->        /dev/mapper/data6       1.75TiB
->        /dev/mapper/data7       6.29TiB
->        /dev/mapper/data8       6.29TiB
-> 
->     Metadata,RAID1: Size:15.00GiB, Used:13.00GiB
->        /dev/mapper/data1       2.00GiB
->        /dev/mapper/data2       3.00GiB
->        /dev/mapper/data3       1.00GiB
->        /dev/mapper/data4       1.00GiB
->        /dev/mapper/data5       3.00GiB
->        /dev/mapper/data6       1.00GiB
->        /dev/mapper/data7       9.00GiB
->        /dev/mapper/data8      10.00GiB
-> 
->     System,RAID1: Size:64.00MiB, Used:1.50MiB
->        /dev/mapper/data2      32.00MiB
->        /dev/mapper/data6      32.00MiB
->        /dev/mapper/data7      32.00MiB
->        /dev/mapper/data8      32.00MiB
-> 
->     Unallocated:
->        /dev/mapper/data1    1004.52GiB
->        /dev/mapper/data2    1004.49GiB
->        /dev/mapper/data3    1006.01GiB
->        /dev/mapper/data4    1006.01GiB
->        /dev/mapper/data5    1004.52GiB
->        /dev/mapper/data6    1004.49GiB
->        /dev/mapper/data7    1005.00GiB
->        /dev/mapper/data8    1005.00GiB
-> 
-> Btrfs does quite good job of evenly using space on all devices. No, how
-> low can I let that go? In other words, with how much space
-> free/unallocated remaining space should I consider adding new disk?
+I did an image with dd pretty early in this process. Unfortunatly this
+gives me the same error.
 
-Btrfs will start running into problems when you run out of unallocated
-space. So the best advice will be monitor your device unallocated, once
-it gets really low - like 2-3 gb I will suggest you run balance which
-will try to free up unallocated space by rewriting data more compactly
-into sparsely populated block groups. If after running balance you
-haven't really freed any space then you should consider adding a new
-drive and running balance to even out the spread of data/metadata.
 
-> 
-> Thanks for advice :)
-> 
-> W.
-> 
+Thanks,
+udo.
+
+> Thanks,
+> Qu
+>=20
+>>>
+>>> The volume contained qcow2 images for VMs. I need only one of those,
+>>> since one piece of important software decided to not do backups :(
+>>>
+>>> Any help is highly appreciated.
+>>>
+>>> Many thanks,
+>>> udo.
+>>>
+>>
+>=20
+
+
+--7Ghhtv8vLGdQpLBIYPlAqv0sGNHkO6l1e--
+
+--e9unI47z8NQo6cpMgDH2mnfilhbch75zE
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCgAdFiEEKvHlGi1zjN9ykHKEyMU4ySCz1VEFAltNogQACgkQyMU4ySCz
+1VFbxAgAjEs0xdalR7HFgDCQalJGvV0flDfgdtoX0wX7YfbHpeThH0xguBGGifu9
+BQ7ap7hiOS7RMyPxoWxufO1IIGTu/QWWO61UJOCkpNe4Q6VMi61nMlV6JxQF7lNw
+/jTuLGgeb513uDfRM1ZR+UZ+UEc/Zyp6O/WqfhLZMjGIWppJHId/6cFiLxEy7bUU
+mhfWwz/PUfETOdlD3eR02WXIhN91W8RipYUcZXVMmk2JMUyD5fm9D48a15HvsLYe
+/ycLl1TwM5teTabm7LVKxUug7zAumS5oXhvcuefusn7JnU9+vbJKZW7wmZE7Y0Lh
+KDRYXRU0OFmQUylyfBo9rCmqwKNzQg==
+=7JxV
+-----END PGP SIGNATURE-----
+
+--e9unI47z8NQo6cpMgDH2mnfilhbch75zE--

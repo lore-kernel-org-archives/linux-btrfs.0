@@ -1,73 +1,133 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:37994 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1728288AbeGQJEy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 17 Jul 2018 05:04:54 -0400
-Subject: Re: [PATCH] btrfs: extent-tree: Check if the newly reserved tree
- block is already in use
-To: Nikolay Borisov <nborisov@suse.com>, Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        linux-btrfs@vger.kernel.org
-References: <20180717074658.22331-1-wqu@suse.com>
- <64ca7ccd-64d2-b5a4-e5fa-4ead145dcd17@suse.com>
- <1ca2ca79-0f76-2ac7-b4b6-5266338a053f@gmx.com>
- <3d7b535f-5466-3a6b-7a04-99e88b75f0fc@suse.com>
-From: Qu Wenruo <wqu@suse.de>
-Message-ID: <6226ce7b-924d-2de1-a607-c4ac661af1c8@suse.de>
-Date: Tue, 17 Jul 2018 16:33:20 +0800
+Received: from mail-io0-f171.google.com ([209.85.223.171]:40166 "EHLO
+        mail-io0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1730736AbeGQMS3 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 17 Jul 2018 08:18:29 -0400
+Received: by mail-io0-f171.google.com with SMTP id l14-v6so686815iob.7
+        for <linux-btrfs@vger.kernel.org>; Tue, 17 Jul 2018 04:46:14 -0700 (PDT)
+Subject: Re: Healthy amount of free space?
+To: Wolf <wolf@wolfsden.cz>, linux-btrfs@vger.kernel.org
+References: <20180716205809.42jywfvuxwuuqixd@wolfsden.cz>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <d847ef6e-aebe-6d5c-092c-b5e62d807db9@gmail.com>
+Date: Tue, 17 Jul 2018 07:46:10 -0400
 MIME-Version: 1.0
-In-Reply-To: <3d7b535f-5466-3a6b-7a04-99e88b75f0fc@suse.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <20180716205809.42jywfvuxwuuqixd@wolfsden.cz>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-On 2018年07月17日 16:28, Nikolay Borisov wrote:
+On 2018-07-16 16:58, Wolf wrote:
+> Greetings,
+> I would like to ask what what is healthy amount of free space to keep on
+> each device for btrfs to be happy?
 > 
+> This is how my disk array currently looks like
 > 
-> On 17.07.2018 11:24, Qu Wenruo wrote:
->> And it's causing problem for certain test cases.
->> Please ignore this (at least for now).
->>
->> But on the other hand, we indeed have a lot of reports on corrupted
->> extent tree, it's possible to hit some corrupted extent tree (Su is
->> already exhausted by the corrupted tree reported by Marc)
->>
->> So I'm not completely fine with current extent tree error handling.
->> I'll try to find some balance in next version.
+>      [root@dennas ~]# btrfs fi usage /raid
+>      Overall:
+>          Device size:                  29.11TiB
+>          Device allocated:             21.26TiB
+>          Device unallocated:            7.85TiB
+>          Device missing:                  0.00B
+>          Used:                         21.18TiB
+>          Free (estimated):              3.96TiB      (min: 3.96TiB)
+>          Data ratio:                       2.00
+>          Metadata ratio:                   2.00
+>          Global reserve:              512.00MiB      (used: 0.00B)
 > 
+>      Data,RAID1: Size:10.61TiB, Used:10.58TiB
+>         /dev/mapper/data1       1.75TiB
+>         /dev/mapper/data2       1.75TiB
+>         /dev/mapper/data3     856.00GiB
+>         /dev/mapper/data4     856.00GiB
+>         /dev/mapper/data5       1.75TiB
+>         /dev/mapper/data6       1.75TiB
+>         /dev/mapper/data7       6.29TiB
+>         /dev/mapper/data8       6.29TiB
 > 
-> I agree we need a better OVERALL error handling/detection. Your
-> tree-checker work IMO is a step in the right direction. What I want is
-> to prevent ad-hoc checks being sprinkled in the code.
-
-Yep, I also don't like what I'm doing.
-But the problem and the limit of tree-checker is, it's static check.
-
-For things doing tons of cross-check like extent tree, it's not really
-as useful.
-
-> Sorry, but that's
-> not fine. The thing with working on a lot of corruption reports is the
-> fact each one of them is looked at in isolation so it produces isolated
-> fixes. Whereas if a step back is taken and the overall error
-> handling/detection is considered it might turn out a whole class of
-> corruption could be detected by a single change, otherwise checks upon
-> checks will be added which just add technical debt.
+>      Metadata,RAID1: Size:15.00GiB, Used:13.00GiB
+>         /dev/mapper/data1       2.00GiB
+>         /dev/mapper/data2       3.00GiB
+>         /dev/mapper/data3       1.00GiB
+>         /dev/mapper/data4       1.00GiB
+>         /dev/mapper/data5       3.00GiB
+>         /dev/mapper/data6       1.00GiB
+>         /dev/mapper/data7       9.00GiB
+>         /dev/mapper/data8      10.00GiB
+Slightly OT, but the distribution of metadata chunks across devices 
+looks a bit sub-optimal here.  If you can tolerate the volume being 
+somewhat slower for a while, I'd suggest balancing these (it should get 
+you better performance long-term).
 > 
-> Considering this, I'm more in favor of extending the tree-checker to be
-> the central place where errors are detected (of course this is easier
-> said than done).
-
-For this report itself, tree checker can detect it indirectly by reject
-the leaf for the unknown key type.
-
-But one can easily create a valid image by just removing the valid
-METADATA_ITEM, and tree-checker can't do anything to detect the problem.
-
-So unfortunately, we will eventually need some runtime check anyway.
-
-Thanks,
-Qu
-
+>      System,RAID1: Size:64.00MiB, Used:1.50MiB
+>         /dev/mapper/data2      32.00MiB
+>         /dev/mapper/data6      32.00MiB
+>         /dev/mapper/data7      32.00MiB
+>         /dev/mapper/data8      32.00MiB
 > 
+>      Unallocated:
+>         /dev/mapper/data1    1004.52GiB
+>         /dev/mapper/data2    1004.49GiB
+>         /dev/mapper/data3    1006.01GiB
+>         /dev/mapper/data4    1006.01GiB
+>         /dev/mapper/data5    1004.52GiB
+>         /dev/mapper/data6    1004.49GiB
+>         /dev/mapper/data7    1005.00GiB
+>         /dev/mapper/data8    1005.00GiB
+> 
+> Btrfs does quite good job of evenly using space on all devices. No, how
+> low can I let that go? In other words, with how much space
+> free/unallocated remaining space should I consider adding new disk?
+Disclaimer: What I'm about to say is based on personal experience.  YMMV.
+
+It depends on how you use the filesystem.
+
+Realistically, there are a couple of things I consider when trying to 
+decide on this myself:
+
+* How quickly does the total usage increase on average, and how much can 
+it be expected to increase in one day in the worst case scenario?  This 
+isn't really BTRFS specific, but it's worth mentioning.  I usually don't 
+let an array get close enough to full that it wouldn't be able to safely 
+handle at least one day of the worst case increase and another 2 of 
+average increases.  In BTRFS terms, the 'safely handle' part means you 
+should be adding about 5GB for a multi-TB array like you have, or about 
+1GB for a sub-TB array.
+
+* What are the typical write patterns?  Do files get rewritten in-place, 
+or are they only ever rewritten with a replace-by-rename? Are writes 
+mostly random, or mostly sequential?  Are writes mostly small or mostly 
+large?  The more towards the first possibility listed in each of those 
+question (in-place rewrites, random access, and small writes), the more 
+free space you should keep on the volume.
+
+* Does this volume see heavy usage of fallocate() either to preallocate 
+space (note that this _DOES NOT WORK SANELY_ on BTRFS), or to punch 
+holes or remove ranges from files.  If whatever software you're using 
+does this a lot on this volume, you want even more free space.
+
+* Do old files tend to get removed in large batches?  That is, possibly 
+hundreds or thousands of files at a time.  If so, and you're running a 
+reasonably recent (4.x series) kernel or regularly balance the volume to 
+clean up empty chunks, you don't need quite as much free space.
+
+* How quickly can you get a new device added, and is it critical that 
+this volume always be writable?  Sounds stupid, but a lot of people 
+don't consider this.  If you can trivially get a new device added 
+immediately, you can generally let things go a bit further than you 
+would normally, same for if the volume being read-only can be tolerated 
+for a while without significant issues.
+
+It's worth noting that I explicitly do not care about snapshot usage. 
+It rarely has much impact on this other than changing how the total 
+usage increases in a day.
+
+Evaluating all of this is of course something I can't really do for you. 
+  If I had to guess, with no other information that the allocations 
+shown, I'd say that you're probably generically fine until you get down 
+to about 5GB more than twice the average amount by which the total usage 
+increases in a day.  That's a rather conservative guess without any 
+spare overhead for more than a day, and assumes you aren't using 
+fallocate much but have an otherwise evenly mixed write/delete workload.

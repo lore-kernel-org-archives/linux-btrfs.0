@@ -1,122 +1,150 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:50803 "EHLO
-        mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726396AbeGQIdc (ORCPT
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:32563 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1727796AbeGQIgU (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 17 Jul 2018 04:33:32 -0400
-From: Martin Steigerwald <martin@lichtvoll.de>
-To: Nikolay Borisov <nborisov@suse.com>
-Cc: Wolf <wolf@wolfsden.cz>, linux-btrfs@vger.kernel.org
-Subject: Re: Healthy amount of free space?
-Date: Tue, 17 Jul 2018 10:02:03 +0200
-Message-ID: <2197534.TZSffJRfLT@merkaba>
-In-Reply-To: <1dd72720-1beb-a5e6-5bd4-88d6af5f02bd@suse.com>
-References: <20180716205809.42jywfvuxwuuqixd@wolfsden.cz> <1dd72720-1beb-a5e6-5bd4-88d6af5f02bd@suse.com>
+        Tue, 17 Jul 2018 04:36:20 -0400
+Subject: Re: [PATCH] btrfs: extent-tree: Check if the newly reserved tree
+ block is already in use
+To: Nikolay Borisov <nborisov@suse.com>, Qu Wenruo <wqu@suse.com>,
+        <linux-btrfs@vger.kernel.org>
+References: <20180717074658.22331-1-wqu@suse.com>
+ <64ca7ccd-64d2-b5a4-e5fa-4ead145dcd17@suse.com>
+From: Su Yue <suy.fnst@cn.fujitsu.com>
+Message-ID: <b93982ae-9416-9e42-0484-ae93960e6525@cn.fujitsu.com>
+Date: Tue, 17 Jul 2018 16:11:18 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <64ca7ccd-64d2-b5a4-e5fa-4ead145dcd17@suse.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Nikolay.
 
-Nikolay Borisov - 17.07.18, 09:20:
-> On 16.07.2018 23:58, Wolf wrote:
-> > Greetings,
-> > I would like to ask what what is healthy amount of free space to
-> > keep on each device for btrfs to be happy?
-> > 
-> > This is how my disk array currently looks like
-> > 
-> >     [root@dennas ~]# btrfs fi usage /raid
-> >     
-> >     Overall:
-> >         Device size:                  29.11TiB
-> >         Device allocated:             21.26TiB
-> >         Device unallocated:            7.85TiB
-> >         Device missing:                  0.00B
-> >         Used:                         21.18TiB
-> >         Free (estimated):              3.96TiB      (min: 3.96TiB)
-> >         Data ratio:                       2.00
-> >         Metadata ratio:                   2.00
-> >         Global reserve:              512.00MiB      (used: 0.00B)
-[…]
-> > Btrfs does quite good job of evenly using space on all devices. No,
-> > how low can I let that go? In other words, with how much space
-> > free/unallocated remaining space should I consider adding new disk?
+
+On 07/17/2018 04:01 PM, Nikolay Borisov wrote:
 > 
-> Btrfs will start running into problems when you run out of unallocated
-> space. So the best advice will be monitor your device unallocated,
-> once it gets really low - like 2-3 gb I will suggest you run balance
-> which will try to free up unallocated space by rewriting data more
-> compactly into sparsely populated block groups. If after running
-> balance you haven't really freed any space then you should consider
-> adding a new drive and running balance to even out the spread of
-> data/metadata.
-
-What are these issues exactly?
-
-I have
-
-% btrfs fi us -T /home
-Overall:
-    Device size:                 340.00GiB
-    Device allocated:            340.00GiB
-    Device unallocated:            2.00MiB
-    Device missing:                  0.00B
-    Used:                        308.37GiB
-    Free (estimated):             14.65GiB      (min: 14.65GiB)
-    Data ratio:                       2.00
-    Metadata ratio:                   2.00
-    Global reserve:              512.00MiB      (used: 0.00B)
-
-                          Data      Metadata System              
-Id Path                   RAID1     RAID1    RAID1    Unallocated
--- ---------------------- --------- -------- -------- -----------
- 1 /dev/mapper/msata-home 165.89GiB  4.08GiB 32.00MiB     1.00MiB
- 2 /dev/mapper/sata-home  165.89GiB  4.08GiB 32.00MiB     1.00MiB
--- ---------------------- --------- -------- -------- -----------
-   Total                  165.89GiB  4.08GiB 32.00MiB     2.00MiB
-   Used                   151.24GiB  2.95GiB 48.00KiB
-
-on a RAID-1 filesystem one, part of the time two Plasma desktops + 
-KDEPIM and Akonadi + Baloo desktop search + you name it write to like 
-mad.
-
-Since kernel 4.5 or 4.6 this simply works. Before that sometimes BTRFS 
-crawled to an halt on searching for free blocks, and I had to switch off 
-the laptop uncleanly. If that happened, a balance helped for a while. 
-But since 4.5 or 4.6 this did not happen anymore.
-
-I found with SLES 12 SP 3 or so there is btrfsmaintenance running a 
-balance weekly. Which created an issue on our Proxmox + Ceph on Intel 
-NUC based opensource demo lab. This is for sure no recommended 
-configuration for Ceph and Ceph is quite slow on these 2,5 inch 
-harddisks and 1 GBit network link, despite albeit somewhat minimal, 
-limited to 5 GiB m.2 SSD caching. What happened it that the VM crawled 
-to a halt and the kernel gave task hung for more than 120 seconds 
-messages. The VM was basically unusable during the balance. Sure that 
-should not happen with a "proper" setup, also it also did not happen 
-without the automatic balance.
-
-Also what would happen on a hypervisor setup with several thousands of 
-VMs with BTRFS, when several 100 of them decide to start the balance at 
-a similar time? It could probably bring the I/O system below to an halt, 
-as many enterprise storage systems are designed to sustain burst I/O 
-loads, but not maximum utilization during an extended period of time.
-
-I am really wondering what to recommend in my Linux performance tuning 
-and analysis courses. On my own laptop I do not do regular balances so 
-far. Due to my thinking: If it is not broken, do not fix it.
-
-My personal opinion here also is: If the filesystem degrades that much 
-that it becomes unusable without regular maintenance from user space, 
-the filesystem needs to be fixed. Ideally I would not have to worry on 
-whether to regularly balance an BTRFS or not. In other words: I should 
-not have to visit a performance analysis and tuning course in order to 
-use a computer with BTRFS filesystem.
-
-Thanks,
--- 
-Martin
+> 
+> On 17.07.2018 10:46, Qu Wenruo wrote:
+>> [BUG]
+>> For certain fuzzed btrfs image, if we create any csum data, it would
+>> cause the following kernel warning and deadlock when trying to update
+>> csum tree:
+>> ------
+>> [  278.113360] WARNING: CPU: 1 PID: 41 at fs/btrfs/locking.c:230 btrfs_tree_lock+0x3e2/0x400
+>> [  278.113737] CPU: 1 PID: 41 Comm: kworker/u4:1 Not tainted 4.18.0-rc1+ #8
+>> [  278.113745] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS Ubuntu-1.8.2-1ubuntu1 04/01/2014
+>> [  278.113753] Workqueue: btrfs-endio-write btrfs_endio_write_helper
+>> [  278.113761] RIP: 0010:btrfs_tree_lock+0x3e2/0x400
+>> [  278.113762] Code: 00 48 c7 40 08 00 00 00 00 48 8b 45 d0 65 48 33 04 25 28 00 00 00 75 20 48 81 c4 a0 00 00 00 5b 41 5c 41 5d 41 5e 41 5f 5d c3 <0f> 0b e9 d4 fc ff ff 0f 0b e9 61 ff ff ff e8 ab f4 87 ff 90 66 2e
+>> [  278.113818] RSP: 0018:ffff8801f407f488 EFLAGS: 00010246
+>> [  278.113865] Call Trace:
+>> [  278.113936]  btrfs_alloc_tree_block+0x39f/0x770
+>> [  278.113988]  __btrfs_cow_block+0x285/0x9e0
+>> [  278.114029]  btrfs_cow_block+0x191/0x2e0
+>> [  278.114035]  btrfs_search_slot+0x492/0x1160
+>> [  278.114146]  btrfs_lookup_csum+0xec/0x280
+>> [  278.114182]  btrfs_csum_file_blocks+0x2be/0xa60
+>> [  278.114232]  add_pending_csums+0xaf/0xf0
+>> [  278.114238]  btrfs_finish_ordered_io+0x74b/0xc90
+>> [  278.114281]  finish_ordered_fn+0x15/0x20
+>> [  278.114285]  normal_work_helper+0xf6/0x500
+>> [  278.114305]  btrfs_endio_write_helper+0x12/0x20
+>> [  278.114310]  process_one_work+0x302/0x770
+>> [  278.114315]  worker_thread+0x81/0x6d0
+>> [  278.114321]  kthread+0x180/0x1d0
+>> [  278.114334]  ret_from_fork+0x35/0x40
+>> [  278.114339] ---[ end trace 2e85051acb5f6dc1 ]---
+>> ------
+>>
+>> [CAUSE]
+>> The fuzzed image has corrupted EXTENT_ITEM for csum tree root:
+>> ------
+>> extent tree key (EXTENT_TREE ROOT_ITEM 0)
+>> 	item 4 key (29364224 METADATA_ITEM 0) itemoff 3857 itemsize 33
+>> 		refs 1 gen 6 flags TREE_BLOCK
+>> 		tree block skinny level 0
+>> 		tree block backref root UUID_TREE
+>> 	item 5 key (29376512 UNKNOWN.0 0) itemoff 3824 itemsize 33
+>> 		    ^^^^^^^^^^^^^^^^^^^^ Corrupted METADATA_ITEM
+>> 	item 6 key (29380608 METADATA_ITEM 0) itemoff 3791 itemsize 33
+>> 		refs 1 gen 4 flags TREE_BLOCK
+>> 		tree block skinny level 0
+>> 		tree block backref root DATA_RELOC_TREE
+>>
+>> checksum tree key (CSUM_TREE ROOT_ITEM 0)
+>> leaf 29376512 items 0 free space 3995 generation 4 owner CSUM_TREE
+>>       ^^^^^^^^ bytenr matches above item.
+>> ------
+>>
+>> So when btrfs_alloc_tree_blocks() calls btrfs_reserve_extent(), since
+>> there is not METADATA_ITEM/EXTENT_ITEM for bytenr 29376512, btrfs thinks
+>> it's free space, and reserve it.
+>>
+>> However in fact it's already been used by csum tree, and later
+>> btrfs_init_new_buffer() will try to call btrfs_tree_lock(), whose
+>> WARN_ON() detects lock nest on the same extent buffer.
+>>
+>> Finally the wait_event() on the eb->read/write_lock_wq will never exit
+>> since we're holding the lock by ourselves and deadlock.
+>>
+>> [FIX]
+>> The fix here is to ensure at least the reserved extent buffer is not
+>> cached.
+>> Any used extent buffer should be cached in the global radix tree
+>> (fs_info->buffer_radix).
+>>
+>> So before calling btrfs_init_new_buffer() in btrfs_alloc_tree_block(),
+>> we call find_extent_buffer() explicitly to verify it's not used by
+>> ourselves.
+>>
+>> Please note this is just a basic check, it is not and will never be as
+>> good as btrfs check on detecting extent tree corruption, but at least we
+>> won't dead lock so easily.
+>>
+>> Link: https://bugzilla.kernel.org/show_bug.cgi?id=200405
+>> Reported-by: Xu Wen <wen.xu@gatech.edu>
+>> Signed-off-by: Qu Wenruo <wqu@suse.com>
+>> ---
+>>   fs/btrfs/extent-tree.c | 14 ++++++++++++++
+>>   1 file changed, 14 insertions(+)
+>>
+>> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+>> index 3578fa5b30ef..782dd96b7c5e 100644
+>> --- a/fs/btrfs/extent-tree.c
+>> +++ b/fs/btrfs/extent-tree.c
+>> @@ -8435,6 +8435,20 @@ struct extent_buffer *btrfs_alloc_tree_block(struct btrfs_trans_handle *trans,
+>>   	if (ret)
+>>   		goto out_unuse;
+>>   
+>> +	/*
+>> +	 * Newly allocated tree block should never be cached in radix tree,
+>> +	 * Or we have a corrupted extent tree.
+>> +	 */
+>> +	buf = find_extent_buffer(fs_info, ins.objectid);
+>> +	if (buf) {
+>> +		btrfs_err_rl(fs_info,
+>> +	"tree block %llu is already in use, extent tree may be corrupted",
+>> +			     ins.objectid);
+>> +		ret = -EUCLEAN;
+>> +		free_extent_buffer(buf);
+>> +		goto out_unuse;
+>> +	}
+> 
+> The code makes sense but I have the feeling it needs to have some sort
+> of assert guard because this check will likely trigger only on severly
+> corrupted filesystemd and yet we introduce it for everyone.
+> 
+Agreed, the function is called so frequently.
+>> +
+>>   	buf = btrfs_init_new_buffer(trans, root, ins.objectid, level);
+>>   	if (IS_ERR(buf)) {
+>>   		ret = PTR_ERR(buf);
+>>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+> 
 
 

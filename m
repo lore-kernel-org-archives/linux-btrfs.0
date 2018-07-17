@@ -1,61 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:52298 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:45912 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727584AbeGSODT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 19 Jul 2018 10:03:19 -0400
-Date: Thu, 19 Jul 2018 15:20:03 +0200
+        id S1731179AbeGQMeq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 17 Jul 2018 08:34:46 -0400
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 28C69AE4F
+        for <linux-btrfs@vger.kernel.org>; Tue, 17 Jul 2018 12:02:26 +0000 (UTC)
+Date: Tue, 17 Jul 2018 14:02:20 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Anand Jain <anand.jain@oracle.com>
+To: Qu Wenruo <wqu@suse.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PULL] uuid_mutex fixes and cleanups part2
-Message-ID: <20180719132003.GO26141@twin.jikos.cz>
+Subject: Re: [PATCH RFC v2 1/2] btrfs: scrub: Don't use inode page cache in
+ scrub_handle_errored_block()
+Message-ID: <20180717120220.GV3126@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <20180718041024.9089-1-anand.jain@oracle.com>
+References: <20180711054122.13727-1-wqu@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180718041024.9089-1-anand.jain@oracle.com>
+In-Reply-To: <20180711054122.13727-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jul 18, 2018 at 12:10:24PM +0800, Anand Jain wrote:
-> These patches we sent independently before and are in the mailing list.
-> They have been tested successfully using the xfstests. The cyclical
-> lockdep warning aren't due to these set of patches and they (2) can be
-> ignored as they are harmless because the threads involved are
-> ioctl/commit and mount thread which lockdep thinks is warn-able can't
-> co-exist in the same time space. So this set is ready to be pulled in.
-> Thanks.
+On Wed, Jul 11, 2018 at 01:41:21PM +0800, Qu Wenruo wrote:
+> In commit ac0b4145d662 ("btrfs: scrub: Don't use inode pages for device
+> replace") we removed the branch of copy_nocow_pages() to avoid
+> corruption for compressed nodatasum extents.
 > 
->   git@github.com:asj/btrfs-devel.git misc-next-jul18
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> However above commit only solves the problem in scrub_extent(), if
+> during scrub_pages() we failed to read some pages,
+> sctx->no_io_error_seen will be non-zero and we go to fixup function
+> scrub_handle_errored_block().
+> 
+> In scrub_handle_errored_block(), for sctx without csum (no matter if
+> we're doing replace or scrub) we go to scrub_fixup_nodatasum() routine,
+> which does the similar thing with copy_nocow_pages(), but does it
+> without the extra check in copy_nocow_pages() routine.
+> 
+> So for test cases like btrfs/100, where we emulate read errors during
+> replace/scrub, we could corrupt compressed extent data again.
+> 
+> This patch will fix it just by avoiding any "optimization" for
+> nodatasum, just falls back to the normal fixup routine by try read from
+> any good copy.
+> 
+> This also solves WARN_ON() or dead lock caused by lame backref iteration
+> in scrub_fixup_nodatasum() routine.
+> 
+> The deadlock or WARN_ON() won't be triggered before commit ac0b4145d662
+> ("btrfs: scrub: Don't use inode pages for device replace") since
+> copy_nocow_pages() have better locking and extra check for data extent,
+> and it's already doing the fixup work by try to read data from any good
+> copy, so it won't go scrub_fixup_nodatasum() anyway.
+> 
+> Fixes: ac0b4145d662 ("btrfs: scrub: Don't use inode pages for device replace")
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
 
-Please note that this not a URL that I could pull, this scheme is used
-for the write acces based on SSH.
-
-The branch name should describe the contents of the branch and be
-versioned, not date based.
-
-> 1/7 has been discussed and reviewed at length, which is drop the
-> unnecessary uuid_mutex in the btrfs_free_extra_devids().
-> 
-> 2/7 fixes the race which syzbot reported.
-> 
-> 3/7 as when we sprout we hijack the seed fs_devices, we are bringing
-> back the seed fs_devices using the clone_fs_devices() instead we could
-> use our btrfs_scan_one_device() which makes the sprout-ing operation
-> much cleaner.
-> 
-> 4-7/7 are a simple cleanup patches.
-> 
-> Anand Jain (7):
-> 1. btrfs: drop uuid_mutex in btrfs_free_extra_devids()
-> 2. btrfs: fix race between free_stale_devices and close_fs_devices
-> 3. btrfs: do device clone using the btrfs_scan_one_device
-> 4. btrfs: use the assigned fs_devices instead of the dereference
-> 5. btrfs: warn for num_devices below 0
-> 6. btrfs: add helper btrfs_num_devices() to deduce num_devices
-> 7. btrfs: add helper function check device delete able
-
-I've commented in to the patches posted to mailinglist. I'll consider 1
-and 2 for merge, need to look up the previous discussions again to
-refresh the details. 4 is in misc-next and the rest has comments.
+Thanks, I'll forward this to 4.18, there are a few more regression fixes
+queued.

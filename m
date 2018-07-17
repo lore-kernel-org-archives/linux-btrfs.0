@@ -1,119 +1,139 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:56250 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S932199AbeGFFf7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 6 Jul 2018 01:35:59 -0400
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id E0F66AD83
-        for <linux-btrfs@vger.kernel.org>; Fri,  6 Jul 2018 05:35:57 +0000 (UTC)
-From: Qu Wenruo <wqu@suse.com>
+Received: from mail-pf0-f195.google.com ([209.85.192.195]:44250 "EHLO
+        mail-pf0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727038AbeGQFtz (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 17 Jul 2018 01:49:55 -0400
+Date: Tue, 17 Jul 2018 13:19:03 +0800
+From: Eryu Guan <guaneryu@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 2/2] btrfs: Verify every chunk has corresponding block group at mount time
-Date: Fri,  6 Jul 2018 13:35:54 +0800
-Message-Id: <20180706053554.18476-2-wqu@suse.com>
-In-Reply-To: <20180706053554.18476-1-wqu@suse.com>
-References: <20180706053554.18476-1-wqu@suse.com>
+Cc: fstests@vger.kernel.org, Anand Jain <anand.jain@oracle.com>
+Subject: Re: [PATCH v2] fstests: btrfs/168 verify device ready after device
+ delete
+Message-ID: <20180717051903.GK2830@desktop>
+References: <20180703084753.21116-1-anand.jain@oracle.com>
+ <20180706060137.1672-1-anand.jain@oracle.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20180706060137.1672-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If a crafted btrfs has missing block group items, it could cause
-unexpected behavior and breaks our expectation on 1:1
-chunk<->block group mapping.
+On Fri, Jul 06, 2018 at 02:01:37PM +0800, Anand Jain wrote:
+> This test case verifies if the device ready return success after the
+> device delete.
+> 
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
 
-Although we added block group -> chunk mapping check, we still need
-chunk -> block group mapping check.
+Need some helps from btrfs folks to see if it's a valid test. Thanks!
 
-This patch will do extra check to ensure each chunk has its
-corresponding block group.
+Eryu
 
-Link: https://bugzilla.kernel.org/show_bug.cgi?id=199847
-Reported-by: Xu Wen <wen.xu@gatech.edu>
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
-changelog:
-v2:
-  Update return value, explain the @len parameter for
-  lookup_extent_mapping(), and remove the ratelimit, all suggested by
-  David.
----
- fs/btrfs/extent-tree.c | 57 +++++++++++++++++++++++++++++++++++++++++-
- 1 file changed, 56 insertions(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 63a6b5d36ac1..3578fa5b30ef 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -10030,6 +10030,61 @@ btrfs_create_block_group_cache(struct btrfs_fs_info *fs_info,
- 	return cache;
- }
- 
-+
-+/*
-+ * Iterate all chunks and verify each of them has corresponding block group
-+ */
-+static int check_chunk_block_group_mappings(struct btrfs_fs_info *fs_info)
-+{
-+	struct btrfs_mapping_tree *map_tree = &fs_info->mapping_tree;
-+	struct extent_map *em;
-+	struct btrfs_block_group_cache *bg;
-+	u64 start = 0;
-+	int ret = 0;
-+
-+	while (1) {
-+		read_lock(&map_tree->map_tree.lock);
-+		/*
-+		 * lookup_extent_mapping will return the first extent map
-+		 * intersects the range, so set @len to 1 is enough to get
-+		 * the first chunk.
-+		 */
-+		em = lookup_extent_mapping(&map_tree->map_tree, start, 1);
-+		read_unlock(&map_tree->map_tree.lock);
-+		if (!em)
-+			break;
-+
-+		bg = btrfs_lookup_block_group(fs_info, em->start);
-+		if (!bg) {
-+			btrfs_err(fs_info,
-+	"chunk start=%llu len=%llu doesn't have corresponding block group",
-+				     em->start, em->len);
-+			ret = -EUCLEAN;
-+			free_extent_map(em);
-+			break;
-+		}
-+		if (bg->key.objectid != em->start ||
-+		    bg->key.offset != em->len ||
-+		    (bg->flags & BTRFS_BLOCK_GROUP_TYPE_MASK) !=
-+		    (em->map_lookup->type & BTRFS_BLOCK_GROUP_TYPE_MASK)) {
-+			btrfs_err(fs_info,
-+"chunk start=%llu len=%llu flags=0x%llx doesn't match with block group start=%llu len=%llu flags=0x%llx",
-+				em->start, em->len,
-+				em->map_lookup->type & BTRFS_BLOCK_GROUP_TYPE_MASK,
-+				bg->key.objectid, bg->key.offset,
-+				bg->flags & BTRFS_BLOCK_GROUP_TYPE_MASK);
-+			ret = -EUCLEAN;
-+			free_extent_map(em);
-+			btrfs_put_block_group(bg);
-+			break;
-+		}
-+		start = em->start + em->len;
-+		free_extent_map(em);
-+		btrfs_put_block_group(bg);
-+	}
-+	return ret;
-+}
-+
- int btrfs_read_block_groups(struct btrfs_fs_info *info)
- {
- 	struct btrfs_path *path;
-@@ -10203,7 +10258,7 @@ int btrfs_read_block_groups(struct btrfs_fs_info *info)
- 
- 	btrfs_add_raid_kobjects(info);
- 	init_global_block_rsv(info);
--	ret = 0;
-+	ret = check_chunk_block_group_mappings(info);
- error:
- 	btrfs_free_path(path);
- 	return ret;
--- 
-2.18.0
-
+> ---
+> v1->v2: use _run_btrfs_util_prog instead of open coding it.
+> 
+>  tests/btrfs/168     | 68 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+>  tests/btrfs/168.out |  2 ++
+>  tests/btrfs/group   |  1 +
+>  3 files changed, 71 insertions(+)
+>  create mode 100755 tests/btrfs/168
+>  create mode 100644 tests/btrfs/168.out
+> 
+> diff --git a/tests/btrfs/168 b/tests/btrfs/168
+> new file mode 100755
+> index 000000000000..0d3e99839209
+> --- /dev/null
+> +++ b/tests/btrfs/168
+> @@ -0,0 +1,68 @@
+> +#! /bin/bash
+> +# SPDX-License-Identifier: GPL-2.0
+> +# Copyright (C) 2018 Oracle. All Rights Reserved.
+> +#
+> +# FS QA Test 168
+> +#
+> +# Test if btrfs is still reported ready after the device delete
+> +#
+> +# This could be fixed by the following kernel commit:
+> +#  btrfs: fix missing superblock update in the device delete commit transaction
+> +#
+> +seq=`basename $0`
+> +seqres=$RESULT_DIR/$seq
+> +echo "QA output created by $seq"
+> +
+> +here=`pwd`
+> +tmp=/tmp/$$
+> +status=1	# failure is the default!
+> +trap "_cleanup; exit \$status" 0 1 2 3 15
+> +
+> +_cleanup()
+> +{
+> +	cd /
+> +	rm -f $tmp.*
+> +}
+> +
+> +# get standard environment, filters and checks
+> +. ./common/rc
+> +. ./common/filter
+> +
+> +# remove previous $seqres.full before test
+> +rm -f $seqres.full
+> +
+> +# real QA test starts here
+> +
+> +# Modify as appropriate.
+> +_supported_fs btrfs
+> +_supported_os Linux
+> +_require_command "$BTRFS_TUNE_PROG" btrfstune
+> +_require_scratch_dev_pool 2
+> +
+> +_scratch_dev_pool_get 2
+> +dev_1=$(echo $SCRATCH_DEV_POOL | awk '{print $1}')
+> +dev_2=$(echo $SCRATCH_DEV_POOL | awk '{print $2}')
+> +
+> +# normal delete device and then check for ready
+> +run_check _scratch_pool_mkfs "-d single -m single"
+> +_scratch_mount
+> +_run_btrfs_util_prog device delete $dev_1 $SCRATCH_MNT
+> +_run_btrfs_util_prog device ready $dev_2
+> +
+> +_scratch_unmount
+> +# delete a seed device and then check for ready
+> +run_check $BTRFS_TUNE_PROG -S 1 $dev_2
+> +run_check _mount $dev_2 $SCRATCH_MNT
+> +_run_btrfs_util_prog device add -f $dev_1 $SCRATCH_MNT
+> +run_check mount -o rw,remount $dev_1 $SCRATCH_MNT
+> +_run_btrfs_util_prog device delete $dev_2 $SCRATCH_MNT
+> +_run_btrfs_util_prog device ready $dev_1
+> +
+> +_scratch_unmount
+> +_scratch_dev_pool_put
+> +
+> +echo "Silence is golden"
+> +
+> +# success, all done
+> +status=0
+> +exit
+> diff --git a/tests/btrfs/168.out b/tests/btrfs/168.out
+> new file mode 100644
+> index 000000000000..893a41d859c8
+> --- /dev/null
+> +++ b/tests/btrfs/168.out
+> @@ -0,0 +1,2 @@
+> +QA output created by 168
+> +Silence is golden
+> diff --git a/tests/btrfs/group b/tests/btrfs/group
+> index 5cff3bd6cc03..7bc3ea457992 100644
+> --- a/tests/btrfs/group
+> +++ b/tests/btrfs/group
+> @@ -170,3 +170,4 @@
+>  165 auto quick subvol
+>  166 auto quick qgroup
+>  167 auto quick replace volume
+> +168 auto quick volume
+> -- 
+> 2.15.0
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,89 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:47778 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726574AbeGSK4h (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 19 Jul 2018 06:56:37 -0400
-Date: Thu, 19 Jul 2018 12:14:03 +0200
-From: David Sterba <dsterba@suse.cz>
-To: dsterba@suse.cz, "Gu, Jinxiang" <gujx@cn.fujitsu.com>,
-        Dan Carpenter <dan.carpenter@oracle.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [bug report] btrfs: Add type check when reading a chunk
-Message-ID: <20180719101403.GG26141@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20180719081053.f46f3pmrdoia64ws@mwanda>
- <516DDBE5B1D92D42BCF7A2E37F045A5D01A8A37CB1@G08CNEXMBPEKD02.g08.fujitsu.local>
- <20180719092201.GD26141@twin.jikos.cz>
+Received: from mail-lj1-f193.google.com ([209.85.208.193]:35210 "EHLO
+        mail-lj1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1729706AbeGQQfz (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 17 Jul 2018 12:35:55 -0400
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <20180719092201.GD26141@twin.jikos.cz>
+In-Reply-To: <dbbb1882-65bf-dda9-eb26-a6217b240def@gmx.com>
+References: <20180717135236.3673195-1-arnd@arndb.de> <dbbb1882-65bf-dda9-eb26-a6217b240def@gmx.com>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Tue, 17 Jul 2018 18:02:31 +0200
+Message-ID: <CAK8P3a17Mik-J-PzjP2g7OzX-0ozTGnRxfw8tB4c+pKiRWoEaA@mail.gmail.com>
+Subject: Re: [PATCH] btrfs: fix size_t format string
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.com>, Qu Wenruo <wqu@suse.com>,
+        Nikolay Borisov <nborisov@suse.com>, Su Yue <suy.fnst@cn.fujitsu.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jul 19, 2018 at 11:22:01AM +0200, David Sterba wrote:
-> On Thu, Jul 19, 2018 at 08:18:25AM +0000, Gu, Jinxiang wrote:
-> > 
-> > 
-> > > -----Original Message-----
-> > > From: Dan Carpenter [mailto:dan.carpenter@oracle.com]
-> > > Sent: Thursday, July 19, 2018 4:11 PM
-> > > To: Gu, Jinxiang/顾 金香 <gujx@cn.fujitsu.com>
-> > > Cc: linux-btrfs@vger.kernel.org
-> > > Subject: [bug report] btrfs: Add type check when reading a chunk
-> > > 
-> > > Hello Gu Jinxiang,
-> > > 
-> > > The patch 72e75ed03c8d: "btrfs: Add type check when reading a chunk"
-> > > from Jul 4, 2018, leads to the following static checker warning:
-> > > 
-> > > 	fs/btrfs/volumes.c:6388 btrfs_check_chunk_valid()
-> > > 	warn: AND to zero '0x4 & 0x1'
-> > > 
-> > > fs/btrfs/volumes.c
-> > >   6356          if (!is_power_of_2(stripe_len) || stripe_len != BTRFS_STRIPE_LEN) {
-> > >   6357                  btrfs_err(fs_info, "invalid chunk stripe length: %llu",
-> > >   6358                            stripe_len);
-> > >   6359                  return -EIO;
-> > >   6360          }
-> > >   6361          if (~(BTRFS_BLOCK_GROUP_TYPE_MASK | BTRFS_BLOCK_GROUP_PROFILE_MASK) &
-> > >   6362              type) {
-> > >   6363                  btrfs_err(fs_info, "unrecognized chunk type: %llu",
-> > >   6364                            ~(BTRFS_BLOCK_GROUP_TYPE_MASK |
-> > >   6365                              BTRFS_BLOCK_GROUP_PROFILE_MASK) &
-> > >   6366                            btrfs_chunk_type(leaf, chunk));
-> > >   6367                  return -EIO;
-> > >   6368          }
-> > >   6369
-> > >   6370          if ((type & BTRFS_BLOCK_GROUP_TYPE_MASK) == 0) {
-> > >   6371                  btrfs_err(fs_info, "missing chunk type flag: %llu", type);
-> > >   6372                  return -EIO;
-> > >   6373          }
-> > >   6374
-> > >   6375          if ((type & BTRFS_BLOCK_GROUP_SYSTEM) &&
-> > >   6376              (type & (BTRFS_BLOCK_GROUP_METADATA | BTRFS_BLOCK_GROUP_DATA))) {
-> > >   6377                  btrfs_err(fs_info,
-> > >   6378                          "system chunk with data or metadata type: %llu", type);
-> > >   6379                  return -EIO;
-> > >   6380          }
-> > >   6381
-> > >   6382          features = btrfs_super_incompat_flags(fs_info->super_copy);
-> > >   6383          if (features & BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS)
-> > >   6384                  mixed = 1;
-> > >   6385
-> > >   6386          if (!mixed) {
-> > >   6387                  if (type &
-> > >   6388                      (BTRFS_BLOCK_GROUP_METADATA & BTRFS_BLOCK_GROUP_DATA)) {
-> > >                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-> > > Was this supposed to be | or perhaps check that both are set?
-> > Yes. It should be |.
-> > Thank you, I'll send a patch to fix it.
-> 
-> Not needed, I'll fix the patch directly.
+On Tue, Jul 17, 2018 at 4:33 PM, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
+>
+>
+> On 2018年07月17日 21:52, Arnd Bergmann wrote:
+>> The newly added check_block_group_item() function causes a build warning
+>> on 32-bit architectures:
+>>
+>> fs/btrfs/tree-checker.c: In function 'check_block_group_item':
+>> fs/btrfs/tree-checker.c:404:41: error: format '%lu' expects argument of type 'long unsigned int', but argument 6 has type 'unsigned int' [-Werror=format=]
+>>
+>> The type of a sizeof() expression is size_t, which is correctly printed
+>> using the %zu format string.
+>>
+>> Fixes: 9dc16aad5660 ("btrfs: tree-checker: Verify block_group_item")
+>
+> My fault again. :(
+>
+> Is there anyway to make gcc report such problem even under x86_64?
 
-And that leads to failed mount:
+I don't think so. However, if you post a patch to the mainling list, the
+0-day bot should report any build regressions within a day.
 
-[   10.867868] BTRFS error (device vda): mixed chunk type in non-mixed mode: 1
-[   10.871084] BTRFS error (device vda): failed to read chunk tree: -5
-[   10.908541] BTRFS error (device vda): open_ctree failed
-
-Please send fixed version.
+      Arnd

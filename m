@@ -1,91 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:45750 "EHLO
-        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1730180AbeGRA76 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 17 Jul 2018 20:59:58 -0400
-Date: Tue, 17 Jul 2018 17:24:51 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: btrfs check (not lowmem) and OOM-like hangs (4.17.6)
-Message-ID: <20180718002451.GF10237@merlins.org>
-References: <20180717203257.GA10237@merlins.org> <20180717205905.GB10237@merlins.org> <8a0fbf2d-ee13-f6d6-a046-5dfba936aa87@gmx.com>
+Received: from smtp-18-i6.italiaonline.it ([213.209.14.18]:58713 "EHLO
+        libero.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1725975AbeGRGgG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 18 Jul 2018 02:36:06 -0400
+Reply-To: kreijack@inwind.it
+Subject: Re: [PATCH 0/4] 3- and 4- copy RAID1
+To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
+References: <cover.1531503452.git.dsterba@suse.com>
+ <9945d460-99b5-a927-a614-c797bbc7862d@dirtcellar.net>
+ <d340ce28-6c93-22d4-0f56-73de8e55f1f6@libero.it>
+ <pan$b5258$f3ecc84$8e06948b$54511335@cox.net>
+From: Goffredo Baroncelli <kreijack@libero.it>
+Message-ID: <793d8ec3-7934-ea60-521d-7a039c9f1ce9@libero.it>
+Date: Wed, 18 Jul 2018 07:59:52 +0200
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <8a0fbf2d-ee13-f6d6-a046-5dfba936aa87@gmx.com>
+In-Reply-To: <pan$b5258$f3ecc84$8e06948b$54511335@cox.net>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jul 18, 2018 at 08:05:51AM +0800, Qu Wenruo wrote:
-> No OOM triggers? That's a little strange.
-> Maybe it's related to how kernel handles memory over-commit?
- 
-Yes, I think you are correct.
-
-> And for the hang, I think it's related to some memory allocation failure
-> and error handler just didn't handle it well, so it's causing deadlock
-> for certain page.
-
-That indeed matches what I'm seeing.
-
-> ENOMEM handling is pretty common but hardly verified, so it's not that
-> strange, but we must locate the problem.
-
-I seem to be getting deadlocks in the kernel, so I'm hoping that at least
-it's checked there, but maybe not?
-
-> In my system, at least I'm not using btrfs as root fs, and for the
-> memory eating program I normally ensure it's eating all the memory +
-> swap, so OOM killer is always triggered, maybe that's the cause.
+On 07/17/2018 11:12 PM, Duncan wrote:
+> Goffredo Baroncelli posted on Mon, 16 Jul 2018 20:29:46 +0200 as
+> excerpted:
 > 
-> So in your case, maybe it's btrfs not really taking up all memory, thus
-> OOM killer not triggered.
-
-Correct, the swap is not used.
-
-> Any kernel dmesg about OOM killer triggered?
- 
-Nothing at all. It never gets triggered.
-
-> > Here is my system when it virtually died:
-> > ER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
-> > root     31006 21.2 90.7 29639020 29623180 pts/19 D+ 13:49   1:35 ./btrfs check /dev/mapper/dshelf2
-
-See how btrs was taking 29GB in that ps output (that's before it takes
-everything and I can't even type ps anymore)
-Note that VSZ is almost equal to RSS. Nothing gets swapped.
-
-Then see free output:
-
-> >              total       used       free     shared    buffers     cached
-> > Mem:      32643788   32180100     463688          0      44664     119508
-> > -/+ buffers/cache:   32015928     627860
-> > Swap:     15616764     443676   15173088
+>> On 07/15/2018 04:37 PM, waxhead wrote:
 > 
-> For swap, it looks like only some other program's memory is swapped out,
-> not btrfs'.
+>> Striping and mirroring/pairing are orthogonal properties; mirror and
+>> parity are mutually exclusive.
+> 
+> I can't agree.  I don't know whether you meant that in the global sense, 
+> or purely in the btrfs context (which I suspect), but either way I can't 
+> agree.
+> 
+> In the pure btrfs context, while striping and mirroring/pairing are 
+> orthogonal today, Hugo's whole point was that btrfs is theoretically 
+> flexible enough to allow both together and the feature may at some point 
+> be added, so it makes sense to have a layout notation format flexible 
+> enough to allow it as well.
 
-That's exactly correct. btrfs check never goes to swap, I'm not sure why,
-and because there is virtual memory free, maybe that's why OOM does not
-trigger?
-So I guess I can probably "fix" my problem by removing swap, but ultimately
-it would be useful to know why memory taken by btrfs check does not end up
-in swap.
+When I say orthogonal, It means that these can be combined: i.e. you can have
+- striping (RAID0)
+- parity  (?)
+- striping + parity  (e.g. RAID5/6)
+- mirroring  (RAID1)
+- mirroring + striping  (RAID10)
 
-> And unfortunately, I'm not so familiar with OOM/MM code outside of
-> filesystem.
-> Any help from other experienced developers would definitely help to
-> solve why memory of 'btrfs check' is not swapped out or why OOM killer
-> is not triggered.
+However you can't have mirroring+parity; this means that a notation where both 'C' ( = number of copy) and 'P' ( = number of parities) is too verbose.
 
-Do you have someone from linux-vm you might be able to ask, or should we Cc
-this thread there?
+[...]
+> 
+>> Question #2: historically RAID10 is requires 4 disks. However I am
+>> guessing if the stripe could be done on a different number of disks:
+>> What about RAID1+Striping on 3 (or 5 disks) ? The key of striping is
+>> that every 64k, the data are stored on a different disk....
+> 
+> As someone else pointed out, md/lvm-raid10 already work like this.  What 
+> btrfs calls raid10 is somewhat different, but btrfs raid1 pretty much 
+> works this way except with huge (gig size) chunks.
 
-Thanks,
-Marc
+As implemented in BTRFS, raid1 doesn't have striping.
+
+ 
+
+
 -- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/  
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

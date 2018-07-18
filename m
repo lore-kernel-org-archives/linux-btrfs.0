@@ -1,101 +1,96 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp2130.oracle.com ([156.151.31.86]:57460 "EHLO
-        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726980AbeGZIFe (ORCPT
+Received: from userp2120.oracle.com ([156.151.31.85]:50026 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1731178AbeGRDkW (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 26 Jul 2018 04:05:34 -0400
-Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
-        by userp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w6Q6mdPr127135
-        for <linux-btrfs@vger.kernel.org>; Thu, 26 Jul 2018 06:50:12 GMT
-Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
-        by userp2130.oracle.com with ESMTP id 2kbv8t9ndh-1
+        Tue, 17 Jul 2018 23:40:22 -0400
+Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
+        by userp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w6I34a4m192860
+        for <linux-btrfs@vger.kernel.org>; Wed, 18 Jul 2018 03:04:42 GMT
+Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
+        by userp2120.oracle.com with ESMTP id 2k7a3ju5bn-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Thu, 26 Jul 2018 06:50:12 +0000
-Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w6Q6oBDT009098
+        for <linux-btrfs@vger.kernel.org>; Wed, 18 Jul 2018 03:04:42 +0000
+Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
+        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id w6I34g37017363
         (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Thu, 26 Jul 2018 06:50:11 GMT
-Received: from abhmp0012.oracle.com (abhmp0012.oracle.com [141.146.116.18])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w6Q6oBCw002675
-        for <linux-btrfs@vger.kernel.org>; Thu, 26 Jul 2018 06:50:11 GMT
+        for <linux-btrfs@vger.kernel.org>; Wed, 18 Jul 2018 03:04:42 GMT
+Received: from abhmp0011.oracle.com (abhmp0011.oracle.com [141.146.116.17])
+        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w6I34gRt004304
+        for <linux-btrfs@vger.kernel.org>; Wed, 18 Jul 2018 03:04:42 GMT
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 4/4] btrfs: add helper btrfs_num_devices() to deduce num_devices
-Date: Thu, 26 Jul 2018 14:53:34 +0800
-Message-Id: <20180726065334.30594-5-anand.jain@oracle.com>
-In-Reply-To: <20180726065334.30594-1-anand.jain@oracle.com>
-References: <20180726065334.30594-1-anand.jain@oracle.com>
+Subject: [PATCH v7] Add cli and ioctl to forget scanned device(s)
+Date: Wed, 18 Jul 2018 11:07:59 +0800
+Message-Id: <20180718030801.31617-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When the replace is running the fs_devices::num_devices also includes
-the replace device, however in some operations like device delete and
-balance it needs the actual num_devices without the repalce devices, so
-now the function btrfs_num_devices() just provides that.
+v7:
+ Availalbe for pull from
+  btrfs-progs:
+   git@github.com:asj/btrfs-progs.git forget
+  btrfs.ko:
+   git@github.com:asj/btrfs-devel.git misc-next-jul18
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
-v1->v2: add comments
- fs/btrfs/volumes.c | 32 ++++++++++++++++++--------------
- 1 file changed, 18 insertions(+), 14 deletions(-)
+ Use struct btrfs_ioctl_vol_args (instead of struct
+  btrfs_ioctl_vol_args_v2) as its inline with other ioctl
+  btrfs-control
+ The CLI usage remains same. However internally the ioctl flag is not
+  required to delete all the unmounted devices. Instead leave
+  btrfs_ioctl_vol_args::name NULL.
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index fe74fefc75f7..8844904f9009 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1854,6 +1854,21 @@ void btrfs_assign_next_active_device(struct btrfs_device *device,
- 		fs_info->fs_devices->latest_bdev = next_device->bdev;
- }
- 
-+/* Returns btrfs_fs_devices::num_devices excluding replace device if any */
-+static inline u64 btrfs_num_devices(struct btrfs_fs_info *fs_info)
-+{
-+	u64 num_devices = fs_info->fs_devices->num_devices;
-+
-+	btrfs_dev_replace_read_lock(&fs_info->dev_replace);
-+	if (btrfs_dev_replace_is_ongoing(&fs_info->dev_replace)) {
-+		BUG_ON(num_devices < 1);
-+		num_devices--;
-+	}
-+	btrfs_dev_replace_read_unlock(&fs_info->dev_replace);
-+
-+	return num_devices;
-+}
-+
- int btrfs_rm_device(struct btrfs_fs_info *fs_info, const char *device_path,
- 		u64 devid)
- {
-@@ -1865,13 +1880,7 @@ int btrfs_rm_device(struct btrfs_fs_info *fs_info, const char *device_path,
- 
- 	mutex_lock(&uuid_mutex);
- 
--	num_devices = fs_devices->num_devices;
--	btrfs_dev_replace_read_lock(&fs_info->dev_replace);
--	if (btrfs_dev_replace_is_ongoing(&fs_info->dev_replace)) {
--		BUG_ON(num_devices < 1);
--		num_devices--;
--	}
--	btrfs_dev_replace_read_unlock(&fs_info->dev_replace);
-+	num_devices = btrfs_num_devices(fs_info);
- 
- 	ret = btrfs_check_raid_min_devices(fs_info, num_devices - 1);
- 	if (ret)
-@@ -3721,13 +3730,8 @@ int btrfs_balance(struct btrfs_fs_info *fs_info,
- 		}
- 	}
- 
--	num_devices = fs_info->fs_devices->num_devices;
--	btrfs_dev_replace_read_lock(&fs_info->dev_replace);
--	if (btrfs_dev_replace_is_ongoing(&fs_info->dev_replace)) {
--		BUG_ON(num_devices < 1);
--		num_devices--;
--	}
--	btrfs_dev_replace_read_unlock(&fs_info->dev_replace);
-+	num_devices = btrfs_num_devices(fs_info);
-+
- 	allowed = BTRFS_AVAIL_ALLOC_BIT_SINGLE | BTRFS_BLOCK_GROUP_DUP;
- 	if (num_devices > 1)
- 		allowed |= (BTRFS_BLOCK_GROUP_RAID0 | BTRFS_BLOCK_GROUP_RAID1);
+v6:
+ Use the changed fn name btrfs_free_stale_devices().
+
+ Change in title:
+ Old v5:
+ Cover-letter:
+  [PATCH v5] Add cli and ioctl to ignore a scanned device
+ Kernel:
+  [PATCH v5] btrfs: introduce feature to ignore a btrfs device
+ Progs:
+  [PATCH v5] btrfs-progs: add 'btrfs device ignore' cli
+
+v5:
+  Adds feature to delete all stale devices
+  Reuses btrfs_free_stale_devices() fn and so depends on the
+    patch-set [1] in the ML.
+  Uses struct btrfs_ioctl_vol_args_v2 instead of
+    struct btrfs_ioctl_vol_args as arg
+  Does the device path matching instead of btrfs_device matching
+    (we won't delete the mounted device as btrfs_free_stale_devices()
+    checks for it)
+v4:
+  No change. But as the ML thread may be confusing, so resend.
+v3:
+  No change. Send to correct ML.
+v2:
+  Accepts review from Nikolay, details are in the specific patch.
+  Patch 1/2 is renamed from
+    [PATCH 1/2] btrfs: refactor btrfs_free_stale_device() to get device list delete
+  to
+    [PATCH 1/2] btrfs: add function to device list delete
+
+Adds cli and ioctl to forget a scanned device or forget all stale
+devices in the kernel.
+
+Anand Jain (1):
+  btrfs: introduce feature to forget a btrfs device
+
+ fs/btrfs/super.c           | 3 +++
+ fs/btrfs/volumes.c         | 9 +++++++++
+ fs/btrfs/volumes.h         | 1 +
+ include/uapi/linux/btrfs.h | 2 ++
+ 4 files changed, 15 insertions(+)
+
+Anand Jain (1):
+  btrfs-progs: add cli to forget one or all scanned devices
+
+ cmds-device.c | 58 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ ioctl.h       |  2 ++
+ 2 files changed, 60 insertions(+)
+
 -- 
 2.7.0
 

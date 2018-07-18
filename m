@@ -1,173 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ed1-f66.google.com ([209.85.208.66]:34781 "EHLO
-        mail-ed1-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727131AbeGRUVs (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 18 Jul 2018 16:21:48 -0400
-Received: by mail-ed1-f66.google.com with SMTP id h1-v6so5216567eds.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 18 Jul 2018 12:42:24 -0700 (PDT)
-Subject: Re: btrfs check (not lowmem) and OOM-like hangs (4.17.6)
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>, Marc MERLIN <marc@merlins.org>,
-        Su Yue <Damenly_Su@gmx.com>
-Cc: Su Yue <suy.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-References: <20180717203257.GA10237@merlins.org>
- <20180717205905.GB10237@merlins.org>
- <8a0fbf2d-ee13-f6d6-a046-5dfba936aa87@gmx.com>
-From: Andrei Borzenkov <arvidjaar@gmail.com>
-Message-ID: <b3b67616-b00b-91e7-716b-dab147d9be88@gmail.com>
-Date: Wed, 18 Jul 2018 22:42:21 +0300
+Received: from smtp-18-i6.italiaonline.it ([213.209.14.18]:59843 "EHLO
+        libero.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1727131AbeGRUWK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 18 Jul 2018 16:22:10 -0400
+Reply-To: kreijack@inwind.it
+Subject: Re: [PATCH 0/4] 3- and 4- copy RAID1
+To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
+References: <cover.1531503452.git.dsterba@suse.com>
+ <9945d460-99b5-a927-a614-c797bbc7862d@dirtcellar.net>
+ <d340ce28-6c93-22d4-0f56-73de8e55f1f6@libero.it>
+ <pan$b5258$f3ecc84$8e06948b$54511335@cox.net>
+ <793d8ec3-7934-ea60-521d-7a039c9f1ce9@libero.it>
+ <pan$98af2$39851f53$ef9fd141$bfd51f5b@cox.net>
+From: Goffredo Baroncelli <kreijack@libero.it>
+Message-ID: <89d20da9-0e80-51d1-3a4f-4cccb44d31ef@libero.it>
+Date: Wed, 18 Jul 2018 21:42:45 +0200
 MIME-Version: 1.0
-In-Reply-To: <8a0fbf2d-ee13-f6d6-a046-5dfba936aa87@gmx.com>
+In-Reply-To: <pan$98af2$39851f53$ef9fd141$bfd51f5b@cox.net>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-18.07.2018 03:05, Qu Wenruo пишет:
+On 07/18/2018 09:20 AM, Duncan wrote:
+> Goffredo Baroncelli posted on Wed, 18 Jul 2018 07:59:52 +0200 as
+> excerpted:
 > 
-> 
-> On 2018年07月18日 04:59, Marc MERLIN wrote:
->> Ok, I did more testing. Qu is right that btrfs check does not crash the kernel.
->> It just takes all the memory until linux hangs everywhere, and somehow (no idea why) 
->> the OOM killer never triggers.
-> 
-> No OOM triggers? That's a little strange.
-> Maybe it's related to how kernel handles memory over-commit?
-> 
-> And for the hang, I think it's related to some memory allocation failure
-> and error handler just didn't handle it well, so it's causing deadlock
-> for certain page.
-> 
-> ENOMEM handling is pretty common but hardly verified, so it's not that
-> strange, but we must locate the problem.
-> 
->> Details below:
->>
->> On Tue, Jul 17, 2018 at 01:32:57PM -0700, Marc MERLIN wrote:
->>> Here is what I got when the system was not doing well (it took minutes to run):
+>> On 07/17/2018 11:12 PM, Duncan wrote:
+>>> Goffredo Baroncelli posted on Mon, 16 Jul 2018 20:29:46 +0200 as
+>>> excerpted:
 >>>
->>>              total       used       free     shared    buffers     cached
->>> Mem:      32643788   32070952     572836          0     102160    4378772
->>> -/+ buffers/cache:   27590020    5053768
->>> Swap:     15616764     973596   14643168
+>>>> On 07/15/2018 04:37 PM, waxhead wrote:
+>>>
+>>>> Striping and mirroring/pairing are orthogonal properties; mirror and
+>>>> parity are mutually exclusive.
+>>>
+>>> I can't agree.  I don't know whether you meant that in the global
+>>> sense,
+>>> or purely in the btrfs context (which I suspect), but either way I
+>>> can't agree.
+>>>
+>>> In the pure btrfs context, while striping and mirroring/pairing are
+>>> orthogonal today, Hugo's whole point was that btrfs is theoretically
+>>> flexible enough to allow both together and the feature may at some
+>>> point be added, so it makes sense to have a layout notation format
+>>> flexible enough to allow it as well.
 >>
->> ok, the reason it was not that close to 0 was due to /dev/shm it seems.
->> I cleared that, and now I can get it to go to near 0 again.
->> I'm wrong about the system being fully crashed, it's not, it's just very
->> close to being hung.
->> I can type killall -9 btrfs in the serial console and wait a few minutes.
->> The system eventually recovers, but it's impossible to fix anything via ssh 
->> apparently because networking does not get to run when I'm in this state.
+>> When I say orthogonal, It means that these can be combined: i.e. you can
+>> have - striping (RAID0)
+>> - parity  (?)
+>> - striping + parity  (e.g. RAID5/6)
+>> - mirroring  (RAID1)
+>> - mirroring + striping  (RAID10)
 >>
->> I'm not sure why my system reproduces this easy while Qu's system does not, 
->> but Qu was right that the kernel is not dead and that it's merely a problem of userspace
->> taking all the RAM and somehow not being killed by OOM
+>> However you can't have mirroring+parity; this means that a notation
+>> where both 'C' ( = number of copy) and 'P' ( = number of parities) is
+>> too verbose.
 > 
-> In my system, at least I'm not using btrfs as root fs, and for the
-> memory eating program I normally ensure it's eating all the memory +
-> swap, so OOM killer is always triggered, maybe that's the cause.
-> 
-> So in your case, maybe it's btrfs not really taking up all memory, thus
-> OOM killer not triggered.
-> 
->>
->> I checked the PID and don't see why it's not being killed:
->> gargamel:/proc/31006# grep . oom*
->> oom_adj:0
->> oom_score:221   << this increases a lot, but OOM never kills it
->> oom_score_adj:0
->>
->> I have these variables:
->> /proc/sys/vm/oom_dump_tasks:1
->> /proc/sys/vm/oom_kill_allocating_task:0
->> /proc/sys/vm/overcommit_kbytes:0
->> /proc/sys/vm/overcommit_memory:0
->> /proc/sys/vm/overcommit_ratio:50  << is this bad (seems default)
-> 
-> Any kernel dmesg about OOM killer triggered?
-> 
->>
->> Here is my system when it virtually died:
->> ER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
->> root     31006 21.2 90.7 29639020 29623180 pts/19 D+ 13:49   1:35 ./btrfs check /dev/mapper/dshelf2
->>
->>              total       used       free     shared    buffers     cached
->> Mem:      32643788   32180100     463688          0      44664     119508
->> -/+ buffers/cache:   32015928     627860
->> Swap:     15616764     443676   15173088
-> 
-> For swap, it looks like only some other program's memory is swapped out,
-> not btrfs'.
-> 
-> And unfortunately, I'm not so familiar with OOM/MM code outside of
-> filesystem.
-> Any help from other experienced developers would definitely help to
-> solve why memory of 'btrfs check' is not swapped out or why OOM killer
-> is not triggered.
-> 
+> Yes, you can have mirroring+parity, conceptually it's simply raid5/6 on 
+> top of mirroring or mirroring on top of raid5/6, much as raid10 is 
+> conceptually just raid0 on top of raid1, and raid01 is conceptually raid1 
+> on top of raid0.  
+And what about raid 615156156 (raid 6 on top of raid 1 on top of raid 5 on top of....) ???
 
-Almost all used memory is marked as "active" and active pages are not
-swapped. Page is active if it was accessed recently. Is it possible that
-btrfs logic does frequent scans across all allocated memory?
+Seriously, of course you can combine a lot of different profile; however the only ones that make sense are the ones above.
+
+The fact that you can combine striping and mirroring (or pairing) makes sense because you could have a speed gain (see below). 
+[....]
+>>>
+>>> As someone else pointed out, md/lvm-raid10 already work like this. 
+>>> What btrfs calls raid10 is somewhat different, but btrfs raid1 pretty
+>>> much works this way except with huge (gig size) chunks.
+>>
+>> As implemented in BTRFS, raid1 doesn't have striping.
+> 
+> The argument is that because there's only two copies, on multi-device 
+> btrfs raid1 with 4+ devices of equal size so chunk allocations tend to 
+> alternate device pairs, it's effectively striped at the macro level, with 
+> the 1 GiB device-level chunks effectively being huge individual device 
+> strips of 1 GiB.
+
+The striping concept is based to the fact that if the "stripe size" is small enough you have a speed benefit because the reads may be performed in parallel from different disks.
+With a "stripe size" of 1GB, it is very unlikely that this would happens.
+
+ 
+> At 1 GiB strip size it doesn't have the typical performance advantage of 
+> striping, but conceptually, it's equivalent to raid10 with huge 1 GiB 
+> strips/chunks.
 
 
 
-> Thanks,
-> Qu
-> 
->>
->> MemTotal:       32643788 kB
->> MemFree:          463440 kB
->> MemAvailable:      44864 kB
->> Buffers:           44664 kB
->> Cached:           120360 kB
->> SwapCached:        87064 kB
->> Active:         30381404 kB
->> Inactive:         585952 kB
->> Active(anon):   30334696 kB
->> Inactive(anon):   474624 kB
->> Active(file):      46708 kB
->> Inactive(file):   111328 kB
->> Unevictable:        5616 kB
->> Mlocked:            5616 kB
->> SwapTotal:      15616764 kB
->> SwapFree:       15173088 kB
->> Dirty:              1636 kB
->> Writeback:             4 kB
->> AnonPages:      30734240 kB
->> Mapped:            67236 kB
->> Shmem:              3036 kB
->> Slab:             267884 kB
->> SReclaimable:      51528 kB
->> SUnreclaim:       216356 kB
->> KernelStack:       10144 kB
->> PageTables:        69284 kB
->> NFS_Unstable:          0 kB
->> Bounce:                0 kB
->> WritebackTmp:          0 kB
->> CommitLimit:    31938656 kB
->> Committed_AS:   32865492 kB
->> VmallocTotal:   34359738367 kB
->> VmallocUsed:           0 kB
->> VmallocChunk:          0 kB
->> HardwareCorrupted:     0 kB
->> AnonHugePages:         0 kB
->> ShmemHugePages:        0 kB
->> ShmemPmdMapped:        0 kB
->> CmaTotal:          16384 kB
->> CmaFree:               0 kB
->> HugePages_Total:       0
->> HugePages_Free:        0
->> HugePages_Rsvd:        0
->> HugePages_Surp:        0
->> Hugepagesize:       2048 kB
->> Hugetlb:               0 kB
->> DirectMap4k:      560404 kB
->> DirectMap2M:    32692224 kB
->>
->>
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-
+-- 
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

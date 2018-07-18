@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:47865 "EHLO
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:48662 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1729594AbeGRHWc (ORCPT
+        with ESMTP id S1729306AbeGRHWe (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 18 Jul 2018 03:22:32 -0400
+        Wed, 18 Jul 2018 03:22:34 -0400
 Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
-        by cn.fujitsu.com (Postfix) with ESMTP id B1EB24B5CD80
-        for <linux-btrfs@vger.kernel.org>; Wed, 18 Jul 2018 14:46:05 +0800 (CST)
+        by cn.fujitsu.com (Postfix) with ESMTP id 9F54D4B5CD85
+        for <linux-btrfs@vger.kernel.org>; Wed, 18 Jul 2018 14:46:07 +0800 (CST)
 From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 12/19] btrfs: qgroup: Drop fs_info parameter from btrfs_limit_qgroup
-Date: Wed, 18 Jul 2018 14:45:35 +0800
-Message-ID: <20180718064542.2730-13-lufq.fnst@cn.fujitsu.com>
+Subject: [PATCH 13/19] btrfs: qgroup: Drop fs_info parameter from btrfs_qgroup_trace_extent
+Date: Wed, 18 Jul 2018 14:45:36 +0800
+Message-ID: <20180718064542.2730-14-lufq.fnst@cn.fujitsu.com>
 In-Reply-To: <20180718064542.2730-1-lufq.fnst@cn.fujitsu.com>
 References: <20180718064542.2730-1-lufq.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -23,63 +23,79 @@ It can be fetched from the transaction handle.
 
 Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 ---
- fs/btrfs/ioctl.c  | 3 +--
- fs/btrfs/qgroup.c | 4 ++--
- fs/btrfs/qgroup.h | 3 +--
- 3 files changed, 4 insertions(+), 6 deletions(-)
+ fs/btrfs/qgroup.c   | 13 ++++++-------
+ fs/btrfs/qgroup.h   |  5 ++---
+ fs/btrfs/tree-log.c |  2 +-
+ 3 files changed, 9 insertions(+), 11 deletions(-)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 25bb192a3775..a92f07831627 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -5243,7 +5243,6 @@ static long btrfs_ioctl_qgroup_create(struct file *file, void __user *arg)
- static long btrfs_ioctl_qgroup_limit(struct file *file, void __user *arg)
- {
- 	struct inode *inode = file_inode(file);
--	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
- 	struct btrfs_ioctl_qgroup_limit_args *sa;
- 	struct btrfs_trans_handle *trans;
-@@ -5276,7 +5275,7 @@ static long btrfs_ioctl_qgroup_limit(struct file *file, void __user *arg)
- 		qgroupid = root->root_key.objectid;
- 	}
- 
--	ret = btrfs_limit_qgroup(trans, fs_info, qgroupid, &sa->lim);
-+	ret = btrfs_limit_qgroup(trans, qgroupid, &sa->lim);
- 
- 	err = btrfs_end_transaction(trans);
- 	if (err && !ret)
 diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 09256114aaa6..c85c1a0e933a 100644
+index c85c1a0e933a..01add73cb2aa 100644
 --- a/fs/btrfs/qgroup.c
 +++ b/fs/btrfs/qgroup.c
-@@ -1444,10 +1444,10 @@ int btrfs_remove_qgroup(struct btrfs_trans_handle *trans, u64 qgroupid)
- 	return ret;
+@@ -1579,10 +1579,10 @@ int btrfs_qgroup_trace_extent_post(struct btrfs_fs_info *fs_info,
+ 	return 0;
  }
  
--int btrfs_limit_qgroup(struct btrfs_trans_handle *trans,
--		       struct btrfs_fs_info *fs_info, u64 qgroupid,
-+int btrfs_limit_qgroup(struct btrfs_trans_handle *trans, u64 qgroupid,
- 		       struct btrfs_qgroup_limit *limit)
+-int btrfs_qgroup_trace_extent(struct btrfs_trans_handle *trans,
+-		struct btrfs_fs_info *fs_info, u64 bytenr, u64 num_bytes,
+-		gfp_t gfp_flag)
++int btrfs_qgroup_trace_extent(struct btrfs_trans_handle *trans, u64 bytenr,
++			      u64 num_bytes, gfp_t gfp_flag)
  {
 +	struct btrfs_fs_info *fs_info = trans->fs_info;
- 	struct btrfs_root *quota_root;
- 	struct btrfs_qgroup *qgroup;
- 	int ret = 0;
+ 	struct btrfs_qgroup_extent_record *record;
+ 	struct btrfs_delayed_ref_root *delayed_refs;
+ 	int ret;
+@@ -1644,8 +1644,8 @@ int btrfs_qgroup_trace_leaf_items(struct btrfs_trans_handle *trans,
+ 
+ 		num_bytes = btrfs_file_extent_disk_num_bytes(eb, fi);
+ 
+-		ret = btrfs_qgroup_trace_extent(trans, fs_info, bytenr,
+-						num_bytes, GFP_NOFS);
++		ret = btrfs_qgroup_trace_extent(trans, bytenr, num_bytes,
++						GFP_NOFS);
+ 		if (ret)
+ 			return ret;
+ 	}
+@@ -1796,8 +1796,7 @@ int btrfs_qgroup_trace_subtree(struct btrfs_trans_handle *trans,
+ 			btrfs_set_lock_blocking_rw(eb, BTRFS_READ_LOCK);
+ 			path->locks[level] = BTRFS_READ_LOCK_BLOCKING;
+ 
+-			ret = btrfs_qgroup_trace_extent(trans, fs_info,
+-							child_bytenr,
++			ret = btrfs_qgroup_trace_extent(trans, child_bytenr,
+ 							fs_info->nodesize,
+ 							GFP_NOFS);
+ 			if (ret)
 diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
-index 41516dddf123..385367989ed6 100644
+index 385367989ed6..0215dc0b1710 100644
 --- a/fs/btrfs/qgroup.h
 +++ b/fs/btrfs/qgroup.h
-@@ -153,8 +153,7 @@ int btrfs_del_qgroup_relation(struct btrfs_trans_handle *trans, u64 src,
- 			      u64 dst);
- int btrfs_create_qgroup(struct btrfs_trans_handle *trans, u64 qgroupid);
- int btrfs_remove_qgroup(struct btrfs_trans_handle *trans, u64 qgroupid);
--int btrfs_limit_qgroup(struct btrfs_trans_handle *trans,
--		       struct btrfs_fs_info *fs_info, u64 qgroupid,
-+int btrfs_limit_qgroup(struct btrfs_trans_handle *trans, u64 qgroupid,
- 		       struct btrfs_qgroup_limit *limit);
- int btrfs_read_qgroup_config(struct btrfs_fs_info *fs_info);
- void btrfs_free_qgroup_config(struct btrfs_fs_info *fs_info);
+@@ -212,9 +212,8 @@ int btrfs_qgroup_trace_extent_post(struct btrfs_fs_info *fs_info,
+  * Return <0 for error, like memory allocation failure or invalid parameter
+  * (NULL trans)
+  */
+-int btrfs_qgroup_trace_extent(struct btrfs_trans_handle *trans,
+-		struct btrfs_fs_info *fs_info, u64 bytenr, u64 num_bytes,
+-		gfp_t gfp_flag);
++int btrfs_qgroup_trace_extent(struct btrfs_trans_handle *trans, u64 bytenr,
++			      u64 num_bytes, gfp_t gfp_flag);
+ 
+ /*
+  * Inform qgroup to trace all leaf items of data
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 7b7498f1f641..10f6a4223897 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -685,7 +685,7 @@ static noinline int replay_one_extent(struct btrfs_trans_handle *trans,
+ 		 * as the owner of the file extent changed from log tree
+ 		 * (doesn't affect qgroup) to fs/file tree(affects qgroup)
+ 		 */
+-		ret = btrfs_qgroup_trace_extent(trans, fs_info,
++		ret = btrfs_qgroup_trace_extent(trans,
+ 				btrfs_file_extent_disk_bytenr(eb, item),
+ 				btrfs_file_extent_disk_num_bytes(eb, item),
+ 				GFP_NOFS);
 -- 
 2.18.0
 

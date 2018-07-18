@@ -1,35 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:48662 "EHLO
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:8361 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1729306AbeGRHWe (ORCPT
+        with ESMTP id S1726990AbeGRJFB (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 18 Jul 2018 03:22:34 -0400
+        Wed, 18 Jul 2018 05:05:01 -0400
 Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
-        by cn.fujitsu.com (Postfix) with ESMTP id 9F54D4B5CD85
-        for <linux-btrfs@vger.kernel.org>; Wed, 18 Jul 2018 14:46:07 +0800 (CST)
+        by cn.fujitsu.com (Postfix) with ESMTP id B942F4B5CD80
+        for <linux-btrfs@vger.kernel.org>; Wed, 18 Jul 2018 16:28:10 +0800 (CST)
 From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 13/19] btrfs: qgroup: Drop fs_info parameter from btrfs_qgroup_trace_extent
-Date: Wed, 18 Jul 2018 14:45:36 +0800
-Message-ID: <20180718064542.2730-14-lufq.fnst@cn.fujitsu.com>
-In-Reply-To: <20180718064542.2730-1-lufq.fnst@cn.fujitsu.com>
-References: <20180718064542.2730-1-lufq.fnst@cn.fujitsu.com>
+Subject: [PATCH v2 13/19] btrfs: qgroup: Drop fs_info parameter from btrfs_qgroup_trace_extent
+Date: Wed, 18 Jul 2018 16:28:03 +0800
+Message-ID: <20180718082803.16351-1-lufq.fnst@cn.fujitsu.com>
+In-Reply-To: <20180718064542.2730-14-lufq.fnst@cn.fujitsu.com>
+References: <20180718064542.2730-14-lufq.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It can be fetched from the transaction handle.
+It can be fetched from the transaction handle. In addition, remove the
+WARN_ON(trans == NULL) because there shouldn't hit this condition.
 
 Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 ---
- fs/btrfs/qgroup.c   | 13 ++++++-------
+v2:
+Remove the WARN_ON(trans == NULL) suggested by Qu Wenruo.
+
+ fs/btrfs/qgroup.c   | 15 ++++++---------
  fs/btrfs/qgroup.h   |  5 ++---
  fs/btrfs/tree-log.c |  2 +-
- 3 files changed, 9 insertions(+), 11 deletions(-)
+ 3 files changed, 9 insertions(+), 13 deletions(-)
 
 diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index c85c1a0e933a..01add73cb2aa 100644
+index c85c1a0e933a..7621ad34244f 100644
 --- a/fs/btrfs/qgroup.c
 +++ b/fs/btrfs/qgroup.c
 @@ -1579,10 +1579,10 @@ int btrfs_qgroup_trace_extent_post(struct btrfs_fs_info *fs_info,
@@ -46,7 +50,16 @@ index c85c1a0e933a..01add73cb2aa 100644
  	struct btrfs_qgroup_extent_record *record;
  	struct btrfs_delayed_ref_root *delayed_refs;
  	int ret;
-@@ -1644,8 +1644,8 @@ int btrfs_qgroup_trace_leaf_items(struct btrfs_trans_handle *trans,
+@@ -1590,8 +1590,6 @@ int btrfs_qgroup_trace_extent(struct btrfs_trans_handle *trans,
+ 	if (!test_bit(BTRFS_FS_QUOTA_ENABLED, &fs_info->flags)
+ 	    || bytenr == 0 || num_bytes == 0)
+ 		return 0;
+-	if (WARN_ON(trans == NULL))
+-		return -EINVAL;
+ 	record = kmalloc(sizeof(*record), gfp_flag);
+ 	if (!record)
+ 		return -ENOMEM;
+@@ -1644,8 +1642,8 @@ int btrfs_qgroup_trace_leaf_items(struct btrfs_trans_handle *trans,
  
  		num_bytes = btrfs_file_extent_disk_num_bytes(eb, fi);
  
@@ -57,7 +70,7 @@ index c85c1a0e933a..01add73cb2aa 100644
  		if (ret)
  			return ret;
  	}
-@@ -1796,8 +1796,7 @@ int btrfs_qgroup_trace_subtree(struct btrfs_trans_handle *trans,
+@@ -1796,8 +1794,7 @@ int btrfs_qgroup_trace_subtree(struct btrfs_trans_handle *trans,
  			btrfs_set_lock_blocking_rw(eb, BTRFS_READ_LOCK);
  			path->locks[level] = BTRFS_READ_LOCK_BLOCKING;
  

@@ -1,100 +1,154 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:37757 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1729714AbeGQVto (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 17 Jul 2018 17:49:44 -0400
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-3@m.gmane.org>)
-        id 1ffXHJ-0003pJ-R1
-        for linux-btrfs@vger.kernel.org; Tue, 17 Jul 2018 23:13:01 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: [PATCH 0/4] 3- and 4- copy RAID1
-Date: Tue, 17 Jul 2018 21:12:55 +0000 (UTC)
-Message-ID: <pan$b5258$f3ecc84$8e06948b$54511335@cox.net>
-References: <cover.1531503452.git.dsterba@suse.com>
-        <9945d460-99b5-a927-a614-c797bbc7862d@dirtcellar.net>
-        <d340ce28-6c93-22d4-0f56-73de8e55f1f6@libero.it>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from mout.gmx.net ([212.227.17.22]:49903 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1730180AbeGRAlO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 17 Jul 2018 20:41:14 -0400
+Subject: Re: btrfs check (not lowmem) and OOM-like hangs (4.17.6)
+To: Marc MERLIN <marc@merlins.org>, Su Yue <Damenly_Su@gmx.com>
+Cc: Su Yue <suy.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+References: <20180717203257.GA10237@merlins.org>
+ <20180717205905.GB10237@merlins.org>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <8a0fbf2d-ee13-f6d6-a046-5dfba936aa87@gmx.com>
+Date: Wed, 18 Jul 2018 08:05:51 +0800
+MIME-Version: 1.0
+In-Reply-To: <20180717205905.GB10237@merlins.org>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Goffredo Baroncelli posted on Mon, 16 Jul 2018 20:29:46 +0200 as
-excerpted:
 
-> On 07/15/2018 04:37 PM, waxhead wrote:
 
-> Striping and mirroring/pairing are orthogonal properties; mirror and
-> parity are mutually exclusive.
+On 2018年07月18日 04:59, Marc MERLIN wrote:
+> Ok, I did more testing. Qu is right that btrfs check does not crash the kernel.
+> It just takes all the memory until linux hangs everywhere, and somehow (no idea why) 
+> the OOM killer never triggers.
 
-I can't agree.  I don't know whether you meant that in the global sense, 
-or purely in the btrfs context (which I suspect), but either way I can't 
-agree.
+No OOM triggers? That's a little strange.
+Maybe it's related to how kernel handles memory over-commit?
 
-In the pure btrfs context, while striping and mirroring/pairing are 
-orthogonal today, Hugo's whole point was that btrfs is theoretically 
-flexible enough to allow both together and the feature may at some point 
-be added, so it makes sense to have a layout notation format flexible 
-enough to allow it as well.
+And for the hang, I think it's related to some memory allocation failure
+and error handler just didn't handle it well, so it's causing deadlock
+for certain page.
 
-In the global context, just to complete things and mostly for others 
-reading as I feel a bit like a simpleton explaining to the expert here, 
-just as raid10 is shorthand for raid1+0, aka raid0 layered on top of 
-raid1 (normally preferred to raid01 due to rebuild characteristics, and 
-as opposed to raid01, aka raid0+1, aka raid1 on top of raid0, sometimes 
-recommended as btrfs raid1 on top of whatever raid0 here due to btrfs' 
-data integrity characteristics and less optimized performance), so 
-there's also raid51 and raid15, raid61 and raid16, etc, with or without 
-the + symbols, involving mirroring and parity conceptually at two 
-different levels altho they can be combined in a single implementation 
-just as raid10 and raid01 commonly are.  These additional layered-raid 
-levels can be used for higher reliability, with differing rebuild and 
-performance characteristics between the two forms depending on which is 
-the top layer.
+ENOMEM handling is pretty common but hardly verified, so it's not that
+strange, but we must locate the problem.
 
-> Question #1: for "parity" profiles, does make sense to limit the maximum
-> disks number where the data may be spread ? If the answer is not, we
-> could omit the last S. IMHO it should.
+> Details below:
+> 
+> On Tue, Jul 17, 2018 at 01:32:57PM -0700, Marc MERLIN wrote:
+>> Here is what I got when the system was not doing well (it took minutes to run):
+>>
+>>              total       used       free     shared    buffers     cached
+>> Mem:      32643788   32070952     572836          0     102160    4378772
+>> -/+ buffers/cache:   27590020    5053768
+>> Swap:     15616764     973596   14643168
+> 
+> ok, the reason it was not that close to 0 was due to /dev/shm it seems.
+> I cleared that, and now I can get it to go to near 0 again.
+> I'm wrong about the system being fully crashed, it's not, it's just very
+> close to being hung.
+> I can type killall -9 btrfs in the serial console and wait a few minutes.
+> The system eventually recovers, but it's impossible to fix anything via ssh 
+> apparently because networking does not get to run when I'm in this state.
+> 
+> I'm not sure why my system reproduces this easy while Qu's system does not, 
+> but Qu was right that the kernel is not dead and that it's merely a problem of userspace
+> taking all the RAM and somehow not being killed by OOM
 
-As someone else already replied, btrfs doesn't currently have the ability 
-to specify spread limit, but the idea if we're going to change the 
-notation is to allow for the flexibility in the new notation so the 
-feature can be added later without further notation changes.
+In my system, at least I'm not using btrfs as root fs, and for the
+memory eating program I normally ensure it's eating all the memory +
+swap, so OOM killer is always triggered, maybe that's the cause.
 
-Why might it make sense to specify spread?  At least two possible reasons:
+So in your case, maybe it's btrfs not really taking up all memory, thus
+OOM killer not triggered.
 
-a) (stealing an already posted example) Consider a multi-device layout 
-with two or more device sizes.  Someone may want to limit the spread in 
-ordered to keep performance and risk consistent as the smaller devices 
-fill up, limiting further usage to a lower number of devices.  If that 
-lower number is specified as the spread originally it'll make things more 
-consistent between the room on all devices case and the room on only some 
-devices case.
+> 
+> I checked the PID and don't see why it's not being killed:
+> gargamel:/proc/31006# grep . oom*
+> oom_adj:0
+> oom_score:221   << this increases a lot, but OOM never kills it
+> oom_score_adj:0
+> 
+> I have these variables:
+> /proc/sys/vm/oom_dump_tasks:1
+> /proc/sys/vm/oom_kill_allocating_task:0
+> /proc/sys/vm/overcommit_kbytes:0
+> /proc/sys/vm/overcommit_memory:0
+> /proc/sys/vm/overcommit_ratio:50  << is this bad (seems default)
 
-b) Limiting spread can change the risk and rebuild performance profiles.  
-Stripes of full width mean all stripes have a strip on each device, so 
-knock a device out and (assuming parity or mirroring) replace it, and all 
-stripes are degraded and must be rebuilt.  With less than maximum spread, 
-some stripes won't be stripped to the replaced device, and won't be 
-degraded or need rebuilt, tho assuming the same overall fill, a larger 
-percentage of stripes that /do/ need rebuilt will be on the replaced 
-device.  So the risk profile is more "objects" (stripes/chunks/files) 
-affected but less of each object, or less of the total affected, but more 
-of each affected object.
+Any kernel dmesg about OOM killer triggered?
 
-> Question #2: historically RAID10 is requires 4 disks. However I am
-> guessing if the stripe could be done on a different number of disks:
-> What about RAID1+Striping on 3 (or 5 disks) ? The key of striping is
-> that every 64k, the data are stored on a different disk....
+> 
+> Here is my system when it virtually died:
+> ER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+> root     31006 21.2 90.7 29639020 29623180 pts/19 D+ 13:49   1:35 ./btrfs check /dev/mapper/dshelf2
+> 
+>              total       used       free     shared    buffers     cached
+> Mem:      32643788   32180100     463688          0      44664     119508
+> -/+ buffers/cache:   32015928     627860
+> Swap:     15616764     443676   15173088
 
-As someone else pointed out, md/lvm-raid10 already work like this.  What 
-btrfs calls raid10 is somewhat different, but btrfs raid1 pretty much 
-works this way except with huge (gig size) chunks.
+For swap, it looks like only some other program's memory is swapped out,
+not btrfs'.
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+And unfortunately, I'm not so familiar with OOM/MM code outside of
+filesystem.
+Any help from other experienced developers would definitely help to
+solve why memory of 'btrfs check' is not swapped out or why OOM killer
+is not triggered.
 
+Thanks,
+Qu
+
+> 
+> MemTotal:       32643788 kB
+> MemFree:          463440 kB
+> MemAvailable:      44864 kB
+> Buffers:           44664 kB
+> Cached:           120360 kB
+> SwapCached:        87064 kB
+> Active:         30381404 kB
+> Inactive:         585952 kB
+> Active(anon):   30334696 kB
+> Inactive(anon):   474624 kB
+> Active(file):      46708 kB
+> Inactive(file):   111328 kB
+> Unevictable:        5616 kB
+> Mlocked:            5616 kB
+> SwapTotal:      15616764 kB
+> SwapFree:       15173088 kB
+> Dirty:              1636 kB
+> Writeback:             4 kB
+> AnonPages:      30734240 kB
+> Mapped:            67236 kB
+> Shmem:              3036 kB
+> Slab:             267884 kB
+> SReclaimable:      51528 kB
+> SUnreclaim:       216356 kB
+> KernelStack:       10144 kB
+> PageTables:        69284 kB
+> NFS_Unstable:          0 kB
+> Bounce:                0 kB
+> WritebackTmp:          0 kB
+> CommitLimit:    31938656 kB
+> Committed_AS:   32865492 kB
+> VmallocTotal:   34359738367 kB
+> VmallocUsed:           0 kB
+> VmallocChunk:          0 kB
+> HardwareCorrupted:     0 kB
+> AnonHugePages:         0 kB
+> ShmemHugePages:        0 kB
+> ShmemPmdMapped:        0 kB
+> CmaTotal:          16384 kB
+> CmaFree:               0 kB
+> HugePages_Total:       0
+> HugePages_Free:        0
+> HugePages_Rsvd:        0
+> HugePages_Surp:        0
+> Hugepagesize:       2048 kB
+> Hugetlb:               0 kB
+> DirectMap4k:      560404 kB
+> DirectMap2M:    32692224 kB
+> 
+> 

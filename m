@@ -1,24 +1,24 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f42.google.com ([209.85.215.42]:43630 "EHLO
-        mail-lf0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727635AbeGRRwy (ORCPT
+Received: from mail-lf0-f41.google.com ([209.85.215.41]:46966 "EHLO
+        mail-lf0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1731282AbeGRSTw (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 18 Jul 2018 13:52:54 -0400
-Received: by mail-lf0-f42.google.com with SMTP id m12-v6so3988680lfc.10
-        for <linux-btrfs@vger.kernel.org>; Wed, 18 Jul 2018 10:14:02 -0700 (PDT)
+        Wed, 18 Jul 2018 14:19:52 -0400
+Received: by mail-lf0-f41.google.com with SMTP id l16-v6so4030705lfc.13
+        for <linux-btrfs@vger.kernel.org>; Wed, 18 Jul 2018 10:40:54 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <0a3a8550-3622-0c7b-bcf7-e2d7cabf6b4a@gmail.com>
+In-Reply-To: <CAJCQCtQrY2rz0CTntCO9szii7SveshtSMgCPz4JQqq16kfATNw@mail.gmail.com>
 References: <20180716205809.42jywfvuxwuuqixd@wolfsden.cz> <2197534.TZSffJRfLT@merkaba>
  <9ea19b13-3c46-666f-fa79-f40bd1ae7658@suse.com> <1736761.B5nO4FXixV@merkaba>
  <33396c10-33ef-b8ff-0041-c94d87c67722@gmail.com> <CAJCQCtSZruKeM117EfQNQnEFuk_bswhhKnEnFVD2i7MHWU65RQ@mail.gmail.com>
  <d42d5c79-46df-4e11-0ba2-1adb9e073ed9@gmail.com> <CAJCQCtSpMi-GmJSQx+tjt+WjDqvEH5Z9yeUrYSjLFz+P4f2j2A@mail.gmail.com>
- <0a3a8550-3622-0c7b-bcf7-e2d7cabf6b4a@gmail.com>
+ <0a3a8550-3622-0c7b-bcf7-e2d7cabf6b4a@gmail.com> <CAJCQCtQrY2rz0CTntCO9szii7SveshtSMgCPz4JQqq16kfATNw@mail.gmail.com>
 From: Chris Murphy <lists@colorremedies.com>
-Date: Wed, 18 Jul 2018 11:14:01 -0600
-Message-ID: <CAJCQCtQrY2rz0CTntCO9szii7SveshtSMgCPz4JQqq16kfATNw@mail.gmail.com>
+Date: Wed, 18 Jul 2018 11:40:52 -0600
+Message-ID: <CAJCQCtSV35cR5KS4dT0x5wYyMHXszdBFGT2Rt7XAMa4dDmC5uw@mail.gmail.com>
 Subject: Re: Healthy amount of free space?
-To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Cc: Chris Murphy <lists@colorremedies.com>,
+To: Chris Murphy <lists@colorremedies.com>
+Cc: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
         Martin Steigerwald <martin@lichtvoll.de>,
         Nikolay Borisov <nborisov@suse.com>, Wolf <wolf@wolfsden.cz>,
         Btrfs BTRFS <linux-btrfs@vger.kernel.org>
@@ -26,47 +26,44 @@ Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jul 18, 2018 at 11:06 AM, Austin S. Hemmelgarn
-<ahferroin7@gmail.com> wrote:
-> On 2018-07-18 13:04, Chris Murphy wrote:
->>
->> On Wed, Jul 18, 2018 at 7:30 AM, Austin S. Hemmelgarn
->> <ahferroin7@gmail.com> wrote:
->>
->>>
->>> I'm not sure.  In this particular case, this will fail on BTRFS for any X
->>> larger than just short of one third of the total free space.  I would
->>> expect
->>> it to fail for any X larger than just short of half instead.
->>
->>
->> I'm confused. I can't get it to fail when X is 3/4 of free space.
->>
->> lvcreate -V 2g -T vg/thintastic -n btrfstest
->> mkfs.btrfs -M /dev/mapper/vg-btrfstest
->> mount /dev/mapper/vg-btrfstest /mnt/btrfs
->> cd /mnt/btrfs
->> fallocate -l 1500m tmp
->> dd if=/dev/zero of=/mnt/btrfs/tmp bs=1M count=1450
->>
->> Succeeds. No enospc. This is on kernel 4.17.6.
->
-> Odd, I could have sworn it would fail reliably.  Unless something has
-> changed since I last tested though, doing it with X equal to the free space
-> on the filesystem will fail.
+On Wed, Jul 18, 2018 at 11:14 AM, Chris Murphy <lists@colorremedies.com> wrote:
 
-OK well X is being defined twice here so I can't tell if I'm doing
-this correctly. There's fallocate X and that's 75% of free space for
-the empty fs at the time of fallocate.
+> I don't know for sure, but based on the addresses reported before and
+> after dd for the fallocated tmp file, it looks like Btrfs is not using
+> the originally fallocated addresses for dd. So maybe it is COWing into
+> new blocks, but is just as quickly deallocating the fallocated blocks
+> as it goes, and hence doesn't end up in enospc?
 
-And then there's dd which is 1450m which is ~2.67x the free space at
-the time of dd.
+Previous thread is "Problem with file system" from August 2017. And
+there's these reproduce steps from Austin which have fallocate coming
+after the dd.
 
-I don't know for sure, but based on the addresses reported before and
-after dd for the fallocated tmp file, it looks like Btrfs is not using
-the originally fallocated addresses for dd. So maybe it is COWing into
-new blocks, but is just as quickly deallocating the fallocated blocks
-as it goes, and hence doesn't end up in enospc?
+    truncate --size=4G ./test-fs
+    mkfs.btrfs ./test-fs
+    mkdir ./test
+    mount -t auto ./test-fs ./test
+    dd if=/dev/zero of=./test/test bs=65536 count=32768
+    fallocate -l 2147483650 ./test/test && echo "Success!"
+
+
+My test Btrfs is 2G not 4G, so I'm cutting the values of dd and
+fallocate in half.
+
+[chris@f28s btrfs]$ sudo dd if=/dev/zero of=tmp bs=1M count=1000
+1000+0 records in
+1000+0 records out
+1048576000 bytes (1.0 GB, 1000 MiB) copied, 7.13391 s, 147 MB/s
+[chris@f28s btrfs]$ sync
+[chris@f28s btrfs]$ df -h
+Filesystem                Size  Used Avail Use% Mounted on
+/dev/mapper/vg-btrfstest  2.0G 1018M  1.1G  50% /mnt/btrfs
+[chris@f28s btrfs]$ sudo fallocate -l 1000m tmp
+
+
+Succeeds. If I do it with a 1200M file for dd and fallocate 1200M over
+it, this fails, but I kinda expect that because there's only 1.1G free
+space. But maybe that's what you're saying is the bug, it shouldn't
+fail?
 
 
 

@@ -1,96 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:55320 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1731767AbeGSOS7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 19 Jul 2018 10:18:59 -0400
-Date: Thu, 19 Jul 2018 15:35:38 +0200
-From: David Sterba <dsterba@suse.cz>
-To: fdmanana@kernel.org
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2] Btrfs: fix file data corruption after cloning a range
- and fsync
-Message-ID: <20180719133537.GP26141@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20180712003643.16439-1-fdmanana@kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180712003643.16439-1-fdmanana@kernel.org>
+Received: from userp2120.oracle.com ([156.151.31.85]:51644 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725729AbeGREm4 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 18 Jul 2018 00:42:56 -0400
+Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
+        by userp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w6I3xIFn031969
+        for <linux-btrfs@vger.kernel.org>; Wed, 18 Jul 2018 04:07:05 GMT
+Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
+        by userp2120.oracle.com with ESMTP id 2k7a3ju8q5-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Wed, 18 Jul 2018 04:07:05 +0000
+Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
+        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id w6I474fW013106
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Wed, 18 Jul 2018 04:07:05 GMT
+Received: from abhmp0002.oracle.com (abhmp0002.oracle.com [141.146.116.8])
+        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w6I4749a000868
+        for <linux-btrfs@vger.kernel.org>; Wed, 18 Jul 2018 04:07:04 GMT
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PULL] uuid_mutex fixes and cleanups part2
+Date: Wed, 18 Jul 2018 12:10:24 +0800
+Message-Id: <20180718041024.9089-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jul 12, 2018 at 01:36:43AM +0100, fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
-> 
-> When we clone a range into a file we can end up dropping existing
-> extent maps (or trimming them) and replacing them with new ones if the
-> range to be cloned overlaps with a range in the destination inode.
-> When that happens we add the new extent maps to the  list of modified
-> extents in the inode's extent map tree, so that a "fast" fsync (the flag
-> BTRFS_INODE_NEEDS_FULL_SYNC not set in the inode) will see the extent maps
-> and log corresponding extent items. However, at the end of range cloning
-> operation we do truncate all the pages in the affected range (in order to
-> ensure future reads will not get stale data). Sometimes this truncation
-> will release the corresponding extent maps besides the pages from the page
-> cache. If this happens, then a "fast" fsync operation will miss logging
-> some extent items, because it relies exclusively on the extent maps being
-> present in the inode's extent tree, leading to data loss/corruption if
-> the fsync ends up using the same transaction used by the clone operation
-> (that transaction was not committed in the meanwhile). An extent map is
-> released through the callback btrfs_invalidatepage(), which gets called by
-> truncate_inode_pages_range(), and it calls __btrfs_releasepage(). The
-> later ends up calling try_release_extent_mapping() which will release the
-> extent map if some conditions are met, like the file size being greater
-> than 16Mb, gfp flags allow blocking and the range not being locked (which
-> is the case during the clone operation) nor being the extent map flagged
-> as pinned (also the case for cloning).
-> 
-> The following example, turned into a test for fstests, reproduces the
-> issue:
-> 
->   $ mkfs.btrfs -f /dev/sdb
->   $ mount /dev/sdb /mnt
-> 
->   $ xfs_io -f -c "pwrite -S 0x18 9000K 6908K" /mnt/foo
->   $ xfs_io -f -c "pwrite -S 0x20 2572K 156K" /mnt/bar
-> 
->   $ xfs_io -c "fsync" /mnt/bar
->   # reflink destination offset corresponds to the size of file bar,
->   # 2728Kb minus 4Kb.
->   $ xfs_io -c ""reflink ${SCRATCH_MNT}/foo 0 2724K 15908K" /mnt/bar
->   $ xfs_io -c "fsync" /mnt/bar
-> 
->   $ md5sum /mnt/bar
->   95a95813a8c2abc9aa75a6c2914a077e  /mnt/bar
-> 
->   <power fail>
-> 
->   $ mount /dev/sdb /mnt
->   $ md5sum /mnt/bar
->   207fd8d0b161be8a84b945f0df8d5f8d  /mnt/bar
->   # digest should be 95a95813a8c2abc9aa75a6c2914a077e like before the
->   # power failure
-> 
-> In the above example, the destination offset of the clone operation
-> corresponds to the size of the "bar" file minus 4Kb. So during the clone
-> operation, the extent map covering the range from 2572Kb to 2728Kb gets
-> trimmed so that it ends at offset 2724Kb, and a new extent map covering
-> the range from 2724Kb to 11724Kb is created. So at the end of the clone
-> operation when we ask to truncate the pages in the range from 2724Kb to
-> 2724Kb + 15908Kb, the page invalidation callback ends up removing the new
-> extent map (through try_release_extent_mapping()) when the page at offset
-> 2724Kb is passed to that callback.
-> 
-> Fix this by setting the bit BTRFS_INODE_NEEDS_FULL_SYNC whenever an extent
-> map is removed at try_release_extent_mapping(), forcing the next fsync to
-> search for modified extents in the fs/subvolume tree instead of relying on
-> the presence of extent maps in memory. This way we can continue doing a
-> "fast" fsync if the destination range of a clone operation does not
-> overlap with an existing range or if any of the criteria necessary to
-> remove an extent map at try_release_extent_mapping() is not met (file
-> size not bigger then 16Mb or gfp flags do not allow blocking).
-> 
-> CC: stable@vger.kernel.org # 3.16+
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+These patches we sent independently before and are in the mailing list.
+They have been tested successfully using the xfstests. The cyclical
+lockdep warning aren't due to these set of patches and they (2) can be
+ignored as they are harmless because the threads involved are
+ioctl/commit and mount thread which lockdep thinks is warn-able can't
+co-exist in the same time space. So this set is ready to be pulled in.
+Thanks.
 
-I've added this to misc-next and will forward it to 4.18 as the type of
-fix qualifies for a late rc state, thanks.
+  git@github.com:asj/btrfs-devel.git misc-next-jul18
+
+1/7 has been discussed and reviewed at length, which is drop the
+unnecessary uuid_mutex in the btrfs_free_extra_devids().
+
+2/7 fixes the race which syzbot reported.
+
+3/7 as when we sprout we hijack the seed fs_devices, we are bringing
+back the seed fs_devices using the clone_fs_devices() instead we could
+use our btrfs_scan_one_device() which makes the sprout-ing operation
+much cleaner.
+
+4-7/7 are a simple cleanup patches.
+
+Anand Jain (7):
+1. btrfs: drop uuid_mutex in btrfs_free_extra_devids()
+2. btrfs: fix race between free_stale_devices and close_fs_devices
+3. btrfs: do device clone using the btrfs_scan_one_device
+4. btrfs: use the assigned fs_devices instead of the dereference
+5. btrfs: warn for num_devices below 0
+6. btrfs: add helper btrfs_num_devices() to deduce num_devices
+7. btrfs: add helper function check device delete able
+
+ fs/btrfs/volumes.c | 106 +++++++++++++++++++++++++++++++----------------------
+ 1 file changed, 62 insertions(+), 44 deletions(-)
+
+-- 
+2.7.0
+

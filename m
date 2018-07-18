@@ -1,25 +1,26 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f47.google.com ([209.85.215.47]:33063 "EHLO
-        mail-lf0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1729122AbeGRWMW (ORCPT
+Received: from mail-lj1-f179.google.com ([209.85.208.179]:40308 "EHLO
+        mail-lj1-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726985AbeGRW1S (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 18 Jul 2018 18:12:22 -0400
-Received: by mail-lf0-f47.google.com with SMTP id u14-v6so4507407lfu.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 18 Jul 2018 14:32:34 -0700 (PDT)
+        Wed, 18 Jul 2018 18:27:18 -0400
+Received: by mail-lj1-f179.google.com with SMTP id j19-v6so5393434ljc.7
+        for <linux-btrfs@vger.kernel.org>; Wed, 18 Jul 2018 14:47:26 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <72230e2d-022c-12bd-cd56-9d728989157d@gmail.com>
+In-Reply-To: <CAJCQCtSLVF8JP_KvFrwsrDDf76b2meS9HjN+ant+d3FbY-9H+Q@mail.gmail.com>
 References: <20180716205809.42jywfvuxwuuqixd@wolfsden.cz> <2197534.TZSffJRfLT@merkaba>
  <9ea19b13-3c46-666f-fa79-f40bd1ae7658@suse.com> <1736761.B5nO4FXixV@merkaba>
  <33396c10-33ef-b8ff-0041-c94d87c67722@gmail.com> <CAJCQCtSZruKeM117EfQNQnEFuk_bswhhKnEnFVD2i7MHWU65RQ@mail.gmail.com>
  <d42d5c79-46df-4e11-0ba2-1adb9e073ed9@gmail.com> <CAJCQCtSpMi-GmJSQx+tjt+WjDqvEH5Z9yeUrYSjLFz+P4f2j2A@mail.gmail.com>
  <0a3a8550-3622-0c7b-bcf7-e2d7cabf6b4a@gmail.com> <CAJCQCtQrY2rz0CTntCO9szii7SveshtSMgCPz4JQqq16kfATNw@mail.gmail.com>
- <CAJCQCtSV35cR5KS4dT0x5wYyMHXszdBFGT2Rt7XAMa4dDmC5uw@mail.gmail.com> <72230e2d-022c-12bd-cd56-9d728989157d@gmail.com>
+ <CAJCQCtSV35cR5KS4dT0x5wYyMHXszdBFGT2Rt7XAMa4dDmC5uw@mail.gmail.com>
+ <72230e2d-022c-12bd-cd56-9d728989157d@gmail.com> <CAJCQCtSLVF8JP_KvFrwsrDDf76b2meS9HjN+ant+d3FbY-9H+Q@mail.gmail.com>
 From: Chris Murphy <lists@colorremedies.com>
-Date: Wed, 18 Jul 2018 15:32:32 -0600
-Message-ID: <CAJCQCtSLVF8JP_KvFrwsrDDf76b2meS9HjN+ant+d3FbY-9H+Q@mail.gmail.com>
+Date: Wed, 18 Jul 2018 15:47:25 -0600
+Message-ID: <CAJCQCtQbvwZ8ZC0DbTr-64QBLMJCYu1d9T2e8kVxb8_ZkiVfAw@mail.gmail.com>
 Subject: Re: Healthy amount of free space?
-To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Cc: Chris Murphy <lists@colorremedies.com>,
+To: Chris Murphy <lists@colorremedies.com>
+Cc: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
         Martin Steigerwald <martin@lichtvoll.de>,
         Nikolay Borisov <nborisov@suse.com>, Wolf <wolf@wolfsden.cz>,
         Btrfs BTRFS <linux-btrfs@vger.kernel.org>
@@ -27,59 +28,6 @@ Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jul 18, 2018 at 12:01 PM, Austin S. Hemmelgarn
-<ahferroin7@gmail.com> wrote:
-> On 2018-07-18 13:40, Chris Murphy wrote:
->>
->> On Wed, Jul 18, 2018 at 11:14 AM, Chris Murphy <lists@colorremedies.com>
->> wrote:
->>
->>> I don't know for sure, but based on the addresses reported before and
->>> after dd for the fallocated tmp file, it looks like Btrfs is not using
->>> the originally fallocated addresses for dd. So maybe it is COWing into
->>> new blocks, but is just as quickly deallocating the fallocated blocks
->>> as it goes, and hence doesn't end up in enospc?
->>
->>
->> Previous thread is "Problem with file system" from August 2017. And
->> there's these reproduce steps from Austin which have fallocate coming
->> after the dd.
->>
->>      truncate --size=4G ./test-fs
->>      mkfs.btrfs ./test-fs
->>      mkdir ./test
->>      mount -t auto ./test-fs ./test
->>      dd if=/dev/zero of=./test/test bs=65536 count=32768
->>      fallocate -l 2147483650 ./test/test && echo "Success!"
->>
->>
->> My test Btrfs is 2G not 4G, so I'm cutting the values of dd and
->> fallocate in half.
->>
->> [chris@f28s btrfs]$ sudo dd if=/dev/zero of=tmp bs=1M count=1000
->> 1000+0 records in
->> 1000+0 records out
->> 1048576000 bytes (1.0 GB, 1000 MiB) copied, 7.13391 s, 147 MB/s
->> [chris@f28s btrfs]$ sync
->> [chris@f28s btrfs]$ df -h
->> Filesystem                Size  Used Avail Use% Mounted on
->> /dev/mapper/vg-btrfstest  2.0G 1018M  1.1G  50% /mnt/btrfs
->> [chris@f28s btrfs]$ sudo fallocate -l 1000m tmp
->>
->>
->> Succeeds. If I do it with a 1200M file for dd and fallocate 1200M over
->> it, this fails, but I kinda expect that because there's only 1.1G free
->> space. But maybe that's what you're saying is the bug, it shouldn't
->> fail?
->
-> Yes, you're right, I had things backwards (well, kind of, this does work on
-> ext4 and regular XFS, so it arguably should work here).
+Related on XFS list.
 
-I guess I'm confused what it even means to fallocate over a file with
-in-use blocks unless either -d or -p options are used. And from the
-man page, I don't grok the distinction between -d and -p either. But
-based on their descriptions I'd expect they both should work without
-enospc.
-
--- 
-Chris Murphy
+https://www.spinics.net/lists/linux-xfs/msg20722.html

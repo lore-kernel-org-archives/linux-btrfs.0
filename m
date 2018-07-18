@@ -1,114 +1,129 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.19]:34913 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725975AbeGRHhE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 18 Jul 2018 03:37:04 -0400
-Subject: Re: [PATCH 00/19] qgroup unused parameter cleanup
-To: Lu Fengqi <lufq.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:32748 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1726699AbeGRIbS (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 18 Jul 2018 04:31:18 -0400
+Date: Wed, 18 Jul 2018 15:54:31 +0800
+From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+CC: <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 13/19] btrfs: qgroup: Drop fs_info parameter from
+ btrfs_qgroup_trace_extent
+Message-ID: <20180718075431.GI575@fnst.localdomain>
 References: <20180718064542.2730-1-lufq.fnst@cn.fujitsu.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <69f60eb9-5769-45f6-bd9b-a5ac63815c4b@gmx.com>
-Date: Wed, 18 Jul 2018 15:00:31 +0800
+ <20180718064542.2730-14-lufq.fnst@cn.fujitsu.com>
+ <ca879289-7a26-e445-210d-0d8c8c9c173e@gmx.com>
 MIME-Version: 1.0
-In-Reply-To: <20180718064542.2730-1-lufq.fnst@cn.fujitsu.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="omnyfSF2Q5ePyxwFhqMK2A1Lpk7JH4Skm"
+Content-Type: text/plain; charset="utf-8"
+In-Reply-To: <ca879289-7a26-e445-210d-0d8c8c9c173e@gmx.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---omnyfSF2Q5ePyxwFhqMK2A1Lpk7JH4Skm
-Content-Type: multipart/mixed; boundary="4DYXdVf3PSOm5t58G4xPtjldM2p2MDFl3";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Lu Fengqi <lufq.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-Message-ID: <69f60eb9-5769-45f6-bd9b-a5ac63815c4b@gmx.com>
-Subject: Re: [PATCH 00/19] qgroup unused parameter cleanup
-References: <20180718064542.2730-1-lufq.fnst@cn.fujitsu.com>
-In-Reply-To: <20180718064542.2730-1-lufq.fnst@cn.fujitsu.com>
+On Wed, Jul 18, 2018 at 02:58:06PM +0800, Qu Wenruo wrote:
+>
+>
+>On 2018年07月18日 14:45, Lu Fengqi wrote:
+>> It can be fetched from the transaction handle.
+>> 
+>> Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+>> ---
+>>  fs/btrfs/qgroup.c   | 13 ++++++-------
+>>  fs/btrfs/qgroup.h   |  5 ++---
+>>  fs/btrfs/tree-log.c |  2 +-
+>>  3 files changed, 9 insertions(+), 11 deletions(-)
+>> 
+>> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+>> index c85c1a0e933a..01add73cb2aa 100644
+>> --- a/fs/btrfs/qgroup.c
+>> +++ b/fs/btrfs/qgroup.c
+>> @@ -1579,10 +1579,10 @@ int btrfs_qgroup_trace_extent_post(struct btrfs_fs_info *fs_info,
+>>  	return 0;
+>>  }
+>>  
+>> -int btrfs_qgroup_trace_extent(struct btrfs_trans_handle *trans,
+>> -		struct btrfs_fs_info *fs_info, u64 bytenr, u64 num_bytes,
+>> -		gfp_t gfp_flag)
+>> +int btrfs_qgroup_trace_extent(struct btrfs_trans_handle *trans, u64 bytenr,
+>> +			      u64 num_bytes, gfp_t gfp_flag)
+>>  {
+>> +	struct btrfs_fs_info *fs_info = trans->fs_info;
+>
+>Just lines below, we do extra WARN_ON(trans == NULL).
+>So if we really hit some case with NULL trans, this would cause a NULL
+>pointer dereference.
+>
+>Although I have to admit, I'm a little paranoid about possible NULL
+>trans passed in.
+>So maybe it's a good timing to remove that WARN_ON() too?
 
---4DYXdVf3PSOm5t58G4xPtjldM2p2MDFl3
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+Sorry, I didn't notice this WARN_ON(trans == NULL). However, I have
+confirmed that the callers of btrfs_qgroup_trace_{extent, leaf_items,
+subtree} should never pass NULL as trans. In my opinion the WARN_ON() can
+be removed without any bad effect.
 
-
-
-On 2018=E5=B9=B407=E6=9C=8818=E6=97=A5 14:45, Lu Fengqi wrote:
-> The transaction handler can provide fs_info, so we can fetch fs_info or=
-
-> quota_root(indirectly) from trans. Just remove the redundant parameter
-> from qgroup functions.
->=20
-> No functional change.
-
-The whole serious looks pretty good.
-
-Although for some call sites, we have extra check on NULL trans and
-return -EINVAL (should be ASSERT though).
-Maybe it's a good time to remove that paranoid check?
-
+-- 
 Thanks,
-Qu
+Lu
 
->=20
-> Lu Fengqi (19):
->   btrfs: qgroup: Drop quota_root parameter from add_qgroup_relation_ite=
-m
->   btrfs: qgroup: Drop quota_root parameter from del_qgroup_relation_ite=
-m
->   btrfs: qgroup: Drop quota_root parameter from del_qgroup_item
->   btrfs: qgroup: Drop root parameter from update_qgroup_limit_item
->   btrfs: qgroup: Drop root parameter from update_qgroup_info_item
->   btrfs: qgroup: Drop quota_root and fs_info parameters from
->     update_qgroup_status_item
->   btrfs: qgroup: Drop fs_info parameter from btrfs_add_qgroup_relation
->   btrfs: qgroup: Drop fs_info parameter from __del_qgroup_relation
->   btrfs: qgroup: Drop fs_info parameter from btrfs_del_qgroup_relation
->   btrfs: qgroup: Drop fs_info parameter from btrfs_create_qgroup
->   btrfs: qgroup: Drop fs_info parameter from btrfs_remove_qgroup
->   btrfs: qgroup: Drop fs_info parameter from btrfs_limit_qgroup
->   btrfs: qgroup: Drop fs_info parameter from btrfs_qgroup_trace_extent
->   btrfs: qgroup: Drop fs_info parameter from
->     btrfs_qgroup_trace_leaf_items
->   btrfs: qgroup: Drop root parameter from btrfs_qgroup_trace_subtree
->   btrfs: qgroup: Drop fs_info parameter from btrfs_qgroup_account_exten=
-t
->   btrfs: qgroup: Drop fs_info parameter from btrfs_run_qgroups
->   btrfs: qgroup: Drop fs_info parameter from btrfs_qgroup_inherit
->   btrfs: qgroup: Drop fs_info parameter from qgroup_rescan_leaf
->=20
->  fs/btrfs/extent-tree.c        |   4 +-
->  fs/btrfs/ioctl.c              |  18 ++--
->  fs/btrfs/qgroup.c             | 163 +++++++++++++++++-----------------=
+>
+>Thanks,
+>Qu
+>
+>>  	struct btrfs_qgroup_extent_record *record;
+>>  	struct btrfs_delayed_ref_root *delayed_refs;
+>>  	int ret;
+>> @@ -1644,8 +1644,8 @@ int btrfs_qgroup_trace_leaf_items(struct btrfs_trans_handle *trans,
+>>  
+>>  		num_bytes = btrfs_file_extent_disk_num_bytes(eb, fi);
+>>  
+>> -		ret = btrfs_qgroup_trace_extent(trans, fs_info, bytenr,
+>> -						num_bytes, GFP_NOFS);
+>> +		ret = btrfs_qgroup_trace_extent(trans, bytenr, num_bytes,
+>> +						GFP_NOFS);
+>>  		if (ret)
+>>  			return ret;
+>>  	}
+>> @@ -1796,8 +1796,7 @@ int btrfs_qgroup_trace_subtree(struct btrfs_trans_handle *trans,
+>>  			btrfs_set_lock_blocking_rw(eb, BTRFS_READ_LOCK);
+>>  			path->locks[level] = BTRFS_READ_LOCK_BLOCKING;
+>>  
+>> -			ret = btrfs_qgroup_trace_extent(trans, fs_info,
+>> -							child_bytenr,
+>> +			ret = btrfs_qgroup_trace_extent(trans, child_bytenr,
+>>  							fs_info->nodesize,
+>>  							GFP_NOFS);
+>>  			if (ret)
+>> diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
+>> index 385367989ed6..0215dc0b1710 100644
+>> --- a/fs/btrfs/qgroup.h
+>> +++ b/fs/btrfs/qgroup.h
+>> @@ -212,9 +212,8 @@ int btrfs_qgroup_trace_extent_post(struct btrfs_fs_info *fs_info,
+>>   * Return <0 for error, like memory allocation failure or invalid parameter
+>>   * (NULL trans)
+>>   */
+>> -int btrfs_qgroup_trace_extent(struct btrfs_trans_handle *trans,
+>> -		struct btrfs_fs_info *fs_info, u64 bytenr, u64 num_bytes,
+>> -		gfp_t gfp_flag);
+>> +int btrfs_qgroup_trace_extent(struct btrfs_trans_handle *trans, u64 bytenr,
+>> +			      u64 num_bytes, gfp_t gfp_flag);
+>>  
+>>  /*
+>>   * Inform qgroup to trace all leaf items of data
+>> diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+>> index 7b7498f1f641..10f6a4223897 100644
+>> --- a/fs/btrfs/tree-log.c
+>> +++ b/fs/btrfs/tree-log.c
+>> @@ -685,7 +685,7 @@ static noinline int replay_one_extent(struct btrfs_trans_handle *trans,
+>>  		 * as the owner of the file extent changed from log tree
+>>  		 * (doesn't affect qgroup) to fs/file tree(affects qgroup)
+>>  		 */
+>> -		ret = btrfs_qgroup_trace_extent(trans, fs_info,
+>> +		ret = btrfs_qgroup_trace_extent(trans,
+>>  				btrfs_file_extent_disk_bytenr(eb, item),
+>>  				btrfs_file_extent_disk_num_bytes(eb, item),
+>>  				GFP_NOFS);
+>> 
+>
 
->  fs/btrfs/qgroup.h             |  40 ++++-----
->  fs/btrfs/relocation.c         |   5 +-
->  fs/btrfs/tests/qgroup-tests.c |  24 ++---
->  fs/btrfs/transaction.c        |   5 +-
->  fs/btrfs/tree-log.c           |   2 +-
->  8 files changed, 123 insertions(+), 138 deletions(-)
->=20
 
-
---4DYXdVf3PSOm5t58G4xPtjldM2p2MDFl3--
-
---omnyfSF2Q5ePyxwFhqMK2A1Lpk7JH4Skm
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAltO5Y8ACgkQwj2R86El
-/qgUZQf+ITuyy0sMaMtaomzNBaS9bL3KnNxpr6LrfNeGZDbRcnL5r/ZdPLyYnuZL
-pf10oQWAFPjw3cQKHWzoPzixrFoo9btvRqoK+Gw7qByw23CGZ8Cf31+s9ZvjBn1w
-ixvUGsUbGVHrt1JdjQKcyLo9YZf6feECZkK4W2/BgtAmnl1qvxCfhw+udAilttoq
-u8dA3Q7PGoZt6m6iDn5q+7zvnzHJPyvFrmjmDgzNpAbio9FqZ3oVINRrDtZW2l4l
-zZ5WoTmEfMXt9tEStERo6P5O5aXoJdpOAJRL6B8UmGYmD3JbBmNNXxD/o7DPHKwq
-LrxbWVJPXIW8CU5KCOoR9ZjUqzyVPg==
-=6sFJ
------END PGP SIGNATURE-----
-
---omnyfSF2Q5ePyxwFhqMK2A1Lpk7JH4Skm--

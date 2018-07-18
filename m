@@ -1,94 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-18-i6.italiaonline.it ([213.209.14.18]:59843 "EHLO
-        libero.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727131AbeGRUWK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 18 Jul 2018 16:22:10 -0400
-Reply-To: kreijack@inwind.it
-Subject: Re: [PATCH 0/4] 3- and 4- copy RAID1
-To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
-References: <cover.1531503452.git.dsterba@suse.com>
- <9945d460-99b5-a927-a614-c797bbc7862d@dirtcellar.net>
- <d340ce28-6c93-22d4-0f56-73de8e55f1f6@libero.it>
- <pan$b5258$f3ecc84$8e06948b$54511335@cox.net>
- <793d8ec3-7934-ea60-521d-7a039c9f1ce9@libero.it>
- <pan$98af2$39851f53$ef9fd141$bfd51f5b@cox.net>
-From: Goffredo Baroncelli <kreijack@libero.it>
-Message-ID: <89d20da9-0e80-51d1-3a4f-4cccb44d31ef@libero.it>
-Date: Wed, 18 Jul 2018 21:42:45 +0200
+Received: from mail-lf0-f47.google.com ([209.85.215.47]:33063 "EHLO
+        mail-lf0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1729122AbeGRWMW (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 18 Jul 2018 18:12:22 -0400
+Received: by mail-lf0-f47.google.com with SMTP id u14-v6so4507407lfu.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 18 Jul 2018 14:32:34 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <pan$98af2$39851f53$ef9fd141$bfd51f5b@cox.net>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <72230e2d-022c-12bd-cd56-9d728989157d@gmail.com>
+References: <20180716205809.42jywfvuxwuuqixd@wolfsden.cz> <2197534.TZSffJRfLT@merkaba>
+ <9ea19b13-3c46-666f-fa79-f40bd1ae7658@suse.com> <1736761.B5nO4FXixV@merkaba>
+ <33396c10-33ef-b8ff-0041-c94d87c67722@gmail.com> <CAJCQCtSZruKeM117EfQNQnEFuk_bswhhKnEnFVD2i7MHWU65RQ@mail.gmail.com>
+ <d42d5c79-46df-4e11-0ba2-1adb9e073ed9@gmail.com> <CAJCQCtSpMi-GmJSQx+tjt+WjDqvEH5Z9yeUrYSjLFz+P4f2j2A@mail.gmail.com>
+ <0a3a8550-3622-0c7b-bcf7-e2d7cabf6b4a@gmail.com> <CAJCQCtQrY2rz0CTntCO9szii7SveshtSMgCPz4JQqq16kfATNw@mail.gmail.com>
+ <CAJCQCtSV35cR5KS4dT0x5wYyMHXszdBFGT2Rt7XAMa4dDmC5uw@mail.gmail.com> <72230e2d-022c-12bd-cd56-9d728989157d@gmail.com>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Wed, 18 Jul 2018 15:32:32 -0600
+Message-ID: <CAJCQCtSLVF8JP_KvFrwsrDDf76b2meS9HjN+ant+d3FbY-9H+Q@mail.gmail.com>
+Subject: Re: Healthy amount of free space?
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        Martin Steigerwald <martin@lichtvoll.de>,
+        Nikolay Borisov <nborisov@suse.com>, Wolf <wolf@wolfsden.cz>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 07/18/2018 09:20 AM, Duncan wrote:
-> Goffredo Baroncelli posted on Wed, 18 Jul 2018 07:59:52 +0200 as
-> excerpted:
-> 
->> On 07/17/2018 11:12 PM, Duncan wrote:
->>> Goffredo Baroncelli posted on Mon, 16 Jul 2018 20:29:46 +0200 as
->>> excerpted:
->>>
->>>> On 07/15/2018 04:37 PM, waxhead wrote:
->>>
->>>> Striping and mirroring/pairing are orthogonal properties; mirror and
->>>> parity are mutually exclusive.
->>>
->>> I can't agree.  I don't know whether you meant that in the global
->>> sense,
->>> or purely in the btrfs context (which I suspect), but either way I
->>> can't agree.
->>>
->>> In the pure btrfs context, while striping and mirroring/pairing are
->>> orthogonal today, Hugo's whole point was that btrfs is theoretically
->>> flexible enough to allow both together and the feature may at some
->>> point be added, so it makes sense to have a layout notation format
->>> flexible enough to allow it as well.
+On Wed, Jul 18, 2018 at 12:01 PM, Austin S. Hemmelgarn
+<ahferroin7@gmail.com> wrote:
+> On 2018-07-18 13:40, Chris Murphy wrote:
 >>
->> When I say orthogonal, It means that these can be combined: i.e. you can
->> have - striping (RAID0)
->> - parity  (?)
->> - striping + parity  (e.g. RAID5/6)
->> - mirroring  (RAID1)
->> - mirroring + striping  (RAID10)
+>> On Wed, Jul 18, 2018 at 11:14 AM, Chris Murphy <lists@colorremedies.com>
+>> wrote:
 >>
->> However you can't have mirroring+parity; this means that a notation
->> where both 'C' ( = number of copy) and 'P' ( = number of parities) is
->> too verbose.
-> 
-> Yes, you can have mirroring+parity, conceptually it's simply raid5/6 on 
-> top of mirroring or mirroring on top of raid5/6, much as raid10 is 
-> conceptually just raid0 on top of raid1, and raid01 is conceptually raid1 
-> on top of raid0.  
-And what about raid 615156156 (raid 6 on top of raid 1 on top of raid 5 on top of....) ???
-
-Seriously, of course you can combine a lot of different profile; however the only ones that make sense are the ones above.
-
-The fact that you can combine striping and mirroring (or pairing) makes sense because you could have a speed gain (see below). 
-[....]
->>>
->>> As someone else pointed out, md/lvm-raid10 already work like this. 
->>> What btrfs calls raid10 is somewhat different, but btrfs raid1 pretty
->>> much works this way except with huge (gig size) chunks.
+>>> I don't know for sure, but based on the addresses reported before and
+>>> after dd for the fallocated tmp file, it looks like Btrfs is not using
+>>> the originally fallocated addresses for dd. So maybe it is COWing into
+>>> new blocks, but is just as quickly deallocating the fallocated blocks
+>>> as it goes, and hence doesn't end up in enospc?
 >>
->> As implemented in BTRFS, raid1 doesn't have striping.
-> 
-> The argument is that because there's only two copies, on multi-device 
-> btrfs raid1 with 4+ devices of equal size so chunk allocations tend to 
-> alternate device pairs, it's effectively striped at the macro level, with 
-> the 1 GiB device-level chunks effectively being huge individual device 
-> strips of 1 GiB.
+>>
+>> Previous thread is "Problem with file system" from August 2017. And
+>> there's these reproduce steps from Austin which have fallocate coming
+>> after the dd.
+>>
+>>      truncate --size=4G ./test-fs
+>>      mkfs.btrfs ./test-fs
+>>      mkdir ./test
+>>      mount -t auto ./test-fs ./test
+>>      dd if=/dev/zero of=./test/test bs=65536 count=32768
+>>      fallocate -l 2147483650 ./test/test && echo "Success!"
+>>
+>>
+>> My test Btrfs is 2G not 4G, so I'm cutting the values of dd and
+>> fallocate in half.
+>>
+>> [chris@f28s btrfs]$ sudo dd if=/dev/zero of=tmp bs=1M count=1000
+>> 1000+0 records in
+>> 1000+0 records out
+>> 1048576000 bytes (1.0 GB, 1000 MiB) copied, 7.13391 s, 147 MB/s
+>> [chris@f28s btrfs]$ sync
+>> [chris@f28s btrfs]$ df -h
+>> Filesystem                Size  Used Avail Use% Mounted on
+>> /dev/mapper/vg-btrfstest  2.0G 1018M  1.1G  50% /mnt/btrfs
+>> [chris@f28s btrfs]$ sudo fallocate -l 1000m tmp
+>>
+>>
+>> Succeeds. If I do it with a 1200M file for dd and fallocate 1200M over
+>> it, this fails, but I kinda expect that because there's only 1.1G free
+>> space. But maybe that's what you're saying is the bug, it shouldn't
+>> fail?
+>
+> Yes, you're right, I had things backwards (well, kind of, this does work on
+> ext4 and regular XFS, so it arguably should work here).
 
-The striping concept is based to the fact that if the "stripe size" is small enough you have a speed benefit because the reads may be performed in parallel from different disks.
-With a "stripe size" of 1GB, it is very unlikely that this would happens.
-
- 
-> At 1 GiB strip size it doesn't have the typical performance advantage of 
-> striping, but conceptually, it's equivalent to raid10 with huge 1 GiB 
-> strips/chunks.
-
-
+I guess I'm confused what it even means to fallocate over a file with
+in-use blocks unless either -d or -p options are used. And from the
+man page, I don't grok the distinction between -d and -p either. But
+based on their descriptions I'd expect they both should work without
+enospc.
 
 -- 
-gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+Chris Murphy

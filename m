@@ -1,111 +1,156 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp2130.oracle.com ([141.146.126.79]:56030 "EHLO
-        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727653AbeGPPWv (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 16 Jul 2018 11:22:51 -0400
-Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
-        by aserp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w6GErlAF058680
-        for <linux-btrfs@vger.kernel.org>; Mon, 16 Jul 2018 14:55:04 GMT
-Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
-        by aserp2130.oracle.com with ESMTP id 2k7a3svtcn-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 16 Jul 2018 14:55:04 +0000
-Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
-        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w6GEt3N7016830
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 16 Jul 2018 14:55:04 GMT
-Received: from abhmp0018.oracle.com (abhmp0018.oracle.com [141.146.116.24])
-        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w6GEt3W5028411
-        for <linux-btrfs@vger.kernel.org>; Mon, 16 Jul 2018 14:55:03 GMT
-From: Anand Jain <anand.jain@oracle.com>
+Received: from mail.kernel.org ([198.145.29.99]:39994 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1732089AbeGSSqP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 19 Jul 2018 14:46:15 -0400
+Received: from debian3.lan (bl8-197-74.dsl.telepac.pt [85.241.197.74])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id F1A0520684
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jul 2018 18:01:57 +0000 (UTC)
+From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 7/7] btrfs: add helper function check device delete able
-Date: Mon, 16 Jul 2018 22:58:12 +0800
-Message-Id: <20180716145812.20836-8-anand.jain@oracle.com>
-In-Reply-To: <20180716145812.20836-1-anand.jain@oracle.com>
-References: <20180716145812.20836-1-anand.jain@oracle.com>
+Subject: [PATCH] Btrfs: fix mount failure after fsync due to hard link recreation
+Date: Thu, 19 Jul 2018 19:01:54 +0100
+Message-Id: <20180719180154.20125-1-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Move the section of the code which performs the check if the device is
-indelible, move that into a helper function.
+From: Filipe Manana <fdmanana@suse.com>
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
+If we end up with logging an inode reference item which has the same name
+but different index from the one we have persisted, we end up failing when
+replaying the log with an errno value of -EEXIST. The error comes from
+btrfs_add_link(), which is called from add_inode_ref(), when we are
+replaying an inode reference item.
+
+Example scenario where this happens:
+
+  $ mkfs.btrfs -f /dev/sdb
+  $ mount /dev/sdb /mnt
+
+  $ touch /mnt/foo
+  $ ln /mnt/foo /mnt/bar
+
+  $ sync
+
+  # Rename the first hard link (foo) to a new name and rename the second
+  # hard link (bar) to the old name of the first hard link (foo).
+  $ mv /mnt/foo /mnt/qwerty
+  $ mv /mnt/bar /mnt/foo
+
+  # Create a new file, in the same parent directory, with the old name of
+  # the second hard link (bar) and fsync this new file.
+  # We do this instead of calling fsync on foo/qwerty because if we did
+  # that the fsync resulted in a full transaction commit, not triggering
+  # the problem.
+  $ touch /mnt/bar
+  $ xfs_io -c "fsync" /mnt/bar
+
+  <power fail>
+
+  $ mount /dev/sdb /mnt
+  mount: mount /dev/sdb on /mnt failed: File exists
+
+So fix this by checking if a conflicting inode reference exists (same
+name, same parent but different index), removing it (and the associated
+dir index entries from the parent inode) if it exists, before attempting
+to add the new reference.
+
+A test case for fstests follows soon.
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
-v1->v2: Rename function to btrfs_get_device_for_delete(), thanks
-Nikolay.
+ fs/btrfs/tree-log.c | 69 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 69 insertions(+)
 
- fs/btrfs/volumes.c | 49 ++++++++++++++++++++++++++++++-------------------
- 1 file changed, 30 insertions(+), 19 deletions(-)
-
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 1c0b56374992..0cefc24b028c 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1859,6 +1859,33 @@ static inline u64 btrfs_num_devices(struct btrfs_fs_info *fs_info)
- 	return num_devices;
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index f8220ec02036..4275b09200e3 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -1291,6 +1291,49 @@ static int unlink_old_inode_refs(struct btrfs_trans_handle *trans,
+ 	return ret;
  }
  
-+static struct btrfs_device *btrfs_get_device_for_delete(
-+				struct btrfs_fs_info *fs_info,
-+				const char *device_path, u64 devid)
++static int btrfs_inode_ref_exists(struct inode *inode,
++				  struct inode *dir,
++				  const u8 ref_type,
++				  const char *name,
++				  const int namelen)
 +{
++	struct btrfs_key key;
++	struct btrfs_path *path;
++	const u64 parent_id = btrfs_ino(BTRFS_I(dir));
 +	int ret;
-+	struct btrfs_device *device;
 +
-+	ret = btrfs_check_raid_min_devices(fs_info,
-+					   btrfs_num_devices(fs_info) - 1);
-+	if (ret)
-+		return ERR_PTR(ret);
++	path = btrfs_alloc_path();
++	if (!path)
++		return -ENOMEM;
 +
-+	ret = btrfs_find_device_by_devspec(fs_info, devid, device_path,
-+					   &device);
-+	if (ret)
-+		return ERR_PTR(ret);
++	key.objectid = btrfs_ino(BTRFS_I(inode));
++	key.type = ref_type;
++	if (key.type == BTRFS_INODE_REF_KEY)
++		key.offset = parent_id;
++	else
++		key.offset = btrfs_extref_hash(parent_id, name, namelen);
 +
-+	if (test_bit(BTRFS_DEV_STATE_REPLACE_TGT, &device->dev_state))
-+		return ERR_PTR(BTRFS_ERROR_DEV_TGT_REPLACE);
++	ret = btrfs_search_slot(NULL, BTRFS_I(inode)->root, &key, path, 0, 0);
++	if (ret < 0)
++		goto out;
++	if (ret > 0) {
++		ret = 0;
++		goto out;
++	}
++	if (key.type == BTRFS_INODE_EXTREF_KEY)
++		ret = btrfs_find_name_in_ext_backref(path->nodes[0],
++						     path->slots[0],
++						     parent_id, name,
++						     namelen, NULL);
++	else
++		ret = btrfs_find_name_in_backref(path->nodes[0], path->slots[0],
++						 name, namelen, NULL);
 +
-+	if (test_bit(BTRFS_DEV_STATE_WRITEABLE, &device->dev_state) &&
-+	    fs_info->fs_devices->rw_devices == 1)
-+		return ERR_PTR(BTRFS_ERROR_DEV_ONLY_WRITABLE);
-+
-+	return device;
++out:
++	btrfs_free_path(path);
++	return ret;
 +}
 +
- int btrfs_rm_device(struct btrfs_fs_info *fs_info, const char *device_path,
- 		u64 devid)
- {
-@@ -1872,25 +1899,9 @@ int btrfs_rm_device(struct btrfs_fs_info *fs_info, const char *device_path,
+ /*
+  * replay one inode back reference item found in the log tree.
+  * eb, slot and key refer to the buffer and key found in the log tree.
+@@ -1400,6 +1443,32 @@ static noinline int add_inode_ref(struct btrfs_trans_handle *trans,
+ 				}
+ 			}
  
- 	mutex_lock(&uuid_mutex);
- 
--	num_devices = btrfs_num_devices(fs_info);
--
--	ret = btrfs_check_raid_min_devices(fs_info, num_devices - 1);
--	if (ret)
--		goto out;
--
--	ret = btrfs_find_device_by_devspec(fs_info, devid, device_path,
--					   &device);
--	if (ret)
--		goto out;
--
--	if (test_bit(BTRFS_DEV_STATE_REPLACE_TGT, &device->dev_state)) {
--		ret = BTRFS_ERROR_DEV_TGT_REPLACE;
--		goto out;
--	}
--
--	if (test_bit(BTRFS_DEV_STATE_WRITEABLE, &device->dev_state) &&
--	    fs_info->fs_devices->rw_devices == 1) {
--		ret = BTRFS_ERROR_DEV_ONLY_WRITABLE;
-+	device = btrfs_get_device_for_delete(fs_info, device_path, devid);
-+	if (IS_ERR(device)) {
-+		ret = PTR_ERR(device);
- 		goto out;
- 	}
- 
++			/*
++			 * If a reference item already exists for this inode
++			 * with the same parent and name, but different index,
++			 * drop it and the corresponding directory index entries
++			 * from the parent before adding the new reference item
++			 * and dir index entries, otherwise we would fail with
++			 * -EEXIST returned from btrfs_add_link() below.
++			 */
++			ret = btrfs_inode_ref_exists(inode, dir, key->type,
++						     name, namelen);
++			if (ret < 0)
++				goto out;
++			if (ret) {
++				ret = btrfs_unlink_inode(trans, root,
++							 BTRFS_I(dir),
++							 BTRFS_I(inode),
++							 name, namelen);
++				/*
++				 * If we dropped the link count to 0, bump it so
++				 * that later the iput() on the inode will not
++				 * free it. We will fixup the link count later.
++				 */
++				if (!ret && inode->i_nlink == 0)
++					inc_nlink(inode);
++			}
++
+ 			/* insert our name */
+ 			ret = btrfs_add_link(trans, BTRFS_I(dir),
+ 					BTRFS_I(inode),
 -- 
-2.7.0
+2.11.0
 

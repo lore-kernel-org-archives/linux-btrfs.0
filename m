@@ -1,125 +1,163 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.15]:36951 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.17.20]:43451 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726672AbeGSGpV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 19 Jul 2018 02:45:21 -0400
-Subject: Re: [PATCH] btrfs-progs: ins: Add v2 ioctl support in logical-resolve
-To: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-Cc: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <fe355417-0516-b27f-1114-a3777916fb87@jp.fujitsu.com>
- <3ed9676f-13e1-3072-5d2c-9b9e10fd36e5@gmx.com>
- <20180719055904.GK575@fnst.localdomain>
+        id S1727975AbeGSIJW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 19 Jul 2018 04:09:22 -0400
+Subject: Re: [PATCH 0/4] 3- and 4- copy RAID1
+To: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+References: <cover.1531503452.git.dsterba@suse.com>
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <98442027-887b-d787-1a6b-f4014f95b846@gmx.com>
-Date: Thu, 19 Jul 2018 14:03:38 +0800
+Message-ID: <88531904-288b-f73e-1157-560845f8e72d@gmx.com>
+Date: Thu, 19 Jul 2018 15:27:17 +0800
 MIME-Version: 1.0
-In-Reply-To: <20180719055904.GK575@fnst.localdomain>
+In-Reply-To: <cover.1531503452.git.dsterba@suse.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="EWqRst6admEfWu6BV6623MXeHuU5O9jWK"
+ boundary="b5yMuofN6GHGA9HfwHhukpcg72MTFpCJP"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---EWqRst6admEfWu6BV6623MXeHuU5O9jWK
-Content-Type: multipart/mixed; boundary="KaDvqzKgrA0uavoSqDLtTRZ7HJ9y2H74p";
+--b5yMuofN6GHGA9HfwHhukpcg72MTFpCJP
+Content-Type: multipart/mixed; boundary="SFR3yLLsAJIrxN5p2bJDd7sYkYmcnKpYm";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-Cc: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>,
- linux-btrfs <linux-btrfs@vger.kernel.org>
-Message-ID: <98442027-887b-d787-1a6b-f4014f95b846@gmx.com>
-Subject: Re: [PATCH] btrfs-progs: ins: Add v2 ioctl support in logical-resolve
-References: <fe355417-0516-b27f-1114-a3777916fb87@jp.fujitsu.com>
- <3ed9676f-13e1-3072-5d2c-9b9e10fd36e5@gmx.com>
- <20180719055904.GK575@fnst.localdomain>
-In-Reply-To: <20180719055904.GK575@fnst.localdomain>
+To: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+Message-ID: <88531904-288b-f73e-1157-560845f8e72d@gmx.com>
+Subject: Re: [PATCH 0/4] 3- and 4- copy RAID1
+References: <cover.1531503452.git.dsterba@suse.com>
+In-Reply-To: <cover.1531503452.git.dsterba@suse.com>
 
---KaDvqzKgrA0uavoSqDLtTRZ7HJ9y2H74p
+--SFR3yLLsAJIrxN5p2bJDd7sYkYmcnKpYm
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
 
 
-On 2018=E5=B9=B407=E6=9C=8819=E6=97=A5 13:59, Lu Fengqi wrote:
-> On Thu, Jul 19, 2018 at 01:51:59PM +0800, Qu Wenruo wrote:
->>
->>
->> On 2018=E5=B9=B407=E6=9C=8819=E6=97=A5 13:15, Misono Tomohiro wrote:
->>> Add -i (ignore offset) option to logical-resolve command
->>> to show how BTRFS_IOC_LOGICAL_INO_V2 ioctl works
->>> (returns every ref to the extent of given logical address).
->>>
->>> [Example]
->>> $ mkfs.btrfs -f $DEV
->>> $ mount $DEV /mnt
->>>
->>> $ dd if=3Dev/urandom of=3D/mnt/file bs=3D4k count=100
->>> # split above extent
->>> $ dd if=3Dev/urandom of=3D/mnt/file bs=3D4k seek=10 count=3D1 conv=3D=
-notrunc
->>> $ btrfs filesystem sync
->>>
->>> # v1
->>> $ btrfs inspect-internal logical-resolve -P 13631488 /mnt
->>> inode 257 offset 0 root 5
->>>
->>> # v2
->>> $ btrfs inspect-internal logical-resolve -iP 13631488 /mnt
->>> inode 257 offset 0 root 5
->>> inode 257 offset 45056 root 5
->>>
->>> Signed-off-by: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
->>> ---
->>>  Documentation/btrfs-inspect-internal.asciidoc |  4 ++++
->>>  cmds-inspect.c                                | 17 +++++++++++++++--=
-
->>>  ioctl.h                                       | 10 +++++++++-
->>>  libbtrfsutil/btrfs.h                          | 10 +++++++++-
->>
->> Not related to this patch itself, but I'm wondering could we just use
->> /usr/include/linux/btrfs.h?
->>
->> So we could save 2 same copies of headers here.
+On 2018=E5=B9=B407=E6=9C=8814=E6=97=A5 02:46, David Sterba wrote:
+> Hi,
 >=20
-> If we want to compile the newest btrfs-progs, but the older
-> /usr/include/linux/btrfs.h maybe doesn't have already defined the ioctl=
-,
-> this will cause the compile error.
+> I have some goodies that go into the RAID56 problem, although not
+> implementing all the remaining features, it can be useful independently=
+=2E
+>=20
+> This time my hackweek project
+>=20
+> https://hackweek.suse.com/17/projects/do-something-about-btrfs-and-raid=
+56
+>=20
+> aimed to implement the fix for the write hole problem but I spent more
+> time with analysis and design of the solution and don't have a working
+> prototype for that yet.
+>=20
+> This patchset brings a feature that will be used by the raid56 log, the=
 
-Makes sense.
+> log has to be on the same redundancy level and thus we need a 3-copy
+> replication for raid6. As it was easy to extend to higher replication,
+> I've added a 4-copy replication, that would allow triple copy raid (tha=
+t
+> does not have a standardized name).
 
-> I am curious about why the
-> libbtrfsutil need to copy the part of ioctl.h instead of including the
-> ioctl.h directly?
+So this special level will be used for RAID56 for now?
+Or it will also be possible for metadata usage just like current RAID1?
 
-Maybe for distribution purpose? Some binding may be delivered as
-independent package just as Omar tries to do.
-So in that case independent header makes sense.
+If the latter, the metadata scrub problem will need to be considered more=
+=2E
+
+For more copies RAID1, it's will have higher possibility one or two
+devices missing, and then being scrubbed.
+For metadata scrub, inlined csum can't ensure it's the latest one.
+
+So for such RAID1 scrub, we need to read out all copies and compare
+their generation to find out the correct copy.
+At least from the changeset, it doesn't look like it's addressed yet.
+
+And this also reminds me that current scrub is not as flex as balance, I
+really like we could filter block groups to scrub just like balance, and
+do scrub in a block group basis, other than devid basis.
+That's to say, for a block group scrub, we don't really care which
+device we're scrubbing, we just need to ensure all device in this block
+is storing correct data.
 
 Thanks,
 Qu
 
+>=20
+> The number of copies is fixed, so it's not N-copy for an arbitrary N.
+> This would complicate the implementation too much, though I'd be willin=
+g
+> to add a 5-copy replication for a small bribe.
+>=20
+> The new raid profiles and covered by an incompatibility bit, called
+> extended_raid, the (idealistic) plan is to stuff as many new
+> raid-related features as possible. The patch 4/4 mentions the 3- 4- cop=
+y
+> raid1, configurable stripe length, write hole log and triple parity.
+> If the plan turns out to be too ambitious, the ready and implemented
+> features will be split and merged.
+>=20
+> An interesting question is the naming of the extended profiles. I picke=
+d
+> something that can be easily understood but it's not a final proposal.
+> Years ago, Hugo proposed a naming scheme that described the
+> non-standard raid varieties of the btrfs flavor:
+>=20
+> https://marc.info/?l=3Dlinux-btrfs&m=3D136286324417767
+>=20
+> Switching to this naming would be a good addition to the extended raid.=
 
---KaDvqzKgrA0uavoSqDLtTRZ7HJ9y2H74p--
+>=20
+> Regarding the missing raid56 features, I'll continue working on them as=
 
---EWqRst6admEfWu6BV6623MXeHuU5O9jWK
+> time permits in the following weeks/months, as I'm not aware of anybody=
+
+> working on that actively enough so to speak.
+>=20
+> Anyway, git branches with the patches:
+>=20
+> kernel: git://github.com/kdave/btrfs-devel dev/extended-raid-ncopies
+> progs:  git://github.com/kdave/btrfs-progs dev/extended-raid-ncopies
+>=20
+> David Sterba (4):
+>   btrfs: refactor block group replication factor calculation to a helpe=
+r
+>   btrfs: add support for 3-copy replication (raid1c3)
+>   btrfs: add support for 4-copy replication (raid1c4)
+>   btrfs: add incompatibility bit for extended raid features
+>=20
+>  fs/btrfs/ctree.h                |  1 +
+>  fs/btrfs/extent-tree.c          | 45 +++++++-----------
+>  fs/btrfs/relocation.c           |  1 +
+>  fs/btrfs/scrub.c                |  4 +-
+>  fs/btrfs/super.c                | 17 +++----
+>  fs/btrfs/sysfs.c                |  2 +
+>  fs/btrfs/volumes.c              | 84 ++++++++++++++++++++++++++++++---=
+
+>  fs/btrfs/volumes.h              |  6 +++
+>  include/uapi/linux/btrfs.h      | 12 ++++-
+>  include/uapi/linux/btrfs_tree.h |  6 +++
+>  10 files changed, 134 insertions(+), 44 deletions(-)
+>=20
+
+
+--SFR3yLLsAJIrxN5p2bJDd7sYkYmcnKpYm--
+
+--b5yMuofN6GHGA9HfwHhukpcg72MTFpCJP
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAltQKboACgkQwj2R86El
-/qikBQf8D6Or6dx1puKfWRgbSuUjP0CSsrWfQk8biiecsrab3kBL97QxPd5t/q0J
-Thm7qyNqoAvy1G69hlmRA6q6uJJBQ9xENBIiZlIP7Fnf6BKDsraR77JQugumnOst
-VhK1GWsHCdgV9Cp2lrL12jXX+nEbo8kQrLnGULLLoXrwj7Ju2cCNc4GfB2B7NTWr
-HCMGyv55Y9iA5iUA5HqmgisIUo/UDfY+3MrGI8tNJqH2Hna3fdqUeImUO7Cw1vsh
-RVnjYUNzS1KsIAggMccJzdtOUFws6rPqmBtl2UOYMSexWOFsge6N5KJLqzEMlvDO
-WRfWBSK5zYk5Av9R/JJmRLRNErHBCQ==
-=Fbp1
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAltQPVUACgkQwj2R86El
+/qiIzAgAp+7xd1qjw9oK2DCv3MikI38n/TPNEGhBj0Jv6lRSUZWwfez+FuGEDcTU
+JG9Kil9llmC1QhZ75ECOCte+lcb2yvzjPVCBl5nuFoHUhStOBo9lRCS3A0TPksep
+IB5NPce02eStpiXeT17n1rKjG6Lcj+yxwS/yaMzJXbJlpoydEQp4KRX1fTB1KOZw
+vAXlOZxBR7ZbUVuwgWHNNcCe4cBGLoR4rEzIm2ocs8TDRbJNhFVXom+KB7DHmRsk
+N5dJnSNNiBWRc+6zxc7nAkHFUpBWjYAyEzgaRENpj7YxYWZRzEugQXs0SzlcvXu0
+ayOqqWLFUxCcCpsXrgqXOBXq3/cnsA==
+=M/HL
 -----END PGP SIGNATURE-----
 
---EWqRst6admEfWu6BV6623MXeHuU5O9jWK--
+--b5yMuofN6GHGA9HfwHhukpcg72MTFpCJP--

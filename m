@@ -1,71 +1,218 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f67.google.com ([209.85.214.67]:34948 "EHLO
-        mail-it0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727217AbeGSMaN (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 19 Jul 2018 08:30:13 -0400
-Received: by mail-it0-f67.google.com with SMTP id q20-v6so8814601ith.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jul 2018 04:47:26 -0700 (PDT)
-Subject: Re: [PATCH 0/4] 3- and 4- copy RAID1
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>, David Sterba <dsterba@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <cover.1531503452.git.dsterba@suse.com>
- <88531904-288b-f73e-1157-560845f8e72d@gmx.com>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <e0870bdd-be7d-b91a-e22c-a6b840b8dd64@gmail.com>
-Date: Thu, 19 Jul 2018 07:47:23 -0400
+Received: from mx2.suse.de ([195.135.220.15]:49200 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1731008AbeGSNrI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 19 Jul 2018 09:47:08 -0400
+Date: Thu, 19 Jul 2018 15:03:55 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] btrfs-progs: ins: Add v2 ioctl support in logical-resolve
+Message-ID: <20180719130355.GM26141@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <fe355417-0516-b27f-1114-a3777916fb87@jp.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <88531904-288b-f73e-1157-560845f8e72d@gmx.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <fe355417-0516-b27f-1114-a3777916fb87@jp.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2018-07-19 03:27, Qu Wenruo wrote:
+On Thu, Jul 19, 2018 at 02:15:50PM +0900, Misono Tomohiro wrote:
+> Add -i (ignore offset) option to logical-resolve command
+> to show how BTRFS_IOC_LOGICAL_INO_V2 ioctl works
+> (returns every ref to the extent of given logical address).
 > 
+> [Example]
+> $ mkfs.btrfs -f $DEV
+> $ mount $DEV /mnt
 > 
-> On 2018年07月14日 02:46, David Sterba wrote:
->> Hi,
->>
->> I have some goodies that go into the RAID56 problem, although not
->> implementing all the remaining features, it can be useful independently.
->>
->> This time my hackweek project
->>
->> https://hackweek.suse.com/17/projects/do-something-about-btrfs-and-raid56
->>
->> aimed to implement the fix for the write hole problem but I spent more
->> time with analysis and design of the solution and don't have a working
->> prototype for that yet.
->>
->> This patchset brings a feature that will be used by the raid56 log, the
->> log has to be on the same redundancy level and thus we need a 3-copy
->> replication for raid6. As it was easy to extend to higher replication,
->> I've added a 4-copy replication, that would allow triple copy raid (that
->> does not have a standardized name).
+> $ dd if=/dev/urandom of=/mnt/file bs=4k count=100
+> # split above extent
+> $ dd if=/dev/urandom of=/mnt/file bs=4k seek=10 count=1 conv=notrunc
+> $ btrfs filesystem sync
 > 
-> So this special level will be used for RAID56 for now?
-> Or it will also be possible for metadata usage just like current RAID1?
+> # v1
+> $ btrfs inspect-internal logical-resolve -P 13631488 /mnt
+> inode 257 offset 0 root 5
 > 
-> If the latter, the metadata scrub problem will need to be considered more.
+> # v2
+> $ btrfs inspect-internal logical-resolve -iP 13631488 /mnt
+> inode 257 offset 0 root 5
+> inode 257 offset 45056 root 5
 > 
-> For more copies RAID1, it's will have higher possibility one or two
-> devices missing, and then being scrubbed.
-> For metadata scrub, inlined csum can't ensure it's the latest one.
+> Signed-off-by: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
+> ---
+>  Documentation/btrfs-inspect-internal.asciidoc |  4 ++++
+>  cmds-inspect.c                                | 17 +++++++++++++++--
+>  ioctl.h                                       | 10 +++++++++-
+>  libbtrfsutil/btrfs.h                          | 10 +++++++++-
+>  4 files changed, 37 insertions(+), 4 deletions(-)
 > 
-> So for such RAID1 scrub, we need to read out all copies and compare
-> their generation to find out the correct copy.
-> At least from the changeset, it doesn't look like it's addressed yet.
-> 
-> And this also reminds me that current scrub is not as flex as balance, I
-> really like we could filter block groups to scrub just like balance, and
-> do scrub in a block group basis, other than devid basis.
-> That's to say, for a block group scrub, we don't really care which
-> device we're scrubbing, we just need to ensure all device in this block
-> is storing correct data.
-> 
-This would actually be rather useful for non-parity cases too.  Being 
-able to scrub only metadata when the data chunks are using a profile 
-that provides no rebuild support would be great for performance.
+> diff --git a/Documentation/btrfs-inspect-internal.asciidoc b/Documentation/btrfs-inspect-internal.asciidoc
+> index e2db6466..a55c9add 100644
+> --- a/Documentation/btrfs-inspect-internal.asciidoc
+> +++ b/Documentation/btrfs-inspect-internal.asciidoc
+> @@ -125,6 +125,10 @@ skip the path resolving and print the inodes instead
+>  verbose mode, print count of returned paths and all ioctl() return values
+>  -s <bufsize>::::
+>  set internal buffer for storing the file names to 'bufsize', default is 4096, maximum 64k
+> +-i::::
+> +ignore offset and return all the ref information
+> +which points to the extent containing given logical address.
+> +This requires version 2 ioctl support (BTRFS_IOC_LOGICAL_INO_V2, since 4.15).
 
-On the same note, it would be _really_ nice to be able to scrub a subset 
-of the volume's directory tree, even if it were only per-subvolume.
+This needs better description, this is too brief and I doubt that
+anybody knows when and why to use this option.
+
+>  *min-dev-size* [options] <path>::
+>  (needs root privileges)
+> diff --git a/cmds-inspect.c b/cmds-inspect.c
+> index 2fc50c1a..d47eeacb 100644
+> --- a/cmds-inspect.c
+> +++ b/cmds-inspect.c
+> @@ -131,6 +131,9 @@ static const char * const cmd_inspect_logical_resolve_usage[] = {
+>  	"-s bufsize  set inode container's size. This is used to increase inode",
+>  	"            container's size in case it is not enough to read all the ",
+>  	"            resolved results. The max value one can set is 64k",
+> +	"-i          ignore offset and return all the ref information",
+
+Please add a long options first, we might decide to add a single letter
+later.
+
+> +	"            which points to the extent containing given logical address",
+> +	"            (requires version 2 ioctl support)",
+>  	NULL
+>  };
+>  
+> @@ -142,7 +145,9 @@ static int cmd_inspect_logical_resolve(int argc, char **argv)
+>  	int verbose = 0;
+>  	int getpath = 1;
+>  	int bytes_left;
+> +	int ignore_offset = 0;
+>  	struct btrfs_ioctl_logical_ino_args loi;
+> +	unsigned long ioctl_num = BTRFS_IOC_LOGICAL_INO;
+>  	struct btrfs_data_container *inodes;
+>  	u64 size = 4096;
+>  	char full_path[PATH_MAX];
+> @@ -151,7 +156,7 @@ static int cmd_inspect_logical_resolve(int argc, char **argv)
+>  
+>  	optind = 0;
+>  	while (1) {
+> -		int c = getopt(argc, argv, "Pvs:");
+> +		int c = getopt(argc, argv, "Pvs:i");
+>  		if (c < 0)
+>  			break;
+>  
+> @@ -165,6 +170,9 @@ static int cmd_inspect_logical_resolve(int argc, char **argv)
+>  		case 's':
+>  			size = arg_strtou64(optarg);
+>  			break;
+> +		case 'i':
+> +			ignore_offset = 1;
+> +			break;
+>  		default:
+>  			usage(cmd_inspect_logical_resolve_usage);
+>  		}
+> @@ -183,13 +191,18 @@ static int cmd_inspect_logical_resolve(int argc, char **argv)
+>  	loi.size = size;
+>  	loi.inodes = ptr_to_u64(inodes);
+>  
+> +	if (ignore_offset) {
+> +		loi.flags = BTRFS_LOGICAL_INO_ARGS_IGNORE_OFFSET;
+> +		ioctl_num = BTRFS_IOC_LOGICAL_INO_V2;
+> +	}
+> +
+>  	fd = btrfs_open_dir(argv[optind + 1], &dirstream, 1);
+>  	if (fd < 0) {
+>  		ret = 12;
+>  		goto out;
+>  	}
+>  
+> -	ret = ioctl(fd, BTRFS_IOC_LOGICAL_INO, &loi);
+> +	ret = ioctl(fd, ioctl_num, &loi);
+>  	if (ret < 0) {
+>  		error("logical ino ioctl: %m");
+>  		goto out;
+> diff --git a/ioctl.h b/ioctl.h
+> index 709e996f..74f30c20 100644
+> --- a/ioctl.h
+> +++ b/ioctl.h
+> @@ -491,10 +491,16 @@ BUILD_ASSERT(sizeof(struct btrfs_ioctl_ino_path_args) == 56);
+>  struct btrfs_ioctl_logical_ino_args {
+>  	__u64				logical;	/* in */
+>  	__u64				size;		/* in */
+> -	__u64				reserved[4];
+> +	__u64				reserved[3];	/* must be 0 for now */
+> +	__u64				flags;		/* in, v2 only */
+
+New items should be added to the beginning of the reserved area, but
+this must match the interface defined by kernel so it has to be like
+that.
+
+It's not a big deal, bu we have to be careful when further using the
+reserved bytes so that the following members (flags and inodes) do not
+change offset.
+
+I'd suggest to add BUILD_ASSERT so we don't accidentally miss that in
+the future.
+
+BUIILD_ASSERT(offsetof(struct btrfs_ioctl_logical_ino_args, flags), <the correct offset>);
+
+>  	/* struct btrfs_data_container	*inodes;	out   */
+>  	__u64				inodes;
+>  };
+> +/*
+> + * Return every ref to the extent, not just those containing logical block.
+> + * Requires logical == extent bytenr.
+> + */
+> +#define BTRFS_LOGICAL_INO_ARGS_IGNORE_OFFSET	(1ULL << 0)
+>  
+>  enum btrfs_dev_stat_values {
+>  	/* disk I/O failure stats */
+> @@ -828,6 +834,8 @@ static inline char *btrfs_err_str(enum btrfs_err_code err_code)
+>                                    struct btrfs_ioctl_feature_flags[3])
+>  #define BTRFS_IOC_RM_DEV_V2	_IOW(BTRFS_IOCTL_MAGIC, 58, \
+>  				   struct btrfs_ioctl_vol_args_v2)
+> +#define BTRFS_IOC_LOGICAL_INO_V2 _IOWR(BTRFS_IOCTL_MAGIC, 59, \
+> +					struct btrfs_ioctl_logical_ino_args)
+>  #ifdef __cplusplus
+>  }
+>  #endif
+> diff --git a/libbtrfsutil/btrfs.h b/libbtrfsutil/btrfs.h
+> index c293f6bf..b4debba7 100644
+> --- a/libbtrfsutil/btrfs.h
+> +++ b/libbtrfsutil/btrfs.h
+> @@ -609,10 +609,16 @@ struct btrfs_ioctl_ino_path_args {
+>  struct btrfs_ioctl_logical_ino_args {
+>  	__u64				logical;	/* in */
+>  	__u64				size;		/* in */
+> -	__u64				reserved[4];
+> +	__u64				reserved[3];	/* must be 0 for now */
+> +	__u64				flags;		/* in, v2 only */
+>  	/* struct btrfs_data_container	*inodes;	out   */
+>  	__u64				inodes;
+>  };
+> +/*
+> + * Return every ref to the extent, not just those containing logical block.
+> + * Requires logical == extent bytenr.
+> + */
+> +#define BTRFS_LOGICAL_INO_ARGS_IGNORE_OFFSET	(1ULL << 0)
+>  
+>  enum btrfs_dev_stat_values {
+>  	/* disk I/O failure stats */
+> @@ -836,5 +842,7 @@ enum btrfs_err_code {
+>  				   struct btrfs_ioctl_feature_flags[3])
+>  #define BTRFS_IOC_RM_DEV_V2 _IOW(BTRFS_IOCTL_MAGIC, 58, \
+>  				   struct btrfs_ioctl_vol_args_v2)
+> +#define BTRFS_IOC_LOGICAL_INO_V2 _IOWR(BTRFS_IOCTL_MAGIC, 59, \
+> +					struct btrfs_ioctl_logical_ino_args)
+>  
+>  #endif /* _LINUX_BTRFS_H */
+> -- 
+> 2.14.4
+> 
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,45 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qt0-f194.google.com ([209.85.216.194]:45274 "EHLO
+Received: from mail-qt0-f194.google.com ([209.85.216.194]:46748 "EHLO
         mail-qt0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1731656AbeGSPeA (ORCPT
+        with ESMTP id S1731993AbeGSPeB (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 19 Jul 2018 11:34:00 -0400
-Received: by mail-qt0-f194.google.com with SMTP id y5-v6so7396173qti.12
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jul 2018 07:50:28 -0700 (PDT)
+        Thu, 19 Jul 2018 11:34:01 -0400
+Received: by mail-qt0-f194.google.com with SMTP id d4-v6so7395062qtn.13
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jul 2018 07:50:30 -0700 (PDT)
 From: Josef Bacik <josef@toxicpanda.com>
 To: linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 15/22] btrfs: run delayed iputs before committing
-Date: Thu, 19 Jul 2018 10:49:59 -0400
-Message-Id: <20180719145006.17532-15-josef@toxicpanda.com>
+Subject: [PATCH 16/22] btrfs: loop in inode_rsv_refill
+Date: Thu, 19 Jul 2018 10:50:00 -0400
+Message-Id: <20180719145006.17532-16-josef@toxicpanda.com>
 In-Reply-To: <20180719145006.17532-1-josef@toxicpanda.com>
 References: <20180719145006.17532-1-josef@toxicpanda.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We want to have a complete picture of any delayed inode updates before
-we make the decision to commit or not, so make sure we run delayed iputs
-before making the decision to commit or not.
+With severe fragmentation we can end up with our inode rsv size being
+huge during writeout, which would cause us to need to make very large
+metadata reservations.  However we may not actually need that much once
+writeout is complete.  So instead try to make our reservation, and if we
+couldn't make it re-calculate our new reservation size and try again.
+If our reservation size doesn't change between tries then we know we are
+actually out of space and can error out.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/extent-tree.c | 4 ++++
- 1 file changed, 4 insertions(+)
+ fs/btrfs/extent-tree.c | 19 +++++++++++++++++--
+ 1 file changed, 17 insertions(+), 2 deletions(-)
 
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 355884445f38..81396bac53f1 100644
+index 81396bac53f1..66b28b29839b 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -4923,6 +4923,10 @@ static int may_commit_transaction(struct btrfs_fs_info *fs_info,
- 		goto commit;
- 	}
+@@ -5860,10 +5860,11 @@ static int btrfs_inode_rsv_refill(struct btrfs_inode *inode,
+ {
+ 	struct btrfs_root *root = inode->root;
+ 	struct btrfs_block_rsv *block_rsv = &inode->block_rsv;
+-	u64 num_bytes = 0;
++	u64 num_bytes = 0, last = 0;
+ 	u64 qgroup_num_bytes = 0;
+ 	int ret = -ENOSPC;
  
-+	mutex_lock(&fs_info->cleaner_delayed_iput_mutex);
-+	btrfs_run_delayed_iputs(fs_info);
-+	mutex_unlock(&fs_info->cleaner_delayed_iput_mutex);
++again:
+ 	spin_lock(&block_rsv->lock);
+ 	if (block_rsv->reserved < block_rsv->size)
+ 		num_bytes = block_rsv->size - block_rsv->reserved;
+@@ -5888,8 +5889,22 @@ static int btrfs_inode_rsv_refill(struct btrfs_inode *inode,
+ 		spin_lock(&block_rsv->lock);
+ 		block_rsv->qgroup_rsv_reserved += qgroup_num_bytes;
+ 		spin_unlock(&block_rsv->lock);
+-	} else
++	} else {
+ 		btrfs_qgroup_free_meta_prealloc(root, qgroup_num_bytes);
 +
- 	spin_lock(&delayed_rsv->lock);
- 	reclaim_bytes += delayed_rsv->reserved;
- 	spin_unlock(&delayed_rsv->lock);
++		/*
++		 * If we are fragmented we can end up with a lot of outstanding
++		 * extents which will make our size be much larger than our
++		 * reserved amount.  If we happen to try to do a reservation
++		 * here that may result in us trying to do a pretty hefty
++		 * reservation, which we may not need once delalloc flushing
++		 * happens.  If this is the case try and do the reserve again.
++		 */
++		if (flush == BTRFS_RESERVE_FLUSH_ALL && last != num_bytes) {
++			last = num_bytes;
++			goto again;
++		}
++	}
+ 	return ret;
+ }
+ 
 -- 
 2.14.3
 

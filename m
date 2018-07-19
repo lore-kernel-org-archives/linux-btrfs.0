@@ -1,79 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ua0-f193.google.com ([209.85.217.193]:39613 "EHLO
-        mail-ua0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1731105AbeGSQFi (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 19 Jul 2018 12:05:38 -0400
-Received: by mail-ua0-f193.google.com with SMTP id g18-v6so5430556uam.6
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jul 2018 08:21:59 -0700 (PDT)
+Received: from mx2.suse.de ([195.135.220.15]:50396 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1731477AbeGSQTT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 19 Jul 2018 12:19:19 -0400
+Subject: Re: [PATCH 10/22] btrfs: alloc space cache inode with GFP_NOFS
+To: Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
+        kernel-team@fb.com
+References: <20180719145006.17532-1-josef@toxicpanda.com>
+ <20180719145006.17532-10-josef@toxicpanda.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <3e617a5c-03d7-5937-fbe1-e067c5b8d5ee@suse.com>
+Date: Thu, 19 Jul 2018 18:35:33 +0300
 MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <20180719145006.17532-17-josef@toxicpanda.com>
-References: <20180719145006.17532-1-josef@toxicpanda.com> <20180719145006.17532-17-josef@toxicpanda.com>
-From: Filipe Manana <fdmanana@gmail.com>
-Date: Thu, 19 Jul 2018 16:21:58 +0100
-Message-ID: <CAL3q7H69HAc=j8JHqVzNC1qt7mc6=nHzpbhuBBo=hv1sLSSn4A@mail.gmail.com>
-Subject: Re: [PATCH 17/22] btrfs: don't take the dio_sem in the fsync path
-To: Josef Bacik <josef@toxicpanda.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>, kernel-team@fb.com
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <20180719145006.17532-10-josef@toxicpanda.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jul 19, 2018 at 3:50 PM, Josef Bacik <josef@toxicpanda.com> wrote:
-> Since we've changed the fsync() path to always run ordered extents
-> before doing the tree log we no longer need to take the dio_sem in the
-> tree log path.  This gets rid of a lockdep splat that I was seeing with
-> the AIO tests.
 
-So actually, we still need it (or some other means of sync).
-Because even after the recent changes to fsync, the fast path still
-logs extent items based on the extent maps, and the dio write path
-creates first the extent map and then the ordered extent.
-So the old problem can still happen between concurrent fsync and
-lockless dio write, where fsync logs an extent item for an extent map
-whose ordered extent we never waited for.
-The solution prior to the introduction of dio_sem solved this - make
-the dio write create first the ordered extent, and, only after it,
-create the extent map.
 
->
+On 19.07.2018 17:49, Josef Bacik wrote:
+> If we're allocating a new space cache inode it's likely going to be
+> under a transaction handle, so we need to use GFP_NOFS to keep from
+> deadlocking.  Otherwise GFP_KERNEL is fine.
+> 
 > Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 > ---
->  fs/btrfs/tree-log.c | 2 --
->  1 file changed, 2 deletions(-)
->
-> diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-> index f8220ec02036..aa06e1954b84 100644
-> --- a/fs/btrfs/tree-log.c
-> +++ b/fs/btrfs/tree-log.c
-> @@ -4439,7 +4439,6 @@ static int btrfs_log_changed_extents(struct btrfs_trans_handle *trans,
->
->         INIT_LIST_HEAD(&extents);
->
-> -       down_write(&inode->dio_sem);
->         write_lock(&tree->lock);
->         test_gen = root->fs_info->last_trans_committed;
->         logged_start = start;
-> @@ -4520,7 +4519,6 @@ static int btrfs_log_changed_extents(struct btrfs_trans_handle *trans,
->         }
->         WARN_ON(!list_empty(&extents));
->         write_unlock(&tree->lock);
-> -       up_write(&inode->dio_sem);
->
->         btrfs_release_path(path);
->         if (!ret)
-> --
-> 2.14.3
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>  fs/btrfs/free-space-cache.c | 5 +++++
+>  fs/btrfs/inode.c            | 3 ++-
+>  fs/btrfs/transaction.h      | 1 +
+>  3 files changed, 8 insertions(+), 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+> index d5f80cb300be..13bc514e4e16 100644
+> --- a/fs/btrfs/free-space-cache.c
+> +++ b/fs/btrfs/free-space-cache.c
+> @@ -68,7 +68,12 @@ static struct inode *__lookup_free_space_inode(struct btrfs_root *root,
+>  	btrfs_disk_key_to_cpu(&location, &disk_key);
+>  	btrfs_release_path(path);
+>  
+> +	/* We need this set so that we use GFP_NOFS when allocating our inode. */
+> +	if (current->journal_info == NULL)
+> +		current->journal_info = BTRFS_TRANS_STUB;
+>  	inode = btrfs_iget(fs_info->sb, &location, root, NULL);
+> +	if (current->journal_info == BTRFS_TRANS_STUB)
+> +		current->journal_info = NULL;
+This is not safe in the face of stacked filesystem, i.e ext4 uses the
+journal_info.
 
+>  	if (IS_ERR(inode))
+>  		return inode;
+>  	if (is_bad_inode(inode)) {
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index eba61bcb9bb3..14ecfe5d6110 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -9211,8 +9211,9 @@ struct inode *btrfs_alloc_inode(struct super_block *sb)
+>  	struct btrfs_fs_info *fs_info = btrfs_sb(sb);
+>  	struct btrfs_inode *ei;
+>  	struct inode *inode;
+> +	gfp_t flags = (current->journal_info) ? GFP_NOFS : GFP_KERNEL;
+>  
+> -	ei = kmem_cache_alloc(btrfs_inode_cachep, GFP_KERNEL);
+> +	ei = kmem_cache_alloc(btrfs_inode_cachep, flags);
 
+Why don't you just hardcode GFP_NOFS? We should be striving at removing
+abuse of ->journal_info than proliferating it.
 
--- 
-Filipe David Manana,
-
-“Whether you think you can, or you think you can't — you're right.”
+>  	if (!ei)
+>  		return NULL;
+>  
+> diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
+> index 94439482a0ec..172ff923bf15 100644
+> --- a/fs/btrfs/transaction.h
+> +++ b/fs/btrfs/transaction.h
+> @@ -106,6 +106,7 @@ struct btrfs_transaction {
+>  #define TRANS_EXTWRITERS	(__TRANS_START | __TRANS_ATTACH)
+>  
+>  #define BTRFS_SEND_TRANS_STUB	((void *)1)
+> +#define BTRFS_TRANS_STUB	((void *)2)
+>  
+>  struct btrfs_trans_handle {
+>  	u64 transid;
+> 

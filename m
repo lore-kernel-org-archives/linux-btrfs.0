@@ -1,144 +1,138 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.22]:46353 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1730798AbeGTNFM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 20 Jul 2018 09:05:12 -0400
-Subject: Re: [PATCH v2] btrfs: fix bug of chunk type check
-To: Gu Jinxiang <gujx@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-References: <1532081841-2301-1-git-send-email-gujx@cn.fujitsu.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <626c50a2-d85c-0ea8-9ca0-901b0494cc94@gmx.com>
-Date: Fri, 20 Jul 2018 20:17:05 +0800
-MIME-Version: 1.0
-In-Reply-To: <1532081841-2301-1-git-send-email-gujx@cn.fujitsu.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="tjMdxMH79XoLc1TeMLGydqZ6WoBJcaFrT"
+Received: from mx2.suse.de ([195.135.220.15]:54674 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1731686AbeGSOPl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 19 Jul 2018 10:15:41 -0400
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 9F472AF46
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jul 2018 13:32:28 +0000 (UTC)
+From: David Sterba <dsterba@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.com>, Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] btrfs: remove remaing full_sync logic from btrfs_sync_file
+Date: Thu, 19 Jul 2018 15:32:20 +0200
+Message-Id: <20180719133220.2666-1-dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---tjMdxMH79XoLc1TeMLGydqZ6WoBJcaFrT
-Content-Type: multipart/mixed; boundary="EtCSCTysGoqShSHwqQOVsoPoaHck1X3qz";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Gu Jinxiang <gujx@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-Message-ID: <626c50a2-d85c-0ea8-9ca0-901b0494cc94@gmx.com>
-Subject: Re: [PATCH v2] btrfs: fix bug of chunk type check
-References: <1532081841-2301-1-git-send-email-gujx@cn.fujitsu.com>
-In-Reply-To: <1532081841-2301-1-git-send-email-gujx@cn.fujitsu.com>
+The logic to check if the inode is already in the log can now be
+simplified since we always wait for the ordered extents to complete
+before deciding whether the inode needs to be logged. The big comment
+about it can go away too.
 
---EtCSCTysGoqShSHwqQOVsoPoaHck1X3qz
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+CC: Filipe Manana <fdmanana@suse.com>
+Suggested-by: Filipe Manana <fdmanana@suse.com>
+[ code and changelog copied from mail discussion ]
+Signed-off-by: David Sterba <dsterba@suse.com>
+---
+ fs/btrfs/file.c         | 37 +------------------------------------
+ fs/btrfs/ordered-data.c | 14 --------------
+ fs/btrfs/ordered-data.h |  3 ---
+ 3 files changed, 1 insertion(+), 53 deletions(-)
 
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 206462a78630..2be00e873e92 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -2039,7 +2039,6 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
+ 	struct btrfs_trans_handle *trans;
+ 	struct btrfs_log_ctx ctx;
+ 	int ret = 0, err;
+-	bool full_sync = false;
+ 	u64 len;
+ 
+ 	/*
+@@ -2063,8 +2062,6 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
+ 
+ 	inode_lock(inode);
+ 	atomic_inc(&root->log_batch);
+-	full_sync = test_bit(BTRFS_INODE_NEEDS_FULL_SYNC,
+-			     &BTRFS_I(inode)->runtime_flags);
+ 
+ 	/*
+ 	 * We have to do this here to avoid the priority inversion of waiting on
+@@ -2077,41 +2074,9 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
+ 	}
+ 	atomic_inc(&root->log_batch);
+ 
+-	/*
+-	 * If the last transaction that changed this file was before the current
+-	 * transaction and we have the full sync flag set in our inode, we can
+-	 * bail out now without any syncing.
+-	 *
+-	 * Note that we can't bail out if the full sync flag isn't set. This is
+-	 * because when the full sync flag is set we start all ordered extents
+-	 * and wait for them to fully complete - when they complete they update
+-	 * the inode's last_trans field through:
+-	 *
+-	 *     btrfs_finish_ordered_io() ->
+-	 *         btrfs_update_inode_fallback() ->
+-	 *             btrfs_update_inode() ->
+-	 *                 btrfs_set_inode_last_trans()
+-	 *
+-	 * So we are sure that last_trans is up to date and can do this check to
+-	 * bail out safely. For the fast path, when the full sync flag is not
+-	 * set in our inode, we can not do it because we start only our ordered
+-	 * extents and don't wait for them to complete (that is when
+-	 * btrfs_finish_ordered_io runs), so here at this point their last_trans
+-	 * value might be less than or equals to fs_info->last_trans_committed,
+-	 * and setting a speculative last_trans for an inode when a buffered
+-	 * write is made (such as fs_info->generation + 1 for example) would not
+-	 * be reliable since after setting the value and before fsync is called
+-	 * any number of transactions can start and commit (transaction kthread
+-	 * commits the current transaction periodically), and a transaction
+-	 * commit does not start nor waits for ordered extents to complete.
+-	 */
+ 	smp_mb();
+ 	if (btrfs_inode_in_log(BTRFS_I(inode), fs_info->generation) ||
+-	    (full_sync && BTRFS_I(inode)->last_trans <=
+-	     fs_info->last_trans_committed) ||
+-	    (!btrfs_have_ordered_extents_in_range(inode, start, len) &&
+-	     BTRFS_I(inode)->last_trans
+-	     <= fs_info->last_trans_committed)) {
++	    BTRFS_I(inode)->last_trans <= fs_info->last_trans_committed) {
+ 		/*
+ 		 * We've had everything committed since the last time we were
+ 		 * modified so clear this flag in case it was set for whatever
+diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+index d1dd0104e77e..0c4ef208b8b9 100644
+--- a/fs/btrfs/ordered-data.c
++++ b/fs/btrfs/ordered-data.c
+@@ -789,20 +789,6 @@ struct btrfs_ordered_extent *btrfs_lookup_ordered_range(
+ 	return entry;
+ }
+ 
+-bool btrfs_have_ordered_extents_in_range(struct inode *inode,
+-					 u64 file_offset,
+-					 u64 len)
+-{
+-	struct btrfs_ordered_extent *oe;
+-
+-	oe = btrfs_lookup_ordered_range(BTRFS_I(inode), file_offset, len);
+-	if (oe) {
+-		btrfs_put_ordered_extent(oe);
+-		return true;
+-	}
+-	return false;
+-}
+-
+ /*
+  * lookup and return any extent before 'file_offset'.  NULL is returned
+  * if none is found
+diff --git a/fs/btrfs/ordered-data.h b/fs/btrfs/ordered-data.h
+index b2d3f6a091f7..02d813aaa261 100644
+--- a/fs/btrfs/ordered-data.h
++++ b/fs/btrfs/ordered-data.h
+@@ -178,9 +178,6 @@ struct btrfs_ordered_extent *btrfs_lookup_ordered_range(
+ 		struct btrfs_inode *inode,
+ 		u64 file_offset,
+ 		u64 len);
+-bool btrfs_have_ordered_extents_in_range(struct inode *inode,
+-					 u64 file_offset,
+-					 u64 len);
+ int btrfs_ordered_update_i_size(struct inode *inode, u64 offset,
+ 				struct btrfs_ordered_extent *ordered);
+ int btrfs_find_ordered_sum(struct inode *inode, u64 offset, u64 disk_bytenr,
+-- 
+2.18.0
 
-
-On 2018=E5=B9=B407=E6=9C=8820=E6=97=A5 18:17, Gu Jinxiang wrote:
-> chunk type BTRFS_BLOCK_GROUP_METADATA and BTRFS_BLOCK_GROUP_DATA
-> should not be set in a non-mixed chunk at the same time.
->=20
-> Since BTRFS_BLOCK_GROUP_METADATA is 0x4 and BTRFS_BLOCK_GROUP_DATA is 0=
-x1,
-> BTRFS_BLOCK_GROUP_METADATA & BTRFS_BLOCK_GROUP_DATA will be 0x0,
-> so we should judge type is one of them separately.
->=20
-> Reported-by: Dan Carpenter <dan.carpenter@oracle.com>
-> Signed-off-by: Gu Jinxiang <gujx@cn.fujitsu.com>
-
-Reviewed-by: Qu Wenruo <wqu@suse.com>
-
-Thanks,
-Qu
-
-> ---
-> Changelog:
->  v2: As comment by Qu, change the print format of bit from %llu to 0x%l=
-lx.
->=20
->  fs/btrfs/volumes.c | 14 +++++++-------
->  1 file changed, 7 insertions(+), 7 deletions(-)
->=20
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index 3f2f01ad9356..d61c604b280c 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -6360,7 +6360,7 @@ static int btrfs_check_chunk_valid(struct btrfs_f=
-s_info *fs_info,
->  	}
->  	if (~(BTRFS_BLOCK_GROUP_TYPE_MASK | BTRFS_BLOCK_GROUP_PROFILE_MASK) &=
-
->  	    type) {
-> -		btrfs_err(fs_info, "unrecognized chunk type: %llu",
-> +		btrfs_err(fs_info, "unrecognized chunk type: 0x%llx",
->  			  ~(BTRFS_BLOCK_GROUP_TYPE_MASK |
->  			    BTRFS_BLOCK_GROUP_PROFILE_MASK) &
->  			  btrfs_chunk_type(leaf, chunk));
-> @@ -6368,14 +6368,14 @@ static int btrfs_check_chunk_valid(struct btrfs=
-_fs_info *fs_info,
->  	}
-> =20
->  	if ((type & BTRFS_BLOCK_GROUP_TYPE_MASK) =3D=3D 0) {
-> -		btrfs_err(fs_info, "missing chunk type flag: %llu", type);
-> +		btrfs_err(fs_info, "missing chunk type flag: 0x%llx", type);
->  		return -EIO;
->  	}
-> =20
->  	if ((type & BTRFS_BLOCK_GROUP_SYSTEM) &&
->  	    (type & (BTRFS_BLOCK_GROUP_METADATA | BTRFS_BLOCK_GROUP_DATA))) {=
-
->  		btrfs_err(fs_info,
-> -			"system chunk with data or metadata type: %llu", type);
-> +		"system chunk with data or metadata type: 0x%llx", type);
->  		return -EIO;
->  	}
-> =20
-> @@ -6384,10 +6384,10 @@ static int btrfs_check_chunk_valid(struct btrfs=
-_fs_info *fs_info,
->  		mixed =3D 1;
-> =20
->  	if (!mixed) {
-> -		if (type &
-> -		    (BTRFS_BLOCK_GROUP_METADATA & BTRFS_BLOCK_GROUP_DATA)) {
-> +		if ((type & BTRFS_BLOCK_GROUP_METADATA) &&
-> +			(type & BTRFS_BLOCK_GROUP_DATA)) {
->  			btrfs_err(fs_info,
-> -			"mixed chunk type in non-mixed mode: %llu", type);
-> +			"mixed chunk type in non-mixed mode: 0x%llx", type);
->  			return -EIO;
->  		}
->  	}
-> @@ -6400,7 +6400,7 @@ static int btrfs_check_chunk_valid(struct btrfs_f=
-s_info *fs_info,
->  	    ((type & BTRFS_BLOCK_GROUP_PROFILE_MASK) =3D=3D 0 &&
->  	     num_stripes !=3D 1)) {
->  		btrfs_err(fs_info,
-> -			"invalid num_stripes:sub_stripes %u:%u for profile %llu",
-> +			"invalid num_stripes:sub_stripes %u:%u for profile 0x%llx",
->  			num_stripes, sub_stripes,
->  			type & BTRFS_BLOCK_GROUP_PROFILE_MASK);
->  		return -EIO;
->=20
-
-
---EtCSCTysGoqShSHwqQOVsoPoaHck1X3qz--
-
---tjMdxMH79XoLc1TeMLGydqZ6WoBJcaFrT
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAltR0sEACgkQwj2R86El
-/qiIFQgAp+4XmZQnDIuHySPASOGB5vDWORRTjx13YpL5+9Pt4I13/jNTWrQTH1cT
-HY7kdxUzSr12sAI4uyXsQyRfV4Vy6bvV9yw4B+w3xtEhfqEM0aTNIdCBMRulnioN
-w7Pw+fScPzgg13IeEOa/ESAfqrqXL8cB+RnIk1S5L8m/+urZFF5+LhtIOIBJzEFT
-v3glHiwGhoETTsQpKJ8zkeUXTaSkrZqFzORPeA/8BYHRPctFwv+3EREThIc4Qeer
-AvB8JGriNdmHH82hc38sxKxtv8/W27fvClTTkzXXHO8wWOzQadjYdVsqPh/DXPBh
-FIORv0JnsOSra7PVbBTCziSx+PrvNA==
-=0btS
------END PGP SIGNATURE-----
-
---tjMdxMH79XoLc1TeMLGydqZ6WoBJcaFrT--

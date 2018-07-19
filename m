@@ -1,163 +1,175 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.20]:43451 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.17.21]:44269 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727975AbeGSIJW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 19 Jul 2018 04:09:22 -0400
-Subject: Re: [PATCH 0/4] 3- and 4- copy RAID1
-To: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-References: <cover.1531503452.git.dsterba@suse.com>
+        id S1726724AbeGSKE2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 19 Jul 2018 06:04:28 -0400
+Subject: Re: btrfs check (not lowmem) and OOM-like hangs (4.17.6)
+To: Marc MERLIN <marc@merlins.org>
+Cc: linux-btrfs@vger.kernel.org
+References: <20180717203257.GA10237@merlins.org>
+ <20180717205905.GB10237@merlins.org>
+ <8a0fbf2d-ee13-f6d6-a046-5dfba936aa87@gmx.com>
+ <20180718002451.GF10237@merlins.org>
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <88531904-288b-f73e-1157-560845f8e72d@gmx.com>
-Date: Thu, 19 Jul 2018 15:27:17 +0800
+Message-ID: <ebccf82e-1812-f62d-08b5-41a673906e0e@gmx.com>
+Date: Thu, 19 Jul 2018 17:22:02 +0800
 MIME-Version: 1.0
-In-Reply-To: <cover.1531503452.git.dsterba@suse.com>
+In-Reply-To: <20180718002451.GF10237@merlins.org>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="b5yMuofN6GHGA9HfwHhukpcg72MTFpCJP"
+ boundary="otk3qBY1jZGH7YjSG6DUHEyCBCQPwAm44"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---b5yMuofN6GHGA9HfwHhukpcg72MTFpCJP
-Content-Type: multipart/mixed; boundary="SFR3yLLsAJIrxN5p2bJDd7sYkYmcnKpYm";
+--otk3qBY1jZGH7YjSG6DUHEyCBCQPwAm44
+Content-Type: multipart/mixed; boundary="LpMmLb4kophqltiEuDsM1KqjZ9R56ot3A";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Message-ID: <88531904-288b-f73e-1157-560845f8e72d@gmx.com>
-Subject: Re: [PATCH 0/4] 3- and 4- copy RAID1
-References: <cover.1531503452.git.dsterba@suse.com>
-In-Reply-To: <cover.1531503452.git.dsterba@suse.com>
+To: Marc MERLIN <marc@merlins.org>
+Cc: linux-btrfs@vger.kernel.org
+Message-ID: <ebccf82e-1812-f62d-08b5-41a673906e0e@gmx.com>
+Subject: Re: btrfs check (not lowmem) and OOM-like hangs (4.17.6)
+References: <20180717203257.GA10237@merlins.org>
+ <20180717205905.GB10237@merlins.org>
+ <8a0fbf2d-ee13-f6d6-a046-5dfba936aa87@gmx.com>
+ <20180718002451.GF10237@merlins.org>
+In-Reply-To: <20180718002451.GF10237@merlins.org>
 
---SFR3yLLsAJIrxN5p2bJDd7sYkYmcnKpYm
+--LpMmLb4kophqltiEuDsM1KqjZ9R56ot3A
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
 
 
-On 2018=E5=B9=B407=E6=9C=8814=E6=97=A5 02:46, David Sterba wrote:
-> Hi,
+On 2018=E5=B9=B407=E6=9C=8818=E6=97=A5 08:24, Marc MERLIN wrote:
+> On Wed, Jul 18, 2018 at 08:05:51AM +0800, Qu Wenruo wrote:
+>> No OOM triggers? That's a little strange.
+>> Maybe it's related to how kernel handles memory over-commit?
+> =20
+> Yes, I think you are correct.
 >=20
-> I have some goodies that go into the RAID56 problem, although not
-> implementing all the remaining features, it can be useful independently=
-=2E
+>> And for the hang, I think it's related to some memory allocation failu=
+re
+>> and error handler just didn't handle it well, so it's causing deadlock=
+
+>> for certain page.
 >=20
-> This time my hackweek project
+> That indeed matches what I'm seeing.
 >=20
-> https://hackweek.suse.com/17/projects/do-something-about-btrfs-and-raid=
-56
+>> ENOMEM handling is pretty common but hardly verified, so it's not that=
+
+>> strange, but we must locate the problem.
 >=20
-> aimed to implement the fix for the write hole problem but I spent more
-> time with analysis and design of the solution and don't have a working
-> prototype for that yet.
+> I seem to be getting deadlocks in the kernel, so I'm hoping that at lea=
+st
+> it's checked there, but maybe not?
 >=20
-> This patchset brings a feature that will be used by the raid56 log, the=
+>> In my system, at least I'm not using btrfs as root fs, and for the
+>> memory eating program I normally ensure it's eating all the memory +
+>> swap, so OOM killer is always triggered, maybe that's the cause.
+>>
+>> So in your case, maybe it's btrfs not really taking up all memory, thu=
+s
+>> OOM killer not triggered.
+>=20
+> Correct, the swap is not used.
+>=20
+>> Any kernel dmesg about OOM killer triggered?
+> =20
+> Nothing at all. It never gets triggered.
+>=20
+>>> Here is my system when it virtually died:
+>>> ER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAN=
+D
+>>> root     31006 21.2 90.7 29639020 29623180 pts/19 D+ 13:49   1:35 ./b=
+trfs check /dev/mapper/dshelf2
+>=20
+> See how btrs was taking 29GB in that ps output (that's before it takes
+> everything and I can't even type ps anymore)
+> Note that VSZ is almost equal to RSS. Nothing gets swapped.
+>=20
+> Then see free output:
+>=20
+>>>              total       used       free     shared    buffers     ca=
+ched
+>>> Mem:      32643788   32180100     463688          0      44664     11=
+9508
+>>> -/+ buffers/cache:   32015928     627860
+>>> Swap:     15616764     443676   15173088
+>>
+>> For swap, it looks like only some other program's memory is swapped ou=
+t,
+>> not btrfs'.
+>=20
+> That's exactly correct. btrfs check never goes to swap, I'm not sure wh=
+y,
+> and because there is virtual memory free, maybe that's why OOM does not=
 
-> log has to be on the same redundancy level and thus we need a 3-copy
-> replication for raid6. As it was easy to extend to higher replication,
-> I've added a 4-copy replication, that would allow triple copy raid (tha=
-t
-> does not have a standardized name).
+> trigger?
+> So I guess I can probably "fix" my problem by removing swap, but ultima=
+tely
+> it would be useful to know why memory taken by btrfs check does not end=
+ up
+> in swap.
+>=20
+>> And unfortunately, I'm not so familiar with OOM/MM code outside of
+>> filesystem.
+>> Any help from other experienced developers would definitely help to
+>> solve why memory of 'btrfs check' is not swapped out or why OOM killer=
 
-So this special level will be used for RAID56 for now?
-Or it will also be possible for metadata usage just like current RAID1?
+>> is not triggered.
+>=20
+> Do you have someone from linux-vm you might be able to ask, or should w=
+e Cc
+> this thread there?
 
-If the latter, the metadata scrub problem will need to be considered more=
-=2E
+Michal Hocho gives me a brief session about this.
+Which is super helpful in this case, thank you Michal!
 
-For more copies RAID1, it's will have higher possibility one or two
-devices missing, and then being scrubbed.
-For metadata scrub, inlined csum can't ensure it's the latest one.
+Firstly, btrfs-progs usage of malloc() will result anonymous pages, thus
+they can be swapped out.
 
-So for such RAID1 scrub, we need to read out all copies and compare
-their generation to find out the correct copy.
-At least from the changeset, it doesn't look like it's addressed yet.
+Secondly, kernel doesn't like to swap out anonymous pages at all, thus
+kernel won't try to aggressively swap out such pages.
 
-And this also reminds me that current scrub is not as flex as balance, I
-really like we could filter block groups to scrub just like balance, and
-do scrub in a block group basis, other than devid basis.
-That's to say, for a block group scrub, we don't really care which
-device we're scrubbing, we just need to ensure all device in this block
-is storing correct data.
+Thirdly, for user anonymous memory, there is LRU-like algorithm to
+determine which memory should go swapped out.
+But considering how btrfs check uses pages, it would only make it harder
+to be swapped out.
+
+So it's not an easy way thing to aggressively swap out memory of btrfs
+check to swap.
+Although Michal mentioned some cgroup way to limit the memory usage so
+it can be more aggressively swapped out, I'm still digging into it.
 
 Thanks,
 Qu
 
 >=20
-> The number of copies is fixed, so it's not N-copy for an arbitrary N.
-> This would complicate the implementation too much, though I'd be willin=
-g
-> to add a 5-copy replication for a small bribe.
->=20
-> The new raid profiles and covered by an incompatibility bit, called
-> extended_raid, the (idealistic) plan is to stuff as many new
-> raid-related features as possible. The patch 4/4 mentions the 3- 4- cop=
-y
-> raid1, configurable stripe length, write hole log and triple parity.
-> If the plan turns out to be too ambitious, the ready and implemented
-> features will be split and merged.
->=20
-> An interesting question is the naming of the extended profiles. I picke=
-d
-> something that can be easily understood but it's not a final proposal.
-> Years ago, Hugo proposed a naming scheme that described the
-> non-standard raid varieties of the btrfs flavor:
->=20
-> https://marc.info/?l=3Dlinux-btrfs&m=3D136286324417767
->=20
-> Switching to this naming would be a good addition to the extended raid.=
-
->=20
-> Regarding the missing raid56 features, I'll continue working on them as=
-
-> time permits in the following weeks/months, as I'm not aware of anybody=
-
-> working on that actively enough so to speak.
->=20
-> Anyway, git branches with the patches:
->=20
-> kernel: git://github.com/kdave/btrfs-devel dev/extended-raid-ncopies
-> progs:  git://github.com/kdave/btrfs-progs dev/extended-raid-ncopies
->=20
-> David Sterba (4):
->   btrfs: refactor block group replication factor calculation to a helpe=
-r
->   btrfs: add support for 3-copy replication (raid1c3)
->   btrfs: add support for 4-copy replication (raid1c4)
->   btrfs: add incompatibility bit for extended raid features
->=20
->  fs/btrfs/ctree.h                |  1 +
->  fs/btrfs/extent-tree.c          | 45 +++++++-----------
->  fs/btrfs/relocation.c           |  1 +
->  fs/btrfs/scrub.c                |  4 +-
->  fs/btrfs/super.c                | 17 +++----
->  fs/btrfs/sysfs.c                |  2 +
->  fs/btrfs/volumes.c              | 84 ++++++++++++++++++++++++++++++---=
-
->  fs/btrfs/volumes.h              |  6 +++
->  include/uapi/linux/btrfs.h      | 12 ++++-
->  include/uapi/linux/btrfs_tree.h |  6 +++
->  10 files changed, 134 insertions(+), 44 deletions(-)
+> Thanks,
+> Marc
 >=20
 
 
---SFR3yLLsAJIrxN5p2bJDd7sYkYmcnKpYm--
+--LpMmLb4kophqltiEuDsM1KqjZ9R56ot3A--
 
---b5yMuofN6GHGA9HfwHhukpcg72MTFpCJP
+--otk3qBY1jZGH7YjSG6DUHEyCBCQPwAm44
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAltQPVUACgkQwj2R86El
-/qiIzAgAp+7xd1qjw9oK2DCv3MikI38n/TPNEGhBj0Jv6lRSUZWwfez+FuGEDcTU
-JG9Kil9llmC1QhZ75ECOCte+lcb2yvzjPVCBl5nuFoHUhStOBo9lRCS3A0TPksep
-IB5NPce02eStpiXeT17n1rKjG6Lcj+yxwS/yaMzJXbJlpoydEQp4KRX1fTB1KOZw
-vAXlOZxBR7ZbUVuwgWHNNcCe4cBGLoR4rEzIm2ocs8TDRbJNhFVXom+KB7DHmRsk
-N5dJnSNNiBWRc+6zxc7nAkHFUpBWjYAyEzgaRENpj7YxYWZRzEugQXs0SzlcvXu0
-ayOqqWLFUxCcCpsXrgqXOBXq3/cnsA==
-=M/HL
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAltQWDoACgkQwj2R86El
+/qjWsgf6Ains1oIVzFSgcRZhxo5iG70+7E5m4HRqRNvpcaaW5wm9wroh2IR23OUz
+C1HeqjvFFKH5rKAf3pvzAKfToH5bSBeyv84IPyAqc8gaV8BW7Lf8rjdWLjd7Q6Zb
+g9xvESbWOBrBLydDwpYf3lxYrVrMKJxvV51rK3oQjtOHv9zBqc59Y5yXAXX46i2S
+bfixw/TiOt27ePfIZDe4YvOWTbwIpx6J/OP+PnBpMV6c8KYyK2u4kS6MKPFavep/
+2Ut2xEQvt9AhLEt2SdFjkrqNRNy/ULXTapth7jStNweaWSq3NlnTWCScaV7dbQqQ
+RLw2xB5+lck2SjW3IZqi3wLp/30QAw==
+=S3l8
 -----END PGP SIGNATURE-----
 
---b5yMuofN6GHGA9HfwHhukpcg72MTFpCJP--
+--otk3qBY1jZGH7YjSG6DUHEyCBCQPwAm44--

@@ -1,204 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lj1-f195.google.com ([209.85.208.195]:45137 "EHLO
-        mail-lj1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753549AbeGGPTm (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 7 Jul 2018 11:19:42 -0400
-Received: by mail-lj1-f195.google.com with SMTP id q5-v6so11129815ljh.12
-        for <linux-btrfs@vger.kernel.org>; Sat, 07 Jul 2018 08:19:41 -0700 (PDT)
-From: Timofey Titovets <nefelim4ag@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Timofey Titovets <nefelim4ag@gmail.com>
-Subject: [PATCH RESEND V4] Btrfs: enchanse raid1/10 balance heuristic
-Date: Sat,  7 Jul 2018 18:19:32 +0300
-Message-Id: <20180707151932.3068-1-timofey.titovets@synesis.ru>
+Received: from mx2.suse.de ([195.135.220.15]:43748 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1731105AbeGSPoJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 19 Jul 2018 11:44:09 -0400
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 16CCAAFC2
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jul 2018 15:00:34 +0000 (UTC)
+Date: Thu, 19 Jul 2018 17:00:24 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Nikolay Borisov <nborisov@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/2] btrfs: Simplify page unlocking in alloc_extent_buffer
+Message-ID: <20180719150024.GS26141@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1530689092-18090-1-git-send-email-nborisov@suse.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1530689092-18090-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Timofey Titovets <nefelim4ag@gmail.com>
+On Wed, Jul 04, 2018 at 10:24:51AM +0300, Nikolay Borisov wrote:
+> Current version of the page unlocking code was added in
+> 727011e07cbd ("Btrfs: allow metadata blocks larger than the page size")
+> but even in this commit that particular flag was never used per-se. In
+> fact, btrfs only uses PageChecked for data pages to identify pages
+> which have been dirtied but don't have ORDERED bit set. For more
+> information see 247e743cbe6e ("Btrfs: Use async helpers to deal with
+> pages that have been improperly dirtied"). However, this doesn't apply
+> to extent buffer pages. The important bit here is that the pages are
+> unlocked AFTER the extent buffer has been properly recorded in the
+> radix tree to avoid races with btree_releasepage. Let's exploit this
+> fact and simplify the page unlocking sequence by unlocking the pages
+> in-order and removing the redundant PageChecked flag setting/clearing.
+> 
+> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 
-Currently btrfs raid1/10 balancer bаlance requests to mirrors,
-based on pid % num of mirrors.
-
-Make logic understood:
- - if one of underline devices are non rotational
- - Queue leght to underline devices
-
-By default try use pid % num_mirrors guessing, but:
- - If one of mirrors are non rotational, repick optimal to it
- - If underline mirror have less queue leght then optimal,
-   repick to that mirror
-
-For avoid round-robin request balancing,
-lets round down queue leght:
- - By 8 for rotational devs
- - By 2 for all non rotational devs
-
-Changes:
-  v1 -> v2:
-    - Use helper part_in_flight() from genhd.c
-      to get queue lenght
-    - Move guess code to guess_optimal()
-    - Change balancer logic, try use pid % mirror by default
-      Make balancing on spinning rust if one of underline devices
-      are overloaded
-  v2 -> v3:
-    - Fix arg for RAID10 - use sub_stripes, instead of num_stripes
-  v3 -> v4:
-    - Rebased on latest misc-next
-
-Signed-off-by: Timofey Titovets <nefelim4ag@gmail.com>
----
- block/genhd.c      |   1 +
- fs/btrfs/volumes.c | 111 ++++++++++++++++++++++++++++++++++++++++++++-
- 2 files changed, 110 insertions(+), 2 deletions(-)
-
-diff --git a/block/genhd.c b/block/genhd.c
-index 9656f9e9f99e..5ea5acc88d3c 100644
---- a/block/genhd.c
-+++ b/block/genhd.c
-@@ -81,6 +81,7 @@ void part_in_flight(struct request_queue *q, struct hd_struct *part,
- 				atomic_read(&part->in_flight[1]);
- 	}
- }
-+EXPORT_SYMBOL_GPL(part_in_flight);
- 
- void part_in_flight_rw(struct request_queue *q, struct hd_struct *part,
- 		       unsigned int inflight[2])
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index c95af358b71f..fa7dd6ac087f 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -16,6 +16,7 @@
- #include <linux/raid/pq.h>
- #include <linux/semaphore.h>
- #include <linux/uuid.h>
-+#include <linux/genhd.h>
- #include <linux/list_sort.h>
- #include "ctree.h"
- #include "extent_map.h"
-@@ -5201,6 +5202,111 @@ int btrfs_is_parity_mirror(struct btrfs_fs_info *fs_info, u64 logical, u64 len)
- 	return ret;
- }
- 
-+/**
-+ * bdev_get_queue_len - return rounded down in flight queue lenght of bdev
-+ *
-+ * @bdev: target bdev
-+ * @round_down: round factor big for hdd and small for ssd, like 8 and 2
-+ */
-+static int bdev_get_queue_len(struct block_device *bdev, int round_down)
-+{
-+	int sum;
-+	struct hd_struct *bd_part = bdev->bd_part;
-+	struct request_queue *rq = bdev_get_queue(bdev);
-+	uint32_t inflight[2] = {0, 0};
-+
-+	part_in_flight(rq, bd_part, inflight);
-+
-+	sum = max_t(uint32_t, inflight[0], inflight[1]);
-+
-+	/*
-+	 * Try prevent switch for every sneeze
-+	 * By roundup output num by some value
-+	 */
-+	return ALIGN_DOWN(sum, round_down);
-+}
-+
-+/**
-+ * guess_optimal - return guessed optimal mirror
-+ *
-+ * Optimal expected to be pid % num_stripes
-+ *
-+ * That's generaly ok for spread load
-+ * Add some balancer based on queue leght to device
-+ *
-+ * Basic ideas:
-+ *  - Sequential read generate low amount of request
-+ *    so if load of drives are equal, use pid % num_stripes balancing
-+ *  - For mixed rotate/non-rotate mirrors, pick non-rotate as optimal
-+ *    and repick if other dev have "significant" less queue lenght
-+ *  - Repick optimal if queue leght of other mirror are less
-+ */
-+static int guess_optimal(struct map_lookup *map, int num, int optimal)
-+{
-+	int i;
-+	int round_down = 8;
-+	int qlen[num];
-+	bool is_nonrot[num];
-+	bool all_bdev_nonrot = true;
-+	bool all_bdev_rotate = true;
-+	struct block_device *bdev;
-+
-+	if (num == 1)
-+		return optimal;
-+
-+	/* Check accessible bdevs */
-+	for (i = 0; i < num; i++) {
-+		/* Init for missing bdevs */
-+		is_nonrot[i] = false;
-+		qlen[i] = INT_MAX;
-+		bdev = map->stripes[i].dev->bdev;
-+		if (bdev) {
-+			qlen[i] = 0;
-+			is_nonrot[i] = blk_queue_nonrot(bdev_get_queue(bdev));
-+			if (is_nonrot[i])
-+				all_bdev_rotate = false;
-+			else
-+				all_bdev_nonrot = false;
-+		}
-+	}
-+
-+	/*
-+	 * Don't bother with computation
-+	 * if only one of two bdevs are accessible
-+	 */
-+	if (num == 2 && qlen[0] != qlen[1]) {
-+		if (qlen[0] < qlen[1])
-+			return 0;
-+		else
-+			return 1;
-+	}
-+
-+	if (all_bdev_nonrot)
-+		round_down = 2;
-+
-+	for (i = 0; i < num; i++) {
-+		if (qlen[i])
-+			continue;
-+		bdev = map->stripes[i].dev->bdev;
-+		qlen[i] = bdev_get_queue_len(bdev, round_down);
-+	}
-+
-+	/* For mixed case, pick non rotational dev as optimal */
-+	if (all_bdev_rotate == all_bdev_nonrot) {
-+		for (i = 0; i < num; i++) {
-+			if (is_nonrot[i])
-+				optimal = i;
-+		}
-+	}
-+
-+	for (i = 0; i < num; i++) {
-+		if (qlen[optimal] > qlen[i])
-+			optimal = i;
-+	}
-+
-+	return optimal;
-+}
-+
- static int find_live_mirror(struct btrfs_fs_info *fs_info,
- 			    struct map_lookup *map, int first,
- 			    int dev_replace_is_ongoing)
-@@ -5219,7 +5325,8 @@ static int find_live_mirror(struct btrfs_fs_info *fs_info,
- 	else
- 		num_stripes = map->num_stripes;
- 
--	preferred_mirror = first + current->pid % num_stripes;
-+	preferred_mirror = first + guess_optimal(map, num_stripes,
-+						 current->pid % num_stripes);
- 
- 	if (dev_replace_is_ongoing &&
- 	    fs_info->dev_replace.cont_reading_from_srcdev_mode ==
--- 
-2.17.0
+Reviewed-by: David Sterba <dsterba@suse.com>

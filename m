@@ -1,84 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:60482 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:55436 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1731256AbeGTPsI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 20 Jul 2018 11:48:08 -0400
+        id S1727541AbeGSLrz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 19 Jul 2018 07:47:55 -0400
 Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 2A305ACF4
-        for <linux-btrfs@vger.kernel.org>; Fri, 20 Jul 2018 14:59:26 +0000 (UTC)
-Date: Fri, 20 Jul 2018 16:59:19 +0200
-From: David Sterba <dsterba@suse.cz>
-To: David Sterba <dsterba@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 3/7] btrfs: remove redundant member async_cow::root
-Message-ID: <20180720145919.GD26141@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+        by mx1.suse.de (Postfix) with ESMTP id DFB28AD7A
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jul 2018 11:05:15 +0000 (UTC)
+From: David Sterba <dsterba@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.com>
+Subject: [PATCH 1/7] btrfs: remove unused member async_submit_bio::fs_info
+Date: Thu, 19 Jul 2018 13:05:09 +0200
+Message-Id: <eca4f1ca127261cf82114dbe76740b669a965460.1531996240.git.dsterba@suse.com>
+In-Reply-To: <cover.1531996240.git.dsterba@suse.com>
 References: <cover.1531996240.git.dsterba@suse.com>
- <1c08372d35f29610eed55f77ddcfbe10c8a952f5.1531996240.git.dsterba@suse.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1c08372d35f29610eed55f77ddcfbe10c8a952f5.1531996240.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jul 19, 2018 at 01:05:14PM +0200, David Sterba wrote:
-> The root is only used to get fs_info out of it, but the same can be
-> retrieved from the inode that's in async_cow.
-> 
-> Signed-off-by: David Sterba <dsterba@suse.com>
-> ---
->  fs/btrfs/inode.c | 7 +------
->  1 file changed, 1 insertion(+), 6 deletions(-)
-> 
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 564ec00c765b..36b323b27dbf 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -358,7 +358,6 @@ struct async_extent {
->  
->  struct async_cow {
->  	struct inode *inode;
-> -	struct btrfs_root *root;
->  	struct page *locked_page;
->  	u64 start;
->  	u64 end;
-> @@ -1144,13 +1143,11 @@ static noinline void async_cow_submit(struct btrfs_work *work)
->  {
->  	struct btrfs_fs_info *fs_info;
->  	struct async_cow *async_cow;
-> -	struct btrfs_root *root;
->  	unsigned long nr_pages;
->  
->  	async_cow = container_of(work, struct async_cow, work);
->  
-> -	root = async_cow->root;
-> -	fs_info = root->fs_info;
-> +	fs_info = BTRFS_I(async_cow->inode)->root->fs_info;
+Introduced by c6100a4b4e3d1 ("Btrfs: replace tree->mapping with
+tree->private_data") to be used in run_one_async_done where it got
+unused after 736cd52e0c720103 ("Btrfs: remove nr_async_submits and
+async_submit_draining").
 
-This crashes if the inode is NULL, which can happen in async_cow_start
-if compress_file_range returns 0 in num_added. The inode is moved to
-delayed iputs and async_cow->inode zeroed.
-
-Patch removed for now. We can reach the inode via the
-async_cow::locked_page, but it's 5 pointers to chase and I want to have a
-second thought on that if the 8 bytes in the structure is not cheaper.
-
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -1143,11 +1143,13 @@ static noinline void async_cow_submit(struct btrfs_work *work)
- {
-        struct btrfs_fs_info *fs_info;
-        struct async_cow *async_cow;
-+       struct inode *inode;
-        unsigned long nr_pages;
- 
-        async_cow = container_of(work, struct async_cow, work);
- 
--       fs_info = BTRFS_I(async_cow->inode)->root->fs_info;
-+       inode = async_cow->locked_page->mapping->host;
-+       fs_info = BTRFS_I(inode)->root->fs_info;
-        nr_pages = (async_cow->end - async_cow->start + PAGE_SIZE) >>
-                PAGE_SHIFT;
- 
+Signed-off-by: David Sterba <dsterba@suse.com>
 ---
+ fs/btrfs/disk-io.c | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index e3858b2fe014..edc2daef423b 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -106,7 +106,6 @@ void __cold btrfs_end_io_wq_exit(void)
+  */
+ struct async_submit_bio {
+ 	void *private_data;
+-	struct btrfs_fs_info *fs_info;
+ 	struct bio *bio;
+ 	extent_submit_bio_start_t *submit_bio_start;
+ 	extent_submit_bio_done_t *submit_bio_done;
+@@ -801,7 +800,6 @@ blk_status_t btrfs_wq_submit_bio(struct btrfs_fs_info *fs_info, struct bio *bio,
+ 		return BLK_STS_RESOURCE;
+ 
+ 	async->private_data = private_data;
+-	async->fs_info = fs_info;
+ 	async->bio = bio;
+ 	async->mirror_num = mirror_num;
+ 	async->submit_bio_start = submit_bio_start;
+-- 
+2.18.0
 

@@ -1,103 +1,116 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp2120.oracle.com ([141.146.126.78]:41548 "EHLO
-        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727043AbeGTHTt (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 20 Jul 2018 03:19:49 -0400
-Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
-        by aserp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w6K6THfD165396
-        for <linux-btrfs@vger.kernel.org>; Fri, 20 Jul 2018 06:33:07 GMT
-Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
-        by aserp2120.oracle.com with ESMTP id 2k9yjgswng-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Fri, 20 Jul 2018 06:33:07 +0000
-Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w6K6X6wm015558
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Fri, 20 Jul 2018 06:33:06 GMT
-Received: from abhmp0006.oracle.com (abhmp0006.oracle.com [141.146.116.12])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w6K6X6hd019486
-        for <linux-btrfs@vger.kernel.org>; Fri, 20 Jul 2018 06:33:06 GMT
-Subject: Re: [bug report] btrfs: add helper function check device delete able
-To: Dan Carpenter <dan.carpenter@oracle.com>
+Received: from mx2.suse.de ([195.135.220.15]:34160 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1730621AbeGSM2m (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 19 Jul 2018 08:28:42 -0400
+Date: Thu, 19 Jul 2018 13:45:46 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Anand Jain <anand.jain@oracle.com>
 Cc: linux-btrfs@vger.kernel.org
-References: <20180719080855.xytzxnj5vfvabipj@mwanda>
-From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <9f9bd2fa-fd82-79e1-0846-1871f416661e@oracle.com>
-Date: Fri, 20 Jul 2018 14:36:25 +0800
+Subject: Re: [PATCH 7/7] btrfs: add helper function check device delete able
+Message-ID: <20180719114546.GH26141@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20180716145812.20836-1-anand.jain@oracle.com>
+ <20180716145812.20836-8-anand.jain@oracle.com>
 MIME-Version: 1.0
-In-Reply-To: <20180719080855.xytzxnj5vfvabipj@mwanda>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20180716145812.20836-8-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Mon, Jul 16, 2018 at 10:58:12PM +0800, Anand Jain wrote:
+> Move the section of the code which performs the check if the device is
+> indelible, move that into a helper function.
+> 
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> ---
+> v1->v2: Rename function to btrfs_get_device_for_delete(), thanks
+> Nikolay.
+> 
+>  fs/btrfs/volumes.c | 49 ++++++++++++++++++++++++++++++-------------------
+>  1 file changed, 30 insertions(+), 19 deletions(-)
+> 
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index 1c0b56374992..0cefc24b028c 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -1859,6 +1859,33 @@ static inline u64 btrfs_num_devices(struct btrfs_fs_info *fs_info)
+>  	return num_devices;
+>  }
+>  
+> +static struct btrfs_device *btrfs_get_device_for_delete(
+> +				struct btrfs_fs_info *fs_info,
+> +				const char *device_path, u64 devid)
+> +{
+> +	int ret;
+> +	struct btrfs_device *device;
+> +
+> +	ret = btrfs_check_raid_min_devices(fs_info,
+> +					   btrfs_num_devices(fs_info) - 1);
+> +	if (ret)
+> +		return ERR_PTR(ret);
+> +
+> +	ret = btrfs_find_device_by_devspec(fs_info, devid, device_path,
+> +					   &device);
+> +	if (ret)
+> +		return ERR_PTR(ret);
+> +
+> +	if (test_bit(BTRFS_DEV_STATE_REPLACE_TGT, &device->dev_state))
+> +		return ERR_PTR(BTRFS_ERROR_DEV_TGT_REPLACE);
 
-Noted. Thanks Dan.
+This is wrong, the BTRFS_ERROR valueas are >= 1, but the IS_ERR, ERR_PTR
+work for errno values -4095..0 .
 
--Anand
+Thouth ERR_PTR would cast the integer into pointer, the callers of
+btrfs_get_device_for_delete will not detect the error and continue.
 
-On 07/19/2018 04:10 PM, Dan Carpenter wrote:
-> Hello Anand Jain,
+> +
+> +	if (test_bit(BTRFS_DEV_STATE_WRITEABLE, &device->dev_state) &&
+> +	    fs_info->fs_devices->rw_devices == 1)
+> +		return ERR_PTR(BTRFS_ERROR_DEV_ONLY_WRITABLE);
+> +
+> +	return device;
+> +}
+> +
+>  int btrfs_rm_device(struct btrfs_fs_info *fs_info, const char *device_path,
+>  		u64 devid)
+>  {
+> @@ -1872,25 +1899,9 @@ int btrfs_rm_device(struct btrfs_fs_info *fs_info, const char *device_path,
+>  
+>  	mutex_lock(&uuid_mutex);
+>  
+> -	num_devices = btrfs_num_devices(fs_info);
+> -
+> -	ret = btrfs_check_raid_min_devices(fs_info, num_devices - 1);
+> -	if (ret)
+> -		goto out;
+> -
+> -	ret = btrfs_find_device_by_devspec(fs_info, devid, device_path,
+> -					   &device);
+> -	if (ret)
+> -		goto out;
+> -
+> -	if (test_bit(BTRFS_DEV_STATE_REPLACE_TGT, &device->dev_state)) {
+> -		ret = BTRFS_ERROR_DEV_TGT_REPLACE;
+> -		goto out;
+> -	}
+> -
+> -	if (test_bit(BTRFS_DEV_STATE_WRITEABLE, &device->dev_state) &&
+> -	    fs_info->fs_devices->rw_devices == 1) {
+> -		ret = BTRFS_ERROR_DEV_ONLY_WRITABLE;
+> +	device = btrfs_get_device_for_delete(fs_info, device_path, devid);
+> +	if (IS_ERR(device)) {
+
+BTRFS_ERROR_DEV_ONLY_WRITABLE won't work here.
+
+> +		ret = PTR_ERR(device);
+>  		goto out;
+>  	}
+>  
+> -- 
+> 2.7.0
 > 
-> The patch a6500c9ef8ac: "btrfs: add helper function check device
-> delete able" from Jul 10, 2018, leads to the following static checker
-> warning:
-> 
-> 	fs/btrfs/volumes.c:1871 btrfs_device_delete_able()
-> 	error: passing non negative 4 to ERR_PTR
-> 
-> 	fs/btrfs/volumes.c:1876 btrfs_device_delete_able()
-> 	error: passing non negative 6 to ERR_PTR
-> 
-> 	fs/btrfs/volumes.c:1879 btrfs_device_delete_able()
-> 	error: passing non negative 5 to ERR_PTR
-> 
-> 	fs/btrfs/volumes.c:1883 btrfs_device_delete_able()
-> 	error: passing non negative 7 to ERR_PTR
-> 
-> fs/btrfs/volumes.c
->    1861  static struct btrfs_device *btrfs_device_delete_able(
->    1862                                  struct btrfs_fs_info *fs_info,
->    1863                                  const char *device_path, u64 devid)
->    1864  {
->    1865          int ret;
->    1866          struct btrfs_device *device;
->    1867
->    1868          ret = btrfs_check_raid_min_devices(fs_info,
->    1869                                             btrfs_num_devices(fs_info) - 1);
->    1870          if (ret)
->    1871                  return ERR_PTR(ret);
->                                         ^^^
-> This is a btrfs_err_code enum, not a negative error code.  It leads to
-> a NULL dereference in the caller.
-> 
->    1872
->    1873          ret = btrfs_find_device_by_devspec(fs_info, devid, device_path,
->    1874                                             &device);
->    1875          if (ret)
->    1876                  return ERR_PTR(ret);
->                                         ^^^
->    1877
->    1878          if (test_bit(BTRFS_DEV_STATE_REPLACE_TGT, &device->dev_state))
->    1879                  return ERR_PTR(BTRFS_ERROR_DEV_TGT_REPLACE);
->                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-> Same only even more so.
-> 
->    1880
->    1881          if (test_bit(BTRFS_DEV_STATE_WRITEABLE, &device->dev_state) &&
->    1882              fs_info->fs_devices->rw_devices == 1)
->    1883                  return ERR_PTR(BTRFS_ERROR_DEV_ONLY_WRITABLE);
->                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
->    1884
->    1885          return device;
->    1886  }
-> 
-> See also:
-> 
-> regards,
-> dan carpenter
 > --
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 > the body of a message to majordomo@vger.kernel.org
 > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 

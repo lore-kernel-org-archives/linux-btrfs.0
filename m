@@ -1,85 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f196.google.com ([209.85.220.196]:37025 "EHLO
-        mail-qk0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1731969AbeGSPeJ (ORCPT
+Received: from mail-ua0-f194.google.com ([209.85.217.194]:46390 "EHLO
+        mail-ua0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1731645AbeGSPzm (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 19 Jul 2018 11:34:09 -0400
-Received: by mail-qk0-f196.google.com with SMTP id t79-v6so4399209qke.4
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jul 2018 07:50:38 -0700 (PDT)
-From: Josef Bacik <josef@toxicpanda.com>
-To: linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 22/22] btrfs: only run delayed refs if we're committing
-Date: Thu, 19 Jul 2018 10:50:06 -0400
-Message-Id: <20180719145006.17532-22-josef@toxicpanda.com>
-In-Reply-To: <20180719145006.17532-1-josef@toxicpanda.com>
-References: <20180719145006.17532-1-josef@toxicpanda.com>
+        Thu, 19 Jul 2018 11:55:42 -0400
+Received: by mail-ua0-f194.google.com with SMTP id r18-v6so5401749ual.13
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jul 2018 08:12:05 -0700 (PDT)
+MIME-Version: 1.0
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <20180719145006.17532-17-josef@toxicpanda.com>
+References: <20180719145006.17532-1-josef@toxicpanda.com> <20180719145006.17532-17-josef@toxicpanda.com>
+From: Filipe Manana <fdmanana@gmail.com>
+Date: Thu, 19 Jul 2018 16:12:04 +0100
+Message-ID: <CAL3q7H7o2Lpg_VFX8EySamWyAjuZQTp9cwaQvfBMHSe_cnyxNQ@mail.gmail.com>
+Subject: Re: [PATCH 17/22] btrfs: don't take the dio_sem in the fsync path
+To: Josef Bacik <josef@toxicpanda.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>, kernel-team@fb.com
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I noticed in a giant dbench run that we spent a lot of time on lock
-contention while running transaction commit.  This is because dbench
-results in a lot of fsync()'s that do a btrfs_transaction_commit(), and
-they all run the delayed refs first thing, so they all contend with
-each other.  This leads to seconds of 0 throughput.  Change this to only
-run the delayed refs if we're the ones committing the transaction.  This
-makes the latency go away and we get no more lock contention.
+On Thu, Jul 19, 2018 at 3:50 PM, Josef Bacik <josef@toxicpanda.com> wrote:
+> Since we've changed the fsync() path to always run ordered extents
+> before doing the tree log we no longer need to take the dio_sem in the
+> tree log path.  This gets rid of a lockdep splat that I was seeing with
+> the AIO tests.
 
-Signed-off-by: Josef Bacik <josef@toxicpanda.com>
----
- fs/btrfs/transaction.c | 26 +++++++++++---------------
- 1 file changed, 11 insertions(+), 15 deletions(-)
+The dio_sem can be removed completely, it was added to synchronize
+lockless dio writes with fsync to avoid races.
+I.e., just removing it here in the tree-log makes it useless.
 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 4b171d8a7554..39ff9378b3db 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -1919,15 +1919,6 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
- 	btrfs_trans_release_metadata(trans);
- 	trans->block_rsv = NULL;
- 
--	/* make a pass through all the delayed refs we have so far
--	 * any runnings procs may add more while we are here
--	 */
--	ret = btrfs_run_delayed_refs(trans, 0);
--	if (ret) {
--		btrfs_end_transaction(trans);
--		return ret;
--	}
--
- 	cur_trans = trans->transaction;
- 
- 	/*
-@@ -1940,12 +1931,6 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
- 	if (!list_empty(&trans->new_bgs))
- 		btrfs_create_pending_block_groups(trans);
- 
--	ret = btrfs_run_delayed_refs(trans, 0);
--	if (ret) {
--		btrfs_end_transaction(trans);
--		return ret;
--	}
--
- 	if (!test_bit(BTRFS_TRANS_DIRTY_BG_RUN, &cur_trans->flags)) {
- 		int run_it = 0;
- 
-@@ -2016,6 +2001,17 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
- 		spin_unlock(&fs_info->trans_lock);
- 	}
- 
-+	/*
-+	 * We are now the only one in the commit area, we can run delayed refs
-+	 * without hitting a bunch of lock contention from a lot of people
-+	 * trying to commit the transaction at once.
-+	 */
-+	ret = btrfs_run_delayed_refs(trans, 0);
-+	if (ret) {
-+		btrfs_end_transaction(trans);
-+		return ret;
-+	}
-+
- 	extwriter_counter_dec(cur_trans, trans->type);
- 
- 	ret = btrfs_start_delalloc_flush(fs_info);
+thanks!
+
+>
+> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+> ---
+>  fs/btrfs/tree-log.c | 2 --
+>  1 file changed, 2 deletions(-)
+>
+> diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+> index f8220ec02036..aa06e1954b84 100644
+> --- a/fs/btrfs/tree-log.c
+> +++ b/fs/btrfs/tree-log.c
+> @@ -4439,7 +4439,6 @@ static int btrfs_log_changed_extents(struct btrfs_trans_handle *trans,
+>
+>         INIT_LIST_HEAD(&extents);
+>
+> -       down_write(&inode->dio_sem);
+>         write_lock(&tree->lock);
+>         test_gen = root->fs_info->last_trans_committed;
+>         logged_start = start;
+> @@ -4520,7 +4519,6 @@ static int btrfs_log_changed_extents(struct btrfs_trans_handle *trans,
+>         }
+>         WARN_ON(!list_empty(&extents));
+>         write_unlock(&tree->lock);
+> -       up_write(&inode->dio_sem);
+>
+>         btrfs_release_path(path);
+>         if (!ret)
+> --
+> 2.14.3
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+
+
 -- 
-2.14.3
+Filipe David Manana,
 
+“Whether you think you can, or you think you can't — you're right.”

@@ -1,361 +1,115 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from p3nlsmtpcp01-02.prod.phx3.secureserver.net ([184.168.200.140]:38548
-        "EHLO p3nlsmtpcp01-02.prod.phx3.secureserver.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727262AbeGPDuq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 15 Jul 2018 23:50:46 -0400
-Date: Mon, 16 Jul 2018 08:46:50 +0530
-From: "Lakshmipathi.G" <Lakshmipathi.Ganapathi@collabora.co.uk>
-To: linux-btrfs@vger.kernel.org
-Cc: lakshmipathi.g@giis.co.in
-Subject: [PATCH] v2: btrfs-progs: Introduce 'btrfs inspect-internal
- dump-csum' option
-Message-ID: <20180716031650.GA8385@giis.co.in>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Received: from mail-qt0-f193.google.com ([209.85.216.193]:36932 "EHLO
+        mail-qt0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727584AbeGSPdk (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 19 Jul 2018 11:33:40 -0400
+Received: by mail-qt0-f193.google.com with SMTP id n6-v6so2858238qtl.4
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jul 2018 07:50:09 -0700 (PDT)
+From: Josef Bacik <josef@toxicpanda.com>
+To: linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Cc: Josef Bacik <jbacik@fb.com>
+Subject: [PATCH 01/22] btrfs: add btrfs_delete_ref_head helper
+Date: Thu, 19 Jul 2018 10:49:45 -0400
+Message-Id: <20180719145006.17532-1-josef@toxicpanda.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Dump csum for a given file.
+From: Josef Bacik <jbacik@fb.com>
 
-Sample usage:
-btrfs inspect-internal dump-csum /btrfs/50gbfile /dev/sda4
-csum for /btrfs/50gbfile dumped to /btrfs/50gbfile.csumdump
+We do this dance in cleanup_ref_head and check_ref_cleanup, unify it
+into a helper and cleanup the calling functions.
 
-Signed-off-by: Lakshmipathi.G <Lakshmipathi.Ganapathi@collabora.co.uk>
+Signed-off-by: Josef Bacik <jbacik@fb.com>
 ---
- Makefile                 |   2 +-
- cmds-inspect-dump-csum.c | 256 +++++++++++++++++++++++++++++++++++++++++++++++
- cmds-inspect-dump-csum.h |  22 ++++
- cmds-inspect.c           |   3 +
- 4 files changed, 282 insertions(+), 1 deletion(-)
- create mode 100644 cmds-inspect-dump-csum.c
- create mode 100644 cmds-inspect-dump-csum.h
+ fs/btrfs/delayed-ref.c | 14 ++++++++++++++
+ fs/btrfs/delayed-ref.h |  3 ++-
+ fs/btrfs/extent-tree.c | 24 ++++--------------------
+ 3 files changed, 20 insertions(+), 21 deletions(-)
 
-diff --git a/Makefile b/Makefile
-index 544410e..8ad2801 100644
---- a/Makefile
-+++ b/Makefile
-@@ -122,7 +122,7 @@ cmds_objects = cmds-subvolume.o cmds-filesystem.o cmds-device.o cmds-scrub.o \
- 	       cmds-quota.o cmds-qgroup.o cmds-replace.o check/main.o \
- 	       cmds-restore.o cmds-rescue.o chunk-recover.o super-recover.o \
- 	       cmds-property.o cmds-fi-usage.o cmds-inspect-dump-tree.o \
--	       cmds-inspect-dump-super.o cmds-inspect-tree-stats.o cmds-fi-du.o \
-+	       cmds-inspect-dump-super.o cmds-inspect-tree-stats.o cmds-fi-du.o cmds-inspect-dump-csum.o \
- 	       mkfs/common.o check/mode-common.o check/mode-lowmem.o
- libbtrfs_objects = send-stream.o send-utils.o kernel-lib/rbtree.o btrfs-list.o \
- 		   kernel-lib/crc32c.o messages.o \
-diff --git a/cmds-inspect-dump-csum.c b/cmds-inspect-dump-csum.c
-new file mode 100644
-index 0000000..38afcc3
---- /dev/null
-+++ b/cmds-inspect-dump-csum.c
-@@ -0,0 +1,256 @@
-+/*
-+ * This program is free software; you can redistribute it and/or
-+ * modify it under the terms of the GNU General Public
-+ * License v2 as published by the Free Software Foundation.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-+ * General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public
-+ * License along with this program; if not, write to the
-+ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-+ * Boston, MA 021110-1307, USA.
-+ */
-+
-+#include "kerncompat.h"
-+#include <stdio.h>
-+#include <stdlib.h>
-+#include <unistd.h>
-+#include <fcntl.h>
-+#include <sys/stat.h>
-+#include <ctype.h>
-+#include <uuid/uuid.h>
-+#include <errno.h>
-+#include <getopt.h>
-+
-+#include "ctree.h"
-+#include "disk-io.h"
-+#include "print-tree.h"
-+#include "transaction.h"
-+#include "list.h"
-+#include "utils.h"
-+#include "commands.h"
-+#include "crc32c.h"
-+#include "cmds-inspect-dump-csum.h"
-+#include "help.h"
-+#include "volumes.h"
-+
-+
-+const char * const cmd_inspect_dump_csum_usage[] = {
-+	"btrfs inspect-internal dump-csum <path/to/file> <device>",
-+	"Get csums for the given file.",
-+	NULL
-+};
-+
-+int btrfs_lookup_csums(struct btrfs_trans_handle *trans, struct btrfs_root *root,
-+	struct btrfs_path *path, u64 bytenr, int cow, int total_csums, FILE *fp)
-+{
-+	int ret;
-+	int i;
-+	int start_pos = 0;
-+	struct btrfs_key file_key;
-+	struct btrfs_key found_key;
-+	struct btrfs_csum_item *item;
-+	struct extent_buffer *leaf;
-+	u64 csum_offset = 0;
-+	u16 csum_size =
-+		btrfs_super_csum_size(root->fs_info->super_copy);
-+	int csums_in_item = 0;
-+	unsigned int tree_csum = 0;
-+	int pending_csums = total_csums;
-+	static int cnt=1;
-+
-+	file_key.objectid = BTRFS_EXTENT_CSUM_OBJECTID;
-+	file_key.offset = bytenr;
-+	file_key.type = BTRFS_EXTENT_CSUM_KEY;
-+	ret = btrfs_search_slot(trans, root, &file_key, path, 0, cow);
-+	if (ret < 0)
-+		goto fail;
-+	while(1){
-+		leaf = path->nodes[0];
-+		if (ret > 0) {
-+			ret = 1;
-+			if (path->slots[0] == 0)
-+				goto fail; 
-+			path->slots[0]--;
-+			btrfs_item_key_to_cpu(leaf, &found_key, path->slots[0]);
-+			if (found_key.type != BTRFS_EXTENT_CSUM_KEY){
-+				fprintf(stderr, "\nInvalid key found.");
-+				goto fail;
-+			}
-+
-+			csum_offset = ((bytenr - found_key.offset) / root->fs_info->sectorsize) * csum_size;
-+			csums_in_item = btrfs_item_size_nr(leaf, path->slots[0]);
-+			csums_in_item /= csum_size;
-+			csums_in_item -= ( bytenr - found_key.offset ) / root->fs_info->sectorsize;
-+			start_pos=csum_offset;
-+		}
-+		if (path->slots[0] >= btrfs_header_nritems(leaf)) {
-+			if (pending_csums > 0){
-+				ret = btrfs_next_leaf(root, path);
-+				if (ret == 0)
-+				      continue;
-+			}
-+		}
-+		item = btrfs_item_ptr(leaf, path->slots[0], struct btrfs_csum_item);
-+		btrfs_item_key_to_cpu(leaf, &found_key, path->slots[0]);
-+		if (!ret){
-+			start_pos=0;
-+			csum_offset = ( bytenr - found_key.offset ) / root->fs_info->sectorsize;
-+			csums_in_item = btrfs_item_size_nr(leaf, path->slots[0]);
-+			csums_in_item /= csum_size;
-+		}
-+		if (csums_in_item > pending_csums){
-+			//possibly,some other csums on this item.
-+			for(i = 0; i < pending_csums; i++, cnt++){
-+			read_extent_buffer(leaf, &tree_csum, 
-+					(unsigned long)item + ((i*4)+start_pos) , csum_size);
-+			fprintf(fp, "%x ", tree_csum);
-+			if (cnt % 8 == 0)
-+				fprintf(fp, "\n");
-+			}
-+			pending_csums = 0;
-+			return 0;
-+		}else{
-+			for(i = 0; i < csums_in_item; i++, cnt++){
-+			read_extent_buffer(leaf, &tree_csum, 
-+					(unsigned long)item+((i*4)+start_pos), csum_size);
-+			fprintf(fp, "%x ", tree_csum);
-+			if (cnt % 8 == 0)
-+				fprintf(fp, "\n");
-+			}
-+		}
-+		pending_csums -= csums_in_item;
-+		ret = 0;
-+		if (pending_csums > 0){
-+			path->slots[0]++;
-+
-+		}else
-+			return 0; 
-+	
-+	}
-+fail:
-+	fprintf(stderr, "btrfs_lookup_csums search failed.");
-+	if (ret > 0)
-+		ret = -ENOENT;
-+	return ret;
-+}
-+
-+int btrfs_lookup_extent(struct btrfs_fs_info *info, struct btrfs_path *path,
-+		u64 ino, int cow, FILE *fp){
-+	struct btrfs_key key;
-+	struct btrfs_key found_key;
-+	struct btrfs_file_extent_item *fi;
-+	struct extent_buffer *leaf;
-+	struct btrfs_root *fs_root;
-+	int ret = -1;
-+	int slot;
-+	int total_csums = 0;
-+	u64 bytenr;
-+	u64 itemnum = 0;
-+	struct btrfs_path *path1 = NULL;
-+
-+	fs_root = info->fs_root;
-+	key.objectid = ino;
-+	key.type = BTRFS_EXTENT_DATA_KEY;
-+	key.offset = 0;
-+	ret = btrfs_search_slot(NULL,fs_root,&key,path,0,0);
-+
-+	if(ret < 0)
-+		goto error;
-+
-+	if (ret > 1){
-+		fprintf(stderr, "Unable to find the entry");
-+		return ret;
-+	}
-+
-+	while(1){
-+		leaf = path->nodes[0];
-+		slot = path->slots[0];
-+		if (slot >=  btrfs_header_nritems(leaf)){
-+		       ret = btrfs_next_leaf(fs_root, path);
-+			       if (ret == 0)
-+				      continue;
-+			       if (ret < 0)
-+				      goto error;
-+		}
-+		btrfs_item_key_to_cpu(leaf, &found_key, slot);
-+		if (found_key.type != BTRFS_EXTENT_DATA_KEY){
-+			btrfs_release_path(path);
-+			return -EINVAL;
-+		}
-+
-+		fi = btrfs_item_ptr(leaf, slot, struct btrfs_file_extent_item);
-+		bytenr = btrfs_file_extent_disk_bytenr(leaf, fi);
-+		total_csums=(btrfs_file_extent_num_bytes(leaf, fi) / 1024) / 4;
-+		path->slots[0]++;
-+		itemnum++;
-+		path1 = btrfs_alloc_path();
-+	 	ret = btrfs_lookup_csums(NULL,info->csum_root, path1, bytenr, 0,
-+			       	total_csums, fp);
-+		btrfs_release_path(path1);
-+		if (ret) {
-+			fprintf(stderr, "\n Error: btrfs_lookup_csum");
-+			return 1;
-+		}
-+	}
-+
-+error:
-+	btrfs_release_path(path);
-+	return ret;
-+}
-+
-+int cmd_inspect_dump_csum(int argc, char **argv)
-+{
-+	struct btrfs_fs_info *info;
-+	int ret;
-+	struct btrfs_path path;
-+	FILE *fp;
-+	struct stat st;
-+	char *filename;
-+	char *outfile;
-+
-+	if (check_argc_exact(argc, 3))
-+		usage(cmd_inspect_dump_csum_usage);
-+
-+	filename = argv[1];
-+	info = open_ctree_fs_info(argv[2], 0, 0, 0, OPEN_CTREE_PARTIAL);
-+	if (!info) {
-+		fprintf(stderr, "unable to open %s\n", argv[2]);
-+	        exit(1);
-+	}
-+
-+	ret = stat(filename, &st);
-+	if (ret < 0)	{
-+		fprintf(stderr, "unable to open %s\n", filename);
-+		exit(1);
-+	}
-+
-+	if(st.st_size < 1024){
-+		fprintf(stderr, "file less than 1KB.abort%lu", (st.st_size ));
-+		exit(1);
-+	}
-+
-+	btrfs_init_path(&path);
-+	ret = asprintf(&outfile, "%s.csumdump", filename);
-+	if (ret == -1){
-+		fprintf(stderr, "memory allocation failed.");
-+		return -1;
-+	}
-+	fp = fopen(outfile, "w+");
-+	if (NULL == fp) {
-+		fprintf(stderr, "Unable to open %s file", outfile);
-+		free(outfile);
-+		return -1;
-+	}
-+	ret = btrfs_lookup_extent(info, &path, st.st_ino, 0, fp);
-+	fclose(fp);
-+	ret = close_ctree(info->fs_root);
-+	btrfs_close_all_devices();
-+
-+	fprintf(stdout, "csum for %s dumped to %s\n ", filename, outfile);
-+	free(outfile);
-+	return ret;
-+}
-diff --git a/cmds-inspect-dump-csum.h b/cmds-inspect-dump-csum.h
-new file mode 100644
-index 0000000..338fa67
---- /dev/null
-+++ b/cmds-inspect-dump-csum.h
-@@ -0,0 +1,22 @@
-+/*
-+ * This program is free software; you can redistribute it and/or
-+ * modify it under the terms of the GNU General Public
-+ * License v2 as published by the Free Software Foundation.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-+ * General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public
-+ * License along with this program; if not, write to the
-+ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-+ * Boston, MA 021110-1307, USA.
-+ *
-+ * Authors: Lakshmipathi.G <lakshmipathi.ganapathi@collabora.co.uk>
-+ */
-+
-+
-+int cmd_inspect_dump_csum(int argc, char **argv);
-+
-+extern const char * const cmd_inspect_dump_csum_usage[];
-diff --git a/cmds-inspect.c b/cmds-inspect.c
-index afd7fe4..c0d59c6 100644
---- a/cmds-inspect.c
-+++ b/cmds-inspect.c
-@@ -32,6 +32,7 @@
- #include "commands.h"
- #include "btrfs-list.h"
- #include "help.h"
-+#include "cmds-inspect-dump-csum.h"
+diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
+index 03dec673d12a..e1b322d651dd 100644
+--- a/fs/btrfs/delayed-ref.c
++++ b/fs/btrfs/delayed-ref.c
+@@ -393,6 +393,20 @@ btrfs_select_ref_head(struct btrfs_trans_handle *trans)
+ 	return head;
+ }
  
- static const char * const inspect_cmd_group_usage[] = {
- 	"btrfs inspect-internal <command> <args>",
-@@ -647,6 +648,8 @@ const struct cmd_group inspect_cmd_group = {
- 				cmd_inspect_dump_super_usage, NULL, 0 },
- 		{ "tree-stats", cmd_inspect_tree_stats,
- 				cmd_inspect_tree_stats_usage, NULL, 0 },
-+		{ "dump-csum", cmd_inspect_dump_csum,
-+				cmd_inspect_dump_csum_usage, NULL, 0 },
- 		NULL_CMD_STRUCT
++void btrfs_delete_ref_head(struct btrfs_delayed_ref_root *delayed_refs,
++			   struct btrfs_delayed_ref_head *head)
++{
++	lockdep_assert_held(&delayed_refs->lock);
++	lockdep_assert_held(&head->lock);
++
++	rb_erase(&head->href_node, &delayed_refs->href_root);
++	RB_CLEAR_NODE(&head->href_node);
++	atomic_dec(&delayed_refs->num_entries);
++	delayed_refs->num_heads--;
++	if (head->processing == 0)
++		delayed_refs->num_heads_ready--;
++}
++
+ /*
+  * Helper to insert the ref_node to the tail or merge with tail.
+  *
+diff --git a/fs/btrfs/delayed-ref.h b/fs/btrfs/delayed-ref.h
+index ea1aecb6a50d..36318182e4ec 100644
+--- a/fs/btrfs/delayed-ref.h
++++ b/fs/btrfs/delayed-ref.h
+@@ -263,7 +263,8 @@ static inline void btrfs_delayed_ref_unlock(struct btrfs_delayed_ref_head *head)
+ {
+ 	mutex_unlock(&head->mutex);
+ }
+-
++void btrfs_delete_ref_head(struct btrfs_delayed_ref_root *delayed_refs,
++			   struct btrfs_delayed_ref_head *head);
+ 
+ struct btrfs_delayed_ref_head *
+ btrfs_select_ref_head(struct btrfs_trans_handle *trans);
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 3d9fe58c0080..ccaccd78534e 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -2577,12 +2577,9 @@ static int cleanup_ref_head(struct btrfs_trans_handle *trans,
+ 		spin_unlock(&delayed_refs->lock);
+ 		return 1;
  	}
- };
+-	delayed_refs->num_heads--;
+-	rb_erase(&head->href_node, &delayed_refs->href_root);
+-	RB_CLEAR_NODE(&head->href_node);
+-	spin_unlock(&head->lock);
++	btrfs_delete_ref_head(delayed_refs, head);
+ 	spin_unlock(&delayed_refs->lock);
+-	atomic_dec(&delayed_refs->num_entries);
++	spin_unlock(&head->lock);
+ 
+ 	trace_run_delayed_ref_head(fs_info, head, 0);
+ 
+@@ -7122,22 +7119,9 @@ static noinline int check_ref_cleanup(struct btrfs_trans_handle *trans,
+ 	if (!mutex_trylock(&head->mutex))
+ 		goto out;
+ 
+-	/*
+-	 * at this point we have a head with no other entries.  Go
+-	 * ahead and process it.
+-	 */
+-	rb_erase(&head->href_node, &delayed_refs->href_root);
+-	RB_CLEAR_NODE(&head->href_node);
+-	atomic_dec(&delayed_refs->num_entries);
+-
+-	/*
+-	 * we don't take a ref on the node because we're removing it from the
+-	 * tree, so we just steal the ref the tree was holding.
+-	 */
+-	delayed_refs->num_heads--;
+-	if (head->processing == 0)
+-		delayed_refs->num_heads_ready--;
++	btrfs_delete_ref_head(delayed_refs, head);
+ 	head->processing = 0;
++
+ 	spin_unlock(&head->lock);
+ 	spin_unlock(&delayed_refs->lock);
+ 
 -- 
-1.9.3
+2.14.3
 

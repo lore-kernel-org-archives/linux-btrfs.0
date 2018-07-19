@@ -1,175 +1,106 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.21]:44269 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726724AbeGSKE2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 19 Jul 2018 06:04:28 -0400
-Subject: Re: btrfs check (not lowmem) and OOM-like hangs (4.17.6)
-To: Marc MERLIN <marc@merlins.org>
-Cc: linux-btrfs@vger.kernel.org
-References: <20180717203257.GA10237@merlins.org>
- <20180717205905.GB10237@merlins.org>
- <8a0fbf2d-ee13-f6d6-a046-5dfba936aa87@gmx.com>
- <20180718002451.GF10237@merlins.org>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <ebccf82e-1812-f62d-08b5-41a673906e0e@gmx.com>
-Date: Thu, 19 Jul 2018 17:22:02 +0800
+Received: from mail-io0-f182.google.com ([209.85.223.182]:37354 "EHLO
+        mail-io0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727335AbeGSMD7 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 19 Jul 2018 08:03:59 -0400
+Received: by mail-io0-f182.google.com with SMTP id z19-v6so6745785ioh.4
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jul 2018 04:21:17 -0700 (PDT)
+Subject: Re: Healthy amount of free space?
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Martin Steigerwald <martin@lichtvoll.de>,
+        Nikolay Borisov <nborisov@suse.com>, Wolf <wolf@wolfsden.cz>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <20180716205809.42jywfvuxwuuqixd@wolfsden.cz>
+ <2197534.TZSffJRfLT@merkaba> <9ea19b13-3c46-666f-fa79-f40bd1ae7658@suse.com>
+ <1736761.B5nO4FXixV@merkaba> <33396c10-33ef-b8ff-0041-c94d87c67722@gmail.com>
+ <CAJCQCtSZruKeM117EfQNQnEFuk_bswhhKnEnFVD2i7MHWU65RQ@mail.gmail.com>
+ <d42d5c79-46df-4e11-0ba2-1adb9e073ed9@gmail.com>
+ <CAJCQCtSpMi-GmJSQx+tjt+WjDqvEH5Z9yeUrYSjLFz+P4f2j2A@mail.gmail.com>
+ <0a3a8550-3622-0c7b-bcf7-e2d7cabf6b4a@gmail.com>
+ <CAJCQCtQrY2rz0CTntCO9szii7SveshtSMgCPz4JQqq16kfATNw@mail.gmail.com>
+ <CAJCQCtSV35cR5KS4dT0x5wYyMHXszdBFGT2Rt7XAMa4dDmC5uw@mail.gmail.com>
+ <72230e2d-022c-12bd-cd56-9d728989157d@gmail.com>
+ <CAJCQCtSLVF8JP_KvFrwsrDDf76b2meS9HjN+ant+d3FbY-9H+Q@mail.gmail.com>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <b67be80f-574f-85f7-8a78-7b00c2f20b8b@gmail.com>
+Date: Thu, 19 Jul 2018 07:21:14 -0400
 MIME-Version: 1.0
-In-Reply-To: <20180718002451.GF10237@merlins.org>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="otk3qBY1jZGH7YjSG6DUHEyCBCQPwAm44"
+In-Reply-To: <CAJCQCtSLVF8JP_KvFrwsrDDf76b2meS9HjN+ant+d3FbY-9H+Q@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---otk3qBY1jZGH7YjSG6DUHEyCBCQPwAm44
-Content-Type: multipart/mixed; boundary="LpMmLb4kophqltiEuDsM1KqjZ9R56ot3A";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Marc MERLIN <marc@merlins.org>
-Cc: linux-btrfs@vger.kernel.org
-Message-ID: <ebccf82e-1812-f62d-08b5-41a673906e0e@gmx.com>
-Subject: Re: btrfs check (not lowmem) and OOM-like hangs (4.17.6)
-References: <20180717203257.GA10237@merlins.org>
- <20180717205905.GB10237@merlins.org>
- <8a0fbf2d-ee13-f6d6-a046-5dfba936aa87@gmx.com>
- <20180718002451.GF10237@merlins.org>
-In-Reply-To: <20180718002451.GF10237@merlins.org>
-
---LpMmLb4kophqltiEuDsM1KqjZ9R56ot3A
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
-
-
-
-On 2018=E5=B9=B407=E6=9C=8818=E6=97=A5 08:24, Marc MERLIN wrote:
-> On Wed, Jul 18, 2018 at 08:05:51AM +0800, Qu Wenruo wrote:
->> No OOM triggers? That's a little strange.
->> Maybe it's related to how kernel handles memory over-commit?
-> =20
-> Yes, I think you are correct.
->=20
->> And for the hang, I think it's related to some memory allocation failu=
-re
->> and error handler just didn't handle it well, so it's causing deadlock=
-
->> for certain page.
->=20
-> That indeed matches what I'm seeing.
->=20
->> ENOMEM handling is pretty common but hardly verified, so it's not that=
-
->> strange, but we must locate the problem.
->=20
-> I seem to be getting deadlocks in the kernel, so I'm hoping that at lea=
-st
-> it's checked there, but maybe not?
->=20
->> In my system, at least I'm not using btrfs as root fs, and for the
->> memory eating program I normally ensure it's eating all the memory +
->> swap, so OOM killer is always triggered, maybe that's the cause.
+On 2018-07-18 17:32, Chris Murphy wrote:
+> On Wed, Jul 18, 2018 at 12:01 PM, Austin S. Hemmelgarn
+> <ahferroin7@gmail.com> wrote:
+>> On 2018-07-18 13:40, Chris Murphy wrote:
+>>>
+>>> On Wed, Jul 18, 2018 at 11:14 AM, Chris Murphy <lists@colorremedies.com>
+>>> wrote:
+>>>
+>>>> I don't know for sure, but based on the addresses reported before and
+>>>> after dd for the fallocated tmp file, it looks like Btrfs is not using
+>>>> the originally fallocated addresses for dd. So maybe it is COWing into
+>>>> new blocks, but is just as quickly deallocating the fallocated blocks
+>>>> as it goes, and hence doesn't end up in enospc?
+>>>
+>>>
+>>> Previous thread is "Problem with file system" from August 2017. And
+>>> there's these reproduce steps from Austin which have fallocate coming
+>>> after the dd.
+>>>
+>>>       truncate --size=4G ./test-fs
+>>>       mkfs.btrfs ./test-fs
+>>>       mkdir ./test
+>>>       mount -t auto ./test-fs ./test
+>>>       dd if=/dev/zero of=./test/test bs=65536 count=32768
+>>>       fallocate -l 2147483650 ./test/test && echo "Success!"
+>>>
+>>>
+>>> My test Btrfs is 2G not 4G, so I'm cutting the values of dd and
+>>> fallocate in half.
+>>>
+>>> [chris@f28s btrfs]$ sudo dd if=/dev/zero of=tmp bs=1M count=1000
+>>> 1000+0 records in
+>>> 1000+0 records out
+>>> 1048576000 bytes (1.0 GB, 1000 MiB) copied, 7.13391 s, 147 MB/s
+>>> [chris@f28s btrfs]$ sync
+>>> [chris@f28s btrfs]$ df -h
+>>> Filesystem                Size  Used Avail Use% Mounted on
+>>> /dev/mapper/vg-btrfstest  2.0G 1018M  1.1G  50% /mnt/btrfs
+>>> [chris@f28s btrfs]$ sudo fallocate -l 1000m tmp
+>>>
+>>>
+>>> Succeeds. If I do it with a 1200M file for dd and fallocate 1200M over
+>>> it, this fails, but I kinda expect that because there's only 1.1G free
+>>> space. But maybe that's what you're saying is the bug, it shouldn't
+>>> fail?
 >>
->> So in your case, maybe it's btrfs not really taking up all memory, thu=
-s
->> OOM killer not triggered.
->=20
-> Correct, the swap is not used.
->=20
->> Any kernel dmesg about OOM killer triggered?
-> =20
-> Nothing at all. It never gets triggered.
->=20
->>> Here is my system when it virtually died:
->>> ER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAN=
-D
->>> root     31006 21.2 90.7 29639020 29623180 pts/19 D+ 13:49   1:35 ./b=
-trfs check /dev/mapper/dshelf2
->=20
-> See how btrs was taking 29GB in that ps output (that's before it takes
-> everything and I can't even type ps anymore)
-> Note that VSZ is almost equal to RSS. Nothing gets swapped.
->=20
-> Then see free output:
->=20
->>>              total       used       free     shared    buffers     ca=
-ched
->>> Mem:      32643788   32180100     463688          0      44664     11=
-9508
->>> -/+ buffers/cache:   32015928     627860
->>> Swap:     15616764     443676   15173088
->>
->> For swap, it looks like only some other program's memory is swapped ou=
-t,
->> not btrfs'.
->=20
-> That's exactly correct. btrfs check never goes to swap, I'm not sure wh=
-y,
-> and because there is virtual memory free, maybe that's why OOM does not=
+>> Yes, you're right, I had things backwards (well, kind of, this does work on
+>> ext4 and regular XFS, so it arguably should work here).
+> 
+> I guess I'm confused what it even means to fallocate over a file with
+> in-use blocks unless either -d or -p options are used. And from the
+> man page, I don't grok the distinction between -d and -p either. But
+> based on their descriptions I'd expect they both should work without
+> enospc.
+> 
+Without any specific options, it forces allocation of any sparse regions 
+in the file (that is, it gets rid of holes in the file).  On BTRFS, I 
+believe the command also forcibly unshares all the extents in the file 
+(for the system call, there's a special flag for doing this). 
+Additionally, you can extend a file with fallocate this way by 
+specifying a length longer than the current size of the file, which 
+guarantees that writes into that region will succeed, unlike truncating 
+the file to a larger size, which just creates a hole at the end of the 
+file to bring it up to size.
 
-> trigger?
-> So I guess I can probably "fix" my problem by removing swap, but ultima=
-tely
-> it would be useful to know why memory taken by btrfs check does not end=
- up
-> in swap.
->=20
->> And unfortunately, I'm not so familiar with OOM/MM code outside of
->> filesystem.
->> Any help from other experienced developers would definitely help to
->> solve why memory of 'btrfs check' is not swapped out or why OOM killer=
-
->> is not triggered.
->=20
-> Do you have someone from linux-vm you might be able to ask, or should w=
-e Cc
-> this thread there?
-
-Michal Hocho gives me a brief session about this.
-Which is super helpful in this case, thank you Michal!
-
-Firstly, btrfs-progs usage of malloc() will result anonymous pages, thus
-they can be swapped out.
-
-Secondly, kernel doesn't like to swap out anonymous pages at all, thus
-kernel won't try to aggressively swap out such pages.
-
-Thirdly, for user anonymous memory, there is LRU-like algorithm to
-determine which memory should go swapped out.
-But considering how btrfs check uses pages, it would only make it harder
-to be swapped out.
-
-So it's not an easy way thing to aggressively swap out memory of btrfs
-check to swap.
-Although Michal mentioned some cgroup way to limit the memory usage so
-it can be more aggressively swapped out, I'm still digging into it.
-
-Thanks,
-Qu
-
->=20
-> Thanks,
-> Marc
->=20
-
-
---LpMmLb4kophqltiEuDsM1KqjZ9R56ot3A--
-
---otk3qBY1jZGH7YjSG6DUHEyCBCQPwAm44
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAltQWDoACgkQwj2R86El
-/qjWsgf6Ains1oIVzFSgcRZhxo5iG70+7E5m4HRqRNvpcaaW5wm9wroh2IR23OUz
-C1HeqjvFFKH5rKAf3pvzAKfToH5bSBeyv84IPyAqc8gaV8BW7Lf8rjdWLjd7Q6Zb
-g9xvESbWOBrBLydDwpYf3lxYrVrMKJxvV51rK3oQjtOHv9zBqc59Y5yXAXX46i2S
-bfixw/TiOt27ePfIZDe4YvOWTbwIpx6J/OP+PnBpMV6c8KYyK2u4kS6MKPFavep/
-2Ut2xEQvt9AhLEt2SdFjkrqNRNy/ULXTapth7jStNweaWSq3NlnTWCScaV7dbQqQ
-RLw2xB5+lck2SjW3IZqi3wLp/30QAw==
-=S3l8
------END PGP SIGNATURE-----
-
---otk3qBY1jZGH7YjSG6DUHEyCBCQPwAm44--
+As far as `-d` versus `-p`:  `-p` directly translates to the option for 
+the system call that punches a hole.  It requires a length and possibly 
+an offset, and will punch a hole at that exact location of that exact 
+size.  `-d` is a special option that's only available for the command. 
+It tells the `fallocate` command to search the file for zero-filled 
+regions, and punch holes there.  Neither option should ever trigger an 
+ENOSPC, except possibly if it has to split an extent for some reason and 
+you are completely out of metadata space.

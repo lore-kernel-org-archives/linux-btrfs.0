@@ -1,59 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qt0-f193.google.com ([209.85.216.193]:40968 "EHLO
-        mail-qt0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1731656AbeGSPd4 (ORCPT
+Received: from mail-qk0-f196.google.com ([209.85.220.196]:34263 "EHLO
+        mail-qk0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1731656AbeGSPd5 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 19 Jul 2018 11:33:56 -0400
-Received: by mail-qt0-f193.google.com with SMTP id e19-v6so7401727qtp.8
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jul 2018 07:50:24 -0700 (PDT)
+        Thu, 19 Jul 2018 11:33:57 -0400
+Received: by mail-qk0-f196.google.com with SMTP id b66-v6so4410987qkj.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jul 2018 07:50:26 -0700 (PDT)
 From: Josef Bacik <josef@toxicpanda.com>
 To: linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 12/22] btrfs: don't use global rsv for chunk allocation
-Date: Thu, 19 Jul 2018 10:49:56 -0400
-Message-Id: <20180719145006.17532-12-josef@toxicpanda.com>
+Subject: [PATCH 13/22] btrfs: reset max_extent_size properly
+Date: Thu, 19 Jul 2018 10:49:57 -0400
+Message-Id: <20180719145006.17532-13-josef@toxicpanda.com>
 In-Reply-To: <20180719145006.17532-1-josef@toxicpanda.com>
 References: <20180719145006.17532-1-josef@toxicpanda.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We've done this forever because of the voodoo around knowing how much
-space we have.  However we have better ways of doing this now, and on
-normal file systems we'll easily have a global reserve of 512MiB, and
-since metadata chunks are usually 1GiB that means we'll allocate
-metadata chunks more readily.  Instead use the actual used amount when
-determining if we need to allocate a chunk or not.
+If we use up our block group before allocating a new one we'll easily
+get a max_extent_size that's set really really low, which will result in
+a lot of fragmentation.  We need to make sure we're resetting the
+max_extent_size when we add a new chunk or add new space.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/extent-tree.c | 9 ---------
- 1 file changed, 9 deletions(-)
+ fs/btrfs/extent-tree.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
 
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 35c1c1b7ba1d..c20675c265c5 100644
+index c20675c265c5..e057d9b2d959 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -4459,21 +4459,12 @@ static inline u64 calc_global_rsv_need_space(struct btrfs_block_rsv *global)
- static int should_alloc_chunk(struct btrfs_fs_info *fs_info,
- 			      struct btrfs_space_info *sinfo, int force)
- {
--	struct btrfs_block_rsv *global_rsv = &fs_info->global_block_rsv;
- 	u64 bytes_used = btrfs_space_info_used(sinfo, false);
- 	u64 thresh;
+@@ -4657,6 +4657,7 @@ static int do_chunk_alloc(struct btrfs_trans_handle *trans,
+ 			goto out;
+ 	} else {
+ 		ret = 1;
++		space_info->max_extent_size = 0;
+ 	}
  
- 	if (force == CHUNK_ALLOC_FORCE)
- 		return 1;
+ 	space_info->force_alloc = CHUNK_ALLOC_NO_FORCE;
+@@ -8199,10 +8200,16 @@ static int __btrfs_free_reserved_extent(struct btrfs_fs_info *fs_info,
+ 	if (pin)
+ 		pin_down_extent(fs_info, cache, start, len, 1);
+ 	else {
++		struct btrfs_space_info *space_info = cache->space_info;
++
+ 		if (btrfs_test_opt(fs_info, DISCARD))
+ 			ret = btrfs_discard_extent(fs_info, start, len, NULL);
+ 		btrfs_add_free_space(cache, start, len);
+ 		btrfs_free_reserved_bytes(cache, len, delalloc);
++
++		spin_lock(&space_info->lock);
++		space_info->max_extent_size = 0;
++		spin_unlock(&space_info->lock);
+ 		trace_btrfs_reserved_extent_free(fs_info, start, len);
+ 	}
  
--	/*
--	 * We need to take into account the global rsv because for all intents
--	 * and purposes it's used space.  Don't worry about locking the
--	 * global_rsv, it doesn't change except when the transaction commits.
--	 */
--	if (sinfo->flags & BTRFS_BLOCK_GROUP_METADATA)
--		bytes_used += calc_global_rsv_need_space(global_rsv);
--
- 	/*
- 	 * in limited mode, we want to have some free space up to
- 	 * about 1% of the FS size.
 -- 
 2.14.3
 

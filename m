@@ -1,68 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:51358 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:52372 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727575AbeGSQXH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 19 Jul 2018 12:23:07 -0400
-Subject: Re: [PATCH 08/22] btrfs: dump block_rsv whe dumping space info
-To: Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
+        id S1731471AbeGSQ2t (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 19 Jul 2018 12:28:49 -0400
+Date: Thu, 19 Jul 2018 17:44:53 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Nikolay Borisov <nborisov@suse.com>
+Cc: Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
         kernel-team@fb.com
+Subject: Re: [PATCH 10/22] btrfs: alloc space cache inode with GFP_NOFS
+Message-ID: <20180719154453.GV26141@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <20180719145006.17532-1-josef@toxicpanda.com>
- <20180719145006.17532-8-josef@toxicpanda.com>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <c38eec9f-82f9-f644-613f-58df462fcb55@suse.com>
-Date: Thu, 19 Jul 2018 18:39:20 +0300
+ <20180719145006.17532-10-josef@toxicpanda.com>
+ <3e617a5c-03d7-5937-fbe1-e067c5b8d5ee@suse.com>
 MIME-Version: 1.0
-In-Reply-To: <20180719145006.17532-8-josef@toxicpanda.com>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <3e617a5c-03d7-5937-fbe1-e067c5b8d5ee@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-On 19.07.2018 17:49, Josef Bacik wrote:
-> For enospc_debug having the block rsvs is super helpful to see if we've
-> done something wrong.
+On Thu, Jul 19, 2018 at 06:35:33PM +0300, Nikolay Borisov wrote:
 > 
-> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
-> ---
->  fs/btrfs/extent-tree.c | 15 +++++++++++++++
->  1 file changed, 15 insertions(+)
 > 
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index 6de9a180abdd..35c1c1b7ba1d 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -8050,6 +8050,15 @@ static noinline int find_free_extent(struct btrfs_fs_info *fs_info,
->  	return ret;
->  }
->  
-> +static void dump_block_rsv(struct btrfs_block_rsv *rsv)
-> +{
-> +	spin_lock(&rsv->lock);
-> +	printk(KERN_ERR "%d: size %llu reserved %llu\n",
-> +	       rsv->type, (unsigned long long)rsv->size,
-> +	       (unsigned long long)rsv->reserved);
-
-Why do you cast to unsigned long long given that size/reserved are
-already defined as u64? Also use pr_err rather than printk.
-
-> +	spin_unlock(&rsv->lock);
-> +}
-> +
->  static void dump_space_info(struct btrfs_fs_info *fs_info,
->  			    struct btrfs_space_info *info, u64 bytes,
->  			    int dump_block_groups)
-> @@ -8069,6 +8078,12 @@ static void dump_space_info(struct btrfs_fs_info *fs_info,
->  		info->bytes_readonly);
->  	spin_unlock(&info->lock);
->  
-> +	dump_block_rsv(&fs_info->global_block_rsv);
-> +	dump_block_rsv(&fs_info->trans_block_rsv);
-> +	dump_block_rsv(&fs_info->chunk_block_rsv);
-> +	dump_block_rsv(&fs_info->delayed_block_rsv);
-> +	dump_block_rsv(&fs_info->delayed_refs_rsv);
-> +
->  	if (!dump_block_groups)
->  		return;
->  
+> On 19.07.2018 17:49, Josef Bacik wrote:
+> > If we're allocating a new space cache inode it's likely going to be
+> > under a transaction handle, so we need to use GFP_NOFS to keep from
+> > deadlocking.  Otherwise GFP_KERNEL is fine.
+> > 
+> > Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+> > ---
+> >  fs/btrfs/free-space-cache.c | 5 +++++
+> >  fs/btrfs/inode.c            | 3 ++-
+> >  fs/btrfs/transaction.h      | 1 +
+> >  3 files changed, 8 insertions(+), 1 deletion(-)
+> > 
+> > diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+> > index d5f80cb300be..13bc514e4e16 100644
+> > --- a/fs/btrfs/free-space-cache.c
+> > +++ b/fs/btrfs/free-space-cache.c
+> > @@ -68,7 +68,12 @@ static struct inode *__lookup_free_space_inode(struct btrfs_root *root,
+> >  	btrfs_disk_key_to_cpu(&location, &disk_key);
+> >  	btrfs_release_path(path);
+> >  
+> > +	/* We need this set so that we use GFP_NOFS when allocating our inode. */
+> > +	if (current->journal_info == NULL)
+> > +		current->journal_info = BTRFS_TRANS_STUB;
+> >  	inode = btrfs_iget(fs_info->sb, &location, root, NULL);
+> > +	if (current->journal_info == BTRFS_TRANS_STUB)
+> > +		current->journal_info = NULL;
+> This is not safe in the face of stacked filesystem, i.e ext4 uses the
+> journal_info.
 > 
+> >  	if (IS_ERR(inode))
+> >  		return inode;
+> >  	if (is_bad_inode(inode)) {
+> > diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> > index eba61bcb9bb3..14ecfe5d6110 100644
+> > --- a/fs/btrfs/inode.c
+> > +++ b/fs/btrfs/inode.c
+> > @@ -9211,8 +9211,9 @@ struct inode *btrfs_alloc_inode(struct super_block *sb)
+> >  	struct btrfs_fs_info *fs_info = btrfs_sb(sb);
+> >  	struct btrfs_inode *ei;
+> >  	struct inode *inode;
+> > +	gfp_t flags = (current->journal_info) ? GFP_NOFS : GFP_KERNEL;
+> >  
+> > -	ei = kmem_cache_alloc(btrfs_inode_cachep, GFP_KERNEL);
+> > +	ei = kmem_cache_alloc(btrfs_inode_cachep, flags);
+> 
+> Why don't you just hardcode GFP_NOFS? We should be striving at removing
+> abuse of ->journal_info than proliferating it.
+
+We're also removing unnecessary use of GFP_NOFS. The right way here is
+to use memalloc_nofs_save/memalloc_nofs_restore around btrfs_iget.

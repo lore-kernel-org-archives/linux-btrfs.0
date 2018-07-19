@@ -1,172 +1,127 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:55460 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:55470 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1731154AbeGSLsD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 19 Jul 2018 07:48:03 -0400
+        id S1731154AbeGSLsF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 19 Jul 2018 07:48:05 -0400
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id EF442ACAA
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jul 2018 11:05:22 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 5254FACAA
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jul 2018 11:05:25 +0000 (UTC)
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 4/7] btrfs: unify end_io callbacks of async_submit_bio
-Date: Thu, 19 Jul 2018 13:05:16 +0200
-Message-Id: <1600b5085d70b33f1363e773e4aeb2002a1bcad8.1531996240.git.dsterba@suse.com>
+Subject: [PATCH 5/7] btrfs: drop extent_io_ops::tree_fs_info callback
+Date: Thu, 19 Jul 2018 13:05:18 +0200
+Message-Id: <11ad794d29a2c0d4bc0b35d0b58b5f2e0bf7d937.1531996240.git.dsterba@suse.com>
 In-Reply-To: <cover.1531996240.git.dsterba@suse.com>
 References: <cover.1531996240.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The end_io callbacks passed to btrfs_wq_submit_bio
-(btrfs_submit_bio_done and btree_submit_bio_done) are effectively the
-same code, there's no point to do the indirection. Export
-btrfs_submit_bio_done and call it directly.
+All implementations of the callback are trivial and do the same and
+there's only user. Merge everything together.
 
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/disk-io.c   | 28 +++-------------------------
- fs/btrfs/disk-io.h   |  5 +++--
- fs/btrfs/extent_io.h |  3 ---
- fs/btrfs/inode.c     |  8 +++-----
- 4 files changed, 9 insertions(+), 35 deletions(-)
+ fs/btrfs/disk-io.c   |  7 -------
+ fs/btrfs/extent_io.c | 14 ++++----------
+ fs/btrfs/extent_io.h |  1 -
+ fs/btrfs/inode.c     |  7 -------
+ 4 files changed, 4 insertions(+), 25 deletions(-)
 
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 2e7932c753b2..c2d1c66edc49 100644
+index c2d1c66edc49..d6c04933abbc 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
-@@ -108,7 +108,6 @@ struct async_submit_bio {
- 	void *private_data;
- 	struct bio *bio;
- 	extent_submit_bio_start_t *submit_bio_start;
--	extent_submit_bio_done_t *submit_bio_done;
- 	int mirror_num;
- 	/*
- 	 * bio_offset is optional, can be used if the pages in the bio
-@@ -775,7 +774,7 @@ static void run_one_async_done(struct btrfs_work *work)
- 		return;
- 	}
- 
--	async->submit_bio_done(async->private_data, async->bio, async->mirror_num);
-+	btrfs_submit_bio_done(async->private_data, async->bio, async->mirror_num);
+@@ -4523,12 +4523,6 @@ static int btrfs_cleanup_transaction(struct btrfs_fs_info *fs_info)
+ 	return 0;
  }
  
- static void run_one_async_free(struct btrfs_work *work)
-@@ -789,8 +788,7 @@ static void run_one_async_free(struct btrfs_work *work)
- blk_status_t btrfs_wq_submit_bio(struct btrfs_fs_info *fs_info, struct bio *bio,
- 				 int mirror_num, unsigned long bio_flags,
- 				 u64 bio_offset, void *private_data,
--				 extent_submit_bio_start_t *submit_bio_start,
--				 extent_submit_bio_done_t *submit_bio_done)
-+				 extent_submit_bio_start_t *submit_bio_start)
- {
- 	struct async_submit_bio *async;
- 
-@@ -802,7 +800,6 @@ blk_status_t btrfs_wq_submit_bio(struct btrfs_fs_info *fs_info, struct bio *bio,
- 	async->bio = bio;
- 	async->mirror_num = mirror_num;
- 	async->submit_bio_start = submit_bio_start;
--	async->submit_bio_done = submit_bio_done;
- 
- 	btrfs_init_work(&async->work, btrfs_worker_helper, run_one_async_start,
- 			run_one_async_done, run_one_async_free);
-@@ -845,24 +842,6 @@ static blk_status_t btree_submit_bio_start(void *private_data, struct bio *bio,
- 	return btree_csum_one_bio(bio);
- }
- 
--static blk_status_t btree_submit_bio_done(void *private_data, struct bio *bio,
--					    int mirror_num)
+-static struct btrfs_fs_info *btree_fs_info(void *private_data)
 -{
 -	struct inode *inode = private_data;
--	blk_status_t ret;
--
--	/*
--	 * when we're called for a write, we're already in the async
--	 * submission context.  Just jump into btrfs_map_bio
--	 */
--	ret = btrfs_map_bio(btrfs_sb(inode->i_sb), bio, mirror_num, 1);
--	if (ret) {
--		bio->bi_status = ret;
--		bio_endio(bio);
--	}
--	return ret;
+-	return btrfs_sb(inode->i_sb);
 -}
 -
- static int check_async_write(struct btrfs_inode *bi)
- {
- 	if (atomic_read(&bi->sync_writers))
-@@ -905,8 +884,7 @@ static blk_status_t btree_submit_bio_hook(void *private_data, struct bio *bio,
- 		 */
- 		ret = btrfs_wq_submit_bio(fs_info, bio, mirror_num, 0,
- 					  bio_offset, private_data,
--					  btree_submit_bio_start,
--					  btree_submit_bio_done);
-+					  btree_submit_bio_start);
- 	}
+ static const struct extent_io_ops btree_extent_io_ops = {
+ 	/* mandatory callbacks */
+ 	.submit_bio_hook = btree_submit_bio_hook,
+@@ -4537,7 +4531,6 @@ static const struct extent_io_ops btree_extent_io_ops = {
+ 	.merge_bio_hook = btrfs_merge_bio_hook,
+ 	.readpage_io_failed_hook = btree_io_failed_hook,
+ 	.set_range_writeback = btrfs_set_range_writeback,
+-	.tree_fs_info = btree_fs_info,
  
- 	if (ret)
-diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
-index 1a3d277b027b..4cccba22640f 100644
---- a/fs/btrfs/disk-io.h
-+++ b/fs/btrfs/disk-io.h
-@@ -120,8 +120,9 @@ blk_status_t btrfs_bio_wq_end_io(struct btrfs_fs_info *info, struct bio *bio,
- blk_status_t btrfs_wq_submit_bio(struct btrfs_fs_info *fs_info, struct bio *bio,
- 			int mirror_num, unsigned long bio_flags,
- 			u64 bio_offset, void *private_data,
--			extent_submit_bio_start_t *submit_bio_start,
--			extent_submit_bio_done_t *submit_bio_done);
-+			extent_submit_bio_start_t *submit_bio_start);
-+blk_status_t btrfs_submit_bio_done(void *private_data, struct bio *bio,
-+			  int mirror_num);
- int btrfs_write_tree_block(struct extent_buffer *buf);
- void btrfs_wait_tree_block_writeback(struct extent_buffer *buf);
- int btrfs_init_log_root_tree(struct btrfs_trans_handle *trans,
+ 	/* optional callbacks */
+ };
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index fea015be4ce1..f7a138278f16 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -140,14 +140,6 @@ static int add_extent_changeset(struct extent_state *state, unsigned bits,
+ 
+ static void flush_write_bio(struct extent_page_data *epd);
+ 
+-static inline struct btrfs_fs_info *
+-tree_fs_info(struct extent_io_tree *tree)
+-{
+-	if (tree->ops)
+-		return tree->ops->tree_fs_info(tree->private_data);
+-	return NULL;
+-}
+-
+ int __init extent_io_init(void)
+ {
+ 	extent_state_cache = kmem_cache_create("btrfs_extent_state",
+@@ -564,8 +556,10 @@ alloc_extent_state_atomic(struct extent_state *prealloc)
+ 
+ static void extent_io_tree_panic(struct extent_io_tree *tree, int err)
+ {
+-	btrfs_panic(tree_fs_info(tree), err,
+-		    "Locking error: Extent tree was modified by another thread while locked.");
++	struct inode *inode = tree->private_data;
++
++	btrfs_panic(btrfs_sb(inode->i_sb), err,
++	"locking error: extent tree was modified by another thread while locked");
+ }
+ 
+ /*
 diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index 48f1ee9ad379..129fc4ab30ac 100644
+index 129fc4ab30ac..6edbe01fd09d 100644
 --- a/fs/btrfs/extent_io.h
 +++ b/fs/btrfs/extent_io.h
-@@ -92,9 +92,6 @@ typedef	blk_status_t (extent_submit_bio_hook_t)(void *private_data, struct bio *
- typedef blk_status_t (extent_submit_bio_start_t)(void *private_data,
- 		struct bio *bio, u64 bio_offset);
+@@ -105,7 +105,6 @@ struct extent_io_ops {
+ 			      size_t size, struct bio *bio,
+ 			      unsigned long bio_flags);
+ 	int (*readpage_io_failed_hook)(struct page *page, int failed_mirror);
+-	struct btrfs_fs_info *(*tree_fs_info)(void *private_data);
+ 	void (*set_range_writeback)(void *private_data, u64 start, u64 end);
  
--typedef blk_status_t (extent_submit_bio_done_t)(void *private_data,
--		struct bio *bio, int mirror_num);
--
- struct extent_io_ops {
  	/*
- 	 * The following callbacks must be allways defined, the function
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 36b323b27dbf..0899ab54cd06 100644
+index 0899ab54cd06..1614551cf953 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -1952,7 +1952,7 @@ static blk_status_t btrfs_submit_bio_start(void *private_data, struct bio *bio,
-  * At IO completion time the cums attached on the ordered extent record
-  * are inserted into the btree
-  */
--static blk_status_t btrfs_submit_bio_done(void *private_data, struct bio *bio,
-+blk_status_t btrfs_submit_bio_done(void *private_data, struct bio *bio,
- 			  int mirror_num)
+@@ -10468,12 +10468,6 @@ static int btrfs_readpage_io_failed_hook(struct page *page, int failed_mirror)
+ 	return -EAGAIN;
+ }
+ 
+-static struct btrfs_fs_info *iotree_fs_info(void *private_data)
+-{
+-	struct inode *inode = private_data;
+-	return btrfs_sb(inode->i_sb);
+-}
+-
+ static void btrfs_check_extent_io_range(void *private_data, const char *caller,
+ 					u64 start, u64 end)
  {
- 	struct inode *inode = private_data;
-@@ -2025,8 +2025,7 @@ static blk_status_t btrfs_submit_bio_hook(void *private_data, struct bio *bio,
- 		/* we're doing a write, do the async checksumming */
- 		ret = btrfs_wq_submit_bio(fs_info, bio, mirror_num, bio_flags,
- 					  bio_offset, inode,
--					  btrfs_submit_bio_start,
--					  btrfs_submit_bio_done);
-+					  btrfs_submit_bio_start);
- 		goto out;
- 	} else if (!skip_sum) {
- 		ret = btrfs_csum_one_bio(inode, bio, 0, 0);
-@@ -8290,8 +8289,7 @@ static inline blk_status_t btrfs_submit_dio_bio(struct bio *bio,
- 	if (write && async_submit) {
- 		ret = btrfs_wq_submit_bio(fs_info, bio, 0, 0,
- 					  file_offset, inode,
--					  btrfs_submit_bio_start_direct_io,
--					  btrfs_submit_bio_done);
-+					  btrfs_submit_bio_start_direct_io);
- 		goto err;
- 	} else if (write) {
- 		/*
+@@ -10548,7 +10542,6 @@ static const struct extent_io_ops btrfs_extent_io_ops = {
+ 	.readpage_end_io_hook = btrfs_readpage_end_io_hook,
+ 	.merge_bio_hook = btrfs_merge_bio_hook,
+ 	.readpage_io_failed_hook = btrfs_readpage_io_failed_hook,
+-	.tree_fs_info = iotree_fs_info,
+ 	.set_range_writeback = btrfs_set_range_writeback,
+ 
+ 	/* optional callbacks */
 -- 
 2.18.0
 

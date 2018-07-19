@@ -1,124 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:55488 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:55454 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1730763AbeGSLsK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 19 Jul 2018 07:48:10 -0400
+        id S1731154AbeGSLsA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 19 Jul 2018 07:48:00 -0400
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id DE100AD7A
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jul 2018 11:05:29 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id C4BEBACAA
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jul 2018 11:05:20 +0000 (UTC)
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 7/7] btrfs: drop extent_io_ops::set_range_writeback callback
-Date: Thu, 19 Jul 2018 13:05:23 +0200
-Message-Id: <76c3a84cb3c27b7acb188d2eb86f49243411bbe6.1531996240.git.dsterba@suse.com>
+Subject: [PATCH 3/7] btrfs: remove redundant member async_cow::root
+Date: Thu, 19 Jul 2018 13:05:14 +0200
+Message-Id: <1c08372d35f29610eed55f77ddcfbe10c8a952f5.1531996240.git.dsterba@suse.com>
 In-Reply-To: <cover.1531996240.git.dsterba@suse.com>
 References: <cover.1531996240.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The data and metadata callback implementation both use the same
-function. We can remove the call indirection and intermediate helper
-completely.
+The root is only used to get fs_info out of it, but the same can be
+retrieved from the inode that's in async_cow.
 
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/ctree.h     |  2 +-
- fs/btrfs/disk-io.c   |  1 -
- fs/btrfs/extent_io.c | 10 +---------
- fs/btrfs/extent_io.h |  1 -
- fs/btrfs/inode.c     |  5 ++---
- 5 files changed, 4 insertions(+), 15 deletions(-)
+ fs/btrfs/inode.c | 7 +------
+ 1 file changed, 1 insertion(+), 6 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index ee1e152cb94b..9c638931b75e 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3172,7 +3172,7 @@ int btrfs_create_subvol_root(struct btrfs_trans_handle *trans,
- int btrfs_merge_bio_hook(struct page *page, unsigned long offset,
- 			 size_t size, struct bio *bio,
- 			 unsigned long bio_flags);
--void btrfs_set_range_writeback(void *private_data, u64 start, u64 end);
-+void btrfs_set_range_writeback(struct extent_io_tree *tree, u64 start, u64 end);
- vm_fault_t btrfs_page_mkwrite(struct vm_fault *vmf);
- int btrfs_readpage(struct file *file, struct page *page);
- void btrfs_evict_inode(struct inode *inode);
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 31ab764cf4e3..4e02c2ac1a96 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -4528,7 +4528,6 @@ static const struct extent_io_ops btree_extent_io_ops = {
- 	.submit_bio_hook = btree_submit_bio_hook,
- 	.readpage_end_io_hook = btree_readpage_end_io_hook,
- 	.readpage_io_failed_hook = btree_io_failed_hook,
--	.set_range_writeback = btrfs_set_range_writeback,
- 
- 	/* optional callbacks */
- };
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 55a845621f85..a427e44c6613 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -1380,14 +1380,6 @@ void extent_range_redirty_for_io(struct inode *inode, u64 start, u64 end)
- 	}
- }
- 
--/*
-- * helper function to set both pages and extents in the tree writeback
-- */
--static void set_range_writeback(struct extent_io_tree *tree, u64 start, u64 end)
--{
--	tree->ops->set_range_writeback(tree->private_data, start, end);
--}
--
- /* find the first state struct with 'bits' set after 'start', and
-  * return it.  tree->lock must be held.  NULL will returned if
-  * nothing was found after 'start'
-@@ -3416,7 +3408,7 @@ static noinline_for_stack int __extent_writepage_io(struct inode *inode,
- 			continue;
- 		}
- 
--		set_range_writeback(tree, cur, cur + iosize - 1);
-+		btrfs_set_range_writeback(tree, cur, cur + iosize - 1);
- 		if (!PageWriteback(page)) {
- 			btrfs_err(BTRFS_I(inode)->root->fs_info,
- 				   "page %lu not writeback, cur %llu end %llu",
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index ec7c4a2982d0..57c2c31f3170 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -102,7 +102,6 @@ struct extent_io_ops {
- 				    struct page *page, u64 start, u64 end,
- 				    int mirror);
- 	int (*readpage_io_failed_hook)(struct page *page, int failed_mirror);
--	void (*set_range_writeback)(void *private_data, u64 start, u64 end);
- 
- 	/*
- 	 * Optional hooks, called if the pointer is not NULL
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 845621a71468..886c205b77f6 100644
+index 564ec00c765b..36b323b27dbf 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -10482,9 +10482,9 @@ static void btrfs_check_extent_io_range(void *private_data, const char *caller,
- 	}
- }
+@@ -358,7 +358,6 @@ struct async_extent {
  
--void btrfs_set_range_writeback(void *private_data, u64 start, u64 end)
-+void btrfs_set_range_writeback(struct extent_io_tree *tree, u64 start, u64 end)
+ struct async_cow {
+ 	struct inode *inode;
+-	struct btrfs_root *root;
+ 	struct page *locked_page;
+ 	u64 start;
+ 	u64 end;
+@@ -1144,13 +1143,11 @@ static noinline void async_cow_submit(struct btrfs_work *work)
  {
--	struct inode *inode = private_data;
-+	struct inode *inode = tree->private_data;
- 	unsigned long index = start >> PAGE_SHIFT;
- 	unsigned long end_index = end >> PAGE_SHIFT;
- 	struct page *page;
-@@ -10541,7 +10541,6 @@ static const struct extent_io_ops btrfs_extent_io_ops = {
- 	.submit_bio_hook = btrfs_submit_bio_hook,
- 	.readpage_end_io_hook = btrfs_readpage_end_io_hook,
- 	.readpage_io_failed_hook = btrfs_readpage_io_failed_hook,
--	.set_range_writeback = btrfs_set_range_writeback,
+ 	struct btrfs_fs_info *fs_info;
+ 	struct async_cow *async_cow;
+-	struct btrfs_root *root;
+ 	unsigned long nr_pages;
  
- 	/* optional callbacks */
- 	.fill_delalloc = run_delalloc_range,
+ 	async_cow = container_of(work, struct async_cow, work);
+ 
+-	root = async_cow->root;
+-	fs_info = root->fs_info;
++	fs_info = BTRFS_I(async_cow->inode)->root->fs_info;
+ 	nr_pages = (async_cow->end - async_cow->start + PAGE_SIZE) >>
+ 		PAGE_SHIFT;
+ 
+@@ -1179,7 +1176,6 @@ static int cow_file_range_async(struct inode *inode, struct page *locked_page,
+ {
+ 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+ 	struct async_cow *async_cow;
+-	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 	unsigned long nr_pages;
+ 	u64 cur_end;
+ 
+@@ -1189,7 +1185,6 @@ static int cow_file_range_async(struct inode *inode, struct page *locked_page,
+ 		async_cow = kmalloc(sizeof(*async_cow), GFP_NOFS);
+ 		BUG_ON(!async_cow); /* -ENOMEM */
+ 		async_cow->inode = igrab(inode);
+-		async_cow->root = root;
+ 		async_cow->locked_page = locked_page;
+ 		async_cow->start = start;
+ 		async_cow->write_flags = write_flags;
 -- 
 2.18.0
 

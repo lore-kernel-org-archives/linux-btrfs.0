@@ -1,75 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:52372 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1731471AbeGSQ2t (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 19 Jul 2018 12:28:49 -0400
-Date: Thu, 19 Jul 2018 17:44:53 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Nikolay Borisov <nborisov@suse.com>
-Cc: Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
-        kernel-team@fb.com
-Subject: Re: [PATCH 10/22] btrfs: alloc space cache inode with GFP_NOFS
-Message-ID: <20180719154453.GV26141@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+Received: from mail-yw0-f194.google.com ([209.85.161.194]:36166 "EHLO
+        mail-yw0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1731110AbeGSQi0 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 19 Jul 2018 12:38:26 -0400
+Received: by mail-yw0-f194.google.com with SMTP id v197-v6so3247374ywg.3
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jul 2018 08:54:38 -0700 (PDT)
+Date: Thu, 19 Jul 2018 11:54:36 -0400
+From: Josef Bacik <josef@toxicpanda.com>
+To: Filipe Manana <fdmanana@gmail.com>
+Cc: Josef Bacik <josef@toxicpanda.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>, kernel-team@fb.com
+Subject: Re: [PATCH 17/22] btrfs: don't take the dio_sem in the fsync path
+Message-ID: <20180719155436.xcafoxp3xnu3lg27@destiny>
 References: <20180719145006.17532-1-josef@toxicpanda.com>
- <20180719145006.17532-10-josef@toxicpanda.com>
- <3e617a5c-03d7-5937-fbe1-e067c5b8d5ee@suse.com>
+ <20180719145006.17532-17-josef@toxicpanda.com>
+ <CAL3q7H69HAc=j8JHqVzNC1qt7mc6=nHzpbhuBBo=hv1sLSSn4A@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <3e617a5c-03d7-5937-fbe1-e067c5b8d5ee@suse.com>
+In-Reply-To: <CAL3q7H69HAc=j8JHqVzNC1qt7mc6=nHzpbhuBBo=hv1sLSSn4A@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jul 19, 2018 at 06:35:33PM +0300, Nikolay Borisov wrote:
+On Thu, Jul 19, 2018 at 04:21:58PM +0100, Filipe Manana wrote:
+> On Thu, Jul 19, 2018 at 3:50 PM, Josef Bacik <josef@toxicpanda.com> wrote:
+> > Since we've changed the fsync() path to always run ordered extents
+> > before doing the tree log we no longer need to take the dio_sem in the
+> > tree log path.  This gets rid of a lockdep splat that I was seeing with
+> > the AIO tests.
 > 
+> So actually, we still need it (or some other means of sync).
+> Because even after the recent changes to fsync, the fast path still
+> logs extent items based on the extent maps, and the dio write path
+> creates first the extent map and then the ordered extent.
+> So the old problem can still happen between concurrent fsync and
+> lockless dio write, where fsync logs an extent item for an extent map
+> whose ordered extent we never waited for.
+> The solution prior to the introduction of dio_sem solved this - make
+> the dio write create first the ordered extent, and, only after it,
+> create the extent map.
 > 
-> On 19.07.2018 17:49, Josef Bacik wrote:
-> > If we're allocating a new space cache inode it's likely going to be
-> > under a transaction handle, so we need to use GFP_NOFS to keep from
-> > deadlocking.  Otherwise GFP_KERNEL is fine.
-> > 
-> > Signed-off-by: Josef Bacik <josef@toxicpanda.com>
-> > ---
-> >  fs/btrfs/free-space-cache.c | 5 +++++
-> >  fs/btrfs/inode.c            | 3 ++-
-> >  fs/btrfs/transaction.h      | 1 +
-> >  3 files changed, 8 insertions(+), 1 deletion(-)
-> > 
-> > diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-> > index d5f80cb300be..13bc514e4e16 100644
-> > --- a/fs/btrfs/free-space-cache.c
-> > +++ b/fs/btrfs/free-space-cache.c
-> > @@ -68,7 +68,12 @@ static struct inode *__lookup_free_space_inode(struct btrfs_root *root,
-> >  	btrfs_disk_key_to_cpu(&location, &disk_key);
-> >  	btrfs_release_path(path);
-> >  
-> > +	/* We need this set so that we use GFP_NOFS when allocating our inode. */
-> > +	if (current->journal_info == NULL)
-> > +		current->journal_info = BTRFS_TRANS_STUB;
-> >  	inode = btrfs_iget(fs_info->sb, &location, root, NULL);
-> > +	if (current->journal_info == BTRFS_TRANS_STUB)
-> > +		current->journal_info = NULL;
-> This is not safe in the face of stacked filesystem, i.e ext4 uses the
-> journal_info.
-> 
-> >  	if (IS_ERR(inode))
-> >  		return inode;
-> >  	if (is_bad_inode(inode)) {
-> > diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> > index eba61bcb9bb3..14ecfe5d6110 100644
-> > --- a/fs/btrfs/inode.c
-> > +++ b/fs/btrfs/inode.c
-> > @@ -9211,8 +9211,9 @@ struct inode *btrfs_alloc_inode(struct super_block *sb)
-> >  	struct btrfs_fs_info *fs_info = btrfs_sb(sb);
-> >  	struct btrfs_inode *ei;
-> >  	struct inode *inode;
-> > +	gfp_t flags = (current->journal_info) ? GFP_NOFS : GFP_KERNEL;
-> >  
-> > -	ei = kmem_cache_alloc(btrfs_inode_cachep, GFP_KERNEL);
-> > +	ei = kmem_cache_alloc(btrfs_inode_cachep, flags);
-> 
-> Why don't you just hardcode GFP_NOFS? We should be striving at removing
-> abuse of ->journal_info than proliferating it.
 
-We're also removing unnecessary use of GFP_NOFS. The right way here is
-to use memalloc_nofs_save/memalloc_nofs_restore around btrfs_iget.
+Oooh balls I see.  This is still a problem even if we add the ordered extent
+first, because we can easily just start the lockless dio write after we've
+waited for ordered extents, so the order we create the extent map and ordered
+extent don't actually matter.  We still have this lockdep thing, I think we just
+move the dio_sem to the start of fsync, if we're fsyncing you just don't get to
+do lockless dio writes while we're doing the fsync.  What do you think?  Thanks,
+
+Josef

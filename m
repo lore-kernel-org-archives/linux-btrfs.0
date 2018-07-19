@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ua0-f194.google.com ([209.85.217.194]:46390 "EHLO
-        mail-ua0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1731645AbeGSPzm (ORCPT
+Received: from mail-ua0-f193.google.com ([209.85.217.193]:39613 "EHLO
+        mail-ua0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1731105AbeGSQFi (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 19 Jul 2018 11:55:42 -0400
-Received: by mail-ua0-f194.google.com with SMTP id r18-v6so5401749ual.13
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jul 2018 08:12:05 -0700 (PDT)
+        Thu, 19 Jul 2018 12:05:38 -0400
+Received: by mail-ua0-f193.google.com with SMTP id g18-v6so5430556uam.6
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jul 2018 08:21:59 -0700 (PDT)
 MIME-Version: 1.0
 Reply-To: fdmanana@gmail.com
 In-Reply-To: <20180719145006.17532-17-josef@toxicpanda.com>
 References: <20180719145006.17532-1-josef@toxicpanda.com> <20180719145006.17532-17-josef@toxicpanda.com>
 From: Filipe Manana <fdmanana@gmail.com>
-Date: Thu, 19 Jul 2018 16:12:04 +0100
-Message-ID: <CAL3q7H7o2Lpg_VFX8EySamWyAjuZQTp9cwaQvfBMHSe_cnyxNQ@mail.gmail.com>
+Date: Thu, 19 Jul 2018 16:21:58 +0100
+Message-ID: <CAL3q7H69HAc=j8JHqVzNC1qt7mc6=nHzpbhuBBo=hv1sLSSn4A@mail.gmail.com>
 Subject: Re: [PATCH 17/22] btrfs: don't take the dio_sem in the fsync path
 To: Josef Bacik <josef@toxicpanda.com>
 Cc: linux-btrfs <linux-btrfs@vger.kernel.org>, kernel-team@fb.com
@@ -26,11 +26,16 @@ On Thu, Jul 19, 2018 at 3:50 PM, Josef Bacik <josef@toxicpanda.com> wrote:
 > tree log path.  This gets rid of a lockdep splat that I was seeing with
 > the AIO tests.
 
-The dio_sem can be removed completely, it was added to synchronize
-lockless dio writes with fsync to avoid races.
-I.e., just removing it here in the tree-log makes it useless.
-
-thanks!
+So actually, we still need it (or some other means of sync).
+Because even after the recent changes to fsync, the fast path still
+logs extent items based on the extent maps, and the dio write path
+creates first the extent map and then the ordered extent.
+So the old problem can still happen between concurrent fsync and
+lockless dio write, where fsync logs an extent item for an extent map
+whose ordered extent we never waited for.
+The solution prior to the introduction of dio_sem solved this - make
+the dio write create first the ordered extent, and, only after it,
+create the extent map.
 
 >
 > Signed-off-by: Josef Bacik <josef@toxicpanda.com>

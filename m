@@ -1,79 +1,110 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:39700 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727378AbeGTLYy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 20 Jul 2018 07:24:54 -0400
-Date: Fri, 20 Jul 2018 12:37:09 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Gu Jinxiang <gujx@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: fix bug of chunk type check
-Message-ID: <20180720103709.GZ26141@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1532063858-32620-1-git-send-email-gujx@cn.fujitsu.com>
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:26144 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1727043AbeGTGTX (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 20 Jul 2018 02:19:23 -0400
+From: "Gu, Jinxiang" <gujx@cn.fujitsu.com>
+To: "dsterba@suse.cz" <dsterba@suse.cz>,
+        Dan Carpenter <dan.carpenter@oracle.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: RE: [bug report] btrfs: Add type check when reading a chunk
+Date: Fri, 20 Jul 2018 05:32:47 +0000
+Message-ID: <516DDBE5B1D92D42BCF7A2E37F045A5D01A8A38230@G08CNEXMBPEKD02.g08.fujitsu.local>
+References: <20180719081053.f46f3pmrdoia64ws@mwanda>
+ <516DDBE5B1D92D42BCF7A2E37F045A5D01A8A37CB1@G08CNEXMBPEKD02.g08.fujitsu.local>
+ <20180719092201.GD26141@twin.jikos.cz> <20180719101403.GG26141@twin.jikos.cz>
+In-Reply-To: <20180719101403.GG26141@twin.jikos.cz>
+Content-Type: text/plain; charset="utf-8"
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1532063858-32620-1-git-send-email-gujx@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jul 20, 2018 at 01:17:38PM +0800, Gu Jinxiang wrote:
-> chunk type BTRFS_BLOCK_GROUP_METADATA and BTRFS_BLOCK_GROUP_DATA
-> should not be set in a non-mixed chunk at the same time.
+
+
+> -----Original Message-----
+> From: David Sterba [mailto:dsterba@suse.cz]
+> Sent: Thursday, July 19, 2018 6:14 PM
+> To: dsterba@suse.cz; Gu, Jinxiang/é¡¾ é‡‘é¦™ <gujx@cn.fujitsu.com>; Dan Carpenter <dan.carpenter@oracle.com>;
+> linux-btrfs@vger.kernel.org
+> Subject: Re: [bug report] btrfs: Add type check when reading a chunk
 > 
-> Since BTRFS_BLOCK_GROUP_METADATA is 0x4 and BTRFS_BLOCK_GROUP_DATA is 0x1,
-> BTRFS_BLOCK_GROUP_METADATA & BTRFS_BLOCK_GROUP_DATA will be 0x0,
-> so we should judge type is one of them separately.
+> On Thu, Jul 19, 2018 at 11:22:01AM +0200, David Sterba wrote:
+> > On Thu, Jul 19, 2018 at 08:18:25AM +0000, Gu, Jinxiang wrote:
+> > >
+> > >
+> > > > -----Original Message-----
+> > > > From: Dan Carpenter [mailto:dan.carpenter@oracle.com]
+> > > > Sent: Thursday, July 19, 2018 4:11 PM
+> > > > To: Gu, Jinxiang/é¡¾ é‡‘é¦™ <gujx@cn.fujitsu.com>
+> > > > Cc: linux-btrfs@vger.kernel.org
+> > > > Subject: [bug report] btrfs: Add type check when reading a chunk
+> > > >
+> > > > Hello Gu Jinxiang,
+> > > >
+> > > > The patch 72e75ed03c8d: "btrfs: Add type check when reading a chunk"
+> > > > from Jul 4, 2018, leads to the following static checker warning:
+> > > >
+> > > > 	fs/btrfs/volumes.c:6388 btrfs_check_chunk_valid()
+> > > > 	warn: AND to zero '0x4 & 0x1'
+> > > >
+> > > > fs/btrfs/volumes.c
+> > > >   6356          if (!is_power_of_2(stripe_len) || stripe_len != BTRFS_STRIPE_LEN) {
+> > > >   6357                  btrfs_err(fs_info, "invalid chunk stripe length: %llu",
+> > > >   6358                            stripe_len);
+> > > >   6359                  return -EIO;
+> > > >   6360          }
+> > > >   6361          if (~(BTRFS_BLOCK_GROUP_TYPE_MASK | BTRFS_BLOCK_GROUP_PROFILE_MASK) &
+> > > >   6362              type) {
+> > > >   6363                  btrfs_err(fs_info, "unrecognized chunk type: %llu",
+> > > >   6364                            ~(BTRFS_BLOCK_GROUP_TYPE_MASK |
+> > > >   6365                              BTRFS_BLOCK_GROUP_PROFILE_MASK) &
+> > > >   6366                            btrfs_chunk_type(leaf, chunk));
+> > > >   6367                  return -EIO;
+> > > >   6368          }
+> > > >   6369
+> > > >   6370          if ((type & BTRFS_BLOCK_GROUP_TYPE_MASK) == 0) {
+> > > >   6371                  btrfs_err(fs_info, "missing chunk type flag: %llu", type);
+> > > >   6372                  return -EIO;
+> > > >   6373          }
+> > > >   6374
+> > > >   6375          if ((type & BTRFS_BLOCK_GROUP_SYSTEM) &&
+> > > >   6376              (type & (BTRFS_BLOCK_GROUP_METADATA | BTRFS_BLOCK_GROUP_DATA))) {
+> > > >   6377                  btrfs_err(fs_info,
+> > > >   6378                          "system chunk with data or metadata type: %llu", type);
+> > > >   6379                  return -EIO;
+> > > >   6380          }
+> > > >   6381
+> > > >   6382          features = btrfs_super_incompat_flags(fs_info->super_copy);
+> > > >   6383          if (features & BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS)
+> > > >   6384                  mixed = 1;
+> > > >   6385
+> > > >   6386          if (!mixed) {
+> > > >   6387                  if (type &
+> > > >   6388                      (BTRFS_BLOCK_GROUP_METADATA & BTRFS_BLOCK_GROUP_DATA)) {
+> > > >                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> > > > Was this supposed to be | or perhaps check that both are set?
+> > > Yes. It should be |.
+> > > Thank you, I'll send a patch to fix it.
+> >
+> > Not needed, I'll fix the patch directly.
 > 
-> Reported-by: Dan Carpenter <dan.carpenter@oracle.com>
-> Signed-off-by: Gu Jinxiang <gujx@cn.fujitsu.com>
+> And that leads to failed mount:
+> 
+> [   10.867868] BTRFS error (device vda): mixed chunk type in non-mixed mode: 1
+> [   10.871084] BTRFS error (device vda): failed to read chunk tree: -5
+> [   10.908541] BTRFS error (device vda): open_ctree failed
+> 
+> Please send fixed version.
 
-Folded to the patch and updated the newly added %llu to 0x%llx and
-switched mixed to bool, thanks.
+I send a patch to fix this.
+Patch: btrfs: fix bug of chunk type check
+And, if possible, please just fold it into 72e75ed03c8d: "btrfs: Add type check when reading a chunk".
 
-The final version, for the record:
+Thanks, Gu Jinxiang
 
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -6305,6 +6305,8 @@ static int btrfs_check_chunk_valid(struct btrfs_fs_info *fs_info,
-        u16 num_stripes;
-        u16 sub_stripes;
-        u64 type;
-+       u64 features;
-+       bool mixed = false;
+> 
 
-        length = btrfs_chunk_length(leaf, chunk);
-        stripe_len = btrfs_chunk_stripe_len(leaf, chunk);
-@@ -6343,6 +6345,32 @@ static int btrfs_check_chunk_valid(struct btrfs_fs_info *fs_info,
-                          btrfs_chunk_type(leaf, chunk));
-                return -EIO;
-        }
-+
-+       if ((type & BTRFS_BLOCK_GROUP_TYPE_MASK) == 0) {
-+               btrfs_err(fs_info, "missing chunk type flag: 0x%llx", type);
-+               return -EIO;
-+       }
-+
-+       if ((type & BTRFS_BLOCK_GROUP_SYSTEM) &&
-+           (type & (BTRFS_BLOCK_GROUP_METADATA | BTRFS_BLOCK_GROUP_DATA))) {
-+               btrfs_err(fs_info,
-+                       "system chunk with data or metadata type: 0x%llx", type);
-+               return -EIO;
-+       }
-+
-+       features = btrfs_super_incompat_flags(fs_info->super_copy);
-+       if (features & BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS)
-+               mixed = true;
-+
-+       if (!mixed) {
-+               if ((type & BTRFS_BLOCK_GROUP_METADATA) &&
-+                   (type & BTRFS_BLOCK_GROUP_DATA)) {
-+                       btrfs_err(fs_info,
-+                       "mixed chunk type in non-mixed mode: 0x%llx", type);
-+                       return -EIO;
-+               }
-+       }
-+
-        if ((type & BTRFS_BLOCK_GROUP_RAID10 && sub_stripes != 2) ||
-            (type & BTRFS_BLOCK_GROUP_RAID1 && num_stripes < 1) ||
-            (type & BTRFS_BLOCK_GROUP_RAID5 && num_stripes < 2) |
+
+
+ÿôèº{.nÇ+‰·Ÿ®‰­†+%ŠËÿ±éÝ¶¥Šwÿº{.nÇ+‰·¥Š{±ý»k~ÏâžØ^n‡r¡ö¦zËëh™¨è­Ú&£ûàz¿äz¹Þ—ú+€Ê+zf£¢·hšˆ§~†­†Ûiÿÿïêÿ‘êçz_è®æj:+v‰¨þ)ß£øm

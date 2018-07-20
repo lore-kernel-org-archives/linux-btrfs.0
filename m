@@ -1,9 +1,9 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp2130.oracle.com ([141.146.126.79]:48526 "EHLO
-        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1730524AbeGTCXz (ORCPT
+Received: from userp2120.oracle.com ([156.151.31.85]:45688 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727361AbeGTMD0 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 19 Jul 2018 22:23:55 -0400
+        Fri, 20 Jul 2018 08:03:26 -0400
 Subject: Re: [PATCH 6/7] btrfs: add helper btrfs_num_devices() to deduce
  num_devices
 To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
@@ -11,8 +11,8 @@ References: <20180716145812.20836-1-anand.jain@oracle.com>
  <20180716145812.20836-7-anand.jain@oracle.com>
  <20180719115332.GI26141@twin.jikos.cz>
 From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <5c797446-1028-d852-a75a-38f19c8f11e1@oracle.com>
-Date: Fri, 20 Jul 2018 09:41:26 +0800
+Message-ID: <d3fc6178-0884-28cf-ac3e-e42a00682150@oracle.com>
+Date: Fri, 20 Jul 2018 19:18:54 +0800
 MIME-Version: 1.0
 In-Reply-To: <20180719115332.GI26141@twin.jikos.cz>
 Content-Type: text/plain; charset=utf-8; format=flowed
@@ -30,10 +30,7 @@ On 07/19/2018 07:53 PM, David Sterba wrote:
 > 
 > We can't run any two from device delete, device replace or balance at
 > the same time.
-
-  You are right. Will fix it in a separate patch. As, here in this patch
-  my intention was to de-duplicate a section of the code.
-
+> 
 >>
 >> Signed-off-by: Anand Jain <anand.jain@oracle.com>
 >> ---
@@ -61,24 +58,30 @@ On 07/19/2018 07:53 PM, David Sterba wrote:
 >> +		num_devices--;
 >> +	}
 >> +	btrfs_dev_replace_read_unlock(&fs_info->dev_replace);
-> 
-> This does not make sense,
 
-  That's in the original code I did not add it.
 
-> besides that btrfs_dev_replace_is_ongoing is
+
+> This does not make sense, besides that > btrfs_dev_replace_is_ongoing is
 > always going to be false here,
 
-  Right. Will fix in a separate patch.
+  No. There is a way how balance and replace could co-exists.
+  (theoretically, I didn't experiment it yet)
+  . Start balance and pause it
+  . Now start the replace
+  . power-fail
+  . The open_ctree() first starts the balance so it must check
+  for the replace device otherwise our num_devices calculation will
+  be wrong. IMO its not a good idea to remove the replace check here.
+
+  For now a consolidation as in this patch is better.
+
+Thanks, Anand
+
 
 > the locking would need to cover the whole
 > range where we want the num_devices to remain unchanged by other
 > operatons.
-
-  Will review this part.
-
-  Thanks, Anand
-
+> 
 >> +
 >> +	return num_devices;
 >> +}

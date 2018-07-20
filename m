@@ -1,96 +1,161 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:40678 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726450AbeG3JvH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 30 Jul 2018 05:51:07 -0400
-Subject: Re: [PATCH 14/16] btrfs: simplify btrfs_iget()
-To: Al Viro <viro@ZenIV.linux.org.uk>, linux-fsdevel@vger.kernel.org
-Cc: Linus Torvalds <torvalds@linux-foundation.org>,
-        linux-kernel@vger.kernel.org, Miklos Szeredi <mszeredi@redhat.com>,
-        David Sterba <dsterba@suse.cz>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <20180729220317.GB30522@ZenIV.linux.org.uk>
- <20180729220453.13431-1-viro@ZenIV.linux.org.uk>
- <20180729220453.13431-14-viro@ZenIV.linux.org.uk>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <4d23323d-9c85-bcfc-ffb8-6477a9ef3c38@suse.com>
-Date: Mon, 30 Jul 2018 11:17:14 +0300
-MIME-Version: 1.0
-In-Reply-To: <20180729220453.13431-14-viro@ZenIV.linux.org.uk>
-Content-Type: text/plain; charset=utf-8
+Received: from mail.kernel.org ([198.145.29.99]:38006 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1727243AbeGTKqk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 20 Jul 2018 06:46:40 -0400
+Received: from debian3.lan (bl8-197-74.dsl.telepac.pt [85.241.197.74])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id 2A3CD20661
+        for <linux-btrfs@vger.kernel.org>; Fri, 20 Jul 2018 09:59:10 +0000 (UTC)
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v2] Btrfs: fix mount failure after fsync due to hard link recreation
+Date: Fri, 20 Jul 2018 10:59:06 +0100
+Message-Id: <20180720095906.3675-1-fdmanana@kernel.org>
+In-Reply-To: <20180719180154.20125-1-fdmanana@kernel.org>
+References: <20180719180154.20125-1-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-[ADDED David Sterba and Linux-btrfs ml to cc. ]
+From: Filipe Manana <fdmanana@suse.com>
 
-On 30.07.2018 01:04, Al Viro wrote:
-> From: Al Viro <viro@zeniv.linux.org.uk>
-> 
-> don't open-code iget_failed(), don't bother with btrfs_free_path(NULL),
-> move handling of positive return values of btrfs_lookup_inode() from
-> btrfs_read_locked_inode() to btrfs_iget() and kill now obviously pointless
-> ASSERT() in there.
-> 
-> Signed-off-by: Al Viro <viro@zeniv.linux.org.uk>
+If we end up with logging an inode reference item which has the same name
+but different index from the one we have persisted, we end up failing when
+replaying the log with an errno value of -EEXIST. The error comes from
+btrfs_add_link(), which is called from add_inode_ref(), when we are
+replaying an inode reference item.
 
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+Example scenario where this happens:
 
-> ---
->  fs/btrfs/inode.c | 24 ++++++++----------------
->  1 file changed, 8 insertions(+), 16 deletions(-)
-> 
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 8f0b2592feb0..388b2dba68a0 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -3610,18 +3610,15 @@ static int btrfs_read_locked_inode(struct inode *inode)
->  		filled = true;
->  
->  	path = btrfs_alloc_path();
-> -	if (!path) {
-> -		ret = -ENOMEM;
-> -		goto make_bad;
-> -	}
-> +	if (!path)
-> +		return -ENOMEM;
->  
->  	memcpy(&location, &BTRFS_I(inode)->location, sizeof(location));
->  
->  	ret = btrfs_lookup_inode(NULL, root, path, &location, 0);
->  	if (ret) {
-> -		if (ret > 0)
-> -			ret = -ENOENT;
-> -		goto make_bad;
-> +		btrfs_free_path(path);
-> +		return ret;
->  	}
->  
->  	leaf = path->nodes[0];
-> @@ -3774,10 +3771,6 @@ static int btrfs_read_locked_inode(struct inode *inode)
->  
->  	btrfs_sync_inode_flags_to_i_flags(inode);
->  	return 0;
-> -
-> -make_bad:
-> -	btrfs_free_path(path);
-> -	return ret;
->  }
->  
->  /*
-> @@ -5713,11 +5706,10 @@ struct inode *btrfs_iget(struct super_block *s, struct btrfs_key *location,
->  			if (new)
->  				*new = 1;
->  		} else {
-> -			make_bad_inode(inode);
-> -			unlock_new_inode(inode);
-> -			iput(inode);
-> -			ASSERT(ret < 0);
-> -			inode = ERR_PTR(ret < 0 ? ret : -ESTALE);
-> +			iget_failed(inode);
-> +			if (ret > 0)
-> +				ret = -ENOENT;
-> +			inode = ERR_PTR(ret);
->  		}
->  	}
->  
-> 
+  $ mkfs.btrfs -f /dev/sdb
+  $ mount /dev/sdb /mnt
+
+  $ touch /mnt/foo
+  $ ln /mnt/foo /mnt/bar
+
+  $ sync
+
+  # Rename the first hard link (foo) to a new name and rename the second
+  # hard link (bar) to the old name of the first hard link (foo).
+  $ mv /mnt/foo /mnt/qwerty
+  $ mv /mnt/bar /mnt/foo
+
+  # Create a new file, in the same parent directory, with the old name of
+  # the second hard link (bar) and fsync this new file.
+  # We do this instead of calling fsync on foo/qwerty because if we did
+  # that the fsync resulted in a full transaction commit, not triggering
+  # the problem.
+  $ touch /mnt/bar
+  $ xfs_io -c "fsync" /mnt/bar
+
+  <power fail>
+
+  $ mount /dev/sdb /mnt
+  mount: mount /dev/sdb on /mnt failed: File exists
+
+So fix this by checking if a conflicting inode reference exists (same
+name, same parent but different index), removing it (and the associated
+dir index entries from the parent inode) if it exists, before attempting
+to add the new reference.
+
+A test case for fstests follows soon.
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+
+V2: added missing error check from btrfs_unlink_inode()
+
+ fs/btrfs/tree-log.c | 69 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 69 insertions(+)
+
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index f8220ec02036..5f3c33466c18 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -1291,6 +1291,49 @@ static int unlink_old_inode_refs(struct btrfs_trans_handle *trans,
+ 	return ret;
+ }
+ 
++static int btrfs_inode_ref_exists(struct inode *inode,
++				  struct inode *dir,
++				  const u8 ref_type,
++				  const char *name,
++				  const int namelen)
++{
++	struct btrfs_key key;
++	struct btrfs_path *path;
++	const u64 parent_id = btrfs_ino(BTRFS_I(dir));
++	int ret;
++
++	path = btrfs_alloc_path();
++	if (!path)
++		return -ENOMEM;
++
++	key.objectid = btrfs_ino(BTRFS_I(inode));
++	key.type = ref_type;
++	if (key.type == BTRFS_INODE_REF_KEY)
++		key.offset = parent_id;
++	else
++		key.offset = btrfs_extref_hash(parent_id, name, namelen);
++
++	ret = btrfs_search_slot(NULL, BTRFS_I(inode)->root, &key, path, 0, 0);
++	if (ret < 0)
++		goto out;
++	if (ret > 0) {
++		ret = 0;
++		goto out;
++	}
++	if (key.type == BTRFS_INODE_EXTREF_KEY)
++		ret = btrfs_find_name_in_ext_backref(path->nodes[0],
++						     path->slots[0],
++						     parent_id, name,
++						     namelen, NULL);
++	else
++		ret = btrfs_find_name_in_backref(path->nodes[0], path->slots[0],
++						 name, namelen, NULL);
++
++out:
++	btrfs_free_path(path);
++	return ret;
++}
++
+ /*
+  * replay one inode back reference item found in the log tree.
+  * eb, slot and key refer to the buffer and key found in the log tree.
+@@ -1400,6 +1443,32 @@ static noinline int add_inode_ref(struct btrfs_trans_handle *trans,
+ 				}
+ 			}
+ 
++			/*
++			 * If a reference item already exists for this inode
++			 * with the same parent and name, but different index,
++			 * drop it and the corresponding directory index entries
++			 * from the parent before adding the new reference item
++			 * and dir index entries, otherwise we would fail with
++			 * -EEXIST returned from btrfs_add_link() below.
++			 */
++			ret = btrfs_inode_ref_exists(inode, dir, key->type,
++						     name, namelen);
++			if (ret > 0) {
++				ret = btrfs_unlink_inode(trans, root,
++							 BTRFS_I(dir),
++							 BTRFS_I(inode),
++							 name, namelen);
++				/*
++				 * If we dropped the link count to 0, bump it so
++				 * that later the iput() on the inode will not
++				 * free it. We will fixup the link count later.
++				 */
++				if (!ret && inode->i_nlink == 0)
++					inc_nlink(inode);
++			}
++			if (ret < 0)
++				goto out;
++
+ 			/* insert our name */
+ 			ret = btrfs_add_link(trans, BTRFS_I(dir),
+ 					BTRFS_I(inode),
+-- 
+2.11.0
+

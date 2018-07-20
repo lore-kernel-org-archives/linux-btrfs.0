@@ -1,95 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:49932 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:49940 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1733128AbeGTR1B (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 20 Jul 2018 13:27:01 -0400
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 8B218AD71
+        id S2387909AbeGTR1C (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 20 Jul 2018 13:27:02 -0400
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id CDD08AD87
         for <linux-btrfs@vger.kernel.org>; Fri, 20 Jul 2018 16:37:56 +0000 (UTC)
 From: Nikolay Borisov <nborisov@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 4/7] btrfs: Remove fs_info from btrfs_assign_next_active_device
-Date: Fri, 20 Jul 2018 19:37:50 +0300
-Message-Id: <1532104673-28311-5-git-send-email-nborisov@suse.com>
+Subject: [PATCH 5/7] btrfs: Remove fs_info from btrfs_destroy_dev_replace_tgtdev
+Date: Fri, 20 Jul 2018 19:37:51 +0300
+Message-Id: <1532104673-28311-6-git-send-email-nborisov@suse.com>
 In-Reply-To: <1532104673-28311-1-git-send-email-nborisov@suse.com>
 References: <1532104673-28311-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It can be referenced from the passed 'device' argument which is always
-a well-formed device.
+This function is always passed a well-formed tgtdevice so the fs_info
+can be referenced from there.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/dev-replace.c | 2 +-
- fs/btrfs/volumes.c     | 9 +++++----
- fs/btrfs/volumes.h     | 4 ++--
- 3 files changed, 8 insertions(+), 7 deletions(-)
+ fs/btrfs/dev-replace.c | 6 +++---
+ fs/btrfs/volumes.c     | 5 ++---
+ fs/btrfs/volumes.h     | 3 +--
+ 3 files changed, 6 insertions(+), 8 deletions(-)
 
 diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index df375e1a0c9f..dd17a4d7bea2 100644
+index dd17a4d7bea2..5a72f9933e58 100644
 --- a/fs/btrfs/dev-replace.c
 +++ b/fs/btrfs/dev-replace.c
-@@ -658,7 +658,7 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
- 	tgt_device->commit_total_bytes = src_device->commit_total_bytes;
- 	tgt_device->commit_bytes_used = src_device->bytes_used;
+@@ -506,7 +506,7 @@ int btrfs_dev_replace_start(struct btrfs_fs_info *fs_info,
+ 	dev_replace->srcdev = NULL;
+ 	dev_replace->tgtdev = NULL;
+ 	btrfs_dev_replace_write_unlock(dev_replace);
+-	btrfs_destroy_dev_replace_tgtdev(fs_info, tgt_device);
++	btrfs_destroy_dev_replace_tgtdev(tgt_device);
+ 	return ret;
+ }
  
--	btrfs_assign_next_active_device(fs_info, src_device, tgt_device);
-+	btrfs_assign_next_active_device(src_device, tgt_device);
+@@ -632,7 +632,7 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
+ 		mutex_unlock(&fs_info->fs_devices->device_list_mutex);
+ 		btrfs_rm_dev_replace_blocked(fs_info);
+ 		if (tgt_device)
+-			btrfs_destroy_dev_replace_tgtdev(fs_info, tgt_device);
++			btrfs_destroy_dev_replace_tgtdev(tgt_device);
+ 		btrfs_rm_dev_replace_unblocked(fs_info);
+ 		mutex_unlock(&dev_replace->lock_finishing_cancel_unmount);
  
- 	list_add(&tgt_device->dev_alloc_list, &fs_info->fs_devices->alloc_list);
- 	fs_info->fs_devices->rw_devices++;
+@@ -821,7 +821,7 @@ int btrfs_dev_replace_cancel(struct btrfs_fs_info *fs_info)
+ 		btrfs_dev_name(tgt_device));
+ 
+ 	if (tgt_device)
+-		btrfs_destroy_dev_replace_tgtdev(fs_info, tgt_device);
++		btrfs_destroy_dev_replace_tgtdev(tgt_device);
+ 
+ leave:
+ 	mutex_unlock(&dev_replace->lock_finishing_cancel_unmount);
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 35cc5b6a06e0..99e126a0edcb 100644
+index 99e126a0edcb..241875277a7e 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -1818,9 +1818,10 @@ static struct btrfs_device * btrfs_find_next_active_device(
-  * where this function called, there should be always be another device (or
-  * this_dev) which is active.
-  */
--void btrfs_assign_next_active_device(struct btrfs_fs_info *fs_info,
--		struct btrfs_device *device, struct btrfs_device *this_dev)
-+void btrfs_assign_next_active_device(struct btrfs_device *device,
-+				     struct btrfs_device *this_dev)
+@@ -2055,10 +2055,9 @@ void btrfs_rm_dev_replace_free_srcdev(struct btrfs_fs_info *fs_info,
+ 	}
+ }
+ 
+-void btrfs_destroy_dev_replace_tgtdev(struct btrfs_fs_info *fs_info,
+-				      struct btrfs_device *tgtdev)
++void btrfs_destroy_dev_replace_tgtdev(struct btrfs_device *tgtdev)
  {
-+	struct btrfs_fs_info *fs_info = device->fs_info;
- 	struct btrfs_device *next_device;
+-	struct btrfs_fs_devices *fs_devices = fs_info->fs_devices;
++	struct btrfs_fs_devices *fs_devices = tgtdev->fs_info->fs_devices;
  
- 	if (this_dev)
-@@ -1936,7 +1937,7 @@ int btrfs_rm_device(struct btrfs_fs_info *fs_info, const char *device_path,
- 	if (test_bit(BTRFS_DEV_STATE_MISSING, &device->dev_state))
- 		cur_devices->missing_devices--;
- 
--	btrfs_assign_next_active_device(fs_info, device, NULL);
-+	btrfs_assign_next_active_device(device, NULL);
- 
- 	if (device->bdev) {
- 		cur_devices->open_devices--;
-@@ -2069,7 +2070,7 @@ void btrfs_destroy_dev_replace_tgtdev(struct btrfs_fs_info *fs_info,
- 
- 	fs_devices->num_devices--;
- 
--	btrfs_assign_next_active_device(fs_info, tgtdev, NULL);
-+	btrfs_assign_next_active_device(tgtdev, NULL);
- 
- 	list_del_rcu(&tgtdev->dev_list);
- 
+ 	WARN_ON(!tgtdev);
+ 	mutex_lock(&fs_devices->device_list_mutex);
 diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 0ae45ff1961b..1bcf0f34e8dc 100644
+index 1bcf0f34e8dc..69a028058c43 100644
 --- a/fs/btrfs/volumes.h
 +++ b/fs/btrfs/volumes.h
-@@ -407,8 +407,8 @@ struct btrfs_device *btrfs_scan_one_device(const char *path,
- 					   fmode_t flags, void *holder);
- int btrfs_close_devices(struct btrfs_fs_devices *fs_devices);
- void btrfs_free_extra_devids(struct btrfs_fs_devices *fs_devices, int step);
--void btrfs_assign_next_active_device(struct btrfs_fs_info *fs_info,
--		struct btrfs_device *device, struct btrfs_device *this_dev);
-+void btrfs_assign_next_active_device(struct btrfs_device *device,
-+				     struct btrfs_device *this_dev);
- int btrfs_find_device_missing_or_by_path(struct btrfs_fs_info *fs_info,
- 					 const char *device_path,
- 					 struct btrfs_device **device);
+@@ -455,8 +455,7 @@ int btrfs_run_dev_stats(struct btrfs_trans_handle *trans,
+ void btrfs_rm_dev_replace_remove_srcdev(struct btrfs_device *srcdev);
+ void btrfs_rm_dev_replace_free_srcdev(struct btrfs_fs_info *fs_info,
+ 				      struct btrfs_device *srcdev);
+-void btrfs_destroy_dev_replace_tgtdev(struct btrfs_fs_info *fs_info,
+-				      struct btrfs_device *tgtdev);
++void btrfs_destroy_dev_replace_tgtdev(struct btrfs_device *tgtdev);
+ void btrfs_scratch_superblocks(struct block_device *bdev, const char *device_path);
+ int btrfs_is_parity_mirror(struct btrfs_fs_info *fs_info,
+ 			   u64 logical, u64 len);
 -- 
 2.7.4
 

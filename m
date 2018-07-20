@@ -1,55 +1,100 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f66.google.com ([209.85.214.66]:39729 "EHLO
-        mail-it0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2388110AbeGTTgR (ORCPT
+Received: from 7.mo68.mail-out.ovh.net ([46.105.63.230]:55632 "EHLO
+        7.mo68.mail-out.ovh.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728183AbeGTW0t (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 20 Jul 2018 15:36:17 -0400
-Received: by mail-it0-f66.google.com with SMTP id g141-v6so13476019ita.4
-        for <linux-btrfs@vger.kernel.org>; Fri, 20 Jul 2018 11:46:45 -0700 (PDT)
-Subject: Re: [PATCH 0/4] 3- and 4- copy RAID1
-To: Hugo Mills <hugo@carfax.org.uk>, Andrei Borzenkov <arvidjaar@gmail.com>,
-        kreijack@inwind.it, Duncan <1i5t5.duncan@cox.net>,
-        linux-btrfs@vger.kernel.org
-References: <cover.1531503452.git.dsterba@suse.com>
- <9945d460-99b5-a927-a614-c797bbc7862d@dirtcellar.net>
- <d340ce28-6c93-22d4-0f56-73de8e55f1f6@libero.it>
- <pan$b5258$f3ecc84$8e06948b$54511335@cox.net>
- <793d8ec3-7934-ea60-521d-7a039c9f1ce9@libero.it>
- <pan$98af2$39851f53$ef9fd141$bfd51f5b@cox.net>
- <89d20da9-0e80-51d1-3a4f-4cccb44d31ef@libero.it>
- <2f1b19da-f2a2-077b-eee1-1106f40679ac@gmail.com>
- <b9ccc6fa-da45-4038-7911-ba012371f223@inwind.it>
- <1066d34f-2703-19e3-62ea-c4178640b8c3@gmail.com>
- <20180720184159.GD21293@carfax.org.uk>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <ac9b68aa-0d4c-1d8c-9a5c-a5d9dda7473c@gmail.com>
-Date: Fri, 20 Jul 2018 14:46:42 -0400
+        Fri, 20 Jul 2018 18:26:49 -0400
+Received: from player728.ha.ovh.net (unknown [10.109.160.143])
+        by mo68.mail-out.ovh.net (Postfix) with ESMTP id 716CFE9F63
+        for <linux-btrfs@vger.kernel.org>; Fri, 20 Jul 2018 23:28:54 +0200 (CEST)
+Received: from awhome.eu (p4FF91582.dip0.t-ipconnect.de [79.249.21.130])
+        (Authenticated sender: postmaster@awhome.eu)
+        by player728.ha.ovh.net (Postfix) with ESMTPSA id 5286A54008F
+        for <linux-btrfs@vger.kernel.org>; Fri, 20 Jul 2018 23:28:54 +0200 (CEST)
+To: linux-btrfs@vger.kernel.org
+From: Alexander Wetzel <alexander.wetzel@web.de>
+Subject: btrfs filesystem corruptions with 4.18. git kernels
+Message-ID: <50997dd6-6e60-af55-1aff-993b7cc3b801@web.de>
+Date: Fri, 20 Jul 2018 23:28:42 +0200
 MIME-Version: 1.0
-In-Reply-To: <20180720184159.GD21293@carfax.org.uk>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2018-07-20 14:41, Hugo Mills wrote:
-> On Fri, Jul 20, 2018 at 09:38:14PM +0300, Andrei Borzenkov wrote:
->> 20.07.2018 20:16, Goffredo Baroncelli пишет:
-> [snip]
->>> Limiting the number of disk per raid, in BTRFS would be quite simple to implement in the "chunk allocator"
->>>
->>
->> You mean that currently RAID5 stripe size is equal to number of disks?
->> Well, I suppose nobody is using btrfs with disk pools of two or three
->> digits size.
-> 
->     But they are (even if not very many of them) -- we've seen at least
-> one person with something like 40 or 50 devices in the array. They'd
-> definitely got into /dev/sdac territory. I don't recall what RAID level
-> they were using. I think it was either RAID-1 or -10.
-> 
->     That's the largest I can recall seeing mention of, though.
-I've talked to at least two people using it on 100+ disks in a SAN 
-situation.  In both cases however, BTRFS itself was only seeing about 20 
-devices and running in raid0 mode on them, with each of those being a 
-RAID6 volume configured on the SAN node holding the disks for it.  From 
-what I understood when talking to them, they actually got rather good 
-performance in this setup, though maintenance was a bit of a pain.
+Hello,
+
+I'm running my normal workstation with git kernels from 
+git://git.kernel.org/pub/scm/linux/kernel/git/wireless/wireless-testing.git 
+and just got the second file system corruption in three weeks. I do not 
+have issues with stable kernels, and just want to give you a heads up 
+that there might be something seriously broken in current development 
+kernels.
+
+The first corruption was with a kernel based on 4.18.0-rc1 
+(wt-2018-06-20) and the second one today based on 4.18.0-rc4 
+(wt-2018-07-09).
+The first corruption definitely destroyed data, the second one has not 
+been looked at all, yet.
+
+After the reinstall I did run some scrubs, the last working one one week 
+ago.
+
+Of course this could be unrelated to the development kernels or even 
+btrfs, but two corruptions within weeks after years without problems is 
+very suspect.
+And since btrfs also allowed to read corrupted data (with a stable 
+ubuntu kernel, see below for more details) it looks like this is indeed 
+an issue in btrfs, correct?
+
+A btrfs subvolume is used as the rootfs on a "Samsung SSD 850 EVO mSATA 
+1TB" and I'm running Gentoo ~amd64 on a Thinkpad W530. Discard is 
+enabled as mount option and there were roughly 5 other subvolumes.
+
+I'm currently backing up the full btrfs partition after the second 
+corruption which announced itself with the following log entries:
+
+[  979.223767] BTRFS critical (device sdc2): corrupt leaf: root=2 
+block=1029783552 slot=1, unexpected item end, have 16161 expect 16250
+[  979.223808] BTRFS: error (device sdc2) in __btrfs_cow_block:1080: 
+errno=-5 IO failure
+[  979.223810] BTRFS info (device sdc2): forced readonly
+[  979.224599] BTRFS warning (device sdc2): Skipping commit of aborted 
+transaction.
+[  979.224603] BTRFS: error (device sdc2) in cleanup_transaction:1847: 
+errno=-5 IO failure
+
+I'll restore the system from a backup - and stick to stable kernels for 
+now - after that, but if needed I can of course also restore the 
+partition backup to another disk for testing.
+
+Here what I can say from the first crash:
+
+On Jul 4th I discovered severe file system corruptions and when booting 
+with init=/bin/bash even tools like parted failed with some report about 
+invalid ELF headers for some library. I started an Ubuntu 17.10 install 
+on another physical disk and copied some data from the damaged btrfs 
+volume to the Ubuntu disk. And while I COULD copy the files quite many 
+of the interesting ones were broken:
+e.g. the git tree I rescued from the broken btrfs disk is unusable. The 
+broken files I found all look about the correct size but contain only 0x01:
+$ hexdump -C .git/objects/9d/732f6506e4cecd6d2b50c5008f9d1255198c1e
+00000000  01 01 01 01 01 01 01 01  01 01 01 01 01 01 01 01 
+|................|
+*
+00000e26
+
+After copying the files I tried a "btrfs check --repair" which was 
+finding countless errors and I aborted after I got more than 3 million 
+lines output. After the abort the complete home dir and everything 
+beneath it was simple gone. I gave up on the install and set the system 
+up from scratch, starting with formating the damaged partition new.
+And exported the root subvolume with btrfs send to a fil.
+
+The full output from the repair attempt can be downloaded here: 
+https://www.awhome.eu/index.php/s/6jXtBTEeyA2ns3d
+
+Kind regards,
+
+Alexander
+
+

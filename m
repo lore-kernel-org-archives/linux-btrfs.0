@@ -1,65 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:36292 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1726905AbeGUC7K (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 20 Jul 2018 22:59:10 -0400
-Date: Sat, 21 Jul 2018 10:08:05 +0800
-From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-To: Nikolay Borisov <nborisov@suse.com>
-CC: <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 0/7] fs_info cleanups for volume.c
-Message-ID: <20180721020805.GB575@fnst.localdomain>
-References: <1532104673-28311-1-git-send-email-nborisov@suse.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Received: from mx2.suse.de ([195.135.220.15]:49914 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S2387758AbeGTR1A (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 20 Jul 2018 13:27:00 -0400
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id AE56BAD55
+        for <linux-btrfs@vger.kernel.org>; Fri, 20 Jul 2018 16:37:55 +0000 (UTC)
+From: Nikolay Borisov <nborisov@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH 1/7] btrfs: Remove fs_info argument from btrfs_add_dev_item
+Date: Fri, 20 Jul 2018 19:37:47 +0300
+Message-Id: <1532104673-28311-2-git-send-email-nborisov@suse.com>
 In-Reply-To: <1532104673-28311-1-git-send-email-nborisov@suse.com>
+References: <1532104673-28311-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jul 20, 2018 at 07:37:46PM +0300, Nikolay Borisov wrote:
->Here are a bunch of patches which cleanup extraneous fs_info parameters to 
->function which already take a structure that holds a reference to the fs_info. 
->
->Except for patches 4 and 5, everything else is correct - due to those functions
->always taking a transaction. 4 and 5 in turn reference the fs_info from 
->struct btrfs_device. Inspecting the callers I managed to convince myself that 
->those function are always called with well-formed btrfs_device i.e one which 
->has its fs_info member initialised. Reviewers might want to pay extra 
->attention to that but otherwise they are trivial. 
->
->Nikolay Borisov (7):
->  btrfs: Remove fs_info argument from btrfs_add_dev_item
->  btrfs: Remove fs_info from btrfs_rm_dev_replace_remove_srcdev
->  btrfs: remove fs_info argument from update_dev_stat_item
->  btrfs: Remove fs_info from btrfs_assign_next_active_device
->  btrfs: Remove fs_info from btrfs_destroy_dev_replace_tgtdev
->  btrfs: Remove fs_info form btrfs_free_chunk
->  btrfs: Remove fs_info from btrfs_finish_chunk_alloc
+It can be referenced form the passed transaction handle.
 
-The series looks good to me.
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+---
+ fs/btrfs/volumes.c | 10 ++++------
+ 1 file changed, 4 insertions(+), 6 deletions(-)
 
-Reviewed-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index e8fb9d5d976e..e73b9e9d6c10 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1666,10 +1666,8 @@ static noinline int find_next_devid(struct btrfs_fs_info *fs_info,
+  * the btrfs_device struct should be fully filled in
+  */
+ static int btrfs_add_dev_item(struct btrfs_trans_handle *trans,
+-			    struct btrfs_fs_info *fs_info,
+ 			    struct btrfs_device *device)
+ {
+-	struct btrfs_root *root = fs_info->chunk_root;
+ 	int ret;
+ 	struct btrfs_path *path;
+ 	struct btrfs_dev_item *dev_item;
+@@ -1685,8 +1683,8 @@ static int btrfs_add_dev_item(struct btrfs_trans_handle *trans,
+ 	key.type = BTRFS_DEV_ITEM_KEY;
+ 	key.offset = device->devid;
+ 
+-	ret = btrfs_insert_empty_item(trans, root, path, &key,
+-				      sizeof(*dev_item));
++	ret = btrfs_insert_empty_item(trans, trans->fs_info->chunk_root, path,
++				      &key, sizeof(*dev_item));
+ 	if (ret)
+ 		goto out;
+ 
+@@ -1711,7 +1709,7 @@ static int btrfs_add_dev_item(struct btrfs_trans_handle *trans,
+ 	ptr = btrfs_device_uuid(dev_item);
+ 	write_extent_buffer(leaf, device->uuid, ptr, BTRFS_UUID_SIZE);
+ 	ptr = btrfs_device_fsid(dev_item);
+-	write_extent_buffer(leaf, fs_info->fsid, ptr, BTRFS_FSID_SIZE);
++	write_extent_buffer(leaf, trans->fs_info->fsid, ptr, BTRFS_FSID_SIZE);
+ 	btrfs_mark_buffer_dirty(leaf);
+ 
+ 	ret = 0;
+@@ -2441,7 +2439,7 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
+ 		}
+ 	}
+ 
+-	ret = btrfs_add_dev_item(trans, fs_info, device);
++	ret = btrfs_add_dev_item(trans, device);
+ 	if (ret) {
+ 		btrfs_abort_transaction(trans, ret);
+ 		goto error_sysfs;
 -- 
-Thanks,
-Lu
-
->
-> fs/btrfs/dev-replace.c | 10 +++++-----
-> fs/btrfs/extent-tree.c |  5 ++---
-> fs/btrfs/volumes.c     | 49 +++++++++++++++++++++++--------------------------
-> fs/btrfs/volumes.h     | 16 ++++++----------
-> 4 files changed, 36 insertions(+), 44 deletions(-)
->
->-- 
->2.7.4
->
->--
->To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->the body of a message to majordomo@vger.kernel.org
->More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
->
-
+2.7.4
 

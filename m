@@ -1,84 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.20]:51657 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726415AbeGTHQR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 20 Jul 2018 03:16:17 -0400
+Received: from mx2.suse.de ([195.135.220.15]:39700 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1727378AbeGTLYy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 20 Jul 2018 07:24:54 -0400
+Date: Fri, 20 Jul 2018 12:37:09 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Gu Jinxiang <gujx@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH] btrfs: fix bug of chunk type check
-To: Nikolay Borisov <nborisov@suse.com>, Gu Jinxiang <gujx@cn.fujitsu.com>,
-        linux-btrfs@vger.kernel.org
+Message-ID: <20180720103709.GZ26141@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <1532063858-32620-1-git-send-email-gujx@cn.fujitsu.com>
- <08fc876b-f9d7-dc11-5126-e35976402caf@suse.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <c571a602-9294-93ba-4390-f8cd0823d943@gmx.com>
-Date: Fri, 20 Jul 2018 14:29:20 +0800
 MIME-Version: 1.0
-In-Reply-To: <08fc876b-f9d7-dc11-5126-e35976402caf@suse.com>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1532063858-32620-1-git-send-email-gujx@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-On 2018年07月20日 14:14, Nikolay Borisov wrote:
+On Fri, Jul 20, 2018 at 01:17:38PM +0800, Gu Jinxiang wrote:
+> chunk type BTRFS_BLOCK_GROUP_METADATA and BTRFS_BLOCK_GROUP_DATA
+> should not be set in a non-mixed chunk at the same time.
 > 
+> Since BTRFS_BLOCK_GROUP_METADATA is 0x4 and BTRFS_BLOCK_GROUP_DATA is 0x1,
+> BTRFS_BLOCK_GROUP_METADATA & BTRFS_BLOCK_GROUP_DATA will be 0x0,
+> so we should judge type is one of them separately.
 > 
-> On 20.07.2018 08:17, Gu Jinxiang wrote:
->> chunk type BTRFS_BLOCK_GROUP_METADATA and BTRFS_BLOCK_GROUP_DATA
->> should not be set in a non-mixed chunk at the same time.
->>
->> Since BTRFS_BLOCK_GROUP_METADATA is 0x4 and BTRFS_BLOCK_GROUP_DATA is 0x1,
->> BTRFS_BLOCK_GROUP_METADATA & BTRFS_BLOCK_GROUP_DATA will be 0x0,
->> so we should judge type is one of them separately.
->>
->> Reported-by: Dan Carpenter <dan.carpenter@oracle.com>
->> Signed-off-by: Gu Jinxiang <gujx@cn.fujitsu.com>
-> 
-> Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+> Reported-by: Dan Carpenter <dan.carpenter@oracle.com>
+> Signed-off-by: Gu Jinxiang <gujx@cn.fujitsu.com>
 
-Reviewed-by: Qu Wenruo <wqu@suse.com>
+Folded to the patch and updated the newly added %llu to 0x%llx and
+switched mixed to bool, thanks.
 
-However an extra nitpick.
+The final version, for the record:
 
-> 
->> ---
->>  fs/btrfs/volumes.c | 4 ++--
->>  1 file changed, 2 insertions(+), 2 deletions(-)
->>
->> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
->> index 3f2f01ad9356..c7d009e45472 100644
->> --- a/fs/btrfs/volumes.c
->> +++ b/fs/btrfs/volumes.c
->> @@ -6384,8 +6384,8 @@ static int btrfs_check_chunk_valid(struct btrfs_fs_info *fs_info,
->>  		mixed = 1;
->>  
->>  	if (!mixed) {
->> -		if (type &
->> -		    (BTRFS_BLOCK_GROUP_METADATA & BTRFS_BLOCK_GROUP_DATA)) {
->> +		if ((type & BTRFS_BLOCK_GROUP_METADATA) &&
->> +			(type & BTRFS_BLOCK_GROUP_DATA)) {
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -6305,6 +6305,8 @@ static int btrfs_check_chunk_valid(struct btrfs_fs_info *fs_info,
+        u16 num_stripes;
+        u16 sub_stripes;
+        u64 type;
++       u64 features;
++       bool mixed = false;
 
-IIRC previous (and failed) fix was checking type & (METADATA | DATA),
-which valid METADATA or DATA will also trigger it.
-
-When handling two bits we indeed need extra attention, either type &
-(METADATA | DATA) == (METADATA | DATA) or your method.
-
-Thanks,
-Qu
-
->>  			btrfs_err(fs_info,
->>  			"mixed chunk type in non-mixed mode: %llu", type);
-
-For bit flags, 0x%llx would be better in my opinion, just as the block
-group item tree-checker did.
-
-Thanks,
-Qu
-
->>  			return -EIO;
->>
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+        length = btrfs_chunk_length(leaf, chunk);
+        stripe_len = btrfs_chunk_stripe_len(leaf, chunk);
+@@ -6343,6 +6345,32 @@ static int btrfs_check_chunk_valid(struct btrfs_fs_info *fs_info,
+                          btrfs_chunk_type(leaf, chunk));
+                return -EIO;
+        }
++
++       if ((type & BTRFS_BLOCK_GROUP_TYPE_MASK) == 0) {
++               btrfs_err(fs_info, "missing chunk type flag: 0x%llx", type);
++               return -EIO;
++       }
++
++       if ((type & BTRFS_BLOCK_GROUP_SYSTEM) &&
++           (type & (BTRFS_BLOCK_GROUP_METADATA | BTRFS_BLOCK_GROUP_DATA))) {
++               btrfs_err(fs_info,
++                       "system chunk with data or metadata type: 0x%llx", type);
++               return -EIO;
++       }
++
++       features = btrfs_super_incompat_flags(fs_info->super_copy);
++       if (features & BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS)
++               mixed = true;
++
++       if (!mixed) {
++               if ((type & BTRFS_BLOCK_GROUP_METADATA) &&
++                   (type & BTRFS_BLOCK_GROUP_DATA)) {
++                       btrfs_err(fs_info,
++                       "mixed chunk type in non-mixed mode: 0x%llx", type);
++                       return -EIO;
++               }
++       }
++
+        if ((type & BTRFS_BLOCK_GROUP_RAID10 && sub_stripes != 2) ||
+            (type & BTRFS_BLOCK_GROUP_RAID1 && num_stripes < 1) ||
+            (type & BTRFS_BLOCK_GROUP_RAID5 && num_stripes < 2) |

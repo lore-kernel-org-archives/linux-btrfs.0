@@ -1,77 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:49920 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:49926 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S2387881AbeGTR1A (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 20 Jul 2018 13:27:00 -0400
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id F270BAD5A
-        for <linux-btrfs@vger.kernel.org>; Fri, 20 Jul 2018 16:37:55 +0000 (UTC)
+        id S2387897AbeGTR1B (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 20 Jul 2018 13:27:01 -0400
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 45E72AD65
+        for <linux-btrfs@vger.kernel.org>; Fri, 20 Jul 2018 16:37:56 +0000 (UTC)
 From: Nikolay Borisov <nborisov@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 2/7] btrfs: Remove fs_info from btrfs_rm_dev_replace_remove_srcdev
-Date: Fri, 20 Jul 2018 19:37:48 +0300
-Message-Id: <1532104673-28311-3-git-send-email-nborisov@suse.com>
+Subject: [PATCH 3/7] btrfs: remove fs_info argument from update_dev_stat_item
+Date: Fri, 20 Jul 2018 19:37:49 +0300
+Message-Id: <1532104673-28311-4-git-send-email-nborisov@suse.com>
 In-Reply-To: <1532104673-28311-1-git-send-email-nborisov@suse.com>
 References: <1532104673-28311-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It can be referenced from the passed srcdev argument.
+It can be referenced from the passed transaction handle.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/dev-replace.c | 2 +-
- fs/btrfs/volumes.c     | 5 ++---
- fs/btrfs/volumes.h     | 3 +--
- 3 files changed, 4 insertions(+), 6 deletions(-)
+ fs/btrfs/volumes.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index 059ca3d5ddd3..df375e1a0c9f 100644
---- a/fs/btrfs/dev-replace.c
-+++ b/fs/btrfs/dev-replace.c
-@@ -667,7 +667,7 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
- 
- 	btrfs_rm_dev_replace_blocked(fs_info);
- 
--	btrfs_rm_dev_replace_remove_srcdev(fs_info, src_device);
-+	btrfs_rm_dev_replace_remove_srcdev(src_device);
- 
- 	btrfs_rm_dev_replace_unblocked(fs_info);
- 
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index e73b9e9d6c10..844e5d4fd3e4 100644
+index 844e5d4fd3e4..35cc5b6a06e0 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -1988,12 +1988,11 @@ int btrfs_rm_device(struct btrfs_fs_info *fs_info, const char *device_path,
- 	goto out;
+@@ -7035,9 +7035,9 @@ int btrfs_init_dev_stats(struct btrfs_fs_info *fs_info)
  }
  
--void btrfs_rm_dev_replace_remove_srcdev(struct btrfs_fs_info *fs_info,
--					struct btrfs_device *srcdev)
-+void btrfs_rm_dev_replace_remove_srcdev(struct btrfs_device *srcdev)
+ static int update_dev_stat_item(struct btrfs_trans_handle *trans,
+-				struct btrfs_fs_info *fs_info,
+ 				struct btrfs_device *device)
  {
- 	struct btrfs_fs_devices *fs_devices;
++	struct btrfs_fs_info *fs_info = trans->fs_info;
+ 	struct btrfs_root *dev_root = fs_info->dev_root;
+ 	struct btrfs_path *path;
+ 	struct btrfs_key key;
+@@ -7130,7 +7130,7 @@ int btrfs_run_dev_stats(struct btrfs_trans_handle *trans,
+ 		 */
+ 		smp_rmb();
  
--	lockdep_assert_held(&fs_info->fs_devices->device_list_mutex);
-+	lockdep_assert_held(&srcdev->fs_info->fs_devices->device_list_mutex);
- 
- 	/*
- 	 * in case of fs with no seed, srcdev->fs_devices will point
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 6943aab9bdd7..0ae45ff1961b 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -452,8 +452,7 @@ void btrfs_init_devices_late(struct btrfs_fs_info *fs_info);
- int btrfs_init_dev_stats(struct btrfs_fs_info *fs_info);
- int btrfs_run_dev_stats(struct btrfs_trans_handle *trans,
- 			struct btrfs_fs_info *fs_info);
--void btrfs_rm_dev_replace_remove_srcdev(struct btrfs_fs_info *fs_info,
--					struct btrfs_device *srcdev);
-+void btrfs_rm_dev_replace_remove_srcdev(struct btrfs_device *srcdev);
- void btrfs_rm_dev_replace_free_srcdev(struct btrfs_fs_info *fs_info,
- 				      struct btrfs_device *srcdev);
- void btrfs_destroy_dev_replace_tgtdev(struct btrfs_fs_info *fs_info,
+-		ret = update_dev_stat_item(trans, fs_info, device);
++		ret = update_dev_stat_item(trans, device);
+ 		if (!ret)
+ 			atomic_sub(stats_cnt, &device->dev_stats_ccnt);
+ 	}
 -- 
 2.7.4
 

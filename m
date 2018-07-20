@@ -1,36 +1,91 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:56236 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S2388086AbeGWO00 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 23 Jul 2018 10:26:26 -0400
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 9CAB3AD64
-        for <linux-btrfs@vger.kernel.org>; Mon, 23 Jul 2018 13:25:10 +0000 (UTC)
-Date: Mon, 23 Jul 2018 15:25:01 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Nikolay Borisov <nborisov@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 0/7] fs_info cleanups for volume.c
-Message-ID: <20180723132501.GL26141@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1532104673-28311-1-git-send-email-nborisov@suse.com>
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:46726 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1727749AbeGTLQK (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 20 Jul 2018 07:16:10 -0400
+From: Gu Jinxiang <gujx@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: <quwenruo.btrfs@gmx.com>
+Subject: [PATCH v2] btrfs: fix bug of chunk type check
+Date: Fri, 20 Jul 2018 18:17:21 +0800
+Message-ID: <1532081841-2301-1-git-send-email-gujx@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1532104673-28311-1-git-send-email-nborisov@suse.com>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jul 20, 2018 at 07:37:46PM +0300, Nikolay Borisov wrote:
-> Here are a bunch of patches which cleanup extraneous fs_info parameters to 
-> function which already take a structure that holds a reference to the fs_info. 
-> 
-> Except for patches 4 and 5, everything else is correct - due to those functions
-> always taking a transaction. 4 and 5 in turn reference the fs_info from 
-> struct btrfs_device. Inspecting the callers I managed to convince myself that 
-> those function are always called with well-formed btrfs_device i.e one which 
-> has its fs_info member initialised. Reviewers might want to pay extra 
-> attention to that but otherwise they are trivial. 
+chunk type BTRFS_BLOCK_GROUP_METADATA and BTRFS_BLOCK_GROUP_DATA
+should not be set in a non-mixed chunk at the same time.
 
-4 and 5 look good to me, a device without a valid fs_info has a short
-timespan and should not appear anywhere besides the helpers that set up
-fs_devices etc. Series added to misc-next, thanks.
+Since BTRFS_BLOCK_GROUP_METADATA is 0x4 and BTRFS_BLOCK_GROUP_DATA is 0x1,
+BTRFS_BLOCK_GROUP_METADATA & BTRFS_BLOCK_GROUP_DATA will be 0x0,
+so we should judge type is one of them separately.
+
+Reported-by: Dan Carpenter <dan.carpenter@oracle.com>
+Signed-off-by: Gu Jinxiang <gujx@cn.fujitsu.com>
+---
+Changelog:
+ v2: As comment by Qu, change the print format of bit from %llu to 0x%llx.
+
+ fs/btrfs/volumes.c | 14 +++++++-------
+ 1 file changed, 7 insertions(+), 7 deletions(-)
+
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 3f2f01ad9356..d61c604b280c 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -6360,7 +6360,7 @@ static int btrfs_check_chunk_valid(struct btrfs_fs_info *fs_info,
+ 	}
+ 	if (~(BTRFS_BLOCK_GROUP_TYPE_MASK | BTRFS_BLOCK_GROUP_PROFILE_MASK) &
+ 	    type) {
+-		btrfs_err(fs_info, "unrecognized chunk type: %llu",
++		btrfs_err(fs_info, "unrecognized chunk type: 0x%llx",
+ 			  ~(BTRFS_BLOCK_GROUP_TYPE_MASK |
+ 			    BTRFS_BLOCK_GROUP_PROFILE_MASK) &
+ 			  btrfs_chunk_type(leaf, chunk));
+@@ -6368,14 +6368,14 @@ static int btrfs_check_chunk_valid(struct btrfs_fs_info *fs_info,
+ 	}
+ 
+ 	if ((type & BTRFS_BLOCK_GROUP_TYPE_MASK) == 0) {
+-		btrfs_err(fs_info, "missing chunk type flag: %llu", type);
++		btrfs_err(fs_info, "missing chunk type flag: 0x%llx", type);
+ 		return -EIO;
+ 	}
+ 
+ 	if ((type & BTRFS_BLOCK_GROUP_SYSTEM) &&
+ 	    (type & (BTRFS_BLOCK_GROUP_METADATA | BTRFS_BLOCK_GROUP_DATA))) {
+ 		btrfs_err(fs_info,
+-			"system chunk with data or metadata type: %llu", type);
++		"system chunk with data or metadata type: 0x%llx", type);
+ 		return -EIO;
+ 	}
+ 
+@@ -6384,10 +6384,10 @@ static int btrfs_check_chunk_valid(struct btrfs_fs_info *fs_info,
+ 		mixed = 1;
+ 
+ 	if (!mixed) {
+-		if (type &
+-		    (BTRFS_BLOCK_GROUP_METADATA & BTRFS_BLOCK_GROUP_DATA)) {
++		if ((type & BTRFS_BLOCK_GROUP_METADATA) &&
++			(type & BTRFS_BLOCK_GROUP_DATA)) {
+ 			btrfs_err(fs_info,
+-			"mixed chunk type in non-mixed mode: %llu", type);
++			"mixed chunk type in non-mixed mode: 0x%llx", type);
+ 			return -EIO;
+ 		}
+ 	}
+@@ -6400,7 +6400,7 @@ static int btrfs_check_chunk_valid(struct btrfs_fs_info *fs_info,
+ 	    ((type & BTRFS_BLOCK_GROUP_PROFILE_MASK) == 0 &&
+ 	     num_stripes != 1)) {
+ 		btrfs_err(fs_info,
+-			"invalid num_stripes:sub_stripes %u:%u for profile %llu",
++			"invalid num_stripes:sub_stripes %u:%u for profile 0x%llx",
+ 			num_stripes, sub_stripes,
+ 			type & BTRFS_BLOCK_GROUP_PROFILE_MASK);
+ 		return -EIO;
+-- 
+2.17.1
+
+
+

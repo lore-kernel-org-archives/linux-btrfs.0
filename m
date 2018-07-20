@@ -1,102 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ed1-f54.google.com ([209.85.208.54]:33637 "EHLO
-        mail-ed1-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727069AbeGTFsT (ORCPT
+Received: from mail-ed1-f68.google.com ([209.85.208.68]:46952 "EHLO
+        mail-ed1-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727056AbeGTGEO (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 20 Jul 2018 01:48:19 -0400
-Received: by mail-ed1-f54.google.com with SMTP id x5-v6so8758543edr.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jul 2018 22:01:55 -0700 (PDT)
-Subject: Re: Healthy amount of free space?
-To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
-        Chris Murphy <lists@colorremedies.com>
-Cc: Martin Steigerwald <martin@lichtvoll.de>,
-        Nikolay Borisov <nborisov@suse.com>, Wolf <wolf@wolfsden.cz>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <20180716205809.42jywfvuxwuuqixd@wolfsden.cz>
- <2197534.TZSffJRfLT@merkaba> <9ea19b13-3c46-666f-fa79-f40bd1ae7658@suse.com>
- <1736761.B5nO4FXixV@merkaba> <33396c10-33ef-b8ff-0041-c94d87c67722@gmail.com>
- <CAJCQCtSZruKeM117EfQNQnEFuk_bswhhKnEnFVD2i7MHWU65RQ@mail.gmail.com>
- <d42d5c79-46df-4e11-0ba2-1adb9e073ed9@gmail.com>
+        Fri, 20 Jul 2018 02:04:14 -0400
+Received: by mail-ed1-f68.google.com with SMTP id o8-v6so8747451edt.13
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jul 2018 22:17:46 -0700 (PDT)
+Subject: Re: [PATCH 0/4] 3- and 4- copy RAID1
+To: kreijack@inwind.it, Duncan <1i5t5.duncan@cox.net>,
+        linux-btrfs@vger.kernel.org
+References: <cover.1531503452.git.dsterba@suse.com>
+ <9945d460-99b5-a927-a614-c797bbc7862d@dirtcellar.net>
+ <d340ce28-6c93-22d4-0f56-73de8e55f1f6@libero.it>
+ <pan$b5258$f3ecc84$8e06948b$54511335@cox.net>
+ <793d8ec3-7934-ea60-521d-7a039c9f1ce9@libero.it>
+ <pan$98af2$39851f53$ef9fd141$bfd51f5b@cox.net>
+ <89d20da9-0e80-51d1-3a4f-4cccb44d31ef@libero.it>
 From: Andrei Borzenkov <arvidjaar@gmail.com>
-Message-ID: <f0c978ec-ca06-af17-cc1b-e82bc80aff8e@gmail.com>
-Date: Fri, 20 Jul 2018 08:01:52 +0300
+Message-ID: <2f1b19da-f2a2-077b-eee1-1106f40679ac@gmail.com>
+Date: Fri, 20 Jul 2018 08:17:43 +0300
 MIME-Version: 1.0
-In-Reply-To: <d42d5c79-46df-4e11-0ba2-1adb9e073ed9@gmail.com>
+In-Reply-To: <89d20da9-0e80-51d1-3a4f-4cccb44d31ef@libero.it>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-18.07.2018 16:30, Austin S. Hemmelgarn пишет:
-> On 2018-07-18 09:07, Chris Murphy wrote:
->> On Wed, Jul 18, 2018 at 6:35 AM, Austin S. Hemmelgarn
->> <ahferroin7@gmail.com> wrote:
+18.07.2018 22:42, Goffredo Baroncelli пишет:
+> On 07/18/2018 09:20 AM, Duncan wrote:
+>> Goffredo Baroncelli posted on Wed, 18 Jul 2018 07:59:52 +0200 as
+>> excerpted:
 >>
->>> If you're doing a training presentation, it may be worth mentioning that
->>> preallocation with fallocate() does not behave the same on BTRFS as
->>> it does
->>> on other filesystems.  For example, the following sequence of commands:
+>>> On 07/17/2018 11:12 PM, Duncan wrote:
+>>>> Goffredo Baroncelli posted on Mon, 16 Jul 2018 20:29:46 +0200 as
+>>>> excerpted:
+>>>>
+>>>>> On 07/15/2018 04:37 PM, waxhead wrote:
+>>>>
+>>>>> Striping and mirroring/pairing are orthogonal properties; mirror and
+>>>>> parity are mutually exclusive.
+>>>>
+>>>> I can't agree.  I don't know whether you meant that in the global
+>>>> sense,
+>>>> or purely in the btrfs context (which I suspect), but either way I
+>>>> can't agree.
+>>>>
+>>>> In the pure btrfs context, while striping and mirroring/pairing are
+>>>> orthogonal today, Hugo's whole point was that btrfs is theoretically
+>>>> flexible enough to allow both together and the feature may at some
+>>>> point be added, so it makes sense to have a layout notation format
+>>>> flexible enough to allow it as well.
 >>>
->>>      fallocate -l X ./tmp
->>>      dd if=/dev/zero of=./tmp bs=1 count=X
+>>> When I say orthogonal, It means that these can be combined: i.e. you can
+>>> have - striping (RAID0)
+>>> - parity  (?)
+>>> - striping + parity  (e.g. RAID5/6)
+>>> - mirroring  (RAID1)
+>>> - mirroring + striping  (RAID10)
 >>>
->>> Will always work on ext4, XFS, and most other filesystems, for any
->>> value of
->>> X between zero and just below the total amount of free space on the
->>> filesystem.  On BTRFS though, it will reliably fail with ENOSPC for
->>> values
->>> of X that are greater than _half_ of the total amount of free space
->>> on the
->>> filesystem (actually, greater than just short of half).  In essence,
->>> preallocating space does not prevent COW semantics for the first write
->>> unless the file is marked NOCOW.
+>>> However you can't have mirroring+parity; this means that a notation
+>>> where both 'C' ( = number of copy) and 'P' ( = number of parities) is
+>>> too verbose.
 >>
->> Is this a bug, or is it suboptimal behavior, or is it intentional?
-> It's been discussed before, though I can't find the email thread right
-> now.  Pretty much, this is _technically_ not incorrect behavior, as the
-> documentation for fallocate doesn't say that subsequent writes can't
-> fail due to lack of space.  I personally consider it a bug though
-> because it breaks from existing behavior in a way that is avoidable and
-> defies user expectations.
+>> Yes, you can have mirroring+parity, conceptually it's simply raid5/6 on 
+>> top of mirroring or mirroring on top of raid5/6, much as raid10 is 
+>> conceptually just raid0 on top of raid1, and raid01 is conceptually raid1 
+>> on top of raid0.  
+> And what about raid 615156156 (raid 6 on top of raid 1 on top of raid 5 on top of....) ???
 > 
-> There are two issues here:
-> 
-> 1. Regions preallocated with fallocate still do COW on the first write
-> to any given block in that region.  This can be handled by either
-> treating the first write to each block as NOCOW, or by allocating a bit
+> Seriously, of course you can combine a lot of different profile; however the only ones that make sense are the ones above.
 
-How is it possible? As long as fallocate actually allocates space, this
-should be checksummed which means it is no more possible to overwrite
-it. May be fallocate on btrfs could simply reserve space. Not sure
-whether it complies with fallocate specification, but as long as
-intention is to ensure write will not fail for the lack of space it
-should be adequate (to the extent it can be ensured on btrfs of course).
-Also hole in file returns zeros by definition which also matches
-fallocate behavior.
+RAID50 (striping across RAID5) is common.
 
-> of extra space and doing a rotating approach like this for writes:
->     - Write goes into the extra space.
->     - Once the write is done, convert the region covered by the write
->       into a new block of extra space.
->     - When the final block of the preallocated region is written,
->       deallocate the extra space.
-> 2. Preallocation does not completely account for necessary metadata
-> space that will be needed to store the data there.  This may not be
-> necessary if the first issue is addressed properly.
->>
->> And then I wonder what happens with XFS COW:
->>
->>       fallocate -l X ./tmp
->>       cp --reflink ./tmp ./tmp2
->>       dd if=/dev/zero of=./tmp bs=1 count=X
-> I'm not sure.  In this particular case, this will fail on BTRFS for any
-> X larger than just short of one third of the total free space.  I would
-> expect it to fail for any X larger than just short of half instead.
-> 
-> ZFS gets around this by not supporting fallocate (well, kind of, if
-> you're using glibc and call posix_fallocate, that _will_ work, but it
-> will take forever because it works by writing out each block of space
-> that's being allocated, which, ironically, means that that still suffers
-> from the same issue potentially that we have).
-
-What happens on btrfs then? fallocate specifies that new space should be
-initialized to zero, so something should still write those zeros?

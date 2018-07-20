@@ -1,14 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ed1-f65.google.com ([209.85.208.65]:34623 "EHLO
-        mail-ed1-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2388043AbeGTT1s (ORCPT
+Received: from frost.carfax.org.uk ([85.119.82.111]:46913 "EHLO
+        frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1731939AbeGTTbd (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 20 Jul 2018 15:27:48 -0400
-Received: by mail-ed1-f65.google.com with SMTP id h1-v6so10485406eds.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 20 Jul 2018 11:38:17 -0700 (PDT)
-Subject: Re: [PATCH 0/4] 3- and 4- copy RAID1
-To: kreijack@inwind.it, Duncan <1i5t5.duncan@cox.net>,
+        Fri, 20 Jul 2018 15:31:33 -0400
+Date: Fri, 20 Jul 2018 18:41:59 +0000
+From: Hugo Mills <hugo@carfax.org.uk>
+To: Andrei Borzenkov <arvidjaar@gmail.com>
+Cc: kreijack@inwind.it, Duncan <1i5t5.duncan@cox.net>,
         linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 0/4] 3- and 4- copy RAID1
+Message-ID: <20180720184159.GD21293@carfax.org.uk>
 References: <cover.1531503452.git.dsterba@suse.com>
  <9945d460-99b5-a927-a614-c797bbc7862d@dirtcellar.net>
  <d340ce28-6c93-22d4-0f56-73de8e55f1f6@libero.it>
@@ -18,71 +20,67 @@ References: <cover.1531503452.git.dsterba@suse.com>
  <89d20da9-0e80-51d1-3a4f-4cccb44d31ef@libero.it>
  <2f1b19da-f2a2-077b-eee1-1106f40679ac@gmail.com>
  <b9ccc6fa-da45-4038-7911-ba012371f223@inwind.it>
-From: Andrei Borzenkov <arvidjaar@gmail.com>
-Message-ID: <1066d34f-2703-19e3-62ea-c4178640b8c3@gmail.com>
-Date: Fri, 20 Jul 2018 21:38:14 +0300
+ <1066d34f-2703-19e3-62ea-c4178640b8c3@gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <b9ccc6fa-da45-4038-7911-ba012371f223@inwind.it>
-Content-Type: text/plain; charset=utf-8
+Content-Type: multipart/signed; micalg=pgp-sha1;
+        protocol="application/pgp-signature"; boundary="xB0nW4MQa6jZONgY"
+In-Reply-To: <1066d34f-2703-19e3-62ea-c4178640b8c3@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-20.07.2018 20:16, Goffredo Baroncelli пишет:
-> On 07/20/2018 07:17 AM, Andrei Borzenkov wrote:
->> 18.07.2018 22:42, Goffredo Baroncelli пишет:
->>> On 07/18/2018 09:20 AM, Duncan wrote:
->>>> Goffredo Baroncelli posted on Wed, 18 Jul 2018 07:59:52 +0200 as
->>>> excerpted:
->>>>
->>>>> On 07/17/2018 11:12 PM, Duncan wrote:
->>>>>> Goffredo Baroncelli posted on Mon, 16 Jul 2018 20:29:46 +0200 as
->>>>>> excerpted:
->>>>>>
->>>>>>> On 07/15/2018 04:37 PM, waxhead wrote:
->>>>>>
->>>>>>> Striping and mirroring/pairing are orthogonal properties; mirror and
->>>>>>> parity are mutually exclusive.
->>>>>>
->>>>>> I can't agree.  I don't know whether you meant that in the global
->>>>>> sense,
->>>>>> or purely in the btrfs context (which I suspect), but either way I
->>>>>> can't agree.
->>>>>>
->>>>>> In the pure btrfs context, while striping and mirroring/pairing are
->>>>>> orthogonal today, Hugo's whole point was that btrfs is theoretically
->>>>>> flexible enough to allow both together and the feature may at some
->>>>>> point be added, so it makes sense to have a layout notation format
->>>>>> flexible enough to allow it as well.
->>>>>
->>>>> When I say orthogonal, It means that these can be combined: i.e. you can
->>>>> have - striping (RAID0)
->>>>> - parity  (?)
->>>>> - striping + parity  (e.g. RAID5/6)
->>>>> - mirroring  (RAID1)
->>>>> - mirroring + striping  (RAID10)
->>>>>
->>>>> However you can't have mirroring+parity; this means that a notation
->>>>> where both 'C' ( = number of copy) and 'P' ( = number of parities) is
->>>>> too verbose.
->>>>
->>>> Yes, you can have mirroring+parity, conceptually it's simply raid5/6 on 
->>>> top of mirroring or mirroring on top of raid5/6, much as raid10 is 
->>>> conceptually just raid0 on top of raid1, and raid01 is conceptually raid1 
->>>> on top of raid0.  
->>> And what about raid 615156156 (raid 6 on top of raid 1 on top of raid 5 on top of....) ???
->>>
->>> Seriously, of course you can combine a lot of different profile; however the only ones that make sense are the ones above.
->>
->> RAID50 (striping across RAID5) is common.
-> 
-> Yeah someone else report that. But other than reducing the number of disk per raid5 (increasing the ration number of disks/number of parity disks), which other advantages has ? 
 
-It allows distributing IO across virtually unlimited number of disks
-while confining failure domain to manageable size.
+--xB0nW4MQa6jZONgY
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-> Limiting the number of disk per raid, in BTRFS would be quite simple to implement in the "chunk allocator"
-> 
+On Fri, Jul 20, 2018 at 09:38:14PM +0300, Andrei Borzenkov wrote:
+> 20.07.2018 20:16, Goffredo Baroncelli =D0=BF=D0=B8=D1=88=D0=B5=D1=82:
+[snip]
+> > Limiting the number of disk per raid, in BTRFS would be quite simple to=
+ implement in the "chunk allocator"
+> >=20
+>=20
+> You mean that currently RAID5 stripe size is equal to number of disks?
+> Well, I suppose nobody is using btrfs with disk pools of two or three
+> digits size.
 
-You mean that currently RAID5 stripe size is equal to number of disks?
-Well, I suppose nobody is using btrfs with disk pools of two or three
-digits size.
+   But they are (even if not very many of them) -- we've seen at least
+one person with something like 40 or 50 devices in the array. They'd
+definitely got into /dev/sdac territory. I don't recall what RAID level
+they were using. I think it was either RAID-1 or -10.
+
+   That's the largest I can recall seeing mention of, though.
+
+   Hugo.
+
+--=20
+Hugo Mills             | Have found Lost City of Atlantis. High Priest is
+hugo@... carfax.org.uk | winning at quoits.
+http://carfax.org.uk/  |
+PGP: E2AB1DE4          |                                       Terry Pratch=
+ett
+
+--xB0nW4MQa6jZONgY
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iQIcBAEBAgAGBQJbUiz3AAoJEFheFHXiqx3k15wP/RCCudkDP4UW1KwQi99MiBBe
+bDJzGAZJBCwZbP7ISgn6xaDFFyqk3FoxXocpbMG9b+5RVj7/Fm6rsZuIk/Z3AVJM
+//jW2NHR3RvdtqJUY7L7JDmzSnt924mxdj+NhtS0JXVm5RRknFz//Xq2Dozr2Wo3
+d5k5EzNM7r2o5nnMgXddtYV2IHJ8+PsoXHwJVcFuCnsHx3hw/oDS3VKnwTCKMjq2
+GNRPGfYi6e85M5s5Rtd/ttima34gO1+zlf3kpoLw/SaKCW+QX8KGbPl9mSQV83Er
+Uf32skE6N+CGJ8L0kTIPYKizmGynmHGs658wDa2X10flVcfp9H5L5bwtTIYfLr5N
+lD6Yjf/CFgkjln3vSIjMvECCERnhfNTnQO9q6J+3njqv/4sL1XiS2EzuZkAX+6RR
+1+vws31qIyrZ4m1BEhFpK9fgZK0RPI0E/YATFxpGtvrfql3HQTpB6FWPQsPU7TLO
+WC6Qz1CeKPjp+2cLmvc5xxCnIj02b1WwJu8KMjv8CGSSMNCHkbKPTmkayB+XFa59
+FhAcmpTH3T73opM/sbA8vu6fau7kwI+W8sD/xNItbIsW++4kb6AJtnUG2xXCjlF/
+7ZDyP4Q0j9K6hM5t3BB7ST8Ru6Mea85cpW84+OUCM0akdGNBlsmdPGkDc6SPURIb
+ka7DeIMynQGgIUrixKGO
+=/vim
+-----END PGP SIGNATURE-----
+
+--xB0nW4MQa6jZONgY--

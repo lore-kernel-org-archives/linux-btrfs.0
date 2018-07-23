@@ -1,156 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from tartarus.angband.pl ([89.206.35.136]:47964 "EHLO
-        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1729742AbeGQWlP (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 17 Jul 2018 18:41:15 -0400
-Date: Wed, 18 Jul 2018 00:05:08 +0200
-From: Adam Borowski <kilobyte@angband.pl>
-To: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.cz>,
-        Mark Fasheh <mfasheh@suse.de>
-Subject: [PATCH resend 0/2] btrfs: fix races between exec and defrag
-Message-ID: <20180717220357.hn7mvajicpy7hu3l@angband.pl>
+Received: from mx2.suse.de ([195.135.220.15]:48894 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S2387831AbeGWQ2V (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 23 Jul 2018 12:28:21 -0400
+Date: Mon, 23 Jul 2018 17:26:24 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Adam Borowski <kilobyte@angband.pl>
+Cc: David Sterba <dsterba@suse.cz>, Mark Fasheh <mfasheh@suse.de>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH resend 1/2] btrfs: allow defrag on a file opened ro that
+ has rw permissions
+Message-ID: <20180723152624.GO26141@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20180717220357.hn7mvajicpy7hu3l@angband.pl>
+ <20180717220900.3588-1-kilobyte@angband.pl>
 MIME-Version: 1.0
-Content-Type: multipart/mixed; boundary="qrmq5hzaqcdsblhm"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20180717220900.3588-1-kilobyte@angband.pl>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Wed, Jul 18, 2018 at 12:08:59AM +0200, Adam Borowski wrote:
+> Requiring a rw descriptor conflicts both ways with exec, returning ETXTBSY
+> whenever you try to defrag a program that's currently being run, or
+> causing intermittent exec failures on a live system being defragged.
+> 
+> As defrag doesn't change the file's contents in any way, there's no reason
+> to consider it a rw operation.  Thus, let's check only whether the file
+> could have been opened rw.  Such access control is still needed as
+> currently defrag can use extra disk space, and might trigger bugs.
+> 
+> Signed-off-by: Adam Borowski <kilobyte@angband.pl>
+> ---
+>  fs/btrfs/ioctl.c | 3 ++-
+>  1 file changed, 2 insertions(+), 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index 43ecbe620dea..01c150b6ab62 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -2941,7 +2941,8 @@ static int btrfs_ioctl_defrag(struct file *file, void __user *argp)
+>  		ret = btrfs_defrag_root(root);
+>  		break;
+>  	case S_IFREG:
+> -		if (!(file->f_mode & FMODE_WRITE)) {
+> +		if (!capable(CAP_SYS_ADMIN) &&
+> +		    inode_permission(inode, MAY_WRITE)) {
 
---qrmq5hzaqcdsblhm
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+The dedupe ioctl does the admin check or the FMODE_WRITE, which means
+admin can dedupe anything but user has to have the file write open.
+Doing the same for defrag should be ok for same reasons it is for
+dedupe.
 
-Hi!
-Here's a ping for a patch to fix ETXTBSY races between defrag and exec, just
-like the dedupe counterpart.  Unlike that one which is shared to multiple
-filesystems and thus lives in Al Viro's land, it is btrfs only.
+I'm not sure about using plain inode_permissions here, though it looks
+correct and I'm not able to see inode vs file descriptor issues that
+could cause trouble here. There are uid/gid, rws, acl, immutable,
+capabilities, namespace aware checks, security hooks.
 
-Attached: a simple tool to fragment a file, by ten O_SYNC rewrites of length
-1 at random positions; racey vs concurrent writes or execs but shouldn't
-damage the file otherwise.
-
-Also attached: a preliminary patch for -progs; it yet lacks a check for the
-kernel version, but to add such a check we'd need to know which kernels
-actually permit ro defrag for non-root.
-
-No man page patch -- there's no man page to be patched...
-
-
-Meow!
--- 
-// If you believe in so-called "intellectual property", please immediately
-// cease using counterfeit alphabets.  Instead, contact the nearest temple
-// of Amon, whose priests will provide you with scribal services for all
-// your writing needs, for Reasonable And Non-Discriminatory prices.
-
---qrmq5hzaqcdsblhm
-Content-Type: text/x-csrc; charset=us-ascii
-Content-Disposition: attachment; filename="fragme.c"
-
-#include <stdio.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <stdarg.h>
-#include <errno.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdint.h>
-#include <unistd.h>
-#include <sys/syscall.h>
-
-static void die(const char *txt, ...) __attribute__((format (printf, 1, 2)));
-static void die(const char *txt, ...)
-{
-    fprintf(stderr, "fragme: ");
-
-    va_list ap;
-    va_start(ap, txt);
-    vfprintf(stderr, txt, ap);
-    va_end(ap);
-
-    exit(1);
-}
-
-static uint64_t rnd(uint64_t max)
-{
-    __uint128_t r;
-    if (syscall(SYS_getrandom, &r, sizeof(r), 0)==-1)
-        die("getrandom(): %m\n");
-    return r%max;
-}
-
-int main(int argc, char **argv)
-{
-    if (argc!=2)
-        die("Usage: fragme <file>\n");
-
-    int fd = open(argv[1], O_RDWR|O_SYNC);
-    if (fd == -1)
-        die("open(\"%s\"): %m\n", argv[1]);
-    off_t size = lseek(fd, 0, SEEK_END);
-    if (size == -1)
-        die("lseek(SEEK_END): %m\n");
-
-    for (int i=0; i<10; ++i)
-    {
-        off_t off = rnd(size);
-        char b;
-        if (lseek(fd, off, SEEK_SET) != off)
-            die("lseek for read: %m\n");
-        if (read(fd, &b, 1) != 1)
-            die("read(%lu): %m\n", off);
-        if (lseek(fd, off, SEEK_SET) != off)
-            die("lseek for write: %m\n");
-        if (write(fd, &b, 1) != 1)
-            die("write: %m\n");
-    }
-
-    return 0;
-}
-
---qrmq5hzaqcdsblhm
-Content-Type: text/x-diff; charset=us-ascii
-Content-Disposition: attachment; filename="0001-defrag-open-files-RO.patch"
-
->From d040af09adb03daadbba4336700f40425a860320 Mon Sep 17 00:00:00 2001
-From: Adam Borowski <kilobyte@angband.pl>
-Date: Tue, 28 Nov 2017 01:00:21 +0100
-Subject: [PATCH] defrag: open files RO
-
-NOT FOR MERGING -- requires kernel versioning
-
-Fixes EXTXBSY races.
-
-Signed-off-by: Adam Borowski <kilobyte@angband.pl>
----
- cmds-filesystem.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
-
-diff --git a/cmds-filesystem.c b/cmds-filesystem.c
-index 30a50bf5..7eb6b7bb 100644
---- a/cmds-filesystem.c
-+++ b/cmds-filesystem.c
-@@ -876,7 +876,7 @@ static int defrag_callback(const char *fpath, const struct stat *sb,
- 	if ((typeflag == FTW_F) && S_ISREG(sb->st_mode)) {
- 		if (defrag_global_verbose)
- 			printf("%s\n", fpath);
--		fd = open(fpath, O_RDWR);
-+		fd = open(fpath, O_RDONLY);
- 		if (fd < 0) {
- 			goto error;
- 		}
-@@ -1012,7 +1012,7 @@ static int cmd_filesystem_defrag(int argc, char **argv)
- 		int defrag_err = 0;
- 
- 		dirstream = NULL;
--		fd = open_file_or_dir(argv[i], &dirstream);
-+		fd = open_file_or_dir3(argv[i], &dirstream, O_RDONLY);
- 		if (fd < 0) {
- 			error("cannot open %s: %m", argv[i]);
- 			ret = -errno;
--- 
-2.18.0
-
-
---qrmq5hzaqcdsblhm--
+So, I'll add the patch to 4.19 queue. It's small and isolated change so
+a revert would be easy in case we find something bad. The 2nd patch
+should be IMHO part of this change as it's logical to return the error
+code in the patch that modifies the user visible behaviour.

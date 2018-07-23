@@ -1,45 +1,311 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:45088 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S2388241AbeGXMHu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 24 Jul 2018 08:07:50 -0400
-Date: Tue, 24 Jul 2018 13:01:43 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-Cc: Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org,
-        dsterba@suse.cz
-Subject: Re: [PATCH v2 2/2] btrfs: fix missing superblock update in the
- device delete commit transaction
-Message-ID: <20180724110143.GU26141@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20180703090724.22023-1-anand.jain@oracle.com>
- <20180703090724.22023-2-anand.jain@oracle.com>
- <20180721060113.GC575@fnst.localdomain>
- <4eba0d60-ef13-314e-0725-634a6113331a@oracle.com>
- <20180724092803.GG575@fnst.localdomain>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180724092803.GG575@fnst.localdomain>
+Received: from mail.kernel.org ([198.145.29.99]:57450 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1728231AbeGWJJx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 23 Jul 2018 05:09:53 -0400
+Received: from debian3.lan (bl8-197-74.dsl.telepac.pt [85.241.197.74])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id 0F80820874
+        for <linux-btrfs@vger.kernel.org>; Mon, 23 Jul 2018 08:09:52 +0000 (UTC)
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: fix send failure when root has deleted files still open
+Date: Mon, 23 Jul 2018 09:09:48 +0100
+Message-Id: <20180723080948.4824-1-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jul 24, 2018 at 05:28:03PM +0800, Lu Fengqi wrote:
-> >I can't reproduce the issue. Do you reproduce consistently? and I
-> 
-> Sorry I've taken so long to reply.
-> 
-> There are four virtual machines with the different storage backend here.
-> And I can reproduce this issue consistently on the virtual machines (with
-> HDD or qcow2 file in HDD), however, I can't reproduce on the virtual machine
-> (with SSD or qcow2 file in SSD). So this may depend on the disk IO speed.
-> 
-> >wonder if your workspace contains the latest changes from
-> >kdave/misc-next? Because last weeks kdave/misc had some issues.
-> >Can you please give a try?
-> 
-> I used the latest kdave/misc-next branch on July 21, 2018, when I send
-> the previous mail. Just as David replied to Nikolay's thread, the current
-> latest kdave/misc-next still has the same problem.
+From: Filipe Manana <fdmanana@suse.com>
 
-I hit that on a physical machine with a mix of HDD and SSD drives under
-fstests. The VM tests did not hit the problem.
+The more common use case of send involves creating a RO snapshot and then
+use it for a send operation. In this case it's not possible to have inodes
+in the snapshot that have a link count of zero (inode with an orphan item)
+since during snapshot creation we do the orphan cleanup. However, other
+less common use cases for send can end up seeing inodes with a link count
+of zero and in this case the send operation fails with a ENOENT error
+because any attempt to generate a path for the inode, with the purpose
+of creating it or updating it at the receiver, fails since there are no
+inode reference items. One use case it to use a regular subvolume for
+a send operation after turning it to RO mode or turning a RW snapshot
+into RO mode and then using it for a send operation. In both cases, if a
+file gets all its hard links deleted while there is an open file
+descriptor before turning the subvolume/snapshot into RO mode, the send
+operation will encounter an inode with a link count of zero and then
+fail with errno ENOENT.
+
+Example using a full send with a subvolume:
+
+  $ mkfs.btrfs -f /dev/sdb
+  $ mount /dev/sdb /mnt
+
+  $ btrfs subvolume create /mnt/sv1
+  $ touch /mnt/sv1/foo
+  $ touch /mnt/sv1/bar
+
+  # keep an open file descriptor on file bar
+  $ exec 73</mnt/sv1/bar
+  $ unlink /mnt/sv1/bar
+
+  # Turn the subvolume to RO mode and use it for a full send, while
+  # holding the open file descriptor.
+  $ btrfs property set /mnt/sv1 ro true
+
+  $ btrfs send -f /tmp/full.send /mnt/sv1
+  At subvol /mnt/sv1
+  ERROR: send ioctl failed with -2: No such file or directory
+
+Example using an incremental send with snapshots:
+
+  $ mkfs.btrfs -f /dev/sdb
+  $ mount /dev/sdb /mnt
+
+  $ btrfs subvolume create /mnt/sv1
+  $ touch /mnt/sv1/foo
+  $ touch /mnt/sv1/bar
+
+  $ btrfs subvolume snapshot -r /mnt/sv1 /mnt/snap1
+
+  $ echo "hello world" >> /mnt/sv1/bar
+
+  $ btrfs subvolume snapshot -r /mnt/sv1 /mnt/snap2
+
+  # Turn the second snapshot to RW mode and delete file foo while
+  # holding an open file descriptor on it.
+  $ btrfs property set /mnt/snap2 ro false
+  $ exec 73</mnt/snap2/foo
+  $ unlink /mnt/snap2/foo
+
+  # Set the second snapshot back to RO mode and do an incremental send.
+  $ btrfs property set /mnt/snap2 ro true
+
+  $ btrfs send -f /tmp/inc.send -p /mnt/snap1 /mnt/snap2
+  At subvol /mnt/snap2
+  ERROR: send ioctl failed with -2: No such file or directory
+
+So fix this by ignoring inodes with a link count of zero if we are either
+doing a full send or if they do not exist in the parent snapshot (they
+are new in the send snapshot), and unlink all paths found in the parent
+snapshot when doing an incremental send (and ignoring all other inode
+items, such as xattrs and extents).
+
+A test case for fstests follows soon.
+
+Reported-by: Martin Wilck <martin.wilck@suse.com>
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/send.c | 143 ++++++++++++++++++++++++++++++++++++++++++++++++++++----
+ 1 file changed, 133 insertions(+), 10 deletions(-)
+
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index c47f62b19226..6ffe1c983b76 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -100,6 +100,7 @@ struct send_ctx {
+ 	u64 cur_inode_rdev;
+ 	u64 cur_inode_last_extent;
+ 	u64 cur_inode_next_write_offset;
++	bool ignore_cur_inode;
+ 
+ 	u64 send_progress;
+ 
+@@ -5799,6 +5800,9 @@ static int finish_inode_if_needed(struct send_ctx *sctx, int at_end)
+ 	int pending_move = 0;
+ 	int refs_processed = 0;
+ 
++	if (sctx->ignore_cur_inode)
++		return 0;
++
+ 	ret = process_recorded_refs_if_needed(sctx, at_end, &pending_move,
+ 					      &refs_processed);
+ 	if (ret < 0)
+@@ -5917,6 +5921,94 @@ static int finish_inode_if_needed(struct send_ctx *sctx, int at_end)
+ 	return ret;
+ }
+ 
++struct parent_paths_ctx {
++	struct list_head *refs;
++	struct send_ctx *sctx;
++};
++
++static int record_parent_ref(int num, u64 dir, int index, struct fs_path *name,
++			     void *ctx)
++{
++	struct parent_paths_ctx *ppctx = ctx;
++
++	return record_ref(ppctx->sctx->parent_root, dir, name, ppctx->sctx,
++			  ppctx->refs);
++}
++
++/*
++ * Issue unlink operations for all paths of the current inode found in the
++ * parent snapshot.
++ */
++static int btrfs_unlink_all_paths(struct send_ctx *sctx)
++{
++	LIST_HEAD(deleted_refs);
++	struct btrfs_path *path;
++	struct btrfs_key key;
++	struct parent_paths_ctx ctx;
++	int ret;
++
++	path = alloc_path_for_send();
++	if (!path)
++		return -ENOMEM;
++
++	key.objectid = sctx->cur_ino;
++	key.type = BTRFS_INODE_REF_KEY;
++	key.offset = 0;
++	ret = btrfs_search_slot(NULL, sctx->parent_root, &key, path, 0, 0);
++	if (ret < 0)
++		goto out;
++
++	ctx.refs = &deleted_refs;
++	ctx.sctx = sctx;
++
++	while (true) {
++		struct extent_buffer *eb = path->nodes[0];
++		int slot = path->slots[0];
++
++		if (slot >= btrfs_header_nritems(eb)) {
++			ret = btrfs_next_leaf(sctx->parent_root, path);
++			if (ret < 0)
++				goto out;
++			else if (ret > 0)
++				break;
++			continue;
++		}
++
++		btrfs_item_key_to_cpu(eb, &key, slot);
++		if (key.objectid != sctx->cur_ino)
++			break;
++		if (key.type != BTRFS_INODE_REF_KEY &&
++		    key.type != BTRFS_INODE_EXTREF_KEY)
++			break;
++
++		ret = iterate_inode_ref(sctx->parent_root, path, &key, 1,
++					record_parent_ref, &ctx);
++		if (ret < 0)
++			goto out;
++
++		path->slots[0]++;
++	}
++
++	while (!list_empty(&deleted_refs)) {
++		struct recorded_ref *ref;
++
++		ref = list_first_entry(&deleted_refs, struct recorded_ref,
++				       list);
++		ret = send_unlink(sctx, ref->full_path);
++		if (ret < 0)
++			goto out;
++		fs_path_free(ref->full_path);
++		list_del(&ref->list);
++		kfree(ref);
++	}
++	ret = 0;
++out:
++	btrfs_free_path(path);
++	if (ret)
++		__free_recorded_refs(&deleted_refs);
++	return ret;
++}
++
+ static int changed_inode(struct send_ctx *sctx,
+ 			 enum btrfs_compare_tree_result result)
+ {
+@@ -5926,11 +6018,13 @@ static int changed_inode(struct send_ctx *sctx,
+ 	struct btrfs_inode_item *right_ii = NULL;
+ 	u64 left_gen = 0;
+ 	u64 right_gen = 0;
++	u32 nlinks;
+ 
+ 	sctx->cur_ino = key->objectid;
+ 	sctx->cur_inode_new_gen = 0;
+ 	sctx->cur_inode_last_extent = (u64)-1;
+ 	sctx->cur_inode_next_write_offset = 0;
++	sctx->ignore_cur_inode = false;
+ 
+ 	/*
+ 	 * Set send_progress to current inode. This will tell all get_cur_xxx
+@@ -5971,7 +6065,9 @@ static int changed_inode(struct send_ctx *sctx,
+ 			sctx->cur_inode_new_gen = 1;
+ 	}
+ 
+-	if (result == BTRFS_COMPARE_TREE_NEW) {
++	nlinks = btrfs_inode_nlink(sctx->left_path->nodes[0], left_ii);
++
++	if (result == BTRFS_COMPARE_TREE_NEW && nlinks > 0) {
+ 		sctx->cur_inode_gen = left_gen;
+ 		sctx->cur_inode_new = 1;
+ 		sctx->cur_inode_deleted = 0;
+@@ -5991,7 +6087,7 @@ static int changed_inode(struct send_ctx *sctx,
+ 				sctx->right_path->nodes[0], right_ii);
+ 		sctx->cur_inode_mode = btrfs_inode_mode(
+ 				sctx->right_path->nodes[0], right_ii);
+-	} else if (result == BTRFS_COMPARE_TREE_CHANGED) {
++	} else if (result == BTRFS_COMPARE_TREE_CHANGED && nlinks > 0) {
+ 		/*
+ 		 * We need to do some special handling in case the inode was
+ 		 * reported as changed with a changed generation number. This
+@@ -6062,6 +6158,31 @@ static int changed_inode(struct send_ctx *sctx,
+ 		}
+ 	}
+ 
++	/*
++	 * Normally we do not find inodes with a link count of zero (orphans)
++	 * because the most common case is to create a snapshot and use it
++	 * for a send operation. However other less common use cases involve
++	 * using a subvolume and send it after turning it to RO mode just
++	 * after deleting all hard links of a file while holding an open
++	 * file descriptor against it or turning a RO snapshot into RW mode,
++	 * keep an open file descriptor against a file, delete it and then
++	 * turn the snapshot back to RO mode before using it for a send
++	 * operation. So if we find such cases, ignore the inode and all its
++	 * items completely if it's a new inode, or if it's a changed inode
++	 * make sure all its previous paths (from the parent snapshot) are all
++	 * unlinked and all other the inode items are ignored.
++	 */
++	if (nlinks == 0 &&
++	    (result == BTRFS_COMPARE_TREE_NEW ||
++	     result == BTRFS_COMPARE_TREE_CHANGED)) {
++		sctx->ignore_cur_inode = true;
++		if (result == BTRFS_COMPARE_TREE_CHANGED) {
++			ret = btrfs_unlink_all_paths(sctx);
++			if (ret < 0)
++				goto out;
++		}
++	}
++
+ out:
+ 	return ret;
+ }
+@@ -6309,15 +6430,17 @@ static int changed_cb(struct btrfs_path *left_path,
+ 	    key->objectid == BTRFS_FREE_SPACE_OBJECTID)
+ 		goto out;
+ 
+-	if (key->type == BTRFS_INODE_ITEM_KEY)
++	if (key->type == BTRFS_INODE_ITEM_KEY) {
+ 		ret = changed_inode(sctx, result);
+-	else if (key->type == BTRFS_INODE_REF_KEY ||
+-		 key->type == BTRFS_INODE_EXTREF_KEY)
+-		ret = changed_ref(sctx, result);
+-	else if (key->type == BTRFS_XATTR_ITEM_KEY)
+-		ret = changed_xattr(sctx, result);
+-	else if (key->type == BTRFS_EXTENT_DATA_KEY)
+-		ret = changed_extent(sctx, result);
++	} else if (!sctx->ignore_cur_inode) {
++		if (key->type == BTRFS_INODE_REF_KEY ||
++		    key->type == BTRFS_INODE_EXTREF_KEY)
++			ret = changed_ref(sctx, result);
++		else if (key->type == BTRFS_XATTR_ITEM_KEY)
++			ret = changed_xattr(sctx, result);
++		else if (key->type == BTRFS_EXTENT_DATA_KEY)
++			ret = changed_extent(sctx, result);
++	}
+ 
+ out:
+ 	return ret;
+-- 
+2.11.0
+

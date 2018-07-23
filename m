@@ -1,121 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pl0-f66.google.com ([209.85.160.66]:35949 "EHLO
-        mail-pl0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2388110AbeGTTfu (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 20 Jul 2018 15:35:50 -0400
-Received: by mail-pl0-f66.google.com with SMTP id e11-v6so5548422plb.3
-        for <linux-btrfs@vger.kernel.org>; Fri, 20 Jul 2018 11:46:18 -0700 (PDT)
-From: Omar Sandoval <osandov@osandov.com>
-To: linux-btrfs@vger.kernel.org
-Cc: kernel-team@fb.com, David Sterba <dsterba@suse.com>
-Subject: [PATCH] Btrfs: fix btrfs_write_inode() vs delayed iput deadlock
-Date: Fri, 20 Jul 2018 11:46:10 -0700
-Message-Id: <d0e0a0ac06a6479fd305c170cb64a33f3b16ff93.1532112361.git.osandov@fb.com>
+Received: from mx2.suse.de ([195.135.220.15]:56236 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S2388086AbeGWO00 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 23 Jul 2018 10:26:26 -0400
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 9CAB3AD64
+        for <linux-btrfs@vger.kernel.org>; Mon, 23 Jul 2018 13:25:10 +0000 (UTC)
+Date: Mon, 23 Jul 2018 15:25:01 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Nikolay Borisov <nborisov@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 0/7] fs_info cleanups for volume.c
+Message-ID: <20180723132501.GL26141@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1532104673-28311-1-git-send-email-nborisov@suse.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1532104673-28311-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Josef Bacik <jbacik@fb.com>
+On Fri, Jul 20, 2018 at 07:37:46PM +0300, Nikolay Borisov wrote:
+> Here are a bunch of patches which cleanup extraneous fs_info parameters to 
+> function which already take a structure that holds a reference to the fs_info. 
+> 
+> Except for patches 4 and 5, everything else is correct - due to those functions
+> always taking a transaction. 4 and 5 in turn reference the fs_info from 
+> struct btrfs_device. Inspecting the callers I managed to convince myself that 
+> those function are always called with well-formed btrfs_device i.e one which 
+> has its fs_info member initialised. Reviewers might want to pay extra 
+> attention to that but otherwise they are trivial. 
 
-We recently ran into the following deadlock involving
-btrfs_write_inode():
-
-[  +0.005066]  __schedule+0x38e/0x8c0
-[  +0.007144]  schedule+0x36/0x80
-[  +0.006447]  bit_wait+0x11/0x60
-[  +0.006446]  __wait_on_bit+0xbe/0x110
-[  +0.007487]  ? bit_wait_io+0x60/0x60
-[  +0.007319]  __inode_wait_for_writeback+0x96/0xc0
-[  +0.009568]  ? autoremove_wake_function+0x40/0x40
-[  +0.009565]  inode_wait_for_writeback+0x21/0x30
-[  +0.009224]  evict+0xb0/0x190
-[  +0.006099]  iput+0x1a8/0x210
-[  +0.006103]  btrfs_run_delayed_iputs+0x73/0xc0
-[  +0.009047]  btrfs_commit_transaction+0x799/0x8c0
-[  +0.009567]  btrfs_write_inode+0x81/0xb0
-[  +0.008008]  __writeback_single_inode+0x267/0x320
-[  +0.009569]  writeback_sb_inodes+0x25b/0x4e0
-[  +0.008702]  wb_writeback+0x102/0x2d0
-[  +0.007487]  wb_workfn+0xa4/0x310
-[  +0.006794]  ? wb_workfn+0xa4/0x310
-[  +0.007143]  process_one_work+0x150/0x410
-[  +0.008179]  worker_thread+0x6d/0x520
-[  +0.007490]  kthread+0x12c/0x160
-[  +0.006620]  ? put_pwq_unlocked+0x80/0x80
-[  +0.008185]  ? kthread_park+0xa0/0xa0
-[  +0.007484]  ? do_syscall_64+0x53/0x150
-[  +0.007837]  ret_from_fork+0x29/0x40
-
-Writeback calls btrfs_write_inode(), which calls
-btrfs_commit_transaction(), which calls btrfs_run_delayed_iputs(). If
-iput() is called on that same inode, evict() will wait for writeback
-forever.
-
-btrfs_write_inode() was originally added way back in 4730a4bc5bf3
-("btrfs_dirty_inode") to support O_SYNC writes. However, ->write_inode()
-hasn't been used for O_SYNC since 148f948ba877 ("vfs: Introduce new
-helpers for syncing after writing to O_SYNC file or IS_SYNC inode"), so
-btrfs_write_inode() is actually unnecessary (and leads to a bunch of
-unnecessary commits). Get rid of it, which also gets rid of the
-deadlock.
-
-Signed-off-by: Josef Bacik <jbacik@fb.com>
-[Omar: new commit message]
-Signed-off-by: Omar Sandoval <osandov@fb.com>
----
- fs/btrfs/inode.c | 26 --------------------------
- fs/btrfs/super.c |  1 -
- 2 files changed, 27 deletions(-)
-
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index eba61bcb9bb3..071d949f69ec 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -6027,32 +6027,6 @@ static int btrfs_real_readdir(struct file *file, struct dir_context *ctx)
- 	return ret;
- }
- 
--int btrfs_write_inode(struct inode *inode, struct writeback_control *wbc)
--{
--	struct btrfs_root *root = BTRFS_I(inode)->root;
--	struct btrfs_trans_handle *trans;
--	int ret = 0;
--	bool nolock = false;
--
--	if (test_bit(BTRFS_INODE_DUMMY, &BTRFS_I(inode)->runtime_flags))
--		return 0;
--
--	if (btrfs_fs_closing(root->fs_info) &&
--			btrfs_is_free_space_inode(BTRFS_I(inode)))
--		nolock = true;
--
--	if (wbc->sync_mode == WB_SYNC_ALL) {
--		if (nolock)
--			trans = btrfs_join_transaction_nolock(root);
--		else
--			trans = btrfs_join_transaction(root);
--		if (IS_ERR(trans))
--			return PTR_ERR(trans);
--		ret = btrfs_commit_transaction(trans);
--	}
--	return ret;
--}
--
- /*
-  * This is somewhat expensive, updating the tree every time the
-  * inode changes.  But, it is most likely to find the inode in cache.
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 81107ad49f3a..bddfc28b27c0 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -2331,7 +2331,6 @@ static const struct super_operations btrfs_super_ops = {
- 	.sync_fs	= btrfs_sync_fs,
- 	.show_options	= btrfs_show_options,
- 	.show_devname	= btrfs_show_devname,
--	.write_inode	= btrfs_write_inode,
- 	.alloc_inode	= btrfs_alloc_inode,
- 	.destroy_inode	= btrfs_destroy_inode,
- 	.statfs		= btrfs_statfs,
--- 
-2.18.0
-
+4 and 5 look good to me, a device without a valid fs_info has a short
+timespan and should not appear anywhere besides the helpers that set up
+fs_devices etc. Series added to misc-next, thanks.

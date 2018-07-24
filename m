@@ -1,128 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ed1-f43.google.com ([209.85.208.43]:34818 "EHLO
-        mail-ed1-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2388427AbeGXTBG (ORCPT
+Received: from [195.159.176.226] ([195.159.176.226]:59292 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S2388470AbeGXU4h (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 24 Jul 2018 15:01:06 -0400
-Received: by mail-ed1-f43.google.com with SMTP id e6-v6so4862254edr.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 24 Jul 2018 10:53:28 -0700 (PDT)
+        Tue, 24 Jul 2018 16:56:37 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-3@m.gmane.org>)
+        id 1fi3GI-0000is-6Q
+        for linux-btrfs@vger.kernel.org; Tue, 24 Jul 2018 21:46:22 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: File permissions lost during send/receive?
-To: Marc Joliet <marcec@gmx.de>, linux-btrfs@vger.kernel.org
+Date: Tue, 24 Jul 2018 19:46:14 +0000 (UTC)
+Message-ID: <pan$d56e4$375bb872$1bdbd77f$1569f8ce@cox.net>
 References: <8202618.Xtt70Sb46P@thetick>
-From: Andrei Borzenkov <arvidjaar@gmail.com>
-Message-ID: <47372f67-70fd-8b11-0573-39d1137356e3@gmail.com>
-Date: Tue, 24 Jul 2018 20:53:15 +0300
-MIME-Version: 1.0
-In-Reply-To: <8202618.Xtt70Sb46P@thetick>
-Content-Type: multipart/signed; micalg=pgp-sha1;
- protocol="application/pgp-signature";
- boundary="0ACfyYdsEGQYQ4u9ohMCVrUQc1MIm61XI"
+        <47372f67-70fd-8b11-0573-39d1137356e3@gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---0ACfyYdsEGQYQ4u9ohMCVrUQc1MIm61XI
-Content-Type: multipart/mixed; boundary="YtHsN06XqY37zjjwh4AwHYlop7f1EkB65";
- protected-headers="v1"
-From: Andrei Borzenkov <arvidjaar@gmail.com>
-To: Marc Joliet <marcec@gmx.de>, linux-btrfs@vger.kernel.org
-Message-ID: <47372f67-70fd-8b11-0573-39d1137356e3@gmail.com>
-Subject: Re: File permissions lost during send/receive?
-References: <8202618.Xtt70Sb46P@thetick>
-In-Reply-To: <8202618.Xtt70Sb46P@thetick>
+Andrei Borzenkov posted on Tue, 24 Jul 2018 20:53:15 +0300 as excerpted:
 
---YtHsN06XqY37zjjwh4AwHYlop7f1EkB65
-Content-Type: text/plain; charset=UTF-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+> 24.07.2018 15:16, Marc Joliet пишет:
+>> Hi list,
+>> 
+>> (Preemptive note: this was with btrfs-progs 4.15.1, I have since
+>> upgraded to 4.17.  My kernel version is 4.14.52-gentoo.)
+>> 
+>> I recently had to restore the root FS of my desktop from backup (extent
+>> tree corruption; not sure how, possibly a loose SATA cable?). 
+>> Everything was fine,
+>> even if restoring was slower than expected.  However, I encountered two
+>> files with permission problems, namely:
+>> 
+>> - /bin/ping, which caused running ping as a normal user to fail due to
+>> missing permissions, and
+>> 
+>> - /sbin/unix_chkpwd (part of PAM), which prevented me from unlocking
+>> the KDE Plasma lock screen; I needed to log into a TTY and run
+>> "loginctl unlock- session".
+>> 
+>> Both were easily fixed by reinstalling the affected packages (iputils
+>> and pam), but I wonder why this happened after restoring from backup.
+>> 
+>> I originally thought it was related to the SUID bit not being set,
+>> because of the explanation in the ping(8) man page (section
+>> "SECURITY"), but cannot find evidence of that -- that is, after
+>> reinstallation, "ls -lh" does not show the sticky bit being set, or any
+>> other special permission bits, for that matter:
+>> 
+>> % ls -lh /bin/ping /sbin/unix_chkpwd
+>> -rwx--x--x 1 root root 60K 22. Jul 14:47 /bin/ping*
+>> -rwx--x--x 1 root root 31K 23. Jul 00:21 /sbin/unix_chkpwd*
+>> 
+>> (Note: no ACLs are set, either.)
+>> 
+>> 
+> What "getcap /bin/ping" says? You may need to install package providing
+> getcap (libcap-progs here on openSUSE).
 
-24.07.2018 15:16, Marc Joliet =D0=BF=D0=B8=D1=88=D0=B5=D1=82:
-> Hi list,
->=20
-> (Preemptive note: this was with btrfs-progs 4.15.1, I have since upgrad=
-ed to=20
-> 4.17.  My kernel version is 4.14.52-gentoo.)
->=20
-> I recently had to restore the root FS of my desktop from backup (extent=
- tree=20
-> corruption; not sure how, possibly a loose SATA cable?).  Everything wa=
-s fine,=20
-> even if restoring was slower than expected.  However, I encountered two=
- files=20
-> with permission problems, namely:
->=20
-> - /bin/ping, which caused running ping as a normal user to fail due to =
-missing=20
-> permissions, and
->=20
-> - /sbin/unix_chkpwd (part of PAM), which prevented me from unlocking th=
-e KDE=20
-> Plasma lock screen; I needed to log into a TTY and run "loginctl unlock=
--
-> session".
->=20
-> Both were easily fixed by reinstalling the affected packages (iputils a=
-nd=20
-> pam), but I wonder why this happened after restoring from backup.
->=20
-> I originally thought it was related to the SUID bit not being set, beca=
-use of=20
-> the explanation in the ping(8) man page (section "SECURITY"), but canno=
-t find=20
-> evidence of that -- that is, after reinstallation, "ls -lh" does not sh=
-ow the=20
-> sticky bit being set, or any other special permission bits, for that ma=
-tter:
->=20
-> % ls -lh /bin/ping /sbin/unix_chkpwd=20
-> -rwx--x--x 1 root root 60K 22. Jul 14:47 /bin/ping*                    =
-                                                                         =
-                                                                         =
-                                                     =20
-> -rwx--x--x 1 root root 31K 23. Jul 00:21 /sbin/unix_chkpwd*
->=20
-> (Note: no ACLs are set, either.)
->=20
+sys-libs/libcap on gentoo.  Here's what I get:
 
-What "getcap /bin/ping" says? You may need to install package providing
-getcap (libcap-progs here on openSUSE).
+$ getcap /bin/ping
+/bin/ping = cap_net_raw+ep
 
-> I do remember the qcheck program (a Gentoo-specific program that checks=
- the=20
-> integrity of installed packages) complaining about wrong file permissio=
-ns, but=20
-> I didn't save its output, and there's a chance it *might* have been bec=
-ause I=20
-> ran qcheck without root permissions :-/ .
->=20
-> I vaguely remember some patches and/or discussion regarding permission =
+(getcap on unix_chkpwd returns nothing, but while I use kde/plasma I 
+don't normally use the lockscreen at all, so for all I know that's broken 
+here too.)
 
-> transfer issues with send/receive on this ML, but didn't find anything =
-after=20
-> searching through my Email archive, so I might be misremembering.
->=20
-> Does anybody have any idea what possibly went wrong, or any similar exp=
-erience=20
-> to speak of?
->=20
-> Greetings
->=20
+As hinted, it's almost certainly a problem with filecaps.  While I'll 
+freely admit to not fully understanding how file-caps work, and my use-
+case doesn't use send/receive, I do recall filecaps are what ping uses 
+these days instead of SUID/SGID (on gentoo it'd be iputils' filecaps and 
+possibly caps USE flags controlling this for ping), and also that btrfs 
+send/receive did have a recent bugfix related to the extended-attributes 
+normally used to record filecaps, so the symptoms match the bug and 
+that's probably what you were seeing.
 
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
-
---YtHsN06XqY37zjjwh4AwHYlop7f1EkB65--
-
---0ACfyYdsEGQYQ4u9ohMCVrUQc1MIm61XI
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iEYEARECAAYFAltXZ5UACgkQR6LMutpd94wVMgCfSUH1v8Z4fIgGLTvBzeAWyTtQ
-QVMAmweHfay/DG02m/z9kqBg2g3gMTjd
-=cSu3
------END PGP SIGNATURE-----
-
---0ACfyYdsEGQYQ4u9ohMCVrUQc1MIm61XI--

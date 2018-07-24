@@ -1,342 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from p3nlsmtpcp01-01.prod.phx3.secureserver.net ([184.168.200.138]:53886
-        "EHLO p3nlsmtpcp01-01.prod.phx3.secureserver.net"
+Received: from mout.gmx.net ([212.227.17.22]:38669 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S2387982AbeGWOTD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 23 Jul 2018 10:19:03 -0400
-Date: Mon, 23 Jul 2018 18:46:40 +0530
-From: "Lakshmipathi.G" <Lakshmipathi.Ganapathi@collabora.co.uk>
+        id S2388348AbeGXNWe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 24 Jul 2018 09:22:34 -0400
+Received: from thetick.localnet ([93.181.44.247]) by mail.gmx.com (mrgmx101
+ [212.227.17.168]) with ESMTPSA (Nemesis) id 0M04uG-1g0q4H04Ro-00uGJX for
+ <linux-btrfs@vger.kernel.org>; Tue, 24 Jul 2018 14:16:21 +0200
+From: Marc Joliet <marcec@gmx.de>
 To: linux-btrfs@vger.kernel.org
-Cc: suy.fnst@cn.fujitsu.com, lakshmipathi.g@giis.co.in
-Subject: [PATCH] v3: btrfs-progs: Introduce 'btrfs inspect-internal
- dump-csum' option
-Message-ID: <20180723131640.GA28817@giis.co.in>
+Subject: File permissions lost during send/receive?
+Date: Tue, 24 Jul 2018 14:16:15 +0200
+Message-ID: <8202618.Xtt70Sb46P@thetick>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: multipart/signed; boundary="nextPart8073226.WS8yGQltbI"; micalg="pgp-sha256"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Print csum for a given file on stdout.
+--nextPart8073226.WS8yGQltbI
+Content-Transfer-Encoding: 7Bit
+Content-Type: text/plain; charset="us-ascii"
 
-Sample usage:
-btrfs inspect-internal dump-csum /btrfs/50gbfile /dev/sda4
-Signed-off-by: Lakshmipathi.G <Lakshmipathi.Ganapathi@collabora.co.uk>
----
- Makefile                 |   2 +-
- cmds-inspect-dump-csum.c | 239 +++++++++++++++++++++++++++++++++++++++++++++++
- cmds-inspect-dump-csum.h |  22 +++++
- cmds-inspect.c           |   3 +
- 4 files changed, 265 insertions(+), 1 deletion(-)
- create mode 100644 cmds-inspect-dump-csum.c
- create mode 100644 cmds-inspect-dump-csum.h
+Hi list,
 
-diff --git a/Makefile b/Makefile
-index 544410e6..8ad28012 100644
---- a/Makefile
-+++ b/Makefile
-@@ -122,7 +122,7 @@ cmds_objects = cmds-subvolume.o cmds-filesystem.o cmds-device.o cmds-scrub.o \
- 	       cmds-quota.o cmds-qgroup.o cmds-replace.o check/main.o \
- 	       cmds-restore.o cmds-rescue.o chunk-recover.o super-recover.o \
- 	       cmds-property.o cmds-fi-usage.o cmds-inspect-dump-tree.o \
--	       cmds-inspect-dump-super.o cmds-inspect-tree-stats.o cmds-fi-du.o \
-+	       cmds-inspect-dump-super.o cmds-inspect-tree-stats.o cmds-fi-du.o cmds-inspect-dump-csum.o \
- 	       mkfs/common.o check/mode-common.o check/mode-lowmem.o
- libbtrfs_objects = send-stream.o send-utils.o kernel-lib/rbtree.o btrfs-list.o \
- 		   kernel-lib/crc32c.o messages.o \
-diff --git a/cmds-inspect-dump-csum.c b/cmds-inspect-dump-csum.c
-new file mode 100644
-index 00000000..06dba368
---- /dev/null
-+++ b/cmds-inspect-dump-csum.c
-@@ -0,0 +1,239 @@
-+/*
-+ * This program is free software; you can redistribute it and/or
-+ * modify it under the terms of the GNU General Public
-+ * License v2 as published by the Free Software Foundation.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-+ * General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public
-+ * License along with this program; if not, write to the
-+ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-+ * Boston, MA 021110-1307, USA.
-+ */
-+
-+#include "kerncompat.h"
-+#include <stdio.h>
-+#include <stdlib.h>
-+#include <unistd.h>
-+#include <fcntl.h>
-+#include <sys/stat.h>
-+#include <ctype.h>
-+#include <uuid/uuid.h>
-+#include <errno.h>
-+#include <getopt.h>
-+
-+#include "ctree.h"
-+#include "disk-io.h"
-+#include "print-tree.h"
-+#include "transaction.h"
-+#include "list.h"
-+#include "utils.h"
-+#include "commands.h"
-+#include "crc32c.h"
-+#include "cmds-inspect-dump-csum.h"
-+#include "help.h"
-+#include "volumes.h"
-+
-+
-+const char * const cmd_inspect_dump_csum_usage[] = {
-+	"btrfs inspect-internal dump-csum <path/to/file> <device>",
-+	"Get csums for the given file.",
-+	NULL
-+};
-+
-+int btrfs_lookup_csums(struct btrfs_trans_handle *trans, struct btrfs_root *root,
-+	struct btrfs_path *path, u64 bytenr, int cow, int total_csums)
-+{
-+	int ret;
-+	int i;
-+	int start_pos = 0;
-+	struct btrfs_key file_key;
-+	struct btrfs_key found_key;
-+	struct btrfs_csum_item *item;
-+	struct extent_buffer *leaf;
-+	u64 csum_offset = 0;
-+	u16 csum_size =
-+		btrfs_super_csum_size(root->fs_info->super_copy);
-+	int csums_in_item = 0;
-+	unsigned int tree_csum = 0;
-+	int pending_csums = total_csums;
-+	static int cnt=1;
-+
-+	file_key.objectid = BTRFS_EXTENT_CSUM_OBJECTID;
-+	file_key.offset = bytenr;
-+	file_key.type = BTRFS_EXTENT_CSUM_KEY;
-+	ret = btrfs_search_slot(trans, root, &file_key, path, 0, cow);
-+	if (ret < 0)
-+		goto fail;
-+	while(1){
-+		leaf = path->nodes[0];
-+		if (ret > 0) {
-+			ret = 1;
-+			if (path->slots[0] == 0)
-+				goto fail;
-+			path->slots[0]--;
-+			btrfs_item_key_to_cpu(leaf, &found_key, path->slots[0]);
-+			if (found_key.type != BTRFS_EXTENT_CSUM_KEY){
-+				fprintf(stderr, "\nInvalid key found.");
-+				goto fail;
-+			}
-+
-+			csum_offset = ((bytenr - found_key.offset) / root->fs_info->sectorsize) * csum_size;
-+			csums_in_item = btrfs_item_size_nr(leaf, path->slots[0]);
-+			csums_in_item /= csum_size;
-+			csums_in_item -= ( bytenr - found_key.offset ) / root->fs_info->sectorsize;
-+			start_pos=csum_offset;
-+		}
-+		if (path->slots[0] >= btrfs_header_nritems(leaf)) {
-+			if (pending_csums > 0){
-+				ret = btrfs_next_leaf(root, path);
-+				if (ret == 0)
-+				      continue;
-+			}
-+		}
-+		item = btrfs_item_ptr(leaf, path->slots[0], struct btrfs_csum_item);
-+		btrfs_item_key_to_cpu(leaf, &found_key, path->slots[0]);
-+		if (!ret){
-+			start_pos=0;
-+			csum_offset = ( bytenr - found_key.offset ) / root->fs_info->sectorsize;
-+			csums_in_item = btrfs_item_size_nr(leaf, path->slots[0]);
-+			csums_in_item /= csum_size;
-+		}
-+		if (csums_in_item > pending_csums){
-+			//possibly,some other csums on this item.
-+			for(i = 0; i < pending_csums; i++, cnt++){
-+			read_extent_buffer(leaf, &tree_csum,
-+					(unsigned long)item + ((i*4)+start_pos) , csum_size);
-+			fprintf(stdout, "%x ", tree_csum);
-+			if (cnt % 8 == 0)
-+				fprintf(stdout, "\n");
-+			}
-+			pending_csums = 0;
-+			return 0;
-+		}else{
-+			for(i = 0; i < csums_in_item; i++, cnt++){
-+			read_extent_buffer(leaf, &tree_csum,
-+					(unsigned long)item+((i*4)+start_pos), csum_size);
-+			fprintf(stdout, "%x ", tree_csum);
-+			if (cnt % 8 == 0)
-+				fprintf(stdout, "\n");
-+			}
-+		}
-+		pending_csums -= csums_in_item;
-+		ret = 0;
-+		if (pending_csums > 0){
-+			path->slots[0]++;
-+
-+		}else
-+			return 0;
-+	}
-+fail:
-+	fprintf(stderr, "btrfs_lookup_csums search failed.");
-+	if (ret > 0)
-+		ret = -ENOENT;
-+	return ret;
-+}
-+
-+int btrfs_lookup_extent(struct btrfs_fs_info *info, struct btrfs_path *path,
-+		u64 ino, int cow){
-+	struct btrfs_key key;
-+	struct btrfs_key found_key;
-+	struct btrfs_file_extent_item *fi;
-+	struct extent_buffer *leaf;
-+	struct btrfs_root *fs_root;
-+	int ret = -1;
-+	int slot;
-+	int total_csums = 0;
-+	u64 bytenr;
-+	u64 itemnum = 0;
-+	struct btrfs_path *path1 = NULL;
-+
-+	fs_root = info->fs_root;
-+	key.objectid = ino;
-+	key.type = BTRFS_EXTENT_DATA_KEY;
-+	key.offset = 0;
-+	ret = btrfs_search_slot(NULL,fs_root,&key,path,0,0);
-+
-+	if(ret < 0)
-+		goto error;
-+
-+	if (ret > 1){
-+		fprintf(stderr, "Unable to find the entry");
-+		return ret;
-+	}
-+
-+	while(1){
-+		leaf = path->nodes[0];
-+		slot = path->slots[0];
-+		if (slot >=  btrfs_header_nritems(leaf)){
-+		       ret = btrfs_next_leaf(fs_root, path);
-+			       if (ret == 0)
-+				      continue;
-+			       if (ret < 0)
-+				      goto error;
-+		}
-+		btrfs_item_key_to_cpu(leaf, &found_key, slot);
-+		if (found_key.type != BTRFS_EXTENT_DATA_KEY){
-+			btrfs_release_path(path);
-+			return -EINVAL;
-+		}
-+
-+		fi = btrfs_item_ptr(leaf, slot, struct btrfs_file_extent_item);
-+		bytenr = btrfs_file_extent_disk_bytenr(leaf, fi);
-+		total_csums=(btrfs_file_extent_num_bytes(leaf, fi) / 1024) / 4;
-+		path->slots[0]++;
-+		itemnum++;
-+		path1 = btrfs_alloc_path();
-+		ret = btrfs_lookup_csums(NULL,info->csum_root, path1, bytenr, 0,
-+					total_csums);
-+		btrfs_release_path(path1);
-+		if (ret) {
-+			fprintf(stderr, "\n Error: btrfs_lookup_csum");
-+			return 1;
-+		}
-+	}
-+
-+error:
-+	btrfs_release_path(path);
-+	return ret;
-+}
-+
-+int cmd_inspect_dump_csum(int argc, char **argv)
-+{
-+	struct btrfs_fs_info *info;
-+	int ret;
-+	struct btrfs_path path;
-+	struct stat st;
-+	char *filename;
-+
-+	if (check_argc_exact(argc, 3))
-+		usage(cmd_inspect_dump_csum_usage);
-+
-+	filename = argv[1];
-+	info = open_ctree_fs_info(argv[2], 0, 0, 0, OPEN_CTREE_PARTIAL);
-+	if (!info) {
-+		fprintf(stderr, "unable to open %s\n", argv[2]);
-+	        exit(1);
-+	}
-+
-+	ret = stat(filename, &st);
-+	if (ret < 0)	{
-+		fprintf(stderr, "unable to open %s\n", filename);
-+		exit(1);
-+	}
-+
-+	if(st.st_size < 1024){
-+		fprintf(stderr, "file less than 1KB.abort%lu", (st.st_size ));
-+		exit(1);
-+	}
-+
-+	btrfs_init_path(&path);
-+	ret = btrfs_lookup_extent(info, &path, st.st_ino, 0);
-+	ret = close_ctree(info->fs_root);
-+	btrfs_close_all_devices();
-+
-+	return ret;
-+}
-diff --git a/cmds-inspect-dump-csum.h b/cmds-inspect-dump-csum.h
-new file mode 100644
-index 00000000..338fa67d
---- /dev/null
-+++ b/cmds-inspect-dump-csum.h
-@@ -0,0 +1,22 @@
-+/*
-+ * This program is free software; you can redistribute it and/or
-+ * modify it under the terms of the GNU General Public
-+ * License v2 as published by the Free Software Foundation.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-+ * General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public
-+ * License along with this program; if not, write to the
-+ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-+ * Boston, MA 021110-1307, USA.
-+ *
-+ * Authors: Lakshmipathi.G <lakshmipathi.ganapathi@collabora.co.uk>
-+ */
-+
-+
-+int cmd_inspect_dump_csum(int argc, char **argv);
-+
-+extern const char * const cmd_inspect_dump_csum_usage[];
-diff --git a/cmds-inspect.c b/cmds-inspect.c
-index afd7fe48..c0d59c6d 100644
---- a/cmds-inspect.c
-+++ b/cmds-inspect.c
-@@ -32,6 +32,7 @@
- #include "commands.h"
- #include "btrfs-list.h"
- #include "help.h"
-+#include "cmds-inspect-dump-csum.h"
- 
- static const char * const inspect_cmd_group_usage[] = {
- 	"btrfs inspect-internal <command> <args>",
-@@ -647,6 +648,8 @@ const struct cmd_group inspect_cmd_group = {
- 				cmd_inspect_dump_super_usage, NULL, 0 },
- 		{ "tree-stats", cmd_inspect_tree_stats,
- 				cmd_inspect_tree_stats_usage, NULL, 0 },
-+		{ "dump-csum", cmd_inspect_dump_csum,
-+				cmd_inspect_dump_csum_usage, NULL, 0 },
- 		NULL_CMD_STRUCT
- 	}
- };
+(Preemptive note: this was with btrfs-progs 4.15.1, I have since upgraded to 
+4.17.  My kernel version is 4.14.52-gentoo.)
+
+I recently had to restore the root FS of my desktop from backup (extent tree 
+corruption; not sure how, possibly a loose SATA cable?).  Everything was fine, 
+even if restoring was slower than expected.  However, I encountered two files 
+with permission problems, namely:
+
+- /bin/ping, which caused running ping as a normal user to fail due to missing 
+permissions, and
+
+- /sbin/unix_chkpwd (part of PAM), which prevented me from unlocking the KDE 
+Plasma lock screen; I needed to log into a TTY and run "loginctl unlock-
+session".
+
+Both were easily fixed by reinstalling the affected packages (iputils and 
+pam), but I wonder why this happened after restoring from backup.
+
+I originally thought it was related to the SUID bit not being set, because of 
+the explanation in the ping(8) man page (section "SECURITY"), but cannot find 
+evidence of that -- that is, after reinstallation, "ls -lh" does not show the 
+sticky bit being set, or any other special permission bits, for that matter:
+
+% ls -lh /bin/ping /sbin/unix_chkpwd 
+-rwx--x--x 1 root root 60K 22. Jul 14:47 /bin/ping*                                                                                                                                                                                                                            
+-rwx--x--x 1 root root 31K 23. Jul 00:21 /sbin/unix_chkpwd*
+
+(Note: no ACLs are set, either.)
+
+I do remember the qcheck program (a Gentoo-specific program that checks the 
+integrity of installed packages) complaining about wrong file permissions, but 
+I didn't save its output, and there's a chance it *might* have been because I 
+ran qcheck without root permissions :-/ .
+
+I vaguely remember some patches and/or discussion regarding permission 
+transfer issues with send/receive on this ML, but didn't find anything after 
+searching through my Email archive, so I might be misremembering.
+
+Does anybody have any idea what possibly went wrong, or any similar experience 
+to speak of?
+
+Greetings
 -- 
-2.11.0
+Marc Joliet
+--
+"People who think they know everything really annoy those of us who know we
+don't" - Bjarne Stroustrup
+
+--nextPart8073226.WS8yGQltbI
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part.
+Content-Transfer-Encoding: 7Bit
+
+-----BEGIN PGP SIGNATURE-----
+
+iQIzBAABCAAdFiEEax7Ya5gDQFOJHKGQv9DmhiyIePQFAltXGI8ACgkQv9DmhiyI
+ePTwHBAAxJznmJ+h1bpKbyx/uBdTneIdmntsJ6bB/K4dOMFf3a7aaSvrS9ymExmy
+1mfFfYHRq4zOWygIWhdT1NvzwHmN0mO3OZJZPdGKJXet37tMMHnuXwtLKYFdtms7
+csAOqkHSCLIyLo28UgbnRQNHjtCOIOMDOXh0IXfjv90eZBQvW+ym32dvuBpO3e9B
+b/+9uywXuTXrl1Eq8Z2cYBQUcNsPYGCLLs39UIMBHnvmOEzv2eC0/xMpOMD8GO1h
+I86+TIoDJ3/LgabxoEYjVF2XiaWMNoVRCMjSiIgtrtPJjj1EqlfOXqzJOj5eEDbj
+6UzUQ7nZrqcI+TOiZvSOao9zCn4K7UeQQsSySxxIjuMvcO7+ws9cFtDzoy1QOg36
+C1sYtKHGXBntFdp6KG6CSyeu8L6ZWF4RxQwION+i9KI8s/mx9HmFqjvxtRw46Atc
+rv7DWurxfL3VuMknpex1CtF9G+ihB1FDHRYaDEPH9cxacAXSEqn7DZlBBJv10JAG
+YguCRRPcMXH+e1lSYwPbiDUXispkMB2eG8CkNi6GcDfdmQjagpmPj1ooUMUNSyMy
+5C4bo1JSkSD3dRE7U4LXPkb7dyr761o1dL+4OZwLg8XpkFV3V37vWt/n1UYdqByA
+plVIQUyyWRpKGtCoOhKgA4KPELjHtZsRRxvfrHbrMK8EHvuKHSw=
+=0ui7
+-----END PGP SIGNATURE-----
+
+--nextPart8073226.WS8yGQltbI--
+
+
 

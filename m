@@ -1,181 +1,99 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from synology.com ([59.124.61.242]:33921 "EHLO synology.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726820AbeG3Lzw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 30 Jul 2018 07:55:52 -0400
-From: robbieko <robbieko@synology.com>
+Received: from mx2.suse.de ([195.135.220.15]:50534 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726857AbeGXQap (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 24 Jul 2018 12:30:45 -0400
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 447C9AE7B
+        for <linux-btrfs@vger.kernel.org>; Tue, 24 Jul 2018 15:23:45 +0000 (UTC)
+From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Robbie Ko <robbieko@synology.com>
-Subject: [PATCH] Btrfs: fix data lose with snapshot when nospace
-Date: Mon, 30 Jul 2018 18:21:11 +0800
-Message-Id: <1532946072-31011-1-git-send-email-robbieko@synology.com>
+Cc: David Sterba <dsterba@suse.cz>
+Subject: Next btrfs development cycle open - 4.20
+Date: Tue, 24 Jul 2018 17:23:34 +0200
+Message-Id: <20180724152334.24294-1-dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Robbie Ko <robbieko@synology.com>
+From: David Sterba <dsterba@suse.cz>
 
-Commit e9894fd3e3b3 ("Btrfs: fix snapshot vs nocow writting")
-modified the nocow writeback mechanism, if you create a snapshot,
-it will always switch to cow writeback.
+Hi,
 
-This will cause data loss when there is no space, because
-when the space is full, the write will not reserve any space, only
-check if it can be nocow write.
+a friendly reminder of the timetable and what's expected at this phase.
 
-So fix this by first flush the nocow data, and then switch to the
-cow write.
+Besides the recurring stuff, there's an update about development git repos.
 
-Fixes: e9894fd3e3b3 ("Btrfs: fix snapshot vs nocow writting")
-Signed-off-by: Robbie Ko <robbieko@synology.com>
----
- fs/btrfs/ctree.h   |  1 +
- fs/btrfs/disk-io.c |  1 +
- fs/btrfs/inode.c   | 26 +++++---------------------
- fs/btrfs/ioctl.c   |  6 ++++++
- 4 files changed, 13 insertions(+), 21 deletions(-)
+4.17 - current
+4.18 - upcoming, urgent regression fixes only
+4.19 - development closed, pull request in prep, fixes or regressions only
+4.20 - development open, until 4.19-rc5 (at least)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 118346a..663ce05 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1277,6 +1277,7 @@ struct btrfs_root {
- 	int send_in_progress;
- 	struct btrfs_subvolume_writers *subv_writers;
- 	atomic_t will_be_snapshotted;
-+	atomic_t snapshot_force_cow;
- 
- 	/* For qgroup metadata reserved space */
- 	spinlock_t qgroup_meta_rsv_lock;
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 205092d..5573916 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1216,6 +1216,7 @@ static void __setup_root(struct btrfs_root *root, struct btrfs_fs_info *fs_info,
- 	atomic_set(&root->log_batch, 0);
- 	refcount_set(&root->refs, 1);
- 	atomic_set(&root->will_be_snapshotted, 0);
-+	atomic_set(&root->snapshot_force_cow, 0);
- 	root->log_transid = 0;
- 	root->log_transid_committed = -1;
- 	root->last_log_commit = 0;
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index eba61bc..263b852 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -1275,7 +1275,7 @@ static noinline int run_delalloc_nocow(struct inode *inode,
- 	u64 disk_num_bytes;
- 	u64 ram_bytes;
- 	int extent_type;
--	int ret, err;
-+	int ret;
- 	int type;
- 	int nocow;
- 	int check_prev = 1;
-@@ -1407,11 +1407,9 @@ static noinline int run_delalloc_nocow(struct inode *inode,
- 			 * if there are pending snapshots for this root,
- 			 * we fall into common COW way.
- 			 */
--			if (!nolock) {
--				err = btrfs_start_write_no_snapshotting(root);
--				if (!err)
--					goto out_check;
--			}
-+			if (!nolock &&
-+				unlikely(atomic_read(&root->snapshot_force_cow)))
-+				goto out_check;
- 			/*
- 			 * force cow if csum exists in the range.
- 			 * this ensure that csum for a given extent are
-@@ -1420,9 +1418,6 @@ static noinline int run_delalloc_nocow(struct inode *inode,
- 			ret = csum_exist_in_range(fs_info, disk_bytenr,
- 						  num_bytes);
- 			if (ret) {
--				if (!nolock)
--					btrfs_end_write_no_snapshotting(root);
--
- 				/*
- 				 * ret could be -EIO if the above fails to read
- 				 * metadata.
-@@ -1435,11 +1430,8 @@ static noinline int run_delalloc_nocow(struct inode *inode,
- 				WARN_ON_ONCE(nolock);
- 				goto out_check;
- 			}
--			if (!btrfs_inc_nocow_writers(fs_info, disk_bytenr)) {
--				if (!nolock)
--					btrfs_end_write_no_snapshotting(root);
-+			if (!btrfs_inc_nocow_writers(fs_info, disk_bytenr))
- 				goto out_check;
--			}
- 			nocow = 1;
- 		} else if (extent_type == BTRFS_FILE_EXTENT_INLINE) {
- 			extent_end = found_key.offset +
-@@ -1453,8 +1445,6 @@ static noinline int run_delalloc_nocow(struct inode *inode,
- out_check:
- 		if (extent_end <= start) {
- 			path->slots[0]++;
--			if (!nolock && nocow)
--				btrfs_end_write_no_snapshotting(root);
- 			if (nocow)
- 				btrfs_dec_nocow_writers(fs_info, disk_bytenr);
- 			goto next_slot;
-@@ -1476,8 +1466,6 @@ static noinline int run_delalloc_nocow(struct inode *inode,
- 					     end, page_started, nr_written, 1,
- 					     NULL);
- 			if (ret) {
--				if (!nolock && nocow)
--					btrfs_end_write_no_snapshotting(root);
- 				if (nocow)
- 					btrfs_dec_nocow_writers(fs_info,
- 								disk_bytenr);
-@@ -1497,8 +1485,6 @@ static noinline int run_delalloc_nocow(struct inode *inode,
- 					  ram_bytes, BTRFS_COMPRESS_NONE,
- 					  BTRFS_ORDERED_PREALLOC);
- 			if (IS_ERR(em)) {
--				if (!nolock && nocow)
--					btrfs_end_write_no_snapshotting(root);
- 				if (nocow)
- 					btrfs_dec_nocow_writers(fs_info,
- 								disk_bytenr);
-@@ -1537,8 +1523,6 @@ static noinline int run_delalloc_nocow(struct inode *inode,
- 					     EXTENT_CLEAR_DATA_RESV,
- 					     PAGE_UNLOCK | PAGE_SET_PRIVATE2);
- 
--		if (!nolock && nocow)
--			btrfs_end_write_no_snapshotting(root);
- 		cur_offset = extent_end;
- 
- 		/*
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index b077544..43674ef 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -761,6 +761,7 @@ static int create_snapshot(struct btrfs_root *root, struct inode *dir,
- 	struct btrfs_pending_snapshot *pending_snapshot;
- 	struct btrfs_trans_handle *trans;
- 	int ret;
-+	bool snapshot_force_cow = false;
- 
- 	if (!test_bit(BTRFS_ROOT_REF_COWS, &root->state))
- 		return -EINVAL;
-@@ -787,6 +788,9 @@ static int create_snapshot(struct btrfs_root *root, struct inode *dir,
- 	if (ret)
- 		goto dec_and_free;
- 
-+	atomic_inc(&root->snapshot_force_cow);
-+	snapshot_force_cow = true;
-+
- 	btrfs_wait_ordered_extents(root, U64_MAX, 0, (u64)-1);
- 
- 	btrfs_init_block_rsv(&pending_snapshot->block_rsv,
-@@ -851,6 +855,8 @@ static int create_snapshot(struct btrfs_root *root, struct inode *dir,
- fail:
- 	btrfs_subvolume_release_metadata(fs_info, &pending_snapshot->block_rsv);
- dec_and_free:
-+	if (snapshot_force_cow)
-+		atomic_dec(&root->snapshot_force_cow);
- 	if (atomic_dec_and_test(&root->will_be_snapshotted))
- 		wake_up_var(&root->will_be_snapshotted);
- free_pending:
--- 
-1.9.1
+(https://btrfs.wiki.kernel.org/index.php/Developer%27s_FAQ#Development_schedule)
 
+
+Current status
+--------------
+
+What's in misc-next is going to be merged to 4.19, unless something really
+serious pops out.
+
+Branches that have been part of for-next are eligible but may need some
+last reviews and testing, because the for-next is mainly meant for early
+warnings and fstests report way more failures compared to master or
+misc-next.
+
+
+Git development repos udpate
+----------------------------
+
+I'm going to phase out the git mirror at repo.or.cz. It served me well over the
+years, but with recent changes to github, I'm going to use gitlab.com more
+extensively and it's a good opportunity to switch the mirror. I'm now managing
+2 devel repos plus the k.org and want to keep it sane.
+
+  k.org: https://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git
+  devel1: https://gitlab.com/kdave/btrfs-devel
+  devel2: https://github.com/kdave/btrfs-devel
+
+The devel repos should be identical regarding the main development branches
+like misc-next or for-next-YYYYMMDD. The mirror at repo.or.cz will be still
+updated for a few weeks.
+
+
+List of things with earlier ack for 4.19
+----------------------------------------
+
+* patchsets sent until this week that have been reviewed
+
+I want to focus on stabilization of misc-next in the upcoming weeks so
+patches that are not going make things better may be postponed. We can
+do some cleanup rounds, update messages or do other obviously low-risk
+changes.
+
+
+List of things pushed to 4.20 or later
+--------------------------------------
+
+* ioctl CLEAR_FREE
+* send v2 updates
+* in-band dedupe
+* the rest not mentioned above
+
+
+Usual points
+------------
+
+* the current patch queue (as is in misc-next) looks stable, so no big
+  changes are going to be applied at this time. The usual exceptions are
+  bugfixes or obvious cleanups.
+
+* the base of the patches should be the last announced pull request,
+  which is going to be named 'for-4.19' in my k.org tree.  Reviewed
+  patches will be collected in a branch that's usually named 'misc-next'
+  in my devel git repos and is part of the for-next at k.org git repo.
+
+* merging of new patches to misc-next will be slow during the
+  merge window, also because there's a btrfs-progs release scheduled and it's
+  summer
+
+* everybody is encouraged to review or test other's patches

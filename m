@@ -1,107 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.99]:51918 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726935AbeG3NOh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 30 Jul 2018 09:14:37 -0400
-Received: from debian3.lan (bl8-197-74.dsl.telepac.pt [85.241.197.74])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 7A59E20881
-        for <linux-btrfs@vger.kernel.org>; Mon, 30 Jul 2018 11:40:02 +0000 (UTC)
-From: fdmanana@kernel.org
+Received: from mail-pl0-f46.google.com ([209.85.160.46]:42974 "EHLO
+        mail-pl0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1730508AbeGZVxR (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 26 Jul 2018 17:53:17 -0400
+Received: by mail-pl0-f46.google.com with SMTP id z7-v6so1308358plo.9
+        for <linux-btrfs@vger.kernel.org>; Thu, 26 Jul 2018 13:34:47 -0700 (PDT)
+From: Omar Sandoval <osandov@osandov.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: send, fix incorrect file layout after hole punching beyond eof
-Date: Mon, 30 Jul 2018 12:39:58 +0100
-Message-Id: <20180730113958.5178-1-fdmanana@kernel.org>
+Cc: kernel-team@fb.com, David Sterba <dsterba@suse.com>
+Subject: [PATCH v2 0/2] btrfs-progs: build improvements
+Date: Thu, 26 Jul 2018 13:34:37 -0700
+Message-Id: <cover.1532637115.git.osandov@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+From: Omar Sandoval <osandov@fb.com>
 
-When doing an incremental send, if we have a file in the parent snapshot
-that has prealloc extents beyond EOF and in the send snapshot it got a
-hole punch that partially covers the prealloc extents, the send stream,
-when replayed by a receiver, can result in a file that has a size bigger
-than it should and filled with zeroes past the correct EOF.
+Hi, Dave,
 
-For example:
+Here's v2 of "btrfs-progs: make all programs and libraries optional",
+this time much less overkill. Now, it's just --disable-programs,
+--disable-shared, and --disable-static. Based on your devel branch.
+Please consider these for the next progs release.
 
-  $ mkfs.btrfs -f /dev/sdb
-  $ mount /dev/sdb /mnt
+Thanks!
 
-  $ xfs_io -f -c "falloc -k 0 4M" /mnt/foobar
-  $ xfs_io -c "pwrite -S 0xea 0 1M" /mnt/foobar
+Omar Sandoval (2):
+  btrfs-progs: add --disable-programs
+  btrfs-progs: add --disable-shared and --disable-static
 
-  $ btrfs subvolume snapshot -r /mnt /mnt/snap1
-  $ btrfs send -f /tmp/1.send /mnt/snap1
+ Makefile        | 56 +++++++++++++++++++++++++++++++++----------------
+ Makefile.inc.in |  3 +++
+ configure.ac    | 28 +++++++++++++++++++++++--
+ 3 files changed, 67 insertions(+), 20 deletions(-)
 
-  $ xfs_io -c "fpunch 1M 2M" /mnt/foobar
-
-  $ btrfs subvolume snapshot -r /mnt /mnt/snap2
-  $ btrfs send -f /tmp/2.send -p /mnt/snap1 /mnt/snap2
-
-  $ stat --format %s /mnt/snap2/foobar
-  1048576
-  $ md5sum /mnt/snap2/foobar
-  d31659e82e87798acd4669a1e0a19d4f  /mnt/snap2/foobar
-
-  $ umount /mnt
-  $ mkfs.btrfs -f /dev/sdc
-  $ mount /dev/sdc /mnt
-
-  $ btrfs receive -f /mnt/1.snap /mnt
-  $ btrfs receive -f /mnt/2.snap /mnt
-
-  $ stat --format %s /mnt/snap2/foobar
-  3145728
-  # --> should be 1Mb and not 3Mb (which was the end offset of hole
-  #     punch operation)
-  $ md5sum /mnt/snap2/foobar
-  117baf295297c2a995f92da725b0b651  /mnt/snap2/foobar
-  # --> should be d31659e82e87798acd4669a1e0a19d4f as in the original fs
-
-This issue actually happens only since commit ffa7c4296e93 ("Btrfs: send,
-do not issue unnecessary truncate operations"), but before that commit we
-were issuing a write operation full of zeroes (to "punch" a hole) which
-was extending the file size beyond the correct value and then immediately
-issue a truncate operation to the correct size and undoing the previous
-write operation. Since the send protocol does not support fallocate, for
-extent preallocation and hole punching, fix this by not even attempting
-to send a "hole" (regular write full of zeroes) if it starts at an offset
-greater then or equals to the file's size. This approach, besides being
-much more simple then making send issue the truncate operation, adds the
-benefit of avoiding the useless pair of write of zeroes and truncate
-operations, saving time and IO at the receiver and reducing the size of
-the send stream.
-
-A test case for fstests follows soon.
-
-CC: stable@vger.kernel.org # 4.17+
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/send.c | 9 +++++++++
- 1 file changed, 9 insertions(+)
-
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 0f31760f875f..87e89f7ff335 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -5007,6 +5007,15 @@ static int send_hole(struct send_ctx *sctx, u64 end)
- 	u64 len;
- 	int ret = 0;
- 
-+	/*
-+	 * A hole that starts at EOF or beyond it. Since we do not yet support
-+	 * fallocate (for extent preallocation and hole punching), sending a
-+	 * write of zeroes starting at EOF or beyond would later require issuing
-+	 * a truncate operation which would undo the write and achieve nothing.
-+	 */
-+	if (offset >= sctx->cur_inode_size)
-+		return 0;
-+
- 	if (sctx->flags & BTRFS_SEND_FLAG_NO_FILE_DATA)
- 		return send_update_extent(sctx, offset, end - offset);
- 
 -- 
-2.11.0
+2.18.0
 

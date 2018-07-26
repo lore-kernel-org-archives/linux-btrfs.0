@@ -1,94 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pl0-f67.google.com ([209.85.160.67]:37438 "EHLO
-        mail-pl0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1731630AbeG0BYU (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 26 Jul 2018 21:24:20 -0400
-Received: by mail-pl0-f67.google.com with SMTP id 31-v6so1510997plc.4
-        for <linux-btrfs@vger.kernel.org>; Thu, 26 Jul 2018 17:05:10 -0700 (PDT)
-From: Naohiro Aota <naota@elisp.net>
-To: linux-btrfs@vger.kernel.org, dsterba@suse.com
-Cc: jbacik@fb.com, clm@fb.com, Naohiro Aota <naota@elisp.net>
-Subject: [PATCH] btrfs: revert fs_devices state on error of btrfs_init_new_device()
-Date: Fri, 27 Jul 2018 09:04:55 +0900
-Message-Id: <20180727000455.2647-1-naota@elisp.net>
+Received: from mx2.suse.de ([195.135.220.15]:57636 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1725941AbeGZHy3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 26 Jul 2018 03:54:29 -0400
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id B8914AD82
+        for <linux-btrfs@vger.kernel.org>; Thu, 26 Jul 2018 06:39:08 +0000 (UTC)
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 0/2] btrfs-progs: Fix qgroup false alerts on uninitialized rescan
+Date: Thu, 26 Jul 2018 14:38:59 +0800
+Message-Id: <20180726063901.1252-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When btrfs hits error after modifying fs_devices in
-btrfs_init_new_device() (such as btrfs_add_dev_item() returns error), it
-leaves everything as is, but frees allocated btrfs_device. As a result,
-fs_devices->devices and fs_devices->alloc_list contain already freed
-btrfs_device, leading to later use-after-free bug.
+This patches can be fetched from github:
+https://github.com/adam900710/btrfs-progs/tree/qgroup_report
 
-Error path also messes the things like ->num_devices. While they go backs
-to the original value by unscanning btrfs devices, it is safe to revert
-them here.
+It's possible that certain timed power loss could lead to initialized quota
+tree without rescan kicked in.
+Can be reproduced in btrfs/166 with low possibility.
 
-Fixes: 79787eaab461 ("btrfs: replace many BUG_ONs with proper error handling")
-Signed-off-by: Naohiro Aota <naota@elisp.net>
----
- fs/btrfs/volumes.c | 28 +++++++++++++++++++++++-----
- 1 file changed, 23 insertions(+), 5 deletions(-)
+In that case, since default flags for QUOTA_STATUS is ON|INCONSISTENT,
+btrfs check will still check qgroups and report difference as error.
 
- This patch applies on master, but not on kdave/for-next because of
- 74b9f4e186eb ("btrfs: declare fs_devices in btrfs_init_new_device()")
+However rescan progress of QUOTA_STATUS is still 0, means qgroup rescan
+hasn't been kicked in, and all quota numbers are 0, difference is
+expected.
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 1da162928d1a..5f0512fffa52 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -2410,7 +2410,7 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
- 	struct list_head *devices;
- 	struct super_block *sb = fs_info->sb;
- 	struct rcu_string *name;
--	u64 tmp;
-+	u64 orig_super_total_bytes, orig_super_num_devices;
- 	int seeding_dev = 0;
- 	int ret = 0;
- 	bool unlocked = false;
-@@ -2509,12 +2509,14 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
- 	if (!blk_queue_nonrot(q))
- 		fs_info->fs_devices->rotating = 1;
- 
--	tmp = btrfs_super_total_bytes(fs_info->super_copy);
-+	orig_super_total_bytes = btrfs_super_total_bytes(fs_info->super_copy);
- 	btrfs_set_super_total_bytes(fs_info->super_copy,
--		round_down(tmp + device->total_bytes, fs_info->sectorsize));
-+		round_down(orig_super_total_bytes + device->total_bytes,
-+			   fs_info->sectorsize));
- 
--	tmp = btrfs_super_num_devices(fs_info->super_copy);
--	btrfs_set_super_num_devices(fs_info->super_copy, tmp + 1);
-+	orig_super_num_devices = btrfs_super_num_devices(fs_info->super_copy);
-+	btrfs_set_super_num_devices(fs_info->super_copy,
-+				    orig_super_num_devices + 1);
- 
- 	/* add sysfs device entry */
- 	btrfs_sysfs_add_device_link(fs_info->fs_devices, device);
-@@ -2594,6 +2596,22 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
- 
- error_sysfs:
- 	btrfs_sysfs_rm_device_link(fs_info->fs_devices, device);
-+	mutex_lock(&fs_info->fs_devices->device_list_mutex);
-+	mutex_lock(&fs_info->chunk_mutex);
-+	list_del_rcu(&device->dev_list);
-+	list_del(&device->dev_alloc_list);
-+	fs_info->fs_devices->num_devices--;
-+	fs_info->fs_devices->open_devices--;
-+	fs_info->fs_devices->rw_devices--;
-+	fs_info->fs_devices->total_devices--;
-+	fs_info->fs_devices->total_rw_bytes -= device->total_bytes;
-+	atomic64_sub(device->total_bytes, &fs_info->free_chunk_space);
-+	btrfs_set_super_total_bytes(fs_info->super_copy,
-+				    orig_super_total_bytes);
-+	btrfs_set_super_num_devices(fs_info->super_copy,
-+				    orig_super_num_devices);
-+	mutex_unlock(&fs_info->chunk_mutex);
-+	mutex_unlock(&fs_info->fs_devices->device_list_mutex);
- error_trans:
- 	if (seeding_dev)
- 		sb->s_flags |= SB_RDONLY;
+In this case, make btrfs check don't report such uninitialized rescan as
+error.
+
+Qu Wenruo (2):
+  btrfs-progs: qgroup-verify: Don't treat qgroup difference as error if
+    the fs hasn't initialized a rescan
+  btrfs-progs: fsck-tests: Add test image to check if btrfs check
+    reports uninitialized rescan as error
+
+ qgroup-verify.c                                 |  14 +++++++++++++-
+ .../no_rescan_kicked_in.img                     | Bin 0 -> 3072 bytes
+ .../fsck-tests/035-rescan-not-kicked-in/test.sh |  16 ++++++++++++++++
+ 3 files changed, 29 insertions(+), 1 deletion(-)
+ create mode 100644 tests/fsck-tests/035-rescan-not-kicked-in/no_rescan_kicked_in.img
+ create mode 100755 tests/fsck-tests/035-rescan-not-kicked-in/test.sh
+
 -- 
 2.18.0
 

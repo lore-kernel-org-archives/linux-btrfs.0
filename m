@@ -1,228 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:41184 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1726476AbeGLKuj (ORCPT
+Received: from userp2120.oracle.com ([156.151.31.85]:58626 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728584AbeGZIFc (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 12 Jul 2018 06:50:39 -0400
-From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Subject: [v10.4 5/5] btrfs-progs: dedupe: introduce reconfigure subcommand
-Date: Thu, 12 Jul 2018 18:41:23 +0800
-Message-ID: <20180712104123.5999-6-lufq.fnst@cn.fujitsu.com>
-In-Reply-To: <20180712104123.5999-1-lufq.fnst@cn.fujitsu.com>
-References: <20180712104123.5999-1-lufq.fnst@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+        Thu, 26 Jul 2018 04:05:32 -0400
+Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
+        by userp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w6Q6mcLw128689
+        for <linux-btrfs@vger.kernel.org>; Thu, 26 Jul 2018 06:50:09 GMT
+Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
+        by userp2120.oracle.com with ESMTP id 2kbwfq1m9d-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Thu, 26 Jul 2018 06:50:09 +0000
+Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
+        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w6Q6o9ug015037
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Thu, 26 Jul 2018 06:50:09 GMT
+Received: from abhmp0012.oracle.com (abhmp0012.oracle.com [141.146.116.18])
+        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w6Q6o8AU017505
+        for <linux-btrfs@vger.kernel.org>; Thu, 26 Jul 2018 06:50:09 GMT
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v2 2/4] btrfs: fix race between free_stale_devices and close_fs_devices
+Date: Thu, 26 Jul 2018 14:53:32 +0800
+Message-Id: <20180726065334.30594-3-anand.jain@oracle.com>
+In-Reply-To: <20180726065334.30594-1-anand.jain@oracle.com>
+References: <20180726065334.30594-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+From: Anand Jain <Anand.Jain@oracle.com>
 
-Introduce reconfigure subcommand to co-operate with new kernel ioctl
-modification.
+%fs_devices can be free-ed by btrfs_free_stale_devices() when the
+close_fs_devices() drops fs_devices::opened to zero, but close_fs_devices
+tries to access the %fs_devices again without the device_list_mutex.
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+Fix this by bringing the %fs_devices access with in the device_list_mutex.
+
+Stack trace as below.
+
+WARNING: CPU: 1 PID: 4499 at fs/btrfs/volumes.c:1071 close_fs_devices+0xbc7/0xfa0 fs/btrfs/volumes.c:1071
+Kernel panic - not syncing: panic_on_warn set ...
+::
+RIP: 0010:close_fs_devices+0xbc7/0xfa0 fs/btrfs/volumes.c:1071
+::
+ btrfs_close_devices+0x29/0x150 fs/btrfs/volumes.c:1085
+ open_ctree+0x589/0x7898 fs/btrfs/disk-io.c:3358
+ btrfs_fill_super fs/btrfs/super.c:1202 [inline]
+ btrfs_mount_root+0x16df/0x1e70 fs/btrfs/super.c:1593
+ mount_fs+0xae/0x328 fs/super.c:1277
+ vfs_kern_mount.part.34+0xd4/0x4d0 fs/namespace.c:1037
+ vfs_kern_mount+0x40/0x60 fs/namespace.c:1027
+ btrfs_mount+0x4a1/0x213e fs/btrfs/super.c:1661
+ mount_fs+0xae/0x328 fs/super.c:1277
+
+Reported-by: syzbot+ceb2606025ec1cc3479c@syzkaller.appspotmail.com
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
-v10.4:
-1. update btrfs-completion for reconfigure
-2. replace strerror(errno) with %m
+v1->v2: Commit log update. Satisfy checkpatch.pl. Remove HEAD..
 
- Documentation/btrfs-dedupe-inband.asciidoc |  7 +++
- btrfs-completion                           |  2 +-
- cmds-dedupe-ib.c                           | 73 +++++++++++++++++-----
- 3 files changed, 66 insertions(+), 16 deletions(-)
+ fs/btrfs/volumes.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/Documentation/btrfs-dedupe-inband.asciidoc b/Documentation/btrfs-dedupe-inband.asciidoc
-index 6096389cb0b4..78c806f772d6 100644
---- a/Documentation/btrfs-dedupe-inband.asciidoc
-+++ b/Documentation/btrfs-dedupe-inband.asciidoc
-@@ -86,6 +86,13 @@ And compression has higher priority than in-band de-duplication, means if
- compression and de-duplication is enabled at the same time, only compression
- will work.
- 
-+*reconfigure* [options] <path>::
-+Re-configure in-band de-duplication parameters of a filesystem.
-++
-+In-band de-duplication must be enbaled first before re-configuration.
-++
-+[Options] are the same with 'btrfs dedupe-inband enable'.
-+
- *status* <path>::
- Show current in-band de-duplication status of a filesystem.
- 
-diff --git a/btrfs-completion b/btrfs-completion
-index 62a7bdd4d0d5..6ff48e4c2f6a 100644
---- a/btrfs-completion
-+++ b/btrfs-completion
-@@ -41,7 +41,7 @@ _btrfs()
- 	commands_quota='enable disable rescan'
- 	commands_qgroup='assign remove create destroy show limit'
- 	commands_replace='start status cancel'
--	commands_dedupe_inband='enable disable status'
-+	commands_dedupe_inband='enable disable status reconfigure'
- 
- 	if [[ "$cur" == -* && $cword -le 3 && "$cmd" != "help" ]]; then
- 		COMPREPLY=( $( compgen -W '--help' -- "$cur" ) )
-diff --git a/cmds-dedupe-ib.c b/cmds-dedupe-ib.c
-index e778457e25a8..e52f939c9ced 100644
---- a/cmds-dedupe-ib.c
-+++ b/cmds-dedupe-ib.c
-@@ -56,7 +56,6 @@ static const char * const cmd_dedupe_ib_enable_usage[] = {
- 	NULL
- };
- 
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 2166c5e7cc01..c62b5e46792e 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1062,13 +1062,13 @@ static int close_fs_devices(struct btrfs_fs_devices *fs_devices)
+ 	list_for_each_entry_safe(device, tmp, &fs_devices->devices, dev_list) {
+ 		btrfs_close_one_device(device);
+ 	}
+-	mutex_unlock(&fs_devices->device_list_mutex);
 -
- #define report_fatal_parameter(dargs, old, member, type, err_val, fmt)	\
- ({									\
- 	if (dargs->member != old->member &&				\
-@@ -88,6 +87,12 @@ static void report_parameter_error(struct btrfs_ioctl_dedupe_args *dargs,
- 		}
- 		report_option_parameter(dargs, old, flags, u8, -1, x);
- 	}
+ 	WARN_ON(fs_devices->open_devices);
+ 	WARN_ON(fs_devices->rw_devices);
+ 	fs_devices->opened = 0;
+ 	fs_devices->seeding = 0;
+ 
++	mutex_unlock(&fs_devices->device_list_mutex);
 +
-+	if (dargs->status == 0 && old->cmd == BTRFS_DEDUPE_CTL_RECONF) {
-+		error("must enable dedupe before reconfiguration");
-+		return;
-+	}
-+
- 	if (report_fatal_parameter(dargs, old, cmd, u16, -1, u) ||
- 	    report_fatal_parameter(dargs, old, blocksize, u64, -1, llu) ||
- 	    report_fatal_parameter(dargs, old, backend, u16, -1, u) ||
-@@ -100,14 +105,17 @@ static void report_parameter_error(struct btrfs_ioctl_dedupe_args *dargs,
- 		old->limit_nr, old->limit_mem);
+ 	return 0;
  }
  
--static int cmd_dedupe_ib_enable(int argc, char **argv)
-+static int enable_reconfig_dedupe(int argc, char **argv, int reconf)
- {
- 	int ret;
- 	int fd = -1;
- 	char *path;
- 	u64 blocksize = BTRFS_DEDUPE_BLOCKSIZE_DEFAULT;
-+	int blocksize_set = 0;
- 	u16 hash_algo = BTRFS_DEDUPE_HASH_SHA256;
-+	int hash_algo_set = 0;
- 	u16 backend = BTRFS_DEDUPE_BACKEND_INMEMORY;
-+	int backend_set = 0;
- 	u64 limit_nr = 0;
- 	u64 limit_mem = 0;
- 	u64 sys_mem = 0;
-@@ -134,15 +142,17 @@ static int cmd_dedupe_ib_enable(int argc, char **argv)
- 			break;
- 		switch (c) {
- 		case 's':
--			if (!strcasecmp("inmemory", optarg))
-+			if (!strcasecmp("inmemory", optarg)) {
- 				backend = BTRFS_DEDUPE_BACKEND_INMEMORY;
--			else {
-+				backend_set = 1;
-+			} else {
- 				error("unsupported dedupe backend: %s", optarg);
- 				exit(1);
- 			}
- 			break;
- 		case 'b':
- 			blocksize = parse_size(optarg);
-+			blocksize_set = 1;
- 			break;
- 		case 'a':
- 			if (strcmp("sha256", optarg)) {
-@@ -224,26 +234,40 @@ static int cmd_dedupe_ib_enable(int argc, char **argv)
- 		return 1;
- 	}
- 	memset(&dargs, -1, sizeof(dargs));
--	dargs.cmd = BTRFS_DEDUPE_CTL_ENABLE;
--	dargs.blocksize = blocksize;
--	dargs.hash_algo = hash_algo;
--	dargs.limit_nr = limit_nr;
--	dargs.limit_mem = limit_mem;
--	dargs.backend = backend;
--	if (force)
--		dargs.flags |= BTRFS_DEDUPE_FLAG_FORCE;
--	else
--		dargs.flags = 0;
-+	if (reconf) {
-+		dargs.cmd = BTRFS_DEDUPE_CTL_RECONF;
-+		if (blocksize_set)
-+			dargs.blocksize = blocksize;
-+		if (hash_algo_set)
-+			dargs.hash_algo = hash_algo;
-+		if (backend_set)
-+			dargs.backend = backend;
-+		dargs.limit_nr = limit_nr;
-+		dargs.limit_mem = limit_mem;
-+	} else {
-+		dargs.cmd = BTRFS_DEDUPE_CTL_ENABLE;
-+		dargs.blocksize = blocksize;
-+		dargs.hash_algo = hash_algo;
-+		dargs.limit_nr = limit_nr;
-+		dargs.limit_mem = limit_mem;
-+		dargs.backend = backend;
-+		if (force)
-+			dargs.flags |= BTRFS_DEDUPE_FLAG_FORCE;
-+		else
-+			dargs.flags = 0;
-+	}
- 
- 	memcpy(&backup, &dargs, sizeof(dargs));
- 	ret = ioctl(fd, BTRFS_IOC_DEDUPE_CTL, &dargs);
- 	if (ret < 0) {
--		error("failed to enable inband deduplication: %m");
-+		error("failed to (%s) inband deduplication: %m",
-+		      reconf ? "reconfigure" : "enable");
- 		report_parameter_error(&dargs, &backup);
- 		ret = 1;
- 		goto out;
- 	}
- 
-+	report_parameter_error(&dargs, &backup);
- mem_check:
- 	if (!force && dargs.limit_mem > sys_mem / 4) {
- 		ret = 1;
-@@ -258,6 +282,10 @@ out:
- 	close_file_or_dir(fd, dirstream);
- 	return ret;
- }
-+static int cmd_dedupe_ib_enable(int argc, char **argv)
-+{
-+	return enable_reconfig_dedupe(argc, argv, 0);
-+}
- 
- static const char * const cmd_dedupe_ib_disable_usage[] = {
- 	"btrfs dedupe-inband disable <path>",
-@@ -376,6 +404,19 @@ out:
- 	return ret;
- }
- 
-+static int cmd_dedupe_ib_reconf(int argc, char **argv)
-+{
-+	return enable_reconfig_dedupe(argc, argv, 1);
-+}
-+
-+static const char * const cmd_dedupe_ib_reconf_usage[] = {
-+	"btrfs dedupe-inband reconfigure [options] <path>",
-+	"Reconfigure in-band(write time) de-duplication of a btrfs.",
-+	"",
-+	"Options are the same as 'btrfs dedupe-inband enable'",
-+	NULL
-+};
-+
- const struct cmd_group dedupe_ib_cmd_group = {
- 	dedupe_ib_cmd_group_usage, dedupe_ib_cmd_group_info, {
- 		{ "enable", cmd_dedupe_ib_enable, cmd_dedupe_ib_enable_usage,
-@@ -384,6 +425,8 @@ const struct cmd_group dedupe_ib_cmd_group = {
- 		  NULL, 0},
- 		{ "status", cmd_dedupe_ib_status, cmd_dedupe_ib_status_usage,
- 		  NULL, 0},
-+		{ "reconfigure", cmd_dedupe_ib_reconf,
-+		  cmd_dedupe_ib_reconf_usage, NULL, 0},
- 		NULL_CMD_STRUCT
- 	}
- };
 -- 
-2.18.0
-
-
+2.7.0
 

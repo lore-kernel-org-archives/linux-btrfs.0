@@ -1,192 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.18]:47247 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725995AbeG3GgZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 30 Jul 2018 02:36:25 -0400
-Subject: Re: [PATCH v2 00/12] mkfs: Quota support through -R|--runtime quota
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org, dsterba@suse.cz
-References: <20171107084259.22367-1-wqu@suse.com>
- <c3643f3f-da0b-0e4c-3bb5-35c09962f409@gmx.com>
- <ef21c72b-c0ca-ee15-e245-5598401817ea@gmx.com>
-Message-ID: <10cc122a-9bee-fd49-f030-ca5ad65bb330@gmx.com>
-Date: Mon, 30 Jul 2018 13:03:00 +0800
-MIME-Version: 1.0
-In-Reply-To: <ef21c72b-c0ca-ee15-e245-5598401817ea@gmx.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="uC3Z2GgMjoUjMO8iscTY3EqupB7jy0HIW"
+Received: from mx2.suse.de ([195.135.220.15]:32896 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726395AbeG3Hux (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 30 Jul 2018 03:50:53 -0400
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id B7768AE1F
+        for <linux-btrfs@vger.kernel.org>; Mon, 30 Jul 2018 06:17:27 +0000 (UTC)
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 0/1] btrfs: Tree lock return value enhancement to avoid deadlock on crafted image
+Date: Mon, 30 Jul 2018 14:17:22 +0800
+Message-Id: <20180730061723.13290-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---uC3Z2GgMjoUjMO8iscTY3EqupB7jy0HIW
-Content-Type: multipart/mixed; boundary="y5Xd2EOKN4YgI751zgJbLJDvF0OD7s3nr";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Message-ID: <10cc122a-9bee-fd49-f030-ca5ad65bb330@gmx.com>
-Subject: Re: [PATCH v2 00/12] mkfs: Quota support through -R|--runtime quota
-References: <20171107084259.22367-1-wqu@suse.com>
- <c3643f3f-da0b-0e4c-3bb5-35c09962f409@gmx.com>
- <ef21c72b-c0ca-ee15-e245-5598401817ea@gmx.com>
-In-Reply-To: <ef21c72b-c0ca-ee15-e245-5598401817ea@gmx.com>
+The patch along with all submitted patches for fuzzed image can be found
+at the following repo:
+https://github.com/adam900710/linux/tree/tree_checker_enhance
 
---y5Xd2EOKN4YgI751zgJbLJDvF0OD7s3nr
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+Although fuzzed images are not really possible to happen in real world,
+it's still a pretty possible Deny of Service to attack the kernel, so we
+still need to address such problems.
 
-Ping the 3rd time?
+Instead of previous failed attempt to use cached eb to determine if
+we're allocating new tree blocks on already used tree block, this time
+we allow btrfs_tree_lock() to return error number to inform callers
+there is something wrong so we can exit a little more gracefully.
 
-Or should I just rebase the patchset?
+This branch should address the 2nd wave of fuzzed images reported by Xu
+Wen.
 
-Thanks,
-Qu
+Please note, since extent tree corruption is the worst scenario, we
+still keep kernel to WARN() on such problem.
+But at least for that fuzzed image we can switched to RO other than
+deadlock the kernel.
 
-On 2018=E5=B9=B403=E6=9C=8808=E6=97=A5 09:17, Qu Wenruo wrote:
-> Ping again.
->=20
-> Since David is planning to merge qgroup patchset, this feature would
-> greatly improve test coverage.
->=20
-> Thanks,
-> Qu
->=20
-> On 2018=E5=B9=B401=E6=9C=8811=E6=97=A5 14:04, Qu Wenruo wrote:
->> Ping?
->>
->> Or do I need to rebase the patchset?
->>
->> Thanks,
->> Qu
->>
->> On 2017=E5=B9=B411=E6=9C=8807=E6=97=A5 16:42, Qu Wenruo wrote:
->>> Can be fetched from github:
->>> https://github.com/adam900710/btrfs-progs/tree/mkfs_qgroup
->>>
->>> This patchset adds quota support, which means the result fs will have=
+Qu Wenruo (1):
+  btrfs: locking: Allow btrfs_tree_lock() to return error to avoid
+    deadlock
 
->>> quota enabled by default, and its accounting is already consistent, n=
-o
->>> manually rescan or quota enable is needed.
->>>
->>> The overall design of such support is:
->>> 1) Create needed tree
->>>    Both btrfs_root and real root item and tree root leaf.
->>>    For this, a new infrastructure, btrfs_create_tree(), is added for
->>>    this.
->>>
->>> 2) Fill quota root with basic skeleton
->>>    Only 3 items are really needed
->>>    a) global quota status item
->>>    b) quota info for specified qgroup
->>>    c) quota limit for specified qgroup
->>>
->>>    Currently only 0/5 qgroup is passed.
->>>    If we're going to support extra subvolume at mkfs time, just pass =
-the
->>>    subvolume id into insert_qgroup_items().
->>>
->>>    The content doesn't matter at all.
->>>
->>> 3) Repair qgroups using infrastructure from qgroup-verify
->>>    In fact, qgroup repair is just offline rescan.
->>>    Although the original qgroup-verify infrastructure is mostly noisy=
-,
->>>    modify it a little to make it silent to function as offline quota
->>>    rescan.
->>>
->>> And such support is mainly designed for developers and QA guys.
->>>
->>> As to enable quota, before we must normally mount the fs, enable quot=
-a
->>> (and rescan if needed).
->>> This ioctl based procedure is not common, and fstests doesn't provide=
+ fs/btrfs/ctree.c           | 57 +++++++++++++++++++++++++++++++-------
+ fs/btrfs/extent-tree.c     | 28 +++++++++++++++----
+ fs/btrfs/extent_io.c       |  8 ++++--
+ fs/btrfs/free-space-tree.c |  4 ++-
+ fs/btrfs/locking.c         | 12 ++++++--
+ fs/btrfs/locking.h         |  2 +-
+ fs/btrfs/qgroup.c          |  4 ++-
+ fs/btrfs/relocation.c      | 13 +++++++--
+ fs/btrfs/tree-log.c        | 14 ++++++++--
+ 9 files changed, 114 insertions(+), 28 deletions(-)
 
->>> such support.
->>>
->>> There are several attempts to make fstests to support it, but due to
->>> different reasons, all these attempts failed.
->>>
->>> To make it easier to test all existing test cases with btrfs quota
->>> enabled, the current best method is to support quota at mkfs time, an=
-d
->>> here comes the patchset.
->>>
->>>
->>> BTW with -R|--runtime-features, we have several possible target to ad=
-d.
->>> Not limited to such ioctl based operation, but also mount option base=
-d
->>> ones.
->>> Like space-cache-tree (space_cache=3Dv2).
->>>
->>>
->>> Qu Wenruo (12):
->>>   btrfs-progs: qgroup-verify: Also repair qgroup status version
->>>   btrfs-progs: qgroup-verify: Use fs_info->readonly to check if we
->>>     should repair qgroups
->>>   btrfs-progs: qgroup-verify: Move qgroup classification out of
->>>     report_qgroups
->>>   btrfs-progs: qgroup-verify: Allow repair_qgroups function to do sil=
-ent
->>>     repair
->>>   btrfs-progs: ctree: Introduce function to create an empty tree
->>>   btrfs-progs: mkfs: Introduce function to insert qgroup info and lim=
-it
->>>     items
->>>
->>>   ^^^ Above patches are not modified at all ^^^
->>>   vvv Modification starts below vvv
->>>
->>>   btrfs-progs: mkfs: Introduce function to setup quota root and resca=
-n
->>>   btrfs-progs: fsfeatures: Introduce a new set of features,
->>>     runtime_features
->>>   btrfs-progs: mkfs: Introduce --runtime-features option
->>>   btrfs-progs: mkfs: Introduce quota runtime feature
->>>   btrfs-progs: test/mkfs: Add test case for -R quota option
->>>   btrfs-progs: test/mkfs: Add test case for --rootdir and -R quota
->>>
->>>  Documentation/mkfs.btrfs.asciidoc              |  23 +++
->>>  cmds-check.c                                   |   2 +-
->>>  convert/main.c                                 |   4 +-
->>>  ctree.c                                        | 109 ++++++++++++++
->>>  ctree.h                                        |   3 +
->>>  fsfeatures.c                                   | 131 ++++++++++++++-=
---
->>>  fsfeatures.h                                   |  10 +-
->>>  mkfs/main.c                                    | 194 +++++++++++++++=
-+++++++---
->>>  qgroup-verify.c                                |  51 +++++--
->>>  qgroup-verify.h                                |   2 +-
->>>  tests/mkfs-tests/001-basic-profiles/test.sh    |  10 ++
->>>  tests/mkfs-tests/010-rootdir-and-quota/test.sh |  51 +++++++
->>>  12 files changed, 529 insertions(+), 61 deletions(-)
->>>  create mode 100755 tests/mkfs-tests/010-rootdir-and-quota/test.sh
->>>
->>
->=20
+-- 
+2.18.0
 
-
---y5Xd2EOKN4YgI751zgJbLJDvF0OD7s3nr--
-
---uC3Z2GgMjoUjMO8iscTY3EqupB7jy0HIW
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAltenAQACgkQwj2R86El
-/qjsMQgAoLvfdZ6XtkoGzSHQnZm9is3hrgTUVfvJMOu0q80iO/ZnRJeCDoQ9yyE1
-n21KufDAuucwv4CZS3LcNlFsbbYkHi+dZnCirFCHpXG6UGB9yzGRqBgQJQY2OPcv
-fF1LKR/ylbaXrYVanpwi4w3rH9l8njvDaBiOtWMnSnqmxu38krYHLiGCCh2ARL7M
-GWlHNu1BPGcLP5RPGn6KgmnEzZrHcAT6EU/sTLxecF20bwPz3dytmno8G0CjCtQc
-KYHVKGQmbNEitMzEeUprkbaU32+RDj2kngvVq9pbXsZlewQ83bIGfwUBL7Iox/qN
-0aKCqNEi2ZnN+YXVyrujEnskxJqwKg==
-=j7SW
------END PGP SIGNATURE-----
-
---uC3Z2GgMjoUjMO8iscTY3EqupB7jy0HIW--

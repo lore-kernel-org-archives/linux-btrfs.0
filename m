@@ -1,161 +1,107 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.99]:38006 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.99]:51918 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727243AbeGTKqk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 20 Jul 2018 06:46:40 -0400
+        id S1726935AbeG3NOh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 30 Jul 2018 09:14:37 -0400
 Received: from debian3.lan (bl8-197-74.dsl.telepac.pt [85.241.197.74])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 2A3CD20661
-        for <linux-btrfs@vger.kernel.org>; Fri, 20 Jul 2018 09:59:10 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id 7A59E20881
+        for <linux-btrfs@vger.kernel.org>; Mon, 30 Jul 2018 11:40:02 +0000 (UTC)
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2] Btrfs: fix mount failure after fsync due to hard link recreation
-Date: Fri, 20 Jul 2018 10:59:06 +0100
-Message-Id: <20180720095906.3675-1-fdmanana@kernel.org>
-In-Reply-To: <20180719180154.20125-1-fdmanana@kernel.org>
-References: <20180719180154.20125-1-fdmanana@kernel.org>
+Subject: [PATCH] Btrfs: send, fix incorrect file layout after hole punching beyond eof
+Date: Mon, 30 Jul 2018 12:39:58 +0100
+Message-Id: <20180730113958.5178-1-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Filipe Manana <fdmanana@suse.com>
 
-If we end up with logging an inode reference item which has the same name
-but different index from the one we have persisted, we end up failing when
-replaying the log with an errno value of -EEXIST. The error comes from
-btrfs_add_link(), which is called from add_inode_ref(), when we are
-replaying an inode reference item.
+When doing an incremental send, if we have a file in the parent snapshot
+that has prealloc extents beyond EOF and in the send snapshot it got a
+hole punch that partially covers the prealloc extents, the send stream,
+when replayed by a receiver, can result in a file that has a size bigger
+than it should and filled with zeroes past the correct EOF.
 
-Example scenario where this happens:
+For example:
 
   $ mkfs.btrfs -f /dev/sdb
   $ mount /dev/sdb /mnt
 
-  $ touch /mnt/foo
-  $ ln /mnt/foo /mnt/bar
+  $ xfs_io -f -c "falloc -k 0 4M" /mnt/foobar
+  $ xfs_io -c "pwrite -S 0xea 0 1M" /mnt/foobar
 
-  $ sync
+  $ btrfs subvolume snapshot -r /mnt /mnt/snap1
+  $ btrfs send -f /tmp/1.send /mnt/snap1
 
-  # Rename the first hard link (foo) to a new name and rename the second
-  # hard link (bar) to the old name of the first hard link (foo).
-  $ mv /mnt/foo /mnt/qwerty
-  $ mv /mnt/bar /mnt/foo
+  $ xfs_io -c "fpunch 1M 2M" /mnt/foobar
 
-  # Create a new file, in the same parent directory, with the old name of
-  # the second hard link (bar) and fsync this new file.
-  # We do this instead of calling fsync on foo/qwerty because if we did
-  # that the fsync resulted in a full transaction commit, not triggering
-  # the problem.
-  $ touch /mnt/bar
-  $ xfs_io -c "fsync" /mnt/bar
+  $ btrfs subvolume snapshot -r /mnt /mnt/snap2
+  $ btrfs send -f /tmp/2.send -p /mnt/snap1 /mnt/snap2
 
-  <power fail>
+  $ stat --format %s /mnt/snap2/foobar
+  1048576
+  $ md5sum /mnt/snap2/foobar
+  d31659e82e87798acd4669a1e0a19d4f  /mnt/snap2/foobar
 
-  $ mount /dev/sdb /mnt
-  mount: mount /dev/sdb on /mnt failed: File exists
+  $ umount /mnt
+  $ mkfs.btrfs -f /dev/sdc
+  $ mount /dev/sdc /mnt
 
-So fix this by checking if a conflicting inode reference exists (same
-name, same parent but different index), removing it (and the associated
-dir index entries from the parent inode) if it exists, before attempting
-to add the new reference.
+  $ btrfs receive -f /mnt/1.snap /mnt
+  $ btrfs receive -f /mnt/2.snap /mnt
+
+  $ stat --format %s /mnt/snap2/foobar
+  3145728
+  # --> should be 1Mb and not 3Mb (which was the end offset of hole
+  #     punch operation)
+  $ md5sum /mnt/snap2/foobar
+  117baf295297c2a995f92da725b0b651  /mnt/snap2/foobar
+  # --> should be d31659e82e87798acd4669a1e0a19d4f as in the original fs
+
+This issue actually happens only since commit ffa7c4296e93 ("Btrfs: send,
+do not issue unnecessary truncate operations"), but before that commit we
+were issuing a write operation full of zeroes (to "punch" a hole) which
+was extending the file size beyond the correct value and then immediately
+issue a truncate operation to the correct size and undoing the previous
+write operation. Since the send protocol does not support fallocate, for
+extent preallocation and hole punching, fix this by not even attempting
+to send a "hole" (regular write full of zeroes) if it starts at an offset
+greater then or equals to the file's size. This approach, besides being
+much more simple then making send issue the truncate operation, adds the
+benefit of avoiding the useless pair of write of zeroes and truncate
+operations, saving time and IO at the receiver and reducing the size of
+the send stream.
 
 A test case for fstests follows soon.
 
+CC: stable@vger.kernel.org # 4.17+
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
+ fs/btrfs/send.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
 
-V2: added missing error check from btrfs_unlink_inode()
-
- fs/btrfs/tree-log.c | 69 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 69 insertions(+)
-
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index f8220ec02036..5f3c33466c18 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -1291,6 +1291,49 @@ static int unlink_old_inode_refs(struct btrfs_trans_handle *trans,
- 	return ret;
- }
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index 0f31760f875f..87e89f7ff335 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -5007,6 +5007,15 @@ static int send_hole(struct send_ctx *sctx, u64 end)
+ 	u64 len;
+ 	int ret = 0;
  
-+static int btrfs_inode_ref_exists(struct inode *inode,
-+				  struct inode *dir,
-+				  const u8 ref_type,
-+				  const char *name,
-+				  const int namelen)
-+{
-+	struct btrfs_key key;
-+	struct btrfs_path *path;
-+	const u64 parent_id = btrfs_ino(BTRFS_I(dir));
-+	int ret;
++	/*
++	 * A hole that starts at EOF or beyond it. Since we do not yet support
++	 * fallocate (for extent preallocation and hole punching), sending a
++	 * write of zeroes starting at EOF or beyond would later require issuing
++	 * a truncate operation which would undo the write and achieve nothing.
++	 */
++	if (offset >= sctx->cur_inode_size)
++		return 0;
 +
-+	path = btrfs_alloc_path();
-+	if (!path)
-+		return -ENOMEM;
-+
-+	key.objectid = btrfs_ino(BTRFS_I(inode));
-+	key.type = ref_type;
-+	if (key.type == BTRFS_INODE_REF_KEY)
-+		key.offset = parent_id;
-+	else
-+		key.offset = btrfs_extref_hash(parent_id, name, namelen);
-+
-+	ret = btrfs_search_slot(NULL, BTRFS_I(inode)->root, &key, path, 0, 0);
-+	if (ret < 0)
-+		goto out;
-+	if (ret > 0) {
-+		ret = 0;
-+		goto out;
-+	}
-+	if (key.type == BTRFS_INODE_EXTREF_KEY)
-+		ret = btrfs_find_name_in_ext_backref(path->nodes[0],
-+						     path->slots[0],
-+						     parent_id, name,
-+						     namelen, NULL);
-+	else
-+		ret = btrfs_find_name_in_backref(path->nodes[0], path->slots[0],
-+						 name, namelen, NULL);
-+
-+out:
-+	btrfs_free_path(path);
-+	return ret;
-+}
-+
- /*
-  * replay one inode back reference item found in the log tree.
-  * eb, slot and key refer to the buffer and key found in the log tree.
-@@ -1400,6 +1443,32 @@ static noinline int add_inode_ref(struct btrfs_trans_handle *trans,
- 				}
- 			}
+ 	if (sctx->flags & BTRFS_SEND_FLAG_NO_FILE_DATA)
+ 		return send_update_extent(sctx, offset, end - offset);
  
-+			/*
-+			 * If a reference item already exists for this inode
-+			 * with the same parent and name, but different index,
-+			 * drop it and the corresponding directory index entries
-+			 * from the parent before adding the new reference item
-+			 * and dir index entries, otherwise we would fail with
-+			 * -EEXIST returned from btrfs_add_link() below.
-+			 */
-+			ret = btrfs_inode_ref_exists(inode, dir, key->type,
-+						     name, namelen);
-+			if (ret > 0) {
-+				ret = btrfs_unlink_inode(trans, root,
-+							 BTRFS_I(dir),
-+							 BTRFS_I(inode),
-+							 name, namelen);
-+				/*
-+				 * If we dropped the link count to 0, bump it so
-+				 * that later the iput() on the inode will not
-+				 * free it. We will fixup the link count later.
-+				 */
-+				if (!ret && inode->i_nlink == 0)
-+					inc_nlink(inode);
-+			}
-+			if (ret < 0)
-+				goto out;
-+
- 			/* insert our name */
- 			ret = btrfs_add_link(trans, BTRFS_I(dir),
- 					BTRFS_I(inode),
 -- 
 2.11.0
 

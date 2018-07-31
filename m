@@ -1,497 +1,511 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lj1-f194.google.com ([209.85.208.194]:43928 "EHLO
-        mail-lj1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728705AbeGaCot (ORCPT
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:46372 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1726591AbeGaIUc (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 30 Jul 2018 22:44:49 -0400
-Received: by mail-lj1-f194.google.com with SMTP id r13-v6so12179364ljg.10
-        for <linux-btrfs@vger.kernel.org>; Mon, 30 Jul 2018 18:07:08 -0700 (PDT)
+        Tue, 31 Jul 2018 04:20:32 -0400
+Subject: Re: [PATCH 1/1] btrfs: locking: Allow btrfs_tree_lock() to return
+ error to avoid deadlock
+To: Qu Wenruo <wqu@suse.com>, <linux-btrfs@vger.kernel.org>
+References: <20180730061723.13290-1-wqu@suse.com>
+ <20180730061723.13290-2-wqu@suse.com>
+From: Su Yue <suy.fnst@cn.fujitsu.com>
+Message-ID: <2427723d-1730-9b8b-98d0-ea5bf617341e@cn.fujitsu.com>
+Date: Tue, 31 Jul 2018 14:48:12 +0800
 MIME-Version: 1.0
-References: <CAMOu_z0HuviCqK9fFFjFA52GMbbWCVmd4GgORzwx754j+JAfDg@mail.gmail.com>
- <09e9001a-b624-cc78-eee5-3dd139eb02bc@gmx.com>
-In-Reply-To: <09e9001a-b624-cc78-eee5-3dd139eb02bc@gmx.com>
-From: Sterling Windmill <swindmill@gmail.com>
-Date: Mon, 30 Jul 2018 21:06:54 -0400
-Message-ID: <CAMOu_z0d+CB3JXBgwXtj2gZGTdtCjKOZNHEuB43DxXprubKW=w@mail.gmail.com>
-Subject: Re: csum failed on raid1 even after clean scrub?
-To: linux-btrfs@vger.kernel.org
-Content-Type: multipart/alternative; boundary="0000000000005f135705724132c0"
+In-Reply-To: <20180730061723.13290-2-wqu@suse.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---0000000000005f135705724132c0
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-
- Thanks for the speedy reply!
-
-Here's my kernel version:
-
-4.17.9-200.fc28.x86_64
-
-dmesg doesn't show any USB related info at all, no signs of errors /
-warnings.
-
-Both drives are identical, Seagate 8TB external drives connected to the
-following PCIe controller:
-
-03:00.0 USB controller: NEC Corporation uPD720200 USB 3.0 Host Controller
-(rev 03)
-
-lsusb output:
-
-Bus 002 Device 002: ID 8087:0024 Intel Corp. Integrated Rate Matching Hub
-Bus 002 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub
-Bus 004 Device 005: ID 0bc2:ab38 Seagate RSS LLC Backup Plus Hub
-Bus 004 Device 003: ID 0bc2:ab45 Seagate RSS LLC
-Bus 004 Device 004: ID 0bc2:ab38 Seagate RSS LLC Backup Plus Hub
-Bus 004 Device 002: ID 0bc2:ab45 Seagate RSS LLC
-Bus 004 Device 001: ID 1d6b:0003 Linux Foundation 3.0 root hub
-Bus 003 Device 003: ID 0bc2:ab44 Seagate RSS LLC
-Bus 003 Device 002: ID 0bc2:ab44 Seagate RSS LLC
-Bus 003 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub
-Bus 001 Device 003: ID 0624:0248 Avocent Corp. Virtual Hub
-Bus 001 Device 002: ID 8087:0024 Intel Corp. Integrated Rate Matching Hub
-Bus 001 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub
-
-There's no output in dmesg related to the scrub, only the few csum failed
-messages I included in my last email.
-
-Per your request, I'm starting a scrub on the single device with the
-following command:
-
-btrfs scrub start /dev/sdj1
-scrub started on /dev/sdj1, fsid ece518d2-4af0-4ef7-a31d-8c89b13a5ad9
-(pid=3D14684)
-
-I'll report back once this is complete. Anything else I can collect that
-might be helpful in understanding what's happening here?
 
 
-On Mon, Jul 30, 2018 at 8:56 PM Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
+On 07/30/2018 02:17 PM, Qu Wenruo wrote:
+> [BUG]
+> For certains crafted image, whose csum root leaf has missing backref, if
+> we try to trigger write with data csum, it could cause deadlock with the
+> following kernel WARN_ON():
+> ------
+> WARNING: CPU: 1 PID: 41 at fs/btrfs/locking.c:230 btrfs_tree_lock+0x3e2/0x400
+> CPU: 1 PID: 41 Comm: kworker/u4:1 Not tainted 4.18.0-rc1+ #8
+> Workqueue: btrfs-endio-write btrfs_endio_write_helper
+> RIP: 0010:btrfs_tree_lock+0x3e2/0x400
+> Call Trace:
+>   btrfs_alloc_tree_block+0x39f/0x770
+>   __btrfs_cow_block+0x285/0x9e0
+>   btrfs_cow_block+0x191/0x2e0
+>   btrfs_search_slot+0x492/0x1160
+>   btrfs_lookup_csum+0xec/0x280
+>   btrfs_csum_file_blocks+0x2be/0xa60
+>   add_pending_csums+0xaf/0xf0
+>   btrfs_finish_ordered_io+0x74b/0xc90
+>   finish_ordered_fn+0x15/0x20
+>   normal_work_helper+0xf6/0x500
+>   btrfs_endio_write_helper+0x12/0x20
+>   process_one_work+0x302/0x770
+>   worker_thread+0x81/0x6d0
+>   kthread+0x180/0x1d0
+>   ret_from_fork+0x35/0x40
+> ---[ end trace 2e85051acb5f6dc1 ]---
+> ------
+> 
+> [CAUSE]
+> That crafted image has missing backref for csum tree root leaf.
+> And when we try to allocate new tree block, since there is no
+> EXTENT/METADATA_ITEM for csum tree root, btrfs consider it's free slot
+> and use it.
+> 
+> However we have already locked csum tree root leaf by ourselves, thus we
+> will ourselves to release read/write lock, and causing deadlock.
+> 
+> [FIX]
+> This patch will allow btrfs_tree_lock() to return error number, so
+> most callers can exit gracefully.
+> (Some caller doesn't really expect btrfs_tree_lock() to return error,
+> and in that case, we use BUG_ON())
+> 
+> Since such problem can only happen in crafted image, we will still
+> trigger kernel warning, but with a little more meaningful warning
+> message.
+> 
+> Link: https://bugzilla.kernel.org/show_bug.cgi?id=200405
+> Reported-by: Xu Wen <wen.xu@gatech.edu>
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
 
->
->
-> On 2018=E5=B9=B407=E6=9C=8831=E6=97=A5 08:43, Sterling Windmill wrote:
-> > I am using a two disk raid1 btrfs filesystem spanning two external hard
-> > drives connected via USB 3.0.
->
-> Is there any speed difference between the two device?
-> And are these 2 devices under the same USB3.0 root hub or different root
-> hubs?
->
-> lsusb output could help to determine the hierarchy.
->
-> >
-> > While copying ~6TB of data from this filesystem to local disk via rsync
-> > I am seeing messages like the following in dmesg output:
-> >
-> > [ 2213.406267] BTRFS warning (device sdj1): csum failed root 5 ino 830
-> > off 2124197888 csum 0xb5da0cd2 expected csum 0x6e478250 mirror 2
->
-> Since only one copy shows the problem, the other copy should be good
-> thus the read should work without problem.
->
-> > [ 4890.178727] BTRFS warning (device sdj1): csum failed root 5 ino 1058
-> > off 26052067328 csum 0x8ccd1067 expected csum 0x4adb8254 mirror 2
-> > [27463.940218] BTRFS warning (device sdj1): csum failed root 5 ino 5372
-> > off 7954096128 csum 0x9f9b697e expected csum 0xbd61a0e2 mirror 2
-> > [29405.832643] BTRFS warning (device sdj1): csum failed root 5 ino 3137=
-4
-> > off 7893983232 csum 0x12fd0ddc expected csum 0xddcd2f8e mirror 2
-> > [31224.279082] BTRFS warning (device sdj1): csum failed root 5 ino
-> > 150903 off 183635968 csum 0xea025eb4 expected csum 0x46d64878 mirror 2
-> > [32282.635615] BTRFS warning (device sdj1): csum failed root 5 ino
-> > 162774 off 31092424704 csum 0x1ee9b38d expected csum 0x4022e3de mirror =
-2
-> > [41052.643493] BTRFS warning (device sdj1): csum failed root 5 ino
-> > 163742 off 52214816768 csum 0x6723208c expected csum 0x0377e68a mirror =
-2
-> > [47723.500430] BTRFS warning (device sdj1): csum failed root 5 ino
-> > 470775 off 12533760 csum 0x9f50f9a0 expected csum 0x23ddc68e mirror 2
-> > [60060.843425] BTRFS warning (device sdj1): csum failed root 5 ino
-> > 786762 off 4178321408 csum 0xcd520ead expected csum 0x46fe6ebc mirror 2
-> > [60900.058745] BTRFS warning (device sdj1): csum failed root 5 ino
-> > 786900 off 896303104 csum 0x4c7e26e7 expected csum 0x86554095 mirror 2
-> > [68149.417236] BTRFS warning (device sdj1): csum failed root 5 ino 1058
-> > off 3101224960 csum 0x2b8c363c expected csum 0x8df2991a mirror 1
-> > [69072.272010] BTRFS warning (device sdj1): csum failed root 5 ino 1141
-> > off 2939588608 csum 0xa2969f63 expected csum 0xddf33efd mirror 1
-> > [71342.354453] BTRFS warning (device sdj1): csum failed root 5 ino 1328
-> > off 57047568384 csum 0xd57f5bb7 expected csum 0x421f96e5 mirror 1
-> >
-> > Because the device was consistent, it seemed that one of the disks held
-> > bad data. I wasn't sure if btrfs was correcting the issue by using the
-> > other seemingly good copy on the second disk or if I was copying bad
-> > data to the destination filesystem, so I aborted the copy and ran a
-> > scrub of the filesystem that includes sdj1 by issuing the following
-> command:
-> >
-> > btrfs scrub start /external
-> >
-> > I let the scrub finish and monitored the result using the following
-> command:
-> >
-> > btrfs scrub status /external
-> >
-> > Which showed the following output:
-> >
-> > scrub status for ece518d2-4af0-4ef7-a31d-8c89b13a5ad9
-> >         scrub started at Sun Jul 29 11:34:44 2018 and finished after
-> > 14:34:58
-> >         total bytes scrubbed: 12.80TiB with 0 errors
->
-> Would you provide the dmesg during the scrub?
->
-> >
-> > Alright, perhaps btrfs had already fixed the issues upon encountering
-> > them. I ran my copy again only to see very similar messages show up in
-> > dmesg:
-> >
-> > [154842.551604] BTRFS warning (device sdj1): csum failed root 5 ino 128=
-4
-> > off 858886144 csum 0x8caf203c expected csum 0x9a3acab6 mirror 2
->
-> At least the corrupted ino and offset is different, thus the old
-> corruption is fixed, but somehow it introduced new corruption.
->
-> > [159949.727412] BTRFS warning (device sdj1): csum failed root 5 ino 163=
-6
-> > off 4463370240 csum 0x8dfaf00c expected csum 0xa7ab457e mirror 2
-> > [160911.893913] BTRFS warning (device sdj1): csum failed root 5 ino 172=
-9
-> > off 8181428224 csum 0xd57845b5 expected csum 0x6904c54e mirror 2
-> > [165210.245890] BTRFS warning (device sdj1): csum failed root 5 ino 292=
-7
-> > off 1013219328 csum 0xf2d2820d expected csum 0x812222bb mirror 2
-> > [169279.620570] BTRFS warning (device sdj1): csum failed root 5 ino 336=
-3
-> > off 900493312 csum 0x6c6a35a2 expected csum 0x2a983a9c mirror 2
-> > [169990.401373] BTRFS warning (device sdj1): csum failed root 5 ino 427=
-7
-> > off 186707968 csum 0xbdd075d5 expected csum 0xf302e9df mirror 2
-> > [171411.085425] BTRFS warning (device sdj1): csum failed root 5 ino 471=
-9
-> > off 593842176 csum 0xcdabc7e6 expected csum 0xc137d47a mirror 2
-> > [173370.025471] BTRFS warning (device sdj1): csum failed root 5 ino 526=
-7
-> > off 2605592576 csum 0xcd2cb8a8 expected csum 0x9de364e9 mirror 2
-> > [180329.942125] BTRFS warning (device sdj1): csum failed root 5 ino
-> > 162774 off 22459506688 csum 0xc38e7a53 expected csum 0xad11854c mirror =
-2
->
-> Since all corruption showed above is about mirror 2, would you mind to
-> try scrub certain device other than the whole fs and attach the dmesg?
->
-> # btrfs scrub start <device>
->
->
->
-> >
-> > I would have expected the scrub to find these issues or to show some
-> > number of corrected errors. Perhaps I misunderstand what scrub does?
->
-> Your understanding is completely correct.
-> In fact reading from corrupted block should trigger re-write on
-> corrupted data.
->
-> I'm wondering if it's related to some scrub race, since for multi-device
-> btrfs, full fs scrub is addressed by doing multiple scrub
-> simultaneously, one scrub for each device.
-> It used to cause problem for raid5/6, but never heard of corruption for
-> raid1.
->
-> Would you provide the kernel version and full dmesg (including reading
-> error and scrub, and later read)?
->
-> >
-> > I also tried tracking down individual files via the referenced inode
-> > numbers with the following command:
-> >
-> > btrfs inspect-internal inode-resolve $INODE /external
-> >
-> > And ran checksums of the source and destination versions of these files
-> > to find them to be identical. So at least the copy on the source and
-> > destination appear to match.
->
-> Since btrfs will switch to the good copy, the data should be correct.
->
-> >
-> > Maybe I'm experiencing some sort of intermittent USB device / bus issue=
-?
->
-> Full dmesg may help, if there is something related to usb.
->
-> Thanks,
-> Qu
->
-> > Can anyone help explain what might be happening here?
-> >
-> > Thanks!
-> >
-> >
-> >
-> >
->
->
+OK.. I looked through every places where the callee is called.
+Those errors are handled gracefully as my thought.
+Except one nitpick, the %llu about pid_t in btrfs_tree_lock.
+However, you can add the tag:
 
---0000000000005f135705724132c0
-Content-Type: text/html; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Reviewed-by: Su Yue <suy.fnst@cn.fujitsu.com>
 
-<div dir=3D"ltr">
+> ---
+>   fs/btrfs/ctree.c           | 57 +++++++++++++++++++++++++++++++-------
+>   fs/btrfs/extent-tree.c     | 28 +++++++++++++++----
+>   fs/btrfs/extent_io.c       |  8 ++++--
+>   fs/btrfs/free-space-tree.c |  4 ++-
+>   fs/btrfs/locking.c         | 12 ++++++--
+>   fs/btrfs/locking.h         |  2 +-
+>   fs/btrfs/qgroup.c          |  4 ++-
+>   fs/btrfs/relocation.c      | 13 +++++++--
+>   fs/btrfs/tree-log.c        | 14 ++++++++--
+>   9 files changed, 114 insertions(+), 28 deletions(-)
+> 
+> diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+> index 4bc326df472e..6e695f4cd931 100644
+> --- a/fs/btrfs/ctree.c
+> +++ b/fs/btrfs/ctree.c
+> @@ -161,10 +161,12 @@ struct extent_buffer *btrfs_root_node(struct btrfs_root *root)
+>   struct extent_buffer *btrfs_lock_root_node(struct btrfs_root *root)
+>   {
+>   	struct extent_buffer *eb;
+> +	int ret;
+>   
+>   	while (1) {
+>   		eb = btrfs_root_node(root);
+> -		btrfs_tree_lock(eb);
+> +		ret = btrfs_tree_lock(eb);
+> +		BUG_ON(ret < 0);
+>   		if (eb == root->node)
+>   			break;
+>   		btrfs_tree_unlock(eb);
+> @@ -1584,6 +1586,7 @@ int btrfs_realloc_node(struct btrfs_trans_handle *trans,
+>   	for (i = start_slot; i <= end_slot; i++) {
+>   		struct btrfs_key first_key;
+>   		int close = 1;
+> +		int ret;
+>   
+>   		btrfs_node_key(parent, &disk_key, i);
+>   		if (!progress_passed && comp_keys(&disk_key, progress) < 0)
+> @@ -1637,7 +1640,11 @@ int btrfs_realloc_node(struct btrfs_trans_handle *trans,
+>   		if (search_start == 0)
+>   			search_start = last_block;
+>   
+> -		btrfs_tree_lock(cur);
+> +		ret = btrfs_tree_lock(cur);
+> +		if (ret < 0) {
+> +			free_extent_buffer(cur);
+> +			return ret;
+> +		}
+>   		btrfs_set_lock_blocking(cur);
+>   		err = __btrfs_cow_block(trans, root, cur, parent, i,
+>   					&cur, search_start,
+> @@ -1853,7 +1860,11 @@ static noinline int balance_level(struct btrfs_trans_handle *trans,
+>   			goto enospc;
+>   		}
+>   
+> -		btrfs_tree_lock(child);
+> +		ret = btrfs_tree_lock(child);
+> +		if (ret < 0) {
+> +			free_extent_buffer(child);
+> +			goto enospc;
+> +		}
+>   		btrfs_set_lock_blocking(child);
+>   		ret = btrfs_cow_block(trans, root, child, mid, 0, &child);
+>   		if (ret) {
+> @@ -1891,7 +1902,12 @@ static noinline int balance_level(struct btrfs_trans_handle *trans,
+>   		left = NULL;
+>   
+>   	if (left) {
+> -		btrfs_tree_lock(left);
+> +		ret = btrfs_tree_lock(left);
+> +		if (ret < 0) {
+> +			free_extent_buffer(left);
+> +			left = NULL;
+> +			goto enospc;
+> +		}
+>   		btrfs_set_lock_blocking(left);
+>   		wret = btrfs_cow_block(trans, root, left,
+>   				       parent, pslot - 1, &left);
+> @@ -1906,7 +1922,12 @@ static noinline int balance_level(struct btrfs_trans_handle *trans,
+>   		right = NULL;
+>   
+>   	if (right) {
+> -		btrfs_tree_lock(right);
+> +		ret = btrfs_tree_lock(right);
+> +		if (ret < 0) {
+> +			free_extent_buffer(right);
 
-<span style=3D"font-size:small;text-decoration-style:initial;text-decoratio=
-n-color:initial;float:none;display:inline">Thanks for the speedy reply!</sp=
-an><div style=3D"font-size:small;text-decoration-style:initial;text-decorat=
-ion-color:initial"><br></div><div style=3D"font-size:small;text-decoration-=
-style:initial;text-decoration-color:initial">Here&#39;s my kernel version:<=
-/div><div style=3D"font-size:small;text-decoration-style:initial;text-decor=
-ation-color:initial"><br></div><div style=3D"font-size:small;text-decoratio=
-n-style:initial;text-decoration-color:initial">4.17.9-200.fc28.x86_64<br></=
-div><div style=3D"font-size:small;text-decoration-style:initial;text-decora=
-tion-color:initial"><br></div><div style=3D"font-size:small;text-decoration=
--style:initial;text-decoration-color:initial">dmesg doesn&#39;t show any US=
-B related info at all, no signs of errors / warnings.</div><div style=3D"fo=
-nt-size:small;text-decoration-style:initial;text-decoration-color:initial">=
-<br></div><div style=3D"font-size:small;text-decoration-style:initial;text-=
-decoration-color:initial">Both drives are identical, Seagate 8TB external d=
-rives connected to the following PCIe controller:</div><div style=3D"font-s=
-ize:small;text-decoration-style:initial;text-decoration-color:initial"><br>=
-</div><div style=3D"font-size:small;text-decoration-style:initial;text-deco=
-ration-color:initial">03:00.0 USB controller: NEC Corporation uPD720200 USB=
- 3.0 Host Controller (rev 03)<br></div><div style=3D"font-size:small;text-d=
-ecoration-style:initial;text-decoration-color:initial"><br></div><div style=
-=3D"font-size:small;text-decoration-style:initial;text-decoration-color:ini=
-tial">lsusb output:</div><div style=3D"font-size:small;text-decoration-styl=
-e:initial;text-decoration-color:initial"><br></div><div style=3D"font-size:=
-small;text-decoration-style:initial;text-decoration-color:initial"><div>Bus=
- 002 Device 002: ID 8087:0024 Intel Corp. Integrated Rate Matching Hub</div=
-><div>Bus 002 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub</div><=
-div>Bus 004 Device 005: ID 0bc2:ab38 Seagate RSS LLC Backup Plus Hub</div><=
-div>Bus 004 Device 003: ID 0bc2:ab45 Seagate RSS LLC</div><div>Bus 004 Devi=
-ce 004: ID 0bc2:ab38 Seagate RSS LLC Backup Plus Hub</div><div>Bus 004 Devi=
-ce 002: ID 0bc2:ab45 Seagate RSS LLC</div><div>Bus 004 Device 001: ID 1d6b:=
-0003 Linux Foundation 3.0 root hub</div><div>Bus 003 Device 003: ID 0bc2:ab=
-44 Seagate RSS LLC</div><div>Bus 003 Device 002: ID 0bc2:ab44 Seagate RSS L=
-LC</div><div>Bus 003 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub=
-</div><div>Bus 001 Device 003: ID 0624:0248 Avocent Corp. Virtual Hub</div>=
-<div>Bus 001 Device 002: ID 8087:0024 Intel Corp. Integrated Rate Matching =
-Hub</div><div>Bus 001 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hu=
-b</div></div><div style=3D"font-size:small;text-decoration-style:initial;te=
-xt-decoration-color:initial"><br></div><div style=3D"font-size:small;text-d=
-ecoration-style:initial;text-decoration-color:initial">There&#39;s no outpu=
-t in dmesg related to the scrub, only the few csum failed messages I includ=
-ed in my last email.</div><div style=3D"font-size:small;text-decoration-sty=
-le:initial;text-decoration-color:initial"><br></div><div style=3D"font-size=
-:small;text-decoration-style:initial;text-decoration-color:initial">Per you=
-r request, I&#39;m starting a scrub on the single device with the following=
- command:</div><div style=3D"font-size:small;text-decoration-style:initial;=
-text-decoration-color:initial"><br></div><div style=3D"font-size:small;text=
--decoration-style:initial;text-decoration-color:initial"><div>btrfs scrub s=
-tart /dev/sdj1</div><div>scrub started on /dev/sdj1, fsid ece518d2-4af0-4ef=
-7-a31d-8c89b13a5ad9 (pid=3D14684)</div></div><div style=3D"font-size:small;=
-text-decoration-style:initial;text-decoration-color:initial"><br></div><div=
- style=3D"font-size:small;text-decoration-style:initial;text-decoration-col=
-or:initial">I&#39;ll report back once this is complete. Anything else I can=
- collect that might be helpful in understanding what&#39;s happening here?<=
-/div>
+> +			right = NULL;
+> +			goto enospc;
+> +		}
+>   		btrfs_set_lock_blocking(right);
+>   		wret = btrfs_cow_block(trans, root, right,
+>   				       parent, pslot + 1, &right);
+> @@ -2069,7 +2090,11 @@ static noinline int push_nodes_for_insert(struct btrfs_trans_handle *trans,
+>   	if (left) {
+>   		u32 left_nr;
+>   
+> -		btrfs_tree_lock(left);
+> +		ret = btrfs_tree_lock(left);
+> +		if (ret < 0) {
+> +			free_extent_buffer(left);
+> +			return ret;
+> +		}
+>   		btrfs_set_lock_blocking(left);
+>   
+>   		left_nr = btrfs_header_nritems(left);
+> @@ -2124,7 +2149,11 @@ static noinline int push_nodes_for_insert(struct btrfs_trans_handle *trans,
+>   	if (right) {
+>   		u32 right_nr;
+>   
+> -		btrfs_tree_lock(right);
+> +		ret = btrfs_tree_lock(right);
+> +		if (ret < 0) {
+> +			free_extent_buffer(right);
+> +			return ret;
+> +		}
+>   		btrfs_set_lock_blocking(right);
+>   
+>   		right_nr = btrfs_header_nritems(right);
+> @@ -2874,7 +2903,9 @@ int btrfs_search_slot(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+>   					err = btrfs_try_tree_write_lock(b);
+>   					if (!err) {
+>   						btrfs_set_path_blocking(p);
+> -						btrfs_tree_lock(b);
+> +						ret = btrfs_tree_lock(b);
+> +						if (ret < 0)
+> +							goto done;
+>   						btrfs_clear_path_blocking(p, b,
+>   								  BTRFS_WRITE_LOCK);
+>   					}
+> @@ -3773,7 +3804,9 @@ static int push_leaf_right(struct btrfs_trans_handle *trans, struct btrfs_root
+>   	if (IS_ERR(right))
+>   		return 1;
+>   
+> -	btrfs_tree_lock(right);
+> +	ret = btrfs_tree_lock(right);
+> +	if (ret < 0)
+> +		goto out_free;
+>   	btrfs_set_lock_blocking(right);
+>   
+>   	free_space = btrfs_leaf_free_space(fs_info, right);
+> @@ -3811,6 +3844,7 @@ static int push_leaf_right(struct btrfs_trans_handle *trans, struct btrfs_root
+>   				right, free_space, left_nritems, min_slot);
+>   out_unlock:
+>   	btrfs_tree_unlock(right);
+> +out_free:
+>   	free_extent_buffer(right);
+>   	return 1;
+>   }
+> @@ -4007,7 +4041,9 @@ static int push_leaf_left(struct btrfs_trans_handle *trans, struct btrfs_root
+>   	if (IS_ERR(left))
+>   		return 1;
+>   
+> -	btrfs_tree_lock(left);
+> +	ret = btrfs_tree_lock(left);
+> +	if (ret < 0)
+> +		goto out_free;
+>   	btrfs_set_lock_blocking(left);
+>   
+>   	free_space = btrfs_leaf_free_space(fs_info, left);
+> @@ -4037,6 +4073,7 @@ static int push_leaf_left(struct btrfs_trans_handle *trans, struct btrfs_root
+>   			       max_slot);
+>   out:
+>   	btrfs_tree_unlock(left);
+> +out_free:
+>   	free_extent_buffer(left);
+>   	return ret;
+>   }
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index 3578fa5b30ef..da615ebc072e 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -8297,14 +8297,19 @@ btrfs_init_new_buffer(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+>   {
+>   	struct btrfs_fs_info *fs_info = root->fs_info;
+>   	struct extent_buffer *buf;
+> +	int ret;
+>   
+>   	buf = btrfs_find_create_tree_block(fs_info, bytenr);
+>   	if (IS_ERR(buf))
+>   		return buf;
+> +	ret = btrfs_tree_lock(buf);
+> +	if (ret < 0) {
+> +		free_extent_buffer(buf);
+> +		return ERR_PTR(ret);
+> +	}
+>   
+>   	btrfs_set_header_generation(buf, trans->transid);
+>   	btrfs_set_buffer_lockdep_class(root->root_key.objectid, buf, level);
+> -	btrfs_tree_lock(buf);
+>   	clean_tree_block(fs_info, buf);
+>   	clear_bit(EXTENT_BUFFER_STALE, &buf->bflags);
+>   
+> @@ -8721,7 +8726,9 @@ static noinline int do_walk_down(struct btrfs_trans_handle *trans,
+>   					       level - 1);
+>   		reada = 1;
+>   	}
+> -	btrfs_tree_lock(next);
+> +	ret = btrfs_tree_lock(next);
+> +	if (ret < 0)
+> +		goto out_free;
+>   	btrfs_set_lock_blocking(next);
+>   
+>   	ret = btrfs_lookup_extent_info(trans, fs_info, bytenr, level - 1, 1,
+> @@ -8781,7 +8788,9 @@ static noinline int do_walk_down(struct btrfs_trans_handle *trans,
+>   			free_extent_buffer(next);
+>   			return -EIO;
+>   		}
+> -		btrfs_tree_lock(next);
+> +		ret = btrfs_tree_lock(next);
+> +		if (ret < 0)
+> +			goto out_free;
+>   		btrfs_set_lock_blocking(next);
+>   	}
+>   
+> @@ -8839,6 +8848,7 @@ static noinline int do_walk_down(struct btrfs_trans_handle *trans,
+>   
+>   out_unlock:
+>   	btrfs_tree_unlock(next);
+> +out_free:
+>   	free_extent_buffer(next);
+>   
+>   	return ret;
+> @@ -8887,7 +8897,8 @@ static noinline int walk_up_proc(struct btrfs_trans_handle *trans,
+>   		 */
+>   		if (!path->locks[level]) {
+>   			BUG_ON(level == 0);
+> -			btrfs_tree_lock(eb);
+> +			ret = btrfs_tree_lock(eb);
+> +			BUG_ON(ret < 0);
+>   			btrfs_set_lock_blocking(eb);
+>   			path->locks[level] = BTRFS_WRITE_LOCK_BLOCKING;
+>   
+> @@ -8929,7 +8940,8 @@ static noinline int walk_up_proc(struct btrfs_trans_handle *trans,
+>   		/* make block locked assertion in clean_tree_block happy */
+>   		if (!path->locks[level] &&
+>   		    btrfs_header_generation(eb) == trans->transid) {
+> -			btrfs_tree_lock(eb);
+> +			ret = btrfs_tree_lock(eb);
+> +			BUG_ON(ret < 0);
+>   			btrfs_set_lock_blocking(eb);
+>   			path->locks[level] = BTRFS_WRITE_LOCK_BLOCKING;
+>   		}
+> @@ -9107,7 +9119,11 @@ int btrfs_drop_snapshot(struct btrfs_root *root,
+>   
+>   		level = btrfs_header_level(root->node);
+>   		while (1) {
+> -			btrfs_tree_lock(path->nodes[level]);
+> +			ret = btrfs_tree_lock(path->nodes[level]);
+> +			if (ret < 0) {
+> +				err = ret;
+> +				goto out_end_trans;
+> +			}
+>   			btrfs_set_lock_blocking(path->nodes[level]);
+>   			path->locks[level] = BTRFS_WRITE_LOCK_BLOCKING;
+>   
+> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> index cce6087d6880..3ba02aac6dd5 100644
+> --- a/fs/btrfs/extent_io.c
+> +++ b/fs/btrfs/extent_io.c
+> @@ -3545,7 +3545,9 @@ lock_extent_buffer_for_io(struct extent_buffer *eb,
+>   	if (!btrfs_try_tree_write_lock(eb)) {
+>   		flush = 1;
+>   		flush_write_bio(epd);
+> -		btrfs_tree_lock(eb);
+> +		ret = btrfs_tree_lock(eb);
+> +		if (ret < 0)
+> +			return ret;
+>   	}
+>   
+>   	if (test_bit(EXTENT_BUFFER_WRITEBACK, &eb->bflags)) {
+> @@ -3558,7 +3560,9 @@ lock_extent_buffer_for_io(struct extent_buffer *eb,
+>   		}
+>   		while (1) {
+>   			wait_on_extent_buffer_writeback(eb);
+> -			btrfs_tree_lock(eb);
+> +			ret = btrfs_tree_lock(eb);
+> +			if (ret < 0)
+> +				return ret;
+>   			if (!test_bit(EXTENT_BUFFER_WRITEBACK, &eb->bflags))
+>   				break;
+>   			btrfs_tree_unlock(eb);
+> diff --git a/fs/btrfs/free-space-tree.c b/fs/btrfs/free-space-tree.c
+> index b5950aacd697..948bbc45638a 100644
+> --- a/fs/btrfs/free-space-tree.c
+> +++ b/fs/btrfs/free-space-tree.c
+> @@ -1242,7 +1242,9 @@ int btrfs_clear_free_space_tree(struct btrfs_fs_info *fs_info)
+>   
+>   	list_del(&free_space_root->dirty_list);
+>   
+> -	btrfs_tree_lock(free_space_root->node);
+> +	ret = btrfs_tree_lock(free_space_root->node);
+> +	if (ret < 0)
+> +		goto abort;
+>   	clean_tree_block(fs_info, free_space_root->node);
+>   	btrfs_tree_unlock(free_space_root->node);
+>   	btrfs_free_tree_block(trans, free_space_root, free_space_root->node,
+> diff --git a/fs/btrfs/locking.c b/fs/btrfs/locking.c
+> index 1da768e5ef75..aa4a3362a9f1 100644
+> --- a/fs/btrfs/locking.c
+> +++ b/fs/btrfs/locking.c
+> @@ -224,10 +224,18 @@ void btrfs_tree_read_unlock_blocking(struct extent_buffer *eb)
+>   /*
+>    * take a spinning write lock.  This will wait for both
+>    * blocking readers or writers
+> + *
+> + * Return 0 if we successfully locked the tree block
+> + * Return <0 if some selftest failed (mostly due to extent tree corruption)
+>    */
+> -void btrfs_tree_lock(struct extent_buffer *eb)
+> +int btrfs_tree_lock(struct extent_buffer *eb)
+>   {
+> -	WARN_ON(eb->lock_owner == current->pid);
+> +	if (unlikely(eb->lock_owner == current->pid)) {
+> +		WARN(1,
+> +"tree block %llu already locked by current (pid=%llu), refuse to lock",
 
-<br></div><br><div class=3D"gmail_quote"><div dir=3D"ltr">On Mon, Jul 30, 2=
-018 at 8:56 PM Qu Wenruo &lt;<a href=3D"mailto:quwenruo.btrfs@gmx.com">quwe=
-nruo.btrfs@gmx.com</a>&gt; wrote:<br></div><blockquote class=3D"gmail_quote=
-" style=3D"margin:0 0 0 .8ex;border-left:1px #ccc solid;padding-left:1ex"><=
-br>
-<br>
-On 2018=E5=B9=B407=E6=9C=8831=E6=97=A5 08:43, Sterling Windmill wrote:<br>
-&gt; I am using a two disk raid1 btrfs filesystem spanning two external har=
-d<br>
-&gt; drives connected via USB 3.0.<br>
-<br>
-Is there any speed difference between the two device?<br>
-And are these 2 devices under the same USB3.0 root hub or different root<br=
->
-hubs?<br>
-<br>
-lsusb output could help to determine the hierarchy.<br>
-<br>
-&gt; <br>
-&gt; While copying ~6TB of data from this filesystem to local disk via rsyn=
-c<br>
-&gt; I am seeing messages like the following in dmesg output:<br>
-&gt; <br>
-&gt; [ 2213.406267] BTRFS warning (device sdj1): csum failed root 5 ino 830=
-<br>
-&gt; off 2124197888 csum 0xb5da0cd2 expected csum 0x6e478250 mirror 2<br>
-<br>
-Since only one copy shows the problem, the other copy should be good<br>
-thus the read should work without problem.<br>
-<br>
-&gt; [ 4890.178727] BTRFS warning (device sdj1): csum failed root 5 ino 105=
-8<br>
-&gt; off 26052067328 csum 0x8ccd1067 expected csum 0x4adb8254 mirror 2<br>
-&gt; [27463.940218] BTRFS warning (device sdj1): csum failed root 5 ino 537=
-2<br>
-&gt; off 7954096128 csum 0x9f9b697e expected csum 0xbd61a0e2 mirror 2<br>
-&gt; [29405.832643] BTRFS warning (device sdj1): csum failed root 5 ino 313=
-74<br>
-&gt; off 7893983232 csum 0x12fd0ddc expected csum 0xddcd2f8e mirror 2<br>
-&gt; [31224.279082] BTRFS warning (device sdj1): csum failed root 5 ino<br>
-&gt; 150903 off 183635968 csum 0xea025eb4 expected csum 0x46d64878 mirror 2=
-<br>
-&gt; [32282.635615] BTRFS warning (device sdj1): csum failed root 5 ino<br>
-&gt; 162774 off 31092424704 csum 0x1ee9b38d expected csum 0x4022e3de mirror=
- 2<br>
-&gt; [41052.643493] BTRFS warning (device sdj1): csum failed root 5 ino<br>
-&gt; 163742 off 52214816768 csum 0x6723208c expected csum 0x0377e68a mirror=
- 2<br>
-&gt; [47723.500430] BTRFS warning (device sdj1): csum failed root 5 ino<br>
-&gt; 470775 off 12533760 csum 0x9f50f9a0 expected csum 0x23ddc68e mirror 2<=
-br>
-&gt; [60060.843425] BTRFS warning (device sdj1): csum failed root 5 ino<br>
-&gt; 786762 off 4178321408 csum 0xcd520ead expected csum 0x46fe6ebc mirror =
-2<br>
-&gt; [60900.058745] BTRFS warning (device sdj1): csum failed root 5 ino<br>
-&gt; 786900 off 896303104 csum 0x4c7e26e7 expected csum 0x86554095 mirror 2=
-<br>
-&gt; [68149.417236] BTRFS warning (device sdj1): csum failed root 5 ino 105=
-8<br>
-&gt; off 3101224960 csum 0x2b8c363c expected csum 0x8df2991a mirror 1<br>
-&gt; [69072.272010] BTRFS warning (device sdj1): csum failed root 5 ino 114=
-1<br>
-&gt; off 2939588608 csum 0xa2969f63 expected csum 0xddf33efd mirror 1<br>
-&gt; [71342.354453] BTRFS warning (device sdj1): csum failed root 5 ino 132=
-8<br>
-&gt; off 57047568384 csum 0xd57f5bb7 expected csum 0x421f96e5 mirror 1<br>
-&gt; <br>
-&gt; Because the device was consistent, it seemed that one of the disks hel=
-d<br>
-&gt; bad data. I wasn&#39;t sure if btrfs was correcting the issue by using=
- the<br>
-&gt; other seemingly good copy on the second disk or if I was copying bad<b=
-r>
-&gt; data to the destination filesystem, so I aborted the copy and ran a<br=
->
-&gt; scrub of the filesystem that includes sdj1 by issuing the following co=
-mmand:<br>
-&gt; <br>
-&gt; btrfs scrub start /external<br>
-&gt; <br>
-&gt; I let the scrub finish and monitored the result using the following co=
-mmand:<br>
-&gt; <br>
-&gt; btrfs scrub status /external<br>
-&gt; <br>
-&gt; Which showed the following output:<br>
-&gt; <br>
-&gt; scrub status for ece518d2-4af0-4ef7-a31d-8c89b13a5ad9<br>
-&gt; =C2=A0 =C2=A0 =C2=A0 =C2=A0 scrub started at Sun Jul 29 11:34:44 2018 =
-and finished after<br>
-&gt; 14:34:58<br>
-&gt; =C2=A0 =C2=A0 =C2=A0 =C2=A0 total bytes scrubbed: 12.80TiB with 0 erro=
-rs<br>
-<br>
-Would you provide the dmesg during the scrub?<br>
-<br>
-&gt; <br>
-&gt; Alright, perhaps btrfs had already fixed the issues upon encountering<=
-br>
-&gt; them. I ran my copy again only to see very similar messages show up in=
-<br>
-&gt; dmesg:<br>
-&gt; <br>
-&gt; [154842.551604] BTRFS warning (device sdj1): csum failed root 5 ino 12=
-84<br>
-&gt; off 858886144 csum 0x8caf203c expected csum 0x9a3acab6 mirror 2<br>
-<br>
-At least the corrupted ino and offset is different, thus the old<br>
-corruption is fixed, but somehow it introduced new corruption.<br>
-<br>
-&gt; [159949.727412] BTRFS warning (device sdj1): csum failed root 5 ino 16=
-36<br>
-&gt; off 4463370240 csum 0x8dfaf00c expected csum 0xa7ab457e mirror 2<br>
-&gt; [160911.893913] BTRFS warning (device sdj1): csum failed root 5 ino 17=
-29<br>
-&gt; off 8181428224 csum 0xd57845b5 expected csum 0x6904c54e mirror 2<br>
-&gt; [165210.245890] BTRFS warning (device sdj1): csum failed root 5 ino 29=
-27<br>
-&gt; off 1013219328 csum 0xf2d2820d expected csum 0x812222bb mirror 2<br>
-&gt; [169279.620570] BTRFS warning (device sdj1): csum failed root 5 ino 33=
-63<br>
-&gt; off 900493312 csum 0x6c6a35a2 expected csum 0x2a983a9c mirror 2<br>
-&gt; [169990.401373] BTRFS warning (device sdj1): csum failed root 5 ino 42=
-77<br>
-&gt; off 186707968 csum 0xbdd075d5 expected csum 0xf302e9df mirror 2<br>
-&gt; [171411.085425] BTRFS warning (device sdj1): csum failed root 5 ino 47=
-19<br>
-&gt; off 593842176 csum 0xcdabc7e6 expected csum 0xc137d47a mirror 2<br>
-&gt; [173370.025471] BTRFS warning (device sdj1): csum failed root 5 ino 52=
-67<br>
-&gt; off 2605592576 csum 0xcd2cb8a8 expected csum 0x9de364e9 mirror 2<br>
-&gt; [180329.942125] BTRFS warning (device sdj1): csum failed root 5 ino<br=
->
-&gt; 162774 off 22459506688 csum 0xc38e7a53 expected csum 0xad11854c mirror=
- 2<br>
-<br>
-Since all corruption showed above is about mirror 2, would you mind to<br>
-try scrub certain device other than the whole fs and attach the dmesg?<br>
-<br>
-# btrfs scrub start &lt;device&gt;<br>
-<br>
-<br>
-<br>
-&gt; <br>
-&gt; I would have expected the scrub to find these issues or to show some<b=
-r>
-&gt; number of corrected errors. Perhaps I misunderstand what scrub does?<b=
-r>
-<br>
-Your understanding is completely correct.<br>
-In fact reading from corrupted block should trigger re-write on<br>
-corrupted data.<br>
-<br>
-I&#39;m wondering if it&#39;s related to some scrub race, since for multi-d=
-evice<br>
-btrfs, full fs scrub is addressed by doing multiple scrub<br>
-simultaneously, one scrub for each device.<br>
-It used to cause problem for raid5/6, but never heard of corruption for<br>
-raid1.<br>
-<br>
-Would you provide the kernel version and full dmesg (including reading<br>
-error and scrub, and later read)?<br>
-<br>
-&gt; <br>
-&gt; I also tried tracking down individual files via the referenced inode<b=
-r>
-&gt; numbers with the following command:<br>
-&gt; <br>
-&gt; btrfs inspect-internal inode-resolve $INODE /external<br>
-&gt; <br>
-&gt; And ran checksums of the source and destination versions of these file=
-s<br>
-&gt; to find them to be identical. So at least the copy on the source and<b=
-r>
-&gt; destination appear to match.<br>
-<br>
-Since btrfs will switch to the good copy, the data should be correct.<br>
-<br>
-&gt; <br>
-&gt; Maybe I&#39;m experiencing some sort of intermittent USB device / bus =
-issue?<br>
-<br>
-Full dmesg may help, if there is something related to usb.<br>
-<br>
-Thanks,<br>
-Qu<br>
-<br>
-&gt; Can anyone help explain what might be happening here?<br>
-&gt; <br>
-&gt; Thanks!<br>
-&gt; <br>
-&gt; <br>
-&gt; <br>
-&gt; <br>
-<br>
-</blockquote></div>
+Nit:
+pid_t is as an signed integer, should be pid=%d .
 
---0000000000005f135705724132c0--
+Thanks,
+Su
+
+> +		     eb->start, current->pid);
+> +		return -EUCLEAN;
+> +	}
+>   again:
+>   	wait_event(eb->read_lock_wq, atomic_read(&eb->blocking_readers) == 0);
+>   	wait_event(eb->write_lock_wq, atomic_read(&eb->blocking_writers) == 0);
+> diff --git a/fs/btrfs/locking.h b/fs/btrfs/locking.h
+> index 29135def468e..7394d7ba2ff9 100644
+> --- a/fs/btrfs/locking.h
+> +++ b/fs/btrfs/locking.h
+> @@ -11,7 +11,7 @@
+>   #define BTRFS_WRITE_LOCK_BLOCKING 3
+>   #define BTRFS_READ_LOCK_BLOCKING 4
+>   
+> -void btrfs_tree_lock(struct extent_buffer *eb);
+> +int btrfs_tree_lock(struct extent_buffer *eb);
+>   void btrfs_tree_unlock(struct extent_buffer *eb);
+>   
+>   void btrfs_tree_read_lock(struct extent_buffer *eb);
+> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+> index 1874a6d2e6f5..ec4351fd7537 100644
+> --- a/fs/btrfs/qgroup.c
+> +++ b/fs/btrfs/qgroup.c
+> @@ -1040,7 +1040,9 @@ int btrfs_quota_disable(struct btrfs_trans_handle *trans,
+>   
+>   	list_del(&quota_root->dirty_list);
+>   
+> -	btrfs_tree_lock(quota_root->node);
+> +	ret = btrfs_tree_lock(quota_root->node);
+> +	if (ret < 0)
+> +		goto out;
+>   	clean_tree_block(fs_info, quota_root->node);
+>   	btrfs_tree_unlock(quota_root->node);
+>   	btrfs_free_tree_block(trans, quota_root, quota_root->node, 0, 1);
+> diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+> index be94c65bb4d2..a2fc0bd83a40 100644
+> --- a/fs/btrfs/relocation.c
+> +++ b/fs/btrfs/relocation.c
+> @@ -1877,7 +1877,11 @@ int replace_path(struct btrfs_trans_handle *trans,
+>   				free_extent_buffer(eb);
+>   				break;
+>   			}
+> -			btrfs_tree_lock(eb);
+> +			ret = btrfs_tree_lock(eb);
+> +			if (ret < 0) {
+> +				free_extent_buffer(eb);
+> +				break;
+> +			}
+>   			if (cow) {
+>   				ret = btrfs_cow_block(trans, dest, eb, parent,
+>   						      slot, &eb);
+> @@ -2788,7 +2792,12 @@ static int do_relocation(struct btrfs_trans_handle *trans,
+>   			err = -EIO;
+>   			goto next;
+>   		}
+> -		btrfs_tree_lock(eb);
+> +		ret = btrfs_tree_lock(eb);
+> +		if (ret < 0) {
+> +			free_extent_buffer(eb);
+> +			err = ret;
+> +			goto next;
+> +		}
+>   		btrfs_set_lock_blocking(eb);
+>   
+>   		if (!node->eb) {
+> diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+> index f8220ec02036..173bc15a7cd1 100644
+> --- a/fs/btrfs/tree-log.c
+> +++ b/fs/btrfs/tree-log.c
+> @@ -2588,7 +2588,11 @@ static noinline int walk_down_log_tree(struct btrfs_trans_handle *trans,
+>   				}
+>   
+>   				if (trans) {
+> -					btrfs_tree_lock(next);
+> +					ret = btrfs_tree_lock(next);
+> +					if (ret < 0) {
+> +						free_extent_buffer(next);
+> +						return ret;
+> +					}
+>   					btrfs_set_lock_blocking(next);
+>   					clean_tree_block(fs_info, next);
+>   					btrfs_wait_tree_block_writeback(next);
+> @@ -2672,7 +2676,9 @@ static noinline int walk_up_log_tree(struct btrfs_trans_handle *trans,
+>   				next = path->nodes[*level];
+>   
+>   				if (trans) {
+> -					btrfs_tree_lock(next);
+> +					ret = btrfs_tree_lock(next);
+> +					if (ret < 0)
+> +						return ret;
+>   					btrfs_set_lock_blocking(next);
+>   					clean_tree_block(fs_info, next);
+>   					btrfs_wait_tree_block_writeback(next);
+> @@ -2754,7 +2760,9 @@ static int walk_log_tree(struct btrfs_trans_handle *trans,
+>   			next = path->nodes[orig_level];
+>   
+>   			if (trans) {
+> -				btrfs_tree_lock(next);
+> +				ret = btrfs_tree_lock(next);
+> +				if (ret < 0)
+> +					goto out;
+>   				btrfs_set_lock_blocking(next);
+>   				clean_tree_block(fs_info, next);
+>   				btrfs_wait_tree_block_writeback(next);
+> 
+
+

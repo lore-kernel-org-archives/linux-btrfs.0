@@ -1,99 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp2130.oracle.com ([156.151.31.86]:57436 "EHLO
-        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728584AbeGZIFa (ORCPT
+Received: from mgwkm02.jp.fujitsu.com ([202.219.69.169]:47045 "EHLO
+        mgwkm02.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727241AbeGaI7z (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 26 Jul 2018 04:05:30 -0400
-Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
-        by userp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w6Q6n9IE127519
-        for <linux-btrfs@vger.kernel.org>; Thu, 26 Jul 2018 06:50:08 GMT
-Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
-        by userp2130.oracle.com with ESMTP id 2kbv8t9ndd-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Thu, 26 Jul 2018 06:50:08 +0000
-Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id w6Q6o8OK018808
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Thu, 26 Jul 2018 06:50:08 GMT
-Received: from abhmp0012.oracle.com (abhmp0012.oracle.com [141.146.116.18])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w6Q6o7lX002649
-        for <linux-btrfs@vger.kernel.org>; Thu, 26 Jul 2018 06:50:07 GMT
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v4 1/4] btrfs: drop uuid_mutex in btrfs_free_extra_devids()
-Date: Thu, 26 Jul 2018 14:53:31 +0800
-Message-Id: <20180726065334.30594-2-anand.jain@oracle.com>
-In-Reply-To: <20180726065334.30594-1-anand.jain@oracle.com>
-References: <20180726065334.30594-1-anand.jain@oracle.com>
+        Tue, 31 Jul 2018 04:59:55 -0400
+Received: from g01jpfmpwkw02.exch.g01.fujitsu.local (g01jpfmpwkw02.exch.g01.fujitsu.local [10.0.193.56])
+        by kw-mxoi2.gw.nic.fujitsu.com (Postfix) with ESMTP id 538EEAC01A1
+        for <linux-btrfs@vger.kernel.org>; Tue, 31 Jul 2018 16:20:50 +0900 (JST)
+Received: from g01jpexchkw37.g01.fujitsu.local (unknown [10.0.193.4])
+        by g01jpfmpwkw02.exch.g01.fujitsu.local (Postfix) with ESMTP id 88D623286E7
+        for <linux-btrfs@vger.kernel.org>; Tue, 31 Jul 2018 16:20:49 +0900 (JST)
+From: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
+Subject: [PATCH] btrfs: replace: Reset on-disk dev stats value after replace
+References: <cover.1533020736.git.misono.tomohiro@jp.fujitsu.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-ID: <e913d7ad-24b0-d361-9841-e15882b521fc@jp.fujitsu.com>
+Date: Tue, 31 Jul 2018 16:20:21 +0900
+MIME-Version: 1.0
+In-Reply-To: <cover.1533020736.git.misono.tomohiro@jp.fujitsu.com>
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs_free_extra_devids() is called only in the mount context which
-traverses through the fs_devices::devices and frees the orphan devices
-devices in the given %fs_devices if any. As the search for the orphan
-device is limited to fs_devices::devices so we don't need the global
-uuid_mutex.
+on-disk devs stats value is updated in btrfs_run_dev_stats(),
+which is called during commit transaction, if device->dev_stats_ccnt
+is not zero.
 
-There can't be any mount-point based ioctl threads in this context as
-the mount thread is not yet returned. But there can be the btrfs-control
-based scan ioctls thread which calls device_list_add().
+Since current replace operation does not touch dev_stats_ccnt,
+on-disk dev stats value is not updated. Therefore "btrfs device stats"
+may return old device's value after umount/mount
+(Example: See "btrfs ins dump-t -t DEV $DEV" after btrfs/100 finish).
 
-Here in the mount thread the fs_devices::opened is incremented way before
-btrfs_free_extra_devids() is called and in the scan context the fs_devices
-which are already opened neither be freed or alloc-able at
-device_list_add().
+Fix this by just increment dev_stats_ccnt in
+btrfs_dev_replace_finishing() when replace is succeeded.
 
-But lets say you change the device-path and call the scan again, then scan
-would update the new device path and this operation could race against the
-btrfs_free_extra_devids() thread, which might be in the process of
-free-ing the same device. So synchronize it by using the
-device_list_mutex.
-
-This scenario is a very corner case, and practically the scan and mount
-are anyway serialized by the usage so unless the race is instrumented its
-very difficult to achieve.
-
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
-Reviewed-by: David Sterba <dsterba@suse.com>
+Signed-off-by: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
 ---
-v3->v4: As we traverse through the seed device, fs_device gets updated with
-	the child seed fs_devices, so make sure we use the same fs_devices
-	pointer for the mutex_unlock as used for the mutex_lock.
-v2->v3: Update change log.
-	(Currently device_list_add() is very lean on its device_list_mutex usage,
-	a cleanup and fix is wip. Given the practicality of the above race
-	condition this patch is good to merge).
-v1->v2: replace uuid_mutex with device_list_mutex instead of delete.
-	change log updated.
+ fs/btrfs/dev-replace.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
- fs/btrfs/volumes.c | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
-
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 66f5ac5e8058..2166c5e7cc01 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -934,8 +934,9 @@ void btrfs_free_extra_devids(struct btrfs_fs_devices *fs_devices, int step)
- {
- 	struct btrfs_device *device, *next;
- 	struct btrfs_device *latest_dev = NULL;
-+	struct btrfs_fs_devices *parent_fs_devices = fs_devices;
+diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+index e2ba0419297a..d20b244623f2 100644
+--- a/fs/btrfs/dev-replace.c
++++ b/fs/btrfs/dev-replace.c
+@@ -676,6 +676,12 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
  
--	mutex_lock(&uuid_mutex);
-+	mutex_lock(&parent_fs_devices->device_list_mutex);
- again:
- 	/* This is the initialized path, it is safe to release the devices. */
- 	list_for_each_entry_safe(device, next, &fs_devices->devices, dev_list) {
-@@ -989,8 +990,7 @@ void btrfs_free_extra_devids(struct btrfs_fs_devices *fs_devices, int step)
- 	}
+ 	btrfs_rm_dev_replace_unblocked(fs_info);
  
- 	fs_devices->latest_bdev = latest_dev->bdev;
--
--	mutex_unlock(&uuid_mutex);
-+	mutex_unlock(&parent_fs_devices->device_list_mutex);
- }
- 
- static void free_device_rcu(struct rcu_head *head)
++	/*
++	 * Increment dev_stats_ccnt so that btrfs_run_dev_stats() will
++	 * update on-disk dev stats value during commit transaction
++	 */
++	atomic_inc(&tgt_device->dev_stats_ccnt);
++
+ 	/*
+ 	 * this is again a consistent state where no dev_replace procedure
+ 	 * is running, the target device is part of the filesystem, the
 -- 
-2.7.0
+2.14.4
+
 

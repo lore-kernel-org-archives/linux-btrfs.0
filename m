@@ -1,103 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:54120 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:35756 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S2388426AbeGXP3q (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 24 Jul 2018 11:29:46 -0400
-Date: Tue, 24 Jul 2018 16:22:51 +0200
-From: David Sterba <dsterba@suse.cz>
-To: fdmanana@kernel.org
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2] Btrfs: fix send failure when root has deleted files
- still open
-Message-ID: <20180724142250.GW26141@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20180723080948.4824-1-fdmanana@kernel.org>
- <20180724105404.2950-1-fdmanana@kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180724105404.2950-1-fdmanana@kernel.org>
+        id S1725886AbeGaWxM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 31 Jul 2018 18:53:12 -0400
+From: Mark Fasheh <mfasheh@suse.de>
+To: Al Viro <viro@ZenIV.linux.org.uk>, linux-fsdevel@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org, Andrew Morton <akpm@linux-foundation.org>,
+        Amir Goldstein <amir73il@gmail.com>, linux-unionfs@vger.kernel.org,
+        Jeff Mahoney <jeffm@suse.com>, linux-nfs@vger.kernel.org
+Subject: [RFC PATCH 0/4] vfs: map unique ino/dev pairs for user space
+Date: Tue, 31 Jul 2018 14:10:41 -0700
+Message-Id: <20180731211045.5671-1-mfasheh@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jul 24, 2018 at 11:54:04AM +0100, fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
-> 
-> The more common use case of send involves creating a RO snapshot and then
-> use it for a send operation. In this case it's not possible to have inodes
-> in the snapshot that have a link count of zero (inode with an orphan item)
-> since during snapshot creation we do the orphan cleanup. However, other
-> less common use cases for send can end up seeing inodes with a link count
-> of zero and in this case the send operation fails with a ENOENT error
-> because any attempt to generate a path for the inode, with the purpose
-> of creating it or updating it at the receiver, fails since there are no
-> inode reference items. One use case it to use a regular subvolume for
-> a send operation after turning it to RO mode or turning a RW snapshot
-> into RO mode and then using it for a send operation. In both cases, if a
-> file gets all its hard links deleted while there is an open file
-> descriptor before turning the subvolume/snapshot into RO mode, the send
-> operation will encounter an inode with a link count of zero and then
-> fail with errno ENOENT.
-> 
-> Example using a full send with a subvolume:
-> 
->   $ mkfs.btrfs -f /dev/sdb
->   $ mount /dev/sdb /mnt
-> 
->   $ btrfs subvolume create /mnt/sv1
->   $ touch /mnt/sv1/foo
->   $ touch /mnt/sv1/bar
-> 
->   # keep an open file descriptor on file bar
->   $ exec 73</mnt/sv1/bar
->   $ unlink /mnt/sv1/bar
-> 
->   # Turn the subvolume to RO mode and use it for a full send, while
->   # holding the open file descriptor.
->   $ btrfs property set /mnt/sv1 ro true
-> 
->   $ btrfs send -f /tmp/full.send /mnt/sv1
->   At subvol /mnt/sv1
->   ERROR: send ioctl failed with -2: No such file or directory
-> 
-> Example using an incremental send with snapshots:
-> 
->   $ mkfs.btrfs -f /dev/sdb
->   $ mount /dev/sdb /mnt
-> 
->   $ btrfs subvolume create /mnt/sv1
->   $ touch /mnt/sv1/foo
->   $ touch /mnt/sv1/bar
-> 
->   $ btrfs subvolume snapshot -r /mnt/sv1 /mnt/snap1
-> 
->   $ echo "hello world" >> /mnt/sv1/bar
-> 
->   $ btrfs subvolume snapshot -r /mnt/sv1 /mnt/snap2
-> 
->   # Turn the second snapshot to RW mode and delete file foo while
->   # holding an open file descriptor on it.
->   $ btrfs property set /mnt/snap2 ro false
->   $ exec 73</mnt/snap2/foo
->   $ unlink /mnt/snap2/foo
-> 
->   # Set the second snapshot back to RO mode and do an incremental send.
->   $ btrfs property set /mnt/snap2 ro true
-> 
->   $ btrfs send -f /tmp/inc.send -p /mnt/snap1 /mnt/snap2
->   At subvol /mnt/snap2
->   ERROR: send ioctl failed with -2: No such file or directory
-> 
-> So fix this by ignoring inodes with a link count of zero if we are either
-> doing a full send or if they do not exist in the parent snapshot (they
-> are new in the send snapshot), and unlink all paths found in the parent
-> snapshot when doing an incremental send (and ignoring all other inode
-> items, such as xattrs and extents).
-> 
-> A test case for fstests follows soon.
-> 
-> Reported-by: Martin Wilck <martin.wilck@suse.com>
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+Hi,
 
-Added to misc-next, thanks. I did a light review of the overall logic
-how the ignore_cur_inode is passed around, skipping the orphans and
-replacing with send_unlink sounds ok to me.
+These patches are follow-up to this conversation on fsdevel which provides a
+good break-down of the core problem:
+
+https://www.spinics.net/lists/linux-fsdevel/msg128003.html
+
+That e-mail was in turn a follow-up to the following patch series:
+
+https://lwn.net/Articles/753917/
+
+which tried to solve the dev portion of this problem with a bit of structure
+re-routing but was never accepted.
+
+
+We have an inconsistency in how the kernel is exporting inode number /
+device pairs for user space.  I'm not talking about stat(2) or statx(2) here
+but everywhere else where an ino/dev is exported into a buffer for user
+space.
+
+We typically do this by simply dumping the potentially 32 bit inode->i_ino
+and single device from super->s_dev.  Sometimes these values differ from
+what is returned via stat(2) or statx(2).  Some filesystems might even show
+duplicate (but internally different!) pairs when the raw i_ino/s_dev is
+used.
+
+Aside from breaking software which expects these pairs to be unique, this
+can put the user in a situation where they might not be able to find an
+inode referenced from some kernel log (be it /proc/, printk buffer, etc). 
+What's even worse - depending on how ino is exported, they might even find
+an existing but /wrong/ file.
+
+The following patches fix these inconsistencies by introducing a VFS helper
+function which calls the underlying filesystem ->getattr to get our real
+inode number / device pair.  The returned values can then be used at those
+places in the kernel where we are incorrectly reporting our ino/dev pair. 
+We then update fs/proc/ and fs/locks.c to use this helper when writing to
+/proc/PID/maps and /proc/locks respectively.
+
+
+For anyone who is watching the evolution of these patches, this would be one
+implementation of the 'callback' method which I discussed in my last e-mail. 
+This approach is very straight forward and easy to understand but has some
+drawbacks:
+
+- Not all of the call sites can tolerate errors.  Instead, we fallback to
+  inode->i_ino and super->s_dev in case of getattr error.  That behavior is
+  no worse than what we have today but what we have today is pretty bad so I
+  don't particularly feel good about that. It's better than nothing though.
+
+- There are places in the kernel where we could never call into ->getattr. 
+  There are tons of tracepoints for example that are printing the the wrong
+  ino/dev pair.
+
+- The helper function has to fake a path struct because getting a vfsmount
+  from inside these call sites is impossible.  This isn't actually a big
+  deal as nobody except NFS cares and the NFS patch is very trivial.  It's
+  ugly though, so if we had consensus on this approach I would happily
+  rework our ->getattr function signature, perhaps pulling the vfsmount and
+  dentry arguments back out.
+
+- The dentry argument to ->getattr is potentially problematic as we have
+  some places which _only_ have an inode. Even if we had a dentry I'm not
+  sure what would keep it from going negative while in the middle of our
+  ->getattr call.
+
+
+Comments and review would be greatly appreciated. Thanks,
+	--Mark

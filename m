@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:32916 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:56308 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726395AbeG3Huz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 30 Jul 2018 03:50:55 -0400
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id B4C24AE21
-        for <linux-btrfs@vger.kernel.org>; Mon, 30 Jul 2018 06:17:29 +0000 (UTC)
+        id S1726591AbeGaIbS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 31 Jul 2018 04:31:18 -0400
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 3FD19AFAC
+        for <linux-btrfs@vger.kernel.org>; Tue, 31 Jul 2018 06:52:27 +0000 (UTC)
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/1] btrfs: locking: Allow btrfs_tree_lock() to return error to avoid deadlock
-Date: Mon, 30 Jul 2018 14:17:23 +0800
-Message-Id: <20180730061723.13290-2-wqu@suse.com>
-In-Reply-To: <20180730061723.13290-1-wqu@suse.com>
-References: <20180730061723.13290-1-wqu@suse.com>
+Subject: [PATCH v2] btrfs: locking: Allow btrfs_tree_lock() to return error to avoid deadlock
+Date: Tue, 31 Jul 2018 14:52:23 +0800
+Message-Id: <20180731065223.12669-1-wqu@suse.com>
+In-Reply-To: <20180730061723.13290-2-wqu@suse.com>
+References: <20180730061723.13290-2-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -66,17 +66,24 @@ message.
 Link: https://bugzilla.kernel.org/show_bug.cgi?id=200405
 Reported-by: Xu Wen <wen.xu@gatech.edu>
 Signed-off-by: Qu Wenruo <wqu@suse.com>
+Reviewed-by: Su Yue <suy.fnst@cn.fujitsu.com>
+---
+changelog:
+v2:
+  Fix pid_t output format from %llu to %d. Pointed by Su.
+  Fix missing return 0 for btrfs_lock_tree().
+  Update reviewed-by tags.
 ---
  fs/btrfs/ctree.c           | 57 +++++++++++++++++++++++++++++++-------
  fs/btrfs/extent-tree.c     | 28 +++++++++++++++----
  fs/btrfs/extent_io.c       |  8 ++++--
  fs/btrfs/free-space-tree.c |  4 ++-
- fs/btrfs/locking.c         | 12 ++++++--
+ fs/btrfs/locking.c         | 13 +++++++--
  fs/btrfs/locking.h         |  2 +-
  fs/btrfs/qgroup.c          |  4 ++-
  fs/btrfs/relocation.c      | 13 +++++++--
  fs/btrfs/tree-log.c        | 14 ++++++++--
- 9 files changed, 114 insertions(+), 28 deletions(-)
+ 9 files changed, 115 insertions(+), 28 deletions(-)
 
 diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
 index 4bc326df472e..6e695f4cd931 100644
@@ -363,7 +370,7 @@ index b5950aacd697..948bbc45638a 100644
  	btrfs_tree_unlock(free_space_root->node);
  	btrfs_free_tree_block(trans, free_space_root, free_space_root->node,
 diff --git a/fs/btrfs/locking.c b/fs/btrfs/locking.c
-index 1da768e5ef75..aa4a3362a9f1 100644
+index 1da768e5ef75..ca151be026bf 100644
 --- a/fs/btrfs/locking.c
 +++ b/fs/btrfs/locking.c
 @@ -224,10 +224,18 @@ void btrfs_tree_read_unlock_blocking(struct extent_buffer *eb)
@@ -380,13 +387,21 @@ index 1da768e5ef75..aa4a3362a9f1 100644
 -	WARN_ON(eb->lock_owner == current->pid);
 +	if (unlikely(eb->lock_owner == current->pid)) {
 +		WARN(1,
-+"tree block %llu already locked by current (pid=%llu), refuse to lock",
++"tree block %llu already locked by current (pid=%d), refuse to lock",
 +		     eb->start, current->pid);
 +		return -EUCLEAN;
 +	}
  again:
  	wait_event(eb->read_lock_wq, atomic_read(&eb->blocking_readers) == 0);
  	wait_event(eb->write_lock_wq, atomic_read(&eb->blocking_writers) == 0);
+@@ -248,6 +256,7 @@ void btrfs_tree_lock(struct extent_buffer *eb)
+ 	atomic_inc(&eb->spinning_writers);
+ 	atomic_inc(&eb->write_locks);
+ 	eb->lock_owner = current->pid;
++	return 0;
+ }
+ 
+ /*
 diff --git a/fs/btrfs/locking.h b/fs/btrfs/locking.h
 index 29135def468e..7394d7ba2ff9 100644
 --- a/fs/btrfs/locking.h

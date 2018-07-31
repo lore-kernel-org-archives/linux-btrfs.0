@@ -1,124 +1,163 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f66.google.com ([209.85.214.66]:52525 "EHLO
-        mail-it0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728327AbeGaRom (ORCPT
+Received: from mail-lj1-f177.google.com ([209.85.208.177]:44406 "EHLO
+        mail-lj1-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728052AbeGaTYR (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 31 Jul 2018 13:44:42 -0400
-Received: by mail-it0-f66.google.com with SMTP id d9-v6so5226839itf.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 31 Jul 2018 09:03:43 -0700 (PDT)
-Subject: Re: Report correct filesystem usage / limits on BTRFS subvolumes with
- quota
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        Thomas Leister <thomas.leister@mailbox.org>, dsterba@suse.cz
-Cc: linux-btrfs@vger.kernel.org, lxc-devel@lists.linuxcontainers.org
-References: <0059606f-88bf-c919-450b-bf08e184b5a2@mailbox.org>
- <b10a3950-0b86-e4fb-3621-f4c5ad3d79e7@gmx.com>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <80e77411-2905-46a9-a5b1-fbbbb824dbf5@gmail.com>
-Date: Tue, 31 Jul 2018 12:03:37 -0400
+        Tue, 31 Jul 2018 15:24:17 -0400
+Received: by mail-lj1-f177.google.com with SMTP id q127-v6so14443610ljq.11
+        for <linux-btrfs@vger.kernel.org>; Tue, 31 Jul 2018 10:42:53 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <b10a3950-0b86-e4fb-3621-f4c5ad3d79e7@gmx.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+From: Gaurav Sanghavi <gaurav.ms5@gmail.com>
+Date: Tue, 31 Jul 2018 10:42:31 -0700
+Message-ID: <CANfewpG7XK5FD5Q_i27=0L9P6P-W-Zwwcu8CC2mCmO1s4AbTBQ@mail.gmail.com>
+Subject: Expected Received UUID
+To: linux-btrfs@vger.kernel.org
+Content-Type: multipart/alternative; boundary="0000000000007671f105724f1b1d"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2018-07-31 10:32, Qu Wenruo wrote:
-> 
-> 
-> On 2018年07月31日 21:49, Thomas Leister wrote:
->> Dear David,
->> hello everyone,
->>
->> during a recent project of mine involving LXD and BTRFS I found out that
->> quotas on BTRFS subvolumes are enforced, but file system usage and
->> limits set via quotas are not reported correctly in LXC containers.
->>
->> I've found this discussion regarding my problem:
->> https://github.com/lxc/lxd/issues/2180
-> 
-> That's not the expected usage of btrfs qgroup/quota.
-> 
-> Quota only accounts how many bytes are used exclusively or shared
-> between subvolumes at extent level.
-> 
->>
->> There was already a proposal to introduce subvolume quota support some
->> time ago:
->> https://marc.info/?l=linux-btrfs&m=147576434114415&w=2
-> 
-> It's in fact impossible if I didn't miss something.
-> 
-> There are several technical problems in the proposal:
-> 
-> 1) Multi-level qgroups
->     The real limit is limited by all related qgroups, including higher
->     level qgroup.
->     Such design makes it pretty hard to calculation the real limit.
-> 
-> 2) Different limitations on exclusive/shared bytes
->     Btrfs can set different limit on exclusive/shared bytes, further
->     complicating the problem.
-> 
-> 3) Btrfs quota only accounts data/metadata used by the subvolume
->     It lacks all the shared trees (mentioned below), and in fact such
->     shared tree can be pretty large (especially for extent tree and csum
->     tree).
->     Only accounting quota limit would hit real ENOSPC easily IMHO.
-> 
->>
->> @David as I've seen your response on that topic on the mailing list,
->> maybe you can tell me if there are any plans to support correct
->> subvolume quota reporting e.g. for "df -h" calls from within a
->> container? Maybe there's already something on your / SUSE's roadmap? :-)
->>
->> As more and more container environments spin up these days, there might
->> be a growing demand on that :-) Personally I'd really appreciate if I
->> could read the current file system usage and limit from within a
->> container using BTRFS as storage backend.
-> 
-> For current btrfs design, I think it's skeptical to implement such design.
-> The main problem here is, btrfs doesn't do the full LVM work. (unlike
-> ZFS IIRC)
-> It doesn't really manage multiple volumes, that's why it's called
-> subvolume in btrfs.
-ZFS quotas work the way they do not because it's trivial to implement 
-them that way due to the underlying implementation, but because they 
-provide the functionality that people actually want.  Being able to put 
-proper hard limits on space usage for a given volume/subvolume/dataset 
-is _critical_ for a large number of enterprise deployment scenarios. 
-Same goes for being able to put a fixed space reservation for a given 
-volume/subvolume/dataset.  If we want to even remotely compete (and it 
-sure seems like we do), we need equivalent features that work 
-intuitively for _regular_ people (not those who have intimate 
-understandings of the internal workings of BTRFS).
+--0000000000007671f105724f1b1d
+Content-Type: text/plain; charset="UTF-8"
 
-> A subvolume is not a fully usable fs, it's just a subset of a full fs.
-> It relies on all the other trees (root tree, extent tree, chunk tree,
-> csum tree, and quota tree in this case) to do all the work.
-A ZFS dataset isn't a fully usable FS either.  It's still dependent on 
-all the underlying infrastructure from the zpool itself (and so are 
-zvols), which, in fact, does a vast majority of the work.  The 
-difference here is that a ZFS dataset is far more self-contained than a 
-BTRFS subvolume.  If we ever want sane per-subvolume storage profiles or 
-mount options, we're going to need to get a lot closer to that anyway.
+Hello everyone,
 
-> Thus it's pretty hard to implement such special purposed df call.
-To implement it perfectly maybe.  Except most applications don't need it 
-to be perfect, they want to know how much space they can actually use. 
-Even a trivial blatantly imperfect implementation that just shows you 
-the total space that can be used and how much is used based on quotas 
-will give better behavior that the current case of just hiding the 
-quotas behind a root-only call.  Pretty much anything which does it's 
-own disk usage management is currently broken on BTRFS when quotas are 
-being used.  Just reporting the quota for the total space, and the space 
-accounted to the subvolume by the quota would fix almost all such 
-applications.
-> 
-> On the other hand, isn't easier to implement special interface for
-> container to get real disk usage/limit other than using the old vanilla
-> df interface?
-This isn't just an issue for containers.  Anybody who is using quotas 
-like they are typically used in ZFS deployments has the same issue, and 
-there _ARE_ people doing that (see for example OpenSUSE, where they are 
-using quotas (if they are enabled because of snapshot support) to limit 
-space consumption of paths like /tmp).
+While researching BTRFS for a project that involves backing up snapshots
+from device A to device B
+before consolidating backups from device B to device C, I noticed that
+received UUID on snapshot on
+device C is not the same as received UUID for the same snapshot on device
+B. Here are my steps:
+
+1. Device A
+BTRFS version: v3.17
+
+btrfs su sn -r /home/test/snapshot1 /home/test/snaps/snapshot1
+btrfs su show /home/test/snaps/snapshot1
+Name: snapshot1
+uuid: b00e8ba1-5aaa-3641-9c4c-e168eee5c296
+Parent uuid: cb570dec-e9fd-1f40-99d2-2070c8ee2466
+        Received UUID:      ---
+Creation time: 2018-07-30 18:32:37
+Flags: readonly
+
+2. Send to Device B
+btrfs send /home/test/snaps/snapshot1 | ssh <device b> 'btrfs receive
+/home/backups/'
+
+After send completes, on Device B
+BTRFS version: v4.7.3
+btrfs su show /home/backups/snapshot1
+Name: snapshot1
+UUID: 7c13d189-7fee-584e-ac90-e68cb0012f5c
+Parent UUID: a2314f7c-4b11-ed40-901f-f1acb5ebf802
+Received UUID: b00e8ba1-5aaa-3641-9c4c-e168eee5c296
+Creation time: 2018-07-30 18:42:37 -0700
+Flags: readonly
+
+
+3. Send to Device C
+btrfs send /home/backups/snapshot1 | ssh <device c> 'btrfs receive
+/home/backups2/'
+
+After send completes, on Device C
+BTRFS version: v4.7.3
+btrfs su show /home/backups2/snapshot1
+Name: snapshot1
+UUID: 8a13aab5-8e44-2541-9082-bc583933b964
+Parent UUID: 54e9b4ff-46dc-534e-b70f-69eb7bb21028
+Received UUID: 7c13d189-7fee-584e-ac90-e68cb0012f5c
+Creation time: 2018-07-30 18:58:32 -0700
+Flags: readonly
+
+1. I have gone through some of the archived emails and have noticed people
+mentioning that
+if received UUID is set, btrfs send propogates this 'received UUID'. But in
+above case,
+it's different for the same snapshot on all three devices. Is this the
+expected behavior ?
+
+2. We want to be able to start backing up from Device A to C, in case B
+goes down or needs
+to be replaced. If received UUID is expected to differ for the snapshot on
+device B and C, incremental
+backups will not work from A to C without setting received UUID. I have
+seen python-btrfs
+mentioned in a couple of emails; but have anyone of you used it in a
+production environment ?
+
+This is my first post to this email. Please let me know if I am missing any
+details.
+
+Thanks,
+Gaurav
+
+--0000000000007671f105724f1b1d
+Content-Type: text/html; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+
+<div dir=3D"ltr">Hello everyone,=C2=A0<div><br></div><div>While researching=
+ BTRFS for a project that involves backing up snapshots from device A to de=
+vice B=C2=A0</div><div>before consolidating backups from device B to device=
+ C, I noticed that received UUID on snapshot on=C2=A0</div><div>device C is=
+ not the same as received UUID for the same snapshot on device B. Here are =
+my steps:</div><div><br></div><div>1. Device A</div><div>BTRFS version: v3.=
+17<br></div><div><br></div><div>btrfs su sn -r /home/test/snapshot1 /home/t=
+est/snaps/snapshot1</div><div>btrfs su show /home/test/snaps/snapshot1<br><=
+/div><div><div><span style=3D"white-space:pre">	</span>Name: <span style=3D=
+"white-space:pre">			</span>snapshot1</div><div><span style=3D"white-space:=
+pre">	</span>uuid: <span style=3D"white-space:pre">			</span>b00e8ba1-5aaa-=
+3641-9c4c-e168eee5c296</div><div><span style=3D"white-space:pre">	</span>Pa=
+rent uuid: <span style=3D"white-space:pre">		</span>cb570dec-e9fd-1f40-99d2=
+-2070c8ee2466</div><div>=C2=A0 =C2=A0 =C2=A0 =C2=A0 Received UUID:=C2=A0 =
+=C2=A0 =C2=A0 ---</div><div><span style=3D"white-space:pre">	</span>Creatio=
+n time: <span style=3D"white-space:pre">		</span>2018-07-30 18:32:37</div><=
+div><span style=3D"white-space:pre">	</span>Flags: <span style=3D"white-spa=
+ce:pre">			</span>readonly</div></div><div><br></div><div>2. Send to Device=
+ B</div><div>btrfs send /home/test/snaps/snapshot1 | ssh &lt;device b&gt; &=
+#39;btrfs receive /home/backups/&#39;<br></div><div><br></div><div>After se=
+nd completes, on Device B</div><div>BTRFS version: v4.7.3</div><div>btrfs s=
+u show /home/backups/snapshot1</div><div><div><span style=3D"white-space:pr=
+e">	</span>Name: <span style=3D"white-space:pre">			</span>snapshot1</div><=
+div><span style=3D"white-space:pre">	</span>UUID: <span style=3D"white-spac=
+e:pre">			</span>7c13d189-7fee-584e-ac90-e68cb0012f5c</div><div><span style=
+=3D"white-space:pre">	</span>Parent UUID: <span style=3D"white-space:pre">	=
+	</span>a2314f7c-4b11-ed40-901f-f1acb5ebf802</div><div><span style=3D"white=
+-space:pre">	</span>Received UUID: <span style=3D"white-space:pre">	</span>=
+b00e8ba1-5aaa-3641-9c4c-e168eee5c296</div><div><span style=3D"white-space:p=
+re">	</span>Creation time: <span style=3D"white-space:pre">		</span>2018-07=
+-30 18:42:37 -0700</div><div><span style=3D"white-space:pre">	</span>Flags:=
+ <span style=3D"white-space:pre">			</span>readonly</div></div><div><br></d=
+iv><div><br></div><div>3. Send to Device C</div><div>btrfs send /home/backu=
+ps/snapshot1 | ssh &lt;device c&gt; &#39;btrfs receive /home/backups2/&#39;=
+</div><div><br></div><div>After send completes, on Device C</div><div>BTRFS=
+ version: v4.7.3</div><div><span style=3D"font-size:small;background-color:=
+rgb(255,255,255);text-decoration-style:initial;text-decoration-color:initia=
+l;float:none;display:inline">btrfs su show /home/backups2/snapshot1</span><=
+br></div><div><span style=3D"background-color:rgb(255,255,255);text-decorat=
+ion-style:initial;text-decoration-color:initial;float:none;display:inline">=
+<div><span style=3D"white-space:pre">	</span>Name: <span style=3D"white-spa=
+ce:pre">			</span>snapshot1</div><div><span style=3D"white-space:pre">	</sp=
+an>UUID: <span style=3D"white-space:pre">			</span>8a13aab5-8e44-2541-9082-=
+bc583933b964</div><div><span style=3D"white-space:pre">	</span>Parent UUID:=
+ <span style=3D"white-space:pre">		</span>54e9b4ff-46dc-534e-b70f-69eb7bb21=
+028</div><div><span style=3D"white-space:pre">	</span>Received UUID: <span =
+style=3D"white-space:pre">	</span>7c13d189-7fee-584e-ac90-e68cb0012f5c</div=
+><div><span style=3D"white-space:pre">	</span>Creation time: <span style=3D=
+"white-space:pre">		</span>2018-07-30 18:58:32 -0700</div><div><span style=
+=3D"white-space:pre">	</span>Flags: <span style=3D"white-space:pre">			</sp=
+an>readonly</div></span></div><div><br></div><div>1. I have gone through so=
+me of the archived emails and have noticed people mentioning that</div><div=
+>if received UUID is set, btrfs send propogates this &#39;received UUID&#39=
+;. But in above case,=C2=A0</div><div>it&#39;s different for the same snaps=
+hot on all three devices. Is this the expected behavior ?</div><div><br></d=
+iv><div>2. We want to be able to start backing up from Device A to C, in ca=
+se B goes down or needs=C2=A0</div><div>to be replaced. If received UUID is=
+ expected to differ for the snapshot on device B and C, incremental</div><d=
+iv>backups will not work from A to C without setting received UUID. I have =
+seen python-btrfs</div><div>mentioned in a couple of emails; but have anyon=
+e of you used it in a production environment ?</div><div><br></div><div>Thi=
+s is my first post to this email. Please let me know if I am missing any de=
+tails.</div><div><br></div><div>Thanks,</div><div>Gaurav</div><div><br></di=
+v></div>
+
+--0000000000007671f105724f1b1d--

@@ -1,58 +1,129 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from tartarus.angband.pl ([89.206.35.136]:33034 "EHLO
-        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2388884AbeHANGr (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Aug 2018 09:06:47 -0400
-Received: from kilobyte by tartarus.angband.pl with local (Exim 4.89)
-        (envelope-from <kilobyte@angband.pl>)
-        id 1fkpBx-0006ky-4O
-        for linux-btrfs@vger.kernel.org; Wed, 01 Aug 2018 13:21:21 +0200
-Date: Wed, 1 Aug 2018 13:21:21 +0200
-From: Adam Borowski <kilobyte@angband.pl>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: BTRFS and databases
-Message-ID: <20180801112120.f4h535yge6vqcsdp@angband.pl>
-References: <CAE8gLhm96B1xxoMv=sYuaNeLYRDP3YUw2qsKumpjLm+jJVjfQQ@mail.gmail.com>
+Received: from mail-vk0-f48.google.com ([209.85.213.48]:38392 "EHLO
+        mail-vk0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S2388953AbeHANxA (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Aug 2018 09:53:00 -0400
+Received: by mail-vk0-f48.google.com with SMTP id k82-v6so9158546vkd.5
+        for <linux-btrfs@vger.kernel.org>; Wed, 01 Aug 2018 05:07:31 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <CAE8gLhm96B1xxoMv=sYuaNeLYRDP3YUw2qsKumpjLm+jJVjfQQ@mail.gmail.com>
+In-Reply-To: <CAJCQCtQWYM5Hb6-9QhRujcrP9Ou8u5N+RFLFzA=Za7Z1FeuakQ@mail.gmail.com>
+References: <CAN4oSBc8zM+OZEXAGygwf3RMoyEKLmrk--_HqwMsG1HVGJCf2Q@mail.gmail.com>
+ <CAJCQCtQWYM5Hb6-9QhRujcrP9Ou8u5N+RFLFzA=Za7Z1FeuakQ@mail.gmail.com>
+From: Cerem Cem ASLAN <ceremcem@ceremcem.net>
+Date: Wed, 1 Aug 2018 15:07:30 +0300
+Message-ID: <CAN4oSBczyZBddarXcLKAjOZ=xQsFBSjbbJi-V20UB27Z5x+Y5g@mail.gmail.com>
+Subject: Re: Unmountable root partition
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: multipart/alternative; boundary="000000000000fd228a05725e8929"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Aug 01, 2018 at 05:45:15AM +0200, MegaBrutal wrote:
-> But there is still one question that I can't get over: if you store a
-> database (e.g. MySQL), would you prefer having a BTRFS volume mounted
-> with nodatacow, or would you just simply use ext4?
-> 
-> I know that with nodatacow, I take away most of the benefits of BTRFS
-> (those are actually hurting database performance – the exact CoW
-> nature that is elsewhere a blessing, with databases it's a drawback).
-> But are there any advantages of still sticking to BTRFS for a database
-> albeit CoW is disabled, or should I just return to the old and
-> reliable ext4 for those applications?
+--000000000000fd228a05725e8929
+Content-Type: text/plain; charset="UTF-8"
 
-Is this database performance-critical?
+Yes, command output is as is, because I just copied and pasted into the
+mail. When I omit the `-t btrfs` part, result is the same.
 
-If yes, you'd want ext4 -- nocow is a crappy ext4 lookalike, with no
-benefits of btrfs.  Or, if you snapshot it, you get bad fragmentation yet no
-checksums/etc.
+I'm now trying to rescue what I can, so getting a image dump with
+`ddrescue`. It's read about 25% without any errors but it will be expected
+to finish in 6 hours. Then I'll try btrfscue to see what happens.
 
-If no, regular cow (especially with autodefrag) will be enough.  Sure, this
-particular load won't be as performant (mysql really loves fsync, which is
-an anathema to btrfs), but you get all the data safety improvements,
-frequent cheap backups, and so on.
+I know it's totally my fault because I must be ready for a total
+disk/pc/building burn out. Lessons learned.
 
-Thus: if the server's primary purpose is that database, you don't want
-btrfs.  If the database is merely incidental, not microoptimizing it will
-save a lot of your time.
+2018-08-01 8:32 GMT+03:00 Chris Murphy <lists@colorremedies.com>:
 
-In neither case nocow is a good idea.  Especially if raid (!= 0) is
-involved.
+> On Tue, Jul 31, 2018 at 12:03 PM, Cerem Cem ASLAN <ceremcem@ceremcem.net>
+> wrote:
+>
+> > 3. mount -t btrfs /dev/mapper/foo--vg-root /mnt/foo
+> > Gives the following error:
+> >
+> > mount: wrong fs type, bad option, bad superblock on ...
+> >
+> > 4. dmesg | tail
+> > Outputs the following:
+> >
+> >
+> > [17755.840916] sd 3:0:0:0: [sda] tag#0 FAILED Result:
+> > hostbyte=DID_BAD_TARGET driverbyte=DRIVER_OK
+> > [17755.840919] sd 3:0:0:0: [sda] tag#0 CDB: Read(10) 28 00 00 07 c0 02
+> 00 00
+> > 02 00
+> > [17755.840921] blk_update_request: I/O error, dev sda, sector 507906
+> > [17755.840941] EXT4-fs (dm-4): unable to read superblock
+>
+>
+> Are you sure this is the output for the command? Because you're
+> explicitly asking for type btrfs, which fails, and then the kernel
+> reports EXT4 superblock unreadable. What do you get if you omit -t
+> btrfs and just let it autodetect?
+>
+> But yeah, this is an IO error from the device and there's nothing
+> Btrfs can do about that unless there is DUP or raid1+ metadata
+> available.
+>
+> Is it possible this LV was accidentally reformatted ext4?
+>
+>
+> --
+> Chris Murphy
+>
 
+--000000000000fd228a05725e8929
+Content-Type: text/html; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-Meow!
--- 
-// If you believe in so-called "intellectual property", please immediately
-// cease using counterfeit alphabets.  Instead, contact the nearest temple
-// of Amon, whose priests will provide you with scribal services for all
-// your writing needs, for Reasonable And Non-Discriminatory prices.
+<div dir=3D"ltr">Yes, command output is as is, because I just copied and pa=
+sted into the mail. When I omit the `-t btrfs` part, result is the same.=C2=
+=A0<div><br></div><div>I&#39;m now trying to rescue what I can, so getting =
+a image dump with `ddrescue`. It&#39;s read about 25% without any errors bu=
+t it will be expected to finish in 6 hours. Then I&#39;ll try=C2=A0btrfscue=
+ to see what happens.=C2=A0</div><div><br></div><div>I know it&#39;s totall=
+y my fault because I must be ready for a total disk/pc/building burn out. L=
+essons learned.=C2=A0</div></div><div class=3D"gmail_extra"><br><div class=
+=3D"gmail_quote">2018-08-01 8:32 GMT+03:00 Chris Murphy <span dir=3D"ltr">&=
+lt;<a href=3D"mailto:lists@colorremedies.com" target=3D"_blank">lists@color=
+remedies.com</a>&gt;</span>:<br><blockquote class=3D"gmail_quote" style=3D"=
+margin:0 0 0 .8ex;border-left:1px #ccc solid;padding-left:1ex"><span class=
+=3D"">On Tue, Jul 31, 2018 at 12:03 PM, Cerem Cem ASLAN &lt;<a href=3D"mail=
+to:ceremcem@ceremcem.net">ceremcem@ceremcem.net</a>&gt; wrote:<br>
+<br>
+&gt; 3. mount -t btrfs /dev/mapper/foo--vg-root /mnt/foo<br>
+&gt; Gives the following error:<br>
+&gt;<br>
+&gt; mount: wrong fs type, bad option, bad superblock on ...<br>
+&gt;<br>
+&gt; 4. dmesg | tail<br>
+&gt; Outputs the following:<br>
+&gt;<br>
+&gt;<br>
+&gt; [17755.840916] sd 3:0:0:0: [sda] tag#0 FAILED Result:<br>
+&gt; hostbyte=3DDID_BAD_TARGET driverbyte=3DDRIVER_OK<br>
+&gt; [17755.840919] sd 3:0:0:0: [sda] tag#0 CDB: Read(10) 28 00 00 07 c0 02=
+ 00 00<br>
+&gt; 02 00<br>
+&gt; [17755.840921] blk_update_request: I/O error, dev sda, sector 507906<b=
+r>
+&gt; [17755.840941] EXT4-fs (dm-4): unable to read superblock<br>
+<br>
+<br>
+</span>Are you sure this is the output for the command? Because you&#39;re<=
+br>
+explicitly asking for type btrfs, which fails, and then the kernel<br>
+reports EXT4 superblock unreadable. What do you get if you omit -t<br>
+btrfs and just let it autodetect?<br>
+<br>
+But yeah, this is an IO error from the device and there&#39;s nothing<br>
+Btrfs can do about that unless there is DUP or raid1+ metadata<br>
+available.<br>
+<br>
+Is it possible this LV was accidentally reformatted ext4?<br>
+<span class=3D"HOEnZb"><font color=3D"#888888"><br>
+<br>
+-- <br>
+Chris Murphy<br>
+</font></span></blockquote></div><br></div>
+
+--000000000000fd228a05725e8929--

@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:39334 "EHLO
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:65449 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1726960AbeHAFQM (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Aug 2018 01:16:12 -0400
+        with ESMTP id S1730957AbeHAFQN (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Aug 2018 01:16:13 -0400
 Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
-        by cn.fujitsu.com (Postfix) with ESMTP id 8AEF04B6ADE1
-        for <linux-btrfs@vger.kernel.org>; Wed,  1 Aug 2018 11:32:41 +0800 (CST)
+        by cn.fujitsu.com (Postfix) with ESMTP id 2AB624B6ADE6
+        for <linux-btrfs@vger.kernel.org>; Wed,  1 Aug 2018 11:32:42 +0800 (CST)
 From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 5/7] btrfs: Remove fs_info from btrfs_add_root_ref
-Date: Wed, 1 Aug 2018 11:32:29 +0800
-Message-ID: <20180801033231.23166-6-lufq.fnst@cn.fujitsu.com>
+Subject: [PATCH 6/7] btrfs: Remove root parameter from btrfs_unlink_subvol
+Date: Wed, 1 Aug 2018 11:32:30 +0800
+Message-ID: <20180801033231.23166-7-lufq.fnst@cn.fujitsu.com>
 In-Reply-To: <20180801033231.23166-1-lufq.fnst@cn.fujitsu.com>
 References: <20180801033231.23166-1-lufq.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -18,104 +18,92 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It can be referenced from the passed transaction handle.
+It can be fetched by BTRFS_I(dir)->root.
 
 Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 ---
- fs/btrfs/ctree.h       | 7 +++----
- fs/btrfs/inode.c       | 3 +--
- fs/btrfs/ioctl.c       | 3 +--
- fs/btrfs/root-tree.c   | 9 ++++-----
- fs/btrfs/transaction.c | 2 +-
- 5 files changed, 10 insertions(+), 14 deletions(-)
+ fs/btrfs/inode.c | 25 ++++++++++---------------
+ 1 file changed, 10 insertions(+), 15 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 3677082ddf4c..c275ea258f9a 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -2984,10 +2984,9 @@ void btrfs_put_tree_mod_seq(struct btrfs_fs_info *fs_info,
- int btrfs_old_root_level(struct btrfs_root *root, u64 time_seq);
- 
- /* root-item.c */
--int btrfs_add_root_ref(struct btrfs_trans_handle *trans,
--		       struct btrfs_fs_info *fs_info,
--		       u64 root_id, u64 ref_id, u64 dirid, u64 sequence,
--		       const char *name, int name_len);
-+int btrfs_add_root_ref(struct btrfs_trans_handle *trans, u64 root_id,
-+		       u64 ref_id, u64 dirid, u64 sequence, const char *name,
-+		       int name_len);
- int btrfs_del_root_ref(struct btrfs_trans_handle *trans, u64 root_id,
- 		       u64 ref_id, u64 dirid, u64 *sequence, const char *name,
- 		       int name_len);
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 7bf4a8d07e1e..407d068d4208 100644
+index 407d068d4208..b8c131b82978 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -6385,7 +6385,6 @@ int btrfs_add_link(struct btrfs_trans_handle *trans,
- 		   struct btrfs_inode *parent_inode, struct btrfs_inode *inode,
- 		   const char *name, int name_len, int add_backref, u64 index)
+@@ -4081,10 +4081,10 @@ static int btrfs_unlink(struct inode *dir, struct dentry *dentry)
+ }
+ 
+ static int btrfs_unlink_subvol(struct btrfs_trans_handle *trans,
+-			struct btrfs_root *root,
+-			struct inode *dir, u64 objectid,
+-			const char *name, int name_len)
++			       struct inode *dir, u64 objectid,
++			       const char *name, int name_len)
  {
--	struct btrfs_fs_info *fs_info = trans->fs_info;
- 	int ret = 0;
- 	struct btrfs_key key;
- 	struct btrfs_root *root = parent_inode->root;
-@@ -6401,7 +6400,7 @@ int btrfs_add_link(struct btrfs_trans_handle *trans,
- 	}
- 
- 	if (unlikely(ino == BTRFS_FIRST_FREE_OBJECTID)) {
--		ret = btrfs_add_root_ref(trans, fs_info, key.objectid,
-+		ret = btrfs_add_root_ref(trans, key.objectid,
- 					 root->root_key.objectid, parent_ino,
- 					 index, name, name_len);
- 	} else if (add_backref) {
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 80fe3c654612..6eaadddaca9f 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -698,8 +698,7 @@ static noinline int create_subvol(struct inode *dir,
- 	ret = btrfs_update_inode(trans, root, dir);
- 	BUG_ON(ret);
- 
--	ret = btrfs_add_root_ref(trans, fs_info,
--				 objectid, root->root_key.objectid,
-+	ret = btrfs_add_root_ref(trans, objectid, root->root_key.objectid,
- 				 btrfs_ino(BTRFS_I(dir)), index, name, namelen);
- 	BUG_ON(ret);
- 
-diff --git a/fs/btrfs/root-tree.c b/fs/btrfs/root-tree.c
-index 52fa133ab53c..65bda0682928 100644
---- a/fs/btrfs/root-tree.c
-+++ b/fs/btrfs/root-tree.c
-@@ -412,12 +412,11 @@ int btrfs_del_root_ref(struct btrfs_trans_handle *trans, u64 root_id,
-  *
-  * Will return 0, -ENOMEM, or anything from the CoW path
-  */
--int btrfs_add_root_ref(struct btrfs_trans_handle *trans,
--		       struct btrfs_fs_info *fs_info,
--		       u64 root_id, u64 ref_id, u64 dirid, u64 sequence,
--		       const char *name, int name_len)
-+int btrfs_add_root_ref(struct btrfs_trans_handle *trans, u64 root_id,
-+		       u64 ref_id, u64 dirid, u64 sequence, const char *name,
-+		       int name_len)
- {
--	struct btrfs_root *tree_root = fs_info->tree_root;
-+	struct btrfs_root *tree_root = trans->fs_info->tree_root;
- 	struct btrfs_key key;
- 	int ret;
++	struct btrfs_root *root = BTRFS_I(dir)->root;
  	struct btrfs_path *path;
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index aec208cbff00..001ed1bc2aa8 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -1573,7 +1573,7 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
- 	/*
- 	 * insert root back/forward references
- 	 */
--	ret = btrfs_add_root_ref(trans, fs_info, objectid,
-+	ret = btrfs_add_root_ref(trans, objectid,
- 				 parent_root->root_key.objectid,
- 				 btrfs_ino(BTRFS_I(parent_inode)), index,
- 				 dentry->d_name.name, dentry->d_name.len);
+ 	struct extent_buffer *leaf;
+ 	struct btrfs_dir_item *di;
+@@ -4335,10 +4335,8 @@ int btrfs_delete_subvolume(struct inode *dir, struct dentry *dentry)
+ 
+ 	btrfs_record_snapshot_destroy(trans, BTRFS_I(dir));
+ 
+-	ret = btrfs_unlink_subvol(trans, root, dir,
+-				dest->root_key.objectid,
+-				dentry->d_name.name,
+-				dentry->d_name.len);
++	ret = btrfs_unlink_subvol(trans, dir, dest->root_key.objectid,
++				  dentry->d_name.name, dentry->d_name.len);
+ 	if (ret) {
+ 		err = ret;
+ 		btrfs_abort_transaction(trans, ret);
+@@ -4433,7 +4431,7 @@ static int btrfs_rmdir(struct inode *dir, struct dentry *dentry)
+ 		return PTR_ERR(trans);
+ 
+ 	if (unlikely(btrfs_ino(BTRFS_I(inode)) == BTRFS_EMPTY_SUBVOL_DIR_OBJECTID)) {
+-		err = btrfs_unlink_subvol(trans, root, dir,
++		err = btrfs_unlink_subvol(trans, dir,
+ 					  BTRFS_I(inode)->location.objectid,
+ 					  dentry->d_name.name,
+ 					  dentry->d_name.len);
+@@ -9505,8 +9503,7 @@ static int btrfs_rename_exchange(struct inode *old_dir,
+ 	/* src is a subvolume */
+ 	if (old_ino == BTRFS_FIRST_FREE_OBJECTID) {
+ 		root_objectid = BTRFS_I(old_inode)->root->root_key.objectid;
+-		ret = btrfs_unlink_subvol(trans, root, old_dir,
+-					  root_objectid,
++		ret = btrfs_unlink_subvol(trans, old_dir, root_objectid,
+ 					  old_dentry->d_name.name,
+ 					  old_dentry->d_name.len);
+ 	} else { /* src is an inode */
+@@ -9525,8 +9522,7 @@ static int btrfs_rename_exchange(struct inode *old_dir,
+ 	/* dest is a subvolume */
+ 	if (new_ino == BTRFS_FIRST_FREE_OBJECTID) {
+ 		root_objectid = BTRFS_I(new_inode)->root->root_key.objectid;
+-		ret = btrfs_unlink_subvol(trans, dest, new_dir,
+-					  root_objectid,
++		ret = btrfs_unlink_subvol(trans, new_dir, root_objectid,
+ 					  new_dentry->d_name.name,
+ 					  new_dentry->d_name.len);
+ 	} else { /* dest is an inode */
+@@ -9786,7 +9782,7 @@ static int btrfs_rename(struct inode *old_dir, struct dentry *old_dentry,
+ 
+ 	if (unlikely(old_ino == BTRFS_FIRST_FREE_OBJECTID)) {
+ 		root_objectid = BTRFS_I(old_inode)->root->root_key.objectid;
+-		ret = btrfs_unlink_subvol(trans, root, old_dir, root_objectid,
++		ret = btrfs_unlink_subvol(trans, old_dir, root_objectid,
+ 					old_dentry->d_name.name,
+ 					old_dentry->d_name.len);
+ 	} else {
+@@ -9808,8 +9804,7 @@ static int btrfs_rename(struct inode *old_dir, struct dentry *old_dentry,
+ 		if (unlikely(btrfs_ino(BTRFS_I(new_inode)) ==
+ 			     BTRFS_EMPTY_SUBVOL_DIR_OBJECTID)) {
+ 			root_objectid = BTRFS_I(new_inode)->location.objectid;
+-			ret = btrfs_unlink_subvol(trans, dest, new_dir,
+-						root_objectid,
++			ret = btrfs_unlink_subvol(trans, new_dir, root_objectid,
+ 						new_dentry->d_name.name,
+ 						new_dentry->d_name.len);
+ 			BUG_ON(new_inode->i_nlink == 0);
 -- 
 2.18.0
 

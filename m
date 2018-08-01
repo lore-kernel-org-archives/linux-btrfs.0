@@ -1,45 +1,26 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:18144 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1731051AbeHAFQM (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Aug 2018 01:16:12 -0400
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
-        by cn.fujitsu.com (Postfix) with ESMTP id D57724B6ADE7
-        for <linux-btrfs@vger.kernel.org>; Wed,  1 Aug 2018 11:32:42 +0800 (CST)
-From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 7/7] btrfs: Remove redundant btrfs_release_path from btrfs_unlink_subvol
-Date: Wed, 1 Aug 2018 11:32:31 +0800
-Message-ID: <20180801033231.23166-8-lufq.fnst@cn.fujitsu.com>
-In-Reply-To: <20180801033231.23166-1-lufq.fnst@cn.fujitsu.com>
-References: <20180801033231.23166-1-lufq.fnst@cn.fujitsu.com>
+Received: from mx2.suse.de ([195.135.220.15]:33012 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S2389081AbeHAOko (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 1 Aug 2018 10:40:44 -0400
+Date: Wed, 1 Aug 2018 14:55:01 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] btrfs: backref.c: Use ERR_CAST() to return error code
+Message-ID: <20180801125501.GC3218@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <cover.1532568195.git.misono.tomohiro@jp.fujitsu.com>
+ <936a6171-4c1e-2bda-af79-9be9ebe6a8fd@jp.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <936a6171-4c1e-2bda-af79-9be9ebe6a8fd@jp.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Although it is safe to call this on paths that no locks or extent buffers
-held, removing the redundant btrfs_release_path is reasonable.
+On Thu, Jul 26, 2018 at 10:22:58AM +0900, Misono Tomohiro wrote:
+> Use ERR_CAST() instead of void * to make meaning clear.
+> 
+> Signed-off-by: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
 
-Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
----
- fs/btrfs/inode.c | 1 -
- 1 file changed, 1 deletion(-)
-
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index b8c131b82978..7e56a203c109 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -4137,7 +4137,6 @@ static int btrfs_unlink_subvol(struct btrfs_trans_handle *trans,
- 
- 		leaf = path->nodes[0];
- 		btrfs_item_key_to_cpu(leaf, &key, path->slots[0]);
--		btrfs_release_path(path);
- 		index = key.offset;
- 	}
- 	btrfs_release_path(path);
--- 
-2.18.0
-
-
-
+Added to misc-next, thanks.

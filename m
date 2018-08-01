@@ -1,30 +1,25 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:33100 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:60564 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S2389081AbeHAOlb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 1 Aug 2018 10:41:31 -0400
-Date: Wed, 1 Aug 2018 14:55:47 +0200
+        id S2389054AbeHAOjI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 1 Aug 2018 10:39:08 -0400
+Date: Wed, 1 Aug 2018 14:53:21 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] btrfs: extent-tree.c: Remove unused
- __btrfs_free_block_rsv()
-Message-ID: <20180801125546.GD3218@twin.jikos.cz>
+To: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 0/7] Some unused parameter cleanup
+Message-ID: <20180801125321.GB3218@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <cover.1532572743.git.misono.tomohiro@jp.fujitsu.com>
- <01829a36-c358-e71a-4281-be8eeb8f8302@jp.fujitsu.com>
+References: <20180801033231.23166-1-lufq.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <01829a36-c358-e71a-4281-be8eeb8f8302@jp.fujitsu.com>
+In-Reply-To: <20180801033231.23166-1-lufq.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jul 26, 2018 at 11:40:54AM +0900, Misono Tomohiro wrote:
-> There is no user of this function.
-> 
-> This is forgotten to get removed in commit a575ceeb1338
-> ("Btrfs: get rid of unused orphan infrastructure").
-> 
-> Signed-off-by: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
+On Wed, Aug 01, 2018 at 11:32:24AM +0800, Lu Fengqi wrote:
+> PATCH 1-2 remove all unused fs_info parameter from delayed-inode.c
+> PATCH 3-5 remove all unused fs_info parameter from root-tree.c
+> PATCH 6-7 some cleanup for btrfs_unlink_subvol
 
-Added to misc-next, thanks.
+Thanks, added to misc-next.

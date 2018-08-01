@@ -1,280 +1,93 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:7401 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1726252AbeHAEyv (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Aug 2018 00:54:51 -0400
-Subject: Re: [PATCH v2 4/6] btrfs: Introduce mount time chunk <-> dev extent
- mapping check
-To: Qu Wenruo <wqu@suse.com>, <linux-btrfs@vger.kernel.org>
+Received: from mx2.suse.de ([195.135.220.15]:51250 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1725933AbeHAEUs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 1 Aug 2018 00:20:48 -0400
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id A5FE1ACD7
+        for <linux-btrfs@vger.kernel.org>; Wed,  1 Aug 2018 02:37:32 +0000 (UTC)
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v2 1/6] btrfs: Check each block group has corresponding chunk at mount time
+Date: Wed,  1 Aug 2018 10:37:16 +0800
+Message-Id: <20180801023721.32143-2-wqu@suse.com>
+In-Reply-To: <20180801023721.32143-1-wqu@suse.com>
 References: <20180801023721.32143-1-wqu@suse.com>
- <20180801023721.32143-5-wqu@suse.com>
-From: Su Yue <suy.fnst@cn.fujitsu.com>
-Message-ID: <6e062d6b-6e8c-94e5-d742-645b7dbdd8ed@cn.fujitsu.com>
-Date: Wed, 1 Aug 2018 11:18:04 +0800
-MIME-Version: 1.0
-In-Reply-To: <20180801023721.32143-5-wqu@suse.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+A crafted btrfs with incorrect chunk<->block group mapping, it could leads
+to a lot of unexpected behavior.
 
+Although the crafted image can be catched by block group item checker
+added in "[PATCH] btrfs: tree-checker: Verify block_group_item", if one
+crafted a valid enough block group item which can pass above check but
+still mismatch with existing chunk, it could cause a lot of undefined
+behavior.
 
-On 08/01/2018 10:37 AM, Qu Wenruo wrote:
-> This patch will introduce chunk <-> dev extent mapping check, to protect
-> us against invalid dev extents or chunks.
-> 
-> Since chunk mapping is the fundamental infrastructure of btrfs, extra
-> check at mount time could prevent a lot of unexpected behavior (BUG_ON).
-> 
-> Reported-by: Xu Wen <wen.xu@gatech.edu>
-> Link: https://bugzilla.kernel.org/show_bug.cgi?id=200403
-> Link: https://bugzilla.kernel.org/show_bug.cgi?id=200407
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
+This patch will add extra block group -> chunk mapping check, to ensure
+we have a completely matching (start, len, flags) chunk for each block
+group at mount time.
 
-LGTM.
-Reviewed-by: Su Yue <suy.fnst@cn.fujitsu.com>
+Here we reuse the original find_first_block_group(), which is already
+doing basic bg -> chunk check, adding more check on start/len and type
+flags.
 
-> ---
->   fs/btrfs/disk-io.c |   7 ++
->   fs/btrfs/volumes.c | 183 +++++++++++++++++++++++++++++++++++++++++++++
->   fs/btrfs/volumes.h |   2 +
->   3 files changed, 192 insertions(+)
-> 
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index 205092dc9390..068ca7498e94 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -3075,6 +3075,13 @@ int open_ctree(struct super_block *sb,
->   	fs_info->generation = generation;
->   	fs_info->last_trans_committed = generation;
->   
-> +	ret = btrfs_verify_dev_extents(fs_info);
-> +	if (ret) {
-> +		btrfs_err(fs_info,
-> +			  "failed to verify dev extents against chunks: %d",
-> +			  ret);
-> +		goto fail_block_groups;
-> +	}
->   	ret = btrfs_recover_balance(fs_info);
->   	if (ret) {
->   		btrfs_err(fs_info, "failed to recover balance: %d", ret);
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index e6a8e4aabc66..467a589854fa 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -6440,6 +6440,7 @@ static int read_one_chunk(struct btrfs_fs_info *fs_info, struct btrfs_key *key,
->   	map->stripe_len = btrfs_chunk_stripe_len(leaf, chunk);
->   	map->type = btrfs_chunk_type(leaf, chunk);
->   	map->sub_stripes = btrfs_chunk_sub_stripes(leaf, chunk);
-> +	map->verified_stripes = 0;
->   	for (i = 0; i < num_stripes; i++) {
->   		map->stripes[i].physical =
->   			btrfs_stripe_offset_nr(leaf, chunk, i);
-> @@ -7295,3 +7296,185 @@ void btrfs_reset_fs_info_ptr(struct btrfs_fs_info *fs_info)
->   		fs_devices = fs_devices->seed;
->   	}
->   }
-> +
-> +static u64 calc_stripe_length(u64 type, u64 chunk_len, int num_stripes)
-> +{
-> +	int index = btrfs_bg_flags_to_raid_index(type);
-> +	int ncopies = btrfs_raid_array[index].ncopies;
-> +	int data_stripes;
-> +
-> +	switch (type & BTRFS_BLOCK_GROUP_PROFILE_MASK) {
-> +	case BTRFS_BLOCK_GROUP_RAID5:
-> +		data_stripes = num_stripes - 1;
-> +		break;
-> +	case BTRFS_BLOCK_GROUP_RAID6:
-> +		data_stripes = num_stripes - 2;
-> +		break;
-> +	default:
-> +		data_stripes = num_stripes / ncopies;
-> +		break;
-> +	}
-> +	return div_u64(chunk_len, data_stripes);
-> +}
-> +static int verify_one_dev_extent(struct btrfs_fs_info *fs_info,
-> +				 u64 chunk_offset, u64 devid,
-> +				 u64 physical_offset, u64 physical_len)
-> +{
-> +	struct extent_map_tree *em_tree = &fs_info->mapping_tree.map_tree;
-> +	struct extent_map *em;
-> +	struct map_lookup *map;
-> +	u64 stripe_len;
-> +	bool found = false;
-> +	int ret = 0;
-> +	int i;
-> +
-> +	read_lock(&em_tree->lock);
-> +	em = lookup_extent_mapping(em_tree, chunk_offset, 1);
-> +	read_unlock(&em_tree->lock);
-> +
-> +	if (!em) {
-> +		ret = -EUCLEAN;
-> +		btrfs_err(fs_info,
-> +		"dev extent (%llu, %llu) doesn't have corresponding chunk",
-> +			  devid, physical_offset);
-> +		goto out;
-> +	}
-> +
-> +	map = em->map_lookup;
-> +	stripe_len = calc_stripe_length(map->type, em->len, map->num_stripes);
-> +	if (physical_len != stripe_len) {
-> +		btrfs_err(fs_info,
-> +"dev extent (%llu, %llu) length doesn't match with chunk %llu, have %llu expect %llu",
-> +			  devid, physical_offset, em->start, physical_len,
-> +			  stripe_len);
-> +		ret = -EUCLEAN;
-> +		goto out;
-> +	}
-> +
-> +	for (i = 0; i < map->num_stripes; i++) {
-> +		if (map->stripes[i].dev->devid == devid &&
-> +		    map->stripes[i].physical == physical_offset) {
-> +			found = true;
-> +			if (map->verified_stripes >= map->num_stripes) {
-> +				btrfs_err(fs_info,
-> +			"too many dev extent for chunk %llu is detected",
-> +					  em->start);
-> +				ret = -EUCLEAN;
-> +				goto out;
-> +			}
-> +			map->verified_stripes++;
-> +			break;
-> +		}
-> +	}
-> +	if (!found) {
-> +		ret = -EUCLEAN;
-> +		btrfs_err(fs_info,
-> +			"dev extent (%llu, %llu) has no corresponding chunk",
-> +			devid, physical_offset);
-> +	}
-> +out:
-> +	free_extent_map(em);
-> +	return ret;
-> +}
-> +
-> +static int verify_chunk_dev_extent_mapping(struct btrfs_fs_info *fs_info)
-> +{
-> +	struct extent_map_tree *em_tree = &fs_info->mapping_tree.map_tree;
-> +	struct extent_map *em;
-> +	struct rb_node *node;
-> +	int ret = 0;
-> +
-> +	read_lock(&em_tree->lock);
-> +	for (node = rb_first(&em_tree->map); node; node = rb_next(node)) {
-> +		em = rb_entry(node, struct extent_map, rb_node);
-> +		if (em->map_lookup->num_stripes !=
-> +		    em->map_lookup->verified_stripes) {
-> +			btrfs_err(fs_info,
-> +			"chunk %llu has missing dev extent, have %d expect %d",
-> +				  em->start, em->map_lookup->verified_stripes,
-> +				  em->map_lookup->num_stripes);
-> +			ret = -EUCLEAN;
-> +			goto out;
-> +		}
-> +	}
-> +out:
-> +	read_unlock(&em_tree->lock);
-> +	return ret;
-> +}
-> +
-> +/*
-> + * Ensure all dev extents are mapped to correct chunk.
-> + * Or later chunk allocation/free would cause unexpected behavior.
-> + *
-> + * NOTE: This will iterate through the whole device tree, which should be
-> + * at the same size level of chunk tree.
-> + * This would increase mount time by a tiny fraction.
-> + */
-> +int btrfs_verify_dev_extents(struct btrfs_fs_info *fs_info)
-> +{
-> +	struct btrfs_path *path;
-> +	struct btrfs_root *root = fs_info->dev_root;
-> +	struct btrfs_key key;
-> +	int ret = 0;
-> +
-> +	key.objectid = 1;
-> +	key.type = BTRFS_DEV_EXTENT_KEY;
-> +	key.offset = 0;
-> +
-> +	path = btrfs_alloc_path();
-> +	if (!path)
-> +		return -ENOMEM;
-> +
-> +	path->reada = READA_FORWARD;
-> +	ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
-> +	if (ret < 0)
-> +		goto out;
-> +
-> +	if (path->slots[0] >= btrfs_header_nritems(path->nodes[0])) {
-> +		ret = btrfs_next_item(root, path);
-> +		if (ret < 0)
-> +			goto out;
-> +		/* No dev extents at all? Not good */
-> +		if (ret > 0) {
-> +			ret = -EUCLEAN;
-> +			goto out;
-> +		}
-> +	}
-> +	while (1) {
-> +		struct extent_buffer *leaf = path->nodes[0];
-> +		struct btrfs_dev_extent *dext;
-> +		int slot = path->slots[0];
-> +		u64 chunk_offset;
-> +		u64 physical_offset;
-> +		u64 physical_len;
-> +		u64 devid;
-> +
-> +		btrfs_item_key_to_cpu(leaf, &key, slot);
-> +		if (key.type != BTRFS_DEV_EXTENT_KEY)
-> +			break;
-> +		devid = key.objectid;
-> +		physical_offset = key.offset;
-> +
-> +		dext = btrfs_item_ptr(leaf, slot, struct btrfs_dev_extent);
-> +		chunk_offset = btrfs_dev_extent_chunk_offset(leaf, dext);
-> +		physical_len = btrfs_dev_extent_length(leaf, dext);
-> +
-> +		ret = verify_one_dev_extent(fs_info, chunk_offset, devid,
-> +					    physical_offset, physical_len);
-> +		if (ret < 0)
-> +			goto out;
-> +		ret = btrfs_next_item(root, path);
-> +		if (ret < 0)
-> +			goto out;
-> +		if (ret > 0) {
-> +			ret = 0;
-> +			break;
-> +		}
-> +	}
-> +
-> +	/* Ensure all chunks have corresponding dev extents */
-> +	ret = verify_chunk_dev_extent_mapping(fs_info);
-> +out:
-> +	btrfs_free_path(path);
-> +	return ret;
-> +}
-> diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-> index 6d4f38ad9f5c..4301bf2d0534 100644
-> --- a/fs/btrfs/volumes.h
-> +++ b/fs/btrfs/volumes.h
-> @@ -345,6 +345,7 @@ struct map_lookup {
->   	u64 stripe_len;
->   	int num_stripes;
->   	int sub_stripes;
-> +	int verified_stripes; /* For mount time dev extent verification */
->   	struct btrfs_bio_stripe stripes[];
->   };
->   
-> @@ -559,5 +560,6 @@ void btrfs_set_fs_info_ptr(struct btrfs_fs_info *fs_info);
->   void btrfs_reset_fs_info_ptr(struct btrfs_fs_info *fs_info);
->   bool btrfs_check_rw_degradable(struct btrfs_fs_info *fs_info,
->   					struct btrfs_device *failing_dev);
-> +int btrfs_verify_dev_extents(struct btrfs_fs_info *fs_info);
->   
->   #endif
-> 
+Link: https://bugzilla.kernel.org/show_bug.cgi?id=199837
+Reported-by: Xu Wen <wen.xu@gatech.edu>
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/extent-tree.c | 29 ++++++++++++++++++++++++++++-
+ 1 file changed, 28 insertions(+), 1 deletion(-)
 
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 3d9fe58c0080..63a6b5d36ac1 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -9717,6 +9717,8 @@ static int find_first_block_group(struct btrfs_fs_info *fs_info,
+ 	int ret = 0;
+ 	struct btrfs_key found_key;
+ 	struct extent_buffer *leaf;
++	struct btrfs_block_group_item bg;
++	u64 flags;
+ 	int slot;
+ 
+ 	ret = btrfs_search_slot(NULL, root, key, path, 0, 0);
+@@ -9751,8 +9753,33 @@ static int find_first_block_group(struct btrfs_fs_info *fs_info,
+ 			"logical %llu len %llu found bg but no related chunk",
+ 					  found_key.objectid, found_key.offset);
+ 				ret = -ENOENT;
++			} else if (em->start != found_key.objectid ||
++				   em->len != found_key.offset) {
++				btrfs_err(fs_info,
++		"block group %llu len %llu mismatch with chunk %llu len %llu",
++					  found_key.objectid, found_key.offset,
++					  em->start, em->len);
++				ret = -EUCLEAN;
+ 			} else {
+-				ret = 0;
++				read_extent_buffer(leaf, &bg,
++					btrfs_item_ptr_offset(leaf, slot),
++					sizeof(bg));
++				flags = btrfs_block_group_flags(&bg) &
++					BTRFS_BLOCK_GROUP_TYPE_MASK;
++
++				if (flags != (em->map_lookup->type &
++					      BTRFS_BLOCK_GROUP_TYPE_MASK)) {
++					btrfs_err(fs_info,
++"block group %llu len %llu type flags 0x%llx mismatch with chunk type flags 0x%llx",
++						found_key.objectid,
++						found_key.offset,
++						flags,
++						(BTRFS_BLOCK_GROUP_TYPE_MASK &
++						 em->map_lookup->type));
++					ret = -EUCLEAN;
++				} else {
++					ret = 0;
++				}
+ 			}
+ 			free_extent_map(em);
+ 			goto out;
+-- 
+2.18.0
 

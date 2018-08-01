@@ -1,93 +1,114 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:51250 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:51258 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725933AbeHAEUs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 1 Aug 2018 00:20:48 -0400
+        id S1725933AbeHAEUz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 1 Aug 2018 00:20:55 -0400
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id A5FE1ACD7
-        for <linux-btrfs@vger.kernel.org>; Wed,  1 Aug 2018 02:37:32 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id E4847ACD7
+        for <linux-btrfs@vger.kernel.org>; Wed,  1 Aug 2018 02:37:38 +0000 (UTC)
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 1/6] btrfs: Check each block group has corresponding chunk at mount time
-Date: Wed,  1 Aug 2018 10:37:16 +0800
-Message-Id: <20180801023721.32143-2-wqu@suse.com>
+Subject: [PATCH v2 2/6] btrfs: Verify every chunk has corresponding block group at mount time
+Date: Wed,  1 Aug 2018 10:37:17 +0800
+Message-Id: <20180801023721.32143-3-wqu@suse.com>
 In-Reply-To: <20180801023721.32143-1-wqu@suse.com>
 References: <20180801023721.32143-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-A crafted btrfs with incorrect chunk<->block group mapping, it could leads
-to a lot of unexpected behavior.
+If a crafted btrfs has missing block group items, it could cause
+unexpected behavior and breaks our expectation on 1:1
+chunk<->block group mapping.
 
-Although the crafted image can be catched by block group item checker
-added in "[PATCH] btrfs: tree-checker: Verify block_group_item", if one
-crafted a valid enough block group item which can pass above check but
-still mismatch with existing chunk, it could cause a lot of undefined
-behavior.
+Although we added block group -> chunk mapping check, we still need
+chunk -> block group mapping check.
 
-This patch will add extra block group -> chunk mapping check, to ensure
-we have a completely matching (start, len, flags) chunk for each block
-group at mount time.
+This patch will do extra check to ensure each chunk has its
+corresponding block group.
 
-Here we reuse the original find_first_block_group(), which is already
-doing basic bg -> chunk check, adding more check on start/len and type
-flags.
-
-Link: https://bugzilla.kernel.org/show_bug.cgi?id=199837
+Link: https://bugzilla.kernel.org/show_bug.cgi?id=199847
 Reported-by: Xu Wen <wen.xu@gatech.edu>
 Signed-off-by: Qu Wenruo <wqu@suse.com>
+Reviewed-by: Gu Jinxiang <gujx@cn.fujitsu.com>
 ---
- fs/btrfs/extent-tree.c | 29 ++++++++++++++++++++++++++++-
- 1 file changed, 28 insertions(+), 1 deletion(-)
+ fs/btrfs/extent-tree.c | 57 +++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 56 insertions(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 3d9fe58c0080..63a6b5d36ac1 100644
+index 63a6b5d36ac1..3578fa5b30ef 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -9717,6 +9717,8 @@ static int find_first_block_group(struct btrfs_fs_info *fs_info,
- 	int ret = 0;
- 	struct btrfs_key found_key;
- 	struct extent_buffer *leaf;
-+	struct btrfs_block_group_item bg;
-+	u64 flags;
- 	int slot;
+@@ -10030,6 +10030,61 @@ btrfs_create_block_group_cache(struct btrfs_fs_info *fs_info,
+ 	return cache;
+ }
  
- 	ret = btrfs_search_slot(NULL, root, key, path, 0, 0);
-@@ -9751,8 +9753,33 @@ static int find_first_block_group(struct btrfs_fs_info *fs_info,
- 			"logical %llu len %llu found bg but no related chunk",
- 					  found_key.objectid, found_key.offset);
- 				ret = -ENOENT;
-+			} else if (em->start != found_key.objectid ||
-+				   em->len != found_key.offset) {
-+				btrfs_err(fs_info,
-+		"block group %llu len %llu mismatch with chunk %llu len %llu",
-+					  found_key.objectid, found_key.offset,
-+					  em->start, em->len);
-+				ret = -EUCLEAN;
- 			} else {
--				ret = 0;
-+				read_extent_buffer(leaf, &bg,
-+					btrfs_item_ptr_offset(leaf, slot),
-+					sizeof(bg));
-+				flags = btrfs_block_group_flags(&bg) &
-+					BTRFS_BLOCK_GROUP_TYPE_MASK;
 +
-+				if (flags != (em->map_lookup->type &
-+					      BTRFS_BLOCK_GROUP_TYPE_MASK)) {
-+					btrfs_err(fs_info,
-+"block group %llu len %llu type flags 0x%llx mismatch with chunk type flags 0x%llx",
-+						found_key.objectid,
-+						found_key.offset,
-+						flags,
-+						(BTRFS_BLOCK_GROUP_TYPE_MASK &
-+						 em->map_lookup->type));
-+					ret = -EUCLEAN;
-+				} else {
-+					ret = 0;
-+				}
- 			}
- 			free_extent_map(em);
- 			goto out;
++/*
++ * Iterate all chunks and verify each of them has corresponding block group
++ */
++static int check_chunk_block_group_mappings(struct btrfs_fs_info *fs_info)
++{
++	struct btrfs_mapping_tree *map_tree = &fs_info->mapping_tree;
++	struct extent_map *em;
++	struct btrfs_block_group_cache *bg;
++	u64 start = 0;
++	int ret = 0;
++
++	while (1) {
++		read_lock(&map_tree->map_tree.lock);
++		/*
++		 * lookup_extent_mapping will return the first extent map
++		 * intersects the range, so set @len to 1 is enough to get
++		 * the first chunk.
++		 */
++		em = lookup_extent_mapping(&map_tree->map_tree, start, 1);
++		read_unlock(&map_tree->map_tree.lock);
++		if (!em)
++			break;
++
++		bg = btrfs_lookup_block_group(fs_info, em->start);
++		if (!bg) {
++			btrfs_err(fs_info,
++	"chunk start=%llu len=%llu doesn't have corresponding block group",
++				     em->start, em->len);
++			ret = -EUCLEAN;
++			free_extent_map(em);
++			break;
++		}
++		if (bg->key.objectid != em->start ||
++		    bg->key.offset != em->len ||
++		    (bg->flags & BTRFS_BLOCK_GROUP_TYPE_MASK) !=
++		    (em->map_lookup->type & BTRFS_BLOCK_GROUP_TYPE_MASK)) {
++			btrfs_err(fs_info,
++"chunk start=%llu len=%llu flags=0x%llx doesn't match with block group start=%llu len=%llu flags=0x%llx",
++				em->start, em->len,
++				em->map_lookup->type & BTRFS_BLOCK_GROUP_TYPE_MASK,
++				bg->key.objectid, bg->key.offset,
++				bg->flags & BTRFS_BLOCK_GROUP_TYPE_MASK);
++			ret = -EUCLEAN;
++			free_extent_map(em);
++			btrfs_put_block_group(bg);
++			break;
++		}
++		start = em->start + em->len;
++		free_extent_map(em);
++		btrfs_put_block_group(bg);
++	}
++	return ret;
++}
++
+ int btrfs_read_block_groups(struct btrfs_fs_info *info)
+ {
+ 	struct btrfs_path *path;
+@@ -10203,7 +10258,7 @@ int btrfs_read_block_groups(struct btrfs_fs_info *info)
+ 
+ 	btrfs_add_raid_kobjects(info);
+ 	init_global_block_rsv(info);
+-	ret = 0;
++	ret = check_chunk_block_group_mappings(info);
+ error:
+ 	btrfs_free_path(path);
+ 	return ret;
 -- 
 2.18.0
 

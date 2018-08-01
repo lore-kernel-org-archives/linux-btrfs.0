@@ -1,83 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f193.google.com ([209.85.220.193]:38856 "EHLO
-        mail-qk0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2387657AbeHAMtL (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Aug 2018 08:49:11 -0400
-Received: by mail-qk0-f193.google.com with SMTP id 126-v6so12331498qke.5
-        for <linux-btrfs@vger.kernel.org>; Wed, 01 Aug 2018 04:03:57 -0700 (PDT)
-Message-ID: <b5b90ff75a222ce3ace37dbd625916ae9aaa9830.camel@poochiereds.net>
-Subject: Re: [PATCH 4/4] locks: map correct ino/dev pairs when exporting to
- userspace
-From: Jeff Layton <jlayton@poochiereds.net>
-To: Mark Fasheh <mfasheh@suse.de>, Al Viro <viro@ZenIV.linux.org.uk>,
-        linux-fsdevel@vger.kernel.org
-Cc: linux-btrfs@vger.kernel.org, Andrew Morton <akpm@linux-foundation.org>,
-        Amir Goldstein <amir73il@gmail.com>, linux-unionfs@vger.kernel.org,
-        Jeff Mahoney <jeffm@suse.com>, linux-nfs@vger.kernel.org
-Date: Wed, 01 Aug 2018 07:03:54 -0400
-In-Reply-To: <20180731211045.5671-5-mfasheh@suse.de>
-References: <20180731211045.5671-1-mfasheh@suse.de>
-         <20180731211045.5671-5-mfasheh@suse.de>
-Content-Type: text/plain; charset="UTF-8"
-Mime-Version: 1.0
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:65449 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1726688AbeHAFQE (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Aug 2018 01:16:04 -0400
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
+        by cn.fujitsu.com (Postfix) with ESMTP id D1B674B6ADE8
+        for <linux-btrfs@vger.kernel.org>; Wed,  1 Aug 2018 11:32:37 +0800 (CST)
+From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH 0/7] Some unused parameter cleanup
+Date: Wed, 1 Aug 2018 11:32:24 +0800
+Message-ID: <20180801033231.23166-1-lufq.fnst@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 2018-07-31 at 14:10 -0700, Mark Fasheh wrote:
-> /proc/locks does not always print the correct inode number/device pair.
-> Update lock_get_status() to use vfs_map_unique_ino_dev() to get the real,
-> unique values for userspace.
-> 
-> Signed-off-by: Mark Fasheh <mfasheh@suse.de>
-> ---
->  fs/locks.c | 12 +++++++++---
->  1 file changed, 9 insertions(+), 3 deletions(-)
-> 
-> diff --git a/fs/locks.c b/fs/locks.c
-> index db7b6917d9c5..3a012df87fd8 100644
-> --- a/fs/locks.c
-> +++ b/fs/locks.c
-> @@ -2621,6 +2621,7 @@ static void lock_get_status(struct seq_file *f, struct file_lock *fl,
->  			    loff_t id, char *pfx)
->  {
->  	struct inode *inode = NULL;
-> +	struct dentry *dentry;
->  	unsigned int fl_pid;
->  	struct pid_namespace *proc_pidns = file_inode(f->file)->i_sb->s_fs_info;
->  
-> @@ -2633,8 +2634,10 @@ static void lock_get_status(struct seq_file *f, struct file_lock *fl,
->  	if (fl_pid == 0)
->  		return;
->  
-> -	if (fl->fl_file != NULL)
-> +	if (fl->fl_file != NULL) {
->  		inode = locks_inode(fl->fl_file);
-> +		dentry = file_dentry(fl->fl_file);
-> +	}
->  
->  	seq_printf(f, "%lld:%s ", id, pfx);
->  	if (IS_POSIX(fl)) {
-> @@ -2681,10 +2684,13 @@ static void lock_get_status(struct seq_file *f, struct file_lock *fl,
->  			       : (fl->fl_type == F_WRLCK) ? "WRITE" : "READ ");
->  	}
->  	if (inode) {
-> +		__u64 ino;
-> +		dev_t dev;
-> +
-> +		vfs_map_unique_ino_dev(dentry, &ino, &dev);
+PATCH 1-2 remove all unused fs_info parameter from delayed-inode.c
+PATCH 3-5 remove all unused fs_info parameter from root-tree.c
+PATCH 6-7 some cleanup for btrfs_unlink_subvol
 
-This code is under a spinlock (blocked_locks_lock or ctx->flc_lock). I
-don't think it'll be ok to call ->getattr while holding a spinlock.
+Lu Fengqi (7):
+  btrfs: Remove fs_info from btrfs_insert_delayed_dir_index
+  btrfs: Remove fs_info from btrfs_delete_delayed_dir_index
+  btrfs: Remove fs_info from btrfs_del_root
+  btrfs: Remove fs_info from btrfs_del_root_ref
+  btrfs: Remove fs_info from btrfs_add_root_ref
+  btrfs: Remove root parameter from btrfs_unlink_subvol
+  btrfs: Remove redundant btrfs_release_path from btrfs_unlink_subvol
 
->  		/* userspace relies on this representation of dev_t */
->  		seq_printf(f, "%d %02x:%02x:%ld ", fl_pid,
-> -				MAJOR(inode->i_sb->s_dev),
-> -				MINOR(inode->i_sb->s_dev), inode->i_ino);
-> +				MAJOR(dev), MINOR(dev), inode->i_ino);
->  	} else {
->  		seq_printf(f, "%d <none>:0 ", fl_pid);
->  	}
+ fs/btrfs/ctree.h           | 16 +++++++--------
+ fs/btrfs/delayed-inode.c   | 10 ++++------
+ fs/btrfs/delayed-inode.h   |  2 --
+ fs/btrfs/dir-item.c        |  4 ++--
+ fs/btrfs/extent-tree.c     |  2 +-
+ fs/btrfs/free-space-tree.c |  2 +-
+ fs/btrfs/inode.c           | 41 +++++++++++++++-----------------------
+ fs/btrfs/ioctl.c           |  3 +--
+ fs/btrfs/qgroup.c          |  2 +-
+ fs/btrfs/root-tree.c       | 22 ++++++++++----------
+ fs/btrfs/transaction.c     |  2 +-
+ 11 files changed, 44 insertions(+), 62 deletions(-)
 
 -- 
-Jeff Layton <jlayton@poochiereds.net>
+2.18.0
+
+
 

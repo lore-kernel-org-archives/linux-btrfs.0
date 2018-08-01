@@ -1,69 +1,100 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:50368 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1732651AbeHBQ6G (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 2 Aug 2018 12:58:06 -0400
-Date: Thu, 2 Aug 2018 17:06:27 +0200
-From: David Sterba <dsterba@suse.cz>
-To: fdmanana@kernel.org
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2] Btrfs: fix mount failure after fsync due to hard link
- recreation
-Message-ID: <20180802150626.GP3218@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20180719180154.20125-1-fdmanana@kernel.org>
- <20180720095906.3675-1-fdmanana@kernel.org>
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:8376 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1725957AbeHAEbs (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Aug 2018 00:31:48 -0400
+Subject: Re: [PATCH v2 1/6] btrfs: Check each block group has corresponding
+ chunk at mount time
+To: Qu Wenruo <wqu@suse.com>, <linux-btrfs@vger.kernel.org>
+References: <20180801023721.32143-1-wqu@suse.com>
+ <20180801023721.32143-2-wqu@suse.com>
+From: Su Yue <suy.fnst@cn.fujitsu.com>
+Message-ID: <b0c89abc-5977-fe4d-8352-402e869e483d@cn.fujitsu.com>
+Date: Wed, 1 Aug 2018 10:54:58 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180720095906.3675-1-fdmanana@kernel.org>
+In-Reply-To: <20180801023721.32143-2-wqu@suse.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jul 20, 2018 at 10:59:06AM +0100, fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
-> 
-> If we end up with logging an inode reference item which has the same name
-> but different index from the one we have persisted, we end up failing when
-> replaying the log with an errno value of -EEXIST. The error comes from
-> btrfs_add_link(), which is called from add_inode_ref(), when we are
-> replaying an inode reference item.
-> 
-> Example scenario where this happens:
-> 
->   $ mkfs.btrfs -f /dev/sdb
->   $ mount /dev/sdb /mnt
-> 
->   $ touch /mnt/foo
->   $ ln /mnt/foo /mnt/bar
-> 
->   $ sync
-> 
->   # Rename the first hard link (foo) to a new name and rename the second
->   # hard link (bar) to the old name of the first hard link (foo).
->   $ mv /mnt/foo /mnt/qwerty
->   $ mv /mnt/bar /mnt/foo
-> 
->   # Create a new file, in the same parent directory, with the old name of
->   # the second hard link (bar) and fsync this new file.
->   # We do this instead of calling fsync on foo/qwerty because if we did
->   # that the fsync resulted in a full transaction commit, not triggering
->   # the problem.
->   $ touch /mnt/bar
->   $ xfs_io -c "fsync" /mnt/bar
-> 
->   <power fail>
-> 
->   $ mount /dev/sdb /mnt
->   mount: mount /dev/sdb on /mnt failed: File exists
-> 
-> So fix this by checking if a conflicting inode reference exists (same
-> name, same parent but different index), removing it (and the associated
-> dir index entries from the parent inode) if it exists, before attempting
-> to add the new reference.
-> 
-> A test case for fstests follows soon.
-> 
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
 
-The patch has been in misc-next for more than a weak but I probably did
-not let you know, so here goes. Thanks.
+
+On 08/01/2018 10:37 AM, Qu Wenruo wrote:
+> A crafted btrfs with incorrect chunk<->block group mapping, it could leads
+> to a lot of unexpected behavior.
+> 
+> Although the crafted image can be catched by block group item checker
+> added in "[PATCH] btrfs: tree-checker: Verify block_group_item", if one
+> crafted a valid enough block group item which can pass above check but
+> still mismatch with existing chunk, it could cause a lot of undefined
+> behavior.
+> 
+> This patch will add extra block group -> chunk mapping check, to ensure
+> we have a completely matching (start, len, flags) chunk for each block
+> group at mount time.
+> 
+> Here we reuse the original find_first_block_group(), which is already
+> doing basic bg -> chunk check, adding more check on start/len and type
+> flags.
+> 
+> Link: https://bugzilla.kernel.org/show_bug.cgi?id=199837
+> Reported-by: Xu Wen <wen.xu@gatech.edu>
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+
+Reviewed-by: Su Yue <suy.fnst@cn.fujitsu.com>
+
+> ---
+>   fs/btrfs/extent-tree.c | 29 ++++++++++++++++++++++++++++-
+>   1 file changed, 28 insertions(+), 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index 3d9fe58c0080..63a6b5d36ac1 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -9717,6 +9717,8 @@ static int find_first_block_group(struct btrfs_fs_info *fs_info,
+>   	int ret = 0;
+>   	struct btrfs_key found_key;
+>   	struct extent_buffer *leaf;
+> +	struct btrfs_block_group_item bg;
+> +	u64 flags;
+>   	int slot;
+>   
+>   	ret = btrfs_search_slot(NULL, root, key, path, 0, 0);
+> @@ -9751,8 +9753,33 @@ static int find_first_block_group(struct btrfs_fs_info *fs_info,
+>   			"logical %llu len %llu found bg but no related chunk",
+>   					  found_key.objectid, found_key.offset);
+>   				ret = -ENOENT;
+> +			} else if (em->start != found_key.objectid ||
+> +				   em->len != found_key.offset) {
+> +				btrfs_err(fs_info,
+> +		"block group %llu len %llu mismatch with chunk %llu len %llu",
+> +					  found_key.objectid, found_key.offset,
+> +					  em->start, em->len);
+> +				ret = -EUCLEAN;
+>   			} else {
+> -				ret = 0;
+> +				read_extent_buffer(leaf, &bg,
+> +					btrfs_item_ptr_offset(leaf, slot),
+> +					sizeof(bg));
+> +				flags = btrfs_block_group_flags(&bg) &
+> +					BTRFS_BLOCK_GROUP_TYPE_MASK;
+> +
+> +				if (flags != (em->map_lookup->type &
+> +					      BTRFS_BLOCK_GROUP_TYPE_MASK)) {
+> +					btrfs_err(fs_info,
+> +"block group %llu len %llu type flags 0x%llx mismatch with chunk type flags 0x%llx",
+> +						found_key.objectid,
+> +						found_key.offset,
+> +						flags,
+> +						(BTRFS_BLOCK_GROUP_TYPE_MASK &
+> +						 em->map_lookup->type));
+> +					ret = -EUCLEAN;
+> +				} else {
+> +					ret = 0;
+> +				}
+>   			}
+>   			free_extent_map(em);
+>   			goto out;
+> 
+
+

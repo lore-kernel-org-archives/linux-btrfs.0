@@ -1,114 +1,138 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:51258 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:51268 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725933AbeHAEUz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 1 Aug 2018 00:20:55 -0400
+        id S1725933AbeHAEU7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 1 Aug 2018 00:20:59 -0400
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id E4847ACD7
-        for <linux-btrfs@vger.kernel.org>; Wed,  1 Aug 2018 02:37:38 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id E6DE7AE2E
+        for <linux-btrfs@vger.kernel.org>; Wed,  1 Aug 2018 02:37:42 +0000 (UTC)
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 2/6] btrfs: Verify every chunk has corresponding block group at mount time
-Date: Wed,  1 Aug 2018 10:37:17 +0800
-Message-Id: <20180801023721.32143-3-wqu@suse.com>
+Subject: [PATCH v2 3/6] btrfs: Remove unused function btrfs_account_dev_extents_size()
+Date: Wed,  1 Aug 2018 10:37:18 +0800
+Message-Id: <20180801023721.32143-4-wqu@suse.com>
 In-Reply-To: <20180801023721.32143-1-wqu@suse.com>
 References: <20180801023721.32143-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If a crafted btrfs has missing block group items, it could cause
-unexpected behavior and breaks our expectation on 1:1
-chunk<->block group mapping.
+This function is never used by any one in kernel, just remove it.
 
-Although we added block group -> chunk mapping check, we still need
-chunk -> block group mapping check.
-
-This patch will do extra check to ensure each chunk has its
-corresponding block group.
-
-Link: https://bugzilla.kernel.org/show_bug.cgi?id=199847
-Reported-by: Xu Wen <wen.xu@gatech.edu>
 Signed-off-by: Qu Wenruo <wqu@suse.com>
-Reviewed-by: Gu Jinxiang <gujx@cn.fujitsu.com>
 ---
- fs/btrfs/extent-tree.c | 57 +++++++++++++++++++++++++++++++++++++++++-
- 1 file changed, 56 insertions(+), 1 deletion(-)
+ fs/btrfs/volumes.c | 85 ----------------------------------------------
+ fs/btrfs/volumes.h |  2 --
+ 2 files changed, 87 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 63a6b5d36ac1..3578fa5b30ef 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -10030,6 +10030,61 @@ btrfs_create_block_group_cache(struct btrfs_fs_info *fs_info,
- 	return cache;
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index b33bf29130b6..e6a8e4aabc66 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1259,91 +1259,6 @@ int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
+ 	return ret;
  }
  
-+
-+/*
-+ * Iterate all chunks and verify each of them has corresponding block group
-+ */
-+static int check_chunk_block_group_mappings(struct btrfs_fs_info *fs_info)
-+{
-+	struct btrfs_mapping_tree *map_tree = &fs_info->mapping_tree;
-+	struct extent_map *em;
-+	struct btrfs_block_group_cache *bg;
-+	u64 start = 0;
-+	int ret = 0;
-+
-+	while (1) {
-+		read_lock(&map_tree->map_tree.lock);
-+		/*
-+		 * lookup_extent_mapping will return the first extent map
-+		 * intersects the range, so set @len to 1 is enough to get
-+		 * the first chunk.
-+		 */
-+		em = lookup_extent_mapping(&map_tree->map_tree, start, 1);
-+		read_unlock(&map_tree->map_tree.lock);
-+		if (!em)
-+			break;
-+
-+		bg = btrfs_lookup_block_group(fs_info, em->start);
-+		if (!bg) {
-+			btrfs_err(fs_info,
-+	"chunk start=%llu len=%llu doesn't have corresponding block group",
-+				     em->start, em->len);
-+			ret = -EUCLEAN;
-+			free_extent_map(em);
-+			break;
-+		}
-+		if (bg->key.objectid != em->start ||
-+		    bg->key.offset != em->len ||
-+		    (bg->flags & BTRFS_BLOCK_GROUP_TYPE_MASK) !=
-+		    (em->map_lookup->type & BTRFS_BLOCK_GROUP_TYPE_MASK)) {
-+			btrfs_err(fs_info,
-+"chunk start=%llu len=%llu flags=0x%llx doesn't match with block group start=%llu len=%llu flags=0x%llx",
-+				em->start, em->len,
-+				em->map_lookup->type & BTRFS_BLOCK_GROUP_TYPE_MASK,
-+				bg->key.objectid, bg->key.offset,
-+				bg->flags & BTRFS_BLOCK_GROUP_TYPE_MASK);
-+			ret = -EUCLEAN;
-+			free_extent_map(em);
-+			btrfs_put_block_group(bg);
-+			break;
-+		}
-+		start = em->start + em->len;
-+		free_extent_map(em);
-+		btrfs_put_block_group(bg);
-+	}
-+	return ret;
-+}
-+
- int btrfs_read_block_groups(struct btrfs_fs_info *info)
- {
- 	struct btrfs_path *path;
-@@ -10203,7 +10258,7 @@ int btrfs_read_block_groups(struct btrfs_fs_info *info)
- 
- 	btrfs_add_raid_kobjects(info);
- 	init_global_block_rsv(info);
+-/* helper to account the used device space in the range */
+-int btrfs_account_dev_extents_size(struct btrfs_device *device, u64 start,
+-				   u64 end, u64 *length)
+-{
+-	struct btrfs_key key;
+-	struct btrfs_root *root = device->fs_info->dev_root;
+-	struct btrfs_dev_extent *dev_extent;
+-	struct btrfs_path *path;
+-	u64 extent_end;
+-	int ret;
+-	int slot;
+-	struct extent_buffer *l;
+-
+-	*length = 0;
+-
+-	if (start >= device->total_bytes ||
+-		test_bit(BTRFS_DEV_STATE_REPLACE_TGT, &device->dev_state))
+-		return 0;
+-
+-	path = btrfs_alloc_path();
+-	if (!path)
+-		return -ENOMEM;
+-	path->reada = READA_FORWARD;
+-
+-	key.objectid = device->devid;
+-	key.offset = start;
+-	key.type = BTRFS_DEV_EXTENT_KEY;
+-
+-	ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
+-	if (ret < 0)
+-		goto out;
+-	if (ret > 0) {
+-		ret = btrfs_previous_item(root, path, key.objectid, key.type);
+-		if (ret < 0)
+-			goto out;
+-	}
+-
+-	while (1) {
+-		l = path->nodes[0];
+-		slot = path->slots[0];
+-		if (slot >= btrfs_header_nritems(l)) {
+-			ret = btrfs_next_leaf(root, path);
+-			if (ret == 0)
+-				continue;
+-			if (ret < 0)
+-				goto out;
+-
+-			break;
+-		}
+-		btrfs_item_key_to_cpu(l, &key, slot);
+-
+-		if (key.objectid < device->devid)
+-			goto next;
+-
+-		if (key.objectid > device->devid)
+-			break;
+-
+-		if (key.type != BTRFS_DEV_EXTENT_KEY)
+-			goto next;
+-
+-		dev_extent = btrfs_item_ptr(l, slot, struct btrfs_dev_extent);
+-		extent_end = key.offset + btrfs_dev_extent_length(l,
+-								  dev_extent);
+-		if (key.offset <= start && extent_end > end) {
+-			*length = end - start + 1;
+-			break;
+-		} else if (key.offset <= start && extent_end > start)
+-			*length += extent_end - start;
+-		else if (key.offset > start && extent_end <= end)
+-			*length += extent_end - key.offset;
+-		else if (key.offset > start && key.offset <= end) {
+-			*length += end - key.offset + 1;
+-			break;
+-		} else if (key.offset > end)
+-			break;
+-
+-next:
+-		path->slots[0]++;
+-	}
 -	ret = 0;
-+	ret = check_chunk_block_group_mappings(info);
- error:
- 	btrfs_free_path(path);
- 	return ret;
+-out:
+-	btrfs_free_path(path);
+-	return ret;
+-}
+-
+ static int contains_pending_extent(struct btrfs_transaction *transaction,
+ 				   struct btrfs_device *device,
+ 				   u64 *start, u64 len)
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 77e6004b6cb9..6d4f38ad9f5c 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -384,8 +384,6 @@ static inline enum btrfs_map_op btrfs_op(struct bio *bio)
+ 	}
+ }
+ 
+-int btrfs_account_dev_extents_size(struct btrfs_device *device, u64 start,
+-				   u64 end, u64 *length);
+ void btrfs_get_bbio(struct btrfs_bio *bbio);
+ void btrfs_put_bbio(struct btrfs_bio *bbio);
+ int btrfs_map_block(struct btrfs_fs_info *fs_info, enum btrfs_map_op op,
 -- 
 2.18.0
 

@@ -1,109 +1,104 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.21]:43835 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.17.21]:57379 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726141AbeHBIwR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 2 Aug 2018 04:52:17 -0400
+        id S1726141AbeHBI5T (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 2 Aug 2018 04:57:19 -0400
 Subject: Re: BTRFS and databases
-To: MegaBrutal <megabrutal@gmail.com>,
+To: Remi Gauvin <remi@georgianit.com>, MegaBrutal <megabrutal@gmail.com>,
         linux-btrfs <linux-btrfs@vger.kernel.org>
 References: <CAE8gLhm96B1xxoMv=sYuaNeLYRDP3YUw2qsKumpjLm+jJVjfQQ@mail.gmail.com>
+ <8b5d3277-1afc-9b10-2960-f9fd4396e2e1@georgianit.com>
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <1276acbf-a834-cd7e-1f06-56e13386a240@gmx.com>
-Date: Thu, 2 Aug 2018 15:02:26 +0800
+Message-ID: <46d12c3f-9756-99be-a99c-75af5acc3296@gmx.com>
+Date: Thu, 2 Aug 2018 15:07:25 +0800
 MIME-Version: 1.0
-In-Reply-To: <CAE8gLhm96B1xxoMv=sYuaNeLYRDP3YUw2qsKumpjLm+jJVjfQQ@mail.gmail.com>
+In-Reply-To: <8b5d3277-1afc-9b10-2960-f9fd4396e2e1@georgianit.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="RYjzS7kCKz7pbu9Xep85IbNqjkcvkbtu6"
+ boundary="f5pn0QE8o0EJ9aMrwItgZe0f4dlEsf4Ge"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---RYjzS7kCKz7pbu9Xep85IbNqjkcvkbtu6
-Content-Type: multipart/mixed; boundary="bvQ1KLIBwH5Ce3N0joSNLAWNbauGH3la4";
+--f5pn0QE8o0EJ9aMrwItgZe0f4dlEsf4Ge
+Content-Type: multipart/mixed; boundary="aXuXHZaL52LVxW90i4XVtqZloKVbBpaAi";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: MegaBrutal <megabrutal@gmail.com>,
+To: Remi Gauvin <remi@georgianit.com>, MegaBrutal <megabrutal@gmail.com>,
  linux-btrfs <linux-btrfs@vger.kernel.org>
-Message-ID: <1276acbf-a834-cd7e-1f06-56e13386a240@gmx.com>
+Message-ID: <46d12c3f-9756-99be-a99c-75af5acc3296@gmx.com>
 Subject: Re: BTRFS and databases
 References: <CAE8gLhm96B1xxoMv=sYuaNeLYRDP3YUw2qsKumpjLm+jJVjfQQ@mail.gmail.com>
-In-Reply-To: <CAE8gLhm96B1xxoMv=sYuaNeLYRDP3YUw2qsKumpjLm+jJVjfQQ@mail.gmail.com>
+ <8b5d3277-1afc-9b10-2960-f9fd4396e2e1@georgianit.com>
+In-Reply-To: <8b5d3277-1afc-9b10-2960-f9fd4396e2e1@georgianit.com>
 
---bvQ1KLIBwH5Ce3N0joSNLAWNbauGH3la4
+--aXuXHZaL52LVxW90i4XVtqZloKVbBpaAi
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
 
 
-On 2018=E5=B9=B408=E6=9C=8801=E6=97=A5 11:45, MegaBrutal wrote:
-> Hi all,
+On 2018=E5=B9=B408=E6=9C=8801=E6=97=A5 22:33, Remi Gauvin wrote:
+> On 2018-07-31 11:45 PM, MegaBrutal wrote:
 >=20
-> I know it's a decade-old question, but I'd like to hear your thoughts
-> of today. By now, I became a heavy BTRFS user. Almost everywhere I use
-> BTRFS, except in situations when it is obvious there is no benefit
-> (e.g. /var/log, /boot). At home, all my desktop, laptop and server
-> computers are mainly running on BTRFS with only a few file systems on
-> ext4. I even installed BTRFS in corporate productive systems (in those
-> cases, the systems were mainly on ext4; but there were some specific
-> file systems those exploited BTRFS features).
+>> I know that with nodatacow, I take away most of the benefits of BTRFS
+>> (those are actually hurting database performance =E2=80=93 the exact C=
+oW
+>> nature that is elsewhere a blessing, with databases it's a drawback).
+>> But are there any advantages of still sticking to BTRFS for a database=
+
+>> albeit CoW is disabled, or should I just return to the old and
+>> reliable ext4 for those applications?
+>>
 >=20
-> But there is still one question that I can't get over: if you store a
-> database (e.g. MySQL), would you prefer having a BTRFS volume mounted
-> with nodatacow, or would you just simply use ext4?
->=20
-> I know that with nodatacow, I take away most of the benefits of BTRFS
-> (those are actually hurting database performance =E2=80=93 the exact Co=
-W
-> nature that is elsewhere a blessing, with databases it's a drawback).
-> But are there any advantages of still sticking to BTRFS for a database
-> albeit CoW is disabled, or should I just return to the old and
-> reliable ext4 for those applications?
+> Be very careful about nodatacow and btrfs 'raid'.  BTRFS has no data
+> synching mechanism for raid,
 
-Since I'm not a expert in database, so I can totally be wrong, but what
-about completely disabling database write-ahead-log (WAL), and let
-btrfs' data CoW to handle data consistency completely?
+Not completely the case though.
+Discussed in another thread, for nodatacow/nodatasum case we indeed
+don't have any anyway to keep data correct.
 
-If there is some concern about the commit interval, it could be tuned by
-commit=3D mount option.
+But for RAID1 datacow or metadata case, it should not be case.
+For tree block, we have generation/first_key/level check done when
+searching tree blocks.
+And for scrub, we also have generation check, so in theory we could
+recovery such problem during scrub.
 
-It may either lead to super unexpected fast behavior, or some unknown
-disaster. (And for latter, we at least could get some interesting
-feedback and bugs to fix)
+For data, since we have cow (along with csum), it should be no problem
+to recover.
+
+And since datacow is used, transaction on each device should be atomic,
+thus we should be able to handle one-time device out-of-sync case.
+(For multiple out-of-sync events, we don't have any good way though).
+
+Or did I miss something from previous discussion?
 
 Thanks,
 Qu
 
->=20
->=20
-> Kind regards,
-> MegaBrutal
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> so if your mirrors end up different
+> somehow, your Array is going to be inconsistent.
 >=20
 
 
---bvQ1KLIBwH5Ce3N0joSNLAWNbauGH3la4--
+--aXuXHZaL52LVxW90i4XVtqZloKVbBpaAi--
 
---RYjzS7kCKz7pbu9Xep85IbNqjkcvkbtu6
+--f5pn0QE8o0EJ9aMrwItgZe0f4dlEsf4Ge
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAltirIMACgkQwj2R86El
-/qiw7Af/bTb1gEnFhib9mgUXLta8b49voUQL1QTmBl6ppYBFjT2lVIm3AO4u1YLk
-Fm+hz5LdlRHzE7bv/Qtp5/55E15DxpYpMlu9vjRPpPpbVWfPQZMk65deFP4H4jos
-5Dp3Acdm3ZTUvjh5v139rp0QCrFzBuzOua2OL23PMiymj29LtKPZs7FO/vfinmNA
-GY7kVbvzhcNXK8NwEvuiuvgUNmU7sivNRSTTlzAyoIUjb6jF7i5YLHAfOLf64D9G
-ysWzLi7gkoLLHF+hsoT4SPfwgwDOgxp0mN+bKIR+/eN1MdTOTnjfb8bOXP122bW7
-Zu2mJhChEGCZ88ZBNeYMvSHNljHr/Q==
-=XJfX
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAltira0ACgkQwj2R86El
+/qiPUQgAkbsCu/upKtVBADoF6/lKhxO/Ok4JPFEpBqFDocsDwuxBcoT1sboq6j0t
+w6UtXxffjIehUjxquAgTjv47+KCEddTS/NlYCnXq05//ysTDnljUR/cB32uQ3zYZ
+MLJyaAOIn+cU6ykmwY5Ufe1jSZcXDMiEeYBzBfcDo6MIyF8IUxvHQ34EYyMyooZN
+Cxdq68Ckvg+1i58jST9p/HDIHXA3ftMrb5MovrfEs2v1kz5QdE6L6k2+mLf8yPFc
+eR5FoFl2COoEueKa3Byp7GmkKm8Cl0jGP253BhksT+6YYB4h7ccSjZuitAmHx/+t
+fZbSCwttLc8pSq8h6AJkj6QlmbB1mA==
+=yRAJ
 -----END PGP SIGNATURE-----
 
---RYjzS7kCKz7pbu9Xep85IbNqjkcvkbtu6--
+--f5pn0QE8o0EJ9aMrwItgZe0f4dlEsf4Ge--

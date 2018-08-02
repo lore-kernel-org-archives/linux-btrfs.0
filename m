@@ -1,145 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ua0-f181.google.com ([209.85.217.181]:40170 "EHLO
-        mail-ua0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2387538AbeHBRte (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Aug 2018 13:49:34 -0400
-Received: by mail-ua0-f181.google.com with SMTP id m13-v6so1796533uaq.7
-        for <linux-btrfs@vger.kernel.org>; Thu, 02 Aug 2018 08:57:47 -0700 (PDT)
+Received: from mx2.suse.de ([195.135.220.15]:55466 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1727079AbeHBScF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 2 Aug 2018 14:32:05 -0400
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 01B3AAD4C
+        for <linux-btrfs@vger.kernel.org>; Thu,  2 Aug 2018 16:40:09 +0000 (UTC)
+Date: Thu, 2 Aug 2018 18:40:04 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2 0/6] btrfs: Enhanced validation check for fuzzed images
+Message-ID: <20180802164004.GR3218@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20180801023721.32143-1-wqu@suse.com>
 MIME-Version: 1.0
-In-Reply-To: <CAN4oSBczyZBddarXcLKAjOZ=xQsFBSjbbJi-V20UB27Z5x+Y5g@mail.gmail.com>
-References: <CAN4oSBc8zM+OZEXAGygwf3RMoyEKLmrk--_HqwMsG1HVGJCf2Q@mail.gmail.com>
- <CAJCQCtQWYM5Hb6-9QhRujcrP9Ou8u5N+RFLFzA=Za7Z1FeuakQ@mail.gmail.com> <CAN4oSBczyZBddarXcLKAjOZ=xQsFBSjbbJi-V20UB27Z5x+Y5g@mail.gmail.com>
-From: Cerem Cem ASLAN <ceremcem@ceremcem.net>
-Date: Thu, 2 Aug 2018 18:57:46 +0300
-Message-ID: <CAN4oSBfGK_vTeSVi+47GoC9i155oyuvvczC5b0vVGEapHY+m4g@mail.gmail.com>
-Subject: Re: Unmountable root partition
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: multipart/alternative; boundary="0000000000004ba624057275df59"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20180801023721.32143-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---0000000000004ba624057275df59
-Content-Type: text/plain; charset="UTF-8"
+On Wed, Aug 01, 2018 at 10:37:15AM +0800, Qu Wenruo wrote:
+> The branch can be fetched from the following git repo:
+> https://github.com/adam900710/linux/tree/tree_checker_enhance
+> 
+> It's based on v4.18-rc1, with 3 patches already merged into misc-next.
+> 
+> This patchset introduced the following enhanced validation check:
+> 1) chunk/block group/dev extent cross check
+>    Unlike extent tree, such cross check can be implemented pretty easy
+>    with minimal mount time impact.
+>    Now the kernel could do chunk/bg/dev extent check as good as btrfs
+>    check.
+> 
+> 2) Locking test to avoid possible deadlock due to extent tree corruption
+>    Unfortunately, for extent tree we can't do really much cross check.
+>    Instead we use the selftest from btrfs_tree_lock() to detect and
+>    avoid deadlock caused by corrupted extent tree.
 
-FYI: According to ddrescue, there were read errors in +45% of the
-partition. There were no chances to save anything from the disk.
+Great, thanks.
 
-2018-08-01 15:07 GMT+03:00 Cerem Cem ASLAN <ceremcem@ceremcem.net>:
+> The 3rd patch "btrfs: Remove unused function btrfs_account_dev_extents_size()"
+> has also been merged into misc-next.
+> 
+> changelog:
+> v2:
+>   Added reviewed-by tags from Gu and Nikolay.
+>   Address comment from David for the 4th patch
+>   Address comment from Gu for the 2nd patch.
 
-> Yes, command output is as is, because I just copied and pasted into the
-> mail. When I omit the `-t btrfs` part, result is the same.
->
-> I'm now trying to rescue what I can, so getting a image dump with
-> `ddrescue`. It's read about 25% without any errors but it will be expected
-> to finish in 6 hours. Then I'll try btrfscue to see what happens.
->
-> I know it's totally my fault because I must be ready for a total
-> disk/pc/building burn out. Lessons learned.
->
-> 2018-08-01 8:32 GMT+03:00 Chris Murphy <lists@colorremedies.com>:
->
->> On Tue, Jul 31, 2018 at 12:03 PM, Cerem Cem ASLAN <ceremcem@ceremcem.net>
->> wrote:
->>
->> > 3. mount -t btrfs /dev/mapper/foo--vg-root /mnt/foo
->> > Gives the following error:
->> >
->> > mount: wrong fs type, bad option, bad superblock on ...
->> >
->> > 4. dmesg | tail
->> > Outputs the following:
->> >
->> >
->> > [17755.840916] sd 3:0:0:0: [sda] tag#0 FAILED Result:
->> > hostbyte=DID_BAD_TARGET driverbyte=DRIVER_OK
->> > [17755.840919] sd 3:0:0:0: [sda] tag#0 CDB: Read(10) 28 00 00 07 c0 02
->> 00 00
->> > 02 00
->> > [17755.840921] blk_update_request: I/O error, dev sda, sector 507906
->> > [17755.840941] EXT4-fs (dm-4): unable to read superblock
->>
->>
->> Are you sure this is the output for the command? Because you're
->> explicitly asking for type btrfs, which fails, and then the kernel
->> reports EXT4 superblock unreadable. What do you get if you omit -t
->> btrfs and just let it autodetect?
->>
->> But yeah, this is an IO error from the device and there's nothing
->> Btrfs can do about that unless there is DUP or raid1+ metadata
->> available.
->>
->> Is it possible this LV was accidentally reformatted ext4?
->>
->>
->> --
->> Chris Murphy
->>
->
->
+Please rather write what did you fix and not who suggested that. There
+are many patches and iterations and I don't remember everything.
 
---0000000000004ba624057275df59
-Content-Type: text/html; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+> 
+> Qu Wenruo (6):
+>   btrfs: Check each block group has corresponding chunk at mount time
+>   btrfs: Verify every chunk has corresponding block group at mount time
+>   btrfs: Remove unused function btrfs_account_dev_extents_size()
+>   btrfs: Introduce mount time chunk <-> dev extent mapping check
+>   btrfs: Exit gracefully when failed to add chunk map
 
-<div dir=3D"ltr">FYI: According to ddrescue, there were read errors in +45%=
- of the partition. There were no chances to save anything from the disk.=C2=
-=A0</div><div class=3D"gmail_extra"><br><div class=3D"gmail_quote">2018-08-=
-01 15:07 GMT+03:00 Cerem Cem ASLAN <span dir=3D"ltr">&lt;<a href=3D"mailto:=
-ceremcem@ceremcem.net" target=3D"_blank">ceremcem@ceremcem.net</a>&gt;</spa=
-n>:<br><blockquote class=3D"gmail_quote" style=3D"margin:0 0 0 .8ex;border-=
-left:1px #ccc solid;padding-left:1ex"><div dir=3D"ltr">Yes, command output =
-is as is, because I just copied and pasted into the mail. When I omit the `=
--t btrfs` part, result is the same.=C2=A0<div><br></div><div>I&#39;m now tr=
-ying to rescue what I can, so getting a image dump with `ddrescue`. It&#39;=
-s read about 25% without any errors but it will be expected to finish in 6 =
-hours. Then I&#39;ll try=C2=A0btrfscue to see what happens.=C2=A0</div><div=
-><br></div><div>I know it&#39;s totally my fault because I must be ready fo=
-r a total disk/pc/building burn out. Lessons learned.=C2=A0</div></div><div=
- class=3D"HOEnZb"><div class=3D"h5"><div class=3D"gmail_extra"><br><div cla=
-ss=3D"gmail_quote">2018-08-01 8:32 GMT+03:00 Chris Murphy <span dir=3D"ltr"=
->&lt;<a href=3D"mailto:lists@colorremedies.com" target=3D"_blank">lists@col=
-orremedies.com</a>&gt;</span>:<br><blockquote class=3D"gmail_quote" style=
-=3D"margin:0 0 0 .8ex;border-left:1px #ccc solid;padding-left:1ex"><span>On=
- Tue, Jul 31, 2018 at 12:03 PM, Cerem Cem ASLAN &lt;<a href=3D"mailto:cerem=
-cem@ceremcem.net" target=3D"_blank">ceremcem@ceremcem.net</a>&gt; wrote:<br=
->
-<br>
-&gt; 3. mount -t btrfs /dev/mapper/foo--vg-root /mnt/foo<br>
-&gt; Gives the following error:<br>
-&gt;<br>
-&gt; mount: wrong fs type, bad option, bad superblock on ...<br>
-&gt;<br>
-&gt; 4. dmesg | tail<br>
-&gt; Outputs the following:<br>
-&gt;<br>
-&gt;<br>
-&gt; [17755.840916] sd 3:0:0:0: [sda] tag#0 FAILED Result:<br>
-&gt; hostbyte=3DDID_BAD_TARGET driverbyte=3DDRIVER_OK<br>
-&gt; [17755.840919] sd 3:0:0:0: [sda] tag#0 CDB: Read(10) 28 00 00 07 c0 02=
- 00 00<br>
-&gt; 02 00<br>
-&gt; [17755.840921] blk_update_request: I/O error, dev sda, sector 507906<b=
-r>
-&gt; [17755.840941] EXT4-fs (dm-4): unable to read superblock<br>
-<br>
-<br>
-</span>Are you sure this is the output for the command? Because you&#39;re<=
-br>
-explicitly asking for type btrfs, which fails, and then the kernel<br>
-reports EXT4 superblock unreadable. What do you get if you omit -t<br>
-btrfs and just let it autodetect?<br>
-<br>
-But yeah, this is an IO error from the device and there&#39;s nothing<br>
-Btrfs can do about that unless there is DUP or raid1+ metadata<br>
-available.<br>
-<br>
-Is it possible this LV was accidentally reformatted ext4?<br>
-<span class=3D"m_2351317195924769091HOEnZb"><font color=3D"#888888"><br>
-<br>
--- <br>
-Chris Murphy<br>
-</font></span></blockquote></div><br></div>
-</div></div></blockquote></div><br></div>
+The above merged, with some adjustments of changelogs or the error
+messages.
 
---0000000000004ba624057275df59--
+>   btrfs: locking: Allow btrfs_tree_lock() to return error to avoid
+>     deadlock
+
+I need to read and understand the explanation you posted, so this patch
+is not in misc-next, I'll add it to for-next after I'll do the first
+pass review.

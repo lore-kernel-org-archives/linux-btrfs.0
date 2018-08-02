@@ -1,85 +1,31 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:57674 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:42870 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1732443AbeHBRMe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 2 Aug 2018 13:12:34 -0400
-Date: Thu, 2 Aug 2018 17:20:51 +0200
+        id S1726177AbeHBVKI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 2 Aug 2018 17:10:08 -0400
+Date: Thu, 2 Aug 2018 21:17:34 +0200
 From: David Sterba <dsterba@suse.cz>
-To: fdmanana@kernel.org
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: send, fix incorrect file layout after hole
- punching beyond eof
-Message-ID: <20180802152051.GQ3218@twin.jikos.cz>
+To: Omar Sandoval <osandov@osandov.com>
+Cc: linux-btrfs@vger.kernel.org, kernel-team@fb.com,
+        David Sterba <dsterba@suse.com>
+Subject: Re: [PATCH v2 0/2] btrfs-progs: build improvements
+Message-ID: <20180802191734.GT3218@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <20180730113958.5178-1-fdmanana@kernel.org>
+References: <cover.1532637115.git.osandov@fb.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180730113958.5178-1-fdmanana@kernel.org>
+In-Reply-To: <cover.1532637115.git.osandov@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jul 30, 2018 at 12:39:58PM +0100, fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
+On Thu, Jul 26, 2018 at 01:34:37PM -0700, Omar Sandoval wrote:
+> From: Omar Sandoval <osandov@fb.com>
 > 
-> When doing an incremental send, if we have a file in the parent snapshot
-> that has prealloc extents beyond EOF and in the send snapshot it got a
-> hole punch that partially covers the prealloc extents, the send stream,
-> when replayed by a receiver, can result in a file that has a size bigger
-> than it should and filled with zeroes past the correct EOF.
+> Hi, Dave,
 > 
-> For example:
-> 
->   $ mkfs.btrfs -f /dev/sdb
->   $ mount /dev/sdb /mnt
-> 
->   $ xfs_io -f -c "falloc -k 0 4M" /mnt/foobar
->   $ xfs_io -c "pwrite -S 0xea 0 1M" /mnt/foobar
-> 
->   $ btrfs subvolume snapshot -r /mnt /mnt/snap1
->   $ btrfs send -f /tmp/1.send /mnt/snap1
-> 
->   $ xfs_io -c "fpunch 1M 2M" /mnt/foobar
-> 
->   $ btrfs subvolume snapshot -r /mnt /mnt/snap2
->   $ btrfs send -f /tmp/2.send -p /mnt/snap1 /mnt/snap2
-> 
->   $ stat --format %s /mnt/snap2/foobar
->   1048576
->   $ md5sum /mnt/snap2/foobar
->   d31659e82e87798acd4669a1e0a19d4f  /mnt/snap2/foobar
-> 
->   $ umount /mnt
->   $ mkfs.btrfs -f /dev/sdc
->   $ mount /dev/sdc /mnt
-> 
->   $ btrfs receive -f /mnt/1.snap /mnt
->   $ btrfs receive -f /mnt/2.snap /mnt
-> 
->   $ stat --format %s /mnt/snap2/foobar
->   3145728
->   # --> should be 1Mb and not 3Mb (which was the end offset of hole
->   #     punch operation)
->   $ md5sum /mnt/snap2/foobar
->   117baf295297c2a995f92da725b0b651  /mnt/snap2/foobar
->   # --> should be d31659e82e87798acd4669a1e0a19d4f as in the original fs
-> 
-> This issue actually happens only since commit ffa7c4296e93 ("Btrfs: send,
-> do not issue unnecessary truncate operations"), but before that commit we
-> were issuing a write operation full of zeroes (to "punch" a hole) which
-> was extending the file size beyond the correct value and then immediately
-> issue a truncate operation to the correct size and undoing the previous
-> write operation. Since the send protocol does not support fallocate, for
-> extent preallocation and hole punching, fix this by not even attempting
-> to send a "hole" (regular write full of zeroes) if it starts at an offset
-> greater then or equals to the file's size. This approach, besides being
-> much more simple then making send issue the truncate operation, adds the
-> benefit of avoiding the useless pair of write of zeroes and truncate
-> operations, saving time and IO at the receiver and reducing the size of
-> the send stream.
-> 
-> A test case for fstests follows soon.
-> 
-> CC: stable@vger.kernel.org # 4.17+
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> Here's v2 of "btrfs-progs: make all programs and libraries optional",
+> this time much less overkill. Now, it's just --disable-programs,
+> --disable-shared, and --disable-static. Based on your devel branch.
+> Please consider these for the next progs release.
 
-Added to misc-next, thanks.
+Added to devel, thanks.

@@ -1,107 +1,145 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from a4-4.smtp-out.eu-west-1.amazonses.com ([54.240.4.4]:39250 "EHLO
-        a4-4.smtp-out.eu-west-1.amazonses.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1732298AbeHBPFl (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 2 Aug 2018 11:05:41 -0400
-Subject: Re: BTRFS and databases
-To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
-        Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        Andrei Borzenkov <arvidjaar@gmail.com>
-Cc: MegaBrutal <megabrutal@gmail.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <CAE8gLhm96B1xxoMv=sYuaNeLYRDP3YUw2qsKumpjLm+jJVjfQQ@mail.gmail.com>
- <1276acbf-a834-cd7e-1f06-56e13386a240@gmx.com>
- <940C43FD-9710-4DAC-937E-6BE290A7A6F6@gmail.com>
- <4f670d3d-5586-5a34-d043-3015e180cb52@gmx.com>
- <4ff454bb-c1d6-46a7-e2c8-6667e2f7954c@gmail.com>
-From: Martin Raiber <martin@urbackup.org>
-Message-ID: <01020164fac67c50-9b312e7c-6604-4771-98d1-22466daf5dca-000000@eu-west-1.amazonses.com>
-Date: Thu, 2 Aug 2018 13:14:29 +0000
+Received: from mail-ua0-f181.google.com ([209.85.217.181]:40170 "EHLO
+        mail-ua0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S2387538AbeHBRte (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Aug 2018 13:49:34 -0400
+Received: by mail-ua0-f181.google.com with SMTP id m13-v6so1796533uaq.7
+        for <linux-btrfs@vger.kernel.org>; Thu, 02 Aug 2018 08:57:47 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <4ff454bb-c1d6-46a7-e2c8-6667e2f7954c@gmail.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <CAN4oSBczyZBddarXcLKAjOZ=xQsFBSjbbJi-V20UB27Z5x+Y5g@mail.gmail.com>
+References: <CAN4oSBc8zM+OZEXAGygwf3RMoyEKLmrk--_HqwMsG1HVGJCf2Q@mail.gmail.com>
+ <CAJCQCtQWYM5Hb6-9QhRujcrP9Ou8u5N+RFLFzA=Za7Z1FeuakQ@mail.gmail.com> <CAN4oSBczyZBddarXcLKAjOZ=xQsFBSjbbJi-V20UB27Z5x+Y5g@mail.gmail.com>
+From: Cerem Cem ASLAN <ceremcem@ceremcem.net>
+Date: Thu, 2 Aug 2018 18:57:46 +0300
+Message-ID: <CAN4oSBfGK_vTeSVi+47GoC9i155oyuvvczC5b0vVGEapHY+m4g@mail.gmail.com>
+Subject: Re: Unmountable root partition
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: multipart/alternative; boundary="0000000000004ba624057275df59"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 02.08.2018 14:27 Austin S. Hemmelgarn wrote:
-> On 2018-08-02 06:56, Qu Wenruo wrote:
->>
->> On 2018年08月02日 18:45, Andrei Borzenkov wrote:
->>>
->>> Отправлено с iPhone
->>>
->>>> 2 авг. 2018 г., в 10:02, Qu Wenruo <quwenruo.btrfs@gmx.com>
->>>> написал(а):
->>>>
->>>>> On 2018年08月01日 11:45, MegaBrutal wrote:
->>>>> Hi all,
->>>>>
->>>>> I know it's a decade-old question, but I'd like to hear your thoughts
->>>>> of today. By now, I became a heavy BTRFS user. Almost everywhere I
->>>>> use
->>>>> BTRFS, except in situations when it is obvious there is no benefit
->>>>> (e.g. /var/log, /boot). At home, all my desktop, laptop and server
->>>>> computers are mainly running on BTRFS with only a few file systems on
->>>>> ext4. I even installed BTRFS in corporate productive systems (in
->>>>> those
->>>>> cases, the systems were mainly on ext4; but there were some specific
->>>>> file systems those exploited BTRFS features).
->>>>>
->>>>> But there is still one question that I can't get over: if you store a
->>>>> database (e.g. MySQL), would you prefer having a BTRFS volume mounted
->>>>> with nodatacow, or would you just simply use ext4?
->>>>>
->>>>> I know that with nodatacow, I take away most of the benefits of BTRFS
->>>>> (those are actually hurting database performance – the exact CoW
->>>>> nature that is elsewhere a blessing, with databases it's a drawback).
->>>>> But are there any advantages of still sticking to BTRFS for a
->>>>> database
->>>>> albeit CoW is disabled, or should I just return to the old and
->>>>> reliable ext4 for those applications?
->>>>
->>>> Since I'm not a expert in database, so I can totally be wrong, but
->>>> what
->>>> about completely disabling database write-ahead-log (WAL), and let
->>>> btrfs' data CoW to handle data consistency completely?
->>>>
->>>
->>> This would make content of database after crash completely
->>> unpredictable, thus making it impossible to reliably roll back
->>> transaction.
->>
->> Btrfs itself (with datacow) can ensure the fs is updated completely.
->>
->> That's to say, even a crash happens, the content of the fs will be the
->> same state as previous btrfs transaction (btrfs sync).
->>
->> Thus there is no need to rollback database transaction though.
->> (Unless database transaction is not sync to btrfs transaction)
->>
-> Two issues with this statement:
+--0000000000004ba624057275df59
+Content-Type: text/plain; charset="UTF-8"
+
+FYI: According to ddrescue, there were read errors in +45% of the
+partition. There were no chances to save anything from the disk.
+
+2018-08-01 15:07 GMT+03:00 Cerem Cem ASLAN <ceremcem@ceremcem.net>:
+
+> Yes, command output is as is, because I just copied and pasted into the
+> mail. When I omit the `-t btrfs` part, result is the same.
 >
-> 1. Not all database software properly groups logically related
-> operations that need to be atomic as a unit into transactions.
-> 2. Even aside from point 1 and the possibility of database corruption,
-> there are other legitimate reasons that you might need to roll-back a
-> transaction (for example, the rather obvious case of a transaction
-> that should not have happened in the first place).
+> I'm now trying to rescue what I can, so getting a image dump with
+> `ddrescue`. It's read about 25% without any errors but it will be expected
+> to finish in 6 hours. Then I'll try btrfscue to see what happens.
+>
+> I know it's totally my fault because I must be ready for a total
+> disk/pc/building burn out. Lessons learned.
+>
+> 2018-08-01 8:32 GMT+03:00 Chris Murphy <lists@colorremedies.com>:
+>
+>> On Tue, Jul 31, 2018 at 12:03 PM, Cerem Cem ASLAN <ceremcem@ceremcem.net>
+>> wrote:
+>>
+>> > 3. mount -t btrfs /dev/mapper/foo--vg-root /mnt/foo
+>> > Gives the following error:
+>> >
+>> > mount: wrong fs type, bad option, bad superblock on ...
+>> >
+>> > 4. dmesg | tail
+>> > Outputs the following:
+>> >
+>> >
+>> > [17755.840916] sd 3:0:0:0: [sda] tag#0 FAILED Result:
+>> > hostbyte=DID_BAD_TARGET driverbyte=DRIVER_OK
+>> > [17755.840919] sd 3:0:0:0: [sda] tag#0 CDB: Read(10) 28 00 00 07 c0 02
+>> 00 00
+>> > 02 00
+>> > [17755.840921] blk_update_request: I/O error, dev sda, sector 507906
+>> > [17755.840941] EXT4-fs (dm-4): unable to read superblock
+>>
+>>
+>> Are you sure this is the output for the command? Because you're
+>> explicitly asking for type btrfs, which fails, and then the kernel
+>> reports EXT4 superblock unreadable. What do you get if you omit -t
+>> btrfs and just let it autodetect?
+>>
+>> But yeah, this is an IO error from the device and there's nothing
+>> Btrfs can do about that unless there is DUP or raid1+ metadata
+>> available.
+>>
+>> Is it possible this LV was accidentally reformatted ext4?
+>>
+>>
+>> --
+>> Chris Murphy
+>>
+>
+>
 
-I thought of a database transaction scheme that is based on btrfs
-features before. It has practical issues, though.
-One would put a b-tree database file into a subvolume (e.g. trans_0).
-When changing the b-tree database one would create a snapshot (trans_1),
-then change the file in the snapshot. On commit sync trans_1, then
-delete trans_0. On rollback, delete trans_1.
+--0000000000004ba624057275df59
+Content-Type: text/html; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-Problems:
-* Large overhead for small transactions (OLTP) -- problem in general for
-copy-on-write b-tree databases
-* Only root can create or destroy snapshots
-* Per default the Linux memory system starts write-back pretty much
-immediately, so pages that get overwritten more than once in a
-transaction (and not kept in RAM) unless Linux is tuned to not do this.
+<div dir=3D"ltr">FYI: According to ddrescue, there were read errors in +45%=
+ of the partition. There were no chances to save anything from the disk.=C2=
+=A0</div><div class=3D"gmail_extra"><br><div class=3D"gmail_quote">2018-08-=
+01 15:07 GMT+03:00 Cerem Cem ASLAN <span dir=3D"ltr">&lt;<a href=3D"mailto:=
+ceremcem@ceremcem.net" target=3D"_blank">ceremcem@ceremcem.net</a>&gt;</spa=
+n>:<br><blockquote class=3D"gmail_quote" style=3D"margin:0 0 0 .8ex;border-=
+left:1px #ccc solid;padding-left:1ex"><div dir=3D"ltr">Yes, command output =
+is as is, because I just copied and pasted into the mail. When I omit the `=
+-t btrfs` part, result is the same.=C2=A0<div><br></div><div>I&#39;m now tr=
+ying to rescue what I can, so getting a image dump with `ddrescue`. It&#39;=
+s read about 25% without any errors but it will be expected to finish in 6 =
+hours. Then I&#39;ll try=C2=A0btrfscue to see what happens.=C2=A0</div><div=
+><br></div><div>I know it&#39;s totally my fault because I must be ready fo=
+r a total disk/pc/building burn out. Lessons learned.=C2=A0</div></div><div=
+ class=3D"HOEnZb"><div class=3D"h5"><div class=3D"gmail_extra"><br><div cla=
+ss=3D"gmail_quote">2018-08-01 8:32 GMT+03:00 Chris Murphy <span dir=3D"ltr"=
+>&lt;<a href=3D"mailto:lists@colorremedies.com" target=3D"_blank">lists@col=
+orremedies.com</a>&gt;</span>:<br><blockquote class=3D"gmail_quote" style=
+=3D"margin:0 0 0 .8ex;border-left:1px #ccc solid;padding-left:1ex"><span>On=
+ Tue, Jul 31, 2018 at 12:03 PM, Cerem Cem ASLAN &lt;<a href=3D"mailto:cerem=
+cem@ceremcem.net" target=3D"_blank">ceremcem@ceremcem.net</a>&gt; wrote:<br=
+>
+<br>
+&gt; 3. mount -t btrfs /dev/mapper/foo--vg-root /mnt/foo<br>
+&gt; Gives the following error:<br>
+&gt;<br>
+&gt; mount: wrong fs type, bad option, bad superblock on ...<br>
+&gt;<br>
+&gt; 4. dmesg | tail<br>
+&gt; Outputs the following:<br>
+&gt;<br>
+&gt;<br>
+&gt; [17755.840916] sd 3:0:0:0: [sda] tag#0 FAILED Result:<br>
+&gt; hostbyte=3DDID_BAD_TARGET driverbyte=3DDRIVER_OK<br>
+&gt; [17755.840919] sd 3:0:0:0: [sda] tag#0 CDB: Read(10) 28 00 00 07 c0 02=
+ 00 00<br>
+&gt; 02 00<br>
+&gt; [17755.840921] blk_update_request: I/O error, dev sda, sector 507906<b=
+r>
+&gt; [17755.840941] EXT4-fs (dm-4): unable to read superblock<br>
+<br>
+<br>
+</span>Are you sure this is the output for the command? Because you&#39;re<=
+br>
+explicitly asking for type btrfs, which fails, and then the kernel<br>
+reports EXT4 superblock unreadable. What do you get if you omit -t<br>
+btrfs and just let it autodetect?<br>
+<br>
+But yeah, this is an IO error from the device and there&#39;s nothing<br>
+Btrfs can do about that unless there is DUP or raid1+ metadata<br>
+available.<br>
+<br>
+Is it possible this LV was accidentally reformatted ext4?<br>
+<span class=3D"m_2351317195924769091HOEnZb"><font color=3D"#888888"><br>
+<br>
+-- <br>
+Chris Murphy<br>
+</font></span></blockquote></div><br></div>
+</div></div></blockquote></div><br></div>
 
-I have used this method, albeit by reflinking the database, then
-modifying the reflink, but I think reflinking it slower than creating a
-snapshot?
+--0000000000004ba624057275df59--

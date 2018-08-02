@@ -1,35 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:35820 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:46332 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S2388930AbeHAOwm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 1 Aug 2018 10:52:42 -0400
-Date: Wed, 1 Aug 2018 15:06:54 +0200
+        id S1728797AbeHBOIg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 2 Aug 2018 10:08:36 -0400
+Date: Thu, 2 Aug 2018 14:17:36 +0200
 From: David Sterba <dsterba@suse.cz>
 To: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] btrfs: replace: Reset on-disk dev stats value after
- replace
-Message-ID: <20180801130653.GF3218@twin.jikos.cz>
+Cc: Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 11/15] btrfs-progs: Add delayed refs infrastructure
+Message-ID: <20180802121735.GL3218@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <cover.1533020736.git.misono.tomohiro@jp.fujitsu.com>
- <e913d7ad-24b0-d361-9841-e15882b521fc@jp.fujitsu.com>
+References: <1528462078-24490-1-git-send-email-nborisov@suse.com>
+ <1528462078-24490-12-git-send-email-nborisov@suse.com>
+ <7b355214-d883-c67d-a6a8-12e8aa32bc19@jp.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <e913d7ad-24b0-d361-9841-e15882b521fc@jp.fujitsu.com>
+In-Reply-To: <7b355214-d883-c67d-a6a8-12e8aa32bc19@jp.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jul 31, 2018 at 04:20:21PM +0900, Misono Tomohiro wrote:
-> on-disk devs stats value is updated in btrfs_run_dev_stats(),
-> which is called during commit transaction, if device->dev_stats_ccnt
-> is not zero.
+On Mon, Jul 30, 2018 at 05:34:54PM +0900, Misono Tomohiro wrote:
+> to correctly count num_entries.
+> (I noticed that num_entries went to negative value when I'm running gdb)
 > 
-> Since current replace operation does not touch dev_stats_ccnt,
-> on-disk dev stats value is not updated. Therefore "btrfs device stats"
-> may return old device's value after umount/mount
-> (Example: See "btrfs ins dump-t -t DEV $DEV" after btrfs/100 finish).
+> However, num_entries is actually not used in progs at all (it is used for
+> throttling in kernel), so maybe we can just drop the variable from progs?
 
-In such cases it's good to have a snippet of the output, so it's
-possible to match the output and check if we see the same thing.
+The long-term goal is to use the same source for kernel and progs where
+possible and where it does not cause trouble. We can add stubs for
+spinlocks, atomics etc and could live with a few variables that are not
+used in progs.
 
-Otherwise looks ok, thanks.
+Right now I'm ok with both ways, ie. when it's easier to take the kernel
+code as-is and add stubs, or drop the unused bits now when porting to
+progs.

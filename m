@@ -1,64 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp2120.oracle.com ([156.151.31.85]:60394 "EHLO
+Received: from userp2120.oracle.com ([156.151.31.85]:56788 "EHLO
         userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726642AbeHBLQF (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Aug 2018 07:16:05 -0400
-Subject: Re: [PATCH v2 2/4] btrfs: fix race between free_stale_devices and
- close_fs_devices
+        with ESMTP id S1726277AbeHBL46 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Aug 2018 07:56:58 -0400
+Subject: Re: [PATCH v2 4/4] btrfs: add helper btrfs_num_devices() to deduce
+ num_devices
 To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
 References: <20180726065334.30594-1-anand.jain@oracle.com>
- <20180726065334.30594-3-anand.jain@oracle.com>
- <20180801142948.GH3218@twin.jikos.cz>
+ <20180726065334.30594-5-anand.jain@oracle.com>
+ <20180801144107.GI3218@twin.jikos.cz>
 From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <ff16322e-6f2c-1e81-032d-651cfa23877f@oracle.com>
-Date: Thu, 2 Aug 2018 17:29:12 +0800
+Message-ID: <e821b772-56b3-2a58-d499-77e4f4d610da@oracle.com>
+Date: Thu, 2 Aug 2018 18:09:55 +0800
 MIME-Version: 1.0
-In-Reply-To: <20180801142948.GH3218@twin.jikos.cz>
+In-Reply-To: <20180801144107.GI3218@twin.jikos.cz>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On 08/01/2018 10:29 PM, David Sterba wrote:
-> On Thu, Jul 26, 2018 at 02:53:32PM +0800, Anand Jain wrote:
->> From: Anand Jain <Anand.Jain@oracle.com>
->>
->> %fs_devices can be free-ed by btrfs_free_stale_devices() when the
->> close_fs_devices() drops fs_devices::opened to zero, but close_fs_devices
->> tries to access the %fs_devices again without the device_list_mutex.
->>
->> Fix this by bringing the %fs_devices access with in the device_list_mutex.
+On 08/01/2018 10:41 PM, David Sterba wrote:
+> On Thu, Jul 26, 2018 at 02:53:34PM +0800, Anand Jain wrote:
+>> When the replace is running the fs_devices::num_devices also includes
+>> the replace device, however in some operations like device delete and
+>> balance it needs the actual num_devices without the repalce devices, so
+>> now the function btrfs_num_devices() just provides that.
 > 
-> AFAICS this cannot happen anymore because the two calls are serialized
-> by the uuid_mutex. But this was not the case when syzbot reported the
-> problem where your patch would apply.
-> 
-> The parallell access to opened and device list cannot happen when:
-> 
-> * btrfs_scan_one_device that wants to call btrfs_free_stale_devices
-> * btrfs_close_devices calls close_fs_devices
-> 
-> Fixed by the series:
-> 
-> btrfs: lift uuid_mutex to callers of btrfs_scan_one_device
-> btrfs: lift uuid_mutex to callers of btrfs_open_devices
-> btrfs: lift uuid_mutex to callers of btrfs_parse_early_options
-> btrfs: reorder initialization before the mount locks uuid_mutex
-> btrfs: fix mount and ioctl device scan ioctl race
-> 
-> If there's a race I don't see, please describe in more detail.
+> The part how concurrent balance and dev-replace can be active at the
+> same time is missing. As this is not obvious, it's desired to have that
+> in the changelog.
 
-  Right. There is no race with the uuid_mutex patches as above.
+  Will do.
 
-  And I just found this- can we make close be consistent with its
-  open part.
-  btrfs_open_devices() hold device_list_mutex before the update to
-  fs_devices::opened. So close_fs_device() could do the same, and be
-  theoretically correct.
+> If there are questions and comments in past patchset revisions, that's a
+> good material for changelogs and when you send an update you can enhance
+> the changelogs. I do simple fixups or additions but when you send a new
+> revision it the right time to save time on both sides.
 
-Thanks, Anand
+  Thanks for mentioning it.
 
+-Anand
 
 > --
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in

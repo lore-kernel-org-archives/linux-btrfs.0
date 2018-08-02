@@ -1,59 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:51292 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:57674 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725933AbeHAEVH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 1 Aug 2018 00:21:07 -0400
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id BA07FACD7
-        for <linux-btrfs@vger.kernel.org>; Wed,  1 Aug 2018 02:37:50 +0000 (UTC)
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 5/6] btrfs: Exit gracefully when failed to add chunk map
-Date: Wed,  1 Aug 2018 10:37:20 +0800
-Message-Id: <20180801023721.32143-6-wqu@suse.com>
-In-Reply-To: <20180801023721.32143-1-wqu@suse.com>
-References: <20180801023721.32143-1-wqu@suse.com>
+        id S1732443AbeHBRMe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 2 Aug 2018 13:12:34 -0400
+Date: Thu, 2 Aug 2018 17:20:51 +0200
+From: David Sterba <dsterba@suse.cz>
+To: fdmanana@kernel.org
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: send, fix incorrect file layout after hole
+ punching beyond eof
+Message-ID: <20180802152051.GQ3218@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20180730113958.5178-1-fdmanana@kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20180730113958.5178-1-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It's completely possible that a crafted btrfs image contains overlapping
-chunks.
+On Mon, Jul 30, 2018 at 12:39:58PM +0100, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
+> 
+> When doing an incremental send, if we have a file in the parent snapshot
+> that has prealloc extents beyond EOF and in the send snapshot it got a
+> hole punch that partially covers the prealloc extents, the send stream,
+> when replayed by a receiver, can result in a file that has a size bigger
+> than it should and filled with zeroes past the correct EOF.
+> 
+> For example:
+> 
+>   $ mkfs.btrfs -f /dev/sdb
+>   $ mount /dev/sdb /mnt
+> 
+>   $ xfs_io -f -c "falloc -k 0 4M" /mnt/foobar
+>   $ xfs_io -c "pwrite -S 0xea 0 1M" /mnt/foobar
+> 
+>   $ btrfs subvolume snapshot -r /mnt /mnt/snap1
+>   $ btrfs send -f /tmp/1.send /mnt/snap1
+> 
+>   $ xfs_io -c "fpunch 1M 2M" /mnt/foobar
+> 
+>   $ btrfs subvolume snapshot -r /mnt /mnt/snap2
+>   $ btrfs send -f /tmp/2.send -p /mnt/snap1 /mnt/snap2
+> 
+>   $ stat --format %s /mnt/snap2/foobar
+>   1048576
+>   $ md5sum /mnt/snap2/foobar
+>   d31659e82e87798acd4669a1e0a19d4f  /mnt/snap2/foobar
+> 
+>   $ umount /mnt
+>   $ mkfs.btrfs -f /dev/sdc
+>   $ mount /dev/sdc /mnt
+> 
+>   $ btrfs receive -f /mnt/1.snap /mnt
+>   $ btrfs receive -f /mnt/2.snap /mnt
+> 
+>   $ stat --format %s /mnt/snap2/foobar
+>   3145728
+>   # --> should be 1Mb and not 3Mb (which was the end offset of hole
+>   #     punch operation)
+>   $ md5sum /mnt/snap2/foobar
+>   117baf295297c2a995f92da725b0b651  /mnt/snap2/foobar
+>   # --> should be d31659e82e87798acd4669a1e0a19d4f as in the original fs
+> 
+> This issue actually happens only since commit ffa7c4296e93 ("Btrfs: send,
+> do not issue unnecessary truncate operations"), but before that commit we
+> were issuing a write operation full of zeroes (to "punch" a hole) which
+> was extending the file size beyond the correct value and then immediately
+> issue a truncate operation to the correct size and undoing the previous
+> write operation. Since the send protocol does not support fallocate, for
+> extent preallocation and hole punching, fix this by not even attempting
+> to send a "hole" (regular write full of zeroes) if it starts at an offset
+> greater then or equals to the file's size. This approach, besides being
+> much more simple then making send issue the truncate operation, adds the
+> benefit of avoiding the useless pair of write of zeroes and truncate
+> operations, saving time and IO at the receiver and reducing the size of
+> the send stream.
+> 
+> A test case for fstests follows soon.
+> 
+> CC: stable@vger.kernel.org # 4.17+
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
 
-Although we can't detect such problem by tree-checker, but it's not a
-catastrophic problem, current extent map can already detect such problem
-and return -EEXIST.
-
-We just only need to exit gracefully so btrfs can refuse to mount the
-fs.
-
-Reported-by: Xu Wen <wen.xu@gatech.edu>
-Link: https://bugzilla.kernel.org/show_bug.cgi?id=200409
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/volumes.c | 8 ++++++--
- 1 file changed, 6 insertions(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 467a589854fa..8c281c1e7f36 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -6477,10 +6477,14 @@ static int read_one_chunk(struct btrfs_fs_info *fs_info, struct btrfs_key *key,
- 	write_lock(&map_tree->map_tree.lock);
- 	ret = add_extent_mapping(&map_tree->map_tree, em, 0);
- 	write_unlock(&map_tree->map_tree.lock);
--	BUG_ON(ret); /* Tree corruption */
-+	if (ret < 0) {
-+		btrfs_err(fs_info,
-+			  "failed to add chunk map, start=%llu len=%llu: %d",
-+			  em->start, em->len, ret);
-+	}
- 	free_extent_map(em);
- 
--	return 0;
-+	return ret;
- }
- 
- static void fill_device_from_item(struct extent_buffer *leaf,
--- 
-2.18.0
-
+Added to misc-next, thanks.

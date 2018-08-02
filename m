@@ -1,49 +1,105 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp2120.oracle.com ([156.151.31.85]:56788 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726277AbeHBL46 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Aug 2018 07:56:58 -0400
-Subject: Re: [PATCH v2 4/4] btrfs: add helper btrfs_num_devices() to deduce
+Received: from mx2.suse.de ([195.135.220.15]:39646 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726739AbeHBMCN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 2 Aug 2018 08:02:13 -0400
+Subject: Re: [PATCH v3 4/4] btrfs: add helper btrfs_num_devices() to deduce
  num_devices
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-References: <20180726065334.30594-1-anand.jain@oracle.com>
- <20180726065334.30594-5-anand.jain@oracle.com>
- <20180801144107.GI3218@twin.jikos.cz>
-From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <e821b772-56b3-2a58-d499-77e4f4d610da@oracle.com>
-Date: Thu, 2 Aug 2018 18:09:55 +0800
+To: Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
+References: <20180726065334.30594-5-anand.jain@oracle.com>
+ <20180802100934.12468-1-anand.jain@oracle.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <b1c8c566-5850-da69-b756-5036dca33975@suse.com>
+Date: Thu, 2 Aug 2018 13:11:40 +0300
 MIME-Version: 1.0
-In-Reply-To: <20180801144107.GI3218@twin.jikos.cz>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <20180802100934.12468-1-anand.jain@oracle.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On 08/01/2018 10:41 PM, David Sterba wrote:
-> On Thu, Jul 26, 2018 at 02:53:34PM +0800, Anand Jain wrote:
->> When the replace is running the fs_devices::num_devices also includes
->> the replace device, however in some operations like device delete and
->> balance it needs the actual num_devices without the repalce devices, so
->> now the function btrfs_num_devices() just provides that.
+On  2.08.2018 13:09, Anand Jain wrote:
+> When the replace is running the fs_devices::num_devices also includes
+> the replace device, however in some operations like device delete and
+> balance it needs the actual num_devices without the repalce devices, so
+> now the function btrfs_num_devices() just provides that.
 > 
-> The part how concurrent balance and dev-replace can be active at the
-> same time is missing. As this is not obvious, it's desired to have that
-> in the changelog.
+> And here is a scenario how balance and repalce items could co-exist.
+> Consider balance is started and paused, now start the replace
+> followed by a power-recycle of the system. During following mount,
+> the open_ctree() first restarts the balance so it must check for the
+> replace device otherwise our num_devices calculation will be wrong.
+> 
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> ---
+> v2->v3: update changelog with not so obvious balance and repalce
+> co-existance secnario
+> v1->v2: add comments
+> 
+>  fs/btrfs/volumes.c | 32 ++++++++++++++++++--------------
+>  1 file changed, 18 insertions(+), 14 deletions(-)
+> 
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index fe74fefc75f7..8844904f9009 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -1854,6 +1854,21 @@ void btrfs_assign_next_active_device(struct btrfs_device *device,
+>  		fs_info->fs_devices->latest_bdev = next_device->bdev;
+>  }
+>  
+> +/* Returns btrfs_fs_devices::num_devices excluding replace device if any */
+> +static inline u64 btrfs_num_devices(struct btrfs_fs_info *fs_info)
+> +{
+> +	u64 num_devices = fs_info->fs_devices->num_devices;
+> +
+> +	btrfs_dev_replace_read_lock(&fs_info->dev_replace);
+> +	if (btrfs_dev_replace_is_ongoing(&fs_info->dev_replace)) {
+> +		BUG_ON(num_devices < 1);
+> +		num_devices--;
+> +	}
+> +	btrfs_dev_replace_read_unlock(&fs_info->dev_replace);
+> +
+> +	return num_devices;
+> +}
+> +
+>  int btrfs_rm_device(struct btrfs_fs_info *fs_info, const char *device_path,
+>  		u64 devid)
+>  {
+> @@ -1865,13 +1880,7 @@ int btrfs_rm_device(struct btrfs_fs_info *fs_info, const char *device_path,
+>  
+>  	mutex_lock(&uuid_mutex);
+>  
+> -	num_devices = fs_devices->num_devices;
+> -	btrfs_dev_replace_read_lock(&fs_info->dev_replace);
+> -	if (btrfs_dev_replace_is_ongoing(&fs_info->dev_replace)) {
+> -		BUG_ON(num_devices < 1);
+> -		num_devices--;
+> -	}
+> -	btrfs_dev_replace_read_unlock(&fs_info->dev_replace);
+> +	num_devices = btrfs_num_devices(fs_info);
 
-  Will do.
+How about lifting the BUG_ON from btrfs_num_devices into a check in this
+function, so if num_devices < 1 then we just exit with -EINVAL or some
+such. We should be aiming at eliminating BUG_ONs.
 
-> If there are questions and comments in past patchset revisions, that's a
-> good material for changelogs and when you send an update you can enhance
-> the changelogs. I do simple fixups or additions but when you send a new
-> revision it the right time to save time on both sides.
-
-  Thanks for mentioning it.
-
--Anand
-
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>  
+>  	ret = btrfs_check_raid_min_devices(fs_info, num_devices - 1);
+>  	if (ret)
+> @@ -3721,13 +3730,8 @@ int btrfs_balance(struct btrfs_fs_info *fs_info,
+>  		}
+>  	}
+>  
+> -	num_devices = fs_info->fs_devices->num_devices;
+> -	btrfs_dev_replace_read_lock(&fs_info->dev_replace);
+> -	if (btrfs_dev_replace_is_ongoing(&fs_info->dev_replace)) {
+> -		BUG_ON(num_devices < 1);
+> -		num_devices--;
+> -	}
+> -	btrfs_dev_replace_read_unlock(&fs_info->dev_replace);
+> +	num_devices = btrfs_num_devices(fs_info);
+> +
+>  	allowed = BTRFS_AVAIL_ALLOC_BIT_SINGLE | BTRFS_BLOCK_GROUP_DUP;
+>  	if (num_devices > 1)
+>  		allowed |= (BTRFS_BLOCK_GROUP_RAID0 | BTRFS_BLOCK_GROUP_RAID1);
 > 

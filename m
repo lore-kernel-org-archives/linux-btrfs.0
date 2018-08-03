@@ -1,56 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:41492 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:41500 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726799AbeHCHpH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 3 Aug 2018 03:45:07 -0400
+        id S1726799AbeHCHpJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 3 Aug 2018 03:45:09 -0400
 Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id D3E83AFA5
-        for <linux-btrfs@vger.kernel.org>; Fri,  3 Aug 2018 05:50:27 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 9FD57AF76
+        for <linux-btrfs@vger.kernel.org>; Fri,  3 Aug 2018 05:50:29 +0000 (UTC)
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/6] btrfs-progs: Exit gracefully if we hit ENOSPC when allocating tree block
-Date: Fri,  3 Aug 2018 13:50:17 +0800
-Message-Id: <20180803055022.9816-2-wqu@suse.com>
+Subject: [PATCH 2/6] btrfs-progs: Exit gracefully when failed to repair root dir item
+Date: Fri,  3 Aug 2018 13:50:18 +0800
+Message-Id: <20180803055022.9816-3-wqu@suse.com>
 In-Reply-To: <20180803055022.9816-1-wqu@suse.com>
 References: <20180803055022.9816-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When running test fuzz/003, we could hit the following BUG_ON:
+Another BUG_ON() during fuzz/003:
 ------
-====== RUN MAYFAIL /home/adam/btrfs/btrfs-progs/btrfs check --init-csum-tree /home/adam/btrfs/btrfs-progs/tests//fuzz-tests/images/bko-155621-bad-block-group-offset.raw.restored
-Unable to find block group for 0
-Unable to find block group for 0
-Unable to find block group for 0
-extent-tree.c:2657: alloc_tree_block: BUG_ON `ret` triggered, value -28
-failed (ignored, ret=134): /home/adam/btrfs/btrfs-progs/btrfs check --init-csum-tree /home/adam/btrfs/btrfs-progs/tests//fuzz-tests/images/bko-155621-bad-block-group-offset.raw.restored
+====== RUN MAYFAIL /home/adam/btrfs/btrfs-progs/btrfs check --init-csum-tree /home/adam/btrfs/btrfs-progs/tests//fuzz-tests/images/bko-161821.raw.restored
+[1/7] checking root items
+Fixed 0 roots.
+[2/7] checking extents
+parent transid verify failed on 4198400 wanted 14 found 1114126
+parent transid verify failed on 4198400 wanted 14 found 1114126
+Ignoring transid failure
+owner ref check failed [4198400 4096]
+repair deleting extent record: key [4198400,169,0]
+adding new tree backref on start 4198400 len 4096 parent 0 root 5
+Repaired extent references for 4198400
+ref mismatch on [4222976 4096] extent item 1, found 0
+backref 4222976 root 7 not referenced back 0x55e9cc694780
+incorrect global backref count on 4222976 found 1 wanted 0
+backpointer mismatch on [4222976 4096]
+owner ref check failed [4222976 4096]
+repair deleting extent record: key [4222976,169,0]
+Repaired extent references for 4222976
+[3/7] checking free space cache
+[4/7] checking fs roots
+parent transid verify failed on 4198400 wanted 14 found 1114126
+Ignoring transid failure
+Wrong generation of child node/leaf, wanted: 1114126, have: 14
+root 5 missing its root dir, recreating
+parent transid verify failed on 4198400 wanted 14 found 1114126
+Ignoring transid failure
+ERROR: child eb corrupted: parent bytenr=4222976 item=0 parent level=1 child level=2
+check/main.c:2738: check_inode_recs: BUG_ON `ret` triggered, value -5
+failed (ignored, ret=134): /home/adam/btrfs/btrfs-progs/btrfs check --init-csum-tree /home/adam/btrfs/btrfs-progs/tests//fuzz-tests/images/bko-161821.raw.restored
 mayfail: returned code 134 (SIGABRT), not ignored
 test failed for case 003-multi-check-unmounted
 ------
 
-Just remove that BUG_ON() and allow us to exit gracefully.
+Just abort current transaction and exit gracefully in this case.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- extent-tree.c | 5 ++++-
+ check/main.c | 5 ++++-
  1 file changed, 4 insertions(+), 1 deletion(-)
 
-diff --git a/extent-tree.c b/extent-tree.c
-index b9d51b388c9a..a1f711ece7a8 100644
---- a/extent-tree.c
-+++ b/extent-tree.c
-@@ -2654,7 +2654,10 @@ static int alloc_tree_block(struct btrfs_trans_handle *trans,
+diff --git a/check/main.c b/check/main.c
+index b597e2a607e5..e6756e0f852b 100644
+--- a/check/main.c
++++ b/check/main.c
+@@ -2735,7 +2735,10 @@ static int check_inode_recs(struct btrfs_root *root,
+ 				(unsigned long long)root->objectid);
  
- 	ret = btrfs_reserve_extent(trans, root, num_bytes, empty_size,
- 				   hint_byte, search_end, ins, 0);
--	BUG_ON(ret);
-+	if (ret < 0) {
-+		btrfs_free_delayed_extent_op(extent_op);
-+		return ret;
-+	}
+ 			ret = btrfs_make_root_dir(trans, root, root_dirid);
+-			BUG_ON(ret);
++			if (ret < 0) {
++				btrfs_abort_transaction(trans, ret);
++				return ret;
++			}
  
- 	if (key)
- 		memcpy(&extent_op->key, key, sizeof(extent_op->key));
+ 			btrfs_commit_transaction(trans, root);
+ 			return -EAGAIN;
 -- 
 2.18.0
 

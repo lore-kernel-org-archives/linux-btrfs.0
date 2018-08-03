@@ -1,138 +1,109 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.19]:34937 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.15.15]:35103 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727260AbeHCB7v (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 2 Aug 2018 21:59:51 -0400
-Subject: Re: [PATCH v2 0/6] btrfs: Enhanced validation check for fuzzed images
-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-References: <20180801023721.32143-1-wqu@suse.com>
- <20180802164004.GR3218@twin.jikos.cz>
+        id S1726256AbeHCGL5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 3 Aug 2018 02:11:57 -0400
+Subject: Re: [PATCH] btrfs: qgroup: Remove qgroup item along with subvolume
+ deletion
+To: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <cover.1533263845.git.misono.tomohiro@jp.fujitsu.com>
+ <eeaa9ab1-f6a5-9043-9b5e-cc9acf82ca47@jp.fujitsu.com>
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <7fd25e4c-32a0-14bb-2b46-18455694abde@gmx.com>
-Date: Fri, 3 Aug 2018 08:06:07 +0800
+Message-ID: <e2d0d7fc-8603-7c47-4168-266be4d72edc@gmx.com>
+Date: Fri, 3 Aug 2018 12:17:26 +0800
 MIME-Version: 1.0
-In-Reply-To: <20180802164004.GR3218@twin.jikos.cz>
+In-Reply-To: <eeaa9ab1-f6a5-9043-9b5e-cc9acf82ca47@jp.fujitsu.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="pPYsNvkEfdFG6rO0TiBcIHlS2rC4UCMBa"
+ boundary="xTIh192dQcnHesHwnplnbJGrSm6Lb0Zsd"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---pPYsNvkEfdFG6rO0TiBcIHlS2rC4UCMBa
-Content-Type: multipart/mixed; boundary="biX3uayL9sgUh3TnwgMBFSA93JIOo937X";
+--xTIh192dQcnHesHwnplnbJGrSm6Lb0Zsd
+Content-Type: multipart/mixed; boundary="AzzegqF0RwQNqBpy4f2e3z80DN0LtpIsA";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Message-ID: <7fd25e4c-32a0-14bb-2b46-18455694abde@gmx.com>
-Subject: Re: [PATCH v2 0/6] btrfs: Enhanced validation check for fuzzed images
-References: <20180801023721.32143-1-wqu@suse.com>
- <20180802164004.GR3218@twin.jikos.cz>
-In-Reply-To: <20180802164004.GR3218@twin.jikos.cz>
+To: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>,
+ linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-ID: <e2d0d7fc-8603-7c47-4168-266be4d72edc@gmx.com>
+Subject: Re: [PATCH] btrfs: qgroup: Remove qgroup item along with subvolume
+ deletion
+References: <cover.1533263845.git.misono.tomohiro@jp.fujitsu.com>
+ <eeaa9ab1-f6a5-9043-9b5e-cc9acf82ca47@jp.fujitsu.com>
+In-Reply-To: <eeaa9ab1-f6a5-9043-9b5e-cc9acf82ca47@jp.fujitsu.com>
 
---biX3uayL9sgUh3TnwgMBFSA93JIOo937X
+--AzzegqF0RwQNqBpy4f2e3z80DN0LtpIsA
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
 
 
-On 2018=E5=B9=B408=E6=9C=8803=E6=97=A5 00:40, David Sterba wrote:
-> On Wed, Aug 01, 2018 at 10:37:15AM +0800, Qu Wenruo wrote:
->> The branch can be fetched from the following git repo:
->> https://github.com/adam900710/linux/tree/tree_checker_enhance
->>
->> It's based on v4.18-rc1, with 3 patches already merged into misc-next.=
-
->>
->> This patchset introduced the following enhanced validation check:
->> 1) chunk/block group/dev extent cross check
->>    Unlike extent tree, such cross check can be implemented pretty easy=
-
->>    with minimal mount time impact.
->>    Now the kernel could do chunk/bg/dev extent check as good as btrfs
->>    check.
->>
->> 2) Locking test to avoid possible deadlock due to extent tree corrupti=
-on
->>    Unfortunately, for extent tree we can't do really much cross check.=
-
->>    Instead we use the selftest from btrfs_tree_lock() to detect and
->>    avoid deadlock caused by corrupted extent tree.
+On 2018=E5=B9=B408=E6=9C=8803=E6=97=A5 12:08, Misono Tomohiro wrote:
+> When qgroup is on, subvolume deletion does not remove qgroup items
+> of the subvolume (qgroup info, limits, relation) from quota tree and
+> they need to get removed manually by "btrfs qgroup destroy".
 >=20
-> Great, thanks.
+> Since level 0 qgroup cannot be used/inherited by any other subvolume,
+> let's remove them automatically when subvolume is deleted.
 >=20
->> The 3rd patch "btrfs: Remove unused function btrfs_account_dev_extents=
-_size()"
->> has also been merged into misc-next.
->>
->> changelog:
->> v2:
->>   Added reviewed-by tags from Gu and Nikolay.
->>   Address comment from David for the 4th patch
->>   Address comment from Gu for the 2nd patch.
+> Signed-off-by: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
+> ---
 >=20
-> Please rather write what did you fix and not who suggested that. There
-> are many patches and iterations and I don't remember everything.
+> I don't see any reason to keep these items after subvolume deletion,
+> but is there something I'm missing?
+>=20
+>  fs/btrfs/inode.c | 4 ++++
+>  1 file changed, 4 insertions(+)
+>=20
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 3f51ddc18f98..4ec60a1b53a3 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -4372,6 +4372,10 @@ int btrfs_delete_subvolume(struct inode *dir, st=
+ruct dentry *dentry)
+>  		}
+>  	}
+> =20
+> +	ret =3D btrfs_remove_qgroup(trans, dest->root_key.objectid);
 
-Sorry for that.
+According to the caller, it only unlinks the subvolume without really
+delete the whole subvolume.
 
-And for this patchset, the changelog should be:
-  Added reviewed-by tags.
-  Fixed unused variable and Link: tag.
-  Moved checks to find_first_block_group() to reduce duplication.
-
->=20
->>
->> Qu Wenruo (6):
->>   btrfs: Check each block group has corresponding chunk at mount time
->>   btrfs: Verify every chunk has corresponding block group at mount tim=
-e
->>   btrfs: Remove unused function btrfs_account_dev_extents_size()
->>   btrfs: Introduce mount time chunk <-> dev extent mapping check
->>   btrfs: Exit gracefully when failed to add chunk map
->=20
-> The above merged, with some adjustments of changelogs or the error
-> messages.
->=20
->>   btrfs: locking: Allow btrfs_tree_lock() to return error to avoid
->>     deadlock
->=20
-> I need to read and understand the explanation you posted, so this patch=
-
-> is not in misc-next, I'll add it to for-next after I'll do the first
-> pass review.
-
-Feel free to ask if there is anything unclear.
+I'm wondering if we should call btrfs_remove_qgroup() only after we have
+deleted the whole subvolume, e.g inside btrfs_drop_snapshot().
 
 Thanks,
 Qu
 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> +	if (ret =3D=3D -EINVAL || ret =3D=3D -ENOENT)
+> +		ret =3D 0;
+> +
+>  out_end_trans:
+>  	trans->block_rsv =3D NULL;
+>  	trans->bytes_reserved =3D 0;
 >=20
 
 
---biX3uayL9sgUh3TnwgMBFSA93JIOo937X--
+--AzzegqF0RwQNqBpy4f2e3z80DN0LtpIsA--
 
---pPYsNvkEfdFG6rO0TiBcIHlS2rC4UCMBa
+--xTIh192dQcnHesHwnplnbJGrSm6Lb0Zsd
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAltjnG8ACgkQwj2R86El
-/qgOewf/Qs24iY2YZjD7ULzqj9t5a0ggqNOjIi4bVoDR53W1iyd/5sPehBNa/CJb
-IXL4J9YCdtXXElT7O458u7Agr664S754qSdQ4SId3QzyfUJFVTD3cYDrsx+wXf+C
-SckYaBO+TrzmBZKYL1PSRFOLo02M+o6+fRk5fxczfcoSbucLcrHJ1giRWgRjdI0L
-whkQYD1e/FQ7eqY/rA/whTAITKGZ/DweX5/ougZKCCjYEevxe7x5ckR3dILjpAFR
-NhkKPr0E9K6bbc5Cea6oKXHncjKYJhCfyhO7ijCEGUVpnkxwFoyT/qwQcvWj9ur7
-C+08B02JCXW3ULw+R7/jmuOJ36U5vA==
-=vVPG
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAltj11YACgkQwj2R86El
+/qg1pgf/a7hzQyr1HCPCY6Ouv2FHl3J1UmJ2/JdDs5wa1eE+wcIl9ehNbwL8K84Q
+C2jMxekltn4PHD1f7MkhU0cNot14rVhDYQQxq+ZeEaaET/iqJNBIKlLNGKJykZ8F
+wk+pMwHgle8TOiwwVHrFYEa3gvMMyZkiuR//Hy80VZEcQvith4AbD/GhuTALqq96
+4ilNBlpz15FrJpt5bFRw9ntRkmY1Yep/2+0aUutrVjgl5g9D3nO8fPQIEWzkU259
+hza7VdlTkaxsoRkSga0x0WAUX/DeEVIxEaxxQWFSiA8roiI0q5NcpXn3ipOlqr6Y
+SKo6nv9EZFrI7K1Iutd/yZa2h6C3cg==
+=rwgB
 -----END PGP SIGNATURE-----
 
---pPYsNvkEfdFG6rO0TiBcIHlS2rC4UCMBa--
+--xTIh192dQcnHesHwnplnbJGrSm6Lb0Zsd--

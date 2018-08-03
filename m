@@ -1,69 +1,139 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwym02.jp.fujitsu.com ([211.128.242.41]:30252 "EHLO
-        mgwym02.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726571AbeHCGWN (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Aug 2018 02:22:13 -0400
-Received: from g01jpfmpwyt01.exch.g01.fujitsu.local (g01jpfmpwyt01.exch.g01.fujitsu.local [10.128.193.38])
-        by yt-mxauth.gw.nic.fujitsu.com (Postfix) with ESMTP id AFB7BAC0115
-        for <linux-btrfs@vger.kernel.org>; Fri,  3 Aug 2018 13:27:44 +0900 (JST)
-Subject: Re: [PATCH] btrfs: qgroup: Remove qgroup item along with subvolume
- deletion
-To: Lu Fengqi <lufq.fnst@cn.fujitsu.com>, Qu Wenruo <quwenruo.btrfs@gmx.com>
-CC: linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <cover.1533263845.git.misono.tomohiro@jp.fujitsu.com>
- <eeaa9ab1-f6a5-9043-9b5e-cc9acf82ca47@jp.fujitsu.com>
- <e2d0d7fc-8603-7c47-4168-266be4d72edc@gmx.com>
- <20180803042331.GC2049@fnst.localdomain>
-From: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
-Message-ID: <7dba0e2e-44d5-8a46-6aa7-2e900f98f240@jp.fujitsu.com>
-Date: Fri, 3 Aug 2018 13:27:38 +0900
+Received: from mail-wm0-f53.google.com ([74.125.82.53]:52077 "EHLO
+        mail-wm0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726413AbeHCGuc (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Aug 2018 02:50:32 -0400
+Received: by mail-wm0-f53.google.com with SMTP id y2-v6so4849559wma.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 02 Aug 2018 21:56:02 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <20180803042331.GC2049@fnst.localdomain>
-Content-Type: text/plain; charset="utf-8"
+From: Nathan Dehnel <ncdehnel@gmail.com>
+Date: Thu, 2 Aug 2018 23:55:50 -0500
+Message-ID: <CAEEhgEtHSH2XezqBr_TRmOCDdjq2VdVizMOBmJ2GtHz8FGRnyw@mail.gmail.com>
+Subject: btrfs check --repair questions
+To: linux-btrfs@vger.kernel.org
+Content-Type: multipart/alternative; boundary="0000000000008fdeeb057280be61"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2018/08/03 13:23, Lu Fengqi wrote:
-> On Fri, Aug 03, 2018 at 12:17:26PM +0800, Qu Wenruo wrote:
->>
->>
->> On 2018年08月03日 12:08, Misono Tomohiro wrote:
->>> When qgroup is on, subvolume deletion does not remove qgroup items
->>> of the subvolume (qgroup info, limits, relation) from quota tree and
->>> they need to get removed manually by "btrfs qgroup destroy".
->>>
->>> Since level 0 qgroup cannot be used/inherited by any other subvolume,
->>> let's remove them automatically when subvolume is deleted.
->>>
->>> Signed-off-by: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
->>> ---
->>>
->>> I don't see any reason to keep these items after subvolume deletion,
->>> but is there something I'm missing?
->>>
->>>  fs/btrfs/inode.c | 4 ++++
->>>  1 file changed, 4 insertions(+)
->>>
->>> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
->>> index 3f51ddc18f98..4ec60a1b53a3 100644
->>> --- a/fs/btrfs/inode.c
->>> +++ b/fs/btrfs/inode.c
->>> @@ -4372,6 +4372,10 @@ int btrfs_delete_subvolume(struct inode *dir, struct dentry *dentry)
->>>  		}
->>>  	}
->>>  
->>> +	ret = btrfs_remove_qgroup(trans, dest->root_key.objectid);
->>
->> According to the caller, it only unlinks the subvolume without really
->> delete the whole subvolume.
->>
->> I'm wondering if we should call btrfs_remove_qgroup() only after we have
->> deleted the whole subvolume, e.g inside btrfs_drop_snapshot().
-> 
-> I agree with Qu's point, because the ongoing online undelete subvolume will
-> be able to recover the subvolume which is intact ondisk, including the qgroup.
-> 
+--0000000000008fdeeb057280be61
+Content-Type: text/plain; charset="UTF-8"
 
-Thanks to both of you, I'll update the patch.
-Misono
+Question 1: The command has been running for a couple days on a 10TB array
+with no visible change in output. Is it actually fixing anything?
 
+enabling repair mode
+Checking filesystem on
+/dev/disk/by-uuid/e1ee5980-c54b-4b6e-82e2-3dbdcee1dd24
+UUID: e1ee5980-c54b-4b6e-82e2-3dbdcee1dd24
+checking extents
+Fixed 0 roots.
+checking free space cache
+cache and super generation don't match, space cache will be invalidated
+checking fs roots
+root 5 inode 5043370 errors 100, file extent discount
+Found file extent holes:
+        start: 0, len: 50331648
+root 5 inode 5043370 errors 100, file extent discount
+Found file extent holes:
+        start: 0, len: 50331648
+root 5 inode 5043370 errors 100, file extent discount
+Found file extent holes:
+        start: 0, len: 50331648
+root 5 inode 5043370 errors 100, file extent discount
+Found file extent holes:
+        start: 0, len: 50331648
+root 5 inode 5043370 errors 100, file extent discount
+Found file extent holes:
+        start: 0, len: 50331648
+root 5 inode 5043370 errors 100, file extent discount
+Found file extent holes:
+        start: 0, len: 50331648
+root 5 inode 5043370 errors 100, file extent discount
+Found file extent holes:
+        start: 0, len: 50331648
+root 5 inode 5043370 errors 100, file extent discount
+Found file extent holes:
+        start: 0, len: 50331648
+root 5 inode 5043370 errors 100, file extent discount
+Found file extent holes:
+        start: 0, len: 50331648
+root 5 inode 5043370 errors 100, file extent discount
+Found file extent holes:
+        start: 0, len: 50331648
+root 5 inode 5043370 errors 100, file extent discount
+Found file extent holes:
+        start: 0, len: 50331648
+root 5 inode 5043370 errors 100, file extent discount
+Found file extent holes:
+        start: 0, len: 50331648
+root 5 inode 5043370 errors 100, file extent discount
+Found file extent holes:
+        start: 0, len: 50331648
+root 5 inode 5043370 errors 100, file extent discount
+Found file extent holes:
+        start: 0, len: 50331648
+root 5 inode 5043370 errors 100, file extent discount
+Found file extent holes:
+        start: 0, len: 50331648
+root 5 inode 5043370 errors 100, file extent discount
+Found file extent holes:
+        start: 0, len: 50331648
+root 5 inode 5043370 errors 100, file extent discount
+Found file extent holes:
+        start: 0, len: 50331648
+
+Question 2: I accidentally interrupted the command by logging out. How
+dangerous is this? Should I be worried?
+
+--0000000000008fdeeb057280be61
+Content-Type: text/html; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+
+<div dir=3D"ltr">Question 1: The command has been running for a couple days=
+ on a 10TB array with no visible change in output. Is it actually fixing an=
+ything?<div><div><br></div><div>enabling repair mode</div><div>Checking fil=
+esystem on /dev/disk/by-uuid/e1ee5980-c54b-4b6e-82e2-3dbdcee1dd24</div><div=
+>UUID: e1ee5980-c54b-4b6e-82e2-3dbdcee1dd24</div><div>checking extents</div=
+><div>Fixed 0 roots.</div><div>checking free space cache</div><div>cache an=
+d super generation don&#39;t match, space cache will be invalidated</div><d=
+iv>checking fs roots</div><div>root 5 inode 5043370 errors 100, file extent=
+ discount</div><div>Found file extent holes:</div><div>=C2=A0 =C2=A0 =C2=A0=
+ =C2=A0 start: 0, len: 50331648</div><div>root 5 inode 5043370 errors 100, =
+file extent discount</div><div>Found file extent holes:</div><div>=C2=A0 =
+=C2=A0 =C2=A0 =C2=A0 start: 0, len: 50331648</div><div>root 5 inode 5043370=
+ errors 100, file extent discount</div><div>Found file extent holes:</div><=
+div>=C2=A0 =C2=A0 =C2=A0 =C2=A0 start: 0, len: 50331648</div><div>root 5 in=
+ode 5043370 errors 100, file extent discount</div><div>Found file extent ho=
+les:</div><div>=C2=A0 =C2=A0 =C2=A0 =C2=A0 start: 0, len: 50331648</div><di=
+v>root 5 inode 5043370 errors 100, file extent discount</div><div>Found fil=
+e extent holes:</div><div>=C2=A0 =C2=A0 =C2=A0 =C2=A0 start: 0, len: 503316=
+48</div><div>root 5 inode 5043370 errors 100, file extent discount</div><di=
+v>Found file extent holes:</div><div>=C2=A0 =C2=A0 =C2=A0 =C2=A0 start: 0, =
+len: 50331648</div><div>root 5 inode 5043370 errors 100, file extent discou=
+nt</div><div>Found file extent holes:</div><div>=C2=A0 =C2=A0 =C2=A0 =C2=A0=
+ start: 0, len: 50331648</div><div>root 5 inode 5043370 errors 100, file ex=
+tent discount</div><div>Found file extent holes:</div><div>=C2=A0 =C2=A0 =
+=C2=A0 =C2=A0 start: 0, len: 50331648</div><div>root 5 inode 5043370 errors=
+ 100, file extent discount</div><div>Found file extent holes:</div><div>=C2=
+=A0 =C2=A0 =C2=A0 =C2=A0 start: 0, len: 50331648</div><div>root 5 inode 504=
+3370 errors 100, file extent discount</div><div>Found file extent holes:</d=
+iv><div>=C2=A0 =C2=A0 =C2=A0 =C2=A0 start: 0, len: 50331648</div><div>root =
+5 inode 5043370 errors 100, file extent discount</div><div>Found file exten=
+t holes:</div><div>=C2=A0 =C2=A0 =C2=A0 =C2=A0 start: 0, len: 50331648</div=
+><div>root 5 inode 5043370 errors 100, file extent discount</div><div>Found=
+ file extent holes:</div><div>=C2=A0 =C2=A0 =C2=A0 =C2=A0 start: 0, len: 50=
+331648</div><div>root 5 inode 5043370 errors 100, file extent discount</div=
+><div>Found file extent holes:</div><div>=C2=A0 =C2=A0 =C2=A0 =C2=A0 start:=
+ 0, len: 50331648</div><div>root 5 inode 5043370 errors 100, file extent di=
+scount</div><div>Found file extent holes:</div><div>=C2=A0 =C2=A0 =C2=A0 =
+=C2=A0 start: 0, len: 50331648</div><div>root 5 inode 5043370 errors 100, f=
+ile extent discount</div><div>Found file extent holes:</div><div>=C2=A0 =C2=
+=A0 =C2=A0 =C2=A0 start: 0, len: 50331648</div><div>root 5 inode 5043370 er=
+rors 100, file extent discount</div><div>Found file extent holes:</div><div=
+>=C2=A0 =C2=A0 =C2=A0 =C2=A0 start: 0, len: 50331648</div><div>root 5 inode=
+ 5043370 errors 100, file extent discount</div><div>Found file extent holes=
+:</div><div>=C2=A0 =C2=A0 =C2=A0 =C2=A0 start: 0, len: 50331648</div></div>=
+<div><br></div><div>Question 2: I accidentally interrupted the command by l=
+ogging out. How dangerous is this? Should I be worried?</div></div>
+
+--0000000000008fdeeb057280be61--

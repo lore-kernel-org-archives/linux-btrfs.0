@@ -1,26 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:52958 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:53010 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1729969AbeHCPmc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 3 Aug 2018 11:42:32 -0400
-Date: Fri, 3 Aug 2018 15:46:02 +0200
+        id S1726115AbeHCRDm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 3 Aug 2018 13:03:42 -0400
+Date: Fri, 3 Aug 2018 17:06:53 +0200
 From: David Sterba <dsterba@suse.cz>
 To: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org, Omar Sandoval <osandov@fb.com>
-Subject: Re: [PATCH v2 00/20] btrfs-progs: Rework of "subvolume list/show"
- and relax the root privileges of them
-Message-ID: <20180803134602.GX3218@twin.jikos.cz>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 2/3] btrfs-progs: ins: logical-resolve: Print message
+ when path cannot be resolved
+Message-ID: <20180803150653.GA3218@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <cover.1529310485.git.misono.tomohiro@jp.fujitsu.com>
- <c462edc0-ef91-0a1b-bc4e-45e868e32604@jp.fujitsu.com>
+References: <cover.1532501096.git.misono.tomohiro@jp.fujitsu.com>
+ <a5545edbef2d2b1800a5ea83d9c14773b5b1fbe7.1532501096.git.misono.tomohiro@jp.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <c462edc0-ef91-0a1b-bc4e-45e868e32604@jp.fujitsu.com>
+In-Reply-To: <a5545edbef2d2b1800a5ea83d9c14773b5b1fbe7.1532501096.git.misono.tomohiro@jp.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jul 04, 2018 at 05:14:59PM +0900, Misono Tomohiro wrote:
-> Gentle ping, as this is related to the new ioctls merged in 4.18-rc1.
+On Wed, Jul 25, 2018 at 05:20:17PM +0900, Misono Tomohiro wrote:
+> Since BTRFS_IOC_INO_PATHS requires fd of subvolume,
 
-Due to me spending more time than expected on kernel, this patchset will
-be merged partially or the 4.18 will be deleayed.
+Does it? AFAICS btrfs_ioctl_ino_to_path gets root that's the containing
+subvolume of the path given by the user.
+
+> logical-resolve
+> cannot find the path when mount point is not FS_TREE
+> (because the subvolume path cannot be opened).
+
+Sorry, I don't understand what's the problem here. What you write sounds
+like there's a reproducer. If yes, please post it.

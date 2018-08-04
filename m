@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:25772 "EHLO
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:10295 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1728434AbeHDPLy (ORCPT
+        with ESMTP id S1727600AbeHDPLy (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>); Sat, 4 Aug 2018 11:11:54 -0400
 Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
-        by cn.fujitsu.com (Postfix) with ESMTP id AD70D4B66A09
-        for <linux-btrfs@vger.kernel.org>; Sat,  4 Aug 2018 21:11:05 +0800 (CST)
+        by cn.fujitsu.com (Postfix) with ESMTP id CFDC64B6ADEF
+        for <linux-btrfs@vger.kernel.org>; Sat,  4 Aug 2018 21:11:06 +0800 (CST)
 From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 3/5] btrfs: switch update_size to bool in both of btrfs_block_rsv_migrate and btrfs_rsv_add_bytes
-Date: Sat, 4 Aug 2018 21:10:55 +0800
-Message-ID: <20180804131057.9967-4-lufq.fnst@cn.fujitsu.com>
+Subject: [PATCH 5/5] btrfs: Remove root parameter from btrfs_insert_dir_item
+Date: Sat, 4 Aug 2018 21:10:57 +0800
+Message-ID: <20180804131057.9967-6-lufq.fnst@cn.fujitsu.com>
 In-Reply-To: <20180804131057.9967-1-lufq.fnst@cn.fujitsu.com>
 References: <20180804131057.9967-1-lufq.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -18,197 +18,100 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Using true and false here is more semantic than using 0 and 1.
-
-No functional change.
+All callers pass the root tree of dir, we can push that down to the
+function itself.
 
 Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 ---
- fs/btrfs/ctree.h         |  2 +-
- fs/btrfs/delayed-inode.c |  4 ++--
- fs/btrfs/extent-tree.c   | 16 ++++++++--------
- fs/btrfs/file.c          |  4 ++--
- fs/btrfs/inode.c         |  6 +++---
- fs/btrfs/relocation.c    |  2 +-
- 6 files changed, 17 insertions(+), 17 deletions(-)
+ fs/btrfs/ctree.h       | 3 +--
+ fs/btrfs/dir-item.c    | 8 ++++----
+ fs/btrfs/inode.c       | 3 +--
+ fs/btrfs/ioctl.c       | 3 +--
+ fs/btrfs/transaction.c | 7 +++----
+ 5 files changed, 10 insertions(+), 14 deletions(-)
 
 diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 318be7864072..4e8a41ef683c 100644
+index 4e8a41ef683c..c49718b33558 100644
 --- a/fs/btrfs/ctree.h
 +++ b/fs/btrfs/ctree.h
-@@ -2770,7 +2770,7 @@ int btrfs_block_rsv_refill(struct btrfs_root *root,
- 			   enum btrfs_reserve_flush_enum flush);
- int btrfs_block_rsv_migrate(struct btrfs_block_rsv *src_rsv,
- 			    struct btrfs_block_rsv *dst_rsv, u64 num_bytes,
--			    int update_size);
-+			    bool update_size);
- int btrfs_cond_migrate_bytes(struct btrfs_fs_info *fs_info,
- 			     struct btrfs_block_rsv *dest, u64 num_bytes,
- 			     int min_factor);
-diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-index f51b509f2d9b..584cb103955e 100644
---- a/fs/btrfs/delayed-inode.c
-+++ b/fs/btrfs/delayed-inode.c
-@@ -559,7 +559,7 @@ static int btrfs_delayed_item_reserve_metadata(struct btrfs_trans_handle *trans,
- 	 * reserved space when starting a transaction.  So no need to reserve
- 	 * qgroup space here.
- 	 */
--	ret = btrfs_block_rsv_migrate(src_rsv, dst_rsv, num_bytes, 1);
-+	ret = btrfs_block_rsv_migrate(src_rsv, dst_rsv, num_bytes, true);
- 	if (!ret) {
- 		trace_btrfs_space_reservation(fs_info, "delayed_item",
- 					      item->key.objectid,
-@@ -647,7 +647,7 @@ static int btrfs_delayed_inode_reserve_metadata(
- 		return ret;
- 	}
- 
--	ret = btrfs_block_rsv_migrate(src_rsv, dst_rsv, num_bytes, 1);
-+	ret = btrfs_block_rsv_migrate(src_rsv, dst_rsv, num_bytes, true);
- 	if (!ret) {
- 		trace_btrfs_space_reservation(fs_info, "delayed_inode",
- 					      btrfs_ino(inode), num_bytes, 1);
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 8b009ae964cc..4fb20f77d6b1 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -5284,7 +5284,7 @@ static int block_rsv_use_bytes(struct btrfs_block_rsv *block_rsv,
- }
- 
- static void block_rsv_add_bytes(struct btrfs_block_rsv *block_rsv,
--				u64 num_bytes, int update_size)
-+				u64 num_bytes, bool update_size)
+@@ -3020,8 +3020,7 @@ int btrfs_uuid_tree_iterate(struct btrfs_fs_info *fs_info,
+ /* dir-item.c */
+ int btrfs_check_dir_item_collision(struct btrfs_root *root, u64 dir,
+ 			  const char *name, int name_len);
+-int btrfs_insert_dir_item(struct btrfs_trans_handle *trans,
+-			  struct btrfs_root *root, const char *name,
++int btrfs_insert_dir_item(struct btrfs_trans_handle *trans, const char *name,
+ 			  int name_len, struct btrfs_inode *dir,
+ 			  struct btrfs_key *location, u8 type, u64 index);
+ struct btrfs_dir_item *btrfs_lookup_dir_item(struct btrfs_trans_handle *trans,
+diff --git a/fs/btrfs/dir-item.c b/fs/btrfs/dir-item.c
+index a678b07fcf01..8de74d835dba 100644
+--- a/fs/btrfs/dir-item.c
++++ b/fs/btrfs/dir-item.c
+@@ -105,13 +105,13 @@ int btrfs_insert_xattr_item(struct btrfs_trans_handle *trans,
+  * to use for the second index (if one is created).
+  * Will return 0 or -ENOMEM
+  */
+-int btrfs_insert_dir_item(struct btrfs_trans_handle *trans, struct btrfs_root
+-			  *root, const char *name, int name_len,
+-			  struct btrfs_inode *dir, struct btrfs_key *location,
+-			  u8 type, u64 index)
++int btrfs_insert_dir_item(struct btrfs_trans_handle *trans, const char *name,
++			  int name_len, struct btrfs_inode *dir,
++			  struct btrfs_key *location, u8 type, u64 index)
  {
- 	spin_lock(&block_rsv->lock);
- 	block_rsv->reserved += num_bytes;
-@@ -5316,7 +5316,7 @@ int btrfs_cond_migrate_bytes(struct btrfs_fs_info *fs_info,
- 		global_rsv->full = 0;
- 	spin_unlock(&global_rsv->lock);
- 
--	block_rsv_add_bytes(dest, num_bytes, 1);
-+	block_rsv_add_bytes(dest, num_bytes, true);
- 	return 0;
- }
- 
-@@ -5479,7 +5479,7 @@ static u64 block_rsv_release_bytes(struct btrfs_fs_info *fs_info,
- 
- int btrfs_block_rsv_migrate(struct btrfs_block_rsv *src,
- 			    struct btrfs_block_rsv *dst, u64 num_bytes,
--			    int update_size)
-+			    bool update_size)
- {
- 	int ret;
- 
-@@ -5540,7 +5540,7 @@ int btrfs_block_rsv_add(struct btrfs_root *root,
- 
- 	ret = reserve_metadata_bytes(root, block_rsv, num_bytes, flush);
- 	if (!ret) {
--		block_rsv_add_bytes(block_rsv, num_bytes, 1);
-+		block_rsv_add_bytes(block_rsv, num_bytes, true);
- 		return 0;
- 	}
- 
-@@ -5587,7 +5587,7 @@ int btrfs_block_rsv_refill(struct btrfs_root *root,
- 
- 	ret = reserve_metadata_bytes(root, block_rsv, num_bytes, flush);
- 	if (!ret) {
--		block_rsv_add_bytes(block_rsv, num_bytes, 0);
-+		block_rsv_add_bytes(block_rsv, num_bytes, false);
- 		return 0;
- 	}
- 
-@@ -5629,7 +5629,7 @@ static int btrfs_inode_rsv_refill(struct btrfs_inode *inode,
- 		return ret;
- 	ret = reserve_metadata_bytes(root, block_rsv, num_bytes, flush);
- 	if (!ret) {
--		block_rsv_add_bytes(block_rsv, num_bytes, 0);
-+		block_rsv_add_bytes(block_rsv, num_bytes, false);
- 		trace_btrfs_space_reservation(root->fs_info, "delalloc",
- 					      btrfs_ino(inode), num_bytes, 1);
- 
-@@ -5834,7 +5834,7 @@ int btrfs_subvolume_reserve_metadata(struct btrfs_root *root,
- 				  BTRFS_RESERVE_FLUSH_ALL);
- 
- 	if (ret == -ENOSPC && use_global_rsv)
--		ret = btrfs_block_rsv_migrate(global_rsv, rsv, num_bytes, 1);
-+		ret = btrfs_block_rsv_migrate(global_rsv, rsv, num_bytes, true);
- 
- 	if (ret && qgroup_num_bytes)
- 		btrfs_qgroup_free_meta_prealloc(root, qgroup_num_bytes);
-@@ -8214,7 +8214,7 @@ use_block_rsv(struct btrfs_trans_handle *trans,
- static void unuse_block_rsv(struct btrfs_fs_info *fs_info,
- 			    struct btrfs_block_rsv *block_rsv, u32 blocksize)
- {
--	block_rsv_add_bytes(block_rsv, blocksize, 0);
-+	block_rsv_add_bytes(block_rsv, blocksize, false);
- 	block_rsv_release_bytes(fs_info, block_rsv, NULL, 0, NULL);
- }
- 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 2be00e873e92..d254cf94545f 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -2544,7 +2544,7 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
- 	}
- 
- 	ret = btrfs_block_rsv_migrate(&fs_info->trans_block_rsv, rsv,
--				      min_size, 0);
-+				      min_size, false);
- 	BUG_ON(ret);
- 	trans->block_rsv = rsv;
- 
-@@ -2594,7 +2594,7 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
- 		}
- 
- 		ret = btrfs_block_rsv_migrate(&fs_info->trans_block_rsv,
--					      rsv, min_size, 0);
-+					      rsv, min_size, false);
- 		BUG_ON(ret);	/* shouldn't happen */
- 		trans->block_rsv = rsv;
- 
+ 	int ret = 0;
+ 	int ret2 = 0;
++	struct btrfs_root *root = dir->root;
+ 	struct btrfs_path *path;
+ 	struct btrfs_dir_item *dir_item;
+ 	struct extent_buffer *leaf;
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index a7d9691a681f..a86d2f4effc6 100644
+index a86d2f4effc6..1f5842ab11cc 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -5351,7 +5351,7 @@ static struct btrfs_trans_handle *evict_refill_and_join(struct btrfs_root *root,
- 		 * it.
- 		 */
- 		if (!btrfs_check_space_for_delayed_refs(trans, fs_info) &&
--		    !btrfs_block_rsv_migrate(global_rsv, rsv, min_size, 0))
-+		    !btrfs_block_rsv_migrate(global_rsv, rsv, min_size, false))
- 			return trans;
+@@ -6405,8 +6405,7 @@ int btrfs_add_link(struct btrfs_trans_handle *trans,
+ 	if (ret)
+ 		return ret;
  
- 		/* If not, commit and try again. */
-@@ -9045,7 +9045,7 @@ static int btrfs_truncate(struct inode *inode, bool skip_writeback)
- 
- 	/* Migrate the slack space for the truncate to our reserve */
- 	ret = btrfs_block_rsv_migrate(&fs_info->trans_block_rsv, rsv,
--				      min_size, 0);
-+				      min_size, false);
- 	BUG_ON(ret);
- 
- 	/*
-@@ -9082,7 +9082,7 @@ static int btrfs_truncate(struct inode *inode, bool skip_writeback)
- 
- 		btrfs_block_rsv_release(fs_info, rsv, -1);
- 		ret = btrfs_block_rsv_migrate(&fs_info->trans_block_rsv,
--					      rsv, min_size, 0);
-+					      rsv, min_size, false);
- 		BUG_ON(ret);	/* shouldn't happen */
- 		trans->block_rsv = rsv;
+-	ret = btrfs_insert_dir_item(trans, root, name, name_len,
+-				    parent_inode, &key,
++	ret = btrfs_insert_dir_item(trans, name, name_len, parent_inode, &key,
+ 				    btrfs_inode_type(&inode->vfs_inode), index);
+ 	if (ret == -EEXIST || ret == -EOVERFLOW)
+ 		goto fail_dir_item;
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index d3a5d2a41e5f..eaff768cd5d4 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -686,8 +686,7 @@ static noinline int create_subvol(struct inode *dir,
+ 		goto fail;
  	}
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 8783a1776540..995a28a724ce 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -4669,7 +4669,7 @@ int btrfs_reloc_post_snapshot(struct btrfs_trans_handle *trans,
- 	if (rc->merge_reloc_tree) {
- 		ret = btrfs_block_rsv_migrate(&pending->block_rsv,
- 					      rc->block_rsv,
--					      rc->nodes_relocated, 1);
-+					      rc->nodes_relocated, true);
- 		if (ret)
- 			return ret;
- 	}
+ 
+-	ret = btrfs_insert_dir_item(trans, root,
+-				    name, namelen, BTRFS_I(dir), &key,
++	ret = btrfs_insert_dir_item(trans, name, namelen, BTRFS_I(dir), &key,
+ 				    BTRFS_FT_DIR, index);
+ 	if (ret) {
+ 		btrfs_abort_transaction(trans, ret);
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 3b84f5015029..bd784d8f5215 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -1613,10 +1613,9 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 	if (ret < 0)
+ 		goto fail;
+ 
+-	ret = btrfs_insert_dir_item(trans, parent_root,
+-				    dentry->d_name.name, dentry->d_name.len,
+-				    BTRFS_I(parent_inode), &key,
+-				    BTRFS_FT_DIR, index);
++	ret = btrfs_insert_dir_item(trans, dentry->d_name.name,
++				    dentry->d_name.len, BTRFS_I(parent_inode),
++				    &key, BTRFS_FT_DIR, index);
+ 	/* We have check then name at the beginning, so it is impossible. */
+ 	BUG_ON(ret == -EEXIST || ret == -EOVERFLOW);
+ 	if (ret) {
 -- 
 2.18.0
 

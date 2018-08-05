@@ -1,50 +1,31 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:60798 "EHLO mx1.suse.de"
+Received: from szxga07-in.huawei.com ([45.249.212.35]:47130 "EHLO huawei.com"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1732639AbeHGRRS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 7 Aug 2018 13:17:18 -0400
-Date: Tue, 7 Aug 2018 17:02:27 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Anand Jain <anand.jain@oracle.com>
-Cc: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v3 4/4] btrfs: add helper btrfs_num_devices() to deduce
- num_devices
-Message-ID: <20180807150227.GI3218@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20180726065334.30594-5-anand.jain@oracle.com>
- <20180802100934.12468-1-anand.jain@oracle.com>
- <b1c8c566-5850-da69-b756-5036dca33975@suse.com>
- <20180802122136.GM3218@twin.jikos.cz>
- <f2f5a582-1bc4-617a-0d38-6c212d93bb56@oracle.com>
+        id S1726251AbeHERTa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 5 Aug 2018 13:19:30 -0400
+From: zhong jiang <zhongjiang@huawei.com>
+To: <clm@fb.com>, <jbacik@fb.com>, <dsterba@suse.com>
+CC: <linux-btrfs@vger.kernel.org>, <linux-kernel@vger.kernel.org>
+Subject: [PATCH 0/3] Remove uneeded variable "err"
+Date: Sun, 5 Aug 2018 23:02:48 +0800
+Message-ID: <1533481371-21349-1-git-send-email-zhongjiang@huawei.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <f2f5a582-1bc4-617a-0d38-6c212d93bb56@oracle.com>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Aug 02, 2018 at 09:07:00PM +0800, Anand Jain wrote:
-> >>> -	num_devices = fs_devices->num_devices;
-> >>> -	btrfs_dev_replace_read_lock(&fs_info->dev_replace);
-> >>> -	if (btrfs_dev_replace_is_ongoing(&fs_info->dev_replace)) {
-> >>> -		BUG_ON(num_devices < 1);
-> >>> -		num_devices--;
-> >>> -	}
-> >>> -	btrfs_dev_replace_read_unlock(&fs_info->dev_replace);
-> >>> +	num_devices = btrfs_num_devices(fs_info);
-> >>
-> >> How about lifting the BUG_ON from btrfs_num_devices into a check in this
-> >> function, so if num_devices < 1 then we just exit with -EINVAL or some
-> >> such. We should be aiming at eliminating BUG_ONs.
-> > 
-> > Right, in both cases it's possible to return with an error instead of
-> > the BUG_ON.
-> 
-> Actually we should just remove it as its a logical bug if num_devices < 
-> 1, so long we didn't hit this bug which means its stable OR keep BUG_ON 
-> it until we add RAID-N. ?
 
-I think the BUG_ON is redundant, all the sanity checks at mount time or
-ioctl remove/replace make sure that there are enough devices to perform
-the action. Still, it can be an assert, such things do not hurt and may
-be catch other errors someday.
+zhong jiang (3):
+  fs/btrfs/disk-io: Remove unneeded variable "err"
+  fs/btrfs/extent-tree: remove redudant variable "err"
+  fs/btrfs/tree-log: remove the unneeded variable "err"
+
+ fs/btrfs/disk-io.c     | 12 ++++--------
+ fs/btrfs/extent-tree.c |  6 ++----
+ fs/btrfs/tree-log.c    |  5 +----
+ fs/btrfs/tree-log.h    |  2 +-
+ 4 files changed, 8 insertions(+), 17 deletions(-)
+
+-- 
+1.7.12.4
+

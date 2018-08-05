@@ -1,133 +1,127 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp2130.oracle.com ([156.151.31.86]:52372 "EHLO
-        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726999AbeHFDMz (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 5 Aug 2018 23:12:55 -0400
-Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
-        by userp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w7614j6R055249
-        for <linux-btrfs@vger.kernel.org>; Mon, 6 Aug 2018 01:06:19 GMT
-Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
-        by userp2130.oracle.com with ESMTP id 2kn3jstsve-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 06 Aug 2018 01:06:19 +0000
-Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w7616IZT019676
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 6 Aug 2018 01:06:18 GMT
-Received: from abhmp0012.oracle.com (abhmp0012.oracle.com [141.146.116.18])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w7616Itt016211
-        for <linux-btrfs@vger.kernel.org>; Mon, 6 Aug 2018 01:06:18 GMT
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: add cli to forget one or all scanned devices
-Date: Mon,  6 Aug 2018 09:09:49 +0800
-Message-Id: <20180806010949.26915-3-anand.jain@oracle.com>
-In-Reply-To: <20180806010949.26915-1-anand.jain@oracle.com>
-References: <20180806010949.26915-1-anand.jain@oracle.com>
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:63684 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1726159AbeHEMo2 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 5 Aug 2018 08:44:28 -0400
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
+        by cn.fujitsu.com (Postfix) with ESMTP id 02D374B625E7
+        for <linux-btrfs@vger.kernel.org>; Sun,  5 Aug 2018 18:40:09 +0800 (CST)
+From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [RFC PATCH 1/4] btrfs: factor out btrfs_link_subvol from create_subvol
+Date: Sun, 5 Aug 2018 18:39:58 +0800
+Message-ID: <20180805104001.5488-2-lufq.fnst@cn.fujitsu.com>
+In-Reply-To: <20180805104001.5488-1-lufq.fnst@cn.fujitsu.com>
+References: <20180805104001.5488-1-lufq.fnst@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch adds cli
-  btrfs device forget [dev]
-to remove the given device structure in the kernel if the device
-is unmounted. If no argument is given it shall remove all stale
-(device which are not mounted) from the kernel.
+The function btrfs_link_subvol is responsible to link the subvolume to
+the specified directory, which is the opposite of what
+btrfs_unlink_subvol does.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
+No functional change.
+
+Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 ---
- cmds-device.c | 58 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- ioctl.h       |  2 ++
- 2 files changed, 60 insertions(+)
+ fs/btrfs/ioctl.c | 65 ++++++++++++++++++++++++++++++------------------
+ 1 file changed, 41 insertions(+), 24 deletions(-)
 
-diff --git a/cmds-device.c b/cmds-device.c
-index 86459d1b9564..49cfd4b41adb 100644
---- a/cmds-device.c
-+++ b/cmds-device.c
-@@ -326,6 +326,63 @@ out:
- 	return !!ret;
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index d3a5d2a41e5f..d37c26f69112 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -542,6 +542,45 @@ int btrfs_is_empty_uuid(u8 *uuid)
+ 	return 1;
  }
  
-+static const char * const cmd_device_forget_usage[] = {
-+	"btrfs device forget [<device>]",
-+	"Forget a stale device or all stale devices in btrfs.ko",
-+	NULL
-+};
-+
-+static int btrfs_forget_devices(char *path)
++static int btrfs_link_subvol(struct btrfs_trans_handle *trans,
++			     struct inode *dir, u64 objectid, const char *name,
++			     int namelen)
 +{
-+	struct btrfs_ioctl_vol_args args;
++	struct btrfs_root *root = BTRFS_I(dir)->root;
++	struct btrfs_key key;
++	u64 index = 0;
 +	int ret;
-+	int fd;
 +
-+	fd = open("/dev/btrfs-control", O_RDWR);
-+	if (fd < 0)
-+		return -errno;
-+
-+	memset(&args, 0, sizeof(args));
-+	if (path)
-+		strncpy_null(args.name, path);
-+	ret = ioctl(fd, BTRFS_IOC_FORGET_DEV, &args);
-+	if (ret)
-+		ret = -errno;
-+	close(fd);
-+	return ret;
-+}
-+
-+static int cmd_device_forget(int argc, char **argv)
-+{
-+	char *path;
-+	int ret = 0;
-+
-+	if (check_argc_max(argc - optind, 1))
-+		usage(cmd_device_forget_usage);
-+
-+	if (argc == 1) {
-+		ret = btrfs_forget_devices(NULL);
-+		if (ret)
-+			error("Can't forget: %s", strerror(-ret));
++	/*
++	 * insert the directory item
++	 */
++	ret = btrfs_set_inode_index(BTRFS_I(dir), &index);
++	if (ret) {
++		btrfs_abort_transaction(trans, ret);
 +		return ret;
 +	}
 +
-+	path = canonicalize_path(argv[1]);
-+	if (!path) {
-+		error("Could not canonicalize path '%s': %s",
-+					argv[1], strerror(errno));
-+		return -ENOENT;
++	key.objectid = objectid;
++	key.type = BTRFS_ROOT_ITEM_KEY;
++	key.offset = -1;
++	ret = btrfs_insert_dir_item(trans, root, name, namelen, BTRFS_I(dir),
++				    &key, BTRFS_FT_DIR, index);
++	if (ret) {
++		btrfs_abort_transaction(trans, ret);
++		return ret;
 +	}
 +
-+	ret  = btrfs_forget_devices(path);
-+	if (ret)
-+		error("Can't forget '%s': %s", path, strerror(-ret));
++	btrfs_i_size_write(BTRFS_I(dir), dir->i_size + namelen * 2);
++	ret = btrfs_update_inode(trans, root, dir);
++	BUG_ON(ret);
 +
-+	free(path);
++	ret = btrfs_add_root_ref(trans, objectid, root->root_key.objectid,
++				 btrfs_ino(BTRFS_I(dir)), index, name, namelen);
++	BUG_ON(ret);
 +
 +	return ret;
 +}
 +
- static const char * const cmd_device_ready_usage[] = {
- 	"btrfs device ready <device>",
- 	"Check device to see if it has all of its devices in cache for mounting",
-@@ -601,6 +658,7 @@ const struct cmd_group device_cmd_group = {
- 			CMD_ALIAS },
- 		{ "remove", cmd_device_remove, cmd_device_remove_usage, NULL, 0 },
- 		{ "scan", cmd_device_scan, cmd_device_scan_usage, NULL, 0 },
-+		{ "forget", cmd_device_forget, cmd_device_forget_usage, NULL, 0 },
- 		{ "ready", cmd_device_ready, cmd_device_ready_usage, NULL, 0 },
- 		{ "stats", cmd_device_stats, cmd_device_stats_usage, NULL, 0 },
- 		{ "usage", cmd_device_usage,
-diff --git a/ioctl.h b/ioctl.h
-index 709e996f401c..e27d80e09392 100644
---- a/ioctl.h
-+++ b/ioctl.h
-@@ -721,6 +721,8 @@ static inline char *btrfs_err_str(enum btrfs_err_code err_code)
- 				   struct btrfs_ioctl_vol_args)
- #define BTRFS_IOC_SCAN_DEV _IOW(BTRFS_IOCTL_MAGIC, 4, \
- 				   struct btrfs_ioctl_vol_args)
-+#define BTRFS_IOC_FORGET_DEV _IOW(BTRFS_IOCTL_MAGIC, 5, \
-+				   struct btrfs_ioctl_vol_args)
- /* trans start and trans end are dangerous, and only for
-  * use by applications that know how to avoid the
-  * resulting deadlocks
+ static noinline int create_subvol(struct inode *dir,
+ 				  struct dentry *dentry,
+ 				  const char *name, int namelen,
+@@ -563,7 +602,6 @@ static noinline int create_subvol(struct inode *dir,
+ 	int err;
+ 	u64 objectid;
+ 	u64 new_dirid = BTRFS_FIRST_FREE_OBJECTID;
+-	u64 index = 0;
+ 	uuid_le new_uuid;
+ 
+ 	root_item = kzalloc(sizeof(*root_item), GFP_KERNEL);
+@@ -677,30 +715,9 @@ static noinline int create_subvol(struct inode *dir,
+ 	new_root->highest_objectid = new_dirid;
+ 	mutex_unlock(&new_root->objectid_mutex);
+ 
+-	/*
+-	 * insert the directory item
+-	 */
+-	ret = btrfs_set_inode_index(BTRFS_I(dir), &index);
+-	if (ret) {
+-		btrfs_abort_transaction(trans, ret);
+-		goto fail;
+-	}
+-
+-	ret = btrfs_insert_dir_item(trans, root,
+-				    name, namelen, BTRFS_I(dir), &key,
+-				    BTRFS_FT_DIR, index);
+-	if (ret) {
+-		btrfs_abort_transaction(trans, ret);
++	ret = btrfs_link_subvol(trans, dir, objectid, name, namelen);
++	if (ret)
+ 		goto fail;
+-	}
+-
+-	btrfs_i_size_write(BTRFS_I(dir), dir->i_size + namelen * 2);
+-	ret = btrfs_update_inode(trans, root, dir);
+-	BUG_ON(ret);
+-
+-	ret = btrfs_add_root_ref(trans, objectid, root->root_key.objectid,
+-				 btrfs_ino(BTRFS_I(dir)), index, name, namelen);
+-	BUG_ON(ret);
+ 
+ 	ret = btrfs_uuid_tree_add(trans, root_item->uuid,
+ 				  BTRFS_UUID_KEY_SUBVOL, objectid);
 -- 
-2.7.0
+2.18.0
+
+
 

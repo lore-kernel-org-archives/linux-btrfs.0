@@ -1,52 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:63684 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1726159AbeHEMoZ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 5 Aug 2018 08:44:25 -0400
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
-        by cn.fujitsu.com (Postfix) with ESMTP id 7BA244B41EE4
-        for <linux-btrfs@vger.kernel.org>; Sun,  5 Aug 2018 18:40:08 +0800 (CST)
-From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [RFC PATCH 0/4] undelete subvolume online version
-Date: Sun, 5 Aug 2018 18:39:57 +0800
-Message-ID: <20180805104001.5488-1-lufq.fnst@cn.fujitsu.com>
+Received: from mail-oi0-f47.google.com ([209.85.218.47]:41337 "EHLO
+        mail-oi0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726204AbeHEROD (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 5 Aug 2018 13:14:03 -0400
+Received: by mail-oi0-f47.google.com with SMTP id k12-v6so17886725oiw.8
+        for <linux-btrfs@vger.kernel.org>; Sun, 05 Aug 2018 08:09:09 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain
+From: Zoltan <zoltan1980@gmail.com>
+Date: Sun, 5 Aug 2018 17:08:28 +0200
+Message-ID: <CAA-GF5uG3tyJCM_EBSW4FywT9zL44iWP8jSL9Q6TQNouFE5Y9g@mail.gmail.com>
+Subject: Hanging btrfs-transaction
+To: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patchset will add the BTRFS_IOC_SUBVOL_UNDELETE ioctl for online
-btrfs subvolume undelete.
+Dear Btrfs Experts,
 
-And btrfs subvolume undelete subcommand was added to btrfs-progs.
+I would like to ask for advice regarding the following problem:
 
-So user can use the following command to recover all the subolume that
-is left on the device. The recovered subvolume will be link to <dest> dir
-named to <name_prefix><subvol_id>.
+I regularly do incremental backups of snapshots using commands like:
 
-# btrfs subvolume undelete [-p <name_prefix>] <dest>
+btrfs send -p /volumes/root/snapshots/2018-08-02
+/volumes/root/snapshots/2018-08-03 | btrfs receive
+/volumes/sj-backup/root
 
-btrfs online undelete version:
-https://github.com/littleroad/linux.git undelete
+Recently the command started hanging with the following message
+showing up in dmesg:
 
-btrfs-progs online undelete version:
-https://github.com/littleroad/btrfs-progs.git online_undelete
+[136055.426170] INFO: task btrfs-transacti:13368 blocked for more than
+120 seconds.
+[136055.426181]       Tainted: P           OE    4.15.0-29-generic #31-Ubuntu
+[136055.426186] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs"
+disables this message.
+[136055.426192] btrfs-transacti D    0 13368      2 0x80000000
+[136055.426199] Call Trace:
+[136055.426215]  __schedule+0x291/0x8a0
+[136055.426224]  schedule+0x2c/0x80
+[136055.426283]  btrfs_commit_transaction+0x81d/0x8f0 [btrfs]
+[136055.426291]  ? wait_woken+0x80/0x80
+[136055.426342]  transaction_kthread+0x18d/0x1b0 [btrfs]
+[136055.426351]  kthread+0x121/0x140
+[136055.426395]  ? btrfs_cleanup_transaction+0x560/0x560 [btrfs]
+[136055.426402]  ? kthread_create_worker_on_cpu+0x70/0x70
+[136055.426409]  ret_from_fork+0x35/0x40
 
-Issue: #82
+This message is repeated 6 times. The first time this happened, I
+waited a few hours for the command to finish (usually it only takes a
+few minutes), but finally I gave up waiting and rebooted. When I ran
+the command again, I got the same result.
 
-Lu Fengqi (4):
-  btrfs: factor out btrfs_link_subvol from create_subvol
-  btrfs: don't BUG_ON() in btrfs_link_subvol()
-  btrfs: undelete: introduce btrfs_undelete_subvolume
-  btrfs: undelete: Add the btrfs_ioctl_undelete
+I have another backup disk stored in a different location and from
+time to time I swap them. I swapped them just to test whether the
+problem is on the sending or the receiving side and with the other
+disk everything works fine. I swapped them back and the problem
+returned.
 
- fs/btrfs/ioctl.c           | 270 +++++++++++++++++++++++++++++++++----
- include/uapi/linux/btrfs.h |   9 ++
- 2 files changed, 255 insertions(+), 24 deletions(-)
+I have tried scrubbing the disk, it did not find any errors.
+Interestingly, when I removed a few older snapshots from the target
+disk, the command started working again, but a few days later, it
+started hanging again. While it was working, I removed some more older
+snapshots, which may or may not have been the trigger behind the
+problem resurfacing.
 
--- 
-2.18.0
+I'm using Ubuntu 18.04, kernel 4.15.0-29-generic.
 
+Thanks,
 
-
+Zoltan

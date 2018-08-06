@@ -1,94 +1,99 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp2120.oracle.com ([141.146.126.78]:46710 "EHLO
-        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726999AbeHFDMy (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 5 Aug 2018 23:12:54 -0400
-Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
-        by aserp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w7613xR2085955
-        for <linux-btrfs@vger.kernel.org>; Mon, 6 Aug 2018 01:06:17 GMT
-Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
-        by aserp2120.oracle.com with ESMTP id 2kn43njrpd-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 06 Aug 2018 01:06:17 +0000
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w7616GjX019611
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 6 Aug 2018 01:06:16 GMT
-Received: from abhmp0012.oracle.com (abhmp0012.oracle.com [141.146.116.18])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w7616GFx030177
-        for <linux-btrfs@vger.kernel.org>; Mon, 6 Aug 2018 01:06:16 GMT
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH RESEND v8] Add cli and ioctl to forget scanned device(s)
-Date: Mon,  6 Aug 2018 09:09:47 +0800
-Message-Id: <20180806010949.26915-1-anand.jain@oracle.com>
+Received: from mgwym01.jp.fujitsu.com ([211.128.242.40]:32560 "EHLO
+        mgwym01.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726408AbeHFEmU (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Aug 2018 00:42:20 -0400
+Received: from g01jpfmpwkw03.exch.g01.fujitsu.local (g01jpfmpwkw03.exch.g01.fujitsu.local [10.0.193.57])
+        by yt-mxoi1.gw.nic.fujitsu.com (Postfix) with ESMTP id E244AAC010A
+        for <linux-btrfs@vger.kernel.org>; Mon,  6 Aug 2018 11:35:25 +0900 (JST)
+Subject: Re: [PATCH 2/3] btrfs-progs: ins: logical-resolve: Print message when
+ path cannot be resolved
+To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
+References: <cover.1532501096.git.misono.tomohiro@jp.fujitsu.com>
+ <a5545edbef2d2b1800a5ea83d9c14773b5b1fbe7.1532501096.git.misono.tomohiro@jp.fujitsu.com>
+ <20180803150653.GA3218@twin.jikos.cz>
+From: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
+Message-ID: <00f506d1-f549-a682-1d38-a41ec5633313@jp.fujitsu.com>
+Date: Mon, 6 Aug 2018 11:34:55 +0900
+MIME-Version: 1.0
+In-Reply-To: <20180803150653.GA3218@twin.jikos.cz>
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-[applies on misc-next and for-next-20180801]
+On 2018/08/04 0:06, David Sterba wrote:
+> On Wed, Jul 25, 2018 at 05:20:17PM +0900, Misono Tomohiro wrote:
+>> Since BTRFS_IOC_INO_PATHS requires fd of subvolume,
+> 
+> Does it? AFAICS btrfs_ioctl_ino_to_path gets root that's the containing
+> subvolume of the path given by the user.
 
-v8:
- Change log update in the kernel patch.
+It is reverse; it returns all paths of given inode number in given subvolume fd.
 
-v7:
- Use struct btrfs_ioctl_vol_args (instead of struct
-  btrfs_ioctl_vol_args_v2) as its inline with other ioctl
-  btrfs-control
- The CLI usage/features remains same. However internally the ioctl flag
-  is not required to delete all the unmounted devices. Instead leave
-  btrfs_ioctl_vol_args::name NULL.
+> 
+>> logical-resolve
+>> cannot find the path when mount point is not FS_TREE
+>> (because the subvolume path cannot be opened).
+> 
+> Sorry, I don't understand what's the problem here. What you write sounds
+> like there's a reproducer. If yes, please post it.
 
-v6:
- Use the changed fn name btrfs_free_stale_devices().
+Sure. If mountpoint is FS_TREE, everything is ok:
 
- Change in title:
- Old v5:
- Cover-letter:
-  [PATCH v5] Add cli and ioctl to ignore a scanned device
- Kernel:
-  [PATCH v5] btrfs: introduce feature to ignore a btrfs device
- Progs:
-  [PATCH v5] btrfs-progs: add 'btrfs device ignore' cli
+$ mkfs.btrfs -fq $DEV
+$ mount $DEV /mnt
 
-v5:
-  Adds feature to delete all stale devices
-  Reuses btrfs_free_stale_devices() fn and so depends on the
-    patch-set [1] in the ML.
-  Uses struct btrfs_ioctl_vol_args_v2 instead of
-    struct btrfs_ioctl_vol_args as arg
-  Does the device path matching instead of btrfs_device matching
-    (we won't delete the mounted device as btrfs_free_stale_devices()
-    checks for it)
-v4:
-  No change. But as the ML thread may be confusing, so resend.
-v3:
-  No change. Send to correct ML.
-v2:
-  Accepts review from Nikolay, details are in the specific patch.
-  Patch 1/2 is renamed from
-    [PATCH 1/2] btrfs: refactor btrfs_free_stale_device() to get device list delete
-  to
-    [PATCH 1/2] btrfs: add function to device list delete
+// create snapshot and hardlink
+$ btrfs sub create /mnt/sub
+$ dd if=/dev/urandom of=/mnt/sub/file bs=1k count=1000
+$ btrfs sub snap /mnt/sub /mnt/snap
+$ ln /mnt/sub/file /mnt/sub/file2
+$ tree --inodes /mnt
+/mnt
+|-- [    256]  snap
+|   `-- [    257]  file
+`-- [    256]  sub
+    |-- [    257]  file
+    `-- [    257]  file2
 
-Adds cli and ioctl to forget a scanned device or forget all stale
-devices in the kernel.
+inode-resolve returns all paths of given inode number in given subvolume:
+(it calls IOC_INO_PATHS)
+$ btrfs ins inode-resolve 257 /mnt/sub
+/mnt/sub/file
+/mnt/sub/file2
 
-Anand Jain (1):
-  btrfs: introduce feature to forget a btrfs device
+$ btrfs ins inode-resolve 257 /mnt/snap
+/mnt/snap/file
 
- fs/btrfs/super.c           | 3 +++
- fs/btrfs/volumes.c         | 9 +++++++++
- fs/btrfs/volumes.h         | 1 +
- include/uapi/linux/btrfs.h | 2 ++
- 4 files changed, 15 insertions(+)
+logical-resolve returns all paths containing given logical address in fs:
+(it calls IOC_INO_PATHS after IOC_LOGICAL_INO)
+$ filefrag -v /mnt/sub/file
+Filesystem type is: 9123683e
+File size of /mnt/sub/file is 1024000 (250 blocks of 4096 bytes)
+ ext:     logical_offset:        physical_offset: length:   expected: flags:
+   0:        0..     249:       3392..      3641:    250:             last,shared,eof
+/mnt/sub/file: 1 extent found
+$ btrfs ins logical-resolve $((3392*4096)) /mnt
+/mnt/snap/file
+/mnt/sub/file
+/mnt/sub/file2
 
-Anand Jain (1):
-  btrfs-progs: add cli to forget one or all scanned devices
 
- cmds-device.c | 58 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- ioctl.h       |  2 ++
- 2 files changed, 60 insertions(+)
+However, when mountpoint is not FS_TREE, above logical-resolve fails:
 
--- 
-2.7.0
+$ umount /mnt
+$ mount -o subvol=sub $DEV /mnt
+$ btrfs ins logical-resolve $((3392*4096)) /mnt
+ERROR: cannot access '/mnt/snap': No such file or directory
+
+The reasons are
+(1) btrfs_list_path_for_root() returns paths from FS_TREE
+(2) subvolume path cannot be opened and therefore cannot call IOC_INO_PATHS
+
+(1) may be fixed for mounted subvolume, but if a subvolume is not accessible at all,
+there is no way to call IOC_INO_PATHS.
+To solve this, we need to pass arbitrary treeid just like INO_LOOKUP ioctl.
+
+Thanks,
+Misono
 

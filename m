@@ -1,80 +1,121 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:41386 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726412AbeHFIHq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 6 Aug 2018 04:07:46 -0400
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 2DE59AE1A
-        for <linux-btrfs@vger.kernel.org>; Mon,  6 Aug 2018 06:00:17 +0000 (UTC)
-From: Qu Wenruo <wqu@suse.com>
+Received: from aserp2130.oracle.com ([141.146.126.79]:41240 "EHLO
+        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727009AbeHFDMz (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 5 Aug 2018 23:12:55 -0400
+Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
+        by aserp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w7614aSv074202
+        for <linux-btrfs@vger.kernel.org>; Mon, 6 Aug 2018 01:06:18 GMT
+Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
+        by aserp2130.oracle.com with ESMTP id 2kn1nctw48-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Mon, 06 Aug 2018 01:06:18 +0000
+Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
+        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w7616HRd019641
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Mon, 6 Aug 2018 01:06:17 GMT
+Received: from abhmp0012.oracle.com (abhmp0012.oracle.com [141.146.116.18])
+        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w7616HFU030183
+        for <linux-btrfs@vger.kernel.org>; Mon, 6 Aug 2018 01:06:17 GMT
+From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 3/3] btrfs-progs: Doc: Update btrfs-qgroup for the rescan condition
-Date: Mon,  6 Aug 2018 14:00:08 +0800
-Message-Id: <20180806060008.9556-4-wqu@suse.com>
-In-Reply-To: <20180806060008.9556-1-wqu@suse.com>
-References: <20180806060008.9556-1-wqu@suse.com>
+Subject: [PATCH] btrfs: introduce feature to forget a btrfs device
+Date: Mon,  6 Aug 2018 09:09:48 +0800
+Message-Id: <20180806010949.26915-2-anand.jain@oracle.com>
+In-Reply-To: <20180806010949.26915-1-anand.jain@oracle.com>
+References: <20180806010949.26915-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add a new section, RESCAN CONDITION, to explain why and when we need a
-full quota rescan when assigning/removing qgroup relationship.
+Support for a new command 'btrfs dev forget [dev]' is proposed here
+to undo the effects of 'btrfs dev scan [dev]'. For this purpose
+this patch proposes to use ioctl #5 as it was empty.
+	IOW(BTRFS_IOCTL_MAGIC, 5, ..)
+This patch adds new ioctl BTRFS_IOC_FORGET_DEV which can be sent from
+the /dev/btrfs-control to forget one or all devices, (devices which are
+not mounted) from the btrfs kernel.
 
-Also, since 'remove' shares the same options of 'assign', add reference
-to 'assign' options for 'remove' subcommand.
+The argument it takes is struct btrfs_ioctl_vol_args, and ::name can be
+set to specify the device path. And all unmounted devices can be removed
+from the kernel if no device path is provided.
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
+Again, the devices are removed only if the relevant fsid aren't mounted.
+
+This new cli can provide..
+ . Release of unwanted btrfs_fs_devices and btrfs_devices memory if the
+   device is not going to be mounted.
+ . Ability to mount the device in degraded mode when one of the other
+   device is corrupted like in split brain raid1.
+ . Running test cases which requires btrfs.ko-reload if the rootfs
+   is btrfs.
+
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- Documentation/btrfs-qgroup.asciidoc | 22 +++++++++++++++++++++-
- 1 file changed, 21 insertions(+), 1 deletion(-)
+ fs/btrfs/super.c           | 3 +++
+ fs/btrfs/volumes.c         | 9 +++++++++
+ fs/btrfs/volumes.h         | 1 +
+ include/uapi/linux/btrfs.h | 2 ++
+ 4 files changed, 15 insertions(+)
 
-diff --git a/Documentation/btrfs-qgroup.asciidoc b/Documentation/btrfs-qgroup.asciidoc
-index fee173860000..d1c8fedc94d4 100644
---- a/Documentation/btrfs-qgroup.asciidoc
-+++ b/Documentation/btrfs-qgroup.asciidoc
-@@ -49,8 +49,10 @@ identified by <path>.
- --rescan::::
- (Default) Automatically schedule quota rescan if the new qgroup assignment
- leads to quota inconsistency.
-+Check `RESCAN CONDITION` for more info.
- --no-rescan::::
--Explicitly ask not to do a rescan.
-+Explicitly ask not to do a rescan, even if the assigning makes quota
-+inconsistent.
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 67de3c0fc85b..470a32af474e 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -2244,6 +2244,9 @@ static long btrfs_control_ioctl(struct file *file, unsigned int cmd,
+ 		ret = PTR_ERR_OR_ZERO(device);
+ 		mutex_unlock(&uuid_mutex);
+ 		break;
++	case BTRFS_IOC_FORGET_DEV:
++		ret = btrfs_forget_devices(vol->name);
++		break;
+ 	case BTRFS_IOC_DEVICES_READY:
+ 		mutex_lock(&uuid_mutex);
+ 		device = btrfs_scan_one_device(vol->name, FMODE_READ,
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 8844904f9009..cd54a926141a 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1208,6 +1208,15 @@ static int btrfs_read_disk_super(struct block_device *bdev, u64 bytenr,
+ 	return 0;
+ }
  
- *create* <qgroupid> <path>::
- Create a subvolume quota group.
-@@ -83,6 +85,10 @@ limit space exclusively assigned to this qgroup.
- *remove* <src> <dst> <path>::
- Remove the relationship between child qgroup <src> and parent qgroup <dst> in
- the btrfs filesystem identified by <path>.
-++
-+`Options`
-++
-+The same as *assign* subcommand.
- 
- *show* [options] <path>::
- Show all qgroups in the btrfs filesystem identified by <path>.
-@@ -131,6 +137,20 @@ If multiple <attr>s is given, use comma to separate.
- To retrieve information after updating the state of qgroups,
- force sync of the filesystem identified by <path> before getting information.
- 
-+RESCAN CONDITION
-+----------------
-+Btrfs quota only keep records of how many bytes are referred to ('rfer') and
-+how many bytes are owned exclusively ('excl').
-+It doesn't keep any record of which extent is owned exclusively or shared.
++int btrfs_forget_devices(const char *path)
++{
++	mutex_lock(&uuid_mutex);
++	btrfs_free_stale_devices(strlen(path) ? path:NULL, NULL);
++	mutex_unlock(&uuid_mutex);
 +
-+This means when qgroup relationship changes, extents owners change and qgroups
-+number are no longer consistent unless we do a full rescan.
++	return 0;
++}
 +
-+However there are cases we can avoid full rescan, if a subvolume whose 'rfer'
-+number equals its 'excl' number, which means all bytes are exclusive owned,
-+then assigning/removing this subvolume only needs to add/subtract 'rfer' number
-+from its parent qgroup.
-+
- EXIT STATUS
- -----------
- *btrfs qgroup* returns a zero exit status if it succeeds. Non zero is
+ /*
+  * Look for a btrfs signature on a device. This may be called out of the mount path
+  * and we are not allowed to call set_blocksize during the scan. The superblock
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 049619176831..1602b5faa7e7 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -405,6 +405,7 @@ int btrfs_open_devices(struct btrfs_fs_devices *fs_devices,
+ 		       fmode_t flags, void *holder);
+ struct btrfs_device *btrfs_scan_one_device(const char *path,
+ 					   fmode_t flags, void *holder);
++int btrfs_forget_devices(const char *path);
+ int btrfs_close_devices(struct btrfs_fs_devices *fs_devices);
+ void btrfs_free_extra_devids(struct btrfs_fs_devices *fs_devices, int step);
+ void btrfs_assign_next_active_device(struct btrfs_device *device,
+diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+index 5ca1d21fc4a7..b1be7f828cb4 100644
+--- a/include/uapi/linux/btrfs.h
++++ b/include/uapi/linux/btrfs.h
+@@ -836,6 +836,8 @@ enum btrfs_err_code {
+ 				   struct btrfs_ioctl_vol_args)
+ #define BTRFS_IOC_SCAN_DEV _IOW(BTRFS_IOCTL_MAGIC, 4, \
+ 				   struct btrfs_ioctl_vol_args)
++#define BTRFS_IOC_FORGET_DEV _IOW(BTRFS_IOCTL_MAGIC, 5, \
++				   struct btrfs_ioctl_vol_args)
+ /* trans start and trans end are dangerous, and only for
+  * use by applications that know how to avoid the
+  * resulting deadlocks
 -- 
-2.18.0
+2.7.0
 

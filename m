@@ -1,164 +1,169 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:52034 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1726121AbeHEMo2 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 5 Aug 2018 08:44:28 -0400
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
-        by cn.fujitsu.com (Postfix) with ESMTP id BDA4D4B6ADFC
-        for <linux-btrfs@vger.kernel.org>; Sun,  5 Aug 2018 18:40:10 +0800 (CST)
-From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [RFC PATCH 4/4] btrfs: undelete: Add the btrfs_ioctl_undelete
-Date: Sun, 5 Aug 2018 18:40:01 +0800
-Message-ID: <20180805104001.5488-5-lufq.fnst@cn.fujitsu.com>
-In-Reply-To: <20180805104001.5488-1-lufq.fnst@cn.fujitsu.com>
-References: <20180805104001.5488-1-lufq.fnst@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from [195.159.176.226] ([195.159.176.226]:46124 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1731092AbeHGAyN (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Aug 2018 20:54:13 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-3@m.gmane.org>)
+        id 1fmoB6-0002fj-FC
+        for linux-btrfs@vger.kernel.org; Tue, 07 Aug 2018 00:40:40 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: recover broken partition on external HDD
+Date: Mon, 6 Aug 2018 22:40:33 +0000 (UTC)
+Message-ID: <pan$b5a07$5993c1bb$cc37f579$529a3aaa@cox.net>
+References: <CAP-4mcAfmp-rCrr5_-TJL4HNz8tVi5kpsOo-8WkZNRLRPOgD=g@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The function will traverse the root from the fs_info->dead_roots and try
-to call btrfs_undelete_subvolume() to recover them.
+Marijn Stollenga posted on Sat, 04 Aug 2018 12:14:44 +0200 as excerpted:
 
-Note: It will lock fs_info->cleaner_mutex to keep the cleaner kthread
-from deleting the subvolume which we want to recover.
+> Hello btrfs experts, I need your help trying to recover an external HDD.
+> I accidentally created a zfs partition on my external HD, which of
+> course screw up the whole partition. I quickly unplugged it and it being
+> a 1TB drive is assume there is still data on it.
 
-Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
----
- fs/btrfs/ioctl.c           | 83 ++++++++++++++++++++++++++++++++++++++
- include/uapi/linux/btrfs.h |  9 +++++
- 2 files changed, 92 insertions(+)
+Just a user and list regular here, not a dev, so my help will be somewhat 
+limited, but as I've seen no other replies yet, perhaps it's better than 
+nothing...
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 7a11c4f8e450..83b9839799d0 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -1980,6 +1980,87 @@ static int btrfs_undelete_subvolume(const struct path *parent,
- 	return ret;
- }
- 
-+static int btrfs_ioctl_undelete(struct file *file, void __user *argp)
-+{
-+	struct btrfs_ioctl_undelete_args __user *uarg;
-+	struct btrfs_ioctl_undelete_args *args;
-+	struct inode *inode = file_inode(file);
-+	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
-+	struct btrfs_root *root, *tmp;
-+	char *name;
-+	u64 count = 0;
-+	u64 objectid;
-+	int err = 0, ret;
-+
-+	/* copy search header and buffer size */
-+	uarg = (struct btrfs_ioctl_undelete_args __user *)argp;
-+	args = memdup_user(uarg, sizeof(*args));
-+	if (IS_ERR(args))
-+		return PTR_ERR(args);
-+	args->name[BTRFS_PATH_NAME_MAX] = '\0';
-+
-+	name = kzalloc(BTRFS_PATH_NAME_MAX + 1, GFP_KERNEL);
-+	if (IS_ERR(name)) {
-+		err = PTR_ERR(name);
-+		goto free_args;
-+	}
-+
-+	if (!capable(CAP_SYS_ADMIN)) {
-+		err = -EPERM;
-+		goto free;
-+	}
-+
-+	err = mnt_want_write_file(file);
-+	if (err)
-+		goto free;
-+
-+	/* Lock cleaner_mutex to prevent the cleaner kthread from deleting the
-+	 * subvolume we want to recover so that we can perform the next rescue
-+	 * in a relaxed manner.
-+	 */
-+	mutex_lock(&fs_info->cleaner_mutex);
-+
-+	list_for_each_entry_safe(root, tmp, &fs_info->dead_roots, root_list) {
-+		objectid = root->root_key.objectid;
-+		snprintf(name, BTRFS_PATH_NAME_MAX, "%s%llu", args->name,
-+				objectid);
-+		ret = btrfs_undelete_subvolume(&file->f_path, root, name,
-+					       strlen(name));
-+		if (ret)
-+			continue;
-+
-+		/*
-+		 * Feel free to remove this root from dead_root list since we
-+		 * have recover it successfully.
-+		 */
-+		spin_lock(&fs_info->trans_lock);
-+		list_del_init(&root->root_list);
-+		spin_unlock(&fs_info->trans_lock);
-+
-+		if ((count + 1) * sizeof(objectid) > args->buf_size)
-+			continue;
-+
-+		/* copy the subvolume id to user space */
-+		ret = copy_to_user(&uarg->buf[count], &objectid,
-+				   sizeof(objectid));
-+		if (ret)
-+			err = -EFAULT;
-+		count++;
-+	}
-+
-+	mutex_unlock(&fs_info->cleaner_mutex);
-+	mnt_drop_write_file(file);
-+
-+	/* copy the count to user space */
-+	if (copy_to_user(&uarg->count, &count, sizeof(count)))
-+		err = -EFAULT;
-+free:
-+	kfree(name);
-+free_args:
-+	kfree(args);
-+	return err;
-+}
-+
- static noinline int btrfs_ioctl_subvol_getflags(struct file *file,
- 						void __user *arg)
- {
-@@ -6089,6 +6170,8 @@ long btrfs_ioctl(struct file *file, unsigned int
- 		return btrfs_ioctl_get_subvol_rootref(file, argp);
- 	case BTRFS_IOC_INO_LOOKUP_USER:
- 		return btrfs_ioctl_ino_lookup_user(file, argp);
-+	case BTRFS_IOC_SUBVOL_UNDELETE:
-+		return btrfs_ioctl_undelete(file, argp);
- 	}
- 
- 	return -ENOTTY;
-diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
-index 5ca1d21fc4a7..25d030687b27 100644
---- a/include/uapi/linux/btrfs.h
-+++ b/include/uapi/linux/btrfs.h
-@@ -816,6 +816,13 @@ struct btrfs_ioctl_get_subvol_rootref_args {
- 		__u8 align[7];
- };
- 
-+struct btrfs_ioctl_undelete_args {
-+	char name[BTRFS_PATH_NAME_MAX + 1];	/* in - subvolume name prefix */
-+	__u64 buf_size;				/* in - size of buffer */
-+	__u64 count;		/* out - store number of recoverd subvolumes */
-+	__u64 buf[0];		/* out - store ids of recoverd subolumes */
-+};
-+
- /* Error codes as returned by the kernel */
- enum btrfs_err_code {
- 	BTRFS_ERROR_DEV_RAID1_MIN_NOT_MET = 1,
-@@ -940,5 +947,7 @@ enum btrfs_err_code {
- 				struct btrfs_ioctl_get_subvol_rootref_args)
- #define BTRFS_IOC_INO_LOOKUP_USER _IOWR(BTRFS_IOCTL_MAGIC, 62, \
- 				struct btrfs_ioctl_ino_lookup_user_args)
-+#define BTRFS_IOC_SUBVOL_UNDELETE _IOWR(BTRFS_IOCTL_MAGIC, 63, \
-+					struct btrfs_ioctl_undelete_args)
- 
- #endif /* _UAPI_LINUX_BTRFS_H */
+> With some great help on IRC I searched for tags using grep and found
+> many positions:
+> https://paste.ee/p/xzL5x
+> 
+> Now I would like to scan all these positions for their information and
+> somehow piece it together, I know there is supposed to be a superblock
+> around 256GB but I'm not sure where the partition started (the search
+> was run from a manually created partition starting at 1MB).
+
+There's a mention of the three superblock copies and their addresses in 
+the problem FAQ (wrapped link due to posting-client required hoops I 
+don't want to jump thru to post it properly ATM, unwrap manually):
+
+https://btrfs.wiki.kernel.org/index.php/Problem_FAQ#What_if_I_don.
+27t_have_wipefs_at_hand.3F
+
+> In general I would be happy if someone can point me to a library that
+> can do low level reading and piecing together of these pieces of meta
+> information and see what is left.
+
+There are multiple libraries in various states available, but being more 
+a sysadmin than a dev I'd consume them as dependencies of whatever app I 
+was installing that required them, so I've not followed the details.  
+However, here's a bit of what I found just now with a quick look:
+
+The project ideas FAQ on the wiki has a (somewhat outdated) library entry 
+(wrapped link...):
+
+https://btrfs.wiki.kernel.org/index.php/
+Project_ideas#Provide_a_library_covering_.27btrfs.27_functionality
+
+That provides further links to a couple python projects as well as a 
+haskell lib.
+
+But I added the "somewhat dated" parenthetical due to libtrfsutil by Omar 
+Sandoval, which appeared in btrfs-progs 4.16.  So there's now an official 
+library. =:^)  Tho not being a dev I've not the foggiest whether it'll 
+provide the functionality you're after.
+
+I also see a rust lib mentioned on-list (Oct 2016).
+
+https://gitlab.wellbehavedsoftware.com/well-behaved-software/rust-btrfs
+
+> I know there is btrfs-check etc. but these need the superblock to be
+> known. Also on another messed up drive (I screwed up two btrfs drives in
+> the same way at the same time) I was able to find the third superblock,
+> but it seems they in the end pointed to other parts in the file system
+> in the beginning of the drive which were broken.
+
+OK, this may seem like rubbing salt in the wound ATM, but there's a 
+reason they did that back in the day before modern disinfectants, it 
+helped stop infection before it started.  Likewise, the following policy 
+should help avoid the problem in the first place.
+
+A sysadmin's first rule of data value and backups is that the real value 
+placed on data isn't defined by arbitrary claims, but rather by the 
+number and quality of backups those who control that data find it 
+worthwhile to make of it.  If it's worth a lot, there will be multiple 
+backups, likely stored in multiple locations, some offsite in ordered to 
+avoid loss in the event of fire/flood/bombing/etc.  Only data that's of 
+trivial value, less than that of the time/trouble/resources necessary to 
+do that backup, will have no backup at all.
+
+(Of course, age of backups is simply a sub-case of the above, since in 
+that case the data in question is simply the data in the delta between 
+the last backup and the current working state.  By definition, as soon as 
+it is considered worth more than the time/trouble/resources necessary to 
+update the backup, an updated or full new backup will be made.)
+
+(The second rule of backups is that it's not a backup until it has been 
+tested to actually be usable under conditions similar to those in which 
+the backup would actually be needed.  In many cases that'll mean booting 
+to rescue media and ensuring they can access and restore the backup from 
+there using only the resources available from that rescue media.  In 
+other cases it'll mean booting directly to the backup and ensuring that 
+normal operations can resume from there.  Etc.  And if it hasn't been 
+tested yet, it's not a backup, only a potential backup still in progress.)
+
+So the above really shouldn't be a problem at all, because you either:
+
+1) Defined the data as worth having a backup, in which case you can just 
+restore from it,
+
+OR
+
+2) Defined the data as of such limited value that it wasn't worth the 
+hassle/time/resources necessary for that backup, in which case you saved 
+what was of *real* value, that time/hassle/resources, before you ever 
+lost the data, and the data loss isn't a big deal because it, by 
+definition of not having a backup, can be of only trivial value not worth 
+the hassle.
+
+There's no #3.  The data was either defined as worth a backup by virtue 
+of having one, and can be restored from there, or it wasn't, but no big 
+deal because the time/trouble/resources that would have otherwise gone 
+into that backup was defined as more important, and was saved before the 
+data was ever lost in the first place.
+
+Thus, while the loss of the data due to fat-fingering (which all 
+sysadmins come to appreciate the real risk of, after a few events of 
+their own) the placement of that ZFS might be a bit of a bother, it's not 
+worth spending huge amounts of time trying to recover, because it was 
+either worth having a backup, in which case you simply recover from it, 
+or it wasn't, in which case it's not worth spending huge amounts to time 
+trying to recover, either.
+
+Of course there's still the pre-disaster weighed risk that something will 
+go wrong vs. the post-disaster it DID go wrong, now how do I best get 
+back to normal operation question, but in the context of the backups rule 
+above resolving that question is more a matter of whether it's most 
+efficient to spend a little time trying to recover the existing data with 
+no guarantee of full success, or to simply jump directly into the wipe 
+and restore from known-good (because tested!) backups, which might take 
+more time, but has a (near) 100% chance at recovery to the point of the 
+backup.  (The slight chance of failure to recover from tested backups is 
+what multiple levels of backups covers for, with the the value of the 
+data and the weighed risk balanced against the value of the time/hassle/
+resources necessary to do that one more level of backup.)
+
+So while it might be worth a bit of time to quick-test recovery of the 
+damaged data, it very quickly becomes not worth the further hassle, 
+because either the data was already defined as not worth it due to not 
+having a backup, or restoring from that backup will be faster and less 
+hassle, with a far greater chance of success, than diving further into 
+the data recovery morass, with ever more limited chances of success.
+
+Live by that sort of policy from now on, and the results of the next 
+failure, whether it be hardware, software, or wetware (another fat-
+fingering, again, this is coming from someone, me, who has had enough of 
+their own!), won't be anything to write the list about, unless of course 
+it's a btrfs bug and quite apart from worrying about your data, you're 
+just trying to get it fixed so it won't continue to happen.
+
 -- 
-2.18.0
-
-
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

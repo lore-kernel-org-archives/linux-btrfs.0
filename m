@@ -1,63 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from out30-132.freemail.mail.aliyun.com ([115.124.30.132]:39293 "EHLO
-        out30-132.freemail.mail.aliyun.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1726278AbeHYJZB (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 25 Aug 2018 05:25:01 -0400
-From: Liu Bo <bo.liu@linux.alibaba.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH v3] Btrfs: set leave_spinning in btrfs_get_extent
-Date: Sat, 25 Aug 2018 13:47:09 +0800
-Message-Id: <1535176029-77767-1-git-send-email-bo.liu@linux.alibaba.com>
-In-Reply-To: <1534981265-97557-1-git-send-email-bo.liu@linux.alibaba.com>
-References: <1534981265-97557-1-git-send-email-bo.liu@linux.alibaba.com>
+Received: from mx2.suse.de ([195.135.220.15]:45826 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1731069AbeHGQCu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 7 Aug 2018 12:02:50 -0400
+Date: Tue, 7 Aug 2018 15:48:19 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Mike Gilbert <floppym@gentoo.org>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 2/2] Install btrfs-ioctl.3 man page
+Message-ID: <20180807134819.GF3218@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20180806205432.11009-1-floppym@gentoo.org>
+ <20180806205432.11009-2-floppym@gentoo.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20180806205432.11009-2-floppym@gentoo.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Unless it's going to read inline extents from btree leaf to page,
-btrfs_get_extent won't sleep during the period of holding path lock.
+On Mon, Aug 06, 2018 at 04:54:32PM -0400, Mike Gilbert wrote:
+> ---
+>  Documentation/Makefile.in | 2 ++
+>  1 file changed, 2 insertions(+)
+> 
+> diff --git a/Documentation/Makefile.in b/Documentation/Makefile.in
+> index c4c843cb..5bc0d80d 100644
+> --- a/Documentation/Makefile.in
+> +++ b/Documentation/Makefile.in
+> @@ -94,8 +94,10 @@ html: $(MAN_HTML)
+>  install: install-man
+>  
+>  install-man: man
+> +	$(INSTALL) -d -m 755 $(DESTDIR)$(man3dir)
+>  	$(INSTALL) -d -m 755 $(DESTDIR)$(man5dir)
+>  	$(INSTALL) -d -m 755 $(DESTDIR)$(man8dir)
+> +	$(INSTALL) -m 644 $(MAN3) $(DESTDIR)$(man3dir)
 
-This sets leave_spinning at first and sets path to blocking mode right
-before reading inline extent if that's the case.  The benefit is that a
-path in spinning mode typically has less impact (faster) on waiters
-rather than that in blocking mode.
+MAN3_TXT += btrfs-ioctl.asciidoc
 
-Also fixes the misalignment of the prototype, which is too trivial for
-a single patch.
-
-
-Signed-off-by: Liu Bo <bo.liu@linux.alibaba.com>
----
-v3: separate alignment fix out of this patch.
-
- fs/btrfs/inode.c | 8 ++++++++
- 1 file changed, 8 insertions(+)
-
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 10e86f7b5398..1e0af0cc56fc 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -6843,6 +6843,12 @@ struct extent_map *btrfs_get_extent(struct btrfs_inode *inode,
- 	 */
- 	path->reada = READA_FORWARD;
- 
-+	/*
-+	 * Unless we're going to uncompress inline extent, no sleep would
-+	 * happen.
-+	 */
-+	path->leave_spinning = 1;
-+
- 	ret = btrfs_lookup_file_extent(NULL, root, path, objectid, start, 0);
- 	if (ret < 0) {
- 		err = ret;
-@@ -6945,6 +6951,8 @@ struct extent_map *btrfs_get_extent(struct btrfs_inode *inode,
- 		em->orig_block_len = em->len;
- 		em->orig_start = em->start;
- 		ptr = btrfs_file_extent_inline_start(item) + extent_offset;
-+
-+		btrfs_set_path_blocking(path);
- 		if (!PageUptodate(page)) {
- 			if (btrfs_file_extent_compression(leaf, item) !=
- 			    BTRFS_COMPRESS_NONE) {
--- 
-1.8.3.1
+The section 3 page is not ready to be published so it's intentionally
+left out of installation.

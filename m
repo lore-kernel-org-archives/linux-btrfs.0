@@ -1,112 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp2130.oracle.com ([156.151.31.86]:54814 "EHLO
-        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2387406AbeHBOyt (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Aug 2018 10:54:49 -0400
-Subject: Re: [PATCH v3 4/4] btrfs: add helper btrfs_num_devices() to deduce
- num_devices
-To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <20180726065334.30594-5-anand.jain@oracle.com>
- <20180802100934.12468-1-anand.jain@oracle.com>
- <b1c8c566-5850-da69-b756-5036dca33975@suse.com>
- <20180802122136.GM3218@twin.jikos.cz>
-From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <f2f5a582-1bc4-617a-0d38-6c212d93bb56@oracle.com>
-Date: Thu, 2 Aug 2018 21:07:00 +0800
+Received: from mx2.suse.de ([195.135.220.15]:60236 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S2389387AbeHGROi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 7 Aug 2018 13:14:38 -0400
+Date: Tue, 7 Aug 2018 16:59:48 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2 2/4] btrfs: fix race between free_stale_devices and
+ close_fs_devices
+Message-ID: <20180807145948.GH3218@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20180726065334.30594-1-anand.jain@oracle.com>
+ <20180726065334.30594-3-anand.jain@oracle.com>
+ <20180801142948.GH3218@twin.jikos.cz>
+ <ff16322e-6f2c-1e81-032d-651cfa23877f@oracle.com>
 MIME-Version: 1.0
-In-Reply-To: <20180802122136.GM3218@twin.jikos.cz>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <ff16322e-6f2c-1e81-032d-651cfa23877f@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-On 08/02/2018 08:21 PM, David Sterba wrote:
-> On Thu, Aug 02, 2018 at 01:11:40PM +0300, Nikolay Borisov wrote:
->>
->>
->> On  2.08.2018 13:09, Anand Jain wrote:
->>> When the replace is running the fs_devices::num_devices also includes
->>> the replace device, however in some operations like device delete and
->>> balance it needs the actual num_devices without the repalce devices, so
->>> now the function btrfs_num_devices() just provides that.
->>>
->>> And here is a scenario how balance and repalce items could co-exist.
->>> Consider balance is started and paused, now start the replace
->>> followed by a power-recycle of the system. During following mount,
->>> the open_ctree() first restarts the balance so it must check for the
->>> replace device otherwise our num_devices calculation will be wrong.
->>>
->>> Signed-off-by: Anand Jain <anand.jain@oracle.com>
->>> ---
->>> v2->v3: update changelog with not so obvious balance and repalce
->>> co-existance secnario
->>> v1->v2: add comments
->>>
->>>   fs/btrfs/volumes.c | 32 ++++++++++++++++++--------------
->>>   1 file changed, 18 insertions(+), 14 deletions(-)
->>>
->>> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
->>> index fe74fefc75f7..8844904f9009 100644
->>> --- a/fs/btrfs/volumes.c
->>> +++ b/fs/btrfs/volumes.c
->>> @@ -1854,6 +1854,21 @@ void btrfs_assign_next_active_device(struct btrfs_device *device,
->>>   		fs_info->fs_devices->latest_bdev = next_device->bdev;
->>>   }
->>>   
->>> +/* Returns btrfs_fs_devices::num_devices excluding replace device if any */
->>> +static inline u64 btrfs_num_devices(struct btrfs_fs_info *fs_info)
+On Thu, Aug 02, 2018 at 05:29:12PM +0800, Anand Jain wrote:
 > 
-> This does not need to be static inline, it's not in a header.
-
-ok will fix.
-
->>> +{
->>> +	u64 num_devices = fs_info->fs_devices->num_devices;
->>> +
->>> +	btrfs_dev_replace_read_lock(&fs_info->dev_replace);
->>> +	if (btrfs_dev_replace_is_ongoing(&fs_info->dev_replace)) {
->>> +		BUG_ON(num_devices < 1);
->>> +		num_devices--;
->>> +	}
->>> +	btrfs_dev_replace_read_unlock(&fs_info->dev_replace);
->>> +
->>> +	return num_devices;
->>> +}
->>> +
->>>   int btrfs_rm_device(struct btrfs_fs_info *fs_info, const char *device_path,
->>>   		u64 devid)
->>>   {
->>> @@ -1865,13 +1880,7 @@ int btrfs_rm_device(struct btrfs_fs_info *fs_info, const char *device_path,
->>>   
->>>   	mutex_lock(&uuid_mutex);
->>>   
->>> -	num_devices = fs_devices->num_devices;
->>> -	btrfs_dev_replace_read_lock(&fs_info->dev_replace);
->>> -	if (btrfs_dev_replace_is_ongoing(&fs_info->dev_replace)) {
->>> -		BUG_ON(num_devices < 1);
->>> -		num_devices--;
->>> -	}
->>> -	btrfs_dev_replace_read_unlock(&fs_info->dev_replace);
->>> +	num_devices = btrfs_num_devices(fs_info);
->>
->> How about lifting the BUG_ON from btrfs_num_devices into a check in this
->> function, so if num_devices < 1 then we just exit with -EINVAL or some
->> such. We should be aiming at eliminating BUG_ONs.
 > 
-> Right, in both cases it's possible to return with an error instead of
-> the BUG_ON.
-
-Actually we should just remove it as its a logical bug if num_devices < 
-1, so long we didn't hit this bug which means its stable OR keep BUG_ON 
-it until we add RAID-N. ?
-
-Thanks, Anand
-
-
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> On 08/01/2018 10:29 PM, David Sterba wrote:
+> > On Thu, Jul 26, 2018 at 02:53:32PM +0800, Anand Jain wrote:
+> >> From: Anand Jain <Anand.Jain@oracle.com>
+> >>
+> >> %fs_devices can be free-ed by btrfs_free_stale_devices() when the
+> >> close_fs_devices() drops fs_devices::opened to zero, but close_fs_devices
+> >> tries to access the %fs_devices again without the device_list_mutex.
+> >>
+> >> Fix this by bringing the %fs_devices access with in the device_list_mutex.
+> > 
+> > AFAICS this cannot happen anymore because the two calls are serialized
+> > by the uuid_mutex. But this was not the case when syzbot reported the
+> > problem where your patch would apply.
+> > 
+> > The parallell access to opened and device list cannot happen when:
+> > 
+> > * btrfs_scan_one_device that wants to call btrfs_free_stale_devices
+> > * btrfs_close_devices calls close_fs_devices
+> > 
+> > Fixed by the series:
+> > 
+> > btrfs: lift uuid_mutex to callers of btrfs_scan_one_device
+> > btrfs: lift uuid_mutex to callers of btrfs_open_devices
+> > btrfs: lift uuid_mutex to callers of btrfs_parse_early_options
+> > btrfs: reorder initialization before the mount locks uuid_mutex
+> > btrfs: fix mount and ioctl device scan ioctl race
+> > 
+> > If there's a race I don't see, please describe in more detail.
 > 
+>   Right. There is no race with the uuid_mutex patches as above.
+> 
+>   And I just found this- can we make close be consistent with its
+>   open part.
+>   btrfs_open_devices() hold device_list_mutex before the update to
+>   fs_devices::opened. So close_fs_device() could do the same, and be
+>   theoretically correct.
+
+Or it can be the other way around, to push the device_list_mutex only
+around the list_sort and open_fs_devices like:
+
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1144,15 +1144,15 @@ int btrfs_open_devices(struct btrfs_fs_devices *fs_devices,
+ 
+        lockdep_assert_held(&uuid_mutex);
+ 
+-       mutex_lock(&fs_devices->device_list_mutex);
+        if (fs_devices->opened) {
+                fs_devices->opened++;
+                ret = 0;
+        } else {
++               mutex_lock(&fs_devices->device_list_mutex);
+                list_sort(NULL, &fs_devices->devices, devid_cmp);
+                ret = open_fs_devices(fs_devices, flags, holder);
++               mutex_unlock(&fs_devices->device_list_mutex);
+        }
+-       mutex_unlock(&fs_devices->device_list_mutex);
+ 
+        return ret;
+ }

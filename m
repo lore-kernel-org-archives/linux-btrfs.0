@@ -1,78 +1,144 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:43850 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:56732 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S2389324AbeHGSH4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 7 Aug 2018 14:07:56 -0400
-Date: Tue, 7 Aug 2018 17:52:53 +0200
-From: David Sterba <dsterba@suse.cz>
-To: robbieko <robbieko@synology.com>
-Cc: linux-btrfs@vger.kernel.org, fdmanana@suse.com
-Subject: Re: [PATCH] Btrfs: fix unexpected failure of nocow buffered writes
- after snapshotting when low on space
-Message-ID: <20180807155253.GK3218@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1533522630-21758-1-git-send-email-robbieko@synology.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1533522630-21758-1-git-send-email-robbieko@synology.com>
+        id S1726027AbeHHAGh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 7 Aug 2018 20:06:37 -0400
+From: Mark Fasheh <mfasheh@suse.de>
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: Al Viro <viro@ZenIV.linux.org.uk>, linux-fsdevel@vger.kernel.org,
+        linux-api@vger.kernel.org, Michael Kerrisk <mtk.manpages@gmail.com>,
+        linux-btrfs@vger.kernel.org, linux-xfs@vger.kernel.org,
+        "Darrick J . Wong" <darrick.wong@oracle.com>,
+        Adam Borowski <kilobyte@angband.pl>, David Sterba <dsterba@suse.cz>,
+        Mark Fasheh <mfasheh@suse.de>
+Subject: [RESEND][PATCH v5 0/2] vfs: better dedupe permission check
+Date: Tue,  7 Aug 2018 14:49:47 -0700
+Message-Id: <20180807214949.7714-1-mfasheh@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Aug 06, 2018 at 10:30:30AM +0800, robbieko wrote:
-> From: Robbie Ko <robbieko@synology.com>
-> 
-> Commit e9894fd3e3b3 ("Btrfs: fix snapshot vs nocow writting")
-> forced nocow writes to fallback to COW, during writeback,
-> when a snapshot is created. This resulted in writes made before
-> creating the snapshot to unexpectedly fail with ENOSPC during
-> writeback when success (0) was returned to user space through
-> the write system call.
-> 
-> The steps leading to this problem are:
-> 
-> 1. When it's not possible to allocate data space for a write,
-> the buffered write path checks if a NOCOW write is possible.
-> If it is, it will not reserve space and success (0) is returned
-> to user space.
-> 
-> 2. Then when a snapshot is created, the root's will_be_snapshotted
-> atomic is incremented and writeback is triggered for all inode's
-> that belong to the root being snapshotted. Incrementing that atomic
-> forces all previous writes to fallback to COW during writeback
-> (running delalloc).
-> 
-> 3. This results in the writeback for the inodes to fail and therefore
-> setting the ENOSPC error in their mappings, so that a subsequent fsync
-> on them will report the error to user space. So it's not a completely
-> silent data loss (since fsync will report ENOSPC) but it's a very
-> unexpected and undesirable behaviour, because if a clean
-> shutdown/unmount of the filesystem happens without previous calls to
-> fsync, it is expected to have the data present in the files after
-> mounting the filesystem again.
-> 
-> So fix this by adding a new atomic named snapshot_force_cow to the
-> root structure which prevents this behaviour and works the following way:
-> 
-> 1. It is incremented when we start to create a snapshot after
-> triggering writeback and before waiting for writeback to finish.
-> 
-> 2. This new atomic is now what is used by writeback (running delalloc)
-> to decide whether we need to fallback to COW or not. Because we
-> incremented this new atomic after triggering writeback in the snapshot
-> creation ioctl, we ensure that all buffered writes that happened
-> before snapshot creation will succeed and not fallback to COW
-> (which would make them fail with ENOSPC).
-> 
-> 3. The existing atomic, will_be_snapshotted, is kept because it is
-> used to force new buffered writes, that start after we started
-> snapshotting, to reserve data space even when NOCOW is possible.
-> This makes these writes fail early with ENOSPC when there's no
-> available space to allocate, preventing the unexpected behaviour
-> of writeback later failing with ENOSPC due to a fallback to COW mode.
-> 
-> Fixes: e9894fd3e3b3 ("Btrfs: fix snapshot vs nocow writting")
-> Signed-off-by: Robbie Ko <robbieko@synology.com>
-> Reviewed-by: Filipe Manana <fdmanana@suse.com>
+Hi Andrew,
 
-Added to misc-next and will be probably in the 2nd pull for the 4.19
-merge window, thanks.
+Could I please have these patches upstreamed or at least put in a tree for
+more public testing? They've hit fsdevel a few times now, I have links to
+the discussions in the change log below.
+
+
+The following patches fix a couple of issues with the permission check
+we do in vfs_dedupe_file_range().
+
+The first patch expands our check to allow dedupe of a file if the
+user owns it or otherwise would be allowed to write to it.
+
+Current behavior is that we'll allow dedupe only if:
+
+- the user is an admin (root)
+- the user has the file open for write
+
+This makes it impossible for a user to dedupe their own file set
+unless they do it as root, or ensure that all files have write
+permission. There's a couple of duperemove bugs open for this:
+
+https://github.com/markfasheh/duperemove/issues/129
+https://github.com/markfasheh/duperemove/issues/86
+
+The other problem we have is also related to forcing the user to open
+target files for write - A process trying to exec a file currently
+being deduped gets ETXTBUSY. The answer (as above) is to allow them to
+open the targets ro - root can already do this. There was a patch from
+Adam Borowski to fix this back in 2016:
+
+https://lkml.org/lkml/2016/7/17/130
+
+which I have incorporated into my changes.
+
+
+The 2nd patch fixes our return code for permission denied to be
+EPERM. For some reason we're returning EINVAL - I think that's
+probably my fault. At any rate, we need to be returning something
+descriptive of the actual problem, otherwise callers see EINVAL and
+can't really make a valid determination of what's gone wrong.
+
+This has also popped up in duperemove, mostly in the form of cryptic
+error messages. Because this is a code returned to userspace, I did
+check the other users of extent-same that I could find. Both 'bees'
+and 'rust-btrfs' do the same as duperemove and simply report the error
+(as they should).
+
+
+Lastly, I have an update to the fi_deduperange manpage to reflect these
+changes. That patch is attached below.
+
+
+Please apply.
+
+git pull https://github.com/markfasheh/linux dedupe-perms
+
+Thanks,
+  --Mark
+
+Changes from V4 to V5:
+- Rebase and retest on 4.18-rc8
+- Place updated manpage patch below, CC linux-api
+- V4 discussion: https://patchwork.kernel.org/patch/10530365/
+
+Changes from V3 to V4:
+- Add a patch (below) to ioctl_fideduperange.2 explaining our
+  changes. I will send this patch once the kernel update is
+  accepted. Thanks to Darrick Wong for this suggestion.
+- V3 discussion: https://www.spinics.net/lists/linux-btrfs/msg79135.html
+
+Changes from V2 to V3:
+- Return bool from allow_file_dedupe
+- V2 discussion: https://www.spinics.net/lists/linux-btrfs/msg78421.html
+
+Changes from V1 to V2:
+- Add inode_permission check as suggested by Adam Borowski
+- V1 discussion: https://marc.info/?l=linux-xfs&m=152606684017965&w=2
+
+
+From: Mark Fasheh <mfasheh@suse.de>
+
+[PATCH] ioctl_fideduperange.2: clarify permission requirements
+
+dedupe permission checks were recently relaxed - update our man page to
+reflect those changes.
+
+Signed-off-by: Mark Fasheh <mfasheh@suse.de>
+---
+ man2/ioctl_fideduperange.2 | 11 +++++++----
+ 1 file changed, 7 insertions(+), 4 deletions(-)
+
+diff --git a/man2/ioctl_fideduperange.2 b/man2/ioctl_fideduperange.2
+index 84d20a276..4040ee064 100644
+--- a/man2/ioctl_fideduperange.2
++++ b/man2/ioctl_fideduperange.2
+@@ -105,9 +105,12 @@ The field
+ must be zero.
+ During the call,
+ .IR src_fd
+-must be open for reading and
++must be open for reading.
+ .IR dest_fd
+-must be open for writing.
++can be open for writing, or reading.
++If
++.IR dest_fd
++is open for reading, the user must have write access to the file.
+ The combined size of the struct
+ .IR file_dedupe_range
+ and the struct
+@@ -185,8 +188,8 @@ This can appear if the filesystem does not support deduplicating either file
+ descriptor, or if either file descriptor refers to special inodes.
+ .TP
+ .B EPERM
+-.IR dest_fd
+-is immutable.
++This will be returned if the user lacks permission to dedupe the file referenced by
++.IR dest_fd .
+ .TP
+ .B ETXTBSY
+ One of the files is a swap file.
+-- 
+2.15.1
+

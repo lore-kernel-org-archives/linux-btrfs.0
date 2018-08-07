@@ -1,36 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:54260 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:44554 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1730869AbeHGSzE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 7 Aug 2018 14:55:04 -0400
-Date: Tue, 7 Aug 2018 18:39:50 +0200
+        id S1727155AbeHGUHM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 7 Aug 2018 16:07:12 -0400
+Date: Tue, 7 Aug 2018 19:51:38 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+To: Anand Jain <anand.jain@oracle.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [RFC PATCH 0/4] undelete subvolume online version
-Message-ID: <20180807163950.GP3218@twin.jikos.cz>
+Subject: Re: [PATCH RESEND v8] Add cli and ioctl to forget scanned device(s)
+Message-ID: <20180807175138.GR3218@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <20180805104001.5488-1-lufq.fnst@cn.fujitsu.com>
+References: <20180806010949.26915-1-anand.jain@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180805104001.5488-1-lufq.fnst@cn.fujitsu.com>
+In-Reply-To: <20180806010949.26915-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Aug 05, 2018 at 06:39:57PM +0800, Lu Fengqi wrote:
-> This patchset will add the BTRFS_IOC_SUBVOL_UNDELETE ioctl for online
-> btrfs subvolume undelete.
-> 
-> And btrfs subvolume undelete subcommand was added to btrfs-progs.
-> 
-> So user can use the following command to recover all the subolume that
-> is left on the device. The recovered subvolume will be link to <dest> dir
-> named to <name_prefix><subvol_id>.
+On Mon, Aug 06, 2018 at 09:09:47AM +0800, Anand Jain wrote:
+> Adds cli and ioctl to forget a scanned device or forget all stale
+> devices in the kernel.
 
-Hm, I don't agree with the proposed interface - to recover all deleted
-subvolumes. IMO this should recover just one subvolume of a given id a
-to given directory.
+Please provide more details about your idea of the usecase, ie. how
+excactly and when the command is supposed to be used.
 
-The ioctl structure has to be reworked, I've skimmed the code and saw
-some suspicious things but will have a look after the interface is
-settled.
+I vaguely recollect that we've discussed the commandline interface but
+don't remember the result. Nevertheless, I think that the 'forget'
+command should be an option of 'device scan'.
+
+  btrfs device scan --forget /dev/sda
+
+Next I'm not sure the freeing all stale devices is a good idea. Should
+it be more fine grained? Suppose there are several multi-device
+filesystems on the host and some of them not mounted. The devices have
+been scanned eg. via udev and the filesystems are ready to be mounted.
+Calling 'forget all' will now prevent mount without another 'device
+scan'.
+
+What if a particular filesystem needs to forget the scanned devices, or
+just one filesystem:device.
+
+And there's the question how to specify the devices, it can be by device
+path or uuid or maybe device id.

@@ -1,127 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:64049 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1730869AbeHGSit (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Aug 2018 14:38:49 -0400
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
-        by cn.fujitsu.com (Postfix) with ESMTP id 464874B473FB
-        for <linux-btrfs@vger.kernel.org>; Wed,  8 Aug 2018 00:23:35 +0800 (CST)
-Date: Wed, 8 Aug 2018 00:23:32 +0800
-From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-To: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
-CC: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH v3] btrfs: qgroup: Remove qgroup items along with
- subvolume deletion
-Message-ID: <20180807162332.GB3288@fnst.localdomain>
-References: <cover.1533517699.git.misono.tomohiro@jp.fujitsu.com>
- <3ea480fc-46ad-4072-198d-1e8f49121be0@jp.fujitsu.com>
+Received: from mx2.suse.de ([195.135.220.15]:54260 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1730869AbeHGSzE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 7 Aug 2018 14:55:04 -0400
+Date: Tue, 7 Aug 2018 18:39:50 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [RFC PATCH 0/4] undelete subvolume online version
+Message-ID: <20180807163950.GP3218@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20180805104001.5488-1-lufq.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <3ea480fc-46ad-4072-198d-1e8f49121be0@jp.fujitsu.com>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20180805104001.5488-1-lufq.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Aug 06, 2018 at 01:53:28PM +0900, Misono Tomohiro wrote:
->When qgroup is on, subvolume deletion does not remove qgroup items
->of the subvolume (qgroup info, limit, relation) from quota tree and
->they need to get removed manually by "btrfs qgroup destroy".
->
->Since level 0 qgroup cannot be used/inherited by any other subvolume,
->let's remove them automatically when subvolume is deleted
->(to be precise, when the subvolume root is dropped).
->
->Reviewed-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
->Reviewed-by: Qu Wenruo <wqu@suse.com>
->Signed-off-by: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
->---
->v2 -> v3:
->  Use root->root_key.objectid instead of root->objectid
->  Add Reviewed-by tag
->
->v1 -> v2:
->  Move call of btrfs_remove_qgroup() from btrfs_delete_subvolume()
->  to btrfs_snapshot_destroy() so that it will be called after the
->  subvolume root is really dropped
->
-> fs/btrfs/extent-tree.c | 16 ++++++++++++----
-> 1 file changed, 12 insertions(+), 4 deletions(-)
->
->diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
->index 9e7b237b9547..48edf839ed2c 100644
->--- a/fs/btrfs/extent-tree.c
->+++ b/fs/btrfs/extent-tree.c
->@@ -8871,12 +8871,13 @@ int btrfs_drop_snapshot(struct btrfs_root *root,
-> 	struct btrfs_root_item *root_item = &root->root_item;
-> 	struct walk_control *wc;
-> 	struct btrfs_key key;
->+	u64 objectid = root->root_key.objectid;
-> 	int err = 0;
-> 	int ret;
-> 	int level;
-> 	bool root_dropped = false;
+On Sun, Aug 05, 2018 at 06:39:57PM +0800, Lu Fengqi wrote:
+> This patchset will add the BTRFS_IOC_SUBVOL_UNDELETE ioctl for online
+> btrfs subvolume undelete.
 > 
->-	btrfs_debug(fs_info, "Drop subvolume %llu", root->objectid);
->+	btrfs_debug(fs_info, "Drop subvolume %llu", objectid);
+> And btrfs subvolume undelete subcommand was added to btrfs-progs.
 > 
-> 	path = btrfs_alloc_path();
-> 	if (!path) {
->@@ -9030,7 +9031,7 @@ int btrfs_drop_snapshot(struct btrfs_root *root,
-> 		goto out_end_trans;
-> 	}
-> 
->-	if (root->root_key.objectid != BTRFS_TREE_RELOC_OBJECTID) {
->+	if (objectid != BTRFS_TREE_RELOC_OBJECTID) {
-> 		ret = btrfs_find_root(tree_root, &root->root_key, path,
-> 				      NULL, NULL);
-> 		if (ret < 0) {
->@@ -9043,8 +9044,7 @@ int btrfs_drop_snapshot(struct btrfs_root *root,
-> 			 *
-> 			 * The most common failure here is just -ENOENT.
-> 			 */
->-			btrfs_del_orphan_item(trans, tree_root,
->-					      root->root_key.objectid);
->+			btrfs_del_orphan_item(trans, tree_root, objectid);
-> 		}
-> 	}
-> 
->@@ -9056,6 +9056,14 @@ int btrfs_drop_snapshot(struct btrfs_root *root,
-> 		btrfs_put_fs_root(root);
-> 	}
-> 	root_dropped = true;
->+
->+	 /* Remove level-0 qgroup items since no other subvolume can use them */
->+	ret = btrfs_remove_qgroup(trans, objectid);
->+	if (ret && ret != -EINVAL && ret != -ENOENT) {
+> So user can use the following command to recover all the subolume that
+> is left on the device. The recovered subvolume will be link to <dest> dir
+> named to <name_prefix><subvol_id>.
 
-I'm sorry for missing the snapshot case. If it is a snapshot, then when
-we remove the relevant qgroup, we will not be able to perform
-quick_update_accounting(), and it will return 1. So we shouldn't abort
-the transaction when the return value = 1.
+Hm, I don't agree with the proposed interface - to recover all deleted
+subvolumes. IMO this should recover just one subvolume of a given id a
+to given directory.
 
-btrfs_remove_qgroup
--> __del_qgroup_relation
-   -> quick_update_accounting << if qgroup->excl != qgroup->rfer; return 1
-
--- 
-Thanks,
-Lu
-
->+		btrfs_abort_transaction(trans, ret);
->+		err = ret;
->+	}
->+
-> out_end_trans:
-> 	btrfs_end_transaction_throttle(trans);
-> out_free:
->-- 
->2.14.4
->
->
->--
->To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->the body of a message to majordomo@vger.kernel.org
->More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
->
-
-
+The ioctl structure has to be reworked, I've skimmed the code and saw
+some suspicious things but will have a look after the interface is
+settled.

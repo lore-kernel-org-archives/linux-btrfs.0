@@ -1,134 +1,102 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:53720 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:53734 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727216AbeHGKdJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 7 Aug 2018 06:33:09 -0400
+        id S1727216AbeHGKdL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 7 Aug 2018 06:33:11 -0400
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 79A42ADB4
-        for <linux-btrfs@vger.kernel.org>; Tue,  7 Aug 2018 08:19:56 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 75E98ADB4
+        for <linux-btrfs@vger.kernel.org>; Tue,  7 Aug 2018 08:19:58 +0000 (UTC)
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 08/11] btrfs-progs: mkfs: Introduce function to setup quota root and rescan
-Date: Tue,  7 Aug 2018 16:19:35 +0800
-Message-Id: <20180807081938.21348-9-wqu@suse.com>
+Subject: [PATCH 09/11] btrfs-progs: mkfs: Introduce mkfs time quota support
+Date: Tue,  7 Aug 2018 16:19:36 +0800
+Message-Id: <20180807081938.21348-10-wqu@suse.com>
 In-Reply-To: <20180807081938.21348-1-wqu@suse.com>
 References: <20180807081938.21348-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Introduce a new function, setup_quota_root(), which will create quota
-root, and do an offline rescan to ensure all quota accounting numbers
-are correct.
+The result fs will has quota enabled, with consistent qgroup accounting.
+
+This is quite handy to test quota with fstests, which doesn't support to
+call ioctl for btrfs at mount time.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- mkfs/main.c | 86 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 86 insertions(+)
+ Documentation/mkfs.btrfs.asciidoc |  5 +++++
+ mkfs/main.c                       | 16 +++++++++++++++-
+ 2 files changed, 20 insertions(+), 1 deletion(-)
 
+diff --git a/Documentation/mkfs.btrfs.asciidoc b/Documentation/mkfs.btrfs.asciidoc
+index 2a1c3592bcb4..821aad337ab5 100644
+--- a/Documentation/mkfs.btrfs.asciidoc
++++ b/Documentation/mkfs.btrfs.asciidoc
+@@ -81,6 +81,11 @@ updating the metadata blocks.
+ +
+ NOTE: versions up to 3.11 set the nodesize to 4k.
+ 
++*-Q|--quota*::
++Enable btrfs quota support. Result filesystem will have quota enabled and all
++qgroup accounting correct.
++See also `btrfs-quota`(8).
++
+ *-s|--sectorsize <size>*::
+ Specify the sectorsize, the minimum data block allocation unit.
+ +
 diff --git a/mkfs/main.c b/mkfs/main.c
-index c6174a7424cf..07e5f6112aad 100644
+index 07e5f6112aad..77eec08ef5f1 100644
 --- a/mkfs/main.c
 +++ b/mkfs/main.c
-@@ -42,6 +42,7 @@
- #include "mkfs/common.h"
- #include "mkfs/rootdir.h"
- #include "fsfeatures.h"
-+#include "qgroup-verify.h"
+@@ -860,6 +860,7 @@ int main(int argc, char **argv)
+ 	char *source_dir = NULL;
+ 	bool source_dir_set = false;
+ 	bool shrink_rootdir = false;
++	bool enable_quota = false;
+ 	u64 source_dir_size = 0;
+ 	u64 min_dev_size;
+ 	u64 shrink_size;
+@@ -889,13 +890,14 @@ int main(int argc, char **argv)
+ 			{ "nodiscard", no_argument, NULL, 'K' },
+ 			{ "features", required_argument, NULL, 'O' },
+ 			{ "uuid", required_argument, NULL, 'U' },
++			{ "quota", required_argument, NULL, 'Q' },
+ 			{ "quiet", 0, NULL, 'q' },
+ 			{ "shrink", no_argument, NULL, GETOPT_VAL_SHRINK },
+ 			{ "help", no_argument, NULL, GETOPT_VAL_HELP },
+ 			{ NULL, 0, NULL, 0}
+ 		};
  
- static int verbose = 1;
+-		c = getopt_long(argc, argv, "A:b:fl:n:s:m:d:L:O:r:U:VMKq",
++		c = getopt_long(argc, argv, "A:b:fl:n:s:m:d:L:O:r:U:VMKqQ",
+ 				long_options, NULL);
+ 		if (c < 0)
+ 			break;
+@@ -970,6 +972,9 @@ int main(int argc, char **argv)
+ 			case 'q':
+ 				verbose = 0;
+ 				break;
++			case 'Q':
++				enable_quota = true;
++				break;
+ 			case GETOPT_VAL_SHRINK:
+ 				shrink_rootdir = true;
+ 				break;
+@@ -1363,6 +1368,15 @@ raid_groups:
+ 		}
+ 	}
  
-@@ -743,6 +744,91 @@ static int insert_qgroup_items(struct btrfs_trans_handle *trans,
- 	return ret;
- }
++	if (enable_quota) {
++		ret = setup_quota_root(fs_info);
++		if (ret < 0) {
++			error("failed to initialize quota: %d (%s)", ret,
++				strerror(-ret));
++			goto out;
++		}
++	}
++
+ 	if (verbose) {
+ 		char features_buf[64];
  
-+static int setup_quota_root(struct btrfs_fs_info *fs_info)
-+{
-+	struct btrfs_trans_handle *trans;
-+	struct btrfs_qgroup_status_item *qsi;
-+	struct btrfs_root *quota_root;
-+	struct btrfs_path path;
-+	struct btrfs_key key;
-+	int qgroup_repaired = 0;
-+	int ret;
-+
-+	/* One to modify tree root, one for quota root */
-+	trans = btrfs_start_transaction(fs_info->tree_root, 2);
-+	if (IS_ERR(trans)) {
-+		ret = PTR_ERR(trans);
-+		error("failed to start transaction: %d (%s)",
-+			ret, strerror(-ret));
-+		return ret;
-+	}
-+	ret = btrfs_create_root(trans, fs_info, BTRFS_QUOTA_TREE_OBJECTID);
-+	if (ret < 0) {
-+		error("failed to create quota root: %d (%s)",
-+			ret, strerror(-ret));
-+		goto fail;
-+	}
-+	quota_root = fs_info->quota_root;
-+
-+	key.objectid = 0;
-+	key.type = BTRFS_QGROUP_STATUS_KEY;
-+	key.offset = 0;
-+
-+	btrfs_init_path(&path);
-+	ret = btrfs_insert_empty_item(trans, quota_root, &path, &key,
-+				      sizeof(*qsi));
-+	if (ret < 0) {
-+		error("failed to insert qgroup status item: %d (%s)",
-+			ret, strerror(-ret));
-+		goto fail;
-+	}
-+
-+	qsi = btrfs_item_ptr(path.nodes[0], path.slots[0],
-+			     struct btrfs_qgroup_status_item);
-+	btrfs_set_qgroup_status_generation(path.nodes[0], qsi, 0);
-+	btrfs_set_qgroup_status_rescan(path.nodes[0], qsi, 0);
-+
-+	/* Mark current status info inconsistent, and fix it later */
-+	btrfs_set_qgroup_status_flags(path.nodes[0], qsi,
-+			BTRFS_QGROUP_STATUS_FLAG_ON |
-+			BTRFS_QGROUP_STATUS_FLAG_INCONSISTENT);
-+	btrfs_release_path(&path);
-+
-+	/* Currently mkfs will only create one subvolume */
-+	ret = insert_qgroup_items(trans, fs_info, BTRFS_FS_TREE_OBJECTID);
-+	if (ret < 0) {
-+		error("failed to insert qgroup items: %d (%s)",
-+			ret, strerror(-ret));
-+		goto fail;
-+	}
-+
-+	ret = btrfs_commit_transaction(trans, fs_info->tree_root);
-+	if (ret < 0) {
-+		error("failed to commit current transaction: %d (%s)",
-+			ret, strerror(-ret));
-+		return ret;
-+	}
-+
-+	/*
-+	 * Qgroup is setup but with wrong info, use qgroup-verify
-+	 * infrastructure to repair them.
-+	 * (Just acts as offline rescan)
-+	 */
-+	ret = qgroup_verify_all(fs_info);
-+	if (ret < 0) {
-+		error("qgroup rescan failed: %d (%s)", ret, strerror(-ret));
-+		return ret;
-+	}
-+	ret = repair_qgroups(fs_info, &qgroup_repaired, true);
-+	if (ret < 0)
-+		error("failed to fill qgroup info: %d (%s)", ret,
-+			strerror(-ret));
-+	return ret;
-+fail:
-+	btrfs_commit_transaction(trans, fs_info->tree_root);
-+	return ret;
-+}
-+
- int main(int argc, char **argv)
- {
- 	char *file;
 -- 
 2.18.0
 

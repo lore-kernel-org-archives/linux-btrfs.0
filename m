@@ -1,60 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from tartarus.angband.pl ([89.206.35.136]:57300 "EHLO
-        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726579AbeHHAhr (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Aug 2018 20:37:47 -0400
-Date: Wed, 8 Aug 2018 00:21:06 +0200
-From: Adam Borowski <kilobyte@angband.pl>
-To: Mark Fasheh <mfasheh@suse.de>
-Cc: Andrew Morton <akpm@linux-foundation.org>,
-        Al Viro <viro@ZenIV.linux.org.uk>, linux-fsdevel@vger.kernel.org,
-        linux-api@vger.kernel.org, Michael Kerrisk <mtk.manpages@gmail.com>,
-        linux-btrfs@vger.kernel.org, linux-xfs@vger.kernel.org,
-        "Darrick J . Wong" <darrick.wong@oracle.com>,
-        David Sterba <dsterba@suse.cz>
-Subject: Re: [RESEND][PATCH v5 0/2] vfs: better dedupe permission check
-Message-ID: <20180807222106.6qfyrivo6y4pzn6a@angband.pl>
-References: <20180807214949.7714-1-mfasheh@suse.de>
+Received: from userp2120.oracle.com ([156.151.31.85]:37188 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726704AbeHHA47 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Aug 2018 20:56:59 -0400
+Subject: Re: [PATCH v3 4/4] btrfs: add helper btrfs_num_devices() to deduce
+ num_devices
+To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
+        linux-btrfs@vger.kernel.org
+References: <20180726065334.30594-5-anand.jain@oracle.com>
+ <20180802100934.12468-1-anand.jain@oracle.com>
+ <b1c8c566-5850-da69-b756-5036dca33975@suse.com>
+ <20180802122136.GM3218@twin.jikos.cz>
+ <f2f5a582-1bc4-617a-0d38-6c212d93bb56@oracle.com>
+ <20180807150227.GI3218@twin.jikos.cz>
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <3077d216-9eed-5b32-6c89-bffa249da6a6@oracle.com>
+Date: Wed, 8 Aug 2018 06:43:53 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <20180807214949.7714-1-mfasheh@suse.de>
+In-Reply-To: <20180807150227.GI3218@twin.jikos.cz>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Aug 07, 2018 at 02:49:47PM -0700, Mark Fasheh wrote:
-> Hi Andrew,
+
+
+On 08/07/2018 11:02 PM, David Sterba wrote:
+> On Thu, Aug 02, 2018 at 09:07:00PM +0800, Anand Jain wrote:
+>>>>> -	num_devices = fs_devices->num_devices;
+>>>>> -	btrfs_dev_replace_read_lock(&fs_info->dev_replace);
+>>>>> -	if (btrfs_dev_replace_is_ongoing(&fs_info->dev_replace)) {
+>>>>> -		BUG_ON(num_devices < 1);
+>>>>> -		num_devices--;
+>>>>> -	}
+>>>>> -	btrfs_dev_replace_read_unlock(&fs_info->dev_replace);
+>>>>> +	num_devices = btrfs_num_devices(fs_info);
+>>>>
+>>>> How about lifting the BUG_ON from btrfs_num_devices into a check in this
+>>>> function, so if num_devices < 1 then we just exit with -EINVAL or some
+>>>> such. We should be aiming at eliminating BUG_ONs.
+>>>
+>>> Right, in both cases it's possible to return with an error instead of
+>>> the BUG_ON.
+>>
+>> Actually we should just remove it as its a logical bug if num_devices <
+>> 1, so long we didn't hit this bug which means its stable OR keep BUG_ON
+>> it until we add RAID-N. ?
 > 
-> Could I please have these patches upstreamed or at least put in a tree for
-> more public testing? They've hit fsdevel a few times now, I have links to
-> the discussions in the change log below.
+> I think the BUG_ON is redundant, all the sanity checks at mount time or
+> ioctl remove/replace make sure that there are enough devices to perform
+> the action. Still, it can be an assert, such things do not hurt and may
+> be catch other errors someday.
 
-> The first patch expands our check to allow dedupe of a file if the
-> user owns it or otherwise would be allowed to write to it.
-[...]
-> The other problem we have is also related to forcing the user to open
-> target files for write - A process trying to exec a file currently
-> being deduped gets ETXTBUSY. The answer (as above) is to allow them to
-> open the targets ro - root can already do this. There was a patch from
-> Adam Borowski to fix this back in 2016
+  Assert makes sense to me. Patch [1] shall be dropped
+  [1]
+  [PATCH] btrfs: handle the BUG_ON in btrfs_num_devices()
 
-> The 2nd patch fixes our return code for permission denied to be
-> EPERM. For some reason we're returning EINVAL - I think that's
-> probably my fault. At any rate, we need to be returning something
-> descriptive of the actual problem, otherwise callers see EINVAL and
-> can't really make a valid determination of what's gone wrong.
-
-Note that the counterpart of these two patches for BTRFS_IOC_DEFRAG, which
-fixes the same issues, is included in btrfs' for-next, slated for 4.19. 
-While technically dedupe and defrag are independent, there would be somewhat
-less confusion if both behave the same in the same kernel version.
-
-Thus, it'd be nice if you would consider taking this.  Should be safe:
-even the permission check is paranoid.
+Thanks, Anand
 
 
-Meow!
--- 
-⢀⣴⠾⠻⢶⣦⠀ So a Hungarian gypsy mountainman, lumberjack by day job,
-⣾⠁⢰⠒⠀⣿⡁ brigand by, uhm, hobby, invented a dish: goulash on potato
-⢿⡄⠘⠷⠚⠋⠀ pancakes.  Then the Polish couldn't decide which of his
-⠈⠳⣄⠀⠀⠀⠀ adjectives to use for the dish's name.
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 

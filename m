@@ -1,87 +1,127 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:53754 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726951AbeHGKdP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 7 Aug 2018 06:33:15 -0400
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 16EC0ADB4
-        for <linux-btrfs@vger.kernel.org>; Tue,  7 Aug 2018 08:20:02 +0000 (UTC)
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 11/11] btrfs-progs: test/mkfs: Add test case for --rootdir and --quota
-Date: Tue,  7 Aug 2018 16:19:38 +0800
-Message-Id: <20180807081938.21348-12-wqu@suse.com>
-In-Reply-To: <20180807081938.21348-1-wqu@suse.com>
-References: <20180807081938.21348-1-wqu@suse.com>
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:64049 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1730869AbeHGSit (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Aug 2018 14:38:49 -0400
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
+        by cn.fujitsu.com (Postfix) with ESMTP id 464874B473FB
+        for <linux-btrfs@vger.kernel.org>; Wed,  8 Aug 2018 00:23:35 +0800 (CST)
+Date: Wed, 8 Aug 2018 00:23:32 +0800
+From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+To: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
+CC: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH v3] btrfs: qgroup: Remove qgroup items along with
+ subvolume deletion
+Message-ID: <20180807162332.GB3288@fnst.localdomain>
+References: <cover.1533517699.git.misono.tomohiro@jp.fujitsu.com>
+ <3ea480fc-46ad-4072-198d-1e8f49121be0@jp.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <3ea480fc-46ad-4072-198d-1e8f49121be0@jp.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Nothing interesting, since such combination can be handled easily by
-qgroup-verify.
+On Mon, Aug 06, 2018 at 01:53:28PM +0900, Misono Tomohiro wrote:
+>When qgroup is on, subvolume deletion does not remove qgroup items
+>of the subvolume (qgroup info, limit, relation) from quota tree and
+>they need to get removed manually by "btrfs qgroup destroy".
+>
+>Since level 0 qgroup cannot be used/inherited by any other subvolume,
+>let's remove them automatically when subvolume is deleted
+>(to be precise, when the subvolume root is dropped).
+>
+>Reviewed-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+>Reviewed-by: Qu Wenruo <wqu@suse.com>
+>Signed-off-by: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
+>---
+>v2 -> v3:
+>  Use root->root_key.objectid instead of root->objectid
+>  Add Reviewed-by tag
+>
+>v1 -> v2:
+>  Move call of btrfs_remove_qgroup() from btrfs_delete_subvolume()
+>  to btrfs_snapshot_destroy() so that it will be called after the
+>  subvolume root is really dropped
+>
+> fs/btrfs/extent-tree.c | 16 ++++++++++++----
+> 1 file changed, 12 insertions(+), 4 deletions(-)
+>
+>diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+>index 9e7b237b9547..48edf839ed2c 100644
+>--- a/fs/btrfs/extent-tree.c
+>+++ b/fs/btrfs/extent-tree.c
+>@@ -8871,12 +8871,13 @@ int btrfs_drop_snapshot(struct btrfs_root *root,
+> 	struct btrfs_root_item *root_item = &root->root_item;
+> 	struct walk_control *wc;
+> 	struct btrfs_key key;
+>+	u64 objectid = root->root_key.objectid;
+> 	int err = 0;
+> 	int ret;
+> 	int level;
+> 	bool root_dropped = false;
+> 
+>-	btrfs_debug(fs_info, "Drop subvolume %llu", root->objectid);
+>+	btrfs_debug(fs_info, "Drop subvolume %llu", objectid);
+> 
+> 	path = btrfs_alloc_path();
+> 	if (!path) {
+>@@ -9030,7 +9031,7 @@ int btrfs_drop_snapshot(struct btrfs_root *root,
+> 		goto out_end_trans;
+> 	}
+> 
+>-	if (root->root_key.objectid != BTRFS_TREE_RELOC_OBJECTID) {
+>+	if (objectid != BTRFS_TREE_RELOC_OBJECTID) {
+> 		ret = btrfs_find_root(tree_root, &root->root_key, path,
+> 				      NULL, NULL);
+> 		if (ret < 0) {
+>@@ -9043,8 +9044,7 @@ int btrfs_drop_snapshot(struct btrfs_root *root,
+> 			 *
+> 			 * The most common failure here is just -ENOENT.
+> 			 */
+>-			btrfs_del_orphan_item(trans, tree_root,
+>-					      root->root_key.objectid);
+>+			btrfs_del_orphan_item(trans, tree_root, objectid);
+> 		}
+> 	}
+> 
+>@@ -9056,6 +9056,14 @@ int btrfs_drop_snapshot(struct btrfs_root *root,
+> 		btrfs_put_fs_root(root);
+> 	}
+> 	root_dropped = true;
+>+
+>+	 /* Remove level-0 qgroup items since no other subvolume can use them */
+>+	ret = btrfs_remove_qgroup(trans, objectid);
+>+	if (ret && ret != -EINVAL && ret != -ENOENT) {
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- .../mkfs-tests/018-rootdir-with-quota/test.sh | 51 +++++++++++++++++++
- 1 file changed, 51 insertions(+)
- create mode 100755 tests/mkfs-tests/018-rootdir-with-quota/test.sh
+I'm sorry for missing the snapshot case. If it is a snapshot, then when
+we remove the relevant qgroup, we will not be able to perform
+quick_update_accounting(), and it will return 1. So we shouldn't abort
+the transaction when the return value = 1.
 
-diff --git a/tests/mkfs-tests/018-rootdir-with-quota/test.sh b/tests/mkfs-tests/018-rootdir-with-quota/test.sh
-new file mode 100755
-index 000000000000..97e5f592ade4
---- /dev/null
-+++ b/tests/mkfs-tests/018-rootdir-with-quota/test.sh
-@@ -0,0 +1,51 @@
-+#!/bin/bash
-+# Check if runtime feature quota can handle rootdir
-+#
-+
-+source "$TOP/tests/common"
-+
-+check_prereq mkfs.btrfs
-+check_prereq btrfs
-+
-+setup_root_helper		# For mknod
-+prepare_test_dev 1G		# make it large since we will fill the fs
-+
-+# mknod can create FIFO/CHAR/BLOCK file but not SOCK.
-+# No neat tool to create socket file, unless using python or similar.
-+# So no SOCK is tested here
-+check_global_prereq mknod
-+check_global_prereq dd
-+
-+tmp=$(mktemp -d --tmpdir btrfs-progs-mkfs.rootdirXXXXXXX)
-+
-+run_check mkdir "$tmp/dir"
-+run_check mkdir -p "$tmp/dir/in/dir"
-+
-+# More dir, there is no good way to pump metadata since we have no trigger
-+# to enable/disable inline extent data, so here create enough dirs to bump
-+# metadata
-+run_check mkdir "$tmp/a_lot_of_dirs"
-+for i in $(seq -w 0 8192); do
-+	run_check mkdir "$tmp/a_lot_of_dirs/dir_$i"
-+done
-+
-+# Then some data
-+run_check dd if=/dev/zero bs=1M count=1 of="$tmp/1M"
-+run_check dd if=/dev/zero bs=2M count=1 of="$tmp/2M"
-+run_check dd if=/dev/zero bs=4M count=1 of="$tmp/4M"
-+run_check dd if=/dev/zero bs=8M count=1 of="$tmp/8M"
-+
-+run_check dd if=/dev/zero bs=1K count=1 of="$tmp/1K"
-+run_check dd if=/dev/zero bs=2K count=1 of="$tmp/2K"
-+run_check dd if=/dev/zero bs=4K count=1 of="$tmp/4K"
-+run_check dd if=/dev/zero bs=8K count=1 of="$tmp/8K"
-+
-+run_check $SUDO_HELPER "$TOP/mkfs.btrfs" -f -r "$tmp" -Q "$TEST_DEV"
-+
-+rm -rf -- "$tmp"
-+
-+# Normal check already includes quota check
-+run_check $SUDO_HELPER "$TOP/btrfs" check "$TEST_DEV"
-+
-+# Just in case
-+run_check $SUDO_HELPER "$TOP/btrfs" check --qgroup-report "$TEST_DEV"
+btrfs_remove_qgroup
+-> __del_qgroup_relation
+   -> quick_update_accounting << if qgroup->excl != qgroup->rfer; return 1
+
 -- 
-2.18.0
+Thanks,
+Lu
+
+>+		btrfs_abort_transaction(trans, ret);
+>+		err = ret;
+>+	}
+>+
+> out_end_trans:
+> 	btrfs_end_transaction_throttle(trans);
+> out_free:
+>-- 
+>2.14.4
+>
+>
+>--
+>To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>the body of a message to majordomo@vger.kernel.org
+>More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
+>
+
 

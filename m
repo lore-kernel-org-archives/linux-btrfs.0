@@ -1,194 +1,130 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.15]:53627 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726721AbeHHJjY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 8 Aug 2018 05:39:24 -0400
-Subject: Re: [RFC PATCH 0/4] undelete subvolume online version
-To: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-References: <20180805104001.5488-1-lufq.fnst@cn.fujitsu.com>
- <20180807163950.GP3218@twin.jikos.cz>
- <bd99bd51-5813-702e-b496-654fead1be41@gmx.com>
- <20180808065306.GE3288@fnst.localdomain>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <d41f9a4b-8324-d260-ae71-7606ce5d3baf@gmx.com>
-Date: Wed, 8 Aug 2018 15:20:47 +0800
+Received: from mgwkm03.jp.fujitsu.com ([202.219.69.170]:52174 "EHLO
+        mgwkm03.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726923AbeHHKAH (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Aug 2018 06:00:07 -0400
+Received: from g01jpfmpwkw03.exch.g01.fujitsu.local (g01jpfmpwkw03.exch.g01.fujitsu.local [10.0.193.57])
+        by kw-mxauth.gw.nic.fujitsu.com (Postfix) with ESMTP id D909BAC015D
+        for <linux-btrfs@vger.kernel.org>; Wed,  8 Aug 2018 16:41:33 +0900 (JST)
+Subject: Re: [PATCH] btrfs: qgroup: Don't populating excl numbers for snapshot
+ src if it belongs to other qgroups
+To: Qu Wenruo <wqu@suse.com>, <linux-btrfs@vger.kernel.org>
+References: <20180808060409.20048-1-wqu@suse.com>
+From: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
+Message-ID: <f6b41cc5-6827-4f6d-e8b5-ef5c3963293f@jp.fujitsu.com>
+Date: Wed, 8 Aug 2018 16:41:08 +0900
 MIME-Version: 1.0
-In-Reply-To: <20180808065306.GE3288@fnst.localdomain>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="awTXYlVSpmdIL8V0iKR5ya5cN57EoVEom"
+In-Reply-To: <20180808060409.20048-1-wqu@suse.com>
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---awTXYlVSpmdIL8V0iKR5ya5cN57EoVEom
-Content-Type: multipart/mixed; boundary="azGhP8JlxQILBvovd5Qfy0Cmr7E2w6GK2";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Message-ID: <d41f9a4b-8324-d260-ae71-7606ce5d3baf@gmx.com>
-Subject: Re: [RFC PATCH 0/4] undelete subvolume online version
-References: <20180805104001.5488-1-lufq.fnst@cn.fujitsu.com>
- <20180807163950.GP3218@twin.jikos.cz>
- <bd99bd51-5813-702e-b496-654fead1be41@gmx.com>
- <20180808065306.GE3288@fnst.localdomain>
-In-Reply-To: <20180808065306.GE3288@fnst.localdomain>
+On 2018/08/08 15:04, Qu Wenruo wrote:
+> When quota is enabled and we do a snapshot, we just update the 'excl'
+> number of both snapshot src and dst to src's 'rfer' - nodesize.
+> 
+> It's a quick hack to avoid quota rescan every time we create a snapshot
+> and it works if src doesn't belong to other qgroups.
+> 
+> But if we have higher level qgroups, such behavior only works for level
+> 0 qgroups, and higher level qgroups don't get update, thus making qgroup
+> number inconsistent.
+> 
+> The problem of updating higher level qgroup numbers is, it's way to
+> complex.
+> 
+> Under the following case, it's pretty simple: (src is 257, dst is 258)
+> 0/257 - 1/0, 0/258.
+> 
+> In this case, we only need to modify 1/0 to reduce its 'excl'
+> 
+> But under the following case, it will go out of control:
+> 
+> 0/257 - 1/0, 0/258 - 1/1 (using -i option), 1/0 - 2/0, 1/1 - 2/0.
+> 
+> So to make it simple, if snapshot src has higher level qgroups, just
+> mark qgroup inconsistent and let later rescan to do its job.
+> 
+> Reported-by: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+>  fs/btrfs/qgroup.c | 16 ++++++++++++++++
+>  1 file changed, 16 insertions(+)
+> 
+> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+> index ec4351fd7537..2b3d2dd1b735 100644
+> --- a/fs/btrfs/qgroup.c
+> +++ b/fs/btrfs/qgroup.c
+> @@ -2298,6 +2298,22 @@ int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans,
+>  		if (!srcgroup)
+>  			goto unlock;
+>  
+> +		/*
+> +		 * If snapshot source is belonging to high level qgroups, it
+> +		 * will be a more complex to hack the numbers.
+> +		 * E.g. source is 257, snapshot is 258:
+> +		 * 0/257 - 1/0, creating snapshot 258 will need to update 1/0
+> +		 * It's too complex when higher level qgroup is involved.
+> +		 * Mark qgroup inconsistent for later rescan
+> +		 */
+> +		if (!list_empty(&srcgroup->groups)) {
+> +			btrfs_info_rl(fs_info,
+> +"src qgroup 0/%llu belongs to higher level qgroup, creating snapshot for it need qgroup rescan",
+> +				      srcid);
+> +			fs_info->qgroup_flags |=
+> +				BTRFS_QGROUP_STATUS_FLAG_INCONSISTENT;
+> +			goto unlock;
+> +		}
+>  		/*
+>  		 * We call inherit after we clone the root in order to make sure
+>  		 * our counts don't go crazy, so at this point the only
+> 
 
---azGhP8JlxQILBvovd5Qfy0Cmr7E2w6GK2
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+Thanks for the quick fix.
+Tested-by/Reviewed-by: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
 
+However there is still another problem about removing relation:
 
+(4.18-rc7 with above patch)
+$ mkfs.btrfs -fq $DEV
+$ mount $DEV /mnt
 
-On 2018=E5=B9=B408=E6=9C=8808=E6=97=A5 14:53, Lu Fengqi wrote:
-> On Wed, Aug 08, 2018 at 02:11:24PM +0800, Qu Wenruo wrote:
->>
->>
->> On 2018=E5=B9=B408=E6=9C=8808=E6=97=A5 00:39, David Sterba wrote:
->>> On Sun, Aug 05, 2018 at 06:39:57PM +0800, Lu Fengqi wrote:
->>>> This patchset will add the BTRFS_IOC_SUBVOL_UNDELETE ioctl for onlin=
-e
->>>> btrfs subvolume undelete.
->>>>
->>>> And btrfs subvolume undelete subcommand was added to btrfs-progs.
->>>>
->>>> So user can use the following command to recover all the subolume th=
-at
->>>> is left on the device. The recovered subvolume will be link to <dest=
-> dir
->>>> named to <name_prefix><subvol_id>.
->>>
->>> Hm, I don't agree with the proposed interface - to recover all delete=
-d
->>> subvolumes. IMO this should recover just one subvolume of a given id =
-a
->>> to given directory.
->>>
->>> The ioctl structure has to be reworked, I've skimmed the code and saw=
+$ btrfs quota enable /mnt
+$ btrfs qgroup create 1/0 /mnt
+$ btrfs sub create /mnt/sub
+$ btrfs qgroup assign 0/257 1/0 /mnt
 
->>> some suspicious things but will have a look after the interface is
->>> settled.
->>
->> My concern is, is such purpose really needed?
->>
->> Yes, it's possible user made some mistake and want to get back the dat=
-a.
->> But putting an ioctl for 'undelete', then user may consider btrfs is s=
-o
->> powerful that can undelete everything.
->> In short, this undelete feature gives user too high expectation.
->>
->> And don't expect user really to read man pages. There are already tons=
+$ dd if=/dev/urandom of=/mnt/sub/file bs=1k count=1000
+$ btrfs sub snap /mnt/sub /mnt/snap
+$ dmesg | tail -n 1
+BTRFS info (device sdb7): src qgroup 0/257 belongs to higher level qgroup,
+ creating snapshot for it need qgroup rescan
 
->=20
-> There is no more way about the too high expectation of users. If we pro=
-vide
-> a feature with a sufficiently detailed man page, but users do not read =
-the
-> man page when using this feature, I can only think that they are not
-> responsible for their own data. So, this seems to be a problem they nee=
-d to
-> consider.
+$ btrfs quota rescan -w /mnt
+$ btrfs qgroup show -pcre /mnt
+qgroupid         rfer         excl     max_rfer     max_excl parent  child
+--------         ----         ----     --------     -------- ------  -----
+0/5          16.00KiB     16.00KiB         none         none ---     ---
+0/257      1016.00KiB     16.00KiB         none         none 1/0     ---
+0/258      1016.00KiB     16.00KiB         none         none ---     ---
+1/0        1016.00KiB     16.00KiB         none         none ---     0/257
+                          
+so far so good, but:
 
-IMHO this ioctl is design only for a pretty niche use case.
-As long as it's a designed ioctl, it's some kind of a "main" feature.
+$ btrfs qgroup remove 0/257 1/0 /mnt
+WARNING: quotas may be inconsistent, rescan needed
+$ btrfs quota rescan -w /mnt
+$ btrfs qgroup show -pcre  /mnt
+qgoupid         rfer         excl     max_rfer     max_excl parent  child
+--------         ----         ----     --------     -------- ------  -----
+0/5          16.00KiB     16.00KiB         none         none ---     ---
+0/257      1016.00KiB     16.00KiB         none         none ---     ---
+0/258      1016.00KiB     16.00KiB         none         none ---     ---
+1/0        1016.00KiB     16.00KiB         none         none ---     ---
+           ^^^^^^^^^^     ^^^^^^^^ not cleared
 
-Even it's users' response to read the man page, we still need to bring
-the surprise to minimal.
-By all mean, undelete is a minor use case and should be prevented from
-the very beginning.
-
->=20
->> of reports where user execute btrfs check --repair without realizing
->> --repair is pretty dangerous (and thanks to the work done to repair, i=
-t
->> normally doesn't cause catastrophic result, but sometimes it indeed
->> causes extra damage)
->=20
-> The good news is that online undelete is not as dangerous as btrfs chec=
-k
-> --repair. In fact, I think it is safe enough.
-
-Yes, for the safety part I completely agree.
-
->=20
->>
->> And when user tried and failed due to deleted tree blocks, they will g=
-et
->> even more frustrated or even betrayed.
->=20
-> As mentioned previous, maybe we should do what we think is right, such =
-as
-> give the user more abilities to protect/recover their data, not to take=
-
-> care of any sensitive users?
-
-=46rom my personal experience, adding a new ioctl means a lot of new
-maintenance burden, especially when the need is small (and sometimes
-raises user expectation).
-
-Personally speaking, we already have a lot of so-called "optimization"
-which makes development pretty tricky.
-We should pay more attention when introduce a new feature, evaluating
-the user-case and possible complexity carefully, since removing a
-feature is way more complex than adding a new one.
-
-(Although thankfully, current undelete is pretty simple, but I'm not
-sure if it will become more and more complex)
-
->=20
->>
->> I prefer to put such undelete as an off-line rescue tool, instead of
->> making it online with an ioctl interface.
->=20
-> I also think that the offline undelete is more useful. After all, umoun=
-t
-> immediately to prevent further data loss is always the most effective a=
-fter
-> a mistake. However, since we can give the ability of online undelete to=
- a
-> user which couldn't umount the filesystem easily,
-
-Well, when the deletion happens, there is no much difference to do
-online or offline rescue.
-Either way, sane user should already stop its business and check the
-system carefully.
-
-> and don't have any side
-> effect on existing features. IMHO, there is no reason to reject this.
-
-I just don't want to regret several years later.
-Currently for undelete, we already need to take a lot of factors into
-consideration, (although most of them are not affected) qgroup, balance,
-pending snapshot (and I may miss a lot of more).
-
-I just don't want later development to take undelete into consideration
-for such a niche use-case.
+It seems some fix is needed for rescan too.
 
 Thanks,
-Qu
+Misono
 
-
---azGhP8JlxQILBvovd5Qfy0Cmr7E2w6GK2--
-
---awTXYlVSpmdIL8V0iKR5ya5cN57EoVEom
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAltqmc8ACgkQwj2R86El
-/qjQgwgAsLAnySXmbuUa8a2TpQGBGo/xlYbDwka6lGF8CZQBn8NwNmF5TJOGkF0B
-AIV/IHpS8AdQpmKoQVTBXnf22FnCKUSek2jXztSQBUl5jxLKYLhsG2heuJPjwTwD
-VAAK+btovihVwpH5by/oolMn+W4Mlkj8Q7l8ON/IztQuIq8tcOXXUFP4glSoES7O
-Pcij6Ab3o2GDRzSW06s//+fXUyIMcsQPL1IqC4YxJ/PkMQnL+XNFECy348LUBCwr
-fm0Xw1StoT2Fd7KISpgVyxWTblEwQMknxvEOdav6bKzAntVam9zkYGKESiYkqBMS
-Zj/58H/YBiSaK9nd4ym9uNDmYsUPGg==
-=yKbK
------END PGP SIGNATURE-----
-
---awTXYlVSpmdIL8V0iKR5ya5cN57EoVEom--

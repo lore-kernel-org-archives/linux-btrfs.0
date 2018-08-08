@@ -1,37 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:43392 "EHLO mx1.suse.de"
+Received: from szxga07-in.huawei.com ([45.249.212.35]:33310 "EHLO huawei.com"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727141AbeHOPgg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 15 Aug 2018 11:36:36 -0400
-Date: Wed, 15 Aug 2018 14:44:25 +0200
-From: David Sterba <dsterba@suse.cz>
-To: zhong jiang <zhongjiang@huawei.com>
-Cc: clm@fb.com, jbacik@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Subject: Re: [PATCHv3 1/3] fs/btrfs/disk-io: change
- btrfs_destroy_delayed_refs to be void function
-Message-ID: <20180815124425.GM24025@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+        id S1727109AbeHHQTd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 8 Aug 2018 12:19:33 -0400
+From: zhong jiang <zhongjiang@huawei.com>
+To: <clm@fb.com>, <jbacik@fb.com>, <dsterba@suse.com>
+CC: <linux-btrfs@vger.kernel.org>, <linux-kernel@vger.kernel.org>
+Subject: [PATCHv3 2/3] fs/btrfs/extent-tree: change btrfs_free_reserved_bytes to be void funtion
+Date: Wed, 8 Aug 2018 21:47:54 +0800
+Message-ID: <1533736075-8691-3-git-send-email-zhongjiang@huawei.com>
+In-Reply-To: <1533736075-8691-1-git-send-email-zhongjiang@huawei.com>
 References: <1533736075-8691-1-git-send-email-zhongjiang@huawei.com>
- <1533736075-8691-2-git-send-email-zhongjiang@huawei.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1533736075-8691-2-git-send-email-zhongjiang@huawei.com>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Aug 08, 2018 at 09:47:53PM +0800, zhong jiang wrote:
-> btrfs_destroy_delayed_refs defines the variable "ret" for return value, but
-> it is not modified after initialization. Further, I find that any of the
-> callees do not handle the return value.  So it is safe to drop the
-> unneeded value "ret".
+btrfs_free_reserved_bytes defines the variable "ret" for return value,
+but it is not modified after initialzation. Further, I find that any of
+the callees do not handle the return value, so it is safe to drop the
+unneeded value "ret".
 
-The callers care about the return values, not the callees. My point in
-the previous patch iterations was to make sure that none of the callees,
-ie. the functions that are called by btrfs_destroy_delayed_refs, do not
-lack error handling.
+Signed-off-by: zhong jiang <zhongjiang@huawei.com>
+---
+ fs/btrfs/extent-tree.c | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
 
-And I found one that does, btrfs_pin_extent, near the end of the while
-loop. So, there's more work and I can't apply this patch until it's
-fixed, which may make this patch obsolete as the return value would be
-actually needed.
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index f77226d..ff305f5 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -6464,11 +6464,10 @@ static int btrfs_add_reserved_bytes(struct btrfs_block_group_cache *cache,
+  * reserve set to 0 in order to clear the reservation.
+  */
+ 
+-static int btrfs_free_reserved_bytes(struct btrfs_block_group_cache *cache,
+-				     u64 num_bytes, int delalloc)
++static void btrfs_free_reserved_bytes(struct btrfs_block_group_cache *cache,
++				      u64 num_bytes, int delalloc)
+ {
+ 	struct btrfs_space_info *space_info = cache->space_info;
+-	int ret = 0;
+ 
+ 	spin_lock(&space_info->lock);
+ 	spin_lock(&cache->lock);
+@@ -6481,7 +6480,6 @@ static int btrfs_free_reserved_bytes(struct btrfs_block_group_cache *cache,
+ 		cache->delalloc_bytes -= num_bytes;
+ 	spin_unlock(&cache->lock);
+ 	spin_unlock(&space_info->lock);
+-	return ret;
+ }
+ void btrfs_prepare_extent_commit(struct btrfs_fs_info *fs_info)
+ {
+-- 
+1.7.12.4
+

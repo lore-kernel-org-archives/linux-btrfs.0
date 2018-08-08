@@ -1,112 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.18]:37691 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726542AbeHHI3l (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 8 Aug 2018 04:29:41 -0400
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:7466 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1726542AbeHHJLh (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Aug 2018 05:11:37 -0400
+Date: Wed, 8 Aug 2018 14:53:06 +0800
+From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+CC: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
 Subject: Re: [RFC PATCH 0/4] undelete subvolume online version
-To: dsterba@suse.cz, Lu Fengqi <lufq.fnst@cn.fujitsu.com>,
-        linux-btrfs@vger.kernel.org
+Message-ID: <20180808065306.GE3288@fnst.localdomain>
 References: <20180805104001.5488-1-lufq.fnst@cn.fujitsu.com>
  <20180807163950.GP3218@twin.jikos.cz>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <bd99bd51-5813-702e-b496-654fead1be41@gmx.com>
-Date: Wed, 8 Aug 2018 14:11:24 +0800
+ <bd99bd51-5813-702e-b496-654fead1be41@gmx.com>
 MIME-Version: 1.0
-In-Reply-To: <20180807163950.GP3218@twin.jikos.cz>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="BYvgQdL5Lu43SZ4ZHMz4C4Atsjw7f3CIz"
+Content-Type: text/plain; charset="utf-8"
+In-Reply-To: <bd99bd51-5813-702e-b496-654fead1be41@gmx.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---BYvgQdL5Lu43SZ4ZHMz4C4Atsjw7f3CIz
-Content-Type: multipart/mixed; boundary="7quTrncPRaRxCK2qy8rMcjRClxdWS76cF";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: dsterba@suse.cz, Lu Fengqi <lufq.fnst@cn.fujitsu.com>,
- linux-btrfs@vger.kernel.org
-Message-ID: <bd99bd51-5813-702e-b496-654fead1be41@gmx.com>
-Subject: Re: [RFC PATCH 0/4] undelete subvolume online version
-References: <20180805104001.5488-1-lufq.fnst@cn.fujitsu.com>
- <20180807163950.GP3218@twin.jikos.cz>
-In-Reply-To: <20180807163950.GP3218@twin.jikos.cz>
+On Wed, Aug 08, 2018 at 02:11:24PM +0800, Qu Wenruo wrote:
+>
+>
+>On 2018年08月08日 00:39, David Sterba wrote:
+>> On Sun, Aug 05, 2018 at 06:39:57PM +0800, Lu Fengqi wrote:
+>>> This patchset will add the BTRFS_IOC_SUBVOL_UNDELETE ioctl for online
+>>> btrfs subvolume undelete.
+>>>
+>>> And btrfs subvolume undelete subcommand was added to btrfs-progs.
+>>>
+>>> So user can use the following command to recover all the subolume that
+>>> is left on the device. The recovered subvolume will be link to <dest> dir
+>>> named to <name_prefix><subvol_id>.
+>> 
+>> Hm, I don't agree with the proposed interface - to recover all deleted
+>> subvolumes. IMO this should recover just one subvolume of a given id a
+>> to given directory.
+>> 
+>> The ioctl structure has to be reworked, I've skimmed the code and saw
+>> some suspicious things but will have a look after the interface is
+>> settled.
+>
+>My concern is, is such purpose really needed?
+>
+>Yes, it's possible user made some mistake and want to get back the data.
+>But putting an ioctl for 'undelete', then user may consider btrfs is so
+>powerful that can undelete everything.
+>In short, this undelete feature gives user too high expectation.
+>
+>And don't expect user really to read man pages. There are already tons
 
---7quTrncPRaRxCK2qy8rMcjRClxdWS76cF
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+There is no more way about the too high expectation of users. If we provide
+a feature with a sufficiently detailed man page, but users do not read the
+man page when using this feature, I can only think that they are not
+responsible for their own data. So, this seems to be a problem they need to
+consider.
 
+>of reports where user execute btrfs check --repair without realizing
+>--repair is pretty dangerous (and thanks to the work done to repair, it
+>normally doesn't cause catastrophic result, but sometimes it indeed
+>causes extra damage)
 
+The good news is that online undelete is not as dangerous as btrfs check
+--repair. In fact, I think it is safe enough.
 
-On 2018=E5=B9=B408=E6=9C=8808=E6=97=A5 00:39, David Sterba wrote:
-> On Sun, Aug 05, 2018 at 06:39:57PM +0800, Lu Fengqi wrote:
->> This patchset will add the BTRFS_IOC_SUBVOL_UNDELETE ioctl for online
->> btrfs subvolume undelete.
->>
->> And btrfs subvolume undelete subcommand was added to btrfs-progs.
->>
->> So user can use the following command to recover all the subolume that=
+>
+>And when user tried and failed due to deleted tree blocks, they will get
+>even more frustrated or even betrayed.
 
->> is left on the device. The recovered subvolume will be link to <dest> =
-dir
->> named to <name_prefix><subvol_id>.
->=20
-> Hm, I don't agree with the proposed interface - to recover all deleted
-> subvolumes. IMO this should recover just one subvolume of a given id a
-> to given directory.
->=20
-> The ioctl structure has to be reworked, I've skimmed the code and saw
-> some suspicious things but will have a look after the interface is
-> settled.
+As mentioned previous, maybe we should do what we think is right, such as
+give the user more abilities to protect/recover their data, not to take
+care of any sensitive users?
 
-My concern is, is such purpose really needed?
+>
+>I prefer to put such undelete as an off-line rescue tool, instead of
+>making it online with an ioctl interface.
 
-Yes, it's possible user made some mistake and want to get back the data.
-But putting an ioctl for 'undelete', then user may consider btrfs is so
-powerful that can undelete everything.
-In short, this undelete feature gives user too high expectation.
+I also think that the offline undelete is more useful. After all, umount
+immediately to prevent further data loss is always the most effective after
+a mistake. However, since we can give the ability of online undelete to a
+user which couldn't umount the filesystem easily, and don't have any side
+effect on existing features. IMHO, there is no reason to reject this.
 
-And don't expect user really to read man pages. There are already tons
-of reports where user execute btrfs check --repair without realizing
---repair is pretty dangerous (and thanks to the work done to repair, it
-normally doesn't cause catastrophic result, but sometimes it indeed
-causes extra damage)
-
-And when user tried and failed due to deleted tree blocks, they will get
-even more frustrated or even betrayed.
-
-I prefer to put such undelete as an off-line rescue tool, instead of
-making it online with an ioctl interface.
-
+-- 
 Thanks,
-Qu
-
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->=20
+Lu
 
 
---7quTrncPRaRxCK2qy8rMcjRClxdWS76cF--
-
---BYvgQdL5Lu43SZ4ZHMz4C4Atsjw7f3CIz
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEyBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAltqiYwACgkQwj2R86El
-/qiUywf3bH5gdIeg4boVg5W/VhJyc2bkKdhd+jXQXTUCARUpNPFdzm+6AeokhvUY
-MRwbnkpnOrdUjxkjgbLxtdpNXeBziyM3v7RGrfK7sM8pO2yO58Jl6bMteU+l6J4R
-FqmuyA8G+wQq0zR1QgaQ1TJVEyF1nyEgabKjBBfo+ur+a+zfC3eHeXtEmz/1qf1+
-pxcbKSSLQJzLlHX+VaFZQTOevKuIZxBXWsztK+773k3YgQKcyB3HeJ9Y0YerRhq9
-aSE3J8jIKygNOYzS7KF15ftOqO9qjtAtgF6jkmM0LfnbXmXeQCX8R3fQYLPmKKoZ
-C2iSQPTKcMYTIUG3AD9kjVBzYgQ9
-=nQWt
------END PGP SIGNATURE-----
-
---BYvgQdL5Lu43SZ4ZHMz4C4Atsjw7f3CIz--

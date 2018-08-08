@@ -1,52 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:64742 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1726503AbeHHGGG (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Aug 2018 02:06:06 -0400
-From: "Gu, Jinxiang" <gujx@cn.fujitsu.com>
-To: "dsterba@suse.cz" <dsterba@suse.cz>,
-        "Lu, Fengqi" <lufq.fnst@cn.fujitsu.com>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: RE: [PATCH 2/5] btrfs: use a separate variable to store the
+Received: from mx2.suse.de ([195.135.220.15]:48676 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726945AbeHHQQR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 8 Aug 2018 12:16:17 -0400
+Date: Wed, 8 Aug 2018 15:56:23 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org, gujx@cn.fujitsu.com
+Subject: Re: [PATCH 2/5] btrfs: use a separate variable to store the
  num_bytes of the qgroup_reserve
-Date: Wed, 8 Aug 2018 03:48:22 +0000
-Message-ID: <516DDBE5B1D92D42BCF7A2E37F045A5D01A8A3EBC7@G08CNEXMBPEKD02.g08.fujitsu.local>
+Message-ID: <20180808135623.GU3218@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <20180804131057.9967-1-lufq.fnst@cn.fujitsu.com>
  <20180804131057.9967-3-lufq.fnst@cn.fujitsu.com>
  <20180807161912.GO3218@twin.jikos.cz>
-In-Reply-To: <20180807161912.GO3218@twin.jikos.cz>
-Content-Type: text/plain; charset="gb2312"
+ <20180808030437.GD3288@fnst.localdomain>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20180808030437.GD3288@fnst.localdomain>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-> -----Original Message-----
-> From: David Sterba [mailto:dsterba@suse.cz]
-> Sent: Wednesday, August 08, 2018 12:19 AM
-> To: Lu, Fengqi/Â½ ·á÷è <lufq.fnst@cn.fujitsu.com>
-> Cc: linux-btrfs@vger.kernel.org; Gu, Jinxiang/¹Ë ½ğÏã <gujx@cn.fujitsu.com>
-> Subject: Re: [PATCH 2/5] btrfs: use a separate variable to store the num_bytes of the qgroup_reserve
+On Wed, Aug 08, 2018 at 11:04:37AM +0800, Lu Fengqi wrote:
+> On Tue, Aug 07, 2018 at 06:19:12PM +0200, David Sterba wrote:
+> >On Sat, Aug 04, 2018 at 09:10:54PM +0800, Lu Fengqi wrote:
+> >> After btrfs_qgroup_reserve_meta_prealloc(), num_bytes will be assigned
+> >> again by btrfs_calc_trans_metadata_size(). Therefore, once block_rsv
+> >> fails, we cannot properly free the num_bytes of the previous
+> >> qgroup_reserve.
+> >
+> >This does not look like a trivial cleanup at all. There was an unused
+> >parameter, removed in c4c129db5da8f070147f175 ("btrfs: drop unused
+> >parameter qgroup_reserved"), that introduced the bug.  This was in this
+> >rc1 so it's a regression and I'll consider pushing it to the 4.18 final.
 > 
-> On Sat, Aug 04, 2018 at 09:10:54PM +0800, Lu Fengqi wrote:
-> > After btrfs_qgroup_reserve_meta_prealloc(), num_bytes will be assigned
-> > again by btrfs_calc_trans_metadata_size(). Therefore, once block_rsv
-> > fails, we cannot properly free the num_bytes of the previous
-> > qgroup_reserve.
-> 
-> This does not look like a trivial cleanup at all. There was an unused
-> parameter, removed in c4c129db5da8f070147f175 ("btrfs: drop unused
-> parameter qgroup_reserved"), that introduced the bug.  
-Yes. It was introduced by fix above.
-I missed the second assignment of num_bytes.
-And it should use two variable to record reserve size of qgroup and blockgroup.
+> I apologize for the inconvenience. I should add the Fixes tag, and really
+> shouldn't mix it into the trivial cleanup patch set.
 
-
->This was in this
-> rc1 so it's a regression and I'll consider pushing it to the 4.18 final.
-> 
-
-
-
-ÿôèº{.nÇ+‰·Ÿ®‰­†+%ŠËÿ±éİ¶¥Šwÿº{.nÇ+‰·¥Š{±ı»k~ÏâØ^n‡r¡ö¦zËëh™¨è­Ú&£ûàz¿äz¹Ş—ú+€Ê+zf£¢·hšˆ§~†­†Ûiÿÿïêÿ‘êçz_è®æj:+v‰¨ş)ß£øm
+As the bug does not qualify as urgent regression, I'm not going to
+forward it to 4.18. Please update the subject and changelog so it
+reflects that's an actual fix. I'll add it to the 4.19 queue then.
+Thanks.

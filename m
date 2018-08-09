@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf1-f195.google.com ([209.85.210.195]:44915 "EHLO
-        mail-pf1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726944AbeHIUb5 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Aug 2018 16:31:57 -0400
+Received: from mail-pg1-f193.google.com ([209.85.215.193]:43644 "EHLO
+        mail-pg1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726944AbeHIUb7 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Aug 2018 16:31:59 -0400
 From: Naohiro Aota <naota@elisp.net>
 To: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
 Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
@@ -10,52 +10,40 @@ Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
         Damien Le Moal <damien.lemoal@wdc.com>,
         Bart Van Assche <bart.vanassche@wdc.com>,
         Matias Bjorling <mb@lightnvm.io>, Naohiro Aota <naota@elisp.net>
-Subject: [RFC PATCH 04/17] btrfs: limit super block locations in HMZONED mode
-Date: Fri, 10 Aug 2018 03:04:37 +0900
-Message-Id: <20180809180450.5091-5-naota@elisp.net>
+Subject: [RFC PATCH 05/17] btrfs: disable fallocate in HMZONED mode
+Date: Fri, 10 Aug 2018 03:04:38 +0900
+Message-Id: <20180809180450.5091-6-naota@elisp.net>
 In-Reply-To: <20180809180450.5091-1-naota@elisp.net>
 References: <20180809180450.5091-1-naota@elisp.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When in HMZONED mode, make sure that device super blocks are located in
-randomly writable zones of zoned block devices. That is, do not write super
-blocks in sequential write required zones of host-managed zoned block
-devices as update would not be possible.
+fallocate() is implemented by reserving actual extent instead of
+reservations. This can result in exposing the sequential write constraint
+of host-managed zoned block devices to the application, which would break
+the POSIX semantic for the fallocated file.  To avoid this, report
+fallocate() as not supported when in HMZONED mode.
 
-Signed-off-by: Damien Le Moal <damien.lemoal@wdc.com>
 Signed-off-by: Naohiro Aota <naota@elisp.net>
 ---
- fs/btrfs/disk-io.c | 9 +++++++++
- 1 file changed, 9 insertions(+)
+ fs/btrfs/file.c | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 14f284382ba7..6a014632ca1e 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -3435,6 +3435,13 @@ struct buffer_head *btrfs_read_dev_super(struct block_device *bdev)
- 	return latest;
- }
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 095f0bb86bb7..6f4546ccb57d 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -2993,6 +2993,10 @@ static long btrfs_fallocate(struct file *file, int mode,
+ 	alloc_end = round_up(offset + len, blocksize);
+ 	cur_offset = alloc_start;
  
-+static int check_super_location(struct btrfs_device *device, u64 pos)
-+{
-+	/* any address is good on a regular (zone_size == 0) device */
-+	/* non-SEQUENTIAL WRITE REQUIRED zones are capable on a zoned device */
-+	return device->zone_size == 0 || !btrfs_dev_is_sequential(device, pos);
-+}
++	/* Do not allow fallocate in HMZONED mode */
++	if (btrfs_fs_incompat(btrfs_sb(inode->i_sb), HMZONED))
++		return -EOPNOTSUPP;
 +
- /*
-  * Write superblock @sb to the @device. Do not wait for completion, all the
-  * buffer heads we write are pinned.
-@@ -3464,6 +3471,8 @@ static int write_dev_supers(struct btrfs_device *device,
- 		if (bytenr + BTRFS_SUPER_INFO_SIZE >=
- 		    device->commit_total_bytes)
- 			break;
-+		if (!check_super_location(device, bytenr))
-+			continue;
- 
- 		btrfs_set_super_bytenr(sb, bytenr);
- 
+ 	/* Make sure we aren't being give some crap mode */
+ 	if (mode & ~(FALLOC_FL_KEEP_SIZE | FALLOC_FL_PUNCH_HOLE |
+ 		     FALLOC_FL_ZERO_RANGE))
 -- 
 2.18.0
 

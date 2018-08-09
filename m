@@ -1,88 +1,145 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:51560 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726882AbeHIVOQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 9 Aug 2018 17:14:16 -0400
-Subject: Re: [COMMAND HANGS] The command 'btrfs subvolume sync -s 2 xyz' can
- hangs.
-To: bepi@adria.it, linux-btrfs@vger.kernel.org
-References: <2543962.HIiRWmuHEy@exnet.gdb.it>
-From: Jeff Mahoney <jeffm@suse.com>
-Message-ID: <3834bc23-03bf-f6e4-dd56-2cf028469a82@suse.com>
-Date: Thu, 9 Aug 2018 14:48:03 -0400
+Received: from mout.gmx.net ([212.227.15.19]:60155 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1727247AbeHJCCr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 9 Aug 2018 22:02:47 -0400
+Subject: Re: Report correct filesystem usage / limits on BTRFS subvolumes with
+ quota
+To: Tomasz Pala <gotar@polanet.pl>
+Cc: linux-btrfs@vger.kernel.org
+References: <0059606f-88bf-c919-450b-bf08e184b5a2@mailbox.org>
+ <b10a3950-0b86-e4fb-3621-f4c5ad3d79e7@gmx.com>
+ <20180809174811.GA27001@polanet.pl>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <ecd793f3-55b3-84d4-80cf-3382a580037f@gmx.com>
+Date: Fri, 10 Aug 2018 07:35:32 +0800
 MIME-Version: 1.0
-In-Reply-To: <2543962.HIiRWmuHEy@exnet.gdb.it>
+In-Reply-To: <20180809174811.GA27001@polanet.pl>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="XBBZjFaVmfExtmjQvL5giHqUbH0p1MxQb"
+ boundary="xPlvrS6nskSEiTbz8V77XL9yj7RXHRQaK"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---XBBZjFaVmfExtmjQvL5giHqUbH0p1MxQb
-Content-Type: multipart/mixed; boundary="I7vGYs9Wy20EBNJdvVqF1JVGawwacm0cF";
+--xPlvrS6nskSEiTbz8V77XL9yj7RXHRQaK
+Content-Type: multipart/mixed; boundary="mraiHDn3bDeJ1bIwGzrzN5NLiq25aYPQe";
  protected-headers="v1"
-From: Jeff Mahoney <jeffm@suse.com>
-To: bepi@adria.it, linux-btrfs@vger.kernel.org
-Message-ID: <3834bc23-03bf-f6e4-dd56-2cf028469a82@suse.com>
-Subject: Re: [COMMAND HANGS] The command 'btrfs subvolume sync -s 2 xyz' can
- hangs.
-References: <2543962.HIiRWmuHEy@exnet.gdb.it>
-In-Reply-To: <2543962.HIiRWmuHEy@exnet.gdb.it>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: Tomasz Pala <gotar@polanet.pl>
+Cc: linux-btrfs@vger.kernel.org
+Message-ID: <ecd793f3-55b3-84d4-80cf-3382a580037f@gmx.com>
+Subject: Re: Report correct filesystem usage / limits on BTRFS subvolumes with
+ quota
+References: <0059606f-88bf-c919-450b-bf08e184b5a2@mailbox.org>
+ <b10a3950-0b86-e4fb-3621-f4c5ad3d79e7@gmx.com>
+ <20180809174811.GA27001@polanet.pl>
+In-Reply-To: <20180809174811.GA27001@polanet.pl>
 
---I7vGYs9Wy20EBNJdvVqF1JVGawwacm0cF
+--mraiHDn3bDeJ1bIwGzrzN5NLiq25aYPQe
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
-On 8/9/18 11:15 AM, Giuseppe Della Bianca wrote:
-> Hi.
+
+
+On 8/10/18 1:48 AM, Tomasz Pala wrote:
+> On Tue, Jul 31, 2018 at 22:32:07 +0800, Qu Wenruo wrote:
 >=20
-> My system:=20
-> - Fedora 28 x86_64
-> - kernel-4.17.7-200
-> - btrfs-progs-4.15.1-1
+>> 2) Different limitations on exclusive/shared bytes
+>>    Btrfs can set different limit on exclusive/shared bytes, further
+>>    complicating the problem.
+>>
+>> 3) Btrfs quota only accounts data/metadata used by the subvolume
+>>    It lacks all the shared trees (mentioned below), and in fact such
+>>    shared tree can be pretty large (especially for extent tree and csu=
+m
+>>    tree).
 >=20
-> The command 'btrfs subvolume sync -s 2 xyz' hangs in this case:
+> I'm not sure about the implications, but just to clarify some things:
 >=20
-> - Run command 'btrfs subvolume sync -s 2 xyz' .
-> - After some time the kernel reports an error on the filesystem.
->   (error that existed before the command was launched.)
-> - The filesystem goes in read-only mode.
-> - The command hangs.
+> when limiting somebody's data space we usually don't care about the
+> underlying "savings" coming from any deduplicating technique - these ar=
+e
+> purely bonuses for system owner, so he could do larger resource overboo=
+king.
 
-Can you provide the output of 'dmesg' and the contents of
-/proc/<pid>/stack where <pid> is the pid of the btrfs command process?
+In reality that's definitely not the case.
 
--Jeff
---=20
-Jeff Mahoney
-SUSE Labs
+=46rom what I see, most users would care more about exclusively used spac=
+e
+(excl), other than the total space one subvolume is referring to (rfer).
+
+The most common case is, you do a snapshot, user would only care how
+much new space can be written into the subvolume, other than the total
+subvolume size.
+
+>=20
+> So - the limit set on any user should enforce maximum and absolute spac=
+e
+> he has allocated, including the shared stuff. I could even imagine that=
+
+> creating a snapshot might immediately "eat" the available quota. In a
+> way, that quota returned matches (give or take) `du` reported usage,
+> unless "do not account reflinks withing single qgroup" was easy to impl=
+emet.
+
+In fact, that's the case. In current implementation, accounting on
+extent is the easiest (if not the only) way to implement.
+
+>=20
+> I.e.: every shared segment should be accounted within quota (at least o=
+nce).
+
+Already accounted, at least for rfer.
+
+>=20
+> And the numbers accounted should reflect the uncompressed sizes.
+
+No way for current extent based solution.
+
+>=20
+>=20
+> Moreover - if there would be per-subvolume RAID levels someday, the dat=
+a
+> should be accouted in relation to "default" (filesystem) RAID level,
+> i.e. having a RAID0 subvolume on RAID1 fs should account half of the
+> data, and twice the data in an opposite scenario (like "dup" profile on=
+
+> single-drive filesystem).
+
+No possible again for current extent based solution.
+
+>=20
+>=20
+> In short: values representing quotas are user-oriented ("the numbers on=
+e
+> bought"), not storage-oriented ("the numbers they actually occupy").
+
+Well, if something is not possible or brings so big performance impact,
+there will be no argument on how it should work in the first place.
+
+Thanks,
+Qu
 
 
+--mraiHDn3bDeJ1bIwGzrzN5NLiq25aYPQe--
 
---I7vGYs9Wy20EBNJdvVqF1JVGawwacm0cF--
-
---XBBZjFaVmfExtmjQvL5giHqUbH0p1MxQb
+--xPlvrS6nskSEiTbz8V77XL9yj7RXHRQaK
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQIzBAEBCAAdFiEE8wzgbmZ74SnKPwtDHntLYyF55bIFAltsjGQACgkQHntLYyF5
-5bL3HQ//bDhvkjMt6FPrP00cJ7gLFtGjb40fbAtxkTAf6dDSHE/BVKJdDFGYDJfC
-h7mbYTZ9diaoUSSp57UEx16Isgn7Ao8KHdV2XKdbuttfLqCQNGBRIstrv78IvcRw
-W1FWU2pR7m1RMqgBHSd2QOLx754s48poQga8DKLmTY+lWoAXR6S4UOZ66hHT02gs
-SGmk9RBMwI0TBmiIIC5sDSCg16zjTRH4gd/VrWEn+vd9vf3mOgm/bToJQ1Ggn+DJ
-2mwk5HXKtxVWcR2DzYzjRXybxaTwbKeGBZhqNhIY0W8HBPADvwU9gHw4f4Jq99Ay
-us819xRRf3/JUg3BylJjwxX5D5RMxnn6HkBKYoNayZSjWGGHvAwEf67O2a1nZ6yj
-0/4BpdbQq1RQtLfXedME6WhHTBDHrm+ncd7Rl1TLsMQh1MHwGsInuG8G/u1C9ign
-BOqhIzxOGbFFUMJSzGxYyCDYFt8EvrS3ovIYMPjb1OOjmgOWvjRF4mgQU9Yo3uy9
-0/qFxrJjPcIIvy0Fhxg0cvYJWgR6gcst9h0nuvWNs3ScqK3mqCHv4MLtjWma2y59
-B8/1/tVtZhHBiSEdkDgjR8GAfEuBRLaKH7gWI6XMfTLNeTm9/VZWwOtRx3rkJURm
-7enIElNtxfweknhD/QCMNUbnU1MxTlgmMlE7kKBss5M2QIDFUao=
-=tzxp
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAltsz8QACgkQwj2R86El
+/qjh9wf9E/ndc53OajI8ODLF+XQI/wiUNPzXkozy9dSZa0j4D3q5b0Q/tUBx9uB9
+xDgYabQo47PViSmNsE2DyULOy9V+qiCjhQMkV6eZ559kfBosU0CvGN9H4zchkJJC
+qGNAuqvxcIAHOmjsADIS2svhfztV827J8WnNxqEiDyZvdQqogHw1+30Yg4GoG44+
+8xff8h9xEWboNFogxeNUfgjOiAFZcK8NNW37tV3xj7LEETKgwiIXK0TdmXjghTs0
+fCSg1L3epA3yqiTq1fFisp4a+w8bf1ywAd0HnDavRRJdxL4chKt9O/2UA5JZ2F7e
+nMWqwaakiTNmZxNLa/YH9my377nm5Q==
+=4Ad6
 -----END PGP SIGNATURE-----
 
---XBBZjFaVmfExtmjQvL5giHqUbH0p1MxQb--
+--xPlvrS6nskSEiTbz8V77XL9yj7RXHRQaK--

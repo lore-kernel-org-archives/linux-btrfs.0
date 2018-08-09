@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf1-f177.google.com ([209.85.210.177]:34879 "EHLO
-        mail-pf1-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726882AbeHIUhW (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Aug 2018 16:37:22 -0400
+Received: from mail-pl0-f66.google.com ([209.85.160.66]:43089 "EHLO
+        mail-pl0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726882AbeHIUhQ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Aug 2018 16:37:16 -0400
 From: Naohiro Aota <naota@elisp.net>
 To: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
 Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
@@ -10,113 +10,113 @@ Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
         Damien Le Moal <damien.lemoal@wdc.com>,
         Bart Van Assche <bart.vanassche@wdc.com>,
         Matias Bjorling <mb@lightnvm.io>, Naohiro Aota <naota@elisp.net>
-Subject: [RFC PATCH 05/12] btrfs-progs: load and check zone information
-Date: Fri, 10 Aug 2018 03:10:58 +0900
-Message-Id: <20180809181105.12856-5-naota@elisp.net>
+Subject: [RFC PATCH 03/12] btrfs-progs: add new HMZONED feature flag
+Date: Fri, 10 Aug 2018 03:10:56 +0900
+Message-Id: <20180809181105.12856-3-naota@elisp.net>
 In-Reply-To: <20180809181105.12856-1-naota@elisp.net>
 References: <20180809180450.5091-1-naota@elisp.net>
  <20180809181105.12856-1-naota@elisp.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch checks if a device added to btrfs is a zoned block device. If it
-is, load zones information and the zone size for the device.
+With this feature enabled, a zoned block device aware btrfs allocates block
+groups aligned to the device zones and always write in sequential zones at
+the zone write pointer position.
 
-For a btrfs volume composed of multiple zoned block devices, all devices
-must have the same zone size.
+Enabling this feature also force disable conversion from ext4 volumes.
+
+Note: this flag can be moved to COMPAT_RO, so that older kernel can read
+but not write zoned block devices formatted with btrfs.
 
 Signed-off-by: Naohiro Aota <naota@elisp.net>
 ---
- utils.c   | 10 ++++++++++
- volumes.c | 18 ++++++++++++++++++
- volumes.h |  3 +++
- 3 files changed, 31 insertions(+)
+ cmds-inspect-dump-super.c | 3 ++-
+ ctree.h                   | 4 +++-
+ fsfeatures.c              | 8 ++++++++
+ fsfeatures.h              | 2 +-
+ libbtrfsutil/btrfs.h      | 1 +
+ 5 files changed, 15 insertions(+), 3 deletions(-)
 
-diff --git a/utils.c b/utils.c
-index 71fc044a..a2172a82 100644
---- a/utils.c
-+++ b/utils.c
-@@ -250,6 +250,16 @@ int btrfs_add_to_fsid(struct btrfs_trans_handle *trans,
- 		goto out;
- 	}
- 
-+	ret = btrfs_get_zone_info(fd, path, fs_info->fs_devices->hmzoned,
-+				  &device->zinfo);
-+	if (ret)
-+		goto out;
-+	if (device->zinfo.zone_size != fs_info->fs_devices->zone_size) {
-+		error("Device zone size differ\n");
-+		ret = -EINVAL;
-+		goto out;
-+	}
-+
- 	disk_super = (struct btrfs_super_block *)buf;
- 	dev_item = &disk_super->dev_item;
- 
-diff --git a/volumes.c b/volumes.c
-index d81b348e..2ec27cd7 100644
---- a/volumes.c
-+++ b/volumes.c
-@@ -160,6 +160,8 @@ static int device_list_add(const char *path,
- 	struct btrfs_device *device;
- 	struct btrfs_fs_devices *fs_devices;
- 	u64 found_transid = btrfs_super_generation(disk_super);
-+	int hmzoned = btrfs_super_incompat_flags(disk_super) &
-+			BTRFS_FEATURE_INCOMPAT_HMZONED;
- 
- 	fs_devices = find_fsid(disk_super->fsid);
- 	if (!fs_devices) {
-@@ -237,6 +239,8 @@ static int device_list_add(const char *path,
- 	if (fs_devices->lowest_devid > devid) {
- 		fs_devices->lowest_devid = devid;
- 	}
-+	if (hmzoned)
-+		fs_devices->hmzoned = 1;
- 	*fs_devices_ret = fs_devices;
- 	return 0;
- }
-@@ -307,6 +311,8 @@ int btrfs_open_devices(struct btrfs_fs_devices *fs_devices, int flags)
- 	struct btrfs_device *device;
- 	int ret;
- 
-+	fs_devices->zone_size = 0;
-+
- 	list_for_each_entry(device, &fs_devices->devices, dev_list) {
- 		if (!device->name) {
- 			printk("no name for device %llu, skip it now\n", device->devid);
-@@ -330,6 +336,18 @@ int btrfs_open_devices(struct btrfs_fs_devices *fs_devices, int flags)
- 		device->fd = fd;
- 		if (flags & O_RDWR)
- 			device->writeable = 1;
-+
-+		ret = btrfs_get_zone_info(fd, device->name, fs_devices->hmzoned,
-+					  &device->zinfo);
-+		if (ret != 0)
-+			goto fail;
-+		if (!fs_devices->zone_size) {
-+			fs_devices->zone_size = device->zinfo.zone_size;
-+		} else if (device->zinfo.zone_size != fs_devices->zone_size) {
-+			fprintf(stderr, "Device zone size differ\n");
-+			ret = -EINVAL;
-+			goto fail;
-+		}
- 	}
- 	return 0;
- fail:
-diff --git a/volumes.h b/volumes.h
-index bad688e5..36a6f44b 100644
---- a/volumes.h
-+++ b/volumes.h
-@@ -111,6 +111,9 @@ struct btrfs_fs_devices {
- 
- 	int seeding;
- 	struct btrfs_fs_devices *seed;
-+
-+	u64 zone_size;
-+	unsigned int hmzoned:1;
+diff --git a/cmds-inspect-dump-super.c b/cmds-inspect-dump-super.c
+index e965267c..4e365ead 100644
+--- a/cmds-inspect-dump-super.c
++++ b/cmds-inspect-dump-super.c
+@@ -228,7 +228,8 @@ static struct readable_flag_entry incompat_flags_array[] = {
+ 	DEF_INCOMPAT_FLAG_ENTRY(EXTENDED_IREF),
+ 	DEF_INCOMPAT_FLAG_ENTRY(RAID56),
+ 	DEF_INCOMPAT_FLAG_ENTRY(SKINNY_METADATA),
+-	DEF_INCOMPAT_FLAG_ENTRY(NO_HOLES)
++	DEF_INCOMPAT_FLAG_ENTRY(NO_HOLES),
++	DEF_INCOMPAT_FLAG_ENTRY(HMZONED)
  };
+ static const int incompat_flags_num = sizeof(incompat_flags_array) /
+ 				      sizeof(struct readable_flag_entry);
+diff --git a/ctree.h b/ctree.h
+index 4719962d..6d805ecd 100644
+--- a/ctree.h
++++ b/ctree.h
+@@ -489,6 +489,7 @@ struct btrfs_super_block {
+ #define BTRFS_FEATURE_INCOMPAT_RAID56		(1ULL << 7)
+ #define BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA	(1ULL << 8)
+ #define BTRFS_FEATURE_INCOMPAT_NO_HOLES		(1ULL << 9)
++#define BTRFS_FEATURE_INCOMPAT_HMZONED		(1ULL << 10)
  
- struct btrfs_bio_stripe {
+ #define BTRFS_FEATURE_COMPAT_SUPP		0ULL
+ 
+@@ -509,7 +510,8 @@ struct btrfs_super_block {
+ 	 BTRFS_FEATURE_INCOMPAT_RAID56 |		\
+ 	 BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS |		\
+ 	 BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA |	\
+-	 BTRFS_FEATURE_INCOMPAT_NO_HOLES)
++	 BTRFS_FEATURE_INCOMPAT_NO_HOLES |		\
++	 BTRFS_FEATURE_INCOMPAT_HMZONED)
+ 
+ /*
+  * A leaf is full of items. offset and size tell us where to find
+diff --git a/fsfeatures.c b/fsfeatures.c
+index 7d85d60f..53396dd4 100644
+--- a/fsfeatures.c
++++ b/fsfeatures.c
+@@ -86,6 +86,14 @@ static const struct btrfs_fs_feature {
+ 		VERSION_TO_STRING2(4,0),
+ 		NULL, 0,
+ 		"no explicit hole extents for files" },
++#ifdef BTRFS_ZONED
++	{ "hmzoned", BTRFS_FEATURE_INCOMPAT_HMZONED,
++		"hmzoned",
++		NULL, 0,
++		NULL, 0,
++		NULL, 0,
++		"support Host-Managed Zoned devices" },
++#endif
+ 	/* Keep this one last */
+ 	{ "list-all", BTRFS_FEATURE_LIST_ALL, NULL }
+ };
+diff --git a/fsfeatures.h b/fsfeatures.h
+index 3cc9452a..0918ee1a 100644
+--- a/fsfeatures.h
++++ b/fsfeatures.h
+@@ -25,7 +25,7 @@
+ 		| BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA)
+ 
+ /*
+- * Avoid multi-device features (RAID56) and mixed block groups
++ * Avoid multi-device features (RAID56), mixed block groups, and hmzoned device
+  */
+ #define BTRFS_CONVERT_ALLOWED_FEATURES				\
+ 	(BTRFS_FEATURE_INCOMPAT_MIXED_BACKREF			\
+diff --git a/libbtrfsutil/btrfs.h b/libbtrfsutil/btrfs.h
+index c293f6bf..c6a60fbc 100644
+--- a/libbtrfsutil/btrfs.h
++++ b/libbtrfsutil/btrfs.h
+@@ -268,6 +268,7 @@ struct btrfs_ioctl_fs_info_args {
+ #define BTRFS_FEATURE_INCOMPAT_RAID56		(1ULL << 7)
+ #define BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA	(1ULL << 8)
+ #define BTRFS_FEATURE_INCOMPAT_NO_HOLES		(1ULL << 9)
++#define BTRFS_FEATURE_INCOMPAT_HMZONED		(1ULL << 10)
+ 
+ struct btrfs_ioctl_feature_flags {
+ 	__u64 compat_flags;
 -- 
 2.18.0
 

@@ -1,77 +1,122 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:39370 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726643AbeHHIWT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 8 Aug 2018 04:22:19 -0400
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 918CFAF5B
-        for <linux-btrfs@vger.kernel.org>; Wed,  8 Aug 2018 06:04:12 +0000 (UTC)
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: qgroup: Don't populating excl numbers for snapshot src if it belongs to other qgroups
-Date: Wed,  8 Aug 2018 14:04:09 +0800
-Message-Id: <20180808060409.20048-1-wqu@suse.com>
+Received: from mout.gmx.net ([212.227.17.22]:41495 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1728267AbeHIIEh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 9 Aug 2018 04:04:37 -0400
+Subject: Re: [PATCH] btrfs: qgroup: Always remove all qgroup relation in
+ btrfs_remove_qgroup()
+To: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <cover.1533787467.git.misono.tomohiro@jp.fujitsu.com>
+ <3efcb82a-5fcb-4d20-1ab9-5d03bbc6b999@jp.fujitsu.com>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <dae991e9-80b5-8e53-26f1-5bdb01e7e142@gmx.com>
+Date: Thu, 9 Aug 2018 13:41:18 +0800
+MIME-Version: 1.0
+In-Reply-To: <3efcb82a-5fcb-4d20-1ab9-5d03bbc6b999@jp.fujitsu.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="eiX4MQTjbHlul72O0XA81ElJHxeK5sh0s"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When quota is enabled and we do a snapshot, we just update the 'excl'
-number of both snapshot src and dst to src's 'rfer' - nodesize.
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--eiX4MQTjbHlul72O0XA81ElJHxeK5sh0s
+Content-Type: multipart/mixed; boundary="W09cuT848Yh4p6Qfgr2QdDK1FYyCaoL11";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>,
+ linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-ID: <dae991e9-80b5-8e53-26f1-5bdb01e7e142@gmx.com>
+Subject: Re: [PATCH] btrfs: qgroup: Always remove all qgroup relation in
+ btrfs_remove_qgroup()
+References: <cover.1533787467.git.misono.tomohiro@jp.fujitsu.com>
+ <3efcb82a-5fcb-4d20-1ab9-5d03bbc6b999@jp.fujitsu.com>
+In-Reply-To: <3efcb82a-5fcb-4d20-1ab9-5d03bbc6b999@jp.fujitsu.com>
 
-It's a quick hack to avoid quota rescan every time we create a snapshot
-and it works if src doesn't belong to other qgroups.
+--W09cuT848Yh4p6Qfgr2QdDK1FYyCaoL11
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-But if we have higher level qgroups, such behavior only works for level
-0 qgroups, and higher level qgroups don't get update, thus making qgroup
-number inconsistent.
 
-The problem of updating higher level qgroup numbers is, it's way to
-complex.
 
-Under the following case, it's pretty simple: (src is 257, dst is 258)
-0/257 - 1/0, 0/258.
+On 8/9/18 12:10 PM, Misono Tomohiro wrote:
+> In btrfs_remove_qgroup(), each qgroup relation is removed by calling
+> __del_qgroup_relation(). However, __del_qgroup_relation() returns 1
+> if deletion of qgroup relation causes inconsistency and current code
+> exits immediately  in that case.
+>=20
+> Therefore if there are several qgroup relations and removing first
+> relation causes inconsistency, remaining items will not be removed.
+>=20
+> Fix this by continuing to remove items if return value of
+> __del_qgroup_relation() is 1.
+>=20
+> Signed-off-by: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
 
-In this case, we only need to modify 1/0 to reduce its 'excl'
+Indeed we still need to remove all qgroup relationship even we will make
+qgroup inconsistent.
 
-But under the following case, it will go out of control:
+Reviewed-by: Qu Wenruo <wqu@suse.com>
 
-0/257 - 1/0, 0/258 - 1/1 (using -i option), 1/0 - 2/0, 1/1 - 2/0.
+Thanks,
+Qu
 
-So to make it simple, if snapshot src has higher level qgroups, just
-mark qgroup inconsistent and let later rescan to do its job.
+> ---
+>  fs/btrfs/qgroup.c | 15 ++++++++++++---
+>  1 file changed, 12 insertions(+), 3 deletions(-)
+>=20
+> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+> index 2ba29f0609d9..f18284253e77 100644
+> --- a/fs/btrfs/qgroup.c
+> +++ b/fs/btrfs/qgroup.c
+> @@ -1428,12 +1428,21 @@ int btrfs_remove_qgroup(struct btrfs_trans_hand=
+le *trans, u64 qgroupid)
+>  		goto out;
+> =20
+>  	while (!list_empty(&qgroup->groups)) {
+> +		int ret2;
+> +
+>  		list =3D list_first_entry(&qgroup->groups,
+>  					struct btrfs_qgroup_list, next_group);
+> -		ret =3D __del_qgroup_relation(trans, qgroupid,
+> +		ret2 =3D __del_qgroup_relation(trans, qgroupid,
+>  					    list->group->qgroupid);
+> -		if (ret)
+> -			goto out;
+> +		if (ret2) {
+> +			ret =3D ret2;
+> +			/*
+> +			 * __del_qgroup_relation() returns 1 if qgroup becomes
+> +			 * inconsistent. Continue to remove items in that case.
+> +			 */
+> +			if (ret !=3D 1)
+> +				goto out;
+> +		}
+>  	}
+> =20
+>  	spin_lock(&fs_info->qgroup_lock);
+>=20
 
-Reported-by: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/qgroup.c | 16 ++++++++++++++++
- 1 file changed, 16 insertions(+)
 
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index ec4351fd7537..2b3d2dd1b735 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -2298,6 +2298,22 @@ int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans,
- 		if (!srcgroup)
- 			goto unlock;
- 
-+		/*
-+		 * If snapshot source is belonging to high level qgroups, it
-+		 * will be a more complex to hack the numbers.
-+		 * E.g. source is 257, snapshot is 258:
-+		 * 0/257 - 1/0, creating snapshot 258 will need to update 1/0
-+		 * It's too complex when higher level qgroup is involved.
-+		 * Mark qgroup inconsistent for later rescan
-+		 */
-+		if (!list_empty(&srcgroup->groups)) {
-+			btrfs_info_rl(fs_info,
-+"src qgroup 0/%llu belongs to higher level qgroup, creating snapshot for it need qgroup rescan",
-+				      srcid);
-+			fs_info->qgroup_flags |=
-+				BTRFS_QGROUP_STATUS_FLAG_INCONSISTENT;
-+			goto unlock;
-+		}
- 		/*
- 		 * We call inherit after we clone the root in order to make sure
- 		 * our counts don't go crazy, so at this point the only
--- 
-2.18.0
+--W09cuT848Yh4p6Qfgr2QdDK1FYyCaoL11--
 
+--eiX4MQTjbHlul72O0XA81ElJHxeK5sh0s
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAltr0/4ACgkQwj2R86El
+/qjovAf8C2DuibN2hKJ4790oj2OU76xSj1Sdz3d+46YPSqEN/vyV0NBU9/SIkX4i
+OdQNIY+tULk94U0KSi+pWZsCa8UKR/KaSkxQ3bukoptwdzbsifkQo7DrK8zZvOXy
+VBcS/9lKB5lQjchv7aQVNsCTzVysB97tyDs/mpcgaPn9hbSoj1G+WcWBmf2A0jvb
+przG+dQqbHsSM88J1MHNzYYEhndw9l2o7FdqL0ajqAx7yVWF35Nmej+lb9HOwWBa
+BTG1TmWHIoz88n0ZJTEzSFmW974Q3/eeHpTNZFHXtFVrVU6RacJxjG2qbcR76EA6
+Oz/Qdud6FhvYyHxY03E+ILqQe+rBrA==
+=kb5B
+-----END PGP SIGNATURE-----
+
+--eiX4MQTjbHlul72O0XA81ElJHxeK5sh0s--

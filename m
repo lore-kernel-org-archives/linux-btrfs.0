@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf1-f195.google.com ([209.85.210.195]:37896 "EHLO
+Received: from mail-pf1-f195.google.com ([209.85.210.195]:46215 "EHLO
         mail-pf1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727407AbeHIUc0 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Aug 2018 16:32:26 -0400
+        with ESMTP id S1727407AbeHIUcY (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Aug 2018 16:32:24 -0400
 From: Naohiro Aota <naota@elisp.net>
 To: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
 Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
@@ -10,48 +10,63 @@ Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
         Damien Le Moal <damien.lemoal@wdc.com>,
         Bart Van Assche <bart.vanassche@wdc.com>,
         Matias Bjorling <mb@lightnvm.io>, Naohiro Aota <naota@elisp.net>
-Subject: [RFC PATCH 16/17] btrfs: wait existing extents before truncating
-Date: Fri, 10 Aug 2018 03:04:49 +0900
-Message-Id: <20180809180450.5091-17-naota@elisp.net>
+Subject: [RFC PATCH 15/17] btrfs: reset zones of unused block groups
+Date: Fri, 10 Aug 2018 03:04:48 +0900
+Message-Id: <20180809180450.5091-16-naota@elisp.net>
 In-Reply-To: <20180809180450.5091-1-naota@elisp.net>
 References: <20180809180450.5091-1-naota@elisp.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When truncating a file, file buffers which have already been allocated but
-not yet written may be truncated.  Truncating these buffers could cause
-breakage of a sequential write pattern in a block group if the truncated
-blocks are for example followed by blocks allocated to another file. To
-avoid this problem, always wait for write out of all unwritten buffers
-before proceeding with the truncate execution.
+For an HMZONED volume, a block group maps to a zone of the device. For
+deleted unused block groups, the zone of the block group can be reset to
+rewind the zone write pointer at the start of the zone.
 
 Signed-off-by: Naohiro Aota <naota@elisp.net>
 ---
- fs/btrfs/inode.c | 11 +++++++++++
- 1 file changed, 11 insertions(+)
+ fs/btrfs/extent-tree.c | 22 +++++++++++++++++++++-
+ 1 file changed, 21 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 05f5e05ccf37..d3f35f81834f 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -5193,6 +5193,17 @@ static int btrfs_setsize(struct inode *inode, struct iattr *attr)
- 		btrfs_end_write_no_snapshotting(root);
- 		btrfs_end_transaction(trans);
- 	} else {
-+		struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index a5f5935315c8..26989f6fe591 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -2025,6 +2025,25 @@ int btrfs_discard_extent(struct btrfs_fs_info *fs_info, u64 bytenr,
+ 				ASSERT(btrfs_test_opt(fs_info, DEGRADED));
+ 				continue;
+ 			}
 +
-+		if (btrfs_fs_incompat(fs_info, HMZONED)) {
-+			u64 sectormask = fs_info->sectorsize - 1;
++			if (clear == BTRFS_CLEAR_OP_DISCARD &&
++			    btrfs_dev_is_sequential(stripe->dev,
++						    stripe->physical) &&
++			    stripe->length == stripe->dev->zone_size) {
++				ret = blkdev_reset_zones(stripe->dev->bdev,
++							 stripe->physical >> 9,
++							 stripe->length >> 9,
++							 GFP_NOFS);
++				if (ret)
++					discarded_bytes += stripe->length;
++				else
++					break;
++				set_bit(stripe->physical >>
++						stripe->dev->zone_size_shift,
++					stripe->dev->empty_zones);
++				continue;
++			}
 +
-+			ret = btrfs_wait_ordered_range(inode,
-+						       newsize & (~sectormask),
-+						       (u64)-1);
-+			if (ret)
-+				return ret;
-+		}
+ 			req_q = bdev_get_queue(stripe->dev->bdev);
+ 			if (clear == BTRFS_CLEAR_OP_DISCARD &&
+ 			    !blk_queue_discard(req_q))
+@@ -10958,7 +10977,8 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
+ 		spin_unlock(&space_info->lock);
  
- 		/*
- 		 * We're truncating a file that used to have good data down to
+ 		/* DISCARD can flip during remount */
+-		trimming = btrfs_test_opt(fs_info, DISCARD);
++		trimming = btrfs_test_opt(fs_info, DISCARD) ||
++				btrfs_fs_incompat(fs_info, HMZONED);
+ 
+ 		/* Implicit trim during transaction commit. */
+ 		if (trimming)
 -- 
 2.18.0
 

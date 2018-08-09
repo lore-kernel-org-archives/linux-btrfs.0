@@ -1,185 +1,229 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.18]:37503 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.17.22]:56987 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1728209AbeHIIKf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 9 Aug 2018 04:10:35 -0400
-Subject: Re: [PATCH v4] btrfs: qgroup: Remove qgroup items along with
- subvolume deletion
+        id S1728209AbeHIISZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 9 Aug 2018 04:18:25 -0400
+Subject: Re: [PATCH] btrfs: qgroup: Don't populating excl numbers for snapshot
+ src if it belongs to other qgroups
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 To: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>,
         linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>
-References: <cover.1533783766.git.misono.tomohiro@jp.fujitsu.com>
- <055391ff-7137-4210-4eff-f2c3f70cf68b@jp.fujitsu.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <1c76deaf-af9b-7c8c-e100-058d67f40fb5@gmx.com>
-Date: Thu, 9 Aug 2018 13:47:10 +0800
+References: <20180808060409.20048-1-wqu@suse.com>
+ <f6b41cc5-6827-4f6d-e8b5-ef5c3963293f@jp.fujitsu.com>
+ <82e8e5e4-7ada-433d-c380-82c534aac796@gmx.com>
+Message-ID: <13846684-4f34-ee9c-a816-a56e7de904ff@gmx.com>
+Date: Thu, 9 Aug 2018 13:55:01 +0800
 MIME-Version: 1.0
-In-Reply-To: <055391ff-7137-4210-4eff-f2c3f70cf68b@jp.fujitsu.com>
+In-Reply-To: <82e8e5e4-7ada-433d-c380-82c534aac796@gmx.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="8TDYUjdcLSJo9DBvOEMsnJJFCtGbrMB47"
+ boundary="rMxaolGYLcAo7n1c9SV182QrXNMsggRvT"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---8TDYUjdcLSJo9DBvOEMsnJJFCtGbrMB47
-Content-Type: multipart/mixed; boundary="ukAR44snF2x7v9Roq9pBPzTwOvpvNDXhD";
+--rMxaolGYLcAo7n1c9SV182QrXNMsggRvT
+Content-Type: multipart/mixed; boundary="X7xam7ztcVy7H5gulMTtPiAtoTpG6uNkH";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 To: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>,
  linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>
-Message-ID: <1c76deaf-af9b-7c8c-e100-058d67f40fb5@gmx.com>
-Subject: Re: [PATCH v4] btrfs: qgroup: Remove qgroup items along with
- subvolume deletion
-References: <cover.1533783766.git.misono.tomohiro@jp.fujitsu.com>
- <055391ff-7137-4210-4eff-f2c3f70cf68b@jp.fujitsu.com>
-In-Reply-To: <055391ff-7137-4210-4eff-f2c3f70cf68b@jp.fujitsu.com>
+Message-ID: <13846684-4f34-ee9c-a816-a56e7de904ff@gmx.com>
+Subject: Re: [PATCH] btrfs: qgroup: Don't populating excl numbers for snapshot
+ src if it belongs to other qgroups
+References: <20180808060409.20048-1-wqu@suse.com>
+ <f6b41cc5-6827-4f6d-e8b5-ef5c3963293f@jp.fujitsu.com>
+ <82e8e5e4-7ada-433d-c380-82c534aac796@gmx.com>
+In-Reply-To: <82e8e5e4-7ada-433d-c380-82c534aac796@gmx.com>
 
---ukAR44snF2x7v9Roq9pBPzTwOvpvNDXhD
+--X7xam7ztcVy7H5gulMTtPiAtoTpG6uNkH
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
 
 
-On 8/9/18 12:12 PM, Misono Tomohiro wrote:
-> When qgroup is on, subvolume deletion does not remove qgroup items
-> of the subvolume (qgroup info, limit, relation) from quota tree and
-> they need to get removed manually by "btrfs qgroup destroy".
+On 8/8/18 3:48 PM, Qu Wenruo wrote:
 >=20
-> Since level 0 qgroup cannot be used/inherited by any other subvolume,
-> let's remove them automatically when subvolume is deleted
-> (to be precise, when the subvolume root is dropped).
 >=20
-> Note that qgroup becomes inconsistent in following case:
->   1. qgroup relation exists
->   2. and subvolume's excl !=3D rref
+> On 2018=E5=B9=B408=E6=9C=8808=E6=97=A5 15:41, Misono Tomohiro wrote:
+>> On 2018/08/08 15:04, Qu Wenruo wrote:
+>>> When quota is enabled and we do a snapshot, we just update the 'excl'=
 
-That's a little strange.
+>>> number of both snapshot src and dst to src's 'rfer' - nodesize.
+>>>
+>>> It's a quick hack to avoid quota rescan every time we create a snapsh=
+ot
+>>> and it works if src doesn't belong to other qgroups.
+>>>
+>>> But if we have higher level qgroups, such behavior only works for lev=
+el
+>>> 0 qgroups, and higher level qgroups don't get update, thus making qgr=
+oup
+>>> number inconsistent.
+>>>
+>>> The problem of updating higher level qgroup numbers is, it's way to
+>>> complex.
+>>>
+>>> Under the following case, it's pretty simple: (src is 257, dst is 258=
+)
+>>> 0/257 - 1/0, 0/258.
+>>>
+>>> In this case, we only need to modify 1/0 to reduce its 'excl'
+>>>
+>>> But under the following case, it will go out of control:
+>>>
+>>> 0/257 - 1/0, 0/258 - 1/1 (using -i option), 1/0 - 2/0, 1/1 - 2/0.
+>>>
+>>> So to make it simple, if snapshot src has higher level qgroups, just
+>>> mark qgroup inconsistent and let later rescan to do its job.
+>>>
+>>> Reported-by: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
+>>> Signed-off-by: Qu Wenruo <wqu@suse.com>
+>>> ---
+>>>  fs/btrfs/qgroup.c | 16 ++++++++++++++++
+>>>  1 file changed, 16 insertions(+)
+>>>
+>>> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+>>> index ec4351fd7537..2b3d2dd1b735 100644
+>>> --- a/fs/btrfs/qgroup.c
+>>> +++ b/fs/btrfs/qgroup.c
+>>> @@ -2298,6 +2298,22 @@ int btrfs_qgroup_inherit(struct btrfs_trans_ha=
+ndle *trans,
+>>>  		if (!srcgroup)
+>>>  			goto unlock;
+>>> =20
+>>> +		/*
+>>> +		 * If snapshot source is belonging to high level qgroups, it
+>>> +		 * will be a more complex to hack the numbers.
+>>> +		 * E.g. source is 257, snapshot is 258:
+>>> +		 * 0/257 - 1/0, creating snapshot 258 will need to update 1/0
+>>> +		 * It's too complex when higher level qgroup is involved.
+>>> +		 * Mark qgroup inconsistent for later rescan
+>>> +		 */
+>>> +		if (!list_empty(&srcgroup->groups)) {
+>>> +			btrfs_info_rl(fs_info,
+>>> +"src qgroup 0/%llu belongs to higher level qgroup, creating snapshot=
+ for it need qgroup rescan",
+>>> +				      srcid);
+>>> +			fs_info->qgroup_flags |=3D
+>>> +				BTRFS_QGROUP_STATUS_FLAG_INCONSISTENT;
+>>> +			goto unlock;
+>>> +		}
+>>>  		/*
+>>>  		 * We call inherit after we clone the root in order to make sure
+>>>  		 * our counts don't go crazy, so at this point the only
+>>>
+>>
+>> Thanks for the quick fix.
+>> Tested-by/Reviewed-by: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com=
+>
+>>
+>> However there is still another problem about removing relation:
+>>
+>> (4.18-rc7 with above patch)
+>> $ mkfs.btrfs -fq $DEV
+>> $ mount $DEV /mnt
+>>
+>> $ btrfs quota enable /mnt
+>> $ btrfs qgroup create 1/0 /mnt
+>> $ btrfs sub create /mnt/sub
+>> $ btrfs qgroup assign 0/257 1/0 /mnt
+>>
+>> $ dd if=3D/dev/urandom of=3D/mnt/sub/file bs=3D1k count=3D1000
+>> $ btrfs sub snap /mnt/sub /mnt/snap
+>> $ dmesg | tail -n 1
+>> BTRFS info (device sdb7): src qgroup 0/257 belongs to higher level qgr=
+oup,
+>>  creating snapshot for it need qgroup rescan
+>>
+>> $ btrfs quota rescan -w /mnt
+>> $ btrfs qgroup show -pcre /mnt
+>> qgroupid         rfer         excl     max_rfer     max_excl parent  c=
+hild
+>> --------         ----         ----     --------     -------- ------  -=
+----
+>> 0/5          16.00KiB     16.00KiB         none         none ---     -=
+--
+>> 0/257      1016.00KiB     16.00KiB         none         none 1/0     -=
+--
+>> 0/258      1016.00KiB     16.00KiB         none         none ---     -=
+--
+>> 1/0        1016.00KiB     16.00KiB         none         none ---     0=
+/257
+>>                          =20
+>> so far so good, but:
+>>
+>> $ btrfs qgroup remove 0/257 1/0 /mnt
+>> WARNING: quotas may be inconsistent, rescan needed
+>> $ btrfs quota rescan -w /mnt
+>> $ btrfs qgroup show -pcre  /mnt
+>> qgoupid         rfer         excl     max_rfer     max_excl parent  ch=
+ild
+>> --------         ----         ----     --------     -------- ------  -=
+----
+>> 0/5          16.00KiB     16.00KiB         none         none ---     -=
+--
+>> 0/257      1016.00KiB     16.00KiB         none         none ---     -=
+--
+>> 0/258      1016.00KiB     16.00KiB         none         none ---     -=
+--
+>> 1/0        1016.00KiB     16.00KiB         none         none ---     -=
+--
+>>            ^^^^^^^^^^     ^^^^^^^^ not cleared
+>>
+>> It seems some fix is needed for rescan too.
+>=20
+> In this particular case, it's not hard to fix.
+>=20
+> In fact for deleting/assigning qgroup with rfer =3D=3D excl case, it sh=
+ould
+> go through the quick accounting path.
+>=20
+> But it looks like remove path doesn't go that path.
 
-If a subvolume is completely dropped, its excl should be the same rfer,
-all 0, and removing its relationship should not mark qgroup inconsistent.=
+My fault, in this case, since rfer !=3D excl, so we can't go quick updati=
+ng.
 
-
-So the problem is the timing when btrfs_remove_qgroup() is called.
-
-Since qgroup accounting is only called at transaction commit time, and
-we're holding a trans handler, it's almost ensured we can't commit this
-transaction, thus the number is not updated yet (still not 0)
-
-So that's why qgroup is inconsistent.
-
-What about commit current transaction and then call btrfs_remove_qgroup()=
-?
-
-(Sorry I didn't catch this problem last time I reviewed this patch)
+But on the other hand, if you don't remove the 0 level qgroup 0/257
+directly, but using subvolume delete, qgroup should update 0/257 to rfer
+=3D 0 and excl =3D 0, and then remove qgroup relationship should work
+without the need to rescan.
 
 Thanks,
 Qu
 
-> In this case manual qgroup rescan is needed.
 >=20
-> Reviewed-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-> Reviewed-by: Qu Wenruo <wqu@suse.com>
-> Signed-off-by: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
-> ---
-> Hi David,
-> It turned out that this patch may cause qgroup inconsistency in case
-> described above and need manual rescan. Since current code will keep=20
-> qgroup items but not break qgroup consistency when deleting subvolume,
-> I cannot clearly say which behavior is better for qgroup usability.
-> Can I ask your opinion?
+> I'll try to fix it soon.
 >=20
-> v3 -> v4:
->   Check return value of btrfs_remove_qgroup() and if it is 1,
->   print message in syslog that fs needs qgroup rescan
+> Thanks,
+> Qu
 >=20
->  fs/btrfs/extent-tree.c | 22 ++++++++++++++++++----
->  1 file changed, 18 insertions(+), 4 deletions(-)
->=20
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index 9e7b237b9547..828d9e68047d 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -8871,12 +8871,13 @@ int btrfs_drop_snapshot(struct btrfs_root *root=
-,
->  	struct btrfs_root_item *root_item =3D &root->root_item;
->  	struct walk_control *wc;
->  	struct btrfs_key key;
-> +	u64 objectid =3D root->root_key.objectid;
->  	int err =3D 0;
->  	int ret;
->  	int level;
->  	bool root_dropped =3D false;
-> =20
-> -	btrfs_debug(fs_info, "Drop subvolume %llu", root->objectid);
-> +	btrfs_debug(fs_info, "Drop subvolume %llu", objectid);
-> =20
->  	path =3D btrfs_alloc_path();
->  	if (!path) {
-> @@ -9030,7 +9031,7 @@ int btrfs_drop_snapshot(struct btrfs_root *root,
->  		goto out_end_trans;
->  	}
-> =20
-> -	if (root->root_key.objectid !=3D BTRFS_TREE_RELOC_OBJECTID) {
-> +	if (objectid !=3D BTRFS_TREE_RELOC_OBJECTID) {
->  		ret =3D btrfs_find_root(tree_root, &root->root_key, path,
->  				      NULL, NULL);
->  		if (ret < 0) {
-> @@ -9043,8 +9044,7 @@ int btrfs_drop_snapshot(struct btrfs_root *root,
->  			 *
->  			 * The most common failure here is just -ENOENT.
->  			 */
-> -			btrfs_del_orphan_item(trans, tree_root,
-> -					      root->root_key.objectid);
-> +			btrfs_del_orphan_item(trans, tree_root, objectid);
->  		}
->  	}
-> =20
-> @@ -9056,6 +9056,20 @@ int btrfs_drop_snapshot(struct btrfs_root *root,=
-
->  		btrfs_put_fs_root(root);
->  	}
->  	root_dropped =3D true;
-> +
-> +	 /* Remove level-0 qgroup items since no other subvolume can use them=
- */
-> +	ret =3D btrfs_remove_qgroup(trans, objectid);
-> +	if (ret =3D=3D 1) {
-> +		/* This means qgroup becomes inconsistent by removing items */
-> +		btrfs_info(fs_info,
-> +		    "qgroup inconsistency found, need qgroup rescan");
-> +	} else if (ret =3D=3D -EINVAL || ret =3D=3D -ENOENT) {
-> +		/* qgroup is not enabled or already removed, just ignore this */
-> +	} else if (ret) {
-> +		btrfs_abort_transaction(trans, ret);
-> +		err =3D ret;
-> +	}
-> +
->  out_end_trans:
->  	btrfs_end_transaction_throttle(trans);
->  out_free:
+>>
+>> Thanks,
+>> Misono
+>>
+>>
 >=20
 
 
---ukAR44snF2x7v9Roq9pBPzTwOvpvNDXhD--
+--X7xam7ztcVy7H5gulMTtPiAtoTpG6uNkH--
 
---8TDYUjdcLSJo9DBvOEMsnJJFCtGbrMB47
+--rMxaolGYLcAo7n1c9SV182QrXNMsggRvT
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAltr1V4ACgkQwj2R86El
-/qghsQgAirE+eLdLYOJns+l81kxitBYMpR0w9r3Qu7CxPLrJtp99eRAVLeZ5vUHT
-bRby2pIkTXRSOZd8VlGmvmcGQGfaHuAyeDwlbSz5jdDBhm8wrh+kLCYyFWZdUp1U
-I3VctnstXKvZoGNswHdeT7WUhhZCQlc1GjbWBVCYcoC8FFfzJK0hSNX8nNaF72Pq
-Fyx38rZwfo4bu+Xfg0I1oHSfE5PpD9QNQMQIjTsN6xWEzsb0a0zvacwhE4RHlT+/
-lbauEgctsVB+ZT8uS3OTgpMrhHO9K0EgFbJAYzu0QCGLi7hp7j0AK/Ewi+9dszwR
-XfCk4PBiSGKHr5i9mh90iozGkijBiQ==
-=rIAs
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAltr1zUACgkQwj2R86El
+/qhBBAf8C4Gsvhvffll3c+h6Wi5rgDDalliYYHthO6rqQ3DruPtI1mDW7dJOeUH/
+7hzI3JMs5MNNxWLQgSd+gUupcpInMRgMpQAOSplYstaRLdbj1lhXDQss6RUmN0hH
+LMzTHCjPtx7dJosGF5jbX8+iAwV0Vw/a2aJlsSWF3mi2Rcnn09SSO6a5waGJ6CuN
+Y0vyfI/4DLZ7kelp0MySNcK24GOHht0cyf/EJ1WmM2/E2QtbtVF77s47AXcvGrGT
+Rx6mLM3lKXPLdsEmJ+VULstFzYoAnS1suXiCB+7QUpUWsD7J7g/uqrtBabr/015c
+Dl4KjkoKvBZmZ/EHINlmup74oxmZ8Q==
+=7Y2t
 -----END PGP SIGNATURE-----
 
---8TDYUjdcLSJo9DBvOEMsnJJFCtGbrMB47--
+--rMxaolGYLcAo7n1c9SV182QrXNMsggRvT--

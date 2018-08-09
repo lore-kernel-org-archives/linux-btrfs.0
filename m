@@ -1,38 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwym04.jp.fujitsu.com ([211.128.242.43]:37188 "EHLO
-        mgwym04.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727371AbeHIKp6 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Aug 2018 06:45:58 -0400
-Received: from g01jpfmpwkw01.exch.g01.fujitsu.local (g01jpfmpwkw01.exch.g01.fujitsu.local [10.0.193.38])
-        by yt-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id 2C568AC0116
-        for <linux-btrfs@vger.kernel.org>; Thu,  9 Aug 2018 17:22:09 +0900 (JST)
-Subject: Re: [PATCH v2 00/20] btrfs-progs: Rework of "subvolume list/show" and
- relax the root privileges of them
-To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
-References: <cover.1529310485.git.misono.tomohiro@jp.fujitsu.com>
- <c462edc0-ef91-0a1b-bc4e-45e868e32604@jp.fujitsu.com>
- <20180803134602.GX3218@twin.jikos.cz>
+Received: from mgwkm04.jp.fujitsu.com ([202.219.69.171]:41092 "EHLO
+        mgwkm04.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726926AbeHIGde (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Aug 2018 02:33:34 -0400
+Received: from g01jpfmpwkw03.exch.g01.fujitsu.local (g01jpfmpwkw03.exch.g01.fujitsu.local [10.0.193.57])
+        by kw-mxauth.gw.nic.fujitsu.com (Postfix) with ESMTP id 02C1DAC01A2
+        for <linux-btrfs@vger.kernel.org>; Thu,  9 Aug 2018 13:10:38 +0900 (JST)
+Received: from G01JPEXCHKW15.g01.fujitsu.local (G01JPEXCHKW15.g01.fujitsu.local [10.0.194.54])
+        by g01jpfmpwkw03.exch.g01.fujitsu.local (Postfix) with ESMTP id 34898BD67EA
+        for <linux-btrfs@vger.kernel.org>; Thu,  9 Aug 2018 13:10:36 +0900 (JST)
 From: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
-Message-ID: <c629fc15-273b-8f82-0f13-ace03b1f4f5e@jp.fujitsu.com>
-Date: Thu, 9 Aug 2018 17:21:53 +0900
+Subject: [PATCH] btrfs: qgroup: Always remove all qgroup relation in
+ btrfs_remove_qgroup()
+References: <cover.1533787467.git.misono.tomohiro@jp.fujitsu.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-ID: <3efcb82a-5fcb-4d20-1ab9-5d03bbc6b999@jp.fujitsu.com>
+Date: Thu, 9 Aug 2018 13:10:33 +0900
 MIME-Version: 1.0
-In-Reply-To: <20180803134602.GX3218@twin.jikos.cz>
+In-Reply-To: <cover.1533787467.git.misono.tomohiro@jp.fujitsu.com>
 Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2018/08/03 22:46, David Sterba wrote:
-> On Wed, Jul 04, 2018 at 05:14:59PM +0900, Misono Tomohiro wrote:
->> Gentle ping, as this is related to the new ioctls merged in 4.18-rc1.
-> 
-> Due to me spending more time than expected on kernel, this patchset will
-> be merged partially or the 4.18 will be deleayed.
+In btrfs_remove_qgroup(), each qgroup relation is removed by calling
+__del_qgroup_relation(). However, __del_qgroup_relation() returns 1
+if deletion of qgroup relation causes inconsistency and current code
+exits immediately  in that case.
 
-github version is rebased to 4.17.1:
-  https://github.com/t-msn/btrfs-progs/tree/rework-sub-list
+Therefore if there are several qgroup relations and removing first
+relation causes inconsistency, remaining items will not be removed.
 
-I will take a vacation from tomorrow and my response may be delayed.
+Fix this by continuing to remove items if return value of
+__del_qgroup_relation() is 1.
 
-Regards,
-Misono
+Signed-off-by: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
+---
+ fs/btrfs/qgroup.c | 15 ++++++++++++---
+ 1 file changed, 12 insertions(+), 3 deletions(-)
+
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index 2ba29f0609d9..f18284253e77 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -1428,12 +1428,21 @@ int btrfs_remove_qgroup(struct btrfs_trans_handle *trans, u64 qgroupid)
+ 		goto out;
+ 
+ 	while (!list_empty(&qgroup->groups)) {
++		int ret2;
++
+ 		list = list_first_entry(&qgroup->groups,
+ 					struct btrfs_qgroup_list, next_group);
+-		ret = __del_qgroup_relation(trans, qgroupid,
++		ret2 = __del_qgroup_relation(trans, qgroupid,
+ 					    list->group->qgroupid);
+-		if (ret)
+-			goto out;
++		if (ret2) {
++			ret = ret2;
++			/*
++			 * __del_qgroup_relation() returns 1 if qgroup becomes
++			 * inconsistent. Continue to remove items in that case.
++			 */
++			if (ret != 1)
++				goto out;
++		}
+ 	}
+ 
+ 	spin_lock(&fs_info->qgroup_lock);
+-- 
+2.14.4
+
 

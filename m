@@ -1,66 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf1-f194.google.com ([209.85.210.194]:39836 "EHLO
-        mail-pf1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726944AbeHIUbt (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Aug 2018 16:31:49 -0400
-From: Naohiro Aota <naota@elisp.net>
-To: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        linux-kernel@vger.kernel.org, Hannes Reinecke <hare@suse.com>,
-        Damien Le Moal <damien.lemoal@wdc.com>,
-        Bart Van Assche <bart.vanassche@wdc.com>,
-        Matias Bjorling <mb@lightnvm.io>, Naohiro Aota <naota@elisp.net>
-Subject: [RFC PATCH 01/17] btrfs: introduce HMZONED feature flag
-Date: Fri, 10 Aug 2018 03:04:34 +0900
-Message-Id: <20180809180450.5091-2-naota@elisp.net>
-In-Reply-To: <20180809180450.5091-1-naota@elisp.net>
-References: <20180809180450.5091-1-naota@elisp.net>
+Received: from pepin.polanet.pl ([193.34.52.2]:57576 "EHLO pepin.polanet.pl"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726756AbeHIUeF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 9 Aug 2018 16:34:05 -0400
+Date: Thu, 9 Aug 2018 19:48:11 +0200
+From: Tomasz Pala <gotar@polanet.pl>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: Report correct filesystem usage / limits on BTRFS subvolumes
+ with quota
+Message-ID: <20180809174811.GA27001@polanet.pl>
+References: <0059606f-88bf-c919-450b-bf08e184b5a2@mailbox.org>
+ <b10a3950-0b86-e4fb-3621-f4c5ad3d79e7@gmx.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=iso-8859-2
+In-Reply-To: <b10a3950-0b86-e4fb-3621-f4c5ad3d79e7@gmx.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch introduces the HMZONED incompat flag. The flag indicates that
-the volume management will satisfy the constraints imposed by host-managed
-zoned block devices.
+On Tue, Jul 31, 2018 at 22:32:07 +0800, Qu Wenruo wrote:
 
-Signed-off-by: Damien Le Moal <damien.lemoal@wdc.com>
-Signed-off-by: Naohiro Aota <naota@elisp.net>
----
- fs/btrfs/sysfs.c           | 2 ++
- include/uapi/linux/btrfs.h | 1 +
- 2 files changed, 3 insertions(+)
+> 2) Different limitations on exclusive/shared bytes
+>    Btrfs can set different limit on exclusive/shared bytes, further
+>    complicating the problem.
+> 
+> 3) Btrfs quota only accounts data/metadata used by the subvolume
+>    It lacks all the shared trees (mentioned below), and in fact such
+>    shared tree can be pretty large (especially for extent tree and csum
+>    tree).
 
-diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index 3717c864ba23..8065d416fb38 100644
---- a/fs/btrfs/sysfs.c
-+++ b/fs/btrfs/sysfs.c
-@@ -191,6 +191,7 @@ BTRFS_FEAT_ATTR_INCOMPAT(extended_iref, EXTENDED_IREF);
- BTRFS_FEAT_ATTR_INCOMPAT(raid56, RAID56);
- BTRFS_FEAT_ATTR_INCOMPAT(skinny_metadata, SKINNY_METADATA);
- BTRFS_FEAT_ATTR_INCOMPAT(no_holes, NO_HOLES);
-+BTRFS_FEAT_ATTR_INCOMPAT(hmzoned, HMZONED);
- BTRFS_FEAT_ATTR_COMPAT_RO(free_space_tree, FREE_SPACE_TREE);
- 
- static struct attribute *btrfs_supported_feature_attrs[] = {
-@@ -204,6 +205,7 @@ static struct attribute *btrfs_supported_feature_attrs[] = {
- 	BTRFS_FEAT_ATTR_PTR(raid56),
- 	BTRFS_FEAT_ATTR_PTR(skinny_metadata),
- 	BTRFS_FEAT_ATTR_PTR(no_holes),
-+	BTRFS_FEAT_ATTR_PTR(hmzoned),
- 	BTRFS_FEAT_ATTR_PTR(free_space_tree),
- 	NULL
- };
-diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
-index 245aace2a400..c37b31a5b29d 100644
---- a/include/uapi/linux/btrfs.h
-+++ b/include/uapi/linux/btrfs.h
-@@ -269,6 +269,7 @@ struct btrfs_ioctl_fs_info_args {
- #define BTRFS_FEATURE_INCOMPAT_RAID56		(1ULL << 7)
- #define BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA	(1ULL << 8)
- #define BTRFS_FEATURE_INCOMPAT_NO_HOLES		(1ULL << 9)
-+#define BTRFS_FEATURE_INCOMPAT_HMZONED		(1ULL << 10)
- 
- struct btrfs_ioctl_feature_flags {
- 	__u64 compat_flags;
+I'm not sure about the implications, but just to clarify some things:
+
+when limiting somebody's data space we usually don't care about the
+underlying "savings" coming from any deduplicating technique - these are
+purely bonuses for system owner, so he could do larger resource overbooking.
+
+So - the limit set on any user should enforce maximum and absolute space
+he has allocated, including the shared stuff. I could even imagine that
+creating a snapshot might immediately "eat" the available quota. In a
+way, that quota returned matches (give or take) `du` reported usage,
+unless "do not account reflinks withing single qgroup" was easy to implemet.
+
+I.e.: every shared segment should be accounted within quota (at least once).
+
+And the numbers accounted should reflect the uncompressed sizes.
+
+
+Moreover - if there would be per-subvolume RAID levels someday, the data
+should be accouted in relation to "default" (filesystem) RAID level,
+i.e. having a RAID0 subvolume on RAID1 fs should account half of the
+data, and twice the data in an opposite scenario (like "dup" profile on
+single-drive filesystem).
+
+
+In short: values representing quotas are user-oriented ("the numbers one
+bought"), not storage-oriented ("the numbers they actually occupy").
+
 -- 
-2.18.0
-
+Tomasz Pala <gotar@pld-linux.org>

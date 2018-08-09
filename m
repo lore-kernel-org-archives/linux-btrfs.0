@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf1-f193.google.com ([209.85.210.193]:36298 "EHLO
-        mail-pf1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727407AbeHIUc2 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Aug 2018 16:32:28 -0400
+Received: from mail-pf1-f195.google.com ([209.85.210.195]:37896 "EHLO
+        mail-pf1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727407AbeHIUc0 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Aug 2018 16:32:26 -0400
 From: Naohiro Aota <naota@elisp.net>
 To: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
 Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
@@ -10,37 +10,48 @@ Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
         Damien Le Moal <damien.lemoal@wdc.com>,
         Bart Van Assche <bart.vanassche@wdc.com>,
         Matias Bjorling <mb@lightnvm.io>, Naohiro Aota <naota@elisp.net>
-Subject: [RFC PATCH 17/17] btrfs: enable to mount HMZONED incompat flag
-Date: Fri, 10 Aug 2018 03:04:50 +0900
-Message-Id: <20180809180450.5091-18-naota@elisp.net>
+Subject: [RFC PATCH 16/17] btrfs: wait existing extents before truncating
+Date: Fri, 10 Aug 2018 03:04:49 +0900
+Message-Id: <20180809180450.5091-17-naota@elisp.net>
 In-Reply-To: <20180809180450.5091-1-naota@elisp.net>
 References: <20180809180450.5091-1-naota@elisp.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This final patch adds the HMZONED incompat flag to
-BTRFS_FEATURE_INCOMPAT_SUPP and enables btrfs to mount HMZONED flagged file
-system.
+When truncating a file, file buffers which have already been allocated but
+not yet written may be truncated.  Truncating these buffers could cause
+breakage of a sequential write pattern in a block group if the truncated
+blocks are for example followed by blocks allocated to another file. To
+avoid this problem, always wait for write out of all unwritten buffers
+before proceeding with the truncate execution.
 
 Signed-off-by: Naohiro Aota <naota@elisp.net>
 ---
- fs/btrfs/ctree.h | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ fs/btrfs/inode.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 8f85c96cd262..46a243b2f111 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -271,7 +271,8 @@ struct btrfs_super_block {
- 	 BTRFS_FEATURE_INCOMPAT_RAID56 |		\
- 	 BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF |		\
- 	 BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA |	\
--	 BTRFS_FEATURE_INCOMPAT_NO_HOLES)
-+	 BTRFS_FEATURE_INCOMPAT_NO_HOLES |		\
-+	 BTRFS_FEATURE_INCOMPAT_HMZONED)
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 05f5e05ccf37..d3f35f81834f 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -5193,6 +5193,17 @@ static int btrfs_setsize(struct inode *inode, struct iattr *attr)
+ 		btrfs_end_write_no_snapshotting(root);
+ 		btrfs_end_transaction(trans);
+ 	} else {
++		struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
++
++		if (btrfs_fs_incompat(fs_info, HMZONED)) {
++			u64 sectormask = fs_info->sectorsize - 1;
++
++			ret = btrfs_wait_ordered_range(inode,
++						       newsize & (~sectormask),
++						       (u64)-1);
++			if (ret)
++				return ret;
++		}
  
- #define BTRFS_FEATURE_INCOMPAT_SAFE_SET			\
- 	(BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF)
+ 		/*
+ 		 * We're truncating a file that used to have good data down to
 -- 
 2.18.0
 

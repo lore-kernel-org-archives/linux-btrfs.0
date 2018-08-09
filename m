@@ -1,122 +1,185 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.22]:41495 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.15.18]:37503 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1728267AbeHIIEh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 9 Aug 2018 04:04:37 -0400
-Subject: Re: [PATCH] btrfs: qgroup: Always remove all qgroup relation in
- btrfs_remove_qgroup()
+        id S1728209AbeHIIKf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 9 Aug 2018 04:10:35 -0400
+Subject: Re: [PATCH v4] btrfs: qgroup: Remove qgroup items along with
+ subvolume deletion
 To: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <cover.1533787467.git.misono.tomohiro@jp.fujitsu.com>
- <3efcb82a-5fcb-4d20-1ab9-5d03bbc6b999@jp.fujitsu.com>
+        linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>
+References: <cover.1533783766.git.misono.tomohiro@jp.fujitsu.com>
+ <055391ff-7137-4210-4eff-f2c3f70cf68b@jp.fujitsu.com>
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <dae991e9-80b5-8e53-26f1-5bdb01e7e142@gmx.com>
-Date: Thu, 9 Aug 2018 13:41:18 +0800
+Message-ID: <1c76deaf-af9b-7c8c-e100-058d67f40fb5@gmx.com>
+Date: Thu, 9 Aug 2018 13:47:10 +0800
 MIME-Version: 1.0
-In-Reply-To: <3efcb82a-5fcb-4d20-1ab9-5d03bbc6b999@jp.fujitsu.com>
+In-Reply-To: <055391ff-7137-4210-4eff-f2c3f70cf68b@jp.fujitsu.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="eiX4MQTjbHlul72O0XA81ElJHxeK5sh0s"
+ boundary="8TDYUjdcLSJo9DBvOEMsnJJFCtGbrMB47"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---eiX4MQTjbHlul72O0XA81ElJHxeK5sh0s
-Content-Type: multipart/mixed; boundary="W09cuT848Yh4p6Qfgr2QdDK1FYyCaoL11";
+--8TDYUjdcLSJo9DBvOEMsnJJFCtGbrMB47
+Content-Type: multipart/mixed; boundary="ukAR44snF2x7v9Roq9pBPzTwOvpvNDXhD";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 To: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>,
- linux-btrfs <linux-btrfs@vger.kernel.org>
-Message-ID: <dae991e9-80b5-8e53-26f1-5bdb01e7e142@gmx.com>
-Subject: Re: [PATCH] btrfs: qgroup: Always remove all qgroup relation in
- btrfs_remove_qgroup()
-References: <cover.1533787467.git.misono.tomohiro@jp.fujitsu.com>
- <3efcb82a-5fcb-4d20-1ab9-5d03bbc6b999@jp.fujitsu.com>
-In-Reply-To: <3efcb82a-5fcb-4d20-1ab9-5d03bbc6b999@jp.fujitsu.com>
+ linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>
+Message-ID: <1c76deaf-af9b-7c8c-e100-058d67f40fb5@gmx.com>
+Subject: Re: [PATCH v4] btrfs: qgroup: Remove qgroup items along with
+ subvolume deletion
+References: <cover.1533783766.git.misono.tomohiro@jp.fujitsu.com>
+ <055391ff-7137-4210-4eff-f2c3f70cf68b@jp.fujitsu.com>
+In-Reply-To: <055391ff-7137-4210-4eff-f2c3f70cf68b@jp.fujitsu.com>
 
---W09cuT848Yh4p6Qfgr2QdDK1FYyCaoL11
+--ukAR44snF2x7v9Roq9pBPzTwOvpvNDXhD
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
 
 
-On 8/9/18 12:10 PM, Misono Tomohiro wrote:
-> In btrfs_remove_qgroup(), each qgroup relation is removed by calling
-> __del_qgroup_relation(). However, __del_qgroup_relation() returns 1
-> if deletion of qgroup relation causes inconsistency and current code
-> exits immediately  in that case.
+On 8/9/18 12:12 PM, Misono Tomohiro wrote:
+> When qgroup is on, subvolume deletion does not remove qgroup items
+> of the subvolume (qgroup info, limit, relation) from quota tree and
+> they need to get removed manually by "btrfs qgroup destroy".
 >=20
-> Therefore if there are several qgroup relations and removing first
-> relation causes inconsistency, remaining items will not be removed.
+> Since level 0 qgroup cannot be used/inherited by any other subvolume,
+> let's remove them automatically when subvolume is deleted
+> (to be precise, when the subvolume root is dropped).
 >=20
-> Fix this by continuing to remove items if return value of
-> __del_qgroup_relation() is 1.
->=20
-> Signed-off-by: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
+> Note that qgroup becomes inconsistent in following case:
+>   1. qgroup relation exists
+>   2. and subvolume's excl !=3D rref
 
-Indeed we still need to remove all qgroup relationship even we will make
-qgroup inconsistent.
+That's a little strange.
 
-Reviewed-by: Qu Wenruo <wqu@suse.com>
+If a subvolume is completely dropped, its excl should be the same rfer,
+all 0, and removing its relationship should not mark qgroup inconsistent.=
+
+
+So the problem is the timing when btrfs_remove_qgroup() is called.
+
+Since qgroup accounting is only called at transaction commit time, and
+we're holding a trans handler, it's almost ensured we can't commit this
+transaction, thus the number is not updated yet (still not 0)
+
+So that's why qgroup is inconsistent.
+
+What about commit current transaction and then call btrfs_remove_qgroup()=
+?
+
+(Sorry I didn't catch this problem last time I reviewed this patch)
 
 Thanks,
 Qu
 
-> ---
->  fs/btrfs/qgroup.c | 15 ++++++++++++---
->  1 file changed, 12 insertions(+), 3 deletions(-)
+> In this case manual qgroup rescan is needed.
 >=20
-> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-> index 2ba29f0609d9..f18284253e77 100644
-> --- a/fs/btrfs/qgroup.c
-> +++ b/fs/btrfs/qgroup.c
-> @@ -1428,12 +1428,21 @@ int btrfs_remove_qgroup(struct btrfs_trans_hand=
-le *trans, u64 qgroupid)
->  		goto out;
+> Reviewed-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+> Reviewed-by: Qu Wenruo <wqu@suse.com>
+> Signed-off-by: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
+> ---
+> Hi David,
+> It turned out that this patch may cause qgroup inconsistency in case
+> described above and need manual rescan. Since current code will keep=20
+> qgroup items but not break qgroup consistency when deleting subvolume,
+> I cannot clearly say which behavior is better for qgroup usability.
+> Can I ask your opinion?
+>=20
+> v3 -> v4:
+>   Check return value of btrfs_remove_qgroup() and if it is 1,
+>   print message in syslog that fs needs qgroup rescan
+>=20
+>  fs/btrfs/extent-tree.c | 22 ++++++++++++++++++----
+>  1 file changed, 18 insertions(+), 4 deletions(-)
+>=20
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index 9e7b237b9547..828d9e68047d 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -8871,12 +8871,13 @@ int btrfs_drop_snapshot(struct btrfs_root *root=
+,
+>  	struct btrfs_root_item *root_item =3D &root->root_item;
+>  	struct walk_control *wc;
+>  	struct btrfs_key key;
+> +	u64 objectid =3D root->root_key.objectid;
+>  	int err =3D 0;
+>  	int ret;
+>  	int level;
+>  	bool root_dropped =3D false;
 > =20
->  	while (!list_empty(&qgroup->groups)) {
-> +		int ret2;
-> +
->  		list =3D list_first_entry(&qgroup->groups,
->  					struct btrfs_qgroup_list, next_group);
-> -		ret =3D __del_qgroup_relation(trans, qgroupid,
-> +		ret2 =3D __del_qgroup_relation(trans, qgroupid,
->  					    list->group->qgroupid);
-> -		if (ret)
-> -			goto out;
-> +		if (ret2) {
-> +			ret =3D ret2;
-> +			/*
-> +			 * __del_qgroup_relation() returns 1 if qgroup becomes
-> +			 * inconsistent. Continue to remove items in that case.
-> +			 */
-> +			if (ret !=3D 1)
-> +				goto out;
-> +		}
+> -	btrfs_debug(fs_info, "Drop subvolume %llu", root->objectid);
+> +	btrfs_debug(fs_info, "Drop subvolume %llu", objectid);
+> =20
+>  	path =3D btrfs_alloc_path();
+>  	if (!path) {
+> @@ -9030,7 +9031,7 @@ int btrfs_drop_snapshot(struct btrfs_root *root,
+>  		goto out_end_trans;
 >  	}
 > =20
->  	spin_lock(&fs_info->qgroup_lock);
+> -	if (root->root_key.objectid !=3D BTRFS_TREE_RELOC_OBJECTID) {
+> +	if (objectid !=3D BTRFS_TREE_RELOC_OBJECTID) {
+>  		ret =3D btrfs_find_root(tree_root, &root->root_key, path,
+>  				      NULL, NULL);
+>  		if (ret < 0) {
+> @@ -9043,8 +9044,7 @@ int btrfs_drop_snapshot(struct btrfs_root *root,
+>  			 *
+>  			 * The most common failure here is just -ENOENT.
+>  			 */
+> -			btrfs_del_orphan_item(trans, tree_root,
+> -					      root->root_key.objectid);
+> +			btrfs_del_orphan_item(trans, tree_root, objectid);
+>  		}
+>  	}
+> =20
+> @@ -9056,6 +9056,20 @@ int btrfs_drop_snapshot(struct btrfs_root *root,=
+
+>  		btrfs_put_fs_root(root);
+>  	}
+>  	root_dropped =3D true;
+> +
+> +	 /* Remove level-0 qgroup items since no other subvolume can use them=
+ */
+> +	ret =3D btrfs_remove_qgroup(trans, objectid);
+> +	if (ret =3D=3D 1) {
+> +		/* This means qgroup becomes inconsistent by removing items */
+> +		btrfs_info(fs_info,
+> +		    "qgroup inconsistency found, need qgroup rescan");
+> +	} else if (ret =3D=3D -EINVAL || ret =3D=3D -ENOENT) {
+> +		/* qgroup is not enabled or already removed, just ignore this */
+> +	} else if (ret) {
+> +		btrfs_abort_transaction(trans, ret);
+> +		err =3D ret;
+> +	}
+> +
+>  out_end_trans:
+>  	btrfs_end_transaction_throttle(trans);
+>  out_free:
 >=20
 
 
---W09cuT848Yh4p6Qfgr2QdDK1FYyCaoL11--
+--ukAR44snF2x7v9Roq9pBPzTwOvpvNDXhD--
 
---eiX4MQTjbHlul72O0XA81ElJHxeK5sh0s
+--8TDYUjdcLSJo9DBvOEMsnJJFCtGbrMB47
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAltr0/4ACgkQwj2R86El
-/qjovAf8C2DuibN2hKJ4790oj2OU76xSj1Sdz3d+46YPSqEN/vyV0NBU9/SIkX4i
-OdQNIY+tULk94U0KSi+pWZsCa8UKR/KaSkxQ3bukoptwdzbsifkQo7DrK8zZvOXy
-VBcS/9lKB5lQjchv7aQVNsCTzVysB97tyDs/mpcgaPn9hbSoj1G+WcWBmf2A0jvb
-przG+dQqbHsSM88J1MHNzYYEhndw9l2o7FdqL0ajqAx7yVWF35Nmej+lb9HOwWBa
-BTG1TmWHIoz88n0ZJTEzSFmW974Q3/eeHpTNZFHXtFVrVU6RacJxjG2qbcR76EA6
-Oz/Qdud6FhvYyHxY03E+ILqQe+rBrA==
-=kb5B
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAltr1V4ACgkQwj2R86El
+/qghsQgAirE+eLdLYOJns+l81kxitBYMpR0w9r3Qu7CxPLrJtp99eRAVLeZ5vUHT
+bRby2pIkTXRSOZd8VlGmvmcGQGfaHuAyeDwlbSz5jdDBhm8wrh+kLCYyFWZdUp1U
+I3VctnstXKvZoGNswHdeT7WUhhZCQlc1GjbWBVCYcoC8FFfzJK0hSNX8nNaF72Pq
+Fyx38rZwfo4bu+Xfg0I1oHSfE5PpD9QNQMQIjTsN6xWEzsb0a0zvacwhE4RHlT+/
+lbauEgctsVB+ZT8uS3OTgpMrhHO9K0EgFbJAYzu0QCGLi7hp7j0AK/Ewi+9dszwR
+XfCk4PBiSGKHr5i9mh90iozGkijBiQ==
+=rIAs
 -----END PGP SIGNATURE-----
 
---eiX4MQTjbHlul72O0XA81ElJHxeK5sh0s--
+--8TDYUjdcLSJo9DBvOEMsnJJFCtGbrMB47--

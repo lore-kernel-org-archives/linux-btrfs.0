@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pl0-f66.google.com ([209.85.160.66]:45242 "EHLO
-        mail-pl0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726944AbeHIUcE (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Aug 2018 16:32:04 -0400
+Received: from mail-pf1-f196.google.com ([209.85.210.196]:38890 "EHLO
+        mail-pf1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726944AbeHIUcB (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Aug 2018 16:32:01 -0400
 From: Naohiro Aota <naota@elisp.net>
 To: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
 Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
@@ -10,44 +10,38 @@ Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
         Damien Le Moal <damien.lemoal@wdc.com>,
         Bart Van Assche <bart.vanassche@wdc.com>,
         Matias Bjorling <mb@lightnvm.io>, Naohiro Aota <naota@elisp.net>
-Subject: [RFC PATCH 07/17] btrfs: disable device replace in HMZONED mode
-Date: Fri, 10 Aug 2018 03:04:40 +0900
-Message-Id: <20180809180450.5091-8-naota@elisp.net>
+Subject: [RFC PATCH 06/17] btrfs: disable direct IO in HMZONED mode
+Date: Fri, 10 Aug 2018 03:04:39 +0900
+Message-Id: <20180809180450.5091-7-naota@elisp.net>
 In-Reply-To: <20180809180450.5091-1-naota@elisp.net>
 References: <20180809180450.5091-1-naota@elisp.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-To enable device replacing feature in HMZONED mode, we should avoid write
-replicating from replace source device to replace target device so that we
-do not write to a location after the position of a zone's device write
-pointer. In addition, scrub process should be modified to dispatch the
-write I/Os sequentially and to fill holes between the extents. Finally,
-write pointers of the zones should be synchronized to match with RAID
-siblings in a RAID case.
-
-It needs more works to solve all these issues. So disable the device
-replace feature in HMZONED mode for now.
+Direct write I/Os can be directed at existing extents that have already
+been written. Such write requests are prohibited on host-managed zoned
+block devices. So disable direct IO support for a volume with HMZONED mode
+enabled.
 
 Signed-off-by: Naohiro Aota <naota@elisp.net>
 ---
- fs/btrfs/dev-replace.c | 3 +++
+ fs/btrfs/inode.c | 3 +++
  1 file changed, 3 insertions(+)
 
-diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index 839a35008fd8..cde61fb217db 100644
---- a/fs/btrfs/dev-replace.c
-+++ b/fs/btrfs/dev-replace.c
-@@ -416,6 +416,9 @@ int btrfs_dev_replace_start(struct btrfs_fs_info *fs_info,
- 	struct btrfs_device *tgt_device = NULL;
- 	struct btrfs_device *src_device = NULL;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 212fa71317d6..05f5e05ccf37 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -8523,6 +8523,9 @@ static ssize_t check_direct_IO(struct btrfs_fs_info *fs_info,
+ 	unsigned int blocksize_mask = fs_info->sectorsize - 1;
+ 	ssize_t retval = -EINVAL;
  
 +	if (btrfs_fs_incompat(fs_info, HMZONED))
-+		return -EOPNOTSUPP;
++		goto out;
 +
- 	ret = btrfs_find_device_by_devspec(fs_info, srcdevid,
- 					    srcdev_name, &src_device);
- 	if (ret)
+ 	if (offset & blocksize_mask)
+ 		goto out;
+ 
 -- 
 2.18.0
 

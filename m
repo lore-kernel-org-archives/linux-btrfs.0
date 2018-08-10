@@ -1,49 +1,102 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f169.google.com ([209.85.223.169]:39506 "EHLO
-        mail-io0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726376AbeHQQEc (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 17 Aug 2018 12:04:32 -0400
-Received: by mail-io0-f169.google.com with SMTP id l7-v6so6817492iok.6
-        for <linux-btrfs@vger.kernel.org>; Fri, 17 Aug 2018 06:01:12 -0700 (PDT)
-Subject: Re: Experiences on BTRFS Dual SSD RAID 1 with outage of one SSD
-To: Roman Mamedov <rm@romanrm.net>, Martin Steigerwald <martin@lichtvoll.de>
-Cc: linux-btrfs@vger.kernel.org
-References: <2331408.nK7QgfhVWv@merkaba>
- <5591e89c-eb89-dc48-1dc6-dc46775c7817@gmail.com> <1598008.Z1BGxZKWFL@merkaba>
- <20180817175022.70cd084e@natsu>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <94de7bd8-1b35-ecbb-566a-86b5c9de06fc@gmail.com>
-Date: Fri, 17 Aug 2018 09:01:06 -0400
-MIME-Version: 1.0
-In-Reply-To: <20180817175022.70cd084e@natsu>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Received: from mx2.suse.de ([195.135.220.15]:60776 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1725198AbeHJEsN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 10 Aug 2018 00:48:13 -0400
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 42DD8AED4
+        for <linux-btrfs@vger.kernel.org>; Fri, 10 Aug 2018 02:20:30 +0000 (UTC)
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v3] btrfs: qgroup: Dirty all qgroups before rescan
+Date: Fri, 10 Aug 2018 10:20:26 +0800
+Message-Id: <20180810022026.27989-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2018-08-17 08:50, Roman Mamedov wrote:
-> On Fri, 17 Aug 2018 14:28:25 +0200
-> Martin Steigerwald <martin@lichtvoll.de> wrote:
-> 
->>> First off, keep in mind that the SSD firmware doing compression only
->>> really helps with wear-leveling.  Doing it in the filesystem will help
->>> not only with that, but will also give you more space to work with.
->>
->> While also reducing the ability of the SSD to wear-level. The more data
->> I fit on the SSD, the less it can wear-level. And the better I compress
->> that data, the less it can wear-level.
-> 
-> Do not consider SSD "compression" as a factor in any of your calculations or
-> planning. Modern controllers do not do it anymore, the last ones that did are
-> SandForce, and that's 2010 era stuff. You can check for yourself by comparing
-> write speeds of compressible vs incompressible data, it should be the same. At
-> most, the modern ones know to recognize a stream of binary zeroes and have a
-> special case for that.
-All that testing write speeds forz compressible versus incompressible 
-data tells you is if the SSD is doing real-time compression of data, not 
-if they are doing any compression at all..  Also, this test only works 
-if you turn the write-cache on the device off.
+[BUG]
+In the following case, rescan won't zero out the number of qgroup 1/0:
+------
+$ mkfs.btrfs -fq $DEV
+$ mount $DEV /mnt
 
-Besides, you can't prove 100% for certain that any manufacturer who does 
-not sell their controller chips isn't doing this, which means there are 
-a few manufacturers that may still be doing it.
+$ btrfs quota enable /mnt
+$ btrfs qgroup create 1/0 /mnt
+$ btrfs sub create /mnt/sub
+$ btrfs qgroup assign 0/257 1/0 /mnt
+
+$ dd if=/dev/urandom of=/mnt/sub/file bs=1k count=1000
+$ btrfs sub snap /mnt/sub /mnt/snap
+$ btrfs quota rescan -w /mnt
+$ btrfs qgroup show -pcre /mnt
+qgroupid         rfer         excl     max_rfer     max_excl parent  child
+--------         ----         ----     --------     -------- ------  -----
+0/5          16.00KiB     16.00KiB         none         none ---     ---
+0/257      1016.00KiB     16.00KiB         none         none 1/0     ---
+0/258      1016.00KiB     16.00KiB         none         none ---     ---
+1/0        1016.00KiB     16.00KiB         none         none ---     0/257
+
+so far so good, but:
+
+$ btrfs qgroup remove 0/257 1/0 /mnt
+WARNING: quotas may be inconsistent, rescan needed
+$ btrfs quota rescan -w /mnt
+$ btrfs qgroup show -pcre  /mnt
+qgoupid         rfer         excl     max_rfer     max_excl parent  child
+--------         ----         ----     --------     -------- ------  -----
+0/5          16.00KiB     16.00KiB         none         none ---     ---
+0/257      1016.00KiB     16.00KiB         none         none ---     ---
+0/258      1016.00KiB     16.00KiB         none         none ---     ---
+1/0        1016.00KiB     16.00KiB         none         none ---     ---
+           ^^^^^^^^^^     ^^^^^^^^ not cleared
+------
+
+[CAUSE]
+Before rescan we call qgroup_rescan_zero_tracking() to zero out all
+qgroups' accounting numbers.
+
+However we don't mark all qgroups dirty, but rely on rescan to mark
+qgroups dirty.
+
+If we have any high level qgroup without children, it won't be marked
+dirty during rescan, since we can not reach that qgroup.
+
+This will cause QGROUP_INFO items of childless qgroups never get updated in
+quota tree, thus their numbers will stay the same in "btrfs qgroup show"
+output.
+
+[FIX]
+Just mark all qgroups dirty in qgroup_rescan_zero_tracking(), so even we
+have childless qgroups, their QGROUP_INFO items will still get updated
+during rescan.
+
+Reported-by: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+Reviewed-by: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
+Tested-by: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
+---
+changelog:
+v2:
+  Fix some grammar errors in commit message.
+v3:
+  Fix the adjective used for qgroups without children, from "orphan" to
+  "childless".
+  Update tags.
+---
+ fs/btrfs/qgroup.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index 48c1c3e7baf3..5a5372b33d96 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -2864,6 +2864,7 @@ qgroup_rescan_zero_tracking(struct btrfs_fs_info *fs_info)
+ 		qgroup->rfer_cmpr = 0;
+ 		qgroup->excl = 0;
+ 		qgroup->excl_cmpr = 0;
++		qgroup_dirty(fs_info, qgroup);
+ 	}
+ 	spin_unlock(&fs_info->qgroup_lock);
+ }
+-- 
+2.18.0

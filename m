@@ -1,64 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:40542 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727141AbeHOPM6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 15 Aug 2018 11:12:58 -0400
-Date: Wed, 15 Aug 2018 14:20:51 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Anand Jain <anand.jain@oracle.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2 0/3] Misc volume patch set part2
-Message-ID: <20180815122051.GL24025@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20180810055321.19730-1-anand.jain@oracle.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Received: from aserp2130.oracle.com ([141.146.126.79]:33798 "EHLO
+        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725784AbeHJISF (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 10 Aug 2018 04:18:05 -0400
+Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
+        by aserp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w7A5mdtJ133175
+        for <linux-btrfs@vger.kernel.org>; Fri, 10 Aug 2018 05:49:45 GMT
+Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
+        by aserp2130.oracle.com with ESMTP id 2kn1nddy8m-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Fri, 10 Aug 2018 05:49:45 +0000
+Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
+        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id w7A5ni1n020745
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Fri, 10 Aug 2018 05:49:44 GMT
+Received: from abhmp0014.oracle.com (abhmp0014.oracle.com [141.146.116.20])
+        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w7A5nif3020182
+        for <linux-btrfs@vger.kernel.org>; Fri, 10 Aug 2018 05:49:44 GMT
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v4 1/3] btrfs: drop uuid_mutex in btrfs_free_extra_devids()
+Date: Fri, 10 Aug 2018 13:53:19 +0800
+Message-Id: <20180810055321.19730-2-anand.jain@oracle.com>
 In-Reply-To: <20180810055321.19730-1-anand.jain@oracle.com>
+References: <20180810055321.19730-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Aug 10, 2018 at 01:53:18PM +0800, Anand Jain wrote:
-> The patch set (2/3 and 3/3) adds helper function to deduce the num_device
-> (which is the number of the devices when device is mounted, this excludes
-> the seed device however includes the replacing target). We need to know
-> the num_device that actually belongs to the FSID without the replacing
-> target (if it exists) when we are balancing and or when we are trying to
-> device delete. In both of these cases, it would be wrong to consider
-> replacing target when reallocating the blockgroups.
-> 
-> This patch as such does not change any of the logic which is already in
-> the original code, but instead it would bring such a logic at two
-> locations into a single place/function. But to do that as these two
-> location uses either WARN_ON or BUG_ON to perform the safety catch so
-> the first patch does the cleanup and uses ASSERT at both of these
-> places. And now since these two sections of codes are identical, the 2nd
-> patch replaces them into a helper function.
-> 
-> Also though the check for num_device > 0 should actually be num_device >
-> 1 OR instead, the check of num_device > 0 should have been after the
-> num_device--,
+btrfs_free_extra_devids() is called only in the mount context which
+traverses through the fs_devices::devices and frees the orphan devices
+devices in the given %fs_devices if any. As the search for the orphan
+device is limited to fs_devices::devices so we don't need the global
+uuid_mutex.
 
-I updated the patch following that logic now.
+There can't be any mount-point based ioctl threads in this context as
+the mount thread is not yet returned. But there can be the btrfs-control
+based scan ioctls thread which calls device_list_add().
 
-> since we have had already too many comments and added
-> confusions, I shall leave that part to be fixed at sometime later. So
-> that the cleanup here is a really a cleanup instead of chaning the
-> logic in a rough scale.
-> 
-> Last but not least, this patch has gone through a lot of comments on
-> either to use BUG or return -EINVAL for accidental fall of num_device
-> below 1, which I wasn't expecting so much of the concerns about
-> the use of BUG_ON/-EINVAL as its trivial because fundamentally a FS
-> can't be in the mounted state when num_device < 1.
-> 
-> 
-> Anand Jain (3):
->   btrfs: drop uuid_mutex in btrfs_free_extra_devids()
->   btrfs: assert for num_devices below 0
->   btrfs: add helper btrfs_num_devices() to deduce num_devices
+Here in the mount thread the fs_devices::opened is incremented way before
+btrfs_free_extra_devids() is called and in the scan context the fs_devices
+which are already opened neither be freed or alloc-able at
+device_list_add().
 
-Patches 2 and 3 are applied, with some adjustments. The first patch
-needs another round of review as there were many changes regarding the
-device locking and uuid_mutex. I need a break from this code as the
-wounds haven't healed yet, but will add the patch to a topic branch to
-next so I don't forget about it.
+But lets say you change the device-path and call the scan again, then scan
+would update the new device path and this operation could race against the
+btrfs_free_extra_devids() thread, which might be in the process of
+free-ing the same device. So synchronize it by using the
+device_list_mutex.
+
+This scenario is a very corner case, and practically the scan and mount
+are anyway serialized by the usage so unless the race is instrumented its
+very difficult to achieve.
+
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+Reviewed-by: David Sterba <dsterba@suse.com>
+---
+v3->v4: As we traverse through the seed device, fs_device gets updated with
+	the child seed fs_devices, so make sure we use the same fs_devices
+	pointer for the mutex_unlock as used for the mutex_lock.
+v2->v3: Update change log.
+	(Currently device_list_add() is very lean on its device_list_mutex usage,
+	a cleanup and fix is wip. Given the practicality of the above race
+	condition this patch is good to merge).
+v1->v2: replace uuid_mutex with device_list_mutex instead of delete.
+	change log updated.
+
+ fs/btrfs/volumes.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index f4405e430da6..f277df935e7c 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -934,8 +934,9 @@ void btrfs_free_extra_devids(struct btrfs_fs_devices *fs_devices, int step)
+ {
+ 	struct btrfs_device *device, *next;
+ 	struct btrfs_device *latest_dev = NULL;
++	struct btrfs_fs_devices *parent_fs_devices = fs_devices;
+ 
+-	mutex_lock(&uuid_mutex);
++	mutex_lock(&parent_fs_devices->device_list_mutex);
+ again:
+ 	/* This is the initialized path, it is safe to release the devices. */
+ 	list_for_each_entry_safe(device, next, &fs_devices->devices, dev_list) {
+@@ -989,8 +990,7 @@ void btrfs_free_extra_devids(struct btrfs_fs_devices *fs_devices, int step)
+ 	}
+ 
+ 	fs_devices->latest_bdev = latest_dev->bdev;
+-
+-	mutex_unlock(&uuid_mutex);
++	mutex_unlock(&parent_fs_devices->device_list_mutex);
+ }
+ 
+ static void free_device_rcu(struct rcu_head *head)
+-- 
+2.7.0

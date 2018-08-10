@@ -1,68 +1,108 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp2120.oracle.com ([156.151.31.85]:57514 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725746AbeHJISE (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 10 Aug 2018 04:18:04 -0400
-Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w7A5mbCe108909
-        for <linux-btrfs@vger.kernel.org>; Fri, 10 Aug 2018 05:49:45 GMT
-Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
-        by userp2120.oracle.com with ESMTP id 2kn4sq5ska-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Fri, 10 Aug 2018 05:49:44 +0000
-Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w7A5nhN3011238
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Fri, 10 Aug 2018 05:49:44 GMT
-Received: from abhmp0014.oracle.com (abhmp0014.oracle.com [141.146.116.20])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w7A5nh8Y020179
-        for <linux-btrfs@vger.kernel.org>; Fri, 10 Aug 2018 05:49:43 GMT
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 0/3] Misc volume patch set part2
-Date: Fri, 10 Aug 2018 13:53:18 +0800
-Message-Id: <20180810055321.19730-1-anand.jain@oracle.com>
+Received: from smtp.nue.novell.com ([195.135.221.5]:52054 "EHLO
+        smtp.nue.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727542AbeHJJde (ORCPT
+        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+        Fri, 10 Aug 2018 05:33:34 -0400
+Subject: Re: [RFC PATCH 00/17] btrfs zoned block device support
+To: Naohiro Aota <naota@elisp.net>, David Sterba <dsterba@suse.com>,
+        linux-btrfs@vger.kernel.org
+Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        linux-kernel@vger.kernel.org, Damien Le Moal <damien.lemoal@wdc.com>,
+        Bart Van Assche <bart.vanassche@wdc.com>,
+        Matias Bjorling <mb@lightnvm.io>
+References: <20180809180450.5091-1-naota@elisp.net>
+From: Hannes Reinecke <hare@suse.com>
+Message-ID: <b60c72ff-8fba-839f-4c42-df68318b9222@suse.com>
+Date: Fri, 10 Aug 2018 09:04:59 +0200
+MIME-Version: 1.0
+In-Reply-To: <20180809180450.5091-1-naota@elisp.net>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The patch set (2/3 and 3/3) adds helper function to deduce the num_device
-(which is the number of the devices when device is mounted, this excludes
-the seed device however includes the replacing target). We need to know
-the num_device that actually belongs to the FSID without the replacing
-target (if it exists) when we are balancing and or when we are trying to
-device delete. In both of these cases, it would be wrong to consider
-replacing target when reallocating the blockgroups.
+On 08/09/2018 08:04 PM, Naohiro Aota wrote:
+> This series adds zoned block device support to btrfs.
+> 
+> A zoned block device consists of a number of zones. Zones are either
+> conventional and accepting random writes or sequential and requiring that
+> writes be issued in LBA order from each zone write pointer position. This
+> patch series ensures that the sequential write constraint of sequential
+> zones is respected while fundamentally not changing BtrFS block and I/O
+> management for block stored in conventional zones.
+> 
+> To achieve this, the default dev extent size of btrfs is changed on zoned
+> block devices so that dev extents are always aligned to a zone. Allocation
+> of blocks within a block group is changed so that the allocation is always
+> sequential from the beginning of the block groups. To do so, an allocation
+> pointer is added to block groups and used as the allocation hint.  The
+> allocation changes also ensures that block freed below the allocation
+> pointer are ignored, resulting in sequential block allocation regardless of
+> the block group usage.
+> 
+> While the introduction of the allocation pointer ensure that blocks will be
+> allocated sequentially, I/Os to write out newly allocated blocks may be
+> issued out of order, causing errors when writing to sequential zones. This
+> problem s solved by introducing a submit_buffer() function and changes to
+> the internal I/O scheduler to ensure in-order issuing of write I/Os for
+> each chunk and corresponding to the block allocation order in the chunk.
+> 
+> The zones of a chunk are reset to allow reusing of the zone only when the
+> block group is being freed, that is, when all the extents of the block group
+> are unused.
+> 
+> For btrfs volumes composed of multiple zoned disks, restrictions are added
+> to ensure that all disks have the same zone size. This matches the existing
+> constraint that all dev extents in a chunk must have the same size.
+> 
+> It requires zoned block devices to test the patchset. Even if you don't
+> have zone devices, you can use tcmu-runner [1] to emulate zoned block
+> devices. It can export emulated zoned block devices via iSCSI. Please see
+> the README.md of tcmu-runner [2] for howtos to generate a zoned block
+> device on tcmu-runner.
+> 
+> [1] https://github.com/open-iscsi/tcmu-runner
+> [2] https://github.com/open-iscsi/tcmu-runner/blob/master/README.md
+> 
+> Patch 1 introduces the HMZONED incompatible feature flag to indicate that
+> the btrfs volume was formatted for use on zoned block devices.
+> 
+> Patches 2 and 3 implement functions to gather information on the zones of
+> the device (zones type and write pointer position).
+> 
+> Patch 4 restrict the possible locations of super blocks to conventional
+> zones to preserve the existing update in-place mechanism for the super
+> blocks.
+> 
+> Patches 5 to 7 disable features which are not compatible with the sequential
+> write constraints of zoned block devices. This includes fallocate and
+> direct I/O support. Device replace is also disabled for now.
+> 
+> Patches 8 and 9 tweak the extent buffer allocation for HMZONED mode to
+> implement sequential block allocation in block groups and chunks.
+> 
+> Patches 10 to 12 implement the new submit buffer I/O path to ensure sequential
+> write I/O delivery to the device zones.
+> 
+> Patches 13 to 16 modify several parts of btrfs to handle free blocks
+> without breaking the sequential block allocation and sequential write order
+> as well as zone reset for unused chunks.
+> 
+> Finally, patch 17 adds the HMZONED feature to the list of supported
+> features.
+> 
+Thanks for doing all the work.
+However, the patches don't apply cleanly to current master branch.
+Can you please rebase them?
 
-This patch as such does not change any of the logic which is already in
-the original code, but instead it would bring such a logic at two
-locations into a single place/function. But to do that as these two
-location uses either WARN_ON or BUG_ON to perform the safety catch so
-the first patch does the cleanup and uses ASSERT at both of these
-places. And now since these two sections of codes are identical, the 2nd
-patch replaces them into a helper function.
+Thanks.
 
-Also though the check for num_device > 0 should actually be num_device >
-1 OR instead, the check of num_device > 0 should have been after the
-num_device--, since we have had already too many comments and added
-confusions, I shall leave that part to be fixed at sometime later. So
-that the cleanup here is a really a cleanup instead of chaning the
-logic in a rough scale.
+Cheers,
 
-Last but not least, this patch has gone through a lot of comments on
-either to use BUG or return -EINVAL for accidental fall of num_device
-below 1, which I wasn't expecting so much of the concerns about
-the use of BUG_ON/-EINVAL as its trivial because fundamentally a FS
-can't be in the mounted state when num_device < 1.
-
-
-Anand Jain (3):
-  btrfs: drop uuid_mutex in btrfs_free_extra_devids()
-  btrfs: assert for num_devices below 0
-  btrfs: add helper btrfs_num_devices() to deduce num_devices
-
- fs/btrfs/volumes.c | 32 ++++++++++++++++++--------------
- 1 file changed, 18 insertions(+), 14 deletions(-)
-
+Hannes
 -- 
-2.7.0
+Dr. Hannes Reinecke		               zSeries & Storage
+hare@suse.com			               +49 911 74053 688
+SUSE LINUX GmbH, Maxfeldstr. 5, 90409 Nürnberg
+GF: F. Imendörffer, J. Smithard, D. Upmanyu, G. Norton
+HRB 21284 (AG Nürnberg)

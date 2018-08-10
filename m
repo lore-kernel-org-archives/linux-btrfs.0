@@ -1,55 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ozlabs.org ([203.11.71.1]:42607 "EHLO ozlabs.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1728272AbeHNMnM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 14 Aug 2018 08:43:12 -0400
-Date: Tue, 14 Aug 2018 19:56:41 +1000
-From: Stephen Rothwell <sfr@canb.auug.org.au>
-To: David Sterba <dsterba@suse.cz>
-Cc: David Sterba <dsterba@suse.com>, torvalds@linux-foundation.org, clm@fb.com,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: Re: [GIT PULL] Btrfs updates for 4.19
-Message-ID: <20180814195641.56545ab0@canb.auug.org.au>
-In-Reply-To: <20180814091438.GD24025@twin.jikos.cz>
-References: <cover.1534161966.git.dsterba@suse.com>
-        <20180814185005.7a05e8ec@canb.auug.org.au>
-        <20180814091438.GD24025@twin.jikos.cz>
+Received: from mail-oi0-f43.google.com ([209.85.218.43]:37531 "EHLO
+        mail-oi0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727038AbeHKArP (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 10 Aug 2018 20:47:15 -0400
+Received: by mail-oi0-f43.google.com with SMTP id j205-v6so18368556oib.4
+        for <linux-btrfs@vger.kernel.org>; Fri, 10 Aug 2018 15:15:29 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha256;
- boundary="Sig_/1E6v8DvpSl8vz1BwP4BbkNH"; protocol="application/pgp-signature"
+In-Reply-To: <7e1b4883-0095-3d7d-553d-ccb551d37a29@gmx.com>
+References: <CAAMvbhED_WrVH5VHL9ND4dpMdS+C5erVnXJQcpwbKU2YnoMu6A@mail.gmail.com>
+ <fa1bac3c-76d6-eb0a-459b-5b931375f1a9@gmx.com> <CAAMvbhGJdGobexGS0QEGDexNeZpZkJY3o_s9N4izZeEJ7-HWtA@mail.gmail.com>
+ <7e1b4883-0095-3d7d-553d-ccb551d37a29@gmx.com>
+From: James Courtier-Dutton <james.dutton@gmail.com>
+Date: Fri, 10 Aug 2018 23:14:48 +0100
+Message-ID: <CAAMvbhGK7QZnLg+4O4B-Pk4XdfgS6N6Gv41ggPn151TPxOPA-g@mail.gmail.com>
+Subject: Re: BUG: scheduling while atomic
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/1E6v8DvpSl8vz1BwP4BbkNH
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: quoted-printable
-
-Hi David,
-
-On Tue, 14 Aug 2018 11:14:38 +0200 David Sterba <dsterba@suse.cz> wrote:
+On 6 August 2018 at 07:26, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
 >
-> Done, sorry. Only the pull branch is there now.
+>
+>> WARNING: CPU: 3 PID: 803 at
+>> /build/linux-hwe-SYRsgd/linux-hwe-4.15.0/fs/btrfs/extent_map.c:77
+>> free_extent_map+0x78/0x90 [btrfs]
+>
+> Then it makes sense, as it's a WARN_ON() line, showing one extent map is
+> still used.
+>
+> If it get freed, it will definitely cause some rbtree corruption.
+>
+>
+> It's should be the only free_extent_map() call in __do_readpage() function.
+> However a first glance into this function shows nothing wrong, nor new
+> modification in this function.
+> (Maybe it's the get_extent() hook?)
+>
+> Is there any reproducer? Or special workload?
+The workload is fairly simple.
+1) The server is receiving 1Gbyte files from across the network, in 10
+minute intervals, and storing them on the HDD.
+2) A process reads the files, scanning them for certain patterns.
+3) A cron job deletes the old files.
 
-Thanks.
 
---=20
-Cheers,
-Stephen Rothwell
 
---Sig_/1E6v8DvpSl8vz1BwP4BbkNH
-Content-Type: application/pgp-signature
-Content-Description: OpenPGP digital signature
+>
+> And, have you tried "btrfs check --readonly <device>"? If there is any
+> error it would help a lot to locate the problem.
+>
+root@sandisk:~# btrfs check --readonly /dev/sda3
+Checking filesystem on /dev/sda3
+UUID: 8c9063b9-a4bb-48d1-92ba-6adf49af6fb5
+checking extents
+checking free space cache
+block group 6874953940992 has wrong amount of free space
+failed to load free space cache for block group 6874953940992
+checking fs roots
+checking csums
+checking root refs
+found 1488143566396 bytes used err is 0
+total csum bytes: 1448276084
+total tree bytes: 5079711744
+total fs tree bytes: 3280207872
+total extent tree bytes: 146997248
+btree space waste bytes: 1100557047
+file data blocks allocated: 2266345996288
+ referenced 2235075653632
+root@sandisk:~#
 
------BEGIN PGP SIGNATURE-----
 
-iQEzBAEBCAAdFiEENIC96giZ81tWdLgKAVBC80lX0GwFAltyp1kACgkQAVBC80lX
-0GxAdQf/eftZso3l38C7Z+C6lcXgrF0BNrVNX4AO5QVlaAgZ+Alf0Cxgu9PvZ2rt
-ilXWRZ+9BaFBGsXqQzQL2CwJHhjG3a4Z79+xg8/+YV3sW+HIxd7utG/avTNjLM2W
-J9RcceEmKDcqqaDSEFnnDXvWbjRmJFcV2BhaEgVlGcmTcAqYPzX6V3GnqeOdPbGN
-VlO3k2gBz2W0W238c73EkFGveEz3mZoc6/c3lNOnfkXV7irU9oQGX5MJsRYlLL7M
-HOvdyGkCl9gCyS2KhTD7Qeyig++4zjXDX6sXMVsdq+Y4dZCHqQc8FdTG1mbfEYp8
-SKqMHBtVBzxV91v0qB0JJspvPi70OQ==
-=APZj
------END PGP SIGNATURE-----
-
---Sig_/1E6v8DvpSl8vz1BwP4BbkNH--
+So, not much to see there.
+Any more ideas?

@@ -1,133 +1,92 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.20]:32789 "EHLO mout.gmx.net"
+Received: from pepin.polanet.pl ([193.34.52.2]:47874 "EHLO pepin.polanet.pl"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727028AbeHJLmf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 10 Aug 2018 07:42:35 -0400
-Subject: Re: Mount stalls indefinitely after enabling quota groups.
-To: Dan Merillat <dan.merillat@gmail.com>
-Cc: BTRFS <linux-btrfs@vger.kernel.org>
-References: <CAPL5yKfaoujn4gOcejJKwvXHhnuRgFLACKHxxy=bXQz0tE0YMA@mail.gmail.com>
- <06f0c899-bb33-54d5-8a87-20f138642f70@gmx.com>
- <CAPL5yKdhTAZjG00xwd=2Z7PsNO7ixBY9gTYMS6c2-7DSBeMapA@mail.gmail.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <6389f50e-3ce5-1f3d-0c2c-d169cf431b57@gmx.com>
-Date: Fri, 10 Aug 2018 17:13:30 +0800
+        id S1725832AbeHJMCX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 10 Aug 2018 08:02:23 -0400
+Date: Fri, 10 Aug 2018 11:33:18 +0200
+From: Tomasz Pala <gotar@polanet.pl>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: Report correct filesystem usage / limits on BTRFS subvolumes
+ with quota
+Message-ID: <20180810093317.GA558@polanet.pl>
+References: <0059606f-88bf-c919-450b-bf08e184b5a2@mailbox.org>
+ <b10a3950-0b86-e4fb-3621-f4c5ad3d79e7@gmx.com>
+ <20180809174811.GA27001@polanet.pl>
+ <ecd793f3-55b3-84d4-80cf-3382a580037f@gmx.com>
+ <20180810071748.GA5473@polanet.pl>
+ <33914565-224f-71b6-f319-7c66e3a69d4d@gmx.com>
 MIME-Version: 1.0
-In-Reply-To: <CAPL5yKdhTAZjG00xwd=2Z7PsNO7ixBY9gTYMS6c2-7DSBeMapA@mail.gmail.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="m8Gs3bMl34kGKbqXtGramxjae3MqoDFqh"
+Content-Type: text/plain; charset=iso-8859-2
+In-Reply-To: <33914565-224f-71b6-f319-7c66e3a69d4d@gmx.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---m8Gs3bMl34kGKbqXtGramxjae3MqoDFqh
-Content-Type: multipart/mixed; boundary="ehaTMqNjlvqXfNjpVIqe8ltqDLYQLNnKj";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Dan Merillat <dan.merillat@gmail.com>
-Cc: BTRFS <linux-btrfs@vger.kernel.org>
-Message-ID: <6389f50e-3ce5-1f3d-0c2c-d169cf431b57@gmx.com>
-Subject: Re: Mount stalls indefinitely after enabling quota groups.
-References: <CAPL5yKfaoujn4gOcejJKwvXHhnuRgFLACKHxxy=bXQz0tE0YMA@mail.gmail.com>
- <06f0c899-bb33-54d5-8a87-20f138642f70@gmx.com>
- <CAPL5yKdhTAZjG00xwd=2Z7PsNO7ixBY9gTYMS6c2-7DSBeMapA@mail.gmail.com>
-In-Reply-To: <CAPL5yKdhTAZjG00xwd=2Z7PsNO7ixBY9gTYMS6c2-7DSBeMapA@mail.gmail.com>
+On Fri, Aug 10, 2018 at 15:55:46 +0800, Qu Wenruo wrote:
 
---ehaTMqNjlvqXfNjpVIqe8ltqDLYQLNnKj
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+>> The first thing about virtually every mechanism should be
+>> discoverability and reliability. I expect my quota not to change without
+>> my interaction. Never. How did you cope with this?
+>> If not - how are you going to explain such weird behaviour to users?
+> 
+> Read the manual first.
+> Not every feature is suitable for every use case.
 
+I, the sysadm, must RTFM.
+My users won't comprehend this and moreover - they won't even care.
 
+> IIRC lvm thin is pretty much the same for the same case.
 
-On 8/10/18 4:47 PM, Dan Merillat wrote:
-> Unfortunately that doesn't appear to be it, a forced restart and
-> attempted to mount with skip_balance leads to the same thing.
+LVM doesn't pretend to be user-oriented, it is the system scope.
+LVM didn't name it's thin provisioning "quotas".
 
-That's strange.
+> For 4 disk with 1T free space each, if you're using RAID5 for data, then
+> you can write 3T data.
+> But if you're also using RAID10 for metadata, and you're using default
+> inline, we can use small files to fill the free space, resulting 2T
+> available space.
+> 
+> So in this case how would you calculate the free space? 3T or 2T or
+> anything between them?
 
-Would you please provide the following output to determine whether we
-have any balance running?
+The answear is pretty simple: 3T. Rationale:
+- this is the space I do can put in a single data stream,
+- people are aware that there is metadata overhead with any object;
+  after all, metadata are also data,
+- while filling the fs with small files the free space available would
+  self-adjust after every single file put, so after uploading 1T of such
+  files the df should report 1.5T free. There would be nothing weird(er
+  that now) that 1T of data has actually eaten 1.5T of storage.
 
-# btrfs inspect dump-super -fFa <device>
+No crystal ball calculations, just KISS; since one _can_ put 3T file
+(non sparse, uncompressible, bulk written) on a filesystem, the free space is 3T.
 
-# btrfs inspect dump-tree -t root <device>
+> Only yourself know what the heck you're going to use the that 4 disks
+> with 1T free space each.
+> Btrfs can't look into your head and know what you're thinking.
 
->=20
-> 20 minutes in btrfs-transactio had a large burst of reads then started
-> spinning the CPU with the disk idle.
->=20
-> Is this recoverable? I could leave it for a day or so if it may make
-> progress, but if not I'd like to start on other options.
+It shouldn't. I expect raw data - there is 3TB of unallocated space for
+current data profile.
 
-When umounted, would you please also try "btrfs check --readonly
-<device>" to see if there is anything wrong about the fs?
+> That's the design from the very beginning of btrfs, yelling at me makes
+> no sense at all.
 
-Thanks,
-Qu
+Sorry if you receive me "yelling" - I honestly must put in on my
+non-native english. I just want to clarify some terminology and
+perspective expectations. They are irrevelant to the underlying
+technical solutions, but the literal *description* of the solution
+you provide should match user expectations of that terminology.
 
->=20
-> On Fri, Aug 10, 2018 at 3:59 AM, Qu Wenruo <quwenruo.btrfs@gmx.com> wro=
-te:
->>
->>
->> On 8/10/18 3:40 PM, Dan Merillat wrote:
->>> Kernel 4.17.9, 11tb BTRFS device (md-backed, not btrfs raid)
->>>
->>> I was testing something out and enabled quota groups and started gett=
-ing
->>> 2-5 minute long pauses where a btrfs-transaction thread spun at 100%.=
+> I have tried to explain what btrfs quota does and it doesn't, if it
+> doesn't fit you use case, that's all.
+> (Whether you have ever tried to understand is another problem)
 
->>
->> Looks pretty like a running balance and quota.
->>
->> Would you please try with balance disabled (temporarily) with
->> skip_balance mount option to see if it works.
->>
->> If it works, then either try resume balance, or just cancel the balanc=
-e.
->>
->> Nowadays balance is not needed routinely, especially when you still ha=
-ve
->> unallocated space and enabled quota.
->>
->> Thanks,
->> Qu
->>
->>>
->>> Post-reboot the mount process spinds at 100% CPU, occasinally yieldin=
-g
->>> to a btrfs-transaction thread at 100% CPU.  The switchover is marked
->>> by a burst of disk activity in btrace.
->>>
->>> Btrace shows all disk activity is returning promptly - no hanging sub=
-mits.
->>>
->>> Currently the mount is at 6+ hours.
->>>
->>> Suggestions on how to go about debugging this?
->>>
->>
+I am (more than before) aware what btrfs quotas are not.
 
+So, my only expectation (except for worldwide peace and other
+unrealistic ones) would be to stop using "quotas", "subvolume quotas"
+and "qgroups" interchangeably in btrfs context, as IMvHO these are not
+plain, well-known "quotas".
 
---ehaTMqNjlvqXfNjpVIqe8ltqDLYQLNnKj--
-
---m8Gs3bMl34kGKbqXtGramxjae3MqoDFqh
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlttVzoACgkQwj2R86El
-/qg6uwf/TL0tBQ64DTxeYZnXuj51XXYlcKRpu5R242ohDKmKrPVKaH5uy9G1Nqwl
-v2Jjoyb/wb5QcshLTaB/WxMTjBPjIh0Ccy/xTfZxsd6Phd6cz6GCrbSoIZUBTMMV
-2EI2KfJzUEtQ9PLmveFniZzrAjoDdJIXOo0tG7PA2wIybnDufTZ77lUWUH3J1a3k
-Kuie616n2X4xKwo3uXhG9lYcoa1veEhgdvs+RzWeKntZ10XZlIxa38TLfvtVHyo3
-UoAruXx2WKgwN1gkxFQwMZEepVXtQKAmzvLp3uGiLFR6pOpZNlfFtU5g5IUgT+6Y
-rZl8BCwUER4cCprzoIGAVjLLd7gXCQ==
-=UPyN
------END PGP SIGNATURE-----
-
---m8Gs3bMl34kGKbqXtGramxjae3MqoDFqh--
+-- 
+Tomasz Pala <gotar@pld-linux.org>

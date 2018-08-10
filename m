@@ -1,60 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from shout02.mail.de ([62.201.172.25]:34787 "EHLO shout02.mail.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725724AbeHJEH7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 10 Aug 2018 00:07:59 -0400
-Received: from postfix01.mail.de (postfix01.bt.mail.de [10.0.121.125])
-        by shout02.mail.de (Postfix) with ESMTP id 0B69BC3344
-        for <linux-btrfs@vger.kernel.org>; Fri, 10 Aug 2018 03:40:24 +0200 (CEST)
-Received: from smtp03.mail.de (smtp03.bt.mail.de [10.0.121.213])
-        by postfix01.mail.de (Postfix) with ESMTP id E78C640459
-        for <linux-btrfs@vger.kernel.org>; Fri, 10 Aug 2018 03:40:23 +0200 (CEST)
-Received: from [127.0.0.1] (localhost [127.0.0.1])
-        (using TLSv1 with cipher ECDHE-RSA-AES256-SHA (256/256 bits))
-        (No client certificate requested)
-        by smtp03.mail.de (Postfix) with ESMTPSA id C3FBD8073A
-        for <linux-btrfs@vger.kernel.org>; Fri, 10 Aug 2018 03:40:23 +0200 (CEST)
-From: erenthetitan@mail.de
-To: linux-btrfs@vger.kernel.org
-Subject: List of known BTRFS Raid 5/6 Bugs?
-Date: Fri, 10 Aug 2018 03:40:23 +0200
-Content-Type: text/plain; charset=utf-8
+Received: from mail-lj1-f177.google.com ([209.85.208.177]:41246 "EHLO
+        mail-lj1-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725725AbeHJGrR (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 10 Aug 2018 02:47:17 -0400
+Received: by mail-lj1-f177.google.com with SMTP id y17-v6so6130481ljy.8
+        for <linux-btrfs@vger.kernel.org>; Thu, 09 Aug 2018 21:19:12 -0700 (PDT)
 MIME-Version: 1.0
-Message-Id: <20180810014023.C3FBD8073A@smtp03.mail.de>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Thu, 9 Aug 2018 22:19:10 -0600
+Message-ID: <CAJCQCtRJk=btjCXejDdg888TmmtQoJc8gZyki+9ksxxF4Tq0YA@mail.gmail.com>
+Subject: mount shows incorrect subvol when backed by bind mount
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I am searching for more information regarding possible bugs related to BTRFS Raid 5/6. All sites i could find are incomplete and information contradicts itself:
+I've got another example of bind mounts resulting in confusing
+(incorrect) information in the mount command with Btrfs. In this case,
+it's Docker using bind mounts.
 
-The Wiki Raid 5/6 Page (https://btrfs.wiki.kernel.org/index.php/RAID56)
-warns of the write hole bug, stating that your data remains safe (except data written during power loss, obviously) upon unclean shutdown unless your data gets corrupted by further issues like bit-rot, drive failure etc.
+Full raw version (expires in 7 days)
+https://paste.fedoraproject.org/paste/r8tr-3nuvoycwxf0bPUrmA/raw
 
-The Wiki Gotchas Page (https://btrfs.wiki.kernel.org/index.php/Gotchas)
-warns of possible incorrigible "transid" mismatch, not stating which versions are affected or what transid mismatch means for your data. It does not mention the write hole at all.
+Relevant portion:
 
-This Mail Archive (linux-btrfs@vger.kernel.org/msg55161.html" target="_blank">https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg55161.html)
-states that scrubbing BTRFS Raid 5/6 will always repair Data Corruption, but may corrupt your Metadata while trying to do so - meaning you have to scrub twice in a row to ensure data integrity.
+mount shows:
 
-The Bugzilla Entry (https://bugzilla.kernel.org/buglist.cgi?component=btrfs)
-contains mostly unanswered bugs, which may or may not still count (2013 - 2018).
+/dev/mmcblk0p3 on /var/lib/docker/containers type btrfs
+(rw,noatime,seclabel,compress-force=zstd,ssd,space_cache=v2,subvolid=265,subvol=/root/var/lib/docker/containers)
+/dev/mmcblk0p3 on /var/lib/docker/btrfs type btrfs
+(rw,noatime,seclabel,compress-force=zstd,ssd,space_cache=v2,subvolid=265,subvol=/root/var/lib/docker/btrfs)
 
-This Spinics Discussion (https://www.spinics.net/lists/linux-btrfs/msg76471.html)
-states that the write hole can even damage old data eg. data that was not accessed during unclean shutdown, the opposite of what the Raid5/6 Status Page states!
+And from the detail fpaste, you can see there is no such subvolume
+docker/btrfs or docker/containers - and subvolid=265 is actually for
+rootfs.
 
-This Spinics comment (https://www.spinics.net/lists/linux-btrfs/msg76412.html)
-informs that hot-plugging a device will trigger the write hole. Accessed data will therefore be corrupted.
-In case the earlier statement about old data corruption is true, random data could be permamently lost.
-This is even more dangerous if you are connecting your devices via USB, as USB can unconnect due to external influence, eg. touching the cables, shaking...
+Anyway, mortals will be confused by this behavior.
 
-Lastly, this Superuser question (https://superuser.com/questions/1325245/btrfs-transid-failure#1344494)
-assumes that the transid mismatch bug could toggle your system unmountable.
-While it might be possible to restore your data using sudo BTRFS Restore, it is still unknown how the transid mismatch is even toggled, meaning that your file system could fail at any time!
-
-Do you know of any comprehensive and complete Bug list?
-
-Do you know more about the stated Bugs?
-
-Do you know further Bugs that are not addressed in any of these sites?
-
--------------------------------------------------------------------------------------------------
-FreeMail powered by mail.de - MEHR SICHERHEIT, SERIOSITÄT UND KOMFORT
+-- 
+Chris Murphy

@@ -1,199 +1,318 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f66.google.com ([209.85.214.66]:36362 "EHLO
-        mail-it0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726619AbeHJVlS (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 10 Aug 2018 17:41:18 -0400
-Received: by mail-it0-f66.google.com with SMTP id p81-v6so4111189itp.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 10 Aug 2018 12:10:09 -0700 (PDT)
-Subject: Re: Report correct filesystem usage / limits on BTRFS subvolumes with
- quota
-To: Chris Murphy <lists@colorremedies.com>, Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: Tomasz Pala <gotar@polanet.pl>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <0059606f-88bf-c919-450b-bf08e184b5a2@mailbox.org>
- <b10a3950-0b86-e4fb-3621-f4c5ad3d79e7@gmx.com>
- <20180809174811.GA27001@polanet.pl>
- <ecd793f3-55b3-84d4-80cf-3382a580037f@gmx.com>
- <CAJCQCtQS+yiSQ4Cu-F_Spi5_6fEw_FuGdXCafJLxBe1swacabQ@mail.gmail.com>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <87368b1d-2c81-e351-b742-d7990fc7aa55@gmail.com>
-Date: Fri, 10 Aug 2018 15:10:05 -0400
+Received: from shout02.mail.de ([62.201.172.25]:44638 "EHLO shout02.mail.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726774AbeHKCEL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 10 Aug 2018 22:04:11 -0400
+Received: from postfix01.mail.de (postfix01.bt.mail.de [10.0.121.125])
+        by shout02.mail.de (Postfix) with ESMTP id 7DA09C339C
+        for <linux-btrfs@vger.kernel.org>; Sat, 11 Aug 2018 01:32:08 +0200 (CEST)
+Received: from smtp03.mail.de (smtp03.bt.mail.de [10.0.121.213])
+        by postfix01.mail.de (Postfix) with ESMTP id 66D1840459
+        for <linux-btrfs@vger.kernel.org>; Sat, 11 Aug 2018 01:32:08 +0200 (CEST)
+Received: from [127.0.0.1] (localhost [127.0.0.1])
+        (using TLSv1 with cipher ECDHE-RSA-AES256-SHA (256/256 bits))
+        (No client certificate requested)
+        by smtp03.mail.de (Postfix) with ESMTPSA id 3BBFC80097
+        for <linux-btrfs@vger.kernel.org>; Sat, 11 Aug 2018 01:32:06 +0200 (CEST)
+From: erenthetitan@mail.de
+To: linux-btrfs@vger.kernel.org
+Subject: Re: List of known BTRFS Raid 5/6 Bugs?
+Date: Sat, 11 Aug 2018 01:32:06 +0200
+Content-Type: text/plain; charset=utf-8
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtQS+yiSQ4Cu-F_Spi5_6fEw_FuGdXCafJLxBe1swacabQ@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Message-Id: <20180810233208.3BBFC80097@smtp03.mail.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2018-08-10 14:07, Chris Murphy wrote:
-> On Thu, Aug 9, 2018 at 5:35 PM, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
->>
->>
->> On 8/10/18 1:48 AM, Tomasz Pala wrote:
->>> On Tue, Jul 31, 2018 at 22:32:07 +0800, Qu Wenruo wrote:
->>>
->>>> 2) Different limitations on exclusive/shared bytes
->>>>     Btrfs can set different limit on exclusive/shared bytes, further
->>>>     complicating the problem.
->>>>
->>>> 3) Btrfs quota only accounts data/metadata used by the subvolume
->>>>     It lacks all the shared trees (mentioned below), and in fact such
->>>>     shared tree can be pretty large (especially for extent tree and csum
->>>>     tree).
->>>
->>> I'm not sure about the implications, but just to clarify some things:
->>>
->>> when limiting somebody's data space we usually don't care about the
->>> underlying "savings" coming from any deduplicating technique - these are
->>> purely bonuses for system owner, so he could do larger resource overbooking.
->>
->> In reality that's definitely not the case.
->>
->>  From what I see, most users would care more about exclusively used space
->> (excl), other than the total space one subvolume is referring to (rfer).
-> 
-> I'm confused.
-> 
-> So what happens in the following case with quotas enabled on Btrfs:
-> 
-> 1. Provision a user with a directory, pre-populated with files, using
-> snapshot. Let's say it's 1GiB of files.
-> 2. Set a quota for this user's directory, 1GiB.
-> 
-> The way I'm reading the description of Btrfs quotas, the 1GiB quota
-> applies to exclusive used space. So for starters, they have 1GiB of
-> shared data that does not affect their 1GiB quota at all.
-> 
-> 3. User creates 500MiB worth of new files, this is exclusive usage.
-> They are still within their quota limit.
-> 4. The shared data becomes obsolete for all but this one user, and is deleted.
-> 
-> Suddenly, 1GiB of shared data for this user is no longer shared data,
-> it instantly becomes exclusive data and their quota is busted. Now
-> consider scaling this to 12TiB of storage, with hundreds of users, and
-> dozens of abruptly busted quotas following this same scenario on a
-> weekly basis.
-> 
-> I *might* buy off on the idea that an overlay2 based initial
-> provisioning would not affect quotas. But whether data is shared or
-> exclusive seems potentially ephemeral, and not something a sysadmin
-> should even be able to anticipate let alone individual users.
-> 
-> Going back to the example, I'd expect to give the user a 2GiB quota,
-> with 1GiB of initially provisioned data via snapshot, so right off the
-> bat they are at 50% usage of their quota. If they were to modify every
-> single provisioned file, they'd in effect go from 100% shared data to
-> 100% exclusive data, but their quota usage would still be 50%. That's
-> completely sane and easily understandable by a regular user. The idea
-> that they'd start modifying shared files, and their quota usage climbs
-> is weird to me. The state of files being shared or exclusive is not
-> user domain terminology anyway.
-And it's important to note that this is the _only_ way this can sanely 
-work for actually partitioning resources, which is the primary classical 
-use case for quotas.
+Did i get you right?
+Please correct me if i am wrong:
 
-Being able to see how much data is shared and exclusive in a subvolume 
-is nice, but quota groups are the wrong name for it because the current 
-implementation does not work at all like quotas and can trivially result 
-in both users escaping quotas (multiple ways), and in quotas being 
-overreached by very large amounts for potentially indefinite periods of 
-time because of actions of individuals who _don't_ own the data the 
-quota is for.
-> 
-> 
->>
->> The most common case is, you do a snapshot, user would only care how
->> much new space can be written into the subvolume, other than the total
->> subvolume size.
-> 
-> I think that's expecting a lot of users.
-> 
-> I also wonder if it expects a lot from services like samba and NFS who
-> have to communicate all of this in some sane way to remote clients? My
-> expectation is that a remote client shows Free Space on a quota'd
-> system to be based on the unused amount of the quota. I also expect if
-> I delete a 1GiB file, that my quota consumption goes down. But you're
-> saying it would be unchanged if I delete a 1GiB shared file, and would
-> only go down if I delete a 1GiB exclusive file. Do samba and NFS know
-> about shared and exclusive files? If samba and NFS don't understand
-> this, then how is a user supposed to understand it?
-It might be worth looking at how Samba and NFS work on top of ZFS on a 
-platform like FreeNAS and trying to emulate that.
+Scrubbing seems to have been fixed, you only have to run it once.
 
-Behavior there is as-follows:
+Hotplugging (temporary connection loss) is affected by the write hole bug, and will create undetectable errors every 16 TB (crc32 limitation).
 
-* The total size of the 'disk' reported over SMB (shown on Windows only 
-if you map the share as a drive) is equal to the quota for the 
-underlying dataset.
-* The reported space used on the 'disk' reported over SMB is based on 
-physical space usage after compression, with a few caveats relating to 
-deduplication:
-     - Data which is shared across multiple datasets is accounted 
-against _all_ datasets that reference it.
-     - Data which is shared only within a given dataset is accounted 
-only once.
-* Free space is reported simply as the total size minus the used space.
-* Usage reported by `du` equivalent tools shows numbers _before_ 
-compression and deduplication (so, it shows you how much space you would 
-need to store all the data elsewhere).
-* Whether or not the files are transparently compressed is actually 
-reported properly.
-> 
-> And now I'm sufficiently confused I'm ready for the weekend!
-> 
-> 
->>> And the numbers accounted should reflect the uncompressed sizes.
->>
->> No way for current extent based solution.
-> 
-> I'm less concerned about this. But since the extent item shows both
-> ram and disk byte values, why couldn't the quota and the space
-> reporting be predicated on the ram value which is always uncompressed?
-> 
-> 
-> 
->>
->>>
->>>
->>> Moreover - if there would be per-subvolume RAID levels someday, the data
->>> should be accouted in relation to "default" (filesystem) RAID level,
->>> i.e. having a RAID0 subvolume on RAID1 fs should account half of the
->>> data, and twice the data in an opposite scenario (like "dup" profile on
->>> single-drive filesystem).
->>
->> No possible again for current extent based solution.
-> 
-> It's fine, I think it's unintuitive for DUP or raid1 profiles to cause
-> quota consumption to double. The underlying configuration of the array
-> is not the business of the user. They can only be expected to
-> understand file size. Underlying space consumed, whether compressed,
-> or duplicated, or compressed and duplicated, is out of scope for the
-> user. And we can't have quotas getting busted all of a sudden because
-> the sysadmin decides to do -dconvert -mconvert raid1, without
-> requiring the sysadmin to double everyone's quota before performing
-> the operation.
-It's not just unintuitive, it's broken unless you have per-object profiles.
-> 
->>
->>>
->>> In short: values representing quotas are user-oriented ("the numbers one
->>> bought"), not storage-oriented ("the numbers they actually occupy").
->>
->> Well, if something is not possible or brings so big performance impact,
->> there will be no argument on how it should work in the first place.
-> 
-> Yep!
-> 
-> What is VFS disk quotas and does Btrfs use that at all? If not, why
-> not? It seems to me there really should be a high level basic per
-> directory quota implementation at the VFS layer, with a single kernel
-> interface as well as a single user space interface, regardless of the
-> file system. Additional file system specific quota features can of
-> course have their own tools, but all of this re-invention of the wheel
-> for basic directory quotas is a mystery to me.
-No, we don't use VFS disk quotas.  I don't know enough about the 
-in-kernel API for it to be certain, but I believe that the way BTRFS 
-handles data violates some of the constraints that are required by that 
-API, which is why we don't use it.  It might be possible if we could 
-have a way to get total data accounted for a given directory (in a way 
-that behaves like the above mentioned FreeNAS Samba handling for 
-calculating 'disk' usage).
+The write Hole Bug can affect both old and new data.
+Reason: BTRFS saves data in fixed size stripes, if the write operation fails midway, the stripe is lost.
+This does not matter much for Raid 1/10, data always uses a full stripe, and stripes are copied on write. Only new data could be lost.
+However, for some reason Raid 5/6 works with partial stripes, meaning that data is stored in stripes not completley filled by prior data, and stripes are removed on write.
+Result: If the operation fails midway, the stripe is lost as is all data previously stored it.
+
+Transid Mismatch can silently corrupt data.
+Reason: It is a seperate metadata failure that is trigged by lost or incomplete writes, writes that are lost somewhere during transmission.
+It can happen to all BTRFS configurations and is not trigerred by the write hole.
+It could happen due to brown out (temporary undersupply of voltage), faulty cables, faulty ram, faulty disc cache, faulty discs in general.
+
+Both bugs could damage metadata and trigger the following:
+Data will be lost (0 to 100% unreadable), the filesystem will be readonly.
+Reason: BTRFS saves metadata as a tree structure. The closer the error to the root, the more data cannot be read.
+
+Transid Mismatch can happen up to once every 3 months per device,
+depending on the drive hardware!
+
+Question: Does this not make transid mismatch way more dangerous than
+the write hole? What would happen to other filesystems, like ext4?
+
+Am 10-Aug-2018 09:12:21 +0200 schrieb ce3g8jdj@umail.furryterror.org: 
+> > On Fri, Aug 10, 2018 at 03:40:23AM +0200, erenthetitan@mail.de wrote:
+> > > I am searching for more information regarding possible bugs related to
+> > > BTRFS Raid 5/6. All sites i could find are incomplete and information
+> > > contradicts itself:
+> > >
+> > > The Wiki Raid 5/6 Page (https://btrfs.wiki.kernel.org/index.php/RAID56)
+> > > warns of the write hole bug, stating that your data remains safe
+> > > (except data written during power loss, obviously) upon unclean shutdown
+> > > unless your data gets corrupted by further issues like bit-rot, drive
+> > > failure etc.
+> > 
+> > The raid5/6 write hole bug exists on btrfs (as of 4.14-4.16) and there are
+> > no mitigations to prevent or avoid it in mainline kernels.
+> > 
+> > The write hole results from allowing a mixture of old (committed) and
+> > new (uncommitted) writes to the same RAID5/6 stripe (i.e. a group of
+> > blocks consisting of one related data or parity block from each disk
+> > in the array, such that writes to any of the data blocks affect the
+> > correctness of the parity block and vice versa). If the writes were
+> > not completed and one or more of the data blocks are not online, the
+> > data blocks reconstructed by the raid5/6 algorithm will be corrupt.
+> > 
+> > If all disks are online, the write hole does not immediately
+> > damage user-visible data as the old data blocks can still be read
+> > directly; however, should a drive failure occur later, old data may
+> > not be recoverable because the parity block will not be correct for
+> > reconstructing the missing data block. A scrub can fix write hole
+> > errors if all disks are online, and a scrub should be performed after
+> > any unclean shutdown to recompute parity data.
+> > 
+> > The write hole always puts both old and new data at risk of damage;
+> > however, due to btrfs's copy-on-write behavior, only the old damaged
+> > data can be observed after power loss. The damaged new data will have
+> > no references to it written to the disk due to the power failure, so
+> > there is no way to observe the new damaged data using the filesystem.
+> > Not every interrupted write causes damage to old data, but some will.
+> > 
+> > Two possible mitigations for the write hole are:
+> > 
+> > - modify the btrfs allocator to prevent writes to partially filled
+> > raid5/6 stripes (similar to what the ssd mount option does, except
+> > with the correct parameters to match RAID5/6 stripe boundaries),
+> > and advise users to run btrfs balance much more often to reclaim
+> > free space in partially occupied raid stripes
+> > 
+> > - add a stripe write journal to the raid5/6 layer (either in
+> > btrfs itself, or in a lower RAID5 layer).
+> > 
+> > There are assorted other ideas (e.g. copy the RAID-Z approach from zfs
+> > to btrfs or dramatically increase the btrfs block size) that also solve
+> > the write hole problem but are somewhat more invasive and less practical
+> > for btrfs.
+> > 
+> > Note that the write hole also affects btrfs on top of other similar
+> > raid5/6 implementations (e.g. mdadm raid5 without stripe journal).
+> > The btrfs CoW layer does not understand how to allocate data to avoid RMW
+> > raid5 stripe updates without corrupting existing committed data, and this
+> > limitation applies to every combination of unjournalled raid5/6 and btrfs.
+> > 
+> > > The Wiki Gotchas Page (https://btrfs.wiki.kernel.org/index.php/Gotchas)
+> > > warns of possible incorrigible "transid" mismatch, not stating which
+> > > versions are affected or what transid mismatch means for your data. It
+> > > does not mention the write hole at all.
+> > 
+> > Neither raid5 nor write hole are required to produce a transid mismatch
+> > failure. transid mismatch usually occurs due to a lost write. Write hole
+> > is a specific case of lost write, but write hole does not usually produce
+> > transid failures (it produces header or csum failures instead).
+> > 
+> > During real disk failure events, multiple distinct failure modes can
+> > occur concurrently. i.e. both transid failure and write hole can occur
+> > at different places in the same filesystem as a result of attempting to
+> > use a failing disk over a long period of time.
+> > 
+> > A transid verify failure is metadata damage. It will make the filesystem
+> > readonly and make some data inaccessible as described below.
+> > 
+> > > This Mail Archive (linux-btrfs@vger.kernel.org/msg55161.html"
+> > > target="_blank">linux-btrfs@vger.kernel.org/msg55161.html" target="_blank">linux-btrfs@vger.kernel.org/msg55161.html" target="_blank">linux-btrfs@vger.kernel.org/msg55161.html" target="_blank">https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg55161.html)
+> > > states that scrubbing BTRFS Raid 5/6 will always repair Data Corruption,
+> > > but may corrupt your Metadata while trying to do so - meaning you have
+> > > to scrub twice in a row to ensure data integrity.
+> > 
+> > Simple corruption (without write hole errors) is fixed by scrubbing
+> > as of the last...at least six months? Kernel v4.14.xx and later can
+> > definitely do it these days. Both data and metadata.
+> > 
+> > If the metadata is damaged in any way (corruption, write hole, or transid
+> > verify failure) on btrfs and btrfs cannot use the raid profile for
+> > metadata to recover the damaged data, the filesystem is usually forever
+> > readonly, and anywhere from 0 to 100% of the filesystem may be readable
+> > depending on where in the metadata tree structure the error occurs (the
+> > closer to the root, the more data is lost). This is the same for dup,
+> > raid1, raid5, raid6, and raid10 profiles. raid0 and single profiles are
+> > not a good idea for metadata if you want a filesystem that can persist
+> > across reboots (some use cases don't require persistence, so they can
+> > use -msingle/-mraid0 btrfs as a large-scale tmpfs).
+> > 
+> > For all metadata raid profiles, recovery can fail due to risks including
+> > RAM corruption, multiple drives having defects in the same locations,
+> > or multiple drives with identically-behaving firmware bugs. For raid5/6
+> > metadata there is the *additional* risk of the write hole bug preventing
+> > recovery of metadata.
+> > 
+> > If the filesystem is -draid5 -mraid1 then the metadata is not vulnerable
+> > to the write hole, but data is. In this configuration you can determine
+> > with high confidence which files you need to restore from backup, and
+> > the filesystem will remain writable to replace the restored data, because
+> > raid1 does not have the write hole bug.
+> > 
+> > More than one scrub for a single write hole event won't help (and never
+> > did). If the first scrub doesn't fix all the errors then your kernel
+> > probably also has a race condition bug or regression that will permanently
+> > corrupt the data (this was true in 2016 when the referenced mailing
+> > list post was written).
+> > 
+> > Current kernels don't have such bugs--if the first scrub can correct
+> > the data, it does, and if the first scrub can't correct the data then
+> > all future scrubs will produce identical results.
+> > 
+> > Older kernels (2016) had problems reconstructing data during read()
+> > operations but could fix data during scrub or balance operations.
+> > These bugs, as far as I am able to test, have been fixed by v4.17 and
+> > backported to v4.14.
+> > 
+> > > The Bugzilla Entry
+> > > (https://bugzilla.kernel.org/buglist.cgi?component=btrfs) contains
+> > > mostly unanswered bugs, which may or may not still count (2013 - 2018).
+> > 
+> > I find that any open bug over three years old on b.k.o can be safely
+> > ignored because it has either already been fixed or there is not enough
+> > information provided to understand what is going on.
+> > 
+> > > This Spinics Discussion
+> > > (https://www.spinics.net/lists/linux-btrfs/msg76471.html) states
+> > > that the write hole can even damage old data eg. data that was not
+> > > accessed during unclean shutdown, the opposite of what the Raid5/6
+> > > Status Page states!
+> > 
+> > Correct, write hole can *only* damage old data as described above.
+> > 
+> > > This Spinics comment
+> > > (https://www.spinics.net/lists/linux-btrfs/msg76412.html) informs that
+> > > hot-plugging a device will trigger the write hole. Accessed data will
+> > > therefore be corrupted. In case the earlier statement about old data
+> > > corruption is true, random data could be permamently lost. This is even
+> > > more dangerous if you are connecting your devices via USB, as USB can
+> > > unconnect due to external influence, eg. touching the cables, shaking...
+> > 
+> > Hot-unplugging a device can cause many lost write events at once, and
+> > each lost write event is very bad.
+> > 
+> > btrfs does not reject and resynchronize a device from a raid array if a
+> > write to the device fails (unlike every other working RAID implementation
+> > on Earth...). If the device reconnects, btrfs will read a mixture of
+> > old and new data and rely on checksums to determine which blocks are
+> > out of date (as opposed to treating the departed disk as entirely out
+> > of date and initiating a disk replace operation when it reconnects).
+> > 
+> > A scrub after a momentary disconnect can reconstruct most missing data,
+> > but not all. CRC32 lets one error through per 16 TB of corrupted blocks,
+> > and all nodatasum/nodatacow files modified while a drive was offline
+> > will be corrupted without detection or recovery by btrfs.
+> > 
+> > Device replace is currently the best recovery option from this kind
+> > of failure. Ideally btrfs would implement something like mdadm write
+> > intent bitmaps so only those block groups that were modified while
+> > the device as offline would be replaced, but this is the btrfs we want
+> > not the btrfs we have.
+> > 
+> > > Lastly, this Superuser question
+> > > (https://superuser.com/questions/1325245/btrfs-transid-failure#1344494)
+> > > assumes that the transid mismatch bug could toggle your system
+> > > unmountable. While it might be possible to restore your data using
+> > > sudo BTRFS Restore, it is still unknown how the transid mismatch is
+> > > even toggled, meaning that your file system could fail at any time!
+> > 
+> > Note that transid failure risk applies to all btrfs configurations.
+> > It is not specific to raid5/6. The write hole errors from raid5/6 will
+> > typically produce a header or csum failure (from reading garbage) not a
+> > transid failure (from reading an old, valid, but deleted metadata block).
+> > 
+> > transid mismatch is pretty simple: one of your disk drives, or some
+> > caching or translation layer between btrfs and your disk drives, dropped
+> > a write (or, less likely, read from or wrote to the wrong sector address).
+> > btrfs detects this by embedding transids into all data structures where
+> > one object points to another object in a different block.
+> > 
+> > transid mismatch is also hard: you then have to figure out which layer
+> > of your possibly quite complicated RAID setup is doing that, and make
+> > it stop. This process almost never involves btrfs. Sometimes it's the
+> > bottom layer (i.e. the drives themselves) but the more layers you add,
+> > the more candidates need to be eliminated before the cause can be found.
+> > Sometimes it's a *power supply* (i.e. the drive controller CPU browns
+> > out and forgets it was writing something or corrupts its embedded RAM).
+> > Sometimes it's host RAM going bad, corrupting and breaking everything
+> > it touches.
+> > 
+> > I have a variety of test setups and the correlation between hardware
+> > model (especially drive model, but also some SATA controller models)
+> > and total filesystem loss due to transid verify failure is very strong.
+> > Out of 10 drive models from 5 vendors, 2 models can't keep a filesystem
+> > intact for more than a few months, while the other models average 3 years
+> > old and still hold the first btrfs filesystem they were formatted with.
+> > 
+> > Disabling drive write caching sometimes helps, but some hardware eats
+> > a filesystem every few months no matter what settings I change. If the
+> > problem is a broken SATA controller or cable then changing drive settings
+> > won't help.
+> > 
+> > It's fun and/or scary to put known good and bad hardware in the same
+> > RAID1 array and watch btrfs autocorrecting the bad data after every
+> > other power failure; however, the bad hardware is clearly not sufficient
+> > to implement any sort of reliable data persistence, and arrays with bad
+> > hardware in them will eventually fail.
+> > 
+> > The bad drives can still contribute to society as media cache servers or
+> > point-of-sale terminals where the only response to any data integrity
+> > issue is a full reformat and image reinstall. This seems to be the
+> > target market that low-end consumer drives are aiming for, as they seem
+> > to be useless for anything else.
+> > 
+> > Adopt a zero-tolerance policy for drive resets after the array is
+> > mounted and active. A drive reset means a potential lost write leading
+> > to a transid verify failure. Swap out both drive and SATA cable the
+> > first time a reset occurs during a read or write operation, and consider
+> > swapping out SATA controller, changing drive model, and upgrading power
+> > supply if it happens twice.
+> > 
+> > > Do you know of any comprehensive and complete Bug list?
+> > 
+> > ...related to raid5/6:
+> > 
+> > - no write hole mitigation (at least two viable strategies
+> > available)
+> > 
+> > - no device bouncing mitigation (mdadm had this working 20
+> > years ago)
+> > 
+> > - probably slower than it could be
+> > 
+> > - no recovery strategy other than raid (btrfs check --repair is
+> > useless on non-trivial filesytems, and a single-bit uncorrected
+> > metadata error makes the filesystem unusable)
+> > 
+> > > Do you know more about the stated Bugs?
+> > >
+> > > Do you know further Bugs that are not addressed in any of these sites?
+> > 
+> > My testing on raid5/6 filesystems is producing pretty favorable results
+> > these days. There do not seem to be many bugs left.
+> > 
+> > I have one test case where I write millions of errors into a raid5/6 and
+> > the filesystem recovers every single one transparently while verifying
+> > SHA1 hashes of test data. After years of rebuilding busted ext3 on
+> > mdadm-raid5 filesystems, watching btrfs do it all automatically is
+> > just...beautiful.
+> > 
+> > I think once the write hole and device bouncing mitigations are in place,
+> > I'll start looking at migrating -draid1/-mraid1 setups to -draid5/-mraid1,
+> > assuming the performance isn't too painful.
+-------------------------------------------------------------------------------------------------
+FreeMail powered by mail.de - MEHR SICHERHEIT, SERIOSITÄT UND KOMFORT

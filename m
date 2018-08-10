@@ -1,52 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from pepin.polanet.pl ([193.34.52.2]:45354 "EHLO pepin.polanet.pl"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727422AbeHJKCW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 10 Aug 2018 06:02:22 -0400
-Date: Fri, 10 Aug 2018 09:33:41 +0200
-From: Tomasz Pala <gotar@polanet.pl>
-To: Andrei Borzenkov <arvidjaar@gmail.com>
-Cc: Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
-Subject: Re: Report correct filesystem usage / limits on BTRFS subvolumes
- with quota
-Message-ID: <20180810073340.GB5473@polanet.pl>
-References: <0059606f-88bf-c919-450b-bf08e184b5a2@mailbox.org>
- <b10a3950-0b86-e4fb-3621-f4c5ad3d79e7@gmx.com>
- <20180809174811.GA27001@polanet.pl>
- <f66b8ff3-d7ec-31ad-e9ca-e09c9eb76474@gmail.com>
+Received: from mail-oi0-f46.google.com ([209.85.218.46]:37229 "EHLO
+        mail-oi0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727028AbeHJKI7 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 10 Aug 2018 06:08:59 -0400
+Received: by mail-oi0-f46.google.com with SMTP id j205-v6so14329821oib.4
+        for <linux-btrfs@vger.kernel.org>; Fri, 10 Aug 2018 00:40:19 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-2
-In-Reply-To: <f66b8ff3-d7ec-31ad-e9ca-e09c9eb76474@gmail.com>
+From: Dan Merillat <dan.merillat@gmail.com>
+Date: Fri, 10 Aug 2018 03:40:18 -0400
+Message-ID: <CAPL5yKfaoujn4gOcejJKwvXHhnuRgFLACKHxxy=bXQz0tE0YMA@mail.gmail.com>
+Subject: Mount stalls indefinitely after enabling quota groups.
+To: BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Aug 10, 2018 at 07:03:18 +0300, Andrei Borzenkov wrote:
+Kernel 4.17.9, 11tb BTRFS device (md-backed, not btrfs raid)
 
->> So - the limit set on any user
-> 
-> Does btrfs support per-user quota at all? I am aware only of per-subvolume quotas.
+I was testing something out and enabled quota groups and started getting
+2-5 minute long pauses where a btrfs-transaction thread spun at 100%.
 
-Well, this is a kind of deceptive word usage in "post-truth" times.
+Post-reboot the mount process spinds at 100% CPU, occasinally yielding
+to a btrfs-transaction thread at 100% CPU.  The switchover is marked
+by a burst of disk activity in btrace.
 
-In this case both "user" and "quota" are not valid...
-- by "user" I ment general word, not unix-user account; such user might
-  possess some container running full-blown guest OS,
-- by "quota" btrfs means - I guess, dataset-quotas?
+Btrace shows all disk activity is returning promptly - no hanging submits.
 
+Currently the mount is at 6+ hours.
 
-In fact: https://btrfs.wiki.kernel.org/index.php/Quota_support
-"Quota support in BTRFS is implemented at a subvolume level by the use of quota groups or qgroup"
-
-- what the hell is "quota group" and how it differs from qgroup? According to btrfs-quota(8):
-
-"The quota groups (qgroups) are managed by the subcommand btrfs qgroup(8)"
-
-- they are the same... just completely different from traditional "quotas".
-
-
-My suggestion would be to completely remove the standalone "quota" word
-from btrfs documentation - there is no "quota", just "subvolume quota"
-or "qgroup" supported.
-
--- 
-Tomasz Pala <gotar@pld-linux.org>
+Suggestions on how to go about debugging this?

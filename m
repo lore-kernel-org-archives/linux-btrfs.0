@@ -1,54 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ed1-f45.google.com ([209.85.208.45]:34628 "EHLO
-        mail-ed1-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727129AbeHKJ1T (ORCPT
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:37992 "EHLO
+        james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
+        by vger.kernel.org with ESMTP id S1727324AbeHKSAA (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 11 Aug 2018 05:27:19 -0400
-Received: by mail-ed1-f45.google.com with SMTP id h1-v6so5814806eds.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 10 Aug 2018 23:54:08 -0700 (PDT)
-Subject: Re: Report correct filesystem usage / limits on BTRFS subvolumes with
- quota
-To: Tomasz Pala <gotar@polanet.pl>, Qu Wenruo <quwenruo.btrfs@gmx.com>
+        Sat, 11 Aug 2018 14:00:00 -0400
+Date: Sat, 11 Aug 2018 11:25:27 -0400
+From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To: erenthetitan@mail.de
 Cc: linux-btrfs@vger.kernel.org
-References: <0059606f-88bf-c919-450b-bf08e184b5a2@mailbox.org>
- <b10a3950-0b86-e4fb-3621-f4c5ad3d79e7@gmx.com>
- <20180809174811.GA27001@polanet.pl>
- <ecd793f3-55b3-84d4-80cf-3382a580037f@gmx.com>
- <20180810071748.GA5473@polanet.pl>
- <33914565-224f-71b6-f319-7c66e3a69d4d@gmx.com>
- <20180810093317.GA558@polanet.pl>
-From: Andrei Borzenkov <arvidjaar@gmail.com>
-Message-ID: <143f2b3e-8b86-cf4a-0d1c-4f544af1eb2f@gmail.com>
-Date: Sat, 11 Aug 2018 09:54:05 +0300
+Subject: Re: List of known BTRFS Raid 5/6 Bugs?
+Message-ID: <20180811152527.GF26989@hungrycats.org>
+References: <20180811054927.GE26989@hungrycats.org>
+ <20180811062704.846CD801E8@smtp03.mail.de>
 MIME-Version: 1.0
-In-Reply-To: <20180810093317.GA558@polanet.pl>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: multipart/signed; micalg=pgp-sha1;
+        protocol="application/pgp-signature"; boundary="dFWYt1i2NyOo1oI9"
+In-Reply-To: <20180811062704.846CD801E8@smtp03.mail.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-10.08.2018 12:33, Tomasz Pala пишет:
-> 
->> For 4 disk with 1T free space each, if you're using RAID5 for data, then
->> you can write 3T data.
->> But if you're also using RAID10 for metadata, and you're using default
->> inline, we can use small files to fill the free space, resulting 2T
->> available space.
->>
->> So in this case how would you calculate the free space? 3T or 2T or
->> anything between them?
-> 
-> The answear is pretty simple: 3T. Rationale:
-> - this is the space I do can put in a single data stream,
-> - people are aware that there is metadata overhead with any object;
->   after all, metadata are also data,
-> - while filling the fs with small files the free space available would
->   self-adjust after every single file put, so after uploading 1T of such
->   files the df should report 1.5T free. There would be nothing weird(er
->   that now) that 1T of data has actually eaten 1.5T of storage.
-> 
-> No crystal ball calculations, just KISS; since one _can_ put 3T file
-> (non sparse, uncompressible, bulk written) on a filesystem, the free space is 3T.
-> 
 
-As far as I can tell, that is exactly what "df" reports now. "btrfs fi
-us" will tell you both max (reported by "df") and worst case min.
+--dFWYt1i2NyOo1oI9
+Content-Type: text/plain; charset=iso-8859-1
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
+
+On Sat, Aug 11, 2018 at 08:27:04AM +0200, erenthetitan@mail.de wrote:
+> I guess that covers most topics, two last questions:
+>=20
+> Will the write hole behave differently on Raid 6 compared to Raid 5 ?
+
+Not really.  It changes the probability distribution (you get an extra
+chance to recover using a parity block in some cases), but there are
+still cases where data gets lost that didn't need to be.
+
+> Is there any benefit of running Raid 5 Metadata compared to Raid 1 ?=20
+
+There may be benefits of raid5 metadata, but they are small compared to
+the risks.
+
+In some configurations it may not be possible to allocate the last
+gigabyte of space.  raid1 will allocate 1GB chunks from 2 disks at a
+time while raid5 will allocate 1GB chunks from N disks at a time, and if
+N is an odd number there could be one chunk left over in the array that
+is unusable.  Most users will find this irrelevant because a large disk
+array that is filled to the last GB will become quite slow due to long
+free space search and seek times--you really want to keep usage below 95%,
+maybe 98% at most, and that means the last GB will never be needed.
+
+Reading raid5 metadata could theoretically be faster than raid1, but that
+depends on a lot of variables, so you can't assume it as a rule of thumb.
+
+Raid6 metadata is more interesting because it's the only currently
+supported way to get 2-disk failure tolerance in btrfs.  Unfortunately
+that benefit is rather limited due to the write hole bug.
+
+There are patches floating around that implement multi-disk raid1 (i.e. 3
+or 4 mirror copies instead of just 2).  This would be much better for
+metadata than raid6--more flexible, more robust, and my guess is that
+it will be faster as well (no need for RMW updates or journal seeks).
+
+> -------------------------------------------------------------------------=
+------------------------
+> FreeMail powered by mail.de - MEHR SICHERHEIT, SERIOSIT=C4T UND KOMFORT
+>=20
+
+--dFWYt1i2NyOo1oI9
+Content-Type: application/pgp-signature; name="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iF0EABECAB0WIQSnOVjcfGcC/+em7H2B+YsaVrMbnAUCW27/5AAKCRCB+YsaVrMb
+nLG+AKCkIaixhJ3XMGU9pecQcYxBQ9JzGQCdH8Lyq7mBZyvVjfuby2mSM+jFzx8=
+=h6ZQ
+-----END PGP SIGNATURE-----
+
+--dFWYt1i2NyOo1oI9--

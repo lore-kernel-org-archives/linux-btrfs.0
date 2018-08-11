@@ -1,105 +1,147 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from shout01.mail.de ([62.201.172.24]:57708 "EHLO shout01.mail.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726857AbeHKEvF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 11 Aug 2018 00:51:05 -0400
-From: erenthetitan@mail.de
-To: ce3g8jdj@umail.furryterror.org, linux-btrfs@vger.kernel.org
-Subject: Re: List of known BTRFS Raid 5/6 Bugs?
-Date: Sat, 11 Aug 2018 04:18:35 +0200
-Content-Type: text/plain; charset=utf-8
-MIME-Version: 1.0
-Message-Id: <20180811021835.D223C8038C@smtp03.mail.de>
+Received: from [195.159.176.226] ([195.159.176.226]:45494 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1726656AbeHKGEb (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 11 Aug 2018 02:04:31 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-3@m.gmane.org>)
+        id 1foKar-0000s6-OV
+        for linux-btrfs@vger.kernel.org; Sat, 11 Aug 2018 05:29:33 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Report correct filesystem usage / limits on BTRFS subvolumes with
+ quota
+Date: Sat, 11 Aug 2018 03:29:27 +0000 (UTC)
+Message-ID: <pan$37ed4$1f39572a$7dd0a77a$b6954c8@cox.net>
+References: <0059606f-88bf-c919-450b-bf08e184b5a2@mailbox.org>
+        <b10a3950-0b86-e4fb-3621-f4c5ad3d79e7@gmx.com>
+        <20180809174811.GA27001@polanet.pl>
+        <ecd793f3-55b3-84d4-80cf-3382a580037f@gmx.com>
+        <CAJCQCtQS+yiSQ4Cu-F_Spi5_6fEw_FuGdXCafJLxBe1swacabQ@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Write hole:
+Chris Murphy posted on Fri, 10 Aug 2018 12:07:34 -0600 as excerpted:
 
+> But whether data is shared or exclusive seems potentially ephemeral, and
+> not something a sysadmin should even be able to anticipate let alone
+> individual users.
 
-> The data will be readable until one of the data blocks becomes
-> inaccessible (bad sector or failed disk). This is because it is only the
-> parity block that is corrupted (old data blocks are still not modified
-> due to btrfs CoW), and the parity block is only required when recovering
-> from a disk failure.
+Define "user(s)".
 
-I am unsure about your meaning. 
-Assuming you perform an unclean shutdown (eg. crash), and after restart perform a scrub, with no additional error (bad sector, bit-rot) before or after the crash:
-will you loose data? Will you be able to mount the filesystem like normal? Additionaly, will the crash create additional errors like bad sectors and or bit-rot aside from the parity-block corruption?
-Its actually part of my first mail, where the btrfs Raid5/6 page assumes no data damage while the spinics comment implies the opposite.
-The write hole does not seem as dangerous if you could simply scrub to repair damage (On smaller discs that is, where scrub doesnt take enough time for additional errors to occur)
+Arguably, in the context of btrfs tool usage, "user" /is/ the admin, the 
+one who cares that it's btrfs in the first place, who should have chosen 
+btrfs based on the best-case match for the use-case, and who continues to 
+maintain the system's btrfs filesystems using btrfs tools.
 
-> Put another way: if all disks are online then RAID5/6 behaves like a slow
-> RAID0, and RAID0 does not have the partial stripe update problem because
-> all of the data blocks in RAID0 are independent. It is only when a disk
-> fails in RAID5/6 that the parity block is combined with data blocks, so
-> it is only in this case that the write hole bug can result in lost data.
+Arguably, in this context "user" is /not/ the other users the admin is 
+caring for the system in behalf of, who don't care /what/ is under the 
+covers so long as it works, to which should be made available more 
+appropriate-to-their-needs tools should they be found necessary or useful.
 
-So data will not be lost if no drive has failed?
+> Going back to the example, I'd expect to give the user a 2GiB quota,
+> with 1GiB of initially provisioned data via snapshot, so right off the
+> bat they are at 50% usage of their quota. If they were to modify every
+> single provisioned file, they'd in effect go from 100% shared data to
+> 100% exclusive data, but their quota usage would still be 50%. That's
+> completely sane and easily understandable by a regular user. The idea
+> that they'd start modifying shared files, and their quota usage climbs
+> is weird to me. The state of files being shared or exclusive is not user
+> domain terminology anyway.
 
-> > > If the filesystem is -draid5 -mraid1 then the metadata is not vulnerable
-> > > to the write hole, but data is. In this configuration you can determine
-> > > with high confidence which files you need to restore from backup, and
-> > > the filesystem will remain writable to replace the restored data, because
-> > > raid1 does not have the write hole bug.
+It's user-domain terminology if the "user" is the admin, who will care 
+about shared/exclusive usage in the context of how it affects the usage 
+of available storage resources.
 
-In regards to my earlier questions, what would change if i do -draid5 -mraid1?
+"Regular users" as you use the term, that is the non-admins who just need 
+to know how close they are to running out of their allotted storage 
+resources, shouldn't really need to care about btrfs tool usage in the 
+first place, and btrfs commands in general, including btrfs quota related 
+commands, really aren't targeted at them, and aren't designed to report 
+the type of information they are likely to find useful.  Other tools will 
+be more appropriate.
 
-
-Lost Writes:
-
-
-> Hotplugging causes an effect (lost writes) which can behave similarly
-> to the write hole bug in some instances. The similarity ends there.
-
-Are we speaking about the same problem that is causing transid mismatch? 
-
-> They are really two distinct categories of problem. Temporary connection
-> loss can do bad things to all RAID profiles on btrfs (not just RAID5/6)
-> and the btrfs requirements for handling connection loss and write holes
-> are very different.
-
-What kind of bad things? Will scrub (1/10, 5/6) detect and repair it?
-
-> > > Hot-unplugging a device can cause many lost write events at once, and
-> > > each lost write event is very bad.
-
-> Transid mismatch is btrfs detecting data
-> that was previously silently corrupted by some component outside of btrfs.
+>> The most common case is, you do a snapshot, user would only care how
+>> much new space can be written into the subvolume, other than the total
+>> subvolume size.
 > 
-> btrfs can't prevent disks from silently corrupting data. It can only
-> try to detect and repair the damage after the damage has occurred.
+> I think that's expecting a lot of users.
 
-Aside from the chance that all copies of data are corrupted, is there any way scrubbing could fail?
+Not really.  Remember, "users" in this context are admins, those to whom 
+the duty of maintaining their btrfs falls, and the ones at whom btrfs * 
+commands are normally targeted, since this is the btrfs tool designed to 
+help them with that job.
 
-> Normally RAID1/5/6/10 or DUP profiles are used for btrfs metadata, so any
-> transid mismatches can be recovered by reading up-to-date data from the
-> other mirror copy of the metadata, or by reconstructing the data with
-> parity blocks in the RAID 5/6 case. It is only after this recovery
-> mechanism fails (i.e. too many disks have a failure or corruption at
-> the same time on the same sectors) that the filesystem is ended.
+And said "users" will (presumably) be concerned about shared/exclusive if 
+they're using btrfs quotas because they are trying to well manage the 
+filesystem space utilization per subvolume.
 
-Does this mean that transid mismatch is harmless unless both copys are hit at once (And in case of Raid 6 all three)?
+(FWIW, "presumably" is thrown in there because here I don't use 
+subvolumes /or/ sub-filesystem-level quotas as personally, I prefer to 
+manage that at the filesystem level, with multiple independent 
+filesystems and the size of individual filesystems enforcing limits on 
+how much the stuff stored in them can grow.)
 
+> I also wonder if it expects a lot from services like samba and NFS who
+> have to communicate all of this in some sane way to remote clients? My
+> expectation is that a remote client shows Free Space on a quota'd system
+> to be based on the unused amount of the quota. I also expect if I delete
+> a 1GiB file, that my quota consumption goes down. But you're saying it
+> would be unchanged if I delete a 1GiB shared file, and would only go
+> down if I delete a 1GiB exclusive file. Do samba and NFS know about
+> shared and exclusive files? If samba and NFS don't understand this, then
+> how is a user supposed to understand it?
 
-Old hardware:
+There's a reason btrfs quotas don't work with standard VFS level quotas.  
+They're managing two different things, and I'd assume the btrfs quota 
+information isn't typically what samba/NFS information exporting is 
+designed to deal with in the first place.  Just because a screwdriver 
+/can/ be used as a hammer doesn't make it the appropriate tool for the 
+job.
 
+> And now I'm sufficiently confused I'm ready for the weekend!
 
-> > > It's fun and/or scary to put known good and bad hardware in the same
-> > > RAID1 array and watch btrfs autocorrecting the bad data after every
-> > > other power failure; however, the bad hardware is clearly not sufficient
-> > > to implement any sort of reliable data persistence, and arrays with bad
-> > > hardware in them will eventually fail.
+LOL!
 
-I am having a hard time wrapping my head around this statement.
-If Btrfs can repair corrupted data and Raid  6 allows two disc failures at once without data loss, is using old discs even with high average error count not still pretty much safe?
-You would simply have to repeat the scrubbing process more often to make sure that not enough data is corrupted to break redundancy.
+(I had today/Friday off, arguably why I'm even taking the time to reply, 
+but my second day off this "week" is next Tuesday, the last day of the 
+schedule-week.  I had actually forgotten that this was the last day of 
+the work-week for most, until I saw that, but then, LOL!)
 
-> > > I have one test case where I write millions of errors into a raid5/6 and
-> > > the filesystem recovers every single one transparently while verifying
-> > > SHA1 hashes of test data. After years of rebuilding busted ext3 on
-> > > mdadm-raid5 filesystems, watching btrfs do it all automatically is
-> > > just...beautiful.
+> And we can't have quotas getting busted all of a sudden because the
+> sysadmin decides to do -dconvert -mconvert raid1, without requiring the
+> sysadmin to double everyone's quota before performing the operation.
 
-Once again, if Btrfs is THIS good at repairing data, then is old hardware, hotplugging and maybe even (depending on whether i understood your point) write hole really dangerous? Are there bugs that could destroy the data or filesystem whitout corrupting all copies of data (Or all copies at once)? Assuming Raid 6, corrupted data would not break redundancy and repeated scrubbing would fix any upcoming issue.
--------------------------------------------------------------------------------------------------
-FreeMail powered by mail.de - MEHR SICHERHEIT, SERIOSITÄT UND KOMFORT
+Not every_one's_, every-subvolume's.  "Everyone's" quotas shouldn't be 
+affected, because that's not what btrfs quotas manage.  There are other 
+(non-btrfs) tools for that.
+
+>>> In short: values representing quotas are user-oriented ("the numbers
+>>> one bought"), not storage-oriented ("the numbers they actually
+>>> occupy").
+
+Btrfs quotas are storage-oriented, and if you're using them, at least 
+directly, for user-oriented, you're using the proverbial screwdriver as a 
+proverbial hammer.
+
+> What is VFS disk quotas and does Btrfs use that at all? If not, why not?
+> It seems to me there really should be a high level basic per directory
+> quota implementation at the VFS layer, with a single kernel interface as
+> well as a single user space interface, regardless of the file system.
+> Additional file system specific quota features can of course have their
+> own tools, but all of this re-invention of the wheel for basic directory
+> quotas is a mystery to me.
+
+As mentioned above and by others, btrfs quotas don't use vfs quotas (or 
+the reverse, really, it'd be vfs quotas using information exposed by 
+btrfs quotas... if it worked that way), because there's an API mis-match 
+because their intended usage and the information they convey and control 
+is different, and (AFAIK) was never intended or claimed to be the same.
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman

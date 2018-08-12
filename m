@@ -1,9 +1,10 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.15]:56679 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.17.21]:43973 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727549AbeHLDso (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 11 Aug 2018 23:48:44 -0400
+        id S1725760AbeHLENA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 12 Aug 2018 00:13:00 -0400
 Subject: Re: Mount stalls indefinitely after enabling quota groups.
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 To: Dan Merillat <dan.merillat@gmail.com>
 Cc: BTRFS <linux-btrfs@vger.kernel.org>
 References: <CAPL5yKfaoujn4gOcejJKwvXHhnuRgFLACKHxxy=bXQz0tE0YMA@mail.gmail.com>
@@ -17,26 +18,24 @@ References: <CAPL5yKfaoujn4gOcejJKwvXHhnuRgFLACKHxxy=bXQz0tE0YMA@mail.gmail.com>
  <CAPL5yKe4if48zANCpSXi+G_q6cHevTEu+LJ2whqc1dQYapq1bA@mail.gmail.com>
  <CAPL5yKcWZ9qOt7ymw2tCM4gqZ3wiwgRLer+r1x=+kYgDJnqjcQ@mail.gmail.com>
  <0ad384b6-58ef-f2e9-76e3-f706cd38bd42@gmx.com>
- <CAPL5yKcW2T4-pq3v-XMM0LU999pVhVkXbh4H0d-Gx85pjgakiQ@mail.gmail.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <f062cff5-ebbc-0338-568a-ac2971a977a8@gmx.com>
-Date: Sun, 12 Aug 2018 09:12:33 +0800
+Message-ID: <250c5cd0-03fe-f5c6-93d6-75c60431f673@gmx.com>
+Date: Sun, 12 Aug 2018 09:36:45 +0800
 MIME-Version: 1.0
-In-Reply-To: <CAPL5yKcW2T4-pq3v-XMM0LU999pVhVkXbh4H0d-Gx85pjgakiQ@mail.gmail.com>
+In-Reply-To: <0ad384b6-58ef-f2e9-76e3-f706cd38bd42@gmx.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="nQ0ytaB4rhD69oGVs0eK3gssis4w1tW0d"
+ boundary="zP6piQ4qBjFyu7vPrrIQLFmKLRmDg2QdR"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---nQ0ytaB4rhD69oGVs0eK3gssis4w1tW0d
-Content-Type: multipart/mixed; boundary="sJmUong30sRFlG8qlEG9zE0PxUCtHE7Hn";
+--zP6piQ4qBjFyu7vPrrIQLFmKLRmDg2QdR
+Content-Type: multipart/mixed; boundary="eMchoakxwzYgDMnRdMLQwJ0u9QtngxZPG";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 To: Dan Merillat <dan.merillat@gmail.com>
 Cc: BTRFS <linux-btrfs@vger.kernel.org>
-Message-ID: <f062cff5-ebbc-0338-568a-ac2971a977a8@gmx.com>
+Message-ID: <250c5cd0-03fe-f5c6-93d6-75c60431f673@gmx.com>
 Subject: Re: Mount stalls indefinitely after enabling quota groups.
 References: <CAPL5yKfaoujn4gOcejJKwvXHhnuRgFLACKHxxy=bXQz0tE0YMA@mail.gmail.com>
  <06f0c899-bb33-54d5-8a87-20f138642f70@gmx.com>
@@ -49,168 +48,104 @@ References: <CAPL5yKfaoujn4gOcejJKwvXHhnuRgFLACKHxxy=bXQz0tE0YMA@mail.gmail.com>
  <CAPL5yKe4if48zANCpSXi+G_q6cHevTEu+LJ2whqc1dQYapq1bA@mail.gmail.com>
  <CAPL5yKcWZ9qOt7ymw2tCM4gqZ3wiwgRLer+r1x=+kYgDJnqjcQ@mail.gmail.com>
  <0ad384b6-58ef-f2e9-76e3-f706cd38bd42@gmx.com>
- <CAPL5yKcW2T4-pq3v-XMM0LU999pVhVkXbh4H0d-Gx85pjgakiQ@mail.gmail.com>
-In-Reply-To: <CAPL5yKcW2T4-pq3v-XMM0LU999pVhVkXbh4H0d-Gx85pjgakiQ@mail.gmail.com>
+In-Reply-To: <0ad384b6-58ef-f2e9-76e3-f706cd38bd42@gmx.com>
 
---sJmUong30sRFlG8qlEG9zE0PxUCtHE7Hn
+--eMchoakxwzYgDMnRdMLQwJ0u9QtngxZPG
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
 
 
-On 2018/8/12 =E4=B8=8A=E5=8D=888:59, Dan Merillat wrote:
-> On Sat, Aug 11, 2018 at 8:30 PM Qu Wenruo <quwenruo.btrfs@gmx.com> wrot=
-e:
+On 2018/8/12 =E4=B8=8A=E5=8D=888:30, Qu Wenruo wrote:
+>=20
+>=20
+> On 2018/8/12 =E4=B8=8A=E5=8D=885:10, Dan Merillat wrote:
+>> 19 hours later, still going extremely slowly and taking longer and
+>> longer for progress made.  Main symptom is the mount process is
+>> spinning at 100% CPU, interspersed with btrfs-transaction spinning at
+>> 100% CPU.
+>> So far it's racked up 14h45m of CPU time on mount and an additional
+>> 3h40m on btrfs-transaction.
 >>
->> It looks pretty like qgroup, but too many noise.
->> The pin point trace event would btrfs_find_all_roots().
->=20
-> I had this half-written when you replied.
->=20
-> Agreed: looks like bulk of time spent resides in qgroups.  Spent some
-> time with sysrq-l and ftrace:
->=20
-> ? __rcu_read_unlock+0x5/0x50
-> ? return_to_handler+0x15/0x36
-> __rcu_read_unlock+0x5/0x50
-> find_extent_buffer+0x47/0x90                    extent_io.c:4888
-> read_block_for_search.isra.12+0xc8/0x350        ctree.c:2399
-> btrfs_search_slot+0x3e7/0x9c0                   ctree.c:2837
-> btrfs_next_old_leaf+0x1dc/0x410                 ctree.c:5702
-> btrfs_next_old_item                             ctree.h:2952
-> add_all_parents                                 backref.c:487
-> resolve_indirect_refs+0x3f7/0x7e0               backref.c:575
-> find_parent_nodes+0x42d/0x1290                  backref.c:1236
-> ? find_parent_nodes+0x5/0x1290                  backref.c:1114
-> btrfs_find_all_roots_safe+0x98/0x100            backref.c:1414
-> btrfs_find_all_roots+0x52/0x70                  backref.c:1442
-> btrfs_qgroup_trace_extent_post+0x27/0x60        qgroup.c:1503
-> btrfs_qgroup_trace_leaf_items+0x104/0x130       qgroup.c:1589
-> btrfs_qgroup_trace_subtree+0x26a/0x3a0          qgroup.c:1750
-> do_walk_down+0x33c/0x5a0                        extent-tree.c:8883
-> walk_down_tree+0xa8/0xd0                        extent-tree.c:9041
-> btrfs_drop_snapshot+0x370/0x8b0                 extent-tree.c:9203
-> merge_reloc_roots+0xcf/0x220
-> btrfs_recover_relocation+0x26d/0x400
-> ? btrfs_cleanup_fs_roots+0x16a/0x180
-> btrfs_remount+0x32e/0x510
-> do_remount_sb+0x67/0x1e0
-> do_mount+0x712/0xc90
->=20
-> The mount is looping in btrfs_qgroup_trace_subtree, as evidenced by
-> the following ftrace filter:
-> fileserver:/sys/kernel/tracing# cat set_ftrace_filter
-> btrfs_qgroup_trace_extent
-> btrfs_qgroup_trace_subtree
+>> The current drop key changes every 10-15 minutes when I check it via
+>> inspect-internal, so some progress is slowly being made.
+>>
+>> I built the kernel with ftrace to see what's going on internally, this=
 
-Yep, it's quota causing the hang.
-
+>> is the pattern I'm seeing:
+>>
+> [snip]
 >=20
-[snip]
+> It looks pretty like qgroup, but too many noise.
+> The pin point trace event would btrfs_find_all_roots().
 >=20
-> So 10-13 minutes per cycle.
->=20
->> 11T, with highly deduped usage is really the worst scenario case for q=
-group.
->> Qgroup is not really good at handle hight reflinked files, nor balance=
+>>
+>> Repeats indefinitely.  btrace shows basically zero activity on the
+>> array while it spins, with the occasional burst when mount &
+>> btrfs-transaction swap off.
+>>
+>> To recap the chain of events leading up to this:
+>> 11TB Array got completely full and started fragmenting badly.
+>> Ran bedup and it found 600gb of duplicate files that it offline-shared=
 =2E
->> When they combines, it goes worse.
+>> Reboot for unrelated reasons
 >=20
-> I'm not really understanding the use-case of qgroup if it melts down
-> on large systems with a shared base + individual changes.
+> 11T, with highly deduped usage is really the worst scenario case for qg=
+roup.
+> Qgroup is not really good at handle hight reflinked files, nor balance.=
 
-The problem is, for balance btrfs is doing a trick by switch tree reloc
-tree with real fs tree.
-However, tree reloc tree doesn't account to quota, but for real fs tree
-it contributes to quota.
+> When they combines, it goes worse.
+>=20
+>> Enabled quota on all subvolumes to try to track where the new data is
+>> coming from
+>> Tried to balance metadata due to transaction CPU spikes
+>> Force-rebooted after the array was completely lagged out.
+>>
+>> Now attempting to mount it RW.  Readonly works, but RW has taken well
+>> over 24 hours at this point.
+>=20
+> I'll add a new rescue subcommand, 'btrfs rescue disable-quota' for you
+> to disable quota offline.
 
-And since above owner changes, btrfs needs to do a full subtree rescan.
-For small subvolume it's not a problem, but for large subvolume, quota
-needs to rescan thousands tree blocks, and due to highly deduped files,
-each tree blocks needs extra iterations for each deduped files.
+Patch set (from my work mailbox), titled "[PATCH] btrfs-progs: rescue:
+Add ability to disable quota offline".
+Can also be fetched from github:
+https://github.com/adam900710/btrfs-progs/tree/quota_disable
 
-Both factors contribute to the slow mount.
+Usage is:
+# btrfs rescue disable-quota <device>
 
-There are several workaround patches in the mail list, one is to make
-the balance background for mount, so it won't hang mount.
-But it still makes transaction pretty slow (write will still be blocked
-for a long time)
-
-There is also plan to skip subtree rescan completely, but it needs extra
-review to ensure such tree block switch won't change quota number.
+Tested locally, it would just toggle the ON/OFF flag for quota, so the
+modification should be minimal.
 
 Thanks,
 Qu
 
 >=20
->> I'll add a new rescue subcommand, 'btrfs rescue disable-quota' for you=
-
->> to disable quota offline.
+> Thanks,
+> Qu
 >=20
-> Ok.  I was looking at just doing this to speed things up:
->=20
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index 51b5e2da708c..c5bf937b79f0 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -8877,7 +8877,7 @@ static noinline int do_walk_down(struct
-> btrfs_trans_handle *trans,
->                         parent =3D 0;
->                 }
->=20
-> -               if (need_account) {
-> +               if (0) {
->                         ret =3D btrfs_qgroup_trace_subtree(trans, root,=
- next,
->                                                          generation, le=
-vel - 1);
->                         if (ret) {
->=20
->=20
->                         btrfs_err_rl(fs_info,
->                           "Error %d accounting shared subtree. Quota
-> is out of sync, rescan required.",
->                           ret);
->              }
->=20
->=20
-> If I follow, this will leave me with inconsistent qgroups and a full
-> rescan is required.  That seems an acceptable tradeoff, since it seems
-> like the best plan going forward is to nuke the qgroups anyway.
->=20
-> There's still the btrfs-transaction spin, but I'm hoping that's
-> related to qgroups as well.
->=20
->>
->> Thanks,
->> Qu
->=20
-> Appreciate it.  I was going to go with my hackjob patch to avoid any
-> untested rewriting - there's already an error path for "something went
-> wrong updating qgroups during walk_tree" so it seemed safest to take
-> advantage of it.  I'll patch either the kernel or the btrfs programs,
-> whichever you think is best.
 >=20
 
 
---sJmUong30sRFlG8qlEG9zE0PxUCtHE7Hn--
+--eMchoakxwzYgDMnRdMLQwJ0u9QtngxZPG--
 
---nQ0ytaB4rhD69oGVs0eK3gssis4w1tW0d
+--zP6piQ4qBjFyu7vPrrIQLFmKLRmDg2QdR
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAltviYEACgkQwj2R86El
-/qgZBggAnRULDnoaWKWa2nFeoPff9W0Kma1ACyhQVkCNq4/gYxbn2jOp3vkv3uGf
-Q51Iivt4jlVR+rr/OL3VSzomik+YQwa+vdY+4o620+evUPsTJpK5gE3MWt+hhT86
-mOherLUJYoTWN5Abwsn/f1lX/sbpilThIoToXczq4loliv3U0XPPmIEP3Zh423zI
-tYJFk0iF2vYCguonWT/3BzP0KVhoweK/QiksBV0a4QvQ12SXKvUiCPshJIkuw8Zs
-1nq8a6JS3/owZmmtZlGKWX/N7geAv5g2HmaxJjhLBxiEq0bMBH3DLhocbiIrh4pn
-6RJS828bBAyanhxcYzMbJvMKHN8eAw==
-=+yDy
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAltvjy0ACgkQwj2R86El
+/qjQyAgAg1CzMAjrShxUeminrR37An2jrYnP1hpQC9hj26JtpfBx7R8TU+Tm/Z5f
+phvkQ5TFI7Q4LJsZf1zo0Rm7ae8mUpGZISXVYO32oDOrVB38myHpBONdpViE3FEW
+BHQrrP6U7Bnn91hlTXhR/b84AZB4TNckXUVzhZegEwEqkSLij/U3VzBOHK9rfIcl
+ZWeJTmBg1STJo1GmROOnQIxC+Z3DGKpW6eNmzVOIX2oZLZ/aFbW10A4HgNiMHKxx
+j2ZuSPeCCXkDxMR7gauKezr2NFZjslO3zrupRomgQB81fAX4uvAVs0B/6hldYtV7
+7klS0fo+u6e64u5FeTLMyU/s0yJc1w==
+=L15k
 -----END PGP SIGNATURE-----
 
---nQ0ytaB4rhD69oGVs0eK3gssis4w1tW0d--
+--zP6piQ4qBjFyu7vPrrIQLFmKLRmDg2QdR--

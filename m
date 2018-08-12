@@ -1,151 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.21]:43973 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725760AbeHLENA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 12 Aug 2018 00:13:00 -0400
-Subject: Re: Mount stalls indefinitely after enabling quota groups.
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Dan Merillat <dan.merillat@gmail.com>
-Cc: BTRFS <linux-btrfs@vger.kernel.org>
-References: <CAPL5yKfaoujn4gOcejJKwvXHhnuRgFLACKHxxy=bXQz0tE0YMA@mail.gmail.com>
- <06f0c899-bb33-54d5-8a87-20f138642f70@gmx.com>
- <CAPL5yKdhTAZjG00xwd=2Z7PsNO7ixBY9gTYMS6c2-7DSBeMapA@mail.gmail.com>
- <6389f50e-3ce5-1f3d-0c2c-d169cf431b57@gmx.com>
- <CAPL5yKfPvmJKtgLTtpAAh_DJ91_M-_mUeX_upQ0-rgO4XwJZDA@mail.gmail.com>
- <e3b0929f-9415-5816-2a68-0e46f11454ba@gmx.com>
- <CAPL5yKds7f2NeGqBx_+LP62FU-EOge74DeW=VJGocDbiZHoztw@mail.gmail.com>
- <6c29c33b-68f4-91d1-493e-5751000dec24@gmx.com>
- <CAPL5yKe4if48zANCpSXi+G_q6cHevTEu+LJ2whqc1dQYapq1bA@mail.gmail.com>
- <CAPL5yKcWZ9qOt7ymw2tCM4gqZ3wiwgRLer+r1x=+kYgDJnqjcQ@mail.gmail.com>
- <0ad384b6-58ef-f2e9-76e3-f706cd38bd42@gmx.com>
-Message-ID: <250c5cd0-03fe-f5c6-93d6-75c60431f673@gmx.com>
-Date: Sun, 12 Aug 2018 09:36:45 +0800
+Received: from mail-lj1-f170.google.com ([209.85.208.170]:35094 "EHLO
+        mail-lj1-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725844AbeHLFxM (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 12 Aug 2018 01:53:12 -0400
+Received: by mail-lj1-f170.google.com with SMTP id p10-v6so10048047ljg.2
+        for <linux-btrfs@vger.kernel.org>; Sat, 11 Aug 2018 20:16:48 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <0ad384b6-58ef-f2e9-76e3-f706cd38bd42@gmx.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="zP6piQ4qBjFyu7vPrrIQLFmKLRmDg2QdR"
+In-Reply-To: <pan$37ed4$1f39572a$7dd0a77a$b6954c8@cox.net>
+References: <0059606f-88bf-c919-450b-bf08e184b5a2@mailbox.org>
+ <b10a3950-0b86-e4fb-3621-f4c5ad3d79e7@gmx.com> <20180809174811.GA27001@polanet.pl>
+ <ecd793f3-55b3-84d4-80cf-3382a580037f@gmx.com> <CAJCQCtQS+yiSQ4Cu-F_Spi5_6fEw_FuGdXCafJLxBe1swacabQ@mail.gmail.com>
+ <pan$37ed4$1f39572a$7dd0a77a$b6954c8@cox.net>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Sat, 11 Aug 2018 21:16:46 -0600
+Message-ID: <CAJCQCtR9mYzFSHheyjK6sSf-KKeXtibArw9UcpH9Bh-ptXTVcg@mail.gmail.com>
+Subject: Re: Report correct filesystem usage / limits on BTRFS subvolumes with quota
+To: Duncan <1i5t5.duncan@cox.net>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---zP6piQ4qBjFyu7vPrrIQLFmKLRmDg2QdR
-Content-Type: multipart/mixed; boundary="eMchoakxwzYgDMnRdMLQwJ0u9QtngxZPG";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Dan Merillat <dan.merillat@gmail.com>
-Cc: BTRFS <linux-btrfs@vger.kernel.org>
-Message-ID: <250c5cd0-03fe-f5c6-93d6-75c60431f673@gmx.com>
-Subject: Re: Mount stalls indefinitely after enabling quota groups.
-References: <CAPL5yKfaoujn4gOcejJKwvXHhnuRgFLACKHxxy=bXQz0tE0YMA@mail.gmail.com>
- <06f0c899-bb33-54d5-8a87-20f138642f70@gmx.com>
- <CAPL5yKdhTAZjG00xwd=2Z7PsNO7ixBY9gTYMS6c2-7DSBeMapA@mail.gmail.com>
- <6389f50e-3ce5-1f3d-0c2c-d169cf431b57@gmx.com>
- <CAPL5yKfPvmJKtgLTtpAAh_DJ91_M-_mUeX_upQ0-rgO4XwJZDA@mail.gmail.com>
- <e3b0929f-9415-5816-2a68-0e46f11454ba@gmx.com>
- <CAPL5yKds7f2NeGqBx_+LP62FU-EOge74DeW=VJGocDbiZHoztw@mail.gmail.com>
- <6c29c33b-68f4-91d1-493e-5751000dec24@gmx.com>
- <CAPL5yKe4if48zANCpSXi+G_q6cHevTEu+LJ2whqc1dQYapq1bA@mail.gmail.com>
- <CAPL5yKcWZ9qOt7ymw2tCM4gqZ3wiwgRLer+r1x=+kYgDJnqjcQ@mail.gmail.com>
- <0ad384b6-58ef-f2e9-76e3-f706cd38bd42@gmx.com>
-In-Reply-To: <0ad384b6-58ef-f2e9-76e3-f706cd38bd42@gmx.com>
+On Fri, Aug 10, 2018 at 9:29 PM, Duncan <1i5t5.duncan@cox.net> wrote:
+> Chris Murphy posted on Fri, 10 Aug 2018 12:07:34 -0600 as excerpted:
+>
+>> But whether data is shared or exclusive seems potentially ephemeral, and
+>> not something a sysadmin should even be able to anticipate let alone
+>> individual users.
+>
+> Define "user(s)".
 
---eMchoakxwzYgDMnRdMLQwJ0u9QtngxZPG
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+The person who is saving their document on a network share, and
+they've never heard of Btrfs.
 
 
+> Arguably, in the context of btrfs tool usage, "user" /is/ the admin,
 
-On 2018/8/12 =E4=B8=8A=E5=8D=888:30, Qu Wenruo wrote:
->=20
->=20
-> On 2018/8/12 =E4=B8=8A=E5=8D=885:10, Dan Merillat wrote:
->> 19 hours later, still going extremely slowly and taking longer and
->> longer for progress made.  Main symptom is the mount process is
->> spinning at 100% CPU, interspersed with btrfs-transaction spinning at
->> 100% CPU.
->> So far it's racked up 14h45m of CPU time on mount and an additional
->> 3h40m on btrfs-transaction.
->>
->> The current drop key changes every 10-15 minutes when I check it via
->> inspect-internal, so some progress is slowly being made.
->>
->> I built the kernel with ftrace to see what's going on internally, this=
+I'm not talking about btrfs tools. I'm talking about rational,
+predictable behavior of a shared folder.
 
->> is the pattern I'm seeing:
->>
-> [snip]
->=20
-> It looks pretty like qgroup, but too many noise.
-> The pin point trace event would btrfs_find_all_roots().
->=20
->>
->> Repeats indefinitely.  btrace shows basically zero activity on the
->> array while it spins, with the occasional burst when mount &
->> btrfs-transaction swap off.
->>
->> To recap the chain of events leading up to this:
->> 11TB Array got completely full and started fragmenting badly.
->> Ran bedup and it found 600gb of duplicate files that it offline-shared=
-=2E
->> Reboot for unrelated reasons
->=20
-> 11T, with highly deduped usage is really the worst scenario case for qg=
-roup.
-> Qgroup is not really good at handle hight reflinked files, nor balance.=
+If I try to drop a 1GiB file into my share and I'm denied, not enough
+free space, and behind the scenes it's because of a quota limit, I
+expect I can delete *any* file(s) amounting to create 1GiB free space
+and then I'll be able to drop that file successfully without error.
 
-> When they combines, it goes worse.
->=20
->> Enabled quota on all subvolumes to try to track where the new data is
->> coming from
->> Tried to balance metadata due to transaction CPU spikes
->> Force-rebooted after the array was completely lagged out.
->>
->> Now attempting to mount it RW.  Readonly works, but RW has taken well
->> over 24 hours at this point.
->=20
-> I'll add a new rescue subcommand, 'btrfs rescue disable-quota' for you
-> to disable quota offline.
-
-Patch set (from my work mailbox), titled "[PATCH] btrfs-progs: rescue:
-Add ability to disable quota offline".
-Can also be fetched from github:
-https://github.com/adam900710/btrfs-progs/tree/quota_disable
-
-Usage is:
-# btrfs rescue disable-quota <device>
-
-Tested locally, it would just toggle the ON/OFF flag for quota, so the
-modification should be minimal.
-
-Thanks,
-Qu
-
->=20
-> Thanks,
-> Qu
->=20
->=20
+But if I'm unwittingly deleting shared files, my quota usage won't go
+down, and I still can't save my file. So now I somehow need a secret
+incantation to discover only my exclusive files and delete enough of
+them in order to save this 1GiB file. It's weird, it's unexpected, I
+think it's a use case failure. Maybe Btrfs quotas isn't meant to work
+with samba or NFS shares. *shrug*
 
 
---eMchoakxwzYgDMnRdMLQwJ0u9QtngxZPG--
 
---zP6piQ4qBjFyu7vPrrIQLFmKLRmDg2QdR
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
+>
+> "Regular users" as you use the term, that is the non-admins who just need
+> to know how close they are to running out of their allotted storage
+> resources, shouldn't really need to care about btrfs tool usage in the
+> first place, and btrfs commands in general, including btrfs quota related
+> commands, really aren't targeted at them, and aren't designed to report
+> the type of information they are likely to find useful.  Other tools will
+> be more appropriate.
 
------BEGIN PGP SIGNATURE-----
+I'm not talking about any btrfs commands or even the term quota for
+regular users. I'm talking about saving a file, being denied, and how
+does the user figure out how to free up space?
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAltvjy0ACgkQwj2R86El
-/qjQyAgAg1CzMAjrShxUeminrR37An2jrYnP1hpQC9hj26JtpfBx7R8TU+Tm/Z5f
-phvkQ5TFI7Q4LJsZf1zo0Rm7ae8mUpGZISXVYO32oDOrVB38myHpBONdpViE3FEW
-BHQrrP6U7Bnn91hlTXhR/b84AZB4TNckXUVzhZegEwEqkSLij/U3VzBOHK9rfIcl
-ZWeJTmBg1STJo1GmROOnQIxC+Z3DGKpW6eNmzVOIX2oZLZ/aFbW10A4HgNiMHKxx
-j2ZuSPeCCXkDxMR7gauKezr2NFZjslO3zrupRomgQB81fAX4uvAVs0B/6hldYtV7
-7klS0fo+u6e64u5FeTLMyU/s0yJc1w==
-=L15k
------END PGP SIGNATURE-----
+Anyway, it's a hypothetical scenario. While I have Samba running on a
+Btrfs volume with various shares as subvolumes, I don't have quotas
+enabled.
 
---zP6piQ4qBjFyu7vPrrIQLFmKLRmDg2QdR--
+
+
+-- 
+Chris Murphy

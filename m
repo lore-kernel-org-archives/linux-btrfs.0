@@ -1,49 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ed1-f42.google.com ([209.85.208.42]:34849 "EHLO
-        mail-ed1-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727773AbeHLUSb (ORCPT
+Received: from aquinas.techsquare.com ([75.125.237.226]:49368 "EHLO
+        techsquare.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1727851AbeHLWhk (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 12 Aug 2018 16:18:31 -0400
-Received: by mail-ed1-f42.google.com with SMTP id e6-v6so7140176edr.2
-        for <linux-btrfs@vger.kernel.org>; Sun, 12 Aug 2018 10:39:46 -0700 (PDT)
-Subject: Re: Report correct filesystem usage / limits on BTRFS subvolumes with
- quota
-From: Andrei Borzenkov <arvidjaar@gmail.com>
-To: Chris Murphy <lists@colorremedies.com>, Duncan <1i5t5.duncan@cox.net>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <0059606f-88bf-c919-450b-bf08e184b5a2@mailbox.org>
- <b10a3950-0b86-e4fb-3621-f4c5ad3d79e7@gmx.com>
- <20180809174811.GA27001@polanet.pl>
- <ecd793f3-55b3-84d4-80cf-3382a580037f@gmx.com>
- <CAJCQCtQS+yiSQ4Cu-F_Spi5_6fEw_FuGdXCafJLxBe1swacabQ@mail.gmail.com>
- <pan$37ed4$1f39572a$7dd0a77a$b6954c8@cox.net>
- <CAJCQCtR9mYzFSHheyjK6sSf-KKeXtibArw9UcpH9Bh-ptXTVcg@mail.gmail.com>
- <5bcd7922-9820-ac9d-5dc2-77a8a4618f91@gmail.com>
-Message-ID: <746f748b-3d81-a76f-e15b-5c0112ee4f50@gmail.com>
-Date: Sun, 12 Aug 2018 20:39:43 +0300
+        Sun, 12 Aug 2018 18:37:40 -0400
 MIME-Version: 1.0
-In-Reply-To: <5bcd7922-9820-ac9d-5dc2-77a8a4618f91@gmail.com>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
+Message-ID: <23408.34902.778845.675960@techsquare.com>
+Date: Sun, 12 Aug 2018 15:19:50 -0400
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: trouble mounting btrfs filesystem....
+From: "Scott E. Blomquist" <sb@techsquare.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-12.08.2018 10:04, Andrei Borzenkov пишет:
-> 
-> On ZFS snapshots are contained in dataset and you limit total dataset
-> space consumption including all snapshots. Thus end effect is the same -
-> deleting data that is itself captured in snapshot does not make a single
-> byte available. ZFS allows you to additionally restrict active file
-> system size ("referenced" quota in ZFS) - this more closely matches your
-> expectation - deleting file in active file system decreases its
-> "referenced" size thus allowing user to write more data (as long as user
-> does not exceed total dataset quota). This is different from btrfs
-> "exculsive" and "shared". This should not be hard to implement in btrfs,
-> as "referenced" simply means all data in current subvolume, be it
-> exclusive or shared.
-> 
 
-Oops, actually this is exactly what "referenced" quota is. Limiting
-total subvolume + snapshots is more difficult, as there is no inherent
-connection between qgroups of source and snapshot nor any built-in way
-to include snapshot qgroup in some common total qgroup when creating
-snapshot.
+Hi All,
+
+Early this morning there was a power glitch that affected our system.
+
+The second enclosure went offline but the file system stayed up for a
+bit before rebooting and recovering the 2 missing arrays sdb1 and
+sdc1.
+
+When mounting we get....
+
+    Aug 12 14:52:43 localhost kernel: [ 8536.649270] BTRFS info (device sda1): has skinny extents
+    Aug 12 14:54:52 localhost kernel: [ 8665.900321] BTRFS error (device sda1): parent transid verify failed on 177443463479296 wanted 2159304 found 2159295
+    Aug 12 14:54:52 localhost kernel: [ 8665.985512] BTRFS error (device sda1): parent transid verify failed on 177443463479296 wanted 2159304 found 2159295
+    Aug 12 14:54:52 localhost kernel: [ 8666.056845] BTRFS error (device sda1): failed to read block groups: -5
+    Aug 12 14:54:52 localhost kernel: [ 8666.254178] BTRFS error (device sda1): open_ctree failed
+
+We are here...
+
+    # uname -a
+    Linux localhost 4.17.14-custom #1 SMP Sun Aug 12 11:54:00 EDT 2018 x86_64 x86_64 x86_64 GNU/Linux
+
+    # btrfs --version
+    btrfs-progs v4.17.1
+    
+    # btrfs filesystem show
+    Label: none  uuid: 8337c837-58cb-430a-a929-7f6d2f50bdbb
+            Total devices 3 FS bytes used 75.05TiB
+            devid    1 size 47.30TiB used 42.07TiB path /dev/sda1
+            devid    2 size 21.83TiB used 16.61TiB path /dev/sdb1
+            devid    3 size 21.83TiB used 16.61TiB path /dev/sdc1
+    
+Thanks for any help.
+
+sb. Scott Blomquist

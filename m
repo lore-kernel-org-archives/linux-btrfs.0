@@ -1,83 +1,135 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f68.google.com ([209.85.214.68]:50566 "EHLO
-        mail-it0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726577AbeHMKBd (ORCPT
+Received: from mail-it0-f43.google.com ([209.85.214.43]:55609 "EHLO
+        mail-it0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728493AbeHMOFd (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 13 Aug 2018 06:01:33 -0400
-Received: by mail-it0-f68.google.com with SMTP id j81-v6so11671614ite.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 13 Aug 2018 00:20:34 -0700 (PDT)
+        Mon, 13 Aug 2018 10:05:33 -0400
+Received: by mail-it0-f43.google.com with SMTP id d10-v6so12600954itj.5
+        for <linux-btrfs@vger.kernel.org>; Mon, 13 Aug 2018 04:23:43 -0700 (PDT)
+Subject: Re: Report correct filesystem usage / limits on BTRFS subvolumes with
+ quota
+To: Andrei Borzenkov <arvidjaar@gmail.com>,
+        Chris Murphy <lists@colorremedies.com>, Duncan <1i5t5.duncan@cox.net>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <0059606f-88bf-c919-450b-bf08e184b5a2@mailbox.org>
+ <b10a3950-0b86-e4fb-3621-f4c5ad3d79e7@gmx.com>
+ <20180809174811.GA27001@polanet.pl>
+ <ecd793f3-55b3-84d4-80cf-3382a580037f@gmx.com>
+ <CAJCQCtQS+yiSQ4Cu-F_Spi5_6fEw_FuGdXCafJLxBe1swacabQ@mail.gmail.com>
+ <pan$37ed4$1f39572a$7dd0a77a$b6954c8@cox.net>
+ <CAJCQCtR9mYzFSHheyjK6sSf-KKeXtibArw9UcpH9Bh-ptXTVcg@mail.gmail.com>
+ <5bcd7922-9820-ac9d-5dc2-77a8a4618f91@gmail.com>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <63818cfd-a7c6-3fdf-9e3b-3eedd1b63b34@gmail.com>
+Date: Mon, 13 Aug 2018 07:23:38 -0400
 MIME-Version: 1.0
-References: <20180811054927.GE26989@hungrycats.org> <20180811062704.846CD801E8@smtp03.mail.de>
- <20180811152527.GF26989@hungrycats.org>
-In-Reply-To: <20180811152527.GF26989@hungrycats.org>
-From: Menion <menion@gmail.com>
-Date: Mon, 13 Aug 2018 09:20:22 +0200
-Message-ID: <CAJVZm6eA7upEy53L7WwvtVbwa+Om4LTi=nz0xAjNN9g92tppfg@mail.gmail.com>
-Subject: Re: List of known BTRFS Raid 5/6 Bugs?
-To: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-Cc: erenthetitan@mail.de, linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <5bcd7922-9820-ac9d-5dc2-77a8a4618f91@gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi
-I have a BTRFS RAID5 array built on 5x8TB HDD filled with, well :),
-there are contradicting opinions by the, well, "several" ways to check
-the used space on a BTRFS RAID5 array, but I should be aroud 8TB of
-data.
-This array is running on kernel 4.17.3 and it definitely experienced
-power loss while data was being written.
-I can say that it wen through at least a dozen of unclear shutdown
-So following this thread I started my first scrub on the array. and
-this is the outcome (after having resumed it 4 times, two after a
-power loss...):
+On 2018-08-12 03:04, Andrei Borzenkov wrote:
+> 12.08.2018 06:16, Chris Murphy пишет:
+>> On Fri, Aug 10, 2018 at 9:29 PM, Duncan <1i5t5.duncan@cox.net> wrote:
+>>> Chris Murphy posted on Fri, 10 Aug 2018 12:07:34 -0600 as excerpted:
+>>>
+>>>> But whether data is shared or exclusive seems potentially ephemeral, and
+>>>> not something a sysadmin should even be able to anticipate let alone
+>>>> individual users.
+>>>
+>>> Define "user(s)".
+>>
+>> The person who is saving their document on a network share, and
+>> they've never heard of Btrfs.
+>>
+>>
+>>> Arguably, in the context of btrfs tool usage, "user" /is/ the admin,
+>>
+>> I'm not talking about btrfs tools. I'm talking about rational,
+>> predictable behavior of a shared folder.
+>>
+>> If I try to drop a 1GiB file into my share and I'm denied, not enough
+>> free space, and behind the scenes it's because of a quota limit, I
+>> expect I can delete *any* file(s) amounting to create 1GiB free space
+>> and then I'll be able to drop that file successfully without error.
+>>
+>> But if I'm unwittingly deleting shared files, my quota usage won't go
+>> down, and I still can't save my file. So now I somehow need a secret
+>> incantation to discover only my exclusive files and delete enough of
+>> them in order to save this 1GiB file. It's weird, it's unexpected, I
+>> think it's a use case failure. Maybe Btrfs quotas isn't meant to work
+>> with samba or NFS shares. *shrug*
+>>
+> 
+> That's how both NetApp and ZFS work as well. I doubt anyone can
+> seriously call NetApp "not meant to work with NFS or CIFS shares".
+> 
+> On NetApp space available to NFS/CIFS user is volume size minus space
+> frozen in snapshots. If file, captured in snapshot, is deleted in active
+> file system, it does not make a single byte available to external user.
+> That's what surprised most every first time NetApp users.
+> 
+> On ZFS snapshots are contained in dataset and you limit total dataset
+> space consumption including all snapshots. Thus end effect is the same -
+> deleting data that is itself captured in snapshot does not make a single
+> byte available. ZFS allows you to additionally restrict active file
+> system size ("referenced" quota in ZFS) - this more closely matches your
+> expectation - deleting file in active file system decreases its
+> "referenced" size thus allowing user to write more data (as long as user
+> does not exceed total dataset quota). This is different from btrfs
+> "exculsive" and "shared". This should not be hard to implement in btrfs,
+> as "referenced" simply means all data in current subvolume, be it
+> exclusive or shared.
+> 
+> IOW ZFS allows to place restriction on both how much data user can use
+> and how much data user is allowed additionally to protect (snapshot).
+Except user created snapshots are kind of irrelevant here.  If we're 
+talking about NFS/CIFS/SMB, there is no way for the user to create a 
+snapshot (at least, not in-band), so provided the admin is sensible and 
+only uses the referenced quota for limiting space usage by users, things 
+behave no differently on  ZFS than they do on ext4 or XFS using user quotas.
 
-menion@Menionubuntu:~$ sudo btrfs scrub status /media/storage/das1/
-scrub status for 931d40c6-7cd7-46f3-a4bf-61f3a53844bc
-        scrub resumed at Sun Aug 12 18:43:31 2018 and finished after 55:06:35
-        total bytes scrubbed: 2.59TiB with 0 errors
-
-So, there are 0 errors, but I don't understand why it says 2.59TiB of
-scrubbed data. Is it possible that also this values is crap, as the
-non zero counters for RAID5 array?
-Il giorno sab 11 ago 2018 alle ore 17:29 Zygo Blaxell
-<ce3g8jdj@umail.furryterror.org> ha scritto:
->
-> On Sat, Aug 11, 2018 at 08:27:04AM +0200, erenthetitan@mail.de wrote:
-> > I guess that covers most topics, two last questions:
-> >
-> > Will the write hole behave differently on Raid 6 compared to Raid 5 ?
->
-> Not really.  It changes the probability distribution (you get an extra
-> chance to recover using a parity block in some cases), but there are
-> still cases where data gets lost that didn't need to be.
->
-> > Is there any benefit of running Raid 5 Metadata compared to Raid 1 ?
->
-> There may be benefits of raid5 metadata, but they are small compared to
-> the risks.
->
-> In some configurations it may not be possible to allocate the last
-> gigabyte of space.  raid1 will allocate 1GB chunks from 2 disks at a
-> time while raid5 will allocate 1GB chunks from N disks at a time, and if
-> N is an odd number there could be one chunk left over in the array that
-> is unusable.  Most users will find this irrelevant because a large disk
-> array that is filled to the last GB will become quite slow due to long
-> free space search and seek times--you really want to keep usage below 95%,
-> maybe 98% at most, and that means the last GB will never be needed.
->
-> Reading raid5 metadata could theoretically be faster than raid1, but that
-> depends on a lot of variables, so you can't assume it as a rule of thumb.
->
-> Raid6 metadata is more interesting because it's the only currently
-> supported way to get 2-disk failure tolerance in btrfs.  Unfortunately
-> that benefit is rather limited due to the write hole bug.
->
-> There are patches floating around that implement multi-disk raid1 (i.e. 3
-> or 4 mirror copies instead of just 2).  This would be much better for
-> metadata than raid6--more flexible, more robust, and my guess is that
-> it will be faster as well (no need for RMW updates or journal seeks).
->
-> > -------------------------------------------------------------------------------------------------
-> > FreeMail powered by mail.de - MEHR SICHERHEIT, SERIOSITÄT UND KOMFORT
-> >
+Note also that a lot of storage appliances that use ZFS as the 
+underlying storage don't expose any way for the admin to use anything 
+other than the referenced quota (and usually space reservations).  They 
+do this because it makes the system behave as pretty much everyone 
+intuitively expects, and it ensures that users don't have to go to an 
+admin to remedy their free space issues.
+> 
+>>
+>>>
+>>> "Regular users" as you use the term, that is the non-admins who just need
+>>> to know how close they are to running out of their allotted storage
+>>> resources, shouldn't really need to care about btrfs tool usage in the
+>>> first place, and btrfs commands in general, including btrfs quota related
+>>> commands, really aren't targeted at them, and aren't designed to report
+>>> the type of information they are likely to find useful.  Other tools will
+>>> be more appropriate.
+>>
+>> I'm not talking about any btrfs commands or even the term quota for
+>> regular users. I'm talking about saving a file, being denied, and how
+>> does the user figure out how to free up space?
+>>
+> 
+> Users need to be educated. Same as with NetApp and ZFS. There is no
+> magic, redirect-on-write filesystems work differently than traditional
+> and users need to adapt.
+> 
+> Of course devil is in details, and usability of btrfs quota is far lower
+> than NetApp/ZFS. In those space consumption information is first class
+> citizen integrated into the very basic tools, not something bolted on
+> later and mostly incomprehensible to end user.
+Except that this _CAN_ be made to work and behave just like classic 
+quotas.  Your example of ZFS above proves it (referenced quotas behave 
+just like classic VFS quotas).  Yes, we need to educate users regarding 
+qgroups, but we need a _WORKING_ alternative so they can do things like 
+they always have, and like most stuff that uses ZFS as part of a 
+pre-built system (FreeNAS for example) does.
+> 
+>> Anyway, it's a hypothetical scenario. While I have Samba running on a
+>> Btrfs volume with various shares as subvolumes, I don't have quotas
+>> enabled.
+> 
+> Given all performance issues with quota reported on this list it is
+> probably just as good for you.
+> 

@@ -1,148 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:57412 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:33574 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725760AbeHLEKN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 12 Aug 2018 00:10:13 -0400
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org, dan.merillat@gmail.com
-Subject: [PATCH] btrfs-progs: rescue: Add ability to disable quota offline
-Date: Sun, 12 Aug 2018 09:33:58 +0800
-Message-Id: <20180812013358.16431-1-wqu@suse.com>
+        id S1729525AbeHMV0a (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 13 Aug 2018 17:26:30 -0400
+Date: Mon, 13 Aug 2018 20:42:52 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Naohiro Aota <naota@elisp.net>
+Cc: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
+        Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        linux-kernel@vger.kernel.org, Hannes Reinecke <hare@suse.com>,
+        Damien Le Moal <damien.lemoal@wdc.com>,
+        Bart Van Assche <bart.vanassche@wdc.com>,
+        Matias Bjorling <mb@lightnvm.io>
+Subject: Re: [RFC PATCH 00/17] btrfs zoned block device support
+Message-ID: <20180813184251.GC24025@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20180809180450.5091-1-naota@elisp.net>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20180809180450.5091-1-naota@elisp.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Provide an offline tool to disable quota.
+On Fri, Aug 10, 2018 at 03:04:33AM +0900, Naohiro Aota wrote:
+> This series adds zoned block device support to btrfs.
 
-For kernel which skip_balance doesn't work, there is no way to disable
-quota on huge fs with balance, as quota will cause balance to hang for a
-long long time for each tree block switch.
+Yay, thanks!
 
-So add an offline rescue tool to disable quota.
+As this a RFC, I'll give you some. The code looks ok for what it claims
+to do, I'll skip style and unimportant implementation details for now as
+there are bigger questions.
 
-Reported-by: Dan Merillat <dan.merillat@gmail.com>
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
-This can patch can be fetched from github repo:
-https://github.com/adam900710/btrfs-progs/tree/quota_disable
----
- Documentation/btrfs-rescue.asciidoc |  6 +++
- cmds-rescue.c                       | 80 +++++++++++++++++++++++++++++
- 2 files changed, 86 insertions(+)
+The zoned devices bring some constraints so not all filesystem features
+cannot be expected to work, so this rules out any form of in-place
+updates like NODATACOW.
 
-diff --git a/Documentation/btrfs-rescue.asciidoc b/Documentation/btrfs-rescue.asciidoc
-index f94a0ff2b45e..fb088c1a768a 100644
---- a/Documentation/btrfs-rescue.asciidoc
-+++ b/Documentation/btrfs-rescue.asciidoc
-@@ -31,6 +31,12 @@ help.
- NOTE: Since *chunk-recover* will scan the whole device, it will be *VERY* slow
- especially executed on a large device.
- 
-+*disable-quota* <device>::
-+disable quota offline
-++
-+Acts as a fallback method to disable quota for case where mount hangs due to
-+balance and quota.
-+
- *fix-device-size* <device>::
- fix device size and super block total bytes values that are do not match
- +
-diff --git a/cmds-rescue.c b/cmds-rescue.c
-index 38c4ab9b2ef6..c7cd92427e9d 100644
---- a/cmds-rescue.c
-+++ b/cmds-rescue.c
-@@ -250,6 +250,84 @@ out:
- 	return !!ret;
- }
- 
-+static const char * const cmd_rescue_disable_quota_usage[] = {
-+	"btrfs rescue disable-quota <device>",
-+	"Disable quota, especially useful for balance mount hang when quota enabled",
-+	"",
-+	NULL
-+};
-+
-+static int cmd_rescue_disable_quota(int argc, char **argv)
-+{
-+	struct btrfs_trans_handle *trans;
-+	struct btrfs_fs_info *fs_info;
-+	struct btrfs_path path;
-+	struct btrfs_root *root;
-+	struct btrfs_qgroup_status_item *qi;
-+	struct btrfs_key key;
-+	char *devname;
-+	int ret;
-+
-+	clean_args_no_options(argc, argv, cmd_rescue_disable_quota_usage);
-+	if (check_argc_exact(argc, 2))
-+		usage(cmd_rescue_disable_quota_usage);
-+
-+	devname = argv[optind];
-+	ret = check_mounted(devname);
-+	if (ret < 0) {
-+		error("could not check mount status: %s", strerror(-ret));
-+		return !!ret;
-+	} else if (ret) {
-+		error("%s is currently mounted", devname);
-+		return !!ret;
-+	}
-+	fs_info = open_ctree_fs_info(devname, 0, 0, 0, OPEN_CTREE_WRITES);
-+	if (!fs_info) {
-+		error("could not open btrfs");
-+		ret = -EIO;
-+		return !!ret;
-+	}
-+	root = fs_info->quota_root;
-+	if (!root) {
-+		printf("Quota is not enabled, no need to modify the fs\n");
-+		goto close;
-+	}
-+	btrfs_init_path(&path);
-+	trans = btrfs_start_transaction(root, 1);
-+	if (IS_ERR(trans)) {
-+		ret = PTR_ERR(trans);
-+		error("failed to start transaction: %s", strerror(-ret));
-+		goto close;
-+	}
-+	key.objectid = 0;
-+	key.type = BTRFS_QGROUP_STATUS_KEY;
-+	key.offset = 0;
-+	ret = btrfs_search_slot(trans, root, &key, &path, 0, 1);
-+	if (ret < 0) {
-+		error("failed to search tree: %s", strerror(-ret));
-+		goto close;
-+	}
-+	if (ret > 0) {
-+		printf(
-+		"qgroup status item not found, not need to modify the fs");
-+		ret = 0;
-+		goto release;
-+	}
-+	qi = btrfs_item_ptr(path.nodes[0], path.slots[0],
-+			    struct btrfs_qgroup_status_item);
-+	btrfs_set_qgroup_status_flags(path.nodes[0], qi,
-+			BTRFS_QGROUP_STATUS_FLAG_INCONSISTENT);
-+	btrfs_mark_buffer_dirty(path.nodes[0]);
-+	ret = btrfs_commit_transaction(trans, root);
-+	if (ret < 0)
-+		error("failed to commit transaction: %s", strerror(-ret));
-+release:
-+	btrfs_release_path(&path);
-+close:
-+	close_ctree(fs_info->tree_root);
-+	return !!ret;
-+}
-+
- static const char rescue_cmd_group_info[] =
- "toolbox for specific rescue operations";
- 
-@@ -262,6 +340,8 @@ const struct cmd_group rescue_cmd_group = {
- 		{ "zero-log", cmd_rescue_zero_log, cmd_rescue_zero_log_usage, NULL, 0},
- 		{ "fix-device-size", cmd_rescue_fix_device_size,
- 			cmd_rescue_fix_device_size_usage, NULL, 0},
-+		{ "disable-quota", cmd_rescue_disable_quota,
-+			cmd_rescue_disable_quota_usage, NULL, 0},
- 		NULL_CMD_STRUCT
- 	}
- };
--- 
-2.18.0
+Then there's list of 'how will zoned device work with feature X'?
+
+You disable fallocate and DIO. I haven't looked closer at the fallocate
+case, but DIO could work in the sense that open() will open the file but
+any write will fallback to buffered writes. This is implemented so it
+would need to be wired together.
+
+Mixed device types are not allowed, and I tend to agree with that,
+though this could work in principle.  Just that the chunk allocator
+would have to be aware of the device types and tweaked to allocate from
+the same group. The btrfs code is not ready for that in terms of the
+allocator capabilities and configuration options.
+
+Device replace is disabled, but the changlog suggests there's a way to
+make it work, so it's a matter of implementation. And this should be
+implemented at the time of merge.
+
+RAID5/6 + zoned support is highly desired and lack of it could be
+considered a NAK for the whole series. The drive sizes are expected to
+be several terabytes, that sounds be too risky to lack the redundancy
+options (RAID1 is not sufficient here).
+
+The changelog does not explain why this does not or cannot work, so I
+cannot reason about that or possibly suggest workarounds or solutions.
+But I think it should work in principle.
+
+As this is first post and RFC I don't expect that everything is
+implemented, but at least the known missing points should be documented.
+You've implemented lots of the low-level zoned support and extent
+allocation, so even if the raid56 might be difficult, it should be the
+smaller part.

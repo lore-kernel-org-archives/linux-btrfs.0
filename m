@@ -1,43 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:36352 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:37330 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727141AbeHOOk1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 15 Aug 2018 10:40:27 -0400
-Date: Wed, 15 Aug 2018 13:48:27 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Liu Bo <bo.liu@linux.alibaba.com>
-Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: remove duplicated btrfs_release_path in
- btrfs_unlink_subvol
-Message-ID: <20180815114827.GI24025@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1534214829-26202-1-git-send-email-bo.liu@linux.alibaba.com>
- <20180814104600.GE24025@twin.jikos.cz>
- <20180815025256.6fftocnncloellm3@rsjd01523.et2sqa>
+        id S1728240AbeHMJnW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 13 Aug 2018 05:43:22 -0400
+Subject: Re: [PATCH] btrfs:free-space-cache: remove unneeded NULL check before
+ kfree
+To: zhong jiang <zhongjiang@huawei.com>, clm@fb.com, jbacik@fb.com,
+        dsterba@suse.com
+Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+References: <1534140369-11578-1-git-send-email-zhongjiang@huawei.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <50a4185c-5276-e33a-afff-102ed32171f2@suse.com>
+Date: Mon, 13 Aug 2018 10:02:23 +0300
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180815025256.6fftocnncloellm3@rsjd01523.et2sqa>
+In-Reply-To: <1534140369-11578-1-git-send-email-zhongjiang@huawei.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Aug 15, 2018 at 10:52:56AM +0800, Liu Bo wrote:
-> On Tue, Aug 14, 2018 at 12:46:00PM +0200, David Sterba wrote:
-> > On Tue, Aug 14, 2018 at 10:47:09AM +0800, Liu Bo wrote:
-> > > The btrfs_release_path() is just useless as path is only used in error handling.
-> > 
-> > Where is it duplicated? And I don't think it's useless, while the
-> > changelog does not explain why and it's not obvious from the context. If
-> > the path is locked, then releasing it right after it's not needed makes
-> > sense.  There are several potentially heavyweight operations between the
-> > release and final free.
+
+
+On 13.08.2018 09:06, zhong jiang wrote:
+> Kfree has taken the null pointer into account. So remove the check
+> before kfree.
 > 
-> I see, the diff context is a little bit misleading, the logic in
-> btrfs_unlink_subvol() is like,
+> The issue is detected with the help of Coccinelle.
+> 
+> Signed-off-by: zhong jiang <zhongjiang@huawei.com>
 
-Well, you based you patch on old code, the duplicate btrfs_release_path
-has been removed in 5b7d687ad5913a56b6a8788435d7a53990b4176d and was
-in the devel branches since like 2 weeks.
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 
-The patch removes the first release while it would could have been the
-other one to save some cycles when the branch with
-btrfs_search_dir_index_item is not taken.
+> ---
+>  fs/btrfs/free-space-cache.c | 6 ++----
+>  1 file changed, 2 insertions(+), 4 deletions(-)
+> 
+> diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+> index c3888c1..69d639f 100644
+> --- a/fs/btrfs/free-space-cache.c
+> +++ b/fs/btrfs/free-space-cache.c
+> @@ -2110,8 +2110,7 @@ static int insert_into_bitmap(struct btrfs_free_space_ctl *ctl,
+>  
+>  out:
+>  	if (info) {
+> -		if (info->bitmap)
+> -			kfree(info->bitmap);
+> +		kfree(info->bitmap);
+>  		kmem_cache_free(btrfs_free_space_cachep, info);
+>  	}
+>  
+> @@ -3605,8 +3604,7 @@ int test_add_free_space_entry(struct btrfs_block_group_cache *cache,
+>  
+>  	if (info)
+>  		kmem_cache_free(btrfs_free_space_cachep, info);
+> -	if (map)
+> -		kfree(map);
+> +	kfree(map);
+>  	return 0;
+>  }
+>  
+> 

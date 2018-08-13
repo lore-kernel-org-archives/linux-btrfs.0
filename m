@@ -1,114 +1,93 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f195.google.com ([209.85.223.195]:38191 "EHLO
-        mail-io0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728763AbeHMWMp (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 13 Aug 2018 18:12:45 -0400
-Subject: Re: [RFC PATCH 00/17] btrfs zoned block device support
-To: Hannes Reinecke <hare@suse.com>, dsterba@suse.cz,
-        Naohiro Aota <naota@elisp.net>, David Sterba <dsterba@suse.com>,
-        linux-btrfs@vger.kernel.org, Chris Mason <clm@fb.com>,
-        Josef Bacik <jbacik@fb.com>, linux-kernel@vger.kernel.org,
-        Damien Le Moal <damien.lemoal@wdc.com>,
-        Bart Van Assche <bart.vanassche@wdc.com>,
-        Matias Bjorling <mb@lightnvm.io>
-References: <20180809180450.5091-1-naota@elisp.net>
- <20180813184251.GC24025@twin.jikos.cz>
- <86bddb14-104e-182b-29a1-6ab8150f09a8@suse.com>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <057b6600-0fef-4067-54ca-216b591d43f8@gmail.com>
-Date: Mon, 13 Aug 2018 15:29:04 -0400
+Received: from shout02.mail.de ([62.201.172.25]:44249 "EHLO shout02.mail.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1729102AbeHNAkN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 13 Aug 2018 20:40:13 -0400
+From: erenthetitan@mail.de
+To: menion@gmail.com, ce3g8jdj@umail.furryterror.org
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: List of known BTRFS Raid 5/6 Bugs?
+Date: Mon, 13 Aug 2018 23:56:05 +0200
+Content-Type: text/plain; charset=utf-8
 MIME-Version: 1.0
-In-Reply-To: <86bddb14-104e-182b-29a1-6ab8150f09a8@suse.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Message-Id: <20180813215605.705238033D@smtp03.mail.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2018-08-13 15:20, Hannes Reinecke wrote:
-> On 08/13/2018 08:42 PM, David Sterba wrote:
->> On Fri, Aug 10, 2018 at 03:04:33AM +0900, Naohiro Aota wrote:
->>> This series adds zoned block device support to btrfs.
->>
->> Yay, thanks!
->>
->> As this a RFC, I'll give you some. The code looks ok for what it claims
->> to do, I'll skip style and unimportant implementation details for now as
->> there are bigger questions.
->>
->> The zoned devices bring some constraints so not all filesystem features
->> cannot be expected to work, so this rules out any form of in-place
->> updates like NODATACOW.
->>
->> Then there's list of 'how will zoned device work with feature X'?
->>
->> You disable fallocate and DIO. I haven't looked closer at the fallocate
->> case, but DIO could work in the sense that open() will open the file but
->> any write will fallback to buffered writes. This is implemented so it
->> would need to be wired together.
->>
->> Mixed device types are not allowed, and I tend to agree with that,
->> though this could work in principle.  Just that the chunk allocator
->> would have to be aware of the device types and tweaked to allocate from
->> the same group. The btrfs code is not ready for that in terms of the
->> allocator capabilities and configuration options.
->>
->> Device replace is disabled, but the changlog suggests there's a way to
->> make it work, so it's a matter of implementation. And this should be
->> implemented at the time of merge.
->>
-> How would a device replace work in general?
-> While I do understand that device replace is possible with RAID 
-> thingies, I somewhat fail to see how could do a device replacement 
-> without RAID functionality.
-> Is it even possible?
-> If so, how would it be different from a simple umount?
-Device replace is implemented in largely the same manner as most other 
-live data migration tools (for example, LVM2's pvmove command).
+Running time of 55:06:35 indicates that the counter is right, it is not enough time to scrub the entire array using hdd.
 
-In short, when you issue a replace command for a given device, all 
-writes that would go to that device are instead sent to the new device. 
-While this is happening, old data is copied over from the old device to 
-the new one.  Once all the data is copied, the old device is released 
-(and it's BTRFS signature wiped), and the new device has it's device ID 
-updated to that of the old device.
+2TiB might be right if you only scrubbed one disc, "sudo btrfs scrub start /dev/sdx1" only scrubs the selected partition, 
+whereas "sudo btrfs scrub start /media/storage/das1" scrubs the actual array.
 
-This is possible largely because of the COW infrastructure, but it's 
-implemented in a way that doesn't entirely depend on it (otherwise it 
-wouldn't work for NOCOW files).
+Use "sudo btrfs scrub status -d " to view per disc scrubbing statistics and post the output.
+For live statistics, use "sudo watch -n 1".
 
-Handling this on zoned devices is not likely to be easy though, you 
-would functionally have to freeze I/O that would hit the device being 
-replaced so that you don't accidentally write to a sequential zone out 
-of order.
+By the way:
+0 errors despite multiple unclean shutdowns? I assumed that the write hole would corrupt parity the first time around, was i wrong?
+
+Am 13-Aug-2018 09:20:36 +0200 schrieb menion@gmail.com: 
+> Hi
+> I have a BTRFS RAID5 array built on 5x8TB HDD filled with, well :),
+> there are contradicting opinions by the, well, "several" ways to check
+> the used space on a BTRFS RAID5 array, but I should be aroud 8TB of
+> data.
+> This array is running on kernel 4.17.3 and it definitely experienced
+> power loss while data was being written.
+> I can say that it wen through at least a dozen of unclear shutdown
+> So following this thread I started my first scrub on the array. and
+> this is the outcome (after having resumed it 4 times, two after a
+> power loss...):
 > 
->> RAID5/6 + zoned support is highly desired and lack of it could be
->> considered a NAK for the whole series. The drive sizes are expected to
->> be several terabytes, that sounds be too risky to lack the redundancy
->> options (RAID1 is not sufficient here).
->>
-> That really depends on the allocator.
-> If we can make the RAID code to work with zone-sized stripes it should 
-> be pretty trivial. I can have a look at that; RAID support was on my 
-> agenda anyway (albeit for MD, not for btrfs).
+> menion@Menionubuntu:~$ sudo btrfs scrub status /media/storage/das1/
+> scrub status for 931d40c6-7cd7-46f3-a4bf-61f3a53844bc
+> scrub resumed at Sun Aug 12 18:43:31 2018 and finished after 55:06:35
+> total bytes scrubbed: 2.59TiB with 0 errors
 > 
->> The changelog does not explain why this does not or cannot work, so I
->> cannot reason about that or possibly suggest workarounds or solutions.
->> But I think it should work in principle.
->>
-> As mentioned, it really should work for zone-sized stripes. I'm not sure 
-> we can make it to work with stripes less than zone sizes.
-> 
->> As this is first post and RFC I don't expect that everything is
->> implemented, but at least the known missing points should be documented.
->> You've implemented lots of the low-level zoned support and extent
->> allocation, so even if the raid56 might be difficult, it should be the
->> smaller part.
->>
-> FYI, I've run a simple stress-test on a zoned device (git clone linus && 
-> make) and haven't found any issue with those; compilation ran without a 
-> problem, and with quite decent speed.
-> Good job!
-> 
-> Cheers,
-> 
-> Hannes
+> So, there are 0 errors, but I don't understand why it says 2.59TiB of
+> scrubbed data. Is it possible that also this values is crap, as the
+> non zero counters for RAID5 array?
+> Il giorno sab 11 ago 2018 alle ore 17:29 Zygo Blaxell
+> <ce3g8jdj@umail.furryterror.org> ha scritto:
+> >
+> > On Sat, Aug 11, 2018 at 08:27:04AM +0200, erenthetitan@mail.de wrote:
+> > > I guess that covers most topics, two last questions:
+> > >
+> > > Will the write hole behave differently on Raid 6 compared to Raid 5 ?
+> >
+> > Not really. It changes the probability distribution (you get an extra
+> > chance to recover using a parity block in some cases), but there are
+> > still cases where data gets lost that didn't need to be.
+> >
+> > > Is there any benefit of running Raid 5 Metadata compared to Raid 1 ?
+> >
+> > There may be benefits of raid5 metadata, but they are small compared to
+> > the risks.
+> >
+> > In some configurations it may not be possible to allocate the last
+> > gigabyte of space. raid1 will allocate 1GB chunks from 2 disks at a
+> > time while raid5 will allocate 1GB chunks from N disks at a time, and if
+> > N is an odd number there could be one chunk left over in the array that
+> > is unusable. Most users will find this irrelevant because a large disk
+> > array that is filled to the last GB will become quite slow due to long
+> > free space search and seek times--you really want to keep usage below 95%,
+> > maybe 98% at most, and that means the last GB will never be needed.
+> >
+> > Reading raid5 metadata could theoretically be faster than raid1, but that
+> > depends on a lot of variables, so you can't assume it as a rule of thumb.
+> >
+> > Raid6 metadata is more interesting because it's the only currently
+> > supported way to get 2-disk failure tolerance in btrfs. Unfortunately
+> > that benefit is rather limited due to the write hole bug.
+> >
+> > There are patches floating around that implement multi-disk raid1 (i.e. 3
+> > or 4 mirror copies instead of just 2). This would be much better for
+> > metadata than raid6--more flexible, more robust, and my guess is that
+> > it will be faster as well (no need for RMW updates or journal seeks).
+> >
+> > > -------------------------------------------------------------------------------------------------
+> > > FreeMail powered by mail.de - MEHR SICHERHEIT, SERIOSITÄT UND KOMFORT
+> > >
+
+
+-------------------------------------------------------------------------------------------------
+FreeMail powered by mail.de - MEHR SICHERHEIT, SERIOSITÄT UND KOMFORT

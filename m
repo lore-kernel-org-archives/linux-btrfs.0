@@ -1,68 +1,139 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:43510 "EHLO
-        james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
-        by vger.kernel.org with ESMTP id S1726019AbeHNGzA (ORCPT
+Received: from mail-it0-f43.google.com ([209.85.214.43]:39712 "EHLO
+        mail-it0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727689AbeHNKTA (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 14 Aug 2018 02:55:00 -0400
-Date: Tue, 14 Aug 2018 00:09:36 -0400
-From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-To: erenthetitan@mail.de
-Cc: menion@gmail.com, linux-btrfs@vger.kernel.org
-Subject: Re: List of known BTRFS Raid 5/6 Bugs?
-Message-ID: <20180814040932.GB13528@hungrycats.org>
-References: <20180813215605.705238033D@smtp03.mail.de>
+        Tue, 14 Aug 2018 06:19:00 -0400
+Received: by mail-it0-f43.google.com with SMTP id g141-v6so18250774ita.4
+        for <linux-btrfs@vger.kernel.org>; Tue, 14 Aug 2018 00:33:03 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-        protocol="application/pgp-signature"; boundary="b5gNqxB1S1yM7hjW"
+References: <20180813215605.705238033D@smtp03.mail.de>
 In-Reply-To: <20180813215605.705238033D@smtp03.mail.de>
+From: Menion <menion@gmail.com>
+Date: Tue, 14 Aug 2018 09:32:51 +0200
+Message-ID: <CAJVZm6fH0B3rFVwmm0dCis+LOZChqk24M3jU5RBXuqa1boH7Sw@mail.gmail.com>
+Subject: Re: List of known BTRFS Raid 5/6 Bugs?
+To: erenthetitan@mail.de
+Cc: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi
+Well, I think it is worth to give more details on the array.
+the array is built with 5x8TB HDD in an esternal USB3.0 to SATAIII enclosure
+The enclosure is a cheap JMicron based chinese stuff (from Orico).
+There is one USB3.0 link for all the 5 HDD with a SATAIII 3.0Gb
+multiplexer behind it. So you cannot expect peak performance, which is
+not the goal of this array (domestic data storage).
+Also the USB to SATA firmware is buggy, so UAS operations are not
+stable, it run in BOT mode.
+Having said so, the scrub has been started (and resumed) on the array
+mount point:
 
---b5gNqxB1S1yM7hjW
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+sudo btrfs scrub start(resume) /media/storage/das1
 
-On Mon, Aug 13, 2018 at 11:56:05PM +0200, erenthetitan@mail.de wrote:
-> Running time of 55:06:35 indicates that the counter is right, it is
-> not enough time to scrub the entire array using hdd.
->=20
-> 2TiB might be right if you only scrubbed one disc, "sudo btrfs scrub
-> start /dev/sdx1" only scrubs the selected partition,
-> whereas "sudo btrfs scrub start /media/storage/das1" scrubs the actual ar=
-ray.
->=20
-> Use "sudo btrfs scrub status -d " to view per disc scrubbing statistics
-> and post the output.
+even if reading the documentation I understand that it is the same
+invoking it on mountpoint or one of the HDD in the array.
+In the end, especially for a RAID5 array, does it really make sense to
+scrub only one disk in the array???
+Regarding the data usage, here you have the current figures:
+
+menion@Menionubuntu:~$ sudo btrfs fi show
+[sudo] password for menion:
+Label: none  uuid: 6db4baf7-fda8-41ac-a6ad-1ca7b083430f
+Total devices 1 FS bytes used 11.44GiB
+devid    1 size 27.07GiB used 18.07GiB path /dev/mmcblk0p3
+
+Label: none  uuid: 931d40c6-7cd7-46f3-a4bf-61f3a53844bc
+Total devices 5 FS bytes used 6.57TiB
+devid    1 size 7.28TiB used 1.64TiB path /dev/sda
+devid    2 size 7.28TiB used 1.64TiB path /dev/sdb
+devid    3 size 7.28TiB used 1.64TiB path /dev/sdc
+devid    4 size 7.28TiB used 1.64TiB path /dev/sdd
+devid    5 size 7.28TiB used 1.64TiB path /dev/sde
+
+menion@Menionubuntu:~$ sudo btrfs fi df /media/storage/das1
+Data, RAID5: total=6.57TiB, used=6.56TiB
+System, RAID5: total=12.75MiB, used=416.00KiB
+Metadata, RAID5: total=9.00GiB, used=8.16GiB
+GlobalReserve, single: total=512.00MiB, used=0.00B
+menion@Menionubuntu:~$ sudo btrfs fi usage /media/storage/das1
+WARNING: RAID56 detected, not implemented
+WARNING: RAID56 detected, not implemented
+WARNING: RAID56 detected, not implemented
+Overall:
+    Device size:   36.39TiB
+    Device allocated:      0.00B
+    Device unallocated:   36.39TiB
+    Device missing:      0.00B
+    Used:      0.00B
+    Free (estimated):      0.00B (min: 8.00EiB)
+    Data ratio:       0.00
+    Metadata ratio:       0.00
+    Global reserve: 512.00MiB (used: 32.00KiB)
+
+Data,RAID5: Size:6.57TiB, Used:6.56TiB
+   /dev/sda    1.64TiB
+   /dev/sdb    1.64TiB
+   /dev/sdc    1.64TiB
+   /dev/sdd    1.64TiB
+   /dev/sde    1.64TiB
+
+Metadata,RAID5: Size:9.00GiB, Used:8.16GiB
+   /dev/sda    2.25GiB
+   /dev/sdb    2.25GiB
+   /dev/sdc    2.25GiB
+   /dev/sdd    2.25GiB
+   /dev/sde    2.25GiB
+
+System,RAID5: Size:12.75MiB, Used:416.00KiB
+   /dev/sda    3.19MiB
+   /dev/sdb    3.19MiB
+   /dev/sdc    3.19MiB
+   /dev/sdd    3.19MiB
+   /dev/sde    3.19MiB
+
+Unallocated:
+   /dev/sda    5.63TiB
+   /dev/sdb    5.63TiB
+   /dev/sdc    5.63TiB
+   /dev/sdd    5.63TiB
+   /dev/sde    5.63TiB
+menion@Menionubuntu:~$
+menion@Menionubuntu:~$ sf -h
+The program 'sf' is currently not installed. You can install it by typing:
+sudo apt install ruby-sprite-factory
+menion@Menionubuntu:~$ df -h
+Filesystem      Size  Used Avail Use% Mounted on
+udev            934M     0  934M   0% /dev
+tmpfs           193M   22M  171M  12% /run
+/dev/mmcblk0p3   28G   12G   15G  44% /
+tmpfs           962M     0  962M   0% /dev/shm
+tmpfs           5,0M     0  5,0M   0% /run/lock
+tmpfs           962M     0  962M   0% /sys/fs/cgroup
+/dev/mmcblk0p1  188M  3,4M  184M   2% /boot/efi
+/dev/mmcblk0p3   28G   12G   15G  44% /home
+/dev/sda         37T  6,6T   29T  19% /media/storage/das1
+tmpfs           193M     0  193M   0% /run/user/1000
+menion@Menionubuntu:~$ btrfs --version
+btrfs-progs v4.17
+
+So I don't fully understand where the scrub data size comes from
+Il giorno lun 13 ago 2018 alle ore 23:56 <erenthetitan@mail.de> ha scritto:
+>
+> Running time of 55:06:35 indicates that the counter is right, it is not enough time to scrub the entire array using hdd.
+>
+> 2TiB might be right if you only scrubbed one disc, "sudo btrfs scrub start /dev/sdx1" only scrubs the selected partition,
+> whereas "sudo btrfs scrub start /media/storage/das1" scrubs the actual array.
+>
+> Use "sudo btrfs scrub status -d " to view per disc scrubbing statistics and post the output.
 > For live statistics, use "sudo watch -n 1".
->=20
+>
 > By the way:
-> 0 errors despite multiple unclean shutdowns? I assumed that the write
-> hole would corrupt parity the first time around, was i wrong?
-
-You won't see the write hole from just a power failure.  You need a
-power failure *and* a disk failure, and writes need to be happening at
-the moment power fails.
-
-Write hole breaks parity.  Scrub silently(!) fixes parity.  Scrub reads
-the parity block and compares it to the computed parity, and if it's
-wrong, scrub writes the computed parity back.  Normal RAID5 reads with
-all disks online read only the data blocks, so they won't read the parity
-block and won't detect wrong parity.
-
-I did a couple of order-of-magnitude estimations of how likely a power
-failure is to trash a btrfs RAID system and got a probability between 3%
-and 30% per power failure if there were writes active at the time, and
-a disk failed to join the array after boot.  That was based on 5 disks
-having 31 writes queued with one of the disks being significantly slower
-than the others (as failing disks often are) with continuous write load.
-
-If you have a power failure on an array that isn't writing anything at
-the time, nothing happens.
-
->=20
-> Am 13-Aug-2018 09:20:36 +0200 schrieb menion@gmail.com:=20
+> 0 errors despite multiple unclean shutdowns? I assumed that the write hole would corrupt parity the first time around, was i wrong?
+>
+> Am 13-Aug-2018 09:20:36 +0200 schrieb menion@gmail.com:
 > > Hi
 > > I have a BTRFS RAID5 array built on 5x8TB HDD filled with, well :),
 > > there are contradicting opinions by the, well, "several" ways to check
@@ -74,12 +145,12 @@ the time, nothing happens.
 > > So following this thread I started my first scrub on the array. and
 > > this is the outcome (after having resumed it 4 times, two after a
 > > power loss...):
-> >=20
+> >
 > > menion@Menionubuntu:~$ sudo btrfs scrub status /media/storage/das1/
 > > scrub status for 931d40c6-7cd7-46f3-a4bf-61f3a53844bc
 > > scrub resumed at Sun Aug 12 18:43:31 2018 and finished after 55:06:35
 > > total bytes scrubbed: 2.59TiB with 0 errors
-> >=20
+> >
 > > So, there are 0 errors, but I don't understand why it says 2.59TiB of
 > > scrubbed data. Is it possible that also this values is crap, as the
 > > non zero counters for RAID5 array?
@@ -89,8 +160,7 @@ the time, nothing happens.
 > > > On Sat, Aug 11, 2018 at 08:27:04AM +0200, erenthetitan@mail.de wrote:
 > > > > I guess that covers most topics, two last questions:
 > > > >
-> > > > Will the write hole behave differently on Raid 6 compared to Raid 5=
- ?
+> > > > Will the write hole behave differently on Raid 6 compared to Raid 5 ?
 > > >
 > > > Not really. It changes the probability distribution (you get an extra
 > > > chance to recover using a parity block in some cases), but there are
@@ -98,56 +168,34 @@ the time, nothing happens.
 > > >
 > > > > Is there any benefit of running Raid 5 Metadata compared to Raid 1 ?
 > > >
-> > > There may be benefits of raid5 metadata, but they are small compared =
-to
+> > > There may be benefits of raid5 metadata, but they are small compared to
 > > > the risks.
 > > >
 > > > In some configurations it may not be possible to allocate the last
 > > > gigabyte of space. raid1 will allocate 1GB chunks from 2 disks at a
-> > > time while raid5 will allocate 1GB chunks from N disks at a time, and=
- if
-> > > N is an odd number there could be one chunk left over in the array th=
-at
+> > > time while raid5 will allocate 1GB chunks from N disks at a time, and if
+> > > N is an odd number there could be one chunk left over in the array that
 > > > is unusable. Most users will find this irrelevant because a large disk
 > > > array that is filled to the last GB will become quite slow due to long
-> > > free space search and seek times--you really want to keep usage below=
- 95%,
+> > > free space search and seek times--you really want to keep usage below 95%,
 > > > maybe 98% at most, and that means the last GB will never be needed.
 > > >
-> > > Reading raid5 metadata could theoretically be faster than raid1, but =
-that
-> > > depends on a lot of variables, so you can't assume it as a rule of th=
-umb.
+> > > Reading raid5 metadata could theoretically be faster than raid1, but that
+> > > depends on a lot of variables, so you can't assume it as a rule of thumb.
 > > >
 > > > Raid6 metadata is more interesting because it's the only currently
 > > > supported way to get 2-disk failure tolerance in btrfs. Unfortunately
 > > > that benefit is rather limited due to the write hole bug.
 > > >
-> > > There are patches floating around that implement multi-disk raid1 (i.=
-e. 3
+> > > There are patches floating around that implement multi-disk raid1 (i.e. 3
 > > > or 4 mirror copies instead of just 2). This would be much better for
 > > > metadata than raid6--more flexible, more robust, and my guess is that
 > > > it will be faster as well (no need for RMW updates or journal seeks).
 > > >
-> > > > -------------------------------------------------------------------=
-------------------------------
-> > > > FreeMail powered by mail.de - MEHR SICHERHEIT, SERIOSIT=C4T UND KOM=
-FORT
+> > > > -------------------------------------------------------------------------------------------------
+> > > > FreeMail powered by mail.de - MEHR SICHERHEIT, SERIOSITÄT UND KOMFORT
 > > > >
->=20
->=20
-> -------------------------------------------------------------------------=
-------------------------
-> FreeMail powered by mail.de - MEHR SICHERHEIT, SERIOSIT=C4T UND KOMFORT
-
---b5gNqxB1S1yM7hjW
-Content-Type: application/pgp-signature; name="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iF0EABECAB0WIQSnOVjcfGcC/+em7H2B+YsaVrMbnAUCW3JV+QAKCRCB+YsaVrMb
-nDBZAJ0ccUp4xHAddX+CNRdoOccHnEgkywCg3I2vIPZdCgmsPKe2oBzhizUwYAg=
-=L88o
------END PGP SIGNATURE-----
-
---b5gNqxB1S1yM7hjW--
+>
+>
+> -------------------------------------------------------------------------------------------------
+> FreeMail powered by mail.de - MEHR SICHERHEIT, SERIOSITÄT UND KOMFORT

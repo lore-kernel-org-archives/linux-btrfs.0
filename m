@@ -1,56 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wr1-f68.google.com ([209.85.221.68]:44339 "EHLO
-        mail-wr1-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726875AbeHHQxo (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Aug 2018 12:53:44 -0400
-Received: by mail-wr1-f68.google.com with SMTP id r16-v6so2205961wrt.11
-        for <linux-btrfs@vger.kernel.org>; Wed, 08 Aug 2018 07:33:47 -0700 (PDT)
+Received: from ozlabs.org ([203.11.71.1]:59791 "EHLO ozlabs.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1727701AbeHNLgV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 14 Aug 2018 07:36:21 -0400
+Date: Tue, 14 Aug 2018 18:50:05 +1000
+From: Stephen Rothwell <sfr@canb.auug.org.au>
+To: David Sterba <dsterba@suse.com>
+Cc: torvalds@linux-foundation.org, clm@fb.com, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+Subject: Re: [GIT PULL] Btrfs updates for 4.19
+Message-ID: <20180814185005.7a05e8ec@canb.auug.org.au>
+In-Reply-To: <cover.1534161966.git.dsterba@suse.com>
+References: <cover.1534161966.git.dsterba@suse.com>
 MIME-Version: 1.0
-References: <20180804131057.9967-1-lufq.fnst@cn.fujitsu.com>
- <20180804131057.9967-3-lufq.fnst@cn.fujitsu.com> <20180807161912.GO3218@twin.jikos.cz>
- <20180808030437.GD3288@fnst.localdomain> <20180808135623.GU3218@twin.jikos.cz>
-In-Reply-To: <20180808135623.GU3218@twin.jikos.cz>
-From: Lu Fengqi <curiouslfq@gmail.com>
-Date: Wed, 8 Aug 2018 22:33:35 +0800
-Message-ID: <CALS+E5Dj3zg-KjEy79aBW828NcRxMYehW0poHfd0_S3rs7W1xw@mail.gmail.com>
-Subject: Re: [PATCH 2/5] btrfs: use a separate variable to store the num_bytes
- of the qgroup_reserve
-To: dsterba@suse.cz, lufq.fnst@cn.fujitsu.com, linux-btrfs@vger.kernel.org,
-        gujx <gujx@cn.fujitsu.com>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ boundary="Sig_/h7ABVJz/MdBTCU/Virl0lS5"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-David Sterba <dsterba@suse.cz> 于2018年8月8日周三 下午9:57写道：
+--Sig_/h7ABVJz/MdBTCU/Virl0lS5
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
+
+Hi David,
+
+On Mon, 13 Aug 2018 14:54:07 +0200 David Sterba <dsterba@suse.com> wrote:
 >
-> On Wed, Aug 08, 2018 at 11:04:37AM +0800, Lu Fengqi wrote:
-> > On Tue, Aug 07, 2018 at 06:19:12PM +0200, David Sterba wrote:
-> > >On Sat, Aug 04, 2018 at 09:10:54PM +0800, Lu Fengqi wrote:
-> > >> After btrfs_qgroup_reserve_meta_prealloc(), num_bytes will be assigned
-> > >> again by btrfs_calc_trans_metadata_size(). Therefore, once block_rsv
-> > >> fails, we cannot properly free the num_bytes of the previous
-> > >> qgroup_reserve.
-> > >
-> > >This does not look like a trivial cleanup at all. There was an unused
-> > >parameter, removed in c4c129db5da8f070147f175 ("btrfs: drop unused
-> > >parameter qgroup_reserved"), that introduced the bug.  This was in this
-> > >rc1 so it's a regression and I'll consider pushing it to the 4.18 final.
-> >
-> > I apologize for the inconvenience. I should add the Fixes tag, and really
-> > shouldn't mix it into the trivial cleanup patch set.
->
-> As the bug does not qualify as urgent regression, I'm not going to
-> forward it to 4.18. Please update the subject and changelog so it
-> reflects that's an actual fix. I'll add it to the 4.19 queue then.
-> Thanks.
+> There are no known pending merge conflicts with other trees. Please
+> pull, thanks.
 
-No problem. I will send it tomorrow.
+Except, presumably with what is in linux-next (which is similar, but
+not identical). :-(
 
--------------------------------------------------------------
-Thanks,
-Lu
+Please clean up your linux-next included branch.
 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+--=20
+Cheers,
+Stephen Rothwell
+
+--Sig_/h7ABVJz/MdBTCU/Virl0lS5
+Content-Type: application/pgp-signature
+Content-Description: OpenPGP digital signature
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEENIC96giZ81tWdLgKAVBC80lX0GwFAltyl70ACgkQAVBC80lX
+0Gx00ggAk35B95XMXqLSafF0xZumCj0bdyOGmFTNo47CValoM5JUAbJBBbiJv1Us
+9H+FKPoZxN5FyCU18Fb6sKIAYBENA9lTyMm6AIRuCG7IpUzj00gGOlS+oELOCmJ2
+RfmeiGjwmAQilRuTPGd+eIc36/GWtdwYKu5n8WpQimt7R9jRGZTMD2/ge2oZT0lO
+maLy5BmMQWFEWx1IljG4F3Y/ENGbrD6u3ocA3KqueIIwGBxPE0qXFeu6LgXgxqHj
+J/yzT/nUmqG7Gk0AOCgBnqNdNGDk/lUO8ArEArcGjrCPZv+l5O3coUaGYxafscxl
+AgD1MxMHme+krFXpggXaAJKYJmTZWQ==
+=Enyv
+-----END PGP SIGNATURE-----
+
+--Sig_/h7ABVJz/MdBTCU/Virl0lS5--

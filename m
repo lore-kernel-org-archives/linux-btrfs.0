@@ -1,88 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp.nue.novell.com ([195.135.221.5]:51798 "EHLO
-        smtp.nue.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727830AbeHNK1h (ORCPT
-        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Tue, 14 Aug 2018 06:27:37 -0400
-Subject: Re: [RFC PATCH 00/17] btrfs zoned block device support
-To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>, dsterba@suse.cz,
-        Naohiro Aota <naota@elisp.net>, David Sterba <dsterba@suse.com>,
-        linux-btrfs@vger.kernel.org, Chris Mason <clm@fb.com>,
-        Josef Bacik <jbacik@fb.com>, linux-kernel@vger.kernel.org,
-        Damien Le Moal <damien.lemoal@wdc.com>,
-        Bart Van Assche <bart.vanassche@wdc.com>,
-        Matias Bjorling <mb@lightnvm.io>
-References: <20180809180450.5091-1-naota@elisp.net>
- <20180813184251.GC24025@twin.jikos.cz>
- <86bddb14-104e-182b-29a1-6ab8150f09a8@suse.com>
- <057b6600-0fef-4067-54ca-216b591d43f8@gmail.com>
-From: Hannes Reinecke <hare@suse.com>
-Message-ID: <9531d57f-2271-7eb8-b734-dac6d33f0ec1@suse.com>
-Date: Tue, 14 Aug 2018 09:41:36 +0200
+Received: from aquinas.techsquare.com ([75.125.237.226]:37788 "EHLO
+        techsquare.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1728314AbeHNP0U (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 14 Aug 2018 11:26:20 -0400
 MIME-Version: 1.0
-In-Reply-To: <057b6600-0fef-4067-54ca-216b591d43f8@gmail.com>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
+Message-ID: <23410.52600.89620.15949@techsquare.com>
+Date: Tue, 14 Aug 2018 08:39:20 -0400
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Cc: sb@techsquare.com
+Subject: Re: trouble mounting btrfs filesystem....
+In-Reply-To: <23408.34902.778845.675960@techsquare.com>
+References: <23408.34902.778845.675960@techsquare.com>
+From: "Scott E. Blomquist" <sb@techsquare.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 08/13/2018 09:29 PM, Austin S. Hemmelgarn wrote:
-> On 2018-08-13 15:20, Hannes Reinecke wrote:
->> On 08/13/2018 08:42 PM, David Sterba wrote:
->>> On Fri, Aug 10, 2018 at 03:04:33AM +0900, Naohiro Aota wrote:
->>>> This series adds zoned block device support to btrfs.
->>>
->>> Yay, thanks!
->>>
-[ .. ]
->>> Device replace is disabled, but the changlog suggests there's a way to
->>> make it work, so it's a matter of implementation. And this should be
->>> implemented at the time of merge.
->>>
->> How would a device replace work in general?
->> While I do understand that device replace is possible with RAID
->> thingies, I somewhat fail to see how could do a device replacement
->> without RAID functionality.
->> Is it even possible?
->> If so, how would it be different from a simple umount?
-> Device replace is implemented in largely the same manner as most other
-> live data migration tools (for example, LVM2's pvmove command).
-> 
-> In short, when you issue a replace command for a given device, all
-> writes that would go to that device are instead sent to the new device.
-> While this is happening, old data is copied over from the old device to
-> the new one.  Once all the data is copied, the old device is released
-> (and it's BTRFS signature wiped), and the new device has it's device ID
-> updated to that of the old device.
-> 
-> This is possible largely because of the COW infrastructure, but it's
-> implemented in a way that doesn't entirely depend on it (otherwise it
-> wouldn't work for NOCOW files).
-> 
-> Handling this on zoned devices is not likely to be easy though, you
-> would functionally have to freeze I/O that would hit the device being
-> replaced so that you don't accidentally write to a sequential zone out
-> of order.
 
-Ah. Oh. Hmm.
+Hi All,
 
-It would be possible in principle if we freeze accesses to any partially
-filled zones on the original device. Then all new writes will be going
-into new/empty zones on the new disks, and we can copy over the old data
-with no issue at all.
-We end up with some partially filled zones on the new disk, but they
-really should be cleaned up eventually either by the allocator filling
-up the partially filled zones or once garbage collection clears out
-stale zones.
+Is there any more info needed here?
 
-However, I fear the required changes to the btrfs allocator are beyond
-my btrfs knowledge :-(
+I can restore from backup if needed but that will take a bit of time.
 
-Cheers,
+Checking around it looks like I could try...
 
-Hannes
--- 
-Dr. Hannes Reinecke		               zSeries & Storage
-hare@suse.com			               +49 911 74053 688
-SUSE LINUX GmbH, Maxfeldstr. 5, 90409 Nürnberg
-GF: F. Imendörffer, J. Smithard, D. Upmanyu, G. Norton
-HRB 21284 (AG Nürnberg)
+    btrfs-zero-log /dev/sda1
+
+Or maybe ..
+
+   btrfsck --repair /dev/sda1
+
+I am just not sure here and would prefer to do the right thing.
+
+Any help would be much appreciated.
+
+Thanks,
+
+sb. Scott Blomquist
+
+
+Scott E. Blomquist writes:
+ > Hi All,
+ > 
+ > Early this morning there was a power glitch that affected our system.
+ > 
+ > The second enclosure went offline but the file system stayed up for a
+ > bit before rebooting and recovering the 2 missing arrays sdb1 and
+ > sdc1.
+ > 
+ > When mounting we get....
+ > 
+ >     Aug 12 14:52:43 localhost kernel: [ 8536.649270] BTRFS info (device sda1): has skinny extents
+ >     Aug 12 14:54:52 localhost kernel: [ 8665.900321] BTRFS error (device sda1): parent transid verify failed on 177443463479296 wanted 2159304 found 2159295
+ >     Aug 12 14:54:52 localhost kernel: [ 8665.985512] BTRFS error (device sda1): parent transid verify failed on 177443463479296 wanted 2159304 found 2159295
+ >     Aug 12 14:54:52 localhost kernel: [ 8666.056845] BTRFS error (device sda1): failed to read block groups: -5
+ >     Aug 12 14:54:52 localhost kernel: [ 8666.254178] BTRFS error (device sda1): open_ctree failed
+ > 
+ > We are here...
+ > 
+ >     # uname -a
+ >     Linux localhost 4.17.14-custom #1 SMP Sun Aug 12 11:54:00 EDT 2018 x86_64 x86_64 x86_64 GNU/Linux
+ > 
+ >     # btrfs --version
+ >     btrfs-progs v4.17.1
+ >     
+ >     # btrfs filesystem show
+ >     Label: none  uuid: 8337c837-58cb-430a-a929-7f6d2f50bdbb
+ >             Total devices 3 FS bytes used 75.05TiB
+ >             devid    1 size 47.30TiB used 42.07TiB path /dev/sda1
+ >             devid    2 size 21.83TiB used 16.61TiB path /dev/sdb1
+ >             devid    3 size 21.83TiB used 16.61TiB path /dev/sdc1
+ >     
+ > Thanks for any help.
+ > 
+ > sb. Scott Blomquist

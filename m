@@ -1,131 +1,124 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:33376 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1729493AbeHNFfD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 14 Aug 2018 01:35:03 -0400
-Subject: Re: Report correct filesystem usage / limits on BTRFS subvolumes with
- quota
-To: Thomas Leister <thomas.leister@mailbox.org>, dsterba@suse.cz
-Cc: linux-btrfs@vger.kernel.org, lxc-devel@lists.linuxcontainers.org
-References: <0059606f-88bf-c919-450b-bf08e184b5a2@mailbox.org>
-From: Jeff Mahoney <jeffm@suse.com>
-Message-ID: <b121976e-fcbf-1349-9e1d-c14904604a17@suse.com>
-Date: Mon, 13 Aug 2018 22:49:54 -0400
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:42572 "EHLO
+        james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
+        by vger.kernel.org with ESMTP id S1729443AbeHNGfE (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 14 Aug 2018 02:35:04 -0400
+Date: Mon, 13 Aug 2018 23:49:49 -0400
+From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To: Menion <menion@gmail.com>
+Cc: erenthetitan@mail.de, linux-btrfs@vger.kernel.org
+Subject: Re: List of known BTRFS Raid 5/6 Bugs?
+Message-ID: <20180814034949.GH26989@hungrycats.org>
+References: <20180811054927.GE26989@hungrycats.org>
+ <20180811062704.846CD801E8@smtp03.mail.de>
+ <20180811152527.GF26989@hungrycats.org>
+ <CAJVZm6eA7upEy53L7WwvtVbwa+Om4LTi=nz0xAjNN9g92tppfg@mail.gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <0059606f-88bf-c919-450b-bf08e184b5a2@mailbox.org>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="fiAVEemN63VTUzIdMJbsGsK0iKT2vm76A"
+Content-Type: multipart/signed; micalg=pgp-sha1;
+        protocol="application/pgp-signature"; boundary="gm5TwAJMO0F2iVRz"
+In-Reply-To: <CAJVZm6eA7upEy53L7WwvtVbwa+Om4LTi=nz0xAjNN9g92tppfg@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---fiAVEemN63VTUzIdMJbsGsK0iKT2vm76A
-Content-Type: multipart/mixed; boundary="nHnbLbC7FcMZASh90I8KYkSj8Ge7iWFfN";
- protected-headers="v1"
-From: Jeff Mahoney <jeffm@suse.com>
-To: Thomas Leister <thomas.leister@mailbox.org>, dsterba@suse.cz
-Cc: linux-btrfs@vger.kernel.org, lxc-devel@lists.linuxcontainers.org
-Message-ID: <b121976e-fcbf-1349-9e1d-c14904604a17@suse.com>
-Subject: Re: Report correct filesystem usage / limits on BTRFS subvolumes with
- quota
-References: <0059606f-88bf-c919-450b-bf08e184b5a2@mailbox.org>
-In-Reply-To: <0059606f-88bf-c919-450b-bf08e184b5a2@mailbox.org>
 
---nHnbLbC7FcMZASh90I8KYkSj8Ge7iWFfN
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
+--gm5TwAJMO0F2iVRz
+Content-Type: text/plain; charset=iso-8859-1
+Content-Disposition: inline
 Content-Transfer-Encoding: quoted-printable
 
-On 7/31/18 9:49 AM, Thomas Leister wrote:
-> Dear David,
-> hello everyone,
+On Mon, Aug 13, 2018 at 09:20:22AM +0200, Menion wrote:
+> Hi
+> I have a BTRFS RAID5 array built on 5x8TB HDD filled with, well :),
+> there are contradicting opinions by the, well, "several" ways to check
+> the used space on a BTRFS RAID5 array, but I should be aroud 8TB of
+> data.
+> This array is running on kernel 4.17.3 and it definitely experienced
+> power loss while data was being written.
+> I can say that it wen through at least a dozen of unclear shutdown
+> So following this thread I started my first scrub on the array. and
+> this is the outcome (after having resumed it 4 times, two after a
+> power loss...):
 >=20
-> during a recent project of mine involving LXD and BTRFS I found out tha=
-t
-> quotas on BTRFS subvolumes are enforced, but file system usage and
-> limits set via quotas are not reported correctly in LXC containers.
+> menion@Menionubuntu:~$ sudo btrfs scrub status /media/storage/das1/
+> scrub status for 931d40c6-7cd7-46f3-a4bf-61f3a53844bc
+>         scrub resumed at Sun Aug 12 18:43:31 2018 and finished after 55:0=
+6:35
+>         total bytes scrubbed: 2.59TiB with 0 errors
 >=20
-> I've found this discussion regarding my problem:
-> https://github.com/lxc/lxd/issues/2180
+> So, there are 0 errors, but I don't understand why it says 2.59TiB of
+> scrubbed data. Is it possible that also this values is crap, as the
+> non zero counters for RAID5 array?
+
+I just tested a quick scrub with injected errors on 4.18.0 and it looks
+like the garbage values are finally fixed (yay!).
+
+I never saw invalid values for 'total bytes' from raid5; however, scrub
+has (had?) trouble resuming, especially if the system was rebooted between
+cancel and resume, but sometimes just if the scrub had just been suspended
+too long (maybe if there are changes to the chunk tree...?).
+
+55 hours for 2600 GB is just under 50GB per hour, which doesn't sound
+too unreasonable for btrfs, though it is known to be a bit slow compared
+to other raid5 implementations.
+
+> Il giorno sab 11 ago 2018 alle ore 17:29 Zygo Blaxell
+> <ce3g8jdj@umail.furryterror.org> ha scritto:
+> >
+> > On Sat, Aug 11, 2018 at 08:27:04AM +0200, erenthetitan@mail.de wrote:
+> > > I guess that covers most topics, two last questions:
+> > >
+> > > Will the write hole behave differently on Raid 6 compared to Raid 5 ?
+> >
+> > Not really.  It changes the probability distribution (you get an extra
+> > chance to recover using a parity block in some cases), but there are
+> > still cases where data gets lost that didn't need to be.
+> >
+> > > Is there any benefit of running Raid 5 Metadata compared to Raid 1 ?
+> >
+> > There may be benefits of raid5 metadata, but they are small compared to
+> > the risks.
+> >
+> > In some configurations it may not be possible to allocate the last
+> > gigabyte of space.  raid1 will allocate 1GB chunks from 2 disks at a
+> > time while raid5 will allocate 1GB chunks from N disks at a time, and if
+> > N is an odd number there could be one chunk left over in the array that
+> > is unusable.  Most users will find this irrelevant because a large disk
+> > array that is filled to the last GB will become quite slow due to long
+> > free space search and seek times--you really want to keep usage below 9=
+5%,
+> > maybe 98% at most, and that means the last GB will never be needed.
+> >
+> > Reading raid5 metadata could theoretically be faster than raid1, but th=
+at
+> > depends on a lot of variables, so you can't assume it as a rule of thum=
+b.
+> >
+> > Raid6 metadata is more interesting because it's the only currently
+> > supported way to get 2-disk failure tolerance in btrfs.  Unfortunately
+> > that benefit is rather limited due to the write hole bug.
+> >
+> > There are patches floating around that implement multi-disk raid1 (i.e.=
+ 3
+> > or 4 mirror copies instead of just 2).  This would be much better for
+> > metadata than raid6--more flexible, more robust, and my guess is that
+> > it will be faster as well (no need for RMW updates or journal seeks).
+> >
+> > > ---------------------------------------------------------------------=
+----------------------------
+> > > FreeMail powered by mail.de - MEHR SICHERHEIT, SERIOSIT=C4T UND KOMFO=
+RT
+> > >
 >=20
-> There was already a proposal to introduce subvolume quota support some
-> time ago:
-> https://marc.info/?l=3Dlinux-btrfs&m=3D147576434114415&w=3D2
->=20
-> @David as I've seen your response on that topic on the mailing list,
-> maybe you can tell me if there are any plans to support correct
-> subvolume quota reporting e.g. for "df -h" calls from within a
-> container? Maybe there's already something on your / SUSE's roadmap? :-=
-)
->=20
-> As more and more container environments spin up these days, there might=
 
-> be a growing demand on that :-) Personally I'd really appreciate if I
-> could read the current file system usage and limit from within a
-> container using BTRFS as storage backend.
-
-In addition to Qu's deeper dive into the qgroup internals, the bigger
-issue is that statfs(), which df uses, only allows the kernel to report
-two numbers to describe space usage: total blocks and free blocks[1].
-
-Currently, the only space tracking we have at a subvolume level is
-qgroups.  There are other trees than "file" (i.e. subvolume) trees in
-btrfs and those aren't accounted using qgroups.
-
-So what should these numbers contain to describe to the user what their
-space usage looks like?  We can have subvolume qgroup limits, nested
-qgroup limits, disk capacity limits.  Df on btrfs is already confusing
-enough with the data/metadata allocation split combined with potentially
-different allocation policies for each.
-
-That's the biggest hurdle to reporting per-subvolume information via df.
- It's a feature request that's been in my TODO inbox for a while.  I
-started in on it again this year and came to the conclusion that wiring
-qgroups into df would be easy[2] - but would ultimately raise more
-questions than it solved for the user.  That's pretty much what I'm
-seeing in this thread.
-
-So, what I have mostly working is adding support for 'btrfs qgroup show'
-to output in JSON format so that tools can be easily written to use the
-numbers available to provide exactly what information the user wants
-(given the limit of what's available.)
-
--Jeff
-
-[1] There's f_bavail too, but that's not really relevant and runs into
-the same issue as above in any case.
-[2] Well, wiring it into statfs would be easy.  Publishing vfsmounts for
-every subvolume so df actually calls it on unqualified 'df' executions
-is rather a bit more involved.
---=20
-Jeff Mahoney
-SUSE Labs
-
-
-
---nHnbLbC7FcMZASh90I8KYkSj8Ge7iWFfN--
-
---fiAVEemN63VTUzIdMJbsGsK0iKT2vm76A
+--gm5TwAJMO0F2iVRz
 Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQIzBAEBCAAdFiEE8wzgbmZ74SnKPwtDHntLYyF55bIFAltyQ1MACgkQHntLYyF5
-5bLTjBAAojc2rIjgkHuhpoZQl0tAXAzBwZnfMETOYg/9bNqbbnMa2WKINcMU14FZ
-K1VpYu3g7R7j7ElHk99NnM8iaDgSs4iCKXAoYKIZ24BHfWOq5TWJ6u/GOb47GlNz
-mBz0GQ1qRel5WIYMqgGqouKZR7LWzYCAMTqV9fQqDTPyNWypMMrA9kEmTAbJrAeU
-Q8z7s1I9HmVgfa8AMTTe9tv1m2+xyYxVocYNXG/qlH5w1scslQmX7kYhCN68mz6l
-MQpn28dS8+Y705s/KxsFSsiH4rijMUIY/NSlq9NpgjO5mYMQ+c9nCAQyhHM0VFEz
-/oKb7Y2ttXbd/gWY7nyIam5j8Zjnn3vEfxoqS9Mu0J9uvuv3UB+oomfYlT7f7ZWQ
-GUeonby3sxr9eCzu30tb52KcOxZYOUNCBPN7LkcpZC2ilAnLO+7TdZ9Qa5tpZkcN
-LNoBQCdnaeoSPkpWgZNX8hig7RvBECPp8z+lkDayqP9WVzFt4AvkmbFAccIX1i8n
-Y3MU+LyPNrU+LIjboq+rJU+DsXNNQUvtCkkfHLcDbz8H07XcbY4OuACC2+WihiOB
-KMvzFHoDqfm2Mpe0ywJjivjF1Sz5H226pty8j9z5EoevX+7XeC5hz3X2F2x5+83X
-wGeDXe9Pw5kk4UY3XaMMv6U8FEYvdcUClDAsh1+UB+83CewCLSs=
-=psND
+iF0EABECAB0WIQSnOVjcfGcC/+em7H2B+YsaVrMbnAUCW3JRWgAKCRCB+YsaVrMb
+nH3BAKC0Ljm0ASVqkmqWYkvdTD99wkdzigCePqSQ8o7DJ2KQyT1beQAwNDRCT+U=
+=ArI/
 -----END PGP SIGNATURE-----
 
---fiAVEemN63VTUzIdMJbsGsK0iKT2vm76A--
+--gm5TwAJMO0F2iVRz--

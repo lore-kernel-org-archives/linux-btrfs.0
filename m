@@ -1,26 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:50012 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1729990AbeHNOOe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 14 Aug 2018 10:14:34 -0400
-Date: Tue, 14 Aug 2018 13:27:40 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Liu Bo <bo.liu@linux.alibaba.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: do not pass write_lock_level when processing leaf
-Message-ID: <20180814112740.GF24025@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1534214813-25712-1-git-send-email-bo.liu@linux.alibaba.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1534214813-25712-1-git-send-email-bo.liu@linux.alibaba.com>
+Received: from out30-133.freemail.mail.aliyun.com ([115.124.30.133]:56195 "EHLO
+        out30-133.freemail.mail.aliyun.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1725821AbeHNFcB (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 14 Aug 2018 01:32:01 -0400
+From: Liu Bo <bo.liu@linux.alibaba.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: do not pass write_lock_level when processing leaf
+Date: Tue, 14 Aug 2018 10:46:53 +0800
+Message-Id: <1534214813-25712-1-git-send-email-bo.liu@linux.alibaba.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Aug 14, 2018 at 10:46:53AM +0800, Liu Bo wrote:
-> As we're going to return, it doesn't make sense to get a new
-> write_lock_level from unlock_up.
-> 
-> Signed-off-by: Liu Bo <bo.liu@linux.alibaba.com>
+As we're going to return, it doesn't make sense to get a new
+write_lock_level from unlock_up.
 
-Reviewed-by: David Sterba <dsterba@suse.com>
+Signed-off-by: Liu Bo <bo.liu@linux.alibaba.com>
+---
+ fs/btrfs/ctree.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index 41eb47488e75..f032b48094b4 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -2950,7 +2950,7 @@ int btrfs_search_slot(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+ 			}
+ 			if (!p->search_for_split)
+ 				unlock_up(p, level, lowest_unlock,
+-					  min_write_lock_level, &write_lock_level);
++					  min_write_lock_level, NULL);
+ 			goto done;
+ 		}
+ 	}
+-- 
+1.8.3.1

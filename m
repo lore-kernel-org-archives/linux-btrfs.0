@@ -1,270 +1,191 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp2120.oracle.com ([156.151.31.85]:33826 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726119AbeHTSuD (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 20 Aug 2018 14:50:03 -0400
-Date: Mon, 20 Aug 2018 08:33:49 -0700
-From: "Darrick J. Wong" <darrick.wong@oracle.com>
-To: Dave Chinner <david@fromorbit.com>
-Cc: fdmanana@kernel.org, fstests@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        Filipe Manana <fdmanana@suse.com>, linux-xfs@vger.kernel.org,
-        linux-fsdevel@vger.kernel.org
-Subject: Re: [patch] file dedupe (and maybe clone) data corruption (was Re:
- [PATCH] generic: test for deduplication between different files)
-Message-ID: <20180820153349.GA4334@magnolia>
-References: <20180817083924.16916-1-fdmanana@kernel.org>
- <20180819231126.GU2234@dastard>
- <20180820010932.GV2234@dastard>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180820010932.GV2234@dastard>
+Received: from synology.com ([59.124.61.242]:43013 "EHLO synology.com"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1727689AbeHNLwD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 14 Aug 2018 07:52:03 -0400
+From: ethanwu <ethanwu@synology.com>
+To: linux-btrfs@vger.kernel.org
+Cc: ethanwu <ethanwu@synology.com>
+Subject: [PATCH] Btrfs: correctly caculate item size used when item key collision happends
+Date: Tue, 14 Aug 2018 17:05:32 +0800
+Message-Id: <1534237532-1310-1-git-send-email-ethanwu@synology.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Aug 20, 2018 at 11:09:32AM +1000, Dave Chinner wrote:
-> [cc linux-fsdevel now, too]
-> 
-> On Mon, Aug 20, 2018 at 09:11:26AM +1000, Dave Chinner wrote:
-> > [cc linux-xfs@vger.kernel.org]
-> > 
-> > On Fri, Aug 17, 2018 at 09:39:24AM +0100, fdmanana@kernel.org wrote:
-> > > From: Filipe Manana <fdmanana@suse.com>
-> > > 
-> > > Test that deduplication of an entire file that has a size that is not
-> > > aligned to the filesystem's block size into a different file does not
-> > > corrupt the destination's file data.
-> 
-> Ok, I've looked at this now. My first question is where did all the
-> magic offsets in this test come from? i.e. how was this bug
-> found and who is it affecting?
-> 
-> > > This test is motivated by a bug found in Btrfs which is fixed by the
-> > > following patch for the linux kernel:
-> > > 
-> > >   "Btrfs: fix data corruption when deduplicating between different files"
-> > > 
-> > > XFS also fails this test, at least as of linux kernel 4.18-rc7, exactly
-> > > with the same corruption as in Btrfs - some bytes of a block get replaced
-> > > with zeroes after the deduplication.
-> > 
-> > Filipe, in future can please report XFS bugs you find to the XFS
-> > list the moment you find them. We shouldn't ever find out about a
-> > data corruption bug we need to fix via a "oh, by the way" comment in
-> > a commit message for a regression test....
-> 
-> This becomes much more relevant because of what I've just found....
-> 
-> .....
-> 
-> > > +# The first byte with a value of 0xae starts at an offset (2518890) which is not
-> > > +# a multiple of the block size.
-> > > +$XFS_IO_PROG -f \
-> > > +	-c "pwrite -S 0x6b 0 2518890" \
-> > > +	-c "pwrite -S 0xae 2518890 102398" \
-> > > +	$SCRATCH_MNT/foo | _filter_xfs_io
-> > > +
-> > > +# Create a second file with a length not aligned to the block size, whose bytes
-> > > +# all have the value 0x6b, so that its extent(s) can be deduplicated with the
-> > > +# first file.
-> > > +$XFS_IO_PROG -f -c "pwrite -S 0x6b 0 557771" $SCRATCH_MNT/bar | _filter_xfs_io
-> > > +
-> > > +# The file is filled with bytes having the value 0x6b from offset 0 to offset
-> > > +# 2518889 and with the value 0xae from offset 2518890 to offset 2621287.
-> > > +echo "File content before deduplication:"
-> > > +od -t x1 $SCRATCH_MNT/foo
-> 
-> Please use "od -Ad -t x1 <file>" so the file offsets reported by od
-> match the offsets used in the test (i.e. in decimal, not octal).
-> 
-> > > +
-> > > +# Now deduplicate the entire second file into a range of the first file that
-> > > +# also has all bytes with the value 0x6b. The destination range's end offset
-> > > +# must not be aligned to the block size and must be less then the offset of
-> > > +# the first byte with the value 0xae (byte at offset 2518890).
-> > > +$XFS_IO_PROG -c "dedupe $SCRATCH_MNT/bar 0 1957888 557771" $SCRATCH_MNT/foo \
-> > > +	| _filter_xfs_io
-> 
-> Ok, now it gets fun. dedupe to non-block aligned rtanges is supposed
-> to be rejected by the kernel in vfs_clone_file_prep_inodes(). i.e
-> this check:
-> 
->         /* Only reflink if we're aligned to block boundaries */
->         if (!IS_ALIGNED(pos_in, bs) || !IS_ALIGNED(pos_in + blen, bs) ||
->             !IS_ALIGNED(pos_out, bs) || !IS_ALIGNED(pos_out + blen, bs))
->                 return -EINVAL;
-> 
-> And it's pretty clear that a length of 557771 is not block aligned
-> (being an odd number).
-> 
-> So why was this dedupe request even accepted by the kernel? Well,
-> I think there's a bug in the check just above this:
-> 
->         /* If we're linking to EOF, continue to the block boundary. */
->         if (pos_in + *len == isize)
->                 blen = ALIGN(isize, bs) - pos_in;
->         else
->                 blen = *len;
-> 
-> basically, when the "in" file dedupe/reflink range is to EOF, it
-> expands the range to include /all/ of the block that contains the
-> EOF byte. IOWs, it now requests us to dedupe /undefined data beyond
-> EOF/. But when we go to compare the data in these ranges, it
-> truncates the comparison to the length that the user asked for
-> (i.e. *len) and not the extended block length.
-> 
-> IOWs, it doesn't compare the bytes beyond EOF in the source block to
-> the data in the destination block it would replace, and so doesn't
-> fail the compare like it should.
-> 
-> And, well, btrfs has the same bug. extent_same_check_offsets()
-> extends the range for alignment so it passes alignment checks, but
-> then /explicitly/ uses the original length for the data compare
-> and dedupe. i.e:
-> 
->        /* pass original length for comparison so we stay within i_size */
->         ret = btrfs_cmp_data(olen, cmp);
->         if (ret == 0)
->                 ret = btrfs_clone(src, dst, loff, olen, len, dst_loff, 1);
-> 
-> This is what we should see if someone tried to dedupe the EOF block
-> of a file:
-> 
-> generic/505     - output mismatch (see /home/dave/src/xfstests-dev/results//xfs/generic/505.out.bad)
->     --- tests/generic/505.out   2018-08-20 09:36:58.449015709 +1000
->     +++ /home/dave/src/xfstests-dev/results//xfs/generic/505.out.bad    2018-08-20 10:45:47.245482160 +1000
->     @@ -13,8 +13,7 @@
->      *
->      2621280 ae ae ae ae ae ae ae ae
->      2621288
->     -deduped 557771/557771 bytes at offset 1957888
->     -XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
->     +XFS_IOC_FILE_EXTENT_SAME: Invalid argument
->      File content after deduplication and before unmounting:
->     ...
->     (Run 'diff -u tests/generic/505.out /home/dave/src/xfstests-dev/results//xfs/generic/505.out.bad'  to see the entire diff)
-> 
-> i.e. the dedupe request should fail as we cannot dedupe the EOF
-> block.
-> 
-> The patch below does this for the VFS dedupe code. it's not a final
-> patch, it's just a demonstration of how this should never have got
-> past the range checks. Open questions:
+Item key collision is allowed for some item types, like dir item and
+inode refs, but the overall item size is limited by the leafsize.
 
-(Here's my five minutes of XFS that I'm allowed per day... :/)
+item size(ins_len) passed from btrfs_insert_empty_items to
+btrfs_search_slot already contains size of btrfs_item.
 
-> 	- is documenting rejection on request alignment grounds
-> 	  (i.e. EINVAL) in the man page sufficient for app
-> 	  developers to understand what is going on here?
+When btrfs_search_slot reaches leaf, we'll see if we need to split leaf,
+since the ins_len includes one struct btrfs_item, the check might
+fail even though new item we try to insert could merge into the existing
+one without adding new btrfs_item.
+And split_leaf return -EOVERFLOW from following code:
+if (extend && data_size + btrfs_item_size_nr(l, slot) +
+    sizeof(struct btrfs_item) > BTRFS_LEAF_DATA_SIZE(fs_info))
+    return -EOVERFLOW;
 
-I think so.  The manpage says: "The filesystem does not support
-reflinking the ranges of the given files", which (to my mind) covers
-this case of not supporting dedupe of EOF blocks.
+In most cases, when callers receive -EOVERFLOW, they either return
+this error or handle in different ways. For example, in normal dir item
+insertion the userspace will get errno EOVERFLOW; in inode ref case
+INODE_EXTREF is used instead if INODE_REF is full.
 
-> 	- should we just round down the EOF dedupe request to the
-> 	  block before EOF so dedupe still succeeds?
+However, this is not the case for rename. To avoid the unrecoverable
+situation in rename, btrfs_check_dir_item_collision is called in
+early phase of rename. In this function, when item key collision is
+detected leaf space is checked:
 
-I've often wondered if the interface should (have) be(en) that we start
-at src_off/dst_off and share as many common blocks as possible until we
-find a mismatch, then tell userspace where we stopped... instead of like
-now where we compare the entire extent and fail if any part of it
-doesn't match.
+data_size = sizeof(*di) + name_len;
+if (data_size + btrfs_item_size_nr(leaf, slot) +
+    sizeof(struct btrfs_item) > BTRFS_LEAF_DATA_SIZE(root->fs_info))
 
-> 	- should file cloning (i.e. reflink) be allow allowing the
-> 	  EOF block to be shared somewhere inside EOF in the
-> 	  destination file?
+the sizeof(struct btrfs_item) + btrfs_item_size_nr(leaf, slot) here
+refers to existing item size.
 
-I don't think we should.
+The check condition here is not consistent with the btrfs_search_slot
+when item key collision happens. We might pass check here but fail
+at btrfs_search_slot.
 
-> That's stale data exposure, yes?
+in the rename call path
+btrfs_add_link
+  btrfs_insert_dir_item
+    insert_with_overflow
+      btrfs_insert_empty_items (btrfs item is counted)
+        btrfs_search_slot
 
-Haven't tested that, but seems likely.
+if (ins_len > 0 &&
+    btrfs_leaf_free_space(fs_info, b) < ins_len) {
 
-> 	- should clone only allow sharing of the EOF block if it's a
-> 	  either a full file clone or a matching range clone and
-> 	  isize is the same for both src and dest files?
+The ins_len here contains btrfs_item and the item data, but this
+btrfs_item is already in leaf used space, two btrfs_item is counted and
+we only need one when this is item key collision cases.
+Therfore, rename fails, and abort transaction is triggered with
+following error messages:
+BTRFS: error (device loop0) in btrfs_rename:9870: errno=-75 unknown
 
-The above sound reasonable for clone, though I would also allow clone to
-share the EOF block if we extend isize of the dest file.
+There are two ways to fix rename issue, one is to revert the patch
+878f2d2cb355 Btrfs: fix max dir item size calculation
+to make the condition consistent.
 
-The above also nearly sound reasonable for dedupe too.  If we encounter
-EOF at the same places in the src range and the dest range, should we
-allow sharing there?  The post-eof bytes are undefined by definition;
-does undefined == undefined?
+The other way is to handle the leaf space check correctly when
+collision happens. I prefer the second one since it correct leaf
+space check in collision case. This fix needs unify the usage of ins_len
+in btrfs_search_slot to contain btrfs_item anyway and
+adjust all callers of btrfs_search_slot that intentionally pass ins_len
+without btrfs_item size to add size of btrfs_item from now.
 
-> 
-> Discuss.
-> 
-> Cheers,
-> 
-> Dave.
-> -- 
-> Dave Chinner
-> david@fromorbit.com
-> 
-> 
-> [RFC] vfs: fix data corruption w/ unaligned dedupe ranges
-> 
-> From: Dave Chinner <dchinner@redhat.com>
-> 
-> Exposed by fstests generic/505 on XFS, caused by extending the
-> bblock match range to include the partial EOF block, but then
-> allowing unknown data beyond EOF to be considered a "match" to data
-> in the destination file because the comparison is only made to the
-> end of the source file. This corrupts the destination file when the
-> source extent is shared with it.
-> 
-> Open questions:
-> 
-> 	- is documenting rejection on request alignment grounds
-> 	  (i.e. EINVAL) in the man page sufficient for app
-> 	  developers to understand what is going on here?
-> 	- should we just silently round down the EOF dedupe request
-> 	  to the block before EOF so dedupe still succeeds?
-> 	- should file cloning (i.e. reflink) be allow allowing the
-> 	  EOF block to be shared somewhere inside EOF in the
-> 	  destination file? That's stale data exposure, yes?
-> 	- should clone only allow sharing of the EOF block if it's a
-> 	  either a full file clone or a matching range clone and
-> 	  isize is the same for both src and dest files?
-> 
-> Btrfs also has the same bug in extent_same_check_offsets() and
-> btrfs_extent_same_range() that is not addressed by this patch.
+dir item hash collision is not easy to reproduce.
+The following is a leaf sample filled with inode ref.
 
-<nod> (xfs/ocfs2) clone ioctls tend to be bug-for-bug compatible with
-btrfs more often than we probably ought to... :/
+Before applying the patch, when item data reaches 16200
+and we want to add another link with namelen 26(inode ref size 36)
+It will not pass the leafspace check
+10(inode ref item) + 26(name len) + 25(btrfs item) >
+    leaf free space 58
+and use BTRFS_INODE_EXTREF_KEY instead.
+Nevertheless, The 25 bytes btrfs_item is not needed because the
+newly inserted item could be merged with the existing one.
 
-(I also sorta wonder if btrfs should be ported to the common vfs
-routines for clone prep and dedupe comparison...?)
+before patch:
+leaf 31571968 items 1 free space 58 generation 178 owner 262
+fs uuid 1abc143e-54af-491f-bff8-e58e21ad26e5
+chunk uuid 688bc1b5-5407-4f2d-9986-3dc3bf3019d3
+    item 0 key (261 INODE_REF 257) itemoff 83 itemsize 16200
+        inode ref index 504 namelen 26 name: abcdefghijklmnopqrstuv0001
+        inode ref index 505 namelen 26 name: abcdefghijklmnopqrstuv0002
+        inode ref index 506 namelen 26 name: abcdefghijklmnopqrstuv0003
+        ...
+        inode ref index 953 namelen 26 name: abcdefghijklmnopqrstuv0450
 
---D
+after patch:
+leaf 31899648 items 1 free space 22 generation 180 owner 262
+fs uuid 1abc143e-54af-491f-bff8-e58e21ad26e5
+chunk uuid 688bc1b5-5407-4f2d-9986-3dc3bf3019d3
+    item 0 key (263 INODE_REF 262) itemoff 47 itemsize 16236
+        inode ref index 504 namelen 26 name: abcdefghijklmnopqrstuv0001
+        inode ref index 505 namelen 26 name: abcdefghijklmnopqrstuv0002
+        inode ref index 506 namelen 26 name: abcdefghijklmnopqrstuv0003
+        ...
+        inode ref index 953 namelen 26 name: abcdefghijklmnopqrstuv0450
+        inode ref index 452 namelen 26 name: abcdefghijklmnopqrstuv0451
 
-> Signed-off-by: Dave Chinner <dchinner@redhat.com>
-> ---
->  fs/read_write.c | 13 +++++++++++--
->  1 file changed, 11 insertions(+), 2 deletions(-)
-> 
-> diff --git a/fs/read_write.c b/fs/read_write.c
-> index 153f8f690490..3844359a4597 100644
-> --- a/fs/read_write.c
-> +++ b/fs/read_write.c
-> @@ -1768,8 +1768,17 @@ int vfs_clone_file_prep_inodes(struct inode *inode_in, loff_t pos_in,
->  			return -EINVAL;
->  	}
->  
-> -	/* If we're linking to EOF, continue to the block boundary. */
-> -	if (pos_in + *len == isize)
-> +	/* Reflink allows linking to EOF, so round the length up to allow us to
-> +	 * shared the last block in the file. We don't care what is beyond the
-> +	 * EOF point in the block that gets shared, as we can't access it and
-> +	 * attempts to extent the file will break the sharing.
-> +	 *
-> +	 * For dedupe, sharing the EOF block is illegal because the bytes beyond
-> +	 * EOF are undefined (i.e. not readable) and so can't be deduped. Hence
-> +	 * we do not extend/align the length and instead let the alignment
-> +	 * checks below reject it.
-> +	 */
-> +	if (!is_dedupe && pos_in + *len == isize)
->  		blen = ALIGN(isize, bs) - pos_in;
->  	else
->  		blen = *len;
+Signed-off-by: ethanwu <ethanwu@synology.com>
+---
+ fs/btrfs/ctree.c       | 15 +++++++++++++--
+ fs/btrfs/extent-tree.c |  5 +++--
+ fs/btrfs/file-item.c   |  2 +-
+ 3 files changed, 17 insertions(+), 5 deletions(-)
+
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index 4bc326d..3614dd9 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -2678,8 +2678,8 @@ static struct extent_buffer *btrfs_search_slot_get_root(struct btrfs_root *root,
+  * @p:		Holds all btree nodes along the search path
+  * @root:	The root node of the tree
+  * @key:	The key we are looking for
+- * @ins_len:	Indicates purpose of search, for inserts it is 1, for
+- *		deletions it's -1. 0 for plain searches
++ * @ins_len:	Indicates purpose of search, for inserts it is item size
++ *		including btrfs_item, for deletions it's -1. 0 for plain searches
+  * @cow:	boolean should CoW operations be performed. Must always be 1
+  *		when modifying the tree.
+  *
+@@ -2893,6 +2893,17 @@ int btrfs_search_slot(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+ 			}
+ 		} else {
+ 			p->slots[level] = slot;
++			/*
++			 * item key collision happens. In this case, if we are allow
++			 * to insert the item(for example, in dir_item case, item key
++			 * collision is allowed), it will be merged with the original
++			 * item. Only the item size grows, no new btrfs item will be
++			 * added. Since the ins_len already accounts the size btrfs_item,
++			 * this value is counted twice. Duduct this value here so the
++			 * leaf space check will be correct.
++			 */
++			if (ret == 0 && ins_len > 0)
++				ins_len -= sizeof(struct btrfs_item);
+ 			if (ins_len > 0 &&
+ 			    btrfs_leaf_free_space(fs_info, b) < ins_len) {
+ 				if (write_lock_level < 1) {
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 3d9fe58..4e3aa09 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -1094,7 +1094,7 @@ static int convert_extent_item_v0(struct btrfs_trans_handle *trans,
+ 
+ 	new_size -= sizeof(*ei0);
+ 	ret = btrfs_search_slot(trans, root, &key, path,
+-				new_size + extra_size, 1);
++				new_size + extra_size + sizeof(struct btrfs_item), 1);
+ 	if (ret < 0)
+ 		return ret;
+ 	BUG_ON(ret); /* Corruption */
+@@ -1644,7 +1644,8 @@ int lookup_inline_extent_backref(struct btrfs_trans_handle *trans,
+ 	}
+ 
+ again:
+-	ret = btrfs_search_slot(trans, root, &key, path, extra_size, 1);
++	ret = btrfs_search_slot(trans, root, &key, path,
++			    extra_size + sizeof(struct btrfs_item), 1);
+ 	if (ret < 0) {
+ 		err = ret;
+ 		goto out;
+diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
+index f9dd6d1..0b6c581 100644
+--- a/fs/btrfs/file-item.c
++++ b/fs/btrfs/file-item.c
+@@ -804,7 +804,7 @@ int btrfs_csum_file_blocks(struct btrfs_trans_handle *trans,
+ 	 */
+ 	btrfs_release_path(path);
+ 	ret = btrfs_search_slot(trans, root, &file_key, path,
+-				csum_size, 1);
++				csum_size + sizeof(struct btrfs_item), 1);
+ 	if (ret < 0)
+ 		goto fail_unlock;
+ 
+-- 
+1.9.1

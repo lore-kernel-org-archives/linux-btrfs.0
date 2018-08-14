@@ -1,201 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f43.google.com ([209.85.214.43]:39712 "EHLO
-        mail-it0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727689AbeHNKTA (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 14 Aug 2018 06:19:00 -0400
-Received: by mail-it0-f43.google.com with SMTP id g141-v6so18250774ita.4
-        for <linux-btrfs@vger.kernel.org>; Tue, 14 Aug 2018 00:33:03 -0700 (PDT)
+Received: from smtp.nue.novell.com ([195.135.221.5]:51798 "EHLO
+        smtp.nue.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727830AbeHNK1h (ORCPT
+        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+        Tue, 14 Aug 2018 06:27:37 -0400
+Subject: Re: [RFC PATCH 00/17] btrfs zoned block device support
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>, dsterba@suse.cz,
+        Naohiro Aota <naota@elisp.net>, David Sterba <dsterba@suse.com>,
+        linux-btrfs@vger.kernel.org, Chris Mason <clm@fb.com>,
+        Josef Bacik <jbacik@fb.com>, linux-kernel@vger.kernel.org,
+        Damien Le Moal <damien.lemoal@wdc.com>,
+        Bart Van Assche <bart.vanassche@wdc.com>,
+        Matias Bjorling <mb@lightnvm.io>
+References: <20180809180450.5091-1-naota@elisp.net>
+ <20180813184251.GC24025@twin.jikos.cz>
+ <86bddb14-104e-182b-29a1-6ab8150f09a8@suse.com>
+ <057b6600-0fef-4067-54ca-216b591d43f8@gmail.com>
+From: Hannes Reinecke <hare@suse.com>
+Message-ID: <9531d57f-2271-7eb8-b734-dac6d33f0ec1@suse.com>
+Date: Tue, 14 Aug 2018 09:41:36 +0200
 MIME-Version: 1.0
-References: <20180813215605.705238033D@smtp03.mail.de>
-In-Reply-To: <20180813215605.705238033D@smtp03.mail.de>
-From: Menion <menion@gmail.com>
-Date: Tue, 14 Aug 2018 09:32:51 +0200
-Message-ID: <CAJVZm6fH0B3rFVwmm0dCis+LOZChqk24M3jU5RBXuqa1boH7Sw@mail.gmail.com>
-Subject: Re: List of known BTRFS Raid 5/6 Bugs?
-To: erenthetitan@mail.de
-Cc: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>, linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <057b6600-0fef-4067-54ca-216b591d43f8@gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi
-Well, I think it is worth to give more details on the array.
-the array is built with 5x8TB HDD in an esternal USB3.0 to SATAIII enclosure
-The enclosure is a cheap JMicron based chinese stuff (from Orico).
-There is one USB3.0 link for all the 5 HDD with a SATAIII 3.0Gb
-multiplexer behind it. So you cannot expect peak performance, which is
-not the goal of this array (domestic data storage).
-Also the USB to SATA firmware is buggy, so UAS operations are not
-stable, it run in BOT mode.
-Having said so, the scrub has been started (and resumed) on the array
-mount point:
+On 08/13/2018 09:29 PM, Austin S. Hemmelgarn wrote:
+> On 2018-08-13 15:20, Hannes Reinecke wrote:
+>> On 08/13/2018 08:42 PM, David Sterba wrote:
+>>> On Fri, Aug 10, 2018 at 03:04:33AM +0900, Naohiro Aota wrote:
+>>>> This series adds zoned block device support to btrfs.
+>>>
+>>> Yay, thanks!
+>>>
+[ .. ]
+>>> Device replace is disabled, but the changlog suggests there's a way to
+>>> make it work, so it's a matter of implementation. And this should be
+>>> implemented at the time of merge.
+>>>
+>> How would a device replace work in general?
+>> While I do understand that device replace is possible with RAID
+>> thingies, I somewhat fail to see how could do a device replacement
+>> without RAID functionality.
+>> Is it even possible?
+>> If so, how would it be different from a simple umount?
+> Device replace is implemented in largely the same manner as most other
+> live data migration tools (for example, LVM2's pvmove command).
+> 
+> In short, when you issue a replace command for a given device, all
+> writes that would go to that device are instead sent to the new device.
+> While this is happening, old data is copied over from the old device to
+> the new one.  Once all the data is copied, the old device is released
+> (and it's BTRFS signature wiped), and the new device has it's device ID
+> updated to that of the old device.
+> 
+> This is possible largely because of the COW infrastructure, but it's
+> implemented in a way that doesn't entirely depend on it (otherwise it
+> wouldn't work for NOCOW files).
+> 
+> Handling this on zoned devices is not likely to be easy though, you
+> would functionally have to freeze I/O that would hit the device being
+> replaced so that you don't accidentally write to a sequential zone out
+> of order.
 
-sudo btrfs scrub start(resume) /media/storage/das1
+Ah. Oh. Hmm.
 
-even if reading the documentation I understand that it is the same
-invoking it on mountpoint or one of the HDD in the array.
-In the end, especially for a RAID5 array, does it really make sense to
-scrub only one disk in the array???
-Regarding the data usage, here you have the current figures:
+It would be possible in principle if we freeze accesses to any partially
+filled zones on the original device. Then all new writes will be going
+into new/empty zones on the new disks, and we can copy over the old data
+with no issue at all.
+We end up with some partially filled zones on the new disk, but they
+really should be cleaned up eventually either by the allocator filling
+up the partially filled zones or once garbage collection clears out
+stale zones.
 
-menion@Menionubuntu:~$ sudo btrfs fi show
-[sudo] password for menion:
-Label: none  uuid: 6db4baf7-fda8-41ac-a6ad-1ca7b083430f
-Total devices 1 FS bytes used 11.44GiB
-devid    1 size 27.07GiB used 18.07GiB path /dev/mmcblk0p3
+However, I fear the required changes to the btrfs allocator are beyond
+my btrfs knowledge :-(
 
-Label: none  uuid: 931d40c6-7cd7-46f3-a4bf-61f3a53844bc
-Total devices 5 FS bytes used 6.57TiB
-devid    1 size 7.28TiB used 1.64TiB path /dev/sda
-devid    2 size 7.28TiB used 1.64TiB path /dev/sdb
-devid    3 size 7.28TiB used 1.64TiB path /dev/sdc
-devid    4 size 7.28TiB used 1.64TiB path /dev/sdd
-devid    5 size 7.28TiB used 1.64TiB path /dev/sde
+Cheers,
 
-menion@Menionubuntu:~$ sudo btrfs fi df /media/storage/das1
-Data, RAID5: total=6.57TiB, used=6.56TiB
-System, RAID5: total=12.75MiB, used=416.00KiB
-Metadata, RAID5: total=9.00GiB, used=8.16GiB
-GlobalReserve, single: total=512.00MiB, used=0.00B
-menion@Menionubuntu:~$ sudo btrfs fi usage /media/storage/das1
-WARNING: RAID56 detected, not implemented
-WARNING: RAID56 detected, not implemented
-WARNING: RAID56 detected, not implemented
-Overall:
-    Device size:   36.39TiB
-    Device allocated:      0.00B
-    Device unallocated:   36.39TiB
-    Device missing:      0.00B
-    Used:      0.00B
-    Free (estimated):      0.00B (min: 8.00EiB)
-    Data ratio:       0.00
-    Metadata ratio:       0.00
-    Global reserve: 512.00MiB (used: 32.00KiB)
-
-Data,RAID5: Size:6.57TiB, Used:6.56TiB
-   /dev/sda    1.64TiB
-   /dev/sdb    1.64TiB
-   /dev/sdc    1.64TiB
-   /dev/sdd    1.64TiB
-   /dev/sde    1.64TiB
-
-Metadata,RAID5: Size:9.00GiB, Used:8.16GiB
-   /dev/sda    2.25GiB
-   /dev/sdb    2.25GiB
-   /dev/sdc    2.25GiB
-   /dev/sdd    2.25GiB
-   /dev/sde    2.25GiB
-
-System,RAID5: Size:12.75MiB, Used:416.00KiB
-   /dev/sda    3.19MiB
-   /dev/sdb    3.19MiB
-   /dev/sdc    3.19MiB
-   /dev/sdd    3.19MiB
-   /dev/sde    3.19MiB
-
-Unallocated:
-   /dev/sda    5.63TiB
-   /dev/sdb    5.63TiB
-   /dev/sdc    5.63TiB
-   /dev/sdd    5.63TiB
-   /dev/sde    5.63TiB
-menion@Menionubuntu:~$
-menion@Menionubuntu:~$ sf -h
-The program 'sf' is currently not installed. You can install it by typing:
-sudo apt install ruby-sprite-factory
-menion@Menionubuntu:~$ df -h
-Filesystem      Size  Used Avail Use% Mounted on
-udev            934M     0  934M   0% /dev
-tmpfs           193M   22M  171M  12% /run
-/dev/mmcblk0p3   28G   12G   15G  44% /
-tmpfs           962M     0  962M   0% /dev/shm
-tmpfs           5,0M     0  5,0M   0% /run/lock
-tmpfs           962M     0  962M   0% /sys/fs/cgroup
-/dev/mmcblk0p1  188M  3,4M  184M   2% /boot/efi
-/dev/mmcblk0p3   28G   12G   15G  44% /home
-/dev/sda         37T  6,6T   29T  19% /media/storage/das1
-tmpfs           193M     0  193M   0% /run/user/1000
-menion@Menionubuntu:~$ btrfs --version
-btrfs-progs v4.17
-
-So I don't fully understand where the scrub data size comes from
-Il giorno lun 13 ago 2018 alle ore 23:56 <erenthetitan@mail.de> ha scritto:
->
-> Running time of 55:06:35 indicates that the counter is right, it is not enough time to scrub the entire array using hdd.
->
-> 2TiB might be right if you only scrubbed one disc, "sudo btrfs scrub start /dev/sdx1" only scrubs the selected partition,
-> whereas "sudo btrfs scrub start /media/storage/das1" scrubs the actual array.
->
-> Use "sudo btrfs scrub status -d " to view per disc scrubbing statistics and post the output.
-> For live statistics, use "sudo watch -n 1".
->
-> By the way:
-> 0 errors despite multiple unclean shutdowns? I assumed that the write hole would corrupt parity the first time around, was i wrong?
->
-> Am 13-Aug-2018 09:20:36 +0200 schrieb menion@gmail.com:
-> > Hi
-> > I have a BTRFS RAID5 array built on 5x8TB HDD filled with, well :),
-> > there are contradicting opinions by the, well, "several" ways to check
-> > the used space on a BTRFS RAID5 array, but I should be aroud 8TB of
-> > data.
-> > This array is running on kernel 4.17.3 and it definitely experienced
-> > power loss while data was being written.
-> > I can say that it wen through at least a dozen of unclear shutdown
-> > So following this thread I started my first scrub on the array. and
-> > this is the outcome (after having resumed it 4 times, two after a
-> > power loss...):
-> >
-> > menion@Menionubuntu:~$ sudo btrfs scrub status /media/storage/das1/
-> > scrub status for 931d40c6-7cd7-46f3-a4bf-61f3a53844bc
-> > scrub resumed at Sun Aug 12 18:43:31 2018 and finished after 55:06:35
-> > total bytes scrubbed: 2.59TiB with 0 errors
-> >
-> > So, there are 0 errors, but I don't understand why it says 2.59TiB of
-> > scrubbed data. Is it possible that also this values is crap, as the
-> > non zero counters for RAID5 array?
-> > Il giorno sab 11 ago 2018 alle ore 17:29 Zygo Blaxell
-> > <ce3g8jdj@umail.furryterror.org> ha scritto:
-> > >
-> > > On Sat, Aug 11, 2018 at 08:27:04AM +0200, erenthetitan@mail.de wrote:
-> > > > I guess that covers most topics, two last questions:
-> > > >
-> > > > Will the write hole behave differently on Raid 6 compared to Raid 5 ?
-> > >
-> > > Not really. It changes the probability distribution (you get an extra
-> > > chance to recover using a parity block in some cases), but there are
-> > > still cases where data gets lost that didn't need to be.
-> > >
-> > > > Is there any benefit of running Raid 5 Metadata compared to Raid 1 ?
-> > >
-> > > There may be benefits of raid5 metadata, but they are small compared to
-> > > the risks.
-> > >
-> > > In some configurations it may not be possible to allocate the last
-> > > gigabyte of space. raid1 will allocate 1GB chunks from 2 disks at a
-> > > time while raid5 will allocate 1GB chunks from N disks at a time, and if
-> > > N is an odd number there could be one chunk left over in the array that
-> > > is unusable. Most users will find this irrelevant because a large disk
-> > > array that is filled to the last GB will become quite slow due to long
-> > > free space search and seek times--you really want to keep usage below 95%,
-> > > maybe 98% at most, and that means the last GB will never be needed.
-> > >
-> > > Reading raid5 metadata could theoretically be faster than raid1, but that
-> > > depends on a lot of variables, so you can't assume it as a rule of thumb.
-> > >
-> > > Raid6 metadata is more interesting because it's the only currently
-> > > supported way to get 2-disk failure tolerance in btrfs. Unfortunately
-> > > that benefit is rather limited due to the write hole bug.
-> > >
-> > > There are patches floating around that implement multi-disk raid1 (i.e. 3
-> > > or 4 mirror copies instead of just 2). This would be much better for
-> > > metadata than raid6--more flexible, more robust, and my guess is that
-> > > it will be faster as well (no need for RMW updates or journal seeks).
-> > >
-> > > > -------------------------------------------------------------------------------------------------
-> > > > FreeMail powered by mail.de - MEHR SICHERHEIT, SERIOSITÄT UND KOMFORT
-> > > >
->
->
-> -------------------------------------------------------------------------------------------------
-> FreeMail powered by mail.de - MEHR SICHERHEIT, SERIOSITÄT UND KOMFORT
+Hannes
+-- 
+Dr. Hannes Reinecke		               zSeries & Storage
+hare@suse.com			               +49 911 74053 688
+SUSE LINUX GmbH, Maxfeldstr. 5, 90409 Nürnberg
+GF: F. Imendörffer, J. Smithard, D. Upmanyu, G. Norton
+HRB 21284 (AG Nürnberg)

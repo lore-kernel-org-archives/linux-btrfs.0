@@ -1,60 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f179.google.com ([209.85.220.179]:37454 "EHLO
-        mail-qk0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728576AbeHOO1b (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 15 Aug 2018 10:27:31 -0400
-Received: by mail-qk0-f179.google.com with SMTP id t79-v6so496021qke.4
-        for <linux-btrfs@vger.kernel.org>; Wed, 15 Aug 2018 04:35:41 -0700 (PDT)
-Subject: Re: How to ensure that a snapshot is not corrupted?
-To: Cerem Cem ASLAN <ceremcem@ceremcem.net>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <CAN4oSBd9aVn9Ruv83fd=oE4hJhGw7y3f1EbJ+SNbHMZZyZo=Mw@mail.gmail.com>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <8e8d23d9-ce7a-5f67-c8e1-d7c1d044178a@gmail.com>
-Date: Wed, 15 Aug 2018 07:35:36 -0400
+Received: from mx2.suse.de ([195.135.220.15]:40542 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1727141AbeHOPM6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 15 Aug 2018 11:12:58 -0400
+Date: Wed, 15 Aug 2018 14:20:51 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2 0/3] Misc volume patch set part2
+Message-ID: <20180815122051.GL24025@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20180810055321.19730-1-anand.jain@oracle.com>
 MIME-Version: 1.0
-In-Reply-To: <CAN4oSBd9aVn9Ruv83fd=oE4hJhGw7y3f1EbJ+SNbHMZZyZo=Mw@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20180810055321.19730-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2018-08-10 06:07, Cerem Cem ASLAN wrote:
-> Original question is here: https://superuser.com/questions/1347843
+On Fri, Aug 10, 2018 at 01:53:18PM +0800, Anand Jain wrote:
+> The patch set (2/3 and 3/3) adds helper function to deduce the num_device
+> (which is the number of the devices when device is mounted, this excludes
+> the seed device however includes the replacing target). We need to know
+> the num_device that actually belongs to the FSID without the replacing
+> target (if it exists) when we are balancing and or when we are trying to
+> device delete. In both of these cases, it would be wrong to consider
+> replacing target when reallocating the blockgroups.
 > 
-> How can we sure that a readonly snapshot is not corrupted due to a disk failure?
+> This patch as such does not change any of the logic which is already in
+> the original code, but instead it would bring such a logic at two
+> locations into a single place/function. But to do that as these two
+> location uses either WARN_ON or BUG_ON to perform the safety catch so
+> the first patch does the cleanup and uses ASSERT at both of these
+> places. And now since these two sections of codes are identical, the 2nd
+> patch replaces them into a helper function.
 > 
-> Is the only way calculating the checksums one on another and store it
-> for further examination, or does BTRFS handle that on its own?
+> Also though the check for num_device > 0 should actually be num_device >
+> 1 OR instead, the check of num_device > 0 should have been after the
+> num_device--,
+
+I updated the patch following that logic now.
+
+> since we have had already too many comments and added
+> confusions, I shall leave that part to be fixed at sometime later. So
+> that the cleanup here is a really a cleanup instead of chaning the
+> logic in a rough scale.
 > 
-I've posted an answer for the linked question on SuperUser, under the 
-assumption that it will be more visible to people simply searching for 
-it there than it would be on the ML.
+> Last but not least, this patch has gone through a lot of comments on
+> either to use BUG or return -EINVAL for accidental fall of num_device
+> below 1, which I wasn't expecting so much of the concerns about
+> the use of BUG_ON/-EINVAL as its trivial because fundamentally a FS
+> can't be in the mounted state when num_device < 1.
+> 
+> 
+> Anand Jain (3):
+>   btrfs: drop uuid_mutex in btrfs_free_extra_devids()
+>   btrfs: assert for num_devices below 0
+>   btrfs: add helper btrfs_num_devices() to deduce num_devices
 
-Here's the text of the answer though so people here can see it too:
-
-There are two possible answers depending on what you mean by 'corrupted 
-by a disk failure'.
-
-### If you mean simple at-rest data corruption
-
-BTRFS handles this itself, transparently to the user.  It checksums 
-everything, including data in snapshots, internally and then verifies 
-the checksums as it reads each block.  There are a couple of exceptions 
-to this though:
-
-* If the volume is mounted with the `nodatasum` or `nodatacow` options, 
-you will have no checksumming of data blocks.  In most cases, you should 
-not be mounting with these options, so this should not e an issue.
-* Any files for which the `NOCOW` attribute is set (`C` in the output of 
-the `lsattr` command) are also not checked.  You're not likely to have 
-any truly important files with this attribute set (systemd journal files 
-have it set, but that's about it unless you set it manually).
-
-### If you mean non-trivial destruction of data on the volume because of 
-loss of too many devices
-
-You can't protect against this except by having another copy of the data 
-somewhere.  Pretty much, if you've lost more devices than however many 
-the storage profiles for the volume can tolerate, your data is gone, and 
-nothing is going to get it back for you short of restoring from a backup.
+Patches 2 and 3 are applied, with some adjustments. The first patch
+needs another round of review as there were many changes regarding the
+device locking and uuid_mutex. I need a break from this code as the
+wounds haven't healed yet, but will add the patch to a topic branch to
+next so I don't forget about it.

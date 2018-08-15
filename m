@@ -1,46 +1,104 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:56228 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:56234 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726133AbeHOKbE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1728670AbeHOKbE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Wed, 15 Aug 2018 06:31:04 -0400
 Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id EB0C3AED2
-        for <linux-btrfs@vger.kernel.org>; Wed, 15 Aug 2018 07:39:59 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 40EDEAED4
+        for <linux-btrfs@vger.kernel.org>; Wed, 15 Aug 2018 07:40:00 +0000 (UTC)
 From: Nikolay Borisov <nborisov@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 0/3] Refactor delayed refs processing loop 
-Date: Wed, 15 Aug 2018 10:39:53 +0300
-Message-Id: <1534318796-23111-1-git-send-email-nborisov@suse.com>
+Subject: [PATCH 1/3] btrfs: Factor out ref head locking code in __btrfs_run_delayed_refs
+Date: Wed, 15 Aug 2018 10:39:54 +0300
+Message-Id: <1534318796-23111-2-git-send-email-nborisov@suse.com>
+In-Reply-To: <1534318796-23111-1-git-send-email-nborisov@suse.com>
+References: <1534318796-23111-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Here is a small series which aims to rectify the eye sore that delayed refs 
-processing loop currently is. In fact, it's actually 2 loops in the guise of a 
-single 'while' construct. All in all this should bring no functional changes 
-and I've verified this with multiple xfstest runs with no problems. 
+This is in preparation to refactor the giant loop in
+__btrfs_run_delayed_refs. As a first step define a new function
+which implements acquiring a reference to a btrfs_delayed_refs_head and
+use it. No functional changes.
 
-Patch 1 factors out the code which deals with selecting a ref head which has 
-delayed refs pending and locking it. 
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+---
+ fs/btrfs/extent-tree.c | 54 ++++++++++++++++++++++++++++++++++----------------
+ 1 file changed, 37 insertions(+), 17 deletions(-)
 
-Patch 2 introduces a new function which comprises the internal loop aka 
-processing delayed refs of a delayed head, which is more or less most of the 
-code in __btrfs_run_delayed_refs copied. The only difference is that the 
-function can return EAGAIN if we detect a delayed ref which has sequence number
-higher than what is currently in the tree mod list. 
-
-Patch 3 Finaly makes the loop in __btrfs_run_delayed_refs use the function 
-introduced in the previous patch, meaning deleting most of the code and 
-changing the loop to a 'do {} while' construct. I strived to retain all the 
-semantics of the old code so there should be no surprises. 
-
-Nikolay Borisov (3):
-  btrfs: Factor out ref head locking code in __btrfs_run_delayed_refs
-  btrfs: Factor out loop processing all refs of a head
-  btrfs: refactor __btrfs_run_delayed_refs loop
-
- fs/btrfs/extent-tree.c | 210 ++++++++++++++++++++++++++++++-------------------
- 1 file changed, 128 insertions(+), 82 deletions(-)
-
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index de6f75f5547b..6a2c86c8a756 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -2502,6 +2502,40 @@ static int cleanup_ref_head(struct btrfs_trans_handle *trans,
+ 	return 0;
+ }
+ 
++STATIC
++struct btrfs_delayed_ref_head *btrfs_obtain_ref_head(
++					struct btrfs_trans_handle *trans)
++{
++	struct btrfs_delayed_ref_root *delayed_refs =
++		&trans->transaction->delayed_refs;
++	struct btrfs_delayed_ref_head *head = NULL;
++	int ret;
++
++	spin_lock(&delayed_refs->lock);
++	head = btrfs_select_ref_head(trans);
++	if (!head) {
++		spin_unlock(&delayed_refs->lock);
++		return head;
++	}
++
++	/*
++	 * grab the lock that says we are going to process  all the refs for
++	 * this head
++	 */
++	ret = btrfs_delayed_ref_lock(trans, head);
++	spin_unlock(&delayed_refs->lock);
++	/*
++	 * we may have dropped the spin lock to get the head
++	 * mutex lock, and that might have given someone else
++	 * time to free the head.  If that's true, it has been
++	 * removed from our list and we can move on.
++	 */
++	if (ret == -EAGAIN)
++		head = ERR_PTR(-EAGAIN);
++
++	return head;
++}
++
+ /*
+  * Returns 0 on success or if called with an already aborted transaction.
+  * Returns -ENOMEM or -EIO on failure and will abort the transaction.
+@@ -2526,24 +2560,10 @@ static noinline int __btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
+ 			if (count >= nr)
+ 				break;
+ 
+-			spin_lock(&delayed_refs->lock);
+-			locked_ref = btrfs_select_ref_head(trans);
+-			if (!locked_ref) {
+-				spin_unlock(&delayed_refs->lock);
++			locked_ref = btrfs_obtain_ref_head(trans);
++			if (!locked_ref)
+ 				break;
+-			}
+-
+-			/* grab the lock that says we are going to process
+-			 * all the refs for this head */
+-			ret = btrfs_delayed_ref_lock(trans, locked_ref);
+-			spin_unlock(&delayed_refs->lock);
+-			/*
+-			 * we may have dropped the spin lock to get the head
+-			 * mutex lock, and that might have given someone else
+-			 * time to free the head.  If that's true, it has been
+-			 * removed from our list and we can move on.
+-			 */
+-			if (ret == -EAGAIN) {
++			else if (PTR_ERR(locked_ref) == -EAGAIN) {
+ 				locked_ref = NULL;
+ 				count++;
+ 				continue;
 -- 
 2.7.4

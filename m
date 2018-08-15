@@ -1,98 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp2130.oracle.com ([141.146.126.79]:33798 "EHLO
-        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725784AbeHJISF (ORCPT
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:43196 "EHLO
+        james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
+        by vger.kernel.org with ESMTP id S1729073AbeHOPWF (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 10 Aug 2018 04:18:05 -0400
-Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
-        by aserp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w7A5mdtJ133175
-        for <linux-btrfs@vger.kernel.org>; Fri, 10 Aug 2018 05:49:45 GMT
-Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
-        by aserp2130.oracle.com with ESMTP id 2kn1nddy8m-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Fri, 10 Aug 2018 05:49:45 +0000
-Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id w7A5ni1n020745
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Fri, 10 Aug 2018 05:49:44 GMT
-Received: from abhmp0014.oracle.com (abhmp0014.oracle.com [141.146.116.20])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w7A5nif3020182
-        for <linux-btrfs@vger.kernel.org>; Fri, 10 Aug 2018 05:49:44 GMT
-From: Anand Jain <anand.jain@oracle.com>
+        Wed, 15 Aug 2018 11:22:05 -0400
+Date: Wed, 15 Aug 2018 08:30:05 -0400
+From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v4 1/3] btrfs: drop uuid_mutex in btrfs_free_extra_devids()
-Date: Fri, 10 Aug 2018 13:53:19 +0800
-Message-Id: <20180810055321.19730-2-anand.jain@oracle.com>
-In-Reply-To: <20180810055321.19730-1-anand.jain@oracle.com>
-References: <20180810055321.19730-1-anand.jain@oracle.com>
+Subject: Deadlock between dedup and rename
+Message-ID: <20180815123005.GD13528@hungrycats.org>
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+        protocol="application/pgp-signature"; boundary="zbGR4y+acU1DwHSi"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs_free_extra_devids() is called only in the mount context which
-traverses through the fs_devices::devices and frees the orphan devices
-devices in the given %fs_devices if any. As the search for the orphan
-device is limited to fs_devices::devices so we don't need the global
-uuid_mutex.
 
-There can't be any mount-point based ioctl threads in this context as
-the mount thread is not yet returned. But there can be the btrfs-control
-based scan ioctls thread which calls device_list_add().
+--zbGR4y+acU1DwHSi
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-Here in the mount thread the fs_devices::opened is incremented way before
-btrfs_free_extra_devids() is called and in the scan context the fs_devices
-which are already opened neither be freed or alloc-able at
-device_list_add().
+Every month or two I hit a btrfs deadlock like this:
 
-But lets say you change the device-path and call the scan again, then scan
-would update the new device path and this operation could race against the
-btrfs_free_extra_devids() thread, which might be in the process of
-free-ing the same device. So synchronize it by using the
-device_list_mutex.
+dedup and rsync are both operating on the same file when the filesystem
+locked up.  The deadlock happens at the moment when rsync renames its
+temporary file (the dedup dst file) to replace the old version of the
+file (the dedup src file).
 
-This scenario is a very corner case, and practically the scan and mount
-are anyway serialized by the usage so unless the race is instrumented its
-very difficult to achieve.
+Dedup ended up stuck with this stack trace:
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
-Reviewed-by: David Sterba <dsterba@suse.com>
----
-v3->v4: As we traverse through the seed device, fs_device gets updated with
-	the child seed fs_devices, so make sure we use the same fs_devices
-	pointer for the mutex_unlock as used for the mutex_lock.
-v2->v3: Update change log.
-	(Currently device_list_add() is very lean on its device_list_mutex usage,
-	a cleanup and fix is wip. Given the practicality of the above race
-	condition this patch is good to merge).
-v1->v2: replace uuid_mutex with device_list_mutex instead of delete.
-	change log updated.
+	[<ffffffff92c111d3>] call_rwsem_down_write_failed+0x13/0x20
+	[<ffffffff920ea907>] down_write_nested+0x87/0xb0
+	[<ffffffff9246e29c>] btrfs_dedupe_file_range+0xdc/0x5f0
+	[<ffffffff922a2f50>] vfs_dedupe_file_range+0x210/0x240
+	[<ffffffff922b9ba6>] do_vfs_ioctl+0x236/0x6b0
+	[<ffffffff922ba096>] SyS_ioctl+0x76/0x90
+	[<ffffffff92003ba0>] do_syscall_64+0x70/0x190
+	[<ffffffff92e00086>] entry_SYSCALL_64_after_hwframe+0x42/0xb7
+	[<ffffffffffffffff>] 0xffffffffffffffff
 
- fs/btrfs/volumes.c | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+and rsync ended up stuck with this stack trace:
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index f4405e430da6..f277df935e7c 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -934,8 +934,9 @@ void btrfs_free_extra_devids(struct btrfs_fs_devices *fs_devices, int step)
- {
- 	struct btrfs_device *device, *next;
- 	struct btrfs_device *latest_dev = NULL;
-+	struct btrfs_fs_devices *parent_fs_devices = fs_devices;
- 
--	mutex_lock(&uuid_mutex);
-+	mutex_lock(&parent_fs_devices->device_list_mutex);
- again:
- 	/* This is the initialized path, it is safe to release the devices. */
- 	list_for_each_entry_safe(device, next, &fs_devices->devices, dev_list) {
-@@ -989,8 +990,7 @@ void btrfs_free_extra_devids(struct btrfs_fs_devices *fs_devices, int step)
- 	}
- 
- 	fs_devices->latest_bdev = latest_dev->bdev;
--
--	mutex_unlock(&uuid_mutex);
-+	mutex_unlock(&parent_fs_devices->device_list_mutex);
- }
- 
- static void free_device_rcu(struct rcu_head *head)
--- 
-2.7.0
+	[<ffffffff92c111d3>] call_rwsem_down_write_failed+0x13/0x20
+	[<ffffffff920ea907>] down_write_nested+0x87/0xb0
+	[<ffffffff922b1e6e>] vfs_rename+0x18e/0x8c0
+	[<ffffffff922b78ee>] SyS_renameat2+0x4ce/0x520
+	[<ffffffff92003ba0>] do_syscall_64+0x70/0x190
+	[<ffffffff92e00086>] entry_SYSCALL_64_after_hwframe+0x42/0xb7
+	[<ffffffffffffffff>] 0xffffffffffffffff
+
+The file in question was somewhat large (>4GB) so there was probably some
+dirty page flushing going on in the background, which may or may not
+matter for reproducing the bug.
+
+This is a fairly common occurrence when rsyncing large files while
+bees is running, as the rsync temporary file is often a copy of its own
+previous version, and bees will start deduplication at the head of the
+temporary file before rsync finishes writing at the tail end.
+
+--zbGR4y+acU1DwHSi
+Content-Type: application/pgp-signature; name="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iF0EABECAB0WIQSnOVjcfGcC/+em7H2B+YsaVrMbnAUCW3QcygAKCRCB+YsaVrMb
+nC+DAJ9DFNYte3SZezlJ10uqOue+dKA/YACfVyzvT90tWDz5zuW1s301sjPTO3A=
+=xEF7
+-----END PGP SIGNATURE-----
+
+--zbGR4y+acU1DwHSi--

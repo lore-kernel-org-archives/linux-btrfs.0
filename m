@@ -1,180 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf1-f193.google.com ([209.85.210.193]:40489 "EHLO
-        mail-pf1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726679AbeHUNnN (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 21 Aug 2018 09:43:13 -0400
-Received: by mail-pf1-f193.google.com with SMTP id e13-v6so8276771pff.7
-        for <linux-btrfs@vger.kernel.org>; Tue, 21 Aug 2018 03:23:38 -0700 (PDT)
-From: damenly.su@gmail.com
+Received: from mx2.suse.de ([195.135.220.15]:38290 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1729287AbeHOSTi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 15 Aug 2018 14:19:38 -0400
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 7A1CDAD66
+        for <linux-btrfs@vger.kernel.org>; Wed, 15 Aug 2018 15:27:01 +0000 (UTC)
+From: Nikolay Borisov <nborisov@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Su Yue <suy.fnst@cn.fujitsu.com>
-Subject: [PATCH 2/2] btrfs-progs: task: add init_ctx and clean up arguments of task_start()
-Date: Tue, 21 Aug 2018 18:23:11 +0000
-Message-Id: <20180821182311.13997-3-suy.fnst@cn.fujitsu.com>
-In-Reply-To: <20180821182311.13997-1-suy.fnst@cn.fujitsu.com>
-References: <20180821182311.13997-1-suy.fnst@cn.fujitsu.com>
+Cc: Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH 0/7] eb reference count cleanups
+Date: Wed, 15 Aug 2018 18:26:50 +0300
+Message-Id: <1534346817-9108-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Su Yue <suy.fnst@cn.fujitsu.com>
+Here is a series which simplifies the way eb are used in EXTENT_BUFFER_UNMAPPED
+context. The end goal was to remove the special "if we have ref count of 2 and 
+EXTENT_BUFFER_UNMAPPED flag then act as if this is the last ref and free the 
+buffer" case. To enable this the first 6 patches modify call sites which 
+needlessly bump the reference count.
 
-Add a function init_ctx() to initialize time and count of ctx while
-checking. Use it as prefn while calling task_init().
-Arguments start_time and item_count of task_start() are useless,
-remove them.
+Patch 1 & 2 remove some btree locking when we are operating on unmapped extent
+buffers. Each patch's changelog explains why this is safe to do . 
 
-Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
----
- check/main.c   | 26 ++++++++++++++++++--------
- convert/main.c |  2 +-
- task-utils.c   |  7 +------
- task-utils.h   |  2 +-
- 4 files changed, 21 insertions(+), 16 deletions(-)
+Patch 3,4,5 and 6 remove redundant calls to extent_buffer_get since they don't 
+really add any value. In all 3 cases having a reference count of 1 is sufficient 
+for the eb to be freed via btrfs_release_path.
 
-diff --git a/check/main.c b/check/main.c
-index 087106d199eb..71baa64168b8 100644
---- a/check/main.c
-+++ b/check/main.c
-@@ -161,6 +161,16 @@ static int compare_extent_backref(struct rb_node *node1, struct rb_node *node2)
- 		return compare_tree_backref(node1, node2);
- }
- 
-+static int init_ctx(void *p)
-+{
-+	struct task_ctx *priv = p;
-+
-+	priv->start_time = time(NULL);
-+	priv->item_count = 0;
-+
-+	return 0;
-+}
-+
- static void print_status_check_line(void *p)
- {
- 	struct task_ctx *priv = p;
-@@ -9628,7 +9638,7 @@ int cmd_check(int argc, char **argv)
- 
- 	if (ctx.progress_enabled) {
- 		ctx.tp = TASK_NOTHING;
--		ctx.info = task_init(print_status_check, NULL,
-+		ctx.info = task_init(print_status_check, init_ctx,
- 				     print_status_return, &ctx);
- 	}
- 
-@@ -9823,7 +9833,7 @@ int cmd_check(int argc, char **argv)
- 			fprintf(stderr, "[1/7] checking root items\n");
- 		} else {
- 			ctx.tp = TASK_ROOT_ITEMS;
--			task_start(ctx.info, &ctx.start_time, &ctx.item_count);
-+			task_start(ctx.info);
- 		}
- 		ret = repair_root_items(info);
- 		task_stop(ctx.info);
-@@ -9853,7 +9863,7 @@ int cmd_check(int argc, char **argv)
- 		fprintf(stderr, "[2/7] checking extents\n");
- 	} else {
- 		ctx.tp = TASK_EXTENTS;
--		task_start(ctx.info, &ctx.start_time, &ctx.item_count);
-+		task_start(ctx.info);
- 	}
- 	ret = do_check_chunks_and_extents(info);
- 	task_stop(ctx.info);
-@@ -9874,7 +9884,7 @@ int cmd_check(int argc, char **argv)
- 			fprintf(stderr, "[3/7] checking free space cache\n");
- 	} else {
- 		ctx.tp = TASK_FREE_SPACE;
--		task_start(ctx.info, &ctx.start_time, &ctx.item_count);
-+		task_start(ctx.info);
- 	}
- 
- 	ret = check_space_cache(root);
-@@ -9899,7 +9909,7 @@ int cmd_check(int argc, char **argv)
- 		fprintf(stderr, "[4/7] checking fs roots\n");
- 	} else {
- 		ctx.tp = TASK_FS_ROOTS;
--		task_start(ctx.info, &ctx.start_time, &ctx.item_count);
-+		task_start(ctx.info);
- 	}
- 
- 	ret = do_check_fs_roots(info, &root_cache);
-@@ -9918,7 +9928,7 @@ int cmd_check(int argc, char **argv)
- 		"[5/7] checking only csums items (without verifying data)\n");
- 	} else {
- 		ctx.tp = TASK_CSUMS;
--		task_start(ctx.info, &ctx.start_time, &ctx.item_count);
-+		task_start(ctx.info);
- 	}
- 
- 	ret = check_csums(root);
-@@ -9937,7 +9947,7 @@ int cmd_check(int argc, char **argv)
- 			fprintf(stderr, "[6/7] checking root refs\n");
- 		} else {
- 			ctx.tp = TASK_ROOT_REFS;
--			task_start(ctx.info, &ctx.start_time, &ctx.item_count);
-+			task_start(ctx.info);
- 		}
- 
- 		ret = check_root_refs(root, &root_cache);
-@@ -9984,7 +9994,7 @@ int cmd_check(int argc, char **argv)
- 			fprintf(stderr, "[7/7] checking quota groups\n");
- 		} else {
- 			ctx.tp = TASK_QGROUPS;
--			task_start(ctx.info, &ctx.start_time, &ctx.item_count);
-+			task_start(ctx.info);
- 		}
- 		ret = qgroup_verify_all(info);
- 		task_stop(ctx.info);
-diff --git a/convert/main.c b/convert/main.c
-index ee51390bb072..e4152a5741f5 100644
---- a/convert/main.c
-+++ b/convert/main.c
-@@ -1182,7 +1182,7 @@ static int do_convert(const char *devname, u32 convert_flags, u32 nodesize,
- 	if (progress) {
- 		ctx.info = task_init(print_copied_inodes, NULL,
- 				     after_copied_inodes, &ctx);
--		task_start(ctx.info, NULL, NULL);
-+		task_start(ctx.info);
- 	}
- 	ret = copy_inodes(&cctx, root, convert_flags, &ctx);
- 	if (ret) {
-diff --git a/task-utils.c b/task-utils.c
-index e837812f57f7..74d21e8b1ead 100644
---- a/task-utils.c
-+++ b/task-utils.c
-@@ -39,7 +39,7 @@ struct task_info *task_init(void *(*threadfn)(void *), int (*prefn)(void *),
- 	return info;
- }
- 
--int task_start(struct task_info *info, time_t *start_time, u64 *item_count)
-+int task_start(struct task_info *info)
- {
- 	int ret;
- 
-@@ -49,11 +49,6 @@ int task_start(struct task_info *info, time_t *start_time, u64 *item_count)
- 	if (!info->threadfn)
- 		return -1;
- 
--	if (start_time)
--		*start_time = time(NULL);
--	if (item_count)
--		*item_count = 0;
--
- 	if (info->prefn) {
- 		ret = info->prefn(info->private_data);
- 		if (ret)
-diff --git a/task-utils.h b/task-utils.h
-index 06ee87defe24..c0673d2a94bf 100644
---- a/task-utils.h
-+++ b/task-utils.h
-@@ -37,7 +37,7 @@ struct task_info {
- /* task life cycle */
- struct task_info *task_init(void *(*threadfn)(void *), int (*postfn)(void *),
- 			    int (*pretfn)(void *), void *thread_private);
--int task_start(struct task_info *info, time_t *start_time, u64 *item_count);
-+int task_start(struct task_info *info);
- void task_stop(struct task_info *info);
- void task_deinit(struct task_info *info);
- 
+Patch 7 removes the special handling of EXTENT_BUFFER_UNMAPPED flag in 
+free_extent_buffer. Also adjust the selftest code to account for this change 
+by calling one extra time free_extent_buffer. Also document which references 
+are being dropped. All in all this shouldn't have any functional bearing. 
+
+This was tested with multiple full xfstest runs as well as unloading the btrfs 
+module after each one to trigger the leak check and ensure no eb's are leaked. 
+I've also run it through btrfs' selftests multiple times with no problems. 
+
+With this set applied EXTENT_BUFFER_UNMAPPED seems to be relevant only for 
+selftest which leads me to believe it can be removed altogether. I will 
+investigate this next but in the meantime this series should be good to go.
+
+
+Nikolay Borisov (7):
+  btrfs: Remove needless locking in iterate_inode_refs
+  btrfs: Remove needless locking in iterate_inode_extrefs
+  btrfs: Remove redundant extent_buffer_get in get_old_root
+  btrfs: Remove extraneous extent_buffer_get from tree_mod_log_rewind
+  btrfs: Remove extra reference count bumps in btrfs_compare_trees
+  btrfs: Remove unnecessary locking code in qgroup_rescan_leaf
+  btrfs: Remove special handling of EXTENT_BUFFER_UNMAPPED while freeing
+
+ fs/btrfs/backref.c           |  9 ---------
+ fs/btrfs/ctree.c             |  4 ----
+ fs/btrfs/extent_io.c         | 11 -----------
+ fs/btrfs/qgroup.c            |  7 +------
+ fs/btrfs/tests/btrfs-tests.c |  6 +++++-
+ 5 files changed, 6 insertions(+), 31 deletions(-)
+
 -- 
-2.17.1
+2.7.4

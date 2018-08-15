@@ -1,65 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:38324 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:38300 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1729287AbeHOSTj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1729424AbeHOSTj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Wed, 15 Aug 2018 14:19:39 -0400
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 12465AD6D
-        for <linux-btrfs@vger.kernel.org>; Wed, 15 Aug 2018 15:27:03 +0000 (UTC)
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 56203AD6B
+        for <linux-btrfs@vger.kernel.org>; Wed, 15 Aug 2018 15:27:02 +0000 (UTC)
 From: Nikolay Borisov <nborisov@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 2/7] btrfs: Remove needless locking in iterate_inode_extrefs
-Date: Wed, 15 Aug 2018 18:26:52 +0300
-Message-Id: <1534346817-9108-3-git-send-email-nborisov@suse.com>
+Subject: [PATCH 3/7] btrfs: Remove redundant extent_buffer_get in get_old_root
+Date: Wed, 15 Aug 2018 18:26:53 +0300
+Message-Id: <1534346817-9108-4-git-send-email-nborisov@suse.com>
 In-Reply-To: <1534346817-9108-1-git-send-email-nborisov@suse.com>
 References: <1534346817-9108-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In iterate_inode_exrefs the eb is cloned via btrfs_clone_extent_buffer
-which creates a private extent buffer with the dummy flag set and
-ref count of 1. Then this buffer is locked for reading and its ref
-count is incremented by 1. Finally it's fed to the passed iterate_irefs_t
-function. The actual iterate call back is inode_to_path (coming from
-paths_from_inode) which feeds the eb to btrfs_ref_to_path. In this
-final function the passed eb is only read by first assigning it to
-the local eb variable. This variable is only modified in the case
-another eb was referenced from the passed path that is eb != eb_in
-check triggers.
-
-Considering this there is no point in locking the cloned eb in
-iterate_inode_refs since it's never being modified and is not published
-anywhere. Furthermore the cloned eb is completely fine having its ref
-count be 1.
+get_old_root used used only by btrfs_search_old_slot to initialise the
+path structure. The old root is always a cloned buffer (either via
+alloc dummy or via btrfs_clone_extent_buffer) and its reference count is
+2 - 1 from allocation 1 from extent_buffer_get call in get_old_root.
+This latter explicit ref count acquire operation is in fact unnecessary
+since the semantic is such that the newly allocated buffer is
+handed over to the btrfs_path for lifetime management. Considering this
+just remove the extra extent_buffer_get in get_old_root.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/backref.c | 5 -----
- 1 file changed, 5 deletions(-)
+ fs/btrfs/ctree.c | 1 -
+ 1 file changed, 1 deletion(-)
 
-diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-index 1cb0b31c5059..99e43f438d90 100644
---- a/fs/btrfs/backref.c
-+++ b/fs/btrfs/backref.c
-@@ -2076,10 +2076,6 @@ static int iterate_inode_extrefs(u64 inum, struct btrfs_root *fs_root,
- 			ret = -ENOMEM;
- 			break;
- 		}
--		extent_buffer_get(eb);
--
--		btrfs_tree_read_lock(eb);
--		btrfs_set_lock_blocking_rw(eb, BTRFS_READ_LOCK);
- 		btrfs_release_path(path);
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index d436fb4c002e..4dc5d4becd49 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -1382,7 +1382,6 @@ get_old_root(struct btrfs_root *root, u64 time_seq)
  
- 		item_size = btrfs_item_size_nr(eb, slot);
-@@ -2100,7 +2096,6 @@ static int iterate_inode_extrefs(u64 inum, struct btrfs_root *fs_root,
- 			cur_offset += btrfs_inode_extref_name_len(eb, extref);
- 			cur_offset += sizeof(*extref);
- 		}
--		btrfs_tree_read_unlock_blocking(eb);
- 		free_extent_buffer(eb);
- 
- 		offset++;
+ 	if (!eb)
+ 		return NULL;
+-	extent_buffer_get(eb);
+ 	btrfs_tree_read_lock(eb);
+ 	if (old_root) {
+ 		btrfs_set_header_bytenr(eb, eb->start);
 -- 
 2.7.4

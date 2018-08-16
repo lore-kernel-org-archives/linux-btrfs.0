@@ -1,25 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:36030 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726319AbeHQPVS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 17 Aug 2018 11:21:18 -0400
-Date: Fri, 17 Aug 2018 14:17:55 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Liu Bo <bo.liu@linux.alibaba.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: remove always true if branch in btrfs_get_extent
-Message-ID: <20180817121755.GS24025@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1534453528-13556-1-git-send-email-bo.liu@linux.alibaba.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1534453528-13556-1-git-send-email-bo.liu@linux.alibaba.com>
+Received: from out30-131.freemail.mail.aliyun.com ([115.124.30.131]:57394 "EHLO
+        out30-131.freemail.mail.aliyun.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1725856AbeHQAGd (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 16 Aug 2018 20:06:33 -0400
+From: Liu Bo <bo.liu@linux.alibaba.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: remove always true if branch in btrfs_get_extent
+Date: Fri, 17 Aug 2018 05:05:28 +0800
+Message-Id: <1534453528-13556-1-git-send-email-bo.liu@linux.alibaba.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Aug 17, 2018 at 05:05:28AM +0800, Liu Bo wrote:
-> @path is always NULL when it comes to the if branch.
-> 
-> Signed-off-by: Liu Bo <bo.liu@linux.alibaba.com>
+@path is always NULL when it comes to the if branch.
 
-Reviewed-by: David Sterba <dsterba@suse.com>
+Signed-off-by: Liu Bo <bo.liu@linux.alibaba.com>
+---
+ fs/btrfs/inode.c | 17 +++++++----------
+ 1 file changed, 7 insertions(+), 10 deletions(-)
+
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 8b135a46835f..4b79916472fb 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -6825,18 +6825,15 @@ struct extent_map *btrfs_get_extent(struct btrfs_inode *inode,
+ 	em->len = (u64)-1;
+ 	em->block_len = (u64)-1;
+ 
++	path = btrfs_alloc_path();
+ 	if (!path) {
+-		path = btrfs_alloc_path();
+-		if (!path) {
+-			err = -ENOMEM;
+-			goto out;
+-		}
+-		/*
+-		 * Chances are we'll be called again, so go ahead and do
+-		 * readahead
+-		 */
+-		path->reada = READA_FORWARD;
++		err = -ENOMEM;
++		goto out;
+ 	}
++	/*
++	 * Chances are we'll be called again, so go ahead and do readahead.
++	 */
++	path->reada = READA_FORWARD;
+ 
+ 	ret = btrfs_lookup_file_extent(NULL, root, path, objectid, start, 0);
+ 	if (ret < 0) {
+-- 
+1.8.3.1

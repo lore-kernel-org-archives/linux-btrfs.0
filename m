@@ -1,50 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f65.google.com ([209.85.214.65]:54619 "EHLO
-        mail-it0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725950AbeHOVeR (ORCPT
+Received: from userp2130.oracle.com ([156.151.31.86]:51208 "EHLO
+        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726473AbeHPFAo (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 15 Aug 2018 17:34:17 -0400
-Received: by mail-it0-f65.google.com with SMTP id s7-v6so2988273itb.4
-        for <linux-btrfs@vger.kernel.org>; Wed, 15 Aug 2018 11:40:59 -0700 (PDT)
+        Thu, 16 Aug 2018 01:00:44 -0400
+Subject: Re: [PATCH 1/2] btrfs: assert for num_devices below 0
+To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+References: <20180810055321.19730-1-anand.jain@oracle.com>
+ <20180810055321.19730-3-anand.jain@oracle.com>
+ <20180815121142.GK24025@twin.jikos.cz>
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <f85c779c-a6be-a0ea-c2f8-4f1d942eafb3@oracle.com>
+Date: Thu, 16 Aug 2018 10:09:23 +0800
 MIME-Version: 1.0
-In-Reply-To: <20180815114827.GI24025@twin.jikos.cz>
-References: <1534214829-26202-1-git-send-email-bo.liu@linux.alibaba.com>
- <20180814104600.GE24025@twin.jikos.cz> <20180815025256.6fftocnncloellm3@rsjd01523.et2sqa>
- <20180815114827.GI24025@twin.jikos.cz>
-From: Liu Bo <obuil.liubo@gmail.com>
-Date: Wed, 15 Aug 2018 11:40:58 -0700
-Message-ID: <CANQeFDDsP8JwTQ1DDWxO=Hm29LAt+GyTqBQs1Z-2jqhgqe=K+g@mail.gmail.com>
-Subject: Re: [PATCH] Btrfs: remove duplicated btrfs_release_path in btrfs_unlink_subvol
-To: David Sterba <dsterba@suse.cz>, Liu Bo <bo.liu@linux.alibaba.com>,
-        linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <20180815121142.GK24025@twin.jikos.cz>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Aug 15, 2018 at 4:48 AM, David Sterba <dsterba@suse.cz> wrote:
-> On Wed, Aug 15, 2018 at 10:52:56AM +0800, Liu Bo wrote:
->> On Tue, Aug 14, 2018 at 12:46:00PM +0200, David Sterba wrote:
->> > On Tue, Aug 14, 2018 at 10:47:09AM +0800, Liu Bo wrote:
->> > > The btrfs_release_path() is just useless as path is only used in error handling.
->> >
->> > Where is it duplicated? And I don't think it's useless, while the
->> > changelog does not explain why and it's not obvious from the context. If
->> > the path is locked, then releasing it right after it's not needed makes
->> > sense.  There are several potentially heavyweight operations between the
->> > release and final free.
+
+
+On 08/15/2018 08:11 PM, David Sterba wrote:
+> On Fri, Aug 10, 2018 at 01:53:20PM +0800, Anand Jain wrote:
+>> In preparation to add helper function to deduce the num_devices with
+>> replace running, use assert instead of bug_on and warn_on.
 >>
->> I see, the diff context is a little bit misleading, the logic in
->> btrfs_unlink_subvol() is like,
->
-> Well, you based you patch on old code, the duplicate btrfs_release_path
-> has been removed in 5b7d687ad5913a56b6a8788435d7a53990b4176d and was
-> in the devel branches since like 2 weeks.
->
-> The patch removes the first release while it would could have been the
-> other one to save some cycles when the branch with
-> btrfs_search_dir_index_item is not taken.
+>> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+>> ---
+>>   fs/btrfs/volumes.c | 4 ++--
+>>   1 file changed, 2 insertions(+), 2 deletions(-)
+>>
+>> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+>> index b6d9b6a6fba7..0062615a79be 100644
+>> --- a/fs/btrfs/volumes.c
+>> +++ b/fs/btrfs/volumes.c
+>> @@ -1877,7 +1877,7 @@ int btrfs_rm_device(struct btrfs_fs_info *fs_info, const char *device_path,
+>>   	num_devices = fs_devices->num_devices;
+>>   	btrfs_dev_replace_read_lock(&fs_info->dev_replace);
+>>   	if (btrfs_dev_replace_is_ongoing(&fs_info->dev_replace)) {
+>> -		WARN_ON(num_devices < 1);
+>> +		ASSERT(num_devices > 0);
+>>   		num_devices--;
+> 
+> I was about to merge the patch but this gave me another opportunity to
+> look at the code: the assertion should check for > 1. The value 1 of
+> num_devices is sligthly wrong here and would lead to 0 returned from the
+> function.
 
-Ah I see, sorry for the noise.
+  Agree its slightly wrong but I kept it as it is to match with the
+  original code. I mentioned about it in the cover letter.
 
-thanks,
-liubo
+Thanks, Anand

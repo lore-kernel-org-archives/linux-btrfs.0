@@ -1,37 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:58614 "EHLO mx1.suse.de"
+Received: from szxga04-in.huawei.com ([45.249.212.190]:11124 "EHLO huawei.com"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1729257AbeHVTMH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 22 Aug 2018 15:12:07 -0400
-Date: Wed, 22 Aug 2018 17:46:31 +0200
-From: David Sterba <dsterba@suse.cz>
-To: zhong jiang <zhongjiang@huawei.com>
-Cc: dsterba@suse.com, jbacik@fb.com, clm@fb.com, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Subject: Re: [PATCHv4 0/3] btrfs: remove unneeded variable and if possbile
-Message-ID: <20180822154631.GK24025@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+        id S1727427AbeHPTsq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 16 Aug 2018 15:48:46 -0400
+From: zhong jiang <zhongjiang@huawei.com>
+To: <dsterba@suse.com>
+CC: <jbacik@fb.com>, <clm@fb.com>, <linux-btrfs@vger.kernel.org>,
+        <linux-kernel@vger.kernel.org>
+Subject: [PATCHv4 1/3] btrfs: remove unneeded variable "ret" in btrfs_destroy_delayed_refs
+Date: Fri, 17 Aug 2018 00:37:13 +0800
+Message-ID: <1534437435-51605-2-git-send-email-zhongjiang@huawei.com>
+In-Reply-To: <1534437435-51605-1-git-send-email-zhongjiang@huawei.com>
 References: <1534437435-51605-1-git-send-email-zhongjiang@huawei.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1534437435-51605-1-git-send-email-zhongjiang@huawei.com>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Aug 17, 2018 at 12:37:12AM +0800, zhong jiang wrote:
-> v3->v4:
->  -  btrfs_destroy_delayed_refs return value would be actually needed.
->     so just remove the unneeded variable "ret" and modify the subject
-> 
-> v2->v3:
->  - repost the patches with detailed commit message.
-> 
-> v1->v2:
->  - Fix v1 issue that forget to return after remove the variable "ret".
-> 
-> zhong jiang (3):
->   btrfs: remove unneeded variable "ret" in btrfs_destroy_delayed_refs
->   btrfs: change btrfs_free_reserved_bytes to be void funtion
->   btrfs: change btrfs_pin_log_trans to be void function
+btrfs_destroy_delayed_refs defines the variable "ret" for return value,
+but it is not modified after initialization. So it is safe to drop the
+unneeded value "ret".
 
-Patches 2 and 3 applied, thanks, but the first one dropped.
+Signed-off-by: zhong jiang <zhongjiang@huawei.com>
+---
+ fs/btrfs/disk-io.c | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
+
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 5124c15..6cdc23a 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -4192,7 +4192,6 @@ static int btrfs_destroy_delayed_refs(struct btrfs_transaction *trans,
+ 	struct rb_node *node;
+ 	struct btrfs_delayed_ref_root *delayed_refs;
+ 	struct btrfs_delayed_ref_node *ref;
+-	int ret = 0;
+ 
+ 	delayed_refs = &trans->delayed_refs;
+ 
+@@ -4200,7 +4199,7 @@ static int btrfs_destroy_delayed_refs(struct btrfs_transaction *trans,
+ 	if (atomic_read(&delayed_refs->num_entries) == 0) {
+ 		spin_unlock(&delayed_refs->lock);
+ 		btrfs_info(fs_info, "delayed_refs has NO entry");
+-		return ret;
++		return 0;
+ 	}
+ 
+ 	while ((node = rb_first(&delayed_refs->href_root)) != NULL) {
+@@ -4255,7 +4254,7 @@ static int btrfs_destroy_delayed_refs(struct btrfs_transaction *trans,
+ 
+ 	spin_unlock(&delayed_refs->lock);
+ 
+-	return ret;
++	return 0;
+ }
+ 
+ static void btrfs_destroy_delalloc_inodes(struct btrfs_root *root)
+-- 
+1.7.12.4

@@ -1,72 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:54388 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:54374 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S2403799AbeHPQJK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 16 Aug 2018 12:09:10 -0400
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 74A93AE78
-        for <linux-btrfs@vger.kernel.org>; Thu, 16 Aug 2018 13:10:38 +0000 (UTC)
+        id S2403797AbeHPQJJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 16 Aug 2018 12:09:09 -0400
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id CD811AE66
+        for <linux-btrfs@vger.kernel.org>; Thu, 16 Aug 2018 13:10:37 +0000 (UTC)
 From: Nikolay Borisov <nborisov@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 0/8 V2] Add delayed-refs support to btrfs-progs
-Date: Thu, 16 Aug 2018 16:10:27 +0300
-Message-Id: <1534425035-323-1-git-send-email-nborisov@suse.com>
+Cc: Nikolay Borisov <nborisov@suse.com>, David Sterba <dsterba@suse.com>
+Subject: [PATCH 1/8] btrfs-progs: Add __free_extent2 function
+Date: Thu, 16 Aug 2018 16:10:28 +0300
+Message-Id: <1534425035-323-2-git-send-email-nborisov@suse.com>
+In-Reply-To: <1534425035-323-1-git-send-email-nborisov@suse.com>
+References: <1534425035-323-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello, 
+This is a simple adapter to convert the arguments delayed ref arguments
+to the existing arguments of __free_extent.
 
-Here is the second version of the delayed refs for progs support. The first 
-version can be found here [1]. I've taken into account all the feedback from 
-Misono and have verified the code is working and rebased it atop btrfs-progs
-4.17.1.
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+Signed-off-by: David Sterba <dsterba@suse.com>
+---
+ extent-tree.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
 
-Changes since v1: 
- * Removed num_entries variable from delayed ref root
+diff --git a/extent-tree.c b/extent-tree.c
+index 5d49af5a901e..34409e600087 100644
+--- a/extent-tree.c
++++ b/extent-tree.c
+@@ -2136,6 +2136,17 @@ void btrfs_unpin_extent(struct btrfs_fs_info *fs_info,
+ 	update_pinned_extents(fs_info, bytenr, num_bytes, 0);
+ }
  
- * Added a patch to refactor btrfs_write_dirty_block_groups and subsequently 
- changed when this function is called to fix an issue reported by Misono. I
- verified that 'make test-fsck TEST_ENABLE_OVERRIDE=true TEST_ARGS_CHECK=--mode=lowmem'
- produces no errors
-
- * Added 2 patches which remove the newly added adapter functions at the 
- beggining of the series, following the wiring up of the delayed refs 
- infrastructured. The first one (dealing with __free_extent2) is trivial, while
- the second one (for alloc_reserved_tree_block2) is a bit more involved, since
- I've opted to merge the two functions. 
-
- * Rebased atop latest btrfs-progs release - 4.17.1
-
- * Dropped patches which have been merged in the mean time
-
-
-[1] https://www.spinics.net/lists/linux-btrfs/msg79173.html
-
-Nikolay Borisov (8):
-  btrfs-progs: Add __free_extent2 function
-  btrfs-progs: Add alloc_reserved_tree_block2 function
-  btrfs-progs: Add delayed refs infrastructure
-  btrfs-progs: Make btrfs_write_dirty_block_groups take only trans
-    argument
-  btrfs-progs: Wire up delayed refs
-  btrfs-progs: Remove old delayed refs infrastructure
-  btrfs-progs: Remove __free_extent2
-  btrfs-progs: Merge alloc_reserved_tree_block(2|)
-
- Makefile      |   3 +-
- check/main.c  |   3 +-
- ctree.h       |   8 +-
- delayed-ref.c | 607 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- delayed-ref.h | 208 ++++++++++++++++++++
- disk-io.c     |   2 -
- extent-tree.c | 575 +++++++++++++++++++++++++++++++-----------------------
- kerncompat.h  |   8 +
- transaction.c |  29 ++-
- transaction.h |   4 +
- 10 files changed, 1199 insertions(+), 248 deletions(-)
- create mode 100644 delayed-ref.c
- create mode 100644 delayed-ref.h
-
++static int __free_extent2(struct btrfs_trans_handle *trans,
++			  struct btrfs_delayed_ref_node *node,
++			  struct btrfs_delayed_extent_op *extent_op)
++{
++
++	struct btrfs_delayed_tree_ref *ref = btrfs_delayed_node_to_tree_ref(node);
++
++	return __free_extent(trans, node->bytenr, node->num_bytes,
++			     ref->parent, ref->root, ref->level, 0, 1);
++}
++
+ /*
+  * remove an extent from the root, returns 0 on success
+  */
 -- 
 2.7.4

@@ -1,39 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([198.137.202.133]:33642 "EHLO
-        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726696AbeHVJ2m (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 22 Aug 2018 05:28:42 -0400
-Date: Tue, 21 Aug 2018 23:05:18 -0700
-From: Christoph Hellwig <hch@infradead.org>
-To: Nikolay Borisov <nborisov@suse.com>
-Cc: linux-api@vger.kernel.org,
-        Ext4 Developers List <linux-ext4@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>, "Ted Ts'o" <tytso@mit.edu>
-Subject: Re: exporting uuid_t from uapi/linux/uuid.h
-Message-ID: <20180822060518.GA28873@infradead.org>
-References: <ffc387b8-09f5-537a-c5a9-08ec28e088e0@suse.com>
+Received: from szxga07-in.huawei.com ([45.249.212.35]:55682 "EHLO huawei.com"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1727317AbeHPTsq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 16 Aug 2018 15:48:46 -0400
+From: zhong jiang <zhongjiang@huawei.com>
+To: <dsterba@suse.com>
+CC: <jbacik@fb.com>, <clm@fb.com>, <linux-btrfs@vger.kernel.org>,
+        <linux-kernel@vger.kernel.org>
+Subject: [PATCHv4 0/3] btrfs: remove unneeded variable and if possbile 
+Date: Fri, 17 Aug 2018 00:37:12 +0800
+Message-ID: <1534437435-51605-1-git-send-email-zhongjiang@huawei.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <ffc387b8-09f5-537a-c5a9-08ec28e088e0@suse.com>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Aug 21, 2018 at 10:25:50PM +0300, Nikolay Borisov wrote:
-> Hello,
-> 
-> I'm doing some refactoring on btrfs and would like to convert some of
-> the "naked" definition of UUID in on-disk object to uuid_t. Since those
-> structs are defined in include/uapi/linux/btrfs_tree.h I naturally would
-> need to expose the kernel uuid_t to the uapi header via
-> include/uapi/linux/uuid.h. The uuid was originally unexported in
-> 60927bc31436 ("uuid: remove uuid_be defintions from the uapi header")
->  but at that time it was called uuid_be. The thing is that btrfs-progs
-> for example uses both btrfs_tree.h uapi header as well as libuuid. THe
-> latter also defines uuid_t. Both the kernel one and libuuid are binary
-> compatible.
-> 
-> So what's the correct way (if any) to expose a kernel type that might
-> have also been defined by a userspace library?
+v3->v4:
+ -  btrfs_destroy_delayed_refs return value would be actually needed.
+    so just remove the unneeded variable "ret" and modify the subject
 
-Please just use an raw array of __u8 for your APIs.
+v2->v3:
+ - repost the patches with detailed commit message.
+
+v1->v2:
+ - Fix v1 issue that forget to return after remove the variable "ret".
+
+zhong jiang (3):
+  btrfs: remove unneeded variable "ret" in btrfs_destroy_delayed_refs
+  btrfs: change btrfs_free_reserved_bytes to be void funtion
+  btrfs: change btrfs_pin_log_trans to be void function
+
+ fs/btrfs/disk-io.c     | 5 ++---
+ fs/btrfs/extent-tree.c | 6 ++----
+ fs/btrfs/tree-log.c    | 5 +----
+ fs/btrfs/tree-log.h    | 2 +-
+ 4 files changed, 6 insertions(+), 12 deletions(-)
+
+-- 
+1.7.12.4

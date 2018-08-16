@@ -1,138 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.99]:49434 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726349AbeHQLlf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 17 Aug 2018 07:41:35 -0400
-Received: from debian3.lan (bl8-197-74.dsl.telepac.pt [85.241.197.74])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id E523821868
-        for <linux-btrfs@vger.kernel.org>; Fri, 17 Aug 2018 08:39:03 +0000 (UTC)
-From: fdmanana@kernel.org
+Received: from mx2.suse.de ([195.135.220.15]:54388 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S2403799AbeHPQJK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 16 Aug 2018 12:09:10 -0400
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 74A93AE78
+        for <linux-btrfs@vger.kernel.org>; Thu, 16 Aug 2018 13:10:38 +0000 (UTC)
+From: Nikolay Borisov <nborisov@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: fix data corruption when deduplicating between different files
-Date: Fri, 17 Aug 2018 09:38:59 +0100
-Message-Id: <20180817083859.16864-1-fdmanana@kernel.org>
+Cc: Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH 0/8 V2] Add delayed-refs support to btrfs-progs
+Date: Thu, 16 Aug 2018 16:10:27 +0300
+Message-Id: <1534425035-323-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+Hello, 
 
-If we deduplicate extents between two different files we can end up
-corrupting data if the source range ends at the size of the source file,
-the source file's size is not aligned to the filesystem's block size
-and the destination range does not go past the size of the destination
-file size.
+Here is the second version of the delayed refs for progs support. The first 
+version can be found here [1]. I've taken into account all the feedback from 
+Misono and have verified the code is working and rebased it atop btrfs-progs
+4.17.1.
 
-Example:
-
-  $ mkfs.btrfs -f /dev/sdb
-  $ mount /dev/sdb /mnt
-
-  $ xfs_io -f -c "pwrite -S 0x6b 0 2518890" /mnt/foo
-  # The first byte with a value of 0xae starts at an offset (2518890)
-  # which is not a multiple of the sector size.
-  $ xfs_io -c "pwrite -S 0xae 2518890 102398" /mnt/foo
-
-  # Confirm the file content is full of bytes with values 0x6b and 0xae.
-  $ od -t x1 /mnt/foo
-  0000000 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b
-  *
-  11467540 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b ae ae ae ae ae ae
-  11467560 ae ae ae ae ae ae ae ae ae ae ae ae ae ae ae ae
-  *
-  11777540 ae ae ae ae ae ae ae ae
-  11777550
-
-  # Create a second file with a length not aligned to the sector size,
-  # whose bytes all have the value 0x6b, so that its extent(s) can be
-  # deduplicated with the first file.
-  $ xfs_io -f -c "pwrite -S 0x6b 0 557771" /mnt/bar
-
-  # Now deduplicate the entire second file into a range of the first file
-  # that also has all bytes with the value 0x6b. The destination range's
-  # end offset must not be aligned to the sector size and must be less
-  # then the offset of the first byte with the value 0xae (byte at offset
-  # 2518890).
-  $ xfs_io -c "dedupe /mnt/bar 0 1957888 557771" /mnt/foo
-
-  # The bytes in the range starting at offset 2515659 (end of the
-  # deduplication range) and ending at offset 2519040 (start offset
-  # rounded up to the block size) must all have the value 0xae (and not
-  # replaced with 0x00 values). In other words, we should have exactly
-  # the same data we had before we asked for deduplication.
-  $ od -t x1 /mnt/foo
-  0000000 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b
-  *
-  11467540 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b ae ae ae ae ae ae
-  11467560 ae ae ae ae ae ae ae ae ae ae ae ae ae ae ae ae
-  *
-  11777540 ae ae ae ae ae ae ae ae
-  11777550
-
-  # Unmount the filesystem and mount it again. This guarantees any file
-  # data in the page cache is dropped.
-  $ umount /dev/sdb
-  $ mount /dev/sdb /mnt
-
-  $ od -t x1 /mnt/foo
-  0000000 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b
-  *
-  11461300 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 00 00 00 00 00
-  11461320 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-  *
-  11470000 ae ae ae ae ae ae ae ae ae ae ae ae ae ae ae ae
-  *
-  11777540 ae ae ae ae ae ae ae ae
-  11777550
-
-  # The bytes in range 2515659 to 2519040 have a value of 0x00 and not a
-  # value of 0xae, data corruption happened due to the deduplication
-  # operation.
-
-So fix this by rounding down, to the sector size, the length used for the
-deduplication when the following conditions are met:
-
-  1) Source file's range ends at its i_size;
-  2) Source file's i_size is not aligned to the sector size;
-  3) Destination range does not cross the i_size of the destination file.
-
-Fixes: e1d227a42ea2 ("btrfs: Handle unaligned length in extent_same")
-CC: stable@vger.kernel.org # 4.2+
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/ioctl.c | 19 +++++++++++++++++++
- 1 file changed, 19 insertions(+)
-
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 331b495d2db9..230644d1e439 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -3479,6 +3479,25 @@ static int btrfs_extent_same_range(struct inode *src, u64 loff, u64 olen,
+Changes since v1: 
+ * Removed num_entries variable from delayed ref root
  
- 		same_lock_start = min_t(u64, loff, dst_loff);
- 		same_lock_len = max_t(u64, loff, dst_loff) + len - same_lock_start;
-+	} else {
-+		/*
-+		 * If the source and destination inodes are different, the
-+		 * source's range end offset matches the source's i_size, that
-+		 * i_size is not a multiple of the sector size, and the
-+		 * destination range does not go past the destination's i_size,
-+		 * we must round down the length to the nearest sector size
-+		 * multiple. If we don't do this adjustment we end replacing
-+		 * with zeroes the bytes in the range that starts at the
-+		 * deduplication range's end offset and ends at the next sector
-+		 * size multiple.
-+		 */
-+		if (loff + olen == i_size_read(src) &&
-+		    dst_loff + len < i_size_read(dst)) {
-+			const u64 sz = BTRFS_I(src)->root->fs_info->sectorsize;
-+
-+			len = round_down(i_size_read(src), sz) - loff;
-+			olen = len;
-+		}
- 	}
- 
- again:
+ * Added a patch to refactor btrfs_write_dirty_block_groups and subsequently 
+ changed when this function is called to fix an issue reported by Misono. I
+ verified that 'make test-fsck TEST_ENABLE_OVERRIDE=true TEST_ARGS_CHECK=--mode=lowmem'
+ produces no errors
+
+ * Added 2 patches which remove the newly added adapter functions at the 
+ beggining of the series, following the wiring up of the delayed refs 
+ infrastructured. The first one (dealing with __free_extent2) is trivial, while
+ the second one (for alloc_reserved_tree_block2) is a bit more involved, since
+ I've opted to merge the two functions. 
+
+ * Rebased atop latest btrfs-progs release - 4.17.1
+
+ * Dropped patches which have been merged in the mean time
+
+
+[1] https://www.spinics.net/lists/linux-btrfs/msg79173.html
+
+Nikolay Borisov (8):
+  btrfs-progs: Add __free_extent2 function
+  btrfs-progs: Add alloc_reserved_tree_block2 function
+  btrfs-progs: Add delayed refs infrastructure
+  btrfs-progs: Make btrfs_write_dirty_block_groups take only trans
+    argument
+  btrfs-progs: Wire up delayed refs
+  btrfs-progs: Remove old delayed refs infrastructure
+  btrfs-progs: Remove __free_extent2
+  btrfs-progs: Merge alloc_reserved_tree_block(2|)
+
+ Makefile      |   3 +-
+ check/main.c  |   3 +-
+ ctree.h       |   8 +-
+ delayed-ref.c | 607 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ delayed-ref.h | 208 ++++++++++++++++++++
+ disk-io.c     |   2 -
+ extent-tree.c | 575 +++++++++++++++++++++++++++++++-----------------------
+ kerncompat.h  |   8 +
+ transaction.c |  29 ++-
+ transaction.h |   4 +
+ 10 files changed, 1199 insertions(+), 248 deletions(-)
+ create mode 100644 delayed-ref.c
+ create mode 100644 delayed-ref.h
+
 -- 
-2.11.0
+2.7.4

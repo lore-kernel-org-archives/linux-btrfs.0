@@ -1,102 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:60776 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725198AbeHJEsN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 10 Aug 2018 00:48:13 -0400
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 42DD8AED4
-        for <linux-btrfs@vger.kernel.org>; Fri, 10 Aug 2018 02:20:30 +0000 (UTC)
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v3] btrfs: qgroup: Dirty all qgroups before rescan
-Date: Fri, 10 Aug 2018 10:20:26 +0800
-Message-Id: <20180810022026.27989-1-wqu@suse.com>
+Received: from a4-3.smtp-out.eu-west-1.amazonses.com ([54.240.4.3]:44306 "EHLO
+        a4-3.smtp-out.eu-west-1.amazonses.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1727398AbeHQT3k (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 17 Aug 2018 15:29:40 -0400
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+From: Martin Raiber <martin@urbackup.org>
+Subject: Hang after growing file system (4.14.48)
+Message-ID: <0102016548b4e2a4-a73ffb8d-fd08-4362-a7bc-3919c50adbe1-000000@eu-west-1.amazonses.com>
+Date: Fri, 17 Aug 2018 16:25:38 +0000
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-[BUG]
-In the following case, rescan won't zero out the number of qgroup 1/0:
-------
-$ mkfs.btrfs -fq $DEV
-$ mount $DEV /mnt
+Hi,
 
-$ btrfs quota enable /mnt
-$ btrfs qgroup create 1/0 /mnt
-$ btrfs sub create /mnt/sub
-$ btrfs qgroup assign 0/257 1/0 /mnt
+after growing a single btrfs file system (on a loop device, with btrfs
+fi resize max /fs ) it hangs later (sometimes much later). Symptoms:
 
-$ dd if=/dev/urandom of=/mnt/sub/file bs=1k count=1000
-$ btrfs sub snap /mnt/sub /mnt/snap
-$ btrfs quota rescan -w /mnt
-$ btrfs qgroup show -pcre /mnt
-qgroupid         rfer         excl     max_rfer     max_excl parent  child
---------         ----         ----     --------     -------- ------  -----
-0/5          16.00KiB     16.00KiB         none         none ---     ---
-0/257      1016.00KiB     16.00KiB         none         none 1/0     ---
-0/258      1016.00KiB     16.00KiB         none         none ---     ---
-1/0        1016.00KiB     16.00KiB         none         none ---     0/257
+* A unkillable btrfs process using 100% (of one) CPU in R state (no
+kernel trace, cannot attach with strace, gdb or run linux perf)
+* Other processes with following stack trace:
 
-so far so good, but:
+Fri Aug 17 16:21:06 2018] INFO: task python3:46794 blocked for more than
+120 seconds.
+[Fri Aug 17 16:21:06 2018]       Not tainted 4.14.48 #2
+[Fri Aug 17 16:21:06 2018] "echo 0 >
+/proc/sys/kernel/hung_task_timeout_secs" disables this message.
+[Fri Aug 17 16:21:06 2018] python3         D    0 46794  46702 0x00000000
+[Fri Aug 17 16:21:06 2018] Call Trace:
+[Fri Aug 17 16:21:06 2018]  ? __schedule+0x2de/0x7b0
+[Fri Aug 17 16:21:06 2018]  schedule+0x32/0x80
+[Fri Aug 17 16:21:06 2018]  schedule_preempt_disabled+0xa/0x10
+[Fri Aug 17 16:21:06 2018]  __mutex_lock.isra.1+0x295/0x4c0
+[Fri Aug 17 16:21:06 2018]  ? btrfs_show_devname+0x25/0xd0
+[Fri Aug 17 16:21:06 2018]  btrfs_show_devname+0x25/0xd0
+[Fri Aug 17 16:21:06 2018]  show_vfsmnt+0x44/0x150
+[Fri Aug 17 16:21:06 2018]  seq_read+0x314/0x3d0
+[Fri Aug 17 16:21:06 2018]  __vfs_read+0x26/0x130
+[Fri Aug 17 16:21:06 2018]  vfs_read+0x91/0x130
+[Fri Aug 17 16:21:06 2018]  SyS_read+0x42/0x90
+[Fri Aug 17 16:21:06 2018]  do_syscall_64+0x6e/0x120
+[Fri Aug 17 16:21:06 2018]  entry_SYSCALL_64_after_hwframe+0x3d/0xa2
+[Fri Aug 17 16:21:06 2018] RIP: 0033:0x7f67fd41b6d0
+[Fri Aug 17 16:21:06 2018] RSP: 002b:00007ffd80be2678 EFLAGS: 00000246
+ORIG_RAX: 0000000000000000
+[Fri Aug 17 16:21:06 2018] RAX: ffffffffffffffda RBX: 000056521bf7bb00
+RCX: 00007f67fd41b6d0
+[Fri Aug 17 16:21:06 2018] RDX: 0000000000000400 RSI: 000056521bf7bd30
+RDI: 0000000000000004
+[Fri Aug 17 16:21:06 2018] RBP: 0000000000000d68 R08: 00007f67fe655700
+R09: 0000000000000101
+[Fri Aug 17 16:21:06 2018] R10: 000056521bf7c0cc R11: 0000000000000246
+R12: 00007f67fd6d6440
+[Fri Aug 17 16:21:06 2018] R13: 00007f67fd6d5900 R14: 0000000000000064
+R15: 0000000000000000
 
-$ btrfs qgroup remove 0/257 1/0 /mnt
-WARNING: quotas may be inconsistent, rescan needed
-$ btrfs quota rescan -w /mnt
-$ btrfs qgroup show -pcre  /mnt
-qgoupid         rfer         excl     max_rfer     max_excl parent  child
---------         ----         ----     --------     -------- ------  -----
-0/5          16.00KiB     16.00KiB         none         none ---     ---
-0/257      1016.00KiB     16.00KiB         none         none ---     ---
-0/258      1016.00KiB     16.00KiB         none         none ---     ---
-1/0        1016.00KiB     16.00KiB         none         none ---     ---
-           ^^^^^^^^^^     ^^^^^^^^ not cleared
-------
-
-[CAUSE]
-Before rescan we call qgroup_rescan_zero_tracking() to zero out all
-qgroups' accounting numbers.
-
-However we don't mark all qgroups dirty, but rely on rescan to mark
-qgroups dirty.
-
-If we have any high level qgroup without children, it won't be marked
-dirty during rescan, since we can not reach that qgroup.
-
-This will cause QGROUP_INFO items of childless qgroups never get updated in
-quota tree, thus their numbers will stay the same in "btrfs qgroup show"
-output.
-
-[FIX]
-Just mark all qgroups dirty in qgroup_rescan_zero_tracking(), so even we
-have childless qgroups, their QGROUP_INFO items will still get updated
-during rescan.
-
-Reported-by: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
-Signed-off-by: Qu Wenruo <wqu@suse.com>
-Reviewed-by: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
-Tested-by: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
----
-changelog:
-v2:
-  Fix some grammar errors in commit message.
-v3:
-  Fix the adjective used for qgroups without children, from "orphan" to
-  "childless".
-  Update tags.
----
- fs/btrfs/qgroup.c | 1 +
- 1 file changed, 1 insertion(+)
-
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 48c1c3e7baf3..5a5372b33d96 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -2864,6 +2864,7 @@ qgroup_rescan_zero_tracking(struct btrfs_fs_info *fs_info)
- 		qgroup->rfer_cmpr = 0;
- 		qgroup->excl = 0;
- 		qgroup->excl_cmpr = 0;
-+		qgroup_dirty(fs_info, qgroup);
- 	}
- 	spin_unlock(&fs_info->qgroup_lock);
- }
--- 
-2.18.0
+Regards,
+Martin Raiber

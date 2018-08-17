@@ -1,151 +1,304 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.18]:40739 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726134AbeHQIyf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 17 Aug 2018 04:54:35 -0400
-Subject: Re: btrfsck out of memory for big fs
-To: "litaibaichina@gmail.com" <litaibaichina@gmail.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <201808171044160880896@gmail.com>
- <64a443c8-a041-ad07-3f16-2de616580a67@gmx.com>
- <2018081713260089574410@gmail.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <87d763ed-147a-e5fb-e596-74f63c9dfbbd@gmx.com>
-Date: Fri, 17 Aug 2018 13:52:22 +0800
+Received: from mx2.suse.de ([195.135.220.15]:37674 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726450AbeHQK1V (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 17 Aug 2018 06:27:21 -0400
+Subject: Re: [PATCH 1/2] Btrfs: kill btrfs_clear_path_blocking
+To: Liu Bo <bo.liu@linux.alibaba.com>, linux-btrfs@vger.kernel.org
+References: <1534453645-17714-1-git-send-email-bo.liu@linux.alibaba.com>
+ <1534453645-17714-2-git-send-email-bo.liu@linux.alibaba.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <f8f4cdcb-5b11-5654-b658-63d9ba1c1638@suse.com>
+Date: Fri, 17 Aug 2018 10:24:58 +0300
 MIME-Version: 1.0
-In-Reply-To: <2018081713260089574410@gmail.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="VUMUb8UJ5XLsdt6K9vxXzItdHyXkwiNYA"
+In-Reply-To: <1534453645-17714-2-git-send-email-bo.liu@linux.alibaba.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---VUMUb8UJ5XLsdt6K9vxXzItdHyXkwiNYA
-Content-Type: multipart/mixed; boundary="Y4iXTxW2UzuclCgvvx7aSrRwkNKHkboxL";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: "litaibaichina@gmail.com" <litaibaichina@gmail.com>,
- "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Message-ID: <87d763ed-147a-e5fb-e596-74f63c9dfbbd@gmx.com>
-Subject: Re: btrfsck out of memory for big fs
-References: <201808171044160880896@gmail.com>
- <64a443c8-a041-ad07-3f16-2de616580a67@gmx.com>
- <2018081713260089574410@gmail.com>
-In-Reply-To: <2018081713260089574410@gmail.com>
-
---Y4iXTxW2UzuclCgvvx7aSrRwkNKHkboxL
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
 
 
+On 17.08.2018 00:07, Liu Bo wrote:
+> Btrfs's btree locking has two modes, spinning mode and blocking mode,
+> while searching btree, locking is always acquired in spinning mode and
+> then converted to blocking mode if necessary, and in some hot paths we may
+> switch the locking back to spinning mode by btrfs_clear_path_blocking().
+> 
+> When acquiring locks, both of reader and writer need to wait for blocking
+> readers and writers to complete before doing read_lock()/write_lock().
+> 
+> The problem is that btrfs_clear_path_blocking() needs to switch nodes
+> in the path to blocking mode at first (by btrfs_set_path_blocking) to
+> make lockdep happy before doing its actual clearing blocking job.
+> 
+> When switching to blocking mode from spinning mode, it consists of
+> 
+> step 1) bumping up blocking readers counter and
+> step 2) read_unlock()/write_unlock(),
+> 
+> this has caused serious ping-pong effect if there're a great amount of
+> concurrent readers/writers, as waiters will be woken up and go to
+> sleep immediately.
 
-On 2018/8/17 =E4=B8=8B=E5=8D=881:26, litaibaichina@gmail.com wrote:
-> thanks Qu.
-> I am runing 4.12.
-> /# btrfs --version
-> btrfs-progs v4.12
->=20
-> Do you think btrfsck can fix the fs issue ?
+I think this ping-pong needs to be explained in a bit more detail.
 
-Nope, transid is pretty tricky especially for super old corruption.
+Looking at the code it seems the issue happens when we have a path
+locked in spinning mode (via btrfs_tree_lock) - in this case we have
+blocking_readers/writes == 0 and write_lock acquired. Then we could
+potentially have multiple requests to lock the tree (in this case the
+root) and since the current holder is spinning then btrfs_tree_lock
+callers will block on the write_lock. Subsequently when the holder
+switches to blocking he calls
+btrfs_set_path_blocking->btrfs_set_lock_blocking_rw which of course
+increments the blocking reader/writes and calls the unlock at which
+point a "thundering herd" problem occurs on the lock. Am I correct?
 
-> =C2=A0Or we better backup data and re-do the fs ?=20
+Furthermore I think the problem occurs not in btrfs_clear_path_blocking
+but rather in the initial call to btrfs_set_path_blocking.
 
-I'd recommend to backup data asap.
+The way I see it the following sequence of operations occur:
 
-Thanks,
-Qu
+1. Call btrfs_set_path_blocking: increments
+blocking_writers/blocking_readers, calls unlock: ping-pong happens. Now
+the lock types for the nodes in the path are
+BTRFS_READ_LOCK_BLOCKING/BTRFS_WRITE_LOCK_BLOCKING
 
->=20
-> _______________________________________________________________________=
-_________________________________________________________________________=
-______________________
-> From:=C2=A0Qu Wenruo
-> Date:=C2=A02018-08-17=C2=A012:34
-> To:=C2=A0litaibaichina@gmail.com; linux-btrfs@vger.kernel.org
-> Subject:=C2=A0Re: btrfsck out of memory for big fs
-> =C2=A0
-> =C2=A0
-> On 2018/8/17 =E4=B8=8A=E5=8D=8810:44, litaibaichina@gmail.com wrote:
->> Hi Guys,
->>
->> I had a big btrfs on a md device, =C2=A0it be mounted , but after a wh=
-ile it will become ready only:
->> # btrfs fi df /data/
->> Data, single: total=3D24.46TiB, used=3D24.46TiB
->> System, DUP: total=3D8.00MiB, used=3D2.59MiB
->> System, single: total=3D4.00MiB, used=3D0.00B
->> Metadata, DUP: total=3D81.00GiB, used=3D79.71GiB
->> Metadata, single: total=3D8.00MiB, used=3D0.00B
->> GlobalReserve, single: total=3D512.00MiB, used=3D264.28MiB
->>
->> # dmesg -T
->> [Thu Aug 16 18:16:31 2018] BTRFS error (device md127): parent transid =
-verify failed on 26603622694912 wanted 185320 found 207817
->> [Thu Aug 16 18:16:31 2018] BTRFS error (device md127): parent transid =
-verify failed on 26603622694912 wanted 185320 found 207817
-> =C2=A0
-> Transaction id mismatch, normally this means some of the fs is already
-> corrupted before.
-> =C2=A0
-> And considering the transid gap, the corruption happened quite a long
-> time ago.
-> =C2=A0
->> [Thu Aug 16 18:16:31 2018] BTRFS warning (device md127): Skipping comm=
-it of aborted transaction.
->> [Thu Aug 16 18:16:31 2018] BTRFS: error (device md127) in cleanup_tran=
-saction:1864: errno=3D-5 IO failure
->> [Thu Aug 16 18:16:31 2018] BTRFS info (device md127): forced readonly
->> [Thu Aug 16 18:16:31 2018] BTRFS info (device md127): delayed_refs has=
- NO entry
->>
->> I want to use btrfsck to check it, =C2=A0but it will OOM :
->> # btrfsck /dev/md127
->> Checking filesystem on /dev/md127
->> UUID: 6b87a52f-9a5f-4d03-b345-9d954c2ce259
->> checking extents
->> Killed
->>
->> I am trying to use lowmem mode, =C2=A0but as I tried before, it may OO=
-M too, =C2=A0 =C2=A0any ideas ?
-> =C2=A0
-> This depends on which version you tried before.
-> =C2=A0
-> Lowmem mode used to do partial lowmem and partial normal mode check, an=
-d
-> normal mode caused the OOM.
-> =C2=A0
-> Latest lowmem mode should not cause OOM, but please ger ready for the
-> super long run time.
-> =C2=A0
-> Thanks,
-> Qu
->>
->> Thanks.
->>
-> =C2=A0
->=20
+2. Some time later we call btrfs_clear_path_blocking
+which also calls btrfs_set_path_blocking, however this time this
+function doesn't do anything because the lock types in path struct are
+already blocking and none of the 2 conditions inside
+btrfs_set_lock_blocking_rw will match hence this code won't be executed.
 
+Did I miss something ?
 
---Y4iXTxW2UzuclCgvvx7aSrRwkNKHkboxL--
-
---VUMUb8UJ5XLsdt6K9vxXzItdHyXkwiNYA
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlt2YpYACgkQwj2R86El
-/qh3yQf9H1kJ3EDvDWMDv3fswiqBIaFg/gMY1yqhUecjtxtHPII96VCDEGs5WaDj
-OC9qD/VcVLtG2u4RwUyGbNlOmKjt1JrQLquUsJA8pDr2BmC3Y3W80iYlHrqUXL6Y
-Ld87Rjz3ADADl0YUKzrOB+u2ehL9oV7jCVKGF4G4haIJZDanrCd2Qg6gGjiA4gye
-91pNu0AVt+dos96qCn22rXFTRBF2pWmMot9dg6eYJgfGh38nrUZlqrbwpTuzRRig
-b7iVzybC6VroLU2P6rlqtuYuia/YA60E29UHFUwWb30ahCRIeHigaTSmYHzGEXh6
-5586xJQcey8mkc5/f995J2BJU1KeAw==
-=gXT/
------END PGP SIGNATURE-----
-
---VUMUb8UJ5XLsdt6K9vxXzItdHyXkwiNYA--
+> 
+> 1) Killing this kind of ping-pong results in a big improvement in my 1600k
+> files creation script,
+> 
+> MNT=/mnt/btrfs
+> mkfs.btrfs -f /dev/sdf
+> mount /dev/def $MNT
+> time fsmark  -D  10000  -S0  -n  100000  -s  0  -L  1 -l /tmp/fs_log.txt \
+>         -d  $MNT/0  -d  $MNT/1 \
+>         -d  $MNT/2  -d  $MNT/3 \
+>         -d  $MNT/4  -d  $MNT/5 \
+>         -d  $MNT/6  -d  $MNT/7 \
+>         -d  $MNT/8  -d  $MNT/9 \
+>         -d  $MNT/10  -d  $MNT/11 \
+>         -d  $MNT/12  -d  $MNT/13 \
+>         -d  $MNT/14  -d  $MNT/15
+> 
+> w/o patch:
+> real    2m27.307s
+> user    0m12.839s
+> sys     13m42.831s
+> 
+> w/ patch:
+> real    1m2.273s
+> user    0m15.802s
+> sys     8m16.495s
+> 
+> 2) dbench also proves the improvement,
+> dbench -t 120 -D /mnt/btrfs 16
+> 
+> w/o patch:
+> Throughput 158.363 MB/sec
+> 
+> w/ patch:
+> Throughput 449.52 MB/sec
+> 
+> 3) xfstests didn't show any additional failures.
+> 
+> One thing to note is that callers may set leave_spinning to have all
+> nodes in the path stay in spinning mode, which means callers are ready
+> to not sleep before releasing the path, but it won't cause problems if
+> they don't want to sleep in blocking mode, IOW, we can just get rid of
+> leave_spinning.
+> 
+> Signed-off-by: Liu Bo <bo.liu@linux.alibaba.com>
+> ---
+>  fs/btrfs/ctree.c         | 57 ++++--------------------------------------------
+>  fs/btrfs/ctree.h         |  2 --
+>  fs/btrfs/delayed-inode.c |  3 ---
+>  3 files changed, 4 insertions(+), 58 deletions(-)
+> 
+> diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+> index d436fb4c002e..8b31caa60b0a 100644
+> --- a/fs/btrfs/ctree.c
+> +++ b/fs/btrfs/ctree.c
+> @@ -52,42 +52,6 @@ noinline void btrfs_set_path_blocking(struct btrfs_path *p)
+>  	}
+>  }
+>  
+> -/*
+> - * reset all the locked nodes in the patch to spinning locks.
+> - *
+> - * held is used to keep lockdep happy, when lockdep is enabled
+> - * we set held to a blocking lock before we go around and
+> - * retake all the spinlocks in the path.  You can safely use NULL
+> - * for held
+> - */
+> -noinline void btrfs_clear_path_blocking(struct btrfs_path *p,
+> -					struct extent_buffer *held, int held_rw)
+> -{
+> -	int i;
+> -
+> -	if (held) {
+> -		btrfs_set_lock_blocking_rw(held, held_rw);
+> -		if (held_rw == BTRFS_WRITE_LOCK)
+> -			held_rw = BTRFS_WRITE_LOCK_BLOCKING;
+> -		else if (held_rw == BTRFS_READ_LOCK)
+> -			held_rw = BTRFS_READ_LOCK_BLOCKING;
+> -	}
+> -	btrfs_set_path_blocking(p);
+> -
+> -	for (i = BTRFS_MAX_LEVEL - 1; i >= 0; i--) {
+> -		if (p->nodes[i] && p->locks[i]) {
+> -			btrfs_clear_lock_blocking_rw(p->nodes[i], p->locks[i]);
+> -			if (p->locks[i] == BTRFS_WRITE_LOCK_BLOCKING)
+> -				p->locks[i] = BTRFS_WRITE_LOCK;
+> -			else if (p->locks[i] == BTRFS_READ_LOCK_BLOCKING)
+> -				p->locks[i] = BTRFS_READ_LOCK;
+> -		}
+> -	}
+> -
+> -	if (held)
+> -		btrfs_clear_lock_blocking_rw(held, held_rw);
+> -}
+> -
+>  /* this also releases the path */
+>  void btrfs_free_path(struct btrfs_path *p)
+>  {
+> @@ -1306,7 +1270,6 @@ static struct tree_mod_elem *__tree_mod_log_oldest_root(
+>  		}
+>  	}
+>  
+> -	btrfs_clear_path_blocking(path, NULL, BTRFS_READ_LOCK);
+>  	btrfs_tree_read_unlock_blocking(eb);
+>  	free_extent_buffer(eb);
+>  
+> @@ -2483,7 +2446,6 @@ noinline void btrfs_unlock_up_safe(struct btrfs_path *path, int level)
+>  		btrfs_set_path_blocking(p);
+>  		reada_for_balance(fs_info, p, level);
+>  		sret = split_node(trans, root, p, level);
+> -		btrfs_clear_path_blocking(p, NULL, 0);
+>  
+>  		BUG_ON(sret > 0);
+>  		if (sret) {
+> @@ -2504,7 +2466,6 @@ noinline void btrfs_unlock_up_safe(struct btrfs_path *path, int level)
+>  		btrfs_set_path_blocking(p);
+>  		reada_for_balance(fs_info, p, level);
+>  		sret = balance_level(trans, root, p, level);
+> -		btrfs_clear_path_blocking(p, NULL, 0);
+>  
+>  		if (sret) {
+>  			ret = sret;
+> @@ -2789,7 +2750,10 @@ int btrfs_search_slot(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+>  		}
+>  cow_done:
+>  		p->nodes[level] = b;
+> -		btrfs_clear_path_blocking(p, NULL, 0);
+> +		/*
+> +		 * Leave path with blocking locks to avoid massive
+> +		 * lock context switch, this is made on purpose.
+> +		 */
+>  
+>  		/*
+>  		 * we have a lock on b and as long as we aren't changing
+> @@ -2871,8 +2835,6 @@ int btrfs_search_slot(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+>  					if (!err) {
+>  						btrfs_set_path_blocking(p);
+>  						btrfs_tree_lock(b);
+> -						btrfs_clear_path_blocking(p, b,
+> -								  BTRFS_WRITE_LOCK);
+>  					}
+>  					p->locks[level] = BTRFS_WRITE_LOCK;
+>  				} else {
+> @@ -2880,8 +2842,6 @@ int btrfs_search_slot(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+>  					if (!err) {
+>  						btrfs_set_path_blocking(p);
+>  						btrfs_tree_read_lock(b);
+> -						btrfs_clear_path_blocking(p, b,
+> -								  BTRFS_READ_LOCK);
+>  					}
+>  					p->locks[level] = BTRFS_READ_LOCK;
+>  				}
+> @@ -2900,7 +2860,6 @@ int btrfs_search_slot(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+>  				btrfs_set_path_blocking(p);
+>  				err = split_leaf(trans, root, key,
+>  						 p, ins_len, ret == 0);
+> -				btrfs_clear_path_blocking(p, NULL, 0);
+>  
+>  				BUG_ON(err > 0);
+>  				if (err) {
+> @@ -2967,7 +2926,6 @@ int btrfs_search_old_slot(struct btrfs_root *root, const struct btrfs_key *key,
+>  	while (b) {
+>  		level = btrfs_header_level(b);
+>  		p->nodes[level] = b;
+> -		btrfs_clear_path_blocking(p, NULL, 0);
+>  
+>  		/*
+>  		 * we have a lock on b and as long as we aren't changing
+> @@ -3013,8 +2971,6 @@ int btrfs_search_old_slot(struct btrfs_root *root, const struct btrfs_key *key,
+>  			if (!err) {
+>  				btrfs_set_path_blocking(p);
+>  				btrfs_tree_read_lock(b);
+> -				btrfs_clear_path_blocking(p, b,
+> -							  BTRFS_READ_LOCK);
+>  			}
+>  			b = tree_mod_log_rewind(fs_info, p, b, time_seq);
+>  			if (!b) {
+> @@ -5198,7 +5154,6 @@ int btrfs_search_forward(struct btrfs_root *root, struct btrfs_key *min_key,
+>  		path->locks[level - 1] = BTRFS_READ_LOCK;
+>  		path->nodes[level - 1] = cur;
+>  		unlock_up(path, level, 1, 0, NULL);
+> -		btrfs_clear_path_blocking(path, NULL, 0);
+>  	}
+>  out:
+>  	path->keep_locks = keep_locks;
+> @@ -5783,8 +5738,6 @@ int btrfs_next_old_leaf(struct btrfs_root *root, struct btrfs_path *path,
+>  			if (!ret) {
+>  				btrfs_set_path_blocking(path);
+>  				btrfs_tree_read_lock(next);
+> -				btrfs_clear_path_blocking(path, next,
+> -							  BTRFS_READ_LOCK);
+>  			}
+>  			next_rw_lock = BTRFS_READ_LOCK;
+>  		}
+> @@ -5820,8 +5773,6 @@ int btrfs_next_old_leaf(struct btrfs_root *root, struct btrfs_path *path,
+>  			if (!ret) {
+>  				btrfs_set_path_blocking(path);
+>  				btrfs_tree_read_lock(next);
+> -				btrfs_clear_path_blocking(path, next,
+> -							  BTRFS_READ_LOCK);
+>  			}
+>  			next_rw_lock = BTRFS_READ_LOCK;
+>  		}
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index 318be7864072..1aeed3c0e949 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -2876,8 +2876,6 @@ int btrfs_realloc_node(struct btrfs_trans_handle *trans,
+>  struct btrfs_path *btrfs_alloc_path(void);
+>  void btrfs_free_path(struct btrfs_path *p);
+>  void btrfs_set_path_blocking(struct btrfs_path *p);
+> -void btrfs_clear_path_blocking(struct btrfs_path *p,
+> -			       struct extent_buffer *held, int held_rw);
+>  void btrfs_unlock_up_safe(struct btrfs_path *p, int level);
+>  
+>  int btrfs_del_items(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+> diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
+> index f51b509f2d9b..db9f45082c61 100644
+> --- a/fs/btrfs/delayed-inode.c
+> +++ b/fs/btrfs/delayed-inode.c
+> @@ -762,9 +762,6 @@ static int btrfs_batch_insert_items(struct btrfs_root *root,
+>  		i++;
+>  	}
+>  
+> -	/* reset all the locked nodes in the patch to spinning locks. */
+> -	btrfs_clear_path_blocking(path, NULL, 0);
+> -
+>  	/* insert the keys of the items */
+>  	setup_items_for_insert(root, path, keys, data_size,
+>  			       total_data_size, total_size, nitems);
+> 

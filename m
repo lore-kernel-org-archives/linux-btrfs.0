@@ -1,61 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from a4-3.smtp-out.eu-west-1.amazonses.com ([54.240.4.3]:44306 "EHLO
-        a4-3.smtp-out.eu-west-1.amazonses.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1727398AbeHQT3k (ORCPT
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:49753 "EHLO
+        mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726344AbeHRAVX (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 17 Aug 2018 15:29:40 -0400
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-From: Martin Raiber <martin@urbackup.org>
-Subject: Hang after growing file system (4.14.48)
-Message-ID: <0102016548b4e2a4-a73ffb8d-fd08-4362-a7bc-3919c50adbe1-000000@eu-west-1.amazonses.com>
-Date: Fri, 17 Aug 2018 16:25:38 +0000
+        Fri, 17 Aug 2018 20:21:23 -0400
+From: Martin Steigerwald <martin@lichtvoll.de>
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Cc: Roman Mamedov <rm@romanrm.net>, linux-btrfs@vger.kernel.org
+Subject: Re: Experiences on BTRFS Dual SSD RAID 1 with outage of one SSD
+Date: Fri, 17 Aug 2018 23:16:24 +0200
+Message-ID: <1816762.xWVpkm38nr@merkaba>
+In-Reply-To: <94de7bd8-1b35-ecbb-566a-86b5c9de06fc@gmail.com>
+References: <2331408.nK7QgfhVWv@merkaba> <20180817175022.70cd084e@natsu> <94de7bd8-1b35-ecbb-566a-86b5c9de06fc@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset="iso-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Austin S. Hemmelgarn - 17.08.18, 15:01:
+> On 2018-08-17 08:50, Roman Mamedov wrote:
+> > On Fri, 17 Aug 2018 14:28:25 +0200
+> > 
+> > Martin Steigerwald <martin@lichtvoll.de> wrote:
+> >>> First off, keep in mind that the SSD firmware doing compression
+> >>> only
+> >>> really helps with wear-leveling.  Doing it in the filesystem will
+> >>> help not only with that, but will also give you more space to
+> >>> work with.>> 
+> >> While also reducing the ability of the SSD to wear-level. The more
+> >> data I fit on the SSD, the less it can wear-level. And the better
+> >> I compress that data, the less it can wear-level.
+> > 
+> > Do not consider SSD "compression" as a factor in any of your
+> > calculations or planning. Modern controllers do not do it anymore,
+> > the last ones that did are SandForce, and that's 2010 era stuff.
+> > You can check for yourself by comparing write speeds of
+> > compressible vs incompressible data, it should be the same. At
+> > most, the modern ones know to recognize a stream of binary zeroes
+> > and have a special case for that.
+> 
+> All that testing write speeds forz compressible versus incompressible
+> data tells you is if the SSD is doing real-time compression of data,
+> not if they are doing any compression at all..  Also, this test only
+> works if you turn the write-cache on the device off.
 
-after growing a single btrfs file system (on a loop device, with btrfs
-fi resize max /fs ) it hangs later (sometimes much later). Symptoms:
+As the data still needs to be transferred to the SSD at least when the 
+SATA connection is maxed out I bet you won�t see any difference in write 
+speed whether the SSD compresses in real time or not.
 
-* A unkillable btrfs process using 100% (of one) CPU in R state (no
-kernel trace, cannot attach with strace, gdb or run linux perf)
-* Other processes with following stack trace:
+> Besides, you can't prove 100% for certain that any manufacturer who
+> does not sell their controller chips isn't doing this, which means
+> there are a few manufacturers that may still be doing it.
 
-Fri Aug 17 16:21:06 2018] INFO: task python3:46794 blocked for more than
-120 seconds.
-[Fri Aug 17 16:21:06 2018]       Not tainted 4.14.48 #2
-[Fri Aug 17 16:21:06 2018] "echo 0 >
-/proc/sys/kernel/hung_task_timeout_secs" disables this message.
-[Fri Aug 17 16:21:06 2018] python3         D    0 46794  46702 0x00000000
-[Fri Aug 17 16:21:06 2018] Call Trace:
-[Fri Aug 17 16:21:06 2018]  ? __schedule+0x2de/0x7b0
-[Fri Aug 17 16:21:06 2018]  schedule+0x32/0x80
-[Fri Aug 17 16:21:06 2018]  schedule_preempt_disabled+0xa/0x10
-[Fri Aug 17 16:21:06 2018]  __mutex_lock.isra.1+0x295/0x4c0
-[Fri Aug 17 16:21:06 2018]  ? btrfs_show_devname+0x25/0xd0
-[Fri Aug 17 16:21:06 2018]  btrfs_show_devname+0x25/0xd0
-[Fri Aug 17 16:21:06 2018]  show_vfsmnt+0x44/0x150
-[Fri Aug 17 16:21:06 2018]  seq_read+0x314/0x3d0
-[Fri Aug 17 16:21:06 2018]  __vfs_read+0x26/0x130
-[Fri Aug 17 16:21:06 2018]  vfs_read+0x91/0x130
-[Fri Aug 17 16:21:06 2018]  SyS_read+0x42/0x90
-[Fri Aug 17 16:21:06 2018]  do_syscall_64+0x6e/0x120
-[Fri Aug 17 16:21:06 2018]  entry_SYSCALL_64_after_hwframe+0x3d/0xa2
-[Fri Aug 17 16:21:06 2018] RIP: 0033:0x7f67fd41b6d0
-[Fri Aug 17 16:21:06 2018] RSP: 002b:00007ffd80be2678 EFLAGS: 00000246
-ORIG_RAX: 0000000000000000
-[Fri Aug 17 16:21:06 2018] RAX: ffffffffffffffda RBX: 000056521bf7bb00
-RCX: 00007f67fd41b6d0
-[Fri Aug 17 16:21:06 2018] RDX: 0000000000000400 RSI: 000056521bf7bd30
-RDI: 0000000000000004
-[Fri Aug 17 16:21:06 2018] RBP: 0000000000000d68 R08: 00007f67fe655700
-R09: 0000000000000101
-[Fri Aug 17 16:21:06 2018] R10: 000056521bf7c0cc R11: 0000000000000246
-R12: 00007f67fd6d6440
-[Fri Aug 17 16:21:06 2018] R13: 00007f67fd6d5900 R14: 0000000000000064
-R15: 0000000000000000
+Who really knows what SSD controller manufacturers are doing? I have not 
+seen any Open Channel SSD stuff for laptops so far.
 
-Regards,
-Martin Raiber
+Thanks,
+-- 
+Martin

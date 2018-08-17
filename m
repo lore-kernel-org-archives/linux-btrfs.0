@@ -1,53 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from out30-133.freemail.mail.aliyun.com ([115.124.30.133]:43645 "EHLO
-        out30-133.freemail.mail.aliyun.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1725990AbeHQAIS (ORCPT
+Received: from mail-pf1-f176.google.com ([209.85.210.176]:40252 "EHLO
+        mail-pf1-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726259AbeHQFpy (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 16 Aug 2018 20:08:18 -0400
-From: Liu Bo <bo.liu@linux.alibaba.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 0/2] address lock contention of btree root
-Date: Fri, 17 Aug 2018 05:07:23 +0800
-Message-Id: <1534453645-17714-1-git-send-email-bo.liu@linux.alibaba.com>
+        Fri, 17 Aug 2018 01:45:54 -0400
+Received: by mail-pf1-f176.google.com with SMTP id e13-v6so2862756pff.7
+        for <linux-btrfs@vger.kernel.org>; Thu, 16 Aug 2018 19:44:21 -0700 (PDT)
+Received: from NJ-MILI-T480 ([209.249.181.2])
+        by smtp.gmail.com with ESMTPSA id g69-v6sm934389pfd.23.2018.08.16.19.44.19
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_2 cipher=AES128-GCM-SHA256 bits=128/128);
+        Thu, 16 Aug 2018 19:44:20 -0700 (PDT)
+Date: Fri, 17 Aug 2018 10:44:19 +0800
+From: "litaibaichina@gmail.com" <litaibaichina@gmail.com>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: btrfsck out of memory for big fs
+Mime-Version: 1.0
+Message-ID: <201808171044160880896@gmail.com>
+Content-Type: text/plain;
+        charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The lock contention on btree nodes (esp. root node) is apparently a
-bottleneck when there're multiple readers and writers concurrently
-trying to access them.  Unfortunately this is by design and it's not
-easy to fix it unless with some complex changes, however, there is
-still some room.
+Hi Guys,
 
-With a stable workload based on fsmark which has 16 threads creating
-1,600K files, we could see that a good amount of overhead comes from
-switching path between spinning mode and blocking mode in
-btrfs_search_slot().
+I had a big btrfs on a md device,  it be mounted , but after a while it will become ready only:
+# btrfs fi df /data/
+Data, single: total=24.46TiB, used=24.46TiB
+System, DUP: total=8.00MiB, used=2.59MiB
+System, single: total=4.00MiB, used=0.00B
+Metadata, DUP: total=81.00GiB, used=79.71GiB
+Metadata, single: total=8.00MiB, used=0.00B
+GlobalReserve, single: total=512.00MiB, used=264.28MiB
 
-Patch 1 provides more details about the overhead and test results from
-fsmark and dbench.
-Patch 2 kills leave_spinning due to the behaviour change from patch 1.
+# dmesg -T
+[Thu Aug 16 18:16:31 2018] BTRFS error (device md127): parent transid verify failed on 26603622694912 wanted 185320 found 207817
+[Thu Aug 16 18:16:31 2018] BTRFS error (device md127): parent transid verify failed on 26603622694912 wanted 185320 found 207817
+[Thu Aug 16 18:16:31 2018] BTRFS warning (device md127): Skipping commit of aborted transaction.
+[Thu Aug 16 18:16:31 2018] BTRFS: error (device md127) in cleanup_transaction:1864: errno=-5 IO failure
+[Thu Aug 16 18:16:31 2018] BTRFS info (device md127): forced readonly
+[Thu Aug 16 18:16:31 2018] BTRFS info (device md127): delayed_refs has NO entry
 
-Liu Bo (2):
-  Btrfs: kill btrfs_clear_path_blocking
-  Btrfs: kill leave_spinning
+I want to use btrfsck to check it,  but it will OOM :
+# btrfsck /dev/md127
+Checking filesystem on /dev/md127
+UUID: 6b87a52f-9a5f-4d03-b345-9d954c2ce259
+checking extents
+Killed
 
- fs/btrfs/backref.c            |  3 --
- fs/btrfs/ctree.c              | 73 +++++--------------------------------------
- fs/btrfs/ctree.h              |  3 --
- fs/btrfs/delayed-inode.c      |  7 -----
- fs/btrfs/dir-item.c           |  1 -
- fs/btrfs/export.c             |  1 -
- fs/btrfs/extent-tree.c        |  7 -----
- fs/btrfs/extent_io.c          |  1 -
- fs/btrfs/file-item.c          |  4 ---
- fs/btrfs/free-space-tree.c    |  2 --
- fs/btrfs/inode-item.c         |  6 ----
- fs/btrfs/inode.c              |  8 -----
- fs/btrfs/ioctl.c              |  3 --
- fs/btrfs/qgroup.c             |  2 --
- fs/btrfs/super.c              |  2 --
- fs/btrfs/tests/qgroup-tests.c |  4 ---
- 16 files changed, 7 insertions(+), 120 deletions(-)
+I am trying to use lowmem mode,  but as I tried before, it may OOM too,    any ideas ?
 
--- 
-1.8.3.1
+Thanks.

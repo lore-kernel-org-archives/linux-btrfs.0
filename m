@@ -1,268 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from out30-131.freemail.mail.aliyun.com ([115.124.30.131]:58776 "EHLO
-        out30-131.freemail.mail.aliyun.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1725990AbeHQAIX (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 16 Aug 2018 20:08:23 -0400
-From: Liu Bo <bo.liu@linux.alibaba.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 1/2] Btrfs: kill btrfs_clear_path_blocking
-Date: Fri, 17 Aug 2018 05:07:24 +0800
-Message-Id: <1534453645-17714-2-git-send-email-bo.liu@linux.alibaba.com>
-In-Reply-To: <1534453645-17714-1-git-send-email-bo.liu@linux.alibaba.com>
-References: <1534453645-17714-1-git-send-email-bo.liu@linux.alibaba.com>
+Received: from mx2.suse.de ([195.135.220.15]:37880 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726683AbeHTQ75 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 20 Aug 2018 12:59:57 -0400
+Subject: Re: [PATCH 2/2] btrfstune: Rename change_header_uuid to
+ change_buffer_header_uuid
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
+References: <1534771685-4924-1-git-send-email-nborisov@suse.com>
+ <1534771685-4924-3-git-send-email-nborisov@suse.com>
+ <55ec64a2-d2ec-d12f-387d-98b40eb78884@gmx.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <701fc4d1-880c-d271-13c2-fc58ec9f9184@suse.com>
+Date: Mon, 20 Aug 2018 16:44:10 +0300
+MIME-Version: 1.0
+In-Reply-To: <55ec64a2-d2ec-d12f-387d-98b40eb78884@gmx.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Btrfs's btree locking has two modes, spinning mode and blocking mode,
-while searching btree, locking is always acquired in spinning mode and
-then converted to blocking mode if necessary, and in some hot paths we may
-switch the locking back to spinning mode by btrfs_clear_path_blocking().
 
-When acquiring locks, both of reader and writer need to wait for blocking
-readers and writers to complete before doing read_lock()/write_lock().
 
-The problem is that btrfs_clear_path_blocking() needs to switch nodes
-in the path to blocking mode at first (by btrfs_set_path_blocking) to
-make lockdep happy before doing its actual clearing blocking job.
+On 20.08.2018 16:34, Qu Wenruo wrote:
+> 
+> 
+> On 2018/8/20 下午9:28, Nikolay Borisov wrote:
+>> Rename the function so its name falls in line with the rest of btrfs
+>> nomenclature. So when we change the uuid of the header it's in fact
+>> of the buffer header.
+> 
+> We have setget functions like btrfs_header_nritems() or
+> btrfs_header_bytenr(), IMHO both ways make sense.
 
-When switching to blocking mode from spinning mode, it consists of
+Yes, however, we don't really have such functions for the two fields.
+Alternatively they could be introduced and will consist of only :
+write_extent_buffer() calls and the cheks for
+same_fsid/same_chunk_tree_uuid will still be retained in
+change_buffer_header_uuid.
 
-step 1) bumping up blocking readers counter and
-step 2) read_unlock()/write_unlock(),
-
-this has caused serious ping-pong effect if there're a great amount of
-concurrent readers/writers, as waiters will be woken up and go to
-sleep immediately.
-
-1) Killing this kind of ping-pong results in a big improvement in my 1600k
-files creation script,
-
-MNT=/mnt/btrfs
-mkfs.btrfs -f /dev/sdf
-mount /dev/def $MNT
-time fsmark  -D  10000  -S0  -n  100000  -s  0  -L  1 -l /tmp/fs_log.txt \
-        -d  $MNT/0  -d  $MNT/1 \
-        -d  $MNT/2  -d  $MNT/3 \
-        -d  $MNT/4  -d  $MNT/5 \
-        -d  $MNT/6  -d  $MNT/7 \
-        -d  $MNT/8  -d  $MNT/9 \
-        -d  $MNT/10  -d  $MNT/11 \
-        -d  $MNT/12  -d  $MNT/13 \
-        -d  $MNT/14  -d  $MNT/15
-
-w/o patch:
-real    2m27.307s
-user    0m12.839s
-sys     13m42.831s
-
-w/ patch:
-real    1m2.273s
-user    0m15.802s
-sys     8m16.495s
-
-2) dbench also proves the improvement,
-dbench -t 120 -D /mnt/btrfs 16
-
-w/o patch:
-Throughput 158.363 MB/sec
-
-w/ patch:
-Throughput 449.52 MB/sec
-
-3) xfstests didn't show any additional failures.
-
-One thing to note is that callers may set leave_spinning to have all
-nodes in the path stay in spinning mode, which means callers are ready
-to not sleep before releasing the path, but it won't cause problems if
-they don't want to sleep in blocking mode, IOW, we can just get rid of
-leave_spinning.
-
-Signed-off-by: Liu Bo <bo.liu@linux.alibaba.com>
----
- fs/btrfs/ctree.c         | 57 ++++--------------------------------------------
- fs/btrfs/ctree.h         |  2 --
- fs/btrfs/delayed-inode.c |  3 ---
- 3 files changed, 4 insertions(+), 58 deletions(-)
-
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index d436fb4c002e..8b31caa60b0a 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -52,42 +52,6 @@ noinline void btrfs_set_path_blocking(struct btrfs_path *p)
- 	}
- }
- 
--/*
-- * reset all the locked nodes in the patch to spinning locks.
-- *
-- * held is used to keep lockdep happy, when lockdep is enabled
-- * we set held to a blocking lock before we go around and
-- * retake all the spinlocks in the path.  You can safely use NULL
-- * for held
-- */
--noinline void btrfs_clear_path_blocking(struct btrfs_path *p,
--					struct extent_buffer *held, int held_rw)
--{
--	int i;
--
--	if (held) {
--		btrfs_set_lock_blocking_rw(held, held_rw);
--		if (held_rw == BTRFS_WRITE_LOCK)
--			held_rw = BTRFS_WRITE_LOCK_BLOCKING;
--		else if (held_rw == BTRFS_READ_LOCK)
--			held_rw = BTRFS_READ_LOCK_BLOCKING;
--	}
--	btrfs_set_path_blocking(p);
--
--	for (i = BTRFS_MAX_LEVEL - 1; i >= 0; i--) {
--		if (p->nodes[i] && p->locks[i]) {
--			btrfs_clear_lock_blocking_rw(p->nodes[i], p->locks[i]);
--			if (p->locks[i] == BTRFS_WRITE_LOCK_BLOCKING)
--				p->locks[i] = BTRFS_WRITE_LOCK;
--			else if (p->locks[i] == BTRFS_READ_LOCK_BLOCKING)
--				p->locks[i] = BTRFS_READ_LOCK;
--		}
--	}
--
--	if (held)
--		btrfs_clear_lock_blocking_rw(held, held_rw);
--}
--
- /* this also releases the path */
- void btrfs_free_path(struct btrfs_path *p)
- {
-@@ -1306,7 +1270,6 @@ static struct tree_mod_elem *__tree_mod_log_oldest_root(
- 		}
- 	}
- 
--	btrfs_clear_path_blocking(path, NULL, BTRFS_READ_LOCK);
- 	btrfs_tree_read_unlock_blocking(eb);
- 	free_extent_buffer(eb);
- 
-@@ -2483,7 +2446,6 @@ noinline void btrfs_unlock_up_safe(struct btrfs_path *path, int level)
- 		btrfs_set_path_blocking(p);
- 		reada_for_balance(fs_info, p, level);
- 		sret = split_node(trans, root, p, level);
--		btrfs_clear_path_blocking(p, NULL, 0);
- 
- 		BUG_ON(sret > 0);
- 		if (sret) {
-@@ -2504,7 +2466,6 @@ noinline void btrfs_unlock_up_safe(struct btrfs_path *path, int level)
- 		btrfs_set_path_blocking(p);
- 		reada_for_balance(fs_info, p, level);
- 		sret = balance_level(trans, root, p, level);
--		btrfs_clear_path_blocking(p, NULL, 0);
- 
- 		if (sret) {
- 			ret = sret;
-@@ -2789,7 +2750,10 @@ int btrfs_search_slot(struct btrfs_trans_handle *trans, struct btrfs_root *root,
- 		}
- cow_done:
- 		p->nodes[level] = b;
--		btrfs_clear_path_blocking(p, NULL, 0);
-+		/*
-+		 * Leave path with blocking locks to avoid massive
-+		 * lock context switch, this is made on purpose.
-+		 */
- 
- 		/*
- 		 * we have a lock on b and as long as we aren't changing
-@@ -2871,8 +2835,6 @@ int btrfs_search_slot(struct btrfs_trans_handle *trans, struct btrfs_root *root,
- 					if (!err) {
- 						btrfs_set_path_blocking(p);
- 						btrfs_tree_lock(b);
--						btrfs_clear_path_blocking(p, b,
--								  BTRFS_WRITE_LOCK);
- 					}
- 					p->locks[level] = BTRFS_WRITE_LOCK;
- 				} else {
-@@ -2880,8 +2842,6 @@ int btrfs_search_slot(struct btrfs_trans_handle *trans, struct btrfs_root *root,
- 					if (!err) {
- 						btrfs_set_path_blocking(p);
- 						btrfs_tree_read_lock(b);
--						btrfs_clear_path_blocking(p, b,
--								  BTRFS_READ_LOCK);
- 					}
- 					p->locks[level] = BTRFS_READ_LOCK;
- 				}
-@@ -2900,7 +2860,6 @@ int btrfs_search_slot(struct btrfs_trans_handle *trans, struct btrfs_root *root,
- 				btrfs_set_path_blocking(p);
- 				err = split_leaf(trans, root, key,
- 						 p, ins_len, ret == 0);
--				btrfs_clear_path_blocking(p, NULL, 0);
- 
- 				BUG_ON(err > 0);
- 				if (err) {
-@@ -2967,7 +2926,6 @@ int btrfs_search_old_slot(struct btrfs_root *root, const struct btrfs_key *key,
- 	while (b) {
- 		level = btrfs_header_level(b);
- 		p->nodes[level] = b;
--		btrfs_clear_path_blocking(p, NULL, 0);
- 
- 		/*
- 		 * we have a lock on b and as long as we aren't changing
-@@ -3013,8 +2971,6 @@ int btrfs_search_old_slot(struct btrfs_root *root, const struct btrfs_key *key,
- 			if (!err) {
- 				btrfs_set_path_blocking(p);
- 				btrfs_tree_read_lock(b);
--				btrfs_clear_path_blocking(p, b,
--							  BTRFS_READ_LOCK);
- 			}
- 			b = tree_mod_log_rewind(fs_info, p, b, time_seq);
- 			if (!b) {
-@@ -5198,7 +5154,6 @@ int btrfs_search_forward(struct btrfs_root *root, struct btrfs_key *min_key,
- 		path->locks[level - 1] = BTRFS_READ_LOCK;
- 		path->nodes[level - 1] = cur;
- 		unlock_up(path, level, 1, 0, NULL);
--		btrfs_clear_path_blocking(path, NULL, 0);
- 	}
- out:
- 	path->keep_locks = keep_locks;
-@@ -5783,8 +5738,6 @@ int btrfs_next_old_leaf(struct btrfs_root *root, struct btrfs_path *path,
- 			if (!ret) {
- 				btrfs_set_path_blocking(path);
- 				btrfs_tree_read_lock(next);
--				btrfs_clear_path_blocking(path, next,
--							  BTRFS_READ_LOCK);
- 			}
- 			next_rw_lock = BTRFS_READ_LOCK;
- 		}
-@@ -5820,8 +5773,6 @@ int btrfs_next_old_leaf(struct btrfs_root *root, struct btrfs_path *path,
- 			if (!ret) {
- 				btrfs_set_path_blocking(path);
- 				btrfs_tree_read_lock(next);
--				btrfs_clear_path_blocking(path, next,
--							  BTRFS_READ_LOCK);
- 			}
- 			next_rw_lock = BTRFS_READ_LOCK;
- 		}
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 318be7864072..1aeed3c0e949 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -2876,8 +2876,6 @@ int btrfs_realloc_node(struct btrfs_trans_handle *trans,
- struct btrfs_path *btrfs_alloc_path(void);
- void btrfs_free_path(struct btrfs_path *p);
- void btrfs_set_path_blocking(struct btrfs_path *p);
--void btrfs_clear_path_blocking(struct btrfs_path *p,
--			       struct extent_buffer *held, int held_rw);
- void btrfs_unlock_up_safe(struct btrfs_path *p, int level);
- 
- int btrfs_del_items(struct btrfs_trans_handle *trans, struct btrfs_root *root,
-diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-index f51b509f2d9b..db9f45082c61 100644
---- a/fs/btrfs/delayed-inode.c
-+++ b/fs/btrfs/delayed-inode.c
-@@ -762,9 +762,6 @@ static int btrfs_batch_insert_items(struct btrfs_root *root,
- 		i++;
- 	}
- 
--	/* reset all the locked nodes in the patch to spinning locks. */
--	btrfs_clear_path_blocking(path, NULL, 0);
--
- 	/* insert the keys of the items */
- 	setup_items_for_insert(root, path, keys, data_size,
- 			       total_data_size, total_size, nitems);
--- 
-1.8.3.1
+> 
+> Although I have no objection against current modification.
+> 
+>> Also remove the root argument since it's used
+>> solely to take a reference to fs_info which can be done via the
+>> mandatory eb argument. No functional changes.>
+>> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+> 
+> Reviewed-by: Qu Wenruo <wqu@suse.com>
+> 
+> Thanks,
+> Qu
+> 
+>> ---
+>>  btrfstune.c | 6 +++---
+>>  1 file changed, 3 insertions(+), 3 deletions(-)
+>>
+>> diff --git a/btrfstune.c b/btrfstune.c
+>> index 723317a00f3a..3745a00c46ae 100644
+>> --- a/btrfstune.c
+>> +++ b/btrfstune.c
+>> @@ -91,9 +91,9 @@ static int set_super_incompat_flags(struct btrfs_root *root, u64 flags)
+>>  	return ret;
+>>  }
+>>  
+>> -static int change_header_uuid(struct btrfs_root *root, struct extent_buffer *eb)
+>> +static int change_buffer_header_uuid(struct extent_buffer *eb)
+>>  {
+>> -	struct btrfs_fs_info *fs_info = root->fs_info;
+>> +	struct btrfs_fs_info *fs_info = eb->fs_info;
+>>  	int same_fsid = 1;
+>>  	int same_chunk_tree_uuid = 1;
+>>  	int ret;
+>> @@ -157,7 +157,7 @@ static int change_extents_uuid(struct btrfs_fs_info *fs_info)
+>>  			ret = PTR_ERR(eb);
+>>  			goto out;
+>>  		}
+>> -		ret = change_header_uuid(root, eb);
+>> +		ret = change_buffer_header_uuid(eb);
+>>  		free_extent_buffer(eb);
+>>  		if (ret < 0) {
+>>  			error("failed to change uuid of tree block: %llu",
+>>
+> 

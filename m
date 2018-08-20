@@ -1,45 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:37318 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:44728 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726689AbeHTQ4w (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 20 Aug 2018 12:56:52 -0400
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 604EBAE6D
-        for <linux-btrfs@vger.kernel.org>; Mon, 20 Aug 2018 13:41:09 +0000 (UTC)
-Date: Mon, 20 Aug 2018 15:40:58 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2 0/2] btrfs-progs: completion: Small fixes to make
- debug simpler
-Message-ID: <20180820134058.GW24025@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20180813060244.8795-1-wqu@suse.com>
+        id S1725948AbeHTLuX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 20 Aug 2018 07:50:23 -0400
+Subject: Re: [PATCH] btrfs: use after free in btrfs_quota_enable()
+To: Dan Carpenter <dan.carpenter@oracle.com>, Chris Mason <clm@fb.com>
+Cc: Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
+        linux-btrfs@vger.kernel.org, kernel-janitors@vger.kernel.org
+References: <20180820082533.rs3yh4agza6epz7j@kili.mountain>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <8af999a0-5320-b916-51ac-475980d5fd53@suse.com>
+Date: Mon, 20 Aug 2018 11:35:37 +0300
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180813060244.8795-1-wqu@suse.com>
+In-Reply-To: <20180820082533.rs3yh4agza6epz7j@kili.mountain>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Aug 13, 2018 at 02:02:42PM +0800, Qu Wenruo wrote:
-> For developer, it's pretty common to use "btrfs check" or "btrfs ins
-> dump-tree" on raw dumps.
-> Even for end user, they may hit case where they need to run "btrfs check"
-> on raw images.
-> 
-> However "btrfs check" can only complete real block devices, and
-> "btrfs inspect dump-tree" can only complete dir.
-> 
-> Make them to use _filedir() so any filename can be completed and save us
-> developer a little time and nerve hitting that holy tab.
-> 
-> changelog:
-> v2:
->   Discard _btrfs_dev() macro completely.
-> 
-> Qu Wenruo (2):
->   btrfs-progs: completion: Use _filedir() to replace _btrfs_devs()
->   btrfs-progs: completion: Let dump-tree/dump-super/inode-resolve to
->     accept any file
 
-Applied, thanks.
+
+On 20.08.2018 11:25, Dan Carpenter wrote:
+> The issue here is that btrfs_commit_transaction() frees "trans" on both
+> the error and the success path.  So the problem would be if
+> btrfs_commit_transaction() succeeds, and then qgroup_rescan_init()
+> fails.  That means that "ret" is non-zero and "trans" is non-NULL and it
+> leads to a use after free inside the btrfs_end_transaction() macro.
+> 
+> Fixes: 340f1aa27f36 ("btrfs: qgroups: Move transaction management inside btrfs_quota_enable/disable")
+> Signed-off-by: Dan Carpenter <dan.carpenter@oracle.com>
+
+Thanks for catching it:
+
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+
+> 
+> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+> index 4353bb69bb86..d4917c0cddf5 100644
+> --- a/fs/btrfs/qgroup.c
+> +++ b/fs/btrfs/qgroup.c
+> @@ -1019,10 +1019,9 @@ int btrfs_quota_enable(struct btrfs_fs_info *fs_info)
+>  	spin_unlock(&fs_info->qgroup_lock);
+>  
+>  	ret = btrfs_commit_transaction(trans);
+> -	if (ret) {
+> -		trans = NULL;
+> +	trans = NULL;
+> +	if (ret)
+>  		goto out_free_path;
+> -	}
+>  
+>  	ret = qgroup_rescan_init(fs_info, 0, 1);
+>  	if (!ret) {
+> 

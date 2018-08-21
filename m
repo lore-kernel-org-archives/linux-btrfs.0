@@ -1,139 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:50212 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S2387560AbeHAJwk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 1 Aug 2018 05:52:40 -0400
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 02DEDAD86
-        for <linux-btrfs@vger.kernel.org>; Wed,  1 Aug 2018 08:08:10 +0000 (UTC)
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/1] btrfs: Handle owner mismatch gracefully when walking up tree
-Date: Wed,  1 Aug 2018 16:08:01 +0800
-Message-Id: <20180801080801.13024-1-wqu@suse.com>
+Received: from mail-pf1-f195.google.com ([209.85.210.195]:45512 "EHLO
+        mail-pf1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726629AbeHUMFZ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 21 Aug 2018 08:05:25 -0400
+Received: by mail-pf1-f195.google.com with SMTP id i26-v6so8156235pfo.12
+        for <linux-btrfs@vger.kernel.org>; Tue, 21 Aug 2018 01:46:10 -0700 (PDT)
+Date: Tue, 21 Aug 2018 01:46:07 -0700
+From: Omar Sandoval <osandov@osandov.com>
+To: dsterba@suse.cz, linux-btrfs@vger.kernel.org, kernel-team@fb.com,
+        linux-fsdevel@vger.kernel.org, Tejun Heo <tj@kernel.org>
+Subject: Re: [RFC PATCH v4 4/6] Btrfs: prevent ioctls from interfering with a
+ swap file
+Message-ID: <20180821084607.GA2119@vader>
+References: <cover.1527197312.git.osandov@fb.com>
+ <296f04a07350c9cc2032e03f78c1a7284747fb50.1527197312.git.osandov@fb.com>
+ <20180525145055.GN6649@twin.jikos.cz>
+ <20180525160058.GA29193@vader>
+ <20180525161042.GR6649@twin.jikos.cz>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20180525161042.GR6649@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-[BUG]
-When mounting certain crafted image, btrfs will trigger kernel BUG_ON()
-when try to recover balance:
-------
-------------[ cut here ]------------
-kernel BUG at fs/btrfs/extent-tree.c:8956!
-invalid opcode: 0000 [#1] PREEMPT SMP NOPTI
-CPU: 1 PID: 662 Comm: mount Not tainted 4.18.0-rc1-custom+ #10
-RIP: 0010:walk_up_proc+0x336/0x480 [btrfs]
-RSP: 0018:ffffb53540c9b890 EFLAGS: 00010202
-Call Trace:
- walk_up_tree+0x172/0x1f0 [btrfs]
- btrfs_drop_snapshot+0x3a4/0x830 [btrfs]
- merge_reloc_roots+0xe1/0x1d0 [btrfs]
- btrfs_recover_relocation+0x3ea/0x420 [btrfs]
- open_ctree+0x1af3/0x1dd0 [btrfs]
- btrfs_mount_root+0x66b/0x740 [btrfs]
- mount_fs+0x3b/0x16a
- vfs_kern_mount.part.9+0x54/0x140
- btrfs_mount+0x16d/0x890 [btrfs]
- mount_fs+0x3b/0x16a
- vfs_kern_mount.part.9+0x54/0x140
- do_mount+0x1fd/0xda0
- ksys_mount+0xba/0xd0
- __x64_sys_mount+0x21/0x30
- do_syscall_64+0x60/0x210
- entry_SYSCALL_64_after_hwframe+0x49/0xbe
----[ end trace d4344e4deee03435 ]---
-------
+On Fri, May 25, 2018 at 06:10:43PM +0200, David Sterba wrote:
+> On Fri, May 25, 2018 at 09:00:58AM -0700, Omar Sandoval wrote:
+> > On Fri, May 25, 2018 at 04:50:55PM +0200, David Sterba wrote:
+> > > On Thu, May 24, 2018 at 02:41:28PM -0700, Omar Sandoval wrote:
+> > > > From: Omar Sandoval <osandov@fb.com>
+> > > > 
+> > > > When a swap file is active, we must make sure that the extents of the
+> > > > file are not moved and that they don't become shared. That means that
+> > > > the following are not safe:
+> > > > 
+> > > > - chattr +c (enable compression)
+> > > > - reflink
+> > > > - dedupe
+> > > > - snapshot
+> > > > - defrag
+> > > > - balance
+> > > > - device remove/replace/resize
+> > > > 
+> > > > Don't allow those to happen on an active swap file. Balance and device
+> > > > remove/replace/resize in particular are disallowed entirely; in the
+> > > > future, we can relax this so that relocation skips/errors out only on
+> > > > chunks containing an active swap file.
+> > > 
+> > > Hm, disabling the entire balance is too intrusive. It's clear that the
+> > > swapfile causes a lot of trouble when it goes against the dynamic
+> > > capabilities of btrfs (relocation and the functionality that builds on
+> > > it).
+> > > 
+> > > Skipping the swapfile extents should be implemented at minimum.
+> > 
+> > Sure thing, this should definitely be possible. For balance, we can skip
+> > them; for resize or delete, it of course has to fail if it encounters
+> > swap extents. I'll take a stab at it.
+> 
+> We can detect if there's an active swap file on the filesystem before
+> shrink, delete or replace is started so the user is not surprised if it
+> fails in the end, or not start the operations at all and give some hints
+> what to do.
 
-[CAUSE]
-Another extent tree corruption.
+I looked at this some more, it's not pretty... Basically, we need to
 
-In this particular case, tree reloc root's owner is
-DATA_RELOC_TREE (should be TREE_RELOC_TREE), thus its backref is
-corrupted and we failed the owner check in walk_up_tree().
+- Add a counter of active swap extents to struct btrfs_block_group_cache
+- At activate time, map the file extent to a block group and increment the counter
+- At relocation time, check the counter, and either error out or skip as
+  appropriate
+- At deactivate time, decrement all of the block group counters. Easier
+  said than done because the file could in theory have new extents
+  allocated beyond EOF
 
-[FIX]
-It's pretty hard to take care of every extent tree corruption, but at
-least we can remove such BUG_ON() and exit more gracefully.
+The last point is the tricky one. The straightforward way to implement
+deactivate would be to walk all of the extents of the file in the same
+way we did for activate, but the extents may have changed. So, we have
+to remember which extents were activated (or get that information from
+the generic swap code somehow). This seems fragile.
 
-And since in this particular image, DATA_RELOC_TREE and TREE_RELOC_TREE
-shares the same root (which is obviously invalid), we needs to make
-__del_reloc_root() more robust to detect such invalid share to avoid
-possible NULL dereference as root->node can be NULL in this case.
-
-Link: https://bugzilla.kernel.org/show_bug.cgi?id=200411
-Reported-by: Xu Wen <wen.xu@gatech.edu>
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
-As always, the patch is also pushed to my github repo, along with other
-fuzzed images related fixes:
-https://github.com/adam900710/linux/tree/tree_checker_enhance
-(BTW, is it correct to indicate a branch like above?)
----
- fs/btrfs/extent-tree.c | 27 +++++++++++++++++++--------
- fs/btrfs/relocation.c  |  2 +-
- 2 files changed, 20 insertions(+), 9 deletions(-)
-
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index da615ebc072e..5f4ca61348b5 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -8949,17 +8949,26 @@ static noinline int walk_up_proc(struct btrfs_trans_handle *trans,
- 	}
- 
- 	if (eb == root->node) {
--		if (wc->flags[level] & BTRFS_BLOCK_FLAG_FULL_BACKREF)
-+		if (wc->flags[level] & BTRFS_BLOCK_FLAG_FULL_BACKREF) {
- 			parent = eb->start;
--		else
--			BUG_ON(root->root_key.objectid !=
--			       btrfs_header_owner(eb));
-+		} else if (root->root_key.objectid != btrfs_header_owner(eb)) {
-+			btrfs_err_rl(fs_info,
-+			"unexpected tree owner, have %llu expect %llu",
-+				     btrfs_header_owner(eb),
-+				     root->root_key.objectid);
-+			return -EINVAL;
-+		}
- 	} else {
--		if (wc->flags[level + 1] & BTRFS_BLOCK_FLAG_FULL_BACKREF)
-+		if (wc->flags[level + 1] & BTRFS_BLOCK_FLAG_FULL_BACKREF) {
- 			parent = path->nodes[level + 1]->start;
--		else
--			BUG_ON(root->root_key.objectid !=
--			       btrfs_header_owner(path->nodes[level + 1]));
-+		} else if (root->root_key.objectid !=
-+			   btrfs_header_owner(path->nodes[level + 1])) {
-+			btrfs_err_rl(fs_info,
-+			"unexpected tree owner, have %llu expect %llu",
-+				     btrfs_header_owner(eb),
-+				     root->root_key.objectid);
-+			return -EINVAL;
-+		}
- 	}
- 
- 	btrfs_free_tree_block(trans, root, eb, parent, wc->refs[level] == 1);
-@@ -9020,6 +9029,8 @@ static noinline int walk_up_tree(struct btrfs_trans_handle *trans,
- 			ret = walk_up_proc(trans, root, path, wc);
- 			if (ret > 0)
- 				return 0;
-+			if (ret < 0)
-+				return ret;
- 
- 			if (path->locks[level]) {
- 				btrfs_tree_unlock_rw(path->nodes[level],
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index a2fc0bd83a40..c64051d33d05 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -1321,7 +1321,7 @@ static void __del_reloc_root(struct btrfs_root *root)
- 	struct mapping_node *node = NULL;
- 	struct reloc_control *rc = fs_info->reloc_ctl;
- 
--	if (rc) {
-+	if (rc && root->node) {
- 		spin_lock(&rc->reloc_root_tree.lock);
- 		rb_node = tree_search(&rc->reloc_root_tree.rb_root,
- 				      root->node->start);
--- 
-2.18.0
-
+Does anyone see a better approach? Is it worth the trouble?

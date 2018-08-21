@@ -1,116 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ipmail07.adl2.internode.on.net ([150.101.137.131]:61960 "EHLO
-        ipmail07.adl2.internode.on.net" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1726228AbeHUIH4 (ORCPT
+Received: from mgwkm03.jp.fujitsu.com ([202.219.69.170]:30634 "EHLO
+        mgwkm03.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726175AbeHUKV7 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 21 Aug 2018 04:07:56 -0400
-Date: Tue, 21 Aug 2018 14:49:21 +1000
-From: Dave Chinner <david@fromorbit.com>
-To: Eric Sandeen <sandeen@sandeen.net>
-Cc: "Darrick J. Wong" <darrick.wong@oracle.com>, fdmanana@kernel.org,
-        fstests@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        Filipe Manana <fdmanana@suse.com>, linux-xfs@vger.kernel.org,
-        linux-fsdevel@vger.kernel.org
-Subject: Re: [patch] file dedupe (and maybe clone) data corruption (was Re:
- [PATCH] generic: test for deduplication between different files)
-Message-ID: <20180821044921.GX2234@dastard>
-References: <20180817083924.16916-1-fdmanana@kernel.org>
- <20180819231126.GU2234@dastard>
- <20180820010932.GV2234@dastard>
- <20180820153349.GA4334@magnolia>
- <20180821004907.GW2234@dastard>
- <a48d51e8-52c7-b9af-a6e6-f840b893c843@sandeen.net>
+        Tue, 21 Aug 2018 06:21:59 -0400
+Received: from g01jpfmpwyt01.exch.g01.fujitsu.local (g01jpfmpwyt01.exch.g01.fujitsu.local [10.128.193.38])
+        by kw-mxoi2.gw.nic.fujitsu.com (Postfix) with ESMTP id 8524AAC0050
+        for <linux-btrfs@vger.kernel.org>; Tue, 21 Aug 2018 16:03:00 +0900 (JST)
+Subject: Re: [PATCH v2 00/20] btrfs-progs: Rework of "subvolume list/show" and
+ relax the root privileges of them
+To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>,
+        Omar Sandoval <osandov@fb.com>
+References: <cover.1529310485.git.misono.tomohiro@jp.fujitsu.com>
+ <20180815181211.GQ24025@twin.jikos.cz>
+From: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
+Message-ID: <749fa2f5-757b-e60f-b6fc-ea75ccf50c6d@jp.fujitsu.com>
+Date: Tue, 21 Aug 2018 16:02:39 +0900
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <a48d51e8-52c7-b9af-a6e6-f840b893c843@sandeen.net>
+In-Reply-To: <20180815181211.GQ24025@twin.jikos.cz>
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Aug 20, 2018 at 08:17:18PM -0500, Eric Sandeen wrote:
+On 2018/08/16 3:12, David Sterba wrote:
+> Hi,
 > 
+> so I've merged the first bath to devel. There was quite some whitespace
+> damage and style issues, but I fixed that as I went through the pathes.
+
+Thanks for taking this.
+
 > 
-> On 8/20/18 7:49 PM, Dave Chinner wrote:
-> > 	Upon successful completion of this ioctl, the number of
-> > 	bytes successfully deduplicated is returned in bytes_deduped
-> > 	and a status code for the deduplication operation is
-> > 	returned in status.  If even a single byte in the range does
-> > 	not match, the deduplication request will be ignored  and
-> > 	status set  to FILE_DEDUPE_RANGE_DIFFERS.
-> > 
-> > This implies we can dedupe less than the entire range as long as the
-> > entire range matches. If the entire range does not match, we have
-> > to return FILE_DEDUPE_RANGE_DIFFERS, but in this case it does match
-> > so we can pick and choose how much we deduplicate. How much we
-> > dedupe is then returned as a byte count. In this case, it will be a
-> > few bytes short of the entire length requested because we aligned
-> > the dedupe inwards....
-> > 
-> > Does that sound reasonable?
+> I've left out all patches that introduce new options, this is the hard
+> part and single letter options cannot be added just randomly. That's
+> what led to the current state.
+
+Ok, but could you consider to add -f (11th path, or --follow instead of
+short option) which is useful when btrfs is used for root fs
+(or please remove cli-tests/010 for the moment from devel branch).
+
 > 
-> I had hoped that dedupe was advisory as Darrick wished for, but TBH my
-> reading of that is no, if you ask for a range to be deduped and any of
-> it differs, "even a single byte," you fail it all.
+> The semantics of current options is preserved, with the slight exception
+> to the option -a.
 
-Yes, if the data differs, then it fails.  But that's not what I'm
-questioning nor what I care about in this case. I'm asking whether
-the filesystem gets to choose how much of the range of same data is
-deduped when the file data is apparently the same.
+Devel branch also excludes 13th patch and behavior of -a is not changed,
+is it intended? Without the patch, there is no way to get the same result
+of current "btrfs subvol list" when mount point is not FS_TREE.
 
-> Why else would that last part be present, if the interface is free to
-> ignore later parts that don't match and truncate the range to the
-> matching portion?
+> 
+>> * Future todo:
+>> If this approach is ok, I'd like to update the output of "sub list" more like:
+>>   - Remove obsolete field (i.e. top-level) from output
+> 
+> Yeah the top-level field can be removed from the user output. Current
+> idea of the fields printed by default is: id, generation, type, path.
+> The type is a representation of eg. read-write status,
+> subvolume/snapshot, and maybe received, or if it is default.
+> 
+> The remaining fields are on-demand by other options and the future proof
+> solution is to provide the single option to specify which columns to
+> print.
+> 
+> The inline format, ie. the current one, is not very comprehensive so the
+> table layout should be the default for user.
+> 
+> The path format needs to be selected by a more concise way than just -A
+> and possibly more added options. Eg. --path
+> 
+> * absolute (shorthand abs)
+> * realative to the current path (pwd)
+> * toplevel relative (toplevel)
+> 
+> In order to make it possible to distinguish in the output without prior
+> knowledge of which one was selected, I propose this formatting:
+> 
+> * absolute path always starts with / and is really absolute to the /
+> * relative path to the current directory starts with ./
+> * toplevel does not start with ./ nor /
+> 
+> There are patches touching the libbtrfsutil code, so I'd like to hear
+> from Omar what he thinks.
 
-I think there is a clear differentiation in the man page text
-between "all the bytes are the same" and "how much of that range the
-filesystem deduped". i.e. the man page does not say that the
-filesystem *must* dedupe the entire range if all the data is the
-same - it says the filesystem will return /how many bytes it
-successfully deduplicated/. IOWs, "do nothing and return zero" is a
-valid ->dedupe_file_range implementation.
+Also, I want to get acknowledgement about 7th patch
+(as I wrote in cover letter, I'm ok with original version too).
 
-AFAIC, it's the fact that we do data comparison from the page cache
-before calling into the filesystem to check on-disk formats that is
-the problem here. Having identical data in the page cache is not the
-same thing as "the blocks on disk containing the user data are
-identical". i.e. Filesystems deduplicate disk blocks, but they often
-perform transformations on the data as it passes between the page
-cache and disk blocks or have constraints on the format of the data
-on disk. For example:
+> 
+> What's now in devel should not change and provide base for further
+> patches, so please use it if you're going to implement something from
+> the above
+Understood. I will consider them if current patches in devel has been settled.
 
-	- encrypted files. unencrypted data in the page cache is the
-	  same, therefore we can't return FILE_DEDUPE_RANGE_DIFFERS
-	  because the user will be able to see that they are the
-	  same. But they will different on disk after encryption
-	  (e.g. because different nonce/seed or completely different
-	  keys) and so the filesystem should not dedupe them.
-
-	- the two files differ in on-disk format e.g. compressed
-	  vs encrypted.
-
-	- data might be inline with metadata
-
-	- tail packing
-
-	- dedupe request might be block aligned at file offsets, but
-	  file offsets are not aligned to disk blocks due to, say,
-	  multi-block data compression.
-
-	- on disk extent tracking granularity might be larger than
-	  filesystem block size (e.g. ext4's bigalloc mode) so can't
-	  be deduped on filesystem block size alignment.
-
-	- the source or destination inode is marked "NODATACOW" so
-	  can't contain shared extents
-
-I'm sure there's others, but I think this is enough to demonstrate
-that "user visible file data is the same" does not mean the
-filesystem can dedupe it. The wording in the man page appears to
-understand these limitations and hence it allows us to silently
-ignore the partial EOF block when it comes to dedupe....
-
-Cheers,
-
-Dave.
--- 
-Dave Chinner
-david@fromorbit.com
+Regards,
+Misono

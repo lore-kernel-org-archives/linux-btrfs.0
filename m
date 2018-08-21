@@ -1,109 +1,152 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:60232 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:58008 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725976AbeH1JpA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 28 Aug 2018 05:45:00 -0400
+        id S1725732AbeHUFLy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 21 Aug 2018 01:11:54 -0400
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 06516AEAE
-        for <linux-btrfs@vger.kernel.org>; Tue, 28 Aug 2018 05:54:58 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 9CD7EAE58
+        for <linux-btrfs@vger.kernel.org>; Tue, 21 Aug 2018 01:53:51 +0000 (UTC)
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH RFC] btrfs: clone: Flush data before doing clone
-Date: Tue, 28 Aug 2018 13:54:53 +0800
-Message-Id: <20180828055453.2353-1-wqu@suse.com>
+Subject: [PATCH v4] btrfs: locking: Add extra check in btrfs_init_new_buffer() to avoid deadlock
+Date: Tue, 21 Aug 2018 09:53:47 +0800
+Message-Id: <20180821015347.6953-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Due to the limitation of btrfs_cross_ref_exist(), run_delalloc_nocow()
-can still fall back to CoW even only (unrelated) part of the
-preallocated extent is shared.
+[BUG]
+For certains crafted image, whose csum root leaf has missing backref, if
+we try to trigger write with data csum, it could cause deadlock with the
+following kernel WARN_ON():
+------
+WARNING: CPU: 1 PID: 41 at fs/btrfs/locking.c:230 btrfs_tree_lock+0x3e2/0x400
+CPU: 1 PID: 41 Comm: kworker/u4:1 Not tainted 4.18.0-rc1+ #8
+Workqueue: btrfs-endio-write btrfs_endio_write_helper
+RIP: 0010:btrfs_tree_lock+0x3e2/0x400
+Call Trace:
+ btrfs_alloc_tree_block+0x39f/0x770
+ __btrfs_cow_block+0x285/0x9e0
+ btrfs_cow_block+0x191/0x2e0
+ btrfs_search_slot+0x492/0x1160
+ btrfs_lookup_csum+0xec/0x280
+ btrfs_csum_file_blocks+0x2be/0xa60
+ add_pending_csums+0xaf/0xf0
+ btrfs_finish_ordered_io+0x74b/0xc90
+ finish_ordered_fn+0x15/0x20
+ normal_work_helper+0xf6/0x500
+ btrfs_endio_write_helper+0x12/0x20
+ process_one_work+0x302/0x770
+ worker_thread+0x81/0x6d0
+ kthread+0x180/0x1d0
+ ret_from_fork+0x35/0x40
+---[ end trace 2e85051acb5f6dc1 ]---
+------
 
-This makes the follow case to do unnecessary CoW:
+[CAUSE]
+That crafted image has missing backref for csum tree root leaf.
+And when we try to allocate new tree block, since there is no
+EXTENT/METADATA_ITEM for csum tree root, btrfs consider it's free slot
+and use it.
 
- # xfs_io -f -c "falloc 0 2M" $mnt/file
- # xfs_io -c "pwrite 0 1M" $mnt/file
- # xfs_io -c "reflink $mnt/file 1M 4M 1M" $mnt/file
- # sync
+The extent tree of the image looks like:
+Normal image                      |       This fuzzed image
+----------------------------------+--------------------------------
+BG 29360128                       | BG 29360128
+ One empty slot                   |  One empty slot
+29364224: backref to UUID tree    | 29364224: backref to UUID tree
+ Two empty slots                  |  Two empty slots
+29376512: backref to CSUM tree    |  One empty slot (bad type) <<<
+29380608: backref to D_RELOC tree | 29380608: backref to D_RELOC tree
+...                               | ...
 
-The pwrite will still be CoWed, since at writeback time, the
-preallocated extent is already shared, btrfs_cross_ref_exist() will
-return 1 and make run_delalloc_nocow() fall back to cow_file_range().
+Since bytenr 29376512 has no METADATA/EXTENT_ITEM, when btrfs try to
+alloc tree block, it's an valid slot for btrfs.
 
-This is definitely an overkilling workaround, but this should be the
-simplest way without further screwing up already complex NOCOW routine.
+And for finish_ordered_write, when we need to insert csum, we try to CoW
+csum tree root.
 
+By *COINCIDENT*, empty slots at bytenr BG_OFFSET, BG_OFFSET + 8K,
+BG_OFFSET + 12K is already used by tree block COW for other trees,
+the next empty slot is BG_OFFSET + 16K, which should be the backref for
+CSUM tree.
+
+But due to the bad type, btrfs can recognize it and still consider it as
+an empty slot, and will try to use it for csum tree CoW.
+
+Then in the following call trace, we will try to lock the new tree
+block, which turns out to be the old csum tree root which is already
+locked:
+
+btrfs_search_slot() called on csum tree root, which is at 29376512
+|- btrfs_cow_block()
+   |- btrfs_set_lock_block()
+   |  |- Now locks tree block 29376512 (old csum tree root)
+   |- __btrfs_cow_block()
+      |- btrfs_alloc_tree_block()
+         |- btrfs_reserve_extent()
+            | Now it returns tree block 29376512, which extent tree
+            | shows its empty slot, but it's already hold by csum tree
+            |- btrfs_init_new_buffer()
+               |- btrfs_tree_lock()
+                  | Triggers WARN_ON(eb->lock_owner == current->pid)
+                  |- wait_event()
+                     Wait lock owner to release the lock, but it's
+                     locked by ourself, so it will deadlock
+
+[FIX]
+This patch will do the lock_owner and current->pid check at
+btrfs_init_new_buffer().
+So above deadlock can be avoided.
+
+Since such problem can only happen in crafted image, we will still
+trigger kernel warning for later aborted transaction, but with a little
+more meaningful warning message.
+
+Link: https://bugzilla.kernel.org/show_bug.cgi?id=200405
+Reported-by: Xu Wen <wen.xu@gatech.edu>
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/ctree.h |  1 +
- fs/btrfs/file.c  |  4 ++--
- fs/btrfs/ioctl.c | 21 +++++++++++++++++++++
- 3 files changed, 24 insertions(+), 2 deletions(-)
+changelog:
+v2:
+  Modify btrfs_tree_lock() to be able to return int to detect possible
+  deadlock and return.
+v3:
+  Instead of modify all btrfs_tree_lock() callers, only check possible
+  deadlock at btrfs_init_new_buffer(), as the bug only happens for newly
+  allocated tree block.
+  With better commit message describing the on-disk extent tree
+  corruption along with the call trace of how dead lock happens.
+v4:
+  Use btrfs_err_rl() to replace original WARN(). (ratelimit to avoid
+  error message flood before fs turned RO)
+  Add tree block owner output for better debugging.
+---
+ fs/btrfs/extent-tree.c | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 53af9f5253f4..ddacc41ff124 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3228,6 +3228,7 @@ int btrfs_add_inode_defrag(struct btrfs_trans_handle *trans,
- 			   struct btrfs_inode *inode);
- int btrfs_run_defrag_inodes(struct btrfs_fs_info *fs_info);
- void btrfs_cleanup_defrag_inodes(struct btrfs_fs_info *fs_info);
-+int btrfs_start_ordered_ops(struct inode *inode, loff_t start, loff_t end);
- int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync);
- void btrfs_drop_extent_cache(struct btrfs_inode *inode, u64 start, u64 end,
- 			     int skip_pinned);
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 2be00e873e92..118bfd019c6c 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1999,7 +1999,7 @@ int btrfs_release_file(struct inode *inode, struct file *filp)
- 	return 0;
- }
- 
--static int start_ordered_ops(struct inode *inode, loff_t start, loff_t end)
-+int btrfs_start_ordered_ops(struct inode *inode, loff_t start, loff_t end)
- {
- 	int ret;
- 	struct blk_plug plug;
-@@ -2056,7 +2056,7 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
- 	 * multi-task, and make the performance up.  See
- 	 * btrfs_wait_ordered_range for an explanation of the ASYNC check.
- 	 */
--	ret = start_ordered_ops(inode, start, end);
-+	ret = btrfs_start_ordered_ops(inode, start, end);
- 	if (ret)
- 		goto out;
- 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 63600dc2ac4c..866979f530bc 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -4266,6 +4266,27 @@ static noinline int btrfs_clone_files(struct file *file, struct file *file_src,
- 			goto out_unlock;
- 	}
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 697dffc9d598..f690cf2be36c 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -8302,6 +8302,19 @@ btrfs_init_new_buffer(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+ 	if (IS_ERR(buf))
+ 		return buf;
  
 +	/*
-+	 * btrfs_cross_ref_exist() only does check at extent level,
-+	 * we could cause unexpected NOCOW write to be COWed.
-+	 * E.g.:
-+	 * falloc 0 2M file1
-+	 * pwrite 0 1M file1 (at this point it should go NOCOW)
-+	 * reflink src=file1 srcoff=1M dst=file1 dstoff=4M len=1M
-+	 * sync
-+	 *
-+	 * In above case, due to the preallocated extent is shared
-+	 * the data at 0~1M can't go NOCOW.
-+	 *
-+	 * So flush the whole src inode to avoid any unneeded CoW.
++	 * Just extra safe net in case extent tree is corrupted and extent
++	 * allocator chooses to use a tree block which is already used and
++	 * locked.
 +	 */
-+	ret = btrfs_start_ordered_ops(src, 0, -1);
-+	if (ret < 0)
-+		goto out_unlock;
-+	ret = btrfs_wait_ordered_range(src, 0, -1);
-+	if (ret < 0)
-+		goto out_unlock;
++	if (buf->lock_owner == current->pid) {
++		btrfs_err_rl(fs_info,
++"tree block %llu owner %llu already locked by pid=%d, extent tree corruption detected",
++		     buf->start, btrfs_header_owner(buf), current->pid);
++		free_extent_buffer(buf);
++		return ERR_PTR(-EUCLEAN);
++	}
 +
- 	/*
- 	 * Lock the target range too. Right after we replace the file extent
- 	 * items in the fs tree (which now point to the cloned data), we might
+ 	btrfs_set_header_generation(buf, trans->transid);
+ 	btrfs_set_buffer_lockdep_class(root->root_key.objectid, buf, level);
+ 	btrfs_tree_lock(buf);
 -- 
 2.18.0

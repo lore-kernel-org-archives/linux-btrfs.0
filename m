@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pl0-f67.google.com ([209.85.160.67]:42358 "EHLO
-        mail-pl0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726679AbeHUNnJ (ORCPT
+Received: from mail-pf1-f193.google.com ([209.85.210.193]:40489 "EHLO
+        mail-pf1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726679AbeHUNnN (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 21 Aug 2018 09:43:09 -0400
-Received: by mail-pl0-f67.google.com with SMTP id g23-v6so5629005plq.9
-        for <linux-btrfs@vger.kernel.org>; Tue, 21 Aug 2018 03:23:34 -0700 (PDT)
+        Tue, 21 Aug 2018 09:43:13 -0400
+Received: by mail-pf1-f193.google.com with SMTP id e13-v6so8276771pff.7
+        for <linux-btrfs@vger.kernel.org>; Tue, 21 Aug 2018 03:23:38 -0700 (PDT)
 From: damenly.su@gmail.com
 To: linux-btrfs@vger.kernel.org
 Cc: Su Yue <suy.fnst@cn.fujitsu.com>
-Subject: [PATCH 1/2] btrfs-progs: task: add prefn() into struct task_info
-Date: Tue, 21 Aug 2018 18:23:10 +0000
-Message-Id: <20180821182311.13997-2-suy.fnst@cn.fujitsu.com>
+Subject: [PATCH 2/2] btrfs-progs: task: add init_ctx and clean up arguments of task_start()
+Date: Tue, 21 Aug 2018 18:23:11 +0000
+Message-Id: <20180821182311.13997-3-suy.fnst@cn.fujitsu.com>
 In-Reply-To: <20180821182311.13997-1-suy.fnst@cn.fujitsu.com>
 References: <20180821182311.13997-1-suy.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -19,106 +19,162 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Su Yue <suy.fnst@cn.fujitsu.com>
 
-Previously, everytime task_start is called, arguments to be initialized
-(start_time and item_count) are passed manually.
-
-For scalability, add a member prefn() to struct task_info.
-prefn() will be called before pthread_create() in task_start().
+Add a function init_ctx() to initialize time and count of ctx while
+checking. Use it as prefn while calling task_init().
+Arguments start_time and item_count of task_start() are useless,
+remove them.
 
 Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
 ---
- check/main.c   |  3 ++-
- convert/main.c |  4 ++--
- task-utils.c   | 12 +++++++++---
- task-utils.h   |  3 ++-
- 4 files changed, 15 insertions(+), 7 deletions(-)
+ check/main.c   | 26 ++++++++++++++++++--------
+ convert/main.c |  2 +-
+ task-utils.c   |  7 +------
+ task-utils.h   |  2 +-
+ 4 files changed, 21 insertions(+), 16 deletions(-)
 
 diff --git a/check/main.c b/check/main.c
-index bc2ee22f7943..087106d199eb 100644
+index 087106d199eb..71baa64168b8 100644
 --- a/check/main.c
 +++ b/check/main.c
-@@ -9628,7 +9628,8 @@ int cmd_check(int argc, char **argv)
+@@ -161,6 +161,16 @@ static int compare_extent_backref(struct rb_node *node1, struct rb_node *node2)
+ 		return compare_tree_backref(node1, node2);
+ }
+ 
++static int init_ctx(void *p)
++{
++	struct task_ctx *priv = p;
++
++	priv->start_time = time(NULL);
++	priv->item_count = 0;
++
++	return 0;
++}
++
+ static void print_status_check_line(void *p)
+ {
+ 	struct task_ctx *priv = p;
+@@ -9628,7 +9638,7 @@ int cmd_check(int argc, char **argv)
  
  	if (ctx.progress_enabled) {
  		ctx.tp = TASK_NOTHING;
--		ctx.info = task_init(print_status_check, print_status_return, &ctx);
-+		ctx.info = task_init(print_status_check, NULL,
-+				     print_status_return, &ctx);
+-		ctx.info = task_init(print_status_check, NULL,
++		ctx.info = task_init(print_status_check, init_ctx,
+ 				     print_status_return, &ctx);
  	}
  
- 	/* This check is the only reason for --readonly to exist */
+@@ -9823,7 +9833,7 @@ int cmd_check(int argc, char **argv)
+ 			fprintf(stderr, "[1/7] checking root items\n");
+ 		} else {
+ 			ctx.tp = TASK_ROOT_ITEMS;
+-			task_start(ctx.info, &ctx.start_time, &ctx.item_count);
++			task_start(ctx.info);
+ 		}
+ 		ret = repair_root_items(info);
+ 		task_stop(ctx.info);
+@@ -9853,7 +9863,7 @@ int cmd_check(int argc, char **argv)
+ 		fprintf(stderr, "[2/7] checking extents\n");
+ 	} else {
+ 		ctx.tp = TASK_EXTENTS;
+-		task_start(ctx.info, &ctx.start_time, &ctx.item_count);
++		task_start(ctx.info);
+ 	}
+ 	ret = do_check_chunks_and_extents(info);
+ 	task_stop(ctx.info);
+@@ -9874,7 +9884,7 @@ int cmd_check(int argc, char **argv)
+ 			fprintf(stderr, "[3/7] checking free space cache\n");
+ 	} else {
+ 		ctx.tp = TASK_FREE_SPACE;
+-		task_start(ctx.info, &ctx.start_time, &ctx.item_count);
++		task_start(ctx.info);
+ 	}
+ 
+ 	ret = check_space_cache(root);
+@@ -9899,7 +9909,7 @@ int cmd_check(int argc, char **argv)
+ 		fprintf(stderr, "[4/7] checking fs roots\n");
+ 	} else {
+ 		ctx.tp = TASK_FS_ROOTS;
+-		task_start(ctx.info, &ctx.start_time, &ctx.item_count);
++		task_start(ctx.info);
+ 	}
+ 
+ 	ret = do_check_fs_roots(info, &root_cache);
+@@ -9918,7 +9928,7 @@ int cmd_check(int argc, char **argv)
+ 		"[5/7] checking only csums items (without verifying data)\n");
+ 	} else {
+ 		ctx.tp = TASK_CSUMS;
+-		task_start(ctx.info, &ctx.start_time, &ctx.item_count);
++		task_start(ctx.info);
+ 	}
+ 
+ 	ret = check_csums(root);
+@@ -9937,7 +9947,7 @@ int cmd_check(int argc, char **argv)
+ 			fprintf(stderr, "[6/7] checking root refs\n");
+ 		} else {
+ 			ctx.tp = TASK_ROOT_REFS;
+-			task_start(ctx.info, &ctx.start_time, &ctx.item_count);
++			task_start(ctx.info);
+ 		}
+ 
+ 		ret = check_root_refs(root, &root_cache);
+@@ -9984,7 +9994,7 @@ int cmd_check(int argc, char **argv)
+ 			fprintf(stderr, "[7/7] checking quota groups\n");
+ 		} else {
+ 			ctx.tp = TASK_QGROUPS;
+-			task_start(ctx.info, &ctx.start_time, &ctx.item_count);
++			task_start(ctx.info);
+ 		}
+ 		ret = qgroup_verify_all(info);
+ 		task_stop(ctx.info);
 diff --git a/convert/main.c b/convert/main.c
-index 3736a14955d1..ee51390bb072 100644
+index ee51390bb072..e4152a5741f5 100644
 --- a/convert/main.c
 +++ b/convert/main.c
-@@ -1180,8 +1180,8 @@ static int do_convert(const char *devname, u32 convert_flags, u32 nodesize,
- 	ctx.cur_copy_inodes = 0;
- 
+@@ -1182,7 +1182,7 @@ static int do_convert(const char *devname, u32 convert_flags, u32 nodesize,
  	if (progress) {
--		ctx.info = task_init(print_copied_inodes, after_copied_inodes,
--				     &ctx);
-+		ctx.info = task_init(print_copied_inodes, NULL,
-+				     after_copied_inodes, &ctx);
- 		task_start(ctx.info, NULL, NULL);
+ 		ctx.info = task_init(print_copied_inodes, NULL,
+ 				     after_copied_inodes, &ctx);
+-		task_start(ctx.info, NULL, NULL);
++		task_start(ctx.info);
  	}
  	ret = copy_inodes(&cctx, root, convert_flags, &ctx);
+ 	if (ret) {
 diff --git a/task-utils.c b/task-utils.c
-index a9bee8f4486d..e837812f57f7 100644
+index e837812f57f7..74d21e8b1ead 100644
 --- a/task-utils.c
 +++ b/task-utils.c
-@@ -23,8 +23,8 @@
- 
- #include "task-utils.h"
- 
--struct task_info *task_init(void *(*threadfn)(void *), int (*postfn)(void *),
--			    void *thread_private)
-+struct task_info *task_init(void *(*threadfn)(void *), int (*prefn)(void *),
-+			    int (*postfn)(void *), void *thread_private)
- {
- 	struct task_info *info = calloc(1, sizeof(struct task_info));
- 
-@@ -33,6 +33,7 @@ struct task_info *task_init(void *(*threadfn)(void *), int (*postfn)(void *),
- 
- 	info->private_data = thread_private;
- 	info->threadfn = threadfn;
-+	info->prefn = prefn;
- 	info->postfn = postfn;
- 
+@@ -39,7 +39,7 @@ struct task_info *task_init(void *(*threadfn)(void *), int (*prefn)(void *),
  	return info;
-@@ -53,9 +54,14 @@ int task_start(struct task_info *info, time_t *start_time, u64 *item_count)
- 	if (item_count)
- 		*item_count = 0;
+ }
  
-+	if (info->prefn) {
-+		ret = info->prefn(info->private_data);
-+		if (ret)
-+			return ret;
-+	}
-+
- 	ret = pthread_create(&info->id, NULL, info->threadfn,
- 			     info->private_data);
+-int task_start(struct task_info *info, time_t *start_time, u64 *item_count)
++int task_start(struct task_info *info)
+ {
+ 	int ret;
+ 
+@@ -49,11 +49,6 @@ int task_start(struct task_info *info, time_t *start_time, u64 *item_count)
+ 	if (!info->threadfn)
+ 		return -1;
+ 
+-	if (start_time)
+-		*start_time = time(NULL);
+-	if (item_count)
+-		*item_count = 0;
 -
- 	if (ret)
- 		info->id = 0;
- 
+ 	if (info->prefn) {
+ 		ret = info->prefn(info->private_data);
+ 		if (ret)
 diff --git a/task-utils.h b/task-utils.h
-index bbb0f1fd9ff6..06ee87defe24 100644
+index 06ee87defe24..c0673d2a94bf 100644
 --- a/task-utils.h
 +++ b/task-utils.h
-@@ -30,12 +30,13 @@ struct task_info {
- 	pthread_t id;
- 	void *private_data;
- 	void *(*threadfn)(void *);
-+	int (*prefn)(void *);
- 	int (*postfn)(void *);
- };
- 
+@@ -37,7 +37,7 @@ struct task_info {
  /* task life cycle */
  struct task_info *task_init(void *(*threadfn)(void *), int (*postfn)(void *),
--			    void *thread_private);
-+			    int (*pretfn)(void *), void *thread_private);
- int task_start(struct task_info *info, time_t *start_time, u64 *item_count);
+ 			    int (*pretfn)(void *), void *thread_private);
+-int task_start(struct task_info *info, time_t *start_time, u64 *item_count);
++int task_start(struct task_info *info);
  void task_stop(struct task_info *info);
  void task_deinit(struct task_info *info);
+ 
 -- 
 2.17.1

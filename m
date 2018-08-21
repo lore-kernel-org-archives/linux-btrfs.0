@@ -1,94 +1,167 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwkm03.jp.fujitsu.com ([202.219.69.170]:30634 "EHLO
-        mgwkm03.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726175AbeHUKV7 (ORCPT
+Received: from mgwkm04.jp.fujitsu.com ([202.219.69.171]:33963 "EHLO
+        mgwkm04.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726253AbeHUKeL (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 21 Aug 2018 06:21:59 -0400
+        Tue, 21 Aug 2018 06:34:11 -0400
 Received: from g01jpfmpwyt01.exch.g01.fujitsu.local (g01jpfmpwyt01.exch.g01.fujitsu.local [10.128.193.38])
-        by kw-mxoi2.gw.nic.fujitsu.com (Postfix) with ESMTP id 8524AAC0050
-        for <linux-btrfs@vger.kernel.org>; Tue, 21 Aug 2018 16:03:00 +0900 (JST)
-Subject: Re: [PATCH v2 00/20] btrfs-progs: Rework of "subvolume list/show" and
- relax the root privileges of them
-To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>,
-        Omar Sandoval <osandov@fb.com>
-References: <cover.1529310485.git.misono.tomohiro@jp.fujitsu.com>
- <20180815181211.GQ24025@twin.jikos.cz>
+        by kw-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id A71CBAC013A
+        for <linux-btrfs@vger.kernel.org>; Tue, 21 Aug 2018 16:15:08 +0900 (JST)
 From: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
-Message-ID: <749fa2f5-757b-e60f-b6fc-ea75ccf50c6d@jp.fujitsu.com>
-Date: Tue, 21 Aug 2018 16:02:39 +0900
+Subject: Re: [PATCH] btrfs-progs: rescue: Add ability to disable quota offline
+To: Qu Wenruo <wqu@suse.com>, <linux-btrfs@vger.kernel.org>
+References: <20180812013358.16431-1-wqu@suse.com>
+Message-ID: <c546e216-0108-fb2b-4193-b2ce1884c336@jp.fujitsu.com>
+Date: Tue, 21 Aug 2018 16:14:50 +0900
 MIME-Version: 1.0
-In-Reply-To: <20180815181211.GQ24025@twin.jikos.cz>
+In-Reply-To: <20180812013358.16431-1-wqu@suse.com>
 Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2018/08/16 3:12, David Sterba wrote:
-> Hi,
+On 2018/08/12 10:33, Qu Wenruo wrote:
+> Provide an offline tool to disable quota.
 > 
-> so I've merged the first bath to devel. There was quite some whitespace
-> damage and style issues, but I fixed that as I went through the pathes.
+> For kernel which skip_balance doesn't work, there is no way to disable
+> quota on huge fs with balance, as quota will cause balance to hang for a
+> long long time for each tree block switch.
+> 
+> So add an offline rescue tool to disable quota.
+> 
+> Reported-by: Dan Merillat <dan.merillat@gmail.com>
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+> This can patch can be fetched from github repo:
+> https://github.com/adam900710/btrfs-progs/tree/quota_disable
+> ---
+>  Documentation/btrfs-rescue.asciidoc |  6 +++
+>  cmds-rescue.c                       | 80 +++++++++++++++++++++++++++++
+>  2 files changed, 86 insertions(+)
+> 
+> diff --git a/Documentation/btrfs-rescue.asciidoc b/Documentation/btrfs-rescue.asciidoc
+> index f94a0ff2b45e..fb088c1a768a 100644
+> --- a/Documentation/btrfs-rescue.asciidoc
+> +++ b/Documentation/btrfs-rescue.asciidoc
+> @@ -31,6 +31,12 @@ help.
+>  NOTE: Since *chunk-recover* will scan the whole device, it will be *VERY* slow
+>  especially executed on a large device.
+>  
+> +*disable-quota* <device>::
+> +disable quota offline
+> ++
+> +Acts as a fallback method to disable quota for case where mount hangs due to
+> +balance and quota.
+> +
+>  *fix-device-size* <device>::
+>  fix device size and super block total bytes values that are do not match
+>  +
+> diff --git a/cmds-rescue.c b/cmds-rescue.c
+> index 38c4ab9b2ef6..c7cd92427e9d 100644
+> --- a/cmds-rescue.c
+> +++ b/cmds-rescue.c
+> @@ -250,6 +250,84 @@ out:
+>  	return !!ret;
+>  }
+>  
+> +static const char * const cmd_rescue_disable_quota_usage[] = {
+> +	"btrfs rescue disable-quota <device>",
+> +	"Disable quota, especially useful for balance mount hang when quota enabled",
+> +	"",
+> +	NULL
+> +};
+> +
+> +static int cmd_rescue_disable_quota(int argc, char **argv)
+> +{
+> +	struct btrfs_trans_handle *trans;
+> +	struct btrfs_fs_info *fs_info;
+> +	struct btrfs_path path;
+> +	struct btrfs_root *root;
+> +	struct btrfs_qgroup_status_item *qi;
+> +	struct btrfs_key key;
+> +	char *devname;
+> +	int ret;
+> +
+> +	clean_args_no_options(argc, argv, cmd_rescue_disable_quota_usage);
+> +	if (check_argc_exact(argc, 2))
+> +		usage(cmd_rescue_disable_quota_usage);
+> +
+> +	devname = argv[optind];
+> +	ret = check_mounted(devname);
+> +	if (ret < 0) {
+> +		error("could not check mount status: %s", strerror(-ret));
+> +		return !!ret;
+> +	} else if (ret) {
+> +		error("%s is currently mounted", devname);
+> +		return !!ret;
+> +	}
+> +	fs_info = open_ctree_fs_info(devname, 0, 0, 0, OPEN_CTREE_WRITES);
+> +	if (!fs_info) {
+> +		error("could not open btrfs");
+> +		ret = -EIO;
+> +		return !!ret;
+> +	}
+> +	root = fs_info->quota_root;
+> +	if (!root) {
+> +		printf("Quota is not enabled, no need to modify the fs\n");
+> +		goto close;
+> +	}
+> +	btrfs_init_path(&path);
+> +	trans = btrfs_start_transaction(root, 1);
+> +	if (IS_ERR(trans)) {
+> +		ret = PTR_ERR(trans);
+> +		error("failed to start transaction: %s", strerror(-ret));
+> +		goto close;
+> +	}
+> +	key.objectid = 0;
+> +	key.type = BTRFS_QGROUP_STATUS_KEY;
+> +	key.offset = 0;
+> +	ret = btrfs_search_slot(trans, root, &key, &path, 0, 1);
+> +	if (ret < 0) {
+> +		error("failed to search tree: %s", strerror(-ret));
+> +		goto close;
+> +	}
+> +	if (ret > 0) {
+> +		printf(
+> +		"qgroup status item not found, not need to modify the fs");
+> +		ret = 0;
+> +		goto release;
+> +	}
+> +	qi = btrfs_item_ptr(path.nodes[0], path.slots[0],
+> +			    struct btrfs_qgroup_status_item);
+> +	btrfs_set_qgroup_status_flags(path.nodes[0], qi,
+> +			BTRFS_QGROUP_STATUS_FLAG_INCONSISTENT);
 
-Thanks for taking this.
+This is not what "btrfs quota disable" does (completely removes quota tree),
+so I think it is better to have different name other than "disable-quota"
+(I'm not sure about good name, maybe suspend?).
 
-> 
-> I've left out all patches that introduce new options, this is the hard
-> part and single letter options cannot be added just randomly. That's
-> what led to the current state.
+btw, maybe we should add this ability to online fs too so that we can
+temporally disable quota during balance while keeping limit/inheritance settings?
 
-Ok, but could you consider to add -f (11th path, or --follow instead of
-short option) which is useful when btrfs is used for root fs
-(or please remove cli-tests/010 for the moment from devel branch).
-
-> 
-> The semantics of current options is preserved, with the slight exception
-> to the option -a.
-
-Devel branch also excludes 13th patch and behavior of -a is not changed,
-is it intended? Without the patch, there is no way to get the same result
-of current "btrfs subvol list" when mount point is not FS_TREE.
-
-> 
->> * Future todo:
->> If this approach is ok, I'd like to update the output of "sub list" more like:
->>   - Remove obsolete field (i.e. top-level) from output
-> 
-> Yeah the top-level field can be removed from the user output. Current
-> idea of the fields printed by default is: id, generation, type, path.
-> The type is a representation of eg. read-write status,
-> subvolume/snapshot, and maybe received, or if it is default.
-> 
-> The remaining fields are on-demand by other options and the future proof
-> solution is to provide the single option to specify which columns to
-> print.
-> 
-> The inline format, ie. the current one, is not very comprehensive so the
-> table layout should be the default for user.
-> 
-> The path format needs to be selected by a more concise way than just -A
-> and possibly more added options. Eg. --path
-> 
-> * absolute (shorthand abs)
-> * realative to the current path (pwd)
-> * toplevel relative (toplevel)
-> 
-> In order to make it possible to distinguish in the output without prior
-> knowledge of which one was selected, I propose this formatting:
-> 
-> * absolute path always starts with / and is really absolute to the /
-> * relative path to the current directory starts with ./
-> * toplevel does not start with ./ nor /
-> 
-> There are patches touching the libbtrfsutil code, so I'd like to hear
-> from Omar what he thinks.
-
-Also, I want to get acknowledgement about 7th patch
-(as I wrote in cover letter, I'm ok with original version too).
-
-> 
-> What's now in devel should not change and provide base for further
-> patches, so please use it if you're going to implement something from
-> the above
-Understood. I will consider them if current patches in devel has been settled.
-
-Regards,
+Thanks,
 Misono
+
+> +	btrfs_mark_buffer_dirty(path.nodes[0]);
+> +	ret = btrfs_commit_transaction(trans, root);
+> +	if (ret < 0)
+> +		error("failed to commit transaction: %s", strerror(-ret));
+> +release:
+> +	btrfs_release_path(&path);
+> +close:
+> +	close_ctree(fs_info->tree_root);
+> +	return !!ret;
+> +}
+> +
+>  static const char rescue_cmd_group_info[] =
+>  "toolbox for specific rescue operations";
+>  
+> @@ -262,6 +340,8 @@ const struct cmd_group rescue_cmd_group = {
+>  		{ "zero-log", cmd_rescue_zero_log, cmd_rescue_zero_log_usage, NULL, 0},
+>  		{ "fix-device-size", cmd_rescue_fix_device_size,
+>  			cmd_rescue_fix_device_size_usage, NULL, 0},
+> +		{ "disable-quota", cmd_rescue_disable_quota,
+> +			cmd_rescue_disable_quota_usage, NULL, 0},
+>  		NULL_CMD_STRUCT
+>  	}
+>  };
+> 

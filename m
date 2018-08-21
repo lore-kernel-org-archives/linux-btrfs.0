@@ -1,82 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf1-f195.google.com ([209.85.210.195]:45512 "EHLO
-        mail-pf1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726629AbeHUMFZ (ORCPT
+Received: from mgwym01.jp.fujitsu.com ([211.128.242.40]:64566 "EHLO
+        mgwym01.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726104AbeHUHk3 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 21 Aug 2018 08:05:25 -0400
-Received: by mail-pf1-f195.google.com with SMTP id i26-v6so8156235pfo.12
-        for <linux-btrfs@vger.kernel.org>; Tue, 21 Aug 2018 01:46:10 -0700 (PDT)
-Date: Tue, 21 Aug 2018 01:46:07 -0700
-From: Omar Sandoval <osandov@osandov.com>
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org, kernel-team@fb.com,
-        linux-fsdevel@vger.kernel.org, Tejun Heo <tj@kernel.org>
-Subject: Re: [RFC PATCH v4 4/6] Btrfs: prevent ioctls from interfering with a
- swap file
-Message-ID: <20180821084607.GA2119@vader>
-References: <cover.1527197312.git.osandov@fb.com>
- <296f04a07350c9cc2032e03f78c1a7284747fb50.1527197312.git.osandov@fb.com>
- <20180525145055.GN6649@twin.jikos.cz>
- <20180525160058.GA29193@vader>
- <20180525161042.GR6649@twin.jikos.cz>
+        Tue, 21 Aug 2018 03:40:29 -0400
+Received: from g01jpfmpwyt01.exch.g01.fujitsu.local (g01jpfmpwyt01.exch.g01.fujitsu.local [10.128.193.38])
+        by yt-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id C6031AC010F
+        for <linux-btrfs@vger.kernel.org>; Tue, 21 Aug 2018 13:21:54 +0900 (JST)
+Subject: Re: [PATCH] btrfs: Always check nocow for quota enabled case to make
+ sure we won't reserve unnecessary data space
+To: Qu Wenruo <wqu@suse.com>, <linux-btrfs@vger.kernel.org>
+References: <20180815061323.23936-1-wqu@suse.com>
+From: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
+Message-ID: <1c8e89b5-eed8-8fdd-33bd-80a9d579fc21@jp.fujitsu.com>
+Date: Tue, 21 Aug 2018 13:21:29 +0900
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180525161042.GR6649@twin.jikos.cz>
+In-Reply-To: <20180815061323.23936-1-wqu@suse.com>
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, May 25, 2018 at 06:10:43PM +0200, David Sterba wrote:
-> On Fri, May 25, 2018 at 09:00:58AM -0700, Omar Sandoval wrote:
-> > On Fri, May 25, 2018 at 04:50:55PM +0200, David Sterba wrote:
-> > > On Thu, May 24, 2018 at 02:41:28PM -0700, Omar Sandoval wrote:
-> > > > From: Omar Sandoval <osandov@fb.com>
-> > > > 
-> > > > When a swap file is active, we must make sure that the extents of the
-> > > > file are not moved and that they don't become shared. That means that
-> > > > the following are not safe:
-> > > > 
-> > > > - chattr +c (enable compression)
-> > > > - reflink
-> > > > - dedupe
-> > > > - snapshot
-> > > > - defrag
-> > > > - balance
-> > > > - device remove/replace/resize
-> > > > 
-> > > > Don't allow those to happen on an active swap file. Balance and device
-> > > > remove/replace/resize in particular are disallowed entirely; in the
-> > > > future, we can relax this so that relocation skips/errors out only on
-> > > > chunks containing an active swap file.
-> > > 
-> > > Hm, disabling the entire balance is too intrusive. It's clear that the
-> > > swapfile causes a lot of trouble when it goes against the dynamic
-> > > capabilities of btrfs (relocation and the functionality that builds on
-> > > it).
-> > > 
-> > > Skipping the swapfile extents should be implemented at minimum.
-> > 
-> > Sure thing, this should definitely be possible. For balance, we can skip
-> > them; for resize or delete, it of course has to fail if it encounters
-> > swap extents. I'll take a stab at it.
+On 2018/08/15 15:13, Qu Wenruo wrote:
+> Commit c6887cd11149 ("Btrfs: don't do nocow check unless we have to")
+> makes nocow check less frequent to improve performance.
 > 
-> We can detect if there's an active swap file on the filesystem before
-> shrink, delete or replace is started so the user is not surprised if it
-> fails in the end, or not start the operations at all and give some hints
-> what to do.
+> However for quota enabled case, such optimization could lead to extra
+> unnecessary data reservation, which results failure for test case like
+> btrfs/153 in fstests.
+> 
+> Fix it by reverting to old behavior for quota enabled case.
+> 
+> Fixes: c6887cd11149 ("Btrfs: don't do nocow check unless we have to")
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+>  fs/btrfs/file.c | 11 +++++++++--
+>  1 file changed, 9 insertions(+), 2 deletions(-)
+> 
+> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+> index 51e77d72068a..f2ce1d707d4c 100644
+> --- a/fs/btrfs/file.c
+> +++ b/fs/btrfs/file.c
+> @@ -1587,6 +1587,7 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
+>  	int ret = 0;
+>  	bool only_release_metadata = false;
+>  	bool force_page_uptodate = false;
+> +	bool quota_enabled = test_bit(BTRFS_FS_QUOTA_ENABLED, &fs_info->flags);
+>  
+>  	nrptrs = min(DIV_ROUND_UP(iov_iter_count(i), PAGE_SIZE),
+>  			PAGE_SIZE / (sizeof(struct page *)));
+> @@ -1627,9 +1628,15 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
+>  				fs_info->sectorsize);
+>  
+>  		extent_changeset_release(data_reserved);
+> -		ret = btrfs_check_data_free_space(inode, &data_reserved, pos,
+> +		/*
+> +		 * If we have quota enabled, we must do the heavy lift nocow
+> +		 * check here to avoid reserving data space, or we can hit
+> +		 * limitation for NOCOW files.
+> +		 */
+> +		if (!quota_enabled)
+> +			ret = btrfs_check_data_free_space(inode, &data_reserved, pos,
+>  						  write_bytes);
+> -		if (ret < 0) {
+> +		if (ret < 0 || quota_enabled) {
+>  			if ((BTRFS_I(inode)->flags & (BTRFS_INODE_NODATACOW |
+>  						      BTRFS_INODE_PREALLOC)) &&>  			    check_can_nocow(BTRFS_I(inode), pos,
+> 
 
-I looked at this some more, it's not pretty... Basically, we need to
+This fixes btrfs/153 but in turn makes other qgroup tests fail (022,091 etc.)
 
-- Add a counter of active swap extents to struct btrfs_block_group_cache
-- At activate time, map the file extent to a block group and increment the counter
-- At relocation time, check the counter, and either error out or skip as
-  appropriate
-- At deactivate time, decrement all of the block group counters. Easier
-  said than done because the file could in theory have new extents
-  allocated beyond EOF
-
-The last point is the tricky one. The straightforward way to implement
-deactivate would be to walk all of the extents of the file in the same
-way we did for activate, but the extents may have changed. So, we have
-to remember which extents were activated (or get that information from
-the generic swap code somehow). This seems fragile.
-
-Does anyone see a better approach? Is it worth the trouble?
+If quota is enabled and file is not marked as nocow, above if is false and write will stop.
+so I think we still need to call btrfs_check_dta_free_space() when quota is enabled
+and file is not nocow, right?

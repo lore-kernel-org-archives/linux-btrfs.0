@@ -1,39 +1,505 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pl0-f67.google.com ([209.85.160.67]:45477 "EHLO
-        mail-pl0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726679AbeHUNnE (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 21 Aug 2018 09:43:04 -0400
-Received: by mail-pl0-f67.google.com with SMTP id j8-v6so8577180pll.12
-        for <linux-btrfs@vger.kernel.org>; Tue, 21 Aug 2018 03:23:30 -0700 (PDT)
-From: damenly.su@gmail.com
+Received: from mx2.suse.de ([195.135.220.15]:55890 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726637AbeHUME7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 21 Aug 2018 08:04:59 -0400
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id AE991B063
+        for <linux-btrfs@vger.kernel.org>; Tue, 21 Aug 2018 08:44:34 +0000 (UTC)
+From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Su Yue <suy.fnst@cn.fujitsu.com>
-Subject: [PATCH 0/2] btrfs-progs: task: add prefn() to task_info and simplify task_start()
-Date: Tue, 21 Aug 2018 18:23:09 +0000
-Message-Id: <20180821182311.13997-1-suy.fnst@cn.fujitsu.com>
+Subject: [PATCH v2 1/4] btrfs: Introduce find_free_extent_ctrl structure for later rework
+Date: Tue, 21 Aug 2018 16:44:23 +0800
+Message-Id: <20180821084426.7858-2-wqu@suse.com>
+In-Reply-To: <20180821084426.7858-1-wqu@suse.com>
+References: <20180821084426.7858-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Su Yue <suy.fnst@cn.fujitsu.com>
+Instead of tons of different local variables in find_free_extent(),
+extract them into find_free_extent_ctrl structure, and add better
+explanation for them.
 
-This patchset is a prepare work for further process of check.
+Some modification may looks redundant, but will later greatly simplify
+function parameter list during find_free_extent() refactor.
 
-patch[1] adds prefn() to task_info and call it before pthread_create().
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/extent-tree.c | 244 ++++++++++++++++++++++++++---------------
+ 1 file changed, 156 insertions(+), 88 deletions(-)
 
-patch[2] moves time and count initializations into the new init_ctx(),
-assign it to prefun(). Remove arguments start_time and item_count.
-
-
-Su Yue (2):
-  btrfs-progs: task: add prefn() into struct task_info
-  btrfs-progs: task: add init_ctx and clean up arguments of task_start()
-
- check/main.c   | 27 +++++++++++++++++++--------
- convert/main.c |  6 +++---
- task-utils.c   | 17 +++++++++--------
- task-utils.h   |  5 +++--
- 4 files changed, 34 insertions(+), 21 deletions(-)
-
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index cb4f7d1cf8b0..7bc0bdda99d4 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -7391,6 +7391,56 @@ btrfs_release_block_group(struct btrfs_block_group_cache *cache,
+ 	btrfs_put_block_group(cache);
+ }
+ 
++/*
++ * Internal used structure for find_free_extent() function.
++ * Wraps needed parameters.
++ */
++struct find_free_extent_ctrl {
++	/* Basic allocation info */
++	u64 ram_bytes;
++	u64 num_bytes;
++	u64 empty_size;
++	u64 flags;
++	int delalloc;
++
++	/* Where to start the search inside the bg */
++	u64 search_start;
++
++	/* For clustered allocation */
++	u64 empty_cluster;
++
++	bool have_caching_bg;
++	bool orig_have_caching_bg;
++
++	/* RAID index, converted from flags */
++	int index;
++
++	/* Current loop number */
++	int loop;
++
++	/*
++	 * Whether we're refilling a cluster, if true we need to re-search
++	 * current block group but don't try to refill the cluster again.
++	 */
++	bool retry_clustered;
++
++	/*
++	 * Whether we're updating free space cache, if true we need to re-search
++	 * current block group but don't try updating free space cache again.
++	 */
++	bool retry_unclustered;
++
++	/* If current block group is cached */
++	int cached;
++
++
++	/* Max extent size found */
++	u64 max_extent_size;
++
++	/* Found result */
++	u64 found_offset;
++};
++
+ /*
+  * walks the btree of allocated extents and find a hole of a given size.
+  * The key ins is changed to record the hole:
+@@ -7411,20 +7461,26 @@ static noinline int find_free_extent(struct btrfs_fs_info *fs_info,
+ 	struct btrfs_root *root = fs_info->extent_root;
+ 	struct btrfs_free_cluster *last_ptr = NULL;
+ 	struct btrfs_block_group_cache *block_group = NULL;
+-	u64 search_start = 0;
+-	u64 max_extent_size = 0;
+-	u64 empty_cluster = 0;
++	struct find_free_extent_ctrl ctrl = {0};
+ 	struct btrfs_space_info *space_info;
+-	int loop = 0;
+-	int index = btrfs_bg_flags_to_raid_index(flags);
+-	bool failed_cluster_refill = false;
+-	bool failed_alloc = false;
+ 	bool use_cluster = true;
+-	bool have_caching_bg = false;
+-	bool orig_have_caching_bg = false;
+ 	bool full_search = false;
+ 
+ 	WARN_ON(num_bytes < fs_info->sectorsize);
++
++	ctrl.ram_bytes = ram_bytes;
++	ctrl.num_bytes = num_bytes;
++	ctrl.empty_size = empty_size;
++	ctrl.flags = flags;
++	ctrl.search_start = 0;
++	ctrl.retry_clustered = false;
++	ctrl.retry_unclustered = false;
++	ctrl.delalloc = delalloc;
++	ctrl.index = btrfs_bg_flags_to_raid_index(flags);
++	ctrl.have_caching_bg = false;
++	ctrl.orig_have_caching_bg = false;
++	ctrl.found_offset = 0;
++
+ 	ins->type = BTRFS_EXTENT_ITEM_KEY;
+ 	ins->objectid = 0;
+ 	ins->offset = 0;
+@@ -7460,7 +7516,7 @@ static noinline int find_free_extent(struct btrfs_fs_info *fs_info,
+ 		spin_unlock(&space_info->lock);
+ 	}
+ 
+-	last_ptr = fetch_cluster_info(fs_info, space_info, &empty_cluster);
++	last_ptr = fetch_cluster_info(fs_info, space_info, &ctrl.empty_cluster);
+ 	if (last_ptr) {
+ 		spin_lock(&last_ptr->lock);
+ 		if (last_ptr->block_group)
+@@ -7477,10 +7533,12 @@ static noinline int find_free_extent(struct btrfs_fs_info *fs_info,
+ 		spin_unlock(&last_ptr->lock);
+ 	}
+ 
+-	search_start = max(search_start, first_logical_byte(fs_info, 0));
+-	search_start = max(search_start, hint_byte);
+-	if (search_start == hint_byte) {
+-		block_group = btrfs_lookup_block_group(fs_info, search_start);
++	ctrl.search_start = max(ctrl.search_start,
++				first_logical_byte(fs_info, 0));
++	ctrl.search_start = max(ctrl.search_start, hint_byte);
++	if (ctrl.search_start == hint_byte) {
++		block_group = btrfs_lookup_block_group(fs_info,
++						       ctrl.search_start);
+ 		/*
+ 		 * we don't want to use the block group if it doesn't match our
+ 		 * allocation bits, or if its not cached.
+@@ -7502,7 +7560,7 @@ static noinline int find_free_extent(struct btrfs_fs_info *fs_info,
+ 				btrfs_put_block_group(block_group);
+ 				up_read(&space_info->groups_sem);
+ 			} else {
+-				index = btrfs_bg_flags_to_raid_index(
++				ctrl.index = btrfs_bg_flags_to_raid_index(
+ 						block_group->flags);
+ 				btrfs_lock_block_group(block_group, delalloc);
+ 				goto have_block_group;
+@@ -7512,21 +7570,19 @@ static noinline int find_free_extent(struct btrfs_fs_info *fs_info,
+ 		}
+ 	}
+ search:
+-	have_caching_bg = false;
+-	if (index == 0 || index == btrfs_bg_flags_to_raid_index(flags))
++	ctrl.have_caching_bg = false;
++	if (ctrl.index == btrfs_bg_flags_to_raid_index(flags) ||
++	    ctrl.index == 0)
+ 		full_search = true;
+ 	down_read(&space_info->groups_sem);
+-	list_for_each_entry(block_group, &space_info->block_groups[index],
++	list_for_each_entry(block_group, &space_info->block_groups[ctrl.index],
+ 			    list) {
+-		u64 offset;
+-		int cached;
+-
+ 		/* If the block group is read-only, we can skip it entirely. */
+ 		if (unlikely(block_group->ro))
+ 			continue;
+ 
+ 		btrfs_grab_block_group(block_group, delalloc);
+-		search_start = block_group->key.objectid;
++		ctrl.search_start = block_group->key.objectid;
+ 
+ 		/*
+ 		 * this can happen if we end up cycling through all the
+@@ -7550,9 +7606,9 @@ static noinline int find_free_extent(struct btrfs_fs_info *fs_info,
+ 		}
+ 
+ have_block_group:
+-		cached = block_group_cache_done(block_group);
+-		if (unlikely(!cached)) {
+-			have_caching_bg = true;
++		ctrl.cached = block_group_cache_done(block_group);
++		if (unlikely(!ctrl.cached)) {
++			ctrl.have_caching_bg = true;
+ 			ret = cache_block_group(block_group, 0);
+ 			BUG_ON(ret < 0);
+ 			ret = 0;
+@@ -7580,20 +7636,21 @@ static noinline int find_free_extent(struct btrfs_fs_info *fs_info,
+ 
+ 			if (used_block_group != block_group &&
+ 			    (used_block_group->ro ||
+-			     !block_group_bits(used_block_group, flags)))
++			     !block_group_bits(used_block_group, ctrl.flags)))
+ 				goto release_cluster;
+ 
+-			offset = btrfs_alloc_from_cluster(used_block_group,
++			ctrl.found_offset = btrfs_alloc_from_cluster(
++						used_block_group,
+ 						last_ptr,
+ 						num_bytes,
+ 						used_block_group->key.objectid,
+-						&max_extent_size);
+-			if (offset) {
++						&ctrl.max_extent_size);
++			if (ctrl.found_offset) {
+ 				/* we have a block, we're done */
+ 				spin_unlock(&last_ptr->refill_lock);
+ 				trace_btrfs_reserve_extent_cluster(
+ 						used_block_group,
+-						search_start, num_bytes);
++						ctrl.search_start, num_bytes);
+ 				if (used_block_group != block_group) {
+ 					btrfs_release_block_group(block_group,
+ 								  delalloc);
+@@ -7619,7 +7676,7 @@ static noinline int find_free_extent(struct btrfs_fs_info *fs_info,
+ 			 * first, so that we stand a better chance of
+ 			 * succeeding in the unclustered
+ 			 * allocation.  */
+-			if (loop >= LOOP_NO_EMPTY_SIZE &&
++			if (ctrl.loop >= LOOP_NO_EMPTY_SIZE &&
+ 			    used_block_group != block_group) {
+ 				spin_unlock(&last_ptr->refill_lock);
+ 				btrfs_release_block_group(used_block_group,
+@@ -7637,18 +7694,19 @@ static noinline int find_free_extent(struct btrfs_fs_info *fs_info,
+ 				btrfs_release_block_group(used_block_group,
+ 							  delalloc);
+ refill_cluster:
+-			if (loop >= LOOP_NO_EMPTY_SIZE) {
++			if (ctrl.loop >= LOOP_NO_EMPTY_SIZE) {
+ 				spin_unlock(&last_ptr->refill_lock);
+ 				goto unclustered_alloc;
+ 			}
+ 
+ 			aligned_cluster = max_t(unsigned long,
+-						empty_cluster + empty_size,
++						ctrl.empty_cluster + empty_size,
+ 					      block_group->full_stripe_len);
+ 
+ 			/* allocate a cluster in this block group */
+ 			ret = btrfs_find_space_cluster(fs_info, block_group,
+-						       last_ptr, search_start,
++						       last_ptr,
++						       ctrl.search_start,
+ 						       num_bytes,
+ 						       aligned_cluster);
+ 			if (ret == 0) {
+@@ -7656,26 +7714,29 @@ static noinline int find_free_extent(struct btrfs_fs_info *fs_info,
+ 				 * now pull our allocation out of this
+ 				 * cluster
+ 				 */
+-				offset = btrfs_alloc_from_cluster(block_group,
++				ctrl.found_offset = btrfs_alloc_from_cluster(
++							block_group,
+ 							last_ptr,
+ 							num_bytes,
+-							search_start,
+-							&max_extent_size);
+-				if (offset) {
++							ctrl.search_start,
++							&ctrl.max_extent_size);
++				if (ctrl.found_offset) {
+ 					/* we found one, proceed */
+ 					spin_unlock(&last_ptr->refill_lock);
+ 					trace_btrfs_reserve_extent_cluster(
+-						block_group, search_start,
++						block_group, ctrl.search_start,
+ 						num_bytes);
+ 					goto checks;
+ 				}
+-			} else if (!cached && loop > LOOP_CACHING_NOWAIT
+-				   && !failed_cluster_refill) {
++			} else if (!ctrl.cached && ctrl.loop >
++				   LOOP_CACHING_NOWAIT
++				   && !ctrl.retry_clustered) {
+ 				spin_unlock(&last_ptr->refill_lock);
+ 
+-				failed_cluster_refill = true;
++				ctrl.retry_clustered = true;
+ 				wait_block_group_cache_progress(block_group,
+-				       num_bytes + empty_cluster + empty_size);
++				       num_bytes + ctrl.empty_cluster +
++				       empty_size);
+ 				goto have_block_group;
+ 			}
+ 
+@@ -7701,89 +7762,96 @@ static noinline int find_free_extent(struct btrfs_fs_info *fs_info,
+ 			last_ptr->fragmented = 1;
+ 			spin_unlock(&last_ptr->lock);
+ 		}
+-		if (cached) {
++		if (ctrl.cached) {
+ 			struct btrfs_free_space_ctl *ctl =
+ 				block_group->free_space_ctl;
+ 
+ 			spin_lock(&ctl->tree_lock);
+ 			if (ctl->free_space <
+-			    num_bytes + empty_cluster + empty_size) {
+-				if (ctl->free_space > max_extent_size)
+-					max_extent_size = ctl->free_space;
++			    num_bytes + ctrl.empty_cluster + empty_size) {
++				if (ctl->free_space > ctrl.max_extent_size)
++					ctrl.max_extent_size = ctl->free_space;
+ 				spin_unlock(&ctl->tree_lock);
+ 				goto loop;
+ 			}
+ 			spin_unlock(&ctl->tree_lock);
+ 		}
+ 
+-		offset = btrfs_find_space_for_alloc(block_group, search_start,
+-						    num_bytes, empty_size,
+-						    &max_extent_size);
++		ctrl.found_offset = btrfs_find_space_for_alloc(block_group,
++				ctrl.search_start, num_bytes, empty_size,
++				&ctrl.max_extent_size);
+ 		/*
+ 		 * If we didn't find a chunk, and we haven't failed on this
+ 		 * block group before, and this block group is in the middle of
+ 		 * caching and we are ok with waiting, then go ahead and wait
+-		 * for progress to be made, and set failed_alloc to true.
++		 * for progress to be made, and set ctrl.retry_unclustered to
++		 * true.
+ 		 *
+-		 * If failed_alloc is true then we've already waited on this
+-		 * block group once and should move on to the next block group.
++		 * If ctrl.retry_unclustered is true then we've already waited
++		 * on this block group once and should move on to the next block
++		 * group.
+ 		 */
+-		if (!offset && !failed_alloc && !cached &&
+-		    loop > LOOP_CACHING_NOWAIT) {
++		if (!ctrl.found_offset && !ctrl.retry_unclustered &&
++		    !ctrl.cached && ctrl.loop > LOOP_CACHING_NOWAIT) {
+ 			wait_block_group_cache_progress(block_group,
+ 						num_bytes + empty_size);
+-			failed_alloc = true;
++			ctrl.retry_unclustered = true;
+ 			goto have_block_group;
+-		} else if (!offset) {
++		} else if (!ctrl.found_offset) {
+ 			goto loop;
+ 		}
+ checks:
+-		search_start = round_up(offset, fs_info->stripesize);
++		ctrl.search_start = round_up(ctrl.found_offset,
++					     fs_info->stripesize);
+ 
+ 		/* move on to the next group */
+-		if (search_start + num_bytes >
++		if (ctrl.search_start + num_bytes >
+ 		    block_group->key.objectid + block_group->key.offset) {
+-			btrfs_add_free_space(block_group, offset, num_bytes);
++			btrfs_add_free_space(block_group, ctrl.found_offset,
++					     num_bytes);
+ 			goto loop;
+ 		}
+ 
+-		if (offset < search_start)
+-			btrfs_add_free_space(block_group, offset,
+-					     search_start - offset);
++		if (ctrl.found_offset < ctrl.search_start)
++			btrfs_add_free_space(block_group, ctrl.found_offset,
++					ctrl.search_start - ctrl.found_offset);
+ 
+ 		ret = btrfs_add_reserved_bytes(block_group, ram_bytes,
+ 				num_bytes, delalloc);
+ 		if (ret == -EAGAIN) {
+-			btrfs_add_free_space(block_group, offset, num_bytes);
++			btrfs_add_free_space(block_group, ctrl.found_offset,
++					     num_bytes);
+ 			goto loop;
+ 		}
+ 		btrfs_inc_block_group_reservations(block_group);
+ 
+ 		/* we are all good, lets return */
+-		ins->objectid = search_start;
++		ins->objectid = ctrl.search_start;
+ 		ins->offset = num_bytes;
+ 
+-		trace_btrfs_reserve_extent(block_group, search_start, num_bytes);
++		trace_btrfs_reserve_extent(block_group, ctrl.search_start,
++					   num_bytes);
+ 		btrfs_release_block_group(block_group, delalloc);
+ 		break;
+ loop:
+-		failed_cluster_refill = false;
+-		failed_alloc = false;
++		ctrl.retry_clustered = false;
++		ctrl.retry_unclustered = false;
+ 		BUG_ON(btrfs_bg_flags_to_raid_index(block_group->flags) !=
+-		       index);
++		       ctrl.index);
+ 		btrfs_release_block_group(block_group, delalloc);
+ 		cond_resched();
+ 	}
+ 	up_read(&space_info->groups_sem);
+ 
+-	if ((loop == LOOP_CACHING_NOWAIT) && have_caching_bg
+-		&& !orig_have_caching_bg)
+-		orig_have_caching_bg = true;
++	if ((ctrl.loop == LOOP_CACHING_NOWAIT) && ctrl.have_caching_bg
++		&& !ctrl.orig_have_caching_bg)
++		ctrl.orig_have_caching_bg = true;
+ 
+-	if (!ins->objectid && loop >= LOOP_CACHING_WAIT && have_caching_bg)
++	if (!ins->objectid && ctrl.loop >= LOOP_CACHING_WAIT &&
++	    ctrl.have_caching_bg)
+ 		goto search;
+ 
+-	if (!ins->objectid && ++index < BTRFS_NR_RAID_TYPES)
++	if (!ins->objectid && ++ctrl.index < BTRFS_NR_RAID_TYPES)
+ 		goto search;
+ 
+ 	/*
+@@ -7794,23 +7862,23 @@ static noinline int find_free_extent(struct btrfs_fs_info *fs_info,
+ 	 * LOOP_NO_EMPTY_SIZE, set empty_size and empty_cluster to 0 and try
+ 	 *			again
+ 	 */
+-	if (!ins->objectid && loop < LOOP_NO_EMPTY_SIZE) {
+-		index = 0;
+-		if (loop == LOOP_CACHING_NOWAIT) {
++	if (!ins->objectid && ctrl.loop < LOOP_NO_EMPTY_SIZE) {
++		ctrl.index = 0;
++		if (ctrl.loop == LOOP_CACHING_NOWAIT) {
+ 			/*
+ 			 * We want to skip the LOOP_CACHING_WAIT step if we
+ 			 * don't have any uncached bgs and we've already done a
+ 			 * full search through.
+ 			 */
+-			if (orig_have_caching_bg || !full_search)
+-				loop = LOOP_CACHING_WAIT;
++			if (ctrl.orig_have_caching_bg || !full_search)
++				ctrl.loop = LOOP_CACHING_WAIT;
+ 			else
+-				loop = LOOP_ALLOC_CHUNK;
++				ctrl.loop = LOOP_ALLOC_CHUNK;
+ 		} else {
+-			loop++;
++			ctrl.loop++;
+ 		}
+ 
+-		if (loop == LOOP_ALLOC_CHUNK) {
++		if (ctrl.loop == LOOP_ALLOC_CHUNK) {
+ 			struct btrfs_trans_handle *trans;
+ 			int exist = 0;
+ 
+@@ -7834,7 +7902,7 @@ static noinline int find_free_extent(struct btrfs_fs_info *fs_info,
+ 			 * case.
+ 			 */
+ 			if (ret == -ENOSPC)
+-				loop = LOOP_NO_EMPTY_SIZE;
++				ctrl.loop = LOOP_NO_EMPTY_SIZE;
+ 
+ 			/*
+ 			 * Do not bail out on ENOSPC since we
+@@ -7850,18 +7918,18 @@ static noinline int find_free_extent(struct btrfs_fs_info *fs_info,
+ 				goto out;
+ 		}
+ 
+-		if (loop == LOOP_NO_EMPTY_SIZE) {
++		if (ctrl.loop == LOOP_NO_EMPTY_SIZE) {
+ 			/*
+ 			 * Don't loop again if we already have no empty_size and
+ 			 * no empty_cluster.
+ 			 */
+ 			if (empty_size == 0 &&
+-			    empty_cluster == 0) {
++			    ctrl.empty_cluster == 0) {
+ 				ret = -ENOSPC;
+ 				goto out;
+ 			}
+ 			empty_size = 0;
+-			empty_cluster = 0;
++			ctrl.empty_cluster = 0;
+ 		}
+ 
+ 		goto search;
+@@ -7878,9 +7946,9 @@ static noinline int find_free_extent(struct btrfs_fs_info *fs_info,
+ out:
+ 	if (ret == -ENOSPC) {
+ 		spin_lock(&space_info->lock);
+-		space_info->max_extent_size = max_extent_size;
++		space_info->max_extent_size = ctrl.max_extent_size;
+ 		spin_unlock(&space_info->lock);
+-		ins->offset = max_extent_size;
++		ins->offset = ctrl.max_extent_size;
+ 	}
+ 	return ret;
+ }
 -- 
-2.17.1
+2.18.0

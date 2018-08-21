@@ -1,113 +1,272 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:46010 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726590AbeHUScM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 21 Aug 2018 14:32:12 -0400
-Date: Tue, 21 Aug 2018 17:11:26 +0200
-From: David Sterba <dsterba@suse.cz>
-To: David Howells <dhowells@redhat.com>
-Cc: dsterba@suse.cz, clm@fb.com, linux-btrfs@vger.kernel.org
-Subject: Re: Do btrfs compression option changes need to be atomic?
-Message-ID: <20180821151126.GE24025@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20180821142000.GC24025@twin.jikos.cz>
- <31114.1534417285@warthog.procyon.org.uk>
- <476.1534859190@warthog.procyon.org.uk>
- <4150.1534862046@warthog.procyon.org.uk>
+Received: from mail.kernel.org ([198.145.29.99]:44560 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1727214AbeHUTQa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 21 Aug 2018 15:16:30 -0400
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <4150.1534862046@warthog.procyon.org.uk>
+In-Reply-To: <20180820010932.GV2234@dastard>
+References: <20180817083924.16916-1-fdmanana@kernel.org> <20180819231126.GU2234@dastard>
+ <20180820010932.GV2234@dastard>
+From: Filipe Manana <fdmanana@kernel.org>
+Date: Tue, 21 Aug 2018 16:55:46 +0100
+Message-ID: <CAL3q7H5Oicg_Ekesg5cVo8Y2BZTcYUbB92SYcTmpBDW2iao4Vg@mail.gmail.com>
+Subject: Re: [patch] file dedupe (and maybe clone) data corruption (was Re:
+ [PATCH] generic: test for deduplication between different files)
+To: Dave Chinner <david@fromorbit.com>
+Cc: fstests <fstests@vger.kernel.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        Filipe Manana <fdmanana@suse.com>, linux-xfs@vger.kernel.org,
+        linux-fsdevel <linux-fsdevel@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Aug 21, 2018 at 03:34:06PM +0100, David Howells wrote:
-> David Sterba <dsterba@suse.cz> wrote:
-> 
-> > Do you mean the compression type (btrfs_fs_info::compress_type) and the
-> > related bits in btrfs_fs_info::mount_opt ? There are more compression
-> > types but not used in the mount context.  I assume you're interested
-> > only in the mount-time settings, otherwise the defrag and per-inode
-> > compression has higher priority over the global settings.
-> 
-> Yes.  However, it would appear that remount can race with using the fs_info
-> variables, so the settings can be changing whilst you're going through the
-> compress_file_range() function.
+On Mon, Aug 20, 2018 at 2:09 AM, Dave Chinner <david@fromorbit.com> wrote:
+> [cc linux-fsdevel now, too]
+>
+> On Mon, Aug 20, 2018 at 09:11:26AM +1000, Dave Chinner wrote:
+>> [cc linux-xfs@vger.kernel.org]
+>>
+>> On Fri, Aug 17, 2018 at 09:39:24AM +0100, fdmanana@kernel.org wrote:
+>> > From: Filipe Manana <fdmanana@suse.com>
+>> >
+>> > Test that deduplication of an entire file that has a size that is not
+>> > aligned to the filesystem's block size into a different file does not
+>> > corrupt the destination's file data.
+>
+> Ok, I've looked at this now. My first question is where did all the
+> magic offsets in this test come from? i.e. how was this bug
+> found and who is it affecting?
 
-compress_file_range reads the compress_type at the beginning, so remount
-does not affect that and the function will continue using that for the
-extent. This is racy in the sense that there's some compression going on
-while the mount options do not say so.
+I found it myself. I'm not aware of any users or applications affected by it.
 
-I think this is not a big deal, there's sync_filesystem call at the
-beginning of remount, so most of the data use the previous settings.
-The window where new IO starts but remount has not updated the mount
-options is short, so yes this is racy though I'm not sure if there's a
-good way to actually measure that. The result is that eg. some extents
-got compressed but should not have been.
+>
+>> > This test is motivated by a bug found in Btrfs which is fixed by the
+>> > following patch for the linux kernel:
+>> >
+>> >   "Btrfs: fix data corruption when deduplicating between different files"
+>> >
+>> > XFS also fails this test, at least as of linux kernel 4.18-rc7, exactly
+>> > with the same corruption as in Btrfs - some bytes of a block get replaced
+>> > with zeroes after the deduplication.
+>>
+>> Filipe, in future can please report XFS bugs you find to the XFS
+>> list the moment you find them. We shouldn't ever find out about a
+>> data corruption bug we need to fix via a "oh, by the way" comment in
+>> a commit message for a regression test....
+>
+> This becomes much more relevant because of what I've just found....
+>
+> .....
+>
+>> > +# The first byte with a value of 0xae starts at an offset (2518890) which is not
+>> > +# a multiple of the block size.
+>> > +$XFS_IO_PROG -f \
+>> > +   -c "pwrite -S 0x6b 0 2518890" \
+>> > +   -c "pwrite -S 0xae 2518890 102398" \
+>> > +   $SCRATCH_MNT/foo | _filter_xfs_io
+>> > +
+>> > +# Create a second file with a length not aligned to the block size, whose bytes
+>> > +# all have the value 0x6b, so that its extent(s) can be deduplicated with the
+>> > +# first file.
+>> > +$XFS_IO_PROG -f -c "pwrite -S 0x6b 0 557771" $SCRATCH_MNT/bar | _filter_xfs_io
+>> > +
+>> > +# The file is filled with bytes having the value 0x6b from offset 0 to offset
+>> > +# 2518889 and with the value 0xae from offset 2518890 to offset 2621287.
+>> > +echo "File content before deduplication:"
+>> > +od -t x1 $SCRATCH_MNT/foo
+>
+> Please use "od -Ad -t x1 <file>" so the file offsets reported by od
+> match the offsets used in the test (i.e. in decimal, not octal).
 
-The remount would have to flush IO and freeze all new, then change
-options and thaw, but this starts to sound too heavyweight.
+Will do, in the next test version after agreement on the fix.
 
-> I'm not sure it'll hurt exactly, but you can also find, say, DATACOW being
-> disabled whilst you're considering compressing.
+>
+>> > +
+>> > +# Now deduplicate the entire second file into a range of the first file that
+>> > +# also has all bytes with the value 0x6b. The destination range's end offset
+>> > +# must not be aligned to the block size and must be less then the offset of
+>> > +# the first byte with the value 0xae (byte at offset 2518890).
+>> > +$XFS_IO_PROG -c "dedupe $SCRATCH_MNT/bar 0 1957888 557771" $SCRATCH_MNT/foo \
+>> > +   | _filter_xfs_io
+>
+> Ok, now it gets fun. dedupe to non-block aligned rtanges is supposed
+> to be rejected by the kernel in vfs_clone_file_prep_inodes(). i.e
+> this check:
+>
+>         /* Only reflink if we're aligned to block boundaries */
+>         if (!IS_ALIGNED(pos_in, bs) || !IS_ALIGNED(pos_in + blen, bs) ||
+>             !IS_ALIGNED(pos_out, bs) || !IS_ALIGNED(pos_out + blen, bs))
+>                 return -EINVAL;
+>
+> And it's pretty clear that a length of 557771 is not block aligned
+> (being an odd number).
+>
+> So why was this dedupe request even accepted by the kernel? Well,
+> I think there's a bug in the check just above this:
+>
+>         /* If we're linking to EOF, continue to the block boundary. */
+>         if (pos_in + *len == isize)
+>                 blen = ALIGN(isize, bs) - pos_in;
+>         else
+>                 blen = *len;
 
-I think the constraint don't need to be strictly atomic, with some
-intermediate states that are valid but neither the old nor what the new
-options say. The race window spans a few instructions so as long as the
-combination is valid or double checked later, I'd consider it ok.
+Yes, btrfs, for the dedupe call, also has its own place where it does
+the same thing,
+at fs/btrfs/ioctl.c:extent_same_check_offsets().
+And that's precisely what made me suspicious about it, together with
+what you note below about the call to btrfs_cmp_data() using the
+original, unaligned, length.
 
-The ordering of the bits set/cleared can prevent unwanted combinations,
-like: when the COMPRESS bit is set, there's no NODATACOW anymore:
+However, I just ran the same test using reflink and not dedupe and the
+same problem happens. In earlier versions of the test/debugging I
+either did not notice
+or made some mistake because I hadn't seen the same problem for the
+reflink/clone operation, and since we only do that extra rounding in
+the btrfs dedupe code path,
+and not on the clone one, I took the conclusion that only dedupe was
+affected, but that is also done in the VFS as you just pointed.
+I only noticied XFS also failed at the last moment, when I had the
+test case complete.
 
-- clear NODATACOW
-- set compress_type
-- set COMPRESS
+>
+> basically, when the "in" file dedupe/reflink range is to EOF, it
+> expands the range to include /all/ of the block that contains the
+> EOF byte. IOWs, it now requests us to dedupe /undefined data beyond
+> EOF/. But when we go to compare the data in these ranges, it
+> truncates the comparison to the length that the user asked for
+> (i.e. *len) and not the extended block length.
+>
+> IOWs, it doesn't compare the bytes beyond EOF in the source block to
+> the data in the destination block it would replace, and so doesn't
+> fail the compare like it should.
+>
+> And, well, btrfs has the same bug. extent_same_check_offsets()
+> extends the range for alignment so it passes alignment checks, but
+> then /explicitly/ uses the original length for the data compare
+> and dedupe. i.e:
+>
+>        /* pass original length for comparison so we stay within i_size */
+>         ret = btrfs_cmp_data(olen, cmp);
+>         if (ret == 0)
+>                 ret = btrfs_clone(src, dst, loff, olen, len, dst_loff, 1);
+>
+> This is what we should see if someone tried to dedupe the EOF block
+> of a file:
+>
+> generic/505     - output mismatch (see /home/dave/src/xfstests-dev/results//xfs/generic/505.out.bad)
+>     --- tests/generic/505.out   2018-08-20 09:36:58.449015709 +1000
+>     +++ /home/dave/src/xfstests-dev/results//xfs/generic/505.out.bad    2018-08-20 10:45:47.245482160 +1000
+>     @@ -13,8 +13,7 @@
+>      *
+>      2621280 ae ae ae ae ae ae ae ae
+>      2621288
+>     -deduped 557771/557771 bytes at offset 1957888
+>     -XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+>     +XFS_IOC_FILE_EXTENT_SAME: Invalid argument
+>      File content after deduplication and before unmounting:
+>     ...
+>     (Run 'diff -u tests/generic/505.out /home/dave/src/xfstests-dev/results//xfs/generic/505.out.bad'  to see the entire diff)
+>
+> i.e. the dedupe request should fail as we cannot dedupe the EOF
+> block.
+>
+> The patch below does this for the VFS dedupe code. it's not a final
+> patch, it's just a demonstration of how this should never have got
+> past the range checks. Open questions:
+>
+>         - is documenting rejection on request alignment grounds
+>           (i.e. EINVAL) in the man page sufficient for app
+>           developers to understand what is going on here?
 
-I haven't checked with the sources if this is so.
+Maybe. No idea if that would "break" existing applications and use cases.
 
-> > > Further to that, how much of an issue is it if the configuration is split
-> > > out into its own struct that is accessed from struct btrfs_fs_info using
-> > > RCU?
-> > 
-> > Depends on how intrusive it's going to be, the mount opions are tested
-> > at many places. The RCU overhead and "locking" is lightweight enough so
-> > it should not be a problem in principle, but without seeing the code I
-> > can't tell.
-> 
-> Actually, a better way of doing this might be to put a subset of the settings
-> into a single variable, say:
-> 
-> 	struct btrfs_fs_info {
-> 		...
-> 		unsigned int	data_storage_opt;
-> 	#define BTRFS_DATA_NONE			0x0000
-> 	#define BTRFS_DATA_COW			0x0001
-> 	#define BTRFS_DATA_SUM			0x0002
-> 	#define BTRFS_DATA_COMPRESS		0x0003
-> 	#define BTRFS_DATA_FORCE_COMPRESS	0x0004
-> 	#define BTRFS_DATA__STORAGE_OPT		0x000f
-> 	#define BTRFS_DATA_COMPRESS_ZLIB	0x0000
-> 	#define BTRFS_DATA_COMPRESS_LZO		0x0010
-> 	#define BTRFS_DATA_COMPRESS_ZSTD	0x0020
-> 	#define BTRFS_DATA__COMPRESS_TYPE	0x00f0
-> 	#define BTRFS_DATA__COMPRESS_LEVEL	0x0f00
-> 		...
-> 	};
-> 
-> That way it might be possible for the datacow, datasum, compress and
-> compress-force options to be handled atomically.
+>         - should we just round down the EOF dedupe request to the
+>           block before EOF so dedupe still succeeds?
 
-So the changes would be possible in one atomic (bitwise) call? Instead
-of:
+That was my idea because dedupe is allowed to deduplicate less then
+what is requested.
 
-  clear_bit(opts, NODATACOW)
-  set_bit(opts, COMPRESS)
+>         - should file cloning (i.e. reflink) be allow allowing the
+>           EOF block to be shared somewhere inside EOF in the
+>           destination file? That's stale data exposure, yes?
 
-do:
+No, but for cloning I'm not sure which approach is better, to round
+down or reject with -EINVAL.
 
-  set_bits_with_mask(opts, COMPRESS, BTRFS_DATA__STORAGE_OPT)
+>         - should clone only allow sharing of the EOF block if it's a
+>           either a full file clone or a matching range clone and
+>           isize is the same for both src and dest files?
 
-?
+I think it should.
 
-Side note: up to now we're all used to the NO* naming and semantics of
-the feature bits, so it might take some time to do the mental switch.
+cheers
+
+>
+> Discuss.
+>
+> Cheers,
+>
+> Dave.
+> --
+> Dave Chinner
+> david@fromorbit.com
+>
+>
+> [RFC] vfs: fix data corruption w/ unaligned dedupe ranges
+>
+> From: Dave Chinner <dchinner@redhat.com>
+>
+> Exposed by fstests generic/505 on XFS, caused by extending the
+> bblock match range to include the partial EOF block, but then
+> allowing unknown data beyond EOF to be considered a "match" to data
+> in the destination file because the comparison is only made to the
+> end of the source file. This corrupts the destination file when the
+> source extent is shared with it.
+>
+> Open questions:
+>
+>         - is documenting rejection on request alignment grounds
+>           (i.e. EINVAL) in the man page sufficient for app
+>           developers to understand what is going on here?
+>         - should we just silently round down the EOF dedupe request
+>           to the block before EOF so dedupe still succeeds?
+>         - should file cloning (i.e. reflink) be allow allowing the
+>           EOF block to be shared somewhere inside EOF in the
+>           destination file? That's stale data exposure, yes?
+>         - should clone only allow sharing of the EOF block if it's a
+>           either a full file clone or a matching range clone and
+>           isize is the same for both src and dest files?
+>
+> Btrfs also has the same bug in extent_same_check_offsets() and
+> btrfs_extent_same_range() that is not addressed by this patch.
+>
+> Signed-off-by: Dave Chinner <dchinner@redhat.com>
+> ---
+>  fs/read_write.c | 13 +++++++++++--
+>  1 file changed, 11 insertions(+), 2 deletions(-)
+>
+> diff --git a/fs/read_write.c b/fs/read_write.c
+> index 153f8f690490..3844359a4597 100644
+> --- a/fs/read_write.c
+> +++ b/fs/read_write.c
+> @@ -1768,8 +1768,17 @@ int vfs_clone_file_prep_inodes(struct inode *inode_in, loff_t pos_in,
+>                         return -EINVAL;
+>         }
+>
+> -       /* If we're linking to EOF, continue to the block boundary. */
+> -       if (pos_in + *len == isize)
+> +       /* Reflink allows linking to EOF, so round the length up to allow us to
+> +        * shared the last block in the file. We don't care what is beyond the
+> +        * EOF point in the block that gets shared, as we can't access it and
+> +        * attempts to extent the file will break the sharing.
+> +        *
+> +        * For dedupe, sharing the EOF block is illegal because the bytes beyond
+> +        * EOF are undefined (i.e. not readable) and so can't be deduped. Hence
+> +        * we do not extend/align the length and instead let the alignment
+> +        * checks below reject it.
+> +        */
+> +       if (!is_dedupe && pos_in + *len == isize)
+>                 blen = ALIGN(isize, bs) - pos_in;
+>         else
+>                 blen = *len;

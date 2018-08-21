@@ -1,99 +1,124 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:50860 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1728343AbeHVS11 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 22 Aug 2018 14:27:27 -0400
-Date: Wed, 22 Aug 2018 17:01:57 +0200
-From: David Sterba <dsterba@suse.cz>
-To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Cc: dsterba@suse.cz, "Janos Toth F." <toth.f.janos@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: lazytime mount =?utf-8?B?b3B0aW9u4oCU?= =?utf-8?Q?no?= support
- in Btrfs
-Message-ID: <20180822150157.GI24025@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <E6FB1ABD-4C84-422B-BD9D-E46D96D03155@gmail.com>
- <088684be-c1ff-c144-6ff7-e41670669c7e@gmail.com>
- <20180821120636.fatftem5qbhv22m4@angband.pl>
- <d959efa3-4e45-c471-625d-c4ad747083ad@gmail.com>
- <CANznX5EwH-DSNzFwCiUrLgxA8P_nrNQoVfPQDQ=v6jM2_dEHAw@mail.gmail.com>
- <774d8406-d8c8-f26b-b176-8ac954c59722@gmail.com>
- <20180821160547.GF24025@twin.jikos.cz>
- <49b2ad81-256a-981e-cf6c-04e3bf32e932@gmail.com>
- <20180822134851.GH24025@twin.jikos.cz>
- <742cf725-e691-530a-d8a8-ea45b08d0450@gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <742cf725-e691-530a-d8a8-ea45b08d0450@gmail.com>
+Received: from mail-pl0-f67.google.com ([209.85.160.67]:42358 "EHLO
+        mail-pl0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726679AbeHUNnJ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 21 Aug 2018 09:43:09 -0400
+Received: by mail-pl0-f67.google.com with SMTP id g23-v6so5629005plq.9
+        for <linux-btrfs@vger.kernel.org>; Tue, 21 Aug 2018 03:23:34 -0700 (PDT)
+From: damenly.su@gmail.com
+To: linux-btrfs@vger.kernel.org
+Cc: Su Yue <suy.fnst@cn.fujitsu.com>
+Subject: [PATCH 1/2] btrfs-progs: task: add prefn() into struct task_info
+Date: Tue, 21 Aug 2018 18:23:10 +0000
+Message-Id: <20180821182311.13997-2-suy.fnst@cn.fujitsu.com>
+In-Reply-To: <20180821182311.13997-1-suy.fnst@cn.fujitsu.com>
+References: <20180821182311.13997-1-suy.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Aug 22, 2018 at 09:56:59AM -0400, Austin S. Hemmelgarn wrote:
-> On 2018-08-22 09:48, David Sterba wrote:
-> > On Tue, Aug 21, 2018 at 01:01:00PM -0400, Austin S. Hemmelgarn wrote:
-> >> On 2018-08-21 12:05, David Sterba wrote:
-> >>> On Tue, Aug 21, 2018 at 10:10:04AM -0400, Austin S. Hemmelgarn wrote:
-> >>>> On 2018-08-21 09:32, Janos Toth F. wrote:
-> >>>>>>>> so pretty much everyone who wants to avoid the overhead from them can just
-> >>>>>>>> use the `noatime` mount option.
-> >>>>>
-> >>>>> It would be great if someone finally fixed this old bug then:
-> >>>>> https://bugzilla.kernel.org/show_bug.cgi?id=61601
-> >>>>> Until then, it seems practically impossible to use both noatime (this
-> >>>>> can't be added as rootflag in the command line and won't apply if the
-> >>>>> kernel already mounted the root as RW) and space-cache-v2 (has to be
-> >>>>> added as a rootflag along with RW to take effect) for the root
-> >>>>> filesystem (at least without an init*fs, which I never use, so can't
-> >>>>> tell).
-> >>>>>
-> >>>> Last I knew, it was fixed.  Of course, it's been quite a while since I
-> >>>> last tried this, as I run locally patched kernels that have `noatime` as
-> >>>> the default instead of `relatime`.
-> >>>
-> >>> I'm using VMs without initrd, tested the rootflags=noatime and it still
-> >>> fails, the same way as in the bugreport.
-> >>>
-> >>> As the 'noatime' mount option is part of the mount(2) API (passed as a
-> >>> bit via mountflags), the remaining option in the filesystem is to
-> >>> whitelist the generic options and ignore them. But this brings some
-> >>> layering violation question.
-> >>>
-> >>> On the other hand, this would be come confusing as the user expectation
-> >>> is to see the effects of 'noatime'.
-> >>>
-> >> Ideally there would be a way to get this to actually work properly.  I
-> >> think ext4 at least doesn't panic, though I'm not sure if it actually
-> >> works correctly.
-> > 
-> > No, ext4 also refuses to mount, the panic happens in VFS that tries
-> > either the rootfstype= or all available filesystems.
-> > 
-> > [    3.763602] EXT4-fs (sda): Unrecognized mount option "noatime" or missing value
-> > 
-> > [    3.761315] BTRFS info (device sda): unrecognized mount option 'noatime'
-> > 
-> >> Otherwise, the only option for people who want it set is to patch the
-> >> kernel to get noatime as the default (instead of relatime).  I would
-> >> look at pushing such a patch upstream myself actually, if it weren't for
-> >> the fact that I'm fairly certain that it would be immediately NACK'ed by
-> >> at least Linus, and probably a couple of other people too.
-> > 
-> > An acceptable solution could be to parse the rootflags and translate
-> > them to the MNT_* values, ie. what the commandline tool mount does
-> > before it calls the mount syscall.
-> > 
-> That would be helpful, but at that point you might as well update the 
-> CLI mount tool to just pass all the named options to the kernel and have 
-> it do the parsing (I mean, keep the old interface too obviously, but 
-> provide a new one and use that preferentially).
+From: Su Yue <suy.fnst@cn.fujitsu.com>
 
-The initial mount is not done by the mount tool but internally by
-kernel init sequence (files in init/):
+Previously, everytime task_start is called, arguments to be initialized
+(start_time and item_count) are passed manually.
 
-mount_block_root
-  do_mount_root
-    ksys_mount
+For scalability, add a member prefn() to struct task_info.
+prefn() will be called before pthread_create() in task_start().
 
-The mount options (as a string) is passed unchanged via variable
-root_mount_data (== rootflags). So before this step, the options would
-have to be filtered and all known generic options turned into bit flags.
+Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
+---
+ check/main.c   |  3 ++-
+ convert/main.c |  4 ++--
+ task-utils.c   | 12 +++++++++---
+ task-utils.h   |  3 ++-
+ 4 files changed, 15 insertions(+), 7 deletions(-)
+
+diff --git a/check/main.c b/check/main.c
+index bc2ee22f7943..087106d199eb 100644
+--- a/check/main.c
++++ b/check/main.c
+@@ -9628,7 +9628,8 @@ int cmd_check(int argc, char **argv)
+ 
+ 	if (ctx.progress_enabled) {
+ 		ctx.tp = TASK_NOTHING;
+-		ctx.info = task_init(print_status_check, print_status_return, &ctx);
++		ctx.info = task_init(print_status_check, NULL,
++				     print_status_return, &ctx);
+ 	}
+ 
+ 	/* This check is the only reason for --readonly to exist */
+diff --git a/convert/main.c b/convert/main.c
+index 3736a14955d1..ee51390bb072 100644
+--- a/convert/main.c
++++ b/convert/main.c
+@@ -1180,8 +1180,8 @@ static int do_convert(const char *devname, u32 convert_flags, u32 nodesize,
+ 	ctx.cur_copy_inodes = 0;
+ 
+ 	if (progress) {
+-		ctx.info = task_init(print_copied_inodes, after_copied_inodes,
+-				     &ctx);
++		ctx.info = task_init(print_copied_inodes, NULL,
++				     after_copied_inodes, &ctx);
+ 		task_start(ctx.info, NULL, NULL);
+ 	}
+ 	ret = copy_inodes(&cctx, root, convert_flags, &ctx);
+diff --git a/task-utils.c b/task-utils.c
+index a9bee8f4486d..e837812f57f7 100644
+--- a/task-utils.c
++++ b/task-utils.c
+@@ -23,8 +23,8 @@
+ 
+ #include "task-utils.h"
+ 
+-struct task_info *task_init(void *(*threadfn)(void *), int (*postfn)(void *),
+-			    void *thread_private)
++struct task_info *task_init(void *(*threadfn)(void *), int (*prefn)(void *),
++			    int (*postfn)(void *), void *thread_private)
+ {
+ 	struct task_info *info = calloc(1, sizeof(struct task_info));
+ 
+@@ -33,6 +33,7 @@ struct task_info *task_init(void *(*threadfn)(void *), int (*postfn)(void *),
+ 
+ 	info->private_data = thread_private;
+ 	info->threadfn = threadfn;
++	info->prefn = prefn;
+ 	info->postfn = postfn;
+ 
+ 	return info;
+@@ -53,9 +54,14 @@ int task_start(struct task_info *info, time_t *start_time, u64 *item_count)
+ 	if (item_count)
+ 		*item_count = 0;
+ 
++	if (info->prefn) {
++		ret = info->prefn(info->private_data);
++		if (ret)
++			return ret;
++	}
++
+ 	ret = pthread_create(&info->id, NULL, info->threadfn,
+ 			     info->private_data);
+-
+ 	if (ret)
+ 		info->id = 0;
+ 
+diff --git a/task-utils.h b/task-utils.h
+index bbb0f1fd9ff6..06ee87defe24 100644
+--- a/task-utils.h
++++ b/task-utils.h
+@@ -30,12 +30,13 @@ struct task_info {
+ 	pthread_t id;
+ 	void *private_data;
+ 	void *(*threadfn)(void *);
++	int (*prefn)(void *);
+ 	int (*postfn)(void *);
+ };
+ 
+ /* task life cycle */
+ struct task_info *task_init(void *(*threadfn)(void *), int (*postfn)(void *),
+-			    void *thread_private);
++			    int (*pretfn)(void *), void *thread_private);
+ int task_start(struct task_info *info, time_t *start_time, u64 *item_count);
+ void task_stop(struct task_info *info);
+ void task_deinit(struct task_info *info);
+-- 
+2.17.1

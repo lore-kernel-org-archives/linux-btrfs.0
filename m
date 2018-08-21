@@ -1,47 +1,91 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:59746 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726628AbeHUXAI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 21 Aug 2018 19:00:08 -0400
-Subject: Re: [PATCH 0/2] btrfs-progs: task: add prefn() to task_info and
- simplify task_start()
-To: damenly.su@gmail.com, linux-btrfs@vger.kernel.org
-Cc: Su Yue <suy.fnst@cn.fujitsu.com>
-References: <20180821182311.13997-1-suy.fnst@cn.fujitsu.com>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <ddba11ae-495a-58e1-59a8-c9ffc7cf868d@suse.com>
-Date: Tue, 21 Aug 2018 22:38:36 +0300
+Received: from out30-132.freemail.mail.aliyun.com ([115.124.30.132]:51314 "EHLO
+        out30-132.freemail.mail.aliyun.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1726762AbeHVBWG (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 21 Aug 2018 21:22:06 -0400
+Date: Tue, 21 Aug 2018 14:59:55 -0700
+From: Liu Bo <bo.liu@linux.alibaba.com>
+To: Holger =?utf-8?Q?Hoffst=C3=A4tte?= <holger@applied-asynchrony.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 0/2] address lock contention of btree root
+Message-ID: <20180821215955.fr4kivqowadtrs77@US-160370MP2.local>
+Reply-To: bo.liu@linux.alibaba.com
+References: <1534453645-17714-1-git-send-email-bo.liu@linux.alibaba.com>
+ <5E5CC82C-57F8-4834-9630-B7DD7CA23C9E@fb.com>
+ <20180821181521.nj4cxyjqt5fo5vng@US-160370MP2.local>
+ <ef175ddd-4e8a-04d4-5fcb-f339248155ab@applied-asynchrony.com>
 MIME-Version: 1.0
-In-Reply-To: <20180821182311.13997-1-suy.fnst@cn.fujitsu.com>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=iso-8859-1
+In-Reply-To: <ef175ddd-4e8a-04d4-5fcb-f339248155ab@applied-asynchrony.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Tue, Aug 21, 2018 at 08:35:30PM +0200, Holger Hoffstätte wrote:
+> On 08/21/18 20:15, Liu Bo wrote:
+> > I just realize that patch 2 can result in softlockup as
+> > btrfs_search_slot() may return a path with all nodes being in spinning
+> > lock, and if the callers want to sleep, we're in trouble.  I've
+> > removed patch 2 and am re-running the test (xfstests, fsmark and
+> > dbench).
+> 
+> You mean like this, when trying to balance? :)
+> Got it only once so far, subsequent attempts worked. Otherwise everything
+> seems fine.
+
+Exactly, it didn't occur every time though, but thanks a lot for
+testing it through.
+
+thanks,
+-liubo
 
 
-On 21.08.2018 21:23, damenly.su@gmail.com wrote:
-> From: Su Yue <suy.fnst@cn.fujitsu.com>
 > 
-> This patchset is a prepare work for further process of check.
+> -h
 > 
-> patch[1] adds prefn() to task_info and call it before pthread_create().
-> 
-> patch[2] moves time and count initializations into the new init_ctx(),
-> assign it to prefun(). Remove arguments start_time and item_count.
-> 
-
-The patches look good albeit being isolated it's hard to see their
-merit. I'd advise to submit them alongside whatever larger refactoring
-you have in mind.
-
-> 
-> Su Yue (2):
->   btrfs-progs: task: add prefn() into struct task_info
->   btrfs-progs: task: add init_ctx and clean up arguments of task_start()
-> 
->  check/main.c   | 27 +++++++++++++++++++--------
->  convert/main.c |  6 +++---
->  task-utils.c   | 17 +++++++++--------
->  task-utils.h   |  5 +++--
->  4 files changed, 34 insertions(+), 21 deletions(-)
-> 
+> kernel: BTRFS info (device sdc1): relocating block group 4128424067072 flags data
+> kernel: BTRFS info (device sdc1): found 1706 extents
+> kernel: INFO: rcu_sched self-detected stall on CPU
+> kernel: ^I3-....: (17999 ticks this GP) idle=f5e/1/4611686018427387906 softirq=269430/269430 fqs=5999
+> kernel: ^I (t=18000 jiffies g=232869 c=232868 q=4365)
+> kernel: NMI backtrace for cpu 3
+> kernel: CPU: 3 PID: 4287 Comm: kworker/u8:0 Not tainted 4.18.3 #1
+> kernel: Hardware name: System manufacturer System Product Name/P8Z68-V LX, BIOS 4105 07/01/2013
+> kernel: Workqueue: btrfs-endio-write btrfs_endio_write_helper [btrfs]
+> kernel: Call Trace:
+> kernel:  <IRQ>
+> kernel:  dump_stack+0x46/0x60
+> kernel:  nmi_cpu_backtrace.cold.0+0x13/0x57
+> kernel:  ? lapic_can_unplug_cpu.cold.5+0x34/0x34
+> kernel:  nmi_trigger_cpumask_backtrace+0x8f/0x91
+> kernel:  rcu_dump_cpu_stacks+0x87/0xb2
+> kernel:  rcu_check_callbacks.cold.59+0x2ac/0x430
+> kernel:  ? tick_sched_handle.isra.6+0x40/0x40
+> kernel:  update_process_times+0x28/0x60
+> kernel:  tick_sched_handle.isra.6+0x35/0x40
+> kernel:  tick_sched_timer+0x3b/0x80
+> kernel:  __hrtimer_run_queues+0xfe/0x270
+> kernel:  hrtimer_interrupt+0xf4/0x210
+> kernel:  smp_apic_timer_interrupt+0x56/0x110
+> kernel:  apic_timer_interrupt+0xf/0x20
+> kernel:  </IRQ>
+> kernel: RIP: 0010:queued_write_lock_slowpath+0x4a/0x80
+> kernel: Code: ff 00 00 00 f0 0f b1 13 85 c0 74 32 f0 81 03 00 01 00 00 ba ff 00 00 00 b9 00 01 00 00 8b 03 3d 00 01 00 00 74 0b f3 90 8b 03 <3d> 00 01 00 00 75 f5 89 c8 f0 0f b1 13 3d 00 01 00 00 75 df c6 43
+> kernel: RSP: 0018:ffffc9000040fc40 EFLAGS: 00000206 ORIG_RAX: ffffffffffffff13
+> kernel: RAX: 0000000000000300 RBX: ffff88071abf86f0 RCX: 0000000000000100
+> kernel: RDX: 00000000000000ff RSI: ffff880000000000 RDI: ffff88071abf86f0
+> kernel: RBP: 0000000000000000 R08: ffff88071abf8690 R09: ffff880724ebeb58
+> kernel: R10: ffff880724ebeb80 R11: 0000000000000000 R12: 0000000000000001
+> kernel: R13: ffff8803d0db5f54 R14: 0000160000000000 R15: 0000000000000006
+> kernel:  btrfs_try_tree_write_lock+0x23/0x60 [btrfs]
+> kernel:  btrfs_search_slot+0x2df/0x970 [btrfs]
+> kernel:  btrfs_mark_extent_written+0xb0/0xac0 [btrfs]
+> kernel:  ? kmem_cache_alloc+0x1a5/0x1b0
+> kernel:  btrfs_finish_ordered_io+0x2e2/0x7a0 [btrfs]
+> kernel:  normal_work_helper+0xad/0x2c0 [btrfs]
+> kernel:  process_one_work+0x1e3/0x390
+> kernel:  worker_thread+0x2d/0x3c0
+> kernel:  ? process_one_work+0x390/0x390
+> kernel:  kthread+0x111/0x130
+> kernel:  ? kthread_flush_work_fn+0x10/0x10
+> kernel:  ret_from_fork+0x1f/0x30

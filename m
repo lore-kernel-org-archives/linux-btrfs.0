@@ -1,27 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:58646 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726876AbeHURLd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 21 Aug 2018 13:11:33 -0400
-Date: Tue, 21 Aug 2018 15:51:06 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Josef Bacik <josef@toxicpanda.com>
-Cc: linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: Re: [PATCH 15/22] btrfs: run delayed iputs before committing
-Message-ID: <20180821135106.GB24025@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20180719145006.17532-1-josef@toxicpanda.com>
- <20180719145006.17532-15-josef@toxicpanda.com>
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:47912 "EHLO
+        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+        by vger.kernel.org with ESMTP id S1726679AbeHURXL (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 21 Aug 2018 13:23:11 -0400
+From: Chris Mason <clm@fb.com>
+To: David Howells <dhowells@redhat.com>
+CC: <linux-btrfs@vger.kernel.org>
+Subject: Re: Do btrfs compression option changes need to be atomic?
+Date: Tue, 21 Aug 2018 10:02:43 -0400
+Message-ID: <335C762B-3ECE-404E-959D-9982C2E15B0A@fb.com>
+In-Reply-To: <476.1534859190@warthog.procyon.org.uk>
+References: <31114.1534417285@warthog.procyon.org.uk>
+ <476.1534859190@warthog.procyon.org.uk>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180719145006.17532-15-josef@toxicpanda.com>
+Content-Type: text/plain; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jul 19, 2018 at 10:49:59AM -0400, Josef Bacik wrote:
-> We want to have a complete picture of any delayed inode updates before
-> we make the decision to commit or not, so make sure we run delayed iputs
-> before making the decision to commit or not.
+On 21 Aug 2018, at 9:46, David Howells wrote:
 
-This basically says "we need to do X, so we do X", lacking the
-explanation why.
+> Should changes to the compression options on a btrfs mount be atomic, 
+> the
+> problem being that they're split across three variables?
+>
+> Further to that, how much of an issue is it if the configuration is 
+> split out
+> into its own struct that is accessed from struct btrfs_fs_info using 
+> RCU?
+>
+
+Hi David,
+
+They shouldn't need to be atomic, we're making compression decisions on 
+a per-extent basis and sometimes bailing on the compression if it 
+doesn't make things smaller.
+
+-chris

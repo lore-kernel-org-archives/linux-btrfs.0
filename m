@@ -1,70 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:53952 "EHLO
-        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-        by vger.kernel.org with ESMTP id S1727291AbeHUWLi (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 21 Aug 2018 18:11:38 -0400
-From: Chris Mason <clm@fb.com>
-To: Liu Bo <bo.liu@linux.alibaba.com>
-CC: <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 0/2] address lock contention of btree root
-Date: Tue, 21 Aug 2018 14:48:47 -0400
-Message-ID: <0F30A584-4FCA-4B60-B2C1-7CB51E091C9E@fb.com>
-In-Reply-To: <20180821181521.nj4cxyjqt5fo5vng@US-160370MP2.local>
-References: <1534453645-17714-1-git-send-email-bo.liu@linux.alibaba.com>
- <5E5CC82C-57F8-4834-9630-B7DD7CA23C9E@fb.com>
- <20180821181521.nj4cxyjqt5fo5vng@US-160370MP2.local>
+Received: from mx2.suse.de ([195.135.220.15]:59746 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726628AbeHUXAI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 21 Aug 2018 19:00:08 -0400
+Subject: Re: [PATCH 0/2] btrfs-progs: task: add prefn() to task_info and
+ simplify task_start()
+To: damenly.su@gmail.com, linux-btrfs@vger.kernel.org
+Cc: Su Yue <suy.fnst@cn.fujitsu.com>
+References: <20180821182311.13997-1-suy.fnst@cn.fujitsu.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <ddba11ae-495a-58e1-59a8-c9ffc7cf868d@suse.com>
+Date: Tue, 21 Aug 2018 22:38:36 +0300
 MIME-Version: 1.0
-Content-Type: text/plain; format=flowed
+In-Reply-To: <20180821182311.13997-1-suy.fnst@cn.fujitsu.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 21 Aug 2018, at 14:15, Liu Bo wrote:
 
-> On Tue, Aug 21, 2018 at 01:54:11PM -0400, Chris Mason wrote:
->> On 16 Aug 2018, at 17:07, Liu Bo wrote:
->>
->>> The lock contention on btree nodes (esp. root node) is apparently a
->>> bottleneck when there're multiple readers and writers concurrently
->>> trying to access them.  Unfortunately this is by design and it's not
->>> easy to fix it unless with some complex changes, however, there is
->>> still some room.
->>>
->>> With a stable workload based on fsmark which has 16 threads creating
->>> 1,600K files, we could see that a good amount of overhead comes from
->>> switching path between spinning mode and blocking mode in
->>> btrfs_search_slot().
->>>
->>> Patch 1 provides more details about the overhead and test results 
->>> from
->>> fsmark and dbench.
->>> Patch 2 kills leave_spinning due to the behaviour change from patch 
->>> 1.
->>
->> This is really interesting, do you have numbers about how often we 
->> are able
->> to stay spinning?
->>
->
-> I didn't gather how long we stay spinning,
 
-I'm less worried about length of time spinning than I am how often we're 
-able to call btrfs_search_slot() without ever blocking.  If one caller 
-ends up going into blocking mode, it can cascade into all of the other 
-callers, which can slow things down in low-to-medium contention 
-workloads.
+On 21.08.2018 21:23, damenly.su@gmail.com wrote:
+> From: Su Yue <suy.fnst@cn.fujitsu.com>
+> 
+> This patchset is a prepare work for further process of check.
+> 
+> patch[1] adds prefn() to task_info and call it before pthread_create().
+> 
+> patch[2] moves time and count initializations into the new init_ctx(),
+> assign it to prefun(). Remove arguments start_time and item_count.
+> 
 
-The flip side is that maybe the adaptive spinning in the mutexes is good 
-enough now and we can just deleting the spinning completely.
+The patches look good albeit being isolated it's hard to see their
+merit. I'd advise to submit them alongside whatever larger refactoring
+you have in mind.
 
-> but I was tracking
->
-> (1) how long a read lock or write lock can wait until it gets the
-> lock, with vanilla kernel, for read lock, it could be up to 10ms while
-> for write lock, it could be up to 200ms.
-
-Nice, please add the stats to the patch descriptions, both before and 
-after.  I'd love to see a histogram like you can get out of bcc's 
-argdist.py.
-
--chris
+> 
+> Su Yue (2):
+>   btrfs-progs: task: add prefn() into struct task_info
+>   btrfs-progs: task: add init_ctx and clean up arguments of task_start()
+> 
+>  check/main.c   | 27 +++++++++++++++++++--------
+>  convert/main.c |  6 +++---
+>  task-utils.c   | 17 +++++++++--------
+>  task-utils.h   |  5 +++--
+>  4 files changed, 34 insertions(+), 21 deletions(-)
+> 

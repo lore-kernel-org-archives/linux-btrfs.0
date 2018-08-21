@@ -1,81 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:50826 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726115AbeHUI7C (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 21 Aug 2018 04:59:02 -0400
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 09D9EAEA6
-        for <linux-btrfs@vger.kernel.org>; Tue, 21 Aug 2018 05:40:23 +0000 (UTC)
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2] btrfs: Always check nocow for quota enabled case to make sure we won't reserve unnecessary data space
-Date: Tue, 21 Aug 2018 13:40:16 +0800
-Message-Id: <20180821054016.28058-1-wqu@suse.com>
+Received: from tartarus.angband.pl ([89.206.35.136]:33314 "EHLO
+        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726937AbeHUP0o (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 21 Aug 2018 11:26:44 -0400
+Date: Tue, 21 Aug 2018 14:06:36 +0200
+From: Adam Borowski <kilobyte@angband.pl>
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Cc: Andrei Borzenkov <arvidjaar@gmail.com>,
+        Martin Steigerwald <martin@lichtvoll.de>, waxhead@dirtcellar.net,
+        Adam Hunt <voxadam@gmail.com>, linux-btrfs@vger.kernel.org
+Subject: Re: lazytime mount =?utf-8?B?b3B0aW9u4oCU?= =?utf-8?Q?no?= support
+ in Btrfs
+Message-ID: <20180821120636.fatftem5qbhv22m4@angband.pl>
+References: <ompef3$sim$1@blaine.gmane.org>
+ <a9037e77-5ea6-fadd-23a1-6cd1f2770220@dirtcellar.net>
+ <2641568.fxl50hTsRH@merkaba>
+ <E6FB1ABD-4C84-422B-BD9D-E46D96D03155@gmail.com>
+ <088684be-c1ff-c144-6ff7-e41670669c7e@gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <088684be-c1ff-c144-6ff7-e41670669c7e@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Commit c6887cd11149 ("Btrfs: don't do nocow check unless we have to")
-makes nocow check less frequent to improve performance.
+On Mon, Aug 20, 2018 at 08:16:16AM -0400, Austin S. Hemmelgarn wrote:
+> Also, slightly OT, but atimes are not where the real benefit is here for
+> most people.  No sane software other than mutt uses atimes (and mutt's use
+> of them is not sane, but that's a different argument)
 
-However for quota enabled case, such optimization could lead to extra
-unnecessary data reservation, which results failure for test case like
-btrfs/153 in fstests.
+Right.  There are two competing forks of mutt: neomutt and vanilla:
+https://github.com/neomutt/neomutt/commit/816095bfdb72caafd8845e8fb28cbc8c6afc114f
+https://gitlab.com/dops/mutt/commit/489a1c394c29e4b12b705b62da413f322406326f
 
-Fix it by reverting to old behavior for quota enabled case.
+So this has already been taken care of.
 
-Fixes: c6887cd11149 ("Btrfs: don't do nocow check unless we have to")
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
-changelog
-v2:
-  Fix regression for quota+cow case. (Previously it will skip data
-  reservation if quota is enabled, causing regression for limit case.
-  Pointed out by Misono)
----
- fs/btrfs/file.c | 18 +++++++++++++++++-
- 1 file changed, 17 insertions(+), 1 deletion(-)
+> so pretty much everyone who wants to avoid the overhead from them can just
+> use the `noatime` mount option.
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 2be00e873e92..183e5fb96f42 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1584,6 +1584,7 @@ static noinline ssize_t btrfs_buffered_write(struct kiocb *iocb,
- 	int ret = 0;
- 	bool only_release_metadata = false;
- 	bool force_page_uptodate = false;
-+	bool quota_enabled = test_bit(BTRFS_FS_QUOTA_ENABLED, &fs_info->flags);
- 
- 	nrptrs = min(DIV_ROUND_UP(iov_iter_count(i), PAGE_SIZE),
- 			PAGE_SIZE / (sizeof(struct page *)));
-@@ -1624,13 +1625,28 @@ static noinline ssize_t btrfs_buffered_write(struct kiocb *iocb,
- 				fs_info->sectorsize);
- 
- 		extent_changeset_release(data_reserved);
-+
-+		/*
-+		 * If we have quota enabled, we must do the heavy lift nocow
-+		 * check here to avoid reserving data space, or we can hit
-+		 * limitation for NOCOW files.
-+		 */
-+		if (quota_enabled) {
-+			if ((BTRFS_I(inode)->flags & (BTRFS_INODE_NODATACOW |
-+						      BTRFS_INODE_PREALLOC)) &&
-+			    check_can_nocow(BTRFS_I(inode), pos,
-+					    &write_bytes) > 0)
-+				goto reserve_meta_only;
-+		}
- 		ret = btrfs_check_data_free_space(inode, &data_reserved, pos,
- 						  write_bytes);
- 		if (ret < 0) {
- 			if ((BTRFS_I(inode)->flags & (BTRFS_INODE_NODATACOW |
- 						      BTRFS_INODE_PREALLOC)) &&
- 			    check_can_nocow(BTRFS_I(inode), pos,
--					&write_bytes) > 0) {
-+					&write_bytes) > 0 &&
-+			    !quota_enabled) {
-+reserve_meta_only:
- 				/*
- 				 * For nodata cow case, no need to reserve
- 				 * data space.
+atime updates (including relatime) are bad not only for performance, they
+also explode disk size used by snapshots (btrfs, LVM, ...) -- to the tune of
+~5% per snapshot for some non-crafted loads.  And, are bad for media with
+low write endurance (SD cards, as used by most SoCs).
+
+Thus, atime needs to die.
+
+> The real benefit for most people is with mtimes, for which there is no
+> other way to limit the impact they have on performance.
+
+With btrfs, any write already triggers metadata update (except nocow), thus
+there's little benefit of lazytime for mtimes.
+
+
+Meow!
 -- 
-2.18.0
+⢀⣴⠾⠻⢶⣦⠀ What Would Jesus Do, MUD/MMORPG edition:
+⣾⠁⢰⠒⠀⣿⡁ • multiplay with an admin char to benefit your mortal [Mt3:16-17]
+⢿⡄⠘⠷⠚⠋⠀ • abuse item cloning bugs [Mt14:17-20, Mt15:34-37]
+⠈⠳⣄⠀⠀⠀⠀ • use glitches to walk on water [Mt14:25-26]

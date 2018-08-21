@@ -1,66 +1,27 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx3-rdu2.redhat.com ([66.187.233.73]:40828 "EHLO mx1.redhat.com"
+Received: from mx3-rdu2.redhat.com ([66.187.233.73]:51504 "EHLO mx1.redhat.com"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726590AbeHURyb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 21 Aug 2018 13:54:31 -0400
+        id S1726743AbeHUR4I (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 21 Aug 2018 13:56:08 -0400
 From: David Howells <dhowells@redhat.com>
-In-Reply-To: <20180821142000.GC24025@twin.jikos.cz>
-References: <20180821142000.GC24025@twin.jikos.cz> <31114.1534417285@warthog.procyon.org.uk> <476.1534859190@warthog.procyon.org.uk>
-To: dsterba@suse.cz, clm@fb.com
-Cc: dhowells@redhat.com, linux-btrfs@vger.kernel.org
-Subject: Re: Do btrfs compression option changes need to be atomic?
+In-Reply-To: <20180821142432.GD24025@twin.jikos.cz>
+References: <20180821142432.GD24025@twin.jikos.cz> <4b5b0a92-8a51-e516-b14a-74557b002d71@gmx.com> <20180816130515.GR24025@twin.jikos.cz> <31114.1534417285@warthog.procyon.org.uk> <32208.1534767847@warthog.procyon.org.uk> <341.1534859015@warthog.procyon.org.uk>
+To: dsterba@suse.cz
+Cc: dhowells@redhat.com, Qu Wenruo <quwenruo.btrfs@gmx.com>, clm@fb.com,
+        linux-btrfs@vger.kernel.org, wqu@suse.de
+Subject: Re: Are the btrfs mount options inconsistent?
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-Date: Tue, 21 Aug 2018 15:34:06 +0100
-Message-ID: <4150.1534862046@warthog.procyon.org.uk>
+Date: Tue, 21 Aug 2018 15:35:42 +0100
+Message-ID: <4246.1534862142@warthog.procyon.org.uk>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 David Sterba <dsterba@suse.cz> wrote:
 
-> Do you mean the compression type (btrfs_fs_info::compress_type) and the
-> related bits in btrfs_fs_info::mount_opt ? There are more compression
-> types but not used in the mount context.  I assume you're interested
-> only in the mount-time settings, otherwise the defrag and per-inode
-> compression has higher priority over the global settings.
+> - nothing: auto-detect non-rotating devices, enable SSD mount option in turn
 
-Yes.  However, it would appear that remount can race with using the fs_info
-variables, so the settings can be changing whilst you're going through the
-compress_file_range() function.
-
-I'm not sure it'll hurt exactly, but you can also find, say, DATACOW being
-disabled whilst you're considering compressing.
-
-> > Further to that, how much of an issue is it if the configuration is split
-> > out into its own struct that is accessed from struct btrfs_fs_info using
-> > RCU?
-> 
-> Depends on how intrusive it's going to be, the mount opions are tested
-> at many places. The RCU overhead and "locking" is lightweight enough so
-> it should not be a problem in principle, but without seeing the code I
-> can't tell.
-
-Actually, a better way of doing this might be to put a subset of the settings
-into a single variable, say:
-
-	struct btrfs_fs_info {
-		...
-		unsigned int	data_storage_opt;
-	#define BTRFS_DATA_NONE			0x0000
-	#define BTRFS_DATA_COW			0x0001
-	#define BTRFS_DATA_SUM			0x0002
-	#define BTRFS_DATA_COMPRESS		0x0003
-	#define BTRFS_DATA_FORCE_COMPRESS	0x0004
-	#define BTRFS_DATA__STORAGE_OPT		0x000f
-	#define BTRFS_DATA_COMPRESS_ZLIB	0x0000
-	#define BTRFS_DATA_COMPRESS_LZO		0x0010
-	#define BTRFS_DATA_COMPRESS_ZSTD	0x0020
-	#define BTRFS_DATA__COMPRESS_TYPE	0x00f0
-	#define BTRFS_DATA__COMPRESS_LEVEL	0x0f00
-		...
-	};
-
-That way it might be possible for the datacow, datasum, compress and
-compress-force options to be handled atomically.
+And it's right that this should only turn on SSD if *all* the devices are
+non-rotating?
 
 David

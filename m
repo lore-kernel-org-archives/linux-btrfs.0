@@ -1,96 +1,113 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.20]:35941 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726590AbeHUSA7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 21 Aug 2018 14:00:59 -0400
-Subject: Re: Are the btrfs mount options inconsistent?
-To: David Howells <dhowells@redhat.com>, dsterba@suse.cz
-Cc: clm@fb.com, linux-btrfs@vger.kernel.org, wqu@suse.de
-References: <20180821142432.GD24025@twin.jikos.cz>
- <4b5b0a92-8a51-e516-b14a-74557b002d71@gmx.com>
- <20180816130515.GR24025@twin.jikos.cz>
+Received: from mx2.suse.de ([195.135.220.15]:46010 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726590AbeHUScM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 21 Aug 2018 14:32:12 -0400
+Date: Tue, 21 Aug 2018 17:11:26 +0200
+From: David Sterba <dsterba@suse.cz>
+To: David Howells <dhowells@redhat.com>
+Cc: dsterba@suse.cz, clm@fb.com, linux-btrfs@vger.kernel.org
+Subject: Re: Do btrfs compression option changes need to be atomic?
+Message-ID: <20180821151126.GE24025@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20180821142000.GC24025@twin.jikos.cz>
  <31114.1534417285@warthog.procyon.org.uk>
- <32208.1534767847@warthog.procyon.org.uk>
- <341.1534859015@warthog.procyon.org.uk>
- <4246.1534862142@warthog.procyon.org.uk>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <b1d99959-568a-43f8-15b2-9f46794c94ce@gmx.com>
-Date: Tue, 21 Aug 2018 22:40:16 +0800
+ <476.1534859190@warthog.procyon.org.uk>
+ <4150.1534862046@warthog.procyon.org.uk>
 MIME-Version: 1.0
-In-Reply-To: <4246.1534862142@warthog.procyon.org.uk>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="MZJEToqwfCa76CVetrNCRIRd7JxyxbAz4"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <4150.1534862046@warthog.procyon.org.uk>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---MZJEToqwfCa76CVetrNCRIRd7JxyxbAz4
-Content-Type: multipart/mixed; boundary="jjEQFhWRwjG9BAjumBg0ZyqYNOiGY8CXI";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: David Howells <dhowells@redhat.com>, dsterba@suse.cz
-Cc: clm@fb.com, linux-btrfs@vger.kernel.org, wqu@suse.de
-Message-ID: <b1d99959-568a-43f8-15b2-9f46794c94ce@gmx.com>
-Subject: Re: Are the btrfs mount options inconsistent?
-References: <20180821142432.GD24025@twin.jikos.cz>
- <4b5b0a92-8a51-e516-b14a-74557b002d71@gmx.com>
- <20180816130515.GR24025@twin.jikos.cz>
- <31114.1534417285@warthog.procyon.org.uk>
- <32208.1534767847@warthog.procyon.org.uk>
- <341.1534859015@warthog.procyon.org.uk>
- <4246.1534862142@warthog.procyon.org.uk>
-In-Reply-To: <4246.1534862142@warthog.procyon.org.uk>
-
---jjEQFhWRwjG9BAjumBg0ZyqYNOiGY8CXI
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
-
-
-
-On 2018/8/21 =E4=B8=8B=E5=8D=8810:35, David Howells wrote:
+On Tue, Aug 21, 2018 at 03:34:06PM +0100, David Howells wrote:
 > David Sterba <dsterba@suse.cz> wrote:
->=20
->> - nothing: auto-detect non-rotating devices, enable SSD mount option i=
-n turn
->=20
-> And it's right that this should only turn on SSD if *all* the devices a=
-re
-> non-rotating?
+> 
+> > Do you mean the compression type (btrfs_fs_info::compress_type) and the
+> > related bits in btrfs_fs_info::mount_opt ? There are more compression
+> > types but not used in the mount context.  I assume you're interested
+> > only in the mount-time settings, otherwise the defrag and per-inode
+> > compression has higher priority over the global settings.
+> 
+> Yes.  However, it would appear that remount can race with using the fs_info
+> variables, so the settings can be changing whilst you're going through the
+> compress_file_range() function.
 
-If I didn't miss anything again, yes.
+compress_file_range reads the compress_type at the beginning, so remount
+does not affect that and the function will continue using that for the
+extent. This is racy in the sense that there's some compression going on
+while the mount options do not say so.
 
-It's btrfs_open_one_device() who updates fs_devices->rotating, and any
-device with rotating disk will set it to 1.
-So it needs all device to to non-rotating to meet
-!fs_info->fs_devices->rotating.
+I think this is not a big deal, there's sync_filesystem call at the
+beginning of remount, so most of the data use the previous settings.
+The window where new IO starts but remount has not updated the mount
+options is short, so yes this is racy though I'm not sure if there's a
+good way to actually measure that. The result is that eg. some extents
+got compressed but should not have been.
 
-Thanks,
-Qu
+The remount would have to flush IO and freeze all new, then change
+options and thaw, but this starts to sound too heavyweight.
 
->=20
-> David
->=20
+> I'm not sure it'll hurt exactly, but you can also find, say, DATACOW being
+> disabled whilst you're considering compressing.
 
+I think the constraint don't need to be strictly atomic, with some
+intermediate states that are valid but neither the old nor what the new
+options say. The race window spans a few instructions so as long as the
+combination is valid or double checked later, I'd consider it ok.
 
---jjEQFhWRwjG9BAjumBg0ZyqYNOiGY8CXI--
+The ordering of the bits set/cleared can prevent unwanted combinations,
+like: when the COMPRESS bit is set, there's no NODATACOW anymore:
 
---MZJEToqwfCa76CVetrNCRIRd7JxyxbAz4
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
+- clear NODATACOW
+- set compress_type
+- set COMPRESS
 
------BEGIN PGP SIGNATURE-----
+I haven't checked with the sources if this is so.
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlt8JFAACgkQwj2R86El
-/qjF3Qf/fsE0lmrI198fpcKS7ns2UN8h9b9PahMj3+iv4H3ayPg33MdEPuLCxuMc
-GmnJa1x7OQH9ynLM4b8iCNdVZqQ0oE59xl4O9+DaSKKeeVbm+u97es2s28JdKZcE
-cx7ecfpm0M2d3vj8wE+V3ayp8NoYbwglvQcRduX+cWM/8EQKVLup0PxbyM5zYIAq
-0Uw2RqTR6N3I+6l08KEWuo/DYQwEYL+4hFd6w8NgwoTMNMsx80JN7EK3awx6I0f6
-Ey969WyzXkda9XiHovEHkFJJeoJXe+btkeVrY8B74bMCMUSjjZO+H7xJLPEJgd5U
-fxUEVAiCRGEJ1pbNlCZfvZt0MMi+fA==
-=6KxT
------END PGP SIGNATURE-----
+> > > Further to that, how much of an issue is it if the configuration is split
+> > > out into its own struct that is accessed from struct btrfs_fs_info using
+> > > RCU?
+> > 
+> > Depends on how intrusive it's going to be, the mount opions are tested
+> > at many places. The RCU overhead and "locking" is lightweight enough so
+> > it should not be a problem in principle, but without seeing the code I
+> > can't tell.
+> 
+> Actually, a better way of doing this might be to put a subset of the settings
+> into a single variable, say:
+> 
+> 	struct btrfs_fs_info {
+> 		...
+> 		unsigned int	data_storage_opt;
+> 	#define BTRFS_DATA_NONE			0x0000
+> 	#define BTRFS_DATA_COW			0x0001
+> 	#define BTRFS_DATA_SUM			0x0002
+> 	#define BTRFS_DATA_COMPRESS		0x0003
+> 	#define BTRFS_DATA_FORCE_COMPRESS	0x0004
+> 	#define BTRFS_DATA__STORAGE_OPT		0x000f
+> 	#define BTRFS_DATA_COMPRESS_ZLIB	0x0000
+> 	#define BTRFS_DATA_COMPRESS_LZO		0x0010
+> 	#define BTRFS_DATA_COMPRESS_ZSTD	0x0020
+> 	#define BTRFS_DATA__COMPRESS_TYPE	0x00f0
+> 	#define BTRFS_DATA__COMPRESS_LEVEL	0x0f00
+> 		...
+> 	};
+> 
+> That way it might be possible for the datacow, datasum, compress and
+> compress-force options to be handled atomically.
 
---MZJEToqwfCa76CVetrNCRIRd7JxyxbAz4--
+So the changes would be possible in one atomic (bitwise) call? Instead
+of:
+
+  clear_bit(opts, NODATACOW)
+  set_bit(opts, COMPRESS)
+
+do:
+
+  set_bits_with_mask(opts, COMPRESS, BTRFS_DATA__STORAGE_OPT)
+
+?
+
+Side note: up to now we're all used to the NO* naming and semantics of
+the feature bits, so it might take some time to do the mental switch.

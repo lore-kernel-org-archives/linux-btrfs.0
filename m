@@ -1,249 +1,101 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.21]:41115 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727241AbeHVIXZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 22 Aug 2018 04:23:25 -0400
-Subject: Re: [PATCH] btrfs-progs: rescue: Add ability to disable quota offline
-To: Su Yue <Damenly_Su@gmx.com>, Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org, dan.merillat@gmail.com
-References: <20180812013358.16431-1-wqu@suse.com>
- <trinity-c93954f2-367f-4aa0-947d-cb5c107877e0-1534905201387@3c-app-mailcom-bs02>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <edfaf3de-db70-7280-2758-66ac8847f4de@gmx.com>
-Date: Wed, 22 Aug 2018 12:59:58 +0800
+Received: from mail-io0-f196.google.com ([209.85.223.196]:46401 "EHLO
+        mail-io0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728546AbeHVOyp (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 22 Aug 2018 10:54:45 -0400
+Received: by mail-io0-f196.google.com with SMTP id y12-v6so1118788ioj.13
+        for <linux-btrfs@vger.kernel.org>; Wed, 22 Aug 2018 04:30:14 -0700 (PDT)
+Received: from [191.9.206.254] (rrcs-70-62-41-24.central.biz.rr.com. [70.62.41.24])
+        by smtp.gmail.com with ESMTPSA id l5-v6sm449463ioq.2.2018.08.22.04.30.11
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Wed, 22 Aug 2018 04:30:12 -0700 (PDT)
+Subject: =?UTF-8?Q?Re:_lazytime_mount_option=e2=80=94no_support_in_Btrfs?=
+To: linux-btrfs@vger.kernel.org
+References: <ompef3$sim$1@blaine.gmane.org>
+ <a9037e77-5ea6-fadd-23a1-6cd1f2770220@dirtcellar.net>
+ <2641568.fxl50hTsRH@merkaba> <E6FB1ABD-4C84-422B-BD9D-E46D96D03155@gmail.com>
+ <088684be-c1ff-c144-6ff7-e41670669c7e@gmail.com>
+ <20180821120636.fatftem5qbhv22m4@angband.pl>
+ <d959efa3-4e45-c471-625d-c4ad747083ad@gmail.com>
+ <CANznX5EwH-DSNzFwCiUrLgxA8P_nrNQoVfPQDQ=v6jM2_dEHAw@mail.gmail.com>
+ <774d8406-d8c8-f26b-b176-8ac954c59722@gmail.com>
+ <20180821160547.GF24025@twin.jikos.cz>
+ <49b2ad81-256a-981e-cf6c-04e3bf32e932@gmail.com>
+ <pan$4b9b5$2e5ff999$1d9fa649$483aa66c@cox.net>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <3a460831-0924-7615-0977-b32ab82cbece@gmail.com>
+Date: Wed, 22 Aug 2018 07:30:09 -0400
 MIME-Version: 1.0
-In-Reply-To: <trinity-c93954f2-367f-4aa0-947d-cb5c107877e0-1534905201387@3c-app-mailcom-bs02>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="6wsjwUMLFyWQw9xkeITdtJa5ZXhr5ywpZ"
+In-Reply-To: <pan$4b9b5$2e5ff999$1d9fa649$483aa66c@cox.net>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---6wsjwUMLFyWQw9xkeITdtJa5ZXhr5ywpZ
-Content-Type: multipart/mixed; boundary="RM6nz9C6Wo5ou4xStXOl5v3sXOQS5wpCQ";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Su Yue <Damenly_Su@gmx.com>, Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org, dan.merillat@gmail.com
-Message-ID: <edfaf3de-db70-7280-2758-66ac8847f4de@gmx.com>
-Subject: Re: [PATCH] btrfs-progs: rescue: Add ability to disable quota offline
-References: <20180812013358.16431-1-wqu@suse.com>
- <trinity-c93954f2-367f-4aa0-947d-cb5c107877e0-1534905201387@3c-app-mailcom-bs02>
-In-Reply-To: <trinity-c93954f2-367f-4aa0-947d-cb5c107877e0-1534905201387@3c-app-mailcom-bs02>
-
---RM6nz9C6Wo5ou4xStXOl5v3sXOQS5wpCQ
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
-
-
-
-On 2018/8/22 =E4=B8=8A=E5=8D=8810:33, Su Yue wrote:
->=20
->=20
->> Sent: Sunday, August 12, 2018 at 9:33 AM
->> From: "Qu Wenruo" <wqu@suse.com>
->> To: linux-btrfs@vger.kernel.org, dan.merillat@gmail.com
->> Subject: [PATCH] btrfs-progs: rescue: Add ability to disable quota off=
-line
->>
->> Provide an offline tool to disable quota.
->>
->> For kernel which skip_balance doesn't work, there is no way to disable=
-
->> quota on huge fs with balance, as quota will cause balance to hang for=
- a
->> long long time for each tree block switch.
->>
-> Make sense the use case.
->=20
->> So add an offline rescue tool to disable quota.
->>
->=20
->> Reported-by: Dan Merillat <dan.merillat@gmail.com>
->> Signed-off-by: Qu Wenruo <wqu@suse.com>
->=20
-> Some nitpicks below.
-> After fixes them, you can add tag:
->=20
-> Reviewed-by: Su Yue <suy.fnst@cn.fujitsu.com>
->=20
->> ---
->> This can patch can be fetched from github repo:
->> https://github.com/adam900710/btrfs-progs/tree/quota_disable
->> ---
->>  Documentation/btrfs-rescue.asciidoc |  6 +++
->>  cmds-rescue.c                       | 80 ++++++++++++++++++++++++++++=
-+
->>  2 files changed, 86 insertions(+)
->>
->> diff --git a/Documentation/btrfs-rescue.asciidoc b/Documentation/btrfs=
--rescue.asciidoc
->> index f94a0ff2b45e..fb088c1a768a 100644
->> --- a/Documentation/btrfs-rescue.asciidoc
->> +++ b/Documentation/btrfs-rescue.asciidoc
->> @@ -31,6 +31,12 @@ help.
->>  NOTE: Since *chunk-recover* will scan the whole device, it will be *V=
-ERY* slow
->>  especially executed on a large device.
->> =20
->> +*disable-quota* <device>::
->> +disable quota offline
->> ++
->> +Acts as a fallback method to disable quota for case where mount hangs=
- due to
->> +balance and quota.
->> +
->>  *fix-device-size* <device>::
->>  fix device size and super block total bytes values that are do not ma=
-tch
->>  +
->> diff --git a/cmds-rescue.c b/cmds-rescue.c
->> index 38c4ab9b2ef6..c7cd92427e9d 100644
->> --- a/cmds-rescue.c
->> +++ b/cmds-rescue.c
->> @@ -250,6 +250,84 @@ out:
->>  	return !!ret;
->>  }
->> =20
->> +static const char * const cmd_rescue_disable_quota_usage[] =3D {
->> +	"btrfs rescue disable-quota <device>",
->> +	"Disable quota, especially useful for balance mount hang when quota =
-enabled",
->> +	"",
->> +	NULL
->> +};
->> +
->> +static int cmd_rescue_disable_quota(int argc, char **argv)
->> +{
->> +	struct btrfs_trans_handle *trans;
->> +	struct btrfs_fs_info *fs_info;
->> +	struct btrfs_path path;
->> +	struct btrfs_root *root;
->> +	struct btrfs_qgroup_status_item *qi;
->> +	struct btrfs_key key;
->> +	char *devname;
->> +	int ret;
->> +
->> +	clean_args_no_options(argc, argv, cmd_rescue_disable_quota_usage);
->> +	if (check_argc_exact(argc, 2))
->> +		usage(cmd_rescue_disable_quota_usage);
->> +
->> +	devname =3D argv[optind];
->> +	ret =3D check_mounted(devname);
->> +	if (ret < 0) {
->> +		error("could not check mount status: %s", strerror(-ret));
->> +		return !!ret;
->> +	} else if (ret) {
->> +		error("%s is currently mounted", devname);
->> +		return !!ret;
->> +	}
->> +	fs_info =3D open_ctree_fs_info(devname, 0, 0, 0, OPEN_CTREE_WRITES);=
-
->=20
-> Not undertstand why not add OPEN_CTREE_PARTIAL here?
-> The function is located in cmd-rescue, so may the FS is corrupted alrea=
-dy?
-
-Here I'm trying to avoid anything wrong with extent tree.
-
-In that case, even we only CoW one tree block, with corrupted extent
-tree we could screw up the whole fs further more.
-
-So I avoid OPEN_CTREE_PARTIAL here.
-
->=20
->> +	if (!fs_info) {
->> +		error("could not open btrfs");
->> +		ret =3D -EIO;
->> +		return !!ret;
->> +	}
->> +	root =3D fs_info->quota_root;
->> +	if (!root) {
->> +		printf("Quota is not enabled, no need to modify the fs\n");
->> +		goto close;
->> +	}
->> +	btrfs_init_path(&path);
->> +	trans =3D btrfs_start_transaction(root, 1);
->> +	if (IS_ERR(trans)) {
->> +		ret =3D PTR_ERR(trans);
->> +		error("failed to start transaction: %s", strerror(-ret));
->> +		goto close;
->> +	}
->> +	key.objectid =3D 0;
->> +	key.type =3D BTRFS_QGROUP_STATUS_KEY;
->> +	key.offset =3D 0;
->> +	ret =3D btrfs_search_slot(trans, root, &key, &path, 0, 1);
->> +	if (ret < 0) {
->> +		error("failed to search tree: %s", strerror(-ret));
->> +		goto close;
->> +	}
->> +	if (ret > 0) {
->> +		printf(
->> +		"qgroup status item not found, not need to modify the fs");
-> nits: s/qgroup/Qgroup and a linebreaker is needed.
-
-Oh, I forgot that,
-
-Thanks for pointing this out,
-Qu
-
->=20
->> +		ret =3D 0;
->> +		goto release;
->> +	}
->> +	qi =3D btrfs_item_ptr(path.nodes[0], path.slots[0],
->> +			    struct btrfs_qgroup_status_item);
->> +	btrfs_set_qgroup_status_flags(path.nodes[0], qi,
->> +			BTRFS_QGROUP_STATUS_FLAG_INCONSISTENT);
->> +	btrfs_mark_buffer_dirty(path.nodes[0]);
->> +	ret =3D btrfs_commit_transaction(trans, root);
->> +	if (ret < 0)
->> +		error("failed to commit transaction: %s", strerror(-ret));
->> +release:
->> +	btrfs_release_path(&path);
->> +close:
->> +	close_ctree(fs_info->tree_root);
->> +	return !!ret;
->> +}
->> +
->>  static const char rescue_cmd_group_info[] =3D
->>  "toolbox for specific rescue operations";
->> =20
->> @@ -262,6 +340,8 @@ const struct cmd_group rescue_cmd_group =3D {
->>  		{ "zero-log", cmd_rescue_zero_log, cmd_rescue_zero_log_usage, NULL,=
- 0},
->>  		{ "fix-device-size", cmd_rescue_fix_device_size,
->>  			cmd_rescue_fix_device_size_usage, NULL, 0},
->> +		{ "disable-quota", cmd_rescue_disable_quota,
->> +			cmd_rescue_disable_quota_usage, NULL, 0},
->>  		NULL_CMD_STRUCT
->>  	}
->>  };
->> --=20
->> 2.18.0
->>
->>
-
-
---RM6nz9C6Wo5ou4xStXOl5v3sXOQS5wpCQ--
-
---6wsjwUMLFyWQw9xkeITdtJa5ZXhr5ywpZ
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlt87c4ACgkQwj2R86El
-/qiNqwgAreRLiCXwLDtKRyMgmKF8bBnlY5LpkNfzjpYxQ10+h6JwbBnZuhvz4Fc/
-w6VknE3WA17Io2poq5Hm+mkgSCsm46xr3GpLCPyxEsAY4W6kRHKJEErvtcr15/vU
-6JMFuWsI5lz2vWJ2QwIEl7pMtqFRsgAxuViZnPymzNH3LwPxKBBIO03TDB0jycFI
-YSRaZorIa78QWe/vVI2hKdxrlxIssQhn5bakdinU6nGjp6+bhevXd7U1rUZrugfY
-DIlEWq8jAJgwvBOexiy8nV/ZIxNLNzVSqCcrR1/D0+1qOh2aaE64g0VjAOsd0usU
-Fpd79TFacI2dg0Rqs1qrLlfq9nhKKg==
-=S0KB
------END PGP SIGNATURE-----
-
---6wsjwUMLFyWQw9xkeITdtJa5ZXhr5ywpZ--
+On 2018-08-21 23:57, Duncan wrote:
+> Austin S. Hemmelgarn posted on Tue, 21 Aug 2018 13:01:00 -0400 as
+> excerpted:
+> 
+>> Otherwise, the only option for people who want it set is to patch the
+>> kernel to get noatime as the default (instead of relatime).  I would
+>> look at pushing such a patch upstream myself actually, if it weren't for
+>> the fact that I'm fairly certain that it would be immediately NACK'ed by
+>> at least Linus, and probably a couple of other people too.
+> 
+> What about making default-noatime a kconfig option, presumably set to
+> default-relatime by default?  That seems to be the way many legacy-
+> incompatible changes work.  Then for most it's up to the distro, which in
+> fact it is already, only if the distro set noatime-default they'd at
+> least be using an upstream option instead of patching it themselves,
+> making it upstream code that could be accounted for instead of downstream
+> code that... who knows?
+That's probably a lot more likely to make it upstream, but it's a bit 
+beyond my skills when it comes to stuff like this.
+> 
+> Meanwhile, I'd be interested in seeing your local patch.  I'm local-
+> patching noatime-default here too, but not being a dev, I'm not entirely
+> sure I'm doing it "correctly", tho AFAICT it does seem to work.  FWIW,
+> here's what I'm doing (posting inline so may be white-space damaged, and
+> IIRC I just recently manually updated the line numbers so they don't
+> reflect the code at the 2014 date any more, but as I'm not sure of the
+> "correctness" it's not intended to be applied in any case):
+> 
+> --- fs/namespace.c.orig	2014-04-18 23:54:42.167666098 -0700
+> +++ fs/namespace.c	2014-04-19 00:19:08.622741946 -0700
+> @@ -2823,8 +2823,9 @@ long do_mount(const char *dev_name, cons
+>   		goto dput_out;
+>   
+>   	/* Default to relatime unless overriden */
+> -	if (!(flags & MS_NOATIME))
+> -		mnt_flags |= MNT_RELATIME;
+> +	/* JED: Make that noatime */
+> +	if (!(flags & MS_RELATIME))
+> +		mnt_flags |= MNT_NOATIME;
+>   
+>   	/* Separate the per-mountpoint flags */
+>   	if (flags & MS_NOSUID)
+> @@ -2837,6 +2837,8 @@ long do_mount(const char *dev_name, cons
+>   		mnt_flags |= MNT_NOATIME;
+>   	if (flags & MS_NODIRATIME)
+>   		mnt_flags |= MNT_NODIRATIME;
+> +	if (flags & MS_RELATIME)
+> +		mnt_flags |= MNT_RELATIME;
+>   	if (flags & MS_STRICTATIME)
+>   	mnt_flags &= ~(MNT_RELATIME | MNT_NOATIME);
+>   	if (flags & MS_RDONLY)
+> 
+> Sane, or am I "doing it wrong!"(TM), or perhaps doing it correctly, but
+> missing a chunk that should be applied elsewhere?
+Mine only has the first part, not the second, which seems to cover 
+making sure it's noatime by default.  I never use relatime though, so 
+that may be broken with my patch because of me not having the second part.
+> 
+> 
+> Meanwhile, since broken rootflags requiring an initr* came up let me take
+> the opportunity to ask once again, does btrfs-raid1 root still require an
+> initr*?  It'd be /so/ nice to be able to supply the appropriate
+> rootflags=device=...,device=... and actually have it work so I didn't
+> need the initr* any longer!
+Last I knew, specifying appropriate `device=` options in rootflags works 
+correctly without an initrd.

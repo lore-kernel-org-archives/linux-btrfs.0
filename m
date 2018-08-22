@@ -1,149 +1,202 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from out30-132.freemail.mail.aliyun.com ([115.124.30.132]:57713 "EHLO
-        out30-132.freemail.mail.aliyun.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1727687AbeHVXSr (ORCPT
+Received: from out30-133.freemail.mail.aliyun.com ([115.124.30.133]:58715 "EHLO
+        out30-133.freemail.mail.aliyun.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1728146AbeHVXSs (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 22 Aug 2018 19:18:47 -0400
+        Wed, 22 Aug 2018 19:18:48 -0400
 From: Liu Bo <bo.liu@linux.alibaba.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 3/5] Btrfs: delayed_items: use rb_first_cached
-Date: Thu, 23 Aug 2018 03:51:51 +0800
-Message-Id: <1534967513-117382-4-git-send-email-bo.liu@linux.alibaba.com>
+Subject: [PATCH 4/5] Btrfs: extent_map: use rb_first_cached
+Date: Thu, 23 Aug 2018 03:51:52 +0800
+Message-Id: <1534967513-117382-5-git-send-email-bo.liu@linux.alibaba.com>
 In-Reply-To: <1534967513-117382-1-git-send-email-bo.liu@linux.alibaba.com>
 References: <1534967513-117382-1-git-send-email-bo.liu@linux.alibaba.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-rb_first_cached() trades an extra pointer "leftmost" for doing the same
-job as rb_first() but in O(1).
+rb_first_cached() trades an extra pointer "leftmost" for doing the
+same job as rb_first() but in O(1).
 
-Functions manipulating delayed_item need to get the first entry, this
-converts it to use rb_first_cached().
+As evict_inode_truncate_pages() removes all extent mapping by always
+looking for the first rb entry, it's helpful to use rb_first_cached
+instead.
 
 Signed-off-by: Liu Bo <bo.liu@linux.alibaba.com>
 ---
- fs/btrfs/delayed-inode.c | 29 ++++++++++++++++-------------
- fs/btrfs/delayed-inode.h |  4 ++--
- 2 files changed, 18 insertions(+), 15 deletions(-)
+ fs/btrfs/extent_map.c             | 27 +++++++++++++++------------
+ fs/btrfs/extent_map.h             |  2 +-
+ fs/btrfs/inode.c                  |  4 ++--
+ fs/btrfs/tests/extent-map-tests.c |  4 ++--
+ fs/btrfs/volumes.c                |  5 +++--
+ 5 files changed, 23 insertions(+), 19 deletions(-)
 
-diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-index db9f45082c61..72569849828e 100644
---- a/fs/btrfs/delayed-inode.c
-+++ b/fs/btrfs/delayed-inode.c
-@@ -42,8 +42,8 @@ static inline void btrfs_init_delayed_node(
- 	delayed_node->root = root;
- 	delayed_node->inode_id = inode_id;
- 	refcount_set(&delayed_node->refs, 0);
--	delayed_node->ins_root = RB_ROOT;
--	delayed_node->del_root = RB_ROOT;
-+	delayed_node->ins_root = RB_ROOT_CACHED;
-+	delayed_node->del_root = RB_ROOT_CACHED;
- 	mutex_init(&delayed_node->mutex);
- 	INIT_LIST_HEAD(&delayed_node->n_list);
- 	INIT_LIST_HEAD(&delayed_node->p_list);
-@@ -390,7 +390,7 @@ static struct btrfs_delayed_item *__btrfs_lookup_delayed_insertion_item(
- 					struct btrfs_delayed_node *delayed_node,
- 					struct btrfs_key *key)
+diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
+index 6648d55e5339..819420eab91d 100644
+--- a/fs/btrfs/extent_map.c
++++ b/fs/btrfs/extent_map.c
+@@ -34,7 +34,7 @@ void __cold extent_map_exit(void)
+  */
+ void extent_map_tree_init(struct extent_map_tree *tree)
  {
--	return __btrfs_lookup_delayed_item(&delayed_node->ins_root, key,
-+	return __btrfs_lookup_delayed_item(&delayed_node->ins_root.rb_root, key,
- 					   NULL, NULL);
+-	tree->map = RB_ROOT;
++	tree->map = RB_ROOT_CACHED;
+ 	INIT_LIST_HEAD(&tree->modified_extents);
+ 	rwlock_init(&tree->lock);
+ }
+@@ -90,24 +90,27 @@ static u64 range_end(u64 start, u64 len)
+ 	return start + len;
  }
  
-@@ -400,9 +400,10 @@ static int __btrfs_add_delayed_item(struct btrfs_delayed_node *delayed_node,
+-static int tree_insert(struct rb_root *root, struct extent_map *em)
++static int tree_insert(struct rb_root_cached *root, struct extent_map *em)
  {
- 	struct rb_node **p, *node;
- 	struct rb_node *parent_node = NULL;
--	struct rb_root *root;
-+	struct rb_root_cached *root;
- 	struct btrfs_delayed_item *item;
- 	int cmp;
+-	struct rb_node **p = &root->rb_node;
++	struct rb_node **p = &root->rb_root.rb_node;
+ 	struct rb_node *parent = NULL;
+ 	struct extent_map *entry = NULL;
+ 	struct rb_node *orig_parent = NULL;
+ 	u64 end = range_end(em->start, em->len);
 +	bool leftmost = true;
  
- 	if (action == BTRFS_DELAYED_INSERTION_ITEM)
- 		root = &delayed_node->ins_root;
-@@ -410,7 +411,7 @@ static int __btrfs_add_delayed_item(struct btrfs_delayed_node *delayed_node,
- 		root = &delayed_node->del_root;
- 	else
- 		BUG();
--	p = &root->rb_node;
-+	p = &root->rb_root.rb_node;
- 	node = &ins->rb_node;
- 
  	while (*p) {
-@@ -419,16 +420,18 @@ static int __btrfs_add_delayed_item(struct btrfs_delayed_node *delayed_node,
- 				 rb_node);
+ 		parent = *p;
+ 		entry = rb_entry(parent, struct extent_map, rb_node);
  
- 		cmp = btrfs_comp_cpu_keys(&item->key, &ins->key);
--		if (cmp < 0)
-+		if (cmp < 0) {
- 			p = &(*p)->rb_right;
--		else if (cmp > 0)
-+			leftmost = false;
-+		} else if (cmp > 0) {
+-		if (em->start < entry->start)
++		if (em->start < entry->start) {
  			p = &(*p)->rb_left;
+-		else if (em->start >= extent_map_end(entry))
++		} else if (em->start >= extent_map_end(entry)) {
+ 			p = &(*p)->rb_right;
 -		else
++			leftmost = false;
 +		} else {
  			return -EEXIST;
 +		}
  	}
  
- 	rb_link_node(node, parent_node, p);
--	rb_insert_color(node, root);
-+	rb_insert_color_cached(node, root, leftmost);
- 	ins->delayed_node = delayed_node;
- 	ins->ins_or_del = action;
+ 	orig_parent = parent;
+@@ -130,7 +133,7 @@ static int tree_insert(struct rb_root *root, struct extent_map *em)
+ 			return -EEXIST;
  
-@@ -468,7 +471,7 @@ static void finish_one_item(struct btrfs_delayed_root *delayed_root)
+ 	rb_link_node(&em->rb_node, orig_parent, p);
+-	rb_insert_color(&em->rb_node, root);
++	rb_insert_color_cached(&em->rb_node, root, leftmost);
+ 	return 0;
+ }
  
- static void __btrfs_remove_delayed_item(struct btrfs_delayed_item *delayed_item)
- {
--	struct rb_root *root;
-+	struct rb_root_cached *root;
- 	struct btrfs_delayed_root *delayed_root;
+@@ -242,7 +245,7 @@ static void try_merge_map(struct extent_map_tree *tree, struct extent_map *em)
+ 			em->mod_start = merge->mod_start;
+ 			em->generation = max(em->generation, merge->generation);
  
- 	delayed_root = delayed_item->delayed_node->root->fs_info->delayed_root;
-@@ -482,7 +485,7 @@ static void __btrfs_remove_delayed_item(struct btrfs_delayed_item *delayed_item)
- 	else
- 		root = &delayed_item->delayed_node->del_root;
+-			rb_erase(&merge->rb_node, &tree->map);
++			rb_erase_cached(&merge->rb_node, &tree->map);
+ 			RB_CLEAR_NODE(&merge->rb_node);
+ 			free_extent_map(merge);
+ 		}
+@@ -254,7 +257,7 @@ static void try_merge_map(struct extent_map_tree *tree, struct extent_map *em)
+ 	if (rb && mergable_maps(em, merge)) {
+ 		em->len += merge->len;
+ 		em->block_len += merge->block_len;
+-		rb_erase(&merge->rb_node, &tree->map);
++		rb_erase_cached(&merge->rb_node, &tree->map);
+ 		RB_CLEAR_NODE(&merge->rb_node);
+ 		em->mod_len = (merge->mod_start + merge->mod_len) - em->mod_start;
+ 		em->generation = max(em->generation, merge->generation);
+@@ -367,7 +370,7 @@ int add_extent_mapping(struct extent_map_tree *tree,
+ 	struct rb_node *next = NULL;
+ 	u64 end = range_end(start, len);
  
--	rb_erase(&delayed_item->rb_node, root);
-+	rb_erase_cached(&delayed_item->rb_node, root);
- 	delayed_item->delayed_node->count--;
+-	rb_node = __tree_search(&tree->map, start, &prev, &next);
++	rb_node = __tree_search(&tree->map.rb_root, start, &prev, &next);
+ 	if (!rb_node) {
+ 		if (prev)
+ 			rb_node = prev;
+@@ -433,7 +436,7 @@ int remove_extent_mapping(struct extent_map_tree *tree, struct extent_map *em)
+ 	int ret = 0;
  
- 	finish_one_item(delayed_root);
-@@ -503,7 +506,7 @@ static struct btrfs_delayed_item *__btrfs_first_delayed_insertion_item(
- 	struct rb_node *p;
- 	struct btrfs_delayed_item *item = NULL;
+ 	WARN_ON(test_bit(EXTENT_FLAG_PINNED, &em->flags));
+-	rb_erase(&em->rb_node, &tree->map);
++	rb_erase_cached(&em->rb_node, &tree->map);
+ 	if (!test_bit(EXTENT_FLAG_LOGGING, &em->flags))
+ 		list_del_init(&em->list);
+ 	RB_CLEAR_NODE(&em->rb_node);
+@@ -449,7 +452,7 @@ void replace_extent_mapping(struct extent_map_tree *tree,
+ 	ASSERT(extent_map_in_tree(cur));
+ 	if (!test_bit(EXTENT_FLAG_LOGGING, &cur->flags))
+ 		list_del_init(&cur->list);
+-	rb_replace_node(&cur->rb_node, &new->rb_node, &tree->map);
++	rb_replace_node_cached(&cur->rb_node, &new->rb_node, &tree->map);
+ 	RB_CLEAR_NODE(&cur->rb_node);
  
--	p = rb_first(&delayed_node->ins_root);
-+	p = rb_first_cached(&delayed_node->ins_root);
- 	if (p)
- 		item = rb_entry(p, struct btrfs_delayed_item, rb_node);
+ 	setup_extent_mapping(tree, new, modified);
+diff --git a/fs/btrfs/extent_map.h b/fs/btrfs/extent_map.h
+index 25d985e7532a..6afe786bf6d0 100644
+--- a/fs/btrfs/extent_map.h
++++ b/fs/btrfs/extent_map.h
+@@ -49,7 +49,7 @@ struct extent_map {
+ };
  
-@@ -516,7 +519,7 @@ static struct btrfs_delayed_item *__btrfs_first_delayed_deletion_item(
- 	struct rb_node *p;
- 	struct btrfs_delayed_item *item = NULL;
+ struct extent_map_tree {
+-	struct rb_root map;
++	struct rb_root_cached map;
+ 	struct list_head modified_extents;
+ 	rwlock_t lock;
+ };
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 6e761cec1f2a..10e86f7b5398 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -5252,10 +5252,10 @@ static void evict_inode_truncate_pages(struct inode *inode)
+ 	truncate_inode_pages_final(&inode->i_data);
  
--	p = rb_first(&delayed_node->del_root);
-+	p = rb_first_cached(&delayed_node->del_root);
- 	if (p)
- 		item = rb_entry(p, struct btrfs_delayed_item, rb_node);
+ 	write_lock(&map_tree->lock);
+-	while (!RB_EMPTY_ROOT(&map_tree->map)) {
++	while (!RB_EMPTY_ROOT(&map_tree->map.rb_root)) {
+ 		struct extent_map *em;
  
-diff --git a/fs/btrfs/delayed-inode.h b/fs/btrfs/delayed-inode.h
-index 33536cd681d4..74ae226ffaf0 100644
---- a/fs/btrfs/delayed-inode.h
-+++ b/fs/btrfs/delayed-inode.h
-@@ -50,8 +50,8 @@ struct btrfs_delayed_node {
- 	 * is waiting to be dealt with by the async worker.
- 	 */
- 	struct list_head p_list;
--	struct rb_root ins_root;
--	struct rb_root del_root;
-+	struct rb_root_cached ins_root;
-+	struct rb_root_cached del_root;
- 	struct mutex mutex;
- 	struct btrfs_inode_item inode_item;
- 	refcount_t refs;
+-		node = rb_first(&map_tree->map);
++		node = rb_first_cached(&map_tree->map);
+ 		em = rb_entry(node, struct extent_map, rb_node);
+ 		clear_bit(EXTENT_FLAG_PINNED, &em->flags);
+ 		clear_bit(EXTENT_FLAG_LOGGING, &em->flags);
+diff --git a/fs/btrfs/tests/extent-map-tests.c b/fs/btrfs/tests/extent-map-tests.c
+index 385a5316e4bf..bf15d3a7f20e 100644
+--- a/fs/btrfs/tests/extent-map-tests.c
++++ b/fs/btrfs/tests/extent-map-tests.c
+@@ -12,8 +12,8 @@ static void free_extent_map_tree(struct extent_map_tree *em_tree)
+ 	struct extent_map *em;
+ 	struct rb_node *node;
+ 
+-	while (!RB_EMPTY_ROOT(&em_tree->map)) {
+-		node = rb_first(&em_tree->map);
++	while (!RB_EMPTY_ROOT(&em_tree->map.rb_root)) {
++		node = rb_first_cached(&em_tree->map);
+ 		em = rb_entry(node, struct extent_map, rb_node);
+ 		remove_extent_mapping(em_tree, em);
+ 
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index da86706123ff..24d37d22a361 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1613,7 +1613,7 @@ static u64 find_next_chunk(struct btrfs_fs_info *fs_info)
+ 
+ 	em_tree = &fs_info->mapping_tree.map_tree;
+ 	read_lock(&em_tree->lock);
+-	n = rb_last(&em_tree->map);
++	n = rb_last(&em_tree->map.rb_root);
+ 	if (n) {
+ 		em = rb_entry(n, struct extent_map, rb_node);
+ 		ret = em->start + em->len;
+@@ -7433,7 +7433,8 @@ static int verify_chunk_dev_extent_mapping(struct btrfs_fs_info *fs_info)
+ 	int ret = 0;
+ 
+ 	read_lock(&em_tree->lock);
+-	for (node = rb_first(&em_tree->map); node; node = rb_next(node)) {
++	for (node = rb_first_cached(&em_tree->map); node;
++	     node = rb_next(node)) {
+ 		em = rb_entry(node, struct extent_map, rb_node);
+ 		if (em->map_lookup->num_stripes !=
+ 		    em->map_lookup->verified_stripes) {
 -- 
 1.8.3.1

@@ -1,53 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:37106 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725979AbeHWJjh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 23 Aug 2018 05:39:37 -0400
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 30D4DAFD2
-        for <linux-btrfs@vger.kernel.org>; Thu, 23 Aug 2018 06:11:34 +0000 (UTC)
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: print-tree: Skip deprecated blockptr / nodesize output
-Date: Thu, 23 Aug 2018 14:11:29 +0800
-Message-Id: <20180823061129.9412-1-wqu@suse.com>
+Received: from out30-132.freemail.mail.aliyun.com ([115.124.30.132]:52688 "EHLO
+        out30-132.freemail.mail.aliyun.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1726762AbeHWDD2 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 22 Aug 2018 23:03:28 -0400
+From: Liu Bo <bo.liu@linux.alibaba.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: set leave_spinning in btrfs_get_extent
+Date: Thu, 23 Aug 2018 07:36:18 +0800
+Message-Id: <1534980978-91392-2-git-send-email-bo.liu@linux.alibaba.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When printing tree nodes, we output slots like:
-key (EXTENT_TREE ROOT_ITEM 0) block 73625600 (17975) gen 16
+Unless it's going to read inline extents from btree leaf to page,
+btrfs_get_extent won't sleep during the period of holding path lock.
 
-The number in the parentheses is blockptr / nodesize.
+This sets leave_spinning at first and sets path to blocking mode right
+before reading inline extent if that's the case.  The benefit is that a
+path in spinning mode typically has less impact (faster) on waiters
+rather than that in blocking mode.
 
-However this number doesn't really do any thing useful.
-And in fact for unaligned metadata block group (block group start bytenr
-is not aligned to 16K), the number doesn't even make sense as it's
-rounded down.
-
-In factor kernel doesn't ever output such divided result in its
-print-tree.c
-
-Remove it so later reader won't wonder what the number means.
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
+Signed-off-by: Liu Bo <bo.liu@linux.alibaba.com>
 ---
- print-tree.c | 3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
+ fs/btrfs/inode.c | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
 
-diff --git a/print-tree.c b/print-tree.c
-index a09ecfbb28f0..31f6fa12522f 100644
---- a/print-tree.c
-+++ b/print-tree.c
-@@ -1420,9 +1420,8 @@ void btrfs_print_tree(struct extent_buffer *eb, int follow)
- 		btrfs_disk_key_to_cpu(&key, &disk_key);
- 		printf("\t");
- 		btrfs_print_key(&disk_key);
--		printf(" block %llu (%llu) gen %llu\n",
-+		printf(" block %llu gen %llu\n",
- 		       (unsigned long long)blocknr,
--		       (unsigned long long)blocknr / eb->len,
- 		       (unsigned long long)btrfs_node_ptr_generation(eb, i));
- 		fflush(stdout);
- 	}
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 10e86f7b5398..4219be9c21f9 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -6843,6 +6843,12 @@ struct extent_map *btrfs_get_extent(struct btrfs_inode *inode,
+ 	 */
+ 	path->reada = READA_FORWARD;
+ 
++	/*
++	 * Unless we're going to uncompress inline extent, no sleep would
++	 * happen.
++	 */
++	path->leave_spinning = 1;
++
+ 	ret = btrfs_lookup_file_extent(NULL, root, path, objectid, start, 0);
+ 	if (ret < 0) {
+ 		err = ret;
+@@ -6945,6 +6951,8 @@ struct extent_map *btrfs_get_extent(struct btrfs_inode *inode,
+ 		em->orig_block_len = em->len;
+ 		em->orig_start = em->start;
+ 		ptr = btrfs_file_extent_inline_start(item) + extent_offset;
++
++		btrfs_set_path_blocking(path);
+ 		if (!PageUptodate(page)) {
+ 			if (btrfs_file_extent_compression(leaf, item) !=
+ 			    BTRFS_COMPRESS_NONE) {
+@@ -6992,10 +7000,10 @@ struct extent_map *btrfs_get_extent(struct btrfs_inode *inode,
+ 	err = btrfs_add_extent_mapping(fs_info, em_tree, &em, start, len);
+ 	write_unlock(&em_tree->lock);
+ out:
++	btrfs_free_path(path);
+ 
+ 	trace_btrfs_get_extent(root, inode, em);
+ 
+-	btrfs_free_path(path);
+ 	if (err) {
+ 		free_extent_map(em);
+ 		return ERR_PTR(err);
 -- 
-2.18.0
+1.8.3.1

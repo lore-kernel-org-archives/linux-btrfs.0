@@ -1,65 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from out30-132.freemail.mail.aliyun.com ([115.124.30.132]:44200 "EHLO
-        out30-132.freemail.mail.aliyun.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1728146AbeHVXSq (ORCPT
+Received: from out30-130.freemail.mail.aliyun.com ([115.124.30.130]:56865 "EHLO
+        out30-130.freemail.mail.aliyun.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1728203AbeHVXSr (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 22 Aug 2018 19:18:46 -0400
+        Wed, 22 Aug 2018 19:18:47 -0400
 From: Liu Bo <bo.liu@linux.alibaba.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 1/5] Btrfs: href_root: use rb_first_cached
-Date: Thu, 23 Aug 2018 03:51:49 +0800
-Message-Id: <1534967513-117382-2-git-send-email-bo.liu@linux.alibaba.com>
+Subject: [PATCH 2/5] Btrfs: href->ref_tree: use rb_first_cached
+Date: Thu, 23 Aug 2018 03:51:50 +0800
+Message-Id: <1534967513-117382-3-git-send-email-bo.liu@linux.alibaba.com>
 In-Reply-To: <1534967513-117382-1-git-send-email-bo.liu@linux.alibaba.com>
 References: <1534967513-117382-1-git-send-email-bo.liu@linux.alibaba.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-rb_first_cached() trades an extra pointer "leftmost" for doing the
-same job as rb_first() but in O(1).
+rb_first_cached() trades an extra pointer "leftmost" for doing the same
+job as rb_first() but in O(1).
 
-Functions manipulating href_root need to get the first entry, this
-converts href_root to use rb_first_cached().
+Functions manipulating href->ref_tree need to get the first entry, this
+converts href->ref_tree to use rb_first_cached().
 
 Signed-off-by: Liu Bo <bo.liu@linux.alibaba.com>
 ---
- fs/btrfs/delayed-ref.c | 26 +++++++++++++++-----------
+ fs/btrfs/backref.c     |  2 +-
+ fs/btrfs/delayed-ref.c | 24 ++++++++++++++----------
  fs/btrfs/delayed-ref.h |  2 +-
  fs/btrfs/disk-io.c     |  4 ++--
- fs/btrfs/extent-tree.c |  6 +++---
- fs/btrfs/transaction.c |  5 +++--
- 5 files changed, 24 insertions(+), 19 deletions(-)
+ fs/btrfs/extent-tree.c | 13 +++++++------
+ 5 files changed, 25 insertions(+), 20 deletions(-)
 
+diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+index ae750b1574a2..bc1ea6e9ea4f 100644
+--- a/fs/btrfs/backref.c
++++ b/fs/btrfs/backref.c
+@@ -769,7 +769,7 @@ static int add_delayed_refs(const struct btrfs_fs_info *fs_info,
+ 		btrfs_disk_key_to_cpu(&tmp_op_key, &extent_op->key);
+ 
+ 	spin_lock(&head->lock);
+-	for (n = rb_first(&head->ref_tree); n; n = rb_next(n)) {
++	for (n = rb_first_cached(&head->ref_tree); n; n = rb_next(n)) {
+ 		node = rb_entry(n, struct btrfs_delayed_ref_node,
+ 				ref_node);
+ 		if (node->seq > seq)
 diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
-index 62ff545ba1f7..4ef4a30ccc3d 100644
+index 4ef4a30ccc3d..5f4d46e0f2c0 100644
 --- a/fs/btrfs/delayed-ref.c
 +++ b/fs/btrfs/delayed-ref.c
-@@ -101,14 +101,15 @@ static int comp_refs(struct btrfs_delayed_ref_node *ref1,
+@@ -133,13 +133,14 @@ static struct btrfs_delayed_ref_head *htree_insert(struct rb_root_cached *root,
+ 	return NULL;
  }
  
- /* insert a new ref to head ref rbtree */
--static struct btrfs_delayed_ref_head *htree_insert(struct rb_root *root,
-+static struct btrfs_delayed_ref_head *htree_insert(struct rb_root_cached *root,
- 						   struct rb_node *node)
+-static struct btrfs_delayed_ref_node* tree_insert(struct rb_root *root,
++static struct btrfs_delayed_ref_node *tree_insert(struct rb_root_cached *root,
+ 		struct btrfs_delayed_ref_node *ins)
  {
 -	struct rb_node **p = &root->rb_node;
 +	struct rb_node **p = &root->rb_root.rb_node;
+ 	struct rb_node *node = &ins->ref_node;
  	struct rb_node *parent_node = NULL;
- 	struct btrfs_delayed_ref_head *entry;
- 	struct btrfs_delayed_ref_head *ins;
- 	u64 bytenr;
+ 	struct btrfs_delayed_ref_node *entry;
 +	bool leftmost = true;
  
- 	ins = rb_entry(node, struct btrfs_delayed_ref_head, href_node);
- 	bytenr = ins->bytenr;
-@@ -117,16 +118,18 @@ static struct btrfs_delayed_ref_head *htree_insert(struct rb_root *root,
- 		entry = rb_entry(parent_node, struct btrfs_delayed_ref_head,
- 				 href_node);
- 
--		if (bytenr < entry->bytenr)
-+		if (bytenr < entry->bytenr) {
+ 	while (*p) {
+ 		int comp;
+@@ -148,16 +149,18 @@ static struct btrfs_delayed_ref_node* tree_insert(struct rb_root *root,
+ 		entry = rb_entry(parent_node, struct btrfs_delayed_ref_node,
+ 				 ref_node);
+ 		comp = comp_refs(ins, entry, true);
+-		if (comp < 0)
++		if (comp < 0) {
  			p = &(*p)->rb_left;
--		else if (bytenr > entry->bytenr)
-+		} else if (bytenr > entry->bytenr) {
+-		else if (comp > 0)
++		} else if (comp > 0) {
  			p = &(*p)->rb_right;
 -		else
 +			leftmost = false;
@@ -74,139 +86,132 @@ index 62ff545ba1f7..4ef4a30ccc3d 100644
  	return NULL;
  }
  
-@@ -165,9 +168,10 @@ static struct btrfs_delayed_ref_node* tree_insert(struct rb_root *root,
-  * match is found.
-  */
- static struct btrfs_delayed_ref_head *
--find_ref_head(struct rb_root *root, u64 bytenr,
-+find_ref_head(struct btrfs_delayed_ref_root *dr, u64 bytenr,
- 	      int return_bigger)
+@@ -231,7 +234,7 @@ static inline void drop_delayed_ref(struct btrfs_trans_handle *trans,
+ 				    struct btrfs_delayed_ref_node *ref)
  {
-+	struct rb_root *root = &dr->href_root.rb_root;
- 	struct rb_node *n;
- 	struct btrfs_delayed_ref_head *entry;
+ 	lockdep_assert_held(&head->lock);
+-	rb_erase(&ref->ref_node, &head->ref_tree);
++	rb_erase_cached(&ref->ref_node, &head->ref_tree);
+ 	RB_CLEAR_NODE(&ref->ref_node);
+ 	if (!list_empty(&ref->add_list))
+ 		list_del(&ref->add_list);
+@@ -300,7 +303,7 @@ void btrfs_merge_delayed_refs(struct btrfs_trans_handle *trans,
  
-@@ -187,7 +191,7 @@ static struct btrfs_delayed_ref_node* tree_insert(struct rb_root *root,
- 		if (bytenr > entry->bytenr) {
- 			n = rb_next(&entry->href_node);
- 			if (!n)
--				n = rb_first(root);
-+				n = rb_first_cached(&dr->href_root);
- 			entry = rb_entry(n, struct btrfs_delayed_ref_head,
- 					 href_node);
- 			return entry;
-@@ -357,12 +361,12 @@ struct btrfs_delayed_ref_head *
+ 	lockdep_assert_held(&head->lock);
+ 
+-	if (RB_EMPTY_ROOT(&head->ref_tree))
++	if (RB_EMPTY_ROOT(&head->ref_tree.rb_root))
+ 		return;
+ 
+ 	/* We don't have too many refs to merge for data. */
+@@ -318,7 +321,8 @@ void btrfs_merge_delayed_refs(struct btrfs_trans_handle *trans,
+ 	spin_unlock(&fs_info->tree_mod_seq_lock);
  
  again:
- 	start = delayed_refs->run_delayed_start;
--	head = find_ref_head(&delayed_refs->href_root, start, 1);
-+	head = find_ref_head(delayed_refs, start, 1);
- 	if (!head && !loop) {
- 		delayed_refs->run_delayed_start = 0;
- 		start = 0;
- 		loop = true;
--		head = find_ref_head(&delayed_refs->href_root, start, 1);
-+		head = find_ref_head(delayed_refs, start, 1);
- 		if (!head)
- 			return NULL;
- 	} else if (!head && loop) {
-@@ -903,7 +907,7 @@ int btrfs_add_delayed_extent_op(struct btrfs_fs_info *fs_info,
- struct btrfs_delayed_ref_head *
- btrfs_find_delayed_ref_head(struct btrfs_delayed_ref_root *delayed_refs, u64 bytenr)
- {
--	return find_ref_head(&delayed_refs->href_root, bytenr, 0);
-+	return find_ref_head(delayed_refs, bytenr, 0);
- }
- 
- void __cold btrfs_delayed_ref_exit(void)
+-	for (node = rb_first(&head->ref_tree); node; node = rb_next(node)) {
++	for (node = rb_first_cached(&head->ref_tree); node;
++	     node = rb_next(node)) {
+ 		ref = rb_entry(node, struct btrfs_delayed_ref_node, ref_node);
+ 		if (seq && ref->seq >= seq)
+ 			continue;
+@@ -573,7 +577,7 @@ static void init_delayed_ref_head(struct btrfs_delayed_ref_head *head_ref,
+ 	head_ref->must_insert_reserved = must_insert_reserved;
+ 	head_ref->is_data = is_data;
+ 	head_ref->is_system = is_system;
+-	head_ref->ref_tree = RB_ROOT;
++	head_ref->ref_tree = RB_ROOT_CACHED;
+ 	INIT_LIST_HEAD(&head_ref->ref_add_list);
+ 	RB_CLEAR_NODE(&head_ref->href_node);
+ 	head_ref->processing = 0;
 diff --git a/fs/btrfs/delayed-ref.h b/fs/btrfs/delayed-ref.h
-index d9f2a4ebd5db..88438b6cee45 100644
+index 88438b6cee45..c3e3486a126c 100644
 --- a/fs/btrfs/delayed-ref.h
 +++ b/fs/btrfs/delayed-ref.h
-@@ -148,7 +148,7 @@ struct btrfs_delayed_data_ref {
+@@ -79,7 +79,7 @@ struct btrfs_delayed_ref_head {
+ 	struct mutex mutex;
  
- struct btrfs_delayed_ref_root {
- 	/* head ref rbtree */
--	struct rb_root href_root;
-+	struct rb_root_cached href_root;
+ 	spinlock_t lock;
+-	struct rb_root ref_tree;
++	struct rb_root_cached ref_tree;
+ 	/* accumulate add BTRFS_ADD_DELAYED_REF nodes to this ref_add_list. */
+ 	struct list_head ref_add_list;
  
- 	/* dirty extent records */
- 	struct rb_root dirty_extent_root;
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 5124c15705ce..dee7bcc13ffa 100644
+index dee7bcc13ffa..95a3d33a0454 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
-@@ -4203,7 +4203,7 @@ static int btrfs_destroy_delayed_refs(struct btrfs_transaction *trans,
- 		return ret;
- 	}
- 
--	while ((node = rb_first(&delayed_refs->href_root)) != NULL) {
-+	while ((node = rb_first_cached(&delayed_refs->href_root)) != NULL) {
- 		struct btrfs_delayed_ref_head *head;
- 		struct rb_node *n;
- 		bool pin_bytes = false;
-@@ -4239,7 +4239,7 @@ static int btrfs_destroy_delayed_refs(struct btrfs_transaction *trans,
- 		if (head->processing == 0)
- 			delayed_refs->num_heads_ready--;
- 		atomic_dec(&delayed_refs->num_entries);
--		rb_erase(&head->href_node, &delayed_refs->href_root);
-+		rb_erase_cached(&head->href_node, &delayed_refs->href_root);
- 		RB_CLEAR_NODE(&head->href_node);
- 		spin_unlock(&head->lock);
- 		spin_unlock(&delayed_refs->lock);
+@@ -4221,11 +4221,11 @@ static int btrfs_destroy_delayed_refs(struct btrfs_transaction *trans,
+ 			continue;
+ 		}
+ 		spin_lock(&head->lock);
+-		while ((n = rb_first(&head->ref_tree)) != NULL) {
++		while ((n = rb_first_cached(&head->ref_tree)) != NULL) {
+ 			ref = rb_entry(n, struct btrfs_delayed_ref_node,
+ 				       ref_node);
+ 			ref->in_tree = 0;
+-			rb_erase(&ref->ref_node, &head->ref_tree);
++			rb_erase_cached(&ref->ref_node, &head->ref_tree);
+ 			RB_CLEAR_NODE(&ref->ref_node);
+ 			if (!list_empty(&ref->add_list))
+ 				list_del(&ref->add_list);
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index de6f75f5547b..0b0472bc209d 100644
+index 0b0472bc209d..e3ee3b7746a8 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -2454,7 +2454,7 @@ static int cleanup_ref_head(struct btrfs_trans_handle *trans,
- 		return 1;
- 	}
- 	delayed_refs->num_heads--;
--	rb_erase(&head->href_node, &delayed_refs->href_root);
-+	rb_erase_cached(&head->href_node, &delayed_refs->href_root);
- 	RB_CLEAR_NODE(&head->href_node);
+@@ -2374,7 +2374,7 @@ static int run_one_delayed_ref(struct btrfs_trans_handle *trans,
+ {
+ 	struct btrfs_delayed_ref_node *ref;
+ 
+-	if (RB_EMPTY_ROOT(&head->ref_tree))
++	if (RB_EMPTY_ROOT(&head->ref_tree.rb_root))
+ 		return NULL;
+ 
+ 	/*
+@@ -2387,7 +2387,7 @@ static int run_one_delayed_ref(struct btrfs_trans_handle *trans,
+ 		return list_first_entry(&head->ref_add_list,
+ 				struct btrfs_delayed_ref_node, add_list);
+ 
+-	ref = rb_entry(rb_first(&head->ref_tree),
++	ref = rb_entry(rb_first_cached(&head->ref_tree),
+ 		       struct btrfs_delayed_ref_node, ref_node);
+ 	ASSERT(list_empty(&ref->add_list));
+ 	return ref;
+@@ -2448,7 +2448,7 @@ static int cleanup_ref_head(struct btrfs_trans_handle *trans,
  	spin_unlock(&head->lock);
- 	spin_unlock(&delayed_refs->lock);
-@@ -2940,7 +2940,7 @@ int btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
- 			btrfs_create_pending_block_groups(trans);
+ 	spin_lock(&delayed_refs->lock);
+ 	spin_lock(&head->lock);
+-	if (!RB_EMPTY_ROOT(&head->ref_tree) || head->extent_op) {
++	if (!RB_EMPTY_ROOT(&head->ref_tree.rb_root) || head->extent_op) {
+ 		spin_unlock(&head->lock);
+ 		spin_unlock(&delayed_refs->lock);
+ 		return 1;
+@@ -2597,7 +2597,7 @@ static noinline int __btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
  
- 		spin_lock(&delayed_refs->lock);
--		node = rb_first(&delayed_refs->href_root);
-+		node = rb_first_cached(&delayed_refs->href_root);
- 		if (!node) {
- 			spin_unlock(&delayed_refs->lock);
- 			goto out;
-@@ -6947,7 +6947,7 @@ static noinline int check_ref_cleanup(struct btrfs_trans_handle *trans,
- 	 * at this point we have a head with no other entries.  Go
- 	 * ahead and process it.
+ 		actual_count++;
+ 		ref->in_tree = 0;
+-		rb_erase(&ref->ref_node, &locked_ref->ref_tree);
++		rb_erase_cached(&ref->ref_node, &locked_ref->ref_tree);
+ 		RB_CLEAR_NODE(&ref->ref_node);
+ 		if (!list_empty(&ref->add_list))
+ 			list_del(&ref->add_list);
+@@ -3040,7 +3040,8 @@ static noinline int check_delayed_ref(struct btrfs_root *root,
+ 	 * XXX: We should replace this with a proper search function in the
+ 	 * future.
  	 */
--	rb_erase(&head->href_node, &delayed_refs->href_root);
-+	rb_erase_cached(&head->href_node, &delayed_refs->href_root);
- 	RB_CLEAR_NODE(&head->href_node);
- 	atomic_dec(&delayed_refs->num_entries);
+-	for (node = rb_first(&head->ref_tree); node; node = rb_next(node)) {
++	for (node = rb_first_cached(&head->ref_tree); node;
++	     node = rb_next(node)) {
+ 		ref = rb_entry(node, struct btrfs_delayed_ref_node, ref_node);
+ 		/* If it's a shared ref we know a cross reference exists */
+ 		if (ref->type != BTRFS_EXTENT_DATA_REF_KEY) {
+@@ -6926,7 +6927,7 @@ static noinline int check_ref_cleanup(struct btrfs_trans_handle *trans,
+ 		goto out_delayed_unlock;
  
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 3b84f5015029..a5c0c2629c8c 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -44,7 +44,8 @@ void btrfs_put_transaction(struct btrfs_transaction *transaction)
- 	WARN_ON(refcount_read(&transaction->use_count) == 0);
- 	if (refcount_dec_and_test(&transaction->use_count)) {
- 		BUG_ON(!list_empty(&transaction->list));
--		WARN_ON(!RB_EMPTY_ROOT(&transaction->delayed_refs.href_root));
-+		WARN_ON(!RB_EMPTY_ROOT(
-+				&transaction->delayed_refs.href_root.rb_root));
- 		if (transaction->delayed_refs.pending_csums)
- 			btrfs_err(transaction->fs_info,
- 				  "pending csums is %llu",
-@@ -245,7 +246,7 @@ static noinline int join_transaction(struct btrfs_fs_info *fs_info,
+ 	spin_lock(&head->lock);
+-	if (!RB_EMPTY_ROOT(&head->ref_tree))
++	if (!RB_EMPTY_ROOT(&head->ref_tree.rb_root))
+ 		goto out;
  
- 	memset(&cur_trans->delayed_refs, 0, sizeof(cur_trans->delayed_refs));
- 
--	cur_trans->delayed_refs.href_root = RB_ROOT;
-+	cur_trans->delayed_refs.href_root = RB_ROOT_CACHED;
- 	cur_trans->delayed_refs.dirty_extent_root = RB_ROOT;
- 	atomic_set(&cur_trans->delayed_refs.num_entries, 0);
- 
+ 	if (head->extent_op) {
 -- 
 1.8.3.1

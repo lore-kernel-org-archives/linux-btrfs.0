@@ -1,273 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:56978 "EHLO
-        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-        by vger.kernel.org with ESMTP id S1725724AbeH1F22 (ORCPT
+Received: from out30-132.freemail.mail.aliyun.com ([115.124.30.132]:33749 "EHLO
+        out30-132.freemail.mail.aliyun.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1727687AbeHVXSp (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 28 Aug 2018 01:28:28 -0400
-Received: from pps.filterd (m0001255.ppops.net [127.0.0.1])
-        by mx0b-00082601.pphosted.com (8.16.0.22/8.16.0.22) with SMTP id w7S1b8pV028183
-        for <linux-btrfs@vger.kernel.org>; Mon, 27 Aug 2018 18:39:15 -0700
-Received: from mail.thefacebook.com ([199.201.64.23])
-        by mx0b-00082601.pphosted.com with ESMTP id 2m4v7eg2nx-4
-        (version=TLSv1 cipher=ECDHE-RSA-AES256-SHA bits=256 verify=NOT)
-        for <linux-btrfs@vger.kernel.org>; Mon, 27 Aug 2018 18:39:15 -0700
-From: Nick Terrell <terrelln@fb.com>
-To: Nick Terrell <terrelln@fb.com>
-CC: David Sterba <dsterba@suse.cz>, <kernel-team@fb.com>,
-        <linux-btrfs@vger.kernel.org>, <grub-devel@gnu.org>
-Subject: [PATCH 3/3] btrfs: Add zstd support to btrfs
-Date: Mon, 27 Aug 2018 18:36:54 -0700
-Message-ID: <20180828013654.1627080-4-terrelln@fb.com>
-In-Reply-To: <20180828013654.1627080-1-terrelln@fb.com>
-References: <20180828013654.1627080-1-terrelln@fb.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+        Wed, 22 Aug 2018 19:18:45 -0400
+From: Liu Bo <bo.liu@linux.alibaba.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH 0/5] rb_first to rb_first_cached conversion
+Date: Thu, 23 Aug 2018 03:51:48 +0800
+Message-Id: <1534967513-117382-1-git-send-email-bo.liu@linux.alibaba.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Adds zstd support to the btrfs module. I'm not sure that my changes to the
-Makefiles are correct, please let me know if I need to do something
-differently.
+Several structs in btrfs are using rb_first() in a while loop, it'd be
+more efficient to do this with rb_first_cached() which has the O(1)
+complexity.
 
-Tested on Ubuntu-18.04 with a btrfs /boot partition with and without zstd
-compression. A test case was also added to the test suite that fails before
-the patch, and passes after.
+This patch set updates five structs which may have a large rb tree in
+practice
 
-Signed-off-by: Nick Terrell <terrelln@fb.com>
----
- Makefile.util.def            |  8 ++++-
- grub-core/Makefile.core.def  | 10 ++++--
- grub-core/fs/btrfs.c         | 85 +++++++++++++++++++++++++++++++++++++++++++-
- tests/btrfs_test.in          |  1 +
- tests/util/grub-fs-tester.in |  4 +--
- 5 files changed, 102 insertions(+), 6 deletions(-)
+Liu Bo (5):
+  Btrfs: href_root: use rb_first_cached
+  Btrfs: href->ref_tree: use rb_first_cached
+  Btrfs: delayed_items: use rb_first_cached
+  Btrfs: extent_map: use rb_first_cached
+  Btrfs: preftree: use rb_first_cached
 
-diff --git a/Makefile.util.def b/Makefile.util.def
-index 3180ac880..b987dc637 100644
---- a/Makefile.util.def
-+++ b/Makefile.util.def
-@@ -54,7 +54,7 @@ library = {
- library = {
-   name = libgrubmods.a;
-   cflags = '-fno-builtin -Wno-undef';
--  cppflags = '-I$(top_srcdir)/grub-core/lib/minilzo -I$(srcdir)/grub-core/lib/xzembed -DMINILZO_HAVE_CONFIG_H';
-+  cppflags = '-I$(top_srcdir)/grub-core/lib/minilzo -I$(srcdir)/grub-core/lib/xzembed -I$(top_srcdir)/grub-core/lib/zstd -DMINILZO_HAVE_CONFIG_H';
+ fs/btrfs/backref.c                | 34 +++++++++++++-------------
+ fs/btrfs/delayed-inode.c          | 29 +++++++++++++----------
+ fs/btrfs/delayed-inode.h          |  4 ++--
+ fs/btrfs/delayed-ref.c            | 50 +++++++++++++++++++++++----------------
+ fs/btrfs/delayed-ref.h            |  4 ++--
+ fs/btrfs/disk-io.c                |  8 +++----
+ fs/btrfs/extent-tree.c            | 19 ++++++++-------
+ fs/btrfs/extent_map.c             | 27 +++++++++++----------
+ fs/btrfs/extent_map.h             |  2 +-
+ fs/btrfs/inode.c                  |  4 ++--
+ fs/btrfs/tests/extent-map-tests.c |  4 ++--
+ fs/btrfs/transaction.c            |  5 ++--
+ fs/btrfs/volumes.c                |  5 ++--
+ 13 files changed, 107 insertions(+), 88 deletions(-)
 
-   common_nodist = grub_script.tab.c;
-   common_nodist = grub_script.yy.c;
-@@ -165,6 +165,12 @@ library = {
-   common = grub-core/lib/xzembed/xz_dec_bcj.c;
-   common = grub-core/lib/xzembed/xz_dec_lzma2.c;
-   common = grub-core/lib/xzembed/xz_dec_stream.c;
-+  common = grub-core/lib/zstd/zstd_common.c;
-+  common = grub-core/lib/zstd/huf_decompress.c;
-+  common = grub-core/lib/zstd/fse_decompress.c;
-+  common = grub-core/lib/zstd/entropy_common.c;
-+  common = grub-core/lib/zstd/decompress.c;
-+  common = grub-core/lib/zstd/xxhash.c;
- };
-
- program = {
-diff --git a/grub-core/Makefile.core.def b/grub-core/Makefile.core.def
-index 9590e87d9..c24bf9147 100644
---- a/grub-core/Makefile.core.def
-+++ b/grub-core/Makefile.core.def
-@@ -404,7 +404,7 @@ image = {
-   i386_pc = boot/i386/pc/boot.S;
-
-   cppflags = '-DHYBRID_BOOT=1';
--
-+
-   i386_pc_ldflags = '$(TARGET_IMG_LDFLAGS)';
-   i386_pc_ldflags = '$(TARGET_IMG_BASE_LDOPT),0x7C00';
-
-@@ -1264,8 +1264,14 @@ module = {
-   name = btrfs;
-   common = fs/btrfs.c;
-   common = lib/crc.c;
-+  common = lib/zstd/zstd_common.c;
-+  common = lib/zstd/huf_decompress.c;
-+  common = lib/zstd/fse_decompress.c;
-+  common = lib/zstd/entropy_common.c;
-+  common = lib/zstd/decompress.c;
-+  common = lib/zstd/xxhash.c;
-   cflags = '$(CFLAGS_POSIX) -Wno-undef';
--  cppflags = '-I$(srcdir)/lib/posix_wrap -I$(srcdir)/lib/minilzo -DMINILZO_HAVE_CONFIG_H';
-+  cppflags = '-I$(srcdir)/lib/posix_wrap -I$(srcdir)/lib/minilzo -I$(srcdir)/lib/zstd -DMINILZO_HAVE_CONFIG_H';
- };
-
- module = {
-diff --git a/grub-core/fs/btrfs.c b/grub-core/fs/btrfs.c
-index be195448d..89ed4884e 100644
---- a/grub-core/fs/btrfs.c
-+++ b/grub-core/fs/btrfs.c
-@@ -27,6 +27,7 @@
- #include <grub/lib/crc.h>
- #include <grub/deflate.h>
- #include <minilzo.h>
-+#include <zstd.h>
- #include <grub/i18n.h>
- #include <grub/btrfs.h>
-
-@@ -45,6 +46,9 @@ GRUB_MOD_LICENSE ("GPLv3+");
- #define GRUB_BTRFS_LZO_BLOCK_MAX_CSIZE (GRUB_BTRFS_LZO_BLOCK_SIZE + \
- 				     (GRUB_BTRFS_LZO_BLOCK_SIZE / 16) + 64 + 3)
-
-+#define ZSTD_BTRFS_MAX_WINDOWLOG 17
-+#define ZSTD_BTRFS_MAX_INPUT (1 << ZSTD_BTRFS_MAX_WINDOWLOG)
-+
- typedef grub_uint8_t grub_btrfs_checksum_t[0x20];
- typedef grub_uint16_t grub_btrfs_uuid_t[8];
-
-@@ -212,6 +216,7 @@ struct grub_btrfs_extent_data
- #define GRUB_BTRFS_COMPRESSION_NONE 0
- #define GRUB_BTRFS_COMPRESSION_ZLIB 1
- #define GRUB_BTRFS_COMPRESSION_LZO  2
-+#define GRUB_BTRFS_COMPRESSION_ZSTD  3
-
- #define GRUB_BTRFS_OBJECT_ID_CHUNK 0x100
-
-@@ -912,6 +917,70 @@ grub_btrfs_read_inode (struct grub_btrfs_data *data,
-   return grub_btrfs_read_logical (data, elemaddr, inode, sizeof (*inode), 0);
- }
-
-+static grub_ssize_t
-+grub_btrfs_zstd_decompress(char *ibuf, grub_size_t isize, grub_off_t off,
-+			  char *obuf, grub_size_t osize)
-+{
-+	void *allocated = NULL;
-+	char *otmpbuf = obuf;
-+	grub_size_t otmpsize = osize;
-+	void *wmem = NULL;
-+	const grub_size_t wmem_size = ZSTD_DCtxWorkspaceBound ();
-+	ZSTD_DCtx *dctx;
-+	grub_size_t zstd_ret;
-+	grub_ssize_t ret = -1;
-+
-+	/* Zstd will fail if it can't fit the entire output in the destination
-+	 * buffer, so if osize isn't large enough, allocate a temporary buffer.
-+	 */
-+	if (otmpsize < ZSTD_BTRFS_MAX_INPUT) {
-+		allocated = grub_malloc (ZSTD_BTRFS_MAX_INPUT);
-+		if (!allocated) {
-+			grub_dprintf ("zstd", "outtmpbuf allocation failed\n");
-+			goto out;
-+		}
-+		otmpbuf = (char*)allocated;
-+		otmpsize = ZSTD_BTRFS_MAX_INPUT;
-+	}
-+
-+	/* Allocate space for, and initialize, the ZSTD_DCtx. */
-+	wmem = grub_malloc (wmem_size);
-+	if (!wmem) {
-+		grub_dprintf ("zstd", "wmem allocation failed\n");
-+		goto out;
-+	}
-+	dctx = ZSTD_initDCtx (wmem, wmem_size);
-+
-+	/* Get the real input size, there may be junk at the
-+	 * end of the frame.
-+	 */
-+	isize = ZSTD_findFrameCompressedSize (ibuf, isize);
-+	if (ZSTD_isError (isize)) {
-+		grub_dprintf ("zstd", "first frame is invalid %d\n",
-+				(int)ZSTD_getErrorCode (isize));
-+		goto out;
-+	}
-+
-+	/* Decompress and check for errors */
-+	zstd_ret = ZSTD_decompressDCtx (dctx, otmpbuf, otmpsize, ibuf, isize);
-+	if (ZSTD_isError (zstd_ret)) {
-+		grub_dprintf ("zstd", "zstd failed with  code %d\n",
-+				(int)ZSTD_getErrorCode (zstd_ret));
-+		goto out;
-+	}
-+
-+	/* Move the requested data into the obuf.
-+	 * obuf may be equal to otmpbuf, which is why grub_memmove() is required.
-+	 */
-+	grub_memmove (obuf, otmpbuf + off, osize);
-+	ret = osize;
-+
-+out:
-+	grub_free (allocated);
-+	grub_free (wmem);
-+	return ret;
-+}
-+
- static grub_ssize_t
- grub_btrfs_lzo_decompress(char *ibuf, grub_size_t isize, grub_off_t off,
- 			  char *obuf, grub_size_t osize)
-@@ -1087,7 +1156,8 @@ grub_btrfs_extent_read (struct grub_btrfs_data *data,
-
-       if (data->extent->compression != GRUB_BTRFS_COMPRESSION_NONE
- 	  && data->extent->compression != GRUB_BTRFS_COMPRESSION_ZLIB
--	  && data->extent->compression != GRUB_BTRFS_COMPRESSION_LZO)
-+	  && data->extent->compression != GRUB_BTRFS_COMPRESSION_LZO
-+	  && data->extent->compression != GRUB_BTRFS_COMPRESSION_ZSTD)
- 	{
- 	  grub_error (GRUB_ERR_NOT_IMPLEMENTED_YET,
- 		      "compression type 0x%x not supported",
-@@ -1127,6 +1197,15 @@ grub_btrfs_extent_read (struct grub_btrfs_data *data,
- 		  != (grub_ssize_t) csize)
- 		return -1;
- 	    }
-+	  else if (data->extent->compression == GRUB_BTRFS_COMPRESSION_ZSTD)
-+	    {
-+	      if (grub_btrfs_zstd_decompress(data->extent->inl, data->extsize -
-+					   ((grub_uint8_t *) data->extent->inl
-+					    - (grub_uint8_t *) data->extent),
-+					   extoff, buf, csize)
-+		  != (grub_ssize_t) csize)
-+		return -1;
-+	    }
- 	  else
- 	    grub_memcpy (buf, data->extent->inl + extoff, csize);
- 	  break;
-@@ -1164,6 +1243,10 @@ grub_btrfs_extent_read (struct grub_btrfs_data *data,
- 		ret = grub_btrfs_lzo_decompress (tmp, zsize, extoff
- 				    + grub_le_to_cpu64 (data->extent->offset),
- 				    buf, csize);
-+	      else if (data->extent->compression == GRUB_BTRFS_COMPRESSION_ZSTD)
-+		ret = grub_btrfs_zstd_decompress (tmp, zsize, extoff
-+				    + grub_le_to_cpu64 (data->extent->offset),
-+				    buf, csize);
- 	      else
- 		ret = -1;
-
-diff --git a/tests/btrfs_test.in b/tests/btrfs_test.in
-index 2b37ddd33..0c9bf3a68 100644
---- a/tests/btrfs_test.in
-+++ b/tests/btrfs_test.in
-@@ -18,6 +18,7 @@ fi
- "@builddir@/grub-fs-tester" btrfs
- "@builddir@/grub-fs-tester" btrfs_zlib
- "@builddir@/grub-fs-tester" btrfs_lzo
-+"@builddir@/grub-fs-tester" btrfs_zstd
- "@builddir@/grub-fs-tester" btrfs_raid0
- "@builddir@/grub-fs-tester" btrfs_raid1
- "@builddir@/grub-fs-tester" btrfs_single
-diff --git a/tests/util/grub-fs-tester.in b/tests/util/grub-fs-tester.in
-index ef65fbc93..147d946d2 100644
---- a/tests/util/grub-fs-tester.in
-+++ b/tests/util/grub-fs-tester.in
-@@ -600,7 +600,7 @@ for LOGSECSIZE in $(range "$MINLOGSECSIZE" "$MAXLOGSECSIZE" 1); do
- 	    GENERATED=n
- 	    LODEVICES=
- 	    MOUNTDEVICE=
--
-+
- 	    case x"$fs" in
- 		x"tarfs" | x"cpio_"*| x"ziso9660" | x"romfs" | x"squash4_"*\
-                     | x"iso9660" | xjoliet | xrockridge | xrockridge_joliet \
-@@ -629,7 +629,7 @@ for LOGSECSIZE in $(range "$MINLOGSECSIZE" "$MAXLOGSECSIZE" 1); do
- 		    ;;
- 		x"btrfs")
- 		    "mkfs.btrfs" -s $SECSIZE -L "$FSLABEL" "${MOUNTDEVICE}" ;;
--		x"btrfs_zlib" | x"btrfs_lzo")
-+		x"btrfs_zlib" | x"btrfs_lzo" | x"btrfs_zstd")
- 		    "mkfs.btrfs" -s $SECSIZE -L "$FSLABEL" "${MOUNTDEVICE}"
- 		    MOUNTOPTS="compress=${fs/btrfs_/},"
- 		    MOUNTFS="btrfs"
---
-2.16.2
+-- 
+1.8.3.1

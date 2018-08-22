@@ -1,153 +1,99 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:60158 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:50860 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726076AbeHVI3K (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 22 Aug 2018 04:29:10 -0400
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 0DC63AF40
-        for <linux-btrfs@vger.kernel.org>; Wed, 22 Aug 2018 05:05:56 +0000 (UTC)
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2] btrfs-progs: rescue: Add ability to disable quota offline
-Date: Wed, 22 Aug 2018 13:05:50 +0800
-Message-Id: <20180822050550.32429-1-wqu@suse.com>
+        id S1728343AbeHVS11 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 22 Aug 2018 14:27:27 -0400
+Date: Wed, 22 Aug 2018 17:01:57 +0200
+From: David Sterba <dsterba@suse.cz>
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Cc: dsterba@suse.cz, "Janos Toth F." <toth.f.janos@gmail.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: lazytime mount =?utf-8?B?b3B0aW9u4oCU?= =?utf-8?Q?no?= support
+ in Btrfs
+Message-ID: <20180822150157.GI24025@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <E6FB1ABD-4C84-422B-BD9D-E46D96D03155@gmail.com>
+ <088684be-c1ff-c144-6ff7-e41670669c7e@gmail.com>
+ <20180821120636.fatftem5qbhv22m4@angband.pl>
+ <d959efa3-4e45-c471-625d-c4ad747083ad@gmail.com>
+ <CANznX5EwH-DSNzFwCiUrLgxA8P_nrNQoVfPQDQ=v6jM2_dEHAw@mail.gmail.com>
+ <774d8406-d8c8-f26b-b176-8ac954c59722@gmail.com>
+ <20180821160547.GF24025@twin.jikos.cz>
+ <49b2ad81-256a-981e-cf6c-04e3bf32e932@gmail.com>
+ <20180822134851.GH24025@twin.jikos.cz>
+ <742cf725-e691-530a-d8a8-ea45b08d0450@gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <742cf725-e691-530a-d8a8-ea45b08d0450@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Provide an offline tool to disable quota.
+On Wed, Aug 22, 2018 at 09:56:59AM -0400, Austin S. Hemmelgarn wrote:
+> On 2018-08-22 09:48, David Sterba wrote:
+> > On Tue, Aug 21, 2018 at 01:01:00PM -0400, Austin S. Hemmelgarn wrote:
+> >> On 2018-08-21 12:05, David Sterba wrote:
+> >>> On Tue, Aug 21, 2018 at 10:10:04AM -0400, Austin S. Hemmelgarn wrote:
+> >>>> On 2018-08-21 09:32, Janos Toth F. wrote:
+> >>>>>>>> so pretty much everyone who wants to avoid the overhead from them can just
+> >>>>>>>> use the `noatime` mount option.
+> >>>>>
+> >>>>> It would be great if someone finally fixed this old bug then:
+> >>>>> https://bugzilla.kernel.org/show_bug.cgi?id=61601
+> >>>>> Until then, it seems practically impossible to use both noatime (this
+> >>>>> can't be added as rootflag in the command line and won't apply if the
+> >>>>> kernel already mounted the root as RW) and space-cache-v2 (has to be
+> >>>>> added as a rootflag along with RW to take effect) for the root
+> >>>>> filesystem (at least without an init*fs, which I never use, so can't
+> >>>>> tell).
+> >>>>>
+> >>>> Last I knew, it was fixed.  Of course, it's been quite a while since I
+> >>>> last tried this, as I run locally patched kernels that have `noatime` as
+> >>>> the default instead of `relatime`.
+> >>>
+> >>> I'm using VMs without initrd, tested the rootflags=noatime and it still
+> >>> fails, the same way as in the bugreport.
+> >>>
+> >>> As the 'noatime' mount option is part of the mount(2) API (passed as a
+> >>> bit via mountflags), the remaining option in the filesystem is to
+> >>> whitelist the generic options and ignore them. But this brings some
+> >>> layering violation question.
+> >>>
+> >>> On the other hand, this would be come confusing as the user expectation
+> >>> is to see the effects of 'noatime'.
+> >>>
+> >> Ideally there would be a way to get this to actually work properly.  I
+> >> think ext4 at least doesn't panic, though I'm not sure if it actually
+> >> works correctly.
+> > 
+> > No, ext4 also refuses to mount, the panic happens in VFS that tries
+> > either the rootfstype= or all available filesystems.
+> > 
+> > [    3.763602] EXT4-fs (sda): Unrecognized mount option "noatime" or missing value
+> > 
+> > [    3.761315] BTRFS info (device sda): unrecognized mount option 'noatime'
+> > 
+> >> Otherwise, the only option for people who want it set is to patch the
+> >> kernel to get noatime as the default (instead of relatime).  I would
+> >> look at pushing such a patch upstream myself actually, if it weren't for
+> >> the fact that I'm fairly certain that it would be immediately NACK'ed by
+> >> at least Linus, and probably a couple of other people too.
+> > 
+> > An acceptable solution could be to parse the rootflags and translate
+> > them to the MNT_* values, ie. what the commandline tool mount does
+> > before it calls the mount syscall.
+> > 
+> That would be helpful, but at that point you might as well update the 
+> CLI mount tool to just pass all the named options to the kernel and have 
+> it do the parsing (I mean, keep the old interface too obviously, but 
+> provide a new one and use that preferentially).
 
-For kernel which skip_balance doesn't work, there is no way to disable
-quota on huge fs with balance, as quota will cause balance to hang for a
-long long time for each tree block switch.
+The initial mount is not done by the mount tool but internally by
+kernel init sequence (files in init/):
 
-So add an offline rescue tool to disable quota.
+mount_block_root
+  do_mount_root
+    ksys_mount
 
-Reported-by: Dan Merillat <dan.merillat@gmail.com>
-Signed-off-by: Qu Wenruo <wqu@suse.com>
-Reviewed-by: Su Yue <suy.fnst@cn.fujitsu.com>
----
-changelog
-v2:
-  Message update for no quota status item case.
----
- Documentation/btrfs-rescue.asciidoc |  6 +++
- cmds-rescue.c                       | 80 +++++++++++++++++++++++++++++
- 2 files changed, 86 insertions(+)
-
-diff --git a/Documentation/btrfs-rescue.asciidoc b/Documentation/btrfs-rescue.asciidoc
-index f94a0ff2b45e..fb088c1a768a 100644
---- a/Documentation/btrfs-rescue.asciidoc
-+++ b/Documentation/btrfs-rescue.asciidoc
-@@ -31,6 +31,12 @@ help.
- NOTE: Since *chunk-recover* will scan the whole device, it will be *VERY* slow
- especially executed on a large device.
- 
-+*disable-quota* <device>::
-+disable quota offline
-++
-+Acts as a fallback method to disable quota for case where mount hangs due to
-+balance and quota.
-+
- *fix-device-size* <device>::
- fix device size and super block total bytes values that are do not match
- +
-diff --git a/cmds-rescue.c b/cmds-rescue.c
-index 38c4ab9b2ef6..0b451fb2dea4 100644
---- a/cmds-rescue.c
-+++ b/cmds-rescue.c
-@@ -250,6 +250,84 @@ out:
- 	return !!ret;
- }
- 
-+static const char * const cmd_rescue_disable_quota_usage[] = {
-+	"btrfs rescue disable-quota <device>",
-+	"Disable quota, especially useful for balance mount hang when quota enabled",
-+	"",
-+	NULL
-+};
-+
-+static int cmd_rescue_disable_quota(int argc, char **argv)
-+{
-+	struct btrfs_trans_handle *trans;
-+	struct btrfs_fs_info *fs_info;
-+	struct btrfs_path path;
-+	struct btrfs_root *root;
-+	struct btrfs_qgroup_status_item *qi;
-+	struct btrfs_key key;
-+	char *devname;
-+	int ret;
-+
-+	clean_args_no_options(argc, argv, cmd_rescue_disable_quota_usage);
-+	if (check_argc_exact(argc, 2))
-+		usage(cmd_rescue_disable_quota_usage);
-+
-+	devname = argv[optind];
-+	ret = check_mounted(devname);
-+	if (ret < 0) {
-+		error("could not check mount status: %s", strerror(-ret));
-+		return !!ret;
-+	} else if (ret) {
-+		error("%s is currently mounted", devname);
-+		return !!ret;
-+	}
-+	fs_info = open_ctree_fs_info(devname, 0, 0, 0, OPEN_CTREE_WRITES);
-+	if (!fs_info) {
-+		error("could not open btrfs");
-+		ret = -EIO;
-+		return !!ret;
-+	}
-+	root = fs_info->quota_root;
-+	if (!root) {
-+		printf("Quota is not enabled, no need to modify the fs\n");
-+		goto close;
-+	}
-+	btrfs_init_path(&path);
-+	trans = btrfs_start_transaction(root, 1);
-+	if (IS_ERR(trans)) {
-+		ret = PTR_ERR(trans);
-+		error("failed to start transaction: %s", strerror(-ret));
-+		goto close;
-+	}
-+	key.objectid = 0;
-+	key.type = BTRFS_QGROUP_STATUS_KEY;
-+	key.offset = 0;
-+	ret = btrfs_search_slot(trans, root, &key, &path, 0, 1);
-+	if (ret < 0) {
-+		error("failed to search tree: %s", strerror(-ret));
-+		goto close;
-+	}
-+	if (ret > 0) {
-+		printf(
-+		"Qgroup status item not found, no need to modify the fs\n");
-+		ret = 0;
-+		goto release;
-+	}
-+	qi = btrfs_item_ptr(path.nodes[0], path.slots[0],
-+			    struct btrfs_qgroup_status_item);
-+	btrfs_set_qgroup_status_flags(path.nodes[0], qi,
-+			BTRFS_QGROUP_STATUS_FLAG_INCONSISTENT);
-+	btrfs_mark_buffer_dirty(path.nodes[0]);
-+	ret = btrfs_commit_transaction(trans, root);
-+	if (ret < 0)
-+		error("failed to commit transaction: %s", strerror(-ret));
-+release:
-+	btrfs_release_path(&path);
-+close:
-+	close_ctree(fs_info->tree_root);
-+	return !!ret;
-+}
-+
- static const char rescue_cmd_group_info[] =
- "toolbox for specific rescue operations";
- 
-@@ -262,6 +340,8 @@ const struct cmd_group rescue_cmd_group = {
- 		{ "zero-log", cmd_rescue_zero_log, cmd_rescue_zero_log_usage, NULL, 0},
- 		{ "fix-device-size", cmd_rescue_fix_device_size,
- 			cmd_rescue_fix_device_size_usage, NULL, 0},
-+		{ "disable-quota", cmd_rescue_disable_quota,
-+			cmd_rescue_disable_quota_usage, NULL, 0},
- 		NULL_CMD_STRUCT
- 	}
- };
--- 
-2.18.0
+The mount options (as a string) is passed unchanged via variable
+root_mount_data (== rootflags). So before this step, the options would
+have to be filtered and all known generic options turned into bit flags.

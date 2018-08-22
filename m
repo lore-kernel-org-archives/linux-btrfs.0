@@ -1,202 +1,154 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from out30-133.freemail.mail.aliyun.com ([115.124.30.133]:58715 "EHLO
-        out30-133.freemail.mail.aliyun.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1728146AbeHVXSs (ORCPT
+Received: from out30-130.freemail.mail.aliyun.com ([115.124.30.130]:44670 "EHLO
+        out30-130.freemail.mail.aliyun.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1728243AbeHVXSs (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Wed, 22 Aug 2018 19:18:48 -0400
 From: Liu Bo <bo.liu@linux.alibaba.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 4/5] Btrfs: extent_map: use rb_first_cached
-Date: Thu, 23 Aug 2018 03:51:52 +0800
-Message-Id: <1534967513-117382-5-git-send-email-bo.liu@linux.alibaba.com>
+Subject: [PATCH 5/5] Btrfs: preftree: use rb_first_cached
+Date: Thu, 23 Aug 2018 03:51:53 +0800
+Message-Id: <1534967513-117382-6-git-send-email-bo.liu@linux.alibaba.com>
 In-Reply-To: <1534967513-117382-1-git-send-email-bo.liu@linux.alibaba.com>
 References: <1534967513-117382-1-git-send-email-bo.liu@linux.alibaba.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-rb_first_cached() trades an extra pointer "leftmost" for doing the
-same job as rb_first() but in O(1).
+rb_first_cached() trades an extra pointer "leftmost" for doing the same
+job as rb_first() but in O(1).
 
-As evict_inode_truncate_pages() removes all extent mapping by always
-looking for the first rb entry, it's helpful to use rb_first_cached
+While resolving indirect refs and missing refs, it always looks for the
+first rb entry in a while loop, it's helpful to use rb_first_cached
 instead.
 
 Signed-off-by: Liu Bo <bo.liu@linux.alibaba.com>
 ---
- fs/btrfs/extent_map.c             | 27 +++++++++++++++------------
- fs/btrfs/extent_map.h             |  2 +-
- fs/btrfs/inode.c                  |  4 ++--
- fs/btrfs/tests/extent-map-tests.c |  4 ++--
- fs/btrfs/volumes.c                |  5 +++--
- 5 files changed, 23 insertions(+), 19 deletions(-)
+ fs/btrfs/backref.c | 32 +++++++++++++++++---------------
+ 1 file changed, 17 insertions(+), 15 deletions(-)
 
-diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
-index 6648d55e5339..819420eab91d 100644
---- a/fs/btrfs/extent_map.c
-+++ b/fs/btrfs/extent_map.c
-@@ -34,7 +34,7 @@ void __cold extent_map_exit(void)
-  */
- void extent_map_tree_init(struct extent_map_tree *tree)
- {
--	tree->map = RB_ROOT;
-+	tree->map = RB_ROOT_CACHED;
- 	INIT_LIST_HEAD(&tree->modified_extents);
- 	rwlock_init(&tree->lock);
- }
-@@ -90,24 +90,27 @@ static u64 range_end(u64 start, u64 len)
- 	return start + len;
+diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+index bc1ea6e9ea4f..49f2188e728b 100644
+--- a/fs/btrfs/backref.c
++++ b/fs/btrfs/backref.c
+@@ -112,11 +112,11 @@ static int find_extent_in_eb(const struct extent_buffer *eb,
  }
  
--static int tree_insert(struct rb_root *root, struct extent_map *em)
-+static int tree_insert(struct rb_root_cached *root, struct extent_map *em)
+ struct preftree {
+-	struct rb_root root;
++	struct rb_root_cached root;
+ 	unsigned int count;
+ };
+ 
+-#define PREFTREE_INIT	{ .root = RB_ROOT, .count = 0 }
++#define PREFTREE_INIT	{ .root = RB_ROOT_CACHED, .count = 0 }
+ 
+ struct preftrees {
+ 	struct preftree direct;    /* BTRFS_SHARED_[DATA|BLOCK]_REF_KEY */
+@@ -225,14 +225,15 @@ static void prelim_ref_insert(const struct btrfs_fs_info *fs_info,
+ 			      struct prelim_ref *newref,
+ 			      struct share_check *sc)
  {
--	struct rb_node **p = &root->rb_node;
-+	struct rb_node **p = &root->rb_root.rb_node;
+-	struct rb_root *root;
++	struct rb_root_cached *root;
+ 	struct rb_node **p;
  	struct rb_node *parent = NULL;
- 	struct extent_map *entry = NULL;
- 	struct rb_node *orig_parent = NULL;
- 	u64 end = range_end(em->start, em->len);
+ 	struct prelim_ref *ref;
+ 	int result;
 +	bool leftmost = true;
+ 
+ 	root = &preftree->root;
+-	p = &root->rb_node;
++	p = &root->rb_root.rb_node;
  
  	while (*p) {
  		parent = *p;
- 		entry = rb_entry(parent, struct extent_map, rb_node);
- 
--		if (em->start < entry->start)
-+		if (em->start < entry->start) {
+@@ -242,6 +243,7 @@ static void prelim_ref_insert(const struct btrfs_fs_info *fs_info,
  			p = &(*p)->rb_left;
--		else if (em->start >= extent_map_end(entry))
-+		} else if (em->start >= extent_map_end(entry)) {
+ 		} else if (result > 0) {
  			p = &(*p)->rb_right;
--		else
 +			leftmost = false;
-+		} else {
- 			return -EEXIST;
-+		}
- 	}
- 
- 	orig_parent = parent;
-@@ -130,7 +133,7 @@ static int tree_insert(struct rb_root *root, struct extent_map *em)
- 			return -EEXIST;
- 
- 	rb_link_node(&em->rb_node, orig_parent, p);
--	rb_insert_color(&em->rb_node, root);
-+	rb_insert_color_cached(&em->rb_node, root, leftmost);
- 	return 0;
+ 		} else {
+ 			/* Identical refs, merge them and free @newref */
+ 			struct extent_inode_elem *eie = ref->inode_list;
+@@ -272,7 +274,7 @@ static void prelim_ref_insert(const struct btrfs_fs_info *fs_info,
+ 	preftree->count++;
+ 	trace_btrfs_prelim_ref_insert(fs_info, newref, NULL, preftree->count);
+ 	rb_link_node(&newref->rbnode, parent, p);
+-	rb_insert_color(&newref->rbnode, root);
++	rb_insert_color_cached(&newref->rbnode, root, leftmost);
  }
  
-@@ -242,7 +245,7 @@ static void try_merge_map(struct extent_map_tree *tree, struct extent_map *em)
- 			em->mod_start = merge->mod_start;
- 			em->generation = max(em->generation, merge->generation);
+ /*
+@@ -283,11 +285,11 @@ static void prelim_release(struct preftree *preftree)
+ {
+ 	struct prelim_ref *ref, *next_ref;
  
--			rb_erase(&merge->rb_node, &tree->map);
-+			rb_erase_cached(&merge->rb_node, &tree->map);
- 			RB_CLEAR_NODE(&merge->rb_node);
- 			free_extent_map(merge);
+-	rbtree_postorder_for_each_entry_safe(ref, next_ref, &preftree->root,
+-					     rbnode)
++	rbtree_postorder_for_each_entry_safe(ref, next_ref,
++					     &preftree->root.rb_root, rbnode)
+ 		free_pref(ref);
+ 
+-	preftree->root = RB_ROOT;
++	preftree->root = RB_ROOT_CACHED;
+ 	preftree->count = 0;
+ }
+ 
+@@ -627,7 +629,7 @@ static int resolve_indirect_refs(struct btrfs_fs_info *fs_info,
+ 	 * freeing the entire indirect tree when we're done.  In some test
+ 	 * cases, the tree can grow quite large (~200k objects).
+ 	 */
+-	while ((rnode = rb_first(&preftrees->indirect.root))) {
++	while ((rnode = rb_first_cached(&preftrees->indirect.root))) {
+ 		struct prelim_ref *ref;
+ 
+ 		ref = rb_entry(rnode, struct prelim_ref, rbnode);
+@@ -637,7 +639,7 @@ static int resolve_indirect_refs(struct btrfs_fs_info *fs_info,
+ 			goto out;
  		}
-@@ -254,7 +257,7 @@ static void try_merge_map(struct extent_map_tree *tree, struct extent_map *em)
- 	if (rb && mergable_maps(em, merge)) {
- 		em->len += merge->len;
- 		em->block_len += merge->block_len;
--		rb_erase(&merge->rb_node, &tree->map);
-+		rb_erase_cached(&merge->rb_node, &tree->map);
- 		RB_CLEAR_NODE(&merge->rb_node);
- 		em->mod_len = (merge->mod_start + merge->mod_len) - em->mod_start;
- 		em->generation = max(em->generation, merge->generation);
-@@ -367,7 +370,7 @@ int add_extent_mapping(struct extent_map_tree *tree,
- 	struct rb_node *next = NULL;
- 	u64 end = range_end(start, len);
  
--	rb_node = __tree_search(&tree->map, start, &prev, &next);
-+	rb_node = __tree_search(&tree->map.rb_root, start, &prev, &next);
- 	if (!rb_node) {
- 		if (prev)
- 			rb_node = prev;
-@@ -433,7 +436,7 @@ int remove_extent_mapping(struct extent_map_tree *tree, struct extent_map *em)
- 	int ret = 0;
+-		rb_erase(&ref->rbnode, &preftrees->indirect.root);
++		rb_erase_cached(&ref->rbnode, &preftrees->indirect.root);
+ 		preftrees->indirect.count--;
  
- 	WARN_ON(test_bit(EXTENT_FLAG_PINNED, &em->flags));
--	rb_erase(&em->rb_node, &tree->map);
-+	rb_erase_cached(&em->rb_node, &tree->map);
- 	if (!test_bit(EXTENT_FLAG_LOGGING, &em->flags))
- 		list_del_init(&em->list);
- 	RB_CLEAR_NODE(&em->rb_node);
-@@ -449,7 +452,7 @@ void replace_extent_mapping(struct extent_map_tree *tree,
- 	ASSERT(extent_map_in_tree(cur));
- 	if (!test_bit(EXTENT_FLAG_LOGGING, &cur->flags))
- 		list_del_init(&cur->list);
--	rb_replace_node(&cur->rb_node, &new->rb_node, &tree->map);
-+	rb_replace_node_cached(&cur->rb_node, &new->rb_node, &tree->map);
- 	RB_CLEAR_NODE(&cur->rb_node);
- 
- 	setup_extent_mapping(tree, new, modified);
-diff --git a/fs/btrfs/extent_map.h b/fs/btrfs/extent_map.h
-index 25d985e7532a..6afe786bf6d0 100644
---- a/fs/btrfs/extent_map.h
-+++ b/fs/btrfs/extent_map.h
-@@ -49,7 +49,7 @@ struct extent_map {
- };
- 
- struct extent_map_tree {
--	struct rb_root map;
-+	struct rb_root_cached map;
- 	struct list_head modified_extents;
- 	rwlock_t lock;
- };
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 6e761cec1f2a..10e86f7b5398 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -5252,10 +5252,10 @@ static void evict_inode_truncate_pages(struct inode *inode)
- 	truncate_inode_pages_final(&inode->i_data);
- 
- 	write_lock(&map_tree->lock);
--	while (!RB_EMPTY_ROOT(&map_tree->map)) {
-+	while (!RB_EMPTY_ROOT(&map_tree->map.rb_root)) {
- 		struct extent_map *em;
- 
--		node = rb_first(&map_tree->map);
-+		node = rb_first_cached(&map_tree->map);
- 		em = rb_entry(node, struct extent_map, rb_node);
- 		clear_bit(EXTENT_FLAG_PINNED, &em->flags);
- 		clear_bit(EXTENT_FLAG_LOGGING, &em->flags);
-diff --git a/fs/btrfs/tests/extent-map-tests.c b/fs/btrfs/tests/extent-map-tests.c
-index 385a5316e4bf..bf15d3a7f20e 100644
---- a/fs/btrfs/tests/extent-map-tests.c
-+++ b/fs/btrfs/tests/extent-map-tests.c
-@@ -12,8 +12,8 @@ static void free_extent_map_tree(struct extent_map_tree *em_tree)
- 	struct extent_map *em;
+ 		if (ref->count == 0) {
+@@ -717,9 +719,9 @@ static int add_missing_keys(struct btrfs_fs_info *fs_info,
+ 	struct preftree *tree = &preftrees->indirect_missing_keys;
  	struct rb_node *node;
  
--	while (!RB_EMPTY_ROOT(&em_tree->map)) {
--		node = rb_first(&em_tree->map);
-+	while (!RB_EMPTY_ROOT(&em_tree->map.rb_root)) {
-+		node = rb_first_cached(&em_tree->map);
- 		em = rb_entry(node, struct extent_map, rb_node);
- 		remove_extent_mapping(em_tree, em);
+-	while ((node = rb_first(&tree->root))) {
++	while ((node = rb_first_cached(&tree->root))) {
+ 		ref = rb_entry(node, struct prelim_ref, rbnode);
+-		rb_erase(node, &tree->root);
++		rb_erase_cached(node, &tree->root);
  
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index da86706123ff..24d37d22a361 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1613,7 +1613,7 @@ static u64 find_next_chunk(struct btrfs_fs_info *fs_info)
+ 		BUG_ON(ref->parent);	/* should not be a direct ref */
+ 		BUG_ON(ref->key_for_search.type);
+@@ -1229,14 +1231,14 @@ static int find_parent_nodes(struct btrfs_trans_handle *trans,
+ 	if (ret)
+ 		goto out;
  
- 	em_tree = &fs_info->mapping_tree.map_tree;
- 	read_lock(&em_tree->lock);
--	n = rb_last(&em_tree->map);
-+	n = rb_last(&em_tree->map.rb_root);
- 	if (n) {
- 		em = rb_entry(n, struct extent_map, rb_node);
- 		ret = em->start + em->len;
-@@ -7433,7 +7433,8 @@ static int verify_chunk_dev_extent_mapping(struct btrfs_fs_info *fs_info)
- 	int ret = 0;
+-	WARN_ON(!RB_EMPTY_ROOT(&preftrees.indirect_missing_keys.root));
++	WARN_ON(!RB_EMPTY_ROOT(&preftrees.indirect_missing_keys.root.rb_root));
  
- 	read_lock(&em_tree->lock);
--	for (node = rb_first(&em_tree->map); node; node = rb_next(node)) {
-+	for (node = rb_first_cached(&em_tree->map); node;
-+	     node = rb_next(node)) {
- 		em = rb_entry(node, struct extent_map, rb_node);
- 		if (em->map_lookup->num_stripes !=
- 		    em->map_lookup->verified_stripes) {
+ 	ret = resolve_indirect_refs(fs_info, path, time_seq, &preftrees,
+ 				    extent_item_pos, total_refs, sc, ignore_offset);
+ 	if (ret)
+ 		goto out;
+ 
+-	WARN_ON(!RB_EMPTY_ROOT(&preftrees.indirect.root));
++	WARN_ON(!RB_EMPTY_ROOT(&preftrees.indirect.root.rb_root));
+ 
+ 	/*
+ 	 * This walks the tree of merged and resolved refs. Tree blocks are
+@@ -1245,7 +1247,7 @@ static int find_parent_nodes(struct btrfs_trans_handle *trans,
+ 	 *
+ 	 * We release the entire tree in one go before returning.
+ 	 */
+-	node = rb_first(&preftrees.direct.root);
++	node = rb_first_cached(&preftrees.direct.root);
+ 	while (node) {
+ 		ref = rb_entry(node, struct prelim_ref, rbnode);
+ 		node = rb_next(&ref->rbnode);
 -- 
 1.8.3.1

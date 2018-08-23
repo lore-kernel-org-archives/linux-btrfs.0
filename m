@@ -1,43 +1,101 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from forward101p.mail.yandex.net ([77.88.28.101]:47416 "EHLO
-        forward101p.mail.yandex.net" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1727043AbeH1C3y (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 27 Aug 2018 22:29:54 -0400
-Received: from mxback19j.mail.yandex.net (mxback19j.mail.yandex.net [IPv6:2a02:6b8:0:1619::95])
-        by forward101p.mail.yandex.net (Yandex) with ESMTP id 06D784E85346
-        for <linux-btrfs@vger.kernel.org>; Tue, 28 Aug 2018 01:33:44 +0300 (MSK)
-To: linux-btrfs@vger.kernel.org
-From: Tucker Boniface <tucker@boniface.tech>
-Subject: btrfs-progs: btrfs-convert: unable to find block group for 0
-Message-ID: <afa83c87-df24-941a-348c-bb58cf7ac033@boniface.tech>
-Date: Mon, 27 Aug 2018 15:33:39 -0700
+Received: from szxga04-in.huawei.com ([45.249.212.190]:11601 "EHLO huawei.com"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726246AbeHWPBF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 23 Aug 2018 11:01:05 -0400
+Message-ID: <5B7E9B1C.40404@huawei.com>
+Date: Thu, 23 Aug 2018 19:31:40 +0800
+From: zhong jiang <zhongjiang@huawei.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8; format=flowed
+To: <clm@fb.com>, <jbacik@fb.com>, <dsterba@suse.com>
+CC: <lufq.fnst@cn.fujitsu.com>, <suy.fnst@cn.fujitsu.com>,
+        <linux-btrfs@vger.kernel.org>, <linux-kernel@vger.kernel.org>
+Subject: Re: [PATCH v2] btrfs/extent_map: Remove unneeded variable "ret"
+References: <1533474287-15049-1-git-send-email-zhongjiang@huawei.com>
+In-Reply-To: <1533474287-15049-1-git-send-email-zhongjiang@huawei.com>
+Content-Type: text/plain; charset="ISO-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello, I am trying to convert an ext4 partition to btrfs using 
-btrfs-convert. I am running Arch Linux with kernel 4.18.5 and 
-btrfs-progs 4.17.1. The full error is inline below.
+Hi,  dsterba
 
--> # btrfs-convert /dev/sda1
-create btrfs filesystem:
-	blocksize: 4096
-	nodesize:  16384
-	features:  extref, skinny-metadata (default)
-creating ext2 image file
-Unable to find block group for 0
-Unable to find block group for 0
-Unable to find block group for 0
-extent-tree.c:2743: alloc_tree_block: BUG_ON `ret` triggered, value -28
-btrfs-convert(+0x1d512)[0x564d08cd3512]
-btrfs-convert(btrfs_alloc_free_block+0x1e8)[0x564d08cda188]
-btrfs-convert(+0x15bd1)[0x564d08ccbbd1]
-btrfs-convert(btrfs_search_slot+0xf27)[0x564d08ccd7d7]
-btrfs-convert(btrfs_csum_file_block+0x499)[0x564d08cdf219]
-btrfs-convert(+0xe625)[0x564d08cc4625]
-btrfs-convert(main+0x1abf)[0x564d08cc3adf]
-/usr/lib/libc.so.6(__libc_start_main+0xf3)[0x7f1822576223]
-btrfs-convert(_start+0x2e)[0x564d08cc41be]
-Aborted
+Can you pick up the patch? Thanks
+
+Best wishes,
+zhong jiang
+ 
+On 2018/8/5 21:04, zhong jiang wrote:
+> The ret is not used after initalization, and we do not care about
+> the return value. So make it void function.
+>
+> Signed-off-by: zhong jiang <zhongjiang@huawei.com>
+> ---
+>  fs/btrfs/extent_map.c | 10 ++--------
+>  fs/btrfs/extent_map.h |  4 ++--
+>  2 files changed, 4 insertions(+), 10 deletions(-)
+>
+> diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
+> index 6648d55..da4e4f3 100644
+> --- a/fs/btrfs/extent_map.c
+> +++ b/fs/btrfs/extent_map.c
+> @@ -273,10 +273,9 @@ static void try_merge_map(struct extent_map_tree *tree, struct extent_map *em)
+>   * to the generation that actually added the file item to the inode so we know
+>   * we need to sync this extent when we call fsync().
+>   */
+> -int unpin_extent_cache(struct extent_map_tree *tree, u64 start, u64 len,
+> +void unpin_extent_cache(struct extent_map_tree *tree, u64 start, u64 len,
+>  		       u64 gen)
+>  {
+> -	int ret = 0;
+>  	struct extent_map *em;
+>  	bool prealloc = false;
+>  
+> @@ -308,8 +307,6 @@ int unpin_extent_cache(struct extent_map_tree *tree, u64 start, u64 len,
+>  	free_extent_map(em);
+>  out:
+>  	write_unlock(&tree->lock);
+> -	return ret;
+> -
+>  }
+>  
+>  void clear_em_logging(struct extent_map_tree *tree, struct extent_map *em)
+> @@ -428,16 +425,13 @@ struct extent_map *search_extent_mapping(struct extent_map_tree *tree,
+>   * Removes @em from @tree.  No reference counts are dropped, and no checks
+>   * are done to see if the range is in use
+>   */
+> -int remove_extent_mapping(struct extent_map_tree *tree, struct extent_map *em)
+> +void remove_extent_mapping(struct extent_map_tree *tree, struct extent_map *em)
+>  {
+> -	int ret = 0;
+> -
+>  	WARN_ON(test_bit(EXTENT_FLAG_PINNED, &em->flags));
+>  	rb_erase(&em->rb_node, &tree->map);
+>  	if (!test_bit(EXTENT_FLAG_LOGGING, &em->flags))
+>  		list_del_init(&em->list);
+>  	RB_CLEAR_NODE(&em->rb_node);
+> -	return ret;
+>  }
+>  
+>  void replace_extent_mapping(struct extent_map_tree *tree,
+> diff --git a/fs/btrfs/extent_map.h b/fs/btrfs/extent_map.h
+> index 25d985e..c80649b 100644
+> --- a/fs/btrfs/extent_map.h
+> +++ b/fs/btrfs/extent_map.h
+> @@ -78,7 +78,7 @@ struct extent_map *lookup_extent_mapping(struct extent_map_tree *tree,
+>  					 u64 start, u64 len);
+>  int add_extent_mapping(struct extent_map_tree *tree,
+>  		       struct extent_map *em, int modified);
+> -int remove_extent_mapping(struct extent_map_tree *tree, struct extent_map *em);
+> +void remove_extent_mapping(struct extent_map_tree *tree, struct extent_map *em);
+>  void replace_extent_mapping(struct extent_map_tree *tree,
+>  			    struct extent_map *cur,
+>  			    struct extent_map *new,
+> @@ -88,7 +88,7 @@ void replace_extent_mapping(struct extent_map_tree *tree,
+>  void free_extent_map(struct extent_map *em);
+>  int __init extent_map_init(void);
+>  void __cold extent_map_exit(void);
+> -int unpin_extent_cache(struct extent_map_tree *tree, u64 start, u64 len, u64 gen);
+> +void unpin_extent_cache(struct extent_map_tree *tree, u64 start, u64 len, u64 gen);
+>  void clear_em_logging(struct extent_map_tree *tree, struct extent_map *em);
+>  struct extent_map *search_extent_mapping(struct extent_map_tree *tree,
+>  					 u64 start, u64 len);

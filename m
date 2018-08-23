@@ -1,286 +1,161 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.15]:58019 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.15.15]:52769 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726204AbeHWIiz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 23 Aug 2018 04:38:55 -0400
-Subject: Re: Reproducer for "compressed data + hole data corruption bug, 2018
- editiion"
-To: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>, linux-btrfs@vger.kernel.org
-References: <20180823031125.GE13528@hungrycats.org>
+        id S1727346AbeHWIvq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 23 Aug 2018 04:51:46 -0400
+Subject: Re: My Filesystem is Broken
+To: Zirconium Hacker <jared.e.vb@gmail.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <CALsQ4_xPLoX7YErmAjV45g=ifD0UTJN-NwTrZFNqPCcaaPYZAA@mail.gmail.com>
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <8273c186-50ec-32d8-ffb3-23bb0b4fe48e@gmx.com>
-Date: Thu, 23 Aug 2018 13:10:48 +0800
+Message-ID: <6bede0c5-d374-d9b1-76df-85c92968d409@gmx.com>
+Date: Thu, 23 Aug 2018 13:23:25 +0800
 MIME-Version: 1.0
-In-Reply-To: <20180823031125.GE13528@hungrycats.org>
+In-Reply-To: <CALsQ4_xPLoX7YErmAjV45g=ifD0UTJN-NwTrZFNqPCcaaPYZAA@mail.gmail.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="idTC29eTx669Z5e2kp2BjszTxnJR6CHKc"
+ boundary="GO8CdeHfKqn0FX8uPtiCxjdHWVpxqhooN"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---idTC29eTx669Z5e2kp2BjszTxnJR6CHKc
-Content-Type: multipart/mixed; boundary="A5z9HjdEhAg8QaAYdrTDjPlJGkQDnM23D";
+--GO8CdeHfKqn0FX8uPtiCxjdHWVpxqhooN
+Content-Type: multipart/mixed; boundary="OOZCEo3ug0ToTUbEporq4OEyLEFQ6mqAi";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>, linux-btrfs@vger.kernel.org
-Message-ID: <8273c186-50ec-32d8-ffb3-23bb0b4fe48e@gmx.com>
-Subject: Re: Reproducer for "compressed data + hole data corruption bug, 2018
- editiion"
-References: <20180823031125.GE13528@hungrycats.org>
-In-Reply-To: <20180823031125.GE13528@hungrycats.org>
+To: Zirconium Hacker <jared.e.vb@gmail.com>,
+ Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Message-ID: <6bede0c5-d374-d9b1-76df-85c92968d409@gmx.com>
+Subject: Re: My Filesystem is Broken
+References: <CALsQ4_xPLoX7YErmAjV45g=ifD0UTJN-NwTrZFNqPCcaaPYZAA@mail.gmail.com>
+In-Reply-To: <CALsQ4_xPLoX7YErmAjV45g=ifD0UTJN-NwTrZFNqPCcaaPYZAA@mail.gmail.com>
 
---A5z9HjdEhAg8QaAYdrTDjPlJGkQDnM23D
+--OOZCEo3ug0ToTUbEporq4OEyLEFQ6mqAi
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
 
 
-On 2018/8/23 =E4=B8=8A=E5=8D=8811:11, Zygo Blaxell wrote:
-> This is a repro script for a btrfs bug that causes corrupted data reads=
-
-> when reading a mix of compressed extents and holes.  The bug is
-> reproducible on at least kernels v4.1..v4.18.
-
-This bug already sounds more serious than previous nodatasum +
-compression bug.
-
+On 2018/8/23 =E4=B8=8A=E5=8D=8811:25, Zirconium Hacker wrote:
+> Hi.
+> My primary (boot) filesystem is broken, due to an interrupted resize op=
+eration.
+> I'm hoping that I can get help either fixing the filesystem or
+> recovering some of my data, but I'd also like to know why btrfs and
+> its tools acted the way they did.
+> I think I've also found a bug in GParted.
 >=20
-> Some more observations and background follow, but first here is the
-> script and some sample output:
+> Output of uname -a on the recovery medium: Linux ArchUSB
+> 4.18.3-arch1-1-ARCH #1 SMP PREEMPT Sat Aug 18 09:22:54 UTC 2018 x86_64
+> GNU/Linux
+> Kernel on the affected system: Liquorix Linux 4.17.14
+> Output of btrfs --version: btrfs-progs v4.17.1
+> Relevant dmesg log is attached.
 >=20
-> 	root@rescue:/test# cat repro-hole-corruption-test
-> 	#!/bin/bash
+> I currently use a single btrfs filesystem (fs A) with subvolumes for
+> root, home, and var.  It's ~140 GiB in size, with ~130GiB used.
+> I also have a second btrfs filesystem (fs B) from a previous
+> installation of Arch Linux.  It's ~40 GiB in size, with less than 30
+> GiB used.
 >=20
-> 	# Write a 4096 byte block of something
-> 	block () { head -c 4096 /dev/zero | tr '\0' "\\$1"; }
+> First of all, how I got into this situation:
 >=20
-> 	# Here is some test data with holes in it:
-> 	for y in $(seq 0 100); do
-> 		for x in 0 1; do
-> 			block 0;
-> 			block 21;
-> 			block 0;
-> 			block 22;
-> 			block 0;
-> 			block 0;
-> 			block 43;
-> 			block 44;
-> 			block 0;
-> 			block 0;
-> 			block 61;
-> 			block 62;
-> 			block 63;
-> 			block 64;
-> 			block 65;
-> 			block 66;> 		done
+> Yesterday, I wanted to reclaim some space, so I decided to shrink fs B.=
 
-Does the content has any difference on this bug?
-It's just 16 * 4K * 2 * 101 data write *without* any hole so far.
+> I opened up GParted, and resized it.  I got an error from btrfs, like
+> "no space left on device".
+> I was a little confused.  This was seemingly solved by unmounting fs B.=
 
-This should indeed cause 101 128K compressed data extent.
-But I'm wondering the description about 'holes'.
-
-> 	done > am
-> 	sync
+> I re-ran the reisze.  Some process was using 100% CPU on one core, and
+> I didn't see much (if any) I/O activity.
+> After a few minutes I noticed that GParted was attempting to resize
+> the mount point of fs B ('/mnt/oldsys' on fs A), even though it wasn't
+> mounted!
+> I'm not sure what this does, but I figure that it's not good (even
+> though fs A shouldn't fit in 32 GiB).
+> So I press cancel... nothing.  I try force cancel, still no effect.  I
+> try to kill the resize process, first with SIGTERM, then with
+> SIGKILL... nothing.
+> I figure that I have to reboot at this point.  During reboot, systemd
+> waits really long for a stop job on some user session thing.
+> Then, strangely, I see output _during shutdown_ about btrfs
+> _beginning_ to resize fs A (referring to it by its block device,
+> /dev/sda2)...
+> I choose to reset my computer.  When I try to boot again (bad idea in
+> retrospect) systemd takes a long time to "re-mount the root
+> filesystem".
+> Start jobs begin to timeout and fail, so I reset my computer again to
+> boot into a recovery medium.
 >=20
-> 	# Now replace those 101 distinct extents with 101 references to the fi=
-rst extent
-> 	btrfs-extent-same 131072 $(for x in $(seq 0 100); do echo am $((x * 13=
-1072)); done) 2>&1 | tail
-
-Will this bug still happen by creating one extent and then reflink it
-101 times?
-
+> Part 2, the attempted recovery:
 >=20
-> 	# Punch holes into the extent refs
-> 	fallocate -v -d am
+> I run btrfsck on sda2, and seeing lots of errors (see
+> btrfsck.readonly.log) I choose to make an image of the entire block
+> device.
 
-Hole-punch in fact happens here.
+At least for the readonly run, it only detects extent tree error without
+fs tree corruption (v4.17.1 continue checking fs tree even when extent
+tree is corrupted).
 
-BTW, will add a "sync" here change the result?
+Even for extent tree errors, I doubt if it's some false alerts.
 
->=20
-> 	# Do some other stuff on the machine while this runs, and watch the sh=
-a1sums change!
-> 	while :; do echo $(sha1sum am); sysctl -q vm.drop_caches=3D{1,2,3}; sl=
-eep 1; done
->=20
-> 	root@rescue:/test# ./repro-hole-corruption-test
-> 	i: 91, status: 0, bytes_deduped: 131072
-> 	i: 92, status: 0, bytes_deduped: 131072
-> 	i: 93, status: 0, bytes_deduped: 131072
-> 	i: 94, status: 0, bytes_deduped: 131072
-> 	i: 95, status: 0, bytes_deduped: 131072
-> 	i: 96, status: 0, bytes_deduped: 131072
-> 	i: 97, status: 0, bytes_deduped: 131072
-> 	i: 98, status: 0, bytes_deduped: 131072
-> 	i: 99, status: 0, bytes_deduped: 131072
-> 	13107200 total bytes deduped in this operation
-> 	am: 4.8 MiB (4964352 bytes) converted to sparse holes.
-> 	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> 	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> 	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> 	072a152355788c767b97e4e4c0e4567720988b84 am
-> 	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> 	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> 	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> 	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> 	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> 	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> 	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> 	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> 	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> 	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> 	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> 	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> 	bf00d862c6ad436a1be2be606a8ab88d22166b89 am
-> 	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> 	0d44cdf030fb149e103cfdc164da3da2b7474c17 am
-> 	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> 	60831f0e7ffe4b49722612c18685c09f4583b1df am
-> 	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> 	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> 	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> 	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> 	a19662b294a3ccdf35dbb18fdd72c62018526d7d am
-> 	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> 	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> 	^C
+So at that point, you should be able to mount your fs RO with
+skip_balance mount option and copy out all your data.
 
-It looks like we have something wrong interpreting file extent, maybe
-related to extent map merging.
+> After that, I attempt a btrfsck --repair (btrfsck.repair.log).
+> It seems alright until it reaches "Deleting bad dir index" and then
+> hangs.  IIRC at some point it segfaulted.
+> Desperately, I try to run another repair... and I encounter a BUG_ON
+> (btrfsck.repair.2.log).  Ouch.
 
-BTW, if without dropping page cache and no read corruption happens, it
-would limit the range of problem we're looking for.
+It looks like the repair makes the problem worse, that why we call
+repair dangerous.
+
+Does the fs still mounts with -o ro,skip_balance ?
 
 Thanks,
 Qu
 
 >=20
-> Corruption occurs most often when there is a sequence like this in a fi=
-le:
 >=20
-> 	ref 1: hole
-> 	ref 2: extent A, offset 0
-> 	ref 3: hole
-> 	ref 4: extent A, offset 8192
->=20
-> This scenario typically arises due to hole-punching or deduplication.
-> Hole-punching replaces one extent ref with two references to the same
-> extent with a hole between them, so:
->=20
-> 	ref 1:  extent A, offset 0, length 16384
->=20
-> becomes:
->=20
-> 	ref 1:  extent A, offset 0, length 4096
-> 	ref 2:  hole, length 8192
-> 	ref 3:  extent A, offset 12288, length 4096
->=20
-> Deduplication replaces two distinct extent refs surrounding a hole with=
-
-> two references to one of the duplicate extents, turning this:
->=20
-> 	ref 1:  extent A, offset 0, length 4096
-> 	ref 2:  hole, length 8192
-> 	ref 3:  extent B, offset 0, length 4096
->=20
-> into this:
->=20
-> 	ref 1:  extent A, offset 0, length 4096
-> 	ref 2:  hole, length 8192
-> 	ref 3:  extent A, offset 0, length 4096
->=20
-> Compression is required (zlib, zstd, or lzo) for corruption to occur.
-> I am not able to reproduce the issue with an uncompressed extent nor
-> have I observed any such corruption in the wild.
->=20
-> The presence or absence of the no-holes filesystem feature has no effec=
-t.
->=20
-> Ordinary writes can lead to pairs of extent references to the same exte=
-nt
-> separated by a reference to a different extent; however, in this case
-> there is data to be read from a real extent, instead of pages that have=
-
-> to be zero filled from a hole.  If ordinary non-hole writes could trigg=
-er
-> this bug, every page-oriented database engine would be crashing all the=
-
-> time on btrfs with compression enabled, and it's unlikely that would no=
-t
-> have been noticed between 2015 and now.  An ordinary write that splits
-> an extent ref would look like this:
->=20
-> 	ref 1:  extent A, offset 0, length 4096
-> 	ref 2:  extent C, offset 0, length 8192
-> 	ref 3:  extent A, offset 12288, length 4096
->=20
-> Sparse writes can lead to pairs of extent references surrounding a hole=
-;
-> however, in this case the extent references will point to different
-> extents, avoiding the bug.  If a sparse write could trigger the bug,
-> the rsync -S option and qemu/kvm 'raw' disk image files (among many
-> other tools that produce sparse files) would be unusable, and it's
-> unlikely that would not have been noticed between 2015 and now either.
-> Sparse writes look like this:
->=20
-> 	ref 1:  extent A, offset 0, length 4096
-> 	ref 2:  hole, length 8192
-> 	ref 3:  extent B, offset 0, length 4096
->=20
-> The pattern or timing of read() calls seems to be relevant.  It is very=
-
-> hard to see the corruption when reading files with 'hd', but 'cat | hd'=
-
-> will see the corruption just fine.  Similar problems exist with 'cmp'
-> but not 'sha1sum'.  Two processes reading the same file at the same tim=
-e
-> seem to trigger the corruption very frequently.
->=20
-> Some patterns of holes and data produce corruption faster than others.
-> The pattern generated by the script above is based on instances of
-> corruption I've found in the wild, and has a much better repro rate tha=
-n
-> random holes.
->=20
-> The corruption occurs during reads, after csum verification and before
-> decompression, so btrfs detects no csum failures.  The data on disk
-> seems to be OK and could be read correctly once the kernel bug is fixed=
+> Well, at this point I'm stuck.  I have no backups.
+> I've already restored the image of fs A from before any repair attempts=
 =2E
-> Repeated reads do eventually return correct data, but there is no way
-> for userspace to distinguish between corrupt and correct data reliably.=
-
 >=20
-> The corrupted data is usually data replaced by a hole or a copy of othe=
-r
-> blocks in the same extent.
+> Thanks in advance,
+> Jared
 >=20
-> The behavior is similar to some earlier bugs related to holes and
-> Compressed data in btrfs, but it's new and not fixed yet--hence,
-> "2018 edition."
+>=20
+> Some big files that I couldn't attach:
+> btrfsck.readonly.log:
+> https://drive.google.com/open?id=3D1CZP67uCs7zCyi1CfPv6tt9DxnIfU967u
+> btrfsck.repair.log:
+> https://drive.google.com/open?id=3D1l2Nj8n9CzmxRZznbbIYEMrQc6c5plMDm
+>=20
+>=20
+> P.S. Sorry if this gets sent twice -- Gmail failed to deliver it the fi=
+rst time.
 >=20
 
 
---A5z9HjdEhAg8QaAYdrTDjPlJGkQDnM23D--
+--OOZCEo3ug0ToTUbEporq4OEyLEFQ6mqAi--
 
---idTC29eTx669Z5e2kp2BjszTxnJR6CHKc
+--GO8CdeHfKqn0FX8uPtiCxjdHWVpxqhooN
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlt+QdgACgkQwj2R86El
-/qhU+wgAlGUctmZq7W6sGGUUsNgUmK8FHpV50Ie0hKirTHonJDsNikX2AEMFm0/u
-ssM7omo+NX1YgcAA6A7OLjQoloaWY4aYhc96mk2y/RW1ycPuoDkLREcvLU7AwU6l
-8yByQjfH5W5PTCOp4iV7uCZ0zurqoEursm2oAGlRkOMa+j5EEXp9CC8JMZHCQp0Z
-PBnInZyMCW2xlZDMm8khBlNghmaRw5cOn06C3H6480jOYd6Y0YB+XvRmqAIEU/9w
-LHaqRnBMArpQT8FfvgHpv1LtfPnxi5oxuPEa8FRuRf8tvv2dggza2uHzImM3r/jd
-kFU2cUS/VpnydACYlv1kaU39VhscYg==
-=tiVp
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlt+RM0ACgkQwj2R86El
+/qgBbAf/eFb4IH6nsbfrK8MpcEOT0Wqt87fU9iJJNqu4SBn65r42q5VGpVGhyNi8
+zbLGZ9UAnAZNGQWUvEvXHo3Aru9P+DGghiFVS0O8mZhwDgw5YNxK82qWdr1+Pxdw
+O928JAPgb99AXnCbGRwP9CGpd41J4z+nDL8OYjNd31MQ66VCw6abfr0k6vN6i/wy
+PqYz+zbl28gSDRkZFLsc9htAiD6DAiW+BSanOaAH5sjpSCVHxXlotph5igSvmlan
+0rHbIl7mxo3f3jzJzYE6+AdE0kQMF3NBN9rTe3GI8xjs0/7uNqIZ/0EmDLhu5N9N
+YN3TAPIjMRdKZrolD9eE8ZV2iHShSg==
+=Kvwv
 -----END PGP SIGNATURE-----
 
---idTC29eTx669Z5e2kp2BjszTxnJR6CHKc--
+--GO8CdeHfKqn0FX8uPtiCxjdHWVpxqhooN--

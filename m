@@ -1,208 +1,264 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:39462 "EHLO
-        james.kirk.hungrycats.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726080AbeHWGiz (ORCPT
+Received: from mail-ed1-f42.google.com ([209.85.208.42]:34921 "EHLO
+        mail-ed1-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726080AbeHWGxf (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 23 Aug 2018 02:38:55 -0400
-Date: Wed, 22 Aug 2018 23:11:25 -0400
-From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-To: linux-btrfs@vger.kernel.org
-Subject: Reproducer for "compressed data + hole data corruption bug, 2018
- editiion"
-Message-ID: <20180823031125.GE13528@hungrycats.org>
+        Thu, 23 Aug 2018 02:53:35 -0400
+Received: by mail-ed1-f42.google.com with SMTP id e6-v6so2676562edr.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 22 Aug 2018 20:26:00 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-        protocol="application/pgp-signature"; boundary="imjhCm/Pyz7Rq5F2"
+From: Zirconium Hacker <jared.e.vb@gmail.com>
+Date: Wed, 22 Aug 2018 23:25:48 -0400
+Message-ID: <CALsQ4_xPLoX7YErmAjV45g=ifD0UTJN-NwTrZFNqPCcaaPYZAA@mail.gmail.com>
+Subject: My Filesystem is Broken
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: multipart/mixed; boundary="00000000000062e5a0057411d146"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+--00000000000062e5a0057411d146
+Content-Type: text/plain; charset="UTF-8"
 
---imjhCm/Pyz7Rq5F2
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Hi.
+My primary (boot) filesystem is broken, due to an interrupted resize operation.
+I'm hoping that I can get help either fixing the filesystem or
+recovering some of my data, but I'd also like to know why btrfs and
+its tools acted the way they did.
+I think I've also found a bug in GParted.
 
-This is a repro script for a btrfs bug that causes corrupted data reads
-when reading a mix of compressed extents and holes.  The bug is
-reproducible on at least kernels v4.1..v4.18.
+Output of uname -a on the recovery medium: Linux ArchUSB
+4.18.3-arch1-1-ARCH #1 SMP PREEMPT Sat Aug 18 09:22:54 UTC 2018 x86_64
+GNU/Linux
+Kernel on the affected system: Liquorix Linux 4.17.14
+Output of btrfs --version: btrfs-progs v4.17.1
+Relevant dmesg log is attached.
 
-Some more observations and background follow, but first here is the
-script and some sample output:
+I currently use a single btrfs filesystem (fs A) with subvolumes for
+root, home, and var.  It's ~140 GiB in size, with ~130GiB used.
+I also have a second btrfs filesystem (fs B) from a previous
+installation of Arch Linux.  It's ~40 GiB in size, with less than 30
+GiB used.
 
-	root@rescue:/test# cat repro-hole-corruption-test
-	#!/bin/bash
+First of all, how I got into this situation:
 
-	# Write a 4096 byte block of something
-	block () { head -c 4096 /dev/zero | tr '\0' "\\$1"; }
+Yesterday, I wanted to reclaim some space, so I decided to shrink fs B.
+I opened up GParted, and resized it.  I got an error from btrfs, like
+"no space left on device".
+I was a little confused.  This was seemingly solved by unmounting fs B.
+I re-ran the reisze.  Some process was using 100% CPU on one core, and
+I didn't see much (if any) I/O activity.
+After a few minutes I noticed that GParted was attempting to resize
+the mount point of fs B ('/mnt/oldsys' on fs A), even though it wasn't
+mounted!
+I'm not sure what this does, but I figure that it's not good (even
+though fs A shouldn't fit in 32 GiB).
+So I press cancel... nothing.  I try force cancel, still no effect.  I
+try to kill the resize process, first with SIGTERM, then with
+SIGKILL... nothing.
+I figure that I have to reboot at this point.  During reboot, systemd
+waits really long for a stop job on some user session thing.
+Then, strangely, I see output _during shutdown_ about btrfs
+_beginning_ to resize fs A (referring to it by its block device,
+/dev/sda2)...
+I choose to reset my computer.  When I try to boot again (bad idea in
+retrospect) systemd takes a long time to "re-mount the root
+filesystem".
+Start jobs begin to timeout and fail, so I reset my computer again to
+boot into a recovery medium.
 
-	# Here is some test data with holes in it:
-	for y in $(seq 0 100); do
-		for x in 0 1; do
-			block 0;
-			block 21;
-			block 0;
-			block 22;
-			block 0;
-			block 0;
-			block 43;
-			block 44;
-			block 0;
-			block 0;
-			block 61;
-			block 62;
-			block 63;
-			block 64;
-			block 65;
-			block 66;
-		done
-	done > am
-	sync
+Part 2, the attempted recovery:
 
-	# Now replace those 101 distinct extents with 101 references to the first extent
-	btrfs-extent-same 131072 $(for x in $(seq 0 100); do echo am $((x * 131072)); done) 2>&1 | tail
+I run btrfsck on sda2, and seeing lots of errors (see
+btrfsck.readonly.log) I choose to make an image of the entire block
+device.
+After that, I attempt a btrfsck --repair (btrfsck.repair.log).
+It seems alright until it reaches "Deleting bad dir index" and then
+hangs.  IIRC at some point it segfaulted.
+Desperately, I try to run another repair... and I encounter a BUG_ON
+(btrfsck.repair.2.log).  Ouch.
 
-	# Punch holes into the extent refs
-	fallocate -v -d am
 
-	# Do some other stuff on the machine while this runs, and watch the sha1sums change!
-	while :; do echo $(sha1sum am); sysctl -q vm.drop_caches={1,2,3}; sleep 1; done
+Well, at this point I'm stuck.  I have no backups.
+I've already restored the image of fs A from before any repair attempts.
 
-	root@rescue:/test# ./repro-hole-corruption-test
-	i: 91, status: 0, bytes_deduped: 131072
-	i: 92, status: 0, bytes_deduped: 131072
-	i: 93, status: 0, bytes_deduped: 131072
-	i: 94, status: 0, bytes_deduped: 131072
-	i: 95, status: 0, bytes_deduped: 131072
-	i: 96, status: 0, bytes_deduped: 131072
-	i: 97, status: 0, bytes_deduped: 131072
-	i: 98, status: 0, bytes_deduped: 131072
-	i: 99, status: 0, bytes_deduped: 131072
-	13107200 total bytes deduped in this operation
-	am: 4.8 MiB (4964352 bytes) converted to sparse holes.
-	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-	072a152355788c767b97e4e4c0e4567720988b84 am
-	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-	bf00d862c6ad436a1be2be606a8ab88d22166b89 am
-	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-	0d44cdf030fb149e103cfdc164da3da2b7474c17 am
-	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-	60831f0e7ffe4b49722612c18685c09f4583b1df am
-	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-	a19662b294a3ccdf35dbb18fdd72c62018526d7d am
-	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-	^C
+Thanks in advance,
+Jared
 
-Corruption occurs most often when there is a sequence like this in a file:
 
-	ref 1: hole
-	ref 2: extent A, offset 0
-	ref 3: hole
-	ref 4: extent A, offset 8192
+Some big files that I couldn't attach:
+btrfsck.readonly.log:
+https://drive.google.com/open?id=1CZP67uCs7zCyi1CfPv6tt9DxnIfU967u
+btrfsck.repair.log:
+https://drive.google.com/open?id=1l2Nj8n9CzmxRZznbbIYEMrQc6c5plMDm
 
-This scenario typically arises due to hole-punching or deduplication.
-Hole-punching replaces one extent ref with two references to the same
-extent with a hole between them, so:
 
-	ref 1:  extent A, offset 0, length 16384
+P.S. Sorry if this gets sent twice -- Gmail failed to deliver it the first time.
 
-becomes:
+--00000000000062e5a0057411d146
+Content-Type: text/x-log; charset="US-ASCII"; name="btrfsck.repair.2.log"
+Content-Disposition: attachment; filename="btrfsck.repair.2.log"
+Content-Transfer-Encoding: base64
+Content-ID: <f_jl5zikhn0>
+X-Attachment-Id: f_jl5zikhn0
 
-	ref 1:  extent A, offset 0, length 4096
-	ref 2:  hole, length 8192
-	ref 3:  extent A, offset 12288, length 4096
+WzEvN10gY2hlY2tpbmcgcm9vdCBpdGVtcwpGaXhlZCAwIHJvb3RzLgpbMi83XSBjaGVja2luZyBl
+eHRlbnRzClszLzddIGNoZWNraW5nIGZyZWUgc3BhY2UgY2FjaGUKWzQvN10gY2hlY2tpbmcgZnMg
+cm9vdHMKRGVsZXRpbmcgYmFkIGRpciBpbmRleCBbMjU4LDk2LDJdIHJvb3QgMTg0NDY3NDQwNzM3
+MDk1NTE2MDgKZXh0ZW50LXRyZWUuYzoxNDIzOiBidHJmc19pbmNfZXh0ZW50X3JlZjogQlVHX09O
+IGBlcnJgIHRyaWdnZXJlZCwgdmFsdWUgLTUKYnRyZnMgY2hlY2soKzB4MWU2MTIpWzB4NTU5M2Nj
+MzEzNjEyXQpidHJmcyBjaGVjayhidHJmc19pbmNfZXh0ZW50X3JlZisweDE2NilbMHg1NTkzY2Mz
+MTY3YjZdCmJ0cmZzIGNoZWNrKCsweDFmMDY0KVsweDU1OTNjYzMxNDA2NF0KYnRyZnMgY2hlY2so
+X19idHJmc19jb3dfYmxvY2srMHg1ZTUpWzB4NTU5M2NjMzA5YWY1XQpidHJmcyBjaGVjayhidHJm
+c19jb3dfYmxvY2srMHhmOSlbMHg1NTkzY2MzMDllYTldCmJ0cmZzIGNoZWNrKGJ0cmZzX3NlYXJj
+aF9zbG90KzB4MzZkKVsweDU1OTNjYzMwY2QxZF0KYnRyZnMgY2hlY2soYnRyZnNfbG9va3VwX2Rp
+cl9pbmRleCsweDU4KVsweDU1OTNjYzMxZWE1OF0KYnRyZnMgY2hlY2soKzB4NWQ2YWUpWzB4NTU5
+M2NjMzUyNmFlXQpidHJmcyBjaGVjayhjbWRfY2hlY2srMHgzNTgwKVsweDU1OTNjYzM1ZDQ2MF0K
+YnRyZnMgY2hlY2sobWFpbisweDg4KVsweDU1OTNjYzMwODBiOF0KL3Vzci9saWIvbGliYy5zby42
+KF9fbGliY19zdGFydF9tYWluKzB4ZjMpWzB4N2Y5NWZhMWIyMjIzXQpidHJmcyBjaGVjayhfc3Rh
+cnQrMHgyZSlbMHg1NTkzY2MzMDgxZGVdCg==
+--00000000000062e5a0057411d146
+Content-Type: text/x-log; charset="US-ASCII"; name="dmesg.log"
+Content-Disposition: attachment; filename="dmesg.log"
+Content-Transfer-Encoding: base64
+Content-ID: <f_jl5ziki21>
+X-Attachment-Id: f_jl5ziki21
 
-Deduplication replaces two distinct extent refs surrounding a hole with
-two references to one of the duplicate extents, turning this:
-
-	ref 1:  extent A, offset 0, length 4096
-	ref 2:  hole, length 8192
-	ref 3:  extent B, offset 0, length 4096
-
-into this:
-
-	ref 1:  extent A, offset 0, length 4096
-	ref 2:  hole, length 8192
-	ref 3:  extent A, offset 0, length 4096
-
-Compression is required (zlib, zstd, or lzo) for corruption to occur.
-I am not able to reproduce the issue with an uncompressed extent nor
-have I observed any such corruption in the wild.
-
-The presence or absence of the no-holes filesystem feature has no effect.
-
-Ordinary writes can lead to pairs of extent references to the same extent
-separated by a reference to a different extent; however, in this case
-there is data to be read from a real extent, instead of pages that have
-to be zero filled from a hole.  If ordinary non-hole writes could trigger
-this bug, every page-oriented database engine would be crashing all the
-time on btrfs with compression enabled, and it's unlikely that would not
-have been noticed between 2015 and now.  An ordinary write that splits
-an extent ref would look like this:
-
-	ref 1:  extent A, offset 0, length 4096
-	ref 2:  extent C, offset 0, length 8192
-	ref 3:  extent A, offset 12288, length 4096
-
-Sparse writes can lead to pairs of extent references surrounding a hole;
-however, in this case the extent references will point to different
-extents, avoiding the bug.  If a sparse write could trigger the bug,
-the rsync -S option and qemu/kvm 'raw' disk image files (among many
-other tools that produce sparse files) would be unusable, and it's
-unlikely that would not have been noticed between 2015 and now either.
-Sparse writes look like this:
-
-	ref 1:  extent A, offset 0, length 4096
-	ref 2:  hole, length 8192
-	ref 3:  extent B, offset 0, length 4096
-
-The pattern or timing of read() calls seems to be relevant.  It is very
-hard to see the corruption when reading files with 'hd', but 'cat | hd'
-will see the corruption just fine.  Similar problems exist with 'cmp'
-but not 'sha1sum'.  Two processes reading the same file at the same time
-seem to trigger the corruption very frequently.
-
-Some patterns of holes and data produce corruption faster than others.
-The pattern generated by the script above is based on instances of
-corruption I've found in the wild, and has a much better repro rate than
-random holes.
-
-The corruption occurs during reads, after csum verification and before
-decompression, so btrfs detects no csum failures.  The data on disk
-seems to be OK and could be read correctly once the kernel bug is fixed.
-Repeated reads do eventually return correct data, but there is no way
-for userspace to distinguish between corrupt and correct data reliably.
-
-The corrupted data is usually data replaced by a hole or a copy of other
-blocks in the same extent.
-
-The behavior is similar to some earlier bugs related to holes and
-Compressed data in btrfs, but it's new and not fixed yet--hence,
-"2018 edition."
-
---imjhCm/Pyz7Rq5F2
-Content-Type: application/pgp-signature; name="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iF0EABECAB0WIQSnOVjcfGcC/+em7H2B+YsaVrMbnAUCW34l2QAKCRCB+YsaVrMb
-nAoPAKDW0f2KdzIT9e/thwYuWH3RrfS/+gCfbe41Ie7QGvNkL3okl2i5iWeovgg=
-=FqaR
------END PGP SIGNATURE-----
-
---imjhCm/Pyz7Rq5F2--
+WyAyMTM3LjEyMzAwNF0gQlRSRlMgaW5mbyAoZGV2aWNlIHNkYTIpOiBkaXNrIHNwYWNlIGNhY2hp
+bmcgaXMgZW5hYmxlZApbIDIxMzcuMTIzMDA1XSBCVFJGUyBpbmZvIChkZXZpY2Ugc2RhMik6IGhh
+cyBza2lubnkgZXh0ZW50cwpbIDIxMzcuMTg5MzIzXSBCVFJGUyBpbmZvIChkZXZpY2Ugc2RhMik6
+IGVuYWJsaW5nIHNzZCBvcHRpbWl6YXRpb25zClsgMzQwOS4wOTM0OTFdIHRyYXBzOiBidHJmc2Nr
+Wzk2Ml0gZ2VuZXJhbCBwcm90ZWN0aW9uIGlwOjU1NzJiMWUwYzljMiBzcDo3ZmZmYmM5MjZjODAg
+ZXJyb3I6MCBpbiBidHJmc1s1NTcyYjFkZmUwMDArN2EwMDBdClsgMzQwOS4wOTM1MjBdIGF1ZGl0
+OiB0eXBlPTE3MDEgYXVkaXQoMTUzNDgxMzAyOS43MzQ6NCk6IGF1aWQ9MTAwMCB1aWQ9MCBnaWQ9
+MCBzZXM9MSBwaWQ9OTYyIGNvbW09ImJ0cmZzY2siIGV4ZT0iL3Vzci9iaW4vYnRyZnMiIHNpZz0x
+MSByZXM9MQpbIDM1NjMuMDY5MzU5XSBJTkZPOiB0YXNrIGJ0cmZzY2s6OTYyIGJsb2NrZWQgZm9y
+IG1vcmUgdGhhbiAxMjAgc2Vjb25kcy4KWyAzNTYzLjA2OTgxNF0gICAgICAgTm90IHRhaW50ZWQg
+NC4xOC4zLWFyY2gxLTEtQVJDSCAjMQpbIDM1NjMuMDcwMjM5XSAiZWNobyAwID4gL3Byb2Mvc3lz
+L2tlcm5lbC9odW5nX3Rhc2tfdGltZW91dF9zZWNzIiBkaXNhYmxlcyB0aGlzIG1lc3NhZ2UuClsg
+MzU2My4wNzA2NjZdIGJ0cmZzY2sgICAgICAgICBEICAgIDAgICA5NjIgICAgOTYwIDB4ODAwMDAw
+ODAKWyAzNTYzLjA3MDY3MV0gQ2FsbCBUcmFjZToKWyAzNTYzLjA3MDY4Ml0gID8gX19zY2hlZHVs
+ZSsweDI5Yi8weDhiMApbIDM1NjMuMDcwNjg2XSAgc2NoZWR1bGUrMHgzMi8weDkwClsgMzU2My4w
+NzA2OTBdICBzY2hlZHVsZV9wcmVlbXB0X2Rpc2FibGVkKzB4MTQvMHgyMApbIDM1NjMuMDcwNjk1
+XSAgX19tdXRleF9sb2NrLmlzcmEuMCsweDIyMC8weDUzMApbIDM1NjMuMDcwNzAwXSAgPyBmaWxl
+X3VwZGF0ZV90aW1lKzB4NWUvMHgxMzAKWyAzNTYzLjA3MDcwNV0gIHBpcGVfd3JpdGUrMHgzNi8w
+eDNmMApbIDM1NjMuMDcwNzEwXSAgPyBfcmF3X3NwaW5fdW5sb2NrKzB4MTYvMHgzMApbIDM1NjMu
+MDcwNzE0XSAgPyBmb2xsb3dfcGFnZV9wdGUrMHgzYTcvMHg1ZjAKWyAzNTYzLjA3MDcyMF0gIF9f
+dmZzX3dyaXRlKzB4MTNmLzB4MTkwClsgMzU2My4wNzA3MjVdICBfX2tlcm5lbF93cml0ZSsweDRk
+LzB4ZjAKWyAzNTYzLjA3MDczMF0gIGR1bXBfZW1pdCsweDkxLzB4YzAKWyAzNTYzLjA3MDczN10g
+IGVsZl9jb3JlX2R1bXArMHgxMzBiLzB4MTRhMApbIDM1NjMuMDcwNzQ3XSAgZG9fY29yZWR1bXAr
+MHg2NTAvMHhlOTgKWyAzNTYzLjA3MDc1N10gIGdldF9zaWduYWwrMHgyOWIvMHg1ZDAKWyAzNTYz
+LjA3MDc2MV0gID8gZ2VuZXJhbF9wcm90ZWN0aW9uKzB4OC8weDMwClsgMzU2My4wNzA3NjldICBk
+b19zaWduYWwrMHgzNi8weDY1MApbIDM1NjMuMDcwNzczXSAgPyBfcmF3X3NwaW5fbG9jaysweDEz
+LzB4NDAKWyAzNTYzLjA3MDc3N10gID8gX3Jhd19zcGluX3VubG9jaysweDE2LzB4MzAKWyAzNTYz
+LjA3MDc4MV0gID8gX3Jhd19zcGluX2xvY2tfaXJxc2F2ZSsweDI1LzB4NTAKWyAzNTYzLjA3MDc4
+NV0gID8gX3Jhd19zcGluX3VubG9ja19pcnFyZXN0b3JlKzB4MjAvMHg0MApbIDM1NjMuMDcwNzkw
+XSAgPyB0cnlfdG9fd2FrZV91cCsweDIzMS8weDQ4MApbIDM1NjMuMDcwNzk1XSAgPyBnZW5lcmFs
+X3Byb3RlY3Rpb24rMHg4LzB4MzAKWyAzNTYzLjA3MDgwMV0gIGV4aXRfdG9fdXNlcm1vZGVfbG9v
+cCsweGJhLzB4ZTAKWyAzNTYzLjA3MDgwNV0gIHByZXBhcmVfZXhpdF90b191c2VybW9kZSsweDY0
+LzB4OTAKWyAzNTYzLjA3MDgxMF0gIHJldGludF91c2VyKzB4OC8weDgKWyAzNTYzLjA3MDgxNV0g
+UklQOiAwMDMzOjB4NTU3MmIxZTBjOWMyClsgMzU2My4wNzA4MTZdIENvZGU6IEJhZCBSSVAgdmFs
+dWUuClsgMzU2My4wNzA4MjZdIFJTUDogMDAyYjowMDAwN2ZmZmJjOTI2YzgwIEVGTEFHUzogMDAw
+MTAyMDIKWyAzNTYzLjA3MDgyOV0gUkFYOiAwMDAwZDU3Mjc0NjA3NmRmIFJCWDogMDAwMDU1NzM2
+ZjBlYzJjMCBSQ1g6IDAwMDAwMDAwMDAwMDAwMDkKWyAzNTYzLjA3MDgzMV0gUkRYOiAwMDAwMDAw
+MDAwMDAwMDJhIFJTSTogMDAwMDAwMDAwMDAwMDAwOSBSREk6IDAwMDAwMDAwMDAwMDAwMDAKWyAz
+NTYzLjA3MDgzM10gUkJQOiAwMDAwMDAwMDAwNTAwMDAwIFIwODogMDAwMDAwMDBmZmZmZmZmZSBS
+MDk6IDAwMDA1NTcyYjdjZTA5OTAKWyAzNTYzLjA3MDgzNV0gUjEwOiAwMDAwMDAwMDAwMDAwMDAw
+IFIxMTogMDAwMDU1NzJiMjM5ZWVmMCBSMTI6IDAwMDA1NTcyYmJmMmQ3ZDAKWyAzNTYzLjA3MDgz
+N10gUjEzOiAwMDAwN2ZmZmJjOTI2Y2NmIFIxNDogMDAwMDAwMDAwMDAwMDBiNiBSMTU6IDAwMDA1
+NTcyYjdjZTBhMTAKWyAzNTYzLjA3MDg0Ml0gSU5GTzogdGFzayBzeXN0ZW1kLWNvcmVkdW06MTAy
+MCBibG9ja2VkIGZvciBtb3JlIHRoYW4gMTIwIHNlY29uZHMuClsgMzU2My4wNzEyNzJdICAgICAg
+IE5vdCB0YWludGVkIDQuMTguMy1hcmNoMS0xLUFSQ0ggIzEKWyAzNTYzLjA3MTcwMV0gImVjaG8g
+MCA+IC9wcm9jL3N5cy9rZXJuZWwvaHVuZ190YXNrX3RpbWVvdXRfc2VjcyIgZGlzYWJsZXMgdGhp
+cyBtZXNzYWdlLgpbIDM1NjMuMDcyMTM0XSBzeXN0ZW1kLWNvcmVkdW0gRCAgICAwICAxMDIwICAg
+ICAgMSAweDAwMDAwMWEwClsgMzU2My4wNzIxMzddIENhbGwgVHJhY2U6ClsgMzU2My4wNzIxNDJd
+ICA/IF9fc2NoZWR1bGUrMHgyOWIvMHg4YjAKWyAzNTYzLjA3MjE0N10gID8gcHJlZW1wdF9jb3Vu
+dF9hZGQrMHg2OC8weGEwClsgMzU2My4wNzIxNTBdICBzY2hlZHVsZSsweDMyLzB4OTAKWyAzNTYz
+LjA3MjE1Nl0gIHdiX3dhaXRfZm9yX2NvbXBsZXRpb24rMHg1OS8weDkwClsgMzU2My4wNzIxNjFd
+ICA/IHdhaXRfd29rZW4rMHg4MC8weDgwClsgMzU2My4wNzIxNjZdICBfX3dyaXRlYmFja19pbm9k
+ZXNfc2JfbnIrMHhhYS8weGQwClsgMzU2My4wNzIxNzJdICB0cnlfdG9fd3JpdGViYWNrX2lub2Rl
+c19zYisweDNjLzB4NTAKWyAzNTYzLjA3MjIwOF0gIGV4dDRfbm9uZGFfc3dpdGNoKzB4N2IvMHg4
+MCBbZXh0NF0KWyAzNTYzLjA3MjIzMV0gIGV4dDRfZGFfd3JpdGVfYmVnaW4rMHg2Zi8weDQ4MCBb
+ZXh0NF0KWyAzNTYzLjA3MjIzOV0gIGdlbmVyaWNfcGVyZm9ybV93cml0ZSsweGI3LzB4MWMwClsg
+MzU2My4wNzIyNDJdICA/IGZpbGVfdXBkYXRlX3RpbWUrMHg1ZS8weDEzMApbIDM1NjMuMDcyMjQ2
+XSAgX19nZW5lcmljX2ZpbGVfd3JpdGVfaXRlcisweGZhLzB4MWMwClsgMzU2My4wNzIyNTBdICA/
+IG1lbV9jZ3JvdXBfZXZlbnRfcmF0ZWxpbWl0LmlzcmEuMTErMHgzNi8weGEwClsgMzU2My4wNzIy
+NjldICBleHQ0X2ZpbGVfd3JpdGVfaXRlcisweGM2LzB4M2UwIFtleHQ0XQpbIDM1NjMuMDcyMjc1
+XSAgZG9faXRlcl9yZWFkdl93cml0ZXYrMHgxNDUvMHgxYTAKWyAzNTYzLjA3MjI3OV0gIGRvX2l0
+ZXJfd3JpdGUrMHg4MC8weDE5MApbIDM1NjMuMDcyMjgzXSAgaXRlcl9maWxlX3NwbGljZV93cml0
+ZSsweDI1NS8weDNiMApbIDM1NjMuMDcyMjg5XSAgX19zZV9zeXNfc3BsaWNlKzB4MzFiLzB4Nzcw
+ClsgMzU2My4wNzIyOTVdICBkb19zeXNjYWxsXzY0KzB4NWIvMHgxNzAKWyAzNTYzLjA3MjMwMF0g
+IGVudHJ5X1NZU0NBTExfNjRfYWZ0ZXJfaHdmcmFtZSsweDQ0LzB4YTkKWyAzNTYzLjA3MjMwM10g
+UklQOiAwMDMzOjB4N2YxZGU5ZDEyZjRiClsgMzU2My4wNzIzMDRdIENvZGU6IEJhZCBSSVAgdmFs
+dWUuClsgMzU2My4wNzIzMTBdIFJTUDogMDAyYjowMDAwN2ZmYzQxYWViNzk4IEVGTEFHUzogMDAw
+MDAyNDYgT1JJR19SQVg6IDAwMDAwMDAwMDAwMDAxMTMKWyAzNTYzLjA3MjMxNF0gUkFYOiBmZmZm
+ZmZmZmZmZmZmZmRhIFJCWDogMDAwMDAwMDAyNjdlZDAwMCBSQ1g6IDAwMDA3ZjFkZTlkMTJmNGIK
+WyAzNTYzLjA3MjMxNV0gUkRYOiAwMDAwMDAwMDAwMDAwMDA2IFJTSTogMDAwMDAwMDAwMDAwMDAw
+MCBSREk6IDAwMDAwMDAwMDAwMDAwMDUKWyAzNTYzLjA3MjMxN10gUkJQOiAwMDAwN2ZmYzQxYWVi
+ODIwIFIwODogMDAwMDAwMDAyNjdlZDAwMCBSMDk6IDAwMDAwMDAwMDAwMDAwMDAKWyAzNTYzLjA3
+MjMxOV0gUjEwOiAwMDAwMDAwMDAwMDAwMDAwIFIxMTogMDAwMDAwMDAwMDAwMDI0NiBSMTI6IDAw
+MDAwMDAwMjY3ZWQwMDAKWyAzNTYzLjA3MjMyMF0gUjEzOiAwMDAwMDAwMDAwMDAyMDAwIFIxNDog
+MDAwMDAwMDAwMDAwMDAwMCBSMTU6IDAwMDAwMDAwMDAwMDAwMDAKWyAzODA4LjgyNTE1MV0gSU5G
+TzogdGFzayBzeXN0ZW1kLWNvcmVkdW06MTAyMCBibG9ja2VkIGZvciBtb3JlIHRoYW4gMTIwIHNl
+Y29uZHMuClsgMzgwOC44MjU2MDldICAgICAgIE5vdCB0YWludGVkIDQuMTguMy1hcmNoMS0xLUFS
+Q0ggIzEKWyAzODA4LjgyNjAzOV0gImVjaG8gMCA+IC9wcm9jL3N5cy9rZXJuZWwvaHVuZ190YXNr
+X3RpbWVvdXRfc2VjcyIgZGlzYWJsZXMgdGhpcyBtZXNzYWdlLgpbIDM4MDguODI2NDc0XSBzeXN0
+ZW1kLWNvcmVkdW0gRCAgICAwICAxMDIwICAgICAgMSAweDAwMDAwMWE0ClsgMzgwOC44MjY0Nzld
+IENhbGwgVHJhY2U6ClsgMzgwOC44MjY0OTBdICA/IF9fc2NoZWR1bGUrMHgyOWIvMHg4YjAKWyAz
+ODA4LjgyNjQ5NV0gID8gcHJlZW1wdF9jb3VudF9hZGQrMHg2OC8weGEwClsgMzgwOC44MjY0OTld
+ICBzY2hlZHVsZSsweDMyLzB4OTAKWyAzODA4LjgyNjUwN10gIHdiX3dhaXRfZm9yX2NvbXBsZXRp
+b24rMHg1OS8weDkwClsgMzgwOC44MjY1MTJdICA/IHdhaXRfd29rZW4rMHg4MC8weDgwClsgMzgw
+OC44MjY1MThdICBfX3dyaXRlYmFja19pbm9kZXNfc2JfbnIrMHhhYS8weGQwClsgMzgwOC44MjY1
+MjNdICB0cnlfdG9fd3JpdGViYWNrX2lub2Rlc19zYisweDNjLzB4NTAKWyAzODA4LjgyNjU2Ml0g
+IGV4dDRfbm9uZGFfc3dpdGNoKzB4N2IvMHg4MCBbZXh0NF0KWyAzODA4LjgyNjU4NV0gIGV4dDRf
+ZGFfd3JpdGVfYmVnaW4rMHg2Zi8weDQ4MCBbZXh0NF0KWyAzODA4LjgyNjU5M10gIGdlbmVyaWNf
+cGVyZm9ybV93cml0ZSsweGI3LzB4MWMwClsgMzgwOC44MjY1OThdICBfX2dlbmVyaWNfZmlsZV93
+cml0ZV9pdGVyKzB4ZmEvMHgxYzAKWyAzODA4LjgyNjYxOF0gIGV4dDRfZmlsZV93cml0ZV9pdGVy
+KzB4YzYvMHgzZTAgW2V4dDRdClsgMzgwOC44MjY2MjJdICA/IF9fc2VjY29tcF9maWx0ZXIrMHg0
+My8weDQ5MApbIDM4MDguODI2NjI4XSAgX192ZnNfd3JpdGUrMHgxM2YvMHgxOTAKWyAzODA4Ljgy
+NjYzNF0gIHZmc193cml0ZSsweGE5LzB4MTkwClsgMzgwOC44MjY2MzhdICBrc3lzX3dyaXRlKzB4
+NGYvMHhiMApbIDM4MDguODI2NjQ0XSAgZG9fc3lzY2FsbF82NCsweDViLzB4MTcwClsgMzgwOC44
+MjY2NDldICBlbnRyeV9TWVNDQUxMXzY0X2FmdGVyX2h3ZnJhbWUrMHg0NC8weGE5ClsgMzgwOC44
+MjY2NTNdIFJJUDogMDAzMzoweDdmMWRlOWRlYzBiNQpbIDM4MDguODI2NjU0XSBDb2RlOiBCYWQg
+UklQIHZhbHVlLgpbIDM4MDguODI2NjY0XSBSU1A6IDAwMmI6MDAwMDdmZmM0MWFlYjZkOCBFRkxB
+R1M6IDAwMDAwMjQ2IE9SSUdfUkFYOiAwMDAwMDAwMDAwMDAwMDAxClsgMzgwOC44MjY2NjhdIFJB
+WDogZmZmZmZmZmZmZmZmZmZkYSBSQlg6IDAwMDAwMDAwMDAwMzJiZjkgUkNYOiAwMDAwN2YxZGU5
+ZGVjMGI1ClsgMzgwOC44MjY2NzBdIFJEWDogMDAwMDAwMDAwMDAzMmJmOSBSU0k6IDAwMDA3ZjFk
+ZTVhMGEwMTAgUkRJOiAwMDAwMDAwMDAwMDAwMDA3ClsgMzgwOC44MjY2NzJdIFJCUDogMDAwMDdm
+MWRlNWEwYTAxMCBSMDg6IDAwMDA3ZjFkNjU5YTkwMDAgUjA5OiAwMDAwN2YxZGE0YjI4ZmY0Clsg
+MzgwOC44MjY2NzNdIFIxMDogMDAwMDAwMDAwMDAwMDAwMCBSMTE6IDAwMDAwMDAwMDAwMDAyNDYg
+UjEyOiAwMDAwMDAwMDAwMDAwMDA3ClsgMzgwOC44MjY2NzVdIFIxMzogMDAwMDAwMDAwMDAwMDAw
+MCBSMTQ6IGZmZmZmZmZmZmZmZmZmZmYgUjE1OiAwMDAwMDAwMDNmMTgwMDAwClsgMzkzMS43MDMw
+OTBdIElORk86IHRhc2sgc3lzdGVtZC1jb3JlZHVtOjEwMjAgYmxvY2tlZCBmb3IgbW9yZSB0aGFu
+IDEyMCBzZWNvbmRzLgpbIDM5MzEuNzAzNTUxXSAgICAgICBOb3QgdGFpbnRlZCA0LjE4LjMtYXJj
+aDEtMS1BUkNIICMxClsgMzkzMS43MDM5ODldICJlY2hvIDAgPiAvcHJvYy9zeXMva2VybmVsL2h1
+bmdfdGFza190aW1lb3V0X3NlY3MiIGRpc2FibGVzIHRoaXMgbWVzc2FnZS4KWyAzOTMxLjcwNDQy
+OV0gc3lzdGVtZC1jb3JlZHVtIEQgICAgMCAgMTAyMCAgICAgIDEgMHgwMDAwMDFhNApbIDM5MzEu
+NzA0NDM0XSBDYWxsIFRyYWNlOgpbIDM5MzEuNzA0NDQ1XSAgPyBfX3NjaGVkdWxlKzB4MjliLzB4
+OGIwClsgMzkzMS43MDQ0NTBdICA/IHByZWVtcHRfY291bnRfYWRkKzB4NjgvMHhhMApbIDM5MzEu
+NzA0NDU0XSAgc2NoZWR1bGUrMHgzMi8weDkwClsgMzkzMS43MDQ0NjBdICB3Yl93YWl0X2Zvcl9j
+b21wbGV0aW9uKzB4NTkvMHg5MApbIDM5MzEuNzA0NDY1XSAgPyB3YWl0X3dva2VuKzB4ODAvMHg4
+MApbIDM5MzEuNzA0NDcwXSAgX193cml0ZWJhY2tfaW5vZGVzX3NiX25yKzB4YWEvMHhkMApbIDM5
+MzEuNzA0NDc2XSAgdHJ5X3RvX3dyaXRlYmFja19pbm9kZXNfc2IrMHgzYy8weDUwClsgMzkzMS43
+MDQ1MTRdICBleHQ0X25vbmRhX3N3aXRjaCsweDdiLzB4ODAgW2V4dDRdClsgMzkzMS43MDQ1Mzdd
+ICBleHQ0X2RhX3dyaXRlX2JlZ2luKzB4NmYvMHg0ODAgW2V4dDRdClsgMzkzMS43MDQ1NDVdICBn
+ZW5lcmljX3BlcmZvcm1fd3JpdGUrMHhiNy8weDFjMApbIDM5MzEuNzA0NTUwXSAgX19nZW5lcmlj
+X2ZpbGVfd3JpdGVfaXRlcisweGZhLzB4MWMwClsgMzkzMS43MDQ1NjldICBleHQ0X2ZpbGVfd3Jp
+dGVfaXRlcisweGM2LzB4M2UwIFtleHQ0XQpbIDM5MzEuNzA0NTc0XSAgPyBfX3NlY2NvbXBfZmls
+dGVyKzB4NDMvMHg0OTAKWyAzOTMxLjcwNDU4MF0gIF9fdmZzX3dyaXRlKzB4MTNmLzB4MTkwClsg
+MzkzMS43MDQ1ODZdICB2ZnNfd3JpdGUrMHhhOS8weDE5MApbIDM5MzEuNzA0NTkwXSAga3N5c193
+cml0ZSsweDRmLzB4YjAKWyAzOTMxLjcwNDU5Nl0gIGRvX3N5c2NhbGxfNjQrMHg1Yi8weDE3MApb
+IDM5MzEuNzA0NjAyXSAgZW50cnlfU1lTQ0FMTF82NF9hZnRlcl9od2ZyYW1lKzB4NDQvMHhhOQpb
+IDM5MzEuNzA0NjA2XSBSSVA6IDAwMzM6MHg3ZjFkZTlkZWMwYjUKWyAzOTMxLjcwNDYwN10gQ29k
+ZTogQmFkIFJJUCB2YWx1ZS4KWyAzOTMxLjcwNDYxN10gUlNQOiAwMDJiOjAwMDA3ZmZjNDFhZWI2
+ZDggRUZMQUdTOiAwMDAwMDI0NiBPUklHX1JBWDogMDAwMDAwMDAwMDAwMDAwMQpbIDM5MzEuNzA0
+NjIxXSBSQVg6IGZmZmZmZmZmZmZmZmZmZGEgUkJYOiAwMDAwMDAwMDAwMDMyYmY5IFJDWDogMDAw
+MDdmMWRlOWRlYzBiNQpbIDM5MzEuNzA0NjIyXSBSRFg6IDAwMDAwMDAwMDAwMzJiZjkgUlNJOiAw
+MDAwN2YxZGU1YTBhMDEwIFJESTogMDAwMDAwMDAwMDAwMDAwNwpbIDM5MzEuNzA0NjI0XSBSQlA6
+IDAwMDA3ZjFkZTVhMGEwMTAgUjA4OiAwMDAwN2YxZDY1OWE5MDAwIFIwOTogMDAwMDdmMWRhNGIy
+OGZmNApbIDM5MzEuNzA0NjI2XSBSMTA6IDAwMDAwMDAwMDAwMDAwMDAgUjExOiAwMDAwMDAwMDAw
+MDAwMjQ2IFIxMjogMDAwMDAwMDAwMDAwMDAwNwpbIDM5MzEuNzA0NjI4XSBSMTM6IDAwMDAwMDAw
+MDAwMDAwMDAgUjE0OiBmZmZmZmZmZmZmZmZmZmZmIFIxNTogMDAwMDAwMDAzZjE4MDAwMApbIDM5
+ODIuNzE4MTE2XSBhdWRpdDogdHlwZT0xNzAxIGF1ZGl0KDE1MzQ4MTM2MDMuMzY3OjUpOiBhdWlk
+PTEwMDAgdWlkPTAgZ2lkPTAgc2VzPTEgcGlkPTk2MCBjb21tPSJzdWRvIiBleGU9Ii91c3IvYmlu
+L3N1ZG8iIHNpZz0xMSByZXM9MQo=
+--00000000000062e5a0057411d146--

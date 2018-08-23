@@ -1,136 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f67.google.com ([209.85.214.67]:50842 "EHLO
-        mail-it0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726780AbeHWV6i (ORCPT
+Received: from mail-lj1-f195.google.com ([209.85.208.195]:35710 "EHLO
+        mail-lj1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726478AbeHWXrD (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 23 Aug 2018 17:58:38 -0400
-Received: by mail-it0-f67.google.com with SMTP id j81-v6so8886236ite.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 23 Aug 2018 11:27:42 -0700 (PDT)
-Date: Thu, 23 Aug 2018 14:27:38 -0400
-From: Nicholas D Steeves <nsteeves@gmail.com>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: jkexcel <jkexcel@comcast.net>, linux-btrfs@vger.kernel.org
-Subject: Re: btrfs-convert missing in btrfs-tools v4.15.1
-Message-ID: <20180823182737.g2o7377e7torldtk@navis>
-References: <1438689914.6655.1532811050018@connect.xfinity.com>
- <20180728213448.GA16016@DigitalMercury.dynalias.net>
- <6c37e7ef-5669-7464-c72a-69a2074ebfb1@gmx.com>
+        Thu, 23 Aug 2018 19:47:03 -0400
+Received: by mail-lj1-f195.google.com with SMTP id p10-v6so5148534ljg.2
+        for <linux-btrfs@vger.kernel.org>; Thu, 23 Aug 2018 13:15:44 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha512;
-        protocol="application/pgp-signature"; boundary="hplpz22xm64uklka"
-In-Reply-To: <6c37e7ef-5669-7464-c72a-69a2074ebfb1@gmx.com>
+In-Reply-To: <CAA3ktqnSR59hSxpj1Pme-3fqJBqNu-A_kRu-VmX-5NrVpjHOoQ@mail.gmail.com>
+References: <CAA3ktqnSR59hSxpj1Pme-3fqJBqNu-A_kRu-VmX-5NrVpjHOoQ@mail.gmail.com>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Thu, 23 Aug 2018 14:15:43 -0600
+Message-ID: <CAJCQCtT-SwNYwLktME97RaC-NQTaCdq8JqWTDaeZhfZOzk6MXw@mail.gmail.com>
+Subject: Re: Device Delete Stalls
+To: Stefan Malte Schumacher <s.schumacher@netcologne.de>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Thu, Aug 23, 2018 at 8:04 AM, Stefan Malte Schumacher
+<s.schumacher@netcologne.de> wrote:
+> Hallo,
+>
+> I originally had RAID with six 4TB drives, which was more than 80
+> percent full. So now I bought
+> a 10TB drive, added it to the Array and gave the command to remove the
+> oldest drive in the array.
+>
+>  btrfs device delete /dev/sda /mnt/btrfs-raid
+>
+> I kept a terminal with "watch btrfs fi show" open and It showed that
+> the size of /dev/sda had been set to zero and that data was being
+> redistributed to the other drives. All seemed well, but now the
+> process stalls at 8GB being left on /dev/sda/. It also seems that the
+> size of the drive has been reset the original value of 3,64TiB.
+>
+> Label: none  uuid: 1609e4e1-4037-4d31-bf12-f84a691db5d8
+>         Total devices 7 FS bytes used 8.07TiB
+>         devid    1 size 3.64TiB used 8.00GiB path /dev/sda
+>         devid    2 size 3.64TiB used 2.73TiB path /dev/sdc
+>         devid    3 size 3.64TiB used 2.73TiB path /dev/sdd
+>         devid    4 size 3.64TiB used 2.73TiB path /dev/sde
+>         devid    5 size 3.64TiB used 2.73TiB path /dev/sdf
+>         devid    6 size 3.64TiB used 2.73TiB path /dev/sdg
+>         devid    7 size 9.10TiB used 2.50TiB path /dev/sdb
+>
+> I see no more btrfs worker processes and no more activity in iotop.
+> How do I proceed? I am using a current debian stretch which uses
+> Kernel 4.9.0-8 and btrfs-progs 4.7.3-1.
+>
+> How should I proceed? I have a Backup but would prefer an easier and
+> less time-comsuming way out of this mess.
 
---hplpz22xm64uklka
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+I'd let it keep running as long as you can tolerate it. In the
+meantime, update your backups, and keep using the file system
+normally, it should be safe to use. The block group migration can
+sometimes be slow with "brfs dev del" compared to the replace
+operation, I can't explain why but it might be related to some
+combination of file and free space fragmentation as well as number of
+snapshots, and just general complexity of what is effectively a
+partial balance operation going on.
 
-Hi Qu,
+Next, you could do a sysrq + t, which dumps process state into the
+kernel message buffer which might not be big enough to contain the
+output. If you're using systemd, the journal -k will have it, and
+presumably syslog's messages will have it. I can't parse this output
+but a developer might find it useful to see what's going on and if
+it's just plain wrong. Or if it's just slow.
 
-On Sun, Jul 29, 2018 at 07:44:05AM +0800, Qu Wenruo wrote:
->=20
->=20
-> On 2018=E5=B9=B407=E6=9C=8829=E6=97=A5 05:34, Nicholas D Steeves wrote:
-> > Resending because I forgot to CC list.
-> >=20
-> > Hi jkexcel,
-> >=20
-> > On 28 July 2018 at 16:50, jkexcel <jkexcel@comcast.net> wrote:
-> >>
-> >> I'm an end user trying to use btrfs-convert but when I installed
-> >> btrfs-tools and its dependency btrfs-progs on kubuntu 18.04, the
-> >> installation was successful, and it shows that v4.15.1-1build1 was
-> >> installed.
-> >>
-> >> However, when using the command  # brtfs-convert  /dev/sda4 (with the
-> >> drive unmounted) the resulting error appears "command not found"
-> >> I also tried command "btrfs convert" in case this was folded into the
-> >> main tool, but this also failed.
-> >>
-> >> 1. Is btrfs-convert still available?
-> >>
-> >> 2. Where can I find it?
-> >>
-> >> 3. Has btrfs-convert been replaced? what is it's new name?
-> >>
-> >> 4. Is it safe to use a downgraded version of btrfs-tools ie: 4.14 or
-> >> older?
-> >=20
-> > You can blame me for that.  In Debian several users had reported
-> > release-critical issues in btrfs-convert, so I submitted a patch to
-> > disable it for the forseable future, eg:
-> >=20
-> >   https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=3D864798
-> >   https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=3D854489
->=20
-> Both report looks pretty old (4.7~4.9).
->=20
-> In fact, just in v4.10 we had a big rework for convert.
-> It should work much better after that.
->=20
-> Furthermore, we have newer (but smaller) fixes to remove a lot of
-> BUG_ON(), and do graceful exit for ENOSPC case since then.
->=20
-> And the design of btrfs-convert (at least for the latest btrfs-convert)
-> is to ensure until everything goes well, we won't touch any bytes of the
-> ext* fs (in fact we open the ext* fs in RO mode).
-> So it at least won't corrupt the ext* fs.
->=20
-> >=20
-> > Also, please consider the official status "As of 4.0 kernels this featu=
-re
-> > is not often used or well tested anymore, and there have been some repo=
-rts
-> > that the conversion doesn't work reliably. Feel free to try it out, but
-> > make sure you have backups" (
-> > https://btrfs.wiki.kernel.org/index.php/Conversion_from_Ext3 ).
->=20
-> The wiki page looks needs to be updated.
->=20
-> Both btrfs-convert and base btrfs-progs are improving, especially after
-> v4.10 btrfs-convert goes through a big rework and works well so far, and
-> even added support for reiserfs under the same framwork.
->=20
-> So IMHO it's at least worth trying.
->=20
-> Thanks,
-> Qu
+Next, once you get sick of waiting, well you can force a reboot with
+'reboot -f' or 'sysrq + b' but then what's the plan? Sure you could
+just try again but I don't know that this should give different
+results. It's either just slow, or it's a bug. And if it's a bug,
+maybe it's fixed in something newer, in which case I'd try a much
+newer kernel 4.14 at the oldest, and ideally 4.18.4, at least to
+finish off this task.
 
-Thank you for sharing the cut-off where success became more likely :-)
-Debian 9 could have had 4.9.1 at the newest, so it wouldn't have had
-btrfs-convert.  So it sounds like btrfs-convert could have been
-enabled for the experimental suite (which is almost only used by
-Debian developers and not users) for 4.10.  Looking at the changelog
-it seems we might have had to disable it again before 4.14.1 or 4.16.
+For what it's worth, the bulk of the delete operation is like a
+filtered balance, it's mainly relocating block groups, and that is
+supposed to be COW. So it should be safe to do an abrupt reboot. If
+you're not writing new information there's no information to lose; the
+worst case is Btrfs has a slightly older superblock than the latest
+generation for block group relocation and it starts from that point
+again. I've done quite a lot of jerkface reboot -f and sysrq + b with
+Btrfs and have never broken a file system so far (power failures,
+different story) but maybe I'm lucky and I have a bunch of well
+behaved devices.
 
-I'm happy we're having this conversation now, because the time to give
-it another try is probably sometime in the next month :-)  See my long
-email to David for the caveats.
 
-Cheers,
-Nicholas
 
---hplpz22xm64uklka
-Content-Type: application/pgp-signature; name="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQIzBAABCgAdFiEE4qYmHjkArtfNxmcIWogwR199EGEFAlt+/JcACgkQWogwR199
-EGETxw/+O3FeuaH/ofJNIV2JrwV9dMrTwVUicXNwzAJVzKT3ROLLB1Xn2xnx3gNR
-PoA4vOP1rq0bfDZEOCvi88JCo/uPUCtboo517QmmbxFKLwUcFeuo5XJOq0xoAnVO
-HS81/GIvjTo3Kk9hPEk8paLzcV5DKC7FcTcm3uYI0PCp7CNEiyfA5yDP4eTui7sL
-KDQmdOsiP02Na7Xz4+xzaFJuJSoIFoDzvIQCnwm0dWs+lunEmuuDKh6WRkrohyQR
-bf+D5bBQ1xMd6Ic154gcpLOKqL9rvhejIgGl9d2YLOruavsOAZduxIG1cILiM3oM
-lZi+GEfKBakwLy+kZfeHS1NMR1T/kOmWSHi1aDmFvjXdQAvN1IyawcxIzcCRVOxZ
-jnjB3l7ALEDJRM1Iv/L5TruRXBFu0JlttH4br4Wl3EWkOdqIbq5ZjoyuhECtgeoG
-/7V5qmt4oBMAvFxWAGwJHRnU8yj+yy3nRjNvp3iHJQqlEKcdZs3C8BmR2XYsncvk
-hXotykOf9Vrr+yy+uglFpT7VJxW71rl7o+4IVGNtOU2T8o8Rb0Kjv5Qe7MS2ieKN
-qHoyaYCBQ+Dhznug6yO3p0kqLOLyTg8eULuv6if1pPiZ5ZdZXNUX1l0rJAs6Vf9I
-OCYWiZivHUeoHNW4wt62KlsXtioMWblJbGzmHMDFQbZgSPVfefs=
-=FFro
------END PGP SIGNATURE-----
-
---hplpz22xm64uklka--
+-- 
+Chris Murphy

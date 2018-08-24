@@ -1,113 +1,141 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:59270 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1726338AbeHXIzW (ORCPT
+Received: from mgwkm01.jp.fujitsu.com ([202.219.69.168]:58133 "EHLO
+        mgwkm01.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726338AbeHXKsk (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 24 Aug 2018 04:55:22 -0400
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-3@m.gmane.org>)
-        id 1ft4W3-0005pn-0x
-        for linux-btrfs@vger.kernel.org; Fri, 24 Aug 2018 07:20:11 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: btrfs-convert missing in btrfs-tools v4.15.1
-Date: Fri, 24 Aug 2018 05:20:04 +0000 (UTC)
-Message-ID: <pan$ec0d6$d2f0d34b$37d58ea8$67a6a800@cox.net>
-References: <1438689914.6655.1532811050018@connect.xfinity.com>
-        <20180728213448.GA16016@DigitalMercury.dynalias.net>
-        <20180809115046.GX3218@twin.jikos.cz>
-        <20180823181516.4oq4yu7xzzueligq@navis>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+        Fri, 24 Aug 2018 06:48:40 -0400
+Received: from g01jpfmpwyt02.exch.g01.fujitsu.local (g01jpfmpwyt02.exch.g01.fujitsu.local [10.128.193.56])
+        by kw-mxauth.gw.nic.fujitsu.com (Postfix) with ESMTP id EDA49AC01B5
+        for <linux-btrfs@vger.kernel.org>; Fri, 24 Aug 2018 16:15:10 +0900 (JST)
+From: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
+Subject: Re: [PATCH v2] btrfs: Always check nocow for quota enabled case to
+ make sure we won't reserve unnecessary data space
+To: Qu Wenruo <wqu@suse.com>, <linux-btrfs@vger.kernel.org>
+References: <20180821054016.28058-1-wqu@suse.com>
+Message-ID: <afee4b2f-ee0b-8afb-b4d6-1fd8f5958e3a@jp.fujitsu.com>
+Date: Fri, 24 Aug 2018 16:14:52 +0900
+MIME-Version: 1.0
+In-Reply-To: <20180821054016.28058-1-wqu@suse.com>
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Nicholas D Steeves posted on Thu, 23 Aug 2018 14:15:18 -0400 as excerpted:
+Hi,
 
->> It's in my interest to ship all tools in distros, but there's also only
->> that much what the upstream community can do. If you're going to
->> reconsider the status of btrfs-convert in Debian, please let me know.
+On 2018/08/21 14:40, Qu Wenruo wrote:
+> Commit c6887cd11149 ("Btrfs: don't do nocow check unless we have to")
+> makes nocow check less frequent to improve performance.
 > 
-> Yes, I'd be happy to advocate for its reinclusion if the answer to 4/5
-> of the following questions is "yes".  Does SUSE now recommend the use of
-> btrfs-convert to its enterprise customers?  The following is a
-> frustrating criteria, but: Can a random desktop user run btrfs-convert
-> against their ext4 rootfs and expect the operation to succeed?  Is
-> btrfs-convert now sufficiently trusted that it can be recommended with
-> the same degree of confidence as a backup, mkfs.btrfs, then restore to
-> new filesystem approach?  Does the user of a btrfs volume created with
-> btrfs-convert have an equal or lesser probability of encountering bugs
-> compared to a one who used mkfs.btrfs?
+> However for quota enabled case, such optimization could lead to extra
+> unnecessary data reservation, which results failure for test case like
+> btrfs/153 in fstests.
+> 
+> Fix it by reverting to old behavior for quota enabled case.
+> 
+> Fixes: c6887cd11149 ("Btrfs: don't do nocow check unless we have to")
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+> changelog
+> v2:
+>   Fix regression for quota+cow case. (Previously it will skip data
+>   reservation if quota is enabled, causing regression for limit case.
+>   Pointed out by Misono)
+> ---
+>  fs/btrfs/file.c | 18 +++++++++++++++++-
+>  1 file changed, 17 insertions(+), 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+> index 2be00e873e92..183e5fb96f42 100644
+> --- a/fs/btrfs/file.c
+> +++ b/fs/btrfs/file.c
+> @@ -1584,6 +1584,7 @@ static noinline ssize_t btrfs_buffered_write(struct kiocb *iocb,
+>  	int ret = 0;
+>  	bool only_release_metadata = false;
+>  	bool force_page_uptodate = false;
+> +	bool quota_enabled = test_bit(BTRFS_FS_QUOTA_ENABLED, &fs_info->flags);
+>  
+>  	nrptrs = min(DIV_ROUND_UP(iov_iter_count(i), PAGE_SIZE),
+>  			PAGE_SIZE / (sizeof(struct page *)));
+> @@ -1624,13 +1625,28 @@ static noinline ssize_t btrfs_buffered_write(struct kiocb *iocb,
+>  				fs_info->sectorsize);
+>  
+>  		extent_changeset_release(data_reserved);
+> +
+> +		/*
+> +		 * If we have quota enabled, we must do the heavy lift nocow
+> +		 * check here to avoid reserving data space, or we can hit
+> +		 * limitation for NOCOW files.
+> +		 */
+> +		if (quota_enabled) {
+> +			if ((BTRFS_I(inode)->flags & (BTRFS_INODE_NODATACOW |
+> +						      BTRFS_INODE_PREALLOC)) &&
+> +			    check_can_nocow(BTRFS_I(inode), pos,
+> +					    &write_bytes) > 0)
+> +				goto reserve_meta_only;
+> +		}
+>  		ret = btrfs_check_data_free_space(inode, &data_reserved, pos,
+>  						  write_bytes);
+>  		if (ret < 0) {
+>  			if ((BTRFS_I(inode)->flags & (BTRFS_INODE_NODATACOW |
+>  						      BTRFS_INODE_PREALLOC)) &&
+>  			    check_can_nocow(BTRFS_I(inode), pos,
+> -					&write_bytes) > 0) {
+> +					&write_bytes) > 0 &&
 
-Just a user and list regular here, and gentoo not debian, but for what it 
-counts...
+> +			    !quota_enabled) {
 
-I'd personally never consider or recommend a filesystem converter over 
-the backup, mkfs-to-new-fs, restore-to-new-fs, method, for three reasons.
+(When we check this condition, quota_enabled must be false or otherwise
+we have already goto reserve_meta_only. So it seems redundant.)
 
-1) Regardless of how stable a filesystem converter is and what two 
-filesystems the conversion is between, "things" /do/ occasionally happen, 
-thus making it irresponsible to use or recommend use of such a converter 
-without a suitably current and tested backup, "just in case."
+> +reserve_meta_only:
+>  				/*
+>  				 * For nodata cow case, no need to reserve
+>  				 * data space.
+> 
 
-(This is of course a special case of the sysadmin's first rule of 
-backups, that the true value of data is defined not by any arbitrary 
-claims, but by the number of backups of that data it's considered worth 
-the time/trouble/resources to make/have.  If the data value is trivial 
-enough, sure, don't bother with the backup, but if it's of /that/ low a 
-value, so low it's not worth a backup even when doing something as 
-theoretically risky as a filesystem conversion, why is it worth the time 
-and trouble to bother converting it in the first place, instead of just 
-blowing it away and starting clean?)
+I applied this patch on today's misc-next and it seems mostly ok, but
+btrfs/022 sometimes gives following warning:
 
-2) Once a backup is considered "strongly recommended", as we've just 
-established that it should be in 1 regardless of the stability of the 
-converter, just using the existing filesystem as that backup and starting 
-fresh with a mkfs for the new filesystem and copying things over is 
-simply put the easiest, simplest and cleanest method to change 
-filesystems.
+[80244.152130] WARNING: CPU: 5 PID: 14575 at fs/btrfs/extent-tree.c:9742 btrfs_free_block_groups+0x2d7/0x440 [btrfs]
+[80244.152132] Modules linked in: btrfs(O) xor zstd_decompress zstd_compress xxhash raid6_pq xt_CHECKSUM ipt_MASQUERADE tun bridge stp llc xt_conntrack ip_set nfnetlink iptable_nat nf_conntrack_ipv4 nf_defrag_ipv4 nf_nat_ipv4 nf_nat nf_conntrack iptable_mangle iptable_raw iptable_security sunrpc intel_powerclamp kvm_intel kvm gpio_ich iTCO_wdt ipmi_ssif iTCO_vendor_support ipmi_si st irqbypass ipmi_devintf crct10dif_pclmul crc32_pclmul ipmi_msghandler ghash_clmulni_intel pcspkr acpi_power_meter i2c_i801 pcc_cpufreq i7core_edac lpc_ich acpi_cpufreq xfs libcrc32c mgag200 drm_kms_helper syscopyarea sysfillrect sysimgblt fb_sys_fops ttm drm igb sr_mod hwmon uas ptp crc32c_intel cdrom usb_storage pps_core ata_generic megaraid_sas dca pata_acpi i2c_algo_bit ipv6 [last unloaded: xor]
+[80244.152185] CPU: 5 PID: 14575 Comm: umount Tainted: G        W IO      4.18.0-rc8+ #98
+[80244.152187] Hardware name: FUJITSU-SV                       PRIMERGY RX300 S6             /D2619, BIOS 6.00 Rev. 1.09.2619.N1           12/13/2010
+[80244.152205] RIP: 0010:btrfs_free_block_groups+0x2d7/0x440 [btrfs]
+[80244.152206] Code: 85 20 cb 00 00 48 39 c6 0f 84 b9 00 00 00 49 bf 00 01 00 00 00 00 ad de 48 8b 9d 20 cb 00 00 48 83 7b a0 00 0f 84 0d 01 00 00 <0f> 0b 48 8d 73 88 31 c9 31 d2 48 89 ef e8 27 7a ff ff 48 89 df e8
+[80244.152235] RSP: 0018:ffff8ea10393fdb0 EFLAGS: 00010286
+[80244.152237] RAX: ffff8c1025819e78 RBX: ffff8c1025819e78 RCX: 0000000000000000
+[80244.152238] RDX: 0000000000000001 RSI: ffff8c115329cb20 RDI: ffff8c1025818e00
+[80244.152239] RBP: ffff8c1153290000 R08: 0000000000000000 R09: 0000000000000000
+[80244.152240] R10: ffff8c1025818e98 R11: 0000000000000002 R12: ffff8c11532900a0
+[80244.152241] R13: 0000000000000000 R14: dead000000000200 R15: dead000000000100
+[80244.152243] FS:  00007ff0cc3d8fc0(0000) GS:ffff8c1137d40000(0000) knlGS:0000000000000000
+[80244.152244] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[80244.152245] CR2: 00007ffe75e53c88 CR3: 0000000235d16001 CR4: 00000000000206e0
+[80244.152246] Call Trace:
+[80244.152270]  close_ctree+0x146/0x320 [btrfs]
+[80244.152276]  ? kthread_stop+0x42/0xf0
+[80244.152280]  generic_shutdown_super+0x6c/0x110
+[80244.152283]  kill_anon_super+0xe/0x20
+[80244.152298]  btrfs_kill_super+0x13/0x100 [btrfs]
+[80244.152301]  deactivate_locked_super+0x3f/0x70
+[80244.152303]  cleanup_mnt+0x3b/0x70
+[80244.152305]  task_work_run+0x84/0xa0
+[80244.152308]  do_syscall_64+0x143/0x4cd
+[80244.152311]  ? do_page_fault+0x31/0x130
+[80244.152314]  entry_SYSCALL_64_after_hwframe+0x44/0xa9
+[80244.152316] RIP: 0033:0x7ff0cb43c1a7
+[80244.152317] Code: ad 2b 00 f7 d8 64 89 01 48 83 c8 ff c3 66 0f 1f 44 00 00 31 f6 e9 09 00 00 00 66 0f 1f 84 00 00 00 00 00 b8 a6 00 00 00 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 8b 0d c9 ac 2b 00 f7 d8 64 89 01 48
+[80244.152346] RSP: 002b:00007ffe75e554b8 EFLAGS: 00000246 ORIG_RAX: 00000000000000a6
+[80244.152348] RAX: 0000000000000000 RBX: 0000563ccced82d0 RCX: 00007ff0cb43c1a7
+[80244.152349] RDX: 0000000000000001 RSI: 0000000000000000 RDI: 0000563ccced84b0
+[80244.152350] RBP: 0000563ccced84b0 R08: 0000000000000005 R09: 0000563ccced84d0
+[80244.152351] R10: 00007ff0cb4ba320 R11: 0000000000000246 R12: 00007ff0cc1d0184
+[80244.152352] R13: 0000000000000000 R14: 0000000000000000 R15: 0000000000000000
+[80244.152354] ---[ end trace b5975ec96174c60c ]---
+[80244.152358] BTRFS info (device sdh2): space_info 1 has 1022132224 free, is not full
+[80244.152360] BTRFS info (device sdh2): space_info total=1082130432, used=60039168, pinned=0, reserved=0, may_use=18446744073709510656, readonly=0
 
-3) (Pretty much)[1] Regardless of the filesystems in question, a fresh 
-mkfs and clean sequential transfer of files from the old-fs/backup to the 
-new one is pretty well guaranteed to be better optimized than conversion 
-from an existing filesystem of a different type, particularly one that 
-has been in normal operation for awhile and thus has operational 
-fragmentation of both data and free-space.  That's in addition to being 
-less bug-prone, even for a "stable" converter.
+Obviously, may_use value is underflowed.
 
-
-Restating: So(1) doing a conversion without a backup is irresponsible, 
-(2) the easiest backup and conversion method is directly using the old fs 
-as the backup, and copying over to the freshly mkfs-ed new filesystem, 
-and (3) a freshly mkfs-ed filesystem and sequential copy of files to it 
-from backup, whether that be the old filesystem or not, is going to be 
-more efficient and less bug-prone than an in-place conversion.
-
-Given the above, why would /anyone/ /sane/ consider using a converter?  
-It simply doesn't make sense, even if the converter were as stable as the 
-most stable filesystems we have.
-
-
-So as a distro btrfs package maintainer, do what you wish in terms of the 
-converter, but were it me, I might actually consider replacing it with an 
-executable that simply printed out some form of the above argument, with 
-a pointer to the sources should they still be interested after having 
-read that argument.[2] Then, if people really are determined to 
-unnecessarily waste their time to get a less efficient filesystem, 
-possibly risking their data in the process of getting it, they can always 
-build the converter from sources themselves.
-
----
-[1] I debated omitting the qualifier as I know of no exceptions, but I'm 
-not a filesystem expert and while I'm a bit skeptical, I suppose it's 
-possible that they might exist.
-
-[2] There's actually btrfs precedent for this in the form of the 
-executable built as fsck.btrfs, which does nothing (successfully) but 
-possibly print a message referring people to btrfs check, if run in 
-interactive mode.
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+Thanks,
+Misono

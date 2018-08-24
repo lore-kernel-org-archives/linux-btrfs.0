@@ -1,250 +1,344 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:40508 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727950AbeH2McG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 29 Aug 2018 08:32:06 -0400
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id D4B76AFC4
-        for <linux-btrfs@vger.kernel.org>; Wed, 29 Aug 2018 08:36:16 +0000 (UTC)
-From: Nikolay Borisov <nborisov@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 2/2] btrfs: Remove fsid/metadata_fsid fields from btrfs_info
-Date: Wed, 29 Aug 2018 11:36:14 +0300
-Message-Id: <1535531774-29830-3-git-send-email-nborisov@suse.com>
-In-Reply-To: <1535531774-29830-1-git-send-email-nborisov@suse.com>
-References: <1535531774-29830-1-git-send-email-nborisov@suse.com>
+Received: from p3nlsmtpcp01-03.prod.phx3.secureserver.net ([184.168.200.142]:52762
+        "EHLO p3nlsmtpcp01-03.prod.phx3.secureserver.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726198AbeHXH6i (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 24 Aug 2018 03:58:38 -0400
+Date: Fri, 24 Aug 2018 09:54:40 +0530
+From: Lakshmipathi Ganapathi <lakshmipathi.ganapathi@collabora.co.uk>
+To: linux-btrfs@vger.kernel.org, lakshmipathi.g@giis.co.in
+Subject: [PATCH] btrfs-progs: dduper - BTRFS offline deduplication tool
+Message-ID: <20180824042440.GA7793@giis.co.in>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Currently btrfs_fs_info structure contains a copy of the
-fsid/metadata_uuid fields. Same values are also contained in the
-btrfs_fs_devices structure which fs_info has a reference to. Let's
-reduce duplication by removing the fields from fs_info and always refer
-to the ones in fs_devices. No functional changes.
+dduper is an offline dedupe tool. It works by fetching checksum from BTRFS
+csum tree, instead of reading whole file blocks and computing checksum.
+This tool relies on output from 'btrfs inspect-internal dump-csum' command.
 
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+Signed-off-by: Lakshmipathi.G <lakshmipathi.ganapathi@collabora.co.uk>
 ---
- fs/btrfs/check-integrity.c   |  2 +-
- fs/btrfs/ctree.c             |  5 +++--
- fs/btrfs/ctree.h             |  2 --
- fs/btrfs/disk-io.c           | 21 ++++++++++++---------
- fs/btrfs/extent-tree.c       |  2 +-
- fs/btrfs/ioctl.c             |  2 +-
- fs/btrfs/super.c             |  2 +-
- fs/btrfs/volumes.c           | 10 ++++------
- include/trace/events/btrfs.h |  2 +-
- 9 files changed, 24 insertions(+), 24 deletions(-)
+ dduper | 310 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 310 insertions(+)
+ create mode 100644 dduper
 
-diff --git a/fs/btrfs/check-integrity.c b/fs/btrfs/check-integrity.c
-index 833cf3c35b4d..4336de746f9c 100644
---- a/fs/btrfs/check-integrity.c
-+++ b/fs/btrfs/check-integrity.c
-@@ -1720,7 +1720,7 @@ static int btrfsic_test_for_metadata(struct btrfsic_state *state,
- 	num_pages = state->metablock_size >> PAGE_SHIFT;
- 	h = (struct btrfs_header *)datav[0];
- 
--	if (memcmp(h->fsid, fs_info->fsid, BTRFS_FSID_SIZE))
-+	if (memcmp(h->fsid, fs_info->fs_devices->fsid, BTRFS_FSID_SIZE))
- 		return 1;
- 
- 	for (i = 0; i < num_pages; i++) {
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 0a6a519723c2..f00bfb6dd8f5 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -12,6 +12,7 @@
- #include "transaction.h"
- #include "print-tree.h"
- #include "locking.h"
-+#include "volumes.h"
- 
- static int split_node(struct btrfs_trans_handle *trans, struct btrfs_root
- 		      *root, struct btrfs_path *path, int level);
-@@ -260,7 +261,7 @@ int btrfs_copy_root(struct btrfs_trans_handle *trans,
- 	else
- 		btrfs_set_header_owner(cow, new_root_objectid);
- 
--	write_extent_buffer_fsid(cow, fs_info->metadata_fsid);
-+	write_extent_buffer_fsid(cow, fs_info->fs_devices->metadata_uuid);
- 
- 	WARN_ON(btrfs_header_generation(buf) > trans->transid);
- 	if (new_root_objectid == BTRFS_TREE_RELOC_OBJECTID)
-@@ -1069,7 +1070,7 @@ static noinline int __btrfs_cow_block(struct btrfs_trans_handle *trans,
- 	else
- 		btrfs_set_header_owner(cow, root->root_key.objectid);
- 
--	write_extent_buffer_fsid(cow, fs_info->metadata_fsid);
-+	write_extent_buffer_fsid(cow, fs_info->fs_devices->metadata_uuid);
- 
- 	ret = update_ref_for_cow(trans, root, buf, cow, &last_ref);
- 	if (ret) {
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 57aae731d4a1..670820b28a5a 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -753,8 +753,6 @@ struct btrfs_delayed_root;
- #define BTRFS_FS_BALANCE_RUNNING		18
- 
- struct btrfs_fs_info {
--	u8 fsid[BTRFS_FSID_SIZE]; /* User-visible fs UUID */
--	u8 metadata_fsid[BTRFS_FSID_SIZE]; /* UUID written to btree blocks */
- 	u8 chunk_tree_uuid[BTRFS_UUID_SIZE];
- 	unsigned long flags;
- 	struct btrfs_root *extent_root;
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 565db699afee..adc5dd3ae318 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -551,7 +551,7 @@ static int csum_dirty_buffer(struct btrfs_fs_info *fs_info, struct page *page)
- 	if (WARN_ON(!PageUptodate(page)))
- 		return -EUCLEAN;
- 
--	ASSERT(memcmp_extent_buffer(eb, fs_info->metadata_fsid,
-+	ASSERT(memcmp_extent_buffer(eb, fs_info->fs_devices->metadata_uuid,
- 			btrfs_header_fsid(), BTRFS_FSID_SIZE) == 0);
- 
- 	return csum_tree_block(fs_info, eb, 0);
-@@ -2491,11 +2491,12 @@ static int validate_super(struct btrfs_fs_info *fs_info,
- 		ret = -EINVAL;
- 	}
- 
--	if (memcmp(fs_info->metadata_fsid, sb->dev_item.fsid,
-+	if (memcmp(fs_info->fs_devices->metadata_uuid, sb->dev_item.fsid,
- 		   BTRFS_FSID_SIZE) != 0) {
- 		btrfs_err(fs_info,
- 			   "dev_item UUID does not match metadata fsid: %pU != %pU",
--			   fs_info->metadata_fsid, sb->dev_item.fsid);
-+			   fs_info->fs_devices->metadata_uuid,
-+			   sb->dev_item.fsid);
- 		ret = -EINVAL;
- 	}
- 
-@@ -2834,14 +2835,16 @@ int open_ctree(struct super_block *sb,
- 	       sizeof(*fs_info->super_for_commit));
- 	brelse(bh);
- 
--	memcpy(fs_info->fsid, fs_info->super_copy->fsid, BTRFS_FSID_SIZE);
-+	ASSERT(!memcmp(fs_info->fs_devices->fsid, fs_info->super_copy->fsid,
-+		       BTRFS_FSID_SIZE));
+diff --git a/dduper b/dduper
+new file mode 100644
+index 0000000..2170b11
+--- /dev/null
++++ b/dduper
+@@ -0,0 +1,310 @@
++#!/usr/bin/env python
 +
- 	if (btrfs_fs_incompat(fs_info, METADATA_UUID)) {
--		memcpy(fs_info->metadata_fsid,
--		       fs_info->super_copy->metadata_uuid, BTRFS_FSID_SIZE);
--	} else {
--		memcpy(fs_info->metadata_fsid, fs_info->fsid, BTRFS_FSID_SIZE);
-+		ASSERT(!memcmp(fs_info->fs_devices->metadata_uuid,
-+				fs_info->super_copy->metadata_uuid,
-+				BTRFS_FSID_SIZE));
- 	}
- 
++""" dduper - BTRFS Dedupe tool.
 +
- 	ret = btrfs_validate_mount_super(fs_info);
- 	if (ret) {
- 		btrfs_err(fs_info, "superblock contains fatal errors");
-@@ -2961,7 +2964,7 @@ int open_ctree(struct super_block *sb,
- 
- 	sb->s_blocksize = sectorsize;
- 	sb->s_blocksize_bits = blksize_bits(sectorsize);
--	memcpy(&sb->s_uuid, fs_info->fsid, BTRFS_FSID_SIZE);
-+	memcpy(&sb->s_uuid, fs_info->fs_devices->fsid, BTRFS_FSID_SIZE);
- 
- 	mutex_lock(&fs_info->chunk_mutex);
- 	ret = btrfs_read_sys_array(fs_info);
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index e964070ca0a7..e51e1362a37f 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -8131,7 +8131,7 @@ btrfs_init_new_buffer(struct btrfs_trans_handle *trans, struct btrfs_root *root,
- 	btrfs_set_header_generation(buf, trans->transid);
- 	btrfs_set_header_backref_rev(buf, BTRFS_MIXED_BACKREF_REV);
- 	btrfs_set_header_owner(buf, owner);
--	write_extent_buffer_fsid(buf, fs_info->metadata_fsid);
-+	write_extent_buffer_fsid(buf, fs_info->fs_devices->metadata_uuid);
- 	write_extent_buffer_chunk_tree_uuid(buf, fs_info->chunk_tree_uuid);
- 	if (root->root_key.objectid == BTRFS_TREE_LOG_OBJECTID) {
- 		buf->log_index = root->log_transid % 2;
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index e92b708302e9..9ac344c2beaf 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -3132,7 +3132,7 @@ static long btrfs_ioctl_fs_info(struct btrfs_fs_info *fs_info,
- 	}
- 	rcu_read_unlock();
- 
--	memcpy(&fi_args->fsid, fs_info->fsid, sizeof(fi_args->fsid));
-+	memcpy(&fi_args->fsid, fs_devices->fsid, sizeof(fi_args->fsid));
- 	fi_args->nodesize = fs_info->nodesize;
- 	fi_args->sectorsize = fs_info->sectorsize;
- 	fi_args->clone_alignment = fs_info->sectorsize;
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index b362b45dd757..1163183fe6dd 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -2090,7 +2090,7 @@ static int btrfs_statfs(struct dentry *dentry, struct kstatfs *buf)
- 	u64 total_free_data = 0;
- 	u64 total_free_meta = 0;
- 	int bits = dentry->d_sb->s_blocksize_bits;
--	__be32 *fsid = (__be32 *)fs_info->fsid;
-+	__be32 *fsid = (__be32 *)fs_info->fs_devices->fsid;
- 	unsigned factor = 1;
- 	struct btrfs_block_rsv *block_rsv = &fs_info->global_block_rsv;
- 	int ret;
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 34f9df314ba4..26fe4ead9d71 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1744,8 +1744,8 @@ static int btrfs_add_dev_item(struct btrfs_trans_handle *trans,
- 	ptr = btrfs_device_uuid(dev_item);
- 	write_extent_buffer(leaf, device->uuid, ptr, BTRFS_UUID_SIZE);
- 	ptr = btrfs_device_fsid(dev_item);
--	write_extent_buffer(leaf, trans->fs_info->metadata_fsid, ptr,
--			    BTRFS_FSID_SIZE);
-+	write_extent_buffer(leaf, trans->fs_info->fs_devices->metadata_uuid,
-+			    ptr, BTRFS_FSID_SIZE);
- 	btrfs_mark_buffer_dirty(leaf);
- 
- 	ret = 0;
-@@ -2278,9 +2278,7 @@ static int btrfs_prepare_sprout(struct btrfs_fs_info *fs_info)
- 	fs_devices->seed = seed_devices;
- 
- 	generate_random_uuid(fs_devices->fsid);
--	memcpy(fs_info->fsid, fs_devices->fsid, BTRFS_FSID_SIZE);
- 	memcpy(fs_devices->metadata_uuid, fs_devices->fsid, BTRFS_FSID_SIZE);
--	memcpy(fs_info->metadata_fsid, fs_devices->fsid, BTRFS_FSID_SIZE);
- 	memcpy(disk_super->fsid, fs_devices->fsid, BTRFS_FSID_SIZE);
- 	mutex_unlock(&fs_devices->device_list_mutex);
- 
-@@ -2522,7 +2520,7 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
- 		 * so rename the fsid on the sysfs
- 		 */
- 		snprintf(fsid_buf, BTRFS_UUID_UNPARSED_SIZE, "%pU",
--						fs_info->fsid);
-+						fs_info->fs_devices->fsid);
- 		if (kobject_rename(&fs_devices->fsid_kobj, fsid_buf))
- 			btrfs_warn(fs_info,
- 				   "sysfs: failed to create fsid for sprout");
-@@ -6667,7 +6665,7 @@ static int read_one_dev(struct btrfs_fs_info *fs_info,
- 	read_extent_buffer(leaf, fs_uuid, btrfs_device_fsid(dev_item),
- 			   BTRFS_FSID_SIZE);
- 
--	if (memcmp(fs_uuid, fs_info->metadata_fsid, BTRFS_FSID_SIZE)) {
-+	if (memcmp(fs_uuid, fs_devices->metadata_uuid, BTRFS_FSID_SIZE)) {
- 		fs_devices = open_seed_devices(fs_info, fs_uuid);
- 		if (IS_ERR(fs_devices))
- 			return PTR_ERR(fs_devices);
-diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
-index abe3ff774f58..94d27e677035 100644
---- a/include/trace/events/btrfs.h
-+++ b/include/trace/events/btrfs.h
-@@ -92,7 +92,7 @@ TRACE_DEFINE_ENUM(COMMIT_TRANS);
- #define TP_STRUCT__entry_fsid __array(u8, fsid, BTRFS_FSID_SIZE)
- 
- #define TP_fast_assign_fsid(fs_info)					\
--	memcpy(__entry->fsid, fs_info->fsid, BTRFS_FSID_SIZE)
-+	memcpy(__entry->fsid, fs_info->fs_devices->fsid, BTRFS_FSID_SIZE)
- 
- #define TP_STRUCT__entry_btrfs(args...)					\
- 	TP_STRUCT__entry(						\
++This is a offline dedupe tool. Instead of reading whole file blocks and
++computing checksum, It works by fetching checksum from BTRFS csum tree.
++This hugely improves the performance.
++
++Authors: Lakshmipathi.G <lakshmipathi.ganapathi@collabora.co.uk>
++"""
++import argparse
++import errno
++import hashlib
++import numpy as np
++import math
++import os
++import pdb
++import struct
++import subprocess
++import sys
++
++from collections import OrderedDict
++from fcntl import ioctl
++from itertools import combinations
++from itertools import izip_longest
++from stat import *
++#  4kb block size
++blk_size = 4
++#  no.of csum on single row - right now its 8
++no_of_chunks = 0
++FICLONERANGE = 0x4020940d
++
++device_name = None
++skip = 0
++chunk_sz = 0
++run_len = 0
++ele_sz = 0
++
++# Already deduped files
++processed_files = []
++
++
++# From https://stackoverflow.com/questions/434287
++def grouper(iterable, n, fillvalue=None):
++    args = [iter(iterable)] * n
++    return izip_longest(*args, fillvalue=fillvalue)
++
++
++def get_ele_size():
++
++    global no_of_chunks, run_len
++    if chunk_sz <= 0 or chunk_sz % 32 != 0:
++        print "Ensure chunk size is of multiple 32KB. (32,64,128 etc)"
++        sys.exit(-1)
++    no_of_chunks = chunk_sz / blk_size
++    ele_sz = no_of_chunks / 8
++    run_len = no_of_chunks * blk_size * 1024
++    return ele_sz
++
++
++def get_hashes(out1):
++    """
++       For each list item compute its hash and store it with offset as its key.
++    """
++    global ele_sz
++
++    if ele_sz == 1:
++        od = OrderedDict()
++        for idx, ele in enumerate(out1):
++            v = []
++            k = hashlib.md5(str(ele)).hexdigest()
++            v.append(idx)
++            if k in od:
++                print "Collison with: "+str(k) + "at offset: "+str(v)
++            od[k] = v
++    else:
++        od = OrderedDict()
++        for idx, ele in enumerate(grouper(out1, ele_sz, 'x')):
++            v = []
++            k = hashlib.md5(str(ele)).hexdigest()
++            v.append(idx)
++            if k in od:
++                print "Collison with: "+str(k) + "at offset: "+str(v)
++            od[k] = v
++
++    return od
++
++
++def ioctl_ficlonerange(dst_fd, s):
++
++    try:
++        ioctl(dst_fd, FICLONERANGE, s)
++    except Exception as e:
++        print "error({0})".format(e.errno)
++
++
++def cmp_files(file1, file2):
++
++    md1 = subprocess.Popen(['md5sum', file1], stdout=subprocess.PIPE,
++            close_fds=True).stdout.read().split(" ")[0]
++    md2 = subprocess.Popen(['md5sum', file2], stdout=subprocess.PIPE,
++            close_fds=True).stdout.read().split(" ")[0]
++    if md1 == md2:
++        return 0
++    else:
++        return 1
++
++
++def do_dedupe(src_file, dst_file, dry_run):
++
++    bkup_file = dst_file + ".__superduper"
++    src_fd = os.open(src_file, os.O_RDONLY)
++    dst_fd = os.open(dst_file, os.O_WRONLY)
++    perfect_match = 0
++
++    out1 = subprocess.Popen(['btrfs', 'inspect-internal', 'dump-csum', src_file, device_name],
++            stdout=subprocess.PIPE, close_fds=True).stdout.readlines()
++    out2 = subprocess.Popen(['btrfs', 'inspect-internal', 'dump-csum', dst_file, device_name],
++            stdout=subprocess.PIPE, close_fds=True).stdout.readlines()
++    # todo : perfect match files. Remove dst_file from further operations
++    if out1 == out2:
++        print "Prefect match : ", src_file, dst_file
++        perfect_match = 1
++
++    src_dict = get_hashes(out1)
++    dst_dict = get_hashes(out2)
++    total_entry = len(src_dict) - 1  # Fix missing final ele
++    file_size = os.path.getsize(src_file)
++
++    np1 = np.array([v for v in src_dict.keys()])
++    np2 = np.array([v for v in dst_dict.keys()])
++    matched_keys = np.intersect1d(np1, np2)
++    unmatched_keys = np.setdiff1d(np1, np2)
++
++    if dry_run == 0:
++        # todo: Clear dict/np/list if there are not used further
++        # todo : handle same content within single file
++
++        if matched_keys is not None:
++            if skip == 0:
++                bkup2 = subprocess.Popen(['cp', '--reflink=always', dst_file, bkup_file], stdout=subprocess.PIPE)
++            print "*" * 24
++            # print "matched regions"
++            for location in matched_keys:
++                    entry = src_dict[location][0]
++                    src_len = no_of_chunks * blk_size * 1024
++                    src_offset = src_dict[location][0] * src_len
++
++                    multi_dst_offsets = dst_dict[location]  # list
++                    for offset in multi_dst_offsets:
++                        dst_offset = offset * src_len
++
++                        if entry == total_entry:  # fix final ele
++                            src_len = file_size - src_offset
++                        # print "matching chunk : src offset:"+str(src_offset) +" src_len="+ str(src_len) +" dest_off="+ str(dst_offset)
++                        s = struct.pack("qQQQ", src_fd, src_offset, src_len, dst_offset)
++                        ioctl_ficlonerange(dst_fd, s)
++
++            print "Dedupe completed for " + src_file + ":" + dst_file
++            # Verify original unmodified file and newly deduped file both point to same contents
++            if skip == 0:
++                ret = cmp_files(dst_file, bkup_file)
++                if ret == 0:
++                    print "Dedupe validation successful " + src_file + ":" + dst_file
++                    # Removing temporary backup file path
++                    os.unlink(bkup_file)
++                else:
++                    print "WARNING: Dedupe for " + dst_file + " Resulted in corruption" + \
++                          " Backup file path " + bkup_file
++
++    # Close open fds
++    os.close(src_fd)
++    os.close(dst_fd)
++
++    print "Summary"
++    print "blk_size : %d chunksize : %d" % (blk_size, chunk_sz)
++    print src_file + " has " + str(len(src_dict)) + " chunks"
++    print dst_file + " has " + str(len(dst_dict)) + " chunks"
++    print "Matched chunks : " + str(len(matched_keys))
++    print "Unmatched chunks: " + str(len(unmatched_keys))
++    return perfect_match
++
++
++def validate_files(src_file, dst_file, processed_files):
++        global run_len
++        if src_file in processed_files:
++            return False
++        if dst_file in processed_files:
++            return False
++        src_stat = os.stat(src_file)
++        dst_stat = os.stat(dst_file)
++        # Verify its a unique regular file
++        if (S_ISREG(src_stat.st_mode) == S_ISREG(dst_stat.st_mode) and
++           (src_stat.st_ino != dst_stat.st_ino) and
++           (src_stat.st_size >= 4096) and
++           (dst_stat.st_size >= 4096) and
++           (src_stat.st_size >= run_len) and
++           (dst_stat.st_size >= run_len)):
++            return True
++        print "Skipped", src_file, dst_file, "not unique regular files or \
++               file size < 4kb or size < " + str(run_len)
++        return False
++
++
++def dedupe_files(file_list, dry_run):
++        ret = 0
++        global processed_files
++        if len(file_list) == 2:
++            src_file = file_list[0]
++            dst_file = file_list[1]
++            if validate_files(src_file, dst_file, processed_files) is True:
++                ret = do_dedupe(src_file, dst_file, dry_run)
++        elif len(file_list) > 2:
++            comb = combinations(file_list, 2)
++            for f in comb:
++                src_file = f[0]
++                dst_file = f[1]
++                if validate_files(src_file, dst_file, processed_files) is True:
++                   ret = do_dedupe(src_file, dst_file, dry_run)
++                   if ret == 1:
++                        # perfectly matching file found - stop re-use this file again.
++                        processed_files.append(dst_file)
++        else:
++            print "Single file given"
++            return
++
++
++def validate_file(filename):
++        global run_len
++        file_stat = os.stat(filename)
++        # Verify its a unique regular file
++        if (S_ISREG(file_stat.st_mode) and (file_stat.st_size >= 4096) and
++        (file_stat.st_size >= run_len)):
++            return True
++        else:
++            filelist.remove(f)
++            print "Skipped", f, "not unique regular files or \
++            file size < 4kb or size < " + str(run_len)
++        return False
++
++
++def dedupe_dir(dir_path, dry_run, recurse):
++        file_list = []
++        if recurse == 1:
++            for path, dirs, files in os.walk(dir_path):
++                for filename in files:
++                    fn = os.path.join(path, filename)
++                    if validate_file(fn) is True:
++                        file_list.append(fn)
++        else:
++            for fi in os.listdir(dir_path):
++                if os.path.isfile(os.path.join(dir_path, fi)):
++                    fn = os.path.join(dir_path, fi)
++                    if validate_file(fn) is True:
++                        file_list.append(fn)
++        dedupe_files(file_list, dry_run)
++
++
++def main(results):
++
++    if results.file_list is not None:
++        dedupe_files(results.file_list, results.dry_run)
++
++    if results.dir_path is not None:
++        dedupe_dir(results.dir_path, results.dry_run, results.recurse)
++
++    return
++
++
++if __name__ == '__main__':
++    parser = argparse.ArgumentParser()
++
++    parser.add_argument('-p', '--device', action='store', dest='device_name',
++                type=str, help='Device with BTRFS partition (ex: /dev/sda3) ',
++                required=True)
++
++    single = parser.add_mutually_exclusive_group()
++
++    single.add_argument('-d', '--dir', action='store', dest='dir_path',
++                type=str, help='Dedupe Given directory', required=False)
++
++    single.add_argument('-f', '--files', action='store', dest='file_list',
++                nargs='+', help='Dedupe List of files', type=str, required=False)
++
++    parser.add_argument('-r', '--recurse', action='store_true', dest='recurse',
++                help='Parse dir recursively (used along with -d)')
++
++    parser.add_argument('-D', '--dry-run', action='store_true', dest='dry_run',
++                help='Show summary of dedupe details')
++
++    parser.add_argument('-s', '--skip', action='store_true', dest='skip',
++                help='Will skip backup/validation process.')
++
++    parser.add_argument('-c', '--chunk-size', action='store', dest='chunk_sz',
++                type=int, default=32, help='Dedupe chunk size in KB', required=False)
++
++    parser.add_argument('-v', '--version', action='version', version='%(prog)s 0.01',
++                 help="Show version info")
++
++    results = parser.parse_args()
++
++    if not (results.dir_path or results.file_list):
++            parser.error('No action requested, add --files or --dir')
++
++    device_name = results.device_name
++    skip = results.skip
++    chunk_sz = results.chunk_sz
++    ele_sz = get_ele_size()
++
++    main(results)
 -- 
 2.7.4

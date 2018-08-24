@@ -1,407 +1,317 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.18]:52865 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726085AbeHXDWU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 23 Aug 2018 23:22:20 -0400
-Subject: Re: Reproducer for "compressed data + hole data corruption bug, 2018
- editiion"
-To: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-Cc: linux-btrfs@vger.kernel.org
-References: <20180823031125.GE13528@hungrycats.org>
- <8273c186-50ec-32d8-ffb3-23bb0b4fe48e@gmx.com>
- <20180823164436.GG13528@hungrycats.org>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <96feaecb-9450-31b4-fa40-c512bcf3e90e@gmx.com>
-Date: Fri, 24 Aug 2018 07:50:06 +0800
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:46972 "EHLO
+        james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
+        by vger.kernel.org with ESMTP id S1726143AbeHXFvx (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 24 Aug 2018 01:51:53 -0400
+Date: Thu, 23 Aug 2018 22:19:25 -0400
+From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To: "Darrick J. Wong" <darrick.wong@oracle.com>
+Cc: Dave Chinner <david@fromorbit.com>, fdmanana@kernel.org,
+        fstests@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        Filipe Manana <fdmanana@suse.com>, linux-xfs@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org
+Subject: Re: [patch] file dedupe (and maybe clone) data corruption (was Re:
+ [PATCH] generic: test for deduplication between different files)
+Message-ID: <20180824021925.GH13528@hungrycats.org>
+References: <20180817083924.16916-1-fdmanana@kernel.org>
+ <20180819231126.GU2234@dastard>
+ <20180820010932.GV2234@dastard>
+ <20180820153349.GA4334@magnolia>
+ <20180823125849.GF13528@hungrycats.org>
 MIME-Version: 1.0
-In-Reply-To: <20180823164436.GG13528@hungrycats.org>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="b0ZpdIosyKEI7tIx7jhdmM3ter2rtE4cD"
+Content-Type: multipart/signed; micalg=pgp-sha1;
+        protocol="application/pgp-signature"; boundary="nFBW6CQlri5Qm8JQ"
+In-Reply-To: <20180823125849.GF13528@hungrycats.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---b0ZpdIosyKEI7tIx7jhdmM3ter2rtE4cD
-Content-Type: multipart/mixed; boundary="gVsr3QAMAzhU9hEZGOE13n7IiHled7YVw";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-Cc: linux-btrfs@vger.kernel.org
-Message-ID: <96feaecb-9450-31b4-fa40-c512bcf3e90e@gmx.com>
-Subject: Re: Reproducer for "compressed data + hole data corruption bug, 2018
- editiion"
-References: <20180823031125.GE13528@hungrycats.org>
- <8273c186-50ec-32d8-ffb3-23bb0b4fe48e@gmx.com>
- <20180823164436.GG13528@hungrycats.org>
-In-Reply-To: <20180823164436.GG13528@hungrycats.org>
 
---gVsr3QAMAzhU9hEZGOE13n7IiHled7YVw
+--nFBW6CQlri5Qm8JQ
 Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
+Content-Disposition: inline
 Content-Transfer-Encoding: quoted-printable
 
+On Thu, Aug 23, 2018 at 08:58:49AM -0400, Zygo Blaxell wrote:
+> On Mon, Aug 20, 2018 at 08:33:49AM -0700, Darrick J. Wong wrote:
+> > On Mon, Aug 20, 2018 at 11:09:32AM +1000, Dave Chinner wrote:
+> > >   - should we just round down the EOF dedupe request to the
+> > >     block before EOF so dedupe still succeeds?
+> >=20
+> > I've often wondered if the interface should (have) be(en) that we start
+> > at src_off/dst_off and share as many common blocks as possible until we
+> > find a mismatch, then tell userspace where we stopped... instead of like
+> > now where we compare the entire extent and fail if any part of it
+> > doesn't match.
+>=20
+> The usefulness or harmfulness of that approach depends a lot on what
+> the application expects the filesystem to do.
+
+Here are some concrete examples.
+
+In the following, letters are 4K disk blocks and also inode offsets
+(i.e. "A" means a block containing 4096 x "A" located at inode offset 0,
+"B" contains "B" located at inode offset 1, etc).  "|" indicates
+a physical discontinuity of the blocks on disk.  Lowercase "a" has
+identical content to uppercase "A", but they are located in different
+physical blocks on disk.
+
+Suppose you have two identical files with different write histories,
+so they have different on-disk layouts:
+
+        Inode 1:  ABCDEFGH|IJ|KL|M|N|O|PQ|RST|UV|WX|YZ
+
+        Inode 2:  a|b|c|d|e|f|g|hijklmnopqrstuvwxyz
+
+A naive dedupe app might pick src and dst at random, and do this:
+
+        // dedupe(length, src_ino, src_off, dst_ino, dst_off)
+
+        dedupe(length 26, Inode 1, Offset 0, Inode 2, Offset 0)
+
+with the result having 11 fragments in each file, all from the
+original Inode 1:
+
+        Inode 1:  ABCDEFGH|IJ|KL|M|N|O|PQ|RST|UV|WX|YZ
+
+        Inode 2:  ABCDEFGH|IJ|KL|M|N|O|PQ|RST|UV|WX|YZ
+
+A smarter dedupe app might choose src and dst based on logical proximity
+and/or physical seek distance, or the app might choose dst with the
+smallest number of existing references in the filesystem, or the app might
+simply choose the longest available src extents to minimize fragmentation:
+
+        dedupe(length 7, Inode 1, Offset 0, Inode 2, Offset 0)
+
+        dedupe(length 19, Inode 2, Offset 7, Inode 1, Offset 7)
+
+with the result having 2 fragments in each file, each chosen
+=66rom a different original inode:
+
+        Inode 1:  ABCDEFG|hijklmnopqrstuvwxyz
+
+        Inode 2:  ABCDEFG|hijklmnopqrstuvwxyz
+
+If the kernel continued past the 'length 7' size specified in the first
+dedupe, then the 'hijklmnopqrstuvwxyz' would be *lost*, and the second
+dedupe would be an expensive no-op because both Inode 1 and Inode 2
+refer to the same physical blocks:
+
+        Inode 1:  ABCDEFGH|IJ|KL|M|N|O|PQ|RST|UV|WX|YZ
+
+                  [-------] - app asked for this
+        Inode 2:  ABCDEFGH|IJ|KL|M|N|O|PQ|RST|UV|WX|YZ
+    kernel does this too - [-------------------------]
+    and "hijklmnopqrstuvwxyz" no longer exists for second dedupe
+
+A dedupe app willing to spend more on IO can create its own better src
+with only one fragment:
+
+        open(with O_TMPFILE) -> Inode 3
+
+        copy(length 7, Inode 1, Offset 0, Inode 3, Offset 0)
+       =20
+        copy(length 19, Inode 2, Offset 7, Inode 3, Offset 7)
+
+        dedupe(length 26, Inode 3, Offset 0, Inode 1, Offset 0)
+
+        dedupe(length 26, Inode 3, Offset 0, Inode 2, Offset 0)
+
+        close(Inode 3)
+
+Now there is just one fragment referenced from two places:
+
+        Inode 1:  =CE=B1=CE=B2=CE=BE=CE=B4=CE=B5=CF=86=CE=B3=CE=B7=CE=B9=CF=
+=82=CE=BA=CE=BB=CE=BC=CE=BD=CE=BF=CF=80=CE=B8=CF=81=CF=83=CF=84=CF=85=D0=B2=
+=D1=88=CF=87=CF=88=CE=B6
+
+        Inode 2:  =CE=B1=CE=B2=CE=BE=CE=B4=CE=B5=CF=86=CE=B3=CE=B7=CE=B9=CF=
+=82=CE=BA=CE=BB=CE=BC=CE=BD=CE=BF=CF=80=CE=B8=CF=81=CF=83=CF=84=CF=85=D0=B2=
+=D1=88=CF=87=CF=88=CE=B6
+
+[If encoding goes horribly wrong, the above are a-z transcoded as a mix
+of Greek and Cyrillic Unicode characters.]
+
+Real filesystems sometimes present thousands of possible dedupe
+src/dst permutations to choose from.  The kernel shouldn't be trying to
+second-guess an application that may have access to external information
+to make better decisions (e.g. the full set of src extents available,
+or knowledge of other calls the app will issue in the future).
+
+> In btrfs, the dedupe operation acts on references to data, not the
+> underlying data blocks.  If there are 1000 slightly overlapping references
+> to a single contiguous range of data blocks in dst on disk, each dedupe
+> operation acts on only one of those, leaving the other 999 untouched.
+> If the app then submits 999 other dedupe requests, no references to the
+> dst blocks remain and the underlying data blocks can be deleted.
+>=20
+> In a parallel universe (or a better filesystem, or a userspace emulation
+> built out of dedupe and other ioctls), dedupe could work at the extent
+> data (physical) level.  The app points at src and dst extent references
+> (inode/offset/length tuples), and the filesystem figures out which
+> physical blocks these point to, then adjusts all the references to the
+> dst blocks at once, dealing with partial overlaps and snapshots and
+> nodatacow and whatever other exotic features might be lurking in the
+> filesystem, ending with every reference to every part of dst replaced
+> by the longest possible contiguous reference(s) to src.
+>=20
+> Problems arise if the length deduped is not exactly the length requested.
+> If the search continues until a mismatch is found, where does the search
+> for a mismatch lead?  Does the search follow physically contiguous
+> blocks on disk, or would dedupe follow logically contiguous blocks in
+> the src and dst files?  Or the intersection of those, i.e. physically
+> contiguous blocks that are logically contiguous in _any_ two files,
+> not limited to src and dst.
+>=20
+> There is also the problem where the files could have been previously
+> deduped and then partially overwritten with identical data.  If the
+> application cannot control where the dedupe search for identical data
+> ends, it can end up accidentally creating new references to extents
+> while it is trying to eliminate those extents.  The kernel might do a
+> lot of extra work from looking ahead that the application has to undo
+> immediately (e.g. after the first few blocks of dst, the app wants to
+> do another dedupe with a better src extent elsewhere on the filesystem,
+> but the kernel goes ahead and dedupes with an inferior src beyond the
+> end of what the app asked for).
+>=20
+> bees tries to determine exactly the set of dedupe requests required to
+> remove all references to duplicate extents (and maybe someday do defrag
+> as well).  If the kernel deviates from the requested sizes (e.g. because
+> the data changed on the filesystem between dedup requests), the final
+> extent layout after the dedupe requests are finished won't match what
+> bees expected it to be, so bees has to reexamine the filesystem and
+> either retry with a fresh set of exact dedupe requests, or give up and
+> leave duplicate extents on disk.  The retry loop is normal and ends
+> quickly if the dedupe fails because data changed on disk, but if the
+> kernel starts messing with the dedupe lengths then bees has to detect
+> this and escape before it gets stuck in a nasty feedback loop.
+>=20
+> If we want to design a new interface, it should allow the app to specify
+> maximum and minimum length, so that the kernel knows how much flexibility
+> it is allowed by the application.  Maximum length lets one app say
+> "dedupe as much as you can find, up to EOF", while minimum length lets
+> another app say "don't bother if the match is less than 12K, the space
+> saving is not worth the write iops", and setting them equal lets the
+> third app say "I have a plan that requires you to do precisely what I
+> tell you or do nothing at all."
+>=20
+> > > 	- should file cloning (i.e. reflink) be allow allowing the
+> > > 	  EOF block to be shared somewhere inside EOF in the
+> > > 	  destination file?
+> >=20
+> > I don't think we should.
+> >=20
+> > > That's stale data exposure, yes?
+> >=20
+> > Haven't tested that, but seems likely.
+>=20
+> It doesn't sound like a good idea, especially if mmap is involved.
+>=20
+> > > 	- should clone only allow sharing of the EOF block if it's a
+> > > 	  either a full file clone or a matching range clone and
+> > > 	  isize is the same for both src and dest files?
+> >=20
+> > The above sound reasonable for clone, though I would also allow clone to
+> > share the EOF block if we extend isize of the dest file.
+> >=20
+> > The above also nearly sound reasonable for dedupe too.  If we encounter
+> > EOF at the same places in the src range and the dest range, should we
+> > allow sharing there?  The post-eof bytes are undefined by definition;
+> > does undefined =3D=3D undefined?
+>=20
+> > >=20
+> > > Discuss.
+> > >=20
+> > > Cheers,
+> > >=20
+> > > Dave.
+> > > --=20
+> > > Dave Chinner
+> > > david@fromorbit.com
+> > >=20
+> > >=20
+> > > [RFC] vfs: fix data corruption w/ unaligned dedupe ranges
+> > >=20
+> > > From: Dave Chinner <dchinner@redhat.com>
+> > >=20
+> > > Exposed by fstests generic/505 on XFS, caused by extending the
+> > > bblock match range to include the partial EOF block, but then
+> > > allowing unknown data beyond EOF to be considered a "match" to data
+> > > in the destination file because the comparison is only made to the
+> > > end of the source file. This corrupts the destination file when the
+> > > source extent is shared with it.
+> > >=20
+> > > Open questions:
+> > >=20
+> > > 	- is documenting rejection on request alignment grounds
+> > > 	  (i.e. EINVAL) in the man page sufficient for app
+> > > 	  developers to understand what is going on here?
+> > > 	- should we just silently round down the EOF dedupe request
+> > > 	  to the block before EOF so dedupe still succeeds?
+> > > 	- should file cloning (i.e. reflink) be allow allowing the
+> > > 	  EOF block to be shared somewhere inside EOF in the
+> > > 	  destination file? That's stale data exposure, yes?
+> > > 	- should clone only allow sharing of the EOF block if it's a
+> > > 	  either a full file clone or a matching range clone and
+> > > 	  isize is the same for both src and dest files?
+> > >=20
+> > > Btrfs also has the same bug in extent_same_check_offsets() and
+> > > btrfs_extent_same_range() that is not addressed by this patch.
+> >=20
+> > <nod> (xfs/ocfs2) clone ioctls tend to be bug-for-bug compatible with
+> > btrfs more often than we probably ought to... :/
+> >=20
+> > (I also sorta wonder if btrfs should be ported to the common vfs
+> > routines for clone prep and dedupe comparison...?)
+> >=20
+> > --D
+> >=20
+> > > Signed-off-by: Dave Chinner <dchinner@redhat.com>
+> > > ---
+> > >  fs/read_write.c | 13 +++++++++++--
+> > >  1 file changed, 11 insertions(+), 2 deletions(-)
+> > >=20
+> > > diff --git a/fs/read_write.c b/fs/read_write.c
+> > > index 153f8f690490..3844359a4597 100644
+> > > --- a/fs/read_write.c
+> > > +++ b/fs/read_write.c
+> > > @@ -1768,8 +1768,17 @@ int vfs_clone_file_prep_inodes(struct inode *i=
+node_in, loff_t pos_in,
+> > >  			return -EINVAL;
+> > >  	}
+> > > =20
+> > > -	/* If we're linking to EOF, continue to the block boundary. */
+> > > -	if (pos_in + *len =3D=3D isize)
+> > > +	/* Reflink allows linking to EOF, so round the length up to allow u=
+s to
+> > > +	 * shared the last block in the file. We don't care what is beyond =
+the
+> > > +	 * EOF point in the block that gets shared, as we can't access it a=
+nd
+> > > +	 * attempts to extent the file will break the sharing.
+> > > +	 *
+> > > +	 * For dedupe, sharing the EOF block is illegal because the bytes b=
+eyond
+> > > +	 * EOF are undefined (i.e. not readable) and so can't be deduped. H=
+ence
+> > > +	 * we do not extend/align the length and instead let the alignment
+> > > +	 * checks below reject it.
+> > > +	 */
+> > > +	if (!is_dedupe && pos_in + *len =3D=3D isize)
+> > >  		blen =3D ALIGN(isize, bs) - pos_in;
+> > >  	else
+> > >  		blen =3D *len;
 
 
-On 2018/8/24 =E4=B8=8A=E5=8D=8812:44, Zygo Blaxell wrote:
-> On Thu, Aug 23, 2018 at 01:10:48PM +0800, Qu Wenruo wrote:
->> On 2018/8/23 =E4=B8=8A=E5=8D=8811:11, Zygo Blaxell wrote:
->>> This is a repro script for a btrfs bug that causes corrupted data rea=
-ds
->>> when reading a mix of compressed extents and holes.  The bug is
->>> reproducible on at least kernels v4.1..v4.18.
->>
->> This bug already sounds more serious than previous nodatasum +
->> compression bug.
->=20
-> Maybe.  "compression + holes corruption bug 2017" could be avoided with=
 
-> the max-inline=3D0 mount option without disabling compression.  This ti=
-me,
-> the workaround is more intrusive:  avoid all applications that use dedu=
-p
-> or hole-punching.
->=20
->>> Some more observations and background follow, but first here is the
->>> script and some sample output:
->>>
->>> 	root@rescue:/test# cat repro-hole-corruption-test
->>> 	#!/bin/bash
->>>
->>> 	# Write a 4096 byte block of something
->>> 	block () { head -c 4096 /dev/zero | tr '\0' "\\$1"; }
->>>
->>> 	# Here is some test data with holes in it:
->>> 	for y in $(seq 0 100); do
->>> 		for x in 0 1; do
->>> 			block 0;
->>> 			block 21;
->>> 			block 0;
->>> 			block 22;
->>> 			block 0;
->>> 			block 0;
->>> 			block 43;
->>> 			block 44;
->>> 			block 0;
->>> 			block 0;
->>> 			block 61;
->>> 			block 62;
->>> 			block 63;
->>> 			block 64;
->>> 			block 65;
->>> 			block 66;> 		done
->>
->> Does the content has any difference on this bug?
->> It's just 16 * 4K * 2 * 101 data write *without* any hole so far.
->=20
-> The content of the extents doesn't seem to matter, other than it needs =
-to
-> be compressible so that the extents on disk are compressed.  The bug is=
-
-> also triggered by writing non-zero data to all blocks, and then punchin=
-g
-> the holes later with "fallocate -p -l 4096 -o $(( insert math here ))".=
-
->=20
-> The layout of the extents matters a lot.  I have to loop hundreds or
-> thousands of times to hit the bug if the first block in the pattern is
-> not a hole, or if the non-hole extents are different sizes or positions=
-
-> than above.
->=20
-> I tried random patterns of holes and extent refs, and most of them have=
-
-> an order of magnitude lower hit rates than the above.  This might be du=
-e
-> to some relationship between the alignment of read() request boundaries=
-
-> with extent boundaries, but I haven't done any tests designed to detect=
-
-> such a relationship.
->=20
-> In the wild, corruption happens on some files much more often than othe=
-rs.
-> This seems to be correlated with the extent layout as well.
->=20
-> I discovered the bug by examining files that were intermittently but
-> repeatedly failing routine data integrity checks, and found that in eve=
-ry
-> case they had similar hole + extent patterns near the point where data
-> was corrupted.
->=20
-> I did a search on some big filesystems for the
-> hole-refExtentA-hole-refExtentA pattern and found several files with
-> this pattern that had passed previous data integrity checks, but would
-> fail randomly in the sha1sum/drop-caches loop.
->=20
->> This should indeed cause 101 128K compressed data extent.
->> But I'm wondering the description about 'holes'.
->=20
-> The holes are coming, wait for it... ;)
->=20
->>> 	done > am
->>> 	sync
->>>
->>> 	# Now replace those 101 distinct extents with 101 references to the =
-first extent
->>> 	btrfs-extent-same 131072 $(for x in $(seq 0 100); do echo am $((x * =
-131072)); done) 2>&1 | tail
->>
->> Will this bug still happen by creating one extent and then reflink it
->> 101 times?
->=20
-> Yes.  I used btrfs-extent-same because a binary is included in the
-> Debian duperemove package, but I use it only for convenience.
->=20
-> It's not necessary to have hundreds of references to the same extent--e=
-ven
-> two refs to a single extent plus a hole can trigger the bug sometimes.
-> 100 references in a single file will trigger the bug so often that it
-> can be detected within the first 20 sha1sum loops.
->=20
-> When the corruption occurs, it affects around 90 of the original 101
-> extents.  The different sha1sum results are due to different extents
-> giving bad data on different runs.
->=20
->>> 	# Punch holes into the extent refs
->>> 	fallocate -v -d am
->>
->> Hole-punch in fact happens here.
->>
->> BTW, will add a "sync" here change the result?
->=20
-> No.  You can reboot the machine here if you like, it does not change
-> anything that happens during reads later.
-
-So it looks like my assumption of bad file extent interpreter is getting
-more and more valid.
-
-It has nothing to do with the race against hole punching/write, but only
-the file layout and extent map cache.
-
->=20
-> Looking at the extent tree in btrfs-debug-tree, the data on disk
-> looks correct, and btrfs does read it correctly most of the time (the
-> correct sha1sum below is 6926a34e0ab3e0a023e8ea85a650f5b4217acab4).
-> The corruption therefore comes from btrfs read() producing incorrect
-> data in some instances.
->=20
->>> 	# Do some other stuff on the machine while this runs, and watch the =
-sha1sums change!
->>> 	while :; do echo $(sha1sum am); sysctl -q vm.drop_caches=3D{1,2,3}; =
-sleep 1; done
->>>
->>> 	root@rescue:/test# ./repro-hole-corruption-test
->>> 	i: 91, status: 0, bytes_deduped: 131072
->>> 	i: 92, status: 0, bytes_deduped: 131072
->>> 	i: 93, status: 0, bytes_deduped: 131072
->>> 	i: 94, status: 0, bytes_deduped: 131072
->>> 	i: 95, status: 0, bytes_deduped: 131072
->>> 	i: 96, status: 0, bytes_deduped: 131072
->>> 	i: 97, status: 0, bytes_deduped: 131072
->>> 	i: 98, status: 0, bytes_deduped: 131072
->>> 	i: 99, status: 0, bytes_deduped: 131072
->>> 	13107200 total bytes deduped in this operation
->>> 	am: 4.8 MiB (4964352 bytes) converted to sparse holes.
->>> 	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
->>> 	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
->>> 	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
->>> 	072a152355788c767b97e4e4c0e4567720988b84 am
->>> 	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
->>> 	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
->>> 	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
->>> 	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
->>> 	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
->>> 	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
->>> 	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
->>> 	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
->>> 	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
->>> 	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
->>> 	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
->>> 	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
->>> 	bf00d862c6ad436a1be2be606a8ab88d22166b89 am
->>> 	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
->>> 	0d44cdf030fb149e103cfdc164da3da2b7474c17 am
->>> 	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
->>> 	60831f0e7ffe4b49722612c18685c09f4583b1df am
->>> 	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
->>> 	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
->>> 	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
->>> 	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
->>> 	a19662b294a3ccdf35dbb18fdd72c62018526d7d am
->>> 	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
->>> 	6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
->>> 	^C
->>
->> It looks like we have something wrong interpreting file extent, maybe
->> related to extent map merging.
->>
->> BTW, if without dropping page cache and no read corruption happens, it=
-
->> would limit the range of problem we're looking for.
->=20
-> The page cache drop makes reproduction easier/faster.  If you don't dro=
-p
-> caches, you have to wait for the data to be evicted from page cache or
-> the data from read() will not change.
-
-So it's highly possible that file extent interpreter is causing the probl=
-em.
-
-Thanks,
-Qu
-
->=20
-> In the wild, if I do a sha1sum loop on a few hundred GB of data known
-> to have the hole-extent-hole pattern (so the pages are evicted between
-> sha1sum runs), I see similar results without explicitly dropping caches=
-=2E
->=20
-> If you read the file with a cold cache from two processes at once
-> (e.g. you run 'hd am' while the sha1sum/drop-cache loop is running)
-> the data changes faster (different on 90% of reads instead of just 20%)=
-=2E
->=20
->> Thanks,
->> Qu
->>
->>>
->>> Corruption occurs most often when there is a sequence like this in a =
-file:
->>>
->>> 	ref 1: hole
->>> 	ref 2: extent A, offset 0
->>> 	ref 3: hole
->>> 	ref 4: extent A, offset 8192
->>>
->>> This scenario typically arises due to hole-punching or deduplication.=
-
->>> Hole-punching replaces one extent ref with two references to the same=
-
->>> extent with a hole between them, so:
->>>
->>> 	ref 1:  extent A, offset 0, length 16384
->>>
->>> becomes:
->>>
->>> 	ref 1:  extent A, offset 0, length 4096
->>> 	ref 2:  hole, length 8192
->>> 	ref 3:  extent A, offset 12288, length 4096
->>>
->>> Deduplication replaces two distinct extent refs surrounding a hole wi=
-th
->>> two references to one of the duplicate extents, turning this:
->>>
->>> 	ref 1:  extent A, offset 0, length 4096
->>> 	ref 2:  hole, length 8192
->>> 	ref 3:  extent B, offset 0, length 4096
->>>
->>> into this:
->>>
->>> 	ref 1:  extent A, offset 0, length 4096
->>> 	ref 2:  hole, length 8192
->>> 	ref 3:  extent A, offset 0, length 4096
->>>
->>> Compression is required (zlib, zstd, or lzo) for corruption to occur.=
-
->>> I am not able to reproduce the issue with an uncompressed extent nor
->>> have I observed any such corruption in the wild.
->>>
->>> The presence or absence of the no-holes filesystem feature has no eff=
-ect.
->>>
->>> Ordinary writes can lead to pairs of extent references to the same ex=
-tent
->>> separated by a reference to a different extent; however, in this case=
-
->>> there is data to be read from a real extent, instead of pages that ha=
-ve
->>> to be zero filled from a hole.  If ordinary non-hole writes could tri=
-gger
->>> this bug, every page-oriented database engine would be crashing all t=
-he
->>> time on btrfs with compression enabled, and it's unlikely that would =
-not
->>> have been noticed between 2015 and now.  An ordinary write that split=
-s
->>> an extent ref would look like this:
->>>
->>> 	ref 1:  extent A, offset 0, length 4096
->>> 	ref 2:  extent C, offset 0, length 8192
->>> 	ref 3:  extent A, offset 12288, length 4096
->>>
->>> Sparse writes can lead to pairs of extent references surrounding a ho=
-le;
->>> however, in this case the extent references will point to different
->>> extents, avoiding the bug.  If a sparse write could trigger the bug,
->>> the rsync -S option and qemu/kvm 'raw' disk image files (among many
->>> other tools that produce sparse files) would be unusable, and it's
->>> unlikely that would not have been noticed between 2015 and now either=
-=2E
->>> Sparse writes look like this:
->>>
->>> 	ref 1:  extent A, offset 0, length 4096
->>> 	ref 2:  hole, length 8192
->>> 	ref 3:  extent B, offset 0, length 4096
->>>
->>> The pattern or timing of read() calls seems to be relevant.  It is ve=
-ry
->>> hard to see the corruption when reading files with 'hd', but 'cat | h=
-d'
->>> will see the corruption just fine.  Similar problems exist with 'cmp'=
-
->>> but not 'sha1sum'.  Two processes reading the same file at the same t=
-ime
->>> seem to trigger the corruption very frequently.
->>>
->>> Some patterns of holes and data produce corruption faster than others=
-=2E
->>> The pattern generated by the script above is based on instances of
->>> corruption I've found in the wild, and has a much better repro rate t=
-han
->>> random holes.
->>>
->>> The corruption occurs during reads, after csum verification and befor=
-e
->>> decompression, so btrfs detects no csum failures.  The data on disk
->>> seems to be OK and could be read correctly once the kernel bug is fix=
-ed.
->>> Repeated reads do eventually return correct data, but there is no way=
-
->>> for userspace to distinguish between corrupt and correct data reliabl=
-y.
->>>
->>> The corrupted data is usually data replaced by a hole or a copy of ot=
-her
->>> blocks in the same extent.
->>>
->>> The behavior is similar to some earlier bugs related to holes and
->>> Compressed data in btrfs, but it's new and not fixed yet--hence,
->>> "2018 edition."
->>>
->>
->=20
->=20
->=20
-
-
---gVsr3QAMAzhU9hEZGOE13n7IiHled7YVw--
-
---b0ZpdIosyKEI7tIx7jhdmM3ter2rtE4cD
+--nFBW6CQlri5Qm8JQ
 Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlt/SC4ACgkQwj2R86El
-/qhXYQf9G6Pg4gfrXxS8j0BVuGfxlGGNl/c64R/h3cZecP/7AJeEbitSKtIS9Fro
-SwIkVjpQo6dsOU/auVkKhfjVBSI+1iArHqs0UR3xoDh9VwUCerkft/NoMg3Jzwmg
-Myn2Begw4B61l533b6JSm/xjWuYK125s0DPHQKKCIzWZKVR5Mzfjv5tKMS98jjuA
-obnQuZksQoBAu/kouk2G97u6V/TtpvIgyfFHp1YTgICbL+nwpL9qp85l645JM5YW
-bnLv/e6UUIVLIhB/lfbVqN75rVD0LzW8dyW6bqpxDxT378bErlny85DiqbNDu595
-rtnDhD02poWbVYW6RBWRVGloHkPioQ==
-=uvuW
+iF0EABECAB0WIQSnOVjcfGcC/+em7H2B+YsaVrMbnAUCW39rKAAKCRCB+YsaVrMb
+nP52AJ0Zhfwh2eYAkpqbNnZJh1ckJakJaQCfSvtwJdFMwlDCrvyRK0EhICDr3GY=
+=rAZN
 -----END PGP SIGNATURE-----
 
---b0ZpdIosyKEI7tIx7jhdmM3ter2rtE4cD--
+--nFBW6CQlri5Qm8JQ--

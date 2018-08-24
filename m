@@ -1,73 +1,104 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx3-rdu2.redhat.com ([66.187.233.73]:59548 "EHLO mx1.redhat.com"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726330AbeHWTir (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 23 Aug 2018 15:38:47 -0400
-From: David Howells <dhowells@redhat.com>
-In-Reply-To: <20180823155955.GO24025@suse.cz>
-References: <20180823155955.GO24025@suse.cz> <22614.1535039351@warthog.procyon.org.uk>
-To: dsterba@suse.cz
-Cc: dhowells@redhat.com, Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>,
-        WenRuo Qu <wqu@suse.com>, linux-btrfs@vger.kernel.org,
-        nborisov@suse.com
+Received: from mgwym01.jp.fujitsu.com ([211.128.242.40]:44168 "EHLO
+        mgwym01.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725735AbeHXFjq (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 24 Aug 2018 01:39:46 -0400
+Received: from g01jpfmpwyt03.exch.g01.fujitsu.local (g01jpfmpwyt03.exch.g01.fujitsu.local [10.128.193.57])
+        by yt-mxauth.gw.nic.fujitsu.com (Postfix) with ESMTP id 9FECAAC020D
+        for <linux-btrfs@vger.kernel.org>; Fri, 24 Aug 2018 11:07:15 +0900 (JST)
 Subject: Re: fs/btrfs/volumes.c:6114 suspicious rcu_dereference_check() usage!
+To: David Howells <dhowells@redhat.com>
+CC: Qu Wenruo <wqu@suse.com>, David Sterba <dsterba@suse.com>,
+        <linux-btrfs@vger.kernel.org>
+References: <22614.1535039351@warthog.procyon.org.uk>
+From: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
+Message-ID: <450873e0-2a8a-d757-4c68-f24e6a0466a1@jp.fujitsu.com>
+Date: Fri, 24 Aug 2018 11:07:00 +0900
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Date: Thu, 23 Aug 2018 17:08:25 +0100
-Message-ID: <26325.1535040505@warthog.procyon.org.uk>
+In-Reply-To: <22614.1535039351@warthog.procyon.org.uk>
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-David Sterba <dsterba@suse.cz> wrote:
-
-> The code previously had explicit rcu_lock/unlock, now it uses the
-> btrfs_debug_in_rcu helper which is supposed to provide that. It's
-> possible that the helper is missing it due to some #ifdef mess, but I
-> don't see it.
-
-I preprocessed the function and extracted submit_stripe_bio() (see attached).
-
-The problem is that btrfs_no_printk() is being called, but not within an RCU
-section.
-
-#define btrfs_debug_in_rcu(fs_info, fmt, args...) \
-	btrfs_printk_in_rcu(fs_info, KERN_DEBUG fmt, ##args)
-
-David
----
-static void submit_stripe_bio(struct btrfs_bio *bbio, struct bio *bio,
-         u64 physical, int dev_nr, int async)
-{
- struct btrfs_device *dev = bbio->stripes[dev_nr].dev;
- struct btrfs_fs_info *fs_info = bbio->fs_info;
-
- bio->bi_private = bbio;
- btrfs_io_bio(bio)->stripe_index = dev_nr;
- bio->bi_end_io = btrfs_end_bio;
- bio->bi_iter.bi_sector = physical >> 9;
- btrfs_no_printk(fs_info, "\001" "7" "btrfs_map_bio: rw %d 0x%x, sector=%llu, dev=%lu (%s id %llu), size=%u", ((bio)->bi_opf & ((1 << 8) - 1)), bio->bi_opf, (u64)bio->bi_iter.bi_sector, (u_long)dev->bdev->bd_dev, ({ struct rcu_string *__str = ({ typeof(*(dev->name)) *________p1 = (typeof(*(dev->name)) *)({ union { typeof((dev->name)) __val; char __c[1]; } __u; if (1) __read_once_size(&((dev->name)), __u.__c, sizeof((dev->name))); else __read_once_size_nocheck(&((dev->name)), __u.__c, sizeof((dev->name))); do { } while (0); __u.__val; }); do { static bool __attribute__ ((__section__(".data.unlikely"))) __warned; if (debug_lockdep_rcu_enabled() && !__warned && (!((0) || rcu_read_lock_held()))) { __warned = true; lockdep_rcu_suspicious(
+On 2018/08/24 0:49, David Howells wrote:
+> I'm seeing the attached message generated from this line:
+> 
+> 	btrfs_debug_in_rcu(fs_info,
+> 	"btrfs_map_bio: rw %d 0x%x, sector=%llu, dev=%lu (%s id %llu), size=%u",
+> 		bio_op(bio), bio->bi_opf, (u64)bio->bi_iter.bi_sector,
+> 		(u_long)dev->bdev->bd_dev, rcu_str_deref(dev->name), dev->devid,
+> 		bio->bi_iter.bi_size);
+> 
+> in submit_stripe_bio().  I'm not sure exactly why, but I suspect
+> rcu_str_deref() is the point from where it is generated.
+> 
+> Note that the mount succeeds.
+> 
+> This code was introduced by:
+> 
+> 	commit 672d599041c862dd61a1576c32e946ef0d77aa34
+> 	Author: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
+> 	Date:   Thu Aug 2 16:19:07 2018 +0900
+> 
 
 
+Thanks for the reporting.
+I didn't turn on CONFIG_PROVE_RCU and missed the warning.
 
-                      "fs/btrfs/volumes.c"
-# 6110 "../fs/btrfs/volumes.c"
- ,
+I will send a fix.
 
+Thanks,
+Misono
 
-
-                      6114
-# 6110 "../fs/btrfs/volumes.c"
- , "suspicious rcu_dereference_check() usage"); } } while (0); ; ((typeof(*(dev->name)) *)(________p1)); }); __str->str; }), dev->devid, bio->bi_iter.bi_size)
-
-
-
-                       ;
- do { if ((bio)->bi_disk != (dev->bdev)->bd_disk) bio_clear_flag(bio, 9); (bio)->bi_disk = (dev->bdev)->bd_disk; (bio)->bi_partno = (dev->bdev)->bd_partno; } while (0);
-
- btrfs_bio_counter_inc_noblocked(fs_info);
-
- if (async)
-  btrfs_schedule_bio(dev, bio);
- else
-  btrfsic_submit_bio(bio);
-}
+> David
+> ---
+> =============================
+> WARNING: suspicious RCU usage
+> 4.18.0-fscache+ #540 Not tainted
+> -----------------------------
+> fs/btrfs/volumes.c:6114 suspicious rcu_dereference_check() usage!
+> 
+> other info that might help us debug this:
+> 
+> 
+> rcu_scheduler_active = 2, debug_locks = 1
+> 1 lock held by mount/3194:
+>  #0: 0000000072604777 (&fc->fs_type->s_umount_key#54/1){+.+.}, at: alloc_super+0xa4/0x313
+> 
+> stack backtrace:
+> CPU: 2 PID: 3194 Comm: mount Not tainted 4.18.0-fscache+ #540
+> Hardware name: ASUS All Series/H97-PLUS, BIOS 2306 10/09/2014
+> Call Trace:
+>  dump_stack+0x67/0x8e
+>  btrfs_map_bio+0x282/0x321
+>  btree_submit_bio_hook+0x71/0xa6
+>  submit_one_bio+0x55/0x66
+>  read_extent_buffer_pages+0x1ec/0x2ab
+>  btree_read_extent_buffer_pages+0x6e/0x237
+>  ? alloc_extent_buffer+0x28f/0x2f2
+>  read_tree_block+0x43/0x5e
+>  open_ctree+0x139b/0x1ee4
+>  btrfs_get_tree+0x357/0xa33
+>  ? selinux_fs_context_dup+0x2d/0x104
+>  vfs_get_tree+0x7a/0x162
+>  btrfs_mount_root+0x52/0x8b
+>  btrfs_get_tree+0x4ab/0xa33
+>  ? vfs_parse_fs_string+0x5b/0x9e
+>  vfs_get_tree+0x7a/0x162
+>  do_mount+0x7f0/0x8b2
+>  ? memdup_user+0x3e/0x5a
+>  ksys_mount+0x72/0x97
+>  __x64_sys_mount+0x21/0x24
+>  do_syscall_64+0x7d/0x1a0
+>  entry_SYSCALL_64_after_hwframe+0x49/0xbe
+> RIP: 0033:0x7f11b8365ada
+> Code: 48 8b 0d c9 a3 2b 00 f7 d8 64 89 01 48 83 c8 ff c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 44 00 00 49 89 ca b8 a5 00 00 00 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 8b 0d 96 a3 2b 00 f7 d8 64 89 01 48
+> RSP: 002b:00007ffe0d9a5b98 EFLAGS: 00000246 ORIG_RAX: 00000000000000a5
+> RAX: ffffffffffffffda RBX: 00005562bf7702a0 RCX: 00007f11b8365ada
+> RDX: 00005562bf77a620 RSI: 00005562bf7704a0 RDI: 00005562bf770480
+> RBP: 0000000000000000 R08: 0000000000000000 R09: 00007f11b8620c40
+> R10: 00000000c0ed0000 R11: 0000000000000246 R12: 00005562bf770480
+> R13: 00005562bf77a620 R14: 0000000000000000 R15: 00007f11b90f9184
+> 
+> 

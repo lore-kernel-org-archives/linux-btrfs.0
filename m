@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from out30-131.freemail.mail.aliyun.com ([115.124.30.131]:53310 "EHLO
-        out30-131.freemail.mail.aliyun.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1726424AbeHWDIH (ORCPT
+Received: from out30-132.freemail.mail.aliyun.com ([115.124.30.132]:39293 "EHLO
+        out30-132.freemail.mail.aliyun.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1726278AbeHYJZB (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 22 Aug 2018 23:08:07 -0400
+        Sat, 25 Aug 2018 05:25:01 -0400
 From: Liu Bo <bo.liu@linux.alibaba.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH v2] Btrfs: set leave_spinning in btrfs_get_extent
-Date: Thu, 23 Aug 2018 07:41:05 +0800
-Message-Id: <1534981265-97557-1-git-send-email-bo.liu@linux.alibaba.com>
-In-Reply-To: <1534980978-91392-2-git-send-email-bo.liu@linux.alibaba.com>
+Subject: [PATCH v3] Btrfs: set leave_spinning in btrfs_get_extent
+Date: Sat, 25 Aug 2018 13:47:09 +0800
+Message-Id: <1535176029-77767-1-git-send-email-bo.liu@linux.alibaba.com>
+In-Reply-To: <1534981265-97557-1-git-send-email-bo.liu@linux.alibaba.com>
+References: <1534981265-97557-1-git-send-email-bo.liu@linux.alibaba.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
-References: <1534980978-91392-2-git-send-email-bo.liu@linux.alibaba.com>
 
 Unless it's going to read inline extents from btree leaf to page,
 btrfs_get_extent won't sleep during the period of holding path lock.
@@ -25,46 +25,18 @@ rather than that in blocking mode.
 Also fixes the misalignment of the prototype, which is too trivial for
 a single patch.
 
+
 Signed-off-by: Liu Bo <bo.liu@linux.alibaba.com>
 ---
-v2: send out the correct patch.
+v3: separate alignment fix out of this patch.
 
- fs/btrfs/ctree.h |  4 ++--
- fs/btrfs/inode.c | 14 +++++++++++---
- 2 files changed, 13 insertions(+), 5 deletions(-)
+ fs/btrfs/inode.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 1aeed3c0e949..00e506de70ba 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3177,8 +3177,8 @@ int btrfs_merge_bio_hook(struct page *page, unsigned long offset,
- struct inode *btrfs_iget(struct super_block *s, struct btrfs_key *location,
- 			 struct btrfs_root *root, int *was_new);
- struct extent_map *btrfs_get_extent(struct btrfs_inode *inode,
--		struct page *page, size_t pg_offset,
--		u64 start, u64 end, int create);
-+				    struct page *page, size_t pg_offset,
-+				    u64 start, u64 end, int create);
- int btrfs_update_inode(struct btrfs_trans_handle *trans,
- 			      struct btrfs_root *root,
- 			      struct inode *inode);
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 10e86f7b5398..31d43355f052 100644
+index 10e86f7b5398..1e0af0cc56fc 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -6787,9 +6787,9 @@ static noinline int uncompress_inline(struct btrfs_path *path,
-  * This also copies inline extents directly into the page.
-  */
- struct extent_map *btrfs_get_extent(struct btrfs_inode *inode,
--		struct page *page,
--	    size_t pg_offset, u64 start, u64 len,
--		int create)
-+				    struct page *page,
-+				    size_t pg_offset, u64 start, u64 len,
-+				    int create)
- {
- 	struct btrfs_fs_info *fs_info = inode->root->fs_info;
- 	int ret;
 @@ -6843,6 +6843,12 @@ struct extent_map *btrfs_get_extent(struct btrfs_inode *inode,
  	 */
  	path->reada = READA_FORWARD;

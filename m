@@ -1,186 +1,119 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.20]:60273 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725779AbeH0EBa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 27 Aug 2018 00:01:30 -0400
+Received: from titan.nuclearwinter.com ([205.185.120.7]:48322 "EHLO
+        titan.nuclearwinter.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726822AbeH0GRF (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 27 Aug 2018 02:17:05 -0400
 Subject: Re: Scrub aborts due to corrupt leaf
-To: Larkin Lowrey <llowrey@nuclearwinter.com>, linux-btrfs@vger.kernel.org
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
 References: <3af15796-2629-ef87-21c9-2bb3c1366732@nuclearwinter.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <3725e6f2-b1ed-8d3d-aec7-1518dad1cb03@gmx.com>
-Date: Mon, 27 Aug 2018 08:16:58 +0800
+ <3725e6f2-b1ed-8d3d-aec7-1518dad1cb03@gmx.com>
+From: Larkin Lowrey <llowrey@nuclearwinter.com>
+Message-ID: <3bf7c73d-ce25-88ce-271f-ab8c9ae6c01d@nuclearwinter.com>
+Date: Sun, 26 Aug 2018 22:32:20 -0400
 MIME-Version: 1.0
-In-Reply-To: <3af15796-2629-ef87-21c9-2bb3c1366732@nuclearwinter.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="2a4nCgLvWmuFdgYHtKMJ1aAUcJirRRgtg"
+In-Reply-To: <3725e6f2-b1ed-8d3d-aec7-1518dad1cb03@gmx.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---2a4nCgLvWmuFdgYHtKMJ1aAUcJirRRgtg
-Content-Type: multipart/mixed; boundary="2BJw1NWTDz1lwI2NOzUfGzqbXSp3KU223";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Larkin Lowrey <llowrey@nuclearwinter.com>, linux-btrfs@vger.kernel.org
-Message-ID: <3725e6f2-b1ed-8d3d-aec7-1518dad1cb03@gmx.com>
-Subject: Re: Scrub aborts due to corrupt leaf
-References: <3af15796-2629-ef87-21c9-2bb3c1366732@nuclearwinter.com>
-In-Reply-To: <3af15796-2629-ef87-21c9-2bb3c1366732@nuclearwinter.com>
+On 8/26/2018 8:16 PM, Qu Wenruo wrote:
+> Corrupted tree block bytenr matches with the number reported by kernel.
+> You could provide the tree block dump for bytenr 7687860535296, and
+> maybe we could find out what's going wrong and fix it manually.
+>
+> # btrfs ins dump-tree -b 7687860535296 <device>
 
---2BJw1NWTDz1lwI2NOzUfGzqbXSp3KU223
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+Thank you for your reply.
 
+# btrfs ins dump-tree -b 7687860535296 /dev/Cached/Backups
+btrfs-progs v4.15.1
+leaf free space ret -2002721201, leaf data size 16283, used 2002737484 
+nritems 319
+leaf 7687860535296 items 319 free space -2002721201 generation 2862 owner 7
+leaf 7687860535296 flags 0x1(WRITTEN) backref revision 1
+fs uuid acff5096-1128-4b24-a15e-4ba04261edc3
+chunk uuid 0d2fdb5d-00c0-41b3-b2ed-39a5e3bf98aa
+         item 0 key (18446744073650847734 EXTENT_CSUM 8487178285056) 
+itemoff 13211 itemsize 3072
+                 range start 8487178285056 end 8487181430784 length 3145728
+         item 1 key (18446744073650880502 EXTENT_CSUM 8487174090752) 
+itemoff 10139 itemsize 3072
+                 range start 8487174090752 end 8487177236480 length 3145728
+         item 2 key (18446744073650913270 EXTENT_CSUM 8487167782912) 
+itemoff 3251 itemsize 6888
+                 range start 8487167782912 end 8487174836224 length 7053312
+         item 3 key (18446744073651011574 EXTENT_CSUM 8487166103552) 
+itemoff 187 itemsize 3064
+                 range start 8487166103552 end 8487169241088 length 3137536
+         item 4 key (58523648 UNKNOWN.0 4115587072) itemoff 0 itemsize 0
+         item 5 key (58523648 UNKNOWN.0 4115058688) itemoff 0 itemsize 0
+         item 6 key (58392576 UNKNOWN.0 4115050496) itemoff 0 itemsize 0
+         item 7 key (58392576 UNKNOWN.0 9160800976331685888) itemoff 
+1325803612 itemsize 1549669347
+         item 8 key (15706350841398176100 UNKNOWN.160 
+9836230374950416562) itemoff -507102832 itemsize -1565142843
+         item 9 key (16420776794030147775 UNKNOWN.139 
+1413404178631177347) itemoff 319666572 itemsize -2033238481
+         item 10 key (12490357187492557094 UNKNOWN.100 
+8703020161114007581) itemoff 1698374107 itemsize 427239449
+         item 11 key (10238910558655956878 UNKNOWN.145 
+13172984620675614213) itemoff -1386707845 itemsize -2094889124
+         item 12 key (14429452134272870167 UNKNOWN.47 
+5095274587264087555) itemoff -385621303 itemsize -1014793681
+         item 13 key (12392706351935785292 TREE_BLOCK_REF 
+17075682359779944300) itemoff 467435242 itemsize -1974352848
+                 tree block backref
+         item 14 key (9030638330689148475 UNKNOWN.146 
+16510052416438219760) itemoff -1329727247 itemsize -989772882
+         item 15 key (2557232588403612193 UNKNOWN.89 
+11359249297629415033) itemoff -1393664382 itemsize -222178533
+         item 16 key (16832668804185527807 UNKNOWN.190 
+12813564574805698827) itemoff -824350641 itemsize 113587270
+         item 17 key (17721977661761488041 UNKNOWN.133 
+65181195353232031) itemoff 1165455420 itemsize -11248999
+         item 18 key (17041494636387836535 UNKNOWN.146 
+659630272632027956) itemoff 1646352770 itemsize 188954807
+         item 19 key (4813797791329885851 UNKNOWN.147 
+2988230942665281926) itemoff 2034137186 itemsize 429359084
+         item 20 key (11925872190557602809 UNKNOWN.28 
+10017979389672184473) itemoff 198274722 itemsize 1654501802
+         item 21 key (18089916911465221293 UNKNOWN.215 
+130744227189807288) itemoff -938569572 itemsize -322594079
+         item 22 key (17582525817082834821 UNKNOWN.133 
+14298100207216235213) itemoff 997305640 itemsize 380205383
+         item 23 key (2509730330338250179 ORPHAN_ITEM 
+8415032273173690331) itemoff 1213495256 itemsize -1813460706
+                 orphan item
+         item 24 key (17657358590741059587 UNKNOWN.5 
+4198714773705203243) itemoff -690501330 itemsize -237182892
+         item 25 key (14784171376049469241 UNKNOWN.139 
+15453005915765327150) itemoff 1543890422 itemsize 2093403168
+         item 26 key (8296048569161577100 UNKNOWN.58 
+12559616442258240580) itemoff 927535366 itemsize -620630864
+         item 27 key (14738413134752477244 SHARED_BLOCK_REF 
+90867799437527556) itemoff -629160915 itemsize 1418942359
+                 shared block backref
+         item 28 key (17386064595326971933 SHARED_BLOCK_REF 
+1813311842215708701) itemoff 1401681450 itemsize -2016124808
+                 shared block backref
+         item 29 key (12068018374989506977 UNKNOWN.160 
+1560146733122974605) itemoff -1145774613 itemsize -490403576
+         item 30 key (5611751644962296316 QGROUP_LIMIT 
+19245/207762978715732) itemoff -433607332 itemsize -854595036
+Segmentation fault (core dumped)
 
+Can I simply rebuild the csum tree (btrfs check --init-csum-tree)? The 
+entire contents of the fs are back-up files that are hashed so I can 
+verify that the files are correct.
 
-On 2018/8/27 =E4=B8=8A=E5=8D=884:45, Larkin Lowrey wrote:
-> When I do a scrub it aborts about 10% of the way in due to:
->=20
-> corrupt leaf: root=3D7 block=3D7687860535296 slot=3D0, invalid key obje=
-ctid
-> for csum item, have 18446744073650847734 expect 18446744073709551606
+> Please note that this corruption could be caused by bad ram or some old
+> kernel bug.
+> It's recommend to run a memtest if possible.
 
-This error message explains itself.
+The system uses ECC memory and edac-util has not reported any errors. 
+However, I will run a memtest anyway.
 
-Key objectid is not valid.
+Thank you,
 
->=20
-> The filesystem in question stores my backups and I have verified all of=
-
-> the backups so I know all files that are supposed to be there are there=
-
-> and their hashes match. Backups run normally and everything seems to
-> work fine, it's just the scrub that doesn't.
-
-No, scrub works as expected, during its csum fetching, it detects bad
-csum tree block.
-This means your csum tree is corrupted.
-
->=20
-> I tried:
->=20
-> # btrfs check --repair /dev/Cached/Backups
-> enabling repair mode
-> Checking filesystem on /dev/Cached/Backups
-> UUID: acff5096-1128-4b24-a15e-4ba04261edc3
-> Fixed 0 roots.
-> checking extents
-> leaf free space ret -2002721201, leaf data size 16283, used 2002737484
-> nritems 319
-> leaf free space ret -2002721201, leaf data size 16283, used 2002737484
-> nritems 319
-
---repair doesn't support to repair such corruption, yet.
-
-> leaf free space incorrect 7687860535296 -2002721201
-> bad block 7687860535296
-
-Corrupted tree block bytenr matches with the number reported by kernel.
-
-You could provide the tree block dump for bytenr 7687860535296, and
-maybe we could find out what's going wrong and fix it manually.
-
-# btrfs ins dump-tree -b 7687860535296 <device>
-
-Please note that this corruption could be caused by bad ram or some old
-kernel bug.
-It's recommend to run a memtest if possible.
-
-> ERROR: errors found in extent allocation tree or chunk allocation
-> checking free space cache
-> block group 34028518375424 has wrong amount of free space
-> failed to load free space cache for block group 34028518375424
-> checking fs roots
-> root 5 inode 6784890 errors 1000, some csum missing
-> checking csums
-> there are no extents for csum range 6447630387207159216-644763039011586=
-8080
-> csum exists for 6447630387207159216-6447630390115868080 but there is no=
-
-> extent record
-> there are no extents for csum range 763548178418734000-7635481814286509=
-28
-> csum exists for 763548178418734000-763548181428650928 but there is no
-> extent record
-> there are no extents for csum range
-> 10574442573086800664-10574442573732416280
-> csum exists for 10574442573086800664-10574442573732416280 but there is
-> no extent record
-> ERROR: errors found in csum tree
-> found 73238589853696 bytes used, error(s) found
-> total csum bytes: 8117840900
-> total tree bytes: 34106834944
-> total fs tree bytes: 23289413632
-> total extent tree bytes: 1659682816
-> btree space waste bytes: 6020692848
-> file data blocks allocated: 73136347418624
-> =C2=A0referenced 73135917441024
->=20
-> Nothing changes because when I run the above command again the output i=
-s
-> identical.
->=20
-> I had been using space_cache v2 but reverted to nospace_cache to run th=
-e
-> above.
-
-The corrupted tree block is csum tree thus space_cache is not related.
-
->=20
-> Is there any way to clean this up?
-
-Only manually patching is possible.
-As the corruption looks pretty like a memory corruption.
-
-Thanks,
-Qu
-
->=20
-> kernel 4.17.14-202.fc28.x86_64
-> btrfs-progs v4.15.1
->=20
-> Label: none=C2=A0 uuid: acff5096-1128-4b24-a15e-4ba04261edc3
-> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 Total devices 1 FS bytes use=
-d 66.61TiB
-> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 devid=C2=A0=C2=A0=C2=A0 1 si=
-ze 72.77TiB used 68.03TiB path
-> /dev/mapper/Cached-Backups
->=20
-> Data, single: total=3D67.80TiB, used=3D66.52TiB
-> System, DUP: total=3D40.00MiB, used=3D7.41MiB
-> Metadata, DUP: total=3D98.50GiB, used=3D95.21GiB
-> GlobalReserve, single: total=3D512.00MiB, used=3D0.00B
->=20
-> BTRFS info (device dm-3): disk space caching is enabled
-> BTRFS info (device dm-3): has skinny extents
-> BTRFS info (device dm-3): bdev /dev/mapper/Cached-Backups errs: wr 0, r=
-d
-> 0, flush 0, corrupt 666, gen 25
-> BTRFS info (device dm-3): enabling ssd optimizations
->=20
->=20
->=20
-
-
---2BJw1NWTDz1lwI2NOzUfGzqbXSp3KU223--
-
---2a4nCgLvWmuFdgYHtKMJ1aAUcJirRRgtg
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAluDQvoACgkQwj2R86El
-/qjzvgf/YFuLvgYnps6zMXyv0finpqdjOtR0XoGP8C7e4/N5iP/rVuJcsNDZ//Om
-ofG9MIV5Ta6pwb+bvIicg3Rj8KJii4lzhLiTRjBAPkwNl937Zrd2e19SjfiL+4PW
-v6lhH7CTJhhMTcghEP1tcCrTE5nF3dlge5rQ4U9hJA4Hi7sV7sFpedzIDU978dYd
-3dQbXLx+N9W1SMrdAnQXjZLdGMg0mTxTao3bZX7DBEgDDbl5ZU4d4JOQUgeQGfep
-m46QvoqAQRa/BoLpQSfKUIup6nGi51sjwRdLL56SMiM4iib7bYAlLfgBZyrsH/sK
-ScAya0MQ0leui7YpoehOL+VLp7xE0A==
-=ts9C
------END PGP SIGNATURE-----
-
---2a4nCgLvWmuFdgYHtKMJ1aAUcJirRRgtg--
+--Larkin

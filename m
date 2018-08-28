@@ -1,121 +1,194 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.19]:37587 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726540AbeH1JLs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 28 Aug 2018 05:11:48 -0400
-Subject: Re: [PATCH v2] btrfs: Always check nocow for quota enabled case to
- make sure we won't reserve unnecessary data space
-To: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>, Qu Wenruo <wqu@suse.de>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <20180821054016.28058-1-wqu@suse.com>
- <afee4b2f-ee0b-8afb-b4d6-1fd8f5958e3a@jp.fujitsu.com>
- <662fd511-708f-5784-18f8-1282830d5730@suse.de>
- <99167e75-351e-ac1d-1a13-97e7717b4a8a@jp.fujitsu.com>
- <2c3f3e97-06db-4bbb-59d9-c2880190a5a5@suse.de>
- <821fe1eb-cade-ed16-5154-b9f8381d0ca4@jp.fujitsu.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <4ada2ba5-0ba9-2e59-470d-5284a013d03a@gmx.com>
-Date: Tue, 28 Aug 2018 13:21:40 +0800
+Received: from mx2.suse.de ([195.135.220.15]:55172 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726979AbeH1Miu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 28 Aug 2018 08:38:50 -0400
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 16DE0AE08
+        for <linux-btrfs@vger.kernel.org>; Tue, 28 Aug 2018 08:48:11 +0000 (UTC)
+Subject: Re: [PATCH] btrfs: extent-tree: Detect bytes_may_use underflow
+ earlier
+To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+References: <20180828064647.9738-1-wqu@suse.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <e6ff790e-0511-45e4-538b-382da9749499@suse.com>
+Date: Tue, 28 Aug 2018 11:48:09 +0300
 MIME-Version: 1.0
-In-Reply-To: <821fe1eb-cade-ed16-5154-b9f8381d0ca4@jp.fujitsu.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="tMUtSarByelCkqa2xBmrFj23ozqlCmBt8"
+In-Reply-To: <20180828064647.9738-1-wqu@suse.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---tMUtSarByelCkqa2xBmrFj23ozqlCmBt8
-Content-Type: multipart/mixed; boundary="Pa713Iq8AWtNb2q4zDxQr5EnBFoBCLVrl";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>, Qu Wenruo
- <wqu@suse.de>, "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Message-ID: <4ada2ba5-0ba9-2e59-470d-5284a013d03a@gmx.com>
-Subject: Re: [PATCH v2] btrfs: Always check nocow for quota enabled case to
- make sure we won't reserve unnecessary data space
-References: <20180821054016.28058-1-wqu@suse.com>
- <afee4b2f-ee0b-8afb-b4d6-1fd8f5958e3a@jp.fujitsu.com>
- <662fd511-708f-5784-18f8-1282830d5730@suse.de>
- <99167e75-351e-ac1d-1a13-97e7717b4a8a@jp.fujitsu.com>
- <2c3f3e97-06db-4bbb-59d9-c2880190a5a5@suse.de>
- <821fe1eb-cade-ed16-5154-b9f8381d0ca4@jp.fujitsu.com>
-In-Reply-To: <821fe1eb-cade-ed16-5154-b9f8381d0ca4@jp.fujitsu.com>
-
---Pa713Iq8AWtNb2q4zDxQr5EnBFoBCLVrl
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
-
-On 2018/8/24 =E4=B8=8B=E5=8D=884:09, Misono Tomohiro wrote:
-[snip]
->>
->> BTW, what's the possibility of such problem in your test environment?
->=20
-> It's like one in several times.
-> It may depend on hardware performance? (the machine is not so fast),
->=20
-> I also noticed following warning happens too (not always):
->=20
-
-After digging into the case, it's more complex than just my patch.
-
-Firstly, we lacks a lot of underflow check when modifying bytes_may_use.
-So we need to do all the underflow detection for every modifier of
-bytes_may_use.
-
-Secondly, btrfs_cross_ref_exist() check makes NODATACOW check in
-__btrfs_buffered_write() unreliable.
-
-For the following case, at __btrfs_buffered_write() time we're pretty
-sure we could do NODATACOW, but at sync time, due to cloned range,
-btrfs_cross_ref_exist() would detect reflinked prealloc extent, then
-falls back to CoW, and finally cause bytes_may_use underflow:
-
----
-mkfs.btrfs -f $dev > $full_log
-
-mount $dev $mnt -o nospace_cache
-btrfs quota enable $mnt
-btrfs quota rescan -w $mnt
-
-xfs_io -f -c "falloc 0 2M" $mnt/file1 > /dev/null
-xfs_io -c "pwrite -b 1M 0 1M" $mnt/file1 > /dev/null
-xfs_io -c "reflink $mnt/file1 1M 4M 1M" $mnt/file1 > /dev/null
-sync
-----
-
-Even without my patch, the "pwrite" command is still CoWed, which could
-be avoided.
-And that's the reason my patch is causing the underflow.
-
-To fix this, we need more accurate btrfs_cross_ref_exist() check, not
-only for @disk_bytenr but also check @len.
-
-Or we could try to flush the whole inode in clone_range() so we could go
-through NOCOW routine before clone really happens.
-
-Thanks,
-Qu
 
 
---Pa713Iq8AWtNb2q4zDxQr5EnBFoBCLVrl--
+On 28.08.2018 09:46, Qu Wenruo wrote:
+> Although we have space_info::bytes_may_use underflow detection in
+> btrfs_free_reserved_data_space_noquota(), we have more callers who are
+> subtracting number from space_info::bytes_may_use.
+> 
+> So instead of doing underflow detection for every caller, introduce a
+> new wrapper update_bytes_may_use() to replace open coded bytes_may_use
+> modifiers.
+> 
+> This also introduce a macro to declare more wrappers, but currently
+> space_info::bytes_may_use is the mostly interesting one.
+> 
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
 
---tMUtSarByelCkqa2xBmrFj23ozqlCmBt8
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
+The more important question is why underflows happen in the first place?
+And this explanation is missing from the changelog.
 
------BEGIN PGP SIGNATURE-----
+As far as I can see this underflow seems to only affect the data
+space_info, since the metadata one is only modified in
+__reserve_metadata_bytes and due to overcommit it's generally higher
+than what is actually being used so it seems unlikely it can underflow.
+IMO this is also useful information to put in the commit message.
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAluE2+QACgkQwj2R86El
-/qg/kwgAmqYhRGYgiwL8ngbYCc/S69txQzFPRKBu3tNydtZI0reg8ixETyzlYXr5
-o1UdzMmylkuqefsYZ9XsVc8+pF9gwxMc9EiBwq37IyfkYGkHHl39YVXrVI+iNGh0
-eD2znjoZc16aL4P2HviNXiiUe2pr5LK1MBecQvzjlGwV81QrauGF059kZSBfoTu3
-bjH5j35R6qOXErzoZPalu+9WP75UnptLNvt9eP8OzEGVREe1QcGRVg0kOi7St5Ja
-tz3iEMNgjXQMGfEH2YTXDKHpFnmGtBID6QyN0s8XhUBtuVHcF8GYUqnowueqQMyu
-vEbBP8TPrEtUZ89G9tQuGRcQbf4olg==
-=+D3w
------END PGP SIGNATURE-----
-
---tMUtSarByelCkqa2xBmrFj23ozqlCmBt8--
+> ---
+>  fs/btrfs/extent-tree.c | 44 +++++++++++++++++++++++++++---------------
+>  1 file changed, 28 insertions(+), 16 deletions(-)
+> 
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index de6f75f5547b..10b58f231350 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -51,6 +51,21 @@ enum {
+>  	CHUNK_ALLOC_FORCE = 2,
+>  };
+>  
+> +/* Helper function to detect various space info bytes underflow */
+> +#define DECLARE_SPACE_INFO_UPDATE(name)					\
+> +static inline void update_##name(struct btrfs_space_info *sinfo, 	\
+> +				 s64 bytes)				\
+> +{									\
+> +	if (bytes < 0 && sinfo->name < -bytes) {			\
+> +		WARN_ON(1);						\
+> +		sinfo->name = 0;					\
+> +		return;							\
+> +	}								\
+> +	sinfo->name += bytes;						\
+> +}
+> +
+> +DECLARE_SPACE_INFO_UPDATE(bytes_may_use);
+> +
+>  static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
+>  			       struct btrfs_delayed_ref_node *node, u64 parent,
+>  			       u64 root_objectid, u64 owner_objectid,
+> @@ -4221,7 +4236,7 @@ int btrfs_alloc_data_chunk_ondemand(struct btrfs_inode *inode, u64 bytes)
+>  					      data_sinfo->flags, bytes, 1);
+>  		return -ENOSPC;
+>  	}
+> -	data_sinfo->bytes_may_use += bytes;
+> +	update_bytes_may_use(data_sinfo, bytes);
+>  	trace_btrfs_space_reservation(fs_info, "space_info",
+>  				      data_sinfo->flags, bytes, 1);
+>  	spin_unlock(&data_sinfo->lock);
+> @@ -4274,10 +4289,7 @@ void btrfs_free_reserved_data_space_noquota(struct inode *inode, u64 start,
+>  
+>  	data_sinfo = fs_info->data_sinfo;
+>  	spin_lock(&data_sinfo->lock);
+> -	if (WARN_ON(data_sinfo->bytes_may_use < len))
+> -		data_sinfo->bytes_may_use = 0;
+> -	else
+> -		data_sinfo->bytes_may_use -= len;
+> +	update_bytes_may_use(data_sinfo, -len);
+>  	trace_btrfs_space_reservation(fs_info, "space_info",
+>  				      data_sinfo->flags, len, 0);
+>  	spin_unlock(&data_sinfo->lock);
+> @@ -5074,7 +5086,7 @@ static int wait_reserve_ticket(struct btrfs_fs_info *fs_info,
+>  		list_del_init(&ticket->list);
+>  	if (ticket->bytes && ticket->bytes < orig_bytes) {
+>  		u64 num_bytes = orig_bytes - ticket->bytes;
+> -		space_info->bytes_may_use -= num_bytes;
+> +		update_bytes_may_use(space_info, -num_bytes);
+>  		trace_btrfs_space_reservation(fs_info, "space_info",
+>  					      space_info->flags, num_bytes, 0);
+>  	}
+> @@ -5120,13 +5132,13 @@ static int __reserve_metadata_bytes(struct btrfs_fs_info *fs_info,
+>  	 * If not things get more complicated.
+>  	 */
+>  	if (used + orig_bytes <= space_info->total_bytes) {
+> -		space_info->bytes_may_use += orig_bytes;
+> +		update_bytes_may_use(space_info, orig_bytes);
+>  		trace_btrfs_space_reservation(fs_info, "space_info",
+>  					      space_info->flags, orig_bytes, 1);
+>  		ret = 0;
+>  	} else if (can_overcommit(fs_info, space_info, orig_bytes, flush,
+>  				  system_chunk)) {
+> -		space_info->bytes_may_use += orig_bytes;
+> +		update_bytes_may_use(space_info, orig_bytes);
+>  		trace_btrfs_space_reservation(fs_info, "space_info",
+>  					      space_info->flags, orig_bytes, 1);
+>  		ret = 0;
+> @@ -5189,7 +5201,7 @@ static int __reserve_metadata_bytes(struct btrfs_fs_info *fs_info,
+>  	if (ticket.bytes) {
+>  		if (ticket.bytes < orig_bytes) {
+>  			u64 num_bytes = orig_bytes - ticket.bytes;
+> -			space_info->bytes_may_use -= num_bytes;
+> +			update_bytes_may_use(space_info, -num_bytes);
+>  			trace_btrfs_space_reservation(fs_info, "space_info",
+>  						      space_info->flags,
+>  						      num_bytes, 0);
+> @@ -5373,7 +5385,7 @@ static void space_info_add_old_bytes(struct btrfs_fs_info *fs_info,
+>  		flush = BTRFS_RESERVE_FLUSH_ALL;
+>  		goto again;
+>  	}
+> -	space_info->bytes_may_use -= num_bytes;
+> +	update_bytes_may_use(space_info, -num_bytes);
+>  	trace_btrfs_space_reservation(fs_info, "space_info",
+>  				      space_info->flags, num_bytes, 0);
+>  	spin_unlock(&space_info->lock);
+> @@ -5401,7 +5413,7 @@ static void space_info_add_new_bytes(struct btrfs_fs_info *fs_info,
+>  						      ticket->bytes, 1);
+>  			list_del_init(&ticket->list);
+>  			num_bytes -= ticket->bytes;
+> -			space_info->bytes_may_use += ticket->bytes;
+> +			update_bytes_may_use(space_info, ticket->bytes);
+>  			ticket->bytes = 0;
+>  			space_info->tickets_id++;
+>  			wake_up(&ticket->wait);
+> @@ -5409,7 +5421,7 @@ static void space_info_add_new_bytes(struct btrfs_fs_info *fs_info,
+>  			trace_btrfs_space_reservation(fs_info, "space_info",
+>  						      space_info->flags,
+>  						      num_bytes, 1);
+> -			space_info->bytes_may_use += num_bytes;
+> +			update_bytes_may_use(space_info, num_bytes);
+>  			ticket->bytes -= num_bytes;
+>  			num_bytes = 0;
+>  		}
+> @@ -5718,14 +5730,14 @@ static void update_global_block_rsv(struct btrfs_fs_info *fs_info)
+>  			num_bytes = min(num_bytes,
+>  					block_rsv->size - block_rsv->reserved);
+>  			block_rsv->reserved += num_bytes;
+> -			sinfo->bytes_may_use += num_bytes;
+> +			update_bytes_may_use(sinfo, num_bytes);
+>  			trace_btrfs_space_reservation(fs_info, "space_info",
+>  						      sinfo->flags, num_bytes,
+>  						      1);
+>  		}
+>  	} else if (block_rsv->reserved > block_rsv->size) {
+>  		num_bytes = block_rsv->reserved - block_rsv->size;
+> -		sinfo->bytes_may_use -= num_bytes;
+> +		update_bytes_may_use(sinfo, -num_bytes);
+>  		trace_btrfs_space_reservation(fs_info, "space_info",
+>  				      sinfo->flags, num_bytes, 0);
+>  		block_rsv->reserved = block_rsv->size;
+> @@ -6404,7 +6416,7 @@ static int btrfs_add_reserved_bytes(struct btrfs_block_group_cache *cache,
+>  		trace_btrfs_space_reservation(cache->fs_info,
+>  				"space_info", space_info->flags,
+>  				ram_bytes, 0);
+> -		space_info->bytes_may_use -= ram_bytes;
+> +		update_bytes_may_use(space_info, -ram_bytes);
+>  		if (delalloc)
+>  			cache->delalloc_bytes += num_bytes;
+>  	}
+> @@ -6582,7 +6594,7 @@ static int unpin_extent_range(struct btrfs_fs_info *fs_info,
+>  				to_add = min(len, global_rsv->size -
+>  					     global_rsv->reserved);
+>  				global_rsv->reserved += to_add;
+> -				space_info->bytes_may_use += to_add;
+> +				update_bytes_may_use(space_info, to_add);
+>  				if (global_rsv->reserved >= global_rsv->size)
+>  					global_rsv->full = 1;
+>  				trace_btrfs_space_reservation(fs_info,
+> 

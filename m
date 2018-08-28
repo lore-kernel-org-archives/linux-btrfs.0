@@ -1,73 +1,93 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:41544 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726799AbeHCHpQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 3 Aug 2018 03:45:16 -0400
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id A4440AF76
-        for <linux-btrfs@vger.kernel.org>; Fri,  3 Aug 2018 05:50:36 +0000 (UTC)
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 6/6] btrfs-progs: rescue-super: Don't double free fs_devices
-Date: Fri,  3 Aug 2018 13:50:22 +0800
-Message-Id: <20180803055022.9816-7-wqu@suse.com>
-In-Reply-To: <20180803055022.9816-1-wqu@suse.com>
-References: <20180803055022.9816-1-wqu@suse.com>
+Received: from mout.gmx.net ([212.227.17.21]:58365 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726994AbeH1D4y (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 27 Aug 2018 23:56:54 -0400
+Subject: Re: btrfs-progs: btrfs-convert: unable to find block group for 0
+To: Tucker Boniface <tucker@boniface.tech>, linux-btrfs@vger.kernel.org
+References: <afa83c87-df24-941a-348c-bb58cf7ac033@boniface.tech>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <e92c69e8-1145-263f-dce1-f8a55dc15193@gmx.com>
+Date: Tue, 28 Aug 2018 08:07:52 +0800
+MIME-Version: 1.0
+In-Reply-To: <afa83c87-df24-941a-348c-bb58cf7ac033@boniface.tech>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="iRFbkSN8nPxuGnKU8EKmU77E0F8yyf5CB"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-[BUG]
-During fuzz/007 we hit the following error:
-------
-====== RUN MAYFAIL /home/adam/btrfs/btrfs-progs/btrfs rescue super-recover -y -v /home/adam/btrfs/btrfs-progs/tests//fuzz-tests/images/bko-200409.raw.restored.scratch
-ERROR: tree_root block unaligned: 33554431
-ERROR: superblock checksum matches but it has invalid members
-ERROR: tree_root block unaligned: 33554431
-ERROR: superblock checksum matches but it has invalid members
-ERROR: tree_root block unaligned: 33554431
-ERROR: superblock checksum matches but it has invalid members
-ERROR: failed to add chunk map start=12582912 len=8454144: -17 (File exists)
-Couldn't read chunk tree
-failed (ignored, ret=139): /home/adam/btrfs/btrfs-progs/btrfs rescue super-recover -y -v /home/adam/btrfs/btrfs-progs/tests//fuzz-tests/images/bko-200409.raw.restored.scratch
-mayfail: returned code 139 (SEGFAULT), not ignored
-test failed for case 007-simple-super-recover
-------
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--iRFbkSN8nPxuGnKU8EKmU77E0F8yyf5CB
+Content-Type: multipart/mixed; boundary="9sslyxMz05Fvq0ccH59NskkcoP5O5WMp9";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: Tucker Boniface <tucker@boniface.tech>, linux-btrfs@vger.kernel.org
+Message-ID: <e92c69e8-1145-263f-dce1-f8a55dc15193@gmx.com>
+Subject: Re: btrfs-progs: btrfs-convert: unable to find block group for 0
+References: <afa83c87-df24-941a-348c-bb58cf7ac033@boniface.tech>
+In-Reply-To: <afa83c87-df24-941a-348c-bb58cf7ac033@boniface.tech>
 
-[CAUSE]
-In __open_ctree_fd(), if we have valid @open_ctree_flags and
-btrfs_scan_fs_devices() successes without problem, no matter what
-happens we will call btrfs_close_devices(), thus free all related
-devices.
+--9sslyxMz05Fvq0ccH59NskkcoP5O5WMp9
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-In super-recover, before we call open_ctree(), we have called
-btrfs_scan_fs_devices() already, so btrfs_scan_fs_devices() should not
-fail in open_ctree(), fs_devices will always be freed in open_ctree() or
-close_ctree().
 
-[FIX]
-So in super-recover.c, we should not call btrfs_close_devices(), or we
-will find fs_devices->list get poisoned, and trigger segfault when
-exiting.
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- super-recover.c | 3 ---
- 1 file changed, 3 deletions(-)
+On 2018/8/28 =E4=B8=8A=E5=8D=886:33, Tucker Boniface wrote:
+> Hello, I am trying to convert an ext4 partition to btrfs using
+> btrfs-convert. I am running Arch Linux with kernel 4.18.5 and
+> btrfs-progs 4.17.1. The full error is inline below.
+>=20
+> -> # btrfs-convert /dev/sda1
+> create btrfs filesystem:
+> =C2=A0=C2=A0=C2=A0=C2=A0blocksize: 4096
+> =C2=A0=C2=A0=C2=A0=C2=A0nodesize:=C2=A0 16384
+> =C2=A0=C2=A0=C2=A0=C2=A0features:=C2=A0 extref, skinny-metadata (defaul=
+t)
+> creating ext2 image file
+> Unable to find block group for 0
+> Unable to find block group for 0
+> Unable to find block group for 0
+> extent-tree.c:2743: alloc_tree_block: BUG_ON `ret` triggered, value -28=
 
-diff --git a/super-recover.c b/super-recover.c
-index 880fd7712546..86b3df9867dc 100644
---- a/super-recover.c
-+++ b/super-recover.c
-@@ -292,9 +292,6 @@ int btrfs_recover_superblocks(const char *dname,
- no_recover:
- 	recover_err_str(ret);
- 	free_recover_superblock(&recover);
--	/* check if we have freed fs_devices in close_ctree() */
--	if (!root)
--		btrfs_close_devices(recover.fs_devices);
- 	return ret;
- }
- 
--- 
-2.18.0
 
+This means ENOSPC.
+Your ext* doesn't have enough free space to contain btrfs' metadata.
+
+Thanks,
+Qu
+
+> btrfs-convert(+0x1d512)[0x564d08cd3512]
+> btrfs-convert(btrfs_alloc_free_block+0x1e8)[0x564d08cda188]
+> btrfs-convert(+0x15bd1)[0x564d08ccbbd1]
+> btrfs-convert(btrfs_search_slot+0xf27)[0x564d08ccd7d7]
+> btrfs-convert(btrfs_csum_file_block+0x499)[0x564d08cdf219]
+> btrfs-convert(+0xe625)[0x564d08cc4625]
+> btrfs-convert(main+0x1abf)[0x564d08cc3adf]
+> /usr/lib/libc.so.6(__libc_start_main+0xf3)[0x7f1822576223]
+> btrfs-convert(_start+0x2e)[0x564d08cc41be]
+> Aborted
+
+
+--9sslyxMz05Fvq0ccH59NskkcoP5O5WMp9--
+
+--iRFbkSN8nPxuGnKU8EKmU77E0F8yyf5CB
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAluEklgACgkQwj2R86El
+/qi8hwgAky1o7gWrXMjuibGlswpzJ3JaXhJRqSlbtZM0NzpCBNa1fPX+zbKalo1t
+NvjwGR5q5zncwM8RuZB/JwpBmrzqK8pMQuOiycg18wKq9Gdb8/hcBaq9J/OHyZR2
+99IrvBLiywKC68VLhRU8exkqhHUR7ExqrNyxgvf0HSI60o3A73phNXvStBvCSzDd
+O/vZHFB3RK+cMhSvtvmjAqs5HexqzD3LFEroHCh9cJCS96k/dK3WDspx8Z1s9nGQ
+9lq+PqseqgfSY3VqKmM/WRaMh2JdptmCF1oq+p7qKItRCefF4JCyhyTzARy2seYh
+WOAlgKc5YDoYZq0IuACg0j1vvJKu2g==
+=IAJc
+-----END PGP SIGNATURE-----
+
+--iRFbkSN8nPxuGnKU8EKmU77E0F8yyf5CB--

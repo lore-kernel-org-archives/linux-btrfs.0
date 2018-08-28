@@ -1,72 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwym03.jp.fujitsu.com ([211.128.242.42]:40486 "EHLO
-        mgwym03.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725893AbeH3F7J (ORCPT
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:50832 "EHLO
+        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1725907AbeH1F0k (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 30 Aug 2018 01:59:09 -0400
-Received: from g01jpfmpwkw01.exch.g01.fujitsu.local (g01jpfmpwkw01.exch.g01.fujitsu.local [10.0.193.38])
-        by yt-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id 4903FAC0065
-        for <linux-btrfs@vger.kernel.org>; Thu, 30 Aug 2018 10:59:20 +0900 (JST)
-Received: from G01JPEXCHKW18.g01.fujitsu.local (G01JPEXCHKW18.g01.fujitsu.local [10.0.194.57])
-        by g01jpfmpwkw01.exch.g01.fujitsu.local (Postfix) with ESMTP id 6E8CD692676
-        for <linux-btrfs@vger.kernel.org>; Thu, 30 Aug 2018 10:59:19 +0900 (JST)
-From: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
-Subject: [PATCH] btrfs: extent-tree.c: Remove redundant variable from
- btrfs_cross_ref_exist()
-References: <cover.1535593351.git.misono.tomohiro@jp.fujitsu.com>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Message-ID: <90c3c33c-0f7d-7121-feb8-4a74e5e78b93@jp.fujitsu.com>
-Date: Thu, 30 Aug 2018 10:59:16 +0900
+        Tue, 28 Aug 2018 01:26:40 -0400
+Received: from pps.filterd (m0044012.ppops.net [127.0.0.1])
+        by mx0a-00082601.pphosted.com (8.16.0.22/8.16.0.22) with SMTP id w7S1ZUrE002874
+        for <linux-btrfs@vger.kernel.org>; Mon, 27 Aug 2018 18:37:27 -0700
+Received: from mail.thefacebook.com ([199.201.64.23])
+        by mx0a-00082601.pphosted.com with ESMTP id 2m4ry70hru-3
+        (version=TLSv1 cipher=ECDHE-RSA-AES256-SHA bits=256 verify=NOT)
+        for <linux-btrfs@vger.kernel.org>; Mon, 27 Aug 2018 18:37:27 -0700
+From: Nick Terrell <terrelln@fb.com>
+To: Nick Terrell <terrelln@fb.com>
+CC: David Sterba <dsterba@suse.cz>, <kernel-team@fb.com>,
+        <linux-btrfs@vger.kernel.org>, <grub-devel@gnu.org>
+Subject: [PATCH 0/3] btrfs: Add zstd support to btrfs
+Date: Mon, 27 Aug 2018 18:36:51 -0700
+Message-ID: <20180828013654.1627080-1-terrelln@fb.com>
 MIME-Version: 1.0
-In-Reply-To: <cover.1535593351.git.misono.tomohiro@jp.fujitsu.com>
-Content-Type: text/plain; charset="utf-8"
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Since commit d7df2c796d7e ("Btrfs attach delayed ref updates to
-delayed ref heads"), check_delaed_ref() won't return -ENOENT.
+Hi all,
 
-In btrfs_cross_ref_exist(), two variable 'ret' and 'ret2' is
-originally used to handle -ENOENT error case.
+This patch set imports the upstream kernel zstd library, patches it to work
+in grub, adds zstd support to the btrfs module, and adds a test case. I've
+separated the importing and patching of the upstream kernel zstd library
+for ease of review.
 
-Since the code is not needed anymore, let's just remove 'ret2'.
+Thanks to David Sterba for starting this project! I started my patch from
+where he left off.
 
-Signed-off-by: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
----
- fs/btrfs/extent-tree.c | 12 ++----------
- 1 file changed, 2 insertions(+), 10 deletions(-)
+Best,
+Nick Terrell
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 2d9074295d7f..0c87472d5719 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3139,7 +3139,6 @@ int btrfs_cross_ref_exist(struct btrfs_root *root, u64 objectid, u64 offset,
- {
- 	struct btrfs_path *path;
- 	int ret;
--	int ret2;
- 
- 	path = btrfs_alloc_path();
- 	if (!path)
-@@ -3151,17 +3150,10 @@ int btrfs_cross_ref_exist(struct btrfs_root *root, u64 objectid, u64 offset,
- 		if (ret && ret != -ENOENT)
- 			goto out;
- 
--		ret2 = check_delayed_ref(root, path, objectid,
-+		ret = check_delayed_ref(root, path, objectid,
- 					 offset, bytenr);
--	} while (ret2 == -EAGAIN);
-+	} while (ret == -EAGAIN);
- 
--	if (ret2 && ret2 != -ENOENT) {
--		ret = ret2;
--		goto out;
--	}
--
--	if (ret != -ENOENT || ret2 != -ENOENT)
--		ret = 0;
- out:
- 	btrfs_free_path(path);
- 	if (root->root_key.objectid == BTRFS_DATA_RELOC_TREE_OBJECTID)
--- 
-2.17.1
+Nick Terrell (3):
+  Import kernel zstd
+  Patch the kernel zstd
+  Add btrfs zstd support
+
+ Makefile.util.def                   |    8 +-
+ grub-core/Makefile.core.def         |   10 +-
+ grub-core/fs/btrfs.c                |   85 +-
+ grub-core/lib/zstd/bitstream.h      |  380 ++++++
+ grub-core/lib/zstd/decompress.c     | 2494 +++++++++++++++++++++++++++++++++++
+ grub-core/lib/zstd/entropy_common.c |  243 ++++
+ grub-core/lib/zstd/error_private.h  |   52 +
+ grub-core/lib/zstd/fse.h            |  575 ++++++++
+ grub-core/lib/zstd/fse_decompress.c |  329 +++++
+ grub-core/lib/zstd/huf.h            |  212 +++
+ grub-core/lib/zstd/huf_decompress.c |  957 ++++++++++++++
+ grub-core/lib/zstd/kerncompat.h     |   69 +
+ grub-core/lib/zstd/mem.h            |  155 +++
+ grub-core/lib/zstd/xxhash.c         |  482 +++++++
+ grub-core/lib/zstd/xxhash.h         |  236 ++++
+ grub-core/lib/zstd/zstd.h           | 1157 ++++++++++++++++
+ grub-core/lib/zstd/zstd_common.c    |   75 ++
+ grub-core/lib/zstd/zstd_internal.h  |  265 ++++
+ tests/btrfs_test.in                 |    1 +
+ tests/util/grub-fs-tester.in        |    4 +-
+ 20 files changed, 7783 insertions(+), 6 deletions(-)
+ create mode 100644 grub-core/lib/zstd/bitstream.h
+ create mode 100644 grub-core/lib/zstd/decompress.c
+ create mode 100644 grub-core/lib/zstd/entropy_common.c
+ create mode 100644 grub-core/lib/zstd/error_private.h
+ create mode 100644 grub-core/lib/zstd/fse.h
+ create mode 100644 grub-core/lib/zstd/fse_decompress.c
+ create mode 100644 grub-core/lib/zstd/huf.h
+ create mode 100644 grub-core/lib/zstd/huf_decompress.c
+ create mode 100644 grub-core/lib/zstd/kerncompat.h
+ create mode 100644 grub-core/lib/zstd/mem.h
+ create mode 100644 grub-core/lib/zstd/xxhash.c
+ create mode 100644 grub-core/lib/zstd/xxhash.h
+ create mode 100644 grub-core/lib/zstd/zstd.h
+ create mode 100644 grub-core/lib/zstd/zstd_common.c
+ create mode 100644 grub-core/lib/zstd/zstd_internal.h
+
+--
+2.16.2

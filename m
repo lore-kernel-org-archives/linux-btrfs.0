@@ -1,61 +1,121 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf1-f53.google.com ([209.85.167.53]:43671 "EHLO
-        mail-lf1-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726096AbeH1HT2 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 28 Aug 2018 03:19:28 -0400
-Received: by mail-lf1-f53.google.com with SMTP id h64-v6so125079lfi.10
-        for <linux-btrfs@vger.kernel.org>; Mon, 27 Aug 2018 20:29:54 -0700 (PDT)
+Received: from mout.gmx.net ([212.227.15.19]:37587 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726540AbeH1JLs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 28 Aug 2018 05:11:48 -0400
+Subject: Re: [PATCH v2] btrfs: Always check nocow for quota enabled case to
+ make sure we won't reserve unnecessary data space
+To: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>, Qu Wenruo <wqu@suse.de>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+References: <20180821054016.28058-1-wqu@suse.com>
+ <afee4b2f-ee0b-8afb-b4d6-1fd8f5958e3a@jp.fujitsu.com>
+ <662fd511-708f-5784-18f8-1282830d5730@suse.de>
+ <99167e75-351e-ac1d-1a13-97e7717b4a8a@jp.fujitsu.com>
+ <2c3f3e97-06db-4bbb-59d9-c2880190a5a5@suse.de>
+ <821fe1eb-cade-ed16-5154-b9f8381d0ca4@jp.fujitsu.com>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <4ada2ba5-0ba9-2e59-470d-5284a013d03a@gmx.com>
+Date: Tue, 28 Aug 2018 13:21:40 +0800
 MIME-Version: 1.0
-In-Reply-To: <273c99b2-d7e0-bea3-a4a4-7337115beb6f@nuclearwinter.com>
-References: <3af15796-2629-ef87-21c9-2bb3c1366732@nuclearwinter.com>
- <3725e6f2-b1ed-8d3d-aec7-1518dad1cb03@gmx.com> <3bf7c73d-ce25-88ce-271f-ab8c9ae6c01d@nuclearwinter.com>
- <3d82a2b9-41da-26b8-9b74-71d17d8a8a76@gmx.com> <273c99b2-d7e0-bea3-a4a4-7337115beb6f@nuclearwinter.com>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Mon, 27 Aug 2018 21:29:53 -0600
-Message-ID: <CAJCQCtQhoKHNAUTeFKowmXMV6brqr08FO+yyCUYGjJ-82RiFmA@mail.gmail.com>
-Subject: Re: Scrub aborts due to corrupt leaf
-To: Larkin Lowrey <llowrey@nuclearwinter.com>
-Cc: Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <821fe1eb-cade-ed16-5154-b9f8381d0ca4@jp.fujitsu.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="tMUtSarByelCkqa2xBmrFj23ozqlCmBt8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Aug 27, 2018 at 8:12 PM, Larkin Lowrey
-<llowrey@nuclearwinter.com> wrote:
-> On 8/27/2018 12:46 AM, Qu Wenruo wrote:
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--tMUtSarByelCkqa2xBmrFj23ozqlCmBt8
+Content-Type: multipart/mixed; boundary="Pa713Iq8AWtNb2q4zDxQr5EnBFoBCLVrl";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>, Qu Wenruo
+ <wqu@suse.de>, "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Message-ID: <4ada2ba5-0ba9-2e59-470d-5284a013d03a@gmx.com>
+Subject: Re: [PATCH v2] btrfs: Always check nocow for quota enabled case to
+ make sure we won't reserve unnecessary data space
+References: <20180821054016.28058-1-wqu@suse.com>
+ <afee4b2f-ee0b-8afb-b4d6-1fd8f5958e3a@jp.fujitsu.com>
+ <662fd511-708f-5784-18f8-1282830d5730@suse.de>
+ <99167e75-351e-ac1d-1a13-97e7717b4a8a@jp.fujitsu.com>
+ <2c3f3e97-06db-4bbb-59d9-c2880190a5a5@suse.de>
+ <821fe1eb-cade-ed16-5154-b9f8381d0ca4@jp.fujitsu.com>
+In-Reply-To: <821fe1eb-cade-ed16-5154-b9f8381d0ca4@jp.fujitsu.com>
+
+--Pa713Iq8AWtNb2q4zDxQr5EnBFoBCLVrl
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
+
+On 2018/8/24 =E4=B8=8B=E5=8D=884:09, Misono Tomohiro wrote:
+[snip]
 >>
->>
->>> The system uses ECC memory and edac-util has not reported any errors.
->>> However, I will run a memtest anyway.
->>
->> So it should not be the memory problem.
->>
->> BTW, what's the current generation of the fs?
->>
->> # btrfs inspect dump-super <device> | grep generation
->>
->> The corrupted leaf has generation 2862, I'm not sure how recent did the
->> corruption happen.
->
->
-> generation              358392
-> chunk_root_generation   357256
-> cache_generation        358392
-> uuid_tree_generation    358392
-> dev_item.generation     0
->
-> I don't recall the last time I ran a scrub but I doubt it has been more than
-> a year.
->
-> I am running 'btrfs check --init-csum-tree' now. Hopefully that clears
-> everything up.
+>> BTW, what's the possibility of such problem in your test environment?
+>=20
+> It's like one in several times.
+> It may depend on hardware performance? (the machine is not so fast),
+>=20
+> I also noticed following warning happens too (not always):
+>=20
+
+After digging into the case, it's more complex than just my patch.
+
+Firstly, we lacks a lot of underflow check when modifying bytes_may_use.
+So we need to do all the underflow detection for every modifier of
+bytes_may_use.
+
+Secondly, btrfs_cross_ref_exist() check makes NODATACOW check in
+__btrfs_buffered_write() unreliable.
+
+For the following case, at __btrfs_buffered_write() time we're pretty
+sure we could do NODATACOW, but at sync time, due to cloned range,
+btrfs_cross_ref_exist() would detect reflinked prealloc extent, then
+falls back to CoW, and finally cause bytes_may_use underflow:
+
+---
+mkfs.btrfs -f $dev > $full_log
+
+mount $dev $mnt -o nospace_cache
+btrfs quota enable $mnt
+btrfs quota rescan -w $mnt
+
+xfs_io -f -c "falloc 0 2M" $mnt/file1 > /dev/null
+xfs_io -c "pwrite -b 1M 0 1M" $mnt/file1 > /dev/null
+xfs_io -c "reflink $mnt/file1 1M 4M 1M" $mnt/file1 > /dev/null
+sync
+----
+
+Even without my patch, the "pwrite" command is still CoWed, which could
+be avoided.
+And that's the reason my patch is causing the underflow.
+
+To fix this, we need more accurate btrfs_cross_ref_exist() check, not
+only for @disk_bytenr but also check @len.
+
+Or we could try to flush the whole inode in clone_range() so we could go
+through NOCOW routine before clone really happens.
+
+Thanks,
+Qu
 
 
-I'd expect --init-csum-tree on recreates the data csum tree, and will
-not assume metadata leaf is correct and just recompute a csum for it.
+--Pa713Iq8AWtNb2q4zDxQr5EnBFoBCLVrl--
 
+--tMUtSarByelCkqa2xBmrFj23ozqlCmBt8
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
 
--- 
-Chris Murphy
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAluE2+QACgkQwj2R86El
+/qg/kwgAmqYhRGYgiwL8ngbYCc/S69txQzFPRKBu3tNydtZI0reg8ixETyzlYXr5
+o1UdzMmylkuqefsYZ9XsVc8+pF9gwxMc9EiBwq37IyfkYGkHHl39YVXrVI+iNGh0
+eD2znjoZc16aL4P2HviNXiiUe2pr5LK1MBecQvzjlGwV81QrauGF059kZSBfoTu3
+bjH5j35R6qOXErzoZPalu+9WP75UnptLNvt9eP8OzEGVREe1QcGRVg0kOi7St5Ja
+tz3iEMNgjXQMGfEH2YTXDKHpFnmGtBID6QyN0s8XhUBtuVHcF8GYUqnowueqQMyu
+vEbBP8TPrEtUZ89G9tQuGRcQbf4olg==
+=+D3w
+-----END PGP SIGNATURE-----
+
+--tMUtSarByelCkqa2xBmrFj23ozqlCmBt8--

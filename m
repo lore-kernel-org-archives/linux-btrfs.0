@@ -1,183 +1,137 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f65.google.com ([209.85.214.65]:37613 "EHLO
-        mail-it0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727101AbeH1N0A (ORCPT
+Received: from mail-pf1-f194.google.com ([209.85.210.194]:37289 "EHLO
+        mail-pf1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727067AbeH1OYg (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 28 Aug 2018 09:26:00 -0400
-Received: by mail-it0-f65.google.com with SMTP id h20-v6so1668657itf.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 28 Aug 2018 02:34:52 -0700 (PDT)
+        Tue, 28 Aug 2018 10:24:36 -0400
+Date: Tue, 28 Aug 2018 19:33:33 +0900
+From: Naohiro Aota <naota@elisp.net>
+To: dsterba@suse.cz
+Cc: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
+        Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        linux-kernel@vger.kernel.org, Hannes Reinecke <hare@suse.com>,
+        Damien Le Moal <damien.lemoal@wdc.com>,
+        Bart Van Assche <bart.vanassche@wdc.com>,
+        Matias Bjorling <mb@lightnvm.io>
+Subject: Re: [RFC PATCH 00/17] btrfs zoned block device support
+Message-ID: <20180828103333.uuywsztisyirwgir@zazie>
+References: <20180809180450.5091-1-naota@elisp.net>
+ <20180813184251.GC24025@twin.jikos.cz>
 MIME-Version: 1.0
-From: Menion <menion@gmail.com>
-Date: Tue, 28 Aug 2018 11:34:40 +0200
-Message-ID: <CAJVZm6fbXOrXieL-hBnd9fqVRH5GdJMmN2ahyzTKCcrOibGJeg@mail.gmail.com>
-Subject: 14Gb of space lost after distro upgrade on BTFS root partition (long
- thread with logs)
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20180813184251.GC24025@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all
-I have run a distro upgrade on my Ubuntu 16.04 that runs ppa kernel
-4.17.2 with btrfsprogs 4.17.0
-The root filesystem is BTRFS single created by the Ubuntu Xenial
-installer (so on kernel 4.4.0) on an internal mmc, located in
-/dev/mmcblk0p3
-After the upgrade I have cleaned apt cache and checked the free space,
-the results were odd, following some checks (shrinked), followed by
-more comments:
+Thank you for your review!
 
-root@Menionubuntu:/home/menion# df -h
-Filesystem      Size  Used Avail Use% Mounted on
-...............................................................
-/dev/mmcblk0p3   28G   24G  2.7G  90% /
+On Mon, Aug 13, 2018 at 08:42:52PM +0200, David Sterba wrote:
+> On Fri, Aug 10, 2018 at 03:04:33AM +0900, Naohiro Aota wrote:
+> > This series adds zoned block device support to btrfs.
+> 
+> Yay, thanks!
+> 
+> As this a RFC, I'll give you some. The code looks ok for what it claims
+> to do, I'll skip style and unimportant implementation details for now as
+> there are bigger questions.
+> 
+> The zoned devices bring some constraints so not all filesystem features
+> cannot be expected to work, so this rules out any form of in-place
+> updates like NODATACOW.
+> 
+> Then there's list of 'how will zoned device work with feature X'?
 
-root@Menionubuntu:/home/menion# btrfs fi usage /usr
-Overall:
-    Device size:                  27.07GiB
-    Device allocated:             25.28GiB
-    Device unallocated:            1.79GiB
-    Device missing:                  0.00B
-    Used:                         23.88GiB
-    Free (estimated):              2.69GiB      (min: 2.69GiB)
-    Data ratio:                       1.00
-    Metadata ratio:                   1.00
-    Global reserve:               72.94MiB      (used: 0.00B)
+Here is the current HMZONED status list based on https://btrfs.wiki.kernel.org/index.php/Status
 
-Data,single: Size:24.00GiB, Used:23.10GiB
-   /dev/mmcblk0p3         24.00GiB
+Performance
+Trim       | OK
+Autodefrag | OK
+Defrag     | OK
+fallocate  | Disabled. cannot reserve region in sequential zones
+direct IO  | Disabled. falling back to buffered IO
 
-Metadata,single: Size:1.25GiB, Used:801.97MiB
-   /dev/mmcblk0p3          1.25GiB
+Compression | OK
 
-System,single: Size:32.00MiB, Used:16.00KiB
-   /dev/mmcblk0p3         32.00MiB
+Reliability
+Auto-repair    | not working. need to rewrite the corrupted extent
+Scrub          | not working. need to rewrite the corrupted extent
+Scrub + RAID56 | not working (RAID56)
+nodatacow      | should be disabled. (noticed it's not disabled now)
+Device replace | disabled for now (need to handle write pointer issues, WIP patch)
+Degraded mount | OK
 
-Unallocated:
-   /dev/mmcblk0p3          1.79GiB
+Block group profile
+Single   | OK
+DUP      | OK
+RAID0    | OK
+RAID1    | OK
+RAID10   | OK
+RAID56   | Disabled for now. need to avoid partial parity write.
+Mixed BG | OK
 
-root@Menionubuntu:/home/menion# btrfs fi df /mnt
-Data, single: total=24.00GiB, used=23.10GiB
-System, single: total=32.00MiB, used=16.00KiB
-Metadata, single: total=1.25GiB, used=801.92MiB
-GlobalReserve, single: total=72.89MiB, used=0.00B
+Administration | OK
 
-The different ways to check the free space are coherent, but if I
-check the directories usage on root, surprise:
+Misc
+Free space tree | Disabled. not necessary for sequential allocator
+no-holes        | OK
+skinny-metadata | OK
+extended-refs   | OK
 
-root@Menionubuntu:/home/menion# du -x -s -h /*
-17M     /bin
-189M    /boot
-36K     /dead.letter
-0       /dev
-18M     /etc
-6.1G    /home
-4.0K    /initrd.img
-4.0K    /initrd.img.old
-791M    /lib
-8.3M    /lib64
-0       /media
-4.0K    /mnt
-0       /opt
-du: cannot access '/proc/24660/task/24660/fd/3': No such file or directory
-du: cannot access '/proc/24660/task/24660/fdinfo/3': No such file or directory
-du: cannot access '/proc/24660/fd/3': No such file or directory
-du: cannot access '/proc/24660/fdinfo/3': No such file or directory
-0       /proc
-2.9M    /root
-2.9M    /run
-17M     /sbin
-4.0K    /snap
-0       /srv
-0       /sys
-0       /tmp
-6.1G    /usr
-2.0G    /var
-4.0K    /vmlinuz
-4.0K    /vmlinuz.old
-4.0K    /webmin-setup.out
+> You disable fallocate and DIO. I haven't looked closer at the fallocate
+> case, but DIO could work in the sense that open() will open the file but
+> any write will fallback to buffered writes. This is implemented so it
+> would need to be wired together.
 
-The computed usage is 15Gb which is what I expected, so there are 9Gb
-lost somewhere.
-I have run scrub and then full balance with:
+Actually, it's working like that. When check_direct_IO() returns
+-EINVAL, btrfs_direct_IO() still returns 0. As a result, the callers
+fall back to buffered IO.
 
-btrfs scrub start /
-btrfs balance start /
-The balance freed 100Mb of space, it was running in background so I
-have checked dmesg when "btrfs balance status" said that was completed
+I will reword the commit subject and log to reflect the actual
+behavior. Also I will relax the condition to disable only direct write
+IOs.
 
-dmesg of balance:
+> Mixed device types are not allowed, and I tend to agree with that,
+> though this could work in principle.  Just that the chunk allocator
+> would have to be aware of the device types and tweaked to allocate from
+> the same group. The btrfs code is not ready for that in terms of the
+> allocator capabilities and configuration options.
 
-[47264.250141] BTRFS info (device mmcblk0p3): relocating block group
-37154193408 flags system
-[47264.592082] BTRFS info (device mmcblk0p3): relocating block group
-36046897152 flags data
-[47271.499809] BTRFS info (device mmcblk0p3): found 73 extents
-[47272.329921] BTRFS info (device mmcblk0p3): found 60 extents
-[47272.471059] BTRFS info (device mmcblk0p3): relocating block group
-35778461696 flags metadata
-[47280.530041] BTRFS info (device mmcblk0p3): found 3199 extents
-[47280.735667] BTRFS info (device mmcblk0p3): relocating block group
-34704719872 flags data
-[47301.460523] BTRFS info (device mmcblk0p3): relocating block group
-37221302272 flags data
-[47306.038404] BTRFS info (device mmcblk0p3): found 5 extents
-[47306.481371] BTRFS info (device mmcblk0p3): found 5 extents
-[47306.673135] BTRFS info (device mmcblk0p3): relocating block group
-37187747840 flags system
-[47306.874874] BTRFS info (device mmcblk0p3): found 1 extents
-[47307.073288] BTRFS info (device mmcblk0p3): relocating block group
-34704719872 flags data
-[47371.059074] BTRFS info (device mmcblk0p3): found 16258 extents
-[47388.191208] BTRFS info (device mmcblk0p3): found 16094 extents
-[47388.985462] BTRFS info (device mmcblk0p3): relocating block group
-31215058944 flags metadata
-[47439.164167] BTRFS info (device mmcblk0p3): found 7378 extents
-[47440.163793] BTRFS info (device mmcblk0p3): relocating block group
-30141317120 flags data
-[47593.239048] BTRFS info (device mmcblk0p3): found 15636 extents
-[47618.389357] BTRFS info (device mmcblk0p3): found 15634 extents
-[47620.020122] BTRFS info (device mmcblk0p3): relocating block group
-29012000768 flags data
-[47637.708444] BTRFS info (device mmcblk0p3): found 1154 extents
-[47639.757342] BTRFS info (device mmcblk0p3): found 1154 extents
-[47640.375483] BTRFS info (device mmcblk0p3): relocating block group
-27938258944 flags data
-[47743.312441] BTRFS info (device mmcblk0p3): found 17009 extents
-[47756.928461] BTRFS info (device mmcblk0p3): found 17005 extents
-[47757.607346] BTRFS info (device mmcblk0p3): relocating block group
-9416212480 flags metadata
-[47825.819449] BTRFS info (device mmcblk0p3): found 11503 extents
-[47826.465926] BTRFS info (device mmcblk0p3): relocating block group
-8342470656 flags data
-[47900.754062] BTRFS info (device mmcblk0p3): found 20607 extents
-[47928.061348] BTRFS info (device mmcblk0p3): found 20607 extents
-[47929.125750] BTRFS info (device mmcblk0p3): relocating block group
-4852809728 flags metadata
-[47993.308492] BTRFS info (device mmcblk0p3): found 13214 extents
-[47994.883308] BTRFS info (device mmcblk0p3): relocating block group
-3779067904 flags data
-[48108.871895] BTRFS info (device mmcblk0p3): found 13256 extents
-[48124.623607] BTRFS info (device mmcblk0p3): found 13255 extents
-[48125.156150] BTRFS info (device mmcblk0p3): relocating block group
-3510632448 flags metadata
-[48191.030178] BTRFS info (device mmcblk0p3): found 12394 extents
-[48193.202016] BTRFS info (device mmcblk0p3): relocating block group
-2436890624 flags data
-[48347.733120] BTRFS info (device mmcblk0p3): found 22889 extents
-[48371.149135] BTRFS info (device mmcblk0p3): found 22889 extents
-[48373.723037] BTRFS info (device mmcblk0p3): relocating block group
-20971520 flags metadata
-[48449.367016] BTRFS info (device mmcblk0p3): found 13755 extents
-[48451.058818] BTRFS info (device mmcblk0p3): relocating block group
-12582912 flags data
-[48453.657685] BTRFS info (device mmcblk0p3): found 726 extents
-[48461.188484] BTRFS info (device mmcblk0p3): found 726 extents
-[48463.496116] BTRFS info (device mmcblk0p3): relocating block group
-4194304 flags metadata
-[48476.405722] BTRFS info (device mmcblk0p3): found 403 extents
-[48479.254106] BTRFS info (device mmcblk0p3): 17 enospc errors during balance
+Yes it will work if the allocator is improved to notice device type,
+zone type and zone size.
 
-There is this enospc errors, can anyone help me in understanding what
-is going on?
-Bye
+> Device replace is disabled, but the changlog suggests there's a way to
+> make it work, so it's a matter of implementation. And this should be
+> implemented at the time of merge.
+
+I have a WIP patch to support device replace. But it fails after
+device replacing due to write pointer mismatch. I'm debugging the
+code, so the following version may enable the feature.
+
+> RAID5/6 + zoned support is highly desired and lack of it could be
+> considered a NAK for the whole series. The drive sizes are expected to
+> be several terabytes, that sounds be too risky to lack the redundancy
+> options (RAID1 is not sufficient here).
+> 
+> The changelog does not explain why this does not or cannot work, so I
+> cannot reason about that or possibly suggest workarounds or solutions.
+> But I think it should work in principle.
+> 
+> As this is first post and RFC I don't expect that everything is
+> implemented, but at least the known missing points should be documented.
+> You've implemented lots of the low-level zoned support and extent
+> allocation, so even if the raid56 might be difficult, it should be the
+> smaller part.
+
+I was leaving RAID56 for the future, since I'm not get used to raid56
+code and the its write path (raid56_parity_write) seems to be
+separated from the other's (submit_stripe_bio).
+
+I quick checked if RAID5 is working on current HMZONED patch. But even
+with simple sequential workload using dd, it made IO failures because
+partial parity writes introduced overwrite IOs, which violate the
+sequential write rule. At a quick glance at the raid56 code, I'm
+currently not sure how we can avoid partial parity write while
+dispatching necessary IOs on transaction commit.
+
+Regards,
+Naohiro

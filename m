@@ -1,267 +1,257 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.19]:54169 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.15.15]:48563 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727069AbeH1Pr3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 28 Aug 2018 11:47:29 -0400
-Subject: Re: [PATCH] btrfs: extent-tree: Detect bytes_may_use underflow
- earlier
-To: Nikolay Borisov <nborisov@suse.com>, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <20180828064647.9738-1-wqu@suse.com>
- <e6ff790e-0511-45e4-538b-382da9749499@suse.com>
- <b05c29c1-5364-b4a6-7642-997e9e249e8b@gmx.com>
- <c9464c01-09c2-d7e2-d204-24c4a08c0f13@suse.com>
+        id S1727085AbeH1PwE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 28 Aug 2018 11:52:04 -0400
+Subject: Re: 14Gb of space lost after distro upgrade on BTFS root partition
+ (long thread with logs)
+To: Menion <menion@gmail.com>, linux-btrfs@vger.kernel.org
+References: <CAJVZm6fbXOrXieL-hBnd9fqVRH5GdJMmN2ahyzTKCcrOibGJeg@mail.gmail.com>
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <8b451356-8d11-43ef-94da-551223329c03@gmx.com>
-Date: Tue, 28 Aug 2018 19:55:57 +0800
+Message-ID: <d804450e-8d49-3114-52be-6492e00193f8@gmx.com>
+Date: Tue, 28 Aug 2018 19:54:03 +0800
 MIME-Version: 1.0
-In-Reply-To: <c9464c01-09c2-d7e2-d204-24c4a08c0f13@suse.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <CAJVZm6fbXOrXieL-hBnd9fqVRH5GdJMmN2ahyzTKCcrOibGJeg@mail.gmail.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="tetOdj7s1BGTtxU7XP5i1UD9NJyBGLky3"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--tetOdj7s1BGTtxU7XP5i1UD9NJyBGLky3
+Content-Type: multipart/mixed; boundary="Wf55Ww1VkYucsXjQW7dS1BZ6TAlpTGkYX";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: Menion <menion@gmail.com>, linux-btrfs@vger.kernel.org
+Message-ID: <d804450e-8d49-3114-52be-6492e00193f8@gmx.com>
+Subject: Re: 14Gb of space lost after distro upgrade on BTFS root partition
+ (long thread with logs)
+References: <CAJVZm6fbXOrXieL-hBnd9fqVRH5GdJMmN2ahyzTKCcrOibGJeg@mail.gmail.com>
+In-Reply-To: <CAJVZm6fbXOrXieL-hBnd9fqVRH5GdJMmN2ahyzTKCcrOibGJeg@mail.gmail.com>
+
+--Wf55Ww1VkYucsXjQW7dS1BZ6TAlpTGkYX
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
 
-On 2018/8/28 下午7:48, Nikolay Borisov wrote:
-> 
-> 
-> On 28.08.2018 14:46, Qu Wenruo wrote:
->>
->>
->> On 2018/8/28 下午4:48, Nikolay Borisov wrote:
->>>
->>>
->>> On 28.08.2018 09:46, Qu Wenruo wrote:
->>>> Although we have space_info::bytes_may_use underflow detection in
->>>> btrfs_free_reserved_data_space_noquota(), we have more callers who are
->>>> subtracting number from space_info::bytes_may_use.
->>>>
->>>> So instead of doing underflow detection for every caller, introduce a
->>>> new wrapper update_bytes_may_use() to replace open coded bytes_may_use
->>>> modifiers.
->>>>
->>>> This also introduce a macro to declare more wrappers, but currently
->>>> space_info::bytes_may_use is the mostly interesting one.
->>>>
->>>> Signed-off-by: Qu Wenruo <wqu@suse.com>
->>>
->>> The more important question is why underflows happen in the first place?
->>> And this explanation is missing from the changelog.
->>
->> As in current mainline/misc-next kernel, there is no (at least obvious)
->> underflow.
->>
->> So there is no explanation for the non-exist underflow.
->>
->>>
->>> As far as I can see this underflow seems to only affect the data
->>> space_info, since the metadata one is only modified in
->>> __reserve_metadata_bytes and due to overcommit it's generally higher
->>> than what is actually being used so it seems unlikely it can underflow.
->>
->> Yep, for data space info.
->>
->>> IMO this is also useful information to put in the commit message.
->>
->> For the full explanation, it's related to this patch:
->> [PATCH v2] btrfs: Always check nocow for quota enabled case to make sure
->> we won't reserve unnecessary data space
->>
->> And the reason why I'm digging into bytes_may_use underflow and how
->> above patch is causing problem can be found in the commit message of
->> this patch:
->> [PATCH RFC] btrfs: clone: Flush data before doing clone
->>
->> The short summary is:
->> ------
->> Due to the limitation of btrfs_cross_ref_exist(), run_delalloc_nocow()
->> can still fall back to CoW even only (unrelated) part of the
->> preallocated extent is shared.
->>
->> This makes the follow case to do unnecessary CoW:
->>
->>  # xfs_io -f -c "falloc 0 2M" $mnt/file
->>  # xfs_io -c "pwrite 0 1M" $mnt/file
->>  # xfs_io -c "reflink $mnt/file 1M 4M 1M" $mnt/file
->>  # sync
->>
->> The pwrite will still be CoWed, since at writeback time, the
->> preallocated extent is already shared, btrfs_cross_ref_exist() will
->> return 1 and make run_delalloc_nocow() fall back to cow_file_range().
->> -----
->>
->> Combined these 2 pieces, it would be:
->> If we do early nocow detection at __btrfs_buffered_write() time, and at
->> delalloc time btrfs decides to fall back to CoW, then we could underflow
->> data space bytes_may_use.
->>
->> So it's a little hard to explain in such early detection patch.
->>
->> I'm pretty happy to add extra explanation into the commit message, but
->> I'm all ears for any advice on what should be put into the commit message.
-> 
-> So it seems this patch on its own doesn't make much sense it needs to be
-> coupled with the other one in one series.
 
-I'm OK combining it into one series, but this patch also make sense on
-its own, to act as extra safe net or validation code to detect underflow
-earlier (even we don't have underflow yet).
+On 2018/8/28 =E4=B8=8B=E5=8D=885:34, Menion wrote:
+> Hi all
+> I have run a distro upgrade on my Ubuntu 16.04 that runs ppa kernel
+> 4.17.2 with btrfsprogs 4.17.0
+> The root filesystem is BTRFS single created by the Ubuntu Xenial
+> installer (so on kernel 4.4.0) on an internal mmc, located in
+> /dev/mmcblk0p3
+> After the upgrade I have cleaned apt cache and checked the free space,
+> the results were odd, following some checks (shrinked), followed by
+> more comments:
+>=20
+> root@Menionubuntu:/home/menion# df -h
+> Filesystem      Size  Used Avail Use% Mounted on
+> ...............................................................
+> /dev/mmcblk0p3   28G   24G  2.7G  90% /
+>=20
+> root@Menionubuntu:/home/menion# btrfs fi usage /usr
+> Overall:
+>     Device size:                  27.07GiB
+>     Device allocated:             25.28GiB
+>     Device unallocated:            1.79GiB
+>     Device missing:                  0.00B
+>     Used:                         23.88GiB
+>     Free (estimated):              2.69GiB      (min: 2.69GiB)
+>     Data ratio:                       1.00
+>     Metadata ratio:                   1.00
+>     Global reserve:               72.94MiB      (used: 0.00B)
+>=20
+> Data,single: Size:24.00GiB, Used:23.10GiB
+>    /dev/mmcblk0p3         24.00GiB
+>=20
+> Metadata,single: Size:1.25GiB, Used:801.97MiB
+>    /dev/mmcblk0p3          1.25GiB
+>=20
+> System,single: Size:32.00MiB, Used:16.00KiB
+>    /dev/mmcblk0p3         32.00MiB
+>=20
+> Unallocated:
+>    /dev/mmcblk0p3          1.79GiB
+>=20
+> root@Menionubuntu:/home/menion# btrfs fi df /mnt
+> Data, single: total=3D24.00GiB, used=3D23.10GiB
+> System, single: total=3D32.00MiB, used=3D16.00KiB
+> Metadata, single: total=3D1.25GiB, used=3D801.92MiB
+> GlobalReserve, single: total=3D72.89MiB, used=3D0.00B
+>=20
+> The different ways to check the free space are coherent, but if I
+> check the directories usage on root, surprise:
+>=20
+> root@Menionubuntu:/home/menion# du -x -s -h /*
+> 17M     /bin
+> 189M    /boot
+> 36K     /dead.letter
+> 0       /dev
+> 18M     /etc
+> 6.1G    /home
+> 4.0K    /initrd.img
+> 4.0K    /initrd.img.old
+> 791M    /lib
+> 8.3M    /lib64
+> 0       /media
+> 4.0K    /mnt
+> 0       /opt
+> du: cannot access '/proc/24660/task/24660/fd/3': No such file or direct=
+ory
+> du: cannot access '/proc/24660/task/24660/fdinfo/3': No such file or di=
+rectory
+> du: cannot access '/proc/24660/fd/3': No such file or directory
+> du: cannot access '/proc/24660/fdinfo/3': No such file or directory
+> 0       /proc
+> 2.9M    /root
+> 2.9M    /run
+> 17M     /sbin
+> 4.0K    /snap
+> 0       /srv
+> 0       /sys
+> 0       /tmp
+> 6.1G    /usr
+> 2.0G    /var
+> 4.0K    /vmlinuz
+> 4.0K    /vmlinuz.old
+> 4.0K    /webmin-setup.out
+>=20
+> The computed usage is 15Gb which is what I expected, so there are 9Gb
+> lost somewhere.
+> I have run scrub and then full balance with:
+
+I think this is related to btrfs CoW and extent booking.
+
+One simple example would be:
+
+xfs_io -f -c "pwrite 0 128k" -c "sync" -c "pwrite 0 64K" \
+	/mnt/btrfs/file1
+
+The result "/mnt/btrfs/file1" will only be sized 128K in du, but it
+on-disk usage is 128K + 64K.
+
+The first 128K is the data written by the first "pwrite" command, it
+caused a full 128K extent on disk.
+Then the 2nd pwrite command also created a new 64K extent, which is the
+default data CoW behavior.
+The first half of the original 128K extent is not used by anyone, but it
+still takes space.
+
+Above btrfs extent booking behavior could cause a lot of wasted space
+even there is only one single subvolume without any snapshot.
+
+In that case, instead of balance, defrag should be your friend to free
+up some space.
 
 Thanks,
 Qu
 
-> 
->>
->> Thanks,
->> Qu
->>
->>>
->>>> ---
->>>>  fs/btrfs/extent-tree.c | 44 +++++++++++++++++++++++++++---------------
->>>>  1 file changed, 28 insertions(+), 16 deletions(-)
->>>>
->>>> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
->>>> index de6f75f5547b..10b58f231350 100644
->>>> --- a/fs/btrfs/extent-tree.c
->>>> +++ b/fs/btrfs/extent-tree.c
->>>> @@ -51,6 +51,21 @@ enum {
->>>>  	CHUNK_ALLOC_FORCE = 2,
->>>>  };
->>>>  
->>>> +/* Helper function to detect various space info bytes underflow */
->>>> +#define DECLARE_SPACE_INFO_UPDATE(name)					\
->>>> +static inline void update_##name(struct btrfs_space_info *sinfo, 	\
->>>> +				 s64 bytes)				\
->>>> +{									\
->>>> +	if (bytes < 0 && sinfo->name < -bytes) {			\
->>>> +		WARN_ON(1);						\
->>>> +		sinfo->name = 0;					\
->>>> +		return;							\
->>>> +	}								\
->>>> +	sinfo->name += bytes;						\
->>>> +}
->>>> +
->>>> +DECLARE_SPACE_INFO_UPDATE(bytes_may_use);
->>>> +
->>>>  static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
->>>>  			       struct btrfs_delayed_ref_node *node, u64 parent,
->>>>  			       u64 root_objectid, u64 owner_objectid,
->>>> @@ -4221,7 +4236,7 @@ int btrfs_alloc_data_chunk_ondemand(struct btrfs_inode *inode, u64 bytes)
->>>>  					      data_sinfo->flags, bytes, 1);
->>>>  		return -ENOSPC;
->>>>  	}
->>>> -	data_sinfo->bytes_may_use += bytes;
->>>> +	update_bytes_may_use(data_sinfo, bytes);
->>>>  	trace_btrfs_space_reservation(fs_info, "space_info",
->>>>  				      data_sinfo->flags, bytes, 1);
->>>>  	spin_unlock(&data_sinfo->lock);
->>>> @@ -4274,10 +4289,7 @@ void btrfs_free_reserved_data_space_noquota(struct inode *inode, u64 start,
->>>>  
->>>>  	data_sinfo = fs_info->data_sinfo;
->>>>  	spin_lock(&data_sinfo->lock);
->>>> -	if (WARN_ON(data_sinfo->bytes_may_use < len))
->>>> -		data_sinfo->bytes_may_use = 0;
->>>> -	else
->>>> -		data_sinfo->bytes_may_use -= len;
->>>> +	update_bytes_may_use(data_sinfo, -len);
->>>>  	trace_btrfs_space_reservation(fs_info, "space_info",
->>>>  				      data_sinfo->flags, len, 0);
->>>>  	spin_unlock(&data_sinfo->lock);
->>>> @@ -5074,7 +5086,7 @@ static int wait_reserve_ticket(struct btrfs_fs_info *fs_info,
->>>>  		list_del_init(&ticket->list);
->>>>  	if (ticket->bytes && ticket->bytes < orig_bytes) {
->>>>  		u64 num_bytes = orig_bytes - ticket->bytes;
->>>> -		space_info->bytes_may_use -= num_bytes;
->>>> +		update_bytes_may_use(space_info, -num_bytes);
->>>>  		trace_btrfs_space_reservation(fs_info, "space_info",
->>>>  					      space_info->flags, num_bytes, 0);
->>>>  	}
->>>> @@ -5120,13 +5132,13 @@ static int __reserve_metadata_bytes(struct btrfs_fs_info *fs_info,
->>>>  	 * If not things get more complicated.
->>>>  	 */
->>>>  	if (used + orig_bytes <= space_info->total_bytes) {
->>>> -		space_info->bytes_may_use += orig_bytes;
->>>> +		update_bytes_may_use(space_info, orig_bytes);
->>>>  		trace_btrfs_space_reservation(fs_info, "space_info",
->>>>  					      space_info->flags, orig_bytes, 1);
->>>>  		ret = 0;
->>>>  	} else if (can_overcommit(fs_info, space_info, orig_bytes, flush,
->>>>  				  system_chunk)) {
->>>> -		space_info->bytes_may_use += orig_bytes;
->>>> +		update_bytes_may_use(space_info, orig_bytes);
->>>>  		trace_btrfs_space_reservation(fs_info, "space_info",
->>>>  					      space_info->flags, orig_bytes, 1);
->>>>  		ret = 0;
->>>> @@ -5189,7 +5201,7 @@ static int __reserve_metadata_bytes(struct btrfs_fs_info *fs_info,
->>>>  	if (ticket.bytes) {
->>>>  		if (ticket.bytes < orig_bytes) {
->>>>  			u64 num_bytes = orig_bytes - ticket.bytes;
->>>> -			space_info->bytes_may_use -= num_bytes;
->>>> +			update_bytes_may_use(space_info, -num_bytes);
->>>>  			trace_btrfs_space_reservation(fs_info, "space_info",
->>>>  						      space_info->flags,
->>>>  						      num_bytes, 0);
->>>> @@ -5373,7 +5385,7 @@ static void space_info_add_old_bytes(struct btrfs_fs_info *fs_info,
->>>>  		flush = BTRFS_RESERVE_FLUSH_ALL;
->>>>  		goto again;
->>>>  	}
->>>> -	space_info->bytes_may_use -= num_bytes;
->>>> +	update_bytes_may_use(space_info, -num_bytes);
->>>>  	trace_btrfs_space_reservation(fs_info, "space_info",
->>>>  				      space_info->flags, num_bytes, 0);
->>>>  	spin_unlock(&space_info->lock);
->>>> @@ -5401,7 +5413,7 @@ static void space_info_add_new_bytes(struct btrfs_fs_info *fs_info,
->>>>  						      ticket->bytes, 1);
->>>>  			list_del_init(&ticket->list);
->>>>  			num_bytes -= ticket->bytes;
->>>> -			space_info->bytes_may_use += ticket->bytes;
->>>> +			update_bytes_may_use(space_info, ticket->bytes);
->>>>  			ticket->bytes = 0;
->>>>  			space_info->tickets_id++;
->>>>  			wake_up(&ticket->wait);
->>>> @@ -5409,7 +5421,7 @@ static void space_info_add_new_bytes(struct btrfs_fs_info *fs_info,
->>>>  			trace_btrfs_space_reservation(fs_info, "space_info",
->>>>  						      space_info->flags,
->>>>  						      num_bytes, 1);
->>>> -			space_info->bytes_may_use += num_bytes;
->>>> +			update_bytes_may_use(space_info, num_bytes);
->>>>  			ticket->bytes -= num_bytes;
->>>>  			num_bytes = 0;
->>>>  		}
->>>> @@ -5718,14 +5730,14 @@ static void update_global_block_rsv(struct btrfs_fs_info *fs_info)
->>>>  			num_bytes = min(num_bytes,
->>>>  					block_rsv->size - block_rsv->reserved);
->>>>  			block_rsv->reserved += num_bytes;
->>>> -			sinfo->bytes_may_use += num_bytes;
->>>> +			update_bytes_may_use(sinfo, num_bytes);
->>>>  			trace_btrfs_space_reservation(fs_info, "space_info",
->>>>  						      sinfo->flags, num_bytes,
->>>>  						      1);
->>>>  		}
->>>>  	} else if (block_rsv->reserved > block_rsv->size) {
->>>>  		num_bytes = block_rsv->reserved - block_rsv->size;
->>>> -		sinfo->bytes_may_use -= num_bytes;
->>>> +		update_bytes_may_use(sinfo, -num_bytes);
->>>>  		trace_btrfs_space_reservation(fs_info, "space_info",
->>>>  				      sinfo->flags, num_bytes, 0);
->>>>  		block_rsv->reserved = block_rsv->size;
->>>> @@ -6404,7 +6416,7 @@ static int btrfs_add_reserved_bytes(struct btrfs_block_group_cache *cache,
->>>>  		trace_btrfs_space_reservation(cache->fs_info,
->>>>  				"space_info", space_info->flags,
->>>>  				ram_bytes, 0);
->>>> -		space_info->bytes_may_use -= ram_bytes;
->>>> +		update_bytes_may_use(space_info, -ram_bytes);
->>>>  		if (delalloc)
->>>>  			cache->delalloc_bytes += num_bytes;
->>>>  	}
->>>> @@ -6582,7 +6594,7 @@ static int unpin_extent_range(struct btrfs_fs_info *fs_info,
->>>>  				to_add = min(len, global_rsv->size -
->>>>  					     global_rsv->reserved);
->>>>  				global_rsv->reserved += to_add;
->>>> -				space_info->bytes_may_use += to_add;
->>>> +				update_bytes_may_use(space_info, to_add);
->>>>  				if (global_rsv->reserved >= global_rsv->size)
->>>>  					global_rsv->full = 1;
->>>>  				trace_btrfs_space_reservation(fs_info,
->>>>
->>
+>=20
+> btrfs scrub start /
+> btrfs balance start /
+> The balance freed 100Mb of space, it was running in background so I
+> have checked dmesg when "btrfs balance status" said that was completed
+>=20
+> dmesg of balance:
+>=20
+> [47264.250141] BTRFS info (device mmcblk0p3): relocating block group
+> 37154193408 flags system
+> [47264.592082] BTRFS info (device mmcblk0p3): relocating block group
+> 36046897152 flags data
+> [47271.499809] BTRFS info (device mmcblk0p3): found 73 extents
+> [47272.329921] BTRFS info (device mmcblk0p3): found 60 extents
+> [47272.471059] BTRFS info (device mmcblk0p3): relocating block group
+> 35778461696 flags metadata
+> [47280.530041] BTRFS info (device mmcblk0p3): found 3199 extents
+> [47280.735667] BTRFS info (device mmcblk0p3): relocating block group
+> 34704719872 flags data
+> [47301.460523] BTRFS info (device mmcblk0p3): relocating block group
+> 37221302272 flags data
+> [47306.038404] BTRFS info (device mmcblk0p3): found 5 extents
+> [47306.481371] BTRFS info (device mmcblk0p3): found 5 extents
+> [47306.673135] BTRFS info (device mmcblk0p3): relocating block group
+> 37187747840 flags system
+> [47306.874874] BTRFS info (device mmcblk0p3): found 1 extents
+> [47307.073288] BTRFS info (device mmcblk0p3): relocating block group
+> 34704719872 flags data
+> [47371.059074] BTRFS info (device mmcblk0p3): found 16258 extents
+> [47388.191208] BTRFS info (device mmcblk0p3): found 16094 extents
+> [47388.985462] BTRFS info (device mmcblk0p3): relocating block group
+> 31215058944 flags metadata
+> [47439.164167] BTRFS info (device mmcblk0p3): found 7378 extents
+> [47440.163793] BTRFS info (device mmcblk0p3): relocating block group
+> 30141317120 flags data
+> [47593.239048] BTRFS info (device mmcblk0p3): found 15636 extents
+> [47618.389357] BTRFS info (device mmcblk0p3): found 15634 extents
+> [47620.020122] BTRFS info (device mmcblk0p3): relocating block group
+> 29012000768 flags data
+> [47637.708444] BTRFS info (device mmcblk0p3): found 1154 extents
+> [47639.757342] BTRFS info (device mmcblk0p3): found 1154 extents
+> [47640.375483] BTRFS info (device mmcblk0p3): relocating block group
+> 27938258944 flags data
+> [47743.312441] BTRFS info (device mmcblk0p3): found 17009 extents
+> [47756.928461] BTRFS info (device mmcblk0p3): found 17005 extents
+> [47757.607346] BTRFS info (device mmcblk0p3): relocating block group
+> 9416212480 flags metadata
+> [47825.819449] BTRFS info (device mmcblk0p3): found 11503 extents
+> [47826.465926] BTRFS info (device mmcblk0p3): relocating block group
+> 8342470656 flags data
+> [47900.754062] BTRFS info (device mmcblk0p3): found 20607 extents
+> [47928.061348] BTRFS info (device mmcblk0p3): found 20607 extents
+> [47929.125750] BTRFS info (device mmcblk0p3): relocating block group
+> 4852809728 flags metadata
+> [47993.308492] BTRFS info (device mmcblk0p3): found 13214 extents
+> [47994.883308] BTRFS info (device mmcblk0p3): relocating block group
+> 3779067904 flags data
+> [48108.871895] BTRFS info (device mmcblk0p3): found 13256 extents
+> [48124.623607] BTRFS info (device mmcblk0p3): found 13255 extents
+> [48125.156150] BTRFS info (device mmcblk0p3): relocating block group
+> 3510632448 flags metadata
+> [48191.030178] BTRFS info (device mmcblk0p3): found 12394 extents
+> [48193.202016] BTRFS info (device mmcblk0p3): relocating block group
+> 2436890624 flags data
+> [48347.733120] BTRFS info (device mmcblk0p3): found 22889 extents
+> [48371.149135] BTRFS info (device mmcblk0p3): found 22889 extents
+> [48373.723037] BTRFS info (device mmcblk0p3): relocating block group
+> 20971520 flags metadata
+> [48449.367016] BTRFS info (device mmcblk0p3): found 13755 extents
+> [48451.058818] BTRFS info (device mmcblk0p3): relocating block group
+> 12582912 flags data
+> [48453.657685] BTRFS info (device mmcblk0p3): found 726 extents
+> [48461.188484] BTRFS info (device mmcblk0p3): found 726 extents
+> [48463.496116] BTRFS info (device mmcblk0p3): relocating block group
+> 4194304 flags metadata
+> [48476.405722] BTRFS info (device mmcblk0p3): found 403 extents
+> [48479.254106] BTRFS info (device mmcblk0p3): 17 enospc errors during b=
+alance
+>=20
+> There is this enospc errors, can anyone help me in understanding what
+> is going on?
+> Bye
+>=20
+
+
+--Wf55Ww1VkYucsXjQW7dS1BZ6TAlpTGkYX--
+
+--tetOdj7s1BGTtxU7XP5i1UD9NJyBGLky3
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAluFN9sACgkQwj2R86El
+/qgQFwf8C4fsO5g3m3HJyvMiIrvj6dPK9DAQl3Uq52IXJ0RX2NmaY5DN20De9GqZ
+2K48gHnM8gZNEQNdS48fivfqzsyr5BVwfgy+UDCen4lGyms1U16sITb0PAFGIi6W
+0w+wBWUyEohMilBDYhikQaUr6O/b9yjsdxm/22A+TXe6v+vGn2cKXKxrze0mpo49
+WZGH2ZnUAz6C9Z+8VLIREc3sHPVHIzVzMhwEjZ/nnrOFJ4EfZxYGDurVDJvlpH3N
+gNUA307rhqJgue7YDFcG/S489gNjAl4P84pzkoDue5KCryYjgHTp28d1aeGeBV5Q
+vsttl3/pV4axTYpWRMpYIj/RXEU+Aw==
+=sxnC
+-----END PGP SIGNATURE-----
+
+--tetOdj7s1BGTtxU7XP5i1UD9NJyBGLky3--

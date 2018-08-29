@@ -1,57 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:40492 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727204AbeH2McE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 29 Aug 2018 08:32:04 -0400
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 35626AF3B
-        for <linux-btrfs@vger.kernel.org>; Wed, 29 Aug 2018 08:36:16 +0000 (UTC)
-From: Nikolay Borisov <nborisov@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 0/2] FSID change kernel support
-Date: Wed, 29 Aug 2018 11:36:12 +0300
-Message-Id: <1535531774-29830-1-git-send-email-nborisov@suse.com>
+Received: from mail-lj1-f177.google.com ([209.85.208.177]:43802 "EHLO
+        mail-lj1-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727172AbeH2Nwz (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 29 Aug 2018 09:52:55 -0400
+Received: by mail-lj1-f177.google.com with SMTP id m84-v6so3825771lje.10
+        for <linux-btrfs@vger.kernel.org>; Wed, 29 Aug 2018 02:56:47 -0700 (PDT)
+Subject: Re: DRDY errors are not consistent with scrub results
+To: Cerem Cem ASLAN <ceremcem@ceremcem.net>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <CAN4oSBdfDVGmG8L2vS9h9McEs5aSuP5RfTGREB2ZhGwmAg4JhA@mail.gmail.com>
+From: ein <ein.net@gmail.com>
+Message-ID: <ef6a2ce8-43d8-59cd-194b-566da77ba8dd@gmail.com>
+Date: Wed, 29 Aug 2018 11:56:44 +0200
+MIME-Version: 1.0
+In-Reply-To: <CAN4oSBdfDVGmG8L2vS9h9McEs5aSuP5RfTGREB2ZhGwmAg4JhA@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Here is the kernel support for another level of indirection when dealing with 
-FSID. I've taken inspiration from XFS so if people are familiar how FSID is 
-changed there it's identical in BTRFS. In short, another field is introduced
-which will record the original fsid (which is stamped into every metadata block
-on-disk) if the user chooses to change it. This enables filesytems to have 
-arbitrary user-visible UUIDS but immutable on-disk UUIDs. 
+On 08/28/2018 12:51 AM, Cerem Cem ASLAN wrote:
+> Hi,
+>
 
-The first patch adjusts the kernel code to cope with this by adding an incompat
-flag and introducing a new field to the on-disk super block. This means old
-kernels will not be able to mount fsid-changed filesystems. Additionally, 
-the device scanning logic is modified so that now devices are being 
-matched for fsid && metadata_uuid when added to the system. This handles 
-scenarios where two filesystems with identical on-disk metadata uuids (but 
-different user-visible fsids) exist on the same machine. 
+Good morning.
 
-The second patch just removes some duplication of the fsid/metadata_uuid fields
-since they were copied in both btrfs_fs_info and btrfs_fs_devices structs. 
+>
+> I'm not sure how to proceed at the moment. Taking succesfull backups
+> made me think that everything might be okay but I'm not sure if I
+> should continue trusting the drive or not. What additional checks
+> should I perform?
+> 
 
-Those patches survived multiple xfstest runs so I think they should be pretty 
-solid. Please review and give them a spin. 
+Can you please show also:
 
-Nikolay Borisov (2):
-  btrfs: Introduce support for FSID change without metadata rewrite
-  btrfs: Remove fsid/metadata_fsid fields from btrfs_info
+btrfs dev stats /path/to/the/mount/point
 
- fs/btrfs/check-integrity.c   |  2 +-
- fs/btrfs/ctree.c             |  5 +--
- fs/btrfs/ctree.h             | 10 +++---
- fs/btrfs/disk-io.c           | 39 ++++++++++++++++++-----
- fs/btrfs/extent-tree.c       |  2 +-
- fs/btrfs/ioctl.c             |  2 +-
- fs/btrfs/super.c             |  2 +-
- fs/btrfs/volumes.c           | 74 ++++++++++++++++++++++++++++++++++----------
- fs/btrfs/volumes.h           |  1 +
- include/trace/events/btrfs.h |  2 +-
- include/uapi/linux/btrfs.h   |  1 +
- 11 files changed, 104 insertions(+), 36 deletions(-)
 
 -- 
-2.7.4
+PGP Public Key (RSA/4096b):
+ID: 0xF2C6EA10
+SHA-1: 51DA 40EE 832A 0572 5AD8 B3C0 7AFF 69E1 F2C6 EA10

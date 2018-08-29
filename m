@@ -1,118 +1,104 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from tty0.vserver.softronics.ch ([91.214.169.36]:53542 "EHLO
-        fe1.digint.ch" rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727621AbeH2V3k (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 29 Aug 2018 17:29:40 -0400
-Received: from mail.tty0.ch (hermes.tty0.ch [172.21.1.5])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by fe1.digint.ch (Postfix) with ESMTPS id 2E6F2307D2
-        for <linux-btrfs@vger.kernel.org>; Wed, 29 Aug 2018 19:23:09 +0200 (CEST)
-From: Axel Burri <axel@tty0.ch>
-To: linux-btrfs@vger.kernel.org
-Cc: Axel Burri <axel@tty0.ch>
-Subject: [RFC PATCH 0/6] btrfs-progs: build distinct binaries for specific btrfs subcommands
-Date: Wed, 29 Aug 2018 19:24:03 +0200
-Message-Id: <20180829172409.18064-1-axel@tty0.ch>
+Received: from mail-io0-f196.google.com ([209.85.223.196]:37945 "EHLO
+        mail-io0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727477AbeH2XBG (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 29 Aug 2018 19:01:06 -0400
+Received: by mail-io0-f196.google.com with SMTP id y3-v6so5416516ioc.5
+        for <linux-btrfs@vger.kernel.org>; Wed, 29 Aug 2018 12:02:51 -0700 (PDT)
+Subject: Re: [RFC PATCH 0/6] btrfs-progs: build distinct binaries for specific
+ btrfs subcommands
+To: Axel Burri <axel@tty0.ch>, linux-btrfs@vger.kernel.org
+References: <20180829172409.18064-1-axel@tty0.ch>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <42587df6-1be3-e42e-3c85-fa356786ba65@gmail.com>
+Date: Wed, 29 Aug 2018 15:02:46 -0400
+MIME-Version: 1.0
+In-Reply-To: <20180829172409.18064-1-axel@tty0.ch>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch allows to build distinct binaries for specific btrfs
-subcommands, e.g. "btrfs-subvolume-show" which would be identical to
-"btrfs subvolume show".
+On 2018-08-29 13:24, Axel Burri wrote:
+> This patch allows to build distinct binaries for specific btrfs
+> subcommands, e.g. "btrfs-subvolume-show" which would be identical to
+> "btrfs subvolume show".
+> 
+> 
+> Motivation:
+> 
+> While btrfs-progs offer the all-inclusive "btrfs" command, it gets
+> pretty cumbersome to restrict privileges to the subcommands [1].
+> Common approaches are to either setuid root for "/sbin/btrfs" (which
+> is not recommended at all), or to write sudo rules for each
+> subcommand.
+> 
+> Separating the subcommands into distinct binaries makes it easy to set
+> elevated privileges using capabilities(7) or setuid. A typical use
+> case where this is needed is when it comes to automated scripts,
+> e.g. btrbk [2] [3] creating snapshots and send/receive them via ssh.
+Let me start by saying I think this is a great idea to have as an 
+option, and that the motivation is a particularly good one.
 
+I've posted my opinions on your two open questions below, but there's 
+two other comments I'd like to make:
 
-Motivation:
+* Is there some particular reason that this only includes the commands 
+it does, and _hard codes_ which ones it works with?  if we just do 
+everything instead of only the stuff we think needs certain 
+capabilities, then we can auto-generate the list of commands to be 
+processed based on function names in the C files, and it will 
+automatically pick up any newly added commands.  At the very least, it 
+could still parse through the C files and look for tags in the comments 
+for the functions to indicate which ones need to be processed this way. 
+Either case will make it significantly easier to add new commands, and 
+would also better justify the overhead of shipping all the files 
+pre-generated (because there would be much more involved in 
+pre-generating them).
 
-While btrfs-progs offer the all-inclusive "btrfs" command, it gets
-pretty cumbersome to restrict privileges to the subcommands [1].
-Common approaches are to either setuid root for "/sbin/btrfs" (which
-is not recommended at all), or to write sudo rules for each
-subcommand.
+* While not essential, it would be really neat to have the `btrfs` 
+command detect if an associated binary exists for whatever command was 
+just invoked, and automatically exec that (possibly with some 
+verification) instead of calling the command directly so that desired 
+permissions are enforced.  This would mitigate the need for users to 
+remember different command names depending on execution context.
+> 
+> 
+> Description:
+> 
+> Patch 1 adds a template as well as a generator shell script for the
+> splitted subcommands.
+> 
+> Patch 2 adds the generated subcommand source files.
+> 
+> Patch 3-5 adds a "install-splitcmd-setcap" make target, with different
+> approaches (either hardcoded in Makefile, or more generically by
+> including "Makefile.install_setcap" generated by "splitcmd-gen.sh").
+> 
+> 
+> Open Questions:
+> 
+> 1. "make install-splitcmd-setcap" installs the binaries with hardcoded
+> group "btrfs". This needs to be configurable (how?). Another approach
+> would be to not set the group at all, and leave this to the user or
+> distro packaging script.
+Leave it to the user or distro.  It's likely to end up standardized on 
+the name 'btrfs', but it should be agnostic of that.
+> 
+> 2. Instead of the "install-splitcmd-setcap" make target, we could
+> introduce a "configure --enable-splitted-subcommands" option, which
+> would simply add all splitcmd binaries to the "all" and "install"
+> targets without special treatment, and leave the setcap stuff to the
+> user or distro packaging script (at least in gentoo, this needs to be
+> specified using the "fcaps" eclass anyways [5]).
+A bit of a nitpick, but 'split' is the proper past tense of the word 
+'split', it's one of those exceptions that English has all over the 
+place.  Even aside from that though, I think `separate` sounds more 
+natural for the configure option, or better yet, just make it 
+`--enable-fscaps` like most other packages do.
 
-Separating the subcommands into distinct binaries makes it easy to set
-elevated privileges using capabilities(7) or setuid. A typical use
-case where this is needed is when it comes to automated scripts,
-e.g. btrbk [2] [3] creating snapshots and send/receive them via ssh.
-
-
-Description:
-
-Patch 1 adds a template as well as a generator shell script for the
-splitted subcommands.
-
-Patch 2 adds the generated subcommand source files.
-
-Patch 3-5 adds a "install-splitcmd-setcap" make target, with different
-approaches (either hardcoded in Makefile, or more generically by
-including "Makefile.install_setcap" generated by "splitcmd-gen.sh").
-
-
-Open Questions:
-
-1. "make install-splitcmd-setcap" installs the binaries with hardcoded
-group "btrfs". This needs to be configurable (how?). Another approach
-would be to not set the group at all, and leave this to the user or
-distro packaging script.
-
-2. Instead of the "install-splitcmd-setcap" make target, we could
-introduce a "configure --enable-splitted-subcommands" option, which
-would simply add all splitcmd binaries to the "all" and "install"
-targets without special treatment, and leave the setcap stuff to the
-user or distro packaging script (at least in gentoo, this needs to be
-specified using the "fcaps" eclass anyways [5]).
-
-
-References:
-
-  [1] https://www.spinics.net/lists/linux-btrfs/msg75736.html
-  [2] https://github.com/digint/btrbk
-  [3] https://github.com/digint/btrfs-progs-btrbk
-  [4] https://github.com/digint/btrfs-progs/tree/splitcmd-setcap
-  [5] https://dev.tty0.ch/portage/digint-overlay.git (sys-fs/btrfs-progs-btrbk)
-
-
-
-Axel Burri (6):
-  btrfs-progs: splitcmd-gen.sh: create btrfs-<subcommand> binaries for
-    selected subcommands
-  btrfs-progs: add btrfs-<subcommand> source files generated by
-    splitcmd-gen.sh
-  btrfs-progs: Makefile: add "install-splitcmd-setcap" target, installs
-    splitcmd binaries with appropriate capabilities
-  btrfs-progs: Makefile: include Makefile.install_setcap generated by
-    splitcmd-gen.sh
-  btrfs-progs: Makefile: move progs_splitcmd variable to
-    Makefile.install_setcap
-  btrfs-progs: add splitcmd binaries to gitignore
-
- .gitignore                 |  9 +++++
- Makefile                   | 20 +++++++++++
- Makefile.inc.in            |  1 +
- Makefile.install_setcap    | 12 +++++++
- btrfs-filesystem-usage.c   | 23 +++++++++++++
- btrfs-qgroup-destroy.c     | 23 +++++++++++++
- btrfs-receive.c            | 23 +++++++++++++
- btrfs-send.c               | 23 +++++++++++++
- btrfs-subvolume-delete.c   | 23 +++++++++++++
- btrfs-subvolume-list.c     | 23 +++++++++++++
- btrfs-subvolume-show.c     | 23 +++++++++++++
- btrfs-subvolume-snapshot.c | 23 +++++++++++++
- configure.ac               |  1 +
- splitcmd-gen.sh            | 86 ++++++++++++++++++++++++++++++++++++++++++++++
- splitcmd.c.in              | 17 +++++++++
- 15 files changed, 330 insertions(+)
- create mode 100644 Makefile.install_setcap
- create mode 100644 btrfs-filesystem-usage.c
- create mode 100644 btrfs-qgroup-destroy.c
- create mode 100644 btrfs-receive.c
- create mode 100644 btrfs-send.c
- create mode 100644 btrfs-subvolume-delete.c
- create mode 100644 btrfs-subvolume-list.c
- create mode 100644 btrfs-subvolume-show.c
- create mode 100644 btrfs-subvolume-snapshot.c
- create mode 100755 splitcmd-gen.sh
- create mode 100644 splitcmd.c.in
-
--- 
-2.16.4
+That aside, I think having a configure option is the best way to do 
+this, it makes it very easy for distro build systems to handle it 
+because this is what they're used to doing anyway.  It also makes it a 
+bit easier on the user, because it just becomes `make` to build 
+whichever version you want installed.

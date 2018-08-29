@@ -1,110 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.19]:37479 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727041AbeH2JXE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 29 Aug 2018 05:23:04 -0400
-Subject: Re: [PATCH 0/6] btrfs-progs: Variant fixes for fuzz-tests
-To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
-        David Sterba <dsterba@suse.cz>
+Received: from mx2.suse.de ([195.135.220.15]:43986 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1727428AbeH2S1S (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 29 Aug 2018 14:27:18 -0400
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id E6DA7AF54
+        for <linux-btrfs@vger.kernel.org>; Wed, 29 Aug 2018 14:30:03 +0000 (UTC)
+Subject: Re: [PATCH 1/6] btrfs-progs: Exit gracefully if we hit ENOSPC when
+ allocating tree block
+To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
 References: <20180803055022.9816-1-wqu@suse.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <d844475b-f06a-4149-4259-999b08e3dd09@gmx.com>
-Date: Wed, 29 Aug 2018 13:27:39 +0800
+ <20180803055022.9816-2-wqu@suse.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <e1f4c7d0-0a7c-60f8-ec15-0c1898d59aff@suse.com>
+Date: Wed, 29 Aug 2018 17:30:03 +0300
 MIME-Version: 1.0
-In-Reply-To: <20180803055022.9816-1-wqu@suse.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="vx6q0WGsZELlkjueZQqZpjFG3DPHi0IOv"
+In-Reply-To: <20180803055022.9816-2-wqu@suse.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---vx6q0WGsZELlkjueZQqZpjFG3DPHi0IOv
-Content-Type: multipart/mixed; boundary="LrJfUMEi988F07pspomAi6LNXAnUqSM8P";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
- David Sterba <dsterba@suse.cz>
-Message-ID: <d844475b-f06a-4149-4259-999b08e3dd09@gmx.com>
-Subject: Re: [PATCH 0/6] btrfs-progs: Variant fixes for fuzz-tests
-References: <20180803055022.9816-1-wqu@suse.com>
-In-Reply-To: <20180803055022.9816-1-wqu@suse.com>
-
---LrJfUMEi988F07pspomAi6LNXAnUqSM8P
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
-
-Gentle ping.
-
-These fixes are pretty small, I'd like to see them merged before I need
-to rebase them again and again.
-
-Thanks,
-Qu
-
-On 2018/8/3 =E4=B8=8B=E5=8D=881:50, Qu Wenruo wrote:
-> This can be fetched from github:
-> https://github.com/adam900710/btrfs-progs/tree/fixes_for_fuzz_test
->=20
-> The base HEAD is:
-> commit d7a1b84756157d544a9ddc399ef48c6132eaafcf (david/devel)
-> Author: Qu Wenruo <wqu@suse.com>
-> Date:   Thu Jul 5 15:37:31 2018 +0800
->=20
->     btrfs-progs: check/original: Don't overwrite return value when we f=
-ailed to repair
->=20
->=20
-> Thanks for the already merged fixes for fuzz/003, the remaining part is=
-
-> pretty small now, +20/-7.
->=20
-> Mostly of the fixes are for fuzz/003, just a small bunch of BUG_ON()
-> removal. (Patch 1~3 and 5)
->=20
-> There is also a fix for fuzz/003 dead loop. (Patch 4)
->=20
-> Finally we have a fix for fuzz/007, the bug is a segfault triggered by
-> accessing poisoned list_head, caused by double list freeing. (Patch 6)
->=20
-> Now fuzz-test should finally work without problem.
->=20
-> Qu Wenruo (6):
->   btrfs-progs: Exit gracefully if we hit ENOSPC when allocating tree
->     block
->   btrfs-progs: Exit gracefully when failed to repair root dir item
->   btrfs-progs: Don't report dirty leaked eb using BUG_ON
->   btrfs-progs: Fix infinite loop when failed to repair bad key order
->   btrfs-progs: Exit gracefull when we failed to alloc dev extent
->   btrfs-progs: rescue-super: Don't double free fs_devices
->=20
->  check/main.c    | 10 +++++++++-
->  extent-tree.c   |  5 ++++-
->  extent_io.c     |  6 +++++-
->  super-recover.c |  3 ---
->  volumes.c       |  3 ++-
->  5 files changed, 20 insertions(+), 7 deletions(-)
->=20
 
 
---LrJfUMEi988F07pspomAi6LNXAnUqSM8P--
+On  3.08.2018 08:50, Qu Wenruo wrote:
+> When running test fuzz/003, we could hit the following BUG_ON:
+> ------
+> ====== RUN MAYFAIL /home/adam/btrfs/btrfs-progs/btrfs check --init-csum-tree /home/adam/btrfs/btrfs-progs/tests//fuzz-tests/images/bko-155621-bad-block-group-offset.raw.restored
+> Unable to find block group for 0
+> Unable to find block group for 0
+> Unable to find block group for 0
+> extent-tree.c:2657: alloc_tree_block: BUG_ON `ret` triggered, value -28
+> failed (ignored, ret=134): /home/adam/btrfs/btrfs-progs/btrfs check --init-csum-tree /home/adam/btrfs/btrfs-progs/tests//fuzz-tests/images/bko-155621-bad-block-group-offset.raw.restored
+> mayfail: returned code 134 (SIGABRT), not ignored
+> test failed for case 003-multi-check-unmounted
+> ------
+> 
+> Just remove that BUG_ON() and allow us to exit gracefully.
+> 
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
 
---vx6q0WGsZELlkjueZQqZpjFG3DPHi0IOv
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAluGLssACgkQwj2R86El
-/qgS4gf/asrR482gR1mc+O1F3JdT7a8tvr30qSAjrWDaX/S3REYOee1lwnoGbUJu
-ahVB7pH3V1f///txlh5yP5QOCNTjOGZCphyy2Dn8pUe+Mo627eMrXfMR8mtjtPrW
-bTDBU/4/ho58pUFIc0TiLeCoVyLxy2qWOpNyTA++w4yaP33BdnMYEyvEW17T4zPC
-4aFn04cKhINRxThFwQ1toUFlRfvCfWnjclC1VQa0fQIXuhz0TDl5Lob9Bhty1biQ
-lY8VsbjsBYqPfhsvGaYzVGi7z2jXw9wYThWw83gVqF6Km8uwbe2wt4elTCAr8mDZ
-xOw2z5QRuXjRJvg6dQSiyb/HVDlymw==
-=clRF
------END PGP SIGNATURE-----
-
---vx6q0WGsZELlkjueZQqZpjFG3DPHi0IOv--
+However there are a lot more BUG_ONs in btrfs_reserve_extent :(
+> ---
+>  extent-tree.c | 5 ++++-
+>  1 file changed, 4 insertions(+), 1 deletion(-)
+> 
+> diff --git a/extent-tree.c b/extent-tree.c
+> index b9d51b388c9a..a1f711ece7a8 100644
+> --- a/extent-tree.c
+> +++ b/extent-tree.c
+> @@ -2654,7 +2654,10 @@ static int alloc_tree_block(struct btrfs_trans_handle *trans,
+>  
+>  	ret = btrfs_reserve_extent(trans, root, num_bytes, empty_size,
+>  				   hint_byte, search_end, ins, 0);
+> -	BUG_ON(ret);
+> +	if (ret < 0) {
+> +		btrfs_free_delayed_extent_op(extent_op);
+> +		return ret;
+> +	}
+>  
+>  	if (key)
+>  		memcpy(&extent_op->key, key, sizeof(extent_op->key));
+> 

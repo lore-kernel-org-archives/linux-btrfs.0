@@ -1,186 +1,155 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.19]:57775 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727203AbeH2J2R (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 29 Aug 2018 05:28:17 -0400
-Subject: Re: Scrub aborts due to corrupt leaf
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Larkin Lowrey <llowrey@nuclearwinter.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <3af15796-2629-ef87-21c9-2bb3c1366732@nuclearwinter.com>
- <3725e6f2-b1ed-8d3d-aec7-1518dad1cb03@gmx.com>
- <3bf7c73d-ce25-88ce-271f-ab8c9ae6c01d@nuclearwinter.com>
- <3d82a2b9-41da-26b8-9b74-71d17d8a8a76@gmx.com>
- <273c99b2-d7e0-bea3-a4a4-7337115beb6f@nuclearwinter.com>
- <0136878c-d4ae-37b0-4903-601367286cf7@nuclearwinter.com>
- <e84595a6-b1c4-0698-b5d3-251165a11412@gmx.com>
- <CAJCQCtR-j3c99KSpsnUuy5yn5Jx7NAYGXmiDfcrZt4yc8ghCEA@mail.gmail.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <cd4ffeae-0b06-f8ae-1a4e-1165428daee2@gmx.com>
-Date: Wed, 29 Aug 2018 13:32:50 +0800
+Received: from mail-vk0-f50.google.com ([209.85.213.50]:34201 "EHLO
+        mail-vk0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727072AbeH2Kx6 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 29 Aug 2018 06:53:58 -0400
+Received: by mail-vk0-f50.google.com with SMTP id l143-v6so2029673vke.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 28 Aug 2018 23:58:34 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtR-j3c99KSpsnUuy5yn5Jx7NAYGXmiDfcrZt4yc8ghCEA@mail.gmail.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="e7qb13md20jV7YGeDrtfkeYRBfuCdkvdM"
+References: <CAN4oSBdfDVGmG8L2vS9h9McEs5aSuP5RfTGREB2ZhGwmAg4JhA@mail.gmail.com>
+ <CAJCQCtSq5K90gpfGQN8JhqQddBg62m8EG_bFuWN5XyzdNStDfw@mail.gmail.com>
+ <CAN4oSBeHwnsm5Ecz1hAQLk6s6utHfn5XeR8xMhnZpmT-sb-_iw@mail.gmail.com>
+ <CAJCQCtQ=CiB5cY8RL4tzps21d=umjzNM=BKjdUBCc7WiP0QF9A@mail.gmail.com>
+ <CAJCQCtSGV1gz66X9BJAJosuhMTvd2=Me-X2tVDwJ0Eg9PA7BPA@mail.gmail.com>
+ <CAN4oSBfAS75x7+D2Ms93NGB5H5MG-AOR5mHg2czGCECg6api3Q@mail.gmail.com>
+ <CAJCQCtT3PrcFwFq3oAyPyQTNBRdSjevFEE7V5_AoKD6hEDgvyA@mail.gmail.com>
+ <CAN4oSBdLEXS8DzZ+8Y-z5BxSe_7EUsA4ZEp4OAhWOhhZMwkM=w@mail.gmail.com>
+ <CAJCQCtRPxtqqfCE_fRwzbfFAFMHCdO34T+riXQfd6-=BJX37SQ@mail.gmail.com>
+ <CAN4oSBezSLqwLaYu-OPrgomcK-RnaJhkukMoun=8JKQbMfqSWA@mail.gmail.com> <CAJCQCtTZap+DRVe9yj-GjvJsvL=A+SoTzdTY=u2KjUV5WQhMsw@mail.gmail.com>
+In-Reply-To: <CAJCQCtTZap+DRVe9yj-GjvJsvL=A+SoTzdTY=u2KjUV5WQhMsw@mail.gmail.com>
+From: Cerem Cem ASLAN <ceremcem@ceremcem.net>
+Date: Wed, 29 Aug 2018 09:58:21 +0300
+Message-ID: <CAN4oSBdvw2BnL7NJeFNmWbnQfhiZzGM=bi4kPVLb3G1BykBL=g@mail.gmail.com>
+Subject: Re: DRDY errors are not consistent with scrub results
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---e7qb13md20jV7YGeDrtfkeYRBfuCdkvdM
-Content-Type: multipart/mixed; boundary="tuq5r4GTowJh44uKrH0PNuUnum3y3GPzE";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Larkin Lowrey <llowrey@nuclearwinter.com>,
- Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Message-ID: <cd4ffeae-0b06-f8ae-1a4e-1165428daee2@gmx.com>
-Subject: Re: Scrub aborts due to corrupt leaf
-References: <3af15796-2629-ef87-21c9-2bb3c1366732@nuclearwinter.com>
- <3725e6f2-b1ed-8d3d-aec7-1518dad1cb03@gmx.com>
- <3bf7c73d-ce25-88ce-271f-ab8c9ae6c01d@nuclearwinter.com>
- <3d82a2b9-41da-26b8-9b74-71d17d8a8a76@gmx.com>
- <273c99b2-d7e0-bea3-a4a4-7337115beb6f@nuclearwinter.com>
- <0136878c-d4ae-37b0-4903-601367286cf7@nuclearwinter.com>
- <e84595a6-b1c4-0698-b5d3-251165a11412@gmx.com>
- <CAJCQCtR-j3c99KSpsnUuy5yn5Jx7NAYGXmiDfcrZt4yc8ghCEA@mail.gmail.com>
-In-Reply-To: <CAJCQCtR-j3c99KSpsnUuy5yn5Jx7NAYGXmiDfcrZt4yc8ghCEA@mail.gmail.com>
+Chris Murphy <lists@colorremedies.com>, 29 Ağu 2018 Çar, 02:58
+tarihinde şunu yazdı:
+>
+> On Tue, Aug 28, 2018 at 5:04 PM, Cerem Cem ASLAN <ceremcem@ceremcem.net> wrote:
+> > What I want to achive is that I want to add the problematic disk as
+> > raid1 and see how/when it fails and how BTRFS recovers these fails.
+> > While the party goes on, the main system shouldn't be interrupted
+> > since this is a production system. For example, I would never expect
+> > to be ended up with such a readonly state while trying to add a disk
+> > with "unknown health" to the system. Was it somewhat expected?
+>
+> I don't know. I also can't tell you how LVM or mdraid behave in the
+> same situation either though. For sure I've come across bug reports
+> where underlying devices go read only and the file system falls over
+> totally and developers shrug and say they can't do anything.
+>
+> This situation is a little different and difficult. You're starting
+> out with a one drive setup so the profile is single/DUP or
+> single/single, and that doesn't change when adding. So the 2nd drive
+> is actually *mandatory* for a brief period of time before you've made
+> it raid1 or higher. It's a developer question what is the design, and
+> if this is a bug: maybe the device being added should be written to
+> with placeholder supers or even just zeros in all the places for 'dev
+> add' metadata, and only if that succeeds, to then write real updated
+> supers to all devices. It's possible the 'dev add' presently writes
+> updated supers to all devices at the same time, and has a brief period
+> where the state is fragile and if it fails, it goes read only to
+> prevent damaging the file system.
 
---tuq5r4GTowJh44uKrH0PNuUnum3y3GPzE
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+Thinking again, this is totally acceptable. If the requirement was a
+good health disk, then I think I must check the disk health by myself.
+I may believe that the disk is in a good state, or make a quick test
+or make some very detailed tests to be sure.
 
+Likewise, ending up with readonly state is not the end of the world,
+even over SSH, because system still functions and all I need to do is
+a reboot in the worst case. That's also acceptable *while adding a new
+disk*.
 
+>
+> Anyway, without a call trace, no idea why it ended up read only. So I
+> have to speculate.
+>
 
-On 2018/8/28 =E4=B8=8B=E5=8D=889:56, Chris Murphy wrote:
-> On Tue, Aug 28, 2018 at 7:42 AM, Qu Wenruo <quwenruo.btrfs@gmx.com> wro=
-te:
->>
->>
->> On 2018/8/28 =E4=B8=8B=E5=8D=889:29, Larkin Lowrey wrote:
->>> On 8/27/2018 10:12 PM, Larkin Lowrey wrote:
->>>> On 8/27/2018 12:46 AM, Qu Wenruo wrote:
->>>>>
->>>>>> The system uses ECC memory and edac-util has not reported any erro=
-rs.
->>>>>> However, I will run a memtest anyway.
->>>>> So it should not be the memory problem.
->>>>>
->>>>> BTW, what's the current generation of the fs?
->>>>>
->>>>> # btrfs inspect dump-super <device> | grep generation
->>>>>
->>>>> The corrupted leaf has generation 2862, I'm not sure how recent did=
- the
->>>>> corruption happen.
->>>>
->>>> generation              358392
->>>> chunk_root_generation   357256
->>>> cache_generation        358392
->>>> uuid_tree_generation    358392
->>>> dev_item.generation     0
->>>>
->>>> I don't recall the last time I ran a scrub but I doubt it has been
->>>> more than a year.
->>>>
->>>> I am running 'btrfs check --init-csum-tree' now. Hopefully that clea=
-rs
->>>> everything up.
->>>
->>> No such luck:
->>>
->>> Creating a new CRC tree
->>> Checking filesystem on /dev/Cached/Backups
->>> UUID: acff5096-1128-4b24-a15e-4ba04261edc3
->>> Reinitialize checksum tree
->>> csum result is 0 for block 2412149436416
->>> extent-tree.c:2764: alloc_tree_block: BUG_ON `ret` triggered, value -=
-28
->>
->> It's ENOSPC, meaning btrfs can't find enough space for the new csum tr=
-ee
->> blocks.
->=20
-> Seems bogus, there's >4TiB unallocated.
+I may try adding the disk again any time and provide any requested
+logs, it is still attached to the server. I'm only not sure if this is
+a useful experiment from the point of view of the rest of the people.
 
-What a shame.
-Btrfs won't try to allocate new chunk if we're allocating new tree
-blocks for metadata trees (extent, csum, etc).
+>
+> >
+> > Although we know that disk is about to fail, it still survives.
+>
+> That's very tenuous rationalization, a drive that rejects even a
+> single write is considered failed by the md driver. Btrfs is still
+> very tolerant of this, so if it had successfully added and you were
+> running in production, you should expect to see thousands of write
+> errors dumped to the kernel log
 
-One quick (and dirty) way to avoid such limitation is to use the
-following patch
-------
-diff --git a/extent-tree.c b/extent-tree.c
-index 5d49af5a901e..0a1d21a8d148 100644
---- a/extent-tree.c
-+++ b/extent-tree.c
-@@ -2652,17 +2652,15 @@ int btrfs_reserve_extent(struct
-btrfs_trans_handle *trans,
-                profile =3D BTRFS_BLOCK_GROUP_METADATA | alloc_profile;
-        }
+That's exactly what I expected :)
 
--       if (root->ref_cows) {
--               if (!(profile & BTRFS_BLOCK_GROUP_METADATA)) {
--                       ret =3D do_chunk_alloc(trans, info,
--                                            num_bytes,
--                                            BTRFS_BLOCK_GROUP_METADATA);=
+because Btrfs never ejects a bad drive
+> still. It keeps trying. And keeps reporting the failures. And all
+> those errors being logged can end up causing more write demand if the
+> logs are on the same volume as the failing device, even more errors to
+> record, and you get an escalating situation with heavy log writing.
+>
 
--                       BUG_ON(ret);
--               }
-+       if (!(profile & BTRFS_BLOCK_GROUP_METADATA)) {
-                ret =3D do_chunk_alloc(trans, info,
--                                    num_bytes + SZ_2M, profile);
-+                                    num_bytes,
-+                                    BTRFS_BLOCK_GROUP_METADATA);
-                BUG_ON(ret);
-        }
-+       ret =3D do_chunk_alloc(trans, info,
-+                            num_bytes + SZ_2M, profile);
-+       BUG_ON(ret);
+Good to point this. Maybe I should arrange an on-ram virtual machine
+that writes back to local disk if no hardware errors found and start
+sending logs in a different server *if* such a hardware failure
+occurs.
 
-        WARN_ON(num_bytes < info->sectorsize);
-        ret =3D find_free_extent(trans, root, num_bytes, empty_size,
-------
+>
+> > Shouldn't we expect in such a scenario that when system tries to read
+> > or write some data from/to that BROKEN_DISK and when it recognizes it
+> > failed, it will try to recover the part of the data from GOOD_DISK and
+> > try to store that recovered data in some other part of the
+> > BROKEN_DISK?
+>
+> Nope. Btrfs can only write supers to fixed locations on the drive,
+> same as any other file system. Btrfs metadata could possibly go
+> elsewhere because it doesn't have fixed locations, but Btrfs doesn't
+> do bad sector tracking. So once it decides metadata goes in location
+> X, if X reports a write error it will not try to write elsewhere and
+> insofar as I'm aware ext4 and XFS and LVM and md don't either; md does
+> have an optional bad block map it will use for tracking bad sectors
+> and remap to known good sectors. Normally the drive firmware should do
+> this and when that fails the drive is considered toast for production
+> purpose
 
-Thanks,
-Qu
+That's also plausible. Thinking again (again? :) if BTRFS would behave
+as I expected, that retries might never end if the disk is in a very
+bad situation and that would add very intensive IO load on a
+production system.
 
->=20
->> Label: none  uuid: acff5096-1128-4b24-a15e-4ba04261edc3
->>        Total devices 1 FS bytes used 66.61TiB
->>        devid    1 size 72.77TiB used 68.03TiB path /dev/mapper/Cached-=
-Backups
->>
->> Data, single: total=3D67.80TiB, used=3D66.52TiB
->> System, DUP: total=3D40.00MiB, used=3D7.41MiB
->> Metadata, DUP: total=3D98.50GiB, used=3D95.21GiB
->> GlobalReserve, single: total=3D512.00MiB, used=3D0.00B
->=20
-> Even if all metadata is only csum tree, and ~200GiB needs to be
-> written, there's plenty of free space for it.
->=20
->=20
->=20
+I think in such a situation I should remove the raid device, try to
+reformat it and attach it again.
 
+>
+> >Or did I misunderstood the whole thing?
+>
+> Well in a way this is sorta user sabotage. It's a valid test and I'd
+> say ideally things should fail safely, rather than fall over. But at
+> the same time it's not wrong for developers to say: "look if you add a
+> bad device there's a decent chance we're going face plant and go read
+> only to avoid causing worse problems, so next time you should qualify
+> the drive before putting it into production."
 
---tuq5r4GTowJh44uKrH0PNuUnum3y3GPzE--
+Agreed.
 
---e7qb13md20jV7YGeDrtfkeYRBfuCdkvdM
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
+>
+> I'm willing to bet all the other file system devs would say something
+> like that even if Btrfs devs think something better could happen, it's
+> probably not a super high priority.
+>
+>
 
------BEGIN PGP SIGNATURE-----
+Devs doing lots of things already and yes, this is not an urgent task.
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAluGMAIACgkQwj2R86El
-/qj9GAf/WVp6/SoCag03fyrg3qse6t1Rp2bOC76LANGS/QnP2V94FjbiqhFSiOWV
-hd2AB5J7kPuCPW1i6xDS5tTyJ74wvkn/xeMReaHaz1i5kyiYZBZaX1DWQQzERC/Q
-250/VSvhiV9qCEd8XMTsH4uP5dgi9Fvam5NSNkb6qvYfUxaUU0Rqq/wymWLjn4uG
-iQXiIE5CO+XPP6x7wdkgZy3bAUTdfgsvY8G5EW7YtN9zaqAIpiZykjhuKNIcAWiC
-ROp02qK4AovXrKwZOleaUQcZuDbDjgAbmdJvQKdOpmZQBRTeF2kWsc1ExZAN68c7
-L034Fp9i1fu8cHBT6LOjKgED/cmaLg==
-=pAph
------END PGP SIGNATURE-----
+I appreciate your helps, thank you!
 
---e7qb13md20jV7YGeDrtfkeYRBfuCdkvdM--
+>
+>
+> --
+> Chris Murphy

@@ -1,40 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f41.google.com ([209.85.218.41]:35844 "EHLO
-        mail-oi0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727204AbeH2R3I (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 29 Aug 2018 13:29:08 -0400
-Received: by mail-oi0-f41.google.com with SMTP id r69-v6so9123410oie.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 29 Aug 2018 06:32:09 -0700 (PDT)
+Received: from smtp2-g21.free.fr ([212.27.42.2]:50946 "EHLO smtp2-g21.free.fr"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1728805AbeH2SE5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 29 Aug 2018 14:04:57 -0400
+Received: from mail.tol.fr (unknown [IPv6:2a01:e34:eeaf:c5f0:428d:5cff:fee6:854e])
+        by smtp2-g21.free.fr (Postfix) with ESMTP id 8E4752003D6
+        for <linux-btrfs@vger.kernel.org>; Wed, 29 Aug 2018 16:07:49 +0200 (CEST)
+Received: from localhost (localhost [127.0.0.1])
+        by mail.tol.fr (Postfix) with ESMTP id 315EB9780521
+        for <linux-btrfs@vger.kernel.org>; Wed, 29 Aug 2018 16:07:49 +0200 (CEST)
+Received: from mail.tol.fr ([127.0.0.1])
+        by localhost (sos.couderc.eu [127.0.0.1]) (amavisd-new, port 10024)
+        with ESMTP id j1VBytgIusNJ for <linux-btrfs@vger.kernel.org>;
+        Wed, 29 Aug 2018 16:07:48 +0200 (CEST)
+Received: from [192.168.163.11] (unknown [192.168.163.254])
+        by mail.tol.fr (Postfix) with ESMTPSA id C05499780362
+        for <linux-btrfs@vger.kernel.org>; Wed, 29 Aug 2018 16:07:48 +0200 (CEST)
+Subject: Re: How to erase a RAID1 ?
+To: linux-btrfs@vger.kernel.org
+References: <04e4b43f-b21e-b6fd-dfad-0506ff35aff7@couderc.eu>
+ <52b06c19-c9e2-29c1-b761-98d770c2d6c7@gmx.com>
+From: Pierre Couderc <pierre@couderc.eu>
+Message-ID: <2e47e913-104e-8d0c-8d49-69518681147b@couderc.eu>
+Date: Wed, 29 Aug 2018 16:07:48 +0200
 MIME-Version: 1.0
-References: <CAHzMYBT22xie_4Tjp+Zn6w7DG0sDAdkRRDrgesUvJ60j0TrmnA@mail.gmail.com>
- <7660605b-d456-308a-7040-720ff31f7181@georgianit.com>
-In-Reply-To: <7660605b-d456-308a-7040-720ff31f7181@georgianit.com>
-From: Jorge Bastos <jorge.mrbastos@gmail.com>
-Date: Wed, 29 Aug 2018 14:31:57 +0100
-Message-ID: <CAHzMYBSTpG1f=2KoLA1w34H_k7N2CHthXm0bxb0qVq8UrroQZw@mail.gmail.com>
-Subject: Re: btrfs fi du unreliable?
-To: remi@georgianit.com
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <52b06c19-c9e2-29c1-b761-98d770c2d6c7@gmx.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Aug 29, 2018 at 1:42 PM Remi Gauvin <remi@georgianit.com> wrote:
->
->
-> Exclusive means... exclusive... to that 1 snapshop/subvolume.  If the
-> data also exists on the 23'rd snapshot, it's not exclusive.
->
-> If you wanted to report how much data is exclusive to a group of
-> snapshots, (say, July 22 *and* 23rd). you would have to make them
-> members of a parent qgroup, then, you could see the exclusive value of
-> the whole group.
->
 
-Thanks, that makes sense, so it's only possible to see how much space
-a snapshot is using with quotas enable, I remember reading that
-somewhere before, though there was a new way after reading this latest
-post .
 
-Jorge
+On 08/29/2018 02:52 PM, Qu Wenruo wrote:
+>
+> On 2018/8/29 下午8:49, Pierre Couderc wrote:
+>> I want to reinstall a RAID1 btrfs system (wchis is now under debian
+>> stretch, and will be reinstalled in stretch).
+> If you still want to use btrfs, just umount the original fs, and
+>
+> # mkfs.btrfs -f <old devices>
+>
+>
+The problem is to "unmount" the RAID1 system..
+
+I have not found how to do that.
+
+I have found a solution by reinstalling under debian, it now asks if 
+need to reformat thez btrfs disk...

@@ -1,240 +1,156 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:40466 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727668AbeH2Mbr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 29 Aug 2018 08:31:47 -0400
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id BEDF2AFE3
-        for <linux-btrfs@vger.kernel.org>; Wed, 29 Aug 2018 08:35:57 +0000 (UTC)
-From: Nikolay Borisov <nborisov@suse.com>
+Received: from tty0.vserver.softronics.ch ([91.214.169.36]:53536 "EHLO
+        fe1.digint.ch" rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1727460AbeH2V3j (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 29 Aug 2018 17:29:39 -0400
+Received: from mail.tty0.ch (hermes.tty0.ch [172.21.1.5])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by fe1.digint.ch (Postfix) with ESMTPS id 2A7B8307D2
+        for <linux-btrfs@vger.kernel.org>; Wed, 29 Aug 2018 19:23:10 +0200 (CEST)
+From: Axel Burri <axel@tty0.ch>
 To: linux-btrfs@vger.kernel.org
-Cc: Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 4/4] btrfs-progs: Remove fsid/metdata_uuid fields from fs_info
-Date: Wed, 29 Aug 2018 11:35:54 +0300
-Message-Id: <1535531754-29774-5-git-send-email-nborisov@suse.com>
-In-Reply-To: <1535531754-29774-1-git-send-email-nborisov@suse.com>
-References: <1535531754-29774-1-git-send-email-nborisov@suse.com>
+Cc: Axel Burri <axel@tty0.ch>
+Subject: [RFC PATCH 1/6] btrfs-progs: splitcmd-gen.sh: create btrfs-<subcommand> binaries for selected subcommands
+Date: Wed, 29 Aug 2018 19:24:04 +0200
+Message-Id: <20180829172409.18064-2-axel@tty0.ch>
+In-Reply-To: <20180829172409.18064-1-axel@tty0.ch>
+References: <20180829172409.18064-1-axel@tty0.ch>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
----
- btrfstune.c     |  5 +++--
- check/main.c    |  2 +-
- chunk-recover.c | 11 +++++------
- ctree.c         | 11 ++++++-----
- ctree.h         |  2 --
- disk-io.c       | 18 +++++++++---------
- volumes.c       |  5 +++--
- 7 files changed, 27 insertions(+), 27 deletions(-)
+Create separate binaries for each subcommand ("btrfs foo bar").
+Least invasive approach, generate c-files for each command:
 
-diff --git a/btrfstune.c b/btrfstune.c
-index 697285ef3bf6..98e366a3b3ce 100644
---- a/btrfstune.c
-+++ b/btrfstune.c
-@@ -344,7 +344,8 @@ static int change_fsid_prepare(struct btrfs_fs_info *fs_info)
- 		return ret;
- 
- 	/* Also need to change the metadatauuid of the fs info */
--	memcpy(fs_info->metadata_uuid, fs_info->new_fsid, BTRFS_FSID_SIZE);
-+	memcpy(fs_info->fs_devices->metadata_uuid, fs_info->new_fsid,
-+	       BTRFS_FSID_SIZE);
- 
- 	/* also restore new chunk_tree_id into tree_root for restore */
- 	write_extent_buffer(tree_root->node, fs_info->new_chunk_tree_uuid,
-@@ -401,7 +402,7 @@ static int change_uuid(struct btrfs_fs_info *fs_info, const char *new_fsid_str)
- 	fs_info->new_fsid = new_fsid;
- 	fs_info->new_chunk_tree_uuid = new_chunk_id;
- 
--	memcpy(old_fsid, (const char*)fs_info->fsid, BTRFS_UUID_SIZE);
-+	memcpy(old_fsid, (const char*)fs_info->fs_devices->fsid, BTRFS_UUID_SIZE);
- 	uuid_unparse(old_fsid, uuid_buf);
- 	printf("Current fsid: %s\n", uuid_buf);
- 
-diff --git a/check/main.c b/check/main.c
-index 0790264190f2..0aede2742dcf 100644
---- a/check/main.c
-+++ b/check/main.c
-@@ -8418,7 +8418,7 @@ static int btrfs_fsck_reinit_root(struct btrfs_trans_handle *trans,
- 	btrfs_set_header_backref_rev(c, BTRFS_MIXED_BACKREF_REV);
- 	btrfs_set_header_owner(c, root->root_key.objectid);
- 
--	write_extent_buffer(c, root->fs_info->metadata_uuid,
-+	write_extent_buffer(c, root->fs_info->fs_devices->metadata_uuid,
- 			    btrfs_header_fsid(), BTRFS_FSID_SIZE);
- 
- 	write_extent_buffer(c, root->fs_info->chunk_tree_uuid,
-diff --git a/chunk-recover.c b/chunk-recover.c
-index 31325bfc54e0..959c169f79a4 100644
---- a/chunk-recover.c
-+++ b/chunk-recover.c
-@@ -1155,7 +1155,7 @@ static int __rebuild_chunk_root(struct btrfs_trans_handle *trans,
- 	btrfs_set_header_level(cow, 0);
- 	btrfs_set_header_backref_rev(cow, BTRFS_MIXED_BACKREF_REV);
- 	btrfs_set_header_owner(cow, BTRFS_CHUNK_TREE_OBJECTID);
--	write_extent_buffer(cow, root->fs_info->metadata_uuid,
-+	write_extent_buffer(cow, root->fs_info->fs_devices->metadata_uuid,
- 			btrfs_header_fsid(), BTRFS_FSID_SIZE);
- 
- 	write_extent_buffer(cow, root->fs_info->chunk_tree_uuid,
-@@ -1457,7 +1457,7 @@ open_ctree_with_broken_chunk(struct recover_control *rc)
- 		goto out_devices;
- 	}
- 
--	memcpy(fs_info->fsid, &disk_super->fsid, BTRFS_FSID_SIZE);
-+	ASSERT(!memcmp(disk_super->fsid, rc->fs_devices->fsid, BTRFS_FSID_SIZE));
- 	fs_info->sectorsize = btrfs_super_sectorsize(disk_super);
- 	fs_info->nodesize = btrfs_super_nodesize(disk_super);
- 	fs_info->stripesize = btrfs_super_stripesize(disk_super);
-@@ -1469,10 +1469,9 @@ open_ctree_with_broken_chunk(struct recover_control *rc)
- 	features = btrfs_super_incompat_flags(disk_super);
- 
- 	if (features & BTRFS_FEATURE_INCOMPAT_METADATA_UUID)
--		memcpy(fs_info->metadata_uuid, disk_super->metadata_uuid,
--		       BTRFS_FSID_SIZE);
--	else
--		memcpy(fs_info->metadata_uuid, fs_info->fsid, BTRFS_FSID_SIZE);
-+		ASSERT(!memcmp(disk_super->metadata_uuid,
-+			       fs_info->fs_devices->metadata_uuid,
-+			       BTRFS_FSID_SIZE));
- 
- 	btrfs_setup_root(fs_info->chunk_root, fs_info,
- 			 BTRFS_CHUNK_TREE_OBJECTID);
-diff --git a/ctree.c b/ctree.c
-index 883c2ae1861d..c79837e0206f 100644
---- a/ctree.c
-+++ b/ctree.c
-@@ -23,6 +23,7 @@
- #include "internal.h"
- #include "sizes.h"
- #include "messages.h"
-+#include "volumes.h"
- 
- static int split_node(struct btrfs_trans_handle *trans, struct btrfs_root
- 		      *root, struct btrfs_path *path, int level);
-@@ -134,7 +135,7 @@ int btrfs_copy_root(struct btrfs_trans_handle *trans,
- 	else
- 		btrfs_set_header_owner(cow, new_root_objectid);
- 
--	write_extent_buffer(cow, root->fs_info->metadata_uuid,
-+	write_extent_buffer(cow, root->fs_info->fs_devices->metadata_uuid,
- 			    btrfs_header_fsid(), BTRFS_FSID_SIZE);
- 
- 	WARN_ON(btrfs_header_generation(buf) > trans->transid);
-@@ -308,7 +309,7 @@ int __btrfs_cow_block(struct btrfs_trans_handle *trans,
- 	else
- 		btrfs_set_header_owner(cow, root->root_key.objectid);
- 
--	write_extent_buffer(cow, root->fs_info->metadata_uuid,
-+	write_extent_buffer(cow, root->fs_info->fs_devices->metadata_uuid,
- 			    btrfs_header_fsid(), BTRFS_FSID_SIZE);
- 
- 	WARN_ON(!(buf->flags & EXTENT_BAD_TRANSID) &&
-@@ -1474,7 +1475,7 @@ static int noinline insert_new_root(struct btrfs_trans_handle *trans,
- 
- 	root_add_used(root, root->fs_info->nodesize);
- 
--	write_extent_buffer(c, root->fs_info->metadata_uuid,
-+	write_extent_buffer(c, root->fs_info->fs_devices->metadata_uuid,
- 			    btrfs_header_fsid(), BTRFS_FSID_SIZE);
- 
- 	write_extent_buffer(c, root->fs_info->chunk_tree_uuid,
-@@ -1595,7 +1596,7 @@ static int split_node(struct btrfs_trans_handle *trans, struct btrfs_root
- 	btrfs_set_header_generation(split, trans->transid);
- 	btrfs_set_header_backref_rev(split, BTRFS_MIXED_BACKREF_REV);
- 	btrfs_set_header_owner(split, root->root_key.objectid);
--	write_extent_buffer(split, root->fs_info->metadata_uuid,
-+	write_extent_buffer(split, root->fs_info->fs_devices->metadata_uuid,
- 			    btrfs_header_fsid(), BTRFS_FSID_SIZE);
- 	write_extent_buffer(split, root->fs_info->chunk_tree_uuid,
- 			    btrfs_header_chunk_tree_uuid(split),
-@@ -2177,7 +2178,7 @@ static noinline int split_leaf(struct btrfs_trans_handle *trans,
- 	btrfs_set_header_backref_rev(right, BTRFS_MIXED_BACKREF_REV);
- 	btrfs_set_header_owner(right, root->root_key.objectid);
- 	btrfs_set_header_level(right, 0);
--	write_extent_buffer(right, root->fs_info->metadata_uuid,
-+	write_extent_buffer(right, root->fs_info->fs_devices->metadata_uuid,
- 			    btrfs_header_fsid(), BTRFS_FSID_SIZE);
- 
- 	write_extent_buffer(right, root->fs_info->chunk_tree_uuid,
-diff --git a/ctree.h b/ctree.h
-index c22d36b1871b..751fc3f9f766 100644
---- a/ctree.h
-+++ b/ctree.h
-@@ -1079,8 +1079,6 @@ struct btrfs_block_group_cache {
- struct btrfs_device;
- struct btrfs_fs_devices;
- struct btrfs_fs_info {
--	u8 fsid[BTRFS_FSID_SIZE];
--	u8 metadata_uuid[BTRFS_FSID_SIZE];
- 	u8 *new_fsid;
- 	u8 chunk_tree_uuid[BTRFS_UUID_SIZE];
- 	u8 *new_chunk_tree_uuid;
-diff --git a/disk-io.c b/disk-io.c
-index c3be4a1017b7..e17fed13302b 100644
---- a/disk-io.c
-+++ b/disk-io.c
-@@ -118,7 +118,7 @@ static void print_tree_block_error(struct btrfs_fs_info *fs_info,
- 		read_extent_buffer(eb, buf, btrfs_header_fsid(),
- 				   BTRFS_UUID_SIZE);
- 		uuid_unparse(buf, found_uuid);
--		uuid_unparse(fs_info->metadata_uuid, fs_uuid);
-+		uuid_unparse(fs_info->fs_devices->metadata_uuid, fs_uuid);
- 		fprintf(stderr, "fsid mismatch, want=%s, have=%s\n",
- 			fs_uuid, found_uuid);
- 		break;
-@@ -1183,13 +1183,12 @@ static struct btrfs_fs_info *__open_ctree_fd(int fp, const char *path,
- 		goto out_devices;
- 	}
- 
--	memcpy(fs_info->fsid, &disk_super->fsid, BTRFS_FSID_SIZE);
--	if (btrfs_fs_incompat(fs_info, METADATA_UUID)) {
--		memcpy(fs_info->metadata_uuid, disk_super->metadata_uuid,
--		       BTRFS_FSID_SIZE);
--	} else {
--		memcpy(fs_info->metadata_uuid, fs_info->fsid, BTRFS_FSID_SIZE);
--	}
-+	ASSERT(!memcmp(disk_super->fsid, fs_devices->fsid, BTRFS_FSID_SIZE));
-+	ASSERT(!memcmp(disk_super->fsid, fs_devices->fsid, BTRFS_FSID_SIZE));
-+	if (btrfs_fs_incompat(fs_info, METADATA_UUID))
-+		ASSERT(!memcmp(disk_super->metadata_uuid,
-+			       fs_devices->metadata_uuid, BTRFS_FSID_SIZE));
+    # ./splitcmd-gen.sh
+    # make V=1 btrfs-subvolume-show
+    # make V=1 btrfs-send
+    # [...]
+
+Alternative approach: instead of including the c-file, link with obj
+in Makefile, e.g.:
+
+    btrfs_subvolume_show_objects = cmds-subvolume.o
+    btrfs_send_objects = cmds-send.o
+    [...]
+
+This implies adaptions in cmds-subvolume.c (and others):
+
+    -static int cmd_filesystem_show(int argc, char **argv)
+    +int cmd_filesystem_show(int argc, char **argv)
+
+If they are defined non-static, we could probably simplify further and
+add `-Wl,-eentry` flags (changing entry point from "main" to "entry").
+
+With this, and if handle_command_group() was declared in some library
+instead of btrfs.c, we would get rid of generated files completely.
+
+Signed-off-by: Axel Burri <axel@tty0.ch>
+---
+ splitcmd-gen.sh | 70 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ splitcmd.c.in   | 17 ++++++++++++++
+ 2 files changed, 87 insertions(+)
+ create mode 100755 splitcmd-gen.sh
+ create mode 100644 splitcmd.c.in
+
+diff --git a/splitcmd-gen.sh b/splitcmd-gen.sh
+new file mode 100755
+index 00000000..4d2e0509
+--- /dev/null
++++ b/splitcmd-gen.sh
+@@ -0,0 +1,70 @@
++#!/bin/bash
 +
- 	fs_info->sectorsize = btrfs_super_sectorsize(disk_super);
- 	fs_info->nodesize = btrfs_super_nodesize(disk_super);
- 	fs_info->stripesize = btrfs_super_stripesize(disk_super);
-@@ -1640,7 +1639,8 @@ int write_all_supers(struct btrfs_fs_info *fs_info)
- 		btrfs_set_stack_device_io_width(dev_item, dev->io_width);
- 		btrfs_set_stack_device_sector_size(dev_item, dev->sector_size);
- 		memcpy(dev_item->uuid, dev->uuid, BTRFS_UUID_SIZE);
--		memcpy(dev_item->fsid, fs_info->metadata_uuid, BTRFS_FSID_SIZE);
-+		memcpy(dev_item->fsid, fs_info->fs_devices->metadata_uuid,
-+		       BTRFS_FSID_SIZE);
- 
- 		flags = btrfs_super_flags(sb);
- 		btrfs_set_super_flags(sb, flags | BTRFS_HEADER_FLAG_WRITTEN);
-diff --git a/volumes.c b/volumes.c
-index b8388194c38f..e13f120e2296 100644
---- a/volumes.c
-+++ b/volumes.c
-@@ -732,7 +732,8 @@ int btrfs_add_device(struct btrfs_trans_handle *trans,
- 	ptr = (unsigned long)btrfs_device_uuid(dev_item);
- 	write_extent_buffer(leaf, device->uuid, ptr, BTRFS_UUID_SIZE);
- 	ptr = (unsigned long)btrfs_device_fsid(dev_item);
--	write_extent_buffer(leaf, fs_info->metadata_uuid, ptr, BTRFS_UUID_SIZE);
-+	write_extent_buffer(leaf, fs_info->fs_devices->metadata_uuid, ptr,
-+			    BTRFS_UUID_SIZE);
- 	btrfs_mark_buffer_dirty(leaf);
- 	ret = 0;
- 
-@@ -2027,7 +2028,7 @@ static int read_one_dev(struct btrfs_fs_info *fs_info,
- 			   (unsigned long)btrfs_device_fsid(dev_item),
- 			   BTRFS_FSID_SIZE);
- 
--	if (memcmp(fs_uuid, fs_info->fsid, BTRFS_UUID_SIZE)) {
-+	if (memcmp(fs_uuid, fs_info->fs_devices->fsid, BTRFS_UUID_SIZE)) {
- 		ret = open_seed_devices(fs_info, fs_uuid);
- 		if (ret)
- 			return ret;
++#
++# Generate c-files for btrfs subcommands defined below
++#
++
++# Notes on linux capabilities:
++#
++# btrfs-subvolume-show, btrfs-subvolume-list, btrfs-send:
++#  - CAP_FOWNER is only needed for O_NOATIME flag in open() system calls
++#  - why CAP_SYS_ADMIN? shouldn't CAP_DAC_READ_SEARCH be enough?
++#
++# btrfs-receive:
++#  - dependent on send-stream (see cmds-receive.c: "send_ops"):
++#    CAP_CHOWN, CAP_MKNOD, CAP_SETFCAP (for "lsetxattr")
++#
++# btrfs-filesystem-usage:
++#  - CAP_SYS_ADMIN is for BTRFS_IOC_TREE_SEARCH and BTRFS_IOC_FS_INFO
++#    in order to provide full level of detail, see btrfs-filesystem(8)
++
++
++makefile_out="Makefile.install_setcap"
++
++splitcmd_list=""
++setcap_lines=""
++
++function gen_splitcmd {
++    local name="$1"
++    local dest="${1}.c"
++    local cfile="$2"
++    local entry="$3"
++    local caps="$4"
++    echo "generating: ${dest} (cfile=${cfile}, entry=${entry})"
++    echo -e "/*\n * ${name}\n *\n * GENERATED BY splitcmd-gen.sh\n */\n" > $dest
++    sed -e "s|@BTRFS_SPLITCMD_CFILE_INCLUDE@|${cfile}|g" \
++        -e "s|@BTRFS_SPLITCMD_ENTRY@|${entry}|g" \
++        splitcmd.c.in >> $dest
++}
++
++gen_splitcmd "btrfs-subvolume-show" \
++             "cmds-subvolume.c" "cmd_subvol_show" \
++             "cap_sys_admin,cap_fowner,cap_dac_read_search"
++
++gen_splitcmd "btrfs-subvolume-list" \
++             "cmds-subvolume.c" "cmd_subvol_list" \
++             "cap_sys_admin,cap_fowner,cap_dac_read_search"
++
++gen_splitcmd "btrfs-subvolume-snapshot" \
++             "cmds-subvolume.c" "cmd_subvol_snapshot" \
++             "cap_sys_admin,cap_fowner,cap_dac_override,cap_dac_read_search"
++
++gen_splitcmd "btrfs-subvolume-delete" \
++             "cmds-subvolume.c" "cmd_subvol_delete" \
++             "cap_sys_admin,cap_dac_override"
++
++gen_splitcmd "btrfs-send" \
++             "cmds-send.c" "cmd_send" \
++             "cap_sys_admin,cap_fowner,cap_dac_read_search"
++
++gen_splitcmd "btrfs-receive" \
++             "cmds-receive.c" "cmd_receive" \
++             "cap_sys_admin,cap_fowner,cap_chown,cap_mknod,cap_setfcap,cap_dac_override,cap_dac_read_search"
++
++gen_splitcmd "btrfs-filesystem-usage" \
++             "cmds-fi-usage.c" "cmd_filesystem_usage" \
++             "cap_sys_admin"
++
++gen_splitcmd "btrfs-qgroup-destroy" \
++             "cmds-qgroup.c" "cmd_qgroup_destroy" \
++             "cap_sys_admin,cap_dac_override"
+diff --git a/splitcmd.c.in b/splitcmd.c.in
+new file mode 100644
+index 00000000..aa07af9a
+--- /dev/null
++++ b/splitcmd.c.in
+@@ -0,0 +1,17 @@
++#include "@BTRFS_SPLITCMD_CFILE_INCLUDE@"
++
++/*
++ * Dummy object: used from second-level command groups (e.g. in
++ * "cmds-subvolume.c"), is never called in splitcmd executables.
++ */
++int handle_command_group(const struct cmd_group *grp, int argc,
++			 char **argv)
++{
++	exit(1);
++}
++
++
++int main(int argc, char **argv)
++{
++	return @BTRFS_SPLITCMD_ENTRY@(argc, argv);
++}
 -- 
-2.7.4
+2.16.4

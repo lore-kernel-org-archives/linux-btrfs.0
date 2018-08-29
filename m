@@ -1,175 +1,240 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:40460 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:40466 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727587AbeH2Mbr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1727668AbeH2Mbr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Wed, 29 Aug 2018 08:31:47 -0400
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 70E3CAFC4
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id BEDF2AFE3
         for <linux-btrfs@vger.kernel.org>; Wed, 29 Aug 2018 08:35:57 +0000 (UTC)
 From: Nikolay Borisov <nborisov@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 3/4] btrfs-progs: tests: Add tests for changing fsid feature
-Date: Wed, 29 Aug 2018 11:35:53 +0300
-Message-Id: <1535531754-29774-4-git-send-email-nborisov@suse.com>
+Subject: [PATCH 4/4] btrfs-progs: Remove fsid/metdata_uuid fields from fs_info
+Date: Wed, 29 Aug 2018 11:35:54 +0300
+Message-Id: <1535531754-29774-5-git-send-email-nborisov@suse.com>
 In-Reply-To: <1535531754-29774-1-git-send-email-nborisov@suse.com>
 References: <1535531754-29774-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add a bunch of tests exercising the new btrfstune functionality. In
-particular check that various restrictions are implemented correctly,
-test that btrfs-image works as expected and also test the output of
-btrfs inspect-internal dump-super is correct.
-
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- tests/misc-tests/033-metadata-uuid/test.sh | 137 +++++++++++++++++++++++++++++
- 1 file changed, 137 insertions(+)
- create mode 100755 tests/misc-tests/033-metadata-uuid/test.sh
+ btrfstune.c     |  5 +++--
+ check/main.c    |  2 +-
+ chunk-recover.c | 11 +++++------
+ ctree.c         | 11 ++++++-----
+ ctree.h         |  2 --
+ disk-io.c       | 18 +++++++++---------
+ volumes.c       |  5 +++--
+ 7 files changed, 27 insertions(+), 27 deletions(-)
 
-diff --git a/tests/misc-tests/033-metadata-uuid/test.sh b/tests/misc-tests/033-metadata-uuid/test.sh
-new file mode 100755
-index 000000000000..b08220c257c8
---- /dev/null
-+++ b/tests/misc-tests/033-metadata-uuid/test.sh
-@@ -0,0 +1,137 @@
-+#!/bin/bash
+diff --git a/btrfstune.c b/btrfstune.c
+index 697285ef3bf6..98e366a3b3ce 100644
+--- a/btrfstune.c
++++ b/btrfstune.c
+@@ -344,7 +344,8 @@ static int change_fsid_prepare(struct btrfs_fs_info *fs_info)
+ 		return ret;
+ 
+ 	/* Also need to change the metadatauuid of the fs info */
+-	memcpy(fs_info->metadata_uuid, fs_info->new_fsid, BTRFS_FSID_SIZE);
++	memcpy(fs_info->fs_devices->metadata_uuid, fs_info->new_fsid,
++	       BTRFS_FSID_SIZE);
+ 
+ 	/* also restore new chunk_tree_id into tree_root for restore */
+ 	write_extent_buffer(tree_root->node, fs_info->new_chunk_tree_uuid,
+@@ -401,7 +402,7 @@ static int change_uuid(struct btrfs_fs_info *fs_info, const char *new_fsid_str)
+ 	fs_info->new_fsid = new_fsid;
+ 	fs_info->new_chunk_tree_uuid = new_chunk_id;
+ 
+-	memcpy(old_fsid, (const char*)fs_info->fsid, BTRFS_UUID_SIZE);
++	memcpy(old_fsid, (const char*)fs_info->fs_devices->fsid, BTRFS_UUID_SIZE);
+ 	uuid_unparse(old_fsid, uuid_buf);
+ 	printf("Current fsid: %s\n", uuid_buf);
+ 
+diff --git a/check/main.c b/check/main.c
+index 0790264190f2..0aede2742dcf 100644
+--- a/check/main.c
++++ b/check/main.c
+@@ -8418,7 +8418,7 @@ static int btrfs_fsck_reinit_root(struct btrfs_trans_handle *trans,
+ 	btrfs_set_header_backref_rev(c, BTRFS_MIXED_BACKREF_REV);
+ 	btrfs_set_header_owner(c, root->root_key.objectid);
+ 
+-	write_extent_buffer(c, root->fs_info->metadata_uuid,
++	write_extent_buffer(c, root->fs_info->fs_devices->metadata_uuid,
+ 			    btrfs_header_fsid(), BTRFS_FSID_SIZE);
+ 
+ 	write_extent_buffer(c, root->fs_info->chunk_tree_uuid,
+diff --git a/chunk-recover.c b/chunk-recover.c
+index 31325bfc54e0..959c169f79a4 100644
+--- a/chunk-recover.c
++++ b/chunk-recover.c
+@@ -1155,7 +1155,7 @@ static int __rebuild_chunk_root(struct btrfs_trans_handle *trans,
+ 	btrfs_set_header_level(cow, 0);
+ 	btrfs_set_header_backref_rev(cow, BTRFS_MIXED_BACKREF_REV);
+ 	btrfs_set_header_owner(cow, BTRFS_CHUNK_TREE_OBJECTID);
+-	write_extent_buffer(cow, root->fs_info->metadata_uuid,
++	write_extent_buffer(cow, root->fs_info->fs_devices->metadata_uuid,
+ 			btrfs_header_fsid(), BTRFS_FSID_SIZE);
+ 
+ 	write_extent_buffer(cow, root->fs_info->chunk_tree_uuid,
+@@ -1457,7 +1457,7 @@ open_ctree_with_broken_chunk(struct recover_control *rc)
+ 		goto out_devices;
+ 	}
+ 
+-	memcpy(fs_info->fsid, &disk_super->fsid, BTRFS_FSID_SIZE);
++	ASSERT(!memcmp(disk_super->fsid, rc->fs_devices->fsid, BTRFS_FSID_SIZE));
+ 	fs_info->sectorsize = btrfs_super_sectorsize(disk_super);
+ 	fs_info->nodesize = btrfs_super_nodesize(disk_super);
+ 	fs_info->stripesize = btrfs_super_stripesize(disk_super);
+@@ -1469,10 +1469,9 @@ open_ctree_with_broken_chunk(struct recover_control *rc)
+ 	features = btrfs_super_incompat_flags(disk_super);
+ 
+ 	if (features & BTRFS_FEATURE_INCOMPAT_METADATA_UUID)
+-		memcpy(fs_info->metadata_uuid, disk_super->metadata_uuid,
+-		       BTRFS_FSID_SIZE);
+-	else
+-		memcpy(fs_info->metadata_uuid, fs_info->fsid, BTRFS_FSID_SIZE);
++		ASSERT(!memcmp(disk_super->metadata_uuid,
++			       fs_info->fs_devices->metadata_uuid,
++			       BTRFS_FSID_SIZE));
+ 
+ 	btrfs_setup_root(fs_info->chunk_root, fs_info,
+ 			 BTRFS_CHUNK_TREE_OBJECTID);
+diff --git a/ctree.c b/ctree.c
+index 883c2ae1861d..c79837e0206f 100644
+--- a/ctree.c
++++ b/ctree.c
+@@ -23,6 +23,7 @@
+ #include "internal.h"
+ #include "sizes.h"
+ #include "messages.h"
++#include "volumes.h"
+ 
+ static int split_node(struct btrfs_trans_handle *trans, struct btrfs_root
+ 		      *root, struct btrfs_path *path, int level);
+@@ -134,7 +135,7 @@ int btrfs_copy_root(struct btrfs_trans_handle *trans,
+ 	else
+ 		btrfs_set_header_owner(cow, new_root_objectid);
+ 
+-	write_extent_buffer(cow, root->fs_info->metadata_uuid,
++	write_extent_buffer(cow, root->fs_info->fs_devices->metadata_uuid,
+ 			    btrfs_header_fsid(), BTRFS_FSID_SIZE);
+ 
+ 	WARN_ON(btrfs_header_generation(buf) > trans->transid);
+@@ -308,7 +309,7 @@ int __btrfs_cow_block(struct btrfs_trans_handle *trans,
+ 	else
+ 		btrfs_set_header_owner(cow, root->root_key.objectid);
+ 
+-	write_extent_buffer(cow, root->fs_info->metadata_uuid,
++	write_extent_buffer(cow, root->fs_info->fs_devices->metadata_uuid,
+ 			    btrfs_header_fsid(), BTRFS_FSID_SIZE);
+ 
+ 	WARN_ON(!(buf->flags & EXTENT_BAD_TRANSID) &&
+@@ -1474,7 +1475,7 @@ static int noinline insert_new_root(struct btrfs_trans_handle *trans,
+ 
+ 	root_add_used(root, root->fs_info->nodesize);
+ 
+-	write_extent_buffer(c, root->fs_info->metadata_uuid,
++	write_extent_buffer(c, root->fs_info->fs_devices->metadata_uuid,
+ 			    btrfs_header_fsid(), BTRFS_FSID_SIZE);
+ 
+ 	write_extent_buffer(c, root->fs_info->chunk_tree_uuid,
+@@ -1595,7 +1596,7 @@ static int split_node(struct btrfs_trans_handle *trans, struct btrfs_root
+ 	btrfs_set_header_generation(split, trans->transid);
+ 	btrfs_set_header_backref_rev(split, BTRFS_MIXED_BACKREF_REV);
+ 	btrfs_set_header_owner(split, root->root_key.objectid);
+-	write_extent_buffer(split, root->fs_info->metadata_uuid,
++	write_extent_buffer(split, root->fs_info->fs_devices->metadata_uuid,
+ 			    btrfs_header_fsid(), BTRFS_FSID_SIZE);
+ 	write_extent_buffer(split, root->fs_info->chunk_tree_uuid,
+ 			    btrfs_header_chunk_tree_uuid(split),
+@@ -2177,7 +2178,7 @@ static noinline int split_leaf(struct btrfs_trans_handle *trans,
+ 	btrfs_set_header_backref_rev(right, BTRFS_MIXED_BACKREF_REV);
+ 	btrfs_set_header_owner(right, root->root_key.objectid);
+ 	btrfs_set_header_level(right, 0);
+-	write_extent_buffer(right, root->fs_info->metadata_uuid,
++	write_extent_buffer(right, root->fs_info->fs_devices->metadata_uuid,
+ 			    btrfs_header_fsid(), BTRFS_FSID_SIZE);
+ 
+ 	write_extent_buffer(right, root->fs_info->chunk_tree_uuid,
+diff --git a/ctree.h b/ctree.h
+index c22d36b1871b..751fc3f9f766 100644
+--- a/ctree.h
++++ b/ctree.h
+@@ -1079,8 +1079,6 @@ struct btrfs_block_group_cache {
+ struct btrfs_device;
+ struct btrfs_fs_devices;
+ struct btrfs_fs_info {
+-	u8 fsid[BTRFS_FSID_SIZE];
+-	u8 metadata_uuid[BTRFS_FSID_SIZE];
+ 	u8 *new_fsid;
+ 	u8 chunk_tree_uuid[BTRFS_UUID_SIZE];
+ 	u8 *new_chunk_tree_uuid;
+diff --git a/disk-io.c b/disk-io.c
+index c3be4a1017b7..e17fed13302b 100644
+--- a/disk-io.c
++++ b/disk-io.c
+@@ -118,7 +118,7 @@ static void print_tree_block_error(struct btrfs_fs_info *fs_info,
+ 		read_extent_buffer(eb, buf, btrfs_header_fsid(),
+ 				   BTRFS_UUID_SIZE);
+ 		uuid_unparse(buf, found_uuid);
+-		uuid_unparse(fs_info->metadata_uuid, fs_uuid);
++		uuid_unparse(fs_info->fs_devices->metadata_uuid, fs_uuid);
+ 		fprintf(stderr, "fsid mismatch, want=%s, have=%s\n",
+ 			fs_uuid, found_uuid);
+ 		break;
+@@ -1183,13 +1183,12 @@ static struct btrfs_fs_info *__open_ctree_fd(int fp, const char *path,
+ 		goto out_devices;
+ 	}
+ 
+-	memcpy(fs_info->fsid, &disk_super->fsid, BTRFS_FSID_SIZE);
+-	if (btrfs_fs_incompat(fs_info, METADATA_UUID)) {
+-		memcpy(fs_info->metadata_uuid, disk_super->metadata_uuid,
+-		       BTRFS_FSID_SIZE);
+-	} else {
+-		memcpy(fs_info->metadata_uuid, fs_info->fsid, BTRFS_FSID_SIZE);
+-	}
++	ASSERT(!memcmp(disk_super->fsid, fs_devices->fsid, BTRFS_FSID_SIZE));
++	ASSERT(!memcmp(disk_super->fsid, fs_devices->fsid, BTRFS_FSID_SIZE));
++	if (btrfs_fs_incompat(fs_info, METADATA_UUID))
++		ASSERT(!memcmp(disk_super->metadata_uuid,
++			       fs_devices->metadata_uuid, BTRFS_FSID_SIZE));
 +
-+source "$TEST_TOP/common"
-+
-+check_prereq mkfs.btrfs
-+check_prereq btrfs
-+check_prereq btrfstune
-+check_prereq btrfs-image
-+
-+setup_root_helper
-+
-+prepare_test_dev
-+
-+function read_fsid {
-+	local dev="$1"
-+	echo $(run_check_stdout $SUDO_HELPER "$TOP/btrfs" inspect-internal \
-+		dump-super "$dev" | awk '/fsid/ {print $2}' | head -n 1)
-+}
-+
-+function read_metadata_uuid {
-+	local dev="$1"
-+	echo $(run_check_stdout $SUDO_HELPER "$TOP/btrfs" inspect-internal \
-+		dump-super "$dev" | awk '/metadata_uuid/ {print $2}')
-+}
-+
-+function check_btrfstune {
-+	local fsid
-+	echo "Checking btrfstune logic" >> "$RESULTS"
-+	#Test with random uuid
-+	run_check $SUDO_HELPER "$TOP/btrfstune" -m "$TEST_DEV"
-+
-+	#check that specific uuid can set
-+	run_check $SUDO_HELPER "$TOP/btrfstune" -M d88c8333-a652-4476-b225-2e9284eb59f1 "$TEST_DEV"
-+
-+	#test that having seed on already changed device doesn't work 
-+	run_mustfail "Managed to set seed on metadata uuid fs" \
-+		$SUDO_HELPER "$TOP/btrfstune" -S 1 "$TEST_DEV"
-+
-+	#test that setting both seed and -m|M is forbidden 
-+	run_check $SUDO_HELPER "$TOP/mkfs.btrfs" -f "$TEST_DEV"
-+	run_mustfail "Succeeded setting seed and changing fs uuid" \
-+		$SUDO_HELPER "$TOP/btrfstune" -S 1 -m "$TEST_DEV"
-+
-+	#test that having -m|-M on seed device is forbidden
-+	run_check $SUDO_HELPER "$TOP/mkfs.btrfs" -f "$TEST_DEV"
-+	run_check $SUDO_HELPER "$TOP/btrfstune" -S 1 "$TEST_DEV" 
-+	run_mustfail "Succeded changing fsid on a seed device" $SUDO_HELPER "$TOP/btrfstune" -m "$TEST_DEV"
-+
-+	#test that using -U|-u on an fs with METADATA_UUID flag is forbidden
-+	run_check $SUDO_HELPER "$TOP/mkfs.btrfs" -f "$TEST_DEV"
-+	run_check $SUDO_HELPER "$TOP/btrfstune" -m "$TEST_DEV"
-+	run_mustfail "Succeeded triggering FSID rewrite while METADATA_UUID is active" \
-+		$SUDO_HELPER "$TOP/btrfstune" -u  "$TEST_DEV"
-+
-+}
-+
-+function check_dump_super_output {
-+	local fsid
-+	local metadata_uuid
-+	local dev_item_match
-+	local old_metadata_uuid
-+
-+	echo "Checking dump-super output" >> "$RESULTS"
-+	#Assert that metadata/fsid match on non-changed fs
-+	fsid=$(read_fsid "$TEST_DEV")
-+	metadata_uuid=$(read_metadata_uuid "$TEST_DEV")
-+	[ "$fsid" = "$metadata_uuid" ] || _fail "fsid ("$fsid") doesn't match metadata_uuid ("$metadata_uuid")"
-+
-+	dev_item_match=$(run_check_stdout $SUDO_HELPER "$TOP/btrfs" inspect-internal dump-super \
-+		"$TEST_DEV" | awk '/dev_item.fsid/ {print $3}')
-+
-+	[ $dev_item_match = "[match]" ] || _fail "dev_item.fsid doesn't match on non-metadata uuid fs"
-+
-+
-+	echo "Checking output after fsid change" >> "$RESULTS"
-+	#change metadatauuid and ensure everything in the output is still correct 
-+	old_metadata_uuid=$metadata_uuid
-+	run_check $SUDO_HELPER "$TOP/btrfstune" -M d88c8333-a652-4476-b225-2e9284eb59f1 "$TEST_DEV"
-+	fsid=$(read_fsid "$TEST_DEV")
-+	metadata_uuid=$(read_metadata_uuid "$TEST_DEV")
-+	dev_item_match=$(run_check_stdout $SUDO_HELPER "$TOP/btrfs" \
-+		inspect-internal dump-super "$TEST_DEV" | awk '/dev_item.fsid/ {print $3}')                         
-+		                                                                                
-+    [ "$dev_item_match" = "[match]" ] || _fail "dev_item.fsid doesn't match on metadata uuid fs"
-+	[ "$fsid" = "d88c8333-a652-4476-b225-2e9284eb59f1" ] || _fail "btrfstune metadata UUID change failed"
-+	[ "$old_metadata_uuid" = "$metadata_uuid" ] || _fail "Metadata uuid change unexpectedly"
-+
-+	echo "Checking for incompat textual representation" >> "$RESULTS"
-+	#check for textual output of the new incompat feature
-+	run_check_stdout $SUDO_HELPER "$TOP/btrfs" inspect-internal dump-super \
-+		"$TEST_DEV" | grep -q METADATA_UUID
-+	[ $? -eq 0 ] || _fail "Didn't find textual representation of METADATA_UUID feature"
-+
-+	echo "Checking setting fsid back to original" >> "$RESULTS"
-+	#ensure that  setting the fsid back to the original works
-+	run_check $SUDO_HELPER "$TOP/btrfstune" -M "$old_metadata_uuid" "$TEST_DEV"
-+
-+	fsid=$(read_fsid "$TEST_DEV")
-+	metadata_uuid=$(read_metadata_uuid "$TEST_DEV")
-+
-+	[ "$fsid" = "$metadata_uuid" ] || _fail "FSID and METADATA_UUID don't match"
-+	run_check_stdout $SUDO_HELPER "$TOP/btrfs" inspect-internal dump-super \
-+		"$TEST_DEV" | grep -q METADATA_UUID
-+	[ $? -eq 1 ] || _fail "METADATA_UUID feature still shown as enabled"
-+}
-+
-+function check_image_restore {
-+	local metadata_uuid
-+	local fsid
-+	local fsid_restored
-+	local metadata_uuid_restored
-+
-+	echo "TESTING btrfs-image restore" >> "$RESULTS"
-+	run_check $SUDO_HELPER "$TOP/mkfs.btrfs" -f "$TEST_DEV"
-+	run_check $SUDO_HELPER "$TOP/btrfstune" -m "$TEST_DEV"
-+	fsid=$(read_fsid "$TEST_DEV")
-+	metadata_uuid=$(read_metadata_uuid "$TEST_DEV")
-+	run_mayfail $SUDO_HELPER "$TOP/btrfs-image" "$TEST_DEV" /tmp/test-img.dump
-+	# erase the fs by creating a new one, wipefs is not sufficient as it just 
-+	# deletes the fs magic string
-+	run_check $SUDO_HELPER "$TOP/mkfs.btrfs" -f "$TEST_DEV"
-+	run_check $SUDO_HELPER "$TOP/btrfs-image" -r /tmp/test-img.dump "$TEST_DEV"
-+	fsid_restored=$(read_fsid "$TEST_DEV")
-+	metadata_uuid_restored=$(read_metadata_uuid "$TEST_DEV")
-+
-+	[ "$fsid" = "$fsid_restored" ] || _faild "FSID don't match after restore"
-+	[ "$metadata_uuid" = "$metadata_uuid_restored" ] || _faild "metadata uuids don't match after restore"
-+}
-+
-+run_check $SUDO_HELPER "$TOP/mkfs.btrfs" -f "$TEST_DEV"
-+check_btrfstune
-+
-+run_check $SUDO_HELPER "$TOP/mkfs.btrfs" -f "$TEST_DEV"
-+check_dump_super_output
-+
-+run_check $SUDO_HELPER "$TOP/mkfs.btrfs" -f "$TEST_DEV"
-+check_image_restore
+ 	fs_info->sectorsize = btrfs_super_sectorsize(disk_super);
+ 	fs_info->nodesize = btrfs_super_nodesize(disk_super);
+ 	fs_info->stripesize = btrfs_super_stripesize(disk_super);
+@@ -1640,7 +1639,8 @@ int write_all_supers(struct btrfs_fs_info *fs_info)
+ 		btrfs_set_stack_device_io_width(dev_item, dev->io_width);
+ 		btrfs_set_stack_device_sector_size(dev_item, dev->sector_size);
+ 		memcpy(dev_item->uuid, dev->uuid, BTRFS_UUID_SIZE);
+-		memcpy(dev_item->fsid, fs_info->metadata_uuid, BTRFS_FSID_SIZE);
++		memcpy(dev_item->fsid, fs_info->fs_devices->metadata_uuid,
++		       BTRFS_FSID_SIZE);
+ 
+ 		flags = btrfs_super_flags(sb);
+ 		btrfs_set_super_flags(sb, flags | BTRFS_HEADER_FLAG_WRITTEN);
+diff --git a/volumes.c b/volumes.c
+index b8388194c38f..e13f120e2296 100644
+--- a/volumes.c
++++ b/volumes.c
+@@ -732,7 +732,8 @@ int btrfs_add_device(struct btrfs_trans_handle *trans,
+ 	ptr = (unsigned long)btrfs_device_uuid(dev_item);
+ 	write_extent_buffer(leaf, device->uuid, ptr, BTRFS_UUID_SIZE);
+ 	ptr = (unsigned long)btrfs_device_fsid(dev_item);
+-	write_extent_buffer(leaf, fs_info->metadata_uuid, ptr, BTRFS_UUID_SIZE);
++	write_extent_buffer(leaf, fs_info->fs_devices->metadata_uuid, ptr,
++			    BTRFS_UUID_SIZE);
+ 	btrfs_mark_buffer_dirty(leaf);
+ 	ret = 0;
+ 
+@@ -2027,7 +2028,7 @@ static int read_one_dev(struct btrfs_fs_info *fs_info,
+ 			   (unsigned long)btrfs_device_fsid(dev_item),
+ 			   BTRFS_FSID_SIZE);
+ 
+-	if (memcmp(fs_uuid, fs_info->fsid, BTRFS_UUID_SIZE)) {
++	if (memcmp(fs_uuid, fs_info->fs_devices->fsid, BTRFS_UUID_SIZE)) {
+ 		ret = open_seed_devices(fs_info, fs_uuid);
+ 		if (ret)
+ 			return ret;
 -- 
 2.7.4

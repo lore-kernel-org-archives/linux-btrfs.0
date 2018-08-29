@@ -1,133 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:52712 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727312AbeH2Q35 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 29 Aug 2018 12:29:57 -0400
-Subject: Re: [PATCH 0/4] Userspace support for FSID change
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
-References: <1535531754-29774-1-git-send-email-nborisov@suse.com>
- <bb73d8d0-0d41-8884-05ad-0d9c76872232@gmx.com>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <cd1572a2-883b-48ce-0212-3b35373d8ef3@suse.com>
-Date: Wed, 29 Aug 2018 15:33:12 +0300
+Received: from out1-smtp.messagingengine.com ([66.111.4.25]:37973 "EHLO
+        out1-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1727254AbeH2QjC (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 29 Aug 2018 12:39:02 -0400
+Subject: Re: btrfs fi du unreliable?
+To: Jorge Bastos <jorge.mrbastos@gmail.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <CAHzMYBT22xie_4Tjp+Zn6w7DG0sDAdkRRDrgesUvJ60j0TrmnA@mail.gmail.com>
+From: Remi Gauvin <remi@georgianit.com>
+Message-ID: <7660605b-d456-308a-7040-720ff31f7181@georgianit.com>
+Date: Wed, 29 Aug 2018 08:42:15 -0400
 MIME-Version: 1.0
-In-Reply-To: <bb73d8d0-0d41-8884-05ad-0d9c76872232@gmx.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <CAHzMYBT22xie_4Tjp+Zn6w7DG0sDAdkRRDrgesUvJ60j0TrmnA@mail.gmail.com>
+Content-Type: multipart/mixed;
+ boundary="------------467B25A7649C5BECE9CA9EF1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This is a multi-part message in MIME format.
+--------------467B25A7649C5BECE9CA9EF1
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: 7bit
 
-
-On 29.08.2018 15:09, Qu Wenruo wrote:
-> 
-> 
-> On 2018/8/29 下午4:35, Nikolay Borisov wrote:
->> Here is the userspace tooling support for utilising the new metadata_uuid field, 
->> enabling the change of fsid without having to rewrite every metadata block. This
->> patchset consists of adding support for the new field to various tools and 
->> files (Patch 1). The actual implementation of the new -m|-M options (which are 
->> described in more detail in Patch 2). A new misc-tests testcasei (Patch 3) which
->> exercises the new options and verifies certain invariants hold (these are also
->> described in Patch2). Patch 4 is more or less copy of the kernel conuterpart 
->> just reducing some duplication between btrfs_fs_info and btrfs_fs_devices 
->> structures.
-> 
-> So to my understand, now we have another layer of UUID.
-> 
-> Before we have one fsid, both used in superblock and tree blocks.
-> 
-> Now we have 2 fsid, the one used in tree blocks are kept the same, but
-> changed its name to metadata_uuid in superblock.
-> And superblock::fsid will become a new field, and although they are the
-> same at mkfs time, they could change several times during its operation.
-> 
-> This indeed makes uuid change super fast, only needs to update all
-> superblocks of the fs, instead of all tree blocks.
-> 
-> However I have one nitpick of the design. Unlike XFS, btrfs supports
-> multiple devices.
-> If we have a raid10 fs with 4 devices, and it has already gone through
-> several UUID change (so its metadata uuid is already different from fsid).
-> 
-> And during another UUID change procedure, we lost power while only
-> updated 2 super blocks, what will happen for kernel device assembly?
-> 
-> (Although considering how fast the UUID change would happen, such case
-> should be super niche)
-
-Then I guess you will be fucked. I'm all ears for suggestion how to
-rectify this without skyrocketing the complexity. The current UUID
-rewrite method sets a flag int he superblock that FSID change is in
-progress and clears it once every metadatablock has been rewritten. I
-can piggyback on this mechanism but I'm not sure it provides 100%
-guarantee. Because by the some token you can set this flag, start
-writing the super blocks then lose power and then only some of the
-superblocks could have this flag set so we back at square 1.
+On 2018-08-29 08:00 AM, Jorge Bastos wrote:
 
 > 
->>
->> The intended usecase of this feature is to give the sysadmin the ability to 
->> create copies of filesystesm, change their uuid quickly and mount them alongside
->> the original filesystem for, say, forensic purposes. 
->>
->> One thing which still hasn't been set in stone is whether the new options 
->> will remain as -m|-M or whether they should subsume the current -u|-U - from 
->> the point of view of users nothing should change.
-> 
-> Well, user would be surprised by how fast the new -m is, thus there is
-> still something changed :)
-> 
-> I prefer to subsume current -u/-U, and use the new one if the incompat
-> feature is already set. Or fall back to original behavior.
-> 
-> But I'm not a fan of using INCOMPAT flags as an indicator of changed
-> fsid/metadata uuid.
-> INCOMPAT feature should not change so easily nor acts as an indicator.
-> 
-> That's to say, the flag should only be set at mkfs time, and then never
-> change unlike the 2nd patch (I don't even like btrfstune to change
-> incompat flags).
-> 
-> E.g.
-> mkfs.btrfs -O metadata_uuid <device>, then we could use the new way to
-> change fsid without touching metadata uuid.
-> Or we could only use the old method.
+> Look for example at snapshots from July 21st and 22nd, total used
+> space went from 199 to 277GiB, this is mostly from new added files, as
+> I confirmed from browsing those snapshots, there were no changes on
+> the 23rd, and a lot of files were deleted before the 24th, so should't
+> there be about 80GiB of exclusive content for the 22nd, or am I
+> misunderstanding how this is reported? ? Those were new files only,
+> never existed on previous snapshots, If I delete both snapshots from
+> the 22nd and the 23rd I expect to get about 80GiB freed space.
 
-I disagree, I don't see any benefit in this but only added complexity.
-Can you elaborate more ?
+Exclusive means... exclusive... to that 1 snapshop/subvolume.  If the
+data also exists on the 23'rd snapshot, it's not exclusive.
+
+If you wanted to report how much data is exclusive to a group of
+snapshots, (say, July 22 *and* 23rd). you would have to make them
+members of a parent qgroup, then, you could see the exclusive value of
+the whole group.
 
 
-> 
-> Thanks,
-> Qu
-> 
->> So this is something which 
->> I'd like to hear from the community. Of course the alternative of rewriting 
->> the metadata blocks will be assigne new options - perhaps -m|M ?
->>
->> I've tested this with multiple xfstest runs with the new tools installed as 
->> well as running btrfs-progs test and have observed no regressions. 
->>
->> Nikolay Borisov (4):
->>   btrfs-progs: Add support for metadata_uuid field.
->>   btrfstune: Add support for changing the user uuid
->>   btrfs-progs: tests: Add tests for changing fsid feature
->>   btrfs-progs: Remove fsid/metdata_uuid fields from fs_info
->>
->>  btrfstune.c                                | 174 ++++++++++++++++++++++++-----
->>  check/main.c                               |   2 +-
->>  chunk-recover.c                            |  17 ++-
->>  cmds-filesystem.c                          |   2 +
->>  cmds-inspect-dump-super.c                  |  22 +++-
->>  convert/common.c                           |   2 +
->>  ctree.c                                    |  15 +--
->>  ctree.h                                    |   8 +-
->>  disk-io.c                                  |  62 ++++++++--
->>  image/main.c                               |  25 +++--
->>  tests/misc-tests/033-metadata-uuid/test.sh | 137 +++++++++++++++++++++++
->>  volumes.c                                  |  37 ++++--
->>  volumes.h                                  |   1 +
->>  13 files changed, 431 insertions(+), 73 deletions(-)
->>  create mode 100755 tests/misc-tests/033-metadata-uuid/test.sh
->>
-> 
+--------------467B25A7649C5BECE9CA9EF1
+Content-Type: text/x-vcard; charset=utf-8;
+ name="remi.vcf"
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment;
+ filename="remi.vcf"
+
+begin:vcard
+fn:Remi Gauvin
+n:Gauvin;Remi
+org:Georgian Infotech
+adr:;;3-51 Sykes St. N.;Meaford;ON;N4L 1X3;Canada
+email;internet:remi@georgianit.com
+tel;work:226-256-1545
+version:2.1
+end:vcard
+
+
+--------------467B25A7649C5BECE9CA9EF1--

@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.15]:56529 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.15.19]:57775 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725799AbeH2FWe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 29 Aug 2018 01:22:34 -0400
+        id S1727203AbeH2J2R (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 29 Aug 2018 05:28:17 -0400
 Subject: Re: Scrub aborts due to corrupt leaf
 To: Chris Murphy <lists@colorremedies.com>
 Cc: Larkin Lowrey <llowrey@nuclearwinter.com>,
@@ -16,25 +16,25 @@ References: <3af15796-2629-ef87-21c9-2bb3c1366732@nuclearwinter.com>
  <e84595a6-b1c4-0698-b5d3-251165a11412@gmx.com>
  <CAJCQCtR-j3c99KSpsnUuy5yn5Jx7NAYGXmiDfcrZt4yc8ghCEA@mail.gmail.com>
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <03fb5f67-7b67-94b3-098b-05777f8de4f1@gmx.com>
-Date: Wed, 29 Aug 2018 09:27:54 +0800
+Message-ID: <cd4ffeae-0b06-f8ae-1a4e-1165428daee2@gmx.com>
+Date: Wed, 29 Aug 2018 13:32:50 +0800
 MIME-Version: 1.0
 In-Reply-To: <CAJCQCtR-j3c99KSpsnUuy5yn5Jx7NAYGXmiDfcrZt4yc8ghCEA@mail.gmail.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="1LW0MBoP6Iv39cxmCVt0V3RpoyXXE9mhK"
+ boundary="e7qb13md20jV7YGeDrtfkeYRBfuCdkvdM"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---1LW0MBoP6Iv39cxmCVt0V3RpoyXXE9mhK
-Content-Type: multipart/mixed; boundary="Ue8LT3lXgOpbBUUTq5bu71t5RM1iKgpO3";
+--e7qb13md20jV7YGeDrtfkeYRBfuCdkvdM
+Content-Type: multipart/mixed; boundary="tuq5r4GTowJh44uKrH0PNuUnum3y3GPzE";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 To: Chris Murphy <lists@colorremedies.com>
 Cc: Larkin Lowrey <llowrey@nuclearwinter.com>,
  Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Message-ID: <03fb5f67-7b67-94b3-098b-05777f8de4f1@gmx.com>
+Message-ID: <cd4ffeae-0b06-f8ae-1a4e-1165428daee2@gmx.com>
 Subject: Re: Scrub aborts due to corrupt leaf
 References: <3af15796-2629-ef87-21c9-2bb3c1366732@nuclearwinter.com>
  <3725e6f2-b1ed-8d3d-aec7-1518dad1cb03@gmx.com>
@@ -46,7 +46,7 @@ References: <3af15796-2629-ef87-21c9-2bb3c1366732@nuclearwinter.com>
  <CAJCQCtR-j3c99KSpsnUuy5yn5Jx7NAYGXmiDfcrZt4yc8ghCEA@mail.gmail.com>
 In-Reply-To: <CAJCQCtR-j3c99KSpsnUuy5yn5Jx7NAYGXmiDfcrZt4yc8ghCEA@mail.gmail.com>
 
---Ue8LT3lXgOpbBUUTq5bu71t5RM1iKgpO3
+--tuq5r4GTowJh44uKrH0PNuUnum3y3GPzE
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
@@ -104,12 +104,44 @@ ee
 >=20
 > Seems bogus, there's >4TiB unallocated.
 
-Pretty strange.
+What a shame.
+Btrfs won't try to allocate new chunk if we're allocating new tree
+blocks for metadata trees (extent, csum, etc).
 
-This either means chunk allocator doesn't work or we have something else
-wrong.
+One quick (and dirty) way to avoid such limitation is to use the
+following patch
+------
+diff --git a/extent-tree.c b/extent-tree.c
+index 5d49af5a901e..0a1d21a8d148 100644
+--- a/extent-tree.c
++++ b/extent-tree.c
+@@ -2652,17 +2652,15 @@ int btrfs_reserve_extent(struct
+btrfs_trans_handle *trans,
+                profile =3D BTRFS_BLOCK_GROUP_METADATA | alloc_profile;
+        }
 
-I'll take a look into this problem.
+-       if (root->ref_cows) {
+-               if (!(profile & BTRFS_BLOCK_GROUP_METADATA)) {
+-                       ret =3D do_chunk_alloc(trans, info,
+-                                            num_bytes,
+-                                            BTRFS_BLOCK_GROUP_METADATA);=
+
+-                       BUG_ON(ret);
+-               }
++       if (!(profile & BTRFS_BLOCK_GROUP_METADATA)) {
+                ret =3D do_chunk_alloc(trans, info,
+-                                    num_bytes + SZ_2M, profile);
++                                    num_bytes,
++                                    BTRFS_BLOCK_GROUP_METADATA);
+                BUG_ON(ret);
+        }
++       ret =3D do_chunk_alloc(trans, info,
++                            num_bytes + SZ_2M, profile);
++       BUG_ON(ret);
+
+        WARN_ON(num_bytes < info->sectorsize);
+        ret =3D find_free_extent(trans, root, num_bytes, empty_size,
+------
 
 Thanks,
 Qu
@@ -132,23 +164,23 @@ Backups
 >=20
 
 
---Ue8LT3lXgOpbBUUTq5bu71t5RM1iKgpO3--
+--tuq5r4GTowJh44uKrH0PNuUnum3y3GPzE--
 
---1LW0MBoP6Iv39cxmCVt0V3RpoyXXE9mhK
+--e7qb13md20jV7YGeDrtfkeYRBfuCdkvdM
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAluF9poACgkQwj2R86El
-/qhLlwf8DwYWH93bOjCCCspvKw94VujIIM3GPQNaKEiEPs3gd8433l2lqoJOmfig
-4WpXXCUKZX2tbC+vI3mJozXnYjm5p7pQxGOFTOjAdiGU8VVYJlUgy/1uCi/JPvnD
-8zq0oc9Xl7VCq88mFHBr1AqfBewwjye9MyUQhLxd3FChrzVar4Mqf12fIphjoujV
-2MwPK+AJpcp+p8qMOudtND/CCUo9L7IlUjbwBp3w9GtGffMjtD6ljOJACEYj+WA2
-K9OyzUngYzYsPVsP57u4B6HW4A7Ys81PyOyXS8UxbgwrA1tY6Nb7Lsdus0inK5kR
-O26qr07rD7OKJlgRaUE0WMozgMyrGg==
-=HGyC
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAluGMAIACgkQwj2R86El
+/qj9GAf/WVp6/SoCag03fyrg3qse6t1Rp2bOC76LANGS/QnP2V94FjbiqhFSiOWV
+hd2AB5J7kPuCPW1i6xDS5tTyJ74wvkn/xeMReaHaz1i5kyiYZBZaX1DWQQzERC/Q
+250/VSvhiV9qCEd8XMTsH4uP5dgi9Fvam5NSNkb6qvYfUxaUU0Rqq/wymWLjn4uG
+iQXiIE5CO+XPP6x7wdkgZy3bAUTdfgsvY8G5EW7YtN9zaqAIpiZykjhuKNIcAWiC
+ROp02qK4AovXrKwZOleaUQcZuDbDjgAbmdJvQKdOpmZQBRTeF2kWsc1ExZAN68c7
+L034Fp9i1fu8cHBT6LOjKgED/cmaLg==
+=pAph
 -----END PGP SIGNATURE-----
 
---1LW0MBoP6Iv39cxmCVt0V3RpoyXXE9mhK--
+--e7qb13md20jV7YGeDrtfkeYRBfuCdkvdM--

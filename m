@@ -1,21 +1,21 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:48160 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:53846 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727537AbeH2S5R (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 29 Aug 2018 14:57:17 -0400
+        id S1727562AbeH2TgR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 29 Aug 2018 15:36:17 -0400
 Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 2B949AF3B
-        for <linux-btrfs@vger.kernel.org>; Wed, 29 Aug 2018 14:59:56 +0000 (UTC)
-Subject: Re: [PATCH 5/6] btrfs-progs: Exit gracefull when we failed to alloc
- dev extent
+        by mx1.suse.de (Postfix) with ESMTP id 6DAEEABC1
+        for <linux-btrfs@vger.kernel.org>; Wed, 29 Aug 2018 15:38:46 +0000 (UTC)
+Subject: Re: [PATCH 6/6] btrfs-progs: rescue-super: Don't double free
+ fs_devices
 To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
 References: <20180803055022.9816-1-wqu@suse.com>
- <20180803055022.9816-6-wqu@suse.com>
+ <20180803055022.9816-7-wqu@suse.com>
 From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <272db467-82b6-4f2b-8bcf-e6e16a666778@suse.com>
-Date: Wed, 29 Aug 2018 17:59:55 +0300
+Message-ID: <c357b98d-3d37-31fe-ad42-df8d7eff0d20@suse.com>
+Date: Wed, 29 Aug 2018 18:38:44 +0300
 MIME-Version: 1.0
-In-Reply-To: <20180803055022.9816-6-wqu@suse.com>
+In-Reply-To: <20180803055022.9816-7-wqu@suse.com>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -23,55 +23,69 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 
 On  3.08.2018 08:50, Qu Wenruo wrote:
-> Another BUG_ON() during fuzz/003:
+> [BUG]
+> During fuzz/007 we hit the following error:
 > ------
-> ====== RUN MAYFAIL /home/adam/btrfs/btrfs-progs/btrfs check --repair /home/adam/btrfs/btrfs-progs/tests//fuzz-tests/images/bko-199833-reloc-recovery-crash.raw.restored
-> [1/7] checking root items
-> Fixed 0 roots.
-> [2/7] checking extents
-> ctree.c:1650: leaf_space_used: Warning: assertion `data_len < 0` failed, value 1
-> bad key ordering 18 19
-> bad block 29409280
-> ERROR: errors found in extent allocation tree or chunk allocation
-> WARNING: minor unaligned/mismatch device size detected
-> WARNING: recommended to use 'btrfs rescue fix-device-size' to fix it
-> [3/7] checking free space cache
-> [4/7] checking fs roots
-> ctree.c:1650: leaf_space_used: Warning: assertion `data_len < 0` failed, value 1
-> bad key ordering 18 19
-> root 18446744073709551608 missing its root dir, recreating
-> Unable to find block group for 0
-> Unable to find block group for 0
-> Unable to find block group for 0
-> volumes.c:564: btrfs_alloc_dev_extent: BUG_ON `ret` triggered, value -28
-> failed (ignored, ret=134): /home/adam/btrfs/btrfs-progs/btrfs check --repair /home/adam/btrfs/btrfs-progs/tests//fuzz-tests/images/bko-199833-reloc-recovery-crash.raw.restored
-> mayfail: returned code 134 (SIGABRT), not ignored
-> test failed for case 003-multi-check-unmounted
+> ====== RUN MAYFAIL /home/adam/btrfs/btrfs-progs/btrfs rescue super-recover -y -v /home/adam/btrfs/btrfs-progs/tests//fuzz-tests/images/bko-200409.raw.restored.scratch
+> ERROR: tree_root block unaligned: 33554431
+> ERROR: superblock checksum matches but it has invalid members
+> ERROR: tree_root block unaligned: 33554431
+> ERROR: superblock checksum matches but it has invalid members
+> ERROR: tree_root block unaligned: 33554431
+> ERROR: superblock checksum matches but it has invalid members
+> ERROR: failed to add chunk map start=12582912 len=8454144: -17 (File exists)
+> Couldn't read chunk tree
+> failed (ignored, ret=139): /home/adam/btrfs/btrfs-progs/btrfs rescue super-recover -y -v /home/adam/btrfs/btrfs-progs/tests//fuzz-tests/images/bko-200409.raw.restored.scratch
+> mayfail: returned code 139 (SEGFAULT), not ignored
+> test failed for case 007-simple-super-recover
 > ------
 > 
-> However the culprit function btrfs_alloc_dev_extent() has proper error
-> handler tag err:, just use that tag would solve the problem easily.
+> [CAUSE]
+> In __open_ctree_fd(), if we have valid @open_ctree_flags and
+> btrfs_scan_fs_devices() successes without problem, no matter what
+> happens we will call btrfs_close_devices(), thus free all related
+> devices.
+
+Why do you think it's _always_ going to be called? Looking into that
+function it seems this can happen if
+btrfs_setup_chunk_tree_and_device_map fails.
+> 
+> In super-recover, before we call open_ctree(), we have called
+> btrfs_scan_fs_devices() already, so btrfs_scan_fs_devices() should not
+> fail in open_ctree(), fs_devices will always be freed in open_ctree() or
+> close_ctree().
+
+Isn't the actual issue just that we call close_ctree. So the actual life
+time of fs_devices is :
+
+1. Create in btrfs_scan_fs_devices called from btrfs_recover_superblocks
+2. All other references to those fs_devices will just return the same
+reference.
+3. Calling close_ctree frees fs_devices.
+
+> 
+> [FIX]
+> So in super-recover.c, we should not call btrfs_close_devices(), or we
+> will find fs_devices->list get poisoned, and trigger segfault when
+> exiting.
 > 
 > Signed-off-by: Qu Wenruo <wqu@suse.com>
-
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-
 > ---
->  volumes.c | 3 ++-
->  1 file changed, 2 insertions(+), 1 deletion(-)
+>  super-recover.c | 3 ---
+>  1 file changed, 3 deletions(-)
 > 
-> diff --git a/volumes.c b/volumes.c
-> index d81b348eb14d..f7a413b71d52 100644
-> --- a/volumes.c
-> +++ b/volumes.c
-> @@ -561,7 +561,8 @@ static int btrfs_alloc_dev_extent(struct btrfs_trans_handle *trans,
->  	key.type = BTRFS_DEV_EXTENT_KEY;
->  	ret = btrfs_insert_empty_item(trans, root, path, &key,
->  				      sizeof(*extent));
-> -	BUG_ON(ret);
-> +	if (ret < 0)
-> +		goto err;
+> diff --git a/super-recover.c b/super-recover.c
+> index 880fd7712546..86b3df9867dc 100644
+> --- a/super-recover.c
+> +++ b/super-recover.c
+> @@ -292,9 +292,6 @@ int btrfs_recover_superblocks(const char *dname,
+>  no_recover:
+>  	recover_err_str(ret);
+>  	free_recover_superblock(&recover);
+> -	/* check if we have freed fs_devices in close_ctree() */
+> -	if (!root)
+> -		btrfs_close_devices(recover.fs_devices);
+>  	return ret;
+>  }
 >  
->  	leaf = path->nodes[0];
->  	extent = btrfs_item_ptr(leaf, path->slots[0],
 > 

@@ -1,154 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from out30-130.freemail.mail.aliyun.com ([115.124.30.130]:44670 "EHLO
-        out30-130.freemail.mail.aliyun.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1728243AbeHVXSs (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 22 Aug 2018 19:18:48 -0400
-From: Liu Bo <bo.liu@linux.alibaba.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 5/5] Btrfs: preftree: use rb_first_cached
-Date: Thu, 23 Aug 2018 03:51:53 +0800
-Message-Id: <1534967513-117382-6-git-send-email-bo.liu@linux.alibaba.com>
-In-Reply-To: <1534967513-117382-1-git-send-email-bo.liu@linux.alibaba.com>
-References: <1534967513-117382-1-git-send-email-bo.liu@linux.alibaba.com>
+Received: from mx2.suse.de ([195.135.220.15]:40472 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726209AbeH2JKm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 29 Aug 2018 05:10:42 -0400
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 33F20AD7D
+        for <linux-btrfs@vger.kernel.org>; Wed, 29 Aug 2018 05:15:36 +0000 (UTC)
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v3 0/2] btrfs: trim enhancement to allow btrfs really trim block groups
+Date: Wed, 29 Aug 2018 13:15:30 +0800
+Message-Id: <20180829051532.32005-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-rb_first_cached() trades an extra pointer "leftmost" for doing the same
-job as rb_first() but in O(1).
+This patchset can be fetched from github:
+https://github.com/adam900710/linux/tree/trim_fix
+Which is based on v4.19-rc1 tag.
 
-While resolving indirect refs and missing refs, it always looks for the
-first rb entry in a while loop, it's helpful to use rb_first_cached
-instead.
+This patchset introduces 2 enhancement, one to output better error
+messages during trim, the other one is to ensure we could really trim
+block groups if logical bytenr of block groups are beyond physical
+device size.
 
-Signed-off-by: Liu Bo <bo.liu@linux.alibaba.com>
----
- fs/btrfs/backref.c | 32 +++++++++++++++++---------------
- 1 file changed, 17 insertions(+), 15 deletions(-)
+These two patches are in the wild for a long time, and are pretty small
+and the 2nd patch in facts fix a regression, and we already have test
+case for it (btrfs/156).
 
-diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-index bc1ea6e9ea4f..49f2188e728b 100644
---- a/fs/btrfs/backref.c
-+++ b/fs/btrfs/backref.c
-@@ -112,11 +112,11 @@ static int find_extent_in_eb(const struct extent_buffer *eb,
- }
- 
- struct preftree {
--	struct rb_root root;
-+	struct rb_root_cached root;
- 	unsigned int count;
- };
- 
--#define PREFTREE_INIT	{ .root = RB_ROOT, .count = 0 }
-+#define PREFTREE_INIT	{ .root = RB_ROOT_CACHED, .count = 0 }
- 
- struct preftrees {
- 	struct preftree direct;    /* BTRFS_SHARED_[DATA|BLOCK]_REF_KEY */
-@@ -225,14 +225,15 @@ static void prelim_ref_insert(const struct btrfs_fs_info *fs_info,
- 			      struct prelim_ref *newref,
- 			      struct share_check *sc)
- {
--	struct rb_root *root;
-+	struct rb_root_cached *root;
- 	struct rb_node **p;
- 	struct rb_node *parent = NULL;
- 	struct prelim_ref *ref;
- 	int result;
-+	bool leftmost = true;
- 
- 	root = &preftree->root;
--	p = &root->rb_node;
-+	p = &root->rb_root.rb_node;
- 
- 	while (*p) {
- 		parent = *p;
-@@ -242,6 +243,7 @@ static void prelim_ref_insert(const struct btrfs_fs_info *fs_info,
- 			p = &(*p)->rb_left;
- 		} else if (result > 0) {
- 			p = &(*p)->rb_right;
-+			leftmost = false;
- 		} else {
- 			/* Identical refs, merge them and free @newref */
- 			struct extent_inode_elem *eie = ref->inode_list;
-@@ -272,7 +274,7 @@ static void prelim_ref_insert(const struct btrfs_fs_info *fs_info,
- 	preftree->count++;
- 	trace_btrfs_prelim_ref_insert(fs_info, newref, NULL, preftree->count);
- 	rb_link_node(&newref->rbnode, parent, p);
--	rb_insert_color(&newref->rbnode, root);
-+	rb_insert_color_cached(&newref->rbnode, root, leftmost);
- }
- 
- /*
-@@ -283,11 +285,11 @@ static void prelim_release(struct preftree *preftree)
- {
- 	struct prelim_ref *ref, *next_ref;
- 
--	rbtree_postorder_for_each_entry_safe(ref, next_ref, &preftree->root,
--					     rbnode)
-+	rbtree_postorder_for_each_entry_safe(ref, next_ref,
-+					     &preftree->root.rb_root, rbnode)
- 		free_pref(ref);
- 
--	preftree->root = RB_ROOT;
-+	preftree->root = RB_ROOT_CACHED;
- 	preftree->count = 0;
- }
- 
-@@ -627,7 +629,7 @@ static int resolve_indirect_refs(struct btrfs_fs_info *fs_info,
- 	 * freeing the entire indirect tree when we're done.  In some test
- 	 * cases, the tree can grow quite large (~200k objects).
- 	 */
--	while ((rnode = rb_first(&preftrees->indirect.root))) {
-+	while ((rnode = rb_first_cached(&preftrees->indirect.root))) {
- 		struct prelim_ref *ref;
- 
- 		ref = rb_entry(rnode, struct prelim_ref, rbnode);
-@@ -637,7 +639,7 @@ static int resolve_indirect_refs(struct btrfs_fs_info *fs_info,
- 			goto out;
- 		}
- 
--		rb_erase(&ref->rbnode, &preftrees->indirect.root);
-+		rb_erase_cached(&ref->rbnode, &preftrees->indirect.root);
- 		preftrees->indirect.count--;
- 
- 		if (ref->count == 0) {
-@@ -717,9 +719,9 @@ static int add_missing_keys(struct btrfs_fs_info *fs_info,
- 	struct preftree *tree = &preftrees->indirect_missing_keys;
- 	struct rb_node *node;
- 
--	while ((node = rb_first(&tree->root))) {
-+	while ((node = rb_first_cached(&tree->root))) {
- 		ref = rb_entry(node, struct prelim_ref, rbnode);
--		rb_erase(node, &tree->root);
-+		rb_erase_cached(node, &tree->root);
- 
- 		BUG_ON(ref->parent);	/* should not be a direct ref */
- 		BUG_ON(ref->key_for_search.type);
-@@ -1229,14 +1231,14 @@ static int find_parent_nodes(struct btrfs_trans_handle *trans,
- 	if (ret)
- 		goto out;
- 
--	WARN_ON(!RB_EMPTY_ROOT(&preftrees.indirect_missing_keys.root));
-+	WARN_ON(!RB_EMPTY_ROOT(&preftrees.indirect_missing_keys.root.rb_root));
- 
- 	ret = resolve_indirect_refs(fs_info, path, time_seq, &preftrees,
- 				    extent_item_pos, total_refs, sc, ignore_offset);
- 	if (ret)
- 		goto out;
- 
--	WARN_ON(!RB_EMPTY_ROOT(&preftrees.indirect.root));
-+	WARN_ON(!RB_EMPTY_ROOT(&preftrees.indirect.root.rb_root));
- 
- 	/*
- 	 * This walks the tree of merged and resolved refs. Tree blocks are
-@@ -1245,7 +1247,7 @@ static int find_parent_nodes(struct btrfs_trans_handle *trans,
- 	 *
- 	 * We release the entire tree in one go before returning.
- 	 */
--	node = rb_first(&preftrees.direct.root);
-+	node = rb_first_cached(&preftrees.direct.root);
- 	while (node) {
- 		ref = rb_entry(node, struct prelim_ref, rbnode);
- 		node = rb_next(&ref->rbnode);
+Changelog:
+v2:
+  Only report total number of errors and first errno to make it less
+  noisy.
+  Change message level from warning to debug
+v3:
+  Rebase to v4.19-rc1.
+  Change back message level from debug to warning since it's less noisy
+  and will only report total failed bgs and devices.
+
+Qu Wenruo (2):
+  btrfs: Enhance btrfs_trim_fs function to handle error better
+  btrfs: Ensure btrfs_trim_fs can trim the whole fs
+
+ fs/btrfs/extent-tree.c | 67 ++++++++++++++++++++++++++----------------
+ fs/btrfs/ioctl.c       | 11 ++++---
+ 2 files changed, 49 insertions(+), 29 deletions(-)
+
 -- 
-1.8.3.1
+2.18.0

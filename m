@@ -1,59 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qt0-f194.google.com ([209.85.216.194]:43088 "EHLO
-        mail-qt0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726878AbeH3VqX (ORCPT
+Received: from mail-qt0-f195.google.com ([209.85.216.195]:44506 "EHLO
+        mail-qt0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726878AbeH3Vqm (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 30 Aug 2018 17:46:23 -0400
-Received: by mail-qt0-f194.google.com with SMTP id g53-v6so11274580qtg.10
-        for <linux-btrfs@vger.kernel.org>; Thu, 30 Aug 2018 10:43:08 -0700 (PDT)
+        Thu, 30 Aug 2018 17:46:42 -0400
+Received: by mail-qt0-f195.google.com with SMTP id k38-v6so11285983qtk.11
+        for <linux-btrfs@vger.kernel.org>; Thu, 30 Aug 2018 10:43:26 -0700 (PDT)
 Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id o5-v6sm4961225qtc.63.2018.08.30.10.43.06
+        by smtp.gmail.com with ESMTPSA id m95-v6sm4309467qte.69.2018.08.30.10.43.24
         for <linux-btrfs@vger.kernel.org>
         (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
-        Thu, 30 Aug 2018 10:43:06 -0700 (PDT)
+        Thu, 30 Aug 2018 10:43:24 -0700 (PDT)
 From: Josef Bacik <josef@toxicpanda.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 22/35] btrfs: make sure we create all new bgs
-Date: Thu, 30 Aug 2018 13:42:12 -0400
-Message-Id: <20180830174225.2200-23-josef@toxicpanda.com>
+Subject: [PATCH 32/35] btrfs: only free reserved extent if we didn't insert it
+Date: Thu, 30 Aug 2018 13:42:22 -0400
+Message-Id: <20180830174225.2200-33-josef@toxicpanda.com>
 In-Reply-To: <20180830174225.2200-1-josef@toxicpanda.com>
 References: <20180830174225.2200-1-josef@toxicpanda.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We can actually allocate new chunks while we're creating our bg's, so
-instead of doing list_for_each_safe, just do while (!list_empty()) so we
-make sure to catch any new bg's that get added to the list.
+When we insert the file extent once the ordered extent completes we free
+the reserved extent reservation as it'll have been migrated to the
+bytes_used counter.  However if we error out after this step we'll still
+clear the reserved extent reservation, resulting in a negative
+accounting of the reserved bytes for the block group and space info.
+Fix this by only doing the free if we didn't successfully insert a file
+extent for this extent.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/extent-tree.c | 7 +++++--
- 1 file changed, 5 insertions(+), 2 deletions(-)
+ fs/btrfs/inode.c | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index ca98c39308f6..fc30ff96f0d6 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -10331,7 +10331,7 @@ int btrfs_read_block_groups(struct btrfs_fs_info *info)
- void btrfs_create_pending_block_groups(struct btrfs_trans_handle *trans)
- {
- 	struct btrfs_fs_info *fs_info = trans->fs_info;
--	struct btrfs_block_group_cache *block_group, *tmp;
-+	struct btrfs_block_group_cache *block_group;
- 	struct btrfs_root *extent_root = fs_info->extent_root;
- 	struct btrfs_block_group_item item;
- 	struct btrfs_key key;
-@@ -10339,7 +10339,10 @@ void btrfs_create_pending_block_groups(struct btrfs_trans_handle *trans)
- 	bool can_flush_pending_bgs = trans->can_flush_pending_bgs;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 10455d0aa71c..3391f6a9fc77 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2992,6 +2992,7 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)
+ 	bool truncated = false;
+ 	bool range_locked = false;
+ 	bool clear_new_delalloc_bytes = false;
++	bool clear_reserved_extent = true;
  
- 	trans->can_flush_pending_bgs = false;
--	list_for_each_entry_safe(block_group, tmp, &trans->new_bgs, bg_list) {
-+	while (!list_empty(&trans->new_bgs)) {
-+		block_group = list_first_entry(&trans->new_bgs,
-+					       struct btrfs_block_group_cache,
-+					       bg_list);
- 		if (ret)
- 			goto next;
- 
+ 	if (!test_bit(BTRFS_ORDERED_NOCOW, &ordered_extent->flags) &&
+ 	    !test_bit(BTRFS_ORDERED_PREALLOC, &ordered_extent->flags) &&
+@@ -3095,10 +3096,12 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)
+ 						logical_len, logical_len,
+ 						compress_type, 0, 0,
+ 						BTRFS_FILE_EXTENT_REG);
+-		if (!ret)
++		if (!ret) {
++			clear_reserved_extent = false;
+ 			btrfs_release_delalloc_bytes(fs_info,
+ 						     ordered_extent->start,
+ 						     ordered_extent->disk_len);
++		}
+ 	}
+ 	unpin_extent_cache(&BTRFS_I(inode)->extent_tree,
+ 			   ordered_extent->file_offset, ordered_extent->len,
+@@ -3159,8 +3162,13 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)
+ 		 * wrong we need to return the space for this ordered extent
+ 		 * back to the allocator.  We only free the extent in the
+ 		 * truncated case if we didn't write out the extent at all.
++		 *
++		 * If we made it past insert_reserved_file_extent before we
++		 * errored out then we don't need to do this as the accounting
++		 * has already been done.
+ 		 */
+ 		if ((ret || !logical_len) &&
++		    clear_reserved_extent &&
+ 		    !test_bit(BTRFS_ORDERED_NOCOW, &ordered_extent->flags) &&
+ 		    !test_bit(BTRFS_ORDERED_PREALLOC, &ordered_extent->flags))
+ 			btrfs_free_reserved_extent(fs_info,
 -- 
 2.14.3

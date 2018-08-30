@@ -1,87 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qt0-f193.google.com ([209.85.216.193]:45093 "EHLO
-        mail-qt0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726878AbeH3VqW (ORCPT
+Received: from mail-qt0-f194.google.com ([209.85.216.194]:45111 "EHLO
+        mail-qt0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726878AbeH3VqZ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 30 Aug 2018 17:46:22 -0400
-Received: by mail-qt0-f193.google.com with SMTP id g44-v6so11258773qtb.12
-        for <linux-btrfs@vger.kernel.org>; Thu, 30 Aug 2018 10:43:06 -0700 (PDT)
+        Thu, 30 Aug 2018 17:46:25 -0400
+Received: by mail-qt0-f194.google.com with SMTP id g44-v6so11259148qtb.12
+        for <linux-btrfs@vger.kernel.org>; Thu, 30 Aug 2018 10:43:10 -0700 (PDT)
 Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id x46-v6sm4738923qtc.9.2018.08.30.10.43.04
+        by smtp.gmail.com with ESMTPSA id a10-v6sm240861qkj.60.2018.08.30.10.43.08
         for <linux-btrfs@vger.kernel.org>
         (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
-        Thu, 30 Aug 2018 10:43:05 -0700 (PDT)
+        Thu, 30 Aug 2018 10:43:08 -0700 (PDT)
 From: Josef Bacik <josef@toxicpanda.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 21/35] btrfs: only run delayed refs if we're committing
-Date: Thu, 30 Aug 2018 13:42:11 -0400
-Message-Id: <20180830174225.2200-22-josef@toxicpanda.com>
+Subject: [PATCH 23/35] btrfs: assert on non-empty delayed iputs
+Date: Thu, 30 Aug 2018 13:42:13 -0400
+Message-Id: <20180830174225.2200-24-josef@toxicpanda.com>
 In-Reply-To: <20180830174225.2200-1-josef@toxicpanda.com>
 References: <20180830174225.2200-1-josef@toxicpanda.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I noticed in a giant dbench run that we spent a lot of time on lock
-contention while running transaction commit.  This is because dbench
-results in a lot of fsync()'s that do a btrfs_transaction_commit(), and
-they all run the delayed refs first thing, so they all contend with
-each other.  This leads to seconds of 0 throughput.  Change this to only
-run the delayed refs if we're the ones committing the transaction.  This
-makes the latency go away and we get no more lock contention.
+I ran into an issue where there was some reference being held on an
+inode that I couldn't track.  This assert wasn't triggered, but it at
+least rules out we're doing something stupid.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/transaction.c | 24 +++++++++---------------
- 1 file changed, 9 insertions(+), 15 deletions(-)
+ fs/btrfs/disk-io.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index ebb0c0405598..2bb19e2ded5e 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -1918,15 +1918,6 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
- 	btrfs_trans_release_metadata(trans);
- 	trans->block_rsv = NULL;
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 0e42401756b8..11ea2ea7439e 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3979,6 +3979,7 @@ void close_ctree(struct btrfs_fs_info *fs_info)
+ 	kthread_stop(fs_info->transaction_kthread);
+ 	kthread_stop(fs_info->cleaner_kthread);
  
--	/* make a pass through all the delayed refs we have so far
--	 * any runnings procs may add more while we are here
--	 */
--	ret = btrfs_run_delayed_refs(trans, 0);
--	if (ret) {
--		btrfs_end_transaction(trans);
--		return ret;
--	}
--
- 	cur_trans = trans->transaction;
++	ASSERT(list_empty(&fs_info->delayed_iputs));
+ 	set_bit(BTRFS_FS_CLOSING_DONE, &fs_info->flags);
  
- 	/*
-@@ -1939,12 +1930,6 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
- 	if (!list_empty(&trans->new_bgs))
- 		btrfs_create_pending_block_groups(trans);
- 
--	ret = btrfs_run_delayed_refs(trans, 0);
--	if (ret) {
--		btrfs_end_transaction(trans);
--		return ret;
--	}
--
- 	if (!test_bit(BTRFS_TRANS_DIRTY_BG_RUN, &cur_trans->flags)) {
- 		int run_it = 0;
- 
-@@ -2015,6 +2000,15 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
- 		spin_unlock(&fs_info->trans_lock);
- 	}
- 
-+	/*
-+	 * We are now the only one in the commit area, we can run delayed refs
-+	 * without hitting a bunch of lock contention from a lot of people
-+	 * trying to commit the transaction at once.
-+	 */
-+	ret = btrfs_run_delayed_refs(trans, 0);
-+	if (ret)
-+		goto cleanup_transaction;
-+
- 	extwriter_counter_dec(cur_trans, trans->type);
- 
- 	ret = btrfs_start_delalloc_flush(fs_info);
+ 	btrfs_free_qgroup_config(fs_info);
 -- 
 2.14.3

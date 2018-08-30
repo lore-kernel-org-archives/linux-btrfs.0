@@ -1,155 +1,172 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.22]:39215 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725844AbeH3GOq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 30 Aug 2018 02:14:46 -0400
-Subject: Re: [PATCH v2] btrfs: Always check nocow for quota enabled case to
- make sure we won't reserve unnecessary data space
-To: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>, Qu Wenruo <wqu@suse.de>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <20180821054016.28058-1-wqu@suse.com>
- <afee4b2f-ee0b-8afb-b4d6-1fd8f5958e3a@jp.fujitsu.com>
- <662fd511-708f-5784-18f8-1282830d5730@suse.de>
- <99167e75-351e-ac1d-1a13-97e7717b4a8a@jp.fujitsu.com>
- <2c3f3e97-06db-4bbb-59d9-c2880190a5a5@suse.de>
- <821fe1eb-cade-ed16-5154-b9f8381d0ca4@jp.fujitsu.com>
- <4ada2ba5-0ba9-2e59-470d-5284a013d03a@gmx.com>
- <b4ea89fd-7cb0-6d8e-a60a-d90d3b22d3e0@jp.fujitsu.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <f2cc308b-bac4-f352-ffb8-71ea292f8173@gmx.com>
-Date: Thu, 30 Aug 2018 10:14:44 +0800
+Received: from mgwym04.jp.fujitsu.com ([211.128.242.43]:25997 "EHLO
+        mgwym04.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725788AbeH3GiZ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 30 Aug 2018 02:38:25 -0400
+Received: from g01jpfmpwkw02.exch.g01.fujitsu.local (g01jpfmpwkw02.exch.g01.fujitsu.local [10.0.193.56])
+        by yt-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id 03EE0AC010F
+        for <linux-btrfs@vger.kernel.org>; Thu, 30 Aug 2018 11:38:29 +0900 (JST)
+Subject: Re: [RFC PATCH 1/6] btrfs-progs: splitcmd-gen.sh: create
+ btrfs-<subcommand> binaries for selected subcommands
+To: Axel Burri <axel@tty0.ch>, <linux-btrfs@vger.kernel.org>
+References: <20180829172409.18064-1-axel@tty0.ch>
+ <20180829172409.18064-2-axel@tty0.ch>
+From: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
+Message-ID: <e26835a5-6d3d-9050-eb6a-6953062bab93@jp.fujitsu.com>
+Date: Thu, 30 Aug 2018 11:38:16 +0900
 MIME-Version: 1.0
-In-Reply-To: <b4ea89fd-7cb0-6d8e-a60a-d90d3b22d3e0@jp.fujitsu.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="JewX1m1wu9y0Ot2X5vj6llaRb2VXluMYn"
+In-Reply-To: <20180829172409.18064-2-axel@tty0.ch>
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---JewX1m1wu9y0Ot2X5vj6llaRb2VXluMYn
-Content-Type: multipart/mixed; boundary="hURhMkdpTAxfIIrCsKKM0wzcr6anXsobn";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>, Qu Wenruo
- <wqu@suse.de>, "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Message-ID: <f2cc308b-bac4-f352-ffb8-71ea292f8173@gmx.com>
-Subject: Re: [PATCH v2] btrfs: Always check nocow for quota enabled case to
- make sure we won't reserve unnecessary data space
-References: <20180821054016.28058-1-wqu@suse.com>
- <afee4b2f-ee0b-8afb-b4d6-1fd8f5958e3a@jp.fujitsu.com>
- <662fd511-708f-5784-18f8-1282830d5730@suse.de>
- <99167e75-351e-ac1d-1a13-97e7717b4a8a@jp.fujitsu.com>
- <2c3f3e97-06db-4bbb-59d9-c2880190a5a5@suse.de>
- <821fe1eb-cade-ed16-5154-b9f8381d0ca4@jp.fujitsu.com>
- <4ada2ba5-0ba9-2e59-470d-5284a013d03a@gmx.com>
- <b4ea89fd-7cb0-6d8e-a60a-d90d3b22d3e0@jp.fujitsu.com>
-In-Reply-To: <b4ea89fd-7cb0-6d8e-a60a-d90d3b22d3e0@jp.fujitsu.com>
+On 2018/08/30 2:24, Axel Burri wrote:
+> Create separate binaries for each subcommand ("btrfs foo bar").
+> Least invasive approach, generate c-files for each command:
+> 
+>     # ./splitcmd-gen.sh
+>     # make V=1 btrfs-subvolume-show
+>     # make V=1 btrfs-send
+>     # [...]
+> 
+> Alternative approach: instead of including the c-file, link with obj
+> in Makefile, e.g.:
+> 
+>     btrfs_subvolume_show_objects = cmds-subvolume.o
+>     btrfs_send_objects = cmds-send.o
+>     [...]
+> 
+> This implies adaptions in cmds-subvolume.c (and others):
+> 
+>     -static int cmd_filesystem_show(int argc, char **argv)
+>     +int cmd_filesystem_show(int argc, char **argv)
+> 
+> If they are defined non-static, we could probably simplify further and
+> add `-Wl,-eentry` flags (changing entry point from "main" to "entry").
+> 
+> With this, and if handle_command_group() was declared in some library
+> instead of btrfs.c, we would get rid of generated files completely.
+> 
+> Signed-off-by: Axel Burri <axel@tty0.ch>
+> ---
+>  splitcmd-gen.sh | 70 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+>  splitcmd.c.in   | 17 ++++++++++++++
+>  2 files changed, 87 insertions(+)
+>  create mode 100755 splitcmd-gen.sh
+>  create mode 100644 splitcmd.c.in
+> 
+> diff --git a/splitcmd-gen.sh b/splitcmd-gen.sh
+> new file mode 100755
+> index 00000000..4d2e0509
+> --- /dev/null
+> +++ b/splitcmd-gen.sh
+> @@ -0,0 +1,70 @@
+> +#!/bin/bash
+> +
+> +#
+> +# Generate c-files for btrfs subcommands defined below
+> +#
+> +
+> +# Notes on linux capabilities:
+> +#
+> +# btrfs-subvolume-show, btrfs-subvolume-list, btrfs-send:
+> +#  - CAP_FOWNER is only needed for O_NOATIME flag in open() system calls
+> +#  - why CAP_SYS_ADMIN? shouldn't CAP_DAC_READ_SEARCH be enough?
 
---hURhMkdpTAxfIIrCsKKM0wzcr6anXsobn
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+Hello,
 
+Not directly related this series and just FYI,
+I'm working to allow sub show/list to non-privileged user as long
+as he can access to the subvolume:
+  https://www.spinics.net/lists/linux-btrfs/msg79285.html
 
-
-On 2018/8/30 =E4=B8=8A=E5=8D=889:57, Misono Tomohiro wrote:
-> On 2018/08/28 14:21, Qu Wenruo wrote:
->> On 2018/8/24 =E4=B8=8B=E5=8D=884:09, Misono Tomohiro wrote:
->> [snip]
->>>>
->>>> BTW, what's the possibility of such problem in your test environment=
-?
->>>
->>> It's like one in several times.
->>> It may depend on hardware performance? (the machine is not so fast),
->>>
->>> I also noticed following warning happens too (not always):
->>>
->>
->> After digging into the case, it's more complex than just my patch.
->>
->> Firstly, we lacks a lot of underflow check when modifying bytes_may_us=
-e.
->> So we need to do all the underflow detection for every modifier of
->> bytes_may_use.
->>
->> Secondly, btrfs_cross_ref_exist() check makes NODATACOW check in
->> __btrfs_buffered_write() unreliable.
->>
->> For the following case, at __btrfs_buffered_write() time we're pretty
->> sure we could do NODATACOW, but at sync time, due to cloned range,
->> btrfs_cross_ref_exist() would detect reflinked prealloc extent, then
->> falls back to CoW, and finally cause bytes_may_use underflow:
->>
->> ---
->> mkfs.btrfs -f $dev > $full_log
->>
->> mount $dev $mnt -o nospace_cache
->> btrfs quota enable $mnt
->> btrfs quota rescan -w $mnt
->>
->> xfs_io -f -c "falloc 0 2M" $mnt/file1 > /dev/null
->> xfs_io -c "pwrite -b 1M 0 1M" $mnt/file1 > /dev/null
->> xfs_io -c "reflink $mnt/file1 1M 4M 1M" $mnt/file1 > /dev/null
->> sync
->> ----
->=20
-> Thanks for the explanation. I will try to understand the relevant code.=
-
-
-Feel free to ask if there is anything I forgot to explain.
-
->=20
->>
->> Even without my patch, the "pwrite" command is still CoWed, which coul=
-d
->> be avoided.
->> And that's the reason my patch is causing the underflow.
->>
->> To fix this, we need more accurate btrfs_cross_ref_exist() check, not
->> only for @disk_bytenr but also check @len.
->>
->> Or we could try to flush the whole inode in clone_range() so we could =
-go
->> through NOCOW routine before clone really happens.
->=20
-> So as your RFC patch does not work, the option is first one?
-
-Yes, and it may be more complex to do that, while even fixed we could
-only get diminishing return.
+Hopefully this will be merged to master in near future
+(any comments from user/dev is welcome).
 
 Thanks,
-Qu
+Misono
 
->=20
-> Thanks,
-> Misono
->=20
->>
->> Thanks,
->> Qu
->>
->=20
-
-
---hURhMkdpTAxfIIrCsKKM0wzcr6anXsobn--
-
---JewX1m1wu9y0Ot2X5vj6llaRb2VXluMYn
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAluHUxQACgkQwj2R86El
-/qgoRAgAgV4mcTRsF7xWZpkiCrZqiHmq0hl9y/qnJommoT7f89D1bQfuAnKX3yEx
-Js2mGXVCkeMpuQLLqFsOIqVPuwZaaqBXkQv4B/yzDCJ7xum9wGd6z6vq3B646mkE
-4SLcnaMWc8v0DDKGX0BXHTApD86zMw2cROm/SEKQiGmNgra4+TornQPUKKy8tAgg
-M/cMgZaV1EquAezLIKvx+rm6QVWx8/PKz6cYNsQu5v4/yfrlz6hie0+1M6wOCife
-YZJXym3g/2ueHkQva5x8822dBe/LztQ6kERGO0emgM+d1RxZ+MhE/wlqBIsG+6nN
-VKs215x+FpE6YppkAJJeTsuyq8EPXQ==
-=UD0m
------END PGP SIGNATURE-----
-
---JewX1m1wu9y0Ot2X5vj6llaRb2VXluMYn--
+> +#
+> +# btrfs-receive:
+> +#  - dependent on send-stream (see cmds-receive.c: "send_ops"):
+> +#    CAP_CHOWN, CAP_MKNOD, CAP_SETFCAP (for "lsetxattr")
+> +#
+> +# btrfs-filesystem-usage:
+> +#  - CAP_SYS_ADMIN is for BTRFS_IOC_TREE_SEARCH and BTRFS_IOC_FS_INFO
+> +#    in order to provide full level of detail, see btrfs-filesystem(8)
+> +
+> +
+> +makefile_out="Makefile.install_setcap"
+> +
+> +splitcmd_list=""
+> +setcap_lines=""
+> +
+> +function gen_splitcmd {
+> +    local name="$1"
+> +    local dest="${1}.c"
+> +    local cfile="$2"
+> +    local entry="$3"
+> +    local caps="$4"
+> +    echo "generating: ${dest} (cfile=${cfile}, entry=${entry})"
+> +    echo -e "/*\n * ${name}\n *\n * GENERATED BY splitcmd-gen.sh\n */\n" > $dest
+> +    sed -e "s|@BTRFS_SPLITCMD_CFILE_INCLUDE@|${cfile}|g" \
+> +        -e "s|@BTRFS_SPLITCMD_ENTRY@|${entry}|g" \
+> +        splitcmd.c.in >> $dest
+> +}
+> +
+> +gen_splitcmd "btrfs-subvolume-show" \
+> +             "cmds-subvolume.c" "cmd_subvol_show" \
+> +             "cap_sys_admin,cap_fowner,cap_dac_read_search"
+> +
+> +gen_splitcmd "btrfs-subvolume-list" \
+> +             "cmds-subvolume.c" "cmd_subvol_list" \
+> +             "cap_sys_admin,cap_fowner,cap_dac_read_search"
+> +
+> +gen_splitcmd "btrfs-subvolume-snapshot" \
+> +             "cmds-subvolume.c" "cmd_subvol_snapshot" \
+> +             "cap_sys_admin,cap_fowner,cap_dac_override,cap_dac_read_search"
+> +
+> +gen_splitcmd "btrfs-subvolume-delete" \
+> +             "cmds-subvolume.c" "cmd_subvol_delete" \
+> +             "cap_sys_admin,cap_dac_override"
+> +
+> +gen_splitcmd "btrfs-send" \
+> +             "cmds-send.c" "cmd_send" \
+> +             "cap_sys_admin,cap_fowner,cap_dac_read_search"
+> +
+> +gen_splitcmd "btrfs-receive" \
+> +             "cmds-receive.c" "cmd_receive" \
+> +             "cap_sys_admin,cap_fowner,cap_chown,cap_mknod,cap_setfcap,cap_dac_override,cap_dac_read_search"
+> +
+> +gen_splitcmd "btrfs-filesystem-usage" \
+> +             "cmds-fi-usage.c" "cmd_filesystem_usage" \
+> +             "cap_sys_admin"
+> +
+> +gen_splitcmd "btrfs-qgroup-destroy" \
+> +             "cmds-qgroup.c" "cmd_qgroup_destroy" \
+> +             "cap_sys_admin,cap_dac_override"
+> diff --git a/splitcmd.c.in b/splitcmd.c.in
+> new file mode 100644
+> index 00000000..aa07af9a
+> --- /dev/null
+> +++ b/splitcmd.c.in
+> @@ -0,0 +1,17 @@
+> +#include "@BTRFS_SPLITCMD_CFILE_INCLUDE@"
+> +
+> +/*
+> + * Dummy object: used from second-level command groups (e.g. in
+> + * "cmds-subvolume.c"), is never called in splitcmd executables.
+> + */
+> +int handle_command_group(const struct cmd_group *grp, int argc,
+> +			 char **argv)
+> +{
+> +	exit(1);
+> +}
+> +
+> +
+> +int main(int argc, char **argv)
+> +{
+> +	return @BTRFS_SPLITCMD_ENTRY@(argc, argv);
+> +}
+> 

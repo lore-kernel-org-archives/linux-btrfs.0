@@ -1,172 +1,179 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwym04.jp.fujitsu.com ([211.128.242.43]:25997 "EHLO
-        mgwym04.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725788AbeH3GiZ (ORCPT
+Received: from ipmail06.adl6.internode.on.net ([150.101.137.145]:60996 "EHLO
+        ipmail06.adl6.internode.on.net" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1726169AbeH3K2V (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 30 Aug 2018 02:38:25 -0400
-Received: from g01jpfmpwkw02.exch.g01.fujitsu.local (g01jpfmpwkw02.exch.g01.fujitsu.local [10.0.193.56])
-        by yt-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id 03EE0AC010F
-        for <linux-btrfs@vger.kernel.org>; Thu, 30 Aug 2018 11:38:29 +0900 (JST)
-Subject: Re: [RFC PATCH 1/6] btrfs-progs: splitcmd-gen.sh: create
- btrfs-<subcommand> binaries for selected subcommands
-To: Axel Burri <axel@tty0.ch>, <linux-btrfs@vger.kernel.org>
-References: <20180829172409.18064-1-axel@tty0.ch>
- <20180829172409.18064-2-axel@tty0.ch>
-From: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
-Message-ID: <e26835a5-6d3d-9050-eb6a-6953062bab93@jp.fujitsu.com>
-Date: Thu, 30 Aug 2018 11:38:16 +0900
+        Thu, 30 Aug 2018 06:28:21 -0400
+Date: Thu, 30 Aug 2018 16:27:43 +1000
+From: Dave Chinner <david@fromorbit.com>
+To: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+Cc: "Darrick J. Wong" <darrick.wong@oracle.com>, fdmanana@kernel.org,
+        fstests@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        Filipe Manana <fdmanana@suse.com>, linux-xfs@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org
+Subject: Re: [patch] file dedupe (and maybe clone) data corruption (was Re:
+ [PATCH] generic: test for deduplication between different files)
+Message-ID: <20180830062743.GF5631@dastard>
+References: <20180817083924.16916-1-fdmanana@kernel.org>
+ <20180819231126.GU2234@dastard>
+ <20180820010932.GV2234@dastard>
+ <20180820153349.GA4334@magnolia>
+ <20180823125849.GF13528@hungrycats.org>
 MIME-Version: 1.0
-In-Reply-To: <20180829172409.18064-2-axel@tty0.ch>
-Content-Type: text/plain; charset="utf-8"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20180823125849.GF13528@hungrycats.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2018/08/30 2:24, Axel Burri wrote:
-> Create separate binaries for each subcommand ("btrfs foo bar").
-> Least invasive approach, generate c-files for each command:
+On Thu, Aug 23, 2018 at 08:58:49AM -0400, Zygo Blaxell wrote:
+> On Mon, Aug 20, 2018 at 08:33:49AM -0700, Darrick J. Wong wrote:
+> > On Mon, Aug 20, 2018 at 11:09:32AM +1000, Dave Chinner wrote:
+> > > 	- is documenting rejection on request alignment grounds
+> > > 	  (i.e. EINVAL) in the man page sufficient for app
+> > > 	  developers to understand what is going on here?
+> > 
+> > I think so.  The manpage says: "The filesystem does not support
+> > reflinking the ranges of the given files", which (to my mind) covers
+> > this case of not supporting dedupe of EOF blocks.
 > 
->     # ./splitcmd-gen.sh
->     # make V=1 btrfs-subvolume-show
->     # make V=1 btrfs-send
->     # [...]
-> 
-> Alternative approach: instead of including the c-file, link with obj
-> in Makefile, e.g.:
-> 
->     btrfs_subvolume_show_objects = cmds-subvolume.o
->     btrfs_send_objects = cmds-send.o
->     [...]
-> 
-> This implies adaptions in cmds-subvolume.c (and others):
-> 
->     -static int cmd_filesystem_show(int argc, char **argv)
->     +int cmd_filesystem_show(int argc, char **argv)
-> 
-> If they are defined non-static, we could probably simplify further and
-> add `-Wl,-eentry` flags (changing entry point from "main" to "entry").
-> 
-> With this, and if handle_command_group() was declared in some library
-> instead of btrfs.c, we would get rid of generated files completely.
-> 
-> Signed-off-by: Axel Burri <axel@tty0.ch>
-> ---
->  splitcmd-gen.sh | 70 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
->  splitcmd.c.in   | 17 ++++++++++++++
->  2 files changed, 87 insertions(+)
->  create mode 100755 splitcmd-gen.sh
->  create mode 100644 splitcmd.c.in
-> 
-> diff --git a/splitcmd-gen.sh b/splitcmd-gen.sh
-> new file mode 100755
-> index 00000000..4d2e0509
-> --- /dev/null
-> +++ b/splitcmd-gen.sh
-> @@ -0,0 +1,70 @@
-> +#!/bin/bash
-> +
-> +#
-> +# Generate c-files for btrfs subcommands defined below
-> +#
-> +
-> +# Notes on linux capabilities:
-> +#
-> +# btrfs-subvolume-show, btrfs-subvolume-list, btrfs-send:
-> +#  - CAP_FOWNER is only needed for O_NOATIME flag in open() system calls
-> +#  - why CAP_SYS_ADMIN? shouldn't CAP_DAC_READ_SEARCH be enough?
+> Older versions of btrfs dedupe (before v4.2 or so) used to do exactly
+> this; however, on btrfs, not supporting dedupe of EOF blocks means small
+> files (one extent) cannot be deduped at all, because the EOF block holds
+> a reference to the entire dst extent.  If a dedupe app doesn't go all the
+> way to EOF on btrfs, then it should not attempt to dedupe any part of the
+> last extent of the file as the benefit would be zero or slightly negative.
 
-Hello,
+That's a filesystem implementation issue, not an API or application
+issue.
 
-Not directly related this series and just FYI,
-I'm working to allow sub show/list to non-privileged user as long
-as he can access to the subvolume:
-  https://www.spinics.net/lists/linux-btrfs/msg79285.html
+> The app developer would need to be aware that such a restriction could
+> exist on some filesystems, and be able to distinguish this from other
+> cases that could lead to EINVAL.  Portable code would have to try a dedupe
+> up to EOF, then if that failed, round down and retry, and if that failed
+> too, the app would have to figure out which filesystem it's running on
+> to know what to do next.  Performance demands the app know what the FS
+> will do in advance, and avoid a whole class of behavior.
 
-Hopefully this will be merged to master in near future
-(any comments from user/dev is welcome).
+Nobody writes "portable" applications like that. They read the man
+page first, and work out what the common subset of functionality is
+and then code from that. Man page says:
 
-Thanks,
-Misono
+"Disk filesystems generally require the offset and length arguments
+to be aligned to the fundamental block size."
 
-> +#
-> +# btrfs-receive:
-> +#  - dependent on send-stream (see cmds-receive.c: "send_ops"):
-> +#    CAP_CHOWN, CAP_MKNOD, CAP_SETFCAP (for "lsetxattr")
-> +#
-> +# btrfs-filesystem-usage:
-> +#  - CAP_SYS_ADMIN is for BTRFS_IOC_TREE_SEARCH and BTRFS_IOC_FS_INFO
-> +#    in order to provide full level of detail, see btrfs-filesystem(8)
-> +
-> +
-> +makefile_out="Makefile.install_setcap"
-> +
-> +splitcmd_list=""
-> +setcap_lines=""
-> +
-> +function gen_splitcmd {
-> +    local name="$1"
-> +    local dest="${1}.c"
-> +    local cfile="$2"
-> +    local entry="$3"
-> +    local caps="$4"
-> +    echo "generating: ${dest} (cfile=${cfile}, entry=${entry})"
-> +    echo -e "/*\n * ${name}\n *\n * GENERATED BY splitcmd-gen.sh\n */\n" > $dest
-> +    sed -e "s|@BTRFS_SPLITCMD_CFILE_INCLUDE@|${cfile}|g" \
-> +        -e "s|@BTRFS_SPLITCMD_ENTRY@|${entry}|g" \
-> +        splitcmd.c.in >> $dest
-> +}
-> +
-> +gen_splitcmd "btrfs-subvolume-show" \
-> +             "cmds-subvolume.c" "cmd_subvol_show" \
-> +             "cap_sys_admin,cap_fowner,cap_dac_read_search"
-> +
-> +gen_splitcmd "btrfs-subvolume-list" \
-> +             "cmds-subvolume.c" "cmd_subvol_list" \
-> +             "cap_sys_admin,cap_fowner,cap_dac_read_search"
-> +
-> +gen_splitcmd "btrfs-subvolume-snapshot" \
-> +             "cmds-subvolume.c" "cmd_subvol_snapshot" \
-> +             "cap_sys_admin,cap_fowner,cap_dac_override,cap_dac_read_search"
-> +
-> +gen_splitcmd "btrfs-subvolume-delete" \
-> +             "cmds-subvolume.c" "cmd_subvol_delete" \
-> +             "cap_sys_admin,cap_dac_override"
-> +
-> +gen_splitcmd "btrfs-send" \
-> +             "cmds-send.c" "cmd_send" \
-> +             "cap_sys_admin,cap_fowner,cap_dac_read_search"
-> +
-> +gen_splitcmd "btrfs-receive" \
-> +             "cmds-receive.c" "cmd_receive" \
-> +             "cap_sys_admin,cap_fowner,cap_chown,cap_mknod,cap_setfcap,cap_dac_override,cap_dac_read_search"
-> +
-> +gen_splitcmd "btrfs-filesystem-usage" \
-> +             "cmds-fi-usage.c" "cmd_filesystem_usage" \
-> +             "cap_sys_admin"
-> +
-> +gen_splitcmd "btrfs-qgroup-destroy" \
-> +             "cmds-qgroup.c" "cmd_qgroup_destroy" \
-> +             "cap_sys_admin,cap_dac_override"
-> diff --git a/splitcmd.c.in b/splitcmd.c.in
-> new file mode 100644
-> index 00000000..aa07af9a
-> --- /dev/null
-> +++ b/splitcmd.c.in
-> @@ -0,0 +1,17 @@
-> +#include "@BTRFS_SPLITCMD_CFILE_INCLUDE@"
-> +
-> +/*
-> + * Dummy object: used from second-level command groups (e.g. in
-> + * "cmds-subvolume.c"), is never called in splitcmd executables.
-> + */
-> +int handle_command_group(const struct cmd_group *grp, int argc,
-> +			 char **argv)
-> +{
-> +	exit(1);
-> +}
-> +
-> +
-> +int main(int argc, char **argv)
-> +{
-> +	return @BTRFS_SPLITCMD_ENTRY@(argc, argv);
-> +}
+IOWs, code compatible with starts with supporting the general case.
+i.e. a range rounded to filesystem block boundaries (it's already
+run fstat() on the files it wants to dedupe to find their size,
+yes?), hence ignoring the partial EOF block. Will just work on
+everything.
+
+Code that then wants to optimise for btrfs/xfs/ocfs quirks runs
+fstatvfs to determine what fs it's operating on and applies the
+necessary quirks. For btrfs it can extend the range to include the
+partial EOF block, and hence will handle the implementation quirks
+btrfs has with single extent dedupe.
+
+Simple, reliable, and doesn't require any sort of flailing
+about with offsets and lengths to avoid unexpected EINVAL errors.
+
+> btrfs dedupe reports success if the src extent is inline and the same
+> size as the dst extent (i.e. file is smaller than one page).  No dedupe
+> can occur in such cases--a clone results in a simple copy, so the best
+> a dedupe could do would be a no-op.  Returning EINVAL there would break
+> a few popular tools like "cp --reflink".  Returning OK but doing nothing
+> seems to be the best option in that case.
+
+Again, those are a filesystem implementation issues, not problems
+with the API itself.
+
+> > > 	- should we just round down the EOF dedupe request to the
+> > > 	  block before EOF so dedupe still succeeds?
+> > 
+> > I've often wondered if the interface should (have) be(en) that we start
+> > at src_off/dst_off and share as many common blocks as possible until we
+> > find a mismatch, then tell userspace where we stopped... instead of like
+> > now where we compare the entire extent and fail if any part of it
+> > doesn't match.
 > 
+> The usefulness or harmfulness of that approach depends a lot on what
+> the application expects the filesystem to do.
+> 
+> In btrfs, the dedupe operation acts on references to data, not the
+> underlying data blocks.  If there are 1000 slightly overlapping references
+> to a single contiguous range of data blocks in dst on disk, each dedupe
+> operation acts on only one of those, leaving the other 999 untouched.
+> If the app then submits 999 other dedupe requests, no references to the
+> dst blocks remain and the underlying data blocks can be deleted.
+
+Assuming your strawman is valid, if you have a thousand separate
+references across the same set of data blocks on disk, then that data is
+already heavily deduplicated.  Trying to optimise that further
+seems.... misguided, way down the curve of diminishing returns.
+
+> In a parallel universe (or a better filesystem, or a userspace emulation
+  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> built out of dedupe and other ioctls), dedupe could work at the extent
+> data (physical) level.  The app points at src and dst extent references
+> (inode/offset/length tuples), and the filesystem figures out which
+> physical blocks these point to, then adjusts all the references to the
+> dst blocks at once,
+
+That's XFS dedupe in a nutshell. And we aren't in a parallel
+universe here. :P
+
+> dealing with partial overlaps and snapshots and nodatacow
+> and whatever other exotic features might be lurking in the
+> filesystem, ending with every reference to every part of dst replaced
+> by the longest possible contiguous reference(s) to src.
+
+XFS doesn't have partial overlaps, we don't have nodatacow hacks,
+and the subvol snapshot stuff I'm working on just uses shared data
+extents so it's 100% compatible with dedupe.
+
+[snip btrfs dedupe issues]
+
+Again, it just seems to me like the problems you are describing are
+complexity problems that arise from the filesystem implementation
+and all the hoops you have to jump through to work around them. It
+doesn't seem to have anything to do with problems in the dedupe
+API...
+
+> If we want to design a new interface, it should allow the app to specify
+> maximum and minimum length, so that the kernel knows how much flexibility
+> it is allowed by the application.  Maximum length lets one app say
+> "dedupe as much as you can find, up to EOF", while minimum length lets
+> another app say "don't bother if the match is less than 12K, the space
+> saving is not worth the write iops", and setting them equal lets the
+> third app say "I have a plan that requires you to do precisely what I
+> tell you or do nothing at all."
+
+OK, we didn't need a "btrfs is insane" story to justify this
+proposal - it's an entirely reasonable set of control requests.
+IOWs, you want the current API (do exactly what I say),
+Darricks proposed API (do as much as you can) and a new behaviour
+(do at least this much) all rolled into one interface.
+
+So, cribbing from copy_file_range(), a syscall like:
+
+ssize_t dedupe_file_range(int fd_src, loff_t *off_src,
+			 int fd_dst, loff_t *off_dst,
+			 size_t len, unsigned int flags, u64 optval);
+
+With the control flags:
+
+#define DDFR_F_TRY		(0)	/* default: as much as possible */
+#define DDFR_F_EXACT		(1<<0)	/* exactly what is asked or fail */
+#define DDFR_F_MINLEN		(1<<1)	/* at least as much as optval says or fail */
+
+And all return the number of bytes deduped in the range that was
+specified.
+
+Perhaps you'd like to write a man page describing how it should all
+work?
+
+Cheers,
+
+Dave.
+-- 
+Dave Chinner
+david@fromorbit.com

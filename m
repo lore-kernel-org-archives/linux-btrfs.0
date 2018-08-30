@@ -1,104 +1,96 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f196.google.com ([209.85.223.196]:37945 "EHLO
-        mail-io0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727477AbeH2XBG (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 29 Aug 2018 19:01:06 -0400
-Received: by mail-io0-f196.google.com with SMTP id y3-v6so5416516ioc.5
-        for <linux-btrfs@vger.kernel.org>; Wed, 29 Aug 2018 12:02:51 -0700 (PDT)
-Subject: Re: [RFC PATCH 0/6] btrfs-progs: build distinct binaries for specific
- btrfs subcommands
-To: Axel Burri <axel@tty0.ch>, linux-btrfs@vger.kernel.org
-References: <20180829172409.18064-1-axel@tty0.ch>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <42587df6-1be3-e42e-3c85-fa356786ba65@gmail.com>
-Date: Wed, 29 Aug 2018 15:02:46 -0400
+Received: from mout.gmx.net ([212.227.15.15]:33203 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1725997AbeH3FYE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 30 Aug 2018 01:24:04 -0400
+Subject: Re: How to erase a RAID1 ?
+To: Pierre Couderc <pierre@couderc.eu>, linux-btrfs@vger.kernel.org
+References: <04e4b43f-b21e-b6fd-dfad-0506ff35aff7@couderc.eu>
+ <52b06c19-c9e2-29c1-b761-98d770c2d6c7@gmx.com>
+ <2e47e913-104e-8d0c-8d49-69518681147b@couderc.eu>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <f77df1e6-8030-716b-fc95-81ef3ae4f173@gmx.com>
+Date: Thu, 30 Aug 2018 09:24:15 +0800
 MIME-Version: 1.0
-In-Reply-To: <20180829172409.18064-1-axel@tty0.ch>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <2e47e913-104e-8d0c-8d49-69518681147b@couderc.eu>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="KJo3x1PYIfD2E1ry4OF6AmOMLpMD4w7xp"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2018-08-29 13:24, Axel Burri wrote:
-> This patch allows to build distinct binaries for specific btrfs
-> subcommands, e.g. "btrfs-subvolume-show" which would be identical to
-> "btrfs subvolume show".
-> 
-> 
-> Motivation:
-> 
-> While btrfs-progs offer the all-inclusive "btrfs" command, it gets
-> pretty cumbersome to restrict privileges to the subcommands [1].
-> Common approaches are to either setuid root for "/sbin/btrfs" (which
-> is not recommended at all), or to write sudo rules for each
-> subcommand.
-> 
-> Separating the subcommands into distinct binaries makes it easy to set
-> elevated privileges using capabilities(7) or setuid. A typical use
-> case where this is needed is when it comes to automated scripts,
-> e.g. btrbk [2] [3] creating snapshots and send/receive them via ssh.
-Let me start by saying I think this is a great idea to have as an 
-option, and that the motivation is a particularly good one.
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--KJo3x1PYIfD2E1ry4OF6AmOMLpMD4w7xp
+Content-Type: multipart/mixed; boundary="cklUpX2zXE8UNDe319rcvl1EzPFbPsH9p";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: Pierre Couderc <pierre@couderc.eu>, linux-btrfs@vger.kernel.org
+Message-ID: <f77df1e6-8030-716b-fc95-81ef3ae4f173@gmx.com>
+Subject: Re: How to erase a RAID1 ?
+References: <04e4b43f-b21e-b6fd-dfad-0506ff35aff7@couderc.eu>
+ <52b06c19-c9e2-29c1-b761-98d770c2d6c7@gmx.com>
+ <2e47e913-104e-8d0c-8d49-69518681147b@couderc.eu>
+In-Reply-To: <2e47e913-104e-8d0c-8d49-69518681147b@couderc.eu>
 
-I've posted my opinions on your two open questions below, but there's 
-two other comments I'd like to make:
+--cklUpX2zXE8UNDe319rcvl1EzPFbPsH9p
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-* Is there some particular reason that this only includes the commands 
-it does, and _hard codes_ which ones it works with?  if we just do 
-everything instead of only the stuff we think needs certain 
-capabilities, then we can auto-generate the list of commands to be 
-processed based on function names in the C files, and it will 
-automatically pick up any newly added commands.  At the very least, it 
-could still parse through the C files and look for tags in the comments 
-for the functions to indicate which ones need to be processed this way. 
-Either case will make it significantly easier to add new commands, and 
-would also better justify the overhead of shipping all the files 
-pre-generated (because there would be much more involved in 
-pre-generating them).
+[Forgot to Cc the list]
 
-* While not essential, it would be really neat to have the `btrfs` 
-command detect if an associated binary exists for whatever command was 
-just invoked, and automatically exec that (possibly with some 
-verification) instead of calling the command directly so that desired 
-permissions are enforced.  This would mitigate the need for users to 
-remember different command names depending on execution context.
-> 
-> 
-> Description:
-> 
-> Patch 1 adds a template as well as a generator shell script for the
-> splitted subcommands.
-> 
-> Patch 2 adds the generated subcommand source files.
-> 
-> Patch 3-5 adds a "install-splitcmd-setcap" make target, with different
-> approaches (either hardcoded in Makefile, or more generically by
-> including "Makefile.install_setcap" generated by "splitcmd-gen.sh").
-> 
-> 
-> Open Questions:
-> 
-> 1. "make install-splitcmd-setcap" installs the binaries with hardcoded
-> group "btrfs". This needs to be configurable (how?). Another approach
-> would be to not set the group at all, and leave this to the user or
-> distro packaging script.
-Leave it to the user or distro.  It's likely to end up standardized on 
-the name 'btrfs', but it should be agnostic of that.
-> 
-> 2. Instead of the "install-splitcmd-setcap" make target, we could
-> introduce a "configure --enable-splitted-subcommands" option, which
-> would simply add all splitcmd binaries to the "all" and "install"
-> targets without special treatment, and leave the setcap stuff to the
-> user or distro packaging script (at least in gentoo, this needs to be
-> specified using the "fcaps" eclass anyways [5]).
-A bit of a nitpick, but 'split' is the proper past tense of the word 
-'split', it's one of those exceptions that English has all over the 
-place.  Even aside from that though, I think `separate` sounds more 
-natural for the configure option, or better yet, just make it 
-`--enable-fscaps` like most other packages do.
+On 2018/8/29 =E4=B8=8B=E5=8D=8810:04, Pierre Couderc wrote:
+>
+> On 08/29/2018 02:52 PM, Qu Wenruo wrote:
+>>
+>> On 2018/8/29 =E4=B8=8B=E5=8D=888:49, Pierre Couderc wrote:
+>>> I want to reinstall a RAID1 btrfs system (wchis is now under debian
+>>> stretch, and will be reinstalled in stretch).
+>> If you still want to use btrfs, just umount the original fs, and
+>>
+>> # mkfs.btrfs -f <old devices>
+>>
+>> Then a completely new btrfs.
+>>
+> The problem is to "unmount" the RAID1 system..
 
-That aside, I think having a configure option is the best way to do 
-this, it makes it very easy for distro build systems to handle it 
-because this is what they're used to doing anyway.  It also makes it a 
-bit easier on the user, because it just becomes `make` to build 
-whichever version you want installed.
+If it's not the root fs, it could be unmount if there is no user
+reading/writing or has any opened file.
+
+>
+> I have not found how to do that.
+>
+> I have found a solution by reinstalling under debian, it now asks if
+> need to reformat thez btrfs disk...
+
+If it's root fs, either go booting from another device, or just let the
+installer (well, it's booting from memory/another device already) to
+re-format the fs.
+
+Thanks,
+Qu
+
+>
+
+
+
+--cklUpX2zXE8UNDe319rcvl1EzPFbPsH9p--
+
+--KJo3x1PYIfD2E1ry4OF6AmOMLpMD4w7xp
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAluHR0AACgkQwj2R86El
+/qjbcgf/ZIilsOXnOTekzghq/l++unJRvaLeXgF2ie9bb2eThBUYAGkO/zRMRw+a
+PbjJYmEQtkoX1sszZd/TrZ0BmkHdv0mELYq6lYPgnt80/0kgNoGslhfkqq4ZMH08
+GBQVTOiCDyIa94kJSytzRmMk2EKAS/oTKtJZAez0URLqwNrXB8wRpnI3oK/jxb9d
+DjSDRC0RWlj/gHAmDHmJ0wwdOyEWnnqtpSLm7VUFMcK4Xpy8fBTSDOppH0kvdpJC
+BK9TwdWIZkmTQf9QNdh/cNoUhGQqWxM58Bo8C11mO1C9uUaqAzogiSws4gIYY6Zb
+M3jC3VyPuc5j3/qQTPbqxtzYqnE96g==
+=Nw9g
+-----END PGP SIGNATURE-----
+
+--KJo3x1PYIfD2E1ry4OF6AmOMLpMD4w7xp--

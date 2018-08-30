@@ -1,94 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lj1-f194.google.com ([209.85.208.194]:35366 "EHLO
-        mail-lj1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726674AbeH3Vgd (ORCPT
+Received: from mail-qt0-f180.google.com ([209.85.216.180]:35431 "EHLO
+        mail-qt0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727054AbeH3Vpo (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 30 Aug 2018 17:36:33 -0400
-Received: by mail-lj1-f194.google.com with SMTP id p10-v6so7955048ljg.2
-        for <linux-btrfs@vger.kernel.org>; Thu, 30 Aug 2018 10:33:20 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <VI1PR08MB08629058D1231A1E374A8C4292080@VI1PR08MB0862.eurprd08.prod.outlook.com>
-References: <04e4b43f-b21e-b6fd-dfad-0506ff35aff7@couderc.eu>
- <52b06c19-c9e2-29c1-b761-98d770c2d6c7@gmx.com> <2e47e913-104e-8d0c-8d49-69518681147b@couderc.eu>
- <f77df1e6-8030-716b-fc95-81ef3ae4f173@gmx.com> <22bd27f6-7107-7c34-110d-9cbed0c62790@couderc.eu>
- <VI1PR08MB08629058D1231A1E374A8C4292080@VI1PR08MB0862.eurprd08.prod.outlook.com>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Thu, 30 Aug 2018 11:33:19 -0600
-Message-ID: <CAJCQCtT9CREHP=bkeMMEBS46mT=ra8GqGuVbUXKrxm=PmScbgA@mail.gmail.com>
-Subject: Re: How to erase a RAID1 (+++)?
-To: Alberto Bursi <alberto.bursi@outlook.it>
-Cc: Pierre Couderc <pierre@couderc.eu>, Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+        Thu, 30 Aug 2018 17:45:44 -0400
+Received: by mail-qt0-f180.google.com with SMTP id j7-v6so11314599qtp.2
+        for <linux-btrfs@vger.kernel.org>; Thu, 30 Aug 2018 10:42:29 -0700 (PDT)
+Received: from localhost ([107.15.81.208])
+        by smtp.gmail.com with ESMTPSA id 94-v6sm4966521qkv.69.2018.08.30.10.42.27
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
+        Thu, 30 Aug 2018 10:42:27 -0700 (PDT)
+From: Josef Bacik <josef@toxicpanda.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 00/35] My current patch queue
+Date: Thu, 30 Aug 2018 13:41:50 -0400
+Message-Id: <20180830174225.2200-1-josef@toxicpanda.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Aug 30, 2018 at 9:21 AM, Alberto Bursi <alberto.bursi@outlook.it> wrote:
->
-> On 8/30/2018 11:13 AM, Pierre Couderc wrote:
->> Trying to install a RAID1 on a debian stretch, I made some mistake and
->> got this, after installing on disk1 and trying to add second disk :
->>
->>
->> root@server:~# fdisk -l
->> Disk /dev/sda: 1.8 TiB, 2000398934016 bytes, 3907029168 sectors
->> Units: sectors of 1 * 512 = 512 bytes
->> Sector size (logical/physical): 512 bytes / 512 bytes
->> I/O size (minimum/optimal): 512 bytes / 512 bytes
->> Disklabel type: dos
->> Disk identifier: 0x2a799300
->>
->> Device     Boot Start        End    Sectors  Size Id Type
->> /dev/sda1  *     2048 3907028991 3907026944  1.8T 83 Linux
->>
->>
->> Disk /dev/sdb: 1.8 TiB, 2000398934016 bytes, 3907029168 sectors
->> Units: sectors of 1 * 512 = 512 bytes
->> Sector size (logical/physical): 512 bytes / 512 bytes
->> I/O size (minimum/optimal): 512 bytes / 512 bytes
->> Disklabel type: dos
->> Disk identifier: 0x9770f6fa
->>
->> Device     Boot Start        End    Sectors  Size Id Type
->> /dev/sdb1  *     2048 3907029167 3907027120  1.8T  5 Extended
->>
->>
->> And :
->>
->> root@server:~# btrfs fi show
->> Label: none  uuid: eed65d24-6501-4991-94bd-6c3baf2af1ed
->>         Total devices 2 FS bytes used 1.10GiB
->>         devid    1 size 1.82TiB used 4.02GiB path /dev/sda1
->>         devid    2 size 1.00KiB used 0.00B path /dev/sdb1
->>
->> ...
->>
->> My purpose is a simple RAID1 main fs, with bootable flag on the 2
->> disks in prder to start in degraded mode....
->> How to get out ofr that...?
->>
->> Thnaks
->> PC
->
->
-> sdb1 is an extended partition, you cannot format an extended partition.
->
-> change sdb1 into primary partition or add a logical partition into it.
+This is the current queue of things that I've been working on.  The main thing
+these patches are doing is separating out the delayed refs reservations from the
+global reserve into their own block rsv.  We have been consistently hitting
+issues in production where we abort a transaction because we run out of the
+global reserve either while running delayed refs or while updating dirty block
+groups.  This is because the math around global reserves is made up bullshit
+magic that has been tweaked more and more throughout the years.  The result is
+something that is inconsistent across the board and sometimes wrong.  So instead
+we need a way to know exactly how much space we need to keep around in order to
+satisfy our outstanding delayed refs and our dirty block groups.
 
-Ahh you're correct. There is special treatment of 0x05, it's a logical
-container with the start address actually pointing to the address
-where the EBR is. And that EBR's first record contains the actual real
-extended partition information.
+Since we don't know how many delayed refs we need at the start of any
+modification we simply use the nr_items passed into btrfs_start_transaction() as
+a guess for what we may need.  This has the side effect of putting more pressure
+on the ENOSPC system, but it's pressure we can deal with more intelligently
+because we always know how much space we have outstanding, instead of guessing
+with weird global reserve math.
 
-So this represents two bugs in the installer:
-1. If there's only one partition on a drive, it should be primary by
-default, not extended.
-2. But if extended, it must point to an EBR, and the EBR must be
-created at that location. Obviously since there is no /dev/sdb2, this
-EBR is not present.
+This works similar to every other reservation we have, we reserve the worst case
+up front, and then at transaction end time we free up any space we didn't
+actually use for delayed refs.
 
+My performance tests show that we are bit faster now since we can do more
+intelligent flushing and don't have to fall back on simply committing the
+transaction in hopes that we have enough space for everything we need to do.
 
+That leads me to the 2nd part of this pull, there's a bunch of fixes around
+ENOSPC.  Because we are a bit faster now there were a bunch of things uncovered
+in testing, but they seem to be all resolved now.
 
+The final chunk of fixes are around transaction aborts.  There were a lot of
+accounting bugs I was running into while running generic/435, so I fixed a bunch
+of those up so now it runs cleanly.
 
--- 
-Chris Murphy
+I have been running these patches through xfstests on multiple machines for a
+while, they are pretty solid and ready for wider testing and review.  Thanks,
+
+Josef

@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qt0-f195.google.com ([209.85.216.195]:38128 "EHLO
-        mail-qt0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727067AbeH3VqQ (ORCPT
+Received: from mail-qt0-f193.google.com ([209.85.216.193]:38135 "EHLO
+        mail-qt0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727582AbeH3VqS (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 30 Aug 2018 17:46:16 -0400
-Received: by mail-qt0-f195.google.com with SMTP id x7-v6so11304534qtk.5
-        for <linux-btrfs@vger.kernel.org>; Thu, 30 Aug 2018 10:43:01 -0700 (PDT)
+        Thu, 30 Aug 2018 17:46:18 -0400
+Received: by mail-qt0-f193.google.com with SMTP id x7-v6so11304685qtk.5
+        for <linux-btrfs@vger.kernel.org>; Thu, 30 Aug 2018 10:43:03 -0700 (PDT)
 From: Josef Bacik <josef@toxicpanda.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Josef Bacik <jbacik@fb.com>
-Subject: [PATCH 18/35] btrfs: set max_extent_size properly
-Date: Thu, 30 Aug 2018 13:42:08 -0400
-Message-Id: <20180830174225.2200-19-josef@toxicpanda.com>
+Subject: [PATCH 19/35] btrfs: don't use ctl->free_space for max_extent_size
+Date: Thu, 30 Aug 2018 13:42:09 -0400
+Message-Id: <20180830174225.2200-20-josef@toxicpanda.com>
 In-Reply-To: <20180830174225.2200-1-josef@toxicpanda.com>
 References: <20180830174225.2200-1-josef@toxicpanda.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -19,89 +19,49 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Josef Bacik <jbacik@fb.com>
 
-We can't use entry->bytes if our entry is a bitmap entry, we need to use
-entry->max_extent_size in that case.  Fix up all the logic to make this
-consistent.
+max_extent_size is supposed to be the largest contiguous range for the
+space info, and ctl->free_space is the total free space in the block
+group.  We need to keep track of these separately and _only_ use the
+max_free_space if we don't have a max_extent_size, as that means our
+original request was too large to search any of the block groups for and
+therefore wouldn't have a max_extent_size set.
 
 Signed-off-by: Josef Bacik <jbacik@fb.com>
 ---
- fs/btrfs/free-space-cache.c | 29 +++++++++++++++++++----------
- 1 file changed, 19 insertions(+), 10 deletions(-)
+ fs/btrfs/extent-tree.c | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index db93a5f035a0..53521027dd78 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -1766,6 +1766,18 @@ static int search_bitmap(struct btrfs_free_space_ctl *ctl,
- 	return -1;
- }
- 
-+static void set_max_extent_size(struct btrfs_free_space *entry,
-+				u64 *max_extent_size)
-+{
-+	if (entry->bitmap) {
-+		if (entry->max_extent_size > *max_extent_size)
-+			*max_extent_size = entry->max_extent_size;
-+	} else {
-+		if (entry->bytes > *max_extent_size)
-+			*max_extent_size = entry->bytes;
-+	}
-+}
-+
- /* Cache the size of the max extent in bytes */
- static struct btrfs_free_space *
- find_free_space(struct btrfs_free_space_ctl *ctl, u64 *offset, u64 *bytes,
-@@ -1787,8 +1799,7 @@ find_free_space(struct btrfs_free_space_ctl *ctl, u64 *offset, u64 *bytes,
- 	for (node = &entry->offset_index; node; node = rb_next(node)) {
- 		entry = rb_entry(node, struct btrfs_free_space, offset_index);
- 		if (entry->bytes < *bytes) {
--			if (entry->bytes > *max_extent_size)
--				*max_extent_size = entry->bytes;
-+			set_max_extent_size(entry, max_extent_size);
- 			continue;
- 		}
- 
-@@ -1806,8 +1817,7 @@ find_free_space(struct btrfs_free_space_ctl *ctl, u64 *offset, u64 *bytes,
- 		}
- 
- 		if (entry->bytes < *bytes + align_off) {
--			if (entry->bytes > *max_extent_size)
--				*max_extent_size = entry->bytes;
-+			set_max_extent_size(entry, max_extent_size);
- 			continue;
- 		}
- 
-@@ -1819,8 +1829,8 @@ find_free_space(struct btrfs_free_space_ctl *ctl, u64 *offset, u64 *bytes,
- 				*offset = tmp;
- 				*bytes = size;
- 				return entry;
--			} else if (size > *max_extent_size) {
--				*max_extent_size = size;
-+			} else {
-+				set_max_extent_size(entry, max_extent_size);
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 664b867ae499..ca98c39308f6 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -7460,6 +7460,7 @@ static noinline int find_free_extent(struct btrfs_fs_info *fs_info,
+ 	struct btrfs_block_group_cache *block_group = NULL;
+ 	u64 search_start = 0;
+ 	u64 max_extent_size = 0;
++	u64 max_free_space = 0;
+ 	u64 empty_cluster = 0;
+ 	struct btrfs_space_info *space_info;
+ 	int loop = 0;
+@@ -7755,8 +7756,8 @@ static noinline int find_free_extent(struct btrfs_fs_info *fs_info,
+ 			spin_lock(&ctl->tree_lock);
+ 			if (ctl->free_space <
+ 			    num_bytes + empty_cluster + empty_size) {
+-				if (ctl->free_space > max_extent_size)
+-					max_extent_size = ctl->free_space;
++				max_free_space = max(max_free_space,
++						     ctl->free_space);
+ 				spin_unlock(&ctl->tree_lock);
+ 				goto loop;
  			}
- 			continue;
- 		}
-@@ -2680,8 +2690,7 @@ static u64 btrfs_alloc_from_bitmap(struct btrfs_block_group_cache *block_group,
- 
- 	err = search_bitmap(ctl, entry, &search_start, &search_bytes, true);
- 	if (err) {
--		if (search_bytes > *max_extent_size)
--			*max_extent_size = search_bytes;
-+		set_max_extent_size(entry, max_extent_size);
- 		return 0;
+@@ -7923,6 +7924,8 @@ static noinline int find_free_extent(struct btrfs_fs_info *fs_info,
  	}
- 
-@@ -2718,8 +2727,8 @@ u64 btrfs_alloc_from_cluster(struct btrfs_block_group_cache *block_group,
- 
- 	entry = rb_entry(node, struct btrfs_free_space, offset_index);
- 	while (1) {
--		if (entry->bytes < bytes && entry->bytes > *max_extent_size)
--			*max_extent_size = entry->bytes;
-+		if (entry->bytes < bytes)
-+			set_max_extent_size(entry, max_extent_size);
- 
- 		if (entry->bytes < bytes ||
- 		    (!entry->bitmap && entry->offset < min_start)) {
+ out:
+ 	if (ret == -ENOSPC) {
++		if (!max_extent_size)
++			max_extent_size = max_free_space;
+ 		spin_lock(&space_info->lock);
+ 		space_info->max_extent_size = max_extent_size;
+ 		spin_unlock(&space_info->lock);
 -- 
 2.14.3

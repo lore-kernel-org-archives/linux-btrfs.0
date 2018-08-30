@@ -1,46 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qt0-f194.google.com ([209.85.216.194]:45111 "EHLO
-        mail-qt0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726878AbeH3VqZ (ORCPT
+Received: from mail-qt0-f195.google.com ([209.85.216.195]:33697 "EHLO
+        mail-qt0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726878AbeH3Vq3 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 30 Aug 2018 17:46:25 -0400
-Received: by mail-qt0-f194.google.com with SMTP id g44-v6so11259148qtb.12
-        for <linux-btrfs@vger.kernel.org>; Thu, 30 Aug 2018 10:43:10 -0700 (PDT)
+        Thu, 30 Aug 2018 17:46:29 -0400
+Received: by mail-qt0-f195.google.com with SMTP id r37-v6so11324579qtc.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 30 Aug 2018 10:43:14 -0700 (PDT)
 Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id a10-v6sm240861qkj.60.2018.08.30.10.43.08
+        by smtp.gmail.com with ESMTPSA id b134-v6sm4501775qka.63.2018.08.30.10.43.12
         for <linux-btrfs@vger.kernel.org>
         (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
-        Thu, 30 Aug 2018 10:43:08 -0700 (PDT)
+        Thu, 30 Aug 2018 10:43:12 -0700 (PDT)
 From: Josef Bacik <josef@toxicpanda.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 23/35] btrfs: assert on non-empty delayed iputs
-Date: Thu, 30 Aug 2018 13:42:13 -0400
-Message-Id: <20180830174225.2200-24-josef@toxicpanda.com>
+Subject: [PATCH 25/35] btrfs: make btrfs_destroy_delayed_refs use btrfs_delayed_ref_lock
+Date: Thu, 30 Aug 2018 13:42:15 -0400
+Message-Id: <20180830174225.2200-26-josef@toxicpanda.com>
 In-Reply-To: <20180830174225.2200-1-josef@toxicpanda.com>
 References: <20180830174225.2200-1-josef@toxicpanda.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I ran into an issue where there was some reference being held on an
-inode that I couldn't track.  This assert wasn't triggered, but it at
-least rules out we're doing something stupid.
+We have this open coded in btrfs_destroy_delayed_refs, use the helper
+instead.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/disk-io.c | 1 +
- 1 file changed, 1 insertion(+)
+ fs/btrfs/disk-io.c | 11 ++---------
+ 1 file changed, 2 insertions(+), 9 deletions(-)
 
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 0e42401756b8..11ea2ea7439e 100644
+index 11ea2ea7439e..c72ab2ca7627 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
-@@ -3979,6 +3979,7 @@ void close_ctree(struct btrfs_fs_info *fs_info)
- 	kthread_stop(fs_info->transaction_kthread);
- 	kthread_stop(fs_info->cleaner_kthread);
+@@ -4214,16 +4214,9 @@ static int btrfs_destroy_delayed_refs(struct btrfs_transaction *trans,
  
-+	ASSERT(list_empty(&fs_info->delayed_iputs));
- 	set_bit(BTRFS_FS_CLOSING_DONE, &fs_info->flags);
- 
- 	btrfs_free_qgroup_config(fs_info);
+ 		head = rb_entry(node, struct btrfs_delayed_ref_head,
+ 				href_node);
+-		if (!mutex_trylock(&head->mutex)) {
+-			refcount_inc(&head->refs);
+-			spin_unlock(&delayed_refs->lock);
+-
+-			mutex_lock(&head->mutex);
+-			mutex_unlock(&head->mutex);
+-			btrfs_put_delayed_ref_head(head);
+-			spin_lock(&delayed_refs->lock);
++		if (btrfs_delayed_ref_lock(delayed_refs, head))
+ 			continue;
+-		}
++
+ 		spin_lock(&head->lock);
+ 		while ((n = rb_first(&head->ref_tree)) != NULL) {
+ 			ref = rb_entry(n, struct btrfs_delayed_ref_node,
 -- 
 2.14.3

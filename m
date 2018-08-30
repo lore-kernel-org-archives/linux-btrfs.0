@@ -1,59 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qt0-f180.google.com ([209.85.216.180]:35431 "EHLO
-        mail-qt0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727054AbeH3Vpo (ORCPT
+Received: from mail-qk1-f194.google.com ([209.85.222.194]:45925 "EHLO
+        mail-qk1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726727AbeH3Vpz (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 30 Aug 2018 17:45:44 -0400
-Received: by mail-qt0-f180.google.com with SMTP id j7-v6so11314599qtp.2
-        for <linux-btrfs@vger.kernel.org>; Thu, 30 Aug 2018 10:42:29 -0700 (PDT)
+        Thu, 30 Aug 2018 17:45:55 -0400
+Received: by mail-qk1-f194.google.com with SMTP id z125-v6so22674qkb.12
+        for <linux-btrfs@vger.kernel.org>; Thu, 30 Aug 2018 10:42:40 -0700 (PDT)
 Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id 94-v6sm4966521qkv.69.2018.08.30.10.42.27
+        by smtp.gmail.com with ESMTPSA id m12-v6sm4390881qkl.54.2018.08.30.10.42.38
         for <linux-btrfs@vger.kernel.org>
         (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
-        Thu, 30 Aug 2018 10:42:27 -0700 (PDT)
+        Thu, 30 Aug 2018 10:42:38 -0700 (PDT)
 From: Josef Bacik <josef@toxicpanda.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 00/35] My current patch queue
-Date: Thu, 30 Aug 2018 13:41:50 -0400
-Message-Id: <20180830174225.2200-1-josef@toxicpanda.com>
+Subject: [PATCH 06/35] btrfs: check if free bgs for commit
+Date: Thu, 30 Aug 2018 13:41:56 -0400
+Message-Id: <20180830174225.2200-7-josef@toxicpanda.com>
+In-Reply-To: <20180830174225.2200-1-josef@toxicpanda.com>
+References: <20180830174225.2200-1-josef@toxicpanda.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is the current queue of things that I've been working on.  The main thing
-these patches are doing is separating out the delayed refs reservations from the
-global reserve into their own block rsv.  We have been consistently hitting
-issues in production where we abort a transaction because we run out of the
-global reserve either while running delayed refs or while updating dirty block
-groups.  This is because the math around global reserves is made up bullshit
-magic that has been tweaked more and more throughout the years.  The result is
-something that is inconsistent across the board and sometimes wrong.  So instead
-we need a way to know exactly how much space we need to keep around in order to
-satisfy our outstanding delayed refs and our dirty block groups.
+may_commit_transaction will skip committing the transaction if we don't
+have enough pinned space or if we're trying to find space for a SYSTEM
+chunk.  However if we have pending free block groups in this transaction
+we still want to commit as we may be able to allocate a chunk to make
+our reservation.  So instead of just returning ENOSPC, check if we have
+free block groups pending, and if so commit the transaction to allow us
+to use that free space.
 
-Since we don't know how many delayed refs we need at the start of any
-modification we simply use the nr_items passed into btrfs_start_transaction() as
-a guess for what we may need.  This has the side effect of putting more pressure
-on the ENOSPC system, but it's pressure we can deal with more intelligently
-because we always know how much space we have outstanding, instead of guessing
-with weird global reserve math.
+Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+---
+ fs/btrfs/extent-tree.c | 18 ++++++++++++------
+ 1 file changed, 12 insertions(+), 6 deletions(-)
 
-This works similar to every other reservation we have, we reserve the worst case
-up front, and then at transaction end time we free up any space we didn't
-actually use for delayed refs.
-
-My performance tests show that we are bit faster now since we can do more
-intelligent flushing and don't have to fall back on simply committing the
-transaction in hopes that we have enough space for everything we need to do.
-
-That leads me to the 2nd part of this pull, there's a bunch of fixes around
-ENOSPC.  Because we are a bit faster now there were a bunch of things uncovered
-in testing, but they seem to be all resolved now.
-
-The final chunk of fixes are around transaction aborts.  There were a lot of
-accounting bugs I was running into while running generic/435, so I fixed a bunch
-of those up so now it runs cleanly.
-
-I have been running these patches through xfstests on multiple machines for a
-while, they are pretty solid and ready for wider testing and review.  Thanks,
-
-Josef
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 6e7f350754d2..80615a579b18 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -4804,6 +4804,7 @@ static int may_commit_transaction(struct btrfs_fs_info *fs_info,
+ 	struct btrfs_trans_handle *trans;
+ 	u64 bytes;
+ 	u64 reclaim_bytes = 0;
++	bool do_commit = true;
+ 
+ 	trans = (struct btrfs_trans_handle *)current->journal_info;
+ 	if (trans)
+@@ -4832,8 +4833,10 @@ static int may_commit_transaction(struct btrfs_fs_info *fs_info,
+ 	 * See if there is some space in the delayed insertion reservation for
+ 	 * this reservation.
+ 	 */
+-	if (space_info != delayed_rsv->space_info)
+-		return -ENOSPC;
++	if (space_info != delayed_rsv->space_info) {
++		do_commit = false;
++		goto commit;
++	}
+ 
+ 	spin_lock(&delayed_rsv->lock);
+ 	reclaim_bytes += delayed_rsv->reserved;
+@@ -4848,15 +4851,18 @@ static int may_commit_transaction(struct btrfs_fs_info *fs_info,
+ 
+ 	if (__percpu_counter_compare(&space_info->total_bytes_pinned,
+ 				   bytes,
+-				   BTRFS_TOTAL_BYTES_PINNED_BATCH) < 0) {
+-		return -ENOSPC;
+-	}
+-
++				   BTRFS_TOTAL_BYTES_PINNED_BATCH) < 0)
++		do_commit = false;
+ commit:
+ 	trans = btrfs_join_transaction(fs_info->extent_root);
+ 	if (IS_ERR(trans))
+ 		return -ENOSPC;
+ 
++	if (!do_commit &&
++	    !test_bit(BTRFS_TRANS_HAVE_FREE_BGS, &trans->transaction->flags)) {
++		btrfs_end_transaction(trans);
++		return -ENOSPC;
++	}
+ 	return btrfs_commit_transaction(trans);
+ }
+ 
+-- 
+2.14.3

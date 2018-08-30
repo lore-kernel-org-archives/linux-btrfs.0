@@ -1,107 +1,97 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-01.dd24.net ([193.46.215.41]:43437 "EHLO
-        mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726592AbeH3VAO (ORCPT
+Received: from mail-lf1-f51.google.com ([209.85.167.51]:47060 "EHLO
+        mail-lf1-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726235AbeH3VLg (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 30 Aug 2018 17:00:14 -0400
-Received: from mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-01.live.igb.homer.key-systems.net [192.168.1.26])
-        by mailgw-01.dd24.net (Postfix) with ESMTP id 3BEB75FD44
-        for <linux-btrfs@vger.kernel.org>; Thu, 30 Aug 2018 16:47:59 +0000 (UTC)
-Received: from smtp.dd24.net ([192.168.1.35])
-        by mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-01.live.igb.homer.key-systems.net [192.168.1.25]) (amavisd-new, port 10235)
-        with ESMTP id Zy-z8O8nr5Py for <linux-btrfs@vger.kernel.org>;
-        Thu, 30 Aug 2018 16:47:57 +0000 (UTC)
-Received: from heisenberg-old.fritz.box (ppp-82-135-88-3.dynamic.mnet-online.de [82.135.88.3])
-        (using TLSv1.2 with cipher DHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by smtp.dd24.net (Postfix) with ESMTPSA
-        for <linux-btrfs@vger.kernel.org>; Thu, 30 Aug 2018 16:47:57 +0000 (UTC)
-Message-ID: <8d8c90d3edfcc9e73428d3730496d48b1160b39b.camel@scientia.net>
-Subject: fsck lowmem mode only: ERROR: errors found in fs roots
-From: Christoph Anton Mitterer <calestyo@scientia.net>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Date: Thu, 30 Aug 2018 18:47:56 +0200
+        Thu, 30 Aug 2018 17:11:36 -0400
+Received: by mail-lf1-f51.google.com with SMTP id e23-v6so7774191lfc.13
+        for <linux-btrfs@vger.kernel.org>; Thu, 30 Aug 2018 10:08:30 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <22bd27f6-7107-7c34-110d-9cbed0c62790@couderc.eu>
+References: <04e4b43f-b21e-b6fd-dfad-0506ff35aff7@couderc.eu>
+ <52b06c19-c9e2-29c1-b761-98d770c2d6c7@gmx.com> <2e47e913-104e-8d0c-8d49-69518681147b@couderc.eu>
+ <f77df1e6-8030-716b-fc95-81ef3ae4f173@gmx.com> <22bd27f6-7107-7c34-110d-9cbed0c62790@couderc.eu>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Thu, 30 Aug 2018 11:08:28 -0600
+Message-ID: <CAJCQCtTcCWavzu5k6ZnhCDU+jaHxWfzfuR5Whic1-ic0s+x+8g@mail.gmail.com>
+Subject: Re: How to erase a RAID1 (+++)?
+To: Pierre Couderc <pierre@couderc.eu>
+Cc: Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
-Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hey.
-
-I've the following on a btrfs that's basically the system fs for my
-notebook:
-
-
-When booting from a USB stick with:
-# uname -a
-Linux heisenberg 4.17.0-3-amd64 #1 SMP Debian 4.17.17-1
-(2018-08-18) x86_64 GNU/Linux
-
-# btrfs --version
-btrfs-progs v4.17
-
-... a lowmem mode fsck gives no error:
-
-# btrfs check --mode=lowmem /dev/mapper/system ; echo $?
-Checking filesystem on /dev/mapper/system
-UUID: 6050ca10-e778-4d08-80e7-6d27b9c89b3c
-checking extents
-checking free space cache
-checking fs roots
-ERROR: errors found in fs roots
-found 495910952960 bytes used, error(s) found
-total csum bytes: 481840472
-total tree bytes: 2388819968
-total fs tree bytes: 1651097600
-total extent tree bytes: 161841152
-btree space waste bytes: 446707102
-file data blocks allocated: 6651878428672
- referenced 542320984064
-1
-
-... while a normal mode fsck doesn't give one:
-
-# btrfs check /dev/mapper/system ; echo $?
-Checking filesystem on /dev/mapper/system
-UUID: 6050ca10-e778-4d08-80e7-6d27b9c89b3c
-checking extents
-checking free space cache
-checking fs roots
-checking only csum items (without verifying data)
-checking root refs
-found 495910952960 bytes used, no error found
-total csum bytes: 481840472
-total tree bytes: 2388819968
-total fs tree bytes: 1651097600
-total extent tree bytes: 161841152
-btree space waste bytes: 446707102
-file data blocks allocated: 6651878428672
- referenced 542320984064
-0
-
-There were no unusual kernel log messages.
+On Thu, Aug 30, 2018 at 3:13 AM, Pierre Couderc <pierre@couderc.eu> wrote:
+> Trying to install a RAID1 on a debian stretch, I made some mistake and got
+> this, after installing on disk1 and trying to add second disk  :
+>
+>
+> root@server:~# fdisk -l
+> Disk /dev/sda: 1.8 TiB, 2000398934016 bytes, 3907029168 sectors
+> Units: sectors of 1 * 512 = 512 bytes
+> Sector size (logical/physical): 512 bytes / 512 bytes
+> I/O size (minimum/optimal): 512 bytes / 512 bytes
+> Disklabel type: dos
+> Disk identifier: 0x2a799300
+>
+> Device     Boot Start        End    Sectors  Size Id Type
+> /dev/sda1  *     2048 3907028991 3907026944  1.8T 83 Linux
+>
+>
+> Disk /dev/sdb: 1.8 TiB, 2000398934016 bytes, 3907029168 sectors
+> Units: sectors of 1 * 512 = 512 bytes
+> Sector size (logical/physical): 512 bytes / 512 bytes
+> I/O size (minimum/optimal): 512 bytes / 512 bytes
+> Disklabel type: dos
+> Disk identifier: 0x9770f6fa
+>
+> Device     Boot Start        End    Sectors  Size Id Type
+> /dev/sdb1  *     2048 3907029167 3907027120  1.8T  5 Extended
 
 
-Back in the normal system (no longer USB)... I spottet this:
-Aug 30 18:31:29 heisenberg kernel: BTRFS info (device dm-0): the free
-space cache file (22570598400) is invalid, skip it
-
-but not sure whether it's related (probably not)... and I haven't seen
-such a free space cache file issue (or any other btrfs errors) in a
-long while (I usually watch my kernel log once after booting has
-finished).
+Extended partition type is not a problem if you're using GRUB as the
+bootloader; other bootloaders may not like this. Strictly speaking the
+type code 0x05 is incorrect, GRUB ignores type code, as does the
+kernel. GRUB also ignores the active bit (boot flag).
 
 
-Any ideas? Perhaps it's just yet another lowmem false positive...
-anything I can help in debugging this?
+>
+>
+> And :
+>
+> root@server:~# btrfs fi show
+> Label: none  uuid: eed65d24-6501-4991-94bd-6c3baf2af1ed
+>         Total devices 2 FS bytes used 1.10GiB
+>         devid    1 size 1.82TiB used 4.02GiB path /dev/sda1
+>         devid    2 size 1.00KiB used 0.00B path /dev/sdb1
+
+That's odd; and I know you've moved on from this problem but I would
+have liked to see the super for /dev/sdb1 and also the installer log
+for what commands were used for partitioning, including mkfs and
+device add commands.
+
+For what it's worth, 'btrfs dev add' formats the device being added,
+it does not need to be formatted in advance, and also it resizes the
+file system properly.
 
 
-Apart from this I haven't noticed any corruptions recently... just
-about to make a full backup of the fs (or better said a rw snapshot of
-the most of the data) with tar, so most data will be read soon at least
-once... an I would probably notice any further errors that are
-otherwise silent.
+
+> My purpose is a simple RAID1 main fs, with bootable flag on the 2 disks in
+> prder to start in degraded mode....
+
+Good luck with this. The Btrfs archives are full of various
+limitations of Btrfs raid1. There is no automatic degraded mount for
+Btrfs. And if you persistently ask for degraded mount, you run the
+risk of other problems if there's merely a delayed discovery of one of
+the devices. Once a Btrfs volume is degraded, it does not
+automatically resume normal operation just because the formerly
+missing device becomes available.
+
+So... this is flat out not suitable for use cases where you need
+unattended raid1 degraded boot.
 
 
-Cheers,
-Chris.
+
+-- 
+Chris Murphy

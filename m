@@ -1,46 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qt0-f195.google.com ([209.85.216.195]:34925 "EHLO
-        mail-qt0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726878AbeH3Vqr (ORCPT
+Received: from mail-lj1-f196.google.com ([209.85.208.196]:44482 "EHLO
+        mail-lj1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726878AbeH3Vrs (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 30 Aug 2018 17:46:47 -0400
-Received: by mail-qt0-f195.google.com with SMTP id j7-v6so11320372qtp.2
-        for <linux-btrfs@vger.kernel.org>; Thu, 30 Aug 2018 10:43:31 -0700 (PDT)
-Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id e65-v6sm4109449qkf.39.2018.08.30.10.43.30
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
-        Thu, 30 Aug 2018 10:43:30 -0700 (PDT)
-From: Josef Bacik <josef@toxicpanda.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 35/35] MAINTAINERS: update my email address for btrfs
-Date: Thu, 30 Aug 2018 13:42:25 -0400
-Message-Id: <20180830174225.2200-36-josef@toxicpanda.com>
-In-Reply-To: <20180830174225.2200-1-josef@toxicpanda.com>
-References: <20180830174225.2200-1-josef@toxicpanda.com>
+        Thu, 30 Aug 2018 17:47:48 -0400
+Received: by mail-lj1-f196.google.com with SMTP id q127-v6so7953458ljq.11
+        for <linux-btrfs@vger.kernel.org>; Thu, 30 Aug 2018 10:44:31 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <CAJCQCtT9CREHP=bkeMMEBS46mT=ra8GqGuVbUXKrxm=PmScbgA@mail.gmail.com>
+References: <04e4b43f-b21e-b6fd-dfad-0506ff35aff7@couderc.eu>
+ <52b06c19-c9e2-29c1-b761-98d770c2d6c7@gmx.com> <2e47e913-104e-8d0c-8d49-69518681147b@couderc.eu>
+ <f77df1e6-8030-716b-fc95-81ef3ae4f173@gmx.com> <22bd27f6-7107-7c34-110d-9cbed0c62790@couderc.eu>
+ <VI1PR08MB08629058D1231A1E374A8C4292080@VI1PR08MB0862.eurprd08.prod.outlook.com>
+ <CAJCQCtT9CREHP=bkeMMEBS46mT=ra8GqGuVbUXKrxm=PmScbgA@mail.gmail.com>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Thu, 30 Aug 2018 11:44:30 -0600
+Message-ID: <CAJCQCtRz6e0jmz5SbR9fx3dq=ZFnaJ2uVZBovxQx6DGb070AAg@mail.gmail.com>
+Subject: Re: How to erase a RAID1 (+++)?
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Alberto Bursi <alberto.bursi@outlook.it>,
+        Pierre Couderc <pierre@couderc.eu>, Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-My work email is completely useless, switch it to my personal address so
-I get emails on a account I actually pay attention to.
+And also, I'll argue this might have been a btrfs-progs bug as well,
+depending on what version was used and the command. Both mkfs and dev
+add should not be able to add type code 0x05. At least libblkid
+correctly shows that it's 1KiB in size, so really Btrfs should not
+succeed at adding this device, it can't put any of the supers in the
+correct location.
 
-Signed-off-by: Josef Bacik <josef@toxicpanda.com>
----
- MAINTAINERS | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+[chris@f28h ~]$ sudo fdisk -l /dev/loop0
+Disk /dev/loop0: 1 GiB, 1073741824 bytes, 2097152 sectors
+Units: sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disklabel type: dos
+Disk identifier: 0x7e255cce
 
-diff --git a/MAINTAINERS b/MAINTAINERS
-index 32fbc6f732d4..7723dc958e99 100644
---- a/MAINTAINERS
-+++ b/MAINTAINERS
-@@ -3095,7 +3095,7 @@ F:	drivers/gpio/gpio-bt8xx.c
- 
- BTRFS FILE SYSTEM
- M:	Chris Mason <clm@fb.com>
--M:	Josef Bacik <jbacik@fb.com>
-+M:	Josef Bacik <josef@toxicpanda.com>
- M:	David Sterba <dsterba@suse.com>
- L:	linux-btrfs@vger.kernel.org
- W:	http://btrfs.wiki.kernel.org/
--- 
-2.14.3
+Device       Boot  Start    End Sectors  Size Id Type
+/dev/loop0p1        2048 206847  204800  100M 83 Linux
+/dev/loop0p2      206848 411647  204800  100M 83 Linux
+/dev/loop0p3      411648 616447  204800  100M 83 Linux
+/dev/loop0p4      616448 821247  204800  100M  5 Extended
+/dev/loop0p5      618496 821247  202752   99M 83 Linux
+
+[chris@f28h ~]$ sudo kpartx -a /dev/loop0
+[chris@f28h ~]$ lsblk
+NAME        MAJ:MIN RM   SIZE RO TYPE  MOUNTPOINT
+loop0         7:0    0     1G  0 loop
+├─loop0p1   253:1    0   100M  0 part
+├─loop0p2   253:2    0   100M  0 part
+├─loop0p3   253:3    0   100M  0 part
+├─loop0p4   253:4    0     1K  0 part
+└─loop0p5   253:5    0    99M  0 part
+
+[chris@f28h ~]$ sudo mkfs.btrfs /dev/loop0p4
+btrfs-progs v4.17.1
+See http://btrfs.wiki.kernel.org for more information.
+
+probe of /dev/loop0p4 failed, cannot detect existing filesystem.
+ERROR: use the -f option to force overwrite of /dev/loop0p4
+[chris@f28h ~]$ sudo mkfs.btrfs /dev/loop0p4 -f
+btrfs-progs v4.17.1
+See http://btrfs.wiki.kernel.org for more information.
+
+ERROR: mount check: cannot open /dev/loop0p4: No such file or directory
+ERROR: cannot check mount status of /dev/loop0p4: No such file or directory
+[chris@f28h ~]$
+
+
+I guess that's a good sign in this case?
+
+
+Chris Murphy

@@ -1,65 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qt0-f193.google.com ([209.85.216.193]:34692 "EHLO
-        mail-qt0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727317AbeHaSSa (ORCPT
+Received: from mail-qt0-f194.google.com ([209.85.216.194]:40682 "EHLO
+        mail-qt0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727432AbeHaSTW (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 31 Aug 2018 14:18:30 -0400
-Received: by mail-qt0-f193.google.com with SMTP id m13-v6so14690179qth.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 31 Aug 2018 07:10:49 -0700 (PDT)
-Date: Fri, 31 Aug 2018 10:10:47 -0400
+        Fri, 31 Aug 2018 14:19:22 -0400
+Received: by mail-qt0-f194.google.com with SMTP id h4-v6so14654949qtj.7
+        for <linux-btrfs@vger.kernel.org>; Fri, 31 Aug 2018 07:11:41 -0700 (PDT)
+Date: Fri, 31 Aug 2018 10:11:39 -0400
 From: Josef Bacik <josef@toxicpanda.com>
 To: Nikolay Borisov <nborisov@suse.com>
 Cc: Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 04/35] btrfs: only track ref_heads in delayed_ref_updates
-Message-ID: <20180831141045.v4jfsuimyauuaolc@destiny>
+Subject: Re: [PATCH 07/35] btrfs: dump block_rsv whe dumping space info
+Message-ID: <20180831141138.vus5d7okct36d54a@destiny>
 References: <20180830174225.2200-1-josef@toxicpanda.com>
- <20180830174225.2200-5-josef@toxicpanda.com>
- <162a5b6e-d361-9385-c95b-afc8bc25563c@suse.com>
+ <20180830174225.2200-8-josef@toxicpanda.com>
+ <f6b8c728-1ce5-f14a-533a-ad3ca9efeed7@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <162a5b6e-d361-9385-c95b-afc8bc25563c@suse.com>
+In-Reply-To: <f6b8c728-1ce5-f14a-533a-ad3ca9efeed7@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Aug 31, 2018 at 10:52:55AM +0300, Nikolay Borisov wrote:
+On Fri, Aug 31, 2018 at 10:53:54AM +0300, Nikolay Borisov wrote:
 > 
 > 
 > On 30.08.2018 20:41, Josef Bacik wrote:
-> > From: Josef Bacik <jbacik@fb.com>
+> > For enospc_debug having the block rsvs is super helpful to see if we've
+> > done something wrong.
 > > 
-> > We use this number to figure out how many delayed refs to run, but
-> > __btrfs_run_delayed_refs really only checks every time we need a new
-> > delayed ref head, so we always run at least one ref head completely no
-> > matter what the number of items on it.  So instead track only the ref
-> > heads added by this trans handle and adjust the counting appropriately
-> > in __btrfs_run_delayed_refs.
-> > 
-> > Signed-off-by: Josef Bacik <jbacik@fb.com>
+> > Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 > > ---
-> >  fs/btrfs/delayed-ref.c | 3 ---
-> >  fs/btrfs/extent-tree.c | 5 +----
-> >  2 files changed, 1 insertion(+), 7 deletions(-)
+> >  fs/btrfs/extent-tree.c | 15 +++++++++++++++
+> >  1 file changed, 15 insertions(+)
 > > 
-> > diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
-> > index 3a9e4ac21794..27f7dd4e3d52 100644
-> > --- a/fs/btrfs/delayed-ref.c
-> > +++ b/fs/btrfs/delayed-ref.c
-> > @@ -234,8 +234,6 @@ static inline void drop_delayed_ref(struct btrfs_trans_handle *trans,
-> >  	ref->in_tree = 0;
-> >  	btrfs_put_delayed_ref(ref);
-> >  	atomic_dec(&delayed_refs->num_entries);
-> > -	if (trans->delayed_ref_updates)
-> > -		trans->delayed_ref_updates--;
+> > diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> > index 80615a579b18..df826f713034 100644
+> > --- a/fs/btrfs/extent-tree.c
+> > +++ b/fs/btrfs/extent-tree.c
+> > @@ -7910,6 +7910,15 @@ static noinline int find_free_extent(struct btrfs_fs_info *fs_info,
+> >  	return ret;
+> >  }
+> >  
+> > +static void dump_block_rsv(struct btrfs_block_rsv *rsv)
+> > +{
+> > +	spin_lock(&rsv->lock);
+> > +	printk(KERN_ERR "%d: size %llu reserved %llu\n",
+> > +	       rsv->type, (unsigned long long)rsv->size,
+> > +	       (unsigned long long)rsv->reserved);
+> > +	spin_unlock(&rsv->lock);
+> > +}
 > 
-> There was feedback on this particular hunk and you've completely ignored
-> it, that's not nice:
+> There was feedback on this hunk which you seem to have ignored:
 > 
-> https://www.spinics.net/lists/linux-btrfs/msg80514.html
+> https://www.spinics.net/lists/linux-btrfs/msg80473.html
+> 
 
-I just missed it in the last go around (as is the case for the other ones).  I'm
-not sure what part is confusing, we only want delayed_ref_updates to be how many
-delayed ref heads there are, which is what this patch is changing.  I could
-probably split this between these two changes and the count changing below since
-they are slightly different things, I'll do that.  Thanks,
+Yup good point, I'll fix this up.  Thanks,
 
 Josef

@@ -1,143 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:47980 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727023AbeIEBHZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 4 Sep 2018 21:07:25 -0400
-From: Mark Fasheh <mfasheh@suse.de>
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: Al Viro <viro@ZenIV.linux.org.uk>, linux-fsdevel@vger.kernel.org,
-        linux-api@vger.kernel.org, Michael Kerrisk <mtk.manpages@gmail.com>,
-        linux-btrfs@vger.kernel.org, linux-xfs@vger.kernel.org,
-        "Darrick J . Wong" <darrick.wong@oracle.com>,
-        Adam Borowski <kilobyte@angband.pl>, David Sterba <dsterba@suse.cz>,
-        Mark Fasheh <mfasheh@suse.de>
-Subject: [RESEND][PATCH v5 0/2] vfs: fix dedupe permission check
-Date: Tue,  4 Sep 2018 13:40:14 -0700
-Message-Id: <20180904204016.14494-1-mfasheh@suse.de>
+Received: from mail-pf1-f193.google.com ([209.85.210.193]:42628 "EHLO
+        mail-pf1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726915AbeIACqX (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 31 Aug 2018 22:46:23 -0400
+Received: by mail-pf1-f193.google.com with SMTP id l9-v6so6114922pff.9
+        for <linux-btrfs@vger.kernel.org>; Fri, 31 Aug 2018 15:36:48 -0700 (PDT)
+From: Omar Sandoval <osandov@osandov.com>
+To: linux-btrfs@vger.kernel.org
+Cc: kernel-team@fb.com
+Subject: [PATCH v5 0/6] Btrfs: implement swap file support
+Date: Fri, 31 Aug 2018 15:36:35 -0700
+Message-Id: <cover.1535754957.git.osandov@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Andrew/Al,
+From: Omar Sandoval <osandov@fb.com>
 
-Could I please have these patches put in a tree for more public testing?
-They've hit fsdevel a few times now, I have links to the discussions in the
-change log below.
+Hi,
 
+This series implements swap file support for Btrfs.
 
-The following patches fix a couple of issues with the permission check
-we do in vfs_dedupe_file_range().
+Changes since v4 [1]:
 
-The first patch expands our check to allow dedupe of a file if the
-user owns it or otherwise would be allowed to write to it.
+- Added a kernel doc for btrfs_get_chunk_map()
+- Got rid of "Btrfs: push EXCL_OP set into btrfs_rm_device()"
+- Made activate error messages more clear and consistent
+- Changed clear vs unlock order in activate error case
+- Added "mm: export add_swap_extent()" as a separate patch
+- Added a btrfs_wait_ordered_range() at the beginning of
+  btrfs_swap_activate() to catch newly created files
+- Added some Reviewed-bys from Nikolay
 
-Current behavior is that we'll allow dedupe only if:
+I took a stab at adding support for balance when a swap file is active,
+but it's a major pain: we need to mark block groups which contain swap
+file extents, check the block group counter in relocate/scrub, then
+unmark the block groups when the swap file is deactivated, which gets
+really messy because the file can grow while it is an active swap file.
+If this is a deal breaker, I can work something out, but I don't think
+it's worth the trouble.
 
-- the user is an admin (root)
-- the user has the file open for write
+This was tested with the swap tests in xfstests plus my new tests here
+[2]. Additionally, I used my swapme test program [3] and ran a few
+memory-intensive workloads (e.g., a highly parallel kernel build),
+verifying that swap was being used. All of this was done with lockdep
+enabled.
 
-This makes it impossible for a user to dedupe their own file set
-unless they do it as root, or ensure that all files have write
-permission. There's a couple of duperemove bugs open for this:
+This series is based on v4.19-rc1. Please take a look.
 
-https://github.com/markfasheh/duperemove/issues/129
-https://github.com/markfasheh/duperemove/issues/86
+Thanks!
 
-The other problem we have is also related to forcing the user to open
-target files for write - A process trying to exec a file currently
-being deduped gets ETXTBUSY. The answer (as above) is to allow them to
-open the targets ro - root can already do this. There was a patch from
-Adam Borowski to fix this back in 2016:
+1: https://www.spinics.net/lists/linux-btrfs/msg78731.html
+2: https://github.com/osandov/xfstests/tree/btrfs-swap
+3: https://github.com/osandov/osandov-linux/blob/master/scripts/swapme.c
 
-https://lkml.org/lkml/2016/7/17/130
+Omar Sandoval (6):
+  mm: split SWP_FILE into SWP_ACTIVATED and SWP_FS
+  mm: export add_swap_extent()
+  vfs: update swap_{,de}activate documentation
+  Btrfs: prevent ioctls from interfering with a swap file
+  Btrfs: rename get_chunk_map() and make it non-static
+  Btrfs: support swap files
 
-which I have incorporated into my changes.
+ Documentation/filesystems/Locking |  17 +--
+ Documentation/filesystems/vfs.txt |  12 +-
+ fs/btrfs/ctree.h                  |   6 +
+ fs/btrfs/disk-io.c                |   3 +
+ fs/btrfs/inode.c                  | 232 ++++++++++++++++++++++++++++++
+ fs/btrfs/ioctl.c                  |  51 ++++++-
+ fs/btrfs/volumes.c                |  28 ++--
+ fs/btrfs/volumes.h                |   9 ++
+ include/linux/swap.h              |  13 +-
+ mm/page_io.c                      |   6 +-
+ mm/swapfile.c                     |  14 +-
+ 11 files changed, 348 insertions(+), 43 deletions(-)
 
-
-The 2nd patch fixes our return code for permission denied to be
-EPERM. For some reason we're returning EINVAL - I think that's
-probably my fault. At any rate, we need to be returning something
-descriptive of the actual problem, otherwise callers see EINVAL and
-can't really make a valid determination of what's gone wrong.
-
-This has also popped up in duperemove, mostly in the form of cryptic
-error messages. Because this is a code returned to userspace, I did
-check the other users of extent-same that I could find. Both 'bees'
-and 'rust-btrfs' do the same as duperemove and simply report the error
-(as they should).
-
-
-Lastly, I have an update to the fi_deduperange manpage to reflect these
-changes. That patch is attached below.
-
-
-Please apply.
-
-git pull https://github.com/markfasheh/linux dedupe-perms
-
-Thanks,
-  --Mark
-
-Changes from V4 to V5:
-- Rebase and retest on 4.18-rc8
-- Place updated manpage patch below, CC linux-api
-- V4 discussion: https://patchwork.kernel.org/patch/10530365/
-
-Changes from V3 to V4:
-- Add a patch (below) to ioctl_fideduperange.2 explaining our
-  changes. I will send this patch once the kernel update is
-  accepted. Thanks to Darrick Wong for this suggestion.
-- V3 discussion: https://www.spinics.net/lists/linux-btrfs/msg79135.html
-
-Changes from V2 to V3:
-- Return bool from allow_file_dedupe
-- V2 discussion: https://www.spinics.net/lists/linux-btrfs/msg78421.html
-
-Changes from V1 to V2:
-- Add inode_permission check as suggested by Adam Borowski
-- V1 discussion: https://marc.info/?l=linux-xfs&m=152606684017965&w=2
-
-
-From: Mark Fasheh <mfasheh@suse.de>
-
-[PATCH] ioctl_fideduperange.2: clarify permission requirements
-
-dedupe permission checks were recently relaxed - update our man page to
-reflect those changes.
-
-Signed-off-by: Mark Fasheh <mfasheh@suse.de>
----
- man2/ioctl_fideduperange.2 | 11 +++++++----
- 1 file changed, 7 insertions(+), 4 deletions(-)
-
-diff --git a/man2/ioctl_fideduperange.2 b/man2/ioctl_fideduperange.2
-index 84d20a276..4040ee064 100644
---- a/man2/ioctl_fideduperange.2
-+++ b/man2/ioctl_fideduperange.2
-@@ -105,9 +105,12 @@ The field
- must be zero.
- During the call,
- .IR src_fd
--must be open for reading and
-+must be open for reading.
- .IR dest_fd
--must be open for writing.
-+can be open for writing, or reading.
-+If
-+.IR dest_fd
-+is open for reading, the user must have write access to the file.
- The combined size of the struct
- .IR file_dedupe_range
- and the struct
-@@ -185,8 +188,8 @@ This can appear if the filesystem does not support deduplicating either file
- descriptor, or if either file descriptor refers to special inodes.
- .TP
- .B EPERM
--.IR dest_fd
--is immutable.
-+This will be returned if the user lacks permission to dedupe the file referenced by
-+.IR dest_fd .
- .TP
- .B ETXTBSY
- One of the files is a swap file.
 -- 
-2.15.1
+2.18.0

@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:38038 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:38362 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727514AbeHaL7I (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 31 Aug 2018 07:59:08 -0400
-Subject: Re: [PATCH 04/35] btrfs: only track ref_heads in delayed_ref_updates
+        id S1727363AbeHaMAH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 31 Aug 2018 08:00:07 -0400
+Subject: Re: [PATCH 07/35] btrfs: dump block_rsv whe dumping space info
 To: Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org
 References: <20180830174225.2200-1-josef@toxicpanda.com>
- <20180830174225.2200-5-josef@toxicpanda.com>
+ <20180830174225.2200-8-josef@toxicpanda.com>
 From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <162a5b6e-d361-9385-c95b-afc8bc25563c@suse.com>
-Date: Fri, 31 Aug 2018 10:52:55 +0300
+Message-ID: <f6b8c728-1ce5-f14a-533a-ad3ca9efeed7@suse.com>
+Date: Fri, 31 Aug 2018 10:53:54 +0300
 MIME-Version: 1.0
-In-Reply-To: <20180830174225.2200-5-josef@toxicpanda.com>
+In-Reply-To: <20180830174225.2200-8-josef@toxicpanda.com>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -19,90 +19,50 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 
 On 30.08.2018 20:41, Josef Bacik wrote:
-> From: Josef Bacik <jbacik@fb.com>
+> For enospc_debug having the block rsvs is super helpful to see if we've
+> done something wrong.
 > 
-> We use this number to figure out how many delayed refs to run, but
-> __btrfs_run_delayed_refs really only checks every time we need a new
-> delayed ref head, so we always run at least one ref head completely no
-> matter what the number of items on it.  So instead track only the ref
-> heads added by this trans handle and adjust the counting appropriately
-> in __btrfs_run_delayed_refs.
-> 
-> Signed-off-by: Josef Bacik <jbacik@fb.com>
+> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 > ---
->  fs/btrfs/delayed-ref.c | 3 ---
->  fs/btrfs/extent-tree.c | 5 +----
->  2 files changed, 1 insertion(+), 7 deletions(-)
+>  fs/btrfs/extent-tree.c | 15 +++++++++++++++
+>  1 file changed, 15 insertions(+)
 > 
-> diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
-> index 3a9e4ac21794..27f7dd4e3d52 100644
-> --- a/fs/btrfs/delayed-ref.c
-> +++ b/fs/btrfs/delayed-ref.c
-> @@ -234,8 +234,6 @@ static inline void drop_delayed_ref(struct btrfs_trans_handle *trans,
->  	ref->in_tree = 0;
->  	btrfs_put_delayed_ref(ref);
->  	atomic_dec(&delayed_refs->num_entries);
-> -	if (trans->delayed_ref_updates)
-> -		trans->delayed_ref_updates--;
-
-There was feedback on this particular hunk and you've completely ignored
-it, that's not nice:
-
-https://www.spinics.net/lists/linux-btrfs/msg80514.html
-
->  }
->  
->  static bool merge_ref(struct btrfs_trans_handle *trans,
-> @@ -460,7 +458,6 @@ static int insert_delayed_ref(struct btrfs_trans_handle *trans,
->  	if (ref->action == BTRFS_ADD_DELAYED_REF)
->  		list_add_tail(&ref->add_list, &href->ref_add_list);
->  	atomic_inc(&root->num_entries);
-> -	trans->delayed_ref_updates++;
->  	spin_unlock(&href->lock);
->  	return ret;
->  }
 > diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index 87c42a2c45b1..20531389a20a 100644
+> index 80615a579b18..df826f713034 100644
 > --- a/fs/btrfs/extent-tree.c
 > +++ b/fs/btrfs/extent-tree.c
-> @@ -2583,6 +2583,7 @@ static noinline int __btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
->  				spin_unlock(&delayed_refs->lock);
->  				break;
->  			}
-> +			count++;
+> @@ -7910,6 +7910,15 @@ static noinline int find_free_extent(struct btrfs_fs_info *fs_info,
+>  	return ret;
+>  }
 >  
->  			/* grab the lock that says we are going to process
->  			 * all the refs for this head */
-> @@ -2596,7 +2597,6 @@ static noinline int __btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
->  			 */
->  			if (ret == -EAGAIN) {
->  				locked_ref = NULL;
-> -				count++;
->  				continue;
->  			}
->  		}
-> @@ -2624,7 +2624,6 @@ static noinline int __btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
->  			unselect_delayed_ref_head(delayed_refs, locked_ref);
->  			locked_ref = NULL;
->  			cond_resched();
-> -			count++;
->  			continue;
->  		}
+> +static void dump_block_rsv(struct btrfs_block_rsv *rsv)
+> +{
+> +	spin_lock(&rsv->lock);
+> +	printk(KERN_ERR "%d: size %llu reserved %llu\n",
+> +	       rsv->type, (unsigned long long)rsv->size,
+> +	       (unsigned long long)rsv->reserved);
+> +	spin_unlock(&rsv->lock);
+> +}
+
+There was feedback on this hunk which you seem to have ignored:
+
+https://www.spinics.net/lists/linux-btrfs/msg80473.html
+
+> +
+>  static void dump_space_info(struct btrfs_fs_info *fs_info,
+>  			    struct btrfs_space_info *info, u64 bytes,
+>  			    int dump_block_groups)
+> @@ -7929,6 +7938,12 @@ static void dump_space_info(struct btrfs_fs_info *fs_info,
+>  		info->bytes_readonly);
+>  	spin_unlock(&info->lock);
 >  
-> @@ -2642,7 +2641,6 @@ static noinline int __btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
->  				return ret;
->  			}
->  			locked_ref = NULL;
-> -			count++;
->  			continue;
->  		}
->  
-> @@ -2693,7 +2691,6 @@ static noinline int __btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
->  		}
->  
->  		btrfs_put_delayed_ref(ref);
-> -		count++;
->  		cond_resched();
->  	}
+> +	dump_block_rsv(&fs_info->global_block_rsv);
+> +	dump_block_rsv(&fs_info->trans_block_rsv);
+> +	dump_block_rsv(&fs_info->chunk_block_rsv);
+> +	dump_block_rsv(&fs_info->delayed_block_rsv);
+> +	dump_block_rsv(&fs_info->delayed_refs_rsv);
+> +
+>  	if (!dump_block_groups)
+>  		return;
 >  
 > 

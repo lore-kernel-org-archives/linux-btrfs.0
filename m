@@ -1,104 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qt0-f195.google.com ([209.85.216.195]:37636 "EHLO
-        mail-qt0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727563AbeHaSUp (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 31 Aug 2018 14:20:45 -0400
-Received: by mail-qt0-f195.google.com with SMTP id n6-v6so14650383qtl.4
-        for <linux-btrfs@vger.kernel.org>; Fri, 31 Aug 2018 07:13:04 -0700 (PDT)
-Date: Fri, 31 Aug 2018 10:13:01 -0400
-From: Josef Bacik <josef@toxicpanda.com>
-To: Nikolay Borisov <nborisov@suse.com>
-Cc: Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 01/35] btrfs: add btrfs_delete_ref_head helper
-Message-ID: <20180831141300.kmcp3fami46r7rtp@destiny>
-References: <20180830174225.2200-1-josef@toxicpanda.com>
- <20180830174225.2200-2-josef@toxicpanda.com>
- <e8e85625-5269-23ec-4152-a96fe393f8b2@suse.com>
+Received: from mail-oln040092072088.outbound.protection.outlook.com ([40.92.72.88]:24259
+        "EHLO EUR03-VE1-obe.outbound.protection.outlook.com"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1727877AbeHaTCl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 31 Aug 2018 15:02:41 -0400
+From: Alberto Bursi <alberto.bursi@outlook.it>
+To: Pierre Couderc <pierre@couderc.eu>, Duncan <1i5t5.duncan@cox.net>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: How to erase a RAID1 (+++)?
+Date: Fri, 31 Aug 2018 14:54:46 +0000
+Message-ID: <VI1PR08MB0862F346E3B20945F73133CE920F0@VI1PR08MB0862.eurprd08.prod.outlook.com>
+References: <04e4b43f-b21e-b6fd-dfad-0506ff35aff7@couderc.eu>
+ <52b06c19-c9e2-29c1-b761-98d770c2d6c7@gmx.com>
+ <2e47e913-104e-8d0c-8d49-69518681147b@couderc.eu>
+ <f77df1e6-8030-716b-fc95-81ef3ae4f173@gmx.com>
+ <22bd27f6-7107-7c34-110d-9cbed0c62790@couderc.eu>
+ <CAJCQCtTcCWavzu5k6ZnhCDU+jaHxWfzfuR5Whic1-ic0s+x+8g@mail.gmail.com>
+ <pan$4e7f0$2612a395$18eaf6d3$f09fc7a4@cox.net>
+ <076f8cb5-1a34-4d1b-727a-466de1e30088@couderc.eu>
+In-Reply-To: <076f8cb5-1a34-4d1b-727a-466de1e30088@couderc.eu>
+Content-Type: text/plain; charset="utf-8"
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <e8e85625-5269-23ec-4152-a96fe393f8b2@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Aug 31, 2018 at 10:57:45AM +0300, Nikolay Borisov wrote:
-> 
-> 
-> On 30.08.2018 20:41, Josef Bacik wrote:
-> > From: Josef Bacik <jbacik@fb.com>
-> > 
-> > We do this dance in cleanup_ref_head and check_ref_cleanup, unify it
-> > into a helper and cleanup the calling functions.
-> > 
-> > Signed-off-by: Josef Bacik <jbacik@fb.com>
-> > ---
-> >  fs/btrfs/delayed-ref.c | 14 ++++++++++++++
-> >  fs/btrfs/delayed-ref.h |  3 ++-
-> >  fs/btrfs/extent-tree.c | 24 ++++--------------------
-> >  3 files changed, 20 insertions(+), 21 deletions(-)
-> > 
-> > diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
-> > index 62ff545ba1f7..3a9e4ac21794 100644
-> > --- a/fs/btrfs/delayed-ref.c
-> > +++ b/fs/btrfs/delayed-ref.c
-> > @@ -393,6 +393,20 @@ btrfs_select_ref_head(struct btrfs_trans_handle *trans)
-> >  	return head;
-> >  }
-> >  
-> > +void btrfs_delete_ref_head(struct btrfs_delayed_ref_root *delayed_refs,
-> > +			   struct btrfs_delayed_ref_head *head)
-> > +{
-> > +	lockdep_assert_held(&delayed_refs->lock);
-> > +	lockdep_assert_held(&head->lock);
-> > +
-> > +	rb_erase(&head->href_node, &delayed_refs->href_root);
-> > +	RB_CLEAR_NODE(&head->href_node);
-> > +	atomic_dec(&delayed_refs->num_entries);
-> > +	delayed_refs->num_heads--;
-> > +	if (head->processing == 0)
-> > +		delayed_refs->num_heads_ready--;
-> > +}
-> > +
-> >  /*
-> >   * Helper to insert the ref_node to the tail or merge with tail.
-> >   *
-> > diff --git a/fs/btrfs/delayed-ref.h b/fs/btrfs/delayed-ref.h
-> > index d9f2a4ebd5db..7769177b489e 100644
-> > --- a/fs/btrfs/delayed-ref.h
-> > +++ b/fs/btrfs/delayed-ref.h
-> > @@ -261,7 +261,8 @@ static inline void btrfs_delayed_ref_unlock(struct btrfs_delayed_ref_head *head)
-> >  {
-> >  	mutex_unlock(&head->mutex);
-> >  }
-> > -
-> > +void btrfs_delete_ref_head(struct btrfs_delayed_ref_root *delayed_refs,
-> > +			   struct btrfs_delayed_ref_head *head);
-> >  
-> >  struct btrfs_delayed_ref_head *
-> >  btrfs_select_ref_head(struct btrfs_trans_handle *trans);
-> > diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> > index f77226d8020a..6799950fa057 100644
-> > --- a/fs/btrfs/extent-tree.c
-> > +++ b/fs/btrfs/extent-tree.c
-> > @@ -2492,12 +2492,9 @@ static int cleanup_ref_head(struct btrfs_trans_handle *trans,
-> >  		spin_unlock(&delayed_refs->lock);
-> >  		return 1;
-> >  	}
-> > -	delayed_refs->num_heads--;
-> > -	rb_erase(&head->href_node, &delayed_refs->href_root);
-> > -	RB_CLEAR_NODE(&head->href_node);
-> > -	spin_unlock(&head->lock);
-> > +	btrfs_delete_ref_head(delayed_refs, head);
-> >  	spin_unlock(&delayed_refs->lock);
-> > -	atomic_dec(&delayed_refs->num_entries);
-> > +	spin_unlock(&head->lock);
-> >  
-> 
-> Again, the feedback of reversed lock-order is not addressed:
-> 
-> https://www.spinics.net/lists/linux-btrfs/msg80482.html
-> 
 
-Oops, I'll fix this.
+On 8/31/2018 8:53 AM, Pierre Couderc wrote:
+>
+> OK, I have understood the message... I was planning that as you said 
+> "semi-routinely", and I understand btrfs is not soon enough ready, and 
+> I am very very far to be a specialist as you are.
+> So, I shall mount my RAID1 very standard, and I  shall expect the 
+> disaster, hoping it does not occur....
+> Now, I shall try to absorb all that...
+>
+> Thank you very much !
+>
 
-Josef
+I just keep around a USB drive with a full Linux system on it, to act as 
+"recovery". If the btrfs raid fails I boot into that and I can do 
+maintenance with a full graphical interface and internet access so I can 
+google things.
+
+Of course on a home server you can't do that without some automation 
+that will switch boot device after some amount of boot failures of the 
+main OS.
+
+While if your server has BMC (lights-out management) you can switch boot 
+device through that.
+
+-Alberto

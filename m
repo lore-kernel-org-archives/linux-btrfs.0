@@ -1,118 +1,202 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:22601 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1726660AbeHaGbn (ORCPT
+Received: from [195.159.176.226] ([195.159.176.226]:47524 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1726037AbeHaGhH (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 31 Aug 2018 02:31:43 -0400
-Subject: Re: fsck lowmem mode only: ERROR: errors found in fs roots
-To: Christoph Anton Mitterer <calestyo@scientia.net>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <8d8c90d3edfcc9e73428d3730496d48b1160b39b.camel@scientia.net>
-CC: Su Yue <Damenly_Su@gmx.com>
-From: Su Yue <suy.fnst@cn.fujitsu.com>
-Message-ID: <a141cad2-0a08-555e-eb05-da2dceb54025@cn.fujitsu.com>
-Date: Fri, 31 Aug 2018 10:33:26 +0800
-MIME-Version: 1.0
-In-Reply-To: <8d8c90d3edfcc9e73428d3730496d48b1160b39b.camel@scientia.net>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+        Fri, 31 Aug 2018 02:37:07 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-3@m.gmane.org>)
+        id 1fvZBw-0007CD-LA
+        for linux-btrfs@vger.kernel.org; Fri, 31 Aug 2018 04:29:44 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: How to erase a RAID1 (+++)?
+Date: Fri, 31 Aug 2018 02:29:36 +0000 (UTC)
+Message-ID: <pan$4e7f0$2612a395$18eaf6d3$f09fc7a4@cox.net>
+References: <04e4b43f-b21e-b6fd-dfad-0506ff35aff7@couderc.eu>
+        <52b06c19-c9e2-29c1-b761-98d770c2d6c7@gmx.com>
+        <2e47e913-104e-8d0c-8d49-69518681147b@couderc.eu>
+        <f77df1e6-8030-716b-fc95-81ef3ae4f173@gmx.com>
+        <22bd27f6-7107-7c34-110d-9cbed0c62790@couderc.eu>
+        <CAJCQCtTcCWavzu5k6ZnhCDU+jaHxWfzfuR5Whic1-ic0s+x+8g@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thank for the report.
+Chris Murphy posted on Thu, 30 Aug 2018 11:08:28 -0600 as excerpted:
 
-On 08/31/2018 12:47 AM, Christoph Anton Mitterer wrote:
-> Hey.
+>> My purpose is a simple RAID1 main fs, with bootable flag on the 2 disks
+>> in prder to start in degraded mode....
 > 
-> I've the following on a btrfs that's basically the system fs for my
-> notebook:
+> Good luck with this. The Btrfs archives are full of various limitations
+> of Btrfs raid1. There is no automatic degraded mount for Btrfs. And if
+> you persistently ask for degraded mount, you run the risk of other
+> problems if there's merely a delayed discovery of one of the devices.
+> Once a Btrfs volume is degraded, it does not automatically resume normal
+> operation just because the formerly missing device becomes available.
 > 
-> 
-> When booting from a USB stick with:
-> # uname -a
-> Linux heisenberg 4.17.0-3-amd64 #1 SMP Debian 4.17.17-1
-> (2018-08-18) x86_64 GNU/Linux
-> 
-> # btrfs --version
-> btrfs-progs v4.17
-> 
-> ... a lowmem mode fsck gives no error:
-> 
-> # btrfs check --mode=lowmem /dev/mapper/system ; echo $?
-> Checking filesystem on /dev/mapper/system
-> UUID: 6050ca10-e778-4d08-80e7-6d27b9c89b3c
-> checking extents
-> checking free space cache
-> checking fs roots
-> ERROR: errors found in fs roots
-> found 495910952960 bytes used, error(s) found
-> total csum bytes: 481840472
-> total tree bytes: 2388819968
-> total fs tree bytes: 1651097600
-> total extent tree bytes: 161841152
-> btree space waste bytes: 446707102
-> file data blocks allocated: 6651878428672
->   referenced 542320984064
-> 1
-> 
-> ... while a normal mode fsck doesn't give one:
-> 
-> # btrfs check /dev/mapper/system ; echo $?
-> Checking filesystem on /dev/mapper/system
-> UUID: 6050ca10-e778-4d08-80e7-6d27b9c89b3c
-> checking extents
-> checking free space cache
-> checking fs roots
-> checking only csum items (without verifying data)
-> checking root refs
-> found 495910952960 bytes used, no error found
-> total csum bytes: 481840472
-> total tree bytes: 2388819968
-> total fs tree bytes: 1651097600
-> total extent tree bytes: 161841152
-> btree space waste bytes: 446707102
-> file data blocks allocated: 6651878428672
->   referenced 542320984064
-> 0
-> 
-> There were no unusual kernel log messages.
-> 
-> 
-Humm, I think it's a bug of lowmem mode.
-After looking through releated codes, I can't tell the cause.
+> So... this is flat out not suitable for use cases where you need
+> unattended raid1 degraded boot.
 
-Can you please fetch btrfs-progs from my repo and run lowmem check
-in readonly?
-Repo: https://github.com/Damenly/btrfs-progs/tree/lowmem_debug
-It's based on v4.17.1 plus additonal output for debug only.
+Agreeing in general and adding some detail...
 
-> Back in the normal system (no longer USB)... I spottet this:
-> Aug 30 18:31:29 heisenberg kernel: BTRFS info (device dm-0): the free
-> space cache file (22570598400) is invalid, skip it
-> 
-> but not sure whether it's related (probably not)... and I haven't seen
-> such a free space cache file issue (or any other btrfs errors) in a
-> long while (I usually watch my kernel log once after booting has
-> finished).
->BTW, what's the mount option of USB?
+1) Are you intending to use an initr*?  I'm not sure the current status 
+(I actually need to test again for myself), but at least in the past, 
+booting a btrfs raid1 rootfs required an initr*, and I have and use one 
+here, for that purpose alone (until switching to btrfs raid1 root, I went 
+initr*-less, and would prefer that again, due to the complications of 
+maintaining an initr*).
 
-> 
-> Any ideas? Perhaps it's just yet another lowmem false positive...
-> anything I can help in debugging this?
-> 
-> 
-> Apart from this I haven't noticed any corruptions recently... just
-> about to make a full backup of the fs (or better said a rw snapshot of
-> the most of the data) with tar, so most data will be read soon at least
-> once... an I would probably notice any further errors that are
-> otherwise silent.
-> 
-Don't worry, since normal check didn't report any error, it may be just
-a false alert.
+The base problem is that with raid1 (or other forms of multi-device 
+btrfs, but it happens to be raid1 that's in question for both you and I) 
+the filesystem needs multiple devices to complete the filesystem and the 
+kernel's root= parameter takes only one.  When mounting after userspace 
+is up, a btrfs device scan is normally run (often automatically by udev) 
+before the mount, that lets btrfs in the kernel track what devices belong 
+to what filesystems, so pointing to just one of the devices is enough 
+because the kernel knows from that what filesystem is intended and can 
+match up the others that go with it from the earlier scan.
 
-Su
-> 
-> Cheers,
-> Chris.
-> 
-> 
-> 
+Now there's a btrfs mount option, device=/dev/*, that can be provided 
+more than once for additional devices, that can /normally/ be used to 
+tell the kernel what specific devices to use, bypassing the need for 
+btrfs device scan, and in /theory/, passing that like other mount options 
+in the kernel commandline via rootflags= /should/ "just work".
+
+But for reasons I as a btrfs user (not dev, and definitely not kernel or 
+btrfs dev) don't fully understand, passing device= via rootflags= is, or 
+at least was, broken, so properly mounting a multi-device btrfs required 
+(and may still require) userspace, thus for a multi-device btrfs rootfs, 
+an initr*.
+
+So direct-booting to a multi-device btrfs rootfs didn't normally work.  
+It would if you passed rootflags=degraded (at least with a two-device 
+raid1 so the one device passed in root= contained one copy of 
+everything), but then it was unclear if the additional device was 
+successfully added to the raid1 later, or not.  And with no automatic 
+sync and bringing back to undegraded status, it was a risk I didn't want 
+to take.  So unfortunately, initr* it was!
+
+But I originally tested that when I setup my own btrfs raid1 rootfs very 
+long ago in kernel and btrfs terms, kernel 3.6 or so IIRC, and while I've 
+not /seen/ anything definitive on-list to suggest rootflags=device= is 
+unbroken now (I asked recently and got an affirmative reply, but I asked 
+for clarification and I've not seen it, tho perhaps it's there and I've 
+not read it yet), perhaps I missed it.  And I've not retested lately, tho 
+I really should as while I asked I guess the only real way to know is to 
+try it for myself, and it'd definitely be nice to be direct-booting 
+without having to bother with an initr*, again.
+
+2) As both Chris and I alluded to, unlike say mdraid, btrfs doesn't (yet) 
+have an automatic mechanism to re-sync and "undegrade" after having been 
+mounted degraded,rw.  A btrfs scrub can be run to re-sync raid1 chunks, 
+but single chunks may have been added while in the degraded state as 
+well, and those need a balance convert to raid1 mode, before the 
+filesystem and data on it can be be considered reliably able to withstand 
+device loss once again.
+
+In fact, while the problem has been fixed now, for quite awhile if the 
+filesystem was mounted degraded,rw, you often had exactly that one mount 
+to fix the problem, as new chunks would be written in single mode and 
+after that the filesystem would refuse to mount writable,degraded, and 
+would only let you mount degraded,ro, which would let you get data off it 
+but not let you fix the problem.  Word to the wise if you're planning on 
+running stable-debian (which tend to be older) kernels, or even just 
+trying to use them for recovery if you need to!  (The fix was to have a 
+mount check if at least one copy of all chunks were available and allow rw 
+mounting if so, instead of simply assuming that any single-mode chunks at 
+all meant some wouldn't be available on a multi-device filesystem with a 
+device missing, thus forcing read-only mode only mounting, as it used to 
+do.)
+
+3) If a btrfs raid1 is mounted degraded,rw with one device missing, then 
+mounted again degraded,rw, with a different device missing, without a 
+full resync between them, the two separately missing devices have 
+diverged and it's no longer safe to mount them together (there's a 
+transaction generation check and the newest will be used, so the old copy 
+on a single missing device shouldn't be used, but if the filesystem was 
+mounted writable separately with different devices missing and the 
+generation numbers for some needed data or metadata happen to be the same 
+on both...).  Doing so may result in data loss, depending on the extent 
+of the writes to each device while in degraded mode.
+
+And it's worthwhile to note as well that due to COWed (copy-on-write-ed) 
+metadata blocks, it's not just newly written data that may go missing.  
+Old data is at risk too, if its metadata is in a block that was modified 
+and thus COWed to a new location so it's different on the two devices.
+
+So if for some reason do /do/ mount degrade,rw, with one device only 
+temporarily missing, make sure you mount all devices undegraded and resync 
+(scrub and balance-convert any resulting single chunks to raid1) as soon 
+as possible, and be **SURE** not to mount with the originally missing 
+device there and another device missing, until that is done!  Or at least 
+if you do, **NEVER** then mount with both separately missing devices 
+there again, unless you like gambling with the chance of lost data.
+
+4) Systemd has a very irritating btrfs default udev rule...
+
+/lib/udev/rules.d/64-btrfs.rules (path on my gentoo system but I believe 
+it's systemd/udev-canonical)
+
+... that will often try to second-guess the kernel and *immediately* 
+unmount a degraded-mount filesystem if devices are missing, despite the 
+degraded mount option and the kernel actually successfully mounting the 
+degraded filesystem.  ("Immediately" means so fast it can appear that the 
+filesystem wasn't mounted at all -- the only way you can really tell it 
+was mounted is by checking dmesg for the normal kernel-btrfs mount 
+messages, and the fact that mount returned a successful exit status.)
+
+The systemd devs say the btrfs devs instituted btrfs device ready (which 
+the rule uses) wrong, and the btrfs devs say the systemd devs are 
+misusing it, but regardless, it's the sysadmins with a broken filesystem 
+they're trying to fix or even just get to stay mounted long enough to get 
+the data off it, left trying to pick up the pieces.
+
+The solution here is to disable the udev rule in question, tho you may 
+want to do that only if you actually need to mount degraded, since in the 
+normal case it is helpful as it ensures all devices for a filesystem are 
+actually there before it tries mounting.  (The btrfs devs say it should 
+try mounting multiple times, before giving up after a timeout, so that 
+mounting degraded will work when necessary, instead of using btrfs device 
+ready, which is only intended to check whether all devices are there, not 
+whether enough are there to mount degraded, but that's not what the 
+systemd/udev people did, so the rule still helps in the normal case, but 
+severely complicates things in the degraded case.)
+
+So if you ever find yourself (presumably in the initr* for a btrfs 
+rootfs) unable to keep a degraded btrfs mounted on a systemd-based 
+system, because systemd keeps unmounting it (again, unless you're looking 
+at dmesg or the mount status, it'll unmount so fast you'll likely think 
+it was never mounted, been there, done that, was very confused until I 
+remembered reading about the problem on the list and checked mount's exit 
+status and dmesg, sure enough it was mounting and getting unmounted!), 
+try mving/rming /lib/udev/rules.d/64-btrfs.rules, or simply commenting 
+the guts of it, and see if the btrfs actually stays mounted after that.
+
+And if you're not on an initr* or other temporary media where your 
+changes are only ephemeral when it happens and you do the mv/rm, don't 
+forget to put it back if appropriate later, because systemd isn't written 
+to keep trying and will just fail the mount if a btrfs component device 
+is a bit slow to appear, otherwise.
+
+5) As a result of #2 and 3, mounting degraded except to recover and 
+repair from a device malfunction is not recommended, nor is simply adding 
+"degraded" to your mount options "just in case" or other unattended 
+degraded mounting.  Don't put degraded in your normal mount options so 
+you know when something breaks due to the mount failure and can fix it 
+right then with your first and ideally only degraded,rw mount, and do the 
+appropriate sync-maintenance immediately afterward.
+
+OK, so if you've absorbed all that and you're only trying to make booting 
+the btrfs raid1 rootfs degraded /possible/ for recovery purposes, go 
+right ahead!  That's what btrfs raid1 is for, after all.  But if you were 
+planning on mounting degraded (semi-)routinely, please do reconsider, 
+because it's just not ready for that at this point, and you're going to 
+run into all sorts of problems trying to do it on an ongoing basis due to 
+the above issues.
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman

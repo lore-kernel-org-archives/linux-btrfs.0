@@ -1,57 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk1-f193.google.com ([209.85.222.193]:41584 "EHLO
-        mail-qk1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727404AbeHaSNU (ORCPT
+Received: from mail-qt0-f195.google.com ([209.85.216.195]:35798 "EHLO
+        mail-qt0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727404AbeHaSOw (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 31 Aug 2018 14:13:20 -0400
-Received: by mail-qk1-f193.google.com with SMTP id h138-v6so1447280qke.8
-        for <linux-btrfs@vger.kernel.org>; Fri, 31 Aug 2018 07:05:41 -0700 (PDT)
-Date: Fri, 31 Aug 2018 10:05:38 -0400
+        Fri, 31 Aug 2018 14:14:52 -0400
+Received: by mail-qt0-f195.google.com with SMTP id j7-v6so14651142qtp.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 31 Aug 2018 07:07:12 -0700 (PDT)
+Date: Fri, 31 Aug 2018 10:07:10 -0400
 From: Josef Bacik <josef@toxicpanda.com>
 To: Nikolay Borisov <nborisov@suse.com>
 Cc: Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 29/35] btrfs: just delete pending bgs if we are aborted
-Message-ID: <20180831140537.iwlf6oaapqit6kmf@destiny>
+Subject: Re: [PATCH 30/35] btrfs: cleanup pending bgs on transaction abort
+Message-ID: <20180831140709.x34o45kag22xlioy@destiny>
 References: <20180830174225.2200-1-josef@toxicpanda.com>
- <20180830174225.2200-30-josef@toxicpanda.com>
- <8d7a8f25-285d-e98e-9094-fe16ed62ab78@suse.com>
+ <20180830174225.2200-31-josef@toxicpanda.com>
+ <265df94d-e5e9-5476-1e7b-f4058b6180e6@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <8d7a8f25-285d-e98e-9094-fe16ed62ab78@suse.com>
+In-Reply-To: <265df94d-e5e9-5476-1e7b-f4058b6180e6@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Aug 31, 2018 at 10:46:36AM +0300, Nikolay Borisov wrote:
+On Fri, Aug 31, 2018 at 10:48:58AM +0300, Nikolay Borisov wrote:
 > 
 > 
 > On 30.08.2018 20:42, Josef Bacik wrote:
-> > We still need to do all of the accounting cleanup for pending block
-> > groups if we abort.  So set the ret to trans->aborted so if we aborted
-> > the cleanup happens and everybody is happy.
+> > We may abort the transaction during a commit and not have a chance to
+> > run the pending bgs stuff, which will leave block groups on our list and
+> > cause us accounting issues and leaked memory.  Fix this by running the
+> > pending bgs when we cleanup a transaction.
 > > 
 > > Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 > > ---
-> >  fs/btrfs/extent-tree.c | 2 +-
-> >  1 file changed, 1 insertion(+), 1 deletion(-)
+> >  fs/btrfs/transaction.c | 1 +
+> >  1 file changed, 1 insertion(+)
 > > 
-> > diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> > index 90f267f4dd0f..132a1157982c 100644
-> > --- a/fs/btrfs/extent-tree.c
-> > +++ b/fs/btrfs/extent-tree.c
-> > @@ -10333,7 +10333,7 @@ void btrfs_create_pending_block_groups(struct btrfs_trans_handle *trans)
-> >  	struct btrfs_root *extent_root = fs_info->extent_root;
-> >  	struct btrfs_block_group_item item;
-> >  	struct btrfs_key key;
-> > -	int ret = 0;
-> > +	int ret = trans->aborted;
+> > diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+> > index 89d14f135837..0f39a0d302d3 100644
+> > --- a/fs/btrfs/transaction.c
+> > +++ b/fs/btrfs/transaction.c
+> > @@ -2273,6 +2273,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
+> >  	btrfs_scrub_continue(fs_info);
+> >  cleanup_transaction:
+> >  	btrfs_trans_release_metadata(trans);
+> > +	btrfs_create_pending_block_groups(trans);
 > 
-> This is really subtle and magical and not obvious from the context of
-> the patch, but if the transaction is aborted this will change the loop
-> to actually just delete all block groups in ->new_bgs. I'd rather have
-> an explicit loop for that honestly.
+> And now you've basically hi-jacked btrfs_create_pending_block_groups to
+> just act as "delete all bg" in case transaction is aborted. Considering
+> this and the previous patch I'd rather you replace them with a single
+> one which introduces a new function delete_pending_bgs or whatever and
+> use that. This will be more explicit and self-documenting.
+> 
 
-We need it this way in case creating the bg's errors out anyway, there's no
-sense in adding a bunch of code to do something we have to handle already
-anyway.  Thanks,
+I haven't hi-jacked it and I'm not adding another helper when we already have
+code that does the right thing.  Remember if we abort a transaction in a path
+that doesn't commit we still end up calling btrfs_create_pending_block_groups()
+in btrfs_end_transaction which does the cleanup there, I'm not adding a bunch of
+new code for a case that's easily handled with the previous fix and works the
+same way in other paths.  Thanks,
 
 Josef

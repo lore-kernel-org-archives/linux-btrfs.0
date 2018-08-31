@@ -1,55 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:55746 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:55758 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726037AbeHaGew (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 31 Aug 2018 02:34:52 -0400
+        id S1726037AbeHaGfB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 31 Aug 2018 02:35:01 -0400
 Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 4E1C3B05B
-        for <linux-btrfs@vger.kernel.org>; Fri, 31 Aug 2018 02:29:43 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id E0A57B05B
+        for <linux-btrfs@vger.kernel.org>; Fri, 31 Aug 2018 02:29:51 +0000 (UTC)
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/3] btrfs: qgroup: Deprecate unused features for btrfs_qgroup_inherit()
-Date: Fri, 31 Aug 2018 10:29:27 +0800
-Message-Id: <20180831022930.3465-1-wqu@suse.com>
+Subject: [PATCH 1/3] btrfs: Set qgroup inherit size limit to SZ_4K instead of page size
+Date: Fri, 31 Aug 2018 10:29:28 +0800
+Message-Id: <20180831022930.3465-2-wqu@suse.com>
+In-Reply-To: <20180831022930.3465-1-wqu@suse.com>
+References: <20180831022930.3465-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patchset can be fetched from github:
-https://github.com/adam900710/linux/tree/qgroup_inherit_check
-Which is based on v4.19-rc1 tag.
+Change btrfs_qgroup_inherit maximum size from PAGE_SIZE to SZ_4K to make
+it consistent across different architectures.
 
-This patchset will first set btrfs_qgroup_inherit structure size limit
-from PAGE_SIZE to fixed SZ_4K.
-I understand this normally will cause compatibility problem, but
-considering how minor this feature is and no sane guy should use it for
-over 100 qgroups, it should be fine in real world.
+Although in theory this could lead to incompatibility, but considering
+how rare btrfs_qgroup_inherit is used, it's still not too late to change
+it without impacting a large user base.
 
-The 2nd patch introduce check function for btrfs_qgroup_inherit
-structure and deprecates the following features:
-1) limit set
-   Never utilized by btrfs-progs from the beginning.
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/ioctl.c           | 2 +-
+ include/uapi/linux/btrfs.h | 1 +
+ 2 files changed, 2 insertions(+), 1 deletion(-)
 
-2) copy rfer/excl
-   Although btrfs-progs provides support for it as a hidden,
-   undocumented feature, it's the easiest way to screw up qgroup
-   numbers.
-   And we already have patches wondering around the ML to remove such
-   support.
-
-The last one will just cleanup the code for unsupported features.
-
-Qu Wenruo (3):
-  btrfs: Set qgroup inherit size limit to SZ_4K instead of page size
-  btrfs: qgroup: Validate btrfs_qgroup_inherit structure before passing
-    it to qgroup
-  btrfs: qgroup: Remove deprecated feature support in
-    btrfs_qgorup_inhert()
-
- fs/btrfs/ioctl.c           |  5 +-
- fs/btrfs/qgroup.c          | 96 ++++++++++++++++----------------------
- fs/btrfs/qgroup.h          |  2 +
- include/uapi/linux/btrfs.h | 18 +++----
- 4 files changed, 55 insertions(+), 66 deletions(-)
-
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 63600dc2ac4c..5db8680b40a9 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -1811,7 +1811,7 @@ static noinline int btrfs_ioctl_snap_create_v2(struct file *file,
+ 	if (vol_args->flags & BTRFS_SUBVOL_RDONLY)
+ 		readonly = true;
+ 	if (vol_args->flags & BTRFS_SUBVOL_QGROUP_INHERIT) {
+-		if (vol_args->size > PAGE_SIZE) {
++		if (vol_args->size > BTRFS_QGROUP_INHERIT_MAX_SIZE) {
+ 			ret = -EINVAL;
+ 			goto free_args;
+ 		}
+diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+index 5ca1d21fc4a7..311edb65567c 100644
+--- a/include/uapi/linux/btrfs.h
++++ b/include/uapi/linux/btrfs.h
+@@ -82,6 +82,7 @@ struct btrfs_qgroup_limit {
+  */
+ #define BTRFS_QGROUP_INHERIT_SET_LIMITS	(1ULL << 0)
+ 
++#define BTRFS_QGROUP_INHERIT_MAX_SIZE	(SZ_4K)
+ struct btrfs_qgroup_inherit {
+ 	__u64	flags;
+ 	__u64	num_qgroups;
 -- 
 2.18.0

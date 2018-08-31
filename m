@@ -1,122 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:39004 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727178AbeHaMEA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 31 Aug 2018 08:04:00 -0400
-Subject: Re: [PATCH 01/35] btrfs: add btrfs_delete_ref_head helper
-To: Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org
+Received: from mail-qt0-f195.google.com ([209.85.216.195]:43431 "EHLO
+        mail-qt0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727582AbeHaSKm (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 31 Aug 2018 14:10:42 -0400
+Received: by mail-qt0-f195.google.com with SMTP id g53-v6so14585356qtg.10
+        for <linux-btrfs@vger.kernel.org>; Fri, 31 Aug 2018 07:03:04 -0700 (PDT)
+Date: Fri, 31 Aug 2018 10:03:00 -0400
+From: Josef Bacik <josef@toxicpanda.com>
+To: Nikolay Borisov <nborisov@suse.com>
+Cc: Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 22/35] btrfs: make sure we create all new bgs
+Message-ID: <20180831140259.dwvyvskb3xg2ubku@destiny>
 References: <20180830174225.2200-1-josef@toxicpanda.com>
- <20180830174225.2200-2-josef@toxicpanda.com>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <e8e85625-5269-23ec-4152-a96fe393f8b2@suse.com>
-Date: Fri, 31 Aug 2018 10:57:45 +0300
+ <20180830174225.2200-23-josef@toxicpanda.com>
+ <a433a3b0-dbe1-da97-2d30-1e3ab85e9ec0@suse.com>
 MIME-Version: 1.0
-In-Reply-To: <20180830174225.2200-2-josef@toxicpanda.com>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <a433a3b0-dbe1-da97-2d30-1e3ab85e9ec0@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-On 30.08.2018 20:41, Josef Bacik wrote:
-> From: Josef Bacik <jbacik@fb.com>
+On Fri, Aug 31, 2018 at 10:31:49AM +0300, Nikolay Borisov wrote:
 > 
-> We do this dance in cleanup_ref_head and check_ref_cleanup, unify it
-> into a helper and cleanup the calling functions.
 > 
-> Signed-off-by: Josef Bacik <jbacik@fb.com>
-> ---
->  fs/btrfs/delayed-ref.c | 14 ++++++++++++++
->  fs/btrfs/delayed-ref.h |  3 ++-
->  fs/btrfs/extent-tree.c | 24 ++++--------------------
->  3 files changed, 20 insertions(+), 21 deletions(-)
+> On 30.08.2018 20:42, Josef Bacik wrote:
+> > We can actually allocate new chunks while we're creating our bg's, so
+> > instead of doing list_for_each_safe, just do while (!list_empty()) so we
+> > make sure to catch any new bg's that get added to the list.
 > 
-> diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
-> index 62ff545ba1f7..3a9e4ac21794 100644
-> --- a/fs/btrfs/delayed-ref.c
-> +++ b/fs/btrfs/delayed-ref.c
-> @@ -393,6 +393,20 @@ btrfs_select_ref_head(struct btrfs_trans_handle *trans)
->  	return head;
->  }
->  
-> +void btrfs_delete_ref_head(struct btrfs_delayed_ref_root *delayed_refs,
-> +			   struct btrfs_delayed_ref_head *head)
-> +{
-> +	lockdep_assert_held(&delayed_refs->lock);
-> +	lockdep_assert_held(&head->lock);
-> +
-> +	rb_erase(&head->href_node, &delayed_refs->href_root);
-> +	RB_CLEAR_NODE(&head->href_node);
-> +	atomic_dec(&delayed_refs->num_entries);
-> +	delayed_refs->num_heads--;
-> +	if (head->processing == 0)
-> +		delayed_refs->num_heads_ready--;
-> +}
-> +
->  /*
->   * Helper to insert the ref_node to the tail or merge with tail.
->   *
-> diff --git a/fs/btrfs/delayed-ref.h b/fs/btrfs/delayed-ref.h
-> index d9f2a4ebd5db..7769177b489e 100644
-> --- a/fs/btrfs/delayed-ref.h
-> +++ b/fs/btrfs/delayed-ref.h
-> @@ -261,7 +261,8 @@ static inline void btrfs_delayed_ref_unlock(struct btrfs_delayed_ref_head *head)
->  {
->  	mutex_unlock(&head->mutex);
->  }
-> -
-> +void btrfs_delete_ref_head(struct btrfs_delayed_ref_root *delayed_refs,
-> +			   struct btrfs_delayed_ref_head *head);
->  
->  struct btrfs_delayed_ref_head *
->  btrfs_select_ref_head(struct btrfs_trans_handle *trans);
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index f77226d8020a..6799950fa057 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -2492,12 +2492,9 @@ static int cleanup_ref_head(struct btrfs_trans_handle *trans,
->  		spin_unlock(&delayed_refs->lock);
->  		return 1;
->  	}
-> -	delayed_refs->num_heads--;
-> -	rb_erase(&head->href_node, &delayed_refs->href_root);
-> -	RB_CLEAR_NODE(&head->href_node);
-> -	spin_unlock(&head->lock);
-> +	btrfs_delete_ref_head(delayed_refs, head);
->  	spin_unlock(&delayed_refs->lock);
-> -	atomic_dec(&delayed_refs->num_entries);
-> +	spin_unlock(&head->lock);
->  
-
-Again, the feedback of reversed lock-order is not addressed:
-
-https://www.spinics.net/lists/linux-btrfs/msg80482.html
-
->  	trace_run_delayed_ref_head(fs_info, head, 0);
->  
-> @@ -6984,22 +6981,9 @@ static noinline int check_ref_cleanup(struct btrfs_trans_handle *trans,
->  	if (!mutex_trylock(&head->mutex))
->  		goto out;
->  
-> -	/*
-> -	 * at this point we have a head with no other entries.  Go
-> -	 * ahead and process it.
-> -	 */
-> -	rb_erase(&head->href_node, &delayed_refs->href_root);
-> -	RB_CLEAR_NODE(&head->href_node);
-> -	atomic_dec(&delayed_refs->num_entries);
-> -
-> -	/*
-> -	 * we don't take a ref on the node because we're removing it from the
-> -	 * tree, so we just steal the ref the tree was holding.
-> -	 */
-> -	delayed_refs->num_heads--;
-> -	if (head->processing == 0)
-> -		delayed_refs->num_heads_ready--;
-> +	btrfs_delete_ref_head(delayed_refs, head);
->  	head->processing = 0;
-> +
->  	spin_unlock(&head->lock);
->  	spin_unlock(&delayed_refs->lock);
->  
+> HOw can this occur, please elaborate and put an example callstack in the
+> commit log.
 > 
+
+Eh?  We're modifying the extent tree and chunk tree, which can cause bg's to be
+allocated, it's just common sense.
+
+Josef

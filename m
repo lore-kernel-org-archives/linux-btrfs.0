@@ -1,51 +1,122 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:38584 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:39004 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727233AbeHaMBg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 31 Aug 2018 08:01:36 -0400
-Subject: Re: [PATCH 15/35] btrfs: run delayed iputs before committing
+        id S1727178AbeHaMEA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 31 Aug 2018 08:04:00 -0400
+Subject: Re: [PATCH 01/35] btrfs: add btrfs_delete_ref_head helper
 To: Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org
 References: <20180830174225.2200-1-josef@toxicpanda.com>
- <20180830174225.2200-16-josef@toxicpanda.com>
+ <20180830174225.2200-2-josef@toxicpanda.com>
 From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <31a5f6cf-f69f-e624-04d5-124e90fe02a4@suse.com>
-Date: Fri, 31 Aug 2018 10:55:22 +0300
+Message-ID: <e8e85625-5269-23ec-4152-a96fe393f8b2@suse.com>
+Date: Fri, 31 Aug 2018 10:57:45 +0300
 MIME-Version: 1.0
-In-Reply-To: <20180830174225.2200-16-josef@toxicpanda.com>
+In-Reply-To: <20180830174225.2200-2-josef@toxicpanda.com>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On 30.08.2018 20:42, Josef Bacik wrote:
-> We want to have a complete picture of any delayed inode updates before
-> we make the decision to commit or not, so make sure we run delayed iputs
-> before making the decision to commit or not.
-
-Again, there was request for more detail which is not addressed:
-
-https://www.spinics.net/lists/linux-btrfs/msg81237.html
-
+On 30.08.2018 20:41, Josef Bacik wrote:
+> From: Josef Bacik <jbacik@fb.com>
 > 
-> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+> We do this dance in cleanup_ref_head and check_ref_cleanup, unify it
+> into a helper and cleanup the calling functions.
+> 
+> Signed-off-by: Josef Bacik <jbacik@fb.com>
 > ---
->  fs/btrfs/extent-tree.c | 4 ++++
->  1 file changed, 4 insertions(+)
+>  fs/btrfs/delayed-ref.c | 14 ++++++++++++++
+>  fs/btrfs/delayed-ref.h |  3 ++-
+>  fs/btrfs/extent-tree.c | 24 ++++--------------------
+>  3 files changed, 20 insertions(+), 21 deletions(-)
 > 
+> diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
+> index 62ff545ba1f7..3a9e4ac21794 100644
+> --- a/fs/btrfs/delayed-ref.c
+> +++ b/fs/btrfs/delayed-ref.c
+> @@ -393,6 +393,20 @@ btrfs_select_ref_head(struct btrfs_trans_handle *trans)
+>  	return head;
+>  }
+>  
+> +void btrfs_delete_ref_head(struct btrfs_delayed_ref_root *delayed_refs,
+> +			   struct btrfs_delayed_ref_head *head)
+> +{
+> +	lockdep_assert_held(&delayed_refs->lock);
+> +	lockdep_assert_held(&head->lock);
+> +
+> +	rb_erase(&head->href_node, &delayed_refs->href_root);
+> +	RB_CLEAR_NODE(&head->href_node);
+> +	atomic_dec(&delayed_refs->num_entries);
+> +	delayed_refs->num_heads--;
+> +	if (head->processing == 0)
+> +		delayed_refs->num_heads_ready--;
+> +}
+> +
+>  /*
+>   * Helper to insert the ref_node to the tail or merge with tail.
+>   *
+> diff --git a/fs/btrfs/delayed-ref.h b/fs/btrfs/delayed-ref.h
+> index d9f2a4ebd5db..7769177b489e 100644
+> --- a/fs/btrfs/delayed-ref.h
+> +++ b/fs/btrfs/delayed-ref.h
+> @@ -261,7 +261,8 @@ static inline void btrfs_delayed_ref_unlock(struct btrfs_delayed_ref_head *head)
+>  {
+>  	mutex_unlock(&head->mutex);
+>  }
+> -
+> +void btrfs_delete_ref_head(struct btrfs_delayed_ref_root *delayed_refs,
+> +			   struct btrfs_delayed_ref_head *head);
+>  
+>  struct btrfs_delayed_ref_head *
+>  btrfs_select_ref_head(struct btrfs_trans_handle *trans);
 > diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index 7c0e99e1f56c..064db7ebaf67 100644
+> index f77226d8020a..6799950fa057 100644
 > --- a/fs/btrfs/extent-tree.c
 > +++ b/fs/btrfs/extent-tree.c
-> @@ -4831,6 +4831,10 @@ static int may_commit_transaction(struct btrfs_fs_info *fs_info,
->  		goto commit;
+> @@ -2492,12 +2492,9 @@ static int cleanup_ref_head(struct btrfs_trans_handle *trans,
+>  		spin_unlock(&delayed_refs->lock);
+>  		return 1;
 >  	}
+> -	delayed_refs->num_heads--;
+> -	rb_erase(&head->href_node, &delayed_refs->href_root);
+> -	RB_CLEAR_NODE(&head->href_node);
+> -	spin_unlock(&head->lock);
+> +	btrfs_delete_ref_head(delayed_refs, head);
+>  	spin_unlock(&delayed_refs->lock);
+> -	atomic_dec(&delayed_refs->num_entries);
+> +	spin_unlock(&head->lock);
 >  
-> +	mutex_lock(&fs_info->cleaner_delayed_iput_mutex);
-> +	btrfs_run_delayed_iputs(fs_info);
-> +	mutex_unlock(&fs_info->cleaner_delayed_iput_mutex);
+
+Again, the feedback of reversed lock-order is not addressed:
+
+https://www.spinics.net/lists/linux-btrfs/msg80482.html
+
+>  	trace_run_delayed_ref_head(fs_info, head, 0);
+>  
+> @@ -6984,22 +6981,9 @@ static noinline int check_ref_cleanup(struct btrfs_trans_handle *trans,
+>  	if (!mutex_trylock(&head->mutex))
+>  		goto out;
+>  
+> -	/*
+> -	 * at this point we have a head with no other entries.  Go
+> -	 * ahead and process it.
+> -	 */
+> -	rb_erase(&head->href_node, &delayed_refs->href_root);
+> -	RB_CLEAR_NODE(&head->href_node);
+> -	atomic_dec(&delayed_refs->num_entries);
+> -
+> -	/*
+> -	 * we don't take a ref on the node because we're removing it from the
+> -	 * tree, so we just steal the ref the tree was holding.
+> -	 */
+> -	delayed_refs->num_heads--;
+> -	if (head->processing == 0)
+> -		delayed_refs->num_heads_ready--;
+> +	btrfs_delete_ref_head(delayed_refs, head);
+>  	head->processing = 0;
 > +
->  	spin_lock(&delayed_rsv->lock);
->  	reclaim_bytes += delayed_rsv->reserved;
->  	spin_unlock(&delayed_rsv->lock);
+>  	spin_unlock(&head->lock);
+>  	spin_unlock(&delayed_refs->lock);
+>  
 > 

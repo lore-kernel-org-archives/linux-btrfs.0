@@ -1,60 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yb1-f182.google.com ([209.85.219.182]:46770 "EHLO
-        mail-yb1-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725973AbeIAEWN (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 1 Sep 2018 00:22:13 -0400
-Received: by mail-yb1-f182.google.com with SMTP id y20-v6so1483491ybi.13
-        for <linux-btrfs@vger.kernel.org>; Fri, 31 Aug 2018 17:12:19 -0700 (PDT)
-Date: Fri, 31 Aug 2018 17:12:14 -0700
+Received: from mail-yw1-f66.google.com ([209.85.161.66]:43567 "EHLO
+        mail-yw1-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725846AbeIAEYw (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 1 Sep 2018 00:24:52 -0400
+Received: by mail-yw1-f66.google.com with SMTP id l189-v6so5641234ywb.10
+        for <linux-btrfs@vger.kernel.org>; Fri, 31 Aug 2018 17:14:57 -0700 (PDT)
+Date: Fri, 31 Aug 2018 17:14:52 -0700
 From: Omar Sandoval <osandov@osandov.com>
 To: Josef Bacik <josef@toxicpanda.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 08/35] btrfs: release metadata before running delayed refs
-Message-ID: <20180901001214.GB29370@vader>
+Subject: Re: [PATCH 09/35] btrfs: protect space cache inode alloc with nofs
+Message-ID: <20180901001452.GC29370@vader>
 References: <20180830174225.2200-1-josef@toxicpanda.com>
- <20180830174225.2200-9-josef@toxicpanda.com>
+ <20180830174225.2200-10-josef@toxicpanda.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180830174225.2200-9-josef@toxicpanda.com>
+In-Reply-To: <20180830174225.2200-10-josef@toxicpanda.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Aug 30, 2018 at 01:41:58PM -0400, Josef Bacik wrote:
-> We want to release the unused reservation we have since it refills the
-> delayed refs reserve, which will make everything go smoother when
-> running the delayed refs if we're short on our reservation.
+On Thu, Aug 30, 2018 at 01:41:59PM -0400, Josef Bacik wrote:
+> If we're allocating a new space cache inode it's likely going to be
+> under a transaction handle, so we need to use memalloc_nofs_save() in
+> order to avoid deadlocks, and more importantly lockdep messages that
+> make xfstests fail.
+
+Could use a comment where we call memalloc_nofs_save(). Otherwise,
 
 Reviewed-by: Omar Sandoval <osandov@fb.com>
 
 > Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 > ---
->  fs/btrfs/transaction.c | 6 +++---
->  1 file changed, 3 insertions(+), 3 deletions(-)
+>  fs/btrfs/free-space-cache.c | 4 ++++
+>  1 file changed, 4 insertions(+)
 > 
-> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-> index 99741254e27e..ebb0c0405598 100644
-> --- a/fs/btrfs/transaction.c
-> +++ b/fs/btrfs/transaction.c
-> @@ -1915,6 +1915,9 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
->  		return ret;
->  	}
+> diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+> index c3888c113d81..db93a5f035a0 100644
+> --- a/fs/btrfs/free-space-cache.c
+> +++ b/fs/btrfs/free-space-cache.c
+> @@ -10,6 +10,7 @@
+>  #include <linux/math64.h>
+>  #include <linux/ratelimit.h>
+>  #include <linux/error-injection.h>
+> +#include <linux/sched/mm.h>
+>  #include "ctree.h"
+>  #include "free-space-cache.h"
+>  #include "transaction.h"
+> @@ -47,6 +48,7 @@ static struct inode *__lookup_free_space_inode(struct btrfs_root *root,
+>  	struct btrfs_free_space_header *header;
+>  	struct extent_buffer *leaf;
+>  	struct inode *inode = NULL;
+> +	unsigned nofs_flag;
+>  	int ret;
 >  
-> +	btrfs_trans_release_metadata(trans);
-> +	trans->block_rsv = NULL;
-> +
->  	/* make a pass through all the delayed refs we have so far
->  	 * any runnings procs may add more while we are here
->  	 */
-> @@ -1924,9 +1927,6 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
->  		return ret;
->  	}
+>  	key.objectid = BTRFS_FREE_SPACE_OBJECTID;
+> @@ -68,7 +70,9 @@ static struct inode *__lookup_free_space_inode(struct btrfs_root *root,
+>  	btrfs_disk_key_to_cpu(&location, &disk_key);
+>  	btrfs_release_path(path);
 >  
-> -	btrfs_trans_release_metadata(trans);
-> -	trans->block_rsv = NULL;
-> -
->  	cur_trans = trans->transaction;
+> +	nofs_flag = memalloc_nofs_save();
+>  	inode = btrfs_iget(fs_info->sb, &location, root, NULL);
+> +	memalloc_nofs_restore(nofs_flag);
+>  	if (IS_ERR(inode))
+>  		return inode;
 >  
->  	/*
 > -- 
 > 2.14.3
 > 

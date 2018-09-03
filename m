@@ -1,30 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from tartarus.angband.pl ([89.206.35.136]:42116 "EHLO
+Received: from tartarus.angband.pl ([89.206.35.136]:48606 "EHLO
         tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727462AbeICOeI (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Sep 2018 10:34:08 -0400
+        with ESMTP id S1726023AbeICPvI (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Sep 2018 11:51:08 -0400
 From: Adam Borowski <kilobyte@angband.pl>
 To: David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org,
-        Mark Fasheh <mfasheh@versity.com>
+        Nikolay Borisov <nborisov@suse.com>
 Cc: Adam Borowski <kilobyte@angband.pl>
-Date: Mon,  3 Sep 2018 12:14:26 +0200
-Message-Id: <20180903101426.14968-2-kilobyte@angband.pl>
-In-Reply-To: <20180903101426.14968-1-kilobyte@angband.pl>
-References: <20180903101426.14968-1-kilobyte@angband.pl>
+Date: Mon,  3 Sep 2018 13:31:15 +0200
+Message-Id: <20180903113115.13609-1-kilobyte@angband.pl>
+In-Reply-To: <51e331d1-0f61-7ccb-7424-99450658805b@suse.com>
+References: <51e331d1-0f61-7ccb-7424-99450658805b@suse.com>
 MIME-Version: 1.0
-Subject: [PATCH 2/2] btrfs-progs: defrag: open files RO on new enough kernels or if root
+Subject: [PATCH v2] btrfs-progs: defrag: open files RO on new enough kernels
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Fixes EXTXBSY races.
+Defragging an executable conflicts both way with it being run, resulting in
+ETXTBSY.  This either makes defrag fail or prevents the program from being
+executed.
+
+Kernels 4.19-rc1 and later allow defragging files you could have possibly
+opened rw, even if the passed descriptor is ro.
 
 Signed-off-by: Adam Borowski <kilobyte@angband.pl>
 ---
+v2: more eloquent description; root can't defrag RO on old kernels (unlike
+dedupe)
+
+
  cmds-filesystem.c | 10 ++++++++--
  1 file changed, 8 insertions(+), 2 deletions(-)
 
 diff --git a/cmds-filesystem.c b/cmds-filesystem.c
-index 06c8311b..4c9df69f 100644
+index 06c8311b..17e992a3 100644
 --- a/cmds-filesystem.c
 +++ b/cmds-filesystem.c
 @@ -26,6 +26,7 @@
@@ -63,7 +72,7 @@ index 06c8311b..4c9df69f 100644
  	int compress_type = BTRFS_COMPRESS_NONE;
  	DIR *dirstream;
  
-+	if (get_running_kernel_version() < KERNEL_VERSION(4,19,0) && getuid())
++	if (get_running_kernel_version() < KERNEL_VERSION(4,19,0))
 +		defrag_ro = O_RDWR;
 +
  	/*

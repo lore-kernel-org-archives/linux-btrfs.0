@@ -1,57 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp2-g21.free.fr ([212.27.42.2]:41758 "EHLO smtp2-g21.free.fr"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725869AbeICKkD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 3 Sep 2018 06:40:03 -0400
-Subject: Re: IO errors when building RAID1.... ?
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <83a74213-e66c-238c-43e4-8333c678e588@couderc.eu>
- <CAJCQCtQso9Lvw-33DmLDuOxnMcsRPzq6Ya9oo_n2_LvsvFVYqA@mail.gmail.com>
- <1d04b9a0-ae0f-267c-11ec-722c2be279aa@couderc.eu>
- <CAJCQCtS6dy4JUqdQEuTNAxDeCVSsRPOhM-yNqq0c4BjQrkbDzw@mail.gmail.com>
-From: Pierre Couderc <pierre@couderc.eu>
-Message-ID: <447e520a-45f1-89b8-94c8-d351b30cf861@couderc.eu>
-Date: Mon, 3 Sep 2018 08:21:18 +0200
+Received: from mx2.suse.de ([195.135.220.15]:52366 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726212AbeICNZp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 3 Sep 2018 09:25:45 -0400
+Subject: Re: [PATCH 06/35] btrfs: check if free bgs for commit
+To: Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org
+References: <20180830174225.2200-1-josef@toxicpanda.com>
+ <20180830174225.2200-7-josef@toxicpanda.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <bc0590cb-cd89-d31d-b666-5e18094368ad@suse.com>
+Date: Mon, 3 Sep 2018 12:06:29 +0300
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtS6dy4JUqdQEuTNAxDeCVSsRPOhM-yNqq0c4BjQrkbDzw@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <20180830174225.2200-7-josef@toxicpanda.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On 09/03/2018 05:15 AM, Chris Murphy wrote:
-> On Sat, Sep 1, 2018 at 1:03 AM, Pierre Couderc <pierre@couderc.eu> wrote:
->>
->> On 08/31/2018 08:52 PM, Chris Murphy wrote:
->>>
->>> Bad sector which is failing write. This is fatal, there isn't anything
->>> the block layer or Btrfs (or ext4 or XFS) can do about it. Well,
->>> ext234 do have an option to scan for bad sectors and create a bad
->>> sector map which then can be used at mkfs time, and ext234 will avoid
->>> using those sectors. And also the md driver has a bad sector option
->>> for the same, and does remapping. But XFS and Btrfs don't do that.
->>>
->>> If the drive is under warranty, get it swapped out, this is definitely
->>> a warranty covered problem.
->>>
->>>
->>>
->>>
->> Thank you very much.
->>
->> Once upon a time...(I am old), there were lists of bad sectors, and the
->> software did avoid wrting in them. It seems to have disappeared. For which
->> reason ? Maybe because these errors occur so  rarely, that it is not worth
->> the trouble ?
-> For > 10 years drive firmware handles bad sector remapping internally.
-> It remaps the sector logical address to a reserve physical sector.
->
-> NTFS and ext[234] have a means of accepting a list of bad sectors, and
-> will avoid using them. Btrfs doesn't. But also ZFS, XFS, APFS, HFS+
-> and I think even FAT, lack this capability. I'm not aware of any file
-> system that once had bad sector tracking, that has since dropped the
-> capability.
->
-Thank you, you are very clear.
+On 30.08.2018 20:41, Josef Bacik wrote:
+> may_commit_transaction will skip committing the transaction if we don't
+> have enough pinned space or if we're trying to find space for a SYSTEM
+> chunk.  However if we have pending free block groups in this transaction
+> we still want to commit as we may be able to allocate a chunk to make
+> our reservation.  So instead of just returning ENOSPC, check if we have
+> free block groups pending, and if so commit the transaction to allow us
+> to use that free space.
+> 
+> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+> ---
+>  fs/btrfs/extent-tree.c | 18 ++++++++++++------
+>  1 file changed, 12 insertions(+), 6 deletions(-)
+> 
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index 6e7f350754d2..80615a579b18 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -4804,6 +4804,7 @@ static int may_commit_transaction(struct btrfs_fs_info *fs_info,
+>  	struct btrfs_trans_handle *trans;
+>  	u64 bytes;
+>  	u64 reclaim_bytes = 0;
+> +	bool do_commit = true;
+>  
+>  	trans = (struct btrfs_trans_handle *)current->journal_info;
+>  	if (trans)
+
+While you are at it, does this check even make sense, since the
+transaction handle is  acquired proper later I think this can be removed?
+
+> @@ -4832,8 +4833,10 @@ static int may_commit_transaction(struct btrfs_fs_info *fs_info,
+>  	 * See if there is some space in the delayed insertion reservation for
+>  	 * this reservation.
+>  	 */
+> -	if (space_info != delayed_rsv->space_info)
+> -		return -ENOSPC;
+> +	if (space_info != delayed_rsv->space_info) {
+> +		do_commit = false;
+> +		goto commit;
+> +	}
+>  
+>  	spin_lock(&delayed_rsv->lock);
+>  	reclaim_bytes += delayed_rsv->reserved;
+> @@ -4848,15 +4851,18 @@ static int may_commit_transaction(struct btrfs_fs_info *fs_info,
+>  
+>  	if (__percpu_counter_compare(&space_info->total_bytes_pinned,
+>  				   bytes,
+> -				   BTRFS_TOTAL_BYTES_PINNED_BATCH) < 0) {
+> -		return -ENOSPC;
+> -	}
+> -
+> +				   BTRFS_TOTAL_BYTES_PINNED_BATCH) < 0)
+> +		do_commit = false;
+>  commit:
+>  	trans = btrfs_join_transaction(fs_info->extent_root);
+>  	if (IS_ERR(trans))
+>  		return -ENOSPC;
+>  
+> +	if (!do_commit &&> +	    !test_bit(BTRFS_TRANS_HAVE_FREE_BGS, &trans->transaction->flags)) {
+> +		btrfs_end_transaction(trans);
+> +		return -ENOSPC;
+> +	}
+>  	return btrfs_commit_transaction(trans);
+>  }
+>  
+> 

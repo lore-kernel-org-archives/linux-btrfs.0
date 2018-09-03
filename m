@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:44124 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:44486 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726023AbeICPVD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 3 Sep 2018 11:21:03 -0400
+        id S1726034AbeICPYF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 3 Sep 2018 11:24:05 -0400
 Subject: Re: [PATCH 2/2] btrfs-progs: defrag: open files RO on new enough
  kernels or if root
 To: Adam Borowski <kilobyte@angband.pl>, David Sterba <dsterba@suse.cz>,
@@ -10,8 +10,8 @@ To: Adam Borowski <kilobyte@angband.pl>, David Sterba <dsterba@suse.cz>,
 References: <20180903101426.14968-1-kilobyte@angband.pl>
  <20180903101426.14968-2-kilobyte@angband.pl>
 From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <51e331d1-0f61-7ccb-7424-99450658805b@suse.com>
-Date: Mon, 3 Sep 2018 14:01:21 +0300
+Message-ID: <61784cbe-719b-a83f-8535-bb622c39edcb@suse.com>
+Date: Mon, 3 Sep 2018 14:04:23 +0300
 MIME-Version: 1.0
 In-Reply-To: <20180903101426.14968-2-kilobyte@angband.pl>
 Content-Type: text/plain; charset=utf-8
@@ -22,11 +22,6 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 On  3.09.2018 13:14, Adam Borowski wrote:
 > Fixes EXTXBSY races.
-
-You have to be more eloquent than that and explain at least one race
-condition.
-
-
 > 
 > Signed-off-by: Adam Borowski <kilobyte@angband.pl>
 > ---
@@ -57,9 +52,6 @@ condition.
 >   */
 >  static struct seen_fsid *seen_fsid_hash[SEEN_FSID_HASH_SIZE] = {NULL,};
 > +static mode_t defrag_ro = O_RDONLY;
-
-This brings no value whatsoever, just use O_RDONLY directly
-
 >  
 >  static const char * const filesystem_cmd_group_usage[] = {
 >  	"btrfs filesystem [<group>] <command> [<args>]",
@@ -69,6 +61,21 @@ This brings no value whatsoever, just use O_RDONLY directly
 >  			printf("%s\n", fpath);
 > -		fd = open(fpath, O_RDWR);
 > +		fd = open(fpath, defrag_ro);
+
+Looking at the kernel code I think this is in fact incorrect, because in
+ioctl.c we have:
+
+                if (!(file->f_mode & FMODE_WRITE)) {
+
+                        ret = -EINVAL;
+
+                        goto out;
+
+                }
+
+So it seems a hard requirement to have opened a file for RW when you
+want to defragment it.
+
 >  		if (fd < 0) {
 >  			goto error;
 >  		}

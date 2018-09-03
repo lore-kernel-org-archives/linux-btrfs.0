@@ -1,58 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:53204 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725898AbeICNcu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 3 Sep 2018 09:32:50 -0400
-Subject: Re: [PATCH 08/35] btrfs: release metadata before running delayed refs
-To: Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org
-References: <20180830174225.2200-1-josef@toxicpanda.com>
- <20180830174225.2200-9-josef@toxicpanda.com>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <fc8cf3f9-dada-0168-e53b-e9bb85c3970d@suse.com>
-Date: Mon, 3 Sep 2018 12:13:32 +0300
+Received: from tartarus.angband.pl ([89.206.35.136]:42830 "EHLO
+        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726052AbeICOmo (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Sep 2018 10:42:44 -0400
+Date: Mon, 3 Sep 2018 12:23:03 +0200
+From: Adam Borowski <kilobyte@angband.pl>
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Pierre Couderc <pierre@couderc.eu>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: IO errors when building RAID1.... ?
+Message-ID: <20180903102303.6jver7oxvwlq6yhc@angband.pl>
+References: <83a74213-e66c-238c-43e4-8333c678e588@couderc.eu>
+ <CAJCQCtQso9Lvw-33DmLDuOxnMcsRPzq6Ya9oo_n2_LvsvFVYqA@mail.gmail.com>
+ <1d04b9a0-ae0f-267c-11ec-722c2be279aa@couderc.eu>
+ <CAJCQCtS6dy4JUqdQEuTNAxDeCVSsRPOhM-yNqq0c4BjQrkbDzw@mail.gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <20180830174225.2200-9-josef@toxicpanda.com>
 Content-Type: text/plain; charset=utf-8
+In-Reply-To: <CAJCQCtS6dy4JUqdQEuTNAxDeCVSsRPOhM-yNqq0c4BjQrkbDzw@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-On 30.08.2018 20:41, Josef Bacik wrote:
-> We want to release the unused reservation we have since it refills the
-> delayed refs reserve, which will make everything go smoother when
-> running the delayed refs if we're short on our reservation.
+On Sun, Sep 02, 2018 at 09:15:25PM -0600, Chris Murphy wrote:
+> For > 10 years drive firmware handles bad sector remapping internally.
+> It remaps the sector logical address to a reserve physical sector.
 > 
-> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+> NTFS and ext[234] have a means of accepting a list of bad sectors, and
+> will avoid using them. Btrfs doesn't. But also ZFS, XFS, APFS, HFS+
+> and I think even FAT, lack this capability.
 
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+<nitpick>
+FAT entry FF7 (FAT12)/FFF7 (FAT16)/...
+</nitpick>
 
-> ---
->  fs/btrfs/transaction.c | 6 +++---
->  1 file changed, 3 insertions(+), 3 deletions(-)
-> 
-> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-> index 99741254e27e..ebb0c0405598 100644
-> --- a/fs/btrfs/transaction.c
-> +++ b/fs/btrfs/transaction.c
-> @@ -1915,6 +1915,9 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
->  		return ret;
->  	}
->  
-> +	btrfs_trans_release_metadata(trans);
-> +	trans->block_rsv = NULL;
-> +
->  	/* make a pass through all the delayed refs we have so far
->  	 * any runnings procs may add more while we are here
->  	 */
-> @@ -1924,9 +1927,6 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
->  		return ret;
->  	}
->  
-> -	btrfs_trans_release_metadata(trans);
-> -	trans->block_rsv = NULL;
-> -
->  	cur_trans = trans->transaction;
->  
->  	/*
-> 
+
+-- 
+⢀⣴⠾⠻⢶⣦⠀ What Would Jesus Do, MUD/MMORPG edition:
+⣾⠁⢰⠒⠀⣿⡁ • multiplay with an admin char to benefit your mortal [Mt3:16-17]
+⢿⡄⠘⠷⠚⠋⠀ • abuse item cloning bugs [Mt14:17-20, Mt15:34-37]
+⠈⠳⣄⠀⠀⠀⠀ • use glitches to walk on water [Mt14:25-26]

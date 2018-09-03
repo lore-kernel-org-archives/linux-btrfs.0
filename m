@@ -1,21 +1,21 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f51.google.com ([209.85.218.51]:33478 "EHLO
-        mail-oi0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727278AbeICSMe (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Sep 2018 14:12:34 -0400
-Received: by mail-oi0-f51.google.com with SMTP id 8-v6so1131745oip.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 03 Sep 2018 06:52:17 -0700 (PDT)
+Received: from mail-oi0-f50.google.com ([209.85.218.50]:47072 "EHLO
+        mail-oi0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727112AbeICSjT (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Sep 2018 14:39:19 -0400
+Received: by mail-oi0-f50.google.com with SMTP id y207-v6so1158671oie.13
+        for <linux-btrfs@vger.kernel.org>; Mon, 03 Sep 2018 07:18:56 -0700 (PDT)
 MIME-Version: 1.0
 From: Etienne Champetier <champetier.etienne@gmail.com>
-Date: Mon, 3 Sep 2018 09:52:02 -0400
-Message-ID: <CAOdf3gor3zmZ5Wu4w6KEKYjxLU+DBr5UF95SrT1=wELeBHBAKg@mail.gmail.com>
+Date: Mon, 3 Sep 2018 10:18:43 -0400
+Message-ID: <CAOdf3gp5RLHxSqhFjjOtNaGpDPvK+UO9eGh+UmmnPxXNa+v-Qg@mail.gmail.com>
 Subject: RAID1 & BTRFS critical (device sda2): corrupt leaf, bad key order
 To: linux-btrfs@vger.kernel.org
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello linux-btfrs,
+Hello btfrs hackers,
 
 I have a computer acting as backup server with BTRFS RAID1, and I
 would like to know the different options to rebuild this RAID

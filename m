@@ -1,43 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from out30-132.freemail.mail.aliyun.com ([115.124.30.132]:60350 "EHLO
-        out30-132.freemail.mail.aliyun.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1725825AbeIEFmn (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 5 Sep 2018 01:42:43 -0400
-From: Liu Bo <bo.liu@linux.alibaba.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: remove redundant btrfs_trans_release_metadata"
-Date: Wed,  5 Sep 2018 09:14:50 +0800
-Message-Id: <1536110090-100798-1-git-send-email-bo.liu@linux.alibaba.com>
+Received: from tartarus.angband.pl ([89.206.35.136]:42112 "EHLO
+        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727523AbeICOeI (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Sep 2018 10:34:08 -0400
+From: Adam Borowski <kilobyte@angband.pl>
+To: David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org,
+        Mark Fasheh <mfasheh@versity.com>
+Cc: Adam Borowski <kilobyte@angband.pl>
+Date: Mon,  3 Sep 2018 12:14:25 +0200
+Message-Id: <20180903101426.14968-1-kilobyte@angband.pl>
+MIME-Version: 1.0
+Subject: [PATCH 1/2] btrfs-progs: fix kernel version parsing on some versions past 3.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-__btrfs_end_transaction() has done the metadata release twice,
-probably because it used to process delayed refs in between, but now
-that we don't process delayed refs any more, the 2nd release is always
-a noop.
+The code fails if the third section is missing (like "4.18") or is followed
+by anything but "." or "-".  This happens for example if we're not exactly
+at a tag and CONFIG_LOCALVERSION_AUTO=n (which results in "4.18.5+").
 
-Signed-off-by: Liu Bo <bo.liu@linux.alibaba.com>
+Signed-off-by: Adam Borowski <kilobyte@angband.pl>
 ---
- fs/btrfs/transaction.c | 6 ------
- 1 file changed, 6 deletions(-)
+ fsfeatures.c | 5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index bb1b9f526e98..94b036a74d11 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -826,12 +826,6 @@ static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
- 		return 0;
- 	}
+diff --git a/fsfeatures.c b/fsfeatures.c
+index 7d85d60f..66111bf4 100644
+--- a/fsfeatures.c
++++ b/fsfeatures.c
+@@ -216,11 +216,8 @@ u32 get_running_kernel_version(void)
+ 		return (u32)-1;
+ 	version |= atoi(tmp) << 8;
+ 	tmp = strtok_r(NULL, ".", &saveptr);
+-	if (tmp) {
+-		if (!string_is_numerical(tmp))
+-			return (u32)-1;
++	if (tmp && string_is_numerical(tmp))
+ 		version |= atoi(tmp);
+-	}
  
--	btrfs_trans_release_metadata(trans);
--	trans->block_rsv = NULL;
--
--	if (!list_empty(&trans->new_bgs))
--		btrfs_create_pending_block_groups(trans);
--
- 	trans->delayed_ref_updates = 0;
- 	if (!trans->sync) {
- 		must_run_delayed_refs =
+ 	return version;
+ }
 -- 
-1.8.3.1
+2.19.0.rc1

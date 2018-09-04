@@ -1,465 +1,151 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:12164 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1726102AbeIDLbc (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 4 Sep 2018 07:31:32 -0400
-From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Subject: [PATCH v10.5 2/5] btrfs-progs: dedupe: Add enable command for dedupe command group
-Date: Tue, 4 Sep 2018 15:07:25 +0800
-Message-ID: <20180904070728.5495-3-lufq.fnst@cn.fujitsu.com>
-In-Reply-To: <20180904070728.5495-1-lufq.fnst@cn.fujitsu.com>
-References: <20180904070728.5495-1-lufq.fnst@cn.fujitsu.com>
+Received: from mout.gmx.net ([212.227.17.21]:35969 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726295AbeIDNjo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 4 Sep 2018 09:39:44 -0400
+Subject: Re: fsck lowmem mode only: ERROR: errors found in fs roots
+To: Christoph Anton Mitterer <calestyo@scientia.net>,
+        Su Yue <suy.fnst@cn.fujitsu.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Cc: Su Yue <Damenly_Su@gmx.com>
+References: <8d8c90d3edfcc9e73428d3730496d48b1160b39b.camel@scientia.net>
+ <a141cad2-0a08-555e-eb05-da2dceb54025@cn.fujitsu.com>
+ <7146cafcc48d46ad123388d492807cbba08e101c.camel@scientia.net>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <c048dacc-7164-6739-252c-c46448a5fed2@gmx.com>
+Date: Tue, 4 Sep 2018 17:14:59 +0800
 MIME-Version: 1.0
-Content-Type: text/plain
+In-Reply-To: <7146cafcc48d46ad123388d492807cbba08e101c.camel@scientia.net>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 
-Add enable subcommand for dedupe commmand group.
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
----
- Documentation/btrfs-dedupe-inband.asciidoc | 114 +++++++++-
- btrfs-completion                           |   6 +-
- cmds-dedupe-ib.c                           | 238 +++++++++++++++++++++
- ioctl.h                                    |   2 +
- 4 files changed, 358 insertions(+), 2 deletions(-)
+On 2018/9/4 上午4:24, Christoph Anton Mitterer wrote:
+> Hey.
+> 
+> 
+> On Fri, 2018-08-31 at 10:33 +0800, Su Yue wrote:
+>> Can you please fetch btrfs-progs from my repo and run lowmem check
+>> in readonly?
+>> Repo: https://github.com/Damenly/btrfs-progs/tree/lowmem_debug
+>> It's based on v4.17.1 plus additonal output for debug only.
+> 
+> I've adapted your patch to 4.17 from Debian (i.e. not the 4.17.1).
+> 
+> 
+> First I ran it again with the pristine 4.17 from Debian:
+> # btrfs check --mode=lowmem /dev/mapper/system ; echo $?
+> Checking filesystem on /dev/mapper/system
+> UUID: 6050ca10-e778-4d08-80e7-6d27b9c89b3c
+> checking extents
+> checking free space cache
+> checking fs roots
+> ERROR: errors found in fs roots
+> found 435924422656 bytes used, error(s) found
+> total csum bytes: 423418948
+> total tree bytes: 2218328064
+> total fs tree bytes: 1557168128
+> total extent tree bytes: 125894656
+> btree space waste bytes: 429599230
+> file data blocks allocated: 5193373646848
+>  referenced 555255164928
+> [ 1248.687628] ------------[ cut here ]------------
+> [ 1248.688352] generic_make_request: Trying to write to read-only block-device dm-0 (partno 0)
+> [ 1248.689127] WARNING: CPU: 3 PID: 933 at /build/linux-LgHyGB/linux-4.17.17/block/blk-core.c:2180 generic_make_request_checks+0x43d/0x610
+> [ 1248.689909] Modules linked in: dm_crypt algif_skcipher af_alg dm_mod snd_hda_codec_hdmi snd_hda_codec_realtek intel_rapl snd_hda_codec_generic x86_pkg_temp_thermal intel_powerclamp i915 iwlwifi btusb coretemp btrtl btbcm uvcvideo kvm_intel snd_hda_intel btintel videobuf2_vmalloc bluetooth snd_hda_codec kvm videobuf2_memops videobuf2_v4l2 videobuf2_common cfg80211 snd_hda_core irqbypass videodev jitterentropy_rng drm_kms_helper crct10dif_pclmul snd_hwdep crc32_pclmul drbg ghash_clmulni_intel intel_cstate snd_pcm ansi_cprng ppdev intel_uncore drm media ecdh_generic iTCO_wdt snd_timer iTCO_vendor_support rtsx_pci_ms crc16 snd intel_rapl_perf memstick joydev mei_me rfkill evdev soundcore sg parport_pc pcspkr serio_raw fujitsu_laptop mei i2c_algo_bit parport shpchp sparse_keymap pcc_cpufreq lpc_ich button
+> [ 1248.693639]  video battery ac ip_tables x_tables autofs4 btrfs zstd_decompress zstd_compress xxhash raid10 raid456 async_raid6_recov async_memcpy async_pq async_xor async_tx xor raid6_pq libcrc32c crc32c_generic raid1 raid0 multipath linear md_mod sd_mod uas usb_storage crc32c_intel rtsx_pci_sdmmc mmc_core ahci xhci_pci libahci aesni_intel ehci_pci aes_x86_64 libata crypto_simd xhci_hcd ehci_hcd cryptd glue_helper psmouse i2c_i801 scsi_mod rtsx_pci e1000e usbcore usb_common
+> [ 1248.696956] CPU: 3 PID: 933 Comm: btrfs Not tainted 4.17.0-3-amd64 #1 Debian 4.17.17-1
+> [ 1248.698118] Hardware name: FUJITSU LIFEBOOK E782/FJNB253, BIOS Version 2.11 07/15/2014
+> [ 1248.699299] RIP: 0010:generic_make_request_checks+0x43d/0x610
+> [ 1248.700495] RSP: 0018:ffffac89827c7d88 EFLAGS: 00010286
+> [ 1248.701702] RAX: 0000000000000000 RBX: ffff98f4848a9200 RCX: 0000000000000006
+> [ 1248.702930] RDX: 0000000000000007 RSI: 0000000000000082 RDI: ffff98f49e2d6730
+> [ 1248.704170] RBP: ffff98f484f6d460 R08: 000000000000033e R09: 0000000000aaaaaa
+> [ 1248.705422] R10: ffffac89827c7e60 R11: 00000000ffffffff R12: 0000000000000000
+> [ 1248.706675] R13: 0000000000000001 R14: 0000000000000000 R15: 0000000000000000
+> [ 1248.707928] FS:  00007f92842018c0(0000) GS:ffff98f49e2c0000(0000) knlGS:0000000000000000
+> [ 1248.709190] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+> [ 1248.710448] CR2: 000055fc6fe1a5b0 CR3: 0000000407f62001 CR4: 00000000001606e0
+> [ 1248.711707] Call Trace:
+> [ 1248.712960]  ? do_writepages+0x4b/0xe0
+> [ 1248.714201]  ? blkdev_readpages+0x20/0x20
+> [ 1248.715441]  ? do_writepages+0x4b/0xe0
+> [ 1248.716684]  generic_make_request+0x64/0x400
+> [ 1248.717935]  ? finish_wait+0x80/0x80
+> [ 1248.719181]  ? mempool_alloc+0x67/0x1a0
+> [ 1248.720425]  ? submit_bio+0x6c/0x140
+> [ 1248.721663]  submit_bio+0x6c/0x140
+> [ 1248.722902]  submit_bio_wait+0x53/0x80
+> [ 1248.724139]  blkdev_issue_flush+0x7c/0xb0
+> [ 1248.725377]  blkdev_fsync+0x2f/0x40
+> [ 1248.726612]  do_fsync+0x38/0x60
+> [ 1248.727849]  __x64_sys_fsync+0x10/0x20
+> [ 1248.729086]  do_syscall_64+0x55/0x110
+> [ 1248.730323]  entry_SYSCALL_64_after_hwframe+0x44/0xa9
 
-diff --git a/Documentation/btrfs-dedupe-inband.asciidoc b/Documentation/btrfs-dedupe-inband.asciidoc
-index 83113f5487e2..d895aafbcf45 100644
---- a/Documentation/btrfs-dedupe-inband.asciidoc
-+++ b/Documentation/btrfs-dedupe-inband.asciidoc
-@@ -22,7 +22,119 @@ use with caution.
- 
- SUBCOMMAND
- ----------
--Nothing yet
-+*enable* [options] <path>::
-+Enable in-band de-duplication for a filesystem.
-++
-+`Options`
-++
-+-f|--force::::
-+Force 'enable' command to be exected.
-+Will skip memory limit check and allow 'enable' to be executed even in-band
-+de-duplication is already enabled.
-++
-+NOTE: If re-enable dedupe with '-f' option, any unspecified parameter will be
-+reset to its default value.
-+
-+-s|--storage-backend <BACKEND>::::
-+Specify de-duplication hash storage backend.
-+Only 'inmemory' backend is supported yet.
-+If not specified, default value is 'inmemory'.
-++
-+Refer to *BACKENDS* sector for more information.
-+
-+-b|--blocksize <BLOCKSIZE>::::
-+Specify dedupe block size.
-+Supported values are power of 2 from '16K' to '8M'.
-+Default value is '128K'.
-++
-+Refer to *BLOCKSIZE* sector for more information.
-+
-+-a|--hash-algorithm <HASH>::::
-+Specify hash algorithm.
-+Only 'sha256' is supported yet.
-+
-+-l|--limit-hash <LIMIT>::::
-+Specify maximum number of hashes stored in memory.
-+Only works for 'inmemory' backend.
-+Conflicts with '-m' option.
-++
-+Only positive values are valid.
-+Default value is '32K'.
-+
-+-m|--limit-memory <LIMIT>::::
-+Specify maximum memory used for hashes.
-+Only works for 'inmemory' backend.
-+Conflicts with '-l' option.
-++
-+Only value larger than or equal to '1024' is valid.
-+No default value.
-++
-+NOTE: Memory limit will be rounded down to kernel internal hash size,
-+so the memory limit shown in 'btrfs dedupe-inband status' may be different
-+from the <LIMIT>.
-+
-+WARNING: Too large value for '-l' or '-m' will easily trigger OOM.
-+Please use with caution according to system memory.
-+
-+NOTE: In-band de-duplication is not compactible with compression yet.
-+And compression has higher priority than in-band de-duplication, means if
-+compression and de-duplication is enabled at the same time, only compression
-+will work.
-+
-+BACKENDS
-+--------
-+Btrfs in-band de-duplication will support different storage backends, with
-+different use case and features.
-+
-+In-memory backend::
-+This backend provides backward-compatibility, and more fine-tuning options.
-+But hash pool is non-persistent and may exhaust kernel memory if not setup
-+properly.
-++
-+This backend can be used on old btrfs(without '-O dedupe' mkfs option).
-+When used on old btrfs, this backend needs to be enabled manually after mount.
-++
-+Designed for fast hash search speed, in-memory backend will keep all dedupe
-+hashes in memory. (Although overall performance is still much the same with
-+'ondisk' backend if all 'ondisk' hash can be cached in memory)
-++
-+And only keeps limited number of hash in memory to avoid exhausting memory.
-+Hashes over the limit will be dropped following Last-Recent-Use behavior.
-+So this backend has a consistent overhead for given limit but can\'t ensure
-+all duplicated blocks will be de-duplicated.
-++
-+After umount and mount, in-memory backend need to refill its hash pool.
-+
-+On-disk backend::
-+This backend provides persistent hash pool, with more smart memory management
-+for hash pool.
-+But it\'s not backward-compatible, meaning it must be used with '-O dedupe' mkfs
-+option and older kernel can\'t mount it read-write.
-++
-+Designed for de-duplication rate, hash pool is stored as btrfs B+ tree on disk.
-+This behavior may cause extra disk IO for hash search under high memory
-+pressure.
-++
-+After umount and mount, on-disk backend still has its hash on disk, no need to
-+refill its dedupe hash pool.
-+
-+Currently, only 'inmemory' backend is supported in btrfs-progs.
-+
-+DEDUPE BLOCK SIZE
-+----------------
-+In-band de-duplication is done at dedupe block size.
-+Any data smaller than dedupe block size won\'t go through in-band
-+de-duplication.
-+
-+And dedupe block size affects dedupe rate and fragmentation heavily.
-+
-+Smaller block size will cause more fragments, but higher dedupe rate.
-+
-+Larger block size will cause less fragments, but lower dedupe rate.
-+
-+In-band de-duplication rate is highly related to the workload pattern.
-+So it\'s highly recommended to align dedupe block size to the workload
-+block size to make full use of de-duplication.
- 
- EXIT STATUS
- -----------
-diff --git a/btrfs-completion b/btrfs-completion
-index ae683f4ecf61..cfdf70966e47 100644
---- a/btrfs-completion
-+++ b/btrfs-completion
-@@ -29,7 +29,7 @@ _btrfs()
- 
- 	local cmd=${words[1]}
- 
--	commands='subvolume filesystem balance device scrub check rescue restore inspect-internal property send receive quota qgroup replace help version'
-+	commands='subvolume filesystem balance device scrub check rescue restore inspect-internal property send receive quota qgroup replace dedupe-inband help version'
- 	commands_subvolume='create delete list snapshot find-new get-default set-default show sync'
- 	commands_filesystem='defragment sync resize show df du label usage'
- 	commands_balance='start pause cancel resume status'
-@@ -41,6 +41,7 @@ _btrfs()
- 	commands_quota='enable disable rescan'
- 	commands_qgroup='assign remove create destroy show limit'
- 	commands_replace='start status cancel'
-+	commands_dedupe_inband='enable'
- 
- 	if [[ "$cur" == -* && $cword -le 3 && "$cmd" != "help" ]]; then
- 		COMPREPLY=( $( compgen -W '--help' -- "$cur" ) )
-@@ -97,6 +98,9 @@ _btrfs()
- 			replace)
- 				opts="$commands_replace"
- 				;;
-+			dedupe-inband)
-+				opts="$commands_dedupe_inband"
-+				;;
- 			help)
- 				opts="--full"
- 				;;
-diff --git a/cmds-dedupe-ib.c b/cmds-dedupe-ib.c
-index 73c923a797da..4d499677d9ae 100644
---- a/cmds-dedupe-ib.c
-+++ b/cmds-dedupe-ib.c
-@@ -6,11 +6,13 @@
- #include <getopt.h>
- #include <unistd.h>
- #include <sys/ioctl.h>
-+#include <sys/sysinfo.h>
- 
- #include "ctree.h"
- #include "ioctl.h"
- 
- #include "commands.h"
-+#include "help.h"
- #include "utils.h"
- #include "kerncompat.h"
- #include "dedupe-ib.h"
-@@ -23,8 +25,244 @@ static const char * const dedupe_ib_cmd_group_usage[] = {
- static const char dedupe_ib_cmd_group_info[] =
- "manage inband(write time) de-duplication";
- 
-+static const char * const cmd_dedupe_ib_enable_usage[] = {
-+	"btrfs dedupe-inband enable [options] <path>",
-+	"Enable in-band(write time) de-duplication of a btrfs.",
-+	"",
-+	"-s|--storage-backend <BACKEND>",
-+	"           specify dedupe hash storage backend",
-+	"           supported backend: 'inmemory'",
-+	"-b|--blocksize <BLOCKSIZE>",
-+	"           specify dedupe block size",
-+	"           default value is 128K",
-+	"-a|--hash-algorithm <HASH>",
-+	"           specify hash algorithm",
-+	"           only 'sha256' is supported yet",
-+	"-l|--limit-hash <LIMIT>",
-+	"           specify maximum number of hashes stored in memory",
-+	"           only for 'inmemory' backend",
-+	"           positive value is valid, default value is 32K",
-+	"-m|--limit-mem <LIMIT>",
-+	"           specify maximum memory used for hashes",
-+	"           only for 'inmemory' backend",
-+	"           value larger than or equal to 1024 is valid, no default",
-+	"           only one of '-m' and '-l' is allowed",
-+	"-f|--force",
-+	"           force enable command to be executed",
-+	"           will skip some memory limit check",
-+	"           also without this flag enable command is not allowed to be",
-+	"           executed if dedupe is already enabled",
-+	"           note: unspecified parameter will be reset to default value",
-+	NULL
-+};
-+
-+
-+#define report_fatal_parameter(dargs, old, member, type, err_val, fmt)	\
-+({									\
-+	if (dargs->member != old->member &&				\
-+			dargs->member == (type)(err_val))		\
-+		error("unsupported dedupe "#member": %"#fmt"",		\
-+				old->member);				\
-+	(dargs->member != old->member &&				\
-+				dargs->member == (type)(err_val));	\
-+})
-+
-+#define report_option_parameter(dargs, old, member, type, err_val, fmt)	\
-+do {									\
-+	if (dargs->member != old->member &&				\
-+			dargs->member == (type)(err_val))		\
-+		warning(						\
-+		"unsupported optional "#member": %"#fmt", continue",	\
-+			old->member);					\
-+} while (0)
-+
-+static void report_parameter_error(struct btrfs_ioctl_dedupe_args *dargs,
-+				   struct btrfs_ioctl_dedupe_args *old)
-+{
-+	if (dargs->flags == (u8)-1) {
-+		if (dargs->status == 1 &&
-+		    old->cmd == BTRFS_DEDUPE_CTL_ENABLE &&
-+		    !(old->flags & BTRFS_DEDUPE_FLAG_FORCE)) {
-+			error("can't re-enable dedupe without --force");
-+			return;
-+		}
-+		report_option_parameter(dargs, old, flags, u8, -1, x);
-+	}
-+	if (report_fatal_parameter(dargs, old, cmd, u16, -1, u) ||
-+	    report_fatal_parameter(dargs, old, blocksize, u64, -1, llu) ||
-+	    report_fatal_parameter(dargs, old, backend, u16, -1, u) ||
-+	    report_fatal_parameter(dargs, old, hash_algo, u16, -1, u))
-+		return;
-+
-+	if (dargs->limit_nr == 0 && dargs->limit_mem == 0)
-+		error(
-+		"unsupported dedupe limit combination: nr: %llu, mem: %llu",
-+		old->limit_nr, old->limit_mem);
-+}
-+
-+static int cmd_dedupe_ib_enable(int argc, char **argv)
-+{
-+	int ret;
-+	int fd = -1;
-+	char *path;
-+	u64 blocksize = BTRFS_DEDUPE_BLOCKSIZE_DEFAULT;
-+	u16 hash_algo = BTRFS_DEDUPE_HASH_SHA256;
-+	u16 backend = BTRFS_DEDUPE_BACKEND_INMEMORY;
-+	u64 limit_nr = 0;
-+	u64 limit_mem = 0;
-+	u64 sys_mem = 0;
-+	int force = 0;
-+	struct btrfs_ioctl_dedupe_args dargs;
-+	struct btrfs_ioctl_dedupe_args backup;
-+	struct sysinfo info;
-+	DIR *dirstream = NULL;
-+
-+	while (1) {
-+		int c;
-+		static const struct option long_options[] = {
-+			{ "storage-backend", required_argument, NULL, 's'},
-+			{ "blocksize", required_argument, NULL, 'b'},
-+			{ "hash-algorithm", required_argument, NULL, 'a'},
-+			{ "limit-hash", required_argument, NULL, 'l'},
-+			{ "limit-memory", required_argument, NULL, 'm'},
-+			{ "force", no_argument, NULL, 'f'},
-+			{ NULL, 0, NULL, 0}
-+		};
-+
-+		c = getopt_long(argc, argv, "s:b:a:l:m:f", long_options, NULL);
-+		if (c < 0)
-+			break;
-+		switch (c) {
-+		case 's':
-+			if (!strcasecmp("inmemory", optarg))
-+				backend = BTRFS_DEDUPE_BACKEND_INMEMORY;
-+			else {
-+				error("unsupported dedupe backend: %s", optarg);
-+				exit(1);
-+			}
-+			break;
-+		case 'b':
-+			blocksize = parse_size(optarg);
-+			break;
-+		case 'a':
-+			if (strcmp("sha256", optarg)) {
-+				error("unsupported dedupe hash algorithm: %s",
-+				      optarg);
-+				return 1;
-+			}
-+			break;
-+		case 'l':
-+			limit_nr = parse_size(optarg);
-+			if (limit_nr == 0) {
-+				error("limit should be larger than 0");
-+				return 1;
-+			}
-+			break;
-+		case 'm':
-+			limit_mem = parse_size(optarg);
-+			/*
-+			 * Make sure at least one hash is allocated
-+			 * 1024 should be good enough though.
-+			 */
-+			if (limit_mem < 1024) {
-+				error(
-+			"memory limit should be larger than or equal to 1024");
-+				return 1;
-+			}
-+			break;
-+		case 'f':
-+			force = 1;
-+			break;
-+		default:
-+			usage(cmd_dedupe_ib_enable_usage);
-+		}
-+	}
-+
-+	path = argv[optind];
-+	if (check_argc_exact(argc - optind, 1))
-+		usage(cmd_dedupe_ib_enable_usage);
-+
-+	/* Validation check */
-+	if (!is_power_of_2(blocksize) ||
-+	    blocksize > BTRFS_DEDUPE_BLOCKSIZE_MAX ||
-+	    blocksize < BTRFS_DEDUPE_BLOCKSIZE_MIN) {
-+		error(
-+	"invalid dedupe blocksize: %llu, not in range [%u,%u] or power of 2",
-+		      blocksize, BTRFS_DEDUPE_BLOCKSIZE_MIN,
-+		      BTRFS_DEDUPE_BLOCKSIZE_MAX);
-+		return 1;
-+	}
-+	if ((limit_nr || limit_mem) &&
-+			backend != BTRFS_DEDUPE_BACKEND_INMEMORY) {
-+		error("limit is only valid for 'inmemory' backend");
-+		return 1;
-+	}
-+	if (limit_nr && limit_mem) {
-+		error(
-+		"limit-memory and limit-hash can't be given at the same time");
-+		return 1;
-+	}
-+
-+	ret = sysinfo(&info);
-+	if (ret < 0)
-+		warning("failed to determine system total ram size: %m");
-+	else
-+		sys_mem = info.totalram;
-+
-+	/*
-+	 * TODO: Add check for limit_nr against current system
-+	 * memory to avoid wrongly set limit.
-+	 */
-+	if (!force && limit_mem && sys_mem && sys_mem < limit_mem * 4) {
-+		dargs.limit_mem = limit_mem;
-+		goto mem_check;
-+	}
-+
-+	fd = open_file_or_dir(path, &dirstream);
-+	if (fd < 0) {
-+		error("failed to open file or directory: %s", path);
-+		return 1;
-+	}
-+	memset(&dargs, -1, sizeof(dargs));
-+	dargs.cmd = BTRFS_DEDUPE_CTL_ENABLE;
-+	dargs.blocksize = blocksize;
-+	dargs.hash_algo = hash_algo;
-+	dargs.limit_nr = limit_nr;
-+	dargs.limit_mem = limit_mem;
-+	dargs.backend = backend;
-+	if (force)
-+		dargs.flags |= BTRFS_DEDUPE_FLAG_FORCE;
-+	else
-+		dargs.flags = 0;
-+
-+	memcpy(&backup, &dargs, sizeof(dargs));
-+	ret = ioctl(fd, BTRFS_IOC_DEDUPE_CTL, &dargs);
-+	if (ret < 0) {
-+		error("failed to enable inband deduplication: %m");
-+		report_parameter_error(&dargs, &backup);
-+		ret = 1;
-+		goto out;
-+	}
-+
-+mem_check:
-+	if (!force && dargs.limit_mem > sys_mem / 4) {
-+		ret = 1;
-+		error(
-+	"memory limit %llu is too large compared to system memory: %llu",
-+		      limit_mem, sys_mem);
-+		error("recommened memory limit is no more than %llu",
-+		      sys_mem / 4);
-+		error("use --force option if you know what you are doing");
-+	}
-+out:
-+	close_file_or_dir(fd, dirstream);
-+	return ret;
-+}
-+
- const struct cmd_group dedupe_ib_cmd_group = {
- 	dedupe_ib_cmd_group_usage, dedupe_ib_cmd_group_info, {
-+		{ "enable", cmd_dedupe_ib_enable, cmd_dedupe_ib_enable_usage,
-+		  NULL, 0},
- 		NULL_CMD_STRUCT
- 	}
- };
-diff --git a/ioctl.h b/ioctl.h
-index 8268c0354eb9..b2500b24d185 100644
---- a/ioctl.h
-+++ b/ioctl.h
-@@ -856,6 +856,8 @@ static inline char *btrfs_err_str(enum btrfs_err_code err_code)
- 				    struct btrfs_ioctl_dev_replace_args)
- #define BTRFS_IOC_FILE_EXTENT_SAME _IOWR(BTRFS_IOCTL_MAGIC, 54, \
- 					 struct btrfs_ioctl_same_args)
-+#define BTRFS_IOC_DEDUPE_CTL	_IOWR(BTRFS_IOCTL_MAGIC, 55, \
-+				      struct btrfs_ioctl_dedupe_args)
- #define BTRFS_IOC_GET_FEATURES _IOR(BTRFS_IOCTL_MAGIC, 57, \
-                                   struct btrfs_ioctl_feature_flags)
- #define BTRFS_IOC_SET_FEATURES _IOW(BTRFS_IOCTL_MAGIC, 57, \
--- 
-2.18.0
+I don't really think it's "btrfs check" causing the problem.
+
+Btrfs check, just like all offline tools, uses open_ctree_flags to
+determine if it's allowed to do write.
+Without OPEN_CTREE_FLAGS_WRITE, all devices are opened RO, thus any
+write will just return error without reaching disk.
+Not to mention such fsync syscall.
+
+However the backtrace can't tell which process caused such fsync call.
+(Maybe LVM user space code?)
+
+Thanks,
+Qu
+
+> [ 1248.731565] RIP: 0033:0x7f928354d161
+> [ 1248.732805] RSP: 002b:00007ffd35e3f5d8 EFLAGS: 00000246 ORIG_RAX: 000000000000004a
+> [ 1248.734067] RAX: ffffffffffffffda RBX: 000055fc09c0c260 RCX: 00007f928354d161
+> [ 1248.735342] RDX: 000055fc09c13e28 RSI: 000055fc0899f820 RDI: 0000000000000004
+> [ 1248.736614] RBP: 000055fc09c0c2d0 R08: 0000000000000005 R09: 000055fc09c0da70
+> [ 1248.738001] R10: 000000000000009e R11: 0000000000000246 R12: 0000000000000000
+> [ 1248.739272] R13: 000055fc0899d213 R14: 000055fc09c0c290 R15: 0000000000000001
+> [ 1248.740542] Code: 24 54 03 00 00 48 8d 74 24 08 48 89 df c6 05 3e 03 d9 00 01 e8 d5 63 01 00 44 89 e2 48 89 c6 48 c7 c7 80 e1 e6 ad e8 a3 4e d1 ff <0f> 0b 4c 8b 63 08 e9 7b fc ff ff 80 3d 15 03 d9 00 00 0f 85 94
+> [ 1248.741909] ---[ end trace c2f580dbd579028c ]---
+> 1
+> 
+> Not really sure why btrfs-check apparently tries to write to the device
+> (I've had set it blockdev --setro).
+> 
+> 
+> 
+> And with your patch:
+> # btrfs check --mode=lowmem /dev/mapper/system ; echo $?
+> checking extents
+> checking free space cache
+> checking fs roots
+> ERROR: errors found in fs roots
+> Checking filesystem on /dev/mapper/system
+> UUID: 6050ca10-e778-4d08-80e7-6d27b9c89b3c
+> DEBUG: error before walking while checking fs root 3 ret -694376768
+> DEBUG: normal error in walking while checking node 125988438016 fs root
+> 257 ret 524296
+> DEBUG: error in checking fs root 257 ret 524296
+> DEBUG: normal error in walking while checking node 230148259840 fs root
+> 743 ret 524296
+> DEBUG: error in checking fs root 743 ret 524296
+> DEBUG: error in checking fs roots ret:
+> found 435924422656 bytes used, error(s) found
+> total csum bytes: 423418948
+> total tree bytes: 2218328064
+> total fs tree bytes: 1557168128
+> total extent tree bytes: 125894656
+> btree space waste bytes: 429599230
+> file data blocks allocated: 5193373646848
+>  referenced 555255164928
+> 1
+> 
+> Interestingly it doesn't try to write again (or the kernel doesn't just
+> print another call trace this time).
+> 
+> 
+> 
+> Cheers,
+> Chris.
+> 

@@ -1,15 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:38902 "EHLO
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:57704 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1726041AbeIDLXm (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 4 Sep 2018 07:23:42 -0400
+        with ESMTP id S1726426AbeIDLXp (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 4 Sep 2018 07:23:45 -0400
 From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-CC: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>,
-        Qu Wenruo <quwenruo@cn.fujitsu.com>
-Subject: [PATCH v15 06/13] btrfs: dedupe: Introduce function to search for an existing hash
-Date: Tue, 4 Sep 2018 14:59:35 +0800
-Message-ID: <20180904065942.3621-7-lufq.fnst@cn.fujitsu.com>
+CC: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Subject: [PATCH v15 05/13] btrfs: delayed-ref: Add support for increasing data ref under spinlock
+Date: Tue, 4 Sep 2018 14:59:34 +0800
+Message-ID: <20180904065942.3621-6-lufq.fnst@cn.fujitsu.com>
 In-Reply-To: <20180904065942.3621-1-lufq.fnst@cn.fujitsu.com>
 References: <20180904065942.3621-1-lufq.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -17,256 +16,175 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 
-Introduce static function inmem_search() to handle the job for in-memory
-hash tree.
-
-The trick is, we must ensure the delayed ref head is not being run at
-the time we search the for the hash.
-
-With inmem_search(), we can implement the btrfs_dedupe_search()
-interface.
+For in-band dedupe, btrfs needs to increase data ref with delayed_ref
+locked, so add a new function btrfs_add_delayed_data_ref_lock() to
+increase extent ref with delayed_refs already locked. Export
+init_delayed_ref_head and init_delayed_ref_common for inband dedupe.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 Reviewed-by: Josef Bacik <jbacik@fb.com>
 Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 ---
- fs/btrfs/dedupe.c | 210 +++++++++++++++++++++++++++++++++++++++++++++-
- 1 file changed, 209 insertions(+), 1 deletion(-)
+ fs/btrfs/delayed-ref.c | 53 +++++++++++++++++++++++++++++-------------
+ fs/btrfs/delayed-ref.h | 15 ++++++++++++
+ 2 files changed, 52 insertions(+), 16 deletions(-)
 
-diff --git a/fs/btrfs/dedupe.c b/fs/btrfs/dedupe.c
-index 951fefd19fde..9c6152b7f0eb 100644
---- a/fs/btrfs/dedupe.c
-+++ b/fs/btrfs/dedupe.c
-@@ -7,6 +7,8 @@
- #include "dedupe.h"
- #include "btrfs_inode.h"
- #include "delayed-ref.h"
-+#include "qgroup.h"
-+#include "transaction.h"
+diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
+index 62ff545ba1f7..faca30b334ee 100644
+--- a/fs/btrfs/delayed-ref.c
++++ b/fs/btrfs/delayed-ref.c
+@@ -526,7 +526,7 @@ update_existing_head_ref(struct btrfs_delayed_ref_root *delayed_refs,
+ 	spin_unlock(&existing->lock);
+ }
  
- struct inmem_hash {
- 	struct rb_node hash_node;
-@@ -242,7 +244,6 @@ static int inmem_add(struct btrfs_dedupe_info *dedupe_info,
- 	struct inmem_hash *ihash;
+-static void init_delayed_ref_head(struct btrfs_delayed_ref_head *head_ref,
++void btrfs_init_delayed_ref_head(struct btrfs_delayed_ref_head *head_ref,
+ 				  struct btrfs_qgroup_extent_record *qrecord,
+ 				  u64 bytenr, u64 num_bytes, u64 ref_root,
+ 				  u64 reserved, int action, bool is_data,
+@@ -654,7 +654,7 @@ add_delayed_ref_head(struct btrfs_trans_handle *trans,
+ }
  
- 	ihash = inmem_alloc_hash(algo);
--
- 	if (!ihash)
- 		return -ENOMEM;
+ /*
+- * init_delayed_ref_common - Initialize the structure which represents a
++ * btrfs_init_delayed_ref_common - Initialize the structure which represents a
+  *			     modification to a an extent.
+  *
+  * @fs_info:    Internal to the mounted filesystem mount structure.
+@@ -678,7 +678,7 @@ add_delayed_ref_head(struct btrfs_trans_handle *trans,
+  *		when recording a metadata extent or BTRFS_SHARED_DATA_REF_KEY/
+  *		BTRFS_EXTENT_DATA_REF_KEY when recording data extent
+  */
+-static void init_delayed_ref_common(struct btrfs_fs_info *fs_info,
++void btrfs_init_delayed_ref_common(struct btrfs_fs_info *fs_info,
+ 				    struct btrfs_delayed_ref_node *ref,
+ 				    u64 bytenr, u64 num_bytes, u64 ref_root,
+ 				    int action, u8 ref_type)
+@@ -751,14 +751,14 @@ int btrfs_add_delayed_tree_ref(struct btrfs_trans_handle *trans,
+ 	else
+ 		ref_type = BTRFS_TREE_BLOCK_REF_KEY;
  
-@@ -436,3 +437,210 @@ int btrfs_dedupe_disable(struct btrfs_fs_info *fs_info)
- 	kfree(dedupe_info);
+-	init_delayed_ref_common(fs_info, &ref->node, bytenr, num_bytes,
+-				ref_root, action, ref_type);
++	btrfs_init_delayed_ref_common(fs_info, &ref->node, bytenr, num_bytes,
++				      ref_root, action, ref_type);
+ 	ref->root = ref_root;
+ 	ref->parent = parent;
+ 	ref->level = level;
+ 
+-	init_delayed_ref_head(head_ref, record, bytenr, num_bytes,
+-			      ref_root, 0, action, false, is_system);
++	btrfs_init_delayed_ref_head(head_ref, record, bytenr, num_bytes,
++				    ref_root, 0, action, false, is_system);
+ 	head_ref->extent_op = extent_op;
+ 
+ 	delayed_refs = &trans->transaction->delayed_refs;
+@@ -787,6 +787,29 @@ int btrfs_add_delayed_tree_ref(struct btrfs_trans_handle *trans,
  	return 0;
  }
-+
+ 
 +/*
-+ * Caller must ensure the corresponding ref head is not being run.
++ * Do real delayed data ref insert.
++ * Caller must hold delayed_refs->lock and allocation memory
++ * for dref,head_ref and record.
 + */
-+static struct inmem_hash *
-+inmem_search_hash(struct btrfs_dedupe_info *dedupe_info, u8 *hash)
++int btrfs_add_delayed_data_ref_locked(struct btrfs_trans_handle *trans,
++			struct btrfs_delayed_ref_head *head_ref,
++			struct btrfs_qgroup_extent_record *qrecord,
++			struct btrfs_delayed_data_ref *ref, int action,
++			int *qrecord_inserted_ret, int *old_ref_mod,
++			int *new_ref_mod)
 +{
-+	struct rb_node **p = &dedupe_info->hash_root.rb_node;
-+	struct rb_node *parent = NULL;
-+	struct inmem_hash *entry = NULL;
-+	u16 hash_algo = dedupe_info->hash_algo;
-+	int hash_len = btrfs_hash_sizes[hash_algo];
-+
-+	while (*p) {
-+		parent = *p;
-+		entry = rb_entry(parent, struct inmem_hash, hash_node);
-+
-+		if (memcmp(hash, entry->hash, hash_len) < 0) {
-+			p = &(*p)->rb_left;
-+		} else if (memcmp(hash, entry->hash, hash_len) > 0) {
-+			p = &(*p)->rb_right;
-+		} else {
-+			/* Found, need to re-add it to LRU list head */
-+			list_del(&entry->lru_list);
-+			list_add(&entry->lru_list, &dedupe_info->lru_list);
-+			return entry;
-+		}
-+	}
-+	return NULL;
-+}
-+
-+static int inmem_search(struct btrfs_dedupe_info *dedupe_info,
-+			struct inode *inode, u64 file_pos,
-+			struct btrfs_dedupe_hash *hash)
-+{
-+	int ret;
-+	struct btrfs_root *root = BTRFS_I(inode)->root;
-+	struct btrfs_trans_handle *trans;
 +	struct btrfs_delayed_ref_root *delayed_refs;
-+	struct btrfs_delayed_ref_head *head;
-+	struct btrfs_delayed_ref_head *insert_head;
-+	struct btrfs_delayed_data_ref *insert_dref;
-+	struct btrfs_qgroup_extent_record *insert_qrecord = NULL;
-+	struct inmem_hash *found_hash;
-+	int free_insert = 1;
-+	int qrecord_inserted = 0;
-+	u64 ref_root = root->root_key.objectid;
-+	u64 bytenr;
-+	u32 num_bytes;
 +
-+	insert_head = kmem_cache_alloc(btrfs_delayed_ref_head_cachep, GFP_NOFS);
-+	if (!insert_head)
-+		return -ENOMEM;
-+	insert_head->extent_op = NULL;
-+
-+	insert_dref = kmem_cache_alloc(btrfs_delayed_data_ref_cachep, GFP_NOFS);
-+	if (!insert_dref) {
-+		kmem_cache_free(btrfs_delayed_ref_head_cachep, insert_head);
-+		return -ENOMEM;
-+	}
-+	if (test_bit(BTRFS_FS_QUOTA_ENABLED, &root->fs_info->flags) &&
-+	    is_fstree(ref_root)) {
-+		insert_qrecord = kmalloc(sizeof(*insert_qrecord), GFP_NOFS);
-+		if (!insert_qrecord) {
-+			kmem_cache_free(btrfs_delayed_ref_head_cachep,
-+					insert_head);
-+			kmem_cache_free(btrfs_delayed_data_ref_cachep,
-+					insert_dref);
-+			return -ENOMEM;
-+		}
-+	}
-+
-+	trans = btrfs_join_transaction(root);
-+	if (IS_ERR(trans)) {
-+		ret = PTR_ERR(trans);
-+		goto free_mem;
-+	}
-+
-+again:
-+	mutex_lock(&dedupe_info->lock);
-+	found_hash = inmem_search_hash(dedupe_info, hash->hash);
-+	/* If we don't find a duplicated extent, just return. */
-+	if (!found_hash) {
-+		ret = 0;
-+		goto out;
-+	}
-+	bytenr = found_hash->bytenr;
-+	num_bytes = found_hash->num_bytes;
-+
-+	btrfs_init_delayed_ref_head(insert_head, insert_qrecord, bytenr,
-+			num_bytes, ref_root, 0, BTRFS_ADD_DELAYED_REF, true,
-+			false);
-+
-+	btrfs_init_delayed_ref_common(trans->fs_info, &insert_dref->node,
-+			bytenr, num_bytes, ref_root, BTRFS_ADD_DELAYED_REF,
-+			BTRFS_EXTENT_DATA_REF_KEY);
-+	insert_dref->root = ref_root;
-+	insert_dref->parent = 0;
-+	insert_dref->objectid = btrfs_ino(BTRFS_I(inode));
-+	insert_dref->offset = file_pos;
++	head_ref = add_delayed_ref_head(trans, head_ref, qrecord,
++					action, qrecord_inserted_ret,
++					old_ref_mod, new_ref_mod);
 +
 +	delayed_refs = &trans->transaction->delayed_refs;
 +
-+	spin_lock(&delayed_refs->lock);
-+	head = btrfs_find_delayed_ref_head(&trans->transaction->delayed_refs,
-+					   bytenr);
-+	if (!head) {
-+		/*
-+		 * We can safely insert a new delayed_ref as long as we
-+		 * hold delayed_refs->lock.
-+		 * Only need to use atomic inc_extent_ref()
-+		 */
-+		btrfs_add_delayed_data_ref_locked(trans, insert_head,
-+				insert_qrecord, insert_dref,
-+				BTRFS_ADD_DELAYED_REF, &qrecord_inserted, NULL,
-+				NULL);
-+		spin_unlock(&delayed_refs->lock);
-+
-+		trace_add_delayed_data_ref(trans->fs_info, &insert_dref->node,
-+				insert_dref, BTRFS_ADD_DELAYED_REF);
-+
-+		if (ret > 0)
-+			kmem_cache_free(btrfs_delayed_data_ref_cachep,
-+					insert_dref);
-+
-+		/* add_delayed_data_ref_locked will free unused memory */
-+		free_insert = 0;
-+		hash->bytenr = bytenr;
-+		hash->num_bytes = num_bytes;
-+		ret = 1;
-+		goto out;
-+	}
-+
-+	/*
-+	 * We can't lock ref head with dedupe_info->lock hold or we will cause
-+	 * ABBA dead lock.
-+	 */
-+	mutex_unlock(&dedupe_info->lock);
-+	ret = btrfs_delayed_ref_lock(trans, head);
-+	spin_unlock(&delayed_refs->lock);
-+	if (ret == -EAGAIN)
-+		goto again;
-+
-+	mutex_lock(&dedupe_info->lock);
-+	/* Search again to ensure the hash is still here */
-+	found_hash = inmem_search_hash(dedupe_info, hash->hash);
-+	if (!found_hash) {
-+		ret = 0;
-+		mutex_unlock(&head->mutex);
-+		goto out;
-+	}
-+	ret = 1;
-+	hash->bytenr = bytenr;
-+	hash->num_bytes = num_bytes;
-+
-+	/*
-+	 * Increase the extent ref right now, to avoid delayed ref run
-+	 * Or we may increase ref on non-exist extent.
-+	 */
-+	btrfs_inc_extent_ref(trans, root, bytenr, num_bytes, 0,
-+			     ref_root,
-+			     btrfs_ino(BTRFS_I(inode)), file_pos);
-+	mutex_unlock(&head->mutex);
-+out:
-+	mutex_unlock(&dedupe_info->lock);
-+	btrfs_end_transaction(trans);
-+
-+free_mem:
-+	if (free_insert) {
-+		kmem_cache_free(btrfs_delayed_ref_head_cachep, insert_head);
-+		kmem_cache_free(btrfs_delayed_data_ref_cachep, insert_dref);
-+	}
-+	if (!qrecord_inserted)
-+		kfree(insert_qrecord);
-+	return ret;
++	return insert_delayed_ref(trans, delayed_refs, head_ref, &ref->node);
 +}
 +
-+int btrfs_dedupe_search(struct btrfs_fs_info *fs_info,
-+			struct inode *inode, u64 file_pos,
-+			struct btrfs_dedupe_hash *hash)
-+{
-+	struct btrfs_dedupe_info *dedupe_info = fs_info->dedupe_info;
-+	int ret = -EINVAL;
-+
-+	if (!hash)
-+		return 0;
-+
-+	/*
-+	 * This function doesn't follow fs_info->dedupe_enabled as it will need
-+	 * to ensure any hashed extent to go through dedupe routine
-+	 */
-+	if (WARN_ON(dedupe_info == NULL))
-+		return -EINVAL;
-+
-+	if (WARN_ON(btrfs_dedupe_hash_hit(hash)))
-+		return -EINVAL;
-+
-+	if (dedupe_info->backend == BTRFS_DEDUPE_BACKEND_INMEMORY)
-+		ret = inmem_search(dedupe_info, inode, file_pos, hash);
-+
-+	/* It's possible hash->bytenr/num_bytenr already changed */
-+	if (ret == 0) {
-+		hash->num_bytes = 0;
-+		hash->bytenr = 0;
-+	}
-+	return ret;
-+}
+ /*
+  * add a delayed data ref. it's similar to btrfs_add_delayed_tree_ref.
+  */
+@@ -813,7 +836,7 @@ int btrfs_add_delayed_data_ref(struct btrfs_trans_handle *trans,
+ 	        ref_type = BTRFS_SHARED_DATA_REF_KEY;
+ 	else
+ 	        ref_type = BTRFS_EXTENT_DATA_REF_KEY;
+-	init_delayed_ref_common(fs_info, &ref->node, bytenr, num_bytes,
++	btrfs_init_delayed_ref_common(fs_info, &ref->node, bytenr, num_bytes,
+ 				ref_root, action, ref_type);
+ 	ref->root = ref_root;
+ 	ref->parent = parent;
+@@ -838,8 +861,8 @@ int btrfs_add_delayed_data_ref(struct btrfs_trans_handle *trans,
+ 		}
+ 	}
+ 
+-	init_delayed_ref_head(head_ref, record, bytenr, num_bytes, ref_root,
+-			      reserved, action, true, false);
++	btrfs_init_delayed_ref_head(head_ref, record, bytenr, num_bytes,
++			      ref_root, reserved, action, true, false);
+ 	head_ref->extent_op = NULL;
+ 
+ 	delayed_refs = &trans->transaction->delayed_refs;
+@@ -849,11 +872,9 @@ int btrfs_add_delayed_data_ref(struct btrfs_trans_handle *trans,
+ 	 * insert both the head node and the new ref without dropping
+ 	 * the spin lock
+ 	 */
+-	head_ref = add_delayed_ref_head(trans, head_ref, record,
+-					action, &qrecord_inserted,
+-					old_ref_mod, new_ref_mod);
+-
+-	ret = insert_delayed_ref(trans, delayed_refs, head_ref, &ref->node);
++	ret = btrfs_add_delayed_data_ref_locked(trans, head_ref,
++			record, ref, action, &qrecord_inserted, old_ref_mod,
++			new_ref_mod);
+ 	spin_unlock(&delayed_refs->lock);
+ 
+ 	trace_add_delayed_data_ref(trans->fs_info, &ref->node, ref,
+@@ -880,7 +901,7 @@ int btrfs_add_delayed_extent_op(struct btrfs_fs_info *fs_info,
+ 	if (!head_ref)
+ 		return -ENOMEM;
+ 
+-	init_delayed_ref_head(head_ref, NULL, bytenr, num_bytes, 0, 0,
++	btrfs_init_delayed_ref_head(head_ref, NULL, bytenr, num_bytes, 0, 0,
+ 			      BTRFS_UPDATE_DELAYED_HEAD, extent_op->is_data,
+ 			      false);
+ 	head_ref->extent_op = extent_op;
+diff --git a/fs/btrfs/delayed-ref.h b/fs/btrfs/delayed-ref.h
+index d9f2a4ebd5db..45963717143b 100644
+--- a/fs/btrfs/delayed-ref.h
++++ b/fs/btrfs/delayed-ref.h
+@@ -234,11 +234,26 @@ static inline void btrfs_put_delayed_ref_head(struct btrfs_delayed_ref_head *hea
+ 		kmem_cache_free(btrfs_delayed_ref_head_cachep, head);
+ }
+ 
++void btrfs_init_delayed_ref_head(struct btrfs_delayed_ref_head *head_ref,
++				  struct btrfs_qgroup_extent_record *qrecord,
++				  u64 bytenr, u64 num_bytes, u64 ref_root,
++				  u64 reserved, int action, bool is_data,
++				  bool is_system);
++void btrfs_init_delayed_ref_common(struct btrfs_fs_info *fs_info,
++				    struct btrfs_delayed_ref_node *ref,
++				    u64 bytenr, u64 num_bytes, u64 ref_root,
++				    int action, u8 ref_type);
+ int btrfs_add_delayed_tree_ref(struct btrfs_trans_handle *trans,
+ 			       u64 bytenr, u64 num_bytes, u64 parent,
+ 			       u64 ref_root, int level, int action,
+ 			       struct btrfs_delayed_extent_op *extent_op,
+ 			       int *old_ref_mod, int *new_ref_mod);
++int btrfs_add_delayed_data_ref_locked(struct btrfs_trans_handle *trans,
++			struct btrfs_delayed_ref_head *head_ref,
++			struct btrfs_qgroup_extent_record *qrecord,
++			struct btrfs_delayed_data_ref *ref, int action,
++			int *qrecord_inserted_ret, int *old_ref_mod,
++			int *new_ref_mod);
+ int btrfs_add_delayed_data_ref(struct btrfs_trans_handle *trans,
+ 			       u64 bytenr, u64 num_bytes,
+ 			       u64 parent, u64 ref_root,
 -- 
 2.18.0

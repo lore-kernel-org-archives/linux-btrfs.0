@@ -1,154 +1,259 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.22]:47433 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725786AbeIDEuS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 4 Sep 2018 00:50:18 -0400
-Subject: Re: RAID1 & BTRFS critical (device sda2): corrupt leaf, bad key order
-To: Etienne Champetier <champetier.etienne@gmail.com>,
-        linux-btrfs@vger.kernel.org
-References: <CAOdf3gp5RLHxSqhFjjOtNaGpDPvK+UO9eGh+UmmnPxXNa+v-Qg@mail.gmail.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <3374b776-071f-ec7f-f5ad-58d0e7dc3059@gmx.com>
-Date: Tue, 4 Sep 2018 08:27:35 +0800
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:38902 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1726041AbeIDLXk (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 4 Sep 2018 07:23:40 -0400
+From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>,
+        Qu Wenruo <quwenruo@cn.fujitsu.com>
+Subject: [PATCH v15 01/13] btrfs: dedupe: Introduce dedupe framework and its header
+Date: Tue, 4 Sep 2018 14:59:30 +0800
+Message-ID: <20180904065942.3621-2-lufq.fnst@cn.fujitsu.com>
+In-Reply-To: <20180904065942.3621-1-lufq.fnst@cn.fujitsu.com>
+References: <20180904065942.3621-1-lufq.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <CAOdf3gp5RLHxSqhFjjOtNaGpDPvK+UO9eGh+UmmnPxXNa+v-Qg@mail.gmail.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="bGtZ80arAbmVhxBsIc9EZnHZtPJstdPFD"
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---bGtZ80arAbmVhxBsIc9EZnHZtPJstdPFD
-Content-Type: multipart/mixed; boundary="9EJCeygPTYyIPvrfpt4HpdbZ4OFVZUyyB";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Etienne Champetier <champetier.etienne@gmail.com>,
- linux-btrfs@vger.kernel.org
-Message-ID: <3374b776-071f-ec7f-f5ad-58d0e7dc3059@gmx.com>
-Subject: Re: RAID1 & BTRFS critical (device sda2): corrupt leaf, bad key order
-References: <CAOdf3gp5RLHxSqhFjjOtNaGpDPvK+UO9eGh+UmmnPxXNa+v-Qg@mail.gmail.com>
-In-Reply-To: <CAOdf3gp5RLHxSqhFjjOtNaGpDPvK+UO9eGh+UmmnPxXNa+v-Qg@mail.gmail.com>
+From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 
---9EJCeygPTYyIPvrfpt4HpdbZ4OFVZUyyB
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+Introduce the header for btrfs in-band(write time) de-duplication
+framework and needed header.
 
+The new de-duplication framework is going to support 2 different dedupe
+methods and 1 dedupe hash.
 
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+---
+ fs/btrfs/ctree.h           |   7 ++
+ fs/btrfs/dedupe.h          | 128 ++++++++++++++++++++++++++++++++++++-
+ fs/btrfs/disk-io.c         |   1 +
+ include/uapi/linux/btrfs.h |  34 ++++++++++
+ 4 files changed, 168 insertions(+), 2 deletions(-)
 
-On 2018/9/3 =E4=B8=8B=E5=8D=8810:18, Etienne Champetier wrote:
-> Hello btfrs hackers,
->=20
-> I have a computer acting as backup server with BTRFS RAID1, and I
-> would like to know the different options to rebuild this RAID
-> (I saw this thread
-> https://www.spinics.net/lists/linux-btrfs/msg68679.html but there was
-> no raid 1)
->=20
-> # uname -a
-> Linux servmaison 4.4.0-134-generic #160-Ubuntu SMP Wed Aug 15 14:58:00
-> UTC 2018 x86_64 x86_64 x86_64 GNU/Linux
->=20
-> # btrfs --version
-> btrfs-progs v4.4
->=20
-> # dmesg
-> ...
-> [ 1955.581972] BTRFS critical (device sda2): corrupt leaf, bad key
-> order: block=3D6020235362304,root=3D1, slot=3D63
-> [ 1955.582299] BTRFS critical (device sda2): corrupt leaf, bad key
-> order: block=3D6020235362304,root=3D1, slot=3D63
-
-Please provide the following dump:
-
-# btrfs inspect dump-tree -t root /dev/sda2
-# btrfs inspect dump-tree -b 6020235362304 /dev/sda2
-
-The first one is to inspect current root tree to find any corruption.
-The second one is to show that corrupted tree block, and compare with
-first output to make sure if it's already in the committed tree.
-
-And the critical error message already shows what's causing the bug,
-your root tree is corrupted, some keys are not in correct order.
-
-All the following errors could be caused by this problem.
-
-[snip]
->=20
-> # btrfs fi show /
-> Label: none  uuid: 4917db5e-fc20-4369-9556-83082a32d4cd
->     Total devices 2 FS bytes used 2.25TiB
->     devid    1 size 3.64TiB used 2.34TiB path /dev/sda2
->     devid    2 size 3.64TiB used 2.34TiB path /dev/sdb2
->=20
-> # btrfs device stats /
-> [/dev/sda2].write_io_errs   0
-> [/dev/sda2].read_io_errs    0
-> [/dev/sda2].flush_io_errs   0
-> [/dev/sda2].corruption_errs 0
-> [/dev/sda2].generation_errs 0
-> [/dev/sdb2].write_io_errs   0
-> [/dev/sdb2].read_io_errs    0
-> [/dev/sdb2].flush_io_errs   0
-> [/dev/sdb2].corruption_errs 0
-> [/dev/sdb2].generation_errs 0
->=20
-> device stats report no errors :(
->=20
-> # btrfs fi df /
-> Data, RAID1: total=3D2.32TiB, used=3D2.23TiB
-> System, RAID1: total=3D96.00MiB, used=3D368.00KiB
-> Metadata, RAID1: total=3D22.00GiB, used=3D19.12GiB
-> GlobalReserve, single: total=3D512.00MiB, used=3D0.00B
->=20
-> # btrfs scrub status /
-> scrub status for 4917db5e-fc20-4369-9556-83082a32d4cd
->     scrub started at Mon Sep  3 05:32:52 2018, interrupted after
-> 00:27:35, not running
->     total bytes scrubbed: 514.05GiB with 0 errors
->=20
-> I've already tried 2 times to run btrfs scrub (after reboot), but it
-> stops before the end, with the previous dmesg error
->=20
-> My question is what is the safest way to rebuild this BTRFS RAID1?
-
-It depends on the inspect dump-tree output.
-
-> I haven't tried "btrfs check --repair" yet
-
-We need "btrfs check --readonly" output to verify if the bad key order
-is the only problem.
-
-If it's the only problem, "btrfs check --repair" indeed could fix it.
-
-Thanks,
-Qu
-
-> (I can boot on a more up to date Linux live if it helps)
->=20
-> Thanks
-> Etienne
->=20
-
-
---9EJCeygPTYyIPvrfpt4HpdbZ4OFVZUyyB--
-
---bGtZ80arAbmVhxBsIc9EZnHZtPJstdPFD
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAluN0XcACgkQwj2R86El
-/qg9DAf+OnNUOpRJg5QiodHw75vEP5PvAaea8t3Y17TFGImwkN4FI1ZEnwA/J0bd
-oDUIc2sLIR74S5QFD51p1pp9aGbXur5OZp2EZLn/33de//VzcG+SDf8v7ttycOZ8
-fTOyT2yrDg/Y+kEfYWDjJVjR41FI82AP03n95FujrBz/K7dXEM1bmP/JzcQaOF2k
-g8aX99d4K+dAMZy6PufkZjbIAXT1orCLhmwEac9POqW6ICTlUO6IaLZDBlie3YOr
-bdErRcHCBxE7t2ISpczFi+lhWTU/Kmlv5QiZxoYO8XSdkCGKytBmFgWwz8L3O/ZM
-CdbQCoWAAm1FfIHICBSJ7ZXApmDm6w==
-=Flvh
------END PGP SIGNATURE-----
-
---bGtZ80arAbmVhxBsIc9EZnHZtPJstdPFD--
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 53af9f5253f4..741ef21a6185 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1125,6 +1125,13 @@ struct btrfs_fs_info {
+ 	spinlock_t ref_verify_lock;
+ 	struct rb_root block_tree;
+ #endif
++
++	/*
++	 * Inband de-duplication related structures
++	 */
++	unsigned long dedupe_enabled:1;
++	struct btrfs_dedupe_info *dedupe_info;
++	struct mutex dedupe_ioctl_lock;
+ };
+ 
+ static inline struct btrfs_fs_info *btrfs_sb(struct super_block *sb)
+diff --git a/fs/btrfs/dedupe.h b/fs/btrfs/dedupe.h
+index 90281a7a35a8..222ce7b4d827 100644
+--- a/fs/btrfs/dedupe.h
++++ b/fs/btrfs/dedupe.h
+@@ -6,7 +6,131 @@
+ #ifndef BTRFS_DEDUPE_H
+ #define BTRFS_DEDUPE_H
+ 
+-/* later in-band dedupe will expand this struct */
+-struct btrfs_dedupe_hash;
++#include <crypto/hash.h>
+ 
++/* 32 bytes for SHA256 */
++static const int btrfs_hash_sizes[] = { 32 };
++
++/*
++ * For caller outside of dedupe.c
++ *
++ * Different dedupe backends should have their own hash structure
++ */
++struct btrfs_dedupe_hash {
++	u64 bytenr;
++	u32 num_bytes;
++
++	/* last field is a variable length array of dedupe hash */
++	u8 hash[];
++};
++
++struct btrfs_dedupe_info {
++	/* dedupe blocksize */
++	u64 blocksize;
++	u16 backend;
++	u16 hash_algo;
++
++	struct crypto_shash *dedupe_driver;
++
++	/*
++	 * Use mutex to portect both backends
++	 * Even for in-memory backends, the rb-tree can be quite large,
++	 * so mutex is better for such use case.
++	 */
++	struct mutex lock;
++
++	/* following members are only used in in-memory backend */
++	struct rb_root hash_root;
++	struct rb_root bytenr_root;
++	struct list_head lru_list;
++	u64 limit_nr;
++	u64 current_nr;
++};
++
++static inline int btrfs_dedupe_hash_hit(struct btrfs_dedupe_hash *hash)
++{
++	return (hash && hash->bytenr);
++}
++
++/*
++ * Initial inband dedupe info
++ * Called at dedupe enable time.
++ *
++ * Return 0 for success
++ * Return <0 for any error
++ * (from unsupported param to tree creation error for some backends)
++ */
++int btrfs_dedupe_enable(struct btrfs_fs_info *fs_info,
++			struct btrfs_ioctl_dedupe_args *dargs);
++
++/*
++ * Disable dedupe and invalidate all its dedupe data.
++ * Called at dedupe disable time.
++ *
++ * Return 0 for success
++ * Return <0 for any error
++ * (tree operation error for some backends)
++ */
++int btrfs_dedupe_disable(struct btrfs_fs_info *fs_info);
++
++/*
++ * Get current dedupe status.
++ * Return 0 for success
++ * No possible error yet
++ */
++void btrfs_dedupe_status(struct btrfs_fs_info *fs_info,
++			 struct btrfs_ioctl_dedupe_args *dargs);
++
++/*
++ * Calculate hash for dedupe.
++ * Caller must ensure [start, start + dedupe_bs) has valid data.
++ *
++ * Return 0 for success
++ * Return <0 for any error
++ * (error from hash codes)
++ */
++int btrfs_dedupe_calc_hash(struct btrfs_fs_info *fs_info,
++			   struct inode *inode, u64 start,
++			   struct btrfs_dedupe_hash *hash);
++
++/*
++ * Search for duplicated extents by calculated hash
++ * Caller must call btrfs_dedupe_calc_hash() first to get the hash.
++ *
++ * @inode: the inode for we are writing
++ * @file_pos: offset inside the inode
++ * As we will increase extent ref immediately after a hash match,
++ * we need @file_pos and @inode in this case.
++ *
++ * Return > 0 for a hash match, and the extent ref will be
++ * *INCREASED*, and hash->bytenr/num_bytes will record the existing
++ * extent data.
++ * Return 0 for a hash miss. Nothing is done
++ * Return <0 for any error
++ * (tree operation error for some backends)
++ */
++int btrfs_dedupe_search(struct btrfs_fs_info *fs_info,
++			struct inode *inode, u64 file_pos,
++			struct btrfs_dedupe_hash *hash);
++
++/*
++ * Add a dedupe hash into dedupe info
++ * Return 0 for success
++ * Return <0 for any error
++ * (tree operation error for some backends)
++ */
++int btrfs_dedupe_add(struct btrfs_fs_info *fs_info,
++		     struct btrfs_dedupe_hash *hash);
++
++/*
++ * Remove a dedupe hash from dedupe info
++ * Return 0 for success
++ * Return <0 for any error
++ * (tree operation error for some backends)
++ *
++ * NOTE: if hash deletion error is not handled well, it will lead
++ * to corrupted fs, as later dedupe write can points to non-exist or even
++ * wrong extent.
++ */
++int btrfs_dedupe_del(struct btrfs_fs_info *fs_info, u64 bytenr);
+ #endif
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 5124c15705ce..06683b3f2f0b 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2678,6 +2678,7 @@ int open_ctree(struct super_block *sb,
+ 	mutex_init(&fs_info->reloc_mutex);
+ 	mutex_init(&fs_info->delalloc_root_mutex);
+ 	mutex_init(&fs_info->cleaner_delayed_iput_mutex);
++	mutex_init(&fs_info->dedupe_ioctl_lock);
+ 	seqlock_init(&fs_info->profiles_lock);
+ 
+ 	INIT_LIST_HEAD(&fs_info->dirty_cowonly_roots);
+diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+index 5ca1d21fc4a7..9cd15d2a40aa 100644
+--- a/include/uapi/linux/btrfs.h
++++ b/include/uapi/linux/btrfs.h
+@@ -20,6 +20,7 @@
+ #ifndef _UAPI_LINUX_BTRFS_H
+ #define _UAPI_LINUX_BTRFS_H
+ #include <linux/types.h>
++#include <linux/sizes.h>
+ #include <linux/ioctl.h>
+ 
+ #define BTRFS_IOCTL_MAGIC 0x94
+@@ -667,6 +668,39 @@ struct btrfs_ioctl_get_dev_stats {
+ 	__u64 unused[128 - 2 - BTRFS_DEV_STAT_VALUES_MAX]; /* pad to 1k */
+ };
+ 
++/* In-band dedupe related */
++#define BTRFS_DEDUPE_BACKEND_INMEMORY		0
++#define BTRFS_DEDUPE_BACKEND_ONDISK		1
++
++/* Only support inmemory yet, so count is still only 1 */
++#define BTRFS_DEDUPE_BACKEND_COUNT		1
++
++/* Dedup block size limit and default value */
++#define BTRFS_DEDUPE_BLOCKSIZE_MAX	SZ_8M
++#define BTRFS_DEDUPE_BLOCKSIZE_MIN	SZ_16K
++#define BTRFS_DEDUPE_BLOCKSIZE_DEFAULT	SZ_128K
++
++/* Hash algorithm, only support SHA256 yet */
++#define BTRFS_DEDUPE_HASH_SHA256		0
++
++/*
++ * This structure is used for dedupe enable/disable/configure
++ * and status ioctl.
++ * Reserved range should be set to 0xff.
++ */
++struct btrfs_ioctl_dedupe_args {
++	__u16 cmd;		/* In: command */
++	__u64 blocksize;	/* In/Out: blocksize */
++	__u64 limit_nr;		/* In/Out: limit nr for inmem backend */
++	__u64 limit_mem;	/* In/Out: limit mem for inmem backend */
++	__u64 current_nr;	/* Out: current hash nr */
++	__u16 backend;		/* In/Out: current backend */
++	__u16 hash_algo;	/* In/Out: hash algorithm */
++	u8 status;		/* Out: enabled or disabled */
++	u8 flags;		/* In: special flags for ioctl */
++	u8 __unused[472];	/* Pad to 512 bytes */
++};
++
+ #define BTRFS_QUOTA_CTL_ENABLE	1
+ #define BTRFS_QUOTA_CTL_DISABLE	2
+ #define BTRFS_QUOTA_CTL_RESCAN__NOTUSED	3
+-- 
+2.18.0

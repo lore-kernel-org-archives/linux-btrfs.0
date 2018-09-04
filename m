@@ -1,128 +1,170 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:57704 "EHLO
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:38902 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1726544AbeIDLXt (ORCPT
+        with ESMTP id S1726041AbeIDLXt (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>); Tue, 4 Sep 2018 07:23:49 -0400
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
+        by cn.fujitsu.com (Postfix) with ESMTP id 19B6C4B6AE12
+        for <linux-btrfs@vger.kernel.org>; Tue,  4 Sep 2018 14:59:49 +0800 (CST)
 From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-CC: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Subject: [PATCH v15 12/13] btrfs: relocation: Enhance error handling to avoid BUG_ON
-Date: Tue, 4 Sep 2018 14:59:41 +0800
-Message-ID: <20180904065942.3621-13-lufq.fnst@cn.fujitsu.com>
-In-Reply-To: <20180904065942.3621-1-lufq.fnst@cn.fujitsu.com>
-References: <20180904065942.3621-1-lufq.fnst@cn.fujitsu.com>
+Subject: [PATCH v15 00/13] Btrfs In-band De-duplication
+Date: Tue, 4 Sep 2018 14:59:29 +0800
+Message-ID: <20180904065942.3621-1-lufq.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+This patchset can be fetched from github:
+https://github.com/littleroad/linux.git dedupe_latest
 
-Since the introduction of btrfs dedupe tree, it's possible that balance can
-race with dedupe disabling.
+Now the new base is v4.19-rc2, and drop the patch about compression
+which conflict with compression heuristic.
 
-When this happens, dedupe_enabled will make btrfs_get_fs_root() return
-PTR_ERR(-ENOENT).
-But due to a bug in error handling branch, when this happens
-backref_cache->nr_nodes is increased but the node is neither added to
-backref_cache or nr_nodes decreased.
-Causing BUG_ON() in backref_cache_cleanup()
+Normal test cases from auto group exposes no regression, and ib-dedupe
+group can pass without problem.
 
-[ 2611.668810] ------------[ cut here ]------------
-[ 2611.669946] kernel BUG at
-/home/sat/ktest/linux/fs/btrfs/relocation.c:243!
-[ 2611.670572] invalid opcode: 0000 [#1] SMP
-[ 2611.686797] Call Trace:
-[ 2611.687034]  [<ffffffffa01f71d3>]
-btrfs_relocate_block_group+0x1b3/0x290 [btrfs]
-[ 2611.687706]  [<ffffffffa01cc177>]
-btrfs_relocate_chunk.isra.40+0x47/0xd0 [btrfs]
-[ 2611.688385]  [<ffffffffa01cdb12>] btrfs_balance+0xb22/0x11e0 [btrfs]
-[ 2611.688966]  [<ffffffffa01d9611>] btrfs_ioctl_balance+0x391/0x3a0
-[btrfs]
-[ 2611.689587]  [<ffffffffa01ddaf0>] btrfs_ioctl+0x1650/0x2290 [btrfs]
-[ 2611.690145]  [<ffffffff81171cda>] ? lru_cache_add+0x3a/0x80
-[ 2611.690647]  [<ffffffff81171e4c>] ?
-lru_cache_add_active_or_unevictable+0x4c/0xc0
-[ 2611.691310]  [<ffffffff81193f04>] ? handle_mm_fault+0xcd4/0x17f0
-[ 2611.691842]  [<ffffffff811da423>] ? cp_new_stat+0x153/0x180
-[ 2611.692342]  [<ffffffff8119913d>] ? __vma_link_rb+0xfd/0x110
-[ 2611.692842]  [<ffffffff81199209>] ? vma_link+0xb9/0xc0
-[ 2611.693303]  [<ffffffff811e7e81>] do_vfs_ioctl+0xa1/0x5a0
-[ 2611.693781]  [<ffffffff8104e024>] ? __do_page_fault+0x1b4/0x400
-[ 2611.694310]  [<ffffffff811e83c1>] SyS_ioctl+0x41/0x70
-[ 2611.694758]  [<ffffffff816dfc6e>] entry_SYSCALL_64_fastpath+0x12/0x71
-[ 2611.695331] Code: ff 48 8b 45 bf 49 83 af a8 05 00 00 01 49 89 87 a0
-05 00 00 e9 2e fd ff ff b8 f4 ff ff ff e9 e4 fb ff ff 0f 0b 0f 0b 0f 0b
-0f 0b <0f> 0b 0f 0b 41 89 c6 e9 b8 fb ff ff e8 9e a6 e8 e0 4c 89 e7 44
-[ 2611.697870] RIP  [<ffffffffa01f6fc1>]
-relocate_block_group+0x741/0x7a0 [btrfs]
-[ 2611.698818]  RSP <ffff88002a81fb30>
+xfstests ib-dedupe group can be fetched from github:
+https://github.com/littleroad/xfstests-dev.git btrfs_dedupe_latest
 
-This patch will call remove_backref_node() in error handling branch, and
-cache the returned -ENOENT in relocate_tree_block() and continue
-balancing.
+Changelog:
+v2:
+  Totally reworked to handle multiple backends
+v3:
+  Fix a stupid but deadly on-disk backend bug
+  Add handle for multiple hash on same bytenr corner case to fix abort
+  trans error
+  Increase dedup rate by enhancing delayed ref handler for both backend.
+  Move dedup_add() to run_delayed_ref() time, to fix abort trans error.
+  Increase dedup block size up limit to 8M.
+v4:
+  Add dedup prop for disabling dedup for given files/dirs.
+  Merge inmem_search() and ondisk_search() into generic_search() to save
+  some code
+  Fix another delayed_ref related bug.
+  Use the same mutex for both inmem and ondisk backend.
+  Move dedup_add() back to btrfs_finish_ordered_io() to increase dedup
+  rate.
+v5:
+  Reuse compress routine for much simpler dedup function.
+  Slightly improved performance due to above modification.
+  Fix race between dedup enable/disable
+  Fix for false ENOSPC report
+v6:
+  Further enable/disable race window fix.
+  Minor format change according to checkpatch.
+v7:
+  Fix one concurrency bug with balance.
+  Slightly modify return value from -EINVAL to -EOPNOTSUPP for
+  btrfs_dedup_ioctl() to allow progs to distinguish unsupported commands
+  and wrong parameter.
+  Rebased to integration-4.6.
+v8:
+  Rename 'dedup' to 'dedupe'.
+  Add support to allow dedupe and compression work at the same time.
+  Fix several balance related bugs. Special thanks to Satoru Takeuchi,
+  who exposed most of them.
+  Small dedupe hit case performance improvement.
+v9:
+  Re-order the patchset to completely separate pure in-memory and any
+  on-disk format change.
+  Fold bug fixes into its original patch.
+v10:
+  Adding back missing bug fix patch.
+  Reduce on-disk item size.
+  Hide dedupe ioctl under CONFIG_BTRFS_DEBUG.
+v11:
+  Remove other backend and props support to focus on the framework and
+  in-memory backend. Suggested by David.
+  Better disable and buffered write race protection.
+  Comprehensive fix to dedupe metadata ENOSPC problem.
+v12:
+  Stateful 'enable' ioctl and new 'reconf' ioctl
+  New FORCE flag for enable ioctl to allow stateless ioctl
+  Precise error report and extendable ioctl structure.
+v12.1
+  Rebase to David's for-next-20160704 branch
+  Add co-ordinate patch for subpage and dedupe patchset.
+v12.2
+  Rebase to David's for-next-20160715 branch
+  Add co-ordinate patch for other patchset.
+v13
+  Rebase to David's for-next-20160906 branch
+  Fix a reserved space leak bug, which only frees quota reserved space
+  but not space_info->byte_may_use.
+v13.1
+  Rebase to Chris' for-linux-4.9 branch
+v14
+  Use generic ENOSPC fix for both compression and dedupe.
+v14.1
+  Further split ENOSPC fix.
+v14.2
+  Rebase to v4.11-rc2.
+  Co-operate with count_max_extent() to calculate num_extents.
+  No longer rely on qgroup fixes.
+v14.3
+  Rebase to v4.12-rc1.
+v14.4
+  Rebase to kdave/for-4.13-part1.
+v14.5
+  Rebase to v4.15-rc3.
+v14.6
+  Rebase to v4.17-rc5.
+v14.7
+  Replace SHASH_DESC_ON_STACK with kmalloc to remove VLA.
+  Fixed the following errors by switching to div_u64.
+  ├── arm-allmodconfig
+  │   └── ERROR:__aeabi_uldivmod-fs-btrfs-btrfs.ko-undefined
+  └── i386-allmodconfig
+      └── ERROR:__udivdi3-fs-btrfs-btrfs.ko-undefined
+v14.8
+  Rebase to v4.18-rc4.
+v15
+  Rebase to v4.19-rc2.
+  Drop "btrfs: Introduce COMPRESS reserve type to fix false enospc for compression".
+  Remove the ifdef around btrfs inband dedupe ioctl.
 
-Reported-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
- fs/btrfs/relocation.c | 22 +++++++++++++++++-----
- 1 file changed, 17 insertions(+), 5 deletions(-)
+Qu Wenruo (4):
+  btrfs: delayed-ref: Add support for increasing data ref under spinlock
+  btrfs: dedupe: Inband in-memory only de-duplication implement
+  btrfs: relocation: Enhance error handling to avoid BUG_ON
+  btrfs: dedupe: Introduce new reconfigure ioctl
 
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 59a9c22ebf51..5f4b138fcb35 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -845,6 +845,13 @@ struct backref_node *build_backref_tree(struct reloc_control *rc,
- 		root = read_fs_root(rc->extent_root->fs_info, key.offset);
- 		if (IS_ERR(root)) {
- 			err = PTR_ERR(root);
-+			/*
-+			 * Don't forget to cleanup current node.
-+			 * As it may not be added to backref_cache but nr_node
-+			 * increased.
-+			 * This will cause BUG_ON() in backref_cache_cleanup().
-+			 */
-+			remove_backref_node(&rc->backref_cache, cur);
- 			goto out;
- 		}
- 
-@@ -3018,14 +3025,21 @@ int relocate_tree_blocks(struct btrfs_trans_handle *trans,
- 	}
- 
- 	rb_node = rb_first(blocks);
--	while (rb_node) {
-+	for (rb_node = rb_first(blocks); rb_node; rb_node = rb_next(rb_node)) {
- 		block = rb_entry(rb_node, struct tree_block, rb_node);
- 
- 		node = build_backref_tree(rc, &block->key,
- 					  block->level, block->bytenr);
- 		if (IS_ERR(node)) {
-+			/*
-+			 * The root(dedupe tree yet) of the tree block is
-+			 * going to be freed and can't be reached.
-+			 * Just skip it and continue balancing.
-+			 */
-+			if (PTR_ERR(node) == -ENOENT)
-+				continue;
- 			err = PTR_ERR(node);
--			goto out;
-+			break;
- 		}
- 
- 		ret = relocate_tree_block(trans, rc, node, &block->key,
-@@ -3033,11 +3047,9 @@ int relocate_tree_blocks(struct btrfs_trans_handle *trans,
- 		if (ret < 0) {
- 			if (ret != -EAGAIN || rb_node == rb_first(blocks))
- 				err = ret;
--			goto out;
-+			break;
- 		}
--		rb_node = rb_next(rb_node);
- 	}
--out:
- 	err = finish_pending_nodes(trans, rc, path, err);
- 
- out_free_path:
+Wang Xiaoguang (9):
+  btrfs: dedupe: Introduce dedupe framework and its header
+  btrfs: dedupe: Introduce function to initialize dedupe info
+  btrfs: dedupe: Introduce function to add hash into in-memory tree
+  btrfs: dedupe: Introduce function to remove hash from in-memory tree
+  btrfs: dedupe: Introduce function to search for an existing hash
+  btrfs: dedupe: Implement btrfs_dedupe_calc_hash interface
+  btrfs: ordered-extent: Add support for dedupe
+  btrfs: introduce type based delalloc metadata reserve
+  btrfs: dedupe: Add ioctl for inband deduplication
+
+ fs/btrfs/Makefile            |   2 +-
+ fs/btrfs/ctree.h             |  52 ++-
+ fs/btrfs/dedupe.c            | 828 +++++++++++++++++++++++++++++++++++
+ fs/btrfs/dedupe.h            | 175 +++++++-
+ fs/btrfs/delayed-ref.c       |  53 ++-
+ fs/btrfs/delayed-ref.h       |  15 +
+ fs/btrfs/disk-io.c           |   4 +
+ fs/btrfs/extent-tree.c       |  67 ++-
+ fs/btrfs/extent_io.c         |   7 +-
+ fs/btrfs/extent_io.h         |   1 +
+ fs/btrfs/file.c              |  34 +-
+ fs/btrfs/free-space-cache.c  |   6 +-
+ fs/btrfs/inode-map.c         |   9 +-
+ fs/btrfs/inode.c             | 423 ++++++++++++++----
+ fs/btrfs/ioctl.c             | 102 ++++-
+ fs/btrfs/ordered-data.c      |  52 ++-
+ fs/btrfs/ordered-data.h      |  16 +-
+ fs/btrfs/relocation.c        |  62 ++-
+ fs/btrfs/sysfs.c             |   2 +
+ fs/btrfs/tests/inode-tests.c |  15 +-
+ include/uapi/linux/btrfs.h   |  56 +++
+ 21 files changed, 1811 insertions(+), 170 deletions(-)
+ create mode 100644 fs/btrfs/dedupe.c
+
 -- 
 2.18.0

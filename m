@@ -1,47 +1,92 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:64813 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1725903AbeICHSc (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Sep 2018 03:18:32 -0400
-Received: from G08CNEXCHPEKD03.g08.fujitsu.local (unknown [10.167.33.85])
-        by cn.fujitsu.com (Postfix) with ESMTP id 099984B5CBE6
-        for <linux-btrfs@vger.kernel.org>; Mon,  3 Sep 2018 11:00:20 +0800 (CST)
-From: Su Yue <suy.fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: <suy.fnst@cn.fujitsu.com>
-Subject: [PATCH] btrfs-progs: docs: update document about option -R of btrfs-scrub
-Date: Mon, 3 Sep 2018 11:07:07 +0800
-Message-ID: <20180903030707.3542-1-suy.fnst@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from mx2.suse.de ([195.135.220.15]:57058 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726312AbeIDJ5m (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 4 Sep 2018 05:57:42 -0400
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 36301AD08
+        for <linux-btrfs@vger.kernel.org>; Tue,  4 Sep 2018 05:34:11 +0000 (UTC)
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 0/4] btrfs: quota: Skip unmodified tree blocks for balance
+Date: Tue,  4 Sep 2018 13:34:03 +0800
+Message-Id: <20180904053407.6445-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The option '-R' of btrfs-scrub was documented by mistake as
-'print raw statistics per-device instead of a summary'.
+This patchset can be fetched from github:
+https://github.com/adam900710/linux/tree/qgroup_balance_skip_trees
+The base commit is v4.19-rc1 tag.
 
-Here change it to 'raw print mode, print full data instead of
-summary' which it works actually.
+There are a lot of reports of system hang for balance on quota enabled
+fs.
+It's most obvious for large fs.
 
-Fixes: 162257574a56 ("btrfs-progs: docs: update btrfs-scrub")
-Reported-by: Chris Murphy <chris@colorremedies.com>
-Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
----
- Documentation/btrfs-scrub.asciidoc | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+The hang is caused by tons of unmodified extents marked as qgroup dirty.
+One of the unmodified extent source is tree blocks.
+(BTW, other sources includes unmodified file extent items, and tree
+reloc tree drop subtree)
 
-diff --git a/Documentation/btrfs-scrub.asciidoc b/Documentation/btrfs-scrub.asciidoc
-index d2d206275c36..4c49269e2f36 100644
---- a/Documentation/btrfs-scrub.asciidoc
-+++ b/Documentation/btrfs-scrub.asciidoc
-@@ -69,7 +69,7 @@ be quiet, omit error messages and statistics
- run in read-only mode, do not attempt to correct anything, can be run on a read-only
- filesystem
- -R::::
--print raw statistics per-device instead of a summary
-+raw print mode, print full data instead of summary
- -c <ioprio_class>::::
- set IO priority class (see `ionice`(1) manpage)
- -n <ioprio_classdata>::::
+E.g.
+OO = Old tree blocks from file tree
+NN = New tree blocks from tree reloc tree
+
+        file tree                            tree reloc tree
+           OO (a)                                  NN (a)
+          /  \                                    /  \
+    (b) OO    OO (c)                        (b) NN    NN (c)
+       / \   / \                               / \   / \
+     OO  OO OO  OO                           OO  OO OO  NN
+    (d) (e) (f) (g)                         (d) (e) (f) (g)
+
+In above case, balance will modify nodeptr in OO(a) to point NN(b) and
+NN(c), and modify NN(a) to point to OO(B) and OO(c).
+
+Before this patch, quota will mark the whole subtree from its parent
+down to the leaves as dirty.
+So btrfs quota need to trace all tree block from (a) to (g).
+
+However tree blocks (d) (e) (f) are shared between both trees, thus
+there is no need to trace those 3 tree blocks.
+
+This patchset will change how this work by only tracing modified tree
+blocks in tree reloc tree, and their counter parts in file tree.
+
+Nodeptr swap will happen for tree blocks (b) and (c) in both tree.
+
+For tree block (b), in tree reloc tree we could find that all its
+children's generation is smaller than last_snapshot, thus no need to
+trace them, only need to trace NN(b), and its counter part OO(b).
+
+For tree block (c), in tree reloc tree, we find its child NN(g) need
+tracing, and for tree block NN(g), there is no child need to trace.
+
+So for subtree starting at tree block NN(c), we need to trace NN(c) and
+NN(g), along with its counter part OO(c) and OO(c).
+
+With this patch, we could skip tree blocks OO(d)~OO(f) in above example,
+thus reduce some some overhead caused by qgroup.
+
+The improvement is mostly related to metadata relocation.
+If there is some high level tree blocks get relocated but its children are
+still unmodified, we could save a lot of time.
+
+Even for the worst case, it should be no worse than original full
+subtree marking method.
+
+Qu Wenruo (4):
+  btrfs: qgroup: Introduce trace event to analyse the number of dirty
+    extents accounted
+  btrfs: qgroup: Introduce function to trace two swaped extents
+  btrfs: qgroup: Introduce function to find all new tree blocks of tree
+    reloc tree
+  btrfs: qgroup: Use generation aware subtree swap to mark dirty extents
+
+ fs/btrfs/qgroup.c            | 327 +++++++++++++++++++++++++++++++++++
+ fs/btrfs/qgroup.h            |  10 ++
+ fs/btrfs/relocation.c        |  11 +-
+ include/trace/events/btrfs.h |  21 +++
+ 4 files changed, 361 insertions(+), 8 deletions(-)
+
 -- 
 2.18.0

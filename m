@@ -1,99 +1,92 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:53664 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:48030 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1729281AbeIGBgx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 6 Sep 2018 21:36:53 -0400
-From: jeffm@suse.com
-To: linux-btrfs@vger.kernel.org
-Cc: Jeff Mahoney <jeffm@suse.com>, stable@vger.kernel.org
-Subject: [PATCH RESEND] btrfs: fix error handling in free_log_tree
-Date: Thu,  6 Sep 2018 16:59:33 -0400
-Message-Id: <20180906205933.7430-1-jeffm@suse.com>
+        id S1727023AbeIEBHh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 4 Sep 2018 21:07:37 -0400
+From: Mark Fasheh <mfasheh@suse.de>
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: Al Viro <viro@ZenIV.linux.org.uk>, linux-fsdevel@vger.kernel.org,
+        linux-api@vger.kernel.org, Michael Kerrisk <mtk.manpages@gmail.com>,
+        linux-btrfs@vger.kernel.org, linux-xfs@vger.kernel.org,
+        "Darrick J . Wong" <darrick.wong@oracle.com>,
+        Adam Borowski <kilobyte@angband.pl>, David Sterba <dsterba@suse.cz>,
+        Mark Fasheh <mfasheh@suse.de>
+Subject: [PATCH v5 1/2] vfs: allow dedupe of user owned read-only files
+Date: Tue,  4 Sep 2018 13:40:15 -0700
+Message-Id: <20180904204016.14494-2-mfasheh@suse.de>
+In-Reply-To: <20180904204016.14494-1-mfasheh@suse.de>
+References: <20180904204016.14494-1-mfasheh@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Jeff Mahoney <jeffm@suse.com>
+The permission check in vfs_dedupe_file_range() is too coarse - We
+only allow dedupe of the destination file if the user is root, or
+they have the file open for write.
 
-When we hit an I/O error in free_log_tree->walk_log_tree during file system
-shutdown we can crash due to there not being a valid transaction handle.
+This effectively limits a non-root user from deduping their own read-only
+files. In addition, the write file descriptor that the user is forced to
+hold open can prevent execution of files. As file data during a dedupe
+does not change, the behavior is unexpected and this has caused a number of
+issue reports. For an example, see:
 
-Use btrfs_handle_fs_error when there's no transaction handle to use.
+https://github.com/markfasheh/duperemove/issues/129
 
-BUG: unable to handle kernel NULL pointer dereference at 0000000000000060
-IP: free_log_tree+0xd2/0x140 [btrfs]
-PGD 0 P4D 0
-Oops: 0000 [#1] SMP DEBUG_PAGEALLOC PTI
-Modules linked in: <modules>
-CPU: 2 PID: 23544 Comm: umount Tainted: G        W        4.12.14-kvmsmall #9 SLE15 (unreleased)
-Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS 1.0.0-prebuilt.qemu-project.org 04/01/2014
-task: ffff96bfd3478880 task.stack: ffffa7cf40d78000
-RIP: 0010:free_log_tree+0xd2/0x140 [btrfs]
-RSP: 0018:ffffa7cf40d7bd10 EFLAGS: 00010282
-RAX: 00000000fffffffb RBX: 00000000fffffffb RCX: 0000000000000002
-RDX: 0000000000000000 RSI: ffff96c02f07d4c8 RDI: 0000000000000282
-RBP: ffff96c013cf1000 R08: ffff96c02f07d4c8 R09: ffff96c02f07d4d0
-R10: 0000000000000000 R11: 0000000000000002 R12: 0000000000000000
-R13: ffff96c005e800c0 R14: ffffa7cf40d7bdb8 R15: 0000000000000000
-FS:  00007f17856bcfc0(0000) GS:ffff96c03f600000(0000) knlGS:0000000000000000
-CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-CR2: 0000000000000060 CR3: 0000000045ed6002 CR4: 00000000003606e0
-DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
-DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
-Call Trace:
- ? wait_for_writer+0xb0/0xb0 [btrfs]
- btrfs_free_log+0x17/0x30 [btrfs]
- btrfs_drop_and_free_fs_root+0x9a/0xe0 [btrfs]
- btrfs_free_fs_roots+0xc0/0x130 [btrfs]
- ? wait_for_completion+0xf2/0x100
- close_ctree+0xea/0x2e0 [btrfs]
- ? kthread_stop+0x161/0x260
- generic_shutdown_super+0x6c/0x120
- kill_anon_super+0xe/0x20
- btrfs_kill_super+0x13/0x100 [btrfs]
- deactivate_locked_super+0x3f/0x70
- cleanup_mnt+0x3b/0x70
- task_work_run+0x78/0x90
- exit_to_usermode_loop+0x77/0xa6
- do_syscall_64+0x1c5/0x1e0
- entry_SYSCALL_64_after_hwframe+0x42/0xb7
-RIP: 0033:0x7f1784f90827
-RSP: 002b:00007ffdeeb03118 EFLAGS: 00000246 ORIG_RAX: 00000000000000a6
-RAX: 0000000000000000 RBX: 0000556a60c62970 RCX: 00007f1784f90827
-RDX: 0000000000000001 RSI: 0000000000000000 RDI: 0000556a60c62b50
-RBP: 0000000000000000 R08: 0000000000000005 R09: 00000000ffffffff
-R10: 0000556a60c63900 R11: 0000000000000246 R12: 0000556a60c62b50
-R13: 00007f17854a81c4 R14: 0000000000000000 R15: 0000000000000000
-Code: 65 a1 fd ff be 01 00 00 00 48 89 ef e8 58 a1 fd ff 48 8b 7d 00 e8 9f 33 fe ff 48 89 ef e8 17 6c d3 ed 48 83 c4 50 5b 5d 41 5c c3 <49> 8b 44 24 60 f0 0f ba a8 80 65 01 00 02 72 23 83 fb fb 75 39
-RIP: free_log_tree+0xd2/0x140 [btrfs] RSP: ffffa7cf40d7bd10
-CR2: 0000000000000060
----[ end trace 3bc199fbf8fb4977 ]---
+So change the check so we allow dedupe on the target if:
 
-Cc: <stable@vger.kernel.org> # v3.13
-Fixes: 681ae50917df9 (Btrfs: cleanup reserved space when freeing tree log on error)
-Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+- the root or admin is asking for it
+- the process has write access
+- the owner of the file is asking for the dedupe
+- the process could get write access
+
+That way users can open read-only and still get dedupe.
+
+Signed-off-by: Mark Fasheh <mfasheh@suse.de>
+Acked-by: Darrick J. Wong <darrick.wong@oracle.com>
 ---
- fs/btrfs/tree-log.c | 9 ++++++---
- 1 file changed, 6 insertions(+), 3 deletions(-)
+ fs/read_write.c | 17 +++++++++++++++--
+ 1 file changed, 15 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index f8220ec02036..a5f6971a125f 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -3143,9 +3143,12 @@ static void free_log_tree(struct btrfs_trans_handle *trans,
- 	};
+diff --git a/fs/read_write.c b/fs/read_write.c
+index e83bd9744b5d..71e9077f8bc1 100644
+--- a/fs/read_write.c
++++ b/fs/read_write.c
+@@ -1964,6 +1964,20 @@ int vfs_dedupe_file_range_compare(struct inode *src, loff_t srcoff,
+ }
+ EXPORT_SYMBOL(vfs_dedupe_file_range_compare);
  
- 	ret = walk_log_tree(trans, log, &wc);
--	/* I don't think this can happen but just in case */
--	if (ret)
--		btrfs_abort_transaction(trans, ret);
-+	if (ret) {
-+		if (trans)
-+			btrfs_abort_transaction(trans, ret);
-+		else
-+			btrfs_handle_fs_error(log->fs_info, ret, NULL);
-+	}
++/* Check whether we are allowed to dedupe the destination file */
++static bool allow_file_dedupe(struct file *file)
++{
++	if (capable(CAP_SYS_ADMIN))
++		return true;
++	if (file->f_mode & FMODE_WRITE)
++		return true;
++	if (uid_eq(current_fsuid(), file_inode(file)->i_uid))
++		return true;
++	if (!inode_permission(file_inode(file), MAY_WRITE))
++		return true;
++	return false;
++}
++
+ int vfs_dedupe_file_range(struct file *file, struct file_dedupe_range *same)
+ {
+ 	struct file_dedupe_range_info *info;
+@@ -1972,7 +1986,6 @@ int vfs_dedupe_file_range(struct file *file, struct file_dedupe_range *same)
+ 	u64 len;
+ 	int i;
+ 	int ret;
+-	bool is_admin = capable(CAP_SYS_ADMIN);
+ 	u16 count = same->dest_count;
+ 	struct file *dst_file;
+ 	loff_t dst_off;
+@@ -2036,7 +2049,7 @@ int vfs_dedupe_file_range(struct file *file, struct file_dedupe_range *same)
  
- 	while (1) {
- 		ret = find_first_extent_bit(&log->dirty_log_pages,
+ 		if (info->reserved) {
+ 			info->status = -EINVAL;
+-		} else if (!(is_admin || (dst_file->f_mode & FMODE_WRITE))) {
++		} else if (!allow_file_dedupe(dst_file)) {
+ 			info->status = -EINVAL;
+ 		} else if (file->f_path.mnt != dst_file->f_path.mnt) {
+ 			info->status = -EXDEV;
 -- 
-2.12.3
+2.15.1

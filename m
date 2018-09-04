@@ -1,15 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from mail.cn.fujitsu.com ([183.91.158.132]:57704 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1726544AbeIDLXr (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 4 Sep 2018 07:23:47 -0400
+        with ESMTP id S1726544AbeIDLXt (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 4 Sep 2018 07:23:49 -0400
 From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-CC: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>, Mark Fasheh <mfasheh@suse.de>,
-        Qu Wenruo <quwenruo@cn.fujitsu.com>
-Subject: [PATCH v15 04/13] btrfs: dedupe: Introduce function to remove hash from in-memory tree
-Date: Tue, 4 Sep 2018 14:59:33 +0800
-Message-ID: <20180904065942.3621-5-lufq.fnst@cn.fujitsu.com>
+CC: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Subject: [PATCH v15 12/13] btrfs: relocation: Enhance error handling to avoid BUG_ON
+Date: Tue, 4 Sep 2018 14:59:41 +0800
+Message-ID: <20180904065942.3621-13-lufq.fnst@cn.fujitsu.com>
 In-Reply-To: <20180904065942.3621-1-lufq.fnst@cn.fujitsu.com>
 References: <20180904065942.3621-1-lufq.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -17,168 +16,113 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 
-Introduce static function inmem_del() to remove hash from in-memory
-dedupe tree.
-And implement btrfs_dedupe_del() and btrfs_dedup_disable() interfaces.
+Since the introduction of btrfs dedupe tree, it's possible that balance can
+race with dedupe disabling.
 
-Also for btrfs_dedupe_disable(), add new functions to wait existing
-writer and block incoming writers to eliminate all possible race.
+When this happens, dedupe_enabled will make btrfs_get_fs_root() return
+PTR_ERR(-ENOENT).
+But due to a bug in error handling branch, when this happens
+backref_cache->nr_nodes is increased but the node is neither added to
+backref_cache or nr_nodes decreased.
+Causing BUG_ON() in backref_cache_cleanup()
 
-Cc: Mark Fasheh <mfasheh@suse.de>
+[ 2611.668810] ------------[ cut here ]------------
+[ 2611.669946] kernel BUG at
+/home/sat/ktest/linux/fs/btrfs/relocation.c:243!
+[ 2611.670572] invalid opcode: 0000 [#1] SMP
+[ 2611.686797] Call Trace:
+[ 2611.687034]  [<ffffffffa01f71d3>]
+btrfs_relocate_block_group+0x1b3/0x290 [btrfs]
+[ 2611.687706]  [<ffffffffa01cc177>]
+btrfs_relocate_chunk.isra.40+0x47/0xd0 [btrfs]
+[ 2611.688385]  [<ffffffffa01cdb12>] btrfs_balance+0xb22/0x11e0 [btrfs]
+[ 2611.688966]  [<ffffffffa01d9611>] btrfs_ioctl_balance+0x391/0x3a0
+[btrfs]
+[ 2611.689587]  [<ffffffffa01ddaf0>] btrfs_ioctl+0x1650/0x2290 [btrfs]
+[ 2611.690145]  [<ffffffff81171cda>] ? lru_cache_add+0x3a/0x80
+[ 2611.690647]  [<ffffffff81171e4c>] ?
+lru_cache_add_active_or_unevictable+0x4c/0xc0
+[ 2611.691310]  [<ffffffff81193f04>] ? handle_mm_fault+0xcd4/0x17f0
+[ 2611.691842]  [<ffffffff811da423>] ? cp_new_stat+0x153/0x180
+[ 2611.692342]  [<ffffffff8119913d>] ? __vma_link_rb+0xfd/0x110
+[ 2611.692842]  [<ffffffff81199209>] ? vma_link+0xb9/0xc0
+[ 2611.693303]  [<ffffffff811e7e81>] do_vfs_ioctl+0xa1/0x5a0
+[ 2611.693781]  [<ffffffff8104e024>] ? __do_page_fault+0x1b4/0x400
+[ 2611.694310]  [<ffffffff811e83c1>] SyS_ioctl+0x41/0x70
+[ 2611.694758]  [<ffffffff816dfc6e>] entry_SYSCALL_64_fastpath+0x12/0x71
+[ 2611.695331] Code: ff 48 8b 45 bf 49 83 af a8 05 00 00 01 49 89 87 a0
+05 00 00 e9 2e fd ff ff b8 f4 ff ff ff e9 e4 fb ff ff 0f 0b 0f 0b 0f 0b
+0f 0b <0f> 0b 0f 0b 41 89 c6 e9 b8 fb ff ff e8 9e a6 e8 e0 4c 89 e7 44
+[ 2611.697870] RIP  [<ffffffffa01f6fc1>]
+relocate_block_group+0x741/0x7a0 [btrfs]
+[ 2611.698818]  RSP <ffff88002a81fb30>
+
+This patch will call remove_backref_node() in error handling branch, and
+cache the returned -ENOENT in relocate_tree_block() and continue
+balancing.
+
+Reported-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 ---
- fs/btrfs/dedupe.c | 131 +++++++++++++++++++++++++++++++++++++++++++---
- 1 file changed, 125 insertions(+), 6 deletions(-)
+ fs/btrfs/relocation.c | 22 +++++++++++++++++-----
+ 1 file changed, 17 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/dedupe.c b/fs/btrfs/dedupe.c
-index 784bb3a8a5ab..951fefd19fde 100644
---- a/fs/btrfs/dedupe.c
-+++ b/fs/btrfs/dedupe.c
-@@ -170,12 +170,6 @@ int btrfs_dedupe_enable(struct btrfs_fs_info *fs_info,
- 	return ret;
- }
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 59a9c22ebf51..5f4b138fcb35 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -845,6 +845,13 @@ struct backref_node *build_backref_tree(struct reloc_control *rc,
+ 		root = read_fs_root(rc->extent_root->fs_info, key.offset);
+ 		if (IS_ERR(root)) {
+ 			err = PTR_ERR(root);
++			/*
++			 * Don't forget to cleanup current node.
++			 * As it may not be added to backref_cache but nr_node
++			 * increased.
++			 * This will cause BUG_ON() in backref_cache_cleanup().
++			 */
++			remove_backref_node(&rc->backref_cache, cur);
+ 			goto out;
+ 		}
  
--int btrfs_dedupe_disable(struct btrfs_fs_info *fs_info)
--{
--	/* Place holder for bisect, will be implemented in later patches */
--	return 0;
--}
--
- static int inmem_insert_hash(struct rb_root *root,
- 			     struct inmem_hash *hash, int hash_len)
- {
-@@ -317,3 +311,128 @@ int btrfs_dedupe_add(struct btrfs_fs_info *fs_info,
- 		return inmem_add(dedupe_info, hash);
- 	return -EINVAL;
- }
-+
-+static struct inmem_hash *
-+inmem_search_bytenr(struct btrfs_dedupe_info *dedupe_info, u64 bytenr)
-+{
-+	struct rb_node **p = &dedupe_info->bytenr_root.rb_node;
-+	struct rb_node *parent = NULL;
-+	struct inmem_hash *entry = NULL;
-+
-+	while (*p) {
-+		parent = *p;
-+		entry = rb_entry(parent, struct inmem_hash, bytenr_node);
-+
-+		if (bytenr < entry->bytenr)
-+			p = &(*p)->rb_left;
-+		else if (bytenr > entry->bytenr)
-+			p = &(*p)->rb_right;
-+		else
-+			return entry;
-+	}
-+
-+	return NULL;
-+}
-+
-+/* Delete a hash from in-memory dedupe tree */
-+static int inmem_del(struct btrfs_dedupe_info *dedupe_info, u64 bytenr)
-+{
-+	struct inmem_hash *hash;
-+
-+	mutex_lock(&dedupe_info->lock);
-+	hash = inmem_search_bytenr(dedupe_info, bytenr);
-+	if (!hash) {
-+		mutex_unlock(&dedupe_info->lock);
-+		return 0;
-+	}
-+
-+	__inmem_del(dedupe_info, hash);
-+	mutex_unlock(&dedupe_info->lock);
-+	return 0;
-+}
-+
-+/* Remove a dedupe hash from dedupe tree */
-+int btrfs_dedupe_del(struct btrfs_fs_info *fs_info, u64 bytenr)
-+{
-+	struct btrfs_dedupe_info *dedupe_info = fs_info->dedupe_info;
-+
-+	if (!fs_info->dedupe_enabled)
-+		return 0;
-+
-+	if (WARN_ON(dedupe_info == NULL))
-+		return -EINVAL;
-+
-+	if (dedupe_info->backend == BTRFS_DEDUPE_BACKEND_INMEMORY)
-+		return inmem_del(dedupe_info, bytenr);
-+	return -EINVAL;
-+}
-+
-+static void inmem_destroy(struct btrfs_dedupe_info *dedupe_info)
-+{
-+	struct inmem_hash *entry, *tmp;
-+
-+	mutex_lock(&dedupe_info->lock);
-+	list_for_each_entry_safe(entry, tmp, &dedupe_info->lru_list, lru_list)
-+		__inmem_del(dedupe_info, entry);
-+	mutex_unlock(&dedupe_info->lock);
-+}
-+
-+/*
-+ * Helper function to wait and block all incoming writers
-+ *
-+ * Use rw_sem introduced for freeze to wait/block writers.
-+ * So during the block time, no new write will happen, so we can
-+ * do something quite safe, espcially helpful for dedupe disable,
-+ * as it affect buffered write.
-+ */
-+static void block_all_writers(struct btrfs_fs_info *fs_info)
-+{
-+	struct super_block *sb = fs_info->sb;
-+
-+	percpu_down_write(sb->s_writers.rw_sem + SB_FREEZE_WRITE - 1);
-+	down_write(&sb->s_umount);
-+}
-+
-+static void unblock_all_writers(struct btrfs_fs_info *fs_info)
-+{
-+	struct super_block *sb = fs_info->sb;
-+
-+	up_write(&sb->s_umount);
-+	percpu_up_write(sb->s_writers.rw_sem + SB_FREEZE_WRITE - 1);
-+}
-+
-+int btrfs_dedupe_disable(struct btrfs_fs_info *fs_info)
-+{
-+	struct btrfs_dedupe_info *dedupe_info;
-+	int ret;
-+
-+	dedupe_info = fs_info->dedupe_info;
-+
-+	if (!dedupe_info)
-+		return 0;
-+
-+	/* Don't allow disable status change in RO mount */
-+	if (fs_info->sb->s_flags & MS_RDONLY)
-+		return -EROFS;
-+
-+	/*
-+	 * Wait for all unfinished writers and block further writers.
-+	 * Then sync the whole fs so all current write will go through
-+	 * dedupe, and all later write won't go through dedupe.
-+	 */
-+	block_all_writers(fs_info);
-+	ret = sync_filesystem(fs_info->sb);
-+	fs_info->dedupe_enabled = 0;
-+	fs_info->dedupe_info = NULL;
-+	unblock_all_writers(fs_info);
-+	if (ret < 0)
-+		return ret;
-+
-+	/* now we are OK to clean up everything */
-+	if (dedupe_info->backend == BTRFS_DEDUPE_BACKEND_INMEMORY)
-+		inmem_destroy(dedupe_info);
-+
-+	crypto_free_shash(dedupe_info->dedupe_driver);
-+	kfree(dedupe_info);
-+	return 0;
-+}
+@@ -3018,14 +3025,21 @@ int relocate_tree_blocks(struct btrfs_trans_handle *trans,
+ 	}
+ 
+ 	rb_node = rb_first(blocks);
+-	while (rb_node) {
++	for (rb_node = rb_first(blocks); rb_node; rb_node = rb_next(rb_node)) {
+ 		block = rb_entry(rb_node, struct tree_block, rb_node);
+ 
+ 		node = build_backref_tree(rc, &block->key,
+ 					  block->level, block->bytenr);
+ 		if (IS_ERR(node)) {
++			/*
++			 * The root(dedupe tree yet) of the tree block is
++			 * going to be freed and can't be reached.
++			 * Just skip it and continue balancing.
++			 */
++			if (PTR_ERR(node) == -ENOENT)
++				continue;
+ 			err = PTR_ERR(node);
+-			goto out;
++			break;
+ 		}
+ 
+ 		ret = relocate_tree_block(trans, rc, node, &block->key,
+@@ -3033,11 +3047,9 @@ int relocate_tree_blocks(struct btrfs_trans_handle *trans,
+ 		if (ret < 0) {
+ 			if (ret != -EAGAIN || rb_node == rb_first(blocks))
+ 				err = ret;
+-			goto out;
++			break;
+ 		}
+-		rb_node = rb_next(rb_node);
+ 	}
+-out:
+ 	err = finish_pending_nodes(trans, rc, path, err);
+ 
+ out_free_path:
 -- 
 2.18.0

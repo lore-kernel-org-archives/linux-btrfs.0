@@ -1,91 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from tartarus.angband.pl ([89.206.35.136]:49718 "EHLO
-        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726023AbeICQGW (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Sep 2018 12:06:22 -0400
-From: Adam Borowski <kilobyte@angband.pl>
-To: David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org,
-        Nikolay Borisov <nborisov@suse.com>
-Cc: Adam Borowski <kilobyte@angband.pl>
-Date: Mon,  3 Sep 2018 13:46:23 +0200
-Message-Id: <20180903114623.14683-1-kilobyte@angband.pl>
-In-Reply-To: <c47c376f-68c6-c00c-80eb-0a6dd95d5ac1@suse.com>
-References: <c47c376f-68c6-c00c-80eb-0a6dd95d5ac1@suse.com>
-MIME-Version: 1.0
-Subject: [PATCH v3] btrfs-progs: defrag: open files RO on new enough kernels
+Received: from mx2.suse.de ([195.135.220.15]:34084 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726299AbeIEK6I (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 5 Sep 2018 06:58:08 -0400
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 8BC3BAEEA
+        for <linux-btrfs@vger.kernel.org>; Wed,  5 Sep 2018 06:29:29 +0000 (UTC)
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/4] btrfs-progs: print-tree: Skip deprecated blockptr / nodesize output
+Date: Wed,  5 Sep 2018 14:29:21 +0800
+Message-Id: <20180905062924.23836-2-wqu@suse.com>
+In-Reply-To: <20180905062924.23836-1-wqu@suse.com>
+References: <20180905062924.23836-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Defragging an executable conflicts both way with it being run, resulting in
-ETXTBSY.  This either makes defrag fail or prevents the program from being
-executed.
+When printing tree nodes, we output slots like:
+key (EXTENT_TREE ROOT_ITEM 0) block 73625600 (17975) gen 16
 
-Kernels 4.19-rc1 and later allow defragging files you could have possibly
-opened rw, even if the passed descriptor is ro (commit 616d374efa23).
+The number in the parentheses is blockptr / nodesize.
 
-Signed-off-by: Adam Borowski <kilobyte@angband.pl>
+However this number doesn't really do any thing useful.
+And in fact for unaligned metadata block group (block group start bytenr
+is not aligned to 16K), the number doesn't even make sense as it's
+rounded down.
+
+In factor kernel doesn't ever output such divided result in its
+print-tree.c
+
+Remove it so later reader won't wonder what the number means.
+
+Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
-v2: more eloquent description; root can't defrag RO on old kernels (unlike
-dedupe)
-v3: more eloquentier description; s/defrag_ro/defrag_open_mode/
+ print-tree.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
- cmds-filesystem.c | 10 ++++++++--
- 1 file changed, 8 insertions(+), 2 deletions(-)
-
-diff --git a/cmds-filesystem.c b/cmds-filesystem.c
-index 06c8311b..99e2aec0 100644
---- a/cmds-filesystem.c
-+++ b/cmds-filesystem.c
-@@ -26,6 +26,7 @@
- #include <ftw.h>
- #include <mntent.h>
- #include <linux/limits.h>
-+#include <linux/version.h>
- #include <getopt.h>
- 
- #include <btrfsutil.h>
-@@ -39,12 +40,14 @@
- #include "list_sort.h"
- #include "disk-io.h"
- #include "help.h"
-+#include "fsfeatures.h"
- 
- /*
-  * for btrfs fi show, we maintain a hash of fsids we've already printed.
-  * This way we don't print dups if a given FS is mounted more than once.
-  */
- static struct seen_fsid *seen_fsid_hash[SEEN_FSID_HASH_SIZE] = {NULL,};
-+static mode_t defrag_open_mode = O_RDONLY;
- 
- static const char * const filesystem_cmd_group_usage[] = {
- 	"btrfs filesystem [<group>] <command> [<args>]",
-@@ -877,7 +880,7 @@ static int defrag_callback(const char *fpath, const struct stat *sb,
- 	if ((typeflag == FTW_F) && S_ISREG(sb->st_mode)) {
- 		if (defrag_global_verbose)
- 			printf("%s\n", fpath);
--		fd = open(fpath, O_RDWR);
-+		fd = open(fpath, defrag_open_mode);
- 		if (fd < 0) {
- 			goto error;
- 		}
-@@ -914,6 +917,9 @@ static int cmd_filesystem_defrag(int argc, char **argv)
- 	int compress_type = BTRFS_COMPRESS_NONE;
- 	DIR *dirstream;
- 
-+	if (get_running_kernel_version() < KERNEL_VERSION(4,19,0))
-+		defrag_open_mode = O_RDWR;
-+
- 	/*
- 	 * Kernel has a different default (256K) that is supposed to be safe,
- 	 * but it does not defragment very well. The 32M will likely lead to
-@@ -1014,7 +1020,7 @@ static int cmd_filesystem_defrag(int argc, char **argv)
- 		int defrag_err = 0;
- 
- 		dirstream = NULL;
--		fd = open_file_or_dir(argv[i], &dirstream);
-+		fd = open_file_or_dir3(argv[i], &dirstream, defrag_open_mode);
- 		if (fd < 0) {
- 			error("cannot open %s: %m", argv[i]);
- 			ret = -errno;
+diff --git a/print-tree.c b/print-tree.c
+index a09ecfbb28f0..31f6fa12522f 100644
+--- a/print-tree.c
++++ b/print-tree.c
+@@ -1420,9 +1420,8 @@ void btrfs_print_tree(struct extent_buffer *eb, int follow)
+ 		btrfs_disk_key_to_cpu(&key, &disk_key);
+ 		printf("\t");
+ 		btrfs_print_key(&disk_key);
+-		printf(" block %llu (%llu) gen %llu\n",
++		printf(" block %llu gen %llu\n",
+ 		       (unsigned long long)blocknr,
+-		       (unsigned long long)blocknr / eb->len,
+ 		       (unsigned long long)btrfs_node_ptr_generation(eb, i));
+ 		fflush(stdout);
+ 	}
 -- 
-2.19.0.rc1
+2.18.0

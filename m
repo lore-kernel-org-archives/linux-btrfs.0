@@ -1,142 +1,105 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f68.google.com ([209.85.214.68]:53201 "EHLO
-        mail-it0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725825AbeIEFSR (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Sep 2018 01:18:17 -0400
-Received: by mail-it0-f68.google.com with SMTP id h3-v6so7653085ita.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 04 Sep 2018 17:50:41 -0700 (PDT)
+Received: from mout.gmx.net ([212.227.17.22]:46103 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1725853AbeIEFxK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 5 Sep 2018 01:53:10 -0400
+Subject: Re: RAID1 & BTRFS critical (device sda2): corrupt leaf, bad key order
+To: Chris Murphy <lists@colorremedies.com>,
+        Etienne Champetier <champetier.etienne@gmail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <CAOdf3gp5RLHxSqhFjjOtNaGpDPvK+UO9eGh+UmmnPxXNa+v-Qg@mail.gmail.com>
+ <3374b776-071f-ec7f-f5ad-58d0e7dc3059@gmx.com>
+ <CAOdf3goVwcAwKXhNDcO0va-PJFu0mAWbBUeu-yQWkb-2SNPnxQ@mail.gmail.com>
+ <43e5b6dc-a963-6d67-732f-c13c2f5abc78@gmx.com>
+ <CAOdf3gqtbGJD29sYCOgL4+RC3a5ypvUbXP=F4r+pVDa_D+bCjg@mail.gmail.com>
+ <CAJCQCtR_UmeksUjVKx3SeDJEttg=QHtW6oeAjp0W1Ov8XUsbvg@mail.gmail.com>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <af2f5b6a-f0f5-1223-700f-98c479ddb073@gmx.com>
+Date: Wed, 5 Sep 2018 09:25:11 +0800
 MIME-Version: 1.0
-In-Reply-To: <20180830174225.2200-3-josef@toxicpanda.com>
-References: <20180830174225.2200-1-josef@toxicpanda.com> <20180830174225.2200-3-josef@toxicpanda.com>
-From: Liu Bo <obuil.liubo@gmail.com>
-Date: Tue, 4 Sep 2018 17:50:40 -0700
-Message-ID: <CANQeFDAdrxN=APx7+mPh_Hk4EpHtgo4VnRsbr4f1a0tiRrb8Ag@mail.gmail.com>
-Subject: Re: [PATCH 02/35] btrfs: add cleanup_ref_head_accounting helper
-To: Josef Bacik <josef@toxicpanda.com>
-Cc: linux-btrfs@vger.kernel.org, Josef Bacik <jbacik@fb.com>
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <CAJCQCtR_UmeksUjVKx3SeDJEttg=QHtW6oeAjp0W1Ov8XUsbvg@mail.gmail.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="qfCEUUVmttLm3U7OwBo2lJyiDWOZbLyIQ"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Aug 30, 2018 at 10:41 AM, Josef Bacik <josef@toxicpanda.com> wrote:
-> From: Josef Bacik <jbacik@fb.com>
->
-> We were missing some quota cleanups in check_ref_cleanup, so break the
-> ref head accounting cleanup into a helper and call that from both
-> check_ref_cleanup and cleanup_ref_head.  This will hopefully ensure that
-> we don't screw up accounting in the future for other things that we add.
->
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--qfCEUUVmttLm3U7OwBo2lJyiDWOZbLyIQ
+Content-Type: multipart/mixed; boundary="x9uW2a65fGXswBjm6WaFMfgP96u5nsaxn";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: Chris Murphy <lists@colorremedies.com>,
+ Etienne Champetier <champetier.etienne@gmail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Message-ID: <af2f5b6a-f0f5-1223-700f-98c479ddb073@gmx.com>
+Subject: Re: RAID1 & BTRFS critical (device sda2): corrupt leaf, bad key order
+References: <CAOdf3gp5RLHxSqhFjjOtNaGpDPvK+UO9eGh+UmmnPxXNa+v-Qg@mail.gmail.com>
+ <3374b776-071f-ec7f-f5ad-58d0e7dc3059@gmx.com>
+ <CAOdf3goVwcAwKXhNDcO0va-PJFu0mAWbBUeu-yQWkb-2SNPnxQ@mail.gmail.com>
+ <43e5b6dc-a963-6d67-732f-c13c2f5abc78@gmx.com>
+ <CAOdf3gqtbGJD29sYCOgL4+RC3a5ypvUbXP=F4r+pVDa_D+bCjg@mail.gmail.com>
+ <CAJCQCtR_UmeksUjVKx3SeDJEttg=QHtW6oeAjp0W1Ov8XUsbvg@mail.gmail.com>
+In-Reply-To: <CAJCQCtR_UmeksUjVKx3SeDJEttg=QHtW6oeAjp0W1Ov8XUsbvg@mail.gmail.com>
+
+--x9uW2a65fGXswBjm6WaFMfgP96u5nsaxn
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
 
 
-Reviewed-by: Liu Bo <bo.liu@linux.alibaba.com>
+On 2018/9/5 =E4=B8=8A=E5=8D=884:37, Chris Murphy wrote:
+> On Tue, Sep 4, 2018 at 10:22 AM, Etienne Champetier
+> <champetier.etienne@gmail.com> wrote:
+>=20
+>> Do you have a procedure to copy all subvolumes & skip error ? (I have
+>> ~200 snapshots)
+>=20
+> If they're already read-only snapshots, then script an iteration of
+> btrfs send receive to a new volume.
 
-thanks,
-liubo
-> Signed-off-by: Josef Bacik <jbacik@fb.com>
-> ---
->  fs/btrfs/extent-tree.c | 67 +++++++++++++++++++++++++++++---------------------
->  1 file changed, 39 insertions(+), 28 deletions(-)
->
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index 6799950fa057..4c9fd35bca07 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -2461,6 +2461,41 @@ static int cleanup_extent_op(struct btrfs_trans_handle *trans,
->         return ret ? ret : 1;
->  }
->
-> +static void cleanup_ref_head_accounting(struct btrfs_trans_handle *trans,
-> +                                       struct btrfs_delayed_ref_head *head)
-> +{
-> +       struct btrfs_fs_info *fs_info = trans->fs_info;
-> +       struct btrfs_delayed_ref_root *delayed_refs =
-> +               &trans->transaction->delayed_refs;
-> +
-> +       if (head->total_ref_mod < 0) {
-> +               struct btrfs_space_info *space_info;
-> +               u64 flags;
-> +
-> +               if (head->is_data)
-> +                       flags = BTRFS_BLOCK_GROUP_DATA;
-> +               else if (head->is_system)
-> +                       flags = BTRFS_BLOCK_GROUP_SYSTEM;
-> +               else
-> +                       flags = BTRFS_BLOCK_GROUP_METADATA;
-> +               space_info = __find_space_info(fs_info, flags);
-> +               ASSERT(space_info);
-> +               percpu_counter_add_batch(&space_info->total_bytes_pinned,
-> +                                  -head->num_bytes,
-> +                                  BTRFS_TOTAL_BYTES_PINNED_BATCH);
-> +
-> +               if (head->is_data) {
-> +                       spin_lock(&delayed_refs->lock);
-> +                       delayed_refs->pending_csums -= head->num_bytes;
-> +                       spin_unlock(&delayed_refs->lock);
-> +               }
-> +       }
-> +
-> +       /* Also free its reserved qgroup space */
-> +       btrfs_qgroup_free_delayed_ref(fs_info, head->qgroup_ref_root,
-> +                                     head->qgroup_reserved);
-> +}
-> +
->  static int cleanup_ref_head(struct btrfs_trans_handle *trans,
->                             struct btrfs_delayed_ref_head *head)
->  {
-> @@ -2496,31 +2531,6 @@ static int cleanup_ref_head(struct btrfs_trans_handle *trans,
->         spin_unlock(&delayed_refs->lock);
->         spin_unlock(&head->lock);
->
-> -       trace_run_delayed_ref_head(fs_info, head, 0);
-> -
-> -       if (head->total_ref_mod < 0) {
-> -               struct btrfs_space_info *space_info;
-> -               u64 flags;
-> -
-> -               if (head->is_data)
-> -                       flags = BTRFS_BLOCK_GROUP_DATA;
-> -               else if (head->is_system)
-> -                       flags = BTRFS_BLOCK_GROUP_SYSTEM;
-> -               else
-> -                       flags = BTRFS_BLOCK_GROUP_METADATA;
-> -               space_info = __find_space_info(fs_info, flags);
-> -               ASSERT(space_info);
-> -               percpu_counter_add_batch(&space_info->total_bytes_pinned,
-> -                                  -head->num_bytes,
-> -                                  BTRFS_TOTAL_BYTES_PINNED_BATCH);
-> -
-> -               if (head->is_data) {
-> -                       spin_lock(&delayed_refs->lock);
-> -                       delayed_refs->pending_csums -= head->num_bytes;
-> -                       spin_unlock(&delayed_refs->lock);
-> -               }
-> -       }
-> -
->         if (head->must_insert_reserved) {
->                 btrfs_pin_extent(fs_info, head->bytenr,
->                                  head->num_bytes, 1);
-> @@ -2530,9 +2540,9 @@ static int cleanup_ref_head(struct btrfs_trans_handle *trans,
->                 }
->         }
->
-> -       /* Also free its reserved qgroup space */
-> -       btrfs_qgroup_free_delayed_ref(fs_info, head->qgroup_ref_root,
-> -                                     head->qgroup_reserved);
-> +       cleanup_ref_head_accounting(trans, head);
-> +
-> +       trace_run_delayed_ref_head(fs_info, head, 0);
->         btrfs_delayed_ref_unlock(head);
->         btrfs_put_delayed_ref_head(head);
->         return 0;
-> @@ -6991,6 +7001,7 @@ static noinline int check_ref_cleanup(struct btrfs_trans_handle *trans,
->         if (head->must_insert_reserved)
->                 ret = 1;
->
-> +       cleanup_ref_head_accounting(trans, head);
->         mutex_unlock(&head->mutex);
->         btrfs_put_delayed_ref_head(head);
->         return ret;
-> --
-> 2.14.3
->
+Doesn't simple "cp -r" work here?
+(If the important thing is data, not the subvolume layout).
+
+Thanks,
+Qu
+
+>=20
+> Btrfs seed-sprout would be ideal, however in this case I don't think
+> can help because a.) it's temporarily one file system, which could
+> mean the corruption is inherited; and b.) I'm not sure it's multiple
+> device aware, so either the btrfs-tune -S1 might fail on 2+ device
+> Btrfs volumes, or possibly it insists on a two device sprout in order
+> to replicate a two device seed.
+>=20
+> If they're not already read-only, it's tricky because it sounds like
+> mounting rw is possibly risky, and taking read only snapshots might
+> fail anyway. There is no way to make read only snapshots unless the
+> volume can be written to; and no way to force a rw subvolume to be
+> treated as if it were read only even if the volume is mounted read
+> only. And it takes a read only subvolume for send to work.
+>=20
+>=20
+
+
+--x9uW2a65fGXswBjm6WaFMfgP96u5nsaxn--
+
+--qfCEUUVmttLm3U7OwBo2lJyiDWOZbLyIQ
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAluPMHcACgkQwj2R86El
+/qgc9gf9GFHBFmF9qVu1gSRNAHz/BpEvFDpX0PndMUDLdJvXrrx63AghXP17OMe6
++BmFQ5HC3BdfoZbfZxorkuZh+ayDx6/pQnBa1QNIgzLiV6FAKO5UmrAEhDjrCw5n
+wZTeLvKp5UrTXVWuVvpeMm3YSnnMiZrP3RCULLRfuNPcQkPwbyFIB3NSIWnnL7oU
+X83B7f0qB+IUFGOX5XBQs5SsEBg++2/gVnEk0FHCwz5K3+mFtd16lgLIfWmVFsSd
+TQtjtf76gnAvXCRKBFvBspIj11dhM9JXV89dbdozzxq2Q7RCjzK3ceR2nO39bgtb
+CWsP79uCvPbR4uXQ4DENHQrChepFPw==
+=RM19
+-----END PGP SIGNATURE-----
+
+--qfCEUUVmttLm3U7OwBo2lJyiDWOZbLyIQ--

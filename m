@@ -1,48 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:49018 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727572AbeIEJcH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 5 Sep 2018 05:32:07 -0400
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 182AFB23A
-        for <linux-btrfs@vger.kernel.org>; Wed,  5 Sep 2018 05:03:43 +0000 (UTC)
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: qgroup: Don't trace subtree if we're dropping tree reloc tree
-Date: Wed,  5 Sep 2018 13:03:39 +0800
-Message-Id: <20180905050339.5356-1-wqu@suse.com>
+Received: from mail-oi0-f66.google.com ([209.85.218.66]:46468 "EHLO
+        mail-oi0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728162AbeIEUbs (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Sep 2018 16:31:48 -0400
+Received: by mail-oi0-f66.google.com with SMTP id y207-v6so14538365oie.13
+        for <linux-btrfs@vger.kernel.org>; Wed, 05 Sep 2018 09:00:58 -0700 (PDT)
+MIME-Version: 1.0
+References: <20180824043139.GA8263@giis.co.in>
+In-Reply-To: <20180824043139.GA8263@giis.co.in>
+From: Timofey Titovets <nefelim4ag@gmail.com>
+Date: Wed, 5 Sep 2018 19:00:21 +0300
+Message-ID: <CAGqmi74eMiHe7HK_oueaj0JZmy1Kp1NoOCrU0yheEE8MjngLKA@mail.gmail.com>
+Subject: Re: dduper - Offline btrfs deduplication tool
+To: lakshmipathi.g@giis.co.in
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Tree reloc tree doesn't contribute to qgroup numbers, as we have
-accounted them at balance time (check replace_path()).
+пт, 24 авг. 2018 г. в 7:41, Lakshmipathi.G <lakshmipathi.g@giis.co.in>:
+>
+> Hi -
+>
+> dduper is an offline dedupe tool. Instead of reading whole file blocks and
+> computing checksum, It works by fetching checksum from BTRFS csum tree. This
+> hugely improves the performance.
+>
+> dduper works like:
+>         - Read csum for given two files.
+>         - Find matching location.
+>         - Pass the location to ioctl_ficlonerange directly
+>           instead of ioctl_fideduperange
+>
+> By default, dduper adds safty check to above steps by creating a
+> backup reflink file and compares the md5sum after dedupe.
+> If the backup file matches new deduped file, then backup file is
+> removed. You can skip this check by passing --skip option. Here is
+> sample cli usage [1] and quick demo [2]
+>
+> Some performance numbers: (with -skip option)
+>
+> Dedupe two 1GB files with same  content - 1.2 seconds
+> Dedupe two 5GB files with same  content - 8.2 seconds
+> Dedupe two 10GB files with same  content - 13.8 seconds
+>
+> dduper requires `btrfs inspect-internal dump-csum` command, you can use
+> this branch [3] or apply patch by yourself [4]
+>
+> [1] https://gitlab.collabora.com/laks/btrfs-progs/blob/dump_csum/Documentation/dduper_usage.md
+> [2] http://giis.co.in/btrfs_dedupe.gif
+> [3] git clone https://gitlab.collabora.com/laks/btrfs-progs.git -b  dump_csum
+> [4] https://patchwork.kernel.org/patch/10540229/
+>
+> Please remember its version-0.1, so test it out, if you plan to use dduper real data.
+> Let me know, if you have suggestions or feedback or bugs :)
+>
+> Cheers.
+> Lakshmipathi.G
+>
 
-Skip such unneeded subtree trace should reduce some performance
-overhead.
+One question:
+Why not ioctl_fideduperange?
+i.e. you kill most of benefits from that ioctl - atomicity.
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/extent-tree.c | 8 +++++++-
- 1 file changed, 7 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index de6f75f5547b..4588153f414c 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -8643,7 +8643,13 @@ static noinline int do_walk_down(struct btrfs_trans_handle *trans,
- 			parent = 0;
- 		}
- 
--		if (need_account) {
-+		/*
-+		 * Tree reloc tree doesn't contribute to qgroup numbers, and
-+		 * we have already accounted them at merge time (replace_path),
-+		 * thus we could skip expensive subtree trace here.
-+		 */
-+		if (root->root_key.objectid != BTRFS_TREE_RELOC_OBJECTID &&
-+		    need_account) {
- 			ret = btrfs_qgroup_trace_subtree(trans, next,
- 							 generation, level - 1);
- 			if (ret) {
 -- 
-2.18.0
+Have a nice day,
+Timofey.

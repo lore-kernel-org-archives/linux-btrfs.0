@@ -1,59 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:57214 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:34062 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726230AbeIEK1S (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 5 Sep 2018 06:27:18 -0400
-Subject: Re: [PATCH] Btrfs: remove redundant btrfs_trans_release_metadata"
-To: Liu Bo <bo.liu@linux.alibaba.com>, linux-btrfs@vger.kernel.org
-References: <1536110090-100798-1-git-send-email-bo.liu@linux.alibaba.com>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <8b39ad2c-36e2-9d68-608d-565b4b6c8a0a@suse.com>
-Date: Wed, 5 Sep 2018 08:58:44 +0300
-MIME-Version: 1.0
-In-Reply-To: <1536110090-100798-1-git-send-email-bo.liu@linux.alibaba.com>
-Content-Type: text/plain; charset=utf-8
+        id S1726299AbeIEK6G (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 5 Sep 2018 06:58:06 -0400
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id DB9F6AEEA
+        for <linux-btrfs@vger.kernel.org>; Wed,  5 Sep 2018 06:29:27 +0000 (UTC)
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 0/4] btrfs-progs: print-tree: breadth-first tree print order
+Date: Wed,  5 Sep 2018 14:29:20 +0800
+Message-Id: <20180905062924.23836-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This patchset can be fetched from github:
+https://github.com/adam900710/btrfs-progs/tree/dump_tree_enhance
 
+The main point of this patchset is to make "btrfs ins dump-tree" to
+print tree blocks in breadth-first order when level is higher than 2.
 
-On  5.09.2018 04:14, Liu Bo wrote:
-> __btrfs_end_transaction() has done the metadata release twice,
-> probably because it used to process delayed refs in between, but now
-> that we don't process delayed refs any more, the 2nd release is always
-> a noop.
-> 
-> Signed-off-by: Liu Bo <bo.liu@linux.alibaba.com>
+The 1st patch is just a minor cleanup, to remove some unused and
+meaningless output.
 
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+The 2nd patch does a root<->fs_info cleanup, provides the basis for
+later btrfs_next_sibling_tree_block().
 
-> ---
->  fs/btrfs/transaction.c | 6 ------
->  1 file changed, 6 deletions(-)
-> 
-> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-> index bb1b9f526e98..94b036a74d11 100644
-> --- a/fs/btrfs/transaction.c
-> +++ b/fs/btrfs/transaction.c
-> @@ -826,12 +826,6 @@ static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
->  		return 0;
->  	}
->  
-> -	btrfs_trans_release_metadata(trans);
-> -	trans->block_rsv = NULL;
-> -
-> -	if (!list_empty(&trans->new_bgs))
-> -		btrfs_create_pending_block_groups(trans);
-> -
+The 3rd patch implements a new function, btrfs_next_sibling_tree_block()
+to find next sibling tree block, other than leaf.
 
-The only code which can have any implications to the transaction reserve
-is the btrfs_Create_pending_block_groups since it does insert items. But
-at this point trans->block_rsv is already null and additionally even if
-more reservations are made for this transaction further down either
-btrfs_commit_transaction is called or the transaction kthread is called
-which is going to commit it. So this change really seems inconsequential.
+The final patch will implement BFS for btrfs_print_tree().
+The BFS search itself is implemented using path along with
+ path::lowest_level and btrfs_next_sibling_tree_block() to iterate all
+sibling tree blocks in a level.
 
->  	trans->delayed_ref_updates = 0;
->  	if (!trans->sync) {
->  		must_run_delayed_refs =
-> 
+Since BFS order is more human-friendly for higher trees, use BFS to
+replace DFS order directly.
+
+Qu Wenruo (4):
+  btrfs-progs: print-tree: Skip deprecated blockptr / nodesize output
+  btrfs-progs: Replace root parameter using fs_info for
+    reada_for_search()
+  btrfs-progs: Introduce function to find next sibling tree block
+  btrfs-progs: print-tree: Use breadth-first search for
+    btrfs_print_tree()
+
+ cmds-restore.c |   4 +-
+ ctree.c        |  25 ++++++------
+ ctree.h        |  19 +++++++--
+ print-tree.c   | 102 +++++++++++++++++++++++++++++++++++--------------
+ 4 files changed, 106 insertions(+), 44 deletions(-)
+
+-- 
+2.18.0

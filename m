@@ -1,64 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f45.google.com ([209.85.214.45]:55206 "EHLO
-        mail-it0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725825AbeIEGJe (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Sep 2018 02:09:34 -0400
-Received: by mail-it0-f45.google.com with SMTP id f14-v6so7781555ita.4
-        for <linux-btrfs@vger.kernel.org>; Tue, 04 Sep 2018 18:41:49 -0700 (PDT)
+Received: from mail-it0-f67.google.com ([209.85.214.67]:50887 "EHLO
+        mail-it0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725825AbeIEGMm (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Sep 2018 02:12:42 -0400
+Received: by mail-it0-f67.google.com with SMTP id j81-v6so7809276ite.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 04 Sep 2018 18:44:56 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <20180830174225.2200-9-josef@toxicpanda.com>
-References: <20180830174225.2200-1-josef@toxicpanda.com> <20180830174225.2200-9-josef@toxicpanda.com>
+In-Reply-To: <20180830174225.2200-21-josef@toxicpanda.com>
+References: <20180830174225.2200-1-josef@toxicpanda.com> <20180830174225.2200-21-josef@toxicpanda.com>
 From: Liu Bo <obuil.liubo@gmail.com>
-Date: Tue, 4 Sep 2018 18:41:48 -0700
-Message-ID: <CANQeFDDJ2Fmi=8Vg7upcm7ih_tjeuXqWPEvyKwa9sF4H65U9HA@mail.gmail.com>
-Subject: Re: [PATCH 08/35] btrfs: release metadata before running delayed refs
+Date: Tue, 4 Sep 2018 18:44:55 -0700
+Message-ID: <CANQeFDCKfRi17E20RfbGHoa8ZSN5QvEdE7BS07qHKQYfofZi5Q@mail.gmail.com>
+Subject: Re: [PATCH 20/35] btrfs: reset max_extent_size on clear in a bitmap
 To: Josef Bacik <josef@toxicpanda.com>
-Cc: linux-btrfs@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org, Josef Bacik <jbacik@fb.com>
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Aug 30, 2018 at 10:41 AM, Josef Bacik <josef@toxicpanda.com> wrote:
-> We want to release the unused reservation we have since it refills the
-> delayed refs reserve, which will make everything go smoother when
-> running the delayed refs if we're short on our reservation.
+On Thu, Aug 30, 2018 at 10:42 AM, Josef Bacik <josef@toxicpanda.com> wrote:
+> From: Josef Bacik <jbacik@fb.com>
+>
+> We need to clear the max_extent_size when we clear bits from a bitmap
+> since it could have been from the range that contains the
+> max_extent_size.
 >
 
-Looks good.
+Looks OK.
 Reviewed-by: Liu Bo <bo.liu@linux.alibaba.com>
 
 thanks,
 liubo
 
-> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+> Signed-off-by: Josef Bacik <jbacik@fb.com>
 > ---
->  fs/btrfs/transaction.c | 6 +++---
->  1 file changed, 3 insertions(+), 3 deletions(-)
+>  fs/btrfs/free-space-cache.c | 2 ++
+>  1 file changed, 2 insertions(+)
 >
-> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-> index 99741254e27e..ebb0c0405598 100644
-> --- a/fs/btrfs/transaction.c
-> +++ b/fs/btrfs/transaction.c
-> @@ -1915,6 +1915,9 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
->                 return ret;
->         }
+> diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+> index 53521027dd78..7faca05e61ea 100644
+> --- a/fs/btrfs/free-space-cache.c
+> +++ b/fs/btrfs/free-space-cache.c
+> @@ -1683,6 +1683,8 @@ static inline void __bitmap_clear_bits(struct btrfs_free_space_ctl *ctl,
+>         bitmap_clear(info->bitmap, start, count);
 >
-> +       btrfs_trans_release_metadata(trans);
-> +       trans->block_rsv = NULL;
-> +
->         /* make a pass through all the delayed refs we have so far
->          * any runnings procs may add more while we are here
->          */
-> @@ -1924,9 +1927,6 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
->                 return ret;
->         }
+>         info->bytes -= bytes;
+> +       if (info->max_extent_size > ctl->unit)
+> +               info->max_extent_size = 0;
+>  }
 >
-> -       btrfs_trans_release_metadata(trans);
-> -       trans->block_rsv = NULL;
-> -
->         cur_trans = trans->transaction;
->
->         /*
+>  static void bitmap_clear_bits(struct btrfs_free_space_ctl *ctl,
 > --
 > 2.14.3
 >

@@ -1,49 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f68.google.com ([209.85.214.68]:50570 "EHLO
-        mail-it0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726105AbeIFOnV (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Sep 2018 10:43:21 -0400
-Received: by mail-it0-f68.google.com with SMTP id j81-v6so13989489ite.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 06 Sep 2018 03:08:37 -0700 (PDT)
-Subject: Re: Transactional btrfs
-To: Nathan Dehnel <ncdehnel@gmail.com>, linux-btrfs@vger.kernel.org
-References: <CAEEhgEtgahZjLd-Uy-sFSc+36pNNUOa82sadJgBcbWKvPYsLiA@mail.gmail.com>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <228f7179-6c5c-4412-2bb1-b0e73439b05a@gmail.com>
-Date: Thu, 6 Sep 2018 06:08:33 -0400
+Received: from mx2.suse.de ([195.135.220.15]:38406 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726400AbeIFPup (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 6 Sep 2018 11:50:45 -0400
+Date: Thu, 6 Sep 2018 13:15:29 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: qgroup: Don't trace subtree if we're dropping
+ tree reloc tree
+Message-ID: <20180906111529.GY24025@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20180905050339.5356-1-wqu@suse.com>
+ <20180905131146.GX24025@twin.jikos.cz>
+ <c0767f62-5356-af80-c5b4-2e97be62e730@gmx.com>
 MIME-Version: 1.0
-In-Reply-To: <CAEEhgEtgahZjLd-Uy-sFSc+36pNNUOa82sadJgBcbWKvPYsLiA@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <c0767f62-5356-af80-c5b4-2e97be62e730@gmx.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2018-09-06 03:23, Nathan Dehnel wrote:
-> https://lwn.net/Articles/287289/
+On Thu, Sep 06, 2018 at 09:41:14AM +0800, Qu Wenruo wrote:
 > 
-> In 2008, HP released the source code for a filesystem called advfs so
-> that its features could be incorporated into linux filesystems. Advfs
-> had a feature where a group of file writes were an atomic transaction.
 > 
-> https://www.usenix.org/system/files/conference/fast15/fast15-paper-verma.pdf
+> On 2018/9/5 下午9:11, David Sterba wrote:
+> > On Wed, Sep 05, 2018 at 01:03:39PM +0800, Qu Wenruo wrote:
+> >> Tree reloc tree doesn't contribute to qgroup numbers, as we have
+> > 
+> > I think you can call it just 'reloc tree', I'm fixing that in all
+> > changelogs and comments anyway.
 > 
-> These guys used advfs to add a "syncv" system call that makes writes
-> across multiple files atomic.
-> 
-> https://lwn.net/Articles/715918/
-> 
-> A patch was later submitted based on the previous paper in some way.
-> 
-> So I guess my question is, does btrfs support atomic writes across
-> multiple files? Or is anyone interested in such a feature?
-> 
-I'm fairly certain that it does not currently, but in theory it would 
-not be hard to add.
+> But there is another tree called data reloc tree.
+> That why I'm sticking to tree reloc tree to distinguish from data reloc
+> tree.
 
-Realistically, the only cases I can think of where cross-file atomic 
-_writes_ would be of any benefit are database systems.
+So call it 'reloc tree' and 'data reloc tree', the naming of
+BTRFS_TREE_RELOC_OBJECTID does not follow the other tree naming and I
+don't know if the inention was to name it after the 'tree log' scheme or
+the 'extent tree'. Or if there was an intention behind the naming at
+all.
 
-However, if this were extended to include rename, unlink, touch, and a 
-handful of other VFS operations, then I can easily think of a few dozen 
-use cases.  Package managers in particular would likely be very 
-interested in being able to atomically rename a group of files as a 
-single transaction, as it would make their job _much_ easier.
+If this is going to bother us too much, I won't mind renaming it to
+BTRFS_RELOC_TREE_OBJECTID everywhere. For consistency.
+
+> >> accounted them at balance time (check replace_path()).
+> >>
+> >> Skip such unneeded subtree trace should reduce some performance
+> >> overhead.
+> > 
+> > Please provide some numbers or description of the improvement. There are
+> > several performance problems caused by qgroups so it would be good to
+> > get a better idea how much this patch is going to help. Thanks.
+> 
+> That's the problem.
+> For my internal test, with 3000+ tree blocks, metadata balance could
+> save about 1~2%.
+> But according to dump-tree, the tree layout is almost the worst case
+> scenario, just one metadata block group owns all the tree blocks.
+
+If you do such test, it's also a good example for the changelog. It
+describes the worst case and this information can be used to prepare
+testing environment on large data samples.

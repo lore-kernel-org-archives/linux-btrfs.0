@@ -1,42 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:42504 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:56568 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725978AbeIFUo4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 6 Sep 2018 16:44:56 -0400
-Date: Thu, 6 Sep 2018 18:08:27 +0200
+        id S1727740AbeIFWGW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 6 Sep 2018 18:06:22 -0400
+Date: Thu, 6 Sep 2018 19:29:35 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Colin King <colin.king@canonical.com>
-Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
-        kernel-janitors@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: Re: [PATCH] btrfs: remove unused pointer 'tree'
-Message-ID: <20180906160827.GE24025@twin.jikos.cz>
+To: Liu Bo <bo.liu@linux.alibaba.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: fix alignment in declaration and prototype of
+ btrfs_get_extent
+Message-ID: <20180906172935.GF24025@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <20180828132101.9559-1-colin.king@canonical.com>
+References: <1535176079-78283-1-git-send-email-bo.liu@linux.alibaba.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180828132101.9559-1-colin.king@canonical.com>
+In-Reply-To: <1535176079-78283-1-git-send-email-bo.liu@linux.alibaba.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Aug 28, 2018 at 02:21:01PM +0100, Colin King wrote:
-> From: Colin Ian King <colin.king@canonical.com>
-> 
-> Pointer 'tree' is being assigned but is never used hence it is
-> redundant and can be removed.
+On Sat, Aug 25, 2018 at 01:47:59PM +0800, Liu Bo wrote:
+> This fixes btrfs_get_extent to be consistent with our existing
+> declaration style.
 
-For patches removing dead code it's good to do a bit of research what
-was the reason for that. In most cases it's a simple leftover after some
-other cleanup or rework, ie. harmless, but this needs to be reviewed
-anyway and the reference in changelog helps.
+For the record, indentation styles that are accepted are both, aligning
+under the opening ( and tab or double tab indentation on the next line.
+Preferrably not spliting the type or long expressions in the argument
+lists.
 
-In this case it's after my commit 00032d38eaa89c76de7, I'll update the
-changelog. And the previous patch removing inode in relink_file_extents
-was udpated too.
-> 
-> Cleans up clang warning:
-> warning: variable 'tree' set but not used [-Wunused-but-set-variable]
-> 
-> Signed-off-by: Colin Ian King <colin.king@canonical.com>
+I personally don't like the alignment under opening ( and in some
+excessive cases I reformat the code to be more compact. We'll never
+agree on one style, so as long as the code does not look ugly as in the
+2nd hunk of this patch, there's no "enforcement".
 
-Reviewed-by: David Sterba <dsterba@suse.com>
+Patch added to misc-next, thanks.

@@ -1,129 +1,100 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.15]:60077 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725918AbeIFPzZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 6 Sep 2018 11:55:25 -0400
-Subject: Re: [PATCH] btrfs: qgroup: Don't trace subtree if we're dropping tree
- reloc tree
-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-References: <20180905050339.5356-1-wqu@suse.com>
- <20180905131146.GX24025@twin.jikos.cz>
- <c0767f62-5356-af80-c5b4-2e97be62e730@gmx.com>
- <20180906111529.GY24025@twin.jikos.cz>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <a37f9cc5-7d5a-4a49-d858-9c58c8930afd@gmx.com>
-Date: Thu, 6 Sep 2018 19:20:18 +0800
+Received: from mail-oi0-f42.google.com ([209.85.218.42]:34427 "EHLO
+        mail-oi0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725819AbeIFTlU (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Sep 2018 15:41:20 -0400
+Received: by mail-oi0-f42.google.com with SMTP id 13-v6so21214305ois.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 06 Sep 2018 08:05:23 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <20180906111529.GY24025@twin.jikos.cz>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="0Stj4dYS7l1D9Vjul3SWktaMCMCSjXUgY"
+References: <e1371e79-f5d1-494b-a6ea-3d8d888bf1d3@gmail.com>
+In-Reply-To: <e1371e79-f5d1-494b-a6ea-3d8d888bf1d3@gmail.com>
+From: Stefan Loewen <stefan.loewen@gmail.com>
+Date: Thu, 6 Sep 2018 17:04:41 +0200
+Message-ID: <CAHTTHimFRYwZ9iiacP7vFVhCtTmcUVaik5fFEM0k0tG-Hvnmhw@mail.gmail.com>
+Subject: Re: btrfs send hung in pipe_wait
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---0Stj4dYS7l1D9Vjul3SWktaMCMCSjXUgY
-Content-Type: multipart/mixed; boundary="0qKC8NXzLjZVi6JhnK8OLtVuoWpInNMIY";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Message-ID: <a37f9cc5-7d5a-4a49-d858-9c58c8930afd@gmx.com>
-Subject: Re: [PATCH] btrfs: qgroup: Don't trace subtree if we're dropping tree
- reloc tree
-References: <20180905050339.5356-1-wqu@suse.com>
- <20180905131146.GX24025@twin.jikos.cz>
- <c0767f62-5356-af80-c5b4-2e97be62e730@gmx.com>
- <20180906111529.GY24025@twin.jikos.cz>
-In-Reply-To: <20180906111529.GY24025@twin.jikos.cz>
+Update:
+It seems like btrfs-send is not completely hung. It somewhat regularly
+wakes up every hour to transfer a few bytes. I noticed this via a
+periodic 'ls -l' on the snapshot file. These are the last outputs
+(uniq'ed):
 
---0qKC8NXzLjZVi6JhnK8OLtVuoWpInNMIY
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+-rw------- 1 root root 1492797759 Sep  6 08:44 intenso_white.snapshot
+-rw------- 1 root root 1493087856 Sep  6 09:44 intenso_white.snapshot
+-rw------- 1 root root 1773825308 Sep  6 10:44 intenso_white.snapshot
+-rw------- 1 root root 1773976853 Sep  6 11:58 intenso_white.snapshot
+-rw------- 1 root root 1774122301 Sep  6 12:59 intenso_white.snapshot
+-rw------- 1 root root 1774274264 Sep  6 13:58 intenso_white.snapshot
+-rw------- 1 root root 1774435235 Sep  6 14:57 intenso_white.snapshot
 
-
-
-On 2018/9/6 =E4=B8=8B=E5=8D=887:15, David Sterba wrote:
-> On Thu, Sep 06, 2018 at 09:41:14AM +0800, Qu Wenruo wrote:
->>
->>
->> On 2018/9/5 =E4=B8=8B=E5=8D=889:11, David Sterba wrote:
->>> On Wed, Sep 05, 2018 at 01:03:39PM +0800, Qu Wenruo wrote:
->>>> Tree reloc tree doesn't contribute to qgroup numbers, as we have
->>>
->>> I think you can call it just 'reloc tree', I'm fixing that in all
->>> changelogs and comments anyway.
->>
->> But there is another tree called data reloc tree.
->> That why I'm sticking to tree reloc tree to distinguish from data relo=
-c
->> tree.
->=20
-> So call it 'reloc tree' and 'data reloc tree', the naming of
-> BTRFS_TREE_RELOC_OBJECTID does not follow the other tree naming and I
-> don't know if the inention was to name it after the 'tree log' scheme o=
-r
-> the 'extent tree'. Or if there was an intention behind the naming at
-> all.
->=20
-> If this is going to bother us too much, I won't mind renaming it to
-> BTRFS_RELOC_TREE_OBJECTID everywhere. For consistency.
->=20
-
-I'll go reloc tree for later reference.
-
-Renaming makes sense, although I'd like to change its name to something
-more distinguish (without the reloc part).
-
-For now, I'm fine using reloc tree.
-
->>>> accounted them at balance time (check replace_path()).
->>>>
->>>> Skip such unneeded subtree trace should reduce some performance
->>>> overhead.
->>>
->>> Please provide some numbers or description of the improvement. There =
-are
->>> several performance problems caused by qgroups so it would be good to=
-
->>> get a better idea how much this patch is going to help. Thanks.
->>
->> That's the problem.
->> For my internal test, with 3000+ tree blocks, metadata balance could
->> save about 1~2%.
->> But according to dump-tree, the tree layout is almost the worst case
->> scenario, just one metadata block group owns all the tree blocks.
->=20
-> If you do such test, it's also a good example for the changelog. It
-> describes the worst case and this information can be used to prepare
-> testing environment on large data samples.
-
-Already preparing the real world case (great thanks for Fujitsu guys
-providing 1TB storage for the test).
-
-I'll provide the data along after the test is done.
-
-Thanks,
-Qu
-
-
---0qKC8NXzLjZVi6JhnK8OLtVuoWpInNMIY--
-
---0Stj4dYS7l1D9Vjul3SWktaMCMCSjXUgY
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAluRDXIACgkQwj2R86El
-/qiMpgf/WTWznkMVJXj3Pqs5DAiANSrlQdjcRt0HwoMXeldwpt9afFWSaOI7XyHz
-yUHScSrUU/5TO+Lx8ZhmzH/GDmNLqQ+Rx56IwPhtmIHUDMv3tf+wEW0YJm42Z+G5
-Sj3hhFgViBxdtnkCPWTdiAwjKkpmGUh/HJN6b/s9SF1/r9DT3UOU7XkaH1k/uo3j
-PMV+vwpSgVnaBmC8Sc+10L5ys8UgUpsDlIa8FrVGoPc+beUiHpWw8vEFrp3MRIDg
-Bs4zIoDFA1LWuiE62tcpW7x5m2hksMLsCUMRXZ2pBdNC8tIQZ/FLdAYmRk3FYfHt
-ufrwVvu3+rXneJ7S8NaqX08K/zX7Fw==
-=6vw7
------END PGP SIGNATURE-----
-
---0Stj4dYS7l1D9Vjul3SWktaMCMCSjXUgY--
+I also monitor the /proc/3022/task/*/stack files with 'tail -f' (I
+have no idea if this is useful) but there are no changes, even during
+the short wakeups.
+Am Do., 6. Sep. 2018 um 11:22 Uhr schrieb Stefan Löwen
+<stefan.loewen@gmail.com>:
+>
+> Hello linux-btrfs,
+>
+> I'm trying to clone a subvolume with 'btrfs send' but it always hangs
+> for hours.
+>
+> I tested this on multiple systems. All showed the same result:
+> - Manjaro (btrfs-progs v4.17.1; linux v4.18.5-1-MANJARO)
+> - Ubuntu 18.04 in VirtualBox (btrfs-progs v4.15.1; linux v4.15.0-33-generic)
+> - ArchLinux in VirtualBox (btrfs-progs v4.17.1; linux v4.18.5-arch1-1-ARCH)
+> All following logs are from the ArchLinux VM.
+>
+> To make sure it's not the 'btrfs receive' at fault I tried sending into
+> a file using the following command:
+> 'strace -o btrfs-send.strace btrfs send -vvv -f intenso_white.snapshot
+> /mnt/intenso_white/@data/.snapshots/test-snapshot'
+>
+> The 'btrfs send' process always copies around 1.2-1.4G of data, then
+> stops all disk IO and fully loads one cpu core. btrfs scrub found 0
+> errors. Neither did btrfsck. 'btrfs device stats' is all 0.
+>
+> I would be thankful for all ideas and tips.
+>
+> Regards
+> Stefan
+>
+> ---------------------------------------------
+>
+> The btrfs-send.strace is attached. So is the dmesg.log during the hang.
+>
+> Stack traces of the hung process:
+> --- /proc/3022/task/3022/stack ---
+> [<0>] 0xffffffffffffffff
+> --- /proc/3022/task/3023/stack ---
+> [<0>] pipe_wait+0x6c/0xb0
+> [<0>] splice_from_pipe_next.part.3+0x24/0xa0
+> [<0>] __splice_from_pipe+0x43/0x180
+> [<0>] splice_from_pipe+0x5d/0x90
+> [<0>] default_file_splice_write+0x15/0x20
+> [<0>] __se_sys_splice+0x31b/0x770
+> [<0>] do_syscall_64+0x5b/0x170
+> [<0>] entry_SYSCALL_64_after_hwframe+0x44/0xa9
+> [<0>] 0xffffffffffffffff
+>
+> [vagrant@archlinux mnt]$ uname -a
+> Linux archlinux 4.18.5-arch1-1-ARCH #1 SMP PREEMPT Fri Aug 24 12:48:58
+> UTC 2018 x86_64 GNU/Linux
+>
+> [vagrant@archlinux mnt]$ btrfs --version
+> btrfs-progs v4.17.1
+>
+> [vagrant@archlinux mnt]$ sudo btrfs fi show /dev/sdb1
+> Label: 'intenso_white'  uuid: 07bf61ed-7728-4151-a784-c4b840e343ed
+> Total devices 1 FS bytes used 655.82GiB
+> devid    1 size 911.51GiB used 703.09GiB path /dev/sdb1
+>
+> [vagrant@archlinux mnt]$ sudo btrfs fi df /mnt/intenso_white/
+> Data, single: total=695.01GiB, used=653.69GiB
+> System, DUP: total=40.00MiB, used=96.00KiB
+> Metadata, DUP: total=4.00GiB, used=2.13GiB
+> GlobalReserve, single: total=512.00MiB, used=0.00B
+>

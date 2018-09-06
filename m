@@ -1,36 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from out30-133.freemail.mail.aliyun.com ([115.124.30.133]:59858 "EHLO
-        out30-133.freemail.mail.aliyun.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1725825AbeIEGFR (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 5 Sep 2018 02:05:17 -0400
-From: Liu Bo <bo.liu@linux.alibaba.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: remove confusing tracepoint in btrfs_add_reserved_bytes
-Date: Wed,  5 Sep 2018 09:37:25 +0800
-Message-Id: <1536111445-126664-1-git-send-email-bo.liu@linux.alibaba.com>
+Received: from mx2.suse.de ([195.135.220.15]:37380 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1730231AbeIFUP0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 6 Sep 2018 16:15:26 -0400
+Date: Thu, 6 Sep 2018 17:39:04 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Liu Bo <bo.liu@linux.alibaba.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2] Btrfs: remove confusing tracepoint in
+ btrfs_add_reserved_bytes
+Message-ID: <20180906153904.GA24025@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1536111445-126664-1-git-send-email-bo.liu@linux.alibaba.com>
+ <1536112527-16758-1-git-send-email-bo.liu@linux.alibaba.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1536112527-16758-1-git-send-email-bo.liu@linux.alibaba.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Signed-off-by: Liu Bo <bo.liu@linux.alibaba.com>
----
- fs/btrfs/extent-tree.c | 4 ----
- 1 file changed, 4 deletions(-)
+On Wed, Sep 05, 2018 at 09:55:27AM +0800, Liu Bo wrote:
+> Here we're not releasing any space, but transferring bytes from
+> ->bytes_may_use to ->bytes_reserved.
+> 
+> Signed-off-by: Liu Bo <bo.liu@linux.alibaba.com>
+> ---
+> v2: Add missing commit log.
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 41a02cbb5a4a..76ee5ebef2b9 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -6401,10 +6401,6 @@ static int btrfs_add_reserved_bytes(struct btrfs_block_group_cache *cache,
- 	} else {
- 		cache->reserved += num_bytes;
- 		space_info->bytes_reserved += num_bytes;
--
--		trace_btrfs_space_reservation(cache->fs_info,
--				"space_info", space_info->flags,
--				ram_bytes, 0);
- 		space_info->bytes_may_use -= ram_bytes;
- 		if (delalloc)
- 			cache->delalloc_bytes += num_bytes;
--- 
-1.8.3.1
+I've enhanced the changlog a bit how the tracepoint got there.
+
+Reviewed-by: David Sterba <dsterba@suse.com>

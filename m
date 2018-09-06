@@ -1,59 +1,124 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:38306 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:56548 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727844AbeINVsY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 14 Sep 2018 17:48:24 -0400
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 5B4E7AFC0
-        for <linux-btrfs@vger.kernel.org>; Fri, 14 Sep 2018 16:33:08 +0000 (UTC)
-Date: Fri, 14 Sep 2018 18:33:07 +0200
-From: David Sterba <dsterba@suse.cz>
-To: jeffm@suse.com
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 0/3] btrfs: trim latency improvements
-Message-ID: <20180914163307.GV5847@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20180906211816.12121-1-jeffm@suse.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+        id S1727625AbeIGBzo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 6 Sep 2018 21:55:44 -0400
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 22AECAE39
+        for <linux-btrfs@vger.kernel.org>; Thu,  6 Sep 2018 21:18:22 +0000 (UTC)
+From: jeffm@suse.com
+To: linux-btrfs@vger.kernel.org
+Cc: Jeff Mahoney <jeffm@suse.com>
+Subject: [PATCH 3/3] btrfs: keep trim from interfering with transaction commits
+Date: Thu,  6 Sep 2018 17:18:16 -0400
+Message-Id: <20180906211816.12121-4-jeffm@suse.com>
 In-Reply-To: <20180906211816.12121-1-jeffm@suse.com>
+References: <20180906211816.12121-1-jeffm@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Sep 06, 2018 at 05:18:13PM -0400, jeffm@suse.com wrote:
-> From: Jeff Mahoney <jeffm@suse.com>
-> 
-> This patch set fixes a few issues with trim.
-> 
-> 1) Fix device list iteration.  We're iterating the ->alloc_list while
->    holding the device_list_mutex.  The ->alloc_list is protected by
->    the chunk mutex and we don't want to hold it across the entire
->    trim execution.  Instead, use the ->devices list, which is protected
->    by the device_list_mutex.
-> 
-> 2) Skip trim on devices that don't support it.  Rather than letting
->    the block layer reject it, bounce out early.
-> 
-> 3) Don't keep the commit_root_sem locked and the transaction pinned
->    across the block layer component of trim.  We only need these to
->    ensure the pending chunks list doesn't go away underneath us, so
->    it's safe to drop across the trim itself.  Historically, this
->    caused issues when fstrim and balance would run at the same time
->    since balance would produce lots of transactions and would
->    have to wait constantly, causing problems for everything else that
->    wanted to start a transaction.
-> 
-> -Jeff
-> ---
-> 
-> Jeff Mahoney (3):
->   btrfs: use ->devices list instead of ->alloc_list in btrfs_trim_fs
->   btrfs: don't attempt to trim devices that don't support it
->   btrfs: keep trim from interfering with transaction commits
+From: Jeff Mahoney <jeffm@suse.com>
 
-The patches have been in for-next for some time, I'm moving them to
-misc-next now and will probably forward them to the next rc (5) with
-other trim fixes from Qu.
+Commit 499f377f49f08 (btrfs: iterate over unused chunk space in FITRIM)
+fixed free space trimming, but introduced latency when it was running.
+This is due to it pinning the transaction using both a incremented
+refcount and holding the commit root sem for the duration of a single
+trim operation.
 
-Please note that the commit subject in the Fixes: tag should be in
-"...", I've fixed that.
+This was to ensure safety but it's unnecessary.  We already hold the the
+chunk mutex so we know that the chunk we're using can't be allocated
+while we're trimming it.
+
+In order to check against chunks allocated already in this transaction,
+we need to check the pending chunks list.  To to that safely without
+joining the transaction (or attaching than then having to commit it) we
+need to ensure that the dev root's commit root doesn't change underneath
+us and the pending chunk lists stays around until we're done with it.
+
+We can ensure the former by holding the commit root sem and the latter
+by pinning the transaction.  We do this now, but the critical section
+covers the trim operation itself and we don't need to do that.
+
+This patch moves the pinning and unpinning logic into helpers and
+unpins the transaction after performing the search and check for
+pending chunks.
+
+Limiting the critical section of the transaction pinning improves
+the latency substantially on slower storage (e.g. image files over NFS).
+
+Fixes: 499f377f49f08 (btrfs: iterate over unused chunk space in FITRIM
+Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+---
+ fs/btrfs/extent-tree.c | 25 +++++++++++++++++--------
+ 1 file changed, 17 insertions(+), 8 deletions(-)
+
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 92e5e9fd9bdd..8dc8e090667c 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -10870,14 +10870,16 @@ int btrfs_error_unpin_extent_range(struct btrfs_fs_info *fs_info,
+  * We don't want a transaction for this since the discard may take a
+  * substantial amount of time.  We don't require that a transaction be
+  * running, but we do need to take a running transaction into account
+- * to ensure that we're not discarding chunks that were released in
+- * the current transaction.
++ * to ensure that we're not discarding chunks that were released or
++ * allocated in the current transaction.
+  *
+  * Holding the chunks lock will prevent other threads from allocating
+  * or releasing chunks, but it won't prevent a running transaction
+  * from committing and releasing the memory that the pending chunks
+  * list head uses.  For that, we need to take a reference to the
+- * transaction.
++ * transaction and hold the commit root sem.  We only need to hold
++ * it while performing the free space search since we have already
++ * held back allocations.
+  */
+ static int btrfs_trim_free_extents(struct btrfs_device *device,
+ 				   u64 minlen, u64 *trimmed)
+@@ -10908,9 +10910,13 @@ static int btrfs_trim_free_extents(struct btrfs_device *device,
+ 
+ 		ret = mutex_lock_interruptible(&fs_info->chunk_mutex);
+ 		if (ret)
+-			return ret;
++			break;
+ 
+-		down_read(&fs_info->commit_root_sem);
++		ret = down_read_killable(&fs_info->commit_root_sem);
++		if (ret) {
++			mutex_unlock(&fs_info->chunk_mutex);
++			break;
++		}
+ 
+ 		spin_lock(&fs_info->trans_lock);
+ 		trans = fs_info->running_transaction;
+@@ -10918,13 +10924,17 @@ static int btrfs_trim_free_extents(struct btrfs_device *device,
+ 			refcount_inc(&trans->use_count);
+ 		spin_unlock(&fs_info->trans_lock);
+ 
++		if (!trans)
++			up_read(&fs_info->commit_root_sem);
++
+ 		ret = find_free_dev_extent_start(trans, device, minlen, start,
+ 						 &start, &len);
+-		if (trans)
++		if (trans) {
++			up_read(&fs_info->commit_root_sem);
+ 			btrfs_put_transaction(trans);
++		}
+ 
+ 		if (ret) {
+-			up_read(&fs_info->commit_root_sem);
+ 			mutex_unlock(&fs_info->chunk_mutex);
+ 			if (ret == -ENOSPC)
+ 				ret = 0;
+@@ -10932,7 +10942,6 @@ static int btrfs_trim_free_extents(struct btrfs_device *device,
+ 		}
+ 
+ 		ret = btrfs_issue_discard(device->bdev, start, len, &bytes);
+-		up_read(&fs_info->commit_root_sem);
+ 		mutex_unlock(&fs_info->chunk_mutex);
+ 
+ 		if (ret)
+-- 
+2.12.3

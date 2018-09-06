@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:56542 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:56540 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727590AbeIGBzn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1727126AbeIGBzn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Thu, 6 Sep 2018 21:55:43 -0400
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id C08D3AE2C
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id BF8CBAE23
         for <linux-btrfs@vger.kernel.org>; Thu,  6 Sep 2018 21:18:21 +0000 (UTC)
 From: jeffm@suse.com
 To: linux-btrfs@vger.kernel.org
 Cc: Jeff Mahoney <jeffm@suse.com>
-Subject: [PATCH 1/3] btrfs: use ->devices list instead of ->alloc_list in btrfs_trim_fs
-Date: Thu,  6 Sep 2018 17:18:14 -0400
-Message-Id: <20180906211816.12121-2-jeffm@suse.com>
+Subject: [PATCH 2/3] btrfs: don't attempt to trim devices that don't support it
+Date: Thu,  6 Sep 2018 17:18:15 -0400
+Message-Id: <20180906211816.12121-3-jeffm@suse.com>
 In-Reply-To: <20180906211816.12121-1-jeffm@suse.com>
 References: <20180906211816.12121-1-jeffm@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -19,35 +19,32 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Jeff Mahoney <jeffm@suse.com>
 
-btrfs_trim_fs iterates over the fs_devices->alloc_list while holding
-the device_list_mutex.  The problem is that ->alloc_list is protected
-by the chunk mutex.  We don't want to hold the chunk mutex over
-the trim of the entire file system.  Fortunately, the ->dev_list
-list is protected by the dev_list mutex and while it will give us
-all devices, including read-only devices, we already just skip the
-read-only devices.  Then we can continue to take and release the chunk
-mutex while scanning each device.
+We check whether any device the file system is using supports discard
+in the ioctl call, but then we attempt to trim free extents on every
+device regardless of whether discard is supported.  Due to the way
+we mask off EOPNOTSUPP, we can end up issuing the trim operations
+on each free range on devices that don't support it, just wasting time.
 
-Fixes: 499f377f49f (btrfs: iterate over unused chunk space in FITRIM)
+Fixes: 499f377f49f08 (btrfs: iterate over unused chunk space in FITRIM)
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/extent-tree.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ fs/btrfs/extent-tree.c | 4 ++++
+ 1 file changed, 4 insertions(+)
 
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 3d9fe58c0080..a0e82589c3e8 100644
+index a0e82589c3e8..92e5e9fd9bdd 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -11008,8 +11008,8 @@ int btrfs_trim_fs(struct btrfs_fs_info *fs_info, struct fstrim_range *range)
- 	}
+@@ -10887,6 +10887,10 @@ static int btrfs_trim_free_extents(struct btrfs_device *device,
  
- 	mutex_lock(&fs_info->fs_devices->device_list_mutex);
--	devices = &fs_info->fs_devices->alloc_list;
--	list_for_each_entry(device, devices, dev_alloc_list) {
-+	devices = &fs_info->fs_devices->devices;
-+	list_for_each_entry(device, devices, dev_list) {
- 		ret = btrfs_trim_free_extents(device, range->minlen,
- 					      &group_trimmed);
- 		if (ret)
+ 	*trimmed = 0;
+ 
++	/* Discard not supported = nothing to do. */
++	if (!blk_queue_discard(bdev_get_queue(device->bdev)))
++		return 0;
++
+ 	/* Not writeable = nothing to do. */
+ 	if (!test_bit(BTRFS_DEV_STATE_WRITEABLE, &device->dev_state))
+ 		return 0;
 -- 
 2.12.3

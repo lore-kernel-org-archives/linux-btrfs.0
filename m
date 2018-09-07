@@ -1,163 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pl1-f195.google.com ([209.85.214.195]:46246 "EHLO
-        mail-pl1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725999AbeIHBwe (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Sep 2018 21:52:34 -0400
-Received: by mail-pl1-f195.google.com with SMTP id t19-v6so7102912ply.13
-        for <linux-btrfs@vger.kernel.org>; Fri, 07 Sep 2018 14:09:50 -0700 (PDT)
-Date: Fri, 7 Sep 2018 14:09:48 -0700
-From: Omar Sandoval <osandov@osandov.com>
-To: David Sterba <dsterba@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 06/11] btrfs: dev-replace: move replace members out of
- fs_info
-Message-ID: <20180907210948.GI29245@vader>
-References: <cover.1536331604.git.dsterba@suse.com>
- <b990783799ffa2cdcccd262cacdf4ce23ba36502.1536331604.git.dsterba@suse.com>
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:45900 "EHLO
+        james.kirk.hungrycats.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725734AbeIHEQC (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 8 Sep 2018 00:16:02 -0400
+Date: Fri, 7 Sep 2018 19:32:21 -0400
+From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To: "Lakshmipathi.G" <lakshmipathi.g@giis.co.in>
+Cc: Timofey Titovets <nefelim4ag@gmail.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: dduper - Offline btrfs deduplication tool
+Message-ID: <20180907233221.GI13528@hungrycats.org>
+References: <20180824043139.GA8263@giis.co.in>
+ <CAGqmi74eMiHe7HK_oueaj0JZmy1Kp1NoOCrU0yheEE8MjngLKA@mail.gmail.com>
+ <20180907035728.GA7717@giis.co.in>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <b990783799ffa2cdcccd262cacdf4ce23ba36502.1536331604.git.dsterba@suse.com>
+Content-Type: multipart/signed; micalg=pgp-sha1;
+        protocol="application/pgp-signature"; boundary="SdaPbLtAangIkrMZ"
+In-Reply-To: <20180907035728.GA7717@giis.co.in>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Sep 07, 2018 at 04:55:13PM +0200, David Sterba wrote:
-> The replace_wait and bio_counter were mistakenly added to fs_info in
-> commit c404e0dc2c843b154f ("Btrfs: fix use-after-free in the finishing
-> procedure of the device replace"), but they logically belong to
-> fs_info::dev_replace. Besides, bio_counter is a very generic name and is
-> confusing in bare fs_info context.
 
-Makes much more sense there.
+--SdaPbLtAangIkrMZ
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Reviewed-by: Omar Sandoval <osandov@fb.com>
+On Fri, Sep 07, 2018 at 09:27:28AM +0530, Lakshmipathi.G wrote:
+> >=20
+> > One question:
+> > Why not ioctl_fideduperange?
+> > i.e. you kill most of benefits from that ioctl - atomicity.
+> >=20
+> I plan to add fideduperange as an option too. User can
+> choose between fideduperange and ficlonerange call.
+>=20
+> If I'm not wrong, with fideduperange, kernel performs
+> comparsion check before dedupe. And it will increase
+> time to dedupe files.
 
-> Signed-off-by: David Sterba <dsterba@suse.com>
-> ---
->  fs/btrfs/ctree.h       |  6 +++---
->  fs/btrfs/dev-replace.c | 16 ++++++++--------
->  fs/btrfs/disk-io.c     |  9 +++++----
->  3 files changed, 16 insertions(+), 15 deletions(-)
-> 
-> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-> index 31f7a58add7e..89fc90eafb0a 100644
-> --- a/fs/btrfs/ctree.h
-> +++ b/fs/btrfs/ctree.h
-> @@ -371,6 +371,9 @@ struct btrfs_dev_replace {
->  	wait_queue_head_t read_lock_wq;
->  
->  	struct btrfs_scrub_progress scrub_progress;
-> +
-> +	struct percpu_counter bio_counter;
-> +	wait_queue_head_t replace_wait;
->  };
->  
->  /* For raid type sysfs entries */
-> @@ -1093,9 +1096,6 @@ struct btrfs_fs_info {
->  	/* device replace state */
->  	struct btrfs_dev_replace dev_replace;
->  
-> -	struct percpu_counter bio_counter;
-> -	wait_queue_head_t replace_wait;
-> -
->  	struct semaphore uuid_tree_rescan_sem;
->  
->  	/* Used to reclaim the metadata space in the background. */
-> diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-> index 0a49843b2ee6..c0e9b2c229d5 100644
-> --- a/fs/btrfs/dev-replace.c
-> +++ b/fs/btrfs/dev-replace.c
-> @@ -540,8 +540,8 @@ int btrfs_dev_replace_by_ioctl(struct btrfs_fs_info *fs_info,
->  static void btrfs_rm_dev_replace_blocked(struct btrfs_fs_info *fs_info)
->  {
->  	set_bit(BTRFS_FS_STATE_DEV_REPLACING, &fs_info->fs_state);
-> -	wait_event(fs_info->replace_wait, !percpu_counter_sum(
-> -		   &fs_info->bio_counter));
-> +	wait_event(fs_info->dev_replace.replace_wait, !percpu_counter_sum(
-> +		   &fs_info->dev_replace.bio_counter));
->  }
->  
->  /*
-> @@ -550,7 +550,7 @@ static void btrfs_rm_dev_replace_blocked(struct btrfs_fs_info *fs_info)
->  static void btrfs_rm_dev_replace_unblocked(struct btrfs_fs_info *fs_info)
->  {
->  	clear_bit(BTRFS_FS_STATE_DEV_REPLACING, &fs_info->fs_state);
-> -	wake_up(&fs_info->replace_wait);
-> +	wake_up(&fs_info->dev_replace.replace_wait);
->  }
->  
->  static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
-> @@ -992,25 +992,25 @@ void btrfs_dev_replace_set_lock_blocking(
->  
->  void btrfs_bio_counter_inc_noblocked(struct btrfs_fs_info *fs_info)
->  {
-> -	percpu_counter_inc(&fs_info->bio_counter);
-> +	percpu_counter_inc(&fs_info->dev_replace.bio_counter);
->  }
->  
->  void btrfs_bio_counter_sub(struct btrfs_fs_info *fs_info, s64 amount)
->  {
-> -	percpu_counter_sub(&fs_info->bio_counter, amount);
-> -	cond_wake_up_nomb(&fs_info->replace_wait);
-> +	percpu_counter_sub(&fs_info->dev_replace.bio_counter, amount);
-> +	cond_wake_up_nomb(&fs_info->dev_replace.replace_wait);
->  }
->  
->  void btrfs_bio_counter_inc_blocked(struct btrfs_fs_info *fs_info)
->  {
->  	while (1) {
-> -		percpu_counter_inc(&fs_info->bio_counter);
-> +		percpu_counter_inc(&fs_info->dev_replace.bio_counter);
->  		if (likely(!test_bit(BTRFS_FS_STATE_DEV_REPLACING,
->  				     &fs_info->fs_state)))
->  			break;
->  
->  		btrfs_bio_counter_dec(fs_info);
-> -		wait_event(fs_info->replace_wait,
-> +		wait_event(fs_info->dev_replace.replace_wait,
->  			   !test_bit(BTRFS_FS_STATE_DEV_REPLACING,
->  				     &fs_info->fs_state));
->  	}
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index acd0cbc5a6b9..3b3906589d12 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -2156,7 +2156,7 @@ static void btrfs_init_dev_replace_locks(struct btrfs_fs_info *fs_info)
->  	mutex_init(&fs_info->dev_replace.lock_finishing_cancel_unmount);
->  	rwlock_init(&fs_info->dev_replace.lock);
->  	atomic_set(&fs_info->dev_replace.blocking_readers, 0);
-> -	init_waitqueue_head(&fs_info->replace_wait);
-> +	init_waitqueue_head(&fs_info->dev_replace.replace_wait);
->  	init_waitqueue_head(&fs_info->dev_replace.read_lock_wq);
->  }
->  
-> @@ -2646,7 +2646,8 @@ int open_ctree(struct super_block *sb,
->  		goto fail_dirty_metadata_bytes;
->  	}
->  
-> -	ret = percpu_counter_init(&fs_info->bio_counter, 0, GFP_KERNEL);
-> +	ret = percpu_counter_init(&fs_info->dev_replace.bio_counter, 0,
-> +			GFP_KERNEL);
->  	if (ret) {
->  		err = ret;
->  		goto fail_delalloc_bytes;
-> @@ -3307,7 +3308,7 @@ int open_ctree(struct super_block *sb,
->  
->  	iput(fs_info->btree_inode);
->  fail_bio_counter:
-> -	percpu_counter_destroy(&fs_info->bio_counter);
-> +	percpu_counter_destroy(&fs_info->dev_replace.bio_counter);
->  fail_delalloc_bytes:
->  	percpu_counter_destroy(&fs_info->delalloc_bytes);
->  fail_dirty_metadata_bytes:
-> @@ -4016,7 +4017,7 @@ void close_ctree(struct btrfs_fs_info *fs_info)
->  
->  	percpu_counter_destroy(&fs_info->dirty_metadata_bytes);
->  	percpu_counter_destroy(&fs_info->delalloc_bytes);
-> -	percpu_counter_destroy(&fs_info->bio_counter);
-> +	percpu_counter_destroy(&fs_info->dev_replace.bio_counter);
->  	cleanup_srcu_struct(&fs_info->subvol_srcu);
->  
->  	btrfs_free_stripe_hash_table(fs_info);
-> -- 
-> 2.18.0
-> 
+Creating the backup reflink file takes far more time than you will ever
+save from fideduperange.
+
+You don't need the md5sum either, unless you have a data set that is
+full of crc32 collisions (e.g. a file format that puts a CRC32 at the
+end of each 4K block).  The few people who have such a data set can
+enable md5sums, everyone else can have md5sums disabled by default.
+
+> I believe the risk involved with ficlonerange is  minimized=20
+> by having a backup file(reflinked). We can revert to older=20
+> original file, if we encounter some problems.
+
+With fideduperange the risk is more than minimized--it's completely
+eliminated.
+
+If you don't use fideduperange you can't use the tool on a live data
+set at all.
+
+> >=20
+> > --=20
+> > Have a nice day,
+> > Timofey.
+>=20
+> Cheers.
+> Lakshmipathi.G
+
+--SdaPbLtAangIkrMZ
+Content-Type: application/pgp-signature; name="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iF0EABECAB0WIQSnOVjcfGcC/+em7H2B+YsaVrMbnAUCW5MKggAKCRCB+YsaVrMb
+nClZAKDNK9oRTGJM+UkuV6ovisjaY4DYUgCglP+2cNcofe1CDbT4/7JZC6TExcE=
+=AfoQ
+-----END PGP SIGNATURE-----
+
+--SdaPbLtAangIkrMZ--

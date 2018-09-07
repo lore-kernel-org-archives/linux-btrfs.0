@@ -1,77 +1,113 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:34258 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725987AbeIGPIP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 7 Sep 2018 11:08:15 -0400
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 05BE4AE2D
-        for <linux-btrfs@vger.kernel.org>; Fri,  7 Sep 2018 10:27:57 +0000 (UTC)
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 3/3] btrfs: qgroup: Prepare to deprecate some btrfs_qgroup_inherit features
-Date: Fri,  7 Sep 2018 18:27:45 +0800
-Message-Id: <20180907102745.10387-4-wqu@suse.com>
-In-Reply-To: <20180907102745.10387-1-wqu@suse.com>
-References: <20180907102745.10387-1-wqu@suse.com>
+Received: from mail-wm0-f68.google.com ([74.125.82.68]:39187 "EHLO
+        mail-wm0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728415AbeIGPZy (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Sep 2018 11:25:54 -0400
+Received: by mail-wm0-f68.google.com with SMTP id q8-v6so14208104wmq.4
+        for <linux-btrfs@vger.kernel.org>; Fri, 07 Sep 2018 03:45:31 -0700 (PDT)
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8;
+ format=flowed
+Date: Fri, 07 Sep 2018 12:45:23 +0200
+From: =?UTF-8?Q?J=C3=BCrgen_Herrmann?= <t-5@t-5.eu>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: compiling btrfs-progs 4.17.1 gives error "reiserfs/misc.h: No
+ such file or directory"
+In-Reply-To: <e3fa019e-32ff-252c-8307-b871ee40b71f@gmx.com>
+References: <e822c3d52bfef3e0f2cc4617b21f5518@t-5.eu>
+ <e3fa019e-32ff-252c-8307-b871ee40b71f@gmx.com>
+Message-ID: <adf0619f947779c7c9c13939f8229a4d@t-5.eu>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Prepare to deprecate the following btrfs_qgroup_inherit features:
+Am 7.9.2018 12:15, schrieb Qu Wenruo:
+> On 2018/9/7 下午5:56, Jürgen Herrmann wrote:
+>> Hello!
+>> 
+>> I'm having a problem with btrfs send which stops after several 
+>> seconds.
+>> The process hangs with 100% cpu time on one cpu. The system is still
+>> responsive to input but no io is happening anymore so the system
+>> basically becomes unuseable.
+> 
+> Do you have a lot of snapshots or reflinked files (common for offline
+> dedupe)?
+> 
+> If so, send can spend a lot of time trying to iterate all referencers.
 
-1) Flags
-   There is only one flag supported, BTRFS_QGROUP_INHERIT_SET_LIMITS,
-   however it's never used by btrfs-progs.
+Linux Mint 19 uses timeshift-btrfs which i find very handy. here's
+a list of snapshot directories, each containing two subvolumes for
+@ and @home:
 
-2) num_excl|ref_copies
-   These two features are going to copy excl/rfer numbers from one
-   qgroup to another.
-   There is no easier way to screw up qgroup numbers like this.
+drwxr-xr-x 1 root root 30 Aug 16 20:00 2018-08-16_20-00-01
+drwxr-xr-x 1 root root 30 Aug 17 14:00 2018-08-17_14-00-02
+drwxr-xr-x 1 root root 30 Aug 23 20:00 2018-08-23_20-00-01
+drwxr-xr-x 1 root root 30 Aug 30 20:00 2018-08-30_20-00-01
+drwxr-xr-x 1 root root 30 Aug 31 17:00 2018-08-31_17-00-01
+drwxr-xr-x 1 root root 30 Sep  1 20:00 2018-09-01_20-00-02
+drwxr-xr-x 1 root root 30 Sep  2 20:00 2018-09-02_20-00-02
+drwxr-xr-x 1 root root 30 Sep  3 22:00 2018-09-03_22-00-01
+drwxr-xr-x 1 root root 30 Sep  4 22:00 2018-09-04_22-00-02
+drwxr-xr-x 1 root root 30 Sep  5 22:00 2018-09-05_22-00-01
+drwxr-xr-x 1 root root 30 Sep  6 20:00 2018-09-06_20-00-01
+drwxr-xr-x 1 root root 30 Sep  6 22:00 2018-09-06_22-00-01
 
-3) btrfs_qgroup_inherit::lim
-   It's used along with BTRFS_QGROUP_INHERIT_SET_LIMITS, never supported
-   by btrfs-progs either.
+> 
+>> 
+>> I'm on linux mint 19, freshly installed on a new laptop about 6 weeks
+>> ago. So i wanted to compile latest btrfs-progs and latest stable 
+>> kernel
+>> first before reporting that here, BUT: I cannot compile btrfs-progs 
+>> 4.17.1
+>> because of the following error:
+> 
+> Your configure detects reiserfs support but it seems that your reiserfs
+> progs is not up-to-date.
+> 
+> You could disable reiserfs convert support by:
+> 
+> $ ./configure --with-convert=ext2
 
-Just output warnings for such features for now.
+This gives me the following error:
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/qgroup.c | 11 +++++++++++
- 1 file changed, 11 insertions(+)
+     [LD]     btrfs-convert
+convert/main.o: In function `convert_open_fs':
+/home/jh/Documents/src/_external/btrfs-progs/convert/main.c:1066: 
+undefined reference to `reiserfs_convert_ops'
+/home/jh/Documents/src/_external/btrfs-progs/convert/main.c:1066: 
+undefined reference to `reiserfs_convert_ops'
+collect2: error: ld returned 1 exit status
+Makefile:506: recipe for target 'btrfs-convert' failed
+make: *** [btrfs-convert] Error 1
 
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 75e1dccf8ed3..aecd3cfc7c78 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -2248,6 +2248,9 @@ int btrfs_validate_inherit(struct btrfs_fs_info *fs_info,
- 
- 	if (inherit->flags & ~BTRFS_QGROUP_INHERIT_FLAGS_SUPP)
- 		return -ENOTTY;
-+	if (inherit->flags & BTRFS_QGROUP_INHERIT_SET_LIMITS)
-+		btrfs_warn(fs_info,
-+"btrfs_qgroup_inherit::flags BTRFS_QGROUP_INHERIT_SET_LIMITS will be deprecated");
- 
- 	/* Size check */
- 	if (sizeof(u64) * inherit->num_qgroups +
-@@ -2256,12 +2259,20 @@ int btrfs_validate_inherit(struct btrfs_fs_info *fs_info,
- 	    sizeof(*inherit) >
- 	    min_t(u64, BTRFS_QGROUP_INHERIT_MAX_SIZE, inherit_size))
- 		return -EINVAL;
-+	if (inherit->num_excl_copies || inherit->num_ref_copies)
-+		btrfs_warn(fs_info,
-+	"btrfs_qgroup_inherit::num_excl/ref_copies will be deprecated");
- 
- 	/* Qgroup 0/0 is not allowed */
- 	for (i = 0; i < inherit->num_qgroups; i++) {
- 		if (inherit->qgroups[i] == 0)
- 			return -EINVAL;
- 	}
-+	if (inherit->lim.max_rfer || inherit->lim.max_excl ||
-+	    inherit->lim.rsv_rfer || inherit->lim.rsv_excl ||
-+	    inherit->lim.flags)
-+		btrfs_warn(fs_info,
-+			"btrfs_qgroup_inherit::lim will be deprecated");
- 	return 0;
- }
- 
+Best regards, Jürgen
+
+> 
+> Thanks,
+> Qu
+> 
+>> 
+>>     [CC]     convert/source-reiserfs.o
+>> In file included from convert/source-reiserfs.c:30:0:
+>> ./convert/source-reiserfs.h:23:10: fatal error: reiserfs/misc.h: No 
+>> such
+>> file or directory
+>>  #include <reiserfs/misc.h>
+>>           ^~~~~~~~~~~~~~~~~
+>> compilation terminated.
+>> Makefile:309: recipe for target 'convert/source-reiserfs.o' failed
+>> make: *** [convert/source-reiserfs.o] Error 1
+>> 
+>> A google search did not turn up any help nor does apt know of any
+>> reiserfs related libs that i could install.
+>> 
+>> Best regards,
+>> Jürgen
+>> 
+
 -- 
-2.18.0
+Jürgen Herrmann
+https://t-5.eu
+ALbertstraße 2
+94327 Bogen

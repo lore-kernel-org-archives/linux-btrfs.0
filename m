@@ -1,47 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:60196 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726603AbeIJXDH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 10 Sep 2018 19:03:07 -0400
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 1DFB1AF7D
-        for <linux-btrfs@vger.kernel.org>; Mon, 10 Sep 2018 18:07:49 +0000 (UTC)
-Date: Mon, 10 Sep 2018 20:07:31 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Nikolay Borisov <nborisov@suse.com>
+Received: from mail-pf1-f196.google.com ([209.85.210.196]:46386 "EHLO
+        mail-pf1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726763AbeIGXDa (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Sep 2018 19:03:30 -0400
+Received: by mail-pf1-f196.google.com with SMTP id u24-v6so7383445pfn.13
+        for <linux-btrfs@vger.kernel.org>; Fri, 07 Sep 2018 11:21:21 -0700 (PDT)
+Date: Fri, 7 Sep 2018 11:21:19 -0700
+From: Omar Sandoval <osandov@osandov.com>
+To: Liu Bo <bo.liu@linux.alibaba.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 0/3] cleanup couple of device-related functions' retval
-Message-ID: <20180910180731.GX24025@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20180903094614.2667-1-nborisov@suse.com>
+Subject: Re: [PATCH] Btrfs: use correct args for kcalloc in btrfsic_read_block
+Message-ID: <20180907182119.GC29245@vader>
+References: <1536343190-400-1-git-send-email-bo.liu@linux.alibaba.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180903094614.2667-1-nborisov@suse.com>
+In-Reply-To: <1536343190-400-1-git-send-email-bo.liu@linux.alibaba.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Sep 03, 2018 at 12:46:11PM +0300, Nikolay Borisov wrote:
-> Currently btrfs_find_device_by_path, btrfs_find_device_missing_or_by_path and 
-> btrfs_find_device_by_devspec are called in a chain and they all return an 
-> integer value to signal error and at the same time use one of their parameters
-> as an output. This patch set refactors those functions starting from the 
-> bottom, gradually making them return a pointer to btrfs_device. This is 
-> sufficient to convey an error when it occurs as well as return the actual 
-> device we are looking for. One added benefit is that the ioctl-specific positive
-> return value BTRFS_ERROR_DEV_MISSING_NOT_FOUND is now returned from 
-> btrfs_rm_device rather than from some internal function. 
+On Sat, Sep 08, 2018 at 01:59:50AM +0800, Liu Bo wrote:
+> kcalloc is defined as
+> kcalloc(size_t n, size_t size, gfp_t flags)
 > 
-> Additionally I'll be sending a patch to progs, adding a test ensuring that 
-> BTRFS_ERROR_MISSING_NOT_FOUND is returned appropriately. 
+> Although this won't cause problems in practice, btrfsic_read_block()
+> has switched n with size.
 > 
-> This survived both my btrfs-progs test as well as xfstest run. No functional 
-> changes.
+> This updates btrfsic_read_block() to be correct in using kcalloc.
 > 
+> Signed-off-by: Liu Bo <bo.liu@linux.alibaba.com>
+> ---
+>  fs/btrfs/check-integrity.c | 6 +++---
+>  1 file changed, 3 insertions(+), 3 deletions(-)
 > 
-> Nikolay Borisov (3):
->   btrfs: Make btrfs_find_device_by_path return struct btrfs_device
->   btrfs: Make btrfs_find_device_missing_or_by_path return directly a
->     device
->   btrfs: Make btrfs_find_device_by_devspec return btrfs_device directly
+> diff --git a/fs/btrfs/check-integrity.c b/fs/btrfs/check-integrity.c
+> index 833cf3c35b4d..651b75939ce9 100644
+> --- a/fs/btrfs/check-integrity.c
+> +++ b/fs/btrfs/check-integrity.c
+> @@ -1594,6 +1594,7 @@ static int btrfsic_read_block(struct btrfsic_state *state,
+>  {
+>  	unsigned int num_pages;
+>  	unsigned int i;
+> +	u64 size;
 
-Added to misc-next, thanks.
+size_t?
+
+Besides that, Reviewed-by: Omar Sandoval <osandov@fb.com>
+
+>  	u64 dev_bytenr;
+>  	int ret;
+>  
+> @@ -1608,9 +1609,8 @@ static int btrfsic_read_block(struct btrfsic_state *state,
+>  
+>  	num_pages = (block_ctx->len + (u64)PAGE_SIZE - 1) >>
+>  		    PAGE_SHIFT;
+> -	block_ctx->mem_to_free = kcalloc(sizeof(*block_ctx->datav) +
+> -						sizeof(*block_ctx->pagev),
+> -					 num_pages, GFP_NOFS);
+> +	size = sizeof(*block_ctx->datav) + sizeof(*block_ctx->pagev);
+> +	block_ctx->mem_to_free = kcalloc(num_pages, size, GFP_NOFS);
+>  	if (!block_ctx->mem_to_free)
+>  		return -ENOMEM;
+>  	block_ctx->datav = block_ctx->mem_to_free;
+> -- 
+> 1.8.3.1
+> 

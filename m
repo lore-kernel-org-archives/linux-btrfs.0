@@ -1,50 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from tartarus.angband.pl ([89.206.35.136]:44192 "EHLO
-        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727659AbeIGTM0 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Sep 2018 15:12:26 -0400
-Date: Fri, 7 Sep 2018 16:31:07 +0200
-From: Adam Borowski <kilobyte@angband.pl>
-To: "Lakshmipathi.G" <lakshmipathi.g@giis.co.in>
-Cc: Timofey Titovets <nefelim4ag@gmail.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: dduper - Offline btrfs deduplication tool
-Message-ID: <20180907143107.gsixosfbswlqcbly@angband.pl>
-References: <20180824043139.GA8263@giis.co.in>
- <CAGqmi74eMiHe7HK_oueaj0JZmy1Kp1NoOCrU0yheEE8MjngLKA@mail.gmail.com>
- <20180907035728.GA7717@giis.co.in>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <20180907035728.GA7717@giis.co.in>
+Received: from mx2.suse.de ([195.135.220.15]:50548 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1728823AbeIGTge (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 7 Sep 2018 15:36:34 -0400
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 12148AC1F
+        for <linux-btrfs@vger.kernel.org>; Fri,  7 Sep 2018 14:55:16 +0000 (UTC)
+From: David Sterba <dsterba@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.com>
+Subject: [PATCH 00/11] Cleanup dev-replace locking
+Date: Fri,  7 Sep 2018 16:54:59 +0200
+Message-Id: <cover.1536331604.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Sep 07, 2018 at 09:27:28AM +0530, Lakshmipathi.G wrote:
-> > One question:
-> > Why not ioctl_fideduperange?
-> > i.e. you kill most of benefits from that ioctl - atomicity.
-> > 
-> I plan to add fideduperange as an option too. User can
-> choose between fideduperange and ficlonerange call.
-> 
-> If I'm not wrong, with fideduperange, kernel performs
-> comparsion check before dedupe. And it will increase
-> time to dedupe files.
+The series peels off the custom locking that's used for dev-replace and
+uses read-write semaphore in the end.
 
-You already read the files to md5sum them, so you have no speed gain.
-You get nasty data-losing races, and risk collisions as well.  md5sum is
-safe against random occurences (compared eg. to the chance of lightning
-hitting you today), but is exploitable by a hostile user.  On the other
-hand, full bit-to-bit comparison is faster and 100% safe.
+I've mainly focused on correctness and haven't measured the performance
+effects. There should be none as the blocking and waiting was merely
+open coding what the rw semaphore does, but without the fairness. The
+overall number of locks taken is low, there's a lots of IO in between so
+even if new scheme is slower, I don't expect any dramatic change.
 
-You can't skip verification -- the checksums are only 32-bit.  They have a
-1:4G chance to mismatch, which means you can expect one false positive with
-64K extents, rising quadratically as the number of files grows.
+  git://github.com/kdave/btrfs-devel.git dev/dev-replace-locking
 
+David Sterba (11):
+  btrfs: remove btrfs_dev_replace::read_locks
+  btrfs: open code btrfs_dev_replace_clear_lock_blocking
+  btrfs: open code btrfs_dev_replace_stats_inc
+  btrfs: open code btrfs_after_dev_replace_commit
+  btrfs: dev-replace: avoid useless lock on error handling path
+  btrfs: dev-replace: move replace members out of fs_info
+  btrfs: dev-replace: remove pointless assert in write unlock
+  btrfs: reada: reorder dev-replace locks before radix tree preload
+  btrfs: dev-replace: swich locking to rw semaphore
+  btrfs: dev-replace: remove custom read/write blocking scheme
+  btrfs: dev-replace: open code trivial locking helpers
 
-Meow!
+ fs/btrfs/ctree.h       |  11 ++--
+ fs/btrfs/dev-replace.c | 136 ++++++++++++-----------------------------
+ fs/btrfs/dev-replace.h |  13 ----
+ fs/btrfs/disk-io.c     |  14 ++---
+ fs/btrfs/reada.c       |  16 ++---
+ fs/btrfs/scrub.c       |  26 ++++----
+ fs/btrfs/transaction.c |   5 +-
+ fs/btrfs/volumes.c     |  23 ++++---
+ 8 files changed, 87 insertions(+), 157 deletions(-)
+
 -- 
-⢀⣴⠾⠻⢶⣦⠀
-⣾⠁⢠⠒⠀⣿⡁
-⢿⡄⠘⠷⠚⠋⠀ Collisions shmolisions, let's see them find a collision or second
-⠈⠳⣄⠀⠀⠀⠀ preimage for double rot13!
+2.18.0

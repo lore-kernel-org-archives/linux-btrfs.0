@@ -1,93 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f68.google.com ([74.125.82.68]:37533 "EHLO
-        mail-wm0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728308AbeIGPg0 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Sep 2018 11:36:26 -0400
-Received: by mail-wm0-f68.google.com with SMTP id n11-v6so14163663wmc.2
-        for <linux-btrfs@vger.kernel.org>; Fri, 07 Sep 2018 03:56:00 -0700 (PDT)
+Received: from mx2.suse.de ([195.135.220.15]:38582 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1727764AbeIGPlh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 7 Sep 2018 11:41:37 -0400
+Date: Fri, 7 Sep 2018 13:00:53 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Omar Sandoval <osandov@osandov.com>
+Cc: Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
+        Josef Bacik <jbacik@fb.com>
+Subject: Re: [PATCH 03/35] btrfs: use cleanup_extent_op in check_ref_cleanup
+Message-ID: <20180907110053.GL24025@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20180830174225.2200-1-josef@toxicpanda.com>
+ <20180830174225.2200-4-josef@toxicpanda.com>
+ <20180831230029.GB17237@vader>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8;
- format=flowed
-Date: Fri, 07 Sep 2018 12:55:58 +0200
-From: =?UTF-8?Q?J=C3=BCrgen_Herrmann?= <t-5@t-5.eu>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: compiling btrfs-progs 4.17.1 gives error "reiserfs/misc.h: No
- such file or directory"
-In-Reply-To: <e3fa019e-32ff-252c-8307-b871ee40b71f@gmx.com>
-References: <e822c3d52bfef3e0f2cc4617b21f5518@t-5.eu>
- <e3fa019e-32ff-252c-8307-b871ee40b71f@gmx.com>
-Message-ID: <2acfb28f635f8eeb27f192936d8c689f@t-5.eu>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20180831230029.GB17237@vader>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am 7.9.2018 12:15, schrieb Qu Wenruo:
-> On 2018/9/7 下午5:56, Jürgen Herrmann wrote:
->> Hello!
->> 
->> I'm having a problem with btrfs send which stops after several 
->> seconds.
->> The process hangs with 100% cpu time on one cpu. The system is still
->> responsive to input but no io is happening anymore so the system
->> basically becomes unuseable.
+On Fri, Aug 31, 2018 at 04:00:29PM -0700, Omar Sandoval wrote:
+> On Thu, Aug 30, 2018 at 01:41:53PM -0400, Josef Bacik wrote:
+> > From: Josef Bacik <jbacik@fb.com>
+> > 
+> > Unify the extent_op handling as well, just add a flag so we don't
+> > actually run the extent op from check_ref_cleanup and instead return a
+> > value so that we can skip cleaning up the ref head.
+> > 
+> > Signed-off-by: Josef Bacik <jbacik@fb.com>
+> > ---
+> >  fs/btrfs/extent-tree.c | 17 +++++++++--------
+> >  1 file changed, 9 insertions(+), 8 deletions(-)
+> > 
+> > diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> > index 4c9fd35bca07..87c42a2c45b1 100644
+> > --- a/fs/btrfs/extent-tree.c
+> > +++ b/fs/btrfs/extent-tree.c
+> > @@ -2443,18 +2443,23 @@ static void unselect_delayed_ref_head(struct btrfs_delayed_ref_root *delayed_ref
+> >  }
+> >  
+> >  static int cleanup_extent_op(struct btrfs_trans_handle *trans,
+> > -			     struct btrfs_delayed_ref_head *head)
+> > +			     struct btrfs_delayed_ref_head *head,
+> > +			     bool run_extent_op)
+> >  {
+> >  	struct btrfs_delayed_extent_op *extent_op = head->extent_op;
+> >  	int ret;
+> >  
+> >  	if (!extent_op)
+> >  		return 0;
+> > +
+> >  	head->extent_op = NULL;
+> >  	if (head->must_insert_reserved) {
+> >  		btrfs_free_delayed_extent_op(extent_op);
+> >  		return 0;
+> > +	} else if (!run_extent_op) {
+> > +		return 1;
+> >  	}
+> > +
+> >  	spin_unlock(&head->lock);
+> >  	ret = run_delayed_extent_op(trans, head, extent_op);
+> >  	btrfs_free_delayed_extent_op(extent_op);
 > 
-> Do you have a lot of snapshots or reflinked files (common for offline
-> dedupe)?
-> 
-> If so, send can spend a lot of time trying to iterate all referencers.
+> So if cleanup_extent_op() returns 1, then the head was unlocked, unless
+> run_extent_op was true. That's pretty confusing. Can we make it always
+> unlock in the !must_insert_reserved case?
 
-I'd like to point out that the first few sends were either interrupted 
-by
-me or did succeed without problems (one full send/receive was actually
-successful). I'm in the process of scripting the
-whole thing... then this error turned up. the hang does not go away 
-after
-waiting for more than one hour. The laptop is not slow by any means, 
-it's
-a core i5 with a 1TB samsung 860 m.2 ssd and 16GB of RAM.
-
-Best regards, Jürgen
-
-> 
->> 
->> I'm on linux mint 19, freshly installed on a new laptop about 6 weeks
->> ago. So i wanted to compile latest btrfs-progs and latest stable 
->> kernel
->> first before reporting that here, BUT: I cannot compile btrfs-progs 
->> 4.17.1
->> because of the following error:
-> 
-> Your configure detects reiserfs support but it seems that your reiserfs
-> progs is not up-to-date.
-> 
-> You could disable reiserfs convert support by:
-> 
-> $ ./configure --with-convert=ext2
-> 
-> Thanks,
-> Qu
-> 
->> 
->>     [CC]     convert/source-reiserfs.o
->> In file included from convert/source-reiserfs.c:30:0:
->> ./convert/source-reiserfs.h:23:10: fatal error: reiserfs/misc.h: No 
->> such
->> file or directory
->>  #include <reiserfs/misc.h>
->>           ^~~~~~~~~~~~~~~~~
->> compilation terminated.
->> Makefile:309: recipe for target 'convert/source-reiserfs.o' failed
->> make: *** [convert/source-reiserfs.o] Error 1
->> 
->> A google search did not turn up any help nor does apt know of any
->> reiserfs related libs that i could install.
->> 
->> Best regards,
->> Jürgen
->> 
-
--- 
-Jürgen Herrmann
-https://t-5.eu
-ALbertstraße 2
-94327 Bogen
+Agreed it's confusing. Possibly cleanup_extent_op can be split to two
+helpers instead, but the locking semantics should be made more clear.

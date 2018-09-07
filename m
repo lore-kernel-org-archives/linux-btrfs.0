@@ -1,41 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:35868 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:34240 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726031AbeIGPSl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 7 Sep 2018 11:18:41 -0400
-Date: Fri, 7 Sep 2018 12:38:03 +0200
-From: David Sterba <dsterba@suse.cz>
-To: =?iso-8859-1?Q?J=FCrgen?= Herrmann <t-5@t-5.eu>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: compiling btrfs-progs 4.17.1 gives error "reiserfs/misc.h: No
- such file or directory"
-Message-ID: <20180907103803.GK24025@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <e822c3d52bfef3e0f2cc4617b21f5518@t-5.eu>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-In-Reply-To: <e822c3d52bfef3e0f2cc4617b21f5518@t-5.eu>
+        id S1725987AbeIGPIL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 7 Sep 2018 11:08:11 -0400
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 60B16AE06
+        for <linux-btrfs@vger.kernel.org>; Fri,  7 Sep 2018 10:27:52 +0000 (UTC)
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v2 1/3] btrfs: Set qgroup inherit size limit to SZ_4K instead of page size
+Date: Fri,  7 Sep 2018 18:27:43 +0800
+Message-Id: <20180907102745.10387-2-wqu@suse.com>
+In-Reply-To: <20180907102745.10387-1-wqu@suse.com>
+References: <20180907102745.10387-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Sep 07, 2018 at 11:56:18AM +0200, Jürgen Herrmann wrote:
-> I'm on linux mint 19, freshly installed on a new laptop about 6 weeks
-> ago. So i wanted to compile latest btrfs-progs and latest stable kernel
-> first before reporting that here, BUT: I cannot compile btrfs-progs 
-> 4.17.1
-> because of the following error:
-> 
->      [CC]     convert/source-reiserfs.o
-> In file included from convert/source-reiserfs.c:30:0:
-> ./convert/source-reiserfs.h:23:10: fatal error: reiserfs/misc.h: No such 
-> file or directory
->   #include <reiserfs/misc.h>
->            ^~~~~~~~~~~~~~~~~
-> compilation terminated.
-> Makefile:309: recipe for target 'convert/source-reiserfs.o' failed
-> make: *** [convert/source-reiserfs.o] Error 1
-> 
-> A google search did not turn up any help nor does apt know of any
-> reiserfs related libs that i could install.
+Change btrfs_qgroup_inherit maximum size from PAGE_SIZE to SZ_4K to make
+it consistent across different architectures.
 
-The build dependencies are in the file INSTALL.
+This change will only affect architectures whose page size is not
+(larger than) 4K, and will only affect how many qgroups can exist in
+btrfs_qgroup_inherit structure:
+
+Before: (64K page size)
+8183
+
+After: (fixed to 4K btrfs_qgroup_inherit size)
+503
+
+Although in theory this could lead to incompatibility, but considering
+how rare btrfs_qgroup_inherit is used, it's still not too late to change
+it without impacting a large user base.
+
+And passing over 100 qgroups in one btrfs_qgroup_inherit structure is
+already insane.
+
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/ioctl.c           | 2 +-
+ include/uapi/linux/btrfs.h | 1 +
+ 2 files changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 63600dc2ac4c..5db8680b40a9 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -1811,7 +1811,7 @@ static noinline int btrfs_ioctl_snap_create_v2(struct file *file,
+ 	if (vol_args->flags & BTRFS_SUBVOL_RDONLY)
+ 		readonly = true;
+ 	if (vol_args->flags & BTRFS_SUBVOL_QGROUP_INHERIT) {
+-		if (vol_args->size > PAGE_SIZE) {
++		if (vol_args->size > BTRFS_QGROUP_INHERIT_MAX_SIZE) {
+ 			ret = -EINVAL;
+ 			goto free_args;
+ 		}
+diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+index 5ca1d21fc4a7..311edb65567c 100644
+--- a/include/uapi/linux/btrfs.h
++++ b/include/uapi/linux/btrfs.h
+@@ -82,6 +82,7 @@ struct btrfs_qgroup_limit {
+  */
+ #define BTRFS_QGROUP_INHERIT_SET_LIMITS	(1ULL << 0)
+ 
++#define BTRFS_QGROUP_INHERIT_MAX_SIZE	(SZ_4K)
+ struct btrfs_qgroup_inherit {
+ 	__u64	flags;
+ 	__u64	num_qgroups;
+-- 
+2.18.0

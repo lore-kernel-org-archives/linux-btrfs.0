@@ -1,95 +1,182 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf1-f53.google.com ([209.85.167.53]:33026 "EHLO
-        mail-lf1-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726025AbeIHAAB (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Sep 2018 20:00:01 -0400
-Received: by mail-lf1-f53.google.com with SMTP id m26-v6so12911619lfb.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 07 Sep 2018 12:17:40 -0700 (PDT)
+Received: from mail-pl1-f193.google.com ([209.85.214.193]:37893 "EHLO
+        mail-pl1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725986AbeIHBdV (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Sep 2018 21:33:21 -0400
+Received: by mail-pl1-f193.google.com with SMTP id u11-v6so7089900plq.5
+        for <linux-btrfs@vger.kernel.org>; Fri, 07 Sep 2018 13:50:41 -0700 (PDT)
+Date: Fri, 7 Sep 2018 13:50:39 -0700
+From: Omar Sandoval <osandov@osandov.com>
+To: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 2/3] btrfs: qgroup: Validate btrfs_qgroup_inherit
+ structure before passing it to qgroup
+Message-ID: <20180907205039.GD29245@vader>
+References: <20180831022930.3465-1-wqu@suse.com>
+ <20180831022930.3465-3-wqu@suse.com>
 MIME-Version: 1.0
-In-Reply-To: <CAHTTHinoyvVCq2ejsDDgtzvFZCiyv7RiJnEkjnx+JdVZYB2+4w@mail.gmail.com>
-References: <e1371e79-f5d1-494b-a6ea-3d8d888bf1d3@gmail.com>
- <CAHTTHimFRYwZ9iiacP7vFVhCtTmcUVaik5fFEM0k0tG-Hvnmhw@mail.gmail.com>
- <CAJCQCtQHmk3ViUkynDhsb6_jCjpRHY6dSdZGiDZzg3k=XW9+-A@mail.gmail.com>
- <090f8da0-c29c-da5f-6e5b-ec6961706508@gmail.com> <CAJCQCtTHxM+Bx8akyV+QdYch=y6-0hCf_3r1KonPC2vKsujkxQ@mail.gmail.com>
- <d0223039-5c8f-38db-fe32-0b46b220e699@gmail.com> <CAJCQCtREREvzveNqdahGb8GN62_CJMyeL8GhjxnqmVZqxKiDUA@mail.gmail.com>
- <326f12a3-ee55-0812-5ea6-f54c0362a29b@gmail.com> <CAJCQCtS+ZXzGU0AE=C1iA7yNFrXuRAvZkhssxN40=jPd=x6neA@mail.gmail.com>
- <CAHTTHimqg_wgqs0AXt73YzOv3ga7cAEUvbwMOVVT2JUVaNbsFQ@mail.gmail.com>
- <CAJCQCtSa1-5Zae4_jqqhZk49YQ+6fKG+jgwcG2_uK5+sYfwCbQ@mail.gmail.com> <CAHTTHinoyvVCq2ejsDDgtzvFZCiyv7RiJnEkjnx+JdVZYB2+4w@mail.gmail.com>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Fri, 7 Sep 2018 13:17:38 -0600
-Message-ID: <CAJCQCtTd7+u3yMtKDshmsw7R1P2bK_JhVqJVKvObNb20uw-6jA@mail.gmail.com>
-Subject: Re: btrfs send hung in pipe_wait
-To: Stefan Loewen <stefan.loewen@gmail.com>
-Cc: Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20180831022930.3465-3-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Sep 7, 2018 at 11:07 AM, Stefan Loewen <stefan.loewen@gmail.com> wrote:
-> List of steps:
-> - 3.8G iso lays in read-only subvol A
-> - I create subvol B and reflink-copy the iso into it.
-> - I create a read-only snapshot C of B
-> - I "btrfs send --no-data C > /somefile"
-> So you got that right, yes.
+On Fri, Aug 31, 2018 at 10:29:29AM +0800, Qu Wenruo wrote:
+> btrfs_qgroup_inherit structure doesn't goes through much validation
+> check.
+> 
+> Now do a comprehensive check for it, including:
+> 1) inherit size
+>    Should not exceeding SZ_4K and its num_qgroups should not
+>    exceed its size passed in btrfs_ioctl_vol_args_v2.
+> 
+> 2) flags
+>    Should not include any unknown flags
+>    (In fact, no flag is supported at all now)
+>    Btrfs-progs never has such ability to set flags for btrfs_qgroup_inherit.
+> 
+> 3) limit
+>    Should not contain anything.
+>    Btrfs-progs never has such ability to set limit for btrfs_qgroup_inherit.
+> 
+> 4) rfer/excl copy
+>    Deprecated feature.
+>    Btrfs-progs has such interface but never documented and we're already
+>    going to remove such ability.
+>    It's the easiest way to screw up qgroup numbers.
+> 
+> 3) Qgroupid
+>    Comprehensive check is already in btrfs_qgroup_inherit(), here we
+>    only check if there is any obviously invalid qgroupid (0).
+> 
+> Coverity-id: 1021055
+> Reported-by: Nikolay Borisov <nborisov@suse.com>
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+>  fs/btrfs/ioctl.c           |  3 +++
+>  fs/btrfs/qgroup.c          | 39 ++++++++++++++++++++++++++++++++++++++
+>  fs/btrfs/qgroup.h          |  2 ++
+>  include/uapi/linux/btrfs.h | 17 ++++++++---------
+>  4 files changed, 52 insertions(+), 9 deletions(-)
+> 
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index 5db8680b40a9..4f5f453d5d07 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -1820,6 +1820,9 @@ static noinline int btrfs_ioctl_snap_create_v2(struct file *file,
+>  			ret = PTR_ERR(inherit);
+>  			goto free_args;
+>  		}
+> +		ret = btrfs_validate_inherit(inherit, vol_args->size);
+> +		if (ret < 0)
+> +			goto free_args;
+>  	}
+>  
+>  	ret = btrfs_ioctl_snap_create_transid(file, vol_args->name,
+> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+> index 4353bb69bb86..53daf73b0de9 100644
+> --- a/fs/btrfs/qgroup.c
+> +++ b/fs/btrfs/qgroup.c
+> @@ -2232,6 +2232,45 @@ int btrfs_run_qgroups(struct btrfs_trans_handle *trans)
+>  	return ret;
+>  }
+>  
+> +/*
+> + * To make sure the inherit passed in is valid
+> + *
+> + * Here we only check flags and rule out some no-longer supported features.
+> + * And we only do very basis qgroupid check to ensure there is no obviously
+> + * invalid qgroupid (0). Detailed qgroupid check will be done in
+> + * btrfs_qgroup_inherit().
+> + */
+> +int btrfs_validate_inherit(struct btrfs_qgroup_inherit *inherit,
+> +			   u64 inherit_size)
+> +{
+> +	u64 i;
+> +
+> +	if (inherit->flags & ~BTRFS_QGROUP_INHERIT_FLAGS_SUPP)
+> +		return -ENOTTY;
+> +	/* Qgroup rfer/excl copy is deprecated */
+> +	if (inherit->num_excl_copies || inherit->num_ref_copies)
+> +		return -ENOTTY;
+> +
+> +	/* Since SET_LIMITS is never used, @lim should all be zeroed */
+> +	if (inherit->lim.max_excl || inherit->lim.max_rfer ||
+> +	    inherit->lim.rsv_excl || inherit->lim.rsv_rfer ||
+> +	    inherit->lim.flags)
+> +		return -ENOTTY;
 
-OK I can't reproduce it. Sending A and C complete instantly with
---no-data, and complete in the same time with a full send/receive. In
-my case I used a 4.9G ISO.
+Why -ENOTTY? I think these should all be -EINVAL.
 
-I can't think of what local difference accounts for what you're
-seeing. There is really nothing special about --reflinks. The extent
-and csum data are identical to the original file, and that's the bulk
-of the metadata for a given file.
+> +	/* Size check */
+> +	if (sizeof(u64) * inherit->num_qgroups + sizeof(*inherit) >
 
-What I can tell you is usually the developers want to see sysrq+w
-whenever there are blocked tasks.
-https://fedoraproject.org/wiki/QA/Sysrq
+This arithmetic can overflow...
 
-You'll want to enable all sysrq functions. And next you'll want three
-ssh shells:
+> +	    min_t(u64, BTRFS_QGROUP_INHERIT_MAX_SIZE, inherit_size))
+> +		return -EINVAL;
+> +
+> +
+> +	/* Qgroup 0/0 is not allowed */
+> +	for (i = 0; i < inherit->num_qgroups; i++) {
+> +		if (inherit->qgroups[i] == 0)
 
-1. sudo journalctl -fk
-2. sudo -i to become root, and then echo w > /proc/sysrq-trigger but
-do not hit return yet
-3. sudo btrfs send... to reproduce the problem.
+Which means we can access out of bounds here.
 
-Basically the thing is gonna hang soon after you reproduce the
-problem, so you want to get to shell #2 and just hit return rather
-than dealing with long delays typing that echo command out. And then
-the journal command is so your local terminal captures the sysrq
-output because you're gonna kill the VM instead of waiting it out. I
-have no idea how to read these things but someone might pick up this
-thread and have some idea why these tasks are hanging.
-
-
-
-
->
-> Unfortunately I don't have any way to connect the drive to a SATA port
-> directly but I tried to switch out as much of the used setup as
-> possible (all changes active at the same time):
-> - I got the original (not the clone) HDD out of the enclosure and used
-> this adapter to connect it:
-> https://www.amazon.de/DIGITUS-Adapterkabel-40pol-480Mbps-schwarz/dp/B007X86VZK
-> - I used a different Notebook
-> - I ran the test natively on that notebook (instead of from
-> VirtualBox. I used VirtualBox for most of the tests as I have to
-> force-poweroff the PC everytime the btrfs-send hangs as it is not
-> killable)
-
-
-This problem only happens in VirtualBox? Or it happens on baremetal
-also? And we've established it happens with two different source
-(send) devices, which means two different Btrfs volumes.
-
-All I can say is you need to keep changing things up, process of
-elimination. Rather tedious. Maybe you could try downloading a Fedora
-28 ISO, make a boot stick out of it, and try to reproduce with the
-same drives. At least that's an easy way to isolate the OS from the
-equation.
-
-
--- 
-Chris Murphy
+> +			return -EINVAL;
+> +	}
+> +	return 0;
+> +}
+> +
+>  /*
+>   * Copy the accounting information between qgroups. This is necessary
+>   * when a snapshot or a subvolume is created. Throwing an error will
+> diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
+> index 54b8bb282c0e..1bf9c584be70 100644
+> --- a/fs/btrfs/qgroup.h
+> +++ b/fs/btrfs/qgroup.h
+> @@ -241,6 +241,8 @@ int btrfs_qgroup_account_extent(struct btrfs_trans_handle *trans, u64 bytenr,
+>  				struct ulist *new_roots);
+>  int btrfs_qgroup_account_extents(struct btrfs_trans_handle *trans);
+>  int btrfs_run_qgroups(struct btrfs_trans_handle *trans);
+> +int btrfs_validate_inherit(struct btrfs_qgroup_inherit *inherit,
+> +			   u64 inherit_size);
+>  int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans, u64 srcid,
+>  			 u64 objectid, struct btrfs_qgroup_inherit *inherit);
+>  void btrfs_qgroup_free_refroot(struct btrfs_fs_info *fs_info,
+> diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+> index 311edb65567c..5a5532a20019 100644
+> --- a/include/uapi/linux/btrfs.h
+> +++ b/include/uapi/linux/btrfs.h
+> @@ -74,21 +74,20 @@ struct btrfs_qgroup_limit {
+>  	__u64	rsv_excl;
+>  };
+>  
+> -/*
+> - * flags definition for qgroup inheritance
+> - *
+> - * Used by:
+> - * struct btrfs_qgroup_inherit.flags
+> - */
+> +/* flags definition for qgroup inheritance (DEPRECATED) */
+>  #define BTRFS_QGROUP_INHERIT_SET_LIMITS	(1ULL << 0)
+>  
+> +/* No supported flags */
+> +#define BTRFS_QGROUP_INHERIT_FLAGS_SUPP (0)
+> +
+>  #define BTRFS_QGROUP_INHERIT_MAX_SIZE	(SZ_4K)
+> +
+>  struct btrfs_qgroup_inherit {
+>  	__u64	flags;
+>  	__u64	num_qgroups;
+> -	__u64	num_ref_copies;
+> -	__u64	num_excl_copies;
+> -	struct btrfs_qgroup_limit lim;
+> +	__u64	num_ref_copies;		/* DEPRECATED */
+> +	__u64	num_excl_copies;	/* DEPRECATED */
+> +	struct btrfs_qgroup_limit lim;	/* DEPRECATED */
+>  	__u64	qgroups[0];
+>  };
+>  
+> -- 
+> 2.18.0
+> 

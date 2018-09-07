@@ -1,83 +1,106 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:43090 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:53864 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726251AbeIKERz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 11 Sep 2018 00:17:55 -0400
-From: Mark Fasheh <mfasheh@suse.de>
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: Al Viro <viro@ZenIV.linux.org.uk>, linux-fsdevel@vger.kernel.org,
-        linux-api@vger.kernel.org, Michael Kerrisk <mtk.manpages@gmail.com>,
-        linux-btrfs@vger.kernel.org, linux-xfs@vger.kernel.org,
-        "Darrick J . Wong" <darrick.wong@oracle.com>,
-        Adam Borowski <kilobyte@angband.pl>, David Sterba <dsterba@suse.cz>,
-        Mark Fasheh <mfasheh@suse.de>
-Subject: [PATCH 1/2] vfs: allow dedupe of user owned read-only files
-Date: Mon, 10 Sep 2018 16:21:17 -0700
-Message-Id: <20180910232118.14424-2-mfasheh@suse.de>
-In-Reply-To: <20180910232118.14424-1-mfasheh@suse.de>
-References: <20180910232118.14424-1-mfasheh@suse.de>
+        id S1728354AbeIGOMq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 7 Sep 2018 10:12:46 -0400
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id A70FCAFC8
+        for <linux-btrfs@vger.kernel.org>; Fri,  7 Sep 2018 09:32:39 +0000 (UTC)
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v2 0/5] btrfs: qgroup: Skip unrelated tree blocks for balance
+Date: Fri,  7 Sep 2018 17:32:30 +0800
+Message-Id: <20180907093235.28254-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The permission check in vfs_dedupe_file_range_one() is too coarse - We only
-allow dedupe of the destination file if the user is root, or they have the
-file open for write.
+This patchset can be fetched from github:
+https://github.com/adam900710/linux/tree/qgroup_balance_skip_trees
+The base commit is v4.19-rc1 tag.
 
-This effectively limits a non-root user from deduping their own read-only
-files. In addition, the write file descriptor that the user is forced to
-hold open can prevent execution of files. As file data during a dedupe
-does not change, the behavior is unexpected and this has caused a number of
-issue reports. For an example, see:
+There are a lot of reports of system hang for balance on quota enabled
+fs.
+It's most obvious for large fs.
 
-https://github.com/markfasheh/duperemove/issues/129
+The hang is caused by tons of unmodified extents marked as qgroup dirty.
+Such unmodified/unrelated sources include:
+1) Unmodified subtree
+2) Subtree drop for reloc tree
+(BTW, other sources includes unmodified file extent items)
 
-So change the check so we allow dedupe on the target if:
+E.g.
+OO = Old tree blocks from file tree
+NN = New tree blocks from reloc tree
 
-- the root or admin is asking for it
-- the process has write access
-- the owner of the file is asking for the dedupe
-- the process could get write access
+        file tree                              reloc tree
+           OO (a)                                  NN (a)
+          /  \                                    /  \
+    (b) OO    OO (c)                        (b) NN    NN (c)
+       / \   / \                               / \   / \
+     OO  OO OO  OO                           OO  OO OO  NN
+    (d) (e) (f) (g)                         (d) (e) (f) (g)
 
-That way users can open read-only and still get dedupe.
+In above case, balance will modify nodeptr in OO(a) to point NN(b) and
+NN(c), and modify NN(a) to point to OO(B) and OO(c).
 
-Signed-off-by: Mark Fasheh <mfasheh@suse.de>
----
- fs/read_write.c | 16 +++++++++++++++-
- 1 file changed, 15 insertions(+), 1 deletion(-)
+Before this patch, quota will mark the whole subtree from its parent
+down to the leaves as dirty.
+So btrfs quota need to trace all tree block from (a) to (g).
 
-diff --git a/fs/read_write.c b/fs/read_write.c
-index 39b4a21dd933..be0e8723a049 100644
---- a/fs/read_write.c
-+++ b/fs/read_write.c
-@@ -1964,6 +1964,20 @@ int vfs_dedupe_file_range_compare(struct inode *src, loff_t srcoff,
- }
- EXPORT_SYMBOL(vfs_dedupe_file_range_compare);
- 
-+/* Check whether we are allowed to dedupe the destination file */
-+static bool allow_file_dedupe(struct file *file)
-+{
-+	if (capable(CAP_SYS_ADMIN))
-+		return true;
-+	if (file->f_mode & FMODE_WRITE)
-+		return true;
-+	if (uid_eq(current_fsuid(), file_inode(file)->i_uid))
-+		return true;
-+	if (!inode_permission(file_inode(file), MAY_WRITE))
-+		return true;
-+	return false;
-+}
-+
- int vfs_dedupe_file_range_one(struct file *src_file, loff_t src_pos,
- 			      struct file *dst_file, loff_t dst_pos, u64 len)
- {
-@@ -1978,7 +1992,7 @@ int vfs_dedupe_file_range_one(struct file *src_file, loff_t src_pos,
- 		goto out_drop_write;
- 
- 	ret = -EINVAL;
--	if (!(capable(CAP_SYS_ADMIN) || (dst_file->f_mode & FMODE_WRITE)))
-+	if (!allow_file_dedupe(dst_file))
- 		goto out_drop_write;
- 
- 	ret = -EXDEV;
+However tree blocks (d) (e) (f) are shared between both trees, thus
+there is no need to trace those 3 tree blocks.
+
+This patchset will change how this work by only tracing modified tree
+blocks in reloc tree, and their counter parts in file tree.
+
+Nodeptr swap will happen for tree blocks (b) and (c) in both tree.
+
+For tree block (b), in reloc tree we could find that all its
+children's generation is smaller than last_snapshot, thus no need to
+trace them, only need to trace NN(b), and its counter part OO(b).
+
+For tree block (c), in reloc tree, we find its child NN(g) need
+tracing, and for tree block NN(g), there is no child need to trace.
+
+So for subtree starting at tree block NN(c), we need to trace NN(c) and
+NN(g), along with its counter part OO(c) and OO(c).
+
+With this patch, we could skip tree blocks OO(d)~OO(f) in above example,
+thus reduce some some overhead caused by qgroup.
+
+The improvement is mostly related to metadata relocation.
+If there is some high level tree blocks get relocated but its children are
+still unmodified, we could save a lot of time.
+
+Even for the worst case, it should be no worse than original full
+subtree marking method.
+
+Real world case benchmark is under way.
+
+Changelog:
+v2:
+  Rename "tree reloc tree" to "reloc tree".
+  Add patch "Don't trace subtree if we're dropping reloc tree" into the
+  patchset.
+  Fix wrong btrfs_bin_search() call, which leads to unexpected ENOENT
+  error for btrfs_qgroup_trace_extent_swap(). Now use dst_path->slots[]
+  directly.
+
+Qu Wenruo (5):
+  btrfs: qgroup: Introduce trace event to analyse the number of dirty
+    extents accounted
+  btrfs: qgroup: Introduce function to trace two swaped extents
+  btrfs: qgroup: Introduce function to find all new tree blocks of reloc
+    tree
+  btrfs: qgroup: Use generation aware subtree swap to mark dirty extents
+  btrfs: qgroup: Don't trace subtree if we're dropping reloc tree
+
+ fs/btrfs/extent-tree.c       |   8 +-
+ fs/btrfs/qgroup.c            | 338 +++++++++++++++++++++++++++++++++++
+ fs/btrfs/qgroup.h            |  10 ++
+ fs/btrfs/relocation.c        |  11 +-
+ include/trace/events/btrfs.h |  21 +++
+ 5 files changed, 379 insertions(+), 9 deletions(-)
+
 -- 
-2.15.1
+2.18.0

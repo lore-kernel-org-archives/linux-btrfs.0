@@ -1,54 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:57972 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727683AbeIJQIy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 10 Sep 2018 12:08:54 -0400
-Date: Mon, 10 Sep 2018 13:15:04 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: GWB <gwb@2realms.com>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: Does ssd auto detected work for microSD cards?
-Message-ID: <20180910111503.GQ24025@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <CAP8EXU0u1sDa97jCeaZWL=+3sRRwigheEeeOL1aM57777XpRQw@mail.gmail.com>
- <CAJCQCtR6tmRaYwipw9JEut9Nu=1754LYz1EBmSRH8Gu_1_JBGg@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAJCQCtR6tmRaYwipw9JEut9Nu=1754LYz1EBmSRH8Gu_1_JBGg@mail.gmail.com>
+Received: from mail-pf1-f193.google.com ([209.85.210.193]:42633 "EHLO
+        mail-pf1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725940AbeIGMTQ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Sep 2018 08:19:16 -0400
+Received: by mail-pf1-f193.google.com with SMTP id l9-v6so6602143pff.9
+        for <linux-btrfs@vger.kernel.org>; Fri, 07 Sep 2018 00:39:37 -0700 (PDT)
+From: Omar Sandoval <osandov@osandov.com>
+To: linux-btrfs@vger.kernel.org
+Cc: kernel-team@fb.com, linux-mm@kvack.org
+Subject: [PATCH v6 0/6] Btrfs: implement swap file support
+Date: Fri,  7 Sep 2018 00:39:14 -0700
+Message-Id: <cover.1536305017.git.osandov@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Sep 03, 2018 at 10:22:42PM -0600, Chris Murphy wrote:
-> On Mon, Sep 3, 2018 at 7:53 PM, GWB <gwb@2realms.com> wrote:
-> > Curious instance here, but perhaps this is the expected behaviour:
-> >
-> > mount | grep btrfs
-> > /dev/sdb3 on / type btrfs (rw,ssd,subvol=@)
-> > /dev/sdb3 on /home type btrfs (rw,ssd,subvol=@home)
-> > /dev/sde1 on /media/gwb09/btrfs-32G-MicroSDc type btrfs
-> > (rw,nosuid,nodev,uhelper=udisks2)
-> >
-> > This is on an Ubuntu 14 client.
-> >
-> > /dev/sdb is indeed an ssd, a Samsung 850 EVO 500Gig, where Ubuntu runs
-> > on btrfs root.   It appears btrfs did indeed auto detected an ssd
-> > drive.   However:
-> >
-> > /dev/sde is a micro SD card (32Gig Samsung) sitting in a USB 3 card
-> > reader, inserted into a USB 3 card slot.  But ssh is not detected.
-> >
-> > So is that the expected behavior?
-> 
-> cat /sys/block/sde/queue/rotational
-> 
-> That's what Btrfs uses for detection. I'm willing to bet the SD Card
-> slot is not using the mmc driver, but instead USB and therefore always
-> treated as a rotational device.
+From: Omar Sandoval <osandov@fb.com>
 
-The correct rotational/non-rot status should be provided by the block
-device driver. The btrfs kernel module or the mkfs utility will not try
-to guess the status by the device name, this does not belong to that
-layer.
+Hi,
 
-So either the device driver is updated or an udev rule could fix that
-too.
+This series implements swap file support for Btrfs.
+
+Compared to v5 [1], this is pretty much feature-complete. It now
+supports:
+
+- Balance (skips block groups containing an active swap file)
+- Resize (error if trying to shrink past a block group containing an
+  active swap file, allowed otherwise)
+- Device delete/replace (as long as the device in question does not
+  contain an active swap file)
+
+This implementation Chris and I came up with is much cleaner than my
+earlier ideas: instead of adding any counters to struct
+btrfs_block_group_cache or struct btrfs_device, we just have a small
+red-black tree of block groups and devices which contain an active
+swapfile.
+
+I updated the xfstests for this series [2] to test this new
+functionality, and put it through the same tests as v5.
+
+Based on v4.19-rc2, please take a look.
+
+Thanks!
+
+1: https://www.spinics.net/lists/linux-btrfs/msg81550.html
+2: https://github.com/osandov/xfstests/tree/btrfs-swap
+
+Omar Sandoval (6):
+  mm: split SWP_FILE into SWP_ACTIVATED and SWP_FS
+  mm: export add_swap_extent()
+  vfs: update swap_{,de}activate documentation
+  Btrfs: prevent ioctls from interfering with a swap file
+  Btrfs: rename get_chunk_map() and make it non-static
+  Btrfs: support swap files
+
+ Documentation/filesystems/Locking |  17 +-
+ Documentation/filesystems/vfs.txt |  12 +-
+ fs/btrfs/ctree.h                  |  24 +++
+ fs/btrfs/dev-replace.c            |   8 +
+ fs/btrfs/disk-io.c                |   4 +
+ fs/btrfs/inode.c                  | 316 ++++++++++++++++++++++++++++++
+ fs/btrfs/ioctl.c                  |  31 ++-
+ fs/btrfs/relocation.c             |  18 +-
+ fs/btrfs/volumes.c                |  71 +++++--
+ fs/btrfs/volumes.h                |   9 +
+ include/linux/swap.h              |  13 +-
+ mm/page_io.c                      |   6 +-
+ mm/swapfile.c                     |  14 +-
+ 13 files changed, 492 insertions(+), 51 deletions(-)
+
+-- 
+2.18.0

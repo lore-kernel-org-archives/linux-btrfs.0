@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf1-f193.google.com ([209.85.210.193]:45547 "EHLO
-        mail-pf1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727611AbeIGMTV (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Sep 2018 08:19:21 -0400
-Received: by mail-pf1-f193.google.com with SMTP id i26-v6so6592433pfo.12
-        for <linux-btrfs@vger.kernel.org>; Fri, 07 Sep 2018 00:39:42 -0700 (PDT)
+Received: from mail-pl1-f193.google.com ([209.85.214.193]:43996 "EHLO
+        mail-pl1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727145AbeIGMTT (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Sep 2018 08:19:19 -0400
+Received: by mail-pl1-f193.google.com with SMTP id h3-v6so2847424plh.10
+        for <linux-btrfs@vger.kernel.org>; Fri, 07 Sep 2018 00:39:40 -0700 (PDT)
 From: Omar Sandoval <osandov@osandov.com>
 To: linux-btrfs@vger.kernel.org
 Cc: kernel-team@fb.com, linux-mm@kvack.org
-Subject: [PATCH v6 6/6] Btrfs: support swap files
-Date: Fri,  7 Sep 2018 00:39:20 -0700
-Message-Id: <77442bbbad9ebc37f3b72a47ca983a3a805e0718.1536305017.git.osandov@fb.com>
+Subject: [PATCH v6 4/6] Btrfs: prevent ioctls from interfering with a swap file
+Date: Fri,  7 Sep 2018 00:39:18 -0700
+Message-Id: <d6f34563688651fa1638160accdcb693e0913a4a.1536305017.git.osandov@fb.com>
 In-Reply-To: <cover.1536305017.git.osandov@fb.com>
 References: <cover.1536305017.git.osandov@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -18,357 +18,322 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Omar Sandoval <osandov@fb.com>
 
-Implement the swap file a_ops on Btrfs. Activation needs to make sure
-that the file can be used as a swap file, which currently means it must
-be fully allocated as nocow with no compression on one device. It must
-also do the proper tracking so that ioctls will not interfere with the
-swap file. Deactivation clears this tracking.
+When a swap file is active, we must make sure that the extents of the
+file are not moved and that they don't become shared. That means that
+the following are not safe:
+
+- chattr +c (enable compression)
+- reflink
+- dedupe
+- snapshot
+- defrag
+
+Don't allow those to happen on an active swap file.
+
+Additionally, balance, resize, device remove, and device replace are
+also unsafe if they affect an active swapfile. Add a red-black tree of
+block groups and devices which contain an active swapfile. Relocation
+checks each block group against this tree and skips it or errors out for
+balance or resize, respectively. Device remove and device replace check
+the tree for the device they will operate on.
+
+Note that we don't have to worry about chattr -C (disable nocow), which
+we ignore for non-empty files, because an active swapfile must be
+non-empty and can't be truncated. We also don't have to worry about
+autodefrag because it's only done on COW files. Truncate and fallocate
+are already taken care of by the generic code. Device add doesn't do
+relocation so it's not an issue, either.
 
 Signed-off-by: Omar Sandoval <osandov@fb.com>
 ---
- fs/btrfs/inode.c | 316 +++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 316 insertions(+)
+ fs/btrfs/ctree.h       | 24 +++++++++++++++++++++
+ fs/btrfs/dev-replace.c |  8 +++++++
+ fs/btrfs/disk-io.c     |  4 ++++
+ fs/btrfs/ioctl.c       | 31 +++++++++++++++++++++++---
+ fs/btrfs/relocation.c  | 18 ++++++++++++----
+ fs/btrfs/volumes.c     | 49 +++++++++++++++++++++++++++++++++++++-----
+ 6 files changed, 122 insertions(+), 12 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 9357a19d2bff..55aba2d7074c 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -27,6 +27,7 @@
- #include <linux/uio.h>
- #include <linux/magic.h>
- #include <linux/iversion.h>
-+#include <linux/swap.h>
- #include <asm/unaligned.h>
- #include "ctree.h"
- #include "disk-io.h"
-@@ -10437,6 +10438,319 @@ void btrfs_set_range_writeback(struct extent_io_tree *tree, u64 start, u64 end)
- 	}
- }
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 53af9f5253f4..e37ce40db380 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -716,6 +716,23 @@ struct btrfs_fs_devices;
+ struct btrfs_balance_control;
+ struct btrfs_delayed_root;
  
 +/*
-+ * Add an entry indicating a block group or device which is pinned by a
-+ * swapfile. Returns 0 on success, 1 if there is already an entry for it, or a
-+ * negative errno on failure.
++ * Block group or device which contains an active swapfile. Used for preventing
++ * unsafe operations while a swapfile is active.
 + */
-+static int btrfs_add_swapfile_pin(struct inode *inode, void *ptr,
-+				  bool is_block_group)
-+{
-+	struct btrfs_fs_info *fs_info = BTRFS_I(inode)->root->fs_info;
-+	struct btrfs_swapfile_pin *sp, *entry;
-+	struct rb_node **p;
-+	struct rb_node *parent = NULL;
-+
-+	sp = kmalloc(sizeof(*sp), GFP_NOFS);
-+	if (!sp)
-+		return -ENOMEM;
-+	sp->ptr = ptr;
-+	sp->inode = inode;
-+	sp->is_block_group = is_block_group;
-+
-+	spin_lock(&fs_info->swapfile_pins_lock);
-+	p = &fs_info->swapfile_pins.rb_node;
-+	while (*p) {
-+		parent = *p;
-+		entry = rb_entry(parent, struct btrfs_swapfile_pin, node);
-+		if (sp->ptr < entry->ptr ||
-+		    (sp->ptr == entry->ptr && sp->inode < entry->inode)) {
-+			p = &(*p)->rb_left;
-+		} else if (sp->ptr > entry->ptr ||
-+			   (sp->ptr == entry->ptr && sp->inode > entry->inode)) {
-+			p = &(*p)->rb_right;
-+		} else {
-+			spin_unlock(&fs_info->swapfile_pins_lock);
-+			kfree(sp);
-+			return 1;
-+		}
-+	}
-+	rb_link_node(&sp->node, parent, p);
-+	rb_insert_color(&sp->node, &fs_info->swapfile_pins);
-+	spin_unlock(&fs_info->swapfile_pins_lock);
-+	return 0;
-+}
-+
-+static void btrfs_free_swapfile_pins(struct inode *inode)
-+{
-+	struct btrfs_fs_info *fs_info = BTRFS_I(inode)->root->fs_info;
-+	struct btrfs_swapfile_pin *sp;
-+	struct rb_node *node, *next;
-+
-+	spin_lock(&fs_info->swapfile_pins_lock);
-+	node = rb_first(&fs_info->swapfile_pins);
-+	while (node) {
-+		next = rb_next(node);
-+		sp = rb_entry(node, struct btrfs_swapfile_pin, node);
-+		if (sp->inode == inode) {
-+			rb_erase(&sp->node, &fs_info->swapfile_pins);
-+			if (sp->is_block_group)
-+				btrfs_put_block_group(sp->ptr);
-+			kfree(sp);
-+		}
-+		node = next;
-+	}
-+	spin_unlock(&fs_info->swapfile_pins_lock);
-+}
-+
-+struct btrfs_swap_info {
-+	u64 start;
-+	u64 block_start;
-+	u64 block_len;
-+	u64 lowest_ppage;
-+	u64 highest_ppage;
-+	unsigned long nr_pages;
-+	int nr_extents;
++struct btrfs_swapfile_pin {
++	struct rb_node node;
++	void *ptr;
++	struct inode *inode;
++	/*
++	 * If true, ptr points to a struct btrfs_block_group_cache. Otherwise,
++	 * ptr points to a struct btrfs_device.
++	 */
++	bool is_block_group;
 +};
 +
-+static int btrfs_add_swap_extent(struct swap_info_struct *sis,
-+				 struct btrfs_swap_info *bsi)
-+{
-+	unsigned long nr_pages;
-+	u64 first_ppage, first_ppage_reported, next_ppage;
-+	int ret;
++bool btrfs_pinned_by_swapfile(struct btrfs_fs_info *fs_info, void *ptr);
 +
-+	first_ppage = ALIGN(bsi->block_start, PAGE_SIZE) >> PAGE_SHIFT;
-+	next_ppage = ALIGN_DOWN(bsi->block_start + bsi->block_len,
-+				PAGE_SIZE) >> PAGE_SHIFT;
+ #define BTRFS_FS_BARRIER			1
+ #define BTRFS_FS_CLOSING_START			2
+ #define BTRFS_FS_CLOSING_DONE			3
+@@ -1121,6 +1138,10 @@ struct btrfs_fs_info {
+ 	u32 sectorsize;
+ 	u32 stripesize;
+ 
++	/* Block groups and devices containing active swapfiles. */
++	spinlock_t swapfile_pins_lock;
++	struct rb_root swapfile_pins;
 +
-+	if (first_ppage >= next_ppage)
-+		return 0;
-+	nr_pages = next_ppage - first_ppage;
+ #ifdef CONFIG_BTRFS_FS_REF_VERIFY
+ 	spinlock_t ref_verify_lock;
+ 	struct rb_root block_tree;
+@@ -1285,6 +1306,9 @@ struct btrfs_root {
+ 	spinlock_t qgroup_meta_rsv_lock;
+ 	u64 qgroup_meta_rsv_pertrans;
+ 	u64 qgroup_meta_rsv_prealloc;
 +
-+	first_ppage_reported = first_ppage;
-+	if (bsi->start == 0)
-+		first_ppage_reported++;
-+	if (bsi->lowest_ppage > first_ppage_reported)
-+		bsi->lowest_ppage = first_ppage_reported;
-+	if (bsi->highest_ppage < (next_ppage - 1))
-+		bsi->highest_ppage = next_ppage - 1;
-+
-+	ret = add_swap_extent(sis, bsi->nr_pages, nr_pages, first_ppage);
-+	if (ret < 0)
-+		return ret;
-+	bsi->nr_extents += ret;
-+	bsi->nr_pages += nr_pages;
-+	return 0;
-+}
-+
-+static void btrfs_swap_deactivate(struct file *file)
-+{
-+	struct inode *inode = file_inode(file);
-+
-+	btrfs_free_swapfile_pins(inode);
-+	atomic_dec(&BTRFS_I(inode)->root->nr_swapfiles);
-+}
-+
-+static int btrfs_swap_activate(struct swap_info_struct *sis, struct file *file,
-+			       sector_t *span)
-+{
-+	struct inode *inode = file_inode(file);
-+	struct btrfs_fs_info *fs_info = BTRFS_I(inode)->root->fs_info;
-+	struct extent_io_tree *io_tree = &BTRFS_I(inode)->io_tree;
-+	struct extent_state *cached_state = NULL;
-+	struct extent_map *em = NULL;
-+	struct btrfs_device *device = NULL;
-+	struct btrfs_swap_info bsi = {
-+		.lowest_ppage = (sector_t)-1ULL,
-+	};
-+	int ret = 0;
-+	u64 isize = inode->i_size;
-+	u64 start;
-+
-+	/*
-+	 * If the swap file was just created, make sure delalloc is done. If the
-+	 * file changes again after this, the user is doing something stupid and
-+	 * we don't really care.
-+	 */
-+	ret = btrfs_wait_ordered_range(inode, 0, (u64)-1);
-+	if (ret)
-+		return ret;
-+
-+	/*
-+	 * The inode is locked, so these flags won't change after we check them.
-+	 */
-+	if (BTRFS_I(inode)->flags & BTRFS_INODE_COMPRESS) {
-+		btrfs_info(fs_info, "swapfile must not be compressed");
-+		return -EINVAL;
-+	}
-+	if (!(BTRFS_I(inode)->flags & BTRFS_INODE_NODATACOW)) {
-+		btrfs_info(fs_info, "swapfile must not be copy-on-write");
-+		return -EINVAL;
-+	}
-+
-+	/*
-+	 * Balance or device remove/replace/resize can move stuff around from
-+	 * under us. The EXCL_OP flag makes sure they aren't running/won't run
-+	 * concurrently while we are mapping the swap extents, and
-+	 * fs_info->swapfile_pins prevents them from running while the swap file
-+	 * is active and moving the extents. Note that this also prevents a
-+	 * concurrent device add which isn't actually necessary, but it's not
-+	 * really worth the trouble to allow it.
-+	 */
-+	if (test_and_set_bit(BTRFS_FS_EXCL_OP, &fs_info->flags))
-+		return -EBUSY;
-+	/*
-+	 * Snapshots can create extents which require COW even if NODATACOW is
-+	 * set. We use this counter to prevent snapshots. We must increment it
-+	 * before walking the extents because we don't want a concurrent
-+	 * snapshot to run after we've already checked the extents.
-+	 */
-+	atomic_inc(&BTRFS_I(inode)->root->nr_swapfiles);
-+
-+	lock_extent_bits(io_tree, 0, isize - 1, &cached_state);
-+	start = 0;
-+	while (start < isize) {
-+		u64 end, logical_block_start, physical_block_start;
-+		struct btrfs_block_group_cache *bg;
-+		u64 len = isize - start;
-+
-+		em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, start, len, 0);
-+		if (IS_ERR(em)) {
-+			ret = PTR_ERR(em);
-+			goto out;
-+		}
-+		end = extent_map_end(em);
-+
-+		if (em->block_start == EXTENT_MAP_HOLE) {
-+			btrfs_info(fs_info, "swapfile must not have holes");
-+			ret = -EINVAL;
-+			goto out;
-+		}
-+		if (em->block_start == EXTENT_MAP_INLINE) {
-+			/*
-+			 * It's unlikely we'll ever actually find ourselves
-+			 * here, as a file small enough to fit inline won't be
-+			 * big enough to store more than the swap header, but in
-+			 * case something changes in the future, let's catch it
-+			 * here rather than later.
-+			 */
-+			btrfs_info(fs_info, "swapfile must not be inline");
-+			ret = -EINVAL;
-+			goto out;
-+		}
-+		if (test_bit(EXTENT_FLAG_COMPRESSED, &em->flags)) {
-+			btrfs_info(fs_info, "swapfile must not be compressed");
-+			ret = -EINVAL;
-+			goto out;
-+		}
-+
-+		logical_block_start = em->block_start + (start - em->start);
-+		len = min(len, em->len - (start - em->start));
-+		free_extent_map(em);
-+		em = NULL;
-+
-+		ret = can_nocow_extent(inode, start, &len, NULL, NULL, NULL);
-+		if (ret < 0) {
-+			goto out;
-+		} else if (ret) {
-+			ret = 0;
-+		} else {
-+			btrfs_info(fs_info, "swapfile must not be copy-on-write");
-+			ret = -EINVAL;
-+			goto out;
-+		}
-+
-+		em = btrfs_get_chunk_map(fs_info, logical_block_start, len);
-+		if (IS_ERR(em)) {
-+			ret = PTR_ERR(em);
-+			goto out;
-+		}
-+
-+		if (em->map_lookup->type & BTRFS_BLOCK_GROUP_PROFILE_MASK) {
-+			btrfs_info(fs_info, "swapfile must have single data profile");
-+			ret = -EINVAL;
-+			goto out;
-+		}
-+
-+		if (device == NULL) {
-+			device = em->map_lookup->stripes[0].dev;
-+			ret = btrfs_add_swapfile_pin(inode, device, false);
-+			if (ret == 1)
-+				ret = 0;
-+			else if (ret)
-+				goto out;
-+		} else if (device != em->map_lookup->stripes[0].dev) {
-+			btrfs_info(fs_info, "swapfile must be on one device");
-+			ret = -EINVAL;
-+			goto out;
-+		}
-+
-+		physical_block_start = (em->map_lookup->stripes[0].physical +
-+					(logical_block_start - em->start));
-+		len = min(len, em->len - (logical_block_start - em->start));
-+		free_extent_map(em);
-+		em = NULL;
-+
-+		bg = btrfs_lookup_block_group(fs_info, logical_block_start);
-+		if (!bg) {
-+			btrfs_info(fs_info, "could not find block group containing swapfile");
-+			ret = -EINVAL;
-+			goto out;
-+		}
-+
-+		ret = btrfs_add_swapfile_pin(inode, bg, true);
-+		if (ret) {
-+			btrfs_put_block_group(bg);
-+			if (ret == 1)
-+				ret = 0;
-+			else
-+				goto out;
-+		}
-+
-+		if (bsi.block_len &&
-+		    bsi.block_start + bsi.block_len == physical_block_start) {
-+			bsi.block_len += len;
-+		} else {
-+			if (bsi.block_len) {
-+				ret = btrfs_add_swap_extent(sis, &bsi);
-+				if (ret)
-+					goto out;
-+			}
-+			bsi.start = start;
-+			bsi.block_start = physical_block_start;
-+			bsi.block_len = len;
-+		}
-+
-+		start = end;
-+	}
-+
-+	if (bsi.block_len)
-+		ret = btrfs_add_swap_extent(sis, &bsi);
-+
-+out:
-+	if (!IS_ERR_OR_NULL(em))
-+		free_extent_map(em);
-+
-+	unlock_extent_cached(io_tree, 0, isize - 1, &cached_state);
-+
-+	if (ret)
-+		btrfs_swap_deactivate(file);
-+
-+	clear_bit(BTRFS_FS_EXCL_OP, &fs_info->flags);
-+
-+	if (ret)
-+		return ret;
-+
-+	if (device)
-+		sis->bdev = device->bdev;
-+	*span = bsi.highest_ppage - bsi.lowest_ppage + 1;
-+	sis->max = bsi.nr_pages;
-+	sis->pages = bsi.nr_pages - 1;
-+	sis->highest_bit = bsi.nr_pages - 1;
-+	return bsi.nr_extents;
-+}
-+
- static const struct inode_operations btrfs_dir_inode_operations = {
- 	.getattr	= btrfs_getattr,
- 	.lookup		= btrfs_lookup,
-@@ -10514,6 +10828,8 @@ static const struct address_space_operations btrfs_aops = {
- 	.releasepage	= btrfs_releasepage,
- 	.set_page_dirty	= btrfs_set_page_dirty,
- 	.error_remove_page = generic_error_remove_page,
-+	.swap_activate	= btrfs_swap_activate,
-+	.swap_deactivate = btrfs_swap_deactivate,
++	/* Number of active swapfiles */
++	atomic_t nr_swapfiles;
  };
  
- static const struct address_space_operations btrfs_symlink_aops = {
+ struct btrfs_file_private {
+diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+index dec01970d8c5..09d2cee2635b 100644
+--- a/fs/btrfs/dev-replace.c
++++ b/fs/btrfs/dev-replace.c
+@@ -414,6 +414,14 @@ int btrfs_dev_replace_start(struct btrfs_fs_info *fs_info,
+ 	if (ret)
+ 		return ret;
+ 
++	if (btrfs_pinned_by_swapfile(fs_info, src_device)) {
++		btrfs_info_in_rcu(fs_info,
++				  "cannot replace device %s (devid %llu) due to active swapfile",
++				  btrfs_dev_name(src_device),
++				  src_device->devid);
++		return -ETXTBSY;
++	}
++
+ 	ret = btrfs_init_dev_replace_tgtdev(fs_info, tgtdev_name,
+ 					    src_device, &tgt_device);
+ 	if (ret)
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 5124c15705ce..0ab3527bedd1 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1187,6 +1187,7 @@ static void __setup_root(struct btrfs_root *root, struct btrfs_fs_info *fs_info,
+ 	atomic_set(&root->log_batch, 0);
+ 	refcount_set(&root->refs, 1);
+ 	atomic_set(&root->will_be_snapshotted, 0);
++	atomic_set(&root->nr_swapfiles, 0);
+ 	root->log_transid = 0;
+ 	root->log_transid_committed = -1;
+ 	root->last_log_commit = 0;
+@@ -2781,6 +2782,9 @@ int open_ctree(struct super_block *sb,
+ 	fs_info->sectorsize = 4096;
+ 	fs_info->stripesize = 4096;
+ 
++	spin_lock_init(&fs_info->swapfile_pins_lock);
++	fs_info->swapfile_pins = RB_ROOT;
++
+ 	ret = btrfs_alloc_stripe_hash_table(fs_info);
+ 	if (ret) {
+ 		err = ret;
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 63600dc2ac4c..d083bf21aabe 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -290,6 +290,11 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
+ 	} else if (fsflags & FS_COMPR_FL) {
+ 		const char *comp;
+ 
++		if (IS_SWAPFILE(inode)) {
++			ret = -ETXTBSY;
++			goto out_unlock;
++		}
++
+ 		binode->flags |= BTRFS_INODE_COMPRESS;
+ 		binode->flags &= ~BTRFS_INODE_NOCOMPRESS;
+ 
+@@ -751,6 +756,12 @@ static int create_snapshot(struct btrfs_root *root, struct inode *dir,
+ 	if (!test_bit(BTRFS_ROOT_REF_COWS, &root->state))
+ 		return -EINVAL;
+ 
++	if (atomic_read(&root->nr_swapfiles)) {
++		btrfs_info(fs_info,
++			   "cannot snapshot subvolume with active swapfile");
++		return -ETXTBSY;
++	}
++
+ 	pending_snapshot = kzalloc(sizeof(*pending_snapshot), GFP_KERNEL);
+ 	if (!pending_snapshot)
+ 		return -ENOMEM;
+@@ -1487,9 +1498,13 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
+ 		}
+ 
+ 		inode_lock(inode);
+-		if (do_compress)
+-			BTRFS_I(inode)->defrag_compress = compress_type;
+-		ret = cluster_pages_for_defrag(inode, pages, i, cluster);
++		if (IS_SWAPFILE(inode)) {
++			ret = -ETXTBSY;
++		} else {
++			if (do_compress)
++				BTRFS_I(inode)->defrag_compress = compress_type;
++			ret = cluster_pages_for_defrag(inode, pages, i, cluster);
++		}
+ 		if (ret < 0) {
+ 			inode_unlock(inode);
+ 			goto out_ra;
+@@ -3538,6 +3553,11 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
+ 		goto out_unlock;
+ 	}
+ 
++	if (IS_SWAPFILE(src) || IS_SWAPFILE(dst)) {
++		ret = -ETXTBSY;
++		goto out_unlock;
++	}
++
+ 	tail_len = olen % BTRFS_MAX_DEDUPE_LEN;
+ 	chunk_count = div_u64(olen, BTRFS_MAX_DEDUPE_LEN);
+ 	if (chunk_count == 0)
+@@ -4234,6 +4254,11 @@ static noinline int btrfs_clone_files(struct file *file, struct file *file_src,
+ 		goto out_unlock;
+ 	}
+ 
++	if (IS_SWAPFILE(src) || IS_SWAPFILE(inode)) {
++		ret = -ETXTBSY;
++		goto out_unlock;
++	}
++
+ 	/* determine range to clone */
+ 	ret = -EINVAL;
+ 	if (off + len > src->i_size || off + len < off)
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 8783a1776540..7468a0f55cd2 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -4226,6 +4226,7 @@ static void describe_relocation(struct btrfs_fs_info *fs_info,
+  */
+ int btrfs_relocate_block_group(struct btrfs_fs_info *fs_info, u64 group_start)
+ {
++	struct btrfs_block_group_cache *bg;
+ 	struct btrfs_root *extent_root = fs_info->extent_root;
+ 	struct reloc_control *rc;
+ 	struct inode *inode;
+@@ -4234,14 +4235,23 @@ int btrfs_relocate_block_group(struct btrfs_fs_info *fs_info, u64 group_start)
+ 	int rw = 0;
+ 	int err = 0;
+ 
++	bg = btrfs_lookup_block_group(fs_info, group_start);
++	if (!bg)
++		return -ENOENT;
++
++	if (btrfs_pinned_by_swapfile(fs_info, bg)) {
++		btrfs_put_block_group(bg);
++		return -ETXTBSY;
++	}
++
+ 	rc = alloc_reloc_control();
+-	if (!rc)
++	if (!rc) {
++		btrfs_put_block_group(bg);
+ 		return -ENOMEM;
++	}
+ 
+ 	rc->extent_root = extent_root;
+-
+-	rc->block_group = btrfs_lookup_block_group(fs_info, group_start);
+-	BUG_ON(!rc->block_group);
++	rc->block_group = bg;
+ 
+ 	ret = btrfs_inc_block_group_ro(rc->block_group);
+ 	if (ret) {
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index da86706123ff..207e36b70d9b 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1882,6 +1882,14 @@ int btrfs_rm_device(struct btrfs_fs_info *fs_info, const char *device_path,
+ 	if (ret)
+ 		goto out;
+ 
++	if (btrfs_pinned_by_swapfile(fs_info, device)) {
++		btrfs_info_in_rcu(fs_info,
++				  "cannot remove device %s (devid %llu) due to active swapfile",
++				  rcu_str_deref(device->name), device->devid);
++		ret = -ETXTBSY;
++		goto out;
++	}
++
+ 	if (test_bit(BTRFS_DEV_STATE_REPLACE_TGT, &device->dev_state)) {
+ 		ret = BTRFS_ERROR_DEV_TGT_REPLACE;
+ 		goto out;
+@@ -3626,10 +3634,15 @@ static int __btrfs_balance(struct btrfs_fs_info *fs_info)
+ 
+ 		ret = btrfs_relocate_chunk(fs_info, found_key.offset);
+ 		mutex_unlock(&fs_info->delete_unused_bgs_mutex);
+-		if (ret && ret != -ENOSPC)
+-			goto error;
+ 		if (ret == -ENOSPC) {
+ 			enospc_errors++;
++		} else if (ret == -ETXTBSY) {
++			btrfs_info(fs_info,
++				   "skipping relocation of block group %llu due to active swapfile",
++				   found_key.offset);
++			ret = 0;
++		} else if (ret) {
++			goto error;
+ 		} else {
+ 			spin_lock(&fs_info->balance_lock);
+ 			bctl->stat.completed++;
+@@ -4426,10 +4439,16 @@ int btrfs_shrink_device(struct btrfs_device *device, u64 new_size)
+ 
+ 		ret = btrfs_relocate_chunk(fs_info, chunk_offset);
+ 		mutex_unlock(&fs_info->delete_unused_bgs_mutex);
+-		if (ret && ret != -ENOSPC)
+-			goto done;
+-		if (ret == -ENOSPC)
++		if (ret == -ENOSPC) {
+ 			failed++;
++		} else {
++			if (ret == -ETXTBSY) {
++				btrfs_info(fs_info,
++					   "could not shrink block group %llu due to active swapfile",
++					   chunk_offset);
++			}
++			goto done;
++		}
+ 	} while (key.offset-- > 0);
+ 
+ 	if (failed && !retried) {
+@@ -7525,3 +7544,23 @@ int btrfs_verify_dev_extents(struct btrfs_fs_info *fs_info)
+ 	btrfs_free_path(path);
+ 	return ret;
+ }
++
++bool btrfs_pinned_by_swapfile(struct btrfs_fs_info *fs_info, void *ptr)
++{
++	struct btrfs_swapfile_pin *sp;
++	struct rb_node *node;
++
++	spin_lock(&fs_info->swapfile_pins_lock);
++	node = fs_info->swapfile_pins.rb_node;
++	while (node) {
++		sp = rb_entry(node, struct btrfs_swapfile_pin, node);
++		if (ptr < sp->ptr)
++			node = node->rb_left;
++		else if (ptr > sp->ptr)
++			node = node->rb_right;
++		else
++			break;
++	}
++	spin_unlock(&fs_info->swapfile_pins_lock);
++	return node != NULL;
++}
 -- 
 2.18.0

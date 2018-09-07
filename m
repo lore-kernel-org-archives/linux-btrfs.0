@@ -1,182 +1,118 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pl1-f193.google.com ([209.85.214.193]:37893 "EHLO
-        mail-pl1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725986AbeIHBdV (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Sep 2018 21:33:21 -0400
-Received: by mail-pl1-f193.google.com with SMTP id u11-v6so7089900plq.5
-        for <linux-btrfs@vger.kernel.org>; Fri, 07 Sep 2018 13:50:41 -0700 (PDT)
-Date: Fri, 7 Sep 2018 13:50:39 -0700
+Received: from mail-pl1-f195.google.com ([209.85.214.195]:44386 "EHLO
+        mail-pl1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725986AbeIHBeC (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Sep 2018 21:34:02 -0400
+Received: by mail-pl1-f195.google.com with SMTP id ba4-v6so7088111plb.11
+        for <linux-btrfs@vger.kernel.org>; Fri, 07 Sep 2018 13:51:22 -0700 (PDT)
+Date: Fri, 7 Sep 2018 13:51:20 -0700
 From: Omar Sandoval <osandov@osandov.com>
 To: Qu Wenruo <wqu@suse.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 2/3] btrfs: qgroup: Validate btrfs_qgroup_inherit
- structure before passing it to qgroup
-Message-ID: <20180907205039.GD29245@vader>
+Subject: Re: [PATCH 3/3] btrfs: qgroup: Remove deprecated feature support in
+ btrfs_qgorup_inhert()
+Message-ID: <20180907205120.GE29245@vader>
 References: <20180831022930.3465-1-wqu@suse.com>
- <20180831022930.3465-3-wqu@suse.com>
+ <20180831022930.3465-4-wqu@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180831022930.3465-3-wqu@suse.com>
+In-Reply-To: <20180831022930.3465-4-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Aug 31, 2018 at 10:29:29AM +0800, Qu Wenruo wrote:
-> btrfs_qgroup_inherit structure doesn't goes through much validation
-> check.
-> 
-> Now do a comprehensive check for it, including:
-> 1) inherit size
->    Should not exceeding SZ_4K and its num_qgroups should not
->    exceed its size passed in btrfs_ioctl_vol_args_v2.
-> 
-> 2) flags
->    Should not include any unknown flags
->    (In fact, no flag is supported at all now)
->    Btrfs-progs never has such ability to set flags for btrfs_qgroup_inherit.
-> 
-> 3) limit
->    Should not contain anything.
->    Btrfs-progs never has such ability to set limit for btrfs_qgroup_inherit.
-> 
-> 4) rfer/excl copy
->    Deprecated feature.
->    Btrfs-progs has such interface but never documented and we're already
->    going to remove such ability.
->    It's the easiest way to screw up qgroup numbers.
-> 
-> 3) Qgroupid
->    Comprehensive check is already in btrfs_qgroup_inherit(), here we
->    only check if there is any obviously invalid qgroupid (0).
-> 
-> Coverity-id: 1021055
-> Reported-by: Nikolay Borisov <nborisov@suse.com>
+On Fri, Aug 31, 2018 at 10:29:30AM +0800, Qu Wenruo wrote:
+> Since btrfs_validate_inherit() will not allow features like copy
+> rfer/excl and limit set, remove these dead code.
+
+Reviewed-by: Omar Sandoval <osandov@fb.com>
+
 > Signed-off-by: Qu Wenruo <wqu@suse.com>
 > ---
->  fs/btrfs/ioctl.c           |  3 +++
->  fs/btrfs/qgroup.c          | 39 ++++++++++++++++++++++++++++++++++++++
->  fs/btrfs/qgroup.h          |  2 ++
->  include/uapi/linux/btrfs.h | 17 ++++++++---------
->  4 files changed, 52 insertions(+), 9 deletions(-)
+>  fs/btrfs/qgroup.c | 57 +----------------------------------------------
+>  1 file changed, 1 insertion(+), 56 deletions(-)
 > 
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index 5db8680b40a9..4f5f453d5d07 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -1820,6 +1820,9 @@ static noinline int btrfs_ioctl_snap_create_v2(struct file *file,
->  			ret = PTR_ERR(inherit);
->  			goto free_args;
->  		}
-> +		ret = btrfs_validate_inherit(inherit, vol_args->size);
-> +		if (ret < 0)
-> +			goto free_args;
->  	}
->  
->  	ret = btrfs_ioctl_snap_create_transid(file, vol_args->name,
 > diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-> index 4353bb69bb86..53daf73b0de9 100644
+> index 53daf73b0de9..b57577f45ff3 100644
 > --- a/fs/btrfs/qgroup.c
 > +++ b/fs/btrfs/qgroup.c
-> @@ -2232,6 +2232,45 @@ int btrfs_run_qgroups(struct btrfs_trans_handle *trans)
->  	return ret;
->  }
+> @@ -2301,8 +2301,7 @@ int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans, u64 srcid,
 >  
-> +/*
-> + * To make sure the inherit passed in is valid
-> + *
-> + * Here we only check flags and rule out some no-longer supported features.
-> + * And we only do very basis qgroupid check to ensure there is no obviously
-> + * invalid qgroupid (0). Detailed qgroupid check will be done in
-> + * btrfs_qgroup_inherit().
-> + */
-> +int btrfs_validate_inherit(struct btrfs_qgroup_inherit *inherit,
-> +			   u64 inherit_size)
-> +{
-> +	u64 i;
-> +
-> +	if (inherit->flags & ~BTRFS_QGROUP_INHERIT_FLAGS_SUPP)
-> +		return -ENOTTY;
-> +	/* Qgroup rfer/excl copy is deprecated */
-> +	if (inherit->num_excl_copies || inherit->num_ref_copies)
-> +		return -ENOTTY;
-> +
-> +	/* Since SET_LIMITS is never used, @lim should all be zeroed */
-> +	if (inherit->lim.max_excl || inherit->lim.max_rfer ||
-> +	    inherit->lim.rsv_excl || inherit->lim.rsv_rfer ||
-> +	    inherit->lim.flags)
-> +		return -ENOTTY;
-
-Why -ENOTTY? I think these should all be -EINVAL.
-
-> +	/* Size check */
-> +	if (sizeof(u64) * inherit->num_qgroups + sizeof(*inherit) >
-
-This arithmetic can overflow...
-
-> +	    min_t(u64, BTRFS_QGROUP_INHERIT_MAX_SIZE, inherit_size))
-> +		return -EINVAL;
-> +
-> +
-> +	/* Qgroup 0/0 is not allowed */
-> +	for (i = 0; i < inherit->num_qgroups; i++) {
-> +		if (inherit->qgroups[i] == 0)
-
-Which means we can access out of bounds here.
-
-> +			return -EINVAL;
-> +	}
-> +	return 0;
-> +}
-> +
->  /*
->   * Copy the accounting information between qgroups. This is necessary
->   * when a snapshot or a subvolume is created. Throwing an error will
-> diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
-> index 54b8bb282c0e..1bf9c584be70 100644
-> --- a/fs/btrfs/qgroup.h
-> +++ b/fs/btrfs/qgroup.h
-> @@ -241,6 +241,8 @@ int btrfs_qgroup_account_extent(struct btrfs_trans_handle *trans, u64 bytenr,
->  				struct ulist *new_roots);
->  int btrfs_qgroup_account_extents(struct btrfs_trans_handle *trans);
->  int btrfs_run_qgroups(struct btrfs_trans_handle *trans);
-> +int btrfs_validate_inherit(struct btrfs_qgroup_inherit *inherit,
-> +			   u64 inherit_size);
->  int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans, u64 srcid,
->  			 u64 objectid, struct btrfs_qgroup_inherit *inherit);
->  void btrfs_qgroup_free_refroot(struct btrfs_fs_info *fs_info,
-> diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
-> index 311edb65567c..5a5532a20019 100644
-> --- a/include/uapi/linux/btrfs.h
-> +++ b/include/uapi/linux/btrfs.h
-> @@ -74,21 +74,20 @@ struct btrfs_qgroup_limit {
->  	__u64	rsv_excl;
->  };
+>  	if (inherit) {
+>  		i_qgroups = (u64 *)(inherit + 1);
+> -		nums = inherit->num_qgroups + 2 * inherit->num_ref_copies +
+> -		       2 * inherit->num_excl_copies;
+> +		nums = inherit->num_qgroups;
+>  		for (i = 0; i < nums; ++i) {
+>  			srcgroup = find_qgroup_rb(fs_info, *i_qgroups);
 >  
-> -/*
-> - * flags definition for qgroup inheritance
-> - *
-> - * Used by:
-> - * struct btrfs_qgroup_inherit.flags
-> - */
-> +/* flags definition for qgroup inheritance (DEPRECATED) */
->  #define BTRFS_QGROUP_INHERIT_SET_LIMITS	(1ULL << 0)
+> @@ -2354,23 +2353,6 @@ int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans, u64 srcid,
+>  		goto unlock;
+>  	}
 >  
-> +/* No supported flags */
-> +#define BTRFS_QGROUP_INHERIT_FLAGS_SUPP (0)
-> +
->  #define BTRFS_QGROUP_INHERIT_MAX_SIZE	(SZ_4K)
-> +
->  struct btrfs_qgroup_inherit {
->  	__u64	flags;
->  	__u64	num_qgroups;
-> -	__u64	num_ref_copies;
-> -	__u64	num_excl_copies;
-> -	struct btrfs_qgroup_limit lim;
-> +	__u64	num_ref_copies;		/* DEPRECATED */
-> +	__u64	num_excl_copies;	/* DEPRECATED */
-> +	struct btrfs_qgroup_limit lim;	/* DEPRECATED */
->  	__u64	qgroups[0];
->  };
+> -	if (inherit && inherit->flags & BTRFS_QGROUP_INHERIT_SET_LIMITS) {
+> -		dstgroup->lim_flags = inherit->lim.flags;
+> -		dstgroup->max_rfer = inherit->lim.max_rfer;
+> -		dstgroup->max_excl = inherit->lim.max_excl;
+> -		dstgroup->rsv_rfer = inherit->lim.rsv_rfer;
+> -		dstgroup->rsv_excl = inherit->lim.rsv_excl;
+> -
+> -		ret = update_qgroup_limit_item(trans, dstgroup);
+> -		if (ret) {
+> -			fs_info->qgroup_flags |= BTRFS_QGROUP_STATUS_FLAG_INCONSISTENT;
+> -			btrfs_info(fs_info,
+> -				   "unable to update quota limit for %llu",
+> -				   dstgroup->qgroupid);
+> -			goto unlock;
+> -		}
+> -	}
+> -
+>  	if (srcid) {
+>  		srcgroup = find_qgroup_rb(fs_info, srcid);
+>  		if (!srcgroup)
+> @@ -2413,43 +2395,6 @@ int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans, u64 srcid,
+>  		++i_qgroups;
+>  	}
 >  
+> -	for (i = 0; i <  inherit->num_ref_copies; ++i, i_qgroups += 2) {
+> -		struct btrfs_qgroup *src;
+> -		struct btrfs_qgroup *dst;
+> -
+> -		if (!i_qgroups[0] || !i_qgroups[1])
+> -			continue;
+> -
+> -		src = find_qgroup_rb(fs_info, i_qgroups[0]);
+> -		dst = find_qgroup_rb(fs_info, i_qgroups[1]);
+> -
+> -		if (!src || !dst) {
+> -			ret = -EINVAL;
+> -			goto unlock;
+> -		}
+> -
+> -		dst->rfer = src->rfer - level_size;
+> -		dst->rfer_cmpr = src->rfer_cmpr - level_size;
+> -	}
+> -	for (i = 0; i <  inherit->num_excl_copies; ++i, i_qgroups += 2) {
+> -		struct btrfs_qgroup *src;
+> -		struct btrfs_qgroup *dst;
+> -
+> -		if (!i_qgroups[0] || !i_qgroups[1])
+> -			continue;
+> -
+> -		src = find_qgroup_rb(fs_info, i_qgroups[0]);
+> -		dst = find_qgroup_rb(fs_info, i_qgroups[1]);
+> -
+> -		if (!src || !dst) {
+> -			ret = -EINVAL;
+> -			goto unlock;
+> -		}
+> -
+> -		dst->excl = src->excl + level_size;
+> -		dst->excl_cmpr = src->excl_cmpr + level_size;
+> -	}
+> -
+>  unlock:
+>  	spin_unlock(&fs_info->qgroup_lock);
+>  out:
 > -- 
 > 2.18.0
 > 

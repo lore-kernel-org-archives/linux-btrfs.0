@@ -1,55 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:38574 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725942AbeIGL3T (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 7 Sep 2018 07:29:19 -0400
-Subject: Re: [PATCH 34/35] btrfs: wait on ordered extents on abort cleanup
-To: Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org
-References: <20180830174225.2200-1-josef@toxicpanda.com>
- <20180830174225.2200-35-josef@toxicpanda.com>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <a86ef70f-116d-5607-661a-783691ae1b7b@suse.com>
-Date: Fri, 7 Sep 2018 09:49:49 +0300
+Received: from mail-wr1-f65.google.com ([209.85.221.65]:38375 "EHLO
+        mail-wr1-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725942AbeIGOgb (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Sep 2018 10:36:31 -0400
+Received: by mail-wr1-f65.google.com with SMTP id w11-v6so14350724wrc.5
+        for <linux-btrfs@vger.kernel.org>; Fri, 07 Sep 2018 02:56:21 -0700 (PDT)
+Received: from t-5.eu (p57AB9DBE.dip0.t-ipconnect.de. [87.171.157.190])
+        by smtp.gmail.com with ESMTPSA id 1-v6sm11923881wmf.47.2018.09.07.02.56.19
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
+        Fri, 07 Sep 2018 02:56:19 -0700 (PDT)
+Received: from t-5.eu (localhost [127.0.0.1])
+        by t-5.eu (Postfix) with ESMTP id 4EDF6119140
+        for <linux-btrfs@vger.kernel.org>; Fri,  7 Sep 2018 11:56:18 +0200 (CEST)
 MIME-Version: 1.0
-In-Reply-To: <20180830174225.2200-35-josef@toxicpanda.com>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=UTF-8;
+ format=flowed
+Date: Fri, 07 Sep 2018 11:56:18 +0200
+From: =?UTF-8?Q?J=C3=BCrgen_Herrmann?= <t-5@t-5.eu>
+To: linux-btrfs@vger.kernel.org
+Subject: compiling btrfs-progs 4.17.1 gives error "reiserfs/misc.h: No such
+ file or directory"
+Message-ID: <e822c3d52bfef3e0f2cc4617b21f5518@t-5.eu>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hello!
 
+I'm having a problem with btrfs send which stops after several seconds.
+The process hangs with 100% cpu time on one cpu. The system is still
+responsive to input but no io is happening anymore so the system
+basically becomes unuseable.
 
-On 30.08.2018 20:42, Josef Bacik wrote:
-> If we flip read-only before we initiate writeback on all dirty pages for
-> ordered extents we've created then we'll have ordered extents left over
-> on umount, which results in all sorts of bad things happening.  Fix this
-> by making sure we wait on ordered extents if we have to do the aborted
-> transaction cleanup stuff.
-> 
-> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+I'm on linux mint 19, freshly installed on a new laptop about 6 weeks
+ago. So i wanted to compile latest btrfs-progs and latest stable kernel
+first before reporting that here, BUT: I cannot compile btrfs-progs 
+4.17.1
+because of the following error:
 
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+     [CC]     convert/source-reiserfs.o
+In file included from convert/source-reiserfs.c:30:0:
+./convert/source-reiserfs.h:23:10: fatal error: reiserfs/misc.h: No such 
+file or directory
+  #include <reiserfs/misc.h>
+           ^~~~~~~~~~~~~~~~~
+compilation terminated.
+Makefile:309: recipe for target 'convert/source-reiserfs.o' failed
+make: *** [convert/source-reiserfs.o] Error 1
 
-> ---
->  fs/btrfs/disk-io.c | 8 ++++++++
->  1 file changed, 8 insertions(+)
-> 
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index 54fbdc944a3f..51b2a5bf25e5 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -4188,6 +4188,14 @@ static void btrfs_destroy_all_ordered_extents(struct btrfs_fs_info *fs_info)
->  		spin_lock(&fs_info->ordered_root_lock);
->  	}
->  	spin_unlock(&fs_info->ordered_root_lock);
-> +
-> +	/*
-> +	 * We need this here because if we've been flipped read-only we won't
-> +	 * get sync() from the umount, so we need to make sure any ordered
-> +	 * extents that haven't had their dirty pages IO start writeout yet
-> +	 * actually get run and error out properly.
-> +	 */
-> +	btrfs_wait_ordered_roots(fs_info, U64_MAX, 0, (u64)-1);
->  }
->  
->  static int btrfs_destroy_delayed_refs(struct btrfs_transaction *trans,
-> 
+A google search did not turn up any help nor does apt know of any
+reiserfs related libs that i could install.
+
+Best regards,
+Jürgen
+
+-- 
+Jürgen Herrmann
+https://t-5.eu
+ALbertstraße 2
+94327 Bogen

@@ -1,72 +1,111 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf1-f193.google.com ([209.85.210.193]:42633 "EHLO
-        mail-pf1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725940AbeIGMTQ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Sep 2018 08:19:16 -0400
-Received: by mail-pf1-f193.google.com with SMTP id l9-v6so6602143pff.9
-        for <linux-btrfs@vger.kernel.org>; Fri, 07 Sep 2018 00:39:37 -0700 (PDT)
+Received: from mail-pl1-f193.google.com ([209.85.214.193]:37707 "EHLO
+        mail-pl1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727145AbeIGMTS (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Sep 2018 08:19:18 -0400
+Received: by mail-pl1-f193.google.com with SMTP id f1-v6so6204974plt.4
+        for <linux-btrfs@vger.kernel.org>; Fri, 07 Sep 2018 00:39:39 -0700 (PDT)
 From: Omar Sandoval <osandov@osandov.com>
 To: linux-btrfs@vger.kernel.org
 Cc: kernel-team@fb.com, linux-mm@kvack.org
-Subject: [PATCH v6 0/6] Btrfs: implement swap file support
-Date: Fri,  7 Sep 2018 00:39:14 -0700
-Message-Id: <cover.1536305017.git.osandov@fb.com>
+Subject: [PATCH v6 3/6] vfs: update swap_{,de}activate documentation
+Date: Fri,  7 Sep 2018 00:39:17 -0700
+Message-Id: <1cb226723bbec23a8a8d4c05368188b3c16522da.1536305017.git.osandov@fb.com>
+In-Reply-To: <cover.1536305017.git.osandov@fb.com>
+References: <cover.1536305017.git.osandov@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Omar Sandoval <osandov@fb.com>
 
-Hi,
+The documentation for these functions is wrong in several ways:
 
-This series implements swap file support for Btrfs.
+- swap_activate() is called with the inode locked
+- swap_activate() takes a swap_info_struct * and a sector_t *
+- swap_activate() can also return a positive number of extents it added
+  itself
+- swap_deactivate() does not return anything
 
-Compared to v5 [1], this is pretty much feature-complete. It now
-supports:
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+Signed-off-by: Omar Sandoval <osandov@fb.com>
+---
+ Documentation/filesystems/Locking | 17 +++++++----------
+ Documentation/filesystems/vfs.txt | 12 ++++++++----
+ 2 files changed, 15 insertions(+), 14 deletions(-)
 
-- Balance (skips block groups containing an active swap file)
-- Resize (error if trying to shrink past a block group containing an
-  active swap file, allowed otherwise)
-- Device delete/replace (as long as the device in question does not
-  contain an active swap file)
-
-This implementation Chris and I came up with is much cleaner than my
-earlier ideas: instead of adding any counters to struct
-btrfs_block_group_cache or struct btrfs_device, we just have a small
-red-black tree of block groups and devices which contain an active
-swapfile.
-
-I updated the xfstests for this series [2] to test this new
-functionality, and put it through the same tests as v5.
-
-Based on v4.19-rc2, please take a look.
-
-Thanks!
-
-1: https://www.spinics.net/lists/linux-btrfs/msg81550.html
-2: https://github.com/osandov/xfstests/tree/btrfs-swap
-
-Omar Sandoval (6):
-  mm: split SWP_FILE into SWP_ACTIVATED and SWP_FS
-  mm: export add_swap_extent()
-  vfs: update swap_{,de}activate documentation
-  Btrfs: prevent ioctls from interfering with a swap file
-  Btrfs: rename get_chunk_map() and make it non-static
-  Btrfs: support swap files
-
- Documentation/filesystems/Locking |  17 +-
- Documentation/filesystems/vfs.txt |  12 +-
- fs/btrfs/ctree.h                  |  24 +++
- fs/btrfs/dev-replace.c            |   8 +
- fs/btrfs/disk-io.c                |   4 +
- fs/btrfs/inode.c                  | 316 ++++++++++++++++++++++++++++++
- fs/btrfs/ioctl.c                  |  31 ++-
- fs/btrfs/relocation.c             |  18 +-
- fs/btrfs/volumes.c                |  71 +++++--
- fs/btrfs/volumes.h                |   9 +
- include/linux/swap.h              |  13 +-
- mm/page_io.c                      |   6 +-
- mm/swapfile.c                     |  14 +-
- 13 files changed, 492 insertions(+), 51 deletions(-)
-
+diff --git a/Documentation/filesystems/Locking b/Documentation/filesystems/Locking
+index efea228ccd8a..b970c8c2ee22 100644
+--- a/Documentation/filesystems/Locking
++++ b/Documentation/filesystems/Locking
+@@ -210,8 +210,9 @@ prototypes:
+ 	int (*launder_page)(struct page *);
+ 	int (*is_partially_uptodate)(struct page *, unsigned long, unsigned long);
+ 	int (*error_remove_page)(struct address_space *, struct page *);
+-	int (*swap_activate)(struct file *);
+-	int (*swap_deactivate)(struct file *);
++	int (*swap_activate)(struct swap_info_struct *, struct file *,
++			     sector_t *);
++	void (*swap_deactivate)(struct file *);
+ 
+ locking rules:
+ 	All except set_page_dirty and freepage may block
+@@ -235,8 +236,8 @@ putback_page:		yes
+ launder_page:		yes
+ is_partially_uptodate:	yes
+ error_remove_page:	yes
+-swap_activate:		no
+-swap_deactivate:	no
++swap_activate:					yes
++swap_deactivate:				no
+ 
+ 	->write_begin(), ->write_end() and ->readpage() may be called from
+ the request handler (/dev/loop).
+@@ -333,14 +334,10 @@ cleaned, or an error value if not. Note that in order to prevent the page
+ getting mapped back in and redirtied, it needs to be kept locked
+ across the entire operation.
+ 
+-	->swap_activate will be called with a non-zero argument on
+-files backing (non block device backed) swapfiles. A return value
+-of zero indicates success, in which case this file can be used for
+-backing swapspace. The swapspace operations will be proxied to the
+-address space operations.
++	->swap_activate is called from sys_swapon() with the inode locked.
+ 
+ 	->swap_deactivate() will be called in the sys_swapoff()
+-path after ->swap_activate() returned success.
++path after ->swap_activate() returned success. The inode is not locked.
+ 
+ ----------------------- file_lock_operations ------------------------------
+ prototypes:
+diff --git a/Documentation/filesystems/vfs.txt b/Documentation/filesystems/vfs.txt
+index 4b2084d0f1fb..40d6d6d4b76b 100644
+--- a/Documentation/filesystems/vfs.txt
++++ b/Documentation/filesystems/vfs.txt
+@@ -652,8 +652,9 @@ struct address_space_operations {
+ 					unsigned long);
+ 	void (*is_dirty_writeback) (struct page *, bool *, bool *);
+ 	int (*error_remove_page) (struct mapping *mapping, struct page *page);
+-	int (*swap_activate)(struct file *);
+-	int (*swap_deactivate)(struct file *);
++	int (*swap_activate)(struct swap_info_struct *, struct file *,
++			     sector_t *);
++	void (*swap_deactivate)(struct file *);
+ };
+ 
+   writepage: called by the VM to write a dirty page to backing store.
+@@ -830,8 +831,11 @@ struct address_space_operations {
+ 
+   swap_activate: Called when swapon is used on a file to allocate
+ 	space if necessary and pin the block lookup information in
+-	memory. A return value of zero indicates success,
+-	in which case this file can be used to back swapspace.
++	memory. If this returns zero, the swap system will call the address
++	space operations ->readpage() and ->direct_IO(). Alternatively, this
++	may call add_swap_extent() and return the number of extents added, in
++	which case the swap system will use the provided blocks directly
++	instead of going through the filesystem.
+ 
+   swap_deactivate: Called during swapoff on files where swap_activate
+ 	was successful.
 -- 
 2.18.0

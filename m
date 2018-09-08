@@ -1,251 +1,228 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.20]:60087 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725731AbeIHEQk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 8 Sep 2018 00:16:40 -0400
-Subject: Re: [PATCH 2/3] btrfs: qgroup: Validate btrfs_qgroup_inherit
- structure before passing it to qgroup
-To: Omar Sandoval <osandov@osandov.com>, Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-References: <20180831022930.3465-1-wqu@suse.com>
- <20180831022930.3465-3-wqu@suse.com> <20180907205039.GD29245@vader>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <e8e63b6c-c88c-9eae-3991-ccf77337d6e3@gmx.com>
-Date: Sat, 8 Sep 2018 07:33:08 +0800
-MIME-Version: 1.0
-In-Reply-To: <20180907205039.GD29245@vader>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="7ZGMm8bcvDTUO7SZUXzEUGNuH7lIBbNeQ"
+Received: from [195.159.176.226] ([195.159.176.226]:51450 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1726291AbeIHN2L (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 8 Sep 2018 09:28:11 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-3@m.gmane.org>)
+        id 1fyYnZ-0006yc-3h
+        for linux-btrfs@vger.kernel.org; Sat, 08 Sep 2018 10:40:57 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: List of known BTRFS Raid 5/6 Bugs?
+Date: Sat, 8 Sep 2018 08:40:50 +0000 (UTC)
+Message-ID: <pan$3058a$74a39424$67b0d289$23de5876@cox.net>
+References: <2685207.fCDoYgCM7x@t460-skr>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---7ZGMm8bcvDTUO7SZUXzEUGNuH7lIBbNeQ
-Content-Type: multipart/mixed; boundary="J2u7k9iHfFvd2TBkc869NAiEMJijuzCXz";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Omar Sandoval <osandov@osandov.com>, Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-Message-ID: <e8e63b6c-c88c-9eae-3991-ccf77337d6e3@gmx.com>
-Subject: Re: [PATCH 2/3] btrfs: qgroup: Validate btrfs_qgroup_inherit
- structure before passing it to qgroup
-References: <20180831022930.3465-1-wqu@suse.com>
- <20180831022930.3465-3-wqu@suse.com> <20180907205039.GD29245@vader>
-In-Reply-To: <20180907205039.GD29245@vader>
+Stefan K posted on Fri, 07 Sep 2018 15:58:36 +0200 as excerpted:
 
---J2u7k9iHfFvd2TBkc869NAiEMJijuzCXz
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+> sorry for disturb this discussion,
+> 
+> are there any plans/dates to fix the raid5/6 issue? Is somebody working
+> on this issue? Cause this is for me one of the most important things for
+> a fileserver, with a raid1 config I loose to much diskspace.
 
+There's a more technically complete discussion of this in at least two 
+earlier threads you can find on the list archive, if you're interested, 
+but here's the basics (well, extended basics...) from a btrfs-using-
+sysadmin perspective.
 
+"The raid5/6 issue" can refer to at least three conceptually separate 
+issues, with different states of solution maturity:
 
-On 2018/9/8 =E4=B8=8A=E5=8D=884:50, Omar Sandoval wrote:
-> On Fri, Aug 31, 2018 at 10:29:29AM +0800, Qu Wenruo wrote:
->> btrfs_qgroup_inherit structure doesn't goes through much validation
->> check.
->>
->> Now do a comprehensive check for it, including:
->> 1) inherit size
->>    Should not exceeding SZ_4K and its num_qgroups should not
->>    exceed its size passed in btrfs_ioctl_vol_args_v2.
->>
->> 2) flags
->>    Should not include any unknown flags
->>    (In fact, no flag is supported at all now)
->>    Btrfs-progs never has such ability to set flags for btrfs_qgroup_in=
-herit.
->>
->> 3) limit
->>    Should not contain anything.
->>    Btrfs-progs never has such ability to set limit for btrfs_qgroup_in=
-herit.
->>
->> 4) rfer/excl copy
->>    Deprecated feature.
->>    Btrfs-progs has such interface but never documented and we're alrea=
-dy
->>    going to remove such ability.
->>    It's the easiest way to screw up qgroup numbers.
->>
->> 3) Qgroupid
->>    Comprehensive check is already in btrfs_qgroup_inherit(), here we
->>    only check if there is any obviously invalid qgroupid (0).
->>
->> Coverity-id: 1021055
->> Reported-by: Nikolay Borisov <nborisov@suse.com>
->> Signed-off-by: Qu Wenruo <wqu@suse.com>
->> ---
->>  fs/btrfs/ioctl.c           |  3 +++
->>  fs/btrfs/qgroup.c          | 39 +++++++++++++++++++++++++++++++++++++=
-+
->>  fs/btrfs/qgroup.h          |  2 ++
->>  include/uapi/linux/btrfs.h | 17 ++++++++---------
->>  4 files changed, 52 insertions(+), 9 deletions(-)
->>
->> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
->> index 5db8680b40a9..4f5f453d5d07 100644
->> --- a/fs/btrfs/ioctl.c
->> +++ b/fs/btrfs/ioctl.c
->> @@ -1820,6 +1820,9 @@ static noinline int btrfs_ioctl_snap_create_v2(s=
-truct file *file,
->>  			ret =3D PTR_ERR(inherit);
->>  			goto free_args;
->>  		}
->> +		ret =3D btrfs_validate_inherit(inherit, vol_args->size);
->> +		if (ret < 0)
->> +			goto free_args;
->>  	}
->> =20
->>  	ret =3D btrfs_ioctl_snap_create_transid(file, vol_args->name,
->> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
->> index 4353bb69bb86..53daf73b0de9 100644
->> --- a/fs/btrfs/qgroup.c
->> +++ b/fs/btrfs/qgroup.c
->> @@ -2232,6 +2232,45 @@ int btrfs_run_qgroups(struct btrfs_trans_handle=
- *trans)
->>  	return ret;
->>  }
->> =20
->> +/*
->> + * To make sure the inherit passed in is valid
->> + *
->> + * Here we only check flags and rule out some no-longer supported fea=
-tures.
->> + * And we only do very basis qgroupid check to ensure there is no obv=
-iously
->> + * invalid qgroupid (0). Detailed qgroupid check will be done in
->> + * btrfs_qgroup_inherit().
->> + */
->> +int btrfs_validate_inherit(struct btrfs_qgroup_inherit *inherit,
->> +			   u64 inherit_size)
->> +{
->> +	u64 i;
->> +
->> +	if (inherit->flags & ~BTRFS_QGROUP_INHERIT_FLAGS_SUPP)
->> +		return -ENOTTY;
->> +	/* Qgroup rfer/excl copy is deprecated */
->> +	if (inherit->num_excl_copies || inherit->num_ref_copies)
->> +		return -ENOTTY;
->> +
->> +	/* Since SET_LIMITS is never used, @lim should all be zeroed */
->> +	if (inherit->lim.max_excl || inherit->lim.max_rfer ||
->> +	    inherit->lim.rsv_excl || inherit->lim.rsv_rfer ||
->> +	    inherit->lim.flags)
->> +		return -ENOTTY;
->=20
-> Why -ENOTTY? I think these should all be -EINVAL.
+1) Now generally historic bugs in btrfs scrub, etc, that are fixed (thus 
+the historic) in current kernels and tools.  Unfortunately these will 
+still affect for some time many users of longer-term stale^H^Hble distros 
+who don't update using other sources for some time, as because the raid56 
+feature wasn't yet stable at the lock-in time for whatever versions they 
+stabilized on, they're not likely to get the fixes as it's new-feature 
+material.
 
-Changed in v2.
+If you're using a current kernel and tools, however, this issue is 
+fixed.  You can look on the wiki for the specific versions, but with the 
+4.18 kernel current latest stable, it or 4.17, and similar tools versions 
+since the version numbers are synced, are the two latest release series, 
+with the two latest release series being best supported and considered 
+"current" on this list.
 
-Now it only outputs warning message.
+Also see...
 
->=20
->> +	/* Size check */
->> +	if (sizeof(u64) * inherit->num_qgroups + sizeof(*inherit) >
->=20
-> This arithmetic can overflow...
+2) General feature maturity:  While raid56 mode should be /reasonably/ 
+stable now, it remains one of the newer features and simply hasn't yet 
+had the testing of time that tends to flush out the smaller and corner-
+case bugs, that more mature features such as raid1 have now had the 
+benefit of.
 
-Oh, forgot that possibility.
+There's nothing to do for this but test, report any bugs you find, and 
+wait for the maturity that time brings.
 
-inherit->num_qgroups/excl_copies/rfer_coopies should be checked against
-(BTRFS_QGROUP_INHERIT_MAX_SIZE - sizeof(*inherit))/(sizeof(u64).
+Of course this is one of several reasons we so strongly emphasize and 
+recommend "current" on this list, because even for reasonably stable and 
+mature features such as raid1, btrfs itself remains new enough that they 
+still occasionally get latent bugs found and fixed, and while /some/ of 
+those fixes get backported to LTS kernels (with even less chance for 
+distros to backport tools fixes), not all of them do and even when they 
+do, current still gets the fixes first.
 
-Thanks,
-Qu
+3) The remaining issue is the infamous parity-raid write-hole that 
+affects all parity-raid implementations (not just btrfs) unless they take 
+specific steps to work around the issue.
 
->=20
->> +	    min_t(u64, BTRFS_QGROUP_INHERIT_MAX_SIZE, inherit_size))
->> +		return -EINVAL;
->> +
->> +
->> +	/* Qgroup 0/0 is not allowed */
->> +	for (i =3D 0; i < inherit->num_qgroups; i++) {
->> +		if (inherit->qgroups[i] =3D=3D 0)
->=20
-> Which means we can access out of bounds here.
->=20
->> +			return -EINVAL;
->> +	}
->> +	return 0;
->> +}
->> +
->>  /*
->>   * Copy the accounting information between qgroups. This is necessary=
+The first thing to point out here again is that it's not btrfs-specific.  
+Between that and the fact that it *ONLY* affects parity-raid operating in 
+degraded mode *WITH* an ungraceful-shutdown recovery situation, it could 
+be argued not to be a btrfs issue at all, but rather one inherent to 
+parity-raid mode and considered an acceptable risk to those choosing 
+parity-raid because it's only a factor when operating degraded, if an 
+ungraceful shutdown does occur.
 
->>   * when a snapshot or a subvolume is created. Throwing an error will
->> diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
->> index 54b8bb282c0e..1bf9c584be70 100644
->> --- a/fs/btrfs/qgroup.h
->> +++ b/fs/btrfs/qgroup.h
->> @@ -241,6 +241,8 @@ int btrfs_qgroup_account_extent(struct btrfs_trans=
-_handle *trans, u64 bytenr,
->>  				struct ulist *new_roots);
->>  int btrfs_qgroup_account_extents(struct btrfs_trans_handle *trans);
->>  int btrfs_run_qgroups(struct btrfs_trans_handle *trans);
->> +int btrfs_validate_inherit(struct btrfs_qgroup_inherit *inherit,
->> +			   u64 inherit_size);
->>  int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans, u64 srcid,=
-
->>  			 u64 objectid, struct btrfs_qgroup_inherit *inherit);
->>  void btrfs_qgroup_free_refroot(struct btrfs_fs_info *fs_info,
->> diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
->> index 311edb65567c..5a5532a20019 100644
->> --- a/include/uapi/linux/btrfs.h
->> +++ b/include/uapi/linux/btrfs.h
->> @@ -74,21 +74,20 @@ struct btrfs_qgroup_limit {
->>  	__u64	rsv_excl;
->>  };
->> =20
->> -/*
->> - * flags definition for qgroup inheritance
->> - *
->> - * Used by:
->> - * struct btrfs_qgroup_inherit.flags
->> - */
->> +/* flags definition for qgroup inheritance (DEPRECATED) */
->>  #define BTRFS_QGROUP_INHERIT_SET_LIMITS	(1ULL << 0)
->> =20
->> +/* No supported flags */
->> +#define BTRFS_QGROUP_INHERIT_FLAGS_SUPP (0)
->> +
->>  #define BTRFS_QGROUP_INHERIT_MAX_SIZE	(SZ_4K)
->> +
->>  struct btrfs_qgroup_inherit {
->>  	__u64	flags;
->>  	__u64	num_qgroups;
->> -	__u64	num_ref_copies;
->> -	__u64	num_excl_copies;
->> -	struct btrfs_qgroup_limit lim;
->> +	__u64	num_ref_copies;		/* DEPRECATED */
->> +	__u64	num_excl_copies;	/* DEPRECATED */
->> +	struct btrfs_qgroup_limit lim;	/* DEPRECATED */
->>  	__u64	qgroups[0];
->>  };
->> =20
->> --=20
->> 2.18.0
->>
+But btrfs' COW nature along with a couple technical implementation 
+factors (the read-modify-write cycle for incomplete stripe widths and how 
+that risks existing metadata when new metadata is written) does amplify 
+the risk somewhat compared to that seen with the same write-hole issue in 
+various other parity-raid implementations that don't avoid it due to 
+taking write-hole avoidance countermeasures.
 
 
---J2u7k9iHfFvd2TBkc869NAiEMJijuzCXz--
+So what can be done right now?
 
---7ZGMm8bcvDTUO7SZUXzEUGNuH7lIBbNeQ
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
+As it happens there is a mitigation the admin can currently take -- btrfs 
+allows specifying data and metadata modes separately, and even where 
+raid1 loses too much space to be used for both, it's possible to specify 
+data as raid5/6 and metadata as raid1.  While btrfs raid1 only covers 
+loss of a single device, it doesn't have the parity-raid write-hole as 
+it's not parity-raid, and for most use-cases at least, specifying raid1 
+for metadata only, while raid5 for data, should strictly limit both the 
+risk of the parity-raid write-hole as it'll be limited to data which in 
+most cases will be full-stripe writes and thus not subject to the 
+problem, and the size-doubling of raid1 as it'll be limited to metadata.
 
------BEGIN PGP SIGNATURE-----
+Meanwhile, arguably, for a sysadmin properly following the sysadmin's 
+first rule of backups, that the true value of data isn't defined by 
+arbitrary claims, but by the number of backups it is considered worth the 
+time/trouble/resources to have of that data, it's a known parity-raid 
+risk specifically limited to the corner-case of having an ungraceful 
+shutdown *WHILE* already operating degraded, and as such, it can be 
+managed along with all the other known risks to the data, including admin 
+fat-fingering, the risk that more devices will go out than the array can 
+tolerate, the risk of general bugs affecting the filesystem or other 
+storage-function related code, etc.
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAluTCrQACgkQwj2R86El
-/qjA7wgAm8Oo6EhxkgS6wqjBx2DjcFcnE/Qfo5UYwx1i/csnvYW6eBoipZU9akiw
-1lFl7c/ltsm7OJbBaqHLf6uhw5Sg7c5fzsciXrv4p3/3yovMj7T6s4vovT03UKiW
-qPS/ctjuplOPFmVmIT69sNn5IvGqPOLEEQqAAlq3okU/hQ6h/Dj7kYDta4GcfT7Y
-V+zeCNHA349v4dAQRYObHbOs0q9Rq4R40lsCnEQg5jg7dlHX+/CTDJf4sk+P+11Z
-oBHfHzErjjrVqOCWVjam5aBqsQJibXO/0sRCMaOqLwkWfihWFdqJGuVvEeSx8a3+
-eKIK/nJahcB0jPeiM84stAVK/m4f+Q==
-=sach
------END PGP SIGNATURE-----
+IOW, in the context of the admin's first rule of backups, no matter the 
+issue, raid56 write hole or whatever other issue of the many possible, 
+loss of data can *never* be a particularly big issue, because by 
+definition, in *all* cases, what was of most value was saved, either the 
+data if it was defined as valuable enough to have a backup, or the time/
+trouble/resources that would have otherwise gone into making that backup, 
+if the data wasn't worth it to have a backup.
 
---7ZGMm8bcvDTUO7SZUXzEUGNuH7lIBbNeQ--
+(One nice thing about this rule is that it covers the loss of whatever 
+number of backups along with the working copy just as well as it does 
+loss of just the working copy.  No matter the number of backups, the 
+value of the data is either worth having one more backup, just in case, 
+or it's not.  Similarly, the rule covers the age of the backup and 
+updates nicely as well, as that's just a subset of the original problem, 
+with the value of the data in the delta between the last backup and the 
+working copy now being the deciding factor, either the risk of losing it 
+is worth updating the backup, or not, same rule, applied to a data 
+subset.)
+
+So from an admin's perspective, in practice, while not entirely stable 
+and mature yet, and with the risk of the already-degraded crash-case 
+corner-case that's already known to apply to parity-raid unless 
+mitigation steps are taken, btrfs raid56 mode should now be within the 
+acceptable risk range already well covered by the risk mitigation of 
+following an appropriate backup policy, optionally combined with the 
+partial write-hole-mitigation strategy of doing data as raid5/6, with 
+metadata as raid1.
+
+
+OK, but what is being done to better mitigate the parity-raid write-hole 
+problem for the future, and when might we be able to use that mitigation?
+
+There are a number of possible mitigation strategies, and there's 
+actually code being written using one of them right now, tho it'll be (at 
+least) a few kernel cycles until it's considered complete and stable 
+enough for mainline, and as mentioned in #2 above, even after that it'll 
+take some time to mature to reasonable stability.
+
+The strategy being taken is partial-stripe-write logging.  Full stripe 
+writes aren't affected by the write hole and (AFAIK) won't be logged, but 
+partial stripe writes are read-modify-write and thus write-hole 
+succeptible, and will be logged.  That means small files and 
+modifications to existing files, the ends of large files, and much of the 
+metadata, will be written twice, first to the log, then to the final 
+location.  In the event of a crash, on reboot and mount, anything in the 
+log can be replayed, thus preventing the write hole.
+
+As for the log, it'll be written using a new 3/4-way-mirroring mode, 
+basically raid1 but mirrored more than two ways (which current btrfs 
+raid1 is limited to, even with more than two devices in the filesystem), 
+thus handling the loss of multiple devices.
+
+That's actually what's being developed ATM, the 3/4-way-mirroring mode, 
+which will be available for other uses as well.
+
+Actually, that's what I'm personally excited about, as years ago, when I 
+first looked into btrfs, I was running older devices in mdraid's raid1 
+mode, which does N-way mirroring.  I liked the btrfs data checksumming 
+and scrubbing ability, but with the older devices I didn't trust having 
+just two-way-mirroring and wanted at least 3-way-mirroring, so back at 
+that time I skipped btrfs and stayed with mdraid.  Later I upgraded to 
+ssds and decided btrfs-raid1's two-way-mirroring was sufficient, but when 
+one of the ssds ended up prematurely bad and needed replaced, I would 
+have sure felt a bit better before I got the replacement done, if I still 
+had good two-way-mirroring even with the bad device.
+
+So I'm still interested in 3-way-mirroring and would probably use it for 
+some things now, were it available and "stabilish", and I'm eager to see 
+that code merged, not for the parity-raid logging it'll also be used for, 
+but for the reliability of 3-way-mirroring.  Tho I'll probably wait at 
+least 2-5 kernel cycles after introduction and see how it stabilizes 
+before actually considering it stable enough to use myself, because even 
+tho I do follow the backups policy above, just because I'm not 
+considering the updated-data delta worth an updated backup yet, doesn't 
+mean I want to unnecessarily risk having to redo the work since the last 
+backup, which means choosing the newer 3-way-mirroring over the more 
+stable and mature existing raid1 2-way-mirroring isn't going to be worth 
+it to me until the 3-way-mirroring has at least a /few/ kernel cycles to 
+stabilize.
+
+And I'd recommend the same caution with the new raid5/6 logging mode 
+built on top of that multi-way-mirroring, once it's merged as well.  
+Don't just jump on it immediately after merge unless you're deliberately 
+doing so to help test for bugs and get them fixed and the feature 
+stabilized as soon as possible.  Wait a few kernel cycles, follow the 
+list to see how the feature's stability is coming, and /then/ use it, 
+after factoring in its remaining then still new and less mature 
+additional risk into your backup risks profile, of course.
+
+Time?  Not a dev but following the list and obviously following the new 3-
+way-mirroring, I'd say probably not 4.20 (5.0?) for the new mirroring 
+modes, so 4.21/5.1 more reasonably likely (if all goes well, could be 
+longer), probably another couple cycles (if all goes well) after that for 
+the parity-raid logging code built on top of the new mirroring modes, so 
+perhaps a year (~5 kernel cycles) to introduction for it.  Then wait 
+however many cycles until you think it has stabilized.  Call that another 
+year.  So say about 10 kernel cycles or two years.  It could be a bit 
+less than that, say 5-7 cycles, if things go well and you take it before 
+I'd really consider it stable enough to recommend, but given the 
+historically much longer than predicted development and stabilization 
+times for raid56 already, it could just as easily end up double that, 4-5 
+years out, too.
+
+But raid56 logging mode for write-hole mitigation is indeed actively 
+being worked on right now.  That's what we know at this time.
+
+And even before that, right now, raid56 mode should already be reasonably 
+usable, especially if you do data raid5/6 and metadata raid1, as long as 
+your backup policy and practice is equally reasonable.
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman

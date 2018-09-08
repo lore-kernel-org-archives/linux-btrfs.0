@@ -1,57 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f51.google.com ([209.85.218.51]:41607 "EHLO
-        mail-oi0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726472AbeIHOdl (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 8 Sep 2018 10:33:41 -0400
-Received: by mail-oi0-f51.google.com with SMTP id k12-v6so31676788oiw.8
-        for <linux-btrfs@vger.kernel.org>; Sat, 08 Sep 2018 02:48:31 -0700 (PDT)
+Received: from tartarus.angband.pl ([89.206.35.136]:59650 "EHLO
+        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726841AbeIHVLP (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 8 Sep 2018 17:11:15 -0400
+Date: Sat, 8 Sep 2018 18:24:53 +0200
+From: Adam Borowski <kilobyte@angband.pl>
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Cc: Nathan Dehnel <ncdehnel@gmail.com>, linux-btrfs@vger.kernel.org
+Subject: Re: Transactional btrfs
+Message-ID: <20180908162453.ewlksc5wf7w73ak2@angband.pl>
+References: <CAEEhgEtgahZjLd-Uy-sFSc+36pNNUOa82sadJgBcbWKvPYsLiA@mail.gmail.com>
+ <228f7179-6c5c-4412-2bb1-b0e73439b05a@gmail.com>
 MIME-Version: 1.0
-References: <e1371e79-f5d1-494b-a6ea-3d8d888bf1d3@gmail.com>
- <CAHTTHimFRYwZ9iiacP7vFVhCtTmcUVaik5fFEM0k0tG-Hvnmhw@mail.gmail.com>
- <CAJCQCtQHmk3ViUkynDhsb6_jCjpRHY6dSdZGiDZzg3k=XW9+-A@mail.gmail.com>
- <090f8da0-c29c-da5f-6e5b-ec6961706508@gmail.com> <CAJCQCtTHxM+Bx8akyV+QdYch=y6-0hCf_3r1KonPC2vKsujkxQ@mail.gmail.com>
- <d0223039-5c8f-38db-fe32-0b46b220e699@gmail.com> <CAJCQCtREREvzveNqdahGb8GN62_CJMyeL8GhjxnqmVZqxKiDUA@mail.gmail.com>
- <326f12a3-ee55-0812-5ea6-f54c0362a29b@gmail.com> <CAJCQCtS+ZXzGU0AE=C1iA7yNFrXuRAvZkhssxN40=jPd=x6neA@mail.gmail.com>
- <CAHTTHimqg_wgqs0AXt73YzOv3ga7cAEUvbwMOVVT2JUVaNbsFQ@mail.gmail.com>
- <CAJCQCtSa1-5Zae4_jqqhZk49YQ+6fKG+jgwcG2_uK5+sYfwCbQ@mail.gmail.com>
- <CAHTTHinoyvVCq2ejsDDgtzvFZCiyv7RiJnEkjnx+JdVZYB2+4w@mail.gmail.com>
- <CAJCQCtTd7+u3yMtKDshmsw7R1P2bK_JhVqJVKvObNb20uw-6jA@mail.gmail.com>
- <CAHTTHimT7m+S4bm1OgZOfmFkk69fc1SPGEvidxwFCHniKL-w6A@mail.gmail.com> <CAJCQCtQBwvvbYR3u=EGbRR=rsnBaZK5F=mso3SE_kPwtcXyvHg@mail.gmail.com>
-In-Reply-To: <CAJCQCtQBwvvbYR3u=EGbRR=rsnBaZK5F=mso3SE_kPwtcXyvHg@mail.gmail.com>
-From: Stefan Loewen <stefan.loewen@gmail.com>
-Date: Sat, 8 Sep 2018 11:47:48 +0200
-Message-ID: <CAHTTHimDSYZCm7LmpSYkaFjZT-nquraQmr2ftis9wtKup1y-sg@mail.gmail.com>
-Subject: Fwd: btrfs send hung in pipe_wait
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <228f7179-6c5c-4412-2bb1-b0e73439b05a@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-And this one as well.
+On Thu, Sep 06, 2018 at 06:08:33AM -0400, Austin S. Hemmelgarn wrote:
+> On 2018-09-06 03:23, Nathan Dehnel wrote:
+> > So I guess my question is, does btrfs support atomic writes across
+> > multiple files? Or is anyone interested in such a feature?
+> > 
+> I'm fairly certain that it does not currently, but in theory it would not be
+> hard to add.
+> 
+> Realistically, the only cases I can think of where cross-file atomic
+> _writes_ would be of any benefit are database systems.
+> 
+> However, if this were extended to include rename, unlink, touch, and a
+> handful of other VFS operations, then I can easily think of a few dozen use
+> cases.  Package managers in particular would likely be very interested in
+> being able to atomically rename a group of files as a single transaction, as
+> it would make their job _much_ easier.
 
----------- Forwarded message ---------
-From: Chris Murphy <lists@colorremedies.com>
-Date: Fr., 7. Sep. 2018 um 23:53 Uhr
-Subject: Re: btrfs send hung in pipe_wait
-To: Stefan Loewen <stefan.loewen@gmail.com>
-Cc: Chris Murphy <lists@colorremedies.com>
+I wonder, what about:
+sync; mount -o remount,commit=9999999,flushoncommit
+eatmydata apt dist-upgrade
+sync; mount -o remount,commit=30,noflushoncommit
+
+Obviously, this gets fooled by fsyncs, and makes the transaction affects the
+whole system (if you have unrelated writes they won't get committed until
+the end of transaction).  Then there are nocow files, but you already made
+the decision to disable most features of btrfs for them.
+
+So unless something forces a commit, this should already work, giving
+cross-file atomic writes, renames and so on.
 
 
-On Fri, Sep 7, 2018 at 3:19 PM, Stefan Loewen <stefan.loewen@gmail.com> wrote:
-> Now I also tested with Fedora 28 (linux 4.16) from live-usb (so baremetal).
-> Same result.
-> Thanks for the pointer towards sys requests. sysrq-w is empty, but I
-> sent a bunch of other sysrqs to get stacktraces etc. from the kernel.
-> Logs are attached.
-
-Needs a dev to take a look at this, or someone with usb or block
-device knowledge to see if something unrelated to btrfs is hung up. I
-can't parse it.
-
-Using btrfs-progs 4.17.1, what do you get for 'btrfs check
---mode=lowmem <dev>' ?
-
-
-
---
-Chris Murphy
+Meow!
+-- 
+⢀⣴⠾⠻⢶⣦⠀ What Would Jesus Do, MUD/MMORPG edition:
+⣾⠁⢰⠒⠀⣿⡁ • multiplay with an admin char to benefit your mortal [Mt3:16-17]
+⢿⡄⠘⠷⠚⠋⠀ • abuse item cloning bugs [Mt14:17-20, Mt15:34-37]
+⠈⠳⣄⠀⠀⠀⠀ • use glitches to walk on water [Mt14:25-26]

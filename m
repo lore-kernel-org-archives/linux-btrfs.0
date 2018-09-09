@@ -1,91 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from tartarus.angband.pl ([89.206.35.136]:48124 "EHLO
-        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727802AbeIICPj (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 8 Sep 2018 22:15:39 -0400
-Date: Sat, 8 Sep 2018 23:28:26 +0200
-From: Adam Borowski <kilobyte@angband.pl>
-To: Martin Raiber <martin@urbackup.org>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Transactional btrfs
-Message-ID: <20180908212826.zvzcr6qkovcegjqz@angband.pl>
-References: <CAEEhgEtgahZjLd-Uy-sFSc+36pNNUOa82sadJgBcbWKvPYsLiA@mail.gmail.com>
- <228f7179-6c5c-4412-2bb1-b0e73439b05a@gmail.com>
- <20180908162453.ewlksc5wf7w73ak2@angband.pl>
- <01020165baeef6ff-eca39c84-99b6-4a19-8e94-f5449540fed3-000000@eu-west-1.amazonses.com>
+Received: from mail-lf1-f45.google.com ([209.85.167.45]:35156 "EHLO
+        mail-lf1-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726583AbeIIHTG (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 9 Sep 2018 03:19:06 -0400
+Received: by mail-lf1-f45.google.com with SMTP id q13-v6so14879655lfc.2
+        for <linux-btrfs@vger.kernel.org>; Sat, 08 Sep 2018 19:31:11 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <01020165baeef6ff-eca39c84-99b6-4a19-8e94-f5449540fed3-000000@eu-west-1.amazonses.com>
+In-Reply-To: <CAHTTHinoH=TG+6zMw0X8rDAdaou3joc+mo_oZAL918BP1sLwqA@mail.gmail.com>
+References: <e1371e79-f5d1-494b-a6ea-3d8d888bf1d3@gmail.com>
+ <CAHTTHimFRYwZ9iiacP7vFVhCtTmcUVaik5fFEM0k0tG-Hvnmhw@mail.gmail.com>
+ <CAJCQCtQHmk3ViUkynDhsb6_jCjpRHY6dSdZGiDZzg3k=XW9+-A@mail.gmail.com>
+ <090f8da0-c29c-da5f-6e5b-ec6961706508@gmail.com> <CAJCQCtTHxM+Bx8akyV+QdYch=y6-0hCf_3r1KonPC2vKsujkxQ@mail.gmail.com>
+ <d0223039-5c8f-38db-fe32-0b46b220e699@gmail.com> <CAJCQCtREREvzveNqdahGb8GN62_CJMyeL8GhjxnqmVZqxKiDUA@mail.gmail.com>
+ <326f12a3-ee55-0812-5ea6-f54c0362a29b@gmail.com> <CAJCQCtS+ZXzGU0AE=C1iA7yNFrXuRAvZkhssxN40=jPd=x6neA@mail.gmail.com>
+ <CAHTTHimqg_wgqs0AXt73YzOv3ga7cAEUvbwMOVVT2JUVaNbsFQ@mail.gmail.com>
+ <CAJCQCtSa1-5Zae4_jqqhZk49YQ+6fKG+jgwcG2_uK5+sYfwCbQ@mail.gmail.com>
+ <CAHTTHinoyvVCq2ejsDDgtzvFZCiyv7RiJnEkjnx+JdVZYB2+4w@mail.gmail.com>
+ <CAJCQCtTd7+u3yMtKDshmsw7R1P2bK_JhVqJVKvObNb20uw-6jA@mail.gmail.com>
+ <CAHTTHimT7m+S4bm1OgZOfmFkk69fc1SPGEvidxwFCHniKL-w6A@mail.gmail.com> <CAHTTHinoH=TG+6zMw0X8rDAdaou3joc+mo_oZAL918BP1sLwqA@mail.gmail.com>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Sat, 8 Sep 2018 20:31:09 -0600
+Message-ID: <CAJCQCtTeOvJDnz8YZpCm86zuqeeTN-7p5kxEycWME+txzqz3tQ@mail.gmail.com>
+Subject: Re: btrfs send hung in pipe_wait
+To: Stefan Loewen <stefan.loewen@gmail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Sep 08, 2018 at 08:45:47PM +0000, Martin Raiber wrote:
-> Am 08.09.2018 um 18:24 schrieb Adam Borowski:
-> > On Thu, Sep 06, 2018 at 06:08:33AM -0400, Austin S. Hemmelgarn wrote:
-> >> On 2018-09-06 03:23, Nathan Dehnel wrote:
-> >>> So I guess my question is, does btrfs support atomic writes across
-> >>> multiple files? Or is anyone interested in such a feature?
-> >>>
-> >> I'm fairly certain that it does not currently, but in theory it would not be
-> >> hard to add.
+I don't see any blocked tasks. I wonder if you were too fast with
+sysrq w? Maybe it takes a little bit for the block task to actually
+develop?
 
-> >> However, if this were extended to include rename, unlink, touch, and a
-> >> handful of other VFS operations, then I can easily think of a few dozen use
-> >> cases.  Package managers in particular would likely be very interested in
-> >> being able to atomically rename a group of files as a single transaction, as
-> >> it would make their job _much_ easier.
+I suggest also 'btrfs check --mode=lowmem' because that is a separate
+implementation of btrfs check that tends to catch different things
+than the original. It is slow, however.
 
-> > I wonder, what about:
-> > sync; mount -o remount,commit=9999999,flushoncommit
-> > eatmydata apt dist-upgrade
-> > sync; mount -o remount,commit=30,noflushoncommit
-> >
-> > Obviously, this gets fooled by fsyncs, and makes the transaction affects the
-> > whole system (if you have unrelated writes they won't get committed until
-> > the end of transaction).  Then there are nocow files, but you already made
-> > the decision to disable most features of btrfs for them.
-
-> Now combine this with snapshot root, then on success rename exchange to
-> root and you are there.
-
-No need: no unsuccessful transactions ever get written to the disk.
-(Not counting unreachable stuff.)
-
-> Btrfs had in the past TRANS_START and TRANS_END ioctls (for ceph, I
-> think), but no rollback (and therefore no error handling incl. ENOSPC).
-> 
-> If you want to look at a working file system transaction mechanism, you
-> should look at transactional NTFS (TxF). They are writing they are
-> deprecating it, so it's perhaps not very widely used. Windows uses it
-> for updates, I think.
-
-You're talking about multiple simultaneous transactions, they have a massive
-complexity cost.  And btrfs is already ridiculously complex.  I don't really
-see a good way to tie this with the POSIX API without some serious
-rethinking.
-
-dpkg can already recover from a properly returned error (although not as
-nicely as a full rollback); what is fatal for it is having its status
-database corrupted/out of sync.  That's why it does a multiple fsync dance
-and keeps fully rewriting its files over and over and over.
-
-Atomic operations are pretty useful even without a rollback: you still need
-to be able to handle failure, but not a crash.
-
-> Specifically for btrfs, the problem would be that it really needs to
-> support multiple simultaneous writers, otherwise one transaction can
-> block the whole system.
-
-My dirty hack above doesn't suffer from such a block: it only suffers from
-compromising durability of concurrent writers.  During that userspace
-transaction, there are no commits until it finishes; this means that if
-there's unrelated activity it may suffer from losing writes that were done
-between transaction start and crash.
-
-
-Meow!
 -- 
-⢀⣴⠾⠻⢶⣦⠀ What Would Jesus Do, MUD/MMORPG edition:
-⣾⠁⢰⠒⠀⣿⡁ • multiplay with an admin char to benefit your mortal [Mt3:16-17]
-⢿⡄⠘⠷⠚⠋⠀ • abuse item cloning bugs [Mt14:17-20, Mt15:34-37]
-⠈⠳⣄⠀⠀⠀⠀ • use glitches to walk on water [Mt14:25-26]
+Chris Murphy

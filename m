@@ -1,56 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pg1-f196.google.com ([209.85.215.196]:44626 "EHLO
+Received: from mail-pg1-f196.google.com ([209.85.215.196]:38136 "EHLO
         mail-pg1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725945AbeIKEhl (ORCPT
+        with ESMTP id S1725945AbeIKEj4 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 11 Sep 2018 00:37:41 -0400
-Received: by mail-pg1-f196.google.com with SMTP id r1-v6so11237474pgp.11
-        for <linux-btrfs@vger.kernel.org>; Mon, 10 Sep 2018 16:41:16 -0700 (PDT)
-Date: Mon, 10 Sep 2018 16:41:14 -0700
+        Tue, 11 Sep 2018 00:39:56 -0400
+Received: by mail-pg1-f196.google.com with SMTP id t84-v6so9409539pgb.5
+        for <linux-btrfs@vger.kernel.org>; Mon, 10 Sep 2018 16:43:30 -0700 (PDT)
+Date: Mon, 10 Sep 2018 16:43:29 -0700
 From: Omar Sandoval <osandov@osandov.com>
 To: David Sterba <dsterba@suse.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 3/4] btrfs: tests: group declarations of self-test helpers
-Message-ID: <20180910234114.GC16436@vader>
+Subject: Re: [PATCH 4/4] btrfs: tests: polish ifdefs around testing helper
+Message-ID: <20180910234329.GD16436@vader>
 References: <cover.1536599879.git.dsterba@suse.com>
- <f97be987031016b1f48e819261aa69db2c609647.1536599879.git.dsterba@suse.com>
+ <7a6c4814d8467999d9a9eb12906ff28a3f90b284.1536599879.git.dsterba@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <f97be987031016b1f48e819261aa69db2c609647.1536599879.git.dsterba@suse.com>
+In-Reply-To: <7a6c4814d8467999d9a9eb12906ff28a3f90b284.1536599879.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Sep 10, 2018 at 07:22:29PM +0200, David Sterba wrote:
-
-Reviewed-by: Omar Sandoval <osandov@fb.com>
-
+On Mon, Sep 10, 2018 at 07:22:31PM +0200, David Sterba wrote:
+> Avoid the inline ifdefs and use two sections for self-tests enabled and
+> disabled.
+> 
 > Signed-off-by: David Sterba <dsterba@suse.com>
 > ---
->  fs/btrfs/ctree.h | 4 +---
->  1 file changed, 1 insertion(+), 3 deletions(-)
+>  fs/btrfs/ctree.h | 9 ++++++---
+>  1 file changed, 6 insertions(+), 3 deletions(-)
 > 
 > diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-> index ee05857cc8ac..32d2fce4ac53 100644
+> index 32d2fce4ac53..8dafc7bb6ad8 100644
 > --- a/fs/btrfs/ctree.h
 > +++ b/fs/btrfs/ctree.h
-> @@ -3194,9 +3194,6 @@ int btrfs_prealloc_file_range_trans(struct inode *inode,
->  				    u64 start, u64 num_bytes, u64 min_size,
->  				    loff_t actual_len, u64 *alloc_hint);
->  extern const struct dentry_operations btrfs_dentry_operations;
-> -#ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
-> -void btrfs_test_inode_set_ops(struct inode *inode);
+> @@ -3708,17 +3708,20 @@ static inline int btrfs_defrag_cancelled(struct btrfs_fs_info *fs_info)
+>  #ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
+>  void btrfs_test_inode_set_ops(struct inode *inode);
+>  void btrfs_test_destroy_inode(struct inode *inode);
 > -#endif
 >  
->  /* ioctl.c */
->  long btrfs_ioctl(struct file *file, unsigned int cmd, unsigned long arg);
-> @@ -3709,6 +3706,7 @@ static inline int btrfs_defrag_cancelled(struct btrfs_fs_info *fs_info)
->  
->  /* Sanity test specific functions */
->  #ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
-> +void btrfs_test_inode_set_ops(struct inode *inode);
->  void btrfs_test_destroy_inode(struct inode *inode);
->  #endif
->  
-> -- 
-> 2.18.0
-> 
+>  static inline int btrfs_is_testing(struct btrfs_fs_info *fs_info)
+>  {
+> -#ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
+>  	if (unlikely(test_bit(BTRFS_FS_STATE_DUMMY_FS_INFO,
+>  			      &fs_info->fs_state)))
+>  		return 1;
+> -#endif
+>  	return 0;
+
+How about just:
+
+	return test_bit(BTRFS_FS_STATE_DUMMY_FS_INFO, &fs_info->fs_state);
+
+We can probably get away without the unlikely() considering that no one
+sane is going to run a kernel with CONFIG_BTRFS_FS_RUN_SANITY_TESTS in
+production.

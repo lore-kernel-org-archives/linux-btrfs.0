@@ -1,112 +1,107 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf1-f193.google.com ([209.85.210.193]:42497 "EHLO
-        mail-pf1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725738AbeILE0S (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 12 Sep 2018 00:26:18 -0400
-Received: by mail-pf1-f193.google.com with SMTP id l9-v6so10876pff.9
-        for <linux-btrfs@vger.kernel.org>; Tue, 11 Sep 2018 16:24:45 -0700 (PDT)
-Date: Tue, 11 Sep 2018 16:24:43 -0700
-From: Omar Sandoval <osandov@osandov.com>
-To: Josef Bacik <josef@toxicpanda.com>
-Cc: kernel-team@fb.com, linux-btrfs@vger.kernel.org,
-        Josef Bacik <jbacik@fb.com>
-Subject: Re: [PATCH 03/36] btrfs: cleanup extent_op handling
-Message-ID: <20180911232443.GF26631@vader>
-References: <20180911175807.26181-1-josef@toxicpanda.com>
- <20180911175807.26181-4-josef@toxicpanda.com>
+Received: from mout.gmx.net ([212.227.15.15]:58321 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1725737AbeILEpW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 12 Sep 2018 00:45:22 -0400
+Subject: Re: [PATCH] btrfs-progs: Continue checking even we found something
+ wrong in free space cache
+To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+References: <20180904124128.22367-1-wqu@suse.com>
+ <20180911144809.GB2154@twin.jikos.cz>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <251a3f20-617f-1bee-4567-c563b0744c30@gmx.com>
+Date: Wed, 12 Sep 2018 07:43:27 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180911175807.26181-4-josef@toxicpanda.com>
+In-Reply-To: <20180911144809.GB2154@twin.jikos.cz>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="x92fpTPl0vM6CzHtyx7CwWdBnN3rCSIxY"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Sep 11, 2018 at 01:57:34PM -0400, Josef Bacik wrote:
-> From: Josef Bacik <jbacik@fb.com>
-> 
-> The cleanup_extent_op function actually would run the extent_op if it
-> needed running, which made the name sort of a misnomer.  Change it to
-> run_and_cleanup_extent_op, and move the actual cleanup work to
-> cleanup_extent_op so it can be used by check_ref_cleanup() in order to
-> unify the extent op handling.
-> 
-> Signed-off-by: Josef Bacik <jbacik@fb.com>
-> ---
->  fs/btrfs/extent-tree.c | 36 +++++++++++++++++++++++-------------
->  1 file changed, 23 insertions(+), 13 deletions(-)
-> 
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index a44d55e36e11..98f36dfeccb0 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -2442,19 +2442,33 @@ static void unselect_delayed_ref_head(struct btrfs_delayed_ref_root *delayed_ref
->  	btrfs_delayed_ref_unlock(head);
->  }
->  
-> -static int cleanup_extent_op(struct btrfs_trans_handle *trans,
-> -			     struct btrfs_delayed_ref_head *head)
-> +static struct btrfs_delayed_extent_op *
-> +cleanup_extent_op(struct btrfs_trans_handle *trans,
-> +		  struct btrfs_delayed_ref_head *head)
->  {
->  	struct btrfs_delayed_extent_op *extent_op = head->extent_op;
-> -	int ret;
->  
->  	if (!extent_op)
-> -		return 0;
-> -	head->extent_op = NULL;
-> +		return NULL;
-> +
->  	if (head->must_insert_reserved) {
-> +		head->extent_op = NULL;
->  		btrfs_free_delayed_extent_op(extent_op);
-> -		return 0;
-> +		return NULL;
->  	}
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--x92fpTPl0vM6CzHtyx7CwWdBnN3rCSIxY
+Content-Type: multipart/mixed; boundary="awL8lFznUTGnVMmdMu3CGMOM72KrKIJPe";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Message-ID: <251a3f20-617f-1bee-4567-c563b0744c30@gmx.com>
+Subject: Re: [PATCH] btrfs-progs: Continue checking even we found something
+ wrong in free space cache
+References: <20180904124128.22367-1-wqu@suse.com>
+ <20180911144809.GB2154@twin.jikos.cz>
+In-Reply-To: <20180911144809.GB2154@twin.jikos.cz>
 
-Now we don't set head->extent_op = NULL in this case when we call it
-from check_ref_cleanup(), is that a problem?
+--awL8lFznUTGnVMmdMu3CGMOM72KrKIJPe
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-> +	return extent_op;
-> +}
-> +
-> +static int run_and_cleanup_extent_op(struct btrfs_trans_handle *trans,
-> +				     struct btrfs_delayed_ref_head *head)
-> +{
-> +	struct btrfs_delayed_extent_op *extent_op =
-> +		cleanup_extent_op(trans, head);
-> +	int ret;
-> +
-> +	if (!extent_op)
-> +		return 0;
-> +	head->extent_op = NULL;
->  	spin_unlock(&head->lock);
->  	ret = run_delayed_extent_op(trans, head, extent_op);
->  	btrfs_free_delayed_extent_op(extent_op);
-> @@ -2506,7 +2520,7 @@ static int cleanup_ref_head(struct btrfs_trans_handle *trans,
->  
->  	delayed_refs = &trans->transaction->delayed_refs;
->  
-> -	ret = cleanup_extent_op(trans, head);
-> +	ret = run_and_cleanup_extent_op(trans, head);
->  	if (ret < 0) {
->  		unselect_delayed_ref_head(delayed_refs, head);
->  		btrfs_debug(fs_info, "run_delayed_extent_op returned %d", ret);
-> @@ -6977,12 +6991,8 @@ static noinline int check_ref_cleanup(struct btrfs_trans_handle *trans,
->  	if (!RB_EMPTY_ROOT(&head->ref_tree))
->  		goto out;
->  
-> -	if (head->extent_op) {
-> -		if (!head->must_insert_reserved)
-> -			goto out;
-> -		btrfs_free_delayed_extent_op(head->extent_op);
-> -		head->extent_op = NULL;
-> -	}
-> +	if (cleanup_extent_op(trans, head) != NULL)
-> +		goto out;
->  
->  	/*
->  	 * waiting for the lock here would deadlock.  If someone else has it
-> -- 
-> 2.14.3
-> 
+
+
+On 2018/9/11 =E4=B8=8B=E5=8D=8810:48, David Sterba wrote:
+> On Tue, Sep 04, 2018 at 08:41:28PM +0800, Qu Wenruo wrote:
+>> No need to abort checking, especially for RO check free space cache is=
+
+>> meaningless, the errors in fs/extent tree is more interesting for
+>> developers.
+>>
+>> So continue checking even something in free space cache is wrong.
+>>
+>> Reported-by: Etienne Champetier <champetier.etienne@gmail.com>
+>> Signed-off-by: Qu Wenruo <wqu@suse.com>
+>> ---
+>>  check/main.c | 1 -
+>>  1 file changed, 1 deletion(-)
+>>
+>> diff --git a/check/main.c b/check/main.c
+>> index b361cd7e26a0..4f720163221e 100644
+>> --- a/check/main.c
+>> +++ b/check/main.c
+>> @@ -9885,7 +9885,6 @@ int cmd_check(int argc, char **argv)
+>>  			error("errors found in free space tree");
+>>  		else
+>>  			error("errors found in free space cache");
+>=20
+> Please make it a warning and update the message so it says that it will=
+
+> continue despite the errors found.
+
+I'm fine to add warning, but isn't it the expected behavior?
+
+In fact I'm quite surprised that when we found something wrong we just
+abort checking.
+
+It's never the case for file/extent tree check. We always report all
+errors we found, not only the first error and exit.
+
+Thanks,
+Qu
+
+>=20
+> I noticed that error handling in check_space_cache is a bit fishy, some=
+
+> errors are stored to 'ret' but ignored at the end of the function.
+>=20
+
+
+--awL8lFznUTGnVMmdMu3CGMOM72KrKIJPe--
+
+--x92fpTPl0vM6CzHtyx7CwWdBnN3rCSIxY
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAluYUx8ACgkQwj2R86El
+/qh8KggAq4leGP6YMaUNUb/0RQwuW9hhunfuNrjeAQrfIoq+F1G/WpxFgF9kcsDm
+pATvVCZPuM02pQaaiOw4Ya1xTHFnPN1UGlN1M0vghT0JPKdBPOjIievJj/Vhbobf
+M7LvjeYPwzf+EYYNjrVoPWCfsdVgUnQIg3RTW3BK45bzDu+K7J4Sc7iefb3r9uU9
+wpN0foSCvR09ctIUx0KCxDE9mAU/LSIY83qf82rZNAU0V7MnJPlu7a4n84IahMJ/
+fDvux27fi4XcBI1z8TOVYGX6NCfBSyT8rye/HMytK1WQKRYIdmJEpFVOrXNoKHr/
+c6uixCs+B2UEPYYOC70QXa4+CXMrQw==
+=f3t9
+-----END PGP SIGNATURE-----
+
+--x92fpTPl0vM6CzHtyx7CwWdBnN3rCSIxY--

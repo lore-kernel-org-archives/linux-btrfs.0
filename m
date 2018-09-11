@@ -1,102 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk1-f194.google.com ([209.85.222.194]:36864 "EHLO
-        mail-qk1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728184AbeIKW7K (ORCPT
+Received: from mail-qt0-f196.google.com ([209.85.216.196]:37223 "EHLO
+        mail-qt0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728113AbeIKW7N (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 11 Sep 2018 18:59:10 -0400
-Received: by mail-qk1-f194.google.com with SMTP id f17-v6so17317280qkh.4
-        for <linux-btrfs@vger.kernel.org>; Tue, 11 Sep 2018 10:58:44 -0700 (PDT)
+        Tue, 11 Sep 2018 18:59:13 -0400
+Received: by mail-qt0-f196.google.com with SMTP id n6-v6so29179346qtl.4
+        for <linux-btrfs@vger.kernel.org>; Tue, 11 Sep 2018 10:58:47 -0700 (PDT)
 From: Josef Bacik <josef@toxicpanda.com>
 To: kernel-team@fb.com, linux-btrfs@vger.kernel.org
-Subject: [PATCH 18/36] btrfs: move the dio_sem higher up the callchain
-Date: Tue, 11 Sep 2018 13:57:49 -0400
-Message-Id: <20180911175807.26181-19-josef@toxicpanda.com>
+Cc: Josef Bacik <jbacik@fb.com>
+Subject: [PATCH 20/36] btrfs: don't use ctl->free_space for max_extent_size
+Date: Tue, 11 Sep 2018 13:57:51 -0400
+Message-Id: <20180911175807.26181-21-josef@toxicpanda.com>
 In-Reply-To: <20180911175807.26181-1-josef@toxicpanda.com>
 References: <20180911175807.26181-1-josef@toxicpanda.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We're getting a lockdep splat because we take the dio_sem under the
-log_mutex.  What we really need is to protect fsync() from logging an
-extent map for an extent we never waited on higher up, so just guard the
-whole thing with dio_sem.
+From: Josef Bacik <jbacik@fb.com>
 
-Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+max_extent_size is supposed to be the largest contiguous range for the
+space info, and ctl->free_space is the total free space in the block
+group.  We need to keep track of these separately and _only_ use the
+max_free_space if we don't have a max_extent_size, as that means our
+original request was too large to search any of the block groups for and
+therefore wouldn't have a max_extent_size set.
+
+Signed-off-by: Josef Bacik <jbacik@fb.com>
 ---
- fs/btrfs/file.c     | 12 ++++++++++++
- fs/btrfs/tree-log.c |  2 --
- 2 files changed, 12 insertions(+), 2 deletions(-)
+ fs/btrfs/extent-tree.c | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 095f0bb86bb7..c07110edb9de 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -2079,6 +2079,14 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
- 		goto out;
- 
- 	inode_lock(inode);
-+
-+	/*
-+	 * We take the dio_sem here because the tree log stuff can race with
-+	 * lockless dio writes and get an extent map logged for an extent we
-+	 * never waited on.  We need it this high up for lockdep reasons.
-+	 */
-+	down_write(&BTRFS_I(inode)->dio_sem);
-+
- 	atomic_inc(&root->log_batch);
- 
- 	/*
-@@ -2087,6 +2095,7 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
- 	 */
- 	ret = btrfs_wait_ordered_range(inode, start, len);
- 	if (ret) {
-+		up_write(&BTRFS_I(inode)->dio_sem);
- 		inode_unlock(inode);
- 		goto out;
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index e43834380ce6..ac7b740be4ff 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -7484,6 +7484,7 @@ static noinline int find_free_extent(struct btrfs_fs_info *fs_info,
+ 	struct btrfs_block_group_cache *block_group = NULL;
+ 	u64 search_start = 0;
+ 	u64 max_extent_size = 0;
++	u64 max_free_space = 0;
+ 	u64 empty_cluster = 0;
+ 	struct btrfs_space_info *space_info;
+ 	int loop = 0;
+@@ -7779,8 +7780,8 @@ static noinline int find_free_extent(struct btrfs_fs_info *fs_info,
+ 			spin_lock(&ctl->tree_lock);
+ 			if (ctl->free_space <
+ 			    num_bytes + empty_cluster + empty_size) {
+-				if (ctl->free_space > max_extent_size)
+-					max_extent_size = ctl->free_space;
++				max_free_space = max(max_free_space,
++						     ctl->free_space);
+ 				spin_unlock(&ctl->tree_lock);
+ 				goto loop;
+ 			}
+@@ -7947,6 +7948,8 @@ static noinline int find_free_extent(struct btrfs_fs_info *fs_info,
  	}
-@@ -2110,6 +2119,7 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
- 		 * checked called fsync.
- 		 */
- 		ret = filemap_check_wb_err(inode->i_mapping, file->f_wb_err);
-+		up_write(&BTRFS_I(inode)->dio_sem);
- 		inode_unlock(inode);
- 		goto out;
- 	}
-@@ -2128,6 +2138,7 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
- 	trans = btrfs_start_transaction(root, 0);
- 	if (IS_ERR(trans)) {
- 		ret = PTR_ERR(trans);
-+		up_write(&BTRFS_I(inode)->dio_sem);
- 		inode_unlock(inode);
- 		goto out;
- 	}
-@@ -2149,6 +2160,7 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
- 	 * file again, but that will end up using the synchronization
- 	 * inside btrfs_sync_log to keep things safe.
- 	 */
-+	up_write(&BTRFS_I(inode)->dio_sem);
- 	inode_unlock(inode);
- 
- 	/*
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 1650dc44a5e3..66b7e059b765 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -4374,7 +4374,6 @@ static int btrfs_log_changed_extents(struct btrfs_trans_handle *trans,
- 
- 	INIT_LIST_HEAD(&extents);
- 
--	down_write(&inode->dio_sem);
- 	write_lock(&tree->lock);
- 	test_gen = root->fs_info->last_trans_committed;
- 	logged_start = start;
-@@ -4440,7 +4439,6 @@ static int btrfs_log_changed_extents(struct btrfs_trans_handle *trans,
- 	}
- 	WARN_ON(!list_empty(&extents));
- 	write_unlock(&tree->lock);
--	up_write(&inode->dio_sem);
- 
- 	btrfs_release_path(path);
- 	if (!ret)
+ out:
+ 	if (ret == -ENOSPC) {
++		if (!max_extent_size)
++			max_extent_size = max_free_space;
+ 		spin_lock(&space_info->lock);
+ 		space_info->max_extent_size = max_extent_size;
+ 		spin_unlock(&space_info->lock);
 -- 
 2.14.3

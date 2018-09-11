@@ -1,73 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qt0-f195.google.com ([209.85.216.195]:35609 "EHLO
-        mail-qt0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728113AbeIKW7h (ORCPT
+Received: from mail-qt0-f194.google.com ([209.85.216.194]:37295 "EHLO
+        mail-qt0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728113AbeIKW7k (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 11 Sep 2018 18:59:37 -0400
-Received: by mail-qt0-f195.google.com with SMTP id j7-v6so29236190qtp.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 11 Sep 2018 10:59:11 -0700 (PDT)
+        Tue, 11 Sep 2018 18:59:40 -0400
+Received: by mail-qt0-f194.google.com with SMTP id n6-v6so29180945qtl.4
+        for <linux-btrfs@vger.kernel.org>; Tue, 11 Sep 2018 10:59:15 -0700 (PDT)
 From: Josef Bacik <josef@toxicpanda.com>
 To: kernel-team@fb.com, linux-btrfs@vger.kernel.org
-Subject: [PATCH 33/36] btrfs: only free reserved extent if we didn't insert it
-Date: Tue, 11 Sep 2018 13:58:04 -0400
-Message-Id: <20180911175807.26181-34-josef@toxicpanda.com>
+Subject: [PATCH 35/36] btrfs: wait on ordered extents on abort cleanup
+Date: Tue, 11 Sep 2018 13:58:06 -0400
+Message-Id: <20180911175807.26181-36-josef@toxicpanda.com>
 In-Reply-To: <20180911175807.26181-1-josef@toxicpanda.com>
 References: <20180911175807.26181-1-josef@toxicpanda.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When we insert the file extent once the ordered extent completes we free
-the reserved extent reservation as it'll have been migrated to the
-bytes_used counter.  However if we error out after this step we'll still
-clear the reserved extent reservation, resulting in a negative
-accounting of the reserved bytes for the block group and space info.
-Fix this by only doing the free if we didn't successfully insert a file
-extent for this extent.
+If we flip read-only before we initiate writeback on all dirty pages for
+ordered extents we've created then we'll have ordered extents left over
+on umount, which results in all sorts of bad things happening.  Fix this
+by making sure we wait on ordered extents if we have to do the aborted
+transaction cleanup stuff.
 
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/inode.c | 10 +++++++++-
- 1 file changed, 9 insertions(+), 1 deletion(-)
+ fs/btrfs/disk-io.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 60bcad901857..fd6ade4680b5 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -2992,6 +2992,7 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)
- 	bool truncated = false;
- 	bool range_locked = false;
- 	bool clear_new_delalloc_bytes = false;
-+	bool clear_reserved_extent = true;
- 
- 	if (!test_bit(BTRFS_ORDERED_NOCOW, &ordered_extent->flags) &&
- 	    !test_bit(BTRFS_ORDERED_PREALLOC, &ordered_extent->flags) &&
-@@ -3095,10 +3096,12 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)
- 						logical_len, logical_len,
- 						compress_type, 0, 0,
- 						BTRFS_FILE_EXTENT_REG);
--		if (!ret)
-+		if (!ret) {
-+			clear_reserved_extent = false;
- 			btrfs_release_delalloc_bytes(fs_info,
- 						     ordered_extent->start,
- 						     ordered_extent->disk_len);
-+		}
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 54fbdc944a3f..51b2a5bf25e5 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -4188,6 +4188,14 @@ static void btrfs_destroy_all_ordered_extents(struct btrfs_fs_info *fs_info)
+ 		spin_lock(&fs_info->ordered_root_lock);
  	}
- 	unpin_extent_cache(&BTRFS_I(inode)->extent_tree,
- 			   ordered_extent->file_offset, ordered_extent->len,
-@@ -3159,8 +3162,13 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)
- 		 * wrong we need to return the space for this ordered extent
- 		 * back to the allocator.  We only free the extent in the
- 		 * truncated case if we didn't write out the extent at all.
-+		 *
-+		 * If we made it past insert_reserved_file_extent before we
-+		 * errored out then we don't need to do this as the accounting
-+		 * has already been done.
- 		 */
- 		if ((ret || !logical_len) &&
-+		    clear_reserved_extent &&
- 		    !test_bit(BTRFS_ORDERED_NOCOW, &ordered_extent->flags) &&
- 		    !test_bit(BTRFS_ORDERED_PREALLOC, &ordered_extent->flags))
- 			btrfs_free_reserved_extent(fs_info,
+ 	spin_unlock(&fs_info->ordered_root_lock);
++
++	/*
++	 * We need this here because if we've been flipped read-only we won't
++	 * get sync() from the umount, so we need to make sure any ordered
++	 * extents that haven't had their dirty pages IO start writeout yet
++	 * actually get run and error out properly.
++	 */
++	btrfs_wait_ordered_roots(fs_info, U64_MAX, 0, (u64)-1);
+ }
+ 
+ static int btrfs_destroy_delayed_refs(struct btrfs_transaction *trans,
 -- 
 2.14.3

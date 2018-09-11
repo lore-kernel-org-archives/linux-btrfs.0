@@ -1,82 +1,109 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:42701 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1726554AbeIKQnm (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 11 Sep 2018 12:43:42 -0400
-Date: Tue, 11 Sep 2018 19:44:41 +0800
-From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>, <dsterba@suse.cz>
-Subject: Re: [PATCH v3 00/10] undelete subvolume offline version
-Message-ID: <20180911114441.GA2790@fnst.localdomain>
-References: <20180507031033.4125-1-lufq.fnst@cn.fujitsu.com>
+Received: from mout.gmx.net ([212.227.15.19]:39299 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726563AbeIKQyG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 11 Sep 2018 12:54:06 -0400
+Subject: Re: [RFC PATCH v2 2/4] btrfs: don't BUG_ON() in btrfs_link_subvol()
+To: Lu Fengqi <lufq.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+References: <20180911112903.25985-1-lufq.fnst@cn.fujitsu.com>
+ <20180911112903.25985-3-lufq.fnst@cn.fujitsu.com>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <e0c7e7fb-b99a-5fde-7017-d3abea5c7ff6@gmx.com>
+Date: Tue, 11 Sep 2018 19:54:58 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <20180507031033.4125-1-lufq.fnst@cn.fujitsu.com>
+In-Reply-To: <20180911112903.25985-3-lufq.fnst@cn.fujitsu.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="zH3rXsOv8GdLjaGECJ02BovoJ91lWRc7L"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, May 07, 2018 at 11:10:23AM +0800, Lu Fengqi wrote:
->This patchset will add undelete-subvol subcommand for btrfs rescue.
->
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--zH3rXsOv8GdLjaGECJ02BovoJ91lWRc7L
+Content-Type: multipart/mixed; boundary="M2ux0JwShtN8GLPIX9uTyRhJYcVw5J0ID";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: Lu Fengqi <lufq.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+Message-ID: <e0c7e7fb-b99a-5fde-7017-d3abea5c7ff6@gmx.com>
+Subject: Re: [RFC PATCH v2 2/4] btrfs: don't BUG_ON() in btrfs_link_subvol()
+References: <20180911112903.25985-1-lufq.fnst@cn.fujitsu.com>
+ <20180911112903.25985-3-lufq.fnst@cn.fujitsu.com>
+In-Reply-To: <20180911112903.25985-3-lufq.fnst@cn.fujitsu.com>
 
-Hi David
+--M2ux0JwShtN8GLPIX9uTyRhJYcVw5J0ID
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-Although there are some disagreements about undeleting subvolumes online
-implementation, the offline version is considered more acceptable. Would
-you like to spend some time talking about your opinions?
 
--- 
+
+On 2018/9/11 =E4=B8=8B=E5=8D=887:29, Lu Fengqi wrote:
+> Both of btrfs_update_inode() and btrfs_add_root_ref() may fail because
+> of ENOMEM.
+
+Not only ENOMEM, but also EEXIST/EIO from btrfs_insert_empty_item().
+
+> So there's no reason to panic here, we can replace BUG_ON()
+> with btrfs_abort_transaction() here.
+
+Valid cleanup.
+
+Reviewed-by: Qu Wenruo <wqu@suse.com>
+
 Thanks,
-Lu
+Qu
 
->Patchset can be fetched from github:
->https://github.com/littleroad/btrfs-progs.git undelete
->
->v2->v3: fixed some issues pointed out by Qu.
->v1->v2: add -s option to allow user specify the subvolume which will be
->recovered.
->
->The first patch are not modified.
->For the rest, please see the changelog in the patches.
->
->Lu Fengqi (10):
->  btrfs-progs: copy btrfs_del_orphan_item from kernel
->  btrfs-progs: extract btrfs_link_subvol from btrfs_mksubvol
->  btrfs-progs: use btrfs_find_free_dir_index to find free inode index
->  btrfs-progs: undelete-subvol: introduce is_subvol_intact
->  btrfs-progs: undelete-subvol: introduce recover_dead_root
->  btrfs-progs: undelete-subvol: introduce link_subvol_to_lostfound
->  btrfs-progs: undelete-subvol: introduce btrfs_undelete_subvols
->  btrfs-progs: undelete-subvol: add undelete-subvol subcommand
->  btrfs-progs: tests: add testcase for undelete-subvol
->  btrfs-progs: undelete-subvol: update completion and documentation
->
-> Documentation/btrfs-rescue.asciidoc           |  12 +
-> Makefile                                      |   3 +-
-> btrfs-completion                              |   2 +-
-> cmds-rescue.c                                 |  69 ++++++
-> convert/main.c                                |  59 ++++-
-> ctree.h                                       |   8 +-
-> inode.c                                       | 119 +++++----
-> .../031-undelete-subvol/intact_subvolume.img  | Bin 0 -> 4096 bytes
-> .../subvolume_in_drop_progress.raw.xz         | Bin 0 -> 23452 bytes
-> tests/misc-tests/031-undelete-subvol/test.sh  |  38 +++
-> undelete-subvol.c                             | 227 ++++++++++++++++++
-> undelete-subvol.h                             |  11 +
-> 12 files changed, 501 insertions(+), 47 deletions(-)
-> create mode 100644 tests/misc-tests/031-undelete-subvol/intact_subvolume.img
-> create mode 100644 tests/misc-tests/031-undelete-subvol/subvolume_in_drop_progress.raw.xz
-> create mode 100755 tests/misc-tests/031-undelete-subvol/test.sh
-> create mode 100644 undelete-subvol.c
-> create mode 100644 undelete-subvol.h
->
->-- 
->2.17.0
->
->
->
->--
->To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->the body of a message to majordomo@vger.kernel.org
->More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>=20
+> Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+> ---
+>  fs/btrfs/ioctl.c | 10 ++++++++--
+>  1 file changed, 8 insertions(+), 2 deletions(-)
+>=20
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index 1b03d07acde2..f6173d4e7ced 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -572,11 +572,17 @@ static int btrfs_link_subvol(struct btrfs_trans_h=
+andle *trans,
+> =20
+>  	btrfs_i_size_write(BTRFS_I(dir), dir->i_size + namelen * 2);
+>  	ret =3D btrfs_update_inode(trans, root, dir);
+> -	BUG_ON(ret);
+> +	if (ret) {
+> +		btrfs_abort_transaction(trans, ret);
+> +		return ret;
+> +	}
+> =20
+>  	ret =3D btrfs_add_root_ref(trans, objectid, root->root_key.objectid,
+>  				 btrfs_ino(BTRFS_I(dir)), index, name, namelen);
+> -	BUG_ON(ret);
+> +	if (ret) {
+> +		btrfs_abort_transaction(trans, ret);
+> +		return ret;
+> +	}
+> =20
+>  	return ret;
+>  }
+>=20
+
+
+--M2ux0JwShtN8GLPIX9uTyRhJYcVw5J0ID--
+
+--zH3rXsOv8GdLjaGECJ02BovoJ91lWRc7L
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAluXrRIACgkQwj2R86El
+/qiXSwgAochk/m+wTkuXGEbvK8G+rGhgArP3h1tX0DrqHFSwJtqptz0AWzQ0z/uQ
+W6+/B+CHbQxRDINT+kJYB5LjC/RLxDn5/gCh9Wih/xVwxabm/SJmDSQhlNYcM++o
+/8wOl2sidNygQ0lx1G+ltvpeQ5T38FBCMGQ1ys52GziR+Y0yGspC6npj7aKpkmX4
+HTT5bl8fy6EPELVr1tmIjbCTBAKekudRw45Rg2LuIGOfn+HLXRDxSdTsTu/RRCw5
+HOAUwQgcKBMvowK72K+bbyxp1KNMGvsbj7meFR7z728QPOX9EzzJWPwN1yEJqP/m
+MDh5GgAhLAqMdfbpCw42JiAg1KlTRQ==
+=KNaf
+-----END PGP SIGNATURE-----
+
+--zH3rXsOv8GdLjaGECJ02BovoJ91lWRc7L--

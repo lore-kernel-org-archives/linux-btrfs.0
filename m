@@ -1,441 +1,152 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:50682 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:55168 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727856AbeIGThB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 7 Sep 2018 15:37:01 -0400
+        id S1726274AbeIKKgE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 11 Sep 2018 06:36:04 -0400
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 1D773ACBB
-        for <linux-btrfs@vger.kernel.org>; Fri,  7 Sep 2018 14:55:41 +0000 (UTC)
-From: David Sterba <dsterba@suse.com>
+        by mx1.suse.de (Postfix) with ESMTP id 812E1B08D
+        for <linux-btrfs@vger.kernel.org>; Tue, 11 Sep 2018 05:38:27 +0000 (UTC)
+From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 11/11] btrfs: dev-replace: open code trivial locking helpers
-Date: Fri,  7 Sep 2018 16:55:25 +0200
-Message-Id: <58cdb1b0ae9fa90df48fb70e55b1e7edba125bb8.1536331604.git.dsterba@suse.com>
-In-Reply-To: <cover.1536331604.git.dsterba@suse.com>
-References: <cover.1536331604.git.dsterba@suse.com>
+Subject: [PATCH v3 0/7] btrfs: qgroup: Reduce dirty extents for metadata
+Date: Tue, 11 Sep 2018 13:38:11 +0800
+Message-Id: <20180911053818.10191-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The dev-replace locking functions are now trivial wrappers around rw
-semaphore that can be used directly everywhere. No functional change.
+This patchset can be fetched from github:
+https://github.com/adam900710/linux/tree/qgroup_balance_skip_trees
+The base commit is v4.19-rc1 tag.
 
-Signed-off-by: David Sterba <dsterba@suse.com>
----
- fs/btrfs/dev-replace.c | 73 ++++++++++++++++--------------------------
- fs/btrfs/dev-replace.h |  4 ---
- fs/btrfs/reada.c       | 12 +++----
- fs/btrfs/scrub.c       | 15 +++++----
- fs/btrfs/volumes.c     | 14 ++++----
- 5 files changed, 48 insertions(+), 70 deletions(-)
+There are a lot of reports of system hang for balance on quota enabled
+fs.
+It's most obvious for large fs.
 
-diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index e8c2f418b2d7..d61c225b3e83 100644
---- a/fs/btrfs/dev-replace.c
-+++ b/fs/btrfs/dev-replace.c
-@@ -285,13 +285,13 @@ int btrfs_run_dev_replace(struct btrfs_trans_handle *trans,
- 	struct btrfs_dev_replace_item *ptr;
- 	struct btrfs_dev_replace *dev_replace = &fs_info->dev_replace;
- 
--	btrfs_dev_replace_read_lock(dev_replace);
-+	down_read(&dev_replace->rwsem);
- 	if (!dev_replace->is_valid ||
- 	    !dev_replace->item_needs_writeback) {
--		btrfs_dev_replace_read_unlock(dev_replace);
-+		up_read(&dev_replace->rwsem);
- 		return 0;
- 	}
--	btrfs_dev_replace_read_unlock(dev_replace);
-+	up_read(&dev_replace->rwsem);
- 
- 	key.objectid = 0;
- 	key.type = BTRFS_DEV_REPLACE_KEY;
-@@ -349,7 +349,7 @@ int btrfs_run_dev_replace(struct btrfs_trans_handle *trans,
- 	ptr = btrfs_item_ptr(eb, path->slots[0],
- 			     struct btrfs_dev_replace_item);
- 
--	btrfs_dev_replace_write_lock(dev_replace);
-+	down_write(&dev_replace->rwsem);
- 	if (dev_replace->srcdev)
- 		btrfs_set_dev_replace_src_devid(eb, ptr,
- 			dev_replace->srcdev->devid);
-@@ -372,7 +372,7 @@ int btrfs_run_dev_replace(struct btrfs_trans_handle *trans,
- 	btrfs_set_dev_replace_cursor_right(eb, ptr,
- 		dev_replace->cursor_right);
- 	dev_replace->item_needs_writeback = 0;
--	btrfs_dev_replace_write_unlock(dev_replace);
-+	up_write(&dev_replace->rwsem);
- 
- 	btrfs_mark_buffer_dirty(eb);
- 
-@@ -426,7 +426,7 @@ int btrfs_dev_replace_start(struct btrfs_fs_info *fs_info,
- 	}
- 
- 	need_unlock = true;
--	btrfs_dev_replace_write_lock(dev_replace);
-+	down_write(&dev_replace->rwsem);
- 	switch (dev_replace->replace_state) {
- 	case BTRFS_IOCTL_DEV_REPLACE_STATE_NEVER_STARTED:
- 	case BTRFS_IOCTL_DEV_REPLACE_STATE_FINISHED:
-@@ -463,7 +463,7 @@ int btrfs_dev_replace_start(struct btrfs_fs_info *fs_info,
- 	dev_replace->item_needs_writeback = 1;
- 	atomic64_set(&dev_replace->num_write_errors, 0);
- 	atomic64_set(&dev_replace->num_uncorrectable_read_errors, 0);
--	btrfs_dev_replace_write_unlock(dev_replace);
-+	up_write(&dev_replace->rwsem);
- 	need_unlock = false;
- 
- 	ret = btrfs_sysfs_add_device_link(tgt_device->fs_devices, tgt_device);
-@@ -500,7 +500,7 @@ int btrfs_dev_replace_start(struct btrfs_fs_info *fs_info,
- 	dev_replace->srcdev = NULL;
- 	dev_replace->tgtdev = NULL;
- 	if (need_unlock)
--		btrfs_dev_replace_write_unlock(dev_replace);
-+		up_write(&dev_replace->rwsem);
- 	btrfs_destroy_dev_replace_tgtdev(tgt_device);
- 	return ret;
- }
-@@ -567,18 +567,18 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
- 	/* don't allow cancel or unmount to disturb the finishing procedure */
- 	mutex_lock(&dev_replace->lock_finishing_cancel_unmount);
- 
--	btrfs_dev_replace_read_lock(dev_replace);
-+	down_read(&dev_replace->rwsem);
- 	/* was the operation canceled, or is it finished? */
- 	if (dev_replace->replace_state !=
- 	    BTRFS_IOCTL_DEV_REPLACE_STATE_STARTED) {
--		btrfs_dev_replace_read_unlock(dev_replace);
-+		up_read(&dev_replace->rwsem);
- 		mutex_unlock(&dev_replace->lock_finishing_cancel_unmount);
- 		return 0;
- 	}
- 
- 	tgt_device = dev_replace->tgtdev;
- 	src_device = dev_replace->srcdev;
--	btrfs_dev_replace_read_unlock(dev_replace);
-+	up_read(&dev_replace->rwsem);
- 
- 	/*
- 	 * flush all outstanding I/O and inode extent mappings before the
-@@ -602,7 +602,7 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
- 	/* keep away write_all_supers() during the finishing procedure */
- 	mutex_lock(&fs_info->fs_devices->device_list_mutex);
- 	mutex_lock(&fs_info->chunk_mutex);
--	btrfs_dev_replace_write_lock(dev_replace);
-+	down_write(&dev_replace->rwsem);
- 	dev_replace->replace_state =
- 		scrub_ret ? BTRFS_IOCTL_DEV_REPLACE_STATE_CANCELED
- 			  : BTRFS_IOCTL_DEV_REPLACE_STATE_FINISHED;
-@@ -622,7 +622,7 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
- 				 btrfs_dev_name(src_device),
- 				 src_device->devid,
- 				 rcu_str_deref(tgt_device->name), scrub_ret);
--		btrfs_dev_replace_write_unlock(dev_replace);
-+		up_write(&dev_replace->rwsem);
- 		mutex_unlock(&fs_info->chunk_mutex);
- 		mutex_unlock(&fs_info->fs_devices->device_list_mutex);
- 		btrfs_rm_dev_replace_blocked(fs_info);
-@@ -658,8 +658,7 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
- 	list_add(&tgt_device->dev_alloc_list, &fs_info->fs_devices->alloc_list);
- 	fs_info->fs_devices->rw_devices++;
- 
--	btrfs_dev_replace_write_unlock(dev_replace);
--
-+	up_write(&dev_replace->rwsem);
- 	btrfs_rm_dev_replace_blocked(fs_info);
- 
- 	btrfs_rm_dev_replace_remove_srcdev(src_device);
-@@ -756,7 +755,7 @@ void btrfs_dev_replace_status(struct btrfs_fs_info *fs_info,
- {
- 	struct btrfs_dev_replace *dev_replace = &fs_info->dev_replace;
- 
--	btrfs_dev_replace_read_lock(dev_replace);
-+	down_read(&dev_replace->rwsem);
- 	/* even if !dev_replace_is_valid, the values are good enough for
- 	 * the replace_status ioctl */
- 	args->result = BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_ERROR;
-@@ -768,7 +767,7 @@ void btrfs_dev_replace_status(struct btrfs_fs_info *fs_info,
- 	args->status.num_uncorrectable_read_errors =
- 		atomic64_read(&dev_replace->num_uncorrectable_read_errors);
- 	args->status.progress_1000 = btrfs_dev_replace_progress(fs_info);
--	btrfs_dev_replace_read_unlock(dev_replace);
-+	up_read(&dev_replace->rwsem);
- }
- 
- int btrfs_dev_replace_cancel(struct btrfs_fs_info *fs_info)
-@@ -785,13 +784,13 @@ int btrfs_dev_replace_cancel(struct btrfs_fs_info *fs_info)
- 		return -EROFS;
- 
- 	mutex_lock(&dev_replace->lock_finishing_cancel_unmount);
--	btrfs_dev_replace_write_lock(dev_replace);
-+	down_write(&dev_replace->rwsem);
- 	switch (dev_replace->replace_state) {
- 	case BTRFS_IOCTL_DEV_REPLACE_STATE_NEVER_STARTED:
- 	case BTRFS_IOCTL_DEV_REPLACE_STATE_FINISHED:
- 	case BTRFS_IOCTL_DEV_REPLACE_STATE_CANCELED:
- 		result = BTRFS_IOCTL_DEV_REPLACE_RESULT_NOT_STARTED;
--		btrfs_dev_replace_write_unlock(dev_replace);
-+		up_write(&dev_replace->rwsem);
- 		goto leave;
- 	case BTRFS_IOCTL_DEV_REPLACE_STATE_STARTED:
- 	case BTRFS_IOCTL_DEV_REPLACE_STATE_SUSPENDED:
-@@ -805,7 +804,7 @@ int btrfs_dev_replace_cancel(struct btrfs_fs_info *fs_info)
- 	dev_replace->replace_state = BTRFS_IOCTL_DEV_REPLACE_STATE_CANCELED;
- 	dev_replace->time_stopped = ktime_get_real_seconds();
- 	dev_replace->item_needs_writeback = 1;
--	btrfs_dev_replace_write_unlock(dev_replace);
-+	up_write(&dev_replace->rwsem);
- 	btrfs_scrub_cancel(fs_info);
- 
- 	trans = btrfs_start_transaction(root, 0);
-@@ -834,7 +833,8 @@ void btrfs_dev_replace_suspend_for_unmount(struct btrfs_fs_info *fs_info)
- 	struct btrfs_dev_replace *dev_replace = &fs_info->dev_replace;
- 
- 	mutex_lock(&dev_replace->lock_finishing_cancel_unmount);
--	btrfs_dev_replace_write_lock(dev_replace);
-+	down_write(&dev_replace->rwsem);
-+
- 	switch (dev_replace->replace_state) {
- 	case BTRFS_IOCTL_DEV_REPLACE_STATE_NEVER_STARTED:
- 	case BTRFS_IOCTL_DEV_REPLACE_STATE_FINISHED:
-@@ -850,7 +850,7 @@ void btrfs_dev_replace_suspend_for_unmount(struct btrfs_fs_info *fs_info)
- 		break;
- 	}
- 
--	btrfs_dev_replace_write_unlock(dev_replace);
-+	up_write(&dev_replace->rwsem);
- 	mutex_unlock(&dev_replace->lock_finishing_cancel_unmount);
- }
- 
-@@ -860,12 +860,13 @@ int btrfs_resume_dev_replace_async(struct btrfs_fs_info *fs_info)
- 	struct task_struct *task;
- 	struct btrfs_dev_replace *dev_replace = &fs_info->dev_replace;
- 
--	btrfs_dev_replace_write_lock(dev_replace);
-+	down_write(&dev_replace->rwsem);
-+
- 	switch (dev_replace->replace_state) {
- 	case BTRFS_IOCTL_DEV_REPLACE_STATE_NEVER_STARTED:
- 	case BTRFS_IOCTL_DEV_REPLACE_STATE_FINISHED:
- 	case BTRFS_IOCTL_DEV_REPLACE_STATE_CANCELED:
--		btrfs_dev_replace_write_unlock(dev_replace);
-+		up_write(&dev_replace->rwsem);
- 		return 0;
- 	case BTRFS_IOCTL_DEV_REPLACE_STATE_STARTED:
- 		break;
-@@ -879,10 +880,10 @@ int btrfs_resume_dev_replace_async(struct btrfs_fs_info *fs_info)
- 			   "cannot continue dev_replace, tgtdev is missing");
- 		btrfs_info(fs_info,
- 			   "you may cancel the operation after 'mount -o degraded'");
--		btrfs_dev_replace_write_unlock(dev_replace);
-+		up_write(&dev_replace->rwsem);
- 		return 0;
- 	}
--	btrfs_dev_replace_write_unlock(dev_replace);
-+	up_write(&dev_replace->rwsem);
- 
- 	/*
- 	 * This could collide with a paused balance, but the exclusive op logic
-@@ -953,26 +954,6 @@ int btrfs_dev_replace_is_ongoing(struct btrfs_dev_replace *dev_replace)
- 	return 1;
- }
- 
--void btrfs_dev_replace_read_lock(struct btrfs_dev_replace *dev_replace)
--{
--	down_read(&dev_replace->rwsem);
--}
--
--void btrfs_dev_replace_read_unlock(struct btrfs_dev_replace *dev_replace)
--{
--	up_read(&dev_replace->rwsem);
--}
--
--void btrfs_dev_replace_write_lock(struct btrfs_dev_replace *dev_replace)
--{
--	down_write(&dev_replace->rwsem);
--}
--
--void btrfs_dev_replace_write_unlock(struct btrfs_dev_replace *dev_replace)
--{
--	up_write(&dev_replace->rwsem);
--}
--
- void btrfs_bio_counter_inc_noblocked(struct btrfs_fs_info *fs_info)
- {
- 	percpu_counter_inc(&fs_info->dev_replace.bio_counter);
-diff --git a/fs/btrfs/dev-replace.h b/fs/btrfs/dev-replace.h
-index eec7289c2618..f81cb16e8e56 100644
---- a/fs/btrfs/dev-replace.h
-+++ b/fs/btrfs/dev-replace.h
-@@ -22,9 +22,5 @@ int btrfs_dev_replace_cancel(struct btrfs_fs_info *fs_info);
- void btrfs_dev_replace_suspend_for_unmount(struct btrfs_fs_info *fs_info);
- int btrfs_resume_dev_replace_async(struct btrfs_fs_info *fs_info);
- int btrfs_dev_replace_is_ongoing(struct btrfs_dev_replace *dev_replace);
--void btrfs_dev_replace_read_lock(struct btrfs_dev_replace *dev_replace);
--void btrfs_dev_replace_read_unlock(struct btrfs_dev_replace *dev_replace);
--void btrfs_dev_replace_write_lock(struct btrfs_dev_replace *dev_replace);
--void btrfs_dev_replace_write_unlock(struct btrfs_dev_replace *dev_replace);
- 
- #endif
-diff --git a/fs/btrfs/reada.c b/fs/btrfs/reada.c
-index 6c4fdd98582d..96002e6e2346 100644
---- a/fs/btrfs/reada.c
-+++ b/fs/btrfs/reada.c
-@@ -377,10 +377,10 @@ static struct reada_extent *reada_find_extent(struct btrfs_fs_info *fs_info,
- 	}
- 
- 	/* insert extent in reada_tree + all per-device trees, all or nothing */
--	btrfs_dev_replace_read_lock(&fs_info->dev_replace);
-+	down_read(&fs_info->dev_replace.rwsem);
- 	ret = radix_tree_preload(GFP_KERNEL);
- 	if (ret) {
--		btrfs_dev_replace_read_unlock(&fs_info->dev_replace);
-+		up_read(&fs_info->dev_replace.rwsem);
- 		goto error;
- 	}
- 
-@@ -391,13 +391,13 @@ static struct reada_extent *reada_find_extent(struct btrfs_fs_info *fs_info,
- 		re_exist->refcnt++;
- 		spin_unlock(&fs_info->reada_lock);
- 		radix_tree_preload_end();
--		btrfs_dev_replace_read_unlock(&fs_info->dev_replace);
-+		up_read(&fs_info->dev_replace.rwsem);
- 		goto error;
- 	}
- 	if (ret) {
- 		spin_unlock(&fs_info->reada_lock);
- 		radix_tree_preload_end();
--		btrfs_dev_replace_read_unlock(&fs_info->dev_replace);
-+		up_read(&fs_info->dev_replace.rwsem);
- 		goto error;
- 	}
- 	radix_tree_preload_end();
-@@ -439,13 +439,13 @@ static struct reada_extent *reada_find_extent(struct btrfs_fs_info *fs_info,
- 			}
- 			radix_tree_delete(&fs_info->reada_tree, index);
- 			spin_unlock(&fs_info->reada_lock);
--			btrfs_dev_replace_read_unlock(&fs_info->dev_replace);
-+			up_read(&fs_info->dev_replace.rwsem);
- 			goto error;
- 		}
- 		have_zone = 1;
- 	}
- 	spin_unlock(&fs_info->reada_lock);
--	btrfs_dev_replace_read_unlock(&fs_info->dev_replace);
-+	up_read(&fs_info->dev_replace.rwsem);
- 
- 	if (!have_zone)
- 		goto error;
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 902819d3cf41..4936cc65dca0 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -3596,11 +3596,12 @@ int scrub_enumerate_chunks(struct scrub_ctx *sctx,
- 			break;
- 		}
- 
--		btrfs_dev_replace_write_lock(&fs_info->dev_replace);
-+		down_write(&fs_info->dev_replace.rwsem);
- 		dev_replace->cursor_right = found_key.offset + length;
- 		dev_replace->cursor_left = found_key.offset;
- 		dev_replace->item_needs_writeback = 1;
--		btrfs_dev_replace_write_unlock(&fs_info->dev_replace);
-+		up_write(&dev_replace->rwsem);
-+
- 		ret = scrub_chunk(sctx, scrub_dev, chunk_offset, length,
- 				  found_key.offset, cache);
- 
-@@ -3636,10 +3637,10 @@ int scrub_enumerate_chunks(struct scrub_ctx *sctx,
- 
- 		scrub_pause_off(fs_info);
- 
--		btrfs_dev_replace_write_lock(&fs_info->dev_replace);
-+		down_write(&fs_info->dev_replace.rwsem);
- 		dev_replace->cursor_left = dev_replace->cursor_right;
- 		dev_replace->item_needs_writeback = 1;
--		btrfs_dev_replace_write_unlock(&fs_info->dev_replace);
-+		up_write(&fs_info->dev_replace.rwsem);
- 
- 		if (ro_set)
- 			btrfs_dec_block_group_ro(cache);
-@@ -3838,16 +3839,16 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
- 		return -EIO;
- 	}
- 
--	btrfs_dev_replace_read_lock(&fs_info->dev_replace);
-+	down_read(&fs_info->dev_replace.rwsem);
- 	if (dev->scrub_ctx ||
- 	    (!is_dev_replace &&
- 	     btrfs_dev_replace_is_ongoing(&fs_info->dev_replace))) {
--		btrfs_dev_replace_read_unlock(&fs_info->dev_replace);
-+		up_read(&fs_info->dev_replace.rwsem);
- 		mutex_unlock(&fs_info->scrub_lock);
- 		mutex_unlock(&fs_info->fs_devices->device_list_mutex);
- 		return -EINPROGRESS;
- 	}
--	btrfs_dev_replace_read_unlock(&fs_info->dev_replace);
-+	up_read(&fs_info->dev_replace.rwsem);
- 
- 	ret = scrub_workers_get(fs_info, is_dev_replace);
- 	if (ret) {
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index d1f83529ac80..bde2992c3713 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1862,12 +1862,12 @@ static u64 btrfs_num_devices(struct btrfs_fs_info *fs_info)
- {
- 	u64 num_devices = fs_info->fs_devices->num_devices;
- 
--	btrfs_dev_replace_read_lock(&fs_info->dev_replace);
-+	down_read(&fs_info->dev_replace.rwsem);
- 	if (btrfs_dev_replace_is_ongoing(&fs_info->dev_replace)) {
- 		ASSERT(num_devices > 1);
- 		num_devices--;
- 	}
--	btrfs_dev_replace_read_unlock(&fs_info->dev_replace);
-+	up_read(&fs_info->dev_replace.rwsem);
- 
- 	return num_devices;
- }
-@@ -5122,11 +5122,11 @@ int btrfs_num_copies(struct btrfs_fs_info *fs_info, u64 logical, u64 len)
- 		ret = 1;
- 	free_extent_map(em);
- 
--	btrfs_dev_replace_read_lock(&fs_info->dev_replace);
-+	down_read(&fs_info->dev_replace.rwsem);
- 	if (btrfs_dev_replace_is_ongoing(&fs_info->dev_replace) &&
- 	    fs_info->dev_replace.tgtdev)
- 		ret++;
--	btrfs_dev_replace_read_unlock(&fs_info->dev_replace);
-+	up_read(&fs_info->dev_replace.rwsem);
- 
- 	return ret;
- }
-@@ -5704,14 +5704,14 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
- 	if (!bbio_ret)
- 		goto out;
- 
--	btrfs_dev_replace_read_lock(dev_replace);
-+	down_read(&dev_replace->rwsem);
- 	dev_replace_is_ongoing = btrfs_dev_replace_is_ongoing(dev_replace);
- 	/*
- 	 * Hold the semaphore for read during the whole operation, write is
- 	 * requested at commit time but must wait.
- 	 */
- 	if (!dev_replace_is_ongoing)
--		btrfs_dev_replace_read_unlock(dev_replace);
-+		up_read(&dev_replace->rwsem);
- 
- 	if (dev_replace_is_ongoing && mirror_num == map->num_stripes + 1 &&
- 	    !need_full_stripe(op) && dev_replace->tgtdev != NULL) {
-@@ -5908,7 +5908,7 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
- 	if (dev_replace_is_ongoing) {
- 		lockdep_assert_held(&dev_replace->rwsem);
- 		/* Unlock and let waiting writers proceed */
--		btrfs_dev_replace_read_unlock(dev_replace);
-+		up_read(&dev_replace->rwsem);
- 	}
- 	free_extent_map(em);
- 	return ret;
+The hang is caused by tons of unmodified extents marked as qgroup dirty.
+Such unmodified/unrelated sources include:
+1) Unmodified subtree
+2) Subtree drop for reloc tree
+(BTW, other sources includes unmodified file extent items)
+
+E.g.
+OO = Old tree blocks from file tree
+NN = New tree blocks from reloc tree
+
+        file tree                              reloc tree
+           OO (a)                                  NN (a)
+          /  \                                    /  \
+    (b) OO    OO (c)                        (b) NN    NN (c)
+       / \   / \                               / \   / \
+     OO  OO OO  OO                           OO  OO OO  NN
+    (d) (e) (f) (g)                         (d) (e) (f) (g)
+
+In above case, balance will modify nodeptr in OO(a) to point NN(b) and
+NN(c), and modify NN(a) to point to OO(B) and OO(c).
+
+Before this patch, quota will mark the whole subtree from its parent
+down to the leaves as dirty.
+So btrfs quota need to trace all tree block from (a) to (g).
+
+However tree blocks (d) (e) (f) are shared between both trees, thus
+there is no need to trace those 3 tree blocks.
+
+This patchset will change how this work by only tracing modified tree
+blocks in reloc tree, and their counter parts in file tree.
+
+With this patch, we could skip tree blocks OO(d)~OO(f) in above example,
+thus reduce some some overhead caused by qgroup.
+
+The improvement is mostly related to metadata relocation.
+
+Also, for metadata relocation, we don't really need to trace data
+extents as they're not modified at all.
+
+
+[[Benchmark]]
+Hardware:
+	VM 4G vRAM, 8 vCPUs,
+	disk is using 'unsafe' cache mode,
+	backing device is SAMSUNG 850 evo SSD.
+	Host has 16G ram.
+
+Mkfs parameter:
+	--nodesize 4K (To bump up tree size)
+
+Initial subvolume contents:
+	4G data copied from /usr and /lib.
+	(With enough regular small files)
+
+Snapshots:
+	16 snapshots of the original subvolume.
+	each snapshot has 3 random files modified.
+
+balance parameter:
+	-m
+
+So the content should be pretty similar to a real world root fs layout.
+
+                     | v4.19-rc1    | w/ patchset    | diff (*)
+---------------------------------------------------------------
+relocated extents    | 22874        | 22856          | +0.1%
+qgroup dirty extents | 225251       | 140431         | -37.7%
+time (sys)           | 40.161s      | 20.574s        | -48.7%
+time (real)          | 42.163s      | 25.173s        | -40.3%
+
+*: (val_new - val_old) / val_old * 100%
+
+And the difference is becoming more and more obvious if more snapshots
+are created.
+
+If we increase the number of snapshots to 64 (4 times the number of
+references, and 64 snapshots is already not recommended to use with
+quota)
+
+                     | v4.19-rc1    | w/ patchset    | diff (*)
+---------------------------------------------------------------
+relocated extents    | 22462        | 22467          | +0.0%
+qgroup dirty extents | 314380       | 140826         | -55.2%
+time (sys)           | 158.033s     | 74.292s        | -53.0%
+time (real)          | 197.395s     | 90.529s        | -67.6%
+
+For larger fs the saving should be even more obvious.
+
+Changelog:
+v2:
+  Rename "tree reloc tree" to "reloc tree".
+  Add patch "Don't trace subtree if we're dropping reloc tree" into the
+  patchset.
+  Fix wrong btrfs_bin_search() call, which leads to unexpected ENOENT
+  error for btrfs_qgroup_trace_extent_swap(). Now use dst_path->slots[]
+  directly.
+  
+v3:
+  Add new patch to avoid unnecessary data extents trace for metadata
+  relocation.
+  Better delayed ref time root owner detection to avoid unnecessary tree
+  block tracing.
+  Add benchmark result for the patchset.
+
+Qu Wenruo (7):
+  btrfs: qgroup: Introduce trace event to analyse the number of dirty
+    extents accounted
+  btrfs: qgroup: Introduce function to trace two swaped extents
+  btrfs: qgroup: Introduce function to find all new tree blocks of reloc
+    tree
+  btrfs: qgroup: Use generation aware subtree swap to mark dirty extents
+  btrfs: qgroup: Don't trace subtree if we're dropping reloc tree
+  btrfs: delayed-ref: Introduce new parameter for
+    btrfs_add_delayed_tree_ref() to reduce unnecessary qgroup tracing
+  btrfs: qgroup: Only trace data extents in leaves if we're relocating
+    data block group
+
+ fs/btrfs/delayed-ref.c       |   5 +-
+ fs/btrfs/delayed-ref.h       |   1 +
+ fs/btrfs/extent-tree.c       |  25 ++-
+ fs/btrfs/qgroup.c            | 347 +++++++++++++++++++++++++++++++++++
+ fs/btrfs/qgroup.h            |  11 ++
+ fs/btrfs/relocation.c        |  15 +-
+ include/trace/events/btrfs.h |  21 +++
+ 7 files changed, 405 insertions(+), 20 deletions(-)
+
 -- 
 2.18.0

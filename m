@@ -1,46 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk1-f196.google.com ([209.85.222.196]:36875 "EHLO
-        mail-qk1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728113AbeIKW7P (ORCPT
+Received: from mail-qt0-f193.google.com ([209.85.216.193]:40537 "EHLO
+        mail-qt0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728113AbeIKW7Q (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 11 Sep 2018 18:59:15 -0400
-Received: by mail-qk1-f196.google.com with SMTP id f17-v6so17317468qkh.4
-        for <linux-btrfs@vger.kernel.org>; Tue, 11 Sep 2018 10:58:49 -0700 (PDT)
+        Tue, 11 Sep 2018 18:59:16 -0400
+Received: by mail-qt0-f193.google.com with SMTP id h4-v6so29190588qtj.7
+        for <linux-btrfs@vger.kernel.org>; Tue, 11 Sep 2018 10:58:51 -0700 (PDT)
 From: Josef Bacik <josef@toxicpanda.com>
 To: kernel-team@fb.com, linux-btrfs@vger.kernel.org
-Cc: Josef Bacik <jbacik@fb.com>
-Subject: [PATCH 21/36] btrfs: reset max_extent_size on clear in a bitmap
-Date: Tue, 11 Sep 2018 13:57:52 -0400
-Message-Id: <20180911175807.26181-22-josef@toxicpanda.com>
+Subject: [PATCH 22/36] btrfs: only run delayed refs if we're committing
+Date: Tue, 11 Sep 2018 13:57:53 -0400
+Message-Id: <20180911175807.26181-23-josef@toxicpanda.com>
 In-Reply-To: <20180911175807.26181-1-josef@toxicpanda.com>
 References: <20180911175807.26181-1-josef@toxicpanda.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Josef Bacik <jbacik@fb.com>
+I noticed in a giant dbench run that we spent a lot of time on lock
+contention while running transaction commit.  This is because dbench
+results in a lot of fsync()'s that do a btrfs_transaction_commit(), and
+they all run the delayed refs first thing, so they all contend with
+each other.  This leads to seconds of 0 throughput.  Change this to only
+run the delayed refs if we're the ones committing the transaction.  This
+makes the latency go away and we get no more lock contention.
 
-We need to clear the max_extent_size when we clear bits from a bitmap
-since it could have been from the range that contains the
-max_extent_size.
-
-Reviewed-by: Liu Bo <bo.liu@linux.alibaba.com>
-Signed-off-by: Josef Bacik <jbacik@fb.com>
+Reviewed-by: Omar Sandoval <osandov@fb.com>
+Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/free-space-cache.c | 2 ++
- 1 file changed, 2 insertions(+)
+ fs/btrfs/transaction.c | 24 +++++++++---------------
+ 1 file changed, 9 insertions(+), 15 deletions(-)
 
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index 2e96ee7da3ec..d2a863a2ee24 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -1687,6 +1687,8 @@ static inline void __bitmap_clear_bits(struct btrfs_free_space_ctl *ctl,
- 	bitmap_clear(info->bitmap, start, count);
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index a0f19ca0bd6c..39a2bddb0b29 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -1925,15 +1925,6 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
+ 	btrfs_trans_release_metadata(trans);
+ 	trans->block_rsv = NULL;
  
- 	info->bytes -= bytes;
-+	if (info->max_extent_size > ctl->unit)
-+		info->max_extent_size = 0;
- }
+-	/* make a pass through all the delayed refs we have so far
+-	 * any runnings procs may add more while we are here
+-	 */
+-	ret = btrfs_run_delayed_refs(trans, 0);
+-	if (ret) {
+-		btrfs_end_transaction(trans);
+-		return ret;
+-	}
+-
+ 	cur_trans = trans->transaction;
  
- static void bitmap_clear_bits(struct btrfs_free_space_ctl *ctl,
+ 	/*
+@@ -1946,12 +1937,6 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
+ 	if (!list_empty(&trans->new_bgs))
+ 		btrfs_create_pending_block_groups(trans);
+ 
+-	ret = btrfs_run_delayed_refs(trans, 0);
+-	if (ret) {
+-		btrfs_end_transaction(trans);
+-		return ret;
+-	}
+-
+ 	if (!test_bit(BTRFS_TRANS_DIRTY_BG_RUN, &cur_trans->flags)) {
+ 		int run_it = 0;
+ 
+@@ -2022,6 +2007,15 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
+ 		spin_unlock(&fs_info->trans_lock);
+ 	}
+ 
++	/*
++	 * We are now the only one in the commit area, we can run delayed refs
++	 * without hitting a bunch of lock contention from a lot of people
++	 * trying to commit the transaction at once.
++	 */
++	ret = btrfs_run_delayed_refs(trans, 0);
++	if (ret)
++		goto cleanup_transaction;
++
+ 	extwriter_counter_dec(cur_trans, trans->type);
+ 
+ 	ret = btrfs_start_delalloc_flush(fs_info);
 -- 
 2.14.3

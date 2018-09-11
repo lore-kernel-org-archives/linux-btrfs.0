@@ -1,36 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from out30-133.freemail.mail.aliyun.com ([115.124.30.133]:53655 "EHLO
-        out30-133.freemail.mail.aliyun.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1728197AbeIMAgV (ORCPT
+Received: from out30-132.freemail.mail.aliyun.com ([115.124.30.132]:56697 "EHLO
+        out30-132.freemail.mail.aliyun.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1728018AbeILDIS (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 12 Sep 2018 20:36:21 -0400
-Date: Wed, 12 Sep 2018 12:30:18 -0700
+        Tue, 11 Sep 2018 23:08:18 -0400
 From: Liu Bo <bo.liu@linux.alibaba.com>
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: remove level==0 check in balance_level
-Message-ID: <20180912193017.pnuqtnhhc6e6x4ld@US-160370MP2.local>
-Reply-To: bo.liu@linux.alibaba.com
-References: <1536703587-94565-4-git-send-email-bo.liu@linux.alibaba.com>
- <20180912125238.GM2154@twin.jikos.cz>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180912125238.GM2154@twin.jikos.cz>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: remove level==0 check in balance_level
+Date: Wed, 12 Sep 2018 06:06:23 +0800
+Message-Id: <1536703587-94565-4-git-send-email-bo.liu@linux.alibaba.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Sep 12, 2018 at 02:52:38PM +0200, David Sterba wrote:
-> On Wed, Sep 12, 2018 at 06:06:23AM +0800, Liu Bo wrote:
-> > btrfs_search_slot()
-> >    if (level != 0)
-> >       setup_nodes_for_search()
-> >           balance_level()
-> > 
-> > It is just impossible to have level=0 in balance_level.
-> 
-> While this is true, what do you think about adding ASSERT(level > 0) ?
-> This is to catch accidentally passing level 0.
+btrfs_search_slot()
+   if (level != 0)
+      setup_nodes_for_search()
+          balance_level()
 
-Sounds good, will update it.
+It is just impossible to have level=0 in balance_level.
 
-thanks,
--liubo
+Signed-off-by: Liu Bo <bo.liu@linux.alibaba.com>
+---
+ fs/btrfs/ctree.c | 3 ---
+ 1 file changed, 3 deletions(-)
+
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index 8b31caa60b0a..858085490e23 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -1778,9 +1778,6 @@ static noinline int balance_level(struct btrfs_trans_handle *trans,
+ 	int orig_slot = path->slots[level];
+ 	u64 orig_ptr;
+ 
+-	if (level == 0)
+-		return 0;
+-
+ 	mid = path->nodes[level];
+ 
+ 	WARN_ON(path->locks[level] != BTRFS_WRITE_LOCK &&
+-- 
+1.8.3.1

@@ -1,38 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from out30-130.freemail.mail.aliyun.com ([115.124.30.130]:50942 "EHLO
-        out30-130.freemail.mail.aliyun.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1726891AbeIOAcj (ORCPT
+Received: from out30-132.freemail.mail.aliyun.com ([115.124.30.132]:35818 "EHLO
+        out30-132.freemail.mail.aliyun.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1727796AbeILDIG (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 14 Sep 2018 20:32:39 -0400
-Date: Fri, 14 Sep 2018 12:16:44 -0700
+        Tue, 11 Sep 2018 23:08:06 -0400
 From: Liu Bo <bo.liu@linux.alibaba.com>
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: remove wait_ordered_range in btrfs_evict_inode
-Message-ID: <20180914191643.tsxkyh2jvkymiie2@US-160370MP2.local>
-Reply-To: bo.liu@linux.alibaba.com
-References: <1536703587-94565-3-git-send-email-bo.liu@linux.alibaba.com>
- <20180914131433.GD5847@twin.jikos.cz>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180914131433.GD5847@twin.jikos.cz>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: remove wait_ordered_range in btrfs_evict_inode
+Date: Wed, 12 Sep 2018 06:06:22 +0800
+Message-Id: <1536703587-94565-3-git-send-email-bo.liu@linux.alibaba.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Sep 14, 2018 at 03:14:33PM +0200, David Sterba wrote:
-> On Wed, Sep 12, 2018 at 06:06:22AM +0800, Liu Bo wrote:
-> > As VFS has called ->invalidatepage() to get all ordered extents done
-> > and truncated all page cache pages, wait_ordered_range() is just a
-> > noop.
-> 
-> Agreed, though looking up the exact points when there are no pages to be
-> waited for took me some time. More references and hints in the changelog
-> would be good. I'll add the patch to misc-next so it can be tested, but
-> please send me an update if you have idea how to rephrase the changelog.
-> Thanks.
-> 
-> Reviewed-by: David Sterba <dsterba@suse.com>
+As VFS has called ->invalidatepage() to get all ordered extents done
+and truncated all page cache pages, wait_ordered_range() is just a
+noop.
 
-OK, I'll add some call stack, hopefully can make it better.
+Signed-off-by: Liu Bo <bo.liu@linux.alibaba.com>
+---
+ fs/btrfs/inode.c | 3 ---
+ 1 file changed, 3 deletions(-)
 
-thanks,
--liubo
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index ff1d2ed2dc94..d3febc3a6bc0 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -5390,9 +5390,6 @@ void btrfs_evict_inode(struct inode *inode)
+ 
+ 	if (is_bad_inode(inode))
+ 		goto no_delete;
+-	/* do we really want it for ->i_nlink > 0 and zero btrfs_root_refs? */
+-	if (!special_file(inode->i_mode))
+-		btrfs_wait_ordered_range(inode, 0, (u64)-1);
+ 
+ 	btrfs_free_io_failure_record(BTRFS_I(inode), 0, (u64)-1);
+ 
+-- 
+1.8.3.1

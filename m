@@ -1,80 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wr1-f53.google.com ([209.85.221.53]:46734 "EHLO
-        mail-wr1-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726612AbeIKPLj (ORCPT
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:23627 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1726713AbeIKQ2G (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 11 Sep 2018 11:11:39 -0400
-Received: by mail-wr1-f53.google.com with SMTP id a108-v6so25269067wrc.13
-        for <linux-btrfs@vger.kernel.org>; Tue, 11 Sep 2018 03:13:01 -0700 (PDT)
+        Tue, 11 Sep 2018 12:28:06 -0400
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
+        by cn.fujitsu.com (Postfix) with ESMTP id B00804B6AE13
+        for <linux-btrfs@vger.kernel.org>; Tue, 11 Sep 2018 19:29:10 +0800 (CST)
+From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [RFC PATCH v2 0/4] undelete subvolume online version
+Date: Tue, 11 Sep 2018 19:28:59 +0800
+Message-ID: <20180911112903.25985-1-lufq.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8;
- format=flowed
-Date: Tue, 11 Sep 2018 12:12:58 +0200
-From: =?UTF-8?Q?J=C3=BCrgen_Herrmann?= <t-5@t-5.eu>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: compiling btrfs-progs 4.17.1 gives error "reiserfs/misc.h: No
- such file or directory"
-In-Reply-To: <CAJCQCtSSAhjWXOS1X8A-q0qtOZ2MBHoUWyHvhWino0K5TqBanw@mail.gmail.com>
-References: <e822c3d52bfef3e0f2cc4617b21f5518@t-5.eu>
- <CAJCQCtSSAhjWXOS1X8A-q0qtOZ2MBHoUWyHvhWino0K5TqBanw@mail.gmail.com>
-Message-ID: <427d123ee042ce4f3c5d7a1b4bf434e7@t-5.eu>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am 7.9.2018 17:46, schrieb Chris Murphy:
-> On Fri, Sep 7, 2018 at 3:56 AM, Jürgen Herrmann <t-5@t-5.eu> wrote:
->> Hello!
->> 
->> I'm having a problem with btrfs send which stops after several 
->> seconds.
->> The process hangs with 100% cpu time on one cpu. The system is still
->> responsive to input but no io is happening anymore so the system
->> basically becomes unuseable.
-> 
-> What kernel? Latest stable is 4.18.6. but I want to make sure that's
-> what you're using, someone else has reported btrfs send problems in
-> another thread with 4.18.5 that sound similar.
+This patchset will add the BTRFS_IOC_SUBVOL_UNDELETE ioctl for online
+btrfs subvolume undelete.
 
-Hello again!
+And using the online_undelete version of btrfs-progs, user can recover
+the subvolume given by <subvol_id> to the directory given by <dest>. The
+optional parameter [-n <name>] can be used to set the name of the
+recovered subvolume.
 
-I was away from home for the last few days and I could not reproduce
-the problem with any kernel and aný version of the btrfs tools while
-on the road and the btrfs receive end was only connected via relatively
-slow wan connection.
+# btrfs subvolume undelete [-n <name>] <subvol_id> <dest>
 
-Now I'm back home and I can reproduce the hang of btrfs send with the
-following versions:
+btrfs online undelete version:
+https://github.com/littleroad/linux.git undelete
 
-kernels:
-- ubuntu kernel 4.15.0-33-generic
-- latest stable from kernel.org 4.18.6
+btrfs-progs online undelete version:
+https://github.com/littleroad/btrfs-progs.git online_undelete
 
-btrfs-progs:
-- ubuntu shipped 4.15.1
-- latest stable compiled from source 4.17.1
+Issue: #82
 
-btrfs send does indeed send some data over the ssh connection to the
-receiving machine as the snapshot is newly created there and contains
-some data:
+Lu Fengqi (4):
+  btrfs: factor out btrfs_link_subvol from create_subvol
+  btrfs: don't BUG_ON() in btrfs_link_subvol()
+  btrfs: undelete: introduce btrfs_undelete_subvolume
+  btrfs: undelete: Add BTRFS_IOCTL_SUBVOL_UNDELETE ioctl
 
-t-5@t-5:/mnt/backup_laptop/2018-08-16_20-00-01/@$ du -h --max-depth=0
-140M    .
+ fs/btrfs/ioctl.c           | 247 +++++++++++++++++++++++++++++++++----
+ include/uapi/linux/btrfs.h |   7 ++
+ 2 files changed, 231 insertions(+), 23 deletions(-)
 
-The sending of data very quickly stops (<1s) and the process takes
-up 100% cpu time on the sending laptop. about two or three seconds
-later all io is blocked and the system is practically unuseable.
-
-A "btrfs send /path/to/subvol > /dev/null" also shows the same
-behaviour. As this is the first snapshot to be trasferred there
-are no -c or -p arguments on the command line.
-
-What can i do to help debug this?
-
-Best regards,
-Jürgen
 -- 
-Jürgen Herrmann
-https://t-5.eu
-ALbertstraße 2
-94327 Bogen
+2.18.0

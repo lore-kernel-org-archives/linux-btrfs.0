@@ -1,101 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pg1-f193.google.com ([209.85.215.193]:33532 "EHLO
-        mail-pg1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725737AbeILEK6 (ORCPT
+Received: from mail-pf1-f193.google.com ([209.85.210.193]:38955 "EHLO
+        mail-pf1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725737AbeILENS (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 12 Sep 2018 00:10:58 -0400
-Received: by mail-pg1-f193.google.com with SMTP id s7-v6so15850pgc.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 11 Sep 2018 16:09:26 -0700 (PDT)
-Date: Tue, 11 Sep 2018 16:09:25 -0700
+        Wed, 12 Sep 2018 00:13:18 -0400
+Received: by mail-pf1-f193.google.com with SMTP id j8-v6so3849pff.6
+        for <linux-btrfs@vger.kernel.org>; Tue, 11 Sep 2018 16:11:46 -0700 (PDT)
+Date: Tue, 11 Sep 2018 16:11:45 -0700
 From: Omar Sandoval <osandov@osandov.com>
 To: Josef Bacik <josef@toxicpanda.com>
 Cc: kernel-team@fb.com, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 07/36] btrfs: check if free bgs for commit
-Message-ID: <20180911230925.GD26631@vader>
+Subject: Re: [PATCH 08/36] btrfs: dump block_rsv whe dumping space info
+Message-ID: <20180911231145.GE26631@vader>
 References: <20180911175807.26181-1-josef@toxicpanda.com>
- <20180911175807.26181-8-josef@toxicpanda.com>
+ <20180911175807.26181-9-josef@toxicpanda.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180911175807.26181-8-josef@toxicpanda.com>
+In-Reply-To: <20180911175807.26181-9-josef@toxicpanda.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Sep 11, 2018 at 01:57:38PM -0400, Josef Bacik wrote:
-> may_commit_transaction will skip committing the transaction if we don't
-> have enough pinned space or if we're trying to find space for a SYSTEM
-> chunk.  However if we have pending free block groups in this transaction
-> we still want to commit as we may be able to allocate a chunk to make
-> our reservation.  So instead of just returning ENOSPC, check if we have
-> free block groups pending, and if so commit the transaction to allow us
-> to use that free space.
+On Tue, Sep 11, 2018 at 01:57:39PM -0400, Josef Bacik wrote:
+> For enospc_debug having the block rsvs is super helpful to see if we've
+> done something wrong.
+> 
+> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+> ---
+>  fs/btrfs/extent-tree.c | 16 ++++++++++++++++
+>  1 file changed, 16 insertions(+)
+> 
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index a3baa16d456f..1cf66a92829b 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -7918,6 +7918,16 @@ static noinline int find_free_extent(struct btrfs_fs_info *fs_info,
+>  	return ret;
+>  }
+>  
+> +static void dump_block_rsv(struct btrfs_fs_info *fs_info,
+> +			   struct btrfs_block_rsv *rsv)
+> +{
+> +	spin_lock(&rsv->lock);
+> +	btrfs_info(fs_info, "%d: size %llu reserved %llu\n",
+> +		   rsv->type, (unsigned long long)rsv->size,
+> +		   (unsigned long long)rsv->reserved);
+
+How about passing a string name for each of these instead of an ID which
+we have to cross-reference with the source?
+
+Besides that,
 
 Reviewed-by: Omar Sandoval <osandov@fb.com>
 
-> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
-> ---
->  fs/btrfs/extent-tree.c | 33 +++++++++++++++++++--------------
->  1 file changed, 19 insertions(+), 14 deletions(-)
-> 
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index 7168e2476944..a3baa16d456f 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -4830,10 +4830,18 @@ static int may_commit_transaction(struct btrfs_fs_info *fs_info,
->  	if (!bytes)
->  		return 0;
->  
-> -	/* See if there is enough pinned space to make this reservation */
-> -	if (__percpu_counter_compare(&space_info->total_bytes_pinned,
-> -				   bytes,
-> -				   BTRFS_TOTAL_BYTES_PINNED_BATCH) >= 0)
-> +	trans = btrfs_join_transaction(fs_info->extent_root);
-> +	if (IS_ERR(trans))
-> +		return -ENOSPC;
+> +	spin_unlock(&rsv->lock);
+> +}
 > +
-> +	/*
-> +	 * See if there is enough pinned space to make this reservation, or if
-> +	 * we have bg's that are going to be freed, allowing us to possibly do a
-> +	 * chunk allocation the next loop through.
-> +	 */
-> +	if (test_bit(BTRFS_TRANS_HAVE_FREE_BGS, &trans->transaction->flags) ||
-> +	    __percpu_counter_compare(&space_info->total_bytes_pinned, bytes,
-> +				     BTRFS_TOTAL_BYTES_PINNED_BATCH) >= 0)
->  		goto commit;
+>  static void dump_space_info(struct btrfs_fs_info *fs_info,
+>  			    struct btrfs_space_info *info, u64 bytes,
+>  			    int dump_block_groups)
+> @@ -7937,6 +7947,12 @@ static void dump_space_info(struct btrfs_fs_info *fs_info,
+>  		info->bytes_readonly);
+>  	spin_unlock(&info->lock);
 >  
->  	/*
-> @@ -4841,7 +4849,7 @@ static int may_commit_transaction(struct btrfs_fs_info *fs_info,
->  	 * this reservation.
->  	 */
->  	if (space_info != delayed_rsv->space_info)
-> -		return -ENOSPC;
-> +		goto enospc;
+> +	dump_block_rsv(fs_info, &fs_info->global_block_rsv);
+> +	dump_block_rsv(fs_info, &fs_info->trans_block_rsv);
+> +	dump_block_rsv(fs_info, &fs_info->chunk_block_rsv);
+> +	dump_block_rsv(fs_info, &fs_info->delayed_block_rsv);
+> +	dump_block_rsv(fs_info, &fs_info->delayed_refs_rsv);
+> +
+>  	if (!dump_block_groups)
+>  		return;
 >  
->  	spin_lock(&delayed_rsv->lock);
->  	reclaim_bytes += delayed_rsv->reserved;
-> @@ -4855,17 +4863,14 @@ static int may_commit_transaction(struct btrfs_fs_info *fs_info,
->  	bytes -= reclaim_bytes;
->  
->  	if (__percpu_counter_compare(&space_info->total_bytes_pinned,
-> -				   bytes,
-> -				   BTRFS_TOTAL_BYTES_PINNED_BATCH) < 0) {
-> -		return -ENOSPC;
-> -	}
-> -
-> +				     bytes,
-> +				     BTRFS_TOTAL_BYTES_PINNED_BATCH) < 0)
-> +		goto enospc;
->  commit:
-> -	trans = btrfs_join_transaction(fs_info->extent_root);
-> -	if (IS_ERR(trans))
-> -		return -ENOSPC;
-> -
->  	return btrfs_commit_transaction(trans);
-> +enospc:
-> +	btrfs_end_transaction(trans);
-> +	return -ENOSPC;
->  }
->  
->  /*
 > -- 
 > 2.14.3
 > 

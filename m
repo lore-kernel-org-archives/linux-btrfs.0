@@ -1,29 +1,22 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from out30-131.freemail.mail.aliyun.com ([115.124.30.131]:52598 "EHLO
+Received: from out30-131.freemail.mail.aliyun.com ([115.124.30.131]:34984 "EHLO
         out30-131.freemail.mail.aliyun.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1727966AbeIMWz0 (ORCPT
+        by vger.kernel.org with ESMTP id S1727762AbeILDIG (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 13 Sep 2018 18:55:26 -0400
+        Tue, 11 Sep 2018 23:08:06 -0400
 From: Liu Bo <bo.liu@linux.alibaba.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH v2] Btrfs: skip set_page_dirty if eb is dirty
-Date: Fri, 14 Sep 2018 01:44:42 +0800
-Message-Id: <1536860682-41012-1-git-send-email-bo.liu@linux.alibaba.com>
-In-Reply-To: <1536703587-94565-1-git-send-email-bo.liu@linux.alibaba.com>
-References: <1536703587-94565-1-git-send-email-bo.liu@linux.alibaba.com>
+Subject: [PATCH] Btrfs: skip set_page_dirty if eb is dirty
+Date: Wed, 12 Sep 2018 06:06:20 +0800
+Message-Id: <1536703587-94565-1-git-send-email-bo.liu@linux.alibaba.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 As long as @eb is marked with EXTENT_BUFFER_DIRTY, all of its pages
 are dirty, so no need to set pages dirty again.
 
-Ftrace showed that the loop took 10us on my dev box, so removing this
-can save us at least 10us if eb is already dirty.
-
 Signed-off-by: Liu Bo <bo.liu@linux.alibaba.com>
 ---
-v2: Update the patch's description.
-
  fs/btrfs/extent_io.c | 11 +++++++----
  fs/btrfs/extent_io.h |  2 +-
  2 files changed, 8 insertions(+), 5 deletions(-)

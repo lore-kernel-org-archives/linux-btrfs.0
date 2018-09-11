@@ -1,154 +1,115 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:33276 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726149AbeILMWj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 12 Sep 2018 08:22:39 -0400
-Subject: Re: [PATCH] Btrfs: do not wait after queue async work for delaye refs
-To: Liu Bo <bo.liu@linux.alibaba.com>, linux-btrfs@vger.kernel.org
-References: <1536703587-94565-8-git-send-email-bo.liu@linux.alibaba.com>
-Cc: Josef Bacik <josef@toxicpanda.com>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <feaa2619-fdb3-efa3-4e2f-878cd81058c1@suse.com>
-Date: Wed, 12 Sep 2018 10:19:23 +0300
-MIME-Version: 1.0
-In-Reply-To: <1536703587-94565-8-git-send-email-bo.liu@linux.alibaba.com>
-Content-Type: text/plain; charset=utf-8
+Received: from out30-130.freemail.mail.aliyun.com ([115.124.30.130]:41373 "EHLO
+        out30-130.freemail.mail.aliyun.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1727762AbeILDII (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 11 Sep 2018 23:08:08 -0400
+From: Liu Bo <bo.liu@linux.alibaba.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: skip setting path to blocking mode if balance is not needed
+Date: Wed, 12 Sep 2018 06:06:24 +0800
+Message-Id: <1536703587-94565-5-git-send-email-bo.liu@linux.alibaba.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-[Adding Josef to CC]
+balance_level() may return early in some cases, but these checks don't
+have to be done with blocking write lock.
 
-On 12.09.2018 01:06, Liu Bo wrote:
-> If metadata space is hungry, how fast flush_space() can run determines
-> the latency we spend in reserve_metadata_space().
-> 
-> flush_space()
->    case FLUSH_DELAYED_ITEMS:
->       ...
->       btrfs_end_transaction()
->    case ALLOC_CHUNK:
->       ...
->       btrfs_end_transaction()
-> 
-> btrfs_end_transaction()
->    btrfs_async_run_delayed_refs()
->        // queue a work to process delayed refs
->        ...
->        if (wait)
->            wait_for_completion()
-> 
-> Although processing delayed refs can add to pinned bytes, pinned bytes
-> can only be used after committing transaction, so waiting async in
-> flush_space() doesn't help.
+This puts together these checks into a helper and the benefit is to
+avoid switching spinning locks to blocking locks (in these paticular
+cases) which slows down btrfs overall.
 
-But not waiting for the async delayed refs to complete don't we
-introduce a race where checking the pinned bytes might indicate there
-are not enough bytes to commit at the same time we will have delayed
-refs which haven't yet run but might add enough pinned bytes to make
-sense to commit?
+Signed-off-by: Liu Bo <bo.liu@linux.alibaba.com>
+---
+ fs/btrfs/ctree.c | 41 ++++++++++++++++++++++++++++++-----------
+ 1 file changed, 30 insertions(+), 11 deletions(-)
 
-> 
-> In fact we don't have to wait for asynchronous delayed refs processing
-> as delayed refs are not blocking the subsequent operations(unless within
-> committing transaction we need to make sure filesystem is consistent).
-> 
-> Signed-off-by: Liu Bo <bo.liu@linux.alibaba.com>
-> ---
->  fs/btrfs/ctree.h       |  2 +-
->  fs/btrfs/extent-tree.c | 18 ++----------------
->  fs/btrfs/inode.c       |  2 +-
->  fs/btrfs/transaction.c |  3 +--
->  4 files changed, 5 insertions(+), 20 deletions(-)
-> 
-> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-> index 00e506de70ba..4c3a733ee4cf 100644
-> --- a/fs/btrfs/ctree.h
-> +++ b/fs/btrfs/ctree.h
-> @@ -2620,7 +2620,7 @@ void btrfs_dec_block_group_reservations(struct btrfs_fs_info *fs_info,
->  int btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
->  			   unsigned long count);
->  int btrfs_async_run_delayed_refs(struct btrfs_fs_info *fs_info,
-> -				 unsigned long count, u64 transid, int wait);
-> +				 unsigned long count, u64 transid);
->  int btrfs_lookup_data_extent(struct btrfs_fs_info *fs_info, u64 start, u64 len);
->  int btrfs_lookup_extent_info(struct btrfs_trans_handle *trans,
->  			     struct btrfs_fs_info *fs_info, u64 bytenr,
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index b6767f9031b5..cac9a9d04d0c 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -2852,14 +2852,11 @@ static void delayed_ref_async_start(struct btrfs_work *work)
->  	if (ret && !async->error)
->  		async->error = ret;
->  done:
-> -	if (async->sync)
-> -		complete(&async->wait);
-> -	else
-> -		kfree(async);
-> +	kfree(async);
->  }
->  
->  int btrfs_async_run_delayed_refs(struct btrfs_fs_info *fs_info,
-> -				 unsigned long count, u64 transid, int wait)
-> +				 unsigned long count, u64 transid)
->  {
->  	struct async_delayed_refs *async;
->  	int ret;
-> @@ -2872,23 +2869,12 @@ int btrfs_async_run_delayed_refs(struct btrfs_fs_info *fs_info,
->  	async->count = count;
->  	async->error = 0;
->  	async->transid = transid;
-> -	if (wait)
-> -		async->sync = 1;
-> -	else
-> -		async->sync = 0;
-> -	init_completion(&async->wait);
->  
->  	btrfs_init_work(&async->work, btrfs_extent_refs_helper,
->  			delayed_ref_async_start, NULL, NULL);
->  
->  	btrfs_queue_work(fs_info->extent_workers, &async->work);
->  
-> -	if (wait) {
-> -		wait_for_completion(&async->wait);
-> -		ret = async->error;
-> -		kfree(async);
-> -		return ret;
-> -	}
->  	return 0;
->  }
->  
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 99ab0203b701..fd4af54f0d3b 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -4736,7 +4736,7 @@ int btrfs_truncate_inode_items(struct btrfs_trans_handle *trans,
->  			if (btrfs_should_throttle_delayed_refs(trans, fs_info))
->  				btrfs_async_run_delayed_refs(fs_info,
->  					trans->delayed_ref_updates * 2,
-> -					trans->transid, 0);
-> +					trans->transid);
->  			if (be_nice) {
->  				if (truncate_space_check(trans, root,
->  							 extent_num_bytes)) {
-> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-> index 772963a61072..a816c0999fb2 100644
-> --- a/fs/btrfs/transaction.c
-> +++ b/fs/btrfs/transaction.c
-> @@ -889,8 +889,7 @@ static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
->  
->  	kmem_cache_free(btrfs_trans_handle_cachep, trans);
->  	if (must_run_delayed_refs) {
-> -		btrfs_async_run_delayed_refs(info, cur, transid,
-> -					     must_run_delayed_refs == 1);
-> +		btrfs_async_run_delayed_refs(info, cur, transid);
->  	}
-
-If you do this, this enables you do also simplify the if (!trans->sync)
-case in __btrfs_end_transaction since now we won't care what's the type
-of transaction and only care about must_run_delayed_refs being set and
-entirely remove the trans->type check.
-
->  	return err;
->  }
-> 
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index 858085490e23..ba267a069ca1 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -1758,6 +1758,29 @@ static void root_sub_used(struct btrfs_root *root, u32 size)
+ 	return eb;
+ }
+ 
++static bool need_balance_level(struct btrfs_fs_info *fs_info,
++			      struct btrfs_trans_handle *trans,
++			      struct btrfs_path *path, int level)
++{
++	struct extent_buffer *mid;
++
++	mid = path->nodes[level];
++
++	WARN_ON(path->locks[level] != BTRFS_WRITE_LOCK &&
++		path->locks[level] != BTRFS_WRITE_LOCK_BLOCKING);
++	WARN_ON(btrfs_header_generation(mid) != trans->transid);
++
++	/* If mid is the root node. */
++	if (level < BTRFS_MAX_LEVEL - 1 && path->nodes[level + 1] == NULL)
++		if (btrfs_header_nritems(mid) != 1)
++			return false;
++
++	if (btrfs_header_nritems(mid) > BTRFS_NODEPTRS_PER_BLOCK(fs_info) / 4)
++		return false;
++
++	return true;
++}
++
+ /*
+  * node level balancing, used to make sure nodes are in proper order for
+  * item deletion.  We balance from the top down, so we have to make sure
+@@ -1780,10 +1803,6 @@ static noinline int balance_level(struct btrfs_trans_handle *trans,
+ 
+ 	mid = path->nodes[level];
+ 
+-	WARN_ON(path->locks[level] != BTRFS_WRITE_LOCK &&
+-		path->locks[level] != BTRFS_WRITE_LOCK_BLOCKING);
+-	WARN_ON(btrfs_header_generation(mid) != trans->transid);
+-
+ 	orig_ptr = btrfs_node_blockptr(mid, orig_slot);
+ 
+ 	if (level < BTRFS_MAX_LEVEL - 1) {
+@@ -1798,9 +1817,6 @@ static noinline int balance_level(struct btrfs_trans_handle *trans,
+ 	if (!parent) {
+ 		struct extent_buffer *child;
+ 
+-		if (btrfs_header_nritems(mid) != 1)
+-			return 0;
+-
+ 		/* promote the child to a root */
+ 		child = read_node_slot(fs_info, mid, 0);
+ 		if (IS_ERR(child)) {
+@@ -1838,9 +1854,6 @@ static noinline int balance_level(struct btrfs_trans_handle *trans,
+ 		free_extent_buffer_stale(mid);
+ 		return 0;
+ 	}
+-	if (btrfs_header_nritems(mid) >
+-	    BTRFS_NODEPTRS_PER_BLOCK(fs_info) / 4)
+-		return 0;
+ 
+ 	left = read_node_slot(fs_info, parent, pslot - 1);
+ 	if (IS_ERR(left))
+@@ -2460,14 +2473,20 @@ noinline void btrfs_unlock_up_safe(struct btrfs_path *path, int level)
+ 			goto again;
+ 		}
+ 
++		/* Skip setting path to blocking if balance is not needed. */
++		if (!need_balance_level(fs_info, trans, p, level)) {
++			ret = 0;
++			goto done;
++		}
++
+ 		btrfs_set_path_blocking(p);
+ 		reada_for_balance(fs_info, p, level);
+ 		sret = balance_level(trans, root, p, level);
+-
+ 		if (sret) {
+ 			ret = sret;
+ 			goto done;
+ 		}
++
+ 		b = p->nodes[level];
+ 		if (!b) {
+ 			btrfs_release_path(p);
+-- 
+1.8.3.1

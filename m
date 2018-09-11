@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf1-f193.google.com ([209.85.210.193]:34175 "EHLO
-        mail-pf1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727047AbeILDgn (ORCPT
+Received: from mail-pl1-f194.google.com ([209.85.214.194]:38864 "EHLO
+        mail-pl1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727047AbeILDgl (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 11 Sep 2018 23:36:43 -0400
-Received: by mail-pf1-f193.google.com with SMTP id k19-v6so12941832pfi.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 11 Sep 2018 15:35:16 -0700 (PDT)
+        Tue, 11 Sep 2018 23:36:41 -0400
+Received: by mail-pl1-f194.google.com with SMTP id u11-v6so11988030plq.5
+        for <linux-btrfs@vger.kernel.org>; Tue, 11 Sep 2018 15:35:15 -0700 (PDT)
 From: Omar Sandoval <osandov@osandov.com>
 To: linux-btrfs@vger.kernel.org
 Cc: kernel-team@fb.com, linux-mm@kvack.org
-Subject: [PATCH v7 3/6] vfs: update swap_{,de}activate documentation
-Date: Tue, 11 Sep 2018 15:34:46 -0700
-Message-Id: <b8fb843e36ceb66b854490094e7c8784f24900e2.1536704650.git.osandov@fb.com>
+Subject: [PATCH v7 2/6] mm: export add_swap_extent()
+Date: Tue, 11 Sep 2018 15:34:45 -0700
+Message-Id: <bb1208575e02829aae51b538709476964f97b1ea.1536704650.git.osandov@fb.com>
 In-Reply-To: <cover.1536704650.git.osandov@fb.com>
 References: <cover.1536704650.git.osandov@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -19,94 +19,24 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Omar Sandoval <osandov@fb.com>
 
-The documentation for these functions is wrong in several ways:
+Btrfs will need this for swap file support.
 
-- swap_activate() is called with the inode locked
-- swap_activate() takes a swap_info_struct * and a sector_t *
-- swap_activate() can also return a positive number of extents it added
-  itself
-- swap_deactivate() does not return anything
-
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 Signed-off-by: Omar Sandoval <osandov@fb.com>
 ---
- Documentation/filesystems/Locking | 17 +++++++----------
- Documentation/filesystems/vfs.txt | 12 ++++++++----
- 2 files changed, 15 insertions(+), 14 deletions(-)
+ mm/swapfile.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/Documentation/filesystems/Locking b/Documentation/filesystems/Locking
-index efea228ccd8a..b970c8c2ee22 100644
---- a/Documentation/filesystems/Locking
-+++ b/Documentation/filesystems/Locking
-@@ -210,8 +210,9 @@ prototypes:
- 	int (*launder_page)(struct page *);
- 	int (*is_partially_uptodate)(struct page *, unsigned long, unsigned long);
- 	int (*error_remove_page)(struct address_space *, struct page *);
--	int (*swap_activate)(struct file *);
--	int (*swap_deactivate)(struct file *);
-+	int (*swap_activate)(struct swap_info_struct *, struct file *,
-+			     sector_t *);
-+	void (*swap_deactivate)(struct file *);
+diff --git a/mm/swapfile.c b/mm/swapfile.c
+index d3f95833d12e..51cb30de17bc 100644
+--- a/mm/swapfile.c
++++ b/mm/swapfile.c
+@@ -2365,6 +2365,7 @@ add_swap_extent(struct swap_info_struct *sis, unsigned long start_page,
+ 	list_add_tail(&new_se->list, &sis->first_swap_extent.list);
+ 	return 1;
+ }
++EXPORT_SYMBOL_GPL(add_swap_extent);
  
- locking rules:
- 	All except set_page_dirty and freepage may block
-@@ -235,8 +236,8 @@ putback_page:		yes
- launder_page:		yes
- is_partially_uptodate:	yes
- error_remove_page:	yes
--swap_activate:		no
--swap_deactivate:	no
-+swap_activate:					yes
-+swap_deactivate:				no
- 
- 	->write_begin(), ->write_end() and ->readpage() may be called from
- the request handler (/dev/loop).
-@@ -333,14 +334,10 @@ cleaned, or an error value if not. Note that in order to prevent the page
- getting mapped back in and redirtied, it needs to be kept locked
- across the entire operation.
- 
--	->swap_activate will be called with a non-zero argument on
--files backing (non block device backed) swapfiles. A return value
--of zero indicates success, in which case this file can be used for
--backing swapspace. The swapspace operations will be proxied to the
--address space operations.
-+	->swap_activate is called from sys_swapon() with the inode locked.
- 
- 	->swap_deactivate() will be called in the sys_swapoff()
--path after ->swap_activate() returned success.
-+path after ->swap_activate() returned success. The inode is not locked.
- 
- ----------------------- file_lock_operations ------------------------------
- prototypes:
-diff --git a/Documentation/filesystems/vfs.txt b/Documentation/filesystems/vfs.txt
-index 4b2084d0f1fb..40d6d6d4b76b 100644
---- a/Documentation/filesystems/vfs.txt
-+++ b/Documentation/filesystems/vfs.txt
-@@ -652,8 +652,9 @@ struct address_space_operations {
- 					unsigned long);
- 	void (*is_dirty_writeback) (struct page *, bool *, bool *);
- 	int (*error_remove_page) (struct mapping *mapping, struct page *page);
--	int (*swap_activate)(struct file *);
--	int (*swap_deactivate)(struct file *);
-+	int (*swap_activate)(struct swap_info_struct *, struct file *,
-+			     sector_t *);
-+	void (*swap_deactivate)(struct file *);
- };
- 
-   writepage: called by the VM to write a dirty page to backing store.
-@@ -830,8 +831,11 @@ struct address_space_operations {
- 
-   swap_activate: Called when swapon is used on a file to allocate
- 	space if necessary and pin the block lookup information in
--	memory. A return value of zero indicates success,
--	in which case this file can be used to back swapspace.
-+	memory. If this returns zero, the swap system will call the address
-+	space operations ->readpage() and ->direct_IO(). Alternatively, this
-+	may call add_swap_extent() and return the number of extents added, in
-+	which case the swap system will use the provided blocks directly
-+	instead of going through the filesystem.
- 
-   swap_deactivate: Called during swapoff on files where swap_activate
- 	was successful.
+ /*
+  * A `swap extent' is a simple thing which maps a contiguous range of pages
 -- 
 2.18.0

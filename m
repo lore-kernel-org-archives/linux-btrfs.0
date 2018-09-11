@@ -1,134 +1,95 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:59576 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1726601AbeIKQd1 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 11 Sep 2018 12:33:27 -0400
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
-        by cn.fujitsu.com (Postfix) with ESMTP id C313F4B6ADFF
-        for <linux-btrfs@vger.kernel.org>; Tue, 11 Sep 2018 19:34:25 +0800 (CST)
-From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [RFC PATCH v2 2/2] btrfs-progs: subvolume: undelete: add btrfs subvolume undelete subcommand
-Date: Tue, 11 Sep 2018 19:34:17 +0800
-Message-ID: <20180911113417.26466-2-lufq.fnst@cn.fujitsu.com>
-In-Reply-To: <20180911113417.26466-1-lufq.fnst@cn.fujitsu.com>
-References: <20180911112903.25985-1-lufq.fnst@cn.fujitsu.com>
- <20180911113417.26466-1-lufq.fnst@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from mx2.suse.de ([195.135.220.15]:55188 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726274AbeIKKgK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 11 Sep 2018 06:36:10 -0400
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 261B5B08D
+        for <linux-btrfs@vger.kernel.org>; Tue, 11 Sep 2018 05:38:34 +0000 (UTC)
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v3 1/7] btrfs: qgroup: Introduce trace event to analyse the number of dirty extents accounted
+Date: Tue, 11 Sep 2018 13:38:12 +0800
+Message-Id: <20180911053818.10191-2-wqu@suse.com>
+In-Reply-To: <20180911053818.10191-1-wqu@suse.com>
+References: <20180911053818.10191-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add the undelete subcommand, this is depend on the
-BTRFS_IOC_SUBVOL_UNDELETE ioctl.
+Number of qgroup dirty extents is directly linked to the performance
+overhead, so add a new trace event, trace_qgroup_num_dirty_extents(), to
+record how many dirty extents is processed in
+btrfs_qgroup_account_extents().
 
-Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+This will be pretty handy to analyse later balance performance
+improvement.
+
+Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- btrfs-completion |  2 +-
- cmds-subvolume.c | 70 ++++++++++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 71 insertions(+), 1 deletion(-)
+ fs/btrfs/qgroup.c            |  4 ++++
+ include/trace/events/btrfs.h | 21 +++++++++++++++++++++
+ 2 files changed, 25 insertions(+)
 
-diff --git a/btrfs-completion b/btrfs-completion
-index ae683f4ecf61..2b43fbd63023 100644
---- a/btrfs-completion
-+++ b/btrfs-completion
-@@ -30,7 +30,7 @@ _btrfs()
- 	local cmd=${words[1]}
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index 4353bb69bb86..5977eedc00d8 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -2133,6 +2133,7 @@ int btrfs_qgroup_account_extents(struct btrfs_trans_handle *trans)
+ 	struct btrfs_delayed_ref_root *delayed_refs;
+ 	struct ulist *new_roots = NULL;
+ 	struct rb_node *node;
++	u64 num_dirty_extents = 0;
+ 	u64 qgroup_to_skip;
+ 	int ret = 0;
  
- 	commands='subvolume filesystem balance device scrub check rescue restore inspect-internal property send receive quota qgroup replace help version'
--	commands_subvolume='create delete list snapshot find-new get-default set-default show sync'
-+	commands_subvolume='create delete list snapshot find-new get-default set-default show sync undelete'
- 	commands_filesystem='defragment sync resize show df du label usage'
- 	commands_balance='start pause cancel resume status'
- 	commands_device='scan add delete remove ready stats usage'
-diff --git a/cmds-subvolume.c b/cmds-subvolume.c
-index e7a884af1f5d..228d0b9e9b34 100644
---- a/cmds-subvolume.c
-+++ b/cmds-subvolume.c
-@@ -1219,6 +1219,74 @@ out:
- 	return !!ret;
+@@ -2142,6 +2143,7 @@ int btrfs_qgroup_account_extents(struct btrfs_trans_handle *trans)
+ 		record = rb_entry(node, struct btrfs_qgroup_extent_record,
+ 				  node);
+ 
++		num_dirty_extents++;
+ 		trace_btrfs_qgroup_account_extents(fs_info, record);
+ 
+ 		if (!ret) {
+@@ -2187,6 +2189,8 @@ int btrfs_qgroup_account_extents(struct btrfs_trans_handle *trans)
+ 		kfree(record);
+ 
+ 	}
++	trace_qgroup_num_dirty_extents(fs_info, trans->transid,
++				       num_dirty_extents);
+ 	return ret;
  }
  
-+static const char * const cmd_subvol_undelete_usage[] = {
-+	"btrfs subvolume undelete [-n <name>] <subvol_id> <dest>",
-+	"Undelete the subvolume of the given <subvol_id> to <dest>.",
-+	"",
-+	"-n <name>  recover the subvolume with <name>.",
-+	NULL
-+};
-+
-+static int cmd_subvol_undelete(int argc, char **argv)
-+{
-+	struct btrfs_ioctl_subvol_undelete_args args;
-+	bool need_assign_name = true;
-+	DIR *dirstream = NULL;
-+	char *dest;
-+	int fd = -1;
-+	int ret;
-+
-+	memset(&args, 0, sizeof(args));
-+
-+	while (1) {
-+		int c = getopt(argc, argv, "n:");
-+
-+		if (c < 0)
-+			break;
-+
-+		switch (c) {
-+		case 'n':
-+			strncpy_null(args.name, optarg);
-+			need_assign_name = false;
-+			break;
-+		default:
-+			usage(cmd_subvol_undelete_usage);
-+		}
-+	}
-+	if (!need_assign_name) {
-+		if (!test_issubvolname(args.name)) {
-+			error("invalid subvolume name: %s", args.name);
-+			return -EINVAL;
-+		} else if (strlen(args.name) > BTRFS_VOL_NAME_MAX) {
-+			error("subvolume name too long: %s", args.name);
-+			return -EINVAL;
-+		}
-+	}
-+
-+	if (check_argc_exact(argc - optind, 2))
-+		usage(cmd_subvol_undelete_usage);
-+
-+	args.subvol_id = arg_strtou64(argv[optind]);
-+	if (need_assign_name)
-+		snprintf(args.name, BTRFS_VOL_NAME_MAX, "sub_%llu",
-+				args.subvol_id);
-+
-+	dest = argv[optind + 1];
-+	fd = btrfs_open_dir(dest, &dirstream, 1);
-+	if (fd < 0) {
-+		error("can't access '%s'", dest);
-+		return -1;
-+	}
-+
-+	ret = ioctl(fd, BTRFS_IOC_SUBVOL_UNDELETE, &args);
-+	if (ret)
-+		perror("BTRFS_IOC_SUBVOL_UNDELETE");
-+
-+	close_file_or_dir(fd, dirstream);
-+
-+	return ret;
-+}
-+
- static const char subvolume_cmd_group_info[] =
- "manage subvolumes: create, delete, list, etc";
+diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
+index b401c4e36394..79253666d1d0 100644
+--- a/include/trace/events/btrfs.h
++++ b/include/trace/events/btrfs.h
+@@ -1575,6 +1575,27 @@ DEFINE_EVENT(btrfs_qgroup_extent, btrfs_qgroup_trace_extent,
+ 	TP_ARGS(fs_info, rec)
+ );
  
-@@ -1237,6 +1305,8 @@ const struct cmd_group subvolume_cmd_group = {
- 			NULL, 0 },
- 		{ "show", cmd_subvol_show, cmd_subvol_show_usage, NULL, 0 },
- 		{ "sync", cmd_subvol_sync, cmd_subvol_sync_usage, NULL, 0 },
-+		{ "undelete", cmd_subvol_undelete, cmd_subvol_undelete_usage,
-+			NULL, 0 },
- 		NULL_CMD_STRUCT
- 	}
- };
++TRACE_EVENT(qgroup_num_dirty_extents,
++
++	TP_PROTO(const struct btrfs_fs_info *fs_info, u64 transid,
++		 u64 num_dirty_extents),
++
++	TP_ARGS(fs_info, transid, num_dirty_extents),
++
++	TP_STRUCT__entry_btrfs(
++		__field(	u64, transid			)
++		__field(	u64, num_dirty_extents		)
++	),
++
++	TP_fast_assign_btrfs(fs_info,
++		__entry->transid	   = transid;
++		__entry->num_dirty_extents = num_dirty_extents;
++	),
++
++	TP_printk_btrfs("transid=%llu num_dirty_extents=%llu",
++		__entry->transid, __entry->num_dirty_extents)
++);
++
+ TRACE_EVENT(btrfs_qgroup_account_extent,
+ 
+ 	TP_PROTO(const struct btrfs_fs_info *fs_info, u64 transid, u64 bytenr,
 -- 
 2.18.0

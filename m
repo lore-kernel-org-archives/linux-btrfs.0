@@ -1,46 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk1-f195.google.com ([209.85.222.195]:40946 "EHLO
-        mail-qk1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728113AbeIKW7d (ORCPT
+Received: from mail-qt0-f195.google.com ([209.85.216.195]:35604 "EHLO
+        mail-qt0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728113AbeIKW7f (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 11 Sep 2018 18:59:33 -0400
-Received: by mail-qk1-f195.google.com with SMTP id c126-v6so17335287qkd.7
-        for <linux-btrfs@vger.kernel.org>; Tue, 11 Sep 2018 10:59:07 -0700 (PDT)
+        Tue, 11 Sep 2018 18:59:35 -0400
+Received: by mail-qt0-f195.google.com with SMTP id j7-v6so29236079qtp.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 11 Sep 2018 10:59:09 -0700 (PDT)
 From: Josef Bacik <josef@toxicpanda.com>
 To: kernel-team@fb.com, linux-btrfs@vger.kernel.org
-Subject: [PATCH 31/36] btrfs: cleanup pending bgs on transaction abort
-Date: Tue, 11 Sep 2018 13:58:02 -0400
-Message-Id: <20180911175807.26181-32-josef@toxicpanda.com>
+Subject: [PATCH 32/36] btrfs: clear delayed_refs_rsv for dirty bg cleanup
+Date: Tue, 11 Sep 2018 13:58:03 -0400
+Message-Id: <20180911175807.26181-33-josef@toxicpanda.com>
 In-Reply-To: <20180911175807.26181-1-josef@toxicpanda.com>
 References: <20180911175807.26181-1-josef@toxicpanda.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We may abort the transaction during a commit and not have a chance to
-run the pending bgs stuff, which will leave block groups on our list and
-cause us accounting issues and leaked memory.  Fix this by running the
-pending bgs when we cleanup a transaction.
+We keep track of dirty bg's as a reservation in the delayed_refs_rsv, so
+when we abort and we cleanup those dirty bgs we need to drop their
+reservation so we don't have accounting issues and lots of scary
+messages on umount.
 
-Reviewed-by: Omar Sandoval <osandov@fb.com>
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/transaction.c | 4 ++++
- 1 file changed, 4 insertions(+)
+ fs/btrfs/disk-io.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 46ca775a709e..9168efaca37e 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -2280,6 +2280,10 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
- 	btrfs_scrub_continue(fs_info);
- cleanup_transaction:
- 	btrfs_trans_release_metadata(trans);
-+	/* This cleans up the pending block groups list properly. */
-+	if (!trans->aborted)
-+		trans->aborted = ret;
-+	btrfs_create_pending_block_groups(trans);
- 	btrfs_trans_release_chunk_metadata(trans);
- 	trans->block_rsv = NULL;
- 	btrfs_warn(fs_info, "Skipping commit of aborted transaction.");
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index caaca8154a1a..54fbdc944a3f 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -4412,6 +4412,7 @@ void btrfs_cleanup_dirty_bgs(struct btrfs_transaction *cur_trans,
+ 
+ 		spin_unlock(&cur_trans->dirty_bgs_lock);
+ 		btrfs_put_block_group(cache);
++		btrfs_delayed_refs_rsv_release(fs_info, 1);
+ 		spin_lock(&cur_trans->dirty_bgs_lock);
+ 	}
+ 	spin_unlock(&cur_trans->dirty_bgs_lock);
 -- 
 2.14.3

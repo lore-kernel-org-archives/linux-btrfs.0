@@ -1,55 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qt0-f194.google.com ([209.85.216.194]:44493 "EHLO
-        mail-qt0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727044AbeIKW6o (ORCPT
+Received: from mail-qt0-f195.google.com ([209.85.216.195]:41648 "EHLO
+        mail-qt0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727044AbeIKW6q (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 11 Sep 2018 18:58:44 -0400
-Received: by mail-qt0-f194.google.com with SMTP id k38-v6so29172417qtk.11
-        for <linux-btrfs@vger.kernel.org>; Tue, 11 Sep 2018 10:58:18 -0700 (PDT)
+        Tue, 11 Sep 2018 18:58:46 -0400
+Received: by mail-qt0-f195.google.com with SMTP id t39-v6so29163960qtc.8
+        for <linux-btrfs@vger.kernel.org>; Tue, 11 Sep 2018 10:58:20 -0700 (PDT)
 From: Josef Bacik <josef@toxicpanda.com>
 To: kernel-team@fb.com, linux-btrfs@vger.kernel.org
-Cc: Josef Bacik <jbacik@fb.com>
-Subject: [PATCH 04/36] btrfs: only track ref_heads in delayed_ref_updates
-Date: Tue, 11 Sep 2018 13:57:35 -0400
-Message-Id: <20180911175807.26181-5-josef@toxicpanda.com>
+Subject: [PATCH 05/36] btrfs: only count ref heads run in __btrfs_run_delayed_refs
+Date: Tue, 11 Sep 2018 13:57:36 -0400
+Message-Id: <20180911175807.26181-6-josef@toxicpanda.com>
 In-Reply-To: <20180911175807.26181-1-josef@toxicpanda.com>
 References: <20180911175807.26181-1-josef@toxicpanda.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Josef Bacik <jbacik@fb.com>
+We pick the number of ref's to run based on the number of ref heads, and
+only make the decision to stop once we've processed entire ref heads, so
+only count the ref heads we've run and bail once we've hit the number of
+ref heads we wanted to process.
 
-We use this number to figure out how many delayed refs to run, but
-__btrfs_run_delayed_refs really only checks every time we need a new
-delayed ref head, so we always run at least one ref head completely no
-matter what the number of items on it.  Fix the accounting to only be
-adjusted when we add/remove a ref head.
-
-Signed-off-by: Josef Bacik <jbacik@fb.com>
+Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/delayed-ref.c | 3 ---
- 1 file changed, 3 deletions(-)
+ fs/btrfs/extent-tree.c | 5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
-index 3a9e4ac21794..27f7dd4e3d52 100644
---- a/fs/btrfs/delayed-ref.c
-+++ b/fs/btrfs/delayed-ref.c
-@@ -234,8 +234,6 @@ static inline void drop_delayed_ref(struct btrfs_trans_handle *trans,
- 	ref->in_tree = 0;
- 	btrfs_put_delayed_ref(ref);
- 	atomic_dec(&delayed_refs->num_entries);
--	if (trans->delayed_ref_updates)
--		trans->delayed_ref_updates--;
- }
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 98f36dfeccb0..b32bd38390dd 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -2592,6 +2592,7 @@ static noinline int __btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
+ 				spin_unlock(&delayed_refs->lock);
+ 				break;
+ 			}
++			count++;
  
- static bool merge_ref(struct btrfs_trans_handle *trans,
-@@ -460,7 +458,6 @@ static int insert_delayed_ref(struct btrfs_trans_handle *trans,
- 	if (ref->action == BTRFS_ADD_DELAYED_REF)
- 		list_add_tail(&ref->add_list, &href->ref_add_list);
- 	atomic_inc(&root->num_entries);
--	trans->delayed_ref_updates++;
- 	spin_unlock(&href->lock);
- 	return ret;
- }
+ 			/* grab the lock that says we are going to process
+ 			 * all the refs for this head */
+@@ -2605,7 +2606,6 @@ static noinline int __btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
+ 			 */
+ 			if (ret == -EAGAIN) {
+ 				locked_ref = NULL;
+-				count++;
+ 				continue;
+ 			}
+ 		}
+@@ -2633,7 +2633,6 @@ static noinline int __btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
+ 			unselect_delayed_ref_head(delayed_refs, locked_ref);
+ 			locked_ref = NULL;
+ 			cond_resched();
+-			count++;
+ 			continue;
+ 		}
+ 
+@@ -2651,7 +2650,6 @@ static noinline int __btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
+ 				return ret;
+ 			}
+ 			locked_ref = NULL;
+-			count++;
+ 			continue;
+ 		}
+ 
+@@ -2702,7 +2700,6 @@ static noinline int __btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
+ 		}
+ 
+ 		btrfs_put_delayed_ref(ref);
+-		count++;
+ 		cond_resched();
+ 	}
+ 
 -- 
 2.14.3

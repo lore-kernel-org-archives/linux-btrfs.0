@@ -1,115 +1,124 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qt0-f193.google.com ([209.85.216.193]:42884 "EHLO
-        mail-qt0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727044AbeIKW6i (ORCPT
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:23627 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1726713AbeIKQ2I (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 11 Sep 2018 18:58:38 -0400
-Received: by mail-qt0-f193.google.com with SMTP id z8-v6so29175507qto.9
-        for <linux-btrfs@vger.kernel.org>; Tue, 11 Sep 2018 10:58:12 -0700 (PDT)
-From: Josef Bacik <josef@toxicpanda.com>
-To: kernel-team@fb.com, linux-btrfs@vger.kernel.org
-Cc: Josef Bacik <jbacik@fb.com>
-Subject: [PATCH 01/36] btrfs: add btrfs_delete_ref_head helper
-Date: Tue, 11 Sep 2018 13:57:32 -0400
-Message-Id: <20180911175807.26181-2-josef@toxicpanda.com>
-In-Reply-To: <20180911175807.26181-1-josef@toxicpanda.com>
-References: <20180911175807.26181-1-josef@toxicpanda.com>
+        Tue, 11 Sep 2018 12:28:08 -0400
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
+        by cn.fujitsu.com (Postfix) with ESMTP id 2AD4A4B6AE18
+        for <linux-btrfs@vger.kernel.org>; Tue, 11 Sep 2018 19:29:11 +0800 (CST)
+From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [RFC PATCH v2 1/4] btrfs: factor out btrfs_link_subvol from create_subvol
+Date: Tue, 11 Sep 2018 19:29:00 +0800
+Message-ID: <20180911112903.25985-2-lufq.fnst@cn.fujitsu.com>
+In-Reply-To: <20180911112903.25985-1-lufq.fnst@cn.fujitsu.com>
+References: <20180911112903.25985-1-lufq.fnst@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Josef Bacik <jbacik@fb.com>
+The function btrfs_link_subvol is responsible to link the subvolume to
+the specified directory, which is the opposite of what
+btrfs_unlink_subvol does.
 
-We do this dance in cleanup_ref_head and check_ref_cleanup, unify it
-into a helper and cleanup the calling functions.
+No functional change.
 
-Signed-off-by: Josef Bacik <jbacik@fb.com>
+Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 ---
- fs/btrfs/delayed-ref.c | 14 ++++++++++++++
- fs/btrfs/delayed-ref.h |  3 ++-
- fs/btrfs/extent-tree.c | 22 +++-------------------
- 3 files changed, 19 insertions(+), 20 deletions(-)
+ fs/btrfs/ioctl.c | 64 +++++++++++++++++++++++++++++++-----------------
+ 1 file changed, 41 insertions(+), 23 deletions(-)
 
-diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
-index 62ff545ba1f7..3a9e4ac21794 100644
---- a/fs/btrfs/delayed-ref.c
-+++ b/fs/btrfs/delayed-ref.c
-@@ -393,6 +393,20 @@ btrfs_select_ref_head(struct btrfs_trans_handle *trans)
- 	return head;
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 4905d13dee0a..1b03d07acde2 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -542,6 +542,45 @@ int btrfs_is_empty_uuid(u8 *uuid)
+ 	return 1;
  }
  
-+void btrfs_delete_ref_head(struct btrfs_delayed_ref_root *delayed_refs,
-+			   struct btrfs_delayed_ref_head *head)
++static int btrfs_link_subvol(struct btrfs_trans_handle *trans,
++			     struct inode *dir, u64 objectid, const char *name,
++			     int namelen)
 +{
-+	lockdep_assert_held(&delayed_refs->lock);
-+	lockdep_assert_held(&head->lock);
++	struct btrfs_root *root = BTRFS_I(dir)->root;
++	struct btrfs_key key;
++	u64 index = 0;
++	int ret;
 +
-+	rb_erase(&head->href_node, &delayed_refs->href_root);
-+	RB_CLEAR_NODE(&head->href_node);
-+	atomic_dec(&delayed_refs->num_entries);
-+	delayed_refs->num_heads--;
-+	if (head->processing == 0)
-+		delayed_refs->num_heads_ready--;
++	/*
++	 * insert the directory item
++	 */
++	ret = btrfs_set_inode_index(BTRFS_I(dir), &index);
++	if (ret) {
++		btrfs_abort_transaction(trans, ret);
++		return ret;
++	}
++
++	key.objectid = objectid;
++	key.type = BTRFS_ROOT_ITEM_KEY;
++	key.offset = -1;
++	ret = btrfs_insert_dir_item(trans, name, namelen, BTRFS_I(dir), &key,
++				    BTRFS_FT_DIR, index);
++	if (ret) {
++		btrfs_abort_transaction(trans, ret);
++		return ret;
++	}
++
++	btrfs_i_size_write(BTRFS_I(dir), dir->i_size + namelen * 2);
++	ret = btrfs_update_inode(trans, root, dir);
++	BUG_ON(ret);
++
++	ret = btrfs_add_root_ref(trans, objectid, root->root_key.objectid,
++				 btrfs_ino(BTRFS_I(dir)), index, name, namelen);
++	BUG_ON(ret);
++
++	return ret;
 +}
 +
- /*
-  * Helper to insert the ref_node to the tail or merge with tail.
-  *
-diff --git a/fs/btrfs/delayed-ref.h b/fs/btrfs/delayed-ref.h
-index d9f2a4ebd5db..7769177b489e 100644
---- a/fs/btrfs/delayed-ref.h
-+++ b/fs/btrfs/delayed-ref.h
-@@ -261,7 +261,8 @@ static inline void btrfs_delayed_ref_unlock(struct btrfs_delayed_ref_head *head)
- {
- 	mutex_unlock(&head->mutex);
- }
--
-+void btrfs_delete_ref_head(struct btrfs_delayed_ref_root *delayed_refs,
-+			   struct btrfs_delayed_ref_head *head);
+ static noinline int create_subvol(struct inode *dir,
+ 				  struct dentry *dentry,
+ 				  const char *name, int namelen,
+@@ -563,7 +602,6 @@ static noinline int create_subvol(struct inode *dir,
+ 	int err;
+ 	u64 objectid;
+ 	u64 new_dirid = BTRFS_FIRST_FREE_OBJECTID;
+-	u64 index = 0;
+ 	uuid_le new_uuid;
  
- struct btrfs_delayed_ref_head *
- btrfs_select_ref_head(struct btrfs_trans_handle *trans);
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index f77226d8020a..d24a0de4a2e7 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -2492,12 +2492,9 @@ static int cleanup_ref_head(struct btrfs_trans_handle *trans,
- 		spin_unlock(&delayed_refs->lock);
- 		return 1;
- 	}
--	delayed_refs->num_heads--;
--	rb_erase(&head->href_node, &delayed_refs->href_root);
--	RB_CLEAR_NODE(&head->href_node);
-+	btrfs_delete_ref_head(delayed_refs, head);
- 	spin_unlock(&head->lock);
- 	spin_unlock(&delayed_refs->lock);
--	atomic_dec(&delayed_refs->num_entries);
- 
- 	trace_run_delayed_ref_head(fs_info, head, 0);
- 
-@@ -6984,22 +6981,9 @@ static noinline int check_ref_cleanup(struct btrfs_trans_handle *trans,
- 	if (!mutex_trylock(&head->mutex))
- 		goto out;
+ 	root_item = kzalloc(sizeof(*root_item), GFP_KERNEL);
+@@ -677,29 +715,9 @@ static noinline int create_subvol(struct inode *dir,
+ 	new_root->highest_objectid = new_dirid;
+ 	mutex_unlock(&new_root->objectid_mutex);
  
 -	/*
--	 * at this point we have a head with no other entries.  Go
--	 * ahead and process it.
+-	 * insert the directory item
 -	 */
--	rb_erase(&head->href_node, &delayed_refs->href_root);
--	RB_CLEAR_NODE(&head->href_node);
--	atomic_dec(&delayed_refs->num_entries);
+-	ret = btrfs_set_inode_index(BTRFS_I(dir), &index);
+-	if (ret) {
+-		btrfs_abort_transaction(trans, ret);
+-		goto fail;
+-	}
 -
--	/*
--	 * we don't take a ref on the node because we're removing it from the
--	 * tree, so we just steal the ref the tree was holding.
--	 */
--	delayed_refs->num_heads--;
--	if (head->processing == 0)
--		delayed_refs->num_heads_ready--;
-+	btrfs_delete_ref_head(delayed_refs, head);
- 	head->processing = 0;
-+
- 	spin_unlock(&head->lock);
- 	spin_unlock(&delayed_refs->lock);
+-	ret = btrfs_insert_dir_item(trans, name, namelen, BTRFS_I(dir), &key,
+-				    BTRFS_FT_DIR, index);
+-	if (ret) {
+-		btrfs_abort_transaction(trans, ret);
++	ret = btrfs_link_subvol(trans, dir, objectid, name, namelen);
++	if (ret)
+ 		goto fail;
+-	}
+-
+-	btrfs_i_size_write(BTRFS_I(dir), dir->i_size + namelen * 2);
+-	ret = btrfs_update_inode(trans, root, dir);
+-	BUG_ON(ret);
+-
+-	ret = btrfs_add_root_ref(trans, objectid, root->root_key.objectid,
+-				 btrfs_ino(BTRFS_I(dir)), index, name, namelen);
+-	BUG_ON(ret);
  
+ 	ret = btrfs_uuid_tree_add(trans, root_item->uuid,
+ 				  BTRFS_UUID_KEY_SUBVOL, objectid);
 -- 
-2.14.3
+2.18.0

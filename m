@@ -1,50 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:49760 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S2390076AbeIUVLW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 21 Sep 2018 17:11:22 -0400
-Date: Fri, 21 Sep 2018 17:21:58 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Omar Sandoval <osandov@osandov.com>
-Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org, kernel-team@fb.com,
-        David Sterba <dsterba@suse.com>
-Subject: Re: [PATCH v8 6/6] Btrfs: support swap files
-Message-ID: <20180921152158.GL5847@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <cover.1537419652.git.osandov@fb.com>
- <0a585197abaedd39d0f6caec59ce3976f4654752.1537419652.git.osandov@fb.com>
- <20180920171541.GD5847@twin.jikos.cz>
- <20180920172257.GA26479@vader>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180920172257.GA26479@vader>
+Received: from mail-pf1-f193.google.com ([209.85.210.193]:36521 "EHLO
+        mail-pf1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727047AbeILDgk (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 11 Sep 2018 23:36:40 -0400
+Received: by mail-pf1-f193.google.com with SMTP id b11-v6so12931570pfo.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 11 Sep 2018 15:35:13 -0700 (PDT)
+From: Omar Sandoval <osandov@osandov.com>
+To: linux-btrfs@vger.kernel.org
+Cc: kernel-team@fb.com, linux-mm@kvack.org
+Subject: [PATCH v7 0/6] Btrfs: implement swap file support
+Date: Tue, 11 Sep 2018 15:34:43 -0700
+Message-Id: <cover.1536704650.git.osandov@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Sep 20, 2018 at 10:22:57AM -0700, Omar Sandoval wrote:
-> > > +	/*
-> > > +	 * Balance or device remove/replace/resize can move stuff around from
-> > > +	 * under us. The EXCL_OP flag makes sure they aren't running/won't run
-> > > +	 * concurrently while we are mapping the swap extents, and
-> > > +	 * fs_info->swapfile_pins prevents them from running while the swap file
-> > > +	 * is active and moving the extents. Note that this also prevents a
-> > > +	 * concurrent device add which isn't actually necessary, but it's not
-> > > +	 * really worth the trouble to allow it.
-> > > +	 */
-> > > +	if (test_and_set_bit(BTRFS_FS_EXCL_OP, &fs_info->flags))
-> > > +		return -EBUSY;
-> > 
-> > This could be also accompanied by a message, "why does not my swapfile
-> > activate?" -> "there's an exclusive operation running". I've checked if
-> > there are similar messages for the other exclusive ops. There are.
-> 
-> Sounds good. I addressed all of your comments and pushed to
-> https://github.com/osandov/linux/tree/btrfs-swap. The only thing I
-> didn't change was the btrfs_info about not being able to relocate an
-> active swapfile. I think it makes sense as btrfs_info since we already
-> log every block group we are relocating as info (see
-> describe_relocation()).
+From: Omar Sandoval <osandov@fb.com>
 
-Ok, then it's consistent with the relocation mesages. I'll do another
-pass just to see if the log level is sane for all messages but this can
-be tuned later too, so this is only a minor issue.
+Hi,
+
+This series implements swap file support for Btrfs.
+
+Changes from v6 [1]:
+
+- Moved btrfs_get_chunk_map() comment to function body
+- Added more comments about pinned block group/device rbtree
+- Fixed bug in patch 4 which broke resize
+
+Based on v4.19-rc3.
+
+Thanks!
+
+1: https://www.spinics.net/lists/linux-btrfs/msg81732.html
+
+Omar Sandoval (6):
+  mm: split SWP_FILE into SWP_ACTIVATED and SWP_FS
+  mm: export add_swap_extent()
+  vfs: update swap_{,de}activate documentation
+  Btrfs: prevent ioctls from interfering with a swap file
+  Btrfs: rename get_chunk_map() and make it non-static
+  Btrfs: support swap files
+
+ Documentation/filesystems/Locking |  17 +-
+ Documentation/filesystems/vfs.txt |  12 +-
+ fs/btrfs/ctree.h                  |  29 +++
+ fs/btrfs/dev-replace.c            |   8 +
+ fs/btrfs/disk-io.c                |   4 +
+ fs/btrfs/inode.c                  | 317 ++++++++++++++++++++++++++++++
+ fs/btrfs/ioctl.c                  |  31 ++-
+ fs/btrfs/relocation.c             |  18 +-
+ fs/btrfs/volumes.c                |  82 ++++++--
+ fs/btrfs/volumes.h                |   2 +
+ include/linux/swap.h              |  13 +-
+ mm/page_io.c                      |   6 +-
+ mm/swapfile.c                     |  14 +-
+ 13 files changed, 502 insertions(+), 51 deletions(-)
+
+-- 
+2.18.0

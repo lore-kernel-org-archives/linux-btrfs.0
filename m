@@ -1,74 +1,107 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk1-f195.google.com ([209.85.222.195]:41016 "EHLO
-        mail-qk1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728184AbeIKW7I (ORCPT
+Received: from mail-qt0-f194.google.com ([209.85.216.194]:40524 "EHLO
+        mail-qt0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728184AbeIKW7L (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 11 Sep 2018 18:59:08 -0400
-Received: by mail-qk1-f195.google.com with SMTP id h138-v6so17323795qke.8
-        for <linux-btrfs@vger.kernel.org>; Tue, 11 Sep 2018 10:58:42 -0700 (PDT)
+        Tue, 11 Sep 2018 18:59:11 -0400
+Received: by mail-qt0-f194.google.com with SMTP id h4-v6so29190301qtj.7
+        for <linux-btrfs@vger.kernel.org>; Tue, 11 Sep 2018 10:58:46 -0700 (PDT)
 From: Josef Bacik <josef@toxicpanda.com>
 To: kernel-team@fb.com, linux-btrfs@vger.kernel.org
-Subject: [PATCH 17/36] btrfs: loop in inode_rsv_refill
-Date: Tue, 11 Sep 2018 13:57:48 -0400
-Message-Id: <20180911175807.26181-18-josef@toxicpanda.com>
+Cc: Josef Bacik <jbacik@fb.com>
+Subject: [PATCH 19/36] btrfs: set max_extent_size properly
+Date: Tue, 11 Sep 2018 13:57:50 -0400
+Message-Id: <20180911175807.26181-20-josef@toxicpanda.com>
 In-Reply-To: <20180911175807.26181-1-josef@toxicpanda.com>
 References: <20180911175807.26181-1-josef@toxicpanda.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-With severe fragmentation we can end up with our inode rsv size being
-huge during writeout, which would cause us to need to make very large
-metadata reservations.  However we may not actually need that much once
-writeout is complete.  So instead try to make our reservation, and if we
-couldn't make it re-calculate our new reservation size and try again.
-If our reservation size doesn't change between tries then we know we are
-actually out of space and can error out.
+From: Josef Bacik <jbacik@fb.com>
 
-Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+We can't use entry->bytes if our entry is a bitmap entry, we need to use
+entry->max_extent_size in that case.  Fix up all the logic to make this
+consistent.
+
+Signed-off-by: Josef Bacik <jbacik@fb.com>
 ---
- fs/btrfs/extent-tree.c | 19 +++++++++++++++++--
- 1 file changed, 17 insertions(+), 2 deletions(-)
+ fs/btrfs/free-space-cache.c | 29 +++++++++++++++++++----------
+ 1 file changed, 19 insertions(+), 10 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 57567d013447..e43834380ce6 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -5790,10 +5790,11 @@ static int btrfs_inode_rsv_refill(struct btrfs_inode *inode,
- {
- 	struct btrfs_root *root = inode->root;
- 	struct btrfs_block_rsv *block_rsv = &inode->block_rsv;
--	u64 num_bytes = 0;
-+	u64 num_bytes = 0, last = 0;
- 	u64 qgroup_num_bytes = 0;
- 	int ret = -ENOSPC;
- 
-+again:
- 	spin_lock(&block_rsv->lock);
- 	if (block_rsv->reserved < block_rsv->size)
- 		num_bytes = block_rsv->size - block_rsv->reserved;
-@@ -5818,8 +5819,22 @@ static int btrfs_inode_rsv_refill(struct btrfs_inode *inode,
- 		spin_lock(&block_rsv->lock);
- 		block_rsv->qgroup_rsv_reserved += qgroup_num_bytes;
- 		spin_unlock(&block_rsv->lock);
--	} else
-+	} else {
- 		btrfs_qgroup_free_meta_prealloc(root, qgroup_num_bytes);
-+
-+		/*
-+		 * If we are fragmented we can end up with a lot of outstanding
-+		 * extents which will make our size be much larger than our
-+		 * reserved amount.  If we happen to try to do a reservation
-+		 * here that may result in us trying to do a pretty hefty
-+		 * reservation, which we may not need once delalloc flushing
-+		 * happens.  If this is the case try and do the reserve again.
-+		 */
-+		if (flush == BTRFS_RESERVE_FLUSH_ALL && last != num_bytes) {
-+			last = num_bytes;
-+			goto again;
-+		}
-+	}
- 	return ret;
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index e077ad3b4549..2e96ee7da3ec 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -1770,6 +1770,18 @@ static int search_bitmap(struct btrfs_free_space_ctl *ctl,
+ 	return -1;
  }
  
++static void set_max_extent_size(struct btrfs_free_space *entry,
++				u64 *max_extent_size)
++{
++	if (entry->bitmap) {
++		if (entry->max_extent_size > *max_extent_size)
++			*max_extent_size = entry->max_extent_size;
++	} else {
++		if (entry->bytes > *max_extent_size)
++			*max_extent_size = entry->bytes;
++	}
++}
++
+ /* Cache the size of the max extent in bytes */
+ static struct btrfs_free_space *
+ find_free_space(struct btrfs_free_space_ctl *ctl, u64 *offset, u64 *bytes,
+@@ -1791,8 +1803,7 @@ find_free_space(struct btrfs_free_space_ctl *ctl, u64 *offset, u64 *bytes,
+ 	for (node = &entry->offset_index; node; node = rb_next(node)) {
+ 		entry = rb_entry(node, struct btrfs_free_space, offset_index);
+ 		if (entry->bytes < *bytes) {
+-			if (entry->bytes > *max_extent_size)
+-				*max_extent_size = entry->bytes;
++			set_max_extent_size(entry, max_extent_size);
+ 			continue;
+ 		}
+ 
+@@ -1810,8 +1821,7 @@ find_free_space(struct btrfs_free_space_ctl *ctl, u64 *offset, u64 *bytes,
+ 		}
+ 
+ 		if (entry->bytes < *bytes + align_off) {
+-			if (entry->bytes > *max_extent_size)
+-				*max_extent_size = entry->bytes;
++			set_max_extent_size(entry, max_extent_size);
+ 			continue;
+ 		}
+ 
+@@ -1823,8 +1833,8 @@ find_free_space(struct btrfs_free_space_ctl *ctl, u64 *offset, u64 *bytes,
+ 				*offset = tmp;
+ 				*bytes = size;
+ 				return entry;
+-			} else if (size > *max_extent_size) {
+-				*max_extent_size = size;
++			} else {
++				set_max_extent_size(entry, max_extent_size);
+ 			}
+ 			continue;
+ 		}
+@@ -2684,8 +2694,7 @@ static u64 btrfs_alloc_from_bitmap(struct btrfs_block_group_cache *block_group,
+ 
+ 	err = search_bitmap(ctl, entry, &search_start, &search_bytes, true);
+ 	if (err) {
+-		if (search_bytes > *max_extent_size)
+-			*max_extent_size = search_bytes;
++		set_max_extent_size(entry, max_extent_size);
+ 		return 0;
+ 	}
+ 
+@@ -2722,8 +2731,8 @@ u64 btrfs_alloc_from_cluster(struct btrfs_block_group_cache *block_group,
+ 
+ 	entry = rb_entry(node, struct btrfs_free_space, offset_index);
+ 	while (1) {
+-		if (entry->bytes < bytes && entry->bytes > *max_extent_size)
+-			*max_extent_size = entry->bytes;
++		if (entry->bytes < bytes)
++			set_max_extent_size(entry, max_extent_size);
+ 
+ 		if (entry->bytes < bytes ||
+ 		    (!entry->bitmap && entry->offset < min_start)) {
 -- 
 2.14.3

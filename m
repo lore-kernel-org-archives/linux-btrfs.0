@@ -1,51 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qt0-f194.google.com ([209.85.216.194]:37295 "EHLO
-        mail-qt0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728113AbeIKW7k (ORCPT
+Received: from mail-qk1-f181.google.com ([209.85.222.181]:40182 "EHLO
+        mail-qk1-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728113AbeIKW7b (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 11 Sep 2018 18:59:40 -0400
-Received: by mail-qt0-f194.google.com with SMTP id n6-v6so29180945qtl.4
-        for <linux-btrfs@vger.kernel.org>; Tue, 11 Sep 2018 10:59:15 -0700 (PDT)
+        Tue, 11 Sep 2018 18:59:31 -0400
+Received: by mail-qk1-f181.google.com with SMTP id c126-v6so17335233qkd.7
+        for <linux-btrfs@vger.kernel.org>; Tue, 11 Sep 2018 10:59:06 -0700 (PDT)
 From: Josef Bacik <josef@toxicpanda.com>
 To: kernel-team@fb.com, linux-btrfs@vger.kernel.org
-Subject: [PATCH 35/36] btrfs: wait on ordered extents on abort cleanup
-Date: Tue, 11 Sep 2018 13:58:06 -0400
-Message-Id: <20180911175807.26181-36-josef@toxicpanda.com>
+Subject: [PATCH 30/36] btrfs: just delete pending bgs if we are aborted
+Date: Tue, 11 Sep 2018 13:58:01 -0400
+Message-Id: <20180911175807.26181-31-josef@toxicpanda.com>
 In-Reply-To: <20180911175807.26181-1-josef@toxicpanda.com>
 References: <20180911175807.26181-1-josef@toxicpanda.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If we flip read-only before we initiate writeback on all dirty pages for
-ordered extents we've created then we'll have ordered extents left over
-on umount, which results in all sorts of bad things happening.  Fix this
-by making sure we wait on ordered extents if we have to do the aborted
-transaction cleanup stuff.
+We still need to do all of the accounting cleanup for pending block
+groups if we abort.  So set the ret to trans->aborted so if we aborted
+the cleanup happens and everybody is happy.
 
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+Reviewed-by: Omar Sandoval <osandov@fb.com>
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/disk-io.c | 8 ++++++++
- 1 file changed, 8 insertions(+)
+ fs/btrfs/extent-tree.c | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 54fbdc944a3f..51b2a5bf25e5 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -4188,6 +4188,14 @@ static void btrfs_destroy_all_ordered_extents(struct btrfs_fs_info *fs_info)
- 		spin_lock(&fs_info->ordered_root_lock);
- 	}
- 	spin_unlock(&fs_info->ordered_root_lock);
-+
-+	/*
-+	 * We need this here because if we've been flipped read-only we won't
-+	 * get sync() from the umount, so we need to make sure any ordered
-+	 * extents that haven't had their dirty pages IO start writeout yet
-+	 * actually get run and error out properly.
-+	 */
-+	btrfs_wait_ordered_roots(fs_info, U64_MAX, 0, (u64)-1);
- }
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 20fed467468e..47690589d89b 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -10358,9 +10358,15 @@ void btrfs_create_pending_block_groups(struct btrfs_trans_handle *trans)
+ 	struct btrfs_root *extent_root = fs_info->extent_root;
+ 	struct btrfs_block_group_item item;
+ 	struct btrfs_key key;
+-	int ret = 0;
++	int ret;
+ 	bool can_flush_pending_bgs = trans->can_flush_pending_bgs;
  
- static int btrfs_destroy_delayed_refs(struct btrfs_transaction *trans,
++	/*
++	 * If we aborted the transaction with pending bg's we need to just
++	 * cleanup the list and carry on.
++	 */
++	ret = trans->aborted;
++
+ 	trans->can_flush_pending_bgs = false;
+ 	while (!list_empty(&trans->new_bgs)) {
+ 		block_group = list_first_entry(&trans->new_bgs,
 -- 
 2.14.3

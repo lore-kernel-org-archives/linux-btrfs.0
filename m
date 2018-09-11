@@ -1,57 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pg1-f196.google.com ([209.85.215.196]:38136 "EHLO
-        mail-pg1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725945AbeIKEj4 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 11 Sep 2018 00:39:56 -0400
-Received: by mail-pg1-f196.google.com with SMTP id t84-v6so9409539pgb.5
-        for <linux-btrfs@vger.kernel.org>; Mon, 10 Sep 2018 16:43:30 -0700 (PDT)
-Date: Mon, 10 Sep 2018 16:43:29 -0700
-From: Omar Sandoval <osandov@osandov.com>
-To: David Sterba <dsterba@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 4/4] btrfs: tests: polish ifdefs around testing helper
-Message-ID: <20180910234329.GD16436@vader>
+Received: from mx2.suse.de ([195.135.220.15]:56436 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726554AbeIKNtJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 11 Sep 2018 09:49:09 -0400
+Date: Tue, 11 Sep 2018 10:50:33 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Omar Sandoval <osandov@osandov.com>
+Cc: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/4] btrfs: tests: add separate stub for
+ find_lock_delalloc_range
+Message-ID: <20180911085033.GB24025@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <cover.1536599879.git.dsterba@suse.com>
- <7a6c4814d8467999d9a9eb12906ff28a3f90b284.1536599879.git.dsterba@suse.com>
+ <42d07540b52556af89366c9fee628829148bffac.1536599879.git.dsterba@suse.com>
+ <20180910234055.GB16436@vader>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <7a6c4814d8467999d9a9eb12906ff28a3f90b284.1536599879.git.dsterba@suse.com>
+In-Reply-To: <20180910234055.GB16436@vader>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Sep 10, 2018 at 07:22:31PM +0200, David Sterba wrote:
-> Avoid the inline ifdefs and use two sections for self-tests enabled and
-> disabled.
+On Mon, Sep 10, 2018 at 04:40:55PM -0700, Omar Sandoval wrote:
+> On Mon, Sep 10, 2018 at 07:22:24PM +0200, David Sterba wrote:
+> > The helper find_lock_delalloc_range is now conditionally built static,
+> > dpending on whether the self-tests are enabled or not. There's a macro
+> > that is suppsed to hide the export, used only once. To discourage
+> > further use, drop it an add a public stub for the helper required by
+> > tests.
+> > 
+> > Signed-off-by: David Sterba <dsterba@suse.com>
+> > ---
+> >  fs/btrfs/ctree.h                 |  6 ------
+> >  fs/btrfs/extent_io.c             | 13 ++++++++++++-
+> >  fs/btrfs/extent_io.h             |  2 +-
+> >  fs/btrfs/tests/extent-io-tests.c | 10 +++++-----
+> >  4 files changed, 18 insertions(+), 13 deletions(-)
+> > 
+> > diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> > index 2cddfe7806a4..45b7029d0f23 100644
+> > --- a/fs/btrfs/ctree.h
+> > +++ b/fs/btrfs/ctree.h
+> > @@ -41,12 +41,6 @@ extern struct kmem_cache *btrfs_path_cachep;
+> >  extern struct kmem_cache *btrfs_free_space_cachep;
+> >  struct btrfs_ordered_sum;
+> >  
+> > -#ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
+> > -#define STATIC noinline
+> > -#else
+> > -#define STATIC static noinline
+> > -#endif
+> > -
+> >  #define BTRFS_MAGIC 0x4D5F53665248425FULL /* ascii _BHRfS_M, no null */
+> >  
+> >  #define BTRFS_MAX_MIRRORS 3
+> > diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> > index 4dd6faab02bb..06e280d8750c 100644
+> > --- a/fs/btrfs/extent_io.c
+> > +++ b/fs/btrfs/extent_io.c
+> > @@ -1568,7 +1568,7 @@ static noinline int lock_delalloc_pages(struct inode *inode,
+> >   *
+> >   * 1 is returned if we find something, 0 if nothing was in the tree
+> >   */
+> > -STATIC u64 find_lock_delalloc_range(struct inode *inode,
+> > +static u64 find_lock_delalloc_range(struct inode *inode,
 > 
-> Signed-off-by: David Sterba <dsterba@suse.com>
-> ---
->  fs/btrfs/ctree.h | 9 ++++++---
->  1 file changed, 6 insertions(+), 3 deletions(-)
-> 
-> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-> index 32d2fce4ac53..8dafc7bb6ad8 100644
-> --- a/fs/btrfs/ctree.h
-> +++ b/fs/btrfs/ctree.h
-> @@ -3708,17 +3708,20 @@ static inline int btrfs_defrag_cancelled(struct btrfs_fs_info *fs_info)
->  #ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
->  void btrfs_test_inode_set_ops(struct inode *inode);
->  void btrfs_test_destroy_inode(struct inode *inode);
-> -#endif
->  
->  static inline int btrfs_is_testing(struct btrfs_fs_info *fs_info)
->  {
-> -#ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
->  	if (unlikely(test_bit(BTRFS_FS_STATE_DUMMY_FS_INFO,
->  			      &fs_info->fs_state)))
->  		return 1;
-> -#endif
->  	return 0;
+> Now this won't be noinline, was that intentional? It has been since way
+> back in d352ac68148b ("Btrfs: add and improve comments"), presumably
+> because Chris wanted it in stack traces.
 
-How about just:
+Heh, the commit is from 2008, besides others removes the original TODO,
+I think there were way more important things to do at that time than
+noinline, but you're right.
 
-	return test_bit(BTRFS_FS_STATE_DUMMY_FS_INFO, &fs_info->fs_state);
-
-We can probably get away without the unlikely() considering that no one
-sane is going to run a kernel with CONFIG_BTRFS_FS_RUN_SANITY_TESTS in
-production.
+Removing noinline was not intentional and it would be better to see it
+on the stack. As there's only one caller, the function will most likely
+be inlined from writepage_delalloc. I'll update it to
+noinline_for_stack.

@@ -1,36 +1,31 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:46576 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:59572 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726622AbeIKUi7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 11 Sep 2018 16:38:59 -0400
-Date: Tue, 11 Sep 2018 17:39:04 +0200
+        id S1726800AbeIKVjA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 11 Sep 2018 17:39:00 -0400
+Date: Tue, 11 Sep 2018 18:38:51 +0200
 From: David Sterba <dsterba@suse.cz>
-To: dsterba@suse.cz, Mike Gilbert <floppym@gentoo.org>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/2] Install uncompressed man pages
-Message-ID: <20180911153904.GC2154@twin.jikos.cz>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
+        David Sterba <dsterba@suse.cz>
+Subject: Re: [PATCH 0/6] btrfs-progs: Variant fixes for fuzz-tests
+Message-ID: <20180911163851.GG2154@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <20180806205432.11009-1-floppym@gentoo.org>
- <20180807140957.GG3218@twin.jikos.cz>
+References: <20180803055022.9816-1-wqu@suse.com>
+ <d844475b-f06a-4149-4259-999b08e3dd09@gmx.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180807140957.GG3218@twin.jikos.cz>
+In-Reply-To: <d844475b-f06a-4149-4259-999b08e3dd09@gmx.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Aug 07, 2018 at 04:09:57PM +0200, David Sterba wrote:
-> On Mon, Aug 06, 2018 at 04:54:31PM -0400, Mike Gilbert wrote:
-> > Build systems do not typically compress man pages when installing them.
-> > This is generally left to distro packaging mechanisms, which may end up
-> > recompressing them using a different compressor.
+On Wed, Aug 29, 2018 at 01:27:39PM +0800, Qu Wenruo wrote:
+> Gentle ping.
 > 
-> Makes sense. I've tested this on openSUSE and there's a post-build step
-> that indeed recompresses the manual pages. It does not work for me here
-> with the uncompressed pages yet for some reason, also the symlinked
-> pages would need to be reworked to the manual page links, but that can
-> be fixed.
-> 
-> I'll queue this patch for a major release, expecting that some breakage
-> might happen. Thanks.
+> These fixes are pretty small, I'd like to see them merged before I need
+> to rebase them again and again.
 
-FYI, the patches are now in devel. Expected release is in 4.18.
+I've merged them now, thanks. I had to edit all changelogs and remove
+the ----- lines, shortened the paths in the test logs and fixed typos.
+Please have a look at the committed patches and compare to what you
+sent.

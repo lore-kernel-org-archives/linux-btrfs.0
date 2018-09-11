@@ -1,107 +1,95 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.15]:58321 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.15.19]:35835 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725737AbeILEpW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 12 Sep 2018 00:45:22 -0400
-Subject: Re: [PATCH] btrfs-progs: Continue checking even we found something
- wrong in free space cache
-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-References: <20180904124128.22367-1-wqu@suse.com>
- <20180911144809.GB2154@twin.jikos.cz>
+        id S1726901AbeILEv4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 12 Sep 2018 00:51:56 -0400
+Subject: Re: [PATCH] btrfs-progs: dump-tree: Introduce --breadth-first option
+To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
+        Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+References: <20180823073107.17016-1-wqu@suse.com>
+ <2d6c65be-6b54-95d7-29a7-fa24f98989fb@suse.com>
+ <26f5f933-7b8d-40e8-16bb-5269867bbc71@gmx.com>
+ <b881113c-197e-76d0-7c44-73f8ae598dab@gmx.com>
+ <20180911155208.GE2154@twin.jikos.cz>
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <251a3f20-617f-1bee-4567-c563b0744c30@gmx.com>
-Date: Wed, 12 Sep 2018 07:43:27 +0800
+Message-ID: <bdadc6a0-b220-cfdc-f140-869c0322689f@gmx.com>
+Date: Wed, 12 Sep 2018 07:50:07 +0800
 MIME-Version: 1.0
-In-Reply-To: <20180911144809.GB2154@twin.jikos.cz>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="x92fpTPl0vM6CzHtyx7CwWdBnN3rCSIxY"
+In-Reply-To: <20180911155208.GE2154@twin.jikos.cz>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---x92fpTPl0vM6CzHtyx7CwWdBnN3rCSIxY
-Content-Type: multipart/mixed; boundary="awL8lFznUTGnVMmdMu3CGMOM72KrKIJPe";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Message-ID: <251a3f20-617f-1bee-4567-c563b0744c30@gmx.com>
-Subject: Re: [PATCH] btrfs-progs: Continue checking even we found something
- wrong in free space cache
-References: <20180904124128.22367-1-wqu@suse.com>
- <20180911144809.GB2154@twin.jikos.cz>
-In-Reply-To: <20180911144809.GB2154@twin.jikos.cz>
-
---awL8lFznUTGnVMmdMu3CGMOM72KrKIJPe
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
 
 
-
-On 2018/9/11 =E4=B8=8B=E5=8D=8810:48, David Sterba wrote:
-> On Tue, Sep 04, 2018 at 08:41:28PM +0800, Qu Wenruo wrote:
->> No need to abort checking, especially for RO check free space cache is=
-
->> meaningless, the errors in fs/extent tree is more interesting for
->> developers.
+On 2018/9/11 下午11:52, David Sterba wrote:
+> On Tue, Sep 04, 2018 at 08:39:55PM +0800, Qu Wenruo wrote:
 >>
->> So continue checking even something in free space cache is wrong.
 >>
->> Reported-by: Etienne Champetier <champetier.etienne@gmail.com>
->> Signed-off-by: Qu Wenruo <wqu@suse.com>
->> ---
->>  check/main.c | 1 -
->>  1 file changed, 1 deletion(-)
+>> On 2018/8/23 下午3:45, Qu Wenruo wrote:
+>>>
+>>>
+>>> On 2018/8/23 下午3:36, Nikolay Borisov wrote:
+>>>>
+>>>>
+>>>> On 23.08.2018 10:31, Qu Wenruo wrote:
+>>>>> Introduce --breadth-first option to do breadth-first tree dump.
+>>>>> This is especially handy to inspect high level trees, e.g. comparing
+>>>>> tree reloc tree with its source tree.
+>>>>
+>>>> Will it make sense instead of exposing another option to just have a
+>>>> heuristics check that will switch to the BFS if the tree is higher than,
+>>>> say, 2 levels?
+>>>
+>>> BFS has one obvious disadvantage here, so it may not be a good idea to
+>>> use it for default.
 >>
->> diff --git a/check/main.c b/check/main.c
->> index b361cd7e26a0..4f720163221e 100644
->> --- a/check/main.c
->> +++ b/check/main.c
->> @@ -9885,7 +9885,6 @@ int cmd_check(int argc, char **argv)
->>  			error("errors found in free space tree");
->>  		else
->>  			error("errors found in free space cache");
->=20
-> Please make it a warning and update the message so it says that it will=
+>> Well, this is only true for my implementation.
+>>
+>> But there are other solutions to do BFS without that heavy memory usage.
+>>
+>>>
+>>>>> More memory usage <<
+>>>    It needs to alloc heap memory, and this can be pretty large for
+>>>    leaves.
+>>>    At level 1, it will need to alloc nr_leaves * sizeof(bfs_entry)
+>>>    memory at least.
+>>>    Compared to DFS, it only needs to iterate at most 8 times, and all of
+>>>    its memory usage is function call stack memory.
+>>>
+>>> It only makes sense for my niche use case (compare tree reloc tree with
+>>> its source).
+>>> For real world use case the default DFS should works fine without all
+>>> the memory allocation burden.
+>>
+>> Since we have btrfs_path to show where our parents are, it's possible to
+>> use btrfs_path and avoid current memory burden.
+>>
+>> And in that case, your idea of using BFS default for tree higher than 2
+>> levels completely make sense.
+> 
+> No such games please, keep the default predictable.
 
-> continue despite the errors found.
+The problem I found using dump-tree for high trees is, default dfs is
+rather unpredictable.
 
-I'm fine to add warning, but isn't it the expected behavior?
+For 2 level trees, it's pretty OK as it's the same as BFS, showing high
+level tree blocks first, then leaves.
+But for 3 level trees, it's nearly impossible to locate level 1 nodes.
 
-In fact I'm quite surprised that when we found something wrong we just
-abort checking.
+It makes searching for the same level tree blocks pretty hard.
 
-It's never the case for file/extent tree check. We always report all
-errors we found, not only the first error and exit.
+And since the output of each tree block is still the same, changing the
+order won't really affect cases using grep.
+
+So, I really like to replace the DFS with BFS.
 
 Thanks,
 Qu
 
->=20
-> I noticed that error handling in check_space_cache is a bit fishy, some=
-
-> errors are stored to 'ret' but ignored at the end of the function.
->=20
-
-
---awL8lFznUTGnVMmdMu3CGMOM72KrKIJPe--
-
---x92fpTPl0vM6CzHtyx7CwWdBnN3rCSIxY
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAluYUx8ACgkQwj2R86El
-/qh8KggAq4leGP6YMaUNUb/0RQwuW9hhunfuNrjeAQrfIoq+F1G/WpxFgF9kcsDm
-pATvVCZPuM02pQaaiOw4Ya1xTHFnPN1UGlN1M0vghT0JPKdBPOjIievJj/Vhbobf
-M7LvjeYPwzf+EYYNjrVoPWCfsdVgUnQIg3RTW3BK45bzDu+K7J4Sc7iefb3r9uU9
-wpN0foSCvR09ctIUx0KCxDE9mAU/LSIY83qf82rZNAU0V7MnJPlu7a4n84IahMJ/
-fDvux27fi4XcBI1z8TOVYGX6NCfBSyT8rye/HMytK1WQKRYIdmJEpFVOrXNoKHr/
-c6uixCs+B2UEPYYOC70QXa4+CXMrQw==
-=f3t9
------END PGP SIGNATURE-----
-
---x92fpTPl0vM6CzHtyx7CwWdBnN3rCSIxY--
+> 
+> As DFS and BFS are quite well-known abbreviations, I'd rather add 2
+> options to set the the mode, ie --dfs and --bfs. Alternatively there
+> could be a --traverse=bfs --traverse=dfs but for now I think the two
+> options should be sufficient.
+> 

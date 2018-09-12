@@ -1,51 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.linuxfoundation.org ([140.211.169.12]:45020 "EHLO
-        mail.linuxfoundation.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726608AbeILXTQ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 12 Sep 2018 19:19:16 -0400
-Date: Wed, 12 Sep 2018 20:13:30 +0200
-From: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-To: Arnd Bergmann <arnd@arndb.de>
-Cc: viro@zeniv.linux.org.uk, linux-fsdevel@vger.kernel.org,
-        "David S. Miller" <davem@davemloft.net>, devel@driverdev.osuosl.org,
-        linux-kernel@vger.kernel.org, qat-linux@intel.com,
-        linux-crypto@vger.kernel.org, linux-media@vger.kernel.org,
-        dri-devel@lists.freedesktop.org, linaro-mm-sig@lists.linaro.org,
-        amd-gfx@lists.freedesktop.org, linux-input@vger.kernel.org,
-        linux-iio@vger.kernel.org, linux-rdma@vger.kernel.org,
-        linux-nvdimm@lists.01.org, linux-nvme@lists.infradead.org,
-        linux-pci@vger.kernel.org, platform-driver-x86@vger.kernel.org,
-        linux-remoteproc@vger.kernel.org, sparclinux@vger.kernel.org,
-        linux-scsi@vger.kernel.org, linux-usb@vger.kernel.org,
-        linux-fbdev@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
-        linux-btrfs@vger.kernel.org, ceph-devel@vger.kernel.org,
-        linux-wireless@vger.kernel.org, netdev@vger.kernel.org
-Subject: Re: [PATCH v2 05/17] compat_ioctl: move more drivers to
- generic_compat_ioctl_ptrarg
-Message-ID: <20180912181330.GC15031@kroah.com>
-References: <20180912150142.157913-1-arnd@arndb.de>
- <20180912151134.436719-1-arnd@arndb.de>
+Received: from mout.gmx.net ([212.227.15.18]:51875 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726082AbeILQ4D (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 12 Sep 2018 12:56:03 -0400
+Subject: Re: [PATCH 00/15] Add delayed-refs support to btrfs-progs
+To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
+        linux-btrfs@vger.kernel.org
+References: <1528462078-24490-1-git-send-email-nborisov@suse.com>
+ <20180716153956.GL3126@twin.jikos.cz>
+From: Su Yue <Damenly_Su@gmx.com>
+Cc: Su Yue <suy.fnst@cn.fujitsu.com>
+Message-ID: <4e07ad89-20df-a531-6c47-e7fa0df7beb6@gmx.com>
+Date: Wed, 12 Sep 2018 19:51:39 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180912151134.436719-1-arnd@arndb.de>
+In-Reply-To: <20180716153956.GL3126@twin.jikos.cz>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Sep 12, 2018 at 05:08:52PM +0200, Arnd Bergmann wrote:
-> The .ioctl and .compat_ioctl file operations have the same prototype so
-> they can both point to the same function, which works great almost all
-> the time when all the commands are compatible.
-> 
-> One exception is the s390 architecture, where a compat pointer is only
-> 31 bit wide, and converting it into a 64-bit pointer requires calling
-> compat_ptr(). Most drivers here will ever run in s390, but since we now
-> have a generic helper for it, it's easy enough to use it consistently.
-> 
-> I double-checked all these drivers to ensure that all ioctl arguments
-> are used as pointers or are ignored, but are not interpreted as integer
-> values.
-> 
-> Signed-off-by: Arnd Bergmann <arnd@arndb.de>
 
-Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+On 2018/7/16 11:39 PM, David Sterba wrote:
+> On Fri, Jun 08, 2018 at 03:47:43PM +0300, Nikolay Borisov wrote:
+>> Hello,
+>>                                                                                  
+>> Here is a series which adds support for delayed refs. This is needed to enable
+>> later work on adding freespace tree repair code. Additionally, it results in
+>> more code sharing between kernel/user space.
+>>
+>> Patches 1-9 are simple prep patches removing some arguments, causing problems
+>> later. They can go independently of the delayed refs work. They don't introduce
+>> any functional changes. Next, patches 10-13 introduce the needed infrastructure
+>> to for delayed refs without actually activating it. Patch 14 finally wires it
+>> up by adding the necessary call outs to btrfs_run_delayed refs and reworking the
+>> extent addition/freeing functions. With all of this done, patch 15 finally
+>> removes the old code.
+>>
+>> This series passes all btrfs progs fsck and misc tests + fuzz tests apart from
+>> fuzz-003/007/009 - but those fail without this series so it's unlikely it's
+>> caused by it.
+>>
+>> Nikolay Borisov (15):
+>>    btrfs-progs: Remove root argument from pin_down_bytes
+>>    btrfs-progs: Remove root argument from btrfs_del_csums
+>>    btrfs-progs: Add functions to modify the used space by a root
+>>    btrfs-progs: Refactor the root used bytes are updated
+>>    btrfs-progs: Make update_block_group take fs_info instead of root
+>>    btrfs-progs: check: Drop trans/root arguments from free_extent_hook
+>>    btrfs-progs: Remove root argument from __free_extent
+>>    btrfs-progs: Remove root argument from alloc_reserved_tree_block
+>>    btrfs-progs: Always pass 0 for offset when calling btrfs_free_extent
+>>      for btree blocks.
+>>    btrfs-progs: Add boolean to signal whether we are re-initing extent
+>>      tree
+>>    btrfs-progs: Add delayed refs infrastructure
+>>    btrfs-progs: Add __free_extent2 function
+>>    btrfs-progs: Add alloc_reserved_tree_block2 function
+>>    btrfs-progs: Wire up delayed refs
+>>    btrfs-progs: Remove old delayed refs infrastructure
+> 
+> Added to devel. There were some patch-to-patch compilation issues,
+> function alloc_reserved_tree_block2 used earlier than defined so I
+> reordered the patches to fix that.
+> 
+> The CI fails at test check/020-extent-ref-cases but it works on my
+> machine so it's not caused by the patchset.
+
+Hi, David
+Actually, now kdave/devel still fails at fsck-tests/020 due to
+version 1st of this patchset. See the thread please
+https://www.spinics.net/lists/linux-btrfs/msg81675.html
+
+Nikolay's V2 patchset should slove the problem.
+You may have known the situation, this mail is just a gentle reminder :).
+
+Thanks,
+Su
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 

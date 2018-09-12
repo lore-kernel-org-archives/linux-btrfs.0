@@ -1,66 +1,154 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:59958 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:33276 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725966AbeILMKR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 12 Sep 2018 08:10:17 -0400
-Subject: Re: [PATCH] Btrfs: remove unused code in __btrfs_unlink_inode
+        id S1726149AbeILMWj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 12 Sep 2018 08:22:39 -0400
+Subject: Re: [PATCH] Btrfs: do not wait after queue async work for delaye refs
 To: Liu Bo <bo.liu@linux.alibaba.com>, linux-btrfs@vger.kernel.org
-References: <1536703587-94565-6-git-send-email-bo.liu@linux.alibaba.com>
+References: <1536703587-94565-8-git-send-email-bo.liu@linux.alibaba.com>
+Cc: Josef Bacik <josef@toxicpanda.com>
 From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <b74cd61e-21bf-d71d-e561-74046448e25e@suse.com>
-Date: Wed, 12 Sep 2018 10:07:05 +0300
+Message-ID: <feaa2619-fdb3-efa3-4e2f-878cd81058c1@suse.com>
+Date: Wed, 12 Sep 2018 10:19:23 +0300
 MIME-Version: 1.0
-In-Reply-To: <1536703587-94565-6-git-send-email-bo.liu@linux.alibaba.com>
+In-Reply-To: <1536703587-94565-8-git-send-email-bo.liu@linux.alibaba.com>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
+[Adding Josef to CC]
 
 On 12.09.2018 01:06, Liu Bo wrote:
-> It might get @leaf and @key in order to do some sanity checks on key's
-> fields, but since we don't check it any more, it's fine to remove the
-> code.
+> If metadata space is hungry, how fast flush_space() can run determines
+> the latency we spend in reserve_metadata_space().
+> 
+> flush_space()
+>    case FLUSH_DELAYED_ITEMS:
+>       ...
+>       btrfs_end_transaction()
+>    case ALLOC_CHUNK:
+>       ...
+>       btrfs_end_transaction()
+> 
+> btrfs_end_transaction()
+>    btrfs_async_run_delayed_refs()
+>        // queue a work to process delayed refs
+>        ...
+>        if (wait)
+>            wait_for_completion()
+> 
+> Although processing delayed refs can add to pinned bytes, pinned bytes
+> can only be used after committing transaction, so waiting async in
+> flush_space() doesn't help.
 
-This is actually false, leaf and key weren't used for sanity checks.
-Instead this code was first introduced in 5f39d397dfbe ("Btrfs: Create
-extent_buffer interface for large blocksizes") and the function was
-named btrfs_unlink_trans. It later got renamed to __btrfs_unlink_inode
-and finally commit 16cdcec736cd ("btrfs: implement delayed inode items
-operation") changed the way inodes are deleted and obviated the need for
-those two members.
+But not waiting for the async delayed refs to complete don't we
+introduce a race where checking the pinned bytes might indicate there
+are not enough bytes to commit at the same time we will have delayed
+refs which haven't yet run but might add enough pinned bytes to make
+sense to commit?
 
-Generally when unused variables are deleted you need to do a bit of
-archeology and explain how they got to be unused in the changelog.
-
-
+> 
+> In fact we don't have to wait for asynchronous delayed refs processing
+> as delayed refs are not blocking the subsequent operations(unless within
+> committing transaction we need to make sure filesystem is consistent).
 > 
 > Signed-off-by: Liu Bo <bo.liu@linux.alibaba.com>
 > ---
->  fs/btrfs/inode.c | 4 ----
->  1 file changed, 4 deletions(-)
+>  fs/btrfs/ctree.h       |  2 +-
+>  fs/btrfs/extent-tree.c | 18 ++----------------
+>  fs/btrfs/inode.c       |  2 +-
+>  fs/btrfs/transaction.c |  3 +--
+>  4 files changed, 5 insertions(+), 20 deletions(-)
 > 
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index 00e506de70ba..4c3a733ee4cf 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -2620,7 +2620,7 @@ void btrfs_dec_block_group_reservations(struct btrfs_fs_info *fs_info,
+>  int btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
+>  			   unsigned long count);
+>  int btrfs_async_run_delayed_refs(struct btrfs_fs_info *fs_info,
+> -				 unsigned long count, u64 transid, int wait);
+> +				 unsigned long count, u64 transid);
+>  int btrfs_lookup_data_extent(struct btrfs_fs_info *fs_info, u64 start, u64 len);
+>  int btrfs_lookup_extent_info(struct btrfs_trans_handle *trans,
+>  			     struct btrfs_fs_info *fs_info, u64 bytenr,
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index b6767f9031b5..cac9a9d04d0c 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -2852,14 +2852,11 @@ static void delayed_ref_async_start(struct btrfs_work *work)
+>  	if (ret && !async->error)
+>  		async->error = ret;
+>  done:
+> -	if (async->sync)
+> -		complete(&async->wait);
+> -	else
+> -		kfree(async);
+> +	kfree(async);
+>  }
+>  
+>  int btrfs_async_run_delayed_refs(struct btrfs_fs_info *fs_info,
+> -				 unsigned long count, u64 transid, int wait)
+> +				 unsigned long count, u64 transid)
+>  {
+>  	struct async_delayed_refs *async;
+>  	int ret;
+> @@ -2872,23 +2869,12 @@ int btrfs_async_run_delayed_refs(struct btrfs_fs_info *fs_info,
+>  	async->count = count;
+>  	async->error = 0;
+>  	async->transid = transid;
+> -	if (wait)
+> -		async->sync = 1;
+> -	else
+> -		async->sync = 0;
+> -	init_completion(&async->wait);
+>  
+>  	btrfs_init_work(&async->work, btrfs_extent_refs_helper,
+>  			delayed_ref_async_start, NULL, NULL);
+>  
+>  	btrfs_queue_work(fs_info->extent_workers, &async->work);
+>  
+> -	if (wait) {
+> -		wait_for_completion(&async->wait);
+> -		ret = async->error;
+> -		kfree(async);
+> -		return ret;
+> -	}
+>  	return 0;
+>  }
+>  
 > diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index d3febc3a6bc0..fd64d7ac76f9 100644
+> index 99ab0203b701..fd4af54f0d3b 100644
 > --- a/fs/btrfs/inode.c
 > +++ b/fs/btrfs/inode.c
-> @@ -3911,9 +3911,7 @@ static int __btrfs_unlink_inode(struct btrfs_trans_handle *trans,
->  	struct btrfs_fs_info *fs_info = root->fs_info;
->  	struct btrfs_path *path;
->  	int ret = 0;
-> -	struct extent_buffer *leaf;
->  	struct btrfs_dir_item *di;
-> -	struct btrfs_key key;
->  	u64 index;
->  	u64 ino = btrfs_ino(inode);
->  	u64 dir_ino = btrfs_ino(dir);
-> @@ -3935,8 +3933,6 @@ static int __btrfs_unlink_inode(struct btrfs_trans_handle *trans,
->  		ret = -ENOENT;
->  		goto err;
+> @@ -4736,7 +4736,7 @@ int btrfs_truncate_inode_items(struct btrfs_trans_handle *trans,
+>  			if (btrfs_should_throttle_delayed_refs(trans, fs_info))
+>  				btrfs_async_run_delayed_refs(fs_info,
+>  					trans->delayed_ref_updates * 2,
+> -					trans->transid, 0);
+> +					trans->transid);
+>  			if (be_nice) {
+>  				if (truncate_space_check(trans, root,
+>  							 extent_num_bytes)) {
+> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+> index 772963a61072..a816c0999fb2 100644
+> --- a/fs/btrfs/transaction.c
+> +++ b/fs/btrfs/transaction.c
+> @@ -889,8 +889,7 @@ static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
+>  
+>  	kmem_cache_free(btrfs_trans_handle_cachep, trans);
+>  	if (must_run_delayed_refs) {
+> -		btrfs_async_run_delayed_refs(info, cur, transid,
+> -					     must_run_delayed_refs == 1);
+> +		btrfs_async_run_delayed_refs(info, cur, transid);
 >  	}
-> -	leaf = path->nodes[0];
-> -	btrfs_dir_item_key_to_cpu(leaf, di, &key);
->  	ret = btrfs_delete_one_dir_name(trans, root, path, di);
->  	if (ret)
->  		goto err;
+
+If you do this, this enables you do also simplify the if (!trans->sync)
+case in __btrfs_end_transaction since now we won't care what's the type
+of transaction and only care about must_run_delayed_refs being set and
+entirely remove the trans->type check.
+
+>  	return err;
+>  }
 > 

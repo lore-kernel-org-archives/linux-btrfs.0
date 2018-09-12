@@ -1,14 +1,13 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([198.137.202.133]:33196 "EHLO
-        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726677AbeILVHG (ORCPT
+Received: from mail.linuxfoundation.org ([140.211.169.12]:45020 "EHLO
+        mail.linuxfoundation.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726608AbeILXTQ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 12 Sep 2018 17:07:06 -0400
-Date: Wed, 12 Sep 2018 13:01:31 -0300
-From: Mauro Carvalho Chehab <mchehab+samsung@kernel.org>
+        Wed, 12 Sep 2018 19:19:16 -0400
+Date: Wed, 12 Sep 2018 20:13:30 +0200
+From: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 To: Arnd Bergmann <arnd@arndb.de>
 Cc: viro@zeniv.linux.org.uk, linux-fsdevel@vger.kernel.org,
-        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
         "David S. Miller" <davem@davemloft.net>, devel@driverdev.osuosl.org,
         linux-kernel@vger.kernel.org, qat-linux@intel.com,
         linux-crypto@vger.kernel.org, linux-media@vger.kernel.org,
@@ -24,18 +23,16 @@ Cc: viro@zeniv.linux.org.uk, linux-fsdevel@vger.kernel.org,
         linux-wireless@vger.kernel.org, netdev@vger.kernel.org
 Subject: Re: [PATCH v2 05/17] compat_ioctl: move more drivers to
  generic_compat_ioctl_ptrarg
-Message-ID: <20180912130131.2c6581d5@coco.lan>
-In-Reply-To: <20180912151134.436719-1-arnd@arndb.de>
+Message-ID: <20180912181330.GC15031@kroah.com>
 References: <20180912150142.157913-1-arnd@arndb.de>
-        <20180912151134.436719-1-arnd@arndb.de>
+ <20180912151134.436719-1-arnd@arndb.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20180912151134.436719-1-arnd@arndb.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Em Wed, 12 Sep 2018 17:08:52 +0200
-Arnd Bergmann <arnd@arndb.de> escreveu:
-
+On Wed, Sep 12, 2018 at 05:08:52PM +0200, Arnd Bergmann wrote:
 > The .ioctl and .compat_ioctl file operations have the same prototype so
 > they can both point to the same function, which works great almost all
 > the time when all the commands are compatible.
@@ -50,41 +47,5 @@ Arnd Bergmann <arnd@arndb.de> escreveu:
 > values.
 > 
 > Signed-off-by: Arnd Bergmann <arnd@arndb.de>
-> ---
 
->  drivers/media/rc/lirc_dev.c                 | 4 +---
-
-> diff --git a/drivers/media/rc/lirc_dev.c b/drivers/media/rc/lirc_dev.c
-> index f862f1b7f996..077209f414ed 100644
-> --- a/drivers/media/rc/lirc_dev.c
-> +++ b/drivers/media/rc/lirc_dev.c
-> @@ -730,9 +730,7 @@ static const struct file_operations lirc_fops = {
->  	.owner		= THIS_MODULE,
->  	.write		= ir_lirc_transmit_ir,
->  	.unlocked_ioctl	= ir_lirc_ioctl,
-> -#ifdef CONFIG_COMPAT
-> -	.compat_ioctl	= ir_lirc_ioctl,
-> -#endif
-> +	.compat_ioctl	= generic_compat_ioctl_ptrarg,
->  	.read		= ir_lirc_read,
->  	.poll		= ir_lirc_poll,
->  	.open		= ir_lirc_open,
-
-Adding an infrared remote controller to a s390 mainframe sounds fun :-)
-
-I suspect that one could implement it on a s390 platform 
-using gpio-ir-recv and/or gpio-ir-tx drivers. Perhaps one possible
-practical usage would be to let the mainframe to send remote
-controller codes to adjust the air conditioning system ;-)
-
->From lirc driver's PoV, there's nothing that really prevents one to
-do that and use lirc API, and the driver is generic enough to work
-on any hardware platform.
-
-I didn't check the implementation of generic_compat_ioctl_ptrarg(),
-but assuming it is ok,
-
-Acked-by: Mauro Carvalho Chehab <mchehab+samsung@kernel.org>
-
-Thanks,
-Mauro
+Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>

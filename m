@@ -1,58 +1,99 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:33970 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:60232 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726689AbeIKVtQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 11 Sep 2018 17:49:16 -0400
-Date: Tue, 11 Sep 2018 18:49:05 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: dsterba@suse.cz, Tucker Boniface <tucker@boniface.tech>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: btrfs-progs: btrfs-convert: unable to find block group for 0
-Message-ID: <20180911164905.GI2154@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <afa83c87-df24-941a-348c-bb58cf7ac033@boniface.tech>
- <e92c69e8-1145-263f-dce1-f8a55dc15193@gmx.com>
- <20180911145258.GE2997@twin.jikos.cz>
- <edd55e92-e45f-87e6-52a8-9a14b1ad45bb@gmx.com>
+        id S1725966AbeILMNE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 12 Sep 2018 08:13:04 -0400
+Subject: Re: [PATCH] Btrfs: unify error handling of btrfs_lookup_dir_item
+To: Liu Bo <bo.liu@linux.alibaba.com>, linux-btrfs@vger.kernel.org
+References: <1536703587-94565-7-git-send-email-bo.liu@linux.alibaba.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <b6c45542-ddeb-b560-deea-10b315084449@suse.com>
+Date: Wed, 12 Sep 2018 10:09:51 +0300
 MIME-Version: 1.0
+In-Reply-To: <1536703587-94565-7-git-send-email-bo.liu@linux.alibaba.com>
 Content-Type: text/plain; charset=utf-8
-In-Reply-To: <edd55e92-e45f-87e6-52a8-9a14b1ad45bb@gmx.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Sep 11, 2018 at 08:55:30PM +0800, Qu Wenruo wrote:
-> 
-> 
-> On 2018/9/11 下午10:52, David Sterba wrote:
-> > On Tue, Aug 28, 2018 at 08:07:52AM +0800, Qu Wenruo wrote:
-> >>
-> >>
-> >> On 2018/8/28 上午6:33, Tucker Boniface wrote:
-> >>> Hello, I am trying to convert an ext4 partition to btrfs using
-> >>> btrfs-convert. I am running Arch Linux with kernel 4.18.5 and
-> >>> btrfs-progs 4.17.1. The full error is inline below.
-> >>>
-> >>> -> # btrfs-convert /dev/sda1
-> >>> create btrfs filesystem:
-> >>>     blocksize: 4096
-> >>>     nodesize:  16384
-> >>>     features:  extref, skinny-metadata (default)
-> >>> creating ext2 image file
-> >>> Unable to find block group for 0
-> >>> Unable to find block group for 0
-> >>> Unable to find block group for 0
-> >>> extent-tree.c:2743: alloc_tree_block: BUG_ON `ret` triggered, value -28
-> >>
-> >> This means ENOSPC.
-> >> Your ext* doesn't have enough free space to contain btrfs' metadata.
-> > 
-> > Can we do something better than a crash? The BUG_ON is in
-> > alloc_tree_block, there's only one caller btrfs_alloc_free_block that
-> > handles errors, so it should be straightforward to fix.
-> > 
-> Already submitted: (about one month ago)
-> 
-> https://patchwork.kernel.org/patch/10554575/
 
-Yeah, thanks. I noticed the patch later on. Now in devel.
+
+On 12.09.2018 01:06, Liu Bo wrote:
+> Unify the error handling part with IS_ERR_OR_NULL.
+> 
+> No functional changes.
+> 
+> Signed-off-by: Liu Bo <bo.liu@linux.alibaba.com>
+
+Reviewed-by: Nikolay Borisov  <nborisov@suse.com>
+
+> ---
+>  fs/btrfs/inode.c | 21 +++++----------------
+>  fs/btrfs/send.c  |  8 ++------
+>  2 files changed, 7 insertions(+), 22 deletions(-)
+> 
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index fd64d7ac76f9..99ab0203b701 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -3925,12 +3925,8 @@ static int __btrfs_unlink_inode(struct btrfs_trans_handle *trans,
+>  	path->leave_spinning = 1;
+>  	di = btrfs_lookup_dir_item(trans, root, path, dir_ino,
+>  				    name, name_len, -1);
+> -	if (IS_ERR(di)) {
+> -		ret = PTR_ERR(di);
+> -		goto err;
+> -	}
+> -	if (!di) {
+> -		ret = -ENOENT;
+> +	if (IS_ERR_OR_NULL(di)) {
+> +		ret = di ? PTR_ERR(di) : -ENOENT;
+>  		goto err;
+>  	}
+>  	ret = btrfs_delete_one_dir_name(trans, root, path, di);
+> @@ -4088,10 +4084,7 @@ static int btrfs_unlink_subvol(struct btrfs_trans_handle *trans,
+>  	di = btrfs_lookup_dir_item(trans, root, path, dir_ino,
+>  				   name, name_len, -1);
+>  	if (IS_ERR_OR_NULL(di)) {
+> -		if (!di)
+> -			ret = -ENOENT;
+> -		else
+> -			ret = PTR_ERR(di);
+> +		ret = di ? PTR_ERR(di) : -ENOENT;
+>  		goto out;
+>  	}
+>  
+> @@ -5481,12 +5474,8 @@ static int btrfs_inode_by_name(struct inode *dir, struct dentry *dentry,
+>  
+>  	di = btrfs_lookup_dir_item(NULL, root, path, btrfs_ino(BTRFS_I(dir)),
+>  			name, namelen, 0);
+> -	if (!di) {
+> -		ret = -ENOENT;
+> -		goto out;
+> -	}
+> -	if (IS_ERR(di)) {
+> -		ret = PTR_ERR(di);
+> +	if (IS_ERR_OR_NULL(di)) {
+> +		ret = di ? PTR_ERR(di) : -ENOENT;
+>  		goto out;
+>  	}
+>  
+> diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+> index ba8950bfd9c7..b8c83778f0f7 100644
+> --- a/fs/btrfs/send.c
+> +++ b/fs/btrfs/send.c
+> @@ -1693,12 +1693,8 @@ static int lookup_dir_item_inode(struct btrfs_root *root,
+>  
+>  	di = btrfs_lookup_dir_item(NULL, root, path,
+>  			dir, name, name_len, 0);
+> -	if (!di) {
+> -		ret = -ENOENT;
+> -		goto out;
+> -	}
+> -	if (IS_ERR(di)) {
+> -		ret = PTR_ERR(di);
+> +	if (IS_ERR_OR_NULL(di)) {
+> +		ret = di ? PTR_ERR(di) : -ENOENT;
+>  		goto out;
+>  	}
+>  	btrfs_dir_item_key_to_cpu(path->nodes[0], di, &key);
+> 

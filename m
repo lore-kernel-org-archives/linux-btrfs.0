@@ -1,30 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:35014 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:56256 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726905AbeINSOQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 14 Sep 2018 14:14:16 -0400
-Date: Fri, 14 Sep 2018 14:59:52 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Liu Bo <bo.liu@linux.alibaba.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2] Btrfs: skip set_page_dirty if eb is dirty
-Message-ID: <20180914125952.GC5847@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1536703587-94565-1-git-send-email-bo.liu@linux.alibaba.com>
- <1536860682-41012-1-git-send-email-bo.liu@linux.alibaba.com>
+        id S1725910AbeILLlz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 12 Sep 2018 07:41:55 -0400
+Subject: Re: [PATCH] Btrfs: assert page dirty bit
+To: Liu Bo <bo.liu@linux.alibaba.com>, linux-btrfs@vger.kernel.org
+References: <1536703587-94565-2-git-send-email-bo.liu@linux.alibaba.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <65915dec-83d5-d79b-c848-d1f4efce8bb8@suse.com>
+Date: Wed, 12 Sep 2018 09:38:49 +0300
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1536860682-41012-1-git-send-email-bo.liu@linux.alibaba.com>
+In-Reply-To: <1536703587-94565-2-git-send-email-bo.liu@linux.alibaba.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Sep 14, 2018 at 01:44:42AM +0800, Liu Bo wrote:
-> As long as @eb is marked with EXTENT_BUFFER_DIRTY, all of its pages
-> are dirty, so no need to set pages dirty again.
-> 
-> Ftrace showed that the loop took 10us on my dev box, so removing this
-> can save us at least 10us if eb is already dirty.
+
+
+On 12.09.2018 01:06, Liu Bo wrote:
+> Just in case that someone breaks the rule that pages are dirty as long
+> as eb is dirty.
 > 
 > Signed-off-by: Liu Bo <bo.liu@linux.alibaba.com>
+> ---
+>  fs/btrfs/extent_io.c | 5 +++++
+>  1 file changed, 5 insertions(+)
+> 
+> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> index fb2bf50134a1..99895f196ecb 100644
+> --- a/fs/btrfs/extent_io.c
+> +++ b/fs/btrfs/extent_io.c
+> @@ -5184,6 +5184,11 @@ bool set_extent_buffer_dirty(struct extent_buffer *eb)
+>  			set_page_dirty(eb->pages[i]);
+>  	}
+>  
+> +#ifdef BTRFS_DEBUG
 
-Reviewed-by: David Sterba <dsterba@suse.com>
+And this will never be compiled since the actual ifdef name is
+"CONFIG_BTRFS_DEBUG"
+
+> +	for (i = 0; i < num_pages; i++)
+> +		ASSERT(PageDirty(eb->pages[i]));
+> +#endif
+> +
+>  	return was_dirty;
+>  }
+>  
+> 

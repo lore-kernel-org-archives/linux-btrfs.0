@@ -1,145 +1,105 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:10914 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1726570AbeIMNlZ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 13 Sep 2018 09:41:25 -0400
-Date: Thu, 13 Sep 2018 16:32:51 +0800
-From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] btrfs-progs: calibrate extent_end when found a gap
-Message-ID: <20180913083251.GD2790@fnst.localdomain>
-References: <20180904124201.3287-1-lufq.fnst@cn.fujitsu.com>
- <20180911144120.GA2154@twin.jikos.cz>
- <20180913083027.GC2790@fnst.localdomain>
+Received: from mx2.suse.de ([195.135.220.15]:53848 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726913AbeIMOVF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 13 Sep 2018 10:21:05 -0400
+Subject: Re: [PATCH] btrfs-progs: lowmem: fix false alert about the existence
+ of gaps in the check_file_extent
+To: Lu Fengqi <lufq.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+References: <20180913082026.16996-1-lufq.fnst@cn.fujitsu.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <6324321e-28b1-2bf5-4a8b-acbac5ca226c@suse.com>
+Date: Thu, 13 Sep 2018 12:12:27 +0300
 MIME-Version: 1.0
-Content-Type: multipart/mixed; boundary="KsGdsel6WgEHnImy"
-In-Reply-To: <20180913083027.GC2790@fnst.localdomain>
+In-Reply-To: <20180913082026.16996-1-lufq.fnst@cn.fujitsu.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---KsGdsel6WgEHnImy
-Content-Type: text/plain; charset="us-ascii"
-Content-Disposition: inline
-
-On Thu, Sep 13, 2018 at 04:30:28PM +0800, Lu Fengqi wrote:
->On Tue, Sep 11, 2018 at 04:41:21PM +0200, David Sterba wrote:
->>On Tue, Sep 04, 2018 at 08:42:01PM +0800, Lu Fengqi wrote:
->>> The extent_end will be used to check whether there is gap between this
->>> extent and next extent. If it is not calibrated, check_file_extent will
->>
->>Do you mean 'synchronized' or 'matching'.
->
->I apologize for this incomprehensible commit message, and I have updated
->the commit message.
->
->[PATCH] btrfs-progs: lowmem: fix false alert about the existence of gaps in the check_file_extent
->
->>
->>> mistake that there are gaps between the remaining extents.
->>
->>If this is a bugfix, do you have a testcase? Thanks.
->>
->
->The testcase requires some check repair's fixes (including originl and lowmem)
->that my colleagues are working on. After they get it, I will send the
->testcase.
->
->The attached is the image which can trigger the false alert.
-
-Sorry, I miss the attached.
-
--- 
-Thanks,
-Lu
-
->
->Without the patch mentioned before, lowmem check will false alert that expect
->the hole extent [257 EXTENT_DATA 8192].
->
->ERROR: root 5 EXTENT_DATA[257 12288] gap exists, expected: EXTENT_DATA[257 8192]
->
->-- 
->Thanks,
->Lu
->
->
 
 
+On 13.09.2018 11:20, Lu Fengqi wrote:
+> In the check_inode_item function, the extent_end variable used to store the
+> end of the last file extent that has checked. When it passes to
+> check_file_extent, if the offset of the next file extent is not equal to
+> it, there is a gap between the two file extents.
 
---KsGdsel6WgEHnImy
-Content-Type: application/octet-stream
-Content-Disposition: attachment; filename="file_extent_with_gap.img"
-Content-Transfer-Encoding: base64
+The 'end' parameter of check_file_extent tracks the ending offset of the
+last checked extent. This is used to detect gaps between adjacent extents.
 
-i2aVcuIlXL0AAAAAAAAAAAQAAAABAAABAAAAAADfAAAAAEBQAQAAAAAJAQAA
-AADQAQAAAAAxBAAAAEDVAQAAAADSAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-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
-AAAAAAAAAAAAAAAA
+> 
+> In the case of a gap existing, it is wrong that only add the
+> extent_num_bytes of this file extent to the invalid extent_end variable as
+> before. Therefore, lowmem check will false alert that there are gaps
+> between the subsequent file extents of this inode due to the wrong
+> extent_end variable.
 
---KsGdsel6WgEHnImy--
+Currently such gaps are wrongly detected since for regular extents only
+the size of the extent is added to the 'end' parameter. This results in
+wrongly considering all extents of a file as having gaps between them
+when only 2 of them really have a gap as seen in the example below.
+
+> 
+> Solution:
+> The extent_end variable should set to the sum of the offset and the
+> extent_num_bytes of the file extent.
+> 
+> Example:
+> Suppose that lowmem check the following file extent of inode 257.
+> 
+>         item 6 key (257 EXTENT_DATA 0) itemoff 15813 itemsize 53
+>                 generation 6 type 1 (regular)
+>                 extent data disk byte 13631488 nr 4096
+>                 extent data offset 0 nr 4096 ram 4096
+>                 extent compression 0 (none)
+>         item 7 key (257 EXTENT_DATA 8192) itemoff 15760 itemsize 53
+>                 generation 6 type 1 (regular)
+>                 extent data disk byte 13631488 nr 4096
+>                 extent data offset 0 nr 4096 ram 4096
+>                 extent compression 0 (none)
+>         item 8 key (257 EXTENT_DATA 12288) itemoff 15707 itemsize 53
+>                 generation 6 type 1 (regular)
+>                 extent data disk byte 13631488 nr 4096
+>                 extent data offset 0 nr 4096 ram 4096
+>                 extent compression 0 (none)
+> 
+> For inode 257, check_inode_item set extent_end to 0, then call
+> check_file_extent to check item {6,7,8}.
+> item 6)
+> 	offset(0) == extent_end(0)
+> 	extent_end = extent_end(0) + extent_num_bytes(4096)
+> item 7)
+> 	offset(8192) != extent_end(4096)
+> 	extent_end = extent_end(4096) + extent_num_bytes(4096)
+> 			^^^
+> 	The old extent_end should replace by offset(8192).
+> item 8)
+> 	offset(12288) != extent_end(8192)
+> 		^^^
+> 	But there is no gap between item {7,8}.
+
+The example makes sense. But can the same thing happen with the inline
+extents, ie should the same adjustments be made for the code in if
+(extent_type == BTRFS_FILE_EXTENT_INLINE) ?
+
+> 
+> Fixes: d88da10ddd42 ("btrfs-progs: check: introduce function to check file extent")
+> Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+> ---
+>  check/mode-lowmem.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> diff --git a/check/mode-lowmem.c b/check/mode-lowmem.c
+> index 1bce44f5658a..370318f0e631 100644
+> --- a/check/mode-lowmem.c
+> +++ b/check/mode-lowmem.c
+> @@ -1974,7 +1974,7 @@ static int check_file_extent(struct btrfs_root *root, struct btrfs_path *path,
+>  		}
+>  	}
+>  
+> -	*end += extent_num_bytes;
+> +	*end = fkey.offset + extent_num_bytes;
+>  	if (!is_hole)
+>  		*size += extent_num_bytes;
+>  
+> 

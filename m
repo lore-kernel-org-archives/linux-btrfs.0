@@ -1,135 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from out30-133.freemail.mail.aliyun.com ([115.124.30.133]:49048 "EHLO
-        out30-133.freemail.mail.aliyun.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1727762AbeILDIK (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 11 Sep 2018 23:08:10 -0400
-From: Liu Bo <bo.liu@linux.alibaba.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: do not wait after queue async work for delaye refs
-Date: Wed, 12 Sep 2018 06:06:27 +0800
-Message-Id: <1536703587-94565-8-git-send-email-bo.liu@linux.alibaba.com>
+Received: from szxga04-in.huawei.com ([45.249.212.190]:12109 "EHLO huawei.com"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726685AbeIMIVE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 13 Sep 2018 04:21:04 -0400
+From: zhong jiang <zhongjiang@huawei.com>
+To: <dsterba@suse.com>
+CC: <jbacik@fb.com>, <clm@fb.com>, <linux-btrfs@vger.kernel.org>,
+        <linux-kernel@vger.kernel.org>
+Subject: [PATCHv3 1/2] btrfs: change unpin_extent_cache to be void function
+Date: Thu, 13 Sep 2018 11:01:14 +0800
+Message-ID: <1536807675-25086-2-git-send-email-zhongjiang@huawei.com>
+In-Reply-To: <1536807675-25086-1-git-send-email-zhongjiang@huawei.com>
+References: <1536807675-25086-1-git-send-email-zhongjiang@huawei.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If metadata space is hungry, how fast flush_space() can run determines
-the latency we spend in reserve_metadata_space().
+unpin_extent_cache use the the variable "ret" for return value,
+but it is not modified after initialzation. Further, I find that
+any of the callers do not handle the return value, so it is safe
+to drop the unneeded "ret" and make it to be void function.
 
-flush_space()
-   case FLUSH_DELAYED_ITEMS:
-      ...
-      btrfs_end_transaction()
-   case ALLOC_CHUNK:
-      ...
-      btrfs_end_transaction()
-
-btrfs_end_transaction()
-   btrfs_async_run_delayed_refs()
-       // queue a work to process delayed refs
-       ...
-       if (wait)
-           wait_for_completion()
-
-Although processing delayed refs can add to pinned bytes, pinned bytes
-can only be used after committing transaction, so waiting async in
-flush_space() doesn't help.
-
-In fact we don't have to wait for asynchronous delayed refs processing
-as delayed refs are not blocking the subsequent operations(unless within
-committing transaction we need to make sure filesystem is consistent).
-
-Signed-off-by: Liu Bo <bo.liu@linux.alibaba.com>
+Signed-off-by: zhong jiang <zhongjiang@huawei.com>
 ---
- fs/btrfs/ctree.h       |  2 +-
- fs/btrfs/extent-tree.c | 18 ++----------------
- fs/btrfs/inode.c       |  2 +-
- fs/btrfs/transaction.c |  3 +--
- 4 files changed, 5 insertions(+), 20 deletions(-)
+ fs/btrfs/extent_map.c | 5 +----
+ fs/btrfs/extent_map.h | 2 +-
+ 2 files changed, 2 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 00e506de70ba..4c3a733ee4cf 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -2620,7 +2620,7 @@ void btrfs_dec_block_group_reservations(struct btrfs_fs_info *fs_info,
- int btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
- 			   unsigned long count);
- int btrfs_async_run_delayed_refs(struct btrfs_fs_info *fs_info,
--				 unsigned long count, u64 transid, int wait);
-+				 unsigned long count, u64 transid);
- int btrfs_lookup_data_extent(struct btrfs_fs_info *fs_info, u64 start, u64 len);
- int btrfs_lookup_extent_info(struct btrfs_trans_handle *trans,
- 			     struct btrfs_fs_info *fs_info, u64 bytenr,
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index b6767f9031b5..cac9a9d04d0c 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -2852,14 +2852,11 @@ static void delayed_ref_async_start(struct btrfs_work *work)
- 	if (ret && !async->error)
- 		async->error = ret;
- done:
--	if (async->sync)
--		complete(&async->wait);
--	else
--		kfree(async);
-+	kfree(async);
- }
- 
- int btrfs_async_run_delayed_refs(struct btrfs_fs_info *fs_info,
--				 unsigned long count, u64 transid, int wait)
-+				 unsigned long count, u64 transid)
+diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
+index 819420e..c4e2347 100644
+--- a/fs/btrfs/extent_map.c
++++ b/fs/btrfs/extent_map.c
+@@ -276,10 +276,9 @@ static void try_merge_map(struct extent_map_tree *tree, struct extent_map *em)
+  * to the generation that actually added the file item to the inode so we know
+  * we need to sync this extent when we call fsync().
+  */
+-int unpin_extent_cache(struct extent_map_tree *tree, u64 start, u64 len,
++void unpin_extent_cache(struct extent_map_tree *tree, u64 start, u64 len,
+ 		       u64 gen)
  {
- 	struct async_delayed_refs *async;
- 	int ret;
-@@ -2872,23 +2869,12 @@ int btrfs_async_run_delayed_refs(struct btrfs_fs_info *fs_info,
- 	async->count = count;
- 	async->error = 0;
- 	async->transid = transid;
--	if (wait)
--		async->sync = 1;
--	else
--		async->sync = 0;
--	init_completion(&async->wait);
+-	int ret = 0;
+ 	struct extent_map *em;
+ 	bool prealloc = false;
  
- 	btrfs_init_work(&async->work, btrfs_extent_refs_helper,
- 			delayed_ref_async_start, NULL, NULL);
- 
- 	btrfs_queue_work(fs_info->extent_workers, &async->work);
- 
--	if (wait) {
--		wait_for_completion(&async->wait);
--		ret = async->error;
--		kfree(async);
--		return ret;
--	}
- 	return 0;
+@@ -311,8 +310,6 @@ int unpin_extent_cache(struct extent_map_tree *tree, u64 start, u64 len,
+ 	free_extent_map(em);
+ out:
+ 	write_unlock(&tree->lock);
+-	return ret;
+-
  }
  
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 99ab0203b701..fd4af54f0d3b 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -4736,7 +4736,7 @@ int btrfs_truncate_inode_items(struct btrfs_trans_handle *trans,
- 			if (btrfs_should_throttle_delayed_refs(trans, fs_info))
- 				btrfs_async_run_delayed_refs(fs_info,
- 					trans->delayed_ref_updates * 2,
--					trans->transid, 0);
-+					trans->transid);
- 			if (be_nice) {
- 				if (truncate_space_check(trans, root,
- 							 extent_num_bytes)) {
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 772963a61072..a816c0999fb2 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -889,8 +889,7 @@ static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
- 
- 	kmem_cache_free(btrfs_trans_handle_cachep, trans);
- 	if (must_run_delayed_refs) {
--		btrfs_async_run_delayed_refs(info, cur, transid,
--					     must_run_delayed_refs == 1);
-+		btrfs_async_run_delayed_refs(info, cur, transid);
- 	}
- 	return err;
- }
+ void clear_em_logging(struct extent_map_tree *tree, struct extent_map *em)
+diff --git a/fs/btrfs/extent_map.h b/fs/btrfs/extent_map.h
+index 6afe786..df4e1a5 100644
+--- a/fs/btrfs/extent_map.h
++++ b/fs/btrfs/extent_map.h
+@@ -88,7 +88,7 @@ void replace_extent_mapping(struct extent_map_tree *tree,
+ void free_extent_map(struct extent_map *em);
+ int __init extent_map_init(void);
+ void __cold extent_map_exit(void);
+-int unpin_extent_cache(struct extent_map_tree *tree, u64 start, u64 len, u64 gen);
++void unpin_extent_cache(struct extent_map_tree *tree, u64 start, u64 len, u64 gen);
+ void clear_em_logging(struct extent_map_tree *tree, struct extent_map *em);
+ struct extent_map *search_extent_mapping(struct extent_map_tree *tree,
+ 					 u64 start, u64 len);
 -- 
-1.8.3.1
+1.7.12.4

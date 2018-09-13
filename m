@@ -1,32 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:33474 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727982AbeINSEV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 14 Sep 2018 14:04:21 -0400
-Date: Fri, 14 Sep 2018 14:49:58 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Liu Bo <bo.liu@linux.alibaba.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2] Btrfs: remove level==0 check in balance_level
-Message-ID: <20180914124958.GA5847@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1536703587-94565-4-git-send-email-bo.liu@linux.alibaba.com>
- <1536861359-55509-1-git-send-email-bo.liu@linux.alibaba.com>
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:12648 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1726832AbeIMN6V (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 13 Sep 2018 09:58:21 -0400
+Date: Thu, 13 Sep 2018 16:49:48 +0800
+From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+To: Nikolay Borisov <nborisov@suse.com>
+CC: <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] btrfs: Handle error of get_old_root
+Message-ID: <20180913084948.GE2790@fnst.localdomain>
+References: <1536827710-20534-1-git-send-email-nborisov@suse.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1536861359-55509-1-git-send-email-bo.liu@linux.alibaba.com>
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <1536827710-20534-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Sep 14, 2018 at 01:55:59AM +0800, Liu Bo wrote:
-> btrfs_search_slot()
->    if (level != 0)
->       setup_nodes_for_search()
->           balance_level()
-> 
-> It is just impossible to have level=0 in balance_level.
-> 
-> Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-> Signed-off-by: Liu Bo <bo.liu@linux.alibaba.com>
+On Thu, Sep 13, 2018 at 11:35:10AM +0300, Nikolay Borisov wrote:
+>In btrfs_search_old_slot get_old_root is always used with the
+>assumption it cannot fail. However, this is not true in rare
+>circumstance it can fail and return null. This will lead to null
+>point dereference when the header is read. Fix this by checking the
+>return value and properly handling NULL by setting ret to -EIO and
+>returning gracefully.
+>
+>CID: 1087503
+>Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 
-Reviewed-by: David Sterba <dsterba@suse.com>
+Reviewed-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+
+-- 
+Thanks,
+Lu
+
+>---
+> fs/btrfs/ctree.c | 4 ++++
+> 1 file changed, 4 insertions(+)
+>
+>diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+>index 1124d236291d..a5399fd49c17 100644
+>--- a/fs/btrfs/ctree.c
+>+++ b/fs/btrfs/ctree.c
+>@@ -2961,6 +2961,10 @@ int btrfs_search_old_slot(struct btrfs_root *root, const struct btrfs_key *key,
+> 
+> again:
+> 	b = get_old_root(root, time_seq);
+>+	if (!b) {
+>+		ret = -EIO;
+>+		goto done;
+>+	}
+> 	level = btrfs_header_level(b);
+> 	p->locks[level] = BTRFS_READ_LOCK;
+> 
+>-- 
+>2.7.4
+>
+>
+>

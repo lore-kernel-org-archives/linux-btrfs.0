@@ -1,43 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:33962 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726495AbeIMLZW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 13 Sep 2018 07:25:22 -0400
-Subject: Re: [PATCH] btrfs-progs: Eliminate remaining uses of strerror(errno)
-To: Rosen Penev <rosenp@gmail.com>, linux-btrfs@vger.kernel.org
-References: <20180913005216.17485-1-rosenp@gmail.com>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <8523769a-dc37-81aa-138a-4702a8c2d009@suse.com>
-Date: Thu, 13 Sep 2018 09:17:17 +0300
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:11718 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1726570AbeIMNi5 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 13 Sep 2018 09:38:57 -0400
+Date: Thu, 13 Sep 2018 16:30:28 +0800
+From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] btrfs-progs: calibrate extent_end when found a gap
+Message-ID: <20180913083027.GC2790@fnst.localdomain>
+References: <20180904124201.3287-1-lufq.fnst@cn.fujitsu.com>
+ <20180911144120.GA2154@twin.jikos.cz>
 MIME-Version: 1.0
-In-Reply-To: <20180913005216.17485-1-rosenp@gmail.com>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <20180911144120.GA2154@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Tue, Sep 11, 2018 at 04:41:21PM +0200, David Sterba wrote:
+>On Tue, Sep 04, 2018 at 08:42:01PM +0800, Lu Fengqi wrote:
+>> The extent_end will be used to check whether there is gap between this
+>> extent and next extent. If it is not calibrated, check_file_extent will
+>
+>Do you mean 'synchronized' or 'matching'.
 
+I apologize for this incomprehensible commit message, and I have updated
+the commit message.
 
-On 13.09.2018 03:52, Rosen Penev wrote:
-> %m allows a smaller filesize. Useful on embedded systems.
-> 
-> Signed-off-by: Rosen Penev <rosenp@gmail.com>
-> ---
->  build/Documentation/Makefile |  142 +++++
->  build/Makefile.inc           |   42 ++
->  build/config.h               |  139 +++++
->  build/config.log             |  822 ++++++++++++++++++++++++++
->  build/config.status          | 1059 ++++++++++++++++++++++++++++++++++
->  build/version.h              |   14 +
->  cmds-qgroup.c                |    3 +-
->  messages.h                   |    4 +-
->  mkfs/rootdir.c               |   47 +-
->  qgroup.c                     |    3 +-
->  10 files changed, 2243 insertions(+), 32 deletions(-)
->  create mode 100644 build/Documentation/Makefile
->  create mode 100644 build/Makefile.inc
->  create mode 100644 build/config.h
->  create mode 100644 build/config.log
->  create mode 100755 build/config.status
->  create mode 100644 build/version.h
+[PATCH] btrfs-progs: lowmem: fix false alert about the existence of gaps in the check_file_extent
 
-You clearly need to resend with changes only to  the *.[ch] files
+>
+>> mistake that there are gaps between the remaining extents.
+>
+>If this is a bugfix, do you have a testcase? Thanks.
+>
+
+The testcase requires some check repair's fixes (including originl and lowmem)
+that my colleagues are working on. After they get it, I will send the
+testcase.
+
+The attached is the image which can trigger the false alert.
+
+Without the patch mentioned before, lowmem check will false alert that expect
+the hole extent [257 EXTENT_DATA 8192].
+
+ERROR: root 5 EXTENT_DATA[257 12288] gap exists, expected: EXTENT_DATA[257 8192]
+
+-- 
+Thanks,
+Lu

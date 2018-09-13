@@ -1,42 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:50904 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726919AbeIMROV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 13 Sep 2018 13:14:21 -0400
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 83024AD6A
-        for <linux-btrfs@vger.kernel.org>; Thu, 13 Sep 2018 12:05:10 +0000 (UTC)
-From: Nikolay Borisov <nborisov@suse.com>
+Received: from mail-pg1-f182.google.com ([209.85.215.182]:45520 "EHLO
+        mail-pg1-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727332AbeIMRbw (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 13 Sep 2018 13:31:52 -0400
+Received: by mail-pg1-f182.google.com with SMTP id x26-v6so2662688pge.12
+        for <linux-btrfs@vger.kernel.org>; Thu, 13 Sep 2018 05:22:38 -0700 (PDT)
+MIME-Version: 1.0
+From: Serhat Sevki Dincer <jfcgauss@gmail.com>
+Date: Thu, 13 Sep 2018 15:22:24 +0300
+Message-ID: <CAPqC6xR1rbNqpPUUxU2OyvtCHoD2LOywE5cRDtNTbqJ2=5e_nQ@mail.gmail.com>
+Subject: btrfs convert problem
 To: linux-btrfs@vger.kernel.org
-Cc: Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 0/3] Misc refactoring of check_file_extent 
-Date: Thu, 13 Sep 2018 15:05:04 +0300
-Message-Id: <20180913120507.18197-1-nborisov@suse.com>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-While looking at check_file_extent I thought that the code might be a bit 
-cleaner than it actually is and cleaner as well. The first patch factors out 
-the code dealing with inline extents into a separate function aptly named 
-check_file_extent_inline. This allows to remove some inline-specific variable 
-from check_file_extent. Patch 2 just moves the final check in the new function 
-into the already existing branch handling the !compressed case. Finally 
-the check which detects unknown extent types is moved first in check_file_extent, 
-followed by the code to handle inline extents and finally the existing code to 
-handle regular/prealloc extents is left intact. 
+Hi,
 
-This patchset brings no functional changes. 
+I have an external usb HDD (WD my passport, just usb cable, no
+external power) with a single ext4 partition occupying the whole disk
+with 698 GiB capacity and 188 GiB empty space. The data on disk is not
+very important.
 
-Nikolay Borisov (3):
-  btrfs-progs: check: lowmem: Factor out inline extent checking code in
-    its own function
-  btrfs-progs: check: lowmem: Refactor extent len test in
-    check_file_extent_inline
-  btrfs-progs: check: lowmem: Refactor extent type checks in
-    check_file_extent
+I also have a laptop with Manjaro 64-bit XFCE, kernel 4.14.68,
+btrfs-progs v4.17.1, all packages come with Manjaro.
 
- check/mode-lowmem.c | 151 ++++++++++++++++++++++++++------------------
- 1 file changed, 89 insertions(+), 62 deletions(-)
+I tried to convert my disk to btrfs with
+sudo btrfs-convert /dev/sdb1
+I have also tried -i, -n options, all failed with:
 
--- 
-2.17.1
+create btrfs filesystem:
+    blocksize: 4096
+    nodesize:  16384
+    features:  extref, skinny-metadata (default)
+creating ext2 image file
+ERROR: failed to create ext2_saved/image: -1
+WARNING: an error occurred during conversion, filesystem is partially
+created but not finalized and not mountable
+
+I could not find this error/warning combo on the net.
+ext4 partition seems intact and working after these attempts.
+How can I debug and complete this conversion?
+
+Thanks..

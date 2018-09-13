@@ -1,73 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.15]:57699 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.15.15]:34461 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725757AbeINEUS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 14 Sep 2018 00:20:18 -0400
-Subject: Re: [PATCH 3/3] btrfs-progs: check: lowmem: Refactor extent type
- checks in check_file_extent
-To: Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
-References: <20180913120507.18197-1-nborisov@suse.com>
- <20180913120507.18197-4-nborisov@suse.com>
+        id S1726942AbeINE3S (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 14 Sep 2018 00:29:18 -0400
+Subject: Re: btrfs convert problem
+To: Nikolay Borisov <nborisov@suse.com>,
+        Serhat Sevki Dincer <jfcgauss@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+References: <CAPqC6xR1rbNqpPUUxU2OyvtCHoD2LOywE5cRDtNTbqJ2=5e_nQ@mail.gmail.com>
+ <e107e504-ee53-8879-23c2-9fc8cfe7c755@suse.com>
+ <CAPqC6xROL93b5DOrNPaNSZahVKYqSpg0-84DgHsFTQZtHVdnRg@mail.gmail.com>
+ <10c6a6c5-4d96-30bb-3965-67272d2fe902@suse.com>
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <abc403df-7328-c169-197a-9d78ee253110@gmx.com>
-Date: Fri, 14 Sep 2018 07:08:32 +0800
+Message-ID: <0af846d3-9f07-d744-f9e4-862fc5a0cbad@gmx.com>
+Date: Fri, 14 Sep 2018 07:17:30 +0800
 MIME-Version: 1.0
-In-Reply-To: <20180913120507.18197-4-nborisov@suse.com>
+In-Reply-To: <10c6a6c5-4d96-30bb-3965-67272d2fe902@suse.com>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On 2018/9/13 下午8:05, Nikolay Borisov wrote:
-> Make the checks in check_file_extent a bit more explicit. First we check
-> for unknown type and fail accordingly. Then we check for inline extent
-> and handle it in the newly introduced check_file_extent_inline. Finally
-> if none of the above checks triggered then we must have a regular or
-> prealloc extents.
+On 2018/9/14 上午12:37, Nikolay Borisov wrote:
 > 
-> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+> 
+> On 13.09.2018 19:15, Serhat Sevki Dincer wrote:
+>>> -1 seems to be EPERM, is your device write-protected, readonly or
+>>> something like that ?
+>>
+>> I am able to use ext4 partition read/write, created a file and wrote
+>> in it, un/re mounted it, all is ok.
+>> The drive only has a microusb port and a little led light; no rw
+>> switch or anything like that..
+>>
+> 
+> What might help is running btrfs convert under strace. So something like :
+> 
+> sudo strace -f -o strace.log btrfs-convert /dev/sdb1 and then send the log.
+> 
+strace would greatly help in this case.
 
-Reviewed-by: Qu Wenruo <wqu@suse.com>
+My guess is something wrong happened in migrate_super_block(), which
+doesn't handle ret > 0 case well.
+In that case, it means pwrite 4K doesn't finish in one call, which looks
+pretty strange.
 
 Thanks,
 Qu
-
-> ---
->  check/mode-lowmem.c | 12 +++++++-----
->  1 file changed, 7 insertions(+), 5 deletions(-)
-> 
-> diff --git a/check/mode-lowmem.c b/check/mode-lowmem.c
-> index 3a6fbb33c858..aa946a1307de 100644
-> --- a/check/mode-lowmem.c
-> +++ b/check/mode-lowmem.c
-> @@ -1915,21 +1915,23 @@ static int check_file_extent(struct btrfs_root *root, struct btrfs_path *path,
->  
->  	btrfs_item_key_to_cpu(node, &fkey, slot);
->  	fi = btrfs_item_ptr(node, slot, struct btrfs_file_extent_item);
-> -
-> -	/* Check inline extent */
->  	extent_type = btrfs_file_extent_type(node, fi);
-> -	if (extent_type == BTRFS_FILE_EXTENT_INLINE)
-> -		return check_file_extent_inline(root, path, size, end);
->  
->  	/* Check extent type */
->  	if (extent_type != BTRFS_FILE_EXTENT_REG &&
-> -			extent_type != BTRFS_FILE_EXTENT_PREALLOC) {
-> +	    extent_type != BTRFS_FILE_EXTENT_PREALLOC &&
-> +	    extent_type != BTRFS_FILE_EXTENT_INLINE) {
->  		err |= FILE_EXTENT_ERROR;
->  		error("root %llu EXTENT_DATA[%llu %llu] type bad",
->  		      root->objectid, fkey.objectid, fkey.offset);
->  		return err;
->  	}
->  
-> +	/* Check inline extent */
-> +	if (extent_type == BTRFS_FILE_EXTENT_INLINE)
-> +		return check_file_extent_inline(root, path, size, end);
-> +
-> +
->  	/* Check REG_EXTENT/PREALLOC_EXTENT */
->  	disk_bytenr = btrfs_file_extent_disk_bytenr(node, fi);
->  	disk_num_bytes = btrfs_file_extent_disk_num_bytes(node, fi);
-> 

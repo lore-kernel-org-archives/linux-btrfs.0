@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:50926 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:51620 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726822AbeINM42 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 14 Sep 2018 08:56:28 -0400
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id E050FAF58
-        for <linux-btrfs@vger.kernel.org>; Fri, 14 Sep 2018 07:43:13 +0000 (UTC)
+        id S1727987AbeINNDH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 14 Sep 2018 09:03:07 -0400
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id DD6B6AF68
+        for <linux-btrfs@vger.kernel.org>; Fri, 14 Sep 2018 07:49:51 +0000 (UTC)
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: Do metadata prealloc as long as we're not modifying csum tree
-Date: Fri, 14 Sep 2018 15:43:07 +0800
-Message-Id: <20180914074307.17565-1-wqu@suse.com>
+Subject: [PATCH v1.1] btrfs-progs: Do metadata prealloc as long as we're not modifying extent tree
+Date: Fri, 14 Sep 2018 15:49:44 +0800
+Message-Id: <20180914074944.19526-1-wqu@suse.com>
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -42,6 +42,10 @@ BTRFS_EXTENT_TREE_OBJECTID", and add some comment for it.
 
 Issue: 123
 Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+changelog:
+v1.1
+  Fix stupid subject, from "csum tree" to "extent tree"
 ---
  extent-tree.c | 7 ++++++-
  1 file changed, 6 insertions(+), 1 deletion(-)

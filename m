@@ -1,55 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:46684 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:46950 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727859AbeINTiO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 14 Sep 2018 15:38:14 -0400
-Date: Fri, 14 Sep 2018 16:23:24 +0200
+        id S1726908AbeINTjs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 14 Sep 2018 15:39:48 -0400
+Date: Fri, 14 Sep 2018 16:25:01 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Arnd Bergmann <arnd@arndb.de>
-Cc: viro@zeniv.linux.org.uk, linux-fsdevel@vger.kernel.org,
-        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-        "David S. Miller" <davem@davemloft.net>, devel@driverdev.osuosl.org,
-        linux-kernel@vger.kernel.org, qat-linux@intel.com,
-        linux-crypto@vger.kernel.org, linux-media@vger.kernel.org,
-        dri-devel@lists.freedesktop.org, linaro-mm-sig@lists.linaro.org,
-        amd-gfx@lists.freedesktop.org, linux-input@vger.kernel.org,
-        linux-iio@vger.kernel.org, linux-rdma@vger.kernel.org,
-        linux-nvdimm@lists.01.org, linux-nvme@lists.infradead.org,
-        linux-pci@vger.kernel.org, platform-driver-x86@vger.kernel.org,
-        linux-remoteproc@vger.kernel.org, sparclinux@vger.kernel.org,
-        linux-scsi@vger.kernel.org, linux-usb@vger.kernel.org,
-        linux-fbdev@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
-        linux-btrfs@vger.kernel.org, ceph-devel@vger.kernel.org,
-        linux-wireless@vger.kernel.org, netdev@vger.kernel.org
-Subject: Re: [PATCH v2 05/17] compat_ioctl: move more drivers to
- generic_compat_ioctl_ptrarg
-Message-ID: <20180914142324.GI5847@twin.jikos.cz>
+To: Qu Wenruo <wqu@suse.de>
+Cc: dsterba@suse.cz, Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 0/6] btrfs-progs: Variant fixes for fuzz-tests
+Message-ID: <20180914142501.GJ5847@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <20180912150142.157913-1-arnd@arndb.de>
- <20180912151134.436719-1-arnd@arndb.de>
+References: <20180803055022.9816-1-wqu@suse.com>
+ <d844475b-f06a-4149-4259-999b08e3dd09@gmx.com>
+ <20180911163851.GG2154@twin.jikos.cz>
+ <ef65752f-c68a-778e-0334-9dc65d1f840c@suse.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180912151134.436719-1-arnd@arndb.de>
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <ef65752f-c68a-778e-0334-9dc65d1f840c@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Sep 12, 2018 at 05:08:52PM +0200, Arnd Bergmann wrote:
-> The .ioctl and .compat_ioctl file operations have the same prototype so
-> they can both point to the same function, which works great almost all
-> the time when all the commands are compatible.
+On Wed, Sep 12, 2018 at 07:59:34AM +0800, Qu Wenruo wrote:
 > 
-> One exception is the s390 architecture, where a compat pointer is only
-> 31 bit wide, and converting it into a 64-bit pointer requires calling
-> compat_ptr(). Most drivers here will ever run in s390, but since we now
-> have a generic helper for it, it's easy enough to use it consistently.
 > 
-> I double-checked all these drivers to ensure that all ioctl arguments
-> are used as pointers or are ignored, but are not interpreted as integer
-> values.
+> On 2018/9/12 上午12:38, David Sterba wrote:
+> > On Wed, Aug 29, 2018 at 01:27:39PM +0800, Qu Wenruo wrote:
+> >> Gentle ping.
+> >>
+> >> These fixes are pretty small, I'd like to see them merged before I need
+> >> to rebase them again and again.
+> > 
+> > I've merged them now, thanks. I had to edit all changelogs and remove
+> > the ----- lines, shortened the paths in the test logs and fixed typos.
 > 
-> Signed-off-by: Arnd Bergmann <arnd@arndb.de>
-> ---
+> Thanks for the editing.
+> 
+> I'll keep the log format as default for all later patches.
+> 
+> BTW, is there any difference between 2 spaces indent and 1 space indent
+> for log?
 
->  fs/btrfs/super.c                            | 2 +-
-
-Acked-by: David Sterba <dsterba@suse.com>
+No, it's for some visual separation so on first glance is obvious what's
+the changelog text and what are logs or commands to reproduce. One space
+is ok too so the log is not drifting away.

@@ -1,112 +1,107 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:24058 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1726558AbeING17 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 14 Sep 2018 02:27:59 -0400
-Subject: Re: [PATCH v2 5/7] btrfs-progs: lowmem: continue to check item in
- last slot while checking inodes
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>, <damenly.su@gmail.com>,
-        <linux-btrfs@vger.kernel.org>
-References: <20180912204924.10089-1-suy.fnst@cn.fujitsu.com>
- <20180912204924.10089-6-suy.fnst@cn.fujitsu.com>
- <e415c063-772b-3dca-fdd1-ed88c90caf8b@gmx.com>
-From: Su Yue <suy.fnst@cn.fujitsu.com>
-Message-ID: <7e3ec0fa-e436-6093-22b8-19f9795c4403@cn.fujitsu.com>
-Date: Fri, 14 Sep 2018 09:22:48 +0800
+Received: from mx2.suse.de ([195.135.220.15]:39454 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726822AbeINLFW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 14 Sep 2018 07:05:22 -0400
+Subject: Re: btrfs convert problem
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        Serhat Sevki Dincer <jfcgauss@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+References: <CAPqC6xR1rbNqpPUUxU2OyvtCHoD2LOywE5cRDtNTbqJ2=5e_nQ@mail.gmail.com>
+ <e107e504-ee53-8879-23c2-9fc8cfe7c755@suse.com>
+ <CAPqC6xROL93b5DOrNPaNSZahVKYqSpg0-84DgHsFTQZtHVdnRg@mail.gmail.com>
+ <10c6a6c5-4d96-30bb-3965-67272d2fe902@suse.com>
+ <0af846d3-9f07-d744-f9e4-862fc5a0cbad@gmx.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <d47473ef-53bb-2ef1-9c09-f0f02ffaa04f@suse.com>
+Date: Fri, 14 Sep 2018 08:52:27 +0300
 MIME-Version: 1.0
-In-Reply-To: <e415c063-772b-3dca-fdd1-ed88c90caf8b@gmx.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+In-Reply-To: <0af846d3-9f07-d744-f9e4-862fc5a0cbad@gmx.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On 09/14/2018 07:43 AM, Qu Wenruo wrote:
+On 14.09.2018 02:17, Qu Wenruo wrote:
 > 
 > 
-> On 2018/9/13 上午4:49, damenly.su@gmail.com wrote:
->> From: Su Yue <suy.fnst@cn.fujitsu.com>
+> On 2018/9/14 上午12:37, Nikolay Borisov wrote:
 >>
->> After call of check_inode_item(), path may point to the last unchecked
->> slot of the leaf. The outer walk_up_tree() always treats the position
->> as checked item then skips to next item.
-> 
-> So check_inode_item() always set its path to *unchecked* slot, while
-> walk_up_tree() always think its path is set to *checked* slot.
-> 
-> Then this is indeed a problem.
-> 
-Yep, that's the case.
-
 >>
->> If the last item was an inode item, yes, it was unchecked.
->> Then walk_up_tree() will think the leaf is checked and walk up to
->> upper node, process_one_leaf() in walk_down_tree() would skip to
->> check next inode item. Which means, the inode item won't be checked.
+>> On 13.09.2018 19:15, Serhat Sevki Dincer wrote:
+>>>> -1 seems to be EPERM, is your device write-protected, readonly or
+>>>> something like that ?
+>>>
+>>> I am able to use ext4 partition read/write, created a file and wrote
+>>> in it, un/re mounted it, all is ok.
+>>> The drive only has a microusb port and a little led light; no rw
+>>> switch or anything like that..
+>>>
 >>
->> Solution:
->> After check_inode_item returns, if found path point to the last item
->> of a leaf,
+>> What might help is running btrfs convert under strace. So something like :
+>>
+>> sudo strace -f -o strace.log btrfs-convert /dev/sdb1 and then send the log.
+>>
+> strace would greatly help in this case.
 > 
-> Would you please explain more about why last item makes a difference here?
-> 
->  From previous statement, it looks like it's the difference in how
-> walk_up_tree() and check_inode_item() handles the path.
-> Not really related to last item.
->
-Yes, the change is tricky. The core problem is walk_up_tree() will
-skip to other nodes. Decreament of slot will let path still
-point to the leaf after  walk_up_tree() returns.
-Or we must change logical of walk_up_tree() or check_inode_item().
+> My guess is something wrong happened in migrate_super_block(), which
+> doesn't handle ret > 0 case well.
+> In that case, it means pwrite 4K doesn't finish in one call, which looks
+> pretty strange.
 
-BTW,now process_one_leaf() checks inode_item from first inode_item
-or second item with different ino. Change it start from last slot
-should be the right way.
+So Qu,
 
-Thanks,
-Su
+I'm not seeing any EPERM errors, though I see the following so you might
+be right:
 
+openat(AT_FDCWD, "/dev/sdb1", O_RDWR) = 5
 
-Thanks,
-Su
-> Or did I miss something?
+followed by a lot of preads, the last one of which is:
+
+pread64(5, 0x557a0abd10b0, 4096, 2732765184) = -1 EIO (Input/output
+error)
+
+This is then followed by a a lot of pwrites, the last 10 or so syscalls
+are:
+
+pwrite64(5, "\220\255\262\244\0\0\0\0\0\0"..., 16384, 91127808) = 16384
+
+pwrite64(5, "|IO\233\0\0\0\0\0\0"..., 16384, 91144192) = 16384
+
+pwrite64(5, "x\2501n\0\0\0\0\0\0"..., 16384, 91160576) = 16384
+
+pwrite64(5, "\252\254l)\0\0\0\0\0\0"..., 16384, 91176960) = 16384
+
+pwrite64(5, "P\256\331\373\0\0\0\0\0\0"..., 16384, 91193344) = 16384
+
+pwrite64(5, "\3\230\230+\0\0\0\0\0\0"..., 4096, 83951616) = 4096
+
+write(2, "ERROR: ", 7) = 7
+
+write(2, "failed to "..., 37) = 37
+
+write(2, "\n", 1) = 1
+
+close(4) = 0
+
+write(2, "WARNING: ", 9) = 9
+
+write(2, "an error o"..., 104) = 104
+
+write(2, "\n", 1) = 1
+
+exit_group(1) = ?
+
+but looking at migrate_super_block it's not doing that many writes -
+just writing the sb at BTRFS_SUPER_INFO_OFFSET and then zeroing out
+0..BTRFS_SUPER_INFO_OFFSET. Also the number of pwrites:
+grep -c pwrite ~/Downloads/btrfs-issue/convert-strace.log
+198
+
+So the failure is not originating from migrate_super_block.
+
 > 
 > Thanks,
 > Qu
-> 
->> decrease path slot manually, so walk_up_tree() will stay
->> on the leaf.
->>
->> Fixes: 5e2dc770471b ("btrfs-progs: check: skip shared node or leaf check for low_memory mode")
->> Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
->> ---
->>   check/mode-lowmem.c | 12 ++++++++++++
->>   1 file changed, 12 insertions(+)
->>
->> diff --git a/check/mode-lowmem.c b/check/mode-lowmem.c
->> index 8fc9edab1d66..b6b33786d02b 100644
->> --- a/check/mode-lowmem.c
->> +++ b/check/mode-lowmem.c
->> @@ -2612,6 +2612,18 @@ again:
->>   	if (cur->start == cur_bytenr)
->>   		goto again;
->>   
->> +	/*
->> +	 * path may point at the last item(a inode item maybe) in a leaf.
->> +	 * Without below lines, walk_up_tree() will skip the item which
->> +	 * means all items related to the inode will never be checked.
->> +	 * Decrease the slot manually, walk_up_tree won't skip to next node
->> +	 * if it occurs.
->> +	 */
->> +	if (path->slots[0] + 1 >= btrfs_header_nritems(path->nodes[0])) {
->> +		if (path->slots[0])
->> +			path->slots[0]--;
->> +	}
->> +
->>   	/*
->>   	 * we have switched to another leaf, above nodes may
->>   	 * have changed, here walk down the path, if a node
->>
-> 
 > 

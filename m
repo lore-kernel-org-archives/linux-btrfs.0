@@ -1,121 +1,116 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.21]:56245 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726891AbeINLYA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 14 Sep 2018 07:24:00 -0400
-Subject: Re: btrfs convert problem
-To: Nikolay Borisov <nborisov@suse.com>,
-        Serhat Sevki Dincer <jfcgauss@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-References: <CAPqC6xR1rbNqpPUUxU2OyvtCHoD2LOywE5cRDtNTbqJ2=5e_nQ@mail.gmail.com>
- <e107e504-ee53-8879-23c2-9fc8cfe7c755@suse.com>
- <CAPqC6xROL93b5DOrNPaNSZahVKYqSpg0-84DgHsFTQZtHVdnRg@mail.gmail.com>
- <10c6a6c5-4d96-30bb-3965-67272d2fe902@suse.com>
- <0af846d3-9f07-d744-f9e4-862fc5a0cbad@gmx.com>
- <d47473ef-53bb-2ef1-9c09-f0f02ffaa04f@suse.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <63965483-0024-e3cf-6fef-e348868511fc@gmx.com>
-Date: Fri, 14 Sep 2018 14:10:49 +0800
+Received: from mx2.suse.de ([195.135.220.15]:42714 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726831AbeINLkC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 14 Sep 2018 07:40:02 -0400
+Subject: Re: [PATCH v2 4/7] btrfs-progs: lowmem: search key of root again
+ after check_fs_root() under repair
+To: Su Yue <suy.fnst@cn.fujitsu.com>, Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        damenly.su@gmail.com, linux-btrfs@vger.kernel.org
+References: <20180912204924.10089-1-suy.fnst@cn.fujitsu.com>
+ <20180912204924.10089-5-suy.fnst@cn.fujitsu.com>
+ <070c1e5b-1ce8-f69a-fc49-426d51d5703b@gmx.com>
+ <b0ea17c4-5040-3560-d135-54006e378c6d@cn.fujitsu.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <8572ed9f-3b9d-9df2-b596-d3362fc9b8f2@suse.com>
+Date: Fri, 14 Sep 2018 09:27:00 +0300
 MIME-Version: 1.0
-In-Reply-To: <d47473ef-53bb-2ef1-9c09-f0f02ffaa04f@suse.com>
+In-Reply-To: <b0ea17c4-5040-3560-d135-54006e378c6d@cn.fujitsu.com>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On 2018/9/14 下午1:52, Nikolay Borisov wrote:
+On 14.09.2018 03:58, Su Yue wrote:
 > 
 > 
-> On 14.09.2018 02:17, Qu Wenruo wrote:
+> On 09/14/2018 07:37 AM, Qu Wenruo wrote:
 >>
 >>
->> On 2018/9/14 上午12:37, Nikolay Borisov wrote:
+>> On 2018/9/13 上午4:49, damenly.su@gmail.com wrote:
+>>> From: Su Yue <suy.fnst@cn.fujitsu.com>
 >>>
+>>> In check_fs_roots_lowmem(), we do search and follow the resulted path
+>>> to call check_fs_root(), then call btrfs_next_item() to check next
+>>> root.
+>>> However, if repair is enabled, the root tree can be cowed, the
+>>> existed path can cause strange errors.
 >>>
->>> On 13.09.2018 19:15, Serhat Sevki Dincer wrote:
->>>>> -1 seems to be EPERM, is your device write-protected, readonly or
->>>>> something like that ?
->>>>
->>>> I am able to use ext4 partition read/write, created a file and wrote
->>>> in it, un/re mounted it, all is ok.
->>>> The drive only has a microusb port and a little led light; no rw
->>>> switch or anything like that..
->>>>
->>>
->>> What might help is running btrfs convert under strace. So something like :
->>>
->>> sudo strace -f -o strace.log btrfs-convert /dev/sdb1 and then send the log.
->>>
->> strace would greatly help in this case.
+>>> Solution:
+>>>    If repair, save the key before calling check_fs_root,
+>>>    search the saved key again before checking next root.
 >>
->> My guess is something wrong happened in migrate_super_block(), which
->> doesn't handle ret > 0 case well.
->> In that case, it means pwrite 4K doesn't finish in one call, which looks
->> pretty strange.
-> 
-> So Qu,
-> 
-> I'm not seeing any EPERM errors, though I see the following so you might
-> be right:
-> 
-> openat(AT_FDCWD, "/dev/sdb1", O_RDWR) = 5
-> 
-> followed by a lot of preads, the last one of which is:
-> 
-> pread64(5, 0x557a0abd10b0, 4096, 2732765184) = -1 EIO (Input/output
-> error)
-
-Would you please provide the full log?
-
-This pread() looks like some data read.
-
-But without context, it's a little hard to say.
-
-Thanks,
-Qu
-
-> 
-> This is then followed by a a lot of pwrites, the last 10 or so syscalls
-> are:
-> 
-> pwrite64(5, "\220\255\262\244\0\0\0\0\0\0"..., 16384, 91127808) = 16384
-> 
-> pwrite64(5, "|IO\233\0\0\0\0\0\0"..., 16384, 91144192) = 16384
-> 
-> pwrite64(5, "x\2501n\0\0\0\0\0\0"..., 16384, 91160576) = 16384
-> 
-> pwrite64(5, "\252\254l)\0\0\0\0\0\0"..., 16384, 91176960) = 16384
-> 
-> pwrite64(5, "P\256\331\373\0\0\0\0\0\0"..., 16384, 91193344) = 16384
-> 
-> pwrite64(5, "\3\230\230+\0\0\0\0\0\0"..., 4096, 83951616) = 4096
-> 
-> write(2, "ERROR: ", 7) = 7
-> 
-> write(2, "failed to "..., 37) = 37
-> 
-> write(2, "\n", 1) = 1
-> 
-> close(4) = 0
-> 
-> write(2, "WARNING: ", 9) = 9
-> 
-> write(2, "an error o"..., 104) = 104
-> 
-> write(2, "\n", 1) = 1
-> 
-> exit_group(1) = ?
-> 
-> but looking at migrate_super_block it's not doing that many writes -
-> just writing the sb at BTRFS_SUPER_INFO_OFFSET and then zeroing out
-> 0..BTRFS_SUPER_INFO_OFFSET. Also the number of pwrites:
-> grep -c pwrite ~/Downloads/btrfs-issue/convert-strace.log
-> 198
-> 
-> So the failure is not originating from migrate_super_block.
-> 
+>> Both reason and solution looks good.
 >>
+>>>
+>>> Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
+>>> ---
+>>>   check/mode-lowmem.c | 15 +++++++++++++++
+>>>   1 file changed, 15 insertions(+)
+>>>
+>>> diff --git a/check/mode-lowmem.c b/check/mode-lowmem.c
+>>> index 89a304bbdd69..8fc9edab1d66 100644
+>>> --- a/check/mode-lowmem.c
+>>> +++ b/check/mode-lowmem.c
+>>> @@ -4967,9 +4967,13 @@ int check_fs_roots_lowmem(struct btrfs_fs_info
+>>> *fs_info)
+>>>       }
+>>>         while (1) {
+>>> +        struct btrfs_key saved_key;
+>>> +
+>>>           node = path.nodes[0];
+>>>           slot = path.slots[0];
+>>>           btrfs_item_key_to_cpu(node, &key, slot);
+>>> +        if (repair)
+>>> +            saved_key = key;
+>>>           if (key.objectid > BTRFS_LAST_FREE_OBJECTID)
+>>>               goto out;
+>>>           if (key.type == BTRFS_ROOT_ITEM_KEY &&
+>>> @@ -5000,6 +5004,17 @@ int check_fs_roots_lowmem(struct btrfs_fs_info
+>>> *fs_info)
+>>>               err |= ret;
+>>>           }
+>>>   next:
+>>> +        /*
+>>> +         * Since root tree can be cowed during repair,
+>>> +         * here search the saved key again.
+>>> +         */
+>>> +        if (repair) {
+>>> +            btrfs_release_path(&path);
+>>> +            ret = btrfs_search_slot(NULL, fs_info->tree_root,
+>>> +                        &saved_key, &path, 0, 0);
+>>> +            /* Repair never deletes trees, search must succeed. */
+>>> +            BUG_ON(ret);
+>>
+>> But this doesn't look good to me.
+>>
+>> Your assumption here is valid (at least for now), but it's possible that
+>> some tree blocks get corrupted in a large root tree, and in that case,
+>> we could still read part of the root tree, but btrfs_search_slot() could
+>> still return -EIO for certain search key.
+>>
+>> So I still prefer to do some error handling other than BUG_ON(ret).
+>>
+> Okay, will try it.
+
+Just to emphasize Qu's point - we should strive to remove existing
+BUG_ON and should never introduce new ones. btrfs-progs is already quite
+messy and we should be improving that.
+
+> 
+> Thanks,
+> Su
 >> Thanks,
 >> Qu
 >>
+>>> +        }
+>>>           ret = btrfs_next_item(tree_root, &path);
+>>>           if (ret > 0)
+>>>               goto out;
+>>>
+>>
+>>
+> 
+> 
+> 

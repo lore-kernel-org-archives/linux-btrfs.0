@@ -1,135 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:50074 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726822AbeINMtS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 14 Sep 2018 08:49:18 -0400
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 502E8ACE6
-        for <linux-btrfs@vger.kernel.org>; Fri, 14 Sep 2018 07:36:04 +0000 (UTC)
-Subject: Re: [PATCH 2/2] btrfs-progs: convert: Output meaningful error
- messages for create_image()
-To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-References: <20180914072505.15916-1-wqu@suse.com>
- <20180914072505.15916-3-wqu@suse.com>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <36d6a078-d17f-5348-2ef9-854f7f9dc96a@suse.com>
-Date: Fri, 14 Sep 2018 10:36:03 +0300
+Received: from mout.gmx.net ([212.227.15.19]:35721 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1727194AbeINOQ7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 14 Sep 2018 10:16:59 -0400
+Received: from t460-skr.localnet ([194.94.224.254]) by mail.gmx.com (mrgmx003
+ [212.227.17.190]) with ESMTPSA (Nemesis) id 0Llmcq-1fRgJ32Dp2-00ZLgr for
+ <linux-btrfs@vger.kernel.org>; Fri, 14 Sep 2018 11:03:25 +0200
+From: Stefan K <shadow_7@gmx.net>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: btrfs filesystem show takes a long time
+Date: Fri, 14 Sep 2018 11:03:24 +0200
+Message-ID: <3275334.7C4KuSQybz@t460-skr>
 MIME-Version: 1.0
-In-Reply-To: <20180914072505.15916-3-wqu@suse.com>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Dear Maintainer,
+
+the command btrfs fi show takes too much time:
+
+time btrfs fi show              
+Label: none  uuid: 513dc574-e8bc-4336-b181-00d1e9782c1c
+Total devices 2 FS bytes used 2.34GiB
+devid    1 size 927.79GiB used 4.03GiB path /dev/sdv2
+devid    2 size 927.79GiB used 4.03GiB path /dev/sdar2
+
+real    12m59.763s
+user    0m0.008s
+sys     0m0.044s
 
 
-On 14.09.2018 10:25, Qu Wenruo wrote:
-> When convert failed, the error messsage would look like:
-> 
->   create btrfs filesystem:
->       blocksize: 4096
->       nodesize:  16384
->       features:  extref, skinny-metadata (default)
->   creating ext2 image file
->   ERROR: failed to create ext2_saved/image: -1
->   WARNING: an error occurred during conversion, filesystem is partially
->   created but not finalized and not mountable
-> 
-> We can only know something wrong happened during "ext2_saved/image" file
-> creation, but unable to know what exactly went wrong.
-> 
-> This patch will add the following error messages for create_image() and
-> its callee:
-> 
-> 1) Sanity test error
-> 2) Csum calculation error
-> 3) Free ino number allocation error
-> 4) Inode creation error
-> 5) Inode mode change error
-> 6) Inode link error
-> 
-> With all these error messages, we should be pretty easy to locate the
-> error without extra debugging.
-> 
-> Reported-by: Serhat Sevki Dincer <jfcgauss@gmail.com>
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
+time btrfs fi show
+Label: none  uuid: 513dc574-e8bc-4336-b181-00d1e9782c1c
+Total devices 2 FS bytes used 2.34GiB
+devid    1 size 927.79GiB used 4.03GiB path /dev/sdv2
+devid    2 size 927.79GiB used 4.03GiB path /dev/sdar2
 
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+real    6m22.498s
+user    0m0.012s
+sys     0m0.024s
 
-> ---
->  convert/main.c | 37 ++++++++++++++++++++++++++++++-------
->  1 file changed, 30 insertions(+), 7 deletions(-)
-> 
-> diff --git a/convert/main.c b/convert/main.c
-> index 3736a14955d1..f100699b652c 100644
-> --- a/convert/main.c
-> +++ b/convert/main.c
-> @@ -290,10 +290,16 @@ static int create_image_file_range(struct btrfs_trans_handle *trans,
->  	if (disk_bytenr) {
->  		/* Check if the range is in a data block group */
->  		bg_cache = btrfs_lookup_block_group(root->fs_info, bytenr);
-> -		if (!bg_cache)
-> +		if (!bg_cache) {
-> +			error("missing data block for bytenr %llu", bytenr);
->  			return -ENOENT;
-> -		if (!(bg_cache->flags & BTRFS_BLOCK_GROUP_DATA))
-> +		}
-> +		if (!(bg_cache->flags & BTRFS_BLOCK_GROUP_DATA)) {
-> +			error(
-> +	"data bytenr %llu is covered by non-data block group %llu flags 0x%llu",
-> +			      bytenr, bg_cache->key.objectid, bg_cache->flags);
->  			return -EINVAL;
-> +		}
->  
->  		/* The extent should never cross block group boundary */
->  		len = min_t(u64, len, bg_cache->key.objectid +
-> @@ -310,8 +316,13 @@ static int create_image_file_range(struct btrfs_trans_handle *trans,
->  	if (ret < 0)
->  		return ret;
->  
-> -	if (datacsum)
-> +	if (datacsum) {
->  		ret = csum_disk_extent(trans, root, bytenr, len);
-> +		if (ret < 0)
-> +			error(
-> +		"failed to calculate csum for bytenr %llu len %llu, %s\n",
-> +			      bytenr, len, strerror(-ret));
-> +	}
->  	*ret_len = len;
->  	return ret;
->  }
-> @@ -759,18 +770,30 @@ static int create_image(struct btrfs_root *root,
->  
->  	ret = btrfs_find_free_objectid(trans, root, BTRFS_FIRST_FREE_OBJECTID,
->  				       &ino);
-> -	if (ret < 0)
-> +	if (ret < 0) {
-> +		error("failed to find free objectid for root %llu, %s",
-> +			root->root_key.objectid, strerror(-ret));
->  		goto out;
-> +	}
->  	ret = btrfs_new_inode(trans, root, ino, 0400 | S_IFREG);
-> -	if (ret < 0)
-> +	if (ret < 0) {
-> +		error("failed to create new inode for root %llu, %s",
-> +			root->root_key.objectid, strerror(-ret));
->  		goto out;
-> +	}
->  	ret = btrfs_change_inode_flags(trans, root, ino, flags);
-> -	if (ret < 0)
-> +	if (ret < 0) {
-> +		error("failed to change inode flag for ino %llu root %llu, %s",
-> +			ino, root->root_key.objectid, strerror(-ret));
->  		goto out;
-> +	}
->  	ret = btrfs_add_link(trans, root, ino, BTRFS_FIRST_FREE_OBJECTID, name,
->  			     strlen(name), BTRFS_FT_REG_FILE, NULL, 1, 0);
-> -	if (ret < 0)
-> +	if (ret < 0) {
-> +		error("failed to link ino %llu to '/%s' in root %llu, %s",
-> +			ino, name, root->root_key.objectid, strerror(-ret));
->  		goto out;
-> +	}
->  
->  	key.objectid = ino;
->  	key.type = BTRFS_INODE_ITEM_KEY;
-> 
+
+time btrfs fi show
+Label: none  uuid: 513dc574-e8bc-4336-b181-00d1e9782c1c
+Total devices 2 FS bytes used 2.34GiB
+devid    1 size 927.79GiB used 4.03GiB path /dev/sdv2
+devid    2 size 927.79GiB used 4.03GiB path /dev/sdar2
+
+real    6m19.796s
+user    0m0.012s
+sys     0m0.024s
+
+
+Maybe its related to that I've some harddisk in my system:
+ls /dev/disk/by-path/ |grep -v part |wc -l
+44
+
+This is also a known Debian Bug #891717
+
+-- System Information:
+Debian Release: 9.3
+  APT prefers stable-updates
+  APT policy: (500, 'stable-updates'), (500, 'stable')
+Architecture: amd64 (x86_64)
+
+Kernel: Linux 4.9.0-5-amd64 (SMP w/20 CPU cores)
+Locale: LANG=en_US.UTF-8, LC_CTYPE=en_US.UTF-8 (charmap=UTF-8), LANGUAGE=en_US:en (charmap=UTF-8)
+Shell: /bin/sh linked to /bin/dash
+Init: systemd (via /run/systemd/system)
+
+Versions of packages btrfs-progs depends on:
+ii  e2fslibs    1.43.4-2
+ii  libblkid1   2.29.2-1
+ii  libc6       2.24-11+deb9u1
+ii  libcomerr2  1.43.4-2
+ii  liblzo2-2   2.08-1.2+b2
+ii  libuuid1    2.29.2-1
+ii  zlib1g      1:1.2.8.dfsg-5

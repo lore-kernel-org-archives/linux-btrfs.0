@@ -1,66 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:48742 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:49284 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726822AbeINMiX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 14 Sep 2018 08:38:23 -0400
+        id S1726822AbeINMnR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 14 Sep 2018 08:43:17 -0400
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 9EFF4AE1D
-        for <linux-btrfs@vger.kernel.org>; Fri, 14 Sep 2018 07:25:12 +0000 (UTC)
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/2] Enhanced error messages for btrfs-convert
-Date: Fri, 14 Sep 2018 15:25:03 +0800
-Message-Id: <20180914072505.15916-1-wqu@suse.com>
+        by mx1.suse.de (Postfix) with ESMTP id 58CD1AE98
+        for <linux-btrfs@vger.kernel.org>; Fri, 14 Sep 2018 07:30:05 +0000 (UTC)
+Subject: Re: [PATCH 1/2] btrfs: convert: Make read_disk_extent() return more
+ meaningful -EIO other -1
+To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+References: <20180914072505.15916-1-wqu@suse.com>
+ <20180914072505.15916-2-wqu@suse.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <00482e71-cc8d-dda8-e0df-2e569ddedab1@suse.com>
+Date: Fri, 14 Sep 2018 10:30:03 +0300
 MIME-Version: 1.0
+In-Reply-To: <20180914072505.15916-2-wqu@suse.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patchset can be fetched from github:
-https://github.com/adam900710/btrfs-progs/tree/convert_error_messages
-As usual, it's based on latest stable tag (v4.17.1).
-
-There is one error report of btrfs-convert, the error message looks
-pretty meaningless:
-
-  create btrfs filesystem:
-      blocksize: 4096
-      nodesize:  16384
-      features:  extref, skinny-metadata (default)
-  creating ext2 image file
-  ERROR: failed to create ext2_saved/image: -1
-  WARNING: an error occurred during conversion, filesystem is partially
-  created but not finalized and not mountable
-
-After some investigation, the problem turns out to be read failure.
-But the error number is intermediate number (-1) returned from
-read_disk_extent().
-
-This patchset will first fix the intermediate return number of
-read_disk_extent(), then add more error messages for btrfs-convert (at
-least convert part) to makes it easier to identify the problem.
-
-In this particular case, it should output things like:
-
-  create btrfs filesystem:
-      blocksize: 4096
-      nodesize:  16384
-      features:  extref, skinny-metadata (default)
-  creating ext2 image file
-  ERROR: failed to calculate csum for bytenr 2732765184 len 4096, Input/output error
-  ERROR: failed to create ext2_saved/image: -5
-  WARNING: an error occurred during conversion, filesystem is partially
-  created but not finalized and not mountable
 
 
-Qu Wenruo (2):
-  btrfs: convert: Make read_disk_extent() return more meaningful -EIO
-    other -1
-  btrfs-progs: convert: Output meaningful error messages for
-    create_image()
+On 14.09.2018 10:25, Qu Wenruo wrote:
+> When pread64() returns value smaller than expected, it normally means
+> EIO, so just return -EIO to replace the intermediate number.
+> So when IO fails, we should be able to get more meaningful error number
+> of than EPERM.
+> 
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 
- convert/main.c      | 37 ++++++++++++++++++++++++++++++-------
- convert/source-fs.c |  2 +-
- 2 files changed, 31 insertions(+), 8 deletions(-)
-
--- 
-2.19.0
+> ---
+>  convert/source-fs.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> diff --git a/convert/source-fs.c b/convert/source-fs.c
+> index b6d08370428a..5660a22cc652 100644
+> --- a/convert/source-fs.c
+> +++ b/convert/source-fs.c
+> @@ -201,7 +201,7 @@ int read_disk_extent(struct btrfs_root *root, u64 bytenr,
+>  	ret = 0;
+>  fail:
+>  	if (ret > 0)
+> -		ret = -1;
+> +		ret = -EIO;
+>  	return ret;
+>  }
+>  
+> 

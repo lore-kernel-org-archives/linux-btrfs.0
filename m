@@ -1,57 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:44486 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:48068 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1728236AbeINTZK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 14 Sep 2018 15:25:10 -0400
-Date: Fri, 14 Sep 2018 16:10:27 +0200
+        id S1727773AbeINTqx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 14 Sep 2018 15:46:53 -0400
+Date: Fri, 14 Sep 2018 16:32:06 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Nikolay Borisov <nborisov@suse.com>
-Cc: Liu Bo <bo.liu@linux.alibaba.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: skip setting path to blocking mode if balance is
- not needed
-Message-ID: <20180914141027.GF5847@twin.jikos.cz>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs-progs: Continue checking even we found something
+ wrong in free space cache
+Message-ID: <20180914143206.GK5847@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1536703587-94565-5-git-send-email-bo.liu@linux.alibaba.com>
- <a66438ea-7da5-a207-d368-70f4072c9958@suse.com>
+References: <20180904124128.22367-1-wqu@suse.com>
+ <20180911144809.GB2154@twin.jikos.cz>
+ <251a3f20-617f-1bee-4567-c563b0744c30@gmx.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <a66438ea-7da5-a207-d368-70f4072c9958@suse.com>
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <251a3f20-617f-1bee-4567-c563b0744c30@gmx.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Sep 12, 2018 at 09:51:33AM +0300, Nikolay Borisov wrote:
+On Wed, Sep 12, 2018 at 07:43:27AM +0800, Qu Wenruo wrote:
 > 
 > 
-> On 12.09.2018 01:06, Liu Bo wrote:
-> > balance_level() may return early in some cases, but these checks don't
-> > have to be done with blocking write lock.
+> On 2018/9/11 下午10:48, David Sterba wrote:
+> > On Tue, Sep 04, 2018 at 08:41:28PM +0800, Qu Wenruo wrote:
+> >> No need to abort checking, especially for RO check free space cache is
+> >> meaningless, the errors in fs/extent tree is more interesting for
+> >> developers.
+> >>
+> >> So continue checking even something in free space cache is wrong.
+> >>
+> >> Reported-by: Etienne Champetier <champetier.etienne@gmail.com>
+> >> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> >> ---
+> >>  check/main.c | 1 -
+> >>  1 file changed, 1 deletion(-)
+> >>
+> >> diff --git a/check/main.c b/check/main.c
+> >> index b361cd7e26a0..4f720163221e 100644
+> >> --- a/check/main.c
+> >> +++ b/check/main.c
+> >> @@ -9885,7 +9885,6 @@ int cmd_check(int argc, char **argv)
+> >>  			error("errors found in free space tree");
+> >>  		else
+> >>  			error("errors found in free space cache");
 > > 
-> > This puts together these checks into a helper and the benefit is to
-> > avoid switching spinning locks to blocking locks (in these paticular
-> > cases) which slows down btrfs overall.
+> > Please make it a warning and update the message so it says that it will
+> > continue despite the errors found.
 > 
-> Performance patches without numbers are frowned upon. You need to
-> substantiate your claims.
+> I'm fine to add warning, but isn't it the expected behavior?
 > 
+> In fact I'm quite surprised that when we found something wrong we just
+> abort checking.
 > 
-> > 
-> > Signed-off-by: Liu Bo <bo.liu@linux.alibaba.com>
-> > ---
-> >  fs/btrfs/ctree.c | 41 ++++++++++++++++++++++++++++++-----------
-> >  1 file changed, 30 insertions(+), 11 deletions(-)
-> > 
-> > diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-> > index 858085490e23..ba267a069ca1 100644
-> > --- a/fs/btrfs/ctree.c
-> > +++ b/fs/btrfs/ctree.c
-> > @@ -1758,6 +1758,29 @@ static void root_sub_used(struct btrfs_root *root, u32 size)
-> >  	return eb;
-> >  }
-> >  
-> > +static bool need_balance_level(struct btrfs_fs_info *fs_info,
-> 
-> nit: I think should_balance_level seems more readable, but it could be
-> just me so won't insist on that.
+> It's never the case for file/extent tree check. We always report all
+> errors we found, not only the first error and exit.
 
-Quick grep shows that should_ is used more frequently, so I'd go with
-that.
+You're right, in context of 'check' this is the expected behaviour. So
+let's keep error().

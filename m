@@ -1,72 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:51620 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:48756 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727987AbeINNDH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 14 Sep 2018 09:03:07 -0400
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id DD6B6AF68
-        for <linux-btrfs@vger.kernel.org>; Fri, 14 Sep 2018 07:49:51 +0000 (UTC)
+        id S1726955AbeINMi3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 14 Sep 2018 08:38:29 -0400
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id E5D79AE1D
+        for <linux-btrfs@vger.kernel.org>; Fri, 14 Sep 2018 07:25:18 +0000 (UTC)
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v1.1] btrfs-progs: Do metadata prealloc as long as we're not modifying extent tree
-Date: Fri, 14 Sep 2018 15:49:44 +0800
-Message-Id: <20180914074944.19526-1-wqu@suse.com>
+Subject: [PATCH 1/2] btrfs: convert: Make read_disk_extent() return more meaningful -EIO other -1
+Date: Fri, 14 Sep 2018 15:25:04 +0800
+Message-Id: <20180914072505.15916-2-wqu@suse.com>
+In-Reply-To: <20180914072505.15916-1-wqu@suse.com>
+References: <20180914072505.15916-1-wqu@suse.com>
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In github issues, one user reports unexpected ENOSPC error if enabling
-datasum.
-After some investigation, it looks like that during ext2_saved/image
-creation, we could create large file extent whose size can be 128M (max
-data extent size).
+When pread64() returns value smaller than expected, it normally means
+EIO, so just return -EIO to replace the intermediate number.
+So when IO fails, we should be able to get more meaningful error number
+of than EPERM.
 
-In that case, its csum will be at least 128K. Under certain case we need
-to allocate extra metadata chunks to fulfill such space requirement.
-
-However we only do metadata prealloc if we're reserving extents for fs
-trees.
-(we use btrfs_root::ref_cows to determine whether we should do metadata
-prealloc, and that member is only set for fs trees).
-
-There is no explaination on why we only do metadata prealloc for file
-trees, but at least from my investigation, it could be related to avoid
-nested extent tree modication.
-
-At least extent reservation for csum tree shouldn't be a problem with
-metadata block group preallocation.
-
-So change the metadata block group preallocation check from
-"root->ref_cow" to "root->root_key.objectid !=
-BTRFS_EXTENT_TREE_OBJECTID", and add some comment for it.
-
-Issue: 123
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
-changelog:
-v1.1
-  Fix stupid subject, from "csum tree" to "extent tree"
----
- extent-tree.c | 7 ++++++-
- 1 file changed, 6 insertions(+), 1 deletion(-)
+ convert/source-fs.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/extent-tree.c b/extent-tree.c
-index 5d49af5a901e..bdf1b0e94c5f 100644
---- a/extent-tree.c
-+++ b/extent-tree.c
-@@ -2652,7 +2652,12 @@ int btrfs_reserve_extent(struct btrfs_trans_handle *trans,
- 		profile = BTRFS_BLOCK_GROUP_METADATA | alloc_profile;
- 	}
+diff --git a/convert/source-fs.c b/convert/source-fs.c
+index b6d08370428a..5660a22cc652 100644
+--- a/convert/source-fs.c
++++ b/convert/source-fs.c
+@@ -201,7 +201,7 @@ int read_disk_extent(struct btrfs_root *root, u64 bytenr,
+ 	ret = 0;
+ fail:
+ 	if (ret > 0)
+-		ret = -1;
++		ret = -EIO;
+ 	return ret;
+ }
  
--	if (root->ref_cows) {
-+	/*
-+	 * Do metadata preallocate if we're not modifying extent tree.
-+	 * Allocating chunk while modify extent tree could lead to tranid
-+	 * mismatch, as do_chunk_alloc() could commit transaction.
-+	 */
-+	if (root->root_key.objectid != BTRFS_EXTENT_TREE_OBJECTID) {
- 		if (!(profile & BTRFS_BLOCK_GROUP_METADATA)) {
- 			ret = do_chunk_alloc(trans, info,
- 					     num_bytes,
 -- 
 2.19.0

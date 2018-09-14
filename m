@@ -1,71 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.idedalo.net ([178.33.75.195]:48176 "EHLO mx1.idedalo.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726969AbeIOB3L (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 14 Sep 2018 21:29:11 -0400
+Received: from mail-qk1-f182.google.com ([209.85.222.182]:42145 "EHLO
+        mail-qk1-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726969AbeIOBkt (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 14 Sep 2018 21:40:49 -0400
+Received: by mail-qk1-f182.google.com with SMTP id g13-v6so5870599qki.9
+        for <linux-btrfs@vger.kernel.org>; Fri, 14 Sep 2018 13:24:46 -0700 (PDT)
+Date: Fri, 14 Sep 2018 16:24:44 -0400
+From: Nicholas D Steeves <nsteeves@gmail.com>
+To: Rafael =?iso-8859-1?Q?Jes=FAs_Alc=E1ntara_P=E9rez?=
+        <ralcantara@idedalo.com>
+Cc: Roman Mamedov <rm@romanrm.net>, linux-btrfs@vger.kernel.org
 Subject: Re: Problem with BTRFS
-To: Nicholas D Steeves <nsteeves@gmail.com>, Roman Mamedov <rm@romanrm.net>
-Cc: linux-btrfs@vger.kernel.org
+Message-ID: <20180914202443.b5jnos64d2gymrqz@DigitalMercury.dynalias.net>
 References: <c7040285-599d-4f6c-cf16-50dc77c9b5f1@idedalo.com>
  <20180914224612.07a5db1b@natsu>
  <20180914181818.rnef5ml3wgelwjm5@DigitalMercury.dynalias.net>
-From: =?UTF-8?Q?Rafael_Jes=c3=bas_Alc=c3=a1ntara_P=c3=a9rez?=
-        <ralcantara@idedalo.com>
-Message-ID: <3dcb98e2-a3e5-4166-a4e0-42dddf6b7080@idedalo.com>
-Date: Fri, 14 Sep 2018 22:13:06 +0200
+ <3dcb98e2-a3e5-4166-a4e0-42dddf6b7080@idedalo.com>
 MIME-Version: 1.0
-In-Reply-To: <20180914181818.rnef5ml3wgelwjm5@DigitalMercury.dynalias.net>
-Content-Type: text/plain; charset=windows-1252
+Content-Type: multipart/signed; micalg=pgp-sha512;
+        protocol="application/pgp-signature"; boundary="wkmglbonfj3qzayj"
+In-Reply-To: <3dcb98e2-a3e5-4166-a4e0-42dddf6b7080@idedalo.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+
+--wkmglbonfj3qzayj
+Content-Type: text/plain; charset=iso-8859-1
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
+
 Hi,
 
-It seems that btrfs-progs_4.17-1 from Sid, includes that feature (at
-least, it says so in the manual page). I don't know if I can install it
-on Stretch but I'll try.
-
-Greets and thank you very much to both of you ;)
-Rafael J. Alcántara Pérez.
-
-El 14/09/18 a las 20:18, Nicholas D Steeves escribió:
+On Fri, Sep 14, 2018 at 10:13:06PM +0200, Rafael Jes=FAs Alc=E1ntara P=E9re=
+z wrote:
 > Hi,
-> 
-> On Fri, Sep 14, 2018 at 10:46:12PM +0500, Roman Mamedov wrote:
->> On Fri, 14 Sep 2018 19:27:04 +0200
->> Rafael Jesús Alcántara Pérez         <ralcantara@idedalo.com> wrote:
->>
->>> BTRFS info (device sdc1): use lzo compression, level 0
->>> BTRFS warning (device sdc1): 'recovery' is deprecated, use
->>> 'usebackuproot' instead
->>> BTRFS info (device sdc1): trying to use backup root at mount time
->>> BTRFS info (device sdc1): disk space caching is enabled
->>> BTRFS info (device sdc1): has skinny extents
->>> BTRFS error (device sdc1): super_total_bytes 6010266660864 mismatch with
->>> fs_devices total_rw_bytes 6010266663424
->>
->> There is a recent feature added to "btrfs rescue" to fix this kind of
->> condition: https://patchwork.kernel.org/patch/10011399/
->>
->> You need a recent version of the Btrfs tools for it, not sure which, I see
->> that it's not in version 4.13 but is present in 4.17.
-> 
-> btrfs-progs_4.17-1~bpo9+1_amd64.changes is waiting to pass through NEW
-> (due to the new library packages in the backport).  It will take
-> between 24h and several weeks to pass to stretch-backports.  The
-> variability in expected delivery is because a Debian FTP Master will
-> need to manually ACK the changes.
-> 
-> If 4.17.1 is required, please 'reportbug btrfs-progs' and take care to
-> set the "found" version to 4.17-1, plus provide a citation for why
-> 4.17.1 is required--without this justification the bug severity could
-> be downgraded to wishlist.  This hypothetical bug would be for the
-> "unstable" suite (packages migrate to testing after a period of
-> testing, and then become eligible for backporting).
-> 
-> Take care!
-> Nicholas
-> 
+>=20
+> It seems that btrfs-progs_4.17-1 from Sid, includes that feature (at
+> least, it says so in the manual page). I don't know if I can install it
+> on Stretch but I'll try.
+>=20
+> Greets and thank you very much to both of you ;)
+> Rafael J. Alc=E1ntara P=E9rez.
 
+Please do not install btrfs-progs from sid on stretch, it's likely to
+break your system.  If you can't wait, here is a link to what I
+uploaded.  It includes both the source and the binary packages (see
+gpg signed changes file, and please take care to verify the binaries
+weren't tampered with):
 
--- 
+https://drive.google.com/file/d/1WflwBEn-QN_btrKPiefz7Kxz58VT8kIQ/view?usp=
+=3Dsharing
+
+Of course, this package is unofficial.  The official one will soon
+become available through the regular channels.
+
+For best results, set up a local file:// apt repository so that apt
+update && apt upgrade will work properly.  Official bpo will
+automatically overwrite these, in any case.
+
+Cheers,
+Nicholas
+
+--wkmglbonfj3qzayj
+Content-Type: application/pgp-signature; name="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQIzBAABCgAdFiEE4qYmHjkArtfNxmcIWogwR199EGEFAlucGQsACgkQWogwR199
+EGFb+BAAqOC7ZceoBvvok/XYsCPizVwDaPE7ctGP9dbF+uIx1G8xW+U6A0x+sp0O
+WY80n63HguzTUo+xDqoffHYWuPJqUQQBwEeCUTWQI7iGiIPbrmW0UmlioVEYZ6Zd
+uo7sAzgKM8uBu5LKlXhSIUcbNcRDaV2kGHUTBAdK+ZX7zSMUBeO3Uc0z1MxSvxPP
+pX1yqJLCZ0zvdSurGsblJDjbHF6NwJ/VLRpyRQ//Uz0R+dKNX5rY9Qdu6mfI7Z0M
+3VA0lLb1/PiDk2ksnebiKdQ01wTszRNIy98ge6guPzy9I4rJG36QELLBdfaA1aAG
+PPlysuHNHx4eUJAtQfulSHABe0rq3KziU3ErPqSgQ5pOQocu7xr9aXIHRJw+kJW1
+qamhiDBwXvEKR3j+LXN+oTU1Fk5Kk8Sy6Hj0rJXiQbYuBlvbiOaGaz2luFuXTNqt
+361ZGcVKpPZ93Z+FgjFGGF608m5jxIoEynNl0VBPvJ4WaUhyNTRJ/YT5DbbspwyX
+6GeUirnLAMy5i9rzEj/OTXOuUKh1Dz5rFtuaurQ4RPdnl7maltvpLmIIYa6ykAk9
+ZLkA9JRK+cE8JGZYGuj05Sf9J6xpYcycOyhCZqeDg3IbzWEkS+RE66rcOS1Pqdai
+agJuLDr4JpHK7qYWZpiowNqY1dhtzle73ubEWeY9bn3+aETF8jU=
+=GqM6
+-----END PGP SIGNATURE-----
+
+--wkmglbonfj3qzayj--

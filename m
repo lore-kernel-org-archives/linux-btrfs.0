@@ -1,23 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from out30-132.freemail.mail.aliyun.com ([115.124.30.132]:35818 "EHLO
-        out30-132.freemail.mail.aliyun.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1727796AbeILDIG (ORCPT
+Received: from out30-131.freemail.mail.aliyun.com ([115.124.30.131]:60253 "EHLO
+        out30-131.freemail.mail.aliyun.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1727773AbeIOCT7 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 11 Sep 2018 23:08:06 -0400
+        Fri, 14 Sep 2018 22:19:59 -0400
 From: Liu Bo <bo.liu@linux.alibaba.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: remove wait_ordered_range in btrfs_evict_inode
-Date: Wed, 12 Sep 2018 06:06:22 +0800
-Message-Id: <1536703587-94565-3-git-send-email-bo.liu@linux.alibaba.com>
+Subject: [PATCH v2] Btrfs: remove wait_ordered_rane in btrfs_evict_inode
+Date: Sat, 15 Sep 2018 05:03:28 +0800
+Message-Id: <1536959008-17291-1-git-send-email-bo.liu@linux.alibaba.com>
+In-Reply-To: <1536703587-94565-3-git-send-email-bo.liu@linux.alibaba.com>
+References: <1536703587-94565-3-git-send-email-bo.liu@linux.alibaba.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-As VFS has called ->invalidatepage() to get all ordered extents done
-and truncated all page cache pages, wait_ordered_range() is just a
-noop.
+When we delete an inode,
 
+btrfs_evict_inode() {
+    truncate_inode_pages_final()
+        truncate_inode_pages_range()
+            lock_page()
+            truncate_cleanup_page()
+                 btrfs_invalidatepage()
+                      wait_on_page_writeback
+                           btrfs_lookup_ordered_range()
+                 cancel_dirty_page()
+           unlock_page()
+     ...    
+     btrfs_wait_ordered_range()
+     ...
+
+As VFS has called ->invalidatepage() to get all ordered extents done
+(if there is any) and truncated all page cache pages (no dirty pages
+to writeback after this step), wait_ordered_range() is just a noop.
+
+Reviewed-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Liu Bo <bo.liu@linux.alibaba.com>
 ---
+v2: More details in the description.
+
  fs/btrfs/inode.c | 3 ---
  1 file changed, 3 deletions(-)
 

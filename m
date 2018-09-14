@@ -1,44 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from out30-132.freemail.mail.aliyun.com ([115.124.30.132]:57160 "EHLO
-        out30-132.freemail.mail.aliyun.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1728175AbeIMW4o (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 13 Sep 2018 18:56:44 -0400
-From: Liu Bo <bo.liu@linux.alibaba.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH v2] Btrfs: assert page dirty bit
-Date: Fri, 14 Sep 2018 01:46:08 +0800
-Message-Id: <1536860768-42604-1-git-send-email-bo.liu@linux.alibaba.com>
-In-Reply-To: <1536703587-94565-2-git-send-email-bo.liu@linux.alibaba.com>
-References: <1536703587-94565-2-git-send-email-bo.liu@linux.alibaba.com>
+Received: from mx2.suse.de ([195.135.220.15]:33474 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1727982AbeINSEV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 14 Sep 2018 14:04:21 -0400
+Date: Fri, 14 Sep 2018 14:49:58 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Liu Bo <bo.liu@linux.alibaba.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2] Btrfs: remove level==0 check in balance_level
+Message-ID: <20180914124958.GA5847@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1536703587-94565-4-git-send-email-bo.liu@linux.alibaba.com>
+ <1536861359-55509-1-git-send-email-bo.liu@linux.alibaba.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1536861359-55509-1-git-send-email-bo.liu@linux.alibaba.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Just in case that someone breaks the rule that pages are dirty as long
-as eb is dirty.
+On Fri, Sep 14, 2018 at 01:55:59AM +0800, Liu Bo wrote:
+> btrfs_search_slot()
+>    if (level != 0)
+>       setup_nodes_for_search()
+>           balance_level()
+> 
+> It is just impossible to have level=0 in balance_level.
+> 
+> Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+> Signed-off-by: Liu Bo <bo.liu@linux.alibaba.com>
 
-Signed-off-by: Liu Bo <bo.liu@linux.alibaba.com>
----
-v2: fix typo of CONFIG_BTRFS_DEBUG
-
- fs/btrfs/extent_io.c | 5 +++++
- 1 file changed, 5 insertions(+)
-
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index fb2bf50134a1..f88231171009 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -5184,6 +5184,11 @@ bool set_extent_buffer_dirty(struct extent_buffer *eb)
- 			set_page_dirty(eb->pages[i]);
- 	}
- 
-+#ifdef CONFIG_BTRFS_DEBUG
-+	for (i = 0; i < num_pages; i++)
-+		ASSERT(PageDirty(eb->pages[i]));
-+#endif
-+
- 	return was_dirty;
- }
- 
--- 
-1.8.3.1
+Reviewed-by: David Sterba <dsterba@suse.com>

@@ -1,73 +1,145 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.idedalo.net ([178.33.75.195]:45780 "EHLO mx1.idedalo.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727052AbeIOSfU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 15 Sep 2018 14:35:20 -0400
-Subject: Re: Problem with BTRFS
-To: Nicholas D Steeves <nsteeves@gmail.com>
-Cc: Roman Mamedov <rm@romanrm.net>, linux-btrfs@vger.kernel.org
-References: <c7040285-599d-4f6c-cf16-50dc77c9b5f1@idedalo.com>
- <20180914224612.07a5db1b@natsu>
- <20180914181818.rnef5ml3wgelwjm5@DigitalMercury.dynalias.net>
- <3dcb98e2-a3e5-4166-a4e0-42dddf6b7080@idedalo.com>
- <20180914202443.b5jnos64d2gymrqz@DigitalMercury.dynalias.net>
-From: =?UTF-8?Q?Rafael_Jes=c3=bas_Alc=c3=a1ntara_P=c3=a9rez?=
-        <ralcantara@idedalo.com>
-Message-ID: <1705124f-fc1f-f913-3f8a-417dce26b3f7@idedalo.com>
-Date: Sat, 15 Sep 2018 15:16:18 +0200
-MIME-Version: 1.0
-In-Reply-To: <20180914202443.b5jnos64d2gymrqz@DigitalMercury.dynalias.net>
-Content-Type: text/plain; charset=windows-1252
+Received: from mail-it0-f67.google.com ([209.85.214.67]:33054 "EHLO
+        mail-it0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727180AbeIOXZD (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 15 Sep 2018 19:25:03 -0400
+Received: by mail-it0-f67.google.com with SMTP id j198-v6so7467653ita.0
+        for <linux-btrfs@vger.kernel.org>; Sat, 15 Sep 2018 11:05:13 -0700 (PDT)
+From: Andreas Dilger <adilger@dilger.ca>
+Message-Id: <22C71398-EFD7-4638-AAE4-CE7E30E95B7E@dilger.ca>
+Content-Type: multipart/signed;
+ boundary="Apple-Mail=_024CC7D5-5AFC-4E92-92E1-51525F7D4B85";
+ protocol="application/pgp-signature"; micalg=pgp-sha256
+Mime-Version: 1.0 (Mac OS X Mail 10.3 \(3273\))
+Subject: Re: metadata operation reordering regards to crash
+Date: Sat, 15 Sep 2018 12:04:51 -0600
+In-Reply-To: <CAJDTihx2MEpdWdp6V6AsOD35Lh_6R=uFXBGtO8fL8s0o5C_t8Q@mail.gmail.com>
+Cc: Dave Chinner <david@fromorbit.com>, cmumford@cmumford.com,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
+        Ext4 Developers List <linux-ext4@vger.kernel.org>,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
+To: =?utf-8?B?54Sm5pmT5Yas?= <milestonejxd@gmail.com>
+References: <CAJDTihzzLV3qwg0tGH_D4xAjCrgMy+oc4H9snpnMC_RC2q7nyw@mail.gmail.com>
+ <20180914222336.GD16550@dastard>
+ <CAJDTihx2MEpdWdp6V6AsOD35Lh_6R=uFXBGtO8fL8s0o5C_t8Q@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi:
 
-I've installed the package from your link and it has fixed the issue ;)
+--Apple-Mail=_024CC7D5-5AFC-4E92-92E1-51525F7D4B85
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain;
+	charset=utf-8
 
-$ sudo btrfs rescue fix-device-size /dev/sdc1
-Fixed device size for devid 3, old size: 1999843081728 new size:
-1999843078144
-Fixed device size for devid 5, old size: 1999843081728 new size:
-1999843078144
-Fixed device size for devid 4, old size: 1999843081728 new size:
-1999843078144
-Fixed super total bytes, old size: 6010266660864 new size: 6010266652672
-Fixed unaligned/mismatched total_bytes for super block and device items
+On Sep 15, 2018, at 12:58 AM, =E7=84=A6=E6=99=93=E5=86=AC =
+<milestonejxd@gmail.com> wrote:
+>=20
+> On Sat, Sep 15, 2018 at 6:23 AM Dave Chinner <david@fromorbit.com> =
+wrote:
+>>=20
+>> On Fri, Sep 14, 2018 at 05:06:44PM +0800, =E7=84=A6=E6=99=93=E5=86=AC =
+wrote:
+>>> Hi, all,
+>>>=20
+>>> A probably bit of complex question:
+>>> Does nowadays practical filesystems, eg., extX, btfs, preserve =
+metadata
+>>> operation order through a crash/power failure?
+>>=20
+>> Yes.
+>>=20
+>> Behaviour is filesystem dependent, but we have tests in fstests that
+>> specifically exercise order preservation across filesystem failures.
+>>=20
+>>> What I know is modern filesystems ensure metadata consistency
+>>> after crash/power failure. Journal filesystems like extX do that by
+>>> write-ahead logging of metadata operations into transactions. Other
+>>> filesystems do that in various ways as btfs do that by COW.
+>>>=20
+>>> What I'm not so far clear is whether these filesystems preserve
+>>> metadata operation order after a crash.
+>>>=20
+>>> For example,
+>>> op 1.  rename(A, B)
+>>> op 2.  rename(C, D)
+>>>=20
+>>> As mentioned above,  metadata consistency is ensured after a crash.
+>>> Thus, B is either the original B(or not exists) or has been replaced =
+by A.
+>>> The same to D.
+>>>=20
+>>> Is it possible that, after a crash, D has been replaced by C but B =
+is still
+>>> the original file(or not exists)?
+>>=20
+>> Not for XFS, ext4, btrfs or f2fs. Other filesystems might be
+>> different.
+>=20
+> Thanks, Dave,
+>=20
+> I found this archive:
+> https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg31937.html
+>=20
+> It seems btrfs people thinks reordering could happen.
+>=20
+> It is a relatively old reply. Has the implement changed? Or is there
+> some new standard that requires reordering not happen?
 
-Thank you very much.
+There is nothing in POSIX that requires any particular ordering.  =
+However,
+the sequence "A, B, C, sync C" on ext3/ext4 has "always" resulted in A, =
+B
+also being sync'd to disk (including parent directory creation, etc).
 
-El 14/09/18 a las 22:24, Nicholas D Steeves escribió:
-> Hi,
-> 
-> On Fri, Sep 14, 2018 at 10:13:06PM +0200, Rafael Jesús Alcántara Pérez wrote:
->> Hi,
->>
->> It seems that btrfs-progs_4.17-1 from Sid, includes that feature (at
->> least, it says so in the manual page). I don't know if I can install it
->> on Stretch but I'll try.
->>
->> Greets and thank you very much to both of you ;)
->> Rafael J. Alcántara Pérez.
-> 
-> Please do not install btrfs-progs from sid on stretch, it's likely to
-> break your system.  If you can't wait, here is a link to what I
-> uploaded.  It includes both the source and the binary packages (see
-> gpg signed changes file, and please take care to verify the binaries
-> weren't tampered with):
-> 
-> https://drive.google.com/file/d/1WflwBEn-QN_btrKPiefz7Kxz58VT8kIQ/view?usp=sharing
-> 
-> Of course, this package is unofficial.  The official one will soon
-> become available through the regular channels.
-> 
-> For best results, set up a local file:// apt repository so that apt
-> update && apt upgrade will work properly.  Official bpo will
-> automatically overwrite these, in any case.
-> 
-> Cheers,
-> Nicholas
-> 
+For a while, ext4 with delayed allocation resulted in write A, rename =
+A->B
+causing "B" to potentially not have any data (commit =
+v2.6.29-5120-g8750c6d).
+While the applications are depending on non-POSIX behaviour, the =
+operation
+ordering behaviour has been around long that applications have grown to
+depend on it, and consider the filesystem to have a bug when it doesn't
+behave that way.
+
+If you want to write a robust application, you should fsync() the files =
+you
+care about (possibly with AIO so you get a notification on completion =
+rather
+than waiting).
+
+Cheers, Andreas
 
 
--- 
+
+
+
+
+--Apple-Mail=_024CC7D5-5AFC-4E92-92E1-51525F7D4B85
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment;
+	filename=signature.asc
+Content-Type: application/pgp-signature;
+	name=signature.asc
+Content-Description: Message signed with OpenPGP
+
+-----BEGIN PGP SIGNATURE-----
+Comment: GPGTools - http://gpgtools.org
+
+iQIzBAEBCAAdFiEEDb73u6ZejP5ZMprvcqXauRfMH+AFAludScsACgkQcqXauRfM
+H+B51g//RtucN7xoWHw6x+k1YAOFJXpc5sYOBfCT4EktAn1NuTkNcSd8TIJ9Y1Ad
+EJvzQAt9K8PwuLcMCsD3hef1cG2D66UwCyw+HMCxftlxOJ32dh1ZNc3Vg3L1KUf2
+EkepyzDrApjsxnjTq7u4L1cykmhZs/hLPvN+XfJFqeyLSsBxUUU1raE+THfLH+sW
+8cmCIurnCRH7RgSq1wq0/mZbWTPoH6TDi3bTco7I5zPMAb2a1PIb8pqtUXuoPuzS
+jW2xQ4CqcCqLboaCbEplQBa75U/SMIUmNX+RoUxXpcIFnE5dOdUmGSq/Eq+708bo
+Oil6MBhhnspiijQOzLsbhp2Wg2kpDFpBeUjdU/vTHx3VArACUUjYwjjE8qJya5NY
+X2JTKjYLjra1As/09hU7ccbyWGb9JmPKd/+rUQRDFr8uhBi5+I0TRxjkTwqaVd/4
+DKhb5VZJNVead4KzvalAItckvrJEOqKHzM0tpjSujNCJvn834GhipQiFC/jnZWsu
+Lrupc0nmm+Gk35bvasGtnZXZ2ekovzpQEhGP2PIG2UiUIEelF48ex9D5f4vaOUVI
+OcAxjRsspU2BIccEOEIAXfSzp6Ct/3X/jtvAyX8rt4FwnTpCMR+QkBbX2FVJWG5V
+Bzsuw4Hj3FzXnd3/zyJu+k53Qxa1dSOwPu7J97KZWCAvzHbZCyM=
+=/EmR
+-----END PGP SIGNATURE-----
+
+--Apple-Mail=_024CC7D5-5AFC-4E92-92E1-51525F7D4B85--

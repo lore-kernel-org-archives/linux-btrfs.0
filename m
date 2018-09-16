@@ -1,71 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf1-f45.google.com ([209.85.167.45]:39097 "EHLO
-        mail-lf1-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728230AbeIPXhS (ORCPT
+Received: from mail-lj1-f193.google.com ([209.85.208.193]:43795 "EHLO
+        mail-lj1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728247AbeIPX70 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 16 Sep 2018 19:37:18 -0400
-Received: by mail-lf1-f45.google.com with SMTP id v77-v6so11661769lfa.6
-        for <linux-btrfs@vger.kernel.org>; Sun, 16 Sep 2018 11:13:32 -0700 (PDT)
+        Sun, 16 Sep 2018 19:59:26 -0400
+Received: by mail-lj1-f193.google.com with SMTP id m84-v6so11286710lje.10
+        for <linux-btrfs@vger.kernel.org>; Sun, 16 Sep 2018 11:35:36 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <20180916180325.c6jkusse76gsuf52@campbell-lange.net>
-References: <20180916111445.lqwjqvq4aeiwglmm@campbell-lange.net>
- <b6d821fb-334f-8145-27e3-28a8cfa99940@mendix.com> <7fade1e9-7eb2-d416-6a3d-452cbca3bbe5@mendix.com>
- <20180916180325.c6jkusse76gsuf52@campbell-lange.net>
+In-Reply-To: <CAMrg+aRfS0NymyKo2Wwk75+TVBBbGPshnG_Yku403CwnhsimxQ@mail.gmail.com>
+References: <CAMrg+aRfS0NymyKo2Wwk75+TVBBbGPshnG_Yku403CwnhsimxQ@mail.gmail.com>
 From: Chris Murphy <lists@colorremedies.com>
-Date: Sun, 16 Sep 2018 12:13:31 -0600
-Message-ID: <CAJCQCtQYznC83N9bj7TKNcrJpS9Omp3goULwro3TCihk85PvmQ@mail.gmail.com>
-Subject: Re: Move data and mount point to subvolume
-To: Rory Campbell-Lange <rory@campbell-lange.net>
-Cc: Hans van Kranenburg <hans.van.kranenburg@mendix.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Date: Sun, 16 Sep 2018 12:35:35 -0600
+Message-ID: <CAJCQCtRx7gL+EYKGa1GaM6Q8B=c_gcEixMrRYRb5FdbVDnxBJg@mail.gmail.com>
+Subject: Re: btrfs problems
+To: Adrian Bastholm <adrian@javaguru.org>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> So I did this:
->
->     btrfs subvol snapshot /bkp /bkp/backup-subvol
->
-> strangely while /bkp/backup has lots of files in it,
-> /bkp/backup-subvol/backup has none.
->
-> # btrfs subvol list /bkp
-> ID 258 gen 313585 top level 5 path backup
-> ID 4782 gen 313590 top level 5 path backup-subvol
+On Sun, Sep 16, 2018 at 7:58 AM, Adrian Bastholm <adrian@javaguru.org> wrote:
+> Hello all
+> Actually I'm not trying to get any help any more, I gave up BTRFS on
+> the desktop, but I'd like to share my efforts of trying to fix my
+> problems, in hope I can help some poor noob like me.
 
-OK so previously you said "/bkp which is a top level subvolume. There
-are no other subvolumes."
+There's almost no useful information provided for someone to even try
+to reproduce your results, isolate cause and figure out the bugs.
 
-But in fact backup is already a subvolume. So now it's confusing what
-you were asking for in the first place, maybe you didn't realize
-backup is not a dir but it is a subvolume.
-
-If you snapshot a subvolume, which itself contains subvolumes, the
-nested subvolumes are not snapshot. In the snapshot, the nested
-subvolumes are empty directories.
+No kernel version. No btrfs-progs version. No description of the
+hardware and how it's laid out, and what mkfs and mount options are
+being used. No one really has the time to speculate.
 
 
->
-> # btrfs fi du -s /bkp/backup-subvol/backup
->      Total   Exclusive  Set shared  Filename
-> ERROR: cannot check space of '/bkp/backup-subvol/backup': Inappropriate
-> ioctl for device
+>BTRFS check --repair is not recommended
 
-That's a bug in older btrfs-progs. It's been fixed, but I'm not sure
-what version, maybe by 4.14?
+Right. So why did you run it anyway?
+
+man btrfs check:
+
+Warning
+           Do not use --repair unless you are advised to do so by a
+developer or an experienced user
 
 
->
-> Any ideas about what could be going on?
->
-> In the mean time I'm trying:
->
->     btrfs subvol create /bkp/backup-subvol
->     cp -prv --reflink=always /bkp/backup/* /bkp/backup-subvol/
+It is always a legitimate complaint, despite this warning, if btrfs
+check --repair makes things worse, because --repair shouldn't ever
+make things worse. But Btrfs repairs are complicated, and that's why
+the warning is there. I suppose the devs could have made the flag
+--riskyrepair but I doubt this would really slow users down that much.
+A big part of --repair fixes weren't known to make things worse at the
+time, and edge cases where it made things worse kept popping up, so
+only in hindsight does it make sense --repair maybe could have been
+called something different to catch the user's attention.
 
-Yeah that will take a lot of writes that are not necessary, now that
-you see backup is a subvolume already. If you want a copy of it, just
-snapshot it.
+But anyway, I see this same sort of thing on the linux-raid list all
+the time. People run into trouble, and they press full forward making
+all kinds of changes, each change increases the chance of data loss.
+And then they come on the list with WTF messages. And it's always a
+lesson in patience for the list regulars and developers... if only
+you'd come to us with questions sooner.
+
+> Please have a look at the console logs.
+
+These aren't logs. It's a record of shell commands. Logs would include
+kernel messages, ideally all of them. Why is device 3 missing? We have
+no idea. Most of Btrfs code is in the kernel, problems are reported by
+the kernel. So we need kernel messages, user space messages aren't
+enough.
+
+Anyway, good luck with openzfs, cool project.
+
 
 -- 
 Chris Murphy

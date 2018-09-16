@@ -1,150 +1,155 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lj1-f178.google.com ([209.85.208.178]:43100 "EHLO
-        mail-lj1-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728353AbeIQBiX (ORCPT
+Received: from mail-lj1-f194.google.com ([209.85.208.194]:41187 "EHLO
+        mail-lj1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728186AbeIQCSh (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 16 Sep 2018 21:38:23 -0400
-Received: by mail-lj1-f178.google.com with SMTP id m84-v6so11397714lje.10
-        for <linux-btrfs@vger.kernel.org>; Sun, 16 Sep 2018 13:14:16 -0700 (PDT)
+        Sun, 16 Sep 2018 22:18:37 -0400
+Received: by mail-lj1-f194.google.com with SMTP id y17-v6so11449057ljy.8
+        for <linux-btrfs@vger.kernel.org>; Sun, 16 Sep 2018 13:54:22 -0700 (PDT)
 MIME-Version: 1.0
+In-Reply-To: <CAMrg+aS4anZaXHmVZchESbmNAZ0QYzE98LGD0nWc1JV1h8jfng@mail.gmail.com>
 References: <CAMrg+aRfS0NymyKo2Wwk75+TVBBbGPshnG_Yku403CwnhsimxQ@mail.gmail.com>
- <CAJCQCtRx7gL+EYKGa1GaM6Q8B=c_gcEixMrRYRb5FdbVDnxBJg@mail.gmail.com>
- <CAMrg+aQw-sjXpaff=cS6X2-CWDRfOy1f8orQsEsy48xrsuPe3g@mail.gmail.com> <CAJCQCtQPniv4eJSsbT24bma9Gv6_T44zoq9owSYmPNmKO7hXaA@mail.gmail.com>
-In-Reply-To: <CAJCQCtQPniv4eJSsbT24bma9Gv6_T44zoq9owSYmPNmKO7hXaA@mail.gmail.com>
-From: Adrian Bastholm <adrian@javaguru.org>
-Date: Sun, 16 Sep 2018 22:13:38 +0200
-Message-ID: <CAMrg+aQbotvSip_EXbBM8nB3zBULP_yJEXNNH_K6_1mt6SXnGA@mail.gmail.com>
-Subject: Fwd: btrfs problems
-To: linux-btrfs@vger.kernel.org
+ <cbb66b3b-1b21-cb3c-c446-c44e861f36bc@gmx.com> <CAMrg+aTNK1cBG7rGVfudpydD6hMJz9UW0-3mdS8Yx4tqAQZE6Q@mail.gmail.com>
+ <CAMrg+aS4anZaXHmVZchESbmNAZ0QYzE98LGD0nWc1JV1h8jfng@mail.gmail.com>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Sun, 16 Sep 2018 14:54:20 -0600
+Message-ID: <CAJCQCtT0CicLZ=y1YpRGOQdbMKc0Zrmc=O8HD1BGHEivLuR94Q@mail.gmail.com>
+Subject: Re: btrfs problems
+To: Adrian Bastholm <adrian@javaguru.org>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-...
-
-And also raid56 is still considered experimental, and has various
-problems if the hardware lies (like if some writes happen out of order
-or faster on some devices than others,and it's much harder to repair
-because the repair tools aren't raid56 feature complete).
-
-https://btrfs.wiki.kernel.org/index.php/Status
-
-I think it's less scary than "dangerous" or "unstable" but anyway,
-there are known problems unique to raid56 that will need future
-features to make it as reliable as single, raid1, raid10. And like any
-parity raid it sucks performance wise for random writes, especially
-when using hard drives.
-
-
-
-On Sun, Sep 16, 2018 at 1:40 PM, Adrian Bastholm <adrian@javaguru.org> wrote:
-> Hi Chris
->> There's almost no useful information provided for someone to even try
->> to reproduce your results, isolate cause and figure out the bugs.
-> I realize that. That's why I wasn't really asking for help, I was
-> merely giving some feedback.
+On Sun, Sep 16, 2018 at 2:11 PM, Adrian Bastholm <adrian@javaguru.org> wrote:
+> Thanks for answering Qu.
 >
->> No kernel version. No btrfs-progs version. No description of the
->> hardware and how it's laid out, and what mkfs and mount options are
->> being used. No one really has the time to speculate.
->
-> I understand, and I apologize. I could have added more detail.
->
+>> At this timing, your fs is already corrupted.
+>> I'm not sure about the reason, it can be a failed CoW combined with
+>> powerloss, or corrupted free space cache, or some old kernel bugs.
 >>
->> >BTRFS check --repair is not recommended
+>> Anyway, the metadata itself is already corrupted, and I believe it
+>> happens even before you noticed.
+>  I suspected it had to be like that
 >>
->> Right. So why did you run it anyway?
->
-> Because "repair" implies it does something to help you. That's how
-> most people's brains work. My fs is broken. I'll try "REPAIR"
->
->
->> man btrfs check:
+>> > BTRFS check --repair is not recommended, it
+>> > crashes , doesn't fix all problems, and I later found out that my
+>> > lost+found dir had about 39G of lost files and dirs.
 >>
->> Warning
->>            Do not use --repair unless you are advised to do so by a
->> developer or an experienced user
+>> lost+found is completely created by btrfs check --repair.
 >>
+>> > I spent about two days trying to fix everything, removing a disk,
+>> > adding it again, checking , you name it. I ended up removing one disk,
+>> > reformatting it, and moving the data there.
 >>
->> It is always a legitimate complaint, despite this warning, if btrfs
->> check --repair makes things worse, because --repair shouldn't ever
->> make things worse.
+>> Well, I would recommend to submit such problem to the mail list *BEFORE*
+>> doing any write operation to the fs (including btrfs check --repair).
+>> As it would help us to analyse the failure pattern to further enhance btrfs.
 >
-> I don't think It made things worse. It's more like it didn't do
-> anything. That's when I started trying to copy a new file to the file
-> with the question mark attributes (lame, I know) to see what happens.
-> The "corrupted" file suddenly had attributes, and so on.
-> check --repair removed the extra files and left me at square one, so not worse.
->
->>But Btrfs repairs are complicated, and that's why
->> the warning is there. I suppose the devs could have made the flag
->> --riskyrepair but I doubt this would really slow users down that much.
->
-> calling it --destructive or --deconstruct, or something even more
-> scary would slow people down
->
->> A big part of --repair fixes weren't known to make things worse at the
->> time, and edge cases where it made things worse kept popping up, so
->> only in hindsight does it make sense --repair maybe could have been
->> called something different to catch the user's attention.
->
-> Exactly. It's not too late to rename it. And maybe make it dump a
-> filesystem report with everything a developer would need (within
-> reason) to trace the error
->
->> But anyway, I see this same sort of thing on the linux-raid list all
->> the time. People run into trouble, and they press full forward making
->> all kinds of changes, each change increases the chance of data loss.
->> And then they come on the list with WTF messages. And it's always a
->> lesson in patience for the list regulars and developers... if only
->> you'd come to us with questions sooner.
->
-> True. I found the list a bit late. I tried the IRC channel but I
-> couldn' t post messages.
->
->> > Please have a look at the console logs.
->>
->> These aren't logs. It's a record of shell commands. Logs would include
->> kernel messages, ideally all of them. Why is device 3 missing?
->
-> It was a RAID5 array of three drives. When doing btrfs check on two of
-> the drives I got the drive x is missing. I figured that maybe it had
-> to do something with which one was the "first" drive or something. The
-> same way, btrfs-check crashed when I was running it against the drives
-> where I got the "drive x missing" message
->
->
->> We have no idea. Most of Btrfs code is in the kernel, problems are reported by
->> the kernel. So we need kernel messages, user space messages aren't
->> enough.
->
->> Anyway, good luck with openzfs, cool project.
-> Cool project, not so cool pitfalls. I might head back to BTRFS after
-> all .. see the response to Qu.
->
-> Thanks for answering, and sorry for the shortcomings of my feedback
-> /A
->
->>
->> --
->> Chris Murphy
->
->
->
-> --
-> Vänliga hälsningar / Kind regards,
-> Adrian Bastholm
->
-> ``I would change the world, but they won't give me the sourcecode``
+> IMHO that's a, how should I put it, a design flaw, the wrong way of
+> looking at how people think, with all respect to all the very smart
+> people that put in countless hours of hard work. Users expect and fs
+> check and repair to repair, not to break stuff.
+> Reading that --repair is "destructive" is contradictory even to me.
+
+It's contradictory to everyone including the developers. No developer
+set out to make --repair dangerous from the outset. It just turns out
+that it was a harder problem to solve and the thought was that it
+would keep getting better.
+
+Newer versions are "should be safe" now even if they can't fix
+everything. The far bigger issue I think the developers are aware of
+is that depending on repair at all for any Btrfs of appreciable size,
+is simply not scalable. Taking a day or a week to run a repair on a
+large file system, is unworkable. And that's why it's better to avoid
+inconsistencies in the first place which is what Btrfs is supposed to
+do, and if that's not happening it's a bug somewhere in Btrfs and also
+sometimes in the hardware.
+
+
+> This problem emerged in a direcory where motion (the camera software)
+> was saving pictures. Either killing the process or a powerloss could
+> have left these jpg files (or fs metadata) in a bad state. Maybe
+> that's something to go on. I was thinking that there's not much anyone
+> can do without root access to my box anyway, and I'm not sure I was
+> prepared to give that to anyone.
+
+I can't recommend raid56 for people new to Btrfs. It really takes
+qualified hardware to make sure there's no betrayal, as everything
+gets a lot more complicated with raid56. The general state of faulty
+device handling on Btrfs, makes raid56 very much a hands on approach
+you can't turn your back on it. And then when jumping into raid5, I
+advise raid1 for metadata. It reduces problems. And that's true for
+raid6 also, except that raid1 metadata is less redundancy than raid1
+so...it's not helpful if you end up losing 2 devices.
+
+If you need production grade parity raid you should use openzfs,
+although I can't speak to how it behaves with respect to faulty
+devices on Linux.
 
 
 
---
-Chris Murphy
+
+>> Any btrfs unexpected behavior, from strange ls output to aborted
+>> transaction, please consult with the mail list first.
+>> (Of course, with kernel version and btrfs-progs version, which is
+>> missing in your console log though)
+>
+> Linux jenna 4.9.0-8-amd64 #1 SMP Debian 4.9.110-3+deb9u4 (2018-08-21)
+> x86_64 GNU/Linux
+> btrfs-progs is already the newest version (4.7.3-1).
+
+Well the newest versions are kernel 4.18.8, and btrfs-progs 4.17.1, so
+in Btrfs terms those are kinda old.
+
+That is not inherently bad, but there are literally thousands of
+additions and deletions since kernel 4.9 so there's almost no way
+anyone on this list, except a developer familiar with backport status,
+can tell you if the problem you're seeing is a bug that's been fixed
+in that particular version. There aren't that many developers that
+familiar with that status who also have time to read user reports.
+Since this is an upstream list, most developers will want to know if
+you're able to reproduce the problem with a mainline kernel, because
+if you can it's very probable it's a bug that needs to be fixed
+upstream first before it can be backported. That's just the nature of
+kernel development generally. And you'll find the same thing on ext4
+and XFS lists...
+
+The main reason why people use Debian and its older kernel bases is
+they're willing to accept certain bugginess in favor of stability.
+Transient bugs are really bad in that world. Consistent bugs they just
+find work arounds for (avoidance) until there's a known highly tested
+backport, because they want "The Behavior" to be predictable, both
+good and bad. That is not a model well suited for a file system that's
+in Btrfs really active development state. It's better now than it was
+even a couple years ago, where I'd say: just don't use RHEL or Debian
+or anything with old kernels except for experimenting; it's not worth
+the hassle; you're inevitably gonna have to use a newer kernel because
+all the Btrfs devs are busy making metric shittonnes of fixes in the
+mainline version. Today, it's not as bad as that. But still 4.9 is old
+in Btrfs terms. Should it be stable? For *your* problem for sure
+because that's just damn strange and something very goofy is going on.
+But is it possible there's a whole series of bugs happening in
+sequence that results in this kind of corruption? No idea. Maybe.
+
+And that's the main reason why quite a lot of users on this list use
+Fedora, Arch, Gentoo - so they're using the newest stable or even
+mainline rc kernels.
+
+And so if you want to run any file system, including Btrfs, in
+production with older kernels,  you pick a distro that's doing that
+work. And right now it's openSUSE and SUSE that have the most Btrfs
+developers supporting 4.9 and 4.14 kernels and Btrfs. Most of those
+users are getting distro support, I don't often see SUSE users on
+here.
+
+OpenZFS is a different strategy because they're using out of tree
+code. So you can run older kernels, and compile the current openzfs
+code base against your older kernel. In effect you're using an older
+distro kernel, but with new file system code base supported by that
+upstream.
+
 
 
 -- 
-Vänliga hälsningar / Kind regards,
-Adrian Bastholm
-
-``I would change the world, but they won't give me the sourcecode``
+Chris Murphy

@@ -1,64 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lj1-f174.google.com ([209.85.208.174]:37001 "EHLO
-        mail-lj1-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728230AbeIPX2a (ORCPT
+Received: from mail-lf1-f45.google.com ([209.85.167.45]:39097 "EHLO
+        mail-lf1-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728230AbeIPXhS (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 16 Sep 2018 19:28:30 -0400
-Received: by mail-lj1-f174.google.com with SMTP id v9-v6so11252025ljk.4
-        for <linux-btrfs@vger.kernel.org>; Sun, 16 Sep 2018 11:04:46 -0700 (PDT)
+        Sun, 16 Sep 2018 19:37:18 -0400
+Received: by mail-lf1-f45.google.com with SMTP id v77-v6so11661769lfa.6
+        for <linux-btrfs@vger.kernel.org>; Sun, 16 Sep 2018 11:13:32 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <20180916111445.lqwjqvq4aeiwglmm@campbell-lange.net>
+In-Reply-To: <20180916180325.c6jkusse76gsuf52@campbell-lange.net>
 References: <20180916111445.lqwjqvq4aeiwglmm@campbell-lange.net>
+ <b6d821fb-334f-8145-27e3-28a8cfa99940@mendix.com> <7fade1e9-7eb2-d416-6a3d-452cbca3bbe5@mendix.com>
+ <20180916180325.c6jkusse76gsuf52@campbell-lange.net>
 From: Chris Murphy <lists@colorremedies.com>
-Date: Sun, 16 Sep 2018 12:04:44 -0600
-Message-ID: <CAJCQCtQqtmJ5mHCAutkX8YMA6BFKW0OnbNvu93Ewio4ccK0bfQ@mail.gmail.com>
+Date: Sun, 16 Sep 2018 12:13:31 -0600
+Message-ID: <CAJCQCtQYznC83N9bj7TKNcrJpS9Omp3goULwro3TCihk85PvmQ@mail.gmail.com>
 Subject: Re: Move data and mount point to subvolume
 To: Rory Campbell-Lange <rory@campbell-lange.net>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Cc: Hans van Kranenburg <hans.van.kranenburg@mendix.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Sep 16, 2018 at 5:14 AM, Rory Campbell-Lange
-<rory@campbell-lange.net> wrote:
-> Hi
+> So I did this:
 >
-> We have a backup machine that has been happily running its backup
-> partitions on btrfs (on top of a luks encrypted disks) for a few years.
+>     btrfs subvol snapshot /bkp /bkp/backup-subvol
 >
-> Our backup partition is on /bkp which is a top level subvolume.
->     Data, RAID1: total=2.52TiB, used=1.36TiB
-> There are no other subvolumes.
+> strangely while /bkp/backup has lots of files in it,
+> /bkp/backup-subvol/backup has none.
+>
+> # btrfs subvol list /bkp
+> ID 258 gen 313585 top level 5 path backup
+> ID 4782 gen 313590 top level 5 path backup-subvol
 
-and
+OK so previously you said "/bkp which is a top level subvolume. There
+are no other subvolumes."
 
-> /dev/mapper/cdisk2 on /bkp type btrfs (rw,noatime,compress=lzo,space_cache,subvolid=5,subvol=/)
+But in fact backup is already a subvolume. So now it's confusing what
+you were asking for in the first place, maybe you didn't realize
+backup is not a dir but it is a subvolume.
 
-I like Hans' 2nd email advice to snapshot the top level subvolume.
+If you snapshot a subvolume, which itself contains subvolumes, the
+nested subvolumes are not snapshot. In the snapshot, the nested
+subvolumes are empty directories.
 
-I would start out with:
-btrfs sub snap -r /bkp /bkp/toplevel.ro
 
-And that way I shouldn't be able to F this up irreversibly if I make a
-mistake. :-D And then do another snapshot that's rw:
+>
+> # btrfs fi du -s /bkp/backup-subvol/backup
+>      Total   Exclusive  Set shared  Filename
+> ERROR: cannot check space of '/bkp/backup-subvol/backup': Inappropriate
+> ioctl for device
 
-btrfs sub snap /bkp /bkp/bkpsnap
-cd /bkp/bkpsnap
+That's a bug in older btrfs-progs. It's been fixed, but I'm not sure
+what version, maybe by 4.14?
 
-Now remove everything except "backupdir". Then move everything out of
-backupdir including any hidden files. Then rmdir backupdir. Then you
-can rename the snapshot/subvolume
-cd ..
-mv bkpsnap backup
 
-That's less metadata writes than creating a new subvolume, and reflink
-copying the backup dir, e.g. cp -a --reflink /bkp/backupdir
-/bkp/backupsubvol
+>
+> Any ideas about what could be going on?
+>
+> In the mean time I'm trying:
+>
+>     btrfs subvol create /bkp/backup-subvol
+>     cp -prv --reflink=always /bkp/backup/* /bkp/backup-subvol/
 
-That could take a long time because all the metadata is fully read,
-modified (new inodes) and written out.
-
-But either way it should work.
+Yeah that will take a lot of writes that are not necessary, now that
+you see backup is a subvolume already. If you want a copy of it, just
+snapshot it.
 
 -- 
 Chris Murphy

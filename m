@@ -1,151 +1,169 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.22]:37517 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.17.21]:55611 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725723AbeIPGjd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 16 Sep 2018 02:39:33 -0400
-Subject: Re: metadata operation reordering regards to crash
-To: =?UTF-8?B?54Sm5pmT5Yas?= <milestonejxd@gmail.com>, david@fromorbit.com,
-        cmumford@cmumford.com, linux-btrfs@vger.kernel.org
-Cc: linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
-        adilger.kernel@dilger.ca, linux-kernel@vger.kernel.org
-References: <CAJDTihzzLV3qwg0tGH_D4xAjCrgMy+oc4H9snpnMC_RC2q7nyw@mail.gmail.com>
- <20180914222336.GD16550@dastard>
- <CAJDTihx2MEpdWdp6V6AsOD35Lh_6R=uFXBGtO8fL8s0o5C_t8Q@mail.gmail.com>
+        id S1726198AbeIPGyp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 16 Sep 2018 02:54:45 -0400
+Subject: Re: state of btrfs snapshot limitations?
+To: "James A. Robinson" <jim.robinson@gmail.com>, linux-btrfs@vger.kernel.org
+References: <CAPd04b4nXw_qe7+8msY26UDr-m+MBpzYn_UdqGQX8Z-KxNN_0w@mail.gmail.com>
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <176cee59-e95f-5077-8120-33277291a115@gmx.com>
-Date: Sun, 16 Sep 2018 09:18:08 +0800
+Message-ID: <8958eae5-dd35-66e3-3b21-d4d70ae93d15@gmx.com>
+Date: Sun, 16 Sep 2018 09:33:28 +0800
 MIME-Version: 1.0
-In-Reply-To: <CAJDTihx2MEpdWdp6V6AsOD35Lh_6R=uFXBGtO8fL8s0o5C_t8Q@mail.gmail.com>
+In-Reply-To: <CAPd04b4nXw_qe7+8msY26UDr-m+MBpzYn_UdqGQX8Z-KxNN_0w@mail.gmail.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="8gxq5ugRV8N6UJcc3dJsbuOH5Is7bOr4L"
+ boundary="AjlAFklFBtk13xUJ737nEJ9ZVeqlsIJN7"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---8gxq5ugRV8N6UJcc3dJsbuOH5Is7bOr4L
-Content-Type: multipart/mixed; boundary="UQIkkXGbRNgYOADTbrzJfpzmDt584N5gg";
+--AjlAFklFBtk13xUJ737nEJ9ZVeqlsIJN7
+Content-Type: multipart/mixed; boundary="mqSJQYhGdDMZ1FYdFJ8jjcE7lmBbo48oS";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: =?UTF-8?B?54Sm5pmT5Yas?= <milestonejxd@gmail.com>, david@fromorbit.com,
- cmumford@cmumford.com, linux-btrfs@vger.kernel.org
-Cc: linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
- adilger.kernel@dilger.ca, linux-kernel@vger.kernel.org
-Message-ID: <176cee59-e95f-5077-8120-33277291a115@gmx.com>
-Subject: Re: metadata operation reordering regards to crash
-References: <CAJDTihzzLV3qwg0tGH_D4xAjCrgMy+oc4H9snpnMC_RC2q7nyw@mail.gmail.com>
- <20180914222336.GD16550@dastard>
- <CAJDTihx2MEpdWdp6V6AsOD35Lh_6R=uFXBGtO8fL8s0o5C_t8Q@mail.gmail.com>
-In-Reply-To: <CAJDTihx2MEpdWdp6V6AsOD35Lh_6R=uFXBGtO8fL8s0o5C_t8Q@mail.gmail.com>
+To: "James A. Robinson" <jim.robinson@gmail.com>, linux-btrfs@vger.kernel.org
+Message-ID: <8958eae5-dd35-66e3-3b21-d4d70ae93d15@gmx.com>
+Subject: Re: state of btrfs snapshot limitations?
+References: <CAPd04b4nXw_qe7+8msY26UDr-m+MBpzYn_UdqGQX8Z-KxNN_0w@mail.gmail.com>
+In-Reply-To: <CAPd04b4nXw_qe7+8msY26UDr-m+MBpzYn_UdqGQX8Z-KxNN_0w@mail.gmail.com>
 
---UQIkkXGbRNgYOADTbrzJfpzmDt584N5gg
+--mqSJQYhGdDMZ1FYdFJ8jjcE7lmBbo48oS
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
 
 
-On 2018/9/15 =E4=B8=8B=E5=8D=882:58, =E7=84=A6=E6=99=93=E5=86=AC wrote:
-> On Sat, Sep 15, 2018 at 6:23 AM Dave Chinner <david@fromorbit.com> wrot=
-e:
->>
->> On Fri, Sep 14, 2018 at 05:06:44PM +0800, =E7=84=A6=E6=99=93=E5=86=AC =
-wrote:
->>> Hi, all,
->>>
->>> A probably bit of complex question:
->>> Does nowadays practical filesystems, eg., extX, btfs, preserve metada=
-ta
->>> operation order through a crash/power failure?
->>
->> Yes.
->>
->> Behaviour is filesystem dependent, but we have tests in fstests that
->> specifically exercise order preservation across filesystem failures.
->>
->>> What I know is modern filesystems ensure metadata consistency
->>> after crash/power failure. Journal filesystems like extX do that by
->>> write-ahead logging of metadata operations into transactions. Other
->>> filesystems do that in various ways as btfs do that by COW.
->>>
->>> What I'm not so far clear is whether these filesystems preserve
->>> metadata operation order after a crash.
->>>
->>> For example,
->>> op 1.  rename(A, B)
->>> op 2.  rename(C, D)
->>>
->>> As mentioned above,  metadata consistency is ensured after a crash.
->>> Thus, B is either the original B(or not exists) or has been replaced =
-by A.
->>> The same to D.
->>>
->>> Is it possible that, after a crash, D has been replaced by C but B is=
- still
->>> the original file(or not exists)?
->>
->> Not for XFS, ext4, btrfs or f2fs. Other filesystems might be
->> different.
+On 2018/9/15 =E4=B8=8A=E5=8D=885:05, James A. Robinson wrote:
+> The mail archive seems to indicate this list is appropriate
+> for not only the technical coding issues, but also for user
+> questions, so I wanted to pose a question here.  If I'm
+> wrong about that, I apologize in advance.
 >=20
-> Thanks, Dave,
+> The page
 >=20
-> I found this archive:
-> https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg31937.html
+> https://btrfs.wiki.kernel.org/index.php/Incremental_Backup
 >=20
-> It seems btrfs people thinks reordering could happen.
+> talks about the basic snapshot capabilities of btrfs and led
+> me to look up what, if any, limits might apply.  I find some
+> threads from a few years ago that talk about limiting the
+> number of snapshots for a volume to 100.
 
-It depends.
+This is mostly related to send and quota, and maybe for
+snapshot/subvolume removal.
+(Any personally I would recommend only 20 snapshots)
 
-For default btrfs (using log tree), it depends on the log replay code
-(which is somewhat like journal, but not completely the same).
+Both of them needs to do backref walk in their core functionality.
+Increased number of reference introduced by snapshots could bring a huge
+impact to quota especially.
 
-Unfortunately I'm not a expert on that part, but tree log is more a
-performance optimization other than a vital part to keep fs consistent.
+We have some plan to enhance it, but for now if send/quota is important
+to you, it's highly recommend to limit number of snapshots to a
+reasonable number.
 
-But if using notreelog mount option, btrfs won't use log tree and falls
-back to sync() for all fsync() due to its metadata organization.
+>=20
+> The reason I'm curious is I wanted to try and use the
+> snapshot capability as a way of keeping a 'history' of a
+> backup volume I maintain.  The backup doesn't change a
+> lot overtime, but small changes are made to files within
+> it daily.
 
-And in that case, there is no reordering at all. It uses metadata CoW to
-ensure everything is consistent.
-In that case, power loss happens either before or after super block
-write back.
-For old superblock it always points to old trees, and vice verse for new
-superblock.
-So one will only see either the new fs or the old fs, thus making btrfs
-atomic for its metadata update.
+Then normally it could lead to some dilemma.
+
+Currently the mostly common way to know how much exclusively used space
+one snapshot uses is btrfs quota (qgroup).
+But a lot of snapshots bring tons of performance impact, sometimes even
+unacceptable.
+
+If one don't need to account how much space a snapshot really take, it
+won't be a problem though.
+
+
+Despite above things, I'd like to point out that, snapshot is not backup
+(which I believe everyone should have already known).
+
+And further more for btrfs specifically, since file trees (snapshots and
+subvolumes) still share the same chunk/extent/csum trees, if one of such
+essential trees gets corrupted (especially for extent tree), you may not
+be able to mount the fs (at least unable to do RW mount).
+
+So it's still pretty important to take real backup.
 
 Thanks,
 Qu
 
 >=20
-> It is a relatively old reply. Has the implement changed? Or is there
-> some new standard that requires reordering not happen?
+> The Plan 9 OS has a nice archival filesystem that lets you
+> easily maintain snapshots, and has various tools that make
+> it simple to keep a /snapshot/yyyy/mmdd snapshot going back
+> for the life of the filesystem.
 >=20
->> Cheers,
->>
->> Dave,
->> --
->> Dave Chinner
->> david@fromorbit.com
+> I wanted to try and replicate the basic functionality of
+> that history using a non-plan-9 filesystem.  At first I
+> tried rsnapshot but I find its technique of rotating and
+> deleting backups is thrashing the disks to the point that it
+> can't keep up with the rotations (the cp -al is fast, but
+> the periodic rm -rf of older snapshots kills the disk).
+>=20
+> With btrfs I was thinking perhaps I could more efficiently
+> maintain the archive of changes over time using a snapshot.
+> If this is an awful thought and I should just go away,
+> please let me know.
+>=20
+> If the limit is 100 or less I'd need use a more complicated
+> rotation scheme.  For example with a layout like the
+> following:
+>=20
+> min/<mm>
+> hour/<hh>
+> day/<dd>
+> month/<mm>
+> year/<yyy>
+>=20
+> The idea being each bucket, min, hour, day, month, would
+> be capped and older snapshots would be removed and replaced
+> with newer ones over time.
+>=20
+> so with a 15-minute snapshot cycle I'd end up with
+>=20
+> min/[00,15,30,45]
+> hour/[00-23]
+> day/[01-31]
+> month/[01-12]
+> year/[2018,2019,...]
+>=20
+> (72+ snapshots with room for a few years worth of yearly's).
+>=20
+> But if things have changed with btrfs over the past few
+> years and number of snapshots scales much higher, I would
+> use the easier scheme:
+>=20
+> /min/[00,15,30,45]
+> /hourly/[00-23]
+> /daily/<yyyy>/<mmdd>
+>=20
+> with 365 snapshots added per additional year.
+>=20
 
 
---UQIkkXGbRNgYOADTbrzJfpzmDt584N5gg--
+--mqSJQYhGdDMZ1FYdFJ8jjcE7lmBbo48oS--
 
---8gxq5ugRV8N6UJcc3dJsbuOH5Is7bOr4L
+--AjlAFklFBtk13xUJ737nEJ9ZVeqlsIJN7
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAludr1AACgkQwj2R86El
-/qiyYwf/cvZm56CfvDwC4Y5Gok0oPuJhNW1yHtnJWjMIpZS0WaOOk0O/NKCSg1TA
-ga4L9oJCDm7XzymrtSPa9zdxbto9EmQyCL39dtnI0ZGxx1/IEvplFQlyZ6/hnbde
-de4HeUrPnSj6j1IaFwvG/uTposaNb4B9nCzT7161Lk34okm/UCsmb6I6iZQ4wvds
-NbcibD73dE+XHS49UPHZNNT5PNmXUnHWeyh/RN69aWIq7L+vgKW0YVllFgVC1aLy
-G5IXZ+bFm2WSa6rEePF+xGQipxlf+gDQbLCAc4QzBfPXsc9mej5yVGy3BvYdHzG9
-thKX4O3VXonggHT30lfyFW0eWXiLIw==
-=GMDQ
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAludsugACgkQwj2R86El
+/qifEQf/V07NuS8BbhrvfSFMWn0kbxxFqLPYhO/FUZwxaYRbAZxpvjMucYb5Nol6
+JzTpzXn49NqQsxWZmu767XrUDfmGKEo9az+9I3aUcvc7uP77eQju8Vr7jW+qw7Tb
+DfRHLKL0cV4Rpq526wiwtwSOUAxXSlpxwFyfNwjsuNY5Ivgf+fG5zDow1VfGOzWp
+oZVEbU7urwOJOYVrSNNls9leS+kIL8UgX3eukjt19SPlUHmuJHX9f7RbqNsfdnao
+QxiyeDyVRZCuv+wWSSDZiShkb4lKB2zYP76qeC0ptjY46BnESAP3X5OVFs61tIDe
+hK431uxremtRiSSPQnZsPUeZFnFtOg==
+=tRGy
 -----END PGP SIGNATURE-----
 
---8gxq5ugRV8N6UJcc3dJsbuOH5Is7bOr4L--
+--AjlAFklFBtk13xUJ737nEJ9ZVeqlsIJN7--

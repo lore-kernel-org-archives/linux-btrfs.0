@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from mail.cn.fujitsu.com ([183.91.158.132]:17617 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1727099AbeIQMsP (ORCPT
+        with ESMTP id S1727099AbeIQMsO (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 17 Sep 2018 08:48:15 -0400
+        Mon, 17 Sep 2018 08:48:14 -0400
 Received: from G08CNEXCHPEKD03.g08.fujitsu.local (unknown [10.167.33.85])
-        by cn.fujitsu.com (Postfix) with ESMTP id 3EF5A4B6EC83
+        by cn.fujitsu.com (Postfix) with ESMTP id CBC394B6EC8D
         for <linux-btrfs@vger.kernel.org>; Mon, 17 Sep 2018 15:21:59 +0800 (CST)
 From: Su Yue <suy.fnst@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: <suy.fnst@cn.fujitsu.com>
-Subject: [PATCH v3 1/7] btrfs-progs: adjust arguments of btrfs_lookup_inode_extref()
-Date: Mon, 17 Sep 2018 15:28:46 +0800
-Message-ID: <20180917072852.25831-2-suy.fnst@cn.fujitsu.com>
+Subject: [PATCH v3 2/7] btrfs-progs: make btrfs_unlink() lookup inode_extref
+Date: Mon, 17 Sep 2018 15:28:47 +0800
+Message-ID: <20180917072852.25831-3-suy.fnst@cn.fujitsu.com>
 In-Reply-To: <20180917072852.25831-1-suy.fnst@cn.fujitsu.com>
 References: <20180917072852.25831-1-suy.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -20,60 +20,50 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The argument index is not used in btrfs_lookup_inode_extref(),
-so remove it.
-And adjust positions its arguments to make it consistent with
-kernel part.
+btrfs_unlink() uses btrfs_lookup_inode_ref() to look up inode_ref
+but forget inode_extref case.
 
-No functional change.
+Let btrfs_unlink() call btrfs_lookup_inode_extref() if inode_ref is
+found and EXTENDED_IREF feature is enabled.
 
-Fixes: 260675657767 ("btrfs-progs: Import btrfs_insert/del/lookup_extref() functions.")
+Fixes: 0cc75eddd093 ("btrfs-progs: Add btrfs_unlink() and btrfs_add_link() functions.")
 Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
 Reviewed-by: Qu Wenruo <wqu@suse.com>
 ---
- ctree.h      | 9 +++++----
- inode-item.c | 9 +++++----
- 2 files changed, 10 insertions(+), 8 deletions(-)
+ inode.c | 14 +++++++++++++-
+ 1 file changed, 13 insertions(+), 1 deletion(-)
 
-diff --git a/ctree.h b/ctree.h
-index 2a2437070ef9..541055a335c2 100644
---- a/ctree.h
-+++ b/ctree.h
-@@ -2710,10 +2710,11 @@ int btrfs_insert_inode(struct btrfs_trans_handle *trans, struct btrfs_root
- int btrfs_lookup_inode(struct btrfs_trans_handle *trans, struct btrfs_root
- 		       *root, struct btrfs_path *path,
- 		       struct btrfs_key *location, int mod);
--struct btrfs_inode_extref *btrfs_lookup_inode_extref(struct btrfs_trans_handle
--		*trans, struct btrfs_path *path, struct btrfs_root *root,
--		u64 ino, u64 parent_ino, u64 index, const char *name,
--		int namelen, int ins_len);
-+struct btrfs_inode_extref *
-+btrfs_lookup_inode_extref(struct btrfs_trans_handle *trans,
-+			  struct btrfs_root *root, struct btrfs_path *path,
-+			  const char *name, int namelen, u64 ino,
-+			  u64 parent_ino, int ins_len);
- int btrfs_del_inode_extref(struct btrfs_trans_handle *trans,
- 			   struct btrfs_root *root,
- 			   const char *name, int name_len,
-diff --git a/inode-item.c b/inode-item.c
-index 1cc106670cd4..ca0052bc2f87 100644
---- a/inode-item.c
-+++ b/inode-item.c
-@@ -227,10 +227,11 @@ static int btrfs_find_name_in_ext_backref(struct btrfs_path *path,
- 	return 0;
- }
- 
--struct btrfs_inode_extref *btrfs_lookup_inode_extref(struct btrfs_trans_handle
--		*trans, struct btrfs_path *path, struct btrfs_root *root,
--		u64 ino, u64 parent_ino, u64 index, const char *name,
--		int namelen, int ins_len)
-+struct btrfs_inode_extref *
-+btrfs_lookup_inode_extref(struct btrfs_trans_handle *trans,
-+			  struct btrfs_root *root, struct btrfs_path *path,
-+			  const char *name, int namelen, u64 ino,
-+			  u64 parent_ino, int ins_len)
- {
+diff --git a/inode.c b/inode.c
+index 2398bca4a109..598ad0ab6b4c 100644
+--- a/inode.c
++++ b/inode.c
+@@ -277,6 +277,7 @@ int btrfs_unlink(struct btrfs_trans_handle *trans, struct btrfs_root *root,
  	struct btrfs_key key;
- 	struct btrfs_inode_extref *extref;
+ 	struct btrfs_inode_item *inode_item;
+ 	struct btrfs_inode_ref *inode_ref;
++	struct btrfs_inode_extref *inode_extref = NULL;
+ 	struct btrfs_dir_item *dir_item;
+ 	u64 inode_size;
+ 	u32 nlinks;
+@@ -296,7 +297,18 @@ int btrfs_unlink(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+ 		ret = PTR_ERR(inode_ref);
+ 		goto out;
+ 	}
+-	if (inode_ref)
++
++	if (!inode_ref && btrfs_fs_incompat(root->fs_info, EXTENDED_IREF)) {
++		btrfs_release_path(path);
++		inode_extref = btrfs_lookup_inode_extref(trans, root, path,
++					 name, namelen, ino, parent_ino, 0);
++		if (IS_ERR(inode_extref)) {
++			ret = PTR_ERR(inode_extref);
++			goto out;
++		}
++	}
++
++	if (inode_ref || inode_extref)
+ 		del_inode_ref = 1;
+ 	btrfs_release_path(path);
+ 
 -- 
 2.17.1

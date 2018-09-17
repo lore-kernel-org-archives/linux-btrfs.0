@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from mail.cn.fujitsu.com ([183.91.158.132]:52508 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1727690AbeIQMsQ (ORCPT
+        with ESMTP id S1727690AbeIQMsS (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 17 Sep 2018 08:48:16 -0400
+        Mon, 17 Sep 2018 08:48:18 -0400
 Received: from G08CNEXCHPEKD03.g08.fujitsu.local (unknown [10.167.33.85])
-        by cn.fujitsu.com (Postfix) with ESMTP id 1F7414B6EC97
-        for <linux-btrfs@vger.kernel.org>; Mon, 17 Sep 2018 15:22:02 +0800 (CST)
+        by cn.fujitsu.com (Postfix) with ESMTP id 0A2304B6EC99
+        for <linux-btrfs@vger.kernel.org>; Mon, 17 Sep 2018 15:22:03 +0800 (CST)
 From: Su Yue <suy.fnst@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: <suy.fnst@cn.fujitsu.com>
-Subject: [PATCH v3 5/7] btrfs-progs: lowmem: do missing check of last item after check_inode_item()
-Date: Mon, 17 Sep 2018 15:28:50 +0800
-Message-ID: <20180917072852.25831-6-suy.fnst@cn.fujitsu.com>
+Subject: [PATCH v3 6/7] btrfs-progs: lowmem: optimization and repair for check_inode_extref()
+Date: Mon, 17 Sep 2018 15:28:51 +0800
+Message-ID: <20180917072852.25831-7-suy.fnst@cn.fujitsu.com>
 In-Reply-To: <20180917072852.25831-1-suy.fnst@cn.fujitsu.com>
 References: <20180917072852.25831-1-suy.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -20,93 +20,207 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-After call of check_inode_item(), path may point to the last unchecked
-slot of the leaf. The outer walk_up_tree() always treats the position
-as checked slot then skips to the next. The last item will never be
-checked.
+inode_extref is much similar with inode_ref, most codes are reused in
+check_inode_extref().
+Exceptions:
+There is no need to check root directory, so remove it.
+Make check_inode_extref() verify hash value with key offset now.
 
-While checking backrefs, path passed to walk_up_tree() always
-points to a checked slot.
-While checking fs trees, path passed to walk_up_tree() always
-points to an unchecked slot.
+And lowmem check can detect errors about inode_extref and try to
+repair errors.
 
-Solution:
-Add an argument @is_checked to walk_up_tree() to decide whether
-to skip current slot.
-
-Fixes: 5e2dc770471b ("btrfs-progs: check: skip shared node or leaf check for low_memory mode")
 Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
 ---
- check/mode-lowmem.c | 37 +++++++++++++++++++++++++++++++++----
- 1 file changed, 33 insertions(+), 4 deletions(-)
+ check/mode-lowmem.c | 125 +++++++++++++++++++++++++++++++++++---------
+ 1 file changed, 99 insertions(+), 26 deletions(-)
 
 diff --git a/check/mode-lowmem.c b/check/mode-lowmem.c
-index db44456fd85b..612e5e28e45b 100644
+index 612e5e28e45b..53e4fdccd740 100644
 --- a/check/mode-lowmem.c
 +++ b/check/mode-lowmem.c
-@@ -4597,22 +4597,38 @@ static int walk_down_tree(struct btrfs_root *root, struct btrfs_path *path,
+@@ -1182,37 +1182,86 @@ out:
+  *
+  * Return 0 if no error occurred.
+  */
+-static int check_inode_extref(struct btrfs_root *root,
+-			      struct btrfs_key *ref_key,
+-			      struct extent_buffer *node, int slot, u64 *refs,
+-			      int mode)
++static int check_inode_extref(struct btrfs_root *root, struct btrfs_key *ref_key,
++			      struct btrfs_path *path, char *name_ret,
++			      u32 *namelen_ret, u64 *refs_ret, int mode)
+ {
+ 	struct btrfs_key key;
+ 	struct btrfs_key location;
+ 	struct btrfs_inode_extref *extref;
++	struct extent_buffer *node;
+ 	char namebuf[BTRFS_NAME_LEN] = {0};
+ 	u32 total;
+-	u32 cur = 0;
++	u32 cur;
+ 	u32 len;
+ 	u32 name_len;
+ 	u64 index;
+ 	u64 parent;
++	int err;
++	int tmp_err;
+ 	int ret;
+-	int err = 0;
++	int slot;
++	u64 refs;
++	bool search_again = false;
+ 
+ 	location.objectid = ref_key->objectid;
+ 	location.type = BTRFS_INODE_ITEM_KEY;
+ 	location.offset = 0;
++begin:
++	cur = 0;
++	err = 0;
++	refs = *refs_ret;
++	*namelen_ret = 0;
++
++	/* since after repair, path and the dir item may be changed */
++	if (search_again) {
++		search_again = false;
++		btrfs_release_path(path);
++		ret = btrfs_search_slot(NULL, root, ref_key, path, 0, 0);
++		/*
++		 * The item was deleted, let the path point to the last checked
++		 * item.
++		 */
++		if (ret > 0) {
++			if (path->slots[0] == 0) {
++				ret = btrfs_prev_leaf(root, path);
++				/*
++				 * we are checking the inode item, there must
++				 * be some items before, the case shall never
++				 * happen.
++				 */
++				if (ret > 0)
++					ret = -EIO;
++				if (ret)
++					error(
++		"failed to get item before INODE_REF[%llu, %llu] root %llu: %s",
++					      ref_key->objectid, ref_key->offset,
++					      root->objectid, strerror(-ret));
++			} else {
++				path->slots[0]--;
++				ret = 0;
++			}
++			goto out;
++		} else if (ret < 0) {
++			err |= FATAL_ERROR;
++			goto out;
++		}
++	}
++
++	node = path->nodes[0];
++	slot = path->slots[0];
+ 
+ 	extref = btrfs_item_ptr(node, slot, struct btrfs_inode_extref);
+ 	total = btrfs_item_size_nr(node, slot);
+ 
+-next:
+-	/* update inode ref count */
+-	(*refs)++;
+-	name_len = btrfs_inode_extref_name_len(node, extref);
+-	index = btrfs_inode_extref_index(node, extref);
++loop:
++	/* Update inode ref count */
++	refs++;
++	tmp_err = 0;
+ 	parent = btrfs_inode_extref_parent(node, extref);
++	index = btrfs_inode_extref_index(node, extref);
++	name_len = btrfs_inode_extref_name_len(node, extref);
++
+ 	if (name_len <= BTRFS_NAME_LEN) {
+ 		len = name_len;
+ 	} else {
+@@ -1220,37 +1269,61 @@ next:
+ 		warning("root %llu INODE_EXTREF[%llu %llu] name too long",
+ 			root->objectid, ref_key->objectid, ref_key->offset);
+ 	}
++
+ 	read_extent_buffer(node, namebuf, (unsigned long)(extref + 1), len);
+ 
+-	/* Check root dir ref name */
+-	if (index == 0 && strncmp(namebuf, "..", name_len)) {
+-		error("root %llu INODE_EXTREF[%llu %llu] ROOT_DIR name shouldn't be %s",
++	/* verify hash value */
++	if (ref_key->offset != btrfs_extref_hash(parent, namebuf, len)) {
++		err |= FATAL_ERROR;
++		error("root %llu INODE_EXTREF[%llu %llu] name %s namelen %u mode %d mismatch with its hash, wanted %llu have %llu",
+ 		      root->objectid, ref_key->objectid, ref_key->offset,
+-		      namebuf);
+-		err |= ROOT_DIR_ERROR;
++		      namebuf, len, mode, ref_key->offset,
++		      btrfs_extref_hash(parent, namebuf, len));
++		goto out;
++	}
++
++	/* copy the first name found to name_ret */
++	if (refs == 1 && name_ret) {
++		memcpy(name_ret, namebuf, len);
++		*namelen_ret = len;
+ 	}
+ 
+-	/* find related dir_index */
++	/* Find related DIR_INDEX */
+ 	key.objectid = parent;
+ 	key.type = BTRFS_DIR_INDEX_KEY;
+ 	key.offset = index;
+-	ret = find_dir_item(root, &key, &location, namebuf, len, mode);
+-	err |= ret;
++	tmp_err |= find_dir_item(root, &key, &location, namebuf, len,
++			    imode_to_type(mode));
+ 
+-	/* find related dir_item */
++	/* Find related dir_item */
+ 	key.objectid = parent;
+ 	key.type = BTRFS_DIR_ITEM_KEY;
+ 	key.offset = btrfs_name_hash(namebuf, len);
+-	ret = find_dir_item(root, &key, &location, namebuf, len, mode);
+-	err |= ret;
++	tmp_err |= find_dir_item(root, &key, &location, namebuf, len,
++			    imode_to_type(mode));
++
++	if (tmp_err && repair) {
++		ret = repair_ternary_lowmem(root, parent, ref_key->objectid,
++			    index, namebuf, name_len, imode_to_type(mode),
++			    tmp_err);
++		if (!ret) {
++			search_again = true;
++			goto begin;
++		}
++	}
+ 
++	print_inode_ref_err(root, ref_key, index, namebuf, name_len,
++			    imode_to_type(mode), tmp_err);
++
++	err |= tmp_err;
+ 	len = sizeof(*extref) + name_len;
+ 	extref = (struct btrfs_inode_extref *)((char *)extref + len);
+ 	cur += len;
+ 
+ 	if (cur < total)
+-		goto next;
+-
++		goto loop;
++out:
++	*refs_ret = refs;
  	return err;
  }
  
-+/*
-+ * Walk up throuh the path. Make path point to next slot to be checked.
-+ * walk_down_tree() should be called after this function.
-+ *
-+ * @root:	root of the tree
-+ * @path:	will point to next slot to check for walk_down_tree()
-+ * @level:	returns with level of next node to be checked
-+ * @is_checked:	means is the current node checked or not
-+ *		if false, the slot is unchecked, do not increase the slot
-+ *		if true, means increase the slot of the current node
-+ *
-+ * Returns 0 means success.
-+ * Returns >0 means the whole loop of walk up/down should be broken.
-+ */
- static int walk_up_tree(struct btrfs_root *root, struct btrfs_path *path,
--			int *level)
-+			int *level, bool is_checked)
- {
- 	int i;
- 	struct extent_buffer *leaf;
-+	int skip_cur = is_checked ? 1 : 0;
- 
- 	for (i = *level; i < BTRFS_MAX_LEVEL - 1 && path->nodes[i]; i++) {
- 		leaf = path->nodes[i];
--		if (path->slots[i] + 1 < btrfs_header_nritems(leaf)) {
--			path->slots[i]++;
-+		if (path->slots[i] + skip_cur < btrfs_header_nritems(leaf)) {
-+			path->slots[i] += skip_cur;
- 			*level = i;
- 			return 0;
- 		}
- 		free_extent_buffer(path->nodes[*level]);
- 		path->nodes[*level] = NULL;
- 		*level = i + 1;
-+		skip_cur = 1;
- 	}
- 	return 1;
- }
-@@ -4815,7 +4831,20 @@ static int check_btrfs_root(struct btrfs_root *root, int check_all)
+@@ -2426,8 +2499,8 @@ static int check_inode_item(struct btrfs_root *root, struct btrfs_path *path)
+ 				warning("root %llu EXTREF[%llu %llu] isn't supported",
+ 					root->objectid, key.objectid,
+ 					key.offset);
+-			ret = check_inode_extref(root, &key, node, slot, &refs,
+-						 mode);
++			ret = check_inode_extref(root, &key, path, namebuf,
++						 &name_len, &refs, mode);
+ 			err |= ret;
  			break;
  		}
- 
--		ret = walk_up_tree(root, &path, &level);
-+		/*
-+		 * The logical of walk trees are shared between backrefs
-+		 * check and fs trees check.
-+		 * In checking backrefs(check_all is true), after
-+		 * check_leaf_items() returns, path points to
-+		 * last checked item.
-+		 * In checking fs roots(check_all is false), after
-+		 * process_one_leaf() returns, path points to unchecked item.
-+		 *
-+		 * walk_up_tree() is reponsible to make path point to next
-+		 * slot to be checked, above case is handled in
-+		 * walk_up_tree().
-+		 */
-+		ret = walk_up_tree(root, &path, &level, check_all);
- 		if (ret != 0) {
- 			/* Normal exit, reset ret to err */
- 			ret = err;
 -- 
 2.17.1

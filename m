@@ -1,126 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:64618 "EHLO
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:17617 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1729192AbeIRORA (ORCPT
+        with ESMTP id S1727099AbeIQMsP (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 18 Sep 2018 10:17:00 -0400
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
-        by cn.fujitsu.com (Postfix) with ESMTP id 2058B4B6EC8D
-        for <linux-btrfs@vger.kernel.org>; Tue, 18 Sep 2018 16:45:11 +0800 (CST)
-From: Su Yanjun <suyj.fnst@cn.fujitsu.com>
+        Mon, 17 Sep 2018 08:48:15 -0400
+Received: from G08CNEXCHPEKD03.g08.fujitsu.local (unknown [10.167.33.85])
+        by cn.fujitsu.com (Postfix) with ESMTP id 3EF5A4B6EC83
+        for <linux-btrfs@vger.kernel.org>; Mon, 17 Sep 2018 15:21:59 +0800 (CST)
+From: Su Yue <suy.fnst@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-CC: Su Yanjun <suyj.fnst@cn.fujitsu.com>
-Subject: [PATCH] btrfs-progs: tests: Add the testcase for subvolume name length limit test
-Date: Tue, 18 Sep 2018 16:44:48 +0800
-Message-ID: <20180918084448.14195-1-suyj.fnst@cn.fujitsu.com>
+CC: <suy.fnst@cn.fujitsu.com>
+Subject: [PATCH v3 1/7] btrfs-progs: adjust arguments of btrfs_lookup_inode_extref()
+Date: Mon, 17 Sep 2018 15:28:46 +0800
+Message-ID: <20180917072852.25831-2-suy.fnst@cn.fujitsu.com>
+In-Reply-To: <20180917072852.25831-1-suy.fnst@cn.fujitsu.com>
+References: <20180917072852.25831-1-suy.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Total of three conditions are tested. One for short name, one with
-name length 255, the last one with more than 255.
+The argument index is not used in btrfs_lookup_inode_extref(),
+so remove it.
+And adjust positions its arguments to make it consistent with
+kernel part.
 
-This case should pass after commit
-'btrfs-progs: change filename limit to 255 when creating subvolume'.
+No functional change.
 
-Signed-off-by: Su Yanjun <suyj.fnst@cn.fujitsu.com>
+Fixes: 260675657767 ("btrfs-progs: Import btrfs_insert/del/lookup_extref() functions.")
+Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
+Reviewed-by: Qu Wenruo <wqu@suse.com>
 ---
- .../033-filename-length-limit/test.sh         | 86 +++++++++++++++++++
- 1 file changed, 86 insertions(+)
- create mode 100755 tests/misc-tests/033-filename-length-limit/test.sh
+ ctree.h      | 9 +++++----
+ inode-item.c | 9 +++++----
+ 2 files changed, 10 insertions(+), 8 deletions(-)
 
-diff --git a/tests/misc-tests/033-filename-length-limit/test.sh b/tests/misc-tests/033-filename-length-limit/test.sh
-new file mode 100755
-index 000000000000..7764ad9b584c
---- /dev/null
-+++ b/tests/misc-tests/033-filename-length-limit/test.sh
-@@ -0,0 +1,86 @@
-+#!/bin/bash
-+#
-+# test file name length limit settings
-+
-+source "$TEST_TOP/common"
-+
-+check_prereq mkfs.btrfs
-+check_prereq btrfs
-+
-+setup_root_helper
-+
-+prepare_test_dev
-+run_check "$TOP/mkfs.btrfs" -f "$TEST_DEV"
-+run_check_mount_test_dev
-+run_check $SUDO_HELPER chmod a+rw "$TEST_MNT"
-+
-+cd "$TEST_MNT"
-+
-+longname=\
-+0123456789\
-+0123456789\
-+0123456789\
-+0123456789\
-+0123456789\
-+\
-+0123456789\
-+0123456789\
-+0123456789\
-+0123456789\
-+0123456789\
-+\
-+0123456789\
-+0123456789\
-+0123456789\
-+0123456789\
-+0123456789\
-+\
-+0123456789\
-+0123456789\
-+0123456789\
-+0123456789\
-+0123456789\
-+\
-+0123456789\
-+0123456789\
-+0123456789\
-+0123456789\
-+0123456789\
-+\
-+01234
-+
-+#
-+# subvolume name length limit test
-+#
-+
-+# short name test
-+run_check $SUDO_HELPER "$TOP/btrfs" subvolume create aaa
-+# 255
-+run_check $SUDO_HELPER "$TOP/btrfs" subvolume create "$longname"
-+# 256, must fail
-+run_mustfail "name 256 bytes long succeeded" \
-+	$SUDO_HELPER "$TOP/btrfs" subvolume create "$longname"5
-+# 255*2, must fail
-+run_mustfail "name 2 * 255 bytes long succeeded" \
-+	$SUDO_HELPER "$TOP/btrfs" subvolume create "$longname$longname"
-+
-+#
-+# snapshot name length limit test
-+#
-+
-+run_check $SUDO_HELPER mkdir snaps
-+
-+# short name test
-+run_check $SUDO_HELPER "$TOP/btrfs" subvolume snapshot aaa snaps/bbb
-+# 255
-+run_check $SUDO_HELPER "$TOP/btrfs" subvolume snapshot aaa snaps/"$longname"
-+# 256, must fail
-+run_mustfail "name 256 bytes long succeeded" \
-+	$SUDO_HELPER "$TOP/btrfs" subvolume snapshot aaa snaps/"$longname"5
-+# 255*2, must fail
-+run_mustfail "name 2 * 255 bytes long succeeded" \
-+	$SUDO_HELPER "$TOP/btrfs" subvolume snapshot aaa snaps/"$longname$longname"
-+
-+cd ..
-+
-+run_check_umount_test_dev
+diff --git a/ctree.h b/ctree.h
+index 2a2437070ef9..541055a335c2 100644
+--- a/ctree.h
++++ b/ctree.h
+@@ -2710,10 +2710,11 @@ int btrfs_insert_inode(struct btrfs_trans_handle *trans, struct btrfs_root
+ int btrfs_lookup_inode(struct btrfs_trans_handle *trans, struct btrfs_root
+ 		       *root, struct btrfs_path *path,
+ 		       struct btrfs_key *location, int mod);
+-struct btrfs_inode_extref *btrfs_lookup_inode_extref(struct btrfs_trans_handle
+-		*trans, struct btrfs_path *path, struct btrfs_root *root,
+-		u64 ino, u64 parent_ino, u64 index, const char *name,
+-		int namelen, int ins_len);
++struct btrfs_inode_extref *
++btrfs_lookup_inode_extref(struct btrfs_trans_handle *trans,
++			  struct btrfs_root *root, struct btrfs_path *path,
++			  const char *name, int namelen, u64 ino,
++			  u64 parent_ino, int ins_len);
+ int btrfs_del_inode_extref(struct btrfs_trans_handle *trans,
+ 			   struct btrfs_root *root,
+ 			   const char *name, int name_len,
+diff --git a/inode-item.c b/inode-item.c
+index 1cc106670cd4..ca0052bc2f87 100644
+--- a/inode-item.c
++++ b/inode-item.c
+@@ -227,10 +227,11 @@ static int btrfs_find_name_in_ext_backref(struct btrfs_path *path,
+ 	return 0;
+ }
+ 
+-struct btrfs_inode_extref *btrfs_lookup_inode_extref(struct btrfs_trans_handle
+-		*trans, struct btrfs_path *path, struct btrfs_root *root,
+-		u64 ino, u64 parent_ino, u64 index, const char *name,
+-		int namelen, int ins_len)
++struct btrfs_inode_extref *
++btrfs_lookup_inode_extref(struct btrfs_trans_handle *trans,
++			  struct btrfs_root *root, struct btrfs_path *path,
++			  const char *name, int namelen, u64 ino,
++			  u64 parent_ino, int ins_len)
+ {
+ 	struct btrfs_key key;
+ 	struct btrfs_inode_extref *extref;
 -- 
-2.18.0
+2.17.1

@@ -1,124 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:56548 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727625AbeIGBzo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 6 Sep 2018 21:55:44 -0400
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 22AECAE39
-        for <linux-btrfs@vger.kernel.org>; Thu,  6 Sep 2018 21:18:22 +0000 (UTC)
-From: jeffm@suse.com
+Received: from userp2130.oracle.com ([156.151.31.86]:37922 "EHLO
+        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728550AbeIRFnJ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 18 Sep 2018 01:43:09 -0400
+Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
+        by userp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w8I097Zq005931
+        for <linux-btrfs@vger.kernel.org>; Tue, 18 Sep 2018 00:13:22 GMT
+Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
+        by userp2130.oracle.com with ESMTP id 2mgsgthc2f-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Tue, 18 Sep 2018 00:13:21 +0000
+Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
+        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w8I0DLnf018686
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Tue, 18 Sep 2018 00:13:21 GMT
+Received: from abhmp0017.oracle.com (abhmp0017.oracle.com [141.146.116.23])
+        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w8I0DLT8013587
+        for <linux-btrfs@vger.kernel.org>; Tue, 18 Sep 2018 00:13:21 GMT
 To: linux-btrfs@vger.kernel.org
-Cc: Jeff Mahoney <jeffm@suse.com>
-Subject: [PATCH 3/3] btrfs: keep trim from interfering with transaction commits
-Date: Thu,  6 Sep 2018 17:18:16 -0400
-Message-Id: <20180906211816.12121-4-jeffm@suse.com>
-In-Reply-To: <20180906211816.12121-1-jeffm@suse.com>
-References: <20180906211816.12121-1-jeffm@suse.com>
+From: "sunny.s.zhang" <sunny.s.zhang@oracle.com>
+Subject: can anyone receive this message
+Message-ID: <91e5d4d5-7867-ab63-e2a3-f554bcc3fa5a@oracle.com>
+Date: Tue, 18 Sep 2018 08:13:01 +0800
+MIME-Version: 1.0
+Content-Type: text/plain; charset=gbk; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Jeff Mahoney <jeffm@suse.com>
+Hi All,
 
-Commit 499f377f49f08 (btrfs: iterate over unused chunk space in FITRIM)
-fixed free space trimming, but introduced latency when it was running.
-This is due to it pinning the transaction using both a incremented
-refcount and holding the commit root sem for the duration of a single
-trim operation.
+Can anyone receive this message? I found i can receive message from the 
+mail list, but can't receive message that send by myself.
 
-This was to ensure safety but it's unnecessary.  We already hold the the
-chunk mutex so we know that the chunk we're using can't be allocated
-while we're trimming it.
+Thanks,
 
-In order to check against chunks allocated already in this transaction,
-we need to check the pending chunks list.  To to that safely without
-joining the transaction (or attaching than then having to commit it) we
-need to ensure that the dev root's commit root doesn't change underneath
-us and the pending chunk lists stays around until we're done with it.
-
-We can ensure the former by holding the commit root sem and the latter
-by pinning the transaction.  We do this now, but the critical section
-covers the trim operation itself and we don't need to do that.
-
-This patch moves the pinning and unpinning logic into helpers and
-unpins the transaction after performing the search and check for
-pending chunks.
-
-Limiting the critical section of the transaction pinning improves
-the latency substantially on slower storage (e.g. image files over NFS).
-
-Fixes: 499f377f49f08 (btrfs: iterate over unused chunk space in FITRIM
-Signed-off-by: Jeff Mahoney <jeffm@suse.com>
----
- fs/btrfs/extent-tree.c | 25 +++++++++++++++++--------
- 1 file changed, 17 insertions(+), 8 deletions(-)
-
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 92e5e9fd9bdd..8dc8e090667c 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -10870,14 +10870,16 @@ int btrfs_error_unpin_extent_range(struct btrfs_fs_info *fs_info,
-  * We don't want a transaction for this since the discard may take a
-  * substantial amount of time.  We don't require that a transaction be
-  * running, but we do need to take a running transaction into account
-- * to ensure that we're not discarding chunks that were released in
-- * the current transaction.
-+ * to ensure that we're not discarding chunks that were released or
-+ * allocated in the current transaction.
-  *
-  * Holding the chunks lock will prevent other threads from allocating
-  * or releasing chunks, but it won't prevent a running transaction
-  * from committing and releasing the memory that the pending chunks
-  * list head uses.  For that, we need to take a reference to the
-- * transaction.
-+ * transaction and hold the commit root sem.  We only need to hold
-+ * it while performing the free space search since we have already
-+ * held back allocations.
-  */
- static int btrfs_trim_free_extents(struct btrfs_device *device,
- 				   u64 minlen, u64 *trimmed)
-@@ -10908,9 +10910,13 @@ static int btrfs_trim_free_extents(struct btrfs_device *device,
- 
- 		ret = mutex_lock_interruptible(&fs_info->chunk_mutex);
- 		if (ret)
--			return ret;
-+			break;
- 
--		down_read(&fs_info->commit_root_sem);
-+		ret = down_read_killable(&fs_info->commit_root_sem);
-+		if (ret) {
-+			mutex_unlock(&fs_info->chunk_mutex);
-+			break;
-+		}
- 
- 		spin_lock(&fs_info->trans_lock);
- 		trans = fs_info->running_transaction;
-@@ -10918,13 +10924,17 @@ static int btrfs_trim_free_extents(struct btrfs_device *device,
- 			refcount_inc(&trans->use_count);
- 		spin_unlock(&fs_info->trans_lock);
- 
-+		if (!trans)
-+			up_read(&fs_info->commit_root_sem);
-+
- 		ret = find_free_dev_extent_start(trans, device, minlen, start,
- 						 &start, &len);
--		if (trans)
-+		if (trans) {
-+			up_read(&fs_info->commit_root_sem);
- 			btrfs_put_transaction(trans);
-+		}
- 
- 		if (ret) {
--			up_read(&fs_info->commit_root_sem);
- 			mutex_unlock(&fs_info->chunk_mutex);
- 			if (ret == -ENOSPC)
- 				ret = 0;
-@@ -10932,7 +10942,6 @@ static int btrfs_trim_free_extents(struct btrfs_device *device,
- 		}
- 
- 		ret = btrfs_issue_discard(device->bdev, start, len, &bytes);
--		up_read(&fs_info->commit_root_sem);
- 		mutex_unlock(&fs_info->chunk_mutex);
- 
- 		if (ret)
--- 
-2.12.3
+Sunny

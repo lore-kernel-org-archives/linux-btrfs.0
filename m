@@ -1,87 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:36144 "EHLO
-        frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1729946AbeISAQV (ORCPT
+Received: from mail-lj1-f177.google.com ([209.85.208.177]:42145 "EHLO
+        mail-lj1-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727140AbeISA0O (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 18 Sep 2018 20:16:21 -0400
-Date: Tue, 18 Sep 2018 18:42:25 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: "Gervais, Francois" <FGervais@distech-controls.com>
-Cc: Andrei Borzenkov <arvidjaar@gmail.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs receive incremental stream on another uuid
-Message-ID: <20180918184225.GB5429@carfax.org.uk>
-References: <BN6PR01MB2531F06B0557C31005C5E6E7F31D0@BN6PR01MB2531.prod.exchangelabs.com>
- <eeba538c-bcc1-8f70-c9b7-b277eec57b36@gmail.com>
- <BN6PR01MB253106EF09795A3F64C61AC8F31D0@BN6PR01MB2531.prod.exchangelabs.com>
+        Tue, 18 Sep 2018 20:26:14 -0400
+Received: by mail-lj1-f177.google.com with SMTP id f1-v6so2711845ljc.9
+        for <linux-btrfs@vger.kernel.org>; Tue, 18 Sep 2018 11:52:18 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-        protocol="application/pgp-signature"; boundary="NDin8bjvE/0mNLFQ"
-In-Reply-To: <BN6PR01MB253106EF09795A3F64C61AC8F31D0@BN6PR01MB2531.prod.exchangelabs.com>
+In-Reply-To: <406ded26-bcef-ce8c-36e4-1b25bbb36768@libero.it>
+References: <CAJCQCtRyY=_qPTkBkMCs9HCNMvEHJCeFJ_=eCK_BGKgWLHotXA@mail.gmail.com>
+ <CAJCQCtTw9=A7BS-eZTy0rRJ1V0+=tUY5c43rvGg5ieY4EkdWZg@mail.gmail.com> <406ded26-bcef-ce8c-36e4-1b25bbb36768@libero.it>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Tue, 18 Sep 2018 12:52:16 -0600
+Message-ID: <CAJCQCtRsox-QC2xkmpuTynHM6+MjQHCff2bEy3659FNQ5YN1oA@mail.gmail.com>
+Subject: Re: GRUB writing to grubenv outside of kernel fs code
+To: Goffredo Baroncelli <kreijack@inwind.it>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Tue, Sep 18, 2018 at 11:15 AM, Goffredo Baroncelli
+<kreijack@libero.it> wrote:
+> On 18/09/2018 06.21, Chris Murphy wrote:
+>> b. The bootloader code, would have to have sophisticated enough Btrfs
+>> knowledge to know if the grubenv has been reflinked or snapshot,
+>> because even if +C, it may not be valid to overwrite, and COW must
+>> still happen, and there's no way the code in GRUB can do full blow COW
+>> and update a bunch of metadata.
+>
+> And what if GRUB ignore the possibility of COWing and overwrite the data ? Is it a so big problem that the data is changed in all the snapshots ?
+> It would be interested if the same problem happens for a swap file.....
 
---NDin8bjvE/0mNLFQ
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+I think it's an abomination :-) It totally perverts the idea of
+reflinks and snapshots and blurs the line between domains. Is it a
+user file or not and are these user space commands or not and are they
+reliable or do they have exceptions?
 
-On Tue, Sep 18, 2018 at 06:28:37PM +0000, Gervais, Francois wrote:
-> > No. It is already possible (by setting received UUID); it should not be
-> made too open to easy abuse.
-> 
-> 
-> Do you mean edit the UUID in the byte stream before btrfs receive?
+I have a boot subvolume mounted at /boot, and this boot subvolume gets
+snapshot, and if GRUB can overwrite grubenv, it overwrites the
+purported GRUB state information in every one of those boots, going
+back maybe months, even when these are read only subvolumes.
 
-   No, there's an ioctl to change the received UUID of a
-subvolume. It's used by receive, at the very end of the receive
-operation.
+I think it's a problem, and near as I can tell it'll be a problem for
+all kinds of complex storage. I don't see how the bootloader itself
+can do an overwrite onto raid5 or raid6. That's certainly supported by
+GRUB for reading, but is the bootloader overwrite of gruvenv going to
+recompute parity and write to multiple devices? Eek!
 
-   Messing around in this area is basically a recipe for ending up
-with a half-completed send/receive full of broken data because the
-receiving subvolume isn't quite as identical as you thought. It
-enforces the rules for a reason.
-
-   Now, it's possible to modify the send stream and the logic around
-it a bit to support a number of additional modes of operation
-(bidirectional send, for example), but that's queued up waiting for
-(a) a definitive list of send stream format changes, and (b) David's
-bandwidth to put them together in one patch set.
-
-   If you want to see more on the underlying UUID model, and how it
-could be (ab)used and modified, there's a write-up here, in a thread
-on pretty much exactly the same proposal that you've just made:
-
-https://www.spinics.net/lists/linux-btrfs/msg44089.html
-
-   Hugo.
 
 -- 
-Hugo Mills             | Great films about cricket: Monster's No-Ball
-hugo@... carfax.org.uk |
-http://carfax.org.uk/  |
-PGP: E2AB1DE4          |
-
---NDin8bjvE/0mNLFQ
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJboUcRAAoJEFheFHXiqx3ky0MP/jjI73keRZJViXfe8z5GzAqS
-RKK1L83ZFSZm3EmqvH9m3WQeKmJ8tWyePT9xg94VOz9FF0prLy9KEgW6ADt+lzfk
-8gsIFJ+L6Q1rGk/xmXIYJH/DLA+DiCRaE2MJtwyUsVtTg4ix2NqKyvQ7iOAQVqhB
-Grrl3DEjiVfIFV/q2N8cdsAec8LjaQIbQkqpihvpFV8XRgZRoj1BoMRLSR5sGbm3
-HH5UBhJOUYK0VVulEkQYXz9kQuiGnGwDlfYGpGtGuJAmQzZFYKXzzcdyqJigAZo/
-dKV+EkvmuO7pmy9YEqO6HBl67x5+/YTnq0GeYwbRDROXoYEI6WupZSTEObv/Ia0/
-nOEpGfEjCcW27IKMvsJ5A+uWqwOlK3Jebk+XwF8/s8SgzMh0YWaBscpkrjFGYjH0
-IcdnnYNmfm0H5v9M/cChec+C6dtUryTlN6Z7gMcI6g2GwlS9vZa1LxqltKKyoc+X
-gWukvFHuPrM+sVoF83JjTFjIeDaviSnzeDg9VVz2Y08EId06seHHcvarYWvfbj46
-KCFu44p3GID+VxyRMwC/BM2sq+MTBqD81ydrtfM8tnWf3WqUqOp0yL9WufKo/q7i
-zWIQeNxOZvS9RxfPoymX0vUSSZhfLh+EuaxWfFQB+wcy8cIbfx/64iQYlEtYpC91
-vm3B4MNjL4ytgnpDv5AI
-=XkSJ
------END PGP SIGNATURE-----
-
---NDin8bjvE/0mNLFQ--
+Chris Murphy

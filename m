@@ -1,56 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qt0-f194.google.com ([209.85.216.194]:35439 "EHLO
-        mail-qt0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728605AbeISAsr (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 18 Sep 2018 20:48:47 -0400
-Received: by mail-qt0-f194.google.com with SMTP id j7-v6so2816905qtp.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 18 Sep 2018 12:14:47 -0700 (PDT)
+Received: from smtp-33-i6.italiaonline.it ([213.209.14.33]:40402 "EHLO
+        libero.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1727660AbeISAxV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 18 Sep 2018 20:53:21 -0400
+Reply-To: kreijack@inwind.it
 Subject: Re: GRUB writing to grubenv outside of kernel fs code
 To: Chris Murphy <lists@colorremedies.com>
-Cc: Andrei Borzenkov <arvidjaar@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 References: <CAJCQCtRyY=_qPTkBkMCs9HCNMvEHJCeFJ_=eCK_BGKgWLHotXA@mail.gmail.com>
  <CAJCQCtTw9=A7BS-eZTy0rRJ1V0+=tUY5c43rvGg5ieY4EkdWZg@mail.gmail.com>
- <f0f6dfbd-bdb5-eaa7-ba7b-f6f65ceb8e87@gmail.com>
- <CAJCQCtRH+WHFXMkJ0zvftBQpg5v=qUAA7ASadivcsC39GvwexQ@mail.gmail.com>
- <eef7ba59-ba4f-c990-4556-f0317a10ffd7@gmail.com>
- <53242fa3-0d66-b7a0-ba78-5d95af54f81b@gmail.com>
- <CAJCQCtQJsYVNaWZAuMhBC6xc0VSkF-Lutz_2vzxTPb_RkfvA=Q@mail.gmail.com>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <08cf5be2-9f6d-6430-7b49-0fcdbadd371b@gmail.com>
-Date: Tue, 18 Sep 2018 15:14:44 -0400
+ <406ded26-bcef-ce8c-36e4-1b25bbb36768@libero.it>
+ <CAJCQCtRsox-QC2xkmpuTynHM6+MjQHCff2bEy3659FNQ5YN1oA@mail.gmail.com>
+From: Goffredo Baroncelli <kreijack@inwind.it>
+Message-ID: <5bf40cee-ca21-da82-c522-69766241d735@inwind.it>
+Date: Tue, 18 Sep 2018 21:11:08 +0200
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtQJsYVNaWZAuMhBC6xc0VSkF-Lutz_2vzxTPb_RkfvA=Q@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <CAJCQCtRsox-QC2xkmpuTynHM6+MjQHCff2bEy3659FNQ5YN1oA@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2018-09-18 15:00, Chris Murphy wrote:
-> On Tue, Sep 18, 2018 at 12:25 PM, Austin S. Hemmelgarn
-> <ahferroin7@gmail.com> wrote:
-> 
->> It actually is independent of /boot already.  I've got it running just fine
->> on my laptop off of the EFI system partition (which is independent of my
->> /boot partition), and thus have no issues with handling of the grubenv file.
->> The problem is that all the big distros assume you want it in /boot, so they
->> have no option for putting it anywhere else.
+On 18/09/2018 20.52, Chris Murphy wrote:
+> On Tue, Sep 18, 2018 at 11:15 AM, Goffredo Baroncelli
+> <kreijack@libero.it> wrote:
+>> On 18/09/2018 06.21, Chris Murphy wrote:
+>>> b. The bootloader code, would have to have sophisticated enough Btrfs
+>>> knowledge to know if the grubenv has been reflinked or snapshot,
+>>> because even if +C, it may not be valid to overwrite, and COW must
+>>> still happen, and there's no way the code in GRUB can do full blow COW
+>>> and update a bunch of metadata.
 >>
->> Actually installing it elsewhere is not hard though, you just pass
->> `--boot-directory=/wherever` to the `grub-install` script and turn off your
->> distributions automatic reinstall mechanism so it doesn't get screwed up by
->> the package manager when the GRUB package gets updated. You can also make
->> `/boot/grub` a symbolic link pointing to the real GRUB directory, so that
->> you don't have to pass any extra options to tools like grub-reboot or
->> grub-set-default.
+>> And what if GRUB ignore the possibility of COWing and overwrite the data ? Is it a so big problem that the data is changed in all the snapshots ?
+>> It would be interested if the same problem happens for a swap file.....
 > 
-> This is how Fedora builds their signed grubx64.efi to behave. But you
-> cannot ever run grub-install on a Secure Boot enabled computer, or you
-> now have to learn all about signing your own binaries. I don't even
-> like doing that, let alone saner users.
+> I think it's an abomination :-) It totally perverts the idea of
+> reflinks and snapshots and blurs the line between domains. 
+
+:-)
+
+> Is it a
+> user file or not and are these user space commands or not and are they
+> reliable or do they have exceptions?
+
+On this statement I fully agree, on the one below a bit less
 > 
-> So for those distros that support Secure Boot, in practice you're
-> stuck with the behavior of their prebuilt GRUB binary that goes on the
-> ESP.
-Agreed, but that avoids the issues we're talking about here completely 
-because the grubenv file ends up on the ESP too.
+> I have a boot subvolume mounted at /boot, and this boot subvolume gets
+> snapshot, and if GRUB can overwrite grubenv, it overwrites the
+> purported GRUB state information in every one of those boots, going
+> back maybe months, even when these are read only subvolumes.
+
+Also the 'suse' behavior have the same issue: storing the data somewhere in the storage reserved area suffers of the same problem. We should be realistic, without implement a full btrfs filesystem engine, it is near impossible to have a grubenv file visible by the filesystem and snapshot-able.
+
+
+> 
+> I think it's a problem, and near as I can tell it'll be a problem for
+> all kinds of complex storage. I don't see how the bootloader itself
+> can do an overwrite onto raid5 or raid6. 
+
+
+> That's certainly supported by GRUB for reading
+Not yet, I am working on that [1]
+
+> but is the bootloader overwrite of gruvenv going to
+> recompute parity and write to multiple devices? Eek!
+
+Recompute the parity should not be a big deal. Updating all the (b)trees would be a too complex goal.
+> 
+> 
+
+[1] http://lists.gnu.org/archive/html/grub-devel/2018-06/msg00064.html
+-- 
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

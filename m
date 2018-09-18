@@ -1,51 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mslow2.mail.gandi.net ([217.70.178.242]:47060 "EHLO
-        mslow2.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727697AbeIUSfb (ORCPT
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:48803 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1725859AbeIRGsU (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 21 Sep 2018 14:35:31 -0400
-Received: from relay10.mail.gandi.net (unknown [217.70.178.230])
-        by mslow2.mail.gandi.net (Postfix) with ESMTP id 4E6523AA541
-        for <linux-btrfs@vger.kernel.org>; Fri, 21 Sep 2018 14:30:39 +0200 (CEST)
-Received: from localhost (wtsc4b153.netvigator.com [219.76.24.153])
-        (Authenticated sender: leonard@lausen.nl)
-        by relay10.mail.gandi.net (Postfix) with ESMTPSA id 0A08424000D
-        for <linux-btrfs@vger.kernel.org>; Fri, 21 Sep 2018 12:30:36 +0000 (UTC)
-From: Leonard Lausen <leonard@lausen.nl>
-To: linux-btrfs@vger.kernel.org
-Subject: btrfs send receive ERROR: chown failed: No such file or directory
-Date: Fri, 21 Sep 2018 12:30:32 +0000
-Message-ID: <87a7obowwn.fsf@lausen.nl>
+        Tue, 18 Sep 2018 02:48:20 -0400
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
+        by cn.fujitsu.com (Postfix) with ESMTP id 054194B41ED3
+        for <linux-btrfs@vger.kernel.org>; Tue, 18 Sep 2018 09:18:16 +0800 (CST)
+From: Su Yanjun <suyj.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Su Yanjun <suyj.fnst@cn.fujitsu.com>
+Subject: [PATCH v2] btrfs-progs: change filename limit to 255 when creating subvolume
+Date: Tue, 18 Sep 2018 09:17:54 +0800
+Message-ID: <20180918011754.7981-1-suyj.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello!
+Modify the file name length limit to meet the Linux naming convention.
+In addition, the file name length is always bigger than 0, no need to
+compare with 0 again.
 
-I observe the following issue with btrfs send | btrfs receive in a setup
-with 2 machines and 3 btrfs file-systems. All machines run Linux 4.18.9.
-Machine 1 runs btrfs-progs 4.17.1, machine 2 runs btrfs-progs 4.17 (via
-https://packages.debian.org/stretch-backports/btrfs-progs).
+Changelog:
+v2:
+ Fix the same problem in creating snapshot routine.
 
-1) Machine 1 takes regular snapshots and sends them to machine 2. btrfs 
-   btrfs send ... | ssh user@machine2 "btrfs receive /path1"
-2) Machine 2 backups all subvolumes stored at /path1 to a second
-   independent btrfs filesystem. Let /path1/rootsnapshot be the first
-   snapshot stored at /path1 (ie. it has no Parent UUID). Let
-   /path1/incrementalsnapshot be a snapshot that has /path1/rootsnapshot
-   as a parent. Then
-   btrfs send -v /path1/rootsnapshot | btrfs receive /path2
-   works without issues, but
-   btrfs send -v -p /path1/rootsnapshot /path1/incrementalsnapshot | btrfs receive /path2
-   fails as follows:
-   ERROR: chown o257-4639416-0 failed: No such file or directory
+Issue: #145
+Signed-off-by: Su Yanjun <suyj.fnst@cn.fujitsu.com>
+---
 
-No error is shown in dmesg. /path1 and /path2 denote two independent
-btrfs filesystems.
+v2: Also fix the same problem in creating snapshot routine.
 
-Note that there was no issue with transferring incrementalsnapshot from
-machine 1 to machine 2. No error is shown in dmesg.
+ cmds-subvolume.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-Best regards
-Leonard
+diff --git a/cmds-subvolume.c b/cmds-subvolume.c
+index e7a884af1f5d..5a446c1ae2b4 100644
+--- a/cmds-subvolume.c
++++ b/cmds-subvolume.c
+@@ -155,7 +155,7 @@ static int cmd_subvol_create(int argc, char **argv)
+ 	}
+ 
+ 	len = strlen(newname);
+-	if (len == 0 || len >= BTRFS_VOL_NAME_MAX) {
++	if (len > BTRFS_VOL_NAME_MAX) {
+ 		error("subvolume name too long: %s", newname);
+ 		goto out;
+ 	}
+@@ -715,7 +715,7 @@ static int cmd_subvol_snapshot(int argc, char **argv)
+ 	}
+ 
+ 	len = strlen(newname);
+-	if (len == 0 || len >= BTRFS_VOL_NAME_MAX) {
++	if (len > BTRFS_VOL_NAME_MAX) {
+ 		error("snapshot name too long '%s'", newname);
+ 		goto out;
+ 	}
+-- 
+2.18.0

@@ -1,228 +1,131 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.21]:38839 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727229AbeIRNrj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 18 Sep 2018 09:47:39 -0400
-Subject: Re: [PATCH v3 5/7] btrfs-progs: lowmem: do missing check of last item
- after check_inode_item()
-To: Su Yue <suy.fnst@cn.fujitsu.com>, Su Yue <Damenly_Su@gmx.com>,
-        linux-btrfs@vger.kernel.org
-References: <20180917072852.25831-1-suy.fnst@cn.fujitsu.com>
- <20180917072852.25831-6-suy.fnst@cn.fujitsu.com>
- <e4ec3fbd-71c3-c59c-1915-0419f06a6c26@gmx.com>
- <c7f2ed73-94d2-23d8-7503-0611469af54c@gmx.com>
- <7a21da5f-efb2-5a17-51ca-2787e52b5bde@gmx.com>
- <7c713106-36a9-95a3-3648-80e67d4f5ee6@cn.fujitsu.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <85c57362-2e1b-3d07-edd5-74d0750c8be3@gmx.com>
-Date: Tue, 18 Sep 2018 16:15:57 +0800
+Received: from aserp2120.oracle.com ([141.146.126.78]:47228 "EHLO
+        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726685AbeIROpj (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 18 Sep 2018 10:45:39 -0400
+Subject: Re: btrfs panic problem
+To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
+References: <2cce0d8b-0958-9fb9-bb88-09fbfbf94c9e@oracle.com>
+ <pan$2c938$bb350250$d5f6ae11$13519ef4@cox.net>
+From: "sunny.s.zhang" <sunny.s.zhang@oracle.com>
+Message-ID: <5a8846b4-ce70-be4b-f024-87987009ed8a@oracle.com>
+Date: Tue, 18 Sep 2018 17:13:32 +0800
 MIME-Version: 1.0
-In-Reply-To: <7c713106-36a9-95a3-3648-80e67d4f5ee6@cn.fujitsu.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <pan$2c938$bb350250$d5f6ae11$13519ef4@cox.net>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Add Junxiao
 
 
-On 2018/9/18 下午4:01, Su Yue wrote:
-> 
-> 
-> On 9/18/18 1:32 PM, Qu Wenruo wrote:
+在 2018年09月18日 13:05, Duncan 写道:
+> sunny.s.zhang posted on Tue, 18 Sep 2018 08:28:14 +0800 as excerpted:
+>
+>> My OS(4.1.12) panic in kmem_cache_alloc, which is called by
+>> btrfs_get_or_create_delayed_node.
 >>
->>
->> On 2018/9/17 下午9:24, Su Yue wrote:
->>>
->>>
->>> On 2018/9/17 8:53 PM, Qu Wenruo wrote:
->>>>
->>>>
->>>> On 2018/9/17 下午3:28, Su Yue wrote:
->>>>> After call of check_inode_item(), path may point to the last unchecked
->>>>> slot of the leaf. The outer walk_up_tree() always treats the position
->>>>> as checked slot then skips to the next. The last item will never be
->>>>> checked.
->>>>>
->>>>> While checking backrefs, path passed to walk_up_tree() always
->>>>> points to a checked slot.
->>>>> While checking fs trees, path passed to walk_up_tree() always
->>>>> points to an unchecked slot.
->>>>
->>>> Can we unify this behavior?
->>>> I has considered in three ways:
->>> 1) Change logical of the process_one_leaf. After it returns, path
->>> points to the next slot checked.
->>> To unify it, we can use saved key but will cost one search_slot time
->>> during serval nodes(>=1). Or call btrfs_previous_item() after every time
->>> check_inode_items() returns.
->>>
->>> But why? why should we cost some time to swing the path. So I
->>> abandoned 1).
->>>
->>> 2) Change logical of the check_leaf_items(). What does the function
->>> is just traverse all items then returns, which seems quite natural.
->>> So I abandoned it.
->>
->> Well, this can also be interpreted as "it's a pretty good place to
->> change the behavior".
->>
->> IMHO, since check_leaf_items() are just really simple hub functions, it
->> will just need a btrfs_next_item() in its out: tag.
->>
-> After sometime thinking, sorry, the idea should not work as expected.
-> In fact, backrefs check and fs check walk a little differently.
-
-Just as discussed offline, unfortunately that's the case.
-
-> 
-> Backrefs check always do walk nodes one by one, never skip any nodes.
-> Fs check will try to skip shared nodes to speed up
-Exactly.
-
-> 
-> While checking backrefs with your idea,
-> If the tree has many levels.
-> Assume before calling btrfs_next_item:
-> path->slots[0] points to the one past of the last item.
-> path->slots[1] points to the last slot of nodes[1].
-> path->slots[2] points to the last slot of nodes[2].
-> path->slots[3] points to the one *before* last slot of nodes[3].
-> 
-> After btrfs_next_item():
-> path->slots[0] points to the first item of another leaf.
-> path->slots[1] points to the first item of another node.
-> path->slots[2] points to the first item of another node.
-> path->slots[3] points to the a slot of *old* nodes[3].
-
-These info is pretty useful, please consider include them in next version.
-
-It's not that obvious from the code.
-
-And now your patch makes sense.
-
-Thanks,
-Qu
-
-> 
-> Then walk_up_tree() is in, it thinks the slot is unchecked then
-> returns with *level=0. Then walk_down_tree() just walk from level
-> to leaf.
-> Backrefs of new nodes[1,2] will never be checked, the most
-> obvious negative effect is inaccurate account info.
-> Although we can do check is slot the first in walk_up_tree(),
-> it's a magic and worse than this patch.
-> 
-> Thanks,
-> Su
-> 
->> By that we can unify the behavior of them to all points to the next
->> *unchecked* slot.
->> And no need for the extra parameter.
->>
->> Thanks,
->> Qu
->>
->>>
->>>
->>> 3) It's what the patch does. The extra argument may seems strange,
->>> I preferred to this way.
->>>
->>> Maybe we can do something after check_leaf_items() returns, is it
->>> acceptable? I have no idea.
->>>
->>> Thanks,
->>> Su
->>>
->>>> E.g, always points to an unchecked slot.
->>>>
->>>> It would make things easier and no need for the extra parameter.
->>>>
->>>> Thanks,
->>>> Qu
->>>>
->>>>>
->>>>> Solution:
->>>>> Add an argument @is_checked to walk_up_tree() to decide whether
->>>>> to skip current slot.
->>>>>
->>>>> Fixes: 5e2dc770471b ("btrfs-progs: check: skip shared node or leaf
->>>>> check for low_memory mode")
->>>>> Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
->>>>> ---
->>>>>    check/mode-lowmem.c | 37 +++++++++++++++++++++++++++++++++----
->>>>>    1 file changed, 33 insertions(+), 4 deletions(-)
->>>>>
->>>>> diff --git a/check/mode-lowmem.c b/check/mode-lowmem.c
->>>>> index db44456fd85b..612e5e28e45b 100644
->>>>> --- a/check/mode-lowmem.c
->>>>> +++ b/check/mode-lowmem.c
->>>>> @@ -4597,22 +4597,38 @@ static int walk_down_tree(struct btrfs_root
->>>>> *root, struct btrfs_path *path,
->>>>>        return err;
->>>>>    }
->>>>>    +/*
->>>>> + * Walk up throuh the path. Make path point to next slot to be
->>>>> checked.
->>>>> + * walk_down_tree() should be called after this function.
->>>>> + *
->>>>> + * @root:    root of the tree
->>>>> + * @path:    will point to next slot to check for walk_down_tree()
->>>>> + * @level:    returns with level of next node to be checked
->>>>> + * @is_checked:    means is the current node checked or not
->>>>> + *        if false, the slot is unchecked, do not increase the slot
->>>>> + *        if true, means increase the slot of the current node
->>>>> + *
->>>>> + * Returns 0 means success.
->>>>> + * Returns >0 means the whole loop of walk up/down should be broken.
->>>>> + */
->>>>>    static int walk_up_tree(struct btrfs_root *root, struct btrfs_path
->>>>> *path,
->>>>> -            int *level)
->>>>> +            int *level, bool is_checked)
->>>>>    {
->>>>>        int i;
->>>>>        struct extent_buffer *leaf;
->>>>> +    int skip_cur =s_checked ? 1 : 0;
->>>>>          for (i =level; i < BTRFS_MAX_LEVEL - 1 && path->nodes[i];
->>>>> i++) {
->>>>>            leaf =ath->nodes[i];
->>>>> -        if (path->slots[i] + 1 < btrfs_header_nritems(leaf)) {
->>>>> -            path->slots[i]++;
->>>>> +        if (path->slots[i] + skip_cur < btrfs_header_nritems(leaf)) {
->>>>> +            path->slots[i] +=kip_cur;
->>>>>                *level =;
->>>>>                return 0;
->>>>>            }
->>>>>            free_extent_buffer(path->nodes[*level]);
->>>>>            path->nodes[*level] =ULL;
->>>>>            *level = + 1;
->>>>> +        skip_cur =;
->>>>>        }
->>>>>        return 1;
->>>>>    }
->>>>> @@ -4815,7 +4831,20 @@ static int check_btrfs_root(struct btrfs_root
->>>>> *root, int check_all)
->>>>>                break;
->>>>>            }
->>>>>    -        ret =alk_up_tree(root, &path, &level);
->>>>> +        /*
->>>>> +         * The logical of walk trees are shared between backrefs
->>>>> +         * check and fs trees check.
->>>>> +         * In checking backrefs(check_all is true), after
->>>>> +         * check_leaf_items() returns, path points to
->>>>> +         * last checked item.
->>>>> +         * In checking fs roots(check_all is false), after
->>>>> +         * process_one_leaf() returns, path points to unchecked item.
->>>>> +         *
->>>>> +         * walk_up_tree() is reponsible to make path point to next
->>>>> +         * slot to be checked, above case is handled in
->>>>> +         * walk_up_tree().
->>>>> +         */
->>>>> +        ret =alk_up_tree(root, &path, &level, check_all);
->>>>>            if (ret !=) {
->>>>>                /* Normal exit, reset ret to err */
->>>>>                ret =rr;
->>>>>
->>
->>
-> 
-> 
+>> I found that the freelist of the slub is wrong.
+> [Not a dev, just a btrfs list regular and user, myself.  But here's a
+> general btrfs list recommendations reply...]
+>
+> You appear to mean kernel 4.1.12 -- confirmed by the version reported in
+> the posted dump:  4.1.12-112.14.13.el6uek.x86_64
+>
+> OK, so from the perspective of this forward-development-focused list,
+> kernel 4.1 is pretty ancient history, but you do have a number of options.
+>
+> First let's consider the general situation.  Most people choose an
+> enterprise distro for supported stability, and that's certainly a valid
+> thing to want.  However, btrfs, while now reaching early maturity for the
+> basics (single device in single or dup mode, and multi-device in single/
+> raid0/1/10 modes, note that raid56 mode is newer and less mature),
+> remains under quite heavy development, and keeping reasonably current is
+> recommended for that reason.
+>
+> So you you chose an enterprise distro presumably to lock in supported
+> stability for several years, but you chose a filesystem, btrfs, that's
+> still under heavy development, with reasonably current kernels and
+> userspace recommended as tending to have the known bugs fixed.  There's a
+> bit of a conflict there, and the /general/ recommendation would thus be
+> to consider whether one or the other of those choices are inappropriate
+> for your use-case, because it's really quite likely that if you really
+> want the stability of an enterprise distro and kernel, that btrfs isn't
+> as stable a filesystem as you're likely to want to match with it.
+> Alternatively, if you want something newer to match the still under heavy
+> development btrfs, you very likely want a distro that's not focused on
+> years-old stability just for the sake of it.  One or the other is likely
+> to be a poor match for your needs, and choosing something else that's a
+> better match is likely to be a much better experience for you.
+>
+> But perhaps you do have reason to want to run the newer and not quite to
+> traditional enterprise-distro level stability btrfs, on an otherwise
+> older and very stable enterprise distro.  That's fine, provided you know
+> what you're getting yourself into, and are prepared to deal with it.
+>
+> In that case, for best support from the list, we'd recommend running one
+> of the latest two kernels in either the current or mainline LTS tracks.
+>
+> For current track, With 4.18 being the latest kernel, that'd be 4.18 or
+> 4.17, as available on kernel.org (tho 4.17 is already EOL, no further
+> releases, at 4.17.19).
+>
+> For mainline-LTS track, 4.14 and 4.9 are the latest two LTS series
+> kernels, tho IIRC 4.19 is scheduled to be this year's LTS (or was it 4.18
+> and it's just not out of normal stable range yet so not yet marked LTS?),
+> so it'll be coming up soon and 4.9 will then be dropping to third LTS
+> series and thus out of our best recommended range.  4.4 was the previous
+> LTS and while still in LTS support, is outside the two newest LTS series
+> that this list recommends.
+>
+> And of course 4.1 is older than 4.4, so as I said, in btrfs development
+> terms, it's quite ancient indeed... quite out of practical support range
+> here, tho of course we'll still try, but in many cases the first question
+> when any problem's reported is going to be whether it's reproducible on
+> something closer to current.
+>
+> But... you ARE on an enterprise kernel, likely on an enterprise distro,
+> and very possibly actually paying /them/ for support.  So you're not
+> without options if you prefer to stay with your supported enterprise
+> kernel.  If you're paying them for support, you might as well use it, and
+> of course of the very many fixes since 4.1, they know what they've
+> backported and what they haven't, so they're far better placed to provide
+> that support in any case.
+>
+> Or, given what you posted, you appear to be reasonably able to do at
+> least limited kernel-dev-level analysis yourself.  Given that, you're
+> already reasonably well placed to simply decide to stick with what you
+> have and take the support you can get, diving into things yourself if
+> necessary.
+>
+>
+> So those are your kernel options.  What about userspace btrfs-progs?
+>
+> Generally speaking, while the filesystem's running, it's the kernel code
+> doing most of the work.  If you have old userspace, it simply means you
+> can't take advantage of some of the newer features as the old userspace
+> doesn't know how to call for them.
+>
+> But the situation changes as soon as you have problems and can't mount,
+> because it's userspace code that runs to try to fix that sort of problem,
+> or failing that, it's userspace code that btrfs restore runs to try to
+> grab what files can be grabbed off of the unmountable filesystem.
+>
+> So for routine operation, it's no big deal if userspace is a bit old, at
+> least as long as it's new enough to have all the newer command formats,
+> etc, that you need, and for comparing against others when posted.  But
+> once things go bad on you, you really want the newest btrfs-progs in
+> ordered to give you the best chance at either fixing things, or worst-
+> case, at least retrieving the files off the dead filesystem.  So using
+> the older distro btrfs-progs for routine running should be fine, but
+> unless your backups are complete and frequent enough that if something
+> goes wrong it's easiest to simply blow the bad version away with a fresh
+> mkfs and start over, you'll probably want at least a reasonably current
+> btrfs-progs on your rescue media at least.  Since the userspace version
+> numbers are synced to the kernel cycle, a good rule of thumb is keep your
+> btrfs-progs version to at least that of the oldest recommended LTS kernel
+> version, as well, so you'd want at least btrfs-progs 4.9 on your rescue
+> media, for now, and 4.14, coming up, since when the new kernel goes LTS
+> that'll displace 4.9 and 4.14 will then be the second-back LTS.
+>

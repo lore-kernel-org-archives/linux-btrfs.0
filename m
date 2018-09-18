@@ -1,47 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lj1-f179.google.com ([209.85.208.179]:46474 "EHLO
-        mail-lj1-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727563AbeISAbR (ORCPT
+Received: from mail-lf1-f67.google.com ([209.85.167.67]:33171 "EHLO
+        mail-lf1-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728605AbeISAe3 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 18 Sep 2018 20:31:17 -0400
-Received: by mail-lj1-f179.google.com with SMTP id 203-v6so2725696ljj.13
-        for <linux-btrfs@vger.kernel.org>; Tue, 18 Sep 2018 11:57:20 -0700 (PDT)
+        Tue, 18 Sep 2018 20:34:29 -0400
+Received: by mail-lf1-f67.google.com with SMTP id m26-v6so2873336lfb.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 18 Sep 2018 12:00:31 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <eef7ba59-ba4f-c990-4556-f0317a10ffd7@gmail.com>
+In-Reply-To: <53242fa3-0d66-b7a0-ba78-5d95af54f81b@gmail.com>
 References: <CAJCQCtRyY=_qPTkBkMCs9HCNMvEHJCeFJ_=eCK_BGKgWLHotXA@mail.gmail.com>
  <CAJCQCtTw9=A7BS-eZTy0rRJ1V0+=tUY5c43rvGg5ieY4EkdWZg@mail.gmail.com>
  <f0f6dfbd-bdb5-eaa7-ba7b-f6f65ceb8e87@gmail.com> <CAJCQCtRH+WHFXMkJ0zvftBQpg5v=qUAA7ASadivcsC39GvwexQ@mail.gmail.com>
- <eef7ba59-ba4f-c990-4556-f0317a10ffd7@gmail.com>
+ <eef7ba59-ba4f-c990-4556-f0317a10ffd7@gmail.com> <53242fa3-0d66-b7a0-ba78-5d95af54f81b@gmail.com>
 From: Chris Murphy <lists@colorremedies.com>
-Date: Tue, 18 Sep 2018 12:57:18 -0600
-Message-ID: <CAJCQCtRm-1Briye1-h7xyzT8VOK_kVOD7eJRnq1CnXA8jk9suA@mail.gmail.com>
+Date: Tue, 18 Sep 2018 13:00:29 -0600
+Message-ID: <CAJCQCtQJsYVNaWZAuMhBC6xc0VSkF-Lutz_2vzxTPb_RkfvA=Q@mail.gmail.com>
 Subject: Re: GRUB writing to grubenv outside of kernel fs code
-To: Andrei Borzenkov <arvidjaar@gmail.com>
-Cc: Chris Murphy <lists@colorremedies.com>,
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Cc: Andrei Borzenkov <arvidjaar@gmail.com>,
+        Chris Murphy <lists@colorremedies.com>,
         Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Sep 18, 2018 at 12:16 PM, Andrei Borzenkov <arvidjaar@gmail.com> wrote:
-> 18.09.2018 08:37, Chris Murphy пишет:
+On Tue, Sep 18, 2018 at 12:25 PM, Austin S. Hemmelgarn
+<ahferroin7@gmail.com> wrote:
 
->> The patches aren't upstream yet? Will they be?
->>
+> It actually is independent of /boot already.  I've got it running just fine
+> on my laptop off of the EFI system partition (which is independent of my
+> /boot partition), and thus have no issues with handling of the grubenv file.
+> The problem is that all the big distros assume you want it in /boot, so they
+> have no option for putting it anywhere else.
 >
-> I do not know. Personally I think much easier is to make grub location
-> independent of /boot, allowing grub be installed in separate partition.
-> This automatically covers all other cases (like MD, LVM etc).
+> Actually installing it elsewhere is not hard though, you just pass
+> `--boot-directory=/wherever` to the `grub-install` script and turn off your
+> distributions automatic reinstall mechanism so it doesn't get screwed up by
+> the package manager when the GRUB package gets updated. You can also make
+> `/boot/grub` a symbolic link pointing to the real GRUB directory, so that
+> you don't have to pass any extra options to tools like grub-reboot or
+> grub-set-default.
 
-The only case where I'm aware of this happens is Fedora on UEFI where
-they write grubenv and grub.cfg on the FAT ESP. I'm pretty sure
-upstream expects grubenv and grub.cfg at /boot/grub and I haven't ever
-seen it elsewhere (except Fedora on UEFI).
+This is how Fedora builds their signed grubx64.efi to behave. But you
+cannot ever run grub-install on a Secure Boot enabled computer, or you
+now have to learn all about signing your own binaries. I don't even
+like doing that, let alone saner users.
 
-I'm not sure this is much easier. Yet another volume that would be
-persistently mounted? Where? A nested mount at /boot/grub? I'm not
-liking that at all. Even Windows and macOS have saner and simpler to
-understand booting methods than this.
+So for those distros that support Secure Boot, in practice you're
+stuck with the behavior of their prebuilt GRUB binary that goes on the
+ESP.
 
 
 -- 

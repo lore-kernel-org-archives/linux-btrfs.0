@@ -1,61 +1,126 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:48803 "EHLO
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:64618 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1725859AbeIRGsU (ORCPT
+        with ESMTP id S1729192AbeIRORA (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 18 Sep 2018 02:48:20 -0400
+        Tue, 18 Sep 2018 10:17:00 -0400
 Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
-        by cn.fujitsu.com (Postfix) with ESMTP id 054194B41ED3
-        for <linux-btrfs@vger.kernel.org>; Tue, 18 Sep 2018 09:18:16 +0800 (CST)
+        by cn.fujitsu.com (Postfix) with ESMTP id 2058B4B6EC8D
+        for <linux-btrfs@vger.kernel.org>; Tue, 18 Sep 2018 16:45:11 +0800 (CST)
 From: Su Yanjun <suyj.fnst@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Su Yanjun <suyj.fnst@cn.fujitsu.com>
-Subject: [PATCH v2] btrfs-progs: change filename limit to 255 when creating subvolume
-Date: Tue, 18 Sep 2018 09:17:54 +0800
-Message-ID: <20180918011754.7981-1-suyj.fnst@cn.fujitsu.com>
+Subject: [PATCH] btrfs-progs: tests: Add the testcase for subvolume name length limit test
+Date: Tue, 18 Sep 2018 16:44:48 +0800
+Message-ID: <20180918084448.14195-1-suyj.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Modify the file name length limit to meet the Linux naming convention.
-In addition, the file name length is always bigger than 0, no need to
-compare with 0 again.
+Total of three conditions are tested. One for short name, one with
+name length 255, the last one with more than 255.
 
-Changelog:
-v2:
- Fix the same problem in creating snapshot routine.
+This case should pass after commit
+'btrfs-progs: change filename limit to 255 when creating subvolume'.
 
-Issue: #145
 Signed-off-by: Su Yanjun <suyj.fnst@cn.fujitsu.com>
 ---
+ .../033-filename-length-limit/test.sh         | 86 +++++++++++++++++++
+ 1 file changed, 86 insertions(+)
+ create mode 100755 tests/misc-tests/033-filename-length-limit/test.sh
 
-v2: Also fix the same problem in creating snapshot routine.
-
- cmds-subvolume.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
-
-diff --git a/cmds-subvolume.c b/cmds-subvolume.c
-index e7a884af1f5d..5a446c1ae2b4 100644
---- a/cmds-subvolume.c
-+++ b/cmds-subvolume.c
-@@ -155,7 +155,7 @@ static int cmd_subvol_create(int argc, char **argv)
- 	}
- 
- 	len = strlen(newname);
--	if (len == 0 || len >= BTRFS_VOL_NAME_MAX) {
-+	if (len > BTRFS_VOL_NAME_MAX) {
- 		error("subvolume name too long: %s", newname);
- 		goto out;
- 	}
-@@ -715,7 +715,7 @@ static int cmd_subvol_snapshot(int argc, char **argv)
- 	}
- 
- 	len = strlen(newname);
--	if (len == 0 || len >= BTRFS_VOL_NAME_MAX) {
-+	if (len > BTRFS_VOL_NAME_MAX) {
- 		error("snapshot name too long '%s'", newname);
- 		goto out;
- 	}
+diff --git a/tests/misc-tests/033-filename-length-limit/test.sh b/tests/misc-tests/033-filename-length-limit/test.sh
+new file mode 100755
+index 000000000000..7764ad9b584c
+--- /dev/null
++++ b/tests/misc-tests/033-filename-length-limit/test.sh
+@@ -0,0 +1,86 @@
++#!/bin/bash
++#
++# test file name length limit settings
++
++source "$TEST_TOP/common"
++
++check_prereq mkfs.btrfs
++check_prereq btrfs
++
++setup_root_helper
++
++prepare_test_dev
++run_check "$TOP/mkfs.btrfs" -f "$TEST_DEV"
++run_check_mount_test_dev
++run_check $SUDO_HELPER chmod a+rw "$TEST_MNT"
++
++cd "$TEST_MNT"
++
++longname=\
++0123456789\
++0123456789\
++0123456789\
++0123456789\
++0123456789\
++\
++0123456789\
++0123456789\
++0123456789\
++0123456789\
++0123456789\
++\
++0123456789\
++0123456789\
++0123456789\
++0123456789\
++0123456789\
++\
++0123456789\
++0123456789\
++0123456789\
++0123456789\
++0123456789\
++\
++0123456789\
++0123456789\
++0123456789\
++0123456789\
++0123456789\
++\
++01234
++
++#
++# subvolume name length limit test
++#
++
++# short name test
++run_check $SUDO_HELPER "$TOP/btrfs" subvolume create aaa
++# 255
++run_check $SUDO_HELPER "$TOP/btrfs" subvolume create "$longname"
++# 256, must fail
++run_mustfail "name 256 bytes long succeeded" \
++	$SUDO_HELPER "$TOP/btrfs" subvolume create "$longname"5
++# 255*2, must fail
++run_mustfail "name 2 * 255 bytes long succeeded" \
++	$SUDO_HELPER "$TOP/btrfs" subvolume create "$longname$longname"
++
++#
++# snapshot name length limit test
++#
++
++run_check $SUDO_HELPER mkdir snaps
++
++# short name test
++run_check $SUDO_HELPER "$TOP/btrfs" subvolume snapshot aaa snaps/bbb
++# 255
++run_check $SUDO_HELPER "$TOP/btrfs" subvolume snapshot aaa snaps/"$longname"
++# 256, must fail
++run_mustfail "name 256 bytes long succeeded" \
++	$SUDO_HELPER "$TOP/btrfs" subvolume snapshot aaa snaps/"$longname"5
++# 255*2, must fail
++run_mustfail "name 2 * 255 bytes long succeeded" \
++	$SUDO_HELPER "$TOP/btrfs" subvolume snapshot aaa snaps/"$longname$longname"
++
++cd ..
++
++run_check_umount_test_dev
 -- 
 2.18.0

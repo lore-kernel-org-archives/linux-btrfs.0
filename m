@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from smtp-33-i6.italiaonline.it ([213.209.14.33]:60002 "EHLO
         libero.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1731419AbeITAUY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 19 Sep 2018 20:20:24 -0400
+        id S1731938AbeITAU0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 19 Sep 2018 20:20:26 -0400
 From: Goffredo Baroncelli <kreijack@libero.it>
 To: grub-devel@gnu.org
 Cc: Daniel Kiper <dkiper@net-space.pl>, linux-btrfs@vger.kernel.org,
         Goffredo Baroncelli <kreijack@inwind.it>
-Subject: [PATCH 1/9] btrfs: Add support for reading a filesystem with a RAID 5 or RAID 6 profile.
-Date: Wed, 19 Sep 2018 20:40:32 +0200
-Message-Id: <20180919184040.22540-2-kreijack@libero.it>
+Subject: [PATCH 8/9] btrfs: Make more generic the code for RAID 6 rebuilding
+Date: Wed, 19 Sep 2018 20:40:39 +0200
+Message-Id: <20180919184040.22540-9-kreijack@libero.it>
 In-Reply-To: <20180919184040.22540-1-kreijack@libero.it>
 References: <20180919184040.22540-1-kreijack@libero.it>
 MIME-Version: 1.0
@@ -18,94 +18,167 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Goffredo Baroncelli <kreijack@inwind.it>
 
-Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
----
- grub-core/fs/btrfs.c | 66 ++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 66 insertions(+)
+The original code which handles the recovery of a RAID 6 disks array
+assumes that all reads are multiple of 1 << GRUB_DISK_SECTOR_BITS and it
+assumes that all the I/O is done via the struct grub_diskfilter_segment.
+This is not true for the btrfs code. In order to reuse the native
+grub_raid6_recover() code, it is modified to not call
+grub_diskfilter_read_node() directly, but to call an handler passed
+as an argument.
 
-diff --git a/grub-core/fs/btrfs.c b/grub-core/fs/btrfs.c
-index be195448d..56c42746d 100644
---- a/grub-core/fs/btrfs.c
-+++ b/grub-core/fs/btrfs.c
-@@ -119,6 +119,8 @@ struct grub_btrfs_chunk_item
- #define GRUB_BTRFS_CHUNK_TYPE_RAID1         0x10
- #define GRUB_BTRFS_CHUNK_TYPE_DUPLICATED    0x20
- #define GRUB_BTRFS_CHUNK_TYPE_RAID10        0x40
-+#define GRUB_BTRFS_CHUNK_TYPE_RAID5         0x80
-+#define GRUB_BTRFS_CHUNK_TYPE_RAID6         0x100
-   grub_uint8_t dummy2[0xc];
-   grub_uint16_t nstripes;
-   grub_uint16_t nsubstripes;
-@@ -764,6 +766,70 @@ grub_btrfs_read_logical (struct grub_btrfs_data *data, grub_disk_addr_t addr,
- 	      stripe_offset = low + chunk_stripe_length
- 		* high;
- 	      csize = chunk_stripe_length - low;
-+	      break;
-+	    }
-+	  case GRUB_BTRFS_CHUNK_TYPE_RAID5:
-+	  case GRUB_BTRFS_CHUNK_TYPE_RAID6:
-+	    {
-+	      grub_uint64_t nparities, block_nr, high, low;
+Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
+Reviewed-by: Daniel Kiper <daniel.kiper@oracle.com>
+---
+ grub-core/disk/raid6_recover.c | 52 ++++++++++++++++++++++------------
+ include/grub/diskfilter.h      |  9 ++++++
+ 2 files changed, 43 insertions(+), 18 deletions(-)
+
+diff --git a/grub-core/disk/raid6_recover.c b/grub-core/disk/raid6_recover.c
+index aa674f6ca..0cf691ddf 100644
+--- a/grub-core/disk/raid6_recover.c
++++ b/grub-core/disk/raid6_recover.c
+@@ -74,14 +74,26 @@ mod_255 (unsigned x)
+ }
+ 
+ static grub_err_t
+-grub_raid6_recover (struct grub_diskfilter_segment *array, int disknr, int p,
+-                    char *buf, grub_disk_addr_t sector, grub_size_t size)
++raid6_recover_read_node (void *data, int disknr,
++				    grub_uint64_t sector,
++				    void *buf, grub_size_t size)
++{
++    struct grub_diskfilter_segment *array = data;
 +
-+	      redundancy = 1;	/* no redundancy for now */
++    return grub_diskfilter_read_node (&array->nodes[disknr],
++				      (grub_disk_addr_t)sector,
++				      size >> GRUB_DISK_SECTOR_BITS, buf);
++}
 +
-+	      if (grub_le_to_cpu64 (chunk->type) & GRUB_BTRFS_CHUNK_TYPE_RAID5)
-+		{
-+		  grub_dprintf ("btrfs", "RAID5\n");
-+		  nparities = 1;
-+		}
-+	      else
-+		{
-+		  grub_dprintf ("btrfs", "RAID6\n");
-+		  nparities = 2;
-+		}
++grub_err_t
++grub_raid6_recover_gen (void *data, grub_uint64_t nstripes, int disknr, int p,
++			    char *buf, grub_uint64_t sector, grub_size_t size,
++			    int layout, raid_recover_read_t read_func)
+ {
+   int i, q, pos;
+   int bad1 = -1, bad2 = -1;
+   char *pbuf = 0, *qbuf = 0;
+ 
+-  size <<= GRUB_DISK_SECTOR_BITS;
+   pbuf = grub_zalloc (size);
+   if (!pbuf)
+     goto quit;
+@@ -91,17 +103,17 @@ grub_raid6_recover (struct grub_diskfilter_segment *array, int disknr, int p,
+     goto quit;
+ 
+   q = p + 1;
+-  if (q == (int) array->node_count)
++  if (q == (int) nstripes)
+     q = 0;
+ 
+   pos = q + 1;
+-  if (pos == (int) array->node_count)
++  if (pos == (int) nstripes)
+     pos = 0;
+ 
+-  for (i = 0; i < (int) array->node_count - 2; i++)
++  for (i = 0; i < (int) nstripes - 2; i++)
+     {
+       int c;
+-      if (array->layout & GRUB_RAID_LAYOUT_MUL_FROM_POS)
++      if (layout & GRUB_RAID_LAYOUT_MUL_FROM_POS)
+ 	c = pos;
+       else
+ 	c = i;
+@@ -109,8 +121,7 @@ grub_raid6_recover (struct grub_diskfilter_segment *array, int disknr, int p,
+         bad1 = c;
+       else
+         {
+-          if (! grub_diskfilter_read_node (&array->nodes[pos], sector,
+-					   size >> GRUB_DISK_SECTOR_BITS, buf))
++	  if (!read_func(data, pos, sector, buf, size))
+             {
+               grub_crypto_xor (pbuf, pbuf, buf, size);
+               grub_raid_block_mulx (c, buf, size);
+@@ -128,7 +139,7 @@ grub_raid6_recover (struct grub_diskfilter_segment *array, int disknr, int p,
+         }
+ 
+       pos++;
+-      if (pos == (int) array->node_count)
++      if (pos == (int) nstripes)
+         pos = 0;
+     }
+ 
+@@ -139,16 +150,14 @@ grub_raid6_recover (struct grub_diskfilter_segment *array, int disknr, int p,
+   if (bad2 < 0)
+     {
+       /* One bad device */
+-      if ((! grub_diskfilter_read_node (&array->nodes[p], sector,
+-					size >> GRUB_DISK_SECTOR_BITS, buf)))
++      if (!read_func(data, p, sector, buf, size))
+         {
+           grub_crypto_xor (buf, buf, pbuf, size);
+           goto quit;
+         }
+ 
+       grub_errno = GRUB_ERR_NONE;
+-      if (grub_diskfilter_read_node (&array->nodes[q], sector,
+-				     size >> GRUB_DISK_SECTOR_BITS, buf))
++      if (read_func(data, q, sector, buf, size))
+         goto quit;
+ 
+       grub_crypto_xor (buf, buf, qbuf, size);
+@@ -160,14 +169,12 @@ grub_raid6_recover (struct grub_diskfilter_segment *array, int disknr, int p,
+       /* Two bad devices */
+       unsigned c;
+ 
+-      if (grub_diskfilter_read_node (&array->nodes[p], sector,
+-				     size >> GRUB_DISK_SECTOR_BITS, buf))
++      if (read_func(data, p, sector, buf, size))
+         goto quit;
+ 
+       grub_crypto_xor (pbuf, pbuf, buf, size);
+ 
+-      if (grub_diskfilter_read_node (&array->nodes[q], sector,
+-				     size >> GRUB_DISK_SECTOR_BITS, buf))
++      if (read_func(data, q, sector, buf, size))
+         goto quit;
+ 
+       grub_crypto_xor (qbuf, qbuf, buf, size);
+@@ -190,6 +197,15 @@ quit:
+   return grub_errno;
+ }
+ 
++static grub_err_t
++grub_raid6_recover (struct grub_diskfilter_segment *array, int disknr, int p,
++                    char *buf, grub_disk_addr_t sector, grub_size_t size)
++{
++  return grub_raid6_recover_gen (array, array->node_count, disknr, p, buf,
++				     sector, size << GRUB_DISK_SECTOR_BITS,
++				     array->layout, raid6_recover_read_node);
++}
 +
-+	      /*
-+	       * A RAID 6 layout consists of several blocks spread on the disks.
-+	       * The raid terminology is used to call all the blocks of a row
-+	       * "stripe". Unfortunately the BTRFS terminology confuses block
-+	       * and stripe.
-+	       *
-+	       *   Disk0  Disk1  Disk2  Disk3
-+	       *
-+	       *    A1     B1     P1     Q1
-+	       *    Q2     A2     B2     P2
-+	       *    P3     Q3     A3     B3
-+	       *  [...]
-+	       *
-+	       *  Note that the placement of the parities depends on row index.
-+	       *  In the code below:
-+	       *  - block_nr is the block number without the parities
-+	       *    (A1 = 0, B1 = 1, A2 = 2, B2 = 3, ...),
-+	       *  - high is the row number (0 for A1...Q1, 1 for Q2...P2, ...),
-+	       *  - stripen is the disk number (0 for A1,Q2,P3, 1 for B1...),
-+	       *  - off is the logical address to read
-+	       *  - chunk_stripe_length is the size of a block (typically 64k),
-+	       *  - nstripes is the number of disks,
-+	       *  - low is the offset of the data inside a stripe,
-+	       *  - stripe_offset is the disk offset,
-+	       *  - csize is the "potential" data to read. It will be reduced to
-+	       *    size if the latter is smaller.
-+	       */
-+	      block_nr = grub_divmod64 (off, chunk_stripe_length, &low);
+ GRUB_MOD_INIT(raid6rec)
+ {
+   grub_raid6_init_table ();
+diff --git a/include/grub/diskfilter.h b/include/grub/diskfilter.h
+index d89273c1b..8deb1a8c3 100644
+--- a/include/grub/diskfilter.h
++++ b/include/grub/diskfilter.h
+@@ -189,6 +189,15 @@ typedef grub_err_t (*grub_raid6_recover_func_t) (struct grub_diskfilter_segment
+ extern grub_raid5_recover_func_t grub_raid5_recover_func;
+ extern grub_raid6_recover_func_t grub_raid6_recover_func;
+ 
++typedef grub_err_t (* raid_recover_read_t)(void *data, int disk_nr,
++					   grub_uint64_t addr, void *dest,
++					   grub_size_t size);
 +
-+	      /*
-+	       * stripen is computed without the parities (0 for A1, A2, A3...
-+	       * 1 for B1, B2...).
-+	       */
-+	      high = grub_divmod64 (block_nr, nstripes - nparities, &stripen);
++extern grub_err_t
++grub_raid6_recover_gen (void *data, grub_uint64_t nstripes, int disknr, int p,
++			    char *buf, grub_uint64_t sector, grub_size_t size,
++			    int layout, raid_recover_read_t read_func);
 +
-+	      /*
-+	       * stripen is recomputed considering the parities (0 for A1, 1 for
-+	       * A2, 2 for A3....).
-+	       */
-+	      grub_divmod64 (high + stripen, nstripes, &stripen);
-+
-+	      stripe_offset = low + chunk_stripe_length * high;
-+	      csize = chunk_stripe_length - low;
-+
- 	      break;
- 	    }
- 	  default:
+ grub_err_t grub_diskfilter_vg_register (struct grub_diskfilter_vg *vg);
+ 
+ grub_err_t
 -- 
 2.19.0

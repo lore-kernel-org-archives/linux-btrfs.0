@@ -1,99 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf1-f193.google.com ([209.85.210.193]:43569 "EHLO
-        mail-pf1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727099AbeISFwS (ORCPT
+Received: from mail-pg1-f194.google.com ([209.85.215.194]:38047 "EHLO
+        mail-pg1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727204AbeISFzq (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 19 Sep 2018 01:52:18 -0400
-Received: by mail-pf1-f193.google.com with SMTP id j26-v6so1781780pfi.10
-        for <linux-btrfs@vger.kernel.org>; Tue, 18 Sep 2018 17:17:12 -0700 (PDT)
-Date: Tue, 18 Sep 2018 17:17:10 -0700
+        Wed, 19 Sep 2018 01:55:46 -0400
+Received: by mail-pg1-f194.google.com with SMTP id t84-v6so1825782pgb.5
+        for <linux-btrfs@vger.kernel.org>; Tue, 18 Sep 2018 17:20:39 -0700 (PDT)
+Date: Tue, 18 Sep 2018 17:20:37 -0700
 From: Omar Sandoval <osandov@osandov.com>
 To: Josef Bacik <josef@toxicpanda.com>
 Cc: kernel-team@fb.com, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 17/36] btrfs: loop in inode_rsv_refill
-Message-ID: <20180919001710.GE479@vader>
+Subject: Re: [PATCH 33/36] btrfs: only free reserved extent if we didn't
+ insert it
+Message-ID: <20180919002037.GG479@vader>
 References: <20180911175807.26181-1-josef@toxicpanda.com>
- <20180911175807.26181-18-josef@toxicpanda.com>
+ <20180911175807.26181-34-josef@toxicpanda.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180911175807.26181-18-josef@toxicpanda.com>
+In-Reply-To: <20180911175807.26181-34-josef@toxicpanda.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Sep 11, 2018 at 01:57:48PM -0400, Josef Bacik wrote:
-> With severe fragmentation we can end up with our inode rsv size being
-> huge during writeout, which would cause us to need to make very large
-> metadata reservations.  However we may not actually need that much once
-> writeout is complete.  So instead try to make our reservation, and if we
-> couldn't make it re-calculate our new reservation size and try again.
-> If our reservation size doesn't change between tries then we know we are
-> actually out of space and can error out.
-> 
+On Tue, Sep 11, 2018 at 01:58:04PM -0400, Josef Bacik wrote:
+> When we insert the file extent once the ordered extent completes we free
+> the reserved extent reservation as it'll have been migrated to the
+> bytes_used counter.  However if we error out after this step we'll still
+> clear the reserved extent reservation, resulting in a negative
+> accounting of the reserved bytes for the block group and space info.
+> Fix this by only doing the free if we didn't successfully insert a file
+> extent for this extent.
+
+Reviewed-by: Omar Sandoval <osandov@fb.com>
+
 > Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 > ---
->  fs/btrfs/extent-tree.c | 19 +++++++++++++++++--
->  1 file changed, 17 insertions(+), 2 deletions(-)
+>  fs/btrfs/inode.c | 10 +++++++++-
+>  1 file changed, 9 insertions(+), 1 deletion(-)
 > 
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index 57567d013447..e43834380ce6 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -5790,10 +5790,11 @@ static int btrfs_inode_rsv_refill(struct btrfs_inode *inode,
->  {
->  	struct btrfs_root *root = inode->root;
->  	struct btrfs_block_rsv *block_rsv = &inode->block_rsv;
-> -	u64 num_bytes = 0;
-> +	u64 num_bytes = 0, last = 0;
->  	u64 qgroup_num_bytes = 0;
->  	int ret = -ENOSPC;
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 60bcad901857..fd6ade4680b5 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -2992,6 +2992,7 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)
+>  	bool truncated = false;
+>  	bool range_locked = false;
+>  	bool clear_new_delalloc_bytes = false;
+> +	bool clear_reserved_extent = true;
 >  
-> +again:
->  	spin_lock(&block_rsv->lock);
->  	if (block_rsv->reserved < block_rsv->size)
->  		num_bytes = block_rsv->size - block_rsv->reserved;
-> @@ -5818,8 +5819,22 @@ static int btrfs_inode_rsv_refill(struct btrfs_inode *inode,
->  		spin_lock(&block_rsv->lock);
->  		block_rsv->qgroup_rsv_reserved += qgroup_num_bytes;
->  		spin_unlock(&block_rsv->lock);
-> -	} else
-> +	} else {
->  		btrfs_qgroup_free_meta_prealloc(root, qgroup_num_bytes);
-> +
-> +		/*
-> +		 * If we are fragmented we can end up with a lot of outstanding
-> +		 * extents which will make our size be much larger than our
-> +		 * reserved amount.  If we happen to try to do a reservation
-> +		 * here that may result in us trying to do a pretty hefty
-> +		 * reservation, which we may not need once delalloc flushing
-> +		 * happens.  If this is the case try and do the reserve again.
-> +		 */
-> +		if (flush == BTRFS_RESERVE_FLUSH_ALL && last != num_bytes) {
-
-Is there any point in retrying the reservation if num_bytes didn't
-change? As this is written, we will:
-
-1. Calculate num_bytes
-2. Try reservation, say it fails
-3. Recalculate num_bytes, say it doesn't change
-4. Retry the reservation anyways, and it fails again
-
-Maybe we should check if it changed before we retry the reservation? So
-then we'd have
-
-1. Calculate num_bytes
-2. Try reservation, fails
-3. Recalculate num_bytes, it doesn't change, bail out
-
-Also, is it possible that num_bytes > last because of other operations
-happening at the same time, and should we still retry in that case?
-
-> +			last = num_bytes;
-> +			goto again;
+>  	if (!test_bit(BTRFS_ORDERED_NOCOW, &ordered_extent->flags) &&
+>  	    !test_bit(BTRFS_ORDERED_PREALLOC, &ordered_extent->flags) &&
+> @@ -3095,10 +3096,12 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)
+>  						logical_len, logical_len,
+>  						compress_type, 0, 0,
+>  						BTRFS_FILE_EXTENT_REG);
+> -		if (!ret)
+> +		if (!ret) {
+> +			clear_reserved_extent = false;
+>  			btrfs_release_delalloc_bytes(fs_info,
+>  						     ordered_extent->start,
+>  						     ordered_extent->disk_len);
 > +		}
-> +	}
->  	return ret;
->  }
->  
+>  	}
+>  	unpin_extent_cache(&BTRFS_I(inode)->extent_tree,
+>  			   ordered_extent->file_offset, ordered_extent->len,
+> @@ -3159,8 +3162,13 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)
+>  		 * wrong we need to return the space for this ordered extent
+>  		 * back to the allocator.  We only free the extent in the
+>  		 * truncated case if we didn't write out the extent at all.
+> +		 *
+> +		 * If we made it past insert_reserved_file_extent before we
+> +		 * errored out then we don't need to do this as the accounting
+> +		 * has already been done.
+>  		 */
+>  		if ((ret || !logical_len) &&
+> +		    clear_reserved_extent &&
+>  		    !test_bit(BTRFS_ORDERED_NOCOW, &ordered_extent->flags) &&
+>  		    !test_bit(BTRFS_ORDERED_PREALLOC, &ordered_extent->flags))
+>  			btrfs_free_reserved_extent(fs_info,
 > -- 
 > 2.14.3
 > 

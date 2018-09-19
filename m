@@ -1,50 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yb1-f194.google.com ([209.85.219.194]:33080 "EHLO
-        mail-yb1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1732190AbeITAWp (ORCPT
+Received: from mail-pf1-f194.google.com ([209.85.210.194]:39246 "EHLO
+        mail-pf1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1732520AbeISXIR (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 19 Sep 2018 20:22:45 -0400
-Received: by mail-yb1-f194.google.com with SMTP id y9-v6so2825338ybh.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 19 Sep 2018 11:43:33 -0700 (PDT)
-Date: Wed, 19 Sep 2018 14:43:31 -0400
-From: Johannes Weiner <hannes@cmpxchg.org>
-To: Omar Sandoval <osandov@osandov.com>
-Cc: linux-btrfs@vger.kernel.org, kernel-team@fb.com, linux-mm@kvack.org
-Subject: Re: [PATCH v7 2/6] mm: export add_swap_extent()
-Message-ID: <20180919184331.GA20181@cmpxchg.org>
+        Wed, 19 Sep 2018 19:08:17 -0400
+Received: by mail-pf1-f194.google.com with SMTP id j8-v6so3028700pff.6
+        for <linux-btrfs@vger.kernel.org>; Wed, 19 Sep 2018 10:29:22 -0700 (PDT)
+Date: Wed, 19 Sep 2018 10:29:18 -0700
+From: Omar Sandoval <osandov@osandov.com>
+To: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>
+Cc: kernel-team@fb.com, linux-mm@kvack.org
+Subject: Re: [PATCH v7 0/6] Btrfs: implement swap file support
+Message-ID: <20180919172918.GI479@vader>
 References: <cover.1536704650.git.osandov@fb.com>
- <bb1208575e02829aae51b538709476964f97b1ea.1536704650.git.osandov@fb.com>
- <20180919180909.GC18068@cmpxchg.org>
- <20180919182800.GK479@vader>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180919182800.GK479@vader>
+In-Reply-To: <cover.1536704650.git.osandov@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Sep 19, 2018 at 11:28:00AM -0700, Omar Sandoval wrote:
-> On Wed, Sep 19, 2018 at 02:09:09PM -0400, Johannes Weiner wrote:
-> > On Tue, Sep 11, 2018 at 03:34:45PM -0700, Omar Sandoval wrote:
-> > > From: Omar Sandoval <osandov@fb.com>
-> > > 
-> > > Btrfs will need this for swap file support.
-> > > 
-> > > Signed-off-by: Omar Sandoval <osandov@fb.com>
-> > 
-> > That looks reasonable. After reading the last patch, it's somewhat
-> > understandable why you cannot simply implemnet ->bmap and use the
-> > generic activation code. But it would be good to explain the reason(s)
-> > for why you can't here briefly to justify this patch.
+On Tue, Sep 11, 2018 at 03:34:43PM -0700, Omar Sandoval wrote:
+> From: Omar Sandoval <osandov@fb.com>
 > 
-> I'll rewrite it to:
+> Hi,
 > 
-> Btrfs currently does not support swap files because swap's use of bmap
-> does not work with copy-on-write and multiple devices. See 35054394c4b3
-> ("Btrfs: stop providing a bmap operation to avoid swapfile
-> corruptions"). However, the swap code has a mechanism for the filesystem
-> to manually add swap extents using add_swap_extent() from the
-> ->swap_activate() aop. iomap has done this since 67482129cdab ("iomap:
-> add a swapfile activation function"). Btrfs will do the same in a later
-> patch, so export add_swap_extent().
+> This series implements swap file support for Btrfs.
+> 
+> Changes from v6 [1]:
+> 
+> - Moved btrfs_get_chunk_map() comment to function body
+> - Added more comments about pinned block group/device rbtree
+> - Fixed bug in patch 4 which broke resize
+> 
+> Based on v4.19-rc3.
+> 
+> Thanks!
+> 
+> 1: https://www.spinics.net/lists/linux-btrfs/msg81732.html
+> 
+> Omar Sandoval (6):
+>   mm: split SWP_FILE into SWP_ACTIVATED and SWP_FS
+>   mm: export add_swap_extent()
+>   vfs: update swap_{,de}activate documentation
+>   Btrfs: prevent ioctls from interfering with a swap file
+>   Btrfs: rename get_chunk_map() and make it non-static
+>   Btrfs: support swap files
+> 
+>  Documentation/filesystems/Locking |  17 +-
+>  Documentation/filesystems/vfs.txt |  12 +-
+>  fs/btrfs/ctree.h                  |  29 +++
+>  fs/btrfs/dev-replace.c            |   8 +
+>  fs/btrfs/disk-io.c                |   4 +
+>  fs/btrfs/inode.c                  | 317 ++++++++++++++++++++++++++++++
+>  fs/btrfs/ioctl.c                  |  31 ++-
+>  fs/btrfs/relocation.c             |  18 +-
+>  fs/btrfs/volumes.c                |  82 ++++++--
+>  fs/btrfs/volumes.h                |   2 +
+>  include/linux/swap.h              |  13 +-
+>  mm/page_io.c                      |   6 +-
+>  mm/swapfile.c                     |  14 +-
+>  13 files changed, 502 insertions(+), 51 deletions(-)
 
-That explains it perfectly. Thanks!
+Ping, any other comments on this version?

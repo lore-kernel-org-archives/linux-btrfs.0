@@ -1,20 +1,20 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wr1-f65.google.com ([209.85.221.65]:38627 "EHLO
-        mail-wr1-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727002AbeITBPH (ORCPT
+Received: from mail-wr1-f42.google.com ([209.85.221.42]:36124 "EHLO
+        mail-wr1-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1732282AbeITBVG (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 19 Sep 2018 21:15:07 -0400
-Received: by mail-wr1-f65.google.com with SMTP id j8-v6so3249175wrw.5
-        for <linux-btrfs@vger.kernel.org>; Wed, 19 Sep 2018 12:35:43 -0700 (PDT)
+        Wed, 19 Sep 2018 21:21:06 -0400
+Received: by mail-wr1-f42.google.com with SMTP id e1-v6so7012031wrt.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 19 Sep 2018 12:41:40 -0700 (PDT)
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8;
  format=flowed
-Date: Wed, 19 Sep 2018 21:35:40 +0200
+Date: Wed, 19 Sep 2018 21:41:37 +0200
 From: =?UTF-8?Q?J=C3=BCrgen_Herrmann?= <t-5@t-5.eu>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+To: Nikolay Borisov <nborisov@suse.com>
+Cc: linux-btrfs@vger.kernel.org
 Subject: Re: btrfs send hangs after partial transfer and blocks all IO
-In-Reply-To: <CAJCQCtRK9tW80GB-LCbNG5eL0jqNN1euGt+KP3LLgM2jpYJ=aA@mail.gmail.com>
+In-Reply-To: <322267c4-5671-73f3-acca-797dd6fe3572@suse.com>
 References: <8c2c436d404bca00617614d08e9720c1@t-5.eu>
  <63ab2fb7-15a8-f807-4a2f-04ce53f3f168@suse.com>
  <bb7c2fdd78c731bdf9b5044f4dfc4223@t-5.eu>
@@ -25,76 +25,96 @@ References: <8c2c436d404bca00617614d08e9720c1@t-5.eu>
  <91b2f76b-5b1c-6df3-ac8c-058696f27788@suse.com>
  <165d2e8e110.27fe.1e2eed663022c8efc8eff86f8ee324b8@t-5.eu>
  <322267c4-5671-73f3-acca-797dd6fe3572@suse.com>
- <CAJCQCtQFfGzNrCSVsZXutfx+O5BdNEELieVuHbJ0mLBqATc-cw@mail.gmail.com>
- <5c0b3895-05c8-63b1-195a-316d3eaca072@suse.com>
- <CAJCQCtRK9tW80GB-LCbNG5eL0jqNN1euGt+KP3LLgM2jpYJ=aA@mail.gmail.com>
-Message-ID: <d8571e74a64369177dcd3945478eac1f@t-5.eu>
+Message-ID: <f76d90ea719d9c386ec5a26ed0f4fb07@t-5.eu>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am 13.9.2018 18:22, schrieb Chris Murphy:
-> (resend to all)
+Am 13.9.2018 14:35, schrieb Nikolay Borisov:
+> On 13.09.2018 15:30, Jürgen Herrmann wrote:
+>> OK, I will install kdump later and perform a dump after the hang.
+>> 
+>> One more noob question beforehand: does this dump contain sensitive
+>> information, for example the luks encryption key for the disk etc? A
+>> Google search only brings up one relevant search result which can only
+>> be viewed with a redhat subscription...
 > 
-> On Thu, Sep 13, 2018 at 9:44 AM, Nikolay Borisov <nborisov@suse.com> 
-> wrote:
+> 
+> So a kdump will dump the kernel memory so it's possible that the LUKS
+> encryption keys could be extracted from that image. Bummer, it's
+> understandable why you wouldn't want to upload it :). In this case 
+> you'd
+> have to install also the 'crash' utility to open the crashdump and
+> extract the calltrace of the btrfs process. The rough process should be 
+> :
+> 
+> 
+> crash 'path to vm linux' 'path to vmcore file', then once inside the
+> crash utility :
+> 
+> set <pid of btrfs send process>, you can acquire the pid by issuing 
+> 'ps'
+> which will give you a ps-like output of all running processes at the
+> time of crash. After the context has been set you can run 'bt' which
+> will give you a backtrace of the send process.
+> 
+> 
+> 
 >> 
+>> Best regards,
+>> Jürgen
 >> 
->> On 13.09.2018 18:30, Chris Murphy wrote:
->>> This is the 2nd or 3rd thread containing hanging btrfs send, with
->>> kernel 4.18.x. The subject of one is "btrfs send hung in pipe_wait"
->>> and the other I can't find at the moment. In that case though the 
->>> hang
->>> is reproducible in 4.14.x and weirdly it only happens when a snapshot
->>> contains (perhaps many) reflinks. Scrub and check lowmem find nothing
->>> wrong.
+>> Am 13. September 2018 14:02:11 schrieb Nikolay Borisov 
+>> <nborisov@suse.com>:
+>> 
+>>> On 13.09.2018 14:50, Jürgen Herrmann wrote:
+>>>> I was echoing "w" to /proc/sysrq_trigger every 0.5s which did work 
+>>>> also
+>>>> after the hang because I started the loop before the hang. The dmesg
+>>>> output should show the hanging tasks from second 346 on or so. Still 
+>>>> not
+>>>> useful?
+>>>> 
 >>> 
->>> I have snapshots with a few reflinks (cp --reflink and also
->>> deduplication), and I see maybe 15-30 second hangs where nothing is
->>> apparently happening (in top or iotop), but I'm also not seeing any
->>> blocked tasks or high CPU usage. Perhaps in my case it's just
->>> recovering quickly.
+>>> So from 346 it's evident that transaction commit is waiting for
+>>> commit_root_sem to be acquired. So something else is holding it and 
+>>> not
+>>> giving the transaction chance to finish committing. Now the only 
+>>> place
+>>> where send acquires this lock is in find_extent_clone around the  
+>>> call
+>>> to extent_from_logical. The latter basically does an extent tree 
+>>> search
+>>> and doesn't loop so can't possibly deadlock. Furthermore I don't see 
+>>> any
+>>> userspace processes being hung in kernel space.
 >>> 
->>> Are there any kernel config options in "# Debug Lockups and Hangs"
->>> that might hint at what's going on? Some of these are enabled in
->>> Fedora debug kernels, which are built practically daily, e.g. right
->>> now the latest in the build system is 4.19.0-0.rc3.git2.1 - which
->>> translates to git 54eda9df17f3.
+>>> Additionally looking at the userspace processes they indicate that
+>>> find_extent_clone has finished and are blocked in send_write_or_clone
+>>> which does the write. But I guess this actually happens before the 
+>>> hang.
+>>> 
+>>> 
+>>> So at this point without looking at the stacktrace of the btrfs send
+>>> process after the hung has occurred I don't think much can be done
 >> 
->> If it's a lock-related problem then you need Lock Debugging => Lock
->> debugging: prove locking correctness
-> 
-> OK looks like that's under a different section as CONFIG_PROVE_LOCKING
-> which is enabled on Fedora debug kernels.
-> 
-> 
-> # Debug Lockups and Hangs
-> CONFIG_LOCKUP_DETECTOR=y
-> CONFIG_SOFTLOCKUP_DETECTOR=y
-> # CONFIG_BOOTPARAM_SOFTLOCKUP_PANIC is not set
-> CONFIG_BOOTPARAM_SOFTLOCKUP_PANIC_VALUE=0
-> CONFIG_HARDLOCKUP_DETECTOR_PERF=y
-> CONFIG_HARDLOCKUP_CHECK_TIMESTAMP=y
-> CONFIG_HARDLOCKUP_DETECTOR=y
-> # CONFIG_BOOTPARAM_HARDLOCKUP_PANIC is not set
-> CONFIG_BOOTPARAM_HARDLOCKUP_PANIC_VALUE=0
-> # Lock Debugging (spinlocks, mutexes, etc...)
-> CONFIG_LOCK_DEBUGGING_SUPPORT=y
-> CONFIG_PROVE_LOCKING=y
-> CONFIG_LOCK_STAT=y
-> CONFIG_DEBUG_SPINLOCK=y
-> CONFIG_DEBUG_LOCK_ALLOC=y
-> CONFIG_LOCKDEP=y
-> # CONFIG_DEBUG_LOCKDEP is not set
-> # CONFIG_DEBUG_LOCKING_API_SELFTESTS is not set
-> CONFIG_LOCK_TORTURE_TEST=m
+I know this is probably not the correct list to ask this question but 
+maybe someone of the devs can point me to the right list?
 
-Hello again!
+I cannot get kdump to work. The crashkernel is loaded and everything is 
+setup for it afaict. I asked a question on this over at stackexchange 
+but no answer yet.
+https://unix.stackexchange.com/questions/469838/linux-kdump-does-not-boot-second-kernel-when-kernel-is-crashing
 
-I have CONFIG_PROVE_LOCKING enabled in my kernel, but no change to
-the observed behaviour.
+So i did a little digging and added some debug printk() statements to 
+see whats going on and it seems that panic() is never called. maybe the 
+second stack trace is the reason?
+Screenshot is here: https://t-5.eu/owncloud/index.php/s/OegsikXo4VFLTJN
 
-Best regards, Jürgen
+Could someone please tell me where I can report this problem and get 
+some help on this topic?
 
+Best regards,
+Jürgen
 
 -- 
 Jürgen Herrmann

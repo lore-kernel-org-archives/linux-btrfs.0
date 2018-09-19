@@ -1,123 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wr1-f42.google.com ([209.85.221.42]:36124 "EHLO
-        mail-wr1-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1732282AbeITBVG (ORCPT
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:59867 "EHLO
+        mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726718AbeITBnq (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 19 Sep 2018 21:21:06 -0400
-Received: by mail-wr1-f42.google.com with SMTP id e1-v6so7012031wrt.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 19 Sep 2018 12:41:40 -0700 (PDT)
+        Wed, 19 Sep 2018 21:43:46 -0400
+From: Martin Steigerwald <martin@lichtvoll.de>
+To: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+Cc: Tomasz Chmielewski <tch@virtall.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: very poor performance / a lot of writes to disk with space_cache (but not with space_cache=v2)
+Date: Wed, 19 Sep 2018 22:04:14 +0200
+Message-ID: <1646602.qIcv3L3msO@merkaba>
+In-Reply-To: <e712843a-d902-97c1-7270-84dfe56c83e1@mendix.com>
+References: <e0f21dace16885d1bd615dd723235d57@virtall.com> <e712843a-d902-97c1-7270-84dfe56c83e1@mendix.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8;
- format=flowed
-Date: Wed, 19 Sep 2018 21:41:37 +0200
-From: =?UTF-8?Q?J=C3=BCrgen_Herrmann?= <t-5@t-5.eu>
-To: Nikolay Borisov <nborisov@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: btrfs send hangs after partial transfer and blocks all IO
-In-Reply-To: <322267c4-5671-73f3-acca-797dd6fe3572@suse.com>
-References: <8c2c436d404bca00617614d08e9720c1@t-5.eu>
- <63ab2fb7-15a8-f807-4a2f-04ce53f3f168@suse.com>
- <bb7c2fdd78c731bdf9b5044f4dfc4223@t-5.eu>
- <cb7403dd-0e76-8e8c-2389-30283b9e319d@suse.com>
- <165d2939520.27fe.1e2eed663022c8efc8eff86f8ee324b8@t-5.eu>
- <7956cebe-3227-f153-6f0e-be272abe2c61@suse.com>
- <165d2c48478.27fe.1e2eed663022c8efc8eff86f8ee324b8@t-5.eu>
- <91b2f76b-5b1c-6df3-ac8c-058696f27788@suse.com>
- <165d2e8e110.27fe.1e2eed663022c8efc8eff86f8ee324b8@t-5.eu>
- <322267c4-5671-73f3-acca-797dd6fe3572@suse.com>
-Message-ID: <f76d90ea719d9c386ec5a26ed0f4fb07@t-5.eu>
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am 13.9.2018 14:35, schrieb Nikolay Borisov:
-> On 13.09.2018 15:30, Jürgen Herrmann wrote:
->> OK, I will install kdump later and perform a dump after the hang.
->> 
->> One more noob question beforehand: does this dump contain sensitive
->> information, for example the luks encryption key for the disk etc? A
->> Google search only brings up one relevant search result which can only
->> be viewed with a redhat subscription...
+Hans van Kranenburg - 19.09.18, 19:58:
+> However, as soon as we remount the filesystem with space_cache=v2 -
 > 
+> > writes drop to just around 3-10 MB/s to each disk. If we remount to
+> > space_cache - lots of writes, system unresponsive. Again remount to
+> > space_cache=v2 - low writes, system responsive.
+> > 
+> > That's a huuge, 10x overhead! Is it expected? Especially that
+> > space_cache=v1 is still the default mount option?
 > 
-> So a kdump will dump the kernel memory so it's possible that the LUKS
-> encryption keys could be extracted from that image. Bummer, it's
-> understandable why you wouldn't want to upload it :). In this case 
-> you'd
-> have to install also the 'crash' utility to open the crashdump and
-> extract the calltrace of the btrfs process. The rough process should be 
-> :
+> Yes, that does not surprise me.
 > 
+> https://events.static.linuxfound.org/sites/events/files/slides/vault20
+> 16_0.pdf
 > 
-> crash 'path to vm linux' 'path to vmcore file', then once inside the
-> crash utility :
-> 
-> set <pid of btrfs send process>, you can acquire the pid by issuing 
-> 'ps'
-> which will give you a ps-like output of all running processes at the
-> time of crash. After the context has been set you can run 'bt' which
-> will give you a backtrace of the send process.
-> 
-> 
-> 
->> 
->> Best regards,
->> Jürgen
->> 
->> Am 13. September 2018 14:02:11 schrieb Nikolay Borisov 
->> <nborisov@suse.com>:
->> 
->>> On 13.09.2018 14:50, Jürgen Herrmann wrote:
->>>> I was echoing "w" to /proc/sysrq_trigger every 0.5s which did work 
->>>> also
->>>> after the hang because I started the loop before the hang. The dmesg
->>>> output should show the hanging tasks from second 346 on or so. Still 
->>>> not
->>>> useful?
->>>> 
->>> 
->>> So from 346 it's evident that transaction commit is waiting for
->>> commit_root_sem to be acquired. So something else is holding it and 
->>> not
->>> giving the transaction chance to finish committing. Now the only 
->>> place
->>> where send acquires this lock is in find_extent_clone around the  
->>> call
->>> to extent_from_logical. The latter basically does an extent tree 
->>> search
->>> and doesn't loop so can't possibly deadlock. Furthermore I don't see 
->>> any
->>> userspace processes being hung in kernel space.
->>> 
->>> Additionally looking at the userspace processes they indicate that
->>> find_extent_clone has finished and are blocked in send_write_or_clone
->>> which does the write. But I guess this actually happens before the 
->>> hang.
->>> 
->>> 
->>> So at this point without looking at the stacktrace of the btrfs send
->>> process after the hung has occurred I don't think much can be done
->> 
-I know this is probably not the correct list to ask this question but 
-maybe someone of the devs can point me to the right list?
+> Free space cache v1 is the default because of issues with btrfs-progs,
+> not because it's unwise to use the kernel code. I can totally
+> recommend using it. The linked presentation above gives some good
+> background information.
 
-I cannot get kdump to work. The crashkernel is loaded and everything is 
-setup for it afaict. I asked a question on this over at stackexchange 
-but no answer yet.
-https://unix.stackexchange.com/questions/469838/linux-kdump-does-not-boot-second-kernel-when-kernel-is-crashing
+What issues in btrfs-progs are that?
 
-So i did a little digging and added some debug printk() statements to 
-see whats going on and it seems that panic() is never called. maybe the 
-second stack trace is the reason?
-Screenshot is here: https://t-5.eu/owncloud/index.php/s/OegsikXo4VFLTJN
+I am wondering whether to switch to freespace tree v2. Would it provide 
+benefit for a regular / and /home filesystems as dual SSD BTRFS RAID-1 
+on a laptop?
 
-Could someone please tell me where I can report this problem and get 
-some help on this topic?
-
-Best regards,
-Jürgen
-
+Thanks,
 -- 
-Jürgen Herrmann
-https://t-5.eu
-ALbertstraße 2
-94327 Bogen
+Martin

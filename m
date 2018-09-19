@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-33-i6.italiaonline.it ([213.209.14.33]:49412 "EHLO
+Received: from smtp-33-i6.italiaonline.it ([213.209.14.33]:53628 "EHLO
         libero.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727804AbeITAUY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 19 Sep 2018 20:20:24 -0400
+        id S1732232AbeITAUZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 19 Sep 2018 20:20:25 -0400
 From: Goffredo Baroncelli <kreijack@libero.it>
 To: grub-devel@gnu.org
 Cc: Daniel Kiper <dkiper@net-space.pl>, linux-btrfs@vger.kernel.org,
         Goffredo Baroncelli <kreijack@inwind.it>
-Subject: [PATCH 2/9] btrfs: Add helper to check the btrfs header.
-Date: Wed, 19 Sep 2018 20:40:33 +0200
-Message-Id: <20180919184040.22540-3-kreijack@libero.it>
+Subject: [PATCH 4/9] btrfs: Avoid a rescan for a device which was already not found.
+Date: Wed, 19 Sep 2018 20:40:35 +0200
+Message-Id: <20180919184040.22540-5-kreijack@libero.it>
 In-Reply-To: <20180919184040.22540-1-kreijack@libero.it>
 References: <20180919184040.22540-1-kreijack@libero.it>
 MIME-Version: 1.0
@@ -18,71 +18,73 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Goffredo Baroncelli <kreijack@inwind.it>
 
-This helper is used in a few places to help the debugging. As
-conservative approach the error is only logged.
-This does not impact the error handling.
+If a device is not found, do not return immediately but
+record this failure by storing NULL in data->devices_attached[].
+This way we avoid unnecessary devices rescan, and speedup the
+reads in case of a degraded array.
 
-Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
-Reviewed-by: Daniel Kiper <daniel.kiper@oracle.com>
+Signed-off-by: Goffredo Baroncelli <kreikack@inwind.it>
 ---
- grub-core/fs/btrfs.c | 24 +++++++++++++++++++++++-
- 1 file changed, 23 insertions(+), 1 deletion(-)
+ grub-core/fs/btrfs.c | 19 +++++++++----------
+ 1 file changed, 9 insertions(+), 10 deletions(-)
 
 diff --git a/grub-core/fs/btrfs.c b/grub-core/fs/btrfs.c
-index 56c42746d..4f404f4b2 100644
+index 0cdfaf7c0..6e42c33f6 100644
 --- a/grub-core/fs/btrfs.c
 +++ b/grub-core/fs/btrfs.c
-@@ -77,7 +77,8 @@ struct btrfs_header
- {
-   grub_btrfs_checksum_t checksum;
-   grub_btrfs_uuid_t uuid;
--  grub_uint8_t dummy[0x30];
-+  grub_uint64_t bytenr;
-+  grub_uint8_t dummy[0x28];
-   grub_uint32_t nitems;
-   grub_uint8_t level;
- } GRUB_PACKED;
-@@ -286,6 +287,25 @@ free_iterator (struct grub_btrfs_leaf_descriptor *desc)
-   grub_free (desc->data);
+@@ -588,7 +588,7 @@ find_device_iter (const char *name, void *data)
  }
  
-+static grub_err_t
-+check_btrfs_header (struct grub_btrfs_data *data, struct btrfs_header *header,
-+                    grub_disk_addr_t addr)
-+{
-+  if (grub_le_to_cpu64 (header->bytenr) != addr)
-+    {
-+      grub_dprintf ("btrfs", "btrfs_header.bytenr is not equal node addr\n");
-+      return grub_error (GRUB_ERR_BAD_FS,
-+			 "header bytenr is not equal node addr");
-+    }
-+  if (grub_memcmp (data->sblock.uuid, header->uuid, sizeof(grub_btrfs_uuid_t)))
-+    {
-+      grub_dprintf ("btrfs", "btrfs_header.uuid doesn't match sblock uuid\n");
-+      return grub_error (GRUB_ERR_BAD_FS,
-+			 "header uuid doesn't match sblock uuid");
-+    }
-+  return GRUB_ERR_NONE;
-+}
+ static grub_device_t
+-find_device (struct grub_btrfs_data *data, grub_uint64_t id, int do_rescan)
++find_device (struct grub_btrfs_data *data, grub_uint64_t id)
+ {
+   struct find_device_ctx ctx = {
+     .data = data,
+@@ -600,12 +600,9 @@ find_device (struct grub_btrfs_data *data, grub_uint64_t id, int do_rescan)
+   for (i = 0; i < data->n_devices_attached; i++)
+     if (id == data->devices_attached[i].id)
+       return data->devices_attached[i].dev;
+-  if (do_rescan)
+-    grub_device_iterate (find_device_iter, &ctx);
+-  if (!ctx.dev_found)
+-    {
+-      return NULL;
+-    }
 +
- static grub_err_t
- save_ref (struct grub_btrfs_leaf_descriptor *desc,
- 	  grub_disk_addr_t addr, unsigned i, unsigned m, int l)
-@@ -341,6 +361,7 @@ next (struct grub_btrfs_data *data,
++  grub_device_iterate (find_device_iter, &ctx);
++
+   data->n_devices_attached++;
+   if (data->n_devices_attached > data->n_devices_allocated)
+     {
+@@ -617,7 +614,8 @@ find_device (struct grub_btrfs_data *data, grub_uint64_t id, int do_rescan)
+ 			* sizeof (data->devices_attached[0]));
+       if (!data->devices_attached)
+ 	{
+-	  grub_device_close (ctx.dev_found);
++	  if (ctx.dev_found)
++	    grub_device_close (ctx.dev_found);
+ 	  data->devices_attached = tmp;
+ 	  return NULL;
+ 	}
+@@ -892,7 +890,7 @@ grub_btrfs_read_logical (struct grub_btrfs_data *data, grub_disk_addr_t addr,
+ 			      " for laddr 0x%" PRIxGRUB_UINT64_T "\n", paddr,
+ 			      addr);
  
-       err = grub_btrfs_read_logical (data, grub_le_to_cpu64 (node.addr),
- 				     &head, sizeof (head), 0);
-+      check_btrfs_header (data, &head, grub_le_to_cpu64 (node.addr));
-       if (err)
- 	return -err;
- 
-@@ -402,6 +423,7 @@ lower_bound (struct grub_btrfs_data *data,
-       /* FIXME: preread few nodes into buffer. */
-       err = grub_btrfs_read_logical (data, addr, &head, sizeof (head),
- 				     recursion_depth + 1);
-+      check_btrfs_header (data, &head, addr);
-       if (err)
- 	return err;
-       addr += sizeof (head);
+-		dev = find_device (data, stripe->device_id, j);
++		dev = find_device (data, stripe->device_id);
+ 		if (!dev)
+ 		  {
+ 		    grub_dprintf ("btrfs",
+@@ -969,7 +967,8 @@ grub_btrfs_unmount (struct grub_btrfs_data *data)
+   unsigned i;
+   /* The device 0 is closed one layer upper.  */
+   for (i = 1; i < data->n_devices_attached; i++)
+-    grub_device_close (data->devices_attached[i].dev);
++    if (data->devices_attached[i].dev)
++        grub_device_close (data->devices_attached[i].dev);
+   grub_free (data->devices_attached);
+   grub_free (data->extent);
+   grub_free (data);
 -- 
 2.19.0

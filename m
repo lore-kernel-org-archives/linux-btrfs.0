@@ -1,45 +1,103 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io1-f65.google.com ([209.85.166.65]:40499 "EHLO
-        mail-io1-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727002AbeITBOL (ORCPT
+Received: from mail-wr1-f65.google.com ([209.85.221.65]:38627 "EHLO
+        mail-wr1-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727002AbeITBPH (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 19 Sep 2018 21:14:11 -0400
-Received: by mail-io1-f65.google.com with SMTP id l14-v6so5451779iob.7
-        for <linux-btrfs@vger.kernel.org>; Wed, 19 Sep 2018 12:34:48 -0700 (PDT)
-Subject: Re: GRUB writing to grubenv outside of kernel fs code
-To: kreijack@inwind.it, Chris Murphy <lists@colorremedies.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <CAJCQCtRyY=_qPTkBkMCs9HCNMvEHJCeFJ_=eCK_BGKgWLHotXA@mail.gmail.com>
- <CAJCQCtTw9=A7BS-eZTy0rRJ1V0+=tUY5c43rvGg5ieY4EkdWZg@mail.gmail.com>
- <406ded26-bcef-ce8c-36e4-1b25bbb36768@libero.it>
- <ea52b0e3-9444-d1e0-a934-ad132998b23c@libero.it>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <3d755559-f25e-0e6d-b6eb-7e38732bed5f@gmail.com>
-Date: Wed, 19 Sep 2018 15:34:42 -0400
+        Wed, 19 Sep 2018 21:15:07 -0400
+Received: by mail-wr1-f65.google.com with SMTP id j8-v6so3249175wrw.5
+        for <linux-btrfs@vger.kernel.org>; Wed, 19 Sep 2018 12:35:43 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <ea52b0e3-9444-d1e0-a934-ad132998b23c@libero.it>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=UTF-8;
+ format=flowed
+Date: Wed, 19 Sep 2018 21:35:40 +0200
+From: =?UTF-8?Q?J=C3=BCrgen_Herrmann?= <t-5@t-5.eu>
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: btrfs send hangs after partial transfer and blocks all IO
+In-Reply-To: <CAJCQCtRK9tW80GB-LCbNG5eL0jqNN1euGt+KP3LLgM2jpYJ=aA@mail.gmail.com>
+References: <8c2c436d404bca00617614d08e9720c1@t-5.eu>
+ <63ab2fb7-15a8-f807-4a2f-04ce53f3f168@suse.com>
+ <bb7c2fdd78c731bdf9b5044f4dfc4223@t-5.eu>
+ <cb7403dd-0e76-8e8c-2389-30283b9e319d@suse.com>
+ <165d2939520.27fe.1e2eed663022c8efc8eff86f8ee324b8@t-5.eu>
+ <7956cebe-3227-f153-6f0e-be272abe2c61@suse.com>
+ <165d2c48478.27fe.1e2eed663022c8efc8eff86f8ee324b8@t-5.eu>
+ <91b2f76b-5b1c-6df3-ac8c-058696f27788@suse.com>
+ <165d2e8e110.27fe.1e2eed663022c8efc8eff86f8ee324b8@t-5.eu>
+ <322267c4-5671-73f3-acca-797dd6fe3572@suse.com>
+ <CAJCQCtQFfGzNrCSVsZXutfx+O5BdNEELieVuHbJ0mLBqATc-cw@mail.gmail.com>
+ <5c0b3895-05c8-63b1-195a-316d3eaca072@suse.com>
+ <CAJCQCtRK9tW80GB-LCbNG5eL0jqNN1euGt+KP3LLgM2jpYJ=aA@mail.gmail.com>
+Message-ID: <d8571e74a64369177dcd3945478eac1f@t-5.eu>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2018-09-19 15:08, Goffredo Baroncelli wrote:
-> On 18/09/2018 19.15, Goffredo Baroncelli wrote:
->>> b. The bootloader code, would have to have sophisticated enough Btrfs
->>> knowledge to know if the grubenv has been reflinked or snapshot,
->>> because even if +C, it may not be valid to overwrite, and COW must
->>> still happen, and there's no way the code in GRUB can do full blow COW
->>> and update a bunch of metadata.
+Am 13.9.2018 18:22, schrieb Chris Murphy:
+> (resend to all)
 > 
->> And what if GRUB ignore the possibility of COWing and overwrite the data ? Is it a so big problem that the data is changed in all the snapshots ?
->> It would be interested if the same problem happens for a swap file.....
+> On Thu, Sep 13, 2018 at 9:44 AM, Nikolay Borisov <nborisov@suse.com> 
+> wrote:
+>> 
+>> 
+>> On 13.09.2018 18:30, Chris Murphy wrote:
+>>> This is the 2nd or 3rd thread containing hanging btrfs send, with
+>>> kernel 4.18.x. The subject of one is "btrfs send hung in pipe_wait"
+>>> and the other I can't find at the moment. In that case though the 
+>>> hang
+>>> is reproducible in 4.14.x and weirdly it only happens when a snapshot
+>>> contains (perhaps many) reflinks. Scrub and check lowmem find nothing
+>>> wrong.
+>>> 
+>>> I have snapshots with a few reflinks (cp --reflink and also
+>>> deduplication), and I see maybe 15-30 second hangs where nothing is
+>>> apparently happening (in top or iotop), but I'm also not seeing any
+>>> blocked tasks or high CPU usage. Perhaps in my case it's just
+>>> recovering quickly.
+>>> 
+>>> Are there any kernel config options in "# Debug Lockups and Hangs"
+>>> that might hint at what's going on? Some of these are enabled in
+>>> Fedora debug kernels, which are built practically daily, e.g. right
+>>> now the latest in the build system is 4.19.0-0.rc3.git2.1 - which
+>>> translates to git 54eda9df17f3.
+>> 
+>> If it's a lock-related problem then you need Lock Debugging => Lock
+>> debugging: prove locking correctness
 > 
-> I gave a look to the Sandoval's patches about implementing swap on BTRFS. This patch set
-> prevents the subvolume containing the swapfile to be snapshot-ted (and the file to be balanced and so on...); what if we would add the same constraint to the grubenv file ?
-We would need to have a generalized mechanism of doing this then, 
-because there's no way in hell a patch special-casing a single filename 
-is going to make it into mainline.
+> OK looks like that's under a different section as CONFIG_PROVE_LOCKING
+> which is enabled on Fedora debug kernels.
+> 
+> 
+> # Debug Lockups and Hangs
+> CONFIG_LOCKUP_DETECTOR=y
+> CONFIG_SOFTLOCKUP_DETECTOR=y
+> # CONFIG_BOOTPARAM_SOFTLOCKUP_PANIC is not set
+> CONFIG_BOOTPARAM_SOFTLOCKUP_PANIC_VALUE=0
+> CONFIG_HARDLOCKUP_DETECTOR_PERF=y
+> CONFIG_HARDLOCKUP_CHECK_TIMESTAMP=y
+> CONFIG_HARDLOCKUP_DETECTOR=y
+> # CONFIG_BOOTPARAM_HARDLOCKUP_PANIC is not set
+> CONFIG_BOOTPARAM_HARDLOCKUP_PANIC_VALUE=0
+> # Lock Debugging (spinlocks, mutexes, etc...)
+> CONFIG_LOCK_DEBUGGING_SUPPORT=y
+> CONFIG_PROVE_LOCKING=y
+> CONFIG_LOCK_STAT=y
+> CONFIG_DEBUG_SPINLOCK=y
+> CONFIG_DEBUG_LOCK_ALLOC=y
+> CONFIG_LOCKDEP=y
+> # CONFIG_DEBUG_LOCKDEP is not set
+> # CONFIG_DEBUG_LOCKING_API_SELFTESTS is not set
+> CONFIG_LOCK_TORTURE_TEST=m
 
-Whatever mechanism is used, it should also:
+Hello again!
 
-* Force the file to not be inlined in metadata.
-* Enforce the file having the NOCOW attribute being set.
+I have CONFIG_PROVE_LOCKING enabled in my kernel, but no change to
+the observed behaviour.
+
+Best regards, Jürgen
+
+
+-- 
+Jürgen Herrmann
+https://t-5.eu
+ALbertstraße 2
+94327 Bogen

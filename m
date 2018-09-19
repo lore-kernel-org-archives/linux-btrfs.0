@@ -1,82 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pg1-f194.google.com ([209.85.215.194]:38047 "EHLO
-        mail-pg1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727204AbeISFzq (ORCPT
+Received: from mail-pf1-f193.google.com ([209.85.210.193]:40045 "EHLO
+        mail-pf1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726960AbeISF4W (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 19 Sep 2018 01:55:46 -0400
-Received: by mail-pg1-f194.google.com with SMTP id t84-v6so1825782pgb.5
-        for <linux-btrfs@vger.kernel.org>; Tue, 18 Sep 2018 17:20:39 -0700 (PDT)
-Date: Tue, 18 Sep 2018 17:20:37 -0700
+        Wed, 19 Sep 2018 01:56:22 -0400
+Received: by mail-pf1-f193.google.com with SMTP id s13-v6so1794382pfi.7
+        for <linux-btrfs@vger.kernel.org>; Tue, 18 Sep 2018 17:21:16 -0700 (PDT)
+Date: Tue, 18 Sep 2018 17:21:14 -0700
 From: Omar Sandoval <osandov@osandov.com>
 To: Josef Bacik <josef@toxicpanda.com>
 Cc: kernel-team@fb.com, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 33/36] btrfs: only free reserved extent if we didn't
- insert it
-Message-ID: <20180919002037.GG479@vader>
+Subject: Re: [PATCH 32/36] btrfs: clear delayed_refs_rsv for dirty bg cleanup
+Message-ID: <20180919002114.GH479@vader>
 References: <20180911175807.26181-1-josef@toxicpanda.com>
- <20180911175807.26181-34-josef@toxicpanda.com>
+ <20180911175807.26181-33-josef@toxicpanda.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180911175807.26181-34-josef@toxicpanda.com>
+In-Reply-To: <20180911175807.26181-33-josef@toxicpanda.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Sep 11, 2018 at 01:58:04PM -0400, Josef Bacik wrote:
-> When we insert the file extent once the ordered extent completes we free
-> the reserved extent reservation as it'll have been migrated to the
-> bytes_used counter.  However if we error out after this step we'll still
-> clear the reserved extent reservation, resulting in a negative
-> accounting of the reserved bytes for the block group and space info.
-> Fix this by only doing the free if we didn't successfully insert a file
-> extent for this extent.
+On Tue, Sep 11, 2018 at 01:58:03PM -0400, Josef Bacik wrote:
+> We keep track of dirty bg's as a reservation in the delayed_refs_rsv, so
+> when we abort and we cleanup those dirty bgs we need to drop their
+> reservation so we don't have accounting issues and lots of scary
+> messages on umount.
 
-Reviewed-by: Omar Sandoval <osandov@fb.com>
+Shouldn't this just be part of patch 6?
 
 > Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 > ---
->  fs/btrfs/inode.c | 10 +++++++++-
->  1 file changed, 9 insertions(+), 1 deletion(-)
+>  fs/btrfs/disk-io.c | 1 +
+>  1 file changed, 1 insertion(+)
 > 
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 60bcad901857..fd6ade4680b5 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -2992,6 +2992,7 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)
->  	bool truncated = false;
->  	bool range_locked = false;
->  	bool clear_new_delalloc_bytes = false;
-> +	bool clear_reserved_extent = true;
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index caaca8154a1a..54fbdc944a3f 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -4412,6 +4412,7 @@ void btrfs_cleanup_dirty_bgs(struct btrfs_transaction *cur_trans,
 >  
->  	if (!test_bit(BTRFS_ORDERED_NOCOW, &ordered_extent->flags) &&
->  	    !test_bit(BTRFS_ORDERED_PREALLOC, &ordered_extent->flags) &&
-> @@ -3095,10 +3096,12 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)
->  						logical_len, logical_len,
->  						compress_type, 0, 0,
->  						BTRFS_FILE_EXTENT_REG);
-> -		if (!ret)
-> +		if (!ret) {
-> +			clear_reserved_extent = false;
->  			btrfs_release_delalloc_bytes(fs_info,
->  						     ordered_extent->start,
->  						     ordered_extent->disk_len);
-> +		}
+>  		spin_unlock(&cur_trans->dirty_bgs_lock);
+>  		btrfs_put_block_group(cache);
+> +		btrfs_delayed_refs_rsv_release(fs_info, 1);
+>  		spin_lock(&cur_trans->dirty_bgs_lock);
 >  	}
->  	unpin_extent_cache(&BTRFS_I(inode)->extent_tree,
->  			   ordered_extent->file_offset, ordered_extent->len,
-> @@ -3159,8 +3162,13 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)
->  		 * wrong we need to return the space for this ordered extent
->  		 * back to the allocator.  We only free the extent in the
->  		 * truncated case if we didn't write out the extent at all.
-> +		 *
-> +		 * If we made it past insert_reserved_file_extent before we
-> +		 * errored out then we don't need to do this as the accounting
-> +		 * has already been done.
->  		 */
->  		if ((ret || !logical_len) &&
-> +		    clear_reserved_extent &&
->  		    !test_bit(BTRFS_ORDERED_NOCOW, &ordered_extent->flags) &&
->  		    !test_bit(BTRFS_ORDERED_PREALLOC, &ordered_extent->flags))
->  			btrfs_free_reserved_extent(fs_info,
+>  	spin_unlock(&cur_trans->dirty_bgs_lock);
 > -- 
 > 2.14.3
 > 

@@ -1,73 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from out1-smtp.messagingengine.com ([66.111.4.25]:39529 "EHLO
-        out1-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1731532AbeISRhp (ORCPT
+Received: from mail-io1-f50.google.com ([209.85.166.50]:34846 "EHLO
+        mail-io1-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1731641AbeISS5S (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 19 Sep 2018 13:37:45 -0400
-Received: from compute2.internal (compute2.nyi.internal [10.202.2.42])
-        by mailout.nyi.internal (Postfix) with ESMTP id 306B321B25
-        for <linux-btrfs@vger.kernel.org>; Wed, 19 Sep 2018 08:00:09 -0400 (EDT)
-Received: from [10.0.0.6] (cpe00248caf16e4-cmbc4dfbde0a70.cpe.net.cable.rogers.com [99.240.134.203])
-        by mail.messagingengine.com (Postfix) with ESMTPA id A3FBDE493A
-        for <linux-btrfs@vger.kernel.org>; Wed, 19 Sep 2018 08:00:08 -0400 (EDT)
-Subject: Re: very poor performance / a lot of writes to disk with space_cache
- (but not with space_cache=v2)
-References: <e0f21dace16885d1bd615dd723235d57@virtall.com>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-From: Remi Gauvin <remi@georgianit.com>
-Message-ID: <7db0a826-8361-2cd3-c9c3-67ea81e45db2@georgianit.com>
-Date: Wed, 19 Sep 2018 08:00:02 -0400
+        Wed, 19 Sep 2018 14:57:18 -0400
+Received: by mail-io1-f50.google.com with SMTP id w11-v6so4454081iob.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 19 Sep 2018 06:19:23 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <e0f21dace16885d1bd615dd723235d57@virtall.com>
-Content-Type: multipart/mixed;
- boundary="------------27BBD4E7275645FC9A44F05E"
+From: "Zbigniew 'zibi' Jarosik" <zibi@nora.pl>
+Date: Wed, 19 Sep 2018 15:19:22 +0200
+Message-ID: <CAOc3t=v+ZTN7wZRSZO0afx5BVJYzrorD3HWoWkeJyUoUZ2KoTg@mail.gmail.com>
+Subject: cannot mount btrfs as root
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a multi-part message in MIME format.
---------------27BBD4E7275645FC9A44F05E
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: 7bit
+Hi!
 
-On 2018-09-19 04:43 AM, Tomasz Chmielewski wrote:
-> I have a mysql slave which writes to a RAID-1 btrfs filesystem (with
-> 4.17.14 kernel) on 3 x ~1.9 TB SSD disks; filesystem is around 40% full.
-> 
-> The slave receives around 0.5-1 MB/s of data from the master over the
-> network, which is then saved to MySQL's relay log and executed. In ideal
-> conditions (i.e. no filesystem overhead) we should expect some 1-3 MB/s
-> of data written to disk.
-> 
-> MySQL directory and files in it are chattr +C (since the directory was
-> created, so all files are really +C); there are no snapshots.
+I can't mount my RAID1 set as rootfs, but as normal mount to running
+system works normally. It was working normal, than some day it died.
 
-Not related to the issue you are reporting, but I thought it's worth
-mentioning, (since not many do), that using chattr +C on a BTRFS Raid 1
-is a dangerous thing.  without COW, the 2 copies are never synchronized,
-even if a scrub is executed.  So any kind of unclean shutdown that
-interrupts writes (not to mention the extreme of a temporarily
-disconnected drive.) will result in files that are inconsistent.  (ie,
-depending on which disk happens to read at the time, the data will be
-different on each read.)
+When booted to rootfs as
+root=UUID=98c94774-d93a-400e-a275-58cc3ac2a58a rootflags=subvol=@root
+i got:
+
+BTRFS error (device bcache2): devid 5 uuid
+dd09f810-717e-4f2f-97ab-26469d5adca5 is missing
+BTRFS error (device bcache2): failed to read the system array: -2
+BTRFS error (device bcache2): open_ctree failed
+mount: mounting /dev/bcache2 on /root failed: Invalid argument
+
+and (initramfs) prompt.
+
+Bcache devices are registered and populated in /dev.
+
+When I boot exacly the same kernel and initrd, but rootfs is on
+pendrive ( root=/dev/sda2 ) than mount dataset to subdir ( mount UUID=
+98c94774-d93a-400e-a275-58cc3ac2a58a  /data ) - works flawlessly.
+
+Thanks in advance for any ideas.
+
+Some system info:
+
+/dev/sdb1: UUID="780cc211-2408-4594-83df-379ee23d6ed8" TYPE="bcache"
+PARTLABEL="Linux filesystem"
+PARTUUID="ef83f1b4-b55c-4deb-8037-69ff16909222"
+/dev/sdc1: UUID="80a1b115-8a1f-41f7-b65b-dd4fdaf400f1" TYPE="bcache"
+PARTLABEL="Linux filesystem"
+PARTUUID="1f920d16-af68-440b-891c-5ff61c3057ca"
+/dev/sdd1: UUID="a40e80dc-f7e2-4a9c-9bfe-81489a1261ca" TYPE="bcache"
+PARTLABEL="Linux filesystem"
+PARTUUID="4b68c314-f029-402a-b332-b0b9109ad51d"
+/dev/bcache0: UUID="98c94774-d93a-400e-a275-58cc3ac2a58a"
+UUID_SUB="dd09f810-717e-4f2f-97ab-26469d5adca5" TYPE="btrfs"
+/dev/bcache1: UUID="98c94774-d93a-400e-a275-58cc3ac2a58a"
+UUID_SUB="8469962d-f9ee-4b5f-b4d5-4a62190c0d8f" TYPE="btrfs"
+/dev/bcache2: UUID="98c94774-d93a-400e-a275-58cc3ac2a58a"
+UUID_SUB="516f2bd1-3fcc-42fd-87ad-5d5fa2f84b5f" TYPE="btrfs"
+
+Linux hp1 4.17.11-ldkb #2 SMP Thu Aug 2 09:24:58 CEST 2018 x86_64 GNU/Linux
+btrfs-progs v4.7.3
+Label: none  uuid: 98c94774-d93a-400e-a275-58cc3ac2a58a
+        Total devices 3 FS bytes used 3.21TiB
+        devid    3 size 2.73TiB used 2.07TiB path /dev/bcache2
+        devid    4 size 2.73TiB used 2.18TiB path /dev/bcache1
+        devid    5 size 2.73TiB used 2.18TiB path /dev/bcache0
+Data, RAID1: total=3.20TiB, used=3.20TiB
+System, RAID1: total=32.00MiB, used=480.00KiB
+Metadata, RAID1: total=12.00GiB, used=10.81GiB
+GlobalReserve, single: total=512.00MiB, used=0.00B
 
 
-
---------------27BBD4E7275645FC9A44F05E
-Content-Type: text/x-vcard; charset=utf-8;
- name="remi.vcf"
-Content-Transfer-Encoding: 7bit
-Content-Disposition: attachment;
- filename="remi.vcf"
-
-begin:vcard
-fn:Remi Gauvin
-n:Gauvin;Remi
-org:Georgian Infotech
-adr:;;3-51 Sykes St. N.;Meaford;ON;N4L 1X3;Canada
-email;internet:remi@georgianit.com
-tel;work:226-256-1545
-version:2.1
-end:vcard
-
-
---------------27BBD4E7275645FC9A44F05E--
+-- 
+Zbigniew 'zibi' Jarosik
+cell: +48 667956686
+jid: tapiau@gmail.com
+gg: 2830
+http://zibi.nora.pl/

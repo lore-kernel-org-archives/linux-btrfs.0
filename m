@@ -1,48 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yw1-f65.google.com ([209.85.161.65]:38890 "EHLO
-        mail-yw1-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1732230AbeITAVB (ORCPT
+Received: from mail-yb1-f194.google.com ([209.85.219.194]:33080 "EHLO
+        mail-yb1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1732190AbeITAWp (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 19 Sep 2018 20:21:01 -0400
-Received: by mail-yw1-f65.google.com with SMTP id n21-v6so2690071ywh.5
-        for <linux-btrfs@vger.kernel.org>; Wed, 19 Sep 2018 11:41:50 -0700 (PDT)
-Date: Wed, 19 Sep 2018 14:41:47 -0400
+        Wed, 19 Sep 2018 20:22:45 -0400
+Received: by mail-yb1-f194.google.com with SMTP id y9-v6so2825338ybh.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 19 Sep 2018 11:43:33 -0700 (PDT)
+Date: Wed, 19 Sep 2018 14:43:31 -0400
 From: Johannes Weiner <hannes@cmpxchg.org>
 To: Omar Sandoval <osandov@osandov.com>
 Cc: linux-btrfs@vger.kernel.org, kernel-team@fb.com, linux-mm@kvack.org
-Subject: Re: [PATCH v7 1/6] mm: split SWP_FILE into SWP_ACTIVATED and SWP_FS
-Message-ID: <20180919184147.GA19595@cmpxchg.org>
+Subject: Re: [PATCH v7 2/6] mm: export add_swap_extent()
+Message-ID: <20180919184331.GA20181@cmpxchg.org>
 References: <cover.1536704650.git.osandov@fb.com>
- <6d63d8668c4287a4f6d203d65696e96f80abdfc7.1536704650.git.osandov@fb.com>
- <20180919180232.GB18068@cmpxchg.org>
- <20180919181202.GJ479@vader>
+ <bb1208575e02829aae51b538709476964f97b1ea.1536704650.git.osandov@fb.com>
+ <20180919180909.GC18068@cmpxchg.org>
+ <20180919182800.GK479@vader>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180919181202.GJ479@vader>
+In-Reply-To: <20180919182800.GK479@vader>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Sep 19, 2018 at 11:12:02AM -0700, Omar Sandoval wrote:
-> On Wed, Sep 19, 2018 at 02:02:32PM -0400, Johannes Weiner wrote:
-> > On Tue, Sep 11, 2018 at 03:34:44PM -0700, Omar Sandoval wrote:
-> > > @@ -2411,8 +2412,10 @@ static int setup_swap_extents(struct swap_info_struct *sis, sector_t *span)
-> > >  
-> > >  	if (mapping->a_ops->swap_activate) {
-> > >  		ret = mapping->a_ops->swap_activate(sis, swap_file, span);
-> > > +		if (ret >= 0)
-> > > +			sis->flags |= SWP_ACTIVATED;
-> > >  		if (!ret) {
-> > > -			sis->flags |= SWP_FILE;
-> > > +			sis->flags |= SWP_FS;
-> > >  			ret = add_swap_extent(sis, 0, sis->max, 0);
+On Wed, Sep 19, 2018 at 11:28:00AM -0700, Omar Sandoval wrote:
+> On Wed, Sep 19, 2018 at 02:09:09PM -0400, Johannes Weiner wrote:
+> > On Tue, Sep 11, 2018 at 03:34:45PM -0700, Omar Sandoval wrote:
+> > > From: Omar Sandoval <osandov@fb.com>
+> > > 
+> > > Btrfs will need this for swap file support.
+> > > 
+> > > Signed-off-by: Omar Sandoval <osandov@fb.com>
 > > 
-> > Won't this single, linear extent be in conflict with the discontiguous
-> > extents you set up in your swap_activate callback in the last patch?
+> > That looks reasonable. After reading the last patch, it's somewhat
+> > understandable why you cannot simply implemnet ->bmap and use the
+> > generic activation code. But it would be good to explain the reason(s)
+> > for why you can't here briefly to justify this patch.
 > 
-> That's only in the case that ->swap_activate() returned 0, which only
-> nfs_swap_activate() will do. btrfs_swap_activate() and
-> iomap_swapfile_activate() both return the number of extents they set up.
+> I'll rewrite it to:
+> 
+> Btrfs currently does not support swap files because swap's use of bmap
+> does not work with copy-on-write and multiple devices. See 35054394c4b3
+> ("Btrfs: stop providing a bmap operation to avoid swapfile
+> corruptions"). However, the swap code has a mechanism for the filesystem
+> to manually add swap extents using add_swap_extent() from the
+> ->swap_activate() aop. iomap has done this since 67482129cdab ("iomap:
+> add a swapfile activation function"). Btrfs will do the same in a later
+> patch, so export add_swap_extent().
 
-Ah yes, I missed that.
-
-That's a little under-documented I guess, but that's not your fault.
+That explains it perfectly. Thanks!

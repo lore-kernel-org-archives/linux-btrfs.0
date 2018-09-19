@@ -1,139 +1,100 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.18]:58811 "EHLO mout.gmx.net"
+Received: from zlom.siedziba.pl ([83.144.122.22]:33848 "EHLO zlom.siedziba.pl"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1730876AbeISTdB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 19 Sep 2018 15:33:01 -0400
-Subject: Re: cannot mount btrfs as root
-To: "Zbigniew 'zibi' Jarosik" <zibi@nora.pl>, linux-btrfs@vger.kernel.org
-References: <CAOc3t=v+ZTN7wZRSZO0afx5BVJYzrorD3HWoWkeJyUoUZ2KoTg@mail.gmail.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <53806b04-c239-cb23-1d8a-e84d7453950a@gmx.com>
-Date: Wed, 19 Sep 2018 21:54:45 +0800
+        id S1731654AbeISUcC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 19 Sep 2018 16:32:02 -0400
+From: =?UTF-8?Q?Piotr_Paw=c5=82ow?= <btrfs@pp.siedziba.pl>
+Subject: state of btrfs snapshot limitations?
+To: "James A. Robinson" <jim.robinson@gmail.com>, linux-btrfs@vger.kernel.org
+References: <CAPd04b4nXw_qe7+8msY26UDr-m+MBpzYn_UdqGQX8Z-KxNN_0w@mail.gmail.com>
+Message-ID: <d502c26f-5270-a3f5-53c7-80f7f51bbe20@siedziba.pl>
+Date: Wed, 19 Sep 2018 16:41:37 +0200
 MIME-Version: 1.0
-In-Reply-To: <CAOc3t=v+ZTN7wZRSZO0afx5BVJYzrorD3HWoWkeJyUoUZ2KoTg@mail.gmail.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="UMnoOpkyPVpa5fKiIkEIpF0pyADCnAFWn"
+In-Reply-To: <CAPd04b4nXw_qe7+8msY26UDr-m+MBpzYn_UdqGQX8Z-KxNN_0w@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---UMnoOpkyPVpa5fKiIkEIpF0pyADCnAFWn
-Content-Type: multipart/mixed; boundary="SEopurdSOTQxvBnDHIFuPqm11RX1VNSGk";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Zbigniew 'zibi' Jarosik <zibi@nora.pl>, linux-btrfs@vger.kernel.org
-Message-ID: <53806b04-c239-cb23-1d8a-e84d7453950a@gmx.com>
-Subject: Re: cannot mount btrfs as root
-References: <CAOc3t=v+ZTN7wZRSZO0afx5BVJYzrorD3HWoWkeJyUoUZ2KoTg@mail.gmail.com>
-In-Reply-To: <CAOc3t=v+ZTN7wZRSZO0afx5BVJYzrorD3HWoWkeJyUoUZ2KoTg@mail.gmail.com>
+Hello,
+> If the limit is 100 or less I'd need use a more complicated
+> rotation scheme.
 
---SEopurdSOTQxvBnDHIFuPqm11RX1VNSGk
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+If you just want to thin them out over time without having selected "special" monthly, yearly etc snapshots, then my favorite scheme is to just compare the age of a snapshot to the distance to its neighbours, and if the distance is less than age / constant then delete it. If the constant is, for example, 12, then it will start thinning out hourly snapshots after around 12 hours, monthly after 12 months etc.
 
+This is how it looks after 2 years with daily snapshots and the constant=6:
 
+backup-20160328143825
+backup-20161210043001
+backup-20170424033001
+backup-20170830033001
+backup-20171102043001
+backup-20180105043001
+backup-20180310043001
+backup-20180411033001
+backup-20180513033001
+backup-20180614033001
+backup-20180630033001
+backup-20180716033001
+backup-20180801033001
+backup-20180809033001
+backup-20180817033001
+backup-20180825033001
+backup-20180829033001
+backup-20180902033001
+backup-20180906033001
+backup-20180908033001
+backup-20180910033001
+backup-20180912033001
+backup-20180914033001
+backup-20180915033001
+backup-20180916033001
+backup-20180917033001
+backup-20180918033001
+backup-20180919033001
 
-On 2018/9/19 =E4=B8=8B=E5=8D=889:19, Zbigniew 'zibi' Jarosik wrote:
-> Hi!
->=20
-> I can't mount my RAID1 set as rootfs, but as normal mount to running
-> system works normally. It was working normal, than some day it died.
->=20
-> When booted to rootfs as
-> root=3DUUID=3D98c94774-d93a-400e-a275-58cc3ac2a58a rootflags=3Dsubvol=3D=
-@root
-> i got:
->=20
-> BTRFS error (device bcache2): devid 5 uuid
-> dd09f810-717e-4f2f-97ab-26469d5adca5 is missing
-> BTRFS error (device bcache2): failed to read the system array: -2
+Notice how I have 6 daily snapshots (from 09-14 to 09-19), then I have at least 1 snapshot from each month 6 months back (04 to 09) and I would have at least 1 snapshot from each year for 6 years if I kept them longer. I delete the oldest snapshot when free space gets too low.
 
-One of your device is missing, thus read_one_dev() refuse to continue
-and return -ENOENT (-2).
+I have a horrid perl "one-liner" to do the thinning (caution! it deletes subvolumes without asking!):
 
-Does the iniramfs do a "btrfs dev scan" to make populate btrfs devices
-lists?
+perl -e 'for(@ARGV){open($in,"-|",qw(btrfs subvolume show),$_);$ts{$_}=(map{/: \t+(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} \+\d{4})$/ or die "error parsing: $_\n";0+`date --date "$1" +%s` or die $!}grep{/Creation time:/}<$in>)[0]}@s=sort{$ts{$b}<=>$ts{$a}}keys%ts;while(@s>2){($s1,$s2,$s3)=@s;if(($ts{$s1}-$ts{$s3})/2<(time-$ts{$s2})/12){system(qw(btrfs subvolume delete),$s2);$s[1]=$s1};shift@s}' [snapshot ...]
 
-> BTRFS error (device bcache2): open_ctree failed
-> mount: mounting /dev/bcache2 on /root failed: Invalid argument
->=20
-> and (initramfs) prompt.
->=20
-> Bcache devices are registered and populated in /dev.
->=20
-> When I boot exacly the same kernel and initrd, but rootfs is on
-> pendrive ( root=3D/dev/sda2 ) than mount dataset to subdir ( mount UUID=
-=3D
-> 98c94774-d93a-400e-a275-58cc3ac2a58a  /data ) - works flawlessly.
->=20
-> Thanks in advance for any ideas.
->=20
-> Some system info:
->=20
-> /dev/sdb1: UUID=3D"780cc211-2408-4594-83df-379ee23d6ed8" TYPE=3D"bcache=
-"
-> PARTLABEL=3D"Linux filesystem"
-> PARTUUID=3D"ef83f1b4-b55c-4deb-8037-69ff16909222"
-> /dev/sdc1: UUID=3D"80a1b115-8a1f-41f7-b65b-dd4fdaf400f1" TYPE=3D"bcache=
-"
-> PARTLABEL=3D"Linux filesystem"
-> PARTUUID=3D"1f920d16-af68-440b-891c-5ff61c3057ca"
-> /dev/sdd1: UUID=3D"a40e80dc-f7e2-4a9c-9bfe-81489a1261ca" TYPE=3D"bcache=
-"
-> PARTLABEL=3D"Linux filesystem"
-> PARTUUID=3D"4b68c314-f029-402a-b332-b0b9109ad51d"
-> /dev/bcache0: UUID=3D"98c94774-d93a-400e-a275-58cc3ac2a58a"
-> UUID_SUB=3D"dd09f810-717e-4f2f-97ab-26469d5adca5" TYPE=3D"btrfs"
+(hey, everything can be a one-liner if you allow unlimited line length!)
 
-The devices is indeed here, so it's not a missing device, but looks like
-at mount time, btrfs hasn't fully scanned all devices.
+I will take this opportunity to tidy it up a bit (below). Maybe someone else will find it useful or have some ideas for improvements. I would really like to avoid parsing "btrfs subvolume show" output (maybe python-btrfs can read subvolume creation time?)
 
-You could refer to your distribution manual to figure out how to make
-btrfs scan work before mounting the rootfs.
+#!/usr/bin/perl
+use strict;
+use warnings;
 
-Thanks,
-Qu
-
-> /dev/bcache1: UUID=3D"98c94774-d93a-400e-a275-58cc3ac2a58a"
-> UUID_SUB=3D"8469962d-f9ee-4b5f-b4d5-4a62190c0d8f" TYPE=3D"btrfs"
-> /dev/bcache2: UUID=3D"98c94774-d93a-400e-a275-58cc3ac2a58a"
-> UUID_SUB=3D"516f2bd1-3fcc-42fd-87ad-5d5fa2f84b5f" TYPE=3D"btrfs"
->=20
-> Linux hp1 4.17.11-ldkb #2 SMP Thu Aug 2 09:24:58 CEST 2018 x86_64 GNU/L=
-inux
-> btrfs-progs v4.7.3
-> Label: none  uuid: 98c94774-d93a-400e-a275-58cc3ac2a58a
->         Total devices 3 FS bytes used 3.21TiB
->         devid    3 size 2.73TiB used 2.07TiB path /dev/bcache2
->         devid    4 size 2.73TiB used 2.18TiB path /dev/bcache1
->         devid    5 size 2.73TiB used 2.18TiB path /dev/bcache0
-> Data, RAID1: total=3D3.20TiB, used=3D3.20TiB
-> System, RAID1: total=3D32.00MiB, used=3D480.00KiB
-> Metadata, RAID1: total=3D12.00GiB, used=3D10.81GiB
-> GlobalReserve, single: total=3D512.00MiB, used=3D0.00B
->=20
->=20
-
-
---SEopurdSOTQxvBnDHIFuPqm11RX1VNSGk--
-
---UMnoOpkyPVpa5fKiIkEIpF0pyADCnAFWn
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAluiVSUACgkQwj2R86El
-/qggqgf+J7b4xiDPvQ+WM4rM0vX9GA4aVDCSUsQrfq7AUdmLWpK3ujveTkcDk+9L
-8kVvwxN3ZpLdNg3nYCZuRgVbI8uRoML1aeSXc59zNsteBYlRCm7wK9rNOUMYXSYB
-EC8M+FfRLl5hKQB4kqU9Hwbjef/oDt/f3sSx2FZpujREAXBi9Uv+qApD1x7MwMTh
-M0Mq1yEAK10H/uT+/oiIfiDLkYPZSxw1VUivZ+dHdHyQfRPTfvZv4CIKWlYuKWg+
-fZ8zz1xhCYeCD1S3Io48jTteHxQMQ2Bqh8k9nOm0kzkSqHyHUI8NxcMYG15w27Ns
-0JkAdbgKgxzXaqvVF9qiIaFDmyVe+A==
-=T4Sq
------END PGP SIGNATURE-----
-
---UMnoOpkyPVpa5fKiIkEIpF0pyADCnAFWn--
+# map snapshot names to timestamps
+my %ts;
+for (@ARGV) {
+    # run "btrfs subvolume show" for each snapshot
+    open( my $in, "-|", qw(btrfs subvolume show), $_ );
+    # convert "Creation time" from btrfs output to timestamp
+    $ts{$_} = (
+        map {
+            /: \t+(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} \+\d{4})$/
+              or die "error parsing: $_\n";
+            # using "date" command to parse "Creation time"
+            # who needs modules from CPAN right? ;)
+            0 + `date --date "$1" +%s` or die $!
+        } grep { /Creation time:/ } <$in>
+    )[0];
+}
+# sort snapshot names by timestamps
+my @s = sort { $ts{$b} <=> $ts{$a} } keys %ts;
+while ( @s > 2 ) {
+    my ( $s1, $s2, $s3 ) = @s;
+    # compare average distance to age / 12
+    # change 12 to some other value to keep more or less snapshots
+    # higher value = more snapshots
+    if ( ( $ts{$s1} - $ts{$s3} ) / 2 < ( time - $ts{$s2} ) / 12 ) {
+        # caution! this runs "btrfs subvolume delete"
+        # you can put "echo" before "btrfs" for a "dry run"
+        system( qw(btrfs subvolume delete), $s2 );
+        # we deleted $s2 snapshot, so replace $s2 with $s1
+        $s[1] = $s1;
+    }
+    shift @s;
+}

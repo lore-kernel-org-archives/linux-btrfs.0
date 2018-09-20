@@ -1,69 +1,110 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from imap.thunk.org ([74.207.234.97]:56474 "EHLO imap.thunk.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727241AbeIUBTZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 20 Sep 2018 21:19:25 -0400
-Date: Thu, 20 Sep 2018 15:34:20 -0400
-From: "Theodore Y. Ts'o" <tytso@mit.edu>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Dave Chinner <david@fromorbit.com>,
-        Linux FS Devel <linux-fsdevel@vger.kernel.org>,
-        xfs list <linux-xfs@vger.kernel.org>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>, linux-ext4@vger.kernel.org
-Subject: Re: inline extents
-Message-ID: <20180920193420.GA9343@thunk.org>
-References: <CAJCQCtQVzmwey0GcuHmZ8=_XuqmrA24d4DDVVuX9vL3KYStwZg@mail.gmail.com>
- <20180920014506.GL27618@dastard>
- <CAJCQCtQyws4LVJKrNiFST4ajFXB5ViXx=oRWq98r=tppa+K8FQ@mail.gmail.com>
+Received: from mail-lf1-f65.google.com ([209.85.167.65]:40263 "EHLO
+        mail-lf1-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727241AbeIUBYO (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 20 Sep 2018 21:24:14 -0400
+Received: by mail-lf1-f65.google.com with SMTP id x26-v6so9430242lfi.7
+        for <linux-btrfs@vger.kernel.org>; Thu, 20 Sep 2018 12:39:08 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAJCQCtQyws4LVJKrNiFST4ajFXB5ViXx=oRWq98r=tppa+K8FQ@mail.gmail.com>
+In-Reply-To: <CAMrg+aQV97Cv4WgH-DQvwDikFydrxD-zeJajUk3iLk1oKf12_A@mail.gmail.com>
+References: <CAMrg+aRfS0NymyKo2Wwk75+TVBBbGPshnG_Yku403CwnhsimxQ@mail.gmail.com>
+ <cbb66b3b-1b21-cb3c-c446-c44e861f36bc@gmx.com> <CAMrg+aTNK1cBG7rGVfudpydD6hMJz9UW0-3mdS8Yx4tqAQZE6Q@mail.gmail.com>
+ <ecac52ad-70ed-e0e3-5660-1717f0d4f5e0@gmx.com> <CAMrg+aTtyOSOnZMj+4q13f7pv9wMydFgTDZ5KLbQSRz8HHcbKw@mail.gmail.com>
+ <405d08b1-9f22-1038-67c3-c055477029d4@gmx.com> <CAMrg+aQV97Cv4WgH-DQvwDikFydrxD-zeJajUk3iLk1oKf12_A@mail.gmail.com>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Thu, 20 Sep 2018 13:39:06 -0600
+Message-ID: <CAJCQCtQ6GQ=oihewodXDOfSRE1X_gE=esxY7kZnPZmCXYHGqiA@mail.gmail.com>
+Subject: Re: btrfs problems
+To: Adrian Bastholm <adrian@javaguru.org>
+Cc: Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Sep 19, 2018 at 09:18:16PM -0600, Chris Murphy wrote:
-> > ext4 has inline data, too, so there's every chance grub will corrupt
-> > ext4 filesystems with tit's wonderful new feature. I'm not sure if
-> > the ext4 metadata cksums cover the entire inode and inline data, but
-> > if they do it's the same problem as btrfs.
-> 
-> I don't see inline used with a default mkfs, but I do see metadata_csum
+On Thu, Sep 20, 2018 at 11:23 AM, Adrian Bastholm <adrian@javaguru.org> wrote:
+> On Mon, Sep 17, 2018 at 2:44 PM Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
+>
+>>
+>> Then I strongly recommend to use the latest upstream kernel and progs
+>> for btrfs. (thus using Debian Testing)
+>>
+>> And if anything went wrong, please report asap to the mail list.
+>>
+>> Especially for fs corruption, that's the ghost I'm always chasing for.
+>> So if any corruption happens again (although I hope it won't happen), I
+>> may have a chance to catch it.
+>
+> You got it
+>> >
+>> >> Anyway, enjoy your stable fs even it's not btrfs
+>
+>> > My new stable fs is too rigid. Can't grow it, can't shrink it, can't
+>> > remove vdevs from it , so I'm planning a comeback to BTRFS. I guess
+>> > after the dust settled I realize I like the flexibility of BTRFS.
+>> >
+> I'm back to btrfs.
+>
+>> From the code aspect, the biggest difference is the chunk layout.
+>> Due to the ext* block group usage, each block group header (except some
+>> sparse bg) is always used, thus btrfs can't use them.
+>>
+>> This leads to highly fragmented chunk layout.
+>
+> The only thing I really understood is "highly fragmented" == not good
+> . I might need to google these "chunk" thingies
 
-The grub environment block is 1024 bytes, so unless you are using a 4k
-inode size (the default is 256 bytes), the grub environment block
-won't be an inline data file.  So in practice, this won't be a
-problem.  So in practice this won't be a problem for ext4 today.
+Chunks are synonyms with block groups. They're like a super extent, or
+extent of extents.
 
-There are ways that grub can query the file system (using FIEMAP or
-FS_IOC_GETFLAGS) to see whether or not the file is an inline file.
-For xfs grub would also need to make sure the file isn't reflinked
-file (which can also be queried using FIEMAP).  That's fine for
-inline, since a file won't magically change from stored in a block
-versus inline, so grub can check this at grub setup time.  But the
-problem with reflink is that a file that was originally using a block
-exclusively could later have that block be shared by another file, at
-which point it's only safe to write the block using copy-on-write.
+The block group is how Btrfs abstracts the logical address used most
+everywhere in Btrfs land, and device + physical location of extents.
+It's how a file is referenced only by on logical address, and doesn't
+need to know either where the extent is located, or how many copies
+there are. The block group allocation profile is what determines if
+there's one copy, duplicate copies, raid1, 10, 5, 6 copies of a chunk
+and where the copies are located. It's also fundamental to how device
+add, remove, replace, file system resize, and balance all interrelate.
 
-> I know some of the file systems have reserve areas for bootloader
-> stuff. I'm not sure if that's preferred over bootloaders just getting
-> their own partition and controlling it stem to stern however they
-> want.
 
-Ext4 had reserved the bootloader inode, and we have defined a way for
-a bootloader to access it.  The original intent was that not it just
-be fore the environment block, but also the grub stage 1.5 or stage 2
-loader.  This would allow grub to just use a fixed list of blocks or
-extents, and not need to understand the ext4 extents structures.  We
-added way this when, because we anticipated this would be easier for
-grub than having it learn how to read ext4 extents structures.
-Instead, the bootloader would at setup time use the EXT4_IOC_SWAP_BOOT
-ioctl and then use a fixed list of blocks or block extents like LILO
-used to do.
+>> If your primary concern is to make the fs as stable as possible, then
+>> keep snapshots to a minimal amount, avoid any functionality you won't
+>> use, like qgroup, routinely balance, RAID5/6.
+>
+> So, is RAID5 stable enough ? reading the wiki there's a big fat
+> warning about some parity issues, I read an article about silent
+> corruption (written a while back), and chris says he can't recommend
+> raid56 to mere mortals.
 
-Of course, grub exceeded expectations and actually learned how to read
-ext4 file systems, and probably we (the ext4 developers) should have
-reached out to GRUB folks.
+Depends on how you define stable. In recent kernels it's stable on
+stable hardware, i.e. no lying hardware (actually flushes when it
+claims it has), no power failures, and no failed devices. Of course
+it's designed to help protect against a clear loss of a device, but
+there's tons of stuff here that's just not finished including ejecting
+bad devices from the array like md and lvm raids will do. Btrfs will
+just keep trying, through all the failures. There are some patches to
+moderate this but I don't think they're merged yet.
 
-Cheers,
+You'd also want to be really familiar with how to handle degraded
+operation, if you're going to depend on it, and how to replace a bad
+device. Last I refreshed my memory on it, it's advised to use "btrfs
+device add" followed by "btrfs device remove" for raid56; whereas
+"btrfs replace" is preferred for all other profiles. I'm not sure if
+the "btrfs replace" issues with parity raid were fixed.
 
-						- Ted
+Metadata as raid56 shows a lot more problem reports than metadata
+raid1, so there's something goofy going on in those cases. I'm not
+sure how well understood they are. But other people don't have
+problems with it.
+
+It's worth looking through the archives about some things. Btrfs
+raid56 isn't exactly perfectly COW, there is read-modify-write code
+that means there can be overwrites. I vaguely recall that it's COW in
+the logical layer, but the physical writes can end up being RMW or not
+for sure COW.
+
+
+
+-- 
+Chris Murphy

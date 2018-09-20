@@ -1,41 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cloudserver094114.home.pl ([79.96.170.134]:49026 "EHLO
-        cloudserver094114.home.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726028AbeITNuC (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 20 Sep 2018 09:50:02 -0400
-From: "Rafael J. Wysocki" <rjw@rjwysocki.net>
+Received: from mx2.suse.de ([195.135.220.15]:36360 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S2387418AbeITSyJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 20 Sep 2018 14:54:09 -0400
+Date: Thu, 20 Sep 2018 15:10:39 +0200
+From: David Sterba <dsterba@suse.cz>
 To: Rasmus Villemoes <linux@rasmusvillemoes.dk>
 Cc: Jason Baron <jbaron@akamai.com>, Andrew Morton <akpm@linux-foundation.org>,
-        linux-kernel@vger.kernel.org,
-        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-        netdev@vger.kernel.org, Petr Mladek <pmladek@suse.com>,
-        Steven Rostedt <rostedt@goodmis.org>, linux-btrfs@vger.kernel.org,
-        linux-acpi@vger.kernel.org, x86@kernel.org
-Subject: Re: [PATCH 00/22] various dynamic_debug patches
-Date: Thu, 20 Sep 2018 10:05:00 +0200
-Message-ID: <4563778.42gAD4asSf@aspire.rjw.lan>
-In-Reply-To: <20180919220444.23190-1-linux@rasmusvillemoes.dk>
+        linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 14/22] btrfs: implement btrfs_debug* in terms of helper
+ macro
+Message-ID: <20180920131039.GY5847@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <20180919220444.23190-1-linux@rasmusvillemoes.dk>
+ <20180919220444.23190-15-linux@rasmusvillemoes.dk>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20180919220444.23190-15-linux@rasmusvillemoes.dk>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thursday, September 20, 2018 12:04:22 AM CEST Rasmus Villemoes wrote:
-> This started as an experiment to see how hard it would be to change
-> the four pointers in struct _ddebug into relative offsets, a la
-> CONFIG_GENERIC_BUG_RELATIVE_POINTERS, thus saving 16 bytes per
-> pr_debug site (and thus exactly making up for the extra space used by
-> the introduction of jump labels in 9049fc74). I stumbled on a few
-> things that are probably worth fixing regardless of whether the latter
-> half of this series is deemed worthwhile.
+On Thu, Sep 20, 2018 at 12:04:36AM +0200, Rasmus Villemoes wrote:
+> First, the btrfs_debug macros open-code (one possible definition of)
+> DYNAMIC_DEBUG_BRANCH, so they don't benefit from the HAVE_JUMP_LABEL
+> optimization.
 > 
-> Patch relationships: 1-2, 3-4, 5-6 and 15-16 can be applied
-> individually, though 2, 4 and 6 probably makes most sense in the
-> context of the final goal of the series.
+> Second, changes on x86-64 later in this series require that all struct
+> _ddebug descriptors in a translation unit use distinct identifiers.
+> 
+> Using the new _dynamic_func_call_no_desc helper macro from
+> dynamic_debug.h takes care of both of these.
+> 
+> Cc: linux-btrfs@vger.kernel.org
+> Signed-off-by: Rasmus Villemoes <linux@rasmusvillemoes.dk>
 
-OK, I can take the [15-16/22] separately.
+Acked-by: David Sterba <dsterba@suse.com>
 
-Thanks,
-Rafael
+Per the cover letter, I assume you'll take it through your git tree.

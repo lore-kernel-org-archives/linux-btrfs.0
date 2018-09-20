@@ -1,38 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp2130.oracle.com ([156.151.31.86]:44020 "EHLO
-        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728758AbeIRFth (ORCPT
+Received: from mail-pl1-f195.google.com ([209.85.214.195]:38611 "EHLO
+        mail-pl1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726028AbeITKn4 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 18 Sep 2018 01:49:37 -0400
-Subject: Re: can anyone receive this message
-To: Hans van Kranenburg <hans.van.kranenburg@mendix.com>,
-        linux-btrfs@vger.kernel.org
-References: <91e5d4d5-7867-ab63-e2a3-f554bcc3fa5a@oracle.com>
- <6e475518-eba9-f11e-4dc0-5678b8a8ddeb@mendix.com>
-From: "sunny.s.zhang" <sunny.s.zhang@oracle.com>
-Message-ID: <a6c3ffd2-2fe6-1829-fe24-b54b91a56751@oracle.com>
-Date: Tue, 18 Sep 2018 08:19:21 +0800
+        Thu, 20 Sep 2018 06:43:56 -0400
+Received: by mail-pl1-f195.google.com with SMTP id u11-v6so3718361plq.5
+        for <linux-btrfs@vger.kernel.org>; Wed, 19 Sep 2018 22:02:27 -0700 (PDT)
+From: Omar Sandoval <osandov@osandov.com>
+To: linux-btrfs@vger.kernel.org
+Cc: kernel-team@fb.com, David Sterba <dsterba@suse.com>
+Subject: [PATCH v8 0/6] Btrfs: implement swap file support
+Date: Wed, 19 Sep 2018 22:02:11 -0700
+Message-Id: <cover.1537419652.git.osandov@fb.com>
 MIME-Version: 1.0
-In-Reply-To: <6e475518-eba9-f11e-4dc0-5678b8a8ddeb@mendix.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-thank you.
+From: Omar Sandoval <osandov@fb.com>
 
+Hi,
 
-在 2018年09月18日 08:18, Hans van Kranenburg 写道:
-> On 09/18/2018 02:13 AM, sunny.s.zhang wrote:
->> Can anyone receive this message? I found i can receive message from the
->> mail list, but can't receive message that send by myself.
-> Yes.
->
-> You can also check public list archives to see if your message shows up,
-> e.g.:
->
-> https://urldefense.proofpoint.com/v2/url?u=https-3A__www.mail-2Darchive.com_linux-2Dbtrfs-40vger.kernel.org_msg80664.html&d=DwICaQ&c=RoP1YumCXCgaWHvlZYR8PZh8Bv7qIrMUB65eapI_JnE&r=mcYQsljqnoxPHJVaWVFtwsEEDhXdP3ULRlrPW_9etWQ&m=b5XwlhQeXUvOaYTNqcoiJlDApD6scT_yCUR6HJKQ41k&s=1QOPjsg35Py77mekTtIcJZGajQsdc3-_xayvhlUUic4&e=
->
-> If it does, then the message reached the list, but your own incoming
-> mail server might be throwing away email with your own address in the
-> From, but forwarded via a mailing list?
->
+This series implements swap file support for Btrfs.
+
+Changes from v7 [1]:
+
+- Expanded a few commit messages
+- Added Johannes' acked-by on patches 1 and 2
+- Rebased on v4.19-rc4
+
+No functional changes.
+
+Thanks!
+
+1: https://www.spinics.net/lists/linux-btrfs/msg81933.html
+
+Omar Sandoval (6):
+  mm: split SWP_FILE into SWP_ACTIVATED and SWP_FS
+  mm: export add_swap_extent()
+  vfs: update swap_{,de}activate documentation
+  Btrfs: prevent ioctls from interfering with a swap file
+  Btrfs: rename get_chunk_map() and make it non-static
+  Btrfs: support swap files
+
+ Documentation/filesystems/Locking |  17 +-
+ Documentation/filesystems/vfs.txt |  12 +-
+ fs/btrfs/ctree.h                  |  29 +++
+ fs/btrfs/dev-replace.c            |   8 +
+ fs/btrfs/disk-io.c                |   4 +
+ fs/btrfs/inode.c                  | 317 ++++++++++++++++++++++++++++++
+ fs/btrfs/ioctl.c                  |  31 ++-
+ fs/btrfs/relocation.c             |  18 +-
+ fs/btrfs/volumes.c                |  82 ++++++--
+ fs/btrfs/volumes.h                |   2 +
+ include/linux/swap.h              |  13 +-
+ mm/page_io.c                      |   6 +-
+ mm/swapfile.c                     |  14 +-
+ 13 files changed, 502 insertions(+), 51 deletions(-)
+
+-- 
+2.19.0

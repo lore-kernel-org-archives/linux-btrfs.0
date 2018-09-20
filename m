@@ -1,39 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f41.google.com ([209.85.214.41]:52755 "EHLO
-        mail-it0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1731240AbeITMCh (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 20 Sep 2018 08:02:37 -0400
-Received: by mail-it0-f41.google.com with SMTP id h3-v6so11673457ita.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 19 Sep 2018 23:20:50 -0700 (PDT)
+Received: from mout.gmx.net ([212.227.15.15]:40957 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1731675AbeITMGP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 20 Sep 2018 08:06:15 -0400
+Received: from t460-skr.localnet ([194.94.224.254]) by mail.gmx.com (mrgmx002
+ [212.227.17.190]) with ESMTPSA (Nemesis) id 0M9Jss-1fwmWK0hQs-00CgpU for
+ <linux-btrfs@vger.kernel.org>; Thu, 20 Sep 2018 08:24:26 +0200
+From: Stefan K <shadow_7@gmx.net>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: btrfs filesystem show takes a long time
+Date: Thu, 20 Sep 2018 08:24:25 +0200
+Message-ID: <2057542.pIGOqnJYbl@t460-skr>
+In-Reply-To: <20180914112530.GV2154@twin.jikos.cz>
+References: <3275334.7C4KuSQybz@t460-skr> <20180914112530.GV2154@twin.jikos.cz>
 MIME-Version: 1.0
-In-Reply-To: <53806b04-c239-cb23-1d8a-e84d7453950a@gmx.com>
-References: <CAOc3t=v+ZTN7wZRSZO0afx5BVJYzrorD3HWoWkeJyUoUZ2KoTg@mail.gmail.com>
- <53806b04-c239-cb23-1d8a-e84d7453950a@gmx.com>
-From: "Zbigniew 'zibi' Jarosik" <zibi@nora.pl>
-Date: Thu, 20 Sep 2018 08:20:49 +0200
-Message-ID: <CAOc3t=ssEVxn5Z-WN2fFRuEde=UeGNZEFUz+yawn6O-6D3t7oA@mail.gmail.com>
-Subject: Re: cannot mount btrfs as root
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 19 September 2018 at 15:54, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
->
-> Does the iniramfs do a "btrfs dev scan" to make populate btrfs devices
-> lists?
+Hi,
 
-This solved problem. Looks like btrfs scans disks to early, before
-bcache initializes. I need to debug initrfamfs scripts.
-
-Thanks a lot for hint!
+> You may try to run the show command under strace to see where it blocks.
+any recommendations for strace options?
 
 
--- 
-Zbigniew 'zibi' Jarosik
-cell: +48 667956686
-jid: tapiau@gmail.com
-gg: 2830
-http://zibi.nora.pl/
+On Friday, September 14, 2018 1:25:30 PM CEST David Sterba wrote:
+> Hi,
+> 
+> thanks for the report, I've forwarded it to the issue tracker
+> https://github.com/kdave/btrfs-progs/issues/148
+> 
+> The show command uses the information provided by blkid, that presumably
+> caches that. The default behaviour of 'fi show' is to skip mount checks,
+> so the delays are likely caused by blkid, but that's not the only
+> possible reason.
+> 
+> You may try to run the show command under strace to see where it blocks.
+> 

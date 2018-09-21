@@ -1,56 +1,146 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00190b01.pphosted.com ([67.231.157.127]:52314 "EHLO
-        mx0b-00190b01.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1725800AbeIVHHv (ORCPT
+Received: from mail-pl1-f196.google.com ([209.85.214.196]:37667 "EHLO
+        mail-pl1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S2391251AbeIVB7C (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 22 Sep 2018 03:07:51 -0400
-Subject: Re: [PATCH 00/22] various dynamic_debug patches
-To: Rasmus Villemoes <linux@rasmusvillemoes.dk>,
-        Andrew Morton <akpm@linux-foundation.org>
-Cc: linux-kernel@vger.kernel.org,
-        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-        netdev@vger.kernel.org, Petr Mladek <pmladek@suse.com>,
-        Steven Rostedt <rostedt@goodmis.org>, linux-btrfs@vger.kernel.org,
-        linux-acpi@vger.kernel.org, x86@kernel.org
-References: <20180919220444.23190-1-linux@rasmusvillemoes.dk>
-From: Jason Baron <jbaron@akamai.com>
-Message-ID: <b2976966-8c48-2798-b2d6-cf7be45ed25f@akamai.com>
-Date: Fri, 21 Sep 2018 20:27:09 -0400
+        Fri, 21 Sep 2018 21:59:02 -0400
+Received: by mail-pl1-f196.google.com with SMTP id q1-v6so936621plr.4
+        for <linux-btrfs@vger.kernel.org>; Fri, 21 Sep 2018 13:08:36 -0700 (PDT)
+Date: Fri, 21 Sep 2018 13:08:34 -0700
+From: Omar Sandoval <osandov@osandov.com>
+To: Nikolay Borisov <nborisov@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 2/6] btrfs-progs: Add extent buffer bitmap manipulation
+ infrastructure
+Message-ID: <20180921200834.GC31081@vader>
+References: <1529060762-4372-1-git-send-email-nborisov@suse.com>
+ <1529060762-4372-3-git-send-email-nborisov@suse.com>
 MIME-Version: 1.0
-In-Reply-To: <20180919220444.23190-1-linux@rasmusvillemoes.dk>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1529060762-4372-3-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 09/19/2018 06:04 PM, Rasmus Villemoes wrote:
-> This started as an experiment to see how hard it would be to change
-> the four pointers in struct _ddebug into relative offsets, a la
-> CONFIG_GENERIC_BUG_RELATIVE_POINTERS, thus saving 16 bytes per
-> pr_debug site (and thus exactly making up for the extra space used by
-> the introduction of jump labels in 9049fc74). I stumbled on a few
-> things that are probably worth fixing regardless of whether the latter
-> half of this series is deemed worthwhile.
+On Fri, Jun 15, 2018 at 02:05:58PM +0300, Nikolay Borisov wrote:
+> Those functions are in preparation for adding the freespace tree
+> repair code since it needs to be able to deal with bitmap based fsts.
+> This patch adds extent_buffer_bitmap_set and extent_buffer_bitmap_clear
+> functions. Since in userspace we don't have to deal with page mappings
+> their implementation is vastly simplified by simply setting each bit in
+> the passed range.
 > 
-> Patch relationships: 1-2, 3-4, 5-6 and 15-16 can be applied
-> individually, though 2, 4 and 6 probably makes most sense in the
-> context of the final goal of the series.
+> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+> ---
+>  extent_io.c | 39 +++++++++++++++++++++++++++++++++++++++
+>  extent_io.h | 15 +++++++++++++++
+>  2 files changed, 54 insertions(+)
 > 
-> 7-12 I believe make sense on their own. Patch 13 again only makes
-> sense if we go all the way, and 14 and 17 depend on 13.
-> 
-> 18-21 are more preparatory patches, and finally 22 switch over x86-64
-> to use CONFIG_DYNAMIC_DEBUG_RELATIVE_POINTERS. I've tested that the
-> end result boots under virtme and that the dynamic_debug control file
-> has the expected contents.
-> 
+> diff --git a/extent_io.c b/extent_io.c
+> index 198492699438..568a12f7084b 100644
+> --- a/extent_io.c
+> +++ b/extent_io.c
+> @@ -204,6 +204,45 @@ static int clear_state_bit(struct extent_io_tree *tree,
+>  	return ret;
+>  }
+>  
+> +/**
+> + * extent_buffer_bitmap_set - set an area of a bitmap
+> + * @eb: the extent buffer
+> + * @start: offset of the bitmap item in the extent buffer
+> + * @pos: bit number of the first bit
+> + * @len: number of bits to set
+> + */
+> +void extent_buffer_bitmap_set(struct extent_buffer *eb, unsigned long start,
+> +                              unsigned long pos, unsigned long len)
+> +{
+> +        u8 *kaddr = (u8 *)eb->data + start;
+> +
+> +        while (len) {
+> +		le_set_bit(pos, kaddr);
+> +		pos++;
+> +		len--;
+> +        }
+> +}
+> +
+> +
+> +/**
+> + * extent_buffer_bitmap_clear - clear an area of a bitmap
+> + * @eb: the extent buffer
+> + * @start: offset of the bitmap item in the extent buffer
+> + * @pos: bit number of the first bit
+> + * @len: number of bits to clear
+> + */
+> +void extent_buffer_bitmap_clear(struct extent_buffer *eb, unsigned long start,
+> +                                unsigned long pos, unsigned long len)
+> +{
+> +        u8 *kaddr = (u8 *)eb->data + start;
+> +
+> +        while (len) {
+> +		le_clear_bit(pos, kaddr);
+> +		pos++;
+> +		len--;
+> +        }
+> +}
+> +
 
-I would like to to see all these patches included. Feel free to add:
-Acked-by: Jason Baron <jbaron@akamai.com>
+Hm, bit-by-bit is pretty slow. We don't have to worry about the kmap
+nonsense, but we can still do this byte-by-byte:
 
-I've been wanting to add DYNAMIC_DEBUG_BRANCH to the
-[dev,net,pr].*ratelimited functions. That should reduce the size of the
-text as well.
+/**
+ * extent_buffer_bitmap_set - set an area of a bitmap
+ * @eb: the extent buffer
+ * @start: offset of the bitmap item in the extent buffer
+ * @pos: bit number of the first bit
+ * @len: number of bits to set
+ */
+void extent_buffer_bitmap_set(struct extent_buffer *eb, unsigned long start,
+			      unsigned long pos, unsigned long len)
+{
+        u8 *p = (u8 *)eb->data + start + BIT_BYTE(pos);
+	const unsigned int size = pos + len;
+	int bits_to_set = BITS_PER_BYTE - (pos % BITS_PER_BYTE);
+	u8 mask_to_set = BITMAP_FIRST_BYTE_MASK(pos);
 
-Thanks,
+	while (len >= bits_to_set) {
+		*p |= mask_to_set;
+		len -= bits_to_set;
+		bits_to_set = BITS_PER_BYTE;
+		mask_to_set = ~0;
+		p++;
+	}
+	if (len) {
+		mask_to_set &= BITMAP_LAST_BYTE_MASK(size);
+		*p |= mask_to_set;
+	}
+}
 
--Jason
+/**
+ * extent_buffer_bitmap_clear - clear an area of a bitmap
+ * @eb: the extent buffer
+ * @start: offset of the bitmap item in the extent buffer
+ * @pos: bit number of the first bit
+ * @len: number of bits to clear
+ */
+void extent_buffer_bitmap_clear(struct extent_buffer *eb, unsigned long start,
+				unsigned long pos, unsigned long len)
+{
+        u8 *p = (u8 *)eb->data + start + BIT_BYTE(pos);
+	const unsigned int size = pos + len;
+	int bits_to_clear = BITS_PER_BYTE - (pos % BITS_PER_BYTE);
+	u8 mask_to_clear = BITMAP_FIRST_BYTE_MASK(pos);
+
+	while (len >= bits_to_clear) {
+		*p &= ~mask_to_clear;
+		len -= bits_to_clear;
+		bits_to_clear = BITS_PER_BYTE;
+		mask_to_clear = ~0;
+		p++;
+	}
+	if (len) {
+		mask_to_clear &= BITMAP_LAST_BYTE_MASK(size);
+		*p &= ~mask_to_clear;
+	}
+}
+
+I'm 95% sure that's right ;) Compare to __bitmap_set() and
+__bitmap_clear() in the kernel.

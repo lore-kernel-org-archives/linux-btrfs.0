@@ -1,102 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:53900 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726479AbeIUNVt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 21 Sep 2018 09:21:49 -0400
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id E5896AD4E
-        for <linux-btrfs@vger.kernel.org>; Fri, 21 Sep 2018 07:34:11 +0000 (UTC)
-Subject: Re: [PATCH v2 1/2] btrfs: relocation: Cleanup while() loop using
- rbtree_postorder_for_each_entry_safe()
-To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Received: from mout.gmx.net ([212.227.17.21]:60897 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1725898AbeIUNY5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 21 Sep 2018 09:24:57 -0400
+Subject: Re: [PATCH v2 2/2] btrfs: relocation: Remove redundant tree level
+ check
+To: Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
 References: <20180921072030.20531-1-wqu@suse.com>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <5dbe08f4-94c3-c675-fdda-4dd68d345d74@suse.com>
-Date: Fri, 21 Sep 2018 10:34:11 +0300
+ <20180921072030.20531-2-wqu@suse.com>
+ <c83bfc6d-569e-aa9f-ce91-637e194672f5@suse.com>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <2ea5ad51-cd44-a8b6-892c-27528a31b3bf@gmx.com>
+Date: Fri, 21 Sep 2018 15:37:10 +0800
 MIME-Version: 1.0
-In-Reply-To: <20180921072030.20531-1-wqu@suse.com>
+In-Reply-To: <c83bfc6d-569e-aa9f-ce91-637e194672f5@suse.com>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On 21.09.2018 10:20, Qu Wenruo wrote:
-> And add one line comment explaining what we're doing for each loop.
+On 2018/9/21 下午3:33, Nikolay Borisov wrote:
 > 
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> ---
+> 
+> On 21.09.2018 10:20, Qu Wenruo wrote:
+>> Commit 581c1760415c ("btrfs: Validate child tree block's level and first
+>> key") has made tree block level check mandatory.
+>>
+>> So if tree block level doesn't match, we won't get a valid extent
+>> buffer.
+>> The extra WARN_ON() check can be removed completely.
+>>
+>> Signed-off-by: Qu Wenruo <wqu@suse.com>
+>> ---
+>> Changelog:
+>> v2:
+>>   Added tags.
+> 
+> Nope you didn't :)
 
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+Face palm, only added in formatted patch, and just re-formatted patch again.
 
-> changelog:
-> v2:
->   Use rbtree_postorder_for_each_entry_safe() to replace for() loop.
-> ---
->  fs/btrfs/relocation.c | 24 +++++++++---------------
->  1 file changed, 9 insertions(+), 15 deletions(-)
+Anyway, David could handle it.
+
+Thanks,
+Qu
+
 > 
-> diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-> index 8783a1776540..94aa148ccde6 100644
-> --- a/fs/btrfs/relocation.c
-> +++ b/fs/btrfs/relocation.c
-> @@ -2987,7 +2987,7 @@ int relocate_tree_blocks(struct btrfs_trans_handle *trans,
->  	struct backref_node *node;
->  	struct btrfs_path *path;
->  	struct tree_block *block;
-> -	struct rb_node *rb_node;
-> +	struct tree_block *next;
->  	int ret;
->  	int err = 0;
->  
-> @@ -2997,29 +2997,23 @@ int relocate_tree_blocks(struct btrfs_trans_handle *trans,
->  		goto out_free_blocks;
->  	}
->  
-> -	rb_node = rb_first(blocks);
-> -	while (rb_node) {
-> -		block = rb_entry(rb_node, struct tree_block, rb_node);
-> +	/* Kick in readahead for tree blocks with missing keys */
-> +	rbtree_postorder_for_each_entry_safe(block, next, blocks, rb_node) {
->  		if (!block->key_ready)
->  			readahead_tree_block(fs_info, block->bytenr);
-> -		rb_node = rb_next(rb_node);
->  	}
->  
-> -	rb_node = rb_first(blocks);
-> -	while (rb_node) {
-> -		block = rb_entry(rb_node, struct tree_block, rb_node);
-> +	/* Get first keys */
-> +	rbtree_postorder_for_each_entry_safe(block, next, blocks, rb_node) {
->  		if (!block->key_ready) {
->  			err = get_tree_block_key(fs_info, block);
->  			if (err)
->  				goto out_free_path;
->  		}
-> -		rb_node = rb_next(rb_node);
->  	}
->  
-> -	rb_node = rb_first(blocks);
-> -	while (rb_node) {
-> -		block = rb_entry(rb_node, struct tree_block, rb_node);
-> -
-> +	/* Do tree relocation */
-> +	rbtree_postorder_for_each_entry_safe(block, next, blocks, rb_node) {
->  		node = build_backref_tree(rc, &block->key,
->  					  block->level, block->bytenr);
->  		if (IS_ERR(node)) {
-> @@ -3030,11 +3024,11 @@ int relocate_tree_blocks(struct btrfs_trans_handle *trans,
->  		ret = relocate_tree_block(trans, rc, node, &block->key,
->  					  path);
->  		if (ret < 0) {
-> -			if (ret != -EAGAIN || rb_node == rb_first(blocks))
-> +			if (ret != -EAGAIN || &block->rb_node ==
-> +					      rb_first(blocks))
->  				err = ret;
->  			goto out;
->  		}
-> -		rb_node = rb_next(rb_node);
->  	}
->  out:
->  	err = finish_pending_nodes(trans, rc, path, err);
-> 
+>> ---
+>>  fs/btrfs/relocation.c | 1 -
+>>  1 file changed, 1 deletion(-)
+>>
+>> diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+>> index 94aa148ccde6..a554e7861b6e 100644
+>> --- a/fs/btrfs/relocation.c
+>> +++ b/fs/btrfs/relocation.c
+>> @@ -2911,7 +2911,6 @@ static int get_tree_block_key(struct btrfs_fs_info *fs_info,
+>>  		free_extent_buffer(eb);
+>>  		return -EIO;
+>>  	}
+>> -	WARN_ON(btrfs_header_level(eb) != block->level);
+>>  	if (block->level == 0)
+>>  		btrfs_item_key_to_cpu(eb, &block->key, 0);
+>>  	else
+>>

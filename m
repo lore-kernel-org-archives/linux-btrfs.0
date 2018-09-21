@@ -1,623 +1,275 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dibed.net-space.pl ([84.10.22.86]:47327 "EHLO
+Received: from dibed.net-space.pl ([84.10.22.86]:47338 "EHLO
         dibed.net-space.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2391087AbeIVAN5 (ORCPT
+        with ESMTP id S2391102AbeIVATe (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 21 Sep 2018 20:13:57 -0400
+        Fri, 21 Sep 2018 20:19:34 -0400
 Received: (from localhost user: 'dkiper' uid#4000 fake: STDIN
         (dkiper@dibed.net-space.pl)) by router-fw-old.i.net-space.pl
-        id S1870757AbeIUSXe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 21 Sep 2018 20:23:34 +0200
-Date: Fri, 21 Sep 2018 20:23:34 +0200
+        id S1870759AbeIUS3U (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 21 Sep 2018 20:29:20 +0200
+Date: Fri, 21 Sep 2018 20:29:20 +0200
 From: Daniel Kiper <dkiper@net-space.pl>
-To: terrelln@fb.com
+To: Nick Terrell <terrelln@fb.com>
 Cc: grub-devel@gnu.org, kernel-team@fb.com, David Sterba <dsterba@suse.cz>,
         linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 2/3] btrfs: Patch the kernel zstd
-Message-ID: <20180921182334.GC29978@router-fw-old.i.net-space.pl>
-References: <20180828013654.1627080-1-terrelln@fb.com> <20180828013654.1627080-3-terrelln@fb.com>
+Subject: Re: [PATCH 3/3] btrfs: Add zstd support to btrfs
+Message-ID: <20180921182920.GD29978@router-fw-old.i.net-space.pl>
+References: <20180828013654.1627080-1-terrelln@fb.com> <20180828013654.1627080-4-terrelln@fb.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180828013654.1627080-3-terrelln@fb.com>
+In-Reply-To: <20180828013654.1627080-4-terrelln@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Aug 27, 2018 at 06:36:53PM -0700, Nick Terrell wrote:
-> Applies patches to the upstream kernel zstd needed to compile in grub.
-> * Replace kernel headers with "kerncompat.h".
-> * Replace the unaligned memory access functions.
-> * Add fallthrough statements for newer gcc versions.
-> * Rename a variable from "byte" because of a conflicting typedef.
-> * Remove the module code.
-> * Switch the memcpy() in ZSTD_copy8() to __builtin_memcpy().
+On Mon, Aug 27, 2018 at 06:36:54PM -0700, Nick Terrell wrote:
+> Adds zstd support to the btrfs module. I'm not sure that my changes to the
+> Makefiles are correct, please let me know if I need to do something
+> differently.
+>
+> Tested on Ubuntu-18.04 with a btrfs /boot partition with and without zstd
+> compression. A test case was also added to the test suite that fails before
+> the patch, and passes after.
 >
 > Signed-off-by: Nick Terrell <terrelln@fb.com>
 > ---
->  grub-core/lib/zstd/bitstream.h      |  6 ++++
->  grub-core/lib/zstd/decompress.c     | 56 ++++++------------------------
->  grub-core/lib/zstd/error_private.h  |  3 +-
->  grub-core/lib/zstd/fse.h            |  2 +-
->  grub-core/lib/zstd/fse_decompress.c |  3 --
->  grub-core/lib/zstd/huf.h            |  2 +-
->  grub-core/lib/zstd/huf_decompress.c |  3 --
->  grub-core/lib/zstd/kerncompat.h     | 69 +++++++++++++++++++++++++++++++++++++
->  grub-core/lib/zstd/mem.h            | 42 ++++++++++++----------
->  grub-core/lib/zstd/xxhash.c         | 22 ++----------
->  grub-core/lib/zstd/xxhash.h         |  2 +-
->  grub-core/lib/zstd/zstd.h           |  2 +-
->  grub-core/lib/zstd/zstd_common.c    |  2 +-
->  grub-core/lib/zstd/zstd_internal.h  | 12 ++++---
->  14 files changed, 124 insertions(+), 102 deletions(-)
->  create mode 100644 grub-core/lib/zstd/kerncompat.h
+>  Makefile.util.def            |  8 ++++-
+>  grub-core/Makefile.core.def  | 10 ++++--
+>  grub-core/fs/btrfs.c         | 85 +++++++++++++++++++++++++++++++++++++++++++-
+>  tests/btrfs_test.in          |  1 +
+>  tests/util/grub-fs-tester.in |  4 +--
+>  5 files changed, 102 insertions(+), 6 deletions(-)
 >
-> diff --git a/grub-core/lib/zstd/bitstream.h b/grub-core/lib/zstd/bitstream.h
-> index a826b99e1..92a6c3fb9 100644
-> --- a/grub-core/lib/zstd/bitstream.h
-> +++ b/grub-core/lib/zstd/bitstream.h
-> @@ -51,6 +51,7 @@
->  *  Dependencies
->  ******************************************/
->  #include "error_private.h" /* error codes and messages */
-> +#include "kerncompat.h"
->  #include "mem.h"	   /* unaligned access routines */
+> diff --git a/Makefile.util.def b/Makefile.util.def
+> index 3180ac880..b987dc637 100644
+> --- a/Makefile.util.def
+> +++ b/Makefile.util.def
+> @@ -54,7 +54,7 @@ library = {
+>  library = {
+>    name = libgrubmods.a;
+>    cflags = '-fno-builtin -Wno-undef';
+> -  cppflags = '-I$(top_srcdir)/grub-core/lib/minilzo -I$(srcdir)/grub-core/lib/xzembed -DMINILZO_HAVE_CONFIG_H';
+> +  cppflags = '-I$(top_srcdir)/grub-core/lib/minilzo -I$(srcdir)/grub-core/lib/xzembed -I$(top_srcdir)/grub-core/lib/zstd -DMINILZO_HAVE_CONFIG_H';
 >
->  /*=========================================
-> @@ -259,10 +260,15 @@ ZSTD_STATIC size_t BIT_initDStream(BIT_DStream_t *bitD, const void *srcBuffer, s
->  		bitD->bitContainer = *(const BYTE *)(bitD->start);
->  		switch (srcSize) {
->  		case 7: bitD->bitContainer += (size_t)(((const BYTE *)(srcBuffer))[6]) << (sizeof(bitD->bitContainer) * 8 - 16);
-> +			/* fallthrough */
-
-Do we really need that?
-
->  		case 6: bitD->bitContainer += (size_t)(((const BYTE *)(srcBuffer))[5]) << (sizeof(bitD->bitContainer) * 8 - 24);
-> +			/* fallthrough */
-
-Ditto and below...
-
->  		case 5: bitD->bitContainer += (size_t)(((const BYTE *)(srcBuffer))[4]) << (sizeof(bitD->bitContainer) * 8 - 32);
-> +			/* fallthrough */
->  		case 4: bitD->bitContainer += (size_t)(((const BYTE *)(srcBuffer))[3]) << 24;
-> +			/* fallthrough */
->  		case 3: bitD->bitContainer += (size_t)(((const BYTE *)(srcBuffer))[2]) << 16;
-> +			/* fallthrough */
->  		case 2: bitD->bitContainer += (size_t)(((const BYTE *)(srcBuffer))[1]) << 8;
->  		default:;
->  		}
-> diff --git a/grub-core/lib/zstd/decompress.c b/grub-core/lib/zstd/decompress.c
-> index b17846725..e7af8df09 100644
-> --- a/grub-core/lib/zstd/decompress.c
-> +++ b/grub-core/lib/zstd/decompress.c
-> @@ -33,9 +33,6 @@
->  #include "huf.h"
->  #include "mem.h" /* low level memory routines */
->  #include "zstd_internal.h"
-> -#include <linux/kernel.h>
-> -#include <linux/module.h>
-> -#include <linux/string.h> /* memcpy, memmove, memset */
+>    common_nodist = grub_script.tab.c;
+>    common_nodist = grub_script.yy.c;
+> @@ -165,6 +165,12 @@ library = {
+>    common = grub-core/lib/xzembed/xz_dec_bcj.c;
+>    common = grub-core/lib/xzembed/xz_dec_lzma2.c;
+>    common = grub-core/lib/xzembed/xz_dec_stream.c;
+> +  common = grub-core/lib/zstd/zstd_common.c;
+> +  common = grub-core/lib/zstd/huf_decompress.c;
+> +  common = grub-core/lib/zstd/fse_decompress.c;
+> +  common = grub-core/lib/zstd/entropy_common.c;
+> +  common = grub-core/lib/zstd/decompress.c;
+> +  common = grub-core/lib/zstd/xxhash.c;
+>  };
 >
->  #define ZSTD_PREFETCH(ptr) __builtin_prefetch(ptr, 0, 0)
+>  program = {
+> diff --git a/grub-core/Makefile.core.def b/grub-core/Makefile.core.def
+> index 9590e87d9..c24bf9147 100644
+> --- a/grub-core/Makefile.core.def
+> +++ b/grub-core/Makefile.core.def
+> @@ -404,7 +404,7 @@ image = {
+>    i386_pc = boot/i386/pc/boot.S;
 >
-> @@ -123,6 +120,7 @@ size_t ZSTD_decompressBegin(ZSTD_DCtx *dctx)
->  	return 0;
+>    cppflags = '-DHYBRID_BOOT=1';
+> -
+> +
+
+Please do not introduce such noise...
+
+>    i386_pc_ldflags = '$(TARGET_IMG_LDFLAGS)';
+>    i386_pc_ldflags = '$(TARGET_IMG_BASE_LDOPT),0x7C00';
+>
+> @@ -1264,8 +1264,14 @@ module = {
+>    name = btrfs;
+>    common = fs/btrfs.c;
+>    common = lib/crc.c;
+> +  common = lib/zstd/zstd_common.c;
+> +  common = lib/zstd/huf_decompress.c;
+> +  common = lib/zstd/fse_decompress.c;
+> +  common = lib/zstd/entropy_common.c;
+> +  common = lib/zstd/decompress.c;
+> +  common = lib/zstd/xxhash.c;
+>    cflags = '$(CFLAGS_POSIX) -Wno-undef';
+> -  cppflags = '-I$(srcdir)/lib/posix_wrap -I$(srcdir)/lib/minilzo -DMINILZO_HAVE_CONFIG_H';
+> +  cppflags = '-I$(srcdir)/lib/posix_wrap -I$(srcdir)/lib/minilzo -I$(srcdir)/lib/zstd -DMINILZO_HAVE_CONFIG_H';
+>  };
+>
+>  module = {
+> diff --git a/grub-core/fs/btrfs.c b/grub-core/fs/btrfs.c
+> index be195448d..89ed4884e 100644
+> --- a/grub-core/fs/btrfs.c
+> +++ b/grub-core/fs/btrfs.c
+> @@ -27,6 +27,7 @@
+>  #include <grub/lib/crc.h>
+>  #include <grub/deflate.h>
+>  #include <minilzo.h>
+> +#include <zstd.h>
+>  #include <grub/i18n.h>
+>  #include <grub/btrfs.h>
+>
+> @@ -45,6 +46,9 @@ GRUB_MOD_LICENSE ("GPLv3+");
+>  #define GRUB_BTRFS_LZO_BLOCK_MAX_CSIZE (GRUB_BTRFS_LZO_BLOCK_SIZE + \
+>  				     (GRUB_BTRFS_LZO_BLOCK_SIZE / 16) + 64 + 3)
+>
+> +#define ZSTD_BTRFS_MAX_WINDOWLOG 17
+> +#define ZSTD_BTRFS_MAX_INPUT (1 << ZSTD_BTRFS_MAX_WINDOWLOG)
+
+Please align stuff properly, i.e.
+
+#define ZSTD_BTRFS_MAX_WINDOWLOG 17
+#define ZSTD_BTRFS_MAX_INPUT     (1 << ZSTD_BTRFS_MAX_WINDOWLOG)
+
+> +
+>  typedef grub_uint8_t grub_btrfs_checksum_t[0x20];
+>  typedef grub_uint16_t grub_btrfs_uuid_t[8];
+>
+> @@ -212,6 +216,7 @@ struct grub_btrfs_extent_data
+>  #define GRUB_BTRFS_COMPRESSION_NONE 0
+>  #define GRUB_BTRFS_COMPRESSION_ZLIB 1
+>  #define GRUB_BTRFS_COMPRESSION_LZO  2
+> +#define GRUB_BTRFS_COMPRESSION_ZSTD  3
+
+Ditto.
+
+>  #define GRUB_BTRFS_OBJECT_ID_CHUNK 0x100
+>
+> @@ -912,6 +917,70 @@ grub_btrfs_read_inode (struct grub_btrfs_data *data,
+>    return grub_btrfs_read_logical (data, elemaddr, inode, sizeof (*inode), 0);
 >  }
 >
-> +static
->  ZSTD_DCtx *ZSTD_createDCtx_advanced(ZSTD_customMem customMem)
->  {
->  	ZSTD_DCtx *dctx;
-> @@ -391,6 +389,7 @@ typedef struct {
->
->  /*! ZSTD_getcBlockSize() :
->  *   Provides the size of compressed block from block header `src` */
-> +static
->  size_t ZSTD_getcBlockSize(const void *src, size_t srcSize, blockProperties_t *bpPtr)
->  {
->  	if (srcSize < ZSTD_blockHeaderSize)
-> @@ -429,6 +428,7 @@ static size_t ZSTD_setRleBlock(void *dst, size_t dstCapacity, const void *src, s
->
->  /*! ZSTD_decodeLiteralsBlock() :
->  	@return : nb of bytes read from src (< srcSize ) */
-> +static
->  size_t ZSTD_decodeLiteralsBlock(ZSTD_DCtx *dctx, const void *src, size_t srcSize) /* note : srcSize < BLOCKSIZE */
->  {
->  	if (srcSize < MIN_CBLOCK_SIZE)
-> @@ -791,6 +791,7 @@ static size_t ZSTD_buildSeqTable(FSE_DTable *DTableSpace, const FSE_DTable **DTa
->  	}
->  }
->
-> +static
->  size_t ZSTD_decodeSeqHeaders(ZSTD_DCtx *dctx, int *nbSeqPtr, const void *src, size_t srcSize)
->  {
->  	const BYTE *const istart = (const BYTE *const)src;
-> @@ -1494,11 +1495,12 @@ size_t ZSTD_insertBlock(ZSTD_DCtx *dctx, const void *blockStart, size_t blockSiz
->  	return blockSize;
->  }
->
-> -size_t ZSTD_generateNxBytes(void *dst, size_t dstCapacity, BYTE byte, size_t length)
-> +static
-> +size_t ZSTD_generateNxBytes(void *dst, size_t dstCapacity, BYTE value, size_t length)
->  {
->  	if (length > dstCapacity)
->  		return ERROR(dstSize_tooSmall);
-> -	memset(dst, byte, length);
-> +	memset(dst, value, length);
-
-I do not see any reason to change byte to value.
-
->  	return length;
->  }
->
-> @@ -1768,6 +1770,7 @@ size_t ZSTD_decompressContinue(ZSTD_DCtx *dctx, void *dst, size_t dstCapacity, c
->  			return 0;
->  		}
->  		dctx->expected = 0; /* not necessary to copy more */
-> +		/* fallthrough */
-
-This change is not needed...
-
->  	case ZSTDds_decodeFrameHeader:
->  		memcpy(dctx->headerBuffer + ZSTD_frameHeaderSize_prefix, src, dctx->expected);
-> @@ -2376,6 +2379,7 @@ size_t ZSTD_decompressStream(ZSTD_DStream *zds, ZSTD_outBuffer *output, ZSTD_inB
->  			zds->stage = zdss_read;
->  		}
->  		/* pass-through */
-> +		/* fallthrough */
-
-Ditto and below...
-
->  		case zdss_read: {
->  			size_t const neededInSize = ZSTD_nextSrcSizeToDecompress(zds->dctx);
-> @@ -2404,6 +2408,7 @@ size_t ZSTD_decompressStream(ZSTD_DStream *zds, ZSTD_outBuffer *output, ZSTD_inB
->  			zds->stage = zdss_load;
->  			/* pass-through */
->  		}
-> +		/* fallthrough */
->
->  		case zdss_load: {
->  			size_t const neededInSize = ZSTD_nextSrcSizeToDecompress(zds->dctx);
-> @@ -2436,6 +2441,7 @@ size_t ZSTD_decompressStream(ZSTD_DStream *zds, ZSTD_outBuffer *output, ZSTD_inB
->  				/* pass-through */
->  			}
->  		}
-> +		/* fallthrough */
->
->  		case zdss_flush: {
->  			size_t const toFlushSize = zds->outEnd - zds->outStart;
-> @@ -2486,43 +2492,3 @@ size_t ZSTD_decompressStream(ZSTD_DStream *zds, ZSTD_outBuffer *output, ZSTD_inB
->  		return nextSrcSizeHint;
->  	}
->  }
-> -
-> -EXPORT_SYMBOL(ZSTD_DCtxWorkspaceBound);
-> -EXPORT_SYMBOL(ZSTD_initDCtx);
-> -EXPORT_SYMBOL(ZSTD_decompressDCtx);
-> -EXPORT_SYMBOL(ZSTD_decompress_usingDict);
-> -
-> -EXPORT_SYMBOL(ZSTD_DDictWorkspaceBound);
-> -EXPORT_SYMBOL(ZSTD_initDDict);
-> -EXPORT_SYMBOL(ZSTD_decompress_usingDDict);
-> -
-> -EXPORT_SYMBOL(ZSTD_DStreamWorkspaceBound);
-> -EXPORT_SYMBOL(ZSTD_initDStream);
-> -EXPORT_SYMBOL(ZSTD_initDStream_usingDDict);
-> -EXPORT_SYMBOL(ZSTD_resetDStream);
-> -EXPORT_SYMBOL(ZSTD_decompressStream);
-> -EXPORT_SYMBOL(ZSTD_DStreamInSize);
-> -EXPORT_SYMBOL(ZSTD_DStreamOutSize);
-> -
-> -EXPORT_SYMBOL(ZSTD_findFrameCompressedSize);
-> -EXPORT_SYMBOL(ZSTD_getFrameContentSize);
-> -EXPORT_SYMBOL(ZSTD_findDecompressedSize);
-> -
-> -EXPORT_SYMBOL(ZSTD_isFrame);
-> -EXPORT_SYMBOL(ZSTD_getDictID_fromDict);
-> -EXPORT_SYMBOL(ZSTD_getDictID_fromDDict);
-> -EXPORT_SYMBOL(ZSTD_getDictID_fromFrame);
-> -
-> -EXPORT_SYMBOL(ZSTD_getFrameParams);
-> -EXPORT_SYMBOL(ZSTD_decompressBegin);
-> -EXPORT_SYMBOL(ZSTD_decompressBegin_usingDict);
-> -EXPORT_SYMBOL(ZSTD_copyDCtx);
-> -EXPORT_SYMBOL(ZSTD_nextSrcSizeToDecompress);
-> -EXPORT_SYMBOL(ZSTD_decompressContinue);
-> -EXPORT_SYMBOL(ZSTD_nextInputType);
-> -
-> -EXPORT_SYMBOL(ZSTD_decompressBlock);
-> -EXPORT_SYMBOL(ZSTD_insertBlock);
-> -
-> -MODULE_LICENSE("Dual BSD/GPL");
-> -MODULE_DESCRIPTION("Zstd Decompressor");
-
-This will disappear if you take zstd lib from original repo.
-
-> diff --git a/grub-core/lib/zstd/error_private.h b/grub-core/lib/zstd/error_private.h
-> index 1a60b31f7..02e6736ea 100644
-> --- a/grub-core/lib/zstd/error_private.h
-> +++ b/grub-core/lib/zstd/error_private.h
-> @@ -22,8 +22,7 @@
->  /* ****************************************
->  *  Dependencies
->  ******************************************/
-> -#include <linux/types.h> /* size_t */
-> -#include <linux/zstd.h>  /* enum list */
-> +#include "zstd.h"
->
->  /* ****************************************
->  *  Compiler-specific
-> diff --git a/grub-core/lib/zstd/fse.h b/grub-core/lib/zstd/fse.h
-> index 7460ab04b..b39639745 100644
-> --- a/grub-core/lib/zstd/fse.h
-> +++ b/grub-core/lib/zstd/fse.h
-> @@ -43,7 +43,7 @@
->  /*-*****************************************
->  *  Dependencies
->  ******************************************/
-> -#include <linux/types.h> /* size_t, ptrdiff_t */
-> +#include "kerncompat.h"
->
->  /*-*****************************************
->  *  FSE_PUBLIC_API : control library symbols visibility
-> diff --git a/grub-core/lib/zstd/fse_decompress.c b/grub-core/lib/zstd/fse_decompress.c
-> index a84300e5a..35b05e3c0 100644
-> --- a/grub-core/lib/zstd/fse_decompress.c
-> +++ b/grub-core/lib/zstd/fse_decompress.c
-> @@ -47,9 +47,6 @@
->  ****************************************************************/
->  #include "bitstream.h"
->  #include "fse.h"
-> -#include <linux/compiler.h>
-> -#include <linux/kernel.h>
-> -#include <linux/string.h> /* memcpy, memset */
->
->  /* **************************************************************
->  *  Error Management
-> diff --git a/grub-core/lib/zstd/huf.h b/grub-core/lib/zstd/huf.h
-> index 2143da28d..2b2ac96c2 100644
-> --- a/grub-core/lib/zstd/huf.h
-> +++ b/grub-core/lib/zstd/huf.h
-> @@ -41,7 +41,7 @@
->  #define HUF_H_298734234
->
->  /* *** Dependencies *** */
-> -#include <linux/types.h> /* size_t */
-> +#include "kerncompat.h"
->
->  /* ***   Tool functions *** */
->  #define HUF_BLOCKSIZE_MAX (128 * 1024) /**< maximum input size for a single block compressed with HUF_compress */
-> diff --git a/grub-core/lib/zstd/huf_decompress.c b/grub-core/lib/zstd/huf_decompress.c
-> index 652648204..fdad9cf98 100644
-> --- a/grub-core/lib/zstd/huf_decompress.c
-> +++ b/grub-core/lib/zstd/huf_decompress.c
-> @@ -48,9 +48,6 @@
->  #include "bitstream.h" /* BIT_* */
->  #include "fse.h"       /* header compression */
->  #include "huf.h"
-> -#include <linux/compiler.h>
-> -#include <linux/kernel.h>
-> -#include <linux/string.h> /* memcpy, memset */
->
->  /* **************************************************************
->  *  Error Management
-> diff --git a/grub-core/lib/zstd/kerncompat.h b/grub-core/lib/zstd/kerncompat.h
-> new file mode 100644
-> index 000000000..219749d7b
-> --- /dev/null
-> +++ b/grub-core/lib/zstd/kerncompat.h
-> @@ -0,0 +1,69 @@
-> +/*
-> + * Copyright (C) 2007 Oracle.  All rights reserved.
-> + *
-> + * This program is free software; you can redistribute it and/or
-> + * modify it under the terms of the GNU General Public
-> + * License v2 as published by the Free Software Foundation.
-> + *
-> + * This program is distributed in the hope that it will be useful,
-> + * but WITHOUT ANY WARRANTY; without even the implied warranty of
-> + * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-> + * General Public License for more details.
-> + *
-> + * You should have received a copy of the GNU General Public
-> + * License along with this program; if not, write to the
-> + * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-> + * Boston, MA 021110-1307, USA.
-> + */
-> +
-> +#ifndef KERNCOMPAT_H
-> +#define KERNCOMPAT_H
-> +
-> +#include <errno.h>
-> +#include <stddef.h>
-> +#include <stdint.h>
-> +#include <stdlib.h>
-> +#include <string.h>
-> +
-> +#include <include/grub/types.h>
-> +
-> +#define get_unaligned_le16(p) grub_le_to_cpu16(grub_get_unaligned16((p)))
-> +#define get_unaligned_be16(p) grub_be_to_cpu16(grub_get_unaligned16((p)))
-> +#define get_unaligned_16(p) grub_get_unaligned16((p))
-> +#define put_unaligned_le16(val,p) grub_set_unaligned16((p), grub_cpu_to_le16((val)))
-> +#define put_unaligned_be16(val,p) grub_set_unaligned16((p), grub_cpu_to_be16((val)))
-> +#define put_unaligned_16(val,p) grub_set_unaligned16((p), (val))
-> +
-> +#define get_unaligned_le32(p) grub_le_to_cpu32(grub_get_unaligned32((p)))
-> +#define get_unaligned_be32(p) grub_be_to_cpu32(grub_get_unaligned32((p)))
-> +#define get_unaligned_32(p) grub_get_unaligned32((p))
-> +#define put_unaligned_le32(val,p) grub_set_unaligned32((p), grub_cpu_to_le32((val)))
-> +#define put_unaligned_be32(val,p) grub_set_unaligned32((p), grub_cpu_to_be32((val)))
-> +#define put_unaligned_32(val,p) grub_set_unaligned32((p), (val))
-> +
-> +#define get_unaligned_le64(p) grub_le_to_cpu64(grub_get_unaligned64((p)))
-> +#define get_unaligned_be64(p) grub_be_to_cpu64(grub_get_unaligned64((p)))
-> +#define get_unaligned_64(p) grub_get_unaligned64((p))
-> +#define put_unaligned_le64(val,p) grub_set_unaligned64((p), grub_cpu_to_le64((val)))
-> +#define put_unaligned_be64(val,p) grub_set_unaligned64((p), grub_cpu_to_be64((val)))
-> +#define put_unaligned_64(val,p) grub_set_unaligned64((p), (val))
-> +
-> +#ifndef noinline
-> +#	define noinline
-> +#endif
-> +
-> +#ifndef __always_inline
-> +#	ifdef __GNUC__
-> +#		define __always_inline inline __attribute__((__always_inline__))
-> +#	else
-> +#		define __always_inline inline
-> +#	endif
-> +#endif
-> +
-> +#define __ALIGN_KERNEL(x, a)		__ALIGN_KERNEL_MASK(x, (typeof(x))(a) - 1)
-> +#define __ALIGN_KERNEL_MASK(x, mask)	(((x) + (mask)) & ~(mask))
-> +#define ALIGN(x, a)		__ALIGN_KERNEL((x), (a))
-> +#define __ALIGN_MASK(x, mask)	__ALIGN_KERNEL_MASK((x), (mask))
-> +#define PTR_ALIGN(p, a)		((typeof(p))ALIGN((unsigned long)(p), (a)))
-> +
-> +#endif /* KERNCOMPAT_H */
-
-Is it really needed? Could not you find relevant GRUB functions?
-If no then I think that this should be a separate patch.
-
-> diff --git a/grub-core/lib/zstd/mem.h b/grub-core/lib/zstd/mem.h
-> index 3a0f34c87..0e0ede37c 100644
-> --- a/grub-core/lib/zstd/mem.h
-> +++ b/grub-core/lib/zstd/mem.h
-> @@ -20,9 +20,7 @@
->  /*-****************************************
->  *  Dependencies
->  ******************************************/
-> -#include <asm/unaligned.h>
-> -#include <linux/string.h> /* memcpy */
-> -#include <linux/types.h>  /* size_t, ptrdiff_t */
-> +#include "kerncompat.h"
->
->  /*-****************************************
->  *  Compiler specifics
-> @@ -32,15 +30,15 @@
->  /*-**************************************************************
->  *  Basic Types
->  *****************************************************************/
-> -typedef uint8_t BYTE;
-> -typedef uint16_t U16;
-> -typedef int16_t S16;
-> -typedef uint32_t U32;
-> -typedef int32_t S32;
-> -typedef uint64_t U64;
-> -typedef int64_t S64;
-> -typedef ptrdiff_t iPtrDiff;
-> -typedef uintptr_t uPtrDiff;
-> +#include <include/grub/types.h>
-> +typedef grub_uint8_t BYTE;
-> +typedef grub_uint16_t U16;
-> +typedef grub_int16_t S16;
-> +typedef grub_uint32_t U32;
-> +typedef grub_int32_t S32;
-> +typedef grub_uint64_t U64;
-> +typedef grub_int64_t S64;
-> +typedef grub_size_t uPtrDiff;
->
->  /*-**************************************************************
->  *  Memory I/O
-> @@ -56,19 +54,25 @@ ZSTD_STATIC unsigned ZSTD_64bits(void) { return sizeof(size_t) == 8; }
->
->  ZSTD_STATIC unsigned ZSTD_isLittleEndian(void) { return ZSTD_LITTLE_ENDIAN; }
->
-> -ZSTD_STATIC U16 ZSTD_read16(const void *memPtr) { return get_unaligned((const U16 *)memPtr); }
-> +ZSTD_STATIC U16 ZSTD_read16(const void *memPtr) { return get_unaligned_16(memPtr); }
->
-> -ZSTD_STATIC U32 ZSTD_read32(const void *memPtr) { return get_unaligned((const U32 *)memPtr); }
-> +ZSTD_STATIC U32 ZSTD_read32(const void *memPtr) { return get_unaligned_32(memPtr); }
->
-> -ZSTD_STATIC U64 ZSTD_read64(const void *memPtr) { return get_unaligned((const U64 *)memPtr); }
-> +ZSTD_STATIC U64 ZSTD_read64(const void *memPtr) { return get_unaligned_64(memPtr); }
->
-> -ZSTD_STATIC size_t ZSTD_readST(const void *memPtr) { return get_unaligned((const size_t *)memPtr); }
-> +ZSTD_STATIC size_t ZSTD_readST(const void *memPtr)
+> +static grub_ssize_t
+> +grub_btrfs_zstd_decompress(char *ibuf, grub_size_t isize, grub_off_t off,
+> +			  char *obuf, grub_size_t osize)
 > +{
-> +	if (ZSTD_32bits())
-> +		return get_unaligned_32(memPtr);
-> +	else
-> +		return get_unaligned_64(memPtr);
-> +}
->
-> -ZSTD_STATIC void ZSTD_write16(void *memPtr, U16 value) { put_unaligned(value, (U16 *)memPtr); }
-> +ZSTD_STATIC void ZSTD_write16(void *memPtr, U16 value) { put_unaligned_16(value, memPtr); }
->
-> -ZSTD_STATIC void ZSTD_write32(void *memPtr, U32 value) { put_unaligned(value, (U32 *)memPtr); }
-> +ZSTD_STATIC void ZSTD_write32(void *memPtr, U32 value) { put_unaligned_32(value, memPtr); }
->
-> -ZSTD_STATIC void ZSTD_write64(void *memPtr, U64 value) { put_unaligned(value, (U64 *)memPtr); }
-> +ZSTD_STATIC void ZSTD_write64(void *memPtr, U64 value) { put_unaligned_64(value, memPtr); }
->
->  /*=== Little endian r/w ===*/
->
-> diff --git a/grub-core/lib/zstd/xxhash.c b/grub-core/lib/zstd/xxhash.c
-> index aa61e2a38..d5bd26097 100644
-> --- a/grub-core/lib/zstd/xxhash.c
-> +++ b/grub-core/lib/zstd/xxhash.c
-> @@ -38,13 +38,8 @@
->   * - xxHash source repository: https://github.com/Cyan4973/xxHash
->   */
->
-> -#include <asm/unaligned.h>
-> -#include <linux/errno.h>
-> -#include <linux/compiler.h>
-> -#include <linux/kernel.h>
-> -#include <linux/module.h>
-> -#include <linux/string.h>
-> -#include <linux/xxhash.h>
-> +#include "kerncompat.h"
-> +#include "xxhash.h"
->
->  /*-*************************************
->   * Macros
-> @@ -80,13 +75,11 @@ void xxh32_copy_state(struct xxh32_state *dst, const struct xxh32_state *src)
->  {
->  	memcpy(dst, src, sizeof(*dst));
->  }
-> -EXPORT_SYMBOL(xxh32_copy_state);
->
->  void xxh64_copy_state(struct xxh64_state *dst, const struct xxh64_state *src)
->  {
->  	memcpy(dst, src, sizeof(*dst));
->  }
-> -EXPORT_SYMBOL(xxh64_copy_state);
->
->  /*-***************************
->   * Simple Hash Functions
-> @@ -151,7 +144,6 @@ uint32_t xxh32(const void *input, const size_t len, const uint32_t seed)
->
->  	return h32;
->  }
-> -EXPORT_SYMBOL(xxh32);
->
->  static uint64_t xxh64_round(uint64_t acc, const uint64_t input)
->  {
-> @@ -234,7 +226,6 @@ uint64_t xxh64(const void *input, const size_t len, const uint64_t seed)
->
->  	return h64;
->  }
-> -EXPORT_SYMBOL(xxh64);
->
->  /*-**************************************************
->   * Advanced Hash Functions
-> @@ -251,7 +242,6 @@ void xxh32_reset(struct xxh32_state *statePtr, const uint32_t seed)
->  	state.v4 = seed - PRIME32_1;
->  	memcpy(statePtr, &state, sizeof(state));
->  }
-> -EXPORT_SYMBOL(xxh32_reset);
->
->  void xxh64_reset(struct xxh64_state *statePtr, const uint64_t seed)
->  {
-> @@ -265,7 +255,6 @@ void xxh64_reset(struct xxh64_state *statePtr, const uint64_t seed)
->  	state.v4 = seed - PRIME64_1;
->  	memcpy(statePtr, &state, sizeof(state));
->  }
-> -EXPORT_SYMBOL(xxh64_reset);
->
->  int xxh32_update(struct xxh32_state *state, const void *input, const size_t len)
->  {
-> @@ -334,7 +323,6 @@ int xxh32_update(struct xxh32_state *state, const void *input, const size_t len)
->
->  	return 0;
->  }
-> -EXPORT_SYMBOL(xxh32_update);
->
->  uint32_t xxh32_digest(const struct xxh32_state *state)
->  {
-> @@ -372,7 +360,6 @@ uint32_t xxh32_digest(const struct xxh32_state *state)
->
->  	return h32;
->  }
-> -EXPORT_SYMBOL(xxh32_digest);
->
->  int xxh64_update(struct xxh64_state *state, const void *input, const size_t len)
->  {
-> @@ -439,7 +426,6 @@ int xxh64_update(struct xxh64_state *state, const void *input, const size_t len)
->
->  	return 0;
->  }
-> -EXPORT_SYMBOL(xxh64_update);
->
->  uint64_t xxh64_digest(const struct xxh64_state *state)
->  {
-> @@ -494,7 +480,3 @@ uint64_t xxh64_digest(const struct xxh64_state *state)
->
->  	return h64;
->  }
-> -EXPORT_SYMBOL(xxh64_digest);
-> -
-> -MODULE_LICENSE("Dual BSD/GPL");
-> -MODULE_DESCRIPTION("xxHash");
-> diff --git a/grub-core/lib/zstd/xxhash.h b/grub-core/lib/zstd/xxhash.h
-> index 9e1f42cb5..b089a4abd 100644
-> --- a/grub-core/lib/zstd/xxhash.h
-> +++ b/grub-core/lib/zstd/xxhash.h
-> @@ -75,7 +75,7 @@
->  #ifndef XXHASH_H
->  #define XXHASH_H
->
-> -#include <linux/types.h>
-> +#include "kerncompat.h"
->
->  /*-****************************
->   * Simple Hash Functions
-> diff --git a/grub-core/lib/zstd/zstd.h b/grub-core/lib/zstd/zstd.h
-> index 249575e24..302581446 100644
-> --- a/grub-core/lib/zstd/zstd.h
-> +++ b/grub-core/lib/zstd/zstd.h
-> @@ -18,7 +18,7 @@
->  #define ZSTD_H
->
->  /* ======   Dependency   ======*/
-> -#include <linux/types.h>   /* size_t */
-> +#include <stddef.h>
->
->
->  /*-*****************************************************************************
-> diff --git a/grub-core/lib/zstd/zstd_common.c b/grub-core/lib/zstd/zstd_common.c
-> index a282624ee..db6327744 100644
-> --- a/grub-core/lib/zstd/zstd_common.c
-> +++ b/grub-core/lib/zstd/zstd_common.c
-> @@ -17,9 +17,9 @@
->  /*-*************************************
->  *  Dependencies
->  ***************************************/
-> +#include "kerncompat.h"
->  #include "error_private.h"
->  #include "zstd_internal.h" /* declaration of ZSTD_isError, ZSTD_getErrorName, ZSTD_getErrorCode, ZSTD_getErrorString, ZSTD_versionNumber */
-> -#include <linux/kernel.h>
->
->  /*=**************************************************************
->  *  Custom allocator
-> diff --git a/grub-core/lib/zstd/zstd_internal.h b/grub-core/lib/zstd/zstd_internal.h
-> index 1a79fab9e..990f4f13f 100644
-> --- a/grub-core/lib/zstd/zstd_internal.h
-> +++ b/grub-core/lib/zstd/zstd_internal.h
-> @@ -28,10 +28,8 @@
->  ***************************************/
->  #include "error_private.h"
->  #include "mem.h"
-> -#include <linux/compiler.h>
-> -#include <linux/kernel.h>
-> -#include <linux/xxhash.h>
-> -#include <linux/zstd.h>
-> +#include "xxhash.h"
-> +#include "zstd.h"
->
->  /*-*************************************
->  *  shared macros
-> @@ -127,7 +125,11 @@ static const U32 OF_defaultNormLog = OF_DEFAULTNORMLOG;
->  *  Shared functions to include for inlining
->  *********************************************/
->  ZSTD_STATIC void ZSTD_copy8(void *dst, const void *src) {
-> -	memcpy(dst, src, 8);
-> +	/* When compiled in freestanding mode, the compiler can't inline memcpy()
-> +	 * unless explicitly told that it is allowed to. This is a major pessimization
-> +	 * for zstd, since ZSTD_wildcopy() is hot.
+> +	void *allocated = NULL;
+> +	char *otmpbuf = obuf;
+> +	grub_size_t otmpsize = osize;
+> +	void *wmem = NULL;
+> +	const grub_size_t wmem_size = ZSTD_DCtxWorkspaceBound ();
+> +	ZSTD_DCtx *dctx;
+> +	grub_size_t zstd_ret;
+> +	grub_ssize_t ret = -1;
+> +
+> +	/* Zstd will fail if it can't fit the entire output in the destination
+> +	 * buffer, so if osize isn't large enough, allocate a temporary buffer.
 > +	 */
-> +	__builtin_memcpy(dst, src, 8);
+> +	if (otmpsize < ZSTD_BTRFS_MAX_INPUT) {
+> +		allocated = grub_malloc (ZSTD_BTRFS_MAX_INPUT);
+> +		if (!allocated) {
+> +			grub_dprintf ("zstd", "outtmpbuf allocation failed\n");
+> +			goto out;
+> +		}
+> +		otmpbuf = (char*)allocated;
+> +		otmpsize = ZSTD_BTRFS_MAX_INPUT;
+> +	}
+> +
+> +	/* Allocate space for, and initialize, the ZSTD_DCtx. */
+> +	wmem = grub_malloc (wmem_size);
+> +	if (!wmem) {
+> +		grub_dprintf ("zstd", "wmem allocation failed\n");
+> +		goto out;
+> +	}
+> +	dctx = ZSTD_initDCtx (wmem, wmem_size);
+> +
+> +	/* Get the real input size, there may be junk at the
+> +	 * end of the frame.
+> +	 */
+> +	isize = ZSTD_findFrameCompressedSize (ibuf, isize);
+> +	if (ZSTD_isError (isize)) {
+> +		grub_dprintf ("zstd", "first frame is invalid %d\n",
+> +				(int)ZSTD_getErrorCode (isize));
+> +		goto out;
+> +	}
+> +
+> +	/* Decompress and check for errors */
+> +	zstd_ret = ZSTD_decompressDCtx (dctx, otmpbuf, otmpsize, ibuf, isize);
+> +	if (ZSTD_isError (zstd_ret)) {
+> +		grub_dprintf ("zstd", "zstd failed with  code %d\n",
+> +				(int)ZSTD_getErrorCode (zstd_ret));
+> +		goto out;
+> +	}
+> +
+> +	/* Move the requested data into the obuf.
+> +	 * obuf may be equal to otmpbuf, which is why grub_memmove() is required.
+> +	 */
+> +	grub_memmove (obuf, otmpbuf + off, osize);
+> +	ret = osize;
+> +
+> +out:
 
-It seems to me that this change is not needed.
+s/out/err/
+
+> +	grub_free (allocated);
+> +	grub_free (wmem);
+> +	return ret;
+> +}
+> +
+>  static grub_ssize_t
+>  grub_btrfs_lzo_decompress(char *ibuf, grub_size_t isize, grub_off_t off,
+>  			  char *obuf, grub_size_t osize)
+> @@ -1087,7 +1156,8 @@ grub_btrfs_extent_read (struct grub_btrfs_data *data,
+>
+>        if (data->extent->compression != GRUB_BTRFS_COMPRESSION_NONE
+>  	  && data->extent->compression != GRUB_BTRFS_COMPRESSION_ZLIB
+> -	  && data->extent->compression != GRUB_BTRFS_COMPRESSION_LZO)
+> +	  && data->extent->compression != GRUB_BTRFS_COMPRESSION_LZO
+> +	  && data->extent->compression != GRUB_BTRFS_COMPRESSION_ZSTD)
+>  	{
+>  	  grub_error (GRUB_ERR_NOT_IMPLEMENTED_YET,
+>  		      "compression type 0x%x not supported",
+> @@ -1127,6 +1197,15 @@ grub_btrfs_extent_read (struct grub_btrfs_data *data,
+>  		  != (grub_ssize_t) csize)
+>  		return -1;
+>  	    }
+> +	  else if (data->extent->compression == GRUB_BTRFS_COMPRESSION_ZSTD)
+> +	    {
+> +	      if (grub_btrfs_zstd_decompress(data->extent->inl, data->extsize -
+> +					   ((grub_uint8_t *) data->extent->inl
+> +					    - (grub_uint8_t *) data->extent),
+> +					   extoff, buf, csize)
+> +		  != (grub_ssize_t) csize)
+> +		return -1;
+> +	    }
+>  	  else
+>  	    grub_memcpy (buf, data->extent->inl + extoff, csize);
+>  	  break;
+> @@ -1164,6 +1243,10 @@ grub_btrfs_extent_read (struct grub_btrfs_data *data,
+>  		ret = grub_btrfs_lzo_decompress (tmp, zsize, extoff
+>  				    + grub_le_to_cpu64 (data->extent->offset),
+>  				    buf, csize);
+> +	      else if (data->extent->compression == GRUB_BTRFS_COMPRESSION_ZSTD)
+> +		ret = grub_btrfs_zstd_decompress (tmp, zsize, extoff
+> +				    + grub_le_to_cpu64 (data->extent->offset),
+> +				    buf, csize);
+>  	      else
+>  		ret = -1;
+>
+> diff --git a/tests/btrfs_test.in b/tests/btrfs_test.in
+> index 2b37ddd33..0c9bf3a68 100644
+> --- a/tests/btrfs_test.in
+> +++ b/tests/btrfs_test.in
+> @@ -18,6 +18,7 @@ fi
+>  "@builddir@/grub-fs-tester" btrfs
+>  "@builddir@/grub-fs-tester" btrfs_zlib
+>  "@builddir@/grub-fs-tester" btrfs_lzo
+> +"@builddir@/grub-fs-tester" btrfs_zstd
+>  "@builddir@/grub-fs-tester" btrfs_raid0
+>  "@builddir@/grub-fs-tester" btrfs_raid1
+>  "@builddir@/grub-fs-tester" btrfs_single
+> diff --git a/tests/util/grub-fs-tester.in b/tests/util/grub-fs-tester.in
+> index ef65fbc93..147d946d2 100644
+> --- a/tests/util/grub-fs-tester.in
+> +++ b/tests/util/grub-fs-tester.in
+> @@ -600,7 +600,7 @@ for LOGSECSIZE in $(range "$MINLOGSECSIZE" "$MAXLOGSECSIZE" 1); do
+>  	    GENERATED=n
+>  	    LODEVICES=
+>  	    MOUNTDEVICE=
+> -
+> +
+
+Ditto.
 
 Daniel

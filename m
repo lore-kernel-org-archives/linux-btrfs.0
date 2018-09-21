@@ -1,45 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:47934 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:55618 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S2389022AbeIUMdM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 21 Sep 2018 08:33:12 -0400
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 556D2AD1A
-        for <linux-btrfs@vger.kernel.org>; Fri, 21 Sep 2018 06:45:27 +0000 (UTC)
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/2] btrfs: relocation: Remove redundant tree level check
-Date: Fri, 21 Sep 2018 14:45:21 +0800
-Message-Id: <20180921064521.13102-2-wqu@suse.com>
-In-Reply-To: <20180921064521.13102-1-wqu@suse.com>
-References: <20180921064521.13102-1-wqu@suse.com>
+        id S1727392AbeIUTBv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 21 Sep 2018 15:01:51 -0400
+Date: Fri, 21 Sep 2018 15:13:00 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org, sunny.s.zhang@oracle.com,
+        bo.liu@linux.alibaba.com, nborisov@suse.com
+Subject: Re: [PATCH RFC] btrfs: delayed-inode: Use spinlock to protect
+ btrfs_inode::delayed_node
+Message-ID: <20180921131300.GF5847@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20180919065958.21153-1-wqu@suse.com>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20180919065958.21153-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Commit 581c1760415c ("btrfs: Validate child tree block's level and first
-key") has made tree block level check mandatory.
+On Wed, Sep 19, 2018 at 02:59:58PM +0800, Qu Wenruo wrote:
+> In the following case, we could trigger a use-after-free bug:
+> 
+>          CPU0                    |               CPU1
+> -------------------------------------------------------------------------
+> btrfs_remove_delayed_node        | btrfs_get_delayed_node
+> |- delayed_node =                | |- node = btrfs_inode->delayed_node;
+> |    btrfs_inode->delayed_node   | |
+> |- btrfs_release_delaedy_node()  | |
+>    |- ref_count_dev_and_test()   | |
+>    |- kmem_cache_free()          | |
+>       Now delayed node is freed  | |
+>                                  | |- refcount_inc(&node->refs)
+> 
+> In that case sine delayed_node is using kmem cache, such use-after-free
+> bug won't directly cause problem, but could leads to corrupted data
+> structure of other kmem cache user.
+> 
+> Fix it by adding btrfs_inode::delayed_node_lock to protect such
+> operation.
+> 
+> Reported-by: sunny.s.zhang <sunny.s.zhang@oracle.com>
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+> Please don't merge this patch yet.
+> 
+> The patch caused random slow down for a lot of quick test cases.
+> Old tests can be executed in 1s or so now randomly needs near 20s.
+> 
+> It looks like the spin_lock() with root->inode_lock hold is causing the
+> problem but I can't see what's going wrong.
+> As the operation done with @delayed_node_lock hold is literatly tiny.
+> 
+> Any comment on this is welcomed.
 
-So if tree block level doesn't match, we won't get a valid extent
-buffer.
-The extra WARN_ON() check can be removed completely.
+I found the original report and discussion, so the resume is that it's
+possibly caused by the refcount_t rework and the missing fix
+ec35e48b2869599 .
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/relocation.c | 1 -
- 1 file changed, 1 deletion(-)
-
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index d7f5a11dde20..56e2fab2926d 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -2911,7 +2911,6 @@ static int get_tree_block_key(struct btrfs_fs_info *fs_info,
- 		free_extent_buffer(eb);
- 		return -EIO;
- 	}
--	WARN_ON(btrfs_header_level(eb) != block->level);
- 	if (block->level == 0)
- 		btrfs_item_key_to_cpu(eb, &block->key, 0);
- 	else
--- 
-2.19.0
+As in time of evict there can be no active operation running and the
+crash happened inside atime update. I take the bug in refcounting as a
+plausible explanation so your patch does not seem to be necessary,
+unless there's a reproducer on a recent kernel.

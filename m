@@ -1,149 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:35154 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:48554 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727605AbeISMgj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 19 Sep 2018 08:36:39 -0400
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 51215AEBA
-        for <linux-btrfs@vger.kernel.org>; Wed, 19 Sep 2018 07:00:06 +0000 (UTC)
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH RFC] btrfs: delayed-inode: Use spinlock to protect btrfs_inode::delayed_node
-Date: Wed, 19 Sep 2018 14:59:58 +0800
-Message-Id: <20180919065958.21153-1-wqu@suse.com>
+        id S1725887AbeIUMkl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 21 Sep 2018 08:40:41 -0400
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 3EDDCAD1A
+        for <linux-btrfs@vger.kernel.org>; Fri, 21 Sep 2018 06:53:12 +0000 (UTC)
+Subject: Re: [PATCH 1/2] btrfs: relocation: Cleanup while() loop using for()
+To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+References: <20180921064521.13102-1-wqu@suse.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <cb987357-1d31-c985-a439-2f368554072d@suse.com>
+Date: Fri, 21 Sep 2018 09:53:11 +0300
 MIME-Version: 1.0
+In-Reply-To: <20180921064521.13102-1-wqu@suse.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In the following case, we could trigger a use-after-free bug:
 
-         CPU0                    |               CPU1
--------------------------------------------------------------------------
-btrfs_remove_delayed_node        | btrfs_get_delayed_node
-|- delayed_node =                | |- node = btrfs_inode->delayed_node;
-|    btrfs_inode->delayed_node   | |
-|- btrfs_release_delaedy_node()  | |
-   |- ref_count_dev_and_test()   | |
-   |- kmem_cache_free()          | |
-      Now delayed node is freed  | |
-                                 | |- refcount_inc(&node->refs)
 
-In that case sine delayed_node is using kmem cache, such use-after-free
-bug won't directly cause problem, but could leads to corrupted data
-structure of other kmem cache user.
+On 21.09.2018 09:45, Qu Wenruo wrote:
+> And add one line comment explaining what we're doing for each loop.
+> 
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+>  fs/btrfs/relocation.c | 15 ++++++---------
+>  1 file changed, 6 insertions(+), 9 deletions(-)
+> 
+> diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+> index 8783a1776540..d7f5a11dde20 100644
+> --- a/fs/btrfs/relocation.c
+> +++ b/fs/btrfs/relocation.c
+> @@ -2997,27 +2997,25 @@ int relocate_tree_blocks(struct btrfs_trans_handle *trans,
+>  		goto out_free_blocks;
+>  	}
+>  
+> -	rb_node = rb_first(blocks);
+> -	while (rb_node) {
+> +	/* Kick in readahead for tree blocks with missing keys */
+> +	for (rb_node = rb_first(blocks); rb_node; rb_node = rb_next(rb_node)) {
 
-Fix it by adding btrfs_inode::delayed_node_lock to protect such
-operation.
+FYI there is already a rbtree_postorder_for_each_entry_safe functino
+which allows to iterate the rb tree in post order. It provides stronger
+guarantees than you actually need (namely the _safe ) but in any case it
+will allows you to get rid of the "block = " line as well as the
+"rb_node =" line. This will remove all superfluous code that's needed to
+handle the iteration.
 
-Reported-by: sunny.s.zhang <sunny.s.zhang@oracle.com>
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
-Please don't merge this patch yet.
-
-The patch caused random slow down for a lot of quick test cases.
-Old tests can be executed in 1s or so now randomly needs near 20s.
-
-It looks like the spin_lock() with root->inode_lock hold is causing the
-problem but I can't see what's going wrong.
-As the operation done with @delayed_node_lock hold is literatly tiny.
-
-Any comment on this is welcomed.
----
- fs/btrfs/btrfs_inode.h   |  2 ++
- fs/btrfs/delayed-inode.c | 18 +++++++++++++++---
- fs/btrfs/inode.c         |  1 +
- 3 files changed, 18 insertions(+), 3 deletions(-)
-
-diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index 1343ac57b438..c2f054223588 100644
---- a/fs/btrfs/btrfs_inode.h
-+++ b/fs/btrfs/btrfs_inode.h
-@@ -175,6 +175,8 @@ struct btrfs_inode {
- 	 */
- 	unsigned defrag_compress;
- 
-+	/* lock for grabbing/freeing @delayed_node */
-+	spinlock_t delayed_node_lock;
- 	struct btrfs_delayed_node *delayed_node;
- 
- 	/* File creation time. */
-diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-index f51b509f2d9b..16c405e54930 100644
---- a/fs/btrfs/delayed-inode.c
-+++ b/fs/btrfs/delayed-inode.c
-@@ -68,19 +68,24 @@ static struct btrfs_delayed_node *btrfs_get_delayed_node(
- 	u64 ino = btrfs_ino(btrfs_inode);
- 	struct btrfs_delayed_node *node;
- 
--	node = READ_ONCE(btrfs_inode->delayed_node);
-+	spin_lock(&btrfs_inode->delayed_node_lock);
-+	node = btrfs_inode->delayed_node;
- 	if (node) {
- 		refcount_inc(&node->refs);
-+		spin_unlock(&btrfs_inode->delayed_node_lock);
- 		return node;
- 	}
-+	spin_unlock(&btrfs_inode->delayed_node_lock);
- 
- 	spin_lock(&root->inode_lock);
- 	node = radix_tree_lookup(&root->delayed_nodes_tree, ino);
- 
- 	if (node) {
-+		spin_lock(&btrfs_inode->delayed_node_lock);
- 		if (btrfs_inode->delayed_node) {
- 			refcount_inc(&node->refs);	/* can be accessed */
- 			BUG_ON(btrfs_inode->delayed_node != node);
-+			spin_unlock(&btrfs_inode->delayed_node_lock);
- 			spin_unlock(&root->inode_lock);
- 			return node;
- 		}
-@@ -108,6 +113,7 @@ static struct btrfs_delayed_node *btrfs_get_delayed_node(
- 			node = NULL;
- 		}
- 
-+		spin_unlock(&btrfs_inode->delayed_node_lock);
- 		spin_unlock(&root->inode_lock);
- 		return node;
- 	}
-@@ -152,7 +158,9 @@ static struct btrfs_delayed_node *btrfs_get_or_create_delayed_node(
- 		radix_tree_preload_end();
- 		goto again;
- 	}
-+	spin_lock(&btrfs_inode->delayed_node_lock);
- 	btrfs_inode->delayed_node = node;
-+	spin_unlock(&btrfs_inode->delayed_node_lock);
- 	spin_unlock(&root->inode_lock);
- 	radix_tree_preload_end();
- 
-@@ -1279,11 +1287,15 @@ void btrfs_remove_delayed_node(struct btrfs_inode *inode)
- {
- 	struct btrfs_delayed_node *delayed_node;
- 
--	delayed_node = READ_ONCE(inode->delayed_node);
--	if (!delayed_node)
-+	spin_lock(&inode->delayed_node_lock);
-+	delayed_node = inode->delayed_node;
-+	if (!delayed_node) {
-+		spin_unlock(&inode->delayed_node_lock);
- 		return;
-+	}
- 
- 	inode->delayed_node = NULL;
-+	spin_unlock(&inode->delayed_node_lock);
- 	btrfs_release_delayed_node(delayed_node);
- }
- 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 9357a19d2bff..f438be5fecaf 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -9177,6 +9177,7 @@ struct inode *btrfs_alloc_inode(struct super_block *sb)
- 	ei->last_log_commit = 0;
- 
- 	spin_lock_init(&ei->lock);
-+	spin_lock_init(&ei->delayed_node_lock);
- 	ei->outstanding_extents = 0;
- 	if (sb->s_magic != BTRFS_TEST_MAGIC)
- 		btrfs_init_metadata_block_rsv(fs_info, &ei->block_rsv,
--- 
-2.19.0
+>  		block = rb_entry(rb_node, struct tree_block, rb_node);
+>  		if (!block->key_ready)
+>  			readahead_tree_block(fs_info, block->bytenr);
+> -		rb_node = rb_next(rb_node);
+>  	}
+>  
+> -	rb_node = rb_first(blocks);
+> -	while (rb_node) {
+> +	/* Get first keys */
+> +	for (rb_node = rb_first(blocks); rb_node; rb_node = rb_next(rb_node)) {
+>  		block = rb_entry(rb_node, struct tree_block, rb_node);
+>  		if (!block->key_ready) {
+>  			err = get_tree_block_key(fs_info, block);
+>  			if (err)
+>  				goto out_free_path;
+>  		}
+> -		rb_node = rb_next(rb_node);
+>  	}
+>  
+> -	rb_node = rb_first(blocks);
+> -	while (rb_node) {
+> +	/* Do tree relocation */
+> +	for (rb_node = rb_first(blocks); rb_node; rb_node = rb_next(rb_node)) {
+>  		block = rb_entry(rb_node, struct tree_block, rb_node);
+>  
+>  		node = build_backref_tree(rc, &block->key,
+> @@ -3034,7 +3032,6 @@ int relocate_tree_blocks(struct btrfs_trans_handle *trans,
+>  				err = ret;
+>  			goto out;
+>  		}
+> -		rb_node = rb_next(rb_node);
+>  	}
+>  out:
+>  	err = finish_pending_nodes(trans, rc, path, err);
+> 

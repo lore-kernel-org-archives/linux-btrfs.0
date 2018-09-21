@@ -1,49 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:50908 "EHLO
-        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S2391160AbeIVAiq (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 21 Sep 2018 20:38:46 -0400
-From: Nick Terrell <terrelln@fb.com>
-To: Daniel Kiper <dkiper@net-space.pl>
-CC: "grub-devel@gnu.org" <grub-devel@gnu.org>,
-        Kernel Team <Kernel-team@fb.com>, David Sterba <dsterba@suse.cz>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 1/3] btrfs: Import kernel zstd
-Date: Fri, 21 Sep 2018 18:48:16 +0000
-Message-ID: <7130ADBC-A7B0-4685-988D-A69DFDEBFFDC@fb.com>
-References: <20180828013654.1627080-1-terrelln@fb.com>
- <20180828013654.1627080-2-terrelln@fb.com>
- <20180921181025.GB29978@router-fw-old.i.net-space.pl>
-In-Reply-To: <20180921181025.GB29978@router-fw-old.i.net-space.pl>
-Content-Type: text/plain; charset="us-ascii"
+Received: from mx2.suse.de ([195.135.220.15]:41300 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1728149AbeIUXpi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 21 Sep 2018 19:45:38 -0400
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 0A9D7AF4A
+        for <linux-btrfs@vger.kernel.org>; Fri, 21 Sep 2018 17:55:38 +0000 (UTC)
+Subject: Re: [PATCH] btrfs: use common helper instead of open coding a bit
+ test
+To: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+References: <20180921122634.12138-1-dsterba@suse.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <aa879b44-21ca-4fe5-e52a-ab20f4a1f6be@suse.com>
+Date: Fri, 21 Sep 2018 20:55:36 +0300
 MIME-Version: 1.0
+In-Reply-To: <20180921122634.12138-1-dsterba@suse.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-> On Sep 21, 2018, at 11:10 AM, Daniel Kiper <dkiper@net-space.pl> wrote:
+On 21.09.2018 15:26, David Sterba wrote:
+> The helper does the same math and we take care about the special case
+> when flags is 0 too.
 > 
-> On Mon, Aug 27, 2018 at 06:36:52PM -0700, Nick Terrell wrote:
->> Import xxhash and zstd from the upstream kernel as-is. This will not
->> compile. The next patch in the series contains all the changes needed to
->> make zstd compile in grub. Only the files needed for decompression are
->> imported from zstd.
->> 
->> The files are copied from these locations:
->> include/linux/{xxhash,zstd}.h
->> lib/xxhash.c
->> lib/zstd/
+> Signed-off-by: David Sterba <dsterba@suse.com>
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+> ---
+>  fs/btrfs/volumes.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
 > 
-> First of all, may I ask you to import zstd from original repository
-> (https://github.com/facebook/zstd) instead of Linux kernel?
-
-Sure, I'll rework the patch set to use upstream zstd, and incorporate
-your comments.
-
-I'll upstream any changes we need to reduce the noise when importing,
-like changing "byte" to "value" because of a typedef of the same name.
-
-Thanks for the review,
-Nick
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index 909c578506ee..26eb388db343 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -3691,7 +3691,7 @@ static int alloc_profile_is_valid(u64 flags, int extended)
+>  		return !extended; /* "0" is valid for usual profiles */
+>  
+>  	/* true if exactly one bit set */
+> -	return (flags & (flags - 1)) == 0;
+> +	return is_power_of_2(flags);
+>  }
+>  
+>  static inline int balance_need_close(struct btrfs_fs_info *fs_info)
+> 

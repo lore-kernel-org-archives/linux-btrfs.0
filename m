@@ -1,66 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.21]:60897 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725898AbeIUNY5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 21 Sep 2018 09:24:57 -0400
-Subject: Re: [PATCH v2 2/2] btrfs: relocation: Remove redundant tree level
- check
-To: Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
-References: <20180921072030.20531-1-wqu@suse.com>
- <20180921072030.20531-2-wqu@suse.com>
- <c83bfc6d-569e-aa9f-ce91-637e194672f5@suse.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <2ea5ad51-cd44-a8b6-892c-27528a31b3bf@gmx.com>
-Date: Fri, 21 Sep 2018 15:37:10 +0800
+Received: from tty0.vserver.softronics.ch ([91.214.169.36]:38010 "EHLO
+        fe1.digint.ch" rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S2388909AbeIUPee (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 21 Sep 2018 11:34:34 -0400
+Subject: Re: [RFC PATCH v2 0/4] btrfs-progs: build distinct binaries for
+ specific btrfs subcommands
+To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org,
+        Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
+References: <20180912144604.6178-1-axel@tty0.ch>
+ <3ceee37e-66f5-e2f8-dbc9-fde2452a6447@tty0.ch>
+ <pan$1f31c$d7f59d13$3b6f50b9$200a6f62@cox.net>
+From: Axel Burri <axel@tty0.ch>
+Message-ID: <de48e007-451e-6094-c4c6-ee1662ff3836@tty0.ch>
+Date: Fri, 21 Sep 2018 11:46:37 +0200
 MIME-Version: 1.0
-In-Reply-To: <c83bfc6d-569e-aa9f-ce91-637e194672f5@suse.com>
+In-Reply-To: <pan$1f31c$d7f59d13$3b6f50b9$200a6f62@cox.net>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On 20/09/2018 10.32, Duncan wrote:
+> Axel Burri posted on Thu, 20 Sep 2018 00:02:22 +0200 as excerpted:
+> 
+>> Now not everybody wants to install these with fscaps or setuid, but it
+>> might also make sense to provide "/usr/bin/btrfs-subvolume-{show,list}",
+>> as they now work for a regular user. Having both root/user binaries
+>> concurrently is not an issue (e.g. in gentoo the full-featured btrfs
+>> command is in "/sbin/").
+> 
+> That's going to be a problem for distros (or users like me with advanced 
+> layouts, on gentoo too FWIW) that have the bin/sbin merge, where one is a 
+> symlink to the other.
+
+I think you got me wrong here: There will not be binaries with the same
+filename. I totally agree that this would be a bad thing, no matter if
+you have bin/sbin merged or not, you'll end up in either having a
+collision or (even worse) rely on the order in $PATH.
+
+With this "separated" patchset, you can install a binary
+"btrfs-subvolume-show", which has the same functionality as "btrfs
+subvolume show" (note the whitespace/dash), ending up with:
+
+    /sbin/btrfs
+    /usr/bin/btrfs-subvolume-show
+    /usr/bin/btrfs-subvolume-list
+
+thus allowing a user to run "btrfs-subvolume-show" while "btrfs" is
+still only visible for root. With /usr merge it would look like this:
+
+    /bin/btrfs
+    /bin/btrfs-subvolume-show
+    /bin/btrfs-subvolume-list
 
 
-On 2018/9/21 下午3:33, Nikolay Borisov wrote:
+What I'm thinking of is a distro package which installs the separated
+binaries, either with suid/fscaps (if the admin wants to provide their
+users with non-restricted versions of specific commands), or without
+special flags (if the admin wants to just provide the binaries that also
+work for non-root user, enabled by Misono's patchset.
+
+See my gentoo ebuild:
+https://github.com/digint/gentoo/tree/btrfs-progs-separated/sys-fs/btrfs-progs-separated
+
+
+> 
+> FWIW I have both the /usr merge (tho reversed for me, so /usr -> . 
+> instead of having to have /bin and /sbin symlinks to /usr/bin) and the 
+> bin/sbin merge, along with, since I'm on amd64-nomultilib, the lib/lib64 
+> merge.  So:
+> 
+> $$ dir -gGd /bin /sbin /usr /lib /lib64
+> drwxr-xr-x 1 35688 Sep 18 22:56 /bin
+> lrwxrwxrwx 1     5 Aug  7 00:29 /lib -> lib64
+> drwxr-xr-x 1 78560 Sep 18 22:56 /lib64
+> lrwxrwxrwx 1     3 Mar 11  2018 /sbin -> bin
+> lrwxrwxrwx 1     1 Mar 11  2018 /usr -> .
 > 
 > 
-> On 21.09.2018 10:20, Qu Wenruo wrote:
->> Commit 581c1760415c ("btrfs: Validate child tree block's level and first
->> key") has made tree block level check mandatory.
->>
->> So if tree block level doesn't match, we won't get a valid extent
->> buffer.
->> The extra WARN_ON() check can be removed completely.
->>
->> Signed-off-by: Qu Wenruo <wqu@suse.com>
->> ---
->> Changelog:
->> v2:
->>   Added tags.
+> Of course that last one (/usr -> .) leads to /share and /include hanging 
+> directly off of / as well, but it works.
 > 
-> Nope you didn't :)
-
-Face palm, only added in formatted patch, and just re-formatted patch again.
-
-Anyway, David could handle it.
-
-Thanks,
-Qu
-
+> But in that scheme /bin, /sbin, /usr/bin and /usr/sbin, are all the same 
+> dir, so only one executable of a particularly name can exist therein.
 > 
->> ---
->>  fs/btrfs/relocation.c | 1 -
->>  1 file changed, 1 deletion(-)
->>
->> diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
->> index 94aa148ccde6..a554e7861b6e 100644
->> --- a/fs/btrfs/relocation.c
->> +++ b/fs/btrfs/relocation.c
->> @@ -2911,7 +2911,6 @@ static int get_tree_block_key(struct btrfs_fs_info *fs_info,
->>  		free_extent_buffer(eb);
->>  		return -EIO;
->>  	}
->> -	WARN_ON(btrfs_header_level(eb) != block->level);
->>  	if (block->level == 0)
->>  		btrfs_item_key_to_cpu(eb, &block->key, 0);
->>  	else
->>

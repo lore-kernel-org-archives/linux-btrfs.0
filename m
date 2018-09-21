@@ -1,72 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pl1-f194.google.com ([209.85.214.194]:38294 "EHLO
-        mail-pl1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1730633AbeIRXdj (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 18 Sep 2018 19:33:39 -0400
-Received: by mail-pl1-f194.google.com with SMTP id u11-v6so1369859plq.5
-        for <linux-btrfs@vger.kernel.org>; Tue, 18 Sep 2018 10:59:55 -0700 (PDT)
-Date: Tue, 18 Sep 2018 11:59:52 -0600
-From: Jason Gunthorpe <jgg@ziepe.ca>
-To: Darren Hart <dvhart@infradead.org>
-Cc: Al Viro <viro@zeniv.linux.org.uk>, Arnd Bergmann <arnd@arndb.de>,
-        linux-fsdevel@vger.kernel.org,
-        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-        "David S. Miller" <davem@davemloft.net>, devel@driverdev.osuosl.org,
-        linux-kernel@vger.kernel.org, qat-linux@intel.com,
-        linux-crypto@vger.kernel.org, linux-media@vger.kernel.org,
-        dri-devel@lists.freedesktop.org, linaro-mm-sig@lists.linaro.org,
-        amd-gfx@lists.freedesktop.org, linux-input@vger.kernel.org,
-        linux-iio@vger.kernel.org, linux-rdma@vger.kernel.org,
-        linux-nvdimm@lists.01.org, linux-nvme@lists.infradead.org,
-        linux-pci@vger.kernel.org, platform-driver-x86@vger.kernel.org,
-        linux-remoteproc@vger.kernel.org, sparclinux@vger.kernel.org,
-        linux-scsi@vger.kernel.org, linux-usb@vger.kernel.org,
-        linux-fbdev@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
-        linux-btrfs@vger.kernel.org, ceph-devel@vger.kernel.org,
-        linux-wireless@vger.kernel.org, netdev@vger.kernel.org
-Subject: Re: [PATCH v2 05/17] compat_ioctl: move more drivers to
- generic_compat_ioctl_ptrarg
-Message-ID: <20180918175952.GJ11367@ziepe.ca>
-References: <20180912150142.157913-1-arnd@arndb.de>
- <20180912151134.436719-1-arnd@arndb.de>
- <20180914203506.GE35251@wrath>
- <20180914205748.GC19965@ZenIV.linux.org.uk>
- <20180918175108.GF35251@wrath>
+Received: from mx2.suse.de ([195.135.220.15]:41296 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1728313AbeIUUTd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 21 Sep 2018 16:19:33 -0400
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 3308DAEAE
+        for <linux-btrfs@vger.kernel.org>; Fri, 21 Sep 2018 14:30:24 +0000 (UTC)
+Date: Fri, 21 Sep 2018 16:30:21 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Nikolay Borisov <nborisov@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/3] btrfs: Factor out ref head locking code in
+ __btrfs_run_delayed_refs
+Message-ID: <20180921143021.GG5847@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1534318796-23111-1-git-send-email-nborisov@suse.com>
+ <1534318796-23111-2-git-send-email-nborisov@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180918175108.GF35251@wrath>
+In-Reply-To: <1534318796-23111-2-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Sep 18, 2018 at 10:51:08AM -0700, Darren Hart wrote:
-> On Fri, Sep 14, 2018 at 09:57:48PM +0100, Al Viro wrote:
-> > On Fri, Sep 14, 2018 at 01:35:06PM -0700, Darren Hart wrote:
-> >  
-> > > Acked-by: Darren Hart (VMware) <dvhart@infradead.org>
-> > > 
-> > > As for a longer term solution, would it be possible to init fops in such
-> > > a way that the compat_ioctl call defaults to generic_compat_ioctl_ptrarg
-> > > so we don't have to duplicate this boilerplate for every ioctl fops
-> > > structure?
-> > 
-> > 	Bad idea, that...  Because several years down the road somebody will add
-> > an ioctl that takes an unsigned int for argument.  Without so much as looking
-> > at your magical mystery macro being used to initialize file_operations.
+On Wed, Aug 15, 2018 at 10:39:54AM +0300, Nikolay Borisov wrote:
+> This is in preparation to refactor the giant loop in
+> __btrfs_run_delayed_refs. As a first step define a new function
+> which implements acquiring a reference to a btrfs_delayed_refs_head and
+> use it. No functional changes.
 > 
-> Fair, being explicit in the declaration as it is currently may be
-> preferable then.
+> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+> ---
+>  fs/btrfs/extent-tree.c | 54 ++++++++++++++++++++++++++++++++++----------------
+>  1 file changed, 37 insertions(+), 17 deletions(-)
+> 
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index de6f75f5547b..6a2c86c8a756 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -2502,6 +2502,40 @@ static int cleanup_ref_head(struct btrfs_trans_handle *trans,
+>  	return 0;
+>  }
+>  
+> +STATIC
+> +struct btrfs_delayed_ref_head *btrfs_obtain_ref_head(
+> +					struct btrfs_trans_handle *trans)
 
-It would be much cleaner and safer if you could arrange things to add
-something like this to struct file_operations:
+The STATIC is now gone from misc-next so it's just 'static'. Please
+don't split the type and function name. It's allowed to fixup the style
+once the function prototype is updated.
 
-  long (*ptr_ioctl) (struct file *, unsigned int, void __user *);
+> +{
+> +	struct btrfs_delayed_ref_root *delayed_refs =
+> +		&trans->transaction->delayed_refs;
+> +	struct btrfs_delayed_ref_head *head = NULL;
+> +	int ret;
+> +
+> +	spin_lock(&delayed_refs->lock);
+> +	head = btrfs_select_ref_head(trans);
+> +	if (!head) {
+> +		spin_unlock(&delayed_refs->lock);
+> +		return head;
+> +	}
+> +
+> +	/*
+> +	 * grab the lock that says we are going to process  all the refs for
+> +	 * this head
+> +	 */
+> +	ret = btrfs_delayed_ref_lock(trans, head);
+> +	spin_unlock(&delayed_refs->lock);
+> +	/*
+> +	 * we may have dropped the spin lock to get the head
+> +	 * mutex lock, and that might have given someone else
+> +	 * time to free the head.  If that's true, it has been
+> +	 * removed from our list and we can move on.
+> +	 */
 
-Where the core code automatically converts the unsigned long to the
-void __user * as appropriate.
+As you move the entire comment, you can reformat it or reword if you
+find a better way what's is supposed to say.
 
-Then it just works right always and the compiler will help address
-Al's concern down the road.
+Otherwise
 
-Cheers,
-Jason
+Reviewed-by: David Sterba <dsterba@suse.com>

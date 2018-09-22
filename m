@@ -1,55 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pg1-f194.google.com ([209.85.215.194]:41188 "EHLO
-        mail-pg1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2391323AbeIVCaV (ORCPT
+Received: from mx0b-00190b01.pphosted.com ([67.231.157.127]:52314 "EHLO
+        mx0b-00190b01.pphosted.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1725800AbeIVHHv (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 21 Sep 2018 22:30:21 -0400
-Received: by mail-pg1-f194.google.com with SMTP id z3-v6so1582094pgv.8
-        for <linux-btrfs@vger.kernel.org>; Fri, 21 Sep 2018 13:39:47 -0700 (PDT)
-Date: Fri, 21 Sep 2018 13:39:45 -0700
-From: Omar Sandoval <osandov@osandov.com>
-To: Nikolay Borisov <nborisov@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 4/6] btrfs-progs: Add freespace tree as compat_ro
- supported feature
-Message-ID: <20180921203945.GA4233@vader>
-References: <1529060762-4372-1-git-send-email-nborisov@suse.com>
- <1529060762-4372-5-git-send-email-nborisov@suse.com>
+        Sat, 22 Sep 2018 03:07:51 -0400
+Subject: Re: [PATCH 00/22] various dynamic_debug patches
+To: Rasmus Villemoes <linux@rasmusvillemoes.dk>,
+        Andrew Morton <akpm@linux-foundation.org>
+Cc: linux-kernel@vger.kernel.org,
+        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
+        netdev@vger.kernel.org, Petr Mladek <pmladek@suse.com>,
+        Steven Rostedt <rostedt@goodmis.org>, linux-btrfs@vger.kernel.org,
+        linux-acpi@vger.kernel.org, x86@kernel.org
+References: <20180919220444.23190-1-linux@rasmusvillemoes.dk>
+From: Jason Baron <jbaron@akamai.com>
+Message-ID: <b2976966-8c48-2798-b2d6-cf7be45ed25f@akamai.com>
+Date: Fri, 21 Sep 2018 20:27:09 -0400
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1529060762-4372-5-git-send-email-nborisov@suse.com>
+In-Reply-To: <20180919220444.23190-1-linux@rasmusvillemoes.dk>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jun 15, 2018 at 02:06:00PM +0300, Nikolay Borisov wrote:
-> The RO_FREE_SPACE_TREE(_VALID) flags are required in order to be able
-> to open an FST filesystem in repair mode. Add them to
-> BTRFS_FEATURE_COMPAT_RO_SUPP.
+On 09/19/2018 06:04 PM, Rasmus Villemoes wrote:
+> This started as an experiment to see how hard it would be to change
+> the four pointers in struct _ddebug into relative offsets, a la
+> CONFIG_GENERIC_BUG_RELATIVE_POINTERS, thus saving 16 bytes per
+> pr_debug site (and thus exactly making up for the extra space used by
+> the introduction of jump labels in 9049fc74). I stumbled on a few
+> things that are probably worth fixing regardless of whether the latter
+> half of this series is deemed worthwhile.
 > 
-> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
-> ---
->  ctree.h | 4 +++-
->  1 file changed, 3 insertions(+), 1 deletion(-)
+> Patch relationships: 1-2, 3-4, 5-6 and 15-16 can be applied
+> individually, though 2, 4 and 6 probably makes most sense in the
+> context of the final goal of the series.
 > 
-> diff --git a/ctree.h b/ctree.h
-> index ade883fecbd6..ef05e8122982 100644
-> --- a/ctree.h
-> +++ b/ctree.h
-> @@ -497,7 +497,9 @@ struct btrfs_super_block {
->   * added here until read-write support for the free space tree is implemented in
->   * btrfs-progs.
->   */
-> -#define BTRFS_FEATURE_COMPAT_RO_SUPP		0ULL
-> +#define BTRFS_FEATURE_COMPAT_RO_SUPP			\
-> +	(BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE |	\
-> +	 BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE_VALID)
+> 7-12 I believe make sense on their own. Patch 13 again only makes
+> sense if we go all the way, and 14 and 17 depend on 13.
+> 
+> 18-21 are more preparatory patches, and finally 22 switch over x86-64
+> to use CONFIG_DYNAMIC_DEBUG_RELATIVE_POINTERS. I've tested that the
+> end result boots under virtme and that the dynamic_debug control file
+> has the expected contents.
+> 
 
+I would like to to see all these patches included. Feel free to add:
+Acked-by: Jason Baron <jbaron@akamai.com>
 
-Have you tested whether btrfs-progs commands that modify the filesystem
-(e.g., btrfstune or btrfs fi label) work with this series? Because that
-is a requirement for claiming that we support this bit (at which point
-we can delete the comment above). Also, this needs to happen _after_ we
-hook up the free space tree with the extent tree.
+I've been wanting to add DYNAMIC_DEBUG_BRANCH to the
+[dev,net,pr].*ratelimited functions. That should reduce the size of the
+text as well.
 
-See here for some historical context:
-https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg57738.html
+Thanks,
+
+-Jason

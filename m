@@ -1,146 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pl1-f196.google.com ([209.85.214.196]:37667 "EHLO
-        mail-pl1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2391251AbeIVB7C (ORCPT
+Received: from [195.159.176.226] ([195.159.176.226]:53066 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1725837AbeIVLwV (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 21 Sep 2018 21:59:02 -0400
-Received: by mail-pl1-f196.google.com with SMTP id q1-v6so936621plr.4
-        for <linux-btrfs@vger.kernel.org>; Fri, 21 Sep 2018 13:08:36 -0700 (PDT)
-Date: Fri, 21 Sep 2018 13:08:34 -0700
-From: Omar Sandoval <osandov@osandov.com>
-To: Nikolay Borisov <nborisov@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 2/6] btrfs-progs: Add extent buffer bitmap manipulation
- infrastructure
-Message-ID: <20180921200834.GC31081@vader>
-References: <1529060762-4372-1-git-send-email-nborisov@suse.com>
- <1529060762-4372-3-git-send-email-nborisov@suse.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1529060762-4372-3-git-send-email-nborisov@suse.com>
+        Sat, 22 Sep 2018 07:52:21 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-3@m.gmane.org>)
+        id 1g3avO-0003nQ-CZ
+        for linux-btrfs@vger.kernel.org; Sat, 22 Sep 2018 07:57:50 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: [RFC PATCH v2 0/4] btrfs-progs: build distinct binaries for
+ specific btrfs subcommands
+Date: Sat, 22 Sep 2018 05:57:44 +0000 (UTC)
+Message-ID: <pan$687fd$ec9c9bfb$3382466c$134cec49@cox.net>
+References: <20180912144604.6178-1-axel@tty0.ch>
+        <3ceee37e-66f5-e2f8-dbc9-fde2452a6447@tty0.ch>
+        <pan$1f31c$d7f59d13$3b6f50b9$200a6f62@cox.net>
+        <de48e007-451e-6094-c4c6-ee1662ff3836@tty0.ch>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jun 15, 2018 at 02:05:58PM +0300, Nikolay Borisov wrote:
-> Those functions are in preparation for adding the freespace tree
-> repair code since it needs to be able to deal with bitmap based fsts.
-> This patch adds extent_buffer_bitmap_set and extent_buffer_bitmap_clear
-> functions. Since in userspace we don't have to deal with page mappings
-> their implementation is vastly simplified by simply setting each bit in
-> the passed range.
+Axel Burri posted on Fri, 21 Sep 2018 11:46:37 +0200 as excerpted:
+
+> I think you got me wrong here: There will not be binaries with the same
+> filename. I totally agree that this would be a bad thing, no matter if
+> you have bin/sbin merged or not, you'll end up in either having a
+> collision or (even worse) rely on the order in $PATH.
 > 
-> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
-> ---
->  extent_io.c | 39 +++++++++++++++++++++++++++++++++++++++
->  extent_io.h | 15 +++++++++++++++
->  2 files changed, 54 insertions(+)
+> With this "separated" patchset, you can install a binary
+> "btrfs-subvolume-show", which has the same functionality as "btrfs
+> subvolume show" (note the whitespace/dash), ending up with:
 > 
-> diff --git a/extent_io.c b/extent_io.c
-> index 198492699438..568a12f7084b 100644
-> --- a/extent_io.c
-> +++ b/extent_io.c
-> @@ -204,6 +204,45 @@ static int clear_state_bit(struct extent_io_tree *tree,
->  	return ret;
->  }
->  
-> +/**
-> + * extent_buffer_bitmap_set - set an area of a bitmap
-> + * @eb: the extent buffer
-> + * @start: offset of the bitmap item in the extent buffer
-> + * @pos: bit number of the first bit
-> + * @len: number of bits to set
-> + */
-> +void extent_buffer_bitmap_set(struct extent_buffer *eb, unsigned long start,
-> +                              unsigned long pos, unsigned long len)
-> +{
-> +        u8 *kaddr = (u8 *)eb->data + start;
-> +
-> +        while (len) {
-> +		le_set_bit(pos, kaddr);
-> +		pos++;
-> +		len--;
-> +        }
-> +}
-> +
-> +
-> +/**
-> + * extent_buffer_bitmap_clear - clear an area of a bitmap
-> + * @eb: the extent buffer
-> + * @start: offset of the bitmap item in the extent buffer
-> + * @pos: bit number of the first bit
-> + * @len: number of bits to clear
-> + */
-> +void extent_buffer_bitmap_clear(struct extent_buffer *eb, unsigned long start,
-> +                                unsigned long pos, unsigned long len)
-> +{
-> +        u8 *kaddr = (u8 *)eb->data + start;
-> +
-> +        while (len) {
-> +		le_clear_bit(pos, kaddr);
-> +		pos++;
-> +		len--;
-> +        }
-> +}
-> +
+>     /sbin/btrfs
+>     /usr/bin/btrfs-subvolume-show
+>     /usr/bin/btrfs-subvolume-list
 
-Hm, bit-by-bit is pretty slow. We don't have to worry about the kmap
-nonsense, but we can still do this byte-by-byte:
+I did get you wrong (and had even understood the separately named 
+binaries from an earlier post, too, but forgot).
 
-/**
- * extent_buffer_bitmap_set - set an area of a bitmap
- * @eb: the extent buffer
- * @start: offset of the bitmap item in the extent buffer
- * @pos: bit number of the first bit
- * @len: number of bits to set
- */
-void extent_buffer_bitmap_set(struct extent_buffer *eb, unsigned long start,
-			      unsigned long pos, unsigned long len)
-{
-        u8 *p = (u8 *)eb->data + start + BIT_BYTE(pos);
-	const unsigned int size = pos + len;
-	int bits_to_set = BITS_PER_BYTE - (pos % BITS_PER_BYTE);
-	u8 mask_to_set = BITMAP_FIRST_BYTE_MASK(pos);
+Thanks. =:^)
 
-	while (len >= bits_to_set) {
-		*p |= mask_to_set;
-		len -= bits_to_set;
-		bits_to_set = BITS_PER_BYTE;
-		mask_to_set = ~0;
-		p++;
-	}
-	if (len) {
-		mask_to_set &= BITMAP_LAST_BYTE_MASK(size);
-		*p |= mask_to_set;
-	}
-}
-
-/**
- * extent_buffer_bitmap_clear - clear an area of a bitmap
- * @eb: the extent buffer
- * @start: offset of the bitmap item in the extent buffer
- * @pos: bit number of the first bit
- * @len: number of bits to clear
- */
-void extent_buffer_bitmap_clear(struct extent_buffer *eb, unsigned long start,
-				unsigned long pos, unsigned long len)
-{
-        u8 *p = (u8 *)eb->data + start + BIT_BYTE(pos);
-	const unsigned int size = pos + len;
-	int bits_to_clear = BITS_PER_BYTE - (pos % BITS_PER_BYTE);
-	u8 mask_to_clear = BITMAP_FIRST_BYTE_MASK(pos);
-
-	while (len >= bits_to_clear) {
-		*p &= ~mask_to_clear;
-		len -= bits_to_clear;
-		bits_to_clear = BITS_PER_BYTE;
-		mask_to_clear = ~0;
-		p++;
-	}
-	if (len) {
-		mask_to_clear &= BITMAP_LAST_BYTE_MASK(size);
-		*p &= ~mask_to_clear;
-	}
-}
-
-I'm 95% sure that's right ;) Compare to __bitmap_set() and
-__bitmap_clear() in the kernel.
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman

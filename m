@@ -1,103 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp2120.oracle.com ([141.146.126.78]:57320 "EHLO
-        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727816AbeIXTmf (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 24 Sep 2018 15:42:35 -0400
-Subject: Re: [PATCH 1/9] fstests: btrfs: _scratch_mkfs_sized fix min size
- without mixed option
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
-References: <1537784193-24431-1-git-send-email-anand.jain@oracle.com>
- <1537784193-24431-2-git-send-email-anand.jain@oracle.com>
- <c770f3ed-a813-74c9-0b9d-04a3ce740185@gmx.com>
- <bdd780f8-8c50-c859-30ba-53c68d81bb72@oracle.com>
- <80c6fc3d-4c30-34b7-ecc1-31eddb12fe59@gmx.com>
-From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <5d791c2f-35ee-8e37-056c-d9089483d5af@oracle.com>
-Date: Mon, 24 Sep 2018 21:40:00 +0800
+Received: from mx2.suse.de ([195.135.220.15]:47084 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726323AbeIXVJZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 24 Sep 2018 17:09:25 -0400
+Date: Mon, 24 Sep 2018 17:06:45 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Chris Mason <clm@fb.com>
+Cc: dsterba@suse.com, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/2] Btrfs: don't clean dirty pages during buffered writes
+Message-ID: <20180924150645.GA3255@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20180620145612.1644763-1-clm@fb.com>
+ <20180620145612.1644763-2-clm@fb.com>
 MIME-Version: 1.0
-In-Reply-To: <80c6fc3d-4c30-34b7-ecc1-31eddb12fe59@gmx.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20180620145612.1644763-2-clm@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Wed, Jun 20, 2018 at 07:56:11AM -0700, Chris Mason wrote:
+> During buffered writes, we follow this basic series of steps:
+> 
+> again:
+> 	lock all the pages
+> 	wait for writeback on all the pages
+> 	Take the extent range lock
+> 	wait for ordered extents on the whole range
+> 	clean all the pages
+> 
+> 	if (copy_from_user_in_atomic() hits a fault) {
+> 		drop our locks
+> 		goto again;
+> 	}
+> 
+> 	dirty all the pages
+> 	release all the locks
+> 
+> The extra waiting, cleaning and locking are there to make sure we don't
+> modify pages in flight to the drive, after they've been crc'd.
+> 
+> If some of the pages in the range were already dirty when the write
+> began, and we need to goto again, we create a window where a dirty page
+> has been cleaned and unlocked.  It may be reclaimed before we're able to
+> lock it again, which means we'll read the old contents off the drive and
+> lose any modifications that had been pending writeback.
+> 
+> We don't actually need to clean the pages.  All of the other locking in
+> place makes sure we don't start IO on the pages, so we can just leave
+> them dirty for the duration of the write.
+> 
+> Fixes: 73d59314e6ed (the original btrfs merge)
+> Signed-off-by: Chris Mason <clm@fb.com>
 
+Reviewed-by: David Sterba <dsterba@suse.com>
 
-On 09/24/2018 08:02 PM, Qu Wenruo wrote:
-> 
-> 
-> On 2018/9/24 下午7:53, Anand Jain wrote:
->>
->>
->> On 09/24/2018 06:58 PM, Qu Wenruo wrote:
->>>
->>>
->>> On 2018/9/24 下午6:16, Anand Jain wrote:
->>>> As of now _scratch_mkfs_sized check if the requested size is below 1G
->>>> and forces the --mixed option for the mkfs.btrfs. Well the correct size
->>>> at which we need to force the mixed option is 114294784bytes. Fix that.
->>>
->>> How this size is get from?
->>> If it's from btrfs_min_dev_size(), I strongly recommend to add reference
->>> here, and don't use the ugly intermediate number.
->>>
->>>
->>> BTW, this number is related to mkfs profile.
->>> If you really want to use some maximum number, please follow the max
->>> possible value in btrfs_min_dev_size(), which should be 229M other than
->>> 106M.
->>
->>   Thanks for the comments. I completely missed out the point of other
->>   group profile requiring more than ~115 bytes. Will fix.
-> 
-> I'd go a rounded number, like 256M.
-> 
-> Non of the number from btrfs_min_dev_size() is really easy to remember
-> nor makes sense out of btrfs realm.
-> 
-> And this also leaves a little more headroom for later modification
-> (although I hope such modification never happen)
-
-  I agree. Actually I was thinking it should be like that when I was 
-writing this patch, then my logical mind didn't provide any strong 
-reason to back that up. As ideas match, Will fix it at 256M.
-
-Thanks, Anand
-
-
-> Thanks,
-> Qu
-> 
->>   Yep the ref for the size is btrfs_min_dev_size().
->>
->> -Anand
->>
->>
->>> Thanks,
->>> Qu
->>>
->>>>
->>>> Signed-off-by: Anand Jain <anand.jain@oracle.com>
->>>> ---
->>>>    common/rc | 4 +++-
->>>>    1 file changed, 3 insertions(+), 1 deletion(-)
->>>>
->>>> diff --git a/common/rc b/common/rc
->>>> index d5bb1feee2c3..bcdbf03e1bf0 100644
->>>> --- a/common/rc
->>>> +++ b/common/rc
->>>> @@ -969,7 +969,9 @@ _scratch_mkfs_sized()
->>>>        ;;
->>>>        btrfs)
->>>>        local mixed_opt=
->>>> -    (( fssize <= 1024 * 1024 * 1024 )) && mixed_opt='--mixed'
->>>> +    # minimum size that's needed without the mixed option.
->>>> +    # Non mixed mode is also the default option.
->>>> +    (( fssize < 114294784 )) && mixed_opt='--mixed'
->>>>        $MKFS_BTRFS_PROG $MKFS_OPTIONS $mixed_opt -b $fssize $SCRATCH_DEV
->>>>        ;;
->>>>        jfs)
->>>>
->>>
-> 
+Moved from for-next to 4.20 queue.

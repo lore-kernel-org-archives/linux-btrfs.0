@@ -1,131 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:58372 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726455AbeIKGnu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 11 Sep 2018 02:43:50 -0400
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 3EEC8B04C
-        for <linux-btrfs@vger.kernel.org>; Tue, 11 Sep 2018 01:46:59 +0000 (UTC)
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: delayed-ref: Introduce new parameter for btrfs_add_delayed_tree_ref() to reduce unnecessary qgroup tracing
-Date: Tue, 11 Sep 2018 09:46:51 +0800
-Message-Id: <20180911014651.18710-1-wqu@suse.com>
+Received: from mail-qt1-f196.google.com ([209.85.160.196]:37611 "EHLO
+        mail-qt1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726316AbeIYCXH (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 24 Sep 2018 22:23:07 -0400
+MIME-Version: 1.0
+References: <20180912150142.157913-1-arnd@arndb.de> <20180912151134.436719-1-arnd@arndb.de>
+ <20180914203506.GE35251@wrath> <20180914205748.GC19965@ZenIV.linux.org.uk>
+ <20180918175108.GF35251@wrath> <20180918175952.GJ11367@ziepe.ca>
+In-Reply-To: <20180918175952.GJ11367@ziepe.ca>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Mon, 24 Sep 2018 22:18:52 +0200
+Message-ID: <CAK8P3a17GY89in7PeLk1F2T-0Xq=sCrwwntM+Y4BCpXheUC+qQ@mail.gmail.com>
+Subject: Re: [PATCH v2 05/17] compat_ioctl: move more drivers to generic_compat_ioctl_ptrarg
+To: Jason Gunthorpe <jgg@ziepe.ca>
+Cc: Darren Hart <dvhart@infradead.org>, Al Viro <viro@zeniv.linux.org.uk>,
+        Linux FS-devel Mailing List <linux-fsdevel@vger.kernel.org>,
+        gregkh <gregkh@linuxfoundation.org>,
+        David Miller <davem@davemloft.net>,
+        driverdevel <devel@driverdev.osuosl.org>,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+        qat-linux@intel.com,
+        "open list:HARDWARE RANDOM NUMBER GENERATOR CORE"
+        <linux-crypto@vger.kernel.org>,
+        Linux Media Mailing List <linux-media@vger.kernel.org>,
+        dri-devel <dri-devel@lists.freedesktop.org>,
+        linaro-mm-sig@lists.linaro.org, amd-gfx@lists.freedesktop.org,
+        "open list:HID CORE LAYER" <linux-input@vger.kernel.org>,
+        linux-iio@vger.kernel.org, linux-rdma <linux-rdma@vger.kernel.org>,
+        linux-nvdimm@lists.01.org, linux-nvme@lists.infradead.org,
+        linux-pci <linux-pci@vger.kernel.org>,
+        Platform Driver <platform-driver-x86@vger.kernel.org>,
+        linux-remoteproc@vger.kernel.org,
+        sparclinux <sparclinux@vger.kernel.org>,
+        linux-scsi <linux-scsi@vger.kernel.org>,
+        USB list <linux-usb@vger.kernel.org>, linux-fbdev@vger.kernel.org,
+        linuxppc-dev <linuxppc-dev@lists.ozlabs.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        ceph-devel <ceph-devel@vger.kernel.org>,
+        linux-wireless <linux-wireless@vger.kernel.org>,
+        Networking <netdev@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-For btrfs_add_delayed_tree_ref(), its ref_root parameter can be
-different from its real root.
-This is pretty common for reloc tree, in that case @ref_root is passed
-as the original tree owner (source file tree).
+On Tue, Sep 18, 2018 at 7:59 PM Jason Gunthorpe <jgg@ziepe.ca> wrote:
+>
+> On Tue, Sep 18, 2018 at 10:51:08AM -0700, Darren Hart wrote:
+> > On Fri, Sep 14, 2018 at 09:57:48PM +0100, Al Viro wrote:
+> > > On Fri, Sep 14, 2018 at 01:35:06PM -0700, Darren Hart wrote:
+> > >
+> > > > Acked-by: Darren Hart (VMware) <dvhart@infradead.org>
+> > > >
+> > > > As for a longer term solution, would it be possible to init fops in such
+> > > > a way that the compat_ioctl call defaults to generic_compat_ioctl_ptrarg
+> > > > so we don't have to duplicate this boilerplate for every ioctl fops
+> > > > structure?
+> > >
+> > >     Bad idea, that...  Because several years down the road somebody will add
+> > > an ioctl that takes an unsigned int for argument.  Without so much as looking
+> > > at your magical mystery macro being used to initialize file_operations.
+> >
+> > Fair, being explicit in the declaration as it is currently may be
+> > preferable then.
+>
+> It would be much cleaner and safer if you could arrange things to add
+> something like this to struct file_operations:
+>
+>   long (*ptr_ioctl) (struct file *, unsigned int, void __user *);
+>
+> Where the core code automatically converts the unsigned long to the
+> void __user * as appropriate.
+>
+> Then it just works right always and the compiler will help address
+> Al's concern down the road.
 
-However btrfs_add_delayed_tree_ref() uses @ref_root to determine whether
-we should do heavy qgroup tracing for it, so for balance this could
-cause a lot of unnecessary extent tracing.
+I think if we wanted to do this with a new file operation, the best
+way would be to do the copy_from_user()/copy_to_user() in the caller
+as well.
 
-This patch will introduce a parameter, @root for qgroup code to
-determine whether we really need to do the heavy-lifting tracing work.
+We already do this inside of some subsystems, notably drivers/media/,
+and it simplifies the implementation of the ioctl handler function
+significantly. We obviously cannot do this in general, both because of
+traditional drivers that have 16-bit command codes (drivers/tty and others)
+and also because of drivers that by accident defined the commands
+incorrectly and use the wrong type or the wrong direction in the
+definition.
 
-This patch would reduce the qgroup dirty extent number from 'number of
-extents being relocated' to 0 for the transaction before real tree swap.
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
-This patch is already added to
-https://github.com/adam900710/linux/tree/qgroup_balance_skip_trees
----
- fs/btrfs/delayed-ref.c |  5 +++--
- fs/btrfs/delayed-ref.h |  1 +
- fs/btrfs/extent-tree.c | 17 ++++++++++-------
- 3 files changed, 14 insertions(+), 9 deletions(-)
-
-diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
-index 62ff545ba1f7..7f681dd36e7f 100644
---- a/fs/btrfs/delayed-ref.c
-+++ b/fs/btrfs/delayed-ref.c
-@@ -710,8 +710,9 @@ static void init_delayed_ref_common(struct btrfs_fs_info *fs_info,
-  * transaction commits.
-  */
- int btrfs_add_delayed_tree_ref(struct btrfs_trans_handle *trans,
-+			       struct btrfs_root *root,
- 			       u64 bytenr, u64 num_bytes, u64 parent,
--			       u64 ref_root,  int level, int action,
-+			       u64 ref_root, int level, int action,
- 			       struct btrfs_delayed_extent_op *extent_op,
- 			       int *old_ref_mod, int *new_ref_mod)
- {
-@@ -737,7 +738,7 @@ int btrfs_add_delayed_tree_ref(struct btrfs_trans_handle *trans,
- 	}
- 
- 	if (test_bit(BTRFS_FS_QUOTA_ENABLED, &fs_info->flags) &&
--	    is_fstree(ref_root)) {
-+	    is_fstree(root->root_key.objectid)) {
- 		record = kmalloc(sizeof(*record), GFP_NOFS);
- 		if (!record) {
- 			kmem_cache_free(btrfs_delayed_tree_ref_cachep, ref);
-diff --git a/fs/btrfs/delayed-ref.h b/fs/btrfs/delayed-ref.h
-index d9f2a4ebd5db..a51560a3cb66 100644
---- a/fs/btrfs/delayed-ref.h
-+++ b/fs/btrfs/delayed-ref.h
-@@ -235,6 +235,7 @@ static inline void btrfs_put_delayed_ref_head(struct btrfs_delayed_ref_head *hea
- }
- 
- int btrfs_add_delayed_tree_ref(struct btrfs_trans_handle *trans,
-+			       struct btrfs_root *root,
- 			       u64 bytenr, u64 num_bytes, u64 parent,
- 			       u64 ref_root, int level, int action,
- 			       struct btrfs_delayed_extent_op *extent_op,
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 4588153f414c..7a3c650b11f8 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -2040,9 +2040,10 @@ int btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
- 			   owner, offset, BTRFS_ADD_DELAYED_REF);
- 
- 	if (owner < BTRFS_FIRST_FREE_OBJECTID) {
--		ret = btrfs_add_delayed_tree_ref(trans, bytenr,
-+		ret = btrfs_add_delayed_tree_ref(trans, root, bytenr,
- 						 num_bytes, parent,
--						 root_objectid, (int)owner,
-+						 root_objectid,
-+						 (int)owner,
- 						 BTRFS_ADD_DELAYED_REF, NULL,
- 						 &old_ref_mod, &new_ref_mod);
- 	} else {
-@@ -6993,7 +6994,7 @@ void btrfs_free_tree_block(struct btrfs_trans_handle *trans,
- 				   root->root_key.objectid,
- 				   btrfs_header_level(buf), 0,
- 				   BTRFS_DROP_DELAYED_REF);
--		ret = btrfs_add_delayed_tree_ref(trans, buf->start,
-+		ret = btrfs_add_delayed_tree_ref(trans, root, buf->start,
- 						 buf->len, parent,
- 						 root->root_key.objectid,
- 						 btrfs_header_level(buf),
-@@ -7072,9 +7073,10 @@ int btrfs_free_extent(struct btrfs_trans_handle *trans,
- 		old_ref_mod = new_ref_mod = 0;
- 		ret = 0;
- 	} else if (owner < BTRFS_FIRST_FREE_OBJECTID) {
--		ret = btrfs_add_delayed_tree_ref(trans, bytenr,
-+		ret = btrfs_add_delayed_tree_ref(trans, root, bytenr,
- 						 num_bytes, parent,
--						 root_objectid, (int)owner,
-+						 root_objectid,
-+						 (int)owner,
- 						 BTRFS_DROP_DELAYED_REF, NULL,
- 						 &old_ref_mod, &new_ref_mod);
- 	} else {
-@@ -8293,9 +8295,10 @@ struct extent_buffer *btrfs_alloc_tree_block(struct btrfs_trans_handle *trans,
- 		btrfs_ref_tree_mod(root, ins.objectid, ins.offset, parent,
- 				   root_objectid, level, 0,
- 				   BTRFS_ADD_DELAYED_EXTENT);
--		ret = btrfs_add_delayed_tree_ref(trans, ins.objectid,
-+		ret = btrfs_add_delayed_tree_ref(trans, root, ins.objectid,
- 						 ins.offset, parent,
--						 root_objectid, level,
-+						 root_objectid,
-+						 level,
- 						 BTRFS_ADD_DELAYED_EXTENT,
- 						 extent_op, NULL, NULL);
- 		if (ret)
--- 
-2.18.0
+       Arnd

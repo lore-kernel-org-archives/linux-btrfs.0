@@ -1,120 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp2120.oracle.com ([141.146.126.78]:34872 "EHLO
+Received: from aserp2120.oracle.com ([141.146.126.78]:39352 "EHLO
         aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727146AbeIXRti (ORCPT
+        with ESMTP id S1728474AbeIXRzJ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 24 Sep 2018 13:49:38 -0400
+        Mon, 24 Sep 2018 13:55:09 -0400
+Subject: Re: [PATCH 1/9] fstests: btrfs: _scratch_mkfs_sized fix min size
+ without mixed option
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
+References: <1537784193-24431-1-git-send-email-anand.jain@oracle.com>
+ <1537784193-24431-2-git-send-email-anand.jain@oracle.com>
+ <c770f3ed-a813-74c9-0b9d-04a3ce740185@gmx.com>
 From: Anand Jain <anand.jain@oracle.com>
-To: fstests@vger.kernel.org
-Cc: linux-btrfs@vger.kernel.org
-Subject: [PATCH] test unaligned punch hole at ENOSPC
-Date: Mon, 24 Sep 2018 19:47:39 +0800
-Message-Id: <1537789659-29460-1-git-send-email-anand.jain@oracle.com>
+Message-ID: <bdd780f8-8c50-c859-30ba-53c68d81bb72@oracle.com>
+Date: Mon, 24 Sep 2018 19:53:13 +0800
+MIME-Version: 1.0
+In-Reply-To: <c770f3ed-a813-74c9-0b9d-04a3ce740185@gmx.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Try to punch hole with unaligned size and offset when the FS
-returns ENOSPC
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
-This test case fails on btrfs as of now.
 
- tests/btrfs/172     | 66 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/172.out |  2 ++
- tests/btrfs/group   |  1 +
- 3 files changed, 69 insertions(+)
- create mode 100755 tests/btrfs/172
- create mode 100644 tests/btrfs/172.out
+On 09/24/2018 06:58 PM, Qu Wenruo wrote:
+> 
+> 
+> On 2018/9/24 下午6:16, Anand Jain wrote:
+>> As of now _scratch_mkfs_sized check if the requested size is below 1G
+>> and forces the --mixed option for the mkfs.btrfs. Well the correct size
+>> at which we need to force the mixed option is 114294784bytes. Fix that.
+> 
+> How this size is get from?
+> If it's from btrfs_min_dev_size(), I strongly recommend to add reference
+> here, and don't use the ugly intermediate number.
+> 
+> 
+> BTW, this number is related to mkfs profile.
+> If you really want to use some maximum number, please follow the max
+> possible value in btrfs_min_dev_size(), which should be 229M other than
+> 106M.
 
-diff --git a/tests/btrfs/172 b/tests/btrfs/172
-new file mode 100755
-index 000000000000..9c32a173f912
---- /dev/null
-+++ b/tests/btrfs/172
-@@ -0,0 +1,66 @@
-+#! /bin/bash
-+# SPDX-License-Identifier: GPL-2.0
-+# Copyright (c) 2018 Oracle. All Rights Reserved.
-+#
-+# FS QA Test 172
-+#
-+# Test if the unaligned (by size and offset) punch hole is successful when FS
-+# is at ENOSPC.
-+#
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1	# failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+	cd /
-+	rm -f $tmp.*
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+
-+# remove previous $seqres.full before test
-+rm -f $seqres.full
-+
-+# real QA test starts here
-+
-+# Modify as appropriate.
-+_supported_fs generic
-+_supported_os Linux
-+_require_scratch
-+
-+_scratch_mkfs_sized $((200 * 1024 *1024)) >> $seqres.full
-+
-+# max_inline helps to create regular extent
-+_scratch_mount "-o max_inline=0,nodatacow"
-+
-+echo "Fill fs upto ENOSPC" >> $seqres.full
-+dd status=none if=/dev/zero of=$SCRATCH_MNT/filler bs=512 >> $seqres.full 2>&1
-+
-+extent_size=$(_scratch_btrfs_sectorsize)
-+unalign_by=512
-+echo extent_size=$extent_size unalign_by=$unalign_by >> $seqres.full
-+
-+hole_offset=0
-+hole_len=$unalign_by
-+run_check fallocate -p -o $hole_offset -l $hole_len $SCRATCH_MNT/filler
-+
-+hole_offset=$(($extent_size + $unalign_by))
-+hole_len=$(($extent_size - $unalign_by))
-+run_check fallocate -p -o $hole_offset -l $hole_len $SCRATCH_MNT/filler
-+
-+hole_offset=$(($extent_size * 2 + $unalign_by))
-+hole_len=$(($extent_size * 5))
-+run_check fallocate -p -o $hole_offset -l $hole_len $SCRATCH_MNT/filler
-+
-+# success, all done
-+echo "Silence is golden"
-+status=0
-+exit
-diff --git a/tests/btrfs/172.out b/tests/btrfs/172.out
-new file mode 100644
-index 000000000000..ce2de3f0d107
---- /dev/null
-+++ b/tests/btrfs/172.out
-@@ -0,0 +1,2 @@
-+QA output created by 172
-+Silence is golden
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index feffc45b6564..7e1a638ab7e1 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -174,3 +174,4 @@
- 169 auto quick send
- 170 auto quick snapshot
- 171 auto quick qgroup
-+172 auto quick
--- 
-1.8.3.1
+  Thanks for the comments. I completely missed out the point of other
+  group profile requiring more than ~115 bytes. Will fix.
+  Yep the ref for the size is btrfs_min_dev_size().
+
+-Anand
+
+
+> Thanks,
+> Qu
+> 
+>>
+>> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+>> ---
+>>   common/rc | 4 +++-
+>>   1 file changed, 3 insertions(+), 1 deletion(-)
+>>
+>> diff --git a/common/rc b/common/rc
+>> index d5bb1feee2c3..bcdbf03e1bf0 100644
+>> --- a/common/rc
+>> +++ b/common/rc
+>> @@ -969,7 +969,9 @@ _scratch_mkfs_sized()
+>>   	;;
+>>       btrfs)
+>>   	local mixed_opt=
+>> -	(( fssize <= 1024 * 1024 * 1024 )) && mixed_opt='--mixed'
+>> +	# minimum size that's needed without the mixed option.
+>> +	# Non mixed mode is also the default option.
+>> +	(( fssize < 114294784 )) && mixed_opt='--mixed'
+>>   	$MKFS_BTRFS_PROG $MKFS_OPTIONS $mixed_opt -b $fssize $SCRATCH_DEV
+>>   	;;
+>>       jfs)
+>>
+> 

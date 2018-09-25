@@ -2,138 +2,60 @@ Return-Path: <SRS0=Vd0G=MH=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
+X-Spam-Status: No, score=-5.3 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_MUTT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 29691C43382
-	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Sep 2018 10:55:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5F510C43382
+	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Sep 2018 15:10:00 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D41282145D
-	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Sep 2018 10:55:13 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org D41282145D
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
+	by mail.kernel.org (Postfix) with ESMTP id DFEB42098A
+	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Sep 2018 15:09:59 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org DFEB42098A
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728559AbeIYRCL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 25 Sep 2018 13:02:11 -0400
-Received: from mx2.suse.de ([195.135.220.15]:48074 "EHLO mx1.suse.de"
+        id S1729420AbeIYVRy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 25 Sep 2018 17:17:54 -0400
+Received: from mx2.suse.de ([195.135.220.15]:36368 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726435AbeIYRCL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 25 Sep 2018 13:02:11 -0400
+        id S1729098AbeIYVRx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 25 Sep 2018 17:17:53 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id B6A57AC36;
-        Tue, 25 Sep 2018 10:55:10 +0000 (UTC)
-Subject: Re: [PATCH v2 2/9] generic/015 fix to test the default non-mixed mode
-To:     Anand Jain <anand.jain@oracle.com>, fstests@vger.kernel.org
+        by mx1.suse.de (Postfix) with ESMTP id B38E9B016
+        for <linux-btrfs@vger.kernel.org>; Tue, 25 Sep 2018 15:09:56 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id E48C7DAE2F; Tue, 25 Sep 2018 17:09:55 +0200 (CEST)
+Date:   Tue, 25 Sep 2018 17:09:55 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Qu Wenruo <wqu@suse.com>
 Cc:     linux-btrfs@vger.kernel.org
-References: <1537849462-619-1-git-send-email-anand.jain@oracle.com>
- <1537849462-619-3-git-send-email-anand.jain@oracle.com>
-From:   Nikolay Borisov <nborisov@suse.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <a84533e1-2f93-4b2f-4d20-6a9c6e27aca2@suse.com>
-Date:   Tue, 25 Sep 2018 13:55:08 +0300
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:52.0) Gecko/20100101
- Thunderbird/52.9.1
+Subject: Re: [PATCH] btrfs: relocation: Add basic extent backref related
+ comment for build_backref_tree()
+Message-ID: <20180925150955.GD3255@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org
+References: <20180925063746.14805-1-wqu@suse.com>
 MIME-Version: 1.0
-In-Reply-To: <1537849462-619-3-git-send-email-anand.jain@oracle.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20180925063746.14805-1-wqu@suse.com>
+User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+On Tue, Sep 25, 2018 at 02:37:46PM +0800, Qu Wenruo wrote:
+> fs/btrfs/relocation.c:build_backref_tree() is some code from 2009 era,
+> although it works pretty fine, it's not that easy to understand.
+> Especially combined with the complex btrfs backref format.
+> 
+> This patch adds some basic comment for the backref build part of the
+> code, making it less hard to read, at least for backref searching part.
+> 
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
 
-
-On 25.09.2018 07:24, Anand Jain wrote:
-> commit 97575acd7495 (generic/015: Change the test filesystem size to
-> 101mb), created 101mb FS instead of 100mb FS to make sure we create
-> a FS which is non mixed mode.
-> 
-> btrfs-progs commit 18e2663db3e1 (btrfs-progs: Add minimum device size
-> check) added a more accurate minimum required space to create the btrfs
-> FS in non mixed mode depending on the group profile, and considering
-> any group profiles we would need at least 256MB (with upward round off).
-> 
-> So this patch changes the FS size to be created by _scratch_sized_mkfs()
-> to 256MB so that we create the FS in non mixed mode for any group
-> profile.
-> 
-> Mixed blockgroup can be tested using the MKFS_OPTIONS explicitly.
-> 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> ---
->  tests/generic/015 | 8 +++-----
->  1 file changed, 3 insertions(+), 5 deletions(-)
-> 
-> diff --git a/tests/generic/015 b/tests/generic/015
-> index 0f4d29800f4f..e6c8d7c37c07 100755
-> --- a/tests/generic/015
-> +++ b/tests/generic/015
-> @@ -37,11 +37,9 @@ _supported_os Linux
->  _require_scratch
->  _require_no_large_scratch_dev
->  
-> -# With filesystems less than 100mb btrfs is created in mixed mode
-> -# which can lead to slight accounting errors of 1mb. Having the
-> -# fs be at least 101 mb ensures those errors are within the error
-> -# tolerance of 1%
-> -_scratch_mkfs_sized `expr 101 \* 1024 \* 1024` >/dev/null 2>&1 \
-> +# btrfs needs at least 256MB (with upward round off) to create a non-mixed mode
-> +# fs. Ref: btrfs-progs: btrfs_min_dev_size()
-> +_scratch_mkfs_sized $((256 * 1024 * 1024)) >> $seqres.full 2>&1 \
-
-Yeah, this test seems rather flaky with mixed block groups I had fixed
-it and then Omar changed the mixed bg threshold to 1g and it started
-failing again internally. I'm happy with this change provided the first
-patch lands as well.
-
->      || _fail "mkfs failed"
->  _scratch_mount
->  out=$SCRATCH_MNT/fillup.$$
-> 
+Added to misc-next, thanks.

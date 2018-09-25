@@ -2,69 +2,69 @@ Return-Path: <SRS0=Vd0G=MH=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.8 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
+X-Spam-Status: No, score=-8.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 78BEEC43382
-	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Sep 2018 15:30:43 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A48CFC43382
+	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Sep 2018 15:30:55 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 2C2CD2086E
-	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Sep 2018 15:30:43 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5FE1720C0A
+	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Sep 2018 15:30:55 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="QENpwOrr"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 2C2CD2086E
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="DEmAPLzk"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 5FE1720C0A
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=toxicpanda.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729878AbeIYVia (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 25 Sep 2018 17:38:30 -0400
-Received: from mail-qt1-f194.google.com ([209.85.160.194]:33693 "EHLO
-        mail-qt1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1729862AbeIYVi3 (ORCPT
+        id S1729791AbeIYVi0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 25 Sep 2018 17:38:26 -0400
+Received: from mail-qt1-f193.google.com ([209.85.160.193]:36988 "EHLO
+        mail-qt1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1729422AbeIYViZ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 25 Sep 2018 17:38:29 -0400
-Received: by mail-qt1-f194.google.com with SMTP id i10-v6so13805731qtp.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 25 Sep 2018 08:30:27 -0700 (PDT)
+        Tue, 25 Sep 2018 17:38:25 -0400
+Received: by mail-qt1-f193.google.com with SMTP id n6-v6so13785705qtl.4
+        for <linux-btrfs@vger.kernel.org>; Tue, 25 Sep 2018 08:30:24 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:subject:date:message-id:in-reply-to:references;
-        bh=ku7/MRL/ppjtTHGZe2O1XF901LokT9maZEyU9FpjnHE=;
-        b=QENpwOrr/7ZhS366ZP7w913/Hs2ElSqyKva/3kYfiaWk0+nhF6n+0Oa0FNzB+IV9Ye
-         w8PDsT3mG1ZBqJSQto0v1fNNqZiiuYsf8CdazEuwY8dEGoeye7fn2Mkgzrzd1pmXKusw
-         ihZdiUq10sVQ4cocO/MxEM+S/6DBh0Z4tjeMK4z44d/zCWr8qs0/nJDyXikVoXRDdTDk
-         mtZ+7pr6nbyNre5aGEML/ZNBB8ndkk8vZSu7Mhd0VOqKcMyDsa5hBcEYJLYdoh4dLmog
-         MdEJGU9LhxBcsHxVKFbrTgk52uT33H2FKS0kYhrbYjBC841r9NXAD4ZgSSGqzActbwAG
-         2dfw==
+        bh=fxF9egp/0MfNC6eP3oXuHL949t8miVwsCl5P35THCQ0=;
+        b=DEmAPLzkrPKAHv0xbTFGpZ6jamzlToLR/cRumBykBnmJoZyUpkUvG6gNwTXEEEvyo9
+         FzeLKBbs0BBVsDOCDYe7Z+Kt3M7PelIG7cQnsJ+iLSS0Q0hbOoLbqqKjMD25QmSZj3z5
+         6K56i3YJEvNJ7B6CpBPv1+KXW2xSGvgAYAbgPmw5fsr4RGI9WsKfIyWFaBWMxqTcB0OR
+         40CUFcmwjK6YV/Uz6Lh4a6RxyGCPOE7GNqcdPm7xXuxJ5VknZBe8xNgSQakCklIAM9Y9
+         M/tXW7YerwILLQKONWAtGoKLqcTvBtzmBwY/IzR3jcvURZQglkbsM/g/KgB2NiS5a0ov
+         vVoA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references;
-        bh=ku7/MRL/ppjtTHGZe2O1XF901LokT9maZEyU9FpjnHE=;
-        b=ti/ym6j/QLRtZVmDtoWaVL9VxRiZlhwTt5J1tlX1uWMxfSbFxoee47BFGHS+0lFOGQ
-         BzRs3MccTxzRevQsVTufojo17I1sYe4mY22R334zoab1RyoOIddULWypKl3wqlrcDkrk
-         HSBwGFxlO22UOqCN7l6656Y36dmJQ/iK3e2B/E/mRottnSVFfADcBnBJPHfMww7hQLB9
-         P31NiYgDEXFx4t4gMZ1TOvlUOa4K34fFxljz2Qa3P5wDtONptHAHWT0GtTKFCzHDG4nk
-         13aDRW6lhB/R+Lhhbkjriv7IvYHWQa233vwBcXmuKar2/sspCtmnptjzw3HDY+dAzqeG
-         pTGw==
-X-Gm-Message-State: ABuFfojhRqWhJSSGoP7aoBwzMIxCaT3fUWDzl19KHUdCqqT0iX47Vk4L
-        NPW+a7NA92oTS4yKca976Vdpaw==
-X-Google-Smtp-Source: ACcGV62u48xuG+u6HnDqHjgjSdJBvYRkbiUdmT4B3A/rajjCC8tIPdq/rTHhk6YGPZQGn6+Y1hSAMw==
-X-Received: by 2002:a0c:93c1:: with SMTP id g1-v6mr1226748qvg.136.1537889427517;
-        Tue, 25 Sep 2018 08:30:27 -0700 (PDT)
+        bh=fxF9egp/0MfNC6eP3oXuHL949t8miVwsCl5P35THCQ0=;
+        b=OSM+0ZSExmeNi7/C54X8LaxIjdDECF1L0oCsEjCKFrQePaNAyWY4TYJJNGn3ijZGqI
+         qV4vTZsU9lggauZ+nJne/ByvWq7Qkp3JaPAA6Q9kvXVYwmKn8f8i8GZxCMUhbiX1cnc2
+         hksaX1dO8GhnwqN16/RkZCjtyt3zIxmR/iCtkV2Y5O4sLt5hAzIOL8yAvaTKj0+ucYE/
+         UPUYcGyYYk2S1WztvWwmIszHJW1pKA3vGnX4tPapu+rrO/MScJFltXJHtWTs7tvRh3Ye
+         bc5tpYL6vV7MZ/6f3OpdCjfHAuNQPfi51KtKY3/IcXflPMj27ItbYuGwIV+MhgUtNZ5T
+         7UwA==
+X-Gm-Message-State: ABuFfohxqq9X4wtCK5lduA5SVZ0YpeVZv6u2rB/cDXdaQlHiNw6j/QNR
+        taFBB/bTIUXnta0h2iZJE10h5w==
+X-Google-Smtp-Source: ACcGV636ILuqRfdWOg/6E/YNgwltlS2o+vJZwooGLdmWZ+ffN3YpnBW1fp9l4X+RFEOUrIOJ5hu2bA==
+X-Received: by 2002:a0c:acad:: with SMTP id m42-v6mr1166622qvc.27.1537889423820;
+        Tue, 25 Sep 2018 08:30:23 -0700 (PDT)
 Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id l16-v6sm1642913qtk.30.2018.09.25.08.30.26
+        by smtp.gmail.com with ESMTPSA id o2-v6sm1965827qkl.63.2018.09.25.08.30.22
         (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
-        Tue, 25 Sep 2018 08:30:26 -0700 (PDT)
+        Tue, 25 Sep 2018 08:30:22 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     akpm@linux-foundation.org, linux-kernel@vger.kernel.org,
         kernel-team@fb.com, linux-btrfs@vger.kernel.org, riel@redhat.com,
         hannes@cmpxchg.org, tj@kernel.org, linux-mm@kvack.org,
         linux-fsdevel@vger.kernel.org
-Subject: [PATCH 7/8] mm: add a flag to indicate we used a cached page
-Date:   Tue, 25 Sep 2018 11:30:10 -0400
-Message-Id: <20180925153011.15311-8-josef@toxicpanda.com>
+Subject: [PATCH 5/8] mm: drop the mmap_sem in all read fault cases
+Date:   Tue, 25 Sep 2018 11:30:08 -0400
+Message-Id: <20180925153011.15311-6-josef@toxicpanda.com>
 X-Mailer: git-send-email 2.14.3
 In-Reply-To: <20180925153011.15311-1-josef@toxicpanda.com>
 References: <20180925153011.15311-1-josef@toxicpanda.com>
@@ -73,65 +73,69 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is preparation for dropping the mmap_sem in page_mkwrite.  We need
-to know if we used our cached page so we can be sure it is the page we
-already did the page_mkwrite stuff on so we don't have to redo all of
-that work.
+Johannes' patches didn't quite cover all of the IO cases that we need to
+drop the mmap_sem for, this patch covers the rest of them.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- include/linux/mm.h | 6 +++++-
- mm/filemap.c       | 5 ++++-
- 2 files changed, 9 insertions(+), 2 deletions(-)
+ mm/filemap.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
 
-diff --git a/include/linux/mm.h b/include/linux/mm.h
-index 724514be03b2..10a0118f5485 100644
---- a/include/linux/mm.h
-+++ b/include/linux/mm.h
-@@ -318,6 +318,9 @@ extern pgprot_t protection_map[16];
- #define FAULT_FLAG_USER		0x40	/* The fault originated in userspace */
- #define FAULT_FLAG_REMOTE	0x80	/* faulting for non current tsk/mm */
- #define FAULT_FLAG_INSTRUCTION  0x100	/* The fault was during an instruction fetch */
-+#define FAULT_FLAG_USED_CACHED	0x200	/* Our vmf->page was from a previous
-+					 * loop through the fault handler.
-+					 */
- 
- #define FAULT_FLAG_TRACE \
- 	{ FAULT_FLAG_WRITE,		"WRITE" }, \
-@@ -328,7 +331,8 @@ extern pgprot_t protection_map[16];
- 	{ FAULT_FLAG_TRIED,		"TRIED" }, \
- 	{ FAULT_FLAG_USER,		"USER" }, \
- 	{ FAULT_FLAG_REMOTE,		"REMOTE" }, \
--	{ FAULT_FLAG_INSTRUCTION,	"INSTRUCTION" }
-+	{ FAULT_FLAG_INSTRUCTION,	"INSTRUCTION" }, \
-+	{ FAULT_FLAG_USED_CACHED,	"USED_CACHED" }
- 
- /*
-  * vm_fault is filled by the the pagefault handler and passed to the vma's
 diff --git a/mm/filemap.c b/mm/filemap.c
-index 49b35293fa95..75a8b252814a 100644
+index 1ed35cd99b2c..65395ee132a0 100644
 --- a/mm/filemap.c
 +++ b/mm/filemap.c
-@@ -2556,6 +2556,7 @@ vm_fault_t filemap_fault(struct vm_fault *vmf)
- 		if (cached_page->mapping == mapping &&
- 		    cached_page->index == offset) {
- 			page = cached_page;
-+			vmf->flags |= FAULT_FLAG_USED_CACHED;
- 			goto have_cached_page;
- 		}
- 		unlock_page(cached_page);
-@@ -2618,8 +2619,10 @@ vm_fault_t filemap_fault(struct vm_fault *vmf)
- 	 * We have a locked page in the page cache, now we need to check
- 	 * that it's up-to-date. If not, it is going to be due to an error.
+@@ -2523,6 +2523,7 @@ vm_fault_t filemap_fault(struct vm_fault *vmf)
+ 	int error;
+ 	struct mm_struct *mm = vmf->vma->vm_mm;
+ 	struct file *file = vmf->vma->vm_file;
++	struct file *fpin = NULL;
+ 	struct address_space *mapping = file->f_mapping;
+ 	struct file_ra_state *ra = &file->f_ra;
+ 	struct inode *inode = mapping->host;
+@@ -2610,11 +2611,15 @@ vm_fault_t filemap_fault(struct vm_fault *vmf)
+ 	return ret | VM_FAULT_LOCKED;
+ 
+ no_cached_page:
++	fpin = maybe_unlock_mmap_for_io(vmf->vma, vmf->flags);
++
+ 	/*
+ 	 * We're only likely to ever get here if MADV_RANDOM is in
+ 	 * effect.
  	 */
--	if (unlikely(!PageUptodate(page)))
-+	if (unlikely(!PageUptodate(page))) {
-+		vmf->flags &= ~(FAULT_FLAG_USED_CACHED);
- 		goto page_not_uptodate;
-+	}
+ 	error = page_cache_read(file, offset, vmf->gfp_mask);
++	if (fpin)
++		goto out_retry;
  
  	/*
- 	 * Found the page and have a reference on it.
+ 	 * The page we want has now been added to the page cache.
+@@ -2634,6 +2639,8 @@ vm_fault_t filemap_fault(struct vm_fault *vmf)
+ 	return VM_FAULT_SIGBUS;
+ 
+ page_not_uptodate:
++	fpin = maybe_unlock_mmap_for_io(vmf->vma, vmf->flags);
++
+ 	/*
+ 	 * Umm, take care of errors if the page isn't up-to-date.
+ 	 * Try to re-read it _once_. We do this synchronously,
+@@ -2647,6 +2654,8 @@ vm_fault_t filemap_fault(struct vm_fault *vmf)
+ 		if (!PageUptodate(page))
+ 			error = -EIO;
+ 	}
++	if (fpin)
++		goto out_retry;
+ 	put_page(page);
+ 
+ 	if (!error || error == AOP_TRUNCATED_PAGE)
+@@ -2665,6 +2674,8 @@ vm_fault_t filemap_fault(struct vm_fault *vmf)
+ 	}
+ 
+ out_retry:
++	if (fpin)
++		fput(fpin);
+ 	if (page)
+ 		put_page(page);
+ 	return ret | VM_FAULT_RETRY;
 -- 
 2.14.3
 

@@ -1,80 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf1-f193.google.com ([209.85.210.193]:34790 "EHLO
-        mail-pf1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726025AbeIYEVY (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 25 Sep 2018 00:21:24 -0400
-Received: by mail-pf1-f193.google.com with SMTP id k19-v6so9751433pfi.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 24 Sep 2018 15:17:01 -0700 (PDT)
-From: Omar Sandoval <osandov@osandov.com>
+Received: from mx2.suse.de ([195.135.220.15]:54280 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1725745AbeIYGLP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 25 Sep 2018 02:11:15 -0400
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 121E7AD1A
+        for <linux-btrfs@vger.kernel.org>; Tue, 25 Sep 2018 00:06:31 +0000 (UTC)
+From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: kernel-team@fb.com, Chris Mason <clm@fb.com>
-Subject: [PATCH] Btrfs: get rid of btrfs_symlink_aops
-Date: Mon, 24 Sep 2018 15:16:55 -0700
-Message-Id: <0794275791ff92b445d78d3dd08c67a30a347bbb.1537827364.git.osandov@fb.com>
+Subject: [PATCH 1/2] btrfs: Use NAME_MAX to replace intermediate number of BTRFS_NAME_LEN
+Date: Tue, 25 Sep 2018 08:06:25 +0800
+Message-Id: <20180925000626.15474-1-wqu@suse.com>
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Omar Sandoval <osandov@fb.com>
+Since we're following the name size limit of linux, just use NAME_MAX.
 
-The only aops we define for symlinks are identical to the aops for
-regular files. This has been the case since symlink support was added in
-commit 2b8d99a723a3 ("Btrfs: symlinks and hard links"). As far as I can
-tell, there wasn't a good reason to have separate aops then, and there
-isn't now, so let's just do what most other filesystems do and reuse the
-same structure.
-
-Signed-off-by: Omar Sandoval <osandov@fb.com>
+Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
-Based on v4.19-rc5.
+ fs/btrfs/ctree.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
- fs/btrfs/inode.c | 12 ++----------
- 1 file changed, 2 insertions(+), 10 deletions(-)
-
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 3ea5339603cf..590063b0b6dc 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -64,7 +64,6 @@ static const struct inode_operations btrfs_dir_ro_inode_operations;
- static const struct inode_operations btrfs_special_inode_operations;
- static const struct inode_operations btrfs_file_inode_operations;
- static const struct address_space_operations btrfs_aops;
--static const struct address_space_operations btrfs_symlink_aops;
- static const struct file_operations btrfs_dir_file_operations;
- static const struct extent_io_ops btrfs_extent_io_ops;
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 53af9f5253f4..5ab6d1f6e055 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -65,7 +65,7 @@ struct btrfs_ordered_sum;
+  * we can actually store much bigger names, but lets not confuse the rest
+  * of linux
+  */
+-#define BTRFS_NAME_LEN 255
++#define BTRFS_NAME_LEN NAME_MAX
  
-@@ -3738,7 +3737,7 @@ static int btrfs_read_locked_inode(struct inode *inode)
- 	case S_IFLNK:
- 		inode->i_op = &btrfs_symlink_inode_operations;
- 		inode_nohighmem(inode);
--		inode->i_mapping->a_ops = &btrfs_symlink_aops;
-+		inode->i_mapping->a_ops = &btrfs_aops;
- 		break;
- 	default:
- 		inode->i_op = &btrfs_special_inode_operations;
-@@ -10191,7 +10190,7 @@ static int btrfs_symlink(struct inode *dir, struct dentry *dentry,
- 
- 	inode->i_op = &btrfs_symlink_inode_operations;
- 	inode_nohighmem(inode);
--	inode->i_mapping->a_ops = &btrfs_symlink_aops;
-+	inode->i_mapping->a_ops = &btrfs_aops;
- 	inode_set_bytes(inode, name_len);
- 	btrfs_i_size_write(BTRFS_I(inode), name_len);
- 	err = btrfs_update_inode(trans, root, inode);
-@@ -10567,13 +10566,6 @@ static const struct address_space_operations btrfs_aops = {
- 	.error_remove_page = generic_error_remove_page,
- };
- 
--static const struct address_space_operations btrfs_symlink_aops = {
--	.readpage	= btrfs_readpage,
--	.writepage	= btrfs_writepage,
--	.invalidatepage = btrfs_invalidatepage,
--	.releasepage	= btrfs_releasepage,
--};
--
- static const struct inode_operations btrfs_file_inode_operations = {
- 	.getattr	= btrfs_getattr,
- 	.setattr	= btrfs_setattr,
+ /*
+  * Theoretical limit is larger, but we keep this down to a sane
 -- 
 2.19.0

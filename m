@@ -6,31 +6,31 @@ X-Spam-Status: No, score=-6.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DDB1DC43382
-	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Sep 2018 10:51:55 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 78D10C43382
+	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Sep 2018 10:54:28 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 66FF42145D
-	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Sep 2018 10:51:55 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 66FF42145D
+	by mail.kernel.org (Postfix) with ESMTP id 3BA962145D
+	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Sep 2018 10:54:28 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 3BA962145D
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728206AbeIYQ6v (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 25 Sep 2018 12:58:51 -0400
-Received: from mx2.suse.de ([195.135.220.15]:47664 "EHLO mx1.suse.de"
+        id S1728199AbeIYRBZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 25 Sep 2018 13:01:25 -0400
+Received: from mx2.suse.de ([195.135.220.15]:47974 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727617AbeIYQ6v (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 25 Sep 2018 12:58:51 -0400
+        id S1726435AbeIYRBY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 25 Sep 2018 13:01:24 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 27045AFE4;
-        Tue, 25 Sep 2018 10:51:51 +0000 (UTC)
-Subject: Re: [PATCH v2 1/9] fstests: btrfs: _scratch_mkfs_sized fix min size
- without mixed option
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id B0F91AC36;
+        Tue, 25 Sep 2018 10:54:24 +0000 (UTC)
+Subject: Re: [PATCH v2 5/9] generic/102 open code dev_size
+ _scratch_mkfs_sized()
 To:     Anand Jain <anand.jain@oracle.com>, fstests@vger.kernel.org
-Cc:     linux-btrfs@vger.kernel.org, Omar Sandoval <osandov@osandov.com>
+Cc:     linux-btrfs@vger.kernel.org
 References: <1537849462-619-1-git-send-email-anand.jain@oracle.com>
- <1537849462-619-2-git-send-email-anand.jain@oracle.com>
+ <1537849462-619-6-git-send-email-anand.jain@oracle.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -75,12 +75,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  KIuxEcV8wcVjr+Wr9zRl06waOCkgrQbTPp631hToxo+4rA1jiQF2M80HAet65ytBVR2pFGZF
  zGYYLqiG+mpUZ+FPjxk9kpkRYz61mTLSY7tuFljExfJWMGfgSg1OxfLV631jV1TcdUnx+h3l
  Sqs2vMhAVt14zT8mpIuu2VNxcontxgVr1kzYA/tQg32fVRbGr449j1gw57BV9i0vww==
-Message-ID: <b054a402-0507-4990-6752-8d75b02a97ed@suse.com>
-Date:   Tue, 25 Sep 2018 13:51:49 +0300
+Message-ID: <6bdc26df-7beb-53dd-69a2-c3d1789cf3c9@suse.com>
+Date:   Tue, 25 Sep 2018 13:54:23 +0300
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:52.0) Gecko/20100101
  Thunderbird/52.9.1
 MIME-Version: 1.0
-In-Reply-To: <1537849462-619-2-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1537849462-619-6-git-send-email-anand.jain@oracle.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 7bit
@@ -92,37 +92,30 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 On 25.09.2018 07:24, Anand Jain wrote:
-> As of now _scratch_mkfs_sized() checks if the requested size is below 1G
-> and forces the --mixed option for the mkfs.btrfs. Well the correct size
-> considering all possible group profiles at which we need to force the
-> mixed option is roughly 256Mbytes. So fix that.
+> Open code helps to grep and find out parameter sent to the
+> _scratch_mkfs_sized here.
 > 
 > Signed-off-by: Anand Jain <anand.jain@oracle.com>
 
-Have you considered the implications of this w.r.t commit
-d4da414a9a9d ("common/rc: raise btrfs mixed mode threshold to 1GB")
-
-Initially this threshold was 100mb then Omar changed it to 1g. Does this
-change affect generic/427?
-
+IMO this is noise, you can just as simply do
+"grep _scratch_mkfs_sized" and then open the file to inspect the actual
+argument. But it's up to the xfstest maintainers
 > ---
->  common/rc | 5 ++++-
->  1 file changed, 4 insertions(+), 1 deletion(-)
+>  tests/generic/102 | 3 +--
+>  1 file changed, 1 insertion(+), 2 deletions(-)
 > 
-> diff --git a/common/rc b/common/rc
-> index d5bb1feee2c3..90dc3002bc3d 100644
-> --- a/common/rc
-> +++ b/common/rc
-> @@ -969,7 +969,10 @@ _scratch_mkfs_sized()
->  	;;
->      btrfs)
->  	local mixed_opt=
-> -	(( fssize <= 1024 * 1024 * 1024 )) && mixed_opt='--mixed'
-> +	# minimum size that's needed without the mixed option.
-> +	# Ref: btrfs-prog: btrfs_min_dev_size()
-> +	# Non mixed mode is also the default option.
-> +	(( fssize < $((256 * 1024 *1024)) )) && mixed_opt='--mixed'
->  	$MKFS_BTRFS_PROG $MKFS_OPTIONS $mixed_opt -b $fssize $SCRATCH_DEV
->  	;;
->      jfs)
+> diff --git a/tests/generic/102 b/tests/generic/102
+> index faf940ac5070..aad496a5bc69 100755
+> --- a/tests/generic/102
+> +++ b/tests/generic/102
+> @@ -31,8 +31,7 @@ _require_scratch
+>  
+>  rm -f $seqres.full
+>  
+> -dev_size=$((512 * 1024 * 1024))     # 512MB filesystem
+> -_scratch_mkfs_sized $dev_size >>$seqres.full 2>&1
+> +_scratch_mkfs_sized $((512 * 1024 * 1024)) >>$seqres.full 2>&1
+>  _scratch_mount
+>  
+>  for ((i = 0; i < 10; i++)); do
 > 

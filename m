@@ -6,31 +6,30 @@ X-Spam-Status: No, score=-6.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 78D10C43382
-	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Sep 2018 10:54:28 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 29691C43382
+	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Sep 2018 10:55:14 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 3BA962145D
-	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Sep 2018 10:54:28 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 3BA962145D
+	by mail.kernel.org (Postfix) with ESMTP id D41282145D
+	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Sep 2018 10:55:13 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org D41282145D
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728199AbeIYRBZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 25 Sep 2018 13:01:25 -0400
-Received: from mx2.suse.de ([195.135.220.15]:47974 "EHLO mx1.suse.de"
+        id S1728559AbeIYRCL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 25 Sep 2018 13:02:11 -0400
+Received: from mx2.suse.de ([195.135.220.15]:48074 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726435AbeIYRBY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 25 Sep 2018 13:01:24 -0400
+        id S1726435AbeIYRCL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 25 Sep 2018 13:02:11 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id B0F91AC36;
-        Tue, 25 Sep 2018 10:54:24 +0000 (UTC)
-Subject: Re: [PATCH v2 5/9] generic/102 open code dev_size
- _scratch_mkfs_sized()
+        by mx1.suse.de (Postfix) with ESMTP id B6A57AC36;
+        Tue, 25 Sep 2018 10:55:10 +0000 (UTC)
+Subject: Re: [PATCH v2 2/9] generic/015 fix to test the default non-mixed mode
 To:     Anand Jain <anand.jain@oracle.com>, fstests@vger.kernel.org
 Cc:     linux-btrfs@vger.kernel.org
 References: <1537849462-619-1-git-send-email-anand.jain@oracle.com>
- <1537849462-619-6-git-send-email-anand.jain@oracle.com>
+ <1537849462-619-3-git-send-email-anand.jain@oracle.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -75,12 +74,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  KIuxEcV8wcVjr+Wr9zRl06waOCkgrQbTPp631hToxo+4rA1jiQF2M80HAet65ytBVR2pFGZF
  zGYYLqiG+mpUZ+FPjxk9kpkRYz61mTLSY7tuFljExfJWMGfgSg1OxfLV631jV1TcdUnx+h3l
  Sqs2vMhAVt14zT8mpIuu2VNxcontxgVr1kzYA/tQg32fVRbGr449j1gw57BV9i0vww==
-Message-ID: <6bdc26df-7beb-53dd-69a2-c3d1789cf3c9@suse.com>
-Date:   Tue, 25 Sep 2018 13:54:23 +0300
+Message-ID: <a84533e1-2f93-4b2f-4d20-6a9c6e27aca2@suse.com>
+Date:   Tue, 25 Sep 2018 13:55:08 +0300
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:52.0) Gecko/20100101
  Thunderbird/52.9.1
 MIME-Version: 1.0
-In-Reply-To: <1537849462-619-6-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1537849462-619-3-git-send-email-anand.jain@oracle.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 7bit
@@ -92,30 +91,49 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 On 25.09.2018 07:24, Anand Jain wrote:
-> Open code helps to grep and find out parameter sent to the
-> _scratch_mkfs_sized here.
+> commit 97575acd7495 (generic/015: Change the test filesystem size to
+> 101mb), created 101mb FS instead of 100mb FS to make sure we create
+> a FS which is non mixed mode.
+> 
+> btrfs-progs commit 18e2663db3e1 (btrfs-progs: Add minimum device size
+> check) added a more accurate minimum required space to create the btrfs
+> FS in non mixed mode depending on the group profile, and considering
+> any group profiles we would need at least 256MB (with upward round off).
+> 
+> So this patch changes the FS size to be created by _scratch_sized_mkfs()
+> to 256MB so that we create the FS in non mixed mode for any group
+> profile.
+> 
+> Mixed blockgroup can be tested using the MKFS_OPTIONS explicitly.
 > 
 > Signed-off-by: Anand Jain <anand.jain@oracle.com>
-
-IMO this is noise, you can just as simply do
-"grep _scratch_mkfs_sized" and then open the file to inspect the actual
-argument. But it's up to the xfstest maintainers
 > ---
->  tests/generic/102 | 3 +--
->  1 file changed, 1 insertion(+), 2 deletions(-)
+>  tests/generic/015 | 8 +++-----
+>  1 file changed, 3 insertions(+), 5 deletions(-)
 > 
-> diff --git a/tests/generic/102 b/tests/generic/102
-> index faf940ac5070..aad496a5bc69 100755
-> --- a/tests/generic/102
-> +++ b/tests/generic/102
-> @@ -31,8 +31,7 @@ _require_scratch
+> diff --git a/tests/generic/015 b/tests/generic/015
+> index 0f4d29800f4f..e6c8d7c37c07 100755
+> --- a/tests/generic/015
+> +++ b/tests/generic/015
+> @@ -37,11 +37,9 @@ _supported_os Linux
+>  _require_scratch
+>  _require_no_large_scratch_dev
 >  
->  rm -f $seqres.full
->  
-> -dev_size=$((512 * 1024 * 1024))     # 512MB filesystem
-> -_scratch_mkfs_sized $dev_size >>$seqres.full 2>&1
-> +_scratch_mkfs_sized $((512 * 1024 * 1024)) >>$seqres.full 2>&1
+> -# With filesystems less than 100mb btrfs is created in mixed mode
+> -# which can lead to slight accounting errors of 1mb. Having the
+> -# fs be at least 101 mb ensures those errors are within the error
+> -# tolerance of 1%
+> -_scratch_mkfs_sized `expr 101 \* 1024 \* 1024` >/dev/null 2>&1 \
+> +# btrfs needs at least 256MB (with upward round off) to create a non-mixed mode
+> +# fs. Ref: btrfs-progs: btrfs_min_dev_size()
+> +_scratch_mkfs_sized $((256 * 1024 * 1024)) >> $seqres.full 2>&1 \
+
+Yeah, this test seems rather flaky with mixed block groups I had fixed
+it and then Omar changed the mixed bg threshold to 1g and it started
+failing again internally. I'm happy with this change provided the first
+patch lands as well.
+
+>      || _fail "mkfs failed"
 >  _scratch_mount
->  
->  for ((i = 0; i < 10; i++)); do
+>  out=$SCRATCH_MNT/fillup.$$
 > 

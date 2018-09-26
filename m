@@ -7,24 +7,27 @@ X-Spam-Status: No, score=-6.5 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
 	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1AEC1C43382
-	for <linux-btrfs@archiver.kernel.org>; Wed, 26 Sep 2018 07:38:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D6FD4C43382
+	for <linux-btrfs@archiver.kernel.org>; Wed, 26 Sep 2018 07:40:02 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id C836B2089D
-	for <linux-btrfs@archiver.kernel.org>; Wed, 26 Sep 2018 07:38:41 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org C836B2089D
+	by mail.kernel.org (Postfix) with ESMTP id 8A8FE2089D
+	for <linux-btrfs@archiver.kernel.org>; Wed, 26 Sep 2018 07:40:02 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 8A8FE2089D
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=gmx.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727151AbeIZNuP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 26 Sep 2018 09:50:15 -0400
-Received: from mout.gmx.net ([212.227.15.15]:40051 "EHLO mout.gmx.net"
+        id S1726968AbeIZNvf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 26 Sep 2018 09:51:35 -0400
+Received: from mout.gmx.net ([212.227.15.19]:55355 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726401AbeIZNuO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 26 Sep 2018 09:50:14 -0400
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx003
- [212.227.17.184]) with ESMTPSA (Nemesis) id 0Mdr7l-1gPkRh375Z-00PfJ6; Wed, 26
- Sep 2018 09:38:33 +0200
+        id S1726401AbeIZNvf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 26 Sep 2018 09:51:35 -0400
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx001
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 0MQRWm-1gCoBJ49gy-00TifT; Wed, 26
+ Sep 2018 09:39:55 +0200
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx001
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 0MQRWm-1gCoBJ49gy-00TifT; Wed, 26
+ Sep 2018 09:39:55 +0200
 Subject: Re: [PATCH] btrfs-progs: delete unused is_vol_small() and
  BTRFS_MKFS_SMALL_VOLUME_SIZE
 To:     Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
@@ -55,50 +58,50 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
  4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
  h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <159a3a03-df0c-4556-154a-fe70f001782e@gmx.com>
-Date:   Wed, 26 Sep 2018 15:38:29 +0800
+Message-ID: <205f0847-7fd4-c716-80ad-2553a8dae4e8@gmx.com>
+Date:   Wed, 26 Sep 2018 15:39:50 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.0
 MIME-Version: 1.0
 In-Reply-To: <1537947388-10396-1-git-send-email-anand.jain@oracle.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="bl1TgNopjchoC2OgfHHBWw5Eo7wCTRy91"
-X-Provags-ID: V03:K1:dTf2z+TJChQ/rKOFdDbIqO/UCu2+hIg7lMSaHTqzpBWlaCWY3/S
- rMd4cUvlh9SWyX5AhHeigcXKU1ZcsX7hCcEJE1ZpNVU7Q3wtBGWkuONVYRcbxWsQfBkIIlx
- 6H/QTvi1sRLpywLUboUXP+5AQUsLzWdr14y08/EpvjiapDtFOjfRJJZLUIWQD4OUw7v+wpV
- X4/PMjirZ5+2FKYMoulVQ==
-X-UI-Out-Filterresults: notjunk:1;V01:K0:qk5uKj5wchE=:WzoOBMd5sT+a3N6bXz5dZ+
- pAMw9eCj7UJXBi5K4NKVM6peCi9n/gaC7x8Y8galSCKqvWIDJ5Xcbxhmy3uEouABd/vTtJnmb
- 5tvfTMAHAJ8NU9XQvodfy+v1RsLc24rnD1fnFD7NAJF5sE5j4WH+s8T2v6qO2jbueCb4yTMGy
- aXPvF/biAZyeZ10mKCPaRnYCqGxiq5s7uBjjbENExXOJAHAuOBNrWzPKQNz7pfoM644HMvdOa
- nMaybhcMYXFvsZ8jBgoIcJaMFDnmdehz5HNFctrHSlUcrHwkX3KmJRaVcyX7ahxVaIUWtzxKD
- ZdHixqThoXtwHlproE9wDT8AqdDgrNZmTanCbTU8qMAIyITlva9vhqptzN9hl2BJOjRZezxB8
- 4BL6enkku+plk6D2Q8e4CA+2tOb6RsH2st5ExOaL+LMq0Kdw+2slGYDlpZU+UXzRSa7tFh84K
- j+Mgp0gjIf1qsA9+wgyZwQFjxYa6PI7NE0JQK5NGiYdstJSeIB7tRLA/BSxqCwzcbp4eSZ+tD
- v4phRVNw52HyC5Do5QHxJUIJUcY8PRQMYd308vqP3zblGeG6GOojxUO4n/x/eIgN0C/Iq0T40
- n1BiyyYPgcT/uCB4Mf/x6rWGGA9dBoKwJ42KxFX973r47kZfTl7YHpOchMjDlVMA4ADxtSwwH
- zU0d+FJnwUNxe6j6Ysvs+xIKLjzcg2fajWkN/jZfdcwobY1CyhGtnp2sVkkWHS2QdeNxHq7hu
- FxLsJxk29rF4ig8ljh1LttPBjaQ41/QaGsE3ZgUohENQhKuRGVowWVcxKFMuB5LW/Y8isJ4o2
- ye3ZRAu7UVYEyzx46aGFm2GN9UB1A==
+ boundary="AIQH0ztlzascUF5R6oz0htKYN0zzAOvMR"
+X-Provags-ID: V03:K1:duGuOCHEYSyLKBdLDgNJa194q3Sg64BY+lV7+LHxTUc1ZoTh5TL
+ yMj1bsZtbuiy8eo+xH0Yu/lnPNSZF//A5Mf2/r+Do0P4+s6j3OJ4+eBUOQc1LTkxRa2pkGR
+ 3gB8zPRIa2G7Qi0NxxcyJrU6ihXGrNAu12qmEfv7oW1WZ1dtQ6WYOGwPB+Qx3d7wYCLBQiF
+ DOjru7AeDsJraRLF969NQ==
+X-UI-Out-Filterresults: notjunk:1;V01:K0:Wg+a58zjXTU=:gL+SJyf8ivSgX0BH80ZnpA
+ 8Vtnoe0QlwaL2SHPr1OIXR1z+hdIUbG555+SNdQtDWzEeylEsEx9Fc5lt7y9relre316e3Flf
+ vbcpA6wCwwakUD9192TVLcHch9zp0h8SgtVdQrshHeE3/emfM97xPlvVx0XbADMHS4EoqyADA
+ z03Phslfua20rYUIQ+OTuoWfZlL6oEcLnxs5h8HafW++XH3WurTYXQZl5GORJT6qZ+C/vL1fo
+ ztzQHzqZ5FCzNUe13J5nki4+7Ziq+GLK9CA1AwHSsiGsHzeK/7yi/teXDR8of0CmbEXXH6as+
+ j8lI7yGUjUD7NZQhSk35F5CJMZnGzpOAAXMxR154zd2FfSTXYLs8jg894Uy6AXaiIRSyqhdQB
+ PMIkpaFh+OgIyPQCAdZCfh0ZpwueNh0f4C7X2jxYYBceIJifn/KiewWcHMLh8upToSoLt9wqz
+ ijCks/37hmNyW1LJJrgCUk1lbyJtn89hshrw4LKtsvvxk2NXP3aYJUFC5jxhlRQ1A5FuSKdP8
+ Rfo5OLSR0NhtKJfdfR9vc5Fp1iReiCy3nOBBLSP7WMjKVLCUL4UJ009o+NQduNxBC+a6PiaO7
+ uAC5m/I+gIYHQ3k3xR6WtTVl4liE66VtvbYZXwX9rGbJhyc2x63iZrSLzzcv9je5xT5Yzgkd5
+ 3c3Th2CF+HLvIMZIAg9qO3JULkrpijTqDeWlvyGaSMmVeSv+2ZjOKJV5tKJsGlQmLBQbpRc4I
+ PPOfVffKyd3LNH4SiMHjX+y8rL8i4YD4z3LeIdjBVpR1hVXT68AnUZ1obuNHBoAca3kOUn/3p
+ iCBtO4huWSpmtTzYzkKSbPSLxGfWw==
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---bl1TgNopjchoC2OgfHHBWw5Eo7wCTRy91
-Content-Type: multipart/mixed; boundary="iRSZ8e0M759xAaWJuBdjhbi5xlmuKnGK0";
+--AIQH0ztlzascUF5R6oz0htKYN0zzAOvMR
+Content-Type: multipart/mixed; boundary="3rK5pQNnyjeXZhRaSZDw6AbLM1WpdeRXO";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 To: Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
-Message-ID: <159a3a03-df0c-4556-154a-fe70f001782e@gmx.com>
+Message-ID: <205f0847-7fd4-c716-80ad-2553a8dae4e8@gmx.com>
 Subject: Re: [PATCH] btrfs-progs: delete unused is_vol_small() and
  BTRFS_MKFS_SMALL_VOLUME_SIZE
 References: <1537947388-10396-1-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1537947388-10396-1-git-send-email-anand.jain@oracle.com>
 
---iRSZ8e0M759xAaWJuBdjhbi5xlmuKnGK0
+--3rK5pQNnyjeXZhRaSZDw6AbLM1WpdeRXO
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
@@ -112,12 +115,6 @@ On 2018/9/26 =E4=B8=8B=E5=8D=883:36, Anand Jain wrote:
 > BTRFS_MKFS_SMALL_VOLUME_SIZE was obsolete since then so clean it up.
 >=20
 > Signed-off-by: Anand Jain <anand.jain@oracle.com>
-
-Reviewed-by: Qu Wenruo <wqu@suse.com>
-
-Thanks,
-Qu
-
 > ---
 >  mkfs/common.c | 29 -----------------------------
 >  mkfs/common.h |  1 -
@@ -173,29 +170,37 @@ rce_overwrite)
 > =20
 >  #define BTRFS_MKFS_SYSTEM_GROUP_SIZE SZ_4M
 > -#define BTRFS_MKFS_SMALL_VOLUME_SIZE SZ_1G
+
+Wait for a minute, is_vol_small()'s declaration is not removed.
+
+Did I miss something? Or it's already removed by some newer commit?
+
+Thanks,
+Qu
+
 > =20
 >  /*
 >   * Tree root blocks created during mkfs
 >=20
 
 
---iRSZ8e0M759xAaWJuBdjhbi5xlmuKnGK0--
+--3rK5pQNnyjeXZhRaSZDw6AbLM1WpdeRXO--
 
---bl1TgNopjchoC2OgfHHBWw5Eo7wCTRy91
+--AIQH0ztlzascUF5R6oz0htKYN0zzAOvMR
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlurN3UACgkQwj2R86El
-/qhaggf/a29QRZJPoJFpAs5AwEw2LTrwqRhcW90OQARsusQkiTDMzhXSin5Dmj2L
-/UtfovLrHb2PH2aYWjya/n/MU1AWNzs0X3zN+rsT/KSPdwQeiMnpFBkmEcUoHS6/
-Y05zWpq9j/HEBhEZ3Hn4Iu/59o8N6Fg7hrmvgxUzuUOZOJRaLov9T125TCZIP6lr
-4B3onKex3ePa1FDuZUlfP4LTBMXiSWW74FQzoXXnmvrMKX0L4wJ8SsDPQWjlI0KT
-AiO06jon9DIGxhVhlxhEu/aHGjPQENkNYsTPlIvBuFllOHCZ4DiGkAKFHnc3DuWK
-1Lh+BknirTztezse0bgEwwJVjpsUBQ==
-=bucl
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlurN8YACgkQwj2R86El
+/qhUiwgAlqqTH2pFOCGXNDbWQaw8hTqShOLw+Pc+mzvqiyWoWnQsIYDGaD6Zaqd2
+9LIccF678E8S1FzFS3vzSWlOuslJJivsmiD8XNfpUCqM4EwipGCnAnYG1xSL6al+
+oH0mhkl5D3ElZoP7bZFAKLUn/8TJyP3JTpWxK1ib+6eMgBEJkUK2jc8PE2doUxCF
+qtngg4T6FulMFaKnXvlnN8z0tbtjfmLAJYzbZHOmH/XVvP4FQNnWvmQXPWQut39O
+ydCIo3FYeS51FtDdOtOIvRrORPnZEYBwwzN8gN7/9uwN463uCKF2dyqmyOBzta2O
+wY4vThs3rl29TfpWqi9Aa/gEr+ATSw==
+=c9kv
 -----END PGP SIGNATURE-----
 
---bl1TgNopjchoC2OgfHHBWw5Eo7wCTRy91--
+--AIQH0ztlzascUF5R6oz0htKYN0zzAOvMR--

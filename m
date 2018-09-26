@@ -2,68 +2,69 @@ Return-Path: <SRS0=dcfB=MI=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_PASS,USER_AGENT_GIT autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.8 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1E6A1C43382
-	for <linux-btrfs@archiver.kernel.org>; Wed, 26 Sep 2018 21:09:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C103AC43382
+	for <linux-btrfs@archiver.kernel.org>; Wed, 26 Sep 2018 21:09:34 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B914B20652
-	for <linux-btrfs@archiver.kernel.org>; Wed, 26 Sep 2018 21:09:24 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 6E20E20652
+	for <linux-btrfs@archiver.kernel.org>; Wed, 26 Sep 2018 21:09:34 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="SXAd6Vke"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org B914B20652
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="E+IkZtxW"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 6E20E20652
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=toxicpanda.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727385AbeI0DYH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 26 Sep 2018 23:24:07 -0400
-Received: from mail-qt1-f196.google.com ([209.85.160.196]:41908 "EHLO
-        mail-qt1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727374AbeI0DYG (ORCPT
+        id S1727352AbeI0DYF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 26 Sep 2018 23:24:05 -0400
+Received: from mail-qt1-f194.google.com ([209.85.160.194]:32972 "EHLO
+        mail-qt1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727296AbeI0DYE (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 26 Sep 2018 23:24:06 -0400
-Received: by mail-qt1-f196.google.com with SMTP id m15-v6so478343qtp.8
-        for <linux-btrfs@vger.kernel.org>; Wed, 26 Sep 2018 14:09:16 -0700 (PDT)
+        Wed, 26 Sep 2018 23:24:04 -0400
+Received: by mail-qt1-f194.google.com with SMTP id i10-v6so537670qtp.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 26 Sep 2018 14:09:14 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:subject:date:message-id:in-reply-to:references;
-        bh=auspTN6sS8IxHotb0wwOzsGrFw8EJq3KjZuMbDyvHfw=;
-        b=SXAd6Vke7LmvdOzgepTuMkxa5FVG4FDrn4gPRLVbWKiMjOC6JruSWoiGNuqVBPi55i
-         oomIuyIQpOYd5drvE4MP5YkIE/T8CccT7b4a0rCb/jOWcNs/VLzth1hvdpAJIC+Kr8sS
-         Kdql0JzF4IvjxHmTULK+GNHNHU2T1sELYyiUO3fwvg8cB+vzlHY1aCyOkAGeoo7ZuI0K
-         q4tEdtkustrtW0fLoHEhksp0WWm6UWorJUfYwumQBeNgr0t397zLmHZW/2TKCgQPhqn4
-         LUcY8NcfEvfqRYiCWcGN2kwaHc9TZ9ZIWFZYX+ykxDz+aHy+hpQ5PyNpPQCYmLLRi1PJ
-         GzFw==
+        bh=uNw1SEfuNh5muyIlKMjO8zXN2XjQ0Df1a1ZQWi9S3hE=;
+        b=E+IkZtxWnldcnfnVAFchZ1hWE504qBGKdX2eijVXxr7G+Yns/Lw/m0dK3zwPRS5BR7
+         NPhHdsbYsqv7Rk+GL8cmQXek2L9S55HKsJVPA0JzSGx8F5+cBMI0QQ9EHQtfNLwA7i4t
+         sC3pLwKemV+y20kKGmmL7K6hBp6n0IfS+xlPMNJ1jxbDFLwniUzBbzgyaLZ1K5mkWh7P
+         eg9pTRdVcxR0Iz8T8p0VWPa/8okeH8kK+cdMZva7oNTlzpExw4ukGzcJj8CVcUfue3GZ
+         UYlI0UuSGIZmFrnbVaBQ6nzmTHAXCMDv3kggv8aYdCPINTF/+3uSSqUkA/HIfFou9+kA
+         XliA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references;
-        bh=auspTN6sS8IxHotb0wwOzsGrFw8EJq3KjZuMbDyvHfw=;
-        b=kkA0t9HLkCIUwTowI9DdN6/pt2Q1BVa/gqA25U5LNuDUU00+UNyAL5XqvchdgjMJcY
-         AplrDns/VsVHAQSbwK6JEvk1rAaMb0xb5hTz2ww8UfzbUNKq6Rw78MZrCgWzL8L3KKEd
-         f/dNTGyqqWaCA8ZhQKSwSGdeXGWr8+vifrBVeVHxIY7+IViFgvTpzudjWNLTPdytkfc2
-         DX3WsevVoay7e1xF5Qe3Yd/KweBMWc3AMtk5Ir2kHTdVRvTeNAkLGTMAJT8ciVD2VL8p
-         NZzYrpJlT7Fv+0diuXzPqpHIjruEndmco0tFG4F2W15gnoCoi8phL3htmqeP+pqtNc4y
-         Mirg==
-X-Gm-Message-State: ABuFfogpb9DhbyLRgXxUHCHpC3I5W39OUSqRaE0/fDFn2sdD3MtS6UfK
-        e0yMpMyqsiWSgr79wyYfs0807A==
-X-Google-Smtp-Source: ACcGV62nJC3T0WRvUixrTKzlWB2aS2+o+U13U55Ewpn8iBVNXBNucv90lx3SdSa1/k4WkjXmvdPwbA==
-X-Received: by 2002:aed:2b43:: with SMTP id p61-v6mr6152561qtd.107.1537996155364;
-        Wed, 26 Sep 2018 14:09:15 -0700 (PDT)
+        bh=uNw1SEfuNh5muyIlKMjO8zXN2XjQ0Df1a1ZQWi9S3hE=;
+        b=af29TQyyzWULFTCAZO8fZ1yMKQLWnOKEDz0f9C5VcmgDimd2N/jx9f2uoCiomZGV/k
+         0YhtbdjUZBnhR1ahtYXRKjGr5lkiUDviqgWgLQt/+VTTvlTzANm/sBNz3bqZApmehjzV
+         mcv0K5XhorwQBSj2dUoEDn9ZvO8O8JD2835NsvnvAgW22FXgKJ74+TXiT6efzKRJy1Ey
+         rQ/U+LOLXDfXSvkIxm3I8hOaUzTW0Ah01KeWRooSRAdQj/pSDgK0W5B1CH1tiq7vX66o
+         BP/RSip3vEnsIIHgqjNhXbneqpe7c/rgfs+9Tq4cqc9weJXCUtWKDxurIGFp05VRAqiK
+         EN7A==
+X-Gm-Message-State: ABuFfogngIT3uydGtVV0w49VRYd1N4ITAzbyT33MiNh5fzcW2yvuKC/P
+        44b+abGiiGk4qgSH2hoq/CsSYA==
+X-Google-Smtp-Source: ACcGV62nU0p/SpQCuwEhccw6FtSj8cKf4zvclsHPNrLrKJb3VdwuIBbYKgcnnrv2S2qANr8nkWYi+g==
+X-Received: by 2002:ac8:39a1:: with SMTP id v30-v6mr5494082qte.58.1537996153608;
+        Wed, 26 Sep 2018 14:09:13 -0700 (PDT)
 Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id q26-v6sm86927qta.18.2018.09.26.14.09.14
+        by smtp.gmail.com with ESMTPSA id r9-v6sm37064qta.87.2018.09.26.14.09.12
         (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
-        Wed, 26 Sep 2018 14:09:14 -0700 (PDT)
+        Wed, 26 Sep 2018 14:09:12 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     kernel-team@fb.com, linux-kernel@vger.kernel.org,
         hannes@cmpxchg.org, tj@kernel.org, linux-fsdevel@vger.kernel.org,
         akpm@linux-foundation.org, riel@redhat.com, linux-mm@kvack.org,
         linux-btrfs@vger.kernel.org
-Subject: [PATCH 9/9] btrfs: drop mmap_sem in mkwrite for btrfs
-Date:   Wed, 26 Sep 2018 17:08:56 -0400
-Message-Id: <20180926210856.7895-10-josef@toxicpanda.com>
+Subject: [PATCH 8/9] mm: allow ->page_mkwrite to do retries
+Date:   Wed, 26 Sep 2018 17:08:55 -0400
+Message-Id: <20180926210856.7895-9-josef@toxicpanda.com>
 X-Mailer: git-send-email 2.14.3
 In-Reply-To: <20180926210856.7895-1-josef@toxicpanda.com>
 References: <20180926210856.7895-1-josef@toxicpanda.com>
@@ -72,161 +73,54 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-->page_mkwrite is extremely expensive in btrfs.  We have to reserve
-space, which can take 6 lifetimes, and we could possibly have to wait on
-writeback on the page, another several lifetimes.  To avoid this simply
-drop the mmap_sem if we didn't have the cached page and do all of our
-work and return the appropriate retry error.  If we have the cached page
-we know we did all the right things to set this page up and we can just
-carry on.
+Before we didn't set the retry flag on our vm_fault.  We want to allow
+file systems to drop the mmap_sem if they so choose, so set this flag
+and deal with VM_FAULT_RETRY appropriately.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/inode.c   | 41 +++++++++++++++++++++++++++++++++++++++--
- include/linux/mm.h | 14 ++++++++++++++
- mm/filemap.c       |  3 ++-
- 3 files changed, 55 insertions(+), 3 deletions(-)
+ mm/memory.c | 10 +++++++---
+ 1 file changed, 7 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 3ea5339603cf..6b723d29bc0c 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -8809,7 +8809,9 @@ static void btrfs_invalidatepage(struct page *page, unsigned int offset,
- vm_fault_t btrfs_page_mkwrite(struct vm_fault *vmf)
- {
- 	struct page *page = vmf->page;
--	struct inode *inode = file_inode(vmf->vma->vm_file);
-+	struct file *file = vmf->vma->vm_file, *fpin;
-+	struct mm_struct *mm = vmf->vma->vm_mm;
-+	struct inode *inode = file_inode(file);
- 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
- 	struct extent_io_tree *io_tree = &BTRFS_I(inode)->io_tree;
- 	struct btrfs_ordered_extent *ordered;
-@@ -8828,6 +8830,29 @@ vm_fault_t btrfs_page_mkwrite(struct vm_fault *vmf)
+diff --git a/mm/memory.c b/mm/memory.c
+index 6f8abde84986..821435855177 100644
+--- a/mm/memory.c
++++ b/mm/memory.c
+@@ -2384,11 +2384,13 @@ static vm_fault_t do_page_mkwrite(struct vm_fault *vmf)
+ 	unsigned int old_flags = vmf->flags;
  
- 	reserved_space = PAGE_SIZE;
+ 	vmf->flags = FAULT_FLAG_WRITE|FAULT_FLAG_MKWRITE;
++	vmf->flags |= old_flags & FAULT_FLAG_ALLOW_RETRY;
  
-+	/*
-+	 * We have our cached page from a previous mkwrite, check it to make
-+	 * sure it's still dirty and our file size matches when we ran mkwrite
-+	 * the last time.  If everything is OK then return VM_FAULT_LOCKED,
-+	 * otherwise do the mkwrite again.
-+	 */
-+	if (vmf->flags & FAULT_FLAG_USED_CACHED) {
-+		lock_page(page);
-+		if (vmf->cached_size == i_size_read(inode) &&
-+		    PageDirty(page))
-+			return VM_FAULT_LOCKED;
-+		unlock_page(page);
-+	}
-+
-+	/*
-+	 * mkwrite is extremely expensive, and we are holding the mmap_sem
-+	 * during this, which means we can starve out anybody trying to
-+	 * down_write(mmap_sem) for a long while, especially if we throw cgroups
-+	 * into the mix.  So just drop the mmap_sem and do all of our work,
-+	 * we'll loop back through and verify everything is ok the next time and
-+	 * hopefully avoid doing the work twice.
-+	 */
-+	fpin = maybe_unlock_mmap_for_io(vmf->vma, vmf->flags);
- 	sb_start_pagefault(inode->i_sb);
- 	page_start = page_offset(page);
- 	page_end = page_start + PAGE_SIZE - 1;
-@@ -8844,7 +8869,7 @@ vm_fault_t btrfs_page_mkwrite(struct vm_fault *vmf)
- 	ret2 = btrfs_delalloc_reserve_space(inode, &data_reserved, page_start,
- 					   reserved_space);
- 	if (!ret2) {
--		ret2 = file_update_time(vmf->vma->vm_file);
-+		ret2 = file_update_time(file);
- 		reserved = 1;
- 	}
- 	if (ret2) {
-@@ -8943,6 +8968,14 @@ vm_fault_t btrfs_page_mkwrite(struct vm_fault *vmf)
- 		btrfs_delalloc_release_extents(BTRFS_I(inode), PAGE_SIZE, true);
- 		sb_end_pagefault(inode->i_sb);
- 		extent_changeset_free(data_reserved);
-+		if (fpin) {
-+			unlock_page(page);
-+			fput(fpin);
-+			get_page(page);
-+			vmf->cached_size = size;
-+			vmf->cached_page = page;
-+			return VM_FAULT_RETRY;
-+		}
- 		return VM_FAULT_LOCKED;
- 	}
- 
-@@ -8955,6 +8988,10 @@ vm_fault_t btrfs_page_mkwrite(struct vm_fault *vmf)
- out_noreserve:
- 	sb_end_pagefault(inode->i_sb);
- 	extent_changeset_free(data_reserved);
-+	if (fpin) {
-+		fput(fpin);
-+		down_read(&mm->mmap_sem);
-+	}
- 	return ret;
- }
- 
-diff --git a/include/linux/mm.h b/include/linux/mm.h
-index a7305d193c71..9409845d0411 100644
---- a/include/linux/mm.h
-+++ b/include/linux/mm.h
-@@ -370,6 +370,13 @@ struct vm_fault {
- 					 * next time we loop through the fault
- 					 * handler for faster lookup.
- 					 */
-+	loff_t cached_size;		/* ->page_mkwrite handlers may drop
-+					 * the mmap_sem to avoid starvation, in
-+					 * which case they need to save the
-+					 * i_size in order to verify the cached
-+					 * page we're using the next loop
-+					 * through hasn't changed under us.
-+					 */
- 	/* These three entries are valid only while holding ptl lock */
- 	pte_t *pte;			/* Pointer to pte entry matching
- 					 * the 'address'. NULL if the page
-@@ -1437,6 +1444,8 @@ extern vm_fault_t handle_mm_fault_cacheable(struct vm_fault *vmf);
- extern int fixup_user_fault(struct task_struct *tsk, struct mm_struct *mm,
- 			    unsigned long address, unsigned int fault_flags,
- 			    bool *unlocked);
-+extern struct file *maybe_unlock_mmap_for_io(struct vm_area_struct *vma,
-+					     int flags);
- void unmap_mapping_pages(struct address_space *mapping,
- 		pgoff_t start, pgoff_t nr, bool even_cows);
- void unmap_mapping_range(struct address_space *mapping,
-@@ -1463,6 +1472,11 @@ static inline int fixup_user_fault(struct task_struct *tsk,
- 	BUG();
- 	return -EFAULT;
- }
-+stiatc inline struct file *maybe_unlock_mmap_for_io(struct vm_area_struct *vma,
-+						    int flags)
-+{
-+	return NULL;
-+}
- static inline void unmap_mapping_pages(struct address_space *mapping,
- 		pgoff_t start, pgoff_t nr, bool even_cows) { }
- static inline void unmap_mapping_range(struct address_space *mapping,
-diff --git a/mm/filemap.c b/mm/filemap.c
-index e9cb44bd35aa..8027f082d74f 100644
---- a/mm/filemap.c
-+++ b/mm/filemap.c
-@@ -2366,7 +2366,7 @@ generic_file_read_iter(struct kiocb *iocb, struct iov_iter *iter)
- EXPORT_SYMBOL(generic_file_read_iter);
- 
- #ifdef CONFIG_MMU
--static struct file *maybe_unlock_mmap_for_io(struct vm_area_struct *vma, int flags)
-+struct file *maybe_unlock_mmap_for_io(struct vm_area_struct *vma, int flags)
- {
- 	if ((flags & (FAULT_FLAG_ALLOW_RETRY | FAULT_FLAG_RETRY_NOWAIT)) == FAULT_FLAG_ALLOW_RETRY) {
- 		struct file *file;
-@@ -2377,6 +2377,7 @@ static struct file *maybe_unlock_mmap_for_io(struct vm_area_struct *vma, int fla
- 	}
- 	return NULL;
- }
-+EXPORT_SYMBOL_GPL(maybe_unlock_mmap_for_io);
- 
- /**
-  * page_cache_read - adds requested page to the page cache if not already there
+ 	ret = vmf->vma->vm_ops->page_mkwrite(vmf);
+ 	/* Restore original flags so that caller is not surprised */
+ 	vmf->flags = old_flags;
+-	if (unlikely(ret & (VM_FAULT_ERROR | VM_FAULT_NOPAGE)))
++	if (unlikely(ret & (VM_FAULT_ERROR | VM_FAULT_NOPAGE |
++			    VM_FAULT_RETRY)))
+ 		return ret;
+ 	if (unlikely(!(ret & VM_FAULT_LOCKED))) {
+ 		lock_page(page);
+@@ -2683,7 +2685,8 @@ static vm_fault_t wp_page_shared(struct vm_fault *vmf)
+ 		pte_unmap_unlock(vmf->pte, vmf->ptl);
+ 		tmp = do_page_mkwrite(vmf);
+ 		if (unlikely(!tmp || (tmp &
+-				      (VM_FAULT_ERROR | VM_FAULT_NOPAGE)))) {
++				      (VM_FAULT_ERROR | VM_FAULT_NOPAGE |
++				       VM_FAULT_RETRY)))) {
+ 			put_page(vmf->page);
+ 			return tmp;
+ 		}
+@@ -3716,7 +3719,8 @@ static vm_fault_t do_shared_fault(struct vm_fault *vmf)
+ 		unlock_page(vmf->page);
+ 		tmp = do_page_mkwrite(vmf);
+ 		if (unlikely(!tmp ||
+-				(tmp & (VM_FAULT_ERROR | VM_FAULT_NOPAGE)))) {
++				(tmp & (VM_FAULT_ERROR | VM_FAULT_NOPAGE |
++					VM_FAULT_RETRY)))) {
+ 			put_page(vmf->page);
+ 			return tmp;
+ 		}
 -- 
 2.14.3
 

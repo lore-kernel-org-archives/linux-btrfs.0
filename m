@@ -2,53 +2,55 @@ Return-Path: <SRS0=dcfB=MI=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+X-Spam-Status: No, score=-6.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 377ABC43382
-	for <linux-btrfs@archiver.kernel.org>; Wed, 26 Sep 2018 19:56:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1C6C4C43382
+	for <linux-btrfs@archiver.kernel.org>; Wed, 26 Sep 2018 20:40:44 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id E70F821527
-	for <linux-btrfs@archiver.kernel.org>; Wed, 26 Sep 2018 19:56:15 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A0A6A21531
+	for <linux-btrfs@archiver.kernel.org>; Wed, 26 Sep 2018 20:40:43 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=libero.it header.i=@libero.it header.b="PI5O9+HZ"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org E70F821527
+	dkim=pass (2048-bit key) header.d=libero.it header.i=@libero.it header.b="dOMpgIFl"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org A0A6A21531
 Authentication-Results: mail.kernel.org; dmarc=fail (p=quarantine dis=none) header.from=libero.it
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726944AbeI0CKt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 26 Sep 2018 22:10:49 -0400
-Received: from smtp-34-i6.italiaonline.it ([213.209.14.34]:39512 "EHLO
+        id S1726931AbeI0CzZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 26 Sep 2018 22:55:25 -0400
+Received: from smtp-34-i6.italiaonline.it ([213.209.14.34]:46723 "EHLO
         libero.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726032AbeI0CKs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 26 Sep 2018 22:10:48 -0400
+        id S1726623AbeI0CzZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 26 Sep 2018 22:55:25 -0400
 Received: from venice.bhome ([84.223.214.84])
         by smtp-34.iol.local with ESMTPA
-        id 5FutgzQvdq9Au5Futgj141; Wed, 26 Sep 2018 21:56:13 +0200
+        id 5GbsgzzuCq9Au5Gbsgj9YS; Wed, 26 Sep 2018 22:40:37 +0200
 x-libjamoibt: 1601
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=libero.it; s=s2014;
-        t=1537991773; bh=JuJyJdn2k0U3Lh/YdVkzEmDhy/chaOfX9dt02NWcSEE=;
+        t=1537994437; bh=Azmo0U4eGmWW3WYlb0sUZUl9D6iR5ctyG+ziLLT91D8=;
         h=Reply-To:Subject:To:Cc:References:From:Date:In-Reply-To;
-        b=PI5O9+HZNW9CP3TzbZzs02bbFoBQdRVM09HS0R3c/AepFhmCpTcn3sWxhMi5ZxJvL
-         F8Y3DxBvbJouzsRwD3pW9GJpulbp4YzsOLUB8pWakeOdVkuTD57b4bGe8ukLv1RP3/
-         GLIX4TulFTja+CXBvOh7lGyNkfeWfcFtrSb3cshhAJdmH9UEYCWJZ3vgM6NfAtz7Au
-         bUsYd62PtLU3Xtvnn4wqcE+bd/lI5vTyO+loJ54xBUy0Vu+g1ovAXZdWz0LY0Lywyd
-         glEUinY8kTmdOhUSdUGo/pKpqMzrxAyafgp2FlExNelvQnd4DDJlFq2yHsRXYKfG+k
-         CoWWDvsBI2DCw==
+        b=dOMpgIFlnoYvb4iGrMIg0yrEGyP9uvV4yv1sjbvaGMESw03A4v83Jr2VdA5rBpOBF
+         DCiVW0+44lAdpA4IRgWeSeemwiIV0MSV24xXh7Hny7xI1Z8KgZg60PJ0KOhCfjVASj
+         81ijT10SV/PDTVfuvnqAr+QC1EM65Cxy585MSSCmdGoOKH9ywHp4Bb4rh5nsVUTVlY
+         vXn939oKrY6O+bcvmAL74nKyL1Vx3B6NMi7jW5p0L6QIvnSrEHG/SL2BqXVpeMXD05
+         NOKhkfnTLxKUwygM6RqXhjs5xQat0Gh6tNXER9x663QQdJ0Txdf8bz3t0SiOa4+jJk
+         dgwDoQXcZpnQg==
 X-CNFS-Analysis: v=2.3 cv=OoWeNB3t c=1 sm=1 tr=0
  a=8ZjQKV1YVqnHfcWpVNE1cw==:117 a=8ZjQKV1YVqnHfcWpVNE1cw==:17
- a=IkcTkHD0fZMA:10 a=mKOXTXn1IpF-MbsE_U4A:9 a=zIqCHynVsgUSJSIY:21
- a=RyUZKyt6Yabo-tBt:21 a=QEXdDO2ut3YA:10
+ a=IkcTkHD0fZMA:10 a=VwQbUJbxAAAA:8 a=ChAbMjvVsfdyXUl2cokA:9
+ a=Ct2Hl-u6UnrpNnY_:21 a=no5Rjb6IG-8amn-3:21 a=QEXdDO2ut3YA:10
+ a=RMblk7DMegEA:10 a=AjGcO6oz07-iQ99wixmX:22
 Reply-To: kreijack@inwind.it
-Subject: Re: [PATCH 9/9] btrfs: Add RAID 6 recovery for a btrfs filesystem.
+Subject: Re: [PATCH 1/9] btrfs: Add support for reading a filesystem with a
+ RAID 5 or RAID 6 profile.
 To:     Daniel Kiper <dkiper@net-space.pl>
 Cc:     grub-devel@gnu.org, linux-btrfs@vger.kernel.org,
         Goffredo Baroncelli <kreijack@inwind.it>
 References: <20180919184040.22540-1-kreijack@libero.it>
- <20180919184040.22540-10-kreijack@libero.it>
- <20180925192046.GE30715@router-fw-old.i.net-space.pl>
+ <20180919184040.22540-2-kreijack@libero.it>
+ <20180925153142.GA30715@router-fw-old.i.net-space.pl>
 From:   Goffredo Baroncelli <kreijack@libero.it>
 Openpgp: preference=signencrypt
 Autocrypt: addr=kreijack@libero.it; prefer-encrypt=mutual; keydata=
@@ -94,68 +96,214 @@ Autocrypt: addr=kreijack@libero.it; prefer-encrypt=mutual; keydata=
  hfOTIAnzXIyegjQWXmnXiZ17OnCnSNIJuCw6OduueVSXtXqbUX1D8M28VLfrh3HWpCLLUR+j
  zcbKI1trRLZsFjj5uBkiTT/f/3jnp8OPiEywQ6vcm5YVZfYbHIx1sM1fKH0HrvfFCx4ANVAA
  5jG0MHwu2J/zJsFM0V7L9V9sRCgXNbLjeL/OJ8PLNY7UTVFAEaw=
-Message-ID: <36e9e14c-f694-1d22-34bf-4a28b6c189cd@libero.it>
-Date:   Wed, 26 Sep 2018 21:56:07 +0200
+Message-ID: <01115a89-3397-3cad-73b1-10495e11cb61@libero.it>
+Date:   Wed, 26 Sep 2018 22:40:32 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.0
 MIME-Version: 1.0
-In-Reply-To: <20180925192046.GE30715@router-fw-old.i.net-space.pl>
+In-Reply-To: <20180925153142.GA30715@router-fw-old.i.net-space.pl>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
-X-CMAE-Envelope: MS4wfMaQOGgmO4twMmi8un84uVRi1cguywgWhSbdgF9XQ6MQenfg1VJg+PpqNGdYJhM2vqDsvGwpmnRDBbQEVmx2w9udTTx8btoYrXwz90AVTu7woa2rnzTd
- 6K6v9R7w6jN7vhDceJekc5kp0DrwmNKSH7caG2/fTan9lCdL1QDWg1zCLyoYd0XhMYSrrhkOppnTaIXSMeFqiSqNc6MY2j2S6pf6hOCiCcwtN7ROPvHiEMqB
- WkRHxZ9GifyyOlKZc5H/s21NpS4KZGM29TC4HSFne7Y=
+X-CMAE-Envelope: MS4wfLszcr+Id76Qjo6OsOjWD99WM1DPDthxB+13nG516H0xM0v+iPHWXNzUqHc86yW+6bKneNYT27bmlWcMeLRH2VcspBTEkx+fvgSMMp053CkR6AfkWWhj
+ bS4AAGpvi1wVGuaX1nJeAWr2k1G3HeAMURw9HA2VjAsBblyF9IoxWk4z8cUi1UakgpHMDxv1ccnRaJd5hC5rC3A51ilzshxwbqGOixMB26TDCU+Fr2tCZqLQ
+ 85Nh5AFxwq8yH6q2Jyg+hmDvWETXWQNhb+I0EiCoKKg=
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 25/09/2018 21.20, Daniel Kiper wrote:
-> On Wed, Sep 19, 2018 at 08:40:40PM +0200, Goffredo Baroncelli wrote:
+On 25/09/2018 17.31, Daniel Kiper wrote:
+> On Wed, Sep 19, 2018 at 08:40:32PM +0200, Goffredo Baroncelli wrote:
 >> From: Goffredo Baroncelli <kreijack@inwind.it>
 >>
-[....]
->>  	       *  - stripe_offset is the disk offset,
->>  	       *  - csize is the "potential" data to read. It will be reduced to
->>  	       *    size if the latter is smaller.
->> +	       *  - parities_pos is the position of the parity inside a row (
+>> Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
+>> ---
+>>  grub-core/fs/btrfs.c | 66 ++++++++++++++++++++++++++++++++++++++++++++
+>>  1 file changed, 66 insertions(+)
+>>
+>> diff --git a/grub-core/fs/btrfs.c b/grub-core/fs/btrfs.c
+>> index be195448d..56c42746d 100644
+>> --- a/grub-core/fs/btrfs.c
+>> +++ b/grub-core/fs/btrfs.c
+>> @@ -119,6 +119,8 @@ struct grub_btrfs_chunk_item
+>>  #define GRUB_BTRFS_CHUNK_TYPE_RAID1         0x10
+>>  #define GRUB_BTRFS_CHUNK_TYPE_DUPLICATED    0x20
+>>  #define GRUB_BTRFS_CHUNK_TYPE_RAID10        0x40
+>> +#define GRUB_BTRFS_CHUNK_TYPE_RAID5         0x80
+>> +#define GRUB_BTRFS_CHUNK_TYPE_RAID6         0x100
+>>    grub_uint8_t dummy2[0xc];
+>>    grub_uint16_t nstripes;
+>>    grub_uint16_t nsubstripes;
+>> @@ -764,6 +766,70 @@ grub_btrfs_read_logical (struct grub_btrfs_data *data, grub_disk_addr_t addr,
+>>  	      stripe_offset = low + chunk_stripe_length
+>>  		* high;
+>>  	      csize = chunk_stripe_length - low;
+>> +	      break;
+>> +	    }
+>> +	  case GRUB_BTRFS_CHUNK_TYPE_RAID5:
+>> +	  case GRUB_BTRFS_CHUNK_TYPE_RAID6:
+>> +	    {
+>> +	      grub_uint64_t nparities, block_nr, high, low;
+>> +
+>> +	      redundancy = 1;	/* no redundancy for now */
+>> +
+>> +	      if (grub_le_to_cpu64 (chunk->type) & GRUB_BTRFS_CHUNK_TYPE_RAID5)
+>> +		{
+>> +		  grub_dprintf ("btrfs", "RAID5\n");
+>> +		  nparities = 1;
+>> +		}
+>> +	      else
+>> +		{
+>> +		  grub_dprintf ("btrfs", "RAID6\n");
+>> +		  nparities = 2;
+>> +		}
+>> +
+>> +	      /*
+>> +	       * A RAID 6 layout consists of several blocks spread on the disks.
+>> +	       * The raid terminology is used to call all the blocks of a row
+>> +	       * "stripe". Unfortunately the BTRFS terminology confuses block
 > 
-> s/inside/in/> 
->> +	       *    2 for P1, 3 for P2...)
+> Stripe is data set or parity (parity stripe) on one disk. Block has
+> different meaning. Please stick to btrfs terminology and say it clearly
+> in the comment. And even add a link to btrfs wiki page to ease reading.
+> 
+> I think about this one:
+>   https://btrfs.wiki.kernel.org/index.php/Manpage/mkfs.btrfs#BLOCK_GROUPS.2C_CHUNKS.2C_RAID
+> 
+>> +	       * and stripe.
+> 
+> I do not think so. Or at least not so much...
 
+Trust me, generally speaking stripe is the "row" in the disks (without the parity); looking at the ext3 man page:
+
+....
+                   stride=stride-size
+                          Configure  the  filesystem  for  a  RAID  array with
+                          stride-size filesystem blocks. This is the number of
+                          blocks  read or written to disk before moving to the
+                          next disk, which is sometimes  referred  to  as  the
+                          chunk   size.   This  mostly  affects  placement  of
+                          filesystem metadata like bitmaps at mke2fs  time  to
+                          avoid  placing them on a single disk, which can hurt
+                          performance.  It may also be used by the block allo‐
+                          cator.
+
+                   stripe_width=stripe-width
+                          Configure  the  filesystem  for  a  RAID  array with
+                          stripe-width filesystem blocks per stripe.  This  is
+                          typically  stride-size * N, where N is the number of
+                          data-bearing disks in the  RAID  (e.g.  for  RAID  5
+                          there is one parity disk, so N will be the number of
+                          disks in the array minus 1).  This allows the  block
+                          allocator to prevent read-modify-write of the parity
+                          in a RAID stripe if possible when the data is  writ‐
+                          ten.
+
+....
+Looking at the RAID5 wikipedia page, it seems that the term "stripe" is coherent with the ext3 man page.
+
+I suspect that the confusion is due to the fact that in RAID1 a stripe is in ONE disk (because the others are like parities). In BTRFS the RAID5/6 code uses the structure of RAID1 with some minimal extensions...
+
+To be clear, I don't have problem to be adherent to the BTRFS terminology. However I found this very confusing because I was used to a different terminology. I am bit worried about the fact that grub uses both MD/DM code and BTRFS code; a quick look to the code (eg ./grub-core/disk/diskfilter.c) shows that the stripe_size field seems to be related to a disks row without parities.
+
+And... yes in BTRFS "chunk" is a completely different beast than what it is reported in the ext3 man page :-)
+
+
+> 
+>> +	       *
+>> +	       *   Disk0  Disk1  Disk2  Disk3
+>> +	       *
+>> +	       *    A1     B1     P1     Q1
+>> +	       *    Q2     A2     B2     P2
+>> +	       *    P3     Q3     A3     B3
+>> +	       *  [...]
+>> +	       *
+>> +	       *  Note that the placement of the parities depends on row index.
+>> +	       *  In the code below:
+>> +	       *  - block_nr is the block number without the parities
+> 
+> Well, it seems to me that the btrfs code introduces confusion not the
+> spec itself. I would leave code as is but s/block number/stripe number/.
+
+Ok I will replace the two terms. However I have to put a warning that this is a "BTRFS" terminology :-)
+> 
+>> +	       *    (A1 = 0, B1 = 1, A2 = 2, B2 = 3, ...),
+>> +	       *  - high is the row number (0 for A1...Q1, 1 for Q2...P2, ...),
+>> +	       *  - stripen is the disk number (0 for A1,Q2,P3, 1 for B1...),
+> 
+> s/disk number/disk number in a row/
+
+This value doesn't depend by the row. So "number of disk" is more correct
+> 
+>> +	       *  - off is the logical address to read
+>> +	       *  - chunk_stripe_length is the size of a block (typically 64k),
+> 
+> s/a block/a stripe/
+> 
+>> +	       *  - nstripes is the number of disks,
+> 
+> s/number of disks/number of disks in a row/
+ditto
+
+
+> 
+> I miss the description of nparities here...
+
+Right:
 +              *  - nparities is the number of parities (1 for RAID5, 2 for RAID6);
 +              *    used only in RAID5/6 code.
 
->>  	       */
->>  	      block_nr = grub_divmod64 (off, chunk_stripe_length, &low);
->>
->> @@ -1030,6 +1069,9 @@ grub_btrfs_read_logical (struct grub_btrfs_data *data, grub_disk_addr_t addr,
->>  	       */
->>  	      grub_divmod64 (high + stripen, nstripes, &stripen);
->>
->> +	      grub_divmod64 (high + nstripes - nparities, nstripes,
->> +			     &parities_pos);
 > 
-> I think that this math requires a bit of explanation in the comment
-> before grub_divmod64(). Especially I am interested in why high +
-> nstripes - nparities works as expected.
+>> +	       *  - low is the offset of the data inside a stripe,
+>> +	       *  - stripe_offset is the disk offset,
+> 
+> s/the disk offset/the data offset in an array/?
 
+Yes
+
+> 
+>> +	       *  - csize is the "potential" data to read. It will be reduced to
+>> +	       *    size if the latter is smaller.
+>> +	       */
+>> +	      block_nr = grub_divmod64 (off, chunk_stripe_length, &low);
+>> +
+>> +	      /*
+>> +	       * stripen is computed without the parities (0 for A1, A2, A3...
+>> +	       * 1 for B1, B2...).
+>> +	       */
+>> +	      high = grub_divmod64 (block_nr, nstripes - nparities, &stripen);
+> 
+> This is clear...
+> 
+>> +	      /*
+>> +	       * stripen is recomputed considering the parities (0 for A1, 1 for
+>> +	       * A2, 2 for A3....).
+>> +	       */
+>> +	      grub_divmod64 (high + stripen, nstripes, &stripen);
+> 
+> ... but this looks strange... You add disk number to row number. Hmmm...
+> It looks that it works but this is not obvious at first sight. Could you
+> explain that?
 
 What about
++	      /*
++	       * stripen is recomputed considering the parities: different row have
++              * a different offset, we have to add to stripen the number of row ("high") in 
++              * modulo nstripes (0 for A1, 1 for A2, 2 for A3....).
++	       */
 
-/*
- * parities_pos is equal to "(high - nparities) % nstripes" (see the diagram above).
- * However "high - nparities" might be negative (eg when high == 0) leading to an
- * incorrect computation.
- * Instead "high + nstripes - nparities" is always positive and in modulo nstripes is
- * equal to "(high - nparities) % nstripes
- */
+> 
+>> +	      stripe_offset = low + chunk_stripe_length * high;
+>> +	      csize = chunk_stripe_length - low;
+>> +
+>>  	      break;
+>>  	    }
+>>  	  default:
 > 
 > Daniel
 > 
-BR
-G.Baroncelli
+
 
 -- 
 gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>

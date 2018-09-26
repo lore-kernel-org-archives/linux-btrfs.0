@@ -7,49 +7,49 @@ X-Spam-Status: No, score=-6.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
 	SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 614BDC43382
-	for <linux-btrfs@archiver.kernel.org>; Wed, 26 Sep 2018 19:56:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 81A83C43382
+	for <linux-btrfs@archiver.kernel.org>; Wed, 26 Sep 2018 19:56:06 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D908821527
-	for <linux-btrfs@archiver.kernel.org>; Wed, 26 Sep 2018 19:56:03 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 300EF21527
+	for <linux-btrfs@archiver.kernel.org>; Wed, 26 Sep 2018 19:56:06 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=libero.it header.i=@libero.it header.b="nneKaXUN"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org D908821527
+	dkim=pass (2048-bit key) header.d=libero.it header.i=@libero.it header.b="C9bOC/wq"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 300EF21527
 Authentication-Results: mail.kernel.org; dmarc=fail (p=quarantine dis=none) header.from=libero.it
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726470AbeI0CKg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 26 Sep 2018 22:10:36 -0400
+        id S1726591AbeI0CKj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 26 Sep 2018 22:10:39 -0400
 Received: from smtp-34-i6.italiaonline.it ([213.209.14.34]:39512 "EHLO
         libero.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726107AbeI0CKf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 26 Sep 2018 22:10:35 -0400
+        id S1726107AbeI0CKi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 26 Sep 2018 22:10:38 -0400
 Received: from venice.bhome ([84.223.214.84])
         by smtp-34.iol.local with ESMTPA
-        id 5FudgzQlfq9Au5Fudgj10z; Wed, 26 Sep 2018 21:55:57 +0200
+        id 5FuigzQpaq9Au5Fukgj12G; Wed, 26 Sep 2018 21:56:04 +0200
 x-libjamoibt: 1601
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=libero.it; s=s2014;
-        t=1537991757; bh=zt9A1XmhPVRjluq8XGb2rfmmuan37Zhk5ZgEubloy7A=;
+        t=1537991764; bh=n+totKcpuO+Iiz43inABlNFXfvWjbql1HRg9GbT5OWc=;
         h=From:Subject:Reply-To:To:Cc:References:Date:In-Reply-To;
-        b=nneKaXUNhIMaVvf9qhuoN3cTZYMGTrgxE7YXHRgfU2Vijak5zHdjrKzVKNk8EAWVk
-         raDREOscBRxOZC7PGt4N1OD5M4uiMy8ECxqUztHuNbQHhmgvcbGK90GSjvhyEnjvUn
-         2BhxkzeJ6dwDQN+sZg8hbm6daFZhQMvHpgQcH/0SFj5LLBiqhm4Nas71h0YugxMZ8f
-         nQg8NGn4z7WyPX0ag0U3dx6Cp6H4BgUokNQ4S6Asx4GkKtxVs9hhPhH5vNXFZKlrZq
-         Fh0fQhycxOAn4R9fCHNDVXPxsbT4PET4Z7PsLUmBuEjWI3S6HNXnA5rj+A40EqsodJ
-         R4sKDme7XkFQw==
+        b=C9bOC/wqrvo2ujdKONn7ihf+4GttaTbUBgKxmAYOT/kB8XbwjSWens139+Lfxrs2n
+         zT9VVYxMwmU2qummWUJYHGh7FEtFRM98pbbBDX2D6zRAqXzqiOLKLys0Rsv4qyc38L
+         8HwDK6yUzXx1BiSlH3lPnjbCQ8C/MYjuOauYSKlugYVFo/mW3lZgIFJaICgFvNF5J/
+         4KZhDR2VhGrQNvUNAJsqrVeib3wPiUwKUtvMEV5LxyKSKBjTKTZBV7RfKoIdG9Gm7N
+         b7vwg+RGLARAbkMwkiEv/Fjm7Hll+MJxf9l2yoYV8YKsWEgtvMDEsuJkML0qSzbH1X
+         tlavySMOOTDzg==
 X-CNFS-Analysis: v=2.3 cv=OoWeNB3t c=1 sm=1 tr=0
  a=8ZjQKV1YVqnHfcWpVNE1cw==:117 a=8ZjQKV1YVqnHfcWpVNE1cw==:17
- a=IkcTkHD0fZMA:10 a=tdgEUAKCtwtIJcxg25wA:9 a=QEXdDO2ut3YA:10
+ a=IkcTkHD0fZMA:10 a=9jdYIcdj8tBjsKatQBAA:9 a=QEXdDO2ut3YA:10
 From:   Goffredo Baroncelli <kreijack@libero.it>
-Subject: [PATCH 4/9] btrfs: Avoid a rescan for a device which was already not
- found.
+Subject: [PATCH 7/9] btrfs: Add support for recovery for a RAID 5 btrfs
+ profiles.
 Reply-To: kreijack@inwind.it
 To:     Daniel Kiper <dkiper@net-space.pl>
 Cc:     grub-devel@gnu.org, linux-btrfs@vger.kernel.org,
         Goffredo Baroncelli <kreijack@inwind.it>
 References: <20180919184040.22540-1-kreijack@libero.it>
- <20180919184040.22540-5-kreijack@libero.it>
- <20180925172931.GC30715@router-fw-old.i.net-space.pl>
+ <20180919184040.22540-8-kreijack@libero.it>
+ <20180925191032.GD30715@router-fw-old.i.net-space.pl>
 Openpgp: preference=signencrypt
 Autocrypt: addr=kreijack@libero.it; prefer-encrypt=mutual; keydata=
  mQINBFCBjk8BEADu0/Wq3RUaW9xXLkvv10HPt13XeA5Kso23CVg6ngNvpNy2jDyBAxKxgYpe
@@ -94,116 +94,163 @@ Autocrypt: addr=kreijack@libero.it; prefer-encrypt=mutual; keydata=
  hfOTIAnzXIyegjQWXmnXiZ17OnCnSNIJuCw6OduueVSXtXqbUX1D8M28VLfrh3HWpCLLUR+j
  zcbKI1trRLZsFjj5uBkiTT/f/3jnp8OPiEywQ6vcm5YVZfYbHIx1sM1fKH0HrvfFCx4ANVAA
  5jG0MHwu2J/zJsFM0V7L9V9sRCgXNbLjeL/OJ8PLNY7UTVFAEaw=
-Message-ID: <1a37b16b-0693-05fd-3a67-6b0242608a26@libero.it>
-Date:   Wed, 26 Sep 2018 21:55:54 +0200
+Message-ID: <e9cd180c-2cc4-e6e2-1b9c-00a3dd353097@libero.it>
+Date:   Wed, 26 Sep 2018 21:55:57 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.0
 MIME-Version: 1.0
-In-Reply-To: <20180925172931.GC30715@router-fw-old.i.net-space.pl>
+In-Reply-To: <20180925191032.GD30715@router-fw-old.i.net-space.pl>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
-X-CMAE-Envelope: MS4wfD25/FHxaTx+7i7oB7a78s+YFsbtTH/jMGOyjez3gafeZJeYzWQA2hZpyeWubUtBYnU3pLPQv2subK+s/dyLGoKwMpZPu0g0qxly06weTr08McioWF7a
- aJfRSQlg+GsWnSGkwu+vzJqAOremUqIQH3OcbXeccK9KEg8UVL5dLqt6y5JLxq6oZEC/3mVXpOHgTJlLAvs70EKcyEHp790BPAgFQ5RJz++u174PPzhWmffX
- KRDUOmPtaAV1Qf2smVPJjYPweq0J96ObbMoq/DkzAVs=
+X-CMAE-Envelope: MS4wfEgLGAsgAnlm8uNiLFY/R6Yy/MYxIzdNvqXSQZ54n4HdtVDBGwwuSH4ofxbd8pJvgoqco+wWRcGV7VmPD9egG+sRlsH3PQ/yc8A5G4adHC947rHgVjHT
+ A2tjFczpGxQIa2oznKq9/CU4XhgPOk1ogfSZ7LKm/JOoDTFDACcPXIUf1YZ9F+YibJYHvuaQSdAhhGfYKpHtOhgKXpzV28hX3uNmamDy/yGoXUc2150yZ1sj
+ kjzV5P9b669NdvC7DHa41sTqpTo/fK8sCUI59VocgmI=
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 25/09/2018 19.29, Daniel Kiper wrote:
-> On Wed, Sep 19, 2018 at 08:40:35PM +0200, Goffredo Baroncelli wrote:
+On 25/09/2018 21.10, Daniel Kiper wrote:
+> On Wed, Sep 19, 2018 at 08:40:38PM +0200, Goffredo Baroncelli wrote:
 >> From: Goffredo Baroncelli <kreijack@inwind.it>
 >>
->> If a device is not found, do not return immediately but
->> record this failure by storing NULL in data->devices_attached[].
-> 
-> Still the same question: Where the store happens in the code?
-> I cannot find it in the patch below. This have to be clarified.
-> 
-> Daniel
-
-
-What about the following commit description
----------------------------------------------
-Change the behavior of find_device(): before the patch, a read of a missed device might trigger a rescan. However, it is never recorded that a device is missed, so each single read of a missed device might triggers a rescan.
-It is the caller who decides if a rescan is performed in case of a missed device. And it does quite often, without considering if in the past a devices was already found as "missed"
-This behavior causes a lot of unneeded rescan, causing a huge slowdown in case of a missed device.
-
-After the patch, the "missed device" information is stored in the cache (as a NULL value). A rescan is triggered only if no information at all is found in the cache. This means that only the first time a read of a missed device triggers a rescan.
-
-The change in the code is done removing "return NULL" when the disk is not found. So it is always executed the code which stores in the cache the value returned by grub_device_iterate(): NULL if the device is missed, or a valid data otherwise.
----------------------------------------------
-> 
->> This way we avoid unnecessary devices rescan, and speedup the
->> reads in case of a degraded array.
+>> Add support for recovery for a RAID 5 btrfs profile. In addition
+>> it is added some code as preparatory work for RAID 6 recovery code.
 >>
->> Signed-off-by: Goffredo Baroncelli <kreikack@inwind.it>
+>> Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
 >> ---
->>  grub-core/fs/btrfs.c | 19 +++++++++----------
->>  1 file changed, 9 insertions(+), 10 deletions(-)
+>>  grub-core/fs/btrfs.c | 169 +++++++++++++++++++++++++++++++++++++++++--
+>>  1 file changed, 164 insertions(+), 5 deletions(-)
 >>
 >> diff --git a/grub-core/fs/btrfs.c b/grub-core/fs/btrfs.c
->> index 0cdfaf7c0..6e42c33f6 100644
+>> index 5c1ebae77..55a7eeffc 100644
 >> --- a/grub-core/fs/btrfs.c
 >> +++ b/grub-core/fs/btrfs.c
->> @@ -588,7 +588,7 @@ find_device_iter (const char *name, void *data)
+>> @@ -29,6 +29,7 @@
+>>  #include <minilzo.h>
+>>  #include <grub/i18n.h>
+>>  #include <grub/btrfs.h>
+>> +#include <grub/crypto.h>
+>>
+>>  GRUB_MOD_LICENSE ("GPLv3+");
+>>
+>> @@ -665,6 +666,148 @@ btrfs_read_from_chunk (struct grub_btrfs_data *data,
+>>      return err;
 >>  }
 >>
->>  static grub_device_t
->> -find_device (struct grub_btrfs_data *data, grub_uint64_t id, int do_rescan)
->> +find_device (struct grub_btrfs_data *data, grub_uint64_t id)
->>  {
->>    struct find_device_ctx ctx = {
->>      .data = data,
->> @@ -600,12 +600,9 @@ find_device (struct grub_btrfs_data *data, grub_uint64_t id, int do_rescan)
->>    for (i = 0; i < data->n_devices_attached; i++)
->>      if (id == data->devices_attached[i].id)
->>        return data->devices_attached[i].dev;
->> -  if (do_rescan)
->> -    grub_device_iterate (find_device_iter, &ctx);
->> -  if (!ctx.dev_found)
->> -    {
->> -      return NULL;
->> -    }
+>> +struct raid56_buffer {
+>> +  void *buf;
+>> +  int  data_is_valid;
+>> +};
 >> +
->> +  grub_device_iterate (find_device_iter, &ctx);
+>> +static void
+>> +rebuild_raid5 (char *dest, struct raid56_buffer *buffers,
+>> +	       grub_uint64_t nstripes, grub_uint64_t csize)
+>> +{
+>> +  grub_uint64_t i;
+>> +  int first;
 >> +
->>    data->n_devices_attached++;
->>    if (data->n_devices_attached > data->n_devices_allocated)
->>      {
->> @@ -617,7 +614,8 @@ find_device (struct grub_btrfs_data *data, grub_uint64_t id, int do_rescan)
->>  			* sizeof (data->devices_attached[0]));
->>        if (!data->devices_attached)
->>  	{
->> -	  grub_device_close (ctx.dev_found);
->> +	  if (ctx.dev_found)
->> +	    grub_device_close (ctx.dev_found);
->>  	  data->devices_attached = tmp;
->>  	  return NULL;
->>  	}
->> @@ -892,7 +890,7 @@ grub_btrfs_read_logical (struct grub_btrfs_data *data, grub_disk_addr_t addr,
->>  			      " for laddr 0x%" PRIxGRUB_UINT64_T "\n", paddr,
->>  			      addr);
->>
->> -		dev = find_device (data, stripe->device_id, j);
->> +		dev = find_device (data, stripe->device_id);
->>  		if (!dev)
->>  		  {
->>  		    grub_dprintf ("btrfs",
->> @@ -969,7 +967,8 @@ grub_btrfs_unmount (struct grub_btrfs_data *data)
->>    unsigned i;
->>    /* The device 0 is closed one layer upper.  */
->>    for (i = 1; i < data->n_devices_attached; i++)
->> -    grub_device_close (data->devices_attached[i].dev);
->> +    if (data->devices_attached[i].dev)
->> +        grub_device_close (data->devices_attached[i].dev);
->>    grub_free (data->devices_attached);
->>    grub_free (data->extent);
->>    grub_free (data);
->> --
->> 2.19.0
->>
+>> +  i = 0;
+>> +  while (buffers[i].data_is_valid && i < nstripes)
+>> +    ++i;
+> 
+> for (i = 0; buffers[i].data_is_valid && i < nstripes; i++);
+> 
+>> +  if (i == nstripes)
+>> +    {
+>> +      grub_dprintf ("btrfs", "called rebuild_raid5(), but all disks are OK\n");
+>> +      return;
+>> +    }
+>> +
+>> +  grub_dprintf ("btrfs", "rebuilding RAID 5 stripe #%" PRIuGRUB_UINT64_T "\n",
+>> +	        i);
+> 
+> One line here please.
+> 
+>> +  for (i = 0, first = 1; i < nstripes; i++)
+>> +    {
+>> +      if (!buffers[i].data_is_valid)
+>> +	continue;
+>> +
+>> +      if (first) {
+>> +	grub_memcpy(dest, buffers[i].buf, csize);
+>> +	first = 0;
+>> +      } else
+>> +	grub_crypto_xor (dest, dest, buffers[i].buf, csize);
+>> +
+>> +    }
+> 
+> Hmmm... I think that this function can be simpler. You can drop first
+> while/for and "if (i == nstripes)". Then here:
+> 
+> if (first) {
+>   grub_dprintf ("btrfs", "called rebuild_raid5(), but all disks are OK\n");
+> 
+> Am I right?
+
+Ehm.. no. The "if" is an internal check to avoid BUG. rebuild_raid5() should be called only if some disk is missed.
+To perform this control, the code checks if all buffers are valid. Otherwise there is an internal BUG.
+
+Checking "first" is a completely different test.
+
+>> +}
+>> +
+>> +static grub_err_t
+>> +raid56_read_retry (struct grub_btrfs_data *data,
+>> +		   struct grub_btrfs_chunk_item *chunk,
+>> +		   grub_uint64_t stripe_offset,
+>> +		   grub_uint64_t csize, void *buf)
+>> +{
+>> +  struct raid56_buffer *buffers;
+>> +  grub_uint64_t nstripes = grub_le_to_cpu16 (chunk->nstripes);
+>> +  grub_uint64_t chunk_type = grub_le_to_cpu64 (chunk->type);
+>> +  grub_err_t ret = GRUB_ERR_NONE;
+> 
+> s/GRUB_ERR_NONE/GRUB_ERR_OUT_OF_MEMORY/ and then you can drop at
+> least two relevant assigments and some curly brackets. Of course
+> before cleanup label you have to add ret = GRUB_ERR_NONE.
+> 
+>> +  grub_uint64_t i, failed_devices;
+>> +
+>> +  buffers = grub_zalloc (sizeof(*buffers) * nstripes);
+>> +  if (!buffers)
+>> +    {
+>> +      ret = GRUB_ERR_OUT_OF_MEMORY;
+>> +      goto cleanup;
+>> +    }
+>> +
+>> +  for (i = 0; i < nstripes; i++)
+>> +    {
+>> +      buffers[i].buf = grub_zalloc (csize);
+>> +      if (!buffers[i].buf)
+>> +	{
+>> +	  ret = GRUB_ERR_OUT_OF_MEMORY;
+>> +	  goto cleanup;
+>> +	}
+>> +    }
+>> +
+>> +  for (failed_devices = 0, i = 0; i < nstripes; i++)
+>> +    {
+>> +      struct grub_btrfs_chunk_stripe *stripe;
+>> +      grub_disk_addr_t paddr;
+>> +      grub_device_t dev;
+>> +      grub_err_t err2;
+> 
+> s/err2/err/?
+
+Ok
+
+> 
+>> +
+>> +      stripe = (struct grub_btrfs_chunk_stripe *) (chunk + 1);
+>> +      stripe += i;
+> 
+> Why not stripe = ((struct grub_btrfs_chunk_stripe *) (chunk + 1)) + i;?
+
+Make sense
+> 
+> Daniel
 > 
 
 

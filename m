@@ -7,54 +7,54 @@ X-Spam-Status: No, score=-8.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
 	SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 07B55C43382
-	for <linux-btrfs@archiver.kernel.org>; Thu, 27 Sep 2018 18:35:18 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id ADDB3C43382
+	for <linux-btrfs@archiver.kernel.org>; Thu, 27 Sep 2018 18:35:21 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id A9D7A204FD
-	for <linux-btrfs@archiver.kernel.org>; Thu, 27 Sep 2018 18:35:17 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 66D23204FD
+	for <linux-btrfs@archiver.kernel.org>; Thu, 27 Sep 2018 18:35:21 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=libero.it header.i=@libero.it header.b="fHkOrz4F"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org A9D7A204FD
+	dkim=pass (2048-bit key) header.d=libero.it header.i=@libero.it header.b="m5PLyeb2"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 66D23204FD
 Authentication-Results: mail.kernel.org; dmarc=fail (p=quarantine dis=none) header.from=libero.it
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728490AbeI1Ayu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 27 Sep 2018 20:54:50 -0400
-Received: from smtp-34-i6.italiaonline.it ([213.209.14.34]:54811 "EHLO
+        id S1728501AbeI1Ayy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 27 Sep 2018 20:54:54 -0400
+Received: from smtp-34-i6.italiaonline.it ([213.209.14.34]:48601 "EHLO
         libero.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727404AbeI1Ayu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 27 Sep 2018 20:54:50 -0400
+        id S1728251AbeI1Ayy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 27 Sep 2018 20:54:54 -0400
 Received: from venice.bhome ([84.223.214.84])
         by smtp-34.iol.local with ESMTPA
-        id 5b7zg9O8gq9Au5b87gnnn3; Thu, 27 Sep 2018 20:35:15 +0200
+        id 5b7zg9O8gq9Au5b88gnnnR; Thu, 27 Sep 2018 20:35:18 +0200
 x-libjamoibt: 1601
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=libero.it; s=s2014;
-        t=1538073315; bh=FC70Ohc1AbMC5cIr0xbtcjxhs1/XHdul+SAZ6Z/uJjQ=;
+        t=1538073318; bh=Zd0XB2/3+InuPzTYI3AT+uOEuSwrcE2wtQ1rXUitQdA=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References;
-        b=fHkOrz4FHldVf+uaomEKJJ2G8E2ilLlmQTX5tCuPEcPZ/yyVVkRpuSDSnSDQcAYrG
-         Sol+elVHHRpMAzNy9Ud6qW2v/4c5dkjbofe7bqXp+H7n4kjyoBnumNlK4Iu+B0jxAR
-         c513xt5hL4itmowRUVOZxfcDEovOiakxxZctjI6wp42h8ftJFRsRd0+nopEmIlbRac
-         xyA6EIKnxCMu5ni8mUexPjxE5Pe9hay7whnn4KTyJigWPvX+W4VlBpWT37LdmHrOMV
-         tT7jU1S29U7D5WOSN8EirIXwup8qVMX2nPNqPl6YPVbaznPn30yTCHnLzrGnUg0ltR
-         oO8m4zAXlilpw==
+        b=m5PLyeb2wDv3dLSGs4f9dURQ5qZVYHKqKREgKEc3+z/WoydCmQjD21nYhHn2ZT36C
+         oM+LphD+rUOeb+nSjXxOslgwOh/T0tT1TR9xCZftZ7smLNII8dnVUXvuFX9lno+m4z
+         JCAndx6N/dfP8sBOIlxQw1rGRpJqSqnkqmwGrw+1eo/K7hyCENN9JKZqItd+toNmwT
+         h5HDACp5MWawNcVDgNF95NssKQ5lLDNOPNmttNCFfoptDvS9clvXCbbpwXkdHgAtwz
+         xWCrJqx6DM07s3xyU/8wJH17oEr2OkWJBadjlqtMlS480wNxbTeOE2FRwslTgEZ6Uo
+         s/8Uz3CL3Bf6Q==
 X-CNFS-Analysis: v=2.3 cv=OoWeNB3t c=1 sm=1 tr=0
- a=8ZjQKV1YVqnHfcWpVNE1cw==:117 a=8ZjQKV1YVqnHfcWpVNE1cw==:17 a=yPCof4ZbAAAA:8
- a=fGidO4j3AiKtNeS3nH0A:9
+ a=8ZjQKV1YVqnHfcWpVNE1cw==:117 a=8ZjQKV1YVqnHfcWpVNE1cw==:17
+ a=_nex0ghXHqrwvuxp8qYA:9
 From:   Goffredo Baroncelli <kreijack@libero.it>
 To:     grub-devel@gnu.org
 Cc:     Daniel Kiper <dkiper@net-space.pl>, linux-btrfs@vger.kernel.org,
         Goffredo Baroncelli <kreijack@inwind.it>
-Subject: [PATCH 3/9] btrfs: Move the error logging from find_device() to its caller.
-Date:   Thu, 27 Sep 2018 20:34:58 +0200
-Message-Id: <20180927183504.18078-4-kreijack@libero.it>
+Subject: [PATCH 4/9] btrfs: Avoid a rescan for a device which was already not found.
+Date:   Thu, 27 Sep 2018 20:34:59 +0200
+Message-Id: <20180927183504.18078-5-kreijack@libero.it>
 X-Mailer: git-send-email 2.19.0
 In-Reply-To: <20180927183504.18078-1-kreijack@libero.it>
 References: <20180927183504.18078-1-kreijack@libero.it>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-CMAE-Envelope: MS4wfGy/KcnOcL0sLmqIW14sch+/wM3CAntTFnnS1dn+AFQ+j96w3TLUaeeP1+nAWEfGVEKKoN7oGDO1nPDNWgU6sHjnvuDZ1oK6ocjyKX9WarEFx42Vv/KG
- qjsnyt6r4kyMCgsmkPmzsur6JW4WRxG4R9TG9jUDLf7XHN7z6y76dFOVX1YrLwNsHxIEiSODLWzcl2TWdRJeignIXQlmo+PVN2oqc31GSiKh70fSUg1589qW
- RxyMg9OVbHyBUUZPsQ5xSqGEEal9cMNoeGsM7Cui3dk=
+X-CMAE-Envelope: MS4wfH+d8sZZBMVu/nghih0NId1a/SGM9cg3t69OOUnG6cv0rFtC3hWd0bqY5PeMnizamS0Fhi7cCC4ldzoKp5ed4KerxuiDWbPya++lQCFu67S7H5Q+Q1oD
+ 8xH0YGcbFp+qoVAPu0w22owirLrgW0rKKT3SJadfzPb9ynVsXfRQ+9sO6d/rA+dcFjwaPM2dzkl9QAOrRmEge2+3/wWpd5C44qFdJ8k8VucW6/MtTFbr9Gff
+ Bc/GhlNCWb5WrAQqe81eNqpAm4Jc4vj9y1Cawk4h9Fo=
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -62,45 +62,86 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Goffredo Baroncelli <kreijack@inwind.it>
 
-The caller knows better if this error is fatal or not, i.e. another disk is
-available or not.
+Change the behavior of find_device(): before the patch, a read of a missed
+device may trigger a rescan. However, it is never recorded that a device
+is missed, so each single read of a missed device may triggers a rescan.
+It is the caller who decides if a rescan is performed in case of a missed
+device. And it does quite often, without considering if in the past a
+devices was already found as "missed"
+This behavior causes a lot of unneeded rescan, causing a huge slowdown in
+case of a missed device.
 
-This is a preparatory patch.
+After the patch, the "missed device" information is stored in the
+data->devices_attached[] array (as a NULL value in the field dev). A rescan
+is triggered only if no information at all is found. This means that only
+the first time a read of a missed device triggers a rescan.
 
-Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
-Reviewed-by: Daniel Kiper <daniel.kiper@oracle.com>
+The change in the code is done removing "return NULL" when the disk is not
+found. So it is always executed the code which stores in the
+data->devices_attached[] array the value returned by grub_device_iterate():
+NULL if the device is missed, or a valid data otherwise.
+
+Signed-off-by: Goffredo Baroncelli <kreikack@inwind.it>
 ---
- grub-core/fs/btrfs.c | 10 ++++------
- 1 file changed, 4 insertions(+), 6 deletions(-)
+ grub-core/fs/btrfs.c | 17 +++++++++--------
+ 1 file changed, 9 insertions(+), 8 deletions(-)
 
 diff --git a/grub-core/fs/btrfs.c b/grub-core/fs/btrfs.c
-index bf0dbce21..2b1dd7dd4 100644
+index 2b1dd7dd4..c07d91657 100644
 --- a/grub-core/fs/btrfs.c
 +++ b/grub-core/fs/btrfs.c
-@@ -603,12 +603,7 @@ find_device (struct grub_btrfs_data *data, grub_uint64_t id, int do_rescan)
-   if (do_rescan)
-     grub_device_iterate (find_device_iter, &ctx);
-   if (!ctx.dev_found)
--    {
--      grub_error (GRUB_ERR_BAD_FS,
--		  N_("couldn't find a necessary member device "
--		     "of multi-device filesystem"));
--      return NULL;
--    }
-+    return NULL;
+@@ -588,7 +588,7 @@ find_device_iter (const char *name, void *data)
+ }
+ 
+ static grub_device_t
+-find_device (struct grub_btrfs_data *data, grub_uint64_t id, int do_rescan)
++find_device (struct grub_btrfs_data *data, grub_uint64_t id)
+ {
+   struct find_device_ctx ctx = {
+     .data = data,
+@@ -600,10 +600,9 @@ find_device (struct grub_btrfs_data *data, grub_uint64_t id, int do_rescan)
+   for (i = 0; i < data->n_devices_attached; i++)
+     if (id == data->devices_attached[i].id)
+       return data->devices_attached[i].dev;
+-  if (do_rescan)
+-    grub_device_iterate (find_device_iter, &ctx);
+-  if (!ctx.dev_found)
+-    return NULL;
++
++  grub_device_iterate (find_device_iter, &ctx);
++
    data->n_devices_attached++;
    if (data->n_devices_attached > data->n_devices_allocated)
      {
-@@ -906,6 +901,9 @@ grub_btrfs_read_logical (struct grub_btrfs_data *data, grub_disk_addr_t addr,
- 		dev = find_device (data, stripe->device_id, j);
+@@ -615,7 +614,8 @@ find_device (struct grub_btrfs_data *data, grub_uint64_t id, int do_rescan)
+ 			* sizeof (data->devices_attached[0]));
+       if (!data->devices_attached)
+ 	{
+-	  grub_device_close (ctx.dev_found);
++	  if (ctx.dev_found)
++	    grub_device_close (ctx.dev_found);
+ 	  data->devices_attached = tmp;
+ 	  return NULL;
+ 	}
+@@ -898,7 +898,7 @@ grub_btrfs_read_logical (struct grub_btrfs_data *data, grub_disk_addr_t addr,
+ 			      " for laddr 0x%" PRIxGRUB_UINT64_T "\n", paddr,
+ 			      addr);
+ 
+-		dev = find_device (data, stripe->device_id, j);
++		dev = find_device (data, stripe->device_id);
  		if (!dev)
  		  {
-+		    grub_dprintf ("btrfs",
-+				  "couldn't find a necessary member device "
-+				  "of multi-device filesystem\n");
- 		    err = grub_errno;
- 		    grub_errno = GRUB_ERR_NONE;
- 		    continue;
+ 		    grub_dprintf ("btrfs",
+@@ -975,7 +975,8 @@ grub_btrfs_unmount (struct grub_btrfs_data *data)
+   unsigned i;
+   /* The device 0 is closed one layer upper.  */
+   for (i = 1; i < data->n_devices_attached; i++)
+-    grub_device_close (data->devices_attached[i].dev);
++    if (data->devices_attached[i].dev)
++        grub_device_close (data->devices_attached[i].dev);
+   grub_free (data->devices_attached);
+   grub_free (data->extent);
+   grub_free (data);
 -- 
 2.19.0
 

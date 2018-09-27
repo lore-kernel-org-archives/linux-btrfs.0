@@ -7,64 +7,65 @@ X-Spam-Status: No, score=-8.8 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
 	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C7C3EC004D5
-	for <linux-btrfs@archiver.kernel.org>; Thu, 27 Sep 2018 18:18:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5AE1AC43382
+	for <linux-btrfs@archiver.kernel.org>; Thu, 27 Sep 2018 18:18:15 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 6D394215F0
-	for <linux-btrfs@archiver.kernel.org>; Thu, 27 Sep 2018 18:18:16 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 19D54215F0
+	for <linux-btrfs@archiver.kernel.org>; Thu, 27 Sep 2018 18:18:15 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="T3F6W7v3"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 6D394215F0
+	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="iRcBmGe2"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 19D54215F0
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=osandov.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728477AbeI1Ahp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 27 Sep 2018 20:37:45 -0400
-Received: from mail-pg1-f195.google.com ([209.85.215.195]:38011 "EHLO
-        mail-pg1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728401AbeI1Ahp (ORCPT
+        id S1728453AbeI1Aho (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 27 Sep 2018 20:37:44 -0400
+Received: from mail-pg1-f196.google.com ([209.85.215.196]:45001 "EHLO
+        mail-pg1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728401AbeI1Ahn (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 27 Sep 2018 20:37:45 -0400
-Received: by mail-pg1-f195.google.com with SMTP id r77-v6so2546739pgr.5
-        for <linux-btrfs@vger.kernel.org>; Thu, 27 Sep 2018 11:18:14 -0700 (PDT)
+        Thu, 27 Sep 2018 20:37:43 -0400
+Received: by mail-pg1-f196.google.com with SMTP id g2-v6so2527204pgu.11
+        for <linux-btrfs@vger.kernel.org>; Thu, 27 Sep 2018 11:18:12 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=osandov-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:cc:subject:date:message-id:in-reply-to:references
          :mime-version:content-transfer-encoding;
-        bh=Gz4F4IjCcs1aVpbcqRI+F+lRRHULLEoRwCUrGwJZfnU=;
-        b=T3F6W7v336Ux6k64eFmGDM2guV5pgIwkNrNqFNY3r03HnBT6vtcn0AWzvMRvjOOSrq
-         KS0C6OGzrfQ+bORgrpy7vekO3OBfBp3ga2eMJRIEUMhCxjZwnQ3tFhUtcaBSRHlWFd+I
-         7gPKkqYJMs6A5WioWvNvQRKfMuuboVlYm5eXcgPXxA8E6ifE/9wMNIjKl9poAMgTPQLQ
-         /Pg/AJkSHFjEAi6ed4TWRLi1D2Meei7S6/WKRUWzOj++CzWop0mlNeG7p4YRZnV8s+oX
-         leZC3CiHvwzoqwEEBucrqga6EWQ+d7lwJaVu6XnwDEXU/Dtdbgshy+hwXo9BUFkPty7p
-         LFqA==
+        bh=pB4cjWu7kIoSAPGh3rcF+ODQvk/IUq3VExz60hmyk9c=;
+        b=iRcBmGe2iOyXaPiMWvLgRrEGh+QqWaFC0SXLrEChkiiVJ2SYONu+OGRC9CE2krWwm3
+         SFI+iDm5JXO7ytk0cdjfABEIMDy4mI4MTxaA69jfNYSsB83ZyQ1jIvXND3F7q7RG+lrF
+         FT/c+TBQ0UBukd+v6rq+Cpz0Ctk0PaGJEOmeI6AtgqIrWwxkGwz0dgsPZV22iOjlul1z
+         Zb8c29ozRtkdq5QqVDEqqNkX4XIAH+C1W1ixwQLbtQoNyH66nGEv5361zSw0K+P6bllZ
+         aJ3M7TvnyIikAt9c8IJFgc6zPwFIC1Lmv/8GmxjzaFEhb5lbBG/qD+LpKztjcj1rwqd0
+         RnYg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=Gz4F4IjCcs1aVpbcqRI+F+lRRHULLEoRwCUrGwJZfnU=;
-        b=LsjOuwkb/C+5IAwOG9Rra6x3LvyUAxy9H435T2n4I0M6VNggctP4Azjs1poMphQvCt
-         XY/CN3Zr31QtlCSg/GFy/qxvTeqwOvbO6hrzEzd/Ymac2u+cN/27GV9VWm7jElBi5ILU
-         +F9XSHPDT3d6nnlS2Yid25W03GAu8LhjaCnvNaRjD2IXwVqNDhRIOGEUAseJHF+K3UkB
-         LMYpNueM7zJZOdH3qqPWr2M5zhfo97JsAg9sJpkWgpJNzoWkN9ZwN42fxtrrXCB1qRYs
-         P4hMhmQijuVFbb+INWj6Hs4x5+/4/l5Qfckjdv0fs0n9sTfWXIH0gSJQOEQ37yeG9cbC
-         gaMw==
-X-Gm-Message-State: ABuFfoidxEVECuFI+h7C8BZrT8DdkAPFupJQiqGOKg0/PXguCimPTr/j
-        yIsRYr72X3W4moUogFhHdHLw86BDCxM=
-X-Google-Smtp-Source: ACcGV62TESeGu+OECpMwoAye/NN2ryKURqWOdyFowSPRHFq/2eL/BdTlqcqH3D5V05OAjg0EVQpfMg==
-X-Received: by 2002:a63:2483:: with SMTP id k125-v6mr3584733pgk.287.1538072293786;
-        Thu, 27 Sep 2018 11:18:13 -0700 (PDT)
+        bh=pB4cjWu7kIoSAPGh3rcF+ODQvk/IUq3VExz60hmyk9c=;
+        b=AlSNkSBv5lcNVJlRpVwss8fD+EXC1QrxUTV1D23vz6b4L6W85Lc0lxDVIkom6FDFiQ
+         787BpM8u46cHnPtwFeFMO8tS8SpPlfIwEgFhPdR76RqWlz4ziTceyAkzzPPBVfAd+z0I
+         GJ3ZLRf0mk2JAD2oFob4ZdGYQRgHV8LJuaNoFd0ctg507JTTrRGcayX8D6nVXXcnkYM4
+         9JZ6HsPfj2Wn+OZXX8GSOrL3ajXSQeyd+JGAVrBWSWin7HAu4DL5cHVFJUmdNmt+JpG0
+         AIUIS6BZ4riiLOndLUag54jMFzckPfH7eFPt3Vb84Fl14qKRnu/dSjgonmRfb4nkB0Z2
+         cQhQ==
+X-Gm-Message-State: ABuFfohp8lFyhIqpBEFZsI59iXOoTjOn5npRdmUwwIt+l9tXovdxVO4m
+        nX9ZpB1XXTL4LoL7WEnmjMrJw/2CJVw=
+X-Google-Smtp-Source: ACcGV612aO4ToB/YjCcbARk3DH6sdoMScF3+ZHfByjDMyiZZ7dFcziLBbwS1aG3/zLbIXllhaGMD1Q==
+X-Received: by 2002:a17:902:1681:: with SMTP id h1-v6mr12185624plh.262.1538072291599;
+        Thu, 27 Sep 2018 11:18:11 -0700 (PDT)
 Received: from vader.thefacebook.com ([2620:10d:c090:200::5:3e64])
-        by smtp.gmail.com with ESMTPSA id p19-v6sm4086614pgh.60.2018.09.27.11.18.11
+        by smtp.gmail.com with ESMTPSA id p19-v6sm4086614pgh.60.2018.09.27.11.18.09
         (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Thu, 27 Sep 2018 11:18:13 -0700 (PDT)
+        Thu, 27 Sep 2018 11:18:11 -0700 (PDT)
 From:   Omar Sandoval <osandov@osandov.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     kernel-team@fb.com, David Sterba <dsterba@suse.com>,
-        linux-fsdevel@vger.kernel.org
-Subject: [PATCH v9 4/6] Btrfs: prevent ioctls from interfering with a swap file
-Date:   Thu, 27 Sep 2018 11:17:36 -0700
-Message-Id: <edc26a1e824f59a501d086fd0ea05588ccafef30.1538072009.git.osandov@fb.com>
+        linux-fsdevel@vger.kernel.org, Jonathan Corbet <corbet@lwn.net>,
+        Al Viro <viro@zeniv.linux.org.uk>
+Subject: [PATCH v9 3/6] vfs: update swap_{,de}activate documentation
+Date:   Thu, 27 Sep 2018 11:17:35 -0700
+Message-Id: <79f71cb15a9008c000ae3eb77118d32cb88948ba.1538072009.git.osandov@fb.com>
 X-Mailer: git-send-email 2.19.0
 In-Reply-To: <cover.1538072009.git.osandov@fb.com>
 References: <cover.1538072009.git.osandov@fb.com>
@@ -77,336 +78,99 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Omar Sandoval <osandov@fb.com>
 
-A later patch will implement swap file support for Btrfs, but before we
-do that, we need to make sure that the various Btrfs ioctls cannot
-change a swap file.
+The documentation for these functions is wrong in several ways:
 
-When a swap file is active, we must make sure that the extents of the
-file are not moved and that they don't become shared. That means that
-the following are not safe:
+- swap_activate() is called with the inode locked
+- swap_activate() takes a swap_info_struct * and a sector_t *
+- swap_activate() can also return a positive number of extents it added
+  itself
+- swap_deactivate() does not return anything
 
-- chattr +c (enable compression)
-- reflink
-- dedupe
-- snapshot
-- defrag
-
-Don't allow those to happen on an active swap file.
-
-Additionally, balance, resize, device remove, and device replace are
-also unsafe if they affect an active swapfile. Add a red-black tree of
-block groups and devices which contain an active swapfile. Relocation
-checks each block group against this tree and skips it or errors out for
-balance or resize, respectively. Device remove and device replace check
-the tree for the device they will operate on.
-
-Note that we don't have to worry about chattr -C (disable nocow), which
-we ignore for non-empty files, because an active swapfile must be
-non-empty and can't be truncated. We also don't have to worry about
-autodefrag because it's only done on COW files. Truncate and fallocate
-are already taken care of by the generic code. Device add doesn't do
-relocation so it's not an issue, either.
-
+Cc: Jonathan Corbet <corbet@lwn.net>
+Cc: Al Viro <viro@zeniv.linux.org.uk>
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 Signed-off-by: Omar Sandoval <osandov@fb.com>
 ---
- fs/btrfs/ctree.h       | 29 +++++++++++++++++++++++
- fs/btrfs/dev-replace.c |  8 +++++++
- fs/btrfs/disk-io.c     |  4 ++++
- fs/btrfs/ioctl.c       | 31 +++++++++++++++++++++---
- fs/btrfs/relocation.c  | 18 ++++++++++----
- fs/btrfs/volumes.c     | 53 ++++++++++++++++++++++++++++++++++++++----
- 6 files changed, 131 insertions(+), 12 deletions(-)
+Hi, Jon, Al, could I get an ack on this patch? Thanks!
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 2cddfe7806a4..08df61b8fc87 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -716,6 +716,28 @@ struct btrfs_fs_devices;
- struct btrfs_balance_control;
- struct btrfs_delayed_root;
+ Documentation/filesystems/Locking | 17 +++++++----------
+ Documentation/filesystems/vfs.txt | 12 ++++++++----
+ 2 files changed, 15 insertions(+), 14 deletions(-)
+
+diff --git a/Documentation/filesystems/Locking b/Documentation/filesystems/Locking
+index efea228ccd8a..b970c8c2ee22 100644
+--- a/Documentation/filesystems/Locking
++++ b/Documentation/filesystems/Locking
+@@ -210,8 +210,9 @@ prototypes:
+ 	int (*launder_page)(struct page *);
+ 	int (*is_partially_uptodate)(struct page *, unsigned long, unsigned long);
+ 	int (*error_remove_page)(struct address_space *, struct page *);
+-	int (*swap_activate)(struct file *);
+-	int (*swap_deactivate)(struct file *);
++	int (*swap_activate)(struct swap_info_struct *, struct file *,
++			     sector_t *);
++	void (*swap_deactivate)(struct file *);
  
-+/*
-+ * Block group or device which contains an active swapfile. Used for preventing
-+ * unsafe operations while a swapfile is active.
-+ *
-+ * These are sorted on (ptr, inode) (note that a block group or device can
-+ * contain more than one swapfile). We compare the pointer values because we
-+ * don't actually care what the object is, we just need a quick check whether
-+ * the object exists in the rbtree.
-+ */
-+struct btrfs_swapfile_pin {
-+	struct rb_node node;
-+	void *ptr;
-+	struct inode *inode;
-+	/*
-+	 * If true, ptr points to a struct btrfs_block_group_cache. Otherwise,
-+	 * ptr points to a struct btrfs_device.
-+	 */
-+	bool is_block_group;
-+};
-+
-+bool btrfs_pinned_by_swapfile(struct btrfs_fs_info *fs_info, void *ptr);
-+
- #define BTRFS_FS_BARRIER			1
- #define BTRFS_FS_CLOSING_START			2
- #define BTRFS_FS_CLOSING_DONE			3
-@@ -1121,6 +1143,10 @@ struct btrfs_fs_info {
- 	u32 sectorsize;
- 	u32 stripesize;
+ locking rules:
+ 	All except set_page_dirty and freepage may block
+@@ -235,8 +236,8 @@ putback_page:		yes
+ launder_page:		yes
+ is_partially_uptodate:	yes
+ error_remove_page:	yes
+-swap_activate:		no
+-swap_deactivate:	no
++swap_activate:					yes
++swap_deactivate:				no
  
-+	/* Block groups and devices containing active swapfiles. */
-+	spinlock_t swapfile_pins_lock;
-+	struct rb_root swapfile_pins;
-+
- #ifdef CONFIG_BTRFS_FS_REF_VERIFY
- 	spinlock_t ref_verify_lock;
- 	struct rb_root block_tree;
-@@ -1286,6 +1312,9 @@ struct btrfs_root {
- 	spinlock_t qgroup_meta_rsv_lock;
- 	u64 qgroup_meta_rsv_pertrans;
- 	u64 qgroup_meta_rsv_prealloc;
-+
-+	/* Number of active swapfiles */
-+	atomic_t nr_swapfiles;
+ 	->write_begin(), ->write_end() and ->readpage() may be called from
+ the request handler (/dev/loop).
+@@ -333,14 +334,10 @@ cleaned, or an error value if not. Note that in order to prevent the page
+ getting mapped back in and redirtied, it needs to be kept locked
+ across the entire operation.
+ 
+-	->swap_activate will be called with a non-zero argument on
+-files backing (non block device backed) swapfiles. A return value
+-of zero indicates success, in which case this file can be used for
+-backing swapspace. The swapspace operations will be proxied to the
+-address space operations.
++	->swap_activate is called from sys_swapon() with the inode locked.
+ 
+ 	->swap_deactivate() will be called in the sys_swapoff()
+-path after ->swap_activate() returned success.
++path after ->swap_activate() returned success. The inode is not locked.
+ 
+ ----------------------- file_lock_operations ------------------------------
+ prototypes:
+diff --git a/Documentation/filesystems/vfs.txt b/Documentation/filesystems/vfs.txt
+index a6c6a8af48a2..6e14db053eaa 100644
+--- a/Documentation/filesystems/vfs.txt
++++ b/Documentation/filesystems/vfs.txt
+@@ -652,8 +652,9 @@ struct address_space_operations {
+ 					unsigned long);
+ 	void (*is_dirty_writeback) (struct page *, bool *, bool *);
+ 	int (*error_remove_page) (struct mapping *mapping, struct page *page);
+-	int (*swap_activate)(struct file *);
+-	int (*swap_deactivate)(struct file *);
++	int (*swap_activate)(struct swap_info_struct *, struct file *,
++			     sector_t *);
++	void (*swap_deactivate)(struct file *);
  };
  
- struct btrfs_file_private {
-diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index dec01970d8c5..781006b6fca3 100644
---- a/fs/btrfs/dev-replace.c
-+++ b/fs/btrfs/dev-replace.c
-@@ -414,6 +414,14 @@ int btrfs_dev_replace_start(struct btrfs_fs_info *fs_info,
- 	if (ret)
- 		return ret;
+   writepage: called by the VM to write a dirty page to backing store.
+@@ -830,8 +831,11 @@ struct address_space_operations {
  
-+	if (btrfs_pinned_by_swapfile(fs_info, src_device)) {
-+		btrfs_warn_in_rcu(fs_info,
-+	  "cannot replace device %s (devid %llu) due to active swapfile",
-+				  btrfs_dev_name(src_device),
-+				  src_device->devid);
-+		return -ETXTBSY;
-+	}
-+
- 	ret = btrfs_init_dev_replace_tgtdev(fs_info, tgtdev_name,
- 					    src_device, &tgt_device);
- 	if (ret)
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 05dc3c17cb62..2428a73067d2 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1188,6 +1188,7 @@ static void __setup_root(struct btrfs_root *root, struct btrfs_fs_info *fs_info,
- 	refcount_set(&root->refs, 1);
- 	atomic_set(&root->will_be_snapshotted, 0);
- 	atomic_set(&root->snapshot_force_cow, 0);
-+	atomic_set(&root->nr_swapfiles, 0);
- 	root->log_transid = 0;
- 	root->log_transid_committed = -1;
- 	root->last_log_commit = 0;
-@@ -2782,6 +2783,9 @@ int open_ctree(struct super_block *sb,
- 	fs_info->sectorsize = 4096;
- 	fs_info->stripesize = 4096;
+   swap_activate: Called when swapon is used on a file to allocate
+ 	space if necessary and pin the block lookup information in
+-	memory. A return value of zero indicates success,
+-	in which case this file can be used to back swapspace.
++	memory. If this returns zero, the swap system will call the address
++	space operations ->readpage() and ->direct_IO(). Alternatively, this
++	may call add_swap_extent() and return the number of extents added, in
++	which case the swap system will use the provided blocks directly
++	instead of going through the filesystem.
  
-+	spin_lock_init(&fs_info->swapfile_pins_lock);
-+	fs_info->swapfile_pins = RB_ROOT;
-+
- 	ret = btrfs_alloc_stripe_hash_table(fs_info);
- 	if (ret) {
- 		err = ret;
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index d60b6caf09e8..72f56c1bbc74 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -290,6 +290,11 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
- 	} else if (fsflags & FS_COMPR_FL) {
- 		const char *comp;
- 
-+		if (IS_SWAPFILE(inode)) {
-+			ret = -ETXTBSY;
-+			goto out_unlock;
-+		}
-+
- 		binode->flags |= BTRFS_INODE_COMPRESS;
- 		binode->flags &= ~BTRFS_INODE_NOCOMPRESS;
- 
-@@ -752,6 +757,12 @@ static int create_snapshot(struct btrfs_root *root, struct inode *dir,
- 	if (!test_bit(BTRFS_ROOT_REF_COWS, &root->state))
- 		return -EINVAL;
- 
-+	if (atomic_read(&root->nr_swapfiles)) {
-+		btrfs_warn(fs_info,
-+			   "cannot snapshot subvolume with active swapfile");
-+		return -ETXTBSY;
-+	}
-+
- 	pending_snapshot = kzalloc(sizeof(*pending_snapshot), GFP_KERNEL);
- 	if (!pending_snapshot)
- 		return -ENOMEM;
-@@ -1503,9 +1514,13 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
- 		}
- 
- 		inode_lock(inode);
--		if (do_compress)
--			BTRFS_I(inode)->defrag_compress = compress_type;
--		ret = cluster_pages_for_defrag(inode, pages, i, cluster);
-+		if (IS_SWAPFILE(inode)) {
-+			ret = -ETXTBSY;
-+		} else {
-+			if (do_compress)
-+				BTRFS_I(inode)->defrag_compress = compress_type;
-+			ret = cluster_pages_for_defrag(inode, pages, i, cluster);
-+		}
- 		if (ret < 0) {
- 			inode_unlock(inode);
- 			goto out_ra;
-@@ -3573,6 +3588,11 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
- 		goto out_unlock;
- 	}
- 
-+	if (IS_SWAPFILE(src) || IS_SWAPFILE(dst)) {
-+		ret = -ETXTBSY;
-+		goto out_unlock;
-+	}
-+
- 	tail_len = olen % BTRFS_MAX_DEDUPE_LEN;
- 	chunk_count = div_u64(olen, BTRFS_MAX_DEDUPE_LEN);
- 	if (chunk_count == 0)
-@@ -4269,6 +4289,11 @@ static noinline int btrfs_clone_files(struct file *file, struct file *file_src,
- 		goto out_unlock;
- 	}
- 
-+	if (IS_SWAPFILE(src) || IS_SWAPFILE(inode)) {
-+		ret = -ETXTBSY;
-+		goto out_unlock;
-+	}
-+
- 	/* determine range to clone */
- 	ret = -EINVAL;
- 	if (off + len > src->i_size || off + len < off)
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 8783a1776540..7468a0f55cd2 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -4226,6 +4226,7 @@ static void describe_relocation(struct btrfs_fs_info *fs_info,
-  */
- int btrfs_relocate_block_group(struct btrfs_fs_info *fs_info, u64 group_start)
- {
-+	struct btrfs_block_group_cache *bg;
- 	struct btrfs_root *extent_root = fs_info->extent_root;
- 	struct reloc_control *rc;
- 	struct inode *inode;
-@@ -4234,14 +4235,23 @@ int btrfs_relocate_block_group(struct btrfs_fs_info *fs_info, u64 group_start)
- 	int rw = 0;
- 	int err = 0;
- 
-+	bg = btrfs_lookup_block_group(fs_info, group_start);
-+	if (!bg)
-+		return -ENOENT;
-+
-+	if (btrfs_pinned_by_swapfile(fs_info, bg)) {
-+		btrfs_put_block_group(bg);
-+		return -ETXTBSY;
-+	}
-+
- 	rc = alloc_reloc_control();
--	if (!rc)
-+	if (!rc) {
-+		btrfs_put_block_group(bg);
- 		return -ENOMEM;
-+	}
- 
- 	rc->extent_root = extent_root;
--
--	rc->block_group = btrfs_lookup_block_group(fs_info, group_start);
--	BUG_ON(!rc->block_group);
-+	rc->block_group = bg;
- 
- 	ret = btrfs_inc_block_group_ro(rc->block_group);
- 	if (ret) {
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index f4405e430da6..aa37ae30bf62 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1882,6 +1882,14 @@ int btrfs_rm_device(struct btrfs_fs_info *fs_info, const char *device_path,
- 	if (ret)
- 		goto out;
- 
-+	if (btrfs_pinned_by_swapfile(fs_info, device)) {
-+		btrfs_warn_in_rcu(fs_info,
-+		  "cannot remove device %s (devid %llu) due to active swapfile",
-+				  rcu_str_deref(device->name), device->devid);
-+		ret = -ETXTBSY;
-+		goto out;
-+	}
-+
- 	if (test_bit(BTRFS_DEV_STATE_REPLACE_TGT, &device->dev_state)) {
- 		ret = BTRFS_ERROR_DEV_TGT_REPLACE;
- 		goto out;
-@@ -3626,10 +3634,15 @@ static int __btrfs_balance(struct btrfs_fs_info *fs_info)
- 
- 		ret = btrfs_relocate_chunk(fs_info, found_key.offset);
- 		mutex_unlock(&fs_info->delete_unused_bgs_mutex);
--		if (ret && ret != -ENOSPC)
--			goto error;
- 		if (ret == -ENOSPC) {
- 			enospc_errors++;
-+		} else if (ret == -ETXTBSY) {
-+			btrfs_info(fs_info,
-+	   "skipping relocation of block group %llu due to active swapfile",
-+				   found_key.offset);
-+			ret = 0;
-+		} else if (ret) {
-+			goto error;
- 		} else {
- 			spin_lock(&fs_info->balance_lock);
- 			bctl->stat.completed++;
-@@ -4426,10 +4439,16 @@ int btrfs_shrink_device(struct btrfs_device *device, u64 new_size)
- 
- 		ret = btrfs_relocate_chunk(fs_info, chunk_offset);
- 		mutex_unlock(&fs_info->delete_unused_bgs_mutex);
--		if (ret && ret != -ENOSPC)
--			goto done;
--		if (ret == -ENOSPC)
-+		if (ret == -ENOSPC) {
- 			failed++;
-+		} else if (ret) {
-+			if (ret == -ETXTBSY) {
-+				btrfs_warn(fs_info,
-+		   "could not shrink block group %llu due to active swapfile",
-+					   chunk_offset);
-+			}
-+			goto done;
-+		}
- 	} while (key.offset-- > 0);
- 
- 	if (failed && !retried) {
-@@ -7530,3 +7549,27 @@ int btrfs_verify_dev_extents(struct btrfs_fs_info *fs_info)
- 	btrfs_free_path(path);
- 	return ret;
- }
-+
-+/*
-+ * Check whether the given block group or device is pinned by any inode being
-+ * used as a swapfile.
-+ */
-+bool btrfs_pinned_by_swapfile(struct btrfs_fs_info *fs_info, void *ptr)
-+{
-+	struct btrfs_swapfile_pin *sp;
-+	struct rb_node *node;
-+
-+	spin_lock(&fs_info->swapfile_pins_lock);
-+	node = fs_info->swapfile_pins.rb_node;
-+	while (node) {
-+		sp = rb_entry(node, struct btrfs_swapfile_pin, node);
-+		if (ptr < sp->ptr)
-+			node = node->rb_left;
-+		else if (ptr > sp->ptr)
-+			node = node->rb_right;
-+		else
-+			break;
-+	}
-+	spin_unlock(&fs_info->swapfile_pins_lock);
-+	return node != NULL;
-+}
+   swap_deactivate: Called during swapoff on files where swap_activate
+ 	was successful.
 -- 
 2.19.0
 

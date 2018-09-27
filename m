@@ -2,242 +2,202 @@ Return-Path: <SRS0=Zypw=MJ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.1 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_PASS,
-	USER_AGENT_MUTT autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E8BE4C43382
-	for <linux-btrfs@archiver.kernel.org>; Thu, 27 Sep 2018 16:24:53 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 427B2C43382
+	for <linux-btrfs@archiver.kernel.org>; Thu, 27 Sep 2018 16:33:09 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 8CF77216FE
-	for <linux-btrfs@archiver.kernel.org>; Thu, 27 Sep 2018 16:24:53 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="OEIqtxU7"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 8CF77216FE
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=infradead.org
+	by mail.kernel.org (Postfix) with ESMTP id E18B42168B
+	for <linux-btrfs@archiver.kernel.org>; Thu, 27 Sep 2018 16:33:08 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org E18B42168B
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727767AbeI0Wns (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 27 Sep 2018 18:43:48 -0400
-Received: from bombadil.infradead.org ([198.137.202.133]:39478 "EHLO
-        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727516AbeI0Wns (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 27 Sep 2018 18:43:48 -0400
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=bombadil.20170209; h=In-Reply-To:Content-Type:MIME-Version
-        :References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
-        Content-Transfer-Encoding:Content-ID:Content-Description:Resent-Date:
-        Resent-From:Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:
-        List-Help:List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
-         bh=Wby51G2NB9G7Kn3hCCXsZ0XQPL0e9eaX7u2kScMWcVQ=; b=OEIqtxU7Ezkw61T5Z/99++hgG
-        vUvJEv4nT1kah2xME5EGse5H2r6vMg8mu5KQuyM63L0ZlCHfUcJnQxxorVhcw2ZLLOvbqAblhCxIJ
-        VWsQMEpXITXltZjITvbiqa5It6YS1zm96keH4qlwSUaUA0E+IH1Rjhf8Z4V38DMSAs/OmTC8F3X58
-        ER9FOiZUopyz41+BSQ71KZfZiGCNpc0vJ+ofRF3ewXo1rgvhJ/vGuPxCwKLQveH/ZiFQl9OjWqoBD
-        Y6GHlUXobL7j1uYmHxDaRtohpdeuWwyldL1KLpKWghq0TFmmfzvqouvPtbEr9nyD6SVHSQNWFFzDQ
-        JJEiGeHYA==;
-Received: from willy by bombadil.infradead.org with local (Exim 4.90_1 #2 (Red Hat Linux))
-        id 1g5Z5n-0006s5-9K; Thu, 27 Sep 2018 16:24:43 +0000
-Date:   Thu, 27 Sep 2018 09:24:43 -0700
-From:   Matthew Wilcox <willy@infradead.org>
-To:     Josef Bacik <josef@toxicpanda.com>
-Cc:     kernel-team@fb.com, linux-kernel@vger.kernel.org,
-        hannes@cmpxchg.org, tj@kernel.org, linux-fsdevel@vger.kernel.org,
-        akpm@linux-foundation.org, riel@redhat.com, linux-mm@kvack.org,
+        id S1728412AbeI0WwL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 27 Sep 2018 18:52:11 -0400
+Received: from mx2.suse.de ([195.135.220.15]:43828 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1727870AbeI0WwL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 27 Sep 2018 18:52:11 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 803A9AF12
+        for <linux-btrfs@vger.kernel.org>; Thu, 27 Sep 2018 16:33:04 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 8D6D2DAE2F; Thu, 27 Sep 2018 18:33:03 +0200 (CEST)
+Date:   Thu, 27 Sep 2018 18:33:02 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Qu Wenruo <wqu@suse.com>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v4 0/7] btrfs: qgroup: Reduce dirty extents for metadata
+Message-ID: <20180927163302.GR3255@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
         linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/9] mm: infrastructure for page fault page caching
-Message-ID: <20180927162442.GC19006@bombadil.infradead.org>
-References: <20180926210856.7895-1-josef@toxicpanda.com>
- <20180926210856.7895-2-josef@toxicpanda.com>
+References: <20180927064235.7432-1-wqu@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20180926210856.7895-2-josef@toxicpanda.com>
-User-Agent: Mutt/1.9.2 (2017-12-15)
+In-Reply-To: <20180927064235.7432-1-wqu@suse.com>
+User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Sep 26, 2018 at 05:08:48PM -0400, Josef Bacik wrote:
-> We want to be able to cache the result of a previous loop of a page
-> fault in the case that we use VM_FAULT_RETRY, so introduce
-> handle_mm_fault_cacheable that will take a struct vm_fault directly, add
-> a ->cached_page field to vm_fault, and add helpers to init/cleanup the
-> struct vm_fault.
+On Thu, Sep 27, 2018 at 02:42:28PM +0800, Qu Wenruo wrote:
+> This patchset can be fetched from github:
+> https://github.com/adam900710/linux/tree/qgroup_balance_skip_trees
+> The base commit is v4.19-rc1 tag.
 > 
-> I've converted x86, other arch's can follow suit if they so wish, it's
-> relatively straightforward.
+> There are a lot of reports of system hang for balance on quota enabled
+> fs.
+> It's most obvious for large fs.
+> 
+> The hang is caused by tons of unmodified extents marked as qgroup dirty.
+> Such unmodified/unrelated sources include:
+> 1) Unmodified subtree
+> 2) Subtree drop for reloc tree
+> (BTW, other sources includes unmodified file extent items)
+> 
+> E.g.
+> OO = Old tree blocks from file tree
+> NN = New tree blocks from reloc tree
+> 
+>         file tree                              reloc tree
+>            OO (a)                                  NN (a)
+>           /  \                                    /  \
+>     (b) OO    OO (c)                        (b) NN    NN (c)
+>        / \   / \                               / \   / \
+>      OO  OO OO  OO                           OO  OO OO  NN
+>     (d) (e) (f) (g)                         (d) (e) (f) (g)
+> 
+> In above case, balance will modify nodeptr in OO(a) to point NN(b) and
+> NN(c), and modify NN(a) to point to OO(B) and OO(c).
+> 
+> Before this patch, quota will mark the whole subtree from its parent
+> down to the leaves as dirty.
+> So btrfs quota need to trace all tree block from (a) to (g).
+> 
+> However tree blocks (d) (e) (f) are shared between both trees, thus
+> there is no need to trace those 3 tree blocks.
+> 
+> This patchset will change how this work by only tracing modified tree
+> blocks in reloc tree, and their counter parts in file tree.
+> 
+> With this patch, we could skip tree blocks OO(d)~OO(f) in above example,
+> thus reduce some some overhead caused by qgroup.
+> 
+> The improvement is mostly related to metadata relocation.
+> 
+> Also, for metadata relocation, we don't really need to trace data
+> extents as they're not modified at all.
+> 
+> 
+> [[Benchmark]]
+> Hardware:
+> 	VM 4G vRAM, 8 vCPUs,
+> 	disk is using 'unsafe' cache mode,
+> 	backing device is SAMSUNG 850 evo SSD.
+> 	Host has 16G ram.
+> 
+> Mkfs parameter:
+> 	--nodesize 4K (To bump up tree size)
+> 
+> Initial subvolume contents:
+> 	4G data copied from /usr and /lib.
+> 	(With enough regular small files)
+> 
+> Snapshots:
+> 	16 snapshots of the original subvolume.
+> 	each snapshot has 3 random files modified.
+> 
+> balance parameter:
+> 	-m
+> 
+> So the content should be pretty similar to a real world root fs layout.
+> 
+>                      | v4.19-rc1    | w/ patchset    | diff (*)
+> ---------------------------------------------------------------
+> relocated extents    | 22874        | 22856          | +0.1%
+> qgroup dirty extents | 225251       | 140431         | -37.7%
+> time (sys)           | 40.161s      | 20.574s        | -48.7%
+> time (real)          | 42.163s      | 25.173s        | -40.3%
+> 
+> *: (val_new - val_old) / val_old * 100%
+> 
+> And the difference is becoming more and more obvious if more snapshots
+> are created.
+> 
+> If we increase the number of snapshots to 64 (4 times the number of
+> references, and 64 snapshots is already not recommended to use with
+> quota)
+> 
+>                      | v4.19-rc1    | w/ patchset    | diff (*)
+> ---------------------------------------------------------------
+> relocated extents    | 22462        | 22467          | +0.0%
+> qgroup dirty extents | 314380       | 140826         | -55.2%
+> time (sys)           | 158.033s     | 74.292s        | -53.0%
+> time (real)          | 197.395s     | 90.529s        | -67.6%
+> 
+> For larger fs the saving should be even more obvious.
+> 
+> Changelog:
+> v2:
+>   Rename "tree reloc tree" to "reloc tree".
+>   Add patch "Don't trace subtree if we're dropping reloc tree" into the
+>   patchset.
+>   Fix wrong btrfs_bin_search() call, which leads to unexpected ENOENT
+>   error for btrfs_qgroup_trace_extent_swap(). Now use dst_path->slots[]
+>   directly.
+>   
+> v3:
+>   Add new patch to avoid unnecessary data extents trace for metadata
+>   relocation.
+>   Better delayed ref time root owner detection to avoid unnecessary tree
+>   block tracing.
+>   Add benchmark result for the patchset.
+> 
+> v4:
+>   Move part of the benchmark result from cover letter to real patches.
+>   - The result is *NEW* result, since host kernel get several updates.
+>     Spectre fixes seem to degrade a little memory performance.
+>   - Per-patch performance change on total balance time, compared to
+>     *previous* patch:
+>     4th -5%
+>     5th -25%
+>     6th -15%
+>     7th 0% 
+>   - Cover letter still uses old test result.
+>   - In patch commit message, the result is still compared to v4.19-rc1
+> 
+>   Add more robust level check for qgroup_trace_new_subtree_blocks().
+> 
+>   Make btrfs_qgroup_trace_subtree_swap() to report wrong parameter
+>   order at runtime. (Since there is only one caller, report at runtime
+>   should be enough to cover development time error).
+> 
+>   Move the comment for btrfs_qgroup_trace_subtree_swap() to qgroup.c.
+>   (Other comment cleanup will be sent as a separate patch)
+> 
+>   Fix one uncaught "tree reloc tree" naming.
+> 
+>   Remove unrelated changes in patch 6.
+>   
+> 
+> Qu Wenruo (7):
+>   btrfs: qgroup: Introduce trace event to analyse the number of dirty
+>     extents accounted
+>   btrfs: qgroup: Introduce function to trace two swaped extents
+>   btrfs: qgroup: Introduce function to find all new tree blocks of reloc
+>     tree
+>   btrfs: qgroup: Use generation aware subtree swap to mark dirty extents
+>   btrfs: qgroup: Don't trace subtree if we're dropping reloc tree
+>   btrfs: delayed-ref: Introduce new parameter for
+>     btrfs_add_delayed_tree_ref() to reduce unnecessary qgroup tracing
+>   btrfs: qgroup: Only trace data extents in leaves if we're relocating
+>     data block group
 
-Here's what I did back in January ... feel free to steal any of it if you
-like it better.
-
-
-diff --git a/mm/memory.c b/mm/memory.c
-index 5eb3d2524bdc..403934297a3d 100644
---- a/mm/memory.c
-+++ b/mm/memory.c
-@@ -3977,36 +3977,28 @@ static int handle_pte_fault(struct vm_fault *vmf)
-  * The mmap_sem may have been released depending on flags and our
-  * return value.  See filemap_fault() and __lock_page_or_retry().
-  */
--static int __handle_mm_fault(struct vm_area_struct *vma, unsigned long address,
--		unsigned int flags)
-+static int __handle_mm_fault(struct vm_fault *vmf)
- {
--	struct vm_fault vmf = {
--		.vma = vma,
--		.address = address & PAGE_MASK,
--		.flags = flags,
--		.pgoff = linear_page_index(vma, address),
--		.gfp_mask = __get_fault_gfp_mask(vma),
--	};
--	unsigned int dirty = flags & FAULT_FLAG_WRITE;
--	struct mm_struct *mm = vma->vm_mm;
-+	unsigned int dirty = vmf->flags & FAULT_FLAG_WRITE;
-+	struct mm_struct *mm = vmf->vma->vm_mm;
- 	pgd_t *pgd;
- 	p4d_t *p4d;
- 	int ret;
- 
--	pgd = pgd_offset(mm, address);
--	p4d = p4d_alloc(mm, pgd, address);
-+	pgd = pgd_offset(mm, vmf->address);
-+	p4d = p4d_alloc(mm, pgd, vmf->address);
- 	if (!p4d)
- 		return VM_FAULT_OOM;
- 
--	vmf.pud = pud_alloc(mm, p4d, address);
--	if (!vmf.pud)
-+	vmf->pud = pud_alloc(mm, p4d, vmf->address);
-+	if (!vmf->pud)
- 		return VM_FAULT_OOM;
--	if (pud_none(*vmf.pud) && transparent_hugepage_enabled(vma)) {
--		ret = create_huge_pud(&vmf);
-+	if (pud_none(*vmf->pud) && transparent_hugepage_enabled(vmf->vma)) {
-+		ret = create_huge_pud(vmf);
- 		if (!(ret & VM_FAULT_FALLBACK))
- 			return ret;
- 	} else {
--		pud_t orig_pud = *vmf.pud;
-+		pud_t orig_pud = *vmf->pud;
- 
- 		barrier();
- 		if (pud_trans_huge(orig_pud) || pud_devmap(orig_pud)) {
-@@ -4014,50 +4006,51 @@ static int __handle_mm_fault(struct vm_area_struct *vma, unsigned long address,
- 			/* NUMA case for anonymous PUDs would go here */
- 
- 			if (dirty && !pud_access_permitted(orig_pud, WRITE)) {
--				ret = wp_huge_pud(&vmf, orig_pud);
-+				ret = wp_huge_pud(vmf, orig_pud);
- 				if (!(ret & VM_FAULT_FALLBACK))
- 					return ret;
- 			} else {
--				huge_pud_set_accessed(&vmf, orig_pud);
-+				huge_pud_set_accessed(vmf, orig_pud);
- 				return 0;
- 			}
- 		}
- 	}
- 
--	vmf.pmd = pmd_alloc(mm, vmf.pud, address);
--	if (!vmf.pmd)
-+	vmf->pmd = pmd_alloc(mm, vmf->pud, vmf->address);
-+	if (!vmf->pmd)
- 		return VM_FAULT_OOM;
--	if (pmd_none(*vmf.pmd) && transparent_hugepage_enabled(vma)) {
--		ret = create_huge_pmd(&vmf);
-+	if (pmd_none(*vmf->pmd) && transparent_hugepage_enabled(vmf->vma)) {
-+		ret = create_huge_pmd(vmf);
- 		if (!(ret & VM_FAULT_FALLBACK))
- 			return ret;
- 	} else {
--		pmd_t orig_pmd = *vmf.pmd;
-+		pmd_t orig_pmd = *vmf->pmd;
- 
- 		barrier();
- 		if (unlikely(is_swap_pmd(orig_pmd))) {
- 			VM_BUG_ON(thp_migration_supported() &&
- 					  !is_pmd_migration_entry(orig_pmd));
- 			if (is_pmd_migration_entry(orig_pmd))
--				pmd_migration_entry_wait(mm, vmf.pmd);
-+				pmd_migration_entry_wait(mm, vmf->pmd);
- 			return 0;
- 		}
- 		if (pmd_trans_huge(orig_pmd) || pmd_devmap(orig_pmd)) {
--			if (pmd_protnone(orig_pmd) && vma_is_accessible(vma))
--				return do_huge_pmd_numa_page(&vmf, orig_pmd);
-+			if (pmd_protnone(orig_pmd) &&
-+						vma_is_accessible(vmf->vma))
-+				return do_huge_pmd_numa_page(vmf, orig_pmd);
- 
- 			if (dirty && !pmd_access_permitted(orig_pmd, WRITE)) {
--				ret = wp_huge_pmd(&vmf, orig_pmd);
-+				ret = wp_huge_pmd(vmf, orig_pmd);
- 				if (!(ret & VM_FAULT_FALLBACK))
- 					return ret;
- 			} else {
--				huge_pmd_set_accessed(&vmf, orig_pmd);
-+				huge_pmd_set_accessed(vmf, orig_pmd);
- 				return 0;
- 			}
- 		}
- 	}
- 
--	return handle_pte_fault(&vmf);
-+	return handle_pte_fault(vmf);
- }
- 
- /*
-@@ -4066,9 +4059,10 @@ static int __handle_mm_fault(struct vm_area_struct *vma, unsigned long address,
-  * The mmap_sem may have been released depending on flags and our
-  * return value.  See filemap_fault() and __lock_page_or_retry().
-  */
--int handle_mm_fault(struct vm_area_struct *vma, unsigned long address,
--		unsigned int flags)
-+int vm_handle_fault(struct vm_fault *vmf)
- {
-+	unsigned int flags = vmf->flags;
-+	struct vm_area_struct *vma = vmf->vma;
- 	int ret;
- 
- 	__set_current_state(TASK_RUNNING);
-@@ -4092,9 +4086,9 @@ int handle_mm_fault(struct vm_area_struct *vma, unsigned long address,
- 		mem_cgroup_oom_enable();
- 
- 	if (unlikely(is_vm_hugetlb_page(vma)))
--		ret = hugetlb_fault(vma->vm_mm, vma, address, flags);
-+		ret = hugetlb_fault(vma->vm_mm, vma, vmf->address, flags);
- 	else
--		ret = __handle_mm_fault(vma, address, flags);
-+		ret = __handle_mm_fault(vmf);
- 
- 	if (flags & FAULT_FLAG_USER) {
- 		mem_cgroup_oom_disable();
-@@ -4110,6 +4104,26 @@ int handle_mm_fault(struct vm_area_struct *vma, unsigned long address,
- 
- 	return ret;
- }
-+
-+/*
-+ * By the time we get here, we already hold the mm semaphore
-+ *
-+ * The mmap_sem may have been released depending on flags and our
-+ * return value.  See filemap_fault() and __lock_page_or_retry().
-+ */
-+int handle_mm_fault(struct vm_area_struct *vma, unsigned long address,
-+		unsigned int flags)
-+{
-+	struct vm_fault vmf = {
-+		.vma = vma,
-+		.address = address & PAGE_MASK,
-+		.flags = flags,
-+		.pgoff = linear_page_index(vma, address),
-+		.gfp_mask = __get_fault_gfp_mask(vma),
-+	};
-+
-+	return vm_handle_fault(&vmf);
-+}
- EXPORT_SYMBOL_GPL(handle_mm_fault);
- 
- #ifndef __PAGETABLE_P4D_FOLDED
+Now added to misc-next, with a few minor adjustments.

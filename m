@@ -6,30 +6,30 @@ X-Spam-Status: No, score=-8.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 73C56C43382
-	for <linux-btrfs@archiver.kernel.org>; Thu, 27 Sep 2018 06:42:55 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0BBF1C43382
+	for <linux-btrfs@archiver.kernel.org>; Thu, 27 Sep 2018 06:42:59 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 394E52156D
-	for <linux-btrfs@archiver.kernel.org>; Thu, 27 Sep 2018 06:42:55 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 394E52156D
+	by mail.kernel.org (Postfix) with ESMTP id ACE292156D
+	for <linux-btrfs@archiver.kernel.org>; Thu, 27 Sep 2018 06:42:58 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org ACE292156D
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727200AbeI0M7e (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 27 Sep 2018 08:59:34 -0400
-Received: from mx2.suse.de ([195.135.220.15]:38050 "EHLO mx1.suse.de"
+        id S1727204AbeI0M7h (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 27 Sep 2018 08:59:37 -0400
+Received: from mx2.suse.de ([195.135.220.15]:38056 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727149AbeI0M7d (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 27 Sep 2018 08:59:33 -0400
+        id S1727149AbeI0M7h (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 27 Sep 2018 08:59:37 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 7C220B124
-        for <linux-btrfs@vger.kernel.org>; Thu, 27 Sep 2018 06:42:52 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id E74E3B124
+        for <linux-btrfs@vger.kernel.org>; Thu, 27 Sep 2018 06:42:54 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v4 6/7] btrfs: delayed-ref: Introduce new parameter for btrfs_add_delayed_tree_ref() to reduce unnecessary qgroup tracing
-Date:   Thu, 27 Sep 2018 14:42:34 +0800
-Message-Id: <20180927064235.7432-7-wqu@suse.com>
+Subject: [PATCH v4 7/7] btrfs: qgroup: Only trace data extents in leaves if we're relocating data block group
+Date:   Thu, 27 Sep 2018 14:42:35 +0800
+Message-Id: <20180927064235.7432-8-wqu@suse.com>
 X-Mailer: git-send-email 2.19.0
 In-Reply-To: <20180927064235.7432-1-wqu@suse.com>
 References: <20180927064235.7432-1-wqu@suse.com>
@@ -40,20 +40,17 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-For btrfs_add_delayed_tree_ref(), its ref_root parameter can be
-different from its real root.
-This is pretty common for reloc tree, in that case @ref_root is passed
-as the original tree owner (source file tree).
+For qgroup_trace_extent_swap(), if we find one leaf needs to be traced,
+btrfs will also iterate all file extents and trace them.
 
-However btrfs_add_delayed_tree_ref() uses @ref_root to determine whether
-we should do heavy qgroup tracing for it, so for balance this could
-cause a lot of unnecessary extent tracing.
+This is OK if we're relocating data block groups, but if we're
+relocating metadata block groups, balance code itself has ensured that
+both subtree of file tree and reloc tree contain the same contents.
 
-This patch will introduce a parameter, @root for qgroup code to
-determine whether we really need to do the heavy-lifting tracing work.
-
-This patch would reduce the qgroup dirty extent number from 'number of
-extents being relocated' to 0 for the transaction before real tree swap.
+That's to say, if we're relocating metadata block groups, all file
+extents in reloc and file tree should match, thus no need to trace them.
+This should reduce the total number of dirty extents processed in metadata
+block group balance.
 
 [[Benchmark]] (with all previous enhancement)
 Hardware:
@@ -80,91 +77,153 @@ So the content should be pretty similar to a real world root fs layout.
 
                      | v4.19-rc1    | w/ patchset    | diff (*)
 ---------------------------------------------------------------
-relocated extents    | 22929        | 22975          | +0.0%
-qgroup dirty extents | 227757       | 141239         | -38.0%
-time (sys)           | 65.253s      | 37.466s        | -42.6%
-time (real)          | 74.032s      | 44.585s        | -39.8%
+relocated extents    | 22929        | 22851          | -0.3%
+qgroup dirty extents | 227757       | 140886         | -38.1%
+time (sys)           | 65.253s      | 37.464s        | -42.6%
+time (real)          | 74.032s      | 44.722s        | -39.6%
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/delayed-ref.c | 3 ++-
- fs/btrfs/delayed-ref.h | 1 +
- fs/btrfs/extent-tree.c | 8 ++++----
- 3 files changed, 7 insertions(+), 5 deletions(-)
+ fs/btrfs/qgroup.c     | 21 +++++++++++++++------
+ fs/btrfs/qgroup.h     |  1 +
+ fs/btrfs/relocation.c | 10 +++++-----
+ 3 files changed, 21 insertions(+), 11 deletions(-)
 
-diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
-index 62ff545ba1f7..a2a5c777d8c2 100644
---- a/fs/btrfs/delayed-ref.c
-+++ b/fs/btrfs/delayed-ref.c
-@@ -710,6 +710,7 @@ static void init_delayed_ref_common(struct btrfs_fs_info *fs_info,
-  * transaction commits.
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index 64251e9ee1d1..678e07c11bc6 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -1725,7 +1725,8 @@ static int adjust_slots_upwards(struct btrfs_path *path, int root_level)
+ static int qgroup_trace_extent_swap(struct btrfs_trans_handle* trans,
+ 				    struct extent_buffer *src_eb,
+ 				    struct btrfs_path *dst_path,
+-				    int dst_level, int root_level)
++				    int dst_level, int root_level,
++				    bool trace_leaf)
+ {
+ 	struct btrfs_key key;
+ 	struct btrfs_path *src_path;
+@@ -1828,7 +1829,7 @@ static int qgroup_trace_extent_swap(struct btrfs_trans_handle* trans,
+ 		goto out;
+ 
+ 	/* Record leaf file extents */
+-	if (dst_level == 0) {
++	if (dst_level == 0 && trace_leaf) {
+ 		ret = btrfs_qgroup_trace_leaf_items(trans, src_path->nodes[0]);
+ 		if (ret < 0)
+ 			goto out;
+@@ -1865,7 +1866,7 @@ static int qgroup_trace_new_subtree_blocks(struct btrfs_trans_handle* trans,
+ 					   struct extent_buffer *src_eb,
+ 					   struct btrfs_path *dst_path,
+ 					   int cur_level, int root_level,
+-					   u64 last_snapshot)
++					   u64 last_snapshot, bool trace_leaf)
+ {
+ 	struct btrfs_fs_info *fs_info = trans->fs_info;
+ 	struct extent_buffer *eb;
+@@ -1937,7 +1938,7 @@ static int qgroup_trace_new_subtree_blocks(struct btrfs_trans_handle* trans,
+ 
+ 	/* Now record this tree block and its counter part for qgroups */
+ 	ret = qgroup_trace_extent_swap(trans, src_eb, dst_path, cur_level,
+-				       root_level);
++				       root_level, trace_leaf);
+ 	if (ret < 0)
+ 		goto cleanup;
+ 
+@@ -1954,7 +1955,7 @@ static int qgroup_trace_new_subtree_blocks(struct btrfs_trans_handle* trans,
+ 			/* Recursive call (at most 7 times) */
+ 			ret = qgroup_trace_new_subtree_blocks(trans, src_eb,
+ 					dst_path, cur_level - 1, root_level,
+-					last_snapshot);
++					last_snapshot, trace_leaf);
+ 			if (ret < 0)
+ 				goto cleanup;
+ 		}
+@@ -1993,6 +1994,7 @@ static int qgroup_trace_new_subtree_blocks(struct btrfs_trans_handle* trans,
+  * @dst_parent, @dst_slot: pointer to dst (tree reloc tree) eb.
   */
- int btrfs_add_delayed_tree_ref(struct btrfs_trans_handle *trans,
-+			       struct btrfs_root *root,
- 			       u64 bytenr, u64 num_bytes, u64 parent,
- 			       u64 ref_root,  int level, int action,
- 			       struct btrfs_delayed_extent_op *extent_op,
-@@ -737,7 +738,7 @@ int btrfs_add_delayed_tree_ref(struct btrfs_trans_handle *trans,
+ int btrfs_qgroup_trace_subtree_swap(struct btrfs_trans_handle *trans,
++				struct btrfs_block_group_cache *bg_cache,
+ 				struct extent_buffer *src_parent, int src_slot,
+ 				struct extent_buffer *dst_parent, int dst_slot,
+ 				u64 last_snapshot)
+@@ -2002,6 +2004,7 @@ int btrfs_qgroup_trace_subtree_swap(struct btrfs_trans_handle *trans,
+ 	struct btrfs_key first_key;
+ 	struct extent_buffer *src_eb = NULL;
+ 	struct extent_buffer *dst_eb = NULL;
++	bool trace_leaf = false;
+ 	u64 child_gen;
+ 	u64 child_bytenr;
+ 	int level;
+@@ -2020,6 +2023,12 @@ int btrfs_qgroup_trace_subtree_swap(struct btrfs_trans_handle *trans,
+ 		return -EUCLEAN;
  	}
  
- 	if (test_bit(BTRFS_FS_QUOTA_ENABLED, &fs_info->flags) &&
--	    is_fstree(ref_root)) {
-+	    is_fstree(root->root_key.objectid)) {
- 		record = kmalloc(sizeof(*record), GFP_NOFS);
- 		if (!record) {
- 			kmem_cache_free(btrfs_delayed_tree_ref_cachep, ref);
-diff --git a/fs/btrfs/delayed-ref.h b/fs/btrfs/delayed-ref.h
-index d9f2a4ebd5db..a51560a3cb66 100644
---- a/fs/btrfs/delayed-ref.h
-+++ b/fs/btrfs/delayed-ref.h
-@@ -235,6 +235,7 @@ static inline void btrfs_put_delayed_ref_head(struct btrfs_delayed_ref_head *hea
- }
++	/*
++	 * Only trace leaf if we're relocating data block groups, this could
++	 * reduce tons of data extents tracing for meta/sys bg relocation.
++	 */
++	if (bg_cache->flags & BTRFS_BLOCK_GROUP_DATA)
++		trace_leaf = true;
+ 	/* Read out real @src_eb, pointed by @src_parent and @src_slot */
+ 	child_bytenr = btrfs_node_blockptr(src_parent, src_slot);
+ 	child_gen = btrfs_node_ptr_generation(src_parent, src_slot);
+@@ -2063,7 +2072,7 @@ int btrfs_qgroup_trace_subtree_swap(struct btrfs_trans_handle *trans,
  
- int btrfs_add_delayed_tree_ref(struct btrfs_trans_handle *trans,
-+			       struct btrfs_root *root,
- 			       u64 bytenr, u64 num_bytes, u64 parent,
- 			       u64 ref_root, int level, int action,
- 			       struct btrfs_delayed_extent_op *extent_op,
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 028d1a80d36f..d8a0746498ac 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -2040,7 +2040,7 @@ int btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
- 			   owner, offset, BTRFS_ADD_DELAYED_REF);
+ 	/* Do the generation aware breadth-first search */
+ 	ret = qgroup_trace_new_subtree_blocks(trans, src_eb, dst_path, level,
+-					      level, last_snapshot);
++					      level, last_snapshot, trace_leaf);
+ 	if (ret < 0)
+ 		goto out;
+ 	ret = 0;
+diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
+index 1aaf4c276900..80ebeb3ab5ba 100644
+--- a/fs/btrfs/qgroup.h
++++ b/fs/btrfs/qgroup.h
+@@ -238,6 +238,7 @@ int btrfs_qgroup_trace_subtree(struct btrfs_trans_handle *trans,
+ 			       u64 root_gen, int root_level);
  
- 	if (owner < BTRFS_FIRST_FREE_OBJECTID) {
--		ret = btrfs_add_delayed_tree_ref(trans, bytenr,
-+		ret = btrfs_add_delayed_tree_ref(trans, root, bytenr,
- 						 num_bytes, parent,
- 						 root_objectid, (int)owner,
- 						 BTRFS_ADD_DELAYED_REF, NULL,
-@@ -6993,7 +6993,7 @@ void btrfs_free_tree_block(struct btrfs_trans_handle *trans,
- 				   root->root_key.objectid,
- 				   btrfs_header_level(buf), 0,
- 				   BTRFS_DROP_DELAYED_REF);
--		ret = btrfs_add_delayed_tree_ref(trans, buf->start,
-+		ret = btrfs_add_delayed_tree_ref(trans, root, buf->start,
- 						 buf->len, parent,
- 						 root->root_key.objectid,
- 						 btrfs_header_level(buf),
-@@ -7072,7 +7072,7 @@ int btrfs_free_extent(struct btrfs_trans_handle *trans,
- 		old_ref_mod = new_ref_mod = 0;
- 		ret = 0;
- 	} else if (owner < BTRFS_FIRST_FREE_OBJECTID) {
--		ret = btrfs_add_delayed_tree_ref(trans, bytenr,
-+		ret = btrfs_add_delayed_tree_ref(trans, root, bytenr,
- 						 num_bytes, parent,
- 						 root_objectid, (int)owner,
- 						 BTRFS_DROP_DELAYED_REF, NULL,
-@@ -8293,7 +8293,7 @@ struct extent_buffer *btrfs_alloc_tree_block(struct btrfs_trans_handle *trans,
- 		btrfs_ref_tree_mod(root, ins.objectid, ins.offset, parent,
- 				   root_objectid, level, 0,
- 				   BTRFS_ADD_DELAYED_EXTENT);
--		ret = btrfs_add_delayed_tree_ref(trans, ins.objectid,
-+		ret = btrfs_add_delayed_tree_ref(trans, root, ins.objectid,
- 						 ins.offset, parent,
- 						 root_objectid, level,
- 						 BTRFS_ADD_DELAYED_EXTENT,
+ int btrfs_qgroup_trace_subtree_swap(struct btrfs_trans_handle *trans,
++				struct btrfs_block_group_cache *bg_cache,
+ 				struct extent_buffer *src_parent, int src_slot,
+ 				struct extent_buffer *dst_parent, int dst_slot,
+ 				u64 last_snapshot);
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 07ab61a740ae..44efde9886fc 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -1735,7 +1735,7 @@ int memcmp_node_keys(struct extent_buffer *eb, int slot,
+  * errors, a negative error number is returned.
+  */
+ static noinline_for_stack
+-int replace_path(struct btrfs_trans_handle *trans,
++int replace_path(struct btrfs_trans_handle *trans, struct reloc_control *rc,
+ 		 struct btrfs_root *dest, struct btrfs_root *src,
+ 		 struct btrfs_path *path, struct btrfs_key *next_key,
+ 		 int lowest_level, int max_level)
+@@ -1879,9 +1879,9 @@ int replace_path(struct btrfs_trans_handle *trans,
+ 		 *    and tree block numbers, if current trans doesn't free
+ 		 *    data reloc tree inode.
+ 		 */
+-		ret = btrfs_qgroup_trace_subtree_swap(trans, parent, slot,
+-				path->nodes[level], path->slots[level],
+-				last_snapshot);
++		ret = btrfs_qgroup_trace_subtree_swap(trans, rc->block_group,
++				parent, slot, path->nodes[level],
++				path->slots[level], last_snapshot);
+ 		if (ret < 0)
+ 			break;
+ 
+@@ -2200,7 +2200,7 @@ static noinline_for_stack int merge_reloc_root(struct reloc_control *rc,
+ 		    btrfs_comp_cpu_keys(&next_key, &key) >= 0) {
+ 			ret = 0;
+ 		} else {
+-			ret = replace_path(trans, root, reloc_root, path,
++			ret = replace_path(trans, rc, root, reloc_root, path,
+ 					   &next_key, level, max_level);
+ 		}
+ 		if (ret < 0) {
 -- 
 2.19.0
 

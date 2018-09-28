@@ -6,40 +6,37 @@ X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
 	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 53483C004D2
-	for <linux-btrfs@archiver.kernel.org>; Fri, 28 Sep 2018 23:04:43 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3A2ACC43143
+	for <linux-btrfs@archiver.kernel.org>; Fri, 28 Sep 2018 23:31:34 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id AB5D5206B2
-	for <linux-btrfs@archiver.kernel.org>; Fri, 28 Sep 2018 23:04:42 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D0EC6206B6
+	for <linux-btrfs@archiver.kernel.org>; Fri, 28 Sep 2018 23:31:33 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=MendixTechnologyBV.onmicrosoft.com header.i=@MendixTechnologyBV.onmicrosoft.com header.b="HcGjiFE6"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org AB5D5206B2
+	dkim=pass (1024-bit key) header.d=MendixTechnologyBV.onmicrosoft.com header.i=@MendixTechnologyBV.onmicrosoft.com header.b="A12qm0++"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org D0EC6206B6
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=mendix.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727504AbeI2Fai (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 29 Sep 2018 01:30:38 -0400
-Received: from mail-eopbgr80043.outbound.protection.outlook.com ([40.107.8.43]:52642
-        "EHLO EUR04-VI1-obe.outbound.protection.outlook.com"
+        id S1727269AbeI2F5f (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 29 Sep 2018 01:57:35 -0400
+Received: from mail-eopbgr20081.outbound.protection.outlook.com ([40.107.2.81]:36256
+        "EHLO EUR02-VE1-obe.outbound.protection.outlook.com"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727022AbeI2Fah (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 29 Sep 2018 01:30:37 -0400
+        id S1726762AbeI2F5f (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 29 Sep 2018 01:57:35 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
  d=MendixTechnologyBV.onmicrosoft.com; s=selector1-mendix-com;
  h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=0bmaQYE0ZhuV41GkFSVYlkDQrXTyvTWHfhe5HlIUbLw=;
- b=HcGjiFE6VKFHN6htkJoKIVV/G2+Jx3JGpFNcWHRumDQSscOVrDQMd8o4BOvnOauV29usdIjFYtX/Ja6Nzy3/eRHu8aftgAaPOUsF6FjNfRUGtbv4m6e0eVQ7SEk1UkIJcldUq0IHKplXxZiVZJ8iIFIOkvu6pgnBeU1rNQ6vt+M=
+ bh=MA+3prGwRlJv5mielsz5zlteBjdpFhhUdLVgC59jLX8=;
+ b=A12qm0++0w4O4vvLfdN9fkz3ex2ELHUoFKhczYGLCmGW9KWfrdnB7ygz1F7UcIgMKVCFnHTtFguPHtVdTkUEzyZvf3acq8ZaGkt28ZSCSJNEZcH7PYid7KjfLldJvAiuzqOs/WAnbx54CAFC/HYxy/NQrQpBWiX8a28zOBpoqMI=
 Received: from [IPv6:2001:980:4a41:fb::12] (2001:980:4a41:fb::12) by
  DB6PR06MB3926.eurprd06.prod.outlook.com (2603:10a6:6:4e::11) with Microsoft
  SMTP Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- 15.20.1164.20; Fri, 28 Sep 2018 23:04:33 +0000
-Subject: Re: python-btrfs v10 preview... detailed usage reporting and a
- tutorial
-To:     Nikolay Borisov <nborisov@suse.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <db9f3d50-a1c7-8a27-c77c-393a1d89b421@mendix.com>
- <f50f64a5-eec5-da34-d07b-0a76d108f044@suse.com>
+ 15.20.1164.20; Fri, 28 Sep 2018 23:30:17 +0000
+Subject: Re: DUP dev_extent might overlap something next to it
 From:   Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+To:     linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <b3461a38-e5f8-f41d-c67c-2efac8129054@mendix.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=hans.van.kranenburg@mendix.com; prefer-encrypt=mutual;
  keydata=
@@ -85,73 +82,74 @@ Autocrypt: addr=hans.van.kranenburg@mendix.com; prefer-encrypt=mutual;
  ek1+1kgBvT3RH0/CpPJgveWV5xDOKuhD8j5l7FME+t2RWP+gyLid6dE0C7J03ir90PlTEkME
  HEzyJMPtOhO05Phy+d51WPTo1VSKxhL4bsWddHLfQoXW8RQ388Q69JG4m+JhNH/XvWe3aQFp
  YP+GZuzOhkMez0lHCaVOOLBSKHkAHh9i0/pH+/3hfEa4NsoHCpyy
-Message-ID: <65be6c24-b02f-c6fd-5932-780e42fb0fd6@mendix.com>
-Date:   Sat, 29 Sep 2018 01:04:30 +0200
+Message-ID: <ef345860-6916-2c37-a7c1-b43ad5549df4@mendix.com>
+Date:   Sat, 29 Sep 2018 01:30:12 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:52.0) Gecko/20100101
  Thunderbird/52.9.1
 MIME-Version: 1.0
-In-Reply-To: <f50f64a5-eec5-da34-d07b-0a76d108f044@suse.com>
+In-Reply-To: <b3461a38-e5f8-f41d-c67c-2efac8129054@mendix.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en_US
 Content-Transfer-Encoding: 8bit
 X-Originating-IP: [2001:980:4a41:fb::12]
-X-ClientProxiedBy: VI1PR02CA0078.eurprd02.prod.outlook.com
- (2603:10a6:802:14::49) To DB6PR06MB3926.eurprd06.prod.outlook.com
+X-ClientProxiedBy: HE1PR0802CA0017.eurprd08.prod.outlook.com
+ (2603:10a6:3:bd::27) To DB6PR06MB3926.eurprd06.prod.outlook.com
  (2603:10a6:6:4e::11)
 X-MS-PublicTrafficType: Email
-X-MS-Office365-Filtering-Correlation-Id: 07785960-6027-433d-ba38-08d62596c147
+X-MS-Office365-Filtering-Correlation-Id: bc97bdd0-29a7-4f92-b407-08d6259a5985
 X-Microsoft-Antispam: BCL:0;PCL:0;RULEID:(7020095)(4652040)(8989299)(4534165)(4627221)(201703031133081)(201702281549075)(8990200)(5600074)(711020)(2017052603328)(7153060)(7193020);SRVR:DB6PR06MB3926;
-X-Microsoft-Exchange-Diagnostics: 1;DB6PR06MB3926;3:ixtnuY4RT0xtPYfkikJo0x4pUqGNY6r2Gxm3KTc2KA+qVNCgNT3n8NOJ76ZMaAx0NsG253pba71TEJDyg15DyG7N27dzCdLTOPpWOF5dG3fE+zmDqoVHQza2fq16IQJbMNOZmzfHYQ2iK2EZYHfA3GWC/APlMEBEcmtTvJIUp2EYKwaa2oszsxpq+c37EijviodkWyZNC/Rj1mIk3KMBXEoxksJMmAf4DfiqDYoPA0sONakzEdh2xR92qXvyil8M;25:ZMqbUSy20pvTyPSM9N4wJpTKDcFqIleai2l2oeq31/3A8r62icetZkaCIE188MeHeVT5VFV/vIpcNNep/jo3ppvgtPGyjRhWddJrxzrdbRpCNcBHWIvsFDK6GWaUljsKtlyVk3WchxG+BQZzU2+T9xKCHGLeHX4sp4GMnLipsW/MJzlxKn1Z/264qhiYOVwAy3ZIX5XN9izbs1OQoEurm8MSCNikanJRZ7Bh56tiTqomTjJspfHW8xEjzFGg3XNHXR/uR7zq4NFJu+Z4ixx3g8/zim0JZ8PFpnkf/d2YHNpnuEw3gmmFiJJS3MJ2u4tf/3Vbb+vWS/bY5edAahJBBA==;31:Mm8zSHTmXYaIppgufITTsC9aV/XPFk1Lb3E0YM1SeZ9YyYcS2ULVgj5iKg+Gwhw+vBrp/XPSi7vnaHcd1r0/ji9/RMnfuFLZcZeLu4QAF246S6YzkXi3mmu2+KQUUW8p+uqa309UIvaR3GNNv6Efm3lBfX8Yb/rwVn+5Q+tPmzuki8ax5BzxPCUTQhkZHMD4yRymUHFYKEwAbjvaCbgnVn6KNPRWluAoNogOLq5MAT0=
+X-Microsoft-Exchange-Diagnostics: 1;DB6PR06MB3926;3:uQ5pmc/a7l3RR/VntqE5iCILJ1cAcO2on/AW42PYrwvZymcjgDcWgcfmODjrZkxUKdyfARL9YY1H2FyVS3bCjK6o/tbYYRbtkFZBPoq/FxLRvEF3eg0UzXi64lOVF4raK5DfCtePPsLqvcRaZGpPL6qaQiG2Oww/3D5zYZxFvfFsnMVNcdVGfrrR2Qtv2LV3sPCSO8xgCRPBwdJcsyTv2rq4bRbFBSmhTbgN/3ZQPSCOC0AR8rhFBYoLAqkJyiU4;25:cEsFrNugywKHq+rhiaddfp+EPQUV9HF1nVvCbqvPG8khUD+VaI6DC5Oz/4xyX7udrhmeJQkHvV4sVE3aeQFvc5eJ5jq99mdBuKggKjwkz0aIMoRz4Ijo9OBe5IacqzcQgcYhuf1uGECSH2O3ZBlsYFiL5p8Q0Yhh9ZxZPyw8qWslOIfjVulElokn3xEyT58eF3MSphrtpRA03gVLiEqPW2iOqbLsmiCoyNgLpeHISUyDGAzxijrUUKN/67ZRwCD5qFFA8Pw2eXekT9Xj2cCdxV50yYyqpivsqecaKZiV41NJpC591LTSBU8SVZp0eH3xFZkwVC3KeyWVLdMxDP418w==;31:hTC7r6bf+c6NYOJnZdxmPiM0jzTcrQWCMZkkrJBktVeLAXk0K8HviYelUFKJgHCN4Oe7eMmAorCJA3mnXIbef73Xqr+Cwr5/HoUvAABYlwgufyxz7+aXuEzvBzm6QyzEgOVO7xy6F8akLzt+pm9tz7W/wrUHWf0AkQ6jt8HBjUNPRnpMBNemKdgRA1mVKrea1spmeHm0eBNeNnhsGW225eHNPEHKgL+MvVFv2swFNFw=
 X-MS-TrafficTypeDiagnostic: DB6PR06MB3926:
-X-Microsoft-Exchange-Diagnostics: 1;DB6PR06MB3926;20:JpXekD14CYtiHQ+n1S06vL6/I50izOgj4HzmLoRDjSUj2PtDG+WhkzrxjnXM8uyJsiNFeHx3eGS4I4Ux7jMyhZgoP4ZBfIcWkHcb4CLMKXAeOOQgpjDDELPGoK5ht4BHQ1I3Kkr77AszUF87+zRBxtR4630AUORYV8tAOrsOAaaaiKd1QRmZh0ixaoLOxek2WTCUk2gNIAr4G7Ut2BqHtZh20rUQOkpRTXoJUX+rMwQ0Dv3HWAHneGZpDOQSfrqD0n4m6WB5DCrZqh9JtuKpTsnVnCZnx3f6aLEMt+Bj8dWcT4yLGgr0KFkA+UxA1Gc3P1abVwUZqjxTXJJbKZaXnou6fuBTYREws+BVx77Zd8B7ani1UnZQZa1Z201o8nV7jAnqM6QIqsJkWBKsjiMoJgyV+F6Gq7WNoSizhs4QuGIDVRt8Jxu708ygozzk9E+1IXL9Qdnj/AwiIcniRI++AxpR3HTzqYzHmp4UwotORTP57gzUV4G0OLa2xIwRm20oZ4SVpuoF8vzt7hBPHJd3nAlMroMuBiCnQVtu+dreHWPxhfUKROfeoopnw8uGb8X2ky8ZTSUVVBaTnPLoKjbH4S0tAqKjJ6n1Xza3bzdBK9c=;4:brf3HxfijsKjJVo0GHVNJqgsXe55fFjWcTXl1qfFttxHJLRtoIZTGgMgwvfPmGy4K9H3LZ2TykewM9pebKvHmHQkC92tbBRZGYYxtZFmh71qzKNmumIBjPczV2we9LTYOUlfbqEeOMPCd03R5FZXXnLDuIQq6CB2dkJZCyx1K6nYJ4Vace08RZRX7aH1H0oSm7VdENDoQjYcP9XiEgbJ7/sUNfrgUv/KhvxtTXX/0Y7ZsWB+lxCmiohUyVPqgu4x8fXIbqrSWGkZTbtQWGbqj/KYLwaGTKVmF0G3D7OACy28T0URQ+9SBbOTOiPN25Ms
-X-Microsoft-Antispam-PRVS: <DB6PR06MB3926E36EC33CC0EA22F64C0CD4EC0@DB6PR06MB3926.eurprd06.prod.outlook.com>
-X-Exchange-Antispam-Report-Test: UriScan:(211171220733660);
+X-Microsoft-Exchange-Diagnostics: 1;DB6PR06MB3926;20:YN4kH99hIE08NxG1KSFykj9EKkTxmMoIoW/uWZGWTtr7OagabAdNNaYVr1GM2GPF2O6raryf/coqUr3EEsJVlbisKrX7BlnPqN0Erk5alklklosaW92R5KO6v54XlQvVlyrVNqANuw3iNiXvywbYG3Uf0gJEvfFkTNRiRAxPxkVtEb9aEWDGRQXw3S4uVlTVuL3E8sEqtownBdEyIrREHqhu2kXmcQuUxHbMClmi2qNUXL1MXl9Pk3TX0KpDCdMkJjLdoH4d0b04Pa3mNPcWT7YEiKXPCuVgqMmNUsOTBkTQZk00DRuOPAJwJHyO9H7BmdJRgzJYHDUiM2AfH53ncYLIUaHn9yadDlONFMjJwFSmXtrcKfS+36SP+iA36qB2v3kdS4Zn4UlRipf3vGB9Hvr6hNn1pNaB2MmTI7vFG0UVb4ZOl8Ou6rqAF4xubo+FakhdLY84MU/pXmzmpM4aBkMMb5hu+H6Bm3ZEac/IgSCGLfsYP88wCtvGhEVZUv5PAqbPkZREfMRCOqqF5QDSVDMckhcbmR28ocHM30/42eulKI0d5pt6qyEcDr9l2LxpYVWaSXiagRz69L0sYSH2jx3lsPea71pchSh0PN+5QEk=;4:lBPTmAJyVLg+gw11Ssb8xZKTuUigDwirxr9mbaMnXAYrk73VWOHjPHLURmA1AxCeeaD8UVnqgga9AwfdJo/GzKI2z533M3scc3DM/w0wMDP10yB8OAcyHmVSQcIrB9V35ib6cMPoLh2h/Z4W9uQyopySgXYbgkGQSB4msZ1PTxKgxcit4KUMrkNbWbt3DL80FyzEkcyW5476+9gZ2wWpC8ilFNB0EXGhIuO/GLXe7tVGseqWNtlMcQs9Zlb1Exj1PiDqxTkh5ZjNitIBt1R2xQ==
+X-Microsoft-Antispam-PRVS: <DB6PR06MB3926B645A14A83CFE5614CB3D4EC0@DB6PR06MB3926.eurprd06.prod.outlook.com>
+X-Exchange-Antispam-Report-Test: UriScan:;
 X-MS-Exchange-SenderADCheck: 1
-X-Exchange-Antispam-Report-CFA-Test: BCL:0;PCL:0;RULEID:(8211001083)(6040522)(2401047)(5005006)(8121501046)(3002001)(3231355)(944501410)(52105095)(10201501046)(93006095)(93001095)(149066)(150057)(6041310)(20161123560045)(20161123562045)(20161123564045)(201703131423095)(201702281528075)(20161123555045)(201703061421075)(201703061406153)(20161123558120)(201708071742011)(7699051)(76991041);SRVR:DB6PR06MB3926;BCL:0;PCL:0;RULEID:;SRVR:DB6PR06MB3926;
+X-Exchange-Antispam-Report-CFA-Test: BCL:0;PCL:0;RULEID:(8211001083)(6040522)(2401047)(8121501046)(5005006)(3002001)(10201501046)(3231355)(944501410)(52105095)(93006095)(93001095)(149066)(150057)(6041310)(20161123562045)(20161123560045)(20161123558120)(20161123564045)(201703131423095)(201702281528075)(20161123555045)(201703061421075)(201703061406153)(201708071742011)(7699051)(76991041);SRVR:DB6PR06MB3926;BCL:0;PCL:0;RULEID:;SRVR:DB6PR06MB3926;
 X-Forefront-PRVS: 0809C12563
-X-Forefront-Antispam-Report: SFV:NSPM;SFS:(10009020)(396003)(39850400004)(136003)(376002)(366004)(346002)(199004)(189003)(65826007)(34290500001)(36756003)(105586002)(52396003)(86362001)(52116002)(31686004)(46003)(52146003)(2616005)(2486003)(1706002)(11346002)(76176011)(31696002)(106356001)(476003)(486006)(316002)(58126008)(23676004)(6116002)(110136005)(5660300001)(446003)(64126003)(68736007)(50466002)(2870700001)(53546011)(386003)(2906002)(72206003)(65956001)(305945005)(97736004)(53936002)(478600001)(7736002)(229853002)(186003)(16526019)(8936002)(8676002)(81166006)(6346003)(81156014)(25786009)(47776003)(6486002)(65806001)(6246003);DIR:OUT;SFP:1101;SCL:1;SRVR:DB6PR06MB3926;H:[IPv6:2001:980:4a41:fb::12];FPR:;SPF:None;LANG:en;PTR:InfoNoRecords;A:1;MX:1;
+X-Forefront-Antispam-Report: SFV:NSPM;SFS:(10009020)(346002)(366004)(136003)(376002)(39850400004)(396003)(199004)(189003)(53936002)(305945005)(97736004)(7736002)(65956001)(478600001)(386003)(2906002)(53546011)(50466002)(68736007)(2870700001)(72206003)(6346003)(25786009)(81156014)(8936002)(8676002)(81166006)(6246003)(47776003)(65806001)(6486002)(16526019)(186003)(229853002)(46003)(31686004)(36756003)(34290500001)(65826007)(86362001)(52116002)(105586002)(52396003)(23676004)(6116002)(58126008)(316002)(5660300001)(6666003)(64126003)(6916009)(446003)(11346002)(1706002)(52146003)(2616005)(2486003)(476003)(486006)(76176011)(31696002)(106356001);DIR:OUT;SFP:1101;SCL:1;SRVR:DB6PR06MB3926;H:[IPv6:2001:980:4a41:fb::12];FPR:;SPF:None;LANG:en;PTR:InfoNoRecords;A:1;MX:1;
 Received-SPF: None (protection.outlook.com: mendix.com does not designate
  permitted sender hosts)
 Authentication-Results: spf=none (sender IP is )
  smtp.mailfrom=Hans.van.Kranenburg@mendix.com; 
-X-Microsoft-Exchange-Diagnostics: =?utf-8?B?MTtEQjZQUjA2TUIzOTI2OzIzOm8rN3JSbEFLSHdvVkVvVmtMLy9zcXNxRWUw?=
- =?utf-8?B?M21nWHBmSzZqMFlOZHZONE9tbnpTUUFDVUpDYU9VTG45cndmdS9uR1V3TVkw?=
- =?utf-8?B?dURSL0hmMjBWQVNObG52S011NHRRK1Fhb2lDaDdSa0pXQkpmN01OdkMwSEVp?=
- =?utf-8?B?cFRKVmV2RDE3ZDA2Q2tDdXFPeWxoOWxYVC95YkRPSHlhRjdTSVlwNVNkdEM0?=
- =?utf-8?B?enpIdmRybUZvbkNHZnRxRkRzNDlieTlTSVdQR0VwQnhQNkdIVDlzcnE1Q2Q1?=
- =?utf-8?B?b2hRTldJZ01tQmxBQk5Ka1V1My81VWpMTXFNN2lXVU5vRzRmek5HSXgydjVM?=
- =?utf-8?B?RTZoN0xIMXNlZWN0NGU3eTJraHlmMjBSMUF4bHBXaFBoVTRqRVRrVHZ4bGRS?=
- =?utf-8?B?dC9hN0xwdWhPcEV0Zkw3NjkyTGRCU0xZNmxYOU45QnZsbmR0YWMwRFQ1cGlW?=
- =?utf-8?B?Vm1rNnNoRXRCQjNLMVVxaWE5ME5XVCtZRkRxc3hhbWFtNlZCM1JHV0dPNHl0?=
- =?utf-8?B?dmc2bDIrRFRhM0NZYXBxTEc2VXRuR2lEQ0ZWVjZpN1NYSzJOUWpZUHltMzI2?=
- =?utf-8?B?bGQxVXVEUGZ2Ry80NWRRZGVzdW56TGFYSWVUQXZlVlNvNm1EbjZQRDZrREdH?=
- =?utf-8?B?cFVhbGh2Q2NUVS9zUWxOeG5NWGdYQlNlQk5WcE0xdFFiNFdabTRtRWpheEM2?=
- =?utf-8?B?TkNqN0FTelQ2TEhkS3NEQldqSHhHSG1Xckt6aWtyN1FaRThNclRSUTZ5TzBZ?=
- =?utf-8?B?VFNEc0Uvd0Q0eXpyVGt0QWRhT3k4NG1wUndzYzFXVGpJbGNCL2w5S1Z2c3Uv?=
- =?utf-8?B?VXlVUlUyR1VPNHM4TDRWVHJ0SUFndHBIa29KVXpSbm4yUGZsV1dTZTJhV0ph?=
- =?utf-8?B?NU9qZjA0d09VRlRtOGNPZFcyS3ByczZyVUZtWWRuM3N2WWtNT2tSc0NSSkxv?=
- =?utf-8?B?QnM4ZlFUbWxYbHlGZHcxcnBsQm5VaGV6eldzQ28yOHBqOHp4OTk3SUUzZzM3?=
- =?utf-8?B?V1BLRDFab3ZCOUtkcm1MQkJGUElzLzJVSkZHc0JPRkRzRnhHR0VMdGY4S3Bt?=
- =?utf-8?B?TkRhak9DcEVraWpkbVR1QmNhUU1SZ2ZXUlI4K2NZYUpJUnRRTWJ3d3pkVXVU?=
- =?utf-8?B?SUp5cjNMMUNiUi9OMzV3a0xVZFJFL01wbUc0UitCSStzbVEya0xnQzdEKzlz?=
- =?utf-8?B?TkhxVlowOWdYMlROVWs0K25hM01TMklDTnVza1VEeUJYekhxSUJlTUcrWVZj?=
- =?utf-8?B?ajBHYjBVcDFIYjRlbVZ6d3lxNHlUamZkblNjTVZLanZGbWFjOCtzRzErejFD?=
- =?utf-8?B?N0NEamYvTHV3ckYvNlVQYjVvUWdGaWg1WnN2U1J5SzRPMlk5UUp0T1ZWRi9B?=
- =?utf-8?B?dzAwYXB2Z0FHdU1JNEp2cEY4NktUaVA0WnJkUkpvdlNUUGNySkp4SU5MTG0y?=
- =?utf-8?B?TzBQdFlMdTQ2SjhtUE83Y05sTjQxaC9HTUc3UU12cGRGcUd6Q0VPYjh0cWZK?=
- =?utf-8?B?eG5CcW5ERGpXNDRZQ2NhNjdpOTJvQkt4My9JZWlFWlVkcnNDL0EvbWNCVFBS?=
- =?utf-8?B?YzIzZUl0bVhjdTVtdHZVaURnN0RvNjNrQ2VNLzNVYkZQZ21aT0s3TFBSaUNw?=
- =?utf-8?B?SDZoSzhaY0oxRkZVcmtvc014UHZyNGExa3FVRjJ1RUhjK1BDUU1wb2UyU3J2?=
- =?utf-8?B?QnEzTUtWTm8ybWV1SW9ybFpkT1R2c2xpTHFPWVM5c0NobHZYd3VVVm50cDFa?=
- =?utf-8?B?UUt2djRmZitEUUVMMkR0YTVWbkVRVEhTVk9UQnNGSTg5ODRrQnhtTEtNT1BB?=
- =?utf-8?B?Mm9CNm0xSEpQYU9keFMvc0Y5bzdwejFaNUJZYU9MazBLRnc9PQ==?=
-X-Microsoft-Antispam-Message-Info: RcDNLsXzdFAqd///9Z+bRc0pzbBpaxBsl0zWDcuTfPdwbatBpsKNJ9nrbGuX0NGtoK/LYddGUuJ8QxjDA1YusFkCTrlSl5SCqgeIjbErJoQwHzSwu4MPs2w/OYMnLWM7GvQs/Oq3kJ4GtnvGc+iOtJTeOrbF37zN48O3yXqLH1OVkR23pzxPxMKsVsIpUQPRqJggEKs8aknETDLKeSGpBaUYdaySByH3MzX4JFEm+gYbdROFF16Z1CWel056uuLDxo+55IGB2DdJazxdezwdr5PpmkskrePyfiGQuiEn7WLNoUvfxu/Eeg6mTYlmbuZhL9lEa5n2fb1nf6ff+nnivnlaPrEQuQ/f4fuwgknkcPA=
-X-Microsoft-Exchange-Diagnostics: 1;DB6PR06MB3926;6:eJ/vLSNlQoa9Z0yU6yfik9/8QabEmp3TjmQ8VUy2WOOLeGWdZxcjBRhNzgkbcYC//NBcxfCUoTz/hAqggMb44lDEj8T2MNNGM9YKH8Tdyyebbi3zmMBHmqG/ArKpFNhloQBn53YRPzJLfM99il0owm6aaaykDboDjkxC1ALmhvf+uI+SmWVekAX0YbajUBvPlyMo9xZB3gmMFtOpao6xdZO06Ie1THWcHYHv5/DB4TXEoxjMXDfQNUNtvSIE6fafAvxScucgng2/ImC1SgBFQ0gmU0xixjU0mseDA1IIeff/0VgkG91Rq6emNnC/Xk/XkYGiRxf9SwcFh9fSrdbTFLugToQo8iBTj1HJ9t5ND1WxvHrBnuigXYOWsJ1yep60Qh/+UEL5A6hwcTmg9JILA7HI9wF+dqGLZjXxhDT6Ik+CAzgBuW10cmwi/j6+ywplYajxh7EhJraWln0fFCQaMA==;5:BbcS7n+OPdLalIjHNJOIefIGtFRIFEQg13oh2CdN5G0INqQjXHP6Wwyn+ZP6CHKcCIDvjWc6rXbcbUUIKSFEzR6H4uwNA23Swx+WW3clEy04eMV9E7CEotmJn3sR7WjfDtg9Fa/I1SOqwOF6+KmAdlcwJ25iX2Ua9s5kCST45zM=;7:EA/0FZLiJDAyKunCYK4lEHW+m7z0+Rg/V+Xzprtg/r+6zadxiBZ4/xetvOoL4We3neZWqDT6HcDgUIQL/g3n0/T7mozCQeciOA0BHIlyS/6rP9fJjhG8bGmjSFSN+VDU4be06PZJVMvuSHqN6RCdmKM8pfKEGpSEDgbvXLWhQxdPVgckyz7d3ze/GEOdtHqmZJetOJ1hzkTOEy7sOchsQN0bGpNKe5ZtCBIyzQmrN/HH3UMbwSksLDhR1KdW+luJ
+X-Microsoft-Exchange-Diagnostics: =?utf-8?B?MTtEQjZQUjA2TUIzOTI2OzIzOklUSkcyZlh2OE00NnVOZVlrVzZRTXNnY1ZD?=
+ =?utf-8?B?dE9JVGhDcHFSVk9UMTJtdldsWlRSejhjZ0dwTm9UaFBVbkJXK3NPOVlqMFJu?=
+ =?utf-8?B?RWgxSXlaN1ZoOW12cC9nUGxOaytvcy84Wi9jejY0OVFiY0YyVnl5ZzloNXRr?=
+ =?utf-8?B?QzVkYzIwWDh3dzVBQ0gvcTdnaFJocW1VbTVMclpLenY4TlNXdUR0dmV4TWdH?=
+ =?utf-8?B?RDVVaWt4c2lUVXlLOUd6Q1dwcndhOWQ1MkRiQmFSTW82Z3phYy9iU3ZxQ2Mv?=
+ =?utf-8?B?SWJRVzM2VjE3TldZNjFGQU9kTm1pN0hwQkxPZHNZRVdzNEszZjNOMlJKMng4?=
+ =?utf-8?B?eDYzazVicTlJSERrNWZxd29MSEptUUNmNjN4WjB6NE00RGR1eEZPQUt3TG9T?=
+ =?utf-8?B?VkFEZFM0RlUyZk53TnJtL1EyQTlvVk8wSFMxODBEcWlrNmZmYlRDTWkvekls?=
+ =?utf-8?B?NTg2dDBwSkZnM1d0Y1hBR3EwbmsrQVhmL1NqTEYyQ01FUXZ5VUxXT083QWVY?=
+ =?utf-8?B?aXNmR3lPWTBtOThEZmc3WnVsNzBiNEk1ekNIZFRPcnFuRnp2b2Yxb2cxVXha?=
+ =?utf-8?B?VW83bWZLamdkbkJQbTB6Yy82Y2ZrLzBZVjdsQ21aSVE5d2dUZGZ1b0NNWnNK?=
+ =?utf-8?B?cXFlWGxzSzA4S2pRUEFla3RacEpzZlJaWUZnckRBeFFoSDVrLzBOWFdGSkJn?=
+ =?utf-8?B?UFZvTnhoSkh6bUZ5KzhoNCs2THJ2QXZHelBlOG00Z0FVakFSQTZ5K0ZwU0U3?=
+ =?utf-8?B?b0ZOWVhOR2svSFpBeWgzWm9EVUZYVHV3UzRtbzFlNWVqNUhlUzdhZHdSUWQy?=
+ =?utf-8?B?L3BldXJFb0FCTi9OQ0RaR1RXYmlUenFMRlA1WEtwY3RwdjdPK2c1dUJwQnh2?=
+ =?utf-8?B?NndiYUl2WXlhZDVlcnZpWmMwaForRmlZd3lkem9qOHFQb3pOWWhjUkZvclQ5?=
+ =?utf-8?B?YzFSakFkcVlFRFJYNWV1L09jRTlPblVUeUpKcnQ4dU1ENUJsTFFhYVUzQ2c2?=
+ =?utf-8?B?YzhUQ1F2RERFL2FXekZQL2FtTktwNkVhVllQSXJudEZueUwrQXh1UjVSL29s?=
+ =?utf-8?B?K0wxWTg1SFY4RXF0MkU1K09QVEZYNE9CWGthV05CWFZ5WVhibWtCNWJYOEVV?=
+ =?utf-8?B?eUlUb3NKVFpwdEZiRmIxQnF4VklENDhkdkpXc2VrV3lWK20xT2FuaFJUZmJx?=
+ =?utf-8?B?SmNmZ1ZMRXhWWkZRMno1dEFid3pKcVMzZ3dDU3Q4d0c1RWlkVzlEa29wOTR5?=
+ =?utf-8?B?a3VxaVY3QmRPSUN2bDBoTkVXc0VsQ3pnZkJESEZ6R0JVWmRyMFdmY1ZkZDBj?=
+ =?utf-8?B?WEZxaG01ZW5CVTdjbEd0YmNZQlI3ZmN4SC9ROVl0RnZWWVY2Ry92Q1ArWEV5?=
+ =?utf-8?B?V2NaT1JHZ25UNG9jZklNK0JXenRvK3JDYTBISDgxNWpsOFRVdllRanRwUlhs?=
+ =?utf-8?B?OUw1TDRMb2NuZWpmcW02RStjWkxoQnQrWld3YkxMeVFMOG1SNkVWK1RjazBr?=
+ =?utf-8?B?d0NIRHFJUHl6dkRKOUFBVkQwUmU5Q05DaGpuaXJ5eC9MUDVVRkVzRVJ6Zngw?=
+ =?utf-8?B?dVdRd1dZc05IRnR4Sm9kRmNRZVluVnY1VzcxbHBJZnhyMGtxM2pKckt4RmZK?=
+ =?utf-8?B?MTI4Nm56QUhLd25Pcnh0dXZvOEdZMytXeldBVUp5cmFNV2hZNEtXNTdScGFZ?=
+ =?utf-8?B?OVdiQnU0N2RFbnZuZXlGbEZWVGdURHpVeHNKZ3laclp2VVZXMllYV1lqR2Fk?=
+ =?utf-8?B?NFFQV2lrazFjN3RCT3RCZ2NEOVpoTVAzRUs4M2pENTVTVnZIbGVTQ1AzNncz?=
+ =?utf-8?B?b0loNjc4RmhMMnlhRGlqR3ZNaTdNOExBcStuYW43SzdHQy9mUlNjNTlHN2lS?=
+ =?utf-8?Q?1O+FRLUJjps=3D?=
+X-Microsoft-Antispam-Message-Info: LQ3GMIoHe+Rp0eNWpuClTqv9FCZ1js35g4IOttz6SKgiyU2EPn2tOGgzh5DrWbdcAxo1mMLBMvd+7wDqKmHXfF03JD06MzUmtgyZXD63otTyC54Be6JozV3LMTThcGHOKtMov8xoAB2O+Zl/1S0ti4RURm5QEvvFmPJJKjg+T3lQD5if96e+cWaHixyNjhyTLqvKkiWAtDsJ7j893KhzD4HBEYEADvFqrJlKPtWmJSQ3CXaywaWyPV6UdT9feh2Vo3zYUCL1ykupVj+AZUsCDpe59fb3ZbpsSSmywnvnOPf2TltXJgsOYSa5PqJaCJSNZUFbtiiUXhy1glb011tBNT7mX+5KJDAUpI3oY1hq82k=
+X-Microsoft-Exchange-Diagnostics: 1;DB6PR06MB3926;6:uxrsl0Kg7W5lNVmzEWIjhvlXWEHAo5w5j/ouoJlyHmP5p8GtIORTDSJsHWCCkBN/5xRgHWtbWnlO3k7HIlmp/rgKhJG5zPmEw9IXZMD1Pmua3ofZw/N8zSjy2hVxZBe/TNyqi3+iTtvunLAGvx1ABnFD2QDGOL628/Q4FTuD9P2mujlCu/AWPhy3X20i2JyeAPOYg8G+ouBonOyi6nt3O33DevkFNiObgqr1uxtfliNuMhK7iTGDroGEEs+ABN/XsrBe4NOw5A/N1BSHPpvZUw315t8YYB+4+pvXAky/bdvQAbpQWXnfWKnBUwVJlW40Zvi1BmgxKwQVuO+JZ8Krd2Imt6cVkjGJH1ZKzjIPMWAzAdibA0QEh4h6055UgmmQkjlAXdZqV5V+/VTRON70MSMcFsS807PjCoUbRgQDPZ3JjlTjgssAdBs9xgeos95qk7RvobWOnZxAoM71z9PAIQ==;5:EgN6hw/WX47Ti82iYF3xan+3r8QnAI18JradBUHdD6Bp5Y/tsGCRDB+39n1I1W5nf0yPUhGcw/l5aFvBKP2Kmwuu/EG78+7C0li6KNPBqtg7hvQA3+0LtQfZhNGPQOEmxrs/jtZZrHQjXLlshfD+b4r8KWTuYLO0ZgRZdgnfmn4=;7:tKeWdvIHy6F1CziTQ9Tgwrs0jfvAjVB2GSlRkw8iywAidUbnirrD+X2iU98HNp0+vmVVZ/KZQgA74S1tWLcpezRqGSotCtMPjeq375bPSJKWDpgnLNSkb0pNS3VwF7MbzF9fD1RmExuIMX+3OuY3EnGbVXZX6aTI16lJ9lraZqijyYa8grTkp9H3Sgo5AU0hWrNdf/tn1ut/jEfasrR22B6minOaYPkYgnGp1vFmRuvv0Iopq4blpkPmsO8AQpMs
 SpamDiagnosticOutput: 1:99
 SpamDiagnosticMetadata: NSPM
 X-OriginatorOrg: mendix.com
-X-MS-Exchange-CrossTenant-OriginalArrivalTime: 28 Sep 2018 23:04:33.4447 (UTC)
-X-MS-Exchange-CrossTenant-Network-Message-Id: 07785960-6027-433d-ba38-08d62596c147
+X-MS-Exchange-CrossTenant-OriginalArrivalTime: 28 Sep 2018 23:30:17.3857 (UTC)
+X-MS-Exchange-CrossTenant-Network-Message-Id: bc97bdd0-29a7-4f92-b407-08d6259a5985
 X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
 X-MS-Exchange-CrossTenant-Id: b4e3c78d-8e3b-46d8-bc56-5540da23ba4d
 X-MS-Exchange-Transport-CrossTenantHeadersStamped: DB6PR06MB3926
@@ -160,28 +158,55 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 09/24/2018 10:08 AM, Nikolay Borisov wrote:
->>
->> The bugs are all related to repeated kernel code all over the place
->> containing a lot of if statements dealing with different kind of
->> allocation profiles and their exceptions. What I ended up doing is
->> making a few helper functions instead, see the commit "Add volumes.py,
->> handling device / chunk logic". It would probably be nice to do the same
->> in the kernel code, which would also solve the mentioned bugs and
->> prevent new similar ones from happening.
+On 09/25/2018 02:05 AM, Hans van Kranenburg wrote:
+> (I'm using v4.19-rc5 code here.)
 > 
-> Would you care to report each bug separately so they can be triaged and
-> fixed?
+> Imagine allocating a DATA|DUP chunk.
+> 
+> [blub, see previous message]
 
-In case of the RAID10 5GiB thing I think I was mixing up things. When
-doing mkfs you end up with a RAID10 chunk of 5GiB (dunno why, didn't
-research), when mounting and pointing balance at it, I get a 10GiB for
-it back, so that's ok.
+Steps to reproduce DUP chunk beyond end of device:
 
-For the DUP thing, I sent an explanation ("DUP dev_extent might overlap
-something next to it"), which doesn't seem to attract much attention
-yet. I'm preparing a pile of patches to volumes.[ch] to fix this, clean
-up things that I ran into and make the logic a bit less convoluted.
+First create a 6302M block device and fill it up.
+
+mkdir bork
+cd bork
+dd if=/dev/zero of=image bs=1 count=0 seek=6302M
+mkfs.btrfs -d dup -m dup image
+losetup -f image
+mkdir mountpoint
+mount -o space_cache=v2 /dev/loop0 mountpoint
+cp -a /usr mountpoint
+
+After a while, this starts throwing: No space left on device
+
+Now we extend the size of the image to 7880MiB so that the next dup data
+chunk allocation will exactly try to use the 1578MiB free raw disk space
+to trigger the bug.
+
+dd if=/dev/zero of=image bs=1 count=0 seek=7880M
+losetup -c /dev/loop0
+btrfs fi resize max mountpoint/
+
+Now we trigger the new DUP data chunk allocation:
+
+cp /vmlinuz mountpoint/
+
+Now I have a dev extent starting at 7446986752 on devid 1, with length
+838860800. This means it ends at 8285847552, which is 7902, exactly
+22MiB beyond the size of the device.
+
+The only nice thing about this is that df shows me I still have more
+than 8 exabyte of space in this image file.
+
+Label: none  uuid: e711eea6-5332-44cf-9704-998a7a939970
+	Total devices 1 FS bytes used 2.81GiB
+	devid    1 size 7.70GiB used 7.72GiB path /dev/loop0
+
+I didn't try filling it up and see what happens yet. Also, this can
+probably done with a DUP chunk, but it's a bit harder to quickly prove.
+And making this happen in the middle of a block device instead of at the
+end is also a bit harder.
 
 -- 
 Hans van Kranenburg

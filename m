@@ -2,67 +2,67 @@ Return-Path: <SRS0=/9qN=MK=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
+X-Spam-Status: No, score=-8.8 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
 	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_PASS,UNWANTED_LANGUAGE_BODY,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3CF0CC43382
-	for <linux-btrfs@archiver.kernel.org>; Fri, 28 Sep 2018 11:19:05 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A1667C43382
+	for <linux-btrfs@archiver.kernel.org>; Fri, 28 Sep 2018 11:19:06 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 01718215F0
-	for <linux-btrfs@archiver.kernel.org>; Fri, 28 Sep 2018 11:19:05 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 61A52215F0
+	for <linux-btrfs@archiver.kernel.org>; Fri, 28 Sep 2018 11:19:06 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="fRkvgD9T"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 01718215F0
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="cdBc5Q6K"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 61A52215F0
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=toxicpanda.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729474AbeI1RmU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 28 Sep 2018 13:42:20 -0400
-Received: from mail-qt1-f193.google.com ([209.85.160.193]:36830 "EHLO
-        mail-qt1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1729343AbeI1RmU (ORCPT
+        id S1729478AbeI1RmW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 28 Sep 2018 13:42:22 -0400
+Received: from mail-qt1-f195.google.com ([209.85.160.195]:38147 "EHLO
+        mail-qt1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1729343AbeI1RmW (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 28 Sep 2018 13:42:20 -0400
-Received: by mail-qt1-f193.google.com with SMTP id e26-v6so6167660qtq.3
-        for <linux-btrfs@vger.kernel.org>; Fri, 28 Sep 2018 04:19:02 -0700 (PDT)
+        Fri, 28 Sep 2018 13:42:22 -0400
+Received: by mail-qt1-f195.google.com with SMTP id z13-v6so6144075qts.5
+        for <linux-btrfs@vger.kernel.org>; Fri, 28 Sep 2018 04:19:04 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:cc:subject:date:message-id:in-reply-to:references;
-        bh=MzDmzB2k3QZIyenv0r3E5KuNr4U54ItlfnVj2WDyMrY=;
-        b=fRkvgD9Tm5fiueF2TUbneyJxwl+/0Cowu0WADeq2v6arQSrd0LYfIBCINPBn3bvQq4
-         8x8MmB9sgRVQVb55yq+TXPMnNqJkiwJqiWcT3BCDyVYKUOgjcC7B7pJx2mo9HHtmB0x/
-         IVabXuodqC3t/H61F5I8K/2jA9SQ25LG1Hp4XS8CMp8K4+ms4BtA+u7Hsjlea9JXNLc0
-         ig0ocS52GtGRq/4qYJl4XaQ348Ne0A5vOQdAp5GHz37huJwkXarIUMxkg7VhumVML8k6
-         EIgj4j3fNU6jwnKNGl5cbhzeHImdFfoKNyOds2vmRdHesgTNm67ZL+ID7HJSFotD6zri
-         5TGg==
+        bh=z3nhKV1wBqQcfXnDoMHMl2GEjOrb6h1HQ06C9nkbnUE=;
+        b=cdBc5Q6KuuD06XXPh1mFzp5TW+/7H4ANit7XsOnhww4nFYTdj+Ei5lZdLzH0WjxRIk
+         zFVyx2lwsl8ES7NVUje/y51OeDxW5XsNNwpvkW5l4A2sW4xZkQuNH8sYxL+Lo1aeqoqd
+         Nq6JAVv2WqD6L+ciesSDtCFrbvxrb+K5mU8eaoP8ALeFe7IKuXAJl8zrLL61vi8gu2cI
+         V3dtJnO8kXeYH8eEb6JPH6CJm7tHhRUNDy64Se86iq7ibK85dhctjYUWi5/nHMNNCsYV
+         EBOwPKd6zw2PHqSsyd6lGlfi2lSCL5ny0uR3xXSsqP95EvEkpLemsyF6kapmNs7I0Rw+
+         rffg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references;
-        bh=MzDmzB2k3QZIyenv0r3E5KuNr4U54ItlfnVj2WDyMrY=;
-        b=aHhupkjye97o5uxBcz+5dkph3EabsdGaY+Q95T9IqXhK++ffsv+qyF6XTAJerL4fHx
-         We8pjWCiCuLEO7JOrfDtoKZcIiSc1L0Q422U7OPcbd+CjAEkv781EOYP1mT6k04Ky1wu
-         senwZz20KI6O5uaDCZZ8MbL2/hNY0LMjF0PPreq0utpJwrfdnZ30EyVXwjgdwyd/HK9O
-         LRMzZL1yNaafC64jFwmDLveIXDsOSqCmXxRQvNoCfVqvRMrl48rli15W9RAfN+gmBq25
-         X8W39mJ4pe2Ise7u+31k54qPvLZXRR9beZyvZNOg3syLYjrPtZm1sU4rSuH48LALbmMw
-         ITtw==
-X-Gm-Message-State: ABuFfog8QJo/jBikQqz/yQQ4UnL0GLyEwq3zcAemwbkECAOnVoKVRpUC
-        y6Y1FWT/k7WkR/X/Y9W0FWhKgw==
-X-Google-Smtp-Source: ACcGV63NO/uep9xRQOix8R+JJuYaabg2d2U9ouTkivv0q4Y/luZsHE1hFGEydFHU6mUApeing+Pfvw==
-X-Received: by 2002:aed:2c64:: with SMTP id f91-v6mr11819172qtd.310.1538133542543;
-        Fri, 28 Sep 2018 04:19:02 -0700 (PDT)
+        bh=z3nhKV1wBqQcfXnDoMHMl2GEjOrb6h1HQ06C9nkbnUE=;
+        b=RLPc6S59EGFuOP0t2LjTOM0VELcIJHQoGcLU3mweTdIgNrh5INNm7s4768sBFphAIm
+         loNdW2GZcrNwSLtxHr/vNhYeu6sAs52eZC9PYAtdDtp52nGvcqEG92w7foRT7G26IY/E
+         0xIFxGRCeYZSk9F0ySnDXBIPmrbJTnasAWidpahdgjjDjoMK+w3zXM1PeAX7wIoTekV5
+         +my0ZtgtZJ/M5NzyJdDhAjPJ3TRXmE2NwzN8Uz7QMrmiVF4mmhDQJPQg+p7gkX81v15J
+         bGYkL5LM/3xUimEGhca8bTjfO8ZVDkMB2hmxAs0/AaOhvFlZrbULUZAVw7Ocypyrooif
+         D6tw==
+X-Gm-Message-State: ABuFfoj75hqE4yu9cRbPZkdxJj457NGxEHsMVmgEcGaFEQ6TDnq934sh
+        mdamYhQL4qyf6BgWTNAGdKkv/Q==
+X-Google-Smtp-Source: ACcGV60AGalAUmVNdqHGKkBexmdl+jSkQFtfKLVDVFggfWZXhFIw2g3Wt8TNzWD7ug2UmJPOienNyg==
+X-Received: by 2002:ac8:6b13:: with SMTP id w19-v6mr12239761qts.317.1538133544259;
+        Fri, 28 Sep 2018 04:19:04 -0700 (PDT)
 Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id s73-v6sm3227842qkl.65.2018.09.28.04.19.01
+        by smtp.gmail.com with ESMTPSA id f10-v6sm2388374qtq.52.2018.09.28.04.19.03
         (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
-        Fri, 28 Sep 2018 04:19:01 -0700 (PDT)
+        Fri, 28 Sep 2018 04:19:03 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     kernel-team@fb.com, linux-btrfs@vger.kernel.org
 Cc:     Josef Bacik <jbacik@fb.com>
-Subject: [PATCH 20/42] btrfs: don't use ctl->free_space for max_extent_size
-Date:   Fri, 28 Sep 2018 07:17:59 -0400
-Message-Id: <20180928111821.24376-21-josef@toxicpanda.com>
+Subject: [PATCH 21/42] btrfs: reset max_extent_size on clear in a bitmap
+Date:   Fri, 28 Sep 2018 07:18:00 -0400
+Message-Id: <20180928111821.24376-22-josef@toxicpanda.com>
 X-Mailer: git-send-email 2.14.3
 In-Reply-To: <20180928111821.24376-1-josef@toxicpanda.com>
 References: <20180928111821.24376-1-josef@toxicpanda.com>
@@ -73,50 +73,29 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Josef Bacik <jbacik@fb.com>
 
-max_extent_size is supposed to be the largest contiguous range for the
-space info, and ctl->free_space is the total free space in the block
-group.  We need to keep track of these separately and _only_ use the
-max_free_space if we don't have a max_extent_size, as that means our
-original request was too large to search any of the block groups for and
-therefore wouldn't have a max_extent_size set.
+We need to clear the max_extent_size when we clear bits from a bitmap
+since it could have been from the range that contains the
+max_extent_size.
 
+Reviewed-by: Liu Bo <bo.liu@linux.alibaba.com>
 Signed-off-by: Josef Bacik <jbacik@fb.com>
 ---
- fs/btrfs/extent-tree.c | 7 +++++--
- 1 file changed, 5 insertions(+), 2 deletions(-)
+ fs/btrfs/free-space-cache.c | 2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index eb64b28196b8..40503438ef6c 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -7492,6 +7492,7 @@ static noinline int find_free_extent(struct btrfs_fs_info *fs_info,
- 	struct btrfs_block_group_cache *block_group = NULL;
- 	u64 search_start = 0;
- 	u64 max_extent_size = 0;
-+	u64 max_free_space = 0;
- 	u64 empty_cluster = 0;
- 	struct btrfs_space_info *space_info;
- 	int loop = 0;
-@@ -7787,8 +7788,8 @@ static noinline int find_free_extent(struct btrfs_fs_info *fs_info,
- 			spin_lock(&ctl->tree_lock);
- 			if (ctl->free_space <
- 			    num_bytes + empty_cluster + empty_size) {
--				if (ctl->free_space > max_extent_size)
--					max_extent_size = ctl->free_space;
-+				max_free_space = max(max_free_space,
-+						     ctl->free_space);
- 				spin_unlock(&ctl->tree_lock);
- 				goto loop;
- 			}
-@@ -7955,6 +7956,8 @@ static noinline int find_free_extent(struct btrfs_fs_info *fs_info,
- 	}
- out:
- 	if (ret == -ENOSPC) {
-+		if (!max_extent_size)
-+			max_extent_size = max_free_space;
- 		spin_lock(&space_info->lock);
- 		space_info->max_extent_size = max_extent_size;
- 		spin_unlock(&space_info->lock);
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index 2e96ee7da3ec..d2a863a2ee24 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -1687,6 +1687,8 @@ static inline void __bitmap_clear_bits(struct btrfs_free_space_ctl *ctl,
+ 	bitmap_clear(info->bitmap, start, count);
+ 
+ 	info->bytes -= bytes;
++	if (info->max_extent_size > ctl->unit)
++		info->max_extent_size = 0;
+ }
+ 
+ static void bitmap_clear_bits(struct btrfs_free_space_ctl *ctl,
 -- 
 2.14.3
 

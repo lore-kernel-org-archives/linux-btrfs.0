@@ -7,61 +7,61 @@ X-Spam-Status: No, score=-8.8 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
 	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id ABCE4C004D1
-	for <linux-btrfs@archiver.kernel.org>; Fri, 28 Sep 2018 11:18:57 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E5266C43382
+	for <linux-btrfs@archiver.kernel.org>; Fri, 28 Sep 2018 11:18:59 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 644BA215F0
-	for <linux-btrfs@archiver.kernel.org>; Fri, 28 Sep 2018 11:18:57 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A4FFF215F0
+	for <linux-btrfs@archiver.kernel.org>; Fri, 28 Sep 2018 11:18:59 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="mpH4vl1e"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 644BA215F0
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="DYvsiw7W"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org A4FFF215F0
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=toxicpanda.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729454AbeI1RmN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 28 Sep 2018 13:42:13 -0400
-Received: from mail-qt1-f193.google.com ([209.85.160.193]:46823 "EHLO
-        mail-qt1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1729008AbeI1RmM (ORCPT
+        id S1729459AbeI1RmP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 28 Sep 2018 13:42:15 -0400
+Received: from mail-qt1-f195.google.com ([209.85.160.195]:34735 "EHLO
+        mail-qt1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1729343AbeI1RmP (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 28 Sep 2018 13:42:12 -0400
-Received: by mail-qt1-f193.google.com with SMTP id h22-v6so6089287qtr.13
-        for <linux-btrfs@vger.kernel.org>; Fri, 28 Sep 2018 04:18:55 -0700 (PDT)
+        Fri, 28 Sep 2018 13:42:15 -0400
+Received: by mail-qt1-f195.google.com with SMTP id x23-v6so6181483qtr.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 28 Sep 2018 04:18:57 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:subject:date:message-id:in-reply-to:references;
-        bh=KEzZC/iUqIPWQQpjLKXekOjt3SWza9+3dFW42ZSpeyc=;
-        b=mpH4vl1e1qsnvjKyFGYH9j8MemRFrNotOWn+pPNkJ0rOFBCRldF9oSy1Q9FrudfUzZ
-         WVdlALbx3O3cU6fzVPK80L3gewph8OE6gZqIn3gN8Z23PEUu/JPSb5l08b5WR5IPlOqf
-         uubaBRyvT3BvBiObMNcLN/nwXSwa3vF9GPnfeEEHKEkA8P22VwIxEjhZkREOy6HPLgF/
-         VZnuAW/Rbal09bUBBKyXwEk6es4yVbgjBMdyerrPbniWHGgGmNqUtJFkNpfZrn2vRsuH
-         x9r1DI2x9FF8thxFH5P8WnWBa3/5uz9c4rhhhpliOMGLfvFDve28KAFjGACnLrFy9/AW
-         BFag==
+        bh=plAorLc8fDr39W0E6gJzb3bU7gor3NEIbpaym2AY9dc=;
+        b=DYvsiw7WBddLcuzMn6MM151tKY2mru/yxknTU8OaWobGouaAXjjCK3n6A+aHFp2FMG
+         Qfkq+vwF+05GYdRimHfl/uH3WXkRYinAML95RnZ5Ur4PHoDGAzVkCwHEjf6hjKRd/WHI
+         3qxrFvFjwJG7LYZ4FCsyjFgg5XQrmSaF5T/UKuB6DcyvGHSIxNRPJxq351gTm5PzpzgD
+         6brXg21iPyvoTy1LblKb95CHPHdKmeNl1ivIIFRqNmfRhObT1wQCaq5rF/8iMAHVK4wT
+         4OjQw8s4mTwjvJTP/wwa0DGmoNMb+Ddsi22eGvtEbnIOhc6+DD0UoghOGgHwFETF7Beu
+         FJUA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references;
-        bh=KEzZC/iUqIPWQQpjLKXekOjt3SWza9+3dFW42ZSpeyc=;
-        b=CsmrMGuZHynVwH1CzbXEpet4idShDyfLnapQGT1RE+8uj2b8R+FD/klQFfEoqo7JfR
-         ZGVHCKGYUjCxfrOm8YQghbYs3qG3La1hMotTp7S/eUhCB6eB4Po8I2q3Yp1C34m15OuT
-         JPtSpdvliSjlzgt86Sl0Z2X+O/eOmURLedsbICr9UYN1nyrdkEguzCEafAwtBwsWpJty
-         vWN88VI/9+PAgppoNmUXvXSVCa4dSfUv0EFgiEdZSct+pGVEhNawVFEGEhQCImCy4N6b
-         qb850wwB8depEKafwzxgq1P2qhpLUOHVGX5ZqphMX8AjDDllWitZLPo1dG5WtV12aRhT
-         k0Ag==
-X-Gm-Message-State: ABuFfoh/4uDPDanT1IOdJYjWZFOXNhgAJeI3RQTOj8IetgR+V3LrFj4k
-        xCVdTiBqoW6bPwQ/A89L910hu2iqIG8=
-X-Google-Smtp-Source: ACcGV61WDEQ8CD6Ygx1jwzatkVT1/F2+h3Hin7G8t7VZVFulCNUFbbcRU3C3NLldI9w5/EowYkaT5g==
-X-Received: by 2002:ac8:1770:: with SMTP id u45-v6mr369521qtk.285.1538133535166;
-        Fri, 28 Sep 2018 04:18:55 -0700 (PDT)
+        bh=plAorLc8fDr39W0E6gJzb3bU7gor3NEIbpaym2AY9dc=;
+        b=WJpYOrLRiSoKCIH/yFBvlCu0ady3vhuDliea67C/ovpMsG35eVLN0RCNO/cO1aqmGl
+         SnhUv7rZvofmf6LoaHAhPA9Pf6r09o0FaAjzbv8FFaRnqf0v1/onbcQ/eRO9TCaAEhWg
+         X7IriQJDjtsl7729qlEUmn8RBrL2R2LeHqm/anDXhyI7m6DVAXgXiBIP5Oy9eUb1LJCE
+         bD/pMzCJE9LWjr9+d9xbHQW5YO4ItRWk49YZvPFabfs3L+QscjICUhgc99FZ4MCEm4ld
+         eILguPEtrOEl+XlxhZcglPBraQHdGHpDiwOVEaY22W4MH9TUSREv7wXekTRT7Qb5Qqf7
+         Y1Zg==
+X-Gm-Message-State: ABuFfohF/6kyEU8d60ft3ncnxFkoUMEOq9tPi4kNGeJokb+d4hcgiqDm
+        qMM7XyqduzX3Z/G72ADvpT+y5A==
+X-Google-Smtp-Source: ACcGV62+kUT27Z6X+Nt3vQU2cl4vsUa3MTyB2JRq4F0qUKtKluq9tso8wH1Ytt+0JyO1ReDaezQqYg==
+X-Received: by 2002:aed:3b97:: with SMTP id r23-v6mr11857892qte.77.1538133536928;
+        Fri, 28 Sep 2018 04:18:56 -0700 (PDT)
 Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id y143-v6sm2650665qky.95.2018.09.28.04.18.54
+        by smtp.gmail.com with ESMTPSA id m6-v6sm242906qta.50.2018.09.28.04.18.55
         (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
-        Fri, 28 Sep 2018 04:18:54 -0700 (PDT)
+        Fri, 28 Sep 2018 04:18:56 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     kernel-team@fb.com, linux-btrfs@vger.kernel.org
-Subject: [PATCH 16/42] btrfs: loop in inode_rsv_refill
-Date:   Fri, 28 Sep 2018 07:17:55 -0400
-Message-Id: <20180928111821.24376-17-josef@toxicpanda.com>
+Subject: [PATCH 17/42] btrfs: run delayed iputs before committing
+Date:   Fri, 28 Sep 2018 07:17:56 -0400
+Message-Id: <20180928111821.24376-18-josef@toxicpanda.com>
 X-Mailer: git-send-email 2.14.3
 In-Reply-To: <20180928111821.24376-1-josef@toxicpanda.com>
 References: <20180928111821.24376-1-josef@toxicpanda.com>
@@ -70,74 +70,39 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-With severe fragmentation we can end up with our inode rsv size being
-huge during writeout, which would cause us to need to make very large
-metadata reservations.  However we may not actually need that much once
-writeout is complete.  So instead try to make our reservation, and if we
-couldn't make it re-calculate our new reservation size and try again.
-If our reservation size doesn't change between tries then we know we are
-actually out of space and can error out.
+Delayed iputs means we can have final iputs of deleted inodes in the
+queue, which could potentially generate a lot of pinned space that could
+be free'd.  So before we decide to commit the transaction for ENOPSC
+reasons, run the delayed iputs so that any potential space is free'd up.
+If there is and we freed enough we can then commit the transaction and
+potentially be able to make our reservation.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+Reviewed-by: Omar Sandoval <osandov@fb.com>
 ---
- fs/btrfs/extent-tree.c | 26 ++++++++++++++++++++++++--
- 1 file changed, 24 insertions(+), 2 deletions(-)
+ fs/btrfs/extent-tree.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
 
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 7a53f6a29ebc..461b8076928b 100644
+index 461b8076928b..eb64b28196b8 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -5781,10 +5781,11 @@ static int btrfs_inode_rsv_refill(struct btrfs_inode *inode,
- {
- 	struct btrfs_root *root = inode->root;
- 	struct btrfs_block_rsv *block_rsv = &inode->block_rsv;
--	u64 num_bytes = 0;
-+	u64 num_bytes = 0, last = 0;
- 	u64 qgroup_num_bytes = 0;
- 	int ret = -ENOSPC;
- 
-+again:
- 	spin_lock(&block_rsv->lock);
- 	if (block_rsv->reserved < block_rsv->size)
- 		num_bytes = block_rsv->size - block_rsv->reserved;
-@@ -5796,6 +5797,13 @@ static int btrfs_inode_rsv_refill(struct btrfs_inode *inode,
- 	if (num_bytes == 0)
+@@ -4823,6 +4823,15 @@ static int may_commit_transaction(struct btrfs_fs_info *fs_info,
+ 	if (!bytes)
  		return 0;
  
 +	/*
-+	 * If our reservation size hasn't changed since the last time we tried
-+	 * to make an allocation we can just bail.
++	 * If we have pending delayed iputs then we could free up a bunch of
++	 * pinned space, so make sure we run the iputs before we do our pinned
++	 * bytes check below.
 +	 */
-+	if (last && last == num_bytes)
-+		return -ENOSPC;
++	mutex_lock(&fs_info->cleaner_delayed_iput_mutex);
++	btrfs_run_delayed_iputs(fs_info);
++	mutex_unlock(&fs_info->cleaner_delayed_iput_mutex);
 +
- 	ret = btrfs_qgroup_reserve_meta_prealloc(root, qgroup_num_bytes, true);
- 	if (ret)
- 		return ret;
-@@ -5809,8 +5817,22 @@ static int btrfs_inode_rsv_refill(struct btrfs_inode *inode,
- 		spin_lock(&block_rsv->lock);
- 		block_rsv->qgroup_rsv_reserved += qgroup_num_bytes;
- 		spin_unlock(&block_rsv->lock);
--	} else
-+	} else {
- 		btrfs_qgroup_free_meta_prealloc(root, qgroup_num_bytes);
-+
-+		/*
-+		 * If we are fragmented we can end up with a lot of outstanding
-+		 * extents which will make our size be much larger than our
-+		 * reserved amount.  If we happen to try to do a reservation
-+		 * here that may result in us trying to do a pretty hefty
-+		 * reservation, which we may not need once delalloc flushing
-+		 * happens.  If this is the case try and do the reserve again.
-+		 */
-+		if (flush == BTRFS_RESERVE_FLUSH_ALL) {
-+			last = num_bytes;
-+			goto again;
-+		}
-+	}
- 	return ret;
- }
- 
+ 	trans = btrfs_join_transaction(fs_info->extent_root);
+ 	if (IS_ERR(trans))
+ 		return -ENOSPC;
 -- 
 2.14.3
 

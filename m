@@ -4,65 +4,64 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-8.8 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
 	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+	SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A1667C43382
-	for <linux-btrfs@archiver.kernel.org>; Fri, 28 Sep 2018 11:19:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F4021C43382
+	for <linux-btrfs@archiver.kernel.org>; Fri, 28 Sep 2018 11:19:08 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 61A52215F0
-	for <linux-btrfs@archiver.kernel.org>; Fri, 28 Sep 2018 11:19:06 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id B5111215F0
+	for <linux-btrfs@archiver.kernel.org>; Fri, 28 Sep 2018 11:19:08 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="cdBc5Q6K"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 61A52215F0
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="oMQjhGq7"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org B5111215F0
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=toxicpanda.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729478AbeI1RmW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 28 Sep 2018 13:42:22 -0400
-Received: from mail-qt1-f195.google.com ([209.85.160.195]:38147 "EHLO
-        mail-qt1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1729343AbeI1RmW (ORCPT
+        id S1729483AbeI1RmY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 28 Sep 2018 13:42:24 -0400
+Received: from mail-qk1-f194.google.com ([209.85.222.194]:39847 "EHLO
+        mail-qk1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1729343AbeI1RmY (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 28 Sep 2018 13:42:22 -0400
-Received: by mail-qt1-f195.google.com with SMTP id z13-v6so6144075qts.5
-        for <linux-btrfs@vger.kernel.org>; Fri, 28 Sep 2018 04:19:04 -0700 (PDT)
+        Fri, 28 Sep 2018 13:42:24 -0400
+Received: by mail-qk1-f194.google.com with SMTP id q5-v6so595207qki.6
+        for <linux-btrfs@vger.kernel.org>; Fri, 28 Sep 2018 04:19:06 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:cc:subject:date:message-id:in-reply-to:references;
-        bh=z3nhKV1wBqQcfXnDoMHMl2GEjOrb6h1HQ06C9nkbnUE=;
-        b=cdBc5Q6KuuD06XXPh1mFzp5TW+/7H4ANit7XsOnhww4nFYTdj+Ei5lZdLzH0WjxRIk
-         zFVyx2lwsl8ES7NVUje/y51OeDxW5XsNNwpvkW5l4A2sW4xZkQuNH8sYxL+Lo1aeqoqd
-         Nq6JAVv2WqD6L+ciesSDtCFrbvxrb+K5mU8eaoP8ALeFe7IKuXAJl8zrLL61vi8gu2cI
-         V3dtJnO8kXeYH8eEb6JPH6CJm7tHhRUNDy64Se86iq7ibK85dhctjYUWi5/nHMNNCsYV
-         EBOwPKd6zw2PHqSsyd6lGlfi2lSCL5ny0uR3xXSsqP95EvEkpLemsyF6kapmNs7I0Rw+
-         rffg==
+        h=from:to:subject:date:message-id:in-reply-to:references;
+        bh=vfQB1tHlwUhp446i68IaYEtvkGVFvtWut8g/b3eBAlk=;
+        b=oMQjhGq73M/j/vpwJYUcd1s9HO4OGoFYrNBUhr1cBwwMTow0G5dAaJSY4JUv2YoDQ5
+         TbFcxWda9/ncAeWNHbheXvIudezGPga5yzc7uRnnQsyUvBQgAN0yCplWIWP3fkVRoNNG
+         Tusl+fERqHorz1x7/N0hFCqiAfDLjBU58zTeSrith2rZE/WLhWqSEuPHQy+y7Dq5usK2
+         xx03ahS9kaD6OYsH53lNd9v8ESjr4xGPn3M9vxgR0MM+d2xELxvzkxLSp2z3S7mzeRkq
+         97m/qbwCwGYOGu1WzjE2Ruc/t4BmmA8CiqhuprgAby8qSmHZLcjSWwTPaU4YSanqnUo9
+         I8zA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
+        h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references;
-        bh=z3nhKV1wBqQcfXnDoMHMl2GEjOrb6h1HQ06C9nkbnUE=;
-        b=RLPc6S59EGFuOP0t2LjTOM0VELcIJHQoGcLU3mweTdIgNrh5INNm7s4768sBFphAIm
-         loNdW2GZcrNwSLtxHr/vNhYeu6sAs52eZC9PYAtdDtp52nGvcqEG92w7foRT7G26IY/E
-         0xIFxGRCeYZSk9F0ySnDXBIPmrbJTnasAWidpahdgjjDjoMK+w3zXM1PeAX7wIoTekV5
-         +my0ZtgtZJ/M5NzyJdDhAjPJ3TRXmE2NwzN8Uz7QMrmiVF4mmhDQJPQg+p7gkX81v15J
-         bGYkL5LM/3xUimEGhca8bTjfO8ZVDkMB2hmxAs0/AaOhvFlZrbULUZAVw7Ocypyrooif
-         D6tw==
-X-Gm-Message-State: ABuFfoj75hqE4yu9cRbPZkdxJj457NGxEHsMVmgEcGaFEQ6TDnq934sh
-        mdamYhQL4qyf6BgWTNAGdKkv/Q==
-X-Google-Smtp-Source: ACcGV60AGalAUmVNdqHGKkBexmdl+jSkQFtfKLVDVFggfWZXhFIw2g3Wt8TNzWD7ug2UmJPOienNyg==
-X-Received: by 2002:ac8:6b13:: with SMTP id w19-v6mr12239761qts.317.1538133544259;
-        Fri, 28 Sep 2018 04:19:04 -0700 (PDT)
+        bh=vfQB1tHlwUhp446i68IaYEtvkGVFvtWut8g/b3eBAlk=;
+        b=e5RJoIG/Dc9iOvZdqWD8gEFd1c2MhyI/vlnf3HmPa7vJBMkmBwcS1CPx0fZs17XPzW
+         M8ZN9FogK0Kwl/xH/kTxknzdPnoqJFvrgf9pkOr3WqcsNE488qRCxD3CLMdJk51NHrtb
+         0qreZrVakMP+KZIQB+LJ9/BTZ6k7neXiX6XNmDGvUked5pJ3QF53tdLINVFnh5rjNm8b
+         YUS0FKXHiJZVsj1vbd8Hk6oesGVLt0bEnh0+AWcDiPudtaalQmZsPhz29pe0jEyu3eNo
+         N9ic4l9PNu/HVy1x8XXuxHGMpTTd5rlgtQoJEA2MNPuAjoNC9TU6Zm+L+nSrQrBlD6UF
+         Alkg==
+X-Gm-Message-State: ABuFfojkWVK0uRRBOz1BF6hDQsVYqzsRrX7pMJIGH+nQ2UptNqryWiy7
+        5XfW+8QiBhdAPCM2SBF1obWZAw==
+X-Google-Smtp-Source: ACcGV60bFU18KpOEOnxw1D9+wYnwqVX/c8DuBEEpN+XPpuOVwovCN19L8mLYsRDCt9CNDfPVMBMShQ==
+X-Received: by 2002:a37:28c7:: with SMTP id o68-v6mr11503452qko.350.1538133546109;
+        Fri, 28 Sep 2018 04:19:06 -0700 (PDT)
 Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id f10-v6sm2388374qtq.52.2018.09.28.04.19.03
+        by smtp.gmail.com with ESMTPSA id o7-v6sm2211760qtp.75.2018.09.28.04.19.04
         (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
-        Fri, 28 Sep 2018 04:19:03 -0700 (PDT)
+        Fri, 28 Sep 2018 04:19:05 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     kernel-team@fb.com, linux-btrfs@vger.kernel.org
-Cc:     Josef Bacik <jbacik@fb.com>
-Subject: [PATCH 21/42] btrfs: reset max_extent_size on clear in a bitmap
-Date:   Fri, 28 Sep 2018 07:18:00 -0400
-Message-Id: <20180928111821.24376-22-josef@toxicpanda.com>
+Subject: [PATCH 22/42] btrfs: only run delayed refs if we're committing
+Date:   Fri, 28 Sep 2018 07:18:01 -0400
+Message-Id: <20180928111821.24376-23-josef@toxicpanda.com>
 X-Mailer: git-send-email 2.14.3
 In-Reply-To: <20180928111821.24376-1-josef@toxicpanda.com>
 References: <20180928111821.24376-1-josef@toxicpanda.com>
@@ -71,31 +70,69 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Josef Bacik <jbacik@fb.com>
+I noticed in a giant dbench run that we spent a lot of time on lock
+contention while running transaction commit.  This is because dbench
+results in a lot of fsync()'s that do a btrfs_transaction_commit(), and
+they all run the delayed refs first thing, so they all contend with
+each other.  This leads to seconds of 0 throughput.  Change this to only
+run the delayed refs if we're the ones committing the transaction.  This
+makes the latency go away and we get no more lock contention.
 
-We need to clear the max_extent_size when we clear bits from a bitmap
-since it could have been from the range that contains the
-max_extent_size.
-
-Reviewed-by: Liu Bo <bo.liu@linux.alibaba.com>
-Signed-off-by: Josef Bacik <jbacik@fb.com>
+Reviewed-by: Omar Sandoval <osandov@fb.com>
+Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/free-space-cache.c | 2 ++
- 1 file changed, 2 insertions(+)
+ fs/btrfs/transaction.c | 24 +++++++++---------------
+ 1 file changed, 9 insertions(+), 15 deletions(-)
 
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index 2e96ee7da3ec..d2a863a2ee24 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -1687,6 +1687,8 @@ static inline void __bitmap_clear_bits(struct btrfs_free_space_ctl *ctl,
- 	bitmap_clear(info->bitmap, start, count);
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index a0f19ca0bd6c..39a2bddb0b29 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -1925,15 +1925,6 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
+ 	btrfs_trans_release_metadata(trans);
+ 	trans->block_rsv = NULL;
  
- 	info->bytes -= bytes;
-+	if (info->max_extent_size > ctl->unit)
-+		info->max_extent_size = 0;
- }
+-	/* make a pass through all the delayed refs we have so far
+-	 * any runnings procs may add more while we are here
+-	 */
+-	ret = btrfs_run_delayed_refs(trans, 0);
+-	if (ret) {
+-		btrfs_end_transaction(trans);
+-		return ret;
+-	}
+-
+ 	cur_trans = trans->transaction;
  
- static void bitmap_clear_bits(struct btrfs_free_space_ctl *ctl,
+ 	/*
+@@ -1946,12 +1937,6 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
+ 	if (!list_empty(&trans->new_bgs))
+ 		btrfs_create_pending_block_groups(trans);
+ 
+-	ret = btrfs_run_delayed_refs(trans, 0);
+-	if (ret) {
+-		btrfs_end_transaction(trans);
+-		return ret;
+-	}
+-
+ 	if (!test_bit(BTRFS_TRANS_DIRTY_BG_RUN, &cur_trans->flags)) {
+ 		int run_it = 0;
+ 
+@@ -2022,6 +2007,15 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
+ 		spin_unlock(&fs_info->trans_lock);
+ 	}
+ 
++	/*
++	 * We are now the only one in the commit area, we can run delayed refs
++	 * without hitting a bunch of lock contention from a lot of people
++	 * trying to commit the transaction at once.
++	 */
++	ret = btrfs_run_delayed_refs(trans, 0);
++	if (ret)
++		goto cleanup_transaction;
++
+ 	extwriter_counter_dec(cur_trans, trans->type);
+ 
+ 	ret = btrfs_start_delalloc_flush(fs_info);
 -- 
 2.14.3
 

@@ -7,61 +7,61 @@ X-Spam-Status: No, score=-8.8 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
 	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8D1D4C43382
-	for <linux-btrfs@archiver.kernel.org>; Fri, 28 Sep 2018 11:19:21 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E4D38C43382
+	for <linux-btrfs@archiver.kernel.org>; Fri, 28 Sep 2018 11:19:22 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 4BFED215F0
-	for <linux-btrfs@archiver.kernel.org>; Fri, 28 Sep 2018 11:19:21 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A5651215F0
+	for <linux-btrfs@archiver.kernel.org>; Fri, 28 Sep 2018 11:19:22 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="CgOQ0H8u"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 4BFED215F0
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="ZsCcd1DB"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org A5651215F0
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=toxicpanda.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729518AbeI1Rmh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 28 Sep 2018 13:42:37 -0400
-Received: from mail-qk1-f170.google.com ([209.85.222.170]:43995 "EHLO
-        mail-qk1-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1729513AbeI1Rmh (ORCPT
+        id S1729523AbeI1Rmi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 28 Sep 2018 13:42:38 -0400
+Received: from mail-qk1-f179.google.com ([209.85.222.179]:46783 "EHLO
+        mail-qk1-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1729513AbeI1Rmi (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 28 Sep 2018 13:42:37 -0400
-Received: by mail-qk1-f170.google.com with SMTP id v18-v6so3545631qka.10
-        for <linux-btrfs@vger.kernel.org>; Fri, 28 Sep 2018 04:19:19 -0700 (PDT)
+        Fri, 28 Sep 2018 13:42:38 -0400
+Received: by mail-qk1-f179.google.com with SMTP id q12-v6so3531722qkl.13
+        for <linux-btrfs@vger.kernel.org>; Fri, 28 Sep 2018 04:19:21 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:subject:date:message-id:in-reply-to:references;
-        bh=P0ipw3j2I3ux8QOjibv1ucfjdjXUNT2FexmyaP5BF3E=;
-        b=CgOQ0H8uZs4lZnX19xSAV9Vl/qfNenrBVOn0R9WmTEdsUV5VGSN80/NFPHZPL0lewU
-         v0YpGGPmTGz/s2rJpMRF9uT52oPF4In1MKLnqqlfJU9ZIHti4D38+u30tThRH/7zdIuq
-         QvON8yTfpE58kXtUyk36OyqzECCQcHYeS+s4KkDrk+etCU0K0y7shSxzRefgiZdwtW6f
-         PMmMhJEFyT9n36/DYqpb5v+hs3Tr7xqy/ZfGSC+NkWf8vEQ2a14A2nAky1TQGLCEiJhm
-         w2wmWN+XSmLOLS+lDj4PiCb30sjh/P6rTp9NYr3xeiUkA6IZiFSS86LnK1jZwAI3f5l/
-         Id7Q==
+        bh=FaedjnvqEPjhcquf2LaidURx/buWzJK+i4n0WtJhwI8=;
+        b=ZsCcd1DBGRmB+4KwglFPY+NQCZgUE7cxMH7Ld0M5QX6NNhCZQvpjLILZ/46rVoYu+R
+         2zOcZwYHeqPt3KBfvEOrWiP28aZGesSyrzw6hz8gygEgJVD/27p8jZo0/IQuvdzvRTwj
+         OTjXD+kqo9WE7sOt7NM1OlAxsGf0U83SrSeBI9rf7wE6OyBL37HOUEZQ1phAPgFtQkLm
+         JmVN3hLMxOD0pxXcuhknpX1IZQVHSieWqGriMA3cPN2z3aRVY79YUA80FqMZH7SerYGe
+         2ERDe+2OlS2gEaiHj53dzHpTc5bk8gtaznafzW0XwxsLYrdE3b2H8L3mJJb0Huy5NR+0
+         im/w==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references;
-        bh=P0ipw3j2I3ux8QOjibv1ucfjdjXUNT2FexmyaP5BF3E=;
-        b=ORvI4IWAu8rLlRiKMcSdilD05dPm0ksKecrjGgQiSTygaHPQlh4S8BiS0p0tAo5oWo
-         asQiQyV+DtK4dfobWyb0AsqnY/Qk/0bBw/hpVAxT31/nHD2LeqIu84zkRwL9sRSw/CE8
-         2xz/gQNVo1WKocktbyR8ivby7WWRpQ8ugnSbriGarf48n7ei4jhYVOsNTlA28zIuw/gx
-         3F+yfQtu/j2mNdi6ieB1W9xuTZBrD4blsHrpgJyE9oItgOkK6PsN41meQ8w07FYGA9H+
-         tENYzneggg++Nx4DnPsilho/G/1qV3KYw4LW9Ypz08P4BU8pNtAozRfOpUx3c6ya52OL
-         OwWQ==
-X-Gm-Message-State: ABuFfoinohqKCEzndeUavFYwXsEnXDMNAwseu9ASWtrmqBy5w/cPREWz
-        014H1cV1gMAwrZwyVIkjlIfycg==
-X-Google-Smtp-Source: ACcGV61H+3oNjLJOoVMLRBuFLMMc3Ihd+z09seBjaKXqVnYuMX76PUJw1GLPbhzTtgwm0CWH2Hviuw==
-X-Received: by 2002:a37:a84:: with SMTP id 126-v6mr8650627qkk.267.1538133558802;
-        Fri, 28 Sep 2018 04:19:18 -0700 (PDT)
+        bh=FaedjnvqEPjhcquf2LaidURx/buWzJK+i4n0WtJhwI8=;
+        b=QNDBE5miF3Yug1X2I78io2dFMP0hZVzQsaX9fqajKc5YPHrnWXlyj1YQNw7sBdKSES
+         dgrUKTgL04xUNHLOZO2MWxXMxprXxp2v+tZq9x8AyOT0uKmOrGNU6TUIiFEvj4Y0czUR
+         uAay3L0aMDMIEwLPTrh3OmPhs25W6ajlUrd53Si5jBzOFqcwSL9cKfXp2utI8kITdLp0
+         PtUgSQeV0pdQm3cfcAxWLktL2j2SK2EgWjzxQkQqoqB07KxFyA8djQ5uxQDGF7ZfhEUP
+         4GWf9rjlz+VqE86iF+L31uNOS4PHvHnHliWIOp6n0bSwO/ee2Mmvwr/73EtWSZkZegGL
+         j0sw==
+X-Gm-Message-State: ABuFfojGMgtWHXV642MxWoGBEbjmjEU1GbmOIcpuqy/4kYHB9MJayzwJ
+        JhN4vjcu/UmU75oEP2b2PtKbMw==
+X-Google-Smtp-Source: ACcGV63q/xlzTEA9gO+cpKCoWp7aVuCzPQFdYBnXnljRcQcwAc5MGBxReIu5LFxsPK4OLpN0lkVpYA==
+X-Received: by 2002:a37:6388:: with SMTP id x130-v6mr4700039qkb.118.1538133560776;
+        Fri, 28 Sep 2018 04:19:20 -0700 (PDT)
 Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id u36-v6sm2927608qtc.46.2018.09.28.04.19.17
+        by smtp.gmail.com with ESMTPSA id a11-v6sm2748774qte.13.2018.09.28.04.19.19
         (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
-        Fri, 28 Sep 2018 04:19:17 -0700 (PDT)
+        Fri, 28 Sep 2018 04:19:19 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     kernel-team@fb.com, linux-btrfs@vger.kernel.org
-Subject: [PATCH 29/42] btrfs: call btrfs_create_pending_block_groups unconditionally
-Date:   Fri, 28 Sep 2018 07:18:08 -0400
-Message-Id: <20180928111821.24376-30-josef@toxicpanda.com>
+Subject: [PATCH 30/42] btrfs: just delete pending bgs if we are aborted
+Date:   Fri, 28 Sep 2018 07:18:09 -0400
+Message-Id: <20180928111821.24376-31-josef@toxicpanda.com>
 X-Mailer: git-send-email 2.14.3
 In-Reply-To: <20180928111821.24376-1-josef@toxicpanda.com>
 References: <20180928111821.24376-1-josef@toxicpanda.com>
@@ -70,58 +70,37 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The first thing we do is loop through the list, this
+We still need to do all of the accounting cleanup for pending block
+groups if we abort.  So set the ret to trans->aborted so if we aborted
+the cleanup happens and everybody is happy.
 
-if (!list_empty())
-	btrfs_create_pending_block_groups();
-
-thing is just wasted space.
-
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+Reviewed-by: Omar Sandoval <osandov@fb.com>
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/extent-tree.c | 3 +--
- fs/btrfs/transaction.c | 6 ++----
- 2 files changed, 3 insertions(+), 6 deletions(-)
+ fs/btrfs/extent-tree.c | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 7245a198ad31..91e45cb14d45 100644
+index 91e45cb14d45..ac282eb535a8 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -2978,8 +2978,7 @@ int btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
- 	}
+@@ -10359,9 +10359,15 @@ void btrfs_create_pending_block_groups(struct btrfs_trans_handle *trans)
+ 	struct btrfs_root *extent_root = fs_info->extent_root;
+ 	struct btrfs_block_group_item item;
+ 	struct btrfs_key key;
+-	int ret = 0;
++	int ret;
+ 	bool can_flush_pending_bgs = trans->can_flush_pending_bgs;
  
- 	if (run_all) {
--		if (!list_empty(&trans->new_bgs))
--			btrfs_create_pending_block_groups(trans);
-+		btrfs_create_pending_block_groups(trans);
- 
- 		spin_lock(&delayed_refs->lock);
- 		node = rb_first(&delayed_refs->href_root);
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 39a2bddb0b29..46ca775a709e 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -846,8 +846,7 @@ static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
- 	btrfs_trans_release_metadata(trans);
- 	trans->block_rsv = NULL;
- 
--	if (!list_empty(&trans->new_bgs))
--		btrfs_create_pending_block_groups(trans);
-+	btrfs_create_pending_block_groups(trans);
- 
- 	btrfs_trans_release_chunk_metadata(trans);
- 
-@@ -1934,8 +1933,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
- 	cur_trans->delayed_refs.flushing = 1;
- 	smp_wmb();
- 
--	if (!list_empty(&trans->new_bgs))
--		btrfs_create_pending_block_groups(trans);
-+	btrfs_create_pending_block_groups(trans);
- 
- 	if (!test_bit(BTRFS_TRANS_DIRTY_BG_RUN, &cur_trans->flags)) {
- 		int run_it = 0;
++	/*
++	 * If we aborted the transaction with pending bg's we need to just
++	 * cleanup the list and carry on.
++	 */
++	ret = trans->aborted;
++
+ 	trans->can_flush_pending_bgs = false;
+ 	while (!list_empty(&trans->new_bgs)) {
+ 		block_group = list_first_entry(&trans->new_bgs,
 -- 
 2.14.3
 

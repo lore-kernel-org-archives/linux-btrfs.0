@@ -7,61 +7,61 @@ X-Spam-Status: No, score=-8.8 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
 	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9D3EEC43382
-	for <linux-btrfs@archiver.kernel.org>; Fri, 28 Sep 2018 11:18:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D94D9C43382
+	for <linux-btrfs@archiver.kernel.org>; Fri, 28 Sep 2018 11:18:46 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 5E4C3215F0
-	for <linux-btrfs@archiver.kernel.org>; Fri, 28 Sep 2018 11:18:44 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9B17A215F0
+	for <linux-btrfs@archiver.kernel.org>; Fri, 28 Sep 2018 11:18:46 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="xyh5YsQd"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 5E4C3215F0
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="Yv2f3IeL"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 9B17A215F0
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=toxicpanda.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729406AbeI1RmA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 28 Sep 2018 13:42:00 -0400
-Received: from mail-qt1-f178.google.com ([209.85.160.178]:42022 "EHLO
-        mail-qt1-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1729008AbeI1Rl7 (ORCPT
+        id S1729418AbeI1RmC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 28 Sep 2018 13:42:02 -0400
+Received: from mail-qk1-f194.google.com ([209.85.222.194]:46158 "EHLO
+        mail-qk1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1729008AbeI1RmC (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 28 Sep 2018 13:41:59 -0400
-Received: by mail-qt1-f178.google.com with SMTP id z8-v6so6114830qto.9
-        for <linux-btrfs@vger.kernel.org>; Fri, 28 Sep 2018 04:18:42 -0700 (PDT)
+        Fri, 28 Sep 2018 13:42:02 -0400
+Received: by mail-qk1-f194.google.com with SMTP id q12-v6so3530730qkl.13
+        for <linux-btrfs@vger.kernel.org>; Fri, 28 Sep 2018 04:18:44 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:subject:date:message-id:in-reply-to:references;
-        bh=yYx+AcpbxeLRdPqDImtMM4yf4Rg6f5T1yjgQiHsfUlY=;
-        b=xyh5YsQd1dY496OnahxCJ7gwUX3hHNiNBHNW9p5RSC9F/NzgUB1S3jN1kyBY+1Par3
-         jiKQ/L5LaLdF1jdbMlY13eeJIpcu4S8o3UQnpv5PzXVEzIGGxdBnqP74EzzOIz081gUP
-         p48XLCB032UGouf07coDJkC0A1eJ4ckAEFABgBr/NbF+0ZCn9otUdl1ESi+0EZr4plEs
-         sOlX5n/hwaag6d8qmOLpScNRbsaIYhAqCW20JZ0FpxB5iGuWEIwGcQtnG7PB/NdAe6xG
-         O18txdxley0ywn/7HgA/eujEpq3L8Wm+gipN1gOCM5lhyDtoL/Ut8TobcpVNJ1SPcStO
-         +SfA==
+        bh=+HzhX5veQVR7KYguCDJIe+MJkMCf434goypDockwhKY=;
+        b=Yv2f3IeLb0lelUrvrsnzmAzNzjBYP7ID/Sf6aD9tQIVsJTggG0w7xY/N1uBwyxAd4I
+         u6zZWzhbYNYY4ankDK09cfyc+CICrSUJVpAw7hBM24KgDCj6OJyJcNPkXO6on+4QjlyQ
+         rEsJT/ieOJpedFzQrObbu2Ku1WfJqyOffoIDjdfhapx/UjWYN2dqjDWJ4UCre40AJHfv
+         RgWMM55OcBVFGqUoZOHUlrLMTusMx2s4SYFuBghA+1M6WfmAOqO/rUNEgvvlME8EA2O5
+         itHNUy4dAAZKbzsEr6gv9c2RvhXVrtzNa+ZxjRTURPVw8gPIbSjGnTVgKWPcLGr1/VwD
+         oVog==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references;
-        bh=yYx+AcpbxeLRdPqDImtMM4yf4Rg6f5T1yjgQiHsfUlY=;
-        b=JhG5OOd4/P7uWHjoJER7bJVh+k3fqHxQRX46MmcV1RKlWoLFsr3SM2jSYC6TVLQg95
-         Cf+ym53vhsvVS0Sem0MsXpLKJPsPIY52Uki61wjqlTYAOomFlIN6IEe3QV/NJKGRLTUs
-         PFwjMuTnZCogHe4zrc5E1AhvQMy0QSLSBMLSFHG/OPP72P1amwz2IW6RMHd3LC8gx8Eq
-         RbUYUvGAMx7aZ9CyN/RQpT+WbjJzt08g8r4LKMVZvJ+TAxA7KIsZevM2pBJ0G8Bt4hUZ
-         WfS6CbsBMfLwP0G3YSTxgwWSEFBfyGJfXLm9xmsq1J2bL1B0864XlM13jma/IJ40+owd
-         qIFQ==
-X-Gm-Message-State: ABuFfojYwh/RXS6jkM2bDhZbOs53vS10EjosoQT/yPQQc4gjulNKXsb8
-        L80XP2YyD5pufjlYOxJs77QoNabjfnA=
-X-Google-Smtp-Source: ACcGV63URrSCe0p12sWYeHvFkdYX48zvn9fdIiis94hC+ELl7QHnekpLMn+eFED0naOYiXjiJ8ffHA==
-X-Received: by 2002:aed:32e4:: with SMTP id z91-v6mr9050397qtd.106.1538133522147;
-        Fri, 28 Sep 2018 04:18:42 -0700 (PDT)
+        bh=+HzhX5veQVR7KYguCDJIe+MJkMCf434goypDockwhKY=;
+        b=rUE8gF2EyuS8iA3mVHibonM0VeMlvTw2QQUifDJxqm/DgRLjZirJv1tiNqw/CuWBF2
+         GnQbV6zealTYWizangiQFmbPy5b9B+IwxMjuz98S9vXJHv6EqtBNY6wx9u0WLW8MCfAI
+         CVgk9oQgHem/593vEKdXInEcIx3tlp7BhePyuY/AdFUdFc2twaqeQlF4Kqfp78RGqPRh
+         V99E9zPwTp48UMcuy6Yn4/T+8+NqFVCma2dSz5L/Yotj1SzUBi2d6abMcbJuR4AAETid
+         1xwsAsqVGjUbq5jmb/x2i8F4aGdXIsWi+i/emyHmYCPrv/rKVZg77UuhTYSG5fLlDw5P
+         eBEw==
+X-Gm-Message-State: ABuFfojFe7nE2aQxytrNEsdcobARwUeA5CeuGd5+17GP5PXANLwBZjiZ
+        cbyzAtvvBmqjg+J0ynmiI43fs+bB/+w=
+X-Google-Smtp-Source: ACcGV60xMtDNKU9hxUosg8ZkY7YbMZ/L8HhT46lel3/jQM90hDP/Kva+Soc3igIw3/hK7bnSaZHjVA==
+X-Received: by 2002:a37:aac5:: with SMTP id t188-v6mr11490373qke.250.1538133524032;
+        Fri, 28 Sep 2018 04:18:44 -0700 (PDT)
 Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id f184-v6sm2610770qkc.23.2018.09.28.04.18.41
+        by smtp.gmail.com with ESMTPSA id t15-v6sm2578317qke.74.2018.09.28.04.18.42
         (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
-        Fri, 28 Sep 2018 04:18:41 -0700 (PDT)
+        Fri, 28 Sep 2018 04:18:43 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     kernel-team@fb.com, linux-btrfs@vger.kernel.org
-Subject: [PATCH 09/42] btrfs: release metadata before running delayed refs
-Date:   Fri, 28 Sep 2018 07:17:48 -0400
-Message-Id: <20180928111821.24376-10-josef@toxicpanda.com>
+Subject: [PATCH 10/42] btrfs: protect space cache inode alloc with nofs
+Date:   Fri, 28 Sep 2018 07:17:49 -0400
+Message-Id: <20180928111821.24376-11-josef@toxicpanda.com>
 X-Mailer: git-send-email 2.14.3
 In-Reply-To: <20180928111821.24376-1-josef@toxicpanda.com>
 References: <20180928111821.24376-1-josef@toxicpanda.com>
@@ -70,42 +70,51 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-We want to release the unused reservation we have since it refills the
-delayed refs reserve, which will make everything go smoother when
-running the delayed refs if we're short on our reservation.
+If we're allocating a new space cache inode it's likely going to be
+under a transaction handle, so we need to use memalloc_nofs_save() in
+order to avoid deadlocks, and more importantly lockdep messages that
+make xfstests fail.
 
 Reviewed-by: Omar Sandoval <osandov@fb.com>
-Reviewed-by: Liu Bo <bo.liu@linux.alibaba.com>
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/transaction.c | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+ fs/btrfs/free-space-cache.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 117e0c4a914a..a0f19ca0bd6c 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -1922,6 +1922,9 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
- 		return ret;
- 	}
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index c3888c113d81..e077ad3b4549 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -10,6 +10,7 @@
+ #include <linux/math64.h>
+ #include <linux/ratelimit.h>
+ #include <linux/error-injection.h>
++#include <linux/sched/mm.h>
+ #include "ctree.h"
+ #include "free-space-cache.h"
+ #include "transaction.h"
+@@ -47,6 +48,7 @@ static struct inode *__lookup_free_space_inode(struct btrfs_root *root,
+ 	struct btrfs_free_space_header *header;
+ 	struct extent_buffer *leaf;
+ 	struct inode *inode = NULL;
++	unsigned nofs_flag;
+ 	int ret;
  
-+	btrfs_trans_release_metadata(trans);
-+	trans->block_rsv = NULL;
-+
- 	/* make a pass through all the delayed refs we have so far
- 	 * any runnings procs may add more while we are here
- 	 */
-@@ -1931,9 +1934,6 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
- 		return ret;
- 	}
+ 	key.objectid = BTRFS_FREE_SPACE_OBJECTID;
+@@ -68,7 +70,13 @@ static struct inode *__lookup_free_space_inode(struct btrfs_root *root,
+ 	btrfs_disk_key_to_cpu(&location, &disk_key);
+ 	btrfs_release_path(path);
  
--	btrfs_trans_release_metadata(trans);
--	trans->block_rsv = NULL;
--
- 	cur_trans = trans->transaction;
++	/*
++	 * We are often under a trans handle at this point, so we need to make
++	 * sure NOFS is set to keep us from deadlocking.
++	 */
++	nofs_flag = memalloc_nofs_save();
+ 	inode = btrfs_iget(fs_info->sb, &location, root, NULL);
++	memalloc_nofs_restore(nofs_flag);
+ 	if (IS_ERR(inode))
+ 		return inode;
  
- 	/*
 -- 
 2.14.3
 

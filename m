@@ -7,74 +7,69 @@ X-Spam-Status: No, score=-8.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	SIGNED_OFF_BY,SPF_PASS,UNPARSEABLE_RELAY,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7D2AAC43143
-	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Oct 2018 08:30:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D61F5C43143
+	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Oct 2018 08:45:05 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 2E1AD2083C
-	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Oct 2018 08:30:58 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 83D7420652
+	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Oct 2018 08:45:05 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="DcRXe/yK"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 2E1AD2083C
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="JRLNzRsQ"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 83D7420652
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=oracle.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728847AbeJAPG5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 1 Oct 2018 11:06:57 -0400
-Received: from aserp2120.oracle.com ([141.146.126.78]:39126 "EHLO
-        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728803AbeJAPG4 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Oct 2018 11:06:56 -0400
-Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
-        by aserp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w918T976101190;
-        Mon, 1 Oct 2018 08:30:21 GMT
+        id S1728839AbeJAPVn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 1 Oct 2018 11:21:43 -0400
+Received: from userp2120.oracle.com ([156.151.31.85]:38874 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728749AbeJAPVn (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Oct 2018 11:21:43 -0400
+Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
+        by userp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w918hOqD065479;
+        Mon, 1 Oct 2018 08:45:03 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : cc :
  subject : date : message-id; s=corp-2018-07-02;
- bh=3EPdNsodAtSnq6j1kEExAyzsAbS+cjNLBG6Z2xU3mW0=;
- b=DcRXe/yK2ZLYlOOKm+0xJzOf8EJv6fA6jbf8dXIjWQdHz/UUvEyYi59DGEeVrEpRJ9Kv
- dMximF1eiejt+4P/hYYuwxc3ZL1OqWFgjHaCnKTatXgkxBLMFrV7M0RW23QuBnvnmvTZ
- tLa2i0uiLqOcLC3KQ5EiVbZ+dV7S9QotF+3vDdNtlFF/klmx42kBVghk1UcTSse0e0Lo
- hjsu83aaYrMJnypZ6qFSnyrjLRXMU+rTirYM78e7R6ckOouu0cOtOmdlFoWMGk5LLX6I
- wNhtktL82H8BpQVu7faL4EegyRJ7hoOjDOf0TJi36eZZ+Ytt35PUUxLv7GiNvecVMC3R 4A== 
+ bh=nhbRhvMLUZpUxpzgSZcUEgZolvrv8E9r5Zk8IOHLWTI=;
+ b=JRLNzRsQcQ38Vn4cHyBbveW90WTb9ZxyRYdJrrXDL5R9NnKjvqnFvVdLJeIw7LpBPOyq
+ 7kloQAr1PJOvIXrjEf5zu8oxfOVBl0MphDQ4B+yeGrElBLVH1CX8d89aEZJ0DeH1e6rE
+ vFNnOOmxYY1h/gh6hqEasZTIZSJ7dKl/UoZp9wgPbLLtJlQlS4Z5Qxyg9iPbvucDFrHQ
+ 6AnEKJ7VUsNlBUwkD2uEf2LUbW1Od7LEYxNAOkK0k/WTaQ0uTz53ZyzoNEf5p5eUmSAM
+ gzzTOJncR7qT+bmvYhOWDIQRsVhDXn7/OdhEsPK7lZk5Bl7+t3bkjUf6sWhrlwYQ7qHf qQ== 
 Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
-        by aserp2120.oracle.com with ESMTP id 2mt1bpnfc9-1
+        by userp2120.oracle.com with ESMTP id 2mt21qnh5a-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Mon, 01 Oct 2018 08:30:20 +0000
-Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w918UJ7g005424
+        Mon, 01 Oct 2018 08:45:02 +0000
+Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
+        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w918j2mU013845
         (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Mon, 1 Oct 2018 08:30:19 GMT
-Received: from abhmp0004.oracle.com (abhmp0004.oracle.com [141.146.116.10])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w918UJ9P006225;
-        Mon, 1 Oct 2018 08:30:19 GMT
+        Mon, 1 Oct 2018 08:45:02 GMT
+Received: from abhmp0017.oracle.com (abhmp0017.oracle.com [141.146.116.23])
+        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w918j2Kb012825;
+        Mon, 1 Oct 2018 08:45:02 GMT
 Received: from tpasj.sg.oracle.com (/10.186.53.176)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Mon, 01 Oct 2018 01:30:19 -0700
+        with ESMTP ; Mon, 01 Oct 2018 01:45:01 -0700
 From:   Anand Jain <anand.jain@oracle.com>
 To:     fstests@vger.kernel.org
 Cc:     linux-btrfs@vger.kernel.org
-Subject: [PATCH] verify hardening agaist duplicate fsid
-Date:   Mon,  1 Oct 2018 16:29:52 +0800
-Message-Id: <1538382592-1632-1-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH] fstests: btrfs verify hardening agaist duplicate fsid
+Date:   Mon,  1 Oct 2018 16:44:35 +0800
+Message-Id: <1538383475-2532-1-git-send-email-anand.jain@oracle.com>
 X-Mailer: git-send-email 1.8.3.1
 X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9032 signatures=668707
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=1 malwarescore=0
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=13 malwarescore=0
  phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
  adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.0.1-1807170000 definitions=main-1810010087
+ engine=8.0.1-1807170000 definitions=main-1810010089
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Its not that impossible to imagine that a device OR a btrfs image is
-been copied just by using the dd or the cp command. Which in case both
-the copies of the btrfs will have the same fsid. If on the system with
-automount enabled, the copied FS gets scanned.
-
 We have a known bug in btrfs, that we let the device path be changed
 after the device has been mounted. So using this loop hole the new
 copied device would appears as if its mounted immediately after its
-been copied.
+been copied. So this test case reproduces this issue.
 
 For example:
 
@@ -125,19 +120,19 @@ the 'btrfstune -u' command.
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- tests/btrfs/173     | 70 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/173     | 72 +++++++++++++++++++++++++++++++++++++++++++++++++++++
  tests/btrfs/173.out |  5 ++++
  tests/btrfs/group   |  1 +
- 3 files changed, 76 insertions(+)
+ 3 files changed, 78 insertions(+)
  create mode 100755 tests/btrfs/173
  create mode 100644 tests/btrfs/173.out
 
 diff --git a/tests/btrfs/173 b/tests/btrfs/173
 new file mode 100755
-index 000000000000..c644b07d6f5b
+index 000000000000..f59a62e206c3
 --- /dev/null
 +++ b/tests/btrfs/173
-@@ -0,0 +1,70 @@
+@@ -0,0 +1,72 @@
 +#! /bin/bash
 +# SPDX-License-Identifier: GPL-2.0
 +# Copyright (c) 2018 Oracle. All Rights Reserved.
@@ -145,6 +140,8 @@ index 000000000000..c644b07d6f5b
 +# FS QA Test 173
 +#
 +# Fuzzy test for FS image duplication.
++#  Could be fixed by
++#    [patch] btrfs: harden agaist duplicate fsid
 +#
 +seq=`basename $0`
 +seqres=$RESULT_DIR/$seq

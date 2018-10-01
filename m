@@ -2,82 +2,102 @@ Return-Path: <SRS0=adn4=MN=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
+X-Spam-Status: No, score=-2.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C5430C00449
-	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Oct 2018 14:32:33 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 82B0BC43143
+	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Oct 2018 14:46:28 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 82695213A2
-	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Oct 2018 14:32:33 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="FW5CsW1W"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 82695213A2
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
+	by mail.kernel.org (Postfix) with ESMTP id 4C78120C0A
+	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Oct 2018 14:46:28 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 4C78120C0A
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729469AbeJAVKi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 1 Oct 2018 17:10:38 -0400
-Received: from mail-ed1-f50.google.com ([209.85.208.50]:45782 "EHLO
-        mail-ed1-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1729415AbeJAVKh (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Oct 2018 17:10:37 -0400
-Received: by mail-ed1-f50.google.com with SMTP id h6-v6so12926119eds.12;
-        Mon, 01 Oct 2018 07:32:30 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:from:date:message-id:subject:to;
-        bh=lu454d2eCTucjk1GkUq1mbrmq9ALQ1DYXXyXmi4DwKU=;
-        b=FW5CsW1WaMQRB3mjKr9YwptHmABXGLwiLBSYFAz1FaUiKnGvGZlOdQ7hPo4ajE/Fb9
-         /xTObXWarwK7dIOAKNHHDnaGYO2Il3ch9+yRu9jUjt5o9oiWi8zqJkyE1TGbSNyboJkA
-         egvIxZUI0zPm4WVtZzb5my72hsPy7SMh9CTFWLlyNhpWr78Xs7EIQiCzJJNh/fphLHtL
-         hie9UIzsXtoKLS2kqpvPJJKhzeqT/jdQi9Q4HIKpnllzENoikFtWie8GULH12VYCRxXu
-         sS756FGmho7kCL5qE0Zmo0i+JPpOxZUzd2GMGncQpBNDYJh0KInKY/wfYNuw/jAddCX3
-         pcpQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:from:date:message-id:subject:to;
-        bh=lu454d2eCTucjk1GkUq1mbrmq9ALQ1DYXXyXmi4DwKU=;
-        b=DkhJgLzh16VSJyFwG2zNQGYHH/DW9K5/+2BqRbU67seCJSkGs9kLXA4nXWN10SesIL
-         3/G44N20VU9kVIJTayk4+nP6r72Nb2xCMGTjNqFI1YvMR+Qa+8uiBGL7uElICqfjAeV7
-         1TpzIihmQqhMrGsZ3tyw5V0baXaPSB4OZftDgqcIyOULb158iZEoHvqF8uOkQhPvIt6J
-         NsmSpQ74dRg11e11pJBkZg1jZInhZRjXjKPCghYAo0OFO1V8wnNjY7CL+Qq0KtNJW6F7
-         3zorF/hL4t/3tSellEqr4XrPf3XfDFWxBcOJwi1DSzdwMZrrW/oTXJpza/CwHknElo9y
-         r+6g==
-X-Gm-Message-State: ABuFfoizw35QFUqEEOYU4UoCeoOHoU6fDkPHnrUv8CjGP2eAqiGW7Xxr
-        6RjVme4K761ptvHUlRBgliN9vd32bGyaviRwp89hi6u/
-X-Google-Smtp-Source: ACcGV63s7BCkONvrhgNUCmC8boYbJj1HHpQXOtBk99ois+cXfWOp+bITs56u8OmeI4hWWlEENo7iZzU3oCaO8sNBnYk=
-X-Received: by 2002:a50:de03:: with SMTP id z3-v6mr18077176edk.245.1538404349334;
- Mon, 01 Oct 2018 07:32:29 -0700 (PDT)
-MIME-Version: 1.0
-From:   Joshi <joshiiitr@gmail.com>
-Date:   Mon, 1 Oct 2018 20:02:17 +0530
-Message-ID: <CA+1E3rLXPwzfO3ro49ZVg7RfpYon5YDB6Y_zqu60ivpgn4wenw@mail.gmail.com>
-Subject: cross-fs copy support
-To:     linux-fsdevel@vger.kernel.org, linux-xfs@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+        id S1729522AbeJAVYg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 1 Oct 2018 17:24:36 -0400
+Received: from mx2.suse.de ([195.135.220.15]:42334 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1729488AbeJAVYg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 1 Oct 2018 17:24:36 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 747A3AF0F
+        for <linux-btrfs@vger.kernel.org>; Mon,  1 Oct 2018 14:46:25 +0000 (UTC)
+From:   Nikolay Borisov <nborisov@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH 00/10] Freespace tree repair support v2
+Date:   Mon,  1 Oct 2018 17:46:11 +0300
+Message-Id: <1538405181-25231-1-git-send-email-nborisov@suse.com>
+X-Mailer: git-send-email 2.7.4
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-I was wondering about the cross-fs copy through copy_file_range.
-It seems current implement has below check, that disables such copy.
+Hello, 
 
-1577         /* this could be relaxed once a method supports cross-fs copies */
-1578         if (inode_in->i_sb != inode_out->i_sb)
-1579                 return -EXDEV;
+Here is the v2 of the freespace tree repair support patches. Version 1 can be 
+found at [0]. For background on the series please refer to the initial cover 
+letter. This time round a number of changes have been incorporated based on 
+feedback from Omar. Namely: 
 
-May I know what are the thoughts behind disabling cross-fs copy?
-Code has the comment "once a method supports", but that leaves me
-wondering exactly what 'method' is expected, and from whom.
+1. Added 2 new patches, patches 3 and 4,  which refactor the userspace
+impelementation of various bit manipulation functions. This was required to
+implement the bitmap conversion code from kernel space. 
 
-I disabled the check, and copy across volumes seemed to work fine. At
-least for a single file (1G size), with no data mismatch, and faster
-speed than regular copy.
+2. Extended patch 5 to include the bitmap conversion code, now userspace 
+handles the case of fragmented fst. 
+
+3. Re-ordered patches 6 and 7 so that we first hook into the extent 
+alloc/dealloc sequence (patch 6) and finally enable support for fst in patch 7.
+
+4. Updated the FST test (patch 9) to work with the new bitmap conversion code 
+since it changed the layout of the expected freespace tree. Now the test 
+passes again. Also removed an unused function. 
+
+5. Added patch 10 which fixes a similar bug to e444c7bfa65f ("btrfs-progs:
+check: Fix wrong error message in case of corrupted extent")
+
+Following the updates, I rerun all misc/fsck-tests and no failures were 
+observed. 
+
+More feedback and suggestions are always welcomed.
+
+[0] https://lore.kernel.org/linux-btrfs/1529060762-4372-1-git-send-email-nborisov@suse.com/
+
+
+Nikolay Borisov (10):
+  btrfs-progs: Add support for freespace tree in btrfs_read_fs_root
+  btrfs-progs: Add extent buffer bitmap manipulation infrastructure
+  btrfs-progs: Replace homegrown bitops related functions with kernel
+    counterparts
+  btrfs-progs: Implement find_*_bit_le operations
+  btrfs-progs: Pull free space tree related code from kernel
+  btrfs-progs: Hook FST code in extent (de)alloc
+  btrfs-progs: Add freespace tree as compat_ro supported feature
+  btrfs-progs: check: Add support for freespace tree fixing
+  btrfs-progs: tests: Test for FST corruption detection/repair
+  btrfs-progs: check: Fix wrong error message in case of corrupted
+    bitmap
+
+ check/main.c                                      |   47 +-
+ ctree.c                                           |   77 ++
+ ctree.h                                           |   19 +-
+ disk-io.c                                         |    3 +
+ extent-tree.c                                     |   11 +
+ extent_io.c                                       |   56 +
+ extent_io.h                                       |    4 +
+ free-space-tree.c                                 | 1255 ++++++++++++++++++++-
+ free-space-tree.h                                 |   13 +-
+ kerncompat.h                                      |    6 +
+ kernel-lib/bitops.h                               |  210 ++--
+ tests/fsck-tests/036-freespacetree-repair/test.sh |   76 ++
+ 12 files changed, 1662 insertions(+), 115 deletions(-)
+ create mode 100755 tests/fsck-tests/036-freespacetree-repair/test.sh
 
 -- 
-Joshi
+2.7.4
+

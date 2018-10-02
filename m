@@ -2,176 +2,129 @@ Return-Path: <SRS0=byT/=MO=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.3 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT autolearn=ham
+X-Spam-Status: No, score=-0.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 40F08C64EB8
-	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Oct 2018 19:24:27 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 80B98C64EB8
+	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Oct 2018 19:40:33 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id AECB1206B2
-	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Oct 2018 19:24:26 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 43F3A20666
+	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Oct 2018 19:40:33 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="DfSWeYOn"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org AECB1206B2
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=osandov.com
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="bC8kjZmo"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 43F3A20666
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727600AbeJCCJT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 2 Oct 2018 22:09:19 -0400
-Received: from mail-pf1-f193.google.com ([209.85.210.193]:38248 "EHLO
-        mail-pf1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726946AbeJCCJT (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Oct 2018 22:09:19 -0400
-Received: by mail-pf1-f193.google.com with SMTP id x17-v6so451062pfh.5
-        for <linux-btrfs@vger.kernel.org>; Tue, 02 Oct 2018 12:24:24 -0700 (PDT)
+        id S1727303AbeJCCZ3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 2 Oct 2018 22:25:29 -0400
+Received: from mail-ua1-f45.google.com ([209.85.222.45]:39779 "EHLO
+        mail-ua1-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726194AbeJCCZ3 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Oct 2018 22:25:29 -0400
+Received: by mail-ua1-f45.google.com with SMTP id g18-v6so1186978uam.6
+        for <linux-btrfs@vger.kernel.org>; Tue, 02 Oct 2018 12:40:31 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=osandov-com.20150623.gappssmtp.com; s=20150623;
-        h=date:from:to:cc:subject:message-id:references:mime-version
-         :content-disposition:in-reply-to:user-agent;
-        bh=DAjaC3gcdXCzGp9WFxc9jpPFNSSiGFBDxa0BfMHhFWw=;
-        b=DfSWeYOnYBJPD9wboZDO5cBin6R1WQdgPycmJfV4b8JZd2bc8wrcw9olF0QyE/DxkK
-         y1jOFc56zbkXN0v116Fftj+WX/bthFmq+E8rurGG+9WojuQqHCZN5Mt76PMs/g38r96R
-         JrRUqPxI0Y3E1Us4vivJPp4RrxgNX0LYaAajcyW+3MgzsXa0zbWZmOThDe9RnYGIPHNQ
-         6uLAME0RQ6E/LiJdImZy22rveQL/RXonTeKJ01PR9YmnDgy40RQ7rcJifwDcExxdJD4z
-         H4xCHGoadPs6iMHQOE5U1o5uZ0hzoRhd+qjJSCB9GrT7iTGn1Jh1dc0zOTAZOe1GL9wv
-         1V0Q==
+        d=gmail.com; s=20161025;
+        h=mime-version:references:in-reply-to:reply-to:from:date:message-id
+         :subject:to:cc:content-transfer-encoding;
+        bh=S9wbk5BNP0lxBvMqf8Gxx6qDDoMsBhe+vhQ8/+xXC6s=;
+        b=bC8kjZmo7s6zcq9m5YAwwBs52qQQcDiCwaUIoK5bwmVf8a+74SSEZDFyYxKN/6ZqcO
+         7mvKshM+juxflHOkqvemTVemuv6GG3C0QqhM0IlBKunoJNcS3Zt7oWADaHBNV/gUq5eO
+         UrVZGXLj8C8PN28I40QqVS7HhkYX9wBAmqcIEg1DrZhHVrPE8oj/9iO2fKm2ZKwLCCOl
+         Qc6drT42vwzzXrWkxv4G3CSQNSowVnJQ6zA+3cpfGRhc3sLTic2Xp/p0kHjowFW/h6Lq
+         uCD/moCbgQ9f8k7K66x2t+hXj3TKEM+FjDY7oBx6Rk1J3BMfrAH1j853QRofgTvSEEXJ
+         907A==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
-         :mime-version:content-disposition:in-reply-to:user-agent;
-        bh=DAjaC3gcdXCzGp9WFxc9jpPFNSSiGFBDxa0BfMHhFWw=;
-        b=Hk6rvSCOydkDyKnsx0VBY5ZWWPibFiCehLAXNImJIqBCynsaZdQC4+GDXtH6tgR0vx
-         5RLlxmosb309Spy3ZxaLiCn+6D5E7v8XvQLvWqtzQw8J9TxuBkI5mWHTe0UkLZlVumzU
-         +G4wIJ+kWlykbwd0i8HpkDnDLuBLdRPlYNd1eVMr1FMHUhjIzvucbPzwagng1u8O+JtM
-         KeYpFSEhCAYGcXtzFUThVHsEDJbgqsJt3fA6CAk+Dc2aiSVAHbwYpCxBfeg0p2FUj9Hw
-         A7N0BeP886bCB9Im/8AXiD5z2AgItvyVbPkCq5kDNTsDfv2NWAmQ/1ZcwBZ71n/7q43u
-         ptrg==
-X-Gm-Message-State: ABuFfoirRj3sGocnL94pfX6hq3ohLeZNAMxX6GkJROFHrWSnF1x8OQYR
-        6VzqtZ1a7ssixHsF3sD6DLleuA==
-X-Google-Smtp-Source: ACcGV61PSn+BHuEjNK/aRrvyk8KeBIW8VogLWcX+zKiHUv2fp7DfWrM4ofbUjS9zeXlYlKQVJerKpA==
-X-Received: by 2002:a62:da03:: with SMTP id c3-v6mr14686948pfh.52.1538508263908;
-        Tue, 02 Oct 2018 12:24:23 -0700 (PDT)
-Received: from vader ([2620:10d:c090:200::5:4e24])
-        by smtp.gmail.com with ESMTPSA id h77-v6sm24072781pfh.13.2018.10.02.12.24.23
-        (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
-        Tue, 02 Oct 2018 12:24:23 -0700 (PDT)
-Date:   Tue, 2 Oct 2018 12:24:22 -0700
-From:   Omar Sandoval <osandov@osandov.com>
-To:     Nikolay Borisov <nborisov@suse.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 02/10] btrfs-progs: Add extent buffer bitmap manipulation
- infrastructure
-Message-ID: <20181002192422.GB25437@vader>
-References: <1538405181-25231-1-git-send-email-nborisov@suse.com>
- <1538405181-25231-3-git-send-email-nborisov@suse.com>
+        h=x-gm-message-state:mime-version:references:in-reply-to:reply-to
+         :from:date:message-id:subject:to:cc:content-transfer-encoding;
+        bh=S9wbk5BNP0lxBvMqf8Gxx6qDDoMsBhe+vhQ8/+xXC6s=;
+        b=ZWpT78oQ0D73+CmGIv3au/MmCuFt6f5WShlwyw7MWd1q+dkBgceCpxu6ygs5LtEjyc
+         TH8t07/bv/+EsKXpCePkXIu+UsEDz6cYBWOeuIwn9JpWqOIMPd6TZAzAf0nswOL/bo62
+         U5iXLjdNp7IfJHfmQE4y/m4m8Jp/wICYH/jWjkcdQKeBB//c06d76cHEH6SxedAR+CZ8
+         qlyMYjCAFFUzclgTuJrBa0xhlLIDs8g0Hxq2rakNhPTwyQCWj0mDY0Lrs7Ia/TPxhWWw
+         bLWM0JrCzorPfQOERkghtjw14F1uVhB0UJhAQAeTa132HB4N3BNDitDWkhQyiwxSSw5c
+         eMdg==
+X-Gm-Message-State: ABuFfog5Fp4Z5JQRSVIsfepWOdxyRIt6s0BLVI9th9OaRlBVDrxHu+Zf
+        mcMR8ydTVQ4TfOoA2iwUvaDnaMrSL6zv3K7E948AFg==
+X-Google-Smtp-Source: ACcGV639CuLRNlELMibeU9EzOAZu2GF5hne02z2hyu5s7I2G64Pa3PjW5WiCRmUH6bBOU/KXq/YcGnCKY1qmkvw5C14=
+X-Received: by 2002:a9f:3044:: with SMTP id i4-v6mr7574939uab.100.1538509230778;
+ Tue, 02 Oct 2018 12:40:30 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <1538405181-25231-3-git-send-email-nborisov@suse.com>
-User-Agent: Mutt/1.10.1 (2018-07-13)
+References: <87a7obowwn.fsf@lausen.nl> <87pnws7usa.fsf@lausen.nl>
+In-Reply-To: <87pnws7usa.fsf@lausen.nl>
+Reply-To: fdmanana@gmail.com
+From:   Filipe Manana <fdmanana@gmail.com>
+Date:   Tue, 2 Oct 2018 20:40:19 +0100
+Message-ID: <CAL3q7H5MbO41q-t-gGNYQuVG6dqfajbGLeZYLOOJyspuJuVFqg@mail.gmail.com>
+Subject: Re: btrfs send receive ERROR: chown failed: No such file or directory
+To:     leonard@lausen.nl
+Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Oct 01, 2018 at 05:46:13PM +0300, Nikolay Borisov wrote:
-> Those functions are in preparation for adding the freespace tree
-> repair code since it needs to be able to deal with bitmap based fsts.
-> This patch adds extent_buffer_bitmap_set and extent_buffer_bitmap_clear
-> functions. Since in userspace we don't have to deal with page mappings
-> their implementation is vastly simplified by simply setting each bit in
-> the passed range.
+On Tue, Oct 2, 2018 at 7:02 AM Leonard Lausen <leonard@lausen.nl> wrote:
+>
+> Hello,
+>
+> does anyone have an idea about below issue? It is a severe issue as it
+> renders btrfs send / receive dysfunctional and it is not clear if there
+> may be a data corruption issue hiding in the current send / receive
+> code.
+>
+> Thank you.
+>
+> Best regards
+> Leonard
+>
+> Leonard Lausen <leonard@lausen.nl> writes:
+> > Hello!
+> >
+> > I observe the following issue with btrfs send | btrfs receive in a setu=
+p
+> > with 2 machines and 3 btrfs file-systems. All machines run Linux 4.18.9=
+.
+> > Machine 1 runs btrfs-progs 4.17.1, machine 2 runs btrfs-progs 4.17 (via
+> > https://packages.debian.org/stretch-backports/btrfs-progs).
+> >
+> > 1) Machine 1 takes regular snapshots and sends them to machine 2. btrfs
+> >    btrfs send ... | ssh user@machine2 "btrfs receive /path1"
+> > 2) Machine 2 backups all subvolumes stored at /path1 to a second
+> >    independent btrfs filesystem. Let /path1/rootsnapshot be the first
+> >    snapshot stored at /path1 (ie. it has no Parent UUID). Let
+> >    /path1/incrementalsnapshot be a snapshot that has /path1/rootsnapsho=
+t
+> >    as a parent. Then
+> >    btrfs send -v /path1/rootsnapshot | btrfs receive /path2
+> >    works without issues, but
+> >    btrfs send -v -p /path1/rootsnapshot /path1/incrementalsnapshot | bt=
+rfs receive /path2
 
-Reviewed-by: Omar Sandoval <osandov@fb.com>
+-v is useless. Use -vv, which will dump all commands.
 
-> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
-> ---
->  extent_io.c | 56 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
->  extent_io.h |  4 ++++
->  2 files changed, 60 insertions(+)
-> 
-> diff --git a/extent_io.c b/extent_io.c
-> index 198492699438..de47c2c59ae9 100644
-> --- a/extent_io.c
-> +++ b/extent_io.c
-> @@ -204,6 +204,62 @@ static int clear_state_bit(struct extent_io_tree *tree,
->  	return ret;
->  }
->  
-> +/**
-> + * extent_buffer_bitmap_set - set an area of a bitmap
-> + * @eb: the extent buffer
-> + * @start: offset of the bitmap item in the extent buffer
-> + * @pos: bit number of the first bit
-> + * @len: number of bits to set
-> + */
-> +void extent_buffer_bitmap_set(struct extent_buffer *eb, unsigned long start,
-> +                              unsigned long pos, unsigned long len)
-> +{
-> +	u8 *p = (u8 *)eb->data + start + BIT_BYTE(pos);
-> +	const unsigned int size = pos + len;
-> +	int bits_to_set = BITS_PER_BYTE - (pos % BITS_PER_BYTE);
-> +	u8 mask_to_set = BITMAP_FIRST_BYTE_MASK(pos);
-> +
-> +	while (len >= bits_to_set) {
-> +		*p |= mask_to_set;
-> +		len -= bits_to_set;
-> +		bits_to_set = BITS_PER_BYTE;
-> +		mask_to_set = ~0;
-> +		p++;
-> +	}
-> +	if (len) {
-> +		mask_to_set &= BITMAP_LAST_BYTE_MASK(size);
-> +		*p |= mask_to_set;
-> +	}
-> +}
-> +
-> +
-> +/**
-> + * extent_buffer_bitmap_clear - clear an area of a bitmap
-> + * @eb: the extent buffer
-> + * @start: offset of the bitmap item in the extent buffer
-> + * @pos: bit number of the first bit
-> + * @len: number of bits to clear
-> + */
-> +void extent_buffer_bitmap_clear(struct extent_buffer *eb, unsigned long start,
-> +                                unsigned long pos, unsigned long len)
-> +{
-> +	u8 *p = (u8 *)eb->data + start + BIT_BYTE(pos);
-> +	const unsigned int size = pos + len;
-> +	int bits_to_clear = BITS_PER_BYTE - (pos % BITS_PER_BYTE);
-> +	u8 mask_to_clear = BITMAP_FIRST_BYTE_MASK(pos);
-> +
-> +	while (len >= bits_to_clear) {
-> +		*p &= ~mask_to_clear;
-> +		len -= bits_to_clear;
-> +		bits_to_clear = BITS_PER_BYTE;
-> +		mask_to_clear = ~0;
-> +		p++;
-> +	}
-> +	if (len) {
-> +		mask_to_clear &= BITMAP_LAST_BYTE_MASK(size);
-> +		*p &= ~mask_to_clear;
-> +	}
-> +}
->  /*
->   * clear some bits on a range in the tree.
->   */
-> diff --git a/extent_io.h b/extent_io.h
-> index d407d93d617e..b67c6fc40e89 100644
-> --- a/extent_io.h
-> +++ b/extent_io.h
-> @@ -175,4 +175,8 @@ int read_data_from_disk(struct btrfs_fs_info *info, void *buf, u64 offset,
->  			u64 bytes, int mirror);
->  int write_data_to_disk(struct btrfs_fs_info *info, void *buf, u64 offset,
->  		       u64 bytes, int mirror);
-> +void extent_buffer_bitmap_clear(struct extent_buffer *eb, unsigned long start,
-> +                                unsigned long pos, unsigned long len);
-> +void extent_buffer_bitmap_set(struct extent_buffer *eb, unsigned long start,
-> +                              unsigned long pos, unsigned long len);
->  #endif
-> -- 
-> 2.7.4
-> 
+> >    fails as follows:
+> >    ERROR: chown o257-4639416-0 failed: No such file or directory
+> >
+> > No error is shown in dmesg. /path1 and /path2 denote two independent
+> > btrfs filesystems.
+> >
+> > Note that there was no issue with transferring incrementalsnapshot from
+> > machine 1 to machine 2. No error is shown in dmesg.
+> >
+> > Best regards
+> > Leonard
+
+
+
+--=20
+Filipe David Manana,
+
+=E2=80=9CWhether you think you can, or you think you can't =E2=80=94 you're=
+ right.=E2=80=9D

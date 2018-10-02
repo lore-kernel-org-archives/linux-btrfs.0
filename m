@@ -2,86 +2,62 @@ Return-Path: <SRS0=byT/=MO=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.3 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-5.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2A230C43143
-	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Oct 2018 08:15:49 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EC020C43143
+	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Oct 2018 13:13:43 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id CB5DA20878
-	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Oct 2018 08:15:48 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org CB5DA20878
+	by mail.kernel.org (Postfix) with ESMTP id BDEB0206B2
+	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Oct 2018 13:13:43 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org BDEB0206B2
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727357AbeJBO5t (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 2 Oct 2018 10:57:49 -0400
-Received: from mx2.suse.de ([195.135.220.15]:45544 "EHLO mx1.suse.de"
+        id S1726143AbeJBT47 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 2 Oct 2018 15:56:59 -0400
+Received: from mx2.suse.de ([195.135.220.15]:39236 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727006AbeJBO5s (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 2 Oct 2018 10:57:48 -0400
+        id S1726092AbeJBT47 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 2 Oct 2018 15:56:59 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 1F8F9AD7D;
-        Tue,  2 Oct 2018 08:15:45 +0000 (UTC)
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id B5871AFD3
+        for <linux-btrfs@vger.kernel.org>; Tue,  2 Oct 2018 13:13:40 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 945BADAD55; Tue,  2 Oct 2018 10:15:44 +0200 (CEST)
-Date:   Tue, 2 Oct 2018 10:15:44 +0200
+        id DA6B8DAD55; Tue,  2 Oct 2018 15:13:39 +0200 (CEST)
+Date:   Tue, 2 Oct 2018 15:13:38 +0200
 From:   David Sterba <dsterba@suse.cz>
-To:     Andreas Dilger <adilger@dilger.ca>
-Cc:     Eric Sandeen <sandeen@sandeen.net>,
-        Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        Joshi <joshiiitr@gmail.com>, linux-fsdevel@vger.kernel.org,
-        linux-xfs@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        linux-ext4@vger.kernel.org
-Subject: Re: cross-fs copy support
-Message-ID: <20181002081544.GW3255@twin.jikos.cz>
+To:     Qu Wenruo <wqu@suse.com>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: tree-checker: Check level for leaves and nodes
+Message-ID: <20181002131338.GX3255@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Andreas Dilger <adilger@dilger.ca>,
-        Eric Sandeen <sandeen@sandeen.net>,
-        Qu Wenruo <quwenruo.btrfs@gmx.com>, Joshi <joshiiitr@gmail.com>,
-        linux-fsdevel@vger.kernel.org, linux-xfs@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org
-References: <CA+1E3rLXPwzfO3ro49ZVg7RfpYon5YDB6Y_zqu60ivpgn4wenw@mail.gmail.com>
- <2a92fff4-d005-835a-3bd7-a328b008857f@gmx.com>
- <df92a795-3f2e-751a-8504-030015fba6d9@sandeen.net>
- <FE6394EC-5CB0-4A16-AAC6-97F465A4E50C@dilger.ca>
+Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org
+References: <20180927235934.5215-1-wqu@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <FE6394EC-5CB0-4A16-AAC6-97F465A4E50C@dilger.ca>
+In-Reply-To: <20180927235934.5215-1-wqu@suse.com>
 User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Oct 01, 2018 at 01:51:09PM -0600, Andreas Dilger wrote:
-> > Yes, I would expect there to be problems with his modified kernel
-> > for a filesystem that supports clone_file_range, because
-> > vfs_copy_file_range() will clone if possible, and this should fail across
-> > filesystems.
-> > 
-> > In general, though, I don't know for sure why we don't fall back to
-> > do_splice_direct() across filesystems, although the filesystems that
-> > implement their own ->copy_file_range ops may have their own,
-> > further restrictions within their implementations.
-> > 
-> > This call /is/ documented in the manpage as only being valid for
-> > files on the same filesystem, though:
-> > http://man7.org/linux/man-pages/man2/copy_file_range.2.html
+On Fri, Sep 28, 2018 at 07:59:34AM +0800, Qu Wenruo wrote:
+> Although we have tree level check at tree read runtime, it's completely
+> based on its parent level.
+> We still need to do accurate level check to avoid invalid tree blocks
+> sneak into kernel space.
 > 
-> There was a patch to allow cross-mount copy for NFS, but it hasn't landed
-> yet.
+> The check itself is simple, for leaf its level should always be 0.
+> For nodes its level should be in range [1, BTRFS_MAX_LEVEL - 1].
+> 
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
 
-I found https://marc.info/?l=linux-nfs&m=144138779721907&w=2 that lifts
-the VFS check (part of a series that can't be easily linked to).
+Reviewed-by: David Sterba <dsterba@suse.com>
 
-The lack of cross-mount reflink (based on the copy_file_ragne) is often
-confusing users, there are common setups that mount subvolumes
-separately and reflinking between them would require mount of the
-toplevel subvolume.
-
-If there are 2 in-kernel users of the relaxed cross-mount copy, I think
-this would help to push the series forward.
+Added to misc-next.

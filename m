@@ -2,78 +2,429 @@ Return-Path: <SRS0=byT/=MO=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.3 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-0.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 99ED7C43143
-	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Oct 2018 16:06:29 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C6863C43143
+	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Oct 2018 18:23:13 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 5D62620666
-	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Oct 2018 16:06:29 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 5D62620666
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=giis.co.in
+	by mail.kernel.org (Postfix) with ESMTP id 685782064E
+	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Oct 2018 18:23:13 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="tjC6cQgh"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 685782064E
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729437AbeJBWud (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 2 Oct 2018 18:50:33 -0400
-Received: from p3nlsmtpcp01-04.prod.phx3.secureserver.net ([184.168.200.145]:39856
-        "EHLO p3nlsmtpcp01-04.prod.phx3.secureserver.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1729393AbeJBWud (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 2 Oct 2018 18:50:33 -0400
-Received: from p3plcpnl0639.prod.phx3.secureserver.net ([50.62.176.166])
-        by : HOSTING RELAY : with ESMTP
-        id 7NAsg5f7edPt87NAsgBCBD; Tue, 02 Oct 2018 09:05:26 -0700
-Received: from [223.182.205.161] (port=3855 helo=giis.co.in)
-        by p3plcpnl0639.prod.phx3.secureserver.net with esmtpsa (TLSv1.2:ECDHE-RSA-AES128-GCM-SHA256:128)
-        (Exim 4.91)
-        (envelope-from <lakshmipathi.g@giis.co.in>)
-        id 1g7NAr-00Bwk9-Bf; Tue, 02 Oct 2018 09:05:25 -0700
-Date:   Tue, 2 Oct 2018 21:35:15 +0530
-From:   "Lakshmipathi.G" <lakshmipathi.g@giis.co.in>
-To:     Adam Borowski <kilobyte@angband.pl>, ce3g8jdj@umail.furryterror.org
-Cc:     Timofey Titovets <nefelim4ag@gmail.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: dduper - Offline btrfs deduplication tool
-Message-ID: <20181002160515.GA28265@giis.co.in>
-References: <20180824043139.GA8263@giis.co.in>
- <CAGqmi74eMiHe7HK_oueaj0JZmy1Kp1NoOCrU0yheEE8MjngLKA@mail.gmail.com>
- <20180907035728.GA7717@giis.co.in>
- <20180907143107.gsixosfbswlqcbly@angband.pl>
+        id S1726809AbeJCBHw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 2 Oct 2018 21:07:52 -0400
+Received: from mail-yw1-f66.google.com ([209.85.161.66]:46524 "EHLO
+        mail-yw1-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725951AbeJCBHv (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Oct 2018 21:07:51 -0400
+Received: by mail-yw1-f66.google.com with SMTP id j202-v6so1154985ywa.13
+        for <linux-btrfs@vger.kernel.org>; Tue, 02 Oct 2018 11:23:10 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc:content-transfer-encoding;
+        bh=4rzbUKpeyn0LfSC2REdKoj9fs2wJgDKYWa9yjfvNK0o=;
+        b=tjC6cQghNSDnwUpHEaubRR2+vsvuhnzo5uuNXVpDYCvKB/EvNAhswXbFkm8AkNHLtO
+         5EYPtzM/twyRr+siuEWIwv4/VSYQuyOZ/doAFhBPuT/qBwhx12iUsT/GUFOf9TrlwZbw
+         LTgXWHh2ypJfmsNRTQ3fooXb1PETJz9sznIGyE48r9q1yQ3wCvKtGAvvpdjIDUS8eNzw
+         38SyCfNkEuHAFfw88Ks8KX6LNpNZsPOndT6Zja+EDHnRfBfgkahh/kpAhXDQU07C0gil
+         vMCdF+VD7IhQNJdtrzju5ABLSdGa0VEsTMvAARrhV0OZ1Tl7eJgahOdC9hXh1z2oLmma
+         VKCQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc:content-transfer-encoding;
+        bh=4rzbUKpeyn0LfSC2REdKoj9fs2wJgDKYWa9yjfvNK0o=;
+        b=knpCrcnWeHNhwyPuQwTnqKhFHz9ywisUl9y+CKE1dM0PMGT4fwOVBSgK2WvS/d3sVy
+         PqV4Yf7kK2SS7umgpjbpk3LobOAAQKDD9LQKna/Bb1eRBY7yk/YnXwJNCk9X8zE7T8C3
+         r3sXuy0a1QIoAUwJmdqlE3XvEC45sKl+lSzfE46yQriEHdVdCHBh6MmT5D0+LYL3FNsF
+         E+VnY4CnJsqKYFPz/OUqdz1sW/awlNVKDiww+I8q6yj5GsTE6vIQdN2UxjctGnFHxk7z
+         1BpQT6DUVMqFqcjdsPgaWY//vYZRQaHhTLr4RWHUYj2aIRA5/qCaiZXMBZ4EE6/2USdG
+         sw9g==
+X-Gm-Message-State: ABuFfohgPfx7uwXnsfbEzuV3HGO+6DdA7IuDm/H8JpnCG2mernyUKaRC
+        ruvDxxrfw9XpNpKV5PLfLq8enBS6jPQGXaB4QYcbg20u
+X-Google-Smtp-Source: ACcGV63tWMxwUDg8MPISN72cb3Mg/Y00oFrVKtuqT43CimNexoHUFVwv4GbM60rxly9YjAI+pO/c9DYrxC+VV3dpPC0=
+X-Received: by 2002:a81:70c4:: with SMTP id l187-v6mr9461148ywc.478.1538504589914;
+ Tue, 02 Oct 2018 11:23:09 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20180907143107.gsixosfbswlqcbly@angband.pl>
-User-Agent: Mutt/1.5.24 (2015-08-30)
-X-AntiAbuse: This header was added to track abuse, please include it with any abuse report
-X-AntiAbuse: Primary Hostname - p3plcpnl0639.prod.phx3.secureserver.net
-X-AntiAbuse: Original Domain - vger.kernel.org
-X-AntiAbuse: Originator/Caller UID/GID - [47 12] / [47 12]
-X-AntiAbuse: Sender Address Domain - giis.co.in
-X-Get-Message-Sender-Via: p3plcpnl0639.prod.phx3.secureserver.net: authenticated_id: lakshmipathi.g@giis.co.in
-X-Authenticated-Sender: p3plcpnl0639.prod.phx3.secureserver.net: lakshmipathi.g@giis.co.in
-X-Source: 
-X-Source-Args: 
-X-Source-Dir: 
-X-CMAE-Envelope: MS4wfJUFXE8XXJuMjBtz4wgAj8OPhgVn6rkupPB9/yQntvpMFD2VGt0sD/qwZVt0SKROyeVbbZFykH4gpZSUHfxS05Vvle7BqdAYWxLY2YHZ/fUIinAXzD2N
- c7T12BQI035EWFYH4SvDk20yhsDsFNqLf1wcRTaIb2/2/PJtKbjm3pBchAAw2T/g4yf+ZOFdQ0l0J8o1amxgxMzAN+VkLFuQsnAZk5ZGZegO7/KTKozIKURz
+References: <CAPsdh31hOT+mjCJJCTFAnNpFOtCJtn=iCrwUKWvL0DZf70Qe2g@mail.gmail.com>
+ <621563d3b15818fd9fc4134c70392079@mailmag.net> <CAPsdh33uGNci2LCT70k95D38y4JX1vF8KSAexx+Z3YtVYQePUA@mail.gmail.com>
+ <CAPsdh33dncXqiSA3X=ESHpLyGMy-PrO9uF46_6ANb1G=xUTjwg@mail.gmail.com>
+In-Reply-To: <CAPsdh33dncXqiSA3X=ESHpLyGMy-PrO9uF46_6ANb1G=xUTjwg@mail.gmail.com>
+From:   Eli V <eliventer@gmail.com>
+Date:   Tue, 2 Oct 2018 14:22:58 -0400
+Message-ID: <CAJtFHUQyvEW6XUVX8pMPME3F5-5VX7_kxZQ3T5mALYR3Y0BOhg@mail.gmail.com>
+Subject: Re: Writing a large file causes odd freeze
+To:     gsaraber@rarcoa.com
+Cc:     joshua@mailmag.net, linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Apologies for pretty delay in response.  Thanks for the suggestions 
-and comments.
+I've seen similar symptoms running
+rsync(https://bugzilla.kernel.org/show_bug.cgi?id=3D199753), and the
+hangs always seem to have the wait_woken() in the stack trace. Doesn't
+happen repeatably for me, though I ran 4.18.6 for a month without
+issues, and had freezes the first(and only) two times I ran with
+4.18.8. So I've rebooted back to 4.18.6 for now. You could try that to
+see if it's any different for you or 4.19 is about done so could try
+that as well.
 
->On the other hand, full bit-to-bit comparison is faster and 100% safe
-
->With fideduperange the risk is more than minimized--it's completely
->eliminated.
-
-Okay got it, will use fideduperange() as default option for the tool and
-keep ficlonerange() as secondary option. Will make the code changes and
-send a new patch soon. thanks! 
-
-Cheers.
-Lakshmipathi.G 
+On Tue, Oct 2, 2018 at 1:43 PM Gerard Saraber <gsaraber@rarcoa.com> wrote:
+>
+> Correction, I am using that option:
+> mount UUID=3D"${FS}" -o space_cache=3Dv2,noatime,degraded /btrfsarray
+> On Tue, Oct 2, 2018 at 10:50 AM Gerard Saraber <gsaraber@rarcoa.com> wrot=
+e:
+> >
+> > I'll give that a shot! thank you!
+> >
+> > -Gerard
+> > On Tue, Oct 2, 2018 at 10:24 AM <joshua@mailmag.net> wrote:
+> > >
+> > > > I have a 25TB mirrored filesystem that I'm able to consistently fre=
+eze
+> > > > by ungzipping a large file.
+> > > > The filesystem scrubs complete without errors and smartd reports no
+> > > > errors at the moment.
+> > > >
+> > > > The command is:
+> > > > gzip -dc /btrfsarray/largefile.gz > /btrfs/db/output.sql
+> > > > At around 31GB it quits writing to the output file, and I start
+> > > > getting the 'hung task' messages in my kernel log.
+> > > > They are 3.0GB gzipped SQL dumps, that uncompress into about 42GB S=
+QL
+> > > > dump files.
+> > > >
+> > > > after that 'ps auwx' completely hangs and I can't write to the
+> > > > filesystem anymore, no errors, the processes just hang. I can still
+> > > > read from the FS as far as I can tell.
+> > > > I'm not sure how to diagnose it, or if i've simply ran into some ki=
+nd
+> > > > of bug (may not even be BTRFS related)
+> > > >
+> > > > Linux cloud1 4.18.10 #1 SMP Fri Sep 28 07:44:06 CDT 2018 x86_64 x86=
+_64
+> > > > x86_64 GNU/Linux
+> > > > [ I think It used to work on 4.18.0-rcX ]
+> > > >
+> > > > Hardware specs:
+> > > > AMD Ryzen Threadripper 1950X 16-Core Processor
+> > > > 128GB ram
+> > > > A bunch of 3-8TB SATA drives connected to the motherboard and a pai=
+r
+> > > > of LSI cards
+> > > >
+> > > > root@cloud1:~# btrfs fi usage /btrfsarray
+> > > > Overall:
+> > > > Device size: 79.14TiB
+> > > > Device allocated: 55.38TiB
+> > > > Device unallocated: 23.76TiB
+> > > > Device missing: 0.00B
+> > > > Used: 55.30TiB
+> > > > Free (estimated): 11.91TiB (min: 11.91TiB)
+> > > > Data ratio: 2.00
+> > > > Metadata ratio: 2.00
+> > > > Global reserve: 512.00MiB (used: 0.00B)
+> > > >
+> > > > Data,RAID1: Size:27.61TiB, Used:27.58TiB
+> > > > /dev/sda 1.64TiB
+> > > > /dev/sdb 1.64TiB
+> > > > /dev/sdc 1.87TiB
+> > > > /dev/sdd 4.37TiB
+> > > > /dev/sde 2.55TiB
+> > > > /dev/sdf 2.55TiB
+> > > > /dev/sdg 4.37TiB
+> > > > /dev/sdh 4.36TiB
+> > > > /dev/sdi 2.55TiB
+> > > > /dev/sdj 4.36TiB
+> > > > /dev/sdk 4.37TiB
+> > > > /dev/sdl 1.64TiB
+> > > > /dev/sdm 4.37TiB
+> > > > /dev/sdn 2.54TiB
+> > > > /dev/sdo 2.55TiB
+> > > > /dev/sdp 2.55TiB
+> > > > /dev/sdq 2.55TiB
+> > > > /dev/sdr 4.37TiB
+> > > >
+> > > > Metadata,RAID1: Size:87.00GiB, Used:77.46GiB
+> > > > /dev/sda 5.00GiB
+> > > > /dev/sdb 5.00GiB
+> > > > /dev/sdd 14.00GiB
+> > > > /dev/sde 12.00GiB
+> > > > /dev/sdf 8.00GiB
+> > > > /dev/sdg 6.00GiB
+> > > > /dev/sdh 20.00GiB
+> > > > /dev/sdi 11.00GiB
+> > > > /dev/sdj 19.00GiB
+> > > > /dev/sdk 5.00GiB
+> > > > /dev/sdl 6.00GiB
+> > > > /dev/sdm 7.00GiB
+> > > > /dev/sdn 17.00GiB
+> > > > /dev/sdo 7.00GiB
+> > > > /dev/sdp 13.00GiB
+> > > > /dev/sdq 12.00GiB
+> > > > /dev/sdr 7.00GiB
+> > > >
+> > > > System,RAID1: Size:32.00MiB, Used:5.19MiB
+> > > > /dev/sdc 32.00MiB
+> > > > /dev/sdr 32.00MiB
+> > > >
+> > > > Unallocated:
+> > > > /dev/sda 1.08TiB
+> > > > /dev/sdb 1.08TiB
+> > > > /dev/sdc 5.40TiB
+> > > > /dev/sdd 1.08TiB
+> > > > /dev/sde 1.08TiB
+> > > > /dev/sdf 1.08TiB
+> > > > /dev/sdg 1.08TiB
+> > > > /dev/sdh 1.08TiB
+> > > > /dev/sdi 1.08TiB
+> > > > /dev/sdj 1.08TiB
+> > > > /dev/sdk 1.08TiB
+> > > > /dev/sdl 1.08TiB
+> > > > /dev/sdm 1.08TiB
+> > > > /dev/sdn 1.08TiB
+> > > > /dev/sdo 1.08TiB
+> > > > /dev/sdp 1.08TiB
+> > > > /dev/sdq 1.08TiB
+> > > > /dev/sdr 1.08TiB
+> > > >
+> > > > Oct 2 08:02:25 cloud1 kernel: [165537.793055] INFO: task smbd:47578
+> > > > blocked for more than 120 seconds.
+> > > > Oct 2 08:02:25 cloud1 kernel: [165537.793068] Not tainted 4.18.10 #=
+1
+> > > > Oct 2 08:02:25 cloud1 kernel: [165537.793079] "echo 0 >
+> > > > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+> > > > Oct 2 08:02:25 cloud1 kernel: [165537.793094] smbd D 0
+> > > > 47578 3375 0x00000000
+> > > > Oct 2 08:02:25 cloud1 kernel: [165537.793096] Call Trace:
+> > > > Oct 2 08:02:25 cloud1 kernel: [165537.793098] ? __schedule+0x299/0x=
+880
+> > > > Oct 2 08:02:25 cloud1 kernel: [165537.793100] schedule+0x28/0x80
+> > > > Oct 2 08:02:25 cloud1 kernel: [165537.793102] wait_current_trans+0x=
+ad/0xe0
+> > > > Oct 2 08:02:25 cloud1 kernel: [165537.793104] ? wait_woken+0x80/0x8=
+0
+> > > > Oct 2 08:02:25 cloud1 kernel: [165537.793106] start_transaction+0x2=
+ee/0x3c0
+> > > > Oct 2 08:02:25 cloud1 kernel: [165537.793108] btrfs_sync_file+0x279=
+/0x400
+> > > > Oct 2 08:02:25 cloud1 kernel: [165537.793110]
+> > > > btrfs_file_write_iter+0x461/0x576
+> > > > Oct 2 08:02:25 cloud1 kernel: [165537.793111] __vfs_write+0x114/0x1=
+a0
+> > > > Oct 2 08:02:25 cloud1 kernel: [165537.793113] vfs_write+0xad/0x1a0
+> > > > Oct 2 08:02:25 cloud1 kernel: [165537.793115] ksys_pwrite64+0x71/0x=
+90
+> > > > Oct 2 08:02:25 cloud1 kernel: [165537.793116] ? __switch_to_asm+0x3=
+4/0x70
+> > > > Oct 2 08:02:25 cloud1 kernel: [165537.793117] do_syscall_64+0x4f/0x=
+100
+> > > > Oct 2 08:02:25 cloud1 kernel: [165537.793119]
+> > > > entry_SYSCALL_64_after_hwframe+0x44/0xa9
+> > > > Oct 2 08:02:25 cloud1 kernel: [165537.793120] RIP: 0033:0x7f82af381=
+04f
+> > > > Oct 2 08:02:25 cloud1 kernel: [165537.793120] Code: Bad RIP value.
+> > > > Oct 2 08:02:25 cloud1 kernel: [165537.793122] RSP:
+> > > > 002b:00007f8296b4fd70 EFLAGS: 00000293 ORIG_RAX: 0000000000000012
+> > > > Oct 2 08:02:25 cloud1 kernel: [165537.793124] RAX: ffffffffffffffda
+> > > > RBX: 0000000000000009 RCX: 00007f82af38104f
+> > > > Oct 2 08:02:25 cloud1 kernel: [165537.793124] RDX: 0000000000001000
+> > > > RSI: 000055e06183fea0 RDI: 0000000000000009
+> > > > Oct 2 08:02:25 cloud1 kernel: [165537.793125] RBP: 000055e06183fea0
+> > > > R08: 0000000000000000 R09: 00007fffac636080
+> > > > Oct 2 08:02:25 cloud1 kernel: [165537.793126] R10: 00000000089c8000
+> > > > R11: 0000000000000293 R12: 0000000000001000
+> > > > Oct 2 08:02:25 cloud1 kernel: [165537.793127] R13: 00000000089c8000
+> > > > R14: 00007f82aa40e090 R15: 000055e0616b5f70
+> > > >
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622345] INFO: task
+> > > > btrfs-transacti:12370 blocked for more than 120 seconds.
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622366] Not tainted 4.18.10 #=
+1
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622378] "echo 0 >
+> > > > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622393] btrfs-transacti D 0
+> > > > 12370 2 0x80000000
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622396] Call Trace:
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622406] ? __schedule+0x299/0x=
+880
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622408] ?
+> > > > _raw_spin_unlock_irqrestore+0xa/0x10
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622410] schedule+0x28/0x80
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622414]
+> > > > btrfs_commit_transaction+0x760/0x870
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622418] ? wait_woken+0x80/0x8=
+0
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622420] transaction_kthread+0=
+x12e/0x150
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622422] ?
+> > > > btrfs_cleanup_transaction+0x520/0x520
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622425] kthread+0x113/0x130
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622427] ?
+> > > > kthread_create_worker_on_cpu+0x70/0x70
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622428] ret_from_fork+0x22/0x=
+40
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622487] INFO: task jsvc:15530
+> > > > blocked for more than 120 seconds.
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622501] Not tainted 4.18.10 #=
+1
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622512] "echo 0 >
+> > > > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622527] jsvc D 0
+> > > > 15530 15312 0x00000120
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622529] Call Trace:
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622531] ? __schedule+0x299/0x=
+880
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622533] schedule+0x28/0x80
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622536]
+> > > > btrfs_start_ordered_extent+0xea/0x120
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622538] ? wait_woken+0x80/0x8=
+0
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622540] btrfs_page_mkwrite+0x=
+1f3/0x500
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622544] do_page_mkwrite+0x31/=
+0x90
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622546] do_wp_page+0x214/0x5a=
+0
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622548] __handle_mm_fault+0xb=
+6a/0x1260
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622551] ? __seccomp_filter+0x=
+44/0x4c0
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622553] handle_mm_fault+0xc6/=
+0x200
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622556] __do_page_fault+0x24c=
+/0x4d0
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622558] ? page_fault+0x8/0x30
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622559] page_fault+0x1e/0x30
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622562] RIP: 0033:0x7f9b5aadb=
+47e
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622563] Code: Bad RIP value.
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622569] RSP:
+> > > > 002b:00007f92dccced60 EFLAGS: 00010246
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622571] RAX: 00009606c50d609c
+> > > > RBX: 00007f9b5c5a1c30 RCX: 0000000000000018
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622572] RDX: 0000000000000000
+> > > > RSI: 00007f92dccced30 RDI: 0000000000000001
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622572] RBP: 00007f92dccced70
+> > > > R08: 001f9c207abaa2b8 R09: 00007fff9f29c080
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622573] R10: 00000000048732ba
+> > > > R11: 0000000000000001 R12: 0000000000000028
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622574] R13: 0000561d92af6950
+> > > > R14: 0000000000000002 R15: 0000000000000001
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622613] INFO: task mongod:233=
+44
+> > > > blocked for more than 120 seconds.
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622628] Not tainted 4.18.10 #=
+1
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622638] "echo 0 >
+> > > > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622653] mongod D 0
+> > > > 23344 15560 0x00000120
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622655] Call Trace:
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622657] ? __schedule+0x299/0x=
+880
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622659] schedule+0x28/0x80
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622661]
+> > > > btrfs_start_ordered_extent+0xea/0x120
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622663] ? wait_woken+0x80/0x8=
+0
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622665]
+> > > > btrfs_wait_ordered_range+0xbb/0x100
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622667] btrfs_sync_file+0x30c=
+/0x400
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622671] do_fsync+0x38/0x60
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622673] __x64_sys_fdatasync+0=
+x13/0x20
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622675] do_syscall_64+0x4f/0x=
+100
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622677]
+> > > > entry_SYSCALL_64_after_hwframe+0x44/0xa9
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622678] RIP: 0033:0x7f3d36c12=
+2e7
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622679] Code: Bad RIP value.
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622681] RSP:
+> > > > 002b:00007f3d31aef560 EFLAGS: 00000293 ORIG_RAX: 000000000000004b
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622683] RAX: ffffffffffffffda
+> > > > RBX: 000000000000000c RCX: 00007f3d36c122e7
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622683] RDX: 0000000000000000
+> > > > RSI: 000000000000000c RDI: 000000000000000c
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622684] RBP: 00007f3d31aef5a0
+> > > > R08: 00005633b3ab9c00 R09: 00007ffeef7a3080
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622685] R10: 0000000004873546
+> > > > R11: 0000000000000293 R12: 00005633b3ab9cc0
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622686] R13: 00005633b1075d90
+> > > > R14: 0000000000000000 R15: 00005633b39a20f8
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622688] INFO: task ftdc:23347
+> > > > blocked for more than 120 seconds.
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622702] Not tainted 4.18.10 #=
+1
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622713] "echo 0 >
+> > > > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622728] ftdc D 0
+> > > > 23347 15560 0x00000120
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622729] Call Trace:
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622731] ? __schedule+0x299/0x=
+880
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622733] schedule+0x28/0x80
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622735] wait_current_trans+0x=
+ad/0xe0
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622737] ? wait_woken+0x80/0x8=
+0
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622738] start_transaction+0x2=
+ee/0x3c0
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622740] btrfs_create+0x57/0x1=
+f0
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622743] path_openat+0x13c1/0x=
+16a0
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622746] do_filp_open+0x9b/0x1=
+10
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622748] ? try_lookup_one_len+=
+0x70/0x70
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622751] ? close_pdeo+0x93/0xf=
+0
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622753] ? __check_object_size=
++0xa7/0x1a0
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622756] ? __alloc_fd+0x3d/0x1=
+60
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622758] ? do_sys_open+0x1bd/0=
+x250
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622760] do_sys_open+0x1bd/0x2=
+50
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622762] do_syscall_64+0x4f/0x=
+100
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622763]
+> > > > entry_SYSCALL_64_after_hwframe+0x44/0xa9
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622764] RIP: 0033:0x7f3d36c0a=
+d19
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622765] Code: Bad RIP value.
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622767] RSP:
+> > > > 002b:00007f3d302ec200 EFLAGS: 00000293 ORIG_RAX: 0000000000000101
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622769] RAX: ffffffffffffffda
+> > > > RBX: 00005633b7197d80 RCX: 00007f3d36c0ad19
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622769] RDX: 0000000000000241
+> > > > RSI: 00005633b7106740 RDI: 00000000ffffff9c
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622770] RBP: 00005633b1077b13
+> > > > R08: 0000000000000000 R09: 00005633b1077b14
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622771] R10: 00000000000001b6
+> > > > R11: 0000000000000293 R12: 0000000000000004
+> > > > Oct 2 08:04:25 cloud1 kernel: [165658.622771] R13: 00005633b1077b12
+> > > > R14: 00007f3d302ec720 R15: 00005633b9942004
+> > >
+> > > Are you using mount option space_cache=3Dv2?
+> > >
+> > > If not, you should enable that and see if you experience the same beh=
+avior.  I believe it's highly recommended on all large BTRFS arrays, and I =
+had intermittent freezing problems on large writes before I enabled it.  I =
+do not appear to have those problems any more...

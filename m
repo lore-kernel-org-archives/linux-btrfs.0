@@ -2,69 +2,139 @@ Return-Path: <SRS0=JEJz=MP=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=unavailable autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-8.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_MUTT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D1C9FC64EBC
-	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Oct 2018 09:28:52 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 48750C00449
+	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Oct 2018 12:27:25 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 94CC620835
-	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Oct 2018 09:28:52 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 94CC620835
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=rjwysocki.net
+	by mail.kernel.org (Postfix) with ESMTP id 188AE20835
+	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Oct 2018 12:27:25 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 188AE20835
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727649AbeJCQQR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 3 Oct 2018 12:16:17 -0400
-Received: from cloudserver094114.home.pl ([79.96.170.134]:62756 "EHLO
-        cloudserver094114.home.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726712AbeJCQQR (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Oct 2018 12:16:17 -0400
-Received: from 79.184.253.194.ipv4.supernova.orange.pl (79.184.253.194) (HELO aspire.rjw.lan)
- by serwer1319399.home.pl (79.96.170.134) with SMTP (IdeaSmtpServer 0.83.148)
- id efea987198ef30d2; Wed, 3 Oct 2018 11:28:41 +0200
-From:   "Rafael J. Wysocki" <rjw@rjwysocki.net>
-To:     Rasmus Villemoes <linux@rasmusvillemoes.dk>
-Cc:     Jason Baron <jbaron@akamai.com>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        linux-kernel@vger.kernel.org,
-        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-        netdev@vger.kernel.org, Petr Mladek <pmladek@suse.com>,
-        Steven Rostedt <rostedt@goodmis.org>,
-        linux-btrfs@vger.kernel.org, linux-acpi@vger.kernel.org,
-        x86@kernel.org
-Subject: Re: [PATCH 00/22] various dynamic_debug patches
-Date:   Wed, 03 Oct 2018 11:25:40 +0200
-Message-ID: <2308315.5DVx2N1Pa0@aspire.rjw.lan>
-In-Reply-To: <4563778.42gAD4asSf@aspire.rjw.lan>
-References: <20180919220444.23190-1-linux@rasmusvillemoes.dk> <4563778.42gAD4asSf@aspire.rjw.lan>
+        id S1726871AbeJCTPe (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 3 Oct 2018 15:15:34 -0400
+Received: from mx2.suse.de ([195.135.220.15]:54046 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726619AbeJCTPe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 3 Oct 2018 15:15:34 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 37FD2AE8B;
+        Wed,  3 Oct 2018 12:27:21 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 78064DABCE; Wed,  3 Oct 2018 14:27:19 +0200 (CEST)
+Date:   Wed, 3 Oct 2018 14:27:18 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Josef Bacik <josef@toxicpanda.com>
+Cc:     kernel-team@fb.com, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 18/42] btrfs: move the dio_sem higher up the callchain
+Message-ID: <20181003122718.GZ3255@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Josef Bacik <josef@toxicpanda.com>,
+        kernel-team@fb.com, linux-btrfs@vger.kernel.org
+References: <20180928111821.24376-1-josef@toxicpanda.com>
+ <20180928111821.24376-19-josef@toxicpanda.com>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 7Bit
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20180928111821.24376-19-josef@toxicpanda.com>
+User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thursday, September 20, 2018 10:05:00 AM CEST Rafael J. Wysocki wrote:
-> On Thursday, September 20, 2018 12:04:22 AM CEST Rasmus Villemoes wrote:
-> > This started as an experiment to see how hard it would be to change
-> > the four pointers in struct _ddebug into relative offsets, a la
-> > CONFIG_GENERIC_BUG_RELATIVE_POINTERS, thus saving 16 bytes per
-> > pr_debug site (and thus exactly making up for the extra space used by
-> > the introduction of jump labels in 9049fc74). I stumbled on a few
-> > things that are probably worth fixing regardless of whether the latter
-> > half of this series is deemed worthwhile.
-> > 
-> > Patch relationships: 1-2, 3-4, 5-6 and 15-16 can be applied
-> > individually, though 2, 4 and 6 probably makes most sense in the
-> > context of the final goal of the series.
+On Fri, Sep 28, 2018 at 07:17:57AM -0400, Josef Bacik wrote:
+> We're getting a lockdep splat because we take the dio_sem under the
+
+Can you please add the important bits of the lockdep warning to the
+changelog? And possibly reference to the test or workload that triggers
+that.
+
+> log_mutex.  What we really need is to protect fsync() from logging an
+> extent map for an extent we never waited on higher up, so just guard the
+> whole thing with dio_sem.
 > 
-> OK, I can take the [15-16/22] separately.
-
-And they have been applied now.
-
-Thanks,
-Rafael
-
+> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+> ---
+>  fs/btrfs/file.c     | 12 ++++++++++++
+>  fs/btrfs/tree-log.c |  2 --
+>  2 files changed, 12 insertions(+), 2 deletions(-)
+> 
+> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+> index 095f0bb86bb7..c07110edb9de 100644
+> --- a/fs/btrfs/file.c
+> +++ b/fs/btrfs/file.c
+> @@ -2079,6 +2079,14 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
+>  		goto out;
+>  
+>  	inode_lock(inode);
+> +
+> +	/*
+> +	 * We take the dio_sem here because the tree log stuff can race with
+> +	 * lockless dio writes and get an extent map logged for an extent we
+> +	 * never waited on.  We need it this high up for lockdep reasons.
+> +	 */
+> +	down_write(&BTRFS_I(inode)->dio_sem);
+> +
+>  	atomic_inc(&root->log_batch);
+>  
+>  	/*
+> @@ -2087,6 +2095,7 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
+>  	 */
+>  	ret = btrfs_wait_ordered_range(inode, start, len);
+>  	if (ret) {
+> +		up_write(&BTRFS_I(inode)->dio_sem);
+>  		inode_unlock(inode);
+>  		goto out;
+>  	}
+> @@ -2110,6 +2119,7 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
+>  		 * checked called fsync.
+>  		 */
+>  		ret = filemap_check_wb_err(inode->i_mapping, file->f_wb_err);
+> +		up_write(&BTRFS_I(inode)->dio_sem);
+>  		inode_unlock(inode);
+>  		goto out;
+>  	}
+> @@ -2128,6 +2138,7 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
+>  	trans = btrfs_start_transaction(root, 0);
+>  	if (IS_ERR(trans)) {
+>  		ret = PTR_ERR(trans);
+> +		up_write(&BTRFS_I(inode)->dio_sem);
+>  		inode_unlock(inode);
+>  		goto out;
+>  	}
+> @@ -2149,6 +2160,7 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
+>  	 * file again, but that will end up using the synchronization
+>  	 * inside btrfs_sync_log to keep things safe.
+>  	 */
+> +	up_write(&BTRFS_I(inode)->dio_sem);
+>  	inode_unlock(inode);
+>  
+>  	/*
+> diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+> index 1650dc44a5e3..66b7e059b765 100644
+> --- a/fs/btrfs/tree-log.c
+> +++ b/fs/btrfs/tree-log.c
+> @@ -4374,7 +4374,6 @@ static int btrfs_log_changed_extents(struct btrfs_trans_handle *trans,
+>  
+>  	INIT_LIST_HEAD(&extents);
+>  
+> -	down_write(&inode->dio_sem);
+>  	write_lock(&tree->lock);
+>  	test_gen = root->fs_info->last_trans_committed;
+>  	logged_start = start;
+> @@ -4440,7 +4439,6 @@ static int btrfs_log_changed_extents(struct btrfs_trans_handle *trans,
+>  	}
+>  	WARN_ON(!list_empty(&extents));
+>  	write_unlock(&tree->lock);
+> -	up_write(&inode->dio_sem);
+>  
+>  	btrfs_release_path(path);
+>  	if (!ret)
+> -- 
+> 2.14.3

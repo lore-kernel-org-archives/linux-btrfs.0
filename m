@@ -2,124 +2,234 @@ Return-Path: <SRS0=6tJf=MR=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+X-Spam-Status: No, score=-6.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS
-	autolearn=ham autolearn_force=no version=3.4.0
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B06BEC00449
-	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Oct 2018 07:07:57 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 267BCC00449
+	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Oct 2018 07:51:06 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 6F7C82084D
-	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Oct 2018 07:07:57 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id BF0F420645
+	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Oct 2018 07:51:05 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="cmcM52lN"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 6F7C82084D
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="aqu49y9a"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org BF0F420645
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728112AbeJEOFQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 5 Oct 2018 10:05:16 -0400
-Received: from mail-yb1-f195.google.com ([209.85.219.195]:36021 "EHLO
-        mail-yb1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727185AbeJEOFQ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Oct 2018 10:05:16 -0400
-Received: by mail-yb1-f195.google.com with SMTP id 5-v6so5036682ybf.3;
-        Fri, 05 Oct 2018 00:07:55 -0700 (PDT)
+        id S1727526AbeJEOsf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 5 Oct 2018 10:48:35 -0400
+Received: from mail-vk1-f194.google.com ([209.85.221.194]:39995 "EHLO
+        mail-vk1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727236AbeJEOsf (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Oct 2018 10:48:35 -0400
+Received: by mail-vk1-f194.google.com with SMTP id h20-v6so90126vke.7;
+        Fri, 05 Oct 2018 00:51:03 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20161025;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=irvS0/yyLva7NtY9K5OrB7KnPGY22KcwWAJaqwdGp5Y=;
-        b=cmcM52lNU7UoVyeLTHbS5x3YPvRCM5MDvd7AqFv4DRdb5xdUXnqF9sFR8xWi058/uh
-         EWsguNgeK+GXyIpCWqvGWiI1Z5rSQGNGzkS6DEscZWrNvbD0p2Nh3BLdiVyDI0COhd8S
-         ZOIgQRx5BdUW8gNF/Ayr9BKgEAYlJKHa7JvWhai7tpawnRMv41Gb8iaDCxXr53t1gPir
-         pwPU6LDxbfs6HPOnHxQOCOJ/TTVqqwJfmt7JbHCn8DEjG/bcrM3vHzRlot3nFti8/mwW
-         nCMIDL4Oas1mO9QQeWSBxycIw30WT+6uxWdNXF7HaaVjmA8zHl9HcV5GjYRTBv/F+/Hx
-         UYHQ==
+        h=mime-version:references:in-reply-to:reply-to:from:date:message-id
+         :subject:to:cc:content-transfer-encoding;
+        bh=OFaSISFePclcgna/voQG+cYCatF79KJFjPqyPf1dOGg=;
+        b=aqu49y9a2uXQYefsYJyValzNITemxqRsxNG8aSdYyKbry2CrJB4eAkR5kEvp1kS+Zp
+         KH/MItHqjgh2FEjg/6Gv1MTGSFqTjgTPu61oYMmTNKP6FcJ0gVw3JfyNOdxixtENcaHl
+         xNdOZCJ4TmU74pPYGe+NLwy0fMAvNh/10IpEzj1iA1CTP2g5QiauSP9LbGWToyoNhkT1
+         m00psy1R2i/8ZNSeyGe/SaqgKteOKwjTkHAXVBhb5GqwwhcWoqMjnKS57U3bxjNNI93h
+         mWTeccFBDdrbcavfRCyFrOAVmsDuLr5Hhycv/YwBbNx+GfA8iaSVmeue4B/onVXZXhoT
+         XgMw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=irvS0/yyLva7NtY9K5OrB7KnPGY22KcwWAJaqwdGp5Y=;
-        b=f8g9W8okpXjJx4YjrnGtBvTE3q7ypQS++Qa1KC7oJiYkqMEfijCi9q4y21aVF5Mbpg
-         ZkxqNa+hryGDNjXZfpTMkjt7mp4f2HtGN2W8+Fc+/bLoCUHyxEfHej5+FMokG8sa/Us4
-         3WLfxz96Cyn7HYUGT8rB+NFpZHx0cI+NXU3aGxj41KPGb/vY+dS5nxAVGHhAyBDPY+Pq
-         vl3zDIz+6rhoxBCo8Qq99YFLRQfOkZB3fOuag0CDpmIjnrGZujG9gySPSpEXCe6HZdkm
-         6PtEqoTAfip95CKL0/OtBzG0riFNlwe17n5yZBeaerhG6T70H5L/wDqshkGv0snOHRBZ
-         WMdw==
-X-Gm-Message-State: ABuFfohWbXX/aZDvZ5d+gmKFA3RqJsvftrd7YoRCWgyFzyt6gRENzsIp
-        DoNBk+pxVdt+ZsFm8s0VMacs0LTd6ouPcS9ev2s=
-X-Google-Smtp-Source: ACcGV62/j3XcuiKqD6YLy11sV1OD+y291ZIgdOaop/jaIuLL1PcUny21XjWhjKbAxppVdOAYdxcylsxEZZcamBNSPrk=
-X-Received: by 2002:a5b:f03:: with SMTP id x3-v6mr5680907ybr.462.1538723274730;
- Fri, 05 Oct 2018 00:07:54 -0700 (PDT)
+        h=x-gm-message-state:mime-version:references:in-reply-to:reply-to
+         :from:date:message-id:subject:to:cc:content-transfer-encoding;
+        bh=OFaSISFePclcgna/voQG+cYCatF79KJFjPqyPf1dOGg=;
+        b=iFdM9jZRfBPGLl6GqwxhgJDJQ1iJCkBaLeJlk0+zSfxxRvllUiU8YOYMwqXzN8ReYI
+         k9hEmF1g0BLmqurLV9HkHj0EB2gm/+i4+N/Uv9RcvXLrZtma460LhyHMP93KtqXOMeBh
+         qJ2V5+eagTmbn6mDEaC6I+Sz3ILC1VLk1bfqWIP7/1DoElxBXEQq7WVrK+Kle8LU1kJ3
+         yQS9STD3GVnssoR9i1DBDLCM+FiljGSM1dwJ+hBk61ax2EJIc6TcZ9/dLzeC5CPHV72g
+         pnEvePIWUkXXpFOb93haY5LlBilrJSZ6lJSYYRmOxn88PvQJVnksMOeSissn/R+kgZDE
+         iR/w==
+X-Gm-Message-State: ABuFfojPPzFpd2060hcEqYxQ954mGpmn+aZ/iFROyss/UGbMBz+TlRTM
+        /7AJ9Ly98mSim5yT8x6G9pkygz35RMQvH3SRCwg=
+X-Google-Smtp-Source: ACcGV62ysKHNsHoWLjOLqqCE9MZ7s2Y3WVN5JZWX5IWPTNiLgGocz1XZfC/s7jNbg3UuMLjip8QDuOJRRn7VFXCyJnk=
+X-Received: by 2002:a1f:280c:: with SMTP id o12-v6mr3928909vko.4.1538725863118;
+ Fri, 05 Oct 2018 00:51:03 -0700 (PDT)
 MIME-Version: 1.0
-References: <153870027422.29072.7433543674436957232.stgit@magnolia> <153870034158.29072.8943691140742142494.stgit@magnolia>
-In-Reply-To: <153870034158.29072.8943691140742142494.stgit@magnolia>
-From:   Amir Goldstein <amir73il@gmail.com>
-Date:   Fri, 5 Oct 2018 10:07:43 +0300
-Message-ID: <CAOQ4uxhDhyx-SnyJ5mmsKMvvb883reCWgvyNbABKyC4-SO+1EA@mail.gmail.com>
-Subject: Re: [PATCH 09/15] vfs: pass operation flags to {clone,
- dedupe}_file_range implementations
-To:     "Darrick J. Wong" <darrick.wong@oracle.com>
-Cc:     Dave Chinner <david@fromorbit.com>,
-        linux-xfs <linux-xfs@vger.kernel.org>,
-        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-        Linux Btrfs <linux-btrfs@vger.kernel.org>,
-        ocfs2-devel@oss.oracle.com, Eric Sandeen <sandeen@redhat.com>,
-        Miklos Szeredi <miklos@szeredi.hu>
+References: <1538146248-1759-1-git-send-email-anand.jain@oracle.com> <1538271592-4086-1-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1538271592-4086-1-git-send-email-anand.jain@oracle.com>
+Reply-To: fdmanana@gmail.com
+From:   Filipe Manana <fdmanana@gmail.com>
+Date:   Fri, 5 Oct 2018 08:50:51 +0100
+Message-ID: <CAL3q7H5P7cOWGOj+MwSookeRDm=ZGSR+pLBbX-nC32x632xr7w@mail.gmail.com>
+Subject: Re: [PATCH v6] test unaligned punch hole at ENOSPC
+To:     Anand Jain <anand.jain@oracle.com>
+Cc:     fstests <fstests@vger.kernel.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Oct 5, 2018 at 3:46 AM Darrick J. Wong <darrick.wong@oracle.com> wrote:
+On Sun, Sep 30, 2018 at 2:40 AM Anand Jain <anand.jain@oracle.com> wrote:
 >
-> From: Darrick J. Wong <darrick.wong@oracle.com>
+> Try to punch hole with unaligned size and offset when the FS is
+> full. Mainly holes are punched at locations which are unaligned
+> with the file extent boundaries when the FS is full by data.
+> As the punching holes at unaligned location will involve
+> truncating blocks instead of just dropping the extents, it shall
+> involve reserving data and metadata space for delalloc and so data
+> alloc fails as the FS is full.
 >
-> Pass operational flags to the per-filesystem clone and dedupe
-> implementations.  This enables the vfs to signal when it can deal with
-> short clone and short dedupe operations.
+> btrfs_punch_hole()
+>  btrfs_truncate_block()
+>    btrfs_check_data_free_space() <-- ENOSPC
 >
-> Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
+> We don't fail punch hole if the holes are aligned with the file
+> extent boundaries as it shall involve just dropping the related
+> extents, without truncating data extent blocks.
+>
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+Reviewed-by: Filipe Manana <fdmanana@suse.com>
+
+Looks good, thanks!
+
 > ---
-[...]
-> --- a/include/linux/fs.h
-> +++ b/include/linux/fs.h
-> @@ -1761,7 +1761,7 @@ struct file_operations {
->                         loff_t, size_t, unsigned int);
->         s64 (*clone_file_range)(struct file *file_in, loff_t pos_in,
->                                 struct file *file_out, loff_t pos_out,
-> -                               u64 count);
-> +                               u64 count, unsigned int flags);
->         s64 (*dedupe_file_range)(struct file *file_in, loff_t pos_in,
->                                  struct file *file_out, loff_t pos_out,
->                                  u64 count);
-> @@ -1827,9 +1827,15 @@ extern ssize_t vfs_readv(struct file *, const struct iovec __user *,
->                 unsigned long, loff_t *, rwf_t);
->  extern ssize_t vfs_copy_file_range(struct file *, loff_t , struct file *,
->                                    loff_t, size_t, unsigned int);
-> +/* Caller can handle a shortened operation. */
-> +#define CLONERANGE_SHORT       (1 << 0)
-> +/* End operation at the source file's EOF. */
-> +#define CLONERANGE_EOF         (1 << 1)
-> +/* Operation is actually dedupe, not clone. */
-> +#define CLONERANGE_DEDUPE      (1 << 2)
+> v5->v6:
+>  fix comments at two places in the test case
+>  drop -f when using xfs_io to punch hole
+>  sync after dd is dropped
+>  change log is slightly updated
+> v4->v5:
+>  Update the change log
+>  Drop the directio option for xfs_io
+> v3->v4:
+>  Add to the group punch
+> v2->v3:
+>  Add _require_xfs_io_command "fpunch"
+>  Add more logs to $seqfull.full
+>    mount options and
+>    group profile info
+>  Add sync after dd upto ENOSPC
+>  Drop fallocate -p and use xfs_io punch to create holes
+>  Use a testfile instead of filler file so that easy to trace
+> v1->v2: Use at least 256MB to test.
+> This test case fails on btrfs as of now.
+>  tests/btrfs/172     | 73 +++++++++++++++++++++++++++++++++++++++++++++++=
+++++++
+>  tests/btrfs/172.out |  2 ++
+>  tests/btrfs/group   |  1 +
+>  3 files changed, 76 insertions(+)
+>  create mode 100755 tests/btrfs/172
+>  create mode 100644 tests/btrfs/172.out
+>
+> diff --git a/tests/btrfs/172 b/tests/btrfs/172
+> new file mode 100755
+> index 000000000000..0dffb2dff40b
+> --- /dev/null
+> +++ b/tests/btrfs/172
+> @@ -0,0 +1,73 @@
+> +#! /bin/bash
+> +# SPDX-License-Identifier: GPL-2.0
+> +# Copyright (c) 2018 Oracle. All Rights Reserved.
+> +#
+> +# FS QA Test 172
+> +#
+> +# Test if the unaligned (by size and offset) punch hole is successful wh=
+en FS
+> +# is at ENOSPC.
+> +#
+> +seq=3D`basename $0`
+> +seqres=3D$RESULT_DIR/$seq
+> +echo "QA output created by $seq"
+> +
+> +here=3D`pwd`
+> +tmp=3D/tmp/$$
+> +status=3D1       # failure is the default!
+> +trap "_cleanup; exit \$status" 0 1 2 3 15
+> +
+> +_cleanup()
+> +{
+> +       cd /
+> +       rm -f $tmp.*
+> +}
+> +
+> +# get standard environment, filters and checks
+> +. ./common/rc
+> +. ./common/filter
+> +
+> +# remove previous $seqres.full before test
+> +rm -f $seqres.full
+> +
+> +# real QA test starts here
+> +
+> +# Modify as appropriate.
+> +_supported_fs btrfs
+> +_supported_os Linux
+> +_require_scratch
+> +_require_xfs_io_command "fpunch"
+> +
+> +_scratch_mkfs_sized $((256 * 1024 *1024)) >> $seqres.full
+> +
+> +# max_inline ensures data is not inlined within metadata extents
+> +_scratch_mount "-o max_inline=3D0,nodatacow"
+> +
+> +cat /proc/self/mounts | grep $SCRATCH_DEV >> $seqres.full
+> +$BTRFS_UTIL_PROG filesystem df $SCRATCH_MNT >> $seqres.full
+> +
+> +extent_size=3D$(_scratch_btrfs_sectorsize)
+> +unalign_by=3D512
+> +echo extent_size=3D$extent_size unalign_by=3D$unalign_by >> $seqres.full
+> +
+> +$XFS_IO_PROG -f -c "pwrite -S 0xab 0 $((extent_size * 10))" \
+> +                                       $SCRATCH_MNT/testfile >> $seqres.=
+full
+> +
+> +echo "Fill all space available for data and all unallocated space." >> $=
+seqres.full
+> +dd status=3Dnone if=3D/dev/zero of=3D$SCRATCH_MNT/filler bs=3D512 >> $se=
+qres.full 2>&1
+> +
+> +hole_offset=3D0
+> +hole_len=3D$unalign_by
+> +$XFS_IO_PROG -c "fpunch $hole_offset $hole_len" $SCRATCH_MNT/testfile
+> +
+> +hole_offset=3D$(($extent_size + $unalign_by))
+> +hole_len=3D$(($extent_size - $unalign_by))
+> +$XFS_IO_PROG -c "fpunch $hole_offset $hole_len" $SCRATCH_MNT/testfile
+> +
+> +hole_offset=3D$(($extent_size * 2 + $unalign_by))
+> +hole_len=3D$(($extent_size * 5))
+> +$XFS_IO_PROG -c "fpunch $hole_offset $hole_len" $SCRATCH_MNT/testfile
+> +
+> +# success, all done
+> +echo "Silence is golden"
+> +status=3D0
+> +exit
+> diff --git a/tests/btrfs/172.out b/tests/btrfs/172.out
+> new file mode 100644
+> index 000000000000..ce2de3f0d107
+> --- /dev/null
+> +++ b/tests/btrfs/172.out
+> @@ -0,0 +1,2 @@
+> +QA output created by 172
+> +Silence is golden
+> diff --git a/tests/btrfs/group b/tests/btrfs/group
+> index feffc45b6564..45782565c3b7 100644
+> --- a/tests/btrfs/group
+> +++ b/tests/btrfs/group
+> @@ -174,3 +174,4 @@
+>  169 auto quick send
+>  170 auto quick snapshot
+>  171 auto quick qgroup
+> +172 auto quick punch
+> --
+> 1.8.3.1
+>
 
-That's cool. But you know what's going to be the next step, right?
-Merging the 3 file operation interfaces into a single one.
-copy_file_range() already has the flags arg for future extensions
-and as you wrote somewhere, clone is really an optimized copy.
-ovl_copyfile() already does that internally.
 
-So the only take away for this patch series, please use constant
-names COPYRANGE_* and also explicitly define:
+--=20
+Filipe David Manana,
 
-/* Operation is actually clone, not copy. */
-#define COPYRANGE_CLONE      (1 << 2)
-/* Operation is actually dedupe, not copy. */
-#define COPYRANGE_DEDUPE      (1 << 3)
-
-Thanks,
-Amir.
+=E2=80=9CWhether you think you can, or you think you can't =E2=80=94 you're=
+ right.=E2=80=9D

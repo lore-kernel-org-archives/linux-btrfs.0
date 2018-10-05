@@ -2,108 +2,175 @@ Return-Path: <SRS0=6tJf=MR=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 63E0BC00449
-	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Oct 2018 08:39:38 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 24CABC00449
+	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Oct 2018 08:45:40 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 1170D20875
-	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Oct 2018 08:39:38 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="NjPTp6Za"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 1170D20875
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
+	by mail.kernel.org (Postfix) with ESMTP id D85D22084D
+	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Oct 2018 08:45:39 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org D85D22084D
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728481AbeJEPhS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 5 Oct 2018 11:37:18 -0400
-Received: from mail-yw1-f67.google.com ([209.85.161.67]:35135 "EHLO
-        mail-yw1-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728072AbeJEPhS (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Oct 2018 11:37:18 -0400
-Received: by mail-yw1-f67.google.com with SMTP id y76-v6so4938020ywd.2;
-        Fri, 05 Oct 2018 01:39:36 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=/fu/BTydMXzRWN2CrdV31OzloX1CkvgJoxVjiOoyqyM=;
-        b=NjPTp6Za/WgiigIh/Ti9SWRU3QV5k0piZ54NHY19P0hfQhjU7diqTnc7m0LNkb1scF
-         f1XI8M3xVYPJOeDwtdxpzxUXkRNLoVhdfiYimChokAXVzwGr9Quelo92rSS7MlFGxTrH
-         Nqncfwkc82MVgiJaq3zEED/LvXT2+IkoPRulOUv6UGLQgWp/NukWe/iS09L2X+jhRkaW
-         jtvYy6PY5eRc91saUcVQPA8tYbG/V+VyWFwSkGgj81/HjgJqVQIx4euLxUSl/OHIwat2
-         TZN/UA+ZLtJ9xphlGgJMax+VSbX8uxxt9grZqQs56Z6nzGKVeUd/wQBmeLj4BroxL4qh
-         7nJg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=/fu/BTydMXzRWN2CrdV31OzloX1CkvgJoxVjiOoyqyM=;
-        b=ho2oiXtQt0+FPxHfGfAwda1n4Kt4ZEeIPIXY037geYTHL6TJIZrMlVSrJBvl+wZi7k
-         wVz1LlWLwdGCLqp2pJpCKHVXFmsWze6EQDIhOR1ein+TB3g8uFQq9+6lAhdfc8MP/2S+
-         YMTMWt8Q6ptWcVdIzyDGLVh2eFfkkegbVLUv25STkWGHAHdDXp0qvQAA/2jW41zgJK8H
-         cFfsiSHFP4cNEEGaSRfU+cP1MMJNIG4XwOmMcAxlDEGGxbgGnwxj9RBUns4KIdSjb9zy
-         C5OvRAM7e/VfB0dqAuriW7vdhIeKbtoIOHWjPf7uCgp3fwHs2AKeDlhH3jCMJGhfxSxv
-         vaaw==
-X-Gm-Message-State: ABuFfojs8F5+NAHdbnL8WyGY245Vh/9FN+QEKBkotQ5Vzy6nn/ELkulW
-        C5Ce8PKErn7/KaVaL/1NJNeArsqWzN2WqK6gT0c=
-X-Google-Smtp-Source: ACcGV63BSdyUuq3ufP+fWrI0JwMlh1uMdlX9gsfJPWPsmpKILHbK6W1rWTui9qVYTcRV68KKJR4PU/jHyoZGfK2dE9E=
-X-Received: by 2002:a0d:c947:: with SMTP id l68-v6mr5678893ywd.404.1538728775837;
- Fri, 05 Oct 2018 01:39:35 -0700 (PDT)
+        id S1728012AbeJEPnV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 5 Oct 2018 11:43:21 -0400
+Received: from mx2.suse.de ([195.135.220.15]:43304 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1727236AbeJEPnU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 5 Oct 2018 11:43:20 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 727A4AF0D;
+        Fri,  5 Oct 2018 08:45:34 +0000 (UTC)
+Subject: Re: Understanding BTRFS RAID0 Performance
+To:     "Wilson, Ellis" <ellisw@panasas.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <54026c92-9cd1-2ac8-5747-c5405dd82087@panasas.com>
+From:   Nikolay Borisov <nborisov@suse.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <2da81104-f0c0-96a3-8c8f-98813e5dbeea@suse.com>
+Date:   Fri, 5 Oct 2018 11:45:32 +0300
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:52.0) Gecko/20100101
+ Thunderbird/52.9.1
 MIME-Version: 1.0
-References: <153870027422.29072.7433543674436957232.stgit@magnolia> <153870032167.29072.11158511021942868400.stgit@magnolia>
-In-Reply-To: <153870032167.29072.11158511021942868400.stgit@magnolia>
-From:   Amir Goldstein <amir73il@gmail.com>
-Date:   Fri, 5 Oct 2018 11:39:24 +0300
-Message-ID: <CAOQ4uxha3=jyVmZ0ArbSsO-CSMeQb43p7YTMGazZRB_M8zS0SQ@mail.gmail.com>
-Subject: Re: [PATCH 07/15] vfs: skip zero-length dedupe requests
-To:     "Darrick J. Wong" <darrick.wong@oracle.com>
-Cc:     Dave Chinner <david@fromorbit.com>,
-        linux-xfs <linux-xfs@vger.kernel.org>,
-        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-        Linux Btrfs <linux-btrfs@vger.kernel.org>,
-        ocfs2-devel@oss.oracle.com, Eric Sandeen <sandeen@redhat.com>
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <54026c92-9cd1-2ac8-5747-c5405dd82087@panasas.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Oct 5, 2018 at 3:46 AM Darrick J. Wong <darrick.wong@oracle.com> wrote:
->
-> From: Darrick J. Wong <darrick.wong@oracle.com>
->
-> Don't bother calling the filesystem for a zero-length dedupe request;
-> we can return zero and exit.
->
-> Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
-> ---
->  fs/read_write.c |    5 +++++
->  1 file changed, 5 insertions(+)
->
->
-> diff --git a/fs/read_write.c b/fs/read_write.c
-> index 973d3da78c09..99b2f809180c 100644
-> --- a/fs/read_write.c
-> +++ b/fs/read_write.c
-> @@ -1966,6 +1966,11 @@ int vfs_dedupe_file_range_one(struct file *src_file, loff_t src_pos,
->         if (!dst_file->f_op->dedupe_file_range)
->                 goto out_drop_write;
->
-> +       if (len == 0) {
-> +               ret = 0;
-> +               goto out_drop_write;
-> +       }
-> +
->         ret = dst_file->f_op->dedupe_file_range(src_file, src_pos,
->                                                 dst_file, dst_pos, len);
 
-I suppose it is best to let user get the same errors he would get
-before this change rather than skipping zero length copy at
-vfs_dedupe_file_range() level, so looks fine.
 
-Thanks,
-Amir.
+On  5.10.2018 00:33, Wilson, Ellis wrote:
+> Hi all,
+> 
+> I'm attempting to understand a roughly 30% degradation in BTRFS RAID0 
+> for large read I/Os across six disks compared with ext4 atop mdadm RAID0.
+> 
+> Specifically, I achieve performance parity with BTRFS in terms of 
+> single-threaded write and read, and multi-threaded write, but poor 
+> performance for multi-threaded read.  The relative discrepancy appears 
+> to grow as one adds disks.  At 6 disks in a RAID0 (yes, I know, and I do 
+> not care about data persistence as I have this solved at a different 
+> layer) I see approximately 1.3GB/s for ext4 atop mdadm, but only about 
+> 950MB/s for BTRFS, both using four threads to read and write four 
+> different large files.  Across a large number of my nodes this 
+> aggregates to a sizable performance loss.
+> 
+> This has been a long and winding road for me, but to keep my question 
+> somewhat succinct, I'm down to the level of block tracing and one thing 
+> that stands out between the two traces is the number of rather small 
+> read I/O's that reach one of the drives in the test is vastly different 
+> for mdadm RAID0 vs BTRFS, which I think explains (in part at least) the 
+> performance drop off.  The read queue depth for BTRFS hovers in the 
+> upper single digits while the ext4/mdadm queue depth is towards 20.  I'm 
+> unsure right now if this is related or not.
+> 
+> Benchmark: FIO was used with the following command:
+> fio --name=read --rw=read --bs=1M --direct=0 --size=16G --numjobs=4 
+> --runtime=120 --group_reporting
+
+Right, so you are doing sequential reads. Since btrfs uses
+generic_read_file_iter as its read-related operations and what it just
+calls btrfs_readpage which ends up in:
+
+btrfs_readpage
+  extent_read_full_page
+   __extent_read_full_page
+    __do_readpage
+      submit_extent_page <- Here we have some code which is supposed to
+detect contiguous bios detection and merging
+
+So my first guess would be to instrument the code around the merging
+logic and see if it works as expected and is able to merge the majority
+of the bios.
+
+> 
+> The block sizes and counts of I/Os at that size I'm seeing for both 
+> cases comes in like the following (my max_segment_kb_size is 4K, hence 
+> the above typical upper-end):
+> 
+> BTRFS:
+>   Count  Read I/O Size
+>    21849 128
+>       18 640
+>        9 768
+>        3 1280
+>        9 1408
+>        3 2048
+>        3 2560
+>     1011 2688
+>      507 2816
+> 
+> ext4 on mdadm RAID0:
+>   Count  Read I/O Size
+>        9 8
+>        3 16
+>        5 256
+>        5 768
+>       19 1024
+>      716 1536
+>        5 1592
+>        5 2504
+>      695 2560
+>       24 4096
+>       21 6656
+>      477 8192
+> 
+> Before I dive into the BTRFS source or try tracing in a different way, I 
+> wanted to see if this was a well-known artifact of BTRFS RAID0 and, even 
+> better, if there's any tunables available for RAID0 in BTRFS I could 
+> play with.  The man page for mkfs.btrfs and btrfstune in the tuning 
+> regard seemed...sparse.>
+> Any help or pointers are greatly appreciated!>
+> Thanks,
+> 
+> ellis
+> 

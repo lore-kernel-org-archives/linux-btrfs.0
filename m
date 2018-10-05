@@ -7,59 +7,59 @@ X-Spam-Status: No, score=-6.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
 	SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1BC39C00449
-	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Oct 2018 06:40:59 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C3256C00449
+	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Oct 2018 06:47:55 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D0D8720875
-	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Oct 2018 06:40:58 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 8063E208E7
+	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Oct 2018 06:47:55 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="FKSiSbKf"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org D0D8720875
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="B+JWvV79"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 8063E208E7
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727826AbeJENiL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 5 Oct 2018 09:38:11 -0400
-Received: from mail-yb1-f195.google.com ([209.85.219.195]:45699 "EHLO
-        mail-yb1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726732AbeJENiL (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Oct 2018 09:38:11 -0400
-Received: by mail-yb1-f195.google.com with SMTP id d9-v6so4986539ybr.12;
-        Thu, 04 Oct 2018 23:40:56 -0700 (PDT)
+        id S1727713AbeJENpJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 5 Oct 2018 09:45:09 -0400
+Received: from mail-yw1-f68.google.com ([209.85.161.68]:35162 "EHLO
+        mail-yw1-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727198AbeJENpJ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Oct 2018 09:45:09 -0400
+Received: by mail-yw1-f68.google.com with SMTP id y76-v6so4846410ywd.2;
+        Thu, 04 Oct 2018 23:47:52 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20161025;
         h=mime-version:references:in-reply-to:from:date:message-id:subject:to
          :cc;
-        bh=Vas4dRpbtpTulEnJmj/AVHrmEwEX74JBZzMGwuxbqe8=;
-        b=FKSiSbKfC34zTepI7pAEyHqjgyVl5AXa/jmBcSZMO+RE6kfcam3zxgPpDTBRiWm/Pq
-         Nk5qC6uuU91MKyHgb8dYpMSrpwYNZIc6T631y8BwHMvjm63uom4jkG6/N5wi9mEGxiZH
-         m/WZN1HhYyce8jCBEimSXnv8V3f7TfrCeNyJhXBUvb9bH5rn3f66+gLIJHiLGZqqxxdE
-         9r4kqiGN98E/Kf1sukdCX2sww0pQ2ve2ES5dSSzrDRFvcdTarLUQEPw5QihMEpwUGad4
-         utN/GbJdiuEloNByqRaH5rYpCl+j1vHxw0stFUfYXSd26Sw1OwUASu3HOGIQS/q6ROvS
-         pNgA==
+        bh=91QKsv4mZCSLehtFbFfOeUG2F4g7OtJputLuH2xT8Ao=;
+        b=B+JWvV79X4VMvA5Zcau3dia3CWCj+qDTXxxJ1sYKoGw5iyUzrU8s+ht5eYacKDREnd
+         0IINlnK3YuTEdEYQkZst+YM0R9Yq3uWbNAs0hcC9n3tuykJ7cqFJGAe8k3hNCmyyRTEj
+         E4Zl2uDDd0ONspqzIjMHrwyqihQ/jp03dxpPAwTkkBO6Mo/de4ehIHcY4PAqlPxxJ3P0
+         83Pv7BlaZgD+Fwmtxa7FtidQ4/b4dR+va/bkaL4xI6hRhOtouBn+yEc1wWNZUb2dSYk0
+         Cl00E0x7Vl4L/9qkQNYbkcx2vVBCiYZ5C1Uf5EjNnBvF2Lgq8A9/WVrF6XDDk2lwMmqy
+         FRhg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:mime-version:references:in-reply-to:from:date
          :message-id:subject:to:cc;
-        bh=Vas4dRpbtpTulEnJmj/AVHrmEwEX74JBZzMGwuxbqe8=;
-        b=uGmRbO+2nfrYY5uF3eMJSFepHYHdDUtex/l7NLZeiokjBmrye1M/64jJZGgD2iwaZc
-         g6DWopG8PazlGzt0B+MH/vlban3w/ghUMxr8g1RPI9HoFDAfIGxvphV/KlWDgJX8vT72
-         W38uyKHGj2RVz8Mgrtr5voInUegNhhX+cULnkQa/iQf5dyX5rX4qyXghqwEtDBDxBNYu
-         K4qC+3rOPYoSrzntoJuK+DGLs6I6cgtDSxp5tzhFuR9GoLNADuqdOaCPnbSYGPBTNhkz
-         jC0FmAtEeT5+EAKPDD5OEZ9lnV/ego0ROaCWGflGG9Sg9BJnsQt5ttPfTS7uZq/hdJzQ
-         p/ZA==
-X-Gm-Message-State: ABuFfogiwmELv5A41jZQrs8h4Rxzj608Dzw2I9+cHnN0jUB8L9aQbLD6
-        4humho8rp03EJgBxzalX8JeVth/IjLvhQJUs6Rw=
-X-Google-Smtp-Source: ACcGV61Q/Lw2muehAFM9Yd2+rj9U6eMwtpdMS2Ti4a8VkwFxTswLNDVggA5NxMZfF+qm+1xTL7W+ex2xyCGjlpii8zc=
-X-Received: by 2002:a25:5555:: with SMTP id j82-v6mr5811918ybb.337.1538721655620;
- Thu, 04 Oct 2018 23:40:55 -0700 (PDT)
+        bh=91QKsv4mZCSLehtFbFfOeUG2F4g7OtJputLuH2xT8Ao=;
+        b=pQ2VCHWq0KTAGPu93eg7oSovN04vVO9uhqje2fFuRboXgHKc6U4xxH7GxmZBosAnrt
+         E5RhTF/AYECJYdrbBsnfcmxdZeRbdrja94A8izb1/n4tWc+EqKYxBghV2/yL469pULXN
+         7GDCATy1gvou4Rea37en8cWkBzNJzrcNYhJ5QiTA5rMaaL2hxuQLGeuo4nCYhaAfULDX
+         3Tw1bnk88VoCQOQpOLy+fKleSTIGWWTpTiKhh8H5r0ZBL07Q7cWPG7gpxGRu2EC5WLzI
+         DXL/fJnrE0xpQ2PQzPh7p9e1lePC1Pss1oZROxIx9thTcVzt66F+qFH5OvzMyBeAp6wl
+         Hjcg==
+X-Gm-Message-State: ABuFfohiHfFW4KXpaV+PIiYztdaY1j7JdlPVFScqhFUYvlX+J32ovv/s
+        clNMe46hRbmMQEmxN9LvufzhYt66eo0h5clf964=
+X-Google-Smtp-Source: ACcGV60mptFHx3YQ66GxJp7PJvxwpcEDhCTLo/Mq7rrjtfKuDyxr7xrHifmLWseacYy6Opb44H16bzGp97wufkAFPq0=
+X-Received: by 2002:a81:8604:: with SMTP id w4-v6mr5675581ywf.409.1538722072073;
+ Thu, 04 Oct 2018 23:47:52 -0700 (PDT)
 MIME-Version: 1.0
-References: <153870027422.29072.7433543674436957232.stgit@magnolia> <153870036143.29072.11970142092673351715.stgit@magnolia>
-In-Reply-To: <153870036143.29072.11970142092673351715.stgit@magnolia>
+References: <153870027422.29072.7433543674436957232.stgit@magnolia> <153870034823.29072.4817036324117498634.stgit@magnolia>
+In-Reply-To: <153870034823.29072.4817036324117498634.stgit@magnolia>
 From:   Amir Goldstein <amir73il@gmail.com>
-Date:   Fri, 5 Oct 2018 09:40:44 +0300
-Message-ID: <CAOQ4uxgqQ9ovr1i5+uGz1hq=fedFGKK7TpPCUvXkYPXhoPji3g@mail.gmail.com>
-Subject: Re: [PATCH 12/15] vfs: implement opportunistic short dedupe
+Date:   Fri, 5 Oct 2018 09:47:41 +0300
+Message-ID: <CAOQ4uxjXt35dUxwrRpVaRf048+edD5RRtHD2aqSOA-2C_=BnEw@mail.gmail.com>
+Subject: Re: [PATCH 10/15] vfs: make cloning to source file eof more explicit
 To:     "Darrick J. Wong" <darrick.wong@oracle.com>
 Cc:     Dave Chinner <david@fromorbit.com>,
         linux-xfs <linux-xfs@vger.kernel.org>,
@@ -76,68 +76,41 @@ On Fri, Oct 5, 2018 at 3:46 AM Darrick J. Wong <darrick.wong@oracle.com> wrote:
 >
 > From: Darrick J. Wong <darrick.wong@oracle.com>
 >
-> For a given dedupe request, the bytes_deduped field in the control
-> structure tells userspace if we managed to deduplicate some, but not all
-> of, the requested regions starting from the file offsets supplied.
-> However, due to sloppy coding, the current dedupe code returns
-> FILE_DEDUPE_RANGE_DIFFERS if any part of the range is different.
-> Fix this so that we can actually support partial request completion.
+> Use the new CLONE_RANGE_EOF flag to explicitly declare that the caller
+> wants the clone implementation to set *len appropriately once the files
+> are locked.
 >
 > Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
 > ---
->  fs/read_write.c    |   44 +++++++++++++++++++++++++++++++++++---------
->  include/linux/fs.h |    2 +-
->  2 files changed, 36 insertions(+), 10 deletions(-)
+>  fs/read_write.c |   14 +++++++++-----
+>  1 file changed, 9 insertions(+), 5 deletions(-)
 >
 >
 > diff --git a/fs/read_write.c b/fs/read_write.c
-> index 292d68c2f47c..9be9f261edd2 100644
+> index 7cfff497263b..4eaea52f70a8 100644
 > --- a/fs/read_write.c
 > +++ b/fs/read_write.c
-> @@ -1781,13 +1781,11 @@ int vfs_clone_file_prep(struct file *file_in, loff_t pos_in,
->          * Check that the extents are the same.
->          */
->         if (is_dedupe) {
-> -               bool            is_same = false;
-> -
->                 ret = vfs_dedupe_file_range_compare(inode_in, pos_in,
-> -                               inode_out, pos_out, *len, &is_same);
-> +                               inode_out, pos_out, len);
->                 if (ret)
->                         return ret;
-> -               if (!is_same)
-> +               if (*len == 0)
->                         return -EBADE;
->         }
+> @@ -1747,11 +1747,12 @@ int vfs_clone_file_prep(struct file *file_in, loff_t pos_in,
 >
-> @@ -1872,13 +1870,30 @@ static struct page *vfs_dedupe_get_page(struct inode *inode, loff_t offset)
->         return page;
->  }
+>         isize = i_size_read(inode_in);
 >
-> +static unsigned int vfs_dedupe_memcmp(const char *s1, const char *s2,
-> +                                     unsigned int cmp_len)
-> +{
-> +       const char *orig_s1 = s1;
-> +       const char *e1 = s1 + cmp_len;
-> +       const char *e2 = s2 + cmp_len;
-> +
-> +       while (s1 < e1 && s2 < e2) {
-> +               if (*s1 != *s2)
-> +                       break;
-> +               s1++;
-> +               s2++;
-> +       }
-> +
-> +       return s1 - orig_s1;
-> +}
-> +
+> -       /* Zero length dedupe exits immediately; reflink goes to EOF. */
+> -       if (*len == 0) {
+> -               if (is_dedupe || pos_in == isize)
+> -                       return 0;
+> -               if (pos_in > isize)
+> +       /*
+> +        * If the caller asked to go all the way to the end of the source file,
+> +        * set *len now that we have the file locked.
+> +        */
+> +       if ((flags & CLONERANGE_EOF) && *len == 0) {
+> +               if (pos_in >= isize)
+>                         return -EINVAL;
 
-A few nits:
-'len' wouldn't have been ambiguous in this context.
-I find the for loop in memcmp more elegant. It is definitely shorter.
-Not sure how differently the variants compile, but decrementing
-count/len seems much more sane then checking 2 conditions that
-always have the same result.
+Slight change of behavior with clone of 0 bytes at EOF.
+Is that intentional?
+Does not change behavior through the entire series?
+Please drop a work about this in commit message.
 
 Thanks,
 Amir.

@@ -7,60 +7,59 @@ X-Spam-Status: No, score=-6.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
 	SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BD5A2C00449
-	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Oct 2018 06:10:26 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1BC39C00449
+	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Oct 2018 06:40:59 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 7160A20834
-	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Oct 2018 06:10:26 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D0D8720875
+	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Oct 2018 06:40:58 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="bn3QzIBw"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 7160A20834
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="FKSiSbKf"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org D0D8720875
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727616AbeJENHg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 5 Oct 2018 09:07:36 -0400
-Received: from mail-yw1-f67.google.com ([209.85.161.67]:37957 "EHLO
-        mail-yw1-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726732AbeJENHf (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Oct 2018 09:07:35 -0400
-Received: by mail-yw1-f67.google.com with SMTP id d126-v6so4817869ywa.5;
-        Thu, 04 Oct 2018 23:10:24 -0700 (PDT)
+        id S1727826AbeJENiL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 5 Oct 2018 09:38:11 -0400
+Received: from mail-yb1-f195.google.com ([209.85.219.195]:45699 "EHLO
+        mail-yb1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726732AbeJENiL (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Oct 2018 09:38:11 -0400
+Received: by mail-yb1-f195.google.com with SMTP id d9-v6so4986539ybr.12;
+        Thu, 04 Oct 2018 23:40:56 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20161025;
         h=mime-version:references:in-reply-to:from:date:message-id:subject:to
          :cc;
-        bh=kXmfAgMw9espQ+NSWqWRysI5sdwrphIGIxYKnH3v9/4=;
-        b=bn3QzIBwrE9Rg14JnxALA9DOuNK1TnF4DtJROaquVlZQPzZ7ZXwaOKVNtw642qcYrk
-         uCp+u21+RRkKz4du+IX1NMyv8uSwCsHNmOzMWaLFzrtgsTm/mBmUfsYIQvxuYm2xqikZ
-         4YWtfYNl6bylw8UWT7qM6Pp7MGMXCYPiEaK2huzgV09yXyDUNr4oaM0urE81daIoW4Vb
-         hBuiSatmVZ4xVVJfc4ORezf493IJZDHxo7NELBoPisYk/bitXyvCb6baxcO8c1Nt5YbM
-         htyD1L1vzDdweQ6kqjJ0zpOqeccGtvNpyvVog16eh412F3IQ02gp/F98YlThf6cYKMcM
-         U4Zw==
+        bh=Vas4dRpbtpTulEnJmj/AVHrmEwEX74JBZzMGwuxbqe8=;
+        b=FKSiSbKfC34zTepI7pAEyHqjgyVl5AXa/jmBcSZMO+RE6kfcam3zxgPpDTBRiWm/Pq
+         Nk5qC6uuU91MKyHgb8dYpMSrpwYNZIc6T631y8BwHMvjm63uom4jkG6/N5wi9mEGxiZH
+         m/WZN1HhYyce8jCBEimSXnv8V3f7TfrCeNyJhXBUvb9bH5rn3f66+gLIJHiLGZqqxxdE
+         9r4kqiGN98E/Kf1sukdCX2sww0pQ2ve2ES5dSSzrDRFvcdTarLUQEPw5QihMEpwUGad4
+         utN/GbJdiuEloNByqRaH5rYpCl+j1vHxw0stFUfYXSd26Sw1OwUASu3HOGIQS/q6ROvS
+         pNgA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:mime-version:references:in-reply-to:from:date
          :message-id:subject:to:cc;
-        bh=kXmfAgMw9espQ+NSWqWRysI5sdwrphIGIxYKnH3v9/4=;
-        b=Bp6/91bVNcJ88nXIyjz89Ird7osPAgMSIgqMjZPxTjIRLBHibII6qz8BCuwtjMHDMR
-         TsgSWCSrgNOx97Qz9o/XfGhpa9KMHuRqZWNmFqIpErJeSq9scjuLcae6l6QoIf4T4qwk
-         7Fm/wWSKwRAw1gNPs1UOzUVHx4TELgGnEdEcdK9Q0M3zg4VLU1vzqO4J6dLWTnlNdjsm
-         cYILwH5y+8ZkkgcKyxV956s7N9K+EqzdIUh0pMlMoNb8uEJBIcmsAK2psiQt3aaIul11
-         hrreS7fbfsDoUF6qANG3cRylJSApNUathYXfWSxuXAB9HB4gJgArSPVCjLVqxFhw0ksM
-         6eeQ==
-X-Gm-Message-State: ABuFfojl/b0JHKZ09NswyE6KJ8upXBJReAYf0tI3C/MzhKyULGYOp1kN
-        4uvDBVO4Opza9pluDdgzRGXeI/bMNbHODjzJwcU=
-X-Google-Smtp-Source: ACcGV61OSBgumZsKmAzKozTBEfjJ+f5+VLIe+VJkTXI6OU2FP5LRBMBvNWuZTySaJzFow7UvOS3nGadd3RyWTtXmRfU=
-X-Received: by 2002:a0d:d4c9:: with SMTP id w192-v6mr5325290ywd.211.1538719823835;
- Thu, 04 Oct 2018 23:10:23 -0700 (PDT)
+        bh=Vas4dRpbtpTulEnJmj/AVHrmEwEX74JBZzMGwuxbqe8=;
+        b=uGmRbO+2nfrYY5uF3eMJSFepHYHdDUtex/l7NLZeiokjBmrye1M/64jJZGgD2iwaZc
+         g6DWopG8PazlGzt0B+MH/vlban3w/ghUMxr8g1RPI9HoFDAfIGxvphV/KlWDgJX8vT72
+         W38uyKHGj2RVz8Mgrtr5voInUegNhhX+cULnkQa/iQf5dyX5rX4qyXghqwEtDBDxBNYu
+         K4qC+3rOPYoSrzntoJuK+DGLs6I6cgtDSxp5tzhFuR9GoLNADuqdOaCPnbSYGPBTNhkz
+         jC0FmAtEeT5+EAKPDD5OEZ9lnV/ego0ROaCWGflGG9Sg9BJnsQt5ttPfTS7uZq/hdJzQ
+         p/ZA==
+X-Gm-Message-State: ABuFfogiwmELv5A41jZQrs8h4Rxzj608Dzw2I9+cHnN0jUB8L9aQbLD6
+        4humho8rp03EJgBxzalX8JeVth/IjLvhQJUs6Rw=
+X-Google-Smtp-Source: ACcGV61Q/Lw2muehAFM9Yd2+rj9U6eMwtpdMS2Ti4a8VkwFxTswLNDVggA5NxMZfF+qm+1xTL7W+ex2xyCGjlpii8zc=
+X-Received: by 2002:a25:5555:: with SMTP id j82-v6mr5811918ybb.337.1538721655620;
+ Thu, 04 Oct 2018 23:40:55 -0700 (PDT)
 MIME-Version: 1.0
-References: <153870027422.29072.7433543674436957232.stgit@magnolia> <153870031519.29072.18289185889660082318.stgit@magnolia>
-In-Reply-To: <153870031519.29072.18289185889660082318.stgit@magnolia>
+References: <153870027422.29072.7433543674436957232.stgit@magnolia> <153870036143.29072.11970142092673351715.stgit@magnolia>
+In-Reply-To: <153870036143.29072.11970142092673351715.stgit@magnolia>
 From:   Amir Goldstein <amir73il@gmail.com>
-Date:   Fri, 5 Oct 2018 09:10:12 +0300
-Message-ID: <CAOQ4uxiVPvNPxTNZ-njeyte6yk3jo3tjNKv78kS9NqA_Xzxc6g@mail.gmail.com>
-Subject: Re: [PATCH 06/15] vfs: strengthen checking of file range inputs to
- clone/dedupe range
+Date:   Fri, 5 Oct 2018 09:40:44 +0300
+Message-ID: <CAOQ4uxgqQ9ovr1i5+uGz1hq=fedFGKK7TpPCUvXkYPXhoPji3g@mail.gmail.com>
+Subject: Re: [PATCH 12/15] vfs: implement opportunistic short dedupe
 To:     "Darrick J. Wong" <darrick.wong@oracle.com>
 Cc:     Dave Chinner <david@fromorbit.com>,
         linux-xfs <linux-xfs@vger.kernel.org>,
@@ -77,64 +76,68 @@ On Fri, Oct 5, 2018 at 3:46 AM Darrick J. Wong <darrick.wong@oracle.com> wrote:
 >
 > From: Darrick J. Wong <darrick.wong@oracle.com>
 >
-> Clone range is an optimization on a regular file write.  File writes
-> that extend the file length are subject to various constraints which are
-> not checked by clonerange.  This is a correctness problem, because we're
-> never allowed to touch ranges that the page cache can't support
-> (s_maxbytes); we're not supposed to deal with large offsets
-> (MAX_NON_LFS) if O_LARGEFILE isn't set; and we must obey resource limits
-> (RLIMIT_FSIZE).
->
-> Therefore, add these checks to the new generic_clone_checks function so
-> that we curtail unexpected behavior.
+> For a given dedupe request, the bytes_deduped field in the control
+> structure tells userspace if we managed to deduplicate some, but not all
+> of, the requested regions starting from the file offsets supplied.
+> However, due to sloppy coding, the current dedupe code returns
+> FILE_DEDUPE_RANGE_DIFFERS if any part of the range is different.
+> Fix this so that we can actually support partial request completion.
 >
 > Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
 > ---
->  mm/filemap.c |   31 +++++++++++++++++++++++++++++++
->  1 file changed, 31 insertions(+)
+>  fs/read_write.c    |   44 +++++++++++++++++++++++++++++++++++---------
+>  include/linux/fs.h |    2 +-
+>  2 files changed, 36 insertions(+), 10 deletions(-)
 >
 >
-> diff --git a/mm/filemap.c b/mm/filemap.c
-> index 68ec91d05c7b..f74391721234 100644
-> --- a/mm/filemap.c
-> +++ b/mm/filemap.c
-> @@ -3015,6 +3015,37 @@ int generic_clone_checks(struct file *file_in, loff_t pos_in,
->                 return -EINVAL;
->         count = min(count, size_in - (uint64_t)pos_in);
+> diff --git a/fs/read_write.c b/fs/read_write.c
+> index 292d68c2f47c..9be9f261edd2 100644
+> --- a/fs/read_write.c
+> +++ b/fs/read_write.c
+> @@ -1781,13 +1781,11 @@ int vfs_clone_file_prep(struct file *file_in, loff_t pos_in,
+>          * Check that the extents are the same.
+>          */
+>         if (is_dedupe) {
+> -               bool            is_same = false;
+> -
+>                 ret = vfs_dedupe_file_range_compare(inode_in, pos_in,
+> -                               inode_out, pos_out, *len, &is_same);
+> +                               inode_out, pos_out, len);
+>                 if (ret)
+>                         return ret;
+> -               if (!is_same)
+> +               if (*len == 0)
+>                         return -EBADE;
+>         }
 >
-> +       /* Don't exceed RLMIT_FSIZE in the file we're writing into. */
-> +       if (limit != RLIM_INFINITY) {
-> +               if (pos_out >= limit) {
-> +                       send_sig(SIGXFSZ, current, 0);
-> +                       return -EFBIG;
-> +               }
-> +               count = min(count, limit - (uint64_t)pos_out);
+> @@ -1872,13 +1870,30 @@ static struct page *vfs_dedupe_get_page(struct inode *inode, loff_t offset)
+>         return page;
+>  }
+>
+> +static unsigned int vfs_dedupe_memcmp(const char *s1, const char *s2,
+> +                                     unsigned int cmp_len)
+> +{
+> +       const char *orig_s1 = s1;
+> +       const char *e1 = s1 + cmp_len;
+> +       const char *e2 = s2 + cmp_len;
+> +
+> +       while (s1 < e1 && s2 < e2) {
+> +               if (*s1 != *s2)
+> +                       break;
+> +               s1++;
+> +               s2++;
 > +       }
 > +
-> +       /* Don't exceed the LFS limits. */
-> +       if (unlikely(pos_out + count > MAX_NON_LFS &&
-> +                               !(file_out->f_flags & O_LARGEFILE))) {
-> +               if (pos_out >= MAX_NON_LFS)
-> +                       return -EFBIG;
-> +               count = min(count, MAX_NON_LFS - (uint64_t)pos_out);
-> +       }
-> +       if (unlikely(pos_in + count > MAX_NON_LFS &&
-> +                               !(file_in->f_flags & O_LARGEFILE))) {
-> +               if (pos_in >= MAX_NON_LFS)
-> +                       return -EFBIG;
-> +               count = min(count, MAX_NON_LFS - (uint64_t)pos_in);
-> +       }
-> +
-> +       /* Don't operate on ranges the page cache doesn't support. */
-> +       if (unlikely(pos_out >= inode_out->i_sb->s_maxbytes ||
-> +                    pos_in >= inode_in->i_sb->s_maxbytes))
-> +               return -EFBIG;
+> +       return s1 - orig_s1;
+> +}
 > +
 
-Forget my standards, this doesn't abide by your own standards ;-)
-Please factor out generic_write_checks() and use it instead of
-duplicating the code. The in/out variant doesn't justify not calling
-the helper twice IMO.
+A few nits:
+'len' wouldn't have been ambiguous in this context.
+I find the for loop in memcmp more elegant. It is definitely shorter.
+Not sure how differently the variants compile, but decrementing
+count/len seems much more sane then checking 2 conditions that
+always have the same result.
 
 Thanks,
 Amir.

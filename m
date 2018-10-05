@@ -2,32 +2,34 @@ Return-Path: <SRS0=6tJf=MR=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 24CABC00449
-	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Oct 2018 08:45:40 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5121AC00449
+	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Oct 2018 08:55:08 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D85D22084D
-	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Oct 2018 08:45:39 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org D85D22084D
+	by mail.kernel.org (Postfix) with ESMTP id E7FF32084D
+	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Oct 2018 08:55:07 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org E7FF32084D
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728012AbeJEPnV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 5 Oct 2018 11:43:21 -0400
-Received: from mx2.suse.de ([195.135.220.15]:43304 "EHLO mx1.suse.de"
+        id S1728433AbeJEPww (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 5 Oct 2018 11:52:52 -0400
+Received: from mx2.suse.de ([195.135.220.15]:46012 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727236AbeJEPnU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 5 Oct 2018 11:43:20 -0400
+        id S1728012AbeJEPwv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 5 Oct 2018 11:52:51 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 727A4AF0D;
-        Fri,  5 Oct 2018 08:45:34 +0000 (UTC)
-Subject: Re: Understanding BTRFS RAID0 Performance
-To:     "Wilson, Ellis" <ellisw@panasas.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <54026c92-9cd1-2ac8-5747-c5405dd82087@panasas.com>
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 013C4AFD5
+        for <linux-btrfs@vger.kernel.org>; Fri,  5 Oct 2018 08:55:04 +0000 (UTC)
+Subject: Re: [PATCH 2/2] btrfs: volumes: Make sure no dev extent is beyond
+ device boundary
+To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+References: <20181005082525.22441-1-wqu@suse.com>
+ <20181005082525.22441-3-wqu@suse.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -72,12 +74,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  KIuxEcV8wcVjr+Wr9zRl06waOCkgrQbTPp631hToxo+4rA1jiQF2M80HAet65ytBVR2pFGZF
  zGYYLqiG+mpUZ+FPjxk9kpkRYz61mTLSY7tuFljExfJWMGfgSg1OxfLV631jV1TcdUnx+h3l
  Sqs2vMhAVt14zT8mpIuu2VNxcontxgVr1kzYA/tQg32fVRbGr449j1gw57BV9i0vww==
-Message-ID: <2da81104-f0c0-96a3-8c8f-98813e5dbeea@suse.com>
-Date:   Fri, 5 Oct 2018 11:45:32 +0300
+Message-ID: <2b2c24d4-9682-039b-b2f0-1fb0aa87f2ab@suse.com>
+Date:   Fri, 5 Oct 2018 11:55:03 +0300
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:52.0) Gecko/20100101
  Thunderbird/52.9.1
 MIME-Version: 1.0
-In-Reply-To: <54026c92-9cd1-2ac8-5747-c5405dd82087@panasas.com>
+In-Reply-To: <20181005082525.22441-3-wqu@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 7bit
@@ -88,89 +90,52 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On  5.10.2018 00:33, Wilson, Ellis wrote:
-> Hi all,
+On  5.10.2018 11:25, Qu Wenruo wrote:
+> Add extra dev extent end check against device boundary.
 > 
-> I'm attempting to understand a roughly 30% degradation in BTRFS RAID0 
-> for large read I/Os across six disks compared with ext4 atop mdadm RAID0.
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+>  fs/btrfs/volumes.c | 17 +++++++++++++++++
+>  1 file changed, 17 insertions(+)
 > 
-> Specifically, I achieve performance parity with BTRFS in terms of 
-> single-threaded write and read, and multi-threaded write, but poor 
-> performance for multi-threaded read.  The relative discrepancy appears 
-> to grow as one adds disks.  At 6 disks in a RAID0 (yes, I know, and I do 
-> not care about data persistence as I have this solved at a different 
-> layer) I see approximately 1.3GB/s for ext4 atop mdadm, but only about 
-> 950MB/s for BTRFS, both using four threads to read and write four 
-> different large files.  Across a large number of my nodes this 
-> aggregates to a sizable performance loss.
-> 
-> This has been a long and winding road for me, but to keep my question 
-> somewhat succinct, I'm down to the level of block tracing and one thing 
-> that stands out between the two traces is the number of rather small 
-> read I/O's that reach one of the drives in the test is vastly different 
-> for mdadm RAID0 vs BTRFS, which I think explains (in part at least) the 
-> performance drop off.  The read queue depth for BTRFS hovers in the 
-> upper single digits while the ext4/mdadm queue depth is towards 20.  I'm 
-> unsure right now if this is related or not.
-> 
-> Benchmark: FIO was used with the following command:
-> fio --name=read --rw=read --bs=1M --direct=0 --size=16G --numjobs=4 
-> --runtime=120 --group_reporting
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index bf0b2c16847a..9fb40e30be6a 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -7492,6 +7492,7 @@ int btrfs_verify_dev_extents(struct btrfs_fs_info *fs_info)
+>  	while (1) {
+>  		struct extent_buffer *leaf = path->nodes[0];
+>  		struct btrfs_dev_extent *dext;
+> +		struct btrfs_device *dev;
+>  		int slot = path->slots[0];
+>  		u64 chunk_offset;
+>  		u64 physical_offset;
+> @@ -7517,6 +7518,22 @@ int btrfs_verify_dev_extents(struct btrfs_fs_info *fs_info)
+>  			goto out;
+>  		}
+>  
+> +		/* Make sure no dev extent is beyond device bondary */
+> +		dev = btrfs_find_device(fs_info, devid, NULL, NULL);
+> +		if (!dev) {
+> +			btrfs_err(fs_info, "failed to find devid %llu", devid);
+> +			ret = -EUCLEAN;
+> +			goto out;
+> +		}
+> +		if (physical_offset + physical_len > dev->disk_total_bytes) {
+> +			btrfs_err(fs_info,
+> +"dev extent devid %llu physical offset %llu len %llu is beyond device boundary %llu",
+> +				  devid, physical_offset, physical_len,
+> +				  dev->disk_total_bytes);
+> +			ret = -EUCLEAN;
+> +			goto out;
+> +		}
 
-Right, so you are doing sequential reads. Since btrfs uses
-generic_read_file_iter as its read-related operations and what it just
-calls btrfs_readpage which ends up in:
+Why not move this code in verify_one_dev_extent, you already have all
+the necessary context in there - devid and physical_len/physical_offset,
+let's avoid scattering logically related code in different places. ?
 
-btrfs_readpage
-  extent_read_full_page
-   __extent_read_full_page
-    __do_readpage
-      submit_extent_page <- Here we have some code which is supposed to
-detect contiguous bios detection and merging
-
-So my first guess would be to instrument the code around the merging
-logic and see if it works as expected and is able to merge the majority
-of the bios.
-
-> 
-> The block sizes and counts of I/Os at that size I'm seeing for both 
-> cases comes in like the following (my max_segment_kb_size is 4K, hence 
-> the above typical upper-end):
-> 
-> BTRFS:
->   Count  Read I/O Size
->    21849 128
->       18 640
->        9 768
->        3 1280
->        9 1408
->        3 2048
->        3 2560
->     1011 2688
->      507 2816
-> 
-> ext4 on mdadm RAID0:
->   Count  Read I/O Size
->        9 8
->        3 16
->        5 256
->        5 768
->       19 1024
->      716 1536
->        5 1592
->        5 2504
->      695 2560
->       24 4096
->       21 6656
->      477 8192
-> 
-> Before I dive into the BTRFS source or try tracing in a different way, I 
-> wanted to see if this was a well-known artifact of BTRFS RAID0 and, even 
-> better, if there's any tunables available for RAID0 in BTRFS I could 
-> play with.  The man page for mkfs.btrfs and btrfstune in the tuning 
-> regard seemed...sparse.>
-> Any help or pointers are greatly appreciated!>
-> Thanks,
-> 
-> ellis
+> +
+>  		ret = verify_one_dev_extent(fs_info, chunk_offset, devid,
+>  					    physical_offset, physical_len);
+>  		if (ret < 0)
 > 

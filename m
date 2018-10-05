@@ -6,31 +6,32 @@ X-Spam-Status: No, score=-6.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 90694C00449
-	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Oct 2018 08:59:26 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4849BC00449
+	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Oct 2018 09:00:16 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 5BD4A2084D
-	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Oct 2018 08:59:26 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 5BD4A2084D
+	by mail.kernel.org (Postfix) with ESMTP id 02DAB20652
+	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Oct 2018 09:00:16 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 02DAB20652
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728595AbeJEP5M (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 5 Oct 2018 11:57:12 -0400
-Received: from mx2.suse.de ([195.135.220.15]:47508 "EHLO mx1.suse.de"
+        id S1728433AbeJEP6B (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 5 Oct 2018 11:58:01 -0400
+Received: from mx2.suse.de ([195.135.220.15]:47742 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1728433AbeJEP5L (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 5 Oct 2018 11:57:11 -0400
+        id S1727942AbeJEP6B (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 5 Oct 2018 11:58:01 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 5EE95B0CC;
-        Fri,  5 Oct 2018 08:59:23 +0000 (UTC)
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 8703AB0E9;
+        Fri,  5 Oct 2018 09:00:12 +0000 (UTC)
 Subject: Re: [PATCH 1/6] btrfs: alloc_chunk: do not refurbish num_bytes
+From:   Nikolay Borisov <nborisov@suse.com>
 To:     Hans van Kranenburg <hans.van.kranenburg@mendix.com>,
         linux-btrfs@vger.kernel.org
 References: <20181004212443.26519-1-hans.van.kranenburg@mendix.com>
  <20181004212443.26519-2-hans.van.kranenburg@mendix.com>
-From:   Nikolay Borisov <nborisov@suse.com>
+ <f50bd209-7cef-5eba-3382-23aea6ba476a@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  xsFNBFiKBz4BEADNHZmqwhuN6EAzXj9SpPpH/nSSP8YgfwoOqwrP+JR4pIqRK0AWWeWCSwmZ
@@ -74,12 +75,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  KIuxEcV8wcVjr+Wr9zRl06waOCkgrQbTPp631hToxo+4rA1jiQF2M80HAet65ytBVR2pFGZF
  zGYYLqiG+mpUZ+FPjxk9kpkRYz61mTLSY7tuFljExfJWMGfgSg1OxfLV631jV1TcdUnx+h3l
  Sqs2vMhAVt14zT8mpIuu2VNxcontxgVr1kzYA/tQg32fVRbGr449j1gw57BV9i0vww==
-Message-ID: <f50bd209-7cef-5eba-3382-23aea6ba476a@suse.com>
-Date:   Fri, 5 Oct 2018 11:59:22 +0300
+Message-ID: <484e779e-b203-ced2-5b74-9496d4443de7@suse.com>
+Date:   Fri, 5 Oct 2018 12:00:11 +0300
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:52.0) Gecko/20100101
  Thunderbird/52.9.1
 MIME-Version: 1.0
-In-Reply-To: <20181004212443.26519-2-hans.van.kranenburg@mendix.com>
+In-Reply-To: <f50bd209-7cef-5eba-3382-23aea6ba476a@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 7bit
@@ -90,40 +91,47 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On  5.10.2018 00:24, Hans van Kranenburg wrote:
-> num_bytes is used to store the chunk length of the chunk that we're
-> allocating. Do not reuse it for something really different in the same
-> function.
+On  5.10.2018 11:59, Nikolay Borisov wrote:
 > 
-> Signed-off-by: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
-
-nit: That's a minor cleanup and brings no functional changes. I think it
-even allows to give a more descriptive name of num_bytes such as
-chunk_size, especially since we have a max_chunk_size. I think they
-would pair nicely.
-
-Anyway,
-
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-
-> ---
->  fs/btrfs/volumes.c | 5 +++--
->  1 file changed, 3 insertions(+), 2 deletions(-)
 > 
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index f4405e430da6..9c9bb127eeee 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -4837,8 +4837,9 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
->  		goto error_del_extent;
->  
->  	for (i = 0; i < map->num_stripes; i++) {
-> -		num_bytes = map->stripes[i].dev->bytes_used + stripe_size;
-> -		btrfs_device_set_bytes_used(map->stripes[i].dev, num_bytes);
-> +		btrfs_device_set_bytes_used(map->stripes[i].dev,
-> +					    map->stripes[i].dev->bytes_used +
-> +					    stripe_size);
->  	}
->  
->  	atomic64_sub(stripe_size * map->num_stripes, &info->free_chunk_space);
+> On  5.10.2018 00:24, Hans van Kranenburg wrote:
+>> num_bytes is used to store the chunk length of the chunk that we're
+>> allocating. Do not reuse it for something really different in the same
+>> function.
+>>
+>> Signed-off-by: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
 > 
+> nit: That's a minor cleanup and brings no functional changes. I think it
+> even allows to give a more descriptive name of num_bytes such as
+> chunk_size, especially since we have a max_chunk_size. I think they
+> would pair nicely.
+
+I saw that your patch 2 actually does that, so ignore this comment :)
+
+
+> 
+> Anyway,
+> 
+> Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+> 
+>> ---
+>>  fs/btrfs/volumes.c | 5 +++--
+>>  1 file changed, 3 insertions(+), 2 deletions(-)
+>>
+>> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+>> index f4405e430da6..9c9bb127eeee 100644
+>> --- a/fs/btrfs/volumes.c
+>> +++ b/fs/btrfs/volumes.c
+>> @@ -4837,8 +4837,9 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
+>>  		goto error_del_extent;
+>>  
+>>  	for (i = 0; i < map->num_stripes; i++) {
+>> -		num_bytes = map->stripes[i].dev->bytes_used + stripe_size;
+>> -		btrfs_device_set_bytes_used(map->stripes[i].dev, num_bytes);
+>> +		btrfs_device_set_bytes_used(map->stripes[i].dev,
+>> +					    map->stripes[i].dev->bytes_used +
+>> +					    stripe_size);
+>>  	}
+>>  
+>>  	atomic64_sub(stripe_size * map->num_stripes, &info->free_chunk_space);
+>>

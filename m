@@ -3,33 +3,33 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-6.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5121AC00449
-	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Oct 2018 08:55:08 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 03061C65BA7
+	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Oct 2018 08:56:44 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id E7FF32084D
-	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Oct 2018 08:55:07 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org E7FF32084D
+	by mail.kernel.org (Postfix) with ESMTP id B67462084D
+	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Oct 2018 08:56:43 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org B67462084D
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728433AbeJEPww (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 5 Oct 2018 11:52:52 -0400
-Received: from mx2.suse.de ([195.135.220.15]:46012 "EHLO mx1.suse.de"
+        id S1728701AbeJEPy2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 5 Oct 2018 11:54:28 -0400
+Received: from mx2.suse.de ([195.135.220.15]:46388 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1728012AbeJEPwv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 5 Oct 2018 11:52:51 -0400
+        id S1728012AbeJEPy2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 5 Oct 2018 11:54:28 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 013C4AFD5
-        for <linux-btrfs@vger.kernel.org>; Fri,  5 Oct 2018 08:55:04 +0000 (UTC)
-Subject: Re: [PATCH 2/2] btrfs: volumes: Make sure no dev extent is beyond
- device boundary
+        by mx1.suse.de (Postfix) with ESMTP id 023C3AFF9
+        for <linux-btrfs@vger.kernel.org>; Fri,  5 Oct 2018 08:56:40 +0000 (UTC)
+Subject: Re: [PATCH 1/2] btrfs: volumes: Make sure there is no overlap dev
+ extents at mount time
 To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
 References: <20181005082525.22441-1-wqu@suse.com>
- <20181005082525.22441-3-wqu@suse.com>
+ <20181005082525.22441-2-wqu@suse.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -74,12 +74,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  KIuxEcV8wcVjr+Wr9zRl06waOCkgrQbTPp631hToxo+4rA1jiQF2M80HAet65ytBVR2pFGZF
  zGYYLqiG+mpUZ+FPjxk9kpkRYz61mTLSY7tuFljExfJWMGfgSg1OxfLV631jV1TcdUnx+h3l
  Sqs2vMhAVt14zT8mpIuu2VNxcontxgVr1kzYA/tQg32fVRbGr449j1gw57BV9i0vww==
-Message-ID: <2b2c24d4-9682-039b-b2f0-1fb0aa87f2ab@suse.com>
-Date:   Fri, 5 Oct 2018 11:55:03 +0300
+Message-ID: <658c8276-4294-d31f-7c63-83fa244dc213@suse.com>
+Date:   Fri, 5 Oct 2018 11:56:39 +0300
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:52.0) Gecko/20100101
  Thunderbird/52.9.1
 MIME-Version: 1.0
-In-Reply-To: <20181005082525.22441-3-wqu@suse.com>
+In-Reply-To: <20181005082525.22441-2-wqu@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 7bit
@@ -91,51 +91,62 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 On  5.10.2018 11:25, Qu Wenruo wrote:
-> Add extra dev extent end check against device boundary.
+> Enhance btrfs_verify_dev_extents() to remember previous checked dev
+> extents, so it can check if one dev extent overlaps with previous dev extent.
 > 
+> Reported-by: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
 > Signed-off-by: Qu Wenruo <wqu@suse.com>
+
+If this is related to the initial report here:
+
+https://lore.kernel.org/linux-btrfs/782f6000-30c0-0085-abd2-74ec5827c903@mendix.com/T/#m609ccb5d32998e8ba5cfa9901c1ab56a38a6f374
+
+I'd rather have it as a link to the commit:
+
+Link:
+https://lore.kernel.org/linux-btrfs/b3461a38-e5f8-f41d-c67c-2efac8129054@mendix.com/
+
+Since I wouldn't expect this occur but clearly there is a bug.
+
+
 > ---
->  fs/btrfs/volumes.c | 17 +++++++++++++++++
->  1 file changed, 17 insertions(+)
+>  fs/btrfs/volumes.c | 14 ++++++++++++++
+>  1 file changed, 14 insertions(+)
 > 
 > diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index bf0b2c16847a..9fb40e30be6a 100644
+> index da86706123ff..bf0b2c16847a 100644
 > --- a/fs/btrfs/volumes.c
 > +++ b/fs/btrfs/volumes.c
-> @@ -7492,6 +7492,7 @@ int btrfs_verify_dev_extents(struct btrfs_fs_info *fs_info)
->  	while (1) {
->  		struct extent_buffer *leaf = path->nodes[0];
->  		struct btrfs_dev_extent *dext;
-> +		struct btrfs_device *dev;
->  		int slot = path->slots[0];
->  		u64 chunk_offset;
->  		u64 physical_offset;
-> @@ -7517,6 +7518,22 @@ int btrfs_verify_dev_extents(struct btrfs_fs_info *fs_info)
->  			goto out;
->  		}
+> @@ -7462,6 +7462,8 @@ int btrfs_verify_dev_extents(struct btrfs_fs_info *fs_info)
+>  	struct btrfs_path *path;
+>  	struct btrfs_root *root = fs_info->dev_root;
+>  	struct btrfs_key key;
+> +	u64 prev_devid = 0;
+> +	u64 prev_dev_ext_end = 0;
+>  	int ret = 0;
 >  
-> +		/* Make sure no dev extent is beyond device bondary */
-> +		dev = btrfs_find_device(fs_info, devid, NULL, NULL);
-> +		if (!dev) {
-> +			btrfs_err(fs_info, "failed to find devid %llu", devid);
-> +			ret = -EUCLEAN;
-> +			goto out;
-> +		}
-> +		if (physical_offset + physical_len > dev->disk_total_bytes) {
+>  	key.objectid = 1;
+> @@ -7506,10 +7508,22 @@ int btrfs_verify_dev_extents(struct btrfs_fs_info *fs_info)
+>  		chunk_offset = btrfs_dev_extent_chunk_offset(leaf, dext);
+>  		physical_len = btrfs_dev_extent_length(leaf, dext);
+>  
+> +		/* Check if this dev extent over lap with previous one */
+> +		if (devid == prev_devid && physical_offset < prev_dev_ext_end) {
 > +			btrfs_err(fs_info,
-> +"dev extent devid %llu physical offset %llu len %llu is beyond device boundary %llu",
-> +				  devid, physical_offset, physical_len,
-> +				  dev->disk_total_bytes);
+> +"dev extent devid %llu physical offset %llu overlap with previous dev extent end %llu",
+> +				  devid, physical_offset, prev_dev_ext_end);
 > +			ret = -EUCLEAN;
 > +			goto out;
 > +		}
-
-Why not move this code in verify_one_dev_extent, you already have all
-the necessary context in there - devid and physical_len/physical_offset,
-let's avoid scattering logically related code in different places. ?
-
 > +
 >  		ret = verify_one_dev_extent(fs_info, chunk_offset, devid,
 >  					    physical_offset, physical_len);
 >  		if (ret < 0)
+>  			goto out;
+> +		prev_devid = devid;
+> +		prev_dev_ext_end = physical_offset + physical_len;
+> +
+>  		ret = btrfs_next_item(root, path);
+>  		if (ret < 0)
+>  			goto out;
 > 

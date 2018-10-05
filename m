@@ -2,124 +2,210 @@ Return-Path: <SRS0=6tJf=MR=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 71118C00449
-	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Oct 2018 14:23:23 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E4C1AC00449
+	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Oct 2018 14:42:51 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 09D582084D
-	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Oct 2018 14:23:22 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 09D582084D
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=lichtvoll.de
+	by mail.kernel.org (Postfix) with ESMTP id 99CCB206B2
+	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Oct 2018 14:42:51 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 99CCB206B2
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728407AbeJEVWR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 5 Oct 2018 17:22:17 -0400
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:55547 "EHLO
-        mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727968AbeJEVWR (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Oct 2018 17:22:17 -0400
-Authentication-Results: auth=pass smtp.auth=martin smtp.mailfrom=martin@lichtvoll.de
-Received: from 127.0.0.1 (localhost [127.0.0.1])
-        (using TLSv1 with cipher ECDHE-RSA-AES256-SHA (256/256 bits))
-        (No client certificate requested)
-        by mail.lichtvoll.de (Postfix) with ESMTPSA id B6EC73C45D0
-        for <linux-btrfs@vger.kernel.org>; Fri,  5 Oct 2018 16:23:19 +0200 (CEST)
-From:   Martin Steigerwald <martin@lichtvoll.de>
-To:     linux-btrfs@vger.kernel.org
-Subject: BTRFS related kernel backtrace on boot on 4.18.7 after blackout due to discharged battery
-Date:   Fri, 05 Oct 2018 16:23:14 +0200
-Message-ID: <3666619.NTnn27ZJZE@merkaba>
+        id S1728983AbeJEVlv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 5 Oct 2018 17:41:51 -0400
+Received: from mx2.suse.de ([195.135.220.15]:56410 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1728624AbeJEVlv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 5 Oct 2018 17:41:51 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id D6226AEC1;
+        Fri,  5 Oct 2018 14:42:46 +0000 (UTC)
+Subject: Re: [PATCH 5/6] btrfs: introduce nparity raid_attr
+To:     Hans van Kranenburg <hans.van.kranenburg@mendix.com>,
+        linux-btrfs@vger.kernel.org
+References: <20181004212443.26519-1-hans.van.kranenburg@mendix.com>
+ <20181004212443.26519-6-hans.van.kranenburg@mendix.com>
+From:   Nikolay Borisov <nborisov@suse.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <f3602299-4904-9a59-0a38-ab4525be1239@suse.com>
+Date:   Fri, 5 Oct 2018 17:42:45 +0300
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:52.0) Gecko/20100101
+ Thunderbird/52.9.1
 MIME-Version: 1.0
-Content-Transfer-Encoding: 7Bit
-Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <20181004212443.26519-6-hans.van.kranenburg@mendix.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hello!
-
-On ThinkPad T520 after battery was discharged and machine just blacked
-out.
-
-Is that some sign of regular consistency check / replay or something to
-investigate further?
-
-I already scrubbed all data and there are no errors. Also btrfs device stats
-reports no errors. SMART status appears to be okay as well on both SSD.
-
-[    4.524355] BTRFS info (device dm-4): disk space caching is enabled
-[    4.524356] BTRFS info (device dm-4): has skinny extents
-[    4.563950] BTRFS info (device dm-4): enabling ssd optimizations
-[    5.463085] Console: switching to colour frame buffer device 240x67
-[    5.492236] i915 0000:00:02.0: fb0: inteldrmfb frame buffer device
-[    5.882661] BTRFS info (device dm-3): disk space caching is enabled
-[    5.882664] BTRFS info (device dm-3): has skinny extents
-[    5.918579] SGI XFS with ACLs, security attributes, realtime, scrub, no debug enabled
-[    5.927421] Adding 20971516k swap on /dev/mapper/sata-swap.  Priority:-2 extents:1 across:20971516k SSDsc
-[    5.935051] XFS (sdb1): Mounting V5 Filesystem
-[    5.935218] XFS (sda1): Mounting V5 Filesystem
-[    5.961100] XFS (sda1): Ending clean mount
-[    5.970857] BTRFS info (device dm-3): enabling ssd optimizations
-[    5.972358] XFS (sdb1): Ending clean mount
-[    5.975955] WARNING: CPU: 1 PID: 1104 at fs/inode.c:342 inc_nlink+0x28/0x30
-[    5.978271] Modules linked in: xfs msr pktcdvd intel_rapl x86_pkg_temp_thermal intel_powerclamp kvm_intel kvm irqbypass crct10dif_pclmul crc32_pclmul ghash_clmulni_intel snd_hda_codec_hdmi pcbc arc4 snd_hda_codec_conexant snd_hda_codec_generic iwldvm mac80211 iwlwifi aesni_intel snd_hda_intel snd_hda_codec aes_x86_64 crypto_simd cryptd snd_hda_core glue_helper intel_cstate snd_hwdep intel_rapl_perf snd_pcm pcspkr input_leds i915 sg cfg80211 snd_timer thinkpad_acpi nvram drm_kms_helper snd soundcore tpm_tis tpm_tis_core drm rfkill ac tpm i2c_algo_bit fb_sys_fops battery rng_core video syscopyarea sysfillrect sysimgblt button evdev sbs sbshc coretemp bfq hdaps(O) tp_smapi(O) thinkpad_ec(O) loop ecryptfs cbc sunrpc mcryptd sha256_ssse3 sha256_generic encrypted_keys ip_tables x_tables autofs4 dm_mod
-[    5.990499]  btrfs xor zstd_decompress zstd_compress xxhash zlib_deflate raid6_pq libcrc32c crc32c_generic sr_mod cdrom sd_mod hid_lenovo hid_generic usbhid hid ahci libahci libata ehci_pci crc32c_intel psmouse i2c_i801 sdhci_pci cqhci lpc_ich sdhci ehci_hcd e1000e scsi_mod i2c_core mfd_core mmc_core usbcore usb_common thermal
-[    5.990529] CPU: 1 PID: 1104 Comm: mount Tainted: G           O      4.18.7-tp520 #63
-[    5.990532] Hardware name: LENOVO 42433WG/42433WG, BIOS 8AET69WW (1.49 ) 06/14/2018
-[    6.000153] RIP: 0010:inc_nlink+0x28/0x30
-[    6.000154] Code: 00 00 8b 47 48 85 c0 74 07 83 c0 01 89 47 48 c3 f6 87 a1 00 00 00 04 74 11 48 8b 47 28 f0 48 ff 88 98 04 00 00 8b 47 48 eb df <0f> 0b eb eb 0f 1f 40 00 41 54 8b 0d 70 3f aa 00 48 ba eb 83 b5 80 
-[    6.008573] RSP: 0018:ffffc90002283828 EFLAGS: 00010246
-[    6.008575] RAX: 0000000000000000 RBX: ffff8804018bed58 RCX: 0000000000022261
-[    6.008576] RDX: 0000000000022251 RSI: 0000000000000000 RDI: ffff8804018bed58
-[    6.008577] RBP: ffffc90002283a50 R08: 000000000002a330 R09: ffffffffa02f3873
-[    6.008578] R10: 30ffffffffffffff R11: 0000000000007763 R12: 0000000000000011
-[    6.008579] R13: 0000000000003d5f R14: ffff880403e19800 R15: ffff88040a3c69a0
-[    6.008580] FS:  00007f071598f100(0000) GS:ffff88041e240000(0000) knlGS:0000000000000000
-[    6.008581] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-[    6.008589] CR2: 00007fda4fbf8218 CR3: 0000000403e42001 CR4: 00000000000606e0
-[    6.008590] Call Trace:
-[    6.008614]  replay_one_buffer+0x80e/0x890 [btrfs]
-[    6.008632]  walk_up_log_tree+0x1dc/0x260 [btrfs]
-[    6.046858]  walk_log_tree+0xaf/0x1e0 [btrfs]
-[    6.046872]  btrfs_recover_log_trees+0x21c/0x410 [btrfs]
-[    6.046885]  ? btree_read_extent_buffer_pages+0xcd/0x210 [btrfs]
-[    6.055941]  ? fixup_inode_link_counts+0x170/0x170 [btrfs]
-[    6.055953]  open_ctree+0x1a0d/0x1b60 [btrfs]
-[    6.055965]  btrfs_mount_root+0x67b/0x760 [btrfs]
-[    6.065039]  ? pcpu_alloc_area+0xdd/0x120
-[    6.065040]  ? pcpu_next_unpop+0x32/0x40
-[    6.065052]  mount_fs+0x36/0x162
-[    6.065055]  vfs_kern_mount.part.34+0x4f/0x120
-[    6.065064]  btrfs_mount+0x15f/0x890 [btrfs]
-[    6.065067]  ? pcpu_cnt_pop_pages+0x40/0x50
-[    6.065069]  ? pcpu_alloc_area+0xdd/0x120
-[    6.065071]  ? pcpu_next_unpop+0x32/0x40
-[    6.065073]  ? cpumask_next+0x16/0x20
-[    6.065075]  ? pcpu_alloc+0x1c3/0x690
-[    6.065078]  ? mount_fs+0x36/0x162
-[    6.099840]  mount_fs+0x36/0x162
-[    6.099843]  vfs_kern_mount.part.34+0x4f/0x120
-[    6.099845]  do_mount+0x1f7/0xc80
-[    6.099856]  ksys_mount+0xb5/0xd0
-[    6.099859]  __x64_sys_mount+0x1c/0x20
-[    6.099861]  do_syscall_64+0x43/0xd0
-[    6.099864]  entry_SYSCALL_64_after_hwframe+0x44/0xa9
-[    6.099866] RIP: 0033:0x7f0715b89a1a
-[    6.099867] Code: 48 8b 0d 71 e4 0b 00 f7 d8 64 89 01 48 83 c8 ff c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 44 00 00 49 89 ca b8 a5 00 00 00 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 8b 0d 3e e4 0b 00 f7 d8 64 89 01 48 
-[    6.123872] RSP: 002b:00007ffc0e3466a8 EFLAGS: 00000202 ORIG_RAX: 00000000000000a5
-[    6.131285] RAX: ffffffffffffffda RBX: 000055f3ed7ee9c0 RCX: 00007f0715b89a1a
-[    6.131286] RDX: 000055f3ed7eebc0 RSI: 000055f3ed7eec40 RDI: 000055f3ed7ef900
-[    6.131287] RBP: 00007f0715ecff04 R08: 000055f3ed7eec00 R09: 000055f3ed7eebc0
-[    6.131288] R10: 00000000c0ed0400 R11: 0000000000000202 R12: 0000000000000000
-[    6.131289] R13: 00000000c0ed0400 R14: 000055f3ed7ef900 R15: 000055f3ed7eebc0
-[    6.131292] ---[ end trace bd5d30b2fea7fb77 ]---
-[    6.251219] BTRFS info (device dm-3): checking UUID tree
-
-Thanks,
--- 
-Martin
 
 
+On  5.10.2018 00:24, Hans van Kranenburg wrote:
+> Instead of hardcoding exceptions for RAID5 and RAID6 in the code, use an
+> nparity field in raid_attr.
+> 
+> Signed-off-by: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+> ---
+>  fs/btrfs/volumes.c | 18 +++++++++++-------
+>  fs/btrfs/volumes.h |  2 ++
+>  2 files changed, 13 insertions(+), 7 deletions(-)
+> 
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index d82b3d735ebe..453046497ac8 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -37,6 +37,7 @@ const struct btrfs_raid_attr btrfs_raid_array[BTRFS_NR_RAID_TYPES] = {
+>  		.tolerated_failures = 1,
+>  		.devs_increment	= 2,
+>  		.ncopies	= 2,
+> +		.nparity        = 0,
+>  		.raid_name	= "raid10",
+>  		.bg_flag	= BTRFS_BLOCK_GROUP_RAID10,
+>  		.mindev_error	= BTRFS_ERROR_DEV_RAID10_MIN_NOT_MET,
+> @@ -49,6 +50,7 @@ const struct btrfs_raid_attr btrfs_raid_array[BTRFS_NR_RAID_TYPES] = {
+>  		.tolerated_failures = 1,
+>  		.devs_increment	= 2,
+>  		.ncopies	= 2,
+> +		.nparity        = 0,
+>  		.raid_name	= "raid1",
+>  		.bg_flag	= BTRFS_BLOCK_GROUP_RAID1,
+>  		.mindev_error	= BTRFS_ERROR_DEV_RAID1_MIN_NOT_MET,
+> @@ -61,6 +63,7 @@ const struct btrfs_raid_attr btrfs_raid_array[BTRFS_NR_RAID_TYPES] = {
+>  		.tolerated_failures = 0,
+>  		.devs_increment	= 1,
+>  		.ncopies	= 2,
+> +		.nparity        = 0,
+>  		.raid_name	= "dup",
+>  		.bg_flag	= BTRFS_BLOCK_GROUP_DUP,
+>  		.mindev_error	= 0,
+> @@ -73,6 +76,7 @@ const struct btrfs_raid_attr btrfs_raid_array[BTRFS_NR_RAID_TYPES] = {
+>  		.tolerated_failures = 0,
+>  		.devs_increment	= 1,
+>  		.ncopies	= 1,
+> +		.nparity        = 0,
+>  		.raid_name	= "raid0",
+>  		.bg_flag	= BTRFS_BLOCK_GROUP_RAID0,
+>  		.mindev_error	= 0,
+> @@ -85,6 +89,7 @@ const struct btrfs_raid_attr btrfs_raid_array[BTRFS_NR_RAID_TYPES] = {
+>  		.tolerated_failures = 0,
+>  		.devs_increment	= 1,
+>  		.ncopies	= 1,
+> +		.nparity        = 0,
+>  		.raid_name	= "single",
+>  		.bg_flag	= 0,
+>  		.mindev_error	= 0,
+> @@ -97,6 +102,7 @@ const struct btrfs_raid_attr btrfs_raid_array[BTRFS_NR_RAID_TYPES] = {
+>  		.tolerated_failures = 1,
+>  		.devs_increment	= 1,
+>  		.ncopies	= 1,
+> +		.nparity        = 2,
+>  		.raid_name	= "raid5",
+>  		.bg_flag	= BTRFS_BLOCK_GROUP_RAID5,
+>  		.mindev_error	= BTRFS_ERROR_DEV_RAID5_MIN_NOT_MET,
+> @@ -109,6 +115,7 @@ const struct btrfs_raid_attr btrfs_raid_array[BTRFS_NR_RAID_TYPES] = {
+>  		.tolerated_failures = 2,
+>  		.devs_increment	= 1,
+>  		.ncopies	= 1,
+> +		.nparity        = 2,
+>  		.raid_name	= "raid6",
+>  		.bg_flag	= BTRFS_BLOCK_GROUP_RAID6,
+>  		.mindev_error	= BTRFS_ERROR_DEV_RAID6_MIN_NOT_MET,
+> @@ -4597,6 +4604,8 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
+>  	int devs_min;		/* min devs needed */
+>  	int devs_increment;	/* ndevs has to be a multiple of this */
+>  	int ncopies;		/* how many copies to data has */
+> +	int nparity;		/* number of stripes worth of bytes to
+> +				   store parity information */
+>  	int ret;
+>  	u64 max_stripe_size;
+>  	u64 max_chunk_size;
+> @@ -4623,6 +4632,7 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
+>  	devs_min = btrfs_raid_array[index].devs_min;
+>  	devs_increment = btrfs_raid_array[index].devs_increment;
+>  	ncopies = btrfs_raid_array[index].ncopies;
+> +	nparity = btrfs_raid_array[index].nparity;
+>  
+>  	if (type & BTRFS_BLOCK_GROUP_DATA) {
+>  		max_stripe_size = SZ_1G;
+> @@ -4752,13 +4762,7 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
+>  	 * this will have to be fixed for RAID1 and RAID10 over
+>  	 * more drives
+>  	 */
+> -	data_stripes = num_stripes / ncopies;
+> -
+> -	if (type & BTRFS_BLOCK_GROUP_RAID5)
+> -		data_stripes = num_stripes - 1;
+> -
+> -	if (type & BTRFS_BLOCK_GROUP_RAID6)
+> -		data_stripes = num_stripes - 2;
+> +	data_stripes = (num_stripes - nparity) / ncopies;
+>  
+>  	/*
+>  	 * Use the number of data stripes to figure out how big this chunk
+> diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+> index 23e9285d88de..0fe005b4295a 100644
+> --- a/fs/btrfs/volumes.h
+> +++ b/fs/btrfs/volumes.h
+> @@ -331,6 +331,8 @@ struct btrfs_raid_attr {
+>  	int tolerated_failures; /* max tolerated fail devs */
+>  	int devs_increment;	/* ndevs has to be a multiple of this */
+>  	int ncopies;		/* how many copies to data has */
+> +	int nparity;		/* number of stripes worth of bytes to
+> +				   store parity information */
+
+The description can be simplified to: number of parity stripes
+
+>  	int mindev_error;	/* error code if min devs requisite is unmet */
+>  	const char raid_name[8]; /* name of the raid */
+>  	u64 bg_flag;		/* block group flag of the raid */
+> 

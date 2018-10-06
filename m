@@ -2,88 +2,126 @@ Return-Path: <SRS0=jasM=MS=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.1 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 89577C65BD0
-	for <linux-btrfs@archiver.kernel.org>; Sat,  6 Oct 2018 10:44:05 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 30B14C65BD0
+	for <linux-btrfs@archiver.kernel.org>; Sat,  6 Oct 2018 11:26:04 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 43A7A21486
-	for <linux-btrfs@archiver.kernel.org>; Sat,  6 Oct 2018 10:44:05 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D7CCA2147D
+	for <linux-btrfs@archiver.kernel.org>; Sat,  6 Oct 2018 11:26:03 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="BbPD/yhH"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 43A7A21486
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=infradead.org
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="PJo0GArQ"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org D7CCA2147D
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727646AbeJFRqu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 6 Oct 2018 13:46:50 -0400
-Received: from bombadil.infradead.org ([198.137.202.133]:35116 "EHLO
-        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726685AbeJFRqu (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 6 Oct 2018 13:46:50 -0400
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=bombadil.20170209; h=In-Reply-To:Content-Type:MIME-Version
-        :References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
-        Content-Transfer-Encoding:Content-ID:Content-Description:Resent-Date:
-        Resent-From:Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:
-        List-Help:List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
-         bh=MVw2bZ/7x7j6BCNneeVJJDXZJWSiCNHkwiJgpXjIYp8=; b=BbPD/yhH19DCnCC85DVBip476
-        ZB8uCZ8iQ3m5+IaNLAwYKj52Jk9yo7KXZ29CQk9kHFvMJu2KH4dnM3f7lkFtL2YWQi/d6ZUz+sEXc
-        NNVVhATDsXi/4tJVXN25yuRdZkTc0SIADL4scmXvfCazQVSky7Z+zoYKBl9dEySCBr1Aw5K58uEfO
-        iUJJ2gp2+epeKzsHYnvnBsBXfcjmcJKEjkos2n9uqXJ2wrDn5m5YA+LuKfxhOxv63cCT7E0/ha56w
-        N67nTaZE7Rt75G5ynp2bsLAqQmWBNG9F5RMlohQ/NxkT2vwXehmZsFJnqHEO+shEf+sXsiXUIws/K
-        n3bQTDRYw==;
-Received: from hch by bombadil.infradead.org with local (Exim 4.90_1 #2 (Red Hat Linux))
-        id 1g8k42-000310-Ep; Sat, 06 Oct 2018 10:44:02 +0000
-Date:   Sat, 6 Oct 2018 03:44:02 -0700
-From:   Christoph Hellwig <hch@infradead.org>
-To:     "Darrick J. Wong" <darrick.wong@oracle.com>
-Cc:     Amir Goldstein <amir73il@gmail.com>,
-        Dave Chinner <david@fromorbit.com>,
-        linux-xfs <linux-xfs@vger.kernel.org>,
-        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-        Linux Btrfs <linux-btrfs@vger.kernel.org>,
-        ocfs2-devel@oss.oracle.com, Eric Sandeen <sandeen@redhat.com>,
-        Miklos Szeredi <miklos@szeredi.hu>
-Subject: Re: [PATCH 09/15] vfs: pass operation flags to {clone,
- dedupe}_file_range implementations
-Message-ID: <20181006104402.GG25747@infradead.org>
-References: <153870027422.29072.7433543674436957232.stgit@magnolia>
- <153870034158.29072.8943691140742142494.stgit@magnolia>
- <CAOQ4uxhDhyx-SnyJ5mmsKMvvb883reCWgvyNbABKyC4-SO+1EA@mail.gmail.com>
- <20181005175008.GY19324@magnolia>
+        id S1727709AbeJFS2G (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 6 Oct 2018 14:28:06 -0400
+Received: from mail-pl1-f196.google.com ([209.85.214.196]:41150 "EHLO
+        mail-pl1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727161AbeJFS2G (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 6 Oct 2018 14:28:06 -0400
+Received: by mail-pl1-f196.google.com with SMTP id q17-v6so7996422plr.8;
+        Sat, 06 Oct 2018 04:25:13 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=date:from:to:cc:subject:message-id:references:mime-version
+         :content-disposition:in-reply-to:user-agent;
+        bh=1rsGdFt+MWBNhZP10kWU8mb2gyofwJSnnl4HadGsJes=;
+        b=PJo0GArQ2G3+diZmMMiTkaRRsB06y+VdxhLQ6jHJVDKU0NPKUfGmkq8YDQ9XpDnbvl
+         kHYTKxS8n4Pk6hkY1GdcwVzJ3f+TsbhQzQCTK+oaI7prc5wKpqyEx2+HF+b3Gx5DjnRe
+         Ji7oH2PgbYBsjb3u7yKY6Xdx82PNFICcMT0qamxnnp+dpGKJydktnm38PDs34eTxJAEC
+         F1kH35ggE09Q0yVMaVYStyYI0wVGghwOBUrrBJgaIzgQdoov/H2LBMJ5uLmHF+osUntB
+         yQQHixlUnmuPyrj7aB3iiHPrYVHdDWSfHmKYWhAFM5NdXANHxlThZECukabzxfe/DEjG
+         k4Xw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
+         :mime-version:content-disposition:in-reply-to:user-agent;
+        bh=1rsGdFt+MWBNhZP10kWU8mb2gyofwJSnnl4HadGsJes=;
+        b=mSFVzQPPPan4oLODKxE1z0V3jFwCKLD9lPPIxChp8bYvZfZt1nobwm92ZaLoGo9ZcW
+         d6gPboQ3bCY4oMZblIAlgXa+HVq2eNuVs2Xm1hL2g9R0PW2zKNHWRD4d46Qaqf61U/qg
+         otcJUoVJJAABp+7dkTDv16uMTFs5+2TZf+rbzoA5WveGTPHFY8bZv0sAEhCyhu+BaBiQ
+         t1YTTsAJkUn0OSzf9jh2+1OFjlWTQa9npm4bOHCPKeTym8QaEIIw0IQTW9Gmp0eZDWXX
+         js3Ct5hLgQYJIEzOV0od5DQ4grJxyt5qbjC93bwALZ+pqaLkOAvx1XiJKGkpFy1F2zBR
+         gNMA==
+X-Gm-Message-State: ABuFfogj1kZObYU9gIdNERbkHRXxl9lbL0gH542UtXPTMV007JO/eXFz
+        EV+KHUGi3DZC5UtihpTdXWMjK4c2+PE=
+X-Google-Smtp-Source: ACcGV614VSEoVBJhEIn1SZYPTdIXK++u4oyFpQO+MC6Oqwc53AHxseK7EsPdCYmKk4P5++fFTfvo/A==
+X-Received: by 2002:a17:902:a50e:: with SMTP id s14-v6mr15631941plq.78.1538825113235;
+        Sat, 06 Oct 2018 04:25:13 -0700 (PDT)
+Received: from localhost ([128.199.137.77])
+        by smtp.gmail.com with ESMTPSA id v63-v6sm12667930pgd.69.2018.10.06.04.25.12
+        (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
+        Sat, 06 Oct 2018 04:25:12 -0700 (PDT)
+Date:   Sat, 6 Oct 2018 19:25:07 +0800
+From:   Eryu Guan <guaneryu@gmail.com>
+To:     Anand Jain <anand.jain@oracle.com>
+Cc:     fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2 3/9] geneirc/077 fix min size for btrfs
+Message-ID: <20181006112507.GL17817@desktop>
+References: <1537849462-619-1-git-send-email-anand.jain@oracle.com>
+ <1537849462-619-4-git-send-email-anand.jain@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20181005175008.GY19324@magnolia>
-User-Agent: Mutt/1.9.2 (2017-12-15)
-X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
+In-Reply-To: <1537849462-619-4-git-send-email-anand.jain@oracle.com>
+User-Agent: Mutt/1.10.1 (2018-07-13)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Oct 05, 2018 at 10:50:08AM -0700, Darrick J. Wong wrote:
-> > That's cool. But you know what's going to be the next step, right?
-> > Merging the 3 file operation interfaces into a single one.
-> > copy_file_range() already has the flags arg for future extensions
-> > and as you wrote somewhere, clone is really an optimized copy.
-> > ovl_copyfile() already does that internally.
-> > 
-> > So the only take away for this patch series, please use constant
-> > names COPYRANGE_* and also explicitly define:
-> > 
-> > /* Operation is actually clone, not copy. */
-> > #define COPYRANGE_CLONE      (1 << 2)
-> > /* Operation is actually dedupe, not copy. */
-> > #define COPYRANGE_DEDUPE      (1 << 3)
+On Tue, Sep 25, 2018 at 12:24:16PM +0800, Anand Jain wrote:
+> If btrfs need to be tested at its default blockgroup which is non-mixed,
+> then it needs at least 256mb.
 > 
-> Yeah, I was too tired to try to throw that one on top of the flaming
-> garbage pile.  But I guess since I have a bunch more work to do to the
-> previous patch I might as well do that...
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
 
-I'm not totally sold on just merging everything, but I very much despise
-what is done in this patch, as it creates a completely confusing
-interface.
+(Sorry for the late review..)
+
+> ---
+>  tests/generic/077 | 3 +--
+>  1 file changed, 1 insertion(+), 2 deletions(-)
+> 
+> diff --git a/tests/generic/077 b/tests/generic/077
+> index ef6af18c83e3..ec236992513f 100755
+> --- a/tests/generic/077
+> +++ b/tests/generic/077
+> @@ -49,8 +49,7 @@ rm -f $seqres.full
+>  _scratch_unmount >/dev/null 2>&1
+>  echo "*** MKFS ***"                         >>$seqres.full
+>  echo ""                                     >>$seqres.full
+> -SIZE=`expr 50 \* 1024 \* 1024`
+> -_scratch_mkfs_sized $SIZE                   >>$seqres.full 2>&1 \
+> +_scratch_mkfs_sized $((256 * 1024 *1024))   >>$seqres.full 2>&1 \
+>  	|| _fail "mkfs failed"
+
+Hmm, this test copies "/lib/modules/" to fill the original 50M
+filesystem (which seems a bad way to me)
+
+"
+# Something w/ enough data to fill 50M of fs...
+filler=/lib/modules/
+...
+echo "*** populate filesystem, pass #1" | tee -a $seqres.full
+cp -rf $filler $SCRATCH_MNT/subdir >$seqres.full 2>&1
+...
+"
+
+It works most of the time as "/lib/modules" is usually larger than 50M,
+but it may not fullfil the fs with 256M size.
+
+I think we should fix the way to fill the fs too.
+
+Thanks,
+Eryu
+
+>  _scratch_mount
+>  mkdir $SCRATCH_MNT/subdir
+> -- 
+> 1.8.3.1
+> 

@@ -2,120 +2,149 @@ Return-Path: <SRS0=2j5R=MU=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.8 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-0.6 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8BB2FC65C20
-	for <linux-btrfs@archiver.kernel.org>; Mon,  8 Oct 2018 22:20:59 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 61D58C67879
+	for <linux-btrfs@archiver.kernel.org>; Mon,  8 Oct 2018 22:41:09 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 00D7020841
-	for <linux-btrfs@archiver.kernel.org>; Mon,  8 Oct 2018 22:20:58 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id F189E21476
+	for <linux-btrfs@archiver.kernel.org>; Mon,  8 Oct 2018 22:41:08 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=MendixTechnologyBV.onmicrosoft.com header.i=@MendixTechnologyBV.onmicrosoft.com header.b="d0coKI5b"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 00D7020841
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=mendix.com
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="KaEt0Cwx"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org F189E21476
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=colorremedies.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726672AbeJIFev (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 9 Oct 2018 01:34:51 -0400
-Received: from mail-eopbgr00048.outbound.protection.outlook.com ([40.107.0.48]:45797
-        "EHLO EUR02-AM5-obe.outbound.protection.outlook.com"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725782AbeJIFeu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 9 Oct 2018 01:34:50 -0400
+        id S1726701AbeJIFzE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 9 Oct 2018 01:55:04 -0400
+Received: from mail-lj1-f176.google.com ([209.85.208.176]:35910 "EHLO
+        mail-lj1-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726537AbeJIFzE (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Oct 2018 01:55:04 -0400
+Received: by mail-lj1-f176.google.com with SMTP id p89-v6so19340038ljb.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 08 Oct 2018 15:41:06 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
- d=MendixTechnologyBV.onmicrosoft.com; s=selector1-mendix-com;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=eM/pI/sajAByBmEapak/TXqdiANUjUr7QI/H19uDAdE=;
- b=d0coKI5baCPyvT7uNYJDkqjsQYQHwhO2UcMdLmwbf9LGy9RZsWjP/uZUGqSEVGgtvpgrmZyv5jj1cgy8w16pmZfCfLT6vj5eidJvwraPZQ3yFvbvv7y8nRimcO0+0yAIIQ+ODTLsRkQqPBp4W3bC/afm0ohbOSBpK15LIjWf54c=
-Received: from AM0PR06MB3921.eurprd06.prod.outlook.com (52.133.57.29) by
- AM0PR06MB4371.eurprd06.prod.outlook.com (52.135.150.156) with Microsoft SMTP
- Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- 15.20.1207.26; Mon, 8 Oct 2018 22:20:53 +0000
-Received: from AM0PR06MB3921.eurprd06.prod.outlook.com
- ([fe80::5063:8a39:67e0:5e0a]) by AM0PR06MB3921.eurprd06.prod.outlook.com
- ([fe80::5063:8a39:67e0:5e0a%3]) with mapi id 15.20.1207.024; Mon, 8 Oct 2018
- 22:20:53 +0000
-From:   Hans van Kranenburg <Hans.van.Kranenburg@mendix.com>
-To:     Qu Wenruo <wqu@suse.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH v3 4/6] btrfs-progs: lowmem check: Add dev_item check for
- used bytes and total bytes
-Thread-Topic: [PATCH v3 4/6] btrfs-progs: lowmem check: Add dev_item check for
- used bytes and total bytes
-Thread-Index: AQHUXwLGruo5PAspCE6ya/8CkSvwHqUV7FGA
-Date:   Mon, 8 Oct 2018 22:20:53 +0000
-Message-ID: <cd511cfa-baa2-6a13-2802-6eac1f47d8bb@mendix.com>
-References: <20181008123044.13413-1-wqu@suse.com>
- <20181008123044.13413-5-wqu@suse.com>
-In-Reply-To: <20181008123044.13413-5-wqu@suse.com>
-Accept-Language: en-US
-Content-Language: en-US
-X-MS-Has-Attach: 
-X-MS-TNEF-Correlator: 
-user-agent: Mozilla/5.0 (X11; Linux x86_64; rv:52.0) Gecko/20100101
- Thunderbird/52.9.1
-x-originating-ip: [2001:980:4a41:fb::12]
-x-clientproxiedby: HE1PR07CA0002.eurprd07.prod.outlook.com
- (2603:10a6:7:67::12) To AM0PR06MB3921.eurprd06.prod.outlook.com
- (2603:10a6:208:b2::29)
-x-ms-exchange-messagesentrepresentingtype: 1
-x-ms-publictraffictype: Email
-x-microsoft-exchange-diagnostics: 1;AM0PR06MB4371;6:JWQcw+42x6rqCwEa8mBFft5mh3aJzUCdchYq7EUOfjhAuT5/F7EZHvM4jptjaFCjPjIFbS90sMlt6Ky7uZcfOQU2714EF1XTqBDmykkGLt0PTDmVPuCZNKTu1e6F6aGmZwSMvya+gW1fA23Gx9vH7fdxC3zYT1Byhsnoiq0jnsLoL7Tya8aLtdrgi9TPH5v8+bS+QIEz9/CPOhumCFwn8Lp1E5WNJiXSQjjFh1KVkcs0tD8APDN/d20FE2FcYBJjcNh5+OmTDN75YRLt6keuPro/9tYsYADLRujphp5ih79FTZEycbKNC3+tNOJtH8n2RfvNMx4FctWViCfk9N54dAgFpW3lsJHau5ty4hkKyiNS8ByIuaUbbhcTH/N9tYG1wgIVlYnJ/nPg0Y/mYSOT8pg6pwSIjkQ5quEqRf9tE52JRPURzvkeDHspYvLzkQfQbugAC8RHteHZfR9wk6G3+A==;5:gQMBaa3/+RV5XGdOrz2tKsGDn3b5mwK1r3POcM6eAv8HLXDNOQS0qqWJcsZIhNZgVrfHJuyr+yvXGWsILHrX7co3OYTU+qku5E+AvRWhvcLlrbTx803VpCDMa3bWomEigj9sp0+bPyE4v+BkH8QfyWdoYAmqP/3LZkDCkOm4Z6U=;7:adl6Yw6Y69p06vUrgHPT/teMa9XxQA8zLz706+5A3byQ3QsRsEb/Vo+4Lt1wmy1G/JfnO5WrpoQoEK3Ui9tfs/4hA7XegKTrCZZDFP8vxWDbHZQBhHUEDLDAcOUjeXWekceonz4A5PYgMR9cWxhDPJ68mvI9yUVdJCglec47NtD1fOodn5PlgNNPdxd8KauCUC1DbjXrvg68YHAIqsjWrlAoUz8laDbDKWBTUGwBPOYy/BoCJOZM+9RRnHIUTsXT
-x-ms-office365-filtering-correlation-id: 0d19f4f2-637e-49c2-05f9-08d62d6c4f88
-x-microsoft-antispam: BCL:0;PCL:0;RULEID:(7020095)(4652040)(8989299)(4534185)(4627221)(201703031133081)(201702281549075)(8990200)(5600074)(711020)(2017052603328)(7153060)(7193020);SRVR:AM0PR06MB4371;
-x-ms-traffictypediagnostic: AM0PR06MB4371:
-authentication-results: spf=none (sender IP is )
- smtp.mailfrom=Hans.van.Kranenburg@mendix.com; 
-x-microsoft-antispam-prvs: <AM0PR06MB4371D400E0FB60C3986BA1EDD4E60@AM0PR06MB4371.eurprd06.prod.outlook.com>
-x-exchange-antispam-report-test: UriScan:;
-x-ms-exchange-senderadcheck: 1
-x-exchange-antispam-report-cfa-test: BCL:0;PCL:0;RULEID:(8211001083)(6040522)(2401047)(8121501046)(5005006)(3002001)(3231355)(944501410)(52105095)(93006095)(93001095)(10201501046)(149066)(150057)(6041310)(20161123564045)(20161123558120)(20161123560045)(201703131423095)(201702281528075)(20161123555045)(201703061421075)(201703061406153)(20161123562045)(201708071742011)(7699051)(76991055);SRVR:AM0PR06MB4371;BCL:0;PCL:0;RULEID:;SRVR:AM0PR06MB4371;
-x-forefront-prvs: 081904387B
-x-forefront-antispam-report: SFV:NSPM;SFS:(10009020)(39850400004)(346002)(366004)(376002)(396003)(136003)(199004)(189003)(6246003)(58126008)(11346002)(2616005)(486006)(36756003)(6512007)(446003)(476003)(5660300001)(65826007)(46003)(2906002)(2501003)(68736007)(5250100002)(64126003)(6116002)(106356001)(105586002)(7736002)(305945005)(8936002)(6506007)(81166006)(81156014)(6486002)(478600001)(86362001)(52116002)(71190400001)(71200400001)(25786009)(110136005)(256004)(53546011)(2900100001)(65806001)(31696002)(65956001)(6436002)(14454004)(31686004)(186003)(386003)(72206003)(102836004)(99286004)(76176011)(97736004)(53936002)(229853002)(8676002)(316002);DIR:OUT;SFP:1101;SCL:1;SRVR:AM0PR06MB4371;H:AM0PR06MB3921.eurprd06.prod.outlook.com;FPR:;SPF:None;LANG:en;PTR:InfoNoRecords;A:1;MX:1;
-received-spf: None (protection.outlook.com: mendix.com does not designate
- permitted sender hosts)
-x-microsoft-antispam-message-info: fsSPPBa9Ey9/betzaGhoR9+E6QUxtsgp3Xaf0476Xm5Dtx4j1WPxYxB3vEwIfFD94dvQeYkUkWK25JcLaK+qfr+2G5cN7X2EeN5AhFFi7Whi5PQmdyvHM1EGAZI/5kP6tS2BYPPI3JAO02qTiXKO35+EnrX8PQbL163dQmvosEY5ggSe4YV6UYbctVG3tvOazenbQHhcZ0R7JiZ/m5W29nxnmoI1nFD4PrTx6xnn8rs4/ygwjzT0P4lFojAAERHiX74d9rhwuXChby3M3NL9oc0v+Ool8c06liR0bcDixCISQhYQyOMJu+4oUjkqBucQAtjhHtU/HkH0TwXCDn9gf2LtBOAAObIxJwnPTIyoZtc=
-spamdiagnosticoutput: 1:99
-spamdiagnosticmetadata: NSPM
-Content-Type: text/plain; charset="utf-8"
-Content-ID: <5D58D7411E6E3B4BB74EE757FC665F73@eurprd06.prod.outlook.com>
-Content-Transfer-Encoding: base64
+        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
+        h=mime-version:sender:from:date:message-id:subject:to;
+        bh=zCMHXm/vGMaN4oivVxwm7wVGQSjAvJoLUbcVrjvPHFM=;
+        b=KaEt0CwxC8bl+ALJzXBftKJcYIrvEIdHG8VOMvVoF132zlcI7B/fylRSd6GC79KlPw
+         1Q/gySSlkMGeKAODYixDWkf2FHXARdNoR7emgosTSR8XKu3DGG9KjJDU05cNRii8t3O4
+         NS6AXkFdRYb8pbZCFXlKwfJYr7ZY5MqunjL6LGeX2NUaiTejlFaK9fbneFC54DWq4Twx
+         Bc8KAlG4+4pjb6vWEuzs+XfF02OZpicHfDq3jyPIdnf4bnsl/+SrpFHChKOXkrKmJvUJ
+         G++ns2VRUVGJvq2csBpK7wvJXN7OkWOA2tjBk7kJF+yWV6VFPTZXlcmQj07PF1LcVzy+
+         ZSFA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:sender:from:date:message-id:subject
+         :to;
+        bh=zCMHXm/vGMaN4oivVxwm7wVGQSjAvJoLUbcVrjvPHFM=;
+        b=o0c/OwoKPdOTXJSgepdJqPHTzCYqIyn94NSjXzgaszflkj21x4VXVuoSErU6Kmfj5m
+         9IOGPjDpPkwoyYHT4Ii4/Z9bk8ygi66ue8BJ/93IA2QcpOt2wg6B3S0fkwDAjW0azpGT
+         8oV32N/gCKPIlniAUZ51BFRzkkDOAoG/zgcgUkXmM3jkF2VKL6xBlC9/G1+ifua9UHJ3
+         gCuRMRFLCUeUNrRZaVn33F0rYLWXMfo2l7vn+NKeYpbeHwydffBwiXMoYE3EUkwpD3hU
+         vk2fOHGLy2o/s7tgzhlS45aGqSyUBsLKNHbfPpe9VekBkzIO0kN3d22XL0RsCyO0SdOy
+         xWQg==
+X-Gm-Message-State: ABuFfojkMgq+bZf2N17c1/TUxuzyUYPTJ4E1LgOzBlaS4zTSawS0nw5r
+        u2cuFQykuh3Vet3bO2xlvBliHDR9RhADBD1k+4sV5m2lfuw=
+X-Google-Smtp-Source: ACcGV63DtQo/AkxJ6NeEGq/X93mrjfMBnmiMunhOENUNfLNNFZEI4Am0gRTUXMNHFldhPtHDk4Ic5iFt75XTO3+U+es=
+X-Received: by 2002:a2e:5645:: with SMTP id k66-v6mr15464745ljb.48.1539038465346;
+ Mon, 08 Oct 2018 15:41:05 -0700 (PDT)
 MIME-Version: 1.0
-X-OriginatorOrg: mendix.com
-X-MS-Exchange-CrossTenant-Network-Message-Id: 0d19f4f2-637e-49c2-05f9-08d62d6c4f88
-X-MS-Exchange-CrossTenant-originalarrivaltime: 08 Oct 2018 22:20:53.8770
- (UTC)
-X-MS-Exchange-CrossTenant-fromentityheader: Hosted
-X-MS-Exchange-CrossTenant-id: b4e3c78d-8e3b-46d8-bc56-5540da23ba4d
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: AM0PR06MB4371
+Received: by 2002:ab3:1999:0:0:0:0:0 with HTTP; Mon, 8 Oct 2018 15:41:04 -0700 (PDT)
+X-Originating-IP: [69.7.113.20]
+From:   Chris Murphy <lists@colorremedies.com>
+Date:   Mon, 8 Oct 2018 16:41:04 -0600
+X-Google-Sender-Auth: DEGnalRxoWEnAbPjHJHzhnaEzB0
+Message-ID: <CAJCQCtQau7DtuUUeycCkZ36qjbKuxNzsgqJ7+sJ6W0dK_NLE3w@mail.gmail.com>
+Subject: qgroups not enabled, but perf stats reports btrfs_qgroup_release_data
+ and btrfs_qgroup_free_delayed_ref
+To:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-T24gMTAvMDgvMjAxOCAwMjozMCBQTSwgUXUgV2VucnVvIHdyb3RlOg0KPiBPYnZpb3VzbHksIHVz
-ZWQgYnl0ZXMgY2FuJ3QgYmUgbGFyZ2VyIHRoYW4gdG90YWwgYnl0ZXMuDQo+IA0KPiBTaWduZWQt
-b2ZmLWJ5OiBRdSBXZW5ydW8gPHdxdUBzdXNlLmNvbT4NCj4gLS0tDQo+ICBjaGVjay9tb2RlLWxv
-d21lbS5jIHwgNSArKysrKw0KPiAgMSBmaWxlIGNoYW5nZWQsIDUgaW5zZXJ0aW9ucygrKQ0KPiAN
-Cj4gZGlmZiAtLWdpdCBhL2NoZWNrL21vZGUtbG93bWVtLmMgYi9jaGVjay9tb2RlLWxvd21lbS5j
-DQo+IGluZGV4IDA3YzAzY2FkNzdhZi4uMTE3M2I5NjNiOGYzIDEwMDY0NA0KPiAtLS0gYS9jaGVj
-ay9tb2RlLWxvd21lbS5jDQo+ICsrKyBiL2NoZWNrL21vZGUtbG93bWVtLmMNCj4gQEAgLTQwNzQs
-NiArNDA3NCwxMSBAQCBzdGF0aWMgaW50IGNoZWNrX2Rldl9pdGVtKHN0cnVjdCBidHJmc19mc19p
-bmZvICpmc19pbmZvLA0KPiAgCXVzZWQgPSBidHJmc19kZXZpY2VfYnl0ZXNfdXNlZChlYiwgZGV2
-X2l0ZW0pOw0KPiAgCXRvdGFsX2J5dGVzID0gYnRyZnNfZGV2aWNlX3RvdGFsX2J5dGVzKGViLCBk
-ZXZfaXRlbSk7DQo+ICANCj4gKwlpZiAodXNlZCA+IHRvdGFsX2J5dGVzKSB7DQo+ICsJCWVycm9y
-KCJkZXZpY2UgJWxsdSBoYXMgaW5jb3JyZWN0IHVzZWQgYnl0ZXMgJWxsdSA+IHRvdGFsIGJ5dGVz
-ICVsbHUiLA0KPiArCQkJZGV2X2lkLCB1c2VkLCB0b3RhbF9ieXRlcyk7DQo+ICsJCXJldHVybiBB
-Q0NPVU5USU5HX01JU01BVENIOw0KDQpUaGUgbWVzc2FnZSBhbmQgcmV0dXJuIGNvZGUgcG9pbnQg
-YXQgYW4gZXJyb3IgaW4gYWNjb3VudGluZyBsb2dpYy4NCg0KSG93ZXZlciwgaWYgeW91IGhhdmUg
-YSBmdWxseSBhbGxvY2F0ZWQgZGV2aWNlIGFuZCBhIERVUCBjaHVuayBlbmRpbmcNCmJleW9uZCBk
-ZXZpY2UsIHRoZW4gaGF2aW5nIHVzZWQgPiB0b3RhbF9ieXRlcyBpcyBleHBlY3RlZC4uLg0KDQpT
-byBtYXliZSB0aGVyZSdzIHR3byBwb3NzaWJpbGl0aWVzLi4uIFRoZXJlJ3MgYW4gZXJyb3IgaW4g
-dGhlIGFjY291bnRpbmcNCmxvZ2ljLCBvciB0aGVyZSdzIGFuICJvdmVyLWFsbG9jYXRpb24iLCB3
-aGljaCBpcyBhbm90aGVyIHR5cGUgb2YgaXNzdWUNCndoaWNoIHByb2R1Y2VzIHVzZWQgPiB0b3Rh
-bCB3aXRoIGNvcnJlY3QgYWNjb3VudGluZyBsb2dpYy4NCg0KPiArCX0NCj4gIAlrZXkub2JqZWN0
-aWQgPSBkZXZfaWQ7DQo+ICAJa2V5LnR5cGUgPSBCVFJGU19ERVZfRVhURU5UX0tFWTsNCj4gIAlr
-ZXkub2Zmc2V0ID0gMDsNCj4gDQoNCg0KLS0gDQpIYW5zIHZhbiBLcmFuZW5idXJnDQo=
+[chris@flap ~]$ sudo perf stat -e 'btrfs:*' -a sleep 70
+##And then I loaded a few sites in Firefox early on in those 70 seconds.
+
+ Performance counter stats for 'system wide':
+
+                 5      btrfs:btrfs_transaction_commit
+                29      btrfs:btrfs_inode_new
+                29      btrfs:btrfs_inode_request
+                25      btrfs:btrfs_inode_evict
+             1,602      btrfs:btrfs_get_extent
+                 0      btrfs:btrfs_handle_em_exist
+                 1      btrfs:btrfs_get_extent_show_fi_regular
+                88      btrfs:btrfs_truncate_show_fi_regular
+                19      btrfs:btrfs_get_extent_show_fi_inline
+                 2      btrfs:btrfs_truncate_show_fi_inline
+               189      btrfs:btrfs_ordered_extent_add
+               189      btrfs:btrfs_ordered_extent_remove
+                 9      btrfs:btrfs_ordered_extent_start
+               592      btrfs:btrfs_ordered_extent_put
+             1,207      btrfs:__extent_writepage
+             1,203      btrfs:btrfs_writepage_end_io_hook
+                25      btrfs:btrfs_sync_file
+                 0      btrfs:btrfs_sync_fs
+                 0      btrfs:btrfs_add_block_group
+             1,508      btrfs:add_delayed_tree_ref
+             1,498      btrfs:run_delayed_tree_ref
+               379      btrfs:add_delayed_data_ref
+               336      btrfs:run_delayed_data_ref
+             1,887      btrfs:add_delayed_ref_head
+             1,839      btrfs:run_delayed_ref_head
+                 0      btrfs:btrfs_chunk_alloc
+                 0      btrfs:btrfs_chunk_free
+               794      btrfs:btrfs_cow_block
+             6,982      btrfs:btrfs_space_reservation
+                 0      btrfs:btrfs_trigger_flush
+                 0      btrfs:btrfs_flush_space
+               952      btrfs:btrfs_reserved_extent_alloc
+                 0      btrfs:btrfs_reserved_extent_free
+             1,005      btrfs:find_free_extent
+             1,005      btrfs:btrfs_reserve_extent
+               816      btrfs:btrfs_reserve_extent_cluster
+                 1      btrfs:btrfs_find_cluster
+                 0      btrfs:btrfs_failed_cluster_setup
+                 1      btrfs:btrfs_setup_cluster
+             5,952      btrfs:alloc_extent_state
+             6,034      btrfs:free_extent_state
+               374      btrfs:btrfs_work_queued
+               362      btrfs:btrfs_work_sched
+               362      btrfs:btrfs_all_work_done
+               116      btrfs:btrfs_ordered_sched
+                 0      btrfs:btrfs_workqueue_alloc
+                 0      btrfs:btrfs_workqueue_destroy
+                 0      btrfs:btrfs_qgroup_reserve_data
+               201      btrfs:btrfs_qgroup_release_data
+             1,839      btrfs:btrfs_qgroup_free_delayed_ref
+                 0      btrfs:btrfs_qgroup_account_extents
+                 0      btrfs:btrfs_qgroup_trace_extent
+                 0      btrfs:btrfs_qgroup_account_extent
+                 0      btrfs:qgroup_update_counters
+                 0      btrfs:qgroup_update_reserve
+                 0      btrfs:qgroup_meta_reserve
+                 0      btrfs:qgroup_meta_convert
+                 0      btrfs:qgroup_meta_free_all_pertrans
+                 0      btrfs:btrfs_prelim_ref_merge
+                 0      btrfs:btrfs_prelim_ref_insert
+             2,663      btrfs:btrfs_inode_mod_outstanding_extents
+                 0      btrfs:btrfs_remove_block_group
+                 0      btrfs:btrfs_add_unused_block_group
+                 0      btrfs:btrfs_skip_unused_block_group
+
+      70.004723586 seconds time elapsed
+
+[chris@flap ~]$
+
+
+Seems like a lot of activity for just a few transactions, but what
+really caught my eye here is the qgroup reporting for a file system
+that has never had qgroups enabled. Is it expected?
+
+
+Chris Murphy

@@ -2,149 +2,248 @@ Return-Path: <SRS0=2j5R=MU=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.6 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.2 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 61D58C67879
-	for <linux-btrfs@archiver.kernel.org>; Mon,  8 Oct 2018 22:41:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 18F34C6787A
+	for <linux-btrfs@archiver.kernel.org>; Mon,  8 Oct 2018 23:01:02 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id F189E21476
-	for <linux-btrfs@archiver.kernel.org>; Mon,  8 Oct 2018 22:41:08 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C480A20C0A
+	for <linux-btrfs@archiver.kernel.org>; Mon,  8 Oct 2018 23:01:01 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="KaEt0Cwx"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org F189E21476
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=colorremedies.com
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="UWUIOozl"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org C480A20C0A
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=oracle.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726701AbeJIFzE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 9 Oct 2018 01:55:04 -0400
-Received: from mail-lj1-f176.google.com ([209.85.208.176]:35910 "EHLO
-        mail-lj1-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726537AbeJIFzE (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Oct 2018 01:55:04 -0400
-Received: by mail-lj1-f176.google.com with SMTP id p89-v6so19340038ljb.3
-        for <linux-btrfs@vger.kernel.org>; Mon, 08 Oct 2018 15:41:06 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
-        h=mime-version:sender:from:date:message-id:subject:to;
-        bh=zCMHXm/vGMaN4oivVxwm7wVGQSjAvJoLUbcVrjvPHFM=;
-        b=KaEt0CwxC8bl+ALJzXBftKJcYIrvEIdHG8VOMvVoF132zlcI7B/fylRSd6GC79KlPw
-         1Q/gySSlkMGeKAODYixDWkf2FHXARdNoR7emgosTSR8XKu3DGG9KjJDU05cNRii8t3O4
-         NS6AXkFdRYb8pbZCFXlKwfJYr7ZY5MqunjL6LGeX2NUaiTejlFaK9fbneFC54DWq4Twx
-         Bc8KAlG4+4pjb6vWEuzs+XfF02OZpicHfDq3jyPIdnf4bnsl/+SrpFHChKOXkrKmJvUJ
-         G++ns2VRUVGJvq2csBpK7wvJXN7OkWOA2tjBk7kJF+yWV6VFPTZXlcmQj07PF1LcVzy+
-         ZSFA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:sender:from:date:message-id:subject
-         :to;
-        bh=zCMHXm/vGMaN4oivVxwm7wVGQSjAvJoLUbcVrjvPHFM=;
-        b=o0c/OwoKPdOTXJSgepdJqPHTzCYqIyn94NSjXzgaszflkj21x4VXVuoSErU6Kmfj5m
-         9IOGPjDpPkwoyYHT4Ii4/Z9bk8ygi66ue8BJ/93IA2QcpOt2wg6B3S0fkwDAjW0azpGT
-         8oV32N/gCKPIlniAUZ51BFRzkkDOAoG/zgcgUkXmM3jkF2VKL6xBlC9/G1+ifua9UHJ3
-         gCuRMRFLCUeUNrRZaVn33F0rYLWXMfo2l7vn+NKeYpbeHwydffBwiXMoYE3EUkwpD3hU
-         vk2fOHGLy2o/s7tgzhlS45aGqSyUBsLKNHbfPpe9VekBkzIO0kN3d22XL0RsCyO0SdOy
-         xWQg==
-X-Gm-Message-State: ABuFfojkMgq+bZf2N17c1/TUxuzyUYPTJ4E1LgOzBlaS4zTSawS0nw5r
-        u2cuFQykuh3Vet3bO2xlvBliHDR9RhADBD1k+4sV5m2lfuw=
-X-Google-Smtp-Source: ACcGV63DtQo/AkxJ6NeEGq/X93mrjfMBnmiMunhOENUNfLNNFZEI4Am0gRTUXMNHFldhPtHDk4Ic5iFt75XTO3+U+es=
-X-Received: by 2002:a2e:5645:: with SMTP id k66-v6mr15464745ljb.48.1539038465346;
- Mon, 08 Oct 2018 15:41:05 -0700 (PDT)
-MIME-Version: 1.0
-Received: by 2002:ab3:1999:0:0:0:0:0 with HTTP; Mon, 8 Oct 2018 15:41:04 -0700 (PDT)
-X-Originating-IP: [69.7.113.20]
-From:   Chris Murphy <lists@colorremedies.com>
-Date:   Mon, 8 Oct 2018 16:41:04 -0600
-X-Google-Sender-Auth: DEGnalRxoWEnAbPjHJHzhnaEzB0
-Message-ID: <CAJCQCtQau7DtuUUeycCkZ36qjbKuxNzsgqJ7+sJ6W0dK_NLE3w@mail.gmail.com>
-Subject: qgroups not enabled, but perf stats reports btrfs_qgroup_release_data
- and btrfs_qgroup_free_delayed_ref
-To:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+        id S1725823AbeJIGPC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 9 Oct 2018 02:15:02 -0400
+Received: from userp2120.oracle.com ([156.151.31.85]:42652 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725759AbeJIGPC (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Oct 2018 02:15:02 -0400
+Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
+        by userp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w98IEHCl119949;
+        Mon, 8 Oct 2018 18:15:19 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : cc :
+ subject : date : message-id : in-reply-to : references; s=corp-2018-07-02;
+ bh=pTM68+1wDHl0HgOXXvQLBt6dVENRmSuTbvxnItqzRmQ=;
+ b=UWUIOozl9ELkfWtVbiIjYjs0hC/cq/av4chiipaFtqw44blltAabOPeqxh9JKN96VCx1
+ Ne+yqd0JbwpGf2oosaeXlIgSGLSJ61YjAwJ+bQt8wAbTUyFvC6R9wlgTMCiD5zlQJT6g
+ x1KxKhtvN16DdFkp/KTv0ZkCwLoTlWYqqh3M2h/O63PxyW9TmlgLxlBO5D3UxgKwC4q5
+ N/NgioHPODrUiY4NbtIqt4oKgDKQXACkEYaAgFehmQFO/x4LIWoFX21gWW24J/TvnTJO
+ QvFhz7wlz02kez+Uu8j4eRjy/MTz3CPVBoMUoZoegtCN+Bk7PzIG6o4VXvri1DInV64F fA== 
+Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
+        by userp2120.oracle.com with ESMTP id 2mxnpqrb0w-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Mon, 08 Oct 2018 18:15:19 +0000
+Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
+        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id w98IFIkI001455
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Mon, 8 Oct 2018 18:15:18 GMT
+Received: from abhmp0003.oracle.com (abhmp0003.oracle.com [141.146.116.9])
+        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w98IFIhf016742;
+        Mon, 8 Oct 2018 18:15:18 GMT
+Received: from tpasj.localdomain (/183.90.36.31)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Mon, 08 Oct 2018 18:15:18 +0000
+From:   Anand Jain <anand.jain@oracle.com>
+To:     fstests@vger.kernel.org
+Cc:     linux-btrfs@vger.kernel.org
+Subject: [PATCH v2] fstests: btrfs verify hardening agaist duplicate fsid
+Date:   Tue,  9 Oct 2018 02:14:52 +0800
+Message-Id: <1539022492-3449-1-git-send-email-anand.jain@oracle.com>
+X-Mailer: git-send-email 1.8.3.1
+In-Reply-To: <1538383475-2532-1-git-send-email-anand.jain@oracle.com>
+References: <1538383475-2532-1-git-send-email-anand.jain@oracle.com>
+X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9040 signatures=668706
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=13 malwarescore=0
+ phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
+ adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.0.1-1807170000 definitions=main-1810080171
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-[chris@flap ~]$ sudo perf stat -e 'btrfs:*' -a sleep 70
-##And then I loaded a few sites in Firefox early on in those 70 seconds.
+We have a known bug in btrfs, that we let the device path be changed
+after the device has been mounted. So using this loop hole the new
+copied device would appears as if its mounted immediately after its
+been copied. So this test case reproduces this issue.
 
- Performance counter stats for 'system wide':
+For example:
 
-                 5      btrfs:btrfs_transaction_commit
-                29      btrfs:btrfs_inode_new
-                29      btrfs:btrfs_inode_request
-                25      btrfs:btrfs_inode_evict
-             1,602      btrfs:btrfs_get_extent
-                 0      btrfs:btrfs_handle_em_exist
-                 1      btrfs:btrfs_get_extent_show_fi_regular
-                88      btrfs:btrfs_truncate_show_fi_regular
-                19      btrfs:btrfs_get_extent_show_fi_inline
-                 2      btrfs:btrfs_truncate_show_fi_inline
-               189      btrfs:btrfs_ordered_extent_add
-               189      btrfs:btrfs_ordered_extent_remove
-                 9      btrfs:btrfs_ordered_extent_start
-               592      btrfs:btrfs_ordered_extent_put
-             1,207      btrfs:__extent_writepage
-             1,203      btrfs:btrfs_writepage_end_io_hook
-                25      btrfs:btrfs_sync_file
-                 0      btrfs:btrfs_sync_fs
-                 0      btrfs:btrfs_add_block_group
-             1,508      btrfs:add_delayed_tree_ref
-             1,498      btrfs:run_delayed_tree_ref
-               379      btrfs:add_delayed_data_ref
-               336      btrfs:run_delayed_data_ref
-             1,887      btrfs:add_delayed_ref_head
-             1,839      btrfs:run_delayed_ref_head
-                 0      btrfs:btrfs_chunk_alloc
-                 0      btrfs:btrfs_chunk_free
-               794      btrfs:btrfs_cow_block
-             6,982      btrfs:btrfs_space_reservation
-                 0      btrfs:btrfs_trigger_flush
-                 0      btrfs:btrfs_flush_space
-               952      btrfs:btrfs_reserved_extent_alloc
-                 0      btrfs:btrfs_reserved_extent_free
-             1,005      btrfs:find_free_extent
-             1,005      btrfs:btrfs_reserve_extent
-               816      btrfs:btrfs_reserve_extent_cluster
-                 1      btrfs:btrfs_find_cluster
-                 0      btrfs:btrfs_failed_cluster_setup
-                 1      btrfs:btrfs_setup_cluster
-             5,952      btrfs:alloc_extent_state
-             6,034      btrfs:free_extent_state
-               374      btrfs:btrfs_work_queued
-               362      btrfs:btrfs_work_sched
-               362      btrfs:btrfs_all_work_done
-               116      btrfs:btrfs_ordered_sched
-                 0      btrfs:btrfs_workqueue_alloc
-                 0      btrfs:btrfs_workqueue_destroy
-                 0      btrfs:btrfs_qgroup_reserve_data
-               201      btrfs:btrfs_qgroup_release_data
-             1,839      btrfs:btrfs_qgroup_free_delayed_ref
-                 0      btrfs:btrfs_qgroup_account_extents
-                 0      btrfs:btrfs_qgroup_trace_extent
-                 0      btrfs:btrfs_qgroup_account_extent
-                 0      btrfs:qgroup_update_counters
-                 0      btrfs:qgroup_update_reserve
-                 0      btrfs:qgroup_meta_reserve
-                 0      btrfs:qgroup_meta_convert
-                 0      btrfs:qgroup_meta_free_all_pertrans
-                 0      btrfs:btrfs_prelim_ref_merge
-                 0      btrfs:btrfs_prelim_ref_insert
-             2,663      btrfs:btrfs_inode_mod_outstanding_extents
-                 0      btrfs:btrfs_remove_block_group
-                 0      btrfs:btrfs_add_unused_block_group
-                 0      btrfs:btrfs_skip_unused_block_group
+Initially.. /dev/mmcblk0p4 is mounted as /
 
-      70.004723586 seconds time elapsed
+lsblk
+NAME        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
+mmcblk0     179:0    0 29.2G  0 disk
+|-mmcblk0p4 179:4    0    4G  0 part /
+|-mmcblk0p2 179:2    0  500M  0 part /boot
+|-mmcblk0p3 179:3    0  256M  0 part [SWAP]
+`-mmcblk0p1 179:1    0  256M  0 part /boot/efi
 
-[chris@flap ~]$
+btrfs fi show
+Label: none  uuid: 07892354-ddaa-4443-90ea-f76a06accaba
+    Total devices 1 FS bytes used 1.40GiB
+    devid    1 size 4.00GiB used 3.00GiB path /dev/mmcblk0p4
 
+Copy mmcblk0 to sda
+dd if=/dev/mmcblk0 of=/dev/sda
 
-Seems like a lot of activity for just a few transactions, but what
-really caught my eye here is the qgroup reporting for a file system
-that has never had qgroups enabled. Is it expected?
+And immediately after the copy completes the change in the device
+superblock is notified which the automount scans using
+btrfs device scan and the new device sda becomes the mounted root
+device.
 
+lsblk
+NAME        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
+sda           8:0    1 14.9G  0 disk
+|-sda4        8:4    1    4G  0 part /
+|-sda2        8:2    1  500M  0 part
+|-sda3        8:3    1  256M  0 part
+`-sda1        8:1    1  256M  0 part
+mmcblk0     179:0    0 29.2G  0 disk
+|-mmcblk0p4 179:4    0    4G  0 part
+|-mmcblk0p2 179:2    0  500M  0 part /boot
+|-mmcblk0p3 179:3    0  256M  0 part [SWAP]
+`-mmcblk0p1 179:1    0  256M  0 part /boot/efi
+btrfs fi show /
+Label: none  uuid: 07892354-ddaa-4443-90ea-f76a06accaba
+    Total devices 1 FS bytes used 1.40GiB
+    devid    1 size 4.00GiB used 3.00GiB path /dev/sda4
 
-Chris Murphy
+The bug is quite nasty that you can't either unmount /dev/sda4 or
+/dev/mmcblk0p4. And the problem does not get solved until you take
+the sda out of the system on to another system to change its fsid using
+the 'btrfstune -u' command.
+
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+ tests/btrfs/173     | 88 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/173.out |  6 ++++
+ tests/btrfs/group   |  1 +
+ 3 files changed, 95 insertions(+)
+ create mode 100755 tests/btrfs/173
+ create mode 100644 tests/btrfs/173.out
+
+diff --git a/tests/btrfs/173 b/tests/btrfs/173
+new file mode 100755
+index 000000000000..b466ae921e19
+--- /dev/null
++++ b/tests/btrfs/173
+@@ -0,0 +1,88 @@
++#! /bin/bash
++# SPDX-License-Identifier: GPL-2.0
++# Copyright (c) 2018 Oracle. All Rights Reserved.
++#
++# FS QA Test 173
++#
++# Fuzzy test for FS image duplication.
++#  Could be fixed by
++#    [patch] btrfs: harden agaist duplicate fsid
++#
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++mnt=$TEST_DIR/$seq.mnt
++_cleanup()
++{
++	rm -rf $mnt > /dev/null 2>&1
++	cd /
++	rm -f $tmp.*
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++
++# remove previous $seqres.full before test
++rm -f $seqres.full
++
++# real QA test starts here
++
++# Modify as appropriate.
++_supported_fs btrfs
++_supported_os Linux
++_require_scratch_dev_pool 2
++_scratch_dev_pool_get 2
++
++dev_foo=$(echo $SCRATCH_DEV_POOL | awk '{print $1}')
++dev_bar=$(echo $SCRATCH_DEV_POOL | awk '{print $2}')
++
++echo dev_foo=$dev_foo >> $seqres.full
++echo dev_bar=$dev_bar >> $seqres.full
++echo | tee -a $seqres.full
++
++rm -rf $mnt > /dev/null 2>&1
++mkdir $mnt
++_mkfs_dev $dev_foo
++_mount $dev_foo $mnt
++
++check_btrfs_mount()
++{
++	local x=$(findmnt $mnt | grep -v TARGET | awk '{print $2}')
++	[[ $x == $dev_foo ]] && echo DEV_FOO
++	[[ $x == $dev_bar ]] && echo DEV_BAR
++}
++
++echo MNT $(check_btrfs_mount)
++
++for sb_bytenr in 65536 67108864
++do
++	echo -n "dd status=none if=$dev_foo of=$dev_bar bs=1 "\
++		"seek=$sb_bytenr skip=$sb_bytenr count=4096" >> $seqres.full
++	dd status=none if=$dev_foo of=$dev_bar bs=1 seek=$sb_bytenr \
++				skip=$sb_bytenr count=4096 >> $seqres.full 2>&1
++	echo ..:$? >> $seqres.full
++done
++
++#Original device is mounted, scan of its clone should fail
++$BTRFS_UTIL_PROG device scan $dev_bar >> $seqres.full 2>&1
++echo btrfs device scan dev_bar ...:$?| tee -a $seqres.full
++
++echo MNT $(check_btrfs_mount)
++
++#Original device scan should be successful
++$BTRFS_UTIL_PROG device scan $dev_foo >> $seqres.full 2>&1
++echo btrfs device scan dev_foo ...:$?| tee -a $seqres.full
++
++umount $mnt > /dev/null 2>&1
++_scratch_dev_pool_put
++
++# success, all done
++status=0
++exit
+diff --git a/tests/btrfs/173.out b/tests/btrfs/173.out
+new file mode 100644
+index 000000000000..3c7e3fb4e3f7
+--- /dev/null
++++ b/tests/btrfs/173.out
+@@ -0,0 +1,6 @@
++QA output created by 173
++
++MNT DEV_FOO
++btrfs device scan dev_bar ...:1
++MNT DEV_FOO
++btrfs device scan dev_foo ...:0
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index 45782565c3b7..b2f1393f3e97 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -175,3 +175,4 @@
+ 170 auto quick snapshot
+ 171 auto quick qgroup
+ 172 auto quick punch
++173 volume
+-- 
+1.8.3.1
+

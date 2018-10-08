@@ -2,35 +2,37 @@ Return-Path: <SRS0=2j5R=MU=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4B9F2C00449
-	for <linux-btrfs@archiver.kernel.org>; Mon,  8 Oct 2018 10:44:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 50A97C00449
+	for <linux-btrfs@archiver.kernel.org>; Mon,  8 Oct 2018 10:44:46 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 0DA0520841
-	for <linux-btrfs@archiver.kernel.org>; Mon,  8 Oct 2018 10:44:44 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 0DA0520841
+	by mail.kernel.org (Postfix) with ESMTP id 17D6120841
+	for <linux-btrfs@archiver.kernel.org>; Mon,  8 Oct 2018 10:44:46 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 17D6120841
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726712AbeJHRzr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 8 Oct 2018 13:55:47 -0400
-Received: from mx2.suse.de ([195.135.220.15]:40882 "EHLO mx1.suse.de"
+        id S1726828AbeJHRzu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 8 Oct 2018 13:55:50 -0400
+Received: from mx2.suse.de ([195.135.220.15]:40896 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726330AbeJHRzr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 8 Oct 2018 13:55:47 -0400
+        id S1726330AbeJHRzu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 8 Oct 2018 13:55:50 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 00971AF3C
-        for <linux-btrfs@vger.kernel.org>; Mon,  8 Oct 2018 10:44:41 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 36D27AF3C
+        for <linux-btrfs@vger.kernel.org>; Mon,  8 Oct 2018 10:44:43 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 0/5] btrfs-progs: check: Detect invalid dev extents and device items
-Date:   Mon,  8 Oct 2018 18:44:31 +0800
-Message-Id: <20181008104436.19267-1-wqu@suse.com>
+Subject: [PATCH v2 1/5] btrfs-progs: lowmem check: Add check for overlapping dev extents
+Date:   Mon,  8 Oct 2018 18:44:32 +0800
+Message-Id: <20181008104436.19267-2-wqu@suse.com>
 X-Mailer: git-send-email 2.19.1
+In-Reply-To: <20181008104436.19267-1-wqu@suse.com>
+References: <20181008104436.19267-1-wqu@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -38,42 +40,74 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This patchset can be fetch from github:
-https://github.com/adam900710/btrfs-progs/tree/dev_extents_check
+Add such check at check_dev_item(), since at that timing we're also
+iterating dev extents for dev item accounting.
 
-Hans van Kranenburg reported a case where btrfs DUP chunk allocator
-could allocate invalid dev extents, either overlaps with existing dev
-extents or beyond device boundary.
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ check/mode-lowmem.c | 34 ++++++++++++++++++++++++++++++++--
+ 1 file changed, 32 insertions(+), 2 deletions(-)
 
-This patchset enhances the btrfs-progs side to detect such problems.
-With hand crafted test image for it.
-
-Link: https://www.spinics.net/lists/linux-btrfs/msg82370.html
-
-Changelog:
-v2:
-  Fix a bug in the 1st patch which makes lowmem mode never checks
-  overlap dev extents.
-  Fix test case bug which never passes due to wrong script.
-
-Qu Wenruo (5):
-  btrfs-progs: lowmem check: Add check for overlapping dev extents
-  btrfs-progs: original check: Add ability to detect bad dev extents
-  btrfs-progs: lowmem check: Add dev_item check for used bytes and total
-    bytes
-  btrfs-progs: original check: Add dev_item check for used bytes and
-    total bytes
-  btrfs-progs: fsck-tests: Add test image for dev extents beyond device
-    boundary
-
- check/main.c                                  | 105 ++++++++++++++++++
- check/mode-lowmem.c                           |  39 ++++++-
- .../over_dev_boundary.img.xz                  | Bin 0 -> 1640 bytes
- tests/fsck-tests/036-bad-dev-extents/test.sh  |  20 ++++
- 4 files changed, 162 insertions(+), 2 deletions(-)
- create mode 100644 tests/fsck-tests/036-bad-dev-extents/over_dev_boundary.img.xz
- create mode 100755 tests/fsck-tests/036-bad-dev-extents/test.sh
-
+diff --git a/check/mode-lowmem.c b/check/mode-lowmem.c
+index 1bce44f5658a..07c03cad77af 100644
+--- a/check/mode-lowmem.c
++++ b/check/mode-lowmem.c
+@@ -4065,6 +4065,8 @@ static int check_dev_item(struct btrfs_fs_info *fs_info,
+ 	u64 dev_id;
+ 	u64 used;
+ 	u64 total = 0;
++	u64 prev_devid = 0;
++	u64 prev_dev_ext_end = 0;
+ 	int ret;
+ 
+ 	dev_item = btrfs_item_ptr(eb, slot, struct btrfs_dev_item);
+@@ -4086,8 +4088,16 @@ static int check_dev_item(struct btrfs_fs_info *fs_info,
+ 		return REFERENCER_MISSING;
+ 	}
+ 
+-	/* Iterate dev_extents to calculate the used space of a device */
++	/*
++	 * Iterate dev_extents to calculate the used space of a device
++	 *
++	 * Also make sure no dev extents overlap and end beyond device boundary
++	 */
+ 	while (1) {
++		u64 devid;
++		u64 physical_offset;
++		u64 physical_len;
++
+ 		if (path.slots[0] >= btrfs_header_nritems(path.nodes[0]))
+ 			goto next;
+ 
+@@ -4099,7 +4109,27 @@ static int check_dev_item(struct btrfs_fs_info *fs_info,
+ 
+ 		ptr = btrfs_item_ptr(path.nodes[0], path.slots[0],
+ 				     struct btrfs_dev_extent);
+-		total += btrfs_dev_extent_length(path.nodes[0], ptr);
++		devid = key.objectid;
++		physical_offset = key.offset;
++		physical_len = btrfs_dev_extent_length(path.nodes[0], ptr);
++
++		if (prev_devid == devid && physical_offset < prev_dev_ext_end) {
++			error(
++"dev extent devid %llu offset %llu len %llu overlap with previous dev extent end %llu",
++			      devid, physical_offset, physical_len,
++			      prev_dev_ext_end);
++			return ACCOUNTING_MISMATCH;
++		}
++		if (physical_offset + physical_len > total_bytes) {
++			error(
++"dev extent devid %llu offset %llu len %llu is beyond device boundary %llu",
++			      devid, physical_offset, physical_len,
++			      total_bytes);
++			return ACCOUNTING_MISMATCH;
++		}
++		prev_devid = devid;
++		prev_dev_ext_end = physical_offset + physical_len;
++		total += physical_len;
+ next:
+ 		ret = btrfs_next_item(dev_root, &path);
+ 		if (ret)
 -- 
 2.19.1
 

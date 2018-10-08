@@ -2,248 +2,162 @@ Return-Path: <SRS0=2j5R=MU=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.2 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.2 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 18F34C6787A
-	for <linux-btrfs@archiver.kernel.org>; Mon,  8 Oct 2018 23:01:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A6AA5C67879
+	for <linux-btrfs@archiver.kernel.org>; Mon,  8 Oct 2018 23:07:10 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id C480A20C0A
-	for <linux-btrfs@archiver.kernel.org>; Mon,  8 Oct 2018 23:01:01 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 542512089D
+	for <linux-btrfs@archiver.kernel.org>; Mon,  8 Oct 2018 23:07:10 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="UWUIOozl"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org C480A20C0A
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=oracle.com
+	dkim=pass (1024-bit key) header.d=fb.com header.i=@fb.com header.b="Og+kcRJ3"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 542512089D
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=fb.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1725823AbeJIGPC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 9 Oct 2018 02:15:02 -0400
-Received: from userp2120.oracle.com ([156.151.31.85]:42652 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725759AbeJIGPC (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Oct 2018 02:15:02 -0400
-Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w98IEHCl119949;
-        Mon, 8 Oct 2018 18:15:19 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : cc :
- subject : date : message-id : in-reply-to : references; s=corp-2018-07-02;
- bh=pTM68+1wDHl0HgOXXvQLBt6dVENRmSuTbvxnItqzRmQ=;
- b=UWUIOozl9ELkfWtVbiIjYjs0hC/cq/av4chiipaFtqw44blltAabOPeqxh9JKN96VCx1
- Ne+yqd0JbwpGf2oosaeXlIgSGLSJ61YjAwJ+bQt8wAbTUyFvC6R9wlgTMCiD5zlQJT6g
- x1KxKhtvN16DdFkp/KTv0ZkCwLoTlWYqqh3M2h/O63PxyW9TmlgLxlBO5D3UxgKwC4q5
- N/NgioHPODrUiY4NbtIqt4oKgDKQXACkEYaAgFehmQFO/x4LIWoFX21gWW24J/TvnTJO
- QvFhz7wlz02kez+Uu8j4eRjy/MTz3CPVBoMUoZoegtCN+Bk7PzIG6o4VXvri1DInV64F fA== 
-Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
-        by userp2120.oracle.com with ESMTP id 2mxnpqrb0w-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Mon, 08 Oct 2018 18:15:19 +0000
-Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id w98IFIkI001455
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Mon, 8 Oct 2018 18:15:18 GMT
-Received: from abhmp0003.oracle.com (abhmp0003.oracle.com [141.146.116.9])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w98IFIhf016742;
-        Mon, 8 Oct 2018 18:15:18 GMT
-Received: from tpasj.localdomain (/183.90.36.31)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Mon, 08 Oct 2018 18:15:18 +0000
-From:   Anand Jain <anand.jain@oracle.com>
-To:     fstests@vger.kernel.org
-Cc:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v2] fstests: btrfs verify hardening agaist duplicate fsid
-Date:   Tue,  9 Oct 2018 02:14:52 +0800
-Message-Id: <1539022492-3449-1-git-send-email-anand.jain@oracle.com>
-X-Mailer: git-send-email 1.8.3.1
-In-Reply-To: <1538383475-2532-1-git-send-email-anand.jain@oracle.com>
-References: <1538383475-2532-1-git-send-email-anand.jain@oracle.com>
-X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9040 signatures=668706
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=13 malwarescore=0
- phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
- adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.0.1-1807170000 definitions=main-1810080171
+        id S1725783AbeJIGVL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 9 Oct 2018 02:21:11 -0400
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:34012 "EHLO
+        mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1725749AbeJIGVL (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 9 Oct 2018 02:21:11 -0400
+Received: from pps.filterd (m0148460.ppops.net [127.0.0.1])
+        by mx0a-00082601.pphosted.com (8.16.0.22/8.16.0.22) with SMTP id w98N3aMR005030
+        for <linux-btrfs@vger.kernel.org>; Mon, 8 Oct 2018 16:07:07 -0700
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=fb.com; h=from : to : cc : subject
+ : date : message-id : mime-version : content-type; s=facebook;
+ bh=b+UxhWSs0H+bv3jxXUqY5R1IEw0L0RReN2SuwQZg7E0=;
+ b=Og+kcRJ3ctjvm6qL4POAfGHmhHGVoUygnp8ZWnfwU9SF5Pbdqe0zNshwELTVPrNuNTzD
+ 7dnR4B+elrvJogrvLM/K608rZ5GvmFjjqeEwN9j/7ZFet46xHAVliES75kpgkKNnU7DQ
+ o3I0VAg4JxxqiVgx3ZMCmx3vOUQ2wDAyBqg= 
+Received: from mail.thefacebook.com ([199.201.64.23])
+        by mx0a-00082601.pphosted.com with ESMTP id 2n0d52rnqp-9
+        (version=TLSv1 cipher=ECDHE-RSA-AES256-SHA bits=256 verify=NOT)
+        for <linux-btrfs@vger.kernel.org>; Mon, 08 Oct 2018 16:07:07 -0700
+Received: from mx-out.facebook.com (192.168.52.123) by mail.thefacebook.com
+ (192.168.16.22) with Microsoft SMTP Server (TLS) id 14.3.319.2; Mon, 8 Oct
+ 2018 16:07:01 -0700
+Received: by devvm4508.prn2.facebook.com (Postfix, from userid 32154)   id
+ 493EA7DE63815; Mon,  8 Oct 2018 16:06:40 -0700 (PDT)
+Smtp-Origin-Hostprefix: devvm
+From:   Nick Terrell <terrelln@fb.com>
+Smtp-Origin-Hostname: devvm4508.prn2.facebook.com
+To:     Nick Terrell <terrelln@fb.com>
+CC:     David Sterba <dsterba@suse.cz>, <kernel-team@fb.com>,
+        <linux-btrfs@vger.kernel.org>, <grub-devel@gnu.org>,
+        Daniel Kiper <dkiper@net-space.pl>
+Smtp-Origin-Cluster: prn2c23
+Subject: [PATCH v2 0/2] btrfs: Add zstd support to grub btrfs
+Date:   Mon, 8 Oct 2018 16:06:19 -0700
+Message-ID: <20181008230621.2185884-1-terrelln@fb.com>
+X-Mailer: git-send-email 2.17.1
+X-FB-Internal: Safe
+MIME-Version: 1.0
+Content-Type: text/plain
+X-Proofpoint-Virus-Version: vendor=fsecure engine=2.50.10434:,, definitions=2018-10-08_11:,,
+ signatures=0
+X-Proofpoint-Spam-Reason: safe
+X-FB-Internal: Safe
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-We have a known bug in btrfs, that we let the device path be changed
-after the device has been mounted. So using this loop hole the new
-copied device would appears as if its mounted immediately after its
-been copied. So this test case reproduces this issue.
+Hi all,
 
-For example:
+This patch set imports the upstream zstd library, adds zstd support to the
+btrfs module, and adds a test case. I've also tested the patch set by storing
+my boot partition in btrfs with and without zstd compression and rebooting.
 
-Initially.. /dev/mmcblk0p4 is mounted as /
+The fist patch imports the files needed to support zstd decompression from
+zstd-1.3.6 as-is. It is a very large patch. In case it doesn't make it,
+I've included the commit hash and the script I used to download the files.
 
-lsblk
-NAME        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
-mmcblk0     179:0    0 29.2G  0 disk
-|-mmcblk0p4 179:4    0    4G  0 part /
-|-mmcblk0p2 179:2    0  500M  0 part /boot
-|-mmcblk0p3 179:3    0  256M  0 part [SWAP]
-`-mmcblk0p1 179:1    0  256M  0 part /boot/efi
+Upstream zstd commit hash: 4fa456d7f12f8b27bd3b2f5dfd4f46898cb31c24
+Upstream zstd commit name: Merge pull request #1354 from facebook/dev
 
-btrfs fi show
-Label: none  uuid: 07892354-ddaa-4443-90ea-f76a06accaba
-    Total devices 1 FS bytes used 1.40GiB
-    devid    1 size 4.00GiB used 3.00GiB path /dev/mmcblk0p4
-
-Copy mmcblk0 to sda
-dd if=/dev/mmcblk0 of=/dev/sda
-
-And immediately after the copy completes the change in the device
-superblock is notified which the automount scans using
-btrfs device scan and the new device sda becomes the mounted root
-device.
-
-lsblk
-NAME        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
-sda           8:0    1 14.9G  0 disk
-|-sda4        8:4    1    4G  0 part /
-|-sda2        8:2    1  500M  0 part
-|-sda3        8:3    1  256M  0 part
-`-sda1        8:1    1  256M  0 part
-mmcblk0     179:0    0 29.2G  0 disk
-|-mmcblk0p4 179:4    0    4G  0 part
-|-mmcblk0p2 179:2    0  500M  0 part /boot
-|-mmcblk0p3 179:3    0  256M  0 part [SWAP]
-`-mmcblk0p1 179:1    0  256M  0 part /boot/efi
-btrfs fi show /
-Label: none  uuid: 07892354-ddaa-4443-90ea-f76a06accaba
-    Total devices 1 FS bytes used 1.40GiB
-    devid    1 size 4.00GiB used 3.00GiB path /dev/sda4
-
-The bug is quite nasty that you can't either unmount /dev/sda4 or
-/dev/mmcblk0p4. And the problem does not get solved until you take
-the sda out of the system on to another system to change its fsid using
-the 'btrfstune -u' command.
-
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- tests/btrfs/173     | 88 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/173.out |  6 ++++
- tests/btrfs/group   |  1 +
- 3 files changed, 95 insertions(+)
- create mode 100755 tests/btrfs/173
- create mode 100644 tests/btrfs/173.out
+#!/bin/sh
+curl -L -O https://github.com/facebook/zstd/releases/download/v1.3.6/zstd-1.3.6.tar.gz
+curl -L -O https://github.com/facebook/zstd/releases/download/v1.3.6/zstd-1.3.6.tar.gz.sha256
+sha256sum --check zstd-1.3.6.tar.gz.sha256
+tar xzf zstd-1.3.6.tar.gz
 
-diff --git a/tests/btrfs/173 b/tests/btrfs/173
-new file mode 100755
-index 000000000000..b466ae921e19
---- /dev/null
-+++ b/tests/btrfs/173
-@@ -0,0 +1,88 @@
-+#! /bin/bash
-+# SPDX-License-Identifier: GPL-2.0
-+# Copyright (c) 2018 Oracle. All Rights Reserved.
-+#
-+# FS QA Test 173
-+#
-+# Fuzzy test for FS image duplication.
-+#  Could be fixed by
-+#    [patch] btrfs: harden agaist duplicate fsid
-+#
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1	# failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+mnt=$TEST_DIR/$seq.mnt
-+_cleanup()
-+{
-+	rm -rf $mnt > /dev/null 2>&1
-+	cd /
-+	rm -f $tmp.*
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+
-+# remove previous $seqres.full before test
-+rm -f $seqres.full
-+
-+# real QA test starts here
-+
-+# Modify as appropriate.
-+_supported_fs btrfs
-+_supported_os Linux
-+_require_scratch_dev_pool 2
-+_scratch_dev_pool_get 2
-+
-+dev_foo=$(echo $SCRATCH_DEV_POOL | awk '{print $1}')
-+dev_bar=$(echo $SCRATCH_DEV_POOL | awk '{print $2}')
-+
-+echo dev_foo=$dev_foo >> $seqres.full
-+echo dev_bar=$dev_bar >> $seqres.full
-+echo | tee -a $seqres.full
-+
-+rm -rf $mnt > /dev/null 2>&1
-+mkdir $mnt
-+_mkfs_dev $dev_foo
-+_mount $dev_foo $mnt
-+
-+check_btrfs_mount()
-+{
-+	local x=$(findmnt $mnt | grep -v TARGET | awk '{print $2}')
-+	[[ $x == $dev_foo ]] && echo DEV_FOO
-+	[[ $x == $dev_bar ]] && echo DEV_BAR
-+}
-+
-+echo MNT $(check_btrfs_mount)
-+
-+for sb_bytenr in 65536 67108864
-+do
-+	echo -n "dd status=none if=$dev_foo of=$dev_bar bs=1 "\
-+		"seek=$sb_bytenr skip=$sb_bytenr count=4096" >> $seqres.full
-+	dd status=none if=$dev_foo of=$dev_bar bs=1 seek=$sb_bytenr \
-+				skip=$sb_bytenr count=4096 >> $seqres.full 2>&1
-+	echo ..:$? >> $seqres.full
-+done
-+
-+#Original device is mounted, scan of its clone should fail
-+$BTRFS_UTIL_PROG device scan $dev_bar >> $seqres.full 2>&1
-+echo btrfs device scan dev_bar ...:$?| tee -a $seqres.full
-+
-+echo MNT $(check_btrfs_mount)
-+
-+#Original device scan should be successful
-+$BTRFS_UTIL_PROG device scan $dev_foo >> $seqres.full 2>&1
-+echo btrfs device scan dev_foo ...:$?| tee -a $seqres.full
-+
-+umount $mnt > /dev/null 2>&1
-+_scratch_dev_pool_put
-+
-+# success, all done
-+status=0
-+exit
-diff --git a/tests/btrfs/173.out b/tests/btrfs/173.out
-new file mode 100644
-index 000000000000..3c7e3fb4e3f7
---- /dev/null
-+++ b/tests/btrfs/173.out
-@@ -0,0 +1,6 @@
-+QA output created by 173
-+
-+MNT DEV_FOO
-+btrfs device scan dev_bar ...:1
-+MNT DEV_FOO
-+btrfs device scan dev_foo ...:0
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index 45782565c3b7..b2f1393f3e97 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -175,3 +175,4 @@
- 170 auto quick snapshot
- 171 auto quick qgroup
- 172 auto quick punch
-+173 volume
--- 
-1.8.3.1
+SRC_LIB="zstd-1.3.6/lib"
+DST_LIB="grub-core/lib/zstd"
+rm -rf $DST_LIB
+mkdir -p $DST_LIB
+cp $SRC_LIB/zstd.h $DST_LIB/
+cp $SRC_LIB/common/*.[hc] $DST_LIB/
+cp $SRC_LIB/decompress/*.[hc] $DST_LIB/
+rm $DST_LIB/{pool.[hc],threading.[hc]}
+rm -rf zstd-1.3.6*
+echo SUCCESS!
+---
 
+Best,
+Nick Terrell
+
+Changelog:
+
+v1 -> v2:
+- Switch to upstream zstd-1.3.6 and drop all the local patches
+- Fix comments from Daniel Kiper
+
+Nick Terrell (2):
+  Import upstream zstd-1.3.6
+  btrfs: Add zstd support to grub btrfs
+
+ Makefile.util.def                    |   10 +-
+ grub-core/Makefile.core.def          |   10 +-
+ grub-core/fs/btrfs.c                 |  105 +-
+ grub-core/lib/zstd/bitstream.h       |  458 ++++
+ grub-core/lib/zstd/compiler.h        |  133 ++
+ grub-core/lib/zstd/cpu.h             |  215 ++
+ grub-core/lib/zstd/debug.c           |   44 +
+ grub-core/lib/zstd/debug.h           |  123 +
+ grub-core/lib/zstd/entropy_common.c  |  236 ++
+ grub-core/lib/zstd/error_private.c   |   48 +
+ grub-core/lib/zstd/error_private.h   |   76 +
+ grub-core/lib/zstd/fse.h             |  708 ++++++
+ grub-core/lib/zstd/fse_decompress.c  |  309 +++
+ grub-core/lib/zstd/huf.h             |  334 +++
+ grub-core/lib/zstd/huf_decompress.c  | 1096 +++++++++
+ grub-core/lib/zstd/mem.h             |  374 ++++
+ grub-core/lib/zstd/xxhash.c          |  876 ++++++++
+ grub-core/lib/zstd/xxhash.h          |  305 +++
+ grub-core/lib/zstd/zstd.h            | 1516 +++++++++++++
+ grub-core/lib/zstd/zstd_common.c     |   81 +
+ grub-core/lib/zstd/zstd_decompress.c | 3108 ++++++++++++++++++++++++++
+ grub-core/lib/zstd/zstd_errors.h     |   92 +
+ grub-core/lib/zstd/zstd_internal.h   |  257 +++
+ tests/btrfs_test.in                  |    1 +
+ tests/util/grub-fs-tester.in         |    2 +-
+ 25 files changed, 10513 insertions(+), 4 deletions(-)
+ create mode 100644 grub-core/lib/zstd/bitstream.h
+ create mode 100644 grub-core/lib/zstd/compiler.h
+ create mode 100644 grub-core/lib/zstd/cpu.h
+ create mode 100644 grub-core/lib/zstd/debug.c
+ create mode 100644 grub-core/lib/zstd/debug.h
+ create mode 100644 grub-core/lib/zstd/entropy_common.c
+ create mode 100644 grub-core/lib/zstd/error_private.c
+ create mode 100644 grub-core/lib/zstd/error_private.h
+ create mode 100644 grub-core/lib/zstd/fse.h
+ create mode 100644 grub-core/lib/zstd/fse_decompress.c
+ create mode 100644 grub-core/lib/zstd/huf.h
+ create mode 100644 grub-core/lib/zstd/huf_decompress.c
+ create mode 100644 grub-core/lib/zstd/mem.h
+ create mode 100644 grub-core/lib/zstd/xxhash.c
+ create mode 100644 grub-core/lib/zstd/xxhash.h
+ create mode 100644 grub-core/lib/zstd/zstd.h
+ create mode 100644 grub-core/lib/zstd/zstd_common.c
+ create mode 100644 grub-core/lib/zstd/zstd_decompress.c
+ create mode 100644 grub-core/lib/zstd/zstd_errors.h
+ create mode 100644 grub-core/lib/zstd/zstd_internal.h
+
+--
+2.17.1

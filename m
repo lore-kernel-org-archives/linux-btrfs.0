@@ -2,128 +2,106 @@ Return-Path: <SRS0=2j5R=MU=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 29E97C00449
-	for <linux-btrfs@archiver.kernel.org>; Mon,  8 Oct 2018 10:44:56 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E3B58C00449
+	for <linux-btrfs@archiver.kernel.org>; Mon,  8 Oct 2018 10:59:48 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id EB9A320841
-	for <linux-btrfs@archiver.kernel.org>; Mon,  8 Oct 2018 10:44:55 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org EB9A320841
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
+	by mail.kernel.org (Postfix) with ESMTP id A5D9820878
+	for <linux-btrfs@archiver.kernel.org>; Mon,  8 Oct 2018 10:59:48 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="ZeLCBmgm"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org A5D9820878
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727360AbeJHR4A (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 8 Oct 2018 13:56:00 -0400
-Received: from mx2.suse.de ([195.135.220.15]:40936 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726330AbeJHRz7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 8 Oct 2018 13:55:59 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 81181AEEF
-        for <linux-btrfs@vger.kernel.org>; Mon,  8 Oct 2018 10:44:52 +0000 (UTC)
-From:   Qu Wenruo <wqu@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 5/5] btrfs-progs: fsck-tests: Add test image for dev extents beyond device boundary
-Date:   Mon,  8 Oct 2018 18:44:36 +0800
-Message-Id: <20181008104436.19267-6-wqu@suse.com>
-X-Mailer: git-send-email 2.19.1
-In-Reply-To: <20181008104436.19267-1-wqu@suse.com>
-References: <20181008104436.19267-1-wqu@suse.com>
+        id S1727279AbeJHSK4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 8 Oct 2018 14:10:56 -0400
+Received: from mail-vs1-f67.google.com ([209.85.217.67]:40746 "EHLO
+        mail-vs1-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726794AbeJHSK4 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Oct 2018 14:10:56 -0400
+Received: by mail-vs1-f67.google.com with SMTP id z130-v6so11116402vsc.7
+        for <linux-btrfs@vger.kernel.org>; Mon, 08 Oct 2018 03:59:46 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=mime-version:references:in-reply-to:reply-to:from:date:message-id
+         :subject:to:cc:content-transfer-encoding;
+        bh=HtWglysCC1yjv30rCVQSnFPP0JuDmduywfuZ8w/HAYY=;
+        b=ZeLCBmgm3RtvHKgUdxhKlzYuI2SBshpWQHFxHMb9/VwNCBdir1RuWmxknSI8DuILCx
+         gvALLwbpkNI091pDUj/2l1fV5BcDX6a0kNyhL1nR2NIJHwSWV42ed8irjl6CCIJN/r9d
+         5AW6FcnNZTJo25G2VYD25RnNxTVOKzyMQibCVl5IUuxKNCtQaJaDSfsIiP+sWKPjqPSd
+         xl8OptUeyOH0EPD8CyrLKvzIT7srRnhC0vhj4t5h3OF24qEuLruP5i+gkaKXf7/3JEtb
+         CnVzxPY6dgJLiJAu/++xOBRjSwQ9v+FsGkO3yQJ1s6yLN7XY4LopHGTMhITqTVdG3pmg
+         828w==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:reply-to
+         :from:date:message-id:subject:to:cc:content-transfer-encoding;
+        bh=HtWglysCC1yjv30rCVQSnFPP0JuDmduywfuZ8w/HAYY=;
+        b=n42wbO2+f7Be1Ia15sfyTDel2WPZu81wS1i3UWWbko4i/pmGSP1Y+QXXLAx7UtfqAG
+         dZMjRh263z+KtV2tlOY5i9NuaHtyCbbbCi2OClnerV5f4ywtRqIi8yyH7XztiXkC0Tc6
+         2bUEMKMU8s8xDAMGJswsuB2MCEX4IEtXdkXPIf0xUlHQk6Zp9y15sJQ8h43hy69Sm9pm
+         hLISv3ocozV1yCESwzHdwc4/lE8O1pwkBJoaIagewiOx7W3HFQirmVoELxH26qYASIXw
+         mTh4Xqj9+Rd6kssDYp2koVTuCH4Y1DjSeg6hEa7nsgtq20llorO16/cBeR/VNJGQOyjM
+         ediw==
+X-Gm-Message-State: ABuFfojcDQnGQld557a8YSlhMe+kLdkNjIE7WPkk9GokrEJJACoBHpb4
+        PZ9cBYSYUaw5XD0Klw654Lm3RrdsblSWXEowVJE=
+X-Google-Smtp-Source: ACcGV62BScLLyWwNhEVmADFafAeY8QKxCBG2TcpPL8Bu3UuxfiucLsVox2sdpyt/+ezIy64b78hMbi14HQG4AimNfVA=
+X-Received: by 2002:a67:e303:: with SMTP id j3mr2799826vsf.95.1538996386198;
+ Mon, 08 Oct 2018 03:59:46 -0700 (PDT)
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+References: <20180928111821.24376-1-josef@toxicpanda.com> <20180928111821.24376-38-josef@toxicpanda.com>
+In-Reply-To: <20180928111821.24376-38-josef@toxicpanda.com>
+Reply-To: fdmanana@gmail.com
+From:   Filipe Manana <fdmanana@gmail.com>
+Date:   Mon, 8 Oct 2018 11:59:35 +0100
+Message-ID: <CAL3q7H7ZKHa2=ntDzvEQ7VdmLE63k7C+QJ6YoPp3cQ8zGE5OzQ@mail.gmail.com>
+Subject: Re: [PATCH 37/42] btrfs: wakeup cleaner thread when adding delayed iput
+To:     Josef Bacik <josef@toxicpanda.com>
+Cc:     kernel-team@fb.com, linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Now two locations can detect such problem, either by device item
-used/total bytes check, or by early dev extents check against device
-boundary.
+On Fri, Sep 28, 2018 at 12:21 PM Josef Bacik <josef@toxicpanda.com> wrote:
+>
+> The cleaner thread usually takes care of delayed iputs, with the
+> exception of the btrfs_end_transaction_throttle path.  The cleaner
+> thread only gets woken up every 30 seconds, so instead wake it up to do
+> it's work so that we can free up that space as quickly as possible.
+>
+> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+Reviewed-by: Filipe Manana <fdmanana@suse.com>
+> ---
+>  fs/btrfs/inode.c | 1 +
+>  1 file changed, 1 insertion(+)
+>
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 2b257d14bd3d..0a1671fb03bf 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -3323,6 +3323,7 @@ void btrfs_add_delayed_iput(struct inode *inode)
+>         ASSERT(list_empty(&binode->delayed_iput));
+>         list_add_tail(&binode->delayed_iput, &fs_info->delayed_iputs);
+>         spin_unlock(&fs_info->delayed_iput_lock);
+> +       wake_up_process(fs_info->cleaner_kthread);
+>  }
+>
+>  void btrfs_run_delayed_iputs(struct btrfs_fs_info *fs_info)
+> --
+> 2.14.3
+>
 
-The image is hand-crafted image which uses DATA SINGLE chunk to feed
-btrfs check.
-As expected, as long as block group item, chunk item, device used bytes
-matches, older btrfs check can't detect such problem.
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- .../over_dev_boundary.img.xz                  | Bin 0 -> 1640 bytes
- tests/fsck-tests/036-bad-dev-extents/test.sh  |  20 ++++++++++++++++++
- 2 files changed, 20 insertions(+)
- create mode 100644 tests/fsck-tests/036-bad-dev-extents/over_dev_boundary.img.xz
- create mode 100755 tests/fsck-tests/036-bad-dev-extents/test.sh
+--=20
+Filipe David Manana,
 
-diff --git a/tests/fsck-tests/036-bad-dev-extents/over_dev_boundary.img.xz b/tests/fsck-tests/036-bad-dev-extents/over_dev_boundary.img.xz
-new file mode 100644
-index 0000000000000000000000000000000000000000..47cb2a707b0097e369dc088ed0549f847995f136
-GIT binary patch
-literal 1640
-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
-
-literal 0
-HcmV?d00001
-
-diff --git a/tests/fsck-tests/036-bad-dev-extents/test.sh b/tests/fsck-tests/036-bad-dev-extents/test.sh
-new file mode 100755
-index 000000000000..fe2d05673bbe
---- /dev/null
-+++ b/tests/fsck-tests/036-bad-dev-extents/test.sh
-@@ -0,0 +1,20 @@
-+#!/bin/bash
-+#
-+# Due to DUP chunk allocator bugs, we could allocate DUP chunks while its dev
-+# extents could exist beyond device boundary.
-+# And since all related items (block group, chunk, device used bytes) are all
-+# valid, btrfs check won't report any error.
-+#
-+# This test case contain hand crafted minimal image, to test if btrfs check can
-+# detect and report such error.
-+
-+source "$TEST_TOP/common"
-+
-+check_prereq btrfs
-+
-+check_image() {
-+	run_mustfail "btrfs check failed to detect invalid dev extents" \
-+		"$TOP/btrfs" check "$1"
-+}
-+
-+check_all_images
--- 
-2.19.1
-
+=E2=80=9CWhether you think you can, or you think you can't =E2=80=94 you're=
+ right.=E2=80=9D

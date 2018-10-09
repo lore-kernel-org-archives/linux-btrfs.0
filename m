@@ -2,35 +2,71 @@ Return-Path: <SRS0=yGwK=MV=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2F979C64EAD
-	for <linux-btrfs@archiver.kernel.org>; Tue,  9 Oct 2018 06:36:52 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 59E3CC64EB8
+	for <linux-btrfs@archiver.kernel.org>; Tue,  9 Oct 2018 11:21:55 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id F3E67213A2
-	for <linux-btrfs@archiver.kernel.org>; Tue,  9 Oct 2018 06:36:51 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org F3E67213A2
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
+	by mail.kernel.org (Postfix) with ESMTP id 1FE91214C4
+	for <linux-btrfs@archiver.kernel.org>; Tue,  9 Oct 2018 11:21:55 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (1024-bit key) header.d=rasmusvillemoes.dk header.i=@rasmusvillemoes.dk header.b="dvvBadQ/"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 1FE91214C4
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=rasmusvillemoes.dk
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726695AbeJINwN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 9 Oct 2018 09:52:13 -0400
-Received: from mx2.suse.de ([195.135.220.15]:54242 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726481AbeJINwM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 9 Oct 2018 09:52:12 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 495B4ACBC
-        for <linux-btrfs@vger.kernel.org>; Tue,  9 Oct 2018 06:36:49 +0000 (UTC)
-From:   Qu Wenruo <wqu@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: qgroup: Avoid calling qgroup functions if qgroup is not enabled
-Date:   Tue,  9 Oct 2018 14:36:45 +0800
-Message-Id: <20181009063645.16113-1-wqu@suse.com>
-X-Mailer: git-send-email 2.19.1
+        id S1727486AbeJIShG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 9 Oct 2018 14:37:06 -0400
+Received: from mail-ed1-f67.google.com ([209.85.208.67]:44259 "EHLO
+        mail-ed1-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727284AbeJIShF (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Oct 2018 14:37:05 -0400
+Received: by mail-ed1-f67.google.com with SMTP id z21-v6so1304534edb.11
+        for <linux-btrfs@vger.kernel.org>; Tue, 09 Oct 2018 04:20:35 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=rasmusvillemoes.dk; s=google;
+        h=from:to:cc:subject:date:message-id:in-reply-to:references
+         :mime-version:content-transfer-encoding;
+        bh=jlaMlnDD3Ii16jAg/Lcwqism2m+Mq3AaZpU6R5FfxQc=;
+        b=dvvBadQ/+q7Cb75Rvd9fiLdENLJws6LhTvYLGKQ0Ew4swyM0YDHDbuYMT4xSxhf3Oj
+         KXVPCStOXlBAau/HBk4c7udeXqXy/a5Z7M2xNzWKyaU6avLzC9wam3jlShc4TkUWCv5v
+         CNV96/yOfdqEdtsJbWHAFHpSCNn5WLhJSrFtw=
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
+         :references:mime-version:content-transfer-encoding;
+        bh=jlaMlnDD3Ii16jAg/Lcwqism2m+Mq3AaZpU6R5FfxQc=;
+        b=bhfKkRhEyx8UjFpDCLymOWD7xQ71/2swDqD01I96TS+1ha5kWY7UDzepet62xE4ozc
+         RCaS0E45fq6ZghprdeICKBlxsGfE8kiDeoS7zBxh4TWNf3o+VYJTLRbvl6kJ0sZR42UD
+         vXbbl64+qDmJKFXigBG8ZitsL8xDFAAwBoSGS1xE/dp0liWAkBp8VRHvlPHrW7X/voU5
+         SK+OvpyLUBlpVOKc53BZ3uV8pSF6kXXjzJcyQ7/00wnAI4fSjYoMD6sSTodmhI0n7qWw
+         +eZSS+JwmbpOVGRKW4hKYvrCMddWqRs7GSx7DQtIMS7BXCi9jcfBTMUy85dvEJJWwcid
+         dUZg==
+X-Gm-Message-State: ABuFfohQtI6AvkLQM4KpvrFyQmYWA7kyMW0hDM3Slpor5yFf5GwMLKoY
+        JZNVaEdSTLpJ1n3LcTIaMa5fQw==
+X-Google-Smtp-Source: ACcGV61DncgNN/5DWqDyjRnBSiYjlO+bnhuy12hsYOkefhzFr0Njo5CZh8/n9Ic+E5i5f2m4Jx7Z9A==
+X-Received: by 2002:a50:b404:: with SMTP id b4-v6mr13233795edh.141.1539084034556;
+        Tue, 09 Oct 2018 04:20:34 -0700 (PDT)
+Received: from prevas-ravi.vestasvisitor.net ([193.47.71.171])
+        by smtp.gmail.com with ESMTPSA id n23-v6sm3595821eja.41.2018.10.09.04.20.33
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-SHA bits=128/128);
+        Tue, 09 Oct 2018 04:20:34 -0700 (PDT)
+From:   Rasmus Villemoes <linux@rasmusvillemoes.dk>
+To:     Jason Baron <jbaron@akamai.com>,
+        Andrew Morton <akpm@linux-foundation.org>
+Cc:     linux-kernel@vger.kernel.org,
+        Rasmus Villemoes <linux@rasmusvillemoes.dk>,
+        linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>
+Subject: [PATCH v2 14/23] btrfs: implement btrfs_debug* in terms of helper macro
+Date:   Tue,  9 Oct 2018 13:20:04 +0200
+Message-Id: <20181009112013.14238-15-linux@rasmusvillemoes.dk>
+X-Mailer: git-send-email 2.19.1.4.g721af0fda3
+In-Reply-To: <20181009112013.14238-1-linux@rasmusvillemoes.dk>
+References: <20180919220444.23190-1-linux@rasmusvillemoes.dk>
+ <20181009112013.14238-1-linux@rasmusvillemoes.dk>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -38,64 +74,70 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Some qgroup trace events like btrfs_qgroup_release_data() and
-btrfs_qgroup_free_delayed_ref() can still be triggered even qgroup is
-not enabled.
+First, the btrfs_debug macros open-code (one possible definition of)
+DYNAMIC_DEBUG_BRANCH, so they don't benefit from the HAVE_JUMP_LABEL
+optimization.
 
-This is caused by the lack of qgroup status check before really calling
-qgroup functions.
-Thankfully related functions can handle quota disabled case well and just
-do nothing for qgroup disabled case.
+Second, changes on x86-64 later in this series require that all struct
+_ddebug descriptors in a translation unit use distinct identifiers.
 
-This patch will do earlier check before triggering related trace events.
+Using the new _dynamic_func_call_no_desc helper macro from
+dynamic_debug.h takes care of both of these.
 
-And for enabled <-> disabled race case:
-1) For enabled->disabled case
-   Disable will wipe out all qgroups data including reservation and
-   excl/rfer. Even we leaks some reserveration or numbers, it will
-   still be wiped, so nothing can go wrong.
-
-2) For disabled -> enabled case
-   Current btrfs_qgroup_release_data() will use extent_io tree to ensure
-   we won't underflow reservation. And for delayed_ref we use
-   head->qgroup_reserved to record reserved space, so in that case
-   head->qgroup_reserved should be 0 and we won't underflow.
-
-Reported-by: Chris Murphy <lists@colorremedies.com>
-Signed-off-by: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Acked-by: David Sterba <dsterba@suse.com>
+Acked-by: Jason Baron <jbaron@akamai.com>
+Signed-off-by: Rasmus Villemoes <linux@rasmusvillemoes.dk>
 ---
- fs/btrfs/qgroup.c | 4 ++++
- fs/btrfs/qgroup.h | 2 ++
- 2 files changed, 6 insertions(+)
+ fs/btrfs/ctree.h | 34 ++++++++++------------------------
+ 1 file changed, 10 insertions(+), 24 deletions(-)
 
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 4353bb69bb86..0656f4e78db6 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -3107,6 +3107,10 @@ static int __btrfs_qgroup_release_data(struct inode *inode,
- 	int trace_op = QGROUP_RELEASE;
- 	int ret;
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 2cddfe7806a4..7ae6cdad5b38 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -3353,31 +3353,17 @@ void btrfs_printk(const struct btrfs_fs_info *fs_info, const char *fmt, ...);
  
-+	if (!test_bit(BTRFS_FS_QUOTA_ENABLED,
-+		      &BTRFS_I(inode)->root->fs_info->flags))
-+		return 0;
-+
- 	/* In release case, we shouldn't have @reserved */
- 	WARN_ON(!free && reserved);
- 	if (free && reserved)
-diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
-index 54b8bb282c0e..4bbcc1e92a93 100644
---- a/fs/btrfs/qgroup.h
-+++ b/fs/btrfs/qgroup.h
-@@ -249,6 +249,8 @@ void btrfs_qgroup_free_refroot(struct btrfs_fs_info *fs_info,
- static inline void btrfs_qgroup_free_delayed_ref(struct btrfs_fs_info *fs_info,
- 						 u64 ref_root, u64 num_bytes)
- {
-+	if (!test_bit(BTRFS_FS_QUOTA_ENABLED, &fs_info->flags))
-+		return;
- 	trace_btrfs_qgroup_free_delayed_ref(fs_info, ref_root, num_bytes);
- 	btrfs_qgroup_free_refroot(fs_info, ref_root, num_bytes,
- 				  BTRFS_QGROUP_RSV_DATA);
+ #if defined(CONFIG_DYNAMIC_DEBUG)
+ #define btrfs_debug(fs_info, fmt, args...)				\
+-do {									\
+-        DEFINE_DYNAMIC_DEBUG_METADATA(descriptor, fmt);         	\
+-        if (unlikely(descriptor.flags & _DPRINTK_FLAGS_PRINT))  	\
+-		btrfs_printk(fs_info, KERN_DEBUG fmt, ##args);		\
+-} while (0)
+-#define btrfs_debug_in_rcu(fs_info, fmt, args...) 			\
+-do {									\
+-        DEFINE_DYNAMIC_DEBUG_METADATA(descriptor, fmt); 	        \
+-        if (unlikely(descriptor.flags & _DPRINTK_FLAGS_PRINT)) 		\
+-		btrfs_printk_in_rcu(fs_info, KERN_DEBUG fmt, ##args);	\
+-} while (0)
++	_dynamic_func_call_no_desc(fmt, btrfs_printk,			\
++				   fs_info, KERN_DEBUG fmt, ##args)
++#define btrfs_debug_in_rcu(fs_info, fmt, args...)			\
++	_dynamic_func_call_no_desc(fmt, btrfs_printk_in_rcu,		\
++				   fs_info, KERN_DEBUG fmt, ##args)
+ #define btrfs_debug_rl_in_rcu(fs_info, fmt, args...)			\
+-do {									\
+-        DEFINE_DYNAMIC_DEBUG_METADATA(descriptor, fmt);         	\
+-        if (unlikely(descriptor.flags & _DPRINTK_FLAGS_PRINT))  	\
+-		btrfs_printk_rl_in_rcu(fs_info, KERN_DEBUG fmt,		\
+-				       ##args);\
+-} while (0)
+-#define btrfs_debug_rl(fs_info, fmt, args...) 				\
+-do {									\
+-        DEFINE_DYNAMIC_DEBUG_METADATA(descriptor, fmt);         	\
+-        if (unlikely(descriptor.flags & _DPRINTK_FLAGS_PRINT))  	\
+-		btrfs_printk_ratelimited(fs_info, KERN_DEBUG fmt,	\
+-					 ##args);			\
+-} while (0)
++	_dynamic_func_call_no_desc(fmt, btrfs_printk_rl_in_rcu,		\
++				   fs_info, KERN_DEBUG fmt, ##args)
++#define btrfs_debug_rl(fs_info, fmt, args...)				\
++	_dynamic_func_call_no_desc(fmt, btrfs_printk_ratelimited,	\
++				   fs_info, KERN_DEBUG fmt, ##args)
+ #elif defined(DEBUG)
+ #define btrfs_debug(fs_info, fmt, args...) \
+ 	btrfs_printk(fs_info, KERN_DEBUG fmt, ##args)
 -- 
-2.19.1
+2.19.1.3.g1d92a00e68
 

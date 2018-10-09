@@ -2,109 +2,168 @@ Return-Path: <SRS0=yGwK=MV=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.6 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.2 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 14BEDC43441
-	for <linux-btrfs@archiver.kernel.org>; Tue,  9 Oct 2018 22:31:35 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F34E7C43441
+	for <linux-btrfs@archiver.kernel.org>; Tue,  9 Oct 2018 23:21:59 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 86D7121479
-	for <linux-btrfs@archiver.kernel.org>; Tue,  9 Oct 2018 22:31:34 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id AB6B2214C4
+	for <linux-btrfs@archiver.kernel.org>; Tue,  9 Oct 2018 23:21:59 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="Yn8z2duC"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 86D7121479
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=colorremedies.com
+	dkim=pass (1024-bit key) header.d=fb.com header.i=@fb.com header.b="OBADpXUH"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org AB6B2214C4
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=fb.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726492AbeJJFuj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 10 Oct 2018 01:50:39 -0400
-Received: from mail-lf1-f52.google.com ([209.85.167.52]:34874 "EHLO
-        mail-lf1-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725837AbeJJFuj (ORCPT
+        id S1726596AbeJJGlP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 10 Oct 2018 02:41:15 -0400
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:35758 "EHLO
+        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+        by vger.kernel.org with ESMTP id S1725766AbeJJGlO (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 10 Oct 2018 01:50:39 -0400
-Received: by mail-lf1-f52.google.com with SMTP id r191-v6so2508639lff.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 09 Oct 2018 15:31:31 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
-        h=mime-version:sender:in-reply-to:references:from:date:message-id
-         :subject:to:cc:content-transfer-encoding;
-        bh=NTaN9OkJApaYg/4hZP1Jz08RSALznNGRDajA5N82bZY=;
-        b=Yn8z2duC5/mVPFUo54qNbfA2MYKeFdSfLjGP7fClldglcKvyIEjSIi4Li51jIqpLWq
-         4kgfn/CO+uuZGad+Oi3jIJ2m/Av5eob3r/mlsuDG6pcM27dRsTveWNVycSbhO+VGu4Uy
-         4gVTuXm46Q3hxcktO8f7W6C89J3iZzLTyjP60DO4NBgN+hgL8vwJUZd1S82btpaQuGyb
-         KdYYL0EU35jFXrhzOCaXaH96ZWv6QpVDSDETpy5tU1Lc1FfeEuTqMNQDWSj5116dbo1z
-         pq859HsiVD8nC4wQ7e3mUKioNE+l5Lhe049ovbcqCEIGRQo27VbiFTC1GpsUDTJxR4jM
-         p8wg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:sender:in-reply-to:references:from
-         :date:message-id:subject:to:cc:content-transfer-encoding;
-        bh=NTaN9OkJApaYg/4hZP1Jz08RSALznNGRDajA5N82bZY=;
-        b=nzFJqI73OihQjyHOtyGWRa27UKXr3tfaE/gAfzOB3w/jwX0e79g4v0MeBpPcW6R95w
-         M4VuePwyub3yBGdRz3r8qGiyDm6S/x8P5GMwA+3ZzGjjkhxMyH2ot9rjJtmvsXwL+ebl
-         E3UOKdwzZnpI3TVNym9DdY0idsjYvGRYV1YOoxMEBJSfGe63MyZhUIXlRsxyWC7brCQP
-         kWgP/ZhpnO+Ex5Q1KsMIRkkPNvWJ1w0ecJvPqzqafGTtwsTU8vBpJQzCLvNdE5YVfvoV
-         VsYI9eAn4enMF3ipEk/oKL7foNaCltyDOjETVvgCmhy9xxjI/qD9tQZC+FTF7FYQx4A5
-         5Uog==
-X-Gm-Message-State: ABuFfogyxU3VWB6q518U8+72eUEPMXIjrp4YdNhMlbSFl2v62fyuyUkz
-        Jb9C2oSmj3ISZPgCUPrrSU/h8NZDk90jOFNajfYw3Q==
-X-Google-Smtp-Source: ACcGV618U5WUBJlxFAczZ7hsMzlR17jNhMEZWpxVfq558P/ZE8ETnHEuvOoSbZ3h0jSwMJ63v6vfKn46Qip3sV94UXE=
-X-Received: by 2002:a19:98c1:: with SMTP id a184-v6mr16107614lfe.94.1539124290251;
- Tue, 09 Oct 2018 15:31:30 -0700 (PDT)
+        Wed, 10 Oct 2018 02:41:14 -0400
+Received: from pps.filterd (m0001303.ppops.net [127.0.0.1])
+        by m0001303.ppops.net (8.16.0.22/8.16.0.22) with SMTP id w99NGnCJ020252
+        for <linux-btrfs@vger.kernel.org>; Tue, 9 Oct 2018 16:21:55 -0700
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=fb.com; h=from : to : cc : subject
+ : date : message-id : mime-version : content-type; s=facebook;
+ bh=dbIckwB9zLAYgVuC1FT9eOy00JonwuP2gQaiLuZFnRI=;
+ b=OBADpXUHRXrKujVCypjfiqiN0QYnmiuN+/brXXHINV2b11fjoMUwEkJl7zXWN3RVZYeG
+ Gpq1S2gVy6+d3+72L81bEtM/naosP3mg6JMd+CtBVcByqLYyJhTgUbAgNltPEBxNqpDE
+ NEmDyc4Q8dJDVMYgqMXrctEwpA9sO3ms630= 
+Received: from mail.thefacebook.com ([199.201.64.23])
+        by m0001303.ppops.net with ESMTP id 2n13yb8cj3-3
+        (version=TLSv1 cipher=ECDHE-RSA-AES256-SHA bits=256 verify=NOT)
+        for <linux-btrfs@vger.kernel.org>; Tue, 09 Oct 2018 16:21:55 -0700
+Received: from mx-out.facebook.com (192.168.52.123) by mail.thefacebook.com
+ (192.168.16.17) with Microsoft SMTP Server (TLS) id 14.3.361.1; Tue, 9 Oct
+ 2018 16:21:54 -0700
+Received: by devvm4508.prn2.facebook.com (Postfix, from userid 32154)   id
+ ADC087E437958; Tue,  9 Oct 2018 16:21:52 -0700 (PDT)
+Smtp-Origin-Hostprefix: devvm
+From:   Nick Terrell <terrelln@fb.com>
+Smtp-Origin-Hostname: devvm4508.prn2.facebook.com
+To:     Nick Terrell <terrelln@fb.com>
+CC:     David Sterba <dsterba@suse.cz>, <kernel-team@fb.com>,
+        <linux-btrfs@vger.kernel.org>, <grub-devel@gnu.org>,
+        Daniel Kiper <dkiper@net-space.pl>
+Smtp-Origin-Cluster: prn2c23
+Subject: [PATCH v3 0/2] btrfs: Add zstd support to grub btrfs
+Date:   Tue, 9 Oct 2018 16:21:35 -0700
+Message-ID: <20181009232137.1941290-1-terrelln@fb.com>
+X-Mailer: git-send-email 2.17.1
+X-FB-Internal: Safe
 MIME-Version: 1.0
-Received: by 2002:ab3:1999:0:0:0:0:0 with HTTP; Tue, 9 Oct 2018 15:31:29 -0700 (PDT)
-X-Originating-IP: [69.7.113.20]
-In-Reply-To: <7ea431d5-2966-f0e5-9dec-882e46743a69@gmail.com>
-References: <BN6PR01MB2531060A61AD3B85A93DF82CF3E70@BN6PR01MB2531.prod.exchangelabs.com>
- <CAJCQCtTAu8qrcB7cd3dKGstgSd32UjkWB5jZc5jbRJ0KXmHgRQ@mail.gmail.com> <7ea431d5-2966-f0e5-9dec-882e46743a69@gmail.com>
-From:   Chris Murphy <lists@colorremedies.com>
-Date:   Tue, 9 Oct 2018 16:31:29 -0600
-X-Google-Sender-Auth: LLW64IiFS4DraNfttL9LHl263ZA
-Message-ID: <CAJCQCtRxKyBR3ZkuMEhPWtoY_UQkq1G1J-YfU_P+zBzrtQW4zw@mail.gmail.com>
-Subject: Re: CoW behavior when writing same content
-To:     Andrei Borzenkov <arvidjaar@gmail.com>
-Cc:     Chris Murphy <lists@colorremedies.com>,
-        "Gervais, Francois" <FGervais@distech-controls.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain
+X-Proofpoint-Virus-Version: vendor=fsecure engine=2.50.10434:,, definitions=2018-10-09_14:,,
+ signatures=0
+X-Proofpoint-Spam-Reason: safe
+X-FB-Internal: Safe
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Oct 9, 2018 at 11:25 AM, Andrei Borzenkov <arvidjaar@gmail.com> wro=
-te:
-> 09.10.2018 18:52, Chris Murphy =D0=BF=D0=B8=D1=88=D0=B5=D1=82:
+Hi all,
 
->>> In this case is root/big_file and snapshot/big_file still share the sam=
-e data?
->>
->> You'll be left with three files. /big_file and root/big_file will
->> share extents,
->
-> How comes they share extents? This requires --reflink, is it default now?
+This patch set imports the upstream zstd library, adds zstd support to the
+btrfs module, and adds a test case. I've also tested the patch set by storing
+my boot partition in btrfs with and without zstd compression and rebooting.
 
-Good catch. It's not the default. I meant to write that initially only
+The fist patch imports the files needed to support zstd decompression from
+zstd-1.3.6 as-is. It is a very large patch. In case it doesn't make it,
+I've included the commit hash and the script I used to download the files.
 
-root/big_file and snapshot/big_file have shared extents
+Upstream zstd commit hash: 4fa456d7f12f8b27bd3b2f5dfd4f46898cb31c24
+Upstream zstd commit name: Merge pull request #1354 from facebook/dev
 
-And the shared extents are lost when snapshot/big_file is
-"overwritten" by the copy into snapshot/
+---
+#!/bin/sh -e
 
+curl -L -O https://github.com/facebook/zstd/releases/download/v1.3.6/zstd-1.3.6.tar.gz
+curl -L -O https://github.com/facebook/zstd/releases/download/v1.3.6/zstd-1.3.6.tar.gz.sha256
+sha256sum --check zstd-1.3.6.tar.gz.sha256
+tar xzf zstd-1.3.6.tar.gz
 
->> and snapshot/big_file will have its own extents. You'd
->> need to copy with --reflink for snapshot/big_file to have shared
->> extents with /big_file - or deduplicate.
->>
-> This still overwrites the whole file in the sense original file content
-> of "snapshot/big_file" is lost. That new content happens to be identical
-> and that new content will probably be reflinked does not change the fact
-> that original file is gone.
+SRC_LIB="zstd-1.3.6/lib"
+DST_LIB="grub-core/lib/zstd"
+rm -rf $DST_LIB
+mkdir -p $DST_LIB
+cp $SRC_LIB/zstd.h $DST_LIB/
+cp $SRC_LIB/common/*.[hc] $DST_LIB/
+cp $SRC_LIB/decompress/*.[hc] $DST_LIB/
+rm $DST_LIB/{pool.[hc],threading.[hc]}
+rm -rf zstd-1.3.6*
+echo SUCCESS!
+---
 
-Agreed.
+Best,
+Nick Terrell
 
---=20
-Chris Murphy
+Changelog:
+
+v1 -> v2:
+- Switch to upstream zstd-1.3.6 and drop all the local patches.
+- Fix comments from Daniel Kiper.
+
+v2 -> v3:
+- Remove an extra file accidentally included in the first patch.
+- Use grub_error() to set grub_errno in grub_btrfs_zstd_decompress().
+- Fix style and formatting comments.
+
+Nick Terrell (2):
+  Import upstream zstd-1.3.6
+  btrfs: Add zstd support to grub btrfs
+
+ Makefile.util.def                    |   10 +-
+ grub-core/Makefile.core.def          |   10 +-
+ grub-core/fs/btrfs.c                 |  112 +-
+ grub-core/lib/zstd/bitstream.h       |  458 ++++
+ grub-core/lib/zstd/compiler.h        |  133 ++
+ grub-core/lib/zstd/cpu.h             |  215 ++
+ grub-core/lib/zstd/debug.c           |   44 +
+ grub-core/lib/zstd/debug.h           |  123 +
+ grub-core/lib/zstd/entropy_common.c  |  236 ++
+ grub-core/lib/zstd/error_private.c   |   48 +
+ grub-core/lib/zstd/error_private.h   |   76 +
+ grub-core/lib/zstd/fse.h             |  708 ++++++
+ grub-core/lib/zstd/fse_decompress.c  |  309 +++
+ grub-core/lib/zstd/huf.h             |  334 +++
+ grub-core/lib/zstd/huf_decompress.c  | 1096 +++++++++
+ grub-core/lib/zstd/mem.h             |  374 ++++
+ grub-core/lib/zstd/xxhash.c          |  876 ++++++++
+ grub-core/lib/zstd/xxhash.h          |  305 +++
+ grub-core/lib/zstd/zstd.h            | 1516 +++++++++++++
+ grub-core/lib/zstd/zstd_common.c     |   81 +
+ grub-core/lib/zstd/zstd_decompress.c | 3108 ++++++++++++++++++++++++++
+ grub-core/lib/zstd/zstd_errors.h     |   92 +
+ grub-core/lib/zstd/zstd_internal.h   |  257 +++
+ tests/btrfs_test.in                  |    1 +
+ tests/util/grub-fs-tester.in         |    2 +-
+ 25 files changed, 10520 insertions(+), 4 deletions(-)
+ create mode 100644 grub-core/lib/zstd/bitstream.h
+ create mode 100644 grub-core/lib/zstd/compiler.h
+ create mode 100644 grub-core/lib/zstd/cpu.h
+ create mode 100644 grub-core/lib/zstd/debug.c
+ create mode 100644 grub-core/lib/zstd/debug.h
+ create mode 100644 grub-core/lib/zstd/entropy_common.c
+ create mode 100644 grub-core/lib/zstd/error_private.c
+ create mode 100644 grub-core/lib/zstd/error_private.h
+ create mode 100644 grub-core/lib/zstd/fse.h
+ create mode 100644 grub-core/lib/zstd/fse_decompress.c
+ create mode 100644 grub-core/lib/zstd/huf.h
+ create mode 100644 grub-core/lib/zstd/huf_decompress.c
+ create mode 100644 grub-core/lib/zstd/mem.h
+ create mode 100644 grub-core/lib/zstd/xxhash.c
+ create mode 100644 grub-core/lib/zstd/xxhash.h
+ create mode 100644 grub-core/lib/zstd/zstd.h
+ create mode 100644 grub-core/lib/zstd/zstd_common.c
+ create mode 100644 grub-core/lib/zstd/zstd_decompress.c
+ create mode 100644 grub-core/lib/zstd/zstd_errors.h
+ create mode 100644 grub-core/lib/zstd/zstd_internal.h
+
+--
+2.17.1

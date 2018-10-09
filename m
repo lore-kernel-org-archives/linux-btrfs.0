@@ -2,67 +2,116 @@ Return-Path: <SRS0=yGwK=MV=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-2.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DDE72C64EB8
-	for <linux-btrfs@archiver.kernel.org>; Tue,  9 Oct 2018 16:21:15 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3C482C64EB8
+	for <linux-btrfs@archiver.kernel.org>; Tue,  9 Oct 2018 16:40:51 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 846C72075C
-	for <linux-btrfs@archiver.kernel.org>; Tue,  9 Oct 2018 16:21:15 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 846C72075C
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=romanrm.net
+	by mail.kernel.org (Postfix) with ESMTP id E583A2086D
+	for <linux-btrfs@archiver.kernel.org>; Tue,  9 Oct 2018 16:40:50 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org E583A2086D
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726492AbeJIXi4 convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 9 Oct 2018 19:38:56 -0400
-Received: from len.romanrm.net ([91.121.75.85]:39192 "EHLO len.romanrm.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726434AbeJIXiz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 9 Oct 2018 19:38:55 -0400
-Received: from natsu (unknown [IPv6:fd39::e99e:8f1b:cfc9:ccb8])
-        by len.romanrm.net (Postfix) with SMTP id E3A74202C7;
-        Tue,  9 Oct 2018 16:21:11 +0000 (UTC)
-Date:   Tue, 9 Oct 2018 21:21:12 +0500
-From:   Roman Mamedov <rm@romanrm.net>
-To:     Chris Murphy <lists@colorremedies.com>
-Cc:     "Gervais, Francois" <FGervais@distech-controls.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: CoW behavior when writing same content
-Message-ID: <20181009212112.044f716b@natsu>
-In-Reply-To: <CAJCQCtTAu8qrcB7cd3dKGstgSd32UjkWB5jZc5jbRJ0KXmHgRQ@mail.gmail.com>
-References: <BN6PR01MB2531060A61AD3B85A93DF82CF3E70@BN6PR01MB2531.prod.exchangelabs.com>
-        <CAJCQCtTAu8qrcB7cd3dKGstgSd32UjkWB5jZc5jbRJ0KXmHgRQ@mail.gmail.com>
-X-Mailer: Claws Mail 3.11.1 (GTK+ 2.24.31; x86_64-pc-linux-gnu)
+        id S1726954AbeJIX6h (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 9 Oct 2018 19:58:37 -0400
+Received: from mx2.suse.de ([195.135.220.15]:58158 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726567AbeJIX6h (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 9 Oct 2018 19:58:37 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id A2644B007
+        for <linux-btrfs@vger.kernel.org>; Tue,  9 Oct 2018 16:40:47 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 84728DAD2B; Tue,  9 Oct 2018 18:40:45 +0200 (CEST)
+From:   David Sterba <dsterba@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     David Sterba <dsterba@suse.cz>
+Subject: Next btrfs development cycle open - 4.21
+Date:   Tue,  9 Oct 2018 18:40:40 +0200
+Message-Id: <20181009164040.17819-1-dsterba@suse.com>
+X-Mailer: git-send-email 2.19.0
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 8BIT
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, 9 Oct 2018 09:52:00 -0600
-Chris Murphy <lists@colorremedies.com> wrote:
+From: David Sterba <dsterba@suse.cz>
 
-> You'll be left with three files. /big_file and root/big_file will
-> share extents, and snapshot/big_file will have its own extents. You'd
-> need to copy with --reflink for snapshot/big_file to have shared
-> extents with /big_file - or deduplicate.
+Hi,
 
-Or use rsync for copying, in the mode where it reads and checksums blocks of
-both files, to copy only the non-matching portions.
+a friendly reminder of the timetable and what's expected at this phase.
 
-rsync --inplace
+4.18 - current
+4.19 - upcoming, urgent regression fixes only
+4.20 - development closed, pull request in prep, fixes or regressions only
+4.21 - development open, until 4.20-rc5 (at least)
 
-              This  option  is  useful  for  transferring  large  files   with
-              block-based  changes  or appended data, and also on systems that
-              are disk bound, not network bound.  It  can  also  help  keep  a
-              copy-on-write filesystem snapshot from diverging the entire con‐
-              tents of a file that only has minor changes.
+(https://btrfs.wiki.kernel.org/index.php/Developer%27s_FAQ#Development_schedule)
 
--- 
-With respect,
-Roman
+Whether the next version is going to be 4.20 or 5.0 I don't know, I'll use the
+4.x for references. There will be 4.19-rc8 milestone, probably the last one
+before the final release.
+
+
+Current status
+--------------
+
+The branch misc-4.20 contains patches that will be sent in the first 4.20
+batch.  There are about 90, fewer than in previous cycles.
+
+There might be 2nd pull sent during the merge window, the reviews are going
+slow but there are still patches/fixes that I'd like to get merged.
+
+
+Hilights of 4.20 changes
+------------------------
+
+The more detailed description will be in the pull request, brief summary:
+
+* (performance) relocation with qgroups on -- skip unnecessary qgroup
+  accounting work during merging b-trees after relocation, claimed improvement
+  is 20-40%+ (run time) but highly depends on the extent layout
+
+* (performance) b-tree path traversal and locking improvements -- no more
+  switching between blocking and spinning mode, sample measurements show
+  noticeable improvements in latency and run time
+
+* (performance) rb-tree caching -- repeated tree traversal does not need to
+  spend time chasing pointers up to the first node
+
+
+Git development repos
+---------------------
+
+  k.org: https://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git
+  devel1: https://gitlab.com/kdave/btrfs-devel
+  devel2: https://github.com/kdave/btrfs-devel
+
+Note: git repository at repo.or.cz is discouraged from use
+
+The devel repos should be identical regarding the main development branches
+like misc-next or for-next-YYYYMMDD.
+
+
+Usual points
+------------
+
+* the current patch queue (as is in misc-next) looks stable, so no big
+  changes are going to be applied at this time. The usual exceptions are
+  bugfixes or obvious cleanups.
+
+* the base of the patches should be the last announced pull request,
+  which is going to be named 'for-4.20' in my k.org tree.  Reviewed
+  patches will be collected in a branch that's usually named 'misc-next'
+  in my devel git repos and is part of the for-next at k.org git repo.
+
+* merging of new patches to misc-next will be slow during the
+  merge window, also because there's a btrfs-progs release scheduled
+
+* everybody is encouraged to review and test other's patches

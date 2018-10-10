@@ -7,61 +7,61 @@ X-Spam-Status: No, score=-6.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
 	SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1E404C43610
-	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Oct 2018 06:40:00 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A45F4C43441
+	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Oct 2018 06:47:14 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D85ED21479
-	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Oct 2018 06:39:59 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 40DEE21479
+	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Oct 2018 06:47:14 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="MPlP0mAs"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org D85ED21479
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="XApas3d5"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 40DEE21479
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726664AbeJJOAi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 10 Oct 2018 10:00:38 -0400
-Received: from mail-yb1-f194.google.com ([209.85.219.194]:43073 "EHLO
-        mail-yb1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726530AbeJJOAh (ORCPT
+        id S1726562AbeJJOHy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 10 Oct 2018 10:07:54 -0400
+Received: from mail-yb1-f195.google.com ([209.85.219.195]:35944 "EHLO
+        mail-yb1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726004AbeJJOHy (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 10 Oct 2018 10:00:37 -0400
-Received: by mail-yb1-f194.google.com with SMTP id w80-v6so1756791ybe.10;
-        Tue, 09 Oct 2018 23:39:56 -0700 (PDT)
+        Wed, 10 Oct 2018 10:07:54 -0400
+Received: by mail-yb1-f195.google.com with SMTP id 5-v6so1777066ybf.3;
+        Tue, 09 Oct 2018 23:47:11 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20161025;
         h=mime-version:references:in-reply-to:from:date:message-id:subject:to
          :cc;
-        bh=CRgyZVjFR/XVdeZOPLxrz4jFRyqeUaSMGx4MJkIivWg=;
-        b=MPlP0mAsqPa/WYS3WzAWw07RzEKfO0EQm4xZqbbk87cFQ+qDkOBYMNQN6IbTOiXnGb
-         1e2hz8lzPhvqYtJcEzNdkxsKP3pdPPEHNGLtmEJo7POGKlz0wIInETElFirarM5D3/Zn
-         5Mge9LFRb98CFDLhn1b2ByWYq+PgKB5bn0F3NGgl09Q1ZwgVMF/VT0IqZFl358DEW2Ow
-         xKXYDWIRbpwxxJy2ElvXGl/S6Nyw5mCAFsSn1uZnBEHCFQ/ZwRPP2KB95bINGSgjFiM8
-         KKq3IJ24PAet3TsKqH199mFBrGFyjufUR9mKCs+0zcEiVTu0ohiFkuQUpMdP6Py4rU9O
-         i46w==
+        bh=vz+7XhVMzFhyIq1lS9yP6TnlkcNOakFSEsU9WxxAfqo=;
+        b=XApas3d5hIqSPYbNXt2SceIRdBCqqWhE46+cGY7AeTcoYEZ/t2R2UICfKxyoKAwEiC
+         E9a1pd8uI6EnT50lu3Fg6uKoPZG0oGHoJcQl9iMgGOpYgSG+CvnlEmQiPHX/5SAD7+C2
+         bQpcL3Y4/erI7DOxVN292CtUGbUWgQsHZ+8z/0HthdoL4Cw0j6s+Q6yKHffmt7via+dY
+         m4+YywFeGHEoVmqdY36d9Pod2AZAnvZd2rIJ7cW9DBTdbWFSjB/YjjAmAlYj8Hv9NiKx
+         KmD5w7ZsM0/kWEK2fgnSsKK1BMVys6Vieq7s5/0vH8/A/XSLIXViaOzM91g40RZEZbEZ
+         +mxw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:mime-version:references:in-reply-to:from:date
          :message-id:subject:to:cc;
-        bh=CRgyZVjFR/XVdeZOPLxrz4jFRyqeUaSMGx4MJkIivWg=;
-        b=fm+WGnHxbgA0sA34FBH7l0WxWaRq2xYHI5vODHLR2fvc3btRKZLihRLL1tQOkHr4cF
-         dHFPfGXWbeuefsp/XyGVB9izs26GOmx5LCqjPe14n2gqXWB3sQaFJgqFugu/OnrC/X45
-         f8i/TmDBYxx9mcX/RfC4DH8PSppdJEhiIHuyHF3FBPXm6DnbEwGGJIUK65TCxkekBrvH
-         4+hLWsA56PPImkMpW5s8GRKCeAZEF2b2bedgo10uVBzRCArgcDOTyNL8K4X9ijgPF8w3
-         ooZptfk+liWzUQeB1r8IUzD677UBjz+dvCYgIoQUge8aiJM4ZhBV+sRhjhbmeqG1tR1D
-         7onA==
-X-Gm-Message-State: ABuFfogMiGs0p4PYqyjdltP+BP2JFqwT5hpxFQgxChtIAiV6xw+TkseA
-        s1OIOjSLTTRw0qtn5M/otfgPVyNlOyOxNbSlcraQrw==
-X-Google-Smtp-Source: ACcGV63vOSkGkmM5GM3tQKbWbBGqUEjnYkhfIgGIa8UmGGJeVyYAKQp44cMTQpOTnJaqIdZ0gCb1IIr/A47pmqGYKYI=
-X-Received: by 2002:a25:1a85:: with SMTP id a127-v6mr18272633yba.507.1539153596137;
- Tue, 09 Oct 2018 23:39:56 -0700 (PDT)
+        bh=vz+7XhVMzFhyIq1lS9yP6TnlkcNOakFSEsU9WxxAfqo=;
+        b=FdP6wN4mlOKsfZzT/PlvTWp5npDFU/o8H/ar4eRetaeZT75EFfNleaJ5rjs4SaW46v
+         OF8nnNYIVo8kaet4bpCzBF60Re+WFqkQ9AcbwPYO8lxxBwwRmj99trCsS84TmWskWC8+
+         4tRoGinnf5MJICSFwIvEn0S4HrXY5RmrOuNQjrbKmTSqB3P7BkM7dQvqhvs1PRcd88k/
+         Xv8fJAvMan1NgwW6MLWCX2PDJ2tZGc0arkoO/Y4hdfNPOqSmlX4I/vL63hkaE/3RaIoK
+         Wu+SAKjPFf6FVmN68/M6udXNwY8pqMmOzmzAsF+B0aZ8gdi+RfynSN42W8tGGt6MWkQO
+         Ot6w==
+X-Gm-Message-State: ABuFfoiQKHFrQDYe/bmhNpzdfGxfbKPuNO2gqLj2XACa3aYO2rVHuj55
+        aELnW+pZGfKVNE4fF5RRKD5Z6jf1VM9y+q4wHqM=
+X-Google-Smtp-Source: ACcGV62QwG/t4AVhNLVqpRJ1jYmXr1uMqgbMDI4FEHKoani4734xczEwNqT0oZI61PxSE1L+yJeHfokokCEHvDFXJ2E=
+X-Received: by 2002:a25:af94:: with SMTP id g20-v6mr17932700ybh.320.1539154031087;
+ Tue, 09 Oct 2018 23:47:11 -0700 (PDT)
 MIME-Version: 1.0
-References: <153913023835.32295.13962696655740190941.stgit@magnolia>
- <153913041692.32295.9928643841686525236.stgit@magnolia> <CAOQ4uxgT-uBn=Zf=085J0HQNy8kgDzB=kNh_dXHXQEbr83Vehw@mail.gmail.com>
-In-Reply-To: <CAOQ4uxgT-uBn=Zf=085J0HQNy8kgDzB=kNh_dXHXQEbr83Vehw@mail.gmail.com>
+References: <153913023835.32295.13962696655740190941.stgit@magnolia> <153913040858.32295.9474188640729118153.stgit@magnolia>
+In-Reply-To: <153913040858.32295.9474188640729118153.stgit@magnolia>
 From:   Amir Goldstein <amir73il@gmail.com>
-Date:   Wed, 10 Oct 2018 09:39:44 +0300
-Message-ID: <CAOQ4uxiLye2PB3PBzYJ=CAbPx7Nnxti946pba=K-pu5cJfETog@mail.gmail.com>
-Subject: Re: [PATCH 15/25] vfs: plumb RFR_* remap flags through the vfs clone functions
+Date:   Wed, 10 Oct 2018 09:47:00 +0300
+Message-ID: <CAOQ4uxg0=EJp1WJXmUeHT05yF1txRKKhPHVTWeG+rdtRD5FfHA@mail.gmail.com>
+Subject: Re: [PATCH 14/25] vfs: make remap_file_range functions take and
+ return bytes completed
 To:     "Darrick J. Wong" <darrick.wong@oracle.com>
 Cc:     Dave Chinner <david@fromorbit.com>,
         Eric Sandeen <sandeen@redhat.com>,
@@ -79,44 +79,103 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Oct 10, 2018 at 9:22 AM Amir Goldstein <amir73il@gmail.com> wrote:
+On Wed, Oct 10, 2018 at 3:14 AM Darrick J. Wong <darrick.wong@oracle.com> wrote:
 >
-> On Wed, Oct 10, 2018 at 3:14 AM Darrick J. Wong <darrick.wong@oracle.com> wrote:
-> >
-> > From: Darrick J. Wong <darrick.wong@oracle.com>
-> >
-> > Plumb a remap_flags argument through the {do,vfs}_clone_file_range
-> > functions so that clone can take advantage of it.
-> >
-> > Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
-> > ---
-> [...]
-> > diff --git a/fs/overlayfs/file.c b/fs/overlayfs/file.c
-> > index c8c890c22898..8b22035af4d7 100644
-> > --- a/fs/overlayfs/file.c
-> > +++ b/fs/overlayfs/file.c
-> > @@ -462,7 +462,7 @@ static loff_t ovl_copyfile(struct file *file_in, loff_t pos_in,
-> >
-> >         case OVL_CLONE:
-> >                 ret = vfs_clone_file_range(real_in.file, pos_in,
-> > -                                          real_out.file, pos_out, len);
-> > +                                          real_out.file, pos_out, len, flags);
-> >                 break;
-> >
-> >         case OVL_DEDUPE:
-> > @@ -509,7 +509,7 @@ static loff_t ovl_remap_file_range(struct file *file_in, loff_t pos_in,
-> >              !ovl_inode_upper(file_inode(file_out))))
-> >                 return -EPERM;
-> >
-> > -       return ovl_copyfile(file_in, pos_in, file_out, pos_out, len, 0,
-> > +       return ovl_copyfile(file_in, pos_in, file_out, pos_out, len, flags,
-> >                             op);
-> >  }
+> From: Darrick J. Wong <darrick.wong@oracle.com>
 >
-> This patch forgets to change args in ovl_copyfile() function definition.
+> Change the remap_file_range functions to take a number of bytes to
+> operate upon and return the number of bytes they operated on.  This is a
+> requirement for allowing fs implementations to return short clone/dedupe
+> results to the user, which will enable us to obey resource limits in a
+> graceful manner.
 >
+> A subsequent patch will enable copy_file_range to signal to the
+> ->clone_file_range implementation that it can handle a short length,
+> which will be returned in the function's return value.  Neither clone
+> ioctl can take advantage of this, alas.
+>
+> Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
+> ---
+[...]
+> @@ -141,8 +142,8 @@ static int ovl_copy_up_data(struct path *old, struct path *new, loff_t len)
+>         }
+>
+>         /* Try to use clone_file_range to clone up within the same fs */
+> -       error = do_clone_file_range(old_file, 0, new_file, 0, len);
+> -       if (!error)
+> +       cloned = do_clone_file_range(old_file, 0, new_file, 0, len);
+> +       if (cloned == len)
+>                 goto out;
+>         /* Couldn't clone, so now we try to copy the data */
+>         error = 0;
 
-Sorry, it was already there.
+This error = 0 not needed anymore, but not a big deal...
+
+> diff --git a/fs/overlayfs/file.c b/fs/overlayfs/file.c
+> index 693bd0620a81..c8c890c22898 100644
+> --- a/fs/overlayfs/file.c
+> +++ b/fs/overlayfs/file.c
+> @@ -434,14 +434,14 @@ enum ovl_copyop {
+>         OVL_DEDUPE,
+>  };
+>
+> -static ssize_t ovl_copyfile(struct file *file_in, loff_t pos_in,
+> +static loff_t ovl_copyfile(struct file *file_in, loff_t pos_in,
+>                             struct file *file_out, loff_t pos_out,
+> -                           u64 len, unsigned int flags, enum ovl_copyop op)
+> +                           loff_t len, unsigned int flags, enum ovl_copyop op)
+>  {
+>         struct inode *inode_out = file_inode(file_out);
+>         struct fd real_in, real_out;
+>         const struct cred *old_cred;
+> -       ssize_t ret;
+> +       loff_t ret;
+>
+>         ret = ovl_real_fdget(file_out, &real_out);
+>         if (ret)
+> @@ -489,9 +489,9 @@ static ssize_t ovl_copy_file_range(struct file *file_in, loff_t pos_in,
+>                             OVL_COPY);
+>  }
+>
+> -static int ovl_remap_file_range(struct file *file_in, loff_t pos_in,
+> -                               struct file *file_out, loff_t pos_out,
+> -                               u64 len, unsigned int flags)
+> +static loff_t ovl_remap_file_range(struct file *file_in, loff_t pos_in,
+> +                                  struct file *file_out, loff_t pos_out,
+> +                                  loff_t len, unsigned int flags)
+>  {
+>         enum ovl_copyop op;
+>
+> diff --git a/fs/read_write.c b/fs/read_write.c
+> index 917934770b08..f43b0620afd4 100644
+> --- a/fs/read_write.c
+> +++ b/fs/read_write.c
+> @@ -1589,10 +1589,13 @@ ssize_t vfs_copy_file_range(struct file *file_in, loff_t pos_in,
+>          * more efficient if both clone and copy are supported (e.g. NFS).
+>          */
+>         if (file_in->f_op->remap_file_range) {
+> -               ret = file_in->f_op->remap_file_range(file_in, pos_in,
+> -                               file_out, pos_out, len, 0);
+> -               if (ret == 0) {
+> -                       ret = len;
+> +               s64 cloned;
+
+loff_t?
+
+> +
+> +               cloned = file_in->f_op->remap_file_range(file_in, pos_in,
+> +                               file_out, pos_out,
+> +                               min_t(loff_t, MAX_RW_COUNT, len), 0);
+> +               if (cloned >= 0) {
+> +                       ret = cloned;
+>                         goto done;
+>                 }
+>         }
+
+Commit message wasn't clear enough on the behavior of copy_file_range()
+before and after the patch IMO. Maybe it would be better to pospone this
+semantic change to the RFR_SHORTEN patch and keep if (cloned == len)
+in this patch?
 
 Thanks,
 Amir.

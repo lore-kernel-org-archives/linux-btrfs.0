@@ -2,111 +2,129 @@ Return-Path: <SRS0=ayZ+=MW=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-3.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 803D1C43441
-	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Oct 2018 18:25:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B8A5FC46462
+	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Oct 2018 18:28:50 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 537CD2098A
-	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Oct 2018 18:25:06 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 537CD2098A
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=applied-asynchrony.com
+	by mail.kernel.org (Postfix) with ESMTP id 8345E2098A
+	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Oct 2018 18:28:50 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="qK9RiMCA"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 8345E2098A
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727068AbeJKBsY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 10 Oct 2018 21:48:24 -0400
-Received: from mail02.iobjects.de ([188.40.134.68]:40784 "EHLO
-        mail02.iobjects.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727042AbeJKBsY (ORCPT
+        id S1727635AbeJKBwJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 10 Oct 2018 21:52:09 -0400
+Received: from mail-yw1-f66.google.com ([209.85.161.66]:46111 "EHLO
+        mail-yw1-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727013AbeJKBwJ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 10 Oct 2018 21:48:24 -0400
-Received: from tux.wizards.de (p3EE2F45F.dip0.t-ipconnect.de [62.226.244.95])
-        by mail02.iobjects.de (Postfix) with ESMTPSA id D90554167C14;
-        Wed, 10 Oct 2018 20:25:02 +0200 (CEST)
-Received: from [192.168.100.223] (ragnarok.applied-asynchrony.com [192.168.100.223])
-        by tux.wizards.de (Postfix) with ESMTP id 881CCF01602;
-        Wed, 10 Oct 2018 20:25:02 +0200 (CEST)
-Subject: Re: Scrub aborts due to corrupt leaf
-To:     Chris Murphy <lists@colorremedies.com>
-Cc:     Larkin Lowrey <llowrey@nuclearwinter.com>,
-        Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <3af15796-2629-ef87-21c9-2bb3c1366732@nuclearwinter.com>
- <3725e6f2-b1ed-8d3d-aec7-1518dad1cb03@gmx.com>
- <3bf7c73d-ce25-88ce-271f-ab8c9ae6c01d@nuclearwinter.com>
- <3d82a2b9-41da-26b8-9b74-71d17d8a8a76@gmx.com>
- <273c99b2-d7e0-bea3-a4a4-7337115beb6f@nuclearwinter.com>
- <0136878c-d4ae-37b0-4903-601367286cf7@nuclearwinter.com>
- <e84595a6-b1c4-0698-b5d3-251165a11412@gmx.com>
- <CAJCQCtR-j3c99KSpsnUuy5yn5Jx7NAYGXmiDfcrZt4yc8ghCEA@mail.gmail.com>
- <cd4ffeae-0b06-f8ae-1a4e-1165428daee2@gmx.com>
- <9c7290ea-668d-c10a-9328-91adfac14d5a@nuclearwinter.com>
- <dd08eb00-faf8-cd88-aeb6-e5ed75a2889f@nuclearwinter.com>
- <4652a690-26ed-fb90-9386-3020ee9e9841@applied-asynchrony.com>
- <CAJCQCtTV3a9rH6ystLCbLUVoh4b1LL5yXWiOBPp6Fa28efZf_w@mail.gmail.com>
-From:   =?UTF-8?Q?Holger_Hoffst=c3=a4tte?= <holger@applied-asynchrony.com>
-Organization: Applied Asynchrony, Inc.
-Message-ID: <90cc4d36-d528-28f9-5d18-ad7dc61b24d3@applied-asynchrony.com>
-Date:   Wed, 10 Oct 2018 20:25:02 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:52.0) Gecko/20100101
- Thunderbird/52.9.1
+        Wed, 10 Oct 2018 21:52:09 -0400
+Received: by mail-yw1-f66.google.com with SMTP id j202-v6so2551103ywa.13;
+        Wed, 10 Oct 2018 11:28:47 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=+jCY+uUWC/JY/tJakwQ409L5L0ga67J4qj0j9F1M0f4=;
+        b=qK9RiMCADlSjpcXotiJRoV5hjWs6D00Vf8XfE98nkH6A9k9OWVWTXh0obvDPOkhOqv
+         qATAsTIJi4XdXedT1ToKP7Ox24cQ1YbpQcjGj4pGnTOcwAgdsh7TyjtNfMqmOEzwbG5V
+         IMaDN5mAPV/t/haU7a6rXKwGg3OIaGVOJc77yH8VSq/NR1RTuxGqFXiNweKGoSCqvfbN
+         xwr4ndcpvBIWJsNQ34qDz7uNzLHn4KFttiYJPQfHYH38UATICcVQbDxQy04xBuCWqzRX
+         UVgDO2jaONiddQcOOKPxp3d+CbxUXZ+Vs+sK74JutrVtlw3RoF6USbzJGraKp0wll/bc
+         hc9w==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=+jCY+uUWC/JY/tJakwQ409L5L0ga67J4qj0j9F1M0f4=;
+        b=mcCQPXrT42RoyzxAzrHOjHMKKoUZ1Sr8F1wShQloob4rbJukrkKDfYewOukFhm0vgs
+         4JjZbt5mgo7qZzYNU+sgYAgKv51opt8emdhthNv7ZDRb9495dJoKMowS8mGOo4WyXEbC
+         2wYUdE9ow/4LAlaB9nhIcdo4148exBqP7thVIG19bDgocUb/8si/0CO8rxKg3khsKvwy
+         FsRwVQoMwXUQ5BezB+BhUSsrDERKoSDJQX/mrsqvUO5/y7JK0ghB5mE6u7/5DclO2oDm
+         tjW34yZCrgmaaeV1+DA3t2G4dTah6slnENOQ4Na+OlCBvCxEqfiLZNeR8F1d8Zo272AW
+         Z19g==
+X-Gm-Message-State: ABuFfojEVXtXcEhGv53pjMXjd6mYgGz1uWb0vRdggaA9889CtHt5bwOi
+        CV6Is2nzpMRd0k7C7CWgOpLmaSLHwKmLxlHJKpBTMtp3
+X-Google-Smtp-Source: ACcGV62ijZVJMWCXX9F3Fr1zq61depYu+YA2mTU9siPS1m2JXbdk3GL8WoyU8FK/CG9dbrd9xqS2+LMl9VLTF/Yf0Io=
+X-Received: by 2002:a81:6505:: with SMTP id z5-v6mr2100545ywb.34.1539196127449;
+ Wed, 10 Oct 2018 11:28:47 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtTV3a9rH6ystLCbLUVoh4b1LL5yXWiOBPp6Fa28efZf_w@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+References: <153913023835.32295.13962696655740190941.stgit@magnolia>
+ <153913040858.32295.9474188640729118153.stgit@magnolia> <CAOQ4uxg0=EJp1WJXmUeHT05yF1txRKKhPHVTWeG+rdtRD5FfHA@mail.gmail.com>
+ <20181010155055.GS28243@magnolia>
+In-Reply-To: <20181010155055.GS28243@magnolia>
+From:   Amir Goldstein <amir73il@gmail.com>
+Date:   Wed, 10 Oct 2018 21:28:34 +0300
+Message-ID: <CAOQ4uxjsKZHxoYqbnJTxQ1SPGn7o_2QhYseuETHnvZxvgCV5vg@mail.gmail.com>
+Subject: Re: [PATCH 14/25] vfs: make remap_file_range functions take and
+ return bytes completed
+To:     "Darrick J. Wong" <darrick.wong@oracle.com>
+Cc:     Dave Chinner <david@fromorbit.com>,
+        Eric Sandeen <sandeen@redhat.com>,
+        Linux NFS Mailing List <linux-nfs@vger.kernel.org>,
+        linux-cifs@vger.kernel.org,
+        overlayfs <linux-unionfs@vger.kernel.org>,
+        linux-xfs <linux-xfs@vger.kernel.org>,
+        Linux MM <linux-mm@kvack.org>,
+        Linux Btrfs <linux-btrfs@vger.kernel.org>,
+        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
+        ocfs2-devel@oss.oracle.com
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 10/10/18 19:44, Chris Murphy wrote:
-> On Wed, Oct 10, 2018 at 10:04 AM, Holger Hoffstätte
-> <holger@applied-asynchrony.com> wrote:
->> On 10/10/18 17:44, Larkin Lowrey wrote:
->> (..)
->>>
->>> About once a week, or so, I'm running into the above situation where
->>> FS seems to deadlock. All IO to the FS blocks, there is no IO
->>> activity at all. I have to hard reboot the system to recover. There
->>> are no error indications except for the following which occurs well
->>> before the FS freezes up:
->>>
->>> BTRFS warning (device dm-3): block group 78691883286528 has wrong amount
->>> of free space
->>> BTRFS warning (device dm-3): failed to load free space cache for block
->>> group 78691883286528, rebuilding it now
->>>
->>> Do I have any options other the nuking the FS and starting over?
->>
->>
->> Unmount cleanly & mount again with -o space_cache=v2.
-> 
-> I'm pretty sure you have to umount, and then clear the space_cache
-> with 'btrfs check --clear-space-cache=v1' and then do a one time mount
-> with -o space_cache=v2.
-> 
-> But anyway, to me that seems premature because we don't even know
-> what's causing the problem.
+On Wed, Oct 10, 2018 at 6:51 PM Darrick J. Wong <darrick.wong@oracle.com> wrote:
+>
+> On Wed, Oct 10, 2018 at 09:47:00AM +0300, Amir Goldstein wrote:
+> > On Wed, Oct 10, 2018 at 3:14 AM Darrick J. Wong <darrick.wong@oracle.com> wrote:
+> > >
+> > > From: Darrick J. Wong <darrick.wong@oracle.com>
+> > >
+> > > Change the remap_file_range functions to take a number of bytes to
+> > > operate upon and return the number of bytes they operated on.  This is a
+> > > requirement for allowing fs implementations to return short clone/dedupe
+> > > results to the user, which will enable us to obey resource limits in a
+> > > graceful manner.
+> > >
+> > > A subsequent patch will enable copy_file_range to signal to the
+> > > ->clone_file_range implementation that it can handle a short length,
+> > > which will be returned in the function's return value.  Neither clone
+> > > ioctl can take advantage of this, alas.
+> > >
+> > > Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
+> > > ---
+[...]
+> > Commit message wasn't clear enough on the behavior of copy_file_range()
+> > before and after the patch IMO. Maybe it would be better to pospone this
+> > semantic change to the RFR_SHORTEN patch and keep if (cloned == len)
+> > in this patch?
+>
+> There shouldn't be any behavior change here -- all implementations
+> return a negative error code or the length that was passed in.  I'll
+> clarify that in the commit message.
+>
 
-Space cache writeout not honoring errors from the depths below
-is not unusual, I think there were some fixes recently which Larkin
-likely doesn't have yet. But yeah, I forgot to mention that cache-v2
-alone won't really fix the _underlying_ symptoms. It is, however,
-vastly more reliable in general.
+OK. BTW, you forgot to update Documentation/filesystems/vfs.txt.
 
-> a. Freezing means there's a kernel bug. Hands down.
-> b. Is it freezing on the rebuild? Or something else?
-> c. I think the devs would like to see the output from btrfs-progs
-> v4.17.1, 'btrfs check --mode=lowmem' and see if it finds anything, in
-> particular something not related to free space cache.
+Also since this series has a potential to break clone/dedup on
+overlayfs, it would be great if you could run some of the clone/dedupe
+xfstests with overlay over xfs.
 
-Apart from performance implications, if only the free space cache
-inodes/blocks are borked then the rest will (should) work just fine
-and/or be replaced/overwritten eventually.
+For the simple case of running ./check with a local.config file that is
+not multi section, this just means running ./check -overlay after the
+first ./check run (-overlay doesn't mkfs the base fs).
 
-Well, at least that was the idea. :}
+If this is a problem, let me know once new devel branch is ready
+and I'll pull it for testing. If I need to pull in extra xfstests, please
+mention that as well.
 
--h
+Thanks,
+Amir.

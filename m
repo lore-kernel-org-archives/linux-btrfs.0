@@ -6,45 +6,31 @@ X-Spam-Status: No, score=-0.5 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
 	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3A361C43441
-	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Oct 2018 23:43:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id ABB88C43441
+	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Oct 2018 23:50:30 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id DB9882086D
-	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Oct 2018 23:43:41 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org DB9882086D
+	by mail.kernel.org (Postfix) with ESMTP id 505F12086D
+	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Oct 2018 23:50:30 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 505F12086D
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=gmx.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726196AbeJKHII (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 11 Oct 2018 03:08:08 -0400
-Received: from mout.gmx.net ([212.227.17.22]:43727 "EHLO mout.gmx.net"
+        id S1726212AbeJKHO5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 11 Oct 2018 03:14:57 -0400
+Received: from mout.gmx.net ([212.227.17.20]:55665 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725968AbeJKHIH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 11 Oct 2018 03:08:07 -0400
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx103
- [212.227.17.174]) with ESMTPSA (Nemesis) id 0M4o41-1flIjW1AVx-00z28v; Thu, 11
- Oct 2018 01:43:24 +0200
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx103
- [212.227.17.174]) with ESMTPSA (Nemesis) id 0M4o41-1flIjW1AVx-00z28v; Thu, 11
- Oct 2018 01:43:24 +0200
-Subject: Re: Scrub aborts due to corrupt leaf
-To:     Larkin Lowrey <llowrey@nuclearwinter.com>,
-        =?UTF-8?Q?Holger_Hoffst=c3=a4tte?= <holger@applied-asynchrony.com>,
-        Chris Murphy <lists@colorremedies.com>
-Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <3af15796-2629-ef87-21c9-2bb3c1366732@nuclearwinter.com>
- <3725e6f2-b1ed-8d3d-aec7-1518dad1cb03@gmx.com>
- <3bf7c73d-ce25-88ce-271f-ab8c9ae6c01d@nuclearwinter.com>
- <3d82a2b9-41da-26b8-9b74-71d17d8a8a76@gmx.com>
- <273c99b2-d7e0-bea3-a4a4-7337115beb6f@nuclearwinter.com>
- <0136878c-d4ae-37b0-4903-601367286cf7@nuclearwinter.com>
- <e84595a6-b1c4-0698-b5d3-251165a11412@gmx.com>
- <CAJCQCtR-j3c99KSpsnUuy5yn5Jx7NAYGXmiDfcrZt4yc8ghCEA@mail.gmail.com>
- <cd4ffeae-0b06-f8ae-1a4e-1165428daee2@gmx.com>
- <9c7290ea-668d-c10a-9328-91adfac14d5a@nuclearwinter.com>
- <dd08eb00-faf8-cd88-aeb6-e5ed75a2889f@nuclearwinter.com>
- <4652a690-26ed-fb90-9386-3020ee9e9841@applied-asynchrony.com>
- <556693f8-6985-dd6f-a376-38325ad68e07@nuclearwinter.com>
+        id S1726079AbeJKHO5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 11 Oct 2018 03:14:57 -0400
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx101
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 0M3vCA-1fsAuB3yza-00rXZQ; Thu, 11
+ Oct 2018 01:50:26 +0200
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx101
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 0M3vCA-1fsAuB3yza-00rXZQ; Thu, 11
+ Oct 2018 01:50:26 +0200
+Subject: Re: Recovery options for damaged beginning of the filesystem
+To:     Shapranov Vladimir <equidamoid@gmail.com>,
+        linux-btrfs@vger.kernel.org
+References: <1a39748c-19de-5fdc-f8ee-efdced880df4@gmail.com>
 From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
@@ -71,142 +57,127 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
  4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
  h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <5f77e276-7fe7-aeb4-6927-5f2c9f1c52b0@gmx.com>
-Date:   Thu, 11 Oct 2018 07:43:19 +0800
+Message-ID: <dc91dec5-a7fe-5aef-99de-91e48c83c837@gmx.com>
+Date:   Thu, 11 Oct 2018 07:50:23 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.0
 MIME-Version: 1.0
-In-Reply-To: <556693f8-6985-dd6f-a376-38325ad68e07@nuclearwinter.com>
+In-Reply-To: <1a39748c-19de-5fdc-f8ee-efdced880df4@gmail.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="l8nCxUbonC9lfvSpeAVdX3CzJf59mSpH5"
-X-Provags-ID: V03:K1:SwN8uzjjldxsehwAU6PysgK9AOHXfpl9aSNNG9USicH019T+8DI
- LDgcT7vDmSgMMMNgVu08pq4a8kyI+2nWlJINqXIipzAm6h1O32eQgMt28zC5UuyDX84rZQC
- N/1tAI5r4Oh1V85ucD0AFpPO6eJ/8/4O36B9AhKnzFzOo8v8XkEuFx/rCvr+m2/yGxjJ5PJ
- XKdJF/B+Y0kN2ts/M+xoA==
-X-UI-Out-Filterresults: notjunk:1;V01:K0:15y0QTPNICY=:st5t9dwiFnwm1+eeU3CGQU
- 8kTBCE9gVPbSKx03X4NGLjsuwT8Jm7rw9067xFYqdvtalaM86HKQJpbxtK/2r37CDmM2+RCxw
- f0jHeOM5rULtjcbHTwrcwJHpII5N/Hw76BEN6LwTKLI2lgg3cPcDwDH3f2bwz3ueV1Z1Mw3x4
- 4BC7Xbq3HrwTJSl9PJsBjhrG4Aomv3ggNIlKDoTDV7bk69UMOLS0noPB2n3OCe5rJg+bLJ6zh
- NWMkImS7c7Ga9DoWFaqi8CmFLKtPEyo3cnBfM/o4lEMDG0F+HxtMZGwUmwCMVi7rmS9a+bWn6
- ht4d+rHUbeao9SdE1dX7bZV4DcnJcM1E+y62OF7/6s11UmQB5/scFErhqjdwAqj435l39xMzS
- gbWrwzLMcL1pkatbUQ+75IaC4oINUmvtgAxLqf71Z/up6YIkeeLBCsLs8MsEV1drOvZLCvZHw
- FvnpwFFdKZruRXCz18MKsdraSz3mJM8aSachhz+4Y1RT55qXcdUjT1wrQyRulNQpIIPwYVobD
- altUnZtuDvL/uOYz+Sbczf7PIXNoLNCiB5dzCXsMw3rUt6FgpAqJTJD/Ehd73SCk7larqkDEW
- lLKoyx0Yy8NJLn9JdDN6ffAgIQzvr7J3oYu10vqWtwK6C6BdV2tI2F2FNoeotEAqMroSJhzHi
- 7u4KE0x6+TE80dE30Jq53K3/sfxQh/Qg4yI47nY8Bjw75DYZtg6GS8Ec2LLDoN9NX6VCr/W+g
- vRgFDDLer9Wa8/GJ3LErIvXY7gjGT1vyT8t+0M5FFiMGe9vEYznfziI3H2iLuNmeQ+eRtpSlv
- EUOf3wmutYFdHFZqyhKu3S03UXhxQ==
+ boundary="DT9JvSNfO3c79rvnoqHkpYLtG2ywYtGc8"
+X-Provags-ID: V03:K1:mvYn6ccTAbAlUPPLJPA3bIfTTbSGikhNDcxA2fGzMvZv41r0ZIY
+ qkusUPckfjhxgj58z0We+mKmA8jOHv/w8f1jP+e3GAHaqvgvGJPnvjfCC8NtpxQ7H3S91d8
+ E5Jc5QB8QluKwQWxWjWJh+davt8M0yFQsfZlbUQP/VShCG5l0/SmgAHxBMNLrm+sAiYk9RN
+ +0XX9TEAvzqC0Mb2uIsvw==
+X-UI-Out-Filterresults: notjunk:1;V01:K0:X6YYjMK2cgs=:JUQJI4DFyLJCnMiFti7kRn
+ o/+HtGHjy7PjfKnyrpM8wg/lH0dH6jfGIVz9OwzHOaIA9NrOlDcMEbPxwyOudqoNaaI/vcfOe
+ m8V4fWBFZYLOfAIJCXf0f1uSS6/xZ418T9qM8Vb2KL4SCyY06Nb83sSg1zB7IvSOpjLvVwqnm
+ zWr94Q18r7xvCuCeX601BD3+hR65Sb4/vStmMUFGD2jMEtNbnpPHPvRfENG9Tj+pz8u5Elk/U
+ x9rxmuaKQVzwNy8AHicFJRtoXekXt5P+F7Asm9qK4yUUM/CiDHL6ohbGiDRJKIPzF2wbNl4aL
+ 0M+Otvlvp2zp8dXghI6dhjxabZQdPxoYtYaaUDV/bqZr2zOJJUx6liT7rRS9zQsAJoH9mOJGp
+ YFSz28kZyXS/T/BpCP0HPsBKCmxVN0r3OYezzT35fTgYqWKy4ZCtS3aCj54qSQuVsA2c979QV
+ 2ZDyvdejWLHDmGxQgoi9uh5etN683So6HPjrnZE8KDkS2BYKvpeX66wBXdcyu7Q2KodRbPRC3
+ 5vddPnKizXQYWwBd1536i6CIZMxcdhSKxU9y3lgK+KeYmZjRRBl7xYXLX+GIB4a64JqMNSxoR
+ FGpf8jpNWT+6JCyjtJglza/7daRCIcQ88pH4v2D9TnbKPEkVBTDDSPof1km980AvzrrjcNceu
+ 6PY82NlWuwObXMhz+hb7sLdQtQXKj57EoZwrr5iowj3G0QvoRw9tBi6MR7/k+5GSyZ/1aaQxz
+ IiHGfb9HbEDuS/Ji/nAwEi6KxsZXmJVCzhrKmHnVVmVci49fP2s4Q7+tivZitFa5Xg+SZq0Yp
+ saxrj5A36vOCf/52787NwjTAPiwWg==
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---l8nCxUbonC9lfvSpeAVdX3CzJf59mSpH5
-Content-Type: multipart/mixed; boundary="C8og6iq8VcpbEqOLe9bIH4bBpk4JmxVwe";
+--DT9JvSNfO3c79rvnoqHkpYLtG2ywYtGc8
+Content-Type: multipart/mixed; boundary="7BSmTZZZydrJPsMgh1wwRnqJ9KmURsjXg";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Larkin Lowrey <llowrey@nuclearwinter.com>,
- =?UTF-8?Q?Holger_Hoffst=c3=a4tte?= <holger@applied-asynchrony.com>,
- Chris Murphy <lists@colorremedies.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Message-ID: <5f77e276-7fe7-aeb4-6927-5f2c9f1c52b0@gmx.com>
-Subject: Re: Scrub aborts due to corrupt leaf
-References: <3af15796-2629-ef87-21c9-2bb3c1366732@nuclearwinter.com>
- <3725e6f2-b1ed-8d3d-aec7-1518dad1cb03@gmx.com>
- <3bf7c73d-ce25-88ce-271f-ab8c9ae6c01d@nuclearwinter.com>
- <3d82a2b9-41da-26b8-9b74-71d17d8a8a76@gmx.com>
- <273c99b2-d7e0-bea3-a4a4-7337115beb6f@nuclearwinter.com>
- <0136878c-d4ae-37b0-4903-601367286cf7@nuclearwinter.com>
- <e84595a6-b1c4-0698-b5d3-251165a11412@gmx.com>
- <CAJCQCtR-j3c99KSpsnUuy5yn5Jx7NAYGXmiDfcrZt4yc8ghCEA@mail.gmail.com>
- <cd4ffeae-0b06-f8ae-1a4e-1165428daee2@gmx.com>
- <9c7290ea-668d-c10a-9328-91adfac14d5a@nuclearwinter.com>
- <dd08eb00-faf8-cd88-aeb6-e5ed75a2889f@nuclearwinter.com>
- <4652a690-26ed-fb90-9386-3020ee9e9841@applied-asynchrony.com>
- <556693f8-6985-dd6f-a376-38325ad68e07@nuclearwinter.com>
-In-Reply-To: <556693f8-6985-dd6f-a376-38325ad68e07@nuclearwinter.com>
+To: Shapranov Vladimir <equidamoid@gmail.com>, linux-btrfs@vger.kernel.org
+Message-ID: <dc91dec5-a7fe-5aef-99de-91e48c83c837@gmx.com>
+Subject: Re: Recovery options for damaged beginning of the filesystem
+References: <1a39748c-19de-5fdc-f8ee-efdced880df4@gmail.com>
+In-Reply-To: <1a39748c-19de-5fdc-f8ee-efdced880df4@gmail.com>
 
---C8og6iq8VcpbEqOLe9bIH4bBpk4JmxVwe
+--7BSmTZZZydrJPsMgh1wwRnqJ9KmURsjXg
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
 
 
-On 2018/10/11 =E4=B8=8A=E5=8D=881:25, Larkin Lowrey wrote:
-> On 10/10/2018 12:04 PM, Holger Hoffst=C3=A4tte wrote:
->> On 10/10/18 17:44, Larkin Lowrey wrote:
->> (..)
->>> About once a week, or so, I'm running into the above situation where
->>> FS seems to deadlock. All IO to the FS blocks, there is no IO
->>> activity at all. I have to hard reboot the system to recover. There
->>> are no error indications except for the following which occurs well
->>> before the FS freezes up:
->>>
->>> BTRFS warning (device dm-3): block group 78691883286528 has wrong
->>> amount of free space
->>> BTRFS warning (device dm-3): failed to load free space cache for
->>> block group 78691883286528, rebuilding it now
->>>
->>> Do I have any options other the nuking the FS and starting over?
->>
->> Unmount cleanly & mount again with -o space_cache=3Dv2.
+On 2018/10/10 =E4=B8=8B=E5=8D=8812:47, Shapranov Vladimir wrote:
+> Hi,
 >=20
-> It froze while unmounting. The attached zip is a stack dump captured vi=
-a
-> 'echo t > /proc/sysrq-trigger'. A second attempt after a hard reboot
-> worked.
+> I've got a filesystem with first ~50Mb accidentally dd'ed.
 
-The trace shows it's indeed free space cache write back code causing the
-problem.
+So about 49M meta/data loss.
 
-It may be a deadlock caused by nested tree locks caused by extent
-allocator and free space writeback code.
-
-To avoid such problem, you could completely disable v1 free space cache
-or goes to v2 cache.
-
-Chris Murphy's guide should be pretty good.
+It depends on the chunk layout. If it got one metadata chunk wiped out,
+it's pretty hard to repair.
+If it only wiped several data chunks, it should be mostly OK.
 
 
-Personally speaking, if your usage is not a performance critical case,
-the following things can be disable and avoid possible bugs:
+>=20
+> "btrfs check" fails with a following error (regardless of "-s"):
+> checksum verify failed on 21037056 found FC8A6557 wanted 2F51D090
+> checksum verify failed on 21037056 found FC8A6557 wanted 2F51D090
+> checksum verify failed on 21037056 found 1EDD5E47 wanted 222F7E7F
+> checksum verify failed on 21037056 found 1EDD5E47 wanted 222F7E7F
+> bytenr mismatch, want=3D21037056, have=3D13515002166904211737
+> ERROR: cannot read chunk root
+> ERROR: cannot open file system
+>=20
+> "mount -o ro /dev/sdf1 /mnt/tmp" fails, while "mount -o ro,subvol=3DX /=
+mnt/tmp" succeeds for "/" and couple subvolumes.
 
-1) free space cache
-   It only increase the speed to lookup free space.
-2) tree log
-   It only speed up fsync() causes. Without it we just falls back to
-   sync()
+That's very strange.
 
-So I'd recommend the following mount option:
-nospace_cache,notreelog
+If chunk root is corrupted, it should fail for all subvolumes.
+
+>=20
+> I can even ls the root directory, but at some point something can't be =
+read anymore and following errors appear in dmesg:
+> [385647.999981] btrfs_dev_stat_print_on_error: 158686 callbacks suppres=
+sed
+> [385648.079187] BTRFS error (device sdd1): bdev /dev/sdf1 errs: wr 0, r=
+d 22094847, flush 0, corrupt 0, gen 0
+> [385648.193733] BTRFS error (device sdd1): bdev /dev/sdf1 errs: wr 0, r=
+d 22094848, flush 0, corrupt 0, gen 0
+>=20
+> Also it is worth mentioning that after corruption one of the subvolumes=
+ was mounted read-write and possibly some files were written.
+>=20
+> Is there any chance to recover the FS?
+
+You could try btrfs rescue chunk-recovery to recover the chunk root, and
+then all depends on your luck to see if it works.
 
 Thanks,
 Qu
 
 >=20
-> --Larkin
+>=20
+>=20
 
 
---C8og6iq8VcpbEqOLe9bIH4bBpk4JmxVwe--
+--7BSmTZZZydrJPsMgh1wwRnqJ9KmURsjXg--
 
---l8nCxUbonC9lfvSpeAVdX3CzJf59mSpH5
+--DT9JvSNfO3c79rvnoqHkpYLtG2ywYtGc8
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlu+jpcACgkQwj2R86El
-/qjCsQf+JucsA1aLnznaY19SHDf3sXzSr8linLVNOb1adDRhP4JGdSPBNak+19HE
-Rs80uQV6Q7yyly0clJ4N15EJ4b4EG1MYem/mU+yvjIn1YtoXLP6MXRaY5EehS2a3
-+Ub1pGMY02LVZMRGqWwRPwg7/WmGFC3+ba3A9ugSAZfM/IYObzLLghTYyQKx4ZUe
-609YNadhcExuv7zc0gXKE3kfSRXbd1CKQLq5vxWPWbEZAYCM3FCdeM+8V8bZxLT0
-Hx5NDuWXlJkar37+q3fIeFiKiBNX+ljzoGM9vCyNYq4pp5slHWrArtqszcNf67C7
-evkowthIxgNHqq85vVDkc+ie0KOaog==
-=wCzF
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlu+kD8ACgkQwj2R86El
+/qgnjQf9GTaR3u6dJcncPCrH/nzPzp7BKt8ClP1L2qmZ8JhbdEpS8dbqqQ4ZfZBh
+++2eiSAMhjLUHPeOfg7NMbGfiOnsgTWeda37LAKTm9/KOuLudSsgVnWe4CASK36C
+oGchXBGfwLPOd5b9H73ItsrhM3T1YTiTCG1/jORKDHeb456KF3aYAK9uHvZfvuDv
+bPiOkRY4V6I3N6Tf2YrMqpBHhxB9b+Lmhlq0rMbKCtoYOKabA+QFTAXU1i8HerQS
+72Rwal1dd7X59fX68+PG3vU1Azipy+scbgTkiUZ30eXGKUJh7cLKVyoDiveOgI/q
+hwWIIreZsOyUgFJEgPIkeAb1BTLwmQ==
+=KSR5
 -----END PGP SIGNATURE-----
 
---l8nCxUbonC9lfvSpeAVdX3CzJf59mSpH5--
+--DT9JvSNfO3c79rvnoqHkpYLtG2ywYtGc8--

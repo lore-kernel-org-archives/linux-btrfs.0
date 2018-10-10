@@ -2,211 +2,153 @@ Return-Path: <SRS0=ayZ+=MW=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,
+	URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 759C9C43441
-	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Oct 2018 12:29:21 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EF586C43441
+	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Oct 2018 12:32:12 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 2361D2085B
-	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Oct 2018 12:29:21 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7371D2085B
+	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Oct 2018 12:32:12 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="f5ncnptz"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 2361D2085B
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
+	dkim=pass (1024-bit key) header.d=codepoets.co.uk header.i=@codepoets.co.uk header.b="Wbk+Bv3D"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 7371D2085B
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=codepoets.co.uk
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726656AbeJJTvQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 10 Oct 2018 15:51:16 -0400
-Received: from mail-yw1-f65.google.com ([209.85.161.65]:39046 "EHLO
-        mail-yw1-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726503AbeJJTvQ (ORCPT
+        id S1726836AbeJJTyI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 10 Oct 2018 15:54:08 -0400
+Received: from mail.palepurple.co.uk ([89.16.169.139]:49652 "EHLO
+        mail.palepurple.co.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726616AbeJJTyI (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 10 Oct 2018 15:51:16 -0400
-Received: by mail-yw1-f65.google.com with SMTP id v1-v6so2067905ywv.6;
-        Wed, 10 Oct 2018 05:29:18 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=/dkY00Ij8F/sh1n14qEVJAmJCJ706EXTvoibm4ncxSQ=;
-        b=f5ncnptzClrAN9Wrw0z9OgW3xST6w3CZcx4u1oUMr13Tyj56ZrgXxeo8qehh0vjVGs
-         S25rR/BDd6AGjrm/Hhyr/bF3kVZuH0ndnqZLRqfDcZJVsKPCdSrNAe5azhKpW+h3m5EX
-         lNfkYKZqXp/rsURfrLsKs527H23fWI0QIU7QavFXHmpq/2nAJfcfSX9HKdE4SK8ah81a
-         AbFBTXDKhzxDlkPcLL2O+YmZ7pb6yQwMJnQtQS2zsYGQ2pssAVhn6z8ReqoOhcf+NkC+
-         bna3xygQ+789DUe0YwYcZKI9CmPV6JoLzunArXgFnlUCXIZpLMHF08Y3NdZtRtVmOhXk
-         248A==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=/dkY00Ij8F/sh1n14qEVJAmJCJ706EXTvoibm4ncxSQ=;
-        b=e1O4cYKv8NLKO/B7BxRhCIotmNcCcBwcSdT3eXlPnQyGp7E0SP5lDA/vJP8wK3qz1t
-         IG8yi+RhZfdcGYnWLgd1nyDXq7zCvnS+Bv7jGAhhEv5UTLDFV5E1xh1MzgLrIjch80UC
-         wkaVeXC/UotU8PEbZvlwdmoY49yjLeA/yFYSEcBiKZ7ei6+dAecXYg0m8EmwKuTzHbrN
-         fDEyBodKnqEs322skUAT5zgJLK761ksjJbSkmLV61mu3vIEi0AmEDC6j9G9+nffuLzbN
-         3A5TNnC8kzyTtg7HRJnY+Z/vJ6LC9Ze9U8fCfVKQTWQwSBmzUiOyxAywoV7WP7NtEFXa
-         7/gA==
-X-Gm-Message-State: ABuFfog8SFeNhDk6lb/P+VaUc3uIuMhUxb9NYBS9RgJxeuKdpgvjtxpf
-        sLExTPZ9v8ttdB2YO7fG6BIHA+cR/o3eY3OHxd4=
-X-Google-Smtp-Source: ACcGV63Blfo7NspePBXhtvLQjDAWREJfz7rTZSTI1AJVbtplPt2jZm5wbOcRVejU0BVImN+Jd+3szItUgXEf8CNHycw=
-X-Received: by 2002:a0d:d181:: with SMTP id t123-v6mr18216177ywd.241.1539174557969;
- Wed, 10 Oct 2018 05:29:17 -0700 (PDT)
+        Wed, 10 Oct 2018 15:54:08 -0400
+X-Greylist: delayed 413 seconds by postgrey-1.27 at vger.kernel.org; Wed, 10 Oct 2018 15:54:07 EDT
+Received: from localhost (localhost [127.0.0.1])
+        by mail.palepurple.co.uk (Postfix) with ESMTP id 04D87806C
+        for <linux-btrfs@vger.kernel.org>; Wed, 10 Oct 2018 12:25:18 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=codepoets.co.uk;
+        s=codepoets; t=1539174318;
+        bh=oOwHIhRYawl2PsNYgwT6VQz1SJnQOR+EPrrFTBuOEYY=;
+        h=To:From:Subject:Date:From;
+        b=Wbk+Bv3D0TR7UA2w+MtN/2yh8latDctaM6dn+OOSeEUaH5efm53V5N/jFw7r0/42R
+         7PZgPBtdwSUCN4fwjiPThDX+kB3BsX+c7CMDckojJvNekwIV5WDx3U5lHyE9XNvSE0
+         rAeHlKm/VwXNXxnLxleGYJyam1jctcSit9gR+sf0=
+X-Virus-Scanned: by Amavis+SpamAssassin+ClamAV and more at palepurple.co.uk
+Received: from mail.palepurple.co.uk ([127.0.0.1])
+        by localhost (mail.palepurple.co.uk [127.0.0.50]) (amavisd-new, port 10024)
+        with ESMTP id kTfAA9KeuEV8 for <linux-btrfs@vger.kernel.org>;
+        Wed, 10 Oct 2018 12:25:09 +0000 (UTC)
+Received: from [192.168.86.200] (5ec3d783.skybroadband.com [94.195.215.131])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        (Authenticated sender: david@palepurple.co.uk)
+        by mail.palepurple.co.uk (Postfix) with ESMTPSA id D04FD804E
+        for <linux-btrfs@vger.kernel.org>; Wed, 10 Oct 2018 12:25:09 +0000 (UTC)
+To:     linux-btrfs@vger.kernel.org
+From:   David Goodwin <david@codepoets.co.uk>
+Subject: Transaction aborted (error -28) - at fs/btrfs/extent-tree.c:6953
+Message-ID: <340c1e88-2f65-e8fc-4fed-3657c15200b7@codepoets.co.uk>
+Date:   Wed, 10 Oct 2018 13:25:09 +0100
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.2.1
 MIME-Version: 1.0
-References: <153913023835.32295.13962696655740190941.stgit@magnolia> <153913043746.32295.17463515265798256890.stgit@magnolia>
-In-Reply-To: <153913043746.32295.17463515265798256890.stgit@magnolia>
-From:   Amir Goldstein <amir73il@gmail.com>
-Date:   Wed, 10 Oct 2018 15:29:06 +0300
-Message-ID: <CAOQ4uxivwLR5assf0VwHdp5p06Er4w7urB637Z3wiQ1eZoT9tQ@mail.gmail.com>
-Subject: Re: [PATCH 17/25] vfs: make remapping to source file eof more explicit
-To:     "Darrick J. Wong" <darrick.wong@oracle.com>
-Cc:     Dave Chinner <david@fromorbit.com>,
-        Eric Sandeen <sandeen@redhat.com>,
-        Linux NFS Mailing List <linux-nfs@vger.kernel.org>,
-        linux-cifs@vger.kernel.org,
-        overlayfs <linux-unionfs@vger.kernel.org>,
-        linux-xfs <linux-xfs@vger.kernel.org>,
-        Linux MM <linux-mm@kvack.org>,
-        Linux Btrfs <linux-btrfs@vger.kernel.org>,
-        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-        ocfs2-devel@oss.oracle.com
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Transfer-Encoding: 8bit
+Content-Language: en-GB
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Oct 10, 2018 at 3:14 AM Darrick J. Wong <darrick.wong@oracle.com> wrote:
->
-> From: Darrick J. Wong <darrick.wong@oracle.com>
->
-> Create a RFR_TO_SRC_EOF flag to explicitly declare that the caller wants
-> the remap implementation to remap to the end of the source file, once
-> the files are locked.
->
-> Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
-> ---
->  fs/ioctl.c         |    3 ++-
->  fs/nfsd/vfs.c      |    3 ++-
->  fs/read_write.c    |   13 +++++++------
->  include/linux/fs.h |    2 ++
->  4 files changed, 13 insertions(+), 8 deletions(-)
->
->
-> diff --git a/fs/ioctl.c b/fs/ioctl.c
-> index 505275ec5596..7fec997abd2f 100644
-> --- a/fs/ioctl.c
-> +++ b/fs/ioctl.c
-> @@ -224,6 +224,7 @@ static long ioctl_file_clone(struct file *dst_file, unsigned long srcfd,
->  {
->         struct fd src_file = fdget(srcfd);
->         loff_t cloned;
-> +       unsigned int flags = olen == 0 ? RFR_TO_SRC_EOF : 0;
->         int ret;
->
->         if (!src_file.file)
-> @@ -232,7 +233,7 @@ static long ioctl_file_clone(struct file *dst_file, unsigned long srcfd,
->         if (src_file.file->f_path.mnt != dst_file->f_path.mnt)
->                 goto fdput;
->         cloned = vfs_clone_file_range(src_file.file, off, dst_file, destoff,
-> -                                     olen, 0);
-> +                                     olen, flags);
->         if (cloned < 0)
->                 ret = cloned;
->         else if (olen && cloned != olen)
-> diff --git a/fs/nfsd/vfs.c b/fs/nfsd/vfs.c
-> index 726fc5b2b27a..d1f2ae08adf6 100644
-> --- a/fs/nfsd/vfs.c
-> +++ b/fs/nfsd/vfs.c
-> @@ -542,8 +542,9 @@ __be32 nfsd4_clone_file_range(struct file *src, u64 src_pos, struct file *dst,
->                 u64 dst_pos, u64 count)
->  {
->         loff_t cloned;
-> +       unsigned int flags = count == 0 ? RFR_TO_SRC_EOF : 0;
->
-> -       cloned = vfs_clone_file_range(src, src_pos, dst, dst_pos, count, 0);
-> +       cloned = vfs_clone_file_range(src, src_pos, dst, dst_pos, count, flags);
->         if (count && cloned != count)
->                 cloned = -EINVAL;
->         return nfserrno(cloned < 0 ? cloned : 0);
-> diff --git a/fs/read_write.c b/fs/read_write.c
-> index 479eb810c8e6..a628fd9a47cf 100644
-> --- a/fs/read_write.c
-> +++ b/fs/read_write.c
-> @@ -1748,11 +1748,12 @@ int generic_remap_file_range_prep(struct file *file_in, loff_t pos_in,
->
->         isize = i_size_read(inode_in);
->
-> -       /* Zero length dedupe exits immediately; reflink goes to EOF. */
-> -       if (*len == 0) {
-> -               if (is_dedupe || pos_in == isize)
-> -                       return 0;
-> -               if (pos_in > isize)
-> +       /*
-> +        * If the caller asked to go all the way to the end of the source file,
-> +        * set *len now that we have the file locked.
-> +        */
-> +       if (remap_flags & RFR_TO_SRC_EOF) {
-> +               if (pos_in >= isize)
->                         return -EINVAL;
->                 *len = isize - pos_in;
->         }
-> @@ -1828,7 +1829,7 @@ loff_t do_clone_file_range(struct file *file_in, loff_t pos_in,
->         struct inode *inode_out = file_inode(file_out);
->         loff_t ret;
->
-> -       WARN_ON_ONCE(remap_flags);
-> +       WARN_ON_ONCE(remap_flags & ~(RFR_TO_SRC_EOF));
->
->         if (S_ISDIR(inode_in->i_mode) || S_ISDIR(inode_out->i_mode))
->                 return -EISDIR;
-> diff --git a/include/linux/fs.h b/include/linux/fs.h
-> index 5c1bf1c35bc6..9f90dcd4df3b 100644
-> --- a/include/linux/fs.h
-> +++ b/include/linux/fs.h
-> @@ -1725,8 +1725,10 @@ struct block_device_operations;
->   * These flags control the behavior of the remap_file_range function pointer.
->   *
->   * RFR_IDENTICAL_DATA: only remap if contents identical (i.e. deduplicate)
+I've just hit this on a backup server. I suspect something would have 
+been trying to remove/create a snapshot at the time.
 
-<bikeshedding> not that I care so much, but is there any reason you chose
-to use _IDENTICAL_ vs. _SAME_? The latter is shorter and already engraved
-in the dedup uapi. </bikeshedding>
+I'll ignorantly assume it's similar to the last one I posted ( 
+https://www.spinics.net/lists/linux-btrfs/msg82636.html ) although the 
+trace is different.
 
-> + * RFR_TO_SRC_EOF: remap to the end of the source file
->   */
->  #define RFR_IDENTICAL_DATA     (1 << 0)
-> +#define RFR_TO_SRC_EOF         (1 << 1)
->
+David.
 
-So what is the best way to make sure that all filesystems can
-properly handle this flag? and the RFR_CAN_SHORTEN flag?
 
-The way that your patches took is to not check for invalid flags
-at all in filesystems, but I don't think that is a viable option.
+------------[ cut here ]------------
+BTRFS: Transaction aborted (error -28)
+WARNING: CPU: 3 PID: 996 at fs/btrfs/extent-tree.c:6953 
+__btrfs_free_extent.isra.67+0x3ec/0xd60
+Modules linked in: ipt_MASQUERADE iptable_nat nf_conntrack_ipv4 
+nf_defrag_ipv4 nf_nat_ipv4 nf_nat_ftp nf_conntrack_ftp nf_nat 
+nf_conntrack ipt_REJECT nf_reject_ipv4 nfsv3 xt_multiport iptable_filter 
+ip_tables x_tables autofs4 nfsd auth_rpcgss nfs_acl nfs lockd grace 
+fscache sunrpc intel_rapl crct10dif_pclmul crc32_pclmul crc32c_intel 
+ghash_clmulni_intel pcbc evdev snd_pcsp snd_pcm aesni_intel snd_timer 
+snd aes_x86_64 crypto_simd soundcore cryptd glue_helper xen_netfront 
+xen_blkfront
+CPU: 3 PID: 996 Comm: btrfs-transacti Not tainted 4.18.11-psi-dg1 #1
+RIP: e030:__btrfs_free_extent.isra.67+0x3ec/0xd60
+Code: 8b 04 24 48 8b 40 50 f0 48 0f ba a8 08 17 00 00 02 72 19 83 fd fb 
+0f 84 15 03 00 00 89 ee 48 c7 c7 38 70 da 81 e8 b4 eb d4 ff <0f> 0b 48 
+8b 3c 24 89 e9 ba 29 1b 00 00 48 c7 c6 00 7b c3 81 e8 77
+RSP: e02b:ffffc90041e03c78 EFLAGS: 00010286
+RAX: 0000000000000000 RBX: 000001f656680000 RCX: 0000000000000006
+RDX: 0000000000000007 RSI: 0000000000000001 RDI: ffff88039a996650
+RBP: 00000000ffffffe4 R08: 0000000000000001 R09: 0000000000000319
+R10: 0000000000000001 R11: 0000000000000319 R12: ffff880395744000
+R13: ffff88024d93b7e0 R14: 0000000000000000 R15: 0000000000000002
+FS:  0000000000000000(0000) GS:ffff88039a980000(0000) knlGS:0000000000000000
+CS:  e033 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f75a076f000 CR3: 000000038ae34000 CR4: 0000000000000660
+Call Trace:
+  ? btrfs_merge_delayed_refs+0xa7/0x360
+  __btrfs_run_delayed_refs+0x32f/0x1140
+  btrfs_run_delayed_refs+0xfb/0x1b0
+  btrfs_commit_transaction+0x343/0x880
+  ? wait_woken+0x80/0x80
+  transaction_kthread+0x157/0x180
+  kthread+0xf8/0x130
+  ? btrfs_cleanup_transaction+0x570/0x570
+  ? kthread_create_worker_on_cpu+0x70/0x70
+  ret_from_fork+0x35/0x40
+---[ end trace 415fa2ecbacc2881 ]---
+BTRFS: error (device xvdh) in __btrfs_free_extent:6953: errno=-28 No 
+space left
+BTRFS: error (device xvdh) in btrfs_drop_snapshot:9250: errno=-28 No 
+space left
+BTRFS info (device xvdh): forced readonly
+BTRFS: error (device xvdh) in btrfs_run_delayed_refs:3057: errno=-28 No 
+space left
+BTRFS warning (device xvdh): Skipping commit of aborted transaction.
 
-Another way would be to individually add those flags to invalid
-flags check in all relevant filesystems.
+BTRFS: error (device xvdh) in cleanup_transaction:1847: errno=-28 No 
+space left
 
-Another way would be to follow a pattern similar to
-fiemap_check_flags(), except in case filesystem does not declare
-to support the RFR_ "advisory" flags, it will not fail the operation.
 
-Comparing to FIEMAP_ flags, no filesystem would have needed to declare
-support for FIEMAP_FLAG_SYNC, because vfs dealt with it anyway
-before calling into the filesystem. So de-facto, any filesystem supports
-FIEMAP_FLAG_SYNC without doing anything, but it is still worth passing
-the flag into filesystem in case it matter (it does for overlayfs).
 
-I am not sure if giving fiemap_check_flags() as an example for sorting
-out VFS API flags is a good idea, because I completely don't understand
-what is going on in ext4_fiemap(). Why do FIEMAP_FLAG_CACHE and
-the case of  !EXT4_INODE_EXTENTS bypass fiemap_check_flags()?
-Is there a rational behind all this or just plain old API bit rot?
-If bit rot, then perhaps the fiemap_check_flags() wasn't a good enough
-coding pattern?
 
-Thanks,
-Amir.
+% btrfs fi us /backups/
+Overall:
+     Device size:           4.00TiB
+     Device allocated:           2.40TiB
+     Device unallocated:           1.60TiB
+     Device missing:             0.00B
+     Used:               2.39TiB
+     Free (estimated):           1.61TiB    (min: 1.61TiB)
+     Data ratio:                  1.00
+     Metadata ratio:              1.00
+     Global reserve:         512.00MiB    (used: 510.00MiB)
+
+Data,single: Size:2.29TiB, Used:2.29TiB
+    /dev/xvdh       1.73TiB
+    /dev/xvdj     574.00GiB
+
+Metadata,single: Size:112.01GiB, Used:106.19GiB
+    /dev/xvdh      48.01GiB
+    /dev/xvdj      64.00GiB
+
+System,single: Size:32.00MiB, Used:288.00KiB
+    /dev/xvdj      32.00MiB
+
+Unallocated:
+    /dev/xvdh     231.98GiB
+    /dev/xvdj       1.38TiB
+

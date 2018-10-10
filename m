@@ -4,64 +4,63 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-7.2 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,UNPARSEABLE_RELAY autolearn=ham
-	autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,UNPARSEABLE_RELAY,URIBL_BLOCKED
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4E0FEC43441
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 913A4C43610
 	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Oct 2018 00:11:33 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 111A9214FF
-	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Oct 2018 00:11:32 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 4CA1621502
+	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Oct 2018 00:11:33 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="zijFNAT9"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 111A9214FF
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="VtVanN8D"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 4CA1621502
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=oracle.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726666AbeJJHay (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 10 Oct 2018 03:30:54 -0400
-Received: from aserp2120.oracle.com ([141.146.126.78]:56092 "EHLO
-        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726226AbeJJHax (ORCPT
+        id S1726831AbeJJHax (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 10 Oct 2018 03:30:53 -0400
+Received: from userp2120.oracle.com ([156.151.31.85]:57112 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725811AbeJJHax (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Wed, 10 Oct 2018 03:30:53 -0400
-Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
-        by aserp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w9A08ekx138543;
-        Wed, 10 Oct 2018 00:11:23 GMT
+Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
+        by userp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w9A090mE083155;
+        Wed, 10 Oct 2018 00:11:21 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : from : to :
  cc : date : message-id : in-reply-to : references : mime-version :
  content-type : content-transfer-encoding; s=corp-2018-07-02;
- bh=UPZ0d5EyyxBIdyb+/QZEk2VIco+d0Uqne8UVSJH846Y=;
- b=zijFNAT9z+gw/MI8d1eVXf3jMsCTgjhryhyCdeq6HhqEzQ1EtXkYHagwhAVTNqJJkaJo
- R9ZE0JZiE0Oa9smd0U066iCUML432vrYFnjzYfCnsHQQ2Fluq1zANB0SuT8talkjS/l4
- AFwIV8HLs5vBTY3V1YHgZjNfCfU1t6OqLbqHEtwrd6k+ccJbluWbQblZSFU6KORkLLfW
- jm4l9tdM+OSKrpky4EitobilSWcztg/PUhzQuPrteT8r3d+SjXkkgDXXr6KS1ZmuFuXP
- EA5ILI/AeOFLm4ZtxS/FQAvuiHvAo1X5y5+WkhJnAOYg9RlqNDQsbSSuDg16hhMqOU9x Ew== 
-Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
-        by aserp2120.oracle.com with ESMTP id 2mxn0q0tgx-1
+ bh=RGh5NtQDTg96POZKHr0ueTCWwKuIbxUzUPcmXpe3PxU=;
+ b=VtVanN8DtXn0kXIvq3J5CXjuC0kdF/yvRSDkI1v2S5AUo1Tzc5hWCl43IFwMXrI8GIiv
+ gF28Pu7SQAaWQtaX+0ud7NepqzZ1WkCzAL4r2EOP4kcA0UzHho3PkDaTIdJVkU/CN/8l
+ RBsAfoLjpEtv7nXYP3X2SvjULbKz0gFemyusUAyI8qFLWzWd/SBoPCfkf6pcivKiDWnn
+ HGBj1oB26x2jHxkRH44TmLXlJA3DZ05FvRCxXHY6ijj8Q5dIbmScMMx0jhNw6tDx/f1R
+ c1Yhg0W2hAraJxiwgiG+8I1hruUjjpgy5qT4E5iJTpxSkSfT3P2x6+nTJRgEgkTd4Y+T xw== 
+Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
+        by userp2120.oracle.com with ESMTP id 2mxnpr0nyj-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Wed, 10 Oct 2018 00:11:23 +0000
+        Wed, 10 Oct 2018 00:11:21 +0000
 Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id w9A0BMFB023816
+        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w9A0BFPK031801
         (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Wed, 10 Oct 2018 00:11:23 GMT
-Received: from abhmp0011.oracle.com (abhmp0011.oracle.com [141.146.116.17])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w9A0BMw9020784;
-        Wed, 10 Oct 2018 00:11:22 GMT
+        Wed, 10 Oct 2018 00:11:16 GMT
+Received: from abhmp0006.oracle.com (abhmp0006.oracle.com [141.146.116.12])
+        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w9A0BF0Q020726;
+        Wed, 10 Oct 2018 00:11:15 GMT
 Received: from localhost (/10.159.249.114)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Wed, 10 Oct 2018 00:11:21 +0000
-Subject: [PATCH 06/25] vfs: strengthen checking of file range inputs to
- generic_remap_checks
+        with ESMTP ; Wed, 10 Oct 2018 00:11:14 +0000
+Subject: [PATCH 05/25] vfs: check file ranges before cloning files
 From:   "Darrick J. Wong" <darrick.wong@oracle.com>
 To:     david@fromorbit.com, darrick.wong@oracle.com
 Cc:     sandeen@redhat.com, linux-nfs@vger.kernel.org,
         linux-cifs@vger.kernel.org, linux-unionfs@vger.kernel.org,
         linux-xfs@vger.kernel.org, linux-mm@kvack.org,
         linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        ocfs2-devel@oss.oracle.com
-Date:   Tue, 09 Oct 2018 17:11:20 -0700
-Message-ID: <153913028015.32295.15993665528948323051.stgit@magnolia>
+        Christoph Hellwig <hch@lst.de>, ocfs2-devel@oss.oracle.com
+Date:   Tue, 09 Oct 2018 17:11:13 -0700
+Message-ID: <153913027326.32295.7601238218404639876.stgit@magnolia>
 In-Reply-To: <153913023835.32295.13962696655740190941.stgit@magnolia>
 References: <153913023835.32295.13962696655740190941.stgit@magnolia>
 User-Agent: StGit/0.17.1-dirty
@@ -80,87 +79,249 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Darrick J. Wong <darrick.wong@oracle.com>
 
-File range remapping, if allowed to run past the destination file's EOF,
-is an optimization on a regular file write.  Regular file writes that
-extend the file length are subject to various constraints which are not
-checked by range cloning.
-
-This is a correctness problem because we're never allowed to touch
-ranges that the page cache can't support (s_maxbytes); we're not
-supposed to deal with large offsets (MAX_NON_LFS) if O_LARGEFILE isn't
-set; and we must obey resource limits (RLIMIT_FSIZE).
-
-Therefore, add these checks to the new generic_remap_checks function so
-that we curtail unexpected behavior.
+Move the file range checks from vfs_clone_file_prep into a separate
+generic_remap_checks function so that all the checks are collected in a
+central location.  This forms the basis for adding more checks from
+generic_write_checks that will make cloning's input checking more
+consistent with write input checking.
 
 Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
+Reviewed-by: Christoph Hellwig <hch@lst.de>
 ---
- mm/filemap.c |   39 +++++++++++++++++++++++++++++++++++++++
- 1 file changed, 39 insertions(+)
+ fs/ocfs2/refcounttree.c |    2 +
+ fs/read_write.c         |   53 +++++++-----------------------------
+ fs/xfs/xfs_reflink.c    |    2 +
+ include/linux/fs.h      |    9 ++++--
+ mm/filemap.c            |   70 +++++++++++++++++++++++++++++++++++++++++++++++
+ 5 files changed, 89 insertions(+), 47 deletions(-)
 
 
+diff --git a/fs/ocfs2/refcounttree.c b/fs/ocfs2/refcounttree.c
+index 7a5ee145c733..19e03936c5e1 100644
+--- a/fs/ocfs2/refcounttree.c
++++ b/fs/ocfs2/refcounttree.c
+@@ -4850,7 +4850,7 @@ int ocfs2_reflink_remap_range(struct file *file_in,
+ 	    (OCFS2_I(inode_out)->ip_flags & OCFS2_INODE_SYSTEM_FILE))
+ 		goto out_unlock;
+ 
+-	ret = vfs_clone_file_prep_inodes(inode_in, pos_in, inode_out, pos_out,
++	ret = vfs_clone_file_prep(file_in, pos_in, file_out, pos_out,
+ 			&len, is_dedupe);
+ 	if (ret <= 0)
+ 		goto out_unlock;
+diff --git a/fs/read_write.c b/fs/read_write.c
+index 8a2737f0d61d..f7b728d4972f 100644
+--- a/fs/read_write.c
++++ b/fs/read_write.c
+@@ -1717,12 +1717,12 @@ static int clone_verify_area(struct file *file, loff_t pos, u64 len, bool write)
+  * Returns: 0 for "nothing to clone", 1 for "something to clone", or
+  * the usual negative error code.
+  */
+-int vfs_clone_file_prep_inodes(struct inode *inode_in, loff_t pos_in,
+-			       struct inode *inode_out, loff_t pos_out,
+-			       u64 *len, bool is_dedupe)
++int vfs_clone_file_prep(struct file *file_in, loff_t pos_in,
++			struct file *file_out, loff_t pos_out,
++			u64 *len, bool is_dedupe)
+ {
+-	loff_t bs = inode_out->i_sb->s_blocksize;
+-	loff_t blen;
++	struct inode *inode_in = file_inode(file_in);
++	struct inode *inode_out = file_inode(file_out);
+ 	loff_t isize;
+ 	bool same_inode = (inode_in == inode_out);
+ 	int ret;
+@@ -1740,10 +1740,7 @@ int vfs_clone_file_prep_inodes(struct inode *inode_in, loff_t pos_in,
+ 	if (!S_ISREG(inode_in->i_mode) || !S_ISREG(inode_out->i_mode))
+ 		return -EINVAL;
+ 
+-	/* Are we going all the way to the end? */
+ 	isize = i_size_read(inode_in);
+-	if (isize == 0)
+-		return 0;
+ 
+ 	/* Zero length dedupe exits immediately; reflink goes to EOF. */
+ 	if (*len == 0) {
+@@ -1754,36 +1751,11 @@ int vfs_clone_file_prep_inodes(struct inode *inode_in, loff_t pos_in,
+ 		*len = isize - pos_in;
+ 	}
+ 
+-	/* Ensure offsets don't wrap and the input is inside i_size */
+-	if (pos_in + *len < pos_in || pos_out + *len < pos_out ||
+-	    pos_in + *len > isize)
+-		return -EINVAL;
+-
+-	/* Don't allow dedupe past EOF in the dest file */
+-	if (is_dedupe) {
+-		loff_t	disize;
+-
+-		disize = i_size_read(inode_out);
+-		if (pos_out >= disize || pos_out + *len > disize)
+-			return -EINVAL;
+-	}
+-
+-	/* If we're linking to EOF, continue to the block boundary. */
+-	if (pos_in + *len == isize)
+-		blen = ALIGN(isize, bs) - pos_in;
+-	else
+-		blen = *len;
+-
+-	/* Only reflink if we're aligned to block boundaries */
+-	if (!IS_ALIGNED(pos_in, bs) || !IS_ALIGNED(pos_in + blen, bs) ||
+-	    !IS_ALIGNED(pos_out, bs) || !IS_ALIGNED(pos_out + blen, bs))
+-		return -EINVAL;
+-
+-	/* Don't allow overlapped reflink within the same file */
+-	if (same_inode) {
+-		if (pos_out + blen > pos_in && pos_out < pos_in + blen)
+-			return -EINVAL;
+-	}
++	/* Check that we don't violate system file offset limits. */
++	ret = generic_remap_checks(file_in, pos_in, file_out, pos_out, len,
++			is_dedupe);
++	if (ret)
++		return ret;
+ 
+ 	/* Wait for the completion of any pending IOs on both files */
+ 	inode_dio_wait(inode_in);
+@@ -1816,7 +1788,7 @@ int vfs_clone_file_prep_inodes(struct inode *inode_in, loff_t pos_in,
+ 
+ 	return 1;
+ }
+-EXPORT_SYMBOL(vfs_clone_file_prep_inodes);
++EXPORT_SYMBOL(vfs_clone_file_prep);
+ 
+ int do_clone_file_range(struct file *file_in, loff_t pos_in,
+ 			struct file *file_out, loff_t pos_out, u64 len)
+@@ -1854,9 +1826,6 @@ int do_clone_file_range(struct file *file_in, loff_t pos_in,
+ 	if (ret)
+ 		return ret;
+ 
+-	if (pos_in + len > i_size_read(inode_in))
+-		return -EINVAL;
+-
+ 	ret = file_in->f_op->clone_file_range(file_in, pos_in,
+ 			file_out, pos_out, len);
+ 	if (!ret) {
+diff --git a/fs/xfs/xfs_reflink.c b/fs/xfs/xfs_reflink.c
+index d4feaeba8542..a4a7b2d9c8a1 100644
+--- a/fs/xfs/xfs_reflink.c
++++ b/fs/xfs/xfs_reflink.c
+@@ -1303,7 +1303,7 @@ xfs_reflink_remap_prep(
+ 	if (IS_DAX(inode_in) || IS_DAX(inode_out))
+ 		goto out_unlock;
+ 
+-	ret = vfs_clone_file_prep_inodes(inode_in, pos_in, inode_out, pos_out,
++	ret = vfs_clone_file_prep(file_in, pos_in, file_out, pos_out,
+ 			len, is_dedupe);
+ 	if (ret <= 0)
+ 		goto out_unlock;
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index 897eae8faee1..ba93a6e7dac4 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -1825,9 +1825,9 @@ extern ssize_t vfs_readv(struct file *, const struct iovec __user *,
+ 		unsigned long, loff_t *, rwf_t);
+ extern ssize_t vfs_copy_file_range(struct file *, loff_t , struct file *,
+ 				   loff_t, size_t, unsigned int);
+-extern int vfs_clone_file_prep_inodes(struct inode *inode_in, loff_t pos_in,
+-				      struct inode *inode_out, loff_t pos_out,
+-				      u64 *len, bool is_dedupe);
++extern int vfs_clone_file_prep(struct file *file_in, loff_t pos_in,
++			       struct file *file_out, loff_t pos_out,
++			       u64 *count, bool is_dedupe);
+ extern int do_clone_file_range(struct file *file_in, loff_t pos_in,
+ 			       struct file *file_out, loff_t pos_out, u64 len);
+ extern int vfs_clone_file_range(struct file *file_in, loff_t pos_in,
+@@ -2967,6 +2967,9 @@ extern int sb_min_blocksize(struct super_block *, int);
+ extern int generic_file_mmap(struct file *, struct vm_area_struct *);
+ extern int generic_file_readonly_mmap(struct file *, struct vm_area_struct *);
+ extern ssize_t generic_write_checks(struct kiocb *, struct iov_iter *);
++extern int generic_remap_checks(struct file *file_in, loff_t pos_in,
++				struct file *file_out, loff_t pos_out,
++				uint64_t *count, bool is_dedupe);
+ extern ssize_t generic_file_read_iter(struct kiocb *, struct iov_iter *);
+ extern ssize_t __generic_file_write_iter(struct kiocb *, struct iov_iter *);
+ extern ssize_t generic_file_write_iter(struct kiocb *, struct iov_iter *);
 diff --git a/mm/filemap.c b/mm/filemap.c
-index 14041a8468ba..59056bd9c58a 100644
+index 52517f28e6f4..14041a8468ba 100644
 --- a/mm/filemap.c
 +++ b/mm/filemap.c
-@@ -2974,6 +2974,27 @@ inline ssize_t generic_write_checks(struct kiocb *iocb, struct iov_iter *from)
+@@ -2974,6 +2974,76 @@ inline ssize_t generic_write_checks(struct kiocb *iocb, struct iov_iter *from)
  }
  EXPORT_SYMBOL(generic_write_checks);
  
-+static int
-+generic_remap_check_limits(struct file *file, loff_t pos, uint64_t *count)
++/*
++ * Performs necessary checks before doing a clone.
++ *
++ * Can adjust amount of bytes to clone.
++ * Returns appropriate error code that caller should return or
++ * zero in case the clone should be allowed.
++ */
++int generic_remap_checks(struct file *file_in, loff_t pos_in,
++			 struct file *file_out, loff_t pos_out,
++			 uint64_t *req_count, bool is_dedupe)
 +{
-+	struct inode *inode = file->f_mapping->host;
++	struct inode *inode_in = file_in->f_mapping->host;
++	struct inode *inode_out = file_out->f_mapping->host;
++	unsigned long limit = rlimit(RLIMIT_FSIZE);
++	uint64_t count = *req_count;
++	uint64_t bcount;
++	loff_t size_in, size_out;
++	loff_t bs = inode_out->i_sb->s_blocksize;
 +
-+	/* Don't exceed the LFS limits. */
-+	if (unlikely(pos + *count > MAX_NON_LFS &&
-+				!(file->f_flags & O_LARGEFILE))) {
-+		if (pos >= MAX_NON_LFS)
-+			return -EFBIG;
-+		*count = min(*count, MAX_NON_LFS - (uint64_t)pos);
++	/* The start of both ranges must be aligned to an fs block. */
++	if (!IS_ALIGNED(pos_in, bs) || !IS_ALIGNED(pos_out, bs))
++		return -EINVAL;
++
++	/* Ensure offsets don't wrap. */
++	if (pos_in + count < pos_in || pos_out + count < pos_out)
++		return -EINVAL;
++
++	size_in = i_size_read(inode_in);
++	size_out = i_size_read(inode_out);
++
++	/* Dedupe requires both ranges to be within EOF. */
++	if (is_dedupe &&
++	    (pos_in >= size_in || pos_in + count > size_in ||
++	     pos_out >= size_out || pos_out + count > size_out))
++		return -EINVAL;
++
++	/* Ensure the infile range is within the infile. */
++	if (pos_in >= size_in)
++		return -EINVAL;
++	count = min(count, size_in - (uint64_t)pos_in);
++
++	/*
++	 * If the user wanted us to link to the infile's EOF, round up to the
++	 * next block boundary for this check.
++	 *
++	 * Otherwise, make sure the count is also block-aligned, having
++	 * already confirmed the starting offsets' block alignment.
++	 */
++	if (pos_in + count == size_in) {
++		bcount = ALIGN(size_in, bs) - pos_in;
++	} else {
++		if (!IS_ALIGNED(count, bs))
++			return -EINVAL;
++
++		bcount = count;
 +	}
 +
-+	/* Don't operate on ranges the page cache doesn't support. */
-+	if (unlikely(pos >= inode->i_sb->s_maxbytes))
-+		return -EFBIG;
++	/* Don't allow overlapped cloning within the same file. */
++	if (inode_in == inode_out &&
++	    pos_out + bcount > pos_in &&
++	    pos_out < pos_in + bcount)
++		return -EINVAL;
 +
-+	*count = min(*count, inode->i_sb->s_maxbytes - (uint64_t)pos);
++	/* For now we don't support changing the length. */
++	if (*req_count != count)
++		return -EINVAL;
++
 +	return 0;
 +}
 +
- /*
-  * Performs necessary checks before doing a clone.
-  *
-@@ -2992,6 +3013,7 @@ int generic_remap_checks(struct file *file_in, loff_t pos_in,
- 	uint64_t bcount;
- 	loff_t size_in, size_out;
- 	loff_t bs = inode_out->i_sb->s_blocksize;
-+	int ret;
- 
- 	/* The start of both ranges must be aligned to an fs block. */
- 	if (!IS_ALIGNED(pos_in, bs) || !IS_ALIGNED(pos_out, bs))
-@@ -3015,6 +3037,23 @@ int generic_remap_checks(struct file *file_in, loff_t pos_in,
- 		return -EINVAL;
- 	count = min(count, size_in - (uint64_t)pos_in);
- 
-+	/* Don't exceed RLMIT_FSIZE in the file we're writing into. */
-+	if (limit != RLIM_INFINITY) {
-+		if (pos_out >= limit) {
-+			send_sig(SIGXFSZ, current, 0);
-+			return -EFBIG;
-+		}
-+		count = min(count, limit - (uint64_t)pos_out);
-+	}
-+
-+	ret = generic_remap_check_limits(file_in, pos_in, &count);
-+	if (ret)
-+		return ret;
-+
-+	ret = generic_remap_check_limits(file_out, pos_out, &count);
-+	if (ret)
-+		return ret;
-+
- 	/*
- 	 * If the user wanted us to link to the infile's EOF, round up to the
- 	 * next block boundary for this check.
+ int pagecache_write_begin(struct file *file, struct address_space *mapping,
+ 				loff_t pos, unsigned len, unsigned flags,
+ 				struct page **pagep, void **fsdata)
 

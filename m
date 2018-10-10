@@ -2,144 +2,211 @@ Return-Path: <SRS0=ayZ+=MW=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.7 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_PASS,UNPARSEABLE_RELAY,URIBL_BLOCKED,USER_AGENT_MUTT
+X-Spam-Status: No, score=-0.5 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
+	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CB9D2C43441
-	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Oct 2018 23:13:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3A361C43441
+	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Oct 2018 23:43:42 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 616CC20870
-	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Oct 2018 23:13:54 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="hLjThU3G"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 616CC20870
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=oracle.com
+	by mail.kernel.org (Postfix) with ESMTP id DB9882086D
+	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Oct 2018 23:43:41 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org DB9882086D
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=gmx.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727799AbeJKGiN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 11 Oct 2018 02:38:13 -0400
-Received: from aserp2120.oracle.com ([141.146.126.78]:38294 "EHLO
-        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727693AbeJKGiL (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 11 Oct 2018 02:38:11 -0400
-Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
-        by aserp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w9AMxIf4107133;
-        Wed, 10 Oct 2018 23:13:42 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=date : from : to : cc
- : subject : message-id : references : mime-version : content-type :
- in-reply-to; s=corp-2018-07-02;
- bh=2q0RMSZCctyYnNETRwNzadxCii8i23iwSD8hokafvUU=;
- b=hLjThU3G75U5tFWjOd5ZdTA3QrRqQD0vPqJU2TDBDSL9Jfrcs4bGl86/gLkMS2Vju+B8
- pgTMpzNQaml7H7VSdn3OPgsoLqNUjfg3cnoxaCQzPNfq/CJlIae/3EE/nMPkWe/S8W23
- BAxth6YnLKbFwDpDyAy3C0zJgzoGlWFY2VU8uuniBVtIsD/gGX9xrueN7dJPV9SdONti
- CTAiq/Jr+KYRUH8J158Ajw1xBkUoIHzev2Ti/7+hsOQAnoTLa06khCuSwDVMX/0HbLOc
- SyDQoUaGqpNSwF3xuJS8xf1EydeNsN/LyobQD1XR3hrg2F3lgYH8IZnDp4Bvndu0OPRa ag== 
-Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
-        by aserp2120.oracle.com with ESMTP id 2mxn0q758b-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Wed, 10 Oct 2018 23:13:42 +0000
-Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w9ANDf3V005961
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Wed, 10 Oct 2018 23:13:41 GMT
-Received: from abhmp0007.oracle.com (abhmp0007.oracle.com [141.146.116.13])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w9ANDfIp020298;
-        Wed, 10 Oct 2018 23:13:41 GMT
-Received: from localhost (/67.169.218.210)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Wed, 10 Oct 2018 23:13:41 +0000
-Date:   Wed, 10 Oct 2018 16:13:39 -0700
-From:   "Darrick J. Wong" <darrick.wong@oracle.com>
-To:     Dave Chinner <david@fromorbit.com>
-Cc:     sandeen@redhat.com, linux-nfs@vger.kernel.org,
-        linux-cifs@vger.kernel.org, linux-unionfs@vger.kernel.org,
-        linux-xfs@vger.kernel.org, linux-mm@kvack.org,
-        linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        Christoph Hellwig <hch@lst.de>, ocfs2-devel@oss.oracle.com
-Subject: Re: [PATCH 05/25] vfs: check file ranges before cloning files
-Message-ID: <20181010231339.GA6701@magnolia>
-References: <153913023835.32295.13962696655740190941.stgit@magnolia>
- <153913027326.32295.7601238218404639876.stgit@magnolia>
- <20181010230639.GN6311@dastard>
+        id S1726196AbeJKHII (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 11 Oct 2018 03:08:08 -0400
+Received: from mout.gmx.net ([212.227.17.22]:43727 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1725968AbeJKHIH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 11 Oct 2018 03:08:07 -0400
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx103
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 0M4o41-1flIjW1AVx-00z28v; Thu, 11
+ Oct 2018 01:43:24 +0200
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx103
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 0M4o41-1flIjW1AVx-00z28v; Thu, 11
+ Oct 2018 01:43:24 +0200
+Subject: Re: Scrub aborts due to corrupt leaf
+To:     Larkin Lowrey <llowrey@nuclearwinter.com>,
+        =?UTF-8?Q?Holger_Hoffst=c3=a4tte?= <holger@applied-asynchrony.com>,
+        Chris Murphy <lists@colorremedies.com>
+Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <3af15796-2629-ef87-21c9-2bb3c1366732@nuclearwinter.com>
+ <3725e6f2-b1ed-8d3d-aec7-1518dad1cb03@gmx.com>
+ <3bf7c73d-ce25-88ce-271f-ab8c9ae6c01d@nuclearwinter.com>
+ <3d82a2b9-41da-26b8-9b74-71d17d8a8a76@gmx.com>
+ <273c99b2-d7e0-bea3-a4a4-7337115beb6f@nuclearwinter.com>
+ <0136878c-d4ae-37b0-4903-601367286cf7@nuclearwinter.com>
+ <e84595a6-b1c4-0698-b5d3-251165a11412@gmx.com>
+ <CAJCQCtR-j3c99KSpsnUuy5yn5Jx7NAYGXmiDfcrZt4yc8ghCEA@mail.gmail.com>
+ <cd4ffeae-0b06-f8ae-1a4e-1165428daee2@gmx.com>
+ <9c7290ea-668d-c10a-9328-91adfac14d5a@nuclearwinter.com>
+ <dd08eb00-faf8-cd88-aeb6-e5ed75a2889f@nuclearwinter.com>
+ <4652a690-26ed-fb90-9386-3020ee9e9841@applied-asynchrony.com>
+ <556693f8-6985-dd6f-a376-38325ad68e07@nuclearwinter.com>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
+ bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
+ ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
+ rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
+ FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
+ 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
+ ilaVzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
+ CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
+ /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
+ GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
+ q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
+ ABEBAAHCwHwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
+ CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
+ f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
+ mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
+ 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
+ h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
+Message-ID: <5f77e276-7fe7-aeb4-6927-5f2c9f1c52b0@gmx.com>
+Date:   Thu, 11 Oct 2018 07:43:19 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.0
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20181010230639.GN6311@dastard>
-User-Agent: Mutt/1.9.4 (2018-02-28)
-X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9042 signatures=668706
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=0 malwarescore=0
- phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
- adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.0.1-1807170000 definitions=main-1810100213
+In-Reply-To: <556693f8-6985-dd6f-a376-38325ad68e07@nuclearwinter.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="l8nCxUbonC9lfvSpeAVdX3CzJf59mSpH5"
+X-Provags-ID: V03:K1:SwN8uzjjldxsehwAU6PysgK9AOHXfpl9aSNNG9USicH019T+8DI
+ LDgcT7vDmSgMMMNgVu08pq4a8kyI+2nWlJINqXIipzAm6h1O32eQgMt28zC5UuyDX84rZQC
+ N/1tAI5r4Oh1V85ucD0AFpPO6eJ/8/4O36B9AhKnzFzOo8v8XkEuFx/rCvr+m2/yGxjJ5PJ
+ XKdJF/B+Y0kN2ts/M+xoA==
+X-UI-Out-Filterresults: notjunk:1;V01:K0:15y0QTPNICY=:st5t9dwiFnwm1+eeU3CGQU
+ 8kTBCE9gVPbSKx03X4NGLjsuwT8Jm7rw9067xFYqdvtalaM86HKQJpbxtK/2r37CDmM2+RCxw
+ f0jHeOM5rULtjcbHTwrcwJHpII5N/Hw76BEN6LwTKLI2lgg3cPcDwDH3f2bwz3ueV1Z1Mw3x4
+ 4BC7Xbq3HrwTJSl9PJsBjhrG4Aomv3ggNIlKDoTDV7bk69UMOLS0noPB2n3OCe5rJg+bLJ6zh
+ NWMkImS7c7Ga9DoWFaqi8CmFLKtPEyo3cnBfM/o4lEMDG0F+HxtMZGwUmwCMVi7rmS9a+bWn6
+ ht4d+rHUbeao9SdE1dX7bZV4DcnJcM1E+y62OF7/6s11UmQB5/scFErhqjdwAqj435l39xMzS
+ gbWrwzLMcL1pkatbUQ+75IaC4oINUmvtgAxLqf71Z/up6YIkeeLBCsLs8MsEV1drOvZLCvZHw
+ FvnpwFFdKZruRXCz18MKsdraSz3mJM8aSachhz+4Y1RT55qXcdUjT1wrQyRulNQpIIPwYVobD
+ altUnZtuDvL/uOYz+Sbczf7PIXNoLNCiB5dzCXsMw3rUt6FgpAqJTJD/Ehd73SCk7larqkDEW
+ lLKoyx0Yy8NJLn9JdDN6ffAgIQzvr7J3oYu10vqWtwK6C6BdV2tI2F2FNoeotEAqMroSJhzHi
+ 7u4KE0x6+TE80dE30Jq53K3/sfxQh/Qg4yI47nY8Bjw75DYZtg6GS8Ec2LLDoN9NX6VCr/W+g
+ vRgFDDLer9Wa8/GJ3LErIvXY7gjGT1vyT8t+0M5FFiMGe9vEYznfziI3H2iLuNmeQ+eRtpSlv
+ EUOf3wmutYFdHFZqyhKu3S03UXhxQ==
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Oct 11, 2018 at 10:06:39AM +1100, Dave Chinner wrote:
-> On Tue, Oct 09, 2018 at 05:11:13PM -0700, Darrick J. Wong wrote:
-> > From: Darrick J. Wong <darrick.wong@oracle.com>
-> > 
-> > Move the file range checks from vfs_clone_file_prep into a separate
-> > generic_remap_checks function so that all the checks are collected in a
-> > central location.  This forms the basis for adding more checks from
-> > generic_write_checks that will make cloning's input checking more
-> > consistent with write input checking.
-> > 
-> > Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
-> > Reviewed-by: Christoph Hellwig <hch@lst.de>
-> ....
-> > --- a/fs/read_write.c
-> > +++ b/fs/read_write.c
-> > @@ -1717,12 +1717,12 @@ static int clone_verify_area(struct file *file, loff_t pos, u64 len, bool write)
-> >   * Returns: 0 for "nothing to clone", 1 for "something to clone", or
-> >   * the usual negative error code.
-> >   */
-> > -int vfs_clone_file_prep_inodes(struct inode *inode_in, loff_t pos_in,
-> > -			       struct inode *inode_out, loff_t pos_out,
-> > -			       u64 *len, bool is_dedupe)
-> > +int vfs_clone_file_prep(struct file *file_in, loff_t pos_in,
-> > +			struct file *file_out, loff_t pos_out,
-> > +			u64 *len, bool is_dedupe)
-> >  {
-> > -	loff_t bs = inode_out->i_sb->s_blocksize;
-> > -	loff_t blen;
-> > +	struct inode *inode_in = file_inode(file_in);
-> > +	struct inode *inode_out = file_inode(file_out);
-> >  	loff_t isize;
-> >  	bool same_inode = (inode_in == inode_out);
-> >  	int ret;
-> > @@ -1740,10 +1740,7 @@ int vfs_clone_file_prep_inodes(struct inode *inode_in, loff_t pos_in,
-> >  	if (!S_ISREG(inode_in->i_mode) || !S_ISREG(inode_out->i_mode))
-> >  		return -EINVAL;
-> >  
-> > -	/* Are we going all the way to the end? */
-> >  	isize = i_size_read(inode_in);
-> > -	if (isize == 0)
-> > -		return 0;
-> 
-> This looks like a change of behaviour. Instead of skipping zero
-> legnth source files and returning success, this will now return
-> -EINVAL as other checks fail? That needs to be documented in the
-> commit message if it's intentional and a valid change to make...
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--l8nCxUbonC9lfvSpeAVdX3CzJf59mSpH5
+Content-Type: multipart/mixed; boundary="C8og6iq8VcpbEqOLe9bIH4bBpk4JmxVwe";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: Larkin Lowrey <llowrey@nuclearwinter.com>,
+ =?UTF-8?Q?Holger_Hoffst=c3=a4tte?= <holger@applied-asynchrony.com>,
+ Chris Murphy <lists@colorremedies.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Message-ID: <5f77e276-7fe7-aeb4-6927-5f2c9f1c52b0@gmx.com>
+Subject: Re: Scrub aborts due to corrupt leaf
+References: <3af15796-2629-ef87-21c9-2bb3c1366732@nuclearwinter.com>
+ <3725e6f2-b1ed-8d3d-aec7-1518dad1cb03@gmx.com>
+ <3bf7c73d-ce25-88ce-271f-ab8c9ae6c01d@nuclearwinter.com>
+ <3d82a2b9-41da-26b8-9b74-71d17d8a8a76@gmx.com>
+ <273c99b2-d7e0-bea3-a4a4-7337115beb6f@nuclearwinter.com>
+ <0136878c-d4ae-37b0-4903-601367286cf7@nuclearwinter.com>
+ <e84595a6-b1c4-0698-b5d3-251165a11412@gmx.com>
+ <CAJCQCtR-j3c99KSpsnUuy5yn5Jx7NAYGXmiDfcrZt4yc8ghCEA@mail.gmail.com>
+ <cd4ffeae-0b06-f8ae-1a4e-1165428daee2@gmx.com>
+ <9c7290ea-668d-c10a-9328-91adfac14d5a@nuclearwinter.com>
+ <dd08eb00-faf8-cd88-aeb6-e5ed75a2889f@nuclearwinter.com>
+ <4652a690-26ed-fb90-9386-3020ee9e9841@applied-asynchrony.com>
+ <556693f8-6985-dd6f-a376-38325ad68e07@nuclearwinter.com>
+In-Reply-To: <556693f8-6985-dd6f-a376-38325ad68e07@nuclearwinter.com>
 
-Meh, I'll make another patch.  btrfs has never had this behavior.
+--C8og6iq8VcpbEqOLe9bIH4bBpk4JmxVwe
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-$ ls /mnt/a
--rw-r--r-- 1 root root 0 Oct 10 16:10 /mnt/a
-$ xfs_io -f -c 'reflink /mnt/a 1000000 0 4096' /mnt/b
-XFS_IOC_CLONE_RANGE: Invalid argument
 
-So it's a bug in the vfs prep functions.
 
---D
+On 2018/10/11 =E4=B8=8A=E5=8D=881:25, Larkin Lowrey wrote:
+> On 10/10/2018 12:04 PM, Holger Hoffst=C3=A4tte wrote:
+>> On 10/10/18 17:44, Larkin Lowrey wrote:
+>> (..)
+>>> About once a week, or so, I'm running into the above situation where
+>>> FS seems to deadlock. All IO to the FS blocks, there is no IO
+>>> activity at all. I have to hard reboot the system to recover. There
+>>> are no error indications except for the following which occurs well
+>>> before the FS freezes up:
+>>>
+>>> BTRFS warning (device dm-3): block group 78691883286528 has wrong
+>>> amount of free space
+>>> BTRFS warning (device dm-3): failed to load free space cache for
+>>> block group 78691883286528, rebuilding it now
+>>>
+>>> Do I have any options other the nuking the FS and starting over?
+>>
+>> Unmount cleanly & mount again with -o space_cache=3Dv2.
+>=20
+> It froze while unmounting. The attached zip is a stack dump captured vi=
+a
+> 'echo t > /proc/sysrq-trigger'. A second attempt after a hard reboot
+> worked.
 
-> Cheers,
-> 
-> Dave.
-> -- 
-> Dave Chinner
-> david@fromorbit.com
+The trace shows it's indeed free space cache write back code causing the
+problem.
+
+It may be a deadlock caused by nested tree locks caused by extent
+allocator and free space writeback code.
+
+To avoid such problem, you could completely disable v1 free space cache
+or goes to v2 cache.
+
+Chris Murphy's guide should be pretty good.
+
+
+Personally speaking, if your usage is not a performance critical case,
+the following things can be disable and avoid possible bugs:
+
+1) free space cache
+   It only increase the speed to lookup free space.
+2) tree log
+   It only speed up fsync() causes. Without it we just falls back to
+   sync()
+
+So I'd recommend the following mount option:
+nospace_cache,notreelog
+
+Thanks,
+Qu
+
+>=20
+> --Larkin
+
+
+--C8og6iq8VcpbEqOLe9bIH4bBpk4JmxVwe--
+
+--l8nCxUbonC9lfvSpeAVdX3CzJf59mSpH5
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlu+jpcACgkQwj2R86El
+/qjCsQf+JucsA1aLnznaY19SHDf3sXzSr8linLVNOb1adDRhP4JGdSPBNak+19HE
+Rs80uQV6Q7yyly0clJ4N15EJ4b4EG1MYem/mU+yvjIn1YtoXLP6MXRaY5EehS2a3
++Ub1pGMY02LVZMRGqWwRPwg7/WmGFC3+ba3A9ugSAZfM/IYObzLLghTYyQKx4ZUe
+609YNadhcExuv7zc0gXKE3kfSRXbd1CKQLq5vxWPWbEZAYCM3FCdeM+8V8bZxLT0
+Hx5NDuWXlJkar37+q3fIeFiKiBNX+ljzoGM9vCyNYq4pp5slHWrArtqszcNf67C7
+evkowthIxgNHqq85vVDkc+ie0KOaog==
+=wCzF
+-----END PGP SIGNATURE-----
+
+--l8nCxUbonC9lfvSpeAVdX3CzJf59mSpH5--

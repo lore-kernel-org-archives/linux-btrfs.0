@@ -7,62 +7,61 @@ X-Spam-Status: No, score=-6.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
 	SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0B5CAC677FC
-	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Oct 2018 20:36:01 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 016AAC677FC
+	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Oct 2018 20:36:32 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id C404820644
-	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Oct 2018 20:36:00 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id AA26620644
+	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Oct 2018 20:36:31 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="pr8jrn1G"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org C404820644
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="TDoo3Fyh"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org AA26620644
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726218AbeJLEEx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 12 Oct 2018 00:04:53 -0400
-Received: from mail-vs1-f65.google.com ([209.85.217.65]:36367 "EHLO
-        mail-vs1-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725819AbeJLEEx (ORCPT
+        id S1726302AbeJLEFY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 12 Oct 2018 00:05:24 -0400
+Received: from mail-vs1-f66.google.com ([209.85.217.66]:39995 "EHLO
+        mail-vs1-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725819AbeJLEFY (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 12 Oct 2018 00:04:53 -0400
-Received: by mail-vs1-f65.google.com with SMTP id c205so9878879vsd.3
-        for <linux-btrfs@vger.kernel.org>; Thu, 11 Oct 2018 13:35:58 -0700 (PDT)
+        Fri, 12 Oct 2018 00:05:24 -0400
+Received: by mail-vs1-f66.google.com with SMTP id z130-v6so9879050vsc.7
+        for <linux-btrfs@vger.kernel.org>; Thu, 11 Oct 2018 13:36:29 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20161025;
         h=mime-version:references:in-reply-to:reply-to:from:date:message-id
          :subject:to:cc:content-transfer-encoding;
-        bh=dwIykBiFSNPOCz6JIgn9lRs0ISesB0hDz/nYvxPM3bw=;
-        b=pr8jrn1GnA1IvvsCKE7qoNvQVqlbBOdtWVJyhB7xgjqLiwIP7gI+vF3zOyvH5vhYFB
-         BWMd4gv9TC03z/jibOp3e+UHU5OS0PGlIBSySC50nMiP6Ugr/VbHZbGgi56i1YN+TEe5
-         Ma0tYikxQkj6Hyhc8n6dO2lUDCYxRb/ff3h3xoRdCqPKr80rrZXDnO0+ruYHrFRuKLdH
-         19oHeBVlUdoqP9E/eWNd+K0VSYNoAGTFFXbFQ1djO9pw1TPDTmbwEzcFCwtdsctV+gQN
-         r9vkdROHEqb5RSOdMnk689lnQcVFHTv/8RNK7wqV2m32SJbee0rFHygSZLBaG5Q7+iyt
-         /1UQ==
+        bh=NY7+FCsh7jtR3vWsxpTFn5v123ULd4qoLLkUBGAQymY=;
+        b=TDoo3FyhrhcDZDFlPwWyfGRhn4QLXkb0RVKyKgh7tH8c3/oVtQ+t9Ah+k+fOAHUguH
+         nteVodA2H4exlri5KjH+y1NyhkmXrKe6aqZVUtzWc1ERL3pB0/T56aLXYR1IzWBsecW/
+         1E5RM5yalrp9WrK+xQ9ngs4O99Ex3zM5qTaicjbIdkuMil9LjsOgtXCLPn5YqvOGXot+
+         iYdcSsd/xKmobveyWyTiBmRcge1dVfjFs2oTx6W0Y1XWoYGfd5nKvuTHiAwAyBvav/p3
+         4Nkx+ITGwBOjmN8Y1S2ar8h6dyPssZUuE8eIEvSOXgNb2pzfG7mcFch6bz/S6xv7Qz9V
+         E7Hw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:mime-version:references:in-reply-to:reply-to
          :from:date:message-id:subject:to:cc:content-transfer-encoding;
-        bh=dwIykBiFSNPOCz6JIgn9lRs0ISesB0hDz/nYvxPM3bw=;
-        b=kqoJfRQu5Tfa4VQtKFt9by9gm4FGxUIKmD5HeJIRAweU/WZxoPKeiSwectrAAhUkkz
-         NypjbrH4x8SXgczZwMQvEvrHn5O3eb/iSt/9RqIsNx695lzifu6HWKpDtwyO7p7RVeKd
-         LXTZHPaCLZuYhN3dS9XsAFTIxE42RVpCq23MKVLIZklzNrO+csupqgC6ED/lXAbrsUSR
-         lgMbIE+s6G3sRLQuiZtED9CKlmm98GkhXVn0KUQ005FyX4p21VXdY0B39O4ibRazo85f
-         bg8edWDc73osEFLlltwiw3z0JgP9KUieLQlXm6Iwr3kfKIVl+Ojxs9lR2b2/G+qyk7gR
-         /xaw==
-X-Gm-Message-State: ABuFfoif+xMoOnyScXbTUTJQeO9xNHeta7yLXXSaTbRXYIAtXeuSvDK+
-        z1SFQ8bjvOkNLHLfAiq/J1lMP4WL9ibPfihQ95c=
-X-Google-Smtp-Source: ACcGV60BYJcKAEbawrhK9awJRdefStDfdKQ36+463OWNQVM5LmShTDxOqn3+6tZnp6uHm6JjN0Um/xbRhdogrXwfsmw=
-X-Received: by 2002:ab0:4812:: with SMTP id b18mr1496536uad.30.1539290158406;
- Thu, 11 Oct 2018 13:35:58 -0700 (PDT)
+        bh=NY7+FCsh7jtR3vWsxpTFn5v123ULd4qoLLkUBGAQymY=;
+        b=W9mdNQXayggZ1nafzhzFz2ifPLzxDl+Hz7hiPHrCQP2KJULKt8iJZRDu95+o61OPUe
+         0ffoDRJ2GyyM+Km4NVWyD6YCQEmqY2M3kDBdu8GJzr35ShzEC6D5FSbxOfiA/4V+3YKw
+         n9EsCjziwZMk9ApCtmo1OGoVCfBDTxEDypulQ8WFmSqsVvBN7YcqhAnmqicZLYABLmTj
+         Yukmr3wM5/AXxhaO4VRVV7arVRp+OP5gqX674lVfwtQSQUc7niLqQroR+P67zWp8cR3A
+         hs7wPJ6LnM8JY3iOyXzW6JSNu83ekVtvZysDZyX1GqpnzE1rBTdaeiW8nR7wR81bTVZN
+         wFCQ==
+X-Gm-Message-State: ABuFfogFiN7D9ApLXKbccOqPTjt113G3NAy8/1bjJAwb6ZAgyS7xD6gX
+        AH1/Qm2EAV/Uk2UUy6h9dH+31avS2RoXFqHvOHVkS6fZ
+X-Google-Smtp-Source: ACcGV623DsODujXKMebK4PmvPhiuv15Ai+9o+EbVY2TqH522I4OnpHN8fvx8W8VVCfZ4pBVF3MnnwBFTQCJhobxStuc=
+X-Received: by 2002:a67:4482:: with SMTP id y2mr1317555vsf.90.1539290188913;
+ Thu, 11 Oct 2018 13:36:28 -0700 (PDT)
 MIME-Version: 1.0
-References: <20181011195431.3441-1-josef@toxicpanda.com> <20181011195431.3441-33-josef@toxicpanda.com>
-In-Reply-To: <20181011195431.3441-33-josef@toxicpanda.com>
+References: <20181011195431.3441-1-josef@toxicpanda.com> <20181011195431.3441-43-josef@toxicpanda.com>
+In-Reply-To: <20181011195431.3441-43-josef@toxicpanda.com>
 Reply-To: fdmanana@gmail.com
 From:   Filipe Manana <fdmanana@gmail.com>
-Date:   Thu, 11 Oct 2018 21:35:46 +0100
-Message-ID: <CAL3q7H6J6mLpr-toJporWoUcAmJ1HXRGOhRujf0dgxPRT3v=dQ@mail.gmail.com>
-Subject: Re: [PATCH 32/42] btrfs: only free reserved extent if we didn't
- insert it
+Date:   Thu, 11 Oct 2018 21:36:17 +0100
+Message-ID: <CAL3q7H5s+nVkay9-9BYJuQiKoGR-ayp-EzZEUSWGqCt7sDX9uA@mail.gmail.com>
+Subject: Re: [PATCH 42/42] btrfs: don't run delayed_iputs in commit
 To:     Josef Bacik <josef@toxicpanda.com>
 Cc:     kernel-team@fb.com, linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
@@ -74,74 +73,51 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 On Thu, Oct 11, 2018 at 8:58 PM Josef Bacik <josef@toxicpanda.com> wrote:
 >
-> When we insert the file extent once the ordered extent completes we free
-> the reserved extent reservation as it'll have been migrated to the
-> bytes_used counter.  However if we error out after this step we'll still
-> clear the reserved extent reservation, resulting in a negative
-> accounting of the reserved bytes for the block group and space info.
-> Fix this by only doing the free if we didn't successfully insert a file
-> extent for this extent.
+> This could result in a really bad case where we do something like
+>
+> evict
+>   evict_refill_and_join
+>     btrfs_commit_transaction
+>       btrfs_run_delayed_iputs
+>         evict
+>           evict_refill_and_join
+>             btrfs_commit_transaction
+> ... forever
+>
+> We have plenty of other places where we run delayed iputs that are much
+> safer, let those do the work.
 >
 > Signed-off-by: Josef Bacik <josef@toxicpanda.com>
-> Reviewed-by: Omar Sandoval <osandov@fb.com>
 Reviewed-by: Filipe Manana <fdmanana@suse.com>
 
+Great catch!
+
 > ---
->  fs/btrfs/inode.c | 10 +++++++++-
->  1 file changed, 9 insertions(+), 1 deletion(-)
+>  fs/btrfs/transaction.c | 9 ---------
+>  1 file changed, 9 deletions(-)
 >
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 5a91055a13b2..2b257d14bd3d 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -2992,6 +2992,7 @@ static int btrfs_finish_ordered_io(struct btrfs_ord=
-ered_extent *ordered_extent)
->         bool truncated =3D false;
->         bool range_locked =3D false;
->         bool clear_new_delalloc_bytes =3D false;
-> +       bool clear_reserved_extent =3D true;
+> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+> index 9168efaca37e..c91dc36fccae 100644
+> --- a/fs/btrfs/transaction.c
+> +++ b/fs/btrfs/transaction.c
+> @@ -2265,15 +2265,6 @@ int btrfs_commit_transaction(struct btrfs_trans_ha=
+ndle *trans)
 >
->         if (!test_bit(BTRFS_ORDERED_NOCOW, &ordered_extent->flags) &&
->             !test_bit(BTRFS_ORDERED_PREALLOC, &ordered_extent->flags) &&
-> @@ -3095,10 +3096,12 @@ static int btrfs_finish_ordered_io(struct btrfs_o=
-rdered_extent *ordered_extent)
->                                                 logical_len, logical_len,
->                                                 compress_type, 0, 0,
->                                                 BTRFS_FILE_EXTENT_REG);
-> -               if (!ret)
-> +               if (!ret) {
-> +                       clear_reserved_extent =3D false;
->                         btrfs_release_delalloc_bytes(fs_info,
->                                                      ordered_extent->star=
-t,
->                                                      ordered_extent->disk=
-_len);
-> +               }
->         }
->         unpin_extent_cache(&BTRFS_I(inode)->extent_tree,
->                            ordered_extent->file_offset, ordered_extent->l=
-en,
-> @@ -3159,8 +3162,13 @@ static int btrfs_finish_ordered_io(struct btrfs_or=
-dered_extent *ordered_extent)
->                  * wrong we need to return the space for this ordered ext=
-ent
->                  * back to the allocator.  We only free the extent in the
->                  * truncated case if we didn't write out the extent at al=
-l.
-> +                *
-> +                * If we made it past insert_reserved_file_extent before =
-we
-> +                * errored out then we don't need to do this as the accou=
-nting
-> +                * has already been done.
->                  */
->                 if ((ret || !logical_len) &&
-> +                   clear_reserved_extent &&
->                     !test_bit(BTRFS_ORDERED_NOCOW, &ordered_extent->flags=
-) &&
->                     !test_bit(BTRFS_ORDERED_PREALLOC, &ordered_extent->fl=
-ags))
->                         btrfs_free_reserved_extent(fs_info,
+>         kmem_cache_free(btrfs_trans_handle_cachep, trans);
+>
+> -       /*
+> -        * If fs has been frozen, we can not handle delayed iputs, otherw=
+ise
+> -        * it'll result in deadlock about SB_FREEZE_FS.
+> -        */
+> -       if (current !=3D fs_info->transaction_kthread &&
+> -           current !=3D fs_info->cleaner_kthread &&
+> -           !test_bit(BTRFS_FS_FROZEN, &fs_info->flags))
+> -               btrfs_run_delayed_iputs(fs_info);
+> -
+>         return ret;
+>
+>  scrub_continue:
 > --
 > 2.14.3
 >

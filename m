@@ -2,128 +2,139 @@ Return-Path: <SRS0=9zVn=MX=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.2 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+X-Spam-Status: No, score=-8.7 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,UNPARSEABLE_RELAY autolearn=ham
-	autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_MUTT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 34105C32788
-	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Oct 2018 04:15:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 01169C32788
+	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Oct 2018 04:25:27 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id E6A0F2077C
-	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Oct 2018 04:15:36 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 99C3220835
+	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Oct 2018 04:25:27 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="jiaPMQek"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org E6A0F2077C
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="TlYVly4/"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 99C3220835
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=oracle.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727739AbeJKLk5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 11 Oct 2018 07:40:57 -0400
-Received: from userp2120.oracle.com ([156.151.31.85]:44368 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726047AbeJKLk5 (ORCPT
+        id S1727170AbeJKLut (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 11 Oct 2018 07:50:49 -0400
+Received: from userp2130.oracle.com ([156.151.31.86]:44412 "EHLO
+        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726047AbeJKLut (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 11 Oct 2018 07:40:57 -0400
-Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w9B4DsHP002714;
-        Thu, 11 Oct 2018 04:15:29 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : from : to :
- cc : date : message-id : in-reply-to : references : mime-version :
- content-type : content-transfer-encoding; s=corp-2018-07-02;
- bh=GtHOAv/QF0y7KDuBC7HZvhRe0zfnNWbV0kEOmXhecBY=;
- b=jiaPMQekkirLHjdnXajmGlZYaH6AI90VeT9yzBHvNtkNFPFeOMCGxenmXX8If2+YeXQX
- QrOaiy1nnibe1CJ9gHV/8yR/ibiw2qh4XqgJtD9k5H2qu+pD8jvp+dpmsAV2B1FRWlZt
- 5CLbIyDNqL+lhms66iPnQ29ghqBQJtqR9URBwyVgSjGHKeTUCjRDZouV3Za/mNOX2vom
- 7tzCyt1CqRTl8OrrJaocWA7rGoZGR2Uk4xMgVcJ5Yf64Yfsc5Zw4wmkhVlh7e0KQEQ5J
- pcNS4WJtPiT863q3yPY5PseJfOvUocfrdP+3CBejMb/wtQm9vY9U6L3WQgnrfFuGzut/ nA== 
-Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
-        by userp2120.oracle.com with ESMTP id 2mxnpr996g-1
+        Thu, 11 Oct 2018 07:50:49 -0400
+Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
+        by userp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w9B4ODPk052205;
+        Thu, 11 Oct 2018 04:25:25 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=date : from : to : cc
+ : subject : message-id : references : mime-version : content-type :
+ in-reply-to; s=corp-2018-07-02;
+ bh=9ZAJQcN7dR+twMTnwvp1XS+bex9XVRU0JTTTLDEkbxY=;
+ b=TlYVly4/TevunJvzCJNPPZsOd+2/RvBelHQxQUqCN70S+XRhXF0E6Hq6HS+w5wpejszN
+ scBsxCRI4+j9HQzVpgb/AhBAFhZbI5Xj2TkKhexKLc2fEUtfeaFH8PJtZSGI6kaRnnYm
+ p/bscqueJ+MnZFRHYnvlZ+Qk8+ZdvFasj2kmoR24Sj5c1jHa3zhVf6v2cHqsSGENYiXg
+ Cch8iTPvqkdN7R7umKeC8TmWthVw4DpBS3+cbFZVP7EeSM4RW0IuqfzMung7NjKc77qd
+ vVswl6VX1uoTHVSbRo1vWrvuazJ2bhaKoN8TvxI7m79EyE3CBAIUPHWeA5WIkkMqDMZK mQ== 
+Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
+        by userp2130.oracle.com with ESMTP id 2mxmfu1hcp-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Thu, 11 Oct 2018 04:15:29 +0000
+        Thu, 11 Oct 2018 04:25:25 +0000
 Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id w9B4FSHv023078
+        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w9B4PJUK014501
         (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Thu, 11 Oct 2018 04:15:28 GMT
-Received: from abhmp0008.oracle.com (abhmp0008.oracle.com [141.146.116.14])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w9B4FS0j010121;
-        Thu, 11 Oct 2018 04:15:28 GMT
+        Thu, 11 Oct 2018 04:25:19 GMT
+Received: from abhmp0010.oracle.com (abhmp0010.oracle.com [141.146.116.16])
+        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w9B4PJM6015021;
+        Thu, 11 Oct 2018 04:25:19 GMT
 Received: from localhost (/10.159.132.249)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Thu, 11 Oct 2018 04:15:27 +0000
-Subject: [PATCH 25/25] xfs: remove redundant remap partial EOF block checks
+        with ESMTP ; Thu, 11 Oct 2018 04:25:18 +0000
+Date:   Wed, 10 Oct 2018 21:25:17 -0700
 From:   "Darrick J. Wong" <darrick.wong@oracle.com>
-To:     david@fromorbit.com, darrick.wong@oracle.com
-Cc:     sandeen@redhat.com, linux-nfs@vger.kernel.org,
-        linux-cifs@vger.kernel.org, linux-unionfs@vger.kernel.org,
-        linux-xfs@vger.kernel.org, linux-mm@kvack.org,
-        linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        ocfs2-devel@oss.oracle.com
-Date:   Wed, 10 Oct 2018 21:15:26 -0700
-Message-ID: <153923132645.5546.97372209609060021.stgit@magnolia>
-In-Reply-To: <153923113649.5546.9840926895953408273.stgit@magnolia>
-References: <153923113649.5546.9840926895953408273.stgit@magnolia>
-User-Agent: StGit/0.17.1-dirty
+To:     Anand Jain <anand.jain@oracle.com>
+Cc:     fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v3] geneirc/077 fix min size for btrfs
+Message-ID: <20181011042517.GA6695@magnolia>
+References: <1539228360-8575-1-git-send-email-anand.jain@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <1539228360-8575-1-git-send-email-anand.jain@oracle.com>
+User-Agent: Mutt/1.9.4 (2018-02-28)
 X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9042 signatures=668706
 X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=0 malwarescore=0
  phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
  adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.0.1-1807170000 definitions=main-1810110040
+ engine=8.0.1-1807170000 definitions=main-1810110042
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Darrick J. Wong <darrick.wong@oracle.com>
+On Thu, Oct 11, 2018 at 11:26:00AM +0800, Anand Jain wrote:
+> If btrfs need to be tested at its default blockgroup which is non-mixed,
+> then it needs at least 256mb.
+> 
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> ---
+> v2->v3:
+> 	separated from the patch set of 9.
+> 	notrun for the cases where filler is not big enough to fill the
+> 		fssize.
+> v2->v1: ref the cover-letter of the set.
+> 
+>  tests/generic/077 | 11 +++++++----
+>  1 file changed, 7 insertions(+), 4 deletions(-)
+> 
+> diff --git a/tests/generic/077 b/tests/generic/077
+> index ef6af18c83e3..784afe448940 100755
+> --- a/tests/generic/077
+> +++ b/tests/generic/077
+> @@ -13,7 +13,7 @@ echo "QA output created by $seq"
+>  here=`pwd`
+>  tmp=/tmp/$$
+>  status=1
+> -# Something w/ enough data to fill 50M of fs...
+> +# Something w/ enough data to fill 256M of fs...
+>  filler=/lib/modules/
+>  
+>  # fall back in case /lib/modules doesn't exist
+> @@ -38,6 +38,11 @@ _supported_os Linux
+>  
+>  [ ! -d $filler ] && _notrun "No directory to source files from"
+>  
+> +# check if two iterations of the assigned filler is big enough to fill fssize
+> +fs_size=$((256 * 1024 * 1024))
+> +[ $(( $(du -h -m /usr | tail -1| cut -f1) * 2 )) -lt 256 ] && \
 
-Now that we've moved the partial EOF block checks to the VFS helpers, we
-can remove the redundantn functionality from XFS.
+Err... what does measuring /usr have to do with /lib/modules?
 
-Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
----
- fs/xfs/xfs_reflink.c |   20 --------------------
- 1 file changed, 20 deletions(-)
+Also, /lib/modules is 58M on my test VM, which means that a 256M
+filesystem isn't going to ENOSPC.
 
+(Though weirdly it doesn't fail despite the lack of ENOSPC even at the
+50M size, so I'm not sure what this test is actually supposed to do...)
 
-diff --git a/fs/xfs/xfs_reflink.c b/fs/xfs/xfs_reflink.c
-index 12a1fe92454e..4450443f1148 100644
---- a/fs/xfs/xfs_reflink.c
-+++ b/fs/xfs/xfs_reflink.c
-@@ -1307,8 +1307,6 @@ xfs_reflink_remap_prep(
- 	struct inode		*inode_out = file_inode(file_out);
- 	struct xfs_inode	*dest = XFS_I(inode_out);
- 	bool			same_inode = (inode_in == inode_out);
--	bool			is_dedupe = (remap_flags & RFR_SAME_DATA);
--	u64			blkmask = i_blocksize(inode_in) - 1;
- 	ssize_t			ret;
- 
- 	/* Lock both files against IO */
-@@ -1336,24 +1334,6 @@ xfs_reflink_remap_prep(
- 	if (ret <= 0)
- 		goto out_unlock;
- 
--	/*
--	 * If the dedupe data matches, chop off the partial EOF block
--	 * from the source file so we don't try to dedupe the partial
--	 * EOF block.
--	 */
--	if (is_dedupe) {
--		*len &= ~blkmask;
--	} else if (*len & blkmask) {
--		/*
--		 * The user is attempting to share a partial EOF block,
--		 * if it's inside the destination EOF then reject it.
--		 */
--		if (pos_out + *len < i_size_read(inode_out)) {
--			ret = -EINVAL;
--			goto out_unlock;
--		}
--	}
--
- 	/* Attach dquots to dest inode before changing block map */
- 	ret = xfs_qm_dqattach(dest);
- 	if (ret)
+--D
 
+> +	_notrun "filler $filler isn't big enough to fill fssize $fssize"
+> +
+>  _require_scratch
+>  _require_attrs
+>  _require_acls
+> @@ -49,9 +54,7 @@ rm -f $seqres.full
+>  _scratch_unmount >/dev/null 2>&1
+>  echo "*** MKFS ***"                         >>$seqres.full
+>  echo ""                                     >>$seqres.full
+> -SIZE=`expr 50 \* 1024 \* 1024`
+> -_scratch_mkfs_sized $SIZE                   >>$seqres.full 2>&1 \
+> -	|| _fail "mkfs failed"
+> +_scratch_mkfs_sized $fs_size >> $seqres.full 2>&1 || _fail "mkfs failed"
+>  _scratch_mount
+>  mkdir $SCRATCH_MNT/subdir
+>  
+> -- 
+> 1.8.3.1
+> 

@@ -2,113 +2,217 @@ Return-Path: <SRS0=9zVn=MX=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.8 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 75A63C677FC
-	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Oct 2018 19:55:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CF7A3C677FC
+	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Oct 2018 20:31:02 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 3898A20835
-	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Oct 2018 19:55:58 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="QJHkhUxT"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 3898A20835
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=toxicpanda.com
+	by mail.kernel.org (Postfix) with ESMTP id 7353420644
+	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Oct 2018 20:31:02 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 7353420644
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=t-5.eu
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727298AbeJLDYm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 11 Oct 2018 23:24:42 -0400
-Received: from mail-qt1-f195.google.com ([209.85.160.195]:46916 "EHLO
-        mail-qt1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727252AbeJLDYi (ORCPT
+        id S1726220AbeJLD7y (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 11 Oct 2018 23:59:54 -0400
+Received: from mail-ed1-f46.google.com ([209.85.208.46]:38253 "EHLO
+        mail-ed1-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726040AbeJLD7y (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 11 Oct 2018 23:24:38 -0400
-Received: by mail-qt1-f195.google.com with SMTP id d8-v6so11327661qtk.13
-        for <linux-btrfs@vger.kernel.org>; Thu, 11 Oct 2018 12:55:52 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:subject:date:message-id:in-reply-to:references;
-        bh=sV09l7dO3avmvRHRl1FabUbd/mHTvojy+8waApybFR4=;
-        b=QJHkhUxTtQCT3P7+4G825BxRv6Zb3O/MQjoykCcyuMzzTi+g5a8tHxkMMMgD6mwKmo
-         AU9hRRofkamjx9oF0knlek5kojdexn2Cxr28/nW1FprCl2bdtdPApZP63BAE4U9CmF6y
-         tvHO+Fu+UC1zzxI67l+1MRor0PgRxAzZSt6+CKTYKwoDcsJG2aSvIEQssu2Btxxx23yD
-         2qJAvU5hOc8JBmkZu/Yv/JFjphZwVmNYeKJ6gLeK3AqRe7nhD2Kd2dmaLPNCUozn5Cq1
-         lEnUlLtDFOpFf+TAMjLzOVboaifZpg9pCYedqzdqzlrqWk3cnj5TVy8WXg+3AYfYSZ9g
-         z3nA==
+        Thu, 11 Oct 2018 23:59:54 -0400
+Received: by mail-ed1-f46.google.com with SMTP id c1-v6so9507432ede.5
+        for <linux-btrfs@vger.kernel.org>; Thu, 11 Oct 2018 13:30:59 -0700 (PDT)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
-         :references;
-        bh=sV09l7dO3avmvRHRl1FabUbd/mHTvojy+8waApybFR4=;
-        b=bR4mFcg98sWFOkISII78DeoZeB8yLPW0hNIaGRqkvsRAc39vJ17y3CHMEOqmzrhryw
-         1+gxmOCU/+0ufLd2KODeaDMrxS2q/jHLHQO5Th7juJKSX5lsdhdD5FojrKyC5BwUbEeL
-         5kqQRt8CzcdQM3ol3epiS7gYGOIoQ6AgH26XScKyFTIFjpuQ4zgXgSAq+NUQ0Vj+ECYv
-         Zr+a1lZzzUhh+7EkNCwUhW3l96gGkDyvfON6L9+v+AA78vtg0VgzwOMtfaOUmf7j82RF
-         ILxA8G3E3jjqGTLBRJik13o+6pMI1pGYAiXYmuHmVONYvqvZnKDE65N1k1qDximRR3yw
-         aTpg==
-X-Gm-Message-State: ABuFfoiRl7ZrbRlVASY2CCNdx5QwupuDl9Unh3xK6qh4fygmciHco/Yy
-        kZtThyxOJr0Ur4xp/hvhe4J66S30jD8=
-X-Google-Smtp-Source: ACcGV60N5A174vlAs4DYMdFjDp6joNWacNStxT1y6RKC4qNax2Ctpyj18gmcFwvdxZZk3px1WyM7Og==
-X-Received: by 2002:a0c:c346:: with SMTP id j6mr3104905qvi.48.1539287752336;
-        Thu, 11 Oct 2018 12:55:52 -0700 (PDT)
-Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id i27-v6sm17965684qti.57.2018.10.11.12.55.51
+        h=x-gm-message-state:mime-version:content-transfer-encoding:date:from
+         :to:subject:message-id:user-agent;
+        bh=gAXYGGc9s+6H6BMn2G0bAZpBYcedTGd2B3kBUJtpVc4=;
+        b=IsWOrm/dBQRHfOGpglX8LgfcXYMOO23HCgvs+fkqhTXWZ2g6sWtHB0oszzoa9PCYif
+         sWCFNDOI5eE0l6XlOMf+R2pClueCrF2W2OCX0jU0V0pvrpvYLkQi2NwjGu90QMXNUJzM
+         oZWran0NgzAefkc6p3HqgA9KgDfPKcYClQt+eVEJ3+o57l+AuXZR0IaSv0FW6bheEcc2
+         cYHXkrgRnAMOxqKaLvyUtwhMa5+vedXS4W/8nRlYdEnjrESYt0/x4dlyLqU032NQLTIF
+         Anhenw8tIovBJ+Xyai/eSDjL76+xg9kEj7+JO8goL7agTKXLLhHNhRHktWK44FsMDiJU
+         hBvg==
+X-Gm-Message-State: ABuFfoiUa6wNqp5nTS6LrrWXMIxvAPr10YmUzNjC3tAKJTVoXWiJLRsO
+        sNC4/owMdsuXJ9Clyn5/lRuvWfXY
+X-Google-Smtp-Source: ACcGV61BjtqAzVdozU2F8VWPiNHWsEBYq1WMjk7olYB1RpE1CMpXU0NRX49DjdM5aFN/TBLuz4iI7Q==
+X-Received: by 2002:a50:86fd:: with SMTP id 58-v6mr5218421edu.15.1539289858339;
+        Thu, 11 Oct 2018 13:30:58 -0700 (PDT)
+Received: from t-5.eu (p5B2838F0.dip0.t-ipconnect.de. [91.40.56.240])
+        by smtp.gmail.com with ESMTPSA id i19-v6sm5100487ejv.73.2018.10.11.13.30.57
+        for <linux-btrfs@vger.kernel.org>
         (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
-        Thu, 11 Oct 2018 12:55:51 -0700 (PDT)
-From:   Josef Bacik <josef@toxicpanda.com>
-To:     kernel-team@fb.com, linux-btrfs@vger.kernel.org
-Subject: [PATCH 42/42] btrfs: don't run delayed_iputs in commit
-Date:   Thu, 11 Oct 2018 15:54:31 -0400
-Message-Id: <20181011195431.3441-43-josef@toxicpanda.com>
-X-Mailer: git-send-email 2.14.3
-In-Reply-To: <20181011195431.3441-1-josef@toxicpanda.com>
-References: <20181011195431.3441-1-josef@toxicpanda.com>
+        Thu, 11 Oct 2018 13:30:57 -0700 (PDT)
+Received: from t-5.eu (localhost [127.0.0.1])
+        by t-5.eu (Postfix) with ESMTP id 5B2021AC499
+        for <linux-btrfs@vger.kernel.org>; Thu, 11 Oct 2018 22:30:56 +0200 (CEST)
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8;
+ format=flowed
+Content-Transfer-Encoding: 8bit
+Date:   Thu, 11 Oct 2018 22:30:56 +0200
+From:   =?UTF-8?Q?J=C3=BCrgen_Herrmann?= <t-5@t-5.eu>
+To:     linux-btrfs@vger.kernel.org
+Subject: errors reported by btrfs-check
+Message-ID: <4610292ca252e23c9da2791ae1acf194@t-5.eu>
+X-Sender: t-5@t-5.eu
+User-Agent: Roundcube Webmail/1.3.6
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This could result in a really bad case where we do something like
+Hi!
 
-evict
-  evict_refill_and_join
-    btrfs_commit_transaction
-      btrfs_run_delayed_iputs
-        evict
-          evict_refill_and_join
-            btrfs_commit_transaction
-... forever
+I just did a btrfs check on my laptop's btrfs filesystem while i was
+on the usb stick rescue system.
 
-We have plenty of other places where we run delayed iputs that are much
-safer, let those do the work.
+the following errors where reported:
+root@mint:/home/mint# btrfs check /dev/mapper/sda3crypt
+Checking filesystem on /dev/mapper/sda3crypt
+UUID: a914c141-72bf-448b-847f-d64ee82d8b7b
+checking extents
+checking free space cache
+checking fs roots
+root 258 inode 3082368 errors 100, file extent discount
+Found file extent holes:
+	start: 0, len: 8192
+root 258 inode 3082370 errors 100, file extent discount
+Found file extent holes:
+	start: 0, len: 8192
+root 258 inode 3082371 errors 100, file extent discount
+Found file extent holes:
+	start: 0, len: 8192
+root 258 inode 3082373 errors 100, file extent discount
+Found file extent holes:
+	start: 0, len: 8192
+root 258 inode 3082414 errors 100, file extent discount
+Found file extent holes:
+	start: 0, len: 8192
+root 258 inode 3082415 errors 100, file extent discount
+Found file extent holes:
+	start: 0, len: 8192
+root 258 inode 3082421 errors 100, file extent discount
+Found file extent holes:
+	start: 0, len: 4096
+root 1387 inode 3082368 errors 100, file extent discount
+Found file extent holes:
+	start: 0, len: 8192
+root 1387 inode 3082370 errors 100, file extent discount
+Found file extent holes:
+	start: 0, len: 8192
+root 1387 inode 3082371 errors 100, file extent discount
+Found file extent holes:
+	start: 0, len: 8192
+root 1387 inode 3082372 errors 100, file extent discount
+Found file extent holes:
+	start: 8192, len: 4096
+	start: 16384, len: 4096
+	start: 24576, len: 4096
+	start: 32768, len: 4096
+	start: 40960, len: 4096
+	start: 49152, len: 20480
+	start: 73728, len: 4096
+	start: 81920, len: 4096
+	start: 90112, len: 8192
+root 1387 inode 3082373 errors 100, file extent discount
+Found file extent holes:
+	start: 0, len: 8192
+root 1387 inode 3082374 errors 100, file extent discount
+Found file extent holes:
+	start: 8192, len: 4096
+	start: 16384, len: 20480
+	start: 40960, len: 12288
+	start: 57344, len: 4096
+	start: 65536, len: 8192
+root 1387 inode 3082380 errors 100, file extent discount
+Found file extent holes:
+	start: 0, len: 233472
+root 1387 inode 3082386 errors 100, file extent discount
+Found file extent holes:
+	start: 0, len: 4096
+root 1387 inode 3082398 errors 100, file extent discount
+Found file extent holes:
+	start: 20480, len: 16384
+root 1387 inode 3082414 errors 100, file extent discount
+Found file extent holes:
+	start: 0, len: 8192
+root 1387 inode 3082415 errors 100, file extent discount
+Found file extent holes:
+	start: 0, len: 8192
+root 1387 inode 3082421 errors 100, file extent discount
+Found file extent holes:
+	start: 0, len: 4096
+root 1391 inode 3082368 errors 100, file extent discount
+Found file extent holes:
+	start: 0, len: 8192
+root 1391 inode 3082370 errors 100, file extent discount
+Found file extent holes:
+	start: 0, len: 8192
+root 1391 inode 3082371 errors 100, file extent discount
+Found file extent holes:
+	start: 0, len: 8192
+root 1391 inode 3082373 errors 100, file extent discount
+Found file extent holes:
+	start: 0, len: 8192
+root 1391 inode 3082386 errors 100, file extent discount
+Found file extent holes:
+	start: 0, len: 4096
+root 1391 inode 3082414 errors 100, file extent discount
+Found file extent holes:
+	start: 0, len: 8192
+root 1391 inode 3082415 errors 100, file extent discount
+Found file extent holes:
+	start: 0, len: 8192
+root 1391 inode 3082421 errors 100, file extent discount
+Found file extent holes:
+	start: 0, len: 4096
+root 1394 inode 3082368 errors 100, file extent discount
+Found file extent holes:
+	start: 0, len: 8192
+root 1394 inode 3082370 errors 100, file extent discount
+Found file extent holes:
+	start: 0, len: 8192
+root 1394 inode 3082371 errors 100, file extent discount
+Found file extent holes:
+	start: 0, len: 8192
+root 1394 inode 3082373 errors 100, file extent discount
+Found file extent holes:
+	start: 0, len: 8192
+root 1394 inode 3082386 errors 100, file extent discount
+Found file extent holes:
+	start: 0, len: 4096
+root 1394 inode 3082414 errors 100, file extent discount
+Found file extent holes:
+	start: 0, len: 8192
+root 1394 inode 3082415 errors 100, file extent discount
+Found file extent holes:
+	start: 0, len: 8192
+root 1394 inode 3082421 errors 100, file extent discount
+Found file extent holes:
+	start: 0, len: 4096
+ERROR: errors found in fs roots
+found 469458231296 bytes used, error(s) found
+total csum bytes: 451180560
+total tree bytes: 4558831616
+total fs tree bytes: 3802955776
+total extent tree bytes: 245055488
+btree space waste bytes: 842802897
+file data blocks allocated: 9656815640576
+  referenced 929225080832
 
-Signed-off-by: Josef Bacik <josef@toxicpanda.com>
----
- fs/btrfs/transaction.c | 9 ---------
- 1 file changed, 9 deletions(-)
+Scrub completes ok though.
 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 9168efaca37e..c91dc36fccae 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -2265,15 +2265,6 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
- 
- 	kmem_cache_free(btrfs_trans_handle_cachep, trans);
- 
--	/*
--	 * If fs has been frozen, we can not handle delayed iputs, otherwise
--	 * it'll result in deadlock about SB_FREEZE_FS.
--	 */
--	if (current != fs_info->transaction_kthread &&
--	    current != fs_info->cleaner_kthread &&
--	    !test_bit(BTRFS_FS_FROZEN, &fs_info->flags))
--		btrfs_run_delayed_iputs(fs_info);
--
- 	return ret;
- 
- scrub_continue:
+I'm prepared to wipe the fs if needed, more than one backup is ready :)
+
+I wanted to ask here first if I should attempt a repair.
+
+Best regards,
+Jürgen
 -- 
-2.14.3
-
+Jürgen Herrmann
+https://t-5.eu
+ALbertstraße 2
+94327 Bogen

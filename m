@@ -2,129 +2,74 @@ Return-Path: <SRS0=9zVn=MX=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.6 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 016AAC677FC
-	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Oct 2018 20:36:32 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 87C96C28CF8
+	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Oct 2018 22:36:29 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id AA26620644
-	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Oct 2018 20:36:31 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1AAD420835
+	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Oct 2018 22:36:29 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="TDoo3Fyh"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org AA26620644
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="w+Ieg9bz"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 1AAD420835
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=colorremedies.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726302AbeJLEFY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 12 Oct 2018 00:05:24 -0400
-Received: from mail-vs1-f66.google.com ([209.85.217.66]:39995 "EHLO
-        mail-vs1-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725819AbeJLEFY (ORCPT
+        id S1726568AbeJLGFs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 12 Oct 2018 02:05:48 -0400
+Received: from mail-lf1-f47.google.com ([209.85.167.47]:39178 "EHLO
+        mail-lf1-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725913AbeJLGFs (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 12 Oct 2018 00:05:24 -0400
-Received: by mail-vs1-f66.google.com with SMTP id z130-v6so9879050vsc.7
-        for <linux-btrfs@vger.kernel.org>; Thu, 11 Oct 2018 13:36:29 -0700 (PDT)
+        Fri, 12 Oct 2018 02:05:48 -0400
+Received: by mail-lf1-f47.google.com with SMTP id w21-v6so7916839lff.6
+        for <linux-btrfs@vger.kernel.org>; Thu, 11 Oct 2018 15:36:26 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:references:in-reply-to:reply-to:from:date:message-id
-         :subject:to:cc:content-transfer-encoding;
-        bh=NY7+FCsh7jtR3vWsxpTFn5v123ULd4qoLLkUBGAQymY=;
-        b=TDoo3FyhrhcDZDFlPwWyfGRhn4QLXkb0RVKyKgh7tH8c3/oVtQ+t9Ah+k+fOAHUguH
-         nteVodA2H4exlri5KjH+y1NyhkmXrKe6aqZVUtzWc1ERL3pB0/T56aLXYR1IzWBsecW/
-         1E5RM5yalrp9WrK+xQ9ngs4O99Ex3zM5qTaicjbIdkuMil9LjsOgtXCLPn5YqvOGXot+
-         iYdcSsd/xKmobveyWyTiBmRcge1dVfjFs2oTx6W0Y1XWoYGfd5nKvuTHiAwAyBvav/p3
-         4Nkx+ITGwBOjmN8Y1S2ar8h6dyPssZUuE8eIEvSOXgNb2pzfG7mcFch6bz/S6xv7Qz9V
-         E7Hw==
+        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
+        h=mime-version:sender:in-reply-to:references:from:date:message-id
+         :subject:to:cc;
+        bh=aEk80ntt4J+8akfk2D5fRpnjQlFZTQmfNscCutN0GnA=;
+        b=w+Ieg9bziZTvVyQny/eolAAf6dD5VxrBtGUW74odVoHsFK1C0/CVIGoJ16VdGKi/mp
+         yAvJzu/M4n+6PkC9tfAtzJeiW3HXl0XkvX0+BFJjpKkWU5ZrBfFJXgQnJBstZCahaIgH
+         fYTGJKVS2F0tvulmjVWkl34+BkakPa0CFLY03H2bqEeKgg5+o9ZJaokOIBNSLyEMoQtq
+         7S86PC7rbj6zX6HE1w54mRCcEGaIeCP2nUE+d+/lMANe6ruYshpwoUmg1dQE/Zfi2LaG
+         p5pZHdcpoNPcAdRKyPmEQGa0HY7+iJR/XJdThycoVxFDge2tFj4Se9kWceDXylgeWEVv
+         HUCw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:reply-to
-         :from:date:message-id:subject:to:cc:content-transfer-encoding;
-        bh=NY7+FCsh7jtR3vWsxpTFn5v123ULd4qoLLkUBGAQymY=;
-        b=W9mdNQXayggZ1nafzhzFz2ifPLzxDl+Hz7hiPHrCQP2KJULKt8iJZRDu95+o61OPUe
-         0ffoDRJ2GyyM+Km4NVWyD6YCQEmqY2M3kDBdu8GJzr35ShzEC6D5FSbxOfiA/4V+3YKw
-         n9EsCjziwZMk9ApCtmo1OGoVCfBDTxEDypulQ8WFmSqsVvBN7YcqhAnmqicZLYABLmTj
-         Yukmr3wM5/AXxhaO4VRVV7arVRp+OP5gqX674lVfwtQSQUc7niLqQroR+P67zWp8cR3A
-         hs7wPJ6LnM8JY3iOyXzW6JSNu83ekVtvZysDZyX1GqpnzE1rBTdaeiW8nR7wR81bTVZN
-         wFCQ==
-X-Gm-Message-State: ABuFfogFiN7D9ApLXKbccOqPTjt113G3NAy8/1bjJAwb6ZAgyS7xD6gX
-        AH1/Qm2EAV/Uk2UUy6h9dH+31avS2RoXFqHvOHVkS6fZ
-X-Google-Smtp-Source: ACcGV623DsODujXKMebK4PmvPhiuv15Ai+9o+EbVY2TqH522I4OnpHN8fvx8W8VVCfZ4pBVF3MnnwBFTQCJhobxStuc=
-X-Received: by 2002:a67:4482:: with SMTP id y2mr1317555vsf.90.1539290188913;
- Thu, 11 Oct 2018 13:36:28 -0700 (PDT)
+        h=x-gm-message-state:mime-version:sender:in-reply-to:references:from
+         :date:message-id:subject:to:cc;
+        bh=aEk80ntt4J+8akfk2D5fRpnjQlFZTQmfNscCutN0GnA=;
+        b=Bhg/1m2GP/R/+5Y6tFbG9tjqQVxTbldWxYvzlYLLq5Abazx22t7RlmFw2o/2PWh3gB
+         2JQhmO9MO8aNkcX5WH3kzIWt1TzhECQOG6syKEzhMZalxnpsTsjURi/WLdNVhY17USW+
+         r01EjZH43d+/WuwUs9n9Vi1q6UerjJTv1silbQwHCTF4g+xaR7vBBVhNFRajcREg4XhO
+         ryMQFTlm6pcjLXMq2B6o6c+k7ymOid0sCjOpPpTFxZNmRF9bZlPd7uJ7pssgVDjuRHQX
+         UWVtQPFpLOMOY+EY8AmS0R3mdGdfx4vVCXu3z/h8x/TwHFYIYszCEiO5faN22XjcuzEq
+         voaA==
+X-Gm-Message-State: ABuFfoj4RVxQozxlNSG2w7A2D7abUngcFcQgizFAl+MDPcpHmyi7g81h
+        yk4l8aT8sjmH0g1Uako8k+UUhkEpUjmZYKvaujPrXkf3
+X-Google-Smtp-Source: ACcGV60g9Pd4w+w4FsS9jm4hzD/ryK2/4NBTjwNpM+GvSP5VcfpuzpGD/c6I4gSgJ4/RTV61OKzWWdbS17BeQS407cc=
+X-Received: by 2002:a19:1447:: with SMTP id k68-v6mr2173258lfi.4.1539297385583;
+ Thu, 11 Oct 2018 15:36:25 -0700 (PDT)
 MIME-Version: 1.0
-References: <20181011195431.3441-1-josef@toxicpanda.com> <20181011195431.3441-43-josef@toxicpanda.com>
-In-Reply-To: <20181011195431.3441-43-josef@toxicpanda.com>
-Reply-To: fdmanana@gmail.com
-From:   Filipe Manana <fdmanana@gmail.com>
-Date:   Thu, 11 Oct 2018 21:36:17 +0100
-Message-ID: <CAL3q7H5s+nVkay9-9BYJuQiKoGR-ayp-EzZEUSWGqCt7sDX9uA@mail.gmail.com>
-Subject: Re: [PATCH 42/42] btrfs: don't run delayed_iputs in commit
-To:     Josef Bacik <josef@toxicpanda.com>
-Cc:     kernel-team@fb.com, linux-btrfs <linux-btrfs@vger.kernel.org>
+Received: by 2002:ab3:1999:0:0:0:0:0 with HTTP; Thu, 11 Oct 2018 15:36:25
+ -0700 (PDT)
+X-Originating-IP: [69.7.113.20]
+In-Reply-To: <4610292ca252e23c9da2791ae1acf194@t-5.eu>
+References: <4610292ca252e23c9da2791ae1acf194@t-5.eu>
+From:   Chris Murphy <lists@colorremedies.com>
+Date:   Thu, 11 Oct 2018 16:36:25 -0600
+X-Google-Sender-Auth: ixrI_ynnU8cQ14T1-bNoNzs0RwY
+Message-ID: <CAJCQCtRoN=0oQyiwOPhkO6ZwqQL+Qjsm_mue8aoMWPsg2b7OQQ@mail.gmail.com>
+Subject: Re: errors reported by btrfs-check
+To:     =?UTF-8?Q?J=C3=BCrgen_Herrmann?= <t-5@t-5.eu>
+Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Oct 11, 2018 at 8:58 PM Josef Bacik <josef@toxicpanda.com> wrote:
->
-> This could result in a really bad case where we do something like
->
-> evict
->   evict_refill_and_join
->     btrfs_commit_transaction
->       btrfs_run_delayed_iputs
->         evict
->           evict_refill_and_join
->             btrfs_commit_transaction
-> ... forever
->
-> We have plenty of other places where we run delayed iputs that are much
-> safer, let those do the work.
->
-> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
-
-Great catch!
-
-> ---
->  fs/btrfs/transaction.c | 9 ---------
->  1 file changed, 9 deletions(-)
->
-> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-> index 9168efaca37e..c91dc36fccae 100644
-> --- a/fs/btrfs/transaction.c
-> +++ b/fs/btrfs/transaction.c
-> @@ -2265,15 +2265,6 @@ int btrfs_commit_transaction(struct btrfs_trans_ha=
-ndle *trans)
->
->         kmem_cache_free(btrfs_trans_handle_cachep, trans);
->
-> -       /*
-> -        * If fs has been frozen, we can not handle delayed iputs, otherw=
-ise
-> -        * it'll result in deadlock about SB_FREEZE_FS.
-> -        */
-> -       if (current !=3D fs_info->transaction_kthread &&
-> -           current !=3D fs_info->cleaner_kthread &&
-> -           !test_bit(BTRFS_FS_FROZEN, &fs_info->flags))
-> -               btrfs_run_delayed_iputs(fs_info);
-> -
->         return ret;
->
->  scrub_continue:
-> --
-> 2.14.3
->
-
-
---=20
-Filipe David Manana,
-
-=E2=80=9CWhether you think you can, or you think you can't =E2=80=94 you're=
- right.=E2=80=9D
+What version of btrfs-progs?

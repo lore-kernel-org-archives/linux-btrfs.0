@@ -2,34 +2,32 @@ Return-Path: <SRS0=9zVn=MX=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BFFA5C32788
-	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Oct 2018 06:40:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4E0FAC32788
+	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Oct 2018 06:41:45 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 725FD2077C
-	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Oct 2018 06:40:58 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 725FD2077C
+	by mail.kernel.org (Postfix) with ESMTP id 164E92077C
+	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Oct 2018 06:41:45 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 164E92077C
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727589AbeJKOGq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 11 Oct 2018 10:06:46 -0400
-Received: from mx2.suse.de ([195.135.220.15]:44594 "EHLO mx1.suse.de"
+        id S1726907AbeJKOHd (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 11 Oct 2018 10:07:33 -0400
+Received: from mx2.suse.de ([195.135.220.15]:44674 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726047AbeJKOGq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 11 Oct 2018 10:06:46 -0400
+        id S1726047AbeJKOHd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 11 Oct 2018 10:07:33 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 4812EB0A7;
-        Thu, 11 Oct 2018 06:40:53 +0000 (UTC)
-Subject: Re: [PATCH 5/6] btrfs: simplify btrfs_select_ref_head and cleanup
- some local variables
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 93A0EB0A7;
+        Thu, 11 Oct 2018 06:41:41 +0000 (UTC)
+Subject: Re: [PATCH 0/6] Some trivail cleanup about dealyed-refs
 To:     Lu Fengqi <lufq.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
 References: <20181011054038.5428-1-lufq.fnst@cn.fujitsu.com>
- <20181011054038.5428-6-lufq.fnst@cn.fujitsu.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -74,12 +72,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  KIuxEcV8wcVjr+Wr9zRl06waOCkgrQbTPp631hToxo+4rA1jiQF2M80HAet65ytBVR2pFGZF
  zGYYLqiG+mpUZ+FPjxk9kpkRYz61mTLSY7tuFljExfJWMGfgSg1OxfLV631jV1TcdUnx+h3l
  Sqs2vMhAVt14zT8mpIuu2VNxcontxgVr1kzYA/tQg32fVRbGr449j1gw57BV9i0vww==
-Message-ID: <e5bb27d0-fea5-30c6-afd4-aea2eae1871e@suse.com>
-Date:   Thu, 11 Oct 2018 09:40:52 +0300
+Message-ID: <a64005f8-0e1e-0f42-1383-bd1563fb92a8@suse.com>
+Date:   Thu, 11 Oct 2018 09:41:40 +0300
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:52.0) Gecko/20100101
  Thunderbird/52.9.1
 MIME-Version: 1.0
-In-Reply-To: <20181011054038.5428-6-lufq.fnst@cn.fujitsu.com>
+In-Reply-To: <20181011054038.5428-1-lufq.fnst@cn.fujitsu.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 7bit
@@ -91,84 +89,33 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 On 11.10.2018 08:40, Lu Fengqi wrote:
-> If the return value of find_ref_head() is NULL, the only possibility is
-> that delayed_refs' head ref rbtree is empty. Hence, the second
-> find_ref_head() is pointless.
-> > Besides, the local variables loop and start are unnecessary, just remove
-> them.
-
-So the objective of that function is to get a reference to the first
-delayed head which is not processed. This is done by essentially keeping
-track of the last range that was processed in
-delayed_refs->run_delayed_start
+> There is no functional change. Just improve readablity.
 > 
-> Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-> ---
->  fs/btrfs/delayed-ref.c | 17 +++--------------
->  1 file changed, 3 insertions(+), 14 deletions(-)
+> PATCH 1-4 parameter cleanup patches
+> PATCH 5 cleanup about btrfs_select_ref_head
+> PATCH 6 switch int to bool; add some comment
 > 
-> diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
-> index 885581852bea..2726d2fb4bbe 100644
-> --- a/fs/btrfs/delayed-ref.c
-> +++ b/fs/btrfs/delayed-ref.c
-> @@ -354,20 +354,11 @@ struct btrfs_delayed_ref_head *
->  btrfs_select_ref_head(struct btrfs_delayed_ref_root *delayed_refs)
->  {
->  	struct btrfs_delayed_ref_head *head;
-> -	u64 start;
-> -	bool loop = false;
->  
->  again:
-> -	start = delayed_refs->run_delayed_start;
-> -	head = find_ref_head(delayed_refs, start, 1);
-> -	if (!head && !loop) {
-> +	head = find_ref_head(delayed_refs, delayed_refs->run_delayed_start, 1);
-> +	if (!head) {
->  		delayed_refs->run_delayed_start = 0;
-> -		start = 0;
-> -		loop = true;
-> -		head = find_ref_head(delayed_refs, start, 1);
-> -		if (!head)
-> -			return NULL;
-> -	} else if (!head && loop) {
+> Lu Fengqi (6):
+>   btrfs: delayed-ref: pass delayed_refs directly to
+>     btrfs_select_ref_head()
+>   btrfs: delayed-ref: pass delayed_refs directly to
+>     btrfs_delayed_ref_lock()
+>   btrfs: remove fs_info from btrfs_check_space_for_delayed_refs
+>   btrfs: remove fs_info from btrfs_should_throttle_delayed_refs
+>   btrfs: simplify btrfs_select_ref_head and cleanup some local variables
+>   btrfs: switch return_bigger to bool in find_ref_head
 
-I believe this will have a negative impact since it actually will
-prevent finding a head which was added BEFORE the last processed head.
-So when a ref head is selected in btrfs_obtain_ref_head then the
-delayed_refs->lock is dropped and the given head is locked and
-delayed_refs->run_delayed_start points to the end of the selected range
-that the head represents. At this point it's possible that another
-thread modifies a different range which is before the one we have
-selected so graphically it will be something like:
+For patches 1-4 and 6:
+
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 
 
----[HEAD2]----->[HEAD1]------
-0                            N
-
-Where HEAD1 is the head returned from first invocation of
-btrfs_obtain_ref_head. Once  btrfs_obtain_ref_head is called the 2nd
-time it will not find HEAD2 so will just reset run_delayed_start to 0
-and return. So it will be up to another run of the delayed refs to
-actually find head2. Essentially you made btrfs_obtain_ref_head less
-greedy. Have you characterized what kind of performance impact this have?
-
-
-
-
->  		return NULL;
->  	}
->  
-> @@ -376,11 +367,9 @@ btrfs_select_ref_head(struct btrfs_delayed_ref_root *delayed_refs)
->  
->  		node = rb_next(&head->href_node);
->  		if (!node) {
-> -			if (loop)
-> +			if (delayed_refs->run_delayed_start == 0)
->  				return NULL;
->  			delayed_refs->run_delayed_start = 0;
-> -			start = 0;
-> -			loop = true;
->  			goto again;
->  		}
->  		head = rb_entry(node, struct btrfs_delayed_ref_head,
+> 
+>  fs/btrfs/ctree.h       |  6 ++----
+>  fs/btrfs/delayed-ref.c | 35 ++++++++++-------------------------
+>  fs/btrfs/delayed-ref.h |  4 ++--
+>  fs/btrfs/extent-tree.c | 15 +++++++--------
+>  fs/btrfs/inode.c       |  7 +++----
+>  fs/btrfs/transaction.c |  4 ++--
+>  6 files changed, 26 insertions(+), 45 deletions(-)
 > 

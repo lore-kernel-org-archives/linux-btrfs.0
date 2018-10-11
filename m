@@ -4,64 +4,64 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-7.2 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,UNPARSEABLE_RELAY autolearn=ham
-	autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,UNPARSEABLE_RELAY,URIBL_BLOCKED
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D07B9C32788
-	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Oct 2018 04:13:15 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 489B1C46462
+	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Oct 2018 04:13:19 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 8CF212077C
-	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Oct 2018 04:13:15 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 090CE2077C
+	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Oct 2018 04:13:19 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="SEHdlmBH"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 8CF212077C
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="teHEeHb8"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 090CE2077C
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=oracle.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727365AbeJKLie (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 11 Oct 2018 07:38:34 -0400
-Received: from aserp2120.oracle.com ([141.146.126.78]:60326 "EHLO
-        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726135AbeJKLie (ORCPT
+        id S1727376AbeJKLih (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 11 Oct 2018 07:38:37 -0400
+Received: from userp2120.oracle.com ([156.151.31.85]:40458 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726135AbeJKLig (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 11 Oct 2018 07:38:34 -0400
-Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
-        by aserp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w9B496X1052689;
-        Thu, 11 Oct 2018 04:13:09 GMT
+        Thu, 11 Oct 2018 07:38:36 -0400
+Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
+        by userp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w9B49RmX191602;
+        Thu, 11 Oct 2018 04:13:10 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : from : to :
  cc : date : message-id : in-reply-to : references : mime-version :
  content-type : content-transfer-encoding; s=corp-2018-07-02;
- bh=rYNys5t3mXrXHQI06sCGnidadi3Ilenga8cPevys5pA=;
- b=SEHdlmBHl1PEWtBx1kYYvDGijkTeRKt9mbK37pkwKSlP+xzGA8BzBE9l4HgH8pubHTCG
- 3pXIVN3BGCuKto224oA4Qn7ERYh8BkALgWgbicwGwWlvGjw5lvRU7+0F4nvI9thzFSOf
- JVqSFtVuTgk+V/MQZKKqBncyCdybDsM8v1A2ijWRF+IrfraawhY3Sf9KsQULQ+tlK+pu
- wB8nr1eYYVV88+rBysG5TcdoeLzofefES9SVeYE3Im/yPvTfx/95sJ8bK0DFUcNRpbzN
- hOHuvbQCDVkknI0XktzKEZKNPlq9H9oZARJwaJ6ZNfdVXat/LSX2gc0MNhq6BqNixwoG nQ== 
-Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
-        by aserp2120.oracle.com with ESMTP id 2mxn0q9dub-1
+ bh=mbCJTCJlHtGyJxCxGNwQiD9bwchYhi3Y610tPi4XMVI=;
+ b=teHEeHb8WJZPjuJ6X2yubSe9uTmR4HvMEk6QUTYBGBaIduMcO1/S1m4PfIrcV4RKk/Al
+ +Ah53OS0lKm8b783yXgN7xgkioM9SXJ9ad2FhEk2YW1KxqmJ9ECJE9/FOzZhFVm+zqwD
+ IfTXJHbHvTu9QqmlGOO/0Akf0BYwgqSQG2QxcDtqPIHy+/iyWZuDAVo3nmgzNo5Kpog2
+ L2Xn7U3DDrvA9fitcOuz5YLUAeDyZ9a9eB8l0Z77qtTCInwYqX3dmaLx7dzrI/uG0fuS
+ 9Nl9Su80Dst4DTeDhARjo9y1JPxObpD3RvBsNnDDPcIX9B3noqayiPk+GKXsK7642B9f LQ== 
+Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
+        by userp2120.oracle.com with ESMTP id 2mxnpr98w9-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Thu, 11 Oct 2018 04:13:08 +0000
+        Thu, 11 Oct 2018 04:13:09 +0000
 Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w9B4D2jD001922
+        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id w9B4D8ER018613
         (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Thu, 11 Oct 2018 04:13:02 GMT
-Received: from abhmp0015.oracle.com (abhmp0015.oracle.com [141.146.116.21])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w9B4D1cT011595;
-        Thu, 11 Oct 2018 04:13:01 GMT
+        Thu, 11 Oct 2018 04:13:09 GMT
+Received: from abhmp0017.oracle.com (abhmp0017.oracle.com [141.146.116.23])
+        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w9B4D8Nu011619;
+        Thu, 11 Oct 2018 04:13:08 GMT
 Received: from localhost (/10.159.132.249)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Thu, 11 Oct 2018 04:13:01 +0000
-Subject: [PATCH 05/25] vfs: avoid problematic remapping requests into
- partial EOF block
+        with ESMTP ; Thu, 11 Oct 2018 04:13:08 +0000
+Subject: [PATCH 06/25] vfs: skip zero-length dedupe requests
 From:   "Darrick J. Wong" <darrick.wong@oracle.com>
 To:     david@fromorbit.com, darrick.wong@oracle.com
 Cc:     sandeen@redhat.com, linux-nfs@vger.kernel.org,
-        linux-cifs@vger.kernel.org, linux-unionfs@vger.kernel.org,
-        linux-xfs@vger.kernel.org, linux-mm@kvack.org,
-        linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+        linux-cifs@vger.kernel.org, Amir Goldstein <amir73il@gmail.com>,
+        linux-unionfs@vger.kernel.org, linux-xfs@vger.kernel.org,
+        linux-mm@kvack.org, linux-btrfs@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org, Christoph Hellwig <hch@lst.de>,
         ocfs2-devel@oss.oracle.com
-Date:   Wed, 10 Oct 2018 21:12:54 -0700
-Message-ID: <153923117420.5546.13317703807467393934.stgit@magnolia>
+Date:   Wed, 10 Oct 2018 21:13:06 -0700
+Message-ID: <153923118667.5546.2251008065628647198.stgit@magnolia>
 In-Reply-To: <153923113649.5546.9840926895953408273.stgit@magnolia>
 References: <153923113649.5546.9840926895953408273.stgit@magnolia>
 User-Agent: StGit/0.17.1-dirty
@@ -70,7 +70,7 @@ Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
 X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9042 signatures=668706
 X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=0 malwarescore=0
- phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=625
+ phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=749
  adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
  engine=8.0.1-1807170000 definitions=main-1810110039
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -80,76 +80,31 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Darrick J. Wong <darrick.wong@oracle.com>
 
-A deduplication data corruption is exposed by fstests generic/505 on
-XFS. It is caused by extending the block match range to include the
-partial EOF block, but then allowing unknown data beyond EOF to be
-considered a "match" to data in the destination file because the
-comparison is only made to the end of the source file. This corrupts the
-destination file when the source extent is shared with it.
-
-The VFS remapping prep functions  only support whole block dedupe, but
-we still need to appear to support whole file dedupe correctly.  Hence
-if the dedupe request includes the last block of the souce file, don't
-include it in the actual dedupe operation. If the rest of the range
-dedupes successfully, then reject the entire request.  A subsequent
-patch will enable us to shorten dedupe requests correctly.
-
-When reflinking sub-file ranges, a data corruption can occur when the
-source file range includes a partial EOF block. This shares the unknown
-data beyond EOF into the second file at a position inside EOF, exposing
-stale data in the second file.
-
-If the reflink request includes the last block of the souce file, only
-proceed with the reflink operation if it lands at or past the
-destination file's current EOF. If it lands within the destination file
-EOF, reject the entire request with -EINVAL and make the caller go the
-hard way.  A subsequent patch will enable us to shorten reflink requests
-correctly.
+Don't bother calling the filesystem for a zero-length dedupe request;
+we can return zero and exit.
 
 Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
+Reviewed-by: Christoph Hellwig <hch@lst.de>
+Reviewed-by: Amir Goldstein <amir73il@gmail.com>
 ---
- fs/read_write.c |   22 ++++++++++++++++++++++
- 1 file changed, 22 insertions(+)
+ fs/read_write.c |    5 +++++
+ 1 file changed, 5 insertions(+)
 
 
 diff --git a/fs/read_write.c b/fs/read_write.c
-index d6e8e242a15f..8498991e2f33 100644
+index 8498991e2f33..48d83231968f 100644
 --- a/fs/read_write.c
 +++ b/fs/read_write.c
-@@ -1723,6 +1723,7 @@ int vfs_clone_file_prep(struct file *file_in, loff_t pos_in,
- {
- 	struct inode *inode_in = file_inode(file_in);
- 	struct inode *inode_out = file_inode(file_out);
-+	u64 blkmask = i_blocksize(inode_in) - 1;
- 	bool same_inode = (inode_in == inode_out);
- 	int ret;
+@@ -1996,6 +1996,11 @@ int vfs_dedupe_file_range_one(struct file *src_file, loff_t src_pos,
+ 	if (!dst_file->f_op->dedupe_file_range)
+ 		goto out_drop_write;
  
-@@ -1785,6 +1786,27 @@ int vfs_clone_file_prep(struct file *file_in, loff_t pos_in,
- 			return -EBADE;
- 	}
- 
-+	/* Are we doing a partial EOF block remapping of some kind? */
-+	if (*len & blkmask) {
-+		/*
-+		 * If the dedupe data matches, don't try to dedupe the partial
-+		 * EOF block.
-+		 *
-+		 * If the user is attempting to remap a partial EOF block and
-+		 * it's inside the destination EOF then reject it.
-+		 *
-+		 * We don't support shortening requests, so we can only reject
-+		 * them.
-+		 */
-+		if (is_dedupe)
-+			ret = -EBADE;
-+		else if (pos_out + *len < i_size_read(inode_out))
-+			ret = -EINVAL;
-+
-+		if (ret)
-+			return ret;
++	if (len == 0) {
++		ret = 0;
++		goto out_drop_write;
 +	}
 +
- 	return 1;
- }
- EXPORT_SYMBOL(vfs_clone_file_prep);
+ 	ret = dst_file->f_op->dedupe_file_range(src_file, src_pos,
+ 						dst_file, dst_pos, len);
+ out_drop_write:
 

@@ -2,372 +2,151 @@ Return-Path: <SRS0=9zVn=MX=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.3 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 360B5C32788
-	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Oct 2018 15:04:18 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B5C18C32788
+	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Oct 2018 15:13:58 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id F32CF2075C
-	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Oct 2018 15:04:17 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org F32CF2075C
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
+	by mail.kernel.org (Postfix) with ESMTP id 5F01C2085B
+	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Oct 2018 15:13:58 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 5F01C2085B
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728002AbeJKWbs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 11 Oct 2018 18:31:48 -0400
-Received: from mx2.suse.de ([195.135.220.15]:50048 "EHLO mx1.suse.de"
+        id S1727638AbeJKWlc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 11 Oct 2018 18:41:32 -0400
+Received: from mx2.suse.de ([195.135.220.15]:51742 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727864AbeJKWbo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 11 Oct 2018 18:31:44 -0400
+        id S1725984AbeJKWlc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 11 Oct 2018 18:41:32 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 1A9F1B616
-        for <linux-btrfs@vger.kernel.org>; Thu, 11 Oct 2018 15:04:08 +0000 (UTC)
-From:   Nikolay Borisov <nborisov@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 4/8] btrfstune: Add support for changing the user uuid
-Date:   Thu, 11 Oct 2018 18:04:00 +0300
-Message-Id: <1539270244-27076-5-git-send-email-nborisov@suse.com>
-X-Mailer: git-send-email 2.7.4
-In-Reply-To: <1539270244-27076-1-git-send-email-nborisov@suse.com>
-References: <1539270244-27076-1-git-send-email-nborisov@suse.com>
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 02992B068;
+        Thu, 11 Oct 2018 15:13:53 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 2FE36DA862; Thu, 11 Oct 2018 17:13:48 +0200 (CEST)
+Date:   Thu, 11 Oct 2018 17:13:47 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 0/6] Chunk allocator DUP fix and cleanups
+Message-ID: <20181011151346.GR29418@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz,
+        Hans van Kranenburg <hans.van.kranenburg@mendix.com>,
+        linux-btrfs@vger.kernel.org
+References: <20181004212443.26519-1-hans.van.kranenburg@mendix.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20181004212443.26519-1-hans.van.kranenburg@mendix.com>
+User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This allows us to change the use-visible UUID on filesytems from
-userspace if desired, by copying the existing UUID to the new location
-for metadata comparisons. If this is done, an incompat flag must be
-set to prevent older filesystems from mounting the filesystem, but
-the original UUID can be restored, and the incompat flag removed.
+On Thu, Oct 04, 2018 at 11:24:37PM +0200, Hans van Kranenburg wrote:
+> This patch set contains an additional fix for a newly exposed bug after
+> the previous attempt to fix a chunk allocator bug for new DUP chunks:
+> 
+> https://lore.kernel.org/linux-btrfs/782f6000-30c0-0085-abd2-74ec5827c903@mendix.com/T/#m609ccb5d32998e8ba5cfa9901c1ab56a38a6f374
+> 
+> The DUP fix is "fix more DUP stripe size handling". I did that one
+> before starting to change more things so it can be applied to earlier
+> LTS kernels.
+> 
+> Besides that patch, which is fixing the bug in a way that is least
+> intrusive, I added a bunch of other patches to help getting the chunk
+> allocator code in a state that is a bit less error-prone and
+> bug-attracting.
+> 
+> When running this and trying the reproduction scenario, I can now see
+> that the created DUP device extent is 827326464 bytes long, which is
+> good.
+> 
+> I wrote and tested this on top of linus 4.19-rc5. I still need to create
+> a list of related use cases and test more things to at least walk
+> through a bunch of obvious use cases to see if there's nothing exploding
+> too quickly with these changes. However, I'm quite confident about it,
+> so I'm sharing all of it already.
+> 
+> Any feedback and review is appreciated. Be gentle and keep in mind that
+> I'm still very much in a learning stage regarding kernel development.
 
-This introduces the new -m|-M UUID options similar to current
--u|-U UUID ones with the difference that we don't rewrite the fsid but
-just copy the old uuid and set a new one. Additionally running with
-[-M old-uuid] clears the incompat flag and retains only fsid on-disk.
+The patches look good, thanks. Problem is explained, preparatory work is
+separated from the fix itself.
 
-Additionally it's not allowed to intermix -m/-u/-U/-M options in a
-single invocation of btrfstune, nor is it allowed to change the uuid
-while there is a uuid rewrite in-progress. Also changing the uuid of a
-seed device is not currently allowed (can change in the future).
+> The stable patches handling workflow is not 100% clear to me yet. I
+> guess I have to add a Fixes: in the DUP patch which points to the
+> previous commit 92e222df7b.
 
-Example:
+Almost nobody does it right, no worries. If you can identify a single
+patch that introduces a bug then it's for Fixes:, otherwise a CC: stable
+with version where it makes sense & applies is enough. I do that check
+myself regardless of what's in the patch.
 
-btrfstune -m /dev/loop1
-btrfs inspect-internal dump-super /dev/loop1
+I ran the patches in a VM and hit a division-by-zero in test
+fstests/btrfs/011, stacktrace below. First guess is that it's caused by
+patch 3/6.
 
-superblock: bytenr=65536, device=/dev/loop1
----------------------------------------------------------
-csum_type		0 (crc32c)
-csum_size		4
-csum			0x4b7ea749 [match]
-
-<ommitted for brevity>
-
-fsid			0efc41d3-4451-49f3-8108-7b8bdbcf5ae8
-metadata_uuid		352715e7-62cf-4ae0-92ee-85a574adc318
-
-<ommitted for brevity>
-
-incompat_flags		0x541
-			( MIXED_BACKREF |
-			  EXTENDED_IREF |
-			  SKINNY_METADATA |
-			  METADATA_UUID )
-
-<omitted for brevity>
-
-dev_item.uuid		0610deee-dfc3-498b-9449-a06533cdec98
-dev_item.fsid		352715e7-62cf-4ae0-92ee-85a574adc318 [match]
-
-<ommitted for brevity>
-
-mount /dev/loop1 btrfs-mnt/
-btrfs fi show btrfs-mnt/
-
-Label: none  uuid: 0efc41d3-4451-49f3-8108-7b8bdbcf5ae8
-	Total devices 1 FS bytes used 128.00KiB
-	devid    1 size 5.00GiB used 536.00MiB path /dev/loop1
-
-In this case a new btrfs filesystem was created and the original uuid
-was 352715e7-62cf-4ae0-92ee-85a574adc318, then btrfstune was run which
-copied that value over to metadata_uuid field and set the current fsid
-to 0efc41d3-4451-49f3-8108-7b8bdbcf5ae8. And as far as userspace is
-concerned this is the fsid of the fs.
-
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
----
- btrfstune.c | 184 +++++++++++++++++++++++++++++++++++++++++++++++++++---------
- ctree.h     |   1 +
- 2 files changed, 160 insertions(+), 25 deletions(-)
-
-diff --git a/btrfstune.c b/btrfstune.c
-index 62a075b2defc..29610476cd99 100644
---- a/btrfstune.c
-+++ b/btrfstune.c
-@@ -73,6 +73,117 @@ static int update_seeding_flag(struct btrfs_root *root, int set_flag)
- 	return ret;
- }
- 
-+/*
-+ * Return 0 for no unfinished fsid change.
-+ * Return >0 for unfinished fsid change, and restore unfinished fsid/
-+ * chunk_tree_id into fsid_ret/chunk_id_ret.
-+ */
-+static int check_unfinished_fsid_change(struct btrfs_fs_info *fs_info,
-+					uuid_t fsid_ret, uuid_t chunk_id_ret)
-+{
-+	struct btrfs_root *tree_root = fs_info->tree_root;
-+	u64 flags = btrfs_super_flags(fs_info->super_copy);
-+
-+	if (flags & (BTRFS_SUPER_FLAG_CHANGING_FSID |
-+		     BTRFS_SUPER_FLAG_CHANGING_FSID_V2)) {
-+		memcpy(fsid_ret, fs_info->super_copy->fsid, BTRFS_FSID_SIZE);
-+		read_extent_buffer(tree_root->node, chunk_id_ret,
-+				btrfs_header_chunk_tree_uuid(tree_root->node),
-+				BTRFS_UUID_SIZE);
-+		return 1;
-+	}
-+	return 0;
-+}
-+
-+static int set_metadata_uuid(struct btrfs_root *root, const char *uuid_string)
-+{
-+	struct btrfs_super_block *disk_super;
-+	uuid_t new_fsid, unused1, unused2;
-+	struct btrfs_trans_handle *trans;
-+	bool new_uuid = true;
-+	u64 incompat_flags;
-+	bool uuid_changed;
-+	u64 super_flags;
-+	int ret;
-+
-+	disk_super = root->fs_info->super_copy;
-+	super_flags = btrfs_super_flags(disk_super);
-+	incompat_flags = btrfs_super_incompat_flags(disk_super);
-+	uuid_changed = incompat_flags & BTRFS_FEATURE_INCOMPAT_METADATA_UUID;
-+
-+	if (super_flags & BTRFS_SUPER_FLAG_SEEDING) {
-+		fprintf(stderr, "Cannot set metadata UUID on a seed device\n");
-+		return 1;
-+	}
-+
-+	if (check_unfinished_fsid_change(root->fs_info, unused1, unused2)) {
-+		fprintf(stderr, "UUID rewrite in progress, cannot change "
-+			"fsid\n");
-+		return 1;
-+	}
-+
-+	if (uuid_string)
-+		uuid_parse(uuid_string, new_fsid);
-+	else
-+		uuid_generate(new_fsid);
-+
-+	new_uuid = (memcmp(new_fsid, disk_super->fsid, BTRFS_FSID_SIZE) != 0);
-+
-+	/* Step 1 sest the in progress flag */
-+	trans = btrfs_start_transaction(root, 1);
-+	super_flags |= BTRFS_SUPER_FLAG_CHANGING_FSID_V2;
-+	btrfs_set_super_flags(disk_super, super_flags);
-+	ret = btrfs_commit_transaction(trans, root);
-+	if (ret < 0)
-+		return ret;
-+
-+	if (new_uuid && uuid_changed && memcmp(disk_super->metadata_uuid,
-+					       new_fsid, BTRFS_FSID_SIZE) == 0) {
-+		/*
-+		 * Changing fsid to be the same as metadata uuid, so just
-+		 * disable the flag
-+		 */
-+		memcpy(disk_super->fsid, &new_fsid, BTRFS_FSID_SIZE);
-+		incompat_flags &= ~BTRFS_FEATURE_INCOMPAT_METADATA_UUID;
-+		btrfs_set_super_incompat_flags(disk_super, incompat_flags);
-+		memset(disk_super->metadata_uuid, 0, BTRFS_FSID_SIZE);
-+	} else if (new_uuid && uuid_changed && memcmp(disk_super->metadata_uuid,
-+						new_fsid, BTRFS_FSID_SIZE)) {
-+		/*
-+		 * Changing fsid on an already changed FS, in this case we
-+		 * only change the fsid and don't touch metadata uuid as it
-+		 * has already the correct value
-+		 */
-+		memcpy(disk_super->fsid, &new_fsid, BTRFS_FSID_SIZE);
-+	} else if (new_uuid && !uuid_changed) {
-+		/*
-+		 * First time changing the fsid, copy the fsid to
-+		 * metadata_uuid
-+		 */
-+		incompat_flags |= BTRFS_FEATURE_INCOMPAT_METADATA_UUID;
-+		btrfs_set_super_incompat_flags(disk_super, incompat_flags);
-+		memcpy(disk_super->metadata_uuid, disk_super->fsid,
-+		       BTRFS_FSID_SIZE);
-+		memcpy(disk_super->fsid, &new_fsid, BTRFS_FSID_SIZE);
-+	} else {
-+		/* Setting the same fsid as current NOOP */
-+		return 0;
-+	}
-+
-+	trans = btrfs_start_transaction(root, 1);
-+
-+	/*
-+	 * Step 2 is to write the metadata_uuid, set the incompat flag and
-+	 * clear the in progress flag
-+	 */
-+	super_flags &= ~BTRFS_SUPER_FLAG_CHANGING_FSID_V2;
-+	btrfs_set_super_flags(disk_super, super_flags);
-+
-+	/* Then actually copy the metadata uuid and set the incompat bit */
-+
-+	return btrfs_commit_transaction(trans, root);
-+}
-+
- static int set_super_incompat_flags(struct btrfs_root *root, u64 flags)
- {
- 	struct btrfs_trans_handle *trans;
-@@ -268,26 +379,6 @@ static int change_fsid_done(struct btrfs_fs_info *fs_info)
- 	return write_all_supers(fs_info);
- }
- 
--/*
-- * Return 0 for no unfinished fsid change.
-- * Return >0 for unfinished fsid change, and restore unfinished fsid/
-- * chunk_tree_id into fsid_ret/chunk_id_ret.
-- */
--static int check_unfinished_fsid_change(struct btrfs_fs_info *fs_info,
--					uuid_t fsid_ret, uuid_t chunk_id_ret)
--{
--	struct btrfs_root *tree_root = fs_info->tree_root;
--	u64 flags = btrfs_super_flags(fs_info->super_copy);
--
--	if (flags & BTRFS_SUPER_FLAG_CHANGING_FSID) {
--		memcpy(fsid_ret, fs_info->super_copy->fsid, BTRFS_FSID_SIZE);
--		read_extent_buffer(tree_root->node, chunk_id_ret,
--				btrfs_header_chunk_tree_uuid(tree_root->node),
--				BTRFS_UUID_SIZE);
--		return 1;
--	}
--	return 0;
--}
- 
- /*
-  * Change fsid of a given fs.
-@@ -381,8 +472,10 @@ static void print_usage(void)
- 	printf("\t-x \t\tenable skinny metadata extent refs\n");
- 	printf("\t-n \t\tenable no-holes feature (more efficient sparse file representation)\n");
- 	printf("\t-f \t\tforce to do dangerous operation, make sure that you are aware of the dangers\n");
--	printf("\t-u \t\tchange fsid, use a random one\n");
--	printf("\t-U UUID\t\tchange fsid to UUID\n");
-+	printf("\t-u \t\trewrite fsid, use a random one\n");
-+	printf("\t-U UUID\t\trewrite fsid to UUID\n");
-+	printf("\t-m \t\tChange only user-facing uuid (lighterweight than -u|-U\n");
-+	printf("\t-M UUID\t\tchange fsid to UUID\n");
- }
- 
- int main(int argc, char *argv[])
-@@ -394,6 +487,7 @@ int main(int argc, char *argv[])
- 	int seeding_flag = 0;
- 	u64 seeding_value = 0;
- 	int random_fsid = 0;
-+	int change_metadata_uuid = 0;
- 	char *new_fsid_str = NULL;
- 	int ret;
- 	u64 super_flags = 0;
-@@ -404,7 +498,7 @@ int main(int argc, char *argv[])
- 			{ "help", no_argument, NULL, GETOPT_VAL_HELP},
- 			{ NULL, 0, NULL, 0 }
- 		};
--		int c = getopt_long(argc, argv, "S:rxfuU:n", long_options, NULL);
-+		int c = getopt_long(argc, argv, "S:rxfuU:nmM:", long_options, NULL);
- 
- 		if (c < 0)
- 			break;
-@@ -433,6 +527,15 @@ int main(int argc, char *argv[])
- 			ctree_flags |= OPEN_CTREE_IGNORE_FSID_MISMATCH;
- 			random_fsid = 1;
- 			break;
-+		case 'M':
-+			ctree_flags |= OPEN_CTREE_IGNORE_FSID_MISMATCH;
-+			change_metadata_uuid = 1;
-+			new_fsid_str = optarg;
-+			break;
-+		case 'm':
-+			ctree_flags |= OPEN_CTREE_IGNORE_FSID_MISMATCH;
-+			change_metadata_uuid = 1;
-+			break;
- 		case GETOPT_VAL_HELP:
- 		default:
- 			print_usage();
-@@ -451,7 +554,8 @@ int main(int argc, char *argv[])
- 		error("random fsid can't be used with specified fsid");
- 		return 1;
- 	}
--	if (!super_flags && !seeding_flag && !(random_fsid || new_fsid_str)) {
-+	if (!super_flags && !seeding_flag && !(random_fsid || new_fsid_str) &&
-+	    !change_metadata_uuid) {
- 		error("at least one option should be specified");
- 		print_usage();
- 		return 1;
-@@ -497,6 +601,12 @@ int main(int argc, char *argv[])
- 	}
- 
- 	if (seeding_flag) {
-+		if (btrfs_fs_incompat(root->fs_info, METADATA_UUID)) {
-+			fprintf(stderr, "SEED flag cannot be changed on a metadata-uuid changed fs\n");
-+			ret = 1;
-+			goto out;
-+		}
-+
- 		if (!seeding_value && !force) {
- 			warning(
- "this is dangerous, clearing the seeding flag may cause the derived device not to be mountable!");
-@@ -521,7 +631,31 @@ int main(int argc, char *argv[])
- 		total++;
- 	}
- 
--	if (random_fsid || new_fsid_str) {
-+	if (change_metadata_uuid) {
-+		if (seeding_flag) {
-+			fprintf(stderr, "Not allowed to set both seeding flag and uuid metadata\n");
-+			ret = 1;
-+			goto out;
-+		}
-+
-+		if (new_fsid_str)
-+			ret = set_metadata_uuid(root, new_fsid_str);
-+		else
-+			ret = set_metadata_uuid(root, NULL);
-+
-+		if (!ret)
-+			success++;
-+		total++;
-+	}
-+
-+	if (random_fsid || (new_fsid_str && !change_metadata_uuid)) {
-+		if (btrfs_fs_incompat(root->fs_info, METADATA_UUID)) {
-+			fprintf(stderr, "Cannot rewrite fsid while METADATA_UUID flag is active."
-+				"Ensure fsid and metadata_uuid match before retrying.\n");
-+			ret = 1;
-+			goto out;
-+		}
-+
- 		if (!force) {
- 			warning(
- 	"it's highly recommended to run 'btrfs check' before this operation");
-diff --git a/ctree.h b/ctree.h
-index c22d36b1871b..ff2ae9fecc11 100644
---- a/ctree.h
-+++ b/ctree.h
-@@ -330,6 +330,7 @@ static inline unsigned long btrfs_chunk_item_size(int num_stripes)
- #define BTRFS_SUPER_FLAG_METADUMP		(1ULL << 33)
- #define BTRFS_SUPER_FLAG_METADUMP_V2		(1ULL << 34)
- #define BTRFS_SUPER_FLAG_CHANGING_FSID		(1ULL << 35)
-+#define BTRFS_SUPER_FLAG_CHANGING_FSID_V2	(1ULL << 36)
- 
- #define BTRFS_BACKREF_REV_MAX		256
- #define BTRFS_BACKREF_REV_SHIFT		56
--- 
-2.7.4
-
+[ 3116.065595] BTRFS: device fsid e3bd8db5-304f-4b1a-8488-7791ea94088f devid 1 transid 5 /dev/vdb
+[ 3116.071274] BTRFS: device fsid e3bd8db5-304f-4b1a-8488-7791ea94088f devid 2 transid 5 /dev/vdc
+[ 3116.087086] BTRFS info (device vdb): disk space caching is enabled
+[ 3116.088644] BTRFS info (device vdb): has skinny extents
+[ 3116.089796] BTRFS info (device vdb): flagging fs with big metadata feature
+[ 3116.093971] BTRFS info (device vdb): checking UUID tree
+[ 3125.853755] BTRFS info (device vdb): dev_replace from /dev/vdb (devid 1) to /dev/vdd started
+[ 3125.860269] divide error: 0000 [#1] PREEMPT SMP
+[ 3125.861264] CPU: 1 PID: 6477 Comm: btrfs Not tainted 4.19.0-rc7-default+ #288
+[ 3125.862841] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS 1.0.0-prebuilt.qemu-project.org 04/01/2014
+[ 3125.865385] RIP: 0010:__btrfs_alloc_chunk+0x368/0xa70 [btrfs]
+[ 3125.870541] RSP: 0018:ffffa4ea0409fa48 EFLAGS: 00010206
+[ 3125.871862] RAX: 0000000004000000 RBX: ffff94e074374508 RCX: 0000000000000002
+[ 3125.873587] RDX: 0000000000000000 RSI: ffff94e017818c80 RDI: 0000000002000000
+[ 3125.874677] RBP: 0000000080800000 R08: 0000000000000000 R09: 0000000000000002
+[ 3125.875816] R10: 0000000300000000 R11: 0000000080900000 R12: 0000000000000000
+[ 3125.876742] R13: 0000000000000001 R14: 0000000000000001 R15: 0000000000000002
+[ 3125.877657] FS:  00007f6de34208c0(0000) GS:ffff94e07d600000(0000) knlGS:0000000000000000
+[ 3125.878862] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[ 3125.880080] CR2: 00007ffe963d5ce8 CR3: 000000007659b000 CR4: 00000000000006e0
+[ 3125.881485] Call Trace:
+[ 3125.882105]  do_chunk_alloc+0x266/0x3e0 [btrfs]
+[ 3125.882841]  btrfs_inc_block_group_ro+0x10e/0x160 [btrfs]
+[ 3125.883875]  scrub_enumerate_chunks+0x18b/0x5d0 [btrfs]
+[ 3125.884658]  ? is_module_address+0x11/0x30
+[ 3125.885271]  ? wait_for_completion+0x160/0x190
+[ 3125.885928]  btrfs_scrub_dev+0x1b8/0x5a0 [btrfs]
+[ 3125.887767]  ? start_transaction+0xa1/0x470 [btrfs]
+[ 3125.888648]  btrfs_dev_replace_start.cold.19+0x155/0x17e [btrfs]
+[ 3125.889459]  btrfs_dev_replace_by_ioctl+0x35/0x60 [btrfs]
+[ 3125.890251]  btrfs_ioctl+0x2a94/0x31d0 [btrfs]
+[ 3125.890885]  ? do_sigaction+0x7c/0x210
+[ 3125.891731]  ? do_vfs_ioctl+0xa2/0x6b0
+[ 3125.892652]  do_vfs_ioctl+0xa2/0x6b0
+[ 3125.893642]  ? do_sigaction+0x1a7/0x210
+[ 3125.894665]  ksys_ioctl+0x3a/0x70
+[ 3125.895523]  __x64_sys_ioctl+0x16/0x20
+[ 3125.896339]  do_syscall_64+0x5a/0x1a0
+[ 3125.896949]  entry_SYSCALL_64_after_hwframe+0x49/0xbe
+[ 3125.897638] RIP: 0033:0x7f6de28ecaa7
+[ 3125.901313] RSP: 002b:00007ffe963da9c8 EFLAGS: 00000246 ORIG_RAX: 0000000000000010
+[ 3125.902486] RAX: ffffffffffffffda RBX: 0000000000000003 RCX: 00007f6de28ecaa7
+[ 3125.903538] RDX: 00007ffe963dae00 RSI: 00000000ca289435 RDI: 0000000000000003
+[ 3125.904878] RBP: 0000000000000000 R08: 0000000000000000 R09: 0000000000000000
+[ 3125.905788] R10: 0000000000000008 R11: 0000000000000246 R12: 00007ffe963de26f
+[ 3125.906700] R13: 0000000000000001 R14: 0000000000000004 R15: 000055fceeceb2a0
+[ 3125.907954] Modules linked in: btrfs libcrc32c xor zstd_decompress zstd_compress xxhash raid6_pq loop
+[ 3125.909342] ---[ end trace 5492bb467d3be2da ]---
+[ 3125.910031] RIP: 0010:__btrfs_alloc_chunk+0x368/0xa70 [btrfs]
+[ 3125.913600] RSP: 0018:ffffa4ea0409fa48 EFLAGS: 00010206
+[ 3125.914595] RAX: 0000000004000000 RBX: ffff94e074374508 RCX: 0000000000000002
+[ 3125.916209] RDX: 0000000000000000 RSI: ffff94e017818c80 RDI: 0000000002000000
+[ 3125.917701] RBP: 0000000080800000 R08: 0000000000000000 R09: 0000000000000002
+[ 3125.919209] R10: 0000000300000000 R11: 0000000080900000 R12: 0000000000000000
+[ 3125.920782] R13: 0000000000000001 R14: 0000000000000001 R15: 0000000000000002
+[ 3125.922413] FS:  00007f6de34208c0(0000) GS:ffff94e07d600000(0000) knlGS:0000000000000000
+[ 3125.924264] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[ 3125.925627] CR2: 00007ffe963d5ce8 CR3: 000000007659b000 CR4: 00000000000006e0

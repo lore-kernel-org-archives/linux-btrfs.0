@@ -2,222 +2,153 @@ Return-Path: <SRS0=9zVn=MX=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 13AE4C67837
-	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Oct 2018 20:34:32 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0B5CAC677FC
+	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Oct 2018 20:36:01 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B5EDA20644
-	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Oct 2018 20:34:31 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C404820644
+	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Oct 2018 20:36:00 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=MendixTechnologyBV.onmicrosoft.com header.i=@MendixTechnologyBV.onmicrosoft.com header.b="QVf1Hepu"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org B5EDA20644
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=mendix.com
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="pr8jrn1G"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org C404820644
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1725911AbeJLEDZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 12 Oct 2018 00:03:25 -0400
-Received: from mail-eopbgr20089.outbound.protection.outlook.com ([40.107.2.89]:9376
-        "EHLO EUR02-VE1-obe.outbound.protection.outlook.com"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725840AbeJLEDX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 12 Oct 2018 00:03:23 -0400
+        id S1726218AbeJLEEx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 12 Oct 2018 00:04:53 -0400
+Received: from mail-vs1-f65.google.com ([209.85.217.65]:36367 "EHLO
+        mail-vs1-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725819AbeJLEEx (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 12 Oct 2018 00:04:53 -0400
+Received: by mail-vs1-f65.google.com with SMTP id c205so9878879vsd.3
+        for <linux-btrfs@vger.kernel.org>; Thu, 11 Oct 2018 13:35:58 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
- d=MendixTechnologyBV.onmicrosoft.com; s=selector1-mendix-com;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=2KhkYw0Kw3k/y1PrCI/8WnuUH5cvrRwmWzevzqvcw8c=;
- b=QVf1Hepu7Wx/eOk25rWwiU8CeUO0pfwm9YbODegZfUlXqtssPbzr8Qzsi/Y1A2mlPwmITBOS/pgJlRPJ3bP6UdkaAfufZcRQyOxlI2FELbGCEQ9LZR9QbZUQReRySiSahnSi2DDNbMOUTJLHw+8mFAwiL6qWmV4vM1FJ34VIBL8=
-Received: from DB7PR06MB4680.eurprd06.prod.outlook.com (20.177.122.217) by
- DB7PR06MB5116.eurprd06.prod.outlook.com (20.178.43.202) with Microsoft SMTP
- Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- 15.20.1228.23; Thu, 11 Oct 2018 20:34:19 +0000
-Received: from DB7PR06MB4680.eurprd06.prod.outlook.com
- ([fe80::a442:b8da:e90:6872]) by DB7PR06MB4680.eurprd06.prod.outlook.com
- ([fe80::a442:b8da:e90:6872%4]) with mapi id 15.20.1228.020; Thu, 11 Oct 2018
- 20:34:19 +0000
-From:   Hans van Kranenburg <Hans.van.Kranenburg@mendix.com>
-To:     "dsterba@suse.cz" <dsterba@suse.cz>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 0/6] Chunk allocator DUP fix and cleanups
-Thread-Topic: [PATCH 0/6] Chunk allocator DUP fix and cleanups
-Thread-Index: AQHUXCmOSBgrE/nJs0WTXuGELqo9PaUaMbCAgABsAAD//+2NAA==
-Date:   Thu, 11 Oct 2018 20:34:19 +0000
-Message-ID: <1f30689c-c7d0-1497-1128-ea0e661f7abc@mendix.com>
-References: <20181004212443.26519-1-hans.van.kranenburg@mendix.com>
- <20181011151346.GR29418@twin.jikos.cz>
- <98354c0d-2bed-340e-4f8e-734307c82863@mendix.com>
-In-Reply-To: <98354c0d-2bed-340e-4f8e-734307c82863@mendix.com>
-Accept-Language: en-US
-Content-Language: en-US
-X-MS-Has-Attach: 
-X-MS-TNEF-Correlator: 
-user-agent: Mozilla/5.0 (X11; Linux x86_64; rv:52.0) Gecko/20100101
- Thunderbird/52.9.1
-x-originating-ip: [2001:980:4a41:fb::12]
-x-clientproxiedby: DB6PR1001CA0047.EURPRD10.PROD.OUTLOOK.COM
- (2603:10a6:4:55::33) To DB7PR06MB4680.eurprd06.prod.outlook.com
- (2603:10a6:10:53::25)
-authentication-results: spf=none (sender IP is )
- smtp.mailfrom=Hans.van.Kranenburg@mendix.com; 
-x-ms-exchange-messagesentrepresentingtype: 1
-x-ms-publictraffictype: Email
-x-microsoft-exchange-diagnostics: 1;DB7PR06MB5116;6:VcGlU9H7MDHLB2i+F5qSdGvOWFuNx9F2QaL+XDJffsH5dJmSnbFhoS1h25/h9Ni5zXOegv6eoZfBiNn3keP6gOdiB9dD9CuwStfWeGAImDWq1KdD/VnjzlGKWsDw+Gve9dRGDfGrVcL7+L+ahENIA1iCMxhoSE9+/7EgG73//4i4hFVHmxwbF0hIwx+3jbrcHGYtUBQ1cSoFtzgBKK06FAAOPykgQhT/EJwCXVrh7bJhtva/mD5BaDnmcQGhHTtjlsCXSCkCEfnv0DHIdAjmuRg0iUSL/dpPsP5pJm9A4pbeEy5DMbLpF1Q1sykyt/3lq2osXBjJOBTZeHkc2lxMiSPoSBg88CUnTaMz5fKchjI0WPzASUhhI7LIC3ILoa6CMwCeflNs+v6i6Dc8JvHjbY2B9XGHM8XH8MHf2qXbwXqdO3pXJHxFd4PyLEqdiYhmnlJB98gjexqK0Saqd6PeMQ==;5:48EDRzxkq/zuiiaR60kQ3SwGw51oqaDpZBNxMKLENKiJybuo9DG0BTAIcxOJ5FnUk9wO/it+/kPOFuSHkcTJNUo7DQEAc9aUWTsLKbQxL4jPYl72XJXFAw/axrW/4AKq+QNhL4wihVTf92lYZgISZjDHwkr8jIxQFhOyyZyoKxo=;7:Dz9NanUcLfLv9pEMFxvpQXqvkFXefPDIJv5rsHV1+kFYla5iJz+PbmsnWepR6YwQXVx+UkipeoZayYa0p852bwsaYLc1rbGeCLdlvg+TZd7DmrKv7f8U2U2922foKH63fgw7JNxvr4Ek5gTCakqxJ2JEABmMzSD+V+zaWUqrvqfu/ZDJRQ2RsdJ6H2RhvMqNpObR6Q/ITj14TGmmRYlNdQFG12lRNSaJxz/1FdaqsXggY15V3Fs+1vsIgMPDx236
-x-ms-office365-filtering-correlation-id: 817d8606-e375-4488-e274-08d62fb8eb69
-x-microsoft-antispam: BCL:0;PCL:0;RULEID:(7020095)(4652040)(8989299)(5600074)(711020)(4534185)(4627221)(201703031133081)(201702281549075)(8990200)(2017052603328)(7153060)(7193020);SRVR:DB7PR06MB5116;
-x-ms-traffictypediagnostic: DB7PR06MB5116:
-x-microsoft-antispam-prvs: <DB7PR06MB511647A70F749299CA997407D4E10@DB7PR06MB5116.eurprd06.prod.outlook.com>
-x-exchange-antispam-report-test: UriScan:(271806183753584)(788757137089);
-x-ms-exchange-senderadcheck: 1
-x-exchange-antispam-report-cfa-test: BCL:0;PCL:0;RULEID:(8211001083)(6040522)(2401047)(5005006)(8121501046)(3002001)(3231355)(944501410)(52105095)(93006095)(93001095)(10201501046)(149066)(150057)(6041310)(20161123560045)(201703131423095)(201702281528075)(20161123555045)(201703061421075)(201703061406153)(20161123558120)(20161123562045)(20161123564045)(201708071742011)(7699051)(76991062);SRVR:DB7PR06MB5116;BCL:0;PCL:0;RULEID:;SRVR:DB7PR06MB5116;
-x-forefront-prvs: 08220FA8D6
-x-forefront-antispam-report: SFV:NSPM;SFS:(10009020)(39850400004)(136003)(376002)(346002)(366004)(396003)(189003)(199004)(476003)(11346002)(106356001)(316002)(46003)(446003)(486006)(105586002)(2900100001)(110136005)(99286004)(2501003)(966005)(81166006)(386003)(36756003)(53546011)(6116002)(31686004)(2616005)(2906002)(81156014)(58126008)(72206003)(5250100002)(71190400001)(71200400001)(14454004)(8936002)(76176011)(8676002)(6506007)(52116002)(256004)(68736007)(31696002)(25786009)(478600001)(86362001)(45080400002)(64126003)(5660300001)(6486002)(65826007)(102836004)(53936002)(7736002)(6512007)(97736004)(6246003)(186003)(6436002)(65806001)(229853002)(6306002)(551934003)(65956001)(305945005);DIR:OUT;SFP:1101;SCL:1;SRVR:DB7PR06MB5116;H:DB7PR06MB4680.eurprd06.prod.outlook.com;FPR:;SPF:None;LANG:en;PTR:InfoNoRecords;MX:1;A:1;
-received-spf: None (protection.outlook.com: mendix.com does not designate
- permitted sender hosts)
-x-microsoft-antispam-message-info: Qdfg50dAK92LeHTKT5fE76Cd0BX2WvvJ8IhlWgxd5nCXeVzQuvpbqFSZT5cKAtqq3v623sL3VFkezlr3KfzFE5BYU4SjHJ0O0t/DWFdRoAQh5i+7M3da4XC31hq5mgsscOjQd27nX0ZX8KmHKexvmag8O9HcVRc/pbTIa4hg5aipFMKfABOH738OdXZcr9rELmYqSNXDTPyuYIaAh2rDkr+YcJekn6mgCvNbKw+9kJBsJjaBUj4Xnw8By5gJ5k9/qnGCVwFKDryIiLJBCLZDKH+rhUNkrKslMtBDfe7rnUT8EW8xNOtF41fyTYO3VBEOcwY3ZWb2jWLDivje9F8X6vOfTphM1EamqOaLdRpUKsk=
-spamdiagnosticoutput: 1:99
-spamdiagnosticmetadata: NSPM
-Content-Type: text/plain; charset="utf-8"
-Content-ID: <7E5C426617225F48BA3254B8B6575AAA@eurprd06.prod.outlook.com>
-Content-Transfer-Encoding: base64
+        d=gmail.com; s=20161025;
+        h=mime-version:references:in-reply-to:reply-to:from:date:message-id
+         :subject:to:cc:content-transfer-encoding;
+        bh=dwIykBiFSNPOCz6JIgn9lRs0ISesB0hDz/nYvxPM3bw=;
+        b=pr8jrn1GnA1IvvsCKE7qoNvQVqlbBOdtWVJyhB7xgjqLiwIP7gI+vF3zOyvH5vhYFB
+         BWMd4gv9TC03z/jibOp3e+UHU5OS0PGlIBSySC50nMiP6Ugr/VbHZbGgi56i1YN+TEe5
+         Ma0tYikxQkj6Hyhc8n6dO2lUDCYxRb/ff3h3xoRdCqPKr80rrZXDnO0+ruYHrFRuKLdH
+         19oHeBVlUdoqP9E/eWNd+K0VSYNoAGTFFXbFQ1djO9pw1TPDTmbwEzcFCwtdsctV+gQN
+         r9vkdROHEqb5RSOdMnk689lnQcVFHTv/8RNK7wqV2m32SJbee0rFHygSZLBaG5Q7+iyt
+         /1UQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:reply-to
+         :from:date:message-id:subject:to:cc:content-transfer-encoding;
+        bh=dwIykBiFSNPOCz6JIgn9lRs0ISesB0hDz/nYvxPM3bw=;
+        b=kqoJfRQu5Tfa4VQtKFt9by9gm4FGxUIKmD5HeJIRAweU/WZxoPKeiSwectrAAhUkkz
+         NypjbrH4x8SXgczZwMQvEvrHn5O3eb/iSt/9RqIsNx695lzifu6HWKpDtwyO7p7RVeKd
+         LXTZHPaCLZuYhN3dS9XsAFTIxE42RVpCq23MKVLIZklzNrO+csupqgC6ED/lXAbrsUSR
+         lgMbIE+s6G3sRLQuiZtED9CKlmm98GkhXVn0KUQ005FyX4p21VXdY0B39O4ibRazo85f
+         bg8edWDc73osEFLlltwiw3z0JgP9KUieLQlXm6Iwr3kfKIVl+Ojxs9lR2b2/G+qyk7gR
+         /xaw==
+X-Gm-Message-State: ABuFfoif+xMoOnyScXbTUTJQeO9xNHeta7yLXXSaTbRXYIAtXeuSvDK+
+        z1SFQ8bjvOkNLHLfAiq/J1lMP4WL9ibPfihQ95c=
+X-Google-Smtp-Source: ACcGV60BYJcKAEbawrhK9awJRdefStDfdKQ36+463OWNQVM5LmShTDxOqn3+6tZnp6uHm6JjN0Um/xbRhdogrXwfsmw=
+X-Received: by 2002:ab0:4812:: with SMTP id b18mr1496536uad.30.1539290158406;
+ Thu, 11 Oct 2018 13:35:58 -0700 (PDT)
 MIME-Version: 1.0
-X-OriginatorOrg: mendix.com
-X-MS-Exchange-CrossTenant-Network-Message-Id: 817d8606-e375-4488-e274-08d62fb8eb69
-X-MS-Exchange-CrossTenant-originalarrivaltime: 11 Oct 2018 20:34:19.2048
- (UTC)
-X-MS-Exchange-CrossTenant-fromentityheader: Hosted
-X-MS-Exchange-CrossTenant-id: b4e3c78d-8e3b-46d8-bc56-5540da23ba4d
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: DB7PR06MB5116
+References: <20181011195431.3441-1-josef@toxicpanda.com> <20181011195431.3441-33-josef@toxicpanda.com>
+In-Reply-To: <20181011195431.3441-33-josef@toxicpanda.com>
+Reply-To: fdmanana@gmail.com
+From:   Filipe Manana <fdmanana@gmail.com>
+Date:   Thu, 11 Oct 2018 21:35:46 +0100
+Message-ID: <CAL3q7H6J6mLpr-toJporWoUcAmJ1HXRGOhRujf0dgxPRT3v=dQ@mail.gmail.com>
+Subject: Re: [PATCH 32/42] btrfs: only free reserved extent if we didn't
+ insert it
+To:     Josef Bacik <josef@toxicpanda.com>
+Cc:     kernel-team@fb.com, linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-T24gMTAvMTEvMjAxOCAwOTo0MCBQTSwgSGFucyB2YW4gS3JhbmVuYnVyZyB3cm90ZToNCj4gT24g
-MTAvMTEvMjAxOCAwNToxMyBQTSwgRGF2aWQgU3RlcmJhIHdyb3RlOg0KPj4gT24gVGh1LCBPY3Qg
-MDQsIDIwMTggYXQgMTE6MjQ6MzdQTSArMDIwMCwgSGFucyB2YW4gS3JhbmVuYnVyZyB3cm90ZToN
-Cj4+PiBUaGlzIHBhdGNoIHNldCBjb250YWlucyBhbiBhZGRpdGlvbmFsIGZpeCBmb3IgYSBuZXds
-eSBleHBvc2VkIGJ1ZyBhZnRlcg0KPj4+IHRoZSBwcmV2aW91cyBhdHRlbXB0IHRvIGZpeCBhIGNo
-dW5rIGFsbG9jYXRvciBidWcgZm9yIG5ldyBEVVAgY2h1bmtzOg0KPj4+DQo+Pj4gaHR0cHM6Ly9s
-b3JlLmtlcm5lbC5vcmcvbGludXgtYnRyZnMvNzgyZjYwMDAtMzBjMC0wMDg1LWFiZDItNzRlYzU4
-MjdjOTAzQG1lbmRpeC5jb20vVC8jbTYwOWNjYjVkMzI5OThlOGJhNWNmYTk5MDFjMWFiNTZhMzhh
-NmYzNzQNCj4+Pg0KPj4+IFRoZSBEVVAgZml4IGlzICJmaXggbW9yZSBEVVAgc3RyaXBlIHNpemUg
-aGFuZGxpbmciLiBJIGRpZCB0aGF0IG9uZQ0KPj4+IGJlZm9yZSBzdGFydGluZyB0byBjaGFuZ2Ug
-bW9yZSB0aGluZ3Mgc28gaXQgY2FuIGJlIGFwcGxpZWQgdG8gZWFybGllcg0KPj4+IExUUyBrZXJu
-ZWxzLg0KPj4+DQo+Pj4gQmVzaWRlcyB0aGF0IHBhdGNoLCB3aGljaCBpcyBmaXhpbmcgdGhlIGJ1
-ZyBpbiBhIHdheSB0aGF0IGlzIGxlYXN0DQo+Pj4gaW50cnVzaXZlLCBJIGFkZGVkIGEgYnVuY2gg
-b2Ygb3RoZXIgcGF0Y2hlcyB0byBoZWxwIGdldHRpbmcgdGhlIGNodW5rDQo+Pj4gYWxsb2NhdG9y
-IGNvZGUgaW4gYSBzdGF0ZSB0aGF0IGlzIGEgYml0IGxlc3MgZXJyb3ItcHJvbmUgYW5kDQo+Pj4g
-YnVnLWF0dHJhY3RpbmcuDQo+Pj4NCj4+PiBXaGVuIHJ1bm5pbmcgdGhpcyBhbmQgdHJ5aW5nIHRo
-ZSByZXByb2R1Y3Rpb24gc2NlbmFyaW8sIEkgY2FuIG5vdyBzZWUNCj4+PiB0aGF0IHRoZSBjcmVh
-dGVkIERVUCBkZXZpY2UgZXh0ZW50IGlzIDgyNzMyNjQ2NCBieXRlcyBsb25nLCB3aGljaCBpcw0K
-Pj4+IGdvb2QuDQo+Pj4NCj4+PiBJIHdyb3RlIGFuZCB0ZXN0ZWQgdGhpcyBvbiB0b3Agb2YgbGlu
-dXMgNC4xOS1yYzUuIEkgc3RpbGwgbmVlZCB0byBjcmVhdGUNCj4+PiBhIGxpc3Qgb2YgcmVsYXRl
-ZCB1c2UgY2FzZXMgYW5kIHRlc3QgbW9yZSB0aGluZ3MgdG8gYXQgbGVhc3Qgd2Fsaw0KPj4+IHRo
-cm91Z2ggYSBidW5jaCBvZiBvYnZpb3VzIHVzZSBjYXNlcyB0byBzZWUgaWYgdGhlcmUncyBub3Ro
-aW5nIGV4cGxvZGluZw0KPj4+IHRvbyBxdWlja2x5IHdpdGggdGhlc2UgY2hhbmdlcy4gSG93ZXZl
-ciwgSSdtIHF1aXRlIGNvbmZpZGVudCBhYm91dCBpdCwNCj4+PiBzbyBJJ20gc2hhcmluZyBhbGwg
-b2YgaXQgYWxyZWFkeS4NCj4+Pg0KPj4+IEFueSBmZWVkYmFjayBhbmQgcmV2aWV3IGlzIGFwcHJl
-Y2lhdGVkLiBCZSBnZW50bGUgYW5kIGtlZXAgaW4gbWluZCB0aGF0DQo+Pj4gSSdtIHN0aWxsIHZl
-cnkgbXVjaCBpbiBhIGxlYXJuaW5nIHN0YWdlIHJlZ2FyZGluZyBrZXJuZWwgZGV2ZWxvcG1lbnQu
-DQo+Pg0KPj4gVGhlIHBhdGNoZXMgbG9vayBnb29kLCB0aGFua3MuIFByb2JsZW0gaXMgZXhwbGFp
-bmVkLCBwcmVwYXJhdG9yeSB3b3JrIGlzDQo+PiBzZXBhcmF0ZWQgZnJvbSB0aGUgZml4IGl0c2Vs
-Zi4NCj4gDQo+IFxvLw0KPiANCj4+PiBUaGUgc3RhYmxlIHBhdGNoZXMgaGFuZGxpbmcgd29ya2Zs
-b3cgaXMgbm90IDEwMCUgY2xlYXIgdG8gbWUgeWV0LiBJDQo+Pj4gZ3Vlc3MgSSBoYXZlIHRvIGFk
-ZCBhIEZpeGVzOiBpbiB0aGUgRFVQIHBhdGNoIHdoaWNoIHBvaW50cyB0byB0aGUNCj4+PiBwcmV2
-aW91cyBjb21taXQgOTJlMjIyZGY3Yi4NCj4+DQo+PiBBbG1vc3Qgbm9ib2R5IGRvZXMgaXQgcmln
-aHQsIG5vIHdvcnJpZXMuIElmIHlvdSBjYW4gaWRlbnRpZnkgYSBzaW5nbGUNCj4+IHBhdGNoIHRo
-YXQgaW50cm9kdWNlcyBhIGJ1ZyB0aGVuIGl0J3MgZm9yIEZpeGVzOiwgb3RoZXJ3aXNlIGEgQ0M6
-IHN0YWJsZQ0KPj4gd2l0aCB2ZXJzaW9uIHdoZXJlIGl0IG1ha2VzIHNlbnNlICYgYXBwbGllcyBp
-cyBlbm91Z2guIEkgZG8gdGhhdCBjaGVjaw0KPj4gbXlzZWxmIHJlZ2FyZGxlc3Mgb2Ygd2hhdCdz
-IGluIHRoZSBwYXRjaC4NCj4gDQo+IEl0J3MgOTJlMjIyZGY3YiBhbmQgdGhlIHRoaW5nIEknbSBu
-b3Qgc3VyZSBhYm91dCBpcyBpZiBpdCBhbHNvIHdpbGwNCj4gY2F0Y2ggdGhlIHNhbWUgcGF0Y2gg
-d2hpY2ggd2FzIGFscmVhZHkgYmFja3BvcnRlZCB0byBMVFMga2VybmVscyBzaW5jZQ0KPiA5MmUy
-MjJkZjdiIGFsc28gaGFzIEZpeGVzIGluIGl0Li4uIFNvIGJ5IG5vdyB0aGUgbmV3IGJ1ZyBpcyBp
-biA0LjE5LA0KPiA0LjE0LCA0LjksIDQuNCwgMy4xNi4uLg0KPiANCj4+IEkgcmFuIHRoZSBwYXRj
-aGVzIGluIGEgVk0gYW5kIGhpdCBhIGRpdmlzaW9uLWJ5LXplcm8gaW4gdGVzdA0KPj4gZnN0ZXN0
-cy9idHJmcy8wMTEsIHN0YWNrdHJhY2UgYmVsb3cuIEZpcnN0IGd1ZXNzIGlzIHRoYXQgaXQncyBj
-YXVzZWQgYnkNCj4+IHBhdGNoIDMvNi4NCj4gDQo+IEFoIGludGVyZXN0aW5nLCBkZXYgcmVwbGFj
-ZS4NCj4gDQo+IEknbGwgcGxheSBhcm91bmQgd2l0aCByZXBsYWNlIGFuZCBmaW5kIG91dCBob3cg
-dG8gcnVuIHRoZSB0ZXN0cyBwcm9wZXJseQ0KPiBhbmQgdGhlbiByZXByb2R1Y2UgdGhpcy4NCj4g
-DQo+IFRoZSBjb2RlIGludHJvZHVjZWQgaW4gcGF0Y2ggMyBpcyByZW1vdmVkIGFnYWluIGluIHBh
-dGNoIDYsIHNvIEkgZG9uJ3QNCj4gc3VzcGVjdCB0aGF0IG9uZS4gOikNCg0KQWN0dWFsbHksIHdo
-aWxlIHdyaXRpbmcgdGhpcyBJIHJlYWxpemUgdGhhdCB0aGlzIG1lYW5zIGl0IHNob3VsZCBiZQ0K
-dGVzdGVkIHNlcGFyYXRlbHkgKGxpa2UsIG9sZGVyIGtlcm5lbCB3aXRoIG9ubHkgMyksIGJlY2F1
-c2UsIHdlbGwsDQpvYnZpb3VzIEkgZ3Vlc3MuDQoNCj4gQnV0LCBJJ2xsIGZpbmQgb3V0Lg0KPiAN
-Cj4gVGhhbmtzIGZvciB0ZXN0aW5nLg0KPiANCj4gSGFucw0KPiANCj4+IFsgMzExNi4wNjU1OTVd
-IEJUUkZTOiBkZXZpY2UgZnNpZCBlM2JkOGRiNS0zMDRmLTRiMWEtODQ4OC03NzkxZWE5NDA4OGYg
-ZGV2aWQgMSB0cmFuc2lkIDUgL2Rldi92ZGINCj4+IFsgMzExNi4wNzEyNzRdIEJUUkZTOiBkZXZp
-Y2UgZnNpZCBlM2JkOGRiNS0zMDRmLTRiMWEtODQ4OC03NzkxZWE5NDA4OGYgZGV2aWQgMiB0cmFu
-c2lkIDUgL2Rldi92ZGMNCj4+IFsgMzExNi4wODcwODZdIEJUUkZTIGluZm8gKGRldmljZSB2ZGIp
-OiBkaXNrIHNwYWNlIGNhY2hpbmcgaXMgZW5hYmxlZA0KPj4gWyAzMTE2LjA4ODY0NF0gQlRSRlMg
-aW5mbyAoZGV2aWNlIHZkYik6IGhhcyBza2lubnkgZXh0ZW50cw0KPj4gWyAzMTE2LjA4OTc5Nl0g
-QlRSRlMgaW5mbyAoZGV2aWNlIHZkYik6IGZsYWdnaW5nIGZzIHdpdGggYmlnIG1ldGFkYXRhIGZl
-YXR1cmUNCj4+IFsgMzExNi4wOTM5NzFdIEJUUkZTIGluZm8gKGRldmljZSB2ZGIpOiBjaGVja2lu
-ZyBVVUlEIHRyZWUNCj4+IFsgMzEyNS44NTM3NTVdIEJUUkZTIGluZm8gKGRldmljZSB2ZGIpOiBk
-ZXZfcmVwbGFjZSBmcm9tIC9kZXYvdmRiIChkZXZpZCAxKSB0byAvZGV2L3ZkZCBzdGFydGVkDQo+
-PiBbIDMxMjUuODYwMjY5XSBkaXZpZGUgZXJyb3I6IDAwMDAgWyMxXSBQUkVFTVBUIFNNUA0KPj4g
-WyAzMTI1Ljg2MTI2NF0gQ1BVOiAxIFBJRDogNjQ3NyBDb21tOiBidHJmcyBOb3QgdGFpbnRlZCA0
-LjE5LjAtcmM3LWRlZmF1bHQrICMyODgNCj4+IFsgMzEyNS44NjI4NDFdIEhhcmR3YXJlIG5hbWU6
-IFFFTVUgU3RhbmRhcmQgUEMgKGk0NDBGWCArIFBJSVgsIDE5OTYpLCBCSU9TIDEuMC4wLXByZWJ1
-aWx0LnFlbXUtcHJvamVjdC5vcmcgMDQvMDEvMjAxNA0KPj4gWyAzMTI1Ljg2NTM4NV0gUklQOiAw
-MDEwOl9fYnRyZnNfYWxsb2NfY2h1bmsrMHgzNjgvMHhhNzAgW2J0cmZzXQ0KPj4gWyAzMTI1Ljg3
-MDU0MV0gUlNQOiAwMDE4OmZmZmZhNGVhMDQwOWZhNDggRUZMQUdTOiAwMDAxMDIwNg0KPj4gWyAz
-MTI1Ljg3MTg2Ml0gUkFYOiAwMDAwMDAwMDA0MDAwMDAwIFJCWDogZmZmZjk0ZTA3NDM3NDUwOCBS
-Q1g6IDAwMDAwMDAwMDAwMDAwMDINCj4+IFsgMzEyNS44NzM1ODddIFJEWDogMDAwMDAwMDAwMDAw
-MDAwMCBSU0k6IGZmZmY5NGUwMTc4MThjODAgUkRJOiAwMDAwMDAwMDAyMDAwMDAwDQo+PiBbIDMx
-MjUuODc0Njc3XSBSQlA6IDAwMDAwMDAwODA4MDAwMDAgUjA4OiAwMDAwMDAwMDAwMDAwMDAwIFIw
-OTogMDAwMDAwMDAwMDAwMDAwMg0KPj4gWyAzMTI1Ljg3NTgxNl0gUjEwOiAwMDAwMDAwMzAwMDAw
-MDAwIFIxMTogMDAwMDAwMDA4MDkwMDAwMCBSMTI6IDAwMDAwMDAwMDAwMDAwMDANCj4+IFsgMzEy
-NS44NzY3NDJdIFIxMzogMDAwMDAwMDAwMDAwMDAwMSBSMTQ6IDAwMDAwMDAwMDAwMDAwMDEgUjE1
-OiAwMDAwMDAwMDAwMDAwMDAyDQo+PiBbIDMxMjUuODc3NjU3XSBGUzogIDAwMDA3ZjZkZTM0MjA4
-YzAoMDAwMCkgR1M6ZmZmZjk0ZTA3ZDYwMDAwMCgwMDAwKSBrbmxHUzowMDAwMDAwMDAwMDAwMDAw
-DQo+PiBbIDMxMjUuODc4ODYyXSBDUzogIDAwMTAgRFM6IDAwMDAgRVM6IDAwMDAgQ1IwOiAwMDAw
-MDAwMDgwMDUwMDMzDQo+PiBbIDMxMjUuODgwMDgwXSBDUjI6IDAwMDA3ZmZlOTYzZDVjZTggQ1Iz
-OiAwMDAwMDAwMDc2NTliMDAwIENSNDogMDAwMDAwMDAwMDAwMDZlMA0KPj4gWyAzMTI1Ljg4MTQ4
-NV0gQ2FsbCBUcmFjZToNCj4+IFsgMzEyNS44ODIxMDVdICBkb19jaHVua19hbGxvYysweDI2Ni8w
-eDNlMCBbYnRyZnNdDQo+PiBbIDMxMjUuODgyODQxXSAgYnRyZnNfaW5jX2Jsb2NrX2dyb3VwX3Jv
-KzB4MTBlLzB4MTYwIFtidHJmc10NCj4+IFsgMzEyNS44ODM4NzVdICBzY3J1Yl9lbnVtZXJhdGVf
-Y2h1bmtzKzB4MThiLzB4NWQwIFtidHJmc10NCj4+IFsgMzEyNS44ODQ2NThdICA/IGlzX21vZHVs
-ZV9hZGRyZXNzKzB4MTEvMHgzMA0KPj4gWyAzMTI1Ljg4NTI3MV0gID8gd2FpdF9mb3JfY29tcGxl
-dGlvbisweDE2MC8weDE5MA0KPj4gWyAzMTI1Ljg4NTkyOF0gIGJ0cmZzX3NjcnViX2RldisweDFi
-OC8weDVhMCBbYnRyZnNdDQo+PiBbIDMxMjUuODg3NzY3XSAgPyBzdGFydF90cmFuc2FjdGlvbisw
-eGExLzB4NDcwIFtidHJmc10NCj4+IFsgMzEyNS44ODg2NDhdICBidHJmc19kZXZfcmVwbGFjZV9z
-dGFydC5jb2xkLjE5KzB4MTU1LzB4MTdlIFtidHJmc10NCj4+IFsgMzEyNS44ODk0NTldICBidHJm
-c19kZXZfcmVwbGFjZV9ieV9pb2N0bCsweDM1LzB4NjAgW2J0cmZzXQ0KPj4gWyAzMTI1Ljg5MDI1
-MV0gIGJ0cmZzX2lvY3RsKzB4MmE5NC8weDMxZDAgW2J0cmZzXQ0KPj4gWyAzMTI1Ljg5MDg4NV0g
-ID8gZG9fc2lnYWN0aW9uKzB4N2MvMHgyMTANCj4+IFsgMzEyNS44OTE3MzFdICA/IGRvX3Zmc19p
-b2N0bCsweGEyLzB4NmIwDQo+PiBbIDMxMjUuODkyNjUyXSAgZG9fdmZzX2lvY3RsKzB4YTIvMHg2
-YjANCj4+IFsgMzEyNS44OTM2NDJdICA/IGRvX3NpZ2FjdGlvbisweDFhNy8weDIxMA0KPj4gWyAz
-MTI1Ljg5NDY2NV0gIGtzeXNfaW9jdGwrMHgzYS8weDcwDQo+PiBbIDMxMjUuODk1NTIzXSAgX194
-NjRfc3lzX2lvY3RsKzB4MTYvMHgyMA0KPj4gWyAzMTI1Ljg5NjMzOV0gIGRvX3N5c2NhbGxfNjQr
-MHg1YS8weDFhMA0KPj4gWyAzMTI1Ljg5Njk0OV0gIGVudHJ5X1NZU0NBTExfNjRfYWZ0ZXJfaHdm
-cmFtZSsweDQ5LzB4YmUNCj4+IFsgMzEyNS44OTc2MzhdIFJJUDogMDAzMzoweDdmNmRlMjhlY2Fh
-Nw0KPj4gWyAzMTI1LjkwMTMxM10gUlNQOiAwMDJiOjAwMDA3ZmZlOTYzZGE5YzggRUZMQUdTOiAw
-MDAwMDI0NiBPUklHX1JBWDogMDAwMDAwMDAwMDAwMDAxMA0KPj4gWyAzMTI1LjkwMjQ4Nl0gUkFY
-OiBmZmZmZmZmZmZmZmZmZmRhIFJCWDogMDAwMDAwMDAwMDAwMDAwMyBSQ1g6IDAwMDA3ZjZkZTI4
-ZWNhYTcNCj4+IFsgMzEyNS45MDM1MzhdIFJEWDogMDAwMDdmZmU5NjNkYWUwMCBSU0k6IDAwMDAw
-MDAwY2EyODk0MzUgUkRJOiAwMDAwMDAwMDAwMDAwMDAzDQo+PiBbIDMxMjUuOTA0ODc4XSBSQlA6
-IDAwMDAwMDAwMDAwMDAwMDAgUjA4OiAwMDAwMDAwMDAwMDAwMDAwIFIwOTogMDAwMDAwMDAwMDAw
-MDAwMA0KPj4gWyAzMTI1LjkwNTc4OF0gUjEwOiAwMDAwMDAwMDAwMDAwMDA4IFIxMTogMDAwMDAw
-MDAwMDAwMDI0NiBSMTI6IDAwMDA3ZmZlOTYzZGUyNmYNCj4+IFsgMzEyNS45MDY3MDBdIFIxMzog
-MDAwMDAwMDAwMDAwMDAwMSBSMTQ6IDAwMDAwMDAwMDAwMDAwMDQgUjE1OiAwMDAwNTVmY2VlY2Vi
-MmEwDQo+PiBbIDMxMjUuOTA3OTU0XSBNb2R1bGVzIGxpbmtlZCBpbjogYnRyZnMgbGliY3JjMzJj
-IHhvciB6c3RkX2RlY29tcHJlc3MgenN0ZF9jb21wcmVzcyB4eGhhc2ggcmFpZDZfcHEgbG9vcA0K
-Pj4gWyAzMTI1LjkwOTM0Ml0gLS0tWyBlbmQgdHJhY2UgNTQ5MmJiNDY3ZDNiZTJkYSBdLS0tDQo+
-PiBbIDMxMjUuOTEwMDMxXSBSSVA6IDAwMTA6X19idHJmc19hbGxvY19jaHVuaysweDM2OC8weGE3
-MCBbYnRyZnNdDQo+PiBbIDMxMjUuOTEzNjAwXSBSU1A6IDAwMTg6ZmZmZmE0ZWEwNDA5ZmE0OCBF
-RkxBR1M6IDAwMDEwMjA2DQo+PiBbIDMxMjUuOTE0NTk1XSBSQVg6IDAwMDAwMDAwMDQwMDAwMDAg
-UkJYOiBmZmZmOTRlMDc0Mzc0NTA4IFJDWDogMDAwMDAwMDAwMDAwMDAwMg0KPj4gWyAzMTI1Ljkx
-NjIwOV0gUkRYOiAwMDAwMDAwMDAwMDAwMDAwIFJTSTogZmZmZjk0ZTAxNzgxOGM4MCBSREk6IDAw
-MDAwMDAwMDIwMDAwMDANCj4+IFsgMzEyNS45MTc3MDFdIFJCUDogMDAwMDAwMDA4MDgwMDAwMCBS
-MDg6IDAwMDAwMDAwMDAwMDAwMDAgUjA5OiAwMDAwMDAwMDAwMDAwMDAyDQo+PiBbIDMxMjUuOTE5
-MjA5XSBSMTA6IDAwMDAwMDAzMDAwMDAwMDAgUjExOiAwMDAwMDAwMDgwOTAwMDAwIFIxMjogMDAw
-MDAwMDAwMDAwMDAwMA0KPj4gWyAzMTI1LjkyMDc4Ml0gUjEzOiAwMDAwMDAwMDAwMDAwMDAxIFIx
-NDogMDAwMDAwMDAwMDAwMDAwMSBSMTU6IDAwMDAwMDAwMDAwMDAwMDINCj4+IFsgMzEyNS45MjI0
-MTNdIEZTOiAgMDAwMDdmNmRlMzQyMDhjMCgwMDAwKSBHUzpmZmZmOTRlMDdkNjAwMDAwKDAwMDAp
-IGtubEdTOjAwMDAwMDAwMDAwMDAwMDANCj4+IFsgMzEyNS45MjQyNjRdIENTOiAgMDAxMCBEUzog
-MDAwMCBFUzogMDAwMCBDUjA6IDAwMDAwMDAwODAwNTAwMzMNCj4+IFsgMzEyNS45MjU2MjddIENS
-MjogMDAwMDdmZmU5NjNkNWNlOCBDUjM6IDAwMDAwMDAwNzY1OWIwMDAgQ1I0OiAwMDAwMDAwMDAw
-MDAwNmUwDQo+Pg0KPiANCj4gDQoNCg0KLS0gDQpIYW5zIHZhbiBLcmFuZW5idXJnDQo=
+On Thu, Oct 11, 2018 at 8:58 PM Josef Bacik <josef@toxicpanda.com> wrote:
+>
+> When we insert the file extent once the ordered extent completes we free
+> the reserved extent reservation as it'll have been migrated to the
+> bytes_used counter.  However if we error out after this step we'll still
+> clear the reserved extent reservation, resulting in a negative
+> accounting of the reserved bytes for the block group and space info.
+> Fix this by only doing the free if we didn't successfully insert a file
+> extent for this extent.
+>
+> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+> Reviewed-by: Omar Sandoval <osandov@fb.com>
+Reviewed-by: Filipe Manana <fdmanana@suse.com>
+
+> ---
+>  fs/btrfs/inode.c | 10 +++++++++-
+>  1 file changed, 9 insertions(+), 1 deletion(-)
+>
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 5a91055a13b2..2b257d14bd3d 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -2992,6 +2992,7 @@ static int btrfs_finish_ordered_io(struct btrfs_ord=
+ered_extent *ordered_extent)
+>         bool truncated =3D false;
+>         bool range_locked =3D false;
+>         bool clear_new_delalloc_bytes =3D false;
+> +       bool clear_reserved_extent =3D true;
+>
+>         if (!test_bit(BTRFS_ORDERED_NOCOW, &ordered_extent->flags) &&
+>             !test_bit(BTRFS_ORDERED_PREALLOC, &ordered_extent->flags) &&
+> @@ -3095,10 +3096,12 @@ static int btrfs_finish_ordered_io(struct btrfs_o=
+rdered_extent *ordered_extent)
+>                                                 logical_len, logical_len,
+>                                                 compress_type, 0, 0,
+>                                                 BTRFS_FILE_EXTENT_REG);
+> -               if (!ret)
+> +               if (!ret) {
+> +                       clear_reserved_extent =3D false;
+>                         btrfs_release_delalloc_bytes(fs_info,
+>                                                      ordered_extent->star=
+t,
+>                                                      ordered_extent->disk=
+_len);
+> +               }
+>         }
+>         unpin_extent_cache(&BTRFS_I(inode)->extent_tree,
+>                            ordered_extent->file_offset, ordered_extent->l=
+en,
+> @@ -3159,8 +3162,13 @@ static int btrfs_finish_ordered_io(struct btrfs_or=
+dered_extent *ordered_extent)
+>                  * wrong we need to return the space for this ordered ext=
+ent
+>                  * back to the allocator.  We only free the extent in the
+>                  * truncated case if we didn't write out the extent at al=
+l.
+> +                *
+> +                * If we made it past insert_reserved_file_extent before =
+we
+> +                * errored out then we don't need to do this as the accou=
+nting
+> +                * has already been done.
+>                  */
+>                 if ((ret || !logical_len) &&
+> +                   clear_reserved_extent &&
+>                     !test_bit(BTRFS_ORDERED_NOCOW, &ordered_extent->flags=
+) &&
+>                     !test_bit(BTRFS_ORDERED_PREALLOC, &ordered_extent->fl=
+ags))
+>                         btrfs_free_reserved_extent(fs_info,
+> --
+> 2.14.3
+>
+
+
+--=20
+Filipe David Manana,
+
+=E2=80=9CWhether you think you can, or you think you can't =E2=80=94 you're=
+ right.=E2=80=9D

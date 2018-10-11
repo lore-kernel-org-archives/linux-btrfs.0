@@ -2,151 +2,187 @@ Return-Path: <SRS0=9zVn=MX=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.3 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
+X-Spam-Status: No, score=-2.7 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_MUTT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B5C18C32788
-	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Oct 2018 15:13:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D59AFC32788
+	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Oct 2018 15:55:18 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 5F01C2085B
-	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Oct 2018 15:13:58 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 5F01C2085B
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
+	by mail.kernel.org (Postfix) with ESMTP id 9B3BB2054F
+	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Oct 2018 15:55:18 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="ujnm2qLU"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 9B3BB2054F
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=oracle.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727638AbeJKWlc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 11 Oct 2018 18:41:32 -0400
-Received: from mx2.suse.de ([195.135.220.15]:51742 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725984AbeJKWlc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 11 Oct 2018 18:41:32 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 02992B068;
-        Thu, 11 Oct 2018 15:13:53 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 2FE36DA862; Thu, 11 Oct 2018 17:13:48 +0200 (CEST)
-Date:   Thu, 11 Oct 2018 17:13:47 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Hans van Kranenburg <hans.van.kranenburg@mendix.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 0/6] Chunk allocator DUP fix and cleanups
-Message-ID: <20181011151346.GR29418@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz,
-        Hans van Kranenburg <hans.van.kranenburg@mendix.com>,
-        linux-btrfs@vger.kernel.org
-References: <20181004212443.26519-1-hans.van.kranenburg@mendix.com>
+        id S1729013AbeJKXXE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 11 Oct 2018 19:23:04 -0400
+Received: from userp2120.oracle.com ([156.151.31.85]:47922 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726721AbeJKXXE (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 11 Oct 2018 19:23:04 -0400
+Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
+        by userp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w9BFs6PO056359;
+        Thu, 11 Oct 2018 15:55:10 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=date : from : to : cc
+ : subject : message-id : references : mime-version : content-type :
+ in-reply-to; s=corp-2018-07-02;
+ bh=hKI69bABDFysqLyaxLaiy7JTh/Ca5LKETEo4AoJ+HwU=;
+ b=ujnm2qLU2UZm9XHfkhGSPmGOOSVGq8HjXhinQCriuOzTFQBCz7dDZC/kekZzJRBAu23R
+ JnRiOJmbpPVpjhcfuplJZUwjv9gDH9EE3adUK5wwmHDewyMogVOeEM43wAlaGmNxqFLJ
+ IBTNZLQ8VLGDjwwDH2mT1eTW8wtyV9vAKR0YbCX42sGi4PuU8K7Vu2AqmCE4D6lFkNWN
+ 6N77o/gPMwzjWhebp8vgk4Vb4gU3Ek9+gPfdmjp8Dw1N4jv7OcEn684SaPE/9oOa12Td
+ +KvfxElGF3sHm/uiKfpTIWsuSDO9+i4CIJhmOBlqTm+FBDUW9oyAB2Kn0C8cJJ7NEWBI 3Q== 
+Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
+        by userp2120.oracle.com with ESMTP id 2mxnprd6ng-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Thu, 11 Oct 2018 15:55:10 +0000
+Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
+        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w9BFt7is025360
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Thu, 11 Oct 2018 15:55:08 GMT
+Received: from abhmp0006.oracle.com (abhmp0006.oracle.com [141.146.116.12])
+        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w9BFt6qV012701;
+        Thu, 11 Oct 2018 15:55:07 GMT
+Received: from localhost (/67.169.218.210)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Thu, 11 Oct 2018 15:55:06 +0000
+Date:   Thu, 11 Oct 2018 08:55:04 -0700
+From:   "Darrick J. Wong" <darrick.wong@oracle.com>
+To:     Amir Goldstein <amir73il@gmail.com>
+Cc:     Dave Chinner <david@fromorbit.com>,
+        Eric Sandeen <sandeen@redhat.com>,
+        Linux NFS Mailing List <linux-nfs@vger.kernel.org>,
+        linux-cifs@vger.kernel.org,
+        overlayfs <linux-unionfs@vger.kernel.org>,
+        linux-xfs <linux-xfs@vger.kernel.org>,
+        Linux MM <linux-mm@kvack.org>,
+        Linux Btrfs <linux-btrfs@vger.kernel.org>,
+        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
+        ocfs2-devel@oss.oracle.com
+Subject: Re: [PATCH v3 00/25] fs: fixes for serious clone/dedupe problems
+Message-ID: <20181011155504.GZ28243@magnolia>
+References: <153923113649.5546.9840926895953408273.stgit@magnolia>
+ <CAOQ4uxgOvOOnKL5TsC9jpjBsepAgtQ56Hhjh7WDeXM7m0=dz7g@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20181004212443.26519-1-hans.van.kranenburg@mendix.com>
-User-Agent: Mutt/1.5.23.1 (2014-03-12)
+In-Reply-To: <CAOQ4uxgOvOOnKL5TsC9jpjBsepAgtQ56Hhjh7WDeXM7m0=dz7g@mail.gmail.com>
+User-Agent: Mutt/1.9.4 (2018-02-28)
+X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9042 signatures=668706
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=0 malwarescore=0
+ phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
+ adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.0.1-1807170000 definitions=main-1810110153
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Oct 04, 2018 at 11:24:37PM +0200, Hans van Kranenburg wrote:
-> This patch set contains an additional fix for a newly exposed bug after
-> the previous attempt to fix a chunk allocator bug for new DUP chunks:
+On Thu, Oct 11, 2018 at 11:33:57AM +0300, Amir Goldstein wrote:
+> On Thu, Oct 11, 2018 at 7:12 AM Darrick J. Wong <darrick.wong@oracle.com> wrote:
+> >
+> > Hi all,
+> >
+> > Dave, Eric, and I have been chasing a stale data exposure bug in the XFS
+> > reflink implementation, and tracked it down to reflink forgetting to do
+> > some of the file-extending activities that must happen for regular
+> > writes.
+> >
+> > We then started auditing the clone, dedupe, and copyfile code and
+> > realized that from a file contents perspective, clonerange isn't any
+> > different from a regular file write.  Unfortunately, we also noticed
+> > that *unlike* a regular write, clonerange skips a ton of overflow
+> > checks, such as validating the ranges against s_maxbytes, MAX_NON_LFS,
+> > and RLIMIT_FSIZE.  We also observed that cloning into a file did not
+> > strip security privileges (suid, capabilities) like a regular write
+> > would.  I also noticed that xfs and ocfs2 need to dump the page cache
+> > before remapping blocks, not after.
+> >
+> > In fixing the range checking problems I also realized that both dedupe
+> > and copyfile tell userspace how much of the requested operation was
+> > acted upon.  Since the range validation can shorten a clone request (or
+> > we can ENOSPC midway through), we might as well plumb the short
+> > operation reporting back through the VFS indirection code to userspace.
+> >
+> > So, here's the whole giant pile of patches[1] that fix all the problems.
+> > This branch is against 4.19-rc7 with Dave Chinner's XFS for-next branch.
+> > The patch "generic: test reflink side effects" recently sent to fstests
+> > exercises the fixes in this series.  Tests are in [2].
+> >
+> > --D
+> >
+> > [1] https://git.kernel.org/pub/scm/linux/kernel/git/djwong/xfs-linux.git/log/?h=djwong-devel
+> > [2] https://git.kernel.org/pub/scm/linux/kernel/git/djwong/xfstests-dev.git/log/?h=djwong-devel
 > 
-> https://lore.kernel.org/linux-btrfs/782f6000-30c0-0085-abd2-74ec5827c903@mendix.com/T/#m609ccb5d32998e8ba5cfa9901c1ab56a38a6f374
-> 
-> The DUP fix is "fix more DUP stripe size handling". I did that one
-> before starting to change more things so it can be applied to earlier
-> LTS kernels.
-> 
-> Besides that patch, which is fixing the bug in a way that is least
-> intrusive, I added a bunch of other patches to help getting the chunk
-> allocator code in a state that is a bit less error-prone and
-> bug-attracting.
-> 
-> When running this and trying the reproduction scenario, I can now see
-> that the created DUP device extent is 827326464 bytes long, which is
-> good.
-> 
-> I wrote and tested this on top of linus 4.19-rc5. I still need to create
-> a list of related use cases and test more things to at least walk
-> through a bunch of obvious use cases to see if there's nothing exploding
-> too quickly with these changes. However, I'm quite confident about it,
-> so I'm sharing all of it already.
-> 
-> Any feedback and review is appreciated. Be gentle and keep in mind that
-> I'm still very much in a learning stage regarding kernel development.
+> I tested your branch with overlayfs over xfs.
+> I did not observe any failures with -g clone except for test generic/937
+> which also failed on xfs in my test.
 
-The patches look good, thanks. Problem is explained, preparatory work is
-separated from the fix itself.
+Ok, matches what I saw overnight.  Good, that means I (at least
+theoretically) know how to test overlayfs now. :)
 
-> The stable patches handling workflow is not 100% clear to me yet. I
-> guess I have to add a Fixes: in the DUP patch which points to the
-> previous commit 92e222df7b.
+> I though that you forgot to mention I needed to grab xfsprogs from djwong-devel
+> for commit e84a9e93 ("xfs_io: dedupe command should only complain
+> if we don't dedupe anything"), but even with this change the test still fails:
+> 
+> generic/937     - output mismatch (see
+> /old/home/amir/src/fstests/xfstests-dev/results//generic/937.out.bad)
+>     --- tests/generic/937.out   2018-10-11 08:23:00.630938364 +0300
+>     +++ /old/home/amir/src/fstests/xfstests-dev/results//generic/937.out.bad
+>    2018-10-11 10:54:40.448134832 +0300
+>     @@ -4,8 +4,7 @@
+>      39578c21e2cb9f6049b1cf7fc7be12a6  TEST_DIR/test-937/file2
+>      Files 1-2 do not match (intentional)
+>      (partial) dedupe the middle blocks together
+>     -deduped XXXX/XXXX bytes at offset XXXX
+>     -XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+>     +XFS_IOC_FILE_EXTENT_SAME: Extents did not match.
 
-Almost nobody does it right, no worries. If you can identify a single
-patch that introduces a bug then it's for Fixes:, otherwise a CC: stable
-with version where it makes sense & applies is enough. I do that check
-myself regardless of what's in the patch.
+Ohhh, right, g/937 is the test to see if the dedupe implementation will
+return a short bytes_deduped if a single byte at the end of the range
+doesn't match.  I'll have to update that because...
 
-I ran the patches in a VM and hit a division-by-zero in test
-fstests/btrfs/011, stacktrace below. First guess is that it's caused by
-patch 3/6.
+I reverted the FIDEDUPERANGE behavior to set ->info[x].bytes_deduped =
+->src_length even if we rounded the length down to the nearest block
+boundary to avoid incorrect sharing of blocks on files with
+non-block-aligned EOF.  It turned out that the existing FIDEDUPERANGE
+users will hang in infinite loops if the kernel returns ->info[x].status
+== FILE_DEDUPE_RANGE_SAME but ->info[x].bytes_deduped < ->src_length.
 
-[ 3116.065595] BTRFS: device fsid e3bd8db5-304f-4b1a-8488-7791ea94088f devid 1 transid 5 /dev/vdb
-[ 3116.071274] BTRFS: device fsid e3bd8db5-304f-4b1a-8488-7791ea94088f devid 2 transid 5 /dev/vdc
-[ 3116.087086] BTRFS info (device vdb): disk space caching is enabled
-[ 3116.088644] BTRFS info (device vdb): has skinny extents
-[ 3116.089796] BTRFS info (device vdb): flagging fs with big metadata feature
-[ 3116.093971] BTRFS info (device vdb): checking UUID tree
-[ 3125.853755] BTRFS info (device vdb): dev_replace from /dev/vdb (devid 1) to /dev/vdd started
-[ 3125.860269] divide error: 0000 [#1] PREEMPT SMP
-[ 3125.861264] CPU: 1 PID: 6477 Comm: btrfs Not tainted 4.19.0-rc7-default+ #288
-[ 3125.862841] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS 1.0.0-prebuilt.qemu-project.org 04/01/2014
-[ 3125.865385] RIP: 0010:__btrfs_alloc_chunk+0x368/0xa70 [btrfs]
-[ 3125.870541] RSP: 0018:ffffa4ea0409fa48 EFLAGS: 00010206
-[ 3125.871862] RAX: 0000000004000000 RBX: ffff94e074374508 RCX: 0000000000000002
-[ 3125.873587] RDX: 0000000000000000 RSI: ffff94e017818c80 RDI: 0000000002000000
-[ 3125.874677] RBP: 0000000080800000 R08: 0000000000000000 R09: 0000000000000002
-[ 3125.875816] R10: 0000000300000000 R11: 0000000080900000 R12: 0000000000000000
-[ 3125.876742] R13: 0000000000000001 R14: 0000000000000001 R15: 0000000000000002
-[ 3125.877657] FS:  00007f6de34208c0(0000) GS:ffff94e07d600000(0000) knlGS:0000000000000000
-[ 3125.878862] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-[ 3125.880080] CR2: 00007ffe963d5ce8 CR3: 000000007659b000 CR4: 00000000000006e0
-[ 3125.881485] Call Trace:
-[ 3125.882105]  do_chunk_alloc+0x266/0x3e0 [btrfs]
-[ 3125.882841]  btrfs_inc_block_group_ro+0x10e/0x160 [btrfs]
-[ 3125.883875]  scrub_enumerate_chunks+0x18b/0x5d0 [btrfs]
-[ 3125.884658]  ? is_module_address+0x11/0x30
-[ 3125.885271]  ? wait_for_completion+0x160/0x190
-[ 3125.885928]  btrfs_scrub_dev+0x1b8/0x5a0 [btrfs]
-[ 3125.887767]  ? start_transaction+0xa1/0x470 [btrfs]
-[ 3125.888648]  btrfs_dev_replace_start.cold.19+0x155/0x17e [btrfs]
-[ 3125.889459]  btrfs_dev_replace_by_ioctl+0x35/0x60 [btrfs]
-[ 3125.890251]  btrfs_ioctl+0x2a94/0x31d0 [btrfs]
-[ 3125.890885]  ? do_sigaction+0x7c/0x210
-[ 3125.891731]  ? do_vfs_ioctl+0xa2/0x6b0
-[ 3125.892652]  do_vfs_ioctl+0xa2/0x6b0
-[ 3125.893642]  ? do_sigaction+0x1a7/0x210
-[ 3125.894665]  ksys_ioctl+0x3a/0x70
-[ 3125.895523]  __x64_sys_ioctl+0x16/0x20
-[ 3125.896339]  do_syscall_64+0x5a/0x1a0
-[ 3125.896949]  entry_SYSCALL_64_after_hwframe+0x49/0xbe
-[ 3125.897638] RIP: 0033:0x7f6de28ecaa7
-[ 3125.901313] RSP: 002b:00007ffe963da9c8 EFLAGS: 00000246 ORIG_RAX: 0000000000000010
-[ 3125.902486] RAX: ffffffffffffffda RBX: 0000000000000003 RCX: 00007f6de28ecaa7
-[ 3125.903538] RDX: 00007ffe963dae00 RSI: 00000000ca289435 RDI: 0000000000000003
-[ 3125.904878] RBP: 0000000000000000 R08: 0000000000000000 R09: 0000000000000000
-[ 3125.905788] R10: 0000000000000008 R11: 0000000000000246 R12: 00007ffe963de26f
-[ 3125.906700] R13: 0000000000000001 R14: 0000000000000004 R15: 000055fceeceb2a0
-[ 3125.907954] Modules linked in: btrfs libcrc32c xor zstd_decompress zstd_compress xxhash raid6_pq loop
-[ 3125.909342] ---[ end trace 5492bb467d3be2da ]---
-[ 3125.910031] RIP: 0010:__btrfs_alloc_chunk+0x368/0xa70 [btrfs]
-[ 3125.913600] RSP: 0018:ffffa4ea0409fa48 EFLAGS: 00010206
-[ 3125.914595] RAX: 0000000004000000 RBX: ffff94e074374508 RCX: 0000000000000002
-[ 3125.916209] RDX: 0000000000000000 RSI: ffff94e017818c80 RDI: 0000000002000000
-[ 3125.917701] RBP: 0000000080800000 R08: 0000000000000000 R09: 0000000000000002
-[ 3125.919209] R10: 0000000300000000 R11: 0000000080900000 R12: 0000000000000000
-[ 3125.920782] R13: 0000000000000001 R14: 0000000000000001 R15: 0000000000000002
-[ 3125.922413] FS:  00007f6de34208c0(0000) GS:ffff94e07d600000(0000) knlGS:0000000000000000
-[ 3125.924264] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-[ 3125.925627] CR2: 00007ffe963d5ce8 CR3: 000000007659b000 CR4: 00000000000006e0
+It seems really stupid to me that the kernel now lies to userspace to
+avoid breaking it, but that's what btrfs does so we're stuck with that.
+For now.
+
+>      Compare sections
+> 
+> One thing that *is* different with overlayfs test is that filefrag crashes
+> on this same test:
+> 
+>     QA output created by 937
+>     Create the original files
+>     35ac8d7917305c385c30f3d82c30a8f6  TEST_DIR/test-937/file1
+>     39578c21e2cb9f6049b1cf7fc7be12a6  TEST_DIR/test-937/file2
+>     Files 1-2 do not match (intentional)
+>     (partial) dedupe the middle blocks together
+>     XFS_IOC_FILE_EXTENT_SAME: Extents did not match.
+>     ./tests/generic/937: line 59: 19242 Floating point exception(core
+> dumped) ${FILEFRAG_PROG} -v $testdir/file1 >> $seqres.full
+>     ./tests/generic/937: line 60: 19244 Floating point exception(core
+> dumped) ${FILEFRAG_PROG} -v $testdir/file2 >> $seqres.full
+> 
+> It looks like an overlayfs v4.19-rc1 regression - FIGETBSZ returns zero.
+> I never noticed this regression before, because none of the generic tests
+> are using filefrag.
+
+Funny, I was wondering just the other day if there were any filesystems
+that set s_blocksize == 0... :)
+
+--D
+
+> Thanks,
+> Amir.

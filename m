@@ -2,32 +2,33 @@ Return-Path: <SRS0=9zVn=MX=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-6.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4E0FAC32788
-	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Oct 2018 06:41:45 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EA0E2C32788
+	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Oct 2018 06:42:50 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 164E92077C
-	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Oct 2018 06:41:45 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 164E92077C
+	by mail.kernel.org (Postfix) with ESMTP id A664B2077C
+	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Oct 2018 06:42:50 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org A664B2077C
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726907AbeJKOHd (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 11 Oct 2018 10:07:33 -0400
-Received: from mx2.suse.de ([195.135.220.15]:44674 "EHLO mx1.suse.de"
+        id S1727261AbeJKOIj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 11 Oct 2018 10:08:39 -0400
+Received: from mx2.suse.de ([195.135.220.15]:44838 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726047AbeJKOHd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 11 Oct 2018 10:07:33 -0400
+        id S1726047AbeJKOIj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 11 Oct 2018 10:08:39 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 93A0EB0A7;
-        Thu, 11 Oct 2018 06:41:41 +0000 (UTC)
-Subject: Re: [PATCH 0/6] Some trivail cleanup about dealyed-refs
+        by mx1.suse.de (Postfix) with ESMTP id F2CB1B0A7;
+        Thu, 11 Oct 2018 06:42:46 +0000 (UTC)
+Subject: Re: [PATCH] btrfs: qgroup: move the qgroup->members check out from
+ (!qgroup)'s else branch
 To:     Lu Fengqi <lufq.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-References: <20181011054038.5428-1-lufq.fnst@cn.fujitsu.com>
+References: <20181011054256.5643-1-lufq.fnst@cn.fujitsu.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -72,12 +73,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  KIuxEcV8wcVjr+Wr9zRl06waOCkgrQbTPp631hToxo+4rA1jiQF2M80HAet65ytBVR2pFGZF
  zGYYLqiG+mpUZ+FPjxk9kpkRYz61mTLSY7tuFljExfJWMGfgSg1OxfLV631jV1TcdUnx+h3l
  Sqs2vMhAVt14zT8mpIuu2VNxcontxgVr1kzYA/tQg32fVRbGr449j1gw57BV9i0vww==
-Message-ID: <a64005f8-0e1e-0f42-1383-bd1563fb92a8@suse.com>
-Date:   Thu, 11 Oct 2018 09:41:40 +0300
+Message-ID: <3597c689-6b14-db1c-cfd2-e66f61328e4a@suse.com>
+Date:   Thu, 11 Oct 2018 09:42:45 +0300
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:52.0) Gecko/20100101
  Thunderbird/52.9.1
 MIME-Version: 1.0
-In-Reply-To: <20181011054038.5428-1-lufq.fnst@cn.fujitsu.com>
+In-Reply-To: <20181011054256.5643-1-lufq.fnst@cn.fujitsu.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 7bit
@@ -88,34 +89,44 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 11.10.2018 08:40, Lu Fengqi wrote:
-> There is no functional change. Just improve readablity.
+On 11.10.2018 08:42, Lu Fengqi wrote:
+> There is no reason to put this check in (!qgroup)'s else branch because if
+> qgroup is null, it will goto out directly. So move it out to reduce
+> indent.
 > 
-> PATCH 1-4 parameter cleanup patches
-> PATCH 5 cleanup about btrfs_select_ref_head
-> PATCH 6 switch int to bool; add some comment
+> No Functional Change.
 > 
-> Lu Fengqi (6):
->   btrfs: delayed-ref: pass delayed_refs directly to
->     btrfs_select_ref_head()
->   btrfs: delayed-ref: pass delayed_refs directly to
->     btrfs_delayed_ref_lock()
->   btrfs: remove fs_info from btrfs_check_space_for_delayed_refs
->   btrfs: remove fs_info from btrfs_should_throttle_delayed_refs
->   btrfs: simplify btrfs_select_ref_head and cleanup some local variables
->   btrfs: switch return_bigger to bool in find_ref_head
-
-For patches 1-4 and 6:
+> Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 
 Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 
-
+> ---
+>  fs/btrfs/qgroup.c | 13 +++++++------
+>  1 file changed, 7 insertions(+), 6 deletions(-)
 > 
->  fs/btrfs/ctree.h       |  6 ++----
->  fs/btrfs/delayed-ref.c | 35 ++++++++++-------------------------
->  fs/btrfs/delayed-ref.h |  4 ++--
->  fs/btrfs/extent-tree.c | 15 +++++++--------
->  fs/btrfs/inode.c       |  7 +++----
->  fs/btrfs/transaction.c |  4 ++--
->  6 files changed, 26 insertions(+), 45 deletions(-)
+> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+> index 27f517315388..af65ab1640b0 100644
+> --- a/fs/btrfs/qgroup.c
+> +++ b/fs/btrfs/qgroup.c
+> @@ -1416,13 +1416,14 @@ int btrfs_remove_qgroup(struct btrfs_trans_handle *trans, u64 qgroupid)
+>  	if (!qgroup) {
+>  		ret = -ENOENT;
+>  		goto out;
+> -	} else {
+> -		/* check if there are no children of this qgroup */
+> -		if (!list_empty(&qgroup->members)) {
+> -			ret = -EBUSY;
+> -			goto out;
+> -		}
+>  	}
+> +
+> +	/* check if there are no children of this qgroup */
+> +	if (!list_empty(&qgroup->members)) {
+> +		ret = -EBUSY;
+> +		goto out;
+> +	}
+> +
+>  	ret = del_qgroup_item(trans, qgroupid);
+>  	if (ret && ret != -ENOENT)
+>  		goto out;
 > 

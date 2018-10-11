@@ -2,181 +2,148 @@ Return-Path: <SRS0=9zVn=MX=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.5 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
-	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 32226C4161D
-	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Oct 2018 12:46:08 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5B550C32788
+	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Oct 2018 13:11:37 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id EFCCB2064A
-	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Oct 2018 12:46:07 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org EFCCB2064A
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=gmx.com
+	by mail.kernel.org (Postfix) with ESMTP id 2052220841
+	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Oct 2018 13:11:37 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 2052220841
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727242AbeJKUNJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 11 Oct 2018 16:13:09 -0400
-Received: from mout.gmx.net ([212.227.17.22]:39719 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726223AbeJKUNJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 11 Oct 2018 16:13:09 -0400
-Received: from [0.0.0.0] ([210.140.77.29]) by mail.gmx.com (mrgmx103
- [212.227.17.174]) with ESMTPSA (Nemesis) id 0LbdiB-1fPk9V1M5b-00l9xj; Thu, 11
- Oct 2018 14:45:59 +0200
-Received: from [0.0.0.0] ([210.140.77.29]) by mail.gmx.com (mrgmx103
- [212.227.17.174]) with ESMTPSA (Nemesis) id 0LbdiB-1fPk9V1M5b-00l9xj; Thu, 11
- Oct 2018 14:45:59 +0200
+        id S1727953AbeJKUin (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 11 Oct 2018 16:38:43 -0400
+Received: from mx2.suse.de ([195.135.220.15]:55598 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726707AbeJKUin (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 11 Oct 2018 16:38:43 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 097D7AED2;
+        Thu, 11 Oct 2018 13:11:34 +0000 (UTC)
 Subject: Re: [PATCH 1/2] btrfs: Populate btrfs_super_block::log_root_transid
-To:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>, dsterba@suse.cz,
+        Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
 References: <20181004054950.11651-1-wqu@suse.com>
  <20181004054950.11651-2-wqu@suse.com> <20181011123151.GP29418@twin.jikos.cz>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+ <ba395b06-ff1a-1926-5339-3a2927e3af0f@gmx.com>
+From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
-Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
- bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
- ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
- rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
- FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
- 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
- ilaVzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAHCwHwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
- CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
- f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
- mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
- 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
- h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <ba395b06-ff1a-1926-5339-3a2927e3af0f@gmx.com>
-Date:   Thu, 11 Oct 2018 20:45:52 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.0
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <2971327e-aa24-534c-cbfb-3ba9f399c6f2@suse.com>
+Date:   Thu, 11 Oct 2018 16:11:32 +0300
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:52.0) Gecko/20100101
+ Thunderbird/52.9.1
 MIME-Version: 1.0
-In-Reply-To: <20181011123151.GP29418@twin.jikos.cz>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="ptS3S2hNH1VnDP48Ym9J7Ab2NAxiNNixT"
-X-Provags-ID: V03:K1:khHs8DspzxSdIOj0/eps7kv1XTaohe7n4QQCPgZ9oeRPeKpidTC
- E8F1Bbq2GbzKr0MxxVyjLxQABQvmysHi6sokMGP31kDS79CowwL5V1zORqWh/nk6F9t4rDe
- AFX8/ybsHx/F2fMQfLmdgj9mDatARkGkQnDphlzo6ZV/5XtP4ITbAVfLlPyhTCHFwRnGn/K
- laNTUjd7xC2YbDH+jylEQ==
-X-UI-Out-Filterresults: notjunk:1;V01:K0:+aYSMpi7lko=:dOLHjpdNeyAeGYJveJe/zo
- u7/YQJWR313I4nUaZFYZwkOE0nw4UX64/6SJoOxPgcHKYzpNgxk5DWI8Zr6ZYGUYvno9stz/6
- Fu9tqiue5estZQN/9hcADw83s6AV+mEkqbvDZOSiVI5xIAi8mG5x+IbNuxm8xvnPeetiMsHWo
- XQ9kuxyYsi0Hxslbds7kRTsKdd03Lq13OOShSsmuBpvNEv8DVJoxFwmuU6CgC3C8ASS0Fyb4d
- sQ9XxXUa9+AVBDIesqXldmPGsO8zTbpvVyAwzMy3kMG0PCEHwy1E6OJP+pMBOqGofSOFex2FN
- TxA5JWHyMYiTmu+ZDQYEjzpm5ffaeb/QVFI45qyvk2MUpWZtJyemku8LpA3jwdqGIBHgyiE3b
- cg4cbNLRm2fy0V2Z8yu/dHlDZMc5YwcXU7guSJn+wxZvR8F2C4TSr/zHqboPZQ/yledQDmseE
- k1z+T9H0TKPuMQNQ/yqdtHnjOhhcYBJU0AlukBGgW2sXATNCytBWn0nAX3z60XTg/5XbUhH1G
- hmxjIrqjtl1GsyMZtADGgse2LMtNypFQkmDXsUdJl9qZ5Qttz3mbi9TQPC6Db0rjIQjGW3qGP
- 7zapH1GypAzanMTjjLlhW5bg2yZSkj6nba81RbK+LVqDylwkm5fbeoaNIzAENRI/StdNVi+7A
- dYANDoawiCHVfC/9rEygCFINSTEPHqYa0isNBR+gZ2CuiJcTk2338WwTKVSLEer4iKQpHOlRM
- 81k3kSedfG1cglu0DN03q5neuuQvDeDhLVOjPNIvYZ4F+MU9216+xlvK2ZU38+7TxoHlu0pLD
- AAcjvrdgl2K0bBb4mbjC5AiyRJQdg==
+In-Reply-To: <ba395b06-ff1a-1926-5339-3a2927e3af0f@gmx.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---ptS3S2hNH1VnDP48Ym9J7Ab2NAxiNNixT
-Content-Type: multipart/mixed; boundary="O9tUCGE5CdC6W9LtjIVpR1RSQzTFBp2W0";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Message-ID: <ba395b06-ff1a-1926-5339-3a2927e3af0f@gmx.com>
-Subject: Re: [PATCH 1/2] btrfs: Populate btrfs_super_block::log_root_transid
-References: <20181004054950.11651-1-wqu@suse.com>
- <20181004054950.11651-2-wqu@suse.com> <20181011123151.GP29418@twin.jikos.cz>
-In-Reply-To: <20181011123151.GP29418@twin.jikos.cz>
-
---O9tUCGE5CdC6W9LtjIVpR1RSQzTFBp2W0
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
 
 
-
-On 2018/10/11 =E4=B8=8B=E5=8D=888:31, David Sterba wrote:
-> On Thu, Oct 04, 2018 at 01:49:49PM +0800, Qu Wenruo wrote:
->> We have btrfs_super_block::log_root_transid to record the transid of l=
-og
->> tree root.
+On 11.10.2018 15:45, Qu Wenruo wrote:
+> 
+> 
+> On 2018/10/11 下午8:31, David Sterba wrote:
+>> On Thu, Oct 04, 2018 at 01:49:49PM +0800, Qu Wenruo wrote:
+>>> We have btrfs_super_block::log_root_transid to record the transid of log
+>>> tree root.
+>>>
+>>> However it's never populated and it's always 0, just as the following
+>>> dump-super:
+>>>  log_root                30572544
+>>>  log_root_transid        0
+>>>  log_root_level          0
+>>>
+>>> This patch will populate it with log tree root correctly, so the result
+>>> will be:
+>>>  log_root                30572544
+>>>  log_root_transid        6
+>>>  log_root_level          0
+>>>
+>>> This won't affect current kernel behavior or btrfs check result as we
+>>> already expect log tree root generation always to be super block
+>>> genration + 1.
+>>>
+>>> But it could be later used to detect log tree corruption early.
 >>
->> However it's never populated and it's always 0, just as the following
->> dump-super:
->>  log_root                30572544
->>  log_root_transid        0
->>  log_root_level          0
+>> The backward compatibility seems to be ok in general, I found one
+>> scenario where the check will fail:
 >>
->> This patch will populate it with log tree root correctly, so the resul=
-t
->> will be:
->>  log_root                30572544
->>  log_root_transid        6
->>  log_root_level          0
+>> * mount with unpatched kernel, log_root_transid = 0
+>> * mount with patched kernel, log_root_transid 100, generation 101
+>> * mount with unpatched kernel, log_root_transid 100 (unchanged), generation 201
+>> * mount with patched kernel -> check fails
+> 
+> Indeed, this is a problem I missed.
+> 
+> It provides the old principle, if we're going to change how kernel
+> use/interprete a on-disk memeber, we have to introduce a new
+> incompatible flag.
+> 
+> Please just drop the series of patch.
+
+Since this member really doesn't have any purpose now I think the
+prudent thing to do is to rename it to "reserved1" or "padding" or
+whatever but basically signal that it's no longer in used. In the future
+when a new incompaat bit will be required for some feature it can be
+re-used.
+
+> 
+> Thanks,
+> Qu
 >>
->> This won't affect current kernel behavior or btrfs check result as we
->> already expect log tree root generation always to be super block
->> genration + 1.
+>> So the problem is when log_root_transid is not 0 and changes out of sync
+>> with the generation. The above sequence of kernels can simply happen
+>> when switching between old stable and current releases.
 >>
->> But it could be later used to detect log tree corruption early.
->=20
-> The backward compatibility seems to be ok in general, I found one
-> scenario where the check will fail:
->=20
-> * mount with unpatched kernel, log_root_transid =3D 0
-> * mount with patched kernel, log_root_transid 100, generation 101
-> * mount with unpatched kernel, log_root_transid 100 (unchanged), genera=
-tion 201
-> * mount with patched kernel -> check fails
-
-Indeed, this is a problem I missed.
-
-It provides the old principle, if we're going to change how kernel
-use/interprete a on-disk memeber, we have to introduce a new
-incompatible flag.
-
-Please just drop the series of patch.
-
-Thanks,
-Qu
->=20
-> So the problem is when log_root_transid is not 0 and changes out of syn=
-c
-> with the generation. The above sequence of kernels can simply happen
-> when switching between old stable and current releases.
->=20
-
-
---O9tUCGE5CdC6W9LtjIVpR1RSQzTFBp2W0--
-
---ptS3S2hNH1VnDP48Ym9J7Ab2NAxiNNixT
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlu/RgAACgkQwj2R86El
-/qgCTwf+NAiaVhKtKikteZpdepMA1yJjyzV/HVKgpLzqmUkh8kZlAZ5fMTiRaK4o
-FZnaFuLV0tl2IXOSz3sBUymQBH0vRdjzwFafZppyHpvkgjZs3FMxVD7q86HTH80r
-wG9lGfja3JR5A0+EVSRdV1JJlcyYEQoESHFqZ1siZVhpNYriQ+9hcp+AeXWLCx9d
-/d4RX6eCvoqDDP9YbiRuNsTrcx+8cK0abqXyKgeX1eMOKRNU+DAUJNVZ73bW9zDJ
-nsq1tiEtgmu43u0s719nwqe5Xb4G1kaNHPuZ+m6gxA6quR4x1AvuGGgWtaKFiaHg
-hWoTe8U0ClkSMnceYlo/w/+CUPDqew==
-=n3Ox
------END PGP SIGNATURE-----
-
---ptS3S2hNH1VnDP48Ym9J7Ab2NAxiNNixT--
+> 

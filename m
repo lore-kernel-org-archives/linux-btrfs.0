@@ -6,78 +6,63 @@ X-Spam-Status: No, score=-2.3 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0AB80C32788
-	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Oct 2018 12:31:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 29CABC32788
+	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Oct 2018 12:45:11 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id CD2742077C
-	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Oct 2018 12:31:57 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org CD2742077C
+	by mail.kernel.org (Postfix) with ESMTP id DE1472064A
+	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Oct 2018 12:45:10 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org DE1472064A
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728141AbeJKT64 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 11 Oct 2018 15:58:56 -0400
-Received: from mx2.suse.de ([195.135.220.15]:49582 "EHLO mx1.suse.de"
+        id S1726955AbeJKUMM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 11 Oct 2018 16:12:12 -0400
+Received: from mx2.suse.de ([195.135.220.15]:52048 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726537AbeJKT64 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 11 Oct 2018 15:58:56 -0400
+        id S1726126AbeJKUML (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 11 Oct 2018 16:12:11 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id CFC19AE02
-        for <linux-btrfs@vger.kernel.org>; Thu, 11 Oct 2018 12:31:54 +0000 (UTC)
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id BAFF6ADE6;
+        Thu, 11 Oct 2018 12:45:07 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 7F90EDA737; Thu, 11 Oct 2018 14:31:51 +0200 (CEST)
-Date:   Thu, 11 Oct 2018 14:31:51 +0200
+        id 946EADA737; Thu, 11 Oct 2018 14:45:04 +0200 (CEST)
+Date:   Thu, 11 Oct 2018 14:45:04 +0200
 From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <wqu@suse.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/2] btrfs: Populate btrfs_super_block::log_root_transid
-Message-ID: <20181011123151.GP29418@twin.jikos.cz>
+To:     Nikolay Borisov <nborisov@suse.com>
+Cc:     Lu Fengqi <lufq.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 5/6] btrfs: simplify btrfs_select_ref_head and cleanup
+ some local variables
+Message-ID: <20181011124504.GQ29418@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <20181004054950.11651-1-wqu@suse.com>
- <20181004054950.11651-2-wqu@suse.com>
+Mail-Followup-To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
+        Lu Fengqi <lufq.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+References: <20181011054038.5428-1-lufq.fnst@cn.fujitsu.com>
+ <20181011054038.5428-6-lufq.fnst@cn.fujitsu.com>
+ <e5bb27d0-fea5-30c6-afd4-aea2eae1871e@suse.com>
+ <20181011121558.GF5899@fnst.localdomain>
+ <0b78a3dc-bf22-fb99-afce-96b74d936173@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20181004054950.11651-2-wqu@suse.com>
+In-Reply-To: <0b78a3dc-bf22-fb99-afce-96b74d936173@suse.com>
 User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Oct 04, 2018 at 01:49:49PM +0800, Qu Wenruo wrote:
-> We have btrfs_super_block::log_root_transid to record the transid of log
-> tree root.
+On Thu, Oct 11, 2018 at 03:28:15PM +0300, Nikolay Borisov wrote:
+> > I noticed that there is a macro called SCRAMBLE_DELAYED_REFS in the
+> > extent-tree.c. I am a bit curious whether it has been forgotten by
+> > everyone, I have not found any test results about its performance impact.
 > 
-> However it's never populated and it's always 0, just as the following
-> dump-super:
->  log_root                30572544
->  log_root_transid        0
->  log_root_level          0
-> 
-> This patch will populate it with log tree root correctly, so the result
-> will be:
->  log_root                30572544
->  log_root_transid        6
->  log_root_level          0
-> 
-> This won't affect current kernel behavior or btrfs check result as we
-> already expect log tree root generation always to be super block
-> genration + 1.
-> 
-> But it could be later used to detect log tree corruption early.
+> I guess it was used during testing but nothing currently sets it. I.e it
+> might make sense to enable it if BTRFS_DEBUG is set.
 
-The backward compatibility seems to be ok in general, I found one
-scenario where the check will fail:
+Agreed, the way the scrambling is supposed to be used does not align
+very well with the typical testing workflow so adding to ti the
+BTRFS_DEBUG set is ok, unless there are severe performance problems.
 
-* mount with unpatched kernel, log_root_transid = 0
-* mount with patched kernel, log_root_transid 100, generation 101
-* mount with unpatched kernel, log_root_transid 100 (unchanged), generation 201
-* mount with patched kernel -> check fails
-
-So the problem is when log_root_transid is not 0 and changes out of sync
-with the generation. The above sequence of kernels can simply happen
-when switching between old stable and current releases.
+The part in btrfs_run_delayed_refs would be better hidden in a function
+similar to btrfs_debug_check_extent_io_range or btrfs_leak_debug_check.

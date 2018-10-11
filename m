@@ -8,54 +8,54 @@ X-Spam-Status: No, score=-8.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3B909C6780B
-	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Oct 2018 18:51:20 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A556AC6780B
+	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Oct 2018 18:51:22 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 057802085B
-	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Oct 2018 18:51:20 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 6934B2075C
+	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Oct 2018 18:51:22 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=libero.it header.i=@libero.it header.b="VzRgdvwt"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 057802085B
+	dkim=pass (2048-bit key) header.d=libero.it header.i=@libero.it header.b="RYEy8qvN"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 6934B2075C
 Authentication-Results: mail.kernel.org; dmarc=fail (p=quarantine dis=none) header.from=libero.it
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729837AbeJLCTq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        id S1729825AbeJLCTq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Thu, 11 Oct 2018 22:19:46 -0400
-Received: from smtp-33-i6.italiaonline.it ([213.209.14.33]:52800 "EHLO
+Received: from smtp-33-i6.italiaonline.it ([213.209.14.33]:43028 "EHLO
         libero.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1729799AbeJLCTp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 11 Oct 2018 22:19:45 -0400
+        id S1729784AbeJLCTo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 11 Oct 2018 22:19:44 -0400
 Received: from venice.bhome ([94.38.186.31])
         by smtp-33.iol.local with ESMTPA
-        id Ag3FgMwlrQGOzAg3HgbY0C; Thu, 11 Oct 2018 20:51:16 +0200
+        id Ag3FgMwlrQGOzAg3GgbXzb; Thu, 11 Oct 2018 20:51:14 +0200
 x-libjamoibt: 1601
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=libero.it; s=s2014;
-        t=1539283876; bh=5oBI0qGMFDD6zfiFnly1NgYUQ377A4SniXN+v2UHtPA=;
+        t=1539283874; bh=KuTYrHl73JrlRdyNxbEMcnlyesZv8nb05pfEisUS7CE=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References;
-        b=VzRgdvwt6iLWeVESPIZMBRd241siCWIeyU4dJxYaFKbnCWnIu3hSqgou+x7XYAoPO
-         bEir4GWKEeH5sHWhFRg0vhev2UECToWv7fvUKUbG1OmNC7UXGVWr2IgntizXCTPShQ
-         SQur5+qnEtIR7qmYe4YEtNraEIAfJjdIolZLQwVCi73CQMAbRH3Ny6omLehn/VM9Io
-         0VxV3rVKz1V08/oOKJJUciqcUU2hgM8uy8X51WUlLwbwjEqjrMXLc1F5fr2HwiEOD3
-         g/iUS5EpIUFqvOytrm9Oo7mUyVTacRjFvWEN0ZOXX+nOfI8H+naujUDtuEXu+VJR/Z
-         Xkhjf9xkAZ3QQ==
+        b=RYEy8qvNxmoenTwcn6LJIMmkpVR7DVkCvu19wevVQTs9D6v7ONZHVAyV0/G25ckVe
+         T9u66RYJe7cMzzMC+dDRcCHnBIFFhoqDSatqiSFwsMP/cKvyyoD+NkY+Xbw70icYaR
+         c5WDGygbs38RblA6+V+FdGiCZ1RTKsoXJ0udseoAvisdcStnyzHaKhJLgCxPvmS+Jo
+         /q/J7zY5JFAkl74hBMG6N95xm2sahDerw/7qa6SHS2kS59blRmiw5qzfp7KWwBMlAj
+         GCWE5hMXtsfbz4I7JrS/QkpZuoxsi0P8qt2x0ygKKZO2VtMtiSgdZQ3nMMBJEbB59l
+         SSV+7ElLmtZ8g==
 X-CNFS-Analysis: v=2.3 cv=OvCeNB3t c=1 sm=1 tr=0
  a=I+JNyrl7/zjgsFWlY3jFdA==:117 a=I+JNyrl7/zjgsFWlY3jFdA==:17 a=yPCof4ZbAAAA:8
- a=tbGcK1RVRLHxssNcnxoA:9 a=ROPnYPVHyosrfo3k:21 a=LACR2KO_iN7HUbMU:21
+ a=GjNF4_zslFSpHsoFBLgA:9
 From:   Goffredo Baroncelli <kreijack@libero.it>
 To:     grub-devel@gnu.org
 Cc:     Daniel Kiper <dkiper@net-space.pl>, linux-btrfs@vger.kernel.org,
         Goffredo Baroncelli <kreijack@inwind.it>
-Subject: [PATCH 5/9] btrfs: Move logging code in grub_btrfs_read_logical()
-Date:   Thu, 11 Oct 2018 20:50:59 +0200
-Message-Id: <20181011185103.23146-6-kreijack@libero.it>
+Subject: [PATCH 2/9] btrfs: Add helper to check the btrfs header.
+Date:   Thu, 11 Oct 2018 20:50:56 +0200
+Message-Id: <20181011185103.23146-3-kreijack@libero.it>
 X-Mailer: git-send-email 2.19.1
 In-Reply-To: <20181011185103.23146-1-kreijack@libero.it>
 References: <20181011185103.23146-1-kreijack@libero.it>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-CMAE-Envelope: MS4wfMeBmjCiNA9CZ9pgvDmeFIYY3WeUnL16lyNyCt1jGH12Omfy0EpmL1x9tU8UqVW7TSZs3cCeonhUGMsDt4Y37TLH2+Uugn7gj63cjTg7UlkOsnpi4ceD
- 61fitc/Y3QHgO+teqAn8FnoHs1KaiKMn8VW/gWQenS33Vs1+tO94Y60BX0oOcyJpKVxoIp4uvQMbuIUfF8sWTj9T3pgWIqTdiCUNwnVwmlv0cPq8osT8AGoX
- mN+mq+vQzghv9aAFC6CzmV8LoC22a+JrqeEpCQXf48E=
+X-CMAE-Envelope: MS4wfB7r80I6B/TEVG9LJ70otK81y11lHjrb4zovuSXGQQOHlAqDr+PKfbm0hvVeB8RyuOopAxLsMNNUmMDCH3W9Ad/5N5PCJCR1zIQMYhWEefoEa84A14Ba
+ fribfUjH2tDYs/uexG+h8Q+BsMz/MlOq7MKNJ8/Rv+MHx6g+g5bJMU05OEDBrFXVYyIbr/MK/3Y94ahfvXEjGfUnSsSdiR7hz65V6rTUspdOVFKR5WYARnXs
+ iV/8iYE4ul9HJp7pG0YTFFIeQ+qn34L3hvbjLlGj+6k=
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -63,64 +63,72 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Goffredo Baroncelli <kreijack@inwind.it>
 
-A portion of the logging code is moved outside of internal for(;;). The part
-that is left inside is the one which depends on the internal for(;;) index.
-
-This is a preparatory patch. The next one will refactor the code inside
-the for(;;) into an another function.
+This helper is used in a few places to help the debugging. As
+conservative approach the error is only logged.
+This does not impact the error handling.
 
 Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
 Reviewed-by: Daniel Kiper <daniel.kiper@oracle.com>
 ---
- grub-core/fs/btrfs.c | 25 ++++++++++++++-----------
- 1 file changed, 14 insertions(+), 11 deletions(-)
+ grub-core/fs/btrfs.c | 24 +++++++++++++++++++++++-
+ 1 file changed, 23 insertions(+), 1 deletion(-)
 
 diff --git a/grub-core/fs/btrfs.c b/grub-core/fs/btrfs.c
-index b2be80c33..a82211ccc 100644
+index 933a57d3b..c9f0c4193 100644
 --- a/grub-core/fs/btrfs.c
 +++ b/grub-core/fs/btrfs.c
-@@ -870,6 +870,18 @@ grub_btrfs_read_logical (struct grub_btrfs_data *data, grub_disk_addr_t addr,
+@@ -77,7 +77,8 @@ struct btrfs_header
+ {
+   grub_btrfs_checksum_t checksum;
+   grub_btrfs_uuid_t uuid;
+-  grub_uint8_t dummy[0x30];
++  grub_uint64_t bytenr;
++  grub_uint8_t dummy[0x28];
+   grub_uint32_t nitems;
+   grub_uint8_t level;
+ } GRUB_PACKED;
+@@ -286,6 +287,25 @@ free_iterator (struct grub_btrfs_leaf_descriptor *desc)
+   grub_free (desc->data);
+ }
  
- 	for (j = 0; j < 2; j++)
- 	  {
-+	    grub_dprintf ("btrfs", "chunk 0x%" PRIxGRUB_UINT64_T
-+			  "+0x%" PRIxGRUB_UINT64_T
-+			  " (%d stripes (%d substripes) of %"
-+			  PRIxGRUB_UINT64_T ")\n",
-+			  grub_le_to_cpu64 (key->offset),
-+			  grub_le_to_cpu64 (chunk->size),
-+			  grub_le_to_cpu16 (chunk->nstripes),
-+			  grub_le_to_cpu16 (chunk->nsubstripes),
-+			  grub_le_to_cpu64 (chunk->stripe_length));
-+	    grub_dprintf ("btrfs", "reading laddr 0x%" PRIxGRUB_UINT64_T "\n",
-+			  addr);
++static grub_err_t
++check_btrfs_header (struct grub_btrfs_data *data, struct btrfs_header *header,
++                    grub_disk_addr_t addr)
++{
++  if (grub_le_to_cpu64 (header->bytenr) != addr)
++    {
++      grub_dprintf ("btrfs", "btrfs_header.bytenr is not equal node addr\n");
++      return grub_error (GRUB_ERR_BAD_FS,
++			 "header bytenr is not equal node addr");
++    }
++  if (grub_memcmp (data->sblock.uuid, header->uuid, sizeof(grub_btrfs_uuid_t)))
++    {
++      grub_dprintf ("btrfs", "btrfs_header.uuid doesn't match sblock uuid\n");
++      return grub_error (GRUB_ERR_BAD_FS,
++			 "header uuid doesn't match sblock uuid");
++    }
++  return GRUB_ERR_NONE;
++}
 +
- 	    for (i = 0; i < redundancy; i++)
- 	      {
- 		struct grub_btrfs_chunk_stripe *stripe;
-@@ -882,20 +894,11 @@ grub_btrfs_read_logical (struct grub_btrfs_data *data, grub_disk_addr_t addr,
+ static grub_err_t
+ save_ref (struct grub_btrfs_leaf_descriptor *desc,
+ 	  grub_disk_addr_t addr, unsigned i, unsigned m, int l)
+@@ -341,6 +361,7 @@ next (struct grub_btrfs_data *data,
  
- 		paddr = grub_le_to_cpu64 (stripe->offset) + stripe_offset;
+       err = grub_btrfs_read_logical (data, grub_le_to_cpu64 (node.addr),
+ 				     &head, sizeof (head), 0);
++      check_btrfs_header (data, &head, grub_le_to_cpu64 (node.addr));
+       if (err)
+ 	return -err;
  
--		grub_dprintf ("btrfs", "chunk 0x%" PRIxGRUB_UINT64_T
--			      "+0x%" PRIxGRUB_UINT64_T
--			      " (%d stripes (%d substripes) of %"
--			      PRIxGRUB_UINT64_T ") stripe %" PRIxGRUB_UINT64_T
-+		grub_dprintf ("btrfs", "stripe %" PRIxGRUB_UINT64_T
- 			      " maps to 0x%" PRIxGRUB_UINT64_T "\n",
--			      grub_le_to_cpu64 (key->offset),
--			      grub_le_to_cpu64 (chunk->size),
--			      grub_le_to_cpu16 (chunk->nstripes),
--			      grub_le_to_cpu16 (chunk->nsubstripes),
--			      grub_le_to_cpu64 (chunk->stripe_length),
- 			      stripen, stripe->offset);
- 		grub_dprintf ("btrfs", "reading paddr 0x%" PRIxGRUB_UINT64_T
--			      " for laddr 0x%" PRIxGRUB_UINT64_T "\n", paddr,
--			      addr);
-+			      "\n", paddr);
- 
- 		dev = find_device (data, stripe->device_id);
- 		if (!dev)
+@@ -402,6 +423,7 @@ lower_bound (struct grub_btrfs_data *data,
+       /* FIXME: preread few nodes into buffer. */
+       err = grub_btrfs_read_logical (data, addr, &head, sizeof (head),
+ 				     recursion_depth + 1);
++      check_btrfs_header (data, &head, addr);
+       if (err)
+ 	return err;
+       addr += sizeof (head);
 -- 
 2.19.1
 

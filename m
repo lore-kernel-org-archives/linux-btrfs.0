@@ -7,61 +7,62 @@ X-Spam-Status: No, score=-8.8 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
 	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EDFB5C6787C
-	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 19:33:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D72E6C71122
+	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 19:33:47 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B83C32087D
-	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 19:33:46 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A279F2087D
+	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 19:33:47 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="NKttTl5l"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org B83C32087D
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="L+N44KSl"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org A279F2087D
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=toxicpanda.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727002AbeJMDHq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 12 Oct 2018 23:07:46 -0400
-Received: from mail-qt1-f195.google.com ([209.85.160.195]:34329 "EHLO
-        mail-qt1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726794AbeJMDHh (ORCPT
+        id S1727000AbeJMDHp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 12 Oct 2018 23:07:45 -0400
+Received: from mail-qk1-f195.google.com ([209.85.222.195]:43449 "EHLO
+        mail-qk1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726933AbeJMDHp (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 12 Oct 2018 23:07:37 -0400
-Received: by mail-qt1-f195.google.com with SMTP id o17-v6so15081949qtr.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2018 12:33:36 -0700 (PDT)
+        Fri, 12 Oct 2018 23:07:45 -0400
+Received: by mail-qk1-f195.google.com with SMTP id 12-v6so8330285qkj.10
+        for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2018 12:33:44 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:subject:date:message-id:in-reply-to:references;
-        bh=vHabzEqM4andqo36SRSVv9D6V894NYsX3WbIWx+RRlM=;
-        b=NKttTl5l4WQbbj+Wy9FAfdXXirZUyutam7wnpsBICTZdfDVCpMCQ5/4PWQeQ8gpW16
-         gbj28GiscKxeF9OJLb/+yT3W4Uh01F6jcHa5K64LEhtiUV35HEermkQAZ7qCdh/C4Orm
-         TsySBzGQRln4DPJ2HIb4K1UXsTArvqYRfdiSi0IlDAO6lkLUvao8Q48uQysr/gWGgMIn
-         riMOOP44Vz1EbUw+lgcXvpFn8TPFCK21jCQ3o/2BQiLLwDlwY1yEJNFkF9fkitf96BNP
-         QhuP0HRB3O88I2AF3b/HGu+G9qDEOVoIdr0OnHd6ayBN4e0DPhfDFkT7Ku+JErlQfHif
-         UnBw==
+        h=from:to:cc:subject:date:message-id:in-reply-to:references;
+        bh=YPU1+9kFJB8jUn5q1U/VWyfL9ar9cpfy/opBHehMoyg=;
+        b=L+N44KSlgTRVrVQY1oPt+aLD38/F4sM/0E+fygpe1dD49axIO2HGoquHCGsBZgwwiq
+         74bl1EQ1sScwV3DMs7uB0bN8jPYuJybBUd0JJkK2OtdHs9jgIbRAU0ETD2gZTaz7Aq26
+         WuSSXXrdB39iwh0Xy8nBBDkZA9wwjC/s4dJsDENM9LUyC09NxmhUwa7G/pGF/EV9EICC
+         DCMh1mOPCuA051IaVWnVLhOWdIUcFsL+PISP91J/mk+ccFHMGc3B0vZhzbWQ2o7H2McC
+         lX2pT+Zke720omGJRdYqf4GRnRY/YFJpieocCt52wdrzcbWFh2y5DlOM5kQL5Br6BwW2
+         fPvA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references;
-        bh=vHabzEqM4andqo36SRSVv9D6V894NYsX3WbIWx+RRlM=;
-        b=YdNJpoxp5MJ5xer66vPHTm6D+OrSlhnpwUklE7d/WqX6cj6Rvv1ZCsLmAlf1zEjJ3w
-         m03EkYuJrSHnN+KjfE6gSyiuEDSqUUrvBzeYOuXbZl+lIBFVYvIDc5sOiEl9CIk90IAi
-         jAgGT+hhL4IQALLoao9XNBLMSJJvSRFqTm7+PwGyQ/ETdFNuoxS4Ncl8qAHHxm+KQ78J
-         GK+xpQASry88qqoKt7r/OJYb9Gm0e7K4OkfN6whNvONRpr0J+t3fnoTdzAGfZtNEMSwY
-         q0bZl7UG8UepcEQbnAUV5HP0a5+ZGttkwJ6ouZBOdrB4Nr8arU+9zGWIieYyHPW703Jp
-         UtRw==
-X-Gm-Message-State: ABuFfohuloQIO2xYJwul2VRAUAgQzFUHz/+gYGrc3ZkLY9zdBdFhcJCQ
-        7jBf3eiF5bhZy0K1ZKyFOhKxdLkS7aw=
-X-Google-Smtp-Source: ACcGV61YkOSjfdg94+24oMvmZoDR6to2HAaIU1vZl9DU0RC8Eyc8/pGWhIFznVYnJX/SPdqG8q/c8w==
-X-Received: by 2002:ac8:2278:: with SMTP id p53-v6mr7136442qtp.200.1539372815530;
-        Fri, 12 Oct 2018 12:33:35 -0700 (PDT)
+        bh=YPU1+9kFJB8jUn5q1U/VWyfL9ar9cpfy/opBHehMoyg=;
+        b=BgSgkdA+NtRzQx9BuHVzZj9UP8PsFZQmcalkhrZUHdb/VDWMDjfyd0HqvkuQfwSDPC
+         gkaFGwPor8NrIom3hzDVuwliBrrKI2yFv8u+S3YP0/USpHLwHCpxnFTJjWcRZevOr4nT
+         rp7g2pWofmbaZwd6hSiUCipWEZXB6QOpqrIXIqp59RZZKO3Si7/g44mFQll3Z5D2vTZW
+         RlJvV21pXHl/cNGW7jaIux0NEPolkc6sb4Mv3T/Kl/la4fiQ2X26rstFZ56lTgSncL1+
+         IyBOf5iuol5xJWzLwUJZtuyr58UPV/dJaAg06+Enu0RZvOtRvT9LL0GyDqPW79f30jTA
+         ME1g==
+X-Gm-Message-State: ABuFfoij/yEelYpSsdI083PYELgnX7AUZ5QPzp52nO747gMwDVDp3z9K
+        WnF6phYSSPvl1GK7yrwU9kYTb8okek4=
+X-Google-Smtp-Source: ACcGV62mEs9B1W6pTtcUop2PEkIfOWAwEu4aGi+NooXnNRXRRpBRdb/pNwpk96YaO3y75bunHQsj9w==
+X-Received: by 2002:a37:ba42:: with SMTP id k63-v6mr7048989qkf.103.1539372823809;
+        Fri, 12 Oct 2018 12:33:43 -0700 (PDT)
 Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id z46-v6sm1589896qth.87.2018.10.12.12.33.34
+        by smtp.gmail.com with ESMTPSA id d12-v6sm1528890qte.75.2018.10.12.12.33.42
         (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
-        Fri, 12 Oct 2018 12:33:34 -0700 (PDT)
+        Fri, 12 Oct 2018 12:33:42 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 16/42] btrfs: loop in inode_rsv_refill
-Date:   Fri, 12 Oct 2018 15:32:30 -0400
-Message-Id: <20181012193256.13735-17-josef@toxicpanda.com>
+Cc:     Josef Bacik <jbacik@fb.com>
+Subject: [PATCH 19/42] btrfs: set max_extent_size properly
+Date:   Fri, 12 Oct 2018 15:32:33 -0400
+Message-Id: <20181012193256.13735-20-josef@toxicpanda.com>
 X-Mailer: git-send-email 2.14.3
 In-Reply-To: <20181012193256.13735-1-josef@toxicpanda.com>
 References: <20181012193256.13735-1-josef@toxicpanda.com>
@@ -70,106 +71,93 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-With severe fragmentation we can end up with our inode rsv size being
-huge during writeout, which would cause us to need to make very large
-metadata reservations.  However we may not actually need that much once
-writeout is complete.  So instead try to make our reservation, and if we
-couldn't make it re-calculate our new reservation size and try again.
-If our reservation size doesn't change between tries then we know we are
-actually out of space and can error out.
+From: Josef Bacik <jbacik@fb.com>
 
-Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+We can't use entry->bytes if our entry is a bitmap entry, we need to use
+entry->max_extent_size in that case.  Fix up all the logic to make this
+consistent.
+
+Signed-off-by: Josef Bacik <jbacik@fb.com>
 ---
- fs/btrfs/extent-tree.c | 56 ++++++++++++++++++++++++++++++++++++--------------
- 1 file changed, 41 insertions(+), 15 deletions(-)
+ fs/btrfs/free-space-cache.c | 30 ++++++++++++++++++++----------
+ 1 file changed, 20 insertions(+), 10 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 19449ee93693..3757ca42b8e0 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -5766,6 +5766,21 @@ int btrfs_block_rsv_refill(struct btrfs_root *root,
- 	return ret;
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index e077ad3b4549..2dd773e96530 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -1770,6 +1770,13 @@ static int search_bitmap(struct btrfs_free_space_ctl *ctl,
+ 	return -1;
  }
  
-+static inline void __get_refill_bytes(struct btrfs_block_rsv *block_rsv,
-+				      u64 *metadata_bytes, u64 *qgroup_bytes)
++static inline u64 get_max_extent_size(struct btrfs_free_space *entry)
 +{
-+	*metadata_bytes = 0;
-+	*qgroup_bytes = 0;
-+
-+	spin_lock(&block_rsv->lock);
-+	if (block_rsv->reserved < block_rsv->size)
-+		*metadata_bytes = block_rsv->size - block_rsv->reserved;
-+	if (block_rsv->qgroup_rsv_reserved < block_rsv->qgroup_rsv_size)
-+		*qgroup_bytes = block_rsv->qgroup_rsv_size -
-+			block_rsv->qgroup_rsv_reserved;
-+	spin_unlock(&block_rsv->lock);
++	if (entry->bitmap)
++		return entry->max_extent_size;
++	return entry->bytes;
 +}
 +
- /**
-  * btrfs_inode_rsv_refill - refill the inode block rsv.
-  * @inode - the inode we are refilling.
-@@ -5781,25 +5796,37 @@ static int btrfs_inode_rsv_refill(struct btrfs_inode *inode,
- {
- 	struct btrfs_root *root = inode->root;
- 	struct btrfs_block_rsv *block_rsv = &inode->block_rsv;
--	u64 num_bytes = 0;
-+	u64 num_bytes = 0, last = 0;
- 	u64 qgroup_num_bytes = 0;
- 	int ret = -ENOSPC;
+ /* Cache the size of the max extent in bytes */
+ static struct btrfs_free_space *
+ find_free_space(struct btrfs_free_space_ctl *ctl, u64 *offset, u64 *bytes,
+@@ -1791,8 +1798,8 @@ find_free_space(struct btrfs_free_space_ctl *ctl, u64 *offset, u64 *bytes,
+ 	for (node = &entry->offset_index; node; node = rb_next(node)) {
+ 		entry = rb_entry(node, struct btrfs_free_space, offset_index);
+ 		if (entry->bytes < *bytes) {
+-			if (entry->bytes > *max_extent_size)
+-				*max_extent_size = entry->bytes;
++			*max_extent_size = max(get_max_extent_size(entry),
++					       *max_extent_size);
+ 			continue;
+ 		}
  
--	spin_lock(&block_rsv->lock);
--	if (block_rsv->reserved < block_rsv->size)
--		num_bytes = block_rsv->size - block_rsv->reserved;
--	if (block_rsv->qgroup_rsv_reserved < block_rsv->qgroup_rsv_size)
--		qgroup_num_bytes = block_rsv->qgroup_rsv_size -
--				   block_rsv->qgroup_rsv_reserved;
--	spin_unlock(&block_rsv->lock);
--
-+	__get_refill_bytes(block_rsv, &num_bytes, &qgroup_num_bytes);
- 	if (num_bytes == 0)
+@@ -1810,8 +1817,8 @@ find_free_space(struct btrfs_free_space_ctl *ctl, u64 *offset, u64 *bytes,
+ 		}
+ 
+ 		if (entry->bytes < *bytes + align_off) {
+-			if (entry->bytes > *max_extent_size)
+-				*max_extent_size = entry->bytes;
++			*max_extent_size = max(get_max_extent_size(entry),
++					       *max_extent_size);
+ 			continue;
+ 		}
+ 
+@@ -1823,8 +1830,10 @@ find_free_space(struct btrfs_free_space_ctl *ctl, u64 *offset, u64 *bytes,
+ 				*offset = tmp;
+ 				*bytes = size;
+ 				return entry;
+-			} else if (size > *max_extent_size) {
+-				*max_extent_size = size;
++			} else {
++				*max_extent_size =
++					max(get_max_extent_size(entry),
++					    *max_extent_size);
+ 			}
+ 			continue;
+ 		}
+@@ -2684,8 +2693,8 @@ static u64 btrfs_alloc_from_bitmap(struct btrfs_block_group_cache *block_group,
+ 
+ 	err = search_bitmap(ctl, entry, &search_start, &search_bytes, true);
+ 	if (err) {
+-		if (search_bytes > *max_extent_size)
+-			*max_extent_size = search_bytes;
++		*max_extent_size = max(get_max_extent_size(entry),
++				       *max_extent_size);
  		return 0;
+ 	}
  
--	ret = btrfs_qgroup_reserve_meta_prealloc(root, qgroup_num_bytes, true);
--	if (ret)
--		return ret;
--	ret = reserve_metadata_bytes(root, block_rsv, num_bytes, flush);
-+	do {
-+		ret = btrfs_qgroup_reserve_meta_prealloc(root, qgroup_num_bytes, true);
-+		if (ret)
-+			return ret;
-+		ret = reserve_metadata_bytes(root, block_rsv, num_bytes, flush);
-+		if (ret) {
-+			btrfs_qgroup_free_meta_prealloc(root, qgroup_num_bytes);
-+			last = num_bytes;
-+			/*
-+			 * If we are fragmented we can end up with a lot of
-+			 * outstanding extents which will make our size be much
-+			 * larger than our reserved amount.  If we happen to
-+			 * try to do a reservation here that may result in us
-+			 * trying to do a pretty hefty reservation, which we may
-+			 * not need once delalloc flushing happens.  If this is
-+			 * the case try and do the reserve again.
-+			 */
-+			if (flush == BTRFS_RESERVE_FLUSH_ALL)
-+				__get_refill_bytes(block_rsv, &num_bytes,
-+						   &qgroup_num_bytes);
-+		}
-+	} while (ret && last != num_bytes);
-+
- 	if (!ret) {
- 		block_rsv_add_bytes(block_rsv, num_bytes, 0);
- 		trace_btrfs_space_reservation(root->fs_info, "delalloc",
-@@ -5809,8 +5836,7 @@ static int btrfs_inode_rsv_refill(struct btrfs_inode *inode,
- 		spin_lock(&block_rsv->lock);
- 		block_rsv->qgroup_rsv_reserved += qgroup_num_bytes;
- 		spin_unlock(&block_rsv->lock);
--	} else
--		btrfs_qgroup_free_meta_prealloc(root, qgroup_num_bytes);
-+	}
- 	return ret;
- }
+@@ -2722,8 +2731,9 @@ u64 btrfs_alloc_from_cluster(struct btrfs_block_group_cache *block_group,
  
+ 	entry = rb_entry(node, struct btrfs_free_space, offset_index);
+ 	while (1) {
+-		if (entry->bytes < bytes && entry->bytes > *max_extent_size)
+-			*max_extent_size = entry->bytes;
++		if (entry->bytes < bytes)
++			*max_extent_size = max(get_max_extent_size(entry),
++					       *max_extent_size);
+ 
+ 		if (entry->bytes < bytes ||
+ 		    (!entry->bitmap && entry->offset < min_start)) {
 -- 
 2.14.3
 

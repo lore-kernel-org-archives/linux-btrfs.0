@@ -4,35 +4,37 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-6.5 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
 	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 25367C43441
-	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 08:46:03 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D2234C43441
+	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 08:47:06 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id C2BF020868
-	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 08:46:02 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org C2BF020868
+	by mail.kernel.org (Postfix) with ESMTP id 7EAB320868
+	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 08:47:06 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 7EAB320868
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=gmx.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727819AbeJLQRX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 12 Oct 2018 12:17:23 -0400
-Received: from mout.gmx.net ([212.227.15.19]:47867 "EHLO mout.gmx.net"
+        id S1727210AbeJLQS1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 12 Oct 2018 12:18:27 -0400
+Received: from mout.gmx.net ([212.227.15.18]:60615 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727524AbeJLQRX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 12 Oct 2018 12:17:23 -0400
-Received: from [0.0.0.0] ([210.140.77.29]) by mail.gmx.com (mrgmx003
- [212.227.17.184]) with ESMTPSA (Nemesis) id 0MMShK-1gJ6YZ0I3S-008Lok; Fri, 12
- Oct 2018 10:45:54 +0200
-Received: from [0.0.0.0] ([210.140.77.29]) by mail.gmx.com (mrgmx003
- [212.227.17.184]) with ESMTPSA (Nemesis) id 0MMShK-1gJ6YZ0I3S-008Lok; Fri, 12
- Oct 2018 10:45:54 +0200
-Subject: Re: [PATCH v2] btrfs: Deprecate unused super block member,
+        id S1726071AbeJLQS1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 12 Oct 2018 12:18:27 -0400
+Received: from [0.0.0.0] ([210.140.77.29]) by mail.gmx.com (mrgmx001
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 0M7Xi3-1fQSYA0wKN-00xNGl; Fri, 12
+ Oct 2018 10:46:58 +0200
+Received: from [0.0.0.0] ([210.140.77.29]) by mail.gmx.com (mrgmx001
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 0M7Xi3-1fQSYA0wKN-00xNGl; Fri, 12
+ Oct 2018 10:46:58 +0200
+Subject: Re: [PATCH 2/2] btrfs-progs: Deprecate unused super block member
  log_root_transid
 To:     Nikolay Borisov <nborisov@suse.com>, Qu Wenruo <wqu@suse.com>,
         linux-btrfs@vger.kernel.org
-References: <20181012063720.25659-1-wqu@suse.com>
- <9584982b-ac47-1b99-cb6f-7c0c68804b94@suse.com>
+References: <20181012064258.27033-1-wqu@suse.com>
+ <20181012064258.27033-2-wqu@suse.com>
+ <2b4ff29a-ff9b-8b56-ef13-4b76e72a281f@suse.com>
 From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
@@ -59,32 +61,32 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
  4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
  h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <1ceba3fb-f84a-7b5d-0fed-f06997806b74@gmx.com>
-Date:   Fri, 12 Oct 2018 16:45:49 +0800
+Message-ID: <fbb5f43e-8eb0-08c6-a1c9-855efd960d3d@gmx.com>
+Date:   Fri, 12 Oct 2018 16:46:53 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.0
 MIME-Version: 1.0
-In-Reply-To: <9584982b-ac47-1b99-cb6f-7c0c68804b94@suse.com>
+In-Reply-To: <2b4ff29a-ff9b-8b56-ef13-4b76e72a281f@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
-X-Provags-ID: V03:K1:91wcFtaTYAdNp4Bau0Vi8UqMWObvCbreakxntSE3OHtNC/du/Cd
- YFYAjTiVox1lfsNbyyRxTHdLmxt2xAgsdvpHS0NBSycAngSHf5Va+uh/KxOS4T2FenNb8vq
- KdHMTIoAh/XZVhMd9HnPfNXtL7jGceWmrQxjEi3KybKC4+tczzRrCnCrDPlVf3fzoOOKBQA
- Bu+qVgp6naN6MiBhd40Ew==
-X-UI-Out-Filterresults: notjunk:1;V01:K0:scd2VTfoesk=:yJiiFauypGmt/UBNCKtzGA
- c9+VSnw+z3PKAiEAjsSNALx1uRGj4zUVBWAa2WRlHCQ7UECw3ELiaHP8/NhPg9oCwyc8li7RL
- Zk8VIHAnFl4xUz/jAkb4GMrZt8Oym4UBKQastIEkC5TMHNZ2yafZ+HCqyHW4KOuA04l81p/ZI
- WL9SO9l8w42GknRyZllWA7dZlfikoUWEpMEpx7gzWbWQo+kEw8btq0Y0y+x4KklczyF4XiVtg
- TFFlprQUwDRb6V4UbIAzlk/h+Tjfm1pN2PUK09xkv773k7IVoulTiskqIv/pG20xeqSEMiiKt
- X+zExQBWy1svZ4as15Nghah0U0O7WQ73HDFu6pYI1I/UDRHRY6VEBabd2rCgaeWmme2oxF8rm
- Ls7zJgFcXdPDQUNVdHHyS0PsLGBeIeMoYxk03FgmAXJQT3YunEItimywy1TSH3+XvLmGQfxlR
- EcNiHtOSuXdpxVDWxYIa5CQcUPqLTJe+CoLdx7jt+6MAnBeAN45BF54rYjdcFiDXmpp0dGJq3
- EfkaSvt+U3RDGnlh9anUbmZdSwmjLZqXFkOWwbKKfDUczMEKvOpkln87OXy/QW4sCDUysQcDz
- dWhBx4YeHqn3qKLKo++Uafx8Y6L+dJTiJNjXBZVAbQswa07hapDCMV7V2EfmVh5tfFFRLge/O
- gG26OfXdccHn06bWsEDUrAnuOul4J0bBIRhjTtHfqjBoKtPVdkdRfWWZS4bqs5clUGwlgIa53
- 5fArpyApi7Hd0bqqWMMpPjEDX8+ko2+JtO4GqSyEaGLFFz8JKM7hUGwCyMi5j+UmwVnroEm2D
- Xhag8L4+PLBEHHdtILMyotyudJPKkj6hfz8QMwWFB+rkPu+qRg=
+X-Provags-ID: V03:K1:lg/FoMlZGNAnMAZAEe8mX/sWqeqePmzHtmXEcPNAofRgHDqr5DE
+ x4/jC2dF35nrgDKObzW+8/l4YAncRpZN215zgWuDsv0a7g07f3k3yZ9bYwSQE/U/Rn6gCPd
+ /9LYBamAIUAVnswsiBg/J88RdmoM36P4ODp0r0JcTRsGyb/GCsZzqCuIaq8O3I6QP+FsZwd
+ E8QG2ofgo7x+J8ibH8T9Q==
+X-UI-Out-Filterresults: notjunk:1;V01:K0:bfAwA7yuQ78=:NRHFYf5vrIeo1wLcLsBO6B
+ rSLdz8VH0fqND1eqiZar5W2pXUAIq5lYnCq4I1Ng5itv0/1agjtVWcVumT4qaFfR8ZxQd2OFV
+ 42HHWJF+13Uh0+iJbLPCcmcNMwFicMGrs1c0zMMzjbpgkRlHXod6d8o3Mwo7MeoeqfO7z7rh6
+ zXm+/f8jqfghZynT2NKEVmoD3REfju2Q10ZrItD8527HSz9a2c97X8KcHVew9QXfD/JtrbSmr
+ 3T3IGwwYk364aRgHeVGr6IAqgqmEPPOkj449ytbJNmeGWNnthkUd8doyHvMKCWYr5IRo+ZBpQ
+ lehvWjuWXpOZxomKOrVGJ/VvTj28ye2k9iOzHCAS9/uD8n1dtybUsKL71MmuoJ9ugRawwGJv0
+ lWFZ3AxWbyeJYxJhUPcFk/rfxlbsRHZiFcHHuDXIkP3cCvuuh0O2/OiRg3vT0GJuiVBweGXCk
+ v04SCilZF0e5pYdnSfBQO8wM1xDQJ0c9nVpx7UiB7k6IebsU2a9Avvyp0K1APyF+jWDdmBEQw
+ B3hBp5hpDWBSJE0lbQrDta9MjG2Cw8V+/9ZjJnWGVQRFCilTFV/SIM1iTphN5WnYeRxeWYpQu
+ uJLxMNDy1ut+NlEti+T2UZ12e6DmxXLdgyrQBsGerQ56zlbHcYdRF3VFcv57jC8mmo9vHsmxb
+ SYJ0WtkpvnB0UXlxZjVhJufoo0BSE8XudHZ/m/z7VA3vT4H1su2u53fbmDB6aoTRSdlq2YVHx
+ 3YwmD/45hDeG082Oq9aipGWGBH/I+aB7Jiz2oY2kc/lk0u5z95EG5+/QPOo4G+MbBU9+spUxR
+ oFDSnL4zzX/MNaGfkHjUi5AXszDYeCshiwYurPmKEdDI9kyd4Q=
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -92,58 +94,62 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 2018/10/12 下午2:52, Nikolay Borisov wrote:
+On 2018/10/12 下午2:53, Nikolay Borisov wrote:
 > 
 > 
-> On 12.10.2018 09:37, Qu Wenruo wrote:
->> The member log_root_transid is never used.
->> It's always kept untouched even when updating log tree root.
->>
->> And populating it without introducing new incompat flags could easily
->> cause back-compatibility problems.
->> So just mark it unused.
+> On 12.10.2018 09:42, Qu Wenruo wrote:
+>> The only user of it is "btrfs inspect dump-super".
 >>
 >> Signed-off-by: Qu Wenruo <wqu@suse.com>
 >> ---
->> changelog:
->> v2:
->>   Remove the redundant comment.
->> ---
->>  fs/btrfs/ctree.h | 5 +----
->>  1 file changed, 1 insertion(+), 4 deletions(-)
+>>  cmds-inspect-dump-super.c | 4 ++--
+>>  ctree.h                   | 6 ++----
+>>  2 files changed, 4 insertions(+), 6 deletions(-)
 >>
->> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
->> index 53af9f5253f4..7adf5f4dcda4 100644
->> --- a/fs/btrfs/ctree.h
->> +++ b/fs/btrfs/ctree.h
->> @@ -214,8 +214,7 @@ struct btrfs_super_block {
->>  	__le64 chunk_root;
->>  	__le64 log_root;
->>  
->> -	/* this will help find the new super based on the log root */
->> -	__le64 log_root_transid;
->> +	__le64 __unused_log_root_transid;
+>> diff --git a/cmds-inspect-dump-super.c b/cmds-inspect-dump-super.c
+>> index e965267c5d96..3f33931ed9bc 100644
+>> --- a/cmds-inspect-dump-super.c
+>> +++ b/cmds-inspect-dump-super.c
+>> @@ -387,8 +387,8 @@ static void dump_superblock(struct btrfs_super_block *sb, int full)
+>>  	       (unsigned long long)btrfs_super_chunk_root_level(sb));
+>>  	printf("log_root\t\t%llu\n",
+>>  	       (unsigned long long)btrfs_super_log_root(sb));
+>> -	printf("log_root_transid\t%llu\n",
+>> -	       (unsigned long long)btrfs_super_log_root_transid(sb));
+>> +	printf("log_root_transid (deprecated)\t%llu\n",
+>> +	       le64_to_cpu(sb->__unused_log_root_transid));
 > 
-> why do you keep insisting on having "log_root_transid" in the name of
-> this member? It was never used on-disk so for all intents and purposes
-> log_root_transid doesn't mean anything? No need to resend, I'm sure
-> David will change it on commit, nut I'm just curious.
+> This should be entirely removed.
 
-We have a similar case, leaf_size.
-Although it differs from this case and it's still used, I prefer to have
-something showing that we at least planned to use this member.
+It looks OK to me.
+Just like the old leafsize.
 
-Just in case one day we tries to use it again.
+And if we try to use this member again, even old progs could show it
+without problem.
 
 Thanks,
 Qu
 
 > 
-> 
+>>  	printf("log_root_level\t\t%llu\n",
+>>  	       (unsigned long long)btrfs_super_log_root_level(sb));
+>>  	printf("total_bytes\t\t%llu\n",
+>> diff --git a/ctree.h b/ctree.h
+>> index 4719962df67d..a314fdb102b0 100644
+>> --- a/ctree.h
+>> +++ b/ctree.h
+>> @@ -427,8 +427,8 @@ struct btrfs_super_block {
+>>  	__le64 chunk_root;
+>>  	__le64 log_root;
+>>  
+>> -	/* this will help find the new super based on the log root */
+>> -	__le64 log_root_transid;
+>> +	/* This member is never touched, should always be 0 */
+>> +	__le64 __unused_log_root_transid;
 >>  	__le64 total_bytes;
 >>  	__le64 bytes_used;
 >>  	__le64 root_dir_objectid;
->> @@ -2317,8 +2316,6 @@ BTRFS_SETGET_STACK_FUNCS(super_chunk_root_level, struct btrfs_super_block,
+>> @@ -2203,8 +2203,6 @@ BTRFS_SETGET_STACK_FUNCS(super_chunk_root_level, struct btrfs_super_block,
 >>  			 chunk_root_level, 8);
 >>  BTRFS_SETGET_STACK_FUNCS(super_log_root, struct btrfs_super_block,
 >>  			 log_root, 64);

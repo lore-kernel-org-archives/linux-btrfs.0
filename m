@@ -4,64 +4,64 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-8.8 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
 	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+	SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D3C31C6787C
-	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 19:34:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 30EBBC6787C
+	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 19:34:16 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9D96921470
-	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 19:34:13 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id EE9F92087D
+	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 19:34:15 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="BznmhAh1"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 9D96921470
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="itXGjxim"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org EE9F92087D
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=toxicpanda.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727141AbeJMDIM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 12 Oct 2018 23:08:12 -0400
-Received: from mail-qt1-f194.google.com ([209.85.160.194]:43199 "EHLO
-        mail-qt1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726227AbeJMDIM (ORCPT
+        id S1727148AbeJMDIP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 12 Oct 2018 23:08:15 -0400
+Received: from mail-qk1-f196.google.com ([209.85.222.196]:44723 "EHLO
+        mail-qk1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726227AbeJMDIO (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 12 Oct 2018 23:08:12 -0400
-Received: by mail-qt1-f194.google.com with SMTP id q41-v6so15045068qtq.10
-        for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2018 12:34:11 -0700 (PDT)
+        Fri, 12 Oct 2018 23:08:14 -0400
+Received: by mail-qk1-f196.google.com with SMTP id y8-v6so8339783qka.11
+        for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2018 12:34:13 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:subject:date:message-id:in-reply-to:references;
-        bh=OTZOuDgDt/R5spujlNFzi4h/V31eI1viGWGcVEUBX/Y=;
-        b=BznmhAh1nQe++duAhbVQugXyBiF/Df+N5Lwb+2mjrpkID+der8ZW9AwHTqikimwwi5
-         x43VFVHWS2aSqHwCh6fFEWcfjgARDZHMmQOag2TjGhvDMucQ2nVYWTxR6XXBfpv3jj6z
-         F3+xnSdy/tC+k2A/uXZKBaXEjvUTrFthlMfggE0lhUmBNZIZgdVlZoa2PQDdrsPD8SvN
-         x3FlmgnNUH0geCTViQQ3IDeiZxGVWpWrSTDVPy6OCkqPlCfvDmk2W9UF0DlDCpaBGuPc
-         LM7GiJk9SXDdrJlTu/v0GFQsBwW9XNgOKovt+1ZqHFpQ2vKaXG8nSDFg3M4T691XGxWm
-         glxA==
+        bh=OmnZZhmWbwXgq96ydypXLUVdgaCmw0VaXUN9znKi4C4=;
+        b=itXGjxim6NfMLCtd+mEWueQ/RG+2jt+Jf8HkEeMSCXfPU6C7pwqpZFtO7/cNXSxTTc
+         nA/osNt34LcHp3+t3Z5fSlUun45a6KUq1BkcIunMtySFKVfz26c8+uEBO4DNt4OQsr95
+         EPnQb+6JhGpVos7HlMKi1+qoHINpi/UtG6uKk6cGJ9cR30B5tRnjbmtrJZ5zetOuFY/X
+         LH5Wc7bjHEKFm6WBsviXX2DT+bWHT8JpxwdkyTjfoW3btP8G0KEKIbJwQAyZlKPrOKRL
+         PMBdhS3zqLB1VYl9XHgC/S7YqOxbqGUSrDoYBS0ba8t4ARZsvTX/12jfSaxjOgVZ4ie7
+         d+lA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references;
-        bh=OTZOuDgDt/R5spujlNFzi4h/V31eI1viGWGcVEUBX/Y=;
-        b=YbGy/GjPmUwEfjHJvDPJBQhSkDGInbYOLXWo03fN+SwhBTrMj/PiHvyf1795AmGBDa
-         AHsAae+loHisaaCKrqITE2K4hGIe9V2Vkm3+dVax9Dkm5S3J8xv1v1PG9WCsYlceZFvM
-         sQPdgqxIT0DLQY1b0rTAWdD1zPpmrnTbVUMQX5cEqWayYsGXTcX1ndqF+h3gOS9mtYLc
-         NKwa7HCTS01ddR4pQiX9uU2NmpGxBMjVKQemws1GmYAiaGG4CKTv9jQwdBejqtffwvLl
-         KcsH0UZ2jNYFSm0rHESwubStXVP08jvj+TgZepaKrzrcv7lLPbmPk54IhGkf+m4lVao3
-         uHBg==
-X-Gm-Message-State: ABuFfoguDO7Qa+KQzmbXsC5ROHQTtpBXL3XkSiqIBv7qu2oz8waBqEF5
-        jZLaKhi7LikbwGFK771Fr1DwuUKvP8k=
-X-Google-Smtp-Source: ACcGV60nzGyhC1itymQUMd78E589/B2gMwK2XHn7lmlG3RwZeeWQYpILwizuEynfVCUaCTlVMZyjGg==
-X-Received: by 2002:ac8:7287:: with SMTP id v7-v6mr7072272qto.126.1539372850771;
-        Fri, 12 Oct 2018 12:34:10 -0700 (PDT)
+        bh=OmnZZhmWbwXgq96ydypXLUVdgaCmw0VaXUN9znKi4C4=;
+        b=mYNgn1bISun5j7KkQuy9fpWzNhJkq8XtIpiTueuQWmSoLErskeUn+fnBOYsh3jK62+
+         kgHEl5pGVrlTLiVoYziByTgs7gvhCUCuArX2RggFCtrg3781Eu6XdYkP/pMonAGMUSJF
+         0axj0ffuuyrP3LN5A3oq15Zu9sH5yqaSlP4RaFUMjki4GFzk6Bx8vqNqUBq5Ey74WLGt
+         VvsHVn929duOuLW64v1cuEEunnLhAv6O8/KSxd0IPKqE0Jb6w7JQkCwWe7vhYe5oLu7F
+         8qsf/5r26zsnVuAejmvbPozYI1zO4KeBXfpOjZ43+6E4b7Rhh7W712U6/aD6mGE0X1N8
+         hzLQ==
+X-Gm-Message-State: ABuFfohgTKx6S9CdzYj1JHDzFp3jXTfDyc4Tztv7tK/1oWIrAM/9yLIY
+        0GiC00MbaAKW92UsZuyYOXsf4WGJRSw=
+X-Google-Smtp-Source: ACcGV61u3sGiLZ8bkAshUuQ4ZmDDUwZxKLODqjqvokNzRyxsqZ28LZewQ0PCx44ZoD2GKODpeBzMlQ==
+X-Received: by 2002:a37:15e7:: with SMTP id 100-v6mr7069328qkv.151.1539372852829;
+        Fri, 12 Oct 2018 12:34:12 -0700 (PDT)
 Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id c2-v6sm1139792qkj.79.2018.10.12.12.34.09
+        by smtp.gmail.com with ESMTPSA id a17-v6sm1575380qta.0.2018.10.12.12.34.11
         (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
-        Fri, 12 Oct 2018 12:34:09 -0700 (PDT)
+        Fri, 12 Oct 2018 12:34:11 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 32/42] btrfs: only free reserved extent if we didn't insert it
-Date:   Fri, 12 Oct 2018 15:32:46 -0400
-Message-Id: <20181012193256.13735-33-josef@toxicpanda.com>
+Subject: [PATCH 33/42] btrfs: fix insert_reserved error handling
+Date:   Fri, 12 Oct 2018 15:32:47 -0400
+Message-Id: <20181012193256.13735-34-josef@toxicpanda.com>
 X-Mailer: git-send-email 2.14.3
 In-Reply-To: <20181012193256.13735-1-josef@toxicpanda.com>
 References: <20181012193256.13735-1-josef@toxicpanda.com>
@@ -70,60 +70,57 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-When we insert the file extent once the ordered extent completes we free
-the reserved extent reservation as it'll have been migrated to the
-bytes_used counter.  However if we error out after this step we'll still
-clear the reserved extent reservation, resulting in a negative
-accounting of the reserved bytes for the block group and space info.
-Fix this by only doing the free if we didn't successfully insert a file
-extent for this extent.
+We were not handling the reserved byte accounting properly for data
+references.  Metadata was fine, if it errored out the error paths would
+free the bytes_reserved count and pin the extent, but it even missed one
+of the error cases.  So instead move this handling up into
+run_one_delayed_ref so we are sure that both cases are properly cleaned
+up in case of a transaction abort.
 
+Reviewed-by: David Sterba <dsterba@suse.com>
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
-Reviewed-by: Omar Sandoval <osandov@fb.com>
 ---
- fs/btrfs/inode.c | 10 +++++++++-
- 1 file changed, 9 insertions(+), 1 deletion(-)
+ fs/btrfs/extent-tree.c | 12 ++++--------
+ 1 file changed, 4 insertions(+), 8 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 5a91055a13b2..2b257d14bd3d 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -2992,6 +2992,7 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)
- 	bool truncated = false;
- 	bool range_locked = false;
- 	bool clear_new_delalloc_bytes = false;
-+	bool clear_reserved_extent = true;
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 933cba06c9fb..9b5366932298 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -2405,6 +2405,9 @@ static int run_one_delayed_ref(struct btrfs_trans_handle *trans,
+ 					   insert_reserved);
+ 	else
+ 		BUG();
++	if (ret && insert_reserved)
++		btrfs_pin_extent(trans->fs_info, node->bytenr,
++				 node->num_bytes, 1);
+ 	return ret;
+ }
  
- 	if (!test_bit(BTRFS_ORDERED_NOCOW, &ordered_extent->flags) &&
- 	    !test_bit(BTRFS_ORDERED_PREALLOC, &ordered_extent->flags) &&
-@@ -3095,10 +3096,12 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)
- 						logical_len, logical_len,
- 						compress_type, 0, 0,
- 						BTRFS_FILE_EXTENT_REG);
--		if (!ret)
-+		if (!ret) {
-+			clear_reserved_extent = false;
- 			btrfs_release_delalloc_bytes(fs_info,
- 						     ordered_extent->start,
- 						     ordered_extent->disk_len);
-+		}
+@@ -8257,21 +8260,14 @@ static int alloc_reserved_tree_block(struct btrfs_trans_handle *trans,
  	}
- 	unpin_extent_cache(&BTRFS_I(inode)->extent_tree,
- 			   ordered_extent->file_offset, ordered_extent->len,
-@@ -3159,8 +3162,13 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)
- 		 * wrong we need to return the space for this ordered extent
- 		 * back to the allocator.  We only free the extent in the
- 		 * truncated case if we didn't write out the extent at all.
-+		 *
-+		 * If we made it past insert_reserved_file_extent before we
-+		 * errored out then we don't need to do this as the accounting
-+		 * has already been done.
- 		 */
- 		if ((ret || !logical_len) &&
-+		    clear_reserved_extent &&
- 		    !test_bit(BTRFS_ORDERED_NOCOW, &ordered_extent->flags) &&
- 		    !test_bit(BTRFS_ORDERED_PREALLOC, &ordered_extent->flags))
- 			btrfs_free_reserved_extent(fs_info,
+ 
+ 	path = btrfs_alloc_path();
+-	if (!path) {
+-		btrfs_free_and_pin_reserved_extent(fs_info,
+-						   extent_key.objectid,
+-						   fs_info->nodesize);
++	if (!path)
+ 		return -ENOMEM;
+-	}
+ 
+ 	path->leave_spinning = 1;
+ 	ret = btrfs_insert_empty_item(trans, fs_info->extent_root, path,
+ 				      &extent_key, size);
+ 	if (ret) {
+ 		btrfs_free_path(path);
+-		btrfs_free_and_pin_reserved_extent(fs_info,
+-						   extent_key.objectid,
+-						   fs_info->nodesize);
+ 		return ret;
+ 	}
+ 
 -- 
 2.14.3
 

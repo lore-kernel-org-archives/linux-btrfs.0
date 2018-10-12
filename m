@@ -2,143 +2,180 @@ Return-Path: <SRS0=eG6O=MY=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
+X-Spam-Status: No, score=-8.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0389AC43441
-	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 06:53:59 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2BF9AC43441
+	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 07:42:32 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B4B972086A
-	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 06:53:58 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org B4B972086A
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
+	by mail.kernel.org (Postfix) with ESMTP id D732B2087D
+	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 07:42:31 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org D732B2087D
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=cn.fujitsu.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727497AbeJLOY4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 12 Oct 2018 10:24:56 -0400
-Received: from mx2.suse.de ([195.135.220.15]:38574 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727358AbeJLOY4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 12 Oct 2018 10:24:56 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id A7112AE46
-        for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2018 06:53:55 +0000 (UTC)
-Subject: Re: [PATCH 2/2] btrfs-progs: Deprecate unused super block member
- log_root_transid
-To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-References: <20181012064258.27033-1-wqu@suse.com>
- <20181012064258.27033-2-wqu@suse.com>
-From:   Nikolay Borisov <nborisov@suse.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <2b4ff29a-ff9b-8b56-ef13-4b76e72a281f@suse.com>
-Date:   Fri, 12 Oct 2018 09:53:54 +0300
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:52.0) Gecko/20100101
- Thunderbird/52.9.1
+        id S1727571AbeJLPNj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 12 Oct 2018 11:13:39 -0400
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:30593 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1726761AbeJLPNj (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 12 Oct 2018 11:13:39 -0400
+X-IronPort-AV: E=Sophos;i="5.43,368,1503331200"; 
+   d="scan'208";a="46021602"
+Received: from unknown (HELO cn.fujitsu.com) ([10.167.33.5])
+  by heian.cn.fujitsu.com with ESMTP; 12 Oct 2018 15:42:27 +0800
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
+        by cn.fujitsu.com (Postfix) with ESMTP id 98DE24B6ED70
+        for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2018 15:42:29 +0800 (CST)
+Received: from localhost.localdomain (10.167.226.155) by
+ G08CNEXCHPEKD01.g08.fujitsu.local (10.167.33.89) with Microsoft SMTP Server
+ id 14.3.408.0; Fri, 12 Oct 2018 15:42:28 +0800
+From:   Su Yanjun <suyj.fnst@cn.fujitsu.com>
+To:     <linux-btrfs@vger.kernel.org>
+CC:     Su Yanjun <suyj.fnst@cn.fujitsu.com>
+Subject: [PATCH] btrfs-progs: fix compile warning when using gcc8 to compile btrfs-progs
+Date:   Fri, 12 Oct 2018 15:41:53 +0800
+Message-ID: <20181012074153.3844-1-suyj.fnst@cn.fujitsu.com>
+X-Mailer: git-send-email 2.19.1
 MIME-Version: 1.0
-In-Reply-To: <20181012064258.27033-2-wqu@suse.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: 7BIT
+Content-Type:   text/plain; charset=US-ASCII
+X-yoursite-MailScanner-ID: 98DE24B6ED70.ABFAF
+X-yoursite-MailScanner: Found to be clean
+X-yoursite-MailScanner-From: suyj.fnst@cn.fujitsu.com
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+When using gcc8 to compile btrfs-progs, it complains as below:
+
+ctree.c: In function 'btrfs_search_slot_for_read':
+    ctree.c:1249:45: warning: passing argument 3 of 'btrfs_search_slot'
+    discards 'const' qualifier from pointer target type
+    [-Wdiscarded-qualifiers]
+             ret = btrfs_search_slot(NULL, root, key, p, 0, 0);
+
+Change btrfs_search_slot prototype with 'const' qualifier for argument 3.
+Also fix similar problems as above change.
+
+Signed-off-by: Su Yanjun <suyj.fnst@cn.fujitsu.com>
+---
+ ctree.c | 19 ++++++++++---------
+ ctree.h | 10 +++++-----
+ 2 files changed, 15 insertions(+), 14 deletions(-)
+
+diff --git a/ctree.c b/ctree.c
+index aa1568620205..c8dd73cf2ce2 100644
+--- a/ctree.c
++++ b/ctree.c
+@@ -27,7 +27,7 @@
+ static int split_node(struct btrfs_trans_handle *trans, struct btrfs_root
+ 		      *root, struct btrfs_path *path, int level);
+ static int split_leaf(struct btrfs_trans_handle *trans, struct btrfs_root
+-		      *root, struct btrfs_key *ins_key,
++		      *root, const struct btrfs_key *ins_key,
+ 		      struct btrfs_path *path, int data_size, int extend);
+ static int push_node_left(struct btrfs_trans_handle *trans,
+ 			  struct btrfs_root *root, struct extent_buffer *dst,
+@@ -389,7 +389,7 @@ int btrfs_cow_block(struct btrfs_trans_handle *trans,
+ 	return ret;
+ }
+ 
+-int btrfs_comp_cpu_keys(struct btrfs_key *k1, struct btrfs_key *k2)
++int btrfs_comp_cpu_keys(const struct btrfs_key *k1, const struct btrfs_key *k2)
+ {
+ 	if (k1->objectid > k2->objectid)
+ 		return 1;
+@@ -409,7 +409,8 @@ int btrfs_comp_cpu_keys(struct btrfs_key *k1, struct btrfs_key *k2)
+ /*
+  * compare two keys in a memcmp fashion
+  */
+-static int btrfs_comp_keys(struct btrfs_disk_key *disk, struct btrfs_key *k2)
++static int btrfs_comp_keys(struct btrfs_disk_key *disk,
++		const struct btrfs_key *k2)
+ {
+ 	struct btrfs_key k1;
+ 
+@@ -602,7 +603,7 @@ static int noinline check_block(struct btrfs_root *root,
+  * slot may point to max if the key is bigger than all of the keys
+  */
+ static int generic_bin_search(struct extent_buffer *eb, unsigned long p,
+-			      int item_size, struct btrfs_key *key,
++			      int item_size, const struct btrfs_key *key,
+ 			      int max, int *slot)
+ {
+ 	int low = 0;
+@@ -636,7 +637,7 @@ static int generic_bin_search(struct extent_buffer *eb, unsigned long p,
+  * simple bin_search frontend that does the right thing for
+  * leaves vs nodes
+  */
+-static int bin_search(struct extent_buffer *eb, struct btrfs_key *key,
++static int bin_search(struct extent_buffer *eb, const struct btrfs_key *key,
+ 		      int level, int *slot)
+ {
+ 	if (level == 0)
+@@ -1129,9 +1130,9 @@ out:
+  * tree.  if ins_len < 0, nodes will be merged as we walk down the tree (if
+  * possible)
+  */
+-int btrfs_search_slot(struct btrfs_trans_handle *trans, struct btrfs_root
+-		      *root, struct btrfs_key *key, struct btrfs_path *p, int
+-		      ins_len, int cow)
++int btrfs_search_slot(struct btrfs_trans_handle *trans,
++		struct btrfs_root *root, const struct btrfs_key *key,
++		struct btrfs_path *p, int ins_len, int cow)
+ {
+ 	struct extent_buffer *b;
+ 	int slot;
+@@ -2150,7 +2151,7 @@ static noinline int copy_for_split(struct btrfs_trans_handle *trans,
+  */
+ static noinline int split_leaf(struct btrfs_trans_handle *trans,
+ 			       struct btrfs_root *root,
+-			       struct btrfs_key *ins_key,
++			       const struct btrfs_key *ins_key,
+ 			       struct btrfs_path *path, int data_size,
+ 			       int extend)
+ {
+diff --git a/ctree.h b/ctree.h
+index 2a2437070ef9..cf0efae9c185 100644
+--- a/ctree.h
++++ b/ctree.h
+@@ -1973,7 +1973,7 @@ static inline void btrfs_disk_key_to_cpu(struct btrfs_key *cpu,
+ }
+ 
+ static inline void btrfs_cpu_key_to_disk(struct btrfs_disk_key *disk,
+-					 struct btrfs_key *cpu)
++					 const struct btrfs_key *cpu)
+ {
+ 	disk->offset = cpu_to_le64(cpu->offset);
+ 	disk->type = cpu->type;
+@@ -2552,7 +2552,7 @@ u64 add_new_free_space(struct btrfs_block_group_cache *block_group,
+ u64 hash_extent_data_ref(u64 root_objectid, u64 owner, u64 offset);
+ 
+ /* ctree.c */
+-int btrfs_comp_cpu_keys(struct btrfs_key *k1, struct btrfs_key *k2);
++int btrfs_comp_cpu_keys(const struct btrfs_key *k1, const struct btrfs_key *k2);
+ int btrfs_del_ptr(struct btrfs_root *root, struct btrfs_path *path,
+ 		int level, int slot);
+ enum btrfs_tree_block_status
+@@ -2595,9 +2595,9 @@ int btrfs_split_item(struct btrfs_trans_handle *trans,
+ 		     struct btrfs_path *path,
+ 		     struct btrfs_key *new_key,
+ 		     unsigned long split_offset);
+-int btrfs_search_slot(struct btrfs_trans_handle *trans, struct btrfs_root
+-		      *root, struct btrfs_key *key, struct btrfs_path *p, int
+-		      ins_len, int cow);
++int btrfs_search_slot(struct btrfs_trans_handle *trans,
++		struct btrfs_root *root, const struct btrfs_key *key,
++		struct btrfs_path *p, int ins_len, int cow);
+ int btrfs_search_slot_for_read(struct btrfs_root *root,
+                                const struct btrfs_key *key,
+                                struct btrfs_path *p, int find_higher,
+-- 
+2.19.1
 
 
-On 12.10.2018 09:42, Qu Wenruo wrote:
-> The only user of it is "btrfs inspect dump-super".
-> 
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> ---
->  cmds-inspect-dump-super.c | 4 ++--
->  ctree.h                   | 6 ++----
->  2 files changed, 4 insertions(+), 6 deletions(-)
-> 
-> diff --git a/cmds-inspect-dump-super.c b/cmds-inspect-dump-super.c
-> index e965267c5d96..3f33931ed9bc 100644
-> --- a/cmds-inspect-dump-super.c
-> +++ b/cmds-inspect-dump-super.c
-> @@ -387,8 +387,8 @@ static void dump_superblock(struct btrfs_super_block *sb, int full)
->  	       (unsigned long long)btrfs_super_chunk_root_level(sb));
->  	printf("log_root\t\t%llu\n",
->  	       (unsigned long long)btrfs_super_log_root(sb));
-> -	printf("log_root_transid\t%llu\n",
-> -	       (unsigned long long)btrfs_super_log_root_transid(sb));
-> +	printf("log_root_transid (deprecated)\t%llu\n",
-> +	       le64_to_cpu(sb->__unused_log_root_transid));
 
-This should be entirely removed.
-
->  	printf("log_root_level\t\t%llu\n",
->  	       (unsigned long long)btrfs_super_log_root_level(sb));
->  	printf("total_bytes\t\t%llu\n",
-> diff --git a/ctree.h b/ctree.h
-> index 4719962df67d..a314fdb102b0 100644
-> --- a/ctree.h
-> +++ b/ctree.h
-> @@ -427,8 +427,8 @@ struct btrfs_super_block {
->  	__le64 chunk_root;
->  	__le64 log_root;
->  
-> -	/* this will help find the new super based on the log root */
-> -	__le64 log_root_transid;
-> +	/* This member is never touched, should always be 0 */
-> +	__le64 __unused_log_root_transid;
->  	__le64 total_bytes;
->  	__le64 bytes_used;
->  	__le64 root_dir_objectid;
-> @@ -2203,8 +2203,6 @@ BTRFS_SETGET_STACK_FUNCS(super_chunk_root_level, struct btrfs_super_block,
->  			 chunk_root_level, 8);
->  BTRFS_SETGET_STACK_FUNCS(super_log_root, struct btrfs_super_block,
->  			 log_root, 64);
-> -BTRFS_SETGET_STACK_FUNCS(super_log_root_transid, struct btrfs_super_block,
-> -			 log_root_transid, 64);
->  BTRFS_SETGET_STACK_FUNCS(super_log_root_level, struct btrfs_super_block,
->  			 log_root_level, 8);
->  BTRFS_SETGET_STACK_FUNCS(super_total_bytes, struct btrfs_super_block,
-> 

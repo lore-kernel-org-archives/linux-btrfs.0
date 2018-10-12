@@ -2,198 +2,159 @@ Return-Path: <SRS0=eG6O=MY=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.5 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
-	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.8 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_PASS,USER_AGENT_NEOMUTT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0CD28C6783C
-	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 13:13:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 97A14C6783C
+	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 13:41:01 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B6BDD20868
-	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 13:13:53 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org B6BDD20868
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=gmx.com
+	by mail.kernel.org (Postfix) with ESMTP id 45D9320835
+	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 13:41:01 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="WhA6ED4H"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 45D9320835
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=toxicpanda.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728576AbeJLUqQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 12 Oct 2018 16:46:16 -0400
-Received: from mout.gmx.net ([212.227.17.22]:60761 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1728354AbeJLUqQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 12 Oct 2018 16:46:16 -0400
-Received: from [0.0.0.0] ([210.140.77.29]) by mail.gmx.com (mrgmx101
- [212.227.17.174]) with ESMTPSA (Nemesis) id 0LguAU-1fqTpU22qc-00oGNa; Fri, 12
- Oct 2018 15:13:47 +0200
-Received: from [0.0.0.0] ([210.140.77.29]) by mail.gmx.com (mrgmx101
- [212.227.17.174]) with ESMTPSA (Nemesis) id 0LguAU-1fqTpU22qc-00oGNa; Fri, 12
- Oct 2018 15:13:47 +0200
-Subject: Re: [PATCH] Btrfs: fix use-after-free during inode eviction
-To:     fdmanana@kernel.org, linux-btrfs@vger.kernel.org
-References: <20181012120248.32262-1-fdmanana@kernel.org>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
- bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
- ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
- rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
- FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
- 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
- ilaVzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAHCwHwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
- CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
- f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
- mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
- 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
- h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <e0d50a42-0ac5-e3e0-1cca-ef4e8ec52250@gmx.com>
-Date:   Fri, 12 Oct 2018 21:13:42 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.0
+        id S1728577AbeJLVNa (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 12 Oct 2018 17:13:30 -0400
+Received: from mail-qt1-f194.google.com ([209.85.160.194]:43623 "EHLO
+        mail-qt1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728483AbeJLVN3 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 12 Oct 2018 17:13:29 -0400
+Received: by mail-qt1-f194.google.com with SMTP id q41-v6so13816204qtq.10
+        for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2018 06:40:58 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
+        h=date:from:to:cc:subject:message-id:references:mime-version
+         :content-disposition:in-reply-to:user-agent;
+        bh=kg9dsQxOjuE4LrLE7YvMMPuXKZoAI/Z+g9wU60y4WNA=;
+        b=WhA6ED4HOqiau35XMRkO4xSaj0utPyfv0YKdGjV/SKcNnqu9GGSXrDkkO+p8sldDZi
+         gTcVO8s8X9YSpMmWwrkV2WtiKBYArF7zjPjlIwtdQ639nG3Q59p1TEtFD/4BroNaMaRa
+         kDZeG+hRL5w+AYuhtcVtqH2AMBA3LbzPxyzI2l3/uVzdZVWYQRazQhQWA2f9LeAsmUQc
+         hFPtlMNnVbaRX6lav9g0I6GdRRo5rzQKU4AYaOqDA/yh0jshDCfN4O+hyQ3+OS58sPEn
+         o6X4FJjCrvI4d526JjtuCaY6f3QYohDEfCkOQSwB3ZG9JezcmWyaHdDDJNrCWz+c/1qN
+         lNxA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
+         :mime-version:content-disposition:in-reply-to:user-agent;
+        bh=kg9dsQxOjuE4LrLE7YvMMPuXKZoAI/Z+g9wU60y4WNA=;
+        b=I6xdc1jGKIuMik/YP5DjIl7u1ud2mok7FZNEvfYzGmpXQk6EFcJj3Ug/tIP4lc2bzS
+         aDyBs/Rurr93H09prw9q4FEb5WQcRiezdAZF92MsSVfraJoVRPDqrtxTTSRL7qFgHE9z
+         QpuTXd6VKmp9jEn/bfmcTKMc3RYz49f6umG5+q7Q382860II2RU6VxljfM6MgdpMWKrN
+         0WkFW2SGFkz5XFsww0bAxzh+Du01t2oDulBvjiteaH6WI1IpZTh4dlWbWlLpPPE1UXUc
+         5BLBZzP4WyEYWwJCrYta+2pWWJ41akVPTQyQ/vtkHDSMcO8aAzH/PtErBzHTsV0twlYi
+         yJ/Q==
+X-Gm-Message-State: ABuFfogiB3hNNbgMO0zU3EFPRdp4HXKobHbuoPU528Xj8WK1JexUE3U+
+        3ern2250lvdNtbS+fMfWLAj/Kxrc5OM=
+X-Google-Smtp-Source: ACcGV60A1/v/WOm+1WNt59bTwxN9ty1qW7l5MGNYkrjeSIXMBKliNSxwnw7wgFB72ACAAts2GhxuJg==
+X-Received: by 2002:a0c:cdca:: with SMTP id a10mr5973200qvn.8.1539351658332;
+        Fri, 12 Oct 2018 06:40:58 -0700 (PDT)
+Received: from localhost ([107.15.81.208])
+        by smtp.gmail.com with ESMTPSA id k71-v6sm1013535qkh.30.2018.10.12.06.40.57
+        (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
+        Fri, 12 Oct 2018 06:40:57 -0700 (PDT)
+Date:   Fri, 12 Oct 2018 09:40:56 -0400
+From:   Josef Bacik <josef@toxicpanda.com>
+To:     fdmanana@kernel.org
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: fix deadlock when writing out free space caches
+Message-ID: <20181012134054.irrjfy52xrarvfnn@destiny>
+References: <20181012090355.25755-1-fdmanana@kernel.org>
 MIME-Version: 1.0
-In-Reply-To: <20181012120248.32262-1-fdmanana@kernel.org>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="V7OXdTVvP6vxdN7ifJwkrLePQIpRGxDus"
-X-Provags-ID: V03:K1:nI3eNZeVvvpDMBwPcHf+0hDP+JaMN6c/QiUZ2imW3E3Oq2kNyeu
- d2CjS4RYVueoQnA8OPRXFCC2dezng7UakM+uYlgE+GJeDU4dBYWltW0t7tEozaVIAjo8ZbX
- DudgjzTc2trx8wt+w7UmiASWmUUr9BxQGvdCQ1uQNZbIYU8gxg0ZNNdUw7SvwQnOSFU0qsy
- ZIafHOkZM5vErUl4VgZzA==
-X-UI-Out-Filterresults: notjunk:1;V01:K0:u3cCbuMpCpg=:918ExSdCeNmcrnhqkz1M5W
- FNM5+RjCJq73s8ZWRzErOB7oBUyMjZyS8GMhIN5hvNes49qG71gZ2lWWt462bjPsLiSAQ4VLE
- I3P6G0b7p6/10qNOBX633LNd+hQ2QPx/GsUZ6hMVGlH86mG7T+M1iUmkiBuL74/Txgw9MDy9p
- PyP9jM5GgqXS4V45EKtRNPJVPrtC69n1FnLiyPF+HvUIYO7ZRND9SJHJqcN4muJULwHDhwrmP
- SOg3RWDq3gx9AUlhFimxpDZeEnrAn8Eo7hFQ7qu8snVg7a1EBR7ZTha7h8v0bGBufF73tFhGV
- VnojS/SG0brVoMtCCBjv5SMzxeLzLo+t+7iD2OuA/FNqyfMTMQP5q1GMVPMWRux4/ibTLyyY6
- PUS8O2+nkDWXxsADX1DLVz/sRy8LLkXssR2c2rrA7DsVx412nVpvNCZ65rok4GMOqCs61dXY/
- cGotqMRkbOxXMDp2/CQjfNjWxA/OPCGCUJvgvJ33Xog9a7JNKUGFllwraA2mERJkuPmZYiZri
- oYa5kJ/z+44N/WrFGvLO+klLgVL1t9Raklao7mjFO7Ub/KK7rH88uwTilwglJwGFkZ26KIAi5
- V+NSBb76nAWi9h7IX1QW9UuGkE+SmB4wZ2t+LOqx8yLdgRqZP00YwpraqJa+qW15QvZ/rJF2H
- 1dTE0GKiCURq+2ZdBOSTXAg6Wv+W+05rAam8JLnVt/fKuq0o1lPcWbDEsiwhczADPbfpVDCe/
- I86rWImFAKGwHs66zdKJNMkuZdEkebB3AaJm2bTE/FPSg5+Og5kmRyRbDhcntiOckF2JOQja4
- EHuytGxke9UK8x4F1UNJQM1WhBnhg==
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20181012090355.25755-1-fdmanana@kernel.org>
+User-Agent: NeoMutt/20180716
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---V7OXdTVvP6vxdN7ifJwkrLePQIpRGxDus
-Content-Type: multipart/mixed; boundary="MdcChxUIjSVXDGTbkgjoSi7NeA3wFaXkO";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: fdmanana@kernel.org, linux-btrfs@vger.kernel.org
-Message-ID: <e0d50a42-0ac5-e3e0-1cca-ef4e8ec52250@gmx.com>
-Subject: Re: [PATCH] Btrfs: fix use-after-free during inode eviction
-References: <20181012120248.32262-1-fdmanana@kernel.org>
-In-Reply-To: <20181012120248.32262-1-fdmanana@kernel.org>
-
---MdcChxUIjSVXDGTbkgjoSi7NeA3wFaXkO
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
-
-
-
-On 2018/10/12 =E4=B8=8B=E5=8D=888:02, fdmanana@kernel.org wrote:
+On Fri, Oct 12, 2018 at 10:03:55AM +0100, fdmanana@kernel.org wrote:
 > From: Filipe Manana <fdmanana@suse.com>
->=20
-> At inode.c:evict_inode_truncate_pages(), when we iterate over the inode=
-'s
-> extent states, we access an extent state record's "state" field after w=
-e
-> unlocked the inode's io tree lock. This can lead to a use-after-free is=
-sue
-> because after we unlock the io tree that extent state record might have=
-
-> been freed due to being merged into another adjacent extent state
-> record (a previous inflight bio for a read operation finished in the
-> meanwhile which unlocked a range in the io tree and cause a merge of
-> extent state records, as explained in the comment before the while loop=
-
-> added in commit 6ca0709756710 ("Btrfs: fix hang during inode eviction d=
-ue
-> to concurrent readahead")).
->=20
-> Fix this by keeping a copy of the extent state's flags in a local varia=
-ble
-> and using it after unlocking the io tree.
->=20
-> Bugzilla: https://bugzilla.kernel.org/show_bug.cgi?id=3D201189
-> Fixes: b9d0b38928e2 ("btrfs: Add handler for invalidate page")
-> CC: stable@vger.kernel.org # 4.4+
+> 
+> When writing out a block group free space cache we can end deadlocking
+> with ourseves on an extent buffer lock resulting in a warning like the
+> following:
+> 
+>   [245043.379979] WARNING: CPU: 4 PID: 2608 at fs/btrfs/locking.c:251 btrfs_tree_lock+0x1be/0x1d0 [btrfs]
+>   [245043.392792] CPU: 4 PID: 2608 Comm: btrfs-transacti Tainted: G
+>     W I      4.16.8 #1
+>   [245043.395489] RIP: 0010:btrfs_tree_lock+0x1be/0x1d0 [btrfs]
+>   [245043.396791] RSP: 0018:ffffc9000424b840 EFLAGS: 00010246
+>   [245043.398093] RAX: 0000000000000a30 RBX: ffff8807e20a3d20 RCX: 0000000000000001
+>   [245043.399414] RDX: 0000000000000001 RSI: 0000000000000002 RDI: ffff8807e20a3d20
+>   [245043.400732] RBP: 0000000000000001 R08: ffff88041f39a700 R09: ffff880000000000
+>   [245043.402021] R10: 0000000000000040 R11: ffff8807e20a3d20 R12: ffff8807cb220630
+>   [245043.403296] R13: 0000000000000001 R14: ffff8807cb220628 R15: ffff88041fbdf000
+>   [245043.404780] FS:  0000000000000000(0000) GS:ffff88082fc80000(0000) knlGS:0000000000000000
+>   [245043.406050] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+>   [245043.407321] CR2: 00007fffdbdb9f10 CR3: 0000000001c09005 CR4: 00000000000206e0
+>   [245043.408670] Call Trace:
+>   [245043.409977]  btrfs_search_slot+0x761/0xa60 [btrfs]
+>   [245043.411278]  btrfs_insert_empty_items+0x62/0xb0 [btrfs]
+>   [245043.412572]  btrfs_insert_item+0x5b/0xc0 [btrfs]
+>   [245043.413922]  btrfs_create_pending_block_groups+0xfb/0x1e0 [btrfs]
+>   [245043.415216]  do_chunk_alloc+0x1e5/0x2a0 [btrfs]
+>   [245043.416487]  find_free_extent+0xcd0/0xf60 [btrfs]
+>   [245043.417813]  btrfs_reserve_extent+0x96/0x1e0 [btrfs]
+>   [245043.419105]  btrfs_alloc_tree_block+0xfb/0x4a0 [btrfs]
+>   [245043.420378]  __btrfs_cow_block+0x127/0x550 [btrfs]
+>   [245043.421652]  btrfs_cow_block+0xee/0x190 [btrfs]
+>   [245043.422979]  btrfs_search_slot+0x227/0xa60 [btrfs]
+>   [245043.424279]  ? btrfs_update_inode_item+0x59/0x100 [btrfs]
+>   [245043.425538]  ? iput+0x72/0x1e0
+>   [245043.426798]  write_one_cache_group.isra.49+0x20/0x90 [btrfs]
+>   [245043.428131]  btrfs_start_dirty_block_groups+0x102/0x420 [btrfs]
+>   [245043.429419]  btrfs_commit_transaction+0x11b/0x880 [btrfs]
+>   [245043.430712]  ? start_transaction+0x8e/0x410 [btrfs]
+>   [245043.432006]  transaction_kthread+0x184/0x1a0 [btrfs]
+>   [245043.433341]  kthread+0xf0/0x130
+>   [245043.434628]  ? btrfs_cleanup_transaction+0x4e0/0x4e0 [btrfs]
+>   [245043.435928]  ? kthread_create_worker_on_cpu+0x40/0x40
+>   [245043.437236]  ret_from_fork+0x1f/0x30
+>   [245043.441054] ---[ end trace 15abaa2aaf36827f ]---
+> 
+> This is because at write_one_cache_group() when we are COWing a leaf from
+> the extent tree we end up allocating a new block group (chunk) and,
+> because we have hit a threshold on the number of bytes reserved for system
+> chunks, we attempt to finalize the creation of new block groups from the
+> current transaction, by calling btrfs_create_pending_block_groups().
+> However here we also need to modify the extent tree in order to insert
+> a block group item, and if the location for this new block group item
+> happens to be in the same leaf that we were COWing earlier, we deadlock
+> since btrfs_search_slot() tries to write lock the extent buffer that we
+> locked before at write_one_cache_group().
+> 
+> We have already hit similar cases in the past and commit d9a0540a79f8
+> ("Btrfs: fix deadlock when finalizing block group creation") fixed some
+> of those cases by delaying the creation of pending block groups at the
+> known specific spots that could lead to a deadlock. This change reworks
+> that commit to be more generic so that we don't have to add similar logic
+> to every possible path that can lead to a deadlock. This is done by
+> making __btrfs_cow_block() disallowing the creation of new block groups
+> (setting the transaction's can_flush_pending_bgs to false) before it
+> attempts to allocate a new extent buffer for either the extent, chunk or
+> device trees, since those are the trees that pending block creation
+> modifies. Once the new extent buffer is allocated, it allows creation of
+> pending block groups to happen again.
+> 
+> This change depends on a recent patch from Josef which is not yet in
+> Linus' tree, named "btrfs: make sure we create all new block groups" in
+> order to avoid occasional warnings at btrfs_trans_release_chunk_metadata().
+> 
+> Fixes: d9a0540a79f8 ("Btrfs: fix deadlock when finalizing block group creation")
+> Bugzilla: https://bugzilla.kernel.org/show_bug.cgi?id=199753
+> Link: https://lore.kernel.org/linux-btrfs/CAJtFHUTHna09ST-_EEiyWmDH6gAqS6wa=zMNMBsifj8ABu99cw@mail.gmail.com/
+> Reported-by: E V <eliventer@gmail.com>
 > Signed-off-by: Filipe Manana <fdmanana@suse.com>
 
-Reviewed-by: Qu Wenruo <wqu@suse.com>
-
-Indeed my fault, state should only be accessed with spinlock hold.
+Reviewed-by: Josef Bacik <josef@toxicpanda.com>
 
 Thanks,
-Qu
 
-> ---
->  fs/btrfs/inode.c | 4 +++-
->  1 file changed, 3 insertions(+), 1 deletion(-)
->=20
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 3ea5339603cf..66c6c4103d2f 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -5274,11 +5274,13 @@ static void evict_inode_truncate_pages(struct i=
-node *inode)
->  		struct extent_state *cached_state =3D NULL;
->  		u64 start;
->  		u64 end;
-> +		unsigned state_flags;
-> =20
->  		node =3D rb_first(&io_tree->state);
->  		state =3D rb_entry(node, struct extent_state, rb_node);
->  		start =3D state->start;
->  		end =3D state->end;
-> +		state_flags =3D state->state;
->  		spin_unlock(&io_tree->lock);
-> =20
->  		lock_extent_bits(io_tree, start, end, &cached_state);
-> @@ -5291,7 +5293,7 @@ static void evict_inode_truncate_pages(struct ino=
-de *inode)
->  		 *
->  		 * Note, end is the bytenr of last byte, so we need + 1 here.
->  		 */
-> -		if (state->state & EXTENT_DELALLOC)
-> +		if (state_flags & EXTENT_DELALLOC)
->  			btrfs_qgroup_free_data(inode, NULL, start, end - start + 1);
-> =20
->  		clear_extent_bit(io_tree, start, end,
->=20
-
-
---MdcChxUIjSVXDGTbkgjoSi7NeA3wFaXkO--
-
---V7OXdTVvP6vxdN7ifJwkrLePQIpRGxDus
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlvAngYACgkQwj2R86El
-/qiBZAf/RmeHVNQkaCkiHBRowWlfSRtzvVFj8440iq4LPFBeImk+KqbMxF2ZPh9K
-3vtjWXPhHTp8Mxeu2GbLVVE/uSz9tKiNqrLmjOO1zDxNG4SWkG2AByHMWwLMsKOj
-XX+CyF7lobkjxnsb9cA2dp4XUwTRRZyTQx9ssKjTOw5OInbC93MbQAsDIJZ7kwq2
-xz+D1bdY7DSekq556YEDX6UFfnPUlFdP1/zCfHgSYvns9AX8gHNkiEacdWRuy//J
-vjSeCUPdooccpReoeZbuEFp9ND5lNx/GIfDlxrEpW7mDDkYnmJvo5QLnSKd3MuCO
-FFLbYorxo9SYPs6YULNZLo7jlhH7xA==
-=Nw6t
------END PGP SIGNATURE-----
-
---V7OXdTVvP6vxdN7ifJwkrLePQIpRGxDus--
+Josef

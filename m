@@ -7,61 +7,61 @@ X-Spam-Status: No, score=-8.8 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
 	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5AF34C71122
-	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 19:33:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1938EC6787C
+	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 19:33:45 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 252FA2087D
-	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 19:33:42 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id BC4792087D
+	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 19:33:44 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="hhQw7Se9"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 252FA2087D
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="hYA/5QOl"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org BC4792087D
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=toxicpanda.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726982AbeJMDHl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 12 Oct 2018 23:07:41 -0400
-Received: from mail-qt1-f195.google.com ([209.85.160.195]:39777 "EHLO
-        mail-qt1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726933AbeJMDHj (ORCPT
+        id S1726989AbeJMDHo (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 12 Oct 2018 23:07:44 -0400
+Received: from mail-qk1-f193.google.com ([209.85.222.193]:46667 "EHLO
+        mail-qk1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726933AbeJMDHn (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 12 Oct 2018 23:07:39 -0400
-Received: by mail-qt1-f195.google.com with SMTP id e22-v6so15072445qto.6
-        for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2018 12:33:39 -0700 (PDT)
+        Fri, 12 Oct 2018 23:07:43 -0400
+Received: by mail-qk1-f193.google.com with SMTP id q12-v6so8326695qkl.13
+        for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2018 12:33:42 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:subject:date:message-id:in-reply-to:references;
-        bh=2w+WsPjL8r93Nw50uJe/lUsSq3OzjnbW2tYS17GINdo=;
-        b=hhQw7Se96f1p4VOc1r9EdzOg4KBxP4LHpXyoYWaLT7lSJwmED/rJAynkWaE294Aegj
-         lITxhCN4MNX8n+uZjBJUMDHgUwb1l9D3lib/awxO4ZJl/yWbo4NrbinjrCWX2GtD36zz
-         p9BYyscRhUxVIXoJagyocQl+aD/OtzpUtIDGEifnoxX1cSy3OxS/V3xCWW3+DqV0r/HD
-         RgUqtkPJZiFju+8ZqZBq8NOdGB2R9httDoFtgKu0235nO4xcBFKBdn7rWiYpKkpbwGkV
-         OuQ8ibYQbXfdXAI0bJlPPAP3ppOMTe4g6Id28O57lKBl0IDTatMdL4Lpw3BBa7EeZHXF
-         LR+w==
+        bh=2AifJsoYa8VVGHqyfqs2+9dIHUSfR9sXlFu5O/p8l7g=;
+        b=hYA/5QOl789sf6jAucWJb8RT5EQ2Gq0Rdqd6o0SaSs18AROxmIFW+Pa1viTMuwWwQJ
+         7DQyDre/FqrbRMczMMGvt64cvCQmqsG8g3naXMUxz/M8QLB8JdNHp5N8oocoenriIFNd
+         d+KQMBr/wLEE74IA0mRHH7uuB2AAGyk7TEYJWwTy52dSWvTXkCfqmIjTzIvnUl4ylEKV
+         ITIhoNTjQAbdechZcorPt3LlUAYa2f0DfO/V1ASAA0BvwDhQqI1g0PVpXP6jEzBfvevZ
+         eV/VxokKIZawpErZ6ZKBzcuWwttV+QWFeee7xS7RbKZM+hBYWRUBhRt/xrKjalquoxWA
+         xyxw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references;
-        bh=2w+WsPjL8r93Nw50uJe/lUsSq3OzjnbW2tYS17GINdo=;
-        b=rIHW/DXvHPYtD1T5qB2Q5HVSOiDs82w1AJ3vOXNJy49BmJWEeoDtDzCAkJLIt65vmz
-         Urq3ZlCdNoD80LxUKapownTe6p8/dIPEhkr+/MI/Ij0R4jVK4nC2iPIsL0Ik+OkbP8ui
-         XyVQZaYJvCNSPIbfTA0tWYC1zfTKt1s6Sq51+vMSmNnoz5R4BB3Bxm0s+ICvf80DTrsN
-         ptzw6To8NMmPSyNJchq+xq7wm3sl+AaEdLScKfhusUMCISz0v4YZ0tba1XozNmuwyseA
-         OSU+K/9lkj2gQSLOmTPSFgxhslzm5gh3N1E/SXbHUOTfmYbaslvIigscednJyQZEB0YD
-         7T9w==
-X-Gm-Message-State: ABuFfoi2VSLmah3ilBpstXvWj2N77pz4R0LwcHlaY7ucJ+jwE+ATlakA
-        J5TF2G/x5MowVNnu1HAIMG5OPLeyv9U=
-X-Google-Smtp-Source: ACcGV62BOG5DUNHqLMvqHS1gYB3bdjO52svtVrMu8I+36bBLSw3F2zlkL6EEm15lhzwrgrsqiHscbA==
-X-Received: by 2002:ac8:46da:: with SMTP id h26-v6mr7124015qto.369.1539372818368;
-        Fri, 12 Oct 2018 12:33:38 -0700 (PDT)
+        bh=2AifJsoYa8VVGHqyfqs2+9dIHUSfR9sXlFu5O/p8l7g=;
+        b=aI1+a9kaL58I8QqcplD7GLJ/4NcOYtub/JayuCrh8XmDn2Jd5n3bOrXdPwHUmrD2UW
+         +zw9tlScrWRX5R4CT9SmpgL+COIcrdaHu/L9Mdb2FPEy03j8PrFzzosZHQ/pmI8/V6XL
+         9wN8pe5kgnB24zGVKzOlY1UgrdCzkhmF982o+3xThWBkXmEzo5CGibYuJhPgkW3lkqxu
+         oLvjy5D7bJhMzZ5Y5dMT9nK13HD+G2XxV7KPZCI/F1jrx9+6TXo1scYGm9mCBCjWcMvT
+         BExslnDH9Z14Uisb3jDl8RbkeODwp9ZTv9e3NJMASLFZbtbjTKwMGC8DeZzEDlFyvKcW
+         CCYQ==
+X-Gm-Message-State: ABuFfogN7FIVvcm6/DI53+dAPOaiWe9BBN1OVQqbtBYhT6FrrChV5MFF
+        VyCN5XV7qXubjmqKFzLUZE1KGzEGMVA=
+X-Google-Smtp-Source: ACcGV61Y3enHMAuI1QYvJq62xKeTfO9UfHSqzU+MhYhNUSiFyUHD6TxrANFr/Toij/QEiLqwJ/GpzQ==
+X-Received: by 2002:a37:6cc3:: with SMTP id h186-v6mr7032971qkc.49.1539372821224;
+        Fri, 12 Oct 2018 12:33:41 -0700 (PDT)
 Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id w17-v6sm1602437qth.47.2018.10.12.12.33.36
+        by smtp.gmail.com with ESMTPSA id e195-v6sm1482164qka.2.2018.10.12.12.33.39
         (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
-        Fri, 12 Oct 2018 12:33:37 -0700 (PDT)
+        Fri, 12 Oct 2018 12:33:40 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 17/42] btrfs: run delayed iputs before committing
-Date:   Fri, 12 Oct 2018 15:32:31 -0400
-Message-Id: <20181012193256.13735-18-josef@toxicpanda.com>
+Subject: [PATCH 18/42] btrfs: move the dio_sem higher up the callchain
+Date:   Fri, 12 Oct 2018 15:32:32 -0400
+Message-Id: <20181012193256.13735-19-josef@toxicpanda.com>
 X-Mailer: git-send-email 2.14.3
 In-Reply-To: <20181012193256.13735-1-josef@toxicpanda.com>
 References: <20181012193256.13735-1-josef@toxicpanda.com>
@@ -70,39 +70,236 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Delayed iputs means we can have final iputs of deleted inodes in the
-queue, which could potentially generate a lot of pinned space that could
-be free'd.  So before we decide to commit the transaction for ENOPSC
-reasons, run the delayed iputs so that any potential space is free'd up.
-If there is and we freed enough we can then commit the transaction and
-potentially be able to make our reservation.
+We're getting a lockdep splat because we take the dio_sem under the
+log_mutex.  What we really need is to protect fsync() from logging an
+extent map for an extent we never waited on higher up, so just guard the
+whole thing with dio_sem.
+
+======================================================
+WARNING: possible circular locking dependency detected
+4.18.0-rc4-xfstests-00025-g5de5edbaf1d4 #411 Not tainted
+------------------------------------------------------
+aio-dio-invalid/30928 is trying to acquire lock:
+0000000092621cfd (&mm->mmap_sem){++++}, at: get_user_pages_unlocked+0x5a/0x1e0
+
+but task is already holding lock:
+00000000cefe6b35 (&ei->dio_sem){++++}, at: btrfs_direct_IO+0x3be/0x400
+
+which lock already depends on the new lock.
+
+the existing dependency chain (in reverse order) is:
+
+-> #5 (&ei->dio_sem){++++}:
+       lock_acquire+0xbd/0x220
+       down_write+0x51/0xb0
+       btrfs_log_changed_extents+0x80/0xa40
+       btrfs_log_inode+0xbaf/0x1000
+       btrfs_log_inode_parent+0x26f/0xa80
+       btrfs_log_dentry_safe+0x50/0x70
+       btrfs_sync_file+0x357/0x540
+       do_fsync+0x38/0x60
+       __ia32_sys_fdatasync+0x12/0x20
+       do_fast_syscall_32+0x9a/0x2f0
+       entry_SYSENTER_compat+0x84/0x96
+
+-> #4 (&ei->log_mutex){+.+.}:
+       lock_acquire+0xbd/0x220
+       __mutex_lock+0x86/0xa10
+       btrfs_record_unlink_dir+0x2a/0xa0
+       btrfs_unlink+0x5a/0xc0
+       vfs_unlink+0xb1/0x1a0
+       do_unlinkat+0x264/0x2b0
+       do_fast_syscall_32+0x9a/0x2f0
+       entry_SYSENTER_compat+0x84/0x96
+
+-> #3 (sb_internal#2){.+.+}:
+       lock_acquire+0xbd/0x220
+       __sb_start_write+0x14d/0x230
+       start_transaction+0x3e6/0x590
+       btrfs_evict_inode+0x475/0x640
+       evict+0xbf/0x1b0
+       btrfs_run_delayed_iputs+0x6c/0x90
+       cleaner_kthread+0x124/0x1a0
+       kthread+0x106/0x140
+       ret_from_fork+0x3a/0x50
+
+-> #2 (&fs_info->cleaner_delayed_iput_mutex){+.+.}:
+       lock_acquire+0xbd/0x220
+       __mutex_lock+0x86/0xa10
+       btrfs_alloc_data_chunk_ondemand+0x197/0x530
+       btrfs_check_data_free_space+0x4c/0x90
+       btrfs_delalloc_reserve_space+0x20/0x60
+       btrfs_page_mkwrite+0x87/0x520
+       do_page_mkwrite+0x31/0xa0
+       __handle_mm_fault+0x799/0xb00
+       handle_mm_fault+0x7c/0xe0
+       __do_page_fault+0x1d3/0x4a0
+       async_page_fault+0x1e/0x30
+
+-> #1 (sb_pagefaults){.+.+}:
+       lock_acquire+0xbd/0x220
+       __sb_start_write+0x14d/0x230
+       btrfs_page_mkwrite+0x6a/0x520
+       do_page_mkwrite+0x31/0xa0
+       __handle_mm_fault+0x799/0xb00
+       handle_mm_fault+0x7c/0xe0
+       __do_page_fault+0x1d3/0x4a0
+       async_page_fault+0x1e/0x30
+
+-> #0 (&mm->mmap_sem){++++}:
+       __lock_acquire+0x42e/0x7a0
+       lock_acquire+0xbd/0x220
+       down_read+0x48/0xb0
+       get_user_pages_unlocked+0x5a/0x1e0
+       get_user_pages_fast+0xa4/0x150
+       iov_iter_get_pages+0xc3/0x340
+       do_direct_IO+0xf93/0x1d70
+       __blockdev_direct_IO+0x32d/0x1c20
+       btrfs_direct_IO+0x227/0x400
+       generic_file_direct_write+0xcf/0x180
+       btrfs_file_write_iter+0x308/0x58c
+       aio_write+0xf8/0x1d0
+       io_submit_one+0x3a9/0x620
+       __ia32_compat_sys_io_submit+0xb2/0x270
+       do_int80_syscall_32+0x5b/0x1a0
+       entry_INT80_compat+0x88/0xa0
+
+other info that might help us debug this:
+
+Chain exists of:
+  &mm->mmap_sem --> &ei->log_mutex --> &ei->dio_sem
+
+ Possible unsafe locking scenario:
+
+       CPU0                    CPU1
+       ----                    ----
+  lock(&ei->dio_sem);
+                               lock(&ei->log_mutex);
+                               lock(&ei->dio_sem);
+  lock(&mm->mmap_sem);
+
+ *** DEADLOCK ***
+
+1 lock held by aio-dio-invalid/30928:
+ #0: 00000000cefe6b35 (&ei->dio_sem){++++}, at: btrfs_direct_IO+0x3be/0x400
+
+stack backtrace:
+CPU: 0 PID: 30928 Comm: aio-dio-invalid Not tainted 4.18.0-rc4-xfstests-00025-g5de5edbaf1d4 #411
+Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS 1.11.0-2.el7 04/01/2014
+Call Trace:
+ dump_stack+0x7c/0xbb
+ print_circular_bug.isra.37+0x297/0x2a4
+ check_prev_add.constprop.45+0x781/0x7a0
+ ? __lock_acquire+0x42e/0x7a0
+ validate_chain.isra.41+0x7f0/0xb00
+ __lock_acquire+0x42e/0x7a0
+ lock_acquire+0xbd/0x220
+ ? get_user_pages_unlocked+0x5a/0x1e0
+ down_read+0x48/0xb0
+ ? get_user_pages_unlocked+0x5a/0x1e0
+ get_user_pages_unlocked+0x5a/0x1e0
+ get_user_pages_fast+0xa4/0x150
+ iov_iter_get_pages+0xc3/0x340
+ do_direct_IO+0xf93/0x1d70
+ ? __alloc_workqueue_key+0x358/0x490
+ ? __blockdev_direct_IO+0x14b/0x1c20
+ __blockdev_direct_IO+0x32d/0x1c20
+ ? btrfs_run_delalloc_work+0x40/0x40
+ ? can_nocow_extent+0x490/0x490
+ ? kvm_clock_read+0x1f/0x30
+ ? can_nocow_extent+0x490/0x490
+ ? btrfs_run_delalloc_work+0x40/0x40
+ btrfs_direct_IO+0x227/0x400
+ ? btrfs_run_delalloc_work+0x40/0x40
+ generic_file_direct_write+0xcf/0x180
+ btrfs_file_write_iter+0x308/0x58c
+ aio_write+0xf8/0x1d0
+ ? kvm_clock_read+0x1f/0x30
+ ? __might_fault+0x3e/0x90
+ io_submit_one+0x3a9/0x620
+ ? io_submit_one+0xe5/0x620
+ __ia32_compat_sys_io_submit+0xb2/0x270
+ do_int80_syscall_32+0x5b/0x1a0
+ entry_INT80_compat+0x88/0xa0
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
-Reviewed-by: Omar Sandoval <osandov@fb.com>
+Reviewed-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/extent-tree.c | 9 +++++++++
- 1 file changed, 9 insertions(+)
+ fs/btrfs/file.c     | 12 ++++++++++++
+ fs/btrfs/tree-log.c |  2 --
+ 2 files changed, 12 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 3757ca42b8e0..ef852d1911d1 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -4823,6 +4823,15 @@ static int may_commit_transaction(struct btrfs_fs_info *fs_info,
- 	if (!bytes)
- 		return 0;
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 095f0bb86bb7..c07110edb9de 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -2079,6 +2079,14 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
+ 		goto out;
  
-+	/*
-+	 * If we have pending delayed iputs then we could free up a bunch of
-+	 * pinned space, so make sure we run the iputs before we do our pinned
-+	 * bytes check below.
-+	 */
-+	mutex_lock(&fs_info->cleaner_delayed_iput_mutex);
-+	btrfs_run_delayed_iputs(fs_info);
-+	mutex_unlock(&fs_info->cleaner_delayed_iput_mutex);
+ 	inode_lock(inode);
 +
- 	trans = btrfs_join_transaction(fs_info->extent_root);
- 	if (IS_ERR(trans))
- 		return PTR_ERR(trans);
++	/*
++	 * We take the dio_sem here because the tree log stuff can race with
++	 * lockless dio writes and get an extent map logged for an extent we
++	 * never waited on.  We need it this high up for lockdep reasons.
++	 */
++	down_write(&BTRFS_I(inode)->dio_sem);
++
+ 	atomic_inc(&root->log_batch);
+ 
+ 	/*
+@@ -2087,6 +2095,7 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
+ 	 */
+ 	ret = btrfs_wait_ordered_range(inode, start, len);
+ 	if (ret) {
++		up_write(&BTRFS_I(inode)->dio_sem);
+ 		inode_unlock(inode);
+ 		goto out;
+ 	}
+@@ -2110,6 +2119,7 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
+ 		 * checked called fsync.
+ 		 */
+ 		ret = filemap_check_wb_err(inode->i_mapping, file->f_wb_err);
++		up_write(&BTRFS_I(inode)->dio_sem);
+ 		inode_unlock(inode);
+ 		goto out;
+ 	}
+@@ -2128,6 +2138,7 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
+ 	trans = btrfs_start_transaction(root, 0);
+ 	if (IS_ERR(trans)) {
+ 		ret = PTR_ERR(trans);
++		up_write(&BTRFS_I(inode)->dio_sem);
+ 		inode_unlock(inode);
+ 		goto out;
+ 	}
+@@ -2149,6 +2160,7 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
+ 	 * file again, but that will end up using the synchronization
+ 	 * inside btrfs_sync_log to keep things safe.
+ 	 */
++	up_write(&BTRFS_I(inode)->dio_sem);
+ 	inode_unlock(inode);
+ 
+ 	/*
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 1650dc44a5e3..66b7e059b765 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -4374,7 +4374,6 @@ static int btrfs_log_changed_extents(struct btrfs_trans_handle *trans,
+ 
+ 	INIT_LIST_HEAD(&extents);
+ 
+-	down_write(&inode->dio_sem);
+ 	write_lock(&tree->lock);
+ 	test_gen = root->fs_info->last_trans_committed;
+ 	logged_start = start;
+@@ -4440,7 +4439,6 @@ static int btrfs_log_changed_extents(struct btrfs_trans_handle *trans,
+ 	}
+ 	WARN_ON(!list_empty(&extents));
+ 	write_unlock(&tree->lock);
+-	up_write(&inode->dio_sem);
+ 
+ 	btrfs_release_path(path);
+ 	if (!ret)
 -- 
 2.14.3
 

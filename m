@@ -2,91 +2,86 @@ Return-Path: <SRS0=eG6O=MY=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.5 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
-	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-6.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D2234C43441
-	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 08:47:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 07852C43441
+	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 08:48:42 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 7EAB320868
-	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 08:47:06 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 7EAB320868
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=gmx.com
+	by mail.kernel.org (Postfix) with ESMTP id B2A112087D
+	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 08:48:41 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org B2A112087D
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727210AbeJLQS1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 12 Oct 2018 12:18:27 -0400
-Received: from mout.gmx.net ([212.227.15.18]:60615 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726071AbeJLQS1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 12 Oct 2018 12:18:27 -0400
-Received: from [0.0.0.0] ([210.140.77.29]) by mail.gmx.com (mrgmx001
- [212.227.17.184]) with ESMTPSA (Nemesis) id 0M7Xi3-1fQSYA0wKN-00xNGl; Fri, 12
- Oct 2018 10:46:58 +0200
-Received: from [0.0.0.0] ([210.140.77.29]) by mail.gmx.com (mrgmx001
- [212.227.17.184]) with ESMTPSA (Nemesis) id 0M7Xi3-1fQSYA0wKN-00xNGl; Fri, 12
- Oct 2018 10:46:58 +0200
-Subject: Re: [PATCH 2/2] btrfs-progs: Deprecate unused super block member
- log_root_transid
-To:     Nikolay Borisov <nborisov@suse.com>, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <20181012064258.27033-1-wqu@suse.com>
- <20181012064258.27033-2-wqu@suse.com>
- <2b4ff29a-ff9b-8b56-ef13-4b76e72a281f@suse.com>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+        id S1727869AbeJLQUD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 12 Oct 2018 12:20:03 -0400
+Received: from mx2.suse.de ([195.135.220.15]:55002 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726071AbeJLQUC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 12 Oct 2018 12:20:02 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 902FDACC2;
+        Fri, 12 Oct 2018 08:48:37 +0000 (UTC)
+Subject: Re: [PATCH] btrfs: introduce feature to forget a btrfs device
+To:     Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
+References: <1539317191-9265-1-git-send-email-anand.jain@oracle.com>
+ <1539317191-9265-2-git-send-email-anand.jain@oracle.com>
+From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
-Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
- bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
- ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
- rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
- FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
- 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
- ilaVzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAHCwHwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
- CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
- f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
- mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
- 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
- h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <fbb5f43e-8eb0-08c6-a1c9-855efd960d3d@gmx.com>
-Date:   Fri, 12 Oct 2018 16:46:53 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.0
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ xsFNBFiKBz4BEADNHZmqwhuN6EAzXj9SpPpH/nSSP8YgfwoOqwrP+JR4pIqRK0AWWeWCSwmZ
+ T7g+RbfPFlmQp+EwFWOtABXlKC54zgSf+uulGwx5JAUFVUIRBmnHOYi/lUiE0yhpnb1KCA7f
+ u/W+DkwGerXqhhe9TvQoGwgCKNfzFPZoM+gZrm+kWv03QLUCr210n4cwaCPJ0Nr9Z3c582xc
+ bCUVbsjt7BN0CFa2BByulrx5xD9sDAYIqfLCcZetAqsTRGxM7LD0kh5WlKzOeAXj5r8DOrU2
+ GdZS33uKZI/kZJZVytSmZpswDsKhnGzRN1BANGP8sC+WD4eRXajOmNh2HL4P+meO1TlM3GLl
+ EQd2shHFY0qjEo7wxKZI1RyZZ5AgJnSmehrPCyuIyVY210CbMaIKHUIsTqRgY5GaNME24w7h
+ TyyVCy2qAM8fLJ4Vw5bycM/u5xfWm7gyTb9V1TkZ3o1MTrEsrcqFiRrBY94Rs0oQkZvunqia
+ c+NprYSaOG1Cta14o94eMH271Kka/reEwSZkC7T+o9hZ4zi2CcLcY0DXj0qdId7vUKSJjEep
+ c++s8ncFekh1MPhkOgNj8pk17OAESanmDwksmzh1j12lgA5lTFPrJeRNu6/isC2zyZhTwMWs
+ k3LkcTa8ZXxh0RfWAqgx/ogKPk4ZxOXQEZetkEyTFghbRH2BIwARAQABzSJOaWtvbGF5IEJv
+ cmlzb3YgPG5ib3Jpc292QHN1c2UuZGU+wsF4BBMBAgAiBQJYijkSAhsDBgsJCAcDAgYVCAIJ
+ CgsEFgIDAQIeAQIXgAAKCRBxvoJG5T8oV/B6D/9a8EcRPdHg8uLEPywuJR8URwXzkofT5bZE
+ IfGF0Z+Lt2ADe+nLOXrwKsamhweUFAvwEUxxnndovRLPOpWerTOAl47lxad08080jXnGfYFS
+ Dc+ew7C3SFI4tFFHln8Y22Q9075saZ2yQS1ywJy+TFPADIprAZXnPbbbNbGtJLoq0LTiESnD
+ w/SUC6sfikYwGRS94Dc9qO4nWyEvBK3Ql8NkoY0Sjky3B0vL572Gq0ytILDDGYuZVo4alUs8
+ LeXS5ukoZIw1QYXVstDJQnYjFxYgoQ5uGVi4t7FsFM/6ykYDzbIPNOx49Rbh9W4uKsLVhTzG
+ BDTzdvX4ARl9La2kCQIjjWRg+XGuBM5rxT/NaTS78PXjhqWNYlGc5OhO0l8e5DIS2tXwYMDY
+ LuHYNkkpMFksBslldvNttSNei7xr5VwjVqW4vASk2Aak5AleXZS+xIq2FADPS/XSgIaepyTV
+ tkfnyreep1pk09cjfXY4A7qpEFwazCRZg9LLvYVc2M2eFQHDMtXsH59nOMstXx2OtNMcx5p8
+ 0a5FHXE/HoXz3p9bD0uIUq6p04VYOHsMasHqHPbsMAq9V2OCytJQPWwe46bBjYZCOwG0+x58
+ fBFreP/NiJNeTQPOa6FoxLOLXMuVtpbcXIqKQDoEte9aMpoj9L24f60G4q+pL/54ql2VRscK
+ d87BTQRYigc+ARAAyJSq9EFk28++SLfg791xOh28tLI6Yr8wwEOvM3wKeTfTZd+caVb9gBBy
+ wxYhIopKlK1zq2YP7ZjTP1aPJGoWvcQZ8fVFdK/1nW+Z8/NTjaOx1mfrrtTGtFxVBdSCgqBB
+ jHTnlDYV1R5plJqK+ggEP1a0mr/rpQ9dFGvgf/5jkVpRnH6BY0aYFPprRL8ZCcdv2DeeicOO
+ YMobD5g7g/poQzHLLeT0+y1qiLIFefNABLN06Lf0GBZC5l8hCM3Rpb4ObyQ4B9PmL/KTn2FV
+ Xq/c0scGMdXD2QeWLePC+yLMhf1fZby1vVJ59pXGq+o7XXfYA7xX0JsTUNxVPx/MgK8aLjYW
+ hX+TRA4bCr4uYt/S3ThDRywSX6Hr1lyp4FJBwgyb8iv42it8KvoeOsHqVbuCIGRCXqGGiaeX
+ Wa0M/oxN1vJjMSIEVzBAPi16tztL/wQtFHJtZAdCnuzFAz8ue6GzvsyBj97pzkBVacwp3/Mw
+ qbiu7sDz7yB0d7J2tFBJYNpVt/Lce6nQhrvon0VqiWeMHxgtQ4k92Eja9u80JDaKnHDdjdwq
+ FUikZirB28UiLPQV6PvCckgIiukmz/5ctAfKpyYRGfez+JbAGl6iCvHYt/wAZ7Oqe/3Cirs5
+ KhaXBcMmJR1qo8QH8eYZ+qhFE3bSPH446+5oEw8A9v5oonKV7zMAEQEAAcLBXwQYAQIACQUC
+ WIoHPgIbDAAKCRBxvoJG5T8oV1pyD/4zdXdOL0lhkSIjJWGqz7Idvo0wjVHSSQCbOwZDWNTN
+ JBTP0BUxHpPu/Z8gRNNP9/k6i63T4eL1xjy4umTwJaej1X15H8Hsh+zakADyWHadbjcUXCkg
+ OJK4NsfqhMuaIYIHbToi9K5pAKnV953xTrK6oYVyd/Rmkmb+wgsbYQJ0Ur1Ficwhp6qU1CaJ
+ mJwFjaWaVgUERoxcejL4ruds66LM9Z1Qqgoer62ZneID6ovmzpCWbi2sfbz98+kW46aA/w8r
+ 7sulgs1KXWhBSv5aWqKU8C4twKjlV2XsztUUsyrjHFj91j31pnHRklBgXHTD/pSRsN0UvM26
+ lPs0g3ryVlG5wiZ9+JbI3sKMfbdfdOeLxtL25ujs443rw1s/PVghphoeadVAKMPINeRCgoJH
+ zZV/2Z/myWPRWWl/79amy/9MfxffZqO9rfugRBORY0ywPHLDdo9Kmzoxoxp9w3uTrTLZaT9M
+ KIuxEcV8wcVjr+Wr9zRl06waOCkgrQbTPp631hToxo+4rA1jiQF2M80HAet65ytBVR2pFGZF
+ zGYYLqiG+mpUZ+FPjxk9kpkRYz61mTLSY7tuFljExfJWMGfgSg1OxfLV631jV1TcdUnx+h3l
+ Sqs2vMhAVt14zT8mpIuu2VNxcontxgVr1kzYA/tQg32fVRbGr449j1gw57BV9i0vww==
+Message-ID: <286b1a54-1cd4-2e70-781a-a6ea4255572d@suse.com>
+Date:   Fri, 12 Oct 2018 11:48:35 +0300
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:52.0) Gecko/20100101
+ Thunderbird/52.9.1
 MIME-Version: 1.0
-In-Reply-To: <2b4ff29a-ff9b-8b56-ef13-4b76e72a281f@suse.com>
+In-Reply-To: <1539317191-9265-2-git-send-email-anand.jain@oracle.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
-Content-Transfer-Encoding: 8bit
-X-Provags-ID: V03:K1:lg/FoMlZGNAnMAZAEe8mX/sWqeqePmzHtmXEcPNAofRgHDqr5DE
- x4/jC2dF35nrgDKObzW+8/l4YAncRpZN215zgWuDsv0a7g07f3k3yZ9bYwSQE/U/Rn6gCPd
- /9LYBamAIUAVnswsiBg/J88RdmoM36P4ODp0r0JcTRsGyb/GCsZzqCuIaq8O3I6QP+FsZwd
- E8QG2ofgo7x+J8ibH8T9Q==
-X-UI-Out-Filterresults: notjunk:1;V01:K0:bfAwA7yuQ78=:NRHFYf5vrIeo1wLcLsBO6B
- rSLdz8VH0fqND1eqiZar5W2pXUAIq5lYnCq4I1Ng5itv0/1agjtVWcVumT4qaFfR8ZxQd2OFV
- 42HHWJF+13Uh0+iJbLPCcmcNMwFicMGrs1c0zMMzjbpgkRlHXod6d8o3Mwo7MeoeqfO7z7rh6
- zXm+/f8jqfghZynT2NKEVmoD3REfju2Q10ZrItD8527HSz9a2c97X8KcHVew9QXfD/JtrbSmr
- 3T3IGwwYk364aRgHeVGr6IAqgqmEPPOkj449ytbJNmeGWNnthkUd8doyHvMKCWYr5IRo+ZBpQ
- lehvWjuWXpOZxomKOrVGJ/VvTj28ye2k9iOzHCAS9/uD8n1dtybUsKL71MmuoJ9ugRawwGJv0
- lWFZ3AxWbyeJYxJhUPcFk/rfxlbsRHZiFcHHuDXIkP3cCvuuh0O2/OiRg3vT0GJuiVBweGXCk
- v04SCilZF0e5pYdnSfBQO8wM1xDQJ0c9nVpx7UiB7k6IebsU2a9Avvyp0K1APyF+jWDdmBEQw
- B3hBp5hpDWBSJE0lbQrDta9MjG2Cw8V+/9ZjJnWGVQRFCilTFV/SIM1iTphN5WnYeRxeWYpQu
- uJLxMNDy1ut+NlEti+T2UZ12e6DmxXLdgyrQBsGerQ56zlbHcYdRF3VFcv57jC8mmo9vHsmxb
- SYJ0WtkpvnB0UXlxZjVhJufoo0BSE8XudHZ/m/z7VA3vT4H1su2u53fbmDB6aoTRSdlq2YVHx
- 3YwmD/45hDeG082Oq9aipGWGBH/I+aB7Jiz2oY2kc/lk0u5z95EG5+/QPOo4G+MbBU9+spUxR
- oFDSnL4zzX/MNaGfkHjUi5AXszDYeCshiwYurPmKEdDI9kyd4Q=
+Content-Transfer-Encoding: 7bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -94,68 +89,100 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 2018/10/12 下午2:53, Nikolay Borisov wrote:
+On 12.10.2018 07:06, Anand Jain wrote:
+> Support for a new command 'btrfs dev forget [dev]' is proposed here
+> to undo the effects of 'btrfs dev scan [dev]'. For this purpose
+> this patch proposes to use ioctl #5 as it was empty.
+> 	IOW(BTRFS_IOCTL_MAGIC, 5, ..)
+> This patch adds new ioctl BTRFS_IOC_FORGET_DEV which can be sent from
+> the /dev/btrfs-control to forget one or all devices, (devices which are
+> not mounted) from the btrfs kernel.
 > 
+> The argument it takes is struct btrfs_ioctl_vol_args, and ::name can be
+> set to specify the device path. And all unmounted devices can be removed
+> from the kernel if no device path is provided.
 > 
-> On 12.10.2018 09:42, Qu Wenruo wrote:
->> The only user of it is "btrfs inspect dump-super".
->>
->> Signed-off-by: Qu Wenruo <wqu@suse.com>
->> ---
->>  cmds-inspect-dump-super.c | 4 ++--
->>  ctree.h                   | 6 ++----
->>  2 files changed, 4 insertions(+), 6 deletions(-)
->>
->> diff --git a/cmds-inspect-dump-super.c b/cmds-inspect-dump-super.c
->> index e965267c5d96..3f33931ed9bc 100644
->> --- a/cmds-inspect-dump-super.c
->> +++ b/cmds-inspect-dump-super.c
->> @@ -387,8 +387,8 @@ static void dump_superblock(struct btrfs_super_block *sb, int full)
->>  	       (unsigned long long)btrfs_super_chunk_root_level(sb));
->>  	printf("log_root\t\t%llu\n",
->>  	       (unsigned long long)btrfs_super_log_root(sb));
->> -	printf("log_root_transid\t%llu\n",
->> -	       (unsigned long long)btrfs_super_log_root_transid(sb));
->> +	printf("log_root_transid (deprecated)\t%llu\n",
->> +	       le64_to_cpu(sb->__unused_log_root_transid));
+> Again, the devices are removed only if the relevant fsid aren't mounted.
 > 
-> This should be entirely removed.
-
-It looks OK to me.
-Just like the old leafsize.
-
-And if we try to use this member again, even old progs could show it
-without problem.
-
-Thanks,
-Qu
-
+> This new cli can provide..
+>  . Release of unwanted btrfs_fs_devices and btrfs_devices memory if the
+>    device is not going to be mounted.
+>  . Ability to mount the device in degraded mode when one of the other
+>    device is corrupted like in split brain raid1.
+>  . Running test cases which requires btrfs.ko-reload if the rootfs
+>    is btrfs.
 > 
->>  	printf("log_root_level\t\t%llu\n",
->>  	       (unsigned long long)btrfs_super_log_root_level(sb));
->>  	printf("total_bytes\t\t%llu\n",
->> diff --git a/ctree.h b/ctree.h
->> index 4719962df67d..a314fdb102b0 100644
->> --- a/ctree.h
->> +++ b/ctree.h
->> @@ -427,8 +427,8 @@ struct btrfs_super_block {
->>  	__le64 chunk_root;
->>  	__le64 log_root;
->>  
->> -	/* this will help find the new super based on the log root */
->> -	__le64 log_root_transid;
->> +	/* This member is never touched, should always be 0 */
->> +	__le64 __unused_log_root_transid;
->>  	__le64 total_bytes;
->>  	__le64 bytes_used;
->>  	__le64 root_dir_objectid;
->> @@ -2203,8 +2203,6 @@ BTRFS_SETGET_STACK_FUNCS(super_chunk_root_level, struct btrfs_super_block,
->>  			 chunk_root_level, 8);
->>  BTRFS_SETGET_STACK_FUNCS(super_log_root, struct btrfs_super_block,
->>  			 log_root, 64);
->> -BTRFS_SETGET_STACK_FUNCS(super_log_root_transid, struct btrfs_super_block,
->> -			 log_root_transid, 64);
->>  BTRFS_SETGET_STACK_FUNCS(super_log_root_level, struct btrfs_super_block,
->>  			 log_root_level, 8);
->>  BTRFS_SETGET_STACK_FUNCS(super_total_bytes, struct btrfs_super_block,
->>
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> ---
+>  fs/btrfs/super.c           | 3 +++
+>  fs/btrfs/volumes.c         | 9 +++++++++
+>  fs/btrfs/volumes.h         | 1 +
+>  include/uapi/linux/btrfs.h | 2 ++
+>  4 files changed, 15 insertions(+)
+> 
+> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+> index 6601c9aa5e35..f14610ef1c66 100644
+> --- a/fs/btrfs/super.c
+> +++ b/fs/btrfs/super.c
+> @@ -2244,6 +2244,9 @@ static long btrfs_control_ioctl(struct file *file, unsigned int cmd,
+>  		ret = PTR_ERR_OR_ZERO(device);
+>  		mutex_unlock(&uuid_mutex);
+>  		break;
+> +	case BTRFS_IOC_FORGET_DEV:
+> +		ret = btrfs_forget_devices(vol->name);
+> +		break;
+>  	case BTRFS_IOC_DEVICES_READY:
+>  		mutex_lock(&uuid_mutex);
+>  		device = btrfs_scan_one_device(vol->name, FMODE_READ,
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index f4405e430da6..e2ab203d9c1d 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -1208,6 +1208,15 @@ static int btrfs_read_disk_super(struct block_device *bdev, u64 bytenr,
+>  	return 0;
+>  }
+>  
+> +int btrfs_forget_devices(const char *path)
+> +{
+> +	mutex_lock(&uuid_mutex);
+> +	btrfs_free_stale_devices(strlen(path) ? path:NULL, NULL);
+
+Checking the len of path is redundant since userspace will pass a zeroed
+struct which will be NULL in any case. Additionally in
+btrfs_free_stalce_devices there is existing check whether path is set or
+not.
+
+> +	mutex_unlock(&uuid_mutex);
+> +
+> +	return 0;
+> +}
+> +
+>  /*
+>   * Look for a btrfs signature on a device. This may be called out of the mount path
+>   * and we are not allowed to call set_blocksize during the scan. The superblock
+> diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+> index 23e9285d88de..394079d5d08d 100644
+> --- a/fs/btrfs/volumes.h
+> +++ b/fs/btrfs/volumes.h
+> @@ -406,6 +406,7 @@ int btrfs_open_devices(struct btrfs_fs_devices *fs_devices,
+>  		       fmode_t flags, void *holder);
+>  struct btrfs_device *btrfs_scan_one_device(const char *path,
+>  					   fmode_t flags, void *holder);
+> +int btrfs_forget_devices(const char *path);
+>  int btrfs_close_devices(struct btrfs_fs_devices *fs_devices);
+>  void btrfs_free_extra_devids(struct btrfs_fs_devices *fs_devices, int step);
+>  void btrfs_assign_next_active_device(struct btrfs_device *device,
+> diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+> index 5ca1d21fc4a7..b1be7f828cb4 100644
+> --- a/include/uapi/linux/btrfs.h
+> +++ b/include/uapi/linux/btrfs.h
+> @@ -836,6 +836,8 @@ enum btrfs_err_code {
+>  				   struct btrfs_ioctl_vol_args)
+>  #define BTRFS_IOC_SCAN_DEV _IOW(BTRFS_IOCTL_MAGIC, 4, \
+>  				   struct btrfs_ioctl_vol_args)
+> +#define BTRFS_IOC_FORGET_DEV _IOW(BTRFS_IOCTL_MAGIC, 5, \
+> +				   struct btrfs_ioctl_vol_args)
+>  /* trans start and trans end are dangerous, and only for
+>   * use by applications that know how to avoid the
+>   * resulting deadlocks
+> 

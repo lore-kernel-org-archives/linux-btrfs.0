@@ -6,30 +6,30 @@ X-Spam-Status: No, score=-8.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1630AC43441
-	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 06:37:27 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C01D8C6783C
+	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 06:43:04 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id CE373206B2
-	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 06:37:26 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org CE373206B2
+	by mail.kernel.org (Postfix) with ESMTP id 9096C206B2
+	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 06:43:04 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 9096C206B2
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727536AbeJLOIW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 12 Oct 2018 10:08:22 -0400
-Received: from mx2.suse.de ([195.135.220.15]:36754 "EHLO mx1.suse.de"
+        id S1727668AbeJLOOA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 12 Oct 2018 10:14:00 -0400
+Received: from mx2.suse.de ([195.135.220.15]:37258 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727056AbeJLOIV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 12 Oct 2018 10:08:21 -0400
+        id S1727056AbeJLOOA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 12 Oct 2018 10:14:00 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 1A1F7AEB2
-        for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2018 06:37:24 +0000 (UTC)
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id C45E2AEE4
+        for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2018 06:43:01 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v2] btrfs: Deprecate unused super block member, log_root_transid
-Date:   Fri, 12 Oct 2018 14:37:20 +0800
-Message-Id: <20181012063720.25659-1-wqu@suse.com>
+Subject: [PATCH 1/2] btrfs-progs: find-root: Fix wrong generation for log tree
+Date:   Fri, 12 Oct 2018 14:42:57 +0800
+Message-Id: <20181012064258.27033-1-wqu@suse.com>
 X-Mailer: git-send-email 2.19.1
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
@@ -38,45 +38,29 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The member log_root_transid is never used.
-It's always kept untouched even when updating log tree root.
+When searching for log tree, we should use btrfs_super_generation + 1
+other than log_root_transid.
 
-And populating it without introducing new incompat flags could easily
-cause back-compatibility problems.
-So just mark it unused.
+Since log_root_transid is never touched and will be deprecated soon.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
-changelog:
-v2:
-  Remove the redundant comment.
----
- fs/btrfs/ctree.h | 5 +----
- 1 file changed, 1 insertion(+), 4 deletions(-)
+ btrfs-find-root.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 53af9f5253f4..7adf5f4dcda4 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -214,8 +214,7 @@ struct btrfs_super_block {
- 	__le64 chunk_root;
- 	__le64 log_root;
- 
--	/* this will help find the new super based on the log root */
--	__le64 log_root_transid;
-+	__le64 __unused_log_root_transid;
- 	__le64 total_bytes;
- 	__le64 bytes_used;
- 	__le64 root_dir_objectid;
-@@ -2317,8 +2316,6 @@ BTRFS_SETGET_STACK_FUNCS(super_chunk_root_level, struct btrfs_super_block,
- 			 chunk_root_level, 8);
- BTRFS_SETGET_STACK_FUNCS(super_log_root, struct btrfs_super_block,
- 			 log_root, 64);
--BTRFS_SETGET_STACK_FUNCS(super_log_root_transid, struct btrfs_super_block,
--			 log_root_transid, 64);
- BTRFS_SETGET_STACK_FUNCS(super_log_root_level, struct btrfs_super_block,
- 			 log_root_level, 8);
- BTRFS_SETGET_STACK_FUNCS(super_total_bytes, struct btrfs_super_block,
+diff --git a/btrfs-find-root.c b/btrfs-find-root.c
+index e2d2e70c408c..376bbc4c47fa 100644
+--- a/btrfs-find-root.c
++++ b/btrfs-find-root.c
+@@ -73,7 +73,7 @@ static void get_root_gen_and_level(u64 objectid, struct btrfs_fs_info *fs_info,
+ 		break;
+ 	case BTRFS_TREE_LOG_OBJECTID:
+ 		level = btrfs_super_log_root_level(super);
+-		gen = btrfs_super_log_root_transid(super);
++		gen = btrfs_super_generation(super) + 1;
+ 		break;
+ 	case BTRFS_UUID_TREE_OBJECTID:
+ 		gen = btrfs_super_uuid_tree_generation(super);
 -- 
 2.19.1
 

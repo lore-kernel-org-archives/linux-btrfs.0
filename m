@@ -2,127 +2,84 @@ Return-Path: <SRS0=eG6O=MY=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.5 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7BA6EC71122
-	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 20:45:39 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7CC31C71122
+	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 20:45:50 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 3AE87204EC
-	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 20:45:39 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 320E4204EC
+	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 20:45:50 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="bAd0YrP4"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 3AE87204EC
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
+	dkim=pass (1024-bit key) header.d=kernel.org header.i=@kernel.org header.b="zUMlL8jz"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 320E4204EC
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=kernel.org
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726099AbeJMETx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 13 Oct 2018 00:19:53 -0400
-Received: from mail-vk1-f194.google.com ([209.85.221.194]:33682 "EHLO
-        mail-vk1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725843AbeJMETx (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 13 Oct 2018 00:19:53 -0400
-Received: by mail-vk1-f194.google.com with SMTP id l186so2680105vke.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2018 13:45:37 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:references:in-reply-to:reply-to:from:date:message-id
-         :subject:to:cc:content-transfer-encoding;
-        bh=c0wZiI8WrehMMgKaDrkE3XoV5k7IcWJMyDsDqVjEA8I=;
-        b=bAd0YrP4Km+Vfgn6Co0vEh3rdt8kU05irHX2Q6mI1rf4utvhG8f0rXT51uoZSyc095
-         fQUanem/adVgZKyu7QvVXZmBYF4XqRsDogBzUPnUOeZEFAXj9JPIAQ1zZPUINbpb6Gkb
-         OFcff7ipHJYh086QAHcBmLfo3OA0K6F+pmPyy8WCBK/Ke7VIX3eu/iRf+e2EORMXTCM1
-         /X0qZjz0ot1dW8uYTW75JxKGwRnDMMCx2/iIVjydFHfg0+hszcBiPsgedZDr6ezt4up8
-         utQ3TnxQxL7Nb48rSZQ+cHIiidhdhy0EX6qOpNaixtx3A6t887Gvm8OwI+RV/2DgswWP
-         hSDQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:reply-to
-         :from:date:message-id:subject:to:cc:content-transfer-encoding;
-        bh=c0wZiI8WrehMMgKaDrkE3XoV5k7IcWJMyDsDqVjEA8I=;
-        b=hZ9RvR1wNn1g4/Kps+aQlCuTM+/XJ4xobfh8RFjwUO8x4fCvlE5Fuk9/02Ab84Nrhm
-         XJAnRWjjutQCAPjn68+LSeJ9x3/6aw4Wss/aE3P9nMEUy3ggZz3QA2I5wL5d18mK+jcC
-         VSRqzhiG+6KZ4h0vwj858gIC439kQ5tbOMig678o5mMigZaByEJoc5+0sgn8OqbX87RD
-         asKw97t5BA9LD8k1+wx4lrXbKu+azfF5IPcBtmMjojaDursBcuYIUTuF0GDArB4QHgJU
-         6qAuWPIhbeSWNROuVKlQcB99U6Dr12mwt8X8vNBerv5fyZ43AfmjODy/I8SojyuRdrEa
-         WNuA==
-X-Gm-Message-State: ABuFfogOYSu8/RQrwTAW+ax7mN6lhnEGNQ9zh1Clv0yurJie2tkKlIpo
-        ZJlLjwNZSDZd3iVqsto1dcLwuS+MiTwgoZavvvq1hQ==
-X-Google-Smtp-Source: ACcGV62uXz3TX1Qsr0qi2E0PSe4P8G9yAeIXF9QtiMzIssE3w7LYsA1M+sLBbSZX7CYQUWv76PbC0/cdLdOuijW+Jq4=
-X-Received: by 2002:a1f:b995:: with SMTP id j143-v6mr3170757vkf.88.1539377136539;
- Fri, 12 Oct 2018 13:45:36 -0700 (PDT)
-MIME-Version: 1.0
-References: <20181012193256.13735-1-josef@toxicpanda.com> <20181012193256.13735-43-josef@toxicpanda.com>
-In-Reply-To: <20181012193256.13735-43-josef@toxicpanda.com>
-Reply-To: fdmanana@gmail.com
-From:   Filipe Manana <fdmanana@gmail.com>
-Date:   Fri, 12 Oct 2018 21:45:25 +0100
-Message-ID: <CAL3q7H7sTLnjtbDG_chSomXowGS5MAekXjOgPrp70uSei5Vf6Q@mail.gmail.com>
-Subject: Re: [PATCH 42/42] btrfs: don't run delayed_iputs in commit
-To:     Josef Bacik <josef@toxicpanda.com>
-Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>, kernel-team@fb.com
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+        id S1726139AbeJMEUE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 13 Oct 2018 00:20:04 -0400
+Received: from mail.kernel.org ([198.145.29.99]:37086 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1725843AbeJMEUE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 13 Oct 2018 00:20:04 -0400
+Received: from localhost.localdomain (bl8-197-74.dsl.telepac.pt [85.241.197.74])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id 27214204EC
+        for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2018 20:45:47 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=default; t=1539377148;
+        bh=tNDoLByi7tTrHxEFq7Qg+sdvIu4qY5I7LCW0sIfsJFo=;
+        h=From:To:Subject:Date:From;
+        b=zUMlL8jzqq9F80GPLb5CNlPrngiomlWnElD4+JQUqoNF0QJiNSK+cQ4qH09GBQFA7
+         6ApjQ4GjQI2G6Ptnvs1zbUplLgjzc5ZzfxXdAjX3P8oSEFBytuh/1hHatXJTd1iVvA
+         9sE9IuOAQPVnFG905OUPA6anAo7xyqVdRYZblpGk=
+From:   fdmanana@kernel.org
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: fix null pointer dereference on compressed write path error
+Date:   Fri, 12 Oct 2018 21:45:44 +0100
+Message-Id: <20181012204544.27137-1-fdmanana@kernel.org>
+X-Mailer: git-send-email 2.11.0
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Oct 12, 2018 at 8:35 PM Josef Bacik <josef@toxicpanda.com> wrote:
->
-> This could result in a really bad case where we do something like
->
-> evict
->   evict_refill_and_join
->     btrfs_commit_transaction
->       btrfs_run_delayed_iputs
->         evict
->           evict_refill_and_join
->             btrfs_commit_transaction
-> ... forever
->
-> We have plenty of other places where we run delayed iputs that are much
-> safer, let those do the work.
->
-> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
+From: Filipe Manana <fdmanana@suse.com>
 
-> ---
->  fs/btrfs/transaction.c | 9 ---------
->  1 file changed, 9 deletions(-)
->
-> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-> index 9168efaca37e..c91dc36fccae 100644
-> --- a/fs/btrfs/transaction.c
-> +++ b/fs/btrfs/transaction.c
-> @@ -2265,15 +2265,6 @@ int btrfs_commit_transaction(struct btrfs_trans_ha=
-ndle *trans)
->
->         kmem_cache_free(btrfs_trans_handle_cachep, trans);
->
-> -       /*
-> -        * If fs has been frozen, we can not handle delayed iputs, otherw=
-ise
-> -        * it'll result in deadlock about SB_FREEZE_FS.
-> -        */
-> -       if (current !=3D fs_info->transaction_kthread &&
-> -           current !=3D fs_info->cleaner_kthread &&
-> -           !test_bit(BTRFS_FS_FROZEN, &fs_info->flags))
-> -               btrfs_run_delayed_iputs(fs_info);
-> -
->         return ret;
->
->  scrub_continue:
-> --
-> 2.14.3
->
+At inode.c:compress_file_range(), under the "free_pages_out" label, we can
+end up dereferencing the "pages" pointer when it has a NULL value. This
+case happens when "start" has a value of 0 and we fail to allocate memory
+for the "pages" pointer. When that happens we jump to the "cont" label and
+then enter the "if (start == 0)" branch where we immediately call the
+cow_file_range_inline() function. If that function returns an error (like
+-ENOMEM for example) we jump to the "free_pages_out" label and then access
+"pages[i]" leading to a NULL pointer dereference, since "nr_pages" has a
+value greater than zero at that point.
 
+Fix this by setting "nr_pages" to 0 when we fail to allocate memory for
+the "pages" pointer.
 
---=20
-Filipe David Manana,
+Bugzilla: https://bugzilla.kernel.org/show_bug.cgi?id=201119
+Fixes: 771ed689d2cd ("Btrfs: Optimize compressed writeback and reads")
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/inode.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-=E2=80=9CWhether you think you can, or you think you can't =E2=80=94 you're=
- right.=E2=80=9D
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 66c6c4103d2f..d6b61b1facdd 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -503,6 +503,7 @@ static noinline void compress_file_range(struct inode *inode,
+ 		pages = kcalloc(nr_pages, sizeof(struct page *), GFP_NOFS);
+ 		if (!pages) {
+ 			/* just bail out to the uncompressed code */
++			nr_pages = 0;
+ 			goto cont;
+ 		}
+ 
+-- 
+2.11.0
+

@@ -2,293 +2,149 @@ Return-Path: <SRS0=eG6O=MY=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.5 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
-	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.2 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B5F94C28CF8
-	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 01:56:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4FD26C6786F
+	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 04:06:46 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 54F472087D
-	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 01:56:54 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 54F472087D
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=gmx.com
+	by mail.kernel.org (Postfix) with ESMTP id 042172086A
+	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 04:06:45 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="pO0oe7Xt"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 042172086A
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=oracle.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726196AbeJLJ0i (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 12 Oct 2018 05:26:38 -0400
-Received: from mout.gmx.net ([212.227.17.21]:54279 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726061AbeJLJ0i (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 12 Oct 2018 05:26:38 -0400
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx102
- [212.227.17.174]) with ESMTPSA (Nemesis) id 0LlGoc-1fZnFP2SwQ-00b3fQ; Fri, 12
- Oct 2018 03:56:34 +0200
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx102
- [212.227.17.174]) with ESMTPSA (Nemesis) id 0LlGoc-1fZnFP2SwQ-00b3fQ; Fri, 12
- Oct 2018 03:56:34 +0200
-Subject: Re: errors reported by btrfs-check
-To:     =?UTF-8?Q?J=c3=bcrgen_Herrmann?= <t-5@t-5.eu>,
-        linux-btrfs@vger.kernel.org
-References: <4610292ca252e23c9da2791ae1acf194@t-5.eu>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
- bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
- ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
- rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
- FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
- 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
- ilaVzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAHCwHwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
- CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
- f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
- mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
- 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
- h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <2e6c6c01-5b29-ebdb-e0d7-ebf85e4993dd@gmx.com>
-Date:   Fri, 12 Oct 2018 09:56:30 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.0
-MIME-Version: 1.0
-In-Reply-To: <4610292ca252e23c9da2791ae1acf194@t-5.eu>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="va02lMw720BnCQk8f0SHWTBdTaqOPnQwi"
-X-Provags-ID: V03:K1:LrnXCK08bN6mdNJ2kV2a0KLtCzSUQ1zFh7qzGVKwbLn0eU8aZrI
- LIdwZ+bBBsvTSgy0MzPbR5kmzW2TKT1IAqHl62/BfZ0oe26XcUCNIAPQ3SA/5ACmfLMYN0T
- +NQbVQVDi+miUUyCZRGhmePJi65YvmwyII2Kl4QgmrigR3EqzjRx+RHkTJMJp4BfnZdN9d8
- nUS+ofDlsJuLyUgfqJTdQ==
-X-UI-Out-Filterresults: notjunk:1;V01:K0:8YFdH9rj0eI=:pe47Z5vjOQ45LbM5rmxysF
- YDBV4k4rxrZMyDsdaHwRKA8luynoMs0g/qEV6UFptcz5OocXHvVclnzrtCIfAOultViqr3u9k
- gsuAATeo7fsPU+okf2G6pnDL1IqQtd1CxkLUbArv4SvFiw0QVSJw4ajYoPsSFZQ/7TN/KRx7X
- ltjskmMJNf4dScIuVR+s2jur7XIIrS0LibI9VMYwYp75ESxpLLPqPgrp6kee7Zis9wpSCzwLE
- GkhdagmgYAwfalwe8+SmjvnTvSw87TU5Yp8dSxS9Aomhjo+OrJZNiTEkHJeBXPWLn7wFv4Hni
- tHekLKeB4phXlFAVEFkPAESIb7uW6zylu01VxmjFORxn5dJOV07uplvXWqUOLOcyZE5HBJSZa
- iCM80XqQ+TJv3ax23j25syhYACuiemm6VY1o9PuDrqXsn6Dba1zwX0qSUHZ3o805NNlbxId1p
- sudYvcG22Bav2YY7iEzBlhvRyHZW9nQDucT56oVdOgL52iOuoSaLtsgczoxa7krxiSAo/BPz6
- wLrNGNAiYzPyLuOz7akSantFGPA0lL8oBbByxQ05G7NrCatelgMhlPqvLeGY/qiqyr/ztM3wN
- rVbacU8Y6R4IT0TKBNoc9rPN48dZCQkM0ZiSHce1icQweUhTW2xUnIO1UlDhaSYewEpnyPRHH
- ca3P2FkTzTgYUQWJa0t0jlZ7CxgrUkxtO7opZmIHG2eJrAb0RyqSial3bQ1Talj7BTpuh78FV
- Zlhzeps7501HtHoQfdjOTU079OT6dBEuEXEBI77ELjdTGwOLPVHhNJ8emFIdQR2ifMM8gLZgs
- ZzPvJHkffrZ6n5LC23luhUF+Mp1Rw==
+        id S1726671AbeJLLhJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 12 Oct 2018 07:37:09 -0400
+Received: from aserp2120.oracle.com ([141.146.126.78]:59922 "EHLO
+        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726485AbeJLLhJ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 12 Oct 2018 07:37:09 -0400
+Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
+        by aserp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w9C444Et100561
+        for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2018 04:06:42 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
+ date : message-id; s=corp-2018-07-02;
+ bh=mY4dhA4EBTrZ8eHSrJPemOH5JJWqSHukfsO9RoFu8FE=;
+ b=pO0oe7XtceZKX+xTG1xbCxif/hPp7dqMZDJbbnlaw4P22pI+cdKF/75n8c8eID8/hGg4
+ fMYUUCMxIOI5qJVvNUGlAqhxN3DzmBv0nOcsX4+OvAc++asUA/cE+BXFkERm6UBMEuJr
+ b7wpziO20fJkJ+ImKy71oVlN4ki6c2wPZY6aun4+zWKtAt7UKatZmk6Vsi5h/Oiu1KEh
+ VFnUs7c0nob04UxjLbog77DMpEf6GGbaqlifi+Vshvm2NXQOA/F127BxPEVYEEmBPk9Q
+ zw7mqS/uCBmPTli3Q8K7FRD6Pq/WE4dBvPUN427tznDV992fpK2/xrtmJ+AjHu4mZLKQ 8g== 
+Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
+        by aserp2120.oracle.com with ESMTP id 2mxn0qg48k-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2018 04:06:42 +0000
+Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
+        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w9C46fBh014474
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2018 04:06:42 GMT
+Received: from abhmp0010.oracle.com (abhmp0010.oracle.com [141.146.116.16])
+        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w9C46fTM005792
+        for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2018 04:06:41 GMT
+Received: from tpasj.sg.oracle.com (/10.186.50.4)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Fri, 12 Oct 2018 04:06:40 +0000
+From:   Anand Jain <anand.jain@oracle.com>
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH v9] Add cli and ioctl to forget scanned device(s)
+Date:   Fri, 12 Oct 2018 12:06:28 +0800
+Message-Id: <1539317191-9265-1-git-send-email-anand.jain@oracle.com>
+X-Mailer: git-send-email 1.8.3.1
+X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9043 signatures=668706
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=3 malwarescore=0
+ phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=872
+ adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.0.1-1807170000 definitions=main-1810120040
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---va02lMw720BnCQk8f0SHWTBdTaqOPnQwi
-Content-Type: multipart/mixed; boundary="VBAcWOvvgqT6PXmRjNHMmTOe9PW6aFWTU";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: =?UTF-8?Q?J=c3=bcrgen_Herrmann?= <t-5@t-5.eu>, linux-btrfs@vger.kernel.org
-Message-ID: <2e6c6c01-5b29-ebdb-e0d7-ebf85e4993dd@gmx.com>
-Subject: Re: errors reported by btrfs-check
-References: <4610292ca252e23c9da2791ae1acf194@t-5.eu>
-In-Reply-To: <4610292ca252e23c9da2791ae1acf194@t-5.eu>
+v9:
+ Make forget as a btrfs device scan option.
+ Use forget in the fstests, now you can run fstests with btrfs as rootfs
+  which helps to exercise the uuid_mutex lock.
 
---VBAcWOvvgqT6PXmRjNHMmTOe9PW6aFWTU
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+v8:
+ Change log update in the kernel patch.
 
+v7:
+ Use struct btrfs_ioctl_vol_args (instead of struct
+  btrfs_ioctl_vol_args_v2) as its inline with other ioctl
+  btrfs-control
+ The CLI usage/features remains same. However internally the ioctl flag
+  is not required to delete all the unmounted devices. Instead leave
+  btrfs_ioctl_vol_args::name NULL.
 
+v6:
+ Use the changed fn name btrfs_free_stale_devices().
 
-On 2018/10/12 =E4=B8=8A=E5=8D=884:30, J=C3=BCrgen Herrmann wrote:
-> Hi!
->=20
-> I just did a btrfs check on my laptop's btrfs filesystem while i was
-> on the usb stick rescue system.
->=20
-> the following errors where reported:
-> root@mint:/home/mint# btrfs check /dev/mapper/sda3crypt
-> Checking filesystem on /dev/mapper/sda3crypt
-> UUID: a914c141-72bf-448b-847f-d64ee82d8b7b
-> checking extents
-> checking free space cache
-> checking fs roots
-> root 258 inode 3082368 errors 100, file extent discount
-> Found file extent holes:
-> =C2=A0=C2=A0=C2=A0=C2=A0start: 0, len: 8192
-> root 258 inode 3082370 errors 100, file extent discount
-> Found file extent holes:
-> =C2=A0=C2=A0=C2=A0=C2=A0start: 0, len: 8192
-> root 258 inode 3082371 errors 100, file extent discount
-> Found file extent holes:
-> =C2=A0=C2=A0=C2=A0=C2=A0start: 0, len: 8192
-> root 258 inode 3082373 errors 100, file extent discount
-> Found file extent holes:
-> =C2=A0=C2=A0=C2=A0=C2=A0start: 0, len: 8192
-> root 258 inode 3082414 errors 100, file extent discount
-> Found file extent holes:
-> =C2=A0=C2=A0=C2=A0=C2=A0start: 0, len: 8192
-> root 258 inode 3082415 errors 100, file extent discount
-> Found file extent holes:
-> =C2=A0=C2=A0=C2=A0=C2=A0start: 0, len: 8192
-> root 258 inode 3082421 errors 100, file extent discount
-> Found file extent holes:
-> =C2=A0=C2=A0=C2=A0=C2=A0start: 0, len: 4096
-> root 1387 inode 3082368 errors 100, file extent discount
-> Found file extent holes:
-> =C2=A0=C2=A0=C2=A0=C2=A0start: 0, len: 8192
-> root 1387 inode 3082370 errors 100, file extent discount
-> Found file extent holes:
-> =C2=A0=C2=A0=C2=A0=C2=A0start: 0, len: 8192
-> root 1387 inode 3082371 errors 100, file extent discount
-> Found file extent holes:
-> =C2=A0=C2=A0=C2=A0=C2=A0start: 0, len: 8192
-> root 1387 inode 3082372 errors 100, file extent discount
-> Found file extent holes:
-> =C2=A0=C2=A0=C2=A0=C2=A0start: 8192, len: 4096
-> =C2=A0=C2=A0=C2=A0=C2=A0start: 16384, len: 4096
-> =C2=A0=C2=A0=C2=A0=C2=A0start: 24576, len: 4096
-> =C2=A0=C2=A0=C2=A0=C2=A0start: 32768, len: 4096
-> =C2=A0=C2=A0=C2=A0=C2=A0start: 40960, len: 4096
-> =C2=A0=C2=A0=C2=A0=C2=A0start: 49152, len: 20480
-> =C2=A0=C2=A0=C2=A0=C2=A0start: 73728, len: 4096
-> =C2=A0=C2=A0=C2=A0=C2=A0start: 81920, len: 4096
-> =C2=A0=C2=A0=C2=A0=C2=A0start: 90112, len: 8192
-> root 1387 inode 3082373 errors 100, file extent discount
-> Found file extent holes:
-> =C2=A0=C2=A0=C2=A0=C2=A0start: 0, len: 8192
-> root 1387 inode 3082374 errors 100, file extent discount
-> Found file extent holes:
-> =C2=A0=C2=A0=C2=A0=C2=A0start: 8192, len: 4096
-> =C2=A0=C2=A0=C2=A0=C2=A0start: 16384, len: 20480
-> =C2=A0=C2=A0=C2=A0=C2=A0start: 40960, len: 12288
-> =C2=A0=C2=A0=C2=A0=C2=A0start: 57344, len: 4096
-> =C2=A0=C2=A0=C2=A0=C2=A0start: 65536, len: 8192
-> root 1387 inode 3082380 errors 100, file extent discount
-> Found file extent holes:
-> =C2=A0=C2=A0=C2=A0=C2=A0start: 0, len: 233472
-> root 1387 inode 3082386 errors 100, file extent discount
-> Found file extent holes:
-> =C2=A0=C2=A0=C2=A0=C2=A0start: 0, len: 4096
-> root 1387 inode 3082398 errors 100, file extent discount
-> Found file extent holes:
-> =C2=A0=C2=A0=C2=A0=C2=A0start: 20480, len: 16384
-> root 1387 inode 3082414 errors 100, file extent discount
-> Found file extent holes:
-> =C2=A0=C2=A0=C2=A0=C2=A0start: 0, len: 8192
-> root 1387 inode 3082415 errors 100, file extent discount
-> Found file extent holes:
-> =C2=A0=C2=A0=C2=A0=C2=A0start: 0, len: 8192
-> root 1387 inode 3082421 errors 100, file extent discount
-> Found file extent holes:
-> =C2=A0=C2=A0=C2=A0=C2=A0start: 0, len: 4096
-> root 1391 inode 3082368 errors 100, file extent discount
-> Found file extent holes:
-> =C2=A0=C2=A0=C2=A0=C2=A0start: 0, len: 8192
-> root 1391 inode 3082370 errors 100, file extent discount
-> Found file extent holes:
-> =C2=A0=C2=A0=C2=A0=C2=A0start: 0, len: 8192
-> root 1391 inode 3082371 errors 100, file extent discount
-> Found file extent holes:
-> =C2=A0=C2=A0=C2=A0=C2=A0start: 0, len: 8192
-> root 1391 inode 3082373 errors 100, file extent discount
-> Found file extent holes:
-> =C2=A0=C2=A0=C2=A0=C2=A0start: 0, len: 8192
-> root 1391 inode 3082386 errors 100, file extent discount
-> Found file extent holes:
-> =C2=A0=C2=A0=C2=A0=C2=A0start: 0, len: 4096
-> root 1391 inode 3082414 errors 100, file extent discount
-> Found file extent holes:
-> =C2=A0=C2=A0=C2=A0=C2=A0start: 0, len: 8192
-> root 1391 inode 3082415 errors 100, file extent discount
-> Found file extent holes:
-> =C2=A0=C2=A0=C2=A0=C2=A0start: 0, len: 8192
-> root 1391 inode 3082421 errors 100, file extent discount
-> Found file extent holes:
-> =C2=A0=C2=A0=C2=A0=C2=A0start: 0, len: 4096
-> root 1394 inode 3082368 errors 100, file extent discount
-> Found file extent holes:
-> =C2=A0=C2=A0=C2=A0=C2=A0start: 0, len: 8192
-> root 1394 inode 3082370 errors 100, file extent discount
-> Found file extent holes:
-> =C2=A0=C2=A0=C2=A0=C2=A0start: 0, len: 8192
-> root 1394 inode 3082371 errors 100, file extent discount
-> Found file extent holes:
-> =C2=A0=C2=A0=C2=A0=C2=A0start: 0, len: 8192
-> root 1394 inode 3082373 errors 100, file extent discount
-> Found file extent holes:
-> =C2=A0=C2=A0=C2=A0=C2=A0start: 0, len: 8192
-> root 1394 inode 3082386 errors 100, file extent discount
-> Found file extent holes:
-> =C2=A0=C2=A0=C2=A0=C2=A0start: 0, len: 4096
-> root 1394 inode 3082414 errors 100, file extent discount
-> Found file extent holes:
-> =C2=A0=C2=A0=C2=A0=C2=A0start: 0, len: 8192
-> root 1394 inode 3082415 errors 100, file extent discount
-> Found file extent holes:
-> =C2=A0=C2=A0=C2=A0=C2=A0start: 0, len: 8192
-> root 1394 inode 3082421 errors 100, file extent discount
-> Found file extent holes:
-> =C2=A0=C2=A0=C2=A0=C2=A0start: 0, len: 4096
-> ERROR: errors found in fs roots
-> found 469458231296 bytes used, error(s) found
-> total csum bytes: 451180560
-> total tree bytes: 4558831616
-> total fs tree bytes: 3802955776
-> total extent tree bytes: 245055488
-> btree space waste bytes: 842802897
-> file data blocks allocated: 9656815640576
-> =C2=A0referenced 929225080832
->=20
-> Scrub completes ok though.
->=20
-> I'm prepared to wipe the fs if needed, more than one backup is ready :)=
+ Change in title:
+ Old v5:
+ Cover-letter:
+  [PATCH v5] Add cli and ioctl to ignore a scanned device
+ Kernel:
+  [PATCH v5] btrfs: introduce feature to ignore a btrfs device
+ Progs:
+  [PATCH v5] btrfs-progs: add 'btrfs device ignore' cli
+
+v5:
+  Adds feature to delete all stale devices
+  Reuses btrfs_free_stale_devices() fn and so depends on the
+    patch-set [1] in the ML.
+  Uses struct btrfs_ioctl_vol_args_v2 instead of
+    struct btrfs_ioctl_vol_args as arg
+  Does the device path matching instead of btrfs_device matching
+    (we won't delete the mounted device as btrfs_free_stale_devices()
+    checks for it)
+v4:
+  No change. But as the ML thread may be confusing, so resend.
+v3:
+  No change. Send to correct ML.
+v2:
+  Accepts review from Nikolay, details are in the specific patch.
+  Patch 1/2 is renamed from
+    [PATCH 1/2] btrfs: refactor btrfs_free_stale_device() to get device list delete
+  to
+    [PATCH 1/2] btrfs: add function to device list delete
+
+Adds cli and ioctl to forget a scanned device or forget all stale
+devices in the kernel.
 
 
-No need. File extent discount is not a big problem.
+Anand Jain (1):
+  btrfs: introduce feature to forget a btrfs device
 
-It only means btrfs lacks some hole file extent to fill the hole.
+ fs/btrfs/super.c           | 3 +++
+ fs/btrfs/volumes.c         | 9 +++++++++
+ fs/btrfs/volumes.h         | 1 +
+ include/uapi/linux/btrfs.h | 2 ++
+ 4 files changed, 15 insertions(+)
 
-It can be "fixed" easily by enabling no_holes features:
+Anand Jain (1):
+  btrfs-progs: add cli to forget one or all scanned devices
 
-# btrfstune -n <device>
+ cmds-device.c | 63 ++++++++++++++++++++++++++++++++++++++++++++++++++---------
+ ioctl.h       |  2 ++
+ 2 files changed, 56 insertions(+), 9 deletions(-)
 
->=20
-> I wanted to ask here first if I should attempt a repair.
+[1]
+Anand Jain (1):
+  fstests: btrfs use forget if not reload
 
-And of course, btrfs check --repair should be able to fix it.
+ common/btrfs    | 20 ++++++++++++++++++++
+ tests/btrfs/124 |  6 +++---
+ tests/btrfs/125 |  6 +++---
+ tests/btrfs/154 |  6 +++---
+ tests/btrfs/164 |  4 ++--
+ 5 files changed, 31 insertions(+), 11 deletions(-)
 
-Thanks,
-Qu
+-- 
+1.8.3.1
 
->=20
-> Best regards,
-> J=C3=BCrgen
-
-
---VBAcWOvvgqT6PXmRjNHMmTOe9PW6aFWTU--
-
---va02lMw720BnCQk8f0SHWTBdTaqOPnQwi
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlu//04ACgkQwj2R86El
-/qhZfAf+IEMX/7sMfzROMEbZRXluNiu8Q8tMsjZCsL1eOqOpIKZo25haWwj8ycv2
-8xEcWPC8teWdMbXeOD9c1+Re7TzaqdKul0OO44G6nhAAqthSEIhjRq+orCpcrM7m
-ePf7FmdV+EWP9XURCZ7unntr5n+dwgYC032l3dNd436FlHSYzFp3mJMKeCkM7Kfy
-t8j21JK6REz8/X9cJxTaXjlmsfYl6VhSEFDLT6VrotN5v/KhsqrLpMF+79ZtLa1k
-8FxIxwopnzYWbxXhhCuW1F+p9zemzzZPHhq8fJYypNeZd1ewRaTxGH4e9VE9fYnI
-LgjMD77T7GHledT0FiXRIzH3i/Fj7g==
-=FHZJ
------END PGP SIGNATURE-----
-
---va02lMw720BnCQk8f0SHWTBdTaqOPnQwi--

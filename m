@@ -2,187 +2,294 @@ Return-Path: <SRS0=eG6O=MY=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.5 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
-	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-0.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 987B5C43441
-	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 09:57:40 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3A82FC43441
+	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 10:05:01 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 51FE32086A
-	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 09:57:40 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 51FE32086A
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=gmx.com
+	by mail.kernel.org (Postfix) with ESMTP id D9FB42086A
+	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 10:05:00 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org D9FB42086A
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=t-5.eu
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728138AbeJLR3P (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 12 Oct 2018 13:29:15 -0400
-Received: from mout.gmx.net ([212.227.17.22]:49085 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727808AbeJLR3O (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 12 Oct 2018 13:29:14 -0400
-Received: from [0.0.0.0] ([210.140.77.29]) by mail.gmx.com (mrgmx101
- [212.227.17.174]) with ESMTPSA (Nemesis) id 0LtEtL-1fVypa1wXD-012mZI; Fri, 12
- Oct 2018 11:57:34 +0200
-Received: from [0.0.0.0] ([210.140.77.29]) by mail.gmx.com (mrgmx101
- [212.227.17.174]) with ESMTPSA (Nemesis) id 0LtEtL-1fVypa1wXD-012mZI; Fri, 12
- Oct 2018 11:57:34 +0200
-Subject: Re: [PATCH 2/2] btrfs-progs: Deprecate unused super block member
- log_root_transid
-To:     Nikolay Borisov <nborisov@suse.com>, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <20181012064258.27033-1-wqu@suse.com>
- <20181012064258.27033-2-wqu@suse.com>
- <2b4ff29a-ff9b-8b56-ef13-4b76e72a281f@suse.com>
- <fbb5f43e-8eb0-08c6-a1c9-855efd960d3d@gmx.com>
- <cb6dd0fa-68e9-9e7c-c9cc-6ac609f9d9fc@suse.com>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
- bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
- ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
- rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
- FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
- 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
- ilaVzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAHCwHwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
- CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
- f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
- mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
- 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
- h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <152d099f-b431-b169-f33a-11ff7e88eee6@gmx.com>
-Date:   Fri, 12 Oct 2018 17:57:29 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.0
+        id S1728483AbeJLRgh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 12 Oct 2018 13:36:37 -0400
+Received: from mail-ed1-f65.google.com ([209.85.208.65]:43444 "EHLO
+        mail-ed1-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728104AbeJLRgh (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 12 Oct 2018 13:36:37 -0400
+Received: by mail-ed1-f65.google.com with SMTP id y20-v6so10958661eds.10
+        for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2018 03:04:57 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:content-transfer-encoding:date:from
+         :to:cc:subject:in-reply-to:references:message-id:user-agent;
+        bh=ojxcug2f21dfAaFnzrXP8hqj7N3Pbi7OvFSUye/ZmJc=;
+        b=PVOnIS79lfskvgC5UpE67oqnVZTDHBm+Po54Lc48dodyJc/F+SuIrhNwEwHCCd5dxF
+         ZK6yCUfwk+c4BMPHaqKB11Sip8J1DWLz67STKQ4/bdA6tnv5e62efrB1XEs2FDHdMUd4
+         eaFpQl2PS3sU/fI/6+B7RYWzl6pQMM/LWOoVl/iwugtX6miDFNCeOjy2Z0b/bRCKAm6o
+         OrXI0R0UZHipayw6VnVNuJz4FN6aE89Z/lpr/eYYP66vD9Z9DCUsCaKyZqiLPhZkvRbB
+         SdXIKlhR493QojJr/em33AwmBZMrHpVraR1Wkuv5p0CWakT9WuUF6WgZ88dpwQsG2X2S
+         i9dw==
+X-Gm-Message-State: ABuFfoi7mqXTRUAc5cfbgoDbPVrjWARiTfSMTxUMPAB8SVm2DsYaFQNX
+        lL8WHbvFW4/Y0wJQ7g4UHHY=
+X-Google-Smtp-Source: ACcGV61VhMnaDeeCclzTZpGRw2kaEM4BZHqXTXgSdpUIIFZ9R1HXxAmY6U0Tzfv0h8G51AzSUqGt+Q==
+X-Received: by 2002:a50:8fa4:: with SMTP id y33-v6mr8141712edy.131.1539338696628;
+        Fri, 12 Oct 2018 03:04:56 -0700 (PDT)
+Received: from t-5.eu (p5B283B56.dip0.t-ipconnect.de. [91.40.59.86])
+        by smtp.gmail.com with ESMTPSA id b14-v6sm407124edc.17.2018.10.12.03.04.55
+        (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
+        Fri, 12 Oct 2018 03:04:55 -0700 (PDT)
+Received: from t-5.eu (localhost [127.0.0.1])
+        by t-5.eu (Postfix) with ESMTP id 944531AD420;
+        Fri, 12 Oct 2018 12:04:54 +0200 (CEST)
 MIME-Version: 1.0
-In-Reply-To: <cb6dd0fa-68e9-9e7c-c9cc-6ac609f9d9fc@suse.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
+Content-Type: text/plain; charset=UTF-8;
+ format=flowed
 Content-Transfer-Encoding: 8bit
-X-Provags-ID: V03:K1:ChJqTS1hWjp2VLG0pEZKyfUxlPHyu5GUBIyvYXtN+S6URsN8XxX
- PyZOG1p/CQWTYrrB518nHROJfvv16cAammZhLTbHGlQJDQKTKPPMskqkUlMpYtImpz9YtKx
- 3WojeCP+cJf5h0tl2Oh+5d8QBBAbmcvvf6jTxsdflKoI1QGQr9nCyyRfdLA2x2VFn/Mh5Me
- dY9vFue6msIGIq/UUCw5Q==
-X-UI-Out-Filterresults: notjunk:1;V01:K0:lkG36TOzDyA=:uJWDQLpdFpOf5atIHqKPXR
- HDD+JwWp3IgjxRRDUzIaqnr8t4Z/bSpWFIDpcAQutUVABBMjGxxanCexmBsqd41dftYOINIu1
- 1XnofzHpIp3Q6x1S5qROZLxJV/VAPmP9UvkY/2SdVWsax5pOTTvh/H3VQ4xujPjXE+4n2j5XP
- b9+YMhyzMCJUv+WBNsfpLYsuLS11grhMlnNWv9KO5d9CjbdJsZMusk9wvZw+ER36Jl8NwhhpM
- 3GEVKbRHQOvIAvRUhYW4QYCX4Vd3yqYFqNCXr+qcIOjDYUnFEOdd5hweZkyvDFJyvaLxTSiIT
- tLDhTrwvwjefErpoHxc1eWkivmeBlV0aXFgtl5oehM/+MKehhNmqmpKBjPXZeNJ7intXwkcRD
- yJ6RlcXIDckEg3fMWOtx9m4S+r+nJEyZdX+EcRi1sHbZPeHO5VY6/t4HZToS9VyWRZIqpwz7x
- xPpQreeEsbUFoxj9kgw7bt3NlNHJOKPnwjlutPT1NNVPSs6EfKf0aGX41MpEuHnOEH6B9AbJI
- 6V6Ev+GTxwIblbthYsB2BEjfGcoM4mio4u4v5vJbShCQLkB/LXDcU93zgeovRJdGojCUsKXZs
- aiMGrYkLMQdU/nwMoCnK0XLpoeF7tLK/QI7i1hzJgBJniUqO0bpP7j9KXT2j/FOlkSL/JDCoq
- hMZbwhaXP+CWmZJgLdOqZsVZN9gxN7iCqo1/83VxCx7h9UueHjcE4B6qNMDkR6c5NpE/DJgFY
- sJXkOAKEqBo0dLE0nopR42aGIMiCn99TfQWANmHKw9a6iR39G8/9gbPxXIHPOtz84DR5hU1re
- 9SOaEcdI4hjgxce7Ur8Y8csjN4MW0fjMgdpDcJlZE6OT3VOfUQ=
+Date:   Fri, 12 Oct 2018 10:04:54 +0000
+From:   =?UTF-8?Q?J=C3=BCrgen_Herrmann?= <t-5@t-5.eu>
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: errors reported by btrfs-check
+In-Reply-To: <2e6c6c01-5b29-ebdb-e0d7-ebf85e4993dd@gmx.com>
+References: <4610292ca252e23c9da2791ae1acf194@t-5.eu>
+ <2e6c6c01-5b29-ebdb-e0d7-ebf85e4993dd@gmx.com>
+Message-ID: <be6da685dcf872fcb60b6258a6f20ceb@t-5.eu>
+X-Sender: t-5@t-5.eu
+User-Agent: Roundcube Webmail/1.3.6
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-
-
-On 2018/10/12 下午5:13, Nikolay Borisov wrote:
+Am 12.10.2018 01:56, schrieb Qu Wenruo:
+> On 2018/10/12 上午4:30, Jürgen Herrmann wrote:
+>> Hi!
+>> 
+>> I just did a btrfs check on my laptop's btrfs filesystem while i was
+>> on the usb stick rescue system.
+>> 
+>> the following errors where reported:
+>> root@mint:/home/mint# btrfs check /dev/mapper/sda3crypt
+>> Checking filesystem on /dev/mapper/sda3crypt
+>> UUID: a914c141-72bf-448b-847f-d64ee82d8b7b
+>> checking extents
+>> checking free space cache
+>> checking fs roots
+>> root 258 inode 3082368 errors 100, file extent discount
+>> Found file extent holes:
+>>     start: 0, len: 8192
+>> root 258 inode 3082370 errors 100, file extent discount
+>> Found file extent holes:
+>>     start: 0, len: 8192
+>> root 258 inode 3082371 errors 100, file extent discount
+>> Found file extent holes:
+>>     start: 0, len: 8192
+>> root 258 inode 3082373 errors 100, file extent discount
+>> Found file extent holes:
+>>     start: 0, len: 8192
+>> root 258 inode 3082414 errors 100, file extent discount
+>> Found file extent holes:
+>>     start: 0, len: 8192
+>> root 258 inode 3082415 errors 100, file extent discount
+>> Found file extent holes:
+>>     start: 0, len: 8192
+>> root 258 inode 3082421 errors 100, file extent discount
+>> Found file extent holes:
+>>     start: 0, len: 4096
+>> root 1387 inode 3082368 errors 100, file extent discount
+>> Found file extent holes:
+>>     start: 0, len: 8192
+>> root 1387 inode 3082370 errors 100, file extent discount
+>> Found file extent holes:
+>>     start: 0, len: 8192
+>> root 1387 inode 3082371 errors 100, file extent discount
+>> Found file extent holes:
+>>     start: 0, len: 8192
+>> root 1387 inode 3082372 errors 100, file extent discount
+>> Found file extent holes:
+>>     start: 8192, len: 4096
+>>     start: 16384, len: 4096
+>>     start: 24576, len: 4096
+>>     start: 32768, len: 4096
+>>     start: 40960, len: 4096
+>>     start: 49152, len: 20480
+>>     start: 73728, len: 4096
+>>     start: 81920, len: 4096
+>>     start: 90112, len: 8192
+>> root 1387 inode 3082373 errors 100, file extent discount
+>> Found file extent holes:
+>>     start: 0, len: 8192
+>> root 1387 inode 3082374 errors 100, file extent discount
+>> Found file extent holes:
+>>     start: 8192, len: 4096
+>>     start: 16384, len: 20480
+>>     start: 40960, len: 12288
+>>     start: 57344, len: 4096
+>>     start: 65536, len: 8192
+>> root 1387 inode 3082380 errors 100, file extent discount
+>> Found file extent holes:
+>>     start: 0, len: 233472
+>> root 1387 inode 3082386 errors 100, file extent discount
+>> Found file extent holes:
+>>     start: 0, len: 4096
+>> root 1387 inode 3082398 errors 100, file extent discount
+>> Found file extent holes:
+>>     start: 20480, len: 16384
+>> root 1387 inode 3082414 errors 100, file extent discount
+>> Found file extent holes:
+>>     start: 0, len: 8192
+>> root 1387 inode 3082415 errors 100, file extent discount
+>> Found file extent holes:
+>>     start: 0, len: 8192
+>> root 1387 inode 3082421 errors 100, file extent discount
+>> Found file extent holes:
+>>     start: 0, len: 4096
+>> root 1391 inode 3082368 errors 100, file extent discount
+>> Found file extent holes:
+>>     start: 0, len: 8192
+>> root 1391 inode 3082370 errors 100, file extent discount
+>> Found file extent holes:
+>>     start: 0, len: 8192
+>> root 1391 inode 3082371 errors 100, file extent discount
+>> Found file extent holes:
+>>     start: 0, len: 8192
+>> root 1391 inode 3082373 errors 100, file extent discount
+>> Found file extent holes:
+>>     start: 0, len: 8192
+>> root 1391 inode 3082386 errors 100, file extent discount
+>> Found file extent holes:
+>>     start: 0, len: 4096
+>> root 1391 inode 3082414 errors 100, file extent discount
+>> Found file extent holes:
+>>     start: 0, len: 8192
+>> root 1391 inode 3082415 errors 100, file extent discount
+>> Found file extent holes:
+>>     start: 0, len: 8192
+>> root 1391 inode 3082421 errors 100, file extent discount
+>> Found file extent holes:
+>>     start: 0, len: 4096
+>> root 1394 inode 3082368 errors 100, file extent discount
+>> Found file extent holes:
+>>     start: 0, len: 8192
+>> root 1394 inode 3082370 errors 100, file extent discount
+>> Found file extent holes:
+>>     start: 0, len: 8192
+>> root 1394 inode 3082371 errors 100, file extent discount
+>> Found file extent holes:
+>>     start: 0, len: 8192
+>> root 1394 inode 3082373 errors 100, file extent discount
+>> Found file extent holes:
+>>     start: 0, len: 8192
+>> root 1394 inode 3082386 errors 100, file extent discount
+>> Found file extent holes:
+>>     start: 0, len: 4096
+>> root 1394 inode 3082414 errors 100, file extent discount
+>> Found file extent holes:
+>>     start: 0, len: 8192
+>> root 1394 inode 3082415 errors 100, file extent discount
+>> Found file extent holes:
+>>     start: 0, len: 8192
+>> root 1394 inode 3082421 errors 100, file extent discount
+>> Found file extent holes:
+>>     start: 0, len: 4096
+>> ERROR: errors found in fs roots
+>> found 469458231296 bytes used, error(s) found
+>> total csum bytes: 451180560
+>> total tree bytes: 4558831616
+>> total fs tree bytes: 3802955776
+>> total extent tree bytes: 245055488
+>> btree space waste bytes: 842802897
+>> file data blocks allocated: 9656815640576
+>>  referenced 929225080832
+>> 
+>> Scrub completes ok though.
+>> 
+>> I'm prepared to wipe the fs if needed, more than one backup is ready 
+>> :)
 > 
+> No need. File extent discount is not a big problem.
 > 
-> On 12.10.2018 11:46, Qu Wenruo wrote:
->>
->>
->> On 2018/10/12 下午2:53, Nikolay Borisov wrote:
->>>
->>>
->>> On 12.10.2018 09:42, Qu Wenruo wrote:
->>>> The only user of it is "btrfs inspect dump-super".
->>>>
->>>> Signed-off-by: Qu Wenruo <wqu@suse.com>
->>>> ---
->>>>  cmds-inspect-dump-super.c | 4 ++--
->>>>  ctree.h                   | 6 ++----
->>>>  2 files changed, 4 insertions(+), 6 deletions(-)
->>>>
->>>> diff --git a/cmds-inspect-dump-super.c b/cmds-inspect-dump-super.c
->>>> index e965267c5d96..3f33931ed9bc 100644
->>>> --- a/cmds-inspect-dump-super.c
->>>> +++ b/cmds-inspect-dump-super.c
->>>> @@ -387,8 +387,8 @@ static void dump_superblock(struct btrfs_super_block *sb, int full)
->>>>  	       (unsigned long long)btrfs_super_chunk_root_level(sb));
->>>>  	printf("log_root\t\t%llu\n",
->>>>  	       (unsigned long long)btrfs_super_log_root(sb));
->>>> -	printf("log_root_transid\t%llu\n",
->>>> -	       (unsigned long long)btrfs_super_log_root_transid(sb));
->>>> +	printf("log_root_transid (deprecated)\t%llu\n",
->>>> +	       le64_to_cpu(sb->__unused_log_root_transid));
->>>
->>> This should be entirely removed.
->>
->> It looks OK to me.
->> Just like the old leafsize.
->>
->> And if we try to use this member again, even old progs could show it
->> without problem.
+> It only means btrfs lacks some hole file extent to fill the hole.
 > 
-> But what is the point of having something which always shows 0 and is
-> essentially unused?
-
-Personally speaking, even it's in fact never used, it is still part of
-the specification of btrfs super blocks.
-
-Even it's a bad decision we made a long time ago, we still need to mark
-it as unused, other than converting it back to "reserved".
-
-To make it short and clear, if some member is specified in early
-specification, even it's never used, we still need to mark it unused and
-keep part of naming.
-
-Thanks,
-Qu
-
+> It can be "fixed" easily by enabling no_holes features:
 > 
->>
->> Thanks,
->> Qu
->>
->>>
->>>>  	printf("log_root_level\t\t%llu\n",
->>>>  	       (unsigned long long)btrfs_super_log_root_level(sb));
->>>>  	printf("total_bytes\t\t%llu\n",
->>>> diff --git a/ctree.h b/ctree.h
->>>> index 4719962df67d..a314fdb102b0 100644
->>>> --- a/ctree.h
->>>> +++ b/ctree.h
->>>> @@ -427,8 +427,8 @@ struct btrfs_super_block {
->>>>  	__le64 chunk_root;
->>>>  	__le64 log_root;
->>>>  
->>>> -	/* this will help find the new super based on the log root */
->>>> -	__le64 log_root_transid;
->>>> +	/* This member is never touched, should always be 0 */
->>>> +	__le64 __unused_log_root_transid;
->>>>  	__le64 total_bytes;
->>>>  	__le64 bytes_used;
->>>>  	__le64 root_dir_objectid;
->>>> @@ -2203,8 +2203,6 @@ BTRFS_SETGET_STACK_FUNCS(super_chunk_root_level, struct btrfs_super_block,
->>>>  			 chunk_root_level, 8);
->>>>  BTRFS_SETGET_STACK_FUNCS(super_log_root, struct btrfs_super_block,
->>>>  			 log_root, 64);
->>>> -BTRFS_SETGET_STACK_FUNCS(super_log_root_transid, struct btrfs_super_block,
->>>> -			 log_root_transid, 64);
->>>>  BTRFS_SETGET_STACK_FUNCS(super_log_root_level, struct btrfs_super_block,
->>>>  			 log_root_level, 8);
->>>>  BTRFS_SETGET_STACK_FUNCS(super_total_bytes, struct btrfs_super_block,
->>>>
->>
+> # btrfstune -n <device>
+> 
+>> 
+>> I wanted to ask here first if I should attempt a repair.
+> 
+> And of course, btrfs check --repair should be able to fix it.
+> 
+> Thanks,
+> Qu
+> 
+>> 
+>> Best regards,
+>> Jürgen
+
+Hi there!
+
+I ran btrfs check --repair on the filesystem. I dont' have this log 
+anymore,
+as it was then sitting on the repaired fs), which is now dead.
+after repairing it I could still mount the fs.
+
+as my btrfs send problem still persists (another thread), I decided to 
+run check
+again... this time i saved the logs to a different partition as it was 
+more
+convenient at that time. here's the output:
+
+Checking filesystem on /dev/mapper/sda3c
+UUID: a914c141-72bf-448b-847f-d64ee82d8b7b
+[1/7] checking root items
+Fixed 0 roots.
+[2/7] checking extents
+No device size related problem found
+[3/7] checking free space cache
+cache and super generation don't match, space cache will be invalidated
+[4/7] checking fs roots
+root 1387 inode 3082380 errors 100, file extent discount
+Found file extent holes:
+	start: 0, len: 233472
+ERROR: errors found in fs roots
+found 470636822528 bytes used, error(s) found
+total csum bytes: 452176524
+total tree bytes: 4579753984
+total fs tree bytes: 3822665728
+total extent tree bytes: 245301248
+btree space waste bytes: 847442809
+file data blocks allocated: 9670623588352
+  referenced 932405829632
+
+I did a repair once again but the error did not go away.
+
+after rebooting the fs is no longer mountable:
+mint@mint:/tmp$ sudo /tmp/btrfs check /dev/mapper/sda3c
+Opening filesystem to check...
+parent transid verify failed on 166475366400 wanted 127054 found 127060
+parent transid verify failed on 166475366400 wanted 127054 found 127060
+Ignoring transid failure
+ERROR: child eb corrupted: parent bytenr=166456229888 item=22 parent 
+level=2 child level=0
+ERROR: cannot open file system
+
+If anyone wants me to help debugging this issue you will have to respond
+fast, because i need my laptop back in working condition and will soon
+nuke the fs. after all I will try one more time with a freshly formatted
+btrfs partition. if i still get these kinds of errors i will have to 
+move back to
+the tried and true xfs :/
+
+best regards,
+Jürgen
+-- 
+Jürgen Herrmann
+https://t-5.eu
+ALbertstraße 2
+94327 Bogen

@@ -7,61 +7,61 @@ X-Spam-Status: No, score=-8.8 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
 	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CF7B9C6787C
-	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 19:34:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 30552C71122
+	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 19:34:39 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9D2542087D
-	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 19:34:37 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id F076B2087D
+	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 19:34:38 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="gx2Y6kcs"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 9D2542087D
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="O9wDp53x"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org F076B2087D
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=toxicpanda.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727193AbeJMDIg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 12 Oct 2018 23:08:36 -0400
-Received: from mail-qk1-f196.google.com ([209.85.222.196]:40393 "EHLO
-        mail-qk1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726158AbeJMDIg (ORCPT
+        id S1726713AbeJMDIi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 12 Oct 2018 23:08:38 -0400
+Received: from mail-qt1-f194.google.com ([209.85.160.194]:41052 "EHLO
+        mail-qt1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726158AbeJMDIi (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 12 Oct 2018 23:08:36 -0400
-Received: by mail-qk1-f196.google.com with SMTP id a13-v6so8346440qkc.7
-        for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2018 12:34:35 -0700 (PDT)
+        Fri, 12 Oct 2018 23:08:38 -0400
+Received: by mail-qt1-f194.google.com with SMTP id l41-v6so15055644qtl.8
+        for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2018 12:34:37 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:subject:date:message-id:in-reply-to:references;
-        bh=am1ak1Lg8slURG/v1F1bdWqQUehd7FnCdJ9TMX1sZm0=;
-        b=gx2Y6kcsHJ+pVpuknpzs13ZOWqkQbNRz+KAaoZl8n3q+UzN/rHyRhKtq0IO7OjBne6
-         V7q3syiIcAa9tgVMjstbIg0FCNQtBKviOLFYQEzEQGNvIvs16izxvgJnomNe4ojOrjlN
-         CUALc8UpoY1IErNEeXzNWZAkhq3n3Wt91utwkY9ymsfjx6/SdDOvsYtXnBDg2m3rCMTw
-         qT7cZhUBpIQd6uYPeiG/4cjqQm/co3CD4ObOjLYimwC8h6Xf6DSZWgD75sQWQKDuWTll
-         P3sRT+kVflYhroI0NBZAvBHfn4YZpw9/OL7acSWKHxpsHS72vSeg3lgzQ9yQx1NUO66M
-         B+lg==
+        bh=sV09l7dO3avmvRHRl1FabUbd/mHTvojy+8waApybFR4=;
+        b=O9wDp53xXiGiI3+RRjMyNCCkLOpSTIYQJZRk7Bh93aO53bdpyA7ePzQfpU+4nhgDG7
+         0vwMWoOMTjj2k6HBSQmES1cBEH5cJ55lBsTC4NVlc5eqQPMs6toz7lbQHQW5tgKEFzdh
+         Ly+SnJYxaJDXxk+NAgGYyfL/trmWWTDl8xqheQ9iacg9BjFznG1KiPobCSLXbs0ZmecO
+         mld5UHJfh91yrVUEiOSaTsneb+Ktd8aVeMO5jykoS2XnC+8lS7eJhcHuUrp9ErWrThb5
+         TJHcud8/rl0nvbGIJxiI4BpfCN/jKWyi17ip1qsQoav+JY+MfXuPHByNK85jCw4z05Ry
+         4Buw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references;
-        bh=am1ak1Lg8slURG/v1F1bdWqQUehd7FnCdJ9TMX1sZm0=;
-        b=q/3uC0Z7E3NDDPPkTKJ6AqQRsc4EKdrDSmYk8daHRHTnt/R93JEacCxs5zaBylYk7w
-         x9GZd8XIYXSKU+3tnZiTdNSuB/9pLMVK0bvJ5f7VOFBwmw54HTeFJ7V5qJbBmEXOm3jM
-         mm8beMJH2imvfIKToKZ5bWkLrRsfVyC3ZltDHurkPqtd2qgRxBfoCA+0O5FjrCAV106U
-         dnyMypi4jG+wO4qoZoplcoGiYHus+LY6jdDjeWeXGKh/Q/J/I3POf0ppwWFvbgbAagQN
-         Rxwd8HiZLf/o2exNmrO1ZplnMyzRXF+ddyWPYNLAagUpnWq7h7nawIO/YFGnMeTPdNyf
-         KFmw==
-X-Gm-Message-State: ABuFfoiCI/jNS43ai1xblbeuiGSdjnxiVy5/iYENELXq03SMTvoK1HPG
-        xX1454gMKmB2u/1hBdYEp89DT1BHKtM=
-X-Google-Smtp-Source: ACcGV62E9oZnMwI/UFpvFRmBjIBrxiA7O5m8cWTA0JkKrnsEV1r2UhaePEPKAr9nka+DbBmDhj8Cuw==
-X-Received: by 2002:a37:ad11:: with SMTP id f17-v6mr6877028qkm.329.1539372874778;
-        Fri, 12 Oct 2018 12:34:34 -0700 (PDT)
+        bh=sV09l7dO3avmvRHRl1FabUbd/mHTvojy+8waApybFR4=;
+        b=Agc3faOshTAis80ClufY6Xet4CxoiwSW9VAJ8rWa0ZNJoqyyAEP68gnAPRHpLRRwEx
+         C1n00VhXigX3mkpcJPwEH6SxZ+yFqhGKROTZw2LATTXdmlSad9ahUOD+VJWvJh1d+xcv
+         hYc7VHTT8CX7dS0C1yIzLzqLat+q3JqHKSj5MizjqKC4imyH6NRSdJ3L0HjDRo0KvX5L
+         SZaONAaUdiPNtzndEqVAMUjq+5a9/IWepFszv60LAZAR7j8ZR8Aa05D4jKYusGdrbQN8
+         B4MFn3Yixm8BsUUJ+R6kaJ4mivXEs6LSLsvfjwyCBym/LN19LzQlCiS5oJxlgtv1EDHO
+         /1hg==
+X-Gm-Message-State: ABuFfogG7M+IHj4dbG9E7EKjqVTHaMA8JFyGOH2UQc7+IOYZ/8xUR8mB
+        1To/ADVYb1i7L4a6CJqOgZ7ByWLdXKs=
+X-Google-Smtp-Source: ACcGV61T5EgiRiaJGKCAH17qJ+KPi4G70kaNp1UxKATWuQsk3oVKnY+VwKGiJjfszq4XSgUg8icSPA==
+X-Received: by 2002:aed:34e1:: with SMTP id x88-v6mr7167409qtd.156.1539372876570;
+        Fri, 12 Oct 2018 12:34:36 -0700 (PDT)
 Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id i27-v6sm1805641qti.57.2018.10.12.12.34.33
+        by smtp.gmail.com with ESMTPSA id m9-v6sm1699980qkl.32.2018.10.12.12.34.35
         (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
-        Fri, 12 Oct 2018 12:34:33 -0700 (PDT)
+        Fri, 12 Oct 2018 12:34:35 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 41/42] btrfs: reserve extra space during evict()
-Date:   Fri, 12 Oct 2018 15:32:55 -0400
-Message-Id: <20181012193256.13735-42-josef@toxicpanda.com>
+Subject: [PATCH 42/42] btrfs: don't run delayed_iputs in commit
+Date:   Fri, 12 Oct 2018 15:32:56 -0400
+Message-Id: <20181012193256.13735-43-josef@toxicpanda.com>
 X-Mailer: git-send-email 2.14.3
 In-Reply-To: <20181012193256.13735-1-josef@toxicpanda.com>
 References: <20181012193256.13735-1-josef@toxicpanda.com>
@@ -70,67 +70,45 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-We could generate a lot of delayed refs in evict but never have any left
-over space from our block rsv to make up for that fact.  So reserve some
-extra space and give it to the transaction so it can be used to refill
-the delayed refs rsv every loop through the truncate path.
+This could result in a really bad case where we do something like
+
+evict
+  evict_refill_and_join
+    btrfs_commit_transaction
+      btrfs_run_delayed_iputs
+        evict
+          evict_refill_and_join
+            btrfs_commit_transaction
+... forever
+
+We have plenty of other places where we run delayed iputs that are much
+safer, let those do the work.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/inode.c | 25 +++++++++++++++++++++++--
- 1 file changed, 23 insertions(+), 2 deletions(-)
+ fs/btrfs/transaction.c | 9 ---------
+ 1 file changed, 9 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index dbcca915e681..9f7da5e3c741 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -5343,13 +5343,15 @@ static struct btrfs_trans_handle *evict_refill_and_join(struct btrfs_root *root,
- {
- 	struct btrfs_fs_info *fs_info = root->fs_info;
- 	struct btrfs_block_rsv *global_rsv = &fs_info->global_block_rsv;
-+	u64 delayed_refs_extra = btrfs_calc_trans_metadata_size(fs_info, 1);
- 	int failures = 0;
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 9168efaca37e..c91dc36fccae 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -2265,15 +2265,6 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
  
- 	for (;;) {
- 		struct btrfs_trans_handle *trans;
- 		int ret;
+ 	kmem_cache_free(btrfs_trans_handle_cachep, trans);
  
--		ret = btrfs_block_rsv_refill(root, rsv, rsv->size,
-+		ret = btrfs_block_rsv_refill(root, rsv,
-+					     rsv->size + delayed_refs_extra,
- 					     BTRFS_RESERVE_FLUSH_LIMIT);
+-	/*
+-	 * If fs has been frozen, we can not handle delayed iputs, otherwise
+-	 * it'll result in deadlock about SB_FREEZE_FS.
+-	 */
+-	if (current != fs_info->transaction_kthread &&
+-	    current != fs_info->cleaner_kthread &&
+-	    !test_bit(BTRFS_FS_FROZEN, &fs_info->flags))
+-		btrfs_run_delayed_iputs(fs_info);
+-
+ 	return ret;
  
- 		if (ret && ++failures > 2) {
-@@ -5358,9 +5360,28 @@ static struct btrfs_trans_handle *evict_refill_and_join(struct btrfs_root *root,
- 			return ERR_PTR(-ENOSPC);
- 		}
- 
-+		/*
-+		 * Evict can generate a large amount of delayed refs without
-+		 * having a way to add space back since we exhaust our temporary
-+		 * block rsv.  We aren't allowed to do FLUSH_ALL in this case
-+		 * because we could deadlock with so many things in the flushing
-+		 * code, so we have to try and hold some extra space to
-+		 * compensate for our delayed ref generation.  If we can't get
-+		 * that space then we need see if we can steal our minimum from
-+		 * the global reserve.  We will be ratelimited by the amount of
-+		 * space we have for the delayed refs rsv, so we'll end up
-+		 * committing and trying again.
-+		 */
- 		trans = btrfs_join_transaction(root);
--		if (IS_ERR(trans) || !ret)
-+		if (IS_ERR(trans) || !ret) {
-+			if (!IS_ERR(trans)) {
-+				trans->block_rsv = &fs_info->trans_block_rsv;
-+				trans->bytes_reserved = delayed_refs_extra;
-+				btrfs_block_rsv_migrate(rsv, trans->block_rsv,
-+							delayed_refs_extra, 1);
-+			}
- 			return trans;
-+		}
- 
- 		/*
- 		 * Try to steal from the global reserve if there is space for
+ scrub_continue:
 -- 
 2.14.3
 

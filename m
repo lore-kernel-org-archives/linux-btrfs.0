@@ -2,255 +2,227 @@ Return-Path: <SRS0=eG6O=MY=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.5 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A2EC1C6783C
-	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 09:03:21 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 16C79C43441
+	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 09:03:58 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 6DE2E2075B
-	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 09:03:21 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 6DE2E2075B
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
+	by mail.kernel.org (Postfix) with ESMTP id C7D2D2075B
+	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 09:03:57 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (1024-bit key) header.d=kernel.org header.i=@kernel.org header.b="w+1u9WAV"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org C7D2D2075B
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=kernel.org
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728149AbeJLQeq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 12 Oct 2018 12:34:46 -0400
-Received: from mx2.suse.de ([195.135.220.15]:56974 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727819AbeJLQep (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 12 Oct 2018 12:34:45 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 8DE26AF8A;
-        Fri, 12 Oct 2018 09:03:16 +0000 (UTC)
-Subject: Re: [PATCH] btrfs-progs: add cli to forget one or all scanned devices
-To:     Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
-References: <1539317191-9265-1-git-send-email-anand.jain@oracle.com>
- <1539317191-9265-3-git-send-email-anand.jain@oracle.com>
-From:   Nikolay Borisov <nborisov@suse.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <6e1d87e3-5e2d-bff2-0421-3b3e67588d5b@suse.com>
-Date:   Fri, 12 Oct 2018 12:03:13 +0300
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:52.0) Gecko/20100101
- Thunderbird/52.9.1
-MIME-Version: 1.0
-In-Reply-To: <1539317191-9265-3-git-send-email-anand.jain@oracle.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
+        id S1728028AbeJLQfW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 12 Oct 2018 12:35:22 -0400
+Received: from mail.kernel.org ([198.145.29.99]:37340 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1727992AbeJLQfW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 12 Oct 2018 12:35:22 -0400
+Received: from localhost.localdomain (bl8-197-74.dsl.telepac.pt [85.241.197.74])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id 27C602075B
+        for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2018 09:03:54 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=default; t=1539335035;
+        bh=7oFXwbmetbEBcAtRMHybbDoDkHJn89LuybMMHjHZ1Hw=;
+        h=From:To:Subject:Date:From;
+        b=w+1u9WAVt+RuxJr/xV16sBAzNVo8cJ5Y7lJZYql2BqkYITlVT7pZRdnkNCbfPrSPt
+         N8p7fx8n6xvaFe4rpaZolZ0ybv4aUbhWEy8n/932Y2eoLNciiwSad/bFLYUESzBZ5l
+         JLUbuRLStzpUPFzjZwrbFrW5vTK2F3tEbnJbpPfU=
+From:   fdmanana@kernel.org
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: fix deadlock when writing out free space caches
+Date:   Fri, 12 Oct 2018 10:03:55 +0100
+Message-Id: <20181012090355.25755-1-fdmanana@kernel.org>
+X-Mailer: git-send-email 2.11.0
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+From: Filipe Manana <fdmanana@suse.com>
 
+When writing out a block group free space cache we can end deadlocking
+with ourseves on an extent buffer lock resulting in a warning like the
+following:
 
-On 12.10.2018 07:06, Anand Jain wrote:
-> This patch adds cli
->   btrfs device forget [dev]
-> to remove the given device structure in the kernel if the device
-> is unmounted. If no argument is given it shall remove all stale
-> (device which are not mounted) from the kernel.
-> 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> ---
->  cmds-device.c | 63 ++++++++++++++++++++++++++++++++++++++++++++++++++---------
->  ioctl.h       |  2 ++
->  2 files changed, 56 insertions(+), 9 deletions(-)
-> 
-> diff --git a/cmds-device.c b/cmds-device.c
-> index 2a05f70a76a9..ecc391ea01d8 100644
-> --- a/cmds-device.c
-> +++ b/cmds-device.c
-> @@ -254,10 +254,32 @@ static int cmd_device_delete(int argc, char **argv)
->  	return _cmd_device_remove(argc, argv, cmd_device_delete_usage);
->  }
->  
-> +static int btrfs_forget_devices(char *path)
-> +{
-> +	struct btrfs_ioctl_vol_args args;
-> +	int ret;
-> +	int fd;
-> +
-> +	fd = open("/dev/btrfs-control", O_RDWR);
-> +	if (fd < 0)
-> +		return -errno;
-> +
-> +	memset(&args, 0, sizeof(args));
-> +	if (path)
-> +		strncpy_null(args.name, path);
-> +	ret = ioctl(fd, BTRFS_IOC_FORGET_DEV, &args);
-> +	if (ret)
-> +		ret = -errno;
-> +	close(fd);
-> +	return ret;
-> +}
-> +
->  static const char * const cmd_device_scan_usage[] = {
-> -	"btrfs device scan [(-d|--all-devices)|<device> [<device>...]]",
-> -	"Scan devices for a btrfs filesystem",
-> +	"btrfs device scan [(-d|--all-devices)|-u|--forget|<device> "\
-> +							"[<device>...]]",
-> +	"Scan or forget (deregister) devices for a btrfs filesystem",
->  	" -d|--all-devices (deprecated)",
-> +	" -u|--forget [<device> ..]",
->  	NULL
->  };
->  
-> @@ -267,32 +289,40 @@ static int cmd_device_scan(int argc, char **argv)
->  	int devstart;
->  	int all = 0;
->  	int ret = 0;
-> +	int forget = 0;
->  
->  	optind = 0;
->  	while (1) {
->  		int c;
->  		static const struct option long_options[] = {
->  			{ "all-devices", no_argument, NULL, 'd'},
-> +			{ "forget", no_argument, NULL, 'u'},
->  			{ NULL, 0, NULL, 0}
->  		};
->  
-> -		c = getopt_long(argc, argv, "d", long_options, NULL);
-> +		c = getopt_long(argc, argv, "du", long_options, NULL);
->  		if (c < 0)
->  			break;
->  		switch (c) {
->  		case 'd':
->  			all = 1;
->  			break;
-> +		case 'u':
-> +			forget = 1;
-> +			break;
->  		default:
->  			usage(cmd_device_scan_usage);
->  		}
->  	}
->  	devstart = optind;
->  
-> +	if (all && forget)
-> +		usage(cmd_device_scan_usage);
-> +
->  	if (all && check_argc_max(argc - optind, 1))
->  		usage(cmd_device_scan_usage);
->  
-> -	if (all || argc - optind == 0) {
-> +	if (!forget && (all || argc - optind == 0)) {
->  		printf("Scanning for Btrfs filesystems\n");
->  		ret = btrfs_scan_devices();
->  		error_on(ret, "error %d while scanning", ret);
-> @@ -301,6 +331,13 @@ static int cmd_device_scan(int argc, char **argv)
->  		goto out;
->  	}
->  
-> +	if (forget && (all || argc - optind == 0)) {
+  [245043.379979] WARNING: CPU: 4 PID: 2608 at fs/btrfs/locking.c:251 btrfs_tree_lock+0x1be/0x1d0 [btrfs]
+  [245043.392792] CPU: 4 PID: 2608 Comm: btrfs-transacti Tainted: G
+    W I      4.16.8 #1
+  [245043.395489] RIP: 0010:btrfs_tree_lock+0x1be/0x1d0 [btrfs]
+  [245043.396791] RSP: 0018:ffffc9000424b840 EFLAGS: 00010246
+  [245043.398093] RAX: 0000000000000a30 RBX: ffff8807e20a3d20 RCX: 0000000000000001
+  [245043.399414] RDX: 0000000000000001 RSI: 0000000000000002 RDI: ffff8807e20a3d20
+  [245043.400732] RBP: 0000000000000001 R08: ffff88041f39a700 R09: ffff880000000000
+  [245043.402021] R10: 0000000000000040 R11: ffff8807e20a3d20 R12: ffff8807cb220630
+  [245043.403296] R13: 0000000000000001 R14: ffff8807cb220628 R15: ffff88041fbdf000
+  [245043.404780] FS:  0000000000000000(0000) GS:ffff88082fc80000(0000) knlGS:0000000000000000
+  [245043.406050] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+  [245043.407321] CR2: 00007fffdbdb9f10 CR3: 0000000001c09005 CR4: 00000000000206e0
+  [245043.408670] Call Trace:
+  [245043.409977]  btrfs_search_slot+0x761/0xa60 [btrfs]
+  [245043.411278]  btrfs_insert_empty_items+0x62/0xb0 [btrfs]
+  [245043.412572]  btrfs_insert_item+0x5b/0xc0 [btrfs]
+  [245043.413922]  btrfs_create_pending_block_groups+0xfb/0x1e0 [btrfs]
+  [245043.415216]  do_chunk_alloc+0x1e5/0x2a0 [btrfs]
+  [245043.416487]  find_free_extent+0xcd0/0xf60 [btrfs]
+  [245043.417813]  btrfs_reserve_extent+0x96/0x1e0 [btrfs]
+  [245043.419105]  btrfs_alloc_tree_block+0xfb/0x4a0 [btrfs]
+  [245043.420378]  __btrfs_cow_block+0x127/0x550 [btrfs]
+  [245043.421652]  btrfs_cow_block+0xee/0x190 [btrfs]
+  [245043.422979]  btrfs_search_slot+0x227/0xa60 [btrfs]
+  [245043.424279]  ? btrfs_update_inode_item+0x59/0x100 [btrfs]
+  [245043.425538]  ? iput+0x72/0x1e0
+  [245043.426798]  write_one_cache_group.isra.49+0x20/0x90 [btrfs]
+  [245043.428131]  btrfs_start_dirty_block_groups+0x102/0x420 [btrfs]
+  [245043.429419]  btrfs_commit_transaction+0x11b/0x880 [btrfs]
+  [245043.430712]  ? start_transaction+0x8e/0x410 [btrfs]
+  [245043.432006]  transaction_kthread+0x184/0x1a0 [btrfs]
+  [245043.433341]  kthread+0xf0/0x130
+  [245043.434628]  ? btrfs_cleanup_transaction+0x4e0/0x4e0 [btrfs]
+  [245043.435928]  ? kthread_create_worker_on_cpu+0x40/0x40
+  [245043.437236]  ret_from_fork+0x1f/0x30
+  [245043.441054] ---[ end trace 15abaa2aaf36827f ]---
 
-You cannot ever have (forget && all) since you specifically call usage()
-above, just remove the 'all'. Furthermore, I think the code will be more
-legible if it's part of an else if rather than a plain if construct. In
-fact the whole function will be more readable. I.e you will have the
-error conditions at the to, followed by "all device scan" case, followed
-by "all device forget" and in the final else branch you will have the
-specific device handling. The increased indentation level won't be a
-problem since the longest lines are string prints and we are not
-wrapping those.
+This is because at write_one_cache_group() when we are COWing a leaf from
+the extent tree we end up allocating a new block group (chunk) and,
+because we have hit a threshold on the number of bytes reserved for system
+chunks, we attempt to finalize the creation of new block groups from the
+current transaction, by calling btrfs_create_pending_block_groups().
+However here we also need to modify the extent tree in order to insert
+a block group item, and if the location for this new block group item
+happens to be in the same leaf that we were COWing earlier, we deadlock
+since btrfs_search_slot() tries to write lock the extent buffer that we
+locked before at write_one_cache_group().
 
+We have already hit similar cases in the past and commit d9a0540a79f8
+("Btrfs: fix deadlock when finalizing block group creation") fixed some
+of those cases by delaying the creation of pending block groups at the
+known specific spots that could lead to a deadlock. This change reworks
+that commit to be more generic so that we don't have to add similar logic
+to every possible path that can lead to a deadlock. This is done by
+making __btrfs_cow_block() disallowing the creation of new block groups
+(setting the transaction's can_flush_pending_bgs to false) before it
+attempts to allocate a new extent buffer for either the extent, chunk or
+device trees, since those are the trees that pending block creation
+modifies. Once the new extent buffer is allocated, it allows creation of
+pending block groups to happen again.
 
-> +		ret = btrfs_forget_devices(NULL);
-> +		if (ret)
-> +			error("Can't forget: %s", strerror(-ret));
-> +		goto out;
-> +	}
-> +
->  	for( i = devstart ; i < argc ; i++ ){
->  		char *path;
->  
-> @@ -315,11 +352,19 @@ static int cmd_device_scan(int argc, char **argv)
->  			ret = 1;
->  			goto out;
->  		}
-> -		printf("Scanning for Btrfs filesystems in '%s'\n", path);
-> -		if (btrfs_register_one_device(path) != 0) {
-> -			ret = 1;
-> -			free(path);
-> -			goto out;
-> +		if (forget) {
-> +			ret = btrfs_forget_devices(path);
-> +			if (ret)
-> +				error("Can't forget '%s': %s",
-> +							path, strerror(-ret));
+This change depends on a recent patch from Josef which is not yet in
+Linus' tree, named "btrfs: make sure we create all new block groups" in
+order to avoid occasional warnings at btrfs_trans_release_chunk_metadata().
 
-For consistency sake I think this error printout should be moved inside
-btrfs_forget_devices() similarly to what btrfs_register_one_device does
-on error.
+Fixes: d9a0540a79f8 ("Btrfs: fix deadlock when finalizing block group creation")
+Bugzilla: https://bugzilla.kernel.org/show_bug.cgi?id=199753
+Link: https://lore.kernel.org/linux-btrfs/CAJtFHUTHna09ST-_EEiyWmDH6gAqS6wa=zMNMBsifj8ABu99cw@mail.gmail.com/
+Reported-by: E V <eliventer@gmail.com>
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/ctree.c       | 17 +++++++++++++++++
+ fs/btrfs/extent-tree.c | 16 ++++++----------
+ 2 files changed, 23 insertions(+), 10 deletions(-)
 
-> +		} else {
-> +			printf("Scanning for Btrfs filesystems in '%s'\n",
-> +									path);
-> +			if (btrfs_register_one_device(path) != 0) {
-> +				ret = 1;
-> +				free(path);
-> +				goto out;
-> +			}
->  		}
->  		free(path);
->  	}
-> diff --git a/ioctl.h b/ioctl.h
-> index 709e996f401c..e27d80e09392 100644
-> --- a/ioctl.h
-> +++ b/ioctl.h
-> @@ -721,6 +721,8 @@ static inline char *btrfs_err_str(enum btrfs_err_code err_code)
->  				   struct btrfs_ioctl_vol_args)
->  #define BTRFS_IOC_SCAN_DEV _IOW(BTRFS_IOCTL_MAGIC, 4, \
->  				   struct btrfs_ioctl_vol_args)
-> +#define BTRFS_IOC_FORGET_DEV _IOW(BTRFS_IOCTL_MAGIC, 5, \
-> +				   struct btrfs_ioctl_vol_args)
->  /* trans start and trans end are dangerous, and only for
->   * use by applications that know how to avoid the
->   * resulting deadlocks
-> 
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index d436fb4c002e..089b46c4d97f 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -1050,9 +1050,26 @@ static noinline int __btrfs_cow_block(struct btrfs_trans_handle *trans,
+ 	if ((root->root_key.objectid == BTRFS_TREE_RELOC_OBJECTID) && parent)
+ 		parent_start = parent->start;
+ 
++	/*
++	 * If we are COWing a node/leaf from the extent, chunk or device trees,
++	 * make sure that we do not finish block group creation of pending block
++	 * groups. We do this to avoid a deadlock.
++	 * COWing can result in allocation of a new chunk, and flushing pending
++	 * block groups (btrfs_create_pending_block_groups()) can be triggered
++	 * when finishing allocation of a new chunk. Creation of a pending block
++	 * group modifies the extent, chunk and device trees, therefore we could
++	 * deadlock with ourselves since we are holding a lock on an extent
++	 * buffer that btrfs_create_pending_block_groups() may try to COW later.
++	 */
++	if (root == fs_info->extent_root ||
++	    root == fs_info->chunk_root ||
++	    root == fs_info->dev_root)
++		trans->can_flush_pending_bgs = false;
++
+ 	cow = btrfs_alloc_tree_block(trans, root, parent_start,
+ 			root->root_key.objectid, &disk_key, level,
+ 			search_start, empty_size);
++	trans->can_flush_pending_bgs = true;
+ 	if (IS_ERR(cow))
+ 		return PTR_ERR(cow);
+ 
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 2f9748599268..577878324799 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -2911,7 +2911,6 @@ int btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
+ 	struct btrfs_delayed_ref_head *head;
+ 	int ret;
+ 	int run_all = count == (unsigned long)-1;
+-	bool can_flush_pending_bgs = trans->can_flush_pending_bgs;
+ 
+ 	/* We'll clean this up in btrfs_cleanup_transaction */
+ 	if (trans->aborted)
+@@ -2928,7 +2927,6 @@ int btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
+ #ifdef SCRAMBLE_DELAYED_REFS
+ 	delayed_refs->run_delayed_start = find_middle(&delayed_refs->root);
+ #endif
+-	trans->can_flush_pending_bgs = false;
+ 	ret = __btrfs_run_delayed_refs(trans, count);
+ 	if (ret < 0) {
+ 		btrfs_abort_transaction(trans, ret);
+@@ -2959,7 +2957,6 @@ int btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
+ 		goto again;
+ 	}
+ out:
+-	trans->can_flush_pending_bgs = can_flush_pending_bgs;
+ 	return 0;
+ }
+ 
+@@ -4554,11 +4551,9 @@ static int do_chunk_alloc(struct btrfs_trans_handle *trans, u64 flags,
+ 	 * the block groups that were made dirty during the lifetime of the
+ 	 * transaction.
+ 	 */
+-	if (trans->can_flush_pending_bgs &&
+-	    trans->chunk_bytes_reserved >= (u64)SZ_2M) {
++	if (trans->chunk_bytes_reserved >= (u64)SZ_2M)
+ 		btrfs_create_pending_block_groups(trans);
+-		btrfs_trans_release_chunk_metadata(trans);
+-	}
++
+ 	return ret;
+ }
+ 
+@@ -10079,9 +10074,10 @@ void btrfs_create_pending_block_groups(struct btrfs_trans_handle *trans)
+ 	struct btrfs_block_group_item item;
+ 	struct btrfs_key key;
+ 	int ret = 0;
+-	bool can_flush_pending_bgs = trans->can_flush_pending_bgs;
+ 
+-	trans->can_flush_pending_bgs = false;
++	if (!trans->can_flush_pending_bgs)
++		return;
++
+ 	while (!list_empty(&trans->new_bgs)) {
+ 		block_group = list_first_entry(&trans->new_bgs,
+ 					       struct btrfs_block_group_cache,
+@@ -10106,7 +10102,7 @@ void btrfs_create_pending_block_groups(struct btrfs_trans_handle *trans)
+ next:
+ 		list_del_init(&block_group->bg_list);
+ 	}
+-	trans->can_flush_pending_bgs = can_flush_pending_bgs;
++	btrfs_trans_release_chunk_metadata(trans);
+ }
+ 
+ int btrfs_make_block_group(struct btrfs_trans_handle *trans, u64 bytes_used,
+-- 
+2.11.0
+

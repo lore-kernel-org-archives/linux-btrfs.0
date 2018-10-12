@@ -2,307 +2,196 @@ Return-Path: <SRS0=eG6O=MY=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
+X-Spam-Status: No, score=-8.8 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_MUTT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3E991C6783C
-	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 13:54:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 14B4AC67872
+	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 16:06:42 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id EA97620868
-	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 13:54:43 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org EA97620868
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.de
+	by mail.kernel.org (Postfix) with ESMTP id D155221473
+	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 16:06:41 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="p55tBDi9"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org D155221473
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=oracle.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728628AbeJLV1Q (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 12 Oct 2018 17:27:16 -0400
-Received: from mx2.suse.de ([195.135.220.15]:55916 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1728354AbeJLV1Q (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 12 Oct 2018 17:27:16 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 28E6AAD0C;
-        Fri, 12 Oct 2018 13:54:41 +0000 (UTC)
-Subject: Re: [PATCH v3 4/4] btrfs: Refactor find_free_extent() loops update
- into find_free_extent_update_loop()
-To:     Josef Bacik <josef@toxicpanda.com>
-Cc:     linux-btrfs@vger.kernel.org
-References: <20181012061819.19482-1-wqu@suse.com>
- <20181012061819.19482-5-wqu@suse.com>
- <20181012135200.ddo7dhhrwng26lnh@destiny>
-From:   Qu Wenruo <wqu@suse.de>
-Openpgp: preference=signencrypt
-Autocrypt: addr=wqu@suse.de; prefer-encrypt=mutual; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
- bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
- ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
- rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
- FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
- 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
- ilaVzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAHCwHwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
- CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
- f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
- mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
- 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
- h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <46a7ed9c-18a6-48b2-67fe-eb738434f654@suse.de>
-Date:   Fri, 12 Oct 2018 21:54:34 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.0
+        id S1729001AbeJLXju (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 12 Oct 2018 19:39:50 -0400
+Received: from userp2120.oracle.com ([156.151.31.85]:48104 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728707AbeJLXjt (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 12 Oct 2018 19:39:49 -0400
+Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
+        by userp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w9CG4pLr070398;
+        Fri, 12 Oct 2018 16:06:34 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=date : from : to : cc
+ : subject : message-id : references : mime-version : content-type :
+ in-reply-to; s=corp-2018-07-02;
+ bh=Xoz00B0stVWLO2UYYHLKzd2WlkfcOw2dkus8eNVrSrM=;
+ b=p55tBDi9+53SvMP8zpA829krOCJZHOnK+uQjaBgsNrmuA87NIDEXfIzSxGDcpufEMMWA
+ IxH0OJGfSjIPR8NBxwlK+Zkyz+BRWYjXJYjLi977tE1yM6fTgR9M+cXbjpIWkvIea/df
+ mLi/R1sxHTOsnT1KF+9pFeuSwnPVDHKVG24+lT3x76/OgODl25HA7szqRlK4XhSmdPwT
+ zSa8l3F5zs+3Gz1K38laJbAgL3BonwO4Bas5eDSq1JFFhD8qeOk9ogjrvZxZ9pf0XgIm
+ M4uiMnOutdk5qhf7Sr/7LbVB7INRoWh6BCuGVdv2EK8Yy6QLoZi1z1N7AbGvK9WMMgn5 bg== 
+Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
+        by userp2120.oracle.com with ESMTP id 2mxnprkcrf-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Fri, 12 Oct 2018 16:06:34 +0000
+Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
+        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w9CG6XgP019024
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Fri, 12 Oct 2018 16:06:33 GMT
+Received: from abhmp0013.oracle.com (abhmp0013.oracle.com [141.146.116.19])
+        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w9CG6WVO030953;
+        Fri, 12 Oct 2018 16:06:32 GMT
+Received: from localhost (/67.169.218.210)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Fri, 12 Oct 2018 16:06:32 +0000
+Date:   Fri, 12 Oct 2018 09:06:30 -0700
+From:   "Darrick J. Wong" <darrick.wong@oracle.com>
+To:     Dave Chinner <david@fromorbit.com>
+Cc:     sandeen@redhat.com, linux-nfs@vger.kernel.org,
+        linux-cifs@vger.kernel.org, linux-unionfs@vger.kernel.org,
+        linux-xfs@vger.kernel.org, linux-mm@kvack.org,
+        linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+        ocfs2-devel@oss.oracle.com
+Subject: Re: [PATCH 24/25] xfs: support returning partial reflink results
+Message-ID: <20181012160630.GE28243@magnolia>
+References: <153923113649.5546.9840926895953408273.stgit@magnolia>
+ <153923131946.5546.5209673711907751253.stgit@magnolia>
+ <20181012012226.GT6311@dastard>
 MIME-Version: 1.0
-In-Reply-To: <20181012135200.ddo7dhhrwng26lnh@destiny>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="GPDzjmJlMMSpDF3XTnvXfk300fUu0JT0H"
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20181012012226.GT6311@dastard>
+User-Agent: Mutt/1.9.4 (2018-02-28)
+X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9043 signatures=668706
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=0 malwarescore=0
+ phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
+ adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.0.1-1807170000 definitions=main-1810120157
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---GPDzjmJlMMSpDF3XTnvXfk300fUu0JT0H
-Content-Type: multipart/mixed; boundary="6t8uw6SoUy82EfBd9W3KMKmOVcsunK2mh";
- protected-headers="v1"
-From: Qu Wenruo <wqu@suse.de>
-To: Josef Bacik <josef@toxicpanda.com>
-Cc: linux-btrfs@vger.kernel.org
-Message-ID: <46a7ed9c-18a6-48b2-67fe-eb738434f654@suse.de>
-Subject: Re: [PATCH v3 4/4] btrfs: Refactor find_free_extent() loops update
- into find_free_extent_update_loop()
-References: <20181012061819.19482-1-wqu@suse.com>
- <20181012061819.19482-5-wqu@suse.com>
- <20181012135200.ddo7dhhrwng26lnh@destiny>
-In-Reply-To: <20181012135200.ddo7dhhrwng26lnh@destiny>
+On Fri, Oct 12, 2018 at 12:22:26PM +1100, Dave Chinner wrote:
+> On Wed, Oct 10, 2018 at 09:15:19PM -0700, Darrick J. Wong wrote:
+> > From: Darrick J. Wong <darrick.wong@oracle.com>
+> > 
+> > Back when the XFS reflink code only supported clone_file_range, we were
+> > only able to return zero or negative error codes to userspace.  However,
+> > now that copy_file_range (which returns bytes copied) can use XFS'
+> > clone_file_range, we have the opportunity to return partial results.
+> > For example, if userspace sends a 1GB clone request and we run out of
+> > space halfway through, we at least can tell userspace that we completed
+> > 512M of that request like a regular write.
+> > 
+> > Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
+> > ---
+> >  fs/xfs/xfs_file.c    |    5 +----
+> >  fs/xfs/xfs_reflink.c |   19 ++++++++++++++-----
+> >  fs/xfs/xfs_reflink.h |    2 +-
+> >  3 files changed, 16 insertions(+), 10 deletions(-)
+> > 
+> > 
+> > diff --git a/fs/xfs/xfs_file.c b/fs/xfs/xfs_file.c
+> > index bc9e94bcb7a3..b2b15b8dc4a1 100644
+> > --- a/fs/xfs/xfs_file.c
+> > +++ b/fs/xfs/xfs_file.c
+> > @@ -928,14 +928,11 @@ xfs_file_remap_range(
+> >  	loff_t		len,
+> >  	unsigned int	remap_flags)
+> >  {
+> > -	int		ret;
+> > -
+> >  	if (!remap_check_flags(remap_flags, RFR_SAME_DATA))
+> >  		return -EINVAL;
+> >  
+> > -	ret = xfs_reflink_remap_range(file_in, pos_in, file_out, pos_out,
+> > +	return xfs_reflink_remap_range(file_in, pos_in, file_out, pos_out,
+> >  			len, remap_flags);
+> > -	return ret < 0 ? ret : len;
+> >  }
+> >  
+> >  STATIC int
+> > diff --git a/fs/xfs/xfs_reflink.c b/fs/xfs/xfs_reflink.c
+> > index e1592e751cc2..12a1fe92454e 100644
+> > --- a/fs/xfs/xfs_reflink.c
+> > +++ b/fs/xfs/xfs_reflink.c
+> > @@ -1123,6 +1123,7 @@ xfs_reflink_remap_blocks(
+> >  	struct xfs_inode	*dest,
+> >  	xfs_fileoff_t		destoff,
+> >  	xfs_filblks_t		len,
+> > +	xfs_filblks_t		*remapped,
+> >  	xfs_off_t		new_isize)
+> >  {
+> >  	struct xfs_bmbt_irec	imap;
+> > @@ -1130,6 +1131,7 @@ xfs_reflink_remap_blocks(
+> >  	int			error = 0;
+> >  	xfs_filblks_t		range_len;
+> >  
+> > +	*remapped = 0;
+> >  	/* drange = (destoff, destoff + len); srange = (srcoff, srcoff + len) */
+> >  	while (len) {
+> >  		uint		lock_mode;
+> > @@ -1168,6 +1170,7 @@ xfs_reflink_remap_blocks(
+> >  		srcoff += range_len;
+> >  		destoff += range_len;
+> >  		len -= range_len;
+> > +		*remapped += range_len;
+> >  	}
+> 
+> So "remapped" is a block count? Can we call this something like
+> remap_len so it's obvious what it is tracking?
 
---6t8uw6SoUy82EfBd9W3KMKmOVcsunK2mh
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+Ok.
 
+> > @@ -1424,11 +1427,17 @@ xfs_reflink_remap_range(
+> >  
+> >  	trace_xfs_reflink_remap_range(src, pos_in, len, dest, pos_out);
+> >  
+> > +	if (len == 0) {
+> > +		ret = 0;
+> > +		goto out_unlock;
+> > +	}
+> > +
+> >  	dfsbno = XFS_B_TO_FSBT(mp, pos_out);
+> >  	sfsbno = XFS_B_TO_FSBT(mp, pos_in);
+> >  	fsblen = XFS_B_TO_FSB(mp, len);
+> >  	ret = xfs_reflink_remap_blocks(src, sfsbno, dest, dfsbno, fsblen,
+> > -			pos_out + len);
+> > +			&remapped, pos_out + len);
+> > +	remapped = min_t(int64_t, len, XFS_FSB_TO_B(mp, remapped));
+> 
+> So remapped is returned as a block count, then immediately converted
+> to a byte count? Can we return it as byte count so that we don't
+> have this weird unit conversion?
 
+But then we'd have a function whose inputs are in units of blocks but
+whose return value is in units of bytes.
 
-On 2018/10/12 =E4=B8=8B=E5=8D=889:52, Josef Bacik wrote:
-> On Fri, Oct 12, 2018 at 02:18:19PM +0800, Qu Wenruo wrote:
->> We have a complex loop design for find_free_extent(), that has differe=
-nt
->> behavior for each loop, some even includes new chunk allocation.
->>
->> Instead of putting such a long code into find_free_extent() and makes =
-it
->> harder to read, just extract them into find_free_extent_update_loop().=
+Maybe I'll just do this to make it more explicit:
 
->>
->> With all the cleanups, the main find_free_extent() should be pretty
->> barebone:
->>
->> find_free_extent()
->> |- Iterate through all block groups
->> |  |- Get a valid block group
->> |  |- Try to do clustered allocation in that block group
->> |  |- Try to do unclustered allocation in that block group
->> |  |- Check if the result is valid
->> |  |  |- If valid, then exit
->> |  |- Jump to next block group
->> |
->> |- Push harder to find free extents
->>    |- If not found, re-iterate all block groups
->>
->> Signed-off-by: Qu Wenruo <wqu@suse.com>
->> Reviewed-by: Su Yue <suy.fnst@cn.fujitsu.com>
->> ---
->>  fs/btrfs/extent-tree.c | 217 ++++++++++++++++++++++------------------=
--
->>  1 file changed, 117 insertions(+), 100 deletions(-)
->>
->> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
->> index e6bfa91af41c..938569d2c583 100644
->> --- a/fs/btrfs/extent-tree.c
->> +++ b/fs/btrfs/extent-tree.c
->> @@ -7236,7 +7236,9 @@ struct find_free_extent_ctl {
->>  	/* RAID index, converted from flags */
->>  	int index;
->> =20
->> -	/* Current loop number */
->> +	/*
->> +	 * Current loop number, check find_free_extent_update_loop() for det=
-ails
->> +	 */
->>  	int loop;
->> =20
->>  	/*
->> @@ -7433,6 +7435,117 @@ static int find_free_extent_unclustered(struct=
- btrfs_block_group_cache *bg,
->>  	return 0;
->>  }
->> =20
->> +/*
->> + * Return >0 means caller needs to re-search for free extent
->> + * Return 0 means we have the needed free extent.
->> + * Return <0 means we failed to locate any free extent.
->> + */
->> +static int find_free_extent_update_loop(struct btrfs_fs_info *fs_info=
-,
->> +					struct btrfs_free_cluster *last_ptr,
->> +					struct btrfs_key *ins,
->> +					struct find_free_extent_ctl *ffe_ctl,
->> +					int full_search, bool use_cluster)
->> +{
->> +	struct btrfs_root *root =3D fs_info->extent_root;
->> +	int ret;
->> +
->> +	if ((ffe_ctl->loop =3D=3D LOOP_CACHING_NOWAIT) &&
->> +	    ffe_ctl->have_caching_bg && !ffe_ctl->orig_have_caching_bg)
->> +		ffe_ctl->orig_have_caching_bg =3D true;
->> +
->> +	if (!ins->objectid && ffe_ctl->loop >=3D LOOP_CACHING_WAIT &&
->> +	     ffe_ctl->have_caching_bg)
->> +		return 1;
->> +
->> +	if (!ins->objectid && ++(ffe_ctl->index) < BTRFS_NR_RAID_TYPES)
->> +		return 1;
->> +
->> +	/*
->> +	 * LOOP_CACHING_NOWAIT, search partially cached block groups, kickin=
-g
->> +	 *			caching kthreads as we move along
->> +	 * LOOP_CACHING_WAIT, search everything, and wait if our bg is cachi=
-ng
->> +	 * LOOP_ALLOC_CHUNK, force a chunk allocation and try again
->> +	 * LOOP_NO_EMPTY_SIZE, set empty_size and empty_cluster to 0 and try=
+xfs_filblks_t	remapped_blocks = 0;
+loff_t		remapped_bytes = 0;
 
->> +	 *			again
->> +	 */
->> +	if (!ins->objectid && ffe_ctl->loop < LOOP_NO_EMPTY_SIZE) {
->> +		ffe_ctl->index =3D 0;
->> +		if (ffe_ctl->loop =3D=3D LOOP_CACHING_NOWAIT) {
->> +			/*
->> +			 * We want to skip the LOOP_CACHING_WAIT step if we
->> +			 * don't have any uncached bgs and we've already done a
->> +			 * full search through.
->> +			 */
->> +			if (ffe_ctl->orig_have_caching_bg || !full_search)
->> +				ffe_ctl->loop =3D LOOP_CACHING_WAIT;
->> +			else
->> +				ffe_ctl->loop =3D LOOP_ALLOC_CHUNK;
->> +		} else {
->> +			ffe_ctl->loop++;
->> +		}
->> +
->> +		if (ffe_ctl->loop =3D=3D LOOP_ALLOC_CHUNK) {
->> +			struct btrfs_trans_handle *trans;
->> +			int exist =3D 0;
->> +
->> +			trans =3D current->journal_info;
->> +			if (trans)
->> +				exist =3D 1;
->> +			else
->> +				trans =3D btrfs_join_transaction(root);
->> +
->> +			if (IS_ERR(trans)) {
->> +				ret =3D PTR_ERR(trans);
->> +				return ret;
->> +			}
->> +
->> +			ret =3D do_chunk_alloc(trans, ffe_ctl->flags,
->> +					     CHUNK_ALLOC_FORCE);
->> +
->> +			/*
->> +			 * If we can't allocate a new chunk we've already looped
->> +			 * through at least once, move on to the NO_EMPTY_SIZE
->> +			 * case.
->> +			 */
->> +			if (ret =3D=3D -ENOSPC)
->> +				ffe_ctl->loop =3D LOOP_NO_EMPTY_SIZE;
->> +
->> +			/* Do not bail out on ENOSPC since we can do more. */
->> +			if (ret < 0 && ret !=3D -ENOSPC)
->> +				btrfs_abort_transaction(trans, ret);
->> +			else
->> +				ret =3D 0;
->> +			if (!exist)
->> +				btrfs_end_transaction(trans);
->> +			if (ret)
->> +				return ret;
->> +		}
->> +
->> +		if (ffe_ctl->loop =3D=3D LOOP_NO_EMPTY_SIZE) {
->> +			/*
->> +			 * Don't loop again if we already have no empty_size and
->> +			 * no empty_cluster.
->> +			 */
->> +			if (ffe_ctl->empty_size =3D=3D 0 &&
->> +			    ffe_ctl->empty_cluster =3D=3D 0)
->> +				return -ENOSPC;
->> +			ffe_ctl->empty_size =3D 0;
->> +			ffe_ctl->empty_cluster =3D 0;
->> +		}
->> +		return 1;
->> +	} else if (!ins->objectid) {
->> +		ret =3D -ENOSPC;
->> +	} else if (ins->objectid) {
->> +		if (!use_cluster && last_ptr) {
->> +			spin_lock(&last_ptr->lock);
->> +			last_ptr->window_start =3D ins->objectid;
->> +			spin_unlock(&last_ptr->lock);
->> +		}
->> +		ret =3D 0;
->> +	}
->> +	return ret;
->> +}
->=20
-> Rework this so the
->=20
-> if (ins->objectid)
-> 	blah
->=20
-> is the first thing, that way you don't have to do the
->=20
-> if (!ins->objectid && <other things>)
->=20
-> for all the other if statements here.  The fast path should be the firs=
-t thing,
-> then we can deal with all of the other crap last.  Thanks,
+ret = xfs_reflink_remap_blocks(..., &remapped_blocks...);
+remapped_bytes = min_t(int64_t, len, XFS_FSB_TO_B(mp, remapped_blocks));
 
-Indeed, the ENOSPC should be in the last else branch.
+...
 
-Thanks,
-Qu
+return remapped_bytes > 0 ? remapped_bytes : ret;
 
->=20
-> Josef
->=20
+--D
 
-
---6t8uw6SoUy82EfBd9W3KMKmOVcsunK2mh--
-
---GPDzjmJlMMSpDF3XTnvXfk300fUu0JT0H
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlvAp5oACgkQwj2R86El
-/qgP8AgAim9r9TRaJAP9jhO0oUqzEHUeEdpdYYwgUaRsF0nkGjO1EfMiNZaHA/+8
-LLudYOWUxmZDz2ZtWKJkY5qlV3pQtuQPT6GcDREYjZz25TVCsbg/YrcGsXI5rOKL
-mjvGZxWZBl8SbfQph2CLOoPWnSBfLRSskwfSHjrRx8g4j/W72CAuHgPNpbqiP+6m
-YmUEfa6odiqazQP6VKxJbFncStQK8KShMVaDU0WrMajUpZsaGLkFrXX9yf/UOOOO
-xLDT6WuiHSCwIFPth8N/5iswXG2PoZsBc19p704GeJALxBrI0clsB0meLhffgxXQ
-H6jOksCVBgawvlrMWnxABnPxfNxLOw==
-=ZMOI
------END PGP SIGNATURE-----
-
---GPDzjmJlMMSpDF3XTnvXfk300fUu0JT0H--
+> Cheers,
+> 
+> Dave.
+> -- 
+> Dave Chinner
+> david@fromorbit.com

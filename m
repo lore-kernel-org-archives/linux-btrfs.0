@@ -2,113 +2,180 @@ Return-Path: <SRS0=eG6O=MY=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.8 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 30552C71122
-	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 19:34:39 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A28B0C71122
+	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 20:22:34 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id F076B2087D
-	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 19:34:38 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5AD62205F4
+	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 20:22:34 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="O9wDp53x"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org F076B2087D
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=toxicpanda.com
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="Lb04MRWL"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 5AD62205F4
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726713AbeJMDIi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 12 Oct 2018 23:08:38 -0400
-Received: from mail-qt1-f194.google.com ([209.85.160.194]:41052 "EHLO
-        mail-qt1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726158AbeJMDIi (ORCPT
+        id S1726715AbeJMD4m (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 12 Oct 2018 23:56:42 -0400
+Received: from mail-ua1-f66.google.com ([209.85.222.66]:42108 "EHLO
+        mail-ua1-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726227AbeJMD4m (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 12 Oct 2018 23:08:38 -0400
-Received: by mail-qt1-f194.google.com with SMTP id l41-v6so15055644qtl.8
-        for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2018 12:34:37 -0700 (PDT)
+        Fri, 12 Oct 2018 23:56:42 -0400
+Received: by mail-ua1-f66.google.com with SMTP id c1so12521uaq.9;
+        Fri, 12 Oct 2018 13:22:30 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:subject:date:message-id:in-reply-to:references;
-        bh=sV09l7dO3avmvRHRl1FabUbd/mHTvojy+8waApybFR4=;
-        b=O9wDp53xXiGiI3+RRjMyNCCkLOpSTIYQJZRk7Bh93aO53bdpyA7ePzQfpU+4nhgDG7
-         0vwMWoOMTjj2k6HBSQmES1cBEH5cJ55lBsTC4NVlc5eqQPMs6toz7lbQHQW5tgKEFzdh
-         Ly+SnJYxaJDXxk+NAgGYyfL/trmWWTDl8xqheQ9iacg9BjFznG1KiPobCSLXbs0ZmecO
-         mld5UHJfh91yrVUEiOSaTsneb+Ktd8aVeMO5jykoS2XnC+8lS7eJhcHuUrp9ErWrThb5
-         TJHcud8/rl0nvbGIJxiI4BpfCN/jKWyi17ip1qsQoav+JY+MfXuPHByNK85jCw4z05Ry
-         4Buw==
+        d=gmail.com; s=20161025;
+        h=mime-version:references:in-reply-to:reply-to:from:date:message-id
+         :subject:to:cc:content-transfer-encoding;
+        bh=O99/+EiYy00XgATUXpvtb3vKNljMACK4yCPGdPq6d1k=;
+        b=Lb04MRWLLfsBKSHqYYHzDSPfzblH0Y2AMyWvcqKr5SfEWs/Kn7Oszt7PHxjLVLtW6Y
+         MWrLuJok2lTMrDocEaUWymSlAm2vDe04nAYlCy2xl+C9d7tCGW1JryTLUv3Pqimxl2d7
+         TOOpwkN0oVywMMpJ0LJDtTcs5d0nWlRl9KT62lFneMWMI2WZfPd0xGg/tKXHrjvcB0cX
+         n7kuWW8waNlt4gR9mWxomgIk9fCJMj2ILyU57jCkTB4791jRuH/OQEzpNU+6AA2wdjXd
+         MBgs9JMXSUM5Q8rBT/J0stwBHgRmqJ/no0GjqI4WLTs1gh/ohaOdKVojjNoqZzcevWdH
+         vMKg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
-         :references;
-        bh=sV09l7dO3avmvRHRl1FabUbd/mHTvojy+8waApybFR4=;
-        b=Agc3faOshTAis80ClufY6Xet4CxoiwSW9VAJ8rWa0ZNJoqyyAEP68gnAPRHpLRRwEx
-         C1n00VhXigX3mkpcJPwEH6SxZ+yFqhGKROTZw2LATTXdmlSad9ahUOD+VJWvJh1d+xcv
-         hYc7VHTT8CX7dS0C1yIzLzqLat+q3JqHKSj5MizjqKC4imyH6NRSdJ3L0HjDRo0KvX5L
-         SZaONAaUdiPNtzndEqVAMUjq+5a9/IWepFszv60LAZAR7j8ZR8Aa05D4jKYusGdrbQN8
-         B4MFn3Yixm8BsUUJ+R6kaJ4mivXEs6LSLsvfjwyCBym/LN19LzQlCiS5oJxlgtv1EDHO
-         /1hg==
-X-Gm-Message-State: ABuFfogG7M+IHj4dbG9E7EKjqVTHaMA8JFyGOH2UQc7+IOYZ/8xUR8mB
-        1To/ADVYb1i7L4a6CJqOgZ7ByWLdXKs=
-X-Google-Smtp-Source: ACcGV61T5EgiRiaJGKCAH17qJ+KPi4G70kaNp1UxKATWuQsk3oVKnY+VwKGiJjfszq4XSgUg8icSPA==
-X-Received: by 2002:aed:34e1:: with SMTP id x88-v6mr7167409qtd.156.1539372876570;
-        Fri, 12 Oct 2018 12:34:36 -0700 (PDT)
-Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id m9-v6sm1699980qkl.32.2018.10.12.12.34.35
-        (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
-        Fri, 12 Oct 2018 12:34:35 -0700 (PDT)
-From:   Josef Bacik <josef@toxicpanda.com>
-To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 42/42] btrfs: don't run delayed_iputs in commit
-Date:   Fri, 12 Oct 2018 15:32:56 -0400
-Message-Id: <20181012193256.13735-43-josef@toxicpanda.com>
-X-Mailer: git-send-email 2.14.3
-In-Reply-To: <20181012193256.13735-1-josef@toxicpanda.com>
-References: <20181012193256.13735-1-josef@toxicpanda.com>
+        h=x-gm-message-state:mime-version:references:in-reply-to:reply-to
+         :from:date:message-id:subject:to:cc:content-transfer-encoding;
+        bh=O99/+EiYy00XgATUXpvtb3vKNljMACK4yCPGdPq6d1k=;
+        b=fxK7UVab/dCibyuKlExUgSUJc0ZGoJoG9jVvOVqKWnsme+qiKnPR3m91YDCOQEt/52
+         GIzRJmo4Ygtkas6FwPTGOOOArHF2Y2h6OxTIF55n9stgu3ZCX8FgtkKzEW+LWFtsqvyw
+         Da+yml2yaCOFTyOu5bhxeFxe2LqExXUJFMumkhmMsC8hGMdKEpFqhzlqZ97/cjqSxzZA
+         SrNbQ6EhQuSn+jv6WDmFU7ZI9Z7q+NPDT7IV4HM7LU3NCHM1kzMi7v651wxIWj0v+J7t
+         HvUip+OzHau2CqVWEAwbgvbS3FdCOmWNCGd7o8cRX0EhsyYuqFuWQnKk4rRupcOOT9XN
+         Wcog==
+X-Gm-Message-State: ABuFfogHyZ/WhQFecFFBcbJme2a5tl3KFovPDXJs577tNVHKts6Jme7l
+        IDogvzZJHbsPGgTPtlnCfAw9cqOi08EGYsT63Qc=
+X-Google-Smtp-Source: ACcGV63DUxaSFRp6wzmh/pOlNpluSIu9YjM+Tt6MsmJgHkM+xbMhHuNbkLB4G7vnO/74zrqKL+eUXxgxgU/laTU/0Pc=
+X-Received: by 2002:a9f:2c0b:: with SMTP id r11mr1609105uaj.100.1539375749783;
+ Fri, 12 Oct 2018 13:22:29 -0700 (PDT)
+MIME-Version: 1.0
+References: <153923113649.5546.9840926895953408273.stgit@magnolia> <153923117420.5546.13317703807467393934.stgit@magnolia>
+In-Reply-To: <153923117420.5546.13317703807467393934.stgit@magnolia>
+Reply-To: fdmanana@gmail.com
+From:   Filipe Manana <fdmanana@gmail.com>
+Date:   Fri, 12 Oct 2018 21:22:18 +0100
+Message-ID: <CAL3q7H7mLvCGpyitJhQ=To-aDvG9k9rxSVi2jSpcALQVj3myzg@mail.gmail.com>
+Subject: Re: [PATCH 05/25] vfs: avoid problematic remapping requests into
+ partial EOF block
+To:     "Darrick J. Wong" <darrick.wong@oracle.com>
+Cc:     Dave Chinner <david@fromorbit.com>,
+        Eric Sandeen <sandeen@redhat.com>, linux-nfs@vger.kernel.org,
+        linux-cifs@vger.kernel.org, linux-unionfs@vger.kernel.org,
+        linux-xfs@vger.kernel.org, linux-mm@kvack.org,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
+        ocfs2-devel@oss.oracle.com
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This could result in a really bad case where we do something like
+On Thu, Oct 11, 2018 at 5:13 AM Darrick J. Wong <darrick.wong@oracle.com> w=
+rote:
+>
+> From: Darrick J. Wong <darrick.wong@oracle.com>
+>
+> A deduplication data corruption is exposed by fstests generic/505 on
+> XFS.
 
-evict
-  evict_refill_and_join
-    btrfs_commit_transaction
-      btrfs_run_delayed_iputs
-        evict
-          evict_refill_and_join
-            btrfs_commit_transaction
-... forever
+(and btrfs)
 
-We have plenty of other places where we run delayed iputs that are much
-safer, let those do the work.
+Btw, the generic test I wrote was indeed numbered 505, however it was
+never committed and there's now a generic/505 which has nothing to do
+with deduplication.
+So you should update the changelog to avoid confusion.
 
-Signed-off-by: Josef Bacik <josef@toxicpanda.com>
----
- fs/btrfs/transaction.c | 9 ---------
- 1 file changed, 9 deletions(-)
+thanks
 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 9168efaca37e..c91dc36fccae 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -2265,15 +2265,6 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
- 
- 	kmem_cache_free(btrfs_trans_handle_cachep, trans);
- 
--	/*
--	 * If fs has been frozen, we can not handle delayed iputs, otherwise
--	 * it'll result in deadlock about SB_FREEZE_FS.
--	 */
--	if (current != fs_info->transaction_kthread &&
--	    current != fs_info->cleaner_kthread &&
--	    !test_bit(BTRFS_FS_FROZEN, &fs_info->flags))
--		btrfs_run_delayed_iputs(fs_info);
--
- 	return ret;
- 
- scrub_continue:
--- 
-2.14.3
+> It is caused by extending the block match range to include the
+> partial EOF block, but then allowing unknown data beyond EOF to be
+> considered a "match" to data in the destination file because the
+> comparison is only made to the end of the source file. This corrupts the
+> destination file when the source extent is shared with it.
+>
+> The VFS remapping prep functions  only support whole block dedupe, but
+> we still need to appear to support whole file dedupe correctly.  Hence
+> if the dedupe request includes the last block of the souce file, don't
+> include it in the actual dedupe operation. If the rest of the range
+> dedupes successfully, then reject the entire request.  A subsequent
+> patch will enable us to shorten dedupe requests correctly.
+>
+> When reflinking sub-file ranges, a data corruption can occur when the
+> source file range includes a partial EOF block. This shares the unknown
+> data beyond EOF into the second file at a position inside EOF, exposing
+> stale data in the second file.
+>
+> If the reflink request includes the last block of the souce file, only
+> proceed with the reflink operation if it lands at or past the
+> destination file's current EOF. If it lands within the destination file
+> EOF, reject the entire request with -EINVAL and make the caller go the
+> hard way.  A subsequent patch will enable us to shorten reflink requests
+> correctly.
+>
+> Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
+> ---
+>  fs/read_write.c |   22 ++++++++++++++++++++++
+>  1 file changed, 22 insertions(+)
+>
+>
+> diff --git a/fs/read_write.c b/fs/read_write.c
+> index d6e8e242a15f..8498991e2f33 100644
+> --- a/fs/read_write.c
+> +++ b/fs/read_write.c
+> @@ -1723,6 +1723,7 @@ int vfs_clone_file_prep(struct file *file_in, loff_=
+t pos_in,
+>  {
+>         struct inode *inode_in =3D file_inode(file_in);
+>         struct inode *inode_out =3D file_inode(file_out);
+> +       u64 blkmask =3D i_blocksize(inode_in) - 1;
+>         bool same_inode =3D (inode_in =3D=3D inode_out);
+>         int ret;
+>
+> @@ -1785,6 +1786,27 @@ int vfs_clone_file_prep(struct file *file_in, loff=
+_t pos_in,
+>                         return -EBADE;
+>         }
+>
+> +       /* Are we doing a partial EOF block remapping of some kind? */
+> +       if (*len & blkmask) {
+> +               /*
+> +                * If the dedupe data matches, don't try to dedupe the pa=
+rtial
+> +                * EOF block.
+> +                *
+> +                * If the user is attempting to remap a partial EOF block=
+ and
+> +                * it's inside the destination EOF then reject it.
+> +                *
+> +                * We don't support shortening requests, so we can only r=
+eject
+> +                * them.
+> +                */
+> +               if (is_dedupe)
+> +                       ret =3D -EBADE;
+> +               else if (pos_out + *len < i_size_read(inode_out))
+> +                       ret =3D -EINVAL;
+> +
+> +               if (ret)
+> +                       return ret;
+> +       }
+> +
+>         return 1;
+>  }
+>  EXPORT_SYMBOL(vfs_clone_file_prep);
+>
 
+
+--=20
+Filipe David Manana,
+
+=E2=80=9CWhether you think you can, or you think you can't =E2=80=94 you're=
+ right.=E2=80=9D

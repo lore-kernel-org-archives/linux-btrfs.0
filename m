@@ -7,70 +7,63 @@ X-Spam-Status: No, score=-6.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
 	SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A28B0C71122
-	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 20:22:34 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7BA6EC71122
+	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 20:45:39 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 5AD62205F4
-	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 20:22:34 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3AE87204EC
+	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 20:45:39 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="Lb04MRWL"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 5AD62205F4
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="bAd0YrP4"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 3AE87204EC
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726715AbeJMD4m (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 12 Oct 2018 23:56:42 -0400
-Received: from mail-ua1-f66.google.com ([209.85.222.66]:42108 "EHLO
-        mail-ua1-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726227AbeJMD4m (ORCPT
+        id S1726099AbeJMETx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 13 Oct 2018 00:19:53 -0400
+Received: from mail-vk1-f194.google.com ([209.85.221.194]:33682 "EHLO
+        mail-vk1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725843AbeJMETx (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 12 Oct 2018 23:56:42 -0400
-Received: by mail-ua1-f66.google.com with SMTP id c1so12521uaq.9;
-        Fri, 12 Oct 2018 13:22:30 -0700 (PDT)
+        Sat, 13 Oct 2018 00:19:53 -0400
+Received: by mail-vk1-f194.google.com with SMTP id l186so2680105vke.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2018 13:45:37 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20161025;
         h=mime-version:references:in-reply-to:reply-to:from:date:message-id
          :subject:to:cc:content-transfer-encoding;
-        bh=O99/+EiYy00XgATUXpvtb3vKNljMACK4yCPGdPq6d1k=;
-        b=Lb04MRWLLfsBKSHqYYHzDSPfzblH0Y2AMyWvcqKr5SfEWs/Kn7Oszt7PHxjLVLtW6Y
-         MWrLuJok2lTMrDocEaUWymSlAm2vDe04nAYlCy2xl+C9d7tCGW1JryTLUv3Pqimxl2d7
-         TOOpwkN0oVywMMpJ0LJDtTcs5d0nWlRl9KT62lFneMWMI2WZfPd0xGg/tKXHrjvcB0cX
-         n7kuWW8waNlt4gR9mWxomgIk9fCJMj2ILyU57jCkTB4791jRuH/OQEzpNU+6AA2wdjXd
-         MBgs9JMXSUM5Q8rBT/J0stwBHgRmqJ/no0GjqI4WLTs1gh/ohaOdKVojjNoqZzcevWdH
-         vMKg==
+        bh=c0wZiI8WrehMMgKaDrkE3XoV5k7IcWJMyDsDqVjEA8I=;
+        b=bAd0YrP4Km+Vfgn6Co0vEh3rdt8kU05irHX2Q6mI1rf4utvhG8f0rXT51uoZSyc095
+         fQUanem/adVgZKyu7QvVXZmBYF4XqRsDogBzUPnUOeZEFAXj9JPIAQ1zZPUINbpb6Gkb
+         OFcff7ipHJYh086QAHcBmLfo3OA0K6F+pmPyy8WCBK/Ke7VIX3eu/iRf+e2EORMXTCM1
+         /X0qZjz0ot1dW8uYTW75JxKGwRnDMMCx2/iIVjydFHfg0+hszcBiPsgedZDr6ezt4up8
+         utQ3TnxQxL7Nb48rSZQ+cHIiidhdhy0EX6qOpNaixtx3A6t887Gvm8OwI+RV/2DgswWP
+         hSDQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:mime-version:references:in-reply-to:reply-to
          :from:date:message-id:subject:to:cc:content-transfer-encoding;
-        bh=O99/+EiYy00XgATUXpvtb3vKNljMACK4yCPGdPq6d1k=;
-        b=fxK7UVab/dCibyuKlExUgSUJc0ZGoJoG9jVvOVqKWnsme+qiKnPR3m91YDCOQEt/52
-         GIzRJmo4Ygtkas6FwPTGOOOArHF2Y2h6OxTIF55n9stgu3ZCX8FgtkKzEW+LWFtsqvyw
-         Da+yml2yaCOFTyOu5bhxeFxe2LqExXUJFMumkhmMsC8hGMdKEpFqhzlqZ97/cjqSxzZA
-         SrNbQ6EhQuSn+jv6WDmFU7ZI9Z7q+NPDT7IV4HM7LU3NCHM1kzMi7v651wxIWj0v+J7t
-         HvUip+OzHau2CqVWEAwbgvbS3FdCOmWNCGd7o8cRX0EhsyYuqFuWQnKk4rRupcOOT9XN
-         Wcog==
-X-Gm-Message-State: ABuFfogHyZ/WhQFecFFBcbJme2a5tl3KFovPDXJs577tNVHKts6Jme7l
-        IDogvzZJHbsPGgTPtlnCfAw9cqOi08EGYsT63Qc=
-X-Google-Smtp-Source: ACcGV63DUxaSFRp6wzmh/pOlNpluSIu9YjM+Tt6MsmJgHkM+xbMhHuNbkLB4G7vnO/74zrqKL+eUXxgxgU/laTU/0Pc=
-X-Received: by 2002:a9f:2c0b:: with SMTP id r11mr1609105uaj.100.1539375749783;
- Fri, 12 Oct 2018 13:22:29 -0700 (PDT)
+        bh=c0wZiI8WrehMMgKaDrkE3XoV5k7IcWJMyDsDqVjEA8I=;
+        b=hZ9RvR1wNn1g4/Kps+aQlCuTM+/XJ4xobfh8RFjwUO8x4fCvlE5Fuk9/02Ab84Nrhm
+         XJAnRWjjutQCAPjn68+LSeJ9x3/6aw4Wss/aE3P9nMEUy3ggZz3QA2I5wL5d18mK+jcC
+         VSRqzhiG+6KZ4h0vwj858gIC439kQ5tbOMig678o5mMigZaByEJoc5+0sgn8OqbX87RD
+         asKw97t5BA9LD8k1+wx4lrXbKu+azfF5IPcBtmMjojaDursBcuYIUTuF0GDArB4QHgJU
+         6qAuWPIhbeSWNROuVKlQcB99U6Dr12mwt8X8vNBerv5fyZ43AfmjODy/I8SojyuRdrEa
+         WNuA==
+X-Gm-Message-State: ABuFfogOYSu8/RQrwTAW+ax7mN6lhnEGNQ9zh1Clv0yurJie2tkKlIpo
+        ZJlLjwNZSDZd3iVqsto1dcLwuS+MiTwgoZavvvq1hQ==
+X-Google-Smtp-Source: ACcGV62uXz3TX1Qsr0qi2E0PSe4P8G9yAeIXF9QtiMzIssE3w7LYsA1M+sLBbSZX7CYQUWv76PbC0/cdLdOuijW+Jq4=
+X-Received: by 2002:a1f:b995:: with SMTP id j143-v6mr3170757vkf.88.1539377136539;
+ Fri, 12 Oct 2018 13:45:36 -0700 (PDT)
 MIME-Version: 1.0
-References: <153923113649.5546.9840926895953408273.stgit@magnolia> <153923117420.5546.13317703807467393934.stgit@magnolia>
-In-Reply-To: <153923117420.5546.13317703807467393934.stgit@magnolia>
+References: <20181012193256.13735-1-josef@toxicpanda.com> <20181012193256.13735-43-josef@toxicpanda.com>
+In-Reply-To: <20181012193256.13735-43-josef@toxicpanda.com>
 Reply-To: fdmanana@gmail.com
 From:   Filipe Manana <fdmanana@gmail.com>
-Date:   Fri, 12 Oct 2018 21:22:18 +0100
-Message-ID: <CAL3q7H7mLvCGpyitJhQ=To-aDvG9k9rxSVi2jSpcALQVj3myzg@mail.gmail.com>
-Subject: Re: [PATCH 05/25] vfs: avoid problematic remapping requests into
- partial EOF block
-To:     "Darrick J. Wong" <darrick.wong@oracle.com>
-Cc:     Dave Chinner <david@fromorbit.com>,
-        Eric Sandeen <sandeen@redhat.com>, linux-nfs@vger.kernel.org,
-        linux-cifs@vger.kernel.org, linux-unionfs@vger.kernel.org,
-        linux-xfs@vger.kernel.org, linux-mm@kvack.org,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-        ocfs2-devel@oss.oracle.com
+Date:   Fri, 12 Oct 2018 21:45:25 +0100
+Message-ID: <CAL3q7H7sTLnjtbDG_chSomXowGS5MAekXjOgPrp70uSei5Vf6Q@mail.gmail.com>
+Subject: Re: [PATCH 42/42] btrfs: don't run delayed_iputs in commit
+To:     Josef Bacik <josef@toxicpanda.com>
+Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>, kernel-team@fb.com
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -78,99 +71,53 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Oct 11, 2018 at 5:13 AM Darrick J. Wong <darrick.wong@oracle.com> w=
-rote:
+On Fri, Oct 12, 2018 at 8:35 PM Josef Bacik <josef@toxicpanda.com> wrote:
 >
-> From: Darrick J. Wong <darrick.wong@oracle.com>
+> This could result in a really bad case where we do something like
 >
-> A deduplication data corruption is exposed by fstests generic/505 on
-> XFS.
+> evict
+>   evict_refill_and_join
+>     btrfs_commit_transaction
+>       btrfs_run_delayed_iputs
+>         evict
+>           evict_refill_and_join
+>             btrfs_commit_transaction
+> ... forever
+>
+> We have plenty of other places where we run delayed iputs that are much
+> safer, let those do the work.
+>
+> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+Reviewed-by: Filipe Manana <fdmanana@suse.com>
 
-(and btrfs)
-
-Btw, the generic test I wrote was indeed numbered 505, however it was
-never committed and there's now a generic/505 which has nothing to do
-with deduplication.
-So you should update the changelog to avoid confusion.
-
-thanks
-
-> It is caused by extending the block match range to include the
-> partial EOF block, but then allowing unknown data beyond EOF to be
-> considered a "match" to data in the destination file because the
-> comparison is only made to the end of the source file. This corrupts the
-> destination file when the source extent is shared with it.
->
-> The VFS remapping prep functions  only support whole block dedupe, but
-> we still need to appear to support whole file dedupe correctly.  Hence
-> if the dedupe request includes the last block of the souce file, don't
-> include it in the actual dedupe operation. If the rest of the range
-> dedupes successfully, then reject the entire request.  A subsequent
-> patch will enable us to shorten dedupe requests correctly.
->
-> When reflinking sub-file ranges, a data corruption can occur when the
-> source file range includes a partial EOF block. This shares the unknown
-> data beyond EOF into the second file at a position inside EOF, exposing
-> stale data in the second file.
->
-> If the reflink request includes the last block of the souce file, only
-> proceed with the reflink operation if it lands at or past the
-> destination file's current EOF. If it lands within the destination file
-> EOF, reject the entire request with -EINVAL and make the caller go the
-> hard way.  A subsequent patch will enable us to shorten reflink requests
-> correctly.
->
-> Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
 > ---
->  fs/read_write.c |   22 ++++++++++++++++++++++
->  1 file changed, 22 insertions(+)
+>  fs/btrfs/transaction.c | 9 ---------
+>  1 file changed, 9 deletions(-)
 >
+> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+> index 9168efaca37e..c91dc36fccae 100644
+> --- a/fs/btrfs/transaction.c
+> +++ b/fs/btrfs/transaction.c
+> @@ -2265,15 +2265,6 @@ int btrfs_commit_transaction(struct btrfs_trans_ha=
+ndle *trans)
 >
-> diff --git a/fs/read_write.c b/fs/read_write.c
-> index d6e8e242a15f..8498991e2f33 100644
-> --- a/fs/read_write.c
-> +++ b/fs/read_write.c
-> @@ -1723,6 +1723,7 @@ int vfs_clone_file_prep(struct file *file_in, loff_=
-t pos_in,
->  {
->         struct inode *inode_in =3D file_inode(file_in);
->         struct inode *inode_out =3D file_inode(file_out);
-> +       u64 blkmask =3D i_blocksize(inode_in) - 1;
->         bool same_inode =3D (inode_in =3D=3D inode_out);
->         int ret;
+>         kmem_cache_free(btrfs_trans_handle_cachep, trans);
 >
-> @@ -1785,6 +1786,27 @@ int vfs_clone_file_prep(struct file *file_in, loff=
-_t pos_in,
->                         return -EBADE;
->         }
+> -       /*
+> -        * If fs has been frozen, we can not handle delayed iputs, otherw=
+ise
+> -        * it'll result in deadlock about SB_FREEZE_FS.
+> -        */
+> -       if (current !=3D fs_info->transaction_kthread &&
+> -           current !=3D fs_info->cleaner_kthread &&
+> -           !test_bit(BTRFS_FS_FROZEN, &fs_info->flags))
+> -               btrfs_run_delayed_iputs(fs_info);
+> -
+>         return ret;
 >
-> +       /* Are we doing a partial EOF block remapping of some kind? */
-> +       if (*len & blkmask) {
-> +               /*
-> +                * If the dedupe data matches, don't try to dedupe the pa=
-rtial
-> +                * EOF block.
-> +                *
-> +                * If the user is attempting to remap a partial EOF block=
- and
-> +                * it's inside the destination EOF then reject it.
-> +                *
-> +                * We don't support shortening requests, so we can only r=
-eject
-> +                * them.
-> +                */
-> +               if (is_dedupe)
-> +                       ret =3D -EBADE;
-> +               else if (pos_out + *len < i_size_read(inode_out))
-> +                       ret =3D -EINVAL;
-> +
-> +               if (ret)
-> +                       return ret;
-> +       }
-> +
->         return 1;
->  }
->  EXPORT_SYMBOL(vfs_clone_file_prep);
+>  scrub_continue:
+> --
+> 2.14.3
 >
 
 

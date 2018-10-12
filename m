@@ -4,64 +4,64 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-8.8 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
 	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
-	version=3.4.0
+	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9BDACC71122
-	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 19:34:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5BB23C71122
+	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 19:34:11 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 637222087D
-	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 19:34:09 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 258182087D
+	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 19:34:11 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="NCgWsohd"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 637222087D
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="2HFFGqV0"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 258182087D
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=toxicpanda.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727128AbeJMDII (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 12 Oct 2018 23:08:08 -0400
-Received: from mail-qt1-f193.google.com ([209.85.160.193]:38790 "EHLO
+        id S1727129AbeJMDIK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 12 Oct 2018 23:08:10 -0400
+Received: from mail-qt1-f193.google.com ([209.85.160.193]:37584 "EHLO
         mail-qt1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726530AbeJMDII (ORCPT
+        with ESMTP id S1726227AbeJMDIJ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 12 Oct 2018 23:08:08 -0400
-Received: by mail-qt1-f193.google.com with SMTP id l9-v6so15069500qtf.5
-        for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2018 12:34:07 -0700 (PDT)
+        Fri, 12 Oct 2018 23:08:09 -0400
+Received: by mail-qt1-f193.google.com with SMTP id d14-v6so15064398qto.4
+        for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2018 12:34:09 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:subject:date:message-id:in-reply-to:references;
-        bh=2v3HNp+SiUuKkJAWzeR46bMWpcvQbLX2jWxeWYdX+Ok=;
-        b=NCgWsohdYsXKratC8htSWExXwEtFINv2XfjX2Qu1N+u1XPgQ5T84AzWbkyvxfz5LhV
-         LSyRjrWZXBwl3iuJfFofjI8+/Gz6ivTxbTBrK/B69L6tkjAdADmD2whIv+sHutOArFLh
-         oemeg525qzuczeB8o6fU/fQwLXvONTqTYUHStE3R/9dr3zwpreVsa6UIFeJPbvsEKL5X
-         QHhTkRZzxaPzPLeyCZrFkq1tSZu577iFxMjPPD618IUQ9GFlzCJfHClLZjOSE3jS8Fkg
-         baWg++BzAquN7LxFauImwAvEAYIXh5q796zMGtyRGEFkzCfY2iVgC9GmgeqttzvDd7j9
-         +Odw==
+        bh=esyabqCBu+9iDj6gymgoZZfIo7W+xlWCseOBiKeoQzQ=;
+        b=2HFFGqV0bAxAaOijWNshjE6G/88Qxic6X1sRVPFM+yr2ufTDIVKOfskbiPZF/jySdz
+         ioCEJkxvsbJxF2+O3+6IuZmmgRmh1DGvTb++EBLly2oZwBu9ebl6Aq+ij+2G18UxwTpW
+         gQDxJ2BTF1xv0EXfe2y0A4W/0p5fHzem58OMrAQypH9+lZGinkFEjKhWbCkYUPrpIfaz
+         2gMNvkLcEYQSd24IM+h08M8roeqzxFWNdTdHk4Or/aW/srvTvDnDDdCdYoqe90Fc+1Dw
+         TzWesY1YZpDzFPCyPLhTZ0/xyt3j7g8jm9uDa5AOXZIhPoYsZvMBMwa3I3Vg/DexSSlp
+         haTQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references;
-        bh=2v3HNp+SiUuKkJAWzeR46bMWpcvQbLX2jWxeWYdX+Ok=;
-        b=Ddg290kNPZAlfrtasx9gTDRu26hHQt3InTjB4e6ie+KtfUfjI305UoUFEJC0mxb/Mo
-         gn0OiIDtvrfluiZgtOwp3wdkteY3qkbACodzHLkaBUNGTirVatrGT/UumPKBvlu6xNfV
-         QiL7iVN/j2p398ZNdYxuAprQh4PMPaoBIIZh2xtW/TvoqNMCCsmVU2HZAXHs7PH6tpKD
-         aLXDCXwTmGOgP1PL+hcRSBvi+yGhW5GqT932NvtXVF013nXGBmNbAB4pDQ3wnka/EaEY
-         3pVtEyMnRBIk1aEVawUBEnoDbfusqGRdgcNWWFlHlDwpWEuQ/LqskzSU/X9IFnWuzZZj
-         Vexg==
-X-Gm-Message-State: ABuFfoj+VkZ9iXfavgbdtafoyqs9TmC27zLjSl8t0LJ6l6elBL+DJ2iq
-        hhmD0WW/0gN/VsBOVrUxSshZPDDqlSs=
-X-Google-Smtp-Source: ACcGV62If6XmjTofKNOvwcwwt2UF3ZpFXdNl7G1XCwoYCObJdIhc0VrzZLDYQqsm3tpYQm7qm/7UDA==
-X-Received: by 2002:aed:2647:: with SMTP id z65-v6mr7020018qtc.301.1539372846646;
-        Fri, 12 Oct 2018 12:34:06 -0700 (PDT)
+        bh=esyabqCBu+9iDj6gymgoZZfIo7W+xlWCseOBiKeoQzQ=;
+        b=QERhAsMuwPK+AdAwyJj72omT/Nm4pA3YfB3zJfJrnZeoCC/vs4VVn+wF5x2ZAK0fcl
+         VKWz1TMG7dENTR6O5iCz2vpXvpeMvf2RjMQMgon+D/N7voBOJEuOT3d+n6H1udjkE+P3
+         bjvwDINO8SqBjxMN84FxdciPyP2I+9/VlI0jFQ3TJcw8hNIKl28hsQF8tesxYfRn/zrx
+         uRfnwgun0iNWm6e1jC0eQm6P8WgYGRqSEPt5BN28t8biTPJJcU++LEReC8O/yuHNZInd
+         p874mIPHjNItgZ8MK8D0kJ8C4fS+fgPArI8YBPXtha/G0u8dUxFC4PXj7iqz3q2Bcw5s
+         dKrg==
+X-Gm-Message-State: ABuFfogSl1C9LW9xnxvGtCZ1QzehGQN7Y9k09WuaPAC+yJI8tyS/jJNQ
+        1KV9kZTGQ0Br72D9MjzESP94IvDszHI=
+X-Google-Smtp-Source: ACcGV602pW3005r1d1Qjhbenv9cdAaQ+RxK/U/137oG2v4HcE4dc6zI8aO6FzXq3EQbvdoCQuF/D3w==
+X-Received: by 2002:a0c:fd8c:: with SMTP id p12-v6mr7104537qvr.198.1539372848521;
+        Fri, 12 Oct 2018 12:34:08 -0700 (PDT)
 Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id n67-v6sm1803906qkh.66.2018.10.12.12.34.05
+        by smtp.gmail.com with ESMTPSA id b134-v6sm1519145qka.45.2018.10.12.12.34.07
         (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
-        Fri, 12 Oct 2018 12:34:05 -0700 (PDT)
+        Fri, 12 Oct 2018 12:34:07 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 30/42] btrfs: just delete pending bgs if we are aborted
-Date:   Fri, 12 Oct 2018 15:32:44 -0400
-Message-Id: <20181012193256.13735-31-josef@toxicpanda.com>
+Subject: [PATCH 31/42] btrfs: cleanup pending bgs on transaction abort
+Date:   Fri, 12 Oct 2018 15:32:45 -0400
+Message-Id: <20181012193256.13735-32-josef@toxicpanda.com>
 X-Mailer: git-send-email 2.14.3
 In-Reply-To: <20181012193256.13735-1-josef@toxicpanda.com>
 References: <20181012193256.13735-1-josef@toxicpanda.com>
@@ -70,37 +70,32 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-We still need to do all of the accounting cleanup for pending block
-groups if we abort.  So set the ret to trans->aborted so if we aborted
-the cleanup happens and everybody is happy.
+We may abort the transaction during a commit and not have a chance to
+run the pending bgs stuff, which will leave block groups on our list and
+cause us accounting issues and leaked memory.  Fix this by running the
+pending bgs when we cleanup a transaction.
 
 Reviewed-by: Omar Sandoval <osandov@fb.com>
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/extent-tree.c | 8 +++++++-
- 1 file changed, 7 insertions(+), 1 deletion(-)
+ fs/btrfs/transaction.c | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 14495c030301..933cba06c9fb 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -10363,9 +10363,15 @@ void btrfs_create_pending_block_groups(struct btrfs_trans_handle *trans)
- 	struct btrfs_root *extent_root = fs_info->extent_root;
- 	struct btrfs_block_group_item item;
- 	struct btrfs_key key;
--	int ret = 0;
-+	int ret;
- 	bool can_flush_pending_bgs = trans->can_flush_pending_bgs;
- 
-+	/*
-+	 * If we aborted the transaction with pending bg's we need to just
-+	 * cleanup the list and carry on.
-+	 */
-+	ret = trans->aborted;
-+
- 	trans->can_flush_pending_bgs = false;
- 	while (!list_empty(&trans->new_bgs)) {
- 		block_group = list_first_entry(&trans->new_bgs,
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 46ca775a709e..9168efaca37e 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -2280,6 +2280,10 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
+ 	btrfs_scrub_continue(fs_info);
+ cleanup_transaction:
+ 	btrfs_trans_release_metadata(trans);
++	/* This cleans up the pending block groups list properly. */
++	if (!trans->aborted)
++		trans->aborted = ret;
++	btrfs_create_pending_block_groups(trans);
+ 	btrfs_trans_release_chunk_metadata(trans);
+ 	trans->block_rsv = NULL;
+ 	btrfs_warn(fs_info, "Skipping commit of aborted transaction.");
 -- 
 2.14.3
 

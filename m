@@ -7,61 +7,61 @@ X-Spam-Status: No, score=-8.8 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
 	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5329FC6787C
-	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 19:34:33 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8B485C71122
+	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 19:34:35 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 15D862087D
-	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 19:34:33 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5553B2087D
+	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 19:34:35 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="SexBi4y6"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 15D862087D
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="xWDwe50u"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 5553B2087D
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=toxicpanda.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727173AbeJMDIc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 12 Oct 2018 23:08:32 -0400
-Received: from mail-qt1-f193.google.com ([209.85.160.193]:43257 "EHLO
-        mail-qt1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726158AbeJMDIc (ORCPT
+        id S1727182AbeJMDIe (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 12 Oct 2018 23:08:34 -0400
+Received: from mail-qt1-f194.google.com ([209.85.160.194]:39917 "EHLO
+        mail-qt1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726158AbeJMDIe (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 12 Oct 2018 23:08:32 -0400
-Received: by mail-qt1-f193.google.com with SMTP id q41-v6so15046050qtq.10
-        for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2018 12:34:30 -0700 (PDT)
+        Fri, 12 Oct 2018 23:08:34 -0400
+Received: by mail-qt1-f194.google.com with SMTP id e22-v6so15075127qto.6
+        for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2018 12:34:33 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:subject:date:message-id:in-reply-to:references;
-        bh=376B5Ewk9SX6zKU3F++7M86mkOiT1w+Wgn5fDYhS55g=;
-        b=SexBi4y6aJiZZOmDM9kDlDU7WqHdFJNdOgWRBuIcdFMHYQcr5qvn7h+5rqYghVy2rj
-         q+0ysKs1bsG0WfHISMBIs1Yh3Q/SIoR4AetDzEsg5Us3+U5dJLZy994tmsQgNl5fN5XS
-         KKClGrtqBI4rDBDUrl267sMwXJ4iG6Qkc/kGHjNjT73Mz+9STusUUdHIM25pxhurTx4q
-         UtAQK2AG67JPiSmvLhVlbvTrX9UKp+grb637aYr7KlccKcOHelotRTtku1nii1kELeV5
-         Xne5xOF3N4h1XaV3nfkPTspwRFouYDCVSAreQmrjyBRVW21VRbv8WLsnQcF2KqAhm8D/
-         nj7A==
+        bh=0pFXVY2NKlGxnx5addw7+EqJLIsrQdT/gx6gstwLZiU=;
+        b=xWDwe50uOk2SNqQssrArVUqWrahx7FZjCeFOktq26Fb1Yh7UH6mPGAU3e5U+4igK0z
+         wucjgxJ3z6ELN7MoiYvz1B3/qnA5D9xgOlfkIyMGxDy+qk87FJRRQZdJO+5Wequikslr
+         n5hFVuKCMapWMELEXWLaQkjlb2ZT/imWVXDRLKkPWpzWoOEbs9G8t4o187STPpBNeKQ5
+         m/td5aCuIvvInbFtO37TzLroMbtvNYBeLdHqRDtluJcRG7tKNjHiDzCf0zgrmrKEH3PK
+         rDcpvy03Sm+8poMUrY83TR6vO/l7XuAGK4bnXNp0dU/UaGWOhyrdJT5SqIIYq+eBpgzk
+         NWwQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references;
-        bh=376B5Ewk9SX6zKU3F++7M86mkOiT1w+Wgn5fDYhS55g=;
-        b=CyEVVvszTGK130o8m7droqW04jqxKgcPkPjleV1vGFwktKSknlJgFALQ74qeVp0duu
-         QQYbJPpOTnZIF5lae/kP0RH9JdeT5nMefZ2TUA0LYc+TSH9n4DmsH6vUk1A62yFHJ0QS
-         8NLWysDvWbcX8YgqnCW0h5J2J5TLK+nHhFFcEoZtUL/203LdjEnrYz3bX/POdGHw+N6t
-         /SoTsjiGGT4CRl0FOo8MUDjiJ0+nxIXU2QEGdZHJngMqzUdHJxHBzAzhXaIRPLc8GFnm
-         Bo2TrRWdOQXRDtdPDyyYTmB+b01nFKWOseixwyAIoBZxWwx2WLtmGeOzjnBRJsfAUPPd
-         VIAQ==
-X-Gm-Message-State: ABuFfogGkH2RrLrYr01xDO9X2y5hYMcx5ItC1GCLYtewU29ksaibSUQM
-        TfGDG8hjjssO5OvDr1TerNOZA0c4XXs=
-X-Google-Smtp-Source: ACcGV63PpgvLaN00tundypUNXk6GDKTbUv1yYjUgRoE4Ii7IGff12dW3aVo01Bngo0TH80/ZNgwRDA==
-X-Received: by 2002:ac8:145:: with SMTP id f5-v6mr6958476qtg.221.1539372870015;
-        Fri, 12 Oct 2018 12:34:30 -0700 (PDT)
+        bh=0pFXVY2NKlGxnx5addw7+EqJLIsrQdT/gx6gstwLZiU=;
+        b=F6CeatpT4h4CTpxvdoNELu2nuKejBLriV9xZU5aV+8f2jNQ2nVeQDX8SvvHb9sHCVk
+         NdJ2UFSD+azcjATQ5t4QOE7RhKoTAD8Z/e1BxL1qlIV9RkfULKMBQO3rtRIp2FzlllDz
+         Cxu2sk0Awv2xgajmDlLvn4RYW+u988YcUwf7TrWmjoqkZoGo9XpzmLlYxLdv2Thrip+K
+         Mb9TdZi8/GitoI1OfmBKSO28FNeXFbP9P49rMpiZEHP4/VUlnVSM/eT9Caurlj/XgVNb
+         lojs1DyDQS/yeNZ2fdiMwEKx+G6LT0bTWF1pgC/s6oDCMZhKM3KfR+6Lc2kZb5G/WAUa
+         tYcQ==
+X-Gm-Message-State: ABuFfointYKbdlHTboEVD9p5YHtEPhIBLeBYAjSqtsynZvJ79QSVMrSO
+        qUgY3anXCtfDEa16SIeYy6O1zw1I8HM=
+X-Google-Smtp-Source: ACcGV60R1NRDAYomDYzO5BHthY7CzZKyFMxduwV+rPIjd3f1dXxX0hMRniXGEShqkQmedA+wa+21Rg==
+X-Received: by 2002:a0c:af49:: with SMTP id j9mr7381392qvc.72.1539372872647;
+        Fri, 12 Oct 2018 12:34:32 -0700 (PDT)
 Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id a17-v6sm1576227qta.0.2018.10.12.12.34.28
+        by smtp.gmail.com with ESMTPSA id c8-v6sm1023590qkb.81.2018.10.12.12.34.31
         (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
-        Fri, 12 Oct 2018 12:34:29 -0700 (PDT)
+        Fri, 12 Oct 2018 12:34:31 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 39/42] btrfs: replace cleaner_delayed_iput_mutex with a waitqueue
-Date:   Fri, 12 Oct 2018 15:32:53 -0400
-Message-Id: <20181012193256.13735-40-josef@toxicpanda.com>
+Subject: [PATCH 40/42] btrfs: drop min_size from evict_refill_and_join
+Date:   Fri, 12 Oct 2018 15:32:54 -0400
+Message-Id: <20181012193256.13735-41-josef@toxicpanda.com>
 X-Mailer: git-send-email 2.14.3
 In-Reply-To: <20181012193256.13735-1-josef@toxicpanda.com>
 References: <20181012193256.13735-1-josef@toxicpanda.com>
@@ -70,155 +70,89 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The throttle path doesn't take cleaner_delayed_iput_mutex, which means
-we could think we're done flushing iputs in the data space reservation
-path when we could have a throttler doing an iput.  There's no real
-reason to serialize the delayed iput flushing, so instead of taking the
-cleaner_delayed_iput_mutex whenever we flush the delayed iputs just
-replace it with an atomic counter and a waitqueue.  This removes the
-short (or long depending on how big the inode is) window where we think
-there are no more pending iputs when there really are some.
+We don't need it, rsv->size is set once and never changes throughout
+its lifetime, so just use that for the reserve size.
 
+Reviewed-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/ctree.h       |  4 +++-
- fs/btrfs/disk-io.c     |  5 ++---
- fs/btrfs/extent-tree.c |  9 +++++----
- fs/btrfs/inode.c       | 21 +++++++++++++++++++++
- 4 files changed, 31 insertions(+), 8 deletions(-)
+ fs/btrfs/inode.c | 16 ++++++----------
+ 1 file changed, 6 insertions(+), 10 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index e40356ca0295..1ef0b1649cad 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -894,7 +894,8 @@ struct btrfs_fs_info {
- 
- 	spinlock_t delayed_iput_lock;
- 	struct list_head delayed_iputs;
--	struct mutex cleaner_delayed_iput_mutex;
-+	atomic_t nr_delayed_iputs;
-+	wait_queue_head_t delayed_iputs_wait;
- 
- 	/* this protects tree_mod_seq_list */
- 	spinlock_t tree_mod_seq_lock;
-@@ -3212,6 +3213,7 @@ int btrfs_orphan_cleanup(struct btrfs_root *root);
- int btrfs_cont_expand(struct inode *inode, loff_t oldsize, loff_t size);
- void btrfs_add_delayed_iput(struct inode *inode);
- void btrfs_run_delayed_iputs(struct btrfs_fs_info *fs_info);
-+int btrfs_wait_on_delayed_iputs(struct btrfs_fs_info *fs_info);
- int btrfs_prealloc_file_range(struct inode *inode, int mode,
- 			      u64 start, u64 num_bytes, u64 min_size,
- 			      loff_t actual_len, u64 *alloc_hint);
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 51b2a5bf25e5..3dce9ff72e41 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1692,9 +1692,7 @@ static int cleaner_kthread(void *arg)
- 			goto sleep;
- 		}
- 
--		mutex_lock(&fs_info->cleaner_delayed_iput_mutex);
- 		btrfs_run_delayed_iputs(fs_info);
--		mutex_unlock(&fs_info->cleaner_delayed_iput_mutex);
- 
- 		again = btrfs_clean_one_deleted_snapshot(root);
- 		mutex_unlock(&fs_info->cleaner_mutex);
-@@ -2677,7 +2675,6 @@ int open_ctree(struct super_block *sb,
- 	mutex_init(&fs_info->delete_unused_bgs_mutex);
- 	mutex_init(&fs_info->reloc_mutex);
- 	mutex_init(&fs_info->delalloc_root_mutex);
--	mutex_init(&fs_info->cleaner_delayed_iput_mutex);
- 	seqlock_init(&fs_info->profiles_lock);
- 
- 	INIT_LIST_HEAD(&fs_info->dirty_cowonly_roots);
-@@ -2699,6 +2696,7 @@ int open_ctree(struct super_block *sb,
- 	atomic_set(&fs_info->defrag_running, 0);
- 	atomic_set(&fs_info->qgroup_op_seq, 0);
- 	atomic_set(&fs_info->reada_works_cnt, 0);
-+	atomic_set(&fs_info->nr_delayed_iputs, 0);
- 	atomic64_set(&fs_info->tree_mod_seq, 0);
- 	fs_info->sb = sb;
- 	fs_info->max_inline = BTRFS_DEFAULT_MAX_INLINE;
-@@ -2776,6 +2774,7 @@ int open_ctree(struct super_block *sb,
- 	init_waitqueue_head(&fs_info->transaction_wait);
- 	init_waitqueue_head(&fs_info->transaction_blocked_wait);
- 	init_waitqueue_head(&fs_info->async_submit_wait);
-+	init_waitqueue_head(&fs_info->delayed_iputs_wait);
- 
- 	INIT_LIST_HEAD(&fs_info->pinned_chunks);
- 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 2056d5d37dfe..d0a7b0589826 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -4258,8 +4258,9 @@ int btrfs_alloc_data_chunk_ondemand(struct btrfs_inode *inode, u64 bytes)
- 				 * operations. Wait for it to finish so that
- 				 * more space is released.
- 				 */
--				mutex_lock(&fs_info->cleaner_delayed_iput_mutex);
--				mutex_unlock(&fs_info->cleaner_delayed_iput_mutex);
-+				ret = btrfs_wait_on_delayed_iputs(fs_info);
-+				if (ret)
-+					return ret;
- 				goto again;
- 			} else {
- 				btrfs_end_transaction(trans);
-@@ -4829,9 +4830,9 @@ static int may_commit_transaction(struct btrfs_fs_info *fs_info,
- 	 * pinned space, so make sure we run the iputs before we do our pinned
- 	 * bytes check below.
- 	 */
--	mutex_lock(&fs_info->cleaner_delayed_iput_mutex);
- 	btrfs_run_delayed_iputs(fs_info);
--	mutex_unlock(&fs_info->cleaner_delayed_iput_mutex);
-+	wait_event(fs_info->delayed_iputs_wait,
-+		   atomic_read(&fs_info->nr_delayed_iputs) == 0);
- 
- 	trans = btrfs_join_transaction(fs_info->extent_root);
- 	if (IS_ERR(trans))
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 0a1671fb03bf..ab8242b10601 100644
+index ab8242b10601..dbcca915e681 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -3319,6 +3319,7 @@ void btrfs_add_delayed_iput(struct inode *inode)
- 	if (atomic_add_unless(&inode->i_count, -1, 1))
- 		return;
- 
-+	atomic_inc(&fs_info->nr_delayed_iputs);
- 	spin_lock(&fs_info->delayed_iput_lock);
- 	ASSERT(list_empty(&binode->delayed_iput));
- 	list_add_tail(&binode->delayed_iput, &fs_info->delayed_iputs);
-@@ -3338,11 +3339,31 @@ void btrfs_run_delayed_iputs(struct btrfs_fs_info *fs_info)
- 		list_del_init(&inode->delayed_iput);
- 		spin_unlock(&fs_info->delayed_iput_lock);
- 		iput(&inode->vfs_inode);
-+		if (atomic_dec_and_test(&fs_info->nr_delayed_iputs))
-+			wake_up(&fs_info->delayed_iputs_wait);
- 		spin_lock(&fs_info->delayed_iput_lock);
- 	}
- 	spin_unlock(&fs_info->delayed_iput_lock);
+@@ -5339,8 +5339,7 @@ static void evict_inode_truncate_pages(struct inode *inode)
  }
  
-+/**
-+ * btrfs_wait_on_delayed_iputs - wait on the delayed iputs to be done running
-+ * @fs_info - the fs_info for this fs
-+ * @return - EINTR if we were killed, 0 if nothing's pending
-+ *
-+ * This will wait on any delayed iputs that are currently running with KILLABLE
-+ * set.  Once they are all done running we will return, unless we are killed in
-+ * which case we return EINTR.
-+ */
-+int btrfs_wait_on_delayed_iputs(struct btrfs_fs_info *fs_info)
-+{
-+	int ret = wait_event_killable(fs_info->delayed_iputs_wait,
-+			atomic_read(&fs_info->nr_delayed_iputs) == 0);
-+	if (ret)
-+		return -EINTR;
-+	return 0;
-+}
-+
- /*
-  * This creates an orphan entry for the given inode in case something goes wrong
-  * in the middle of an unlink.
+ static struct btrfs_trans_handle *evict_refill_and_join(struct btrfs_root *root,
+-							struct btrfs_block_rsv *rsv,
+-							u64 min_size)
++							struct btrfs_block_rsv *rsv)
+ {
+ 	struct btrfs_fs_info *fs_info = root->fs_info;
+ 	struct btrfs_block_rsv *global_rsv = &fs_info->global_block_rsv;
+@@ -5350,7 +5349,7 @@ static struct btrfs_trans_handle *evict_refill_and_join(struct btrfs_root *root,
+ 		struct btrfs_trans_handle *trans;
+ 		int ret;
+ 
+-		ret = btrfs_block_rsv_refill(root, rsv, min_size,
++		ret = btrfs_block_rsv_refill(root, rsv, rsv->size,
+ 					     BTRFS_RESERVE_FLUSH_LIMIT);
+ 
+ 		if (ret && ++failures > 2) {
+@@ -5368,7 +5367,7 @@ static struct btrfs_trans_handle *evict_refill_and_join(struct btrfs_root *root,
+ 		 * it.
+ 		 */
+ 		if (!btrfs_check_space_for_delayed_refs(fs_info) &&
+-		    !btrfs_block_rsv_migrate(global_rsv, rsv, min_size, 0))
++		    !btrfs_block_rsv_migrate(global_rsv, rsv, rsv->size, 0))
+ 			return trans;
+ 
+ 		/* If not, commit and try again. */
+@@ -5384,7 +5383,6 @@ void btrfs_evict_inode(struct inode *inode)
+ 	struct btrfs_trans_handle *trans;
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 	struct btrfs_block_rsv *rsv;
+-	u64 min_size;
+ 	int ret;
+ 
+ 	trace_btrfs_inode_evict(inode);
+@@ -5394,8 +5392,6 @@ void btrfs_evict_inode(struct inode *inode)
+ 		return;
+ 	}
+ 
+-	min_size = btrfs_calc_trunc_metadata_size(fs_info, 1);
+-
+ 	evict_inode_truncate_pages(inode);
+ 
+ 	if (inode->i_nlink &&
+@@ -5428,13 +5424,13 @@ void btrfs_evict_inode(struct inode *inode)
+ 	rsv = btrfs_alloc_block_rsv(fs_info, BTRFS_BLOCK_RSV_TEMP);
+ 	if (!rsv)
+ 		goto no_delete;
+-	rsv->size = min_size;
++	rsv->size = btrfs_calc_trunc_metadata_size(fs_info, 1);
+ 	rsv->failfast = 1;
+ 
+ 	btrfs_i_size_write(BTRFS_I(inode), 0);
+ 
+ 	while (1) {
+-		trans = evict_refill_and_join(root, rsv, min_size);
++		trans = evict_refill_and_join(root, rsv);
+ 		if (IS_ERR(trans))
+ 			goto free_rsv;
+ 
+@@ -5459,7 +5455,7 @@ void btrfs_evict_inode(struct inode *inode)
+ 	 * If it turns out that we are dropping too many of these, we might want
+ 	 * to add a mechanism for retrying these after a commit.
+ 	 */
+-	trans = evict_refill_and_join(root, rsv, min_size);
++	trans = evict_refill_and_join(root, rsv);
+ 	if (!IS_ERR(trans)) {
+ 		trans->block_rsv = rsv;
+ 		btrfs_orphan_del(trans, BTRFS_I(inode));
 -- 
 2.14.3
 

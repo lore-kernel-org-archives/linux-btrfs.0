@@ -2,159 +2,249 @@ Return-Path: <SRS0=eG6O=MY=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.8 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_PASS,USER_AGENT_NEOMUTT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.8 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_NEOMUTT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 97A14C6783C
-	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 13:41:01 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 90421C6783C
+	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 13:52:06 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 45D9320835
-	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 13:41:01 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3CF2E20868
+	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 13:52:06 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="WhA6ED4H"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 45D9320835
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="IrK2hzwk"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 3CF2E20868
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=toxicpanda.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728577AbeJLVNa (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 12 Oct 2018 17:13:30 -0400
-Received: from mail-qt1-f194.google.com ([209.85.160.194]:43623 "EHLO
-        mail-qt1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728483AbeJLVN3 (ORCPT
+        id S1728633AbeJLVYh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 12 Oct 2018 17:24:37 -0400
+Received: from mail-qt1-f196.google.com ([209.85.160.196]:38245 "EHLO
+        mail-qt1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728354AbeJLVYh (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 12 Oct 2018 17:13:29 -0400
-Received: by mail-qt1-f194.google.com with SMTP id q41-v6so13816204qtq.10
-        for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2018 06:40:58 -0700 (PDT)
+        Fri, 12 Oct 2018 17:24:37 -0400
+Received: by mail-qt1-f196.google.com with SMTP id l9-v6so13878638qtf.5
+        for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2018 06:52:04 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=date:from:to:cc:subject:message-id:references:mime-version
          :content-disposition:in-reply-to:user-agent;
-        bh=kg9dsQxOjuE4LrLE7YvMMPuXKZoAI/Z+g9wU60y4WNA=;
-        b=WhA6ED4HOqiau35XMRkO4xSaj0utPyfv0YKdGjV/SKcNnqu9GGSXrDkkO+p8sldDZi
-         gTcVO8s8X9YSpMmWwrkV2WtiKBYArF7zjPjlIwtdQ639nG3Q59p1TEtFD/4BroNaMaRa
-         kDZeG+hRL5w+AYuhtcVtqH2AMBA3LbzPxyzI2l3/uVzdZVWYQRazQhQWA2f9LeAsmUQc
-         hFPtlMNnVbaRX6lav9g0I6GdRRo5rzQKU4AYaOqDA/yh0jshDCfN4O+hyQ3+OS58sPEn
-         o6X4FJjCrvI4d526JjtuCaY6f3QYohDEfCkOQSwB3ZG9JezcmWyaHdDDJNrCWz+c/1qN
-         lNxA==
+        bh=I2jzxmESBIHb38hlufgwLT00WDfMnsqYM2mEeNShipA=;
+        b=IrK2hzwkhIIhm2bBq7ynxsquupKS0vnMmEHagxtzwwsww+8N89qopOFLFisX5Fm0qL
+         6rqbdz9Y+Fgd/DF2kLiwmx0F4C7T7XW5cbUNhvfsgn+hCt/vMGKVPUSu8kY1ecOa11By
+         1S6Njy2OQCxIjjigJyBGEIQE35SpIFRHgqfUPpRD7XmjnXFhLLgjlPQbtZNEolkv4g2O
+         9meGe9U5sQok6m3VsIlPeKxiNIPGZSph1qV9llwji/zzryJW22+lGbXRFzbrXouw3s+b
+         sL+fpM1LEVhbGNM7U4SWRwASK3Lw4CrNkpfZdYNqFHSKnn2wW1Of8CVzCEZF/X2WTAjE
+         WFgQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:date:from:to:cc:subject:message-id:references
          :mime-version:content-disposition:in-reply-to:user-agent;
-        bh=kg9dsQxOjuE4LrLE7YvMMPuXKZoAI/Z+g9wU60y4WNA=;
-        b=I6xdc1jGKIuMik/YP5DjIl7u1ud2mok7FZNEvfYzGmpXQk6EFcJj3Ug/tIP4lc2bzS
-         aDyBs/Rurr93H09prw9q4FEb5WQcRiezdAZF92MsSVfraJoVRPDqrtxTTSRL7qFgHE9z
-         QpuTXd6VKmp9jEn/bfmcTKMc3RYz49f6umG5+q7Q382860II2RU6VxljfM6MgdpMWKrN
-         0WkFW2SGFkz5XFsww0bAxzh+Du01t2oDulBvjiteaH6WI1IpZTh4dlWbWlLpPPE1UXUc
-         5BLBZzP4WyEYWwJCrYta+2pWWJ41akVPTQyQ/vtkHDSMcO8aAzH/PtErBzHTsV0twlYi
-         yJ/Q==
-X-Gm-Message-State: ABuFfogiB3hNNbgMO0zU3EFPRdp4HXKobHbuoPU528Xj8WK1JexUE3U+
-        3ern2250lvdNtbS+fMfWLAj/Kxrc5OM=
-X-Google-Smtp-Source: ACcGV60A1/v/WOm+1WNt59bTwxN9ty1qW7l5MGNYkrjeSIXMBKliNSxwnw7wgFB72ACAAts2GhxuJg==
-X-Received: by 2002:a0c:cdca:: with SMTP id a10mr5973200qvn.8.1539351658332;
-        Fri, 12 Oct 2018 06:40:58 -0700 (PDT)
+        bh=I2jzxmESBIHb38hlufgwLT00WDfMnsqYM2mEeNShipA=;
+        b=qzYEjuumPcpaHlDvjAU6AKZO6JbUNqupoV7lgDxEzbReJp5pqM2S4TzfLbF55C7jOt
+         J8YJ/PNO8fF12PAQgKL32mAXCO2LAr0LLUDHtMqHsHpSKcTsLmKIdQ01tEvuZvsUlwxi
+         zdER+cYp7svy8DUbX5naDFA9N5+iqyyWod9rLrbsLYusaoXLzovxkS7Jfz8DqfB0SxQU
+         cuj9PmMvV7BeZt7lAP+WRBvQXXcZayFCtFdhdMaoV7nTyMcW8zv03mVgiGy51zTzukJq
+         JdlBfBwBUeEC620kkf/R9Bg1DaoGsoFhBUvfIhZmji0jpr9DkJu8HBjDTpO0mt4BPfGP
+         43aA==
+X-Gm-Message-State: ABuFfoiQZZVHd537YPmv3GOnPfK5/Wq09+2PoZyyL7RQbSqPN8HqKSpJ
+        8YshFBHYSUrcAiDOvNRE/HASDw==
+X-Google-Smtp-Source: ACcGV62LRT6uedcOTMjZgGllQsrZUvaySSsVqbiH1YwnSe7+pz0ptQdpUkuccX/Iqrs1zkr3Hu9b9Q==
+X-Received: by 2002:ac8:3f89:: with SMTP id d9-v6mr5798236qtk.46.1539352323565;
+        Fri, 12 Oct 2018 06:52:03 -0700 (PDT)
 Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id k71-v6sm1013535qkh.30.2018.10.12.06.40.57
+        by smtp.gmail.com with ESMTPSA id m2-v6sm502758qkg.92.2018.10.12.06.52.02
         (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
-        Fri, 12 Oct 2018 06:40:57 -0700 (PDT)
-Date:   Fri, 12 Oct 2018 09:40:56 -0400
+        Fri, 12 Oct 2018 06:52:02 -0700 (PDT)
+Date:   Fri, 12 Oct 2018 09:52:01 -0400
 From:   Josef Bacik <josef@toxicpanda.com>
-To:     fdmanana@kernel.org
+To:     Qu Wenruo <wqu@suse.com>
 Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: fix deadlock when writing out free space caches
-Message-ID: <20181012134054.irrjfy52xrarvfnn@destiny>
-References: <20181012090355.25755-1-fdmanana@kernel.org>
+Subject: Re: [PATCH v3 4/4] btrfs: Refactor find_free_extent() loops update
+ into find_free_extent_update_loop()
+Message-ID: <20181012135200.ddo7dhhrwng26lnh@destiny>
+References: <20181012061819.19482-1-wqu@suse.com>
+ <20181012061819.19482-5-wqu@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20181012090355.25755-1-fdmanana@kernel.org>
+In-Reply-To: <20181012061819.19482-5-wqu@suse.com>
 User-Agent: NeoMutt/20180716
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Oct 12, 2018 at 10:03:55AM +0100, fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
+On Fri, Oct 12, 2018 at 02:18:19PM +0800, Qu Wenruo wrote:
+> We have a complex loop design for find_free_extent(), that has different
+> behavior for each loop, some even includes new chunk allocation.
 > 
-> When writing out a block group free space cache we can end deadlocking
-> with ourseves on an extent buffer lock resulting in a warning like the
-> following:
+> Instead of putting such a long code into find_free_extent() and makes it
+> harder to read, just extract them into find_free_extent_update_loop().
 > 
->   [245043.379979] WARNING: CPU: 4 PID: 2608 at fs/btrfs/locking.c:251 btrfs_tree_lock+0x1be/0x1d0 [btrfs]
->   [245043.392792] CPU: 4 PID: 2608 Comm: btrfs-transacti Tainted: G
->     W I      4.16.8 #1
->   [245043.395489] RIP: 0010:btrfs_tree_lock+0x1be/0x1d0 [btrfs]
->   [245043.396791] RSP: 0018:ffffc9000424b840 EFLAGS: 00010246
->   [245043.398093] RAX: 0000000000000a30 RBX: ffff8807e20a3d20 RCX: 0000000000000001
->   [245043.399414] RDX: 0000000000000001 RSI: 0000000000000002 RDI: ffff8807e20a3d20
->   [245043.400732] RBP: 0000000000000001 R08: ffff88041f39a700 R09: ffff880000000000
->   [245043.402021] R10: 0000000000000040 R11: ffff8807e20a3d20 R12: ffff8807cb220630
->   [245043.403296] R13: 0000000000000001 R14: ffff8807cb220628 R15: ffff88041fbdf000
->   [245043.404780] FS:  0000000000000000(0000) GS:ffff88082fc80000(0000) knlGS:0000000000000000
->   [245043.406050] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
->   [245043.407321] CR2: 00007fffdbdb9f10 CR3: 0000000001c09005 CR4: 00000000000206e0
->   [245043.408670] Call Trace:
->   [245043.409977]  btrfs_search_slot+0x761/0xa60 [btrfs]
->   [245043.411278]  btrfs_insert_empty_items+0x62/0xb0 [btrfs]
->   [245043.412572]  btrfs_insert_item+0x5b/0xc0 [btrfs]
->   [245043.413922]  btrfs_create_pending_block_groups+0xfb/0x1e0 [btrfs]
->   [245043.415216]  do_chunk_alloc+0x1e5/0x2a0 [btrfs]
->   [245043.416487]  find_free_extent+0xcd0/0xf60 [btrfs]
->   [245043.417813]  btrfs_reserve_extent+0x96/0x1e0 [btrfs]
->   [245043.419105]  btrfs_alloc_tree_block+0xfb/0x4a0 [btrfs]
->   [245043.420378]  __btrfs_cow_block+0x127/0x550 [btrfs]
->   [245043.421652]  btrfs_cow_block+0xee/0x190 [btrfs]
->   [245043.422979]  btrfs_search_slot+0x227/0xa60 [btrfs]
->   [245043.424279]  ? btrfs_update_inode_item+0x59/0x100 [btrfs]
->   [245043.425538]  ? iput+0x72/0x1e0
->   [245043.426798]  write_one_cache_group.isra.49+0x20/0x90 [btrfs]
->   [245043.428131]  btrfs_start_dirty_block_groups+0x102/0x420 [btrfs]
->   [245043.429419]  btrfs_commit_transaction+0x11b/0x880 [btrfs]
->   [245043.430712]  ? start_transaction+0x8e/0x410 [btrfs]
->   [245043.432006]  transaction_kthread+0x184/0x1a0 [btrfs]
->   [245043.433341]  kthread+0xf0/0x130
->   [245043.434628]  ? btrfs_cleanup_transaction+0x4e0/0x4e0 [btrfs]
->   [245043.435928]  ? kthread_create_worker_on_cpu+0x40/0x40
->   [245043.437236]  ret_from_fork+0x1f/0x30
->   [245043.441054] ---[ end trace 15abaa2aaf36827f ]---
+> With all the cleanups, the main find_free_extent() should be pretty
+> barebone:
 > 
-> This is because at write_one_cache_group() when we are COWing a leaf from
-> the extent tree we end up allocating a new block group (chunk) and,
-> because we have hit a threshold on the number of bytes reserved for system
-> chunks, we attempt to finalize the creation of new block groups from the
-> current transaction, by calling btrfs_create_pending_block_groups().
-> However here we also need to modify the extent tree in order to insert
-> a block group item, and if the location for this new block group item
-> happens to be in the same leaf that we were COWing earlier, we deadlock
-> since btrfs_search_slot() tries to write lock the extent buffer that we
-> locked before at write_one_cache_group().
+> find_free_extent()
+> |- Iterate through all block groups
+> |  |- Get a valid block group
+> |  |- Try to do clustered allocation in that block group
+> |  |- Try to do unclustered allocation in that block group
+> |  |- Check if the result is valid
+> |  |  |- If valid, then exit
+> |  |- Jump to next block group
+> |
+> |- Push harder to find free extents
+>    |- If not found, re-iterate all block groups
 > 
-> We have already hit similar cases in the past and commit d9a0540a79f8
-> ("Btrfs: fix deadlock when finalizing block group creation") fixed some
-> of those cases by delaying the creation of pending block groups at the
-> known specific spots that could lead to a deadlock. This change reworks
-> that commit to be more generic so that we don't have to add similar logic
-> to every possible path that can lead to a deadlock. This is done by
-> making __btrfs_cow_block() disallowing the creation of new block groups
-> (setting the transaction's can_flush_pending_bgs to false) before it
-> attempts to allocate a new extent buffer for either the extent, chunk or
-> device trees, since those are the trees that pending block creation
-> modifies. Once the new extent buffer is allocated, it allows creation of
-> pending block groups to happen again.
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> Reviewed-by: Su Yue <suy.fnst@cn.fujitsu.com>
+> ---
+>  fs/btrfs/extent-tree.c | 217 ++++++++++++++++++++++-------------------
+>  1 file changed, 117 insertions(+), 100 deletions(-)
 > 
-> This change depends on a recent patch from Josef which is not yet in
-> Linus' tree, named "btrfs: make sure we create all new block groups" in
-> order to avoid occasional warnings at btrfs_trans_release_chunk_metadata().
-> 
-> Fixes: d9a0540a79f8 ("Btrfs: fix deadlock when finalizing block group creation")
-> Bugzilla: https://bugzilla.kernel.org/show_bug.cgi?id=199753
-> Link: https://lore.kernel.org/linux-btrfs/CAJtFHUTHna09ST-_EEiyWmDH6gAqS6wa=zMNMBsifj8ABu99cw@mail.gmail.com/
-> Reported-by: E V <eliventer@gmail.com>
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index e6bfa91af41c..938569d2c583 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -7236,7 +7236,9 @@ struct find_free_extent_ctl {
+>  	/* RAID index, converted from flags */
+>  	int index;
+>  
+> -	/* Current loop number */
+> +	/*
+> +	 * Current loop number, check find_free_extent_update_loop() for details
+> +	 */
+>  	int loop;
+>  
+>  	/*
+> @@ -7433,6 +7435,117 @@ static int find_free_extent_unclustered(struct btrfs_block_group_cache *bg,
+>  	return 0;
+>  }
+>  
+> +/*
+> + * Return >0 means caller needs to re-search for free extent
+> + * Return 0 means we have the needed free extent.
+> + * Return <0 means we failed to locate any free extent.
+> + */
+> +static int find_free_extent_update_loop(struct btrfs_fs_info *fs_info,
+> +					struct btrfs_free_cluster *last_ptr,
+> +					struct btrfs_key *ins,
+> +					struct find_free_extent_ctl *ffe_ctl,
+> +					int full_search, bool use_cluster)
+> +{
+> +	struct btrfs_root *root = fs_info->extent_root;
+> +	int ret;
+> +
+> +	if ((ffe_ctl->loop == LOOP_CACHING_NOWAIT) &&
+> +	    ffe_ctl->have_caching_bg && !ffe_ctl->orig_have_caching_bg)
+> +		ffe_ctl->orig_have_caching_bg = true;
+> +
+> +	if (!ins->objectid && ffe_ctl->loop >= LOOP_CACHING_WAIT &&
+> +	     ffe_ctl->have_caching_bg)
+> +		return 1;
+> +
+> +	if (!ins->objectid && ++(ffe_ctl->index) < BTRFS_NR_RAID_TYPES)
+> +		return 1;
+> +
+> +	/*
+> +	 * LOOP_CACHING_NOWAIT, search partially cached block groups, kicking
+> +	 *			caching kthreads as we move along
+> +	 * LOOP_CACHING_WAIT, search everything, and wait if our bg is caching
+> +	 * LOOP_ALLOC_CHUNK, force a chunk allocation and try again
+> +	 * LOOP_NO_EMPTY_SIZE, set empty_size and empty_cluster to 0 and try
+> +	 *			again
+> +	 */
+> +	if (!ins->objectid && ffe_ctl->loop < LOOP_NO_EMPTY_SIZE) {
+> +		ffe_ctl->index = 0;
+> +		if (ffe_ctl->loop == LOOP_CACHING_NOWAIT) {
+> +			/*
+> +			 * We want to skip the LOOP_CACHING_WAIT step if we
+> +			 * don't have any uncached bgs and we've already done a
+> +			 * full search through.
+> +			 */
+> +			if (ffe_ctl->orig_have_caching_bg || !full_search)
+> +				ffe_ctl->loop = LOOP_CACHING_WAIT;
+> +			else
+> +				ffe_ctl->loop = LOOP_ALLOC_CHUNK;
+> +		} else {
+> +			ffe_ctl->loop++;
+> +		}
+> +
+> +		if (ffe_ctl->loop == LOOP_ALLOC_CHUNK) {
+> +			struct btrfs_trans_handle *trans;
+> +			int exist = 0;
+> +
+> +			trans = current->journal_info;
+> +			if (trans)
+> +				exist = 1;
+> +			else
+> +				trans = btrfs_join_transaction(root);
+> +
+> +			if (IS_ERR(trans)) {
+> +				ret = PTR_ERR(trans);
+> +				return ret;
+> +			}
+> +
+> +			ret = do_chunk_alloc(trans, ffe_ctl->flags,
+> +					     CHUNK_ALLOC_FORCE);
+> +
+> +			/*
+> +			 * If we can't allocate a new chunk we've already looped
+> +			 * through at least once, move on to the NO_EMPTY_SIZE
+> +			 * case.
+> +			 */
+> +			if (ret == -ENOSPC)
+> +				ffe_ctl->loop = LOOP_NO_EMPTY_SIZE;
+> +
+> +			/* Do not bail out on ENOSPC since we can do more. */
+> +			if (ret < 0 && ret != -ENOSPC)
+> +				btrfs_abort_transaction(trans, ret);
+> +			else
+> +				ret = 0;
+> +			if (!exist)
+> +				btrfs_end_transaction(trans);
+> +			if (ret)
+> +				return ret;
+> +		}
+> +
+> +		if (ffe_ctl->loop == LOOP_NO_EMPTY_SIZE) {
+> +			/*
+> +			 * Don't loop again if we already have no empty_size and
+> +			 * no empty_cluster.
+> +			 */
+> +			if (ffe_ctl->empty_size == 0 &&
+> +			    ffe_ctl->empty_cluster == 0)
+> +				return -ENOSPC;
+> +			ffe_ctl->empty_size = 0;
+> +			ffe_ctl->empty_cluster = 0;
+> +		}
+> +		return 1;
+> +	} else if (!ins->objectid) {
+> +		ret = -ENOSPC;
+> +	} else if (ins->objectid) {
+> +		if (!use_cluster && last_ptr) {
+> +			spin_lock(&last_ptr->lock);
+> +			last_ptr->window_start = ins->objectid;
+> +			spin_unlock(&last_ptr->lock);
+> +		}
+> +		ret = 0;
+> +	}
+> +	return ret;
+> +}
 
-Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+Rework this so the
 
-Thanks,
+if (ins->objectid)
+	blah
+
+is the first thing, that way you don't have to do the
+
+if (!ins->objectid && <other things>)
+
+for all the other if statements here.  The fast path should be the first thing,
+then we can deal with all of the other crap last.  Thanks,
 
 Josef

@@ -7,62 +7,62 @@ X-Spam-Status: No, score=-8.8 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
 	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 60DE3C6787C
-	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 19:33:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6E59EC6787C
+	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 19:33:06 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 284C92087D
-	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 19:33:04 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 366C42087D
+	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 19:33:06 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="SHU5fAyz"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 284C92087D
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="Z2l6+vhh"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 366C42087D
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=toxicpanda.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726762AbeJMDHC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 12 Oct 2018 23:07:02 -0400
-Received: from mail-qt1-f195.google.com ([209.85.160.195]:37399 "EHLO
-        mail-qt1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725935AbeJMDHC (ORCPT
+        id S1726770AbeJMDHF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 12 Oct 2018 23:07:05 -0400
+Received: from mail-qk1-f196.google.com ([209.85.222.196]:34223 "EHLO
+        mail-qk1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725935AbeJMDHE (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 12 Oct 2018 23:07:02 -0400
-Received: by mail-qt1-f195.google.com with SMTP id d14-v6so15061116qto.4
-        for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2018 12:33:02 -0700 (PDT)
+        Fri, 12 Oct 2018 23:07:04 -0400
+Received: by mail-qk1-f196.google.com with SMTP id p6-v6so8369083qkg.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2018 12:33:04 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:cc:subject:date:message-id:in-reply-to:references;
-        bh=J1nvikXF93vBk79skKC0f+gf8yb5S1jfySvhFcqnzF4=;
-        b=SHU5fAyz5XNLgGKxkw4xZlIt4Jh0IHCuD644icXLTKHduTq5piUEdHoyt7/ts0TlsH
-         kUH/GHQFpxWJx3kM+PVbrL2vOfSqpub+drUSzRNzvzDnbUlJXRZoK5dGPQ6cPQFhc/3/
-         xsEjUWkCM9szfolpcw7Gwspds82bkxTQiO9PHVCWit1pLfsndGwkOFdIajWk269z5fW2
-         KBgP87dlhKJsHf26wAblcMAgx0W+NEMiAxK+CqvNEDx168KO9DMOk0PzufoiGPCMM94N
-         VKyepeDJ1fj3LubY2/fb8T6CosEs5htnX2gRmb5TwHz52evztzEfeeechysAOFlEDxLz
-         I1wA==
+        bh=/1YdvlrrEVlQm7E7WHAhXkpqC+TBu9F+Y13pNbn/ob8=;
+        b=Z2l6+vhhczKihir2zLc0QNqK70PDGxPRriU4KhAWIdz2Ya6oHSY4KRWveoQwVB4+lY
+         ++yip40rdI8jNunMS7S9purUs+KIu8HbNdwu37YToap+O77elMDS4i3K2crx/fYLpSri
+         QWo0sDKT5JL7CDcO8B48fBGuKfV/npW0LUGRu0duyFMWqaAnWB6u1NnUJUBomWIOwKkH
+         vRZN0RyKQSBUOj9VHX2+/4OjRkxDY9/qSXcAJ2ancnwuRpszCRaQclv62wzu+D/5pDAZ
+         yQBQfhhHO+B0fj2eBYfyU/PMadOawgVsCiKEzdeHTWtUhfZFYv48W1E7CA47ny7oXnLG
+         JtDQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references;
-        bh=J1nvikXF93vBk79skKC0f+gf8yb5S1jfySvhFcqnzF4=;
-        b=bs4ZJzn0ZrYNya/p3bKobYQ7HJ1Spz5E88EnskMUIJufYbZU1MMLkgkocgmrRj0dEr
-         DYflGfLV97W50bp/P8peqUeRGE/og6t6MPl9k3Ob0KfDkTpnDXT7b0pSEZNGMVWFIa8L
-         KZmo+bzbn1KIJeL9g7mH5r761AtqOpG33jglussd/NogYrvnPhXhWROhqhWA7rBt6pil
-         aGVQSzm4C1EVwHBlzbZCqeg0HQclmbLiQ8LdUZ6yfA6R3Ch+HX4CisIhUyhKRK7PIeUy
-         i+hD0exVeZYpAwPZWU+fKQe/ZIZZjCggz4zTnFuLoDa/DF+TZYhiLSQEdd7xvrvIY01v
-         LUfw==
-X-Gm-Message-State: ABuFfogdDGyJ2MZ3Vc8J0wnaG54DciX6AG34OGk2DjsvEfJ1cZ9wRUYt
-        8etdKqqKvtJ7iX9o/ERx1fZCsgL8NZs=
-X-Google-Smtp-Source: ACcGV606mE5fqsS6YuSLZ9GpITIJm5rrJkbuSMIcwUt9FfPoYgKXFkrxz2mjjroNP+tOMGqgJHqaTA==
-X-Received: by 2002:ac8:540d:: with SMTP id b13-v6mr6688964qtq.242.1539372781506;
-        Fri, 12 Oct 2018 12:33:01 -0700 (PDT)
+        bh=/1YdvlrrEVlQm7E7WHAhXkpqC+TBu9F+Y13pNbn/ob8=;
+        b=tfFE9C7k7gh1kWLEkc4ENKGC2+Xo7BkAHyhw19c/1GykzMhB+Fxbq6HIlRqRCZvqLC
+         0vUzEY6Li3fcdGLItZEXsT/2pUPxesswydBSQImPXOImlGL0nX67PcG3c0Eq2aisF2Q0
+         GakoHfqq9rWQSlpeuDOURdTxfT5A/k27ZUdwAZfDxRnKs29dzPb++gOW7R2VNnDRyB1N
+         xEP+Te/9d4OhbfoUzUeTBC4K3xWHmnoKaRqRWf9UFSA7hlpqOdIoEiwp9qKLadWMJcBk
+         k908ONYr2n8mBQVFpBpV+v5t8BAwbsCq1TEvlk7Kb4yiffZ1gCsfluh7JtSvBRx2dHh/
+         jfFA==
+X-Gm-Message-State: ABuFfogpUuz1OwLFEqAYfZrd4mwiGRnYgXj82uhovobC/AyG4RyG/rns
+        lN2FveP2pGHEKPq0x/w/KGJYTgDSrD0=
+X-Google-Smtp-Source: ACcGV60WHY5G5NsYES0gRKhfpFeyMjo3YpJKsYdP9ycNmASP31Q8JanCoMG51cvzmE9HDB38j5TFyA==
+X-Received: by 2002:ae9:ef11:: with SMTP id d17-v6mr7186828qkg.80.1539372783484;
+        Fri, 12 Oct 2018 12:33:03 -0700 (PDT)
 Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id k185-v6sm1393771qkd.27.2018.10.12.12.33.00
+        by smtp.gmail.com with ESMTPSA id y26-v6sm1253675qty.52.2018.10.12.12.33.02
         (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
-        Fri, 12 Oct 2018 12:33:00 -0700 (PDT)
+        Fri, 12 Oct 2018 12:33:02 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
 Cc:     Josef Bacik <jbacik@fb.com>
-Subject: [PATCH 01/42] btrfs: add btrfs_delete_ref_head helper
-Date:   Fri, 12 Oct 2018 15:32:15 -0400
-Message-Id: <20181012193256.13735-2-josef@toxicpanda.com>
+Subject: [PATCH 02/42] btrfs: add cleanup_ref_head_accounting helper
+Date:   Fri, 12 Oct 2018 15:32:16 -0400
+Message-Id: <20181012193256.13735-3-josef@toxicpanda.com>
 X-Mailer: git-send-email 2.14.3
 In-Reply-To: <20181012193256.13735-1-josef@toxicpanda.com>
 References: <20181012193256.13735-1-josef@toxicpanda.com>
@@ -73,99 +73,117 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Josef Bacik <jbacik@fb.com>
 
-We do this dance in cleanup_ref_head and check_ref_cleanup, unify it
-into a helper and cleanup the calling functions.
+We were missing some quota cleanups in check_ref_cleanup, so break the
+ref head accounting cleanup into a helper and call that from both
+check_ref_cleanup and cleanup_ref_head.  This will hopefully ensure that
+we don't screw up accounting in the future for other things that we add.
 
-Signed-off-by: Josef Bacik <jbacik@fb.com>
 Reviewed-by: Omar Sandoval <osandov@fb.com>
+Reviewed-by: Liu Bo <bo.liu@linux.alibaba.com>
+Signed-off-by: Josef Bacik <jbacik@fb.com>
 ---
- fs/btrfs/delayed-ref.c | 14 ++++++++++++++
- fs/btrfs/delayed-ref.h |  3 ++-
- fs/btrfs/extent-tree.c | 22 +++-------------------
- 3 files changed, 19 insertions(+), 20 deletions(-)
+ fs/btrfs/extent-tree.c | 67 +++++++++++++++++++++++++++++---------------------
+ 1 file changed, 39 insertions(+), 28 deletions(-)
 
-diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
-index 62ff545ba1f7..3a9e4ac21794 100644
---- a/fs/btrfs/delayed-ref.c
-+++ b/fs/btrfs/delayed-ref.c
-@@ -393,6 +393,20 @@ btrfs_select_ref_head(struct btrfs_trans_handle *trans)
- 	return head;
- }
- 
-+void btrfs_delete_ref_head(struct btrfs_delayed_ref_root *delayed_refs,
-+			   struct btrfs_delayed_ref_head *head)
-+{
-+	lockdep_assert_held(&delayed_refs->lock);
-+	lockdep_assert_held(&head->lock);
-+
-+	rb_erase(&head->href_node, &delayed_refs->href_root);
-+	RB_CLEAR_NODE(&head->href_node);
-+	atomic_dec(&delayed_refs->num_entries);
-+	delayed_refs->num_heads--;
-+	if (head->processing == 0)
-+		delayed_refs->num_heads_ready--;
-+}
-+
- /*
-  * Helper to insert the ref_node to the tail or merge with tail.
-  *
-diff --git a/fs/btrfs/delayed-ref.h b/fs/btrfs/delayed-ref.h
-index d9f2a4ebd5db..7769177b489e 100644
---- a/fs/btrfs/delayed-ref.h
-+++ b/fs/btrfs/delayed-ref.h
-@@ -261,7 +261,8 @@ static inline void btrfs_delayed_ref_unlock(struct btrfs_delayed_ref_head *head)
- {
- 	mutex_unlock(&head->mutex);
- }
--
-+void btrfs_delete_ref_head(struct btrfs_delayed_ref_root *delayed_refs,
-+			   struct btrfs_delayed_ref_head *head);
- 
- struct btrfs_delayed_ref_head *
- btrfs_select_ref_head(struct btrfs_trans_handle *trans);
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index f77226d8020a..d24a0de4a2e7 100644
+index d24a0de4a2e7..a44d55e36e11 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -2492,12 +2492,9 @@ static int cleanup_ref_head(struct btrfs_trans_handle *trans,
- 		spin_unlock(&delayed_refs->lock);
- 		return 1;
- 	}
--	delayed_refs->num_heads--;
--	rb_erase(&head->href_node, &delayed_refs->href_root);
--	RB_CLEAR_NODE(&head->href_node);
-+	btrfs_delete_ref_head(delayed_refs, head);
- 	spin_unlock(&head->lock);
- 	spin_unlock(&delayed_refs->lock);
--	atomic_dec(&delayed_refs->num_entries);
+@@ -2461,6 +2461,41 @@ static int cleanup_extent_op(struct btrfs_trans_handle *trans,
+ 	return ret ? ret : 1;
+ }
  
- 	trace_run_delayed_ref_head(fs_info, head, 0);
- 
-@@ -6984,22 +6981,9 @@ static noinline int check_ref_cleanup(struct btrfs_trans_handle *trans,
- 	if (!mutex_trylock(&head->mutex))
- 		goto out;
- 
--	/*
--	 * at this point we have a head with no other entries.  Go
--	 * ahead and process it.
--	 */
--	rb_erase(&head->href_node, &delayed_refs->href_root);
--	RB_CLEAR_NODE(&head->href_node);
--	atomic_dec(&delayed_refs->num_entries);
--
--	/*
--	 * we don't take a ref on the node because we're removing it from the
--	 * tree, so we just steal the ref the tree was holding.
--	 */
--	delayed_refs->num_heads--;
--	if (head->processing == 0)
--		delayed_refs->num_heads_ready--;
-+	btrfs_delete_ref_head(delayed_refs, head);
- 	head->processing = 0;
++static void cleanup_ref_head_accounting(struct btrfs_trans_handle *trans,
++					struct btrfs_delayed_ref_head *head)
++{
++	struct btrfs_fs_info *fs_info = trans->fs_info;
++	struct btrfs_delayed_ref_root *delayed_refs =
++		&trans->transaction->delayed_refs;
 +
++	if (head->total_ref_mod < 0) {
++		struct btrfs_space_info *space_info;
++		u64 flags;
++
++		if (head->is_data)
++			flags = BTRFS_BLOCK_GROUP_DATA;
++		else if (head->is_system)
++			flags = BTRFS_BLOCK_GROUP_SYSTEM;
++		else
++			flags = BTRFS_BLOCK_GROUP_METADATA;
++		space_info = __find_space_info(fs_info, flags);
++		ASSERT(space_info);
++		percpu_counter_add_batch(&space_info->total_bytes_pinned,
++				   -head->num_bytes,
++				   BTRFS_TOTAL_BYTES_PINNED_BATCH);
++
++		if (head->is_data) {
++			spin_lock(&delayed_refs->lock);
++			delayed_refs->pending_csums -= head->num_bytes;
++			spin_unlock(&delayed_refs->lock);
++		}
++	}
++
++	/* Also free its reserved qgroup space */
++	btrfs_qgroup_free_delayed_ref(fs_info, head->qgroup_ref_root,
++				      head->qgroup_reserved);
++}
++
+ static int cleanup_ref_head(struct btrfs_trans_handle *trans,
+ 			    struct btrfs_delayed_ref_head *head)
+ {
+@@ -2496,31 +2531,6 @@ static int cleanup_ref_head(struct btrfs_trans_handle *trans,
  	spin_unlock(&head->lock);
  	spin_unlock(&delayed_refs->lock);
  
+-	trace_run_delayed_ref_head(fs_info, head, 0);
+-
+-	if (head->total_ref_mod < 0) {
+-		struct btrfs_space_info *space_info;
+-		u64 flags;
+-
+-		if (head->is_data)
+-			flags = BTRFS_BLOCK_GROUP_DATA;
+-		else if (head->is_system)
+-			flags = BTRFS_BLOCK_GROUP_SYSTEM;
+-		else
+-			flags = BTRFS_BLOCK_GROUP_METADATA;
+-		space_info = __find_space_info(fs_info, flags);
+-		ASSERT(space_info);
+-		percpu_counter_add_batch(&space_info->total_bytes_pinned,
+-				   -head->num_bytes,
+-				   BTRFS_TOTAL_BYTES_PINNED_BATCH);
+-
+-		if (head->is_data) {
+-			spin_lock(&delayed_refs->lock);
+-			delayed_refs->pending_csums -= head->num_bytes;
+-			spin_unlock(&delayed_refs->lock);
+-		}
+-	}
+-
+ 	if (head->must_insert_reserved) {
+ 		btrfs_pin_extent(fs_info, head->bytenr,
+ 				 head->num_bytes, 1);
+@@ -2530,9 +2540,9 @@ static int cleanup_ref_head(struct btrfs_trans_handle *trans,
+ 		}
+ 	}
+ 
+-	/* Also free its reserved qgroup space */
+-	btrfs_qgroup_free_delayed_ref(fs_info, head->qgroup_ref_root,
+-				      head->qgroup_reserved);
++	cleanup_ref_head_accounting(trans, head);
++
++	trace_run_delayed_ref_head(fs_info, head, 0);
+ 	btrfs_delayed_ref_unlock(head);
+ 	btrfs_put_delayed_ref_head(head);
+ 	return 0;
+@@ -6991,6 +7001,7 @@ static noinline int check_ref_cleanup(struct btrfs_trans_handle *trans,
+ 	if (head->must_insert_reserved)
+ 		ret = 1;
+ 
++	cleanup_ref_head_accounting(trans, head);
+ 	mutex_unlock(&head->mutex);
+ 	btrfs_put_delayed_ref_head(head);
+ 	return ret;
 -- 
 2.14.3
 

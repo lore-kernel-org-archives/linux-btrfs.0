@@ -2,227 +2,167 @@ Return-Path: <SRS0=eG6O=MY=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.5 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 16C79C43441
-	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 09:03:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 99C31C43441
+	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 09:13:41 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id C7D2D2075B
-	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 09:03:57 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=kernel.org header.i=@kernel.org header.b="w+1u9WAV"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org C7D2D2075B
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=kernel.org
+	by mail.kernel.org (Postfix) with ESMTP id 3C63C2086A
+	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Oct 2018 09:13:41 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 3C63C2086A
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728028AbeJLQfW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 12 Oct 2018 12:35:22 -0400
-Received: from mail.kernel.org ([198.145.29.99]:37340 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727992AbeJLQfW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 12 Oct 2018 12:35:22 -0400
-Received: from localhost.localdomain (bl8-197-74.dsl.telepac.pt [85.241.197.74])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 27C602075B
-        for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2018 09:03:54 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1539335035;
-        bh=7oFXwbmetbEBcAtRMHybbDoDkHJn89LuybMMHjHZ1Hw=;
-        h=From:To:Subject:Date:From;
-        b=w+1u9WAVt+RuxJr/xV16sBAzNVo8cJ5Y7lJZYql2BqkYITlVT7pZRdnkNCbfPrSPt
-         N8p7fx8n6xvaFe4rpaZolZ0ybv4aUbhWEy8n/932Y2eoLNciiwSad/bFLYUESzBZ5l
-         JLUbuRLStzpUPFzjZwrbFrW5vTK2F3tEbnJbpPfU=
-From:   fdmanana@kernel.org
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: fix deadlock when writing out free space caches
-Date:   Fri, 12 Oct 2018 10:03:55 +0100
-Message-Id: <20181012090355.25755-1-fdmanana@kernel.org>
-X-Mailer: git-send-email 2.11.0
+        id S1728019AbeJLQpH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 12 Oct 2018 12:45:07 -0400
+Received: from mx2.suse.de ([195.135.220.15]:59434 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726071AbeJLQpH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 12 Oct 2018 12:45:07 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 74E4DAF8E;
+        Fri, 12 Oct 2018 09:13:37 +0000 (UTC)
+Subject: Re: [PATCH 2/2] btrfs-progs: Deprecate unused super block member
+ log_root_transid
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org
+References: <20181012064258.27033-1-wqu@suse.com>
+ <20181012064258.27033-2-wqu@suse.com>
+ <2b4ff29a-ff9b-8b56-ef13-4b76e72a281f@suse.com>
+ <fbb5f43e-8eb0-08c6-a1c9-855efd960d3d@gmx.com>
+From:   Nikolay Borisov <nborisov@suse.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <cb6dd0fa-68e9-9e7c-c9cc-6ac609f9d9fc@suse.com>
+Date:   Fri, 12 Oct 2018 12:13:36 +0300
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:52.0) Gecko/20100101
+ Thunderbird/52.9.1
+MIME-Version: 1.0
+In-Reply-To: <fbb5f43e-8eb0-08c6-a1c9-855efd960d3d@gmx.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Filipe Manana <fdmanana@suse.com>
 
-When writing out a block group free space cache we can end deadlocking
-with ourseves on an extent buffer lock resulting in a warning like the
-following:
 
-  [245043.379979] WARNING: CPU: 4 PID: 2608 at fs/btrfs/locking.c:251 btrfs_tree_lock+0x1be/0x1d0 [btrfs]
-  [245043.392792] CPU: 4 PID: 2608 Comm: btrfs-transacti Tainted: G
-    W I      4.16.8 #1
-  [245043.395489] RIP: 0010:btrfs_tree_lock+0x1be/0x1d0 [btrfs]
-  [245043.396791] RSP: 0018:ffffc9000424b840 EFLAGS: 00010246
-  [245043.398093] RAX: 0000000000000a30 RBX: ffff8807e20a3d20 RCX: 0000000000000001
-  [245043.399414] RDX: 0000000000000001 RSI: 0000000000000002 RDI: ffff8807e20a3d20
-  [245043.400732] RBP: 0000000000000001 R08: ffff88041f39a700 R09: ffff880000000000
-  [245043.402021] R10: 0000000000000040 R11: ffff8807e20a3d20 R12: ffff8807cb220630
-  [245043.403296] R13: 0000000000000001 R14: ffff8807cb220628 R15: ffff88041fbdf000
-  [245043.404780] FS:  0000000000000000(0000) GS:ffff88082fc80000(0000) knlGS:0000000000000000
-  [245043.406050] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-  [245043.407321] CR2: 00007fffdbdb9f10 CR3: 0000000001c09005 CR4: 00000000000206e0
-  [245043.408670] Call Trace:
-  [245043.409977]  btrfs_search_slot+0x761/0xa60 [btrfs]
-  [245043.411278]  btrfs_insert_empty_items+0x62/0xb0 [btrfs]
-  [245043.412572]  btrfs_insert_item+0x5b/0xc0 [btrfs]
-  [245043.413922]  btrfs_create_pending_block_groups+0xfb/0x1e0 [btrfs]
-  [245043.415216]  do_chunk_alloc+0x1e5/0x2a0 [btrfs]
-  [245043.416487]  find_free_extent+0xcd0/0xf60 [btrfs]
-  [245043.417813]  btrfs_reserve_extent+0x96/0x1e0 [btrfs]
-  [245043.419105]  btrfs_alloc_tree_block+0xfb/0x4a0 [btrfs]
-  [245043.420378]  __btrfs_cow_block+0x127/0x550 [btrfs]
-  [245043.421652]  btrfs_cow_block+0xee/0x190 [btrfs]
-  [245043.422979]  btrfs_search_slot+0x227/0xa60 [btrfs]
-  [245043.424279]  ? btrfs_update_inode_item+0x59/0x100 [btrfs]
-  [245043.425538]  ? iput+0x72/0x1e0
-  [245043.426798]  write_one_cache_group.isra.49+0x20/0x90 [btrfs]
-  [245043.428131]  btrfs_start_dirty_block_groups+0x102/0x420 [btrfs]
-  [245043.429419]  btrfs_commit_transaction+0x11b/0x880 [btrfs]
-  [245043.430712]  ? start_transaction+0x8e/0x410 [btrfs]
-  [245043.432006]  transaction_kthread+0x184/0x1a0 [btrfs]
-  [245043.433341]  kthread+0xf0/0x130
-  [245043.434628]  ? btrfs_cleanup_transaction+0x4e0/0x4e0 [btrfs]
-  [245043.435928]  ? kthread_create_worker_on_cpu+0x40/0x40
-  [245043.437236]  ret_from_fork+0x1f/0x30
-  [245043.441054] ---[ end trace 15abaa2aaf36827f ]---
+On 12.10.2018 11:46, Qu Wenruo wrote:
+> 
+> 
+> On 2018/10/12 下午2:53, Nikolay Borisov wrote:
+>>
+>>
+>> On 12.10.2018 09:42, Qu Wenruo wrote:
+>>> The only user of it is "btrfs inspect dump-super".
+>>>
+>>> Signed-off-by: Qu Wenruo <wqu@suse.com>
+>>> ---
+>>>  cmds-inspect-dump-super.c | 4 ++--
+>>>  ctree.h                   | 6 ++----
+>>>  2 files changed, 4 insertions(+), 6 deletions(-)
+>>>
+>>> diff --git a/cmds-inspect-dump-super.c b/cmds-inspect-dump-super.c
+>>> index e965267c5d96..3f33931ed9bc 100644
+>>> --- a/cmds-inspect-dump-super.c
+>>> +++ b/cmds-inspect-dump-super.c
+>>> @@ -387,8 +387,8 @@ static void dump_superblock(struct btrfs_super_block *sb, int full)
+>>>  	       (unsigned long long)btrfs_super_chunk_root_level(sb));
+>>>  	printf("log_root\t\t%llu\n",
+>>>  	       (unsigned long long)btrfs_super_log_root(sb));
+>>> -	printf("log_root_transid\t%llu\n",
+>>> -	       (unsigned long long)btrfs_super_log_root_transid(sb));
+>>> +	printf("log_root_transid (deprecated)\t%llu\n",
+>>> +	       le64_to_cpu(sb->__unused_log_root_transid));
+>>
+>> This should be entirely removed.
+> 
+> It looks OK to me.
+> Just like the old leafsize.
+> 
+> And if we try to use this member again, even old progs could show it
+> without problem.
 
-This is because at write_one_cache_group() when we are COWing a leaf from
-the extent tree we end up allocating a new block group (chunk) and,
-because we have hit a threshold on the number of bytes reserved for system
-chunks, we attempt to finalize the creation of new block groups from the
-current transaction, by calling btrfs_create_pending_block_groups().
-However here we also need to modify the extent tree in order to insert
-a block group item, and if the location for this new block group item
-happens to be in the same leaf that we were COWing earlier, we deadlock
-since btrfs_search_slot() tries to write lock the extent buffer that we
-locked before at write_one_cache_group().
+But what is the point of having something which always shows 0 and is
+essentially unused?
 
-We have already hit similar cases in the past and commit d9a0540a79f8
-("Btrfs: fix deadlock when finalizing block group creation") fixed some
-of those cases by delaying the creation of pending block groups at the
-known specific spots that could lead to a deadlock. This change reworks
-that commit to be more generic so that we don't have to add similar logic
-to every possible path that can lead to a deadlock. This is done by
-making __btrfs_cow_block() disallowing the creation of new block groups
-(setting the transaction's can_flush_pending_bgs to false) before it
-attempts to allocate a new extent buffer for either the extent, chunk or
-device trees, since those are the trees that pending block creation
-modifies. Once the new extent buffer is allocated, it allows creation of
-pending block groups to happen again.
-
-This change depends on a recent patch from Josef which is not yet in
-Linus' tree, named "btrfs: make sure we create all new block groups" in
-order to avoid occasional warnings at btrfs_trans_release_chunk_metadata().
-
-Fixes: d9a0540a79f8 ("Btrfs: fix deadlock when finalizing block group creation")
-Bugzilla: https://bugzilla.kernel.org/show_bug.cgi?id=199753
-Link: https://lore.kernel.org/linux-btrfs/CAJtFHUTHna09ST-_EEiyWmDH6gAqS6wa=zMNMBsifj8ABu99cw@mail.gmail.com/
-Reported-by: E V <eliventer@gmail.com>
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/ctree.c       | 17 +++++++++++++++++
- fs/btrfs/extent-tree.c | 16 ++++++----------
- 2 files changed, 23 insertions(+), 10 deletions(-)
-
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index d436fb4c002e..089b46c4d97f 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -1050,9 +1050,26 @@ static noinline int __btrfs_cow_block(struct btrfs_trans_handle *trans,
- 	if ((root->root_key.objectid == BTRFS_TREE_RELOC_OBJECTID) && parent)
- 		parent_start = parent->start;
- 
-+	/*
-+	 * If we are COWing a node/leaf from the extent, chunk or device trees,
-+	 * make sure that we do not finish block group creation of pending block
-+	 * groups. We do this to avoid a deadlock.
-+	 * COWing can result in allocation of a new chunk, and flushing pending
-+	 * block groups (btrfs_create_pending_block_groups()) can be triggered
-+	 * when finishing allocation of a new chunk. Creation of a pending block
-+	 * group modifies the extent, chunk and device trees, therefore we could
-+	 * deadlock with ourselves since we are holding a lock on an extent
-+	 * buffer that btrfs_create_pending_block_groups() may try to COW later.
-+	 */
-+	if (root == fs_info->extent_root ||
-+	    root == fs_info->chunk_root ||
-+	    root == fs_info->dev_root)
-+		trans->can_flush_pending_bgs = false;
-+
- 	cow = btrfs_alloc_tree_block(trans, root, parent_start,
- 			root->root_key.objectid, &disk_key, level,
- 			search_start, empty_size);
-+	trans->can_flush_pending_bgs = true;
- 	if (IS_ERR(cow))
- 		return PTR_ERR(cow);
- 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 2f9748599268..577878324799 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -2911,7 +2911,6 @@ int btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
- 	struct btrfs_delayed_ref_head *head;
- 	int ret;
- 	int run_all = count == (unsigned long)-1;
--	bool can_flush_pending_bgs = trans->can_flush_pending_bgs;
- 
- 	/* We'll clean this up in btrfs_cleanup_transaction */
- 	if (trans->aborted)
-@@ -2928,7 +2927,6 @@ int btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
- #ifdef SCRAMBLE_DELAYED_REFS
- 	delayed_refs->run_delayed_start = find_middle(&delayed_refs->root);
- #endif
--	trans->can_flush_pending_bgs = false;
- 	ret = __btrfs_run_delayed_refs(trans, count);
- 	if (ret < 0) {
- 		btrfs_abort_transaction(trans, ret);
-@@ -2959,7 +2957,6 @@ int btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
- 		goto again;
- 	}
- out:
--	trans->can_flush_pending_bgs = can_flush_pending_bgs;
- 	return 0;
- }
- 
-@@ -4554,11 +4551,9 @@ static int do_chunk_alloc(struct btrfs_trans_handle *trans, u64 flags,
- 	 * the block groups that were made dirty during the lifetime of the
- 	 * transaction.
- 	 */
--	if (trans->can_flush_pending_bgs &&
--	    trans->chunk_bytes_reserved >= (u64)SZ_2M) {
-+	if (trans->chunk_bytes_reserved >= (u64)SZ_2M)
- 		btrfs_create_pending_block_groups(trans);
--		btrfs_trans_release_chunk_metadata(trans);
--	}
-+
- 	return ret;
- }
- 
-@@ -10079,9 +10074,10 @@ void btrfs_create_pending_block_groups(struct btrfs_trans_handle *trans)
- 	struct btrfs_block_group_item item;
- 	struct btrfs_key key;
- 	int ret = 0;
--	bool can_flush_pending_bgs = trans->can_flush_pending_bgs;
- 
--	trans->can_flush_pending_bgs = false;
-+	if (!trans->can_flush_pending_bgs)
-+		return;
-+
- 	while (!list_empty(&trans->new_bgs)) {
- 		block_group = list_first_entry(&trans->new_bgs,
- 					       struct btrfs_block_group_cache,
-@@ -10106,7 +10102,7 @@ void btrfs_create_pending_block_groups(struct btrfs_trans_handle *trans)
- next:
- 		list_del_init(&block_group->bg_list);
- 	}
--	trans->can_flush_pending_bgs = can_flush_pending_bgs;
-+	btrfs_trans_release_chunk_metadata(trans);
- }
- 
- int btrfs_make_block_group(struct btrfs_trans_handle *trans, u64 bytes_used,
--- 
-2.11.0
-
+> 
+> Thanks,
+> Qu
+> 
+>>
+>>>  	printf("log_root_level\t\t%llu\n",
+>>>  	       (unsigned long long)btrfs_super_log_root_level(sb));
+>>>  	printf("total_bytes\t\t%llu\n",
+>>> diff --git a/ctree.h b/ctree.h
+>>> index 4719962df67d..a314fdb102b0 100644
+>>> --- a/ctree.h
+>>> +++ b/ctree.h
+>>> @@ -427,8 +427,8 @@ struct btrfs_super_block {
+>>>  	__le64 chunk_root;
+>>>  	__le64 log_root;
+>>>  
+>>> -	/* this will help find the new super based on the log root */
+>>> -	__le64 log_root_transid;
+>>> +	/* This member is never touched, should always be 0 */
+>>> +	__le64 __unused_log_root_transid;
+>>>  	__le64 total_bytes;
+>>>  	__le64 bytes_used;
+>>>  	__le64 root_dir_objectid;
+>>> @@ -2203,8 +2203,6 @@ BTRFS_SETGET_STACK_FUNCS(super_chunk_root_level, struct btrfs_super_block,
+>>>  			 chunk_root_level, 8);
+>>>  BTRFS_SETGET_STACK_FUNCS(super_log_root, struct btrfs_super_block,
+>>>  			 log_root, 64);
+>>> -BTRFS_SETGET_STACK_FUNCS(super_log_root_transid, struct btrfs_super_block,
+>>> -			 log_root_transid, 64);
+>>>  BTRFS_SETGET_STACK_FUNCS(super_log_root_level, struct btrfs_super_block,
+>>>  			 log_root_level, 8);
+>>>  BTRFS_SETGET_STACK_FUNCS(super_total_bytes, struct btrfs_super_block,
+>>>
+> 

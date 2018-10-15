@@ -2,157 +2,113 @@ Return-Path: <SRS0=Zicy=M3=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 88FA5C28CF8
-	for <linux-btrfs@archiver.kernel.org>; Mon, 15 Oct 2018 09:22:55 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9E2AEC04AA5
+	for <linux-btrfs@archiver.kernel.org>; Mon, 15 Oct 2018 12:09:44 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 3B0572086A
-	for <linux-btrfs@archiver.kernel.org>; Mon, 15 Oct 2018 09:22:55 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 572012083C
+	for <linux-btrfs@archiver.kernel.org>; Mon, 15 Oct 2018 12:09:44 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=kernel.org header.i=@kernel.org header.b="Ywj8LLs2"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 3B0572086A
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=kernel.org
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="YRBeqIJv"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 572012083C
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726474AbeJORHT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 15 Oct 2018 13:07:19 -0400
-Received: from mail.kernel.org ([198.145.29.99]:48070 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726319AbeJORHT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 15 Oct 2018 13:07:19 -0400
-Received: from localhost.localdomain (bl8-197-74.dsl.telepac.pt [85.241.197.74])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 8B2432054F;
-        Mon, 15 Oct 2018 09:22:52 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1539595373;
-        bh=+aEhUo3bBLvM5owI9kWVAtL1BbcvMxUc+5QQumQKtjg=;
-        h=From:To:Cc:Subject:Date:From;
-        b=Ywj8LLs2smv7v6fEBfQSXE8xGzYE4RyQ6I6rsImsJWLVWNixfkDX0XQ1gJvxwqswP
-         kBxzQ6pShe0MM1CGyKOZlSPc7ejLwJdHdHO2SPqr9L48nAvN7Qj4XJvXtG7rH7vCNI
-         7NUzhEYFCN9HkzYx8VxJELcOEPaRcyodVIc0+Htg=
-From:   fdmanana@kernel.org
-To:     fstests@vger.kernel.org
-Cc:     linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] btrfs: fix test btrfs/007 to not leave temporary files in /tmp
-Date:   Mon, 15 Oct 2018 10:22:46 +0100
-Message-Id: <20181015092246.10424-1-fdmanana@kernel.org>
-X-Mailer: git-send-email 2.11.0
+        id S1726589AbeJOTym (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 15 Oct 2018 15:54:42 -0400
+Received: from mail-it1-f182.google.com ([209.85.166.182]:34995 "EHLO
+        mail-it1-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726498AbeJOTym (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 15 Oct 2018 15:54:42 -0400
+Received: by mail-it1-f182.google.com with SMTP id p64-v6so27294011itp.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 15 Oct 2018 05:09:42 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=subject:to:references:from:message-id:date:user-agent:mime-version
+         :in-reply-to:content-language:content-transfer-encoding;
+        bh=9F4HnDU+Ng0G2CkGQY9udNddJFmOFVP8DPVXG2ea55U=;
+        b=YRBeqIJvkLwvcW2HmeZFthvYNcZ4U/r2rVUuMZOW2q3Ez8fd5k2LTyETyJRQTvTRHa
+         j6rsh9G43PNMuYh5TOtcpwEKbpEYSnXhewt1C67XfaLr1SmJujV/v5QXTeiD/IxJZDvU
+         FmJaqCcbGTw3Hv64nhRSH9UhVXLiQVHpJs0/Iv/Muemtk4Cn+aCtAhvBZzLEEp/CDk68
+         Po9FEI5maLmrVQbajn8NeaD94Y0K9lA6j/K/3U9r+mRh742iRZKcjVQrk62FOEy/S7sW
+         MtpzLA/lQtPqMW8+VHGSyjqvjq4+I7X4lHt27ImDWp5nX1hLHmBb7v35PPgIlyU+9dyi
+         jrOA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:subject:to:references:from:message-id:date
+         :user-agent:mime-version:in-reply-to:content-language
+         :content-transfer-encoding;
+        bh=9F4HnDU+Ng0G2CkGQY9udNddJFmOFVP8DPVXG2ea55U=;
+        b=il/0qjDMIyF8ZrYGG8Ev9kp/juXMFY+5RaRcu+LsGiR1yeNeO2BqcKAiDV3yCPjuye
+         valsCcILpBmtee2Zze1GcCd+dMzE5oiL9uDxSoZG4dlCHhvwWVFo1e5wb2rY1ZR2bwoK
+         OPCqoWgL+8oyso1DKXACKSytjXoT3uLXmWsJA97cMyjzhj7PxYMtrvXIWiDaV0i1NLTG
+         lUNa0x6gxjD7X5G5S1gdq7JhehE+kRQE5mER9Gv6FWzoZhdWgN/gpp3ELsrP+55NfOpf
+         khgCwhUtv5CVVPWgeM3SWF9qJLI6jd6N/Xwt/8jlkxp+9K8YOZLPD5qRpjNYGUQL+/iv
+         k1Pw==
+X-Gm-Message-State: ABuFfogf2p7jbHcD9lTruqjH86rnchdcxEGmAD73IPNfq0laxpizyk+q
+        37KZpZe8HzsjfDUqC1jtgPQhCuDbCBk=
+X-Google-Smtp-Source: ACcGV637C4HunG2XOBm2T+OvFqyNlGI81criyS/0Q2D/FLwb99CUM0W8w+cycvRoMfOIuE2tQkrQ4g==
+X-Received: by 2002:a24:6e87:: with SMTP id w129-v6mr13363534itc.49.1539605380847;
+        Mon, 15 Oct 2018 05:09:40 -0700 (PDT)
+Received: from [191.9.206.254] (rrcs-70-62-41-24.central.biz.rr.com. [70.62.41.24])
+        by smtp.gmail.com with ESMTPSA id b26-v6sm2865263iod.38.2018.10.15.05.09.39
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Mon, 15 Oct 2018 05:09:39 -0700 (PDT)
+Subject: Re: BTRFS bad block management. Does it exist?
+To:     waxhead@dirtcellar.net, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <42b1965a-356c-25c9-8c49-788a9a8a11aa@dirtcellar.net>
+From:   "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <3af0d10e-f7d8-806e-8ce5-91295e0ed6d7@gmail.com>
+Date:   Mon, 15 Oct 2018 08:09:37 -0400
+User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64; rv:52.0) Gecko/20100101
+ Thunderbird/52.9.1
+MIME-Version: 1.0
+In-Reply-To: <42b1965a-356c-25c9-8c49-788a9a8a11aa@dirtcellar.net>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Filipe Manana <fdmanana@suse.com>
+On 2018-10-14 07:08, waxhead wrote:
+> In case BTRFS fails to WRITE to a disk. What happens?
+> Does the bad area get mapped out somehow? Does it try again until it 
+> succeed or until it "times out" or reach a threshold counter?
+> Does it eventually try to write to a different disk (in case of using 
+> the raid1/10 profile?)
 
-This test was using the "mktemp -d" command to create a temporary
-directory for storing send streams and computations from fssum, without
-ever deleting them when it finishes. Therefore after running it for many
-times it filled up all space from /tmp.
+Building on Qu's answer (which is absolutely correct), BTRFS makes the 
+perfectly reasonable assumption that you're not trying to use known bad 
+hardware.  It's not alone in this respect either, pretty much every 
+Linux filesystem makes the exact same assumption (and almost all 
+non-Linux ones too), because it really is a perfectly reasonable 
+assumption.  The only exception is ext[234], but they only support it 
+statically (you can set the bad block list at mkfs time, but not 
+afterwards, and they don't update it at runtime), and it's a holdover 
+from earlier filesystems which originated at a time when storage was 
+sufficiently expensive _and_ unreliable that you kept using disks until 
+they were essentially completely dead.
 
-Fix this by using a temporary directory in TEST_DEV instead, as all the
-more recent send/receive tests do, to store these files, and making sure
-they get deleted when the test finishes. On average the sum of the size
-of those files is between 5.5Mb to 6Mb, but changing the number of
-operations for fsstress makes it even bigger.
+The reality is that with modern storage hardware, if you have 
+persistently bad sectors the device is either defective (and should be 
+returned under warranty), or it's beyond expected EOL (and should just 
+be replaced).  Most people know about SSD's doing block remapping to 
+avoid bad blocks, but hard drives do it to, and they're actually rather 
+good at it.  In both cases, enough spare blocks are provided that the 
+device can handle average rates of media errors through the entirety of 
+it's average life expectancy without running out of spare blocks.
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- tests/btrfs/007     | 33 +++++++++++++++++++--------------
- tests/btrfs/007.out |  1 -
- 2 files changed, 19 insertions(+), 15 deletions(-)
-
-diff --git a/tests/btrfs/007 b/tests/btrfs/007
-index 09f2f011..438f2f27 100755
---- a/tests/btrfs/007
-+++ b/tests/btrfs/007
-@@ -16,14 +16,14 @@ seq=`basename $0`
- seqres=$RESULT_DIR/$seq
- echo "QA output created by $seq"
- 
--tmp=`mktemp -d`
-+tmp=/tmp/$$
- status=1
- 
- _cleanup()
- {
--	echo "*** unmount"
--	_scratch_unmount 2>/dev/null
-+	cd /
- 	rm -f $tmp.*
-+	rm -fr $send_files_dir
- }
- trap "_cleanup; exit \$status" 0 1 2 3 15
- 
-@@ -38,7 +38,11 @@ _require_scratch
- _require_fssum
- _require_seek_data_hole
- 
-+send_files_dir=$TEST_DIR/btrfs-test-$seq
-+
- rm -f $seqres.full
-+rm -fr $send_files_dir
-+mkdir $send_files_dir
- 
- workout()
- {
-@@ -57,19 +61,20 @@ workout()
- 
- 	_run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/incr
- 
--	echo "# $BTRFS_UTIL_PROG send $SCRATCH_MNT/base > $tmp/base.snap" \
-+	echo "# $BTRFS_UTIL_PROG send $SCRATCH_MNT/base > ${send_files_dir}/base.snap" \
- 		>> $seqres.full
--	$BTRFS_UTIL_PROG send $SCRATCH_MNT/base > $tmp/base.snap 2>> $seqres.full \
-+	$BTRFS_UTIL_PROG send $SCRATCH_MNT/base > $send_files_dir/base.snap 2>> $seqres.full \
- 		|| _fail "failed: '$@'"
- 	echo "# $BTRFS_UTIL_PROG send -p $SCRATCH_MNT/base\
--		$SCRATCH_MNT/incr > $tmp/incr.snap" >> $seqres.full
-+		$SCRATCH_MNT/incr > ${send_files_dir}/incr.snap" >> $seqres.full
- 	$BTRFS_UTIL_PROG send -p $SCRATCH_MNT/base \
--		$SCRATCH_MNT/incr > $tmp/incr.snap 2>> $seqres.full \
-+		$SCRATCH_MNT/incr > $send_files_dir/incr.snap 2>> $seqres.full \
- 		|| _fail "failed: '$@'"
- 
--	run_check $FSSUM_PROG -A -f -w $tmp/base.fssum $SCRATCH_MNT/base
--	run_check $FSSUM_PROG -A -f -w $tmp/incr.fssum -x $SCRATCH_MNT/incr/base \
--		$SCRATCH_MNT/incr
-+	run_check $FSSUM_PROG -A -f -w $send_files_dir/base.fssum \
-+		$SCRATCH_MNT/base
-+	run_check $FSSUM_PROG -A -f -w $send_files_dir/incr.fssum \
-+		-x $SCRATCH_MNT/incr/base $SCRATCH_MNT/incr
- 
- 	_scratch_unmount >/dev/null 2>&1
- 	echo "*** mkfs -dsize=$fsz"    >>$seqres.full
-@@ -78,11 +83,11 @@ workout()
- 		|| _fail "size=$fsz mkfs failed"
- 	_scratch_mount "-o noatime"
- 
--	_run_btrfs_util_prog receive $SCRATCH_MNT < $tmp/base.snap
--	run_check $FSSUM_PROG -r $tmp/base.fssum $SCRATCH_MNT/base
-+	_run_btrfs_util_prog receive $SCRATCH_MNT < $send_files_dir/base.snap
-+	run_check $FSSUM_PROG -r $send_files_dir/base.fssum $SCRATCH_MNT/base
- 
--	_run_btrfs_util_prog receive $SCRATCH_MNT < $tmp/incr.snap
--	run_check $FSSUM_PROG -r $tmp/incr.fssum $SCRATCH_MNT/incr
-+	_run_btrfs_util_prog receive $SCRATCH_MNT < $send_files_dir/incr.snap
-+	run_check $FSSUM_PROG -r $send_files_dir/incr.fssum $SCRATCH_MNT/incr
- }
- 
- echo "*** test send / receive"
-diff --git a/tests/btrfs/007.out b/tests/btrfs/007.out
-index 8f8cec7d..5d029ceb 100644
---- a/tests/btrfs/007.out
-+++ b/tests/btrfs/007.out
-@@ -1,4 +1,3 @@
- QA output created by 007
- *** test send / receive
- *** done
--*** unmount
--- 
-2.11.0
-
+On top of all of that though, it's fully possible to work around bad 
+blocks in the block layer if you take the time to actually do it.  With 
+a bit of reasonably simple math, you can easily set up an LVM volume 
+that actively avoids all the bad blocks on a disk while still fully 
+utilizing the rest of the volume.  Similarly, with a bit of work (and a 
+partition table that supports _lots_ of partitions) you can work around 
+bad blocks with an MD concatenated device.

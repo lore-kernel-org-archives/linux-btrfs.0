@@ -1,114 +1,79 @@
-Return-Path: <SRS0=Sb/y=M2=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=Zicy=M3=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.6 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 21623C71122
-	for <linux-btrfs@archiver.kernel.org>; Sun, 14 Oct 2018 23:38:36 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0A2B7C070C3
+	for <linux-btrfs@archiver.kernel.org>; Mon, 15 Oct 2018 00:31:47 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id A1D0E20652
-	for <linux-btrfs@archiver.kernel.org>; Sun, 14 Oct 2018 23:38:35 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="QmUlaMlD"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org A1D0E20652
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=colorremedies.com
+	by mail.kernel.org (Postfix) with ESMTP id BBAEE2087D
+	for <linux-btrfs@archiver.kernel.org>; Mon, 15 Oct 2018 00:31:46 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org BBAEE2087D
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=fromorbit.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726228AbeJOHVO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 15 Oct 2018 03:21:14 -0400
-Received: from mail-lf1-f66.google.com ([209.85.167.66]:40850 "EHLO
-        mail-lf1-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725792AbeJOHVO (ORCPT
+        id S1726444AbeJOIOe (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 15 Oct 2018 04:14:34 -0400
+Received: from ipmail06.adl6.internode.on.net ([150.101.137.145]:16730 "EHLO
+        ipmail06.adl6.internode.on.net" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1726343AbeJOIOe (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 15 Oct 2018 03:21:14 -0400
-Received: by mail-lf1-f66.google.com with SMTP id t22-v6so12792542lfb.7
-        for <linux-btrfs@vger.kernel.org>; Sun, 14 Oct 2018 16:38:33 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
-        h=mime-version:sender:in-reply-to:references:from:date:message-id
-         :subject:to:cc;
-        bh=LUNugbt/1ew1rW0p/524hiCRVZqQBBDUxk/RiJI6Qho=;
-        b=QmUlaMlDZOiJ+LbuGPedrHpZMPLBSiSzDBhJzcxwE7y9/qmCAMXbftpYTlVjbDeIQR
-         uZtv6Kd+YFoQcoJhVRhZNCJbIwTyGje9sz5ddzYRCs0KkrdEuOM6W1iarEZG8IEkLRV1
-         T7usv9cdTzn4IjPlmaWfdUeN9IPJujTWsHFsksnB/DtOwA6Fy5hYfB2FnccU0G33ZEjW
-         439U0H3Hp3qPaAcLyYyoKDoBZJUWEY9M2aJvV63+2E0YHIAlIQB7l6mAFPCrgWcBr5C3
-         SKLTzIgg3KJvOPv2luBbKjOc2agP9qupjWjrtD7fEIqtttVTTmDilrE+oyFTPb2gjdUW
-         yQpw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:sender:in-reply-to:references:from
-         :date:message-id:subject:to:cc;
-        bh=LUNugbt/1ew1rW0p/524hiCRVZqQBBDUxk/RiJI6Qho=;
-        b=s7lxcYLFMWQPO1PijGgG6vAhZrC1omdxGMkXCm4n+o2vppGykkBPgLxnXbmRugW/Ix
-         PSf7Gj3r0ifsR2i3zLdy0le0SjRIW6Uijqo+GiFgHOQ6Or9Z0ygRgxMmyQ0UGhAQBcrk
-         EeQ7tGAbtQHWlJTWpB79pGD6ZEoBQGuaBbmrxjCjDOLN90B6kTAU7Y4tuNb4FCoD5uDR
-         qiH1+jDdEpP6CrbIrkTYBhEBaEmu7VfBt3fLHe6D+Fi4PuxJeaGOQ2XUfrnEgkvpesqO
-         J9/GMXW4TnutxVgPnggpVbPJa9j4PIE4/zAMHQIasXSUxv+H3HJiRsS7IQYkgnWmgRW+
-         J5ow==
-X-Gm-Message-State: ABuFfojNW5CpnDUeLbnVC97yJq1RHeC5I5vWMvHw9Ek57QH9d2ySE/pH
-        vrJyxR9xdvFLgMsTV70tv614rFJ2J4GBvA8ikfuIsg==
-X-Google-Smtp-Source: ACcGV61v1KDQ9nkE+eUmMit3EXvPvOQpAOv88gjVZy+/OcbETMlx/Vbt13A3aVXo6g59ZXTvwM2W3OlnGy6mhcRKyZM=
-X-Received: by 2002:a19:e013:: with SMTP id x19-v6mr8100959lfg.89.1539560312459;
- Sun, 14 Oct 2018 16:38:32 -0700 (PDT)
+        Mon, 15 Oct 2018 04:14:34 -0400
+Received: from ppp59-167-129-252.static.internode.on.net (HELO dastard) ([59.167.129.252])
+  by ipmail06.adl6.internode.on.net with ESMTP; 15 Oct 2018 11:01:40 +1030
+Received: from dave by dastard with local (Exim 4.80)
+        (envelope-from <david@fromorbit.com>)
+        id 1gBqnL-0000c3-SL; Mon, 15 Oct 2018 11:31:39 +1100
+Date:   Mon, 15 Oct 2018 11:31:39 +1100
+From:   Dave Chinner <david@fromorbit.com>
+To:     Filipe Manana <fdmanana@gmail.com>
+Cc:     "Darrick J. Wong" <darrick.wong@oracle.com>,
+        Eric Sandeen <sandeen@redhat.com>, linux-nfs@vger.kernel.org,
+        linux-cifs@vger.kernel.org, linux-unionfs@vger.kernel.org,
+        linux-xfs@vger.kernel.org, linux-mm@kvack.org,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
+        ocfs2-devel@oss.oracle.com
+Subject: Re: [PATCH 05/25] vfs: avoid problematic remapping requests into
+ partial EOF block
+Message-ID: <20181015003139.GZ6311@dastard>
+References: <153923113649.5546.9840926895953408273.stgit@magnolia>
+ <153923117420.5546.13317703807467393934.stgit@magnolia>
+ <CAL3q7H7mLvCGpyitJhQ=To-aDvG9k9rxSVi2jSpcALQVj3myzg@mail.gmail.com>
 MIME-Version: 1.0
-Received: by 2002:ab3:1999:0:0:0:0:0 with HTTP; Sun, 14 Oct 2018 16:38:31
- -0700 (PDT)
-X-Originating-IP: [69.7.113.20]
-In-Reply-To: <CAN4oSBcs=3BgdcREN_ukEFu09v8QxP7-jYX7a0PNW-tctLLk=Q@mail.gmail.com>
-References: <CAJCQCtTPwQnzwkpk=4ZsZXfWTC7HymYETxp-9xUU_tsvOTW0ZQ@mail.gmail.com>
- <CAJCQCtT2ackbOo1QPkaj5W+LXnJx5VUMvbxbD0VmcenWz_85pg@mail.gmail.com>
- <CAN4oSBevO04cV+DyGxXg60nBbYB7UANFZzMcWV1M0S6HpHYc-w@mail.gmail.com>
- <CAJCQCtQkY0_2J8HHp8HmoT523nhWr7nFwHhjHZ_cfoSXoWoDWg@mail.gmail.com> <CAN4oSBcs=3BgdcREN_ukEFu09v8QxP7-jYX7a0PNW-tctLLk=Q@mail.gmail.com>
-From:   Chris Murphy <lists@colorremedies.com>
-Date:   Sun, 14 Oct 2018 17:38:31 -0600
-X-Google-Sender-Auth: vLP4l2D9cc_X2OPjRmfZWypqeMs
-Message-ID: <CAJCQCtR=pJxXN5RWy3H5xEfnbn5eC-gQpV9UWfjXc9YZyfuTMA@mail.gmail.com>
-Subject: Re: reproducible builds with btrfs seed feature
-To:     Cerem Cem ASLAN <ceremcem@ceremcem.net>
-Cc:     Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
-        Anand Jain <anand.jain@oracle.com>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <CAL3q7H7mLvCGpyitJhQ=To-aDvG9k9rxSVi2jSpcALQVj3myzg@mail.gmail.com>
+User-Agent: Mutt/1.5.21 (2010-09-15)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Sun, Oct 14, 2018 at 1:09 PM, Cerem Cem ASLAN <ceremcem@ceremcem.net> wrote:
-> Thanks for the explanation, I got it now. I still think this is
-> related with my needs, so I'll keep an eye on this.
->
-> What is the possible use case? I can think of only one scenario: You
-> have a rootfs that contains a distro installer and you want to
-> generate distro.img files which uses Btrfs under the hood in different
-> locations and still have the same hash, so you can publish your
-> verified image hash by a single source (https://your-distro.org).
+On Fri, Oct 12, 2018 at 09:22:18PM +0100, Filipe Manana wrote:
+> On Thu, Oct 11, 2018 at 5:13 AM Darrick J. Wong <darrick.wong@oracle.com> wrote:
+> >
+> > From: Darrick J. Wong <darrick.wong@oracle.com>
+> >
+> > A deduplication data corruption is exposed by fstests generic/505 on
+> > XFS.
+> 
+> (and btrfs)
+> 
+> Btw, the generic test I wrote was indeed numbered 505, however it was
+> never committed and there's now a generic/505 which has nothing to do
+> with deduplication.
+> So you should update the changelog to avoid confusion.
 
-The first step is accepting reproducible builds as a worthy goal in
-and of itself independent of Btrfs. Specifically "Why does it matter?"
-found here https://reproducible-builds.org/
+What test is it now? And if it hasn't been committed, are you going
+to update it and repost as it clearly had value....
 
-Btrfs does bring valuable features for installation images: always on
-checksumming; seed feature permits a straightforward way to setup a
-volatile overlay on zram device; ability to convert it to a
-non-volatile overlay, and boot either the seed or overlay; and even
-installation by adding the install target and removing both overlay
-and seed. And yet it remains compatible with a conventional copy to
-another file system if it's not desirable to use Btrfs as root. Win
-win.
+Cheers,
 
-By subsetting Btrfs features we don't care about in the installation
-seed context, can we achieve reproducibility as a consequence, while
-retaining some of the more interesting features? Of course once
-sprouted, those limitations wouldn't apply.
-
-Basically it's a "btrfs seed device 2.0" idea. But Btrfs is so
-complicated it's maybe too much work, hence the question.
-
-
-
+Dave.
 -- 
-Chris Murphy
+Dave Chinner
+david@fromorbit.com

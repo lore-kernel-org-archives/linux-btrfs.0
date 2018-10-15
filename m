@@ -2,99 +2,105 @@ Return-Path: <SRS0=Zicy=M3=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.6 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
+X-Spam-Status: No, score=-0.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
 	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DA2F9C04AA5
-	for <linux-btrfs@archiver.kernel.org>; Mon, 15 Oct 2018 20:23:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F325DC04AA5
+	for <linux-btrfs@archiver.kernel.org>; Mon, 15 Oct 2018 21:26:06 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 71D8F208B3
-	for <linux-btrfs@archiver.kernel.org>; Mon, 15 Oct 2018 20:23:04 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id AABD4205F4
+	for <linux-btrfs@archiver.kernel.org>; Mon, 15 Oct 2018 21:26:06 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="SryJMV5C"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 71D8F208B3
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=colorremedies.com
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="a7YPiIZn"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org AABD4205F4
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726043AbeJPEJu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 16 Oct 2018 00:09:50 -0400
-Received: from mail-lj1-f173.google.com ([209.85.208.173]:44045 "EHLO
-        mail-lj1-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725917AbeJPEJu (ORCPT
+        id S1726506AbeJPFNF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 16 Oct 2018 01:13:05 -0400
+Received: from mail-lj1-f177.google.com ([209.85.208.177]:33495 "EHLO
+        mail-lj1-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725957AbeJPFNF (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 16 Oct 2018 00:09:50 -0400
-Received: by mail-lj1-f173.google.com with SMTP id v6-v6so18701504ljc.11
-        for <linux-btrfs@vger.kernel.org>; Mon, 15 Oct 2018 13:23:01 -0700 (PDT)
+        Tue, 16 Oct 2018 01:13:05 -0400
+Received: by mail-lj1-f177.google.com with SMTP id z21-v6so18895923ljz.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 15 Oct 2018 14:26:03 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
-        h=mime-version:sender:in-reply-to:references:from:date:message-id
-         :subject:to:cc;
-        bh=ntBLkbTqjG6zDPXS3ylVeGrnDCkLv6H7dFmbCP67IeI=;
-        b=SryJMV5CSVVbAUZnErQfDXoGMF5PKh6eOxMdDM77MmgHxT2P1pzsHyA1j/PXzATq+Z
-         WRnZ2F9xLZjzAyK4l/2OQOBTPUurYE++SIGmn8MkW1rSrjWs303mwHtpxBROPCPPZ/qi
-         GBSISy46NNxxeuYmQLLWC9ncqr3JZ1wY1jJeVauKuXON0kwwHgseW4RhtEFfwre2VdWE
-         Lrgt7dBgo0q1Bq1HgwA6ouxtFUUr5BVQwqNTuCe0CsAQmPsCcDOn7INlv9yNTnwtdCRg
-         G84fsY8nh1D0WWhmOTEs78X7baF6TGTDmLzXMKh17JrGUA2n+OMedLnFqNttqpeVg+oO
-         ldwg==
+        d=gmail.com; s=20161025;
+        h=date:from:to:cc:subject:message-id:in-reply-to:references
+         :mime-version:content-transfer-encoding;
+        bh=1pQEmVE6u/jf1I6FaQPrWpRoiE5eLPwLGCjyZIKH508=;
+        b=a7YPiIZnUZBrwHwOy6oQBrt2KFsJ3IXGFugiYy/5QQjiJrPwauJCR+novfi5Ky6839
+         dWaVCrko8mm1akIIkgPmnawP4wlE+MbukydYBNPMpUId8pKRJ362rrgDnFYlYwEGEMw3
+         5io9PyhhtKtmbJ71saZOV/4ql7xV5MQuuUwfYzmk5lRlNZbOwFvXuUahfBZIBLNQNFY5
+         LzqMoXWchRYxRdZ/e0W+FQijTFfJ/2zaFRsLX11blIXPiU7mT//JQ2LkzaswXWo+ubsJ
+         /2fTbH0Tn3GwTyNjW64FFWBcr+pSv3ZgvDu3nLYu334h9ol4i91Tj8ycoQgBUPZ/LxFw
+         Ce8A==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:sender:in-reply-to:references:from
-         :date:message-id:subject:to:cc;
-        bh=ntBLkbTqjG6zDPXS3ylVeGrnDCkLv6H7dFmbCP67IeI=;
-        b=tpXGI7L2+tUmZpaHOOvKvVHt+YuXoNs8Y93Gd/++OIhqQmRfdX5EkwGkEHvx0PVFCf
-         kBbzFW7WTYQX4f6+JXnM9XzR6GKzJJWd+qt7dtp1icGbY+RZiG/aE5txHXno62Pl4u3R
-         gHNaCjqfOdfbVSB+GmJsBV6TUF9EDez6KTfiofxUxcVYpbhDRjXj88icv3mJnkf5U53g
-         ebd/Q0mgjpxKUbGZWDjDJeFJ7K22HIeVC2BYC0NId2BGRfrRGiL/GSbRN/ZPHNPfPicV
-         UH8VRoSWZaN94yrHl4EJ550fd+miaWchm3XVdv3FkUTE82qTHO9KmsrtJ5i7pFzKPezs
-         iphQ==
-X-Gm-Message-State: ABuFfohgg3gzkRq917kaSp0TQA0taWFAx2WrtwcJak4ah9uKYIjj5TsS
-        1MzaYzY/cZwrAgQHMKyka9OqvbL0nsGH2rK+uis9LNMapTM=
-X-Google-Smtp-Source: ACcGV60DiruoXAca3ok11VIkFQ3gh+RDojBB+41UMiwP+xTSASZHZrKzoAbq6Cy3JEGJnPySZxHJIU4ccIq2HJTgJ3s=
-X-Received: by 2002:a2e:7c18:: with SMTP id x24-v6mr11329920ljc.174.1539634980395;
- Mon, 15 Oct 2018 13:23:00 -0700 (PDT)
-MIME-Version: 1.0
-Received: by 2002:ab3:1999:0:0:0:0:0 with HTTP; Mon, 15 Oct 2018 13:22:59
- -0700 (PDT)
-X-Originating-IP: [69.7.113.20]
-In-Reply-To: <20181015180546.4dd598bf0fe61b61f56e99ce@gmail.com>
-References: <20181015180546.4dd598bf0fe61b61f56e99ce@gmail.com>
-From:   Chris Murphy <lists@colorremedies.com>
-Date:   Mon, 15 Oct 2018 14:22:59 -0600
-X-Google-Sender-Auth: nwcG2tlPZRKRrJT0wMveKbYt_Hs
-Message-ID: <CAJCQCtTHY8iKZefwr-yC5-mZ32JEr=EtpP1vMhoRXjDAGNhxhg@mail.gmail.com>
+        h=x-gm-message-state:date:from:to:cc:subject:message-id:in-reply-to
+         :references:mime-version:content-transfer-encoding;
+        bh=1pQEmVE6u/jf1I6FaQPrWpRoiE5eLPwLGCjyZIKH508=;
+        b=DRBVvUBqvWUNW/LYEioFkyC1TBDV3nRll0r2p3dHTvZdRX+Vp1+IjgLfa4a7tDYlNi
+         f2LMfGM/+J/yt0xNN5fNBD00dcmWwE3R4JB3DoMh5MiANAl45UKRKQ4MZ2luDSQmWaDk
+         saLt2z4VswWwMERB4Yrt/dNVtWsLLs6ETH2KwPgFLlBOL4njPIhmwrRqKJ5sQfqbkObm
+         U2dmGklPxEUBmfy3U82qobB1YmERTF4833dVwBNQbnK9RvYYpHKZ5TNfkz7FusazNfqV
+         eDGL8mBpWf1w2ISEl4FW2OC3cR7JKOZW/BDNlJjjBsaCxTsgrWKdmv4gqycZEHU5IoN+
+         xnlA==
+X-Gm-Message-State: ABuFfog0TBh2N99x6OFI1sOZN5woKL2E/pnxXMx+levS/l2cDI5PPUji
+        SxduO/gTSL1U6UBKhGKHLRc=
+X-Google-Smtp-Source: ACcGV63E2Il+4WdfsYmrAQ7Jim7+oMV2PEWzel7joaw4eAbmlJXoB16CJ2Umd2samzkjFomaPs1Zcw==
+X-Received: by 2002:a2e:4b11:: with SMTP id y17-v6mr11752303lja.42.1539638763062;
+        Mon, 15 Oct 2018 14:26:03 -0700 (PDT)
+Received: from ant-519666801b8 ([95.72.235.248])
+        by smtp.gmail.com with ESMTPSA id i66-v6sm2683501lji.88.2018.10.15.14.26.01
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Mon, 15 Oct 2018 14:26:02 -0700 (PDT)
+Date:   Tue, 16 Oct 2018 00:26:01 +0300
+From:   Anton Shepelev <anton.txt@gmail.com>
+To:     Chris Murphy <lists@colorremedies.com>
+Cc:     linux-btrfs@vger.kernel.org
 Subject: Re: Spurious mount point
-To:     Anton Shepelev <anton.txt@gmail.com>
-Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Message-Id: <20181016002601.5517a4ea66c2c9c5dbdb5471@gmail.com>
+In-Reply-To: <CAJCQCtSz+=uwXUFGxagoUOYxy99eCJGG-ezLVh0RO=vL=LReEg@mail.gmail.com>
+References: <20181015180546.4dd598bf0fe61b61f56e99ce@gmail.com>
+        <CAJCQCtSz+=uwXUFGxagoUOYxy99eCJGG-ezLVh0RO=vL=LReEg@mail.gmail.com>
+X-Mailer: Sylpheed 3.7.0 (GTK+ 2.24.30; i686-pc-mingw32)
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Oct 15, 2018 at 9:05 AM, Anton Shepelev <anton.txt@gmail.com> wrote:
-> Hello, all
->
-> How can I track down the origin of this mount point:
->
->    /dev/sda2 on /home/hana type btrfs (rw,relatime,space_cache,subvolid=259,subvol=/@/.snapshots/1/snapshot/hana)
->
-> if it is not present in /etc/fstab?  I shouldn't like to
-> find/grep thoughout the whole filesystem.
->
-> --
-> ()  ascii ribbon campaign - against html e-mail
-> /\  http://preview.tinyurl.com/qcy6mjc [archived]
+Chris Murphy to Anton Shepelev:
 
-Sounds like some service taking snapshots regularly is managing this.
-Maybe this is Mint or Ubuntu and you're using Timeshift?
+> > How can I track down the origin of this mount point:
+> >
+> > /dev/sda2 on /home/hana type btrfs (rw,relatime,space_cache,subvolid=259,subvol=/@/.snapshots/1/snapshot/hana)
+> >
+> > if it is not present in /etc/fstab?  I shouldn't like to
+> > find/grep thoughout the whole filesystem.
+>
+> Sounds like some service taking snapshots regularly is
+> managing this.  Maybe this is Mint or Ubuntu and you're
+> using Timeshift?
 
-Maybe it'll show up in the journal if you add boot parameter
-'systemd.log_level=debug' and reboot; then use 'journalctl -b | grep
-mount' and it should show all instances logged instances of mount
-events: systemd, udisks2, maybe others?
+It is SUSE Linux and (probably) its tool called `snapper',
+but I have not found a clue in its documentation.
 
+> Maybe it'll show up in the journal if you add boot
+> parameter 'systemd.log_level=debug' and reboot; then use
+> 'journalctl -b | grep mount' and it should show all
+> instances logged instances of mount events: systemd,
+> udisks2, maybe others?
 
+I will try that as soon as the client lets me reboot that
+machine.
 
 -- 
-Chris Murphy
+()  ascii ribbon campaign -- against html e-mail
+/\  http://preview.tinyurl.com/qcy6mjc [archived]

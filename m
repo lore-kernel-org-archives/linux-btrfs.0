@@ -2,127 +2,156 @@ Return-Path: <SRS0=Zicy=M3=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 539D3C7112A
-	for <linux-btrfs@archiver.kernel.org>; Mon, 15 Oct 2018 06:04:29 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9272FC28CF8
+	for <linux-btrfs@archiver.kernel.org>; Mon, 15 Oct 2018 06:25:58 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 1AD822086A
-	for <linux-btrfs@archiver.kernel.org>; Mon, 15 Oct 2018 06:04:29 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="U0EWkHPx"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 1AD822086A
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
+	by mail.kernel.org (Postfix) with ESMTP id 348442064E
+	for <linux-btrfs@archiver.kernel.org>; Mon, 15 Oct 2018 06:25:58 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 348442064E
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=cn.fujitsu.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726424AbeJONsM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 15 Oct 2018 09:48:12 -0400
-Received: from mail-yb1-f196.google.com ([209.85.219.196]:38505 "EHLO
-        mail-yb1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725887AbeJONsL (ORCPT
+        id S1726507AbeJOOJr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 15 Oct 2018 10:09:47 -0400
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:43764 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1726164AbeJOOJq (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 15 Oct 2018 09:48:11 -0400
-Received: by mail-yb1-f196.google.com with SMTP id e190-v6so7060536ybb.5;
-        Sun, 14 Oct 2018 23:04:25 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=/YZP89amjKg8soR5hutwVGiJjdiUiUoODs0AIZZk1bg=;
-        b=U0EWkHPxv4egfnyZYelO5Pj6Yp7Es+ed/SmPY8adNHy32ePpbvW9+5OAhFqVCUSol0
-         knOylzNmyFhQvpX8nM/bkVw1hI9eUpup6ePmZXgQUvdI+ayeccTBlmUegHCkLcWGdN4g
-         LcXN4ZXyS6FVd/lrwRHJIdTYr6GMxPYcdrutxhTIUcBlUqJ4Ul3n/Fd7A1/7alh+ifNL
-         JS3OeNqAoznbMvoWTJ15o+HdW3a40Acv5uk5pT4HLsn/pCIs1cQHFbc0ClorkGWrwLlg
-         8omkIVAd4SHuFrb+l8gVT6isjZI8qQ9MazX1KWt/tu76ZPSu9cJ4WcUDvqCMBATsPBXp
-         blkg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=/YZP89amjKg8soR5hutwVGiJjdiUiUoODs0AIZZk1bg=;
-        b=hfg2bkh9kyN/YKMEsdgmJDXvYfIQGmF0XGkr7mSdEOmVzpcT6wRvDresBvsQ/A7s2k
-         2sLfPS4Pv5XCZZauTH8hF+J2J525p7GD6/Fj2hFo8RpDijZJQ4vzt54BitPMr2GF8WJt
-         erOaaBgIRAMuntXXe+VWeMxQhNc4781XNM+eV/2sWn62zp5fZ92DQdcqhFJ4UWf9vgYs
-         IlSa348VrWv+G4LEhhP2uqiK4cfk6NKO61vxkPtOzRQiDRCLMo+imMYYTZI+fqhsiWEK
-         bVFj0QO0uejDOsu6ET5tNzfrC3vwgZW+mQVCnNS3qsI5JoSLJlvhq9LqDGXvLlCZXDXf
-         0lmw==
-X-Gm-Message-State: ABuFfojhrlAfWMiIIxlVs3IMxFRZRxwi1YqVEBk1yurvkwBi7VV2ETH0
-        m9CHXuTlyLamzbs69KplMkURLwymf4Cxs8S48lI=
-X-Google-Smtp-Source: ACcGV60OhDgfOVdNbHZOE0VE0O7LxDCLg+QmRNUt9rnvubN99KJXXpaIKhiMqUlEV2jqEshe2C6Y3xoGUct1H9OCyR8=
-X-Received: by 2002:a25:ad4a:: with SMTP id l10-v6mr2000167ybe.507.1539583464680;
- Sun, 14 Oct 2018 23:04:24 -0700 (PDT)
+        Mon, 15 Oct 2018 10:09:46 -0400
+X-IronPort-AV: E=Sophos;i="5.43,368,1503331200"; 
+   d="scan'208";a="46144637"
+Received: from unknown (HELO cn.fujitsu.com) ([10.167.33.5])
+  by heian.cn.fujitsu.com with ESMTP; 15 Oct 2018 14:25:48 +0800
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
+        by cn.fujitsu.com (Postfix) with ESMTP id C1E9D4B6ED4D;
+        Mon, 15 Oct 2018 14:25:44 +0800 (CST)
+Received: from fnst.lan (10.167.226.155) by G08CNEXCHPEKD01.g08.fujitsu.local
+ (10.167.33.89) with Microsoft SMTP Server (TLS) id 14.3.408.0; Mon, 15 Oct
+ 2018 14:25:49 +0800
+From:   Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+To:     <linux-btrfs@vger.kernel.org>
+CC:     <nborisov@suse.com>
+Subject: [PATCH] btrfs: delayed-ref: extract find_first_ref_head from find_ref_head
+Date:   Mon, 15 Oct 2018 14:25:38 +0800
+Message-ID: <20181015062538.30784-1-lufq.fnst@cn.fujitsu.com>
+X-Mailer: git-send-email 2.19.1
 MIME-Version: 1.0
-References: <153938912912.8361.13446310416406388958.stgit@magnolia>
- <153938919123.8361.13059492965161549195.stgit@magnolia> <20181014171927.GD30673@infradead.org>
-In-Reply-To: <20181014171927.GD30673@infradead.org>
-From:   Amir Goldstein <amir73il@gmail.com>
-Date:   Mon, 15 Oct 2018 09:04:13 +0300
-Message-ID: <CAOQ4uxiReFJRxKJbsoUgWWNP75_Qsoh1fWC_dLYV_zBU_jaGbA@mail.gmail.com>
-Subject: Re: [PATCH 07/25] vfs: combine the clone and dedupe into a single remap_file_range
-To:     Christoph Hellwig <hch@infradead.org>
-Cc:     "Darrick J. Wong" <darrick.wong@oracle.com>,
-        Dave Chinner <david@fromorbit.com>,
-        Eric Sandeen <sandeen@redhat.com>,
-        Linux NFS Mailing List <linux-nfs@vger.kernel.org>,
-        linux-cifs@vger.kernel.org,
-        overlayfs <linux-unionfs@vger.kernel.org>,
-        linux-xfs <linux-xfs@vger.kernel.org>,
-        Linux MM <linux-mm@kvack.org>,
-        Linux Btrfs <linux-btrfs@vger.kernel.org>,
-        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-        ocfs2-devel@oss.oracle.com
-Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 7BIT
+Content-Type:   text/plain; charset=US-ASCII
+X-Originating-IP: [10.167.226.155]
+X-yoursite-MailScanner-ID: C1E9D4B6ED4D.AE8CF
+X-yoursite-MailScanner: Found to be clean
+X-yoursite-MailScanner-From: lufq.fnst@cn.fujitsu.com
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-> > +/*
-> > + * These flags control the behavior of the remap_file_range function pointer.
-> > + *
-> > + * RFR_SAME_DATA: only remap if contents identical (i.e. deduplicate)
-> > + */
-> > +#define RFR_SAME_DATA                (1 << 0)
-> > +
-> > +#define RFR_VALID_FLAGS              (RFR_SAME_DATA)
->
-> RFR?  Why not REMAP_FILE_*  Also why not the well understood
-> REMAP_FILE_DEDUP instead of the odd SAME_DATA?
->
-> > +
-> > +/*
-> > + * Filesystem remapping implementations should call this helper on their
-> > + * remap flags to filter out flags that the implementation doesn't support.
-> > + *
-> > + * Returns true if the flags are ok, false otherwise.
-> > + */
-> > +static inline bool remap_check_flags(unsigned int remap_flags,
-> > +                                  unsigned int supported_flags)
-> > +{
-> > +     return (remap_flags & ~(supported_flags & RFR_VALID_FLAGS)) == 0;
-> > +}
->
-> Any reason to even bother with a helper for this?  ->fallocate
-> seems to be doing fine without the helper, and the resulting code
-> seems a lot easier to understand to me.
+The find_ref_head shouldn't return the first entry even if no exact match
+is found. So move the hidden behavior to higher level.
 
-I supposed you figured out the reason already.
-It makes it appearance in patch 16/25 as RFR_VFS_FLAGS.
-All those "advisory" flags, we want to pass them in to filesystem as FYI,
-but we don't want to explicitly add support for e.g. RFR_CAN_SHORTEN
-to every filesystem, when vfs has already taken care of the advice.
+Besides, remove the useless local variables in the btrfs_select_ref_head.
 
-The reason a similar helper doesn't make sense for ->fallocate()
-is because vfs does not take any action on behalf of filesystem
-nor does vfs pass any internal flags to filesystem.
+Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+---
+ fs/btrfs/delayed-ref.c | 45 +++++++++++++++++++++++-------------------
+ 1 file changed, 25 insertions(+), 20 deletions(-)
 
-I argued that fiemap_check_flags() should similarly mask out
-FIEMAP_FLAG_SYNC before checking supported fs_flags,
-because ioctl_fiemap() respects this flag regardless if filesystem
-(or generic helper) declares support for FIEMAP_FLAG_SYNC.
+diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
+index 6e8be384398e..a92f104cf06f 100644
+--- a/fs/btrfs/delayed-ref.c
++++ b/fs/btrfs/delayed-ref.c
+@@ -164,14 +164,28 @@ static struct btrfs_delayed_ref_node* tree_insert(struct rb_root_cached *root,
+ 	return NULL;
+ }
+ 
++static struct btrfs_delayed_ref_head *find_first_ref_head(
++		struct btrfs_delayed_ref_root *dr)
++{
++	struct rb_node *n;
++	struct btrfs_delayed_ref_head *entry;
++
++	n = rb_first_cached(&dr->href_root);
++	if (!n)
++		return NULL;
++
++	entry = rb_entry(n, struct btrfs_delayed_ref_head, href_node);
++
++	return entry;
++}
++
+ /*
+  * find an head entry based on bytenr. This returns the delayed ref
+  * head if it was able to find one, or NULL if nothing was in that spot.
+  * If return_bigger is given, the next bigger entry is returned if no exact
+- * match is found. But if no bigger one is found then the first node of the
+- * ref head tree will be returned.
++ * match is found.
+  */
+-static struct btrfs_delayed_ref_head* find_ref_head(
++static struct btrfs_delayed_ref_head *find_ref_head(
+ 		struct btrfs_delayed_ref_root *dr, u64 bytenr,
+ 		bool return_bigger)
+ {
+@@ -195,10 +209,9 @@ static struct btrfs_delayed_ref_head* find_ref_head(
+ 		if (bytenr > entry->bytenr) {
+ 			n = rb_next(&entry->href_node);
+ 			if (!n)
+-				n = rb_first_cached(&dr->href_root);
++				return NULL;
+ 			entry = rb_entry(n, struct btrfs_delayed_ref_head,
+ 					 href_node);
+-			return entry;
+ 		}
+ 		return entry;
+ 	}
+@@ -358,33 +371,25 @@ struct btrfs_delayed_ref_head *btrfs_select_ref_head(
+ 		struct btrfs_delayed_ref_root *delayed_refs)
+ {
+ 	struct btrfs_delayed_ref_head *head;
+-	u64 start;
+-	bool loop = false;
+ 
+ again:
+-	start = delayed_refs->run_delayed_start;
+-	head = find_ref_head(delayed_refs, start, true);
+-	if (!head && !loop) {
++	head = find_ref_head(delayed_refs, delayed_refs->run_delayed_start,
++			     true);
++	if (!head && delayed_refs->run_delayed_start != 0) {
+ 		delayed_refs->run_delayed_start = 0;
+-		start = 0;
+-		loop = true;
+-		head = find_ref_head(delayed_refs, start, true);
+-		if (!head)
+-			return NULL;
+-	} else if (!head && loop) {
+-		return NULL;
++		head = find_first_ref_head(delayed_refs);
+ 	}
++	if (!head)
++		return NULL;
+ 
+ 	while (head->processing) {
+ 		struct rb_node *node;
+ 
+ 		node = rb_next(&head->href_node);
+ 		if (!node) {
+-			if (loop)
++			if (delayed_refs->run_delayed_start == 0)
+ 				return NULL;
+ 			delayed_refs->run_delayed_start = 0;
+-			start = 0;
+-			loop = true;
+ 			goto again;
+ 		}
+ 		head = rb_entry(node, struct btrfs_delayed_ref_head,
+-- 
+2.19.1
 
-Thanks,
-Amir.
+
+

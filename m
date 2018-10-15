@@ -7,51 +7,51 @@ X-Spam-Status: No, score=-2.4 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_MUTT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 72DBFC71134
-	for <linux-btrfs@archiver.kernel.org>; Mon, 15 Oct 2018 15:32:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E03B1C04AA5
+	for <linux-btrfs@archiver.kernel.org>; Mon, 15 Oct 2018 15:42:33 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 2B2942089E
-	for <linux-btrfs@archiver.kernel.org>; Mon, 15 Oct 2018 15:32:58 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9FB25208B3
+	for <linux-btrfs@archiver.kernel.org>; Mon, 15 Oct 2018 15:42:33 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="cdtMq74q"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 2B2942089E
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="xqD0EWKy"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 9FB25208B3
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=oracle.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726843AbeJOXSl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 15 Oct 2018 19:18:41 -0400
-Received: from userp2120.oracle.com ([156.151.31.85]:51154 "EHLO
+        id S1726744AbeJOX2S (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 15 Oct 2018 19:28:18 -0400
+Received: from userp2120.oracle.com ([156.151.31.85]:33934 "EHLO
         userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726691AbeJOXSl (ORCPT
+        with ESMTP id S1726703AbeJOX2S (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 15 Oct 2018 19:18:41 -0400
+        Mon, 15 Oct 2018 19:28:18 -0400
 Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w9FFPHLV049096;
-        Mon, 15 Oct 2018 15:32:29 GMT
+        by userp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w9FFct8e062699;
+        Mon, 15 Oct 2018 15:42:14 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=date : from : to : cc
  : subject : message-id : references : mime-version : content-type :
  in-reply-to; s=corp-2018-07-02;
- bh=VqCNfBszl9KoWUzC7oYrokhqLyA1pGP7T5IvmajnL5I=;
- b=cdtMq74qUlV3/Ds96bIb4fjlRpA+5QKHIeSHm8V6yM0Uurg2JDOvnNTlAq1M91mTiYXG
- A4N82KnYa5mrTZVT8RVjEJAiuFhYgO7vXTu7cnN3ONS0RPAMTBwqgJi+N9jWpjYvBV77
- 9W5tpSm+sd/HzuTIkwAJZA87UeyaPecsZISaYujvihHTQ2vMREHQdvZTR1c39Ex6jYYb
- 116cJzMO48FTeMEHGs+4XlBBhHE1znKHNxCtFKHUobD54LfOJgZbsoZWnUU75+ZqxLbh
- YIzoC3S3YxbgEKY1zIbZngCUz6bf3yno07mMthv62FcEheQjL9ZOVyFtovTiOOIMt044 lg== 
-Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
-        by userp2120.oracle.com with ESMTP id 2n39br32xx-1
+ bh=A+QwyCpVociTHCDR86S7zw162oAlBMlJZ+RbrXMQUGI=;
+ b=xqD0EWKyMpfXpZrc8YDJ99V+9Eb2FwvB0J2S959K58klUlCHBrLECAkcorWOnKNNkIut
+ FTlBZDXoLd3GdYSYFCjW23X2VFR0nL73WX4SvsWBA5znQFhGhalu707xYMww4jYyAISQ
+ 7aJQ7KF8EjHMxdZG1uPi8fjTolPPNSCriXosZroIjoXFYh98Eud9R3mqTdhrLHoIZwdC
+ lhRuJRZlsR4UD+yBc7N+E66gQ8OFh8RJFWpKvtGZdW73d3ky+p5zpaDF+x2aUjVCVokt
+ 5E7A8ba0kcOzLxFgfgNjjjy+38sMLkL7Ovh6SAHyogWVFXVSUHjNoac2tAXaWgS9ifQd Jw== 
+Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
+        by userp2120.oracle.com with ESMTP id 2n39br35ab-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Mon, 15 Oct 2018 15:32:29 +0000
-Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id w9FFWMi0009136
+        Mon, 15 Oct 2018 15:42:14 +0000
+Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
+        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id w9FFgCNW018295
         (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Mon, 15 Oct 2018 15:32:23 GMT
-Received: from abhmp0016.oracle.com (abhmp0016.oracle.com [141.146.116.22])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w9FFWMhH021861;
-        Mon, 15 Oct 2018 15:32:22 GMT
+        Mon, 15 Oct 2018 15:42:13 GMT
+Received: from abhmp0012.oracle.com (abhmp0012.oracle.com [141.146.116.18])
+        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w9FFgBmo028418;
+        Mon, 15 Oct 2018 15:42:11 GMT
 Received: from localhost (/67.169.218.210)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Mon, 15 Oct 2018 08:32:22 -0700
-Date:   Mon, 15 Oct 2018 08:32:19 -0700
+        with ESMTP ; Mon, 15 Oct 2018 08:42:10 -0700
+Date:   Mon, 15 Oct 2018 08:42:08 -0700
 From:   "Darrick J. Wong" <darrick.wong@oracle.com>
 To:     Christoph Hellwig <hch@infradead.org>
 Cc:     david@fromorbit.com, sandeen@redhat.com, linux-nfs@vger.kernel.org,
@@ -59,59 +59,33 @@ Cc:     david@fromorbit.com, sandeen@redhat.com, linux-nfs@vger.kernel.org,
         linux-unionfs@vger.kernel.org, linux-xfs@vger.kernel.org,
         linux-mm@kvack.org, linux-btrfs@vger.kernel.org,
         linux-fsdevel@vger.kernel.org, ocfs2-devel@oss.oracle.com
-Subject: Re: [PATCH 16/25] vfs: make remapping to source file eof more
- explicit
-Message-ID: <20181015153219.GG28243@magnolia>
+Subject: Re: [PATCH 11/25] vfs: pass remap flags to
+ generic_remap_file_range_prep
+Message-ID: <20181015154208.GH28243@magnolia>
 References: <153938912912.8361.13446310416406388958.stgit@magnolia>
- <153938925737.8361.3995899966552253527.stgit@magnolia>
- <20181014172433.GG30673@infradead.org>
+ <153938921860.8361.1983470639945895613.stgit@magnolia>
+ <20181014173738.GA6400@infradead.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20181014172433.GG30673@infradead.org>
+In-Reply-To: <20181014173738.GA6400@infradead.org>
 User-Agent: Mutt/1.9.4 (2018-02-28)
 X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9047 signatures=668706
 X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=0 malwarescore=0
- phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
+ phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=623
  adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.0.1-1807170000 definitions=main-1810150138
+ engine=8.0.1-1807170000 definitions=main-1810150140
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Sun, Oct 14, 2018 at 10:24:33AM -0700, Christoph Hellwig wrote:
-> On Fri, Oct 12, 2018 at 05:07:37PM -0700, Darrick J. Wong wrote:
-> > From: Darrick J. Wong <darrick.wong@oracle.com>
-> > 
-> > Create a RFR_TO_SRC_EOF flag to explicitly declare that the caller wants
-> > the remap implementation to remap to the end of the source file, once
-> > the files are locked.
+On Sun, Oct 14, 2018 at 10:37:38AM -0700, Christoph Hellwig wrote:
+> > +	bool is_dedupe = (remap_flags & RFR_SAME_DATA);
 > 
-> The name looks like a cat threw up on your keyboard :)
+> Btw, I think the code would be cleaner if we dropped this variable.
 
-Yeah... :(
-
-> From reading the code this seems to ask for a whole file remap, right?
-
-Nope.  In the original btrfs clonerange ioctl, length == 0 meant "to EOF".
-If you made a call like this:
-
-struct btrfs_ioctl_clone_range_args x = {
-	.src_offset = 16384,
-	.src_length = 0,
-	.dest_offset = 0,
-	.src_fd = whatever,
-};
-ftruncate(dest_fd, 0);
-ioctl(dest_fd, BTRFS_IOC_CLONE, &x);
-
-Then dest_fd ends up with the contents of [16k...EOF] from src_fd.
-It's annoying to have the magic length number (and no flags?) but we're
-stuck with this quirk of the interface.
-
-> Why not put that in the name to make it more descriptive?
-
-I'm all ears for better suggestions. :)
+Ok to both.  I'll move up the patch to replace is_dedupe with
+remap_flags to avoid churning the _touch function too, btw.
 
 --D

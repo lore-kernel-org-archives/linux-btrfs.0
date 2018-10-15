@@ -2,90 +2,109 @@ Return-Path: <SRS0=Zicy=M3=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.4 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_MUTT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-0.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E03B1C04AA5
-	for <linux-btrfs@archiver.kernel.org>; Mon, 15 Oct 2018 15:42:33 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 37794C04AA5
+	for <linux-btrfs@archiver.kernel.org>; Mon, 15 Oct 2018 15:48:19 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9FB25208B3
-	for <linux-btrfs@archiver.kernel.org>; Mon, 15 Oct 2018 15:42:33 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="xqD0EWKy"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 9FB25208B3
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=oracle.com
+	by mail.kernel.org (Postfix) with ESMTP id C3A57208D9
+	for <linux-btrfs@archiver.kernel.org>; Mon, 15 Oct 2018 15:48:18 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org C3A57208D9
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=lichtvoll.de
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726744AbeJOX2S (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 15 Oct 2018 19:28:18 -0400
-Received: from userp2120.oracle.com ([156.151.31.85]:33934 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726703AbeJOX2S (ORCPT
+        id S1726747AbeJOXeF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 15 Oct 2018 19:34:05 -0400
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:52667 "EHLO
+        mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726515AbeJOXeF (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 15 Oct 2018 19:28:18 -0400
-Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w9FFct8e062699;
-        Mon, 15 Oct 2018 15:42:14 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=date : from : to : cc
- : subject : message-id : references : mime-version : content-type :
- in-reply-to; s=corp-2018-07-02;
- bh=A+QwyCpVociTHCDR86S7zw162oAlBMlJZ+RbrXMQUGI=;
- b=xqD0EWKyMpfXpZrc8YDJ99V+9Eb2FwvB0J2S959K58klUlCHBrLECAkcorWOnKNNkIut
- FTlBZDXoLd3GdYSYFCjW23X2VFR0nL73WX4SvsWBA5znQFhGhalu707xYMww4jYyAISQ
- 7aJQ7KF8EjHMxdZG1uPi8fjTolPPNSCriXosZroIjoXFYh98Eud9R3mqTdhrLHoIZwdC
- lhRuJRZlsR4UD+yBc7N+E66gQ8OFh8RJFWpKvtGZdW73d3ky+p5zpaDF+x2aUjVCVokt
- 5E7A8ba0kcOzLxFgfgNjjjy+38sMLkL7Ovh6SAHyogWVFXVSUHjNoac2tAXaWgS9ifQd Jw== 
-Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
-        by userp2120.oracle.com with ESMTP id 2n39br35ab-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Mon, 15 Oct 2018 15:42:14 +0000
-Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id w9FFgCNW018295
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Mon, 15 Oct 2018 15:42:13 GMT
-Received: from abhmp0012.oracle.com (abhmp0012.oracle.com [141.146.116.18])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w9FFgBmo028418;
-        Mon, 15 Oct 2018 15:42:11 GMT
-Received: from localhost (/67.169.218.210)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Mon, 15 Oct 2018 08:42:10 -0700
-Date:   Mon, 15 Oct 2018 08:42:08 -0700
-From:   "Darrick J. Wong" <darrick.wong@oracle.com>
-To:     Christoph Hellwig <hch@infradead.org>
-Cc:     david@fromorbit.com, sandeen@redhat.com, linux-nfs@vger.kernel.org,
-        linux-cifs@vger.kernel.org, Amir Goldstein <amir73il@gmail.com>,
-        linux-unionfs@vger.kernel.org, linux-xfs@vger.kernel.org,
-        linux-mm@kvack.org, linux-btrfs@vger.kernel.org,
-        linux-fsdevel@vger.kernel.org, ocfs2-devel@oss.oracle.com
-Subject: Re: [PATCH 11/25] vfs: pass remap flags to
- generic_remap_file_range_prep
-Message-ID: <20181015154208.GH28243@magnolia>
-References: <153938912912.8361.13446310416406388958.stgit@magnolia>
- <153938921860.8361.1983470639945895613.stgit@magnolia>
- <20181014173738.GA6400@infradead.org>
+        Mon, 15 Oct 2018 19:34:05 -0400
+Authentication-Results: auth=pass smtp.auth=martin smtp.mailfrom=martin@lichtvoll.de
+Received: from 127.0.0.1 (localhost [127.0.0.1])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by mail.lichtvoll.de (Postfix) with ESMTPSA id 15B993CF3DB;
+        Mon, 15 Oct 2018 17:48:16 +0200 (CEST)
+From:   Martin Steigerwald <martin@lichtvoll.de>
+To:     Hugo Mills <hugo@carfax.org.uk>,
+        Anton Shepelev <anton.txt@gmail.com>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: Interpreting `btrfs filesystem show'
+Date:   Mon, 15 Oct 2018 17:48:15 +0200
+Message-ID: <20001436.sb0dmY2reh@merkaba>
+In-Reply-To: <20181015142641.GD9538@carfax.org.uk>
+References: <20181015172408.1b3867debea3951fb7014ee4@gmail.com> <20181015142641.GD9538@carfax.org.uk>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20181014173738.GA6400@infradead.org>
-User-Agent: Mutt/1.9.4 (2018-02-28)
-X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9047 signatures=668706
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=0 malwarescore=0
- phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=623
- adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.0.1-1807170000 definitions=main-1810150140
+Content-Transfer-Encoding: 7Bit
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Sun, Oct 14, 2018 at 10:37:38AM -0700, Christoph Hellwig wrote:
-> > +	bool is_dedupe = (remap_flags & RFR_SAME_DATA);
+Hugo Mills - 15.10.18, 16:26:
+> On Mon, Oct 15, 2018 at 05:24:08PM +0300, Anton Shepelev wrote:
+> > Hello, all
+> > 
+> > While trying to resolve free space problems, and found that
+> > 
+> > I cannot interpret the output of:
+> > > btrfs filesystem show
+> > 
+> > Label: none  uuid: 8971ce5b-71d9-4e46-ab25-ca37485784c8
+> > Total devices 1 FS bytes used 34.06GiB
+> > devid    1 size 40.00GiB used 37.82GiB path /dev/sda2
+> > 
+> > How come the total used value is less than the value listed
+> > for the only device?
 > 
-> Btw, I think the code would be cleaner if we dropped this variable.
+>    "Used" on the device is the mount of space allocated. "Used" on the
+> FS is the total amount of actual data and metadata in that
+> allocation.
+> 
+>    You will also need to look at the output of "btrfs fi df" to see
+> the breakdown of the 37.82 GiB into data, metadata and currently
+> unused.
 
-Ok to both.  I'll move up the patch to replace is_dedupe with
-remap_flags to avoid churning the _touch function too, btw.
+I usually use btrfs fi usage -T, cause
 
---D
+1. It has all the information.
+
+2. It differentiates between used and allocated.
+
+% btrfs fi usage -T /
+Overall:
+    Device size:                 100.00GiB
+    Device allocated:             54.06GiB
+    Device unallocated:           45.94GiB
+    Device missing:                  0.00B
+    Used:                         46.24GiB
+    Free (estimated):             25.58GiB      (min: 25.58GiB)
+    Data ratio:                       2.00
+    Metadata ratio:                   2.00
+    Global reserve:               70.91MiB      (used: 0.00B)
+
+                            Data     Metadata  System              
+Id Path                     RAID1    RAID1     RAID1    Unallocated
+-- ------------------------ -------- --------- -------- -----------
+ 2 /dev/mapper/msata-debian 25.00GiB   2.00GiB 32.00MiB    22.97GiB
+ 1 /dev/mapper/sata-debian  25.00GiB   2.00GiB 32.00MiB    22.97GiB
+-- ------------------------ -------- --------- -------- -----------
+   Total                    25.00GiB   2.00GiB 32.00MiB    45.94GiB
+   Used                     22.38GiB 754.66MiB 16.00KiB  
+
+
+For RAID it in some place reports the raw size and sometimes the logical 
+size. Especially in the "Total" line I find this a bit inconsistent. 
+"RAID1" columns show logical size, "Unallocated" shows raw size.
+
+Also "Used:" in the global section shows raw size and "Free 
+(estimated):" shows logical size.
+
+Thanks
+-- 
+Martin
+
+

@@ -7,51 +7,51 @@ X-Spam-Status: No, score=-6.9 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,UNPARSEABLE_RELAY autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 491F9C04EBD
-	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Oct 2018 03:11:24 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0DCDBC04EB9
+	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Oct 2018 03:11:29 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 057CE208D9
-	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Oct 2018 03:11:24 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C95EA208D9
+	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Oct 2018 03:11:28 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="aYabyVyQ"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 057CE208D9
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="K76nLdhT"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org C95EA208D9
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=oracle.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727341AbeJPK7b (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 16 Oct 2018 06:59:31 -0400
-Received: from userp2120.oracle.com ([156.151.31.85]:47008 "EHLO
+        id S1727362AbeJPK7i (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 16 Oct 2018 06:59:38 -0400
+Received: from userp2120.oracle.com ([156.151.31.85]:47154 "EHLO
         userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727094AbeJPK7b (ORCPT
+        with ESMTP id S1727094AbeJPK7h (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 16 Oct 2018 06:59:31 -0400
+        Tue, 16 Oct 2018 06:59:37 -0400
 Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w9G39XqD194641;
-        Tue, 16 Oct 2018 03:11:16 GMT
+        by userp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w9G38gOw194183;
+        Tue, 16 Oct 2018 03:11:23 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : from : to :
  cc : date : message-id : in-reply-to : references : mime-version :
  content-type : content-transfer-encoding; s=corp-2018-07-02;
- bh=ufw8W7mPrmpLra0J7s1MmX4U818cevYIGQfOZevEvFE=;
- b=aYabyVyQlq1DtI1o6Ff2/y7K4acMZ+OaFB2ns5yCS2KHsg7JtP44Fa94qCGfm7pCVlFO
- jPV+amd16vZRAF7+SfbcSPGoXoI1padqRp8aOzX8nQuYBUluzOoETTVvTY+jI/K+j+o+
- oFuH5FQqaEXkQvmigqXMKgfg9+aUHra/pfPqJwecKNH/T3dt1yfVvcRH4HV62EC+PCQ8
- C3BuShQ2Ii/cYDI3Oqxo06uiZoVPXlu30TQGNTR71AYNF+DReKwmKQbC4TTsJNDEqQYp
- awgbuN+YQOKbN7l8UZhe4sltPR/Mflt4y3NVxGRwY4g+i9BaEFp8V+q5BkLpjVIi2MvY iA== 
+ bh=3p9QiOkfa8h9mw3zC6wMgXppY9cjHOCTYbdPvwFdVO8=;
+ b=K76nLdhT6z9//J9WzFChKCPByxZCJ3bcnKeQCRf7+O3k8IYOKZC23DpxdiJrv+Bk5xXQ
+ xa1Nvo5eEQJMrMX15uCsVKr1pQV98+F+iZlkV7KaPHC/7FYkFKQmR+Tifepl9n/Ggx+B
+ lHJ+ft5aXUUCXWDmlkwcMZ2vpeW/PKb3JxGpgjZygVNltJJXUp8JEfevSY1LyVnaW/5v
+ 7hlLCmyTT6urnozlcbkCG0H2eKFUh9QLA/O/VoUvUZBhcCf3VbHSF2MHIpJbu5xRVw1k
+ hKNnk7U2qw2NgyALk9dlvHm4ufqEHatYvfxg8G6JaIuIeI7YQTBVh9wdJHfmROQbOaPH 2w== 
 Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
-        by userp2120.oracle.com with ESMTP id 2n39br5rhy-1
+        by userp2120.oracle.com with ESMTP id 2n39br5rj5-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Tue, 16 Oct 2018 03:11:16 +0000
-Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
-        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w9G3BE6I030534
+        Tue, 16 Oct 2018 03:11:23 +0000
+Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
+        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w9G3BLJR030688
         (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Tue, 16 Oct 2018 03:11:15 GMT
-Received: from abhmp0010.oracle.com (abhmp0010.oracle.com [141.146.116.16])
-        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w9G3BEQN009419;
-        Tue, 16 Oct 2018 03:11:14 GMT
+        Tue, 16 Oct 2018 03:11:21 GMT
+Received: from abhmp0017.oracle.com (abhmp0017.oracle.com [141.146.116.23])
+        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w9G3BKo0004163;
+        Tue, 16 Oct 2018 03:11:20 GMT
 Received: from localhost (/10.159.227.150)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Mon, 15 Oct 2018 20:11:13 -0700
-Subject: [PATCH 11/26] vfs: pass remap flags to generic_remap_file_range_prep
+        with ESMTP ; Mon, 15 Oct 2018 20:11:20 -0700
+Subject: [PATCH 12/26] vfs: pass remap flags to generic_remap_checks
 From:   "Darrick J. Wong" <darrick.wong@oracle.com>
 To:     david@fromorbit.com, darrick.wong@oracle.com
 Cc:     sandeen@redhat.com, linux-nfs@vger.kernel.org,
@@ -59,8 +59,8 @@ Cc:     sandeen@redhat.com, linux-nfs@vger.kernel.org,
         linux-unionfs@vger.kernel.org, linux-xfs@vger.kernel.org,
         linux-mm@kvack.org, linux-btrfs@vger.kernel.org,
         linux-fsdevel@vger.kernel.org, ocfs2-devel@oss.oracle.com
-Date:   Mon, 15 Oct 2018 20:11:12 -0700
-Message-ID: <153965947208.1256.13169150057249233851.stgit@magnolia>
+Date:   Mon, 15 Oct 2018 20:11:19 -0700
+Message-ID: <153965947897.1256.9976516083702922569.stgit@magnolia>
 In-Reply-To: <153965939489.1256.7400115244528045860.stgit@magnolia>
 References: <153965939489.1256.7400115244528045860.stgit@magnolia>
 User-Agent: StGit/0.17.1-dirty
@@ -69,7 +69,7 @@ Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
 X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9047 signatures=668706
 X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=0 malwarescore=0
- phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
+ phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=470
  adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
  engine=8.0.1-1807170000 definitions=main-1810160026
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -79,268 +79,63 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Darrick J. Wong <darrick.wong@oracle.com>
 
-Plumb the remap flags through the filesystem from the vfs function
-dispatcher all the way to the prep function to prepare for behavior
-changes in subsequent patches.
+Pass the same remap flags to generic_remap_checks for consistency.
 
 Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
 Reviewed-by: Amir Goldstein <amir73il@gmail.com>
 ---
- fs/ocfs2/file.c         |    2 +-
- fs/ocfs2/refcounttree.c |    4 ++--
- fs/ocfs2/refcounttree.h |    2 +-
- fs/read_write.c         |   14 +++++++-------
- fs/xfs/xfs_file.c       |    2 +-
- fs/xfs/xfs_reflink.c    |   21 +++++++++++----------
- fs/xfs/xfs_reflink.h    |    3 ++-
- include/linux/fs.h      |    2 +-
- 8 files changed, 26 insertions(+), 24 deletions(-)
+ fs/read_write.c    |    2 +-
+ include/linux/fs.h |    2 +-
+ mm/filemap.c       |    4 ++--
+ 3 files changed, 4 insertions(+), 4 deletions(-)
 
 
-diff --git a/fs/ocfs2/file.c b/fs/ocfs2/file.c
-index 0b757a24567c..9809b0e5746f 100644
---- a/fs/ocfs2/file.c
-+++ b/fs/ocfs2/file.c
-@@ -2538,7 +2538,7 @@ static int ocfs2_remap_file_range(struct file *file_in,
- 		return -EINVAL;
- 
- 	return ocfs2_reflink_remap_range(file_in, pos_in, file_out, pos_out,
--					 len, remap_flags & REMAP_FILE_DEDUP);
-+					 len, remap_flags);
- }
- 
- const struct inode_operations ocfs2_file_iops = {
-diff --git a/fs/ocfs2/refcounttree.c b/fs/ocfs2/refcounttree.c
-index 36c56dfbe485..df9781567ec0 100644
---- a/fs/ocfs2/refcounttree.c
-+++ b/fs/ocfs2/refcounttree.c
-@@ -4825,7 +4825,7 @@ int ocfs2_reflink_remap_range(struct file *file_in,
- 			      struct file *file_out,
- 			      loff_t pos_out,
- 			      u64 len,
--			      bool is_dedupe)
-+			      unsigned int remap_flags)
- {
- 	struct inode *inode_in = file_inode(file_in);
- 	struct inode *inode_out = file_inode(file_out);
-@@ -4851,7 +4851,7 @@ int ocfs2_reflink_remap_range(struct file *file_in,
- 		goto out_unlock;
- 
- 	ret = generic_remap_file_range_prep(file_in, pos_in, file_out, pos_out,
--			&len, is_dedupe);
-+			&len, remap_flags);
- 	if (ret <= 0)
- 		goto out_unlock;
- 
-diff --git a/fs/ocfs2/refcounttree.h b/fs/ocfs2/refcounttree.h
-index 4af55bf4b35b..d2c5f526edff 100644
---- a/fs/ocfs2/refcounttree.h
-+++ b/fs/ocfs2/refcounttree.h
-@@ -120,6 +120,6 @@ int ocfs2_reflink_remap_range(struct file *file_in,
- 			      struct file *file_out,
- 			      loff_t pos_out,
- 			      u64 len,
--			      bool is_dedupe);
-+			      unsigned int remap_flags);
- 
- #endif /* OCFS2_REFCOUNTTREE_H */
 diff --git a/fs/read_write.c b/fs/read_write.c
-index 766bdcb381f3..201381689284 100644
+index 201381689284..ebcbfc4f2907 100644
 --- a/fs/read_write.c
 +++ b/fs/read_write.c
-@@ -1722,14 +1722,14 @@ static int generic_remap_check_len(struct inode *inode_in,
- 				   struct inode *inode_out,
- 				   loff_t pos_out,
- 				   u64 *len,
--				   bool is_dedupe)
-+				   unsigned int remap_flags)
- {
- 	u64 blkmask = i_blocksize(inode_in) - 1;
- 
- 	if ((*len & blkmask) == 0)
- 		return 0;
- 
--	if (is_dedupe)
-+	if (remap_flags & REMAP_FILE_DEDUP)
- 		*len &= ~blkmask;
- 	else if (pos_out + *len < i_size_read(inode_out))
- 		return -EINVAL;
-@@ -1747,7 +1747,7 @@ static int generic_remap_check_len(struct inode *inode_in,
-  */
- int generic_remap_file_range_prep(struct file *file_in, loff_t pos_in,
- 				  struct file *file_out, loff_t pos_out,
--				  u64 *len, bool is_dedupe)
-+				  u64 *len, unsigned int remap_flags)
- {
- 	struct inode *inode_in = file_inode(file_in);
- 	struct inode *inode_out = file_inode(file_out);
-@@ -1771,7 +1771,7 @@ int generic_remap_file_range_prep(struct file *file_in, loff_t pos_in,
- 	if (*len == 0) {
- 		loff_t isize = i_size_read(inode_in);
- 
--		if (is_dedupe || pos_in == isize)
-+		if ((remap_flags & REMAP_FILE_DEDUP) || pos_in == isize)
- 			return 0;
- 		if (pos_in > isize)
- 			return -EINVAL;
 @@ -1782,7 +1782,7 @@ int generic_remap_file_range_prep(struct file *file_in, loff_t pos_in,
  
  	/* Check that we don't violate system file offset limits. */
  	ret = generic_remap_checks(file_in, pos_in, file_out, pos_out, len,
--			is_dedupe);
-+			(remap_flags & REMAP_FILE_DEDUP));
- 	if (ret)
- 		return ret;
- 
-@@ -1804,7 +1804,7 @@ int generic_remap_file_range_prep(struct file *file_in, loff_t pos_in,
- 	/*
- 	 * Check that the extents are the same.
- 	 */
--	if (is_dedupe) {
-+	if (remap_flags & REMAP_FILE_DEDUP) {
- 		bool		is_same = false;
- 
- 		ret = vfs_dedupe_file_range_compare(inode_in, pos_in,
-@@ -1816,7 +1816,7 @@ int generic_remap_file_range_prep(struct file *file_in, loff_t pos_in,
- 	}
- 
- 	ret = generic_remap_check_len(inode_in, inode_out, pos_out, len,
--			is_dedupe);
+-			(remap_flags & REMAP_FILE_DEDUP));
 +			remap_flags);
  	if (ret)
  		return ret;
  
-diff --git a/fs/xfs/xfs_file.c b/fs/xfs/xfs_file.c
-index 2ad94d508f80..20314eb4677a 100644
---- a/fs/xfs/xfs_file.c
-+++ b/fs/xfs/xfs_file.c
-@@ -932,7 +932,7 @@ xfs_file_remap_range(
- 		return -EINVAL;
- 
- 	return xfs_reflink_remap_range(file_in, pos_in, file_out, pos_out,
--			len, remap_flags & REMAP_FILE_DEDUP);
-+			len, remap_flags);
- }
- 
- STATIC int
-diff --git a/fs/xfs/xfs_reflink.c b/fs/xfs/xfs_reflink.c
-index a7757a128a78..29aab196ce7e 100644
---- a/fs/xfs/xfs_reflink.c
-+++ b/fs/xfs/xfs_reflink.c
-@@ -921,13 +921,14 @@ xfs_reflink_update_dest(
- 	struct xfs_inode	*dest,
- 	xfs_off_t		newlen,
- 	xfs_extlen_t		cowextsize,
--	bool			is_dedupe)
-+	unsigned int		remap_flags)
- {
- 	struct xfs_mount	*mp = dest->i_mount;
- 	struct xfs_trans	*tp;
- 	int			error;
- 
--	if (is_dedupe && newlen <= i_size_read(VFS_I(dest)) && cowextsize == 0)
-+	if ((remap_flags & REMAP_FILE_DEDUP) &&
-+	    newlen <= i_size_read(VFS_I(dest)) && cowextsize == 0)
- 		return 0;
- 
- 	error = xfs_trans_alloc(mp, &M_RES(mp)->tr_ichange, 0, 0, 0, &tp);
-@@ -948,7 +949,7 @@ xfs_reflink_update_dest(
- 		dest->i_d.di_flags2 |= XFS_DIFLAG2_COWEXTSIZE;
- 	}
- 
--	if (!is_dedupe) {
-+	if (!(remap_flags & REMAP_FILE_DEDUP)) {
- 		xfs_trans_ichgtime(tp, dest,
- 				   XFS_ICHGTIME_MOD | XFS_ICHGTIME_CHG);
- 	}
-@@ -1296,7 +1297,7 @@ xfs_reflink_remap_prep(
- 	struct file		*file_out,
- 	loff_t			pos_out,
- 	u64			*len,
--	bool			is_dedupe)
-+	unsigned int		remap_flags)
- {
- 	struct inode		*inode_in = file_inode(file_in);
- 	struct xfs_inode	*src = XFS_I(inode_in);
-@@ -1327,7 +1328,7 @@ xfs_reflink_remap_prep(
- 		goto out_unlock;
- 
- 	ret = generic_remap_file_range_prep(file_in, pos_in, file_out, pos_out,
--			len, is_dedupe);
-+			len, remap_flags);
- 	if (ret <= 0)
- 		goto out_unlock;
- 
-@@ -1336,7 +1337,7 @@ xfs_reflink_remap_prep(
- 	 * from the source file so we don't try to dedupe the partial
- 	 * EOF block.
- 	 */
--	if (is_dedupe) {
-+	if (remap_flags & REMAP_FILE_DEDUP) {
- 		*len &= ~blkmask;
- 	} else if (*len & blkmask) {
- 		/*
-@@ -1372,7 +1373,7 @@ xfs_reflink_remap_prep(
- 				   PAGE_ALIGN(pos_out + *len) - 1);
- 
- 	/* If we're altering the file contents... */
--	if (!is_dedupe) {
-+	if (!(remap_flags & REMAP_FILE_DEDUP)) {
- 		/*
- 		 * ...update the timestamps (which will grab the ilock again
- 		 * from xfs_fs_dirty_inode, so we have to call it before we
-@@ -1410,7 +1411,7 @@ xfs_reflink_remap_range(
- 	struct file		*file_out,
- 	loff_t			pos_out,
- 	u64			len,
--	bool			is_dedupe)
-+	unsigned int		remap_flags)
- {
- 	struct inode		*inode_in = file_inode(file_in);
- 	struct xfs_inode	*src = XFS_I(inode_in);
-@@ -1430,7 +1431,7 @@ xfs_reflink_remap_range(
- 
- 	/* Prepare and then clone file data. */
- 	ret = xfs_reflink_remap_prep(file_in, pos_in, file_out, pos_out,
--			&len, is_dedupe);
-+			&len, remap_flags);
- 	if (ret <= 0)
- 		return ret;
- 
-@@ -1457,7 +1458,7 @@ xfs_reflink_remap_range(
- 		cowextsize = src->i_d.di_cowextsize;
- 
- 	ret = xfs_reflink_update_dest(dest, pos_out + len, cowextsize,
--			is_dedupe);
-+			remap_flags);
- 
- out_unlock:
- 	xfs_reflink_remap_unlock(file_in, file_out);
-diff --git a/fs/xfs/xfs_reflink.h b/fs/xfs/xfs_reflink.h
-index c585ad9552b2..6f82d628bf17 100644
---- a/fs/xfs/xfs_reflink.h
-+++ b/fs/xfs/xfs_reflink.h
-@@ -28,7 +28,8 @@ extern int xfs_reflink_end_cow(struct xfs_inode *ip, xfs_off_t offset,
- 		xfs_off_t count);
- extern int xfs_reflink_recover_cow(struct xfs_mount *mp);
- extern int xfs_reflink_remap_range(struct file *file_in, loff_t pos_in,
--		struct file *file_out, loff_t pos_out, u64 len, bool is_dedupe);
-+		struct file *file_out, loff_t pos_out, u64 len,
-+		unsigned int remap_flags);
- extern int xfs_reflink_inode_has_shared_extents(struct xfs_trans *tp,
- 		struct xfs_inode *ip, bool *has_shared);
- extern int xfs_reflink_clear_inode_flag(struct xfs_inode *ip,
 diff --git a/include/linux/fs.h b/include/linux/fs.h
-index 794d1b83eded..c2800953937a 100644
+index c2800953937a..1aa3bc1bb092 100644
 --- a/include/linux/fs.h
 +++ b/include/linux/fs.h
-@@ -1839,7 +1839,7 @@ extern ssize_t vfs_copy_file_range(struct file *, loff_t , struct file *,
- 				   loff_t, size_t, unsigned int);
- extern int generic_remap_file_range_prep(struct file *file_in, loff_t pos_in,
- 					 struct file *file_out, loff_t pos_out,
--					 u64 *count, bool is_dedupe);
-+					 u64 *count, unsigned int remap_flags);
- extern int do_clone_file_range(struct file *file_in, loff_t pos_in,
- 			       struct file *file_out, loff_t pos_out, u64 len);
- extern int vfs_clone_file_range(struct file *file_in, loff_t pos_in,
+@@ -2981,7 +2981,7 @@ extern int generic_file_readonly_mmap(struct file *, struct vm_area_struct *);
+ extern ssize_t generic_write_checks(struct kiocb *, struct iov_iter *);
+ extern int generic_remap_checks(struct file *file_in, loff_t pos_in,
+ 				struct file *file_out, loff_t pos_out,
+-				uint64_t *count, bool is_dedupe);
++				uint64_t *count, unsigned int remap_flags);
+ extern ssize_t generic_file_read_iter(struct kiocb *, struct iov_iter *);
+ extern ssize_t __generic_file_write_iter(struct kiocb *, struct iov_iter *);
+ extern ssize_t generic_file_write_iter(struct kiocb *, struct iov_iter *);
+diff --git a/mm/filemap.c b/mm/filemap.c
+index 08ad210fee49..b0f1f6d93d9c 100644
+--- a/mm/filemap.c
++++ b/mm/filemap.c
+@@ -3001,7 +3001,7 @@ EXPORT_SYMBOL(generic_write_checks);
+  */
+ int generic_remap_checks(struct file *file_in, loff_t pos_in,
+ 			 struct file *file_out, loff_t pos_out,
+-			 uint64_t *req_count, bool is_dedupe)
++			 uint64_t *req_count, unsigned int remap_flags)
+ {
+ 	struct inode *inode_in = file_in->f_mapping->host;
+ 	struct inode *inode_out = file_out->f_mapping->host;
+@@ -3023,7 +3023,7 @@ int generic_remap_checks(struct file *file_in, loff_t pos_in,
+ 	size_out = i_size_read(inode_out);
+ 
+ 	/* Dedupe requires both ranges to be within EOF. */
+-	if (is_dedupe &&
++	if ((remap_flags & REMAP_FILE_DEDUP) &&
+ 	    (pos_in >= size_in || pos_in + count > size_in ||
+ 	     pos_out >= size_out || pos_out + count > size_out))
+ 		return -EINVAL;
 

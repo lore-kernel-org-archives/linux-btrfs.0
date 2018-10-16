@@ -7,60 +7,60 @@ X-Spam-Status: No, score=-6.9 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,UNPARSEABLE_RELAY autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AEA8AC04EB9
-	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Oct 2018 03:20:55 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 51B88C04EB9
+	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Oct 2018 03:20:59 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 768C1208E4
-	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Oct 2018 03:20:55 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1C8762083E
+	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Oct 2018 03:20:59 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="WR4l6CaN"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 768C1208E4
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="M9aJJC01"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 1C8762083E
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=oracle.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727373AbeJPLJG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 16 Oct 2018 07:09:06 -0400
-Received: from userp2130.oracle.com ([156.151.31.86]:60478 "EHLO
+        id S1727391AbeJPLJK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 16 Oct 2018 07:09:10 -0400
+Received: from userp2130.oracle.com ([156.151.31.86]:60532 "EHLO
         userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727002AbeJPLJG (ORCPT
+        with ESMTP id S1727002AbeJPLJK (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 16 Oct 2018 07:09:06 -0400
+        Tue, 16 Oct 2018 07:09:10 -0400
 Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
-        by userp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w9G3J8UH051365;
-        Tue, 16 Oct 2018 03:20:50 GMT
+        by userp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w9G3Josa051805;
+        Tue, 16 Oct 2018 03:20:51 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : from : to :
  cc : date : message-id : in-reply-to : references : mime-version :
  content-type : content-transfer-encoding; s=corp-2018-07-02;
- bh=yAZ/1PPkeVRlAU93kCg6O9O78UCd/8KO5hoqJKQC2Ek=;
- b=WR4l6CaNFvRFJvo0RrOCbkwn6zqWARZ4QM5OsezyfgD2tuyXdAMCLSg7ARjygnhBIQ4B
- QrixQ6mYXqO/VtlfFN8xctLozdccypgLlh+mNWsZxiZng1AMJvs5dioZLm6FvY4SGL1j
- BBPUnkI2dWQO2YPfpJLW4G2ewNqx4ZQ5JZ/VqpsHcTyiyCFVkWEgb6btr1ne9sZTxbZ0
- LtZ5JrFHTx7K0RYG9ctwVY1IOGQbUPnHk+6k40hUeCvu+cMKpPW4ZRKwb0F/trgIe/VB
- G1psh2zVthXpKrtpkRvVOgVOWh3TFpjGFNCsZCNEwTskVG4MP/vTQDpiJicvjdBghQcf 0A== 
-Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
-        by userp2130.oracle.com with ESMTP id 2n384tx2a9-1
+ bh=XaJCcJb52edg+aC8VnKgwcIySPxyOilGPHSlrKf5LPY=;
+ b=M9aJJC01Tp0zKMm3aGPrIymayT3/oGG8aOw26Q0M4e4DEK7vxr+C1dNV8a4IIDYGwIIi
+ 73fE7Y5dtB9kyI9S1StHRq4Sjt9fxomsFtCT+0Ht6jO5HY4+DmCLmcASG5llF1uHcySb
+ QBhvyQmOoB7X7DOwuQZHtEZQdpNs9hS9AgyiFiH2bPXpSGQswfy2L80wcwY4MaZTX0gx
+ ZXcvbFa48F2OK+E88GXXZFNlvxv2qm0kDeGtLP6WwShpaMTkCQVJbAadXd34AA/W2Ysl
+ S0YK4gwPZdTV5v7vHD22j3NAhnrdwWsP/QxerdGr+C414ZQRxelypj0KnkeycLv1ebD2 kQ== 
+Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
+        by userp2130.oracle.com with ESMTP id 2n384tx2ae-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Tue, 16 Oct 2018 03:20:49 +0000
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id w9G3KhAR001355
+        Tue, 16 Oct 2018 03:20:51 +0000
+Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
+        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id w9G3KpjV030152
         (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Tue, 16 Oct 2018 03:20:43 GMT
-Received: from abhmp0001.oracle.com (abhmp0001.oracle.com [141.146.116.7])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w9G3Khqg010937;
-        Tue, 16 Oct 2018 03:20:43 GMT
+        Tue, 16 Oct 2018 03:20:51 GMT
+Received: from abhmp0012.oracle.com (abhmp0012.oracle.com [141.146.116.18])
+        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w9G3KoTr012714;
+        Tue, 16 Oct 2018 03:20:50 GMT
 Received: from localhost (/10.159.227.150)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Mon, 15 Oct 2018 20:20:43 -0700
-Subject: [PATCH 23/26] ocfs2: remove ocfs2_reflink_remap_range
+        with ESMTP ; Mon, 15 Oct 2018 20:20:50 -0700
+Subject: [PATCH 24/26] xfs: fix pagecache truncation prior to reflink
 From:   "Darrick J. Wong" <darrick.wong@oracle.com>
 To:     david@fromorbit.com, darrick.wong@oracle.com
 Cc:     sandeen@redhat.com, linux-nfs@vger.kernel.org,
         linux-cifs@vger.kernel.org, linux-unionfs@vger.kernel.org,
         linux-xfs@vger.kernel.org, linux-mm@kvack.org,
-        linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        ocfs2-devel@oss.oracle.com
-Date:   Mon, 15 Oct 2018 20:20:41 -0700
-Message-ID: <153966004165.3607.1479048685053789222.stgit@magnolia>
+        linux-btrfs@vger.kernel.org, Dave Chinner <dchinner@redhat.com>,
+        linux-fsdevel@vger.kernel.org, ocfs2-devel@oss.oracle.com
+Date:   Mon, 15 Oct 2018 20:20:48 -0700
+Message-ID: <153966004854.3607.15187709452762502392.stgit@magnolia>
 In-Reply-To: <153965939489.1256.7400115244528045860.stgit@magnolia>
 References: <153965939489.1256.7400115244528045860.stgit@magnolia>
 User-Agent: StGit/0.17.1-dirty
@@ -69,7 +69,7 @@ Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
 X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9047 signatures=668706
 X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=0 malwarescore=0
- phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
+ phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=896
  adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
  engine=8.0.1-1807170000 definitions=main-1810160028
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -79,281 +79,34 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Darrick J. Wong <darrick.wong@oracle.com>
 
-Since ocfs2_remap_file_range is a thin shell around
-ocfs2_remap_remap_range, move everything from the latter into the
-former.
+Prior to remapping blocks, it is necessary to remove pages from the
+destination file's page cache.  Unfortunately, the truncation is not
+aggressive enough -- if page size > block size, we'll end up zeroing
+subpage blocks instead of removing them.  So, round the start offset
+down and the end offset up to page boundaries.  We already wrote all
+the dirty data so the larger range shouldn't be a problem.
 
 Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
+Reviewed-by: Dave Chinner <dchinner@redhat.com>
 ---
- fs/ocfs2/file.c         |   68 +++++++++++++++++++++++++++-
- fs/ocfs2/refcounttree.c |  113 +++++++----------------------------------------
- fs/ocfs2/refcounttree.h |   24 +++++++---
- 3 files changed, 102 insertions(+), 103 deletions(-)
+ fs/xfs/xfs_reflink.c |    5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
 
 
-diff --git a/fs/ocfs2/file.c b/fs/ocfs2/file.c
-index 8125c5ccf821..fe570824b991 100644
---- a/fs/ocfs2/file.c
-+++ b/fs/ocfs2/file.c
-@@ -2531,11 +2531,75 @@ static loff_t ocfs2_remap_file_range(struct file *file_in, loff_t pos_in,
- 				     struct file *file_out, loff_t pos_out,
- 				     loff_t len, unsigned int remap_flags)
- {
-+	struct inode *inode_in = file_inode(file_in);
-+	struct inode *inode_out = file_inode(file_out);
-+	struct ocfs2_super *osb = OCFS2_SB(inode_in->i_sb);
-+	struct buffer_head *in_bh = NULL, *out_bh = NULL;
-+	bool same_inode = (inode_in == inode_out);
-+	loff_t remapped = 0;
-+	ssize_t ret;
-+
- 	if (remap_flags & ~(REMAP_FILE_DEDUP | REMAP_FILE_ADVISORY))
- 		return -EINVAL;
-+	if (!ocfs2_refcount_tree(osb))
-+		return -EOPNOTSUPP;
-+	if (ocfs2_is_hard_readonly(osb) || ocfs2_is_soft_readonly(osb))
-+		return -EROFS;
+diff --git a/fs/xfs/xfs_reflink.c b/fs/xfs/xfs_reflink.c
+index 9b1ea42c81d1..e8e86646bb4b 100644
+--- a/fs/xfs/xfs_reflink.c
++++ b/fs/xfs/xfs_reflink.c
+@@ -1369,8 +1369,9 @@ xfs_reflink_remap_prep(
+ 		goto out_unlock;
  
--	return ocfs2_reflink_remap_range(file_in, pos_in, file_out, pos_out,
--			len, remap_flags);
-+	/* Lock both files against IO */
-+	ret = ocfs2_reflink_inodes_lock(inode_in, &in_bh, inode_out, &out_bh);
-+	if (ret)
-+		return ret;
-+
-+	/* Check file eligibility and prepare for block sharing. */
-+	ret = -EINVAL;
-+	if ((OCFS2_I(inode_in)->ip_flags & OCFS2_INODE_SYSTEM_FILE) ||
-+	    (OCFS2_I(inode_out)->ip_flags & OCFS2_INODE_SYSTEM_FILE))
-+		goto out_unlock;
-+
-+	ret = generic_remap_file_range_prep(file_in, pos_in, file_out, pos_out,
-+			&len, remap_flags);
-+	if (ret < 0 || len == 0)
-+		goto out_unlock;
-+
-+	/* Lock out changes to the allocation maps and remap. */
-+	down_write(&OCFS2_I(inode_in)->ip_alloc_sem);
-+	if (!same_inode)
-+		down_write_nested(&OCFS2_I(inode_out)->ip_alloc_sem,
-+				  SINGLE_DEPTH_NESTING);
-+
-+	/* Zap any page cache for the destination file's range. */
+ 	/* Zap any page cache for the destination file's range. */
+-	truncate_inode_pages_range(&inode_out->i_data, pos_out,
+-				   PAGE_ALIGN(pos_out + *len) - 1);
 +	truncate_inode_pages_range(&inode_out->i_data,
-+				   round_down(pos_out, PAGE_SIZE),
-+				   round_up(pos_out + len, PAGE_SIZE) - 1);
-+
-+	remapped = ocfs2_reflink_remap_blocks(inode_in, in_bh, pos_in,
-+			inode_out, out_bh, pos_out, len);
-+	up_write(&OCFS2_I(inode_in)->ip_alloc_sem);
-+	if (!same_inode)
-+		up_write(&OCFS2_I(inode_out)->ip_alloc_sem);
-+	if (remapped < 0) {
-+		ret = remapped;
-+		mlog_errno(ret);
-+		goto out_unlock;
-+	}
-+
-+	/*
-+	 * Empty the extent map so that we may get the right extent
-+	 * record from the disk.
-+	 */
-+	ocfs2_extent_map_trunc(inode_in, 0);
-+	ocfs2_extent_map_trunc(inode_out, 0);
-+
-+	ret = ocfs2_reflink_update_dest(inode_out, out_bh, pos_out + len);
-+	if (ret) {
-+		mlog_errno(ret);
-+		goto out_unlock;
-+	}
-+
-+out_unlock:
-+	ocfs2_reflink_inodes_unlock(inode_in, in_bh, inode_out, out_bh);
-+	return remapped > 0 ? remapped : ret;
- }
++			round_down(pos_out, PAGE_SIZE),
++			round_up(pos_out + *len, PAGE_SIZE) - 1);
  
- const struct inode_operations ocfs2_file_iops = {
-diff --git a/fs/ocfs2/refcounttree.c b/fs/ocfs2/refcounttree.c
-index c7409578657b..dc66b80585ec 100644
---- a/fs/ocfs2/refcounttree.c
-+++ b/fs/ocfs2/refcounttree.c
-@@ -4468,9 +4468,9 @@ int ocfs2_reflink_ioctl(struct inode *inode,
- }
- 
- /* Update destination inode size, if necessary. */
--static int ocfs2_reflink_update_dest(struct inode *dest,
--				     struct buffer_head *d_bh,
--				     loff_t newlen)
-+int ocfs2_reflink_update_dest(struct inode *dest,
-+			      struct buffer_head *d_bh,
-+			      loff_t newlen)
- {
- 	handle_t *handle;
- 	int ret;
-@@ -4621,13 +4621,13 @@ static loff_t ocfs2_reflink_remap_extent(struct inode *s_inode,
- }
- 
- /* Set up refcount tree and remap s_inode to t_inode. */
--static loff_t ocfs2_reflink_remap_blocks(struct inode *s_inode,
--					 struct buffer_head *s_bh,
--					 loff_t pos_in,
--					 struct inode *t_inode,
--					 struct buffer_head *t_bh,
--					 loff_t pos_out,
--					 loff_t len)
-+loff_t ocfs2_reflink_remap_blocks(struct inode *s_inode,
-+				  struct buffer_head *s_bh,
-+				  loff_t pos_in,
-+				  struct inode *t_inode,
-+				  struct buffer_head *t_bh,
-+				  loff_t pos_out,
-+				  loff_t len)
- {
- 	struct ocfs2_cached_dealloc_ctxt dealloc;
- 	struct ocfs2_super *osb;
-@@ -4720,10 +4720,10 @@ static loff_t ocfs2_reflink_remap_blocks(struct inode *s_inode,
- }
- 
- /* Lock an inode and grab a bh pointing to the inode. */
--static int ocfs2_reflink_inodes_lock(struct inode *s_inode,
--				     struct buffer_head **bh1,
--				     struct inode *t_inode,
--				     struct buffer_head **bh2)
-+int ocfs2_reflink_inodes_lock(struct inode *s_inode,
-+			      struct buffer_head **bh1,
-+			      struct inode *t_inode,
-+			      struct buffer_head **bh2)
- {
- 	struct inode *inode1;
- 	struct inode *inode2;
-@@ -4808,10 +4808,10 @@ static int ocfs2_reflink_inodes_lock(struct inode *s_inode,
- }
- 
- /* Unlock both inodes and release buffers. */
--static void ocfs2_reflink_inodes_unlock(struct inode *s_inode,
--					struct buffer_head *s_bh,
--					struct inode *t_inode,
--					struct buffer_head *t_bh)
-+void ocfs2_reflink_inodes_unlock(struct inode *s_inode,
-+				 struct buffer_head *s_bh,
-+				 struct inode *t_inode,
-+				 struct buffer_head *t_bh)
- {
- 	ocfs2_inode_unlock(s_inode, 1);
- 	ocfs2_rw_unlock(s_inode, 1);
-@@ -4823,80 +4823,3 @@ static void ocfs2_reflink_inodes_unlock(struct inode *s_inode,
- 	}
- 	unlock_two_nondirectories(s_inode, t_inode);
- }
--
--/* Link a range of blocks from one file to another. */
--loff_t ocfs2_reflink_remap_range(struct file *file_in,
--				 loff_t pos_in,
--				 struct file *file_out,
--				 loff_t pos_out,
--				 loff_t len,
--				 unsigned int remap_flags)
--{
--	struct inode *inode_in = file_inode(file_in);
--	struct inode *inode_out = file_inode(file_out);
--	struct ocfs2_super *osb = OCFS2_SB(inode_in->i_sb);
--	struct buffer_head *in_bh = NULL, *out_bh = NULL;
--	bool same_inode = (inode_in == inode_out);
--	loff_t remapped = 0;
--	ssize_t ret;
--
--	if (!ocfs2_refcount_tree(osb))
--		return -EOPNOTSUPP;
--	if (ocfs2_is_hard_readonly(osb) || ocfs2_is_soft_readonly(osb))
--		return -EROFS;
--
--	/* Lock both files against IO */
--	ret = ocfs2_reflink_inodes_lock(inode_in, &in_bh, inode_out, &out_bh);
--	if (ret)
--		return ret;
--
--	/* Check file eligibility and prepare for block sharing. */
--	ret = -EINVAL;
--	if ((OCFS2_I(inode_in)->ip_flags & OCFS2_INODE_SYSTEM_FILE) ||
--	    (OCFS2_I(inode_out)->ip_flags & OCFS2_INODE_SYSTEM_FILE))
--		goto out_unlock;
--
--	ret = generic_remap_file_range_prep(file_in, pos_in, file_out, pos_out,
--			&len, remap_flags);
--	if (ret < 0 || len == 0)
--		goto out_unlock;
--
--	/* Lock out changes to the allocation maps and remap. */
--	down_write(&OCFS2_I(inode_in)->ip_alloc_sem);
--	if (!same_inode)
--		down_write_nested(&OCFS2_I(inode_out)->ip_alloc_sem,
--				  SINGLE_DEPTH_NESTING);
--
--	/* Zap any page cache for the destination file's range. */
--	truncate_inode_pages_range(&inode_out->i_data,
--				   round_down(pos_out, PAGE_SIZE),
--				   round_up(pos_out + len, PAGE_SIZE) - 1);
--
--	remapped = ocfs2_reflink_remap_blocks(inode_in, in_bh, pos_in,
--			inode_out, out_bh, pos_out, len);
--	up_write(&OCFS2_I(inode_in)->ip_alloc_sem);
--	if (!same_inode)
--		up_write(&OCFS2_I(inode_out)->ip_alloc_sem);
--	if (remapped < 0) {
--		ret = remapped;
--		mlog_errno(ret);
--		goto out_unlock;
--	}
--
--	/*
--	 * Empty the extent map so that we may get the right extent
--	 * record from the disk.
--	 */
--	ocfs2_extent_map_trunc(inode_in, 0);
--	ocfs2_extent_map_trunc(inode_out, 0);
--
--	ret = ocfs2_reflink_update_dest(inode_out, out_bh, pos_out + len);
--	if (ret) {
--		mlog_errno(ret);
--		goto out_unlock;
--	}
--
--out_unlock:
--	ocfs2_reflink_inodes_unlock(inode_in, in_bh, inode_out, out_bh);
--	return remapped > 0 ? remapped : ret;
--}
-diff --git a/fs/ocfs2/refcounttree.h b/fs/ocfs2/refcounttree.h
-index 9e64daba395d..e9e862be4a1e 100644
---- a/fs/ocfs2/refcounttree.h
-+++ b/fs/ocfs2/refcounttree.h
-@@ -115,11 +115,23 @@ int ocfs2_reflink_ioctl(struct inode *inode,
- 			const char __user *oldname,
- 			const char __user *newname,
- 			bool preserve);
--loff_t ocfs2_reflink_remap_range(struct file *file_in,
--				 loff_t pos_in,
--				 struct file *file_out,
--				 loff_t pos_out,
--				 loff_t len,
--				 unsigned int remap_flags);
-+loff_t ocfs2_reflink_remap_blocks(struct inode *s_inode,
-+				  struct buffer_head *s_bh,
-+				  loff_t pos_in,
-+				  struct inode *t_inode,
-+				  struct buffer_head *t_bh,
-+				  loff_t pos_out,
-+				  loff_t len);
-+int ocfs2_reflink_inodes_lock(struct inode *s_inode,
-+			      struct buffer_head **bh1,
-+			      struct inode *t_inode,
-+			      struct buffer_head **bh2);
-+void ocfs2_reflink_inodes_unlock(struct inode *s_inode,
-+				 struct buffer_head *s_bh,
-+				 struct inode *t_inode,
-+				 struct buffer_head *t_bh);
-+int ocfs2_reflink_update_dest(struct inode *dest,
-+			      struct buffer_head *d_bh,
-+			      loff_t newlen);
- 
- #endif /* OCFS2_REFCOUNTTREE_H */
+ 	return 1;
+ out_unlock:
 

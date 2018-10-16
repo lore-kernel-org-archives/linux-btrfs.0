@@ -7,65 +7,63 @@ X-Spam-Status: No, score=-0.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 44BFAC04EBD
-	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Oct 2018 15:25:57 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E709DC04EBD
+	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Oct 2018 15:30:57 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 0BA062083C
-	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Oct 2018 15:25:57 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 8708D208B3
+	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Oct 2018 15:30:57 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="PdZSG0qc"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 0BA062083C
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="sI74YKl/"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 8708D208B3
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727105AbeJPXQx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 16 Oct 2018 19:16:53 -0400
-Received: from mail-lj1-f179.google.com ([209.85.208.179]:38923 "EHLO
-        mail-lj1-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726978AbeJPXQw (ORCPT
+        id S1727149AbeJPXVy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 16 Oct 2018 19:21:54 -0400
+Received: from mail-lj1-f176.google.com ([209.85.208.176]:41615 "EHLO
+        mail-lj1-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727007AbeJPXVy (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 16 Oct 2018 19:16:52 -0400
-Received: by mail-lj1-f179.google.com with SMTP id p1-v6so21293278ljg.6
-        for <linux-btrfs@vger.kernel.org>; Tue, 16 Oct 2018 08:25:54 -0700 (PDT)
+        Tue, 16 Oct 2018 19:21:54 -0400
+Received: by mail-lj1-f176.google.com with SMTP id u21-v6so21291729lja.8
+        for <linux-btrfs@vger.kernel.org>; Tue, 16 Oct 2018 08:30:54 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20161025;
-        h=date:from:to:subject:message-id:in-reply-to:references:mime-version
+        h=date:from:to:subject:message-id:mime-version
          :content-transfer-encoding;
-        bh=WzuQ0K/UAgbHjSXE9MKhQTkioQVqO1uVezHUbZ/yMCU=;
-        b=PdZSG0qc6n5shiRc3866YfL/t2V28JQk70L4autOP7FdzDqnG0H0d26BNZrBgKM34J
-         fZuKVxXo9xM/5rf+nYgsPpo+rUK/v2d3SD29mHxDQe4hA4blZ/W6ga55VdcIbWVue+T/
-         Ke0flNPF8o+387UEhE97sgSc3gM+37iLX0h1OAUJIUsXnUmi0IrsEiD04KIt0/yOP60y
-         TrQKJMU7gFwymxg6PG+NmuV2hyBRhyzN3GGiGFk0n1yJEdWf84VGasfOs9qlMc91Q8RZ
-         7HurSh7ulnVB6KU30Dz337yzP65rv3BCl7TlkypgW0f0dH/VQll0IqpZ97Mpm6OahSvY
-         jp5w==
+        bh=NPU1Oegqbm1qqGsQ+wPonMbeusgy73czY5uMNCtWZYg=;
+        b=sI74YKl/D16i0rIxbu+eTcPBNIfSa+PeXd5XsCYOLGioJ5Q5fO/C5QXvQBzGDwl4wt
+         NdtAly17OkYUmgST7vLxjutDTivvBCyneK5YmtBYeaySWhtCO4MEKIytiUia4qHxdxkB
+         x9k3RZA5mWUHBFv2axqpr2EN9szTHrOGWblhoxMeSVJGFlxY1Ddb6OpIKd1XFzrCYn+6
+         OJcrgpVVjfNjmwS5QAw7PbaZUhLTAUC8TInqss6lGaX1QdI+LrbnCGcrqBKxdPKPZnrY
+         90jKaf1sz1LInmiJuNipPzaLcFMprjUEe+4YyZEkN8l/V8MnR6NTLivVVS1G4PYKDodq
+         58SQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:date:from:to:subject:message-id:in-reply-to
-         :references:mime-version:content-transfer-encoding;
-        bh=WzuQ0K/UAgbHjSXE9MKhQTkioQVqO1uVezHUbZ/yMCU=;
-        b=fekHfE1gnRT1KDiQZGKBlB081q/PT5l++02klSbSbAYKZOy/P+et1KHY4ULygIHtYv
-         DTuifZTDf4JKZS1jtdURcUOnwCCdeX8FrlEdK82AC5C2rGzH0fyNfTYUr1pB9UemlIqZ
-         ONZbAVxISSWODNa2eHUdu5r+7DOKPTi7KF+psQ1CWjtnrjj0PUxhb5l9Gxuqx5GaHQ4o
-         2CuloA7qFsmudfVHkIUhjj5x5uOIBE6Kfm05EqsJn2Q9fFwci8cA5/VWiYTgwaAqkPYh
-         zOypui++3mZeVbyTIcTmxYFcEimlyylJBkqJnkRg9l1UTxzccq4k6U5sYg3UMRgcza8Q
-         QuUA==
-X-Gm-Message-State: ABuFfohqvgT+3/zxBO8DMiQ9clcspo1omP7QK4k0tx1d4lS4WJzYD9GW
-        narbCw9VuhYT7deHdkxyRk38xO1Z
-X-Google-Smtp-Source: ACcGV63TGYs+dOjn9Tu4v/TA+fJCCk+zxbiEoAx6pRsuuw06iec9o3ea54MyD1wr1jiLfPSMtl9TlQ==
-X-Received: by 2002:a2e:9d7:: with SMTP id 206-v6mr15260524ljj.127.1539703552954;
-        Tue, 16 Oct 2018 08:25:52 -0700 (PDT)
+        h=x-gm-message-state:date:from:to:subject:message-id:mime-version
+         :content-transfer-encoding;
+        bh=NPU1Oegqbm1qqGsQ+wPonMbeusgy73czY5uMNCtWZYg=;
+        b=CpBv+9o4KGIrUghr8WzUOSUF/pUlonyyzLpSIUyXnk+jh3PO14gBfenBM8rgUDyKJ+
+         rIygyVARrOxj3efOYVhKJRbg2sGOBHaXtP7m+CSJuU07ziykgxyl17xp5bBWZeEdgusa
+         WYOPKskdqySs7gW2s8+ve1pySinRSwbTJ0p6ymLcl58YISmAs2Ik0CWO9RSN9fxzWQvA
+         ZoSRcY5cYTD1G3TloIoCCJv/1CyA2lq8kYvdcufBzoOKHVXMYWeuGA8AY+I5NwBATRFV
+         HhMTvdQAYjM00fatHHID8WG5/3WQuKYtJlOd6etY67VFixcPCtJbw+r350LoEfGx3xEM
+         PsvA==
+X-Gm-Message-State: ABuFfojH2vqmv1qSrmcrmSf+wZbl1XyJ2+vZR/9p0MSSfnAfgZCA9YiM
+        jCJVzlE+ScHqCNAV+KHJQ1y6kn59
+X-Google-Smtp-Source: ACcGV63usaOpTaI0HNMGRa38a7vH4tgH6C6LA/peGCayRxnq9nQ9tMqy8cKo/RgURLap1nmbKlDiLA==
+X-Received: by 2002:a2e:8090:: with SMTP id i16-v6mr13806853ljg.168.1539703853243;
+        Tue, 16 Oct 2018 08:30:53 -0700 (PDT)
 Received: from erp07.git.ru ([94.79.3.84])
-        by smtp.gmail.com with ESMTPSA id t15-v6sm3239830lji.75.2018.10.16.08.25.51
+        by smtp.gmail.com with ESMTPSA id p11-v6sm3374570lji.87.2018.10.16.08.30.52
         for <linux-btrfs@vger.kernel.org>
         (version=TLS1 cipher=AES128-SHA bits=128/128);
-        Tue, 16 Oct 2018 08:25:52 -0700 (PDT)
-Date:   Tue, 16 Oct 2018 18:25:50 +0300
+        Tue, 16 Oct 2018 08:30:52 -0700 (PDT)
+Date:   Tue, 16 Oct 2018 18:30:51 +0300
 From:   Anton Shepelev <anton.txt@gmail.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: Re: btrfs check: Superblock bytenr is larger than device size
-Message-Id: <20181016182550.60bafce18bfb07fb4bcf24d0@gmail.com>
-In-Reply-To: <20181016170538.8a7d2fce3a9c7bc9e63642cc@gmail.com>
-References: <20181016170538.8a7d2fce3a9c7bc9e63642cc@gmail.com>
+Subject: CRC mismatch
+Message-Id: <20181016183051.788a79297af47a9798a0c0e3@gmail.com>
 X-Mailer: Sylpheed 3.5.0 (GTK+ 2.24.23; i686-pc-mingw32)
 Mime-Version: 1.0
 Content-Type: text/plain; charset=US-ASCII
@@ -75,19 +73,17 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Qu Wenruo to Anton Shepelev:
+Hello, all
 
->>On all our servers with BTRFS, which are otherwise working
->>normally, `btrfs check /' complains that
->>
->>Superblock bytenr is larger than device size
->>Couldn't open file system
->>
->Please try latest btrfs-progs and see if btrfs check
->reports any error.
+What may be the reason of a CRC mismatch on a BTRFS file in
+a virutal machine:
 
-It is SUSE Linux Enterprise with its native repository, so I
-cannot update btrfs easily.  I will, though.
+   csum failed ino 175524 off 1876295680 csum 451760558
+   expected csum 1446289185
+
+Shall I seek the culprit in the host machine on in the guest
+one?  Supposing the host machine healty, what operations on
+the gueest might have caused a CRC mismatch?
 
 -- 
 ()  ascii ribbon campaign - against html e-mail

@@ -7,51 +7,52 @@ X-Spam-Status: No, score=-6.9 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,UNPARSEABLE_RELAY autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0DCDBC04EB9
-	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Oct 2018 03:11:29 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 73476C04EB9
+	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Oct 2018 03:19:41 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id C95EA208D9
-	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Oct 2018 03:11:28 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3C9AA2083E
+	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Oct 2018 03:19:41 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="K76nLdhT"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org C95EA208D9
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="QyfeosX1"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 3C9AA2083E
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=oracle.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727362AbeJPK7i (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 16 Oct 2018 06:59:38 -0400
-Received: from userp2120.oracle.com ([156.151.31.85]:47154 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727094AbeJPK7h (ORCPT
+        id S1727010AbeJPLHr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 16 Oct 2018 07:07:47 -0400
+Received: from aserp2120.oracle.com ([141.146.126.78]:55926 "EHLO
+        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726934AbeJPLHr (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 16 Oct 2018 06:59:37 -0400
-Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w9G38gOw194183;
-        Tue, 16 Oct 2018 03:11:23 GMT
+        Tue, 16 Oct 2018 07:07:47 -0400
+Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
+        by aserp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w9G3JMpO060270;
+        Tue, 16 Oct 2018 03:19:31 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : from : to :
  cc : date : message-id : in-reply-to : references : mime-version :
  content-type : content-transfer-encoding; s=corp-2018-07-02;
- bh=3p9QiOkfa8h9mw3zC6wMgXppY9cjHOCTYbdPvwFdVO8=;
- b=K76nLdhT6z9//J9WzFChKCPByxZCJ3bcnKeQCRf7+O3k8IYOKZC23DpxdiJrv+Bk5xXQ
- xa1Nvo5eEQJMrMX15uCsVKr1pQV98+F+iZlkV7KaPHC/7FYkFKQmR+Tifepl9n/Ggx+B
- lHJ+ft5aXUUCXWDmlkwcMZ2vpeW/PKb3JxGpgjZygVNltJJXUp8JEfevSY1LyVnaW/5v
- 7hlLCmyTT6urnozlcbkCG0H2eKFUh9QLA/O/VoUvUZBhcCf3VbHSF2MHIpJbu5xRVw1k
- hKNnk7U2qw2NgyALk9dlvHm4ufqEHatYvfxg8G6JaIuIeI7YQTBVh9wdJHfmROQbOaPH 2w== 
-Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
-        by userp2120.oracle.com with ESMTP id 2n39br5rj5-1
+ bh=2Mwz+Jm1Vv6DSly8RfSjLjmTysY9FOE+4U51VEcOuGA=;
+ b=QyfeosX11lkm+R6FJaSex5a7QxpympeeUy+dEEs9LKcGmvkOjbmr5b5J42Y4L8kKr8jP
+ MWHQFqrh7+0Btd+SC4wQED5K+Z7Qao9bJJuFGTprbpx7sofYa7z8KCZXd+7Ij4P7EK7K
+ Cf8tB5t/gAlpy1jcqWV+QKaLlLUtV1HRm9m+rcUt90RHgqeIcq3QMawvy3a2XTE4v0UE
+ Oo3BAZ/uV/C3sUdMJ0/03DTL9bkT0Klnm3D4tD8cmX79Rf3eoAVBfw6w+O18hAEHE40G
+ 5qhtdTc/xjY9MDG3MQXzblfJtk8pVlt2ZitpFkBAoaLtI84yG1vMR1/rdJltfHCrfRYQ /w== 
+Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
+        by aserp2120.oracle.com with ESMTP id 2n38npwvev-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Tue, 16 Oct 2018 03:11:23 +0000
+        Tue, 16 Oct 2018 03:19:30 +0000
 Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w9G3BLJR030688
+        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w9G3JTuR003181
         (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Tue, 16 Oct 2018 03:11:21 GMT
-Received: from abhmp0017.oracle.com (abhmp0017.oracle.com [141.146.116.23])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w9G3BKo0004163;
-        Tue, 16 Oct 2018 03:11:20 GMT
+        Tue, 16 Oct 2018 03:19:29 GMT
+Received: from abhmp0008.oracle.com (abhmp0008.oracle.com [141.146.116.14])
+        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w9G3JSGX007232;
+        Tue, 16 Oct 2018 03:19:28 GMT
 Received: from localhost (/10.159.227.150)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Mon, 15 Oct 2018 20:11:20 -0700
-Subject: [PATCH 12/26] vfs: pass remap flags to generic_remap_checks
+        with ESMTP ; Mon, 15 Oct 2018 20:19:28 -0700
+Subject: [PATCH 13/26] vfs: create generic_remap_file_range_touch to update
+ inode metadata
 From:   "Darrick J. Wong" <darrick.wong@oracle.com>
 To:     david@fromorbit.com, darrick.wong@oracle.com
 Cc:     sandeen@redhat.com, linux-nfs@vger.kernel.org,
@@ -59,8 +60,8 @@ Cc:     sandeen@redhat.com, linux-nfs@vger.kernel.org,
         linux-unionfs@vger.kernel.org, linux-xfs@vger.kernel.org,
         linux-mm@kvack.org, linux-btrfs@vger.kernel.org,
         linux-fsdevel@vger.kernel.org, ocfs2-devel@oss.oracle.com
-Date:   Mon, 15 Oct 2018 20:11:19 -0700
-Message-ID: <153965947897.1256.9976516083702922569.stgit@magnolia>
+Date:   Mon, 15 Oct 2018 20:19:26 -0700
+Message-ID: <153965996673.3607.133184523000924340.stgit@magnolia>
 In-Reply-To: <153965939489.1256.7400115244528045860.stgit@magnolia>
 References: <153965939489.1256.7400115244528045860.stgit@magnolia>
 User-Agent: StGit/0.17.1-dirty
@@ -69,9 +70,9 @@ Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
 X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9047 signatures=668706
 X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=0 malwarescore=0
- phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=470
+ phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=853
  adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.0.1-1807170000 definitions=main-1810160026
+ engine=8.0.1-1807170000 definitions=main-1810160028
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -79,63 +80,98 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Darrick J. Wong <darrick.wong@oracle.com>
 
-Pass the same remap flags to generic_remap_checks for consistency.
+Create a new VFS helper to handle inode metadata updates when remapping
+into a file.  If the operation can possibly alter the file contents, we
+must update the ctime and mtime and remove security privileges, just
+like we do for regular file writes.  Wire up ocfs2 to ensure consistent
+behavior.
 
 Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
 Reviewed-by: Amir Goldstein <amir73il@gmail.com>
 ---
- fs/read_write.c    |    2 +-
- include/linux/fs.h |    2 +-
- mm/filemap.c       |    4 ++--
- 3 files changed, 4 insertions(+), 4 deletions(-)
+ fs/read_write.c      |   28 ++++++++++++++++++++++++++++
+ fs/xfs/xfs_reflink.c |   23 -----------------------
+ 2 files changed, 28 insertions(+), 23 deletions(-)
 
 
 diff --git a/fs/read_write.c b/fs/read_write.c
-index 201381689284..ebcbfc4f2907 100644
+index ebcbfc4f2907..3f6392f1d5d4 100644
 --- a/fs/read_write.c
 +++ b/fs/read_write.c
-@@ -1782,7 +1782,7 @@ int generic_remap_file_range_prep(struct file *file_in, loff_t pos_in,
+@@ -1737,6 +1737,30 @@ static int generic_remap_check_len(struct inode *inode_in,
+ 	return 0;
+ }
  
- 	/* Check that we don't violate system file offset limits. */
- 	ret = generic_remap_checks(file_in, pos_in, file_out, pos_out, len,
--			(remap_flags & REMAP_FILE_DEDUP));
-+			remap_flags);
++/* Update inode timestamps and remove security privileges when remapping. */
++static int generic_remap_file_range_target(struct file *file,
++					   unsigned int remap_flags)
++{
++	int ret;
++
++	/* If can't alter the file contents, we're done. */
++	if (remap_flags & REMAP_FILE_DEDUP)
++		return 0;
++
++	/* Update the timestamps, since we can alter file contents. */
++	if (!(file->f_mode & FMODE_NOCMTIME)) {
++		ret = file_update_time(file);
++		if (ret)
++			return ret;
++	}
++
++	/*
++	 * Clear the security bits if the process is not being run by root.
++	 * This keeps people from modifying setuid and setgid binaries.
++	 */
++	return file_remove_privs(file);
++}
++
+ /*
+  * Check that the two inodes are eligible for cloning, the ranges make
+  * sense, and then flush all dirty data.  Caller must ensure that the
+@@ -1820,6 +1844,10 @@ int generic_remap_file_range_prep(struct file *file_in, loff_t pos_in,
  	if (ret)
  		return ret;
  
-diff --git a/include/linux/fs.h b/include/linux/fs.h
-index c2800953937a..1aa3bc1bb092 100644
---- a/include/linux/fs.h
-+++ b/include/linux/fs.h
-@@ -2981,7 +2981,7 @@ extern int generic_file_readonly_mmap(struct file *, struct vm_area_struct *);
- extern ssize_t generic_write_checks(struct kiocb *, struct iov_iter *);
- extern int generic_remap_checks(struct file *file_in, loff_t pos_in,
- 				struct file *file_out, loff_t pos_out,
--				uint64_t *count, bool is_dedupe);
-+				uint64_t *count, unsigned int remap_flags);
- extern ssize_t generic_file_read_iter(struct kiocb *, struct iov_iter *);
- extern ssize_t __generic_file_write_iter(struct kiocb *, struct iov_iter *);
- extern ssize_t generic_file_write_iter(struct kiocb *, struct iov_iter *);
-diff --git a/mm/filemap.c b/mm/filemap.c
-index 08ad210fee49..b0f1f6d93d9c 100644
---- a/mm/filemap.c
-+++ b/mm/filemap.c
-@@ -3001,7 +3001,7 @@ EXPORT_SYMBOL(generic_write_checks);
-  */
- int generic_remap_checks(struct file *file_in, loff_t pos_in,
- 			 struct file *file_out, loff_t pos_out,
--			 uint64_t *req_count, bool is_dedupe)
-+			 uint64_t *req_count, unsigned int remap_flags)
- {
- 	struct inode *inode_in = file_in->f_mapping->host;
- 	struct inode *inode_out = file_out->f_mapping->host;
-@@ -3023,7 +3023,7 @@ int generic_remap_checks(struct file *file_in, loff_t pos_in,
- 	size_out = i_size_read(inode_out);
++	ret = generic_remap_file_range_target(file_out, remap_flags);
++	if (ret)
++		return ret;
++
+ 	return 1;
+ }
+ EXPORT_SYMBOL(generic_remap_file_range_prep);
+diff --git a/fs/xfs/xfs_reflink.c b/fs/xfs/xfs_reflink.c
+index 29aab196ce7e..2d7dd8b28d7c 100644
+--- a/fs/xfs/xfs_reflink.c
++++ b/fs/xfs/xfs_reflink.c
+@@ -1372,29 +1372,6 @@ xfs_reflink_remap_prep(
+ 	truncate_inode_pages_range(&inode_out->i_data, pos_out,
+ 				   PAGE_ALIGN(pos_out + *len) - 1);
  
- 	/* Dedupe requires both ranges to be within EOF. */
--	if (is_dedupe &&
-+	if ((remap_flags & REMAP_FILE_DEDUP) &&
- 	    (pos_in >= size_in || pos_in + count > size_in ||
- 	     pos_out >= size_out || pos_out + count > size_out))
- 		return -EINVAL;
+-	/* If we're altering the file contents... */
+-	if (!(remap_flags & REMAP_FILE_DEDUP)) {
+-		/*
+-		 * ...update the timestamps (which will grab the ilock again
+-		 * from xfs_fs_dirty_inode, so we have to call it before we
+-		 * take the ilock).
+-		 */
+-		if (!(file_out->f_mode & FMODE_NOCMTIME)) {
+-			ret = file_update_time(file_out);
+-			if (ret)
+-				goto out_unlock;
+-		}
+-
+-		/*
+-		 * ...clear the security bits if the process is not being run
+-		 * by root.  This keeps people from modifying setuid and setgid
+-		 * binaries.
+-		 */
+-		ret = file_remove_privs(file_out);
+-		if (ret)
+-			goto out_unlock;
+-	}
+-
+ 	return 1;
+ out_unlock:
+ 	xfs_reflink_remap_unlock(file_in, file_out);
 

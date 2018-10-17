@@ -2,324 +2,80 @@ Return-Path: <SRS0=tjhn=M5=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.5 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
+	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A6CADECDE30
-	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Oct 2018 06:56:38 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4B458ECDE32
+	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Oct 2018 08:16:16 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 6D8AF214C3
-	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Oct 2018 06:56:38 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 6D8AF214C3
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
+	by mail.kernel.org (Postfix) with ESMTP id 0CF602151D
+	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Oct 2018 08:16:15 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 0CF602151D
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=web.de
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727487AbeJQOut (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 17 Oct 2018 10:50:49 -0400
-Received: from mx2.suse.de ([195.135.220.15]:58412 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727182AbeJQOut (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 17 Oct 2018 10:50:49 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 22D6DAD52
-        for <linux-btrfs@vger.kernel.org>; Wed, 17 Oct 2018 06:56:35 +0000 (UTC)
-From:   Qu Wenruo <wqu@suse.com>
+        id S1727181AbeJQQKp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 17 Oct 2018 12:10:45 -0400
+Received: from smtprelay04.ispgateway.de ([80.67.31.31]:28508 "EHLO
+        smtprelay04.ispgateway.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726967AbeJQQKp (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 17 Oct 2018 12:10:45 -0400
+X-Greylist: delayed 1063 seconds by postgrey-1.27 at vger.kernel.org; Wed, 17 Oct 2018 12:10:44 EDT
+Received: from [78.43.137.104] (helo=Michaels-MacBook-Pro-3.local)
+        by smtprelay04.ispgateway.de with esmtpsa (TLSv1.2:ECDHE-RSA-AES128-GCM-SHA256:128)
+        (Exim 4.90_1)
+        (envelope-from <michael_post@web.de>)
+        id 1gCgiu-0000yj-26
+        for linux-btrfs@vger.kernel.org; Wed, 17 Oct 2018 09:58:32 +0200
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v4 4/4] btrfs: Refactor find_free_extent() loops update into find_free_extent_update_loop()
-Date:   Wed, 17 Oct 2018 14:56:06 +0800
-Message-Id: <20181017065606.8707-5-wqu@suse.com>
-X-Mailer: git-send-email 2.19.1
-In-Reply-To: <20181017065606.8707-1-wqu@suse.com>
-References: <20181017065606.8707-1-wqu@suse.com>
+From:   Michael Post <michael_post@web.de>
+Subject: Urgent: Need BTRFS-Expert
+Openpgp: preference=signencrypt
+Autocrypt: addr=michael_post@web.de; prefer-encrypt=mutual; keydata=
+ xsBNBFHnksUBCACvM/mCgOrWiJ2rzvjm6t4hJtJ9UQYso+Hb7zvy7cVtfDcQA7Bm3JfGNwNW
+ k1VHdCgdHokbzo/bqX2GRP/IDmbYCW0FCuxu2PeZ3gIHp+3baEhdAzjKgqfxb/VAb6+q26Lu
+ h9nzujBMmbvcz9pXk/yvirBdjZckI1xOo8Q0EMOv4yFQ/zHBVhYnuqN8HAkxq1FPvACYpCSw
+ pGBQXb/auoT2+jLy3vT+dxSPWdzgOeAWI3eEKsQ66wHDw98U1q75T7SvxrFtLvXZ3m7QhagJ
+ 9ChoCRAXBgvwbu/0SFXytmW4Rm4f2b5WU716qNyK20hMsM8iqgSyZIG4jFNa44SmO68lABEB
+ AAHNKE1pY2hhZWwgUG9zdCA8bWljaGFlbC5wb3N0QHB1cmVtYXRpYy5kZT7CwH0EEwEKACcC
+ GwMFCwkIBwMFFQoJCAsFFgIDAQACHgECF4AFAlRbh4YFCSvWSsEACgkQUXp8TpPfYDxX9gf/
+ a1UYBgGXfAnfMe0g6upNTplxL+HJfLiKtA6foyZBbOLV52JNO/8a6E4Bfw0RgM+EMaQfuHIQ
+ ZIXHOwTItT7b3uEqaHVqbQ/tIXK0hzmGbBihZ8m/sFUEgY7QTQQvJ78ERUdl+jH+fLHhVkJt
+ Nxl0Od13ewhEUpvGIM34MRXqb6pkH1yuAlYmOfup9f6kKSE5OME303CsbsfEkVKyR1sZRoc6
+ isK9z1BGA795RtimQ4xi4oEa1fe1fuMhFbf8XUbKwCWIZx3gfzxBvzixLeaYNtZSopl0vFgv
+ dZZbW/K0yFWgR3XtFVY5UaydMxkmNHReCT0V6gBwmx+uP9OIzl+HLc7ATQRR55LFAQgAvwcz
+ w/z+UBw6ZxmmFSXIcWhsJNjLjaBN0X6TCh/OZUVqwEwcREfd0FcSw3erZf7GUvtIxiORRIms
+ YposKnCMRqcVZAue9X7p11Rvi12xXzFSjLL0sfanIi0LCYF10UgcCEG+s7uW/YUPHjltGcgH
+ jJDDZTRY0gV+MlQWFxr6Pesys/yTHWueo85ZEkUGAAwhrxTkA1RGHys6Ru3yNeTw1sQy6bjO
+ d1yy3hBPQ7thES9/hCrK4rF8GhcTxCVh+Ut2wvtFMAdNB48g5NqIDudaLY26Nv5XNkaW46Uf
+ 3OsXMSDW/M6aFIU/5NioFv+DkXHLjR05V/8t0AXJEx3ivpIq1QARAQABwsBfBBgBCgAJBQJR
+ 55LFAhsMAAoJEFF6fE6T32A8FJQH/1o3mMGvr8ztCHJvXpDJCBwI+gouQeaWBrpBoFHHRtp0
+ 9qqImrgOUgYsOcUIy3Q9keuv+ZtE6Pz/SdBepj/BHu7ZljYybAKHHmfP/VJfCarGFCVXiPVt
+ wSGZFul0W/ZJqETfZK4FVU5C48KCVNrgbTuUxFdjK3gT9lIaiGNehGj78pUJwp/a30Yj2Njf
+ 0aniHuNrWykrUagNJPeAb3RvNTX4e+X7P+LxlVB7gqBgUUkM0EpPS6Vq5r7Pb2Z9shQw22PP
+ tVPSS4Bie8tVfyvussJEw5lndUPFjAMLX91Uyju1HbvvUvZM3qxJrW8ADR04nltwdtIY+VD6
+ y8uexxux4zg=
+Message-ID: <9996625e-df27-ab14-8192-5b28ac4ffba7@web.de>
+Date:   Wed, 17 Oct 2018 09:58:31 +0200
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.13; rv:60.0)
+ Gecko/20100101 Thunderbird/60.2.1
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: 7bit
+X-Df-Sender: bXlfbWljaGFlbHBvc3RAcHVyZW1hdGljLmRl
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-We have a complex loop design for find_free_extent(), that has different
-behavior for each loop, some even includes new chunk allocation.
+Hello together,
 
-Instead of putting such a long code into find_free_extent() and makes it
-harder to read, just extract them into find_free_extent_update_loop().
+i need a BTRFS-Expert for remote support.
 
-With all the cleanups, the main find_free_extent() should be pretty
-barebone:
+Anyone who can assist me?
 
-find_free_extent()
-|- Iterate through all block groups
-|  |- Get a valid block group
-|  |- Try to do clustered allocation in that block group
-|  |- Try to do unclustered allocation in that block group
-|  |- Check if the result is valid
-|  |  |- If valid, then exit
-|  |- Jump to next block group
-|
-|- Push harder to find free extents
-   |- If not found, re-iterate all block groups
+Please let me know,
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
-Reviewed-by: Su Yue <suy.fnst@cn.fujitsu.com>
----
- fs/btrfs/extent-tree.c | 219 ++++++++++++++++++++++-------------------
- 1 file changed, 119 insertions(+), 100 deletions(-)
-
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index e6bfa91af41c..76e5bef92fed 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -7236,7 +7236,9 @@ struct find_free_extent_ctl {
- 	/* RAID index, converted from flags */
- 	int index;
- 
--	/* Current loop number */
-+	/*
-+	 * Current loop number, check find_free_extent_update_loop() for details
-+	 */
- 	int loop;
- 
- 	/*
-@@ -7433,6 +7435,119 @@ static int find_free_extent_unclustered(struct btrfs_block_group_cache *bg,
- 	return 0;
- }
- 
-+/*
-+ * Return >0 means caller needs to re-search for free extent
-+ * Return 0 means we have the needed free extent.
-+ * Return <0 means we failed to locate any free extent.
-+ */
-+static int find_free_extent_update_loop(struct btrfs_fs_info *fs_info,
-+					struct btrfs_free_cluster *last_ptr,
-+					struct btrfs_key *ins,
-+					struct find_free_extent_ctl *ffe_ctl,
-+					int full_search, bool use_cluster)
-+{
-+	struct btrfs_root *root = fs_info->extent_root;
-+	int ret;
-+
-+	if ((ffe_ctl->loop == LOOP_CACHING_NOWAIT) &&
-+	    ffe_ctl->have_caching_bg && !ffe_ctl->orig_have_caching_bg)
-+		ffe_ctl->orig_have_caching_bg = true;
-+
-+	if (!ins->objectid && ffe_ctl->loop >= LOOP_CACHING_WAIT &&
-+	     ffe_ctl->have_caching_bg)
-+		return 1;
-+
-+	if (!ins->objectid && ++(ffe_ctl->index) < BTRFS_NR_RAID_TYPES)
-+		return 1;
-+
-+	if (ins->objectid) {
-+		if (!use_cluster && last_ptr) {
-+			spin_lock(&last_ptr->lock);
-+			last_ptr->window_start = ins->objectid;
-+			spin_unlock(&last_ptr->lock);
-+		}
-+		return 0;
-+	}
-+
-+	/*
-+	 * LOOP_CACHING_NOWAIT, search partially cached block groups, kicking
-+	 *			caching kthreads as we move along
-+	 * LOOP_CACHING_WAIT, search everything, and wait if our bg is caching
-+	 * LOOP_ALLOC_CHUNK, force a chunk allocation and try again
-+	 * LOOP_NO_EMPTY_SIZE, set empty_size and empty_cluster to 0 and try
-+	 *			again
-+	 */
-+	if (ffe_ctl->loop < LOOP_NO_EMPTY_SIZE) {
-+		ffe_ctl->index = 0;
-+		if (ffe_ctl->loop == LOOP_CACHING_NOWAIT) {
-+			/*
-+			 * We want to skip the LOOP_CACHING_WAIT step if we
-+			 * don't have any uncached bgs and we've already done a
-+			 * full search through.
-+			 */
-+			if (ffe_ctl->orig_have_caching_bg || !full_search)
-+				ffe_ctl->loop = LOOP_CACHING_WAIT;
-+			else
-+				ffe_ctl->loop = LOOP_ALLOC_CHUNK;
-+		} else {
-+			ffe_ctl->loop++;
-+		}
-+
-+		if (ffe_ctl->loop == LOOP_ALLOC_CHUNK) {
-+			struct btrfs_trans_handle *trans;
-+			int exist = 0;
-+
-+			trans = current->journal_info;
-+			if (trans)
-+				exist = 1;
-+			else
-+				trans = btrfs_join_transaction(root);
-+
-+			if (IS_ERR(trans)) {
-+				ret = PTR_ERR(trans);
-+				return ret;
-+			}
-+
-+			ret = do_chunk_alloc(trans, ffe_ctl->flags,
-+					     CHUNK_ALLOC_FORCE);
-+
-+			/*
-+			 * If we can't allocate a new chunk we've already looped
-+			 * through at least once, move on to the NO_EMPTY_SIZE
-+			 * case.
-+			 */
-+			if (ret == -ENOSPC)
-+				ffe_ctl->loop = LOOP_NO_EMPTY_SIZE;
-+
-+			/* Do not bail out on ENOSPC since we can do more. */
-+			if (ret < 0 && ret != -ENOSPC)
-+				btrfs_abort_transaction(trans, ret);
-+			else
-+				ret = 0;
-+			if (!exist)
-+				btrfs_end_transaction(trans);
-+			if (ret)
-+				return ret;
-+		}
-+
-+		if (ffe_ctl->loop == LOOP_NO_EMPTY_SIZE) {
-+			/*
-+			 * Don't loop again if we already have no empty_size and
-+			 * no empty_cluster.
-+			 */
-+			if (ffe_ctl->empty_size == 0 &&
-+			    ffe_ctl->empty_cluster == 0)
-+				return -ENOSPC;
-+			ffe_ctl->empty_size = 0;
-+			ffe_ctl->empty_cluster = 0;
-+		}
-+		return 1;
-+	} else {
-+		ret = -ENOSPC;
-+	}
-+	return ret;
-+}
-+
- /*
-  * walks the btree of allocated extents and find a hole of a given size.
-  * The key ins is changed to record the hole:
-@@ -7450,7 +7565,6 @@ static noinline int find_free_extent(struct btrfs_fs_info *fs_info,
- 				u64 flags, int delalloc)
- {
- 	int ret = 0;
--	struct btrfs_root *root = fs_info->extent_root;
- 	struct btrfs_free_cluster *last_ptr = NULL;
- 	struct btrfs_block_group_cache *block_group = NULL;
- 	struct find_free_extent_ctl ffe_ctl = {0};
-@@ -7685,106 +7799,11 @@ static noinline int find_free_extent(struct btrfs_fs_info *fs_info,
- 	}
- 	up_read(&space_info->groups_sem);
- 
--	if ((ffe_ctl.loop == LOOP_CACHING_NOWAIT) && ffe_ctl.have_caching_bg
--		&& !ffe_ctl.orig_have_caching_bg)
--		ffe_ctl.orig_have_caching_bg = true;
--
--	if (!ins->objectid && ffe_ctl.loop >= LOOP_CACHING_WAIT &&
--	    ffe_ctl.have_caching_bg)
--		goto search;
--
--	if (!ins->objectid && ++ffe_ctl.index < BTRFS_NR_RAID_TYPES)
-+	ret = find_free_extent_update_loop(fs_info, last_ptr, ins, &ffe_ctl,
-+					   full_search, use_cluster);
-+	if (ret > 0)
- 		goto search;
- 
--	/*
--	 * LOOP_CACHING_NOWAIT, search partially cached block groups, kicking
--	 *			caching kthreads as we move along
--	 * LOOP_CACHING_WAIT, search everything, and wait if our bg is caching
--	 * LOOP_ALLOC_CHUNK, force a chunk allocation and try again
--	 * LOOP_NO_EMPTY_SIZE, set empty_size and empty_cluster to 0 and try
--	 *			again
--	 */
--	if (!ins->objectid && ffe_ctl.loop < LOOP_NO_EMPTY_SIZE) {
--		ffe_ctl.index = 0;
--		if (ffe_ctl.loop == LOOP_CACHING_NOWAIT) {
--			/*
--			 * We want to skip the LOOP_CACHING_WAIT step if we
--			 * don't have any uncached bgs and we've already done a
--			 * full search through.
--			 */
--			if (ffe_ctl.orig_have_caching_bg || !full_search)
--				ffe_ctl.loop = LOOP_CACHING_WAIT;
--			else
--				ffe_ctl.loop = LOOP_ALLOC_CHUNK;
--		} else {
--			ffe_ctl.loop++;
--		}
--
--		if (ffe_ctl.loop == LOOP_ALLOC_CHUNK) {
--			struct btrfs_trans_handle *trans;
--			int exist = 0;
--
--			trans = current->journal_info;
--			if (trans)
--				exist = 1;
--			else
--				trans = btrfs_join_transaction(root);
--
--			if (IS_ERR(trans)) {
--				ret = PTR_ERR(trans);
--				goto out;
--			}
--
--			ret = do_chunk_alloc(trans, flags, CHUNK_ALLOC_FORCE);
--
--			/*
--			 * If we can't allocate a new chunk we've already looped
--			 * through at least once, move on to the NO_EMPTY_SIZE
--			 * case.
--			 */
--			if (ret == -ENOSPC)
--				ffe_ctl.loop = LOOP_NO_EMPTY_SIZE;
--
--			/*
--			 * Do not bail out on ENOSPC since we
--			 * can do more things.
--			 */
--			if (ret < 0 && ret != -ENOSPC)
--				btrfs_abort_transaction(trans, ret);
--			else
--				ret = 0;
--			if (!exist)
--				btrfs_end_transaction(trans);
--			if (ret)
--				goto out;
--		}
--
--		if (ffe_ctl.loop == LOOP_NO_EMPTY_SIZE) {
--			/*
--			 * Don't loop again if we already have no empty_size and
--			 * no empty_cluster.
--			 */
--			if (empty_size == 0 &&
--			    ffe_ctl.empty_cluster == 0) {
--				ret = -ENOSPC;
--				goto out;
--			}
--			empty_size = 0;
--			ffe_ctl.empty_cluster = 0;
--		}
--
--		goto search;
--	} else if (!ins->objectid) {
--		ret = -ENOSPC;
--	} else if (ins->objectid) {
--		if (!use_cluster && last_ptr) {
--			spin_lock(&last_ptr->lock);
--			last_ptr->window_start = ins->objectid;
--			spin_unlock(&last_ptr->lock);
--		}
--		ret = 0;
--	}
--out:
- 	if (ret == -ENOSPC) {
- 		spin_lock(&space_info->lock);
- 		space_info->max_extent_size = ffe_ctl.max_extent_size;
--- 
-2.19.1
-
+Michael Post

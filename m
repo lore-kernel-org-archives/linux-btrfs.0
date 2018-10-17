@@ -6,31 +6,31 @@ X-Spam-Status: No, score=-0.5 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
 	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 09C9CC5ACC6
-	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Oct 2018 01:06:49 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B9F12C5ACCC
+	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Oct 2018 01:08:21 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id A461F214C3
-	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Oct 2018 01:06:48 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org A461F214C3
+	by mail.kernel.org (Postfix) with ESMTP id 7BC13214AB
+	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Oct 2018 01:08:21 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 7BC13214AB
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=gmx.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726955AbeJQI7x (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 17 Oct 2018 04:59:53 -0400
-Received: from mout.gmx.net ([212.227.15.19]:33513 "EHLO mout.gmx.net"
+        id S1726982AbeJQJB1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 17 Oct 2018 05:01:27 -0400
+Received: from mout.gmx.net ([212.227.15.15]:35191 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726430AbeJQI7x (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 17 Oct 2018 04:59:53 -0400
+        id S1726936AbeJQJB0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 17 Oct 2018 05:01:26 -0400
 Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx002
- [212.227.17.184]) with ESMTPSA (Nemesis) id 0M3zne-1fLASk2x7q-00rVpz; Wed, 17
- Oct 2018 03:06:45 +0200
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 0MDhba-1gQNZv2vl8-00H9se; Wed, 17
+ Oct 2018 03:08:18 +0200
 Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx002
- [212.227.17.184]) with ESMTPSA (Nemesis) id 0M3zne-1fLASk2x7q-00rVpz; Wed, 17
- Oct 2018 03:06:45 +0200
-Subject: Re: brtfs warning at ctree.h:1564 btrfs_update_device+0x220/0x230
-To:     Dmitry Katsubo <dma_k@mail.ru>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <e5970ef2-3d22-6c49-0634-8e6d9d92191d@mail.ru>
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 0MDhba-1gQNZv2vl8-00H9se; Wed, 17
+ Oct 2018 03:08:18 +0200
+Subject: Re: btrfs check: Superblock bytenr is larger than device size
+To:     Anton Shepelev <anton.txt@gmail.com>, linux-btrfs@vger.kernel.org
+References: <20181016170538.8a7d2fce3a9c7bc9e63642cc@gmail.com>
+ <20181016182550.60bafce18bfb07fb4bcf24d0@gmail.com>
 From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
@@ -57,109 +57,97 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
  4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
  h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <c9af2ee8-4148-957a-7e2e-a10f40a1dc00@gmx.com>
-Date:   Wed, 17 Oct 2018 09:06:41 +0800
+Message-ID: <8635c78b-8a4c-c9cd-9a5f-6066ec981caf@gmx.com>
+Date:   Wed, 17 Oct 2018 09:08:14 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.0
 MIME-Version: 1.0
-In-Reply-To: <e5970ef2-3d22-6c49-0634-8e6d9d92191d@mail.ru>
+In-Reply-To: <20181016182550.60bafce18bfb07fb4bcf24d0@gmail.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="hqf5k8S9QD8ONLwGU0e09iTemmEq3gfDs"
-X-Provags-ID: V03:K1:ItB8pl9ijhTOPYU+EBpIjAlLTnBWrnHJgC2dMeJSeswlKCFM5mb
- fTsTNJlSqQaeNR46ARdR5LzB4DxNMZU2DJl39RRg8WRWPyONvaE2CLIVoAH1ukg9ZFq/gy8
- Tt+ekadir8n/fcRyFTFNIQbMvFC6o7S1bJp794IbVCmwPNsYin/uMrkBXxG6/TuktIHlW0x
- nNf9F3rzWox1xD7TCQAQg==
-X-UI-Out-Filterresults: notjunk:1;V01:K0:riPYvGpz0og=:ajBTfhgZqTSore+egmezRx
- h1AOIL1HtyRfweQLdoml70XddqVrjSr2wFw4cxR7GmGMiIi77UYPbJVlPw0LO6eWW0k8fcC+8
- DzMLh0uvrgGjpXLlkxFF/Gas0mPiDJ/khqt1fGplp1v1W3rDNbqvNuCtYq5YgiuCzfDKwehIr
- /DkmMfCD1acSkdueE7N5CtMNsgV2QkvLi3zE2mrESlzAAm/7BHBrqwdwC8rAdG4jaJD4nrQz6
- 60ObWN2+StSJL2op0K/banbu/p1qp3bcckptpQ9FBQXMRarQoJn/NucmxrGOpPt1l6MDnw7ZW
- pOirQcbI2FFYahf3dRzcggmFCvDGHe5tmRWGBDO54QNH+WpnjDl1TKGC7UAh4KvrgBZjs8ZMG
- erkl6TLTkcSDaolb240mIu5B/AT3jVPV/3pV0RGyic+XbSfpsR/gVP2RQnl+geqC8nbkymcq0
- f/avszGnMWYx0lfcVB7n+6pg6imI3AwQ9rdMZIwMzu+Z2N4i5CTniyRcv47Mr4p2KZA/NgVl0
- Hs7ro7i5SxD35KDCUM6HnDtRrMfaSLzcArvDh8+NBgoXzQfwo31CNgj/OlBUIvctodkXpfB/y
- N3HewmxO2J3TA3uilGzZeiqT4npMj3/AzgLHRfyHGYwT/smLYFjnyrCTfE9xEExoRKy3kldY+
- g99wDrck3oz/lhEGSVMJtDDTgpT6N9EWPv24ns+Hv/dc5UmQxLWjzhfhRtfRBaqaLBsAOPSi0
- lgYww4ca0GAbptqSw4xcGnQlrcCQPt2AyhLn8y3d/tGRjJizFM0A8gQCmNpX0nag4nuURjJbm
- D6rn8tJt8+yfWaNv3zg9aRXar82fg==
+ boundary="4AMeB1uE49uutHsdL29sH0YSyfAJyzJnX"
+X-Provags-ID: V03:K1:lv2RIRXv4LTA1Wp1Hqtm+QiKjOyEZezfmHNL0smLJeZrbTTnCV+
+ hoMNug4nEJNfJb3FTPJ71v1cIzAedaHcCg9Jjd1NQ+Ff0wKRDrD8EmXhHnX0B0ykNp/bJR9
+ Apmg/FaD9g0OLT2bUtuS35Vz7lzZO7oLdUgFRwffcTdUYZDTNMd547LI2N4JtB4dx0LP5Ie
+ H3gZPaUZ7n5PyRZciuOog==
+X-UI-Out-Filterresults: notjunk:1;V01:K0:9b4lhVWmfl8=:7QcLssYMKHofz8YwgA8hJ2
+ aiOm9tsjLN/rn5zOiHGdM1PnYFYDa/VEj/44LojBl6//iPWrmKw2+JvXfbWj/x1okhZecdKTV
+ ykbr1ZhNfhDCUp/D2s0/epfxsoS5rC+jiLGJKnJVhk9eLullV7Gl6MqKl9iOtRh34UXcR4mIW
+ n96R8xorrCLBhR76Y0rT+q2HOHjgH6A5q6EhPwHDxFsph8P/OjFlvHBjs56AdV3VQBo97gzZf
+ Vfj58Vhc92OHHhbvn+Q9Kh8kyXAMIGtHznixqBRvyAfPimGvA1cmvwkiegiTRF6vMHit/9MfX
+ 4jlA3z5FZpfVjzjLbpKr/yoWsKwiTjx6QK+bV325mKm07W47tfrE7vMQFZJkceQTy6oHoZNFZ
+ aZM7x35JQq7ik4CMtqaUL9bMHB8G+APRbEueEcfOL+CvcuXnUDITYArw6IyQg9Tjz0xf3k/ua
+ bObzbnm4GqYxh2/6CTi+Dgfl3rrRQCCFmP/tbRZtbh2K75VWqYi7PXi404oR4b+03B1JT/ISA
+ kYeWsmGBh7fWJ9eReQx7NYoR26GiUi62tyz1iL6eDDKzZ64Z5/FZw1eUINMOCIcYHeKm2ZvWn
+ 8SrFJyYxE9SGwdy7yJO86kF7VY3ZNmDZ93s/iZS4L47Solqt93D1eVYwGvikHNiJFoKA0X7mX
+ OcVtkya49qIfwGvl/rULz04neqekt+E8AyRwKeq6z0WxAbSaWcOZFY25hejN/8I8hZMcUIigt
+ qHEsWbIYDTE9I/vFpmTb0/dJKOx0U+sPqORme4ifRxmGcRWu/o1f9+TrRDRrZqlSkaMP6WOHr
+ s5n96DynrxCyW8tUj7PjKbyidXhNw==
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---hqf5k8S9QD8ONLwGU0e09iTemmEq3gfDs
-Content-Type: multipart/mixed; boundary="ZXP76XwJ2ubIFp2QQBdTVNApRxmHJYJKN";
+--4AMeB1uE49uutHsdL29sH0YSyfAJyzJnX
+Content-Type: multipart/mixed; boundary="Lt4e9yJaWByQx7j7sDd4uoCTQGrk9LCuJ";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Dmitry Katsubo <dma_k@mail.ru>, linux-btrfs <linux-btrfs@vger.kernel.org>
-Message-ID: <c9af2ee8-4148-957a-7e2e-a10f40a1dc00@gmx.com>
-Subject: Re: brtfs warning at ctree.h:1564 btrfs_update_device+0x220/0x230
-References: <e5970ef2-3d22-6c49-0634-8e6d9d92191d@mail.ru>
-In-Reply-To: <e5970ef2-3d22-6c49-0634-8e6d9d92191d@mail.ru>
+To: Anton Shepelev <anton.txt@gmail.com>, linux-btrfs@vger.kernel.org
+Message-ID: <8635c78b-8a4c-c9cd-9a5f-6066ec981caf@gmx.com>
+Subject: Re: btrfs check: Superblock bytenr is larger than device size
+References: <20181016170538.8a7d2fce3a9c7bc9e63642cc@gmail.com>
+ <20181016182550.60bafce18bfb07fb4bcf24d0@gmail.com>
+In-Reply-To: <20181016182550.60bafce18bfb07fb4bcf24d0@gmail.com>
 
---ZXP76XwJ2ubIFp2QQBdTVNApRxmHJYJKN
+--Lt4e9yJaWByQx7j7sDd4uoCTQGrk9LCuJ
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
 
 
-On 2018/10/17 =E4=B8=8A=E5=8D=885:27, Dmitry Katsubo wrote:
-> Dear btrfs team,
+On 2018/10/16 =E4=B8=8B=E5=8D=8811:25, Anton Shepelev wrote:
+> Qu Wenruo to Anton Shepelev:
 >=20
-> I often observe kernel traces on linux-4.14.0 (mostly likely due to bac=
-kground
-> "btrfs scrub") which contain the following "characterizing" line (for t=
-he rest
-> see attachments):
+>>> On all our servers with BTRFS, which are otherwise working
+>>> normally, `btrfs check /' complains that
+>>>
+>>> Superblock bytenr is larger than device size
+>>> Couldn't open file system
+>>>
+>> Please try latest btrfs-progs and see if btrfs check
+>> reports any error.
 >=20
-> btrfs_remove_chunk+0x26a/0x7e0 [btrfs]
->=20
-> I wonder if somebody from developers team knows anything about this pro=
-blem. It
-> seems like after such dump btfs volume continues to function OK.
+> It is SUSE Linux Enterprise with its native repository, so I
+> cannot update btrfs easily.  I will, though.
 
-It's a known minor problem.
-
-"btrfs rescue fix-device-size <device>" could fix it offline (unmounted)
-
-Or if you're using the fs as root fs, resize the fs by removing 4K would
-also solve the problem:
-
-  # btrfs filesystem resize <devid>:-4K <mnt>
-
-The cause is old mkfs/kernel isn't aligning device size correctly, while
-later kernel is pretty picky about that alignment.
-It's mostly a developer oriented warning, no harm except a lot of scary
-kernel warning and may slow down log system.
+Then I recommend to use latest openSUSE Tumbleweed rescue ISO to do the
+mount and check.
 
 Thanks,
 Qu
 
 >=20
-> Thanks for any information!
->=20
 
 
---ZXP76XwJ2ubIFp2QQBdTVNApRxmHJYJKN--
+--Lt4e9yJaWByQx7j7sDd4uoCTQGrk9LCuJ--
 
---hqf5k8S9QD8ONLwGU0e09iTemmEq3gfDs
+--4AMeB1uE49uutHsdL29sH0YSyfAJyzJnX
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlvGiyEACgkQwj2R86El
-/qiAMwf9Fw8ArKaYfv93N2Og9Es7duW/C2CtVABFqS8R5y9LE36RFKPJvgZaLg5z
-OqyLGiKJPNd1ZvYi0J0uHqfVM0xXWIMfXWYWrTrBltoBldZ/iUw2flqiYSHXBq61
-fkZL3CuHx0jJo0PlNNFR+8MCggB/P8sodQmumEVllOEO7IiqnAc80XgDpl6Nj3s2
-37j4LzZsfWByZnQnB5EAEKPevBS2sbCMQ9c+wLOhaHCwuykHEaDO7OlGMuEsEOFF
-R6MPUYOcSVxmm8Aqv99O77GYrt8SWxEW1kpa0L91J1u15Kabg2p/WxCIfsnyM3fc
-66B63QbXm3uuV2vPOnT8LR8ukjqxXA==
-=AcGj
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlvGi34ACgkQwj2R86El
+/qjJWAf/Zq1tIVJ+/34MPI0SJLm19UfuNqvZ8SFgK9RjclaRCGyxaDXGQc8JtSHI
+mOjEmDdAQdJXVxd32TozADEkCNMNh6lqwe4rq46Q2rj+sjG7Rhj1+GVjmNvfgdft
+AWfiCMMDLQxFHr+smg+HVEbQJ/j+Rd3xF/qnp4JnYMx/5Gg5GnMv3Wd225PhBrBx
+RDgzhyAt1zJ1L2C4lmx3bvQTMaDcEbqyYIMV1UsPYNXL1T+YhnNoMDhgK23e1UbR
+UYjIsi3lv7xPanqOwaz3nf40vZxCn01d4rdio5aoN/QtF31MkPvWG4FSpeJH3e5P
+LdlspqZxX8wTbJCfDrQXBeagHV+5vw==
+=IQ0V
 -----END PGP SIGNATURE-----
 
---hqf5k8S9QD8ONLwGU0e09iTemmEq3gfDs--
+--4AMeB1uE49uutHsdL29sH0YSyfAJyzJnX--

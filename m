@@ -2,137 +2,125 @@ Return-Path: <SRS0=tjhn=M5=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.5 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
-	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.4 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_MUTT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DBF97ECDE32
-	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Oct 2018 15:50:50 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4D103ECDE32
+	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Oct 2018 16:36:11 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 7B64B21529
-	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Oct 2018 15:50:50 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 7B64B21529
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=web.de
+	by mail.kernel.org (Postfix) with ESMTP id 139C52156B
+	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Oct 2018 16:36:11 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="iMOCs8SO"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 139C52156B
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=oracle.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727681AbeJQXrH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 17 Oct 2018 19:47:07 -0400
-Received: from smtprelay01.ispgateway.de ([80.67.31.35]:38668 "EHLO
-        smtprelay01.ispgateway.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727018AbeJQXrG (ORCPT
+        id S1727698AbeJRAci (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 17 Oct 2018 20:32:38 -0400
+Received: from userp2130.oracle.com ([156.151.31.86]:54272 "EHLO
+        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727061AbeJRAci (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 17 Oct 2018 19:47:06 -0400
-Received: from [78.43.137.104] (helo=Michaels-MacBook-Pro-3.local)
-        by smtprelay01.ispgateway.de with esmtpsa (TLSv1.2:ECDHE-RSA-AES128-GCM-SHA256:128)
-        (Exim 4.90_1)
-        (envelope-from <michael_post@web.de>)
-        id 1gCo5q-00014S-MI; Wed, 17 Oct 2018 17:50:42 +0200
-Subject: Re: Urgent: Need BTRFS-Expert
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org
-References: <9996625e-df27-ab14-8192-5b28ac4ffba7@web.de>
- <20181017091820.GE16380@carfax.org.uk>
- <5691be7e-0b5e-1a80-6bdf-4ee258deeb49@web.de>
- <1e492842-18e2-cbaa-08af-fe503b9935f4@gmx.com>
-From:   Michael Post <michael_post@web.de>
-Openpgp: preference=signencrypt
-Autocrypt: addr=michael_post@web.de; prefer-encrypt=mutual; keydata=
- xsBNBFHnksUBCACvM/mCgOrWiJ2rzvjm6t4hJtJ9UQYso+Hb7zvy7cVtfDcQA7Bm3JfGNwNW
- k1VHdCgdHokbzo/bqX2GRP/IDmbYCW0FCuxu2PeZ3gIHp+3baEhdAzjKgqfxb/VAb6+q26Lu
- h9nzujBMmbvcz9pXk/yvirBdjZckI1xOo8Q0EMOv4yFQ/zHBVhYnuqN8HAkxq1FPvACYpCSw
- pGBQXb/auoT2+jLy3vT+dxSPWdzgOeAWI3eEKsQ66wHDw98U1q75T7SvxrFtLvXZ3m7QhagJ
- 9ChoCRAXBgvwbu/0SFXytmW4Rm4f2b5WU716qNyK20hMsM8iqgSyZIG4jFNa44SmO68lABEB
- AAHNKE1pY2hhZWwgUG9zdCA8bWljaGFlbC5wb3N0QHB1cmVtYXRpYy5kZT7CwH0EEwEKACcC
- GwMFCwkIBwMFFQoJCAsFFgIDAQACHgECF4AFAlRbh4YFCSvWSsEACgkQUXp8TpPfYDxX9gf/
- a1UYBgGXfAnfMe0g6upNTplxL+HJfLiKtA6foyZBbOLV52JNO/8a6E4Bfw0RgM+EMaQfuHIQ
- ZIXHOwTItT7b3uEqaHVqbQ/tIXK0hzmGbBihZ8m/sFUEgY7QTQQvJ78ERUdl+jH+fLHhVkJt
- Nxl0Od13ewhEUpvGIM34MRXqb6pkH1yuAlYmOfup9f6kKSE5OME303CsbsfEkVKyR1sZRoc6
- isK9z1BGA795RtimQ4xi4oEa1fe1fuMhFbf8XUbKwCWIZx3gfzxBvzixLeaYNtZSopl0vFgv
- dZZbW/K0yFWgR3XtFVY5UaydMxkmNHReCT0V6gBwmx+uP9OIzl+HLc7ATQRR55LFAQgAvwcz
- w/z+UBw6ZxmmFSXIcWhsJNjLjaBN0X6TCh/OZUVqwEwcREfd0FcSw3erZf7GUvtIxiORRIms
- YposKnCMRqcVZAue9X7p11Rvi12xXzFSjLL0sfanIi0LCYF10UgcCEG+s7uW/YUPHjltGcgH
- jJDDZTRY0gV+MlQWFxr6Pesys/yTHWueo85ZEkUGAAwhrxTkA1RGHys6Ru3yNeTw1sQy6bjO
- d1yy3hBPQ7thES9/hCrK4rF8GhcTxCVh+Ut2wvtFMAdNB48g5NqIDudaLY26Nv5XNkaW46Uf
- 3OsXMSDW/M6aFIU/5NioFv+DkXHLjR05V/8t0AXJEx3ivpIq1QARAQABwsBfBBgBCgAJBQJR
- 55LFAhsMAAoJEFF6fE6T32A8FJQH/1o3mMGvr8ztCHJvXpDJCBwI+gouQeaWBrpBoFHHRtp0
- 9qqImrgOUgYsOcUIy3Q9keuv+ZtE6Pz/SdBepj/BHu7ZljYybAKHHmfP/VJfCarGFCVXiPVt
- wSGZFul0W/ZJqETfZK4FVU5C48KCVNrgbTuUxFdjK3gT9lIaiGNehGj78pUJwp/a30Yj2Njf
- 0aniHuNrWykrUagNJPeAb3RvNTX4e+X7P+LxlVB7gqBgUUkM0EpPS6Vq5r7Pb2Z9shQw22PP
- tVPSS4Bie8tVfyvussJEw5lndUPFjAMLX91Uyju1HbvvUvZM3qxJrW8ADR04nltwdtIY+VD6
- y8uexxux4zg=
-Message-ID: <1cc35c0e-3ea2-e63f-b42e-084f44b77ffd@web.de>
-Date:   Wed, 17 Oct 2018 17:50:41 +0200
-User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.13; rv:60.0)
- Gecko/20100101 Thunderbird/60.2.1
+        Wed, 17 Oct 2018 20:32:38 -0400
+Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
+        by userp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w9HGYDgB129942;
+        Wed, 17 Oct 2018 16:35:46 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=date : from : to : cc
+ : subject : message-id : references : mime-version : content-type :
+ in-reply-to; s=corp-2018-07-02;
+ bh=/t05Z3x5uWRjbecu03yZ2Bf0k2cH5K3gOwgB3+gR+PA=;
+ b=iMOCs8SO4zruv/fNOzsYoHJ2U8qGmlgJYVWW71fSFWpAiTjs9nCaPhScQpMs3B2JaeXz
+ 8PnqBZ9qkraS6tbLEJwGgarHIbKQ9mIfnYcjDdj8qhfdjy7wjYrD7Q/OR0vonuJ2vi8d
+ t/h6yueyk/6yCy8ypnxStQt4hAqdVzkZFn3C01i3JYoRk2ha8RmYRZ/NJ6rCSl9IM5Rg
+ u9lbMZCD1sVWclyf4hKylqAv392XjyrFLN9FljTVHXl2GCBLpWYVRpM6zcTDpcA05JYz
+ N/pDKYX5dlfwCiLTqj6uyRTkODE+Lz0EbuIog3H6pOPEsyvZJ/QzZ1t2rCoPWIBPkY89 zg== 
+Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
+        by userp2130.oracle.com with ESMTP id 2n384u8b1p-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Wed, 17 Oct 2018 16:35:45 +0000
+Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
+        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id w9HGZdxn020428
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Wed, 17 Oct 2018 16:35:39 GMT
+Received: from abhmp0007.oracle.com (abhmp0007.oracle.com [141.146.116.13])
+        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w9HGZd7L031444;
+        Wed, 17 Oct 2018 16:35:39 GMT
+Received: from localhost (/67.169.218.210)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Wed, 17 Oct 2018 09:35:39 -0700
+Date:   Wed, 17 Oct 2018 09:35:37 -0700
+From:   "Darrick J. Wong" <darrick.wong@oracle.com>
+To:     Christoph Hellwig <hch@infradead.org>
+Cc:     david@fromorbit.com, sandeen@redhat.com, linux-nfs@vger.kernel.org,
+        linux-cifs@vger.kernel.org, Amir Goldstein <amir73il@gmail.com>,
+        linux-unionfs@vger.kernel.org, linux-xfs@vger.kernel.org,
+        linux-mm@kvack.org, linux-btrfs@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org, ocfs2-devel@oss.oracle.com
+Subject: Re: [PATCH 17/26] vfs: enable remap callers that can handle short
+ operations
+Message-ID: <20181017163537.GO28243@magnolia>
+References: <153965939489.1256.7400115244528045860.stgit@magnolia>
+ <153965999426.3607.3221368918901209000.stgit@magnolia>
+ <20181017083652.GF16896@infradead.org>
 MIME-Version: 1.0
-In-Reply-To: <1e492842-18e2-cbaa-08af-fe503b9935f4@gmx.com>
-Content-Type: multipart/signed; micalg=pgp-sha512;
- protocol="application/pgp-signature";
- boundary="WqhWlD2Pxx2yLNPXuatC6OFW1fndL9yLP"
-X-Df-Sender: bXlfbWljaGFlbHBvc3RAcHVyZW1hdGljLmRl
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20181017083652.GF16896@infradead.org>
+User-Agent: Mutt/1.9.4 (2018-02-28)
+X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9049 signatures=668683
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=0 malwarescore=0
+ phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=938
+ adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.0.1-1807170000 definitions=main-1810170140
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---WqhWlD2Pxx2yLNPXuatC6OFW1fndL9yLP
-Content-Type: multipart/mixed; boundary="6CwbbcZ5g6lYYKJBz3QoJAydcH6tfreK5";
- protected-headers="v1"
-From: Michael Post <michael_post@web.de>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>, Hugo Mills <hugo@carfax.org.uk>,
- linux-btrfs@vger.kernel.org
-Message-ID: <1cc35c0e-3ea2-e63f-b42e-084f44b77ffd@web.de>
-Subject: Re: Urgent: Need BTRFS-Expert
-References: <9996625e-df27-ab14-8192-5b28ac4ffba7@web.de>
- <20181017091820.GE16380@carfax.org.uk>
- <5691be7e-0b5e-1a80-6bdf-4ee258deeb49@web.de>
- <1e492842-18e2-cbaa-08af-fe503b9935f4@gmx.com>
-In-Reply-To: <1e492842-18e2-cbaa-08af-fe503b9935f4@gmx.com>
+On Wed, Oct 17, 2018 at 01:36:52AM -0700, Christoph Hellwig wrote:
+> >  /* Update inode timestamps and remove security privileges when remapping. */
+> > @@ -2023,7 +2034,8 @@ loff_t vfs_dedupe_file_range_one(struct file *src_file, loff_t src_pos,
+> >  {
+> >  	loff_t ret;
+> >  
+> > -	WARN_ON_ONCE(remap_flags & ~(REMAP_FILE_DEDUP));
+> > +	WARN_ON_ONCE(remap_flags & ~(REMAP_FILE_DEDUP |
+> > +				     REMAP_FILE_CAN_SHORTEN));
+> 
+> I guess this is where you could actually use REMAP_FILE_VALID_FLAGS..
+> 
+> >  /* REMAP_FILE flags taken care of by the vfs. */
+> > -#define REMAP_FILE_ADVISORY		(0)
+> > +#define REMAP_FILE_ADVISORY		(REMAP_FILE_CAN_SHORTEN)
+> 
+> And btw, they are not 'taken care of by the VFS', they need to be
+> taken care of by the fs (possibly using helpers) to take affect,
+> but they can be safely ignored.
 
---6CwbbcZ5g6lYYKJBz3QoJAydcH6tfreK5
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: quoted-printable
+Ok, I'll update the comment.
 
-Hello Qu,
-Hello Hugo,
+> > +		if (!IS_ALIGNED(count, bs)) {
+> > +			if (remap_flags & REMAP_FILE_CAN_SHORTEN)
+> > +				count = ALIGN_DOWN(count, bs);
+> > +			else
+> > +				return -EINVAL;
+> 
+> 			if (!(remap_flags & REMAP_FILE_CAN_SHORTEN))
+> 				return -EINVAL;
+> 			count = ALIGN_DOWN(count, bs);
 
-i got this result when i try to recover the chunk tree.
+Seeing as we return EINVAL on shortened count and !CAN_SHORTEN below
+this, I think this can be simplified further:
 
-# btrfs check /dev/mapper/vg0-virtualbox
-bytenr mismatch, want=3D1263835381760, have=3D0
-ERROR: cannot open file system
+	if (pos_in + count == size_in) {
+		bcount = ALIGN(size_in, bs) - pos_in;
+	} else {
+		if (!IS_ALIGNED(count, bs))
+			count = ALIGN_DOWN(count, bs);
+		bcount = count;
+	}
 
-
-# btrfs rescue chunk-recover -y  /dev/mapper/vg0-virtualbox
-Scanning: DONE in dev0
-open with broken chunk error
-Chunk tree recovery failed
-
-Did you any clue?
-
-
-Michael
-
-
---6CwbbcZ5g6lYYKJBz3QoJAydcH6tfreK5--
-
---WqhWlD2Pxx2yLNPXuatC6OFW1fndL9yLP
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Comment: Using GnuPG with Thunderbird - https://www.enigmail.net/
-
-iQEzBAEBCgAdFiEEmxB90zjUALsjw+n2UXp8TpPfYDwFAlvHWlEACgkQUXp8TpPf
-YDzQHgf7BLVALin5Ir/imzkQZO1zNv+JLH2bO21B7yab5uj5Yqn5xkPR/513KAcw
-CDBHzC6/U2U1nSrm+aDlY+S5ZpTZIyojqLJCXVbQ5fIXsOxvueyrmPTa0VS1DWht
-GbD0rUkQdAhMG4+7Zgv66pwet2x3G1svv8eL/288lXrluLDa0oNyf8MXqQMO3OOM
-szFtv9xMezJci6ATfO9W113te6L/IMr608X6mB2l9AzxONPb+m3LIZkgJ5X8ujs5
-XynysxLx/Wo+wvgV7W+iKM0QPfrIUOiElqiMAR9PlfZtr8ZJKsnvMhNXDHobSVif
-a90vOGpLIYgSB5ce4P+8No2k+EMnbw==
-=qn5D
------END PGP SIGNATURE-----
-
---WqhWlD2Pxx2yLNPXuatC6OFW1fndL9yLP--
+--D

@@ -2,75 +2,92 @@ Return-Path: <SRS0=tjhn=M5=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.1 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_MUTT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.5 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
+	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 040E9ECDE30
-	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Oct 2018 08:40:24 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 53596ECDE30
+	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Oct 2018 09:14:13 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id ACD5A214C3
-	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Oct 2018 08:40:23 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="uGFBGk3p"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org ACD5A214C3
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=infradead.org
+	by mail.kernel.org (Postfix) with ESMTP id 2420321523
+	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Oct 2018 09:14:13 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 2420321523
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=wanadoo.fr
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726977AbeJQQfA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 17 Oct 2018 12:35:00 -0400
-Received: from bombadil.infradead.org ([198.137.202.133]:48674 "EHLO
-        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726112AbeJQQe7 (ORCPT
+        id S1727235AbeJQRIx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 17 Oct 2018 13:08:53 -0400
+Received: from smtp12.smtpout.orange.fr ([80.12.242.134]:42864 "EHLO
+        smtp.smtpout.orange.fr" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726964AbeJQRIx (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 17 Oct 2018 12:34:59 -0400
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=bombadil.20170209; h=In-Reply-To:Content-Type:MIME-Version
-        :References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
-        Content-Transfer-Encoding:Content-ID:Content-Description:Resent-Date:
-        Resent-From:Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:
-        List-Help:List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
-         bh=p2srIvdYWmw8xzN0t5Tz8LKHIyDiv6n6NwKOEl3YP98=; b=uGFBGk3pxDNzxjE55QXqkulBY
-        BWiITMxD/7h72THiQQnFgsfNYGCw7GXpS449KP+NdUZvZJIjk7l/XsV6nmZaBb9cA5Pq3bBqEWrpg
-        /JEE4H+TkFW6yHcRtqbszJmVCI2oxanYNERCnX1nCQirFuGSJKgatmLBtZ5bKcHmOFGZxn2YsgDbh
-        TKddwylwPsD+0FTnz+iTS0CbDmznfhMgtbcRxE0XQ9A+PFfxHzBOaA6znPHIQ+G9Fy5l9VzTvhsER
-        iG0g1/sjsUFEnWvUo9fgy5CMxkjITRc4JDCRD3I+IjY1qLMu3erHyVUPuwTzV0FzzywShw2Y3gnYa
-        7S3wPsUgw==;
-Received: from hch by bombadil.infradead.org with local (Exim 4.90_1 #2 (Red Hat Linux))
-        id 1gChNM-0003He-Nc; Wed, 17 Oct 2018 08:40:20 +0000
-Date:   Wed, 17 Oct 2018 01:40:20 -0700
-From:   Christoph Hellwig <hch@infradead.org>
-To:     "Darrick J. Wong" <darrick.wong@oracle.com>
-Cc:     david@fromorbit.com, sandeen@redhat.com, linux-nfs@vger.kernel.org,
-        linux-cifs@vger.kernel.org, linux-unionfs@vger.kernel.org,
-        linux-xfs@vger.kernel.org, linux-mm@kvack.org,
-        linux-btrfs@vger.kernel.org, Dave Chinner <dchinner@redhat.com>,
-        linux-fsdevel@vger.kernel.org, ocfs2-devel@oss.oracle.com
-Subject: Re: [PATCH 26/26] xfs: remove redundant remap partial EOF block
- checks
-Message-ID: <20181017084020.GJ16896@infradead.org>
-References: <153965939489.1256.7400115244528045860.stgit@magnolia>
- <153966006214.3607.15131077363912605792.stgit@magnolia>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <153966006214.3607.15131077363912605792.stgit@magnolia>
-User-Agent: Mutt/1.9.2 (2017-12-15)
-X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
+        Wed, 17 Oct 2018 13:08:53 -0400
+Received: from ubuntu-CJ.clients.t30.sncf.fr ([109.190.253.13])
+        by mwinf5d23 with ME
+        id oZE01y00A0J6jfR03ZE0HA; Wed, 17 Oct 2018 11:14:05 +0200
+X-ME-Helo: ubuntu-CJ.clients.t30.sncf.fr
+X-ME-Auth: Y2hyaXN0b3BoZS5qYWlsbGV0QHdhbmFkb28uZnI=
+X-ME-Date: Wed, 17 Oct 2018 11:14:05 +0200
+X-ME-IP: 109.190.253.13
+From:   Christophe JAILLET <christophe.jaillet@wanadoo.fr>
+To:     clm@fb.com, jbacik@fb.com, dsterba@suse.com
+Cc:     linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+        kernel-janitors@vger.kernel.org,
+        Christophe JAILLET <christophe.jaillet@wanadoo.fr>
+Subject: [PATCH] btrfs: Fix the return value in case of error in 'btrfs_mark_extent_written()'
+Date:   Wed, 17 Oct 2018 11:13:59 +0200
+Message-Id: <20181017091359.3763-1-christophe.jaillet@wanadoo.fr>
+X-Mailer: git-send-email 2.17.1
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Oct 15, 2018 at 08:21:02PM -0700, Darrick J. Wong wrote:
-> From: Darrick J. Wong <darrick.wong@oracle.com>
-> 
-> Now that we've moved the partial EOF block checks to the VFS helpers, we
-> can remove the redundant functionality from XFS.
-> 
-> Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
-> Reviewed-by: Dave Chinner <dchinner@redhat.com>
+We return 0 unconditionally in most of the error handling paths of
+'btrfs_mark_extent_written()'.
+However, 'ret' is set to some error codes in several error handling paths.
 
-Looks fine,
+Return 'ret' instead to propagate the error code.
 
-Reviewed-by: Christoph Hellwig <hch@lst.de>
+Fixes: 9c8e63db1de9 ("Btrfs: kill BUG_ON()'s in btrfs_mark_extent_written")
+Signed-off-by: Christophe JAILLET <christophe.jaillet@wanadoo.fr>
+---
+This patch proposal is purely speculative.
+I'm not sure at all that returning 'ret' is correct (but it looks like it
+is :) )
+
+What puzzles me is when 'ret' is set, 'btrfs_abort_transaction()' is also
+called.
+However, the only caller of 'btrfs_mark_extent_written()' (i.e.
+'btrfs_finish_ordered_io()') also calls 'btrfs_abort_transaction()' if an
+error is returned.
+So returning an error code here, would lead to a double call to this abort
+function.
+
+I'm usure of if it is correct and/or intented.
+If returning 'ret' is correct, should we also axe the 'btrfs_abort_transaction()'
+calls here, and leave the caller do the clean-up?
+
+Before the commit in the Fixes tag, we were BUGing_ON in case of errror. So
+propagating the error was pointless.
+---
+ fs/btrfs/file.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 15b925142793..cac0bd744de3 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1374,7 +1374,7 @@ int btrfs_mark_extent_written(struct btrfs_trans_handle *trans,
+ 	}
+ out:
+ 	btrfs_free_path(path);
+-	return 0;
++	return ret;
+ }
+ 
+ /*
+-- 
+2.17.1
+

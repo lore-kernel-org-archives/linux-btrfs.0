@@ -2,178 +2,123 @@ Return-Path: <SRS0=tjhn=M5=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.3 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,UNPARSEABLE_RELAY,
-	USER_AGENT_MUTT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.3 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3DC0FECDE32
-	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Oct 2018 14:24:08 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D3144ECDE32
+	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Oct 2018 14:26:37 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 0E2A5205F4
-	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Oct 2018 14:24:08 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 0E2A5205F4
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=net-space.pl
+	by mail.kernel.org (Postfix) with ESMTP id A34DA21526
+	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Oct 2018 14:26:37 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org A34DA21526
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727774AbeJQWUC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 17 Oct 2018 18:20:02 -0400
-Received: from dibed.net-space.pl ([84.10.22.86]:35980 "EHLO
-        dibed.net-space.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727772AbeJQWUC (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 17 Oct 2018 18:20:02 -0400
-Received: (from localhost user: 'dkiper' uid#4000 fake: STDIN
-        (dkiper@dibed.net-space.pl)) by router-fw-old.i.net-space.pl
-        id S1875848AbeJQOXK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 17 Oct 2018 16:23:10 +0200
-Date:   Wed, 17 Oct 2018 16:23:10 +0200
-From:   Daniel Kiper <dkiper@net-space.pl>
-To:     Goffredo Baroncelli <kreijack@libero.it>
-Cc:     grub-devel@gnu.org, Daniel Kiper <dkiper@net-space.pl>,
-        linux-btrfs@vger.kernel.org,
-        Goffredo Baroncelli <kreijack@inwind.it>
-Subject: Re: [PATCH 9/9] btrfs: Add RAID 6 recovery for a btrfs filesystem.
-Message-ID: <20181017142310.GD25306@router-fw-old.i.net-space.pl>
-References: <20181011185103.23146-1-kreijack@libero.it> <20181011185103.23146-10-kreijack@libero.it>
-Mime-Version: 1.0
+        id S1727633AbeJQWWc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 17 Oct 2018 18:22:32 -0400
+Received: from mx2.suse.de ([195.135.220.15]:51830 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726974AbeJQWWc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 17 Oct 2018 18:22:32 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id F0232AD77;
+        Wed, 17 Oct 2018 14:26:33 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 3B44BDAD55; Wed, 17 Oct 2018 16:26:28 +0200 (CEST)
+Date:   Wed, 17 Oct 2018 16:26:27 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     fdmanana@kernel.org
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: fix deadlock when writing out free space caches
+Message-ID: <20181017142627.GE29418@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, fdmanana@kernel.org,
+        linux-btrfs@vger.kernel.org
+References: <20181012090355.25755-1-fdmanana@kernel.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20181011185103.23146-10-kreijack@libero.it>
-User-Agent: Mutt/1.3.28i
+In-Reply-To: <20181012090355.25755-1-fdmanana@kernel.org>
+User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Oct 11, 2018 at 08:51:03PM +0200, Goffredo Baroncelli wrote:
-> From: Goffredo Baroncelli <kreijack@inwind.it>
->
-> Add the RAID 6 recovery, in order to use a RAID 6 filesystem even if some
-> disks (up to two) are missing. This code use the md RAID 6 code already
-> present in grub.
->
-> Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
-> Reviewed-by: Daniel Kiper <daniel.kiper@oracle.com>
-> ---
->  grub-core/fs/btrfs.c | 60 +++++++++++++++++++++++++++++++++++++++-----
->  1 file changed, 54 insertions(+), 6 deletions(-)
->
-> diff --git a/grub-core/fs/btrfs.c b/grub-core/fs/btrfs.c
-> index d066d54cc..d20ee09e4 100644
-> --- a/grub-core/fs/btrfs.c
-> +++ b/grub-core/fs/btrfs.c
-> @@ -30,6 +30,7 @@
->  #include <grub/i18n.h>
->  #include <grub/btrfs.h>
->  #include <grub/crypto.h>
-> +#include <grub/diskfilter.h>
->
->  GRUB_MOD_LICENSE ("GPLv3+");
->
-> @@ -702,11 +703,36 @@ rebuild_raid5 (char *dest, struct raid56_buffer *buffers,
->      }
->  }
->
-> +static grub_err_t
-> +raid6_recover_read_buffer (void *data, int disk_nr,
-> +			   grub_uint64_t addr __attribute__ ((unused)),
-> +			   void *dest, grub_size_t size)
-> +{
-> +    struct raid56_buffer *buffers = data;
-> +
-> +    if (!buffers[disk_nr].data_is_valid)
-> +	return grub_errno = GRUB_ERR_READ_ERROR;
-> +
-> +    grub_memcpy(dest, buffers[disk_nr].buf, size);
-> +
-> +    return grub_errno = GRUB_ERR_NONE;
-> +}
-> +
-> +static void
-> +rebuild_raid6 (struct raid56_buffer *buffers, grub_uint64_t nstripes,
-> +               grub_uint64_t csize, grub_uint64_t parities_pos, void *dest,
-> +               grub_uint64_t stripen)
-> +
-> +{
-> +  grub_raid6_recover_gen (buffers, nstripes, stripen, parities_pos,
-> +                          dest, 0, csize, 0, raid6_recover_read_buffer);
-> +}
-> +
->  static grub_err_t
->  raid56_read_retry (struct grub_btrfs_data *data,
->  		   struct grub_btrfs_chunk_item *chunk,
-> -		   grub_uint64_t stripe_offset,
-> -		   grub_uint64_t csize, void *buf)
-> +		   grub_uint64_t stripe_offset, grub_uint64_t stripen,
-> +		   grub_uint64_t csize, void *buf, grub_uint64_t parities_pos)
->  {
->    struct raid56_buffer *buffers;
->    grub_uint64_t nstripes = grub_le_to_cpu16 (chunk->nstripes);
-> @@ -779,6 +805,15 @@ raid56_read_retry (struct grub_btrfs_data *data,
->        ret = GRUB_ERR_READ_ERROR;
->        goto cleanup;
->      }
-> +  else if (failed_devices > 2 && (chunk_type & GRUB_BTRFS_CHUNK_TYPE_RAID6))
-> +    {
-> +      grub_dprintf ("btrfs",
-> +		    "not enough disks for raid6: total %" PRIuGRUB_UINT64_T
+On Fri, Oct 12, 2018 at 10:03:55AM +0100, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
+> 
+> When writing out a block group free space cache we can end deadlocking
+> with ourseves on an extent buffer lock resulting in a warning like the
+> following:
+> 
+>   [245043.379979] WARNING: CPU: 4 PID: 2608 at fs/btrfs/locking.c:251 btrfs_tree_lock+0x1be/0x1d0 [btrfs]
+>   [245043.392792] CPU: 4 PID: 2608 Comm: btrfs-transacti Tainted: G
+>     W I      4.16.8 #1
+>   [245043.395489] RIP: 0010:btrfs_tree_lock+0x1be/0x1d0 [btrfs]
+>   [245043.396791] RSP: 0018:ffffc9000424b840 EFLAGS: 00010246
+>   [245043.398093] RAX: 0000000000000a30 RBX: ffff8807e20a3d20 RCX: 0000000000000001
+>   [245043.399414] RDX: 0000000000000001 RSI: 0000000000000002 RDI: ffff8807e20a3d20
+>   [245043.400732] RBP: 0000000000000001 R08: ffff88041f39a700 R09: ffff880000000000
+>   [245043.402021] R10: 0000000000000040 R11: ffff8807e20a3d20 R12: ffff8807cb220630
+>   [245043.403296] R13: 0000000000000001 R14: ffff8807cb220628 R15: ffff88041fbdf000
+>   [245043.404780] FS:  0000000000000000(0000) GS:ffff88082fc80000(0000) knlGS:0000000000000000
+>   [245043.406050] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+>   [245043.407321] CR2: 00007fffdbdb9f10 CR3: 0000000001c09005 CR4: 00000000000206e0
+>   [245043.408670] Call Trace:
+>   [245043.409977]  btrfs_search_slot+0x761/0xa60 [btrfs]
+>   [245043.411278]  btrfs_insert_empty_items+0x62/0xb0 [btrfs]
+>   [245043.412572]  btrfs_insert_item+0x5b/0xc0 [btrfs]
+>   [245043.413922]  btrfs_create_pending_block_groups+0xfb/0x1e0 [btrfs]
+>   [245043.415216]  do_chunk_alloc+0x1e5/0x2a0 [btrfs]
+>   [245043.416487]  find_free_extent+0xcd0/0xf60 [btrfs]
+>   [245043.417813]  btrfs_reserve_extent+0x96/0x1e0 [btrfs]
+>   [245043.419105]  btrfs_alloc_tree_block+0xfb/0x4a0 [btrfs]
+>   [245043.420378]  __btrfs_cow_block+0x127/0x550 [btrfs]
+>   [245043.421652]  btrfs_cow_block+0xee/0x190 [btrfs]
+>   [245043.422979]  btrfs_search_slot+0x227/0xa60 [btrfs]
+>   [245043.424279]  ? btrfs_update_inode_item+0x59/0x100 [btrfs]
+>   [245043.425538]  ? iput+0x72/0x1e0
+>   [245043.426798]  write_one_cache_group.isra.49+0x20/0x90 [btrfs]
+>   [245043.428131]  btrfs_start_dirty_block_groups+0x102/0x420 [btrfs]
+>   [245043.429419]  btrfs_commit_transaction+0x11b/0x880 [btrfs]
+>   [245043.430712]  ? start_transaction+0x8e/0x410 [btrfs]
+>   [245043.432006]  transaction_kthread+0x184/0x1a0 [btrfs]
+>   [245043.433341]  kthread+0xf0/0x130
+>   [245043.434628]  ? btrfs_cleanup_transaction+0x4e0/0x4e0 [btrfs]
+>   [245043.435928]  ? kthread_create_worker_on_cpu+0x40/0x40
+>   [245043.437236]  ret_from_fork+0x1f/0x30
+>   [245043.441054] ---[ end trace 15abaa2aaf36827f ]---
+> 
+> This is because at write_one_cache_group() when we are COWing a leaf from
+> the extent tree we end up allocating a new block group (chunk) and,
+> because we have hit a threshold on the number of bytes reserved for system
+> chunks, we attempt to finalize the creation of new block groups from the
+> current transaction, by calling btrfs_create_pending_block_groups().
+> However here we also need to modify the extent tree in order to insert
+> a block group item, and if the location for this new block group item
+> happens to be in the same leaf that we were COWing earlier, we deadlock
+> since btrfs_search_slot() tries to write lock the extent buffer that we
+> locked before at write_one_cache_group().
+> 
+> We have already hit similar cases in the past and commit d9a0540a79f8
+> ("Btrfs: fix deadlock when finalizing block group creation") fixed some
+> of those cases by delaying the creation of pending block groups at the
+> known specific spots that could lead to a deadlock. This change reworks
+> that commit to be more generic so that we don't have to add similar logic
+> to every possible path that can lead to a deadlock. This is done by
+> making __btrfs_cow_block() disallowing the creation of new block groups
+> (setting the transaction's can_flush_pending_bgs to false) before it
+> attempts to allocate a new extent buffer for either the extent, chunk or
+> device trees, since those are the trees that pending block creation
+> modifies. Once the new extent buffer is allocated, it allows creation of
+> pending block groups to happen again.
+> 
+> This change depends on a recent patch from Josef which is not yet in
+> Linus' tree, named "btrfs: make sure we create all new block groups" in
+> order to avoid occasional warnings at btrfs_trans_release_chunk_metadata().
 
-s/not enough disks for raid6/not enough disks for RAID 6/
-
-You are using "RAID 5" in earlier patch, so, please be consistent
-and use "RAID 6" here.
-
-> +		    ", missing %" PRIuGRUB_UINT64_T "\n",
-> +		    nstripes, failed_devices);
-> +      ret = GRUB_ERR_READ_ERROR;
-> +      goto cleanup;
-> +    }
->    else
->      grub_dprintf ("btrfs",
->  		  "enough disks for RAID 5 rebuilding: total %"
-> @@ -789,7 +824,7 @@ raid56_read_retry (struct grub_btrfs_data *data,
->    if (chunk_type & GRUB_BTRFS_CHUNK_TYPE_RAID5)
->      rebuild_raid5 (buf, buffers, nstripes, csize);
->    else
-> -    grub_dprintf ("btrfs", "called rebuild_raid6(), NOT IMPLEMENTED\n");
-> +    rebuild_raid6 (buffers, nstripes, csize, parities_pos, buf, stripen);
->
->    ret = GRUB_ERR_NONE;
->   cleanup:
-> @@ -879,9 +914,11 @@ grub_btrfs_read_logical (struct grub_btrfs_data *data, grub_disk_addr_t addr,
->  	unsigned redundancy = 1;
->  	unsigned i, j;
->  	int is_raid56;
-> +	grub_uint64_t parities_pos = 0;
->
-> -	is_raid56 = !!(grub_le_to_cpu64 (chunk->type) &
-> -		       GRUB_BTRFS_CHUNK_TYPE_RAID5);
-> +        is_raid56 = !!(grub_le_to_cpu64 (chunk->type) &
-> +		       (GRUB_BTRFS_CHUNK_TYPE_RAID5 |
-> +		        GRUB_BTRFS_CHUNK_TYPE_RAID6));
->
->  	if (grub_le_to_cpu64 (chunk->size) <= off)
->  	  {
-> @@ -1030,6 +1067,17 @@ grub_btrfs_read_logical (struct grub_btrfs_data *data, grub_disk_addr_t addr,
->  	       */
->  	      grub_divmod64 (high + stripen, nstripes, &stripen);
->
-> +	      /*
-> +	       * parities_pos is equal to "(high - nparities) % nstripes"
-> +	       * (see the diagram above).
-> +	       * However "high - nparities" might be negative (eg when high
-> +	       * == 0) leading to an incorrect computation.
-
-However, "high - nparities" can be negative, eg. when high == 0,
-leading to an incorrect results.
-
-> +	       * Instead "high + nstripes - nparities" is always positive and
-> +	       * in modulo nstripes is equal to "(high - nparities) % nstripes"
-
-"high + nstripes - nparities" is always positive and modulo
-nstripes is equal to "(high - nparities) % nstripes".
-
-If you change above mentioned things you can retain my
-  Reviewed-by: Daniel Kiper <daniel.kiper@oracle.com>
-
-Daniel
+Thanks for mentioning it, the referenced patch has been in misc-next and
+is scheduled for 4.20 so your patch will be added too.

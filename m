@@ -2,59 +2,59 @@ Return-Path: <SRS0=tjhn=M5=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.1 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.1 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,
+	USER_AGENT_MUTT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F1FEBECDE30
-	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Oct 2018 08:36:56 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5B2C2ECDE30
+	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Oct 2018 08:37:26 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id A7EF721529
-	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Oct 2018 08:36:56 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 17D6E21529
+	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Oct 2018 08:37:26 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="lAfbl8Kp"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org A7EF721529
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="hFrcBgkQ"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 17D6E21529
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=infradead.org
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727042AbeJQQbb (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 17 Oct 2018 12:31:31 -0400
-Received: from bombadil.infradead.org ([198.137.202.133]:46572 "EHLO
+        id S1726924AbeJQQcB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 17 Oct 2018 12:32:01 -0400
+Received: from bombadil.infradead.org ([198.137.202.133]:46634 "EHLO
         bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726947AbeJQQbb (ORCPT
+        with ESMTP id S1726112AbeJQQcB (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 17 Oct 2018 12:31:31 -0400
+        Wed, 17 Oct 2018 12:32:01 -0400
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=bombadil.20170209; h=In-Reply-To:Content-Type:MIME-Version
         :References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
         Content-Transfer-Encoding:Content-ID:Content-Description:Resent-Date:
         Resent-From:Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:
         List-Help:List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
-         bh=2jGMuw/IDUHGfFXckUR8sZLJ5nbBNtVb83WOlmdGwJI=; b=lAfbl8KpFIS/6ewxmEYdhTbW7
-        jYpcNhS45rz6HFj2+ahZ9VciIiAU2AVM/sPcKda4XOJiAYvqly2+EVL24g2cxqvJBDaJfKYkk0/vJ
-        1xEoVRF1X1awZedeAG/UKCAe6gYAWig+gxoCH8bxvt9RvB59EQ5Zi/Dcge/B8jUTY1nbIRcZZQN+J
-        XzjyMFqiayDqwpoqQIsLHejE/jhz34wA6+5ya0k8adbcCd2bMCoLONZjRutnEbRVqO4TPbh0yh0eI
-        KCQ336SSEhp50FEGm/fE+uR4RwO/CiOEHLTMw83CBmEf7q0Q6+bXyxqxMIzYpWGF0LHAsiqUwuffu
-        EsjnSSeXQ==;
+         bh=qRhJ535hi/QWylCVGhUigoBAxumc3LQjbi0ChGwojfc=; b=hFrcBgkQ7bOLo2h6eU3I7rR7H
+        YQiVEwf/p9upyRX+t6cxJiXvw+rhvATZIfptU8UkCl8jQG9fsznKF7mX0AUgfMLtWcZClSzkBRxTc
+        CMJCNbRWkJpj75IgnutGaDjA1NKJtKU1mfLDU0RroWljQbiWNuf7QqfH8XIrtFDgBnbEGgeZ12RGz
+        eey64Fcc9Tb8oNyfHRMHggYQK6v3zv24JALO4WsY1s2UtSOyIp9k45L82nDgNCIHfE07UJtP/qIHP
+        PaYTL7qBUhplcgfZ0rT5Tg+qOzEjp8zhboV+XiFArxFN756CMXnoXuMLQ/Xk8ujePihUMQNq9FDnT
+        zL+byPmaQ==;
 Received: from hch by bombadil.infradead.org with local (Exim 4.90_1 #2 (Red Hat Linux))
-        id 1gChK0-00017g-BZ; Wed, 17 Oct 2018 08:36:52 +0000
-Date:   Wed, 17 Oct 2018 01:36:52 -0700
+        id 1gChKU-0001Ah-4Y; Wed, 17 Oct 2018 08:37:22 +0000
+Date:   Wed, 17 Oct 2018 01:37:21 -0700
 From:   Christoph Hellwig <hch@infradead.org>
 To:     "Darrick J. Wong" <darrick.wong@oracle.com>
 Cc:     david@fromorbit.com, sandeen@redhat.com, linux-nfs@vger.kernel.org,
-        linux-cifs@vger.kernel.org, Amir Goldstein <amir73il@gmail.com>,
-        linux-unionfs@vger.kernel.org, linux-xfs@vger.kernel.org,
-        linux-mm@kvack.org, linux-btrfs@vger.kernel.org,
-        linux-fsdevel@vger.kernel.org, ocfs2-devel@oss.oracle.com
-Subject: Re: [PATCH 17/26] vfs: enable remap callers that can handle short
- operations
-Message-ID: <20181017083652.GF16896@infradead.org>
+        linux-cifs@vger.kernel.org, linux-unionfs@vger.kernel.org,
+        linux-xfs@vger.kernel.org, linux-mm@kvack.org,
+        linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+        ocfs2-devel@oss.oracle.com
+Subject: Re: [PATCH 19/26] vfs: clean up generic_remap_file_range_prep return
+ value
+Message-ID: <20181017083721.GG16896@infradead.org>
 References: <153965939489.1256.7400115244528045860.stgit@magnolia>
- <153965999426.3607.3221368918901209000.stgit@magnolia>
+ <153966001458.3607.5940191707393894977.stgit@magnolia>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <153965999426.3607.3221368918901209000.stgit@magnolia>
+In-Reply-To: <153966001458.3607.5940191707393894977.stgit@magnolia>
 User-Agent: Mutt/1.9.2 (2017-12-15)
 X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -62,31 +62,15 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
->  /* Update inode timestamps and remove security privileges when remapping. */
-> @@ -2023,7 +2034,8 @@ loff_t vfs_dedupe_file_range_one(struct file *src_file, loff_t src_pos,
->  {
->  	loff_t ret;
->  
-> -	WARN_ON_ONCE(remap_flags & ~(REMAP_FILE_DEDUP));
-> +	WARN_ON_ONCE(remap_flags & ~(REMAP_FILE_DEDUP |
-> +				     REMAP_FILE_CAN_SHORTEN));
+On Mon, Oct 15, 2018 at 08:20:14PM -0700, Darrick J. Wong wrote:
+> From: Darrick J. Wong <darrick.wong@oracle.com>
+> 
+> Since the remap prep function can update the length of the remap
+> request, we can change this function to return the usual return status
+> instead of the odd behavior it has now.
+> 
+> Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
 
-I guess this is where you could actually use REMAP_FILE_VALID_FLAGS..
+Looks fine,
 
->  /* REMAP_FILE flags taken care of by the vfs. */
-> -#define REMAP_FILE_ADVISORY		(0)
-> +#define REMAP_FILE_ADVISORY		(REMAP_FILE_CAN_SHORTEN)
-
-And btw, they are not 'taken care of by the VFS', they need to be
-taken care of by the fs (possibly using helpers) to take affect,
-but they can be safely ignored.
-
-> +		if (!IS_ALIGNED(count, bs)) {
-> +			if (remap_flags & REMAP_FILE_CAN_SHORTEN)
-> +				count = ALIGN_DOWN(count, bs);
-> +			else
-> +				return -EINVAL;
-
-			if (!(remap_flags & REMAP_FILE_CAN_SHORTEN))
-				return -EINVAL;
-			count = ALIGN_DOWN(count, bs);
+Reviewed-by: Christoph Hellwig <hch@lst.de>

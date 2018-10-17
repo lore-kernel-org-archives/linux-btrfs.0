@@ -7,62 +7,61 @@ X-Spam-Status: No, score=-6.9 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,UNPARSEABLE_RELAY,URIBL_BLOCKED
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6B927ECDE3B
-	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Oct 2018 22:45:00 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9149EECDE32
+	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Oct 2018 22:45:05 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 2DC4621473
-	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Oct 2018 22:45:00 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 541A1213A2
+	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Oct 2018 22:45:05 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="WwmaTn1d"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 2DC4621473
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="lOoM4rN5"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 541A1213A2
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=oracle.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727567AbeJRGms (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 18 Oct 2018 02:42:48 -0400
-Received: from userp2130.oracle.com ([156.151.31.86]:36538 "EHLO
+        id S1727608AbeJRGmy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 18 Oct 2018 02:42:54 -0400
+Received: from userp2130.oracle.com ([156.151.31.86]:36634 "EHLO
         userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726673AbeJRGms (ORCPT
+        with ESMTP id S1726673AbeJRGmx (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 18 Oct 2018 02:42:48 -0400
+        Thu, 18 Oct 2018 02:42:53 -0400
 Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
-        by userp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w9HMiHlm040228;
-        Wed, 17 Oct 2018 22:44:52 GMT
+        by userp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w9HMiWfv040580;
+        Wed, 17 Oct 2018 22:44:57 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : from : to :
  cc : date : message-id : in-reply-to : references : mime-version :
  content-type : content-transfer-encoding; s=corp-2018-07-02;
- bh=5eu3BWWTXWnKtqnmkgUDN4s2jZ2fNj7azSAvuPl2YO0=;
- b=WwmaTn1d7wGPgulLsq+MVrQhXeA947jg3AohXBhAWClsPsbg503CWg9tiKUkqc6lRJbG
- FP05fT60N2rsWL3m2CGUQ1ck4/sJJZe71MEe0H2jYmBjGmWaAU9ukXbAnwK9MshO7RB6
- noWZ3jBzlenYvhuYtzj/OsLYGuU1FuRifZgWseIpo9/ouUnEgpZwwqZMw+zQdHE0QV7d
- CSWR8VIJ3wUiblCd612X2NgsYC3dn+7d5y+YydC0dY6zlLh8lQMyWeiteY5x4iT5asoi
- VqgyPdU6CdtP6s3TtCFoJbzV3S6z5CTVqRRjT66LE8K58MpuY26OlfFRb4WXiJFL0CvS nw== 
+ bh=SHexZ7j4NahuPkzJw7xdjRTs2Ez8K2Od8tzKdBj+sBY=;
+ b=lOoM4rN589fci7BOye8ix6pMQcE6KdksRa2Vti6deEuen1Gw4n8qbt90Dpykir13UikE
+ LKy3fXLal5Oldz0ztrMCIx3hSA9wgL/A0oPB18ZjhQ9DTLTDfRbJ66hiOJb5cQzYoq8l
+ /g9lLpHY4vaneJprNdEgdprWh2iY7yKUD8Amvvt4r/FmTUQRg7vWhLCGjbKeigCawI+q
+ 5gRXmV4TZrORc1B+8GFG4s9GqVUDUS8h42Y5IHYYiAImaXhCtzcJqZ3+pz+hAqXPPwN9
+ Yb1fSGyI4LLWy4uTdzBeDFGpsSxzs+U423q3a1s8/zutvjeJkSgTin5kIberMNti//4v Tg== 
 Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
-        by userp2130.oracle.com with ESMTP id 2n384u9yvq-1
+        by userp2130.oracle.com with ESMTP id 2n384u9yw1-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Wed, 17 Oct 2018 22:44:51 +0000
-Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
-        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id w9HMijOV000463
+        Wed, 17 Oct 2018 22:44:57 +0000
+Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
+        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id w9HMip3x000659
         (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Wed, 17 Oct 2018 22:44:46 GMT
+        Wed, 17 Oct 2018 22:44:51 GMT
 Received: from abhmp0020.oracle.com (abhmp0020.oracle.com [141.146.116.26])
-        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w9HMiiBR030974;
-        Wed, 17 Oct 2018 22:44:45 GMT
+        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w9HMipBk014640;
+        Wed, 17 Oct 2018 22:44:51 GMT
 Received: from localhost (/10.159.132.177)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Wed, 17 Oct 2018 15:44:44 -0700
-Subject: [PATCH 04/29] vfs: strengthen checking of file range inputs to
- generic_remap_checks
+        with ESMTP ; Wed, 17 Oct 2018 15:44:51 -0700
+Subject: [PATCH 05/29] vfs: avoid problematic remapping requests into
+ partial EOF block
 From:   "Darrick J. Wong" <darrick.wong@oracle.com>
 To:     david@fromorbit.com, darrick.wong@oracle.com
 Cc:     sandeen@redhat.com, linux-nfs@vger.kernel.org,
-        linux-cifs@vger.kernel.org, Amir Goldstein <amir73il@gmail.com>,
-        linux-unionfs@vger.kernel.org, linux-xfs@vger.kernel.org,
-        linux-mm@kvack.org, linux-btrfs@vger.kernel.org,
-        linux-fsdevel@vger.kernel.org, Christoph Hellwig <hch@lst.de>,
-        ocfs2-devel@oss.oracle.com
-Date:   Wed, 17 Oct 2018 15:44:43 -0700
-Message-ID: <153981628292.5568.2466587869276881561.stgit@magnolia>
+        linux-cifs@vger.kernel.org, linux-unionfs@vger.kernel.org,
+        linux-xfs@vger.kernel.org, linux-mm@kvack.org,
+        linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+        Christoph Hellwig <hch@lst.de>, ocfs2-devel@oss.oracle.com
+Date:   Wed, 17 Oct 2018 15:44:49 -0700
+Message-ID: <153981628984.5568.13713064343145585532.stgit@magnolia>
 In-Reply-To: <153981625504.5568.2708520119290577378.stgit@magnolia>
 References: <153981625504.5568.2708520119290577378.stgit@magnolia>
 User-Agent: StGit/0.17.1-dirty
@@ -71,7 +70,7 @@ Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
 X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9049 signatures=668683
 X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=0 malwarescore=0
- phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
+ phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=793
  adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
  engine=8.0.1-1807170000 definitions=main-1810170188
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -81,159 +80,88 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Darrick J. Wong <darrick.wong@oracle.com>
 
-File range remapping, if allowed to run past the destination file's EOF,
-is an optimization on a regular file write.  Regular file writes that
-extend the file length are subject to various constraints which are not
-checked by range cloning.
+A deduplication data corruption is exposed in XFS and btrfs. It is
+caused by extending the block match range to include the partial EOF
+block, but then allowing unknown data beyond EOF to be considered a
+"match" to data in the destination file because the comparison is only
+made to the end of the source file. This corrupts the destination file
+when the source extent is shared with it.
 
-This is a correctness problem because we're never allowed to touch
-ranges that the page cache can't support (s_maxbytes); we're not
-supposed to deal with large offsets (MAX_NON_LFS) if O_LARGEFILE isn't
-set; and we must obey resource limits (RLIMIT_FSIZE).
+The VFS remapping prep functions  only support whole block dedupe, but
+we still need to appear to support whole file dedupe correctly.  Hence
+if the dedupe request includes the last block of the souce file, don't
+include it in the actual dedupe operation. If the rest of the range
+dedupes successfully, then reject the entire request.  A subsequent
+patch will enable us to shorten dedupe requests correctly.
 
-Therefore, add these checks to the new generic_remap_checks function so
-that we curtail unexpected behavior.
+When reflinking sub-file ranges, a data corruption can occur when the
+source file range includes a partial EOF block. This shares the unknown
+data beyond EOF into the second file at a position inside EOF, exposing
+stale data in the second file.
+
+If the reflink request includes the last block of the souce file, only
+proceed with the reflink operation if it lands at or past the
+destination file's current EOF. If it lands within the destination file
+EOF, reject the entire request with -EINVAL and make the caller go the
+hard way.  A subsequent patch will enable us to shorten reflink requests
+correctly.
 
 Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
-Reviewed-by: Amir Goldstein <amir73il@gmail.com>
 Reviewed-by: Christoph Hellwig <hch@lst.de>
 ---
- mm/filemap.c |   91 ++++++++++++++++++++++++++++++++++++++--------------------
- 1 file changed, 59 insertions(+), 32 deletions(-)
+ fs/read_write.c |   33 +++++++++++++++++++++++++++++++++
+ 1 file changed, 33 insertions(+)
 
 
-diff --git a/mm/filemap.c b/mm/filemap.c
-index 47e6bfd45a91..08ad210fee49 100644
---- a/mm/filemap.c
-+++ b/mm/filemap.c
-@@ -2915,6 +2915,49 @@ struct page *read_cache_page_gfp(struct address_space *mapping,
- }
- EXPORT_SYMBOL(read_cache_page_gfp);
+diff --git a/fs/read_write.c b/fs/read_write.c
+index 2456da3f8a41..0f0a6efdd502 100644
+--- a/fs/read_write.c
++++ b/fs/read_write.c
+@@ -1708,6 +1708,34 @@ static int clone_verify_area(struct file *file, loff_t pos, u64 len, bool write)
  
-+static int generic_access_check_limits(struct file *file, loff_t pos,
-+				       loff_t *count)
+ 	return security_file_permission(file, write ? MAY_WRITE : MAY_READ);
+ }
++/*
++ * Ensure that we don't remap a partial EOF block in the middle of something
++ * else.  Assume that the offsets have already been checked for block
++ * alignment.
++ *
++ * For deduplication we always scale down to the previous block because we
++ * can't meaningfully compare post-EOF contents.
++ *
++ * For clone we only link a partial EOF block above the destination file's EOF.
++ */
++static int generic_remap_check_len(struct inode *inode_in,
++				   struct inode *inode_out,
++				   loff_t pos_out,
++				   u64 *len,
++				   bool is_dedupe)
 +{
-+	struct inode *inode = file->f_mapping->host;
++	u64 blkmask = i_blocksize(inode_in) - 1;
 +
-+	/* Don't exceed the LFS limits. */
-+	if (unlikely(pos + *count > MAX_NON_LFS &&
-+				!(file->f_flags & O_LARGEFILE))) {
-+		if (pos >= MAX_NON_LFS)
-+			return -EFBIG;
-+		*count = min(*count, (loff_t)MAX_NON_LFS - pos);
-+	}
++	if ((*len & blkmask) == 0)
++		return 0;
 +
-+	/*
-+	 * Don't operate on ranges the page cache doesn't support.
-+	 *
-+	 * If we have written data it becomes a short write.  If we have
-+	 * exceeded without writing data we send a signal and return EFBIG.
-+	 * Linus frestrict idea will clean these up nicely..
-+	 */
-+	if (unlikely(pos >= inode->i_sb->s_maxbytes))
-+		return -EFBIG;
++	if (is_dedupe)
++		*len &= ~blkmask;
++	else if (pos_out + *len < i_size_read(inode_out))
++		return -EINVAL;
 +
-+	*count = min(*count, inode->i_sb->s_maxbytes - pos);
 +	return 0;
 +}
-+
-+static int generic_write_check_limits(struct file *file, loff_t pos,
-+				      loff_t *count)
-+{
-+	unsigned long limit = rlimit(RLIMIT_FSIZE);
-+
-+	if (limit != RLIM_INFINITY) {
-+		if (pos >= limit) {
-+			send_sig(SIGXFSZ, current, 0);
-+			return -EFBIG;
-+		}
-+		*count = min(*count, (loff_t)limit - pos);
-+	}
-+
-+	return generic_access_check_limits(file, pos, count);
-+}
-+
+ 
  /*
-  * Performs necessary checks before doing a write
-  *
-@@ -2926,8 +2969,8 @@ inline ssize_t generic_write_checks(struct kiocb *iocb, struct iov_iter *from)
- {
- 	struct file *file = iocb->ki_filp;
- 	struct inode *inode = file->f_mapping->host;
--	unsigned long limit = rlimit(RLIMIT_FSIZE);
--	loff_t pos;
-+	loff_t count;
-+	int ret;
+  * Check that the two inodes are eligible for cloning, the ranges make
+@@ -1787,6 +1815,11 @@ int vfs_clone_file_prep(struct file *file_in, loff_t pos_in,
+ 			return -EBADE;
+ 	}
  
- 	if (!iov_iter_count(from))
- 		return 0;
-@@ -2936,40 +2979,15 @@ inline ssize_t generic_write_checks(struct kiocb *iocb, struct iov_iter *from)
- 	if (iocb->ki_flags & IOCB_APPEND)
- 		iocb->ki_pos = i_size_read(inode);
- 
--	pos = iocb->ki_pos;
--
- 	if ((iocb->ki_flags & IOCB_NOWAIT) && !(iocb->ki_flags & IOCB_DIRECT))
- 		return -EINVAL;
- 
--	if (limit != RLIM_INFINITY) {
--		if (iocb->ki_pos >= limit) {
--			send_sig(SIGXFSZ, current, 0);
--			return -EFBIG;
--		}
--		iov_iter_truncate(from, limit - (unsigned long)pos);
--	}
-+	count = iov_iter_count(from);
-+	ret = generic_write_check_limits(file, iocb->ki_pos, &count);
++	ret = generic_remap_check_len(inode_in, inode_out, pos_out, len,
++			is_dedupe);
 +	if (ret)
 +		return ret;
- 
--	/*
--	 * LFS rule
--	 */
--	if (unlikely(pos + iov_iter_count(from) > MAX_NON_LFS &&
--				!(file->f_flags & O_LARGEFILE))) {
--		if (pos >= MAX_NON_LFS)
--			return -EFBIG;
--		iov_iter_truncate(from, MAX_NON_LFS - (unsigned long)pos);
--	}
--
--	/*
--	 * Are we about to exceed the fs block limit ?
--	 *
--	 * If we have written data it becomes a short write.  If we have
--	 * exceeded without writing data we send a signal and return EFBIG.
--	 * Linus frestrict idea will clean these up nicely..
--	 */
--	if (unlikely(pos >= inode->i_sb->s_maxbytes))
--		return -EFBIG;
--
--	iov_iter_truncate(from, inode->i_sb->s_maxbytes - pos);
-+	iov_iter_truncate(from, count);
- 	return iov_iter_count(from);
++
+ 	return 1;
  }
- EXPORT_SYMBOL(generic_write_checks);
-@@ -2991,6 +3009,7 @@ int generic_remap_checks(struct file *file_in, loff_t pos_in,
- 	uint64_t bcount;
- 	loff_t size_in, size_out;
- 	loff_t bs = inode_out->i_sb->s_blocksize;
-+	int ret;
- 
- 	/* The start of both ranges must be aligned to an fs block. */
- 	if (!IS_ALIGNED(pos_in, bs) || !IS_ALIGNED(pos_out, bs))
-@@ -3014,6 +3033,14 @@ int generic_remap_checks(struct file *file_in, loff_t pos_in,
- 		return -EINVAL;
- 	count = min(count, size_in - (uint64_t)pos_in);
- 
-+	ret = generic_access_check_limits(file_in, pos_in, &count);
-+	if (ret)
-+		return ret;
-+
-+	ret = generic_write_check_limits(file_out, pos_out, &count);
-+	if (ret)
-+		return ret;
-+
- 	/*
- 	 * If the user wanted us to link to the infile's EOF, round up to the
- 	 * next block boundary for this check.
+ EXPORT_SYMBOL(vfs_clone_file_prep);
 

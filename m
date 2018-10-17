@@ -3,122 +3,116 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-2.3 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT autolearn=ham
-	autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D3144ECDE32
-	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Oct 2018 14:26:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8C28DECDE32
+	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Oct 2018 14:56:15 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id A34DA21526
-	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Oct 2018 14:26:37 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org A34DA21526
+	by mail.kernel.org (Postfix) with ESMTP id 5C2CC2150F
+	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Oct 2018 14:56:15 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 5C2CC2150F
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727633AbeJQWWc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 17 Oct 2018 18:22:32 -0400
-Received: from mx2.suse.de ([195.135.220.15]:51830 "EHLO mx1.suse.de"
+        id S1727402AbeJQWwR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 17 Oct 2018 18:52:17 -0400
+Received: from mx2.suse.de ([195.135.220.15]:58140 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726974AbeJQWWc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 17 Oct 2018 18:22:32 -0400
+        id S1727000AbeJQWwR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 17 Oct 2018 18:52:17 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id F0232AD77;
-        Wed, 17 Oct 2018 14:26:33 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id E258EAE8F
+        for <linux-btrfs@vger.kernel.org>; Wed, 17 Oct 2018 14:56:11 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 3B44BDAD55; Wed, 17 Oct 2018 16:26:28 +0200 (CEST)
-Date:   Wed, 17 Oct 2018 16:26:27 +0200
+        id 28439DAD55; Wed, 17 Oct 2018 16:56:03 +0200 (CEST)
+Date:   Wed, 17 Oct 2018 16:56:01 +0200
 From:   David Sterba <dsterba@suse.cz>
-To:     fdmanana@kernel.org
+To:     Qu Wenruo <wqu@suse.com>
 Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: fix deadlock when writing out free space caches
-Message-ID: <20181017142627.GE29418@twin.jikos.cz>
+Subject: Re: [PATCH v4 2/4] btrfs: Refactor clustered extent allocation into
+ find_free_extent_clustered()
+Message-ID: <20181017145601.GF29418@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, fdmanana@kernel.org,
+Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
         linux-btrfs@vger.kernel.org
-References: <20181012090355.25755-1-fdmanana@kernel.org>
+References: <20181017065606.8707-1-wqu@suse.com>
+ <20181017065606.8707-3-wqu@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20181012090355.25755-1-fdmanana@kernel.org>
+In-Reply-To: <20181017065606.8707-3-wqu@suse.com>
 User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Oct 12, 2018 at 10:03:55AM +0100, fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
-> 
-> When writing out a block group free space cache we can end deadlocking
-> with ourseves on an extent buffer lock resulting in a warning like the
-> following:
-> 
->   [245043.379979] WARNING: CPU: 4 PID: 2608 at fs/btrfs/locking.c:251 btrfs_tree_lock+0x1be/0x1d0 [btrfs]
->   [245043.392792] CPU: 4 PID: 2608 Comm: btrfs-transacti Tainted: G
->     W I      4.16.8 #1
->   [245043.395489] RIP: 0010:btrfs_tree_lock+0x1be/0x1d0 [btrfs]
->   [245043.396791] RSP: 0018:ffffc9000424b840 EFLAGS: 00010246
->   [245043.398093] RAX: 0000000000000a30 RBX: ffff8807e20a3d20 RCX: 0000000000000001
->   [245043.399414] RDX: 0000000000000001 RSI: 0000000000000002 RDI: ffff8807e20a3d20
->   [245043.400732] RBP: 0000000000000001 R08: ffff88041f39a700 R09: ffff880000000000
->   [245043.402021] R10: 0000000000000040 R11: ffff8807e20a3d20 R12: ffff8807cb220630
->   [245043.403296] R13: 0000000000000001 R14: ffff8807cb220628 R15: ffff88041fbdf000
->   [245043.404780] FS:  0000000000000000(0000) GS:ffff88082fc80000(0000) knlGS:0000000000000000
->   [245043.406050] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
->   [245043.407321] CR2: 00007fffdbdb9f10 CR3: 0000000001c09005 CR4: 00000000000206e0
->   [245043.408670] Call Trace:
->   [245043.409977]  btrfs_search_slot+0x761/0xa60 [btrfs]
->   [245043.411278]  btrfs_insert_empty_items+0x62/0xb0 [btrfs]
->   [245043.412572]  btrfs_insert_item+0x5b/0xc0 [btrfs]
->   [245043.413922]  btrfs_create_pending_block_groups+0xfb/0x1e0 [btrfs]
->   [245043.415216]  do_chunk_alloc+0x1e5/0x2a0 [btrfs]
->   [245043.416487]  find_free_extent+0xcd0/0xf60 [btrfs]
->   [245043.417813]  btrfs_reserve_extent+0x96/0x1e0 [btrfs]
->   [245043.419105]  btrfs_alloc_tree_block+0xfb/0x4a0 [btrfs]
->   [245043.420378]  __btrfs_cow_block+0x127/0x550 [btrfs]
->   [245043.421652]  btrfs_cow_block+0xee/0x190 [btrfs]
->   [245043.422979]  btrfs_search_slot+0x227/0xa60 [btrfs]
->   [245043.424279]  ? btrfs_update_inode_item+0x59/0x100 [btrfs]
->   [245043.425538]  ? iput+0x72/0x1e0
->   [245043.426798]  write_one_cache_group.isra.49+0x20/0x90 [btrfs]
->   [245043.428131]  btrfs_start_dirty_block_groups+0x102/0x420 [btrfs]
->   [245043.429419]  btrfs_commit_transaction+0x11b/0x880 [btrfs]
->   [245043.430712]  ? start_transaction+0x8e/0x410 [btrfs]
->   [245043.432006]  transaction_kthread+0x184/0x1a0 [btrfs]
->   [245043.433341]  kthread+0xf0/0x130
->   [245043.434628]  ? btrfs_cleanup_transaction+0x4e0/0x4e0 [btrfs]
->   [245043.435928]  ? kthread_create_worker_on_cpu+0x40/0x40
->   [245043.437236]  ret_from_fork+0x1f/0x30
->   [245043.441054] ---[ end trace 15abaa2aaf36827f ]---
-> 
-> This is because at write_one_cache_group() when we are COWing a leaf from
-> the extent tree we end up allocating a new block group (chunk) and,
-> because we have hit a threshold on the number of bytes reserved for system
-> chunks, we attempt to finalize the creation of new block groups from the
-> current transaction, by calling btrfs_create_pending_block_groups().
-> However here we also need to modify the extent tree in order to insert
-> a block group item, and if the location for this new block group item
-> happens to be in the same leaf that we were COWing earlier, we deadlock
-> since btrfs_search_slot() tries to write lock the extent buffer that we
-> locked before at write_one_cache_group().
-> 
-> We have already hit similar cases in the past and commit d9a0540a79f8
-> ("Btrfs: fix deadlock when finalizing block group creation") fixed some
-> of those cases by delaying the creation of pending block groups at the
-> known specific spots that could lead to a deadlock. This change reworks
-> that commit to be more generic so that we don't have to add similar logic
-> to every possible path that can lead to a deadlock. This is done by
-> making __btrfs_cow_block() disallowing the creation of new block groups
-> (setting the transaction's can_flush_pending_bgs to false) before it
-> attempts to allocate a new extent buffer for either the extent, chunk or
-> device trees, since those are the trees that pending block creation
-> modifies. Once the new extent buffer is allocated, it allows creation of
-> pending block groups to happen again.
-> 
-> This change depends on a recent patch from Josef which is not yet in
-> Linus' tree, named "btrfs: make sure we create all new block groups" in
-> order to avoid occasional warnings at btrfs_trans_release_chunk_metadata().
+On Wed, Oct 17, 2018 at 02:56:04PM +0800, Qu Wenruo wrote:
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -7261,6 +7261,115 @@ struct find_free_extent_ctl {
+>  	u64 found_offset;
+>  };
+>  
+> +
 
-Thanks for mentioning it, the referenced patch has been in misc-next and
-is scheduled for 4.20 so your patch will be added too.
+No extra newlines.
+
+> +/*
+> + * Helper function for find_free_extent().
+> + *
+> + * Return -ENOENT to inform caller that we need fallback to unclustered mode.
+> + * Return -EAGAIN to inform caller that we need to re-search this block group
+> + * Return >0 to inform caller that we find nothing
+> + * Return 0 means we have found a location and set ffe_ctl->found_offset.
+> + */
+> +static int find_free_extent_clustered(struct btrfs_block_group_cache *bg,
+> +		struct btrfs_free_cluster *last_ptr,
+> +		struct find_free_extent_ctl *ffe_ctl,
+> +		struct btrfs_block_group_cache **cluster_bg_ret)
+> +{
+> +	struct btrfs_fs_info *fs_info = bg->fs_info;
+> +	struct btrfs_block_group_cache *cluster_bg;
+> +	u64 aligned_cluster;
+> +	u64 offset;
+> +	int ret;
+> +
+> +	cluster_bg = btrfs_lock_cluster(bg, last_ptr, ffe_ctl->delalloc);
+> +	if (!cluster_bg)
+> +		goto refill_cluster;
+> +	if (cluster_bg != bg && (cluster_bg->ro ||
+> +	    !block_group_bits(cluster_bg, ffe_ctl->flags)))
+> +		goto release_cluster;
+> +
+> +	offset = btrfs_alloc_from_cluster(cluster_bg, last_ptr,
+> +			ffe_ctl->num_bytes, cluster_bg->key.objectid,
+> +			&ffe_ctl->max_extent_size);
+> +	if (offset) {
+> +		/* we have a block, we're done */
+> +		spin_unlock(&last_ptr->refill_lock);
+> +		trace_btrfs_reserve_extent_cluster(cluster_bg,
+> +				ffe_ctl->search_start, ffe_ctl->num_bytes);
+> +		*cluster_bg_ret = cluster_bg;
+> +		ffe_ctl->found_offset = offset;
+> +		return 0;
+> +	}
+> +	WARN_ON(last_ptr->block_group != cluster_bg);
+> +release_cluster:
+> +	/* If we are on LOOP_NO_EMPTY_SIZE, we can't set up a new clusters, so
+
+If you move or update comment that does not follow our preferred style,
+please fix it.
+
+I'll fix both and maybe more that I find while committing the patches.
+
+> +	 * lets just skip it and let the allocator find whatever block it can
+> +	 * find. If we reach this point, we will have tried the cluster
+> +	 * allocator plenty of times and not have found anything, so we are
+> +	 * likely way too fragmented for the clustering stuff to find anything.
+> +	 *
+> +	 * However, if the cluster is taken from the current block group,
+> +	 * release the cluster first, so that we stand a better chance of
+> +	 * succeeding in the unclustered allocation.
+> +	 */

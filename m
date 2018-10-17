@@ -6,32 +6,32 @@ X-Spam-Status: No, score=-0.5 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
 	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4B458ECDE32
-	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Oct 2018 08:16:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 37354ECDE30
+	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Oct 2018 08:17:46 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 0CF602151D
-	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Oct 2018 08:16:15 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 0CF602151D
+	by mail.kernel.org (Postfix) with ESMTP id F1FB221526
+	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Oct 2018 08:17:45 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org F1FB221526
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=web.de
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727181AbeJQQKp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 17 Oct 2018 12:10:45 -0400
-Received: from smtprelay04.ispgateway.de ([80.67.31.31]:28508 "EHLO
-        smtprelay04.ispgateway.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726967AbeJQQKp (ORCPT
+        id S1727062AbeJQQMQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 17 Oct 2018 12:12:16 -0400
+Received: from smtprelay05.ispgateway.de ([80.67.31.94]:13336 "EHLO
+        smtprelay05.ispgateway.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727008AbeJQQMQ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 17 Oct 2018 12:10:45 -0400
-X-Greylist: delayed 1063 seconds by postgrey-1.27 at vger.kernel.org; Wed, 17 Oct 2018 12:10:44 EDT
+        Wed, 17 Oct 2018 12:12:16 -0400
 Received: from [78.43.137.104] (helo=Michaels-MacBook-Pro-3.local)
-        by smtprelay04.ispgateway.de with esmtpsa (TLSv1.2:ECDHE-RSA-AES128-GCM-SHA256:128)
+        by smtprelay05.ispgateway.de with esmtpsa (TLSv1.2:ECDHE-RSA-AES128-GCM-SHA256:128)
         (Exim 4.90_1)
         (envelope-from <michael_post@web.de>)
-        id 1gCgiu-0000yj-26
-        for linux-btrfs@vger.kernel.org; Wed, 17 Oct 2018 09:58:32 +0200
+        id 1gCh1R-0002Rs-Go
+        for linux-btrfs@vger.kernel.org; Wed, 17 Oct 2018 10:17:41 +0200
+References: <9996625e-df27-ab14-8192-5b28ac4ffba7@web.de>
+Subject: Urgent: Need BTRFS-Expert
 To:     linux-btrfs@vger.kernel.org
 From:   Michael Post <michael_post@web.de>
-Subject: Urgent: Need BTRFS-Expert
 Openpgp: preference=signencrypt
 Autocrypt: addr=michael_post@web.de; prefer-encrypt=mutual; keydata=
  xsBNBFHnksUBCACvM/mCgOrWiJ2rzvjm6t4hJtJ9UQYso+Hb7zvy7cVtfDcQA7Bm3JfGNwNW
@@ -57,11 +57,13 @@ Autocrypt: addr=michael_post@web.de; prefer-encrypt=mutual; keydata=
  0aniHuNrWykrUagNJPeAb3RvNTX4e+X7P+LxlVB7gqBgUUkM0EpPS6Vq5r7Pb2Z9shQw22PP
  tVPSS4Bie8tVfyvussJEw5lndUPFjAMLX91Uyju1HbvvUvZM3qxJrW8ADR04nltwdtIY+VD6
  y8uexxux4zg=
-Message-ID: <9996625e-df27-ab14-8192-5b28ac4ffba7@web.de>
-Date:   Wed, 17 Oct 2018 09:58:31 +0200
+X-Forwarded-Message-Id: <9996625e-df27-ab14-8192-5b28ac4ffba7@web.de>
+Message-ID: <40cd768b-7842-2888-bad9-64db6466d8c2@web.de>
+Date:   Wed, 17 Oct 2018 10:17:41 +0200
 User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.13; rv:60.0)
  Gecko/20100101 Thunderbird/60.2.1
 MIME-Version: 1.0
+In-Reply-To: <9996625e-df27-ab14-8192-5b28ac4ffba7@web.de>
 Content-Type: text/plain; charset=utf-8
 Content-Transfer-Encoding: 7bit
 X-Df-Sender: bXlfbWljaGFlbHBvc3RAcHVyZW1hdGljLmRl
@@ -74,7 +76,8 @@ Hello together,
 
 i need a BTRFS-Expert for remote support.
 
-Anyone who can assist me?
+Anyone who can assist me via Skype or teamviewer?
+I will pay for it.
 
 Please let me know,
 

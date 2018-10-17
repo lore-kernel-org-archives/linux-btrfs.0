@@ -2,92 +2,97 @@ Return-Path: <SRS0=tjhn=M5=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.5 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
-	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT autolearn=unavailable
+X-Spam-Status: No, score=-0.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 53596ECDE30
-	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Oct 2018 09:14:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6E734ECDE32
+	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Oct 2018 09:15:50 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 2420321523
-	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Oct 2018 09:14:13 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 2420321523
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=wanadoo.fr
+	by mail.kernel.org (Postfix) with ESMTP id 193F721523
+	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Oct 2018 09:15:50 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="vghqIsqY"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 193F721523
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727235AbeJQRIx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 17 Oct 2018 13:08:53 -0400
-Received: from smtp12.smtpout.orange.fr ([80.12.242.134]:42864 "EHLO
-        smtp.smtpout.orange.fr" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726964AbeJQRIx (ORCPT
+        id S1727008AbeJQRKf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 17 Oct 2018 13:10:35 -0400
+Received: from mail-lf1-f52.google.com ([209.85.167.52]:42238 "EHLO
+        mail-lf1-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726964AbeJQRKf (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 17 Oct 2018 13:08:53 -0400
-Received: from ubuntu-CJ.clients.t30.sncf.fr ([109.190.253.13])
-        by mwinf5d23 with ME
-        id oZE01y00A0J6jfR03ZE0HA; Wed, 17 Oct 2018 11:14:05 +0200
-X-ME-Helo: ubuntu-CJ.clients.t30.sncf.fr
-X-ME-Auth: Y2hyaXN0b3BoZS5qYWlsbGV0QHdhbmFkb28uZnI=
-X-ME-Date: Wed, 17 Oct 2018 11:14:05 +0200
-X-ME-IP: 109.190.253.13
-From:   Christophe JAILLET <christophe.jaillet@wanadoo.fr>
-To:     clm@fb.com, jbacik@fb.com, dsterba@suse.com
-Cc:     linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-        kernel-janitors@vger.kernel.org,
-        Christophe JAILLET <christophe.jaillet@wanadoo.fr>
-Subject: [PATCH] btrfs: Fix the return value in case of error in 'btrfs_mark_extent_written()'
-Date:   Wed, 17 Oct 2018 11:13:59 +0200
-Message-Id: <20181017091359.3763-1-christophe.jaillet@wanadoo.fr>
-X-Mailer: git-send-email 2.17.1
+        Wed, 17 Oct 2018 13:10:35 -0400
+Received: by mail-lf1-f52.google.com with SMTP id s10-v6so19195705lfc.9
+        for <linux-btrfs@vger.kernel.org>; Wed, 17 Oct 2018 02:15:46 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=date:from:to:subject:message-id:in-reply-to:references:mime-version
+         :content-transfer-encoding;
+        bh=pEr5On5t0wAUqHI2KrCUIVyM2jWo9pI4qIpErMTi94E=;
+        b=vghqIsqYD3nfOIUSadgDAn3VGQBImTCWMe0Cylc0a3S2Be/ftUXIcTd+XuJV5mg6j3
+         u1ko+7m9F2VzwY/e8cIEGyKg3P2wnDJ0jNjWyoBRfvsdkK72lAn1BGHIOFHi44Qd5fpl
+         yKo8BZiA5ZUtDJddcBnAWDQc7IFw+wzzx1+3u3Qy4dLYC7AIsSrHTnGF1HHVejLBnCxS
+         GDAF524JGPZzbcL/tBhcRcw+LET0nknDpDMk+JYVjZrOgCaGvuGu04Htb3yk54/aJ4Hd
+         lH9JIxTEI4IdaLfqj3ngxcZX0Xg2FannqweE+C5LjV0/ByB8Rz4B8+QncsvooT82e3Tz
+         HdXg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:date:from:to:subject:message-id:in-reply-to
+         :references:mime-version:content-transfer-encoding;
+        bh=pEr5On5t0wAUqHI2KrCUIVyM2jWo9pI4qIpErMTi94E=;
+        b=Y6oddOLYESDU6Wgj4ld7KSoToZCM5SVfgLbZZJS7HdIyw+oWRHy2UpPYClvjnlLhJX
+         XfKU9/RQbVq5ktJ3gxNCHJmJEwreQ6P1gr38ys4ngSkSyt+Hex6owtDN3tMU3Sxg7c7o
+         IvcpvW+Q/xmkAiPjN/FFlimbNq8IkGJ7aV8WTt/yn5PezZtbKxZapAImnySQIgsT+spa
+         AfwkLOE2SH+ATU/Fa/FN1i20S7jprS83Rsm6YYA+xv+ZSwYrzP6cH53nRj9xWi2bw58J
+         JgIwY36dXU+nxYWBOJ02JrJ5a0hfbuBqXdHTqy68T7QEL894UuyJ4axfpeB22s3Lh9TK
+         wYuA==
+X-Gm-Message-State: ABuFfogeatqzJUGM34y3yKnF/wyR+hP81C7ixeyYnOLfDHPqebU84KBa
+        xmkZPNo5j4y3M1BlE/bkOTGV1dw6
+X-Google-Smtp-Source: ACcGV62s8Sl4wgHC4sZvGpsjfYcymadyGx5FdJ0n/a46NJ1IjZSuggKI0ILXgmKOInWVDcaOhCUFIQ==
+X-Received: by 2002:a19:d0c2:: with SMTP id h185-v6mr14837507lfg.81.1539767745743;
+        Wed, 17 Oct 2018 02:15:45 -0700 (PDT)
+Received: from erp07.git.ru ([94.79.3.84])
+        by smtp.gmail.com with ESMTPSA id m26-v6sm3670500lfc.30.2018.10.17.02.15.44
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1 cipher=AES128-SHA bits=128/128);
+        Wed, 17 Oct 2018 02:15:45 -0700 (PDT)
+Date:   Wed, 17 Oct 2018 12:15:44 +0300
+From:   Anton Shepelev <anton.txt@gmail.com>
+To:     linux-btrfs@vger.kernel.org
+Subject: Re: CRC mismatch
+Message-Id: <20181017121544.3d5e310a9266747d2367c871@gmail.com>
+In-Reply-To: <CAJCQCtRrqOf+AzkH+-z++GTx9+Mh0-wA5PqQB9g0kDhBBCJ2qQ@mail.gmail.com>
+References: <20181016183051.788a79297af47a9798a0c0e3@gmail.com>
+        <f2df5862-ae3e-5808-4f00-e153f604df60@gmail.com>
+        <CAJCQCtRrqOf+AzkH+-z++GTx9+Mh0-wA5PqQB9g0kDhBBCJ2qQ@mail.gmail.com>
+X-Mailer: Sylpheed 3.5.0 (GTK+ 2.24.23; i686-pc-mingw32)
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-We return 0 unconditionally in most of the error handling paths of
-'btrfs_mark_extent_written()'.
-However, 'ret' is set to some error codes in several error handling paths.
+[I accdientally replied to Chris instead of the mailing list]
+Chris Murphy:
 
-Return 'ret' instead to propagate the error code.
+>Is there still that O_DIRECT related "bug" (or more of a
+>limitation) if the guest is using cache=none on the block
+>device?
 
-Fixes: 9c8e63db1de9 ("Btrfs: kill BUG_ON()'s in btrfs_mark_extent_written")
-Signed-off-by: Christophe JAILLET <christophe.jaillet@wanadoo.fr>
----
-This patch proposal is purely speculative.
-I'm not sure at all that returning 'ret' is correct (but it looks like it
-is :) )
+I know nothing about it.
 
-What puzzles me is when 'ret' is set, 'btrfs_abort_transaction()' is also
-called.
-However, the only caller of 'btrfs_mark_extent_written()' (i.e.
-'btrfs_finish_ordered_io()') also calls 'btrfs_abort_transaction()' if an
-error is returned.
-So returning an error code here, would lead to a double call to this abort
-function.
+>Anton what virtual machine tech are you using?  qemu/kvm
+>managed with virt-manager?  The configuration affects host
+>behavior; but the negative effect manifests inside the
+>guest as corruption.  If I remember correctly.
 
-I'm usure of if it is correct and/or intented.
-If returning 'ret' is correct, should we also axe the 'btrfs_abort_transaction()'
-calls here, and leave the caller do the clean-up?
+This is a commericial system run inside VMWare.
 
-Before the commit in the Fixes tag, we were BUGing_ON in case of errror. So
-propagating the error was pointless.
----
- fs/btrfs/file.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 15b925142793..cac0bd744de3 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1374,7 +1374,7 @@ int btrfs_mark_extent_written(struct btrfs_trans_handle *trans,
- 	}
- out:
- 	btrfs_free_path(path);
--	return 0;
-+	return ret;
- }
- 
- /*
 -- 
-2.17.1
-
+()  ascii ribbon campaign - against html e-mail
+/\  http://preview.tinyurl.com/qcy6mjc [archived]

@@ -2,113 +2,114 @@ Return-Path: <SRS0=wNEY=M6=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.6 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_MUTT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-0.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 09120C5ACCC
-	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Oct 2018 05:03:56 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A2848ECDE43
+	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Oct 2018 06:16:22 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id AA10021473
-	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Oct 2018 05:03:55 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 6337821476
+	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Oct 2018 06:16:22 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="1h9bgnqg"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org AA10021473
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=oracle.com
+	dkim=pass (1024-bit key) header.d=zoho.com header.i=tprokott@zoho.com header.b="qQAcN+J1"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 6337821476
+Authentication-Results: mail.kernel.org; dmarc=fail (p=quarantine dis=none) header.from=zoho.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727388AbeJRNDC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 18 Oct 2018 09:03:02 -0400
-Received: from userp2130.oracle.com ([156.151.31.86]:48848 "EHLO
-        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727328AbeJRNDB (ORCPT
+        id S1727501AbeJROPo (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 18 Oct 2018 10:15:44 -0400
+Received: from sender-pp-092.zoho.com ([135.84.80.237]:25424 "EHLO
+        sender-pp-092.zoho.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727361AbeJROPn (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 18 Oct 2018 09:03:01 -0400
-Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
-        by userp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w9I53law033466;
-        Thu, 18 Oct 2018 05:03:47 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=date : from : to : cc
- : subject : message-id : references : mime-version : content-type :
- in-reply-to; s=corp-2018-07-02;
- bh=mpxG2duM7u1a6SnGJr5spt/2AqtqPqyhhAV70h8CMGc=;
- b=1h9bgnqg0x3HhFWonbBXlbR0e1/PJgSpryglEDaoX/d9mGDqxQOrHU9oVxELeY5XPOlJ
- K+SFBBx9ADKVHvQcoel0P+UP6+gLBRH8hkR2UpqIKm3+qWLxoLvnenDQbahhg2C6mOiq
- LcvQst54L8WpOtHIeenEtFfYYiAm8yEQfJ7LEZrVfpyi6qiA5hxFW16KcyHc91YCIUYe
- XMIsqpf/sYTt6GM1a8eO1fWS8ZhmKrsedzg95xJCVDm1mYngzpMsrP1CcviCi+2gHNim
- qZ+MUogsVyNa3JpIUo45r4jf9UbZ7IK26X65dJJQ2QS5pM7RL/NLHRa2nd5hKOdnk+Xo +A== 
-Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
-        by userp2130.oracle.com with ESMTP id 2n384uceep-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Thu, 18 Oct 2018 05:03:47 +0000
-Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w9I53coR021557
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Thu, 18 Oct 2018 05:03:38 GMT
-Received: from abhmp0008.oracle.com (abhmp0008.oracle.com [141.146.116.14])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w9I53aLr013700;
-        Thu, 18 Oct 2018 05:03:37 GMT
-Received: from localhost (/67.169.218.210)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Wed, 17 Oct 2018 22:03:36 -0700
-Date:   Wed, 17 Oct 2018 22:03:34 -0700
-From:   "Darrick J. Wong" <darrick.wong@oracle.com>
-To:     Al Viro <viro@ZenIV.linux.org.uk>
-Cc:     david@fromorbit.com, sandeen@redhat.com, linux-nfs@vger.kernel.org,
-        linux-cifs@vger.kernel.org, Amir Goldstein <amir73il@gmail.com>,
-        linux-unionfs@vger.kernel.org, linux-xfs@vger.kernel.org,
-        linux-mm@kvack.org, linux-btrfs@vger.kernel.org,
-        linux-fsdevel@vger.kernel.org, Christoph Hellwig <hch@lst.de>,
-        ocfs2-devel@oss.oracle.com
-Subject: Re: [PATCH 09/29] vfs: combine the clone and dedupe into a single
- remap_file_range
-Message-ID: <20181018050334.GU28243@magnolia>
-References: <153981625504.5568.2708520119290577378.stgit@magnolia>
- <153981631706.5568.6473120432728396978.stgit@magnolia>
- <20181018004826.GB12386@ZenIV.linux.org.uk>
- <20181018044718.GT28243@magnolia>
- <20181018045429.GF32577@ZenIV.linux.org.uk>
+        Thu, 18 Oct 2018 10:15:43 -0400
+ARC-Seal: i=1; a=rsa-sha256; t=1539843378; cv=none; 
+        d=zoho.com; s=zohoarc; 
+        b=cjBghqP9f7SjFCiNNOo0hRBvDbdwX2AJBCRFzRBjSgCZYz9ly4Da5hhetDb4YJwnEXxIwOIyR/fa27BcHr+hAu26OLNp5z6l4WPxZnfFYoEmL575ZiiWzPJ8NJMVVeRw8+U6kT973P2/inZBC21xlF6+3SbKJ/5KTCIO/M8xaCg=
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=zoho.com; s=zohoarc; 
+        t=1539843378; h=Content-Type:Content-Transfer-Encoding:Date:From:In-Reply-To:MIME-Version:Message-ID:References:Subject:To:ARC-Authentication-Results; 
+        bh=oF7wfLLHBG5VD2JB19iSkl+54SmW4YBPYBqwoB53vd4=; 
+        b=N7pfDM36iDHkou8KyHQwhMqOg6B3biAuertmBOsV8+2lznupSUsf0jVbLDvmlKzL+LVV/a1HU1gLV61JJk29q4MXRVNGxYorJdUEX0QtHtrm871eiPItsB8X3lwQNlXdsbv/lY06GWrVMpWiO+u8YYay0Ev0xJ+QvBKePBnr9Tk=
+ARC-Authentication-Results: i=1; mx.zoho.com;
+        dkim=pass  header.i=zoho.com;
+        spf=pass  smtp.mailfrom=tprokott@zoho.com;
+        dmarc=pass header.from=<tprokott@zoho.com> header.from=<tprokott@zoho.com>
+DomainKey-Signature: a=rsa-sha1; q=dns; c=nofws; 
+  s=zapps768; d=zoho.com; 
+  h=date:from:to:message-id:in-reply-to:references:subject:mime-version:content-type:user-agent; 
+  b=GTgILvXr9v4MruVPH90WPBLovTdLBo3eSH3Kn98NORhQTjx5k+fZiid6osewpJTJsl86QRHPrwFC
+    radiEODrGfYgwdl8kKxK1fi1B6sCWf2SgXQsg1Ff/LFI4FT3Hyec  
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; t=1539843378;
+        s=default; d=zoho.com; i=tprokott@zoho.com;
+        h=Date:From:To:Message-ID:In-Reply-To:References:Subject:MIME-Version:Content-Type:Content-Transfer-Encoding;
+        l=2285; bh=oF7wfLLHBG5VD2JB19iSkl+54SmW4YBPYBqwoB53vd4=;
+        b=qQAcN+J1KNoXTTVujZxmxKzk7l1OdaVBrVQgF4YX1DZ5lSovbEMGvq7XZRfjcVN8
+        w67/EgX1cIek5NBp9VzwmTeTwvbyePJQeNL7QmSQnFZXcTmHM9i6iZlxNQg/xNmOVMf
+        A/z+KwLx/N8L06nuuQSMQsiW/y7iWTSXDuvf0yNQ=
+Received: from mail.zoho.com by mx.zohomail.com
+        with SMTP id 1539843376711390.8874159841138; Wed, 17 Oct 2018 23:16:16 -0700 (PDT)
+Received: from  [24.7.203.165] by mail.zoho.com
+        with HTTP;Wed, 17 Oct 2018 23:16:16 -0700 (PDT)
+Date:   Wed, 17 Oct 2018 23:16:16 -0700
+From:   Tony Prokott <tprokott@zoho.com>
+To:     "linux-btrfs" <linux-btrfs@vger.kernel.org>
+Message-ID: <16685d14644.eefe20a081666.8834845236508091976@zoho.com>
+In-Reply-To: <9655303c-d4e9-cdbd-6d8c-8c9db3f05246@gmx.com>
+References: <16682e5051a.ee83c20873105.8360554719511192350@zoho.com> <9655303c-d4e9-cdbd-6d8c-8c9db3f05246@gmx.com>
+Subject: Re: Conversion to btrfs raid1 profile on added ext device renders
+ some systems unable to boot into converted rootfs
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20181018045429.GF32577@ZenIV.linux.org.uk>
-User-Agent: Mutt/1.9.4 (2018-02-28)
-X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9049 signatures=668683
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=0 malwarescore=0
- phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=722
- adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.0.1-1807170000 definitions=main-1810180048
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 7bit
+X-Priority: Medium
+User-Agent: Zoho Mail
+X-Mailer: Zoho Mail
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Oct 18, 2018 at 05:54:29AM +0100, Al Viro wrote:
-> On Wed, Oct 17, 2018 at 09:47:18PM -0700, Darrick J. Wong wrote:
-> 
-> > > > +#define REMAP_FILE_DEDUP		(1 << 0)
-> > > > +
-> > > > +/*
-> > > > + * These flags should be taken care of by the implementation (possibly using
-> > > > + * vfs helpers) but can be ignored by the implementation.
-> > > > + */
-> > > > +#define REMAP_FILE_ADVISORY		(0)
-> > > 
-> > > ???
-> > 
-> > Sorry if this wasn't clear.  How about this?
-> > 
-> > /*
-> >  * These flags signal that the caller is ok with altering various aspects of
-> >  * the behavior of the remap operation.  The changes must be made by the
-> >  * implementation; the vfs remap helper functions can take advantage of them.
-> >  * Flags in this category exist to preserve the quirky behavior of the hoisted
-> >  * btrfs clone/dedupe ioctls.
-> >  */
-> 
-> Something like "currently we have no such flags, but some will appear
-> in subsequent commits", removed once such flags do appear, perhaps?
+ ---- On Wed, 17 Oct 2018 17:57:25 -0700 Qu Wenruo <quwenruo.btrfs@gmx.com> wrote ---- 
+...
+ > > But after chrooting to update-initramfs and cataloging resulting image content, usb_storage and uas were present under /lib/modules/xxx already, and failing systems still just busybox without a real rootfs rather than launch systemd; even tried kernel option "rootwait" which had no effect on access to ext storage; udev still seems not to have noticed the ext drives once busybox had control. 
+ >  
+ > Still looks like a initramfs problem other than btrfs problem. 
+ >  
+ > In the busybox environment, have you tried listing /dev to see if that 
+ > external device is found? 
 
-Done.
+agreed that initramfs smells bad, but it hadn't been a problem until btrfs mounts (external-raid) had to rely on the usb channel;
+in busybox, ext drives/partitions are all missing from /dev; can't tell why so, ahci and usb modules are loaded afaict
 
---D
+ > Since you have a busybox environment, have you checked if "btrfs" command lives in the initramfs? 
+
+yes btrfs command works from busybox
+
+ > IIRC at least you need the following things/abilities to boot: 
+ >  
+ > 1) usb and sata drivers 
+ >    Means you could see both devices in the busybox environment under /dev 
+ >  
+ > 2) "Btrfs" command 
+ >    Mostly for scan 
+ > Then you could try the following commands under busybox environment: 
+ > # btrfs device scan 
+ > # mount <device> <some temporary mount point> 
+
+"btrfs dev scan" runs but doesn't indicate recognizing any; since raid1 conversion, ext drives are required for any btrfs mounts to be seen whole.
+When manually trying to mount in busybox, it gives a similar error about missing external device by UUID_SUB
+
+ > If it works, it may mean you're missing "btrfs device scan" during boot 
+ > so kernel can't see all RAID1 disks for btrfs and failed to boot. 
+ >  
+ > Please refer to your distribution initramfs creation tool to see how to 
+ > add that scan. (Some distro has special hook for btrfs to handle such case). 
+
+may have to tweak the /etc/initramfs-tools/initramfs.conf or modules list; MODULES=dep setting might act better than MODULES=most
+will look into this further to see about contrasting block device modules between cindy and the others
+
+appreciate the timely response-
+TP
+

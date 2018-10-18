@@ -4,67 +4,67 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-8.8 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
 	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
-	version=3.4.0
+	SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CE5E4C67863
-	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Oct 2018 20:24:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9D161C67863
+	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Oct 2018 20:24:28 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 926D22098A
-	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Oct 2018 20:24:06 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 40A932145D
+	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Oct 2018 20:24:28 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="CsGd4MKY"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 926D22098A
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="Nn2z7qLS"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 40A932145D
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=toxicpanda.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726736AbeJSE0P (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 19 Oct 2018 00:26:15 -0400
-Received: from mail-qt1-f195.google.com ([209.85.160.195]:42630 "EHLO
-        mail-qt1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727465AbeJSE0O (ORCPT
+        id S1727430AbeJSE0L (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 19 Oct 2018 00:26:11 -0400
+Received: from mail-qt1-f194.google.com ([209.85.160.194]:45321 "EHLO
+        mail-qt1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726069AbeJSE0L (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 19 Oct 2018 00:26:14 -0400
-Received: by mail-qt1-f195.google.com with SMTP id j46-v6so35856991qtc.9
-        for <linux-btrfs@vger.kernel.org>; Thu, 18 Oct 2018 13:23:33 -0700 (PDT)
+        Fri, 19 Oct 2018 00:26:11 -0400
+Received: by mail-qt1-f194.google.com with SMTP id e10-v6so35854271qtq.12
+        for <linux-btrfs@vger.kernel.org>; Thu, 18 Oct 2018 13:23:29 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:subject:date:message-id:in-reply-to:references;
-        bh=fxF9egp/0MfNC6eP3oXuHL949t8miVwsCl5P35THCQ0=;
-        b=CsGd4MKY/m+BPmdLJs1XHbIfFvNHSiitKVVvPPLGWo5GU4tkWD2chfSUrV5zjUnnpd
-         MEUkQhixYy33qgfBuHB19UlLntUG7w/9YmUYulSdDJbj9IDIkEvv27avzNxO+ld+Rpcb
-         1ujI9o6Iwu5OcYN1l13rg0lrebrNiNCw/UqOPQOsCT68Lv0v1fdwV0hUAAYn6XNSfJ4N
-         P5pZU2FQGAX3Trf0a/N1E5HQlDnUmAPue33l0Pp0OwRsnHUU0XbNvmOCnCcNBJWK4HWB
-         z9TPDqwvl3zC3f308y+eCt9LAclba0uYOz3mN0EnOEzR/QNHs1iqquFfov2zw8VvRWqJ
-         po3Q==
+        bh=epHd1o6KPupVYmL3VXxvF5Z1JP8sYlPDk5pYju44IUA=;
+        b=Nn2z7qLS1B+jXFy6MBMwp+CrujTK5hWQIvWXvIKYiCXZBEkc+Zm/YxOCHqjRgPbkgc
+         Z5AQDLFvx3RGwu8BmWQ0eA9BPCqG+BAm/4iY6nHbEXbOOj7ye6iJ7/5B3/UwMyEM2iqu
+         YwmJilgDXnCqkZC02x0bJRYppB4B6XXhNt3u77hXDGrddoCsFYh5GgS32E5jmCnys8Gq
+         rSQpIiyg/e6UziyOF9ep6Ffc+zXMisEowv7yc+7Ekj9eotr2aypi2moJud9myU9KXYRe
+         awab9+FM2+bPs+nN+zwUVZbk2DEDVLgLFhAXxN2vXp1imeaEC8rt10xrJN51R6D5pbn8
+         H2oQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references;
-        bh=fxF9egp/0MfNC6eP3oXuHL949t8miVwsCl5P35THCQ0=;
-        b=GFxITkOG5e15+HmVoL2HU3KXD+kLUtwbkYdbzcyCAVyqH6Ssxwihu0zwWxDi8z9V7V
-         IlKAri6KxmSXeLVfPa301S2mITg5Qt1i38qobw/5H/PxF9UPlokDt2b4/divnb40yrX/
-         JBHTNum1CnOZ64Z8y8ENmKFqrOGwCo+Uce3UH37mhCk+2GEM054J1c3PGOwmwvYRWI4H
-         i9YkNmEf3UD2OyIvvkYJ43a78B2kKqcFrUVstnDQfftBn3Yvd50HMO7DHZ5GGs0DmtZq
-         2mVKSq2nnugPNDhsa1U9yvLgdH7Ibvfld9crqKts7KZagMuE7wF/AuihyK/Xp9Z0MTan
-         Jfbw==
-X-Gm-Message-State: ABuFfoj8hMCM4nkuPtCBdIAjL9VsKSmkYHnjej3P+BoLtVxNlseFPL5n
-        Qh9M2YhQOnmQZGv+K9WarWmmdQ==
-X-Google-Smtp-Source: ACcGV630Z4wH07uH115hll3vDXkYV06Zr9DVywG5L0C4yssKYm3wAfDGCW8PcK+V6OEPe9bJVZ2VLQ==
-X-Received: by 2002:aed:2791:: with SMTP id a17-v6mr30183020qtd.303.1539894212661;
-        Thu, 18 Oct 2018 13:23:32 -0700 (PDT)
+        bh=epHd1o6KPupVYmL3VXxvF5Z1JP8sYlPDk5pYju44IUA=;
+        b=mpz7L8HWrIh69GEDGZtXCQvUW9aOWiovow05PwxlTPEv058qwcmnd3o0rC4VQeeaex
+         uA926EA+YzGiv8nHPybJN7/uV5N7BiJX1S93E1NWgd86a7Aq5IzlWg4vHydKpRwcfv0+
+         FFnMMeumBN+UWf+ZFlb7fKySwrvG4JvhHKN8C3WTJrjyMkoMEm5U5wrxF3QFeC/9BKSB
+         VICRJMRu9hMmr0BysjKM01SO+EFe0BKkXl0hhAjTZ4IeLuXymGHJgg7kYf9Y+iFiVidK
+         xDbJPKDAKPjUNYBqTRPR4t/IDtLvueAiy8oPBN/xIObWhS/Z8q35zahDBhreKWL1X+Rx
+         b18Q==
+X-Gm-Message-State: ABuFfohrO3l6w+zr8Ue23SVbIQ8RulKlhdqQfYxwygqm4s6sMt6z6Fi3
+        wZKGV/Bo30nWKv5G6lbVafvssQ==
+X-Google-Smtp-Source: ACcGV60QhlEhA2u9OPmOUNshVmeMn661T3D0mucsYsbEhGwfAv2ZgSqc3+Y6LjDLUpS+iIeky1agow==
+X-Received: by 2002:a0c:b484:: with SMTP id c4mr11910024qve.245.1539894209082;
+        Thu, 18 Oct 2018 13:23:29 -0700 (PDT)
 Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id n3-v6sm13614949qkc.48.2018.10.18.13.23.31
+        by smtp.gmail.com with ESMTPSA id l43-v6sm17526410qtc.80.2018.10.18.13.23.27
         (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
-        Thu, 18 Oct 2018 13:23:31 -0700 (PDT)
+        Thu, 18 Oct 2018 13:23:28 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     kernel-team@fb.com, hannes@cmpxchg.org,
         linux-kernel@vger.kernel.org, tj@kernel.org, david@fromorbit.com,
         akpm@linux-foundation.org, linux-fsdevel@vger.kernel.org,
         linux-btrfs@vger.kernel.org, riel@fb.com, linux-mm@kvack.org
-Subject: [PATCH 3/7] mm: drop the mmap_sem in all read fault cases
-Date:   Thu, 18 Oct 2018 16:23:14 -0400
-Message-Id: <20181018202318.9131-4-josef@toxicpanda.com>
+Subject: [PATCH 1/7] mm: infrastructure for page fault page caching
+Date:   Thu, 18 Oct 2018 16:23:12 -0400
+Message-Id: <20181018202318.9131-2-josef@toxicpanda.com>
 X-Mailer: git-send-email 2.14.3
 In-Reply-To: <20181018202318.9131-1-josef@toxicpanda.com>
 References: <20181018202318.9131-1-josef@toxicpanda.com>
@@ -73,69 +73,299 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Johannes' patches didn't quite cover all of the IO cases that we need to
-drop the mmap_sem for, this patch covers the rest of them.
+We want to be able to cache the result of a previous loop of a page
+fault in the case that we use VM_FAULT_RETRY, so introduce
+handle_mm_fault_cacheable that will take a struct vm_fault directly, add
+a ->cached_page field to vm_fault, and add helpers to init/cleanup the
+struct vm_fault.
+
+I've converted x86, other arch's can follow suit if they so wish, it's
+relatively straightforward.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- mm/filemap.c | 11 +++++++++++
- 1 file changed, 11 insertions(+)
+ arch/x86/mm/fault.c |  6 +++-
+ include/linux/mm.h  | 31 +++++++++++++++++++++
+ mm/memory.c         | 79 ++++++++++++++++++++++++++++++++---------------------
+ 3 files changed, 84 insertions(+), 32 deletions(-)
 
-diff --git a/mm/filemap.c b/mm/filemap.c
-index 1ed35cd99b2c..65395ee132a0 100644
---- a/mm/filemap.c
-+++ b/mm/filemap.c
-@@ -2523,6 +2523,7 @@ vm_fault_t filemap_fault(struct vm_fault *vmf)
- 	int error;
- 	struct mm_struct *mm = vmf->vma->vm_mm;
- 	struct file *file = vmf->vma->vm_file;
-+	struct file *fpin = NULL;
- 	struct address_space *mapping = file->f_mapping;
- 	struct file_ra_state *ra = &file->f_ra;
- 	struct inode *inode = mapping->host;
-@@ -2610,11 +2611,15 @@ vm_fault_t filemap_fault(struct vm_fault *vmf)
- 	return ret | VM_FAULT_LOCKED;
- 
- no_cached_page:
-+	fpin = maybe_unlock_mmap_for_io(vmf->vma, vmf->flags);
-+
- 	/*
- 	 * We're only likely to ever get here if MADV_RANDOM is in
- 	 * effect.
+diff --git a/arch/x86/mm/fault.c b/arch/x86/mm/fault.c
+index 47bebfe6efa7..ef6e538c4931 100644
+--- a/arch/x86/mm/fault.c
++++ b/arch/x86/mm/fault.c
+@@ -1211,6 +1211,7 @@ static noinline void
+ __do_page_fault(struct pt_regs *regs, unsigned long error_code,
+ 		unsigned long address)
+ {
++	struct vm_fault vmf = {};
+ 	struct vm_area_struct *vma;
+ 	struct task_struct *tsk;
+ 	struct mm_struct *mm;
+@@ -1392,7 +1393,8 @@ __do_page_fault(struct pt_regs *regs, unsigned long error_code,
+ 	 * fault, so we read the pkey beforehand.
  	 */
- 	error = page_cache_read(file, offset, vmf->gfp_mask);
-+	if (fpin)
-+		goto out_retry;
+ 	pkey = vma_pkey(vma);
+-	fault = handle_mm_fault(vma, address, flags);
++	vm_fault_init(&vmf, vma, address, flags);
++	fault = handle_mm_fault_cacheable(&vmf);
+ 	major |= fault & VM_FAULT_MAJOR;
  
  	/*
- 	 * The page we want has now been added to the page cache.
-@@ -2634,6 +2639,8 @@ vm_fault_t filemap_fault(struct vm_fault *vmf)
- 	return VM_FAULT_SIGBUS;
+@@ -1408,6 +1410,7 @@ __do_page_fault(struct pt_regs *regs, unsigned long error_code,
+ 			if (!fatal_signal_pending(tsk))
+ 				goto retry;
+ 		}
++		vm_fault_cleanup(&vmf);
  
- page_not_uptodate:
-+	fpin = maybe_unlock_mmap_for_io(vmf->vma, vmf->flags);
+ 		/* User mode? Just return to handle the fatal exception */
+ 		if (flags & FAULT_FLAG_USER)
+@@ -1418,6 +1421,7 @@ __do_page_fault(struct pt_regs *regs, unsigned long error_code,
+ 		return;
+ 	}
+ 
++	vm_fault_cleanup(&vmf);
+ 	up_read(&mm->mmap_sem);
+ 	if (unlikely(fault & VM_FAULT_ERROR)) {
+ 		mm_fault_error(regs, error_code, address, &pkey, fault);
+diff --git a/include/linux/mm.h b/include/linux/mm.h
+index a61ebe8ad4ca..4a84ec976dfc 100644
+--- a/include/linux/mm.h
++++ b/include/linux/mm.h
+@@ -360,6 +360,12 @@ struct vm_fault {
+ 					 * is set (which is also implied by
+ 					 * VM_FAULT_ERROR).
+ 					 */
++	struct page *cached_page;	/* ->fault handlers that return
++					 * VM_FAULT_RETRY can store their
++					 * previous page here to be reused the
++					 * next time we loop through the fault
++					 * handler for faster lookup.
++					 */
+ 	/* These three entries are valid only while holding ptl lock */
+ 	pte_t *pte;			/* Pointer to pte entry matching
+ 					 * the 'address'. NULL if the page
+@@ -378,6 +384,16 @@ struct vm_fault {
+ 					 */
+ };
+ 
++static inline void vm_fault_init(struct vm_fault *vmf,
++				 struct vm_area_struct *vma,
++				 unsigned long address,
++				 unsigned int flags)
++{
++	vmf->vma = vma;
++	vmf->address = address;
++	vmf->flags = flags;
++}
 +
- 	/*
- 	 * Umm, take care of errors if the page isn't up-to-date.
- 	 * Try to re-read it _once_. We do this synchronously,
-@@ -2647,6 +2654,8 @@ vm_fault_t filemap_fault(struct vm_fault *vmf)
- 		if (!PageUptodate(page))
- 			error = -EIO;
- 	}
-+	if (fpin)
-+		goto out_retry;
- 	put_page(page);
+ /* page entry size for vm->huge_fault() */
+ enum page_entry_size {
+ 	PE_SIZE_PTE = 0,
+@@ -943,6 +959,14 @@ static inline void put_page(struct page *page)
+ 		__put_page(page);
+ }
  
- 	if (!error || error == AOP_TRUNCATED_PAGE)
-@@ -2665,6 +2674,8 @@ vm_fault_t filemap_fault(struct vm_fault *vmf)
++static inline void vm_fault_cleanup(struct vm_fault *vmf)
++{
++	if (vmf->cached_page) {
++		put_page(vmf->cached_page);
++		vmf->cached_page = NULL;
++	}
++}
++
+ #if defined(CONFIG_SPARSEMEM) && !defined(CONFIG_SPARSEMEM_VMEMMAP)
+ #define SECTION_IN_PAGE_FLAGS
+ #endif
+@@ -1405,6 +1429,7 @@ int invalidate_inode_page(struct page *page);
+ #ifdef CONFIG_MMU
+ extern vm_fault_t handle_mm_fault(struct vm_area_struct *vma,
+ 			unsigned long address, unsigned int flags);
++extern vm_fault_t handle_mm_fault_cacheable(struct vm_fault *vmf);
+ extern int fixup_user_fault(struct task_struct *tsk, struct mm_struct *mm,
+ 			    unsigned long address, unsigned int fault_flags,
+ 			    bool *unlocked);
+@@ -1420,6 +1445,12 @@ static inline vm_fault_t handle_mm_fault(struct vm_area_struct *vma,
+ 	BUG();
+ 	return VM_FAULT_SIGBUS;
+ }
++static inline vm_fault_t handle_mm_fault_cacheable(struct vm_fault *vmf)
++{
++	/* should never happen if there's no MMU */
++	BUG();
++	return VM_FAULT_SIGBUS;
++}
+ static inline int fixup_user_fault(struct task_struct *tsk,
+ 		struct mm_struct *mm, unsigned long address,
+ 		unsigned int fault_flags, bool *unlocked)
+diff --git a/mm/memory.c b/mm/memory.c
+index c467102a5cbc..433075f722ea 100644
+--- a/mm/memory.c
++++ b/mm/memory.c
+@@ -4024,36 +4024,34 @@ static vm_fault_t handle_pte_fault(struct vm_fault *vmf)
+  * The mmap_sem may have been released depending on flags and our
+  * return value.  See filemap_fault() and __lock_page_or_retry().
+  */
+-static vm_fault_t __handle_mm_fault(struct vm_area_struct *vma,
+-		unsigned long address, unsigned int flags)
++static vm_fault_t __handle_mm_fault(struct vm_fault *vmf)
+ {
+-	struct vm_fault vmf = {
+-		.vma = vma,
+-		.address = address & PAGE_MASK,
+-		.flags = flags,
+-		.pgoff = linear_page_index(vma, address),
+-		.gfp_mask = __get_fault_gfp_mask(vma),
+-	};
+-	unsigned int dirty = flags & FAULT_FLAG_WRITE;
++	struct vm_area_struct *vma = vmf->vma;
++	unsigned long address = vmf->address;
++	unsigned int dirty = vmf->flags & FAULT_FLAG_WRITE;
+ 	struct mm_struct *mm = vma->vm_mm;
+ 	pgd_t *pgd;
+ 	p4d_t *p4d;
+ 	vm_fault_t ret;
+ 
++	vmf->address = address & PAGE_MASK;
++	vmf->pgoff = linear_page_index(vma, address);
++	vmf->gfp_mask = __get_fault_gfp_mask(vma);
++
+ 	pgd = pgd_offset(mm, address);
+ 	p4d = p4d_alloc(mm, pgd, address);
+ 	if (!p4d)
+ 		return VM_FAULT_OOM;
+ 
+-	vmf.pud = pud_alloc(mm, p4d, address);
+-	if (!vmf.pud)
++	vmf->pud = pud_alloc(mm, p4d, address);
++	if (!vmf->pud)
+ 		return VM_FAULT_OOM;
+-	if (pud_none(*vmf.pud) && transparent_hugepage_enabled(vma)) {
+-		ret = create_huge_pud(&vmf);
++	if (pud_none(*vmf->pud) && transparent_hugepage_enabled(vma)) {
++		ret = create_huge_pud(vmf);
+ 		if (!(ret & VM_FAULT_FALLBACK))
+ 			return ret;
+ 	} else {
+-		pud_t orig_pud = *vmf.pud;
++		pud_t orig_pud = *vmf->pud;
+ 
+ 		barrier();
+ 		if (pud_trans_huge(orig_pud) || pud_devmap(orig_pud)) {
+@@ -4061,50 +4059,50 @@ static vm_fault_t __handle_mm_fault(struct vm_area_struct *vma,
+ 			/* NUMA case for anonymous PUDs would go here */
+ 
+ 			if (dirty && !pud_write(orig_pud)) {
+-				ret = wp_huge_pud(&vmf, orig_pud);
++				ret = wp_huge_pud(vmf, orig_pud);
+ 				if (!(ret & VM_FAULT_FALLBACK))
+ 					return ret;
+ 			} else {
+-				huge_pud_set_accessed(&vmf, orig_pud);
++				huge_pud_set_accessed(vmf, orig_pud);
+ 				return 0;
+ 			}
+ 		}
  	}
  
- out_retry:
-+	if (fpin)
-+		fput(fpin);
- 	if (page)
- 		put_page(page);
- 	return ret | VM_FAULT_RETRY;
+-	vmf.pmd = pmd_alloc(mm, vmf.pud, address);
+-	if (!vmf.pmd)
++	vmf->pmd = pmd_alloc(mm, vmf->pud, address);
++	if (!vmf->pmd)
+ 		return VM_FAULT_OOM;
+-	if (pmd_none(*vmf.pmd) && transparent_hugepage_enabled(vma)) {
+-		ret = create_huge_pmd(&vmf);
++	if (pmd_none(*vmf->pmd) && transparent_hugepage_enabled(vma)) {
++		ret = create_huge_pmd(vmf);
+ 		if (!(ret & VM_FAULT_FALLBACK))
+ 			return ret;
+ 	} else {
+-		pmd_t orig_pmd = *vmf.pmd;
++		pmd_t orig_pmd = *vmf->pmd;
+ 
+ 		barrier();
+ 		if (unlikely(is_swap_pmd(orig_pmd))) {
+ 			VM_BUG_ON(thp_migration_supported() &&
+ 					  !is_pmd_migration_entry(orig_pmd));
+ 			if (is_pmd_migration_entry(orig_pmd))
+-				pmd_migration_entry_wait(mm, vmf.pmd);
++				pmd_migration_entry_wait(mm, vmf->pmd);
+ 			return 0;
+ 		}
+ 		if (pmd_trans_huge(orig_pmd) || pmd_devmap(orig_pmd)) {
+ 			if (pmd_protnone(orig_pmd) && vma_is_accessible(vma))
+-				return do_huge_pmd_numa_page(&vmf, orig_pmd);
++				return do_huge_pmd_numa_page(vmf, orig_pmd);
+ 
+ 			if (dirty && !pmd_write(orig_pmd)) {
+-				ret = wp_huge_pmd(&vmf, orig_pmd);
++				ret = wp_huge_pmd(vmf, orig_pmd);
+ 				if (!(ret & VM_FAULT_FALLBACK))
+ 					return ret;
+ 			} else {
+-				huge_pmd_set_accessed(&vmf, orig_pmd);
++				huge_pmd_set_accessed(vmf, orig_pmd);
+ 				return 0;
+ 			}
+ 		}
+ 	}
+ 
+-	return handle_pte_fault(&vmf);
++	return handle_pte_fault(vmf);
+ }
+ 
+ /*
+@@ -4113,9 +4111,10 @@ static vm_fault_t __handle_mm_fault(struct vm_area_struct *vma,
+  * The mmap_sem may have been released depending on flags and our
+  * return value.  See filemap_fault() and __lock_page_or_retry().
+  */
+-vm_fault_t handle_mm_fault(struct vm_area_struct *vma, unsigned long address,
+-		unsigned int flags)
++static vm_fault_t do_handle_mm_fault(struct vm_fault *vmf)
+ {
++	struct vm_area_struct *vma = vmf->vma;
++	unsigned int flags = vmf->flags;
+ 	vm_fault_t ret;
+ 
+ 	__set_current_state(TASK_RUNNING);
+@@ -4139,9 +4138,9 @@ vm_fault_t handle_mm_fault(struct vm_area_struct *vma, unsigned long address,
+ 		mem_cgroup_enter_user_fault();
+ 
+ 	if (unlikely(is_vm_hugetlb_page(vma)))
+-		ret = hugetlb_fault(vma->vm_mm, vma, address, flags);
++		ret = hugetlb_fault(vma->vm_mm, vma, vmf->address, flags);
+ 	else
+-		ret = __handle_mm_fault(vma, address, flags);
++		ret = __handle_mm_fault(vmf);
+ 
+ 	if (flags & FAULT_FLAG_USER) {
+ 		mem_cgroup_exit_user_fault();
+@@ -4157,8 +4156,26 @@ vm_fault_t handle_mm_fault(struct vm_area_struct *vma, unsigned long address,
+ 
+ 	return ret;
+ }
++
++vm_fault_t handle_mm_fault(struct vm_area_struct *vma, unsigned long address,
++			   unsigned int flags)
++{
++	struct vm_fault vmf = {};
++	vm_fault_t ret;
++
++	vm_fault_init(&vmf, vma, address, flags);
++	ret = do_handle_mm_fault(&vmf);
++	vm_fault_cleanup(&vmf);
++	return ret;
++}
+ EXPORT_SYMBOL_GPL(handle_mm_fault);
+ 
++vm_fault_t handle_mm_fault_cacheable(struct vm_fault *vmf)
++{
++	return do_handle_mm_fault(vmf);
++}
++EXPORT_SYMBOL_GPL(handle_mm_fault_cacheable);
++
+ #ifndef __PAGETABLE_P4D_FOLDED
+ /*
+  * Allocate p4d page table.
 -- 
 2.14.3
 

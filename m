@@ -6,30 +6,30 @@ X-Spam-Status: No, score=-8.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 27875ECDE43
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 918AAC5ACCC
 	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Oct 2018 11:17:41 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id EC6052087A
-	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Oct 2018 11:17:40 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org EC6052087A
+	by mail.kernel.org (Postfix) with ESMTP id 570212087A
+	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Oct 2018 11:17:41 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 570212087A
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727705AbeJRTSL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 18 Oct 2018 15:18:11 -0400
-Received: from mx2.suse.de ([195.135.220.15]:42886 "EHLO mx1.suse.de"
+        id S1727776AbeJRTSM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 18 Oct 2018 15:18:12 -0400
+Received: from mx2.suse.de ([195.135.220.15]:42894 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727461AbeJRTSL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1727470AbeJRTSL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Thu, 18 Oct 2018 15:18:11 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 15266AD18
-        for <linux-btrfs@vger.kernel.org>; Thu, 18 Oct 2018 11:17:37 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 9DF5AAE66
+        for <linux-btrfs@vger.kernel.org>; Thu, 18 Oct 2018 11:17:38 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/6] btrfs: qgroup: Allow btrfs_qgroup_extent_record::old_roots unpopulated at insert time
-Date:   Thu, 18 Oct 2018 19:17:24 +0800
-Message-Id: <20181018111729.11128-2-wqu@suse.com>
+Subject: [PATCH 2/6] btrfs: relocation: Commit transaction before dropping btrfs_root::reloc_root
+Date:   Thu, 18 Oct 2018 19:17:25 +0800
+Message-Id: <20181018111729.11128-3-wqu@suse.com>
 X-Mailer: git-send-email 2.19.1
 In-Reply-To: <20181018111729.11128-1-wqu@suse.com>
 References: <20181018111729.11128-1-wqu@suse.com>
@@ -40,123 +40,52 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Commit fb235dc06fac ("btrfs: qgroup: Move half of the qgroup accounting
-time out of commit trans") makes btrfs_qgroup_extent_record::old_roots
-populated at insert time.
+Currently only relocation code cares about btrfs_root::reloc_root, and
+they have the method to sync btrfs_root::reloc_root without screwing
+things up.
 
-It's OK for most cases as btrfs_qgroup_extent_record is inserted at
-delayed ref head insert time, which has a less restrict lock context.
+However qgroup code doesn't really have the ability to keep
+btrfs_root::reloc_root reliable.
 
-But later delayed subtree scan optimization will need to insert
-btrfs_qgroup_extent_record with path write lock hold, where triggering a
-backref walk can easily lead to dead lock.
+Currently if someone outside of relocation code want to access
+btrfs_root::reloc_root, it's highly possible some race could make
+@reloc_root unreliable.
 
-So this patch introduces two new internal functions,
-qgroup_trace_extent() and qgroup_trace_leaf_items(), with new @exec_post
-parameter to info whether we need to initialize the backref walk right
-now.
+Thankfully, we only need to make qgroup code access
+btrfs_root::reloc_root, and due to the nature of qgroup, it only needs
+it before committing a transaction.
 
-Also modifies btrfs_qgroup_account_extents() not to trigger kernel
-warning.
+So alter the timming of transaction commit for merge_reloc_root(). For
+every successful root merge, commit transaction before dropping
+btrfs_root::reloc_root, making qgroup code happy with it.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/qgroup.c | 51 +++++++++++++++++++++++++++++++++++++----------
- 1 file changed, 41 insertions(+), 10 deletions(-)
+ fs/btrfs/relocation.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
 
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 678e07c11bc6..aaa3657266b0 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -1580,8 +1580,16 @@ int btrfs_qgroup_trace_extent_post(struct btrfs_fs_info *fs_info,
- 	return 0;
- }
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 44efde9886fc..a8b62323f60b 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -2251,6 +2251,17 @@ static noinline_for_stack int merge_reloc_root(struct reloc_control *rc,
+ 	btrfs_free_path(path);
  
--int btrfs_qgroup_trace_extent(struct btrfs_trans_handle *trans, u64 bytenr,
--			      u64 num_bytes, gfp_t gfp_flag)
-+/*
-+ * Insert qgroup extent record for extent at @bytenr, @num_bytes.
-+ *
-+ * @bytenr:	bytenr of the extent
-+ * @num_bytes:	length of the extent
-+ * @exec_post:	whether to exec the post insert work
-+ * 		will init backref walk if set to true.
-+ */
-+static int qgroup_trace_extent(struct btrfs_trans_handle *trans, u64 bytenr,
-+			       u64 num_bytes, gfp_t gfp_flag, bool exec_post)
- {
- 	struct btrfs_fs_info *fs_info = trans->fs_info;
- 	struct btrfs_qgroup_extent_record *record;
-@@ -1607,11 +1615,27 @@ int btrfs_qgroup_trace_extent(struct btrfs_trans_handle *trans, u64 bytenr,
- 		kfree(record);
- 		return 0;
- 	}
--	return btrfs_qgroup_trace_extent_post(fs_info, record);
-+	if (exec_post)
-+		return btrfs_qgroup_trace_extent_post(fs_info, record);
-+	return 0;
- }
- 
--int btrfs_qgroup_trace_leaf_items(struct btrfs_trans_handle *trans,
--				  struct extent_buffer *eb)
-+int btrfs_qgroup_trace_extent(struct btrfs_trans_handle *trans, u64 bytenr,
-+			      u64 num_bytes, gfp_t gfp_flag)
-+{
-+	return qgroup_trace_extent(trans, bytenr, num_bytes, gfp_flag, true);
-+}
-+
-+/*
-+ * Insert qgroup extent record for leaf and all file extents in it
-+ *
-+ * @bytenr:	bytenr of the leaf
-+ * @num_bytes:	length of the leaf
-+ * @exec_post:	whether to exec the post insert work
-+ * 		will init backref walk if set to true.
-+ */
-+static int qgroup_trace_leaf_items(struct btrfs_trans_handle *trans,
-+				   struct extent_buffer *eb, bool exec_post)
- {
- 	struct btrfs_fs_info *fs_info = trans->fs_info;
- 	int nr = btrfs_header_nritems(eb);
-@@ -1643,8 +1667,8 @@ int btrfs_qgroup_trace_leaf_items(struct btrfs_trans_handle *trans,
- 
- 		num_bytes = btrfs_file_extent_disk_num_bytes(eb, fi);
- 
--		ret = btrfs_qgroup_trace_extent(trans, bytenr, num_bytes,
--						GFP_NOFS);
-+		ret = qgroup_trace_extent(trans, bytenr, num_bytes, GFP_NOFS,
-+					  exec_post);
- 		if (ret)
- 			return ret;
- 	}
-@@ -1652,6 +1676,12 @@ int btrfs_qgroup_trace_leaf_items(struct btrfs_trans_handle *trans,
- 	return 0;
- }
- 
-+int btrfs_qgroup_trace_leaf_items(struct btrfs_trans_handle *trans,
-+				  struct extent_buffer *eb)
-+{
-+	return qgroup_trace_leaf_items(trans, eb, true);
-+}
-+
- /*
-  * Walk up the tree from the bottom, freeing leaves and any interior
-  * nodes which have had all slots visited. If a node (leaf or
-@@ -2521,10 +2551,11 @@ int btrfs_qgroup_account_extents(struct btrfs_trans_handle *trans)
- 
- 		if (!ret) {
- 			/*
--			 * Old roots should be searched when inserting qgroup
--			 * extent record
-+			 * Most record->old_roots should have been populated at
-+			 * insert time. Although we still allow some records
-+			 * without old_roots populated.
- 			 */
--			if (WARN_ON(!record->old_roots)) {
-+			if (!record->old_roots) {
- 				/* Search commit root to find old_roots */
- 				ret = btrfs_find_all_roots(NULL, fs_info,
- 						record->bytenr, 0,
+ 	if (err == 0) {
++		/*
++		 * Commit current trans before we reset root->reloc_root
++		 * pointer, since qgroup code still needs root->reloc_root
++		 * to trace post-swap CoWs until we commit transaction.
++		 */
++		err = btrfs_commit_transaction(trans);
++		if (err < 0)
++			return err;
++		trans = btrfs_start_transaction(root, 0);
++		if (IS_ERR(trans))
++			return PTR_ERR(trans);
+ 		memset(&root_item->drop_progress, 0,
+ 		       sizeof(root_item->drop_progress));
+ 		root_item->drop_level = 0;
 -- 
 2.19.1
 

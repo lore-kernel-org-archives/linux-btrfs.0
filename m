@@ -2,104 +2,180 @@ Return-Path: <SRS0=wNEY=M6=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.6 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0C5B5ECDE43
-	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Oct 2018 18:02:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2B788ECDE43
+	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Oct 2018 18:14:47 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B067521480
-	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Oct 2018 18:02:13 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id E7C61204FD
+	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Oct 2018 18:14:46 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="1yQ/kDoJ"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org B067521480
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=colorremedies.com
+	dkim=pass (2048-bit key) header.d=libero.it header.i=@libero.it header.b="g/kWlKH9"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org E7C61204FD
+Authentication-Results: mail.kernel.org; dmarc=fail (p=quarantine dis=none) header.from=libero.it
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729725AbeJSCES (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 18 Oct 2018 22:04:18 -0400
-Received: from mail-lj1-f173.google.com ([209.85.208.173]:36285 "EHLO
-        mail-lj1-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1729306AbeJSCES (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 18 Oct 2018 22:04:18 -0400
-Received: by mail-lj1-f173.google.com with SMTP id p89-v6so28566019ljb.3
-        for <linux-btrfs@vger.kernel.org>; Thu, 18 Oct 2018 11:02:11 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
-        h=mime-version:sender:in-reply-to:references:from:date:message-id
-         :subject:to:cc;
-        bh=ckgPgKVHkj1ev1s2gxA+NZJ6OhARBPqpZ6mSzc6RHfk=;
-        b=1yQ/kDoJtyR1Fn2OX8j8IzTWOSpll6RAV9LvbOpptTIrJpcnHElVS9HqxGm5AQIcqe
-         emyuoR4HJ5IO3kK/lhJGkQsHYPUkiNDgaPVTEFGEyWrjqmcjvZbxQWV4tfJndMXIadYj
-         Mw3J66teoy+jd4lYINFBJtKmF2R/mIZVX8zpfqx75AvIDEz4Pc6yltQeqauLLqOVmDdY
-         8SxT6ynm/pwG1JI4xLcLLzv4bVLpT5IkFW8eK39ax9VcFrFXj0JS9IwnNCwwkkgRqgxI
-         a2cyFUaP3OkK3vEfF2SPQq1q4msQ+W3r9X53pkWUV4lgQzWihbdVKw2QCAgtzv0w07N5
-         A8TA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:sender:in-reply-to:references:from
-         :date:message-id:subject:to:cc;
-        bh=ckgPgKVHkj1ev1s2gxA+NZJ6OhARBPqpZ6mSzc6RHfk=;
-        b=Bt2NbJHrK+H/3SQWDl9znr2sxEWZcIk2YikPWi6+8+Qj3UVCFsm3AdlBPs4hsNgmox
-         YZDz66Oa5kcz28UF6a/jlT8BSU5sr20qkMJqPfzh7FrMV4dkltioXwySfxbiM/jupEsr
-         P/y+zCpYxHhZeQo7UtwiV+P2SwHGi33V3NtrqOwFiKlo4QI/G+cOwEC+gZzeT8p69VQS
-         s0LxWY6acz+4pFrm2Y0iy/hzTIGtw7KqH22/L4X1Oc66ePmM24M5UdQbem5CTOfB28Is
-         /aTzPfWNQEcYbuN9bXvY7ur9Q89Vu7IG6ozJuNC33B9AkasoesPmrnHA2aPe7+D1+ZG0
-         0RwQ==
-X-Gm-Message-State: ABuFfoh+WcT26QzF9quMiQVer9yjrhHSg+EstIV3iJ9bVqKCLAXDPfSW
-        1W/aJxPGlha9rHtvwv3KdOHzqm+NQAoQn/bAGyjVcw==
-X-Google-Smtp-Source: ACcGV61dVQJZB7OxjyjGKRSVFkQvPl9gdR29zTxH2+TkCq+jZK1afLbpkvqjpLZWleSW64vtotPemGEOUuS5nRhIPLg=
-X-Received: by 2002:a2e:a20a:: with SMTP id h10-v6mr20736504ljm.8.1539885730538;
- Thu, 18 Oct 2018 11:02:10 -0700 (PDT)
+        id S1728739AbeJSB67 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 18 Oct 2018 21:58:59 -0400
+Received: from smtp-34-i6.italiaonline.it ([213.209.14.34]:44872 "EHLO
+        libero.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726463AbeJSB67 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 18 Oct 2018 21:58:59 -0400
+Received: from venice.bhome ([94.38.16.140])
+        by smtp-34.iol.local with ESMTPA
+        id DCWVgs2H18KmnDCWYgOdVN; Thu, 18 Oct 2018 19:55:54 +0200
+x-libjamoibt: 1601
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=libero.it; s=s2014;
+        t=1539885354; bh=1emG1V12wB2MYi1b9SVurpKNgMWp+bRbTFT100nQPQQ=;
+        h=From:To:Cc:Subject:Date:In-Reply-To:References;
+        b=g/kWlKH9lIvVXfNmJ38d2+gSpOPodJQfwm71gyomaasrVin0RLLlky8RGazPs1WD0
+         4gpoaj6fJ6VEXfYbuTb4CwqtxVBuS5/CiqOtlwVqMR2oMc41e86aECUld3J4cd+Hy9
+         u6pLuRJTYdYct6es4Q6bt6WVIfsZPvS0iNHX/olhM2Mg80qikiuvEmi3w2HktYeeqR
+         wWFjkhhEzCN/pWeb5OVLQMrFRgxtXAz/hBevREMJKJArOt3oKbmMguSG/4f92Srvk9
+         C1vAzFUviULfSlDMHB7+ACk0uXhN0F1POq7/m9LGK4VK3PsKOmQ8SqixpuwmZY8HLm
+         DHipfyOnLKe6Q==
+X-CNFS-Analysis: v=2.3 cv=ZbLMyfdA c=1 sm=1 tr=0
+ a=nqgIlLay6LNLiZJCVl9G2Q==:117 a=nqgIlLay6LNLiZJCVl9G2Q==:17 a=yPCof4ZbAAAA:8
+ a=54DIDk4bsIWUoIzoLckA:9
+From:   Goffredo Baroncelli <kreijack@libero.it>
+To:     grub-devel@gnu.org
+Cc:     Daniel Kiper <dkiper@net-space.pl>, linux-btrfs@vger.kernel.org,
+        Goffredo Baroncelli <kreijack@inwind.it>
+Subject: [PATCH 6/9] btrfs: Refactor the code that read from disk
+Date:   Thu, 18 Oct 2018 19:55:38 +0200
+Message-Id: <20181018175541.9532-7-kreijack@libero.it>
+X-Mailer: git-send-email 2.19.1
+In-Reply-To: <20181018175541.9532-1-kreijack@libero.it>
+References: <20181018175541.9532-1-kreijack@libero.it>
 MIME-Version: 1.0
-Received: by 2002:ab3:1999:0:0:0:0:0 with HTTP; Thu, 18 Oct 2018 11:02:09
- -0700 (PDT)
-X-Originating-IP: [69.7.113.20]
-In-Reply-To: <d63839e6-6d76-2457-cbe5-7e5a60181d23@oracle.com>
-References: <CAJCQCtTPwQnzwkpk=4ZsZXfWTC7HymYETxp-9xUU_tsvOTW0ZQ@mail.gmail.com>
- <11171664-790c-40ff-3925-1c179ab8e74b@oracle.com> <CAJCQCtSfuLTsxXfEkmz59PrOJ3LrXmGNG+_NKS_LPk9dHTgkug@mail.gmail.com>
- <d63839e6-6d76-2457-cbe5-7e5a60181d23@oracle.com>
-From:   Chris Murphy <lists@colorremedies.com>
-Date:   Thu, 18 Oct 2018 12:02:09 -0600
-X-Google-Sender-Auth: PtGxoDpPv32xC2qGy7s4Y0wCaus
-Message-ID: <CAJCQCtTu0pjAY8k3L=YK0CCv7MvDepUBafMDqf1mBvJbNdFnkg@mail.gmail.com>
-Subject: Re: reproducible builds with btrfs seed feature
-To:     Anand Jain <anand.jain@oracle.com>
-Cc:     Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8bit
+X-CMAE-Envelope: MS4wfAFQAnepgIR3LhuFW2Fjl/FIaf3qkFj8u+brT0BLCHmZmfrQ0Is8/YzEiDOyDcOWLmOliFfBjP3hdPCkOTpNj9t6ngE1Frezq815uyiL8zmlFfhWRiQM
+ 9XHOg4zC5DjSxFGgd4dYm+YZNumU9SeaMgBkP5cSqXz4i4vvunrcN5EYfG2rHBEh6+FLFpOJUbmkE0wiudJiTROxuf7NcquoA5tCTxokGuRBO0f/ynufzR+X
+ 5J+6qdpvHaoWib/vaCOHQFuippeJekSSWfz0NAOm7S4=
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Oct 16, 2018 at 10:08 PM, Anand Jain <anand.jain@oracle.com> wrote:
+From: Goffredo Baroncelli <kreijack@inwind.it>
 
+Move the code in charge to read the data from disk into a separate
+function. This helps to separate the error handling logic (which depends on
+the different raid profiles) from the read from disk logic.
+Refactoring this code increases the general readability too.
 
->
->  So a possible solution for the reproducible builds:
->    usual mkfs.btrfs dev
->    Write the data
->    unmount; create btrfs-image with uuid/fsid/time sanitized; mark it as a
-> seed (RO).
->    check/verify the hash of the image.
+This is a preparatory patch, to help the adding of the RAID 5/6 recovery
+code.
 
-Gotcha. Generation/transid needs to be included in that list. Imagine
-a fast system vs a slow system. The slow system certainly will end up
-with with higher transid's for the latest completed transactions.
+Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
+Reviewed-by: Daniel Kiper <daniel.kiper@oracle.com>
+---
+ grub-core/fs/btrfs.c | 75 ++++++++++++++++++++++++++------------------
+ 1 file changed, 44 insertions(+), 31 deletions(-)
 
-But also, I don't know how the kernel code chooses block numbers,
-either physical (chunk allocation) or logical (extent allocation) and
-if that could be made deterministic. Same for inode assignment.
-
-Another question that comes up later when creating the sprout by
-removing the seed device, is how a script can know when all block
-groups have successfully copied from seed to sprout, and that the
-sprout can be unmounted.
-
-
-
+diff --git a/grub-core/fs/btrfs.c b/grub-core/fs/btrfs.c
+index dde0edd03..ea97f0502 100644
+--- a/grub-core/fs/btrfs.c
++++ b/grub-core/fs/btrfs.c
+@@ -625,6 +625,46 @@ find_device (struct grub_btrfs_data *data, grub_uint64_t id)
+   return ctx.dev_found;
+ }
+ 
++static grub_err_t
++btrfs_read_from_chunk (struct grub_btrfs_data *data,
++		       struct grub_btrfs_chunk_item *chunk,
++		       grub_uint64_t stripen, grub_uint64_t stripe_offset,
++		       int redundancy, grub_uint64_t csize,
++		       void *buf)
++{
++    struct grub_btrfs_chunk_stripe *stripe;
++    grub_disk_addr_t paddr;
++    grub_device_t dev;
++    grub_err_t err;
++
++    stripe = (struct grub_btrfs_chunk_stripe *) (chunk + 1);
++    /* Right now the redundancy handling is easy.
++       With RAID5-like it will be more difficult.  */
++    stripe += stripen + redundancy;
++
++    paddr = grub_le_to_cpu64 (stripe->offset) + stripe_offset;
++
++    grub_dprintf ("btrfs", "stripe %" PRIxGRUB_UINT64_T
++		  " maps to 0x%" PRIxGRUB_UINT64_T
++		  ". Reading paddr 0x%" PRIxGRUB_UINT64_T "\n",
++		  stripen, stripe->offset, paddr);
++
++    dev = find_device (data, stripe->device_id);
++    if (!dev)
++      {
++	grub_dprintf ("btrfs",
++		      "couldn't find a necessary member device "
++		      "of multi-device filesystem\n");
++	grub_errno = GRUB_ERR_NONE;
++	return GRUB_ERR_READ_ERROR;
++      }
++
++    err = grub_disk_read (dev->disk, paddr >> GRUB_DISK_SECTOR_BITS,
++			  paddr & (GRUB_DISK_SECTOR_SIZE - 1),
++			  csize, buf);
++    return err;
++}
++
+ static grub_err_t
+ grub_btrfs_read_logical (struct grub_btrfs_data *data, grub_disk_addr_t addr,
+ 			 void *buf, grub_size_t size, int recursion_depth)
+@@ -638,7 +678,6 @@ grub_btrfs_read_logical (struct grub_btrfs_data *data, grub_disk_addr_t addr,
+       grub_err_t err = 0;
+       struct grub_btrfs_key key_out;
+       int challoc = 0;
+-      grub_device_t dev;
+       struct grub_btrfs_key key_in;
+       grub_size_t chsize;
+       grub_disk_addr_t chaddr;
+@@ -884,36 +923,10 @@ grub_btrfs_read_logical (struct grub_btrfs_data *data, grub_disk_addr_t addr,
+ 
+ 	    for (i = 0; i < redundancy; i++)
+ 	      {
+-		struct grub_btrfs_chunk_stripe *stripe;
+-		grub_disk_addr_t paddr;
+-
+-		stripe = (struct grub_btrfs_chunk_stripe *) (chunk + 1);
+-		/* Right now the redundancy handling is easy.
+-		   With RAID5-like it will be more difficult.  */
+-		stripe += stripen + i;
+-
+-		paddr = grub_le_to_cpu64 (stripe->offset) + stripe_offset;
+-
+-		grub_dprintf ("btrfs", "stripe %" PRIxGRUB_UINT64_T
+-			      " maps to 0x%" PRIxGRUB_UINT64_T "\n",
+-			      stripen, stripe->offset);
+-		grub_dprintf ("btrfs", "reading paddr 0x%" PRIxGRUB_UINT64_T
+-			      "\n", paddr);
+-
+-		dev = find_device (data, stripe->device_id);
+-		if (!dev)
+-		  {
+-		    grub_dprintf ("btrfs",
+-				  "couldn't find a necessary member device "
+-				  "of multi-device filesystem\n");
+-		    err = grub_errno;
+-		    grub_errno = GRUB_ERR_NONE;
+-		    continue;
+-		  }
+-
+-		err = grub_disk_read (dev->disk, paddr >> GRUB_DISK_SECTOR_BITS,
+-				      paddr & (GRUB_DISK_SECTOR_SIZE - 1),
+-				      csize, buf);
++		err = btrfs_read_from_chunk (data, chunk, stripen,
++					     stripe_offset,
++					     i,     /* redundancy */
++					     csize, buf);
+ 		if (!err)
+ 		  break;
+ 		grub_errno = GRUB_ERR_NONE;
 -- 
-Chris Murphy
+2.19.1
+

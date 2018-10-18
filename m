@@ -2,56 +2,56 @@ Return-Path: <SRS0=wNEY=M6=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.6 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_MUTT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-8.6 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_MUTT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 462F4ECDE42
-	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Oct 2018 04:37:45 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 71AC1ECDE42
+	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Oct 2018 04:47:38 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 0A0E42145D
-	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Oct 2018 04:37:44 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 37FDD208E4
+	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Oct 2018 04:47:38 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="XAhoAeko"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 0A0E42145D
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="GRQF+0ls"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 37FDD208E4
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=oracle.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727493AbeJRMgp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 18 Oct 2018 08:36:45 -0400
-Received: from userp2120.oracle.com ([156.151.31.85]:49012 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727410AbeJRMgp (ORCPT
+        id S1727536AbeJRMql (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 18 Oct 2018 08:46:41 -0400
+Received: from aserp2120.oracle.com ([141.146.126.78]:36346 "EHLO
+        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727388AbeJRMql (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 18 Oct 2018 08:36:45 -0400
-Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w9I4XdVG160654;
-        Thu, 18 Oct 2018 04:37:36 GMT
+        Thu, 18 Oct 2018 08:46:41 -0400
+Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
+        by aserp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w9I4jmVs026539;
+        Thu, 18 Oct 2018 04:47:29 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=date : from : to : cc
  : subject : message-id : references : mime-version : content-type :
  in-reply-to; s=corp-2018-07-02;
- bh=rkcslAM0NOFz2hUL43+pBrc7T9nx1xmjZfKtAisDuUg=;
- b=XAhoAekoM+4kzq6ih2/FS0Yei9sJRIB09w2e/JRyjPLJ8fiQYfPzTJpdjSezVHlyACMx
- Nwvu4SVHAzllT0VpZQ2rUvAfja48fJnU/mCnQUk1L9V81fj9PW3B1+Yhpu/AqDZbVreM
- zIJx60e1crd/w/hLKjkpyt+5QmKyCT8Pl53Irk45wBY1W687QXrCoVd50/BG6GaofpeZ
- LWK/NZH1GkzAu3j1NP8yA5ke5u7cgMAJ1DO5pPhVlacFvi9DDlwHmqoh+sBHte4T1Y+N
- uRhzqIiV/hXa48EmjOaPNLsQf19fKjEDjHI/5zXp19zQYeitnjK8jrpbVXorD5FyvvXJ Wg== 
-Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
-        by userp2120.oracle.com with ESMTP id 2n39brm1xa-1
+ bh=vXgftaptkWsB9URK9bj1aD+RBRBJzW9Ox3DYlQ/Kzhc=;
+ b=GRQF+0lsXNZBkEp2ZlJdpPp2P876onQagwJL/o+XFZjHIPVUtihN0XCCcOj3yv/9v16y
+ 6VCwhvEdl12u3bno1qzItHLiwc7uaZ6kQzcn21ODpioTEpJP9gfw4/Cle/AwP6eawnfT
+ 4V3tcnMJgAb+hNAyDPlaA1EGAL4mcAp9M/P+ZVbzclkiI60xfZ2xTrVwfu0nwHMlUBv4
+ +n7BoAmY4YQr2WXgmqBFtuweB4od3iUyCHXtPkROdPL+hrFFMRQNvb8+pCn8hPkSn8Bo
+ swrFNM0jrBlxsN+TSeAmpAbcPgWVc14QXntqi0x7CNGptVe9AspaIyvOlA3I2ljr0Eay YA== 
+Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
+        by aserp2120.oracle.com with ESMTP id 2n38nqc5vu-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Thu, 18 Oct 2018 04:37:36 +0000
-Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
-        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w9I4bTv0022132
+        Thu, 18 Oct 2018 04:47:29 +0000
+Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
+        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w9I4lMjF018852
         (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Thu, 18 Oct 2018 04:37:29 GMT
-Received: from abhmp0015.oracle.com (abhmp0015.oracle.com [141.146.116.21])
-        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w9I4bSnh007108;
-        Thu, 18 Oct 2018 04:37:28 GMT
+        Thu, 18 Oct 2018 04:47:22 GMT
+Received: from abhmp0009.oracle.com (abhmp0009.oracle.com [141.146.116.15])
+        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w9I4lMUL009448;
+        Thu, 18 Oct 2018 04:47:22 GMT
 Received: from localhost (/67.169.218.210)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Wed, 17 Oct 2018 21:37:28 -0700
-Date:   Wed, 17 Oct 2018 21:37:24 -0700
+        with ESMTP ; Wed, 17 Oct 2018 21:47:21 -0700
+Date:   Wed, 17 Oct 2018 21:47:18 -0700
 From:   "Darrick J. Wong" <darrick.wong@oracle.com>
 To:     Al Viro <viro@ZenIV.linux.org.uk>
 Cc:     david@fromorbit.com, sandeen@redhat.com, linux-nfs@vger.kernel.org,
@@ -60,72 +60,93 @@ Cc:     david@fromorbit.com, sandeen@redhat.com, linux-nfs@vger.kernel.org,
         linux-mm@kvack.org, linux-btrfs@vger.kernel.org,
         linux-fsdevel@vger.kernel.org, Christoph Hellwig <hch@lst.de>,
         ocfs2-devel@oss.oracle.com
-Subject: Re: [PATCH 04/29] vfs: strengthen checking of file range inputs to
- generic_remap_checks
-Message-ID: <20181018043724.GS28243@magnolia>
+Subject: Re: [PATCH 09/29] vfs: combine the clone and dedupe into a single
+ remap_file_range
+Message-ID: <20181018044718.GT28243@magnolia>
 References: <153981625504.5568.2708520119290577378.stgit@magnolia>
- <153981628292.5568.2466587869276881561.stgit@magnolia>
- <20181018004156.GA12386@ZenIV.linux.org.uk>
+ <153981631706.5568.6473120432728396978.stgit@magnolia>
+ <20181018004826.GB12386@ZenIV.linux.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20181018004156.GA12386@ZenIV.linux.org.uk>
+In-Reply-To: <20181018004826.GB12386@ZenIV.linux.org.uk>
 User-Agent: Mutt/1.9.4 (2018-02-28)
 X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9049 signatures=668683
 X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=0 malwarescore=0
- phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=995
+ phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=904
  adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.0.1-1807170000 definitions=main-1810180043
+ engine=8.0.1-1807170000 definitions=main-1810180045
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Oct 18, 2018 at 01:41:56AM +0100, Al Viro wrote:
-> On Wed, Oct 17, 2018 at 03:44:43PM -0700, Darrick J. Wong wrote:
-> > +static int generic_access_check_limits(struct file *file, loff_t pos,
-> > +				       loff_t *count)
-> > +{
-> > +	struct inode *inode = file->f_mapping->host;
-> > +
-> > +	/* Don't exceed the LFS limits. */
-> > +	if (unlikely(pos + *count > MAX_NON_LFS &&
-> > +				!(file->f_flags & O_LARGEFILE))) {
-> > +		if (pos >= MAX_NON_LFS)
-> > +			return -EFBIG;
-> > +		*count = min(*count, (loff_t)MAX_NON_LFS - pos);
+On Thu, Oct 18, 2018 at 01:48:26AM +0100, Al Viro wrote:
+> On Wed, Oct 17, 2018 at 03:45:17PM -0700, Darrick J. Wong wrote:
+> > From: Darrick J. Wong <darrick.wong@oracle.com>
+> > 
+> > Combine the clone_file_range and dedupe_file_range operations into a
+> > single remap_file_range file operation dispatch since they're
+> > fundamentally the same operation.  The differences between the two can
+> > be made in the prep functions.
+> > 
+> > Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
+> > Reviewed-by: Amir Goldstein <amir73il@gmail.com>
+> > Reviewed-by: Christoph Hellwig <hch@lst.de>
+> > ---
+> >  Documentation/filesystems/vfs.txt |   13 +++++------
+> >  fs/btrfs/ctree.h                  |    8 ++-----
+> >  fs/btrfs/file.c                   |    3 +-
+> >  fs/btrfs/ioctl.c                  |   45 +++++++++++++++++++------------------
+> >  fs/cifs/cifsfs.c                  |   22 +++++++++++-------
+> >  fs/nfs/nfs4file.c                 |   10 ++++++--
+> >  fs/ocfs2/file.c                   |   24 +++++++-------------
+> >  fs/overlayfs/file.c               |   30 ++++++++++++++-----------
+> >  fs/read_write.c                   |   18 +++++++--------
+> >  fs/xfs/xfs_file.c                 |   23 ++++++-------------
+> >  include/linux/fs.h                |   20 +++++++++++++---
+> >  11 files changed, 110 insertions(+), 106 deletions(-)
+> > 
+> > 
+> > diff --git a/Documentation/filesystems/vfs.txt b/Documentation/filesystems/vfs.txt
+> > index a6c6a8af48a2..bb3183334ab9 100644
+> > --- a/Documentation/filesystems/vfs.txt
+> > +++ b/Documentation/filesystems/vfs.txt
+> > @@ -883,8 +883,9 @@ struct file_operations {
+> >  	unsigned (*mmap_capabilities)(struct file *);
+> >  #endif
+> >  	ssize_t (*copy_file_range)(struct file *, loff_t, struct file *, loff_t, size_t, unsigned int);
+> > -	int (*clone_file_range)(struct file *, loff_t, struct file *, loff_t, u64);
+> > -	int (*dedupe_file_range)(struct file *, loff_t, struct file *, loff_t, u64);
+> > +	int (*remap_file_range)(struct file *file_in, loff_t pos_in,
+> > +				struct file *file_out, loff_t pos_out,
+> > +				u64 len, unsigned int remap_flags);
+> >  	int (*fadvise)(struct file *, loff_t, loff_t, int);
+> >  };
 > 
-> 	Can that can be different from MAX_NON_LFS - pos?
-> 
-> > +	}
-> > +
-> > +	/*
-> > +	 * Don't operate on ranges the page cache doesn't support.
-> > +	 *
-> > +	 * If we have written data it becomes a short write.  If we have
-> > +	 * exceeded without writing data we send a signal and return EFBIG.
-> > +	 * Linus frestrict idea will clean these up nicely..
-> > +	 */
-> > +	if (unlikely(pos >= inode->i_sb->s_maxbytes))
-> > +		return -EFBIG;
-> > +
-> > +	*count = min(*count, inode->i_sb->s_maxbytes - pos);
-> > +	return 0;
-> > +}
-> 
-> Anyway, I would rather do this here:
-> 
-> 	struct inode *inode = file->f_mapping->host;
-> 	loff_t max_size = inode->i_sb->s_maxbytes;
-> 
-> 	if (!(file->f_flags & O_LARGEFILE))
-> 		max_size = MAX_NON_LFS;
-> 
-> 	if (unlikely(pos >= max_size))
-> 		return -EFBIG;
-> 	*count = min(*count, max_size - pos);
-> 	return 0;
+> Documentation/filesystems/porting part, please.  And document remap_flags.
 
-Sounds much better to me. :)
+Ok, will do.
+
+> > +#define REMAP_FILE_DEDUP		(1 << 0)
+> > +
+> > +/*
+> > + * These flags should be taken care of by the implementation (possibly using
+> > + * vfs helpers) but can be ignored by the implementation.
+> > + */
+> > +#define REMAP_FILE_ADVISORY		(0)
+> 
+> ???
+
+Sorry if this wasn't clear.  How about this?
+
+/*
+ * These flags signal that the caller is ok with altering various aspects of
+ * the behavior of the remap operation.  The changes must be made by the
+ * implementation; the vfs remap helper functions can take advantage of them.
+ * Flags in this category exist to preserve the quirky behavior of the hoisted
+ * btrfs clone/dedupe ioctls.
+ */
+
 
 --D

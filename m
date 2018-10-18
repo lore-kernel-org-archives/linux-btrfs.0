@@ -2,178 +2,97 @@ Return-Path: <SRS0=wNEY=M6=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 298F8ECDE43
-	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Oct 2018 11:17:53 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 283A5C5ACCC
+	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Oct 2018 12:02:35 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id F10592087A
-	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Oct 2018 11:17:52 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org F10592087A
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
+	by mail.kernel.org (Postfix) with ESMTP id CD5822087A
+	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Oct 2018 12:02:34 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="VIp7T8Pq"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org CD5822087A
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728183AbeJRTSX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 18 Oct 2018 15:18:23 -0400
-Received: from mx2.suse.de ([195.135.220.15]:42938 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1728165AbeJRTSX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 18 Oct 2018 15:18:23 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 93E70AD18
-        for <linux-btrfs@vger.kernel.org>; Thu, 18 Oct 2018 11:17:49 +0000 (UTC)
-From:   Qu Wenruo <wqu@suse.com>
+        id S1726424AbeJRUDP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 18 Oct 2018 16:03:15 -0400
+Received: from mail-lj1-f179.google.com ([209.85.208.179]:35414 "EHLO
+        mail-lj1-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726043AbeJRUDO (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 18 Oct 2018 16:03:14 -0400
+Received: by mail-lj1-f179.google.com with SMTP id o14-v6so27464955ljj.2
+        for <linux-btrfs@vger.kernel.org>; Thu, 18 Oct 2018 05:02:31 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=date:from:to:subject:message-id:in-reply-to:references:mime-version
+         :content-transfer-encoding;
+        bh=ZmcuOGFKwCTJyT6vmfnIghx9fQ3Ypr8GljoePsJWCnw=;
+        b=VIp7T8PqrCjntNN/m5+crMZWAsMslv2v00WhaaZZXwpob0UbztnkSjPN/eNZypRNEy
+         krc+KNgsVh5VdpUqGa2ocEv8D7AkVPerbz93WxkmkGLNYveGyYm5I6Jl3n+bySE14tOT
+         RBPzZjnCPYKmxf0xAuWSXBG/zD13J72kDF7I+3Cs3XgdICRZgm9ttUKLx0hz3CyptXnO
+         oXXjcHJTdBZqqEPZsCAMw3WKGl8zN+k7AMZgAPv4shPU5/W7D9Gbj1PdwVYcHFTY+iAy
+         Hm2E1rmzh+ei9lNJHhNziPIV0wRJ8FU7zApgpr8x6gGTRp9Vw2Gozx8tzAxRxSbE2xLI
+         iaHQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:date:from:to:subject:message-id:in-reply-to
+         :references:mime-version:content-transfer-encoding;
+        bh=ZmcuOGFKwCTJyT6vmfnIghx9fQ3Ypr8GljoePsJWCnw=;
+        b=Bt9TH3vEQqwy6pJWNJCwBQaU1xj/eqoqP2gytD6c4AaPXMOLcr/UWYjPAUGPPc9lPB
+         BTsxTaYmLAqgj77GD51m+Iu8kP5tz4J7RWlIlDHvybDiT+YUux1xGh4IfVLuYK0Wq8FZ
+         FJh6iToF6X79RcGGMat39mH+n3xhPMuDSVeSO2n6vm0Gf+DRA32uGMOzPqM4UnJJvTaQ
+         b13rxkeaLQxk9nliB8D/We17LfuFQhiAe/8f+f2GolSO3DYyc6vChmoB2YxUe2tqHu2q
+         cjj2TGsLUVdPCaMFJVP9b8XJW3Z7YBnhSB78t01PlPwqo7dls6MqO911VBMNx8gJiv77
+         VuBA==
+X-Gm-Message-State: ABuFfogSiTTWnTWjpygshRzqX2YVrKw1rOu7RAUZljuBeNa3oGmX2Q9p
+        vHlb2aDv4hOpfjoHg4qequff9kJZ
+X-Google-Smtp-Source: ACcGV61UVzERk9lgnS/5ItoYZKehd5ZQ2ikZezgdZ5SkaITir1xv3kAMUAtDbkHDhFI52Pc2AhrxWw==
+X-Received: by 2002:a2e:974a:: with SMTP id f10-v6mr19891024ljj.30.1539864150473;
+        Thu, 18 Oct 2018 05:02:30 -0700 (PDT)
+Received: from erp07.git.ru ([94.79.3.84])
+        by smtp.gmail.com with ESMTPSA id c30-v6sm4199032lfj.28.2018.10.18.05.02.28
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1 cipher=AES128-SHA bits=128/128);
+        Thu, 18 Oct 2018 05:02:29 -0700 (PDT)
+Date:   Thu, 18 Oct 2018 15:02:28 +0300
+From:   Anton Shepelev <anton.txt@gmail.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 6/6] btrfs: qgroup: Cleanup old subtree swap code
-Date:   Thu, 18 Oct 2018 19:17:29 +0800
-Message-Id: <20181018111729.11128-7-wqu@suse.com>
-X-Mailer: git-send-email 2.19.1
-In-Reply-To: <20181018111729.11128-1-wqu@suse.com>
-References: <20181018111729.11128-1-wqu@suse.com>
-MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Subject: Re: CRC mismatch
+Message-Id: <20181018150228.16680172c2551c06038d5344@gmail.com>
+In-Reply-To: <20181016183051.788a79297af47a9798a0c0e3@gmail.com>
+References: <20181016183051.788a79297af47a9798a0c0e3@gmail.com>
+X-Mailer: Sylpheed 3.5.0 (GTK+ 2.24.23; i686-pc-mingw32)
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Since it's replaced by new delayed subtree swap code, remove the
-original code.
+I wrote:
 
-The cleanup is small since most of its core function is still used by
-delayed subtree swap trace.
+>What may be the reason of a CRC mismatch on a BTRFS file in
+>a virutal machine:
+>
+>csum failed ino 175524 off 1876295680 csum 451760558
+>expected csum 1446289185
+>
+>Shall I seek the culprit in the host machine on in the
+>guest one?  Supposing the host machine healty, what
+>operations on the gueest might have caused a CRC mismatch?
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/qgroup.c | 94 -----------------------------------------------
- fs/btrfs/qgroup.h |  6 ---
- 2 files changed, 100 deletions(-)
+Thank you, Austin and Chris, for your replies.  While
+describing the problem for the client, I tried again to copy
+the corrupt file and this time it was copied without error,
+which is of course scary because errors that miraculously
+disappear may suddenly reappear in the same manner.
 
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 896711b1671a..9de00a82d046 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -2061,100 +2061,6 @@ static int qgroup_trace_subtree_swap(struct btrfs_trans_handle *trans,
- 	return ret;
- }
- 
--/*
-- * Inform qgroup to trace subtree swap used in balance.
-- *
-- * Unlike btrfs_qgroup_trace_subtree(), this function will only trace
-- * new tree blocks whose generation is equal to (or larger than) @last_snapshot.
-- *
-- * Will go down the tree block pointed by @dst_eb (pointed by @dst_parent and
-- * @dst_slot), and find any tree blocks whose generation is at @last_snapshot,
-- * and then go down @src_eb (pointed by @src_parent and @src_slot) to find
-- * the conterpart of the tree block, then mark both tree blocks as qgroup dirty,
-- * and skip all tree blocks whose generation is smaller than last_snapshot.
-- *
-- * This would skip tons of tree blocks of original btrfs_qgroup_trace_subtree(),
-- * which could be the culprit of super slow balance if the file tree is large.
-- *
-- * @src_parent, @src_slot: pointer to src (file tree) eb.
-- * @dst_parent, @dst_slot: pointer to dst (tree reloc tree) eb.
-- */
--int btrfs_qgroup_trace_subtree_swap(struct btrfs_trans_handle *trans,
--				struct btrfs_block_group_cache *bg_cache,
--				struct extent_buffer *src_parent, int src_slot,
--				struct extent_buffer *dst_parent, int dst_slot,
--				u64 last_snapshot)
--{
--	struct btrfs_fs_info *fs_info = trans->fs_info;
--	struct btrfs_key first_key;
--	struct extent_buffer *src_eb = NULL;
--	struct extent_buffer *dst_eb = NULL;
--	bool trace_leaf = false;
--	u64 child_gen;
--	u64 child_bytenr;
--	int ret;
--
--	if (!test_bit(BTRFS_FS_QUOTA_ENABLED, &fs_info->flags))
--		return 0;
--
--	/* Wrong parameter order */
--	if (btrfs_node_ptr_generation(src_parent, src_slot) >
--		btrfs_node_ptr_generation(dst_parent, dst_slot)) {
--		btrfs_err_rl(fs_info,
--		"%s: bad parameter order, src_gen=%llu dst_gen=%llu", __func__,
--			btrfs_node_ptr_generation(src_parent, src_slot),
--			btrfs_node_ptr_generation(dst_parent, dst_slot));
--		return -EUCLEAN;
--	}
--
--	/*
--	 * Only trace leaf if we're relocating data block groups, this could
--	 * reduce tons of data extents tracing for meta/sys bg relocation.
--	 */
--	if (bg_cache->flags & BTRFS_BLOCK_GROUP_DATA)
--		trace_leaf = true;
--	/* Read out real @src_eb, pointed by @src_parent and @src_slot */
--	child_bytenr = btrfs_node_blockptr(src_parent, src_slot);
--	child_gen = btrfs_node_ptr_generation(src_parent, src_slot);
--	btrfs_node_key_to_cpu(src_parent, &first_key, src_slot);
--
--	src_eb = read_tree_block(fs_info, child_bytenr, child_gen,
--			btrfs_header_level(src_parent) - 1, &first_key);
--	if (IS_ERR(src_eb)) {
--		ret = PTR_ERR(src_eb);
--		goto out;
--	}
--
--	/* Read out real @dst_eb, pointed by @src_parent and @src_slot */
--	child_bytenr = btrfs_node_blockptr(dst_parent, dst_slot);
--	child_gen = btrfs_node_ptr_generation(dst_parent, dst_slot);
--	btrfs_node_key_to_cpu(dst_parent, &first_key, dst_slot);
--
--	dst_eb = read_tree_block(fs_info, child_bytenr, child_gen,
--			btrfs_header_level(dst_parent) - 1, &first_key);
--	if (IS_ERR(dst_eb)) {
--		ret = PTR_ERR(dst_eb);
--		goto out;
--	}
--
--	if (!extent_buffer_uptodate(src_eb) || !extent_buffer_uptodate(dst_eb)) {
--		ret = -EINVAL;
--		goto out;
--	}
--
--	/* Do the generation aware breadth-first search */
--	ret = qgroup_trace_subtree_swap(trans, src_eb, dst_eb, last_snapshot,
--					trace_leaf, true);
--	if (ret < 0)
--		goto out;
--	ret = 0;
--
--out:
--	free_extent_buffer(src_eb);
--	free_extent_buffer(dst_eb);
--	return ret;
--}
--
- int btrfs_qgroup_trace_subtree(struct btrfs_trans_handle *trans,
- 			       struct extent_buffer *root_eb,
- 			       u64 root_gen, int root_level)
-diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
-index 145787be3f70..fc65eba26de9 100644
---- a/fs/btrfs/qgroup.h
-+++ b/fs/btrfs/qgroup.h
-@@ -316,12 +316,6 @@ int btrfs_qgroup_trace_leaf_items(struct btrfs_trans_handle *trans,
- int btrfs_qgroup_trace_subtree(struct btrfs_trans_handle *trans,
- 			       struct extent_buffer *root_eb,
- 			       u64 root_gen, int root_level);
--
--int btrfs_qgroup_trace_subtree_swap(struct btrfs_trans_handle *trans,
--				struct btrfs_block_group_cache *bg_cache,
--				struct extent_buffer *src_parent, int src_slot,
--				struct extent_buffer *dst_parent, int dst_slot,
--				u64 last_snapshot);
- int btrfs_qgroup_account_extent(struct btrfs_trans_handle *trans, u64 bytenr,
- 				u64 num_bytes, struct ulist *old_roots,
- 				struct ulist *new_roots);
 -- 
-2.19.1
-
+()  ascii ribbon campaign - against html e-mail
+/\  http://preview.tinyurl.com/qcy6mjc [archived]

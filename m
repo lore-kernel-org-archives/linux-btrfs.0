@@ -2,97 +2,73 @@ Return-Path: <SRS0=wNEY=M6=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.3 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2E1B3C5ACCC
-	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Oct 2018 14:48:21 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A4AD9C5ACCC
+	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Oct 2018 16:21:08 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id BC85721476
-	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Oct 2018 14:48:20 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org BC85721476
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=scientia.net
+	by mail.kernel.org (Postfix) with ESMTP id 6DB5B2098A
+	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Oct 2018 16:21:08 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 6DB5B2098A
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726815AbeJRWtj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 18 Oct 2018 18:49:39 -0400
-Received: from mailgw-02.dd24.net ([193.46.215.43]:34889 "EHLO
-        mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726133AbeJRWtj (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 18 Oct 2018 18:49:39 -0400
-X-Greylist: delayed 383 seconds by postgrey-1.27 at vger.kernel.org; Thu, 18 Oct 2018 18:49:38 EDT
-Received: from mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.27])
-        by mailgw-02.dd24.net (Postfix) with ESMTP id 61F3B5FD41;
-        Thu, 18 Oct 2018 14:41:55 +0000 (UTC)
-X-Virus-Scanned: Debian amavisd-new at
-        mailpolicy-02.live.igb.homer.key-systems.net
-Received: from smtp.dd24.net ([192.168.1.36])
-        by mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.25]) (amavisd-new, port 10236)
-        with ESMTP id HClcknW6z-34; Thu, 18 Oct 2018 14:41:53 +0000 (UTC)
-Received: from gar-nb-etp23.garching.physik.uni-muenchen.de (unknown [141.84.41.132])
-        (using TLSv1.2 with cipher DHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by smtp.dd24.net (Postfix) with ESMTPSA;
-        Thu, 18 Oct 2018 14:41:53 +0000 (UTC)
-Message-ID: <e2ac3e05ddd1297d4017cbeecfa4b392b04613ad.camel@scientia.net>
-Subject: Re: fsck lowmem mode only: ERROR: errors found in fs roots
-From:   Christoph Anton Mitterer <calestyo@scientia.net>
-To:     Su Yue <suy.fnst@cn.fujitsu.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Cc:     Su Yue <Damenly_Su@gmx.com>
-Date:   Thu, 18 Oct 2018 16:41:52 +0200
-In-Reply-To: <94750beb-c339-756a-11ec-f2bcc72b98e3@cn.fujitsu.com>
-References: <8d8c90d3edfcc9e73428d3730496d48b1160b39b.camel@scientia.net>
-         <a141cad2-0a08-555e-eb05-da2dceb54025@cn.fujitsu.com>
-         <7146cafcc48d46ad123388d492807cbba08e101c.camel@scientia.net>
-         <94750beb-c339-756a-11ec-f2bcc72b98e3@cn.fujitsu.com>
-Content-Type: text/plain; charset="UTF-8"
-User-Agent: Evolution 3.30.1-1 
-Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+        id S1728374AbeJSAWt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 18 Oct 2018 20:22:49 -0400
+Received: from mx2.suse.de ([195.135.220.15]:34912 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1727274AbeJSAWt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 18 Oct 2018 20:22:49 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 76906AF13
+        for <linux-btrfs@vger.kernel.org>; Thu, 18 Oct 2018 16:21:05 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id B0C1DDAE03; Thu, 18 Oct 2018 18:20:59 +0200 (CEST)
+Date:   Thu, 18 Oct 2018 18:20:59 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Qu Wenruo <wqu@suse.com>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 4/6] btrfs: qgroup: Introduce per-root swapped blocks
+ infrastructure
+Message-ID: <20181018162059.GJ29418@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org
+References: <20181018111729.11128-1-wqu@suse.com>
+ <20181018111729.11128-5-wqu@suse.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20181018111729.11128-5-wqu@suse.com>
+User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hey.
+On Thu, Oct 18, 2018 at 07:17:27PM +0800, Qu Wenruo wrote:
+> +void btrfs_qgroup_clean_swapped_blocks(struct btrfs_root *root)
+> +{
+> +	struct btrfs_qgroup_swapped_blocks *swapped_blocks;
+> +	struct btrfs_qgroup_swapped_block *cur, *next;
+> +	int i;
+> +
+> +	swapped_blocks = &root->swapped_blocks;
+> +
+> +	spin_lock(&swapped_blocks->lock);
+> +	if (!swapped_blocks->swapped)
+> +		goto out;
+> +	for (i = 0; i < BTRFS_MAX_LEVEL; i++) {
+> +		struct rb_root *cur_root = &swapped_blocks->blocks[i];
+> +
+> +		rbtree_postorder_for_each_entry_safe(cur, next, cur_root,
+> +						     node) {
+> +			rb_erase(&cur->node, cur_root);
 
-So I'm back from a longer vacation and had now the time to try out your
-patches from below:
+https://elixir.bootlin.com/linux/latest/source/include/linux/rbtree.h#L141
 
-On Wed, 2018-09-05 at 15:04 +0800, Su Yue wrote:
-> I found the errors should blame to something about inode_extref check
-> in lowmem mode.
-> I have writeen three patches to detect and report errors about
-> inode_extref. For your convenience, it's based on v4.17:
-> https://github.com/Damenly/btrfs-progs/tree/ext_ref_v4.17
-> 
-> This repo should report more errors. Because one of those is just
-> Whac-A-Mole, I will make it better and send them later to ML.
-
-
-This is the output it gives:
-checking extents
-checking free space cache
-checking fs roots
-checking only csum items (without verifying data)
-checking root refs
-Checking filesystem on /dev/mapper/system
-UUID: 6050ca10-e778-4d08-80e7-6d27b9c89b3c
-found 617228185600 bytes used, no error found
-total csum bytes: 600139124
-total tree bytes: 2516172800
-total fs tree bytes: 1639890944
-total extent tree bytes: 156532736
-btree space waste bytes: 455772589
-file data blocks allocated: 7431727771648
- referenced 732073979904
-
-(just a bit strange that the UUID line is not in the beginngin)... but
-other than that, no longer an error message as it seems)
-
-
-Cheers,
-Chris.
-
+rb_erase must not be used on the same pointer that
+rbtree_postorder_for_each_entry_safe iterates, here it's cur.

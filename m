@@ -7,109 +7,120 @@ X-Spam-Status: No, score=-0.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A2848ECDE43
-	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Oct 2018 06:16:22 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 61437ECDE43
+	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Oct 2018 06:43:17 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 6337821476
-	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Oct 2018 06:16:22 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1DC852098A
+	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Oct 2018 06:43:17 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=zoho.com header.i=tprokott@zoho.com header.b="qQAcN+J1"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 6337821476
-Authentication-Results: mail.kernel.org; dmarc=fail (p=quarantine dis=none) header.from=zoho.com
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="bIpZq5i6"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 1DC852098A
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727501AbeJROPo (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 18 Oct 2018 10:15:44 -0400
-Received: from sender-pp-092.zoho.com ([135.84.80.237]:25424 "EHLO
-        sender-pp-092.zoho.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727361AbeJROPn (ORCPT
+        id S1727488AbeJROmp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 18 Oct 2018 10:42:45 -0400
+Received: from mail-oi1-f169.google.com ([209.85.167.169]:40807 "EHLO
+        mail-oi1-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727357AbeJROmp (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 18 Oct 2018 10:15:43 -0400
-ARC-Seal: i=1; a=rsa-sha256; t=1539843378; cv=none; 
-        d=zoho.com; s=zohoarc; 
-        b=cjBghqP9f7SjFCiNNOo0hRBvDbdwX2AJBCRFzRBjSgCZYz9ly4Da5hhetDb4YJwnEXxIwOIyR/fa27BcHr+hAu26OLNp5z6l4WPxZnfFYoEmL575ZiiWzPJ8NJMVVeRw8+U6kT973P2/inZBC21xlF6+3SbKJ/5KTCIO/M8xaCg=
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=zoho.com; s=zohoarc; 
-        t=1539843378; h=Content-Type:Content-Transfer-Encoding:Date:From:In-Reply-To:MIME-Version:Message-ID:References:Subject:To:ARC-Authentication-Results; 
-        bh=oF7wfLLHBG5VD2JB19iSkl+54SmW4YBPYBqwoB53vd4=; 
-        b=N7pfDM36iDHkou8KyHQwhMqOg6B3biAuertmBOsV8+2lznupSUsf0jVbLDvmlKzL+LVV/a1HU1gLV61JJk29q4MXRVNGxYorJdUEX0QtHtrm871eiPItsB8X3lwQNlXdsbv/lY06GWrVMpWiO+u8YYay0Ev0xJ+QvBKePBnr9Tk=
-ARC-Authentication-Results: i=1; mx.zoho.com;
-        dkim=pass  header.i=zoho.com;
-        spf=pass  smtp.mailfrom=tprokott@zoho.com;
-        dmarc=pass header.from=<tprokott@zoho.com> header.from=<tprokott@zoho.com>
-DomainKey-Signature: a=rsa-sha1; q=dns; c=nofws; 
-  s=zapps768; d=zoho.com; 
-  h=date:from:to:message-id:in-reply-to:references:subject:mime-version:content-type:user-agent; 
-  b=GTgILvXr9v4MruVPH90WPBLovTdLBo3eSH3Kn98NORhQTjx5k+fZiid6osewpJTJsl86QRHPrwFC
-    radiEODrGfYgwdl8kKxK1fi1B6sCWf2SgXQsg1Ff/LFI4FT3Hyec  
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; t=1539843378;
-        s=default; d=zoho.com; i=tprokott@zoho.com;
-        h=Date:From:To:Message-ID:In-Reply-To:References:Subject:MIME-Version:Content-Type:Content-Transfer-Encoding;
-        l=2285; bh=oF7wfLLHBG5VD2JB19iSkl+54SmW4YBPYBqwoB53vd4=;
-        b=qQAcN+J1KNoXTTVujZxmxKzk7l1OdaVBrVQgF4YX1DZ5lSovbEMGvq7XZRfjcVN8
-        w67/EgX1cIek5NBp9VzwmTeTwvbyePJQeNL7QmSQnFZXcTmHM9i6iZlxNQg/xNmOVMf
-        A/z+KwLx/N8L06nuuQSMQsiW/y7iWTSXDuvf0yNQ=
-Received: from mail.zoho.com by mx.zohomail.com
-        with SMTP id 1539843376711390.8874159841138; Wed, 17 Oct 2018 23:16:16 -0700 (PDT)
-Received: from  [24.7.203.165] by mail.zoho.com
-        with HTTP;Wed, 17 Oct 2018 23:16:16 -0700 (PDT)
-Date:   Wed, 17 Oct 2018 23:16:16 -0700
-From:   Tony Prokott <tprokott@zoho.com>
-To:     "linux-btrfs" <linux-btrfs@vger.kernel.org>
-Message-ID: <16685d14644.eefe20a081666.8834845236508091976@zoho.com>
-In-Reply-To: <9655303c-d4e9-cdbd-6d8c-8c9db3f05246@gmx.com>
-References: <16682e5051a.ee83c20873105.8360554719511192350@zoho.com> <9655303c-d4e9-cdbd-6d8c-8c9db3f05246@gmx.com>
-Subject: Re: Conversion to btrfs raid1 profile on added ext device renders
- some systems unable to boot into converted rootfs
+        Thu, 18 Oct 2018 10:42:45 -0400
+Received: by mail-oi1-f169.google.com with SMTP id j68-v6so23146468oib.7
+        for <linux-btrfs@vger.kernel.org>; Wed, 17 Oct 2018 23:43:15 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=BmCuPKbSVhYSwyubcZgvrxhF7/JSTpm+WX6pdFtu/l0=;
+        b=bIpZq5i6qN8Imum8Jw8m2pTQERTlfvbYhRAbthKTIOd3XkhKnz2+tEHhHKZQ11zWHH
+         n3f9w38uf+VjsOyelBPpJ56ZMZv0NzD5h7y3+tNCObLVf49xhPQrNuF4qBtg4nAB6xUf
+         Q0LEjEDvfa8TjxVA1iC0TMR2ZGd1jXGgiazZn2iWAwL4NePaYzVZSO23O++Wpe0ZbANe
+         qxr/oZHZBMJMOlppN4Z4VhNFZku2wwSxBbInN/VNww96BkPIfjSSdUlQ1sYAFNGhgkw+
+         6xB9ncqkHjC3dub/OJeo6oQPUHqaRItm9pnm7UcL+FB5i7ZC9XURHQYlJL+iHeh0+Jop
+         aSXg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=BmCuPKbSVhYSwyubcZgvrxhF7/JSTpm+WX6pdFtu/l0=;
+        b=QwbCm9qy5toMTstI+BGt8NpRAQaFD1XlIJu86GWN4LjmUSZrUoI9QHlJrr4I6NDKt7
+         EyifXIyXet9sJqAyDFslXuX1gr2mbMO155MDL1FnoauP6ZMorGcqzeU4yr4UDPwpdW7O
+         YtRqF61XNAEzri2zrIqEhPKNKm03AQGWjvM/nQnqQmr6Qgf+jeOlmBjGSxzls95SMeIu
+         R17c5UeQYt8qcPgctyIoNYVaCyXXVXdpldnm7l47RrQHUUDdS+gncMvgNNwCflO6o2N3
+         UPn/gkgYBhJ0JwsJRtPOKlKPCAfJm6mFrp2jZhRrZsoNGi4OcYfs2uT7Vb7kcxVj/BeR
+         v5pA==
+X-Gm-Message-State: ABuFfogQmKro4wfZA8ypGHoZ1aCfiF42qOL07j1b5B5Sy9JBAXsoZ99V
+        IHFRirmLJ4HjrmxC1DIu9LwVgBpB95bW8VC+8nVQy0av2Pw=
+X-Google-Smtp-Source: ACcGV632I8TVWeqJsSHhph7ELs9JlEACj6HKiLENVgBqggaLQmwjtaw4i9JuOHj9/CRSeZBgRxLym/Dw9igicWmLZtY=
+X-Received: by 2002:aca:f5d3:: with SMTP id t202-v6mr16015893oih.29.1539844994902;
+ Wed, 17 Oct 2018 23:43:14 -0700 (PDT)
 MIME-Version: 1.0
+References: <pq90ft$hso$1@blaine.gmane.org>
+In-Reply-To: <pq90ft$hso$1@blaine.gmane.org>
+From:   Henk Slager <eye1tm@gmail.com>
+Date:   Thu, 18 Oct 2018 08:43:03 +0200
+Message-ID: <CAPmG0jbaKvK-xvkQ+sBVsCGiVdxDJA-o_rFDCxH1CJN-dW6-iA@mail.gmail.com>
+Subject: Re: Untar on empty partition returns ENOSPACE
+To:     jd.girard@sysnux.pf
+Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: 7bit
-X-Priority: Medium
-User-Agent: Zoho Mail
-X-Mailer: Zoho Mail
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
- ---- On Wed, 17 Oct 2018 17:57:25 -0700 Qu Wenruo <quwenruo.btrfs@gmx.com> wrote ---- 
-...
- > > But after chrooting to update-initramfs and cataloging resulting image content, usb_storage and uas were present under /lib/modules/xxx already, and failing systems still just busybox without a real rootfs rather than launch systemd; even tried kernel option "rootwait" which had no effect on access to ext storage; udev still seems not to have noticed the ext drives once busybox had control. 
- >  
- > Still looks like a initramfs problem other than btrfs problem. 
- >  
- > In the busybox environment, have you tried listing /dev to see if that 
- > external device is found? 
+On Thu, Oct 18, 2018 at 6:04 AM Jean-Denis Girard <jd.girard@sysnux.pf> wrote:
+>
+> Hi list,
+>
+> My goal is to duplicate some SD cards, to prepare 50 similar Raspberry Pi.
+>
+> First, I made a tar of my master SD card (unmounted). Then I made a
+> script, which creates 2 partitions (50 MB for boot, 14 GB for /),
+> creates the file-systems (vfat and btrfs, default options), mounts the
+> two partitions:
+>
+> mount $part2 $mnt
+> -ocompress=zstd,space_cache=v2,autodefrag,noatime,nodiratime
+> mkdir $mnt/boot
+> mount $part1 $mnt/boot
+>
+> When untarring, I get many errors, like:
+> tar:
+> ./usr/lib/libreoffice/share/gallery/arrows/A45-TrendArrow-Red-GoUp.png :
+> open impossible: No space left on device
+> tar:
+> ./usr/lib/libreoffice/share/gallery/arrows/A53-TrendArrow-LightBlue-TwoDirections.svg
+> : open impossible: No space left on device
+> tar:
+> ./usr/lib/libreoffice/share/gallery/arrows/A27-CurvedArrow-DarkRed.png :
+> open impossible: No space left on device
+> tar:
+> ./usr/lib/libreoffice/share/gallery/arrows/A41-CurvedArrow-Gray-Left.svg
+> : open impossible: No space left on device
+>
+> Which usually results in unusable SD card.
+>
+> When the first errors occur, less than 1 GB has been written. I tried to
+> change mount options, especially commit interval, but still got ENOSPACE.
+>
+> What I ended up doing is limiting write speed with:
+> xzcat $archive | pv -L 4M | tar x
+> (with -L 5M I start to get a couple of errors)
+>
+> Is there a better work around? Or a patch to test that could help?
+>
+> The machine that runs the script has:
+> [jdg@tiare tar-install]$ uname -r
+> 4.19.0-rc7-snx
+> [jdg@tiare tar-install]$ btrfs version
+> btrfs-progs v4.17.1
+This looks like to have a similar root cause as this:
+https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg81536.html
 
-agreed that initramfs smells bad, but it hadn't been a problem until btrfs mounts (external-raid) had to rely on the usb channel;
-in busybox, ext drives/partitions are all missing from /dev; can't tell why so, ahci and usb modules are loaded afaict
+For 50 clones, you could prepare 1 master (sparse) image and change
+the UUID with btrfstune for every SD-card you have after written the
+image (optionally sparse write with e.g. dd_rescue).
 
- > Since you have a busybox environment, have you checked if "btrfs" command lives in the initramfs? 
-
-yes btrfs command works from busybox
-
- > IIRC at least you need the following things/abilities to boot: 
- >  
- > 1) usb and sata drivers 
- >    Means you could see both devices in the busybox environment under /dev 
- >  
- > 2) "Btrfs" command 
- >    Mostly for scan 
- > Then you could try the following commands under busybox environment: 
- > # btrfs device scan 
- > # mount <device> <some temporary mount point> 
-
-"btrfs dev scan" runs but doesn't indicate recognizing any; since raid1 conversion, ext drives are required for any btrfs mounts to be seen whole.
-When manually trying to mount in busybox, it gives a similar error about missing external device by UUID_SUB
-
- > If it works, it may mean you're missing "btrfs device scan" during boot 
- > so kernel can't see all RAID1 disks for btrfs and failed to boot. 
- >  
- > Please refer to your distribution initramfs creation tool to see how to 
- > add that scan. (Some distro has special hook for btrfs to handle such case). 
-
-may have to tweak the /etc/initramfs-tools/initramfs.conf or modules list; MODULES=dep setting might act better than MODULES=most
-will look into this further to see about contrasting block device modules between cindy and the others
-
-appreciate the timely response-
-TP
-
+But it looks like some change is needed in the kernel code, although I
+have no clue at the moment where exactly.

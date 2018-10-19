@@ -2,153 +2,107 @@ Return-Path: <SRS0=U11f=M7=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.3 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 50564ECDE3D
-	for <linux-btrfs@archiver.kernel.org>; Fri, 19 Oct 2018 13:47:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F408DECDE43
+	for <linux-btrfs@archiver.kernel.org>; Fri, 19 Oct 2018 14:18:59 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 11D0E21476
-	for <linux-btrfs@archiver.kernel.org>; Fri, 19 Oct 2018 13:47:37 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 11D0E21476
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.de
+	by mail.kernel.org (Postfix) with ESMTP id AA2D9204EC
+	for <linux-btrfs@archiver.kernel.org>; Fri, 19 Oct 2018 14:18:59 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org AA2D9204EC
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727621AbeJSVxs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 19 Oct 2018 17:53:48 -0400
-Received: from mx2.suse.de ([195.135.220.15]:36654 "EHLO mx1.suse.de"
+        id S1727510AbeJSWZR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 19 Oct 2018 18:25:17 -0400
+Received: from mx2.suse.de ([195.135.220.15]:42782 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727004AbeJSVxr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 19 Oct 2018 17:53:47 -0400
+        id S1727439AbeJSWZR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 19 Oct 2018 18:25:17 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 6DAF9AF14
-        for <linux-btrfs@vger.kernel.org>; Fri, 19 Oct 2018 13:47:33 +0000 (UTC)
-Subject: Re: [PATCH 0/6] btrfs: qgroup: Delay subtree scan to reduce overhead
-To:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 601CFAF65
+        for <linux-btrfs@vger.kernel.org>; Fri, 19 Oct 2018 14:18:56 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id A64D3DAF50; Fri, 19 Oct 2018 16:18:48 +0200 (CEST)
+Date:   Fri, 19 Oct 2018 16:18:47 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Nikolay Borisov <nborisov@suse.com>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 0/6] FSID change kernel support
+Message-ID: <20181019141847.GI16290@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
         linux-btrfs@vger.kernel.org
-References: <20181018111729.11128-1-wqu@suse.com>
- <20181019134230.GH16290@twin.jikos.cz>
-From:   Qu Wenruo <wqu@suse.de>
-Openpgp: preference=signencrypt
-Autocrypt: addr=wqu@suse.de; prefer-encrypt=mutual; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
- bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
- ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
- rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
- FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
- 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
- ilaVzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAHCwHwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
- CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
- f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
- mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
- 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
- h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <9fd0eec9-10b2-d81c-3c9d-99213fb6f9d7@suse.de>
-Date:   Fri, 19 Oct 2018 21:47:24 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.2.1
+References: <1539270206-27005-1-git-send-email-nborisov@suse.com>
 MIME-Version: 1.0
-In-Reply-To: <20181019134230.GH16290@twin.jikos.cz>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="5Q3HzxWpG497cW2zuhsCNpCq4yyPih0FY"
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <1539270206-27005-1-git-send-email-nborisov@suse.com>
+User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---5Q3HzxWpG497cW2zuhsCNpCq4yyPih0FY
-Content-Type: multipart/mixed; boundary="jYrq1G72OWm2lm9S2DKxwrRM4pReMPhWH";
- protected-headers="v1"
-From: Qu Wenruo <wqu@suse.de>
-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Message-ID: <9fd0eec9-10b2-d81c-3c9d-99213fb6f9d7@suse.de>
-Subject: Re: [PATCH 0/6] btrfs: qgroup: Delay subtree scan to reduce overhead
-References: <20181018111729.11128-1-wqu@suse.com>
- <20181019134230.GH16290@twin.jikos.cz>
-In-Reply-To: <20181019134230.GH16290@twin.jikos.cz>
+On Thu, Oct 11, 2018 at 06:03:20PM +0300, Nikolay Borisov wrote:
+> Here is the second posting of the fsid change support for the kernel. For 
+> background information you can refer to v1 [0]. The main changes in this version
+> are around the handling of possible split-brain scenarios. I've changed a bit 
+> how the userspace code works and now the process is split among 2 transactions. 
+> The first one flagging "we are about to change fsid" and once it's persisted on
+> all disks a second one does the actual change. This of course is not enough 
+> to guarantee full consistency so I had to extend the device scanning to 
+> gracefully handle such cases. I believe I have covered everything but more 
+> review will be appreciated. 
 
---jYrq1G72OWm2lm9S2DKxwrRM4pReMPhWH
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+All the cases seem to be covered. Do you intend to add the design
+document somewhere? The references in the code seem stale and puzzling.
 
+> So patch 1 implements the basic functionality with no split-brain handling 
+> whatsoever. Patch 2 is a minor cleanup. Patch 3 deals with a split-brain that 
+> can occur if power loss happens during the initial transaction (the one setting
+> the beginning flag). Patch 4 adds some information that is needed in the last 2 
+> patches. Patch 5 handles failure between transaction 1 and transaction 2 and 
+> finally patch 6 handles the case of power loss during transaction 1 but for an 
+> fs which has already undergone at least one successful fsid change. More 
+> details about the exact failure modes are in each respective patch.
+> 
+> One thing which could be improved but I ran out of ideas is the naming of the 
+> ancillary functions - find_fsid_inprogress and find_fsid_changed. 
 
+Hm, no better ideas so it can stay and be changed later.
 
-On 2018/10/19 =E4=B8=8B=E5=8D=889:42, David Sterba wrote:
-> On Thu, Oct 18, 2018 at 07:17:23PM +0800, Qu Wenruo wrote:
->> This patchset can be fetched from github:
->> https://github.com/adam900710/linux/tree/qgroup_balance_skip_trees
->>
->> Which is still based on v4.19-rc1, but with previous submitted patches=
+> I've actually tested the split-brain handing code with specially crafted images. 
+> They will be part of the user-space submissions and I believe I have full 
+> coverage for that. 
 
->> as dependency.
->=20
-> Please rebase this patchset on top of misc-4.20, this should not change=
+Perfect, thanks.
 
-> as it's going to be the 1st pull.
->=20
-> I tried to pull the git branch and rebase but there were several
-> conflicts and some of the paches appeared duplicated so the rebase did
-> not recognize the changes as identical.
+Now the bad news from me :) There are several coding style and style
+issues all over the patches so I'll list them here.
 
-Yes, the branch has submitted qgroup patches as dependency, and it's
-still based on v4.19-rc1, so conflicts are expected.
+* BTRFS_SUPER_FLAG_CHANGING_FSID_v2 -- V2 with uppercase V, as other
+  versioned symbols
 
->=20
-> Applying patches from mails causes other sort of conflicts and I can't
-> seem to get a compilable version.
+* all references in changelogs or comments should refer to the super flag
+  as CHANGING_FSID_v2, not FSID_CHANGING, not just CHANGING_FSID, nor
+  FSID_CHANGE. This is because we want to be able to search for it and
+  find all occurences
 
-I'll look into it.
+* error messages should stick to the preferred format,
+  https://btrfs.wiki.kernel.org/index.php/Development_notes#Error_messages
 
->=20
-> This is not urgent as I want to put the patchset to a topic branch and
-> give it some testing before it goes to for-next. Thanks.
+* comments referring to UUID should use "UUID", there's a mixt of
+  both ways added by the patches, error messages should use the
+  uppercase form too
 
-OK, however this patchset may still need extra polish, especially for
-the 2nd patch.
-As you can see in the benchmark part, it reduces nearly half of dirty
-qgroup extents but only cuts about 25% relocation time, that's mostly
-caused by that 2nd patch, and that 2nd patch could impact balance
-performance even for quota disabled case.
+* find_fsid - type and name should be on one line, parameters on the
+  next if they don't fit
 
-So I'm not eager to push it soon either.
+* device_list_add - missing space before =
 
-Thanks,
-Qu
-
-
-
---jYrq1G72OWm2lm9S2DKxwrRM4pReMPhWH--
-
---5Q3HzxWpG497cW2zuhsCNpCq4yyPih0FY
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlvJ4GwACgkQwj2R86El
-/qj5tQf/R99Ph2cTV8amjJnjNNoTfaubLod/hCKUismQTQF7gPWkDtcNNdodKLnJ
-Si1dIHe7mfRZUDAdapCz5Vg4cHDwo9IViP+HKBsrWtETChCR/fQpakAm1Am8lG1l
-1jnfQwMhXMqgOvLlK374NIM1tshFSQAvHHsKoxEe5P5zkxDQzQOqNAaKaPcwAPyX
-fmqRGLqpvT/giJIMlwz1pbQViSrtm41cCPBDRAx9srn8vO/WAkKvEDm5GGWK2Yoq
-kiEv72p7IQPlaHZInpfrRz40wr/EKIgZYjIOUx0q7t24i0S2jvL0Phn7EV6o99x0
-gunjC9ImghfUcJD2+kTrCQ8UxdxLqg==
-=VonS
------END PGP SIGNATURE-----
-
---5Q3HzxWpG497cW2zuhsCNpCq4yyPih0FY--
+As these are not functional problems, I'll add the patchset to for-next
+for testing.

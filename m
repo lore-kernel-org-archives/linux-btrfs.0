@@ -2,156 +2,167 @@ Return-Path: <SRS0=U11f=M7=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.5 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
+	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7F27DECDE3D
-	for <linux-btrfs@archiver.kernel.org>; Fri, 19 Oct 2018 14:31:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 04F4BECDE3D
+	for <linux-btrfs@archiver.kernel.org>; Fri, 19 Oct 2018 14:52:06 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 35C5B2145D
-	for <linux-btrfs@archiver.kernel.org>; Fri, 19 Oct 2018 14:31:16 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 35C5B2145D
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
+	by mail.kernel.org (Postfix) with ESMTP id 81FB72064A
+	for <linux-btrfs@archiver.kernel.org>; Fri, 19 Oct 2018 14:52:05 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 81FB72064A
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=gmx.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727222AbeJSWhg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 19 Oct 2018 18:37:36 -0400
-Received: from mx2.suse.de ([195.135.220.15]:44464 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726867AbeJSWhg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 19 Oct 2018 18:37:36 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id C94A4ADA9
-        for <linux-btrfs@vger.kernel.org>; Fri, 19 Oct 2018 14:31:11 +0000 (UTC)
-Subject: Re: [PATCH 0/6] FSID change kernel support
-To:     dsterba@suse.cz, linux-btrfs@vger.kernel.org
-References: <1539270206-27005-1-git-send-email-nborisov@suse.com>
- <20181019141847.GI16290@twin.jikos.cz>
-From:   Nikolay Borisov <nborisov@suse.com>
+        id S1727466AbeJSW6b (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 19 Oct 2018 18:58:31 -0400
+Received: from mout.gmx.net ([212.227.17.22]:37379 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726664AbeJSW6b (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 19 Oct 2018 18:58:31 -0400
+Received: from [0.0.0.0] ([210.140.77.29]) by mail.gmx.com (mrgmx102
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 0LejNC-1fqnZc0NQM-00qWHo; Fri, 19
+ Oct 2018 16:51:56 +0200
+Received: from [0.0.0.0] ([210.140.77.29]) by mail.gmx.com (mrgmx102
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 0LejNC-1fqnZc0NQM-00qWHo; Fri, 19
+ Oct 2018 16:51:56 +0200
+Subject: Re: [PATCH 0/6] btrfs: qgroup: Delay subtree scan to reduce overhead
+To:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org
+References: <20181018111729.11128-1-wqu@suse.com>
+ <20181019134230.GH16290@twin.jikos.cz>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
 Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <05980fc1-cdb1-b278-da4f-5a9f5b5c2a9a@suse.com>
-Date:   Fri, 19 Oct 2018 17:31:09 +0300
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:52.0) Gecko/20100101
- Thunderbird/52.9.1
+Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
+ bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
+ ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
+ rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
+ FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
+ 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
+ ilaVzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
+ CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
+ /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
+ GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
+ q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
+ ABEBAAHCwHwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
+ CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
+ f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
+ mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
+ 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
+ h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
+Message-ID: <c546fa75-00b8-a897-6656-3550a8367ab2@gmx.com>
+Date:   Fri, 19 Oct 2018 22:51:47 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <20181019141847.GI16290@twin.jikos.cz>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
+In-Reply-To: <20181019134230.GH16290@twin.jikos.cz>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="uxfkvCSAXahOEd6zeWzpPPNfkVIlW1BJO"
+X-Provags-ID: V03:K1:yWxyjc/Qj1ZgaSsmVqzQ1Nsix3tTA2qDXwG93h9o2+1QAUEwQNs
+ 4fHMLZV/AMEd3H7u27rRHuonUeOdbGjBfBNhCZdAenD0nZ35b39tPS08Aw9dPwsZXNmU7Ra
+ wk50Owl/QhPydiCwdt2JW9GTWv24QaJZyXRiBvbfp1dv2E6dglMbpORrQTDGXYpqPsxoaQ2
+ hGwe2ZHKTnQdXqznXyAhg==
+X-UI-Out-Filterresults: notjunk:1;V01:K0:tPgKKe2l+zM=:AD5Sc25h+Dq70tmrI/GRWJ
+ WB83f7uY32Y0lQHMqURmDKumvIvxxs9lY865MLeoA1AS5f62Xs7g5e/4lEoSC2EvBUtL7u9tj
+ 9OwIQwSRvlkWTnoNajx27b1GpDvIL44NwQabEGEbe2ZAbBY1SwvaZR8I1sH0MPgerQYfIlFjA
+ BENl8+tWYdkbAr6N93tJoiyaWvmq2ybao67PjMOPg1gVYamT7Tl+lsMClbFf4sCTKywU2Hklw
+ v5drjhq0SYBTvE76XSxN6sTLzA5TJPnDATxfCFcJfYPjpz1LUj5BU/Pm9R2ZJu1w/Zm2Ddw37
+ VZyoZdgjj8Py06WxP9losxd5zH68WjGQd37Cn7t8gzeEcAbdExwyxzinYqC+MUuHiL2strvjL
+ L0wlVcCbOp3gnsP3mAsxFCpvygzjOLTJuoV1IOcJQeUZpgRD63ojqPEAY5lpF+tsGLNRp0/+p
+ DpSFQq2p/DqISvo1oFPzie1i6iIbRu6s7js5iKAz4/ouv9+dQggpsCQkp7UTRNewTKVmNwUCt
+ sy/RjJrks2WmgtV9wa8XqzjT8B8Kqs/mIU38IAfAx2+JzTC2tTH6L9tvSvxy6f+V6JSuSIGcM
+ qDPb/pXXajMjmu+K/VfO0vf2r/hW8+ImaslPFCgeQbXQ2TtyB2LiWwMn3Ags8gI1OYYKSL1nb
+ YRIxfg+rs3t5G4PLd48UMrhMMaz+K0uxKRAx3SRgBpWfzJZF8uy2GeJeqP3gg9sqWzTqjThFK
+ N0ogsLABEt3OYUw4cMbpB7GRKAvAbGAPjww4D54F8bdtQhhEmgtMicaVaS2IrONpaQrknpkJl
+ mWpwptVVoKLEA/ruApuM8EWcJM+TQ==
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--uxfkvCSAXahOEd6zeWzpPPNfkVIlW1BJO
+Content-Type: multipart/mixed; boundary="gR5PNs2UbTbYu3hDbnm8Yro3ExuFRGKB1";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Message-ID: <c546fa75-00b8-a897-6656-3550a8367ab2@gmx.com>
+Subject: Re: [PATCH 0/6] btrfs: qgroup: Delay subtree scan to reduce overhead
+References: <20181018111729.11128-1-wqu@suse.com>
+ <20181019134230.GH16290@twin.jikos.cz>
+In-Reply-To: <20181019134230.GH16290@twin.jikos.cz>
+
+--gR5PNs2UbTbYu3hDbnm8Yro3ExuFRGKB1
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
 
-On 19.10.2018 17:18, David Sterba wrote:
-> On Thu, Oct 11, 2018 at 06:03:20PM +0300, Nikolay Borisov wrote:
->> Here is the second posting of the fsid change support for the kernel. For 
->> background information you can refer to v1 [0]. The main changes in this version
->> are around the handling of possible split-brain scenarios. I've changed a bit 
->> how the userspace code works and now the process is split among 2 transactions. 
->> The first one flagging "we are about to change fsid" and once it's persisted on
->> all disks a second one does the actual change. This of course is not enough 
->> to guarantee full consistency so I had to extend the device scanning to 
->> gracefully handle such cases. I believe I have covered everything but more 
->> review will be appreciated. 
-> 
-> All the cases seem to be covered. Do you intend to add the design
-> document somewhere? The references in the code seem stale and puzzling.
 
-I believe I have the critical portions of the design document (i.e the
-handling of various cases) described in each of the 3 patches that add
-split-brain handling. The doc could be added to the btrfs-dev-doc repo I
-guess.
-
-> 
->> So patch 1 implements the basic functionality with no split-brain handling 
->> whatsoever. Patch 2 is a minor cleanup. Patch 3 deals with a split-brain that 
->> can occur if power loss happens during the initial transaction (the one setting
->> the beginning flag). Patch 4 adds some information that is needed in the last 2 
->> patches. Patch 5 handles failure between transaction 1 and transaction 2 and 
->> finally patch 6 handles the case of power loss during transaction 1 but for an 
->> fs which has already undergone at least one successful fsid change. More 
->> details about the exact failure modes are in each respective patch.
+On 2018/10/19 =E4=B8=8B=E5=8D=889:42, David Sterba wrote:
+> On Thu, Oct 18, 2018 at 07:17:23PM +0800, Qu Wenruo wrote:
+>> This patchset can be fetched from github:
+>> https://github.com/adam900710/linux/tree/qgroup_balance_skip_trees
 >>
->> One thing which could be improved but I ran out of ideas is the naming of the 
->> ancillary functions - find_fsid_inprogress and find_fsid_changed. 
-> 
-> Hm, no better ideas so it can stay and be changed later.
-> 
->> I've actually tested the split-brain handing code with specially crafted images. 
->> They will be part of the user-space submissions and I believe I have full 
->> coverage for that. 
-> 
-> Perfect, thanks.
-> 
-> Now the bad news from me :) There are several coding style and style
-> issues all over the patches so I'll list them here.
-> 
-> * BTRFS_SUPER_FLAG_CHANGING_FSID_v2 -- V2 with uppercase V, as other
->   versioned symbols
-> 
-> * all references in changelogs or comments should refer to the super flag
->   as CHANGING_FSID_v2, not FSID_CHANGING, not just CHANGING_FSID, nor
->   FSID_CHANGE. This is because we want to be able to search for it and
->   find all occurences
-> 
-> * error messages should stick to the preferred format,
->   https://btrfs.wiki.kernel.org/index.php/Development_notes#Error_messages
-> 
-> * comments referring to UUID should use "UUID", there's a mixt of
->   both ways added by the patches, error messages should use the
->   uppercase form too
-> 
-> * find_fsid - type and name should be on one line, parameters on the
->   next if they don't fit
-> 
-> * device_list_add - missing space before =
-> 
-> As these are not functional problems, I'll add the patchset to for-next
-> for testing.
-> 
+>> Which is still based on v4.19-rc1, but with previous submitted patches=
+
+>> as dependency.
+>=20
+> Please rebase this patchset on top of misc-4.20, this should not change=
+
+> as it's going to be the 1st pull.
+>=20
+> I tried to pull the git branch and rebase but there were several
+> conflicts and some of the paches appeared duplicated so the rebase did
+> not recognize the changes as identical.
+>=20
+> Applying patches from mails causes other sort of conflicts and I can't
+> seem to get a compilable version.
+>=20
+> This is not urgent as I want to put the patchset to a topic branch and
+> give it some testing before it goes to for-next. Thanks.
+
+Current patchset (still using while(rb_first()) for cleanup
+swapped_blocks) rebased to misc-4.20.
+With all checkpatch errors fixed.
+
+The branch is:
+https://github.com/adam900710/linux/tree/qgroup_delayed_subtree_rebased
+
+Please note that this is only for test purpose.
+Due to explained reasons, I don't really think it should go misc-next
+right now.
+
+Thanks,
+Qu
+
+
+--gR5PNs2UbTbYu3hDbnm8Yro3ExuFRGKB1--
+
+--uxfkvCSAXahOEd6zeWzpPPNfkVIlW1BJO
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlvJ74MACgkQwj2R86El
+/qh6ewf+IRFDFIuNIYnrxYGqMzuEuTkQ3ZhrUMAeJb+Tz/gH/XcHWPqy4K92BzBe
+Osqnrh+3JS0ESzAFbdxQ1cOsoZnYEvfPLm0ZvtLDsOjA2GyxvOOTcWrObt9i03an
+XIAR3jfrN4B6601DFsrmWc+Githk4KpQZJgPf4eDYwbMqXxA/5awbQQIhN4KqniN
+6WBupXTAyXEgLM1CDRhb4hxHzG1v56Z5skoq9yfoaht2uPqcO27STm2aKWcDXuuB
+Oj7yHq6VIIy0jVxSSdO6658XKazyGOhlVUXDYmDtTDvQ4jKBgeFW1Xiv2cyTa+KS
+m2YhrtJEmXjLOr9jI4d/OdC56iaShA==
+=alX+
+-----END PGP SIGNATURE-----
+
+--uxfkvCSAXahOEd6zeWzpPPNfkVIlW1BJO--

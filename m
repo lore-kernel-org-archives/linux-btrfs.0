@@ -2,96 +2,85 @@ Return-Path: <SRS0=U11f=M7=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.3 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 432D6ECDE3D
-	for <linux-btrfs@archiver.kernel.org>; Fri, 19 Oct 2018 09:15:29 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 23EFBECDE43
+	for <linux-btrfs@archiver.kernel.org>; Fri, 19 Oct 2018 09:41:49 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id E905420869
-	for <linux-btrfs@archiver.kernel.org>; Fri, 19 Oct 2018 09:15:28 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org E905420869
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
+	by mail.kernel.org (Postfix) with ESMTP id BA6862064A
+	for <linux-btrfs@archiver.kernel.org>; Fri, 19 Oct 2018 09:41:48 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=ceremcem-net.20150623.gappssmtp.com header.i=@ceremcem-net.20150623.gappssmtp.com header.b="WFNc9zo/"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org BA6862064A
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=ceremcem.net
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727065AbeJSRUk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 19 Oct 2018 13:20:40 -0400
-Received: from mx2.suse.de ([195.135.220.15]:44890 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726399AbeJSRUk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 19 Oct 2018 13:20:40 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 93747AFA1;
-        Fri, 19 Oct 2018 09:15:25 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id AD718DAEE6; Fri, 19 Oct 2018 11:15:17 +0200 (CEST)
-Date:   Fri, 19 Oct 2018 11:15:17 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 4/6] btrfs: qgroup: Introduce per-root swapped blocks
- infrastructure
-Message-ID: <20181019091516.GB16290@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-References: <20181018111729.11128-1-wqu@suse.com>
- <20181018111729.11128-5-wqu@suse.com>
- <20181018162059.GJ29418@twin.jikos.cz>
- <dfa39127-3cdc-b98d-b0a0-eed82ba984a5@gmx.com>
+        id S1727220AbeJSRrG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 19 Oct 2018 13:47:06 -0400
+Received: from mail-vs1-f49.google.com ([209.85.217.49]:32836 "EHLO
+        mail-vs1-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727208AbeJSRrF (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 19 Oct 2018 13:47:05 -0400
+Received: by mail-vs1-f49.google.com with SMTP id e206so24936686vsd.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 19 Oct 2018 02:41:47 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=ceremcem-net.20150623.gappssmtp.com; s=20150623;
+        h=mime-version:from:date:message-id:subject:to;
+        bh=9LmcW/ShRlfCGYiwe+RmGgzFhMfOFHvJfAwcEC41AcA=;
+        b=WFNc9zo/UfQEqJJost5k+o6ODUMhzx9ueYbLzOAv9zzsXpH23eTTh7WnfYMXp2o4r7
+         xD7z8+JJIv1GRFKKqDgfztbaGBDSJfP/182TySthjGPtZM2Tdly3JsmlMCvDtmS+UK4z
+         8LR9pba5+aEAg0u0mfxa2cBYksSYdssGiuGGxXvT0K5OP8nRYFu/eGICK/uDi40Vb2F3
+         KWXRI14BVPEUWEH0e5yr449LPIH0RqWfZfSqTwiSvL34II+wPfmeBBUc9arq5Ir0Uvfx
+         FCssPKi8T1803ZaT7mjGfu8uHylGu6Mi0UmPagOJVGE/V5K7Eyq/NlUQKezGwcMue8ww
+         cH7g==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:from:date:message-id:subject:to;
+        bh=9LmcW/ShRlfCGYiwe+RmGgzFhMfOFHvJfAwcEC41AcA=;
+        b=gZgBf9I2LefWCTe2D8Kgn0QyTUJ9OsrlSJ2HfXRk1xJ+5FE5l5Os8EACttB5rhM85i
+         oNpNcbBCcSS9Y1xgYnEV7kps6JJhG3yJ269is4QUWUSnDgUyViJkVmuKDFWUbz0MuBLl
+         bpfahRFpcYi7N29nj1lWc4e+gxHVzitBh1Cx/jXk2pVzFRuVPD2YB9lc23J1fSxxWlNF
+         GpqoIwAoB1n5Mu53rRm+OI90rx5wx62FVWhPIrGuFveCZfexslSW3XmvPBOOxbqKypxO
+         6nnp6XAYR5VD/WQ+8bgjsE7gGYjUHnDP47xesQU+f7quxncQbzjoCTNOeb1GrVRczF5E
+         n9Dw==
+X-Gm-Message-State: ABuFfojkCaKdqpSefXhJ66aiR6h9347ONpdhDlxUzu/GE8soxwQWrU4t
+        KZPqIr/wBf/kq9WTIdGF886SpSV/SQqV81xAScqTg8dofU0=
+X-Google-Smtp-Source: ACcGV63soRZVeivGtUTOjZaNmVVBY7F+5za8PWHdoqkBB0RxA5nQB3o+H4rvR2sEyowXnYH1IGnl5EvBawtCJOfdtWk=
+X-Received: by 2002:a67:4282:: with SMTP id p124mr13997132vsa.134.1539942106430;
+ Fri, 19 Oct 2018 02:41:46 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <dfa39127-3cdc-b98d-b0a0-eed82ba984a5@gmx.com>
-User-Agent: Mutt/1.5.23.1 (2014-03-12)
+From:   Cerem Cem ASLAN <ceremcem@ceremcem.net>
+Date:   Fri, 19 Oct 2018 12:41:35 +0300
+Message-ID: <CAN4oSBcEi7Lxt7D3KrZ=jtU3g=DtN7mwUpPQ8zLrvwRjtKRCXw@mail.gmail.com>
+Subject: Is it possible to construct snapshots manually?
+To:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Oct 19, 2018 at 07:29:26AM +0800, Qu Wenruo wrote:
-> 
-> 
-> On 2018/10/19 上午12:20, David Sterba wrote:
-> > On Thu, Oct 18, 2018 at 07:17:27PM +0800, Qu Wenruo wrote:
-> >> +void btrfs_qgroup_clean_swapped_blocks(struct btrfs_root *root)
-> >> +{
-> >> +	struct btrfs_qgroup_swapped_blocks *swapped_blocks;
-> >> +	struct btrfs_qgroup_swapped_block *cur, *next;
-> >> +	int i;
-> >> +
-> >> +	swapped_blocks = &root->swapped_blocks;
-> >> +
-> >> +	spin_lock(&swapped_blocks->lock);
-> >> +	if (!swapped_blocks->swapped)
-> >> +		goto out;
-> >> +	for (i = 0; i < BTRFS_MAX_LEVEL; i++) {
-> >> +		struct rb_root *cur_root = &swapped_blocks->blocks[i];
-> >> +
-> >> +		rbtree_postorder_for_each_entry_safe(cur, next, cur_root,
-> >> +						     node) {
-> >> +			rb_erase(&cur->node, cur_root);
-> > 
-> > https://elixir.bootlin.com/linux/latest/source/include/linux/rbtree.h#L141
-> > 
-> > rb_erase must not be used on the same pointer that
-> > rbtree_postorder_for_each_entry_safe iterates, here it's cur.
-> 
-> Oh, thanks for pointing this out.
-> 
-> So we must go the old while(rb_first()) loop...
+By saying "manually", I mean copying files into a subvolume on a
+different mountpoint manually, then mark the target as if it is
+created by "btrfs send | btrfs receive".
 
-I just realized the postorder iterator can be used here. The forbidden
-pattern is
+Rationale:
 
-rbtree_postorder_for_each_entry_safe() {
-	rb_erase();
-}
+When we delete all common snapshots from source, we have to send whole
+snapshot for next time. This ability will prevent sending everything
+from scratch unless it's necessary.
+(https://unix.stackexchange.com/q/462451/65781)
 
-But you also do kfree right after the erase, and the iterator is fine
-with that and rb_erase is pointless for an entry that's being freed
-anyway.
+Possible workaround:
+
+I've got an idea at the moment: What I want can be achieved by
+dropping usage of "btrfs send | btrfs receive" completely and using
+only rsync for transfers. After transfer, a snapshot can be created
+independently on the remote site. Only problem will be handling the
+renamed/relocated files, but `rsync --fuzzy` option might help here:
+https://serverfault.com/a/489293/261445
+
+Anyway, it would be good to have a built in support for this.

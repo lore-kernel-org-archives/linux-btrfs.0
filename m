@@ -2,82 +2,156 @@ Return-Path: <SRS0=U11f=M7=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.3 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-0.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 43AE3ECDE43
-	for <linux-btrfs@archiver.kernel.org>; Fri, 19 Oct 2018 15:50:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 03FB2ECDE3D
+	for <linux-btrfs@archiver.kernel.org>; Fri, 19 Oct 2018 16:41:58 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 1497120658
-	for <linux-btrfs@archiver.kernel.org>; Fri, 19 Oct 2018 15:50:51 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 1497120658
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
+	by mail.kernel.org (Postfix) with ESMTP id AAFA220869
+	for <linux-btrfs@archiver.kernel.org>; Fri, 19 Oct 2018 16:41:57 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="PVZSgBou"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org AAFA220869
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727743AbeJSX53 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 19 Oct 2018 19:57:29 -0400
-Received: from mx2.suse.de ([195.135.220.15]:59570 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727724AbeJSX53 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 19 Oct 2018 19:57:29 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id D78C4B012
-        for <linux-btrfs@vger.kernel.org>; Fri, 19 Oct 2018 15:50:47 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 82D2EDAF50; Fri, 19 Oct 2018 17:50:40 +0200 (CEST)
-Date:   Fri, 19 Oct 2018 17:50:39 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Nikolay Borisov <nborisov@suse.com>
-Cc:     dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 0/6] FSID change kernel support
-Message-ID: <20181019155039.GL16290@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <1539270206-27005-1-git-send-email-nborisov@suse.com>
- <20181019141847.GI16290@twin.jikos.cz>
- <05980fc1-cdb1-b278-da4f-5a9f5b5c2a9a@suse.com>
+        id S1727856AbeJTAsr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 19 Oct 2018 20:48:47 -0400
+Received: from mail-yw1-f52.google.com ([209.85.161.52]:34052 "EHLO
+        mail-yw1-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727549AbeJTAsr (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 19 Oct 2018 20:48:47 -0400
+Received: by mail-yw1-f52.google.com with SMTP id m129-v6so13446282ywc.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 19 Oct 2018 09:41:55 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=mime-version:from:date:message-id:subject:to;
+        bh=2unvdekOyInqnrn00Yh8VBNwZ6n2tuq1DF5yWUXkCkE=;
+        b=PVZSgBouwHwKhd0aP8ghtDFyn2OKdka5yp57ZGllFDnSQJY+TxjyISO1KTWcyPm10V
+         Kj4Sulz3ZFAwExgAs0RdnUMf49O4Qz++NeBNUjFvHjzvJM4g+Y5FDs+s5bDnMOHy/bZA
+         2LWabXiS3yWp/6xlNiTGxskHdBP6Z5mnBu5vUOrkVEGHIoZki8D+smp9xnpuPHVJWAeN
+         jIJHU/3lBDdr9rm++cBdVEm52ZkTEKQWkiGQlrrvD/bQ9VMuJ7tmbxPtnc7Mm+uV+EWP
+         o9vwol9lRRh4fjjNrqahc1i9ldzDT4MrRSCaucG3Ue0Fm9ZChe5Ia1dlV4hEzZf7QJ8r
+         IeDg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:from:date:message-id:subject:to;
+        bh=2unvdekOyInqnrn00Yh8VBNwZ6n2tuq1DF5yWUXkCkE=;
+        b=GbPTmrz0M4wIm0W3tAhZP9avTTr99TmhH437IPcU/87L1+nFLm/jyGjl8Hq69hOko0
+         FXMbpuujf8LXiygocFIZonDFrHESJ1228IOa6+h9Tg3CK/hiLk3Mn705t3AslCBnMAac
+         u29uOU+74sNzKC1rDYosDv74Ao9hxCv/6IngJ1fM5n2x7PARte+25LyTdrs6FgbNX3tJ
+         PF9DL/f5QHCg4BLq3/HCP4qpt+0BEWQehwOh+FpZguEVFZUzIzkKwj2SQAuvKmx0Dbb4
+         9911W/JHjSthl+Yg0JxHcu77oE2OwZfhHrfxSKchmlWqbf/+bOM0eSrSj19hKtgt0vz7
+         8fkQ==
+X-Gm-Message-State: ABuFfoiRpANHGUV0X6kD4zMKDU5nWUIfkIstAm2rDG9wBhHaKzDVYX6n
+        W+e9jduhg/wAsxcY+wSwFIRlkeBlXiqJpxHHXYneQmBe
+X-Google-Smtp-Source: ACcGV61xoAfI0FPnWE3nShcjU6pRAgOBc1LxpjKG6TPEh2ekhoYE7ix1b/wRn1Vdxx/K7S8/nCLZ+C0mzpT/O4yABP8=
+X-Received: by 2002:a81:32d3:: with SMTP id y202-v6mr1372891ywy.55.1539967314468;
+ Fri, 19 Oct 2018 09:41:54 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <05980fc1-cdb1-b278-da4f-5a9f5b5c2a9a@suse.com>
-User-Agent: Mutt/1.5.23.1 (2014-03-12)
+From:   "Marco L. Crociani" <marco.crociani@gmail.com>
+Date:   Fri, 19 Oct 2018 18:41:42 +0200
+Message-ID: <CADy=jfV+rOf9MJ2iF2OcGOLpA+o8Q2235FjoOpyMCGEP1aRbLA@mail.gmail.com>
+Subject: I messed up disk replace of RAID5
+To:     linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Oct 19, 2018 at 05:31:09PM +0300, Nikolay Borisov wrote:
-> 
-> 
-> On 19.10.2018 17:18, David Sterba wrote:
-> > On Thu, Oct 11, 2018 at 06:03:20PM +0300, Nikolay Borisov wrote:
-> >> Here is the second posting of the fsid change support for the kernel. For 
-> >> background information you can refer to v1 [0]. The main changes in this version
-> >> are around the handling of possible split-brain scenarios. I've changed a bit 
-> >> how the userspace code works and now the process is split among 2 transactions. 
-> >> The first one flagging "we are about to change fsid" and once it's persisted on
-> >> all disks a second one does the actual change. This of course is not enough 
-> >> to guarantee full consistency so I had to extend the device scanning to 
-> >> gracefully handle such cases. I believe I have covered everything but more 
-> >> review will be appreciated. 
-> > 
-> > All the cases seem to be covered. Do you intend to add the design
-> > document somewhere? The references in the code seem stale and puzzling.
-> 
-> I believe I have the critical portions of the design document (i.e the
-> handling of various cases) described in each of the 3 patches that add
-> split-brain handling. The doc could be added to the btrfs-dev-doc repo I
-> guess.
+Hi,
+I have a copy of this data online and a backup offline but I would
+like to find out if we can recover this.
+A drive broke and I made a mess while replacing it.
 
-Yeah, but what does 4/a mean in the comments? It's not referring to the
-changelog where I'd look first. External documentation is fine but we
-need some sort of reference in the code. The comments in 5/6 and 6/6 are
-sufficient, just that the references could be more explicit. Possibly
-the cases can be simplified and put into the .c as a bullet list.
+each of sda,sdb,sdc,sdd is a 2 disk hardware RAID0.
+one disk of sda died and.
+I replaced it.
+Made a new raid0 array: sde
 
-The document is good for understanding, the nice-to-have part would be
-some quick reference to check the logic. I'll give it another read to
-see how much is really missing or not.
+This was my mistake right?
+With btrfs filesystem still mounted I replicated GUID partition using
+gdisk /dev/sdd
+u
+/dev/sde
+w
+q
+
+then to randomize GUID (but it was already too late right? )
+gdisk /dev/sde
+g
+w
+q
+
+btrfs already took the new partion in.
+Infact btrfs fi show showed 4 drives and no missing drives.
+
+Here I made some more mistakes like a btrfs de remove than stopped and
+some other command.
+
+Then I umounted the filesystem. wipefs on /dev/sde5 and then zero to
+all /dev/sde5 to be sure
+Rebooted the machine.
+
+mount -o degraded
+btrfs device add /dev/sda5 (after reboot sde-> sda)
+btrfs device remove missing /data/btrfs
+ERROR: error removing device 'missing': Input/output error
+
+btrfs balance start /data/btrfs
+[...]
+Input/output error
+
+btrfs fi show
+Label: 'btrfs-data'  uuid: dee27729-64b0-45e0-af2b-97557357c021
+        Total devices 5 FS bytes used 12.86TiB
+        devid    2 size 7.12TiB used 4.29TiB path /dev/sdb5
+        devid    3 size 7.12TiB used 4.29TiB path /dev/sdc5
+        devid    4 size 7.12TiB used 4.29TiB path /dev/sdd5
+        devid    5 size 7.12TiB used 60.34GiB path /dev/sda5
+        *** Some devices missing
+
+uname -a
+Linux kvm4.prisma 4.18.13-1.el7.elrepo.x86_64 #1 SMP Wed Oct 10
+15:37:55 EDT 2018 x86_64 x86_64 x86_64 GNU/Linux
+
+btrfs --version
+btrfs-progs v4.15.1
+
+btrfs fi show
+Label: 'btrfs-data'  uuid: dee27729-64b0-45e0-af2b-97557357c021
+        Total devices 5 FS bytes used 12.86TiB
+        devid    2 size 7.12TiB used 4.29TiB path /dev/sdb5
+        devid    3 size 7.12TiB used 4.29TiB path /dev/sdc5
+        devid    4 size 7.12TiB used 4.29TiB path /dev/sdd5
+        devid    5 size 7.12TiB used 60.34GiB path /dev/sda5
+        *** Some devices missing
+
+btrfs fi df /data/btrfs/
+Data, RAID5: total=12.83TiB, used=12.83TiB
+System, RAID5: total=12.00MiB, used=912.00KiB
+Metadata, RAID5: total=31.88GiB, used=30.94GiB
+GlobalReserve, single: total=512.00MiB, used=0.00B
+
+[ 3011.971936] BTRFS info (device sdb5): found 66028 extents
+[ 3012.489634] BTRFS info (device sdb5): relocating block group
+14141113761792 flags data|raid5
+[ 3020.107263] BTRFS info (device sdb5): found 5057 extents
+[ 3024.248896] BTRFS info (device sdb5): found 5057 extents
+[ 3024.341585] BTRFS info (device sdb5): relocating block group
+13945625640960 flags data|raid5
+[ 3041.911748] BTRFS info (device sdb5): found 95400 extents
+[ 3043.288820] BTRFS error (device sdb5): bad tree block start 0 13851980791808
+
+
+Data is readable and seem also writeable but is this array recoverable
+or should I make a new filesystem?
+
+Regards,
+
+Marco

@@ -2,77 +2,58 @@ Return-Path: <SRS0=U11f=M7=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D10ECC67863
-	for <linux-btrfs@archiver.kernel.org>; Fri, 19 Oct 2018 00:48:22 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 62E41C67863
+	for <linux-btrfs@archiver.kernel.org>; Fri, 19 Oct 2018 01:04:37 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 7A94D20C0E
-	for <linux-btrfs@archiver.kernel.org>; Fri, 19 Oct 2018 00:48:22 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="Oe5DzcQU"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 7A94D20C0E
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=oracle.com
+	by mail.kernel.org (Postfix) with ESMTP id C3B432145D
+	for <linux-btrfs@archiver.kernel.org>; Fri, 19 Oct 2018 01:04:36 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org C3B432145D
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=cn.fujitsu.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726478AbeJSIv6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 19 Oct 2018 04:51:58 -0400
-Received: from userp2120.oracle.com ([156.151.31.85]:43366 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725945AbeJSIv6 (ORCPT
+        id S1726454AbeJSJIQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 19 Oct 2018 05:08:16 -0400
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:9217 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1726261AbeJSJIQ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 19 Oct 2018 04:51:58 -0400
-Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w9J0cpDM159648;
-        Fri, 19 Oct 2018 00:48:18 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to : cc :
- references : from : message-id : date : mime-version : in-reply-to :
- content-type : content-transfer-encoding; s=corp-2018-07-02;
- bh=yAG7Rd3PSRwoAFNE+aPta8+0uHHGYzYEVVm+PD6zZkU=;
- b=Oe5DzcQUGAFa3z2dnSz0M1ENFAcDIuQ0uKLjxFdtMTLS3QEhlnVaIFaCVWhG8pcKjbhh
- d6mAobRLS9FmC7lKNpee0dTTYVLOkH9aPv5lyII5NiaDXB06ggbIOBLr/+O7GICiCBS2
- U4VQsk9y1Ivn9+B6zCj5cTb7EXiQluNqrhPyKV3eK3ItKyewafEACfOF49jzwC2m4N3B
- itklCWdBKVYRZFsbqL5T3zCFkqSEZUGVzIjE/q8uCo8q8FVf97UjFcsDGkBiKtF0JDUl
- Xu1yfAIxzFxFqVtp0DEM0AAZm5Yg5RnAC1ps7ZbdfFjrwYp60OzqGPNlxJFMetIP8pUA YA== 
-Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
-        by userp2120.oracle.com with ESMTP id 2n39brse8b-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Fri, 19 Oct 2018 00:48:18 +0000
-Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w9J0mCtC021733
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Fri, 19 Oct 2018 00:48:12 GMT
-Received: from abhmp0005.oracle.com (abhmp0005.oracle.com [141.146.116.11])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w9J0mC8g012442;
-        Fri, 19 Oct 2018 00:48:12 GMT
-Received: from [192.168.0.120] (/202.156.136.99)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Thu, 18 Oct 2018 17:48:11 -0700
-Subject: Re: reproducible builds with btrfs seed feature
-To:     Chris Murphy <lists@colorremedies.com>
-Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <CAJCQCtTPwQnzwkpk=4ZsZXfWTC7HymYETxp-9xUU_tsvOTW0ZQ@mail.gmail.com>
- <11171664-790c-40ff-3925-1c179ab8e74b@oracle.com>
- <CAJCQCtSfuLTsxXfEkmz59PrOJ3LrXmGNG+_NKS_LPk9dHTgkug@mail.gmail.com>
- <d63839e6-6d76-2457-cbe5-7e5a60181d23@oracle.com>
- <CAJCQCtTu0pjAY8k3L=YK0CCv7MvDepUBafMDqf1mBvJbNdFnkg@mail.gmail.com>
-From:   Anand Jain <anand.jain@oracle.com>
-Message-ID: <d4363456-241d-8631-df21-8a6fe8af72b1@oracle.com>
-Date:   Fri, 19 Oct 2018 08:47:51 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:52.0) Gecko/20100101
- Thunderbird/52.9.1
+        Fri, 19 Oct 2018 05:08:16 -0400
+X-IronPort-AV: E=Sophos;i="5.43,368,1503331200"; 
+   d="scan'208";a="46404750"
+Received: from unknown (HELO cn.fujitsu.com) ([10.167.33.5])
+  by heian.cn.fujitsu.com with ESMTP; 19 Oct 2018 09:04:33 +0800
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
+        by cn.fujitsu.com (Postfix) with ESMTP id B4CFF4B6EDAD;
+        Fri, 19 Oct 2018 09:04:32 +0800 (CST)
+Received: from [10.167.226.24] (10.167.226.24) by
+ G08CNEXCHPEKD01.g08.fujitsu.local (10.167.33.89) with Microsoft SMTP Server
+ (TLS) id 14.3.408.0; Fri, 19 Oct 2018 09:04:32 +0800
+Subject: Re: fsck lowmem mode only: ERROR: errors found in fs roots
+To:     Christoph Anton Mitterer <calestyo@scientia.net>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+CC:     Su Yue <Damenly_Su@gmx.com>
+References: <8d8c90d3edfcc9e73428d3730496d48b1160b39b.camel@scientia.net>
+ <a141cad2-0a08-555e-eb05-da2dceb54025@cn.fujitsu.com>
+ <7146cafcc48d46ad123388d492807cbba08e101c.camel@scientia.net>
+ <94750beb-c339-756a-11ec-f2bcc72b98e3@cn.fujitsu.com>
+ <e2ac3e05ddd1297d4017cbeecfa4b392b04613ad.camel@scientia.net>
+From:   Su Yue <suy.fnst@cn.fujitsu.com>
+Message-ID: <d0680364-bc5c-2fe1-ef84-29309eaabab1@cn.fujitsu.com>
+Date:   Fri, 19 Oct 2018 09:11:48 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.0
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtTu0pjAY8k3L=YK0CCv7MvDepUBafMDqf1mBvJbNdFnkg@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <e2ac3e05ddd1297d4017cbeecfa4b392b04613ad.camel@scientia.net>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Content-Language: en-US
 Content-Transfer-Encoding: 7bit
-X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9050 signatures=668683
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=0 malwarescore=0
- phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
- adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.0.1-1807170000 definitions=main-1810190005
+X-Originating-IP: [10.167.226.24]
+X-yoursite-MailScanner-ID: B4CFF4B6EDAD.AF70C
+X-yoursite-MailScanner: Found to be clean
+X-yoursite-MailScanner-From: suy.fnst@cn.fujitsu.com
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -80,56 +61,53 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 10/19/2018 02:02 AM, Chris Murphy wrote:
-> On Tue, Oct 16, 2018 at 10:08 PM, Anand Jain <anand.jain@oracle.com> wrote:
+On 10/18/18 10:41 PM, Christoph Anton Mitterer wrote:
+> Hey.
+> 
+> So I'm back from a longer vacation and had now the time to try out your
+> patches from below:
+> 
+> On Wed, 2018-09-05 at 15:04 +0800, Su Yue wrote:
+>> I found the errors should blame to something about inode_extref check
+>> in lowmem mode.
+>> I have writeen three patches to detect and report errors about
+>> inode_extref. For your convenience, it's based on v4.17:
+>> https://github.com/Damenly/btrfs-progs/tree/ext_ref_v4.17
+>>My bad, I have sent patches to ML according to my guess but forgot
+to update above repo. I rebased it to v4.17 and pushed again just now, 
+would you please fetch patches from above repo and try again?
+
+Thanks,
+Su
+>> This repo should report more errors. Because one of those is just
+>> Whac-A-Mole, I will make it better and send them later to ML.
 > 
 > 
->>
->>   So a possible solution for the reproducible builds:
->>     usual mkfs.btrfs dev
->>     Write the data
->>     unmount; create btrfs-image with uuid/fsid/time sanitized; mark it as a
->> seed (RO).
->>     check/verify the hash of the image.
+> This is the output it gives:
+> checking extents
+> checking free space cache
+> checking fs roots
+> checking only csum items (without verifying data)
+> checking root refs
+> Checking filesystem on /dev/mapper/system
+> UUID: 6050ca10-e778-4d08-80e7-6d27b9c89b3c
+> found 617228185600 bytes used, no error found
+> total csum bytes: 600139124
+> total tree bytes: 2516172800
+> total fs tree bytes: 1639890944
+> total extent tree bytes: 156532736
+> btree space waste bytes: 455772589
+> file data blocks allocated: 7431727771648
+>   referenced 732073979904
 > 
-> Gotcha. Generation/transid needs to be included in that list. Imagine
-> a fast system vs a slow system. The slow system certainly will end up
-> with with higher transid's for the latest completed transactions.
-
-  In a scripted build environment the transid could remain same, as 
-there won't extra sync or mount -o transid changes.. etc.
-
-> But also, I don't know how the kernel code chooses block numbers,
-> either physical (chunk allocation) or logical (extent allocation) and
-> if that could be made deterministic. Same for inode assignment.
-
-  The above list may not be complete. To avoid the disk size,type 
-related changes one can choose to create a mkfs on a file instead of 
-disk. But the point I am trying to make with bytenr is if a tool uses 
-certain items which are not explicitly EXPORTED/ioctl, that means it can 
-change without notice, unless these tools are inline with the btrfs 
-kernel changes it would break.
-
-> Another question that comes up later when creating the sprout by
-> removing the seed device, is how a script can know when all block
-> groups have successfully copied from seed to sprout, and that the
-> sprout can be unmounted.
-
-  Oh.
-    mount -o loop seed.img /seed  <-- this will be RO
-    btrfs device add /dev/sprout /seed <-- new FSID on the same mount 
-point, /dev/sprout will have new SB with new FSID, and sprout device 
-count will include the seed device. And originally this was RW already 
-but we broke it somewhere. But not a big deal as we can use remount.
-    mount -o remount,rw /dev/sprout /seed <-- this is RW. Only _new_ 
-writes goes to /dev/sprout, and sprout still needs seed to mount.
-    btrfs device delete <seed-devid> /seed <-- this will transfer all 
-seed blocks to /dev/sprout.
-
-    Now /dev/sprout is an independent RW FS with the contents from the 
-seed and its total device count is now 1.
-
-Thanks, Anand
+> (just a bit strange that the UUID line is not in the beginngin)... but
+> other than that, no longer an error message as it seems)
+> 
+> 
+> Cheers,
+> Chris.
 > 
 > 
 > 
+
+

@@ -2,113 +2,66 @@ Return-Path: <SRS0=ymi4=NB=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.3 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,UNPARSEABLE_RELAY,URIBL_BLOCKED
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=0.8 required=3.0 tests=FORGED_MUA_MOZILLA,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1E60FECDE43
-	for <linux-btrfs@archiver.kernel.org>; Sun, 21 Oct 2018 16:20:22 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 43681ECDE44
+	for <linux-btrfs@archiver.kernel.org>; Sun, 21 Oct 2018 19:06:21 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D7C7E20779
-	for <linux-btrfs@archiver.kernel.org>; Sun, 21 Oct 2018 16:20:21 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="24DUBrAG"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org D7C7E20779
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=oracle.com
+	by mail.kernel.org (Postfix) with ESMTP id DA95F20838
+	for <linux-btrfs@archiver.kernel.org>; Sun, 21 Oct 2018 19:06:20 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org DA95F20838
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=sysnux.pf
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728130AbeJVAe6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 21 Oct 2018 20:34:58 -0400
-Received: from userp2130.oracle.com ([156.151.31.86]:42810 "EHLO
-        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727998AbeJVAe6 (ORCPT
+        id S1728018AbeJVDVg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 21 Oct 2018 23:21:36 -0400
+Received: from [195.159.176.226] ([195.159.176.226]:60637 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1727965AbeJVDVf (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 21 Oct 2018 20:34:58 -0400
-Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
-        by userp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w9LGE2Nq154085;
-        Sun, 21 Oct 2018 16:17:51 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : from : to :
- cc : date : message-id : in-reply-to : references : mime-version :
- content-type : content-transfer-encoding; s=corp-2018-07-02;
- bh=5749FIFK93ihy3lPNOQ7wkYeCVTZYvwQHKIL7IXrY6w=;
- b=24DUBrAGkrS2J7UxUA0/AFMP2niht/l+UPTNWVEE060bjG0GnWg2p395m+ArKTBUx7y8
- 8Pf3F/xyVSSzU2K8Rs3RJpTOWwy6IixapcY4hhlmyvjqel0igTNgBDVwKp+ZUt0yvJ8i
- Bbe5zJXWBRnIIPVOE3yW0zP6AdK7hqDVDb5GNSkFmAcJ5Hxu4lonIwT+3e19/K+RnO9l
- zNykhLIuplLOLFXg/FjypYE1/l+DuckhLJl0kowR2EvKqP3tt7swvyXKJPGgvNXdKcsi
- MxjkHcDic0D1podKczKFJNoUbEBagCkE1VgGJGj+v5eGx+VggQ+TQuRS1OiwnXxdNHUl 5A== 
-Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
-        by userp2130.oracle.com with ESMTP id 2n7ustu1v9-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Sun, 21 Oct 2018 16:17:51 +0000
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w9LGHjFo027541
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Sun, 21 Oct 2018 16:17:45 GMT
-Received: from abhmp0010.oracle.com (abhmp0010.oracle.com [141.146.116.16])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w9LGHjwD024877;
-        Sun, 21 Oct 2018 16:17:45 GMT
-Received: from localhost (/10.159.225.70)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Sun, 21 Oct 2018 09:17:45 -0700
-Subject: [PATCH 23/28] xfs: fix pagecache truncation prior to reflink
-From:   "Darrick J. Wong" <darrick.wong@oracle.com>
-To:     david@fromorbit.com, darrick.wong@oracle.com
-Cc:     sandeen@redhat.com, linux-nfs@vger.kernel.org,
-        linux-cifs@vger.kernel.org, linux-unionfs@vger.kernel.org,
-        linux-xfs@vger.kernel.org, linux-mm@kvack.org,
-        linux-btrfs@vger.kernel.org, Dave Chinner <dchinner@redhat.com>,
-        linux-fsdevel@vger.kernel.org, Christoph Hellwig <hch@lst.de>,
-        ocfs2-devel@oss.oracle.com
-Date:   Sun, 21 Oct 2018 09:17:43 -0700
-Message-ID: <154013866350.29026.11722237862126200267.stgit@magnolia>
-In-Reply-To: <154013850285.29026.16168387526580596209.stgit@magnolia>
-References: <154013850285.29026.16168387526580596209.stgit@magnolia>
-User-Agent: StGit/0.17.1-dirty
-MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 7bit
-X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9053 signatures=668683
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=0 malwarescore=0
- phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=952
- adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.0.1-1807170000 definitions=main-1810210151
+        Sun, 21 Oct 2018 23:21:35 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-3@m.gmane.org>)
+        id 1gEJ1C-0005So-0k
+        for linux-btrfs@vger.kernel.org; Sun, 21 Oct 2018 21:04:06 +0200
+X-Injected-Via-Gmane: http://gmane.org/
+To:     linux-btrfs@vger.kernel.org
+From:   Jean-Denis Girard <jd.girard@sysnux.pf>
+Subject: Re: Untar on empty partition returns ENOSPACE
+Date:   Sun, 21 Oct 2018 09:06:10 -1000
+Message-ID: <pqiiiv$7fl$1@blaine.gmane.org>
+References: <pq90ft$hso$1@blaine.gmane.org>
+ <CAPmG0jbaKvK-xvkQ+sBVsCGiVdxDJA-o_rFDCxH1CJN-dW6-iA@mail.gmail.com>
+ <pqfts8$6a6$1@blaine.gmane.org>
+ <CAN4oSBfHiez22uNVsST8Cnzyiiic8Q+9yxw=2LJs4wu_ADVxQw@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: 8bit
+X-Complaints-To: usenet@blaine.gmane.org
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.2.1
+In-Reply-To: <CAN4oSBfHiez22uNVsST8Cnzyiiic8Q+9yxw=2LJs4wu_ADVxQw@mail.gmail.com>
+Content-Language: en-US
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Darrick J. Wong <darrick.wong@oracle.com>
+Le 20/10/2018 à 10:39, Cerem Cem ASLAN a écrit :
+> You don't even need dd_rescue or something for RaspberryPi creation,
+> you may use https://github.com/aktos-io/dcs-tools#cloning-a-target-into-a-new-target
 
-Prior to remapping blocks, it is necessary to remove pages from the
-destination file's page cache.  Unfortunately, the truncation is not
-aggressive enough -- if page size > block size, we'll end up zeroing
-subpage blocks instead of removing them.  So, round the start offset
-down and the end offset up to page boundaries.  We already wrote all
-the dirty data so the larger range shouldn't be a problem.
-
-Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
-Reviewed-by: Dave Chinner <dchinner@redhat.com>
-Reviewed-by: Christoph Hellwig <hch@lst.de>
----
- fs/xfs/xfs_reflink.c |    5 +++--
- 1 file changed, 3 insertions(+), 2 deletions(-)
+That's interesting, but a bit overkill for my needs : I'll stay with my
+simple script for this project.
 
 
-diff --git a/fs/xfs/xfs_reflink.c b/fs/xfs/xfs_reflink.c
-index 9b1ea42c81d1..e8e86646bb4b 100644
---- a/fs/xfs/xfs_reflink.c
-+++ b/fs/xfs/xfs_reflink.c
-@@ -1369,8 +1369,9 @@ xfs_reflink_remap_prep(
- 		goto out_unlock;
- 
- 	/* Zap any page cache for the destination file's range. */
--	truncate_inode_pages_range(&inode_out->i_data, pos_out,
--				   PAGE_ALIGN(pos_out + *len) - 1);
-+	truncate_inode_pages_range(&inode_out->i_data,
-+			round_down(pos_out, PAGE_SIZE),
-+			round_up(pos_out + *len, PAGE_SIZE) - 1);
- 
- 	return 1;
- out_unlock:
+Thanks,
+-- 
+Jean-Denis Girard
+
+SysNux                   Systèmes   Linux   en   Polynésie  française
+https://www.sysnux.pf/   Tél: +689 40.50.10.40 / GSM: +689 87.797.527
+
 

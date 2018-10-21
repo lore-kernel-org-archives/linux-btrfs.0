@@ -2,367 +2,274 @@ Return-Path: <SRS0=ymi4=NB=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+X-Spam-Status: No, score=-8.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
 	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
+	SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DBA10ECDE43
-	for <linux-btrfs@archiver.kernel.org>; Sun, 21 Oct 2018 09:31:45 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 44614ECDE43
+	for <linux-btrfs@archiver.kernel.org>; Sun, 21 Oct 2018 10:26:04 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 8DEBF20838
-	for <linux-btrfs@archiver.kernel.org>; Sun, 21 Oct 2018 09:31:45 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id DAEB420869
+	for <linux-btrfs@archiver.kernel.org>; Sun, 21 Oct 2018 10:26:03 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="HsTznG4G"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 8DEBF20838
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="raJgxKvd"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org DAEB420869
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727585AbeJURpZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 21 Oct 2018 13:45:25 -0400
-Received: from mail-vs1-f68.google.com ([209.85.217.68]:39493 "EHLO
-        mail-vs1-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727573AbeJURpZ (ORCPT
+        id S1727465AbeJUSjx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 21 Oct 2018 14:39:53 -0400
+Received: from mail-pf1-f195.google.com ([209.85.210.195]:39741 "EHLO
+        mail-pf1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726842AbeJUSjw (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 21 Oct 2018 13:45:25 -0400
-Received: by mail-vs1-f68.google.com with SMTP id m5so27805175vsk.6;
-        Sun, 21 Oct 2018 02:31:43 -0700 (PDT)
+        Sun, 21 Oct 2018 14:39:52 -0400
+Received: by mail-pf1-f195.google.com with SMTP id c25-v6so18485421pfe.6;
+        Sun, 21 Oct 2018 03:26:02 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20161025;
-        h=mime-version:references:in-reply-to:reply-to:from:date:message-id
-         :subject:to:cc:content-transfer-encoding;
-        bh=QBLUGbFci5KrNNymi2yT8ntnXUV4JOG+Xiz/x+0CXPg=;
-        b=HsTznG4GLxsHFON0tttkx6R5V123DM1Ozgs0mEhuu9Ea3z13TRPGMHcIYfDgPYSeYL
-         HttPzaA9tuuGTTkgKwfgfYoCseIKGU8nnz2W7o/Br+wEI8YBT7nBz02gMQacm4Od93A9
-         l5zliyuI59fK9R8xdJaTzhFb66nf3SQNGYaSkIi3oqDBUaHA5LZG65sJM9Idak4ZlKfU
-         QyDVIuVQgha7ODgu4XoFHLT9iIfCiAL5mcOaIMmxFUVqrKydzPFn3BfVGXsq+g/5HFgJ
-         Fnr+GeyRF5XZlPUPEj/kA/Yfda2DlYpK6PNrDNgt0rWilrXLvtcz0XKQ12gaNZCeT9Fn
-         kBzw==
+        h=date:from:to:cc:subject:message-id:references:mime-version
+         :content-disposition:in-reply-to:user-agent;
+        bh=hUWJZg4j0jB2zF1ITtOaMc3F8tXhDnnQe2FFo3/OT6c=;
+        b=raJgxKvdDjS/1Sd5/Hj8pSlXmo+bqcvV/38UntsTlCB4xdFqiu8IA4L66OhI3mjnxn
+         /r2cF9mgc/R+S7uL6HtUnDKGgF89nQZewG1Xj0JnLeNxfQhNzbA01o+M4qH6MkJS4PD1
+         GAZRfTad56inp1PTKESAzhXf9dlSWtMlIxfTYzV2Q+CJN/TcmGV8j9T+xC9x+zvGle3H
+         mPhW31gFBY/HSth1d4r6XO2RfungWu8LegNr/dDwgzXXXmSsKcQuaq2/o+picQgb01HI
+         lvFbVYYMOC/zrsZVI6IwVAfPY7b10UDfTaMS4mgOYXUqoiUovi9LXLFwowzXdvR5LE8x
+         I2dw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:reply-to
-         :from:date:message-id:subject:to:cc:content-transfer-encoding;
-        bh=QBLUGbFci5KrNNymi2yT8ntnXUV4JOG+Xiz/x+0CXPg=;
-        b=X1HGnsz/nDS4H+UsqHYGj1N4SuEEz86KK54nbXuoESjFn3vLE324mFNSwSfbChx6Cr
-         ehGHzHJnVxC4YZuIX5YPf+fKOBVpdl1SmFlPaDlJB8QClID8SD/m+TrZk6246gGp8OEm
-         nKBuN3lHW3RAIU+7IzbIrvuMLtgSkFjimCjSgMBcbODbpvqoKUSe1hpc5cXpHiRUYRzU
-         D+XsQFiRWLo1Df5g41OYUjskbKtvyAmp1PwaoRtWW5I6SXO7W78bv690QzMUoHSwPMXc
-         3sHi0fDHJRRyWhj7TjUvOFrfycJU5RXt/bCtq+jfw9IG5nmixinTTxyiexjX7yxQvfNR
-         Xk+A==
-X-Gm-Message-State: ABuFfoi6BooahVPu7mU4x1aQ85GMwexlsZY+CZKV9H4mLGGC1i+PFJmO
-        8/V1UA200FcpyFRvDNktsMJvOa7MBQV7KX01uAY=
-X-Google-Smtp-Source: ACcGV60dtcIxD2n7t4rIKT8SGS6RVYO3LxStiRH9RgDql1V4nIMqJBUh1uZpN7n44UCtKxmWZAvNPV+lvEBjnaKaBnQ=
-X-Received: by 2002:a67:4482:: with SMTP id y2mr16910077vsf.90.1540114303030;
- Sun, 21 Oct 2018 02:31:43 -0700 (PDT)
+        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
+         :mime-version:content-disposition:in-reply-to:user-agent;
+        bh=hUWJZg4j0jB2zF1ITtOaMc3F8tXhDnnQe2FFo3/OT6c=;
+        b=LBhBR8NURxjGxMVb9rha572cUdwpZVbgUN4FWq+lN+hBLsApTKG8ghLM83d9yci2Av
+         cId1Csg0CbG5m6yGtz45G30tfVqXle+RCKJYOEEmBAs8K2rq5SMrFxvadm1NnbM9cFXf
+         BLAVCcl/OcidPmgAcpwzahlcnl/szU6JZOgzUSOPUTL2dd4YiYHn51XBYKi0xKSW2OrP
+         Q4feIGIEGvKZTujyunI6Zg9A6r/nOK01IlKc+vjvOSPq+zAKCjeQ2rwG+9j2Tom0zslq
+         KsYNWceCAseaM7vPvXYxqkjgtyTZyqtGzFvx+P+j0ZTtoQDHqlGZBDsnZ8HTR78URRTZ
+         C3+g==
+X-Gm-Message-State: ABuFfog50LaKBP+/yPn/MyH75Szki2lUsSqXH+Vo+SFh/DbuYCDpv0jV
+        ormP0kM4U8VkRHxN/JarA6U=
+X-Google-Smtp-Source: ACcGV60P6tyOPbvPfhfZ/zr27x2Av9idUT5vC0zRGp9eyuyaLFWOkG/Lt0bFakZcyEfEs+TDB7xJvQ==
+X-Received: by 2002:a62:6ac4:: with SMTP id f187-v6mr9595275pfc.103.1540117561560;
+        Sun, 21 Oct 2018 03:26:01 -0700 (PDT)
+Received: from localhost ([128.199.137.77])
+        by smtp.gmail.com with ESMTPSA id y144-v6sm42003437pfb.81.2018.10.21.03.25.59
+        (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
+        Sun, 21 Oct 2018 03:26:00 -0700 (PDT)
+Date:   Sun, 21 Oct 2018 18:25:54 +0800
+From:   Eryu Guan <guaneryu@gmail.com>
+To:     Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
+Cc:     fstests@vger.kernel.org
+Subject: Re: [PATCH v2 rev log added] fstests: btrfs verify hardening agaist
+ duplicate fsid
+Message-ID: <20181021102554.GR17817@desktop>
+References: <1538383475-2532-1-git-send-email-anand.jain@oracle.com>
+ <1539023301-4583-1-git-send-email-anand.jain@oracle.com>
 MIME-Version: 1.0
-References: <20171113022541.7413-1-anand.jain@oracle.com> <CAL3q7H41dQpiVaCyre3sCgAaVXd19-cWbLO68z4ovJz2F1E2-g@mail.gmail.com>
- <a83fb0ce-dff8-9389-2371-f2e7a5164153@suse.com>
-In-Reply-To: <a83fb0ce-dff8-9389-2371-f2e7a5164153@suse.com>
-Reply-To: fdmanana@gmail.com
-From:   Filipe Manana <fdmanana@gmail.com>
-Date:   Sun, 21 Oct 2018 10:31:31 +0100
-Message-ID: <CAL3q7H7inq5UCgihaP8i+9NOGiSvDGc6ndphMyuONc6OTJFtiw@mail.gmail.com>
-Subject: Re: [PATCH] btrfs/154: test for device dynamic rescan
-To:     Nikolay Borisov <nborisov@suse.com>
-Cc:     Anand Jain <anand.jain@oracle.com>,
-        fstests <fstests@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <1539023301-4583-1-git-send-email-anand.jain@oracle.com>
+User-Agent: Mutt/1.10.1 (2018-07-13)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Sun, Oct 21, 2018 at 10:20 AM Nikolay Borisov <nborisov@suse.com> wrote:
->
->
->
-> On 21.10.2018 10:16, Filipe Manana wrote:
-> > On Mon, Nov 13, 2017 at 2:26 AM Anand Jain <anand.jain@oracle.com> wrot=
-e:
-> >>
-> >> Make sure missing device is included in the alloc list when it is
-> >> scanned on a mounted FS.
-> >>
-> >> This test case needs btrfs kernel patch which is in the ML
-> >>   [PATCH] btrfs: handle dynamically reappearing missing device
-> >> Without the kernel patch, the test will run, but reports as
-> >> failed, as the device scanned won't appear in the alloc_list.
-> >
-> > So that patch was never merged, at least not with that subject.
-> > What happened?
->
-> https://git.kernel.org/pub/scm/fs/xfs/xfstests-dev.git/tree/tests/btrfs/1=
-54
->
-> In my testing of misc-next this test has been failing for me.
+On Tue, Oct 09, 2018 at 02:28:21AM +0800, Anand Jain wrote:
+> We have a known bug in btrfs, that we let the device path be changed
+> after the device has been mounted. So using this loop hole the new
+> copied device would appears as if its mounted immediately after its
+> been copied. So this test case reproduces this issue.
+> 
+> For example:
+> 
+> Initially.. /dev/mmcblk0p4 is mounted as /
+> 
+> lsblk
+> NAME        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
+> mmcblk0     179:0    0 29.2G  0 disk
+> |-mmcblk0p4 179:4    0    4G  0 part /
+> |-mmcblk0p2 179:2    0  500M  0 part /boot
+> |-mmcblk0p3 179:3    0  256M  0 part [SWAP]
+> `-mmcblk0p1 179:1    0  256M  0 part /boot/efi
+> 
+> btrfs fi show
+> Label: none  uuid: 07892354-ddaa-4443-90ea-f76a06accaba
+>     Total devices 1 FS bytes used 1.40GiB
+>     devid    1 size 4.00GiB used 3.00GiB path /dev/mmcblk0p4
+> 
+> Copy mmcblk0 to sda
+> dd if=/dev/mmcblk0 of=/dev/sda
+> 
+> And immediately after the copy completes the change in the device
+> superblock is notified which the automount scans using
+> btrfs device scan and the new device sda becomes the mounted root
+> device.
+> 
+> lsblk
+> NAME        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
+> sda           8:0    1 14.9G  0 disk
+> |-sda4        8:4    1    4G  0 part /
+> |-sda2        8:2    1  500M  0 part
+> |-sda3        8:3    1  256M  0 part
+> `-sda1        8:1    1  256M  0 part
+> mmcblk0     179:0    0 29.2G  0 disk
+> |-mmcblk0p4 179:4    0    4G  0 part
+> |-mmcblk0p2 179:2    0  500M  0 part /boot
+> |-mmcblk0p3 179:3    0  256M  0 part [SWAP]
+> `-mmcblk0p1 179:1    0  256M  0 part /boot/efi
+> btrfs fi show /
+> Label: none  uuid: 07892354-ddaa-4443-90ea-f76a06accaba
+>     Total devices 1 FS bytes used 1.40GiB
+>     devid    1 size 4.00GiB used 3.00GiB path /dev/sda4
+> 
+> The bug is quite nasty that you can't either unmount /dev/sda4 or
+> /dev/mmcblk0p4. And the problem does not get solved until you take
+> the sda out of the system on to another system to change its fsid using
+> the 'btrfstune -u' command.
+> 
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
 
-Yes, that's why I'm asking.
-It's not uncommon for Anand to submit tests that never get the
-corresponding kernel patch merged or, like in his recent hole punch
-test, that doesn't have a corresponding kernel fix.
+Hi btrfs folks,
 
-Anand, what's the deal here? Are you planning on pushing the fixes to
-the kernel? And for the hole punch test, are you working on a fix or
-just hoping someone else will fix it?
+Please help review if this patch adds a valid test for btrfs. It looks
+fine to me from fstests' perspective of view, though it needs some
+really minor tweaks that I can fix on commit (e.g. format of for loop,
+adding space after '#' in comments line). Thanks a lot!
 
-> >
-> >>
-> >> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> >> ---
-> >>  tests/btrfs/154     | 188 +++++++++++++++++++++++++++++++++++++++++++=
-+++++++++
-> >>  tests/btrfs/154.out |  10 +++
-> >>  tests/btrfs/group   |   1 +
-> >>  3 files changed, 199 insertions(+)
-> >>  create mode 100755 tests/btrfs/154
-> >>  create mode 100644 tests/btrfs/154.out
-> >>
-> >> diff --git a/tests/btrfs/154 b/tests/btrfs/154
-> >> new file mode 100755
-> >> index 000000000000..8b06fc4d9347
-> >> --- /dev/null
-> >> +++ b/tests/btrfs/154
-> >> @@ -0,0 +1,188 @@
-> >> +#! /bin/bash
-> >> +# FS QA Test 154
-> >> +#
-> >> +# Test for reappearing missing device functionality.
-> >> +#   This test will fail without the btrfs kernel patch
-> >> +#   [PATCH] btrfs: handle dynamically reappearing missing device
-> >> +#
-> >> +#--------------------------------------------------------------------=
--
-> >> +# Copyright (c) 2017 Oracle.  All Rights Reserved.
-> >> +# Author: Anand Jain <anand.jain@oracle.com>
-> >> +#
-> >> +# This program is free software; you can redistribute it and/or
-> >> +# modify it under the terms of the GNU General Public License as
-> >> +# published by the Free Software Foundation.
-> >> +#
-> >> +# This program is distributed in the hope that it would be useful,
-> >> +# but WITHOUT ANY WARRANTY; without even the implied warranty of
-> >> +# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-> >> +# GNU General Public License for more details.
-> >> +#
-> >> +# You should have received a copy of the GNU General Public License
-> >> +# along with this program; if not, write the Free Software Foundation=
-,
-> >> +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-> >> +#--------------------------------------------------------------------=
--
-> >> +#
-> >> +
-> >> +seq=3D`basename $0`
-> >> +seqres=3D$RESULT_DIR/$seq
-> >> +echo "QA output created by $seq"
-> >> +
-> >> +here=3D`pwd`
-> >> +tmp=3D/tmp/$$
-> >> +status=3D1       # failure is the default!
-> >> +trap "_cleanup; exit \$status" 0 1 2 3 15
-> >> +
-> >> +_cleanup()
-> >> +{
-> >> +       cd /
-> >> +       rm -f $tmp.*
-> >> +}
-> >> +
-> >> +# get standard environment, filters and checks
-> >> +. ./common/rc
-> >> +. ./common/filter
-> >> +. ./common/module
-> >> +
-> >> +# remove previous $seqres.full before test
-> >> +rm -f $seqres.full
-> >> +
-> >> +# real QA test starts here
-> >> +
-> >> +_supported_fs btrfs
-> >> +_supported_os Linux
-> >> +_require_scratch_dev_pool 2
-> >> +_test_unmount
-> >> +_require_loadable_fs_module "btrfs"
-> >> +
-> >> +_scratch_dev_pool_get 2
-> >> +
-> >> +DEV1=3D`echo $SCRATCH_DEV_POOL | awk '{print $1}'`
-> >> +DEV2=3D`echo $SCRATCH_DEV_POOL | awk '{print $2}'`
-> >> +
-> >> +echo DEV1=3D$DEV1 >> $seqres.full
-> >> +echo DEV2=3D$DEV2 >> $seqres.full
-> >> +
-> >> +# Balance won't be successful if filled too much
-> >> +DEV1_SZ=3D`blockdev --getsize64 $DEV1`
-> >> +DEV2_SZ=3D`blockdev --getsize64 $DEV2`
-> >> +
-> >> +# get min
-> >> +MAX_FS_SZ=3D`echo -e "$DEV1_SZ\n$DEV2_SZ" | sort | head -1`
-> >> +# Need disks with more than 2G
-> >> +if [ $MAX_FS_SZ -lt 2000000000 ]; then
-> >> +       _scratch_dev_pool_put
-> >> +       _test_mount
-> >> +       _notrun "Smallest dev size $MAX_FS_SZ, Need at least 2G"
-> >> +fi
-> >> +
-> >> +MAX_FS_SZ=3D100000000
-> >> +bs=3D"1M"
-> >> +COUNT=3D$(($MAX_FS_SZ / 1000000))
-> >> +CHECKPOINT1=3D0
-> >> +CHECKPOINT2=3D0
-> >> +
-> >> +setup()
-> >> +{
-> >> +       echo >> $seqres.full
-> >> +       echo "MAX_FS_SZ=3D$MAX_FS_SZ COUNT=3D$COUNT" >> $seqres.full
-> >> +       echo "setup"
-> >> +       echo "-----setup-----" >> $seqres.full
-> >> +       _scratch_pool_mkfs "-mraid1 -draid1" >> $seqres.full 2>&1
-> >> +       _scratch_mount >> $seqres.full 2>&1
-> >> +       dd if=3D/dev/urandom of=3D"$SCRATCH_MNT"/tf bs=3D$bs count=3D1=
- \
-> >> +                                       >>$seqres.full 2>&1
-> >> +       _run_btrfs_util_prog filesystem show -m ${SCRATCH_MNT}
-> >> +       _run_btrfs_util_prog filesystem df $SCRATCH_MNT
-> >> +       COUNT=3D$(( $COUNT - 1 ))
-> >> +       echo "unmount" >> $seqres.full
-> >> +       _scratch_unmount
-> >> +}
-> >> +
-> >> +degrade_mount_write()
-> >> +{
-> >> +       echo >> $seqres.full
-> >> +       echo "--degraded mount: max_fs_sz $max_fs_sz bytes--" >> $seqr=
-es.full
-> >> +       echo
-> >> +       echo "degraded mount"
-> >> +
-> >> +       echo "clean btrfs ko" >> $seqres.full
-> >> +       # un-scan the btrfs devices
-> >> +       _reload_fs_module "btrfs"
-> >> +       _mount -o degraded $DEV1 $SCRATCH_MNT >>$seqres.full 2>&1
-> >> +       cnt=3D$(( $COUNT/10 ))
-> >> +       dd if=3D/dev/urandom of=3D"$SCRATCH_MNT"/tf1 bs=3D$bs count=3D=
-$cnt \
-> >> +                                       >>$seqres.full 2>&1
-> >> +       COUNT=3D$(( $COUNT - $cnt ))
-> >> +       _run_btrfs_util_prog filesystem show -m $SCRATCH_MNT
-> >> +       _run_btrfs_util_prog filesystem df $SCRATCH_MNT
-> >> +       CHECKPOINT1=3D`md5sum $SCRATCH_MNT/tf1`
-> >> +       echo $SCRATCH_MNT/tf1:$CHECKPOINT1 >> $seqres.full 2>&1
-> >> +}
-> >> +
-> >> +scan_missing_dev_and_write()
-> >> +{
-> >> +       echo >> $seqres.full
-> >> +       echo "--scan missing $DEV2--" >> $seqres.full
-> >> +       echo
-> >> +       echo "scan missing dev and write"
-> >> +
-> >> +       _run_btrfs_util_prog device scan $DEV2
-> >> +
-> >> +       echo >> $seqres.full
-> >> +
-> >> +       _run_btrfs_util_prog filesystem show -m ${SCRATCH_MNT}
-> >> +       _run_btrfs_util_prog filesystem df ${SCRATCH_MNT}
-> >> +
-> >> +       dd if=3D/dev/urandom of=3D"$SCRATCH_MNT"/tf2 bs=3D$bs count=3D=
-$COUNT \
-> >> +                                               >>$seqres.full 2>&1
-> >> +       CHECKPOINT2=3D`md5sum $SCRATCH_MNT/tf2`
-> >> +       echo $SCRATCH_MNT/tf2:$CHECKPOINT2 >> $seqres.full 2>&1
-> >> +}
-> >> +
-> >> +balance_convert()
-> >> +{
-> >> +       echo >> $seqres.full
-> >> +       echo "----- run balance -----" >> $seqres.full
-> >> +       echo
-> >> +       echo "run balance"
-> >> +
-> >> +       _run_btrfs_util_prog bal start --full-balance -dconvert=3Draid=
-1 \
-> >> +                               -mconvert=3Draid1 ${SCRATCH_MNT}
-> >> +}
-> >> +
-> >> +verify()
-> >> +{
-> >> +       echo >> $seqres.full
-> >> +       echo "--mount reconstructed dev only and check md5sum--" >> $s=
-eqres.full
-> >> +       echo
-> >> +       echo "mount reconstructed dev only and check md5sum"
-> >> +       echo "unmount" >> $seqres.full
-> >> +
-> >> +       _scratch_unmount
-> >> +       _reload_fs_module "btrfs"
-> >> +       _mount -o degraded $DEV2 $SCRATCH_MNT >>$seqres.full 2>&1
-> >> +       verify_checkpoint1=3D`md5sum $SCRATCH_MNT/tf1`
-> >> +       verify_checkpoint2=3D`md5sum $SCRATCH_MNT/tf2`
-> >> +
-> >> +       if [ "$verify_checkpoint1" !=3D "$CHECKPOINT1" ]; then
-> >> +               echo "checkpoint1 does not match with after scrub"
-> >> +       fi
-> >> +
-> >> +       if [ "$verify_checkpoint2" !=3D "$CHECKPOINT2" ]; then
-> >> +               echo "checkpoint2 does not match with after scrub"
-> >> +       fi
-> >> +}
-> >> +
-> >> +setup
-> >> +degrade_mount_write
-> >> +scan_missing_dev_and_write
-> >> +balance_convert
-> >> +verify
-> >> +
-> >> +$UMOUNT_PROG $DEV2
-> >> +_scratch_dev_pool_put
-> >> +_test_mount
-> >> +
-> >> +status=3D0
-> >> +exit
-> >> diff --git a/tests/btrfs/154.out b/tests/btrfs/154.out
-> >> new file mode 100644
-> >> index 000000000000..4a4939d448aa
-> >> --- /dev/null
-> >> +++ b/tests/btrfs/154.out
-> >> @@ -0,0 +1,10 @@
-> >> +QA output created by 154
-> >> +setup
-> >> +
-> >> +degraded mount
-> >> +
-> >> +scan missing dev and write
-> >> +
-> >> +run balance
-> >> +
-> >> +mount reconstructed dev only and check md5sum
-> >> diff --git a/tests/btrfs/group b/tests/btrfs/group
-> >> index 15c2ecbf553c..c98cf823224e 100644
-> >> --- a/tests/btrfs/group
-> >> +++ b/tests/btrfs/group
-> >> @@ -156,3 +156,4 @@
-> >>  151 auto quick
-> >>  152 auto quick metadata qgroup send
-> >>  153 auto quick qgroup
-> >> +154 auto quick
-> >> --
-> >> 2.13.1
-> >>
-> >> --
-> >> To unsubscribe from this list: send the line "unsubscribe linux-btrfs"=
- in
-> >> the body of a message to majordomo@vger.kernel.org
-> >> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> >
-> >
-> >
+Eryu
 
-
-
---=20
-Filipe David Manana,
-
-=E2=80=9CWhether you think you can, or you think you can't =E2=80=94 you're=
- right.=E2=80=9D
+> ---
+> v1->v2: 
+>   dont play around with dev patch use it as it is.
+>   do not use SCRATCH_MNT instead create it at the TEST_DIR and its related
+>    changes.
+>   golden out changes
+>    
+>  tests/btrfs/173     | 88 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+>  tests/btrfs/173.out |  6 ++++
+>  tests/btrfs/group   |  1 +
+>  3 files changed, 95 insertions(+)
+>  create mode 100755 tests/btrfs/173
+>  create mode 100644 tests/btrfs/173.out
+> 
+> diff --git a/tests/btrfs/173 b/tests/btrfs/173
+> new file mode 100755
+> index 000000000000..b466ae921e19
+> --- /dev/null
+> +++ b/tests/btrfs/173
+> @@ -0,0 +1,88 @@
+> +#! /bin/bash
+> +# SPDX-License-Identifier: GPL-2.0
+> +# Copyright (c) 2018 Oracle. All Rights Reserved.
+> +#
+> +# FS QA Test 173
+> +#
+> +# Fuzzy test for FS image duplication.
+> +#  Could be fixed by
+> +#    [patch] btrfs: harden agaist duplicate fsid
+> +#
+> +seq=`basename $0`
+> +seqres=$RESULT_DIR/$seq
+> +echo "QA output created by $seq"
+> +
+> +here=`pwd`
+> +tmp=/tmp/$$
+> +status=1	# failure is the default!
+> +trap "_cleanup; exit \$status" 0 1 2 3 15
+> +
+> +mnt=$TEST_DIR/$seq.mnt
+> +_cleanup()
+> +{
+> +	rm -rf $mnt > /dev/null 2>&1
+> +	cd /
+> +	rm -f $tmp.*
+> +}
+> +
+> +# get standard environment, filters and checks
+> +. ./common/rc
+> +. ./common/filter
+> +
+> +# remove previous $seqres.full before test
+> +rm -f $seqres.full
+> +
+> +# real QA test starts here
+> +
+> +# Modify as appropriate.
+> +_supported_fs btrfs
+> +_supported_os Linux
+> +_require_scratch_dev_pool 2
+> +_scratch_dev_pool_get 2
+> +
+> +dev_foo=$(echo $SCRATCH_DEV_POOL | awk '{print $1}')
+> +dev_bar=$(echo $SCRATCH_DEV_POOL | awk '{print $2}')
+> +
+> +echo dev_foo=$dev_foo >> $seqres.full
+> +echo dev_bar=$dev_bar >> $seqres.full
+> +echo | tee -a $seqres.full
+> +
+> +rm -rf $mnt > /dev/null 2>&1
+> +mkdir $mnt
+> +_mkfs_dev $dev_foo
+> +_mount $dev_foo $mnt
+> +
+> +check_btrfs_mount()
+> +{
+> +	local x=$(findmnt $mnt | grep -v TARGET | awk '{print $2}')
+> +	[[ $x == $dev_foo ]] && echo DEV_FOO
+> +	[[ $x == $dev_bar ]] && echo DEV_BAR
+> +}
+> +
+> +echo MNT $(check_btrfs_mount)
+> +
+> +for sb_bytenr in 65536 67108864
+> +do
+> +	echo -n "dd status=none if=$dev_foo of=$dev_bar bs=1 "\
+> +		"seek=$sb_bytenr skip=$sb_bytenr count=4096" >> $seqres.full
+> +	dd status=none if=$dev_foo of=$dev_bar bs=1 seek=$sb_bytenr \
+> +				skip=$sb_bytenr count=4096 >> $seqres.full 2>&1
+> +	echo ..:$? >> $seqres.full
+> +done
+> +
+> +#Original device is mounted, scan of its clone should fail
+> +$BTRFS_UTIL_PROG device scan $dev_bar >> $seqres.full 2>&1
+> +echo btrfs device scan dev_bar ...:$?| tee -a $seqres.full
+> +
+> +echo MNT $(check_btrfs_mount)
+> +
+> +#Original device scan should be successful
+> +$BTRFS_UTIL_PROG device scan $dev_foo >> $seqres.full 2>&1
+> +echo btrfs device scan dev_foo ...:$?| tee -a $seqres.full
+> +
+> +umount $mnt > /dev/null 2>&1
+> +_scratch_dev_pool_put
+> +
+> +# success, all done
+> +status=0
+> +exit
+> diff --git a/tests/btrfs/173.out b/tests/btrfs/173.out
+> new file mode 100644
+> index 000000000000..3c7e3fb4e3f7
+> --- /dev/null
+> +++ b/tests/btrfs/173.out
+> @@ -0,0 +1,6 @@
+> +QA output created by 173
+> +
+> +MNT DEV_FOO
+> +btrfs device scan dev_bar ...:1
+> +MNT DEV_FOO
+> +btrfs device scan dev_foo ...:0
+> diff --git a/tests/btrfs/group b/tests/btrfs/group
+> index 45782565c3b7..b2f1393f3e97 100644
+> --- a/tests/btrfs/group
+> +++ b/tests/btrfs/group
+> @@ -175,3 +175,4 @@
+>  170 auto quick snapshot
+>  171 auto quick qgroup
+>  172 auto quick punch
+> +173 volume
+> -- 
+> 1.8.3.1
+> 

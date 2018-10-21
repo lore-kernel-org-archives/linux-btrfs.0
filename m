@@ -2,71 +2,68 @@ Return-Path: <SRS0=ymi4=NB=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+X-Spam-Status: No, score=-6.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A2BC8ECDE43
-	for <linux-btrfs@archiver.kernel.org>; Sun, 21 Oct 2018 08:56:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9E37FECDE3D
+	for <linux-btrfs@archiver.kernel.org>; Sun, 21 Oct 2018 09:16:32 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 5ABE320843
-	for <linux-btrfs@archiver.kernel.org>; Sun, 21 Oct 2018 08:56:17 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2F5CD20869
+	for <linux-btrfs@archiver.kernel.org>; Sun, 21 Oct 2018 09:16:32 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="dUaeMp3F"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 5ABE320843
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="BbiKRTKb"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 2F5CD20869
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727295AbeJURJw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 21 Oct 2018 13:09:52 -0400
-Received: from mail-ua1-f65.google.com ([209.85.222.65]:39173 "EHLO
-        mail-ua1-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727220AbeJURJw (ORCPT
+        id S1727400AbeJURaK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 21 Oct 2018 13:30:10 -0400
+Received: from mail-ua1-f67.google.com ([209.85.222.67]:40427 "EHLO
+        mail-ua1-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726980AbeJURaK (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 21 Oct 2018 13:09:52 -0400
-Received: by mail-ua1-f65.google.com with SMTP id f12so8908162uan.6
-        for <linux-btrfs@vger.kernel.org>; Sun, 21 Oct 2018 01:56:14 -0700 (PDT)
+        Sun, 21 Oct 2018 13:30:10 -0400
+Received: by mail-ua1-f67.google.com with SMTP id c21so8913589uap.7;
+        Sun, 21 Oct 2018 02:16:30 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20161025;
         h=mime-version:references:in-reply-to:reply-to:from:date:message-id
          :subject:to:cc:content-transfer-encoding;
-        bh=pr0fa81PUy61NhMTfZMbWhJiILxsdUrFgQM4P8CJdB0=;
-        b=dUaeMp3FwkTHvlkShCM9o+F/TZN6PkYWe4I/OceTkTJkY8/phpnUu6NX+65TFWn+4T
-         AXOR/lOQbE79InMOOtRRirAc+Tc2XbnymV0px9sfTPGdLSVvhJHRC4sLlr42cyLHOFUT
-         8oLQen6PDe6O7a0Ml0iso9nIJt4KnyX48h+3iCBHIno7aGaZd2tvTlwr+jxyoRlO3fPV
-         eg4RQI5Qb5hGntusmjm3T/GZtEfP7X8fCbteY9aX+yGoBp5qU6upqaaVONOS5Wwnv4QS
-         IF7dL91SO6NqHlSWlQ1LoBlXoGqRVJ9AAgH1Bg0gVIimhVWwHrSNftrhe02c1AWRtxu7
-         iX1Q==
+        bh=SztT5eOthCDaIF/n19TQZQ7oTQb37l4OPx9tmGbPJQM=;
+        b=BbiKRTKbJdwejeMMCV/ei80FHkOenV9CUV6hhoQ0OJg+Gqdn1gcBZ1grwmeuC0q0FY
+         vhT1YhgxajC6GY94ZNmIye0RnyDdW98sxtApJVS+REUQ/Z/od1b3RNxqa+y5/8bVrikG
+         SHwRJjmu7oNBmAq0HbhS+ZnHy4ftnVMjUj7K+EA4G5EIGtX7P1jmzEK3HSTxmshw5KI1
+         5qA+dpW7z56i0Dy+D92tPsx80uk520DapwDepFhKUVe/6Wyc7GSsST9Lm/cjU/sMSTeQ
+         3O+YzAgw3HOHLa62ppNLMLB8H0GiTObFFiTambRULq0O5yivT8vHFtyoLYGm2GvguI4a
+         q1XQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:mime-version:references:in-reply-to:reply-to
          :from:date:message-id:subject:to:cc:content-transfer-encoding;
-        bh=pr0fa81PUy61NhMTfZMbWhJiILxsdUrFgQM4P8CJdB0=;
-        b=mGc2tzBOFP3eSNYPBlzTjE9d/MZdDYcfm1Q2xCTPX79vql9QZxToBqxTsWDzoJqckl
-         UZz0MnQvdmejYflB7FXXBTxLl5Lnffup+dkXiS8hq3yIneHTFmVZj3v63YNAqwuA+yjY
-         a/PnYR13jlS5yArLVQZjEdMFT4/mw2EkB+kMcEaevtl943ulw6C8i5CCPKXH/GHDQBto
-         HMZD43eg+MA7csBBvE2gSEdMiJvKb3yHYpNLKu5Sqz+eZhbUPBY+vL0jv6kk8pZy0GW+
-         EVZgx6jQn/A2mps014qf7e9doLAnzYmzF/UJY3pbH6MDkb1vhBF5EilacZ2yfHWS9uSo
-         WumA==
-X-Gm-Message-State: ABuFfojvEBA9TQ5eMNhiQ7IVInaWisU1RgPoYeffpDLtAzzFUbb1JM12
-        ZFzioTKQoOpngj92bTiqVEUpv5md83ugyAULuUd+rA==
-X-Google-Smtp-Source: ACcGV60D0iKh1mXnzOfYKaC8PgwGaOvHCUIossuj19hPSsSfEob0lqV9UHeI2PGf6r/Qn62zO5740lO5QzJgn+WK37A=
-X-Received: by 2002:ab0:631a:: with SMTP id a26mr11635751uap.36.1540112174261;
- Sun, 21 Oct 2018 01:56:14 -0700 (PDT)
+        bh=SztT5eOthCDaIF/n19TQZQ7oTQb37l4OPx9tmGbPJQM=;
+        b=skulGu5gAkHiRPy+ZeAog4H38gQ5obf/QBnPPJPhn497vVd7il6GR7/nMcKRlJswiW
+         u6ihPO5LU2zMYURbAqPKQVM6d9wudlxsGVCEe8j3ErXNaxot5I3y3+Hdlh928/QGjxeQ
+         bYJLDz24J1LWuIoW5F6vX3/T1EhKOWkhw4d1WXiKVUnVvckmzx653d2LvGVeKm6KR4aA
+         nY8Zs5XZ3R43/7Oyl1U7dWtFhqQMY/gRmRrGJE2aeUsZ0Qrp3wzqHvnh/wKCY/NU6XJb
+         oFi6ziMARQ7DItmKIihAdPDr5vBzCUUZ1c0PHkgu8Dw2mTjiOepF+rxcMZFzeJtisoSJ
+         YYlg==
+X-Gm-Message-State: ABuFfogGPJ+H/nTINMUbwwX2R/TmQ3wVKS+oQwaPaz57Evx9jGxzld5B
+        j77hoB0jSbMdLoeJxnH8fTFhqVvxtsTzZhE89APTBA==
+X-Google-Smtp-Source: ACcGV63ktEjU3kNU+xG8tdDRaYgr4Z+2+X9duvlEWt6CKe/8rzfWBebw9/twCSFjPgjLX1ZUuNl2fZY+YBp4wNnq4bo=
+X-Received: by 2002:ab0:4812:: with SMTP id b18mr18521177uad.30.1540113390057;
+ Sun, 21 Oct 2018 02:16:30 -0700 (PDT)
 MIME-Version: 1.0
-References: <CAPTELenq9x5KOWuQ+fa7h1r3nsJG8vyiTH8+ifjURc_duHh2Wg@mail.gmail.com>
- <CANQeFDBAxL=BTWjCOVmu8rGP0k2OCipD07my4RQs8vV9NJeraw@mail.gmail.com>
- <CAL3q7H6-06g12Kv1FD30Tii+zoQjDmJj+aM8kCnLeJVVvNad5A@mail.gmail.com>
- <CAPTELen29rS9ZoECxf7kBvDDRGFUcB=TQn2o=T+cmV=a-x9N2Q@mail.gmail.com> <CAPTELe=ObC4gbjB+vjuYCHyqPxr4rakWYksN8p1P=UL8BsU_wg@mail.gmail.com>
-In-Reply-To: <CAPTELe=ObC4gbjB+vjuYCHyqPxr4rakWYksN8p1P=UL8BsU_wg@mail.gmail.com>
+References: <20171113022541.7413-1-anand.jain@oracle.com>
+In-Reply-To: <20171113022541.7413-1-anand.jain@oracle.com>
 Reply-To: fdmanana@gmail.com
 From:   Filipe Manana <fdmanana@gmail.com>
-Date:   Sun, 21 Oct 2018 09:56:03 +0100
-Message-ID: <CAL3q7H6EOMj+-4wwAo3KaRxG=MtJcYVxdpLjPMRa-n5OpGYO1w@mail.gmail.com>
-Subject: Re: Btrfs resize seems to deadlock
-To:     andrew.s.nelson@gmail.com
-Cc:     Liu Bo <obuil.liubo@gmail.com>,
+Date:   Sun, 21 Oct 2018 10:16:19 +0100
+Message-ID: <CAL3q7H41dQpiVaCyre3sCgAaVXd19-cWbLO68z4ovJz2F1E2-g@mail.gmail.com>
+Subject: Re: [PATCH] btrfs/154: test for device dynamic rescan
+To:     Anand Jain <anand.jain@oracle.com>
+Cc:     fstests <fstests@vger.kernel.org>,
         linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
@@ -75,193 +72,260 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Sun, Oct 21, 2018 at 6:05 AM Andrew Nelson <andrew.s.nelson@gmail.com> w=
-rote:
+On Mon, Nov 13, 2017 at 2:26 AM Anand Jain <anand.jain@oracle.com> wrote:
 >
-> Also, is the drive in a safe state to use? Is there anything I should
-> run on the drive to check consistency?
+> Make sure missing device is included in the alloc list when it is
+> scanned on a mounted FS.
+>
+> This test case needs btrfs kernel patch which is in the ML
+>   [PATCH] btrfs: handle dynamically reappearing missing device
+> Without the kernel patch, the test will run, but reports as
+> failed, as the device scanned won't appear in the alloc_list.
 
-It should be in a safe state. You can verify it running "btrfs check
-/dev/<your device>" (it's a readonly operation).
+So that patch was never merged, at least not with that subject.
+What happened?
 
-If you are able to patch and build a kernel, you can also try the
-patch. I left it running tests overnight and haven't got any
-regressions.
-
-Thanks.
-
-> On Sat, Oct 20, 2018 at 10:02 PM Andrew Nelson
-> <andrew.s.nelson@gmail.com> wrote:
-> >
-> > I have ran the "btrfs inspect-internal dump-tree -t 1" command, but
-> > the output is ~55mb. Is there something in particular you are looking
-> > for in this?
-> > On Sat, Oct 20, 2018 at 1:34 PM Filipe Manana <fdmanana@gmail.com> wrot=
-e:
-> > >
-> > > On Sat, Oct 20, 2018 at 9:27 PM Liu Bo <obuil.liubo@gmail.com> wrote:
-> > > >
-> > > > On Fri, Oct 19, 2018 at 7:09 PM Andrew Nelson <andrew.s.nelson@gmai=
-l.com> wrote:
-> > > > >
-> > > > > I am having an issue with btrfs resize in Fedora 28. I am attempt=
-ing
-> > > > > to enlarge my Btrfs partition. Every time I run "btrfs filesystem
-> > > > > resize max $MOUNT", the command runs for a few minutes and then h=
-angs
-> > > > > forcing the system to be reset. I am not sure what the state of t=
-he
-> > > > > filesystem really is at this point. Btrfs usage does report the
-> > > > > correct size for after resizing. Details below:
-> > > > >
-> > > >
-> > > > Thanks for the report, the stack is helpful, but this needs a few
-> > > > deeper debugging, may I ask you to post "btrfs inspect-internal
-> > > > dump-tree -t 1 /dev/your_btrfs_disk"?
-> > >
-> > > I believe it's actually easy to understand from the trace alone and
-> > > it's kind of a bad luck scenario.
-> > > I made this fix a few hours ago:
-> > >
-> > > https://git.kernel.org/pub/scm/linux/kernel/git/fdmanana/linux.git/co=
-mmit/?h=3Dfix_find_free_extent_deadlock
-> > >
-> > > But haven't done full testing yet and might have missed something.
-> > > Bo, can you take a look and let me know what you think?
-> > >
-> > > Thanks.
-> > >
-> > > >
-> > > > So I'd like to know what's the height of your tree "1" which refers=
- to
-> > > > root tree in btrfs.
-> > > >
-> > > > thanks,
-> > > > liubo
-> > > >
-> > > > > $ sudo btrfs filesystem usage $MOUNT
-> > > > > Overall:
-> > > > >     Device size:                  90.96TiB
-> > > > >     Device allocated:             72.62TiB
-> > > > >     Device unallocated:           18.33TiB
-> > > > >     Device missing:                  0.00B
-> > > > >     Used:                         72.62TiB
-> > > > >     Free (estimated):             18.34TiB      (min: 9.17TiB)
-> > > > >     Data ratio:                       1.00
-> > > > >     Metadata ratio:                   2.00
-> > > > >     Global reserve:              512.00MiB      (used: 24.11MiB)
-> > > > >
-> > > > > Data,single: Size:72.46TiB, Used:72.45TiB
-> > > > >     $MOUNT        72.46TiB
-> > > > >
-> > > > > Metadata,DUP: Size:86.00GiB, Used:84.96GiB
-> > > > >     $MOUNT       172.00GiB
-> > > > >
-> > > > > System,DUP: Size:40.00MiB, Used:7.53MiB
-> > > > >    $MOUNT        80.00MiB
-> > > > >
-> > > > > Unallocated:
-> > > > >     $MOUNT        18.33TiB
-> > > > >
-> > > > > $ uname -a
-> > > > > Linux localhost.localdomain 4.18.14-200.fc28.x86_64 #1 SMP Mon Oc=
-t 15
-> > > > > 13:16:27 UTC 2018 x86_64 x86_64 x86_64 GNU/Linux
-> > > > >
-> > > > > btrfs-transacti D    0  2501      2 0x80000000
-> > > > > Call Trace:
-> > > > >  ? __schedule+0x253/0x860
-> > > > >  schedule+0x28/0x80
-> > > > >  btrfs_commit_transaction+0x7aa/0x8b0 [btrfs]
-> > > > >  ? kmem_cache_alloc+0x166/0x1d0
-> > > > >  ? join_transaction+0x22/0x3e0 [btrfs]
-> > > > >  ? finish_wait+0x80/0x80
-> > > > >  transaction_kthread+0x155/0x170 [btrfs]
-> > > > >  ? btrfs_cleanup_transaction+0x550/0x550 [btrfs]
-> > > > >  kthread+0x112/0x130
-> > > > >  ? kthread_create_worker_on_cpu+0x70/0x70
-> > > > >  ret_from_fork+0x35/0x40
-> > > > > btrfs           D    0  2504   2502 0x00000002
-> > > > > Call Trace:
-> > > > >  ? __schedule+0x253/0x860
-> > > > >  schedule+0x28/0x80
-> > > > >  btrfs_tree_read_lock+0x8e/0x120 [btrfs]
-> > > > >  ? finish_wait+0x80/0x80
-> > > > >  btrfs_read_lock_root_node+0x2f/0x40 [btrfs]
-> > > > >  btrfs_search_slot+0xf6/0x9f0 [btrfs]
-> > > > >  ? evict_refill_and_join+0xd0/0xd0 [btrfs]
-> > > > >  ? inode_insert5+0x119/0x190
-> > > > >  btrfs_lookup_inode+0x3a/0xc0 [btrfs]
-> > > > >  ? kmem_cache_alloc+0x166/0x1d0
-> > > > >  btrfs_iget+0x113/0x690 [btrfs]
-> > > > >  __lookup_free_space_inode+0xd8/0x150 [btrfs]
-> > > > >  lookup_free_space_inode+0x5b/0xb0 [btrfs]
-> > > > >  load_free_space_cache+0x7c/0x170 [btrfs]
-> > > > >  ? cache_block_group+0x72/0x3b0 [btrfs]
-> > > > >  cache_block_group+0x1b3/0x3b0 [btrfs]
-> > > > >  ? finish_wait+0x80/0x80
-> > > > >  find_free_extent+0x799/0x1010 [btrfs]
-> > > > >  btrfs_reserve_extent+0x9b/0x180 [btrfs]
-> > > > >  btrfs_alloc_tree_block+0x1b3/0x4f0 [btrfs]
-> > > > >  __btrfs_cow_block+0x11d/0x500 [btrfs]
-> > > > >  btrfs_cow_block+0xdc/0x180 [btrfs]
-> > > > >  btrfs_search_slot+0x3bd/0x9f0 [btrfs]
-> > > > >  btrfs_lookup_inode+0x3a/0xc0 [btrfs]
-> > > > >  ? kmem_cache_alloc+0x166/0x1d0
-> > > > >  btrfs_update_inode_item+0x46/0x100 [btrfs]
-> > > > >  cache_save_setup+0xe4/0x3a0 [btrfs]
-> > > > >  btrfs_start_dirty_block_groups+0x1be/0x480 [btrfs]
-> > > > >  btrfs_commit_transaction+0xcb/0x8b0 [btrfs]
-> > > > >  ? btrfs_release_path+0x13/0x80 [btrfs]
-> > > > >  ? btrfs_update_device+0x8d/0x1c0 [btrfs]
-> > > > >  btrfs_ioctl_resize.cold.46+0xf4/0xf9 [btrfs]
-> > > > >  btrfs_ioctl+0xa25/0x2cf0 [btrfs]
-> > > > >  ? tty_write+0x1fc/0x330
-> > > > >  ? do_vfs_ioctl+0xa4/0x620
-> > > > >  do_vfs_ioctl+0xa4/0x620
-> > > > >  ksys_ioctl+0x60/0x90
-> > > > >  ? ksys_write+0x4f/0xb0
-> > > > >  __x64_sys_ioctl+0x16/0x20
-> > > > >  do_syscall_64+0x5b/0x160
-> > > > >  entry_SYSCALL_64_after_hwframe+0x44/0xa9
-> > > > > RIP: 0033:0x7fcdc0d78c57
-> > > > > Code: Bad RIP value.
-> > > > > RSP: 002b:00007ffdd1ee6cf8 EFLAGS: 00000246 ORIG_RAX: 00000000000=
-00010
-> > > > > RAX: ffffffffffffffda RBX: 00007ffdd1ee888a RCX: 00007fcdc0d78c57
-> > > > > RDX: 00007ffdd1ee6da0 RSI: 0000000050009403 RDI: 0000000000000003
-> > > > > RBP: 00007ffdd1ee6da0 R08: 0000000000000000 R09: 00007ffdd1ee67e0
-> > > > > R10: 0000000000000000 R11: 0000000000000246 R12: 00007ffdd1ee888e
-> > > > > R13: 0000000000000003 R14: 0000000000000000 R15: 0000000000000000
-> > > > > kworker/u48:1   D    0  2505      2 0x80000000
-> > > > > Workqueue: btrfs-freespace-write btrfs_freespace_write_helper [bt=
-rfs]
-> > > > > Call Trace:
-> > > > >  ? __schedule+0x253/0x860
-> > > > >  schedule+0x28/0x80
-> > > > >  btrfs_tree_lock+0x130/0x210 [btrfs]
-> > > > >  ? finish_wait+0x80/0x80
-> > > > >  btrfs_search_slot+0x775/0x9f0 [btrfs]
-> > > > >  btrfs_mark_extent_written+0xb0/0xb20 [btrfs]
-> > > > >  ? join_transaction+0x22/0x3e0 [btrfs]
-> > > > >  btrfs_finish_ordered_io+0x2e0/0x7e0 [btrfs]
-> > > > >  ? syscall_return_via_sysret+0x13/0x83
-> > > > >  ? __switch_to_asm+0x34/0x70
-> > > > >  normal_work_helper+0xd3/0x2f0 [btrfs]
-> > > > >  process_one_work+0x1a1/0x350
-> > > > >  worker_thread+0x30/0x380
-> > > > >  ? pwq_unbound_release_workfn+0xd0/0xd0
-> > > > >  kthread+0x112/0x130
-> > > > >  ? kthread_create_worker_on_cpu+0x70/0x70
-> > > > >  ret_from_fork+0x35/0x40
-> > >
-> > >
-> > >
-> > > --
-> > > Filipe David Manana,
-> > >
-> > > =E2=80=9CWhether you think you can, or you think you can't =E2=80=94 =
-you're right.=E2=80=9D
+>
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> ---
+>  tests/btrfs/154     | 188 ++++++++++++++++++++++++++++++++++++++++++++++=
+++++++
+>  tests/btrfs/154.out |  10 +++
+>  tests/btrfs/group   |   1 +
+>  3 files changed, 199 insertions(+)
+>  create mode 100755 tests/btrfs/154
+>  create mode 100644 tests/btrfs/154.out
+>
+> diff --git a/tests/btrfs/154 b/tests/btrfs/154
+> new file mode 100755
+> index 000000000000..8b06fc4d9347
+> --- /dev/null
+> +++ b/tests/btrfs/154
+> @@ -0,0 +1,188 @@
+> +#! /bin/bash
+> +# FS QA Test 154
+> +#
+> +# Test for reappearing missing device functionality.
+> +#   This test will fail without the btrfs kernel patch
+> +#   [PATCH] btrfs: handle dynamically reappearing missing device
+> +#
+> +#---------------------------------------------------------------------
+> +# Copyright (c) 2017 Oracle.  All Rights Reserved.
+> +# Author: Anand Jain <anand.jain@oracle.com>
+> +#
+> +# This program is free software; you can redistribute it and/or
+> +# modify it under the terms of the GNU General Public License as
+> +# published by the Free Software Foundation.
+> +#
+> +# This program is distributed in the hope that it would be useful,
+> +# but WITHOUT ANY WARRANTY; without even the implied warranty of
+> +# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+> +# GNU General Public License for more details.
+> +#
+> +# You should have received a copy of the GNU General Public License
+> +# along with this program; if not, write the Free Software Foundation,
+> +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+> +#---------------------------------------------------------------------
+> +#
+> +
+> +seq=3D`basename $0`
+> +seqres=3D$RESULT_DIR/$seq
+> +echo "QA output created by $seq"
+> +
+> +here=3D`pwd`
+> +tmp=3D/tmp/$$
+> +status=3D1       # failure is the default!
+> +trap "_cleanup; exit \$status" 0 1 2 3 15
+> +
+> +_cleanup()
+> +{
+> +       cd /
+> +       rm -f $tmp.*
+> +}
+> +
+> +# get standard environment, filters and checks
+> +. ./common/rc
+> +. ./common/filter
+> +. ./common/module
+> +
+> +# remove previous $seqres.full before test
+> +rm -f $seqres.full
+> +
+> +# real QA test starts here
+> +
+> +_supported_fs btrfs
+> +_supported_os Linux
+> +_require_scratch_dev_pool 2
+> +_test_unmount
+> +_require_loadable_fs_module "btrfs"
+> +
+> +_scratch_dev_pool_get 2
+> +
+> +DEV1=3D`echo $SCRATCH_DEV_POOL | awk '{print $1}'`
+> +DEV2=3D`echo $SCRATCH_DEV_POOL | awk '{print $2}'`
+> +
+> +echo DEV1=3D$DEV1 >> $seqres.full
+> +echo DEV2=3D$DEV2 >> $seqres.full
+> +
+> +# Balance won't be successful if filled too much
+> +DEV1_SZ=3D`blockdev --getsize64 $DEV1`
+> +DEV2_SZ=3D`blockdev --getsize64 $DEV2`
+> +
+> +# get min
+> +MAX_FS_SZ=3D`echo -e "$DEV1_SZ\n$DEV2_SZ" | sort | head -1`
+> +# Need disks with more than 2G
+> +if [ $MAX_FS_SZ -lt 2000000000 ]; then
+> +       _scratch_dev_pool_put
+> +       _test_mount
+> +       _notrun "Smallest dev size $MAX_FS_SZ, Need at least 2G"
+> +fi
+> +
+> +MAX_FS_SZ=3D100000000
+> +bs=3D"1M"
+> +COUNT=3D$(($MAX_FS_SZ / 1000000))
+> +CHECKPOINT1=3D0
+> +CHECKPOINT2=3D0
+> +
+> +setup()
+> +{
+> +       echo >> $seqres.full
+> +       echo "MAX_FS_SZ=3D$MAX_FS_SZ COUNT=3D$COUNT" >> $seqres.full
+> +       echo "setup"
+> +       echo "-----setup-----" >> $seqres.full
+> +       _scratch_pool_mkfs "-mraid1 -draid1" >> $seqres.full 2>&1
+> +       _scratch_mount >> $seqres.full 2>&1
+> +       dd if=3D/dev/urandom of=3D"$SCRATCH_MNT"/tf bs=3D$bs count=3D1 \
+> +                                       >>$seqres.full 2>&1
+> +       _run_btrfs_util_prog filesystem show -m ${SCRATCH_MNT}
+> +       _run_btrfs_util_prog filesystem df $SCRATCH_MNT
+> +       COUNT=3D$(( $COUNT - 1 ))
+> +       echo "unmount" >> $seqres.full
+> +       _scratch_unmount
+> +}
+> +
+> +degrade_mount_write()
+> +{
+> +       echo >> $seqres.full
+> +       echo "--degraded mount: max_fs_sz $max_fs_sz bytes--" >> $seqres.=
+full
+> +       echo
+> +       echo "degraded mount"
+> +
+> +       echo "clean btrfs ko" >> $seqres.full
+> +       # un-scan the btrfs devices
+> +       _reload_fs_module "btrfs"
+> +       _mount -o degraded $DEV1 $SCRATCH_MNT >>$seqres.full 2>&1
+> +       cnt=3D$(( $COUNT/10 ))
+> +       dd if=3D/dev/urandom of=3D"$SCRATCH_MNT"/tf1 bs=3D$bs count=3D$cn=
+t \
+> +                                       >>$seqres.full 2>&1
+> +       COUNT=3D$(( $COUNT - $cnt ))
+> +       _run_btrfs_util_prog filesystem show -m $SCRATCH_MNT
+> +       _run_btrfs_util_prog filesystem df $SCRATCH_MNT
+> +       CHECKPOINT1=3D`md5sum $SCRATCH_MNT/tf1`
+> +       echo $SCRATCH_MNT/tf1:$CHECKPOINT1 >> $seqres.full 2>&1
+> +}
+> +
+> +scan_missing_dev_and_write()
+> +{
+> +       echo >> $seqres.full
+> +       echo "--scan missing $DEV2--" >> $seqres.full
+> +       echo
+> +       echo "scan missing dev and write"
+> +
+> +       _run_btrfs_util_prog device scan $DEV2
+> +
+> +       echo >> $seqres.full
+> +
+> +       _run_btrfs_util_prog filesystem show -m ${SCRATCH_MNT}
+> +       _run_btrfs_util_prog filesystem df ${SCRATCH_MNT}
+> +
+> +       dd if=3D/dev/urandom of=3D"$SCRATCH_MNT"/tf2 bs=3D$bs count=3D$CO=
+UNT \
+> +                                               >>$seqres.full 2>&1
+> +       CHECKPOINT2=3D`md5sum $SCRATCH_MNT/tf2`
+> +       echo $SCRATCH_MNT/tf2:$CHECKPOINT2 >> $seqres.full 2>&1
+> +}
+> +
+> +balance_convert()
+> +{
+> +       echo >> $seqres.full
+> +       echo "----- run balance -----" >> $seqres.full
+> +       echo
+> +       echo "run balance"
+> +
+> +       _run_btrfs_util_prog bal start --full-balance -dconvert=3Draid1 \
+> +                               -mconvert=3Draid1 ${SCRATCH_MNT}
+> +}
+> +
+> +verify()
+> +{
+> +       echo >> $seqres.full
+> +       echo "--mount reconstructed dev only and check md5sum--" >> $seqr=
+es.full
+> +       echo
+> +       echo "mount reconstructed dev only and check md5sum"
+> +       echo "unmount" >> $seqres.full
+> +
+> +       _scratch_unmount
+> +       _reload_fs_module "btrfs"
+> +       _mount -o degraded $DEV2 $SCRATCH_MNT >>$seqres.full 2>&1
+> +       verify_checkpoint1=3D`md5sum $SCRATCH_MNT/tf1`
+> +       verify_checkpoint2=3D`md5sum $SCRATCH_MNT/tf2`
+> +
+> +       if [ "$verify_checkpoint1" !=3D "$CHECKPOINT1" ]; then
+> +               echo "checkpoint1 does not match with after scrub"
+> +       fi
+> +
+> +       if [ "$verify_checkpoint2" !=3D "$CHECKPOINT2" ]; then
+> +               echo "checkpoint2 does not match with after scrub"
+> +       fi
+> +}
+> +
+> +setup
+> +degrade_mount_write
+> +scan_missing_dev_and_write
+> +balance_convert
+> +verify
+> +
+> +$UMOUNT_PROG $DEV2
+> +_scratch_dev_pool_put
+> +_test_mount
+> +
+> +status=3D0
+> +exit
+> diff --git a/tests/btrfs/154.out b/tests/btrfs/154.out
+> new file mode 100644
+> index 000000000000..4a4939d448aa
+> --- /dev/null
+> +++ b/tests/btrfs/154.out
+> @@ -0,0 +1,10 @@
+> +QA output created by 154
+> +setup
+> +
+> +degraded mount
+> +
+> +scan missing dev and write
+> +
+> +run balance
+> +
+> +mount reconstructed dev only and check md5sum
+> diff --git a/tests/btrfs/group b/tests/btrfs/group
+> index 15c2ecbf553c..c98cf823224e 100644
+> --- a/tests/btrfs/group
+> +++ b/tests/btrfs/group
+> @@ -156,3 +156,4 @@
+>  151 auto quick
+>  152 auto quick metadata qgroup send
+>  153 auto quick qgroup
+> +154 auto quick
+> --
+> 2.13.1
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
 
 

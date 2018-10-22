@@ -2,228 +2,158 @@ Return-Path: <SRS0=ca24=NC=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.8 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_NEOMUTT autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6483BC67863
-	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Oct 2018 17:31:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 75DCBC004D3
+	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Oct 2018 17:57:05 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 1633320645
-	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Oct 2018 17:31:14 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 4857020663
+	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Oct 2018 17:57:06 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=libero.it header.i=@libero.it header.b="cKRFc21C"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 1633320645
-Authentication-Results: mail.kernel.org; dmarc=fail (p=quarantine dis=none) header.from=libero.it
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="0AiVyJMl"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 4857020663
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=toxicpanda.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728820AbeJWBuh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 22 Oct 2018 21:50:37 -0400
-Received: from smtp-34-i6.italiaonline.it ([213.209.14.34]:52199 "EHLO
-        libero.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1728758AbeJWBug (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 22 Oct 2018 21:50:36 -0400
-Received: from venice.bhome ([94.38.16.140])
-        by smtp-34.iol.local with ESMTPA
-        id Ee1mgPeG98KmnEe1qgfjs8; Mon, 22 Oct 2018 19:30:10 +0200
-x-libjamoibt: 1601
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=libero.it; s=s2014;
-        t=1540229410; bh=rRN3WhXbdv8hpdGqHvWXTQsfzlxWcpsHLNi1isTwRYk=;
-        h=From:To:Cc:Subject:Date:In-Reply-To:References;
-        b=cKRFc21C0QqQynXpl/nbzhtLshMGc3nEEPdWPO4yLOYuvSN2ItBIJKi3b7bD7Ekxr
-         HcEW86UQ2y8IFftDmMcnNb+34dkFg3b6qlll2WOPS9JlSI4SuAtaKHibkznIoP03p1
-         DTjBrCGfj/J0KqKJWglxKTRAbYTmrVgsDhQaIZQFdg3lZpIJr4qzaFBD087sh/7KlS
-         pVlODqujOwaiEx1vmyYe2oJA4U102YOi2XmKWqMPlI9kLUHxk9RyDcPUPxSpZJJ4Gw
-         ZzA1OjbBgixLOuUV6yNKhv3MIiWkrLpCBG0ze+smqRANSVUCGoPAFOZsrQe+1HNLvV
-         EIb+ixYPqB6Tg==
-X-CNFS-Analysis: v=2.3 cv=ZbLMyfdA c=1 sm=1 tr=0
- a=nqgIlLay6LNLiZJCVl9G2Q==:117 a=nqgIlLay6LNLiZJCVl9G2Q==:17 a=yPCof4ZbAAAA:8
- a=veM9U-ac7Y8X2fC78R8A:9
-From:   Goffredo Baroncelli <kreijack@libero.it>
-To:     grub-devel@gnu.org
-Cc:     Daniel Kiper <dkiper@net-space.pl>, linux-btrfs@vger.kernel.org,
-        Goffredo Baroncelli <kreijack@inwind.it>
-Subject: [PATCH 8/9] btrfs: Make more generic the code for RAID 6 rebuilding
-Date:   Mon, 22 Oct 2018 19:29:38 +0200
-Message-Id: <20181022172938.7936-9-kreijack@libero.it>
-X-Mailer: git-send-email 2.19.1
-In-Reply-To: <20181022172938.7936-1-kreijack@libero.it>
-References: <20181022172938.7936-1-kreijack@libero.it>
+        id S1728915AbeJWCQ2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 22 Oct 2018 22:16:28 -0400
+Received: from mail-qt1-f194.google.com ([209.85.160.194]:39949 "EHLO
+        mail-qt1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728878AbeJWCQ2 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 22 Oct 2018 22:16:28 -0400
+Received: by mail-qt1-f194.google.com with SMTP id z9-v6so7116062qto.7
+        for <linux-btrfs@vger.kernel.org>; Mon, 22 Oct 2018 10:56:56 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
+        h=date:from:to:cc:subject:message-id:references:mime-version
+         :content-disposition:in-reply-to:user-agent;
+        bh=my5wh6X5Z2sj/VWBRX7uC0ClqBKdVPmhq2qlgotFP0U=;
+        b=0AiVyJMlWD2ykObNuH0HBjsZhep/bkFPv9/FWWz8mtuDFhtkqPOWAdpZD5pjUnyQ1I
+         /zLuH2UQS2KSMAH6YTbZaNtQnV0ffkEAGsLFnjfQSVk6KGrIOfbSnKsw31mXbxuhdh+2
+         A+lMVxVjANuTYyF2Jo1TBwzCovT64sYO/WXSOB/sxCRc60t8Hak5vCdLrSmq1yo8IlZ2
+         hybMy+NwIQXXYHcQKPyZy4CJkxQdRqbQ7DOfd4PWNU4hRnCo28V4lftCmupIq5ok/lzP
+         I18ApYV/U8HaFyYx3Srq4KJ9et7x50O9bxYJwdO2EmIFhSOUWSAr2JB0RYiylhpGEhvU
+         +ICA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
+         :mime-version:content-disposition:in-reply-to:user-agent;
+        bh=my5wh6X5Z2sj/VWBRX7uC0ClqBKdVPmhq2qlgotFP0U=;
+        b=RPYhOgBWmz7FKPZ/49BuAFX27Xsf6qIt3gNe9gb+C9XY+5GiL0zyjTOU4HQRGw0nUW
+         NioDXf/QwrTqeAMU+4pQ342JT7Hom63odvkXUngVamnBK5ykbcqPINlsz+M1yK6n9bqm
+         FxQknGpbhWDERLMo5DreEXSZ6Hz80RhgAsuSJwIGy2E4AtAvVOfu34M5VDPsuf1x3FGv
+         SEMmmRJhPmeDGiwnUwJVj9sPUGAzY6UNACXWHA/IosBgyW96RqwXAow/YOBUWOYLxRG2
+         9GjKJ4uznKs7yRKJCOE39p4GeE3Mc8xXBnfUV2ppes8eIq5NSt9ei3YUgj+EVc0VUr6G
+         MHSQ==
+X-Gm-Message-State: AGRZ1gJJ/kk4983oiH0hi6N9pSaAuc/3k7RVfYbN/wXbd+KxNNcR6Z4Y
+        NRkURPq71t8KpfT2OiBEJvq1T5SiPKXqWQ==
+X-Google-Smtp-Source: AJdET5c5EJ+ZK6wu5+7Swvfd47mtgSadeYdDzEHUwmbsoz6W86X7IspSq6Nl3AS2Ts/Csx0GjwmJjw==
+X-Received: by 2002:a0c:f7c8:: with SMTP id f8mr6000977qvo.154.1540231016322;
+        Mon, 22 Oct 2018 10:56:56 -0700 (PDT)
+Received: from localhost ([107.15.81.208])
+        by smtp.gmail.com with ESMTPSA id 70-v6sm7352212qkf.35.2018.10.22.10.56.54
+        (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
+        Mon, 22 Oct 2018 10:56:55 -0700 (PDT)
+Date:   Mon, 22 Oct 2018 13:56:54 -0400
+From:   Josef Bacik <josef@toxicpanda.com>
+To:     Dave Chinner <david@fromorbit.com>
+Cc:     Josef Bacik <josef@toxicpanda.com>, kernel-team@fb.com,
+        hannes@cmpxchg.org, linux-kernel@vger.kernel.org, tj@kernel.org,
+        akpm@linux-foundation.org, linux-fsdevel@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, riel@fb.com, linux-mm@kvack.org
+Subject: Re: [PATCH 7/7] btrfs: drop mmap_sem in mkwrite for btrfs
+Message-ID: <20181022175652.ase7u23uzizqtlao@destiny>
+References: <20181018202318.9131-1-josef@toxicpanda.com>
+ <20181018202318.9131-8-josef@toxicpanda.com>
+ <20181019034847.GM18822@dastard>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-CMAE-Envelope: MS4wfGDWjgNbXbf3OBVhZYY1SNXx0zJ+aeGIr4xevcNmkDBHWvZIXRICLvotT5goHlP+azFdky998YxTXym1l5/C4IrynQDpF8e5k28VzA6T5PnHxCIeNvmI
- LfZT+XMQHhijHJ4WjeKfVXA34dVMzDRu8FUGuM8cFJF0PvoQ1cf+xGoNipH08AM9NgY1TIgQg3K9karYwNFSRPWcfBBFwoPjkz6G70O9p2hONawTHRQooEfr
- oP0AFRi2ZSUtWX2eCObhDCiORXa5B+uzoSwmK0XZh1o=
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20181019034847.GM18822@dastard>
+User-Agent: NeoMutt/20180716
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Goffredo Baroncelli <kreijack@inwind.it>
+On Fri, Oct 19, 2018 at 02:48:47PM +1100, Dave Chinner wrote:
+> On Thu, Oct 18, 2018 at 04:23:18PM -0400, Josef Bacik wrote:
+> > ->page_mkwrite is extremely expensive in btrfs.  We have to reserve
+> > space, which can take 6 lifetimes, and we could possibly have to wait on
+> > writeback on the page, another several lifetimes.  To avoid this simply
+> > drop the mmap_sem if we didn't have the cached page and do all of our
+> > work and return the appropriate retry error.  If we have the cached page
+> > we know we did all the right things to set this page up and we can just
+> > carry on.
+> > 
+> > Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+> > ---
+> >  fs/btrfs/inode.c   | 41 +++++++++++++++++++++++++++++++++++++++--
+> >  include/linux/mm.h | 14 ++++++++++++++
+> >  mm/filemap.c       |  3 ++-
+> >  3 files changed, 55 insertions(+), 3 deletions(-)
+> > 
+> > diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> > index 3ea5339603cf..6b723d29bc0c 100644
+> > --- a/fs/btrfs/inode.c
+> > +++ b/fs/btrfs/inode.c
+> > @@ -8809,7 +8809,9 @@ static void btrfs_invalidatepage(struct page *page, unsigned int offset,
+> >  vm_fault_t btrfs_page_mkwrite(struct vm_fault *vmf)
+> >  {
+> >  	struct page *page = vmf->page;
+> > -	struct inode *inode = file_inode(vmf->vma->vm_file);
+> > +	struct file *file = vmf->vma->vm_file, *fpin;
+> > +	struct mm_struct *mm = vmf->vma->vm_mm;
+> > +	struct inode *inode = file_inode(file);
+> >  	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+> >  	struct extent_io_tree *io_tree = &BTRFS_I(inode)->io_tree;
+> >  	struct btrfs_ordered_extent *ordered;
+> > @@ -8828,6 +8830,29 @@ vm_fault_t btrfs_page_mkwrite(struct vm_fault *vmf)
+> >  
+> >  	reserved_space = PAGE_SIZE;
+> >  
+> > +	/*
+> > +	 * We have our cached page from a previous mkwrite, check it to make
+> > +	 * sure it's still dirty and our file size matches when we ran mkwrite
+> > +	 * the last time.  If everything is OK then return VM_FAULT_LOCKED,
+> > +	 * otherwise do the mkwrite again.
+> > +	 */
+> > +	if (vmf->flags & FAULT_FLAG_USED_CACHED) {
+> > +		lock_page(page);
+> > +		if (vmf->cached_size == i_size_read(inode) &&
+> > +		    PageDirty(page))
+> > +			return VM_FAULT_LOCKED;
+> > +		unlock_page(page);
+> > +	}
+> 
+> What does the file size have to do with whether we can use the
+> initialised page or not? The file can be extended by other
+> data operations (like write()) while a page fault is in progress,
+> so I'm not sure how or why this check makes any sense.
+> 
+> I also don't see anything btrfs specific here, so....
+> 
 
-The original code which handles the recovery of a RAID 6 disks array
-assumes that all reads are multiple of 1 << GRUB_DISK_SECTOR_BITS and it
-assumes that all the I/O is done via the struct grub_diskfilter_segment.
-This is not true for the btrfs code. In order to reuse the native
-grub_raid6_recover() code, it is modified to not call
-grub_diskfilter_read_node() directly, but to call an handler passed
-as an argument.
+First thanks for the review, I've gone through and addressed everything you
+mentioned, however this one is subtle.
 
-Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
-Reviewed-by: Daniel Kiper <daniel.kiper@oracle.com>
----
- grub-core/disk/raid6_recover.c | 52 ++++++++++++++++++++++------------
- include/grub/diskfilter.h      |  9 ++++++
- 2 files changed, 43 insertions(+), 18 deletions(-)
+The problem is the vmf->vma->vm_file access.  Once we drop the mmap_sem we can
+no longer safely go into vmf->vma, so I'd have to fix all the page_mkwrite()'s
+to not touch vma, and add a vmf->fpin instead to mess with. Plus I didn't want
+to miss some subtlety in other fs's page_mkwrite()'s and inavertedly break them.
+If I break btrfs I can fix it, I'm not as good with xfs.
 
-diff --git a/grub-core/disk/raid6_recover.c b/grub-core/disk/raid6_recover.c
-index aa674f6ca..0cf691ddf 100644
---- a/grub-core/disk/raid6_recover.c
-+++ b/grub-core/disk/raid6_recover.c
-@@ -74,14 +74,26 @@ mod_255 (unsigned x)
- }
- 
- static grub_err_t
--grub_raid6_recover (struct grub_diskfilter_segment *array, int disknr, int p,
--                    char *buf, grub_disk_addr_t sector, grub_size_t size)
-+raid6_recover_read_node (void *data, int disknr,
-+				    grub_uint64_t sector,
-+				    void *buf, grub_size_t size)
-+{
-+    struct grub_diskfilter_segment *array = data;
-+
-+    return grub_diskfilter_read_node (&array->nodes[disknr],
-+				      (grub_disk_addr_t)sector,
-+				      size >> GRUB_DISK_SECTOR_BITS, buf);
-+}
-+
-+grub_err_t
-+grub_raid6_recover_gen (void *data, grub_uint64_t nstripes, int disknr, int p,
-+			    char *buf, grub_uint64_t sector, grub_size_t size,
-+			    int layout, raid_recover_read_t read_func)
- {
-   int i, q, pos;
-   int bad1 = -1, bad2 = -1;
-   char *pbuf = 0, *qbuf = 0;
- 
--  size <<= GRUB_DISK_SECTOR_BITS;
-   pbuf = grub_zalloc (size);
-   if (!pbuf)
-     goto quit;
-@@ -91,17 +103,17 @@ grub_raid6_recover (struct grub_diskfilter_segment *array, int disknr, int p,
-     goto quit;
- 
-   q = p + 1;
--  if (q == (int) array->node_count)
-+  if (q == (int) nstripes)
-     q = 0;
- 
-   pos = q + 1;
--  if (pos == (int) array->node_count)
-+  if (pos == (int) nstripes)
-     pos = 0;
- 
--  for (i = 0; i < (int) array->node_count - 2; i++)
-+  for (i = 0; i < (int) nstripes - 2; i++)
-     {
-       int c;
--      if (array->layout & GRUB_RAID_LAYOUT_MUL_FROM_POS)
-+      if (layout & GRUB_RAID_LAYOUT_MUL_FROM_POS)
- 	c = pos;
-       else
- 	c = i;
-@@ -109,8 +121,7 @@ grub_raid6_recover (struct grub_diskfilter_segment *array, int disknr, int p,
-         bad1 = c;
-       else
-         {
--          if (! grub_diskfilter_read_node (&array->nodes[pos], sector,
--					   size >> GRUB_DISK_SECTOR_BITS, buf))
-+	  if (!read_func(data, pos, sector, buf, size))
-             {
-               grub_crypto_xor (pbuf, pbuf, buf, size);
-               grub_raid_block_mulx (c, buf, size);
-@@ -128,7 +139,7 @@ grub_raid6_recover (struct grub_diskfilter_segment *array, int disknr, int p,
-         }
- 
-       pos++;
--      if (pos == (int) array->node_count)
-+      if (pos == (int) nstripes)
-         pos = 0;
-     }
- 
-@@ -139,16 +150,14 @@ grub_raid6_recover (struct grub_diskfilter_segment *array, int disknr, int p,
-   if (bad2 < 0)
-     {
-       /* One bad device */
--      if ((! grub_diskfilter_read_node (&array->nodes[p], sector,
--					size >> GRUB_DISK_SECTOR_BITS, buf)))
-+      if (!read_func(data, p, sector, buf, size))
-         {
-           grub_crypto_xor (buf, buf, pbuf, size);
-           goto quit;
-         }
- 
-       grub_errno = GRUB_ERR_NONE;
--      if (grub_diskfilter_read_node (&array->nodes[q], sector,
--				     size >> GRUB_DISK_SECTOR_BITS, buf))
-+      if (read_func(data, q, sector, buf, size))
-         goto quit;
- 
-       grub_crypto_xor (buf, buf, qbuf, size);
-@@ -160,14 +169,12 @@ grub_raid6_recover (struct grub_diskfilter_segment *array, int disknr, int p,
-       /* Two bad devices */
-       unsigned c;
- 
--      if (grub_diskfilter_read_node (&array->nodes[p], sector,
--				     size >> GRUB_DISK_SECTOR_BITS, buf))
-+      if (read_func(data, p, sector, buf, size))
-         goto quit;
- 
-       grub_crypto_xor (pbuf, pbuf, buf, size);
- 
--      if (grub_diskfilter_read_node (&array->nodes[q], sector,
--				     size >> GRUB_DISK_SECTOR_BITS, buf))
-+      if (read_func(data, q, sector, buf, size))
-         goto quit;
- 
-       grub_crypto_xor (qbuf, qbuf, buf, size);
-@@ -190,6 +197,15 @@ quit:
-   return grub_errno;
- }
- 
-+static grub_err_t
-+grub_raid6_recover (struct grub_diskfilter_segment *array, int disknr, int p,
-+                    char *buf, grub_disk_addr_t sector, grub_size_t size)
-+{
-+  return grub_raid6_recover_gen (array, array->node_count, disknr, p, buf,
-+				     sector, size << GRUB_DISK_SECTOR_BITS,
-+				     array->layout, raid6_recover_read_node);
-+}
-+
- GRUB_MOD_INIT(raid6rec)
- {
-   grub_raid6_init_table ();
-diff --git a/include/grub/diskfilter.h b/include/grub/diskfilter.h
-index d89273c1b..8deb1a8c3 100644
---- a/include/grub/diskfilter.h
-+++ b/include/grub/diskfilter.h
-@@ -189,6 +189,15 @@ typedef grub_err_t (*grub_raid6_recover_func_t) (struct grub_diskfilter_segment
- extern grub_raid5_recover_func_t grub_raid5_recover_func;
- extern grub_raid6_recover_func_t grub_raid6_recover_func;
- 
-+typedef grub_err_t (* raid_recover_read_t)(void *data, int disk_nr,
-+					   grub_uint64_t addr, void *dest,
-+					   grub_size_t size);
-+
-+extern grub_err_t
-+grub_raid6_recover_gen (void *data, grub_uint64_t nstripes, int disknr, int p,
-+			    char *buf, grub_uint64_t sector, grub_size_t size,
-+			    int layout, raid_recover_read_t read_func);
-+
- grub_err_t grub_diskfilter_vg_register (struct grub_diskfilter_vg *vg);
- 
- grub_err_t
--- 
-2.19.1
+If you want this in the generic layer and not in the fs I can go back and add a
+vmf->fpin and vmf->mm, and then fix up all the mkwrite()'s to use that instead
+of vmf->vma.  I think that's the only things we care about so it wouldn't be
+hard.  Does that sound reasonable to you?
 
+Also the size thing was just a paranoid way to make sure everything had stayed
+exactly the same, but you're right, I'll just keep it consistent with all of our
+other "is this page ok" checks.  Thanks,
+
+Josef

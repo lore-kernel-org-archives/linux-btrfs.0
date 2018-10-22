@@ -2,315 +2,262 @@ Return-Path: <SRS0=ca24=NC=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.6 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3EA83C67863
-	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Oct 2018 09:12:56 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1EE2EC67863
+	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Oct 2018 09:43:13 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id C385120779
-	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Oct 2018 09:12:55 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id BE58420652
+	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Oct 2018 09:43:12 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="eHC5vcvQ"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org C385120779
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
+	dkim=pass (1024-bit key) header.d=kernel.org header.i=@kernel.org header.b="d10Mu0di"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org BE58420652
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=kernel.org
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727773AbeJVRad (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 22 Oct 2018 13:30:33 -0400
-Received: from mail-ua1-f67.google.com ([209.85.222.67]:36615 "EHLO
-        mail-ua1-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727218AbeJVRad (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 22 Oct 2018 13:30:33 -0400
-Received: by mail-ua1-f67.google.com with SMTP id b3so9671592uak.3
-        for <linux-btrfs@vger.kernel.org>; Mon, 22 Oct 2018 02:12:53 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:references:in-reply-to:reply-to:from:date:message-id
-         :subject:to:cc:content-transfer-encoding;
-        bh=Zo2xu7ig5C7BdQJou15m3fFK781dI6xLlZ9EJGBSkfM=;
-        b=eHC5vcvQXYuRcEFSQShftRB8t7Bz3DZ19if2A8X3dPpZGcBooVhGo0VkPqzj9o5gM8
-         Pb4KukXFI5mrzo5SgHXIMfNU8qbzL4eTQwIxpuNN0DZwyJB0ngamQcVB7gasv1i6YVS/
-         ez+qkWpR7x2VQvgJVs2d66+WF36TiaxPDmf7AKoRkg1P6S9+AOOFX0fJv8YQpGV3JcX9
-         SW/uwgM3Gn4YMFuJG6iLmkwahCqkUzfWcFa9FwDe97iQmCGKtk7NLweObWnNzWif1gSr
-         L+IqrA1Ay92ip4X5/qg3J+jpGKZ60SGfoRB1SF45messO20CmzevRTAQeDTenvkNySWb
-         HNQg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:reply-to
-         :from:date:message-id:subject:to:cc:content-transfer-encoding;
-        bh=Zo2xu7ig5C7BdQJou15m3fFK781dI6xLlZ9EJGBSkfM=;
-        b=gK7F/BpNIAh+SkatKLwSmuXqE3cdKSAry1LYFWVxZEWK9uMFeDwRC9s2YgucTVIPpI
-         6ESDS/W/fRMgKZBobqmj7PdyKdxcvHRBUQ2RfX1XU5YbMpvm6nGAmlDp4o6bi8BhvKe9
-         JFLfmo1hTWvQRKbzBGiv1md1CDINygXIw0YyBE7eaWwbwA3SCje1p3GENP4HHvY7MVK4
-         HNKcu8RBfOOcTbR0qRRFoy69LN6J5+b/Z7QoJ2POh/lNgsPwJ9WRRuTWDWCXg+BydlFZ
-         DZt9UK2fhPv+T0heYjANp0+yy90pT3SOqHqenZ+hgS569abNtHrwdasNuIbhEuZjw1zD
-         zw0w==
-X-Gm-Message-State: ABuFfoiBzbisZfUrcBNPWwjpNIfhCiW3eSHMnit65X9d8hIaK1eTJbhL
-        zcZuvCdxp4F0pL6LTnLPojN62onqTsDZLhEp4m4=
-X-Google-Smtp-Source: ACcGV63TmNK3sS6zL71RlVn2QkiUoyQl5x14lkA96aKBbTEmtqLAYgMwjVtRoYukSoiObcjeUOniFZS0fPpray3EIQk=
-X-Received: by 2002:a9f:2c0b:: with SMTP id r11mr18245266uaj.100.1540199572910;
- Mon, 22 Oct 2018 02:12:52 -0700 (PDT)
-MIME-Version: 1.0
-References: <CAPTELenq9x5KOWuQ+fa7h1r3nsJG8vyiTH8+ifjURc_duHh2Wg@mail.gmail.com>
- <CANQeFDBAxL=BTWjCOVmu8rGP0k2OCipD07my4RQs8vV9NJeraw@mail.gmail.com>
- <CAL3q7H6-06g12Kv1FD30Tii+zoQjDmJj+aM8kCnLeJVVvNad5A@mail.gmail.com>
- <CAPTELen29rS9ZoECxf7kBvDDRGFUcB=TQn2o=T+cmV=a-x9N2Q@mail.gmail.com>
- <CAPTELe=ObC4gbjB+vjuYCHyqPxr4rakWYksN8p1P=UL8BsU_wg@mail.gmail.com>
- <CAL3q7H6EOMj+-4wwAo3KaRxG=MtJcYVxdpLjPMRa-n5OpGYO1w@mail.gmail.com> <CAPTELen2iKt928nGtnr2J7s+rwi5-v_yygV_VWrtr_G6dkwRkw@mail.gmail.com>
-In-Reply-To: <CAPTELen2iKt928nGtnr2J7s+rwi5-v_yygV_VWrtr_G6dkwRkw@mail.gmail.com>
-Reply-To: fdmanana@gmail.com
-From:   Filipe Manana <fdmanana@gmail.com>
-Date:   Mon, 22 Oct 2018 10:12:41 +0100
-Message-ID: <CAL3q7H4VR_Wcmm-XFvuDUbWKM_q5Hj2W17qsz9StgQsJ7MFojQ@mail.gmail.com>
-Subject: Re: Btrfs resize seems to deadlock
-To:     andrew.s.nelson@gmail.com
-Cc:     Liu Bo <obuil.liubo@gmail.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+        id S1728451AbeJVSA5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 22 Oct 2018 14:00:57 -0400
+Received: from mail.kernel.org ([198.145.29.99]:36162 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1728348AbeJVSA5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 22 Oct 2018 14:00:57 -0400
+Received: from localhost.localdomain (bl8-197-74.dsl.telepac.pt [85.241.197.74])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id 8F44320652
+        for <linux-btrfs@vger.kernel.org>; Mon, 22 Oct 2018 09:43:09 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=default; t=1540201390;
+        bh=TY6dEVjjjcSYxb+UefK3/eeLU1b77+x2akgQYy6sWqM=;
+        h=From:To:Subject:Date:From;
+        b=d10Mu0dikxFvSAHBpGeXQgLCOWwvyGzKg00ZfeTbiwNAbxceSW3gNn0EbaWAxh9F5
+         yvlINY8DWqbKdDKszEYukxdmnuZurH+ySTIjvedTL3tlSCqBMHnWcRyZeNueC7On5p
+         VjxsH+xMcY992EAHcaIXP4it1t8Vsbr3pNLezudU=
+From:   fdmanana@kernel.org
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: fix use-after-free when dumping free space
+Date:   Mon, 22 Oct 2018 10:43:06 +0100
+Message-Id: <20181022094306.28868-1-fdmanana@kernel.org>
+X-Mailer: git-send-email 2.11.0
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Oct 22, 2018 at 10:06 AM Andrew Nelson
-<andrew.s.nelson@gmail.com> wrote:
->
-> OK, an update: After unmouting and running btrfs check, the drive
-> reverted to reporting the old size. Not sure if this was due to
-> unmounting / mounting or doing btrfs check. Btrfs check should have
-> been running in readonly mode.
+From: Filipe Manana <fdmanana@suse.com>
 
-It reverted to the old size because the transaction used for the
-resize operation never got committed due to the deadlock, not because
-of 'btrfs check'.
+We were iterating a block group's free space cache rbtree without locking
+first the lock that protects it (the free_space_ctl->free_space_offset
+rbtree is protected by the free_space_ctl->tree_lock spinlock).
 
->  Since it looked like something was
-> wrong with the resize process, I patched my kernel with the posted
-> patch. This time the resize operation finished successfully.
+KASAN reported an use-after-free problem when iterating such a rbtree due
+to a concurrent rbtree delete:
 
-Great, thanks for testing!
+[ 9520.359168] ==================================================================
+[ 9520.359656] BUG: KASAN: use-after-free in rb_next+0x13/0x90
+[ 9520.359949] Read of size 8 at addr ffff8800b7ada500 by task btrfs-transacti/1721
+[ 9520.360357]
+[ 9520.360530] CPU: 4 PID: 1721 Comm: btrfs-transacti Tainted: G             L    4.19.0-rc8-nbor #555
+[ 9520.360990] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS 1.10.2-1ubuntu1 04/01/2014
+[ 9520.362682] Call Trace:
+[ 9520.362887]  dump_stack+0xa4/0xf5
+[ 9520.363146]  print_address_description+0x78/0x280
+[ 9520.363412]  kasan_report+0x263/0x390
+[ 9520.363650]  ? rb_next+0x13/0x90
+[ 9520.363873]  __asan_load8+0x54/0x90
+[ 9520.364102]  rb_next+0x13/0x90
+[ 9520.364380]  btrfs_dump_free_space+0x146/0x160 [btrfs]
+[ 9520.364697]  dump_space_info+0x2cd/0x310 [btrfs]
+[ 9520.364997]  btrfs_reserve_extent+0x1ee/0x1f0 [btrfs]
+[ 9520.365310]  __btrfs_prealloc_file_range+0x1cc/0x620 [btrfs]
+[ 9520.365646]  ? btrfs_update_time+0x180/0x180 [btrfs]
+[ 9520.365923]  ? _raw_spin_unlock+0x27/0x40
+[ 9520.366204]  ? btrfs_alloc_data_chunk_ondemand+0x2c0/0x5c0 [btrfs]
+[ 9520.366549]  btrfs_prealloc_file_range_trans+0x23/0x30 [btrfs]
+[ 9520.366880]  cache_save_setup+0x42e/0x580 [btrfs]
+[ 9520.367220]  ? btrfs_check_data_free_space+0xd0/0xd0 [btrfs]
+[ 9520.367518]  ? lock_downgrade+0x2f0/0x2f0
+[ 9520.367799]  ? btrfs_write_dirty_block_groups+0x11f/0x6e0 [btrfs]
+[ 9520.368104]  ? kasan_check_read+0x11/0x20
+[ 9520.368349]  ? do_raw_spin_unlock+0xa8/0x140
+[ 9520.368638]  btrfs_write_dirty_block_groups+0x2af/0x6e0 [btrfs]
+[ 9520.368978]  ? btrfs_start_dirty_block_groups+0x870/0x870 [btrfs]
+[ 9520.369282]  ? do_raw_spin_unlock+0xa8/0x140
+[ 9520.369534]  ? _raw_spin_unlock+0x27/0x40
+[ 9520.369811]  ? btrfs_run_delayed_refs+0x1b8/0x230 [btrfs]
+[ 9520.370137]  commit_cowonly_roots+0x4b9/0x610 [btrfs]
+[ 9520.370560]  ? commit_fs_roots+0x350/0x350 [btrfs]
+[ 9520.370926]  ? btrfs_run_delayed_refs+0x1b8/0x230 [btrfs]
+[ 9520.371285]  btrfs_commit_transaction+0x5e5/0x10e0 [btrfs]
+[ 9520.371612]  ? btrfs_apply_pending_changes+0x90/0x90 [btrfs]
+[ 9520.371943]  ? start_transaction+0x168/0x6c0 [btrfs]
+[ 9520.372257]  transaction_kthread+0x21c/0x240 [btrfs]
+[ 9520.372537]  kthread+0x1d2/0x1f0
+[ 9520.372793]  ? btrfs_cleanup_transaction+0xb50/0xb50 [btrfs]
+[ 9520.373090]  ? kthread_park+0xb0/0xb0
+[ 9520.373329]  ret_from_fork+0x3a/0x50
+[ 9520.373567]
+[ 9520.373738] Allocated by task 1804:
+[ 9520.373974]  kasan_kmalloc+0xff/0x180
+[ 9520.374208]  kasan_slab_alloc+0x11/0x20
+[ 9520.374447]  kmem_cache_alloc+0xfc/0x2d0
+[ 9520.374731]  __btrfs_add_free_space+0x40/0x580 [btrfs]
+[ 9520.375044]  unpin_extent_range+0x4f7/0x7a0 [btrfs]
+[ 9520.375383]  btrfs_finish_extent_commit+0x15f/0x4d0 [btrfs]
+[ 9520.375707]  btrfs_commit_transaction+0xb06/0x10e0 [btrfs]
+[ 9520.376027]  btrfs_alloc_data_chunk_ondemand+0x237/0x5c0 [btrfs]
+[ 9520.376365]  btrfs_check_data_free_space+0x81/0xd0 [btrfs]
+[ 9520.376689]  btrfs_delalloc_reserve_space+0x25/0x80 [btrfs]
+[ 9520.377018]  btrfs_direct_IO+0x42e/0x6d0 [btrfs]
+[ 9520.377284]  generic_file_direct_write+0x11e/0x220
+[ 9520.377587]  btrfs_file_write_iter+0x472/0xac0 [btrfs]
+[ 9520.377875]  aio_write+0x25c/0x360
+[ 9520.378106]  io_submit_one+0xaa0/0xdc0
+[ 9520.378343]  __se_sys_io_submit+0xfa/0x2f0
+[ 9520.378589]  __x64_sys_io_submit+0x43/0x50
+[ 9520.378840]  do_syscall_64+0x7d/0x240
+[ 9520.379081]  entry_SYSCALL_64_after_hwframe+0x49/0xbe
+[ 9520.379387]
+[ 9520.379557] Freed by task 1802:
+[ 9520.379782]  __kasan_slab_free+0x173/0x260
+[ 9520.380028]  kasan_slab_free+0xe/0x10
+[ 9520.380262]  kmem_cache_free+0xc1/0x2c0
+[ 9520.380544]  btrfs_find_space_for_alloc+0x4cd/0x4e0 [btrfs]
+[ 9520.380866]  find_free_extent+0xa99/0x17e0 [btrfs]
+[ 9520.381166]  btrfs_reserve_extent+0xd5/0x1f0 [btrfs]
+[ 9520.381474]  btrfs_get_blocks_direct+0x60b/0xbd0 [btrfs]
+[ 9520.381761]  __blockdev_direct_IO+0x10ee/0x58a1
+[ 9520.382059]  btrfs_direct_IO+0x25a/0x6d0 [btrfs]
+[ 9520.382321]  generic_file_direct_write+0x11e/0x220
+[ 9520.382623]  btrfs_file_write_iter+0x472/0xac0 [btrfs]
+[ 9520.382904]  aio_write+0x25c/0x360
+[ 9520.383172]  io_submit_one+0xaa0/0xdc0
+[ 9520.383416]  __se_sys_io_submit+0xfa/0x2f0
+[ 9520.383678]  __x64_sys_io_submit+0x43/0x50
+[ 9520.383927]  do_syscall_64+0x7d/0x240
+[ 9520.384165]  entry_SYSCALL_64_after_hwframe+0x49/0xbe
+[ 9520.384439]
+[ 9520.384610] The buggy address belongs to the object at ffff8800b7ada500
+                which belongs to the cache btrfs_free_space of size 72
+[ 9520.385175] The buggy address is located 0 bytes inside of
+                72-byte region [ffff8800b7ada500, ffff8800b7ada548)
+[ 9520.385691] The buggy address belongs to the page:
+[ 9520.385957] page:ffffea0002deb680 count:1 mapcount:0 mapping:ffff880108a1d700 index:0x0 compound_mapcount: 0
+[ 9520.388030] flags: 0x8100(slab|head)
+[ 9520.388281] raw: 0000000000008100 ffffea0002deb608 ffffea0002728808 ffff880108a1d700
+[ 9520.388722] raw: 0000000000000000 0000000000130013 00000001ffffffff 0000000000000000
+[ 9520.389169] page dumped because: kasan: bad access detected
+[ 9520.389473]
+[ 9520.389658] Memory state around the buggy address:
+[ 9520.389943]  ffff8800b7ada400: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+[ 9520.390368]  ffff8800b7ada480: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+[ 9520.390796] >ffff8800b7ada500: fb fb fb fb fb fb fb fb fb fc fc fc fc fc fc fc
+[ 9520.391223]                    ^
+[ 9520.391461]  ffff8800b7ada580: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+[ 9520.391885]  ffff8800b7ada600: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+[ 9520.392313] ==================================================================
+[ 9520.392772] BTRFS critical (device vdc): entry offset 2258497536, bytes 131072, bitmap no
+[ 9520.393247] BUG: unable to handle kernel NULL pointer dereference at 0000000000000011
+[ 9520.393705] PGD 800000010dbab067 P4D 800000010dbab067 PUD 107551067 PMD 0
+[ 9520.394059] Oops: 0000 [#1] SMP DEBUG_PAGEALLOC KASAN PTI
+[ 9520.394378] CPU: 4 PID: 1721 Comm: btrfs-transacti Tainted: G    B        L    4.19.0-rc8-nbor #555
+[ 9520.394858] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS 1.10.2-1ubuntu1 04/01/2014
+[ 9520.395350] RIP: 0010:rb_next+0x3c/0x90
+[ 9520.396461] RSP: 0018:ffff8801074ff780 EFLAGS: 00010292
+[ 9520.396762] RAX: 0000000000000000 RBX: 0000000000000001 RCX: ffffffff81b5ac4c
+[ 9520.397115] RDX: 0000000000000000 RSI: 0000000000000008 RDI: 0000000000000011
+[ 9520.397468] RBP: ffff8801074ff7a0 R08: ffffed0021d64ccc R09: ffffed0021d64ccc
+[ 9520.397821] R10: 0000000000000001 R11: ffffed0021d64ccb R12: ffff8800b91e0000
+[ 9520.398188] R13: ffff8800a3ceba48 R14: ffff8800b627bf80 R15: 0000000000020000
+[ 9520.398555] FS:  0000000000000000(0000) GS:ffff88010eb00000(0000) knlGS:0000000000000000
+[ 9520.399007] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[ 9520.399335] CR2: 0000000000000011 CR3: 0000000106b52000 CR4: 00000000000006a0
+[ 9520.399679] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+[ 9520.400023] DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+[ 9520.400400] Call Trace:
+[ 9520.400648]  btrfs_dump_free_space+0x146/0x160 [btrfs]
+[ 9520.400974]  dump_space_info+0x2cd/0x310 [btrfs]
+[ 9520.401287]  btrfs_reserve_extent+0x1ee/0x1f0 [btrfs]
+[ 9520.401609]  __btrfs_prealloc_file_range+0x1cc/0x620 [btrfs]
+[ 9520.401952]  ? btrfs_update_time+0x180/0x180 [btrfs]
+[ 9520.402232]  ? _raw_spin_unlock+0x27/0x40
+[ 9520.402522]  ? btrfs_alloc_data_chunk_ondemand+0x2c0/0x5c0 [btrfs]
+[ 9520.402882]  btrfs_prealloc_file_range_trans+0x23/0x30 [btrfs]
+[ 9520.403261]  cache_save_setup+0x42e/0x580 [btrfs]
+[ 9520.403570]  ? btrfs_check_data_free_space+0xd0/0xd0 [btrfs]
+[ 9520.403871]  ? lock_downgrade+0x2f0/0x2f0
+[ 9520.404161]  ? btrfs_write_dirty_block_groups+0x11f/0x6e0 [btrfs]
+[ 9520.404481]  ? kasan_check_read+0x11/0x20
+[ 9520.404732]  ? do_raw_spin_unlock+0xa8/0x140
+[ 9520.405026]  btrfs_write_dirty_block_groups+0x2af/0x6e0 [btrfs]
+[ 9520.405375]  ? btrfs_start_dirty_block_groups+0x870/0x870 [btrfs]
+[ 9520.405694]  ? do_raw_spin_unlock+0xa8/0x140
+[ 9520.405958]  ? _raw_spin_unlock+0x27/0x40
+[ 9520.406243]  ? btrfs_run_delayed_refs+0x1b8/0x230 [btrfs]
+[ 9520.406574]  commit_cowonly_roots+0x4b9/0x610 [btrfs]
+[ 9520.406899]  ? commit_fs_roots+0x350/0x350 [btrfs]
+[ 9520.407253]  ? btrfs_run_delayed_refs+0x1b8/0x230 [btrfs]
+[ 9520.407589]  btrfs_commit_transaction+0x5e5/0x10e0 [btrfs]
+[ 9520.407925]  ? btrfs_apply_pending_changes+0x90/0x90 [btrfs]
+[ 9520.408262]  ? start_transaction+0x168/0x6c0 [btrfs]
+[ 9520.408582]  transaction_kthread+0x21c/0x240 [btrfs]
+[ 9520.408870]  kthread+0x1d2/0x1f0
+[ 9520.409138]  ? btrfs_cleanup_transaction+0xb50/0xb50 [btrfs]
+[ 9520.409440]  ? kthread_park+0xb0/0xb0
+[ 9520.409682]  ret_from_fork+0x3a/0x50
+[ 9520.410508] Dumping ftrace buffer:
+[ 9520.410764]    (ftrace buffer empty)
+[ 9520.411007] CR2: 0000000000000011
+[ 9520.411297] ---[ end trace 01a0863445cf360a ]---
+[ 9520.411568] RIP: 0010:rb_next+0x3c/0x90
+[ 9520.412644] RSP: 0018:ffff8801074ff780 EFLAGS: 00010292
+[ 9520.412932] RAX: 0000000000000000 RBX: 0000000000000001 RCX: ffffffff81b5ac4c
+[ 9520.413274] RDX: 0000000000000000 RSI: 0000000000000008 RDI: 0000000000000011
+[ 9520.413616] RBP: ffff8801074ff7a0 R08: ffffed0021d64ccc R09: ffffed0021d64ccc
+[ 9520.414007] R10: 0000000000000001 R11: ffffed0021d64ccb R12: ffff8800b91e0000
+[ 9520.414349] R13: ffff8800a3ceba48 R14: ffff8800b627bf80 R15: 0000000000020000
+[ 9520.416074] FS:  0000000000000000(0000) GS:ffff88010eb00000(0000) knlGS:0000000000000000
+[ 9520.416536] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[ 9520.416848] CR2: 0000000000000011 CR3: 0000000106b52000 CR4: 00000000000006a0
+[ 9520.418477] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+[ 9520.418846] DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+[ 9520.419204] Kernel panic - not syncing: Fatal exception
+[ 9520.419666] Dumping ftrace buffer:
+[ 9520.419930]    (ftrace buffer empty)
+[ 9520.420168] Kernel Offset: disabled
+[ 9520.420406] ---[ end Kernel panic - not syncing: Fatal exception ]---
 
-> On Sun, Oct 21, 2018 at 1:56 AM Filipe Manana <fdmanana@gmail.com> wrote:
-> >
-> > On Sun, Oct 21, 2018 at 6:05 AM Andrew Nelson <andrew.s.nelson@gmail.co=
-m> wrote:
-> > >
-> > > Also, is the drive in a safe state to use? Is there anything I should
-> > > run on the drive to check consistency?
-> >
-> > It should be in a safe state. You can verify it running "btrfs check
-> > /dev/<your device>" (it's a readonly operation).
-> >
-> > If you are able to patch and build a kernel, you can also try the
-> > patch. I left it running tests overnight and haven't got any
-> > regressions.
-> >
-> > Thanks.
-> >
-> > > On Sat, Oct 20, 2018 at 10:02 PM Andrew Nelson
-> > > <andrew.s.nelson@gmail.com> wrote:
-> > > >
-> > > > I have ran the "btrfs inspect-internal dump-tree -t 1" command, but
-> > > > the output is ~55mb. Is there something in particular you are looki=
-ng
-> > > > for in this?
-> > > > On Sat, Oct 20, 2018 at 1:34 PM Filipe Manana <fdmanana@gmail.com> =
-wrote:
-> > > > >
-> > > > > On Sat, Oct 20, 2018 at 9:27 PM Liu Bo <obuil.liubo@gmail.com> wr=
-ote:
-> > > > > >
-> > > > > > On Fri, Oct 19, 2018 at 7:09 PM Andrew Nelson <andrew.s.nelson@=
-gmail.com> wrote:
-> > > > > > >
-> > > > > > > I am having an issue with btrfs resize in Fedora 28. I am att=
-empting
-> > > > > > > to enlarge my Btrfs partition. Every time I run "btrfs filesy=
-stem
-> > > > > > > resize max $MOUNT", the command runs for a few minutes and th=
-en hangs
-> > > > > > > forcing the system to be reset. I am not sure what the state =
-of the
-> > > > > > > filesystem really is at this point. Btrfs usage does report t=
-he
-> > > > > > > correct size for after resizing. Details below:
-> > > > > > >
-> > > > > >
-> > > > > > Thanks for the report, the stack is helpful, but this needs a f=
-ew
-> > > > > > deeper debugging, may I ask you to post "btrfs inspect-internal
-> > > > > > dump-tree -t 1 /dev/your_btrfs_disk"?
-> > > > >
-> > > > > I believe it's actually easy to understand from the trace alone a=
-nd
-> > > > > it's kind of a bad luck scenario.
-> > > > > I made this fix a few hours ago:
-> > > > >
-> > > > > https://git.kernel.org/pub/scm/linux/kernel/git/fdmanana/linux.gi=
-t/commit/?h=3Dfix_find_free_extent_deadlock
-> > > > >
-> > > > > But haven't done full testing yet and might have missed something=
-.
-> > > > > Bo, can you take a look and let me know what you think?
-> > > > >
-> > > > > Thanks.
-> > > > >
-> > > > > >
-> > > > > > So I'd like to know what's the height of your tree "1" which re=
-fers to
-> > > > > > root tree in btrfs.
-> > > > > >
-> > > > > > thanks,
-> > > > > > liubo
-> > > > > >
-> > > > > > > $ sudo btrfs filesystem usage $MOUNT
-> > > > > > > Overall:
-> > > > > > >     Device size:                  90.96TiB
-> > > > > > >     Device allocated:             72.62TiB
-> > > > > > >     Device unallocated:           18.33TiB
-> > > > > > >     Device missing:                  0.00B
-> > > > > > >     Used:                         72.62TiB
-> > > > > > >     Free (estimated):             18.34TiB      (min: 9.17TiB=
-)
-> > > > > > >     Data ratio:                       1.00
-> > > > > > >     Metadata ratio:                   2.00
-> > > > > > >     Global reserve:              512.00MiB      (used: 24.11M=
-iB)
-> > > > > > >
-> > > > > > > Data,single: Size:72.46TiB, Used:72.45TiB
-> > > > > > >     $MOUNT        72.46TiB
-> > > > > > >
-> > > > > > > Metadata,DUP: Size:86.00GiB, Used:84.96GiB
-> > > > > > >     $MOUNT       172.00GiB
-> > > > > > >
-> > > > > > > System,DUP: Size:40.00MiB, Used:7.53MiB
-> > > > > > >    $MOUNT        80.00MiB
-> > > > > > >
-> > > > > > > Unallocated:
-> > > > > > >     $MOUNT        18.33TiB
-> > > > > > >
-> > > > > > > $ uname -a
-> > > > > > > Linux localhost.localdomain 4.18.14-200.fc28.x86_64 #1 SMP Mo=
-n Oct 15
-> > > > > > > 13:16:27 UTC 2018 x86_64 x86_64 x86_64 GNU/Linux
-> > > > > > >
-> > > > > > > btrfs-transacti D    0  2501      2 0x80000000
-> > > > > > > Call Trace:
-> > > > > > >  ? __schedule+0x253/0x860
-> > > > > > >  schedule+0x28/0x80
-> > > > > > >  btrfs_commit_transaction+0x7aa/0x8b0 [btrfs]
-> > > > > > >  ? kmem_cache_alloc+0x166/0x1d0
-> > > > > > >  ? join_transaction+0x22/0x3e0 [btrfs]
-> > > > > > >  ? finish_wait+0x80/0x80
-> > > > > > >  transaction_kthread+0x155/0x170 [btrfs]
-> > > > > > >  ? btrfs_cleanup_transaction+0x550/0x550 [btrfs]
-> > > > > > >  kthread+0x112/0x130
-> > > > > > >  ? kthread_create_worker_on_cpu+0x70/0x70
-> > > > > > >  ret_from_fork+0x35/0x40
-> > > > > > > btrfs           D    0  2504   2502 0x00000002
-> > > > > > > Call Trace:
-> > > > > > >  ? __schedule+0x253/0x860
-> > > > > > >  schedule+0x28/0x80
-> > > > > > >  btrfs_tree_read_lock+0x8e/0x120 [btrfs]
-> > > > > > >  ? finish_wait+0x80/0x80
-> > > > > > >  btrfs_read_lock_root_node+0x2f/0x40 [btrfs]
-> > > > > > >  btrfs_search_slot+0xf6/0x9f0 [btrfs]
-> > > > > > >  ? evict_refill_and_join+0xd0/0xd0 [btrfs]
-> > > > > > >  ? inode_insert5+0x119/0x190
-> > > > > > >  btrfs_lookup_inode+0x3a/0xc0 [btrfs]
-> > > > > > >  ? kmem_cache_alloc+0x166/0x1d0
-> > > > > > >  btrfs_iget+0x113/0x690 [btrfs]
-> > > > > > >  __lookup_free_space_inode+0xd8/0x150 [btrfs]
-> > > > > > >  lookup_free_space_inode+0x5b/0xb0 [btrfs]
-> > > > > > >  load_free_space_cache+0x7c/0x170 [btrfs]
-> > > > > > >  ? cache_block_group+0x72/0x3b0 [btrfs]
-> > > > > > >  cache_block_group+0x1b3/0x3b0 [btrfs]
-> > > > > > >  ? finish_wait+0x80/0x80
-> > > > > > >  find_free_extent+0x799/0x1010 [btrfs]
-> > > > > > >  btrfs_reserve_extent+0x9b/0x180 [btrfs]
-> > > > > > >  btrfs_alloc_tree_block+0x1b3/0x4f0 [btrfs]
-> > > > > > >  __btrfs_cow_block+0x11d/0x500 [btrfs]
-> > > > > > >  btrfs_cow_block+0xdc/0x180 [btrfs]
-> > > > > > >  btrfs_search_slot+0x3bd/0x9f0 [btrfs]
-> > > > > > >  btrfs_lookup_inode+0x3a/0xc0 [btrfs]
-> > > > > > >  ? kmem_cache_alloc+0x166/0x1d0
-> > > > > > >  btrfs_update_inode_item+0x46/0x100 [btrfs]
-> > > > > > >  cache_save_setup+0xe4/0x3a0 [btrfs]
-> > > > > > >  btrfs_start_dirty_block_groups+0x1be/0x480 [btrfs]
-> > > > > > >  btrfs_commit_transaction+0xcb/0x8b0 [btrfs]
-> > > > > > >  ? btrfs_release_path+0x13/0x80 [btrfs]
-> > > > > > >  ? btrfs_update_device+0x8d/0x1c0 [btrfs]
-> > > > > > >  btrfs_ioctl_resize.cold.46+0xf4/0xf9 [btrfs]
-> > > > > > >  btrfs_ioctl+0xa25/0x2cf0 [btrfs]
-> > > > > > >  ? tty_write+0x1fc/0x330
-> > > > > > >  ? do_vfs_ioctl+0xa4/0x620
-> > > > > > >  do_vfs_ioctl+0xa4/0x620
-> > > > > > >  ksys_ioctl+0x60/0x90
-> > > > > > >  ? ksys_write+0x4f/0xb0
-> > > > > > >  __x64_sys_ioctl+0x16/0x20
-> > > > > > >  do_syscall_64+0x5b/0x160
-> > > > > > >  entry_SYSCALL_64_after_hwframe+0x44/0xa9
-> > > > > > > RIP: 0033:0x7fcdc0d78c57
-> > > > > > > Code: Bad RIP value.
-> > > > > > > RSP: 002b:00007ffdd1ee6cf8 EFLAGS: 00000246 ORIG_RAX: 0000000=
-000000010
-> > > > > > > RAX: ffffffffffffffda RBX: 00007ffdd1ee888a RCX: 00007fcdc0d7=
-8c57
-> > > > > > > RDX: 00007ffdd1ee6da0 RSI: 0000000050009403 RDI: 000000000000=
-0003
-> > > > > > > RBP: 00007ffdd1ee6da0 R08: 0000000000000000 R09: 00007ffdd1ee=
-67e0
-> > > > > > > R10: 0000000000000000 R11: 0000000000000246 R12: 00007ffdd1ee=
-888e
-> > > > > > > R13: 0000000000000003 R14: 0000000000000000 R15: 000000000000=
-0000
-> > > > > > > kworker/u48:1   D    0  2505      2 0x80000000
-> > > > > > > Workqueue: btrfs-freespace-write btrfs_freespace_write_helper=
- [btrfs]
-> > > > > > > Call Trace:
-> > > > > > >  ? __schedule+0x253/0x860
-> > > > > > >  schedule+0x28/0x80
-> > > > > > >  btrfs_tree_lock+0x130/0x210 [btrfs]
-> > > > > > >  ? finish_wait+0x80/0x80
-> > > > > > >  btrfs_search_slot+0x775/0x9f0 [btrfs]
-> > > > > > >  btrfs_mark_extent_written+0xb0/0xb20 [btrfs]
-> > > > > > >  ? join_transaction+0x22/0x3e0 [btrfs]
-> > > > > > >  btrfs_finish_ordered_io+0x2e0/0x7e0 [btrfs]
-> > > > > > >  ? syscall_return_via_sysret+0x13/0x83
-> > > > > > >  ? __switch_to_asm+0x34/0x70
-> > > > > > >  normal_work_helper+0xd3/0x2f0 [btrfs]
-> > > > > > >  process_one_work+0x1a1/0x350
-> > > > > > >  worker_thread+0x30/0x380
-> > > > > > >  ? pwq_unbound_release_workfn+0xd0/0xd0
-> > > > > > >  kthread+0x112/0x130
-> > > > > > >  ? kthread_create_worker_on_cpu+0x70/0x70
-> > > > > > >  ret_from_fork+0x35/0x40
-> > > > >
-> > > > >
-> > > > >
-> > > > > --
-> > > > > Filipe David Manana,
-> > > > >
-> > > > > =E2=80=9CWhether you think you can, or you think you can't =E2=80=
-=94 you're right.=E2=80=9D
-> >
-> >
-> >
-> > --
-> > Filipe David Manana,
-> >
-> > =E2=80=9CWhether you think you can, or you think you can't =E2=80=94 yo=
-u're right.=E2=80=9D
+Fix this by acquiring the respective lock before iterating the rbtree.
 
+Reported-by: Nikolay Borisov <nborisov@suse.com>
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/free-space-cache.c | 2 ++
+ 1 file changed, 2 insertions(+)
 
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index 0adf38b00fa0..65b79500e09f 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -2440,6 +2440,7 @@ void btrfs_dump_free_space(struct btrfs_block_group_cache *block_group,
+ 	struct rb_node *n;
+ 	int count = 0;
+ 
++	spin_lock(&ctl->tree_lock);
+ 	for (n = rb_first(&ctl->free_space_offset); n; n = rb_next(n)) {
+ 		info = rb_entry(n, struct btrfs_free_space, offset_index);
+ 		if (info->bytes >= bytes && !block_group->ro)
+@@ -2448,6 +2449,7 @@ void btrfs_dump_free_space(struct btrfs_block_group_cache *block_group,
+ 			   info->offset, info->bytes,
+ 		       (info->bitmap) ? "yes" : "no");
+ 	}
++	spin_unlock(&ctl->tree_lock);
+ 	btrfs_info(fs_info, "block group has cluster?: %s",
+ 	       list_empty(&block_group->cluster_list) ? "no" : "yes");
+ 	btrfs_info(fs_info,
+-- 
+2.11.0
 
---=20
-Filipe David Manana,
-
-=E2=80=9CWhether you think you can, or you think you can't =E2=80=94 you're=
- right.=E2=80=9D

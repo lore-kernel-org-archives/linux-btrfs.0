@@ -2,145 +2,145 @@ Return-Path: <SRS0=ca24=NC=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.7 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FROM_EXCESS_BASE64,HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B47BEECDE43
-	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Oct 2018 05:42:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8BDD9C67863
+	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Oct 2018 06:30:28 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 7D6272083C
-	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Oct 2018 05:42:44 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C6F2220658
+	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Oct 2018 06:30:27 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="eDVdwQU+"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 7D6272083C
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
+	dkim=pass (1024-bit key) header.d=seravo.fi header.i=@seravo.fi header.b="ChO99Nsc"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org C6F2220658
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=seravo.fi
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727497AbeJVN7n (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 22 Oct 2018 09:59:43 -0400
-Received: from mail-yw1-f66.google.com ([209.85.161.66]:44957 "EHLO
-        mail-yw1-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726784AbeJVN7m (ORCPT
+        id S1727492AbeJVOrf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 22 Oct 2018 10:47:35 -0400
+Received: from mail-pf1-f174.google.com ([209.85.210.174]:40940 "EHLO
+        mail-pf1-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727091AbeJVOre (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 22 Oct 2018 09:59:42 -0400
-Received: by mail-yw1-f66.google.com with SMTP id t78-v6so824328ywg.11;
-        Sun, 21 Oct 2018 22:42:41 -0700 (PDT)
+        Mon, 22 Oct 2018 10:47:34 -0400
+Received: by mail-pf1-f174.google.com with SMTP id g21-v6so12390409pfi.7
+        for <linux-btrfs@vger.kernel.org>; Sun, 21 Oct 2018 23:30:26 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
+        d=seravo.fi; s=google;
         h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=bN/QTOFYlGzihYw12coFOWAJpI4OqQTPB1y4x703j1M=;
-        b=eDVdwQU+e+vxO+oQlsQdggN2kYigbVMrkmCKxsHkK/GS38VLB2XhAI58e92EdoH+7u
-         dTaNPvQ0AybBnWRRMMb1xuw0J1b3DYN5c9MNWZt3fQOn24by8+tvmzQmoUtlspZEVzBe
-         nf0pJgLxikW68/HUViS8z54nhOp2e0Hx3nt6al0ZEdSh3Gi5zCys9x1Uyv5xrg8iyZir
-         Fm1HDYO/NliNaUlVWlLlU+peWCnYdxF3FMKqesfs3wHSbK7+Vk5Pgx5+JO2vvzZKBt3+
-         MUue1ubBo0ceniL4YjJzfxLB0cC9Mo4P18HwoEOGPu6Pzm8ELPoEoGxG9d8lXlT4N6A4
-         EAGA==
+         :content-transfer-encoding;
+        bh=1faa+tqx9O+HFq2atn2n5Mmfq5vFpG7hTQaDGjvEytE=;
+        b=ChO99NscGS3XzWC69g6rxgTHpQ88SmoJahY9nZwtdwoY4D9Jnvbenn4Xb6wqX7iv8B
+         WAIVC4eFOVoSrbX7zhCDImPo1RyTvkRM6b5UxOczvgHE+Q3foT8fV4ozvBCq4oUYvzuI
+         nIjoCfAD9fAZQMlRuQvBP/XEtKpUtAxNG7ZNs=
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=bN/QTOFYlGzihYw12coFOWAJpI4OqQTPB1y4x703j1M=;
-        b=cJnI0GUYyWxXHqltX3ELx4tKhI+xLXcUFcKjlRzaQ3SnCSAZdlJGW7xwn8+x8KKDAw
-         WE0FLx74Ml/oO0WIl9lg/tqkqTSGstCXLNDCq3vvwPGoZFzMiLg3gK8Dkjv1lLaL4a0+
-         GkReZJ56S1rYMycCZWkehYB8+7V3j4ACEyyuihPMiodDkPvOWig+5dfyMIU9rCLMIsQU
-         ValF6Ii4fzzvVGZmOnAVPS/LOcviXZp6aOlyD8mipCxMISpUHx1jopea2xJrt6GbVhbZ
-         OW8nx8YsoPbBQzJM93mvYUrdezfU1w8tQdb7mGlBvmSBRvSwuKQhPPrsoj/vivhtTprH
-         QdBQ==
-X-Gm-Message-State: ABuFfoi2/om70NDRFkT7Y6KThl+tYLQ3t86NtZ3TjWfk/NmL42KUnNh+
-        2bVAl7p6Hr4IRvzNtIFfbHiIsbd7ZL3zYgRvvdk=
-X-Google-Smtp-Source: ACcGV63mmG7OxWCXg8T//oq0p+/rRnpa1NnZAEAfJc5YzLvqbrx7ByY7EWbZ2sD4QikmtvJ8wuIK62p393S2FJhY8Vk=
-X-Received: by 2002:a81:8604:: with SMTP id w4-v6mr31632728ywf.409.1540186961142;
- Sun, 21 Oct 2018 22:42:41 -0700 (PDT)
+         :message-id:subject:to:content-transfer-encoding;
+        bh=1faa+tqx9O+HFq2atn2n5Mmfq5vFpG7hTQaDGjvEytE=;
+        b=Xkuckgwtso6oeR0/xCl3n2Bhyl8cSwc+fFE5qDVCOesNAQ5u8FvXbvtQRR+BbpE4rf
+         h3EhY0Flvsh5RCpeiOsuGHOU5WBoPc7UbVlax/AMUzBGnzK1N8KRl3gHNOUFtfCpFsye
+         BCur9I8sgIju3eyYnPAOuAMh3xY+7iWdePw5zrdD23AFUp+Knyf6K92wm5t2nWN28h5l
+         kvlu2ipphVQTaDDe+YtkJzRLn5tOGfkyqkK4D23WcANVH0lK55kSrWycn/4ujmsiLLcD
+         ejol9Sbu7kl9xHrAgF+HBHaG1R6BO0/POpbJcdB1plx1Jz6iGgpKD/V5KDkhsR+3ra80
+         WCeA==
+X-Gm-Message-State: ABuFfogTH4NYa70gSTaOKf7I7DIeRGPS4YhzU8yt89akDen1I4i+ok7A
+        +ncPcl8j6LaX9ZDDiC6QuVIRtwPmMRTLoT/XL7g/7bg=
+X-Google-Smtp-Source: ACcGV63jcEvUCrDhfIdW+KWOcQgySqapS313FJtlb3xSZB8NNDCOK2ctHJpkoadRPuDFkFDrxwXqYUSdIn5krvu96og=
+X-Received: by 2002:a63:dd58:: with SMTP id g24-v6mr40846338pgj.86.1540189825074;
+ Sun, 21 Oct 2018 23:30:25 -0700 (PDT)
 MIME-Version: 1.0
-References: <154013850285.29026.16168387526580596209.stgit@magnolia>
- <20181022022112.GW6311@dastard> <20181022043741.GX6311@dastard>
- <20181022045249.GP32577@ZenIV.linux.org.uk> <20181022050851.GY6311@dastard>
-In-Reply-To: <20181022050851.GY6311@dastard>
-From:   Amir Goldstein <amir73il@gmail.com>
-Date:   Mon, 22 Oct 2018 08:42:29 +0300
-Message-ID: <CAOQ4uxhjpieVdDfrATStT8YQZZwX=rrWtiMX=FSXFdHdqsUaDg@mail.gmail.com>
-Subject: Re: [PATCH v6 00/28] fs: fixes for serious clone/dedupe problems
-To:     Dave Chinner <david@fromorbit.com>
-Cc:     Al Viro <viro@zeniv.linux.org.uk>,
-        "Darrick J. Wong" <darrick.wong@oracle.com>,
-        Eric Sandeen <sandeen@redhat.com>,
-        Linux NFS Mailing List <linux-nfs@vger.kernel.org>,
-        linux-cifs@vger.kernel.org,
-        overlayfs <linux-unionfs@vger.kernel.org>,
-        linux-xfs <linux-xfs@vger.kernel.org>,
-        Linux MM <linux-mm@kvack.org>,
-        Linux Btrfs <linux-btrfs@vger.kernel.org>,
-        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-        ocfs2-devel@oss.oracle.com
+References: <CAHj_TLCsG52NUJf6DbKCO9iQ6Fr2-jOUAsfHs=_UM_LJBYtdMA@mail.gmail.com>
+In-Reply-To: <CAHj_TLCsG52NUJf6DbKCO9iQ6Fr2-jOUAsfHs=_UM_LJBYtdMA@mail.gmail.com>
+From:   =?UTF-8?B?T3R0byBLZWvDpGzDpGluZW4=?= <otto@seravo.fi>
+Date:   Mon, 22 Oct 2018 09:29:58 +0300
+Message-ID: <CAHj_TLAHdUqPV_fbPD6G9FNsPhdg5=Hqt1simx256t-2mom4cA@mail.gmail.com>
+Subject: Re: How to recover from btrfs scrub errors? (uncorrectable errors,
+ checksum error at logical)
+To:     linux-btrfs@vger.kernel.org
 Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Oct 22, 2018 at 8:09 AM Dave Chinner <david@fromorbit.com> wrote:
+I never got a reply to this thread, but I am not replying to myself in
+case somebody has the same issue and is reading the archive:
+
+The problem went away after:
+- deleted all snapshots as they seemed to slow down btrfs I/O so much
+that simple commands like rm and rsync were unusable
+- replaced the disk that had the corrupted file (just in case -
+smartctl did not indicate any disk failures) with btrfs replace
+- rsynced files from another location to this filesystem so that the
+corrupted files got overwritten
+
+Now btrfs scrub does not find any corruption anymore and the
+filesystem I/O speed is usable, though still slower than what it used
+to be in the past.
+
+ma 15. lokak. 2018 klo 10.50 Otto Kek=C3=A4l=C3=A4inen (otto@seravo.fi) kir=
+joitti:
 >
-> On Mon, Oct 22, 2018 at 05:52:49AM +0100, Al Viro wrote:
-> > On Mon, Oct 22, 2018 at 03:37:41PM +1100, Dave Chinner wrote:
-> >
-> > > Ok, this is a bit of a mess. the patches do not merge cleanly to a
-> > > 4.19-rc1 base kernel because of all the changes to
-> > > include/linux/fs.h that have hit the tree after this. There's also
-> > > failures against Documentation/filesystems/fs.h
-> > >
-> > > IOWs, it's not going to get merged through the main XFS tree because
-> > > I don't have the patience to resolve all the patch application
-> > > failures, then when it comes to merge make sure all the merge
-> > > failures end up being resolved correctly.
-> > >
-> > > So if I take it through the XFS tree, it will being a standalone
-> > > branch based on 4.19-rc8 and won't hit linux-next until after the
-> > > first XFS merge when I can rebase the for-next branch...
-> >
-> > How many conflicts does it have with XFS tree?  I can take it via
-> > vfs.git...
+> Hello!
 >
-> I gave up after 4 of the first 6 or 7 patches had conflicts in vfs
-> and documentation code.
+> I am trying to figure out how to recover from errors detected by btrfs sc=
+rub.
 >
-> There were changes that went into 4.19-rc7 that changed
-> {do|vfs}_clone_file_range() prototypes and this patchset hits
-> prototypes adjacent to that multiple times. There's also a conflicts
-> against a new f_ops->fadvise method. These all appear to be direct
-> fallout of fixes needed for all the overlay f_ops changes.
+> Scrub status reports:
 >
-> The XFS changes at the end of the patchset are based on
-> commits that were merged into -rc7 and -rc8, so if you are using
-> -rc8 as your base, then it all merges cleanly. There are no
-> conflicts with the current xfs/for-next branch.
+> scrub status for 4f4479d5-648a-45b9-bcbf-978c766aeb41
+>         scrub started at Mon Oct 15 10:02:28 2018, running for 00:35:39
+>         total bytes scrubbed: 791.15GiB with 18 errors
+>         error details: csum=3D18
+>         corrected errors: 0, uncorrectable errors: 18, unverified errors:=
+ 0
 >
-> I've just merged and built it into my test tree (-rc8, xfs/for-next,
-> djwong/devel) so I can test it properly, but if it merges cleanly
-> with the vfs tree you are building then that's probably the easiest
-> way to merge it all...
+> Kernel log contains lines like
 >
+>   BTRFS warning (device dm-8): checksum error at logical 7351706472448 on=
+ dev
+>   /dev/mapper/disk6tb, sector 61412648, root 12725, inode 152358265,
+> offset 483328:
+>   path resolving failed with ret=3D-2
+>
+> I've tried so far:
+> - deleting the files (when path is visible)
+> - overwriting the files with new data
+> - changed disk (with btrfs replace)
+>
+> The checksum errors however persist.
+> How do I get rid of them?
+>
+>
+> The files are logs and other non-vital information. I am fine by
+> deleting the corrupted files. It is OK to recover so that I loose a
+> few gigabytes of data, but not the entire filesystem.
+>
+> Setup is a multi-disk btrfs filesystem, data single, metadata RAID-1
+> Mounted with:
+>
+> /dev/mapper/wdc3td on /data type btrfs
+> (rw,noatime,compress=3Dlzo,space_cache,subvolid=3D5,subvol=3D/)
+>
+> I've read lots of online sources on the topic but none of these help
+> me on how to recover from the current state:
+>
+> https://btrfs.wiki.kernel.org/index.php/Btrfsck
+> http://marc.merlins.org/perso/btrfs/post_2014-03-19_Btrfs-Tips_-Btrfs-Scr=
+ub-and-Btrfs-Filesystem-Repair.html
+> https://wiki.archlinux.org/index.php/Identify_damaged_files#Find_damaged_=
+files
 
-Dave,
 
-Pardon my ignorance, but its an opportunity for me to learn a thing
-or two about kernel development process.
 
-First, I asked Darrick to base his patches on top of -rc8 intentionally
-to avoid the conflict with "swap names of {do|vfs}_clone_file_range()" (*).
-My change pre dates his changes so it makes sense.
+--=20
+Otto Kek=C3=A4l=C3=A4inen
+CEO
+Seravo
++358 44 566 2204
 
-What I don't get is why does it need to create a problem?
-Can you not back merge -rc8 into xfs/for-next (or into vfs/for-next for
-that matter) and then merge Darrick's patches?
-
-What is the culprit with doing that?
-
-Thanks,
-Amir.
-
-(*) Yes, I do realize "swap names of {do|vfs}_clone_file_range()"
-is a backporting landmine. It's been on my todo list to send it to Greg
-here I am going to do it now...
+Follow me at @ottokekalainen

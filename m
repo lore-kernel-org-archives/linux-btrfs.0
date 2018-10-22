@@ -7,46 +7,46 @@ X-Spam-Status: No, score=-8.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
 	SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EEF27C7112C
-	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Oct 2018 17:30:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 79925C004D3
+	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Oct 2018 17:31:12 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id A9FA520645
-	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Oct 2018 17:30:18 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 24A8A20645
+	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Oct 2018 17:31:13 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=libero.it header.i=@libero.it header.b="qhiaHviX"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org A9FA520645
+	dkim=pass (2048-bit key) header.d=libero.it header.i=@libero.it header.b="gCUOJFiC"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 24A8A20645
 Authentication-Results: mail.kernel.org; dmarc=fail (p=quarantine dis=none) header.from=libero.it
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728690AbeJWBtg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 22 Oct 2018 21:49:36 -0400
-Received: from smtp-34-i6.italiaonline.it ([213.209.14.34]:47744 "EHLO
+        id S1728813AbeJWBug (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 22 Oct 2018 21:50:36 -0400
+Received: from smtp-34-i6.italiaonline.it ([213.209.14.34]:48960 "EHLO
         libero.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1728584AbeJWBtg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 22 Oct 2018 21:49:36 -0400
+        id S1728439AbeJWBuf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 22 Oct 2018 21:50:35 -0400
 Received: from venice.bhome ([94.38.16.140])
         by smtp-34.iol.local with ESMTPA
-        id Ee1mgPeG98KmnEe1pgfjrd; Mon, 22 Oct 2018 19:30:09 +0200
+        id Ee1mgPeG98KmnEe1pgfjrj; Mon, 22 Oct 2018 19:30:09 +0200
 x-libjamoibt: 1601
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=libero.it; s=s2014;
-        t=1540229409; bh=JgAMnYNIHiju5Rd63/hYsQIu/hu1AUy86GiQKVcTUZM=;
+        t=1540229409; bh=1emG1V12wB2MYi1b9SVurpKNgMWp+bRbTFT100nQPQQ=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References;
-        b=qhiaHviXVOf/nPbVaIFR5ys67CoxaI7iLafJY27TZz368766HvcFehpj+y6NgGrI/
-         Nt74Ua8i9bCsrg41eABMuzD8Ud653XW1uAqM7TwSzS2qJ4B4bsUwmk21m5Ffu7Z4Jb
-         V6rfxGH7R2ux7vl1F0uAZEXDA2IPjIKbIiBvOAA2A4d1Gm1hD301Kul93YRuxAa77o
-         qPTn/kB3heMRDzri1YYeVuEdWTXnlGf/FhGWTS7aIT0p4kuxv6VlNiH+1qPhdpBGNE
-         asH6rCYblPIcGvJ5QnrUn+1jou59CdHc5dX5bGQtNXMYf6qVZM3UNnukd2mYEMg1Pk
-         Or1SLmEQrIJtA==
+        b=gCUOJFiCFnLYLKcqGRTuRp+jBl9FZ99hZJ0UKacgdNEJAbBBCKpl6RD/xIQEQ6FPE
+         3dYiGHc7mW1qIfOtn+PEmsWz6pvrZ+cytp80VnKQUFStGrEHCieYuaA8Ets7P7a1qx
+         7qIo4Uf0aymbDbaj+Uq4lSsPF5J3d/TewqcZgPTMx26kEZ+PE5z9F32Ikl3O8f7VSl
+         2It/3LQqN5CMgrDWTB1j5gypivIOV2anFs3nd4dfuiELzWy4QVRrRy8bHFNtSt7wCQ
+         fmgx+CSkBVOLjJOyBXlpct0d2l72755v+Gq/jRqi3/+GZlhAPURg48AEFMZYXlGlrM
+         gaYuX6K80CDtQ==
 X-CNFS-Analysis: v=2.3 cv=ZbLMyfdA c=1 sm=1 tr=0
  a=nqgIlLay6LNLiZJCVl9G2Q==:117 a=nqgIlLay6LNLiZJCVl9G2Q==:17 a=yPCof4ZbAAAA:8
- a=tbGcK1RVRLHxssNcnxoA:9 a=ROPnYPVHyosrfo3k:21 a=LACR2KO_iN7HUbMU:21
+ a=54DIDk4bsIWUoIzoLckA:9
 From:   Goffredo Baroncelli <kreijack@libero.it>
 To:     grub-devel@gnu.org
 Cc:     Daniel Kiper <dkiper@net-space.pl>, linux-btrfs@vger.kernel.org,
         Goffredo Baroncelli <kreijack@inwind.it>
-Subject: [PATCH 5/9] btrfs: Move logging code in grub_btrfs_read_logical()
-Date:   Mon, 22 Oct 2018 19:29:35 +0200
-Message-Id: <20181022172938.7936-6-kreijack@libero.it>
+Subject: [PATCH 6/9] btrfs: Refactor the code that read from disk
+Date:   Mon, 22 Oct 2018 19:29:36 +0200
+Message-Id: <20181022172938.7936-7-kreijack@libero.it>
 X-Mailer: git-send-email 2.19.1
 In-Reply-To: <20181022172938.7936-1-kreijack@libero.it>
 References: <20181022172938.7936-1-kreijack@libero.it>
@@ -62,64 +62,120 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Goffredo Baroncelli <kreijack@inwind.it>
 
-A portion of the logging code is moved outside of internal for(;;). The part
-that is left inside is the one which depends on the internal for(;;) index.
+Move the code in charge to read the data from disk into a separate
+function. This helps to separate the error handling logic (which depends on
+the different raid profiles) from the read from disk logic.
+Refactoring this code increases the general readability too.
 
-This is a preparatory patch. The next one will refactor the code inside
-the for(;;) into an another function.
+This is a preparatory patch, to help the adding of the RAID 5/6 recovery
+code.
 
 Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
 Reviewed-by: Daniel Kiper <daniel.kiper@oracle.com>
 ---
- grub-core/fs/btrfs.c | 25 ++++++++++++++-----------
- 1 file changed, 14 insertions(+), 11 deletions(-)
+ grub-core/fs/btrfs.c | 75 ++++++++++++++++++++++++++------------------
+ 1 file changed, 44 insertions(+), 31 deletions(-)
 
 diff --git a/grub-core/fs/btrfs.c b/grub-core/fs/btrfs.c
-index 81f3bc120..dde0edd03 100644
+index dde0edd03..ea97f0502 100644
 --- a/grub-core/fs/btrfs.c
 +++ b/grub-core/fs/btrfs.c
-@@ -870,6 +870,18 @@ grub_btrfs_read_logical (struct grub_btrfs_data *data, grub_disk_addr_t addr,
+@@ -625,6 +625,46 @@ find_device (struct grub_btrfs_data *data, grub_uint64_t id)
+   return ctx.dev_found;
+ }
  
- 	for (j = 0; j < 2; j++)
- 	  {
-+	    grub_dprintf ("btrfs", "chunk 0x%" PRIxGRUB_UINT64_T
-+			  "+0x%" PRIxGRUB_UINT64_T
-+			  " (%d stripes (%d substripes) of %"
-+			  PRIxGRUB_UINT64_T ")\n",
-+			  grub_le_to_cpu64 (key->offset),
-+			  grub_le_to_cpu64 (chunk->size),
-+			  grub_le_to_cpu16 (chunk->nstripes),
-+			  grub_le_to_cpu16 (chunk->nsubstripes),
-+			  grub_le_to_cpu64 (chunk->stripe_length));
-+	    grub_dprintf ("btrfs", "reading laddr 0x%" PRIxGRUB_UINT64_T "\n",
-+			  addr);
++static grub_err_t
++btrfs_read_from_chunk (struct grub_btrfs_data *data,
++		       struct grub_btrfs_chunk_item *chunk,
++		       grub_uint64_t stripen, grub_uint64_t stripe_offset,
++		       int redundancy, grub_uint64_t csize,
++		       void *buf)
++{
++    struct grub_btrfs_chunk_stripe *stripe;
++    grub_disk_addr_t paddr;
++    grub_device_t dev;
++    grub_err_t err;
 +
++    stripe = (struct grub_btrfs_chunk_stripe *) (chunk + 1);
++    /* Right now the redundancy handling is easy.
++       With RAID5-like it will be more difficult.  */
++    stripe += stripen + redundancy;
++
++    paddr = grub_le_to_cpu64 (stripe->offset) + stripe_offset;
++
++    grub_dprintf ("btrfs", "stripe %" PRIxGRUB_UINT64_T
++		  " maps to 0x%" PRIxGRUB_UINT64_T
++		  ". Reading paddr 0x%" PRIxGRUB_UINT64_T "\n",
++		  stripen, stripe->offset, paddr);
++
++    dev = find_device (data, stripe->device_id);
++    if (!dev)
++      {
++	grub_dprintf ("btrfs",
++		      "couldn't find a necessary member device "
++		      "of multi-device filesystem\n");
++	grub_errno = GRUB_ERR_NONE;
++	return GRUB_ERR_READ_ERROR;
++      }
++
++    err = grub_disk_read (dev->disk, paddr >> GRUB_DISK_SECTOR_BITS,
++			  paddr & (GRUB_DISK_SECTOR_SIZE - 1),
++			  csize, buf);
++    return err;
++}
++
+ static grub_err_t
+ grub_btrfs_read_logical (struct grub_btrfs_data *data, grub_disk_addr_t addr,
+ 			 void *buf, grub_size_t size, int recursion_depth)
+@@ -638,7 +678,6 @@ grub_btrfs_read_logical (struct grub_btrfs_data *data, grub_disk_addr_t addr,
+       grub_err_t err = 0;
+       struct grub_btrfs_key key_out;
+       int challoc = 0;
+-      grub_device_t dev;
+       struct grub_btrfs_key key_in;
+       grub_size_t chsize;
+       grub_disk_addr_t chaddr;
+@@ -884,36 +923,10 @@ grub_btrfs_read_logical (struct grub_btrfs_data *data, grub_disk_addr_t addr,
+ 
  	    for (i = 0; i < redundancy; i++)
  	      {
- 		struct grub_btrfs_chunk_stripe *stripe;
-@@ -882,20 +894,11 @@ grub_btrfs_read_logical (struct grub_btrfs_data *data, grub_disk_addr_t addr,
- 
- 		paddr = grub_le_to_cpu64 (stripe->offset) + stripe_offset;
- 
--		grub_dprintf ("btrfs", "chunk 0x%" PRIxGRUB_UINT64_T
--			      "+0x%" PRIxGRUB_UINT64_T
--			      " (%d stripes (%d substripes) of %"
--			      PRIxGRUB_UINT64_T ") stripe %" PRIxGRUB_UINT64_T
-+		grub_dprintf ("btrfs", "stripe %" PRIxGRUB_UINT64_T
- 			      " maps to 0x%" PRIxGRUB_UINT64_T "\n",
--			      grub_le_to_cpu64 (key->offset),
--			      grub_le_to_cpu64 (chunk->size),
--			      grub_le_to_cpu16 (chunk->nstripes),
--			      grub_le_to_cpu16 (chunk->nsubstripes),
--			      grub_le_to_cpu64 (chunk->stripe_length),
- 			      stripen, stripe->offset);
- 		grub_dprintf ("btrfs", "reading paddr 0x%" PRIxGRUB_UINT64_T
--			      " for laddr 0x%" PRIxGRUB_UINT64_T "\n", paddr,
--			      addr);
-+			      "\n", paddr);
- 
- 		dev = find_device (data, stripe->device_id);
- 		if (!dev)
+-		struct grub_btrfs_chunk_stripe *stripe;
+-		grub_disk_addr_t paddr;
+-
+-		stripe = (struct grub_btrfs_chunk_stripe *) (chunk + 1);
+-		/* Right now the redundancy handling is easy.
+-		   With RAID5-like it will be more difficult.  */
+-		stripe += stripen + i;
+-
+-		paddr = grub_le_to_cpu64 (stripe->offset) + stripe_offset;
+-
+-		grub_dprintf ("btrfs", "stripe %" PRIxGRUB_UINT64_T
+-			      " maps to 0x%" PRIxGRUB_UINT64_T "\n",
+-			      stripen, stripe->offset);
+-		grub_dprintf ("btrfs", "reading paddr 0x%" PRIxGRUB_UINT64_T
+-			      "\n", paddr);
+-
+-		dev = find_device (data, stripe->device_id);
+-		if (!dev)
+-		  {
+-		    grub_dprintf ("btrfs",
+-				  "couldn't find a necessary member device "
+-				  "of multi-device filesystem\n");
+-		    err = grub_errno;
+-		    grub_errno = GRUB_ERR_NONE;
+-		    continue;
+-		  }
+-
+-		err = grub_disk_read (dev->disk, paddr >> GRUB_DISK_SECTOR_BITS,
+-				      paddr & (GRUB_DISK_SECTOR_SIZE - 1),
+-				      csize, buf);
++		err = btrfs_read_from_chunk (data, chunk, stripen,
++					     stripe_offset,
++					     i,     /* redundancy */
++					     csize, buf);
+ 		if (!err)
+ 		  break;
+ 		grub_errno = GRUB_ERR_NONE;
 -- 
 2.19.1
 

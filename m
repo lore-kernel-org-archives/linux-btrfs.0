@@ -2,200 +2,286 @@ Return-Path: <SRS0=ca24=NC=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.3 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT autolearn=ham
+X-Spam-Status: No, score=-0.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DD54BC67863
-	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Oct 2018 06:55:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E40DBC67863
+	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Oct 2018 09:07:00 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id AB6A32083A
-	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Oct 2018 06:55:51 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org AB6A32083A
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=fromorbit.com
+	by mail.kernel.org (Postfix) with ESMTP id 95B0620779
+	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Oct 2018 09:07:00 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="SSbaHrGm"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 95B0620779
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727521AbeJVPND (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 22 Oct 2018 11:13:03 -0400
-Received: from ipmail07.adl2.internode.on.net ([150.101.137.131]:59671 "EHLO
-        ipmail07.adl2.internode.on.net" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1726784AbeJVPND (ORCPT
+        id S1727799AbeJVRY3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 22 Oct 2018 13:24:29 -0400
+Received: from mail-oi1-f196.google.com ([209.85.167.196]:42216 "EHLO
+        mail-oi1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727554AbeJVRY3 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 22 Oct 2018 11:13:03 -0400
-Received: from ppp59-167-129-252.static.internode.on.net (HELO dastard) ([59.167.129.252])
-  by ipmail07.adl2.internode.on.net with ESMTP; 22 Oct 2018 17:25:45 +1030
-Received: from dave by dastard with local (Exim 4.80)
-        (envelope-from <david@fromorbit.com>)
-        id 1gEU7q-0002UC-Ir; Mon, 22 Oct 2018 17:55:42 +1100
-Date:   Mon, 22 Oct 2018 17:55:42 +1100
-From:   Dave Chinner <david@fromorbit.com>
-To:     Amir Goldstein <amir73il@gmail.com>
-Cc:     Al Viro <viro@zeniv.linux.org.uk>,
-        "Darrick J. Wong" <darrick.wong@oracle.com>,
-        Eric Sandeen <sandeen@redhat.com>,
-        Linux NFS Mailing List <linux-nfs@vger.kernel.org>,
-        linux-cifs@vger.kernel.org,
-        overlayfs <linux-unionfs@vger.kernel.org>,
-        linux-xfs <linux-xfs@vger.kernel.org>,
-        Linux MM <linux-mm@kvack.org>,
-        Linux Btrfs <linux-btrfs@vger.kernel.org>,
-        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-        ocfs2-devel@oss.oracle.com
-Subject: Re: [PATCH v6 00/28] fs: fixes for serious clone/dedupe problems
-Message-ID: <20181022065542.GZ6311@dastard>
-References: <154013850285.29026.16168387526580596209.stgit@magnolia>
- <20181022022112.GW6311@dastard>
- <20181022043741.GX6311@dastard>
- <20181022045249.GP32577@ZenIV.linux.org.uk>
- <20181022050851.GY6311@dastard>
- <CAOQ4uxhjpieVdDfrATStT8YQZZwX=rrWtiMX=FSXFdHdqsUaDg@mail.gmail.com>
+        Mon, 22 Oct 2018 13:24:29 -0400
+Received: by mail-oi1-f196.google.com with SMTP id w81-v6so31589107oiw.9
+        for <linux-btrfs@vger.kernel.org>; Mon, 22 Oct 2018 02:06:50 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc:content-transfer-encoding;
+        bh=HhFrTriPcKcMbx1QhMydl6ADpIHnIlLIm/AI90wya2I=;
+        b=SSbaHrGm5ddbNpBdgd1JDifHqSTuxhHbB894AnAL2b4riDXrnMJGjnXw02A3dEv4Pb
+         Jr4gWnSK5OrUdDCpOPfrbuCTNeOZhxJGEd3Uum/0GithuhRUMnnuEFaGh6NbcKgXYiOK
+         u18YXFowtmk08QNRhV/7iCIHQHukGlKxWHr8YrhtWPRuDPAKi2SUpZ0B+ER4Uup+Rrw4
+         08CF2CnwKOV+adaLbFeh46lhKefTts/TKJZ6VlzcceSajM0nA9+B1C3VL3Od7p+evnjt
+         iGAv2ouueJoHO4n1dKQC3gfCV1eMHSE+GrVxBPOfdM4zr6or4XHZubvzUdiG1kiE+PCV
+         Q+Fg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc:content-transfer-encoding;
+        bh=HhFrTriPcKcMbx1QhMydl6ADpIHnIlLIm/AI90wya2I=;
+        b=JTwaVKPiPmkojy94J5a5fLdTcu4FpVGZVSH7/gdpbSkBrzQLRAppilqMWxjOzNliIx
+         3n8EmDgcCUJcJRjpPoEkrjbWG2t9TjpowGVDDBbsBelHqgBbVOX5XAMJwU3yNuI+UZSy
+         s+/s6C1TkhVxGGVO+Jcb9GD2ZFEaEpNHFTQnJZKyQgRgbxh34n4N8iKsAPscMEtBziYA
+         aOEQaUA7WZH452EHfBOiManWGf9O3MD8lfFCXWX5k0uXTkJoUWrZHXLZw5iU7IsHMUiu
+         FpO3jNpTROaoaicB6Q6fL18tG/i+bj2RzMBc58M+xU7PLI4vPNr79P/dSbyUPbHxzoGZ
+         HWmQ==
+X-Gm-Message-State: ABuFfoh5qjs5CtcpasrXPtgJRUrBltwsDtnMY+1OEG3dh04MAO+u423o
+        8E5gXHG5IqZUuQ7VU8pnAEi9Mi5KHg5KU4sO/6w=
+X-Google-Smtp-Source: ACcGV62N7lV36K8YW2tb2jsxwhxlw6JlMgAv/s5sbbEcS52XB5RM8qD8a5oOy0t1G0n/uoKVY0BOPbdPpnUMP2IDZQw=
+X-Received: by 2002:aca:a811:: with SMTP id r17-v6mr24320871oie.5.1540199210167;
+ Mon, 22 Oct 2018 02:06:50 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <CAOQ4uxhjpieVdDfrATStT8YQZZwX=rrWtiMX=FSXFdHdqsUaDg@mail.gmail.com>
-User-Agent: Mutt/1.5.21 (2010-09-15)
+References: <CAPTELenq9x5KOWuQ+fa7h1r3nsJG8vyiTH8+ifjURc_duHh2Wg@mail.gmail.com>
+ <CANQeFDBAxL=BTWjCOVmu8rGP0k2OCipD07my4RQs8vV9NJeraw@mail.gmail.com>
+ <CAL3q7H6-06g12Kv1FD30Tii+zoQjDmJj+aM8kCnLeJVVvNad5A@mail.gmail.com>
+ <CAPTELen29rS9ZoECxf7kBvDDRGFUcB=TQn2o=T+cmV=a-x9N2Q@mail.gmail.com>
+ <CAPTELe=ObC4gbjB+vjuYCHyqPxr4rakWYksN8p1P=UL8BsU_wg@mail.gmail.com> <CAL3q7H6EOMj+-4wwAo3KaRxG=MtJcYVxdpLjPMRa-n5OpGYO1w@mail.gmail.com>
+In-Reply-To: <CAL3q7H6EOMj+-4wwAo3KaRxG=MtJcYVxdpLjPMRa-n5OpGYO1w@mail.gmail.com>
+From:   Andrew Nelson <andrew.s.nelson@gmail.com>
+Date:   Mon, 22 Oct 2018 02:06:37 -0700
+Message-ID: <CAPTELen2iKt928nGtnr2J7s+rwi5-v_yygV_VWrtr_G6dkwRkw@mail.gmail.com>
+Subject: Re: Btrfs resize seems to deadlock
+To:     fdmanana@gmail.com
+Cc:     obuil.liubo@gmail.com, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Oct 22, 2018 at 08:42:29AM +0300, Amir Goldstein wrote:
-> On Mon, Oct 22, 2018 at 8:09 AM Dave Chinner <david@fromorbit.com> wrote:
+OK, an update: After unmouting and running btrfs check, the drive
+reverted to reporting the old size. Not sure if this was due to
+unmounting / mounting or doing btrfs check. Btrfs check should have
+been running in readonly mode. Since it looked like something was
+wrong with the resize process, I patched my kernel with the posted
+patch. This time the resize operation finished successfully.
+On Sun, Oct 21, 2018 at 1:56 AM Filipe Manana <fdmanana@gmail.com> wrote:
+>
+> On Sun, Oct 21, 2018 at 6:05 AM Andrew Nelson <andrew.s.nelson@gmail.com>=
+ wrote:
 > >
-> > On Mon, Oct 22, 2018 at 05:52:49AM +0100, Al Viro wrote:
-> > > On Mon, Oct 22, 2018 at 03:37:41PM +1100, Dave Chinner wrote:
+> > Also, is the drive in a safe state to use? Is there anything I should
+> > run on the drive to check consistency?
+>
+> It should be in a safe state. You can verify it running "btrfs check
+> /dev/<your device>" (it's a readonly operation).
+>
+> If you are able to patch and build a kernel, you can also try the
+> patch. I left it running tests overnight and haven't got any
+> regressions.
+>
+> Thanks.
+>
+> > On Sat, Oct 20, 2018 at 10:02 PM Andrew Nelson
+> > <andrew.s.nelson@gmail.com> wrote:
 > > >
-> > > > Ok, this is a bit of a mess. the patches do not merge cleanly to a
-> > > > 4.19-rc1 base kernel because of all the changes to
-> > > > include/linux/fs.h that have hit the tree after this. There's also
-> > > > failures against Documentation/filesystems/fs.h
+> > > I have ran the "btrfs inspect-internal dump-tree -t 1" command, but
+> > > the output is ~55mb. Is there something in particular you are looking
+> > > for in this?
+> > > On Sat, Oct 20, 2018 at 1:34 PM Filipe Manana <fdmanana@gmail.com> wr=
+ote:
 > > > >
-> > > > IOWs, it's not going to get merged through the main XFS tree because
-> > > > I don't have the patience to resolve all the patch application
-> > > > failures, then when it comes to merge make sure all the merge
-> > > > failures end up being resolved correctly.
+> > > > On Sat, Oct 20, 2018 at 9:27 PM Liu Bo <obuil.liubo@gmail.com> wrot=
+e:
+> > > > >
+> > > > > On Fri, Oct 19, 2018 at 7:09 PM Andrew Nelson <andrew.s.nelson@gm=
+ail.com> wrote:
+> > > > > >
+> > > > > > I am having an issue with btrfs resize in Fedora 28. I am attem=
+pting
+> > > > > > to enlarge my Btrfs partition. Every time I run "btrfs filesyst=
+em
+> > > > > > resize max $MOUNT", the command runs for a few minutes and then=
+ hangs
+> > > > > > forcing the system to be reset. I am not sure what the state of=
+ the
+> > > > > > filesystem really is at this point. Btrfs usage does report the
+> > > > > > correct size for after resizing. Details below:
+> > > > > >
+> > > > >
+> > > > > Thanks for the report, the stack is helpful, but this needs a few
+> > > > > deeper debugging, may I ask you to post "btrfs inspect-internal
+> > > > > dump-tree -t 1 /dev/your_btrfs_disk"?
 > > > >
-> > > > So if I take it through the XFS tree, it will being a standalone
-> > > > branch based on 4.19-rc8 and won't hit linux-next until after the
-> > > > first XFS merge when I can rebase the for-next branch...
-> > >
-> > > How many conflicts does it have with XFS tree?  I can take it via
-> > > vfs.git...
-> >
-> > I gave up after 4 of the first 6 or 7 patches had conflicts in vfs
-> > and documentation code.
-> >
-> > There were changes that went into 4.19-rc7 that changed
-> > {do|vfs}_clone_file_range() prototypes and this patchset hits
-> > prototypes adjacent to that multiple times. There's also a conflicts
-> > against a new f_ops->fadvise method. These all appear to be direct
-> > fallout of fixes needed for all the overlay f_ops changes.
-> >
-> > The XFS changes at the end of the patchset are based on
-> > commits that were merged into -rc7 and -rc8, so if you are using
-> > -rc8 as your base, then it all merges cleanly. There are no
-> > conflicts with the current xfs/for-next branch.
-> >
-> > I've just merged and built it into my test tree (-rc8, xfs/for-next,
-> > djwong/devel) so I can test it properly, but if it merges cleanly
-> > with the vfs tree you are building then that's probably the easiest
-> > way to merge it all...
-> >
-> 
-> Dave,
-> 
-> Pardon my ignorance, but its an opportunity for me to learn a thing
-> or two about kernel development process.
-> 
-> First, I asked Darrick to base his patches on top of -rc8 intentionally
-> to avoid the conflict with "swap names of {do|vfs}_clone_file_range()" (*).
-> My change pre dates his changes so it makes sense.
-
-Actually, I asked him to do that because the critical clone/dedupe
-data corruption bug fixes for XFS that were merged into -rc8. They
-created substantial conflicts with the XFS code being
-rearranged in the patch set, and that wasn't something easy to
-resolve.
-
-But because those XFS commits in 4.19-rc8 are from a stable in a
-topic branch in the xfs tree (xfs-4.19-fixes-1) which is merged into
-the for-next tree before anything else, the XFS changes in Darrick's
-patchset merge cleanly with the XFS for-next branch.
-
-What doesn't merge cleanly is all the VFS API and prototype stuff
-that got changed after -rc1 because it's not in the master branch of
-the xfs dev tree.
-
-> What I don't get is why does it need to create a problem?
-> Can you not back merge -rc8 into xfs/for-next (or into vfs/for-next for
-> that matter) and then merge Darrick's patches?
-
-Because it forces everyone to move their base kernel forward to test
-the latest fixes. i.e. i forces everyone to rebase their local dev
-trees to -rc8 regardless of whether they want to or not.
-
-If you're doing work outside the XFS tree, then that forces you to
-rebase everything you are working on, not just modify your XFS
-patches that are affected by the new XFS changes. it also breaks the
-concept of having a baseline for regression tests - force upgrading
-to -rc8 breaks the baseline for comparing just XFS changes.
-
-The other reason is topic branches. They need to have a stable base.
-i.e. all your topic branches that get merged in need to be on the
-same base commit so they can be merged and rearranged without
-problems or having to rewrite commits. The for-next tree can move
-forward on a rebase with topic branches if necessary, but  it has
-downsides for downstream developers.
-
-For example, I can do:
-
-git reset --hard v4.19-rc8
-git am djw-clone-dedupe-rework
-
-and have it apply cleanly. But I can't turn that into a topic branch
-for merge into linux-xfs/for-next because it's not based on the
-correct branch.  i.e. I need to do this to create a topic branch for
-for-next merge:
-
-git reset --hard linux-xfs/master
-git merge linux-xfs/xfs-4.19-fixes-1
-git am djw-clone-dedupe-rework
-{rejects galore}
-
-I can fix all the rejectsi (boring, tedious, time consuming), but
-then when I go to merge it back into a 4.19-rc8 kernel like so:
-
-git reset --hard v4.19-rc8
-git merge linux-xfs/vfs-4.20-clone-dedupe-rework
-[conflicts!]
-
-I essentially have to revert all of the conflict resolution I just
-did to get it into ithe XFS topic branch. And those conflicts will
-need to be resolved in the upstream merge, too, and by every XFS
-developer who changes their base kernel to >=4.19-rc7.
-
-IOWs, there's downsides everywhere. Yes, we could rebase the entire
-tree on 4.19-rc8, but Linus *really* didn't like dev trees to be
-rebased to a late -rcX just to clean up merge issues like this. He
-wanted to see the development history of the code he was asked to
-pull and wanted to see merge conflicts and resolve them himself so
-he knew who and what was causing problems when merging code. That
-way he nkew in future what changes to allow late in -rcX releases
-and what to defer to after the next merge window.
-
-Co-ordination between tree is important - high level API changes are
-exactly the sort of thing that causes dev tree merge pain late in a
-dev cycle. Hence this sort of thing is best done immediately after
--rc1 when everyone is getting ready to rebase and start their next
-dev cycle and nobody is really affected by the API change.
-
-So, historically speaking, I've done things this way because that's
-how Linus wanted them done to make life easier for both himself and
-everyone who manages a dev tree.
-
-Cheers,
-
-Dave.
--- 
-Dave Chinner
-david@fromorbit.com
+> > > > I believe it's actually easy to understand from the trace alone and
+> > > > it's kind of a bad luck scenario.
+> > > > I made this fix a few hours ago:
+> > > >
+> > > > https://git.kernel.org/pub/scm/linux/kernel/git/fdmanana/linux.git/=
+commit/?h=3Dfix_find_free_extent_deadlock
+> > > >
+> > > > But haven't done full testing yet and might have missed something.
+> > > > Bo, can you take a look and let me know what you think?
+> > > >
+> > > > Thanks.
+> > > >
+> > > > >
+> > > > > So I'd like to know what's the height of your tree "1" which refe=
+rs to
+> > > > > root tree in btrfs.
+> > > > >
+> > > > > thanks,
+> > > > > liubo
+> > > > >
+> > > > > > $ sudo btrfs filesystem usage $MOUNT
+> > > > > > Overall:
+> > > > > >     Device size:                  90.96TiB
+> > > > > >     Device allocated:             72.62TiB
+> > > > > >     Device unallocated:           18.33TiB
+> > > > > >     Device missing:                  0.00B
+> > > > > >     Used:                         72.62TiB
+> > > > > >     Free (estimated):             18.34TiB      (min: 9.17TiB)
+> > > > > >     Data ratio:                       1.00
+> > > > > >     Metadata ratio:                   2.00
+> > > > > >     Global reserve:              512.00MiB      (used: 24.11MiB=
+)
+> > > > > >
+> > > > > > Data,single: Size:72.46TiB, Used:72.45TiB
+> > > > > >     $MOUNT        72.46TiB
+> > > > > >
+> > > > > > Metadata,DUP: Size:86.00GiB, Used:84.96GiB
+> > > > > >     $MOUNT       172.00GiB
+> > > > > >
+> > > > > > System,DUP: Size:40.00MiB, Used:7.53MiB
+> > > > > >    $MOUNT        80.00MiB
+> > > > > >
+> > > > > > Unallocated:
+> > > > > >     $MOUNT        18.33TiB
+> > > > > >
+> > > > > > $ uname -a
+> > > > > > Linux localhost.localdomain 4.18.14-200.fc28.x86_64 #1 SMP Mon =
+Oct 15
+> > > > > > 13:16:27 UTC 2018 x86_64 x86_64 x86_64 GNU/Linux
+> > > > > >
+> > > > > > btrfs-transacti D    0  2501      2 0x80000000
+> > > > > > Call Trace:
+> > > > > >  ? __schedule+0x253/0x860
+> > > > > >  schedule+0x28/0x80
+> > > > > >  btrfs_commit_transaction+0x7aa/0x8b0 [btrfs]
+> > > > > >  ? kmem_cache_alloc+0x166/0x1d0
+> > > > > >  ? join_transaction+0x22/0x3e0 [btrfs]
+> > > > > >  ? finish_wait+0x80/0x80
+> > > > > >  transaction_kthread+0x155/0x170 [btrfs]
+> > > > > >  ? btrfs_cleanup_transaction+0x550/0x550 [btrfs]
+> > > > > >  kthread+0x112/0x130
+> > > > > >  ? kthread_create_worker_on_cpu+0x70/0x70
+> > > > > >  ret_from_fork+0x35/0x40
+> > > > > > btrfs           D    0  2504   2502 0x00000002
+> > > > > > Call Trace:
+> > > > > >  ? __schedule+0x253/0x860
+> > > > > >  schedule+0x28/0x80
+> > > > > >  btrfs_tree_read_lock+0x8e/0x120 [btrfs]
+> > > > > >  ? finish_wait+0x80/0x80
+> > > > > >  btrfs_read_lock_root_node+0x2f/0x40 [btrfs]
+> > > > > >  btrfs_search_slot+0xf6/0x9f0 [btrfs]
+> > > > > >  ? evict_refill_and_join+0xd0/0xd0 [btrfs]
+> > > > > >  ? inode_insert5+0x119/0x190
+> > > > > >  btrfs_lookup_inode+0x3a/0xc0 [btrfs]
+> > > > > >  ? kmem_cache_alloc+0x166/0x1d0
+> > > > > >  btrfs_iget+0x113/0x690 [btrfs]
+> > > > > >  __lookup_free_space_inode+0xd8/0x150 [btrfs]
+> > > > > >  lookup_free_space_inode+0x5b/0xb0 [btrfs]
+> > > > > >  load_free_space_cache+0x7c/0x170 [btrfs]
+> > > > > >  ? cache_block_group+0x72/0x3b0 [btrfs]
+> > > > > >  cache_block_group+0x1b3/0x3b0 [btrfs]
+> > > > > >  ? finish_wait+0x80/0x80
+> > > > > >  find_free_extent+0x799/0x1010 [btrfs]
+> > > > > >  btrfs_reserve_extent+0x9b/0x180 [btrfs]
+> > > > > >  btrfs_alloc_tree_block+0x1b3/0x4f0 [btrfs]
+> > > > > >  __btrfs_cow_block+0x11d/0x500 [btrfs]
+> > > > > >  btrfs_cow_block+0xdc/0x180 [btrfs]
+> > > > > >  btrfs_search_slot+0x3bd/0x9f0 [btrfs]
+> > > > > >  btrfs_lookup_inode+0x3a/0xc0 [btrfs]
+> > > > > >  ? kmem_cache_alloc+0x166/0x1d0
+> > > > > >  btrfs_update_inode_item+0x46/0x100 [btrfs]
+> > > > > >  cache_save_setup+0xe4/0x3a0 [btrfs]
+> > > > > >  btrfs_start_dirty_block_groups+0x1be/0x480 [btrfs]
+> > > > > >  btrfs_commit_transaction+0xcb/0x8b0 [btrfs]
+> > > > > >  ? btrfs_release_path+0x13/0x80 [btrfs]
+> > > > > >  ? btrfs_update_device+0x8d/0x1c0 [btrfs]
+> > > > > >  btrfs_ioctl_resize.cold.46+0xf4/0xf9 [btrfs]
+> > > > > >  btrfs_ioctl+0xa25/0x2cf0 [btrfs]
+> > > > > >  ? tty_write+0x1fc/0x330
+> > > > > >  ? do_vfs_ioctl+0xa4/0x620
+> > > > > >  do_vfs_ioctl+0xa4/0x620
+> > > > > >  ksys_ioctl+0x60/0x90
+> > > > > >  ? ksys_write+0x4f/0xb0
+> > > > > >  __x64_sys_ioctl+0x16/0x20
+> > > > > >  do_syscall_64+0x5b/0x160
+> > > > > >  entry_SYSCALL_64_after_hwframe+0x44/0xa9
+> > > > > > RIP: 0033:0x7fcdc0d78c57
+> > > > > > Code: Bad RIP value.
+> > > > > > RSP: 002b:00007ffdd1ee6cf8 EFLAGS: 00000246 ORIG_RAX: 000000000=
+0000010
+> > > > > > RAX: ffffffffffffffda RBX: 00007ffdd1ee888a RCX: 00007fcdc0d78c=
+57
+> > > > > > RDX: 00007ffdd1ee6da0 RSI: 0000000050009403 RDI: 00000000000000=
+03
+> > > > > > RBP: 00007ffdd1ee6da0 R08: 0000000000000000 R09: 00007ffdd1ee67=
+e0
+> > > > > > R10: 0000000000000000 R11: 0000000000000246 R12: 00007ffdd1ee88=
+8e
+> > > > > > R13: 0000000000000003 R14: 0000000000000000 R15: 00000000000000=
+00
+> > > > > > kworker/u48:1   D    0  2505      2 0x80000000
+> > > > > > Workqueue: btrfs-freespace-write btrfs_freespace_write_helper [=
+btrfs]
+> > > > > > Call Trace:
+> > > > > >  ? __schedule+0x253/0x860
+> > > > > >  schedule+0x28/0x80
+> > > > > >  btrfs_tree_lock+0x130/0x210 [btrfs]
+> > > > > >  ? finish_wait+0x80/0x80
+> > > > > >  btrfs_search_slot+0x775/0x9f0 [btrfs]
+> > > > > >  btrfs_mark_extent_written+0xb0/0xb20 [btrfs]
+> > > > > >  ? join_transaction+0x22/0x3e0 [btrfs]
+> > > > > >  btrfs_finish_ordered_io+0x2e0/0x7e0 [btrfs]
+> > > > > >  ? syscall_return_via_sysret+0x13/0x83
+> > > > > >  ? __switch_to_asm+0x34/0x70
+> > > > > >  normal_work_helper+0xd3/0x2f0 [btrfs]
+> > > > > >  process_one_work+0x1a1/0x350
+> > > > > >  worker_thread+0x30/0x380
+> > > > > >  ? pwq_unbound_release_workfn+0xd0/0xd0
+> > > > > >  kthread+0x112/0x130
+> > > > > >  ? kthread_create_worker_on_cpu+0x70/0x70
+> > > > > >  ret_from_fork+0x35/0x40
+> > > >
+> > > >
+> > > >
+> > > > --
+> > > > Filipe David Manana,
+> > > >
+> > > > =E2=80=9CWhether you think you can, or you think you can't =E2=80=
+=94 you're right.=E2=80=9D
+>
+>
+>
+> --
+> Filipe David Manana,
+>
+> =E2=80=9CWhether you think you can, or you think you can't =E2=80=94 you'=
+re right.=E2=80=9D

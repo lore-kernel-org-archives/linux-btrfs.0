@@ -7,54 +7,54 @@ X-Spam-Status: No, score=-8.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
 	SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E334AC67863
-	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Oct 2018 17:30:11 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3065CC004D3
+	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Oct 2018 17:30:13 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9A1E520645
-	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Oct 2018 17:30:12 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id DE64920645
+	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Oct 2018 17:30:13 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=libero.it header.i=@libero.it header.b="DZXUI6LJ"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 9A1E520645
+	dkim=pass (2048-bit key) header.d=libero.it header.i=@libero.it header.b="QgYJk/LQ"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org DE64920645
 Authentication-Results: mail.kernel.org; dmarc=fail (p=quarantine dis=none) header.from=libero.it
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728663AbeJWBtf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 22 Oct 2018 21:49:35 -0400
-Received: from smtp-34-i6.italiaonline.it ([213.209.14.34]:39350 "EHLO
+        id S1728727AbeJWBtg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 22 Oct 2018 21:49:36 -0400
+Received: from smtp-34-i6.italiaonline.it ([213.209.14.34]:48960 "EHLO
         libero.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1728566AbeJWBtf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1728575AbeJWBtf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Mon, 22 Oct 2018 21:49:35 -0400
 Received: from venice.bhome ([94.38.16.140])
         by smtp-34.iol.local with ESMTPA
-        id Ee1mgPeG98KmnEe1ogfjr5; Mon, 22 Oct 2018 19:30:08 +0200
+        id Ee1mgPeG98KmnEe1ogfjrV; Mon, 22 Oct 2018 19:30:09 +0200
 x-libjamoibt: 1601
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=libero.it; s=s2014;
-        t=1540229408; bh=rBCv2aOPJtIw+dlR3woR1f4IXLbCloRw2O+TGV2oeWQ=;
+        t=1540229409; bh=d6AQBEgz0RNa61javY0WhaXZw6LSZcXpCmyDysS3KyU=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References;
-        b=DZXUI6LJ97u3Qoyo7SYpO/+8js4gJbnFtaWQr80A+gqIm+ARinpV1wnvTDxrII6kX
-         SKQZn59Hknih78fgqw4zn+dSpwWQ0hy0iSBb97TfMnuKN9weGPe9pj7/xutf7+HABo
-         Ryd/UAOQM99X4VMoR3Ru60rcyGp/OeGFl/UR+DQyu12uLpb3jeasVt4bNBuzxT+ps1
-         TZ/qnjf8svAtU+uUVwr1DpYKFUuejLyGQYRQy/PKQ8k3yjUVWhFjkT19V6FgMJ4i6U
-         P8wSGIHYyp+dMzXwStM/jWyEigEyEhZknj440H3iLCc/Bq5KVPAZQIJ2G/XzR/lsBL
-         c4uQEbKlG1ECA==
+        b=QgYJk/LQWL/bPjUiRFxVRngmyaBbAfzr+2gyhIPeAfCOL0m7mwEOTTdIjlrn/vpOw
+         Aq46af9mMmJny7znbZ2MGWN/rZXdys4/8FNYxihB6bJTgbEFxfsLcV677M1S3ghInx
+         X8sEnr5wMiX8/MWLLSc8HwswT8nJ69eKmRoBxZ9Z5kdfPSKQg5msZoZQQlpXOAvUMd
+         F7Lu5Od/t8eI68iIWj6/qsWSKFIXdCYBJ7gk7pJfoTdaWOjV/cIRSOPn1SwCpnrnoo
+         cJYYXtBz2N9nGb4p91KhVyfARsfaWLfu3J/SfKn77/WMu6VVHgrixgCIUmZNTKt34p
+         UqVbaoS2eyT2w==
 X-CNFS-Analysis: v=2.3 cv=ZbLMyfdA c=1 sm=1 tr=0
  a=nqgIlLay6LNLiZJCVl9G2Q==:117 a=nqgIlLay6LNLiZJCVl9G2Q==:17 a=yPCof4ZbAAAA:8
- a=GjNF4_zslFSpHsoFBLgA:9
+ a=wqVqdCQbwCNbCc34xW0A:9
 From:   Goffredo Baroncelli <kreijack@libero.it>
 To:     grub-devel@gnu.org
 Cc:     Daniel Kiper <dkiper@net-space.pl>, linux-btrfs@vger.kernel.org,
         Goffredo Baroncelli <kreijack@inwind.it>
-Subject: [PATCH 2/9] btrfs: Add helper to check the btrfs header.
-Date:   Mon, 22 Oct 2018 19:29:32 +0200
-Message-Id: <20181022172938.7936-3-kreijack@libero.it>
+Subject: [PATCH 4/9] btrfs: Avoid a rescan for a device which was already not found.
+Date:   Mon, 22 Oct 2018 19:29:34 +0200
+Message-Id: <20181022172938.7936-5-kreijack@libero.it>
 X-Mailer: git-send-email 2.19.1
 In-Reply-To: <20181022172938.7936-1-kreijack@libero.it>
 References: <20181022172938.7936-1-kreijack@libero.it>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-CMAE-Envelope: MS4wfHqgJISiJS6fR51Hz35O38qAU8jUYCd2mJjZwGQXqLnn0oSVIrdq4xL/N1oHu5RaWXKhBDG2g33WOvfIQhz8nCztBY4TelCEE9R4D4V6NaZZcRC6OiIN
- NHlwiqryoAHta9tk86WAaS12ILtL2HQvqHFcOybCzoK8bPalDOibCl+Gsk4QE+7a/0npPpRJk9Usrq17L792ao2bFEPzvD5IqXn5X67WZ2JbmUhAi+1nztyF
- KvCFs62XgqPcB9H8xIhigY7THSiJd3z1ENgIUiT9Uug=
+X-CMAE-Envelope: MS4wfK8Fiko8mK1TTbWzjwX/xLamVqnzTuLzyMSzvwVm3cSyiB0N8NJkeYyWQRQKij2vZV5tC+WJCvua905K/M2v0cz2XXMIzRh2ZLgUPyngIhGCFNowQtYI
+ g6FXGnh+GCjcQzpe2WA/TqWzKeP/ZW4UWlbkakLP5orf5O3IBXi+QaCh8Hr54u+25WQUTi2aaw9Wo+ibKYkB0EUt6uF5IuI7fqHjGt4IHe3e6ZujU48lb3qG
+ 93HzhZp+DvfRyvL4CBAkTgMyKUsJjnNC6fxKUVfnbfI=
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -62,72 +62,82 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Goffredo Baroncelli <kreijack@inwind.it>
 
-This helper is used in a few places to help the debugging. As
-conservative approach the error is only logged.
-This does not impact the error handling.
+Currently read from missing device triggers rescan. However, it is never
+recorded that the device is missing. So, each read of a missing device
+triggers rescan again and again. This behavior causes a lot of unneeded
+rescans leading to huge slowdowns.
 
-Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
+This patch fixes above mentioned issue. Information about missing devices
+is stored in the data->devices_attached[] array as NULL value in dev
+member. Rescan is triggered only if no information is found for a given
+device. This means that only first time read triggers rescan.
+
+The patch drops premature return. This way data->devices_attached[] is
+filled even when a given device is missing.
+
+Signed-off-by: Goffredo Baroncelli <kreikack@inwind.it>
+Signed-off-by: Daniel Kiper <daniel.kiper@oracle.com>
 Reviewed-by: Daniel Kiper <daniel.kiper@oracle.com>
 ---
- grub-core/fs/btrfs.c | 24 +++++++++++++++++++++++-
- 1 file changed, 23 insertions(+), 1 deletion(-)
+ grub-core/fs/btrfs.c | 17 +++++++++--------
+ 1 file changed, 9 insertions(+), 8 deletions(-)
 
 diff --git a/grub-core/fs/btrfs.c b/grub-core/fs/btrfs.c
-index 9122169aa..0cbf3551a 100644
+index 6b6e91cd1..81f3bc120 100644
 --- a/grub-core/fs/btrfs.c
 +++ b/grub-core/fs/btrfs.c
-@@ -77,7 +77,8 @@ struct btrfs_header
- {
-   grub_btrfs_checksum_t checksum;
-   grub_btrfs_uuid_t uuid;
--  grub_uint8_t dummy[0x30];
-+  grub_uint64_t bytenr;
-+  grub_uint8_t dummy[0x28];
-   grub_uint32_t nitems;
-   grub_uint8_t level;
- } GRUB_PACKED;
-@@ -286,6 +287,25 @@ free_iterator (struct grub_btrfs_leaf_descriptor *desc)
-   grub_free (desc->data);
+@@ -588,7 +588,7 @@ find_device_iter (const char *name, void *data)
  }
  
-+static grub_err_t
-+check_btrfs_header (struct grub_btrfs_data *data, struct btrfs_header *header,
-+                    grub_disk_addr_t addr)
-+{
-+  if (grub_le_to_cpu64 (header->bytenr) != addr)
-+    {
-+      grub_dprintf ("btrfs", "btrfs_header.bytenr is not equal node addr\n");
-+      return grub_error (GRUB_ERR_BAD_FS,
-+			 "header bytenr is not equal node addr");
-+    }
-+  if (grub_memcmp (data->sblock.uuid, header->uuid, sizeof(grub_btrfs_uuid_t)))
-+    {
-+      grub_dprintf ("btrfs", "btrfs_header.uuid doesn't match sblock uuid\n");
-+      return grub_error (GRUB_ERR_BAD_FS,
-+			 "header uuid doesn't match sblock uuid");
-+    }
-+  return GRUB_ERR_NONE;
-+}
+ static grub_device_t
+-find_device (struct grub_btrfs_data *data, grub_uint64_t id, int do_rescan)
++find_device (struct grub_btrfs_data *data, grub_uint64_t id)
+ {
+   struct find_device_ctx ctx = {
+     .data = data,
+@@ -600,10 +600,9 @@ find_device (struct grub_btrfs_data *data, grub_uint64_t id, int do_rescan)
+   for (i = 0; i < data->n_devices_attached; i++)
+     if (id == data->devices_attached[i].id)
+       return data->devices_attached[i].dev;
+-  if (do_rescan)
+-    grub_device_iterate (find_device_iter, &ctx);
+-  if (!ctx.dev_found)
+-    return NULL;
 +
- static grub_err_t
- save_ref (struct grub_btrfs_leaf_descriptor *desc,
- 	  grub_disk_addr_t addr, unsigned i, unsigned m, int l)
-@@ -341,6 +361,7 @@ next (struct grub_btrfs_data *data,
++  grub_device_iterate (find_device_iter, &ctx);
++
+   data->n_devices_attached++;
+   if (data->n_devices_attached > data->n_devices_allocated)
+     {
+@@ -615,7 +614,8 @@ find_device (struct grub_btrfs_data *data, grub_uint64_t id, int do_rescan)
+ 			* sizeof (data->devices_attached[0]));
+       if (!data->devices_attached)
+ 	{
+-	  grub_device_close (ctx.dev_found);
++	  if (ctx.dev_found)
++	    grub_device_close (ctx.dev_found);
+ 	  data->devices_attached = tmp;
+ 	  return NULL;
+ 	}
+@@ -897,7 +897,7 @@ grub_btrfs_read_logical (struct grub_btrfs_data *data, grub_disk_addr_t addr,
+ 			      " for laddr 0x%" PRIxGRUB_UINT64_T "\n", paddr,
+ 			      addr);
  
-       err = grub_btrfs_read_logical (data, grub_le_to_cpu64 (node.addr),
- 				     &head, sizeof (head), 0);
-+      check_btrfs_header (data, &head, grub_le_to_cpu64 (node.addr));
-       if (err)
- 	return -err;
- 
-@@ -402,6 +423,7 @@ lower_bound (struct grub_btrfs_data *data,
-       /* FIXME: preread few nodes into buffer. */
-       err = grub_btrfs_read_logical (data, addr, &head, sizeof (head),
- 				     recursion_depth + 1);
-+      check_btrfs_header (data, &head, addr);
-       if (err)
- 	return err;
-       addr += sizeof (head);
+-		dev = find_device (data, stripe->device_id, j);
++		dev = find_device (data, stripe->device_id);
+ 		if (!dev)
+ 		  {
+ 		    grub_dprintf ("btrfs",
+@@ -974,7 +974,8 @@ grub_btrfs_unmount (struct grub_btrfs_data *data)
+   unsigned i;
+   /* The device 0 is closed one layer upper.  */
+   for (i = 1; i < data->n_devices_attached; i++)
+-    grub_device_close (data->devices_attached[i].dev);
++    if (data->devices_attached[i].dev)
++        grub_device_close (data->devices_attached[i].dev);
+   grub_free (data->devices_attached);
+   grub_free (data->extent);
+   grub_free (data);
 -- 
 2.19.1
 

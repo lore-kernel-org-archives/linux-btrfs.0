@@ -5,62 +5,62 @@ X-Spam-Level:
 X-Spam-Status: No, score=-6.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
 	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
+	SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D3F13C67863
-	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Oct 2018 09:54:03 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 166EEC67863
+	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Oct 2018 09:54:51 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 8157C2083A
-	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Oct 2018 09:54:03 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C62FA20779
+	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Oct 2018 09:54:50 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="WZRJhU29"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 8157C2083A
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="gwvSKY2X"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org C62FA20779
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728418AbeJVSLv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 22 Oct 2018 14:11:51 -0400
-Received: from mail-ua1-f66.google.com ([209.85.222.66]:46321 "EHLO
-        mail-ua1-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728363AbeJVSLu (ORCPT
+        id S1728542AbeJVSMi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 22 Oct 2018 14:12:38 -0400
+Received: from mail-vs1-f66.google.com ([209.85.217.66]:38194 "EHLO
+        mail-vs1-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728316AbeJVSMi (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 22 Oct 2018 14:11:50 -0400
-Received: by mail-ua1-f66.google.com with SMTP id z8so9720221uap.13
-        for <linux-btrfs@vger.kernel.org>; Mon, 22 Oct 2018 02:54:01 -0700 (PDT)
+        Mon, 22 Oct 2018 14:12:38 -0400
+Received: by mail-vs1-f66.google.com with SMTP id a202so29162009vsd.5
+        for <linux-btrfs@vger.kernel.org>; Mon, 22 Oct 2018 02:54:48 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20161025;
         h=mime-version:references:in-reply-to:reply-to:from:date:message-id
          :subject:to:content-transfer-encoding;
-        bh=DWJN/n/4wmRbxsbgNQ4/WQ3rpisaZg9s0nPdFlcwZJ8=;
-        b=WZRJhU295nySsPGSSKcQAbcrh4LMD5/EuphdQW8sY090lJoDpIHk72L6z7bUQ6BmaY
-         HPLNooJ8VhxIc4UEo3TX6BKtNPhLX1+ZiHr3mYOInByG2wVv6ZPE5cbZ3DPUgyYy9MCZ
-         hxNokw7P/qD5DyI28ptPO3bOTS8NffuwASVNZInr9g0QzRj6HeiPZC78fJIuY8kN6uWk
-         6tBnPWprkX8o48d1yGxC77NDZJJOd50Detveu8Dd09AKcPNaaUIMmuIgjoE9Lzazd7HE
-         /vEUnJMVyWnocDkV84wELSkidYUG/AdQGvFIRi+CfYfLr2mtOzwGI4DNhBF/DGEsWh66
-         AyAQ==
+        bh=Hom3yfChOvpVvxU6Vmjk+7JDJM266f2aVgb3dL1gHrM=;
+        b=gwvSKY2XJ4K66aORusaI77RAm7kVg6fcBtdzYePrJ2NZh6shFqf0SdQzs421AVb+NO
+         TFc2XROr0IWtUVoNPaDnE96GyhFO7mF27PVLT+llx47+dKaHQAoWCc9zvQ+WNaDsGoYH
+         mP0h0vHS07Y9dlTljID3px16fqzlYQeZHfsSpLBKqRuzK7fShyRQlnd/1UJ9k+TWfWBZ
+         zBcXIKn7sIYdt8R/0lAxX6x8DxqQBaDCRB3fGjAKLt7hMJ2+XFdUpDjRxMFYATMApH0G
+         DZxWyDP3ow+GLO+BhHiD2rOxBV9dNk0QsU9Rc40OafKEp2ZBDHmBNnJ1S/q6GY05ymbj
+         GT9w==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:mime-version:references:in-reply-to:reply-to
          :from:date:message-id:subject:to:content-transfer-encoding;
-        bh=DWJN/n/4wmRbxsbgNQ4/WQ3rpisaZg9s0nPdFlcwZJ8=;
-        b=Mx3DPb8UW/9DVceZy/tN09Iw33DNGUWEnYF0XYdv1AJcTX+siMxJePQMpCA4NSyeEH
-         ziutYoMgkc64OpD5e3mCHB8GZ6lbP20dzYjHn7SZdw3dAc9gFFB/81shZpPfCWIcZjZn
-         JJDVkSTK3t9LOZpCMJrewqnPLqP205CkKkIJg1DCexTgTkikGI46v9TJ/gYBeO2dxkOE
-         MiQ/6YbwYdyQAyltHtjvqRdt0MaZJxvhCL/FHYUV6/cYa8ddLekzR40HBtXLg1yX69cE
-         qsSrj+rLWwf0/nPS3ROIWPJAb36HQFVDK8YB6UfNOpjOpBj/b+acg9lClejW8vKNe5Mb
-         +Bcw==
-X-Gm-Message-State: ABuFfoiN4QMzf+5iE7PA0eB/Zb7xwi0uv2VxviVJcURoD7f8ECSDpaoC
-        M5D9/Y6c+A/z6EebmEQ3YAy2Ej6/ZpDMoT5pqEOk8AL/
-X-Google-Smtp-Source: ACcGV60Lj/P2brm5QtJPSoO88wJxwVQPps7FgCIaVtIhdl8iDw3+6IoLrbJpr9j9hKNIIeRNF2zVACcR3N6+gA1YPC8=
-X-Received: by 2002:ab0:2101:: with SMTP id d1mr18596558ual.108.1540202040416;
- Mon, 22 Oct 2018 02:54:00 -0700 (PDT)
+        bh=Hom3yfChOvpVvxU6Vmjk+7JDJM266f2aVgb3dL1gHrM=;
+        b=tEx62bJJgNVLJE5qqNEsi02w5DhNqs0jPBOBpkDmNYFOsXXlon58NUcOeKpqBApio+
+         BMFwVTS9jId6NT31B94njWc0nY/4lDutIVNgIrGGGfE36JJ0pDlBAJH0N5g06UJ+Bksu
+         vZ+EsTnHmVel2cGOj6PJS/2dHi9yL60rpW0xXXC/9IQ6X6r7JvWMNIkz+bX/G/1nKean
+         w+enKWxf7ZbquupKig/fj3m66+nG4eXTsz9YqB4M7ZxmG4wbdmRyVJFlLESCuJVdUJQ2
+         A/XEGTTFAgsdGaJrtWn1rK2Nuwa2BVmNdkgIClud5pAHs6QvxECawxuTT+jRoYbv69DG
+         CqKw==
+X-Gm-Message-State: ABuFfoh5ricp37UEaTlU5R26NFH9B7pr0voFWrnTnwgYl8BVuwqxr3vm
+        k9btawgB+/uBRgL6WVFV30wCIe4PwO/qPsbFFnqzCsNQ
+X-Google-Smtp-Source: ACcGV61L/X0MipsRK4Tv77pHhbA/F0VbRObggFzTk0pndI9EEyrig8qQCa1n+gsxJipCrLrAlOI9Isbk+412oBWpJCk=
+X-Received: by 2002:a67:4482:: with SMTP id y2mr18345434vsf.90.1540202087592;
+ Mon, 22 Oct 2018 02:54:47 -0700 (PDT)
 MIME-Version: 1.0
 References: <20181022090946.1150-1-fdmanana@kernel.org>
 In-Reply-To: <20181022090946.1150-1-fdmanana@kernel.org>
 Reply-To: fdmanana@gmail.com
 From:   Filipe Manana <fdmanana@gmail.com>
-Date:   Mon, 22 Oct 2018 10:53:49 +0100
-Message-ID: <CAL3q7H5CVXtHsg3NMbiP8Y8uwqQppKkkAZ1X72VXF-qe_ymz2w@mail.gmail.com>
+Date:   Mon, 22 Oct 2018 10:54:36 +0100
+Message-ID: <CAL3q7H7V0-H0kyqzv+kDAudaTQ3_b8t2akzkZUSLsj9KViV_2g@mail.gmail.com>
 Subject: Re: [PATCH] Btrfs: fix deadlock on tree root leaf when finding free extent
 To:     linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
@@ -132,8 +132,7 @@ yiTH8+ifjURc_duHh2Wg@mail.gmail.com/
 > Fixes: 9d66e233c704 ("Btrfs: load free space cache if it exists")
 > Signed-off-by: Filipe Manana <fdmanana@suse.com>
 
-Andrew Nelson <andrew.s.nelson@gmail.com>
-
+Tested-by: Andrew Nelson <andrew.s.nelson@gmail.com>
 
 > ---
 >  fs/btrfs/ctree.h       |  3 +++
@@ -227,6 +226,7 @@ ock the
 > --
 > 2.11.0
 >
+
 
 --=20
 Filipe David Manana,

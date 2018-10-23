@@ -1,240 +1,243 @@
-Return-Path: <SRS0=ca24=NC=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=XNjG=ND=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.5 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
-	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CB0ABC004D3
-	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Oct 2018 23:13:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AADCDC004D3
+	for <linux-btrfs@archiver.kernel.org>; Tue, 23 Oct 2018 00:19:05 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D452520645
-	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Oct 2018 23:13:02 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org D452520645
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=gmx.com
+	by mail.kernel.org (Postfix) with ESMTP id B9350205F4
+	for <linux-btrfs@archiver.kernel.org>; Tue, 23 Oct 2018 00:19:05 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="sUfdnXLR"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org B9350205F4
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728170AbeJWHdf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 23 Oct 2018 03:33:35 -0400
-Received: from mout.gmx.net ([212.227.17.20]:50181 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725997AbeJWHdf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 23 Oct 2018 03:33:35 -0400
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx102
- [212.227.17.174]) with ESMTPSA (Nemesis) id 0MgYGJ-1g04ll4Bst-00O2Cy; Tue, 23
- Oct 2018 01:12:56 +0200
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx102
- [212.227.17.174]) with ESMTPSA (Nemesis) id 0MgYGJ-1g04ll4Bst-00O2Cy; Tue, 23
- Oct 2018 01:12:56 +0200
-Subject: Re: Filesystem corruption?
-To:     "Gervais, Francois" <FGervais@distech-controls.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <BN6PR01MB2531B41C0F7A49D2DBF001C1F3F40@BN6PR01MB2531.prod.exchangelabs.com>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
- bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
- ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
- rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
- FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
- 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
- ilaVzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAHCwHwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
- CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
- f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
- mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
- 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
- h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <4b6ca03c-ed85-5719-1d0f-fc6957e8ad4c@gmx.com>
-Date:   Tue, 23 Oct 2018 07:12:50 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.2.1
+        id S1726279AbeJWIjw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 23 Oct 2018 04:39:52 -0400
+Received: from mail-qt1-f196.google.com ([209.85.160.196]:36652 "EHLO
+        mail-qt1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725768AbeJWIjw (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 23 Oct 2018 04:39:52 -0400
+Received: by mail-qt1-f196.google.com with SMTP id u34-v6so48606059qth.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 22 Oct 2018 17:19:03 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc:content-transfer-encoding;
+        bh=feFK8JGjyMPolxEptJkAkuvn6y93vuo3ABXL1c6q68I=;
+        b=sUfdnXLRoAbQo/vUAqsdS7wlHMI0owYW8Cwq6jS/2tGH33OAO3zcvHvPAGuh0wq4GD
+         ACAFvO2RtASBnDoUyCwuhzczDXjRs0h3detCQUtrOjVkqxSwZEf90KgvhvAieuWdFhHo
+         EDQRXQoj2F9IH7KGN6inzXVycjju3uJft48J7eAPvS//OvqJcQff9wjlPxewUuolJIvD
+         aoNzSebEhOlIBFPK+OROPxe8Pkuu62i7FUOMZgWTuHHPnvvS2X/W9hIXjlCSkhBuf97Q
+         YUvDilGf5seqlmjAPANbER9hfREWuEmx04uD3p2QLeuC+tY3CTAhRcF2mnRxmy9gmi+A
+         Ja1g==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc:content-transfer-encoding;
+        bh=feFK8JGjyMPolxEptJkAkuvn6y93vuo3ABXL1c6q68I=;
+        b=BJkhUGIHvkjBKmjbWU3EFNy7cjbV0Tze9k/cOowfE5dcTkIm3o2nc4sa1ILdgBONEj
+         4L3Fat47HlrA4QYGgedQwP3kr+hPr9C+j1vaxoW/JUgblUwrMmoNg8P1X57RD8/ir3Xb
+         N3CVdBslyI6z9ME6aAIOOnosUUaQbCRDPz+nuiEt7buzdFQZYWHNxc8OIFgxYtp9rwOn
+         GFSvpupZDTAP8vt/y7vS1Hmn9oQkzXIqYU/IESVpknvlaR0+qKXI9gWChsxwLAH05ic9
+         +6G2kkS6jjW/LTb+BNDgDUedgcepEAE4wnS1CMR/caz32j2kWEBZz86pEr9xdQ3PfOYo
+         A11w==
+X-Gm-Message-State: ABuFfoiEPkEXDnTrw9ehLSQZqTKlBqjIQ/+jgLpuNkuRljvU4xB7ctyQ
+        UxXzuyzznvPGZMGWszmwZ25zLXY1iIGuaHZfMN0wZw==
+X-Google-Smtp-Source: ACcGV62qUU94uDj1onyA8KhhYda3W6rGkOxvb8aMfGhtQT3pMdofJQA8zRmzWdiVd99+1rwWRYC5r0ZDMJwvCOGBTfY=
+X-Received: by 2002:ac8:687:: with SMTP id f7-v6mr45414429qth.348.1540253942922;
+ Mon, 22 Oct 2018 17:19:02 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <BN6PR01MB2531B41C0F7A49D2DBF001C1F3F40@BN6PR01MB2531.prod.exchangelabs.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="mZ168aMzn6jX3LqLOY77gNEK1HhTRhNJs"
-X-Provags-ID: V03:K1:qAIk+SPhfZMl4Xb7GL8TVOR8hlp4qcKF+xL5+CfvMpcymN8CSx4
- r29dH6gYFS4AIlgxxR/bAR8FeMX/OEF/QaNfHOwuXSHpVcR6nFnR5Gm906t+0mNwrVjAUIT
- T4WqYnlkt1WpCRfLuZOdvSUqx0UcrBe7m6dj2vYToHf+JzrTLoJ+0ptI+vVA65N0DB4lmoU
- GCAIxgWc2v/BBw3jaS1gg==
-X-UI-Out-Filterresults: notjunk:1;V01:K0:ZsKukg3rNb0=:WYR+6S+ZJEvULUNbdEZTRZ
- 1gWpEJISLSD9fnesGQ6RpyICYpnUyM9HlBtSe9wlMSJ648OJd8KAXY1gYSLAe/fpvLJ48ntn3
- S5AvKgURTiYjiU+voNzh0E4REvWX8nb8rS7If/9Qi70yFTDjhAZcBmUbkVTVsBu5yspE8XLxN
- zQdJDD35UOlQl1D0mJJgtCjkpjv2tlQG3xwJLeY78bbjr4lE1XQUZ1P16wLdAGT0P94c67V/p
- AeXTKC54Hfh6UlapHU3COrqCUxTwSiY8fK8Of9BnE42PNUJEyM4tBmWHLj23FusWsjBPMN1g7
- cbNz2OR1DErGvC7fuqoGU16FrEeN0Kv2BvCMbrlGnuP5ASWzetLpVZzAh0pDweJtYSQyN7uWW
- QkhBjin9pcPQdKZZLqu/SyB3E+nNCi4lyJeP7YLKzJElw4mTEbexGKApAyJeAG6g2zFf7KN0n
- 0lpD+PdgWTtajw4bTFVVqVWwFB3eYpxtgXsxt8NJrgPhqI9+QZ6y6r1WA7VoBDibc2HLImxqE
- W4YtGwu0j3Kpna+WKCeBZW67XupKx1aolBPnnu/URblB42ixBcRAsEmztToGL/5pGcLSc7SKg
- tlLdFaWiWsb1sMHKTv55/VdtCUnj/ur6Bs0ojMRMPAJeUTtAWfNR95++4l1zYF4vL9hRuEjZP
- VB6V6rV91NUtK29PxHB8DGyhWDyLbboMcdIYLUuWgQitqtWKuke+4gWpDOMy8Rkv6LDHgILB9
- ztrwwxoVsijICs158ruLdlkEDI/2Gd4jdpDg09YLLw6k4NvcMPbN27XceBm6mbunFLHyotI1p
- 9WYsrdPO0c5dqTbo5fhZnK455abdw==
+References: <CAPTELenq9x5KOWuQ+fa7h1r3nsJG8vyiTH8+ifjURc_duHh2Wg@mail.gmail.com>
+ <CANQeFDBAxL=BTWjCOVmu8rGP0k2OCipD07my4RQs8vV9NJeraw@mail.gmail.com> <CAL3q7H6-06g12Kv1FD30Tii+zoQjDmJj+aM8kCnLeJVVvNad5A@mail.gmail.com>
+In-Reply-To: <CAL3q7H6-06g12Kv1FD30Tii+zoQjDmJj+aM8kCnLeJVVvNad5A@mail.gmail.com>
+From:   Liu Bo <obuil.liubo@gmail.com>
+Date:   Mon, 22 Oct 2018 17:18:51 -0700
+Message-ID: <CANQeFDD_DfswqGug9zZZfzv8dKvuy=VntGpxO3sDdZFO0E8rpA@mail.gmail.com>
+Subject: Re: Btrfs resize seems to deadlock
+To:     Filipe Manana <fdmanana@gmail.com>
+Cc:     Andrew Nelson <andrew.s.nelson@gmail.com>,
+        linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---mZ168aMzn6jX3LqLOY77gNEK1HhTRhNJs
-Content-Type: multipart/mixed; boundary="FemfPe40HXhWBfQ7v83YXGBNElhHQITot";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: "Gervais, Francois" <FGervais@distech-controls.com>,
- "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Message-ID: <4b6ca03c-ed85-5719-1d0f-fc6957e8ad4c@gmx.com>
-Subject: Re: Filesystem corruption?
-References: <BN6PR01MB2531B41C0F7A49D2DBF001C1F3F40@BN6PR01MB2531.prod.exchangelabs.com>
-In-Reply-To: <BN6PR01MB2531B41C0F7A49D2DBF001C1F3F40@BN6PR01MB2531.prod.exchangelabs.com>
+On Sat, Oct 20, 2018 at 1:34 PM Filipe Manana <fdmanana@gmail.com> wrote:
+>
+> On Sat, Oct 20, 2018 at 9:27 PM Liu Bo <obuil.liubo@gmail.com> wrote:
+> >
+> > On Fri, Oct 19, 2018 at 7:09 PM Andrew Nelson <andrew.s.nelson@gmail.co=
+m> wrote:
+> > >
+> > > I am having an issue with btrfs resize in Fedora 28. I am attempting
+> > > to enlarge my Btrfs partition. Every time I run "btrfs filesystem
+> > > resize max $MOUNT", the command runs for a few minutes and then hangs
+> > > forcing the system to be reset. I am not sure what the state of the
+> > > filesystem really is at this point. Btrfs usage does report the
+> > > correct size for after resizing. Details below:
+> > >
+> >
+> > Thanks for the report, the stack is helpful, but this needs a few
+> > deeper debugging, may I ask you to post "btrfs inspect-internal
+> > dump-tree -t 1 /dev/your_btrfs_disk"?
+>
+> I believe it's actually easy to understand from the trace alone and
+> it's kind of a bad luck scenario.
+> I made this fix a few hours ago:
+>
+> https://git.kernel.org/pub/scm/linux/kernel/git/fdmanana/linux.git/commit=
+/?h=3Dfix_find_free_extent_deadlock
+>
+> But haven't done full testing yet and might have missed something.
+> Bo, can you take a look and let me know what you think?
+>
 
---FemfPe40HXhWBfQ7v83YXGBNElhHQITot
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+The patch is OK to me, should fix the problem.
 
+Since load_free_space_cache() is touching root tree with
+path->commit_root and skip_locking, I was wondering if we could just
+provide a same way for free space cache inode's iget().
 
+thanks,
+liubo
 
-On 2018/10/23 =E4=B8=8A=E5=8D=884:02, Gervais, Francois wrote:
-> Hi,
->=20
-> I think I lost power on my btrfs disk and it looks like it is now in an=
- unfunctional state.
-
-What does the word "unfunctional" mean?
-
-Unable to mount? Or what else?
-
->=20
-> Any idea how I could debug that issue?
->=20
-> Here is what I have:
->=20
-> kernel 4.4.0-119-generic
-
-The kernel is somewhat old now.
-
-> btrfs-progs v4.4
-
-The progs is definitely too old.
-
-It's highly recommended to use the latest btrfs-progs for its better
-"btrfs check" code.
-
->=20
->=20
->=20
-> sudo btrfs check /dev/sdd
-> Checking filesystem on /dev/sdd
-> UUID: 9a14b7a1-672c-44da-b49a-1f6566db3e44
-> checking extents
-> checking free space cache
-> checking fs roots
-> checking csums
-> checking root refs
-
-So no error reported from all these essential trees.
-Unless there is some bug in btrfs-progs 4.4, your fs should be mostly OK.=
-
-
-> checking quota groups
-> Ignoring qgroup relation key 310
-[snip]
-> Ignoring qgroup relation key 71776119061217590
-
-Just a lot of qgroup relation key problems.
-Not a big problem, especially considering you're using older kernel
-without proper qgroup fixes.
-
-Just in case, please run "btrfs check" with latest btrfs-progs (v4.17.1)
-to see if it reports extra error.
-
-Despite that, if the fs can be mounted RW, mount it then execute "btrfs
-quota disable <mnt>" should disable quota and solves the problem.
-
-Thanks,
-Qu
-
-> found 29301522460 bytes used err is 0
-> total csum bytes: 27525424
-> total tree bytes: 541573120
-> total fs tree bytes: 494223360
-> total extent tree bytes: 16908288
-> btree space waste bytes: 85047903
-> file data blocks allocated: 273892241408
->  referenced 44667650048
-> extent buffer leak: start 29360128 len 16384
-> extent buffer leak: start 740524032 len 16384
-> extent buffer leak: start 446840832 len 16384
-> extent buffer leak: start 142819328 len 16384
-> extent buffer leak: start 143179776 len 16384
-> extent buffer leak: start 184107008 len 16384
-> extent buffer leak: start 190513152 len 16384
-> extent buffer leak: start 190939136 len 16384
-> extent buffer leak: start 239943680 len 16384
-> extent buffer leak: start 29392896 len 16384
-> extent buffer leak: start 295223296 len 16384
-> extent buffer leak: start 30556160 len 16384
-> extent buffer leak: start 29376512 len 16384
-> extent buffer leak: start 29409280 len 16384
-> extent buffer leak: start 29491200 len 16384
-> extent buffer leak: start 29556736 len 16384
-> extent buffer leak: start 29720576 len 16384
-> extent buffer leak: start 29884416 len 16384
-> extent buffer leak: start 30097408 len 16384
-> extent buffer leak: start 30179328 len 16384
-> extent buffer leak: start 30228480 len 16384
-> extent buffer leak: start 30277632 len 16384
-> extent buffer leak: start 30343168 len 16384
-> extent buffer leak: start 30392320 len 16384
-> extent buffer leak: start 30457856 len 16384
-> extent buffer leak: start 30507008 len 16384
-> extent buffer leak: start 30572544 len 16384
-> extent buffer leak: start 30621696 len 16384
-> extent buffer leak: start 30670848 len 16384
-> extent buffer leak: start 30720000 len 16384
-> extent buffer leak: start 30769152 len 16384
-> extent buffer leak: start 30801920 len 16384
-> extent buffer leak: start 30867456 len 16384
-> extent buffer leak: start 30916608 len 16384
-> extent buffer leak: start 102498304 len 16384
-> extent buffer leak: start 204488704 len 16384
-> extent buffer leak: start 237912064 len 16384
-> extent buffer leak: start 328499200 len 16384
-> extent buffer leak: start 684539904 len 16384
-> extent buffer leak: start 849362944 len 16384
->=20
-
-
---FemfPe40HXhWBfQ7v83YXGBNElhHQITot--
-
---mZ168aMzn6jX3LqLOY77gNEK1HhTRhNJs
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlvOWXIACgkQwj2R86El
-/qgoeQf/TI8+Z0+lma/rUchDEAkhgcoGqLHcwz/fw2tUe5AWP+zErWu+/0pzAYiS
-3me0FlH/Q47xDvuLJdiOtSkyCUk52/PwfeEDKvsezXccUF7/4bpPlNTerrcQ1iMD
-QbrxT0N+58FiquIlhawUvi4ntRsvmApFMaubEUWOEoruteHWdNUTaA0Tj+tgVYU5
-TabOReI+GkPX6YKxOlJ2gR6P/uuDb4DDgK2nXpT3mwWQW62rslTskXZVfgXziXUr
-kXBiUxGGQoJPNa9DM+rnz1vmXQmSwEZZrxpBho07wkg7l0QvUcsdw+axRcdTKwNA
-PlXpBFlb2tDaPG/RFHi49WETxkLqsA==
-=3AM3
------END PGP SIGNATURE-----
-
---mZ168aMzn6jX3LqLOY77gNEK1HhTRhNJs--
+> Thanks.
+>
+> >
+> > So I'd like to know what's the height of your tree "1" which refers to
+> > root tree in btrfs.
+> >
+> > thanks,
+> > liubo
+> >
+> > > $ sudo btrfs filesystem usage $MOUNT
+> > > Overall:
+> > >     Device size:                  90.96TiB
+> > >     Device allocated:             72.62TiB
+> > >     Device unallocated:           18.33TiB
+> > >     Device missing:                  0.00B
+> > >     Used:                         72.62TiB
+> > >     Free (estimated):             18.34TiB      (min: 9.17TiB)
+> > >     Data ratio:                       1.00
+> > >     Metadata ratio:                   2.00
+> > >     Global reserve:              512.00MiB      (used: 24.11MiB)
+> > >
+> > > Data,single: Size:72.46TiB, Used:72.45TiB
+> > >     $MOUNT        72.46TiB
+> > >
+> > > Metadata,DUP: Size:86.00GiB, Used:84.96GiB
+> > >     $MOUNT       172.00GiB
+> > >
+> > > System,DUP: Size:40.00MiB, Used:7.53MiB
+> > >    $MOUNT        80.00MiB
+> > >
+> > > Unallocated:
+> > >     $MOUNT        18.33TiB
+> > >
+> > > $ uname -a
+> > > Linux localhost.localdomain 4.18.14-200.fc28.x86_64 #1 SMP Mon Oct 15
+> > > 13:16:27 UTC 2018 x86_64 x86_64 x86_64 GNU/Linux
+> > >
+> > > btrfs-transacti D    0  2501      2 0x80000000
+> > > Call Trace:
+> > >  ? __schedule+0x253/0x860
+> > >  schedule+0x28/0x80
+> > >  btrfs_commit_transaction+0x7aa/0x8b0 [btrfs]
+> > >  ? kmem_cache_alloc+0x166/0x1d0
+> > >  ? join_transaction+0x22/0x3e0 [btrfs]
+> > >  ? finish_wait+0x80/0x80
+> > >  transaction_kthread+0x155/0x170 [btrfs]
+> > >  ? btrfs_cleanup_transaction+0x550/0x550 [btrfs]
+> > >  kthread+0x112/0x130
+> > >  ? kthread_create_worker_on_cpu+0x70/0x70
+> > >  ret_from_fork+0x35/0x40
+> > > btrfs           D    0  2504   2502 0x00000002
+> > > Call Trace:
+> > >  ? __schedule+0x253/0x860
+> > >  schedule+0x28/0x80
+> > >  btrfs_tree_read_lock+0x8e/0x120 [btrfs]
+> > >  ? finish_wait+0x80/0x80
+> > >  btrfs_read_lock_root_node+0x2f/0x40 [btrfs]
+> > >  btrfs_search_slot+0xf6/0x9f0 [btrfs]
+> > >  ? evict_refill_and_join+0xd0/0xd0 [btrfs]
+> > >  ? inode_insert5+0x119/0x190
+> > >  btrfs_lookup_inode+0x3a/0xc0 [btrfs]
+> > >  ? kmem_cache_alloc+0x166/0x1d0
+> > >  btrfs_iget+0x113/0x690 [btrfs]
+> > >  __lookup_free_space_inode+0xd8/0x150 [btrfs]
+> > >  lookup_free_space_inode+0x5b/0xb0 [btrfs]
+> > >  load_free_space_cache+0x7c/0x170 [btrfs]
+> > >  ? cache_block_group+0x72/0x3b0 [btrfs]
+> > >  cache_block_group+0x1b3/0x3b0 [btrfs]
+> > >  ? finish_wait+0x80/0x80
+> > >  find_free_extent+0x799/0x1010 [btrfs]
+> > >  btrfs_reserve_extent+0x9b/0x180 [btrfs]
+> > >  btrfs_alloc_tree_block+0x1b3/0x4f0 [btrfs]
+> > >  __btrfs_cow_block+0x11d/0x500 [btrfs]
+> > >  btrfs_cow_block+0xdc/0x180 [btrfs]
+> > >  btrfs_search_slot+0x3bd/0x9f0 [btrfs]
+> > >  btrfs_lookup_inode+0x3a/0xc0 [btrfs]
+> > >  ? kmem_cache_alloc+0x166/0x1d0
+> > >  btrfs_update_inode_item+0x46/0x100 [btrfs]
+> > >  cache_save_setup+0xe4/0x3a0 [btrfs]
+> > >  btrfs_start_dirty_block_groups+0x1be/0x480 [btrfs]
+> > >  btrfs_commit_transaction+0xcb/0x8b0 [btrfs]
+> > >  ? btrfs_release_path+0x13/0x80 [btrfs]
+> > >  ? btrfs_update_device+0x8d/0x1c0 [btrfs]
+> > >  btrfs_ioctl_resize.cold.46+0xf4/0xf9 [btrfs]
+> > >  btrfs_ioctl+0xa25/0x2cf0 [btrfs]
+> > >  ? tty_write+0x1fc/0x330
+> > >  ? do_vfs_ioctl+0xa4/0x620
+> > >  do_vfs_ioctl+0xa4/0x620
+> > >  ksys_ioctl+0x60/0x90
+> > >  ? ksys_write+0x4f/0xb0
+> > >  __x64_sys_ioctl+0x16/0x20
+> > >  do_syscall_64+0x5b/0x160
+> > >  entry_SYSCALL_64_after_hwframe+0x44/0xa9
+> > > RIP: 0033:0x7fcdc0d78c57
+> > > Code: Bad RIP value.
+> > > RSP: 002b:00007ffdd1ee6cf8 EFLAGS: 00000246 ORIG_RAX: 000000000000001=
+0
+> > > RAX: ffffffffffffffda RBX: 00007ffdd1ee888a RCX: 00007fcdc0d78c57
+> > > RDX: 00007ffdd1ee6da0 RSI: 0000000050009403 RDI: 0000000000000003
+> > > RBP: 00007ffdd1ee6da0 R08: 0000000000000000 R09: 00007ffdd1ee67e0
+> > > R10: 0000000000000000 R11: 0000000000000246 R12: 00007ffdd1ee888e
+> > > R13: 0000000000000003 R14: 0000000000000000 R15: 0000000000000000
+> > > kworker/u48:1   D    0  2505      2 0x80000000
+> > > Workqueue: btrfs-freespace-write btrfs_freespace_write_helper [btrfs]
+> > > Call Trace:
+> > >  ? __schedule+0x253/0x860
+> > >  schedule+0x28/0x80
+> > >  btrfs_tree_lock+0x130/0x210 [btrfs]
+> > >  ? finish_wait+0x80/0x80
+> > >  btrfs_search_slot+0x775/0x9f0 [btrfs]
+> > >  btrfs_mark_extent_written+0xb0/0xb20 [btrfs]
+> > >  ? join_transaction+0x22/0x3e0 [btrfs]
+> > >  btrfs_finish_ordered_io+0x2e0/0x7e0 [btrfs]
+> > >  ? syscall_return_via_sysret+0x13/0x83
+> > >  ? __switch_to_asm+0x34/0x70
+> > >  normal_work_helper+0xd3/0x2f0 [btrfs]
+> > >  process_one_work+0x1a1/0x350
+> > >  worker_thread+0x30/0x380
+> > >  ? pwq_unbound_release_workfn+0xd0/0xd0
+> > >  kthread+0x112/0x130
+> > >  ? kthread_create_worker_on_cpu+0x70/0x70
+> > >  ret_from_fork+0x35/0x40
+>
+>
+>
+> --
+> Filipe David Manana,
+>
+> =E2=80=9CWhether you think you can, or you think you can't =E2=80=94 you'=
+re right.=E2=80=9D

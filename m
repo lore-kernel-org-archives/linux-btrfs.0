@@ -2,35 +2,37 @@ Return-Path: <SRS0=XNjG=ND=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.5 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
-	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.5 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
+	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4F31DC67863
-	for <linux-btrfs@archiver.kernel.org>; Tue, 23 Oct 2018 09:45:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 455A6C46475
+	for <linux-btrfs@archiver.kernel.org>; Tue, 23 Oct 2018 10:04:17 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 187212075D
-	for <linux-btrfs@archiver.kernel.org>; Tue, 23 Oct 2018 09:45:57 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 187212075D
+	by mail.kernel.org (Postfix) with ESMTP id F1C7D20652
+	for <linux-btrfs@archiver.kernel.org>; Tue, 23 Oct 2018 10:04:16 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org F1C7D20652
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=gmx.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727527AbeJWSIe (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 23 Oct 2018 14:08:34 -0400
-Received: from mout.gmx.net ([212.227.15.15]:51669 "EHLO mout.gmx.net"
+        id S1728690AbeJWS05 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 23 Oct 2018 14:26:57 -0400
+Received: from mout.gmx.net ([212.227.15.15]:35589 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726277AbeJWSIe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 23 Oct 2018 14:08:34 -0400
+        id S1727542AbeJWS05 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 23 Oct 2018 14:26:57 -0400
 Received: from [0.0.0.0] ([210.140.77.29]) by mail.gmx.com (mrgmx001
- [212.227.17.184]) with ESMTPSA (Nemesis) id 0Lbdl5-1flpyM2079-00lB3R; Tue, 23
- Oct 2018 11:45:46 +0200
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 0LZiLk-1fl2Ri2Ixg-00lS84; Tue, 23
+ Oct 2018 12:04:11 +0200
 Received: from [0.0.0.0] ([210.140.77.29]) by mail.gmx.com (mrgmx001
- [212.227.17.184]) with ESMTPSA (Nemesis) id 0Lbdl5-1flpyM2079-00lB3R; Tue, 23
- Oct 2018 11:45:46 +0200
-Subject: Re: [PATCH 00/13] btrfs-progs: fixes of file extent in original and
- lowmem check
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 0LZiLk-1fl2Ri2Ixg-00lS84; Tue, 23
+ Oct 2018 12:04:11 +0200
+Subject: Re: [PATCH 01/13] btrfs-progs: lowmem: add argument path to
+ punch_extent_hole()
 To:     Su Yue <suy.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
 References: <20181023094147.7906-1-suy.fnst@cn.fujitsu.com>
+ <20181023094147.7906-2-suy.fnst@cn.fujitsu.com>
 From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
@@ -57,32 +59,32 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
  4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
  h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <75e8466f-3391-b063-6f88-e67acfb7a462@gmx.com>
-Date:   Tue, 23 Oct 2018 17:45:42 +0800
+Message-ID: <79d1c476-4df2-e422-8aa4-74815a5a53e2@gmx.com>
+Date:   Tue, 23 Oct 2018 18:04:07 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <20181023094147.7906-1-suy.fnst@cn.fujitsu.com>
+In-Reply-To: <20181023094147.7906-2-suy.fnst@cn.fujitsu.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
-X-Provags-ID: V03:K1:AZDDC0igRHBU86tvKQ09Yn9nzzLK6h5Y3+PAqPx0WqYQ5f6DIjo
- vUhXpnYcXA8lOskFY7dksCRdp1deUMJZW+sjoUZCY5QnRf81Nf5qIHa+6g/AnesLtLyZoin
- ZM3uGKl83/hHSVoIUHPvp3oJ2BVQKOYZYAjHa/tvNDYzJ6fTWBSTnK1VW/g3KwjeDCkhyYx
- ywqALznylYOwhYhY8d5/g==
-X-UI-Out-Filterresults: notjunk:1;V01:K0:fMERSybm964=:bh2BkU0O/krD/kmlOahDYu
- kfyWQ5XAb1Zb/qMtTOfK3/ay8Hu/yx5lekQl7diYC6FyHDlos1MnPIsKI8Fq/vXzMDrtvxNJN
- i2WQidb6qOu/prPOjd8l5FuM4ofkl+Pcwhy3mPw3TRjSP+IzEtztyqznbZLzlZTc4PSoLWX1K
- ACuqy9bFCRedsZGu1pfzPHdySpF7cZ/E1HW9Jf4K1bZb50NGwugLckF9MzJxLY3cJPY03WCG3
- tmVrRm3vsI21ONoQWj85yL1pmTim/tMmM2wlZgO92fSV5WW/Ld4yCOURFkhogRhmv4M3wT2fm
- HJUco/U9vyjJ5iR5n6QBlEP9OGrOBvz9iNo3sEd5KzC12+v5BFVPzdA30SU+MkMiVu5sdMqan
- wHYqmtursu3lm2DizMoEYQcvR8L9rfh69Yz823CJSRQVWVe/oZAzETKFaAhqOAPHOPwUbCBK4
- wkXzILEeqKhL3+1fibO1w8gfSJW12ojs2jb186lpbsDZZcFgoV7lNDYR6tzDeayKh4RY/LpJq
- Sq2stGRJtQNMJl5+kdh6V5TSqL1V3nUPtdos9BMC9Rn2s37H9XN1oRgfh/pxHFY4MSKW0jlSf
- QjaVS1nUOg4vlSRMDkxEZOhVqEhHc15BYXaTRk/j5OOUzn+/kKbkBCof3onAWhgxRudxx60LC
- b/IypNZnGlU1zCONoxP0OFdW/zMWOybsx13RoRdNkpR9ELaS9sfNws9Pu1eltyIALVYzIHz/0
- 0pWttmdvNRJ6iaIgQVkmk58cSWojZ7pd/qkNtM/dBFTqhhxD34JO8JMYgm52IBlu0L8jP9s31
- OLNwxAEQdW7npBh+rQ0vnREOqoVyrSvRCVCD7VGQnXErXV1Vms=
+X-Provags-ID: V03:K1:oo5yqJF2HhDRQazEAdFgROUBiSyYwWgzKktgpggBq1hm0MP+/ro
+ a2XbZ5tkJ13dQoJD2+QZl3CUxaAu1WNaxzfZjT52u2kIHYOjNuOQVWHHoCQiP3LC7q98WBg
+ 8o1Pj1ZqHIW1wZBHoEGXOtRtmH9104lxoMme9t29CdrbioMiuIs55lLp9/98XplRQMqG1iE
+ auO5OZi1sc6h5OLVdAgPA==
+X-UI-Out-Filterresults: notjunk:1;V01:K0:dSyb1v2xkBw=:scluKngnWhWFPGpEZXvrpF
+ rXdvaNxSz3UJ6UXJvOnbrjnM3pkmwRLbzHrZidZx7CUEKs6UO+SSQE17MB4/M1amml4Q5Laek
+ PW6cOOmP7KxwKR+0E9x+vfkCnNUV60CQJ0+t2M5gjCjyzOftxn68QOCsbAGDtO4O/uKGEUIR5
+ NzJYIXPzN2eXLCAzvoNREX0SAmrRWj5SVHgSmvooy1sbxutP+Ft6AAQltRPOMLmEo5gEfHGHu
+ n5+OjDJ2ScAGrQqEruDGukx8ninwQSPeNly7I/kghrI0e+aqEKIpy5S+PbQpGUvVglz3kYchi
+ tTzur6YStZBcd+kYqvVm+AS7aUfMyKGkmSG4ys18ESAwBkZXqyROmO4+w9oW06uCaZqx17hgm
+ Ykn6u1K0sze+i4UMCQdc6WoXkNe+foCamt2qqhUNaW3Ln8NENdBjusjHFA/62vWr8Hvy1kvfq
+ 8g9Gs05i28e5PZEH/JpPZeWXqpN9P/BYGBO1Xks4sBX4Z2rHXFkRVFIId2WBRiO1rwUQDubtZ
+ geAh4ZIzo/keCUYS+0rMr5z8rbdlt2LnFIwd5AzV/d5NYotGjeltGlPReRIC8Xge/xzPybWl8
+ gt6mzG7x9yR8qItU4ORN2uX8r6esvL7Iw9694EMAd+nAeT6GgQJBhUZCWTRIonwXS9gRL3+iw
+ dgoajJi6vguhsDO1mmg+qIT4UJh0hhIWZsh3NMjFZbRnti2q6Yvmrp4pnQw1thZ1VMbOOue9c
+ 9NGtr/2Nuz5Kgfh2jpR052gQczmg6cmIeZE3uz1OeP9yJXpoRYotSNnYmuZ0C3av9zXnvfp7Y
+ DwWhpiQnSJO6zv/OyVA9H9jNP7O0tCl6CDTCgUcdEI28tizYA8=
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -91,93 +93,105 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 On 2018/10/23 下午5:41, Su Yue wrote:
-> This patchset can be fetched from my repo:
-> https://github.com/Damenly/btrfs-progs/tree/file_extent_fixes
-> which is based on kdave/devel whose HEAD is:
-> commit 4f20c27ab33aab3efffe13cdae1b8837c821d0d7 (kdave/devel)
-> Author: Nikolay Borisov <nborisov@suse.com>
-> Date:   Fri Jun 15 07:13:50 2018 +0000
+> Since repair will do CoW, the outer path may be invalid,
+> add an argument path to punch_extent_hole().
+> When punch_extent_hole() returns, path will still point to the item
+> before calling punch_extent_hole();
 > 
->     btrfs-progs: tests: test for FST corruption detection/repair
+> Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
+
+Overall it looks OK, however still some nitpicks with a new bug exposed
+inlined below.
+
+> ---
+>  check/mode-lowmem.c | 21 ++++++++++++++++-----
+>  1 file changed, 16 insertions(+), 5 deletions(-)
 > 
-> This set fixes bugs of checking unaligned disk_bytenr extent_data and
-> orphan extent. Lowmem part patches can be used in common, so I put
-> this two fixes together.
-> 
-> For unaligned disk_bytenr extent_data, now original and lowmem check
-> both delete the corrupted part and punch a hole.
+> diff --git a/check/mode-lowmem.c b/check/mode-lowmem.c
+> index 1bce44f5658a..c8e4f13d816f 100644
+> --- a/check/mode-lowmem.c
+> +++ b/check/mode-lowmem.c
+> @@ -1710,15 +1710,20 @@ out:
+>  /*
+>   * Wrapper function of btrfs_punch_hole.
+>   *
+> + * @path:	will point to the item while calling the function.
+> + *
+>   * Returns 0 means success.
+>   * Returns not 0 means error.
+>   */
+> -static int punch_extent_hole(struct btrfs_root *root, u64 ino, u64 start,
+> -			     u64 len)
+> +static int punch_extent_hole(struct btrfs_root *root, struct btrfs_path *path,
+> +			     u64 ino, u64 start, u64 len)
+>  {
+>  	struct btrfs_trans_handle *trans;
+> -	int ret = 0;
+> +	struct btrfs_key key;
+> +	int ret;
+> +	int ret2;
 
-This method looks pretty valid.
+I didn't see the need to introduce another ret.
 
-> 
-> For orphan extent, lowmem mode has no change here.
-> Original mode discards function of detect and repair orphan extents
-> according extent items. Because as corruptions the community reported,
-> extent tree is more problematic than fs trees.
+@ret is used to record the error from btrfs_punch_hole(), which should
+only return <0 or 0.
 
-This also looks pretty nice to me.
+We should only continue for ret == 0, so we can overwrite @ret.
 
-Extent tree can't really be trusted, not to mention under most case it's
-extent tree itself corrupted.
+>  
+> +	btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
+>  	trans = btrfs_start_transaction(root, 1);
+>  	if (IS_ERR(trans))
+>  		return PTR_ERR(trans);
+> @@ -1732,6 +1737,12 @@ static int punch_extent_hole(struct btrfs_root *root, u64 ino, u64 start,
+>  		       ino);
+>  
+>  	btrfs_commit_transaction(trans, root);
 
-More over, even we lost every tree block of extent tree, it's still
-possible for btrfs-progs to recover the whole fs using btrfs-restore.
+Here since the wrapper is a little old and at that time we don't have
+btrfs_abort_transaction() (well, not really have one even now).
 
-(In theory, we should provide a mount option to allow RO mount to read
-the fs without a valid extent tree).
+The correct behavior is to abort trans and return error if we get error
+from btrfs_punch_hole().
 
-So this is the correct way to do.
+And if we get no error from btrfs_punch_hole(), we can reuse @ret for
+btrfs_search_slot(), no need to introduce @ret2.
+
+> +
+> +	btrfs_release_path(path);
+> +	ret2 = btrfs_search_slot(NULL, root, &key, path, 0, 0);
+> +	if (ret2 > 0)
+> +		ret2 = -ENOENT;
+> +	ret |= ret2;
+>  	return ret;
+>  }
+>  
+> @@ -1963,7 +1974,7 @@ static int check_file_extent(struct btrfs_root *root, struct btrfs_path *path,
+>  	/* Check EXTENT_DATA hole */
+>  	if (!no_holes && *end != fkey.offset) {
+>  		if (repair)
+> -			ret = punch_extent_hole(root, fkey.objectid,
+> +			ret = punch_extent_hole(root, path, fkey.objectid,
+>  						*end, fkey.offset - *end);
+>  		if (!repair || ret) {
+>  			err |= FILE_EXTENT_ERROR;
+> @@ -2534,7 +2545,7 @@ out:
+>  
+>  		if (!nbytes && !no_holes && extent_end < isize) {
+>  			if (repair)
+> -				ret = punch_extent_hole(root, inode_id,
+> +				ret = punch_extent_hole(root, path, inode_id,
+>  						extent_end, isize - extent_end);
+
+In this case, it's check_inode_item() and it's repair case for missing
+tailing hole.
+
+However isize can be unaligned, but hole extent should always be aligned.
+So there is another bug that repair could create invalid hole extents.
 
 Thanks,
 Qu
-> 
-> patch[1-2] fix minor bugs in lowmem repair.
-> patch[3] fixes false alert about repaired extent item in lowmem mode.
-> patch[4] fixes annoying alerts about gap in file extent in lowmem mode.
-> patch[5,6,7] enable check and repair unaligned disk_bytenr file extent
-> 	     in lowmem mode.
-> patch[8,9] revert support for orphan extent in original mode.
-> patch[10] fixes bug about finding right backrefs in original mode.
-> patch[11] adds support to detect and delete unaligned file extents
-> 	       in original.
-> patch[12] adds a test image which lacks of a file extent.
-> patch[13] enables lowmem repair of test case fsck-tests/001 which has
-> 	  	  unaligned disk_bytenr file extent.
-> 
-> 
-> Lu Fengqi (2):
->   btrfs-progs: lowmem: fix false alert about the existence of gaps in
->     the check_file_extent
->   btrfs-progs: tests: add case for inode lose one file extent
-> 
-> Su Yanjun (4):
->   btrfs-progs: Revert "btrfs-progs: Add repair and report function for
->     orphan file extent."
->   btrfs-progs: Revert "btrfs-progs: Record orphan data extent ref to
->     corresponding root."
->   btrfs-progs: check: fix bug in find_possible_backrefs
->   btrfs-progs: check: Delete file extent item with unaligned extent
->     backref
-> 
-> Su Yue (7):
->   btrfs-progs: lowmem: add argument path to punch_extent_hole()
->   btrfs-progs: lowmem: move nbytes check before isize check
->   btrfs-progs: lowmem: fix false alert if extent item has been repaired
->   btrfs-progs: lowmem: check unaligned disk_bytenr for extent_data
->   btrfs-progs: lowmem: rename delete_extent_tree_item() to delete_item()
->   btrfs-progs: lowmem: delete unaligned bytes extent data under repair
->   btrfs-progs: fsck-test: enable lowmem repair for case 001
-> 
->  check/main.c                                  | 581 +++++++++++-------
->  check/mode-lowmem.c                           | 272 ++++----
->  check/mode-original.h                         |  30 +-
->  ctree.h                                       |  10 +-
->  disk-io.c                                     |   2 +-
->  .../.lowmem_repairable                        |   0
->  .../.lowmem_repairable                        |   0
->  .../default_case.img                          | Bin 0 -> 3072 bytes
->  8 files changed, 538 insertions(+), 357 deletions(-)
->  create mode 100644 tests/fsck-tests/001-bad-file-extent-bytenr/.lowmem_repairable
->  create mode 100644 tests/fsck-tests/038-missing-one-file-extent/.lowmem_repairable
->  create mode 100644 tests/fsck-tests/038-missing-one-file-extent/default_case.img
+
+>  			if (!repair || ret) {
+>  				err |= NBYTES_ERROR;
 > 

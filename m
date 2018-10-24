@@ -2,64 +2,62 @@ Return-Path: <SRS0=Pubh=NE=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.3 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.3 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 630B1C67863
-	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Oct 2018 04:32:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C90DDC67863
+	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Oct 2018 04:32:03 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 197F020652
-	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Oct 2018 04:32:02 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9126820652
+	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Oct 2018 04:32:03 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="khtfAlY4"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 197F020652
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="N6KK+a+F"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 9126820652
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=oracle.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726285AbeJXM6W (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 24 Oct 2018 08:58:22 -0400
-Received: from userp2130.oracle.com ([156.151.31.86]:33710 "EHLO
-        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725928AbeJXM6W (ORCPT
+        id S1726449AbeJXM6Y (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 24 Oct 2018 08:58:24 -0400
+Received: from aserp2120.oracle.com ([141.146.126.78]:51656 "EHLO
+        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725928AbeJXM6Y (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 24 Oct 2018 08:58:22 -0400
-Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
-        by userp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w9O4TSjA003166
-        for <linux-btrfs@vger.kernel.org>; Wed, 24 Oct 2018 04:31:59 GMT
+        Wed, 24 Oct 2018 08:58:24 -0400
+Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
+        by aserp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w9O4U1f9007477
+        for <linux-btrfs@vger.kernel.org>; Wed, 24 Oct 2018 04:32:00 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
- date : message-id : in-reply-to : references; s=corp-2018-07-02;
- bh=a35QQRyhcBJeTYt2wJIZ2jii2BXiCXNOq9VJ8o3vo24=;
- b=khtfAlY4U37IKxVsqLbFp7JilaBrdp01vSRhB9GOIuHHXUAlF60Gnkze24q4ISXv42Vd
- J+qCwkP9MeCD1g3q1yxiHyjJ6SGoDKsF/LHE2PdK02hUxVsrX7eVt9L0DqzomSAucNcL
- MiIyvlcAwsgUWHGGLbC0atkZ2456VSn887xD7u6iReXzZZVgo3pAf8eEmzmOR+uW6c0C
- 8fVaZ2ECM5EX9z4n+d4ta5/k9Mk+xZKsuytlMQbweHvQhwnlFzKmiDEspzuDFVI9+7f7
- JFtSCUT7lxZbh6gqNAzmdHeIsP4aHk4fFN7rSzq9c6a9be5CUbNxXGZSYyM9kK2loQMu qg== 
-Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
-        by userp2130.oracle.com with ESMTP id 2n7usu93qc-1
+ date : message-id; s=corp-2018-07-02;
+ bh=qB8svSl+NmdgvGNRr/c6hRmbz+e/oUrgAVPXJGyQztE=;
+ b=N6KK+a+FgoDrA1tQEm590veqkBNqNWGQh/fsyoh/HCTcPwaZUc1IOh1AzGaW6CR6ZRZS
+ 3Y4V5HVfBg4fp9YKWxhPLGQX6rOZG8G04TzixL9s95rFFzyI8cZM99oSqJVlI0Jdd9Mg
+ VbOkpxRYIWKSsxQeNpZTv8P3t4/phE96i0HK2RSxmrBFoUi2R6GPWTokPSVPTkGIKHJh
+ f6yQ0w07wWAy5/A/oD0z0mmryHLkkCyyTgfxbzeT+RTxHBvDfDTXy1IVvbr2eT+59cko
+ X0oamB6nAVmAdJNcAvvmhkLo6AjTE801GgZDDtePns6vc6tpUEZsPTtg/F5EYVndLEHk 6A== 
+Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
+        by aserp2120.oracle.com with ESMTP id 2n7vaq11vn-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 24 Oct 2018 04:31:59 +0000
-Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w9O4VwU4027983
+        for <linux-btrfs@vger.kernel.org>; Wed, 24 Oct 2018 04:32:00 +0000
+Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
+        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id w9O4Vsw7009138
         (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 24 Oct 2018 04:31:58 GMT
+        for <linux-btrfs@vger.kernel.org>; Wed, 24 Oct 2018 04:31:55 GMT
 Received: from abhmp0012.oracle.com (abhmp0012.oracle.com [141.146.116.18])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w9O4VwsM020176
-        for <linux-btrfs@vger.kernel.org>; Wed, 24 Oct 2018 04:31:58 GMT
+        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w9O4Vsuh005284
+        for <linux-btrfs@vger.kernel.org>; Wed, 24 Oct 2018 04:31:54 GMT
 Received: from tpasj.oracle.com (/192.188.170.107)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Tue, 23 Oct 2018 21:31:58 -0700
+        with ESMTP ; Tue, 23 Oct 2018 21:31:54 -0700
 From:   Anand Jain <anand.jain@oracle.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH] fstests: btrfs use forget if not reload
-Date:   Wed, 24 Oct 2018 12:31:42 +0800
-Message-Id: <1540355502-22489-4-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH v10] Add cli and ioctl to forget scanned device(s)
+Date:   Wed, 24 Oct 2018 12:31:39 +0800
+Message-Id: <1540355502-22489-1-git-send-email-anand.jain@oracle.com>
 X-Mailer: git-send-email 1.8.3.1
-In-Reply-To: <1540355502-22489-1-git-send-email-anand.jain@oracle.com>
-References: <1540355502-22489-1-git-send-email-anand.jain@oracle.com>
 X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9055 signatures=668683
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=1 malwarescore=0
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=3 malwarescore=0
  phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
  adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
  engine=8.0.1-1807170000 definitions=main-1810240039
@@ -68,24 +66,89 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-btrfs reload was introduced to cleanup the device list inside the btrfs
-kernel module.
+v10:
+ Make btrfs-progs changes more readable.
+ With an effort to keep the known bug [1] as it is..
+  [1]
+   The cli 'btrfs device scan --all /dev/sdb' which should have scanned
+    only one device, ends up scanning all the devices and I am not trying
+    to fix this bug in this patch because..
+  . -d|--all is marked as deprecated, I hope -d option would go away
+  . For now some script might be using this bug as a feature, and fixing
+    this bug might lead to mount failure.
 
-The problem with the reload approach is that you can't run btrfs test
-cases 124,125, 154 and 164 on the system with btrfs as root fs.
+v9:
+ Make forget as a btrfs device scan option.
+ Use forget in the fstests, now you can run fstests with btrfs as rootfs
+  which helps to exercise the uuid_mutex lock.
 
-Now as we are introducing the btrfs forget feature as an btrfs device
-scan option [1], so here are its pertaining changes in the fstests.
+v8:
+ Change log update in the kernel patch.
 
-So these changes ensures we use the forget feature where available and
-if its not then falls back to the reload approach.
+v7:
+ Use struct btrfs_ioctl_vol_args (instead of struct
+  btrfs_ioctl_vol_args_v2) as its inline with other ioctl
+  btrfs-control
+ The CLI usage/features remains same. However internally the ioctl flag
+  is not required to delete all the unmounted devices. Instead leave
+  btrfs_ioctl_vol_args::name NULL.
+
+v6:
+ Use the changed fn name btrfs_free_stale_devices().
+
+ Change in title:
+ Old v5:
+ Cover-letter:
+  [PATCH v5] Add cli and ioctl to ignore a scanned device
+ Kernel:
+  [PATCH v5] btrfs: introduce feature to ignore a btrfs device
+ Progs:
+  [PATCH v5] btrfs-progs: add 'btrfs device ignore' cli
+
+v5:
+  Adds feature to delete all stale devices
+  Reuses btrfs_free_stale_devices() fn and so depends on the
+    patch-set [1] in the ML.
+  Uses struct btrfs_ioctl_vol_args_v2 instead of
+    struct btrfs_ioctl_vol_args as arg
+  Does the device path matching instead of btrfs_device matching
+    (we won't delete the mounted device as btrfs_free_stale_devices()
+    checks for it)
+v4:
+  No change. But as the ML thread may be confusing, so resend.
+v3:
+  No change. Send to correct ML.
+v2:
+  Accepts review from Nikolay, details are in the specific patch.
+  Patch 1/2 is renamed from
+    [PATCH 1/2] btrfs: refactor btrfs_free_stale_device() to get device list delete
+  to
+    [PATCH 1/2] btrfs: add function to device list delete
+
+Adds cli and ioctl to forget a scanned device or forget all stale
+devices in the kernel.
+
+
+Anand Jain (1):
+  btrfs: introduce feature to forget a btrfs device
+
+ fs/btrfs/super.c           | 3 +++
+ fs/btrfs/volumes.c         | 9 +++++++++
+ fs/btrfs/volumes.h         | 1 +
+ include/uapi/linux/btrfs.h | 2 ++
+ 4 files changed, 15 insertions(+)
+
+Anand Jain (1):
+  btrfs-progs: add cli to forget one or all scanned devices
+
+ cmds-device.c | 63 ++++++++++++++++++++++++++++++++++++++++++++++++++---------
+ ioctl.h       |  2 ++
+ 2 files changed, 56 insertions(+), 9 deletions(-)
 
 [1]
-btrfs-progs: add cli to forget one or all scanned devices
-btrfs: introduce feature to forget a btrfs device
+Anand Jain (1):
+  fstests: btrfs use forget if not reload
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
  common/btrfs    | 20 ++++++++++++++++++++
  tests/btrfs/124 |  6 +++---
  tests/btrfs/125 |  6 +++---
@@ -93,149 +156,6 @@ Signed-off-by: Anand Jain <anand.jain@oracle.com>
  tests/btrfs/164 |  4 ++--
  5 files changed, 31 insertions(+), 11 deletions(-)
 
-diff --git a/common/btrfs b/common/btrfs
-index 26dc0bb9600f..c7fbec11c8c1 100644
---- a/common/btrfs
-+++ b/common/btrfs
-@@ -374,3 +374,23 @@ _scratch_btrfs_sectorsize()
- 	$BTRFS_UTIL_PROG inspect-internal dump-super $SCRATCH_DEV |\
- 		grep sectorsize | awk '{print $2}'
- }
-+
-+_btrfs_supports_forget()
-+{
-+	$BTRFS_UTIL_PROG device scan --help | grep -wq forget && \
-+		$BTRFS_UTIL_PROG device scan --forget > /dev/null 2>&1
-+}
-+
-+_require_btrfs_forget_if_not_fs_loadable()
-+{
-+	_btrfs_supports_forget && return
-+
-+	_require_loadable_fs_module "btrfs"
-+}
-+
-+_btrfs_forget_if_not_fs_reload()
-+{
-+	_btrfs_supports_forget && return
-+
-+	_reload_fs_module "btrfs"
-+}
-diff --git a/tests/btrfs/124 b/tests/btrfs/124
-index ce3ad6aa3a58..edbeff1443f5 100755
---- a/tests/btrfs/124
-+++ b/tests/btrfs/124
-@@ -51,7 +51,7 @@ _supported_fs btrfs
- _supported_os Linux
- _require_scratch_dev_pool 2
- _test_unmount
--_require_loadable_fs_module "btrfs"
-+_require_btrfs_forget_if_not_fs_loadable
- 
- _scratch_dev_pool_get 2
- 
-@@ -86,7 +86,7 @@ echo "clean btrfs ko" >> $seqres.full
- _scratch_unmount
- 
- # un-scan the btrfs devices
--_reload_fs_module "btrfs"
-+_btrfs_forget_if_not_fs_reload
- 
- echo >> $seqres.full
- echo "-----Write degraded mount fill upto $max_fs_sz bytes-----" >> $seqres.full
-@@ -125,7 +125,7 @@ echo
- echo "Mount degraded with the other dev"
- _scratch_unmount
- # un-scan the btrfs devices
--_reload_fs_module "btrfs"
-+_btrfs_forget_if_not_fs_reload
- _mount -o degraded $dev2 $SCRATCH_MNT >>$seqres.full 2>&1
- _run_btrfs_util_prog filesystem show
- checkpoint3=`md5sum $SCRATCH_MNT/tf2`
-diff --git a/tests/btrfs/125 b/tests/btrfs/125
-index e38de264b28e..9161a2ddeaad 100755
---- a/tests/btrfs/125
-+++ b/tests/btrfs/125
-@@ -50,7 +50,7 @@ _supported_fs btrfs
- _supported_os Linux
- _require_scratch_dev_pool 3
- _test_unmount
--_require_loadable_fs_module "btrfs"
-+_require_btrfs_forget_if_not_fs_loadable
- 
- _scratch_dev_pool_get 3
- 
-@@ -102,7 +102,7 @@ echo "unmount" >> $seqres.full
- _scratch_unmount
- echo "clean btrfs ko" >> $seqres.full
- # un-scan the btrfs devices
--_reload_fs_module "btrfs"
-+_btrfs_forget_if_not_fs_reload
- _mount -o degraded,device=$dev2 $dev1 $SCRATCH_MNT >>$seqres.full 2>&1
- dd if=/dev/zero of="$SCRATCH_MNT"/tf2 bs=$bs count=$count \
- 					>>$seqres.full 2>&1
-@@ -138,7 +138,7 @@ echo "Mount degraded but with other dev"
- 
- _scratch_unmount
- # un-scan the btrfs devices
--_reload_fs_module "btrfs"
-+_btrfs_forget_if_not_fs_reload
- 
- _mount -o degraded,device=${dev2} $dev3 $SCRATCH_MNT >>$seqres.full 2>&1
- 
-diff --git a/tests/btrfs/154 b/tests/btrfs/154
-index 99ea232aba4c..01745d20e9fc 100755
---- a/tests/btrfs/154
-+++ b/tests/btrfs/154
-@@ -36,7 +36,7 @@ rm -f $seqres.full
- _supported_fs btrfs
- _supported_os Linux
- _require_scratch_dev_pool 2
--_require_loadable_fs_module "btrfs"
-+_require_btrfs_forget_if_not_fs_loadable
- 
- _scratch_dev_pool_get 2
- 
-@@ -90,7 +90,7 @@ degrade_mount_write()
- 
- 	echo "clean btrfs ko" >> $seqres.full
- 	# un-scan the btrfs devices
--	_reload_fs_module "btrfs"
-+	_btrfs_forget_if_not_fs_reload
- 	_mount -o degraded $DEV1 $SCRATCH_MNT >>$seqres.full 2>&1
- 	cnt=$(( $COUNT/10 ))
- 	dd if=/dev/urandom of="$SCRATCH_MNT"/tf1 bs=$bs count=$cnt \
-@@ -142,7 +142,7 @@ verify()
- 	echo "unmount" >> $seqres.full
- 
- 	_scratch_unmount
--	_reload_fs_module "btrfs"
-+	_btrfs_forget_if_not_fs_reload
- 	_mount -o degraded $DEV2 $SCRATCH_MNT >>$seqres.full 2>&1
- 	verify_checkpoint1=`md5sum $SCRATCH_MNT/tf1`
- 	verify_checkpoint2=`md5sum $SCRATCH_MNT/tf2`
-diff --git a/tests/btrfs/164 b/tests/btrfs/164
-index 097191a0e493..55042c4035e0 100755
---- a/tests/btrfs/164
-+++ b/tests/btrfs/164
-@@ -36,7 +36,7 @@ rm -f $seqres.full
- # Modify as appropriate.
- _supported_fs btrfs
- _supported_os Linux
--_require_loadable_fs_module "btrfs"
-+_require_btrfs_forget_if_not_fs_loadable
- _require_scratch_dev_pool 2
- 
- _scratch_dev_pool_get 2
-@@ -69,7 +69,7 @@ delete_seed()
- {
- 	_run_btrfs_util_prog device delete $dev_seed $SCRATCH_MNT
- 	_scratch_unmount
--	_reload_fs_module "btrfs"
-+	_btrfs_forget_if_not_fs_reload
- 	run_check _mount $dev_sprout $SCRATCH_MNT
- 	_run_btrfs_util_prog filesystem show -m $SCRATCH_MNT
- 	echo -- sprout --
 -- 
 1.8.3.1
 

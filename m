@@ -2,163 +2,185 @@ Return-Path: <SRS0=Pubh=NE=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.8 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_PASS,URIBL_BLOCKED,USER_AGENT_NEOMUTT autolearn=ham autolearn_force=no
+X-Spam-Status: No, score=-7.3 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0248FC004D3
-	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Oct 2018 04:08:31 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2630DC67863
+	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Oct 2018 04:31:37 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id AC39320651
-	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Oct 2018 04:08:30 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id DDC3A20652
+	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Oct 2018 04:31:36 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="WJLYmT4K"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org AC39320651
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=toxicpanda.com
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="S9QTc9OB"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org DDC3A20652
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=oracle.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726338AbeJXMes (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 24 Oct 2018 08:34:48 -0400
-Received: from mail-qk1-f195.google.com ([209.85.222.195]:36747 "EHLO
-        mail-qk1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725996AbeJXMer (ORCPT
+        id S1726577AbeJXM55 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 24 Oct 2018 08:57:57 -0400
+Received: from userp2120.oracle.com ([156.151.31.85]:43120 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726224AbeJXM55 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 24 Oct 2018 08:34:47 -0400
-Received: by mail-qk1-f195.google.com with SMTP id q184-v6so2338496qkd.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 23 Oct 2018 21:08:28 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=date:from:to:cc:subject:message-id:references:mime-version
-         :content-disposition:in-reply-to:user-agent;
-        bh=UfT8d/PWxRStfdSqPQHL3KYkSNpdlCVP5hz2NrKt1LU=;
-        b=WJLYmT4KNgcVJKX3vVaGbqhtiuQ7rZx72O7VZ3Lewsj9/SAddlepIRAJEEMntL11U0
-         ebJ0fjf3352QzpNiel3vfwYmToPUOzAIOGxBg2JA7uZbNf6x8JPYlYHf2W4V4JL2oYhN
-         RpAgpxeg+vfC8cCifwcf44bJfw4INjgd/ryYIxYVLlI4g5tFbMwE5gRxmWq0KL7oyGGO
-         EhQLbzsabLdVKtfwMIqENnYO4SyDArgsrgxsMVWlEGMcZWzPBIa7pbgezdGwqKLA27NN
-         cwxW+2l5AIe/Y+3qIx314/4sodCOMRD73ofLBdw5rsb9gUtCsL9rUEDDlKqOpQ/M0gdl
-         ic5Q==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
-         :mime-version:content-disposition:in-reply-to:user-agent;
-        bh=UfT8d/PWxRStfdSqPQHL3KYkSNpdlCVP5hz2NrKt1LU=;
-        b=f+Iosz1rKzpCf8eaDiHTJf493cYh5SsgMmOFWTgWr4nU+byXl3pbISAqaSiE9uPtkF
-         sfFaRwgiSPQYcTvABUhSaCmTT4LAprl1g4ghgGVL0Ei4DTYFFGYmtqzjeC/mVtxzr3cE
-         WNRE4G4JRtcLs5DFBDBiEfKz9+e0vZ4JQ5U+6WbbgKDzkNdYtdt8g+6Rw19ctDPbCbqr
-         2q4ROE8uu549P2IXgjN7TQUtRUWYuCTGDmW8UtqD4v1rJ3za+TQKlOmXByyOZSXdt2B9
-         ajW6ECPMujgJUOJ/xi3AIvKCcWRlr0/50Y4QSwXhmmuGKN0nnxNaPcr0g43eSImUxmN8
-         Rmtg==
-X-Gm-Message-State: AGRZ1gKXoMCdWbhvH5btOhedmYVfDjhn4xiObmb3JCC0t4/9K6Cl9oYc
-        HEAgWGNXYGjkH/q9TpJeP0efa3HsIZQOPg==
-X-Google-Smtp-Source: AJdET5e5gtClFOAv9GkWXolRU7N9caxm9TRi+yBIGP8sbxfH0q/iy5ilnryCjx5S39knVk4GACCP8Q==
-X-Received: by 2002:a37:86c1:: with SMTP id i184-v6mr842078qkd.209.1540354107750;
-        Tue, 23 Oct 2018 21:08:27 -0700 (PDT)
-Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id s71-v6sm2756581qkl.86.2018.10.23.21.08.26
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Tue, 23 Oct 2018 21:08:26 -0700 (PDT)
-Date:   Wed, 24 Oct 2018 00:08:25 -0400
-From:   Josef Bacik <josef@toxicpanda.com>
-To:     Filipe Manana <fdmanana@kernel.org>
-Cc:     Josef Bacik <josef@toxicpanda.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Filipe David Borba Manana <fdmanana@suse.com>
-Subject: Re: [PATCH v3] Btrfs: fix deadlock on tree root leaf when finding
- free extent
-Message-ID: <20181024040228.3gpipdaohezdsrm2@MacBook-Pro-91.local>
-References: <20181022090946.1150-1-fdmanana@kernel.org>
- <20181022191037.18471-1-fdmanana@kernel.org>
- <20181022191848.awvitym7tw24kpgx@destiny>
- <CAL3q7H5Fk3+jh+jaMHkJpSZ5VdNJTN=nNTEiKyqRPerRRkqP7g@mail.gmail.com>
+        Wed, 24 Oct 2018 08:57:57 -0400
+Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
+        by userp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w9O4TG4K152682;
+        Wed, 24 Oct 2018 04:31:31 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to :
+ references : from : message-id : date : mime-version : in-reply-to :
+ content-type : content-transfer-encoding; s=corp-2018-07-02;
+ bh=qI/jh/hfkqg/l8zugtSUwfi6rr+7eZI/hQYzzbMeaXs=;
+ b=S9QTc9OB4qXFWmdJeD4fxARPJMN5+vDQTZcyykcT750cQQj/0zdAqAED+JEn6VYtJ1GO
+ ap5ndss3B0KqLQOZbIu2JZAcnKaKoWSOz9Lv3tMALJKy581809HSv1onTvF7i0ZmF14C
+ DGT84pG2UBkKAqjMqoqy1ikyXye8x+D8yNAaRWs2JMIFLpdsVKhAXUXmHTMZy8RRmo5E
+ AoW/rS5p7Q78yiJliWRvxRQTlW3xOWg2dJC5kwDXhYsfe7BbOwIdwsa87bq+vtVRWJ/h
+ Fqmd3pUl8o9nigpBeYsqugL6aUdwzNymJU2xKsyT6/pIlMauMsSJmibzmxXR69r9mfdE Ew== 
+Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
+        by userp2120.oracle.com with ESMTP id 2n7w0qs0ck-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Wed, 24 Oct 2018 04:31:31 +0000
+Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
+        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id w9O4VP4S008112
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Wed, 24 Oct 2018 04:31:25 GMT
+Received: from abhmp0003.oracle.com (abhmp0003.oracle.com [141.146.116.9])
+        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w9O4VPBd006673;
+        Wed, 24 Oct 2018 04:31:25 GMT
+Received: from [10.190.205.83] (/192.188.170.107)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Tue, 23 Oct 2018 21:31:25 -0700
+Subject: Re: [PATCH] btrfs: introduce feature to forget a btrfs device
+To:     Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
+References: <1539317191-9265-1-git-send-email-anand.jain@oracle.com>
+ <1539317191-9265-2-git-send-email-anand.jain@oracle.com>
+ <286b1a54-1cd4-2e70-781a-a6ea4255572d@suse.com>
+From:   Anand Jain <anand.jain@oracle.com>
+Message-ID: <e9fd58a1-ba7c-6c7f-bb19-0ae8f3dcf12a@oracle.com>
+Date:   Wed, 24 Oct 2018 12:31:17 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:52.0) Gecko/20100101
+ Thunderbird/52.9.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <CAL3q7H5Fk3+jh+jaMHkJpSZ5VdNJTN=nNTEiKyqRPerRRkqP7g@mail.gmail.com>
-User-Agent: NeoMutt/20180716
+In-Reply-To: <286b1a54-1cd4-2e70-781a-a6ea4255572d@suse.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
+X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9055 signatures=668683
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=2 malwarescore=0
+ phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
+ adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.0.1-1807170000 definitions=main-1810240039
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Oct 22, 2018 at 11:05:08PM +0100, Filipe Manana wrote:
-> On Mon, Oct 22, 2018 at 8:18 PM Josef Bacik <josef@toxicpanda.com> wrote:
-> >
-> > On Mon, Oct 22, 2018 at 08:10:37PM +0100, fdmanana@kernel.org wrote:
-> > > From: Filipe Manana <fdmanana@suse.com>
-> > >
-> > > When we are writing out a free space cache, during the transaction commit
-> > > phase, we can end up in a deadlock which results in a stack trace like the
-> > > following:
-> > >
-> > >  schedule+0x28/0x80
-> > >  btrfs_tree_read_lock+0x8e/0x120 [btrfs]
-> > >  ? finish_wait+0x80/0x80
-> > >  btrfs_read_lock_root_node+0x2f/0x40 [btrfs]
-> > >  btrfs_search_slot+0xf6/0x9f0 [btrfs]
-> > >  ? evict_refill_and_join+0xd0/0xd0 [btrfs]
-> > >  ? inode_insert5+0x119/0x190
-> > >  btrfs_lookup_inode+0x3a/0xc0 [btrfs]
-> > >  ? kmem_cache_alloc+0x166/0x1d0
-> > >  btrfs_iget+0x113/0x690 [btrfs]
-> > >  __lookup_free_space_inode+0xd8/0x150 [btrfs]
-> > >  lookup_free_space_inode+0x5b/0xb0 [btrfs]
-> > >  load_free_space_cache+0x7c/0x170 [btrfs]
-> > >  ? cache_block_group+0x72/0x3b0 [btrfs]
-> > >  cache_block_group+0x1b3/0x3b0 [btrfs]
-> > >  ? finish_wait+0x80/0x80
-> > >  find_free_extent+0x799/0x1010 [btrfs]
-> > >  btrfs_reserve_extent+0x9b/0x180 [btrfs]
-> > >  btrfs_alloc_tree_block+0x1b3/0x4f0 [btrfs]
-> > >  __btrfs_cow_block+0x11d/0x500 [btrfs]
-> > >  btrfs_cow_block+0xdc/0x180 [btrfs]
-> > >  btrfs_search_slot+0x3bd/0x9f0 [btrfs]
-> > >  btrfs_lookup_inode+0x3a/0xc0 [btrfs]
-> > >  ? kmem_cache_alloc+0x166/0x1d0
-> > >  btrfs_update_inode_item+0x46/0x100 [btrfs]
-> > >  cache_save_setup+0xe4/0x3a0 [btrfs]
-> > >  btrfs_start_dirty_block_groups+0x1be/0x480 [btrfs]
-> > >  btrfs_commit_transaction+0xcb/0x8b0 [btrfs]
-> > >
-> > > At cache_save_setup() we need to update the inode item of a block group's
-> > > cache which is located in the tree root (fs_info->tree_root), which means
-> > > that it may result in COWing a leaf from that tree. If that happens we
-> > > need to find a free metadata extent and while looking for one, if we find
-> > > a block group which was not cached yet we attempt to load its cache by
-> > > calling cache_block_group(). However this function will try to load the
-> > > inode of the free space cache, which requires finding the matching inode
-> > > item in the tree root - if that inode item is located in the same leaf as
-> > > the inode item of the space cache we are updating at cache_save_setup(),
-> > > we end up in a deadlock, since we try to obtain a read lock on the same
-> > > extent buffer that we previously write locked.
-> > >
-> > > So fix this by skipping the loading of free space caches of any block
-> > > groups that are not yet cached (rare cases) if we are COWing an extent
-> > > buffer from the root tree and space caching is enabled (-o space_cache
-> > > mount option). This is a rare case and its downside is failure to
-> > > find a free extent (return -ENOSPC) when all the already cached block
-> > > groups have no free extents.
-> > >
-> > > Reported-by: Andrew Nelson <andrew.s.nelson@gmail.com>
-> > > Link: https://lore.kernel.org/linux-btrfs/CAPTELenq9x5KOWuQ+fa7h1r3nsJG8vyiTH8+ifjURc_duHh2Wg@mail.gmail.com/
-> > > Fixes: 9d66e233c704 ("Btrfs: load free space cache if it exists")
-> > > Tested-by: Andrew Nelson <andrew.s.nelson@gmail.com>
-> > > Signed-off-by: Filipe Manana <fdmanana@suse.com>
-> >
-> > Great, thanks,
-> >
-> > Reviewed-by: Josef Bacik <josef@toxicpanda.com>
-> 
-> So this makes many fstests occasionally fail with aborted transaction
-> due to ENOSPC.
-> It's late and I haven't verified yet, but I suppose this is because we
-> always skip loading the cache regardless of currently being COWing an
-> existing leaf or allocating a new one (growing the tree).
-> Needs to be fixed.
-> 
 
-How about we just use path->search_commit_root?  If we're loading the cache we
-just want the last committed version, it's not like we read it after we've
-written it.  Then we can go back to business as usual.  Thanks,
 
-Josef
+On 10/12/2018 04:48 PM, Nikolay Borisov wrote:
+> 
+> 
+> On 12.10.2018 07:06, Anand Jain wrote:
+>> Support for a new command 'btrfs dev forget [dev]' is proposed here
+>> to undo the effects of 'btrfs dev scan [dev]'. For this purpose
+>> this patch proposes to use ioctl #5 as it was empty.
+>> 	IOW(BTRFS_IOCTL_MAGIC, 5, ..)
+>> This patch adds new ioctl BTRFS_IOC_FORGET_DEV which can be sent from
+>> the /dev/btrfs-control to forget one or all devices, (devices which are
+>> not mounted) from the btrfs kernel.
+>>
+>> The argument it takes is struct btrfs_ioctl_vol_args, and ::name can be
+>> set to specify the device path. And all unmounted devices can be removed
+>> from the kernel if no device path is provided.
+>>
+>> Again, the devices are removed only if the relevant fsid aren't mounted.
+>>
+>> This new cli can provide..
+>>   . Release of unwanted btrfs_fs_devices and btrfs_devices memory if the
+>>     device is not going to be mounted.
+>>   . Ability to mount the device in degraded mode when one of the other
+>>     device is corrupted like in split brain raid1.
+>>   . Running test cases which requires btrfs.ko-reload if the rootfs
+>>     is btrfs.
+>>
+>> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+>> ---
+>>   fs/btrfs/super.c           | 3 +++
+>>   fs/btrfs/volumes.c         | 9 +++++++++
+>>   fs/btrfs/volumes.h         | 1 +
+>>   include/uapi/linux/btrfs.h | 2 ++
+>>   4 files changed, 15 insertions(+)
+>>
+>> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+>> index 6601c9aa5e35..f14610ef1c66 100644
+>> --- a/fs/btrfs/super.c
+>> +++ b/fs/btrfs/super.c
+>> @@ -2244,6 +2244,9 @@ static long btrfs_control_ioctl(struct file *file, unsigned int cmd,
+>>   		ret = PTR_ERR_OR_ZERO(device);
+>>   		mutex_unlock(&uuid_mutex);
+>>   		break;
+>> +	case BTRFS_IOC_FORGET_DEV:
+>> +		ret = btrfs_forget_devices(vol->name);
+>> +		break;
+>>   	case BTRFS_IOC_DEVICES_READY:
+>>   		mutex_lock(&uuid_mutex);
+>>   		device = btrfs_scan_one_device(vol->name, FMODE_READ,
+>> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+>> index f4405e430da6..e2ab203d9c1d 100644
+>> --- a/fs/btrfs/volumes.c
+>> +++ b/fs/btrfs/volumes.c
+>> @@ -1208,6 +1208,15 @@ static int btrfs_read_disk_super(struct block_device *bdev, u64 bytenr,
+>>   	return 0;
+>>   }
+>>   
+>> +int btrfs_forget_devices(const char *path)
+>> +{
+>> +	mutex_lock(&uuid_mutex);
+>> +	btrfs_free_stale_devices(strlen(path) ? path:NULL, NULL);
+> 
+> Checking the len of path is redundant since userspace will pass a zeroed
+> struct which will be NULL in any case. Additionally in
+> btrfs_free_stalce_devices there is existing check whether path is set or
+> not.
+
+That won't work. btrfs_free_stalce_devices() expects the pointer to be 
+NULL. User space has zeroed the name which is char array and its pointer 
+is not NULL.
+
+Thanks, Anand
+
+>> +	mutex_unlock(&uuid_mutex);
+>> +
+>> +	return 0;
+>> +}
+>> +
+>>   /*
+>>    * Look for a btrfs signature on a device. This may be called out of the mount path
+>>    * and we are not allowed to call set_blocksize during the scan. The superblock
+>> diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+>> index 23e9285d88de..394079d5d08d 100644
+>> --- a/fs/btrfs/volumes.h
+>> +++ b/fs/btrfs/volumes.h
+>> @@ -406,6 +406,7 @@ int btrfs_open_devices(struct btrfs_fs_devices *fs_devices,
+>>   		       fmode_t flags, void *holder);
+>>   struct btrfs_device *btrfs_scan_one_device(const char *path,
+>>   					   fmode_t flags, void *holder);
+>> +int btrfs_forget_devices(const char *path);
+>>   int btrfs_close_devices(struct btrfs_fs_devices *fs_devices);
+>>   void btrfs_free_extra_devids(struct btrfs_fs_devices *fs_devices, int step);
+>>   void btrfs_assign_next_active_device(struct btrfs_device *device,
+>> diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+>> index 5ca1d21fc4a7..b1be7f828cb4 100644
+>> --- a/include/uapi/linux/btrfs.h
+>> +++ b/include/uapi/linux/btrfs.h
+>> @@ -836,6 +836,8 @@ enum btrfs_err_code {
+>>   				   struct btrfs_ioctl_vol_args)
+>>   #define BTRFS_IOC_SCAN_DEV _IOW(BTRFS_IOCTL_MAGIC, 4, \
+>>   				   struct btrfs_ioctl_vol_args)
+>> +#define BTRFS_IOC_FORGET_DEV _IOW(BTRFS_IOCTL_MAGIC, 5, \
+>> +				   struct btrfs_ioctl_vol_args)
+>>   /* trans start and trans end are dangerous, and only for
+>>    * use by applications that know how to avoid the
+>>    * resulting deadlocks
+>>

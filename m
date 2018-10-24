@@ -4,35 +4,34 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-6.5 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
 	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
-	version=3.4.0
+	SIGNED_OFF_BY,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 42040C46475
-	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Oct 2018 02:55:45 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3D074C46475
+	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Oct 2018 02:57:27 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 159B32082F
-	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Oct 2018 02:55:45 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 159B32082F
+	by mail.kernel.org (Postfix) with ESMTP id F2ABA2082F
+	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Oct 2018 02:57:26 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org F2ABA2082F
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=gmx.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726414AbeJXLVp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 24 Oct 2018 07:21:45 -0400
-Received: from mout.gmx.net ([212.227.17.20]:51971 "EHLO mout.gmx.net"
+        id S1726258AbeJXLX1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 24 Oct 2018 07:23:27 -0400
+Received: from mout.gmx.net ([212.227.17.20]:58435 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726073AbeJXLVp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 24 Oct 2018 07:21:45 -0400
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx102
- [212.227.17.174]) with ESMTPSA (Nemesis) id 0Me5Q2-1fy6pT0H8g-00PxFg; Wed, 24
- Oct 2018 02:13:54 +0200
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx102
- [212.227.17.174]) with ESMTPSA (Nemesis) id 0Me5Q2-1fy6pT0H8g-00PxFg; Wed, 24
- Oct 2018 02:13:54 +0200
-Subject: Re: [PATCH 05/13] btrfs-progs: lowmem: check unaligned disk_bytenr
- for extent_data
+        id S1725998AbeJXLX1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 24 Oct 2018 07:23:27 -0400
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx103
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 0MVvDo-1g8WCm2NHE-00X5IG; Wed, 24
+ Oct 2018 02:15:29 +0200
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx103
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 0MVvDo-1g8WCm2NHE-00X5IG; Wed, 24
+ Oct 2018 02:15:29 +0200
+Subject: Re: [PATCH 06/13] btrfs-progs: lowmem: rename
+ delete_extent_tree_item() to delete_item()
 To:     Su Yue <suy.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
 References: <20181023094147.7906-1-suy.fnst@cn.fujitsu.com>
- <20181023094147.7906-6-suy.fnst@cn.fujitsu.com>
+ <20181023094147.7906-7-suy.fnst@cn.fujitsu.com>
 From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
@@ -59,32 +58,32 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
  4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
  h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <bd2b2004-0396-50e1-4b74-2e3a910907d5@gmx.com>
-Date:   Wed, 24 Oct 2018 08:13:49 +0800
+Message-ID: <4ce4613b-c1ac-24db-e916-996e012e7e86@gmx.com>
+Date:   Wed, 24 Oct 2018 08:15:24 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <20181023094147.7906-6-suy.fnst@cn.fujitsu.com>
+In-Reply-To: <20181023094147.7906-7-suy.fnst@cn.fujitsu.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
-X-Provags-ID: V03:K1:K2IMIMFyepGzXF/7YLrGWGGeP/UoiwS3XCl4j8b/0wrZOeTafe7
- Z356yNmLJ8Xer1PxQk4GeJIol8Idfg2n/3DfU4UxLSCf6PtMOSoges5ifsEEgMkGkxZRPUy
- IVxFxVyrwBva6/+CHRfVwLqdQIDbk25OJNPcGJAyFtFSg6EQ5L7zjRAL1x/+Z1mHgoy4+Lk
- ZBM14/RfNnwBrHliDRleA==
-X-UI-Out-Filterresults: notjunk:1;V01:K0:NgdP/mqy5Mc=:CQXvy+WcwCPaD0lNMZupYp
- o9a/XWzbr8+lRz4beKVmgyg90VgLGZgiK5SnV4WbzF69MpmQfY7aUgsK5TaNCDIjbTIlv3+it
- WzjxXWf2gl2EIao04b7MCVBvYQzV7a8NMMB13oC0MwPq8ToqW4AgxsAjOoM/r4vS5zEi57PEE
- Spi1q7d88S4+9bNxuKyEsoYvVK3ghUJP3xKCvD/p6XtD7w7OyUo4xFr1lQjrM2O5D/FaMTv4s
- GrxeCIweAdcO+e7Qt1PFMqHgMbg7E4Kn5iH4dU7BntMO5bykc/CaxiuV1Nvra3culn+mc/nLj
- OlvIuXSUaZsyqKV7eKYm/V5wyZxgtL24MLhurnRFrkQXzPVTDrLIL/8XANcoGmStUfaqkOg6H
- AMrgeovopH5ZK6UFo3yLPIDejDieL+gHh0cuVhOyH3zkgm9mfxDYsvoclgFby/TwOdHYdzYE9
- lMl1kMiYLjHFBY+XkNnnd5RuYNnxBzArOzs1hLrAK8FLriLFTzzmSRhUgJLBu3esBPk8yAm88
- 2Sg0GPrD+wyKEF7HUK4/MfPrwOHXhYc3AuK/LnXAgUyA0nq9iMQbdOi4AKcDF02sbS62tSwhS
- v6FYiK8snZYro7qh0sYqyKLfxRcivM0NK+oFWvmWZbZKhPeY70J2ci6kK4xFdgTfdBtlb6M2D
- BKsrMnPuJP0gxt1CSQBK/3JAKBgZfRTYABW9jUL4bgczj91yejL4NHtwaOPDrfJRW6fTKU+Ev
- IxVWC7av8wQnTnWktZsFldDys9E8eq3ozDh1+pi0DnL+VF996denZRb9ObmO19rxhHZW34aAT
- e2TkpugMcYBmJb38K8Umx16wtjeUXYGxjCPTbFUfdIpRk6d70g=
+X-Provags-ID: V03:K1:uSkhqosW+6/8xt5Nmo3S5aJUBAOu8qMZxhCiaiFjI0QyIWbIQwz
+ axwDzbYM9ja29f+QpZc3wPRjJuwjtRO/d2BEnG87qmeZzwNmBKHwhbrB7GZMILre6NLbzzi
+ PI243ldAl6hrgIaJ14/VsT5cL0BplLzhOB2FPhSWwyO1nllBlU3hUawy0awjyJYV9C0/XSb
+ yX5WCix8k1rZeYx/0cc6w==
+X-UI-Out-Filterresults: notjunk:1;V01:K0:ckZd7XwLgmg=:m3Ldb6ByRXPHLSHsbV6aS9
+ Wjjk6n3GOhxkmFksfcQsEBF395hMhLfmr7N8ZDZAdkKl691DNoXR47S4K89UTIG+D6qILRqPv
+ bgs0K0JffwS9pA9tG9OmjPKH45u/D/SIA6qayNj0YtOFufCZt+VSp9SUtC+wQpMTvmBnNIoT2
+ xanUWSKSrm0RsiOyrUvRwiimLxMFItvwXx2JcH2G8XkdK0hc1ApORuX9iGxZHWrunVe16Bebf
+ 9eU71C+ro2AuTd/UdNMqM+0IA9RN+Ihmk0M+vqiXMvfehlGmD4sp3t0WZlQSEI2xoCBJHlZeX
+ 71JUnynHTsOh3Cs7PcgXpt/UK3li9QaezrLIfCz8fpQOPnfG0YGA/d/9jqvughnCZ5ULik22v
+ JhID2qREE6/dLr6Ndiclvz4rfqeg/HAVQuX6d5qDy6hmyxNXjTuCh54McppxMWSNglS9+QI2S
+ Eb//rPWgAuEcREJGGBVIcgDiZBm0AMoBqBWXiewK1jZTPrvDvZQoy/T1/vrnyMg2eX4ufvRjQ
+ aRhgIjupSSNK3xkhus16TeWZxSJHTMF70/4VnWrpJhlMeHZsPWTBzURXRGZLHKrQCWy7eSIWi
+ 9rSnfDCGHhlfT4Vt4N/V5zb7siwOCvs9wyuZCQMZfrEpezR+WHH4LlkRKURf9WK+akABsf6ck
+ 1QqE9oNShFwlePvWH1E3Chvu/euj/v01AOzfHP70duTGl2HCQuJnhKboG488iN50HYANcPfUQ
+ Yk6GDe66YJ2jkQBGxCJTuScBTPOCQkJtA5zDHA6NHh2KQtsuWcWMDG9Bn5k1tIRLzxVX9RCA6
+ RG5wo0JXY2XFyqL1XMfUI1ASYgOr9LCz7R8lhZY5MrpK5qP86o=
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -93,37 +92,174 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 On 2018/10/23 下午5:41, Su Yue wrote:
-> Add support to check unaligned disk_bytenr for extent_data.
+> The function can delete items in trees besides extent tree.
+> Rename and move it for further use.
 > 
 > Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
 
 Reviewed-by: Qu Wenruo <wqu@suse.com>
 
+> ---
+>  check/mode-lowmem.c | 99 +++++++++++++++++++++++----------------------
+>  1 file changed, 51 insertions(+), 48 deletions(-)
+> 
+> diff --git a/check/mode-lowmem.c b/check/mode-lowmem.c
+> index e8a2e825c0f3..3c9ecff7e498 100644
+> --- a/check/mode-lowmem.c
+> +++ b/check/mode-lowmem.c
+> @@ -537,6 +537,52 @@ static int end_avoid_extents_overwrite(struct btrfs_fs_info *fs_info)
+>  	return ret;
+>  }
+>  
+> +/*
+> + * Delete the item @path point to.
+
+Although I'd prefer to add some more words about the fact it's a wrapper
+for btrfs_del_item().
+
 Thanks,
 Qu
 
-> ---
->  check/mode-lowmem.c | 9 ++++++++-
->  1 file changed, 8 insertions(+), 1 deletion(-)
-> 
-> diff --git a/check/mode-lowmem.c b/check/mode-lowmem.c
-> index 35fe1adf58e6..e8a2e825c0f3 100644
-> --- a/check/mode-lowmem.c
-> +++ b/check/mode-lowmem.c
-> @@ -3103,7 +3103,14 @@ static int check_extent_data_item(struct btrfs_root *root,
->  	extent_num_bytes = btrfs_file_extent_num_bytes(eb, fi);
->  	offset = btrfs_file_extent_offset(eb, fi);
->  
-> -	/* Check unaligned disk_num_bytes and num_bytes */
-> +	/* Check unaligned disk_bytenr, disk_num_bytes and num_bytes */
-> +	if (!IS_ALIGNED(disk_bytenr, root->fs_info->sectorsize)) {
-> +		error(
-> +"file extent [%llu, %llu] has unaligned disk bytenr: %llu, should be aligned to %u",
-> +			fi_key.objectid, fi_key.offset, disk_bytenr,
-> +			root->fs_info->sectorsize);
-> +		err |= BYTES_UNALIGNED;
+> + * If deleted, path will point to the previous item to the deleted item.
+> + */
+> +static int delete_item(struct btrfs_root *root, struct btrfs_path *path)
+> +{
+> +	struct btrfs_key key;
+> +	struct btrfs_trans_handle *trans;
+> +	int ret = 0;
+> +
+> +	ret = avoid_extents_overwrite(root->fs_info);
+> +	if (ret)
+> +		return ret;
+> +	trans = btrfs_start_transaction(root, 1);
+> +	if (IS_ERR(trans)) {
+> +		ret = PTR_ERR(trans);
+> +		error("fail to start transaction %s", strerror(-ret));
+> +		goto out;
 > +	}
->  	if (!IS_ALIGNED(disk_num_bytes, root->fs_info->sectorsize)) {
->  		error(
->  "file extent [%llu, %llu] has unaligned disk num bytes: %llu, should be aligned to %u",
+> +	btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
+> +	btrfs_release_path(path);
+> +	ret = btrfs_search_slot(trans, root, &key, path, -1, 1);
+> +	if (ret) {
+> +		ret = -ENOENT;
+> +		goto out;
+> +	}
+> +
+> +	ret = btrfs_del_item(trans, root, path);
+> +	if (ret)
+> +		goto out;
+> +
+> +	if (path->slots[0] == 0)
+> +		btrfs_prev_leaf(root, path);
+> +	else
+> +		path->slots[0]--;
+> +out:
+> +	btrfs_commit_transaction(trans, root);
+> +	if (ret)
+> +		error("failed to delete root %llu item[%llu, %u, %llu]",
+> +		      root->objectid, key.objectid, key.type, key.offset);
+> +	else
+> +		printf("Deleted root %llu item[%llu, %u, %llu]\n",
+> +		       root->objectid, key.objectid, key.type, key.offset);
+> +	return ret;
+> +}
+> +
+>  /*
+>   * Wrapper function for btrfs_fix_block_accounting().
+>   *
+> @@ -4335,49 +4381,6 @@ static int repair_chunk_item(struct btrfs_root *chunk_root,
+>  	return err;
+>  }
+>  
+> -static int delete_extent_tree_item(struct btrfs_root *root,
+> -				   struct btrfs_path *path)
+> -{
+> -	struct btrfs_key key;
+> -	struct btrfs_trans_handle *trans;
+> -	int ret = 0;
+> -
+> -	ret = avoid_extents_overwrite(root->fs_info);
+> -	if (ret)
+> -		return ret;
+> -	trans = btrfs_start_transaction(root, 1);
+> -	if (IS_ERR(trans)) {
+> -		ret = PTR_ERR(trans);
+> -		error("fail to start transaction %s", strerror(-ret));
+> -		goto out;
+> -	}
+> -	btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
+> -	btrfs_release_path(path);
+> -	ret = btrfs_search_slot(trans, root, &key, path, -1, 1);
+> -	if (ret) {
+> -		ret = -ENOENT;
+> -		goto out;
+> -	}
+> -
+> -	ret = btrfs_del_item(trans, root, path);
+> -	if (ret)
+> -		goto out;
+> -
+> -	if (path->slots[0] == 0)
+> -		btrfs_prev_leaf(root, path);
+> -	else
+> -		path->slots[0]--;
+> -out:
+> -	btrfs_commit_transaction(trans, root);
+> -	if (ret)
+> -		error("failed to delete root %llu item[%llu, %u, %llu]",
+> -		      root->objectid, key.objectid, key.type, key.offset);
+> -	else
+> -		printf("Deleted root %llu item[%llu, %u, %llu]\n",
+> -		       root->objectid, key.objectid, key.type, key.offset);
+> -	return ret;
+> -}
+> -
+>  /*
+>   * Main entry function to check known items and update related accounting info
+>   */
+> @@ -4419,7 +4422,7 @@ again:
+>  		ret = check_block_group_item(fs_info, eb, slot);
+>  		if (repair &&
+>  		    ret & REFERENCER_MISSING)
+> -			ret = delete_extent_tree_item(root, path);
+> +			ret = delete_item(root, path);
+>  		err |= ret;
+>  		break;
+>  	case BTRFS_DEV_ITEM_KEY:
+> @@ -4450,7 +4453,7 @@ again:
+>  					       key.objectid, -1);
+>  		if (repair &&
+>  		    ret & (REFERENCER_MISMATCH | REFERENCER_MISSING))
+> -			ret = delete_extent_tree_item(root, path);
+> +			ret = delete_item(root, path);
+>  		err |= ret;
+>  		break;
+>  	case BTRFS_EXTENT_DATA_REF_KEY:
+> @@ -4463,7 +4466,7 @@ again:
+>  				btrfs_extent_data_ref_count(eb, dref));
+>  		if (repair &&
+>  		    ret & (REFERENCER_MISMATCH | REFERENCER_MISSING))
+> -			ret = delete_extent_tree_item(root, path);
+> +			ret = delete_item(root, path);
+>  		err |= ret;
+>  		break;
+>  	case BTRFS_SHARED_BLOCK_REF_KEY:
+> @@ -4471,7 +4474,7 @@ again:
+>  						 key.objectid, -1);
+>  		if (repair &&
+>  		    ret & (REFERENCER_MISMATCH | REFERENCER_MISSING))
+> -			ret = delete_extent_tree_item(root, path);
+> +			ret = delete_item(root, path);
+>  		err |= ret;
+>  		break;
+>  	case BTRFS_SHARED_DATA_REF_KEY:
+> @@ -4479,7 +4482,7 @@ again:
+>  						key.objectid);
+>  		if (repair &&
+>  		    ret & (REFERENCER_MISMATCH | REFERENCER_MISSING))
+> -			ret = delete_extent_tree_item(root, path);
+> +			ret = delete_item(root, path);
+>  		err |= ret;
+>  		break;
+>  	default:
 > 

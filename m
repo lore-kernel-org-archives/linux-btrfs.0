@@ -2,143 +2,115 @@ Return-Path: <SRS0=Pubh=NE=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E6FD0C67863
-	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Oct 2018 14:48:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D86F8C004D3
+	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Oct 2018 15:03:34 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id ADC9020824
-	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Oct 2018 14:48:13 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org ADC9020824
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
+	by mail.kernel.org (Postfix) with ESMTP id 336A72075D
+	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Oct 2018 15:03:34 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (1024-bit key) header.d=mail.ru header.i=@mail.ru header.b="P658LhRY";
+	dkim=pass (1024-bit key) header.d=mail.ru header.i=@mail.ru header.b="P658LhRY"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 336A72075D
+Authentication-Results: mail.kernel.org; dmarc=fail (p=reject dis=none) header.from=mail.ru
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726797AbeJXXQf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 24 Oct 2018 19:16:35 -0400
-Received: from mx2.suse.de ([195.135.220.15]:39122 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726457AbeJXXQf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 24 Oct 2018 19:16:35 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 18E16B05B
-        for <linux-btrfs@vger.kernel.org>; Wed, 24 Oct 2018 14:48:10 +0000 (UTC)
-Subject: Re: [PATCH 2/2] btrfs-progs: Deprecate unused super block member
- log_root_transid
-To:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <20181012064258.27033-1-wqu@suse.com>
- <20181012064258.27033-2-wqu@suse.com>
- <2b4ff29a-ff9b-8b56-ef13-4b76e72a281f@suse.com>
- <fbb5f43e-8eb0-08c6-a1c9-855efd960d3d@gmx.com>
- <cb6dd0fa-68e9-9e7c-c9cc-6ac609f9d9fc@suse.com>
- <152d099f-b431-b169-f33a-11ff7e88eee6@gmx.com>
- <20181024143015.GT16290@twin.jikos.cz>
-From:   Nikolay Borisov <nborisov@suse.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <f382295d-a203-ea33-5a1e-34553d8cb518@suse.com>
-Date:   Wed, 24 Oct 2018 15:48:07 +0100
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.2.1
+        id S1726538AbeJXXb7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 24 Oct 2018 19:31:59 -0400
+Received: from fallback20.mail.ru ([185.5.136.252]:56706 "EHLO
+        fallback20.mail.ru" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726414AbeJXXb7 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 24 Oct 2018 19:31:59 -0400
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=mail.ru; s=mail2;
+        h=Message-ID:References:In-Reply-To:Subject:To:From:Date:Content-Transfer-Encoding:Content-Type:MIME-Version; bh=kXz7vOh7FFEpDy0l57WJ6IEa7AsNCd1VsMRxaYPfH3M=;
+        b=P658LhRY0Wu+OvZ5gn2DsVnPsvzliyyXPpTGrs59TusozMVw2qTOiaSU8RTcZCEPY2R2ArZ3BbSPZpoPiso2+1K+14E0SaGQ/knCUEqAPA3VK+B3eiupFcbhhkPwrwq2+kZ0MthGfVuo5i9RgyJXvovEkYlIfJYeXFhUVcJVowo=;
+Received: from [10.161.8.33] (port=50362 helo=smtp14.mail.ru)
+        by fallback20.m.smailru.net with esmtp (envelope-from <dma_k@mail.ru>)
+        id 1gFKh0-0004Wh-08
+        for linux-btrfs@vger.kernel.org; Wed, 24 Oct 2018 18:03:30 +0300
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=mail.ru; s=mail2;
+        h=Message-ID:References:In-Reply-To:Subject:To:From:Date:Content-Transfer-Encoding:Content-Type:MIME-Version; bh=kXz7vOh7FFEpDy0l57WJ6IEa7AsNCd1VsMRxaYPfH3M=;
+        b=P658LhRY0Wu+OvZ5gn2DsVnPsvzliyyXPpTGrs59TusozMVw2qTOiaSU8RTcZCEPY2R2ArZ3BbSPZpoPiso2+1K+14E0SaGQ/knCUEqAPA3VK+B3eiupFcbhhkPwrwq2+kZ0MthGfVuo5i9RgyJXvovEkYlIfJYeXFhUVcJVowo=;
+Received: by smtp14.mail.ru with esmtpa (envelope-from <dma_k@mail.ru>)
+        id 1gFKgy-0003jv-48
+        for linux-btrfs@vger.kernel.org; Wed, 24 Oct 2018 18:03:28 +0300
+Received: from www.centurion.link (localhost [IPv6:::1])
+        by centurion.home (Postfix) with ESMTP id DED19F23A99
+        for <linux-btrfs@vger.kernel.org>; Wed, 24 Oct 2018 17:03:26 +0200 (CEST)
 MIME-Version: 1.0
-In-Reply-To: <20181024143015.GT16290@twin.jikos.cz>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=US-ASCII;
+ format=flowed
+Content-Transfer-Encoding: 7bit
+Date:   Wed, 24 Oct 2018 17:03:26 +0200
+From:   Dmitry Katsubo <dma_k@mail.ru>
+To:     linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: Failover for unattached USB device
+In-Reply-To: <dac5a4c5-e40d-a332-420f-f5517730a5f4@mail.ru>
+References: <dac5a4c5-e40d-a332-420f-f5517730a5f4@mail.ru>
+Message-ID: <3051750f58524cceed2a69fcf43bae31@mail.ru>
+X-Sender: dma_k@mail.ru
+User-Agent: Roundcube Webmail/1.2.3
+X-77F55803: LRrXVehmsVRb9YmrEZN1K1Hbu3ZriRqctp4ZJCkgvf7G3QwvoolO6g==
+X-7FA49CB5: 0D63561A33F958A5FA37D73298C3588AE210F425B66F0FD236A2807E4187C3608941B15DA834481FA18204E546F3947CEDCF5861DED71B2F389733CBF5DBD5E9C8A9BA7A39EFB7666BA297DBC24807EA117882F44604297287769387670735209ECD01F8117BC8BEA471835C12D1D977C4224003CC8364767815B9869FA544D8090A508E0FED6299176DF2183F8FC7C097A342136F30543A2E03817F3C3E88BC8594870E79453796B1593CA6EC85F86DAD7EC71F1DB88427E0C89D67371282C4CF19DD082D7633A0E7DDDDC251EA7DABD81D268191BDAD3D4E70A05D1297E1BB35872C767BF85DA227C277FBC8AE2E8BDA9D247E9FFFF00AFF69BA5D7DBC07CB35872C767BF85DA2F004C906525384306FED454B719173D6462275124DF8B9C9DE2850DD75B2526BE5BFE6E7EFDEDCD789D4C264860C145E
+X-Mailru-Sender: 6DAAA20F2058E07D134D6D8D77B89E7F4B81FA0D7FAF572CE1AFB479B13BE71E9EF95AA7B19AEE03501E7C294F69090ED50E20E2BC48EF5AE609D43F356B221EEAB4BC95F72C04283CDA0F3B3F5B9367
+X-Mras: OK
+X-77F55803: 6Ns2ePE+8+ADfjlgolKFsH1Tlr7GOl1sDQiy/OfkAjDjMdHjzCcsTw==
+X-7FA49CB5: 0D63561A33F958A58622913454648A369564D4B1DD6AF16EDEC8C2C8BCD2534D8941B15DA834481FA18204E546F3947CEDCF5861DED71B2F389733CBF5DBD5E9C8A9BA7A39EFB7666BA297DBC24807EA117882F44604297287769387670735209ECD01F8117BC8BEA471835C12D1D977C4224003CC836476C0CAF46E325F83A50BF2EBBBDD9D6B0F05F538519369F3743B503F486389A921A5CC5B56E945C8DA
+X-Mailru-Sender: A5480F10D64C9005D917D4885F602B38AF1EFF4F77CD088C21DB3BD6CE55EA482841AB8488F6860D3BDEC02E5C93C5DB1C2ED716FDD6C8E1F935CE35D19D7009B4A721A3011E896F
+X-Mras: OK
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-
-
-On 24.10.18 г. 15:30 ч., David Sterba wrote:
-> On Fri, Oct 12, 2018 at 05:57:29PM +0800, Qu Wenruo wrote:
->>>>>> +	printf("log_root_transid (deprecated)\t%llu\n",
->>>>>> +	       le64_to_cpu(sb->__unused_log_root_transid));
->>>>>
->>>>> This should be entirely removed.
->>>>
->>>> It looks OK to me.
->>>> Just like the old leafsize.
->>>>
->>>> And if we try to use this member again, even old progs could show it
->>>> without problem.
->>>
->>> But what is the point of having something which always shows 0 and is
->>> essentially unused?
->>
->> Personally speaking, even it's in fact never used, it is still part of
->> the specification of btrfs super blocks.
->>
->> Even it's a bad decision we made a long time ago, we still need to mark
->> it as unused, other than converting it back to "reserved".
->>
->> To make it short and clear, if some member is specified in early
->> specification, even it's never used, we still need to mark it unused and
->> keep part of naming.
+On 2018-10-17 00:14, Dmitry Katsubo wrote:
+> As a workaround I can monitor dmesg output but:
 > 
-> Agreed, follows the same patern as the leafsize. The superblock dump is
-> a debugging and bug report tool, the full output is desirable.
+> 1. It would be nice if I could tell btrfs that I would like to mount 
+> read-only
+> after a certain error rate per minute is reached.
+> 2. It would be nice if btrfs could detect that both drives are not 
+> available and
+> unmount (as mount read-only won't help much) the filesystem.
+> 
+> Kernel log for Linux v4.14.2 is attached.
 
-I really don't want to get into the argument but I think we should
-really name unused fields unusedX where X is some number. Looking at the
-code in struct btrfs_root_backup we have 2 unused fields. In the
-superblock we have unused space which is called 'reserved'. In struct
-btrfs_disk_balance_args there is a field called unused, same thing for
-struct btrfs_balance_item.
+I wonder if somebody could further advise the workaround. I understand 
+that running
+btrfs volume over USB devices is not good, but I think btrfs could play 
+some role
+as well.
 
-In btrfs_inode_item we have 'reserved' field, same thing for
-btrfs_root_item.
+In particular I wonder if btrfs could detect that all devices in RAID1 
+volume became
+inaccessible and instead of reporting increasing "write error" counter 
+to kernel log simply
+render the volume as read-only. "inaccessible" could be that if the same 
+block cannot be
+written back to minimum number of devices in RAID volume, so btrfs gives 
+up.
 
-So the code base is yet again highly inconsistent and looking at it
-there is only a single field following the __unused_original_name, so
-it's really the exception rather than the rule.
+Maybe someone can advise some sophisticated way of quick checking that 
+filesystems is
+healthy? Right now the only way I see is to make a tiny write (like 
+create a file and
+instantly remove it) to make it die faster... Checking for write IO 
+errors in "btrfs
+dev stats /mnt/backups" output could be an option provided that delta is 
+computed for
+some period of time and write errors counter increase for both devices 
+in the volume
+(as apparently I am not interested in one failing block which btrfs 
+tries to write
+again and again increasing the write errors counter).
 
-Again, I would argue that once a field is deprecated or in this case it
-has _never_ actually been used then we might as well rename it to
-something cryptic so as not to attach (false) meaning to it. Just my 50
-cents
+Thanks for any feedback.
+
+-- 
+With best regards,
+Dmitry

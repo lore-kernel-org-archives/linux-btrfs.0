@@ -2,229 +2,160 @@ Return-Path: <SRS0=Pubh=NE=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.5 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
-	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-4.5 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,
+	URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2BB4CC004D3
-	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Oct 2018 05:07:35 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 976D0C004D3
+	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Oct 2018 09:07:18 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id CBA3F20652
-	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Oct 2018 05:07:34 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org CBA3F20652
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=gmx.com
+	by mail.kernel.org (Postfix) with ESMTP id 3687D2075D
+	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Oct 2018 09:07:18 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (1024-bit key) header.d=kernel.org header.i=@kernel.org header.b="qgqYJyR6"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 3687D2075D
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=kernel.org
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726338AbeJXNeB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 24 Oct 2018 09:34:01 -0400
-Received: from mout.gmx.net ([212.227.15.15]:56287 "EHLO mout.gmx.net"
+        id S1726538AbeJXRec (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 24 Oct 2018 13:34:32 -0400
+Received: from mail.kernel.org ([198.145.29.99]:60962 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726080AbeJXNeB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 24 Oct 2018 09:34:01 -0400
-Received: from [0.0.0.0] ([210.140.77.29]) by mail.gmx.com (mrgmx002
- [212.227.17.184]) with ESMTPSA (Nemesis) id 0McVKy-1fxW0v0yoq-00HcZh; Wed, 24
- Oct 2018 07:07:30 +0200
-Received: from [0.0.0.0] ([210.140.77.29]) by mail.gmx.com (mrgmx002
- [212.227.17.184]) with ESMTPSA (Nemesis) id 0McVKy-1fxW0v0yoq-00HcZh; Wed, 24
- Oct 2018 07:07:30 +0200
-Subject: Re: Have 15GB missing in btrfs filesystem.
-To:     Marc MERLIN <marc@merlins.org>, linux-btrfs@vger.kernel.org
-References: <20181024003613.q5bxmqm4hh5xbgmf@merlins.org>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
- bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
- ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
- rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
- FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
- 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
- ilaVzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAHCwHwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
- CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
- f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
- mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
- 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
- h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <a8500d2d-2747-f250-75a8-2ec4c0533c6c@gmx.com>
-Date:   Wed, 24 Oct 2018 13:07:25 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.2.1
+        id S1726258AbeJXRec (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 24 Oct 2018 13:34:32 -0400
+Received: from mail-ua1-f53.google.com (mail-ua1-f53.google.com [209.85.222.53])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id 588C92082E
+        for <linux-btrfs@vger.kernel.org>; Wed, 24 Oct 2018 09:07:15 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=default; t=1540372035;
+        bh=RsQKSS/UTCDnNbMgIPMOgokyh2iCsEDBF7Duf7QXeeU=;
+        h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
+        b=qgqYJyR6965yxGjabDTk/skxbRBKzQ1e7ldJxXmnHu8339iOwt06+Mf2gk9ArffrC
+         FlexpgvnakQ69p7H0R0kIZ+WcIcl8lkrbMjOkINVVfsUWuVbA0B9zwqJmwPX63HNGn
+         Xdb8KhENYSDGQqLVpzmFQ+hhO1IYP0KT/8N2iEP0=
+Received: by mail-ua1-f53.google.com with SMTP id z8so1571472uap.13
+        for <linux-btrfs@vger.kernel.org>; Wed, 24 Oct 2018 02:07:15 -0700 (PDT)
+X-Gm-Message-State: AGRZ1gJaDXHehT7lSl/Jyy8haIB00wIisLPr/tqECqqkZ2ybhRMQW2iO
+        tuGCmK5bJ0oYqADyoP0KfFaRE5EoFxUQRuFdbGY=
+X-Google-Smtp-Source: AJdET5cw9JKR23aGyRAnP0D8SOBYYMxnezVZ3gALUhPP25Etp7lTJC0bIeiHApe5W+ILqQcrrepjyL98Ctb/tpu3foA=
+X-Received: by 2002:ab0:2101:: with SMTP id d1mr720103ual.108.1540372034432;
+ Wed, 24 Oct 2018 02:07:14 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <20181024003613.q5bxmqm4hh5xbgmf@merlins.org>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="7EvE2b0PCfr9NoblxI409dn2pxBLtHrwF"
-X-Provags-ID: V03:K1:GlYF8NqnlBAJx7uZHWvX6ZhrXx/NmlJBJ4W3WzzXzhhChb7oYPe
- v8fogx1+KRWfLXGr+5bNvbB2aWwVgea3Em4FRlPPgpRob51gqh+HSD/uNUllf+M6ljYg/Sv
- 1zEVlVzKZWkpI34F4NgpLslfKOJJe2kAqSrFjXkFVA1iHFHtWC32datG+2c0PmboZap2gW8
- sMOe4ar/RD/tjFDUOggig==
-X-UI-Out-Filterresults: notjunk:1;V01:K0:rxpj20ux0ps=:8NQZ5xYlcLI5ojxkn7NfUS
- PVfTfkvRbuNFG8XGMjdal+mifg8fUiVG2A+9T8dzlMhnh2bRTuplQ50xIv6biASj/d7EszYTq
- qdQ92AfhScbYwMc4G1quZ2WGOBZSRUvnooC/WVxq/AZzNfCp8l7EpK6rr7SSEOhepi/grR16s
- 3zVL56T5YQ/fA/yvU9qp28wwxtWSVgWHfiVFjwdh+XqfuyTEK1ucwPZnDARLFKtJhvREADeOG
- I5VLehBFAVU8/6udNzJ1QsfjCx0eE/Yc5HauRmpdEFfeTXgb2Itsn+lDcHTa6SyoB9+BEBVso
- gXYSpnYZaKo9w1OqYHjt3oIWjQVXiotlC0tNW+rJreU63bWhhE/LiAQuOIVxtAOeqSjwItPQu
- dpcp2Tp1LXcKRwRix7TuuD8bctqpGBq+p9VDh5zLzHzn7Wbvm8btweRaia7EsoQ0HnFNsk80f
- 2QynHXgyt7wo7Dc3wt1uFS30mM7RDBAFl465RJEPer9cxO2m3kVOc2nLpsKgbve7lkWrcqVMz
- e7BOD400gRIhU+FcRaqkbXBdDWJ24Ot9iEuZog/NpNQv5emCX84s2QQVOAM0XzcnKQE8q6fmT
- wuvyRAz1Q+/6AoMbHgzdfKDhPyqvzTi/2DjhFUMFZcQ+xh0WH3l6xvwLT6UV3NjGlVTJtGftJ
- qnAwKFP6VAhVHAy0HDYz81jEqja1mJp5sguadu6/70Q7lgBBXitTKkSw8fAi8nEWFKpZVSGdW
- 07ka808DzJsTCSNezPDkGfnBpj/hFNIw/B4iNcQADPgaGiVZwPZmY6SYO6JFUXF5ScRypRYIK
- SL0CV66kt/WTlPf/XAjIY5pIXirSg==
+References: <20181022090946.1150-1-fdmanana@kernel.org> <20181022191037.18471-1-fdmanana@kernel.org>
+ <20181022191848.awvitym7tw24kpgx@destiny> <CAL3q7H5Fk3+jh+jaMHkJpSZ5VdNJTN=nNTEiKyqRPerRRkqP7g@mail.gmail.com>
+ <20181024040228.3gpipdaohezdsrm2@MacBook-Pro-91.local>
+In-Reply-To: <20181024040228.3gpipdaohezdsrm2@MacBook-Pro-91.local>
+From:   Filipe Manana <fdmanana@kernel.org>
+Date:   Wed, 24 Oct 2018 10:07:02 +0100
+X-Gmail-Original-Message-ID: <CAL3q7H43pT85PG3dEvNKP5W1puPxfS3xY4PL0-zJ7Ku3RBUWxQ@mail.gmail.com>
+Message-ID: <CAL3q7H43pT85PG3dEvNKP5W1puPxfS3xY4PL0-zJ7Ku3RBUWxQ@mail.gmail.com>
+Subject: Re: [PATCH v3] Btrfs: fix deadlock on tree root leaf when finding
+ free extent
+To:     Josef Bacik <josef@toxicpanda.com>
+Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>,
+        Filipe David Borba Manana <fdmanana@suse.com>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---7EvE2b0PCfr9NoblxI409dn2pxBLtHrwF
-Content-Type: multipart/mixed; boundary="JL7dwhHURiKB2e56cnDFRvNVXW5gxz3ZV";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Marc MERLIN <marc@merlins.org>, linux-btrfs@vger.kernel.org
-Message-ID: <a8500d2d-2747-f250-75a8-2ec4c0533c6c@gmx.com>
-Subject: Re: Have 15GB missing in btrfs filesystem.
-References: <20181024003613.q5bxmqm4hh5xbgmf@merlins.org>
-In-Reply-To: <20181024003613.q5bxmqm4hh5xbgmf@merlins.org>
+On Wed, Oct 24, 2018 at 5:08 AM Josef Bacik <josef@toxicpanda.com> wrote:
+>
+> On Mon, Oct 22, 2018 at 11:05:08PM +0100, Filipe Manana wrote:
+> > On Mon, Oct 22, 2018 at 8:18 PM Josef Bacik <josef@toxicpanda.com> wrote:
+> > >
+> > > On Mon, Oct 22, 2018 at 08:10:37PM +0100, fdmanana@kernel.org wrote:
+> > > > From: Filipe Manana <fdmanana@suse.com>
+> > > >
+> > > > When we are writing out a free space cache, during the transaction commit
+> > > > phase, we can end up in a deadlock which results in a stack trace like the
+> > > > following:
+> > > >
+> > > >  schedule+0x28/0x80
+> > > >  btrfs_tree_read_lock+0x8e/0x120 [btrfs]
+> > > >  ? finish_wait+0x80/0x80
+> > > >  btrfs_read_lock_root_node+0x2f/0x40 [btrfs]
+> > > >  btrfs_search_slot+0xf6/0x9f0 [btrfs]
+> > > >  ? evict_refill_and_join+0xd0/0xd0 [btrfs]
+> > > >  ? inode_insert5+0x119/0x190
+> > > >  btrfs_lookup_inode+0x3a/0xc0 [btrfs]
+> > > >  ? kmem_cache_alloc+0x166/0x1d0
+> > > >  btrfs_iget+0x113/0x690 [btrfs]
+> > > >  __lookup_free_space_inode+0xd8/0x150 [btrfs]
+> > > >  lookup_free_space_inode+0x5b/0xb0 [btrfs]
+> > > >  load_free_space_cache+0x7c/0x170 [btrfs]
+> > > >  ? cache_block_group+0x72/0x3b0 [btrfs]
+> > > >  cache_block_group+0x1b3/0x3b0 [btrfs]
+> > > >  ? finish_wait+0x80/0x80
+> > > >  find_free_extent+0x799/0x1010 [btrfs]
+> > > >  btrfs_reserve_extent+0x9b/0x180 [btrfs]
+> > > >  btrfs_alloc_tree_block+0x1b3/0x4f0 [btrfs]
+> > > >  __btrfs_cow_block+0x11d/0x500 [btrfs]
+> > > >  btrfs_cow_block+0xdc/0x180 [btrfs]
+> > > >  btrfs_search_slot+0x3bd/0x9f0 [btrfs]
+> > > >  btrfs_lookup_inode+0x3a/0xc0 [btrfs]
+> > > >  ? kmem_cache_alloc+0x166/0x1d0
+> > > >  btrfs_update_inode_item+0x46/0x100 [btrfs]
+> > > >  cache_save_setup+0xe4/0x3a0 [btrfs]
+> > > >  btrfs_start_dirty_block_groups+0x1be/0x480 [btrfs]
+> > > >  btrfs_commit_transaction+0xcb/0x8b0 [btrfs]
+> > > >
+> > > > At cache_save_setup() we need to update the inode item of a block group's
+> > > > cache which is located in the tree root (fs_info->tree_root), which means
+> > > > that it may result in COWing a leaf from that tree. If that happens we
+> > > > need to find a free metadata extent and while looking for one, if we find
+> > > > a block group which was not cached yet we attempt to load its cache by
+> > > > calling cache_block_group(). However this function will try to load the
+> > > > inode of the free space cache, which requires finding the matching inode
+> > > > item in the tree root - if that inode item is located in the same leaf as
+> > > > the inode item of the space cache we are updating at cache_save_setup(),
+> > > > we end up in a deadlock, since we try to obtain a read lock on the same
+> > > > extent buffer that we previously write locked.
+> > > >
+> > > > So fix this by skipping the loading of free space caches of any block
+> > > > groups that are not yet cached (rare cases) if we are COWing an extent
+> > > > buffer from the root tree and space caching is enabled (-o space_cache
+> > > > mount option). This is a rare case and its downside is failure to
+> > > > find a free extent (return -ENOSPC) when all the already cached block
+> > > > groups have no free extents.
+> > > >
+> > > > Reported-by: Andrew Nelson <andrew.s.nelson@gmail.com>
+> > > > Link: https://lore.kernel.org/linux-btrfs/CAPTELenq9x5KOWuQ+fa7h1r3nsJG8vyiTH8+ifjURc_duHh2Wg@mail.gmail.com/
+> > > > Fixes: 9d66e233c704 ("Btrfs: load free space cache if it exists")
+> > > > Tested-by: Andrew Nelson <andrew.s.nelson@gmail.com>
+> > > > Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> > >
+> > > Great, thanks,
+> > >
+> > > Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+> >
+> > So this makes many fstests occasionally fail with aborted transaction
+> > due to ENOSPC.
+> > It's late and I haven't verified yet, but I suppose this is because we
+> > always skip loading the cache regardless of currently being COWing an
+> > existing leaf or allocating a new one (growing the tree).
+> > Needs to be fixed.
+> >
+>
+> How about we just use path->search_commit_root?  If we're loading the cache we
+> just want the last committed version, it's not like we read it after we've
+> written it.  Then we can go back to business as usual.  Thanks,
 
---JL7dwhHURiKB2e56cnDFRvNVXW5gxz3ZV
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+Yeah, that works. It was an idea before sending v1 but it felt a bit
+dirty at the time.
+Left fstests running overnight using the commit root approach and
+everything seems fine. Sending a v4.
 
+Another alternative, which would solve similar problems for any tree,
+would be to allow getting a read lock on an
+already (spin) write locked eb, just like we do for blocking write
+locks:  https://friendpaste.com/6XrGXb5p0RSJGixUFZ8lCt
 
-
-On 2018/10/24 =E4=B8=8A=E5=8D=888:36, Marc MERLIN wrote:
-> Normally when btrfs fi show will show lost space because=20
-> your trees aren't balanced.
-
-Not always the case.
-
-Btrfs uses two level allocation:
-1) Chunk
-   2 types, data, metadata, and system.
-
-   And that's "used" space of "btrfs fi show", or "Device allocated" of
-   "btrfs fi usage"
-
-2) Extent
-   2 types, data and metadata.
-
-   And that's "used" space of "btrfs fi df"
-
-A metadata extent can only get allocated from a metadata chunk
-(or a system chunk, but system chunks are pretty small).
-A data extent can only get allocated from data chunk.
-
-Balance can only solve the case where an near empty metadata chunk can't
-be freed since it's still used by some metadata extents, or similar case
-for data chunks.
-
-It can't really magically reclaim free space from void.
-
-
-=46rom your description, I don't think it's the case.
-
-> Balance usually reclaims that space, or most of it.
-> In this case, not so much.
->=20
-> kernel 4.17.6:
->=20
-> saruman:/mnt/btrfs_pool1# btrfs fi show .
-> Label: 'btrfs_pool1'  uuid: fda628bc-1ca4-49c5-91c2-4260fe967a23
-> 	Total devices 1 FS bytes used 186.89GiB
-> 	devid    1 size 228.67GiB used 207.60GiB path /dev/mapper/pool1
->=20
-> Ok, I have 21GB between used by FS and used in block layer.
->=20
-> saruman:/mnt/btrfs_pool1# btrfs balance start -dusage=3D40 -v .
-> Dumping filters: flags 0x1, state 0x0, force is off
->   DATA (flags 0x2): balancing, usage=3D40
-> Done, had to relocate 1 out of 210 chunks
-> saruman:/mnt/btrfs_pool1# btrfs balance start -musage=3D60 -v .
-> Dumping filters: flags 0x6, state 0x0, force is off
->   METADATA (flags 0x2): balancing, usage=3D60
->   SYSTEM (flags 0x2): balancing, usage=3D60
-> Done, had to relocate 4 out of 209 chunks
-> saruman:/mnt/btrfs_pool1# btrfs fi show .
-> Label: 'btrfs_pool1'  uuid: fda628bc-1ca4-49c5-91c2-4260fe967a23
-> 	Total devices 1 FS bytes used 186.91GiB
-> 	devid    1 size 228.67GiB used 205.60GiB path /dev/mapper/pool1
->=20
-> That didn't help much, delta is now 19GB
->=20
-> saruman:/mnt/btrfs_pool1# btrfs balance start -dusage=3D80 -v .
-> Dumping filters: flags 0x1, state 0x0, force is off
->   DATA (flags 0x2): balancing, usage=3D80
-> Done, had to relocate 8 out of 207 chunks
-> saruman:/mnt/btrfs_pool1# btrfs fi show .
-> Label: 'btrfs_pool1'  uuid: fda628bc-1ca4-49c5-91c2-4260fe967a23
-> 	Total devices 1 FS bytes used 187.03GiB
-> 	devid    1 size 228.67GiB used 201.54GiB path /dev/mapper/pool1
->=20
-> Ok, now delta is 14GB
->=20
-> saruman:/mnt/btrfs_pool1# btrfs balance start -musage=3D80 -v .
-> Dumping filters: flags 0x6, state 0x0, force is off
->   METADATA (flags 0x2): balancing, usage=3D80
->   SYSTEM (flags 0x2): balancing, usage=3D80
-> Done, had to relocate 5 out of 202 chunks
-> saruman:/mnt/btrfs_pool1# btrfs fi show .
-> Label: 'btrfs_pool1'  uuid: fda628bc-1ca4-49c5-91c2-4260fe967a23
-> 	Total devices 1 FS bytes used 188.24GiB
-> 	devid    1 size 228.67GiB used 203.54GiB path /dev/mapper/pool1
->=20
-> and it's back to 15GB :-/
->=20
-> How can I get 188.24 and 203.54 to converge further? Where is all that
-> space gone?
-
-Your original chunks are already pretty compact.
-Thus really no need to do extra balance.
-
-You may get some extra space by doing full system balance (no usage=3D
-filter), but that's really not worthy in my opinion.
-
-Maybe you could try defrag to free some space wasted by CoW instead?
-(If you're not using many snapshots)
-
-Thanks,
-Qu
-
->=20
-> Thanks,
-> Marc
->=20
+thanks
 
 
---JL7dwhHURiKB2e56cnDFRvNVXW5gxz3ZV--
-
---7EvE2b0PCfr9NoblxI409dn2pxBLtHrwF
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlvP/g0ACgkQwj2R86El
-/qh7tggAje1zeoK/XBCqX9QuUZjZ7UnY8KF7SmdwKP4h0N7JS3KIfeBvpoLAvlwG
-GMR6lYB+E6hMdps1t4s8lMCxsa/TFZnVGUy7y9uzuqDffFzQsPFiZmR388vA1SDL
-v8UM1is0J6rR71Vfg5Yj4jSx2gVT9h4eIk9/zCjSvV9gnKg9420tpB5rIju/Kq/j
-dGbIddjc5dUDkIBMhxIXkz8Q126K5dU/0QqKI2b4mkNI8J0TkPiDyNqEvZEsM528
-Nesf+FvpSDJGm6A1dHvEd5v5TfZ3/GFewmQpOhLyjuvPcpQgadOTjM08XW8KVydp
-mNIequxB7AF4N4s3JVAu+7TWDDYnLg==
-=lawr
------END PGP SIGNATURE-----
-
---7EvE2b0PCfr9NoblxI409dn2pxBLtHrwF--
+>
+> Josef

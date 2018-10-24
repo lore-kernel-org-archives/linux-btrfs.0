@@ -2,208 +2,168 @@ Return-Path: <SRS0=Pubh=NE=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.3 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3DEDCC67863
-	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Oct 2018 04:32:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DD14CC67863
+	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Oct 2018 04:53:56 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id DE9E220652
-	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Oct 2018 04:32:05 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 98960207DD
+	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Oct 2018 04:53:56 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="lN7z5q0t"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org DE9E220652
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=oracle.com
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="bgPdx8eu"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 98960207DD
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726826AbeJXM60 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 24 Oct 2018 08:58:26 -0400
-Received: from aserp2120.oracle.com ([141.146.126.78]:51714 "EHLO
-        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725928AbeJXM60 (ORCPT
+        id S1726773AbeJXNUV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 24 Oct 2018 09:20:21 -0400
+Received: from mail-lf1-f67.google.com ([209.85.167.67]:44582 "EHLO
+        mail-lf1-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726268AbeJXNUU (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 24 Oct 2018 08:58:26 -0400
-Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
-        by aserp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w9O4StmA006579
-        for <linux-btrfs@vger.kernel.org>; Wed, 24 Oct 2018 04:32:03 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
- date : message-id : in-reply-to : references; s=corp-2018-07-02;
- bh=FK7KH0ATwusWGev3nL6auxeiHmdB0WXCaNO265KrOew=;
- b=lN7z5q0tKsORmbHP9nP1TJ9iWbu2Z8yAwGo3nzzMrJBi4Q3OojPPdy/A5AwoFMLIJWFS
- 3vVC0YQ/RXQSzi0D58YNwgRjuh++fhtP8vWuVFZ8OeenaqfAbjq8ZmTpOiJv6AZ05R65
- szvNZE1iHp+uQq0L7gVRihYKo0/nZmo+VneTle3n9nGGq8HFhNnkEUGGl9ug+6xeJRbD
- lYhWIyqafE8gOD0MWmdH/h6M2srgIjzixIUu/9QQZV6Jbih7TA+hKjEIjUwWM/TD8lDS
- rjw9KurNjYVlFAlf3CmpTemFGjyP9oPU+wY7gYZ6z1LEEWMSOfMgP28gxQ4Sy09LpceA qA== 
-Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
-        by aserp2120.oracle.com with ESMTP id 2n7vaq11vt-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 24 Oct 2018 04:32:03 +0000
-Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
-        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id w9O4VvI8009269
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 24 Oct 2018 04:31:58 GMT
-Received: from abhmp0012.oracle.com (abhmp0012.oracle.com [141.146.116.18])
-        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w9O4VvZX027710
-        for <linux-btrfs@vger.kernel.org>; Wed, 24 Oct 2018 04:31:57 GMT
-Received: from tpasj.oracle.com (/192.188.170.107)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Tue, 23 Oct 2018 21:31:56 -0700
-From:   Anand Jain <anand.jain@oracle.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: add cli to forget one or all scanned devices
-Date:   Wed, 24 Oct 2018 12:31:41 +0800
-Message-Id: <1540355502-22489-3-git-send-email-anand.jain@oracle.com>
-X-Mailer: git-send-email 1.8.3.1
-In-Reply-To: <1540355502-22489-1-git-send-email-anand.jain@oracle.com>
-References: <1540355502-22489-1-git-send-email-anand.jain@oracle.com>
-X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9055 signatures=668683
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=4 malwarescore=0
- phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
- adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.0.1-1807170000 definitions=main-1810240039
+        Wed, 24 Oct 2018 09:20:20 -0400
+Received: by mail-lf1-f67.google.com with SMTP id m18-v6so2885803lfl.11
+        for <linux-btrfs@vger.kernel.org>; Tue, 23 Oct 2018 21:53:53 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=subject:to:references:from:openpgp:autocrypt:message-id:date
+         :user-agent:mime-version:in-reply-to:content-language
+         :content-transfer-encoding;
+        bh=ca3QL15ZmVMZeWTr+zYDUodAGeAyx0eLglAOSK65KFI=;
+        b=bgPdx8euFJLW7ZeDoLGL+X1mOLteMd2/tdXdXv1VJaZFB6yUY3ssDpuePoeJm2iVPo
+         0B9WNQjyETtFya0mDmn60PfyR2NBFgA7i1OgrqbKnFtRp5sSjOXGvz+o2uI4oomXrDgI
+         SLOr8vMy5UuU9PB/Wz1/Ddv1uIqd4nPjBva01pvdS1CC02kQGoeEdYPKnJt5agEOZ6Ax
+         aS2iSrgm+9in+i7y5fpnXd8woa/nZCGU0rb999Vy/UNV1xkdiLLzYI6nPfj24k4mjv/Z
+         4c6E8/o7aF+nKrYGbRdSj4hVaDOkE69BIhOtzE7+1qR5tJ6YWoyqdXk8jEOIHCGY/ypl
+         lG3w==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:subject:to:references:from:openpgp:autocrypt
+         :message-id:date:user-agent:mime-version:in-reply-to
+         :content-language:content-transfer-encoding;
+        bh=ca3QL15ZmVMZeWTr+zYDUodAGeAyx0eLglAOSK65KFI=;
+        b=V90W/YR3dBlZrjq91GD9lWv7Ty66KuZvgGWAPmmEXhvah3g+aatKnwjp8SkjOiM9mQ
+         MCK8mv0LQyObyc/xWFJiMP6Lux52W3H4ggohUI57fBfsftOn2e5dJg+JS8n1NpQSXkgG
+         5tOs+HngBi4afIVvt55pC28tzzbdwGmiSEgwlwnwUO2wYM5p3wXa9WwM4ykcuLnPR/c/
+         Fgtw8e63gAJ0saSDgxsddYzYcg9jfFJ3y6v4I44FvuyhKs6+wjTMLZIvWmlkDrre87PZ
+         DIPd0hXKdj7bs6FDJ+WQKydYOn4OegmcEsssW4eUW6s0HtY4ym0eUEAJtNhZuFxfxTKu
+         zTMw==
+X-Gm-Message-State: ABuFfoh8Wlfsl4cUF2dDLpBrDRv/ogWmP+X5AlviOV/ZDnUnPRR4Z9mq
+        OAh9OaDnMMd7+s1lXNbtv1NdnsTAdo4=
+X-Google-Smtp-Source: ACcGV60pI4kZPoKxzP0uQJ3hTmnyvBIa/3VV39wUzJNAsQpQ1F0bGKHofzdAD6KiVLKp605SprIEuw==
+X-Received: by 2002:a19:5186:: with SMTP id g6mr13446958lfl.143.1540356831918;
+        Tue, 23 Oct 2018 21:53:51 -0700 (PDT)
+Received: from [192.168.1.4] ([109.252.55.124])
+        by smtp.gmail.com with ESMTPSA id c22sm407201lfd.88.2018.10.23.21.53.50
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Tue, 23 Oct 2018 21:53:50 -0700 (PDT)
+Subject: Re: Have 15GB missing in btrfs filesystem.
+To:     Marc MERLIN <marc@merlins.org>, linux-btrfs@vger.kernel.org
+References: <20181024003613.q5bxmqm4hh5xbgmf@merlins.org>
+From:   Andrei Borzenkov <arvidjaar@gmail.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=arvidjaar@gmail.com; prefer-encrypt=mutual; keydata=
+ xsDiBDxiRwwRBAC3CN9wdwpVEqUGmSoqF8tWVIT4P/bLCSZLkinSZ2drsblKpdG7x+guxwts
+ +LgI8qjf/q5Lah1TwOqzDvjHYJ1wbBauxZ03nDzSLUhD4Ms1IsqlIwyTLumQs4vcQdvLxjFs
+ G70aDglgUSBogtaIEsiYZXl4X0j3L9fVstuz4/wXtwCg1cN/yv/eBC0tkcM1nsJXQrC5Ay8D
+ /1aA5qPticLBpmEBxqkf0EMHuzyrFlqVw1tUjZ+Ep2LMlem8malPvfdZKEZ71W1a/XbRn8FE
+ SOp0tUa5GwdoDXgEp1CJUn+WLurR0KPDf01E4j/PHHAoABgrqcOTcIVoNpv2gNiBySVsNGzF
+ XTeY/Yd6vQclkqjBYONGN3r9R8bWA/0Y1j4XK61qjowRk3Iy8sBggM3PmmNRUJYgroerpcAr
+ 2byz6wTsb3U7OzUZ1Llgisk5Qum0RN77m3I37FXlIhCmSEY7KZVzGNW3blugLHcfw/HuCB7R
+ 1w5qiLWKK6eCQHL+BZwiU8hX3dtTq9d7WhRW5nsVPEaPqudQfMSi/Ux1kc0mQW5kcmVpIEJv
+ cnplbmtvdiA8YXJ2aWRqYWFyQGdtYWlsLmNvbT7CZQQTEQIAJQIbAwYLCQgHAwIGFQgCCQoL
+ BBYCAwECHgECF4AFAliWAiQCGQEACgkQR6LMutpd94wFGwCeNuQnMDxve/Fo3EvYIkAOn+zE
+ 21cAnRCQTXd1hTgcRHfpArEd/Rcb5+SczsBNBDxiRyQQBACQtME33UHfFOCApLki4kLFrIw1
+ 5A5asua10jm5It+hxzI9jDR9/bNEKDTKSciHnM7aRUggLwTt+6CXkMy8an+tVqGL/MvDc4/R
+ KKlZxj39xP7wVXdt8y1ciY4ZqqZf3tmmSN9DlLcZJIOT82DaJZuvr7UJ7rLzBFbAUh4yRKaN
+ nwADBwQAjNvMr/KBcGsV/UvxZSm/mdpvUPtcw9qmbxCrqFQoB6TmoZ7F6wp/rL3TkQ5UElPR
+ gsG12+Dk9GgRhnnxTHCFgN1qTiZNX4YIFpNrd0au3W/Xko79L0c4/49ten5OrFI/psx53fhY
+ vLYfkJnc62h8hiNeM6kqYa/x0BEddu92ZG7CRgQYEQIABgUCPGJHJAAKCRBHosy62l33jMhd
+ AJ48P7WDvKLQQ5MKnn2D/TI337uA/gCgn5mnvm4SBctbhaSBgckRmgSxfwQ=
+Message-ID: <d057f534-df7f-d1bc-bdef-9b794aaf3492@gmail.com>
+Date:   Wed, 24 Oct 2018 07:53:49 +0300
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.2.1
+MIME-Version: 1.0
+In-Reply-To: <20181024003613.q5bxmqm4hh5xbgmf@merlins.org>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This patch adds cli
-  btrfs device forget [dev]
-to remove the given device structure in the kernel if the device
-is unmounted. If no argument is given it shall remove all stale
-(device which are not mounted) from the kernel.
+24.10.2018 3:36, Marc MERLIN пишет:
+> Normally when btrfs fi show will show lost space because 
+> your trees aren't balanced.
+> Balance usually reclaims that space, or most of it.
+> In this case, not so much.
+> 
+> kernel 4.17.6:
+> 
+> saruman:/mnt/btrfs_pool1# btrfs fi show .
+> Label: 'btrfs_pool1'  uuid: fda628bc-1ca4-49c5-91c2-4260fe967a23
+> 	Total devices 1 FS bytes used 186.89GiB
+> 	devid    1 size 228.67GiB used 207.60GiB path /dev/mapper/pool1
+> 
+> Ok, I have 21GB between used by FS and used in block layer.
+> 
+> saruman:/mnt/btrfs_pool1# btrfs balance start -dusage=40 -v .
+> Dumping filters: flags 0x1, state 0x0, force is off
+>   DATA (flags 0x2): balancing, usage=40
+> Done, had to relocate 1 out of 210 chunks
+> saruman:/mnt/btrfs_pool1# btrfs balance start -musage=60 -v .
+> Dumping filters: flags 0x6, state 0x0, force is off
+>   METADATA (flags 0x2): balancing, usage=60
+>   SYSTEM (flags 0x2): balancing, usage=60
+> Done, had to relocate 4 out of 209 chunks
+> saruman:/mnt/btrfs_pool1# btrfs fi show .
+> Label: 'btrfs_pool1'  uuid: fda628bc-1ca4-49c5-91c2-4260fe967a23
+> 	Total devices 1 FS bytes used 186.91GiB
+> 	devid    1 size 228.67GiB used 205.60GiB path /dev/mapper/pool1
+> 
+> That didn't help much, delta is now 19GB
+> 
+> saruman:/mnt/btrfs_pool1# btrfs balance start -dusage=80 -v .
+> Dumping filters: flags 0x1, state 0x0, force is off
+>   DATA (flags 0x2): balancing, usage=80
+> Done, had to relocate 8 out of 207 chunks
+> saruman:/mnt/btrfs_pool1# btrfs fi show .
+> Label: 'btrfs_pool1'  uuid: fda628bc-1ca4-49c5-91c2-4260fe967a23
+> 	Total devices 1 FS bytes used 187.03GiB
+> 	devid    1 size 228.67GiB used 201.54GiB path /dev/mapper/pool1
+> 
+> Ok, now delta is 14GB
+> 
+> saruman:/mnt/btrfs_pool1# btrfs balance start -musage=80 -v .
+> Dumping filters: flags 0x6, state 0x0, force is off
+>   METADATA (flags 0x2): balancing, usage=80
+>   SYSTEM (flags 0x2): balancing, usage=80
+> Done, had to relocate 5 out of 202 chunks
+> saruman:/mnt/btrfs_pool1# btrfs fi show .
+> Label: 'btrfs_pool1'  uuid: fda628bc-1ca4-49c5-91c2-4260fe967a23
+> 	Total devices 1 FS bytes used 188.24GiB
+> 	devid    1 size 228.67GiB used 203.54GiB path /dev/mapper/pool1
+> 
+> and it's back to 15GB :-/
+> 
+> How can I get 188.24 and 203.54 to converge further? Where is all that
+> space gone?
+> 
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- cmds-device.c | 59 +++++++++++++++++++++++++++++++++++++++++++++++++++--------
- ioctl.h       |  2 ++
- 2 files changed, 53 insertions(+), 8 deletions(-)
+Most likely this is due to partially used extents which has been
+explained more than once on this list. When large extent is partially
+overwritten, extent is not physically split - it remains allocated in
+full but only part of it is referenced. Balance does not change it (at
+least that is my understanding) - it moves extents, but here we have
+internal fragmentation inside of extent. Defragmentation should rewrite
+files, but if you have snapshots, it is unclear if there will be any gain.
 
-diff --git a/cmds-device.c b/cmds-device.c
-index 2a05f70a76a9..c2a2b7f304b8 100644
---- a/cmds-device.c
-+++ b/cmds-device.c
-@@ -254,10 +254,32 @@ static int cmd_device_delete(int argc, char **argv)
- 	return _cmd_device_remove(argc, argv, cmd_device_delete_usage);
- }
- 
-+static int btrfs_forget_devices(char *path)
-+{
-+	struct btrfs_ioctl_vol_args args;
-+	int ret;
-+	int fd;
-+
-+	fd = open("/dev/btrfs-control", O_RDWR);
-+	if (fd < 0)
-+		return -errno;
-+
-+	memset(&args, 0, sizeof(args));
-+	if (path)
-+		strncpy_null(args.name, path);
-+	ret = ioctl(fd, BTRFS_IOC_FORGET_DEV, &args);
-+	if (ret)
-+		ret = -errno;
-+	close(fd);
-+	return ret;
-+}
-+
- static const char * const cmd_device_scan_usage[] = {
--	"btrfs device scan [(-d|--all-devices)|<device> [<device>...]]",
--	"Scan devices for a btrfs filesystem",
-+	"btrfs device scan [(-d|--all-devices)|(-u|--forget)|<device> "\
-+							"[<device>...]]",
-+	"Scan or forget (deregister) devices for a btrfs filesystem",
- 	" -d|--all-devices (deprecated)",
-+	" -u|--forget [<device> ..]",
- 	NULL
- };
- 
-@@ -267,32 +289,45 @@ static int cmd_device_scan(int argc, char **argv)
- 	int devstart;
- 	int all = 0;
- 	int ret = 0;
-+	int forget = 0;
- 
- 	optind = 0;
- 	while (1) {
- 		int c;
- 		static const struct option long_options[] = {
- 			{ "all-devices", no_argument, NULL, 'd'},
-+			{ "forget", no_argument, NULL, 'u'},
- 			{ NULL, 0, NULL, 0}
- 		};
- 
--		c = getopt_long(argc, argv, "d", long_options, NULL);
-+		c = getopt_long(argc, argv, "du", long_options, NULL);
- 		if (c < 0)
- 			break;
- 		switch (c) {
- 		case 'd':
- 			all = 1;
- 			break;
-+		case 'u':
-+			forget = 1;
-+			break;
- 		default:
- 			usage(cmd_device_scan_usage);
- 		}
- 	}
- 	devstart = optind;
- 
-+	if (all && forget)
-+		usage(cmd_device_scan_usage);
-+
- 	if (all && check_argc_max(argc - optind, 1))
- 		usage(cmd_device_scan_usage);
- 
- 	if (all || argc - optind == 0) {
-+		if (forget) {
-+			ret = btrfs_forget_devices(NULL);
-+			error_on(ret, "error %d while running forget", ret);
-+			goto out;
-+		}
- 		printf("Scanning for Btrfs filesystems\n");
- 		ret = btrfs_scan_devices();
- 		error_on(ret, "error %d while scanning", ret);
-@@ -315,11 +350,19 @@ static int cmd_device_scan(int argc, char **argv)
- 			ret = 1;
- 			goto out;
- 		}
--		printf("Scanning for Btrfs filesystems in '%s'\n", path);
--		if (btrfs_register_one_device(path) != 0) {
--			ret = 1;
--			free(path);
--			goto out;
-+		if (forget) {
-+			ret = btrfs_forget_devices(path);
-+			if (ret)
-+				error("Can't forget '%s': %s",
-+							path, strerror(-ret));
-+		} else {
-+			printf("Scanning for Btrfs filesystems in '%s'\n",
-+									path);
-+			if (btrfs_register_one_device(path) != 0) {
-+				ret = 1;
-+				free(path);
-+				goto out;
-+			}
- 		}
- 		free(path);
- 	}
-diff --git a/ioctl.h b/ioctl.h
-index 709e996f401c..e27d80e09392 100644
---- a/ioctl.h
-+++ b/ioctl.h
-@@ -721,6 +721,8 @@ static inline char *btrfs_err_str(enum btrfs_err_code err_code)
- 				   struct btrfs_ioctl_vol_args)
- #define BTRFS_IOC_SCAN_DEV _IOW(BTRFS_IOCTL_MAGIC, 4, \
- 				   struct btrfs_ioctl_vol_args)
-+#define BTRFS_IOC_FORGET_DEV _IOW(BTRFS_IOCTL_MAGIC, 5, \
-+				   struct btrfs_ioctl_vol_args)
- /* trans start and trans end are dangerous, and only for
-  * use by applications that know how to avoid the
-  * resulting deadlocks
--- 
-1.8.3.1
-
+I wonder if there is any tool that can compute physical vs. logical
+space consumption (i.e. how much space in extent is actually
+referenced). Should be possible using python-btrfs but probably time
+consuming as it needs to walk each extent.

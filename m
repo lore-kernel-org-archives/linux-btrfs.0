@@ -2,276 +2,188 @@ Return-Path: <SRS0=Pubh=NE=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.5 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-8.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_MUTT autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2F445C004D3
-	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Oct 2018 09:13:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D0C58C004D3
+	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Oct 2018 10:11:44 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B9BE92075D
-	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Oct 2018 09:13:13 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=kernel.org header.i=@kernel.org header.b="VaKRAGpa"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org B9BE92075D
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=kernel.org
+	by mail.kernel.org (Postfix) with ESMTP id 971E62064A
+	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Oct 2018 10:11:44 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 971E62064A
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727540AbeJXRk3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 24 Oct 2018 13:40:29 -0400
-Received: from mail.kernel.org ([198.145.29.99]:33116 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726256AbeJXRk3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 24 Oct 2018 13:40:29 -0400
-Received: from localhost.localdomain (bl8-197-74.dsl.telepac.pt [85.241.197.74])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id CF6882075D;
-        Wed, 24 Oct 2018 09:13:09 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1540372390;
-        bh=pn4qgeCNd6VY/KALZAeG21tVrd53JOv8n/h/Kr+S82E=;
-        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=VaKRAGpay0udOa8JniNHJcT7C45XbTW7kALE/gVf58/hVpxnzXi86RjlMYjh2o8VQ
-         QtUJyyccf+Fh1KKqMyUi00BT/YIF888kzrADex0j264LBPdJMJiTbc5Vttc7qRWQFA
-         UFHqtb/fH0nwEbehDQBPxyqcJe5PsFQDwKLDhTNE=
-From:   fdmanana@kernel.org
-To:     linux-btrfs@vger.kernel.org
-Cc:     josef@toxicpanda.com, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH v4] Btrfs: fix deadlock on tree root leaf when finding free extent
-Date:   Wed, 24 Oct 2018 10:13:03 +0100
-Message-Id: <20181024091303.20324-1-fdmanana@kernel.org>
-X-Mailer: git-send-email 2.11.0
-In-Reply-To: <20181022090946.1150-1-fdmanana@kernel.org>
-References: <20181022090946.1150-1-fdmanana@kernel.org>
+        id S1727147AbeJXSjG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 24 Oct 2018 14:39:06 -0400
+Received: from mx2.suse.de ([195.135.220.15]:49416 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726301AbeJXSjG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 24 Oct 2018 14:39:06 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 39752AEAF;
+        Wed, 24 Oct 2018 10:11:36 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 6D404DABAA; Wed, 24 Oct 2018 12:11:28 +0200 (CEST)
+Date:   Wed, 24 Oct 2018 12:11:28 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Phillip Potter <phil@philpotter.co.uk>
+Cc:     clm@fb.com, linux-kernel@vger.kernel.org, amir73il@gmail.com,
+        viro@zeniv.linux.org.uk, jbacik@fb.com, dsterba@suse.com,
+        linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org
+Subject: Re: [RFC][PATCH v2 10/10] btrfs: use common file type conversion
+Message-ID: <20181024101128.GS16290@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Phillip Potter <phil@philpotter.co.uk>,
+        clm@fb.com, linux-kernel@vger.kernel.org, amir73il@gmail.com,
+        viro@zeniv.linux.org.uk, jbacik@fb.com, dsterba@suse.com,
+        linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org
+References: <20181023201952.GA15676@pathfinder>
+ <20181023211728.GA16584@pathfinder>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20181023211728.GA16584@pathfinder>
+User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Filipe Manana <fdmanana@suse.com>
+On Tue, Oct 23, 2018 at 10:17:28PM +0100, Phillip Potter wrote:
+> Deduplicate the btrfs file type conversion implementation.
 
-When we are writing out a free space cache, during the transaction commit
-phase, we can end up in a deadlock which results in a stack trace like the
-following:
+The per-filesystem changelogs need a brief explanation why this is done,
+like "Filesystems that use the same filetypes as defined by POSIX do not
+need to define their own versions and use the common defines in
+file_type.h", rephrase at you like.
 
- schedule+0x28/0x80
- btrfs_tree_read_lock+0x8e/0x120 [btrfs]
- ? finish_wait+0x80/0x80
- btrfs_read_lock_root_node+0x2f/0x40 [btrfs]
- btrfs_search_slot+0xf6/0x9f0 [btrfs]
- ? evict_refill_and_join+0xd0/0xd0 [btrfs]
- ? inode_insert5+0x119/0x190
- btrfs_lookup_inode+0x3a/0xc0 [btrfs]
- ? kmem_cache_alloc+0x166/0x1d0
- btrfs_iget+0x113/0x690 [btrfs]
- __lookup_free_space_inode+0xd8/0x150 [btrfs]
- lookup_free_space_inode+0x5b/0xb0 [btrfs]
- load_free_space_cache+0x7c/0x170 [btrfs]
- ? cache_block_group+0x72/0x3b0 [btrfs]
- cache_block_group+0x1b3/0x3b0 [btrfs]
- ? finish_wait+0x80/0x80
- find_free_extent+0x799/0x1010 [btrfs]
- btrfs_reserve_extent+0x9b/0x180 [btrfs]
- btrfs_alloc_tree_block+0x1b3/0x4f0 [btrfs]
- __btrfs_cow_block+0x11d/0x500 [btrfs]
- btrfs_cow_block+0xdc/0x180 [btrfs]
- btrfs_search_slot+0x3bd/0x9f0 [btrfs]
- btrfs_lookup_inode+0x3a/0xc0 [btrfs]
- ? kmem_cache_alloc+0x166/0x1d0
- btrfs_update_inode_item+0x46/0x100 [btrfs]
- cache_save_setup+0xe4/0x3a0 [btrfs]
- btrfs_start_dirty_block_groups+0x1be/0x480 [btrfs]
- btrfs_commit_transaction+0xcb/0x8b0 [btrfs]
+> Original patch by Amir Goldstein.
+> 
+> v2:
+> - Rebased against Linux 4.19 by Phillip Potter
+> - Compile-time checks added by Phillip Potter to make
+>   sure the BTRFS_FT_x enum values stay same as FT_x values
+> 
+> v1:
+> - Initial implementation
+> 
+> Signed-off-by: Phillip Potter <phil@philpotter.co.uk>
+> ---
+>  fs/btrfs/btrfs_inode.h          |  2 --
+>  fs/btrfs/delayed-inode.c        |  2 +-
+>  fs/btrfs/inode.c                | 35 +++++++++++++++++----------------
+>  include/uapi/linux/btrfs_tree.h |  2 ++
+>  4 files changed, 21 insertions(+), 20 deletions(-)
+> 
+> diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
+> index 1343ac57b438..c7c6db6b4a35 100644
+> --- a/fs/btrfs/btrfs_inode.h
+> +++ b/fs/btrfs/btrfs_inode.h
+> @@ -196,8 +196,6 @@ struct btrfs_inode {
+>  	struct inode vfs_inode;
+>  };
+>  
+> -extern unsigned char btrfs_filetype_table[];
+> -
+>  static inline struct btrfs_inode *BTRFS_I(const struct inode *inode)
+>  {
+>  	return container_of(inode, struct btrfs_inode, vfs_inode);
+> diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
+> index f51b509f2d9b..c1da34e3a775 100644
+> --- a/fs/btrfs/delayed-inode.c
+> +++ b/fs/btrfs/delayed-inode.c
+> @@ -1691,7 +1691,7 @@ int btrfs_readdir_delayed_dir_index(struct dir_context *ctx,
+>  		name = (char *)(di + 1);
+>  		name_len = btrfs_stack_dir_name_len(di);
+>  
+> -		d_type = btrfs_filetype_table[di->type];
+> +		d_type = fs_dtype(di->type);
+>  		btrfs_disk_key_to_cpu(&location, &di->location);
+>  
+>  		over = !dir_emit(ctx, name, name_len,
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 3ea5339603cf..4cbdcba4799a 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -73,17 +73,6 @@ struct kmem_cache *btrfs_trans_handle_cachep;
+>  struct kmem_cache *btrfs_path_cachep;
+>  struct kmem_cache *btrfs_free_space_cachep;
+>  
+> -#define S_SHIFT 12
+> -static const unsigned char btrfs_type_by_mode[S_IFMT >> S_SHIFT] = {
+> -	[S_IFREG >> S_SHIFT]	= BTRFS_FT_REG_FILE,
+> -	[S_IFDIR >> S_SHIFT]	= BTRFS_FT_DIR,
+> -	[S_IFCHR >> S_SHIFT]	= BTRFS_FT_CHRDEV,
+> -	[S_IFBLK >> S_SHIFT]	= BTRFS_FT_BLKDEV,
+> -	[S_IFIFO >> S_SHIFT]	= BTRFS_FT_FIFO,
+> -	[S_IFSOCK >> S_SHIFT]	= BTRFS_FT_SOCK,
+> -	[S_IFLNK >> S_SHIFT]	= BTRFS_FT_SYMLINK,
+> -};
+> -
+>  static int btrfs_setsize(struct inode *inode, struct iattr *attr);
+>  static int btrfs_truncate(struct inode *inode, bool skip_writeback);
+>  static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent);
+> @@ -5803,10 +5792,6 @@ static struct dentry *btrfs_lookup(struct inode *dir, struct dentry *dentry,
+>  	return d_splice_alias(inode, dentry);
+>  }
+>  
+> -unsigned char btrfs_filetype_table[] = {
+> -	DT_UNKNOWN, DT_REG, DT_DIR, DT_CHR, DT_BLK, DT_FIFO, DT_SOCK, DT_LNK
+> -};
+> -
+>  /*
+>   * All this infrastructure exists because dir_emit can fault, and we are holding
+>   * the tree lock when doing readdir.  For now just allocate a buffer and copy
+> @@ -5945,7 +5930,23 @@ static int btrfs_real_readdir(struct file *file, struct dir_context *ctx)
+>  		name_ptr = (char *)(entry + 1);
+>  		read_extent_buffer(leaf, name_ptr, (unsigned long)(di + 1),
+>  				   name_len);
+> -		put_unaligned(btrfs_filetype_table[btrfs_dir_type(leaf, di)],
+> +
+> +		/*
+> +		 * compile-time asserts that generic FT_x types
+> +		 * still match BTRFS_FT_x types - no need to list
+> +		 * in other functions as well as build will
+> +		 * fail either way
+> +		 */
 
-At cache_save_setup() we need to update the inode item of a block group's
-cache which is located in the tree root (fs_info->tree_root), which means
-that it may result in COWing a leaf from that tree. If that happens we
-need to find a free metadata extent and while looking for one, if we find
-a block group which was not cached yet we attempt to load its cache by
-calling cache_block_group(). However this function will try to load the
-inode of the free space cache, which requires finding the matching inode
-item in the tree root - if that inode item is located in the same leaf as
-the inode item of the space cache we are updating at cache_save_setup(),
-we end up in a deadlock, since we try to obtain a read lock on the same
-extent buffer that we previously write locked.
+Please format comments to 80 columns.
 
-So fix this by using the tree root's commit root when searching for a
-block group's free space cache inode item when we are attempting to load
-a free space cache. This is safe since block groups once loaded stay in
-memory forever, as well as their caches, so after they are first loaded
-we will never need to read their inode items again. For new block groups,
-once they are created they get their ->cached field set to
-BTRFS_CACHE_FINISHED meaning we will not need to read their inode item.
+> +		BUILD_BUG_ON(BTRFS_FT_UNKNOWN != FT_UNKNOWN);
+> +		BUILD_BUG_ON(BTRFS_FT_REG_FILE != FT_REG_FILE);
+> +		BUILD_BUG_ON(BTRFS_FT_DIR != FT_DIR);
+> +		BUILD_BUG_ON(BTRFS_FT_CHRDEV != FT_CHRDEV);
+> +		BUILD_BUG_ON(BTRFS_FT_BLKDEV != FT_BLKDEV);
+> +		BUILD_BUG_ON(BTRFS_FT_FIFO != FT_FIFO);
+> +		BUILD_BUG_ON(BTRFS_FT_SOCK != FT_SOCK);
+> +		BUILD_BUG_ON(BTRFS_FT_SYMLINK != FT_SYMLINK);
+> +
+> +		put_unaligned(fs_dtype(btrfs_dir_type(leaf, di)),
+>  				&entry->type);
+>  		btrfs_dir_item_key_to_cpu(leaf, di, &location);
+>  		put_unaligned(location.objectid, &entry->ino);
+> @@ -6350,7 +6351,7 @@ static struct inode *btrfs_new_inode(struct btrfs_trans_handle *trans,
+>  
+>  static inline u8 btrfs_inode_type(struct inode *inode)
+>  {
+> -	return btrfs_type_by_mode[(inode->i_mode & S_IFMT) >> S_SHIFT];
+> +	return fs_umode_to_ftype(inode->i_mode);
+>  }
+>  
+>  /*
+> diff --git a/include/uapi/linux/btrfs_tree.h b/include/uapi/linux/btrfs_tree.h
+> index aff1356c2bb8..5747cffa09fa 100644
+> --- a/include/uapi/linux/btrfs_tree.h
+> +++ b/include/uapi/linux/btrfs_tree.h
+> @@ -307,6 +307,8 @@
+>   *
+>   * Used by:
+>   * struct btrfs_dir_item.type
+> + *
+> + * Values 0..7 should match common file type values in file_type.h.
 
-Reported-by: Andrew Nelson <andrew.s.nelson@gmail.com>
-Link: https://lore.kernel.org/linux-btrfs/CAPTELenq9x5KOWuQ+fa7h1r3nsJG8vyiTH8+ifjURc_duHh2Wg@mail.gmail.com/
-Fixes: 9d66e233c704 ("Btrfs: load free space cache if it exists")
-Tested-by: Andrew Nelson <andrew.s.nelson@gmail.com>
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
-
-V2: Made the solution more generic, since the problem could happen in any
-    path COWing an extent buffer from the root tree.
-
-    Applies on top of a previous patch titled:
-
-     "Btrfs: fix deadlock when writing out free space caches"
-
-V3: Made it more simple by avoiding the atomic from V2 and pass the root
-    to find_free_extent().
-
-V4: Changed the whole approach so that we lookup for free space cache inode
-    items using the commit root instead.
-    The previous approach was causing some transactions to be aborted with
-    -ENOSPC during umount because sometimes we were skipping cache loading
-    of all metadata block groups.
-
- fs/btrfs/ctree.h            |  3 +++
- fs/btrfs/free-space-cache.c | 22 +++++++++++++++++++++-
- fs/btrfs/inode.c            | 32 ++++++++++++++++++++++----------
- 3 files changed, 46 insertions(+), 11 deletions(-)
-
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 2cddfe7806a4..2b34b2a05ad6 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3177,6 +3177,9 @@ void btrfs_destroy_inode(struct inode *inode);
- int btrfs_drop_inode(struct inode *inode);
- int __init btrfs_init_cachep(void);
- void __cold btrfs_destroy_cachep(void);
-+struct inode *btrfs_iget_path(struct super_block *s, struct btrfs_key *location,
-+			      struct btrfs_root *root, int *new,
-+			      struct btrfs_path *path);
- struct inode *btrfs_iget(struct super_block *s, struct btrfs_key *location,
- 			 struct btrfs_root *root, int *was_new);
- struct extent_map *btrfs_get_extent(struct btrfs_inode *inode,
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index 65b79500e09f..7265f35324f6 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -68,7 +68,8 @@ static struct inode *__lookup_free_space_inode(struct btrfs_root *root,
- 	btrfs_disk_key_to_cpu(&location, &disk_key);
- 	btrfs_release_path(path);
- 
--	inode = btrfs_iget(fs_info->sb, &location, root, NULL);
-+	inode = btrfs_iget_path(fs_info->sb, &location, root, NULL, path);
-+	btrfs_release_path(path);
- 	if (IS_ERR(inode))
- 		return inode;
- 
-@@ -830,6 +831,25 @@ int load_free_space_cache(struct btrfs_fs_info *fs_info,
- 	path->search_commit_root = 1;
- 	path->skip_locking = 1;
- 
-+	/*
-+	 * We must pass a path with search_commit_root set to btrfs_iget in
-+	 * order to avoid a deadlock when allocating extents for the tree root.
-+	 *
-+	 * When we are COWing an extent buffer from the tree root, when looking
-+	 * for a free extent, at extent-tree.c:find_free_extent(), we can find
-+	 * block group without its free space cache loaded. When we find one
-+	 * we must load its space cache which requires reading its free space
-+	 * cache's inode item from the root tree. If this inode item is located
-+	 * in the same leaf that we started COWing before, then we end up in
-+	 * deadlock on the extent buffer (trying to read lock it when we
-+	 * previously write locked it).
-+	 *
-+	 * It's safe to read the inode item using the commit root because
-+	 * block groups, once loaded, stay in memory forever (until they are
-+	 * removed) as well as their space caches once loaded. New block groups
-+	 * once created get their ->cached field set to BTRFS_CACHE_FINISHED so
-+	 * we will never try to read their inode item while the fs is mounted.
-+	 */
- 	inode = lookup_free_space_inode(fs_info, block_group, path);
- 	if (IS_ERR(inode)) {
- 		btrfs_free_path(path);
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index d6b61b1facdd..64ea749c1ba4 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -3568,10 +3568,11 @@ static noinline int acls_after_inode_item(struct extent_buffer *leaf,
- /*
-  * read an inode from the btree into the in-memory inode
-  */
--static int btrfs_read_locked_inode(struct inode *inode)
-+static int btrfs_read_locked_inode(struct inode *inode,
-+				   struct btrfs_path *in_path)
- {
- 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
--	struct btrfs_path *path;
-+	struct btrfs_path *path = in_path;
- 	struct extent_buffer *leaf;
- 	struct btrfs_inode_item *inode_item;
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
-@@ -3587,15 +3588,18 @@ static int btrfs_read_locked_inode(struct inode *inode)
- 	if (!ret)
- 		filled = true;
- 
--	path = btrfs_alloc_path();
--	if (!path)
--		return -ENOMEM;
-+	if (!path) {
-+		path = btrfs_alloc_path();
-+		if (!path)
-+			return -ENOMEM;
-+	}
- 
- 	memcpy(&location, &BTRFS_I(inode)->location, sizeof(location));
- 
- 	ret = btrfs_lookup_inode(NULL, root, path, &location, 0);
- 	if (ret) {
--		btrfs_free_path(path);
-+		if (path != in_path)
-+			btrfs_free_path(path);
- 		return ret;
- 	}
- 
-@@ -3720,7 +3724,8 @@ static int btrfs_read_locked_inode(struct inode *inode)
- 				  btrfs_ino(BTRFS_I(inode)),
- 				  root->root_key.objectid, ret);
- 	}
--	btrfs_free_path(path);
-+	if (path != in_path)
-+		btrfs_free_path(path);
- 
- 	if (!maybe_acls)
- 		cache_no_acl(inode);
-@@ -5662,8 +5667,9 @@ static struct inode *btrfs_iget_locked(struct super_block *s,
- /* Get an inode object given its location and corresponding root.
-  * Returns in *is_new if the inode was read from disk
-  */
--struct inode *btrfs_iget(struct super_block *s, struct btrfs_key *location,
--			 struct btrfs_root *root, int *new)
-+struct inode *btrfs_iget_path(struct super_block *s, struct btrfs_key *location,
-+			      struct btrfs_root *root, int *new,
-+			      struct btrfs_path *path)
- {
- 	struct inode *inode;
- 
-@@ -5674,7 +5680,7 @@ struct inode *btrfs_iget(struct super_block *s, struct btrfs_key *location,
- 	if (inode->i_state & I_NEW) {
- 		int ret;
- 
--		ret = btrfs_read_locked_inode(inode);
-+		ret = btrfs_read_locked_inode(inode, path);
- 		if (!ret) {
- 			inode_tree_add(inode);
- 			unlock_new_inode(inode);
-@@ -5696,6 +5702,12 @@ struct inode *btrfs_iget(struct super_block *s, struct btrfs_key *location,
- 	return inode;
- }
- 
-+struct inode *btrfs_iget(struct super_block *s, struct btrfs_key *location,
-+			 struct btrfs_root *root, int *new)
-+{
-+	return btrfs_iget_path(s, location, root, new, NULL);
-+}
-+
- static struct inode *new_simple_dir(struct super_block *s,
- 				    struct btrfs_key *key,
- 				    struct btrfs_root *root)
--- 
-2.11.0
-
+I think it's rather 'must' than 'should' as there are the compile-time
+checks.

@@ -7,34 +7,34 @@ X-Spam-Status: No, score=-6.5 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
 	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EA210C67863
-	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Oct 2018 03:09:12 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B59DFC46475
+	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Oct 2018 03:10:53 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B1F5F2075D
-	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Oct 2018 03:09:12 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org B1F5F2075D
+	by mail.kernel.org (Postfix) with ESMTP id 692F52075D
+	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Oct 2018 03:10:53 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 692F52075D
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=gmx.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726449AbeJXLfK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 24 Oct 2018 07:35:10 -0400
-Received: from mout.gmx.net ([212.227.15.19]:47613 "EHLO mout.gmx.net"
+        id S1726521AbeJXLg4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 24 Oct 2018 07:36:56 -0400
+Received: from mout.gmx.net ([212.227.17.21]:39615 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725826AbeJXLfJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 24 Oct 2018 07:35:09 -0400
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx003
- [212.227.17.184]) with ESMTPSA (Nemesis) id 0M2LZc-1fN1kh3mfk-00sAJK; Wed, 24
- Oct 2018 03:24:33 +0200
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx003
- [212.227.17.184]) with ESMTPSA (Nemesis) id 0M2LZc-1fN1kh3mfk-00sAJK; Wed, 24
- Oct 2018 03:24:33 +0200
-Subject: Re: [PATCH 03/13] btrfs-progs: lowmem: fix false alert if extent item
- has been repaired
-To:     Su Yue <suy.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+        id S1725826AbeJXLgz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 24 Oct 2018 07:36:55 -0400
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx101
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 0MF9WR-1gPEJG0GWx-00GIcF; Wed, 24
+ Oct 2018 02:28:18 +0200
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx101
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 0MF9WR-1gPEJG0GWx-00GIcF; Wed, 24
+ Oct 2018 02:28:18 +0200
+Subject: Re: [PATCH 08/13] btrfs-progs: Revert "btrfs-progs: Add repair and
+ report function for orphan file extent."
+To:     Su Yue <suy.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org,
+        David Sterba <dsterba@suse.cz>
+Cc:     Su Yanjun <suyj.fnst@cn.fujitsu.com>
 References: <20181023094147.7906-1-suy.fnst@cn.fujitsu.com>
- <20181023094147.7906-4-suy.fnst@cn.fujitsu.com>
- <3363e342-9acc-95d4-cf70-2872fc8b6258@gmx.com>
- <825f4755-1f86-e778-7c9b-3798ea5c7185@cn.fujitsu.com>
+ <20181023094147.7906-9-suy.fnst@cn.fujitsu.com>
 From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
@@ -61,32 +61,32 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
  4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
  h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <efb6600b-3a78-52e7-e039-bd23632bc452@gmx.com>
-Date:   Wed, 24 Oct 2018 09:24:27 +0800
+Message-ID: <83c8ff64-1536-944a-71c4-f91706ef6ebf@gmx.com>
+Date:   Wed, 24 Oct 2018 08:28:12 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <825f4755-1f86-e778-7c9b-3798ea5c7185@cn.fujitsu.com>
+In-Reply-To: <20181023094147.7906-9-suy.fnst@cn.fujitsu.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
-X-Provags-ID: V03:K1:tv4AkgajI4BAoynPkI1B4urGcpD8BhE6RuFTmDnB/MhqhAahJrn
- RgT66ToNiHWZsfSP5/6j5jRinSQZFCW4KCeT6aBxnjcj/dk5+rSQGtXerkQjThZ+yDXG8yr
- 7LXZM4AiYABNFGhKQFfM3iTjxTL2Byu8iUE3IdzHlWZRx0RCivxqJHXntm6Nedj+BXfRvnT
- ANb8tZ/xMa9IWlDQ//mVQ==
-X-UI-Out-Filterresults: notjunk:1;V01:K0:ijr6IjPazOI=:l8KnI2gdGxKfp/L3vstuWg
- z/2kU0955HWum29irBNpyrywXsnYmrUmiMn+THPR90wuVHvRuce5tJmnA7TOGN9Lh6yVtL7az
- XHbmMfMlX5YsSO2YdeBAMo3Uxg2RCutZZF+EvJnXvwVdXh6iLYifuVT60CiO7+b+ba9jkw/i4
- gA2487d0d/nKLwQQWCcdLfrmb6DFU7dLvcbAuFRBacIB2w43KFonoIlYPd/Fp1j0mUYy6r/a2
- VGIMr++aUey/xgTZ3nZqhKu/LQ29kB80zNqbPis78J0moC7dJwo2pyuMTnLg8wGDEt+nroI1V
- DBwCPXATGavpIAjiJD2gIQTzpYDRtzXuZ6ilV7a1HiJCpUBOmCjIo9jn0RLfdagT9ZgEMNCXk
- Z3KwpJSmU5DT2cPwDlWsOgtj0PywYt4Oyi1BiF10x1H5Hk2ZVAOOZyZIlgGNPhBfjHqzlt3SR
- rLl38zOp0rxAC1W7IAewEU3nAXHaoQrywOuAePQwVGNRLxfRssAsHKkYtcivQHPC2p1ICKfFM
- wng360KqgCX9jPyaSyCEJX0I9jFLxujV+k5GjILRcyqA1aajEAW7Q7E9iJsmnJ4JB5OXebqw0
- xaHBAc3LUITkzKwh/sDO9jkXj03U5fljmKpX0FgFjeu19DSq14Yn7YE0PVIyCsrTmtQxnCGqH
- dkJUBmkHwvlG8CsUJ5eWfjB3Oh+wvJ+EhxGTyx6bqV5zr0deVYWKt0gCQIJRFEQkg6bYwKp8c
- 3GWk/YbtoTCJ1hjG673EBioiX5qOvaQu+WHVJVGk/QCYwnlPbEEWjArEAi3yw+bsfj4gdOO56
- h2Co57U+a7LTbJNWbfhVXZxpxG68kUu1ysYdFUVNmJRsSRtR8Y=
+X-Provags-ID: V03:K1:75Eg4S4wyH1te/moDlxn00v2y63mpAHqHPMeCSpJTRibt5m48/P
+ wMVEMyO5YpGM7n8ZoL2M7TJaSh8IvPe9lUf2rHCdMmC0fpPgH9ojNODKnVvncP0jlv9+l+0
+ 7Gf7Bu4MW7q6HDL7XvamsVvKAQfS1DDlgYTr/1H4/TX5d7CqWa1YxGBtYLbZbqjOAkJexVO
+ CaSV7c8HyQxuEErpdbHsQ==
+X-UI-Out-Filterresults: notjunk:1;V01:K0:/ldqPnVWTas=:BtDhDgqIP0OeVHSoEQDGrq
+ OrKZnXF/SYhUMz06I1o4ox7XO/wjhvv1PLWhOedfpNF5wYtbAvaTqnZa8ruvAACkAHlt+k0/L
+ ZQxAjeysbOVGmx20X+ehqQFUjPvq0r7uGk9vSvNkZ4BsjH4qnQ7L4KXfvmZheNeA7qb2J57fy
+ nTizTqUy/gQyX3wvM9jJoXKdM9pFfmQ66Nns8b+36mABo0DqVcGNpNpeXwkQVdmOTZqSJGc6Q
+ WTkzxryqCGXDDV6rKgmcYO72G8w7YNPX8l8RutYUxGL2Rhi0IicF0q/6sR///3QGr9cF4OaHK
+ vhGGu/B/9MmRmeUEBbCVM2GBL0xA9L6+iMQn3uLaIDpGsLeFEnwD706wNn48Iig3apJ3JgcBd
+ GwfldPdbugS5x86/mTFztcei5nXtdmYHz/xyDVRGublQrGL3RisUo2c/wIckEcF/3rf2H001d
+ PNnslqqkmxLKFOOFOxiN/wi0CeBMSlVcni6UGmb5HYHMuO3SYtDHhmOxGOPpbAbPullwr+66U
+ FJ0ETlkZ3OzlkcQg4Sn9vXriGdTECiVoa7+bMzfIGHHueOzfxB3NwcsJLUGJFraOwjidQv2kh
+ ATS7zoCMgMaTiHwFiL3SfBIDBNioHlPb/aZC7vUbKpfbtRZhQPWJrah22v9xUccRLw467hsu+
+ KbGhlC9gv94Q3XjNJDc/VXv4y+2iLbBF2LncJTLiFB6XcLH9+7vvS0WD64/o2g4SBfEOl+Mlc
+ vIz5+36RfYOTom6NoivDWJkUH2fpIl9fgE7HPXOwhRoh3KCAKAclQXjOGryDzTEau/PXiAea+
+ OvIIjO0EOVkkLf77P6st6BtXSFD2RjSnc0OK4jjA08DxqPz61k=
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -94,134 +94,241 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 2018/10/24 上午9:27, Su Yue wrote:
+On 2018/10/23 下午5:41, Su Yue wrote:
+> From: Su Yanjun <suyj.fnst@cn.fujitsu.com>
 > 
-> 
-> On 10/23/18 6:30 PM, Qu Wenruo wrote:
->>
->>
->> On 2018/10/23 下午5:41, Su Yue wrote:
->>> Previously, @err are assigned immediately after check but before
->>> repair.
->>> repair_extent_item()'s return value also confuses the caller. If
->>> error has been repaired and returns 0, check_extent_item() will try
->>> to continue check the nonexistent and cause flase alerts.
->>>
->>> Here make repair_extent_item()'s return codes only represents status
->>> of the extent item, error bits are passed by pointer.
->>> Move the change of @err after repair.
->>>
->>> Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
->>> ---
->>>   check/mode-lowmem.c | 106 ++++++++++++++++++++++++++++----------------
->>>   1 file changed, 68 insertions(+), 38 deletions(-)
->>>
->>> diff --git a/check/mode-lowmem.c b/check/mode-lowmem.c
->>> index 76e7be81ceb1..769b3141de8b 100644
->>> --- a/check/mode-lowmem.c
->>> +++ b/check/mode-lowmem.c
->>> @@ -3788,35 +3788,35 @@ out:
->>>   /*
->>>    * Only delete backref if REFERENCER_MISSING now
->>>    *
->>> - * Returns <0   the extent was deleted
->>> - * Returns >0   the backref was deleted but extent still exists,
->>> returned value
->>> - *               means error after repair
->>> + * Returns <0   the whole extent item was deleted
->>> + * Returns >0   the backref was deleted but extent still exists,
->>> @err_ret
->>> + *        will be set to be error bits after repair.
->>
->> Well, I have to admit the parameter list is really human friendly from
->> the initial design.
->>
-> 
-> As my previous design, callers of repair_xxx functions just take
-> care of successes, failures and pathes. If exposing the logic
-> to the callers is acceptable, will do it as your suggestions.
+> The reason for revert is that according to the existing situation, the
+> probability of problem in the extent tree is higher than in the fs tree.
 
-Sorry, I miss the "not" word, so the correct line should be:
+In fact we should find a place to address the priority when we
+check/repair fs trees.
 
-> Well, I have to admit the parameter list is really mot human friendly
-> from the initial design.
+My initial priorities are:
+
+1) Vital trees:
+   Chunk, root
+
+2) Data trees
+   Fs, file trees
+
+3) Supporting trees
+   Extent, csum,
+
+4) Ready to die trees.
+   UUID, reloc, log
+
+In that priority, if we found something mismatch in fs and extent tree,
+we should trust fs instead of extent tree.
+
+
+Any good idea on where to place such principle, David?
+
+
+
+> So this feature should be removed.
+> 
+> Signed-off-by: Su Yanjun <suyj.fnst@cn.fujitsu.com>
+
+Looks good to me, although the commit message needs extra explanation.
+
+An example is needed to validate the revert.
 
 Thanks,
 Qu
 
-
-
+> ---
+>  check/main.c | 103 +--------------------------------------------------
+>  1 file changed, 1 insertion(+), 102 deletions(-)
 > 
-> Thanks,
-> Su
-> 
->> In fact, the only real user of @err is just that "if ((err &
->> (REFERENCER_MISSING | REFERENCER_MISMATCH)) == 0)" line.
->>
->> We can in fact get rid of that @err parameter and do that check at the
->> only caller of repair_extent_item().
->>
->>
->> And then redefine the return value.
->>
->> Like "Return < 0 if we failed to repair backref for the extent.
->> Return 0 if we repaired the backref for the extent".
->>
->> [snip]
->>>   -    if (err && repair) {
->>> +    if (tmp_err && repair) {
->>>           ret = repair_extent_item(fs_info->extent_root, path,
->>>                key.objectid, num_bytes, parent, root_objectid,
->>> -             owner, owner_offset, ret);
->>> -        if (ret < 0)
->>
->> If follow my above method, here the code can be a little easier:
->>     if (tmp_err && repair) {
->>         if (!(tmp_err & (REFERENCER_MISSING |
->>             REFENCER_MISMATCH)) {
->>             err |= tmp_err;
->>             goto next;
->>         }
->>         ret = repair_extent_item(...);
->>         if (ret < 0)
->>             err |= tmp_err;
->>     } else if (tmp_err) {
->>         err |= tmp_err;
->>     }
->>
-> 
->> Without the need to passing @err into repair_extent_item() nor modifying
->> @err in that function.
->>
->> Thanks,
->> Qu
->>
->>> +             owner, owner_offset, &tmp_err);
->>> +        err |= tmp_err;
->>> +
->>> +        if (tmp_err & FATAL_ERROR || ret < 0)
->>>               goto out;
->>> -        if (ret) {
->>> +        /*
->>> +         * the error has been repaired which means the extent item
->>> +         * is still existed with other backrefs, go to check next.
->>> +         */> +        if (ret > 0) {
->>> +            eb = path->nodes[0];
->>> +            slot = path->slots[0];
->>> +            ei = btrfs_item_ptr(eb, slot, struct btrfs_extent_item);
->>> +            item_size = btrfs_item_size_nr(eb, slot);
->>>               goto next;
->>> -            err = ret;
->>>           }
->>> +    } else {
->>> +        err |= tmp_err;
->>>       }
->>>   -    ptr += btrfs_extent_inline_ref_size(type);
->>> +    ptr_offset += btrfs_extent_inline_ref_size(type);
->>>       goto next;
->>>     out:
->>>
->>
->>
-> 
+> diff --git a/check/main.c b/check/main.c
+> index 9c0e75c19ebc..268de5dd5f26 100644
+> --- a/check/main.c
+> +++ b/check/main.c
+> @@ -460,8 +460,6 @@ static struct inode_record *clone_inode_rec(struct inode_record *orig_rec)
+>  	struct inode_backref *backref;
+>  	struct inode_backref *orig;
+>  	struct inode_backref *tmp;
+> -	struct orphan_data_extent *src_orphan;
+> -	struct orphan_data_extent *dst_orphan;
+>  	struct rb_node *rb;
+>  	size_t size;
+>  	int ret;
+> @@ -472,7 +470,6 @@ static struct inode_record *clone_inode_rec(struct inode_record *orig_rec)
+>  	memcpy(rec, orig_rec, sizeof(*rec));
+>  	rec->refs = 1;
+>  	INIT_LIST_HEAD(&rec->backrefs);
+> -	INIT_LIST_HEAD(&rec->orphan_extents);
+>  	rec->holes = RB_ROOT;
+>  
+>  	list_for_each_entry(orig, &orig_rec->backrefs, list) {
+> @@ -485,15 +482,7 @@ static struct inode_record *clone_inode_rec(struct inode_record *orig_rec)
+>  		memcpy(backref, orig, size);
+>  		list_add_tail(&backref->list, &rec->backrefs);
+>  	}
+> -	list_for_each_entry(src_orphan, &orig_rec->orphan_extents, list) {
+> -		dst_orphan = malloc(sizeof(*dst_orphan));
+> -		if (!dst_orphan) {
+> -			ret = -ENOMEM;
+> -			goto cleanup;
+> -		}
+> -		memcpy(dst_orphan, src_orphan, sizeof(*src_orphan));
+> -		list_add_tail(&dst_orphan->list, &rec->orphan_extents);
+> -	}
+> +
+>  	ret = copy_file_extent_holes(&rec->holes, &orig_rec->holes);
+>  	if (ret < 0)
+>  		goto cleanup_rb;
+> @@ -517,12 +506,6 @@ cleanup:
+>  			free(orig);
+>  		}
+>  
+> -	if (!list_empty(&rec->orphan_extents))
+> -		list_for_each_entry_safe(orig, tmp, &rec->orphan_extents, list) {
+> -			list_del(&orig->list);
+> -			free(orig);
+> -		}
+> -
+>  	free(rec);
+>  
+>  	return ERR_PTR(ret);
+> @@ -590,8 +573,6 @@ static void print_inode_error(struct btrfs_root *root, struct inode_record *rec)
+>  		fprintf(stderr, ", some csum missing");
+>  	if (errors & I_ERR_LINK_COUNT_WRONG)
+>  		fprintf(stderr, ", link count wrong");
+> -	if (errors & I_ERR_FILE_EXTENT_ORPHAN)
+> -		fprintf(stderr, ", orphan file extent");
+>  	if (errors & I_ERR_ODD_INODE_FLAGS)
+>  		fprintf(stderr, ", odd inode flags");
+>  	if (errors & I_ERR_INLINE_RAM_BYTES_WRONG)
+> @@ -681,7 +662,6 @@ static struct inode_record *get_inode_rec(struct cache_tree *inode_cache,
+>  		rec->extent_start = (u64)-1;
+>  		rec->refs = 1;
+>  		INIT_LIST_HEAD(&rec->backrefs);
+> -		INIT_LIST_HEAD(&rec->orphan_extents);
+>  		rec->holes = RB_ROOT;
+>  
+>  		node = malloc(sizeof(*node));
+> @@ -2420,9 +2400,6 @@ static int repair_inode_no_item(struct btrfs_trans_handle *trans,
+>  		} else if (rec->found_dir_item) {
+>  			type_recovered = 1;
+>  			filetype = BTRFS_FT_DIR;
+> -		} else if (!list_empty(&rec->orphan_extents)) {
+> -			type_recovered = 1;
+> -			filetype = BTRFS_FT_REG_FILE;
+>  		} else{
+>  			printf("Can't determine the filetype for inode %llu, assume it is a normal file\n",
+>  			       rec->ino);
+> @@ -2453,67 +2430,6 @@ out:
+>  	return ret;
+>  }
+>  
+> -static int repair_inode_orphan_extent(struct btrfs_trans_handle *trans,
+> -				      struct btrfs_root *root,
+> -				      struct btrfs_path *path,
+> -				      struct inode_record *rec)
+> -{
+> -	struct orphan_data_extent *orphan;
+> -	struct orphan_data_extent *tmp;
+> -	int ret = 0;
+> -
+> -	list_for_each_entry_safe(orphan, tmp, &rec->orphan_extents, list) {
+> -		/*
+> -		 * Check for conflicting file extents
+> -		 *
+> -		 * Here we don't know whether the extents is compressed or not,
+> -		 * so we can only assume it not compressed nor data offset,
+> -		 * and use its disk_len as extent length.
+> -		 */
+> -		ret = btrfs_get_extent(NULL, root, path, orphan->objectid,
+> -				       orphan->offset, orphan->disk_len, 0);
+> -		btrfs_release_path(path);
+> -		if (ret < 0)
+> -			goto out;
+> -		if (!ret) {
+> -			fprintf(stderr,
+> -				"orphan extent (%llu, %llu) conflicts, delete the orphan\n",
+> -				orphan->disk_bytenr, orphan->disk_len);
+> -			ret = btrfs_free_extent(trans,
+> -					root->fs_info->extent_root,
+> -					orphan->disk_bytenr, orphan->disk_len,
+> -					0, root->objectid, orphan->objectid,
+> -					orphan->offset);
+> -			if (ret < 0)
+> -				goto out;
+> -		}
+> -		ret = btrfs_insert_file_extent(trans, root, orphan->objectid,
+> -				orphan->offset, orphan->disk_bytenr,
+> -				orphan->disk_len, orphan->disk_len);
+> -		if (ret < 0)
+> -			goto out;
+> -
+> -		/* Update file size info */
+> -		rec->found_size += orphan->disk_len;
+> -		if (rec->found_size == rec->nbytes)
+> -			rec->errors &= ~I_ERR_FILE_NBYTES_WRONG;
+> -
+> -		/* Update the file extent hole info too */
+> -		ret = del_file_extent_hole(&rec->holes, orphan->offset,
+> -					   orphan->disk_len);
+> -		if (ret < 0)
+> -			goto out;
+> -		if (RB_EMPTY_ROOT(&rec->holes))
+> -			rec->errors &= ~I_ERR_FILE_EXTENT_DISCOUNT;
+> -
+> -		list_del(&orphan->list);
+> -		free(orphan);
+> -	}
+> -	rec->errors &= ~I_ERR_FILE_EXTENT_ORPHAN;
+> -out:
+> -	return ret;
+> -}
+> -
+>  static int repair_inode_discount_extent(struct btrfs_trans_handle *trans,
+>  					struct btrfs_root *root,
+>  					struct btrfs_path *path,
+> @@ -2600,7 +2516,6 @@ static int try_repair_inode(struct btrfs_root *root, struct inode_record *rec)
+>  			     I_ERR_NO_ORPHAN_ITEM |
+>  			     I_ERR_LINK_COUNT_WRONG |
+>  			     I_ERR_NO_INODE_ITEM |
+> -			     I_ERR_FILE_EXTENT_ORPHAN |
+>  			     I_ERR_FILE_EXTENT_DISCOUNT |
+>  			     I_ERR_FILE_NBYTES_WRONG |
+>  			     I_ERR_INLINE_RAM_BYTES_WRONG)))
+> @@ -2620,8 +2535,6 @@ static int try_repair_inode(struct btrfs_root *root, struct inode_record *rec)
+>  	btrfs_init_path(&path);
+>  	if (rec->errors & I_ERR_NO_INODE_ITEM)
+>  		ret = repair_inode_no_item(trans, root, &path, rec);
+> -	if (!ret && rec->errors & I_ERR_FILE_EXTENT_ORPHAN)
+> -		ret = repair_inode_orphan_extent(trans, root, &path, rec);
+>  	if (!ret && rec->errors & I_ERR_FILE_EXTENT_DISCOUNT)
+>  		ret = repair_inode_discount_extent(trans, root, &path, rec);
+>  	if (!ret && rec->errors & I_ERR_DIR_ISIZE_WRONG)
+> @@ -3245,8 +3158,6 @@ static int check_fs_root(struct btrfs_root *root,
+>  	struct root_record *rec;
+>  	struct btrfs_root_item *root_item = &root->root_item;
+>  	struct cache_tree corrupt_blocks;
+> -	struct orphan_data_extent *orphan;
+> -	struct orphan_data_extent *tmp;
+>  	enum btrfs_tree_block_status status;
+>  	struct node_refs nrefs;
+>  
+> @@ -3272,18 +3183,6 @@ static int check_fs_root(struct btrfs_root *root,
+>  	cache_tree_init(&root_node.inode_cache);
+>  	memset(&nrefs, 0, sizeof(nrefs));
+>  
+> -	/* Move the orphan extent record to corresponding inode_record */
+> -	list_for_each_entry_safe(orphan, tmp,
+> -				 &root->orphan_data_extents, list) {
+> -		struct inode_record *inode;
+> -
+> -		inode = get_inode_rec(&root_node.inode_cache, orphan->objectid,
+> -				      1);
+> -		BUG_ON(IS_ERR(inode));
+> -		inode->errors |= I_ERR_FILE_EXTENT_ORPHAN;
+> -		list_move(&orphan->list, &inode->orphan_extents);
+> -	}
+> -
+>  	level = btrfs_header_level(root->node);
+>  	memset(wc->nodes, 0, sizeof(wc->nodes));
+>  	wc->nodes[level] = &root_node;
 > 

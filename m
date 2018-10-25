@@ -3,33 +3,33 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-8.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 91A2AECDE46
-	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Oct 2018 07:44:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 84A0BECDE46
+	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Oct 2018 07:45:00 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 51F982054F
-	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Oct 2018 07:44:58 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 51F982054F
+	by mail.kernel.org (Postfix) with ESMTP id 4BEDE2054F
+	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Oct 2018 07:45:00 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 4BEDE2054F
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726759AbeJYQQa (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 25 Oct 2018 12:16:30 -0400
-Received: from mx2.suse.de ([195.135.220.15]:58212 "EHLO mx1.suse.de"
+        id S1726803AbeJYQQc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 25 Oct 2018 12:16:32 -0400
+Received: from mx2.suse.de ([195.135.220.15]:58218 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726465AbeJYQQa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 25 Oct 2018 12:16:30 -0400
+        id S1726465AbeJYQQc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 25 Oct 2018 12:16:32 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 26382AE02
-        for <linux-btrfs@vger.kernel.org>; Thu, 25 Oct 2018 07:44:55 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 4DDF1AF92
+        for <linux-btrfs@vger.kernel.org>; Thu, 25 Oct 2018 07:44:57 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/4] btrfs-progs: lowmem check: Add ability to repair dir item with mismatch hash
-Date:   Thu, 25 Oct 2018 15:44:46 +0800
-Message-Id: <20181025074449.32469-2-wqu@suse.com>
+Subject: [PATCH 2/4] btrfs-progs: original check: Use mismatch_dir_hash_record to record bad dir items
+Date:   Thu, 25 Oct 2018 15:44:47 +0800
+Message-Id: <20181025074449.32469-3-wqu@suse.com>
 X-Mailer: git-send-email 2.19.1
 In-Reply-To: <20181025074449.32469-1-wqu@suse.com>
 References: <20181025074449.32469-1-wqu@suse.com>
@@ -40,236 +40,225 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-For DIR_ITEM with mismatch hash, we could just remove the offending dir
-item.
+This allow us to report the error better, from old in-place report like:
+  ERROR: DIR_ITEM[256 751495445] name foor.WvG1c1TdU namelen 13 filetype 1 mismatch with its hash, wanted 751495445 have 2870353892
+  root 5 root dir 256 error
 
-Lowmem mode will handle the rest part (either re-create the correct
-dir_item or move the orphan inode to lost+found).
+To new centralized report:
+  root 5 root dir 256 error
+  root 5 inode 256 errors 40000
+  Dir items with mismatch hash:
+	  name: foor.WvG1c1Td namelen: 13 wanted 0xab161fe4 has 0x2ccae915
 
-This is especially important for old btrfs, since later kernel
-introduces restrict tree-checker, which could detect such hash mismatch
-and refuse to read the corrupted leaf.
+Also, with mismatch_dir_hash_record structure, it provides the basis for
+later original mode repair.
 
-With this repair ability, user could repair with btrfs check
---mode=lowmem --repair.
-
-Link: https://bugzilla.opensuse.org/show_bug.cgi?id=1111991
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- check/mode-common.c | 51 +++++++++++++++++++++++++++++++++++++++++++++
- check/mode-common.h |  5 ++++-
- check/mode-lowmem.c | 46 +++++++++++++++++++++++++++++++++++-----
- check/mode-lowmem.h |  1 +
- ctree.h             |  3 +++
- dir-item.c          |  6 +-----
- 6 files changed, 101 insertions(+), 11 deletions(-)
+ check/main.c          | 76 ++++++++++++++++++++++++++++++++++++++++---
+ check/mode-original.h | 14 ++++++++
+ 2 files changed, 86 insertions(+), 4 deletions(-)
 
-diff --git a/check/mode-common.c b/check/mode-common.c
-index 15e2bbd1f30f..8660f43f6b20 100644
---- a/check/mode-common.c
-+++ b/check/mode-common.c
-@@ -742,3 +742,54 @@ void cleanup_excluded_extents(struct btrfs_fs_info *fs_info)
- 	}
- 	fs_info->excluded_extents = NULL;
- }
-+
-+/*
-+ * Delete one corrupted dir item whose hash doesn't match its name.
-+ *
-+ * Since its hash is incorrect, we can't use btrfs_name_hash() to calculate
-+ * the search key, but relie on @di_key parameter to do the search.
-+ */
-+int delete_corrupted_dir_item(struct btrfs_trans_handle *trans,
-+			      struct btrfs_root *root,
-+			      struct btrfs_key *di_key, char *namebuf,
-+			      u32 namelen)
-+{
-+	struct btrfs_dir_item *di_item;
-+	struct btrfs_path path;
-+	int ret;
-+
-+	btrfs_init_path(&path);
-+	ret = btrfs_search_slot(trans, root, di_key, &path, 0, 1);
-+	if (ret > 0) {
-+		error("key (%llu %u %llu) doesn't exist in root %llu",
-+			di_key->objectid, di_key->type, di_key->offset,
-+			root->root_key.objectid);
-+		ret = -ENOENT;
-+		goto out;
-+	}
-+	if (ret < 0) {
-+		error("failed to search root %llu: %d",
-+			root->root_key.objectid, ret);
-+		goto out;
-+	}
-+
-+	di_item = btrfs_match_dir_item_name(root, &path, namebuf, namelen);
-+	if (!di_item) {
-+		/*
-+		 * This is possible if the dir_item has incorrect namelen.
-+		 * But in that case, we shouldn't reach repair path here.
-+		 */
-+		error("no dir item named '%s' found with key (%llu %u %llu)",
-+			namebuf, di_key->objectid, di_key->type,
-+			di_key->offset);
-+		ret = -ENOENT;
-+		goto out;
-+	}
-+	ret = btrfs_delete_one_dir_name(trans, root, &path, di_item);
-+	if (ret < 0)
-+		error("failed to delete one dir name: %d", ret);
-+
-+out:
-+	btrfs_release_path(&path);
-+	return ret;
-+}
-diff --git a/check/mode-common.h b/check/mode-common.h
-index 6b05f8baf474..fda319267b04 100644
---- a/check/mode-common.h
-+++ b/check/mode-common.h
-@@ -121,5 +121,8 @@ void reset_cached_block_groups(struct btrfs_fs_info *fs_info);
- int pin_metadata_blocks(struct btrfs_fs_info *fs_info);
- int exclude_metadata_blocks(struct btrfs_fs_info *fs_info);
- void cleanup_excluded_extents(struct btrfs_fs_info *fs_info);
--
-+int delete_corrupted_dir_item(struct btrfs_trans_handle *trans,
-+			      struct btrfs_root *root,
-+			      struct btrfs_key *di_key, char *namebuf,
-+			      u32 namelen);
- #endif
-diff --git a/check/mode-lowmem.c b/check/mode-lowmem.c
-index 1bce44f5658a..fe3d5940faf0 100644
---- a/check/mode-lowmem.c
-+++ b/check/mode-lowmem.c
-@@ -1464,17 +1464,52 @@ out:
- 	return ret;
- }
- 
-+/*
-+ * A wrapper for delete_corrupted_dir_item(), with support part like
-+ * start/commit transaction.
-+ */
-+static int lowmem_delete_corrupted_dir_item(struct btrfs_root *root,
-+					    struct btrfs_key *di_key,
-+					    char *namebuf, u32 name_len)
-+{
-+	struct btrfs_trans_handle *trans;
-+	int ret;
-+
-+	trans = btrfs_start_transaction(root, 1);
-+	if (IS_ERR(trans)) {
-+		ret = PTR_ERR(trans);
-+		error("failed to start transaction: %d", ret);
-+		return ret;
-+	}
-+
-+	ret = delete_corrupted_dir_item(trans, root, di_key, namebuf, name_len);
-+	if (ret < 0) {
-+		btrfs_abort_transaction(trans, ret);
-+	} else {
-+		ret = btrfs_commit_transaction(trans, root);
-+		if (ret < 0)
-+			error("failed to commit transaction: %d", ret);
-+	}
-+	return ret;
-+}
- /*
-  * Call repair_inode_item_missing and repair_ternary_lowmem to repair
-  *
-  * Returns error after repair
-  */
--static int repair_dir_item(struct btrfs_root *root, u64 dirid, u64 ino,
--			   u64 index, u8 filetype, char *namebuf, u32 name_len,
--			   int err)
-+static int repair_dir_item(struct btrfs_root *root, struct btrfs_key *di_key,
-+			   u64 ino, u64 index, u8 filetype, char *namebuf,
-+			   u32 name_len, int err)
- {
-+	u64 dirid = di_key->objectid;
+diff --git a/check/main.c b/check/main.c
+index bc2ee22f7943..4a4f2a7c9cdb 100644
+--- a/check/main.c
++++ b/check/main.c
+@@ -462,6 +462,8 @@ static struct inode_record *clone_inode_rec(struct inode_record *orig_rec)
+ 	struct inode_backref *tmp;
+ 	struct orphan_data_extent *src_orphan;
+ 	struct orphan_data_extent *dst_orphan;
++	struct mismatch_dir_hash_record *hash_record;
++	struct mismatch_dir_hash_record *new_record;
+ 	struct rb_node *rb;
+ 	size_t size;
  	int ret;
+@@ -473,6 +475,7 @@ static struct inode_record *clone_inode_rec(struct inode_record *orig_rec)
+ 	rec->refs = 1;
+ 	INIT_LIST_HEAD(&rec->backrefs);
+ 	INIT_LIST_HEAD(&rec->orphan_extents);
++	INIT_LIST_HEAD(&rec->mismatch_dir_hash);
+ 	rec->holes = RB_ROOT;
  
-+	if (err & (DIR_ITEM_HASH_MISMATCH)) {
-+		ret = lowmem_delete_corrupted_dir_item(root, di_key, namebuf,
-+						       name_len);
-+		if (!ret)
-+			err &= ~(DIR_ITEM_HASH_MISMATCH);
+ 	list_for_each_entry(orig, &orig_rec->backrefs, list) {
+@@ -494,6 +497,16 @@ static struct inode_record *clone_inode_rec(struct inode_record *orig_rec)
+ 		memcpy(dst_orphan, src_orphan, sizeof(*src_orphan));
+ 		list_add_tail(&dst_orphan->list, &rec->orphan_extents);
+ 	}
++	list_for_each_entry(hash_record, &orig_rec->mismatch_dir_hash, list) {
++		size = sizeof(*hash_record) + hash_record->namelen;
++		new_record = malloc(size);
++		if (!new_record) {
++			ret = -ENOMEM;
++			goto cleanup;
++		}
++		memcpy(&new_record, hash_record, size);
++		list_add_tail(&new_record->list, &rec->mismatch_dir_hash);
 +	}
- 	if (err & INODE_ITEM_MISSING) {
- 		ret = repair_inode_item_missing(root, ino, filetype);
- 		if (!ret)
-@@ -1622,11 +1657,12 @@ begin:
+ 	ret = copy_file_extent_holes(&rec->holes, &orig_rec->holes);
+ 	if (ret < 0)
+ 		goto cleanup_rb;
+@@ -522,6 +535,13 @@ cleanup:
+ 			list_del(&orig->list);
+ 			free(orig);
+ 		}
++	if (!list_empty(&rec->mismatch_dir_hash)) {
++		list_for_each_entry_safe(hash_record, new_record,
++				&rec->mismatch_dir_hash, list) {
++			list_del(&hash_record->list);
++			free(hash_record);
++		}
++	}
  
- 		if (di_key->type == BTRFS_DIR_ITEM_KEY &&
- 		    di_key->offset != btrfs_name_hash(namebuf, len)) {
--			err |= -EIO;
- 			error("root %llu DIR_ITEM[%llu %llu] name %s namelen %u filetype %u mismatch with its hash, wanted %llu have %llu",
- 			root->objectid, di_key->objectid, di_key->offset,
- 			namebuf, len, filetype, di_key->offset,
- 			btrfs_name_hash(namebuf, len));
-+			tmp_err |= DIR_ITEM_HASH_MISMATCH;
+ 	free(rec);
+ 
+@@ -621,6 +641,25 @@ static void print_inode_error(struct btrfs_root *root, struct inode_record *rec)
+ 				round_up(rec->isize,
+ 					 root->fs_info->sectorsize));
+ 	}
++
++	/* Print dir item with mismatch hash */
++	if (errors & I_ERR_MISMATCH_DIR_HASH) {
++		struct mismatch_dir_hash_record *hash_record;
++
++		fprintf(stderr, "Dir items with mismatch hash:\n");
++		list_for_each_entry(hash_record, &rec->mismatch_dir_hash,
++				list) {
++			char *namebuf = (char *)(hash_record + 1);
++			u32 crc;
++
++			crc = btrfs_name_hash(namebuf, hash_record->namelen);
++			fprintf(stderr,
++			"\tname: %.*s namelen: %u wanted 0x%08x has 0x%08llx\n",
++				hash_record->namelen, namebuf,
++				hash_record->namelen, crc,
++				hash_record->key.offset);
++		}
++	}
+ }
+ 
+ static void print_ref_error(int errors)
+@@ -682,6 +721,7 @@ static struct inode_record *get_inode_rec(struct cache_tree *inode_cache,
+ 		rec->refs = 1;
+ 		INIT_LIST_HEAD(&rec->backrefs);
+ 		INIT_LIST_HEAD(&rec->orphan_extents);
++		INIT_LIST_HEAD(&rec->mismatch_dir_hash);
+ 		rec->holes = RB_ROOT;
+ 
+ 		node = malloc(sizeof(*node));
+@@ -718,6 +758,8 @@ static void free_orphan_data_extents(struct list_head *orphan_extents)
+ static void free_inode_rec(struct inode_record *rec)
+ {
+ 	struct inode_backref *backref;
++	struct mismatch_dir_hash_record *hash;
++	struct mismatch_dir_hash_record *next;
+ 
+ 	if (--rec->refs > 0)
+ 		return;
+@@ -727,6 +769,8 @@ static void free_inode_rec(struct inode_record *rec)
+ 		list_del(&backref->list);
+ 		free(backref);
+ 	}
++	list_for_each_entry_safe(hash, next, &rec->mismatch_dir_hash, list)
++		free(hash);
+ 	free_orphan_data_extents(&rec->orphan_extents);
+ 	free_file_extent_holes(&rec->holes);
+ 	free(rec);
+@@ -1273,6 +1317,25 @@ out:
+ 	return has_parent ? 0 : 2;
+ }
+ 
++static int add_mismatch_dir_hash(struct inode_record *dir_rec,
++				 struct btrfs_key *key, const char *namebuf,
++				 int namelen)
++{
++	struct mismatch_dir_hash_record *hash_record;
++
++	hash_record = malloc(sizeof(*hash_record) + namelen);
++	if (!hash_record) {
++		error("failed to allocate memory for mismatch dir hash rec");
++		return -ENOMEM;
++	}
++	memcpy(&hash_record->key, key, sizeof(*key));
++	memcpy(hash_record + 1, namebuf, namelen);
++	hash_record->namelen = namelen;
++
++	list_add(&hash_record->list, &dir_rec->mismatch_dir_hash);
++	return 0;
++}
++
+ static int process_dir_item(struct extent_buffer *eb,
+ 			    int slot, struct btrfs_key *key,
+ 			    struct shared_node *active_node)
+@@ -1300,6 +1363,8 @@ static int process_dir_item(struct extent_buffer *eb,
+ 	di = btrfs_item_ptr(eb, slot, struct btrfs_dir_item);
+ 	total = btrfs_item_size_nr(eb, slot);
+ 	while (cur < total) {
++		int ret;
++
+ 		nritems++;
+ 		btrfs_dir_item_key_to_cpu(eb, di, &location);
+ 		name_len = btrfs_dir_name_len(eb, di);
+@@ -1324,10 +1389,12 @@ static int process_dir_item(struct extent_buffer *eb,
+ 
+ 		if (key->type == BTRFS_DIR_ITEM_KEY &&
+ 		    key->offset != btrfs_name_hash(namebuf, len)) {
+-			rec->errors |= I_ERR_ODD_DIR_ITEM;
+-			error("DIR_ITEM[%llu %llu] name %s namelen %u filetype %u mismatch with its hash, wanted %llu have %llu",
+-			key->objectid, key->offset, namebuf, len, filetype,
+-			key->offset, btrfs_name_hash(namebuf, len));
++			rec->errors |= I_ERR_MISMATCH_DIR_HASH;
++			ret = add_mismatch_dir_hash(rec, key, namebuf, len);
++			/* Fatal error, ENOMEM */
++			if (ret < 0)
++				return ret;
 +			goto next;
  		}
  
- 		btrfs_dir_item_key_to_cpu(node, di, &location);
-@@ -1674,7 +1710,7 @@ begin:
- next:
+ 		if (location.type == BTRFS_INODE_ITEM_KEY) {
+@@ -1348,6 +1415,7 @@ static int process_dir_item(struct extent_buffer *eb,
+ 					  len, filetype, key->type, error);
+ 		}
  
- 		if (tmp_err && repair) {
--			ret = repair_dir_item(root, di_key->objectid,
-+			ret = repair_dir_item(root, di_key,
- 					      location.objectid, index,
- 					      imode_to_type(mode), namebuf,
- 					      name_len, tmp_err);
-diff --git a/check/mode-lowmem.h b/check/mode-lowmem.h
-index 91f7b6b1db53..afd376ad7d5d 100644
---- a/check/mode-lowmem.h
-+++ b/check/mode-lowmem.h
-@@ -45,6 +45,7 @@
- #define BG_ACCOUNTING_ERROR     (1<<21) /* Block group accounting error */
- #define FATAL_ERROR             (1<<22) /* Fatal bit for errno */
- #define INODE_FLAGS_ERROR	(1<<23) /* Invalid inode flags */
-+#define DIR_ITEM_HASH_MISMATCH	(1<<24) /* Dir item hash mismatch */
++next:
+ 		len = sizeof(*di) + name_len + data_len;
+ 		di = (struct btrfs_dir_item *)((char *)di + len);
+ 		cur += len;
+diff --git a/check/mode-original.h b/check/mode-original.h
+index ec2842e0b3be..25ca274118a7 100644
+--- a/check/mode-original.h
++++ b/check/mode-original.h
+@@ -188,6 +188,7 @@ struct file_extent_hole {
+ #define I_ERR_FILE_EXTENT_TOO_LARGE	(1 << 15)
+ #define I_ERR_ODD_INODE_FLAGS		(1 << 16)
+ #define I_ERR_INLINE_RAM_BYTES_WRONG	(1 << 17)
++#define I_ERR_MISMATCH_DIR_HASH		(1 << 18)
  
- /*
-  * Error bit for low memory mode check.
-diff --git a/ctree.h b/ctree.h
-index 4719962df67d..be0dacbe351d 100644
---- a/ctree.h
-+++ b/ctree.h
-@@ -2691,6 +2691,9 @@ int btrfs_insert_xattr_item(struct btrfs_trans_handle *trans,
- 			    struct btrfs_root *root, const char *name,
- 			    u16 name_len, const void *data, u16 data_len,
- 			    u64 dir);
-+struct btrfs_dir_item *btrfs_match_dir_item_name(struct btrfs_root *root,
-+			      struct btrfs_path *path,
-+			      const char *name, int name_len);
- /* inode-map.c */
- int btrfs_find_free_objectid(struct btrfs_trans_handle *trans,
- 			     struct btrfs_root *fs_root,
-diff --git a/dir-item.c b/dir-item.c
-index d64f71e306e0..fa69dd1de185 100644
---- a/dir-item.c
-+++ b/dir-item.c
-@@ -22,10 +22,6 @@
- #include "hash.h"
- #include "transaction.h"
+ struct inode_record {
+ 	struct list_head backrefs;
+@@ -213,10 +214,23 @@ struct inode_record {
+ 	u64 extent_end;
+ 	struct rb_root holes;
+ 	struct list_head orphan_extents;
++	struct list_head mismatch_dir_hash;
  
--static struct btrfs_dir_item *btrfs_match_dir_item_name(struct btrfs_root *root,
--			      struct btrfs_path *path,
--			      const char *name, int name_len);
--
- static struct btrfs_dir_item *insert_with_overflow(struct btrfs_trans_handle
- 						   *trans,
- 						   struct btrfs_root *root,
-@@ -323,7 +319,7 @@ static int verify_dir_item(struct btrfs_root *root,
- 	return 0;
- }
+ 	u32 refs;
+ };
  
--static struct btrfs_dir_item *btrfs_match_dir_item_name(struct btrfs_root *root,
-+struct btrfs_dir_item *btrfs_match_dir_item_name(struct btrfs_root *root,
- 			      struct btrfs_path *path,
- 			      const char *name, int name_len)
- {
++/*
++ * To record one dir_item with mismatch hash.
++ *
++ * Since the hash is incorrect, we must record the hash (key).
++ */
++struct mismatch_dir_hash_record {
++	struct list_head list;
++	struct btrfs_key key;
++	int namelen;
++	/* namebuf follows here */
++};
++
+ struct root_backref {
+ 	struct list_head list;
+ 	unsigned int found_dir_item:1;
 -- 
 2.19.1
 

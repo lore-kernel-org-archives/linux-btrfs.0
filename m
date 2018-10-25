@@ -6,65 +6,64 @@ X-Spam-Status: No, score=-0.6 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
 	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E7087ECDE46
-	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Oct 2018 18:34:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C9675C46475
+	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Oct 2018 18:49:13 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 8CD8820652
-	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Oct 2018 18:34:58 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 8D969207DD
+	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Oct 2018 18:49:13 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="BX4GErPX"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 8CD8820652
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="UTeSWE3g"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 8D969207DD
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=colorremedies.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727551AbeJZDIu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 25 Oct 2018 23:08:50 -0400
-Received: from mail-lf1-f48.google.com ([209.85.167.48]:38308 "EHLO
-        mail-lf1-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727313AbeJZDIu (ORCPT
+        id S1727472AbeJZDXI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 25 Oct 2018 23:23:08 -0400
+Received: from mail-lf1-f41.google.com ([209.85.167.41]:33134 "EHLO
+        mail-lf1-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727350AbeJZDXI (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 25 Oct 2018 23:08:50 -0400
-Received: by mail-lf1-f48.google.com with SMTP id x24-v6so7583260lfe.5
-        for <linux-btrfs@vger.kernel.org>; Thu, 25 Oct 2018 11:34:55 -0700 (PDT)
+        Thu, 25 Oct 2018 23:23:08 -0400
+Received: by mail-lf1-f41.google.com with SMTP id w16-v6so5502686lfc.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 25 Oct 2018 11:49:10 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
         h=mime-version:sender:in-reply-to:references:from:date:message-id
          :subject:to:cc;
-        bh=7NPI67bYK40k8gZr/i0TKucdOmZpF/1F7PoM5zOMEJA=;
-        b=BX4GErPXXJa3TThrowyP6wq00p7YCV85jCTOoy0ysRoBybHl5zL7dW17Wwkn9CgjSj
-         QF01Nb1LmqPHJaaB1ECjrs0M9LJ9vtmr46lKipUG3orEHZ+0HemM083TDpD1yD8RViOC
-         Z0Jw2NbatrtumHJWuIKroUC+fidYMXzP6hdlA9iUn0m/lTUuUYMSuRy+j6BZxxnxeAmF
-         EREV+g/Nrc43PdVvKjSfGFR/ln/buNIvk1WM6HlzN9UJb4A0JabjcDMHHqE+sjzeSdTA
-         CRziYudWw5peEScw61wZtyaXloS5RjZo1izs6HPEpeU59+PPWu89tAouu/tiJFIq09uG
-         QWdw==
+        bh=JtBdBeh+TMbWaFkDVY1EN1diYPaz+xyZG38AdiIL3BM=;
+        b=UTeSWE3gnsIj3XPq/TKOR0qG+bK0cIFkLh2rWDnFw0CI2gqzsEf1GJ0FR7oV1ah59F
+         Zu/iR59olhTVnv0ecwfaEIv6YtVyPInX6sfWgB97ZpQM4fSoW4FthM7BGyfPiJfcx0HQ
+         S+5j6OqEIeK8SJgO2TNurcUE/U/gGnMQLZPA1RHk2TSLgvKPrf7fxM3ES5IIycN4qYeY
+         2oWUveHDLrrszWLOlXl6DDAKtMCrxTzoFZvYdsFNtsUYB8eScmHbcp9az/F8Fw9NwORV
+         h4oeBvH6x4YfG0grg/qk92UP9K7qRnI4zHaauSGyIeuUNAhLuQmh7WPBQiL2TuGdAvBX
+         wRrA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:mime-version:sender:in-reply-to:references:from
          :date:message-id:subject:to:cc;
-        bh=7NPI67bYK40k8gZr/i0TKucdOmZpF/1F7PoM5zOMEJA=;
-        b=rwkwo3VyJuYvK/7k0je7HVaRT2YrPEc7qQurX8r3ZinvvtM6/nFGjBP/4C73tD2BH9
-         1bZqYab+eeRz+YMh1dakwT5qNwFQe2wr9e5a3YVGSquJ5vLoJnbH7FtYgyn25PEedube
-         kvKpx+WYHloWKKccx7g10GyHhDvlsgDR4JRIyfc9bkjZJuzRDO7p88lUzo77CTlTDL6q
-         P6zkGeu/2i3vPrA04LEMioSX2BRZM3BVfhi8E39UpshcFp5RrojbAs/cuv05qn2VW4VU
-         p4hBPNqG1rVKPTEkdu7H0VIJ56x986BhI3qrJ1S1eDCIaoyuWARnzMPUMaicuRmP5sdH
-         W18Q==
-X-Gm-Message-State: AGRZ1gK1th2l528xFNwMBmvgOMGZo0zyfxbJfHChY5ayjybP8gN5ZLGq
-        1d0TIE0EZnixjjF2zMmavAql0W6Y0KOi7hn9qAXLNw==
-X-Google-Smtp-Source: AJdET5eOivUiPyj3cRZUTCvUMcrJmD5j4XS9Vex73+TmIVOSQRJZRySarZc1QBvl6Mt28kjOXIJDVMO6G1sIUj6mKDI=
-X-Received: by 2002:a19:d612:: with SMTP id n18-v6mr231133lfg.4.1540492494027;
- Thu, 25 Oct 2018 11:34:54 -0700 (PDT)
+        bh=JtBdBeh+TMbWaFkDVY1EN1diYPaz+xyZG38AdiIL3BM=;
+        b=Awc+ZlJJHKPzxr5dtRLPRKwhVed1uI8vbyPg/a1uNnOTT36LVcIKC0Rz7O5CTcj3i0
+         kcmKdhVQc2HW7csVjqFtQWAn9cfMzNnZSinrduyz90i9KfF+SF+ctRDC/r+MLxOEyY68
+         PystuoJ856qRCwlaKdrQLFMf0l58bZ1/I2mCU0AtYh0AN2dk4kSXlRdDTa9n0E8A3Zyi
+         fzWrHIdLWbjYgLWNnKj/NnyClqfuvM+cPWzTabHPBqhITbPnTinbOtXHJWD8PG5jF3ZU
+         MO1agkNYIMTq7dSCwrQ/oiLRGKielg+j/XTHkjNjx+Jifnvie+RKxT9vSWIKcDO+oM9N
+         JmEg==
+X-Gm-Message-State: AGRZ1gLYVYxUBbLAwGe3Zw/YybpTYof11ZfqUdaIwnSjqgKMsfaOR56f
+        BNqpS2DjJS5HI6MRHQecPA1acnFh92X2+VdtTre6cYc84SE=
+X-Google-Smtp-Source: AJdET5eNnpCuMBezc42OpiaUoxlM+PjBmPV2pKnAI8zvUwOvN7wuT2vG17yVsJ5b1FOnu74SUXuBbdusdPqOV/GupTY=
+X-Received: by 2002:a19:f89:: with SMTP id 9mr261148lfp.10.1540493349837; Thu,
+ 25 Oct 2018 11:49:09 -0700 (PDT)
 MIME-Version: 1.0
-Received: by 2002:ab3:6f0e:0:0:0:0:0 with HTTP; Thu, 25 Oct 2018 11:34:53
+Received: by 2002:ab3:6f0e:0:0:0:0:0 with HTTP; Thu, 25 Oct 2018 11:49:09
  -0700 (PDT)
 X-Originating-IP: [174.29.142.179]
-In-Reply-To: <e3d54b3d15a57d8fcd34e7a5bb9139c1@mail.ru>
-References: <dac5a4c5-e40d-a332-420f-f5517730a5f4@mail.ru> <3051750f58524cceed2a69fcf43bae31@mail.ru>
- <CAJCQCtQqus2ytiBCe=TZsWNsBNDy-SR064r1bPsyC5hL3iaJKQ@mail.gmail.com> <e3d54b3d15a57d8fcd34e7a5bb9139c1@mail.ru>
+In-Reply-To: <63eaecce7b60646b7322146ea3f707ba@mail.ru>
+References: <63eaecce7b60646b7322146ea3f707ba@mail.ru>
 From:   Chris Murphy <lists@colorremedies.com>
-Date:   Thu, 25 Oct 2018 12:34:53 -0600
-X-Google-Sender-Auth: Wnnb_nOvKZMWKGsUSxX_VLCYi9s
-Message-ID: <CAJCQCtQPBF0XxO5oGi_JM-VLiLmKCDMas_Q-genUZrYSnFjfsQ@mail.gmail.com>
-Subject: Re: Failover for unattached USB device
+Date:   Thu, 25 Oct 2018 12:49:09 -0600
+X-Google-Sender-Auth: raOmAI5toru5U2NcWLPw2EFLWnA
+Message-ID: <CAJCQCtQrPKMUaGgg-t+0q8fACy0cys_CBi_5CSp2mr+xa5TeNQ@mail.gmail.com>
+Subject: Re: Kernel crash related to LZO compression
 To:     Dmitry Katsubo <dma_k@mail.ru>
 Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
@@ -73,135 +72,71 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Oct 25, 2018 at 3:47 AM, Dmitry Katsubo <dma_k@mail.ru> wrote:
+On Thu, Oct 25, 2018 at 9:56 AM, Dmitry Katsubo <dma_k@mail.ru> wrote:
+> Dear btrfs community,
 >
+> My excuses for the dumps for rather old kernel (4.9.25), nevertheless I
+> wonder
+> about your opinion about the below reported kernel crashes.
 >
-> BTRFS error (device sdf): bdev /dev/sdh errs: wr 0, rd 1867, flush 0,
-> corrupt 0, gen 0
-> BTRFS error (device sdf): bdev /dev/sdg errs: wr 0, rd 1867, flush 0,
-> corrupt 0, gen 0
+> As I could understand the situation (correct me if I am wrong), it happened
+> that some data block became corrupted which resulted the following kernel
+> trace
+> during the boot:
 >
-> Attempts lasted for 29 minutes.
-
-Yep, and it floods the log. It's extra fun if the journal is on the
-device with errors. The more errors, the more writes and reads to the
-problem drive, the more errors, the more writes, the more errors...
-snowball.
-
-But that's the state of error handling on Btrfs, which is still more
-sophisticated than other file systems. It's not more sophisticated
-than the kernel's md driver, which does have some sort of read error
-rate limit and then it'll kick the drive out of the array (faulty
-state) and stop complaining about it. And I think it considers a drive
-faulty on a single write failure.
-
+> kernel BUG at /build/linux-fB36Cv/linux-4.9.25/fs/btrfs/extent_io.c:2318!
+> invalid opcode: 0000 [#1] SMP
+> Call Trace:
+>  [<f8c63739>] ? end_bio_extent_readpage+0x4e9/0x680 [btrfs]
+>  [<f8c951eb>] ? end_compressed_bio_read+0x3b/0x2d0 [btrfs]
+>  [<f8c771de>] ? btrfs_scrubparity_helper+0xce/0x2d0 [btrfs]
+>  [<de07ebb1>] ? process_one_work+0x141/0x380
+>  [<de07ee31>] ? worker_thread+0x41/0x460
+>  [<de0840e4>] ? kthread+0xb4/0xd0
+>  [<de07edf0>] ? process_one_work+0x380/0x380
+>  [<de084030>] ? kthread_park+0x50/0x50
+>  [<de5aae03>] ? ret_from_fork+0x1b/0x28
 >
-> Thanks for this information. I have a situation similar to yours, with
-> only important difference that my drives are put into the USB dock with
-> independent power and cooling like this one:
+> The problematic file turned out to be the one used by systemd-journald
+> /var/log/journal/c496cea41ebc4700a0dfaabf64a21be4/system.journal
+> which was trying to read it (or append to it) during the boot and that was
+> causing the system crash (see attached bootN_dmesg.txt).
 >
-> https://www.ebay.com/itm/Mediasonic-ProBox-4-Bay-3-5-Hard-Drive-Enclosure-USB-3-0-eSATA-Sata-3-6-0Gbps/273161164246
+> I've rebooted in safe mode and tried to copy the data from this partition to
+> another location using btrfs-restore, however kernel was crashing as well
+> with
+> a bit different symphom (see attached copyN_dmesg.txt):
 >
-> so I don't think I need to worry about amps. This dock is connected
-> directly to USB port on the motherboard.
-
-It is entirely plausible that this still needs a hub, but it really
-depends on the exact errors you're getting. And those need to go to
-the linux-usb list, I don't know enough about it.
-
-And it might require a bit of luck to get a reply because it's a very
-busy list. My main recommendation is to be very concise: They will
-want to know the hardware setup (topology), lsusb -v, lspci, and a
-complete dmesg. It'll seem reasonable to snip just to the usb error
-messages, that almost always drives developers crazy because important
-hints for problems can show up in kernel message during boot, so they
-will inevitably want the whole dmesg. Ideal scenario is to do a clean
-boot and then reproduce the problem, and then capture the dmesg, that
-way it's a concise dmesg that isn't two weeks old with a bunch of
-device connects and disconnects or whatever. There almost certainly
-will be usb kernel parameters for debugging, ideally you search the
-linux-usb list archives to find out what they are (I'm not sure) so
-that you already have that set for your clean boot.
-
-There might be usb quirks for your hardware setup that apply. Or they
-might suggests that it still needs a  USB hub to clean things up
-between controller and bridge chipset.
-
-
-
+> Call Trace:
+>  [<f8b4c760>] ? lzo_decompress_biovec+0x1b0/0x2b0 [btrfs]
+>  [<d71a8828>] ? vmalloc+0x38/0x40
+>  [<f8b4d415>] ? end_compressed_bio_read+0x265/0x2d0 [btrfs]
+>  [<f8b2f1de>] ? btrfs_scrubparity_helper+0xce/0x2d0 [btrfs]
+>  [<d707ebb1>] ? process_one_work+0x141/0x380
+>  [<d707ee31>] ? worker_thread+0x41/0x460
+>  [<d70840e4>] ? kthread+0xb4/0xd0
+>  [<d75aae03>] ? ret_from_fork+0x1b/0x28
 >
-> However indeed there could be bugs both on dock side and in south bridge.
-> More over I could imagine that USB reset happens due to another USB device,
-> like a wave stated in one place turning into tsunami for the whole
-> USB subsystem.
-
-If there is a hub, one of their jobs is to prevent that from
-happening. And if the drive enclosure and problem device are on
-separate ports, they are effectively going through a built-in hub in
-the usb host device. But yeah, you want to tell linux-usb exactly what
-devices (and chipsets which lsusb -v will show)  you're using because
-they may already know about such problems.
-
-
+> Just to keep away from the problem, I've removed this file and also removed
+> "compress=lzo" mount option.
 >
->> There are pending patches for something similar that you can find in
->> the archives. I think the reason they haven't been merged yet is there
->> haven't been enough comments and feedback (?). I think Anand Jain is
->> the author of those patches so you might dig around in the archives.
->> In a way you have an ideal setup for testing them out. Just make sure
->> you have backups...
->
->
-> Thanks for reference. Should I look for this patch here:
->
-> https://patchwork.kernel.org/project/linux-btrfs/list/?submitter=34632&order=-date
-
-Maybe, it's a lot of patches to go through. I'm using
-https://lore.kernel.org/linux-btrfs which has a search field.
-
-This is the recent email I was thinking of that might point you in the
-right direction:
-
-https://lore.kernel.org/linux-btrfs/2287c62d-6dbb-3b30-1134-d754e42941ab@oracle.com/
-
-A complicating factor is that the block layer does do some retries.
-I'm also not familiar enough with the way md does retries and sets
-drives as faulty and if that is really what Btrfs should replicate or
-not. Some of these conversations require cooperation with other kernel
-developers, I suspect, like libata, SCSI, USB, SD, in order to make
-sure no one is being stepped on with some big surprise.
+> Are there any updates / fixes done in that area? Is lzo option safe to use?
 
 
+It should be safe even with that kernel. I'm not sure this is
+compression related. There is a corruption bug related to inline
+extents and corruption that had been fairly elusive but I think it's
+fixed now. I haven't run into it though.
 
->
-> I didn't observe any errors while doing "btrfs check" on this volume after
-> several such resets, because that volume is mostly used for reading and
-> chance that USB reset happens during the write is very low.
+I would say the first step no matter what if you're using an older
+kernel, is to boot a current Fedora or Arch live or install media,
+mount the Btrfs and try to read the problem files and see if the
+problem still happens. I can't even being to estimate the tens of
+thousands of line changes since kernel 4.9.
 
-If it mounts and the most recent changes are readable without errors,
-the file system is probably fine. Btrfs is pretty good at detecting
-and correcting for hardware related problems, in that it is fussier
-than other file systems because it can detect such problems in both
-metadata and data and should be able to avoid them in the first place
-due to always on COW (as long as you haven't disabled it).
+What profile are you using for this Btrfs? Is this a raid56? What do
+you get for 'btrfs fi us <mountpoint>' ?
 
-But there is some evidence that old Btrfs bugs could induce corruption
-in metadata, and not turn into a problem for a long time later. The
-scrubs only check if metadata and its checksum match up (corruption
-detection elsewhere in the storage stack) so the scrub most often
-can't find bugs that cause corruption. You best bet for side stepping
-such problems is backups, and using the most recent kernel you can. If
-you encounter some problem that might be a bug, inevitably you'll need
-to test with a newer kernel version anyway to see if it's still a bug.
-Each merge cycle involves thousands of lines of changes just for Btrfs
-and there's more to the storage stack in the kernel than just Btrfs.
-
-In your use case with mostly reads, and probably you also don't care
-about write performance, you could consider mounting with notreelog.
-This will drop the use of the treelog which is used to improve
-performance on operations that use fsync. With this option,
-transactions calling fsync() fall back to sync() so it's safer but
-slower.
 
 
 -- 

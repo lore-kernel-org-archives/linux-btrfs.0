@@ -3,163 +3,70 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-8.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0A08FC6786E
-	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Oct 2018 11:42:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D1210C6786E
+	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Oct 2018 11:43:25 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 97186205F4
-	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Oct 2018 11:42:01 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 97186205F4
+	by mail.kernel.org (Postfix) with ESMTP id 90C43205F4
+	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Oct 2018 11:43:25 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 90C43205F4
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727545AbeJZUSq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 26 Oct 2018 16:18:46 -0400
-Received: from mx2.suse.de ([195.135.220.15]:33028 "EHLO mx1.suse.de"
+        id S1727570AbeJZUUK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 26 Oct 2018 16:20:10 -0400
+Received: from mx2.suse.de ([195.135.220.15]:33534 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727462AbeJZUSq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 26 Oct 2018 16:18:46 -0400
+        id S1727491AbeJZUUK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 26 Oct 2018 16:20:10 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 33BE1ABDC
-        for <linux-btrfs@vger.kernel.org>; Fri, 26 Oct 2018 11:41:58 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 79B67AE15
+        for <linux-btrfs@vger.kernel.org>; Fri, 26 Oct 2018 11:43:23 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
-To:     dsterba@suse.com
-Cc:     linux-btrfs@vger.kernel.org, wqu@suse.com,
-        Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH v2] btrfs: Fix error handling in btrfs_cleanup_ordered_extents
-Date:   Fri, 26 Oct 2018 14:41:55 +0300
-Message-Id: <1540554115-11226-1-git-send-email-nborisov@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH 1/5] btrfs: Ensure at least 1g is free for balance
+Date:   Fri, 26 Oct 2018 14:43:17 +0300
+Message-Id: <1540554201-11305-2-git-send-email-nborisov@suse.com>
 X-Mailer: git-send-email 2.7.4
+In-Reply-To: <1540554201-11305-1-git-send-email-nborisov@suse.com>
+References: <1540554201-11305-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Running btrfs/124 in a loop hung up on me sporadically with the
-following call trace:
-	btrfs           D    0  5760   5324 0x00000000
-	Call Trace:
-	 ? __schedule+0x243/0x800
-	 schedule+0x33/0x90
-	 btrfs_start_ordered_extent+0x10c/0x1b0 [btrfs]
-	 ? wait_woken+0xa0/0xa0
-	 btrfs_wait_ordered_range+0xbb/0x100 [btrfs]
-	 btrfs_relocate_block_group+0x1ff/0x230 [btrfs]
-	 btrfs_relocate_chunk+0x49/0x100 [btrfs]
-	 btrfs_balance+0xbeb/0x1740 [btrfs]
-	 btrfs_ioctl_balance+0x2ee/0x380 [btrfs]
-	 btrfs_ioctl+0x1691/0x3110 [btrfs]
-	 ? lockdep_hardirqs_on+0xed/0x180
-	 ? __handle_mm_fault+0x8e7/0xfb0
-	 ? _raw_spin_unlock+0x24/0x30
-	 ? __handle_mm_fault+0x8e7/0xfb0
-	 ? do_vfs_ioctl+0xa5/0x6e0
-	 ? btrfs_ioctl_get_supported_features+0x30/0x30 [btrfs]
-	 do_vfs_ioctl+0xa5/0x6e0
-	 ? entry_SYSCALL_64_after_hwframe+0x3e/0xbe
-	 ksys_ioctl+0x3a/0x70
-	 __x64_sys_ioctl+0x16/0x20
-	 do_syscall_64+0x60/0x1b0
-	 entry_SYSCALL_64_after_hwframe+0x49/0xbe
+The first part of balance operation is to shrink every constituting
+device to ensure there is free space for chunk allocation. However, the code
+has been buggy ever since its introduction since calculating the space to shrink
+the device by was bounded by 1 mb. Most likely the original intention was to
+have an upper bound of 1g and not 1m, since the largest chunk size is 1g. This 
+means the first stage in __btrfs_balance so far has been a null op since it
+effectively freed just a single megabyte.
 
-Turns out during page writeback it's possible that the code in
-writepage_delalloc can instantiate a delalloc range which doesn't
-belong to the page currently being written back. This happens since
-find_lock_delalloc_range returns up to BTRFS_MAX_EXTENT_SIZE delalloc
-range when asked and doens't really consider the range of the passed
-page. When such a foregin range is found the code proceeds to
-run_delalloc_range and calls the appropriate function to fill the
-delalloc and create ordered extents. If, however, a failure occurs
-while this operation is in effect then the clean up code in
-btrfs_cleanup_ordered_extents will be called. This function has the
-wrong assumption that caller of run_delalloc_range always properly
-cleans the first page of the range hence when it calls
-__endio_write_update_ordered it explicitly ommits the first page of
-the delalloc range. This is wrong because this function could be
-cleaning a delalloc range that doesn't belong to the current page. This
-in turn means that the page cleanup code in __extent_writepage will
-not really free the initial page for the range, leaving a hanging
-ordered extent with bytes_left set to 4k. This bug has been present
-ever since the original introduction of the cleanup code in 524272607e88.
-
-Fix this by correctly checking whether the current page belongs to the
-range being instantiated and if so correctly adjust the range parameters
-passed for cleaning up. If it doesn't, then just clean the whole OE
-range directly.
+Fix this by setting an upper bound of size_to_free of 1g. 
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
-Fixes: 524272607e88 ("btrfs: Handle delalloc error correctly to avoid ordered extent hang")
 ---
+ fs/btrfs/volumes.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-V2: 
- * Fix compilation failure due to missing parentheses
- * Fixed the "Fixes" tag. 
-
- fs/btrfs/inode.c | 29 ++++++++++++++++++++---------
- 1 file changed, 20 insertions(+), 9 deletions(-)
-
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index e1f00d8c24ce..5906564ae2e9 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -109,17 +109,17 @@ static void __endio_write_update_ordered(struct inode *inode,
-  * extent_clear_unlock_delalloc() to clear both the bits EXTENT_DO_ACCOUNTING
-  * and EXTENT_DELALLOC simultaneously, because that causes the reserved metadata
-  * to be released, which we want to happen only when finishing the ordered
-- * extent (btrfs_finish_ordered_io()). Also note that the caller of the
-- * fill_delalloc() callback already does proper cleanup for the first page of
-- * the range, that is, it invokes the callback writepage_end_io_hook() for the
-- * range of the first page.
-+ * extent (btrfs_finish_ordered_io()).
-  */
- static inline void btrfs_cleanup_ordered_extents(struct inode *inode,
--						 const u64 offset,
--						 const u64 bytes)
-+						 struct page *locked_page,
-+						 u64 offset, u64 bytes)
- {
- 	unsigned long index = offset >> PAGE_SHIFT;
- 	unsigned long end_index = (offset + bytes - 1) >> PAGE_SHIFT;
-+	u64 page_start = page_offset(locked_page);
-+	u64 page_end = page_start + PAGE_SIZE - 1;
-+
- 	struct page *page;
- 
- 	while (index <= end_index) {
-@@ -130,8 +130,18 @@ static inline void btrfs_cleanup_ordered_extents(struct inode *inode,
- 		ClearPagePrivate2(page);
- 		put_page(page);
- 	}
--	return __endio_write_update_ordered(inode, offset + PAGE_SIZE,
--					    bytes - PAGE_SIZE, false);
-+
-+	/*
-+	 * In case this page belongs to the delalloc range being instantiated
-+	 * then skip it, since the first page of a range is going to be
-+	 * properly cleaned up by the caller of run_delalloc_range
-+	 */
-+	if (page_start >= offset && page_end <= (offset + bytes - 1)) {
-+		offset += PAGE_SIZE;
-+		bytes -= PAGE_SIZE;
-+	}
-+
-+	return __endio_write_update_ordered(inode, offset, bytes, false);
- }
- 
- static int btrfs_dirty_inode(struct inode *inode);
-@@ -1606,7 +1616,8 @@ static int run_delalloc_range(void *private_data, struct page *locked_page,
- 					   write_flags);
- 	}
- 	if (ret)
--		btrfs_cleanup_ordered_extents(inode, start, end - start + 1);
-+		btrfs_cleanup_ordered_extents(inode, locked_page, start,
-+					      end - start + 1);
- 	return ret;
- }
- 
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index f435d397019e..8b0fd7bf3447 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -3467,7 +3467,7 @@ static int __btrfs_balance(struct btrfs_fs_info *fs_info)
+ 	list_for_each_entry(device, devices, dev_list) {
+ 		old_size = btrfs_device_get_total_bytes(device);
+ 		size_to_free = div_factor(old_size, 1);
+-		size_to_free = min_t(u64, size_to_free, SZ_1M);
++		size_to_free = min_t(u64, size_to_free, SZ_1G);
+ 		if (!test_bit(BTRFS_DEV_STATE_WRITEABLE, &device->dev_state) ||
+ 		    btrfs_device_get_total_bytes(device) -
+ 		    btrfs_device_get_bytes_used(device) > size_to_free ||
 -- 
 2.7.4
 

@@ -2,244 +2,197 @@ Return-Path: <SRS0=9Rtw=NG=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
+X-Spam-Status: No, score=-0.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1811DC6786E
-	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Oct 2018 14:36:41 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D4A35C6786E
+	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Oct 2018 14:57:35 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id C2D7C205F4
-	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Oct 2018 14:36:40 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org C2D7C205F4
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
+	by mail.kernel.org (Postfix) with ESMTP id F04802082B
+	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Oct 2018 14:57:34 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (1024-bit key) header.d=mail.ru header.i=@mail.ru header.b="cv02gQZW";
+	dkim=pass (1024-bit key) header.d=mail.ru header.i=@mail.ru header.b="cv02gQZW"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org F04802082B
+Authentication-Results: mail.kernel.org; dmarc=fail (p=reject dis=none) header.from=mail.ru
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726787AbeJZXN5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 26 Oct 2018 19:13:57 -0400
-Received: from mx2.suse.de ([195.135.220.15]:33574 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726254AbeJZXN5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 26 Oct 2018 19:13:57 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 1E78FABA1;
-        Fri, 26 Oct 2018 14:36:38 +0000 (UTC)
-Subject: Re: [PATCH] btrfs-progs: add cli to forget one or all scanned devices
-To:     Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
-References: <1540564068-12918-1-git-send-email-anand.jain@oracle.com>
- <1540564068-12918-3-git-send-email-anand.jain@oracle.com>
-From:   Nikolay Borisov <nborisov@suse.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- xsFNBFiKBz4BEADNHZmqwhuN6EAzXj9SpPpH/nSSP8YgfwoOqwrP+JR4pIqRK0AWWeWCSwmZ
- T7g+RbfPFlmQp+EwFWOtABXlKC54zgSf+uulGwx5JAUFVUIRBmnHOYi/lUiE0yhpnb1KCA7f
- u/W+DkwGerXqhhe9TvQoGwgCKNfzFPZoM+gZrm+kWv03QLUCr210n4cwaCPJ0Nr9Z3c582xc
- bCUVbsjt7BN0CFa2BByulrx5xD9sDAYIqfLCcZetAqsTRGxM7LD0kh5WlKzOeAXj5r8DOrU2
- GdZS33uKZI/kZJZVytSmZpswDsKhnGzRN1BANGP8sC+WD4eRXajOmNh2HL4P+meO1TlM3GLl
- EQd2shHFY0qjEo7wxKZI1RyZZ5AgJnSmehrPCyuIyVY210CbMaIKHUIsTqRgY5GaNME24w7h
- TyyVCy2qAM8fLJ4Vw5bycM/u5xfWm7gyTb9V1TkZ3o1MTrEsrcqFiRrBY94Rs0oQkZvunqia
- c+NprYSaOG1Cta14o94eMH271Kka/reEwSZkC7T+o9hZ4zi2CcLcY0DXj0qdId7vUKSJjEep
- c++s8ncFekh1MPhkOgNj8pk17OAESanmDwksmzh1j12lgA5lTFPrJeRNu6/isC2zyZhTwMWs
- k3LkcTa8ZXxh0RfWAqgx/ogKPk4ZxOXQEZetkEyTFghbRH2BIwARAQABzSJOaWtvbGF5IEJv
- cmlzb3YgPG5ib3Jpc292QHN1c2UuZGU+wsF4BBMBAgAiBQJYijkSAhsDBgsJCAcDAgYVCAIJ
- CgsEFgIDAQIeAQIXgAAKCRBxvoJG5T8oV/B6D/9a8EcRPdHg8uLEPywuJR8URwXzkofT5bZE
- IfGF0Z+Lt2ADe+nLOXrwKsamhweUFAvwEUxxnndovRLPOpWerTOAl47lxad08080jXnGfYFS
- Dc+ew7C3SFI4tFFHln8Y22Q9075saZ2yQS1ywJy+TFPADIprAZXnPbbbNbGtJLoq0LTiESnD
- w/SUC6sfikYwGRS94Dc9qO4nWyEvBK3Ql8NkoY0Sjky3B0vL572Gq0ytILDDGYuZVo4alUs8
- LeXS5ukoZIw1QYXVstDJQnYjFxYgoQ5uGVi4t7FsFM/6ykYDzbIPNOx49Rbh9W4uKsLVhTzG
- BDTzdvX4ARl9La2kCQIjjWRg+XGuBM5rxT/NaTS78PXjhqWNYlGc5OhO0l8e5DIS2tXwYMDY
- LuHYNkkpMFksBslldvNttSNei7xr5VwjVqW4vASk2Aak5AleXZS+xIq2FADPS/XSgIaepyTV
- tkfnyreep1pk09cjfXY4A7qpEFwazCRZg9LLvYVc2M2eFQHDMtXsH59nOMstXx2OtNMcx5p8
- 0a5FHXE/HoXz3p9bD0uIUq6p04VYOHsMasHqHPbsMAq9V2OCytJQPWwe46bBjYZCOwG0+x58
- fBFreP/NiJNeTQPOa6FoxLOLXMuVtpbcXIqKQDoEte9aMpoj9L24f60G4q+pL/54ql2VRscK
- d87BTQRYigc+ARAAyJSq9EFk28++SLfg791xOh28tLI6Yr8wwEOvM3wKeTfTZd+caVb9gBBy
- wxYhIopKlK1zq2YP7ZjTP1aPJGoWvcQZ8fVFdK/1nW+Z8/NTjaOx1mfrrtTGtFxVBdSCgqBB
- jHTnlDYV1R5plJqK+ggEP1a0mr/rpQ9dFGvgf/5jkVpRnH6BY0aYFPprRL8ZCcdv2DeeicOO
- YMobD5g7g/poQzHLLeT0+y1qiLIFefNABLN06Lf0GBZC5l8hCM3Rpb4ObyQ4B9PmL/KTn2FV
- Xq/c0scGMdXD2QeWLePC+yLMhf1fZby1vVJ59pXGq+o7XXfYA7xX0JsTUNxVPx/MgK8aLjYW
- hX+TRA4bCr4uYt/S3ThDRywSX6Hr1lyp4FJBwgyb8iv42it8KvoeOsHqVbuCIGRCXqGGiaeX
- Wa0M/oxN1vJjMSIEVzBAPi16tztL/wQtFHJtZAdCnuzFAz8ue6GzvsyBj97pzkBVacwp3/Mw
- qbiu7sDz7yB0d7J2tFBJYNpVt/Lce6nQhrvon0VqiWeMHxgtQ4k92Eja9u80JDaKnHDdjdwq
- FUikZirB28UiLPQV6PvCckgIiukmz/5ctAfKpyYRGfez+JbAGl6iCvHYt/wAZ7Oqe/3Cirs5
- KhaXBcMmJR1qo8QH8eYZ+qhFE3bSPH446+5oEw8A9v5oonKV7zMAEQEAAcLBXwQYAQIACQUC
- WIoHPgIbDAAKCRBxvoJG5T8oV1pyD/4zdXdOL0lhkSIjJWGqz7Idvo0wjVHSSQCbOwZDWNTN
- JBTP0BUxHpPu/Z8gRNNP9/k6i63T4eL1xjy4umTwJaej1X15H8Hsh+zakADyWHadbjcUXCkg
- OJK4NsfqhMuaIYIHbToi9K5pAKnV953xTrK6oYVyd/Rmkmb+wgsbYQJ0Ur1Ficwhp6qU1CaJ
- mJwFjaWaVgUERoxcejL4ruds66LM9Z1Qqgoer62ZneID6ovmzpCWbi2sfbz98+kW46aA/w8r
- 7sulgs1KXWhBSv5aWqKU8C4twKjlV2XsztUUsyrjHFj91j31pnHRklBgXHTD/pSRsN0UvM26
- lPs0g3ryVlG5wiZ9+JbI3sKMfbdfdOeLxtL25ujs443rw1s/PVghphoeadVAKMPINeRCgoJH
- zZV/2Z/myWPRWWl/79amy/9MfxffZqO9rfugRBORY0ywPHLDdo9Kmzoxoxp9w3uTrTLZaT9M
- KIuxEcV8wcVjr+Wr9zRl06waOCkgrQbTPp631hToxo+4rA1jiQF2M80HAet65ytBVR2pFGZF
- zGYYLqiG+mpUZ+FPjxk9kpkRYz61mTLSY7tuFljExfJWMGfgSg1OxfLV631jV1TcdUnx+h3l
- Sqs2vMhAVt14zT8mpIuu2VNxcontxgVr1kzYA/tQg32fVRbGr449j1gw57BV9i0vww==
-Message-ID: <b2e7e975-5356-e222-3bb3-94f7c80f9239@suse.com>
-Date:   Fri, 26 Oct 2018 17:36:37 +0300
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.2.1
+        id S1727386AbeJZXe4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 26 Oct 2018 19:34:56 -0400
+Received: from fallback14.mail.ru ([94.100.179.44]:49574 "EHLO
+        fallback14.mail.ru" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726243AbeJZXe4 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 26 Oct 2018 19:34:56 -0400
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=mail.ru; s=mail2;
+        h=Message-ID:References:In-Reply-To:Subject:To:From:Date:Content-Type:MIME-Version; bh=t51gkuOb7hdwy3WFdolb9CkSA4N6+HLkfnHEicinKBs=;
+        b=cv02gQZW5OjXnJiyB+JyheygDpecS6tP0rdTQDTaClOqFyvkVKKM4rZHRtTZXoxBBSD0NX8jwbs68hswrikGHWuepmYLetLCRcJpJ0CJLojGGLkqzXFKtUkRnXWEtpAgBfLGZZVzKr+rytZfXFaJE9de5PA64km9GO1xCuBKh+Q=;
+Received: from [10.161.64.55] (port=58534 helo=smtp47.i.mail.ru)
+        by fallback14.m.smailru.net with esmtp (envelope-from <dma_k@mail.ru>)
+        id 1gG3YF-000740-H7
+        for linux-btrfs@vger.kernel.org; Fri, 26 Oct 2018 17:57:27 +0300
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=mail.ru; s=mail2;
+        h=Message-ID:References:In-Reply-To:Subject:To:From:Date:Content-Type:MIME-Version; bh=t51gkuOb7hdwy3WFdolb9CkSA4N6+HLkfnHEicinKBs=;
+        b=cv02gQZW5OjXnJiyB+JyheygDpecS6tP0rdTQDTaClOqFyvkVKKM4rZHRtTZXoxBBSD0NX8jwbs68hswrikGHWuepmYLetLCRcJpJ0CJLojGGLkqzXFKtUkRnXWEtpAgBfLGZZVzKr+rytZfXFaJE9de5PA64km9GO1xCuBKh+Q=;
+Received: by smtp47.i.mail.ru with esmtpa (envelope-from <dma_k@mail.ru>)
+        id 1gG3YD-0007bR-2X
+        for linux-btrfs@vger.kernel.org; Fri, 26 Oct 2018 17:57:25 +0300
+Received: from www.centurion.link (localhost [IPv6:::1])
+        by centurion.home (Postfix) with ESMTP id 02E11F2913D
+        for <linux-btrfs@vger.kernel.org>; Fri, 26 Oct 2018 16:57:24 +0200 (CEST)
 MIME-Version: 1.0
-In-Reply-To: <1540564068-12918-3-git-send-email-anand.jain@oracle.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+Content-Type: multipart/mixed;
+ boundary="=_c83203375d9452d2681564a85854d988"
+Date:   Fri, 26 Oct 2018 16:57:23 +0200
+From:   Dmitry Katsubo <dma_k@mail.ru>
+To:     linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: Kernel crash related to LZO compression
+In-Reply-To: <CAJCQCtQrPKMUaGgg-t+0q8fACy0cys_CBi_5CSp2mr+xa5TeNQ@mail.gmail.com>
+References: <63eaecce7b60646b7322146ea3f707ba@mail.ru>
+ <CAJCQCtQrPKMUaGgg-t+0q8fACy0cys_CBi_5CSp2mr+xa5TeNQ@mail.gmail.com>
+Message-ID: <456e4b3d-50f7-1f88-c503-fb3213abccca@mail.ru>
+X-Sender: dma_k@mail.ru
+User-Agent: Roundcube Webmail/1.2.3
+X-77F55803: ABQATh8ydykdfC8LjbO7mDCqC+YBLPYOEUOLSum/u1W8jY/eigcMsw==
+X-7FA49CB5: 0D63561A33F958A51D55B6579900B8BFAFBB9BC1A2A863770381A57B1554B7A88941B15DA834481FA18204E546F3947CEDCF5861DED71B2F389733CBF5DBD5E9C8A9BA7A39EFB7666BA297DBC24807EA117882F44604297287769387670735209ECD01F8117BC8BEA471835C12D1D977C4224003CC8364767815B9869FA544D8D32BA5DBAC0009BE9E8FC8737B5C2249D827CA74CCEABFF33AA81AA40904B5D9CF19DD082D7633A0E7DDDDC251EA7DABD81D268191BDAD3D78DA827A17800CE767C209D01CC1E34BCD04E86FAF290E2D40A5AABA2AD3711975ECD9A6C639B01B78DA827A17800CE7CC5D2E9EFE8938D97E3324020B80CB4F75ECD9A6C639B01B4E70A05D1297E1BBC6867C52282FAC85D9B7C4F32B44FF57285124B2A10EEC6C00306258E7E6ABB4E4A6367B16DE6309
+X-Mailru-Sender: 6DAAA20F2058E07D134D6D8D77B89E7FA8404108B3A064CAB3946D7C2B2B123ED234C9E63E727397501E7C294F69090ED50E20E2BC48EF5AE609D43F356B221EEAB4BC95F72C04283CDA0F3B3F5B9367
+X-Mras: OK
+X-77F55803: 6Ns2ePE+8+B2uBAt8D8br4kJnRWqiScC6S4nGHi1TLfUVoQop97kSA==
+X-7FA49CB5: 0D63561A33F958A58D4D90E4FBF98747A3FDB99E058B855A4CCBD82AE49501798941B15DA834481FA18204E546F3947CEDCF5861DED71B2F389733CBF5DBD5E9C8A9BA7A39EFB7666BA297DBC24807EA117882F44604297287769387670735209ECD01F8117BC8BEA471835C12D1D977C4224003CC836476C0CAF46E325F83A50BF2EBBBDD9D6B0F05F538519369F3743B503F486389A921A5CC5B56E945C8DA
+X-Mailru-MI: 800
+X-Mailru-Sender: A5480F10D64C9005EB82917A46D9527673EB381CDDD68F6D5A957526117A57DBA5946156EE097900D7448B40F9645FF708335C02508E532C672654BDC5BB03D95FEEDEB644C299C0ED14614B50AE0675
+X-Mras: OK
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+--=_c83203375d9452d2681564a85854d988
+Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=US-ASCII;
+ format=flowed
 
+On 2018-10-25 20:49, Chris Murphy wrote:
+> I would say the first step no matter what if you're using an older
+> kernel, is to boot a current Fedora or Arch live or install media,
+> mount the Btrfs and try to read the problem files and see if the
+> problem still happens. I can't even being to estimate the tens of
+> thousands of line changes since kernel 4.9.
 
-On 26.10.18 г. 17:27 ч., Anand Jain wrote:
-> This patch adds cli
->   btrfs device forget [dev]
-> to remove the given device structure in the kernel if the device
-> is unmounted. If no argument is given it shall remove all stale
-> (device which are not mounted) from the kernel.
+Good point Chris. Indeed booting a fresh kernel is never a problem.
+Actually I forgot to mention that I've seen the same problem with
+kernel 4.12.13 (attached).
+
+> What profile are you using for this Btrfs? Is this a raid56? What do
+> you get for 'btrfs fi us <mountpoint>' ?
+
+It is RAID1 volume for both metadata and data, but unfortunately I
+haven't recorded the actual output before the failure. The configuration
+was like this:
+
+# btrfs filesystem show /var/log
+Label: none  uuid: 5b45ac8e-fd8c-4759-854a-94e45069959d
+	Total devices 2 FS bytes used 11.13GiB
+	devid    3 size 50.00GiB used 14.03GiB path /dev/sda3
+	devid    4 size 50.00GiB used 14.03GiB path /dev/sdc1
+
+On 2018-10-25 20:49, Chris Murphy wrote:
+> It should be safe even with that kernel. I'm not sure this is
+> compression related. There is a corruption bug related to inline
+> extents and corruption that had been fairly elusive but I think it's
+> fixed now. I haven't run into it though.
+
+On 2018-10-26 02:09, Qu Wenruo wrote:
+>> Are there any updates / fixes done in that area? Is lzo option safe to 
+>> use?
 > 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-
-> ---
->  cmds-device.c | 72 ++++++++++++++++++++++++++++++++++++++++++++++++-----------
->  ioctl.h       |  2 ++
->  2 files changed, 61 insertions(+), 13 deletions(-)
+> Yes, we have commits to harden lzo decompress code in v4.18:
 > 
-> diff --git a/cmds-device.c b/cmds-device.c
-> index 2a05f70a76a9..280d6f555377 100644
-> --- a/cmds-device.c
-> +++ b/cmds-device.c
-> @@ -254,10 +254,32 @@ static int cmd_device_delete(int argc, char **argv)
->  	return _cmd_device_remove(argc, argv, cmd_device_delete_usage);
->  }
->  
-> +static int btrfs_forget_devices(char *path)
-> +{
-> +	struct btrfs_ioctl_vol_args args;
-> +	int ret;
-> +	int fd;
-> +
-> +	fd = open("/dev/btrfs-control", O_RDWR);
-> +	if (fd < 0)
-> +		return -errno;
-> +
-> +	memset(&args, 0, sizeof(args));
-> +	if (path)
-> +		strncpy_null(args.name, path);
-> +	ret = ioctl(fd, BTRFS_IOC_FORGET_DEV, &args);
-> +	if (ret)
-> +		ret = -errno;
-> +	close(fd);
-> +	return ret;
-> +}
-> +
->  static const char * const cmd_device_scan_usage[] = {
-> -	"btrfs device scan [(-d|--all-devices)|<device> [<device>...]]",
-> -	"Scan devices for a btrfs filesystem",
-> +	"btrfs device scan [(-d|--all-devices)|(-u|--forget)|<device> "\
-> +							"[<device>...]]",
-> +	"Scan or forget (deregister) devices for a btrfs filesystem",
->  	" -d|--all-devices (deprecated)",
-> +	" -u|--forget [<device> ..]",
->  	NULL
->  };
->  
-> @@ -267,37 +289,53 @@ static int cmd_device_scan(int argc, char **argv)
->  	int devstart;
->  	int all = 0;
->  	int ret = 0;
-> +	int forget = 0;
->  
->  	optind = 0;
->  	while (1) {
->  		int c;
->  		static const struct option long_options[] = {
->  			{ "all-devices", no_argument, NULL, 'd'},
-> +			{ "forget", no_argument, NULL, 'u'},
->  			{ NULL, 0, NULL, 0}
->  		};
->  
-> -		c = getopt_long(argc, argv, "d", long_options, NULL);
-> +		c = getopt_long(argc, argv, "du", long_options, NULL);
->  		if (c < 0)
->  			break;
->  		switch (c) {
->  		case 'd':
->  			all = 1;
->  			break;
-> +		case 'u':
-> +			forget = 1;
-> +			break;
->  		default:
->  			usage(cmd_device_scan_usage);
->  		}
->  	}
->  	devstart = optind;
->  
-> +	if (all && forget)
-> +		usage(cmd_device_scan_usage);
-> +
->  	if (all && check_argc_max(argc - optind, 1))
->  		usage(cmd_device_scan_usage);
->  
->  	if (all || argc - optind == 0) {
-> -		printf("Scanning for Btrfs filesystems\n");
-> -		ret = btrfs_scan_devices();
-> -		error_on(ret, "error %d while scanning", ret);
-> -		ret = btrfs_register_all_devices();
-> -		error_on(ret, "there are %d errors while registering devices", ret);
-> +		if (forget) {
-> +			ret = btrfs_forget_devices(NULL);
-> +			error_on(ret, "'%s', forget failed",
-> +				 strerror(-ret));
-> +		} else {
-> +			printf("Scanning for Btrfs filesystems\n");
-> +			ret = btrfs_scan_devices();
-> +			error_on(ret, "error %d while scanning", ret);
-> +			ret = btrfs_register_all_devices();
-> +			error_on(ret,
-> +				"there are %d errors while registering devices",
-> +				ret);
-> +		}
->  		goto out;
->  	}
->  
-> @@ -315,11 +353,19 @@ static int cmd_device_scan(int argc, char **argv)
->  			ret = 1;
->  			goto out;
->  		}
-> -		printf("Scanning for Btrfs filesystems in '%s'\n", path);
-> -		if (btrfs_register_one_device(path) != 0) {
-> -			ret = 1;
-> -			free(path);
-> -			goto out;
-> +		if (forget) {
-> +			ret = btrfs_forget_devices(path);
-> +			if (ret)
-> +				error("Can't forget '%s': %s",
-> +							path, strerror(-ret));
-> +		} else {
-> +			printf("Scanning for Btrfs filesystems in '%s'\n",
-> +									path);
-> +			if (btrfs_register_one_device(path) != 0) {
-> +				ret = 1;
-> +				free(path);
-> +				goto out;
-> +			}
->  		}
->  		free(path);
->  	}
-> diff --git a/ioctl.h b/ioctl.h
-> index 709e996f401c..e27d80e09392 100644
-> --- a/ioctl.h
-> +++ b/ioctl.h
-> @@ -721,6 +721,8 @@ static inline char *btrfs_err_str(enum btrfs_err_code err_code)
->  				   struct btrfs_ioctl_vol_args)
->  #define BTRFS_IOC_SCAN_DEV _IOW(BTRFS_IOCTL_MAGIC, 4, \
->  				   struct btrfs_ioctl_vol_args)
-> +#define BTRFS_IOC_FORGET_DEV _IOW(BTRFS_IOCTL_MAGIC, 5, \
-> +				   struct btrfs_ioctl_vol_args)
->  /* trans start and trans end are dangerous, and only for
->   * use by applications that know how to avoid the
->   * resulting deadlocks
+> de885e3ee281a88f52283c7e8994e762e3a5f6bd btrfs: lzo: Harden inline lzo
+> compressed extent decompression
+> 314bfa473b6b6d3efe68011899bd718b349f29d7 btrfs: lzo: Add header length
+> check to avoid potential out-of-bounds acc
 > 
+> And for the root cause, it's compressed data without csum, then scrub
+> could make it corrupted.
+> 
+> It's also fixed in v4.18:
+> 
+> 665d4953cde6d9e75c62a07ec8f4f8fd7d396ade btrfs: scrub: Don't use inode
+> page cache in scrub_handle_errored_block()
+> ac0b4145d662a3b9e34085dea460fb06ede9b69b btrfs: scrub: Don't use inode
+> pages for device replace
+
+Thanks, Qu, for this information. Actually one time I've seen the binary
+crap (not zeros) in text log files (/var/log/*.log) and I was surprised
+that btrfs returned me data which is corrupted instead of signalling I/O
+error. Could it be because of "compressed data without csum" problem?
+
+Thanks!
+
+-- 
+With best regards,
+Dmitry
+
+--=_c83203375d9452d2681564a85854d988
+Content-Transfer-Encoding: base64
+Content-Type: text/plain;
+ name=dmesg.2017-12-03.txt
+Content-Disposition: attachment;
+ filename=dmesg.2017-12-03.txt;
+ size=2906
+
+W1N1biBEZWMgIDMgMTk6Mzk6NTUgMjAxN10gQlVHOiB1bmFibGUgdG8gaGFuZGxlIGtlcm5lbCBw
+YWdpbmcgcmVxdWVzdCBhdCBmODBhMzAwMApbU3VuIERlYyAgMyAxOTozOTo1NSAyMDE3XSBJUDog
+bWVtY3B5KzB4MTEvMHgyMApbU3VuIERlYyAgMyAxOTozOTo1NSAyMDE3XSAqcGRlID0gMzcwYmIw
+NjcgCltTdW4gRGVjICAzIDE5OjM5OjU1IDIwMTddICpwdGUgPSAwMDAwMDAwMCAKW1N1biBEZWMg
+IDMgMTk6Mzk6NTUgMjAxN10gT29wczogMDAwMiBbIzFdIFNNUApbU3VuIERlYyAgMyAxOTozOTo1
+NSAyMDE3XSBNb2R1bGVzIGxpbmtlZCBpbjogYnJpZGdlIHN0cCBsbGMgYXJjNCBpVENPX3dkdCBp
+VENPX3ZlbmRvcl9zdXBwb3J0IHBwZGV2IGF0aDVrIGV2ZGV2IGF0aCBtYWM4MDIxMSBjZmc4MDIx
+MSBpOTE1IGNvcmV0ZW1wIHBjc3BrciByZmtpbGwgc25kX2hkYV9jb2RlY19yZWFsdGVrIHNlcmlv
+X3JhdyBzbmRfaGRhX2NvZGVjX2dlbmVyaWMgdmlkZW8gc25kX2hkYV9pbnRlbCBkcm1fa21zX2hl
+bHBlciBzbmRfaGRhX2NvZGVjIGxwY19pY2ggZHJtIHNuZF9oZGFfY29yZSBzbmRfaHdkZXAgaTJj
+X2FsZ29fYml0IHNuZF9wY21fb3NzIHNuZF9taXhlcl9vc3MgZmJfc3lzX2ZvcHMgc2cgc25kX3Bj
+bSBzeXNjb3B5YXJlYSBzbmRfdGltZXIgc3lzZmlsbHJlY3Qgcm5nX2NvcmUgc25kIHN5c2ltZ2Js
+dCBzb3VuZGNvcmUgcGFycG9ydF9wYyBwYXJwb3J0IHNocGNocCBidXR0b24gYWNwaV9jcHVmcmVx
+IGJpbmZtdF9taXNjIHc4MzYyN2hmIGh3bW9uX3ZpZCBpcF90YWJsZXMgeF90YWJsZXMgYXV0b2Zz
+NCBzZXMgZW5jbG9zdXJlIHNjc2lfdHJhbnNwb3J0X3NhcyB4ZnMgbGliY3JjMzJjIGhpZF9nZW5l
+cmljIHVzYmhpZCBoaWQgYnRyZnMgY3JjMzJjX2dlbmVyaWMgeG9yIHJhaWQ2X3BxIHVhcyB1c2Jf
+c3RvcmFnZSBzcl9tb2QgY2Ryb20gc2RfbW9kIGF0YV9nZW5lcmljIGF0YV9waWl4IGkyY19pODAx
+IGxpYmF0YSBzY3NpX21vZCBmaXJld2lyZV9vaGNpIGZpcmV3aXJlX2NvcmUgY3JjX2l0dV90IGVo
+Y2lfcGNpIGUxMDAwZSBwdHAgcHBzX2NvcmUgdWhjaV9oY2QgZWhjaV9oY2QgdXNiY29yZSB1c2Jf
+Y29tbW9uCltTdW4gRGVjICAzIDE5OjM5OjU1IDIwMTddIENQVTogMSBQSUQ6IDEwMCBDb21tOiBr
+d29ya2VyL3U0OjIgVGFpbnRlZDogRyAgICAgICAgVyAgICAgICA0LjEyLjAtMi02ODYgIzEgRGVi
+aWFuIDQuMTIuMTMtMQpbU3VuIERlYyAgMyAxOTozOTo1NSAyMDE3XSBIYXJkd2FyZSBuYW1lOiBB
+T3BlbiBpOTQ1R014LUlGL2k5NDVHTXgtSUYsIEJJT1MgaTk0NUdNeC1JRiBSMS4wMSBNYXIuMDIu
+MjAwNyBBT3BlbiBJbmMuIDAzLzAyLzIwMDcKW1N1biBEZWMgIDMgMTk6Mzk6NTUgMjAxN10gV29y
+a3F1ZXVlOiBidHJmcy1lbmRpbyBidHJmc19lbmRpb19oZWxwZXIgW2J0cmZzXQpbU3VuIERlYyAg
+MyAxOTozOTo1NSAyMDE3XSB0YXNrOiBmNzMzNzI4MCB0YXNrLnN0YWNrOiBmNjk1YzAwMApbU3Vu
+IERlYyAgMyAxOTozOTo1NSAyMDE3XSBFSVA6IG1lbWNweSsweDExLzB4MjAKW1N1biBEZWMgIDMg
+MTk6Mzk6NTUgMjAxN10gRUZMQUdTOiAwMDAxMDIwNiBDUFU6IDEKW1N1biBEZWMgIDMgMTk6Mzk6
+NTUgMjAxN10gRUFYOiBmODBhMmZmOCBFQlg6IDAwMDAxMDAwIEVDWDogMDAwMDAzZmUgRURYOiBm
+Zjk5ODAwMApbU3VuIERlYyAgMyAxOTozOTo1NSAyMDE3XSBFU0k6IGZmOTk4MDA4IEVESTogZjgw
+YTMwMDAgRUJQOiAwMDAwMDAwMCBFU1A6IGY2OTVkZTg4CltTdW4gRGVjICAzIDE5OjM5OjU1IDIw
+MTddICBEUzogMDA3YiBFUzogMDA3YiBGUzogMDBkOCBHUzogMDBlMCBTUzogMDA2OApbU3VuIERl
+YyAgMyAxOTozOTo1NSAyMDE3XSBDUjA6IDgwMDUwMDMzIENSMjogZjljMDAxNDAgQ1IzOiAzNmJj
+NzAwMCBDUjQ6IDAwMDAwNmQwCltTdW4gRGVjICAzIDE5OjM5OjU1IDIwMTddIENhbGwgVHJhY2U6
+CltTdW4gRGVjICAzIDE5OjM5OjU1IDIwMTddICA/IGx6b19kZWNvbXByZXNzX2JpbysweDE5Zi8w
+eDJiMCBbYnRyZnNdCltTdW4gRGVjICAzIDE5OjM5OjU1IDIwMTddICA/IGVuZF9jb21wcmVzc2Vk
+X2Jpb19yZWFkKzB4MjhkLzB4MzYwIFtidHJmc10KW1N1biBEZWMgIDMgMTk6Mzk6NTUgMjAxN10g
+ID8gYnRyZnNfc2NydWJwYXJpdHlfaGVscGVyKzB4YjYvMHgyYzAgW2J0cmZzXQpbU3VuIERlYyAg
+MyAxOTozOTo1NSAyMDE3XSAgPyBwcm9jZXNzX29uZV93b3JrKzB4MTM1LzB4MmYwCltTdW4gRGVj
+ICAzIDE5OjM5OjU1IDIwMTddICA/IHdvcmtlcl90aHJlYWQrMHgzOS8weDNhMApbU3VuIERlYyAg
+MyAxOTozOTo1NSAyMDE3XSAgPyBrdGhyZWFkKzB4ZDcvMHgxMTAKW1N1biBEZWMgIDMgMTk6Mzk6
+NTUgMjAxN10gID8gcHJvY2Vzc19vbmVfd29yaysweDJmMC8weDJmMApbU3VuIERlYyAgMyAxOToz
+OTo1NSAyMDE3XSAgPyBrdGhyZWFkX2NyZWF0ZV9vbl9ub2RlKzB4MzAvMHgzMApbU3VuIERlYyAg
+MyAxOTozOTo1NSAyMDE3XSAgPyByZXRfZnJvbV9mb3JrKzB4MTkvMHgyNApbU3VuIERlYyAgMyAx
+OTozOTo1NSAyMDE3XSBDb2RlOiA0MyA1OCAyYiA0MyA1MCA4OCA0MyA0ZSA1YiBlYiBlZCA5MCA5
+MCA5MCA5MCA5MCA5MCA5MCA5MCA5MCA5MCA5MCA5MCA5MCA5MCA5MCAzZSA4ZCA3NCAyNiAwMCA1
+NyA4OSBjNyA1NiA4OSBkNiA1MyA4OSBjYiBjMSBlOSAwMiA8ZjM+IGE1IDg5IGQ5IDgzIGUxIDAz
+IDc0IDAyIGYzIGE0IDViIDVlIDVmIGMzIDNlIDhkIDc0IDI2IDAwIDU1CltTdW4gRGVjICAzIDE5
+OjM5OjU1IDIwMTddIEVJUDogbWVtY3B5KzB4MTEvMHgyMCBTUzpFU1A6IDAwNjg6ZjY5NWRlODgK
+W1N1biBEZWMgIDMgMTk6Mzk6NTUgMjAxN10gQ1IyOiAwMDAwMDAwMGY4MGEzMDAwCltTdW4gRGVj
+ICAzIDE5OjM5OjU1IDIwMTddIC0tLVsgZW5kIHRyYWNlIGE5NjFkMzk1Njg3YWQyNjUgXS0tLQo=
+--=_c83203375d9452d2681564a85854d988--

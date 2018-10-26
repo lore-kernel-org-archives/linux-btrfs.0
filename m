@@ -7,32 +7,32 @@ X-Spam-Status: No, score=-6.5 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
 	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 06E4FC6786E
-	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Oct 2018 12:42:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 55374C6786E
+	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Oct 2018 12:44:35 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 93FB120868
-	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Oct 2018 12:42:45 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 93FB120868
+	by mail.kernel.org (Postfix) with ESMTP id 11E1220868
+	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Oct 2018 12:44:35 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 11E1220868
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=gmx.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727645AbeJZVTm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 26 Oct 2018 17:19:42 -0400
-Received: from mout.gmx.net ([212.227.15.19]:33731 "EHLO mout.gmx.net"
+        id S1727644AbeJZVVb (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 26 Oct 2018 17:21:31 -0400
+Received: from mout.gmx.net ([212.227.15.15]:58093 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727582AbeJZVTl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 26 Oct 2018 17:19:41 -0400
+        id S1727582AbeJZVVb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 26 Oct 2018 17:21:31 -0400
 Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx002
- [212.227.17.184]) with ESMTPSA (Nemesis) id 0LrvWY-1fb0bK32X0-013dfE; Fri, 26
- Oct 2018 14:42:37 +0200
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 0Lvl0u-1fXAgR0140-017TO5; Fri, 26
+ Oct 2018 14:44:28 +0200
 Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx002
- [212.227.17.184]) with ESMTPSA (Nemesis) id 0LrvWY-1fb0bK32X0-013dfE; Fri, 26
- Oct 2018 14:42:37 +0200
-Subject: Re: [PATCH 4/5] btrfs: Sink find_lock_delalloc_range's 'max_bytes'
- argument
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 0Lvl0u-1fXAgR0140-017TO5; Fri, 26
+ Oct 2018 14:44:28 +0200
+Subject: Re: [PATCH 5/5] btrfs: Replace BUG_ON with ASSERT in
+ find_lock_delalloc_range
 To:     Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
 References: <1540554201-11305-1-git-send-email-nborisov@suse.com>
- <1540554201-11305-5-git-send-email-nborisov@suse.com>
+ <1540554201-11305-6-git-send-email-nborisov@suse.com>
 From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
@@ -59,32 +59,32 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
  4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
  h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <5e0d99aa-cbe3-2a64-d51a-a1d26b155357@gmx.com>
-Date:   Fri, 26 Oct 2018 20:42:33 +0800
+Message-ID: <6eaef69c-48ab-d43c-ac82-c1d72c78bf00@gmx.com>
+Date:   Fri, 26 Oct 2018 20:44:22 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <1540554201-11305-5-git-send-email-nborisov@suse.com>
+In-Reply-To: <1540554201-11305-6-git-send-email-nborisov@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
-X-Provags-ID: V03:K1:hDgBdN+gudCU+yoaUquiM+6GOMVJhE63cWROi0qQAudFFGH3Xua
- TVUvRRRE/yqlVThETS7f8pkmfumv+l8meMjQwqTzgbJLBB/PplnAdf9SQX7apAsOEV5NCqs
- Irvru84wqwTTbGySDGDnWgSFxwGrcHxfk9incvhsNUQwKLyQXbxKcghJui0LXm3RvPBI2PU
- bqhuSL34rWmcqld2n6byQ==
-X-UI-Out-Filterresults: notjunk:1;V01:K0:pgDXb7dHCIc=:eJ2T8xmIjksxoc+orz+35l
- 7DAnpZ1vQ15plpZuLxbXHe//aNSwN0Js+R5aS8TtpHU78GjbTQt72rfmv6xbfpMTEhhvgER0m
- lqDkuEI34KNoPEFN6b3qDo7fhJndqOE88mkG/a+XPqZbN2RJLOvLZ8QXFUJvSfushMoSZe06h
- fQxMEt+TEG1mIpTWNwRxCZeIokW6OfvW+ScaJXiJ52H9pR+e49jJbxbGs66Ng/9AR0/ksZici
- ZmwrPiwwIvJBadvmomMJPad5a90x2T98qsit6uDV6fgRwq/nP3HUAeMP0A78uq6OgMyEkkBMi
- KflIR864iO6AhlucemAVb9GVvnIOsOJD78/W2Kq97U6skxSFGne/fhxp6KSYgfc79GEVHskOX
- rJ5Ju22t217IWYxA+JHz0JVtjldgMMYaZCfE7uX4VHp/gWer8oQm8EYB9lEWspDoUEE+kYZ0s
- LZsJ+1eE68cUwvfl/0cwWsPNBYTpYi8GH0YHCl/bQFYVLlnDU7JkqakUyGpE9nY1EjmiWo188
- kxgaQHW2GRLpIvQHsm2BaxK1iWq7wDSl6OBXG/PEThLTv4epDCTSXWqkQisEk0Ku679h4WlYY
- h2f3OZEiQHQTr8PKz7SWOFhnBRyWL4wBJjhhkr4JdbNu/TKD8FqhwEDs2OLWTUpqOX3hrfsWv
- vs96X7S4ErDO7Oovx6TBAAuZHiCLWoqkz8UohH/k4+6rVeioFWi5lfynOx/O3M/raVwfbv7lc
- ycRx2RKPvIvlKDdNnRe73BBfJ/fu2IikAFmNR+wsd/bXjlTebfc1xMFZ/kH8kFFqf3z5Q9ltG
- UWJ06RTH5DfTkKU1s0TQZOMc4BkMWr92PbdMUX5hhj8T3jsizg=
+X-Provags-ID: V03:K1:HXDAAK5eDrsNTORxluxi9D4X6dnmGV0Fm7FsW4xB9qZxcr5nTd+
+ 3IwbNQNhaThe9iwnTE3IW8Ho608kxnpw/fepEB7LrLsxRQj1kR56gWDcX1WO8Dxy/zKenCC
+ F8e50t9f47j824YgVLTA6wRY5YMd44LCY1rRZR3bD4K/GqBQviOP18cMLaI0uKWO75EQgo3
+ +s8xC87q7avgvMX/R7t5w==
+X-UI-Out-Filterresults: notjunk:1;V01:K0:OnrK720AtZw=:9uCDIF2kEHt6RGenY8rThD
+ yo5gXKfUodostCwrfrdCcs+5t/+h6278dCIspIQEh+lSKDZ2QhjJ2E5X/aXitqpBHtj2oWY/d
+ oMyfBqG/AuLOjvVYRknGija8duBj/1Q+HNXWNAdksCMq824wv6cl7uBhEPqZMFUUlsGJ/fjm1
+ ntP2RUrcwjdNnhSSBz3oUVzvMQ8KGuNsjfHCJGMDmIwV/aIL6Hvw57jwOJBUU1X9TfbXrHauX
+ eX0V928rMvR9y4YlPVg5U8hp2ZUl3nB6yA4aewXkihCSyAAtjeE3rWKQACdBuCqSzPrik6TVz
+ MVwiwttQZyEuc0MeZeuyV38oOEyXyUg7za15+A8hNyYPuF65dVJGV5GJoBJQYDPsGLfrhuq/2
+ T9owWo6d6YKe/jvy92xGeECC2YGgou0FqTqmCBgy7Ptj0p7tdl9e2xaC551i9KKoY7QmWvCgs
+ OXcXWkAfNsBWIE7FwF0VpTA3seoUt6JTCHZ/pAOykr/SgYfkkzutRaOtiQGVvK712defFNmW/
+ FHBCudUVQniSH8n3YFHDjpfi8Io/j8J3EokytPyqZ9g8hhEFuHE5ZDFRYqSd6qWGxDVPs2f+5
+ 3m9yHEupttlvrqhYAE+I54zN7OMGrtbRO2gg0MUyfJ/fLR+KqUzVGGsVDwSuOUgDStPKXqSY2
+ l3kNUhcoZi9S3sJu0q7eAcNKufobS6ykb9r/D750QOsjNHv5KA23FiHn6xaAHDTxJhok/zKW3
+ rBDGMSv+ekDWuyxK8CInkthe/yxHkD1SX6pQLb2bEGnMYGp5R+NVFmmDulVjej7xlrj1cB4o7
+ Dny47Yx+MOzNeY5tuW++aTTEtRUeUjwLylrMtA/DP7YKyydGrY=
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -93,9 +93,12 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 On 2018/10/26 下午7:43, Nikolay Borisov wrote:
-> All callers of this function pass BTRFS_MAX_EXTENT_SIZE (128M) so let's
-> reduce the argument count and make that a local variable. No functional
-> changes.
+> lock_delalloc_pages should only return 2 values - 0 in case of success
+> and -EAGAIN if the range of pages to be locked should be shrunk due to
+> some of gone. Manual inspections confirms that this is
+> indeed the case since __process_pages_contig is where lock_delalloc_pages
+> gets its return value. The latter always returns 0  or -EAGAIN so the
+> invariant holds. No functional changes.
 > 
 > Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 
@@ -105,109 +108,27 @@ Thanks,
 Qu
 
 > ---
->  fs/btrfs/extent_io.c             | 11 +++++------
->  fs/btrfs/extent_io.h             |  2 +-
->  fs/btrfs/tests/extent-io-tests.c | 10 +++++-----
->  3 files changed, 11 insertions(+), 12 deletions(-)
+>  fs/btrfs/extent_io.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
 > 
 > diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-> index 6877a74c7469..1a9a521aefe5 100644
+> index 1a9a521aefe5..94bc53472031 100644
 > --- a/fs/btrfs/extent_io.c
 > +++ b/fs/btrfs/extent_io.c
-> @@ -1566,8 +1566,9 @@ static noinline int lock_delalloc_pages(struct inode *inode,
->  static noinline_for_stack u64 find_lock_delalloc_range(struct inode *inode,
->  				    struct extent_io_tree *tree,
->  				    struct page *locked_page, u64 *start,
-> -				    u64 *end, u64 max_bytes)
-> +				    u64 *end)
->  {
-> +	u64 max_bytes = BTRFS_MAX_EXTENT_SIZE;
->  	u64 delalloc_start;
->  	u64 delalloc_end;
->  	u64 found;
-> @@ -1647,10 +1648,9 @@ static noinline_for_stack u64 find_lock_delalloc_range(struct inode *inode,
->  u64 btrfs_find_lock_delalloc_range(struct inode *inode,
->  				    struct extent_io_tree *tree,
->  				    struct page *locked_page, u64 *start,
-> -				    u64 *end, u64 max_bytes)
-> +				    u64 *end)
->  {
-> -	return find_lock_delalloc_range(inode, tree, locked_page, start, end,
-> -			max_bytes);
-> +	return find_lock_delalloc_range(inode, tree, locked_page, start, end);
->  }
->  #endif
+> @@ -1606,6 +1606,7 @@ static noinline_for_stack u64 find_lock_delalloc_range(struct inode *inode,
+>  	/* step two, lock all the pages after the page that has start */
+>  	ret = lock_delalloc_pages(inode, locked_page,
+>  				  delalloc_start, delalloc_end);
+> +	ASSERT(!ret || ret == -EAGAIN);
+>  	if (ret == -EAGAIN) {
+>  		/* some of the pages are gone, lets avoid looping by
+>  		 * shortening the size of the delalloc range we're searching
+> @@ -1621,7 +1622,6 @@ static noinline_for_stack u64 find_lock_delalloc_range(struct inode *inode,
+>  			goto out_failed;
+>  		}
+>  	}
+> -	BUG_ON(ret); /* Only valid values are 0 and -EAGAIN */
 >  
-> @@ -3233,8 +3233,7 @@ static noinline_for_stack int writepage_delalloc(struct inode *inode,
->  		nr_delalloc = find_lock_delalloc_range(inode, tree,
->  					       page,
->  					       &delalloc_start,
-> -					       &delalloc_end,
-> -					       BTRFS_MAX_EXTENT_SIZE);
-> +					       &delalloc_end);
->  		if (nr_delalloc == 0) {
->  			delalloc_start = delalloc_end + 1;
->  			continue;
-> diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-> index 369daa5d4f73..7ec4f93caf78 100644
-> --- a/fs/btrfs/extent_io.h
-> +++ b/fs/btrfs/extent_io.h
-> @@ -549,7 +549,7 @@ int free_io_failure(struct extent_io_tree *failure_tree,
->  u64 btrfs_find_lock_delalloc_range(struct inode *inode,
->  				      struct extent_io_tree *tree,
->  				      struct page *locked_page, u64 *start,
-> -				      u64 *end, u64 max_bytes);
-> +				      u64 *end);
->  #endif
->  struct extent_buffer *alloc_test_extent_buffer(struct btrfs_fs_info *fs_info,
->  					       u64 start);
-> diff --git a/fs/btrfs/tests/extent-io-tests.c b/fs/btrfs/tests/extent-io-tests.c
-> index 9e0f4a01be14..8ea8c2aa6696 100644
-> --- a/fs/btrfs/tests/extent-io-tests.c
-> +++ b/fs/btrfs/tests/extent-io-tests.c
-> @@ -107,7 +107,7 @@ static int test_find_delalloc(u32 sectorsize)
->  	start = 0;
->  	end = 0;
->  	found = btrfs_find_lock_delalloc_range(inode, &tmp, locked_page, &start,
-> -					 &end, max_bytes);
-> +					 &end);
->  	if (!found) {
->  		test_err("should have found at least one delalloc");
->  		goto out_bits;
-> @@ -138,7 +138,7 @@ static int test_find_delalloc(u32 sectorsize)
->  	start = test_start;
->  	end = 0;
->  	found = btrfs_find_lock_delalloc_range(inode, &tmp, locked_page, &start,
-> -					 &end, max_bytes);
-> +					 &end);
->  	if (!found) {
->  		test_err("couldn't find delalloc in our range");
->  		goto out_bits;
-> @@ -172,7 +172,7 @@ static int test_find_delalloc(u32 sectorsize)
->  	start = test_start;
->  	end = 0;
->  	found = btrfs_find_lock_delalloc_range(inode, &tmp, locked_page, &start,
-> -					 &end, max_bytes);
-> +					 &end);
->  	if (found) {
->  		test_err("found range when we shouldn't have");
->  		goto out_bits;
-> @@ -193,7 +193,7 @@ static int test_find_delalloc(u32 sectorsize)
->  	start = test_start;
->  	end = 0;
->  	found = btrfs_find_lock_delalloc_range(inode, &tmp, locked_page, &start,
-> -					 &end, max_bytes);
-> +					 &end);
->  	if (!found) {
->  		test_err("didn't find our range");
->  		goto out_bits;
-> @@ -234,7 +234,7 @@ static int test_find_delalloc(u32 sectorsize)
->  	 * tests expected behavior.
->  	 */
->  	found = btrfs_find_lock_delalloc_range(inode, &tmp, locked_page, &start,
-> -					 &end, max_bytes);
-> +					 &end);
->  	if (!found) {
->  		test_err("didn't find our range");
->  		goto out_bits;
+>  	/* step three, lock the state bits for the whole range */
+>  	lock_extent_bits(tree, delalloc_start, delalloc_end, &cached_state);
 > 

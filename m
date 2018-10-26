@@ -1,171 +1,213 @@
-Return-Path: <SRS0=YGKe=NF=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=9Rtw=NG=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.5 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
+	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F0A65C46475
-	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Oct 2018 20:40:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5DE07C46475
+	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Oct 2018 00:09:51 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id A316920834
-	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Oct 2018 20:40:25 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org A316920834
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
+	by mail.kernel.org (Postfix) with ESMTP id 1B8A920848
+	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Oct 2018 00:09:51 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 1B8A920848
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=gmx.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1725941AbeJZFOh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 26 Oct 2018 01:14:37 -0400
-Received: from mx2.suse.de ([195.135.220.15]:49750 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725849AbeJZFOh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 26 Oct 2018 01:14:37 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 7A407AD3C
-        for <linux-btrfs@vger.kernel.org>; Thu, 25 Oct 2018 20:40:22 +0000 (UTC)
-Subject: Re: [PATCH 2/2] btrfs-progs: Deprecate unused super block member
- log_root_transid
-To:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <20181012064258.27033-1-wqu@suse.com>
- <20181012064258.27033-2-wqu@suse.com>
- <2b4ff29a-ff9b-8b56-ef13-4b76e72a281f@suse.com>
- <fbb5f43e-8eb0-08c6-a1c9-855efd960d3d@gmx.com>
- <cb6dd0fa-68e9-9e7c-c9cc-6ac609f9d9fc@suse.com>
- <152d099f-b431-b169-f33a-11ff7e88eee6@gmx.com>
- <20181024143015.GT16290@twin.jikos.cz>
- <f382295d-a203-ea33-5a1e-34553d8cb518@suse.com>
- <20181025111809.GB16290@twin.jikos.cz>
-From:   Nikolay Borisov <nborisov@suse.com>
+        id S1726179AbeJZIod (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 26 Oct 2018 04:44:33 -0400
+Received: from mout.gmx.net ([212.227.17.21]:34923 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1725807AbeJZIod (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 26 Oct 2018 04:44:33 -0400
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx103
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 0MEo4s-1gLtBL37oQ-00Fyx7; Fri, 26
+ Oct 2018 02:09:46 +0200
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx103
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 0MEo4s-1gLtBL37oQ-00Fyx7; Fri, 26
+ Oct 2018 02:09:46 +0200
+Subject: Re: Kernel crash related to LZO compression
+To:     Dmitry Katsubo <dma_k@mail.ru>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <63eaecce7b60646b7322146ea3f707ba@mail.ru>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
 Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <c6aee5bc-d812-31c3-6652-08dfca5d6e4f@suse.com>
-Date:   Thu, 25 Oct 2018 23:40:21 +0300
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:52.0) Gecko/20100101
- Thunderbird/52.9.1
+Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
+ bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
+ ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
+ rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
+ FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
+ 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
+ ilaVzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
+ CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
+ /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
+ GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
+ q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
+ ABEBAAHCwHwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
+ CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
+ f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
+ mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
+ 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
+ h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
+Message-ID: <1bd8d0f1-76e1-1bda-867e-3fadc35c30a2@gmx.com>
+Date:   Fri, 26 Oct 2018 08:09:42 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <20181025111809.GB16290@twin.jikos.cz>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+In-Reply-To: <63eaecce7b60646b7322146ea3f707ba@mail.ru>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="x7S2tlB6bsNu0CHJf6SZO2f4Vvif2FSTF"
+X-Provags-ID: V03:K1:m9Uv8Eu65OT9KxHWCiVFOSfqmbeu7patCSlv4TUM1PQ6NJlM17P
+ looLJ+KHrdasZ2CND3QN079f1QJKrgonIOUxNBG1HSG1n8NefLxLJbsNxWGINhVJizGgfYx
+ nzUOSpZIoK6gBuVx8SeGpLwAjRo7ohuWQ73URmyh7MJ8IN4XZTr9+H8evEHxGqIHI88gtPB
+ i5dKykbKh52FyG0P7clDQ==
+X-UI-Out-Filterresults: notjunk:1;V01:K0:fNPIiy/iB/0=:AS6hCZu98NRtLDM2g3nb9F
+ eHCm8k+ZeJW790fBg7n9XafLrncRpGz8AJokSUM02frnczj9mOoOl83UFXA5yxstc8b3i/rr/
+ VD6tzjZyFffPPQ48k1QvYtjVukQclJwtoDtopkVJcEJgWiPx3sLIvJwSeOECWeYdxEjAqDxcH
+ cXI8vqy6vRMfqODZ1wp4akv5PWuWQ0jgnhyMsZwtvCCcyGAyCALVHhBbLljJla55Y7gzhnbLP
+ Z8dXL762SipIgBaE2jUuUENybxrdkAhgEZqregyYKnJ7kquri6fOMQK/STNFRL2ocD0UjE+JJ
+ vuY2RkukZN/QplY9MWys1Pp6duNKdppypEhmfJIXS6ELu0s3t+ZVOJlV82oKYX+QW5T7WMcrg
+ Vy7OtlvEqBXGj1j3/u95KYD6upbxv5R/ODDML88IyzlG3rm5/GrPG/3CwLzI4a9W3cE56SROW
+ 4E3pPaURmEGnLALCMp6TZboAKIjupzI1Plb/9wjD8tbOxMLHWc90G+P9pX8paCR3UH1Yu3cfb
+ baMBbBYzdz0Gdl+vijDULUq04iEp8xSFGI0TftjEmy2mTMOnHq54t+Y4O0adNNKXL/AaZBfsB
+ E0MxwWgqJCAxP3/pBKJvgCa+TFF0M0xI2bXl2OGINj8RiK4uLo/19EgPLrWMgXf/8FWJgMp/V
+ G+uZLd1SIq2Xt6cPEzdZZINte1ljtdJtVxGo1fLV96KEdjmO8vfWI9/SCyU8qTCFAv0xcoJ8f
+ 5CQSSyyucnoroPX1B5vFq98mhM+QkouDbSRfoPuYUJ01BoeNfxmp3byXY7lOOt1UvyE1OUAkF
+ xmF7UkuvfMrR0S+rBxVPaMHncKEdw==
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--x7S2tlB6bsNu0CHJf6SZO2f4Vvif2FSTF
+Content-Type: multipart/mixed; boundary="DJoz9K1W4g9iLQcG6ICaIvLq9h4HnmTuh";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: Dmitry Katsubo <dma_k@mail.ru>, linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-ID: <1bd8d0f1-76e1-1bda-867e-3fadc35c30a2@gmx.com>
+Subject: Re: Kernel crash related to LZO compression
+References: <63eaecce7b60646b7322146ea3f707ba@mail.ru>
+In-Reply-To: <63eaecce7b60646b7322146ea3f707ba@mail.ru>
+
+--DJoz9K1W4g9iLQcG6ICaIvLq9h4HnmTuh
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
 
-On 25.10.2018 14:18, David Sterba wrote:
-> On Wed, Oct 24, 2018 at 03:48:07PM +0100, Nikolay Borisov wrote:
->>
->>
->> On 24.10.18 г. 15:30 ч., David Sterba wrote:
->>> On Fri, Oct 12, 2018 at 05:57:29PM +0800, Qu Wenruo wrote:
->>>>>>>> +	printf("log_root_transid (deprecated)\t%llu\n",
->>>>>>>> +	       le64_to_cpu(sb->__unused_log_root_transid));
->>>>>>>
->>>>>>> This should be entirely removed.
->>>>>>
->>>>>> It looks OK to me.
->>>>>> Just like the old leafsize.
->>>>>>
->>>>>> And if we try to use this member again, even old progs could show it
->>>>>> without problem.
->>>>>
->>>>> But what is the point of having something which always shows 0 and is
->>>>> essentially unused?
->>>>
->>>> Personally speaking, even it's in fact never used, it is still part of
->>>> the specification of btrfs super blocks.
->>>>
->>>> Even it's a bad decision we made a long time ago, we still need to mark
->>>> it as unused, other than converting it back to "reserved".
->>>>
->>>> To make it short and clear, if some member is specified in early
->>>> specification, even it's never used, we still need to mark it unused and
->>>> keep part of naming.
->>>
->>> Agreed, follows the same patern as the leafsize. The superblock dump is
->>> a debugging and bug report tool, the full output is desirable.
->>
->> I really don't want to get into the argument but I think we should
->> really name unused fields unusedX where X is some number. Looking at the
->> code in struct btrfs_root_backup we have 2 unused fields. In the
->> superblock we have unused space which is called 'reserved'. In struct
->> btrfs_disk_balance_args there is a field called unused, same thing for
->> struct btrfs_balance_item.
->>
->> In btrfs_inode_item we have 'reserved' field, same thing for
->> btrfs_root_item.
->>
->> So the code base is yet again highly inconsistent and looking at it
->> there is only a single field following the __unused_original_name, so
->> it's really the exception rather than the rule.
-> 
-> You're right about the inconsistent namig, for the "reserved for future
-> use" members. This could be unified to "reserved", and even though it's
-> in a public header I would not expect any application using the items.
-> 
-> The __unused_original_name is a different kind of "unused", as it became
-> obsolete at some point and the bytes cannot be reused, unlike the
-> reserved ones.
-> 
-> It's an exception because it was the first instance, there was no
-> established rule/pattern to follow just a deliberate choice in the
-> naming so it captures the original purpose and current status.
-> 
->> Again, I would argue that once a field is deprecated or in this case it
->> has _never_ actually been used then we might as well rename it to
->> something cryptic so as not to attach (false) meaning to it. Just my 50
->> cents
-> 
-> The log_root_transid is a again different from leafsize. I don't know
-> what exactly you mean by the cryptic naming here, I'd rather keep the
-> name selfexplanatory. Using 'reserved' could be misleading and somebody
-> would want to use it for futher extensions.
 
-But this is exactly my point - log_root_transid can indeed be repurposed
-because it has _never_ been used in the code.
+On 2018/10/25 =E4=B8=8B=E5=8D=8811:56, Dmitry Katsubo wrote:
+> Dear btrfs community,
+>=20
+> My excuses for the dumps for rather old kernel (4.9.25), nevertheless I=
 
+> wonder
+> about your opinion about the below reported kernel crashes.
+>=20
+> As I could understand the situation (correct me if I am wrong), it happ=
+ened
+> that some data block became corrupted which resulted the following
+> kernel trace
+> during the boot:
+>=20
+> kernel BUG at /build/linux-fB36Cv/linux-4.9.25/fs/btrfs/extent_io.c:231=
+8!
+> invalid opcode: 0000 [#1] SMP
+> Call Trace:
+> =C2=A0[<f8c63739>] ? end_bio_extent_readpage+0x4e9/0x680 [btrfs]
+> =C2=A0[<f8c951eb>] ? end_compressed_bio_read+0x3b/0x2d0 [btrfs]
+> =C2=A0[<f8c771de>] ? btrfs_scrubparity_helper+0xce/0x2d0 [btrfs]
+> =C2=A0[<de07ebb1>] ? process_one_work+0x141/0x380
+> =C2=A0[<de07ee31>] ? worker_thread+0x41/0x460
+> =C2=A0[<de0840e4>] ? kthread+0xb4/0xd0
+> =C2=A0[<de07edf0>] ? process_one_work+0x380/0x380
+> =C2=A0[<de084030>] ? kthread_park+0x50/0x50
+> =C2=A0[<de5aae03>] ? ret_from_fork+0x1b/0x28
+>=20
+> The problematic file turned out to be the one used by systemd-journald
+> /var/log/journal/c496cea41ebc4700a0dfaabf64a21be4/system.journal
+> which was trying to read it (or append to it) during the boot and that =
+was
+> causing the system crash (see attached bootN_dmesg.txt).
+>=20
+> I've rebooted in safe mode and tried to copy the data from this
+> partition to
+> another location using btrfs-restore, however kernel was crashing as
+> well with
+> a bit different symphom (see attached copyN_dmesg.txt):
+>=20
+> Call Trace:
+> =C2=A0[<f8b4c760>] ? lzo_decompress_biovec+0x1b0/0x2b0 [btrfs]
+> =C2=A0[<d71a8828>] ? vmalloc+0x38/0x40
+> =C2=A0[<f8b4d415>] ? end_compressed_bio_read+0x265/0x2d0 [btrfs]
+> =C2=A0[<f8b2f1de>] ? btrfs_scrubparity_helper+0xce/0x2d0 [btrfs]
+> =C2=A0[<d707ebb1>] ? process_one_work+0x141/0x380
+> =C2=A0[<d707ee31>] ? worker_thread+0x41/0x460
+> =C2=A0[<d70840e4>] ? kthread+0xb4/0xd0
+> =C2=A0[<d75aae03>] ? ret_from_fork+0x1b/0x28
+>=20
+> Just to keep away from the problem, I've removed this file and also rem=
+oved
+> "compress=3Dlzo" mount option.
+>=20
+> Are there any updates / fixes done in that area? Is lzo option safe to =
+use?
+
+Yes, we have commits to harden lzo decompress code in v4.18:
+
+de885e3ee281a88f52283c7e8994e762e3a5f6bd btrfs: lzo: Harden inline lzo
+compressed extent decompression
+314bfa473b6b6d3efe68011899bd718b349f29d7 btrfs: lzo: Add header length
+check to avoid potential out-of-bounds acc
+
+And for the root cause, it's compressed data without csum, then scrub
+could make it corrupted.
+
+It's also fixed in v4.18:
+
+665d4953cde6d9e75c62a07ec8f4f8fd7d396ade btrfs: scrub: Don't use inode
+page cache in scrub_handle_errored_block()
+ac0b4145d662a3b9e34085dea460fb06ede9b69b btrfs: scrub: Don't use inode
+pages for device replace
+
+Thanks,
+Qu
+
+>=20
+> P.S. Perhaps relative issue is in "Warnings" section:
+>=20
+> https://wiki.debian.org/Btrfs#Warnings /
+> https://www.spinics.net/lists/linux-btrfs/msg56563.html
+>=20
+
+
+--DJoz9K1W4g9iLQcG6ICaIvLq9h4HnmTuh--
+
+--x7S2tlB6bsNu0CHJf6SZO2f4Vvif2FSTF
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlvSW0YACgkQwj2R86El
+/qgpTgf+KISQxWSrmJ/poA2KbL9nz9hjMF5IG32+GcG4WsNHqFbZgL+VwNodN7AI
+g/MuHo3H+AW4sWR1AjbJNPGMOGUcG19Q0YPxCMjwL5a3M78nzOdlGAEEkdsOpc3j
+UErQeI6ER/nG+8FhBqZ4d0lOhRdQMvWvPKfJcx2vHB3HeaaSXU7NMiIphPK3Mn0P
+3Y3LRWj1Pp8qwrjIWCrbzNFJPMvijd8alOTrlGZelL7mAqjPlrxLLS1R2Wx9V9s/
+8V3bFw3g7HI8xaD39HAGuNBaNofCI/zZaiMAMnFiIDQKaKC5rsH43qcNiGngwnSA
+vDwGFOKCxQNjXoHeRIgoD3qcMYYqBA==
+=b1so
+-----END PGP SIGNATURE-----
+
+--x7S2tlB6bsNu0CHJf6SZO2f4Vvif2FSTF--

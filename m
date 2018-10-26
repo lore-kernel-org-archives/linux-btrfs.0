@@ -3,35 +3,32 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-6.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
-	autolearn=ham autolearn_force=no version=3.4.0
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8324AC6786E
-	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Oct 2018 12:16:21 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3C6CCC6786E
+	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Oct 2018 12:21:24 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 4247A20868
-	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Oct 2018 12:16:21 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 4247A20868
+	by mail.kernel.org (Postfix) with ESMTP id DB3B220868
+	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Oct 2018 12:21:23 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org DB3B220868
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727570AbeJZUxM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 26 Oct 2018 16:53:12 -0400
-Received: from mx2.suse.de ([195.135.220.15]:42786 "EHLO mx1.suse.de"
+        id S1727609AbeJZU6P (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 26 Oct 2018 16:58:15 -0400
+Received: from mx2.suse.de ([195.135.220.15]:43796 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727507AbeJZUxM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 26 Oct 2018 16:53:12 -0400
+        id S1727586AbeJZU6P (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 26 Oct 2018 16:58:15 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 241F5AE7E;
-        Fri, 26 Oct 2018 12:16:18 +0000 (UTC)
-Subject: Re: [PATCH 1/5] btrfs: Ensure at least 1g is free for balance
-To:     Hans van Kranenburg <Hans.van.Kranenburg@mendix.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <1540554201-11305-1-git-send-email-nborisov@suse.com>
- <1540554201-11305-2-git-send-email-nborisov@suse.com>
- <34b2d8ff-d4f0-63a9-eb49-c26d9b84737c@mendix.com>
-Cc:     Chris Mason <clm@fb.com>
+        by mx1.suse.de (Postfix) with ESMTP id 5A11CAE7E;
+        Fri, 26 Oct 2018 12:21:20 +0000 (UTC)
+Subject: Re: [PATCH] btrfs-progs: add cli to forget one or all scanned devices
+To:     Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
+References: <1540355502-22489-1-git-send-email-anand.jain@oracle.com>
+ <1540355502-22489-3-git-send-email-anand.jain@oracle.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -76,12 +73,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  KIuxEcV8wcVjr+Wr9zRl06waOCkgrQbTPp631hToxo+4rA1jiQF2M80HAet65ytBVR2pFGZF
  zGYYLqiG+mpUZ+FPjxk9kpkRYz61mTLSY7tuFljExfJWMGfgSg1OxfLV631jV1TcdUnx+h3l
  Sqs2vMhAVt14zT8mpIuu2VNxcontxgVr1kzYA/tQg32fVRbGr449j1gw57BV9i0vww==
-Message-ID: <6b03ed20-4ee6-4342-c287-618343f3b8ad@suse.com>
-Date:   Fri, 26 Oct 2018 15:16:16 +0300
+Message-ID: <4ca26c1c-3fc2-5673-5443-e543cf23a1b5@suse.com>
+Date:   Fri, 26 Oct 2018 15:21:19 +0300
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:52.0) Gecko/20100101
  Thunderbird/52.9.1
 MIME-Version: 1.0
-In-Reply-To: <34b2d8ff-d4f0-63a9-eb49-c26d9b84737c@mendix.com>
+In-Reply-To: <1540355502-22489-3-git-send-email-anand.jain@oracle.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 7bit
@@ -91,56 +88,146 @@ List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
-(Adding Chris to CC since he is the original author of the code)
 
-On 26.10.2018 15:09, Hans van Kranenburg wrote:
-> On 10/26/18 1:43 PM, Nikolay Borisov wrote:
->> The first part of balance operation is to shrink every constituting
->> device to ensure there is free space for chunk allocation.
+On 24.10.2018 07:31, Anand Jain wrote:
+> This patch adds cli
+>   btrfs device forget [dev]
+> to remove the given device structure in the kernel if the device
+> is unmounted. If no argument is given it shall remove all stale
+> (device which are not mounted) from the kernel.
 > 
-> A very useful thing to be able to do if there's no unallocated raw disk
-> space left, is use balance to rewrite some blockgroup into the free
-> space of other ones.
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> ---
+>  cmds-device.c | 59 +++++++++++++++++++++++++++++++++++++++++++++++++++--------
+>  ioctl.h       |  2 ++
+>  2 files changed, 53 insertions(+), 8 deletions(-)
 > 
-> This does not need any raw space for a chunk allocation. Requiring so
-> makes it unneccesarily more complicated for users to fix the situation
-> they got in.
+> diff --git a/cmds-device.c b/cmds-device.c
+> index 2a05f70a76a9..c2a2b7f304b8 100644
+> --- a/cmds-device.c
+> +++ b/cmds-device.c
+> @@ -254,10 +254,32 @@ static int cmd_device_delete(int argc, char **argv)
+>  	return _cmd_device_remove(argc, argv, cmd_device_delete_usage);
+>  }
+>  
+> +static int btrfs_forget_devices(char *path)
+> +{
+> +	struct btrfs_ioctl_vol_args args;
+> +	int ret;
+> +	int fd;
+> +
+> +	fd = open("/dev/btrfs-control", O_RDWR);
+> +	if (fd < 0)
+> +		return -errno;
+> +
+> +	memset(&args, 0, sizeof(args));
+> +	if (path)
+> +		strncpy_null(args.name, path);
+> +	ret = ioctl(fd, BTRFS_IOC_FORGET_DEV, &args);
+> +	if (ret)
+> +		ret = -errno;
+> +	close(fd);
+> +	return ret;
+> +}
+> +
+>  static const char * const cmd_device_scan_usage[] = {
+> -	"btrfs device scan [(-d|--all-devices)|<device> [<device>...]]",
+> -	"Scan devices for a btrfs filesystem",
+> +	"btrfs device scan [(-d|--all-devices)|(-u|--forget)|<device> "\
+> +							"[<device>...]]",
+> +	"Scan or forget (deregister) devices for a btrfs filesystem",
+>  	" -d|--all-devices (deprecated)",
+> +	" -u|--forget [<device> ..]",
+>  	NULL
+>  };
+>  
+> @@ -267,32 +289,45 @@ static int cmd_device_scan(int argc, char **argv)
+>  	int devstart;
+>  	int all = 0;
+>  	int ret = 0;
+> +	int forget = 0;
+>  
+>  	optind = 0;
+>  	while (1) {
+>  		int c;
+>  		static const struct option long_options[] = {
+>  			{ "all-devices", no_argument, NULL, 'd'},
+> +			{ "forget", no_argument, NULL, 'u'},
+>  			{ NULL, 0, NULL, 0}
+>  		};
+>  
+> -		c = getopt_long(argc, argv, "d", long_options, NULL);
+> +		c = getopt_long(argc, argv, "du", long_options, NULL);
+>  		if (c < 0)
+>  			break;
+>  		switch (c) {
+>  		case 'd':
+>  			all = 1;
+>  			break;
+> +		case 'u':
+> +			forget = 1;
+> +			break;
+>  		default:
+>  			usage(cmd_device_scan_usage);
+>  		}
+>  	}
+>  	devstart = optind;
+>  
+> +	if (all && forget)
+> +		usage(cmd_device_scan_usage);
+> +
+>  	if (all && check_argc_max(argc - optind, 1))
+>  		usage(cmd_device_scan_usage);
+>  
+>  	if (all || argc - optind == 0) {
+> +		if (forget) {
+> +			ret = btrfs_forget_devices(NULL);
+> +			error_on(ret, "error %d while running forget", ret);
+> +			goto out;
+> +		}
 
-The current logic of the code doesn't preclude this use case since if we
-can't shrink we just proceed to relocation. So even if 1g is replaced
-with 5eb and shrink_device always fails balancing will still proceed.
+nit: I would prefer to also have an if () {} else {} construct here,
+similar to what you do below.
 
-However, all of this really makes me wonder do we even need this "first
-stage" code in balancing (Chris, any thoughts?).
-
-> 
->> However, the code
->> has been buggy ever since its introduction since calculating the space to shrink
->> the device by was bounded by 1 mb. Most likely the original intention was to
->> have an upper bound of 1g and not 1m, since the largest chunk size is 1g. This 
->> means the first stage in __btrfs_balance so far has been a null op since it
->> effectively freed just a single megabyte.
->>
->> Fix this by setting an upper bound of size_to_free of 1g. 
->>
->> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
->> ---
->>  fs/btrfs/volumes.c | 2 +-
->>  1 file changed, 1 insertion(+), 1 deletion(-)
->>
->> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
->> index f435d397019e..8b0fd7bf3447 100644
->> --- a/fs/btrfs/volumes.c
->> +++ b/fs/btrfs/volumes.c
->> @@ -3467,7 +3467,7 @@ static int __btrfs_balance(struct btrfs_fs_info *fs_info)
->>  	list_for_each_entry(device, devices, dev_list) {
->>  		old_size = btrfs_device_get_total_bytes(device);
->>  		size_to_free = div_factor(old_size, 1);
->> -		size_to_free = min_t(u64, size_to_free, SZ_1M);
->> +		size_to_free = min_t(u64, size_to_free, SZ_1G);
->>  		if (!test_bit(BTRFS_DEV_STATE_WRITEABLE, &device->dev_state) ||
->>  		    btrfs_device_get_total_bytes(device) -
->>  		    btrfs_device_get_bytes_used(device) > size_to_free ||
->>
-> 
+>  		printf("Scanning for Btrfs filesystems\n");
+>  		ret = btrfs_scan_devices();
+>  		error_on(ret, "error %d while scanning", ret);
+> @@ -315,11 +350,19 @@ static int cmd_device_scan(int argc, char **argv)
+>  			ret = 1;
+>  			goto out;
+>  		}
+> -		printf("Scanning for Btrfs filesystems in '%s'\n", path);
+> -		if (btrfs_register_one_device(path) != 0) {
+> -			ret = 1;
+> -			free(path);
+> -			goto out;
+> +		if (forget) {
+> +			ret = btrfs_forget_devices(path);
+> +			if (ret)
+> +				error("Can't forget '%s': %s",
+> +							path, strerror(-ret));
+> +		} else {
+> +			printf("Scanning for Btrfs filesystems in '%s'\n",
+> +									path);
+> +			if (btrfs_register_one_device(path) != 0) {
+> +				ret = 1;
+> +				free(path);
+> +				goto out;
+> +			}
+>  		}
+>  		free(path);
+>  	}
+> diff --git a/ioctl.h b/ioctl.h
+> index 709e996f401c..e27d80e09392 100644
+> --- a/ioctl.h
+> +++ b/ioctl.h
+> @@ -721,6 +721,8 @@ static inline char *btrfs_err_str(enum btrfs_err_code err_code)
+>  				   struct btrfs_ioctl_vol_args)
+>  #define BTRFS_IOC_SCAN_DEV _IOW(BTRFS_IOCTL_MAGIC, 4, \
+>  				   struct btrfs_ioctl_vol_args)
+> +#define BTRFS_IOC_FORGET_DEV _IOW(BTRFS_IOCTL_MAGIC, 5, \
+> +				   struct btrfs_ioctl_vol_args)
+>  /* trans start and trans end are dangerous, and only for
+>   * use by applications that know how to avoid the
+>   * resulting deadlocks
 > 

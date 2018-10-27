@@ -2,241 +2,203 @@ Return-Path: <SRS0=3TJ0=NH=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED
+X-Spam-Status: No, score=-0.9 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1F5F5C46475
-	for <linux-btrfs@archiver.kernel.org>; Sat, 27 Oct 2018 20:45:05 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A13C8C46475
+	for <linux-btrfs@archiver.kernel.org>; Sat, 27 Oct 2018 21:21:17 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id BF6C220831
-	for <linux-btrfs@archiver.kernel.org>; Sat, 27 Oct 2018 20:45:04 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 23ACA20848
+	for <linux-btrfs@archiver.kernel.org>; Sat, 27 Oct 2018 21:21:17 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="YeYawios"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org BF6C220831
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
+	dkim=pass (2048-bit key) header.d=georgianit.com header.i=@georgianit.com header.b="FtypKzPd";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="lyzTt1LV"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 23ACA20848
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=georgianit.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728879AbeJ1F1P (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 28 Oct 2018 01:27:15 -0400
-Received: from mail-lj1-f180.google.com ([209.85.208.180]:40038 "EHLO
-        mail-lj1-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726226AbeJ1F1O (ORCPT
+        id S1727312AbeJ1GCZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 28 Oct 2018 02:02:25 -0400
+Received: from out3-smtp.messagingengine.com ([66.111.4.27]:41491 "EHLO
+        out3-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1726039AbeJ1GCZ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 28 Oct 2018 01:27:14 -0400
-Received: by mail-lj1-f180.google.com with SMTP id t22-v6so4241064lji.7
-        for <linux-btrfs@vger.kernel.org>; Sat, 27 Oct 2018 13:45:01 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=subject:to:references:from:openpgp:autocrypt:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=TOxjopCGD2KM4hu8DyLCPKyv4FTLyr993LiZRMv5cv4=;
-        b=YeYawiosU8tmfuOY64uqFvVAZLUGqX6hb8lOPbDWCExfOC6/Ib+6ou88KkpzOy3Z7J
-         UpfSs2Tgx2nP7DfRl2xP1k1m3l/RY9BZ718PfE7sky3ijPyqz0Ea7++J7EJVwHJ6gJXB
-         50vJoqQLlJ3SbQsBfO+vzl9QP1cQeL8jqVL7DzInPII953IGIyCp1L1pFGwrEsaYZVGq
-         yRPqm+ZRdR33iQdL3GP8VAhvKDcWhxdIFQnCZIJcsahDmi74mcV31QUm9504jsUvw1Kj
-         jEXpAj0CNItm8eVtRCuO9O7gZ2qHuWJjhwklhOU6y69aGR8yqLXEEeLU3ilzaBntziiu
-         nByw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:references:from:openpgp:autocrypt
-         :message-id:date:user-agent:mime-version:in-reply-to
-         :content-language:content-transfer-encoding;
-        bh=TOxjopCGD2KM4hu8DyLCPKyv4FTLyr993LiZRMv5cv4=;
-        b=ehYc5bnwhFrIQLzb85fFPxmu9tkoFgtUsRuES8S4PfmTVQxnLzWIVKUe1/ISKgR3NA
-         bp2a4Wil8n8EBV/fv9PrnHHKJjQsU+poOMXNWqR6sB/FaAxlNBuReLZ9YIlqVMuyDXhq
-         e4dUhdbOnE/8cyU47+frhShphAraM7BD9rsENu9bMBrNE7WhIZRlS0Og/8sn+vhCejRh
-         pAkxJU6dOPKKYjO6+34qNzO83FYZVDOPt5LlPdlMoBLY9iD79cvrd0S/+nG/uO+8MTmr
-         X08A5U4aS4ZitGxyWISeQNeHGPlqgszd6Ez0dTmvbg/ZE/zMk6hxD7xh+43ywqm4L1lk
-         eRCg==
-X-Gm-Message-State: AGRZ1gLQjjHIX60EyCVx7Sn7gyPalC0VVFUriIa7rRwdg8OqOD1AMFFp
-        +Iq8v9U2hHwblCzBE0gpswa4xvAS
-X-Google-Smtp-Source: AJdET5cBxbEntWZkbXKbrTb/MXPFvFw2cFktcPvo01m32Jn2se5VxHRyrKkGBLuvsd6zAMjqSdxO6A==
-X-Received: by 2002:a2e:302:: with SMTP id 2-v6mr5543295ljd.152.1540673100046;
-        Sat, 27 Oct 2018 13:45:00 -0700 (PDT)
-Received: from [192.168.1.4] (109-252-55-124.nat.spd-mgts.ru. [109.252.55.124])
-        by smtp.gmail.com with ESMTPSA id y9-v6sm2219286ljk.35.2018.10.27.13.44.58
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Sat, 27 Oct 2018 13:44:59 -0700 (PDT)
+        Sun, 28 Oct 2018 02:02:25 -0400
+Received: from compute2.internal (compute2.nyi.internal [10.202.2.42])
+        by mailout.nyi.internal (Postfix) with ESMTP id 7418921A1E;
+        Sat, 27 Oct 2018 17:20:07 -0400 (EDT)
+Received: from mailfrontend2 ([10.202.2.163])
+  by compute2.internal (MEProxy); Sat, 27 Oct 2018 17:20:07 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=georgianit.com;
+         h=subject:to:cc:references:from:message-id:date:mime-version
+        :in-reply-to:content-type; s=fm1; bh=DP3IFV7O0PwvYCc3AZYI/vmuy/3
+        QNS5F78JptSjjd7w=; b=FtypKzPdcYPvukOlKrXfW51YirSgRnVRauDwbme5bFv
+        ALOhvNkNDJJtYoyrMJz6A2Umv7gk3qs70oIOTY6UDW41yIAm6Z3byZk4bg1c7PvG
+        RFP9NHj0AlyxEB+Rn/G4wXocVAo5ugmCv9SEZ5LfInoQma18SUmCB8NpTs/QEIfz
+        aDPiL5DcM9NCiBsJnDmAdcBpA1z3YEqYIS3EmQzNdvOZU+GmTnhMq6cvdynadCqA
+        iKc82Ne1Yh0HcW/j1awFReVqU4V+0Dl89nPiWB8VyoRhxzDa6Stid2H9BbxyjFNm
+        nefYZgRm+gG1E6ED+FF1WBsOHTQGJhv79zhlWeOYVyg==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+        messagingengine.com; h=cc:content-type:date:from:in-reply-to
+        :message-id:mime-version:references:subject:to:x-me-proxy
+        :x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm1; bh=DP3IFV
+        7O0PwvYCc3AZYI/vmuy/3QNS5F78JptSjjd7w=; b=lyzTt1LV8uk6n7ys/02CXm
+        9tedPBopJ8KE4zwWm3u6O1Uy2wKk6vxi8oDRV6wFVSVr2NfwRXZCmjCM0ETYDtPe
+        EfVpEBggWtePxH9rk/8xCBkg3K8NTsnqiipCxxV45zn5ojz9I2mVBa4U20Z2WMpE
+        KGNc/2GZrHQ1tWVmy/ftnqu1py33pNp4EmDQHXghTD/Xr50lNkPZv6vdyi22eW1/
+        TP4YISp2GE3Y2qYlDPGhkho0lDSjt33jmN//Jj3OuJ3xoY0mAaZUyR6UtAyYBtcL
+        rbXTVW/UtIRYuNjjXWtYzaU7vaesTVbtbiSZwWgU2Pa6s1UiKW5Bu4ORgTEZSzHQ
+        ==
+X-ME-Sender: <xms:htbUW2A6SDymiN6piThmnnvYVPBTbX_cJEx1ambMgnKzMYGYnrMaHA>
+X-ME-Proxy: <xmx:htbUW8L1eoSqFazOv01Sp42zPaNmdV8k9ep8rlH6oPLlUGqYgUCQwg>
+    <xmx:htbUW0tExwg-b7schdYM6T4MOCyo62pbNfJYPYIaaHTJUvmn-v6TJw>
+    <xmx:htbUWzwaUWD9kYAHzombF8PCJDm29LVaQQqOgJKqV-XZdayxxWK73A>
+    <xmx:htbUW-dwPTQfe9-xbk9tQsgqouq6OG29Jpg4Urwa7LAoq3wvKHgrCA>
+    <xmx:htbUW0KyuVG-W4XocBaM9xBVKWeGH_obkQywVj5pdI3_k0AVqQak7w>
+    <xmx:h9bUWzX4csyedVbH2iM0tgsyf4PneFmBMiuQVHLCN97hXMSY16PcyA>
+Received: from [10.0.0.6] (cpe00248caf16e4-cmbc4dfbde0a70.cpe.net.cable.rogers.com [99.240.134.203])
+        by mail.messagingengine.com (Postfix) with ESMTPA id 870D9102DD;
+        Sat, 27 Oct 2018 17:20:06 -0400 (EDT)
 Subject: Re: Have 15GB missing in btrfs filesystem.
-To:     Remi Gauvin <remi@georgianit.com>, Marc MERLIN <marc@merlins.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
+To:     Marc MERLIN <marc@merlins.org>
+Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
 References: <20181024003613.q5bxmqm4hh5xbgmf@merlins.org>
  <a8500d2d-2747-f250-75a8-2ec4c0533c6c@gmx.com>
  <20181027174245.4isfcb6nv4pkklmd@merlins.org>
  <d530a9d0-4cee-521b-6c95-ff56d0f7c130@georgianit.com>
-From:   Andrei Borzenkov <arvidjaar@gmail.com>
+ <20181027201933.wrquhmdrg3z2fa2o@merlins.org>
+From:   Remi Gauvin <remi@georgianit.com>
 Openpgp: preference=signencrypt
-Autocrypt: addr=arvidjaar@gmail.com; prefer-encrypt=mutual; keydata=
- xsDiBDxiRwwRBAC3CN9wdwpVEqUGmSoqF8tWVIT4P/bLCSZLkinSZ2drsblKpdG7x+guxwts
- +LgI8qjf/q5Lah1TwOqzDvjHYJ1wbBauxZ03nDzSLUhD4Ms1IsqlIwyTLumQs4vcQdvLxjFs
- G70aDglgUSBogtaIEsiYZXl4X0j3L9fVstuz4/wXtwCg1cN/yv/eBC0tkcM1nsJXQrC5Ay8D
- /1aA5qPticLBpmEBxqkf0EMHuzyrFlqVw1tUjZ+Ep2LMlem8malPvfdZKEZ71W1a/XbRn8FE
- SOp0tUa5GwdoDXgEp1CJUn+WLurR0KPDf01E4j/PHHAoABgrqcOTcIVoNpv2gNiBySVsNGzF
- XTeY/Yd6vQclkqjBYONGN3r9R8bWA/0Y1j4XK61qjowRk3Iy8sBggM3PmmNRUJYgroerpcAr
- 2byz6wTsb3U7OzUZ1Llgisk5Qum0RN77m3I37FXlIhCmSEY7KZVzGNW3blugLHcfw/HuCB7R
- 1w5qiLWKK6eCQHL+BZwiU8hX3dtTq9d7WhRW5nsVPEaPqudQfMSi/Ux1kc0mQW5kcmVpIEJv
- cnplbmtvdiA8YXJ2aWRqYWFyQGdtYWlsLmNvbT7CZQQTEQIAJQIbAwYLCQgHAwIGFQgCCQoL
- BBYCAwECHgECF4AFAliWAiQCGQEACgkQR6LMutpd94wFGwCeNuQnMDxve/Fo3EvYIkAOn+zE
- 21cAnRCQTXd1hTgcRHfpArEd/Rcb5+SczsBNBDxiRyQQBACQtME33UHfFOCApLki4kLFrIw1
- 5A5asua10jm5It+hxzI9jDR9/bNEKDTKSciHnM7aRUggLwTt+6CXkMy8an+tVqGL/MvDc4/R
- KKlZxj39xP7wVXdt8y1ciY4ZqqZf3tmmSN9DlLcZJIOT82DaJZuvr7UJ7rLzBFbAUh4yRKaN
- nwADBwQAjNvMr/KBcGsV/UvxZSm/mdpvUPtcw9qmbxCrqFQoB6TmoZ7F6wp/rL3TkQ5UElPR
- gsG12+Dk9GgRhnnxTHCFgN1qTiZNX4YIFpNrd0au3W/Xko79L0c4/49ten5OrFI/psx53fhY
- vLYfkJnc62h8hiNeM6kqYa/x0BEddu92ZG7CRgQYEQIABgUCPGJHJAAKCRBHosy62l33jMhd
- AJ48P7WDvKLQQ5MKnn2D/TI337uA/gCgn5mnvm4SBctbhaSBgckRmgSxfwQ=
-Message-ID: <95329ddd-3e70-7a00-8ca3-f9ba42c98029@gmail.com>
-Date:   Sat, 27 Oct 2018 23:44:57 +0300
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.2.1
+Autocrypt: addr=remi@georgianit.com; prefer-encrypt=mutual;
+ keydata= xsBNBFogjcYBCADvI0pxdYyVkEUAIzT6HwYnZ5CAy2czT87Si5mqk4wL4Ulupwfv9TLzaj3R
+ CUgHPNpFsp1n/nKKyOq1ZmE6w5YKx4I8/o9tRl+vjnJr2otfS7XizBaVV7UwziODikOimmT+
+ sGNfYGcjdJ+CC567g9aAECbvnyxNlncTyUPUdmazOKhmzB4IvG8+M2u+C4c9nVkX2ucf3OuF
+ t/qmeRaF8+nlkCMtAdIVh0F7HBYJzvYG3EPiKbGmbOody3OM55113uEzyw39k8WHRhhaKhi6
+ 8QY9nKCPVhRFzk6wUHJa2EKbKxqeFcFzZ1ok7l7vrX3/OBk2dGOAoOJ4UX+ozAtrMqCBABEB
+ AAHNIVJlbWkgR2F1dmluIDxyZW1pQGdlb3JnaWFuaXQuY29tPsLAfgQTAQIAKAUCWiCNxgIb
+ IwUJCWYBgAYLCQgHAwIGFQgCCQoLBBYCAwECHgECF4AACgkQ71Of8kdFam2V1Qf9Fs6LSx1i
+ OoVgOzjWwiI06vJrZznjmtbJkcm/Of5onITZnB4h+tbqEyaMYYsEIk1r4oFMfKB7SDpQbADj
+ 9CI2EbpygwZa24Oqv4gWEzb4c7mSJuLKTnrhmwCOtdeDQXO/uu6BZPkazDAaKHUM6XqNEVvt
+ WHBaGioaV4dGxzjXALQDpLc4vDreSl9nwlTorwJR9t6u5BlDcdh3VOuYlgXjI4pCk+cihgtY
+ k3KZo/El1fWFYmtSTq7m/JPpKZyb77cbzf2AbkxJuLgg9o0iVAg81LjElznI0R5UbYrJcJeh
+ Jo4rvXKFYQ1qFwno1jlSXejsFA5F3FQzJe1JUAu2HlYqRs7ATQRaII3GAQgAo0Y6FX84QsDp
+ R8kFEqMhpkjeVQpbwYhqBgIFJT5cBMQpZsHmnOgpYU0Jo8P3owHUFu569g6j4+wSubbh2+bt
+ WL0QoFZcng0a2/j3qH98g9lAn8ZgohxavmwYINt7b+LEeDoBvq0s/0ZeXx47MOmbjROq8L/g
+ QOYbIWoJLO2emyxmVo1Fg00FKkbuCEgJPW8U/7VX4EFYaIhPQv/K3mpnyWXIq5lviiMCHzxE
+ jzBh/35DTLwymDdmtzWgcu1rzZ6j2s+4bTxE8mYXd4l2Xonn7v448gwvQmZJ8EPplO/pWe9F
+ oISyiNxZnQNCVEO9lManKPFphfVHqJ1WEtYMiLxTkQARAQABwsBlBBgBAgAPBQJaII3GAhsM
+ BQkJZgGAAAoJEO9Tn/JHRWptnn0H+gOtkumwlKcad2PqLFXCt2SzVJm5rHuYZhPPq4GCdMbz
+ XwuCEPXDoECFVXeiXngJmrL8+tLxvUhxUMdXtyYSPusnmFgj/EnCjQdFMLdvgvXI/wF5qj0/
+ r6NKJWtx3/+OSLW0E9J/gLfimIc3OF49E3S1c35Wj+4Okx9Tpwor7Tw8KwBVbdZA6TyQF08N
+ phFkhgnTK6gl2XqIHaoxPKhI9pKU5oPkg2eI27OICZrpTCppaSh3SGUp0EHPkZuhVfIxg4vF
+ nato30VZr+RMHtPtx813VZ/kzj+2pC/DrwZOtqFeaqJfCi6JSik3vX9BQd9GL4mxytQBZKXz
+ SY9JJa155sI=
+Message-ID: <0d2b2e8e-571b-3001-6bab-9c74c005b868@georgianit.com>
+Date:   Sat, 27 Oct 2018 17:20:05 -0400
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:52.0) Gecko/20100101
+ Thunderbird/52.8.0
 MIME-Version: 1.0
-In-Reply-To: <d530a9d0-4cee-521b-6c95-ff56d0f7c130@georgianit.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <20181027201933.wrquhmdrg3z2fa2o@merlins.org>
+Content-Type: multipart/mixed;
+ boundary="------------9452B26E43C15F6FCCFB3768"
 Content-Language: en-US
-Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-27.10.2018 21:12, Remi Gauvin пишет:
-> On 2018-10-27 01:42 PM, Marc MERLIN wrote:
+This is a multi-part message in MIME format.
+--------------9452B26E43C15F6FCCFB3768
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: 8bit
+
+On 2018-10-27 04:19 PM, Marc MERLIN wrote:
+
+> Thanks for confirming. Because I always have snapshots for btrfs
+> send/receive, defrag will duplicate as you say, but once the older
+> snapshots get freed up, the duplicate blocks should go away, correct?
 > 
->>
->> I've been using btrfs for a long time now but I've never had a
->> filesystem where I had 15GB apparently unusable (7%) after a balance.
->>
+> Back to usage, thanks for pointing out that command:
+> saruman:/mnt/btrfs_pool1# btrfs fi usage .
+> Overall:
+>     Device size:		 228.67GiB
+>     Device allocated:		 203.54GiB
+>     Device unallocated:		  25.13GiB
+>     Device missing:		     0.00B
+>     Used:			 192.01GiB
+>     Free (estimated):		  32.44GiB	(min: 19.88GiB)
+>     Data ratio:			      1.00
+>     Metadata ratio:		      2.00
+>     Global reserve:		 512.00MiB	(used: 0.00B)
 > 
-> The space isn't unusable.  It's just allocated.. (It's used in the sense
-> that it's reserved for data chunks.).  Start writing data to the drive,
-> and the data will fill that space before more gets allocated.. (Unless
-
-No (at least, not necessarily).
-
-On empty filesystem:
-
-bor@10:~> df -h /mnt
-Filesystem      Size  Used Avail Use% Mounted on
-/dev/sdb1      1023M   17M  656M   3% /mnt
-bor@10:~> sudo dd if=/dev/zero of=/mnt/foo bs=100M count=1
-1+0 records in
-1+0 records out
-104857600 bytes (105 MB, 100 MiB) copied, 0.260088 s, 403 MB/s
-bor@10:~> sync
-bor@10:~> df -h /mnt
-Filesystem      Size  Used Avail Use% Mounted on
-/dev/sdb1      1023M  117M  556M  18% /mnt
-bor@10:~> sudo filefrag -v /mnt/foo
-Filesystem type is: 9123683e
-File size of /mnt/foo is 104857600 (25600 blocks of 4096 bytes)
- ext:     logical_offset:        physical_offset: length:   expected: flags:
-   0:        0..   14419:      36272..     50691:  14420:
-   1:    14420..   25599:     125312..    136491:  11180:      50692:
-last,eof
-/mnt/foo: 2 extents found
-bor@10:~> sudo dd if=/dev/zero of=/mnt/foo bs=10M count=1 conv=notrunc
-seek=2
-1+0 records in
-1+0 records out
-10485760 bytes (10 MB, 10 MiB) copied, 0.0300004 s, 350 MB/s
-bor@10:~> sync
-bor@10:~> df -h /mnt
-Filesystem      Size  Used Avail Use% Mounted on
-/dev/sdb1      1023M  127M  546M  19% /mnt
-bor@10:~> sudo filefrag -v /mnt/foo
-Filesystem type is: 9123683e
-File size of /mnt/foo is 104857600 (25600 blocks of 4096 bytes)
- ext:     logical_offset:        physical_offset: length:   expected: flags:
-   0:        0..    5119:      36272..     41391:   5120:
-   1:     5120..    7679:      33696..     36255:   2560:      41392:
-   2:     7680..   14419:      43952..     50691:   6740:      36256:
-   3:    14420..   25599:     125312..    136491:  11180:      50692:
-last,eof
-/mnt/foo: 4 extents found
-bor@10:~> sudo dd if=/dev/zero of=/mnt/foo bs=10M count=1 conv=notrunc
-seek=7
-1+0 records in
-1+0 records out
-10485760 bytes (10 MB, 10 MiB) copied, 0.0314211 s, 334 MB/s
-bor@10:~> sync
-bor@10:~> df -h /mnt
-Filesystem      Size  Used Avail Use% Mounted on
-/dev/sdb1      1023M  137M  536M  21% /mnt
-bor@10:~> sudo filefrag -v /mnt/foo
-Filesystem type is: 9123683e
-File size of /mnt/foo is 104857600 (25600 blocks of 4096 bytes)
- ext:     logical_offset:        physical_offset: length:   expected: flags:
-   0:        0..    5119:      36272..     41391:   5120:
-   1:     5120..    7679:      33696..     36255:   2560:      41392:
-   2:     7680..   14419:      43952..     50691:   6740:      36256:
-   3:    14420..   17919:     125312..    128811:   3500:      50692:
-   4:    17920..   20479:     136492..    139051:   2560:     128812:
-   5:    20480..   25599:     131372..    136491:   5120:     139052:
-last,eof
-/mnt/foo: 6 extents found
-bor@10:~> ll -sh /mnt
-total 100M
-100M -rw-r--r-- 1 root root 100M Oct 27 23:30 foo
-bor@10:~>
-
-So you still have the single file with size of 100M but space consumed
-on filesystem is 120M because two initial large extents remain. Each
-write of 10M will get new extent allocated, but large extents are not
-split. If you look at file details
-
-bor@10:~/python-btrfs/examples> sudo ./show_file.py /mnt/foo
-filename /mnt/foo tree 5 inum 259
-inode generation 239 transid 242 size 104857600 nbytes 104857600
-block_group 0 mode 100644 nlink 1 uid 0 gid 0 rdev 0 flags 0x0(none)
-inode ref list size 1
-    inode ref index 3 name utf-8 foo
-extent data at 0 generation 239 ram_bytes 46563328 compression none type
-regular disk_bytenr 148570112 disk_num_bytes 46563328 offset 0 num_bytes
-20971520
-
-This extent consumes about 44MB on disk but only 20MB of it is part of file.
-
-extent data at 20971520 generation 241 ram_bytes 10485760 compression
-none type regular disk_bytenr 138018816 disk_num_bytes 10485760 offset 0
-num_bytes 10485760
-extent data at 31457280 generation 239 ram_bytes 46563328 compression
-none type regular disk_bytenr 148570112 disk_num_bytes 46563328 offset
-31457280 num_bytes 15106048
-
-And another 14MB. So 10MB allocated on disk are "lost".
-
-extent data at 46563328 generation 239 ram_bytes 12500992 compression
-none type regular disk_bytenr 195133440 disk_num_bytes 12500992 offset 0
-num_bytes 12500992
-extent data at 59064320 generation 239 ram_bytes 45793280 compression
-none type regular disk_bytenr 513277952 disk_num_bytes 45793280 offset 0
-num_bytes 14336000
-extent data at 73400320 generation 242 ram_bytes 10485760 compression
-none type regular disk_bytenr 559071232 disk_num_bytes 10485760 offset 0
-num_bytes 10485760
-extent data at 83886080 generation 239 ram_bytes 45793280 compression
-none type regular disk_bytenr 513277952 disk_num_bytes 45793280 offset
-24821760 num_bytes 20971520
-
-Same here. 10MB in extent at 513277952 are lost.
-
-There is no way to regain them using balance. Only defragmentation can
-potentially rewrite file freeing partial extents.
-
-> you are using an older kernel and the filesystem gets mounted with ssd
-> option, in which case, you'll want to add nossd option to prevent that
-> behaviour.)
+> Data,single: Size:192.48GiB, Used:185.16GiB
+>    /dev/mapper/pool1	 192.48GiB
 > 
-> You can use btrfs fi usage to display that more clearly.
+> Metadata,DUP: Size:5.50GiB, Used:3.42GiB
+>    /dev/mapper/pool1	  11.00GiB
+> 
+> System,DUP: Size:32.00MiB, Used:48.00KiB
+>    /dev/mapper/pool1	  64.00MiB
+> 
+> Unallocated:
+>    /dev/mapper/pool1	  25.13GiB
 > 
 > 
->> I can try a defrag next, but since I have COW for snapshots, it's not
->> going to help much, correct?
+> I'm still seing that I'm using 192GB, but 203GB allocated.
+> Do I have 25GB usable:
+>     Device unallocated:		  25.13GiB
 > 
-> The defrag will end up using more space, as the fragmented parts of
-> files will get duplicated.  That being said, if you have the luxury to
-> defrag *before* taking new snapshots, that would be the time to do it.
+> Or 35GB usable?
+>     Device size:		 228.67GiB
+>       -
+>     Used:                        192.01GiB
+>       = 36GB ?    
 > 
 
+
+The answer is somewhere between the two.  (BTRFS's estimate of 32.44
+Free is probably as close as you'll get to predicting.)
+
+So you have 7.32GB  allocated but still free space for data, and 25GB of
+completely unallocated disk space. However, as you add more data, or
+create more snapshots and create metadata duplication, some of that 25GB
+will be allocated for Metadata.  Remember that Metadata is Duplicated
+(so that 3.42GB of Metadata you are using now is actually using 6.84GB
+of disk space, out of the allocated 11GB
+
+You want to be careful that unallocated space doesn't run out.    If the
+system runs out of usable space for metadata, it can be tricky to get
+yourself out of the corner.  That is why a large discrepency between
+Data Size and Used would be a concern.  If those 25GB of space were
+allocated to data, your would get out of space errors even if the 25GB
+was still unused.
+
+On that note, you seem to have a rather high metadata to data ratio..
+(at least, compared to my limited experience.).  Are you using noatime
+on your filesystems?  without it, snapshots will end up causing
+duplicated metadata when atime updates.
+
+
+
+
+
+--------------9452B26E43C15F6FCCFB3768
+Content-Type: text/x-vcard; charset=utf-8;
+ name="remi.vcf"
+Content-Transfer-Encoding: quoted-printable
+Content-Disposition: attachment;
+ filename="remi.vcf"
+
+begin:vcard
+fn:Remi Gauvin
+n:Gauvin;Remi
+org:Georgian Infotech
+adr:;;3-51 Sykes St. N.;Meaford;ON;N4L 1X3;Canada
+email;internet:remi@georgianit.com
+tel;work:226-256-1545
+version:2.1
+end:vcard
+
+
+--------------9452B26E43C15F6FCCFB3768--

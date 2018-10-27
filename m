@@ -1,4 +1,4 @@
-Return-Path: <SRS0=3TJ0=NH=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=kVXZ=NI=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
@@ -6,33 +6,31 @@ X-Spam-Status: No, score=-0.5 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
 	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 14834ECDE44
-	for <linux-btrfs@archiver.kernel.org>; Sat, 27 Oct 2018 23:27:33 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5EEBEC46475
+	for <linux-btrfs@archiver.kernel.org>; Sun, 28 Oct 2018 00:03:42 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D48CE20856
-	for <linux-btrfs@archiver.kernel.org>; Sat, 27 Oct 2018 23:27:32 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org D48CE20856
+	by mail.kernel.org (Postfix) with ESMTP id 00B7F2085B
+	for <linux-btrfs@archiver.kernel.org>; Sun, 28 Oct 2018 00:03:41 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 00B7F2085B
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=gmx.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729068AbeJ1IKH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 28 Oct 2018 04:10:07 -0400
-Received: from mout.gmx.net ([212.227.17.20]:41165 "EHLO mout.gmx.net"
+        id S1728810AbeJ1ImF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 28 Oct 2018 04:42:05 -0400
+Received: from mout.gmx.net ([212.227.17.22]:38073 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1728630AbeJ1IKH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 28 Oct 2018 04:10:07 -0400
+        id S1728630AbeJ1ImE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 28 Oct 2018 04:42:04 -0400
 Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx102
- [212.227.17.174]) with ESMTPSA (Nemesis) id 0LkSOt-1fkFVN2C1j-00cPxb; Sun, 28
- Oct 2018 01:27:27 +0200
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 0M34eJ-1fPHH82v3v-00srgm; Sun, 28
+ Oct 2018 01:59:18 +0200
 Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx102
- [212.227.17.174]) with ESMTPSA (Nemesis) id 0LkSOt-1fkFVN2C1j-00cPxb; Sun, 28
- Oct 2018 01:27:27 +0200
-Subject: Re: Have 15GB missing in btrfs filesystem.
-To:     Marc MERLIN <marc@merlins.org>
-Cc:     linux-btrfs@vger.kernel.org
-References: <20181024003613.q5bxmqm4hh5xbgmf@merlins.org>
- <a8500d2d-2747-f250-75a8-2ec4c0533c6c@gmx.com>
- <20181027174245.4isfcb6nv4pkklmd@merlins.org>
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 0M34eJ-1fPHH82v3v-00srgm; Sun, 28
+ Oct 2018 01:59:18 +0200
+Subject: Re: btrfs-qgroup-rescan using 100% CPU
+To:     Dave <davestechshop@gmail.com>,
+        Linux fs Btrfs <linux-btrfs@vger.kernel.org>
+References: <CAH=dxU7OXpWYRVkhoPtcfPj3r6Sh5Mkmz4nc6jOy_W8osX5zOQ@mail.gmail.com>
 From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
@@ -59,170 +57,155 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
  4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
  h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <25bf6019-c4e8-1d36-e475-b37f79aecc59@gmx.com>
-Date:   Sun, 28 Oct 2018 07:27:22 +0800
+Message-ID: <f666e341-3c9c-1108-717a-5165cb2ca3c1@gmx.com>
+Date:   Sun, 28 Oct 2018 07:59:14 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <20181027174245.4isfcb6nv4pkklmd@merlins.org>
+In-Reply-To: <CAH=dxU7OXpWYRVkhoPtcfPj3r6Sh5Mkmz4nc6jOy_W8osX5zOQ@mail.gmail.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="C3TMKhItbaWtubrnLi03sdTaze89e1KIJ"
-X-Provags-ID: V03:K1:14HW/GhUg+mVuYE2uZDosXhbUpv7o0Wx3M4+eIskTP+syxnHVLB
- 3nU6g1gs8tHsjuJaPrS+lkheYSZXxExvxbLz29gBls4qlr5rVjxZcmodREONlkFBfW/C6wn
- t4L+pagmGmHBJE/nSZ1k7uRUkp5tcxZOl8cvXBwTpgBKLVumzMovQ+BCZDpxc8fzxstkqTp
- e4a+gDNH+ENkUlxkXVaoQ==
-X-UI-Out-Filterresults: notjunk:1;V01:K0:sT3Uanbp2T4=:FGV0eoRx3Q4LY5Cskyd0x1
- 6fuIn6cOoqQLoPrJ4Uqlo8xrf3+2voIUpEi13sn/xrXAJ260LuAwLdJ0bZnGtbAd2xM5fTVQR
- TFN7JsrPrRsytovf+acbcShb2qWYwiWRuCSLiodlvYIAEnLacrsoEIUptB6uot4ts7l3PwTlP
- PfeJjKYvghKJBro9i5DWbHSBB9Z6hU4JLajNnQi5C7v6dx2Zokp++b9kFszcoKC+djICG4FKd
- F08BLffL5DLOOPxq0s0FMCJNgp9oJLck4kMu86iKOjxM1NhFTl0oeou0NiU/yX91+zOKSbAXS
- qHx7sQFISrjj10LAJgnAsnCdhhEdo/gDznlrtc1/HWuxVi2TuWIGMIwJNCDTNNbe2hs+2Ssm1
- apV/jj3vRkz5oTo4ko1QRVcpnkwITBrl+V7O/X5g2hhm7cjTJYBeLB3RtyIVWp5Eu8PkaZcML
- 48suaPbydLVEGCXPmIH4UDPBCxvks+a4oLwESdw0rjbOzsH3pC7Yr2u3SqcxAcMkSz55uNwJ5
- 5s/Kty/z+pBGfK/3wzyUPkGa3I6XecbDw9uqHx4xytgOpZaSHp0Djyl+dMvID0LdQYrsILTZb
- ymw4cWW9ha8fgecsJnFebRHqJrtjYVyhFXZdAUYGWMh7lgeUi0mTGilNhEwyqlcU8wuEWOEiE
- PG0pbs5qO2xmZdVzoD27B+T7URcQ4C6HZ9mHtQTftcLfCH3UWrk+PoeYHPxQhJVmH/+9ZYKUK
- AiJ/76ivyOd+LZnCdk6Sr275VEALkA4Xm8RrcCYG0MHAEXazbtB+bED8y8c0cg7rqLRgmrgzv
- Z9lJWOI/wojjL+9Zap6T4sVsHqerw==
+ boundary="zXqqlKsT7t18XV7DecBf4n2S78SHPbS1Y"
+X-Provags-ID: V03:K1:MunCXoAxIEMXxqhNKlyKimN5GM+oguO8oc5gcY3NaEnJTmjTkZB
+ cUkP64z/4xYCF6ceoKTUhlbkPk62K3mK1Eekc3Xoj6jWegwFyhlYP2hW8A/nQNymxJljfKk
+ J9pW7qtbCzT1hfl0NAPTuApD9w5nK7MhUwqmim6RraAgO7Kh9cIU9qMgqtEiB6dgDrk2a34
+ CbD2ZrDmvdd9DTZl4bDrg==
+X-UI-Out-Filterresults: notjunk:1;V01:K0:xGErKipnASM=:9ko+LvrOVQwAW/xeraN32v
+ godrjIwPJ7AunY486cKbFRntdg7zS1w6J3vQx+enq93rOnAmCGLvAaPi4uzrzgiuJsC1TB7lu
+ Onw/IGmTfPWV+0ubYFB2+AZEiqlf+mzQW/MzQevhJ/g2nH2bnQMmecxiocgEIa40Chk0COKhZ
+ LlwBLB3zZIlElKUFS8mRniQvZ06isaPb83CR8QG0msRZB1b/WW3tqwHHwZxdfhk2UHSE8QWh6
+ cUfwG4kvJTljTjanJ0UH9FEf9Uew/tVZVVAA3RnWdXmZl2qNwx3p6UN0zlP2oQP2fqi5Rs61z
+ 6HMpLolAfxloZatJPNE/R3gH31kGcUZ6AmQIXaFs/Fdhp5zUDkB/OOI+/xvk7bG+66ou7E0qe
+ QrzxBsAJOTPcD3plGVGT0lD+HJ5/7FEyJlKTmNTCFI2wV3BcLtTrixfXDBrlx6fDdo3mK6cbN
+ dX8E8/YmjUJi3C5sUzytNAb4aq9D+rl8VYTvgS06L58scqsJsyLJoJxcPB9fABmFI/0W2LOJA
+ eQIOvHjcjKyXgfRf6yHdJ6cVSHXLQoOWTJjFe0hKWtYkPd1DL0P21shhYYoJC9CJgx9F/Hbva
+ AOyfExf/5GxEeZdyZv5RlHVjN7x+jj1nvabEMKJ+uq+x7UGvh+QHa/vp81GushNrtUtbjjY3F
+ DYF5g9xbIj/mqgbrJ+D+IGxxl3Mjx3en6njldBIC4YgNEXDzRS91IS5bj5WIPeMvwVyRCuWSN
+ zktS1NcG8golcj7qrqaw7eTRKnNoFAUf6pcHem1AVABLUbDNneYZReZq439gydTEcMJgeyR3c
+ NqFFNINfM2AFCyK/yako5+g2gRjOQ==
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---C3TMKhItbaWtubrnLi03sdTaze89e1KIJ
-Content-Type: multipart/mixed; boundary="lTX407wTP5CvPVT6how2ndDkF9jnrGPRk";
+--zXqqlKsT7t18XV7DecBf4n2S78SHPbS1Y
+Content-Type: multipart/mixed; boundary="tHOcQMUFgRF4NRFhBKlRtPvKRZHJjwG8t";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Marc MERLIN <marc@merlins.org>
-Cc: linux-btrfs@vger.kernel.org
-Message-ID: <25bf6019-c4e8-1d36-e475-b37f79aecc59@gmx.com>
-Subject: Re: Have 15GB missing in btrfs filesystem.
-References: <20181024003613.q5bxmqm4hh5xbgmf@merlins.org>
- <a8500d2d-2747-f250-75a8-2ec4c0533c6c@gmx.com>
- <20181027174245.4isfcb6nv4pkklmd@merlins.org>
-In-Reply-To: <20181027174245.4isfcb6nv4pkklmd@merlins.org>
+To: Dave <davestechshop@gmail.com>,
+ Linux fs Btrfs <linux-btrfs@vger.kernel.org>
+Message-ID: <f666e341-3c9c-1108-717a-5165cb2ca3c1@gmx.com>
+Subject: Re: btrfs-qgroup-rescan using 100% CPU
+References: <CAH=dxU7OXpWYRVkhoPtcfPj3r6Sh5Mkmz4nc6jOy_W8osX5zOQ@mail.gmail.com>
+In-Reply-To: <CAH=dxU7OXpWYRVkhoPtcfPj3r6Sh5Mkmz4nc6jOy_W8osX5zOQ@mail.gmail.com>
 
---lTX407wTP5CvPVT6how2ndDkF9jnrGPRk
+--tHOcQMUFgRF4NRFhBKlRtPvKRZHJjwG8t
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
 
 
-On 2018/10/28 =E4=B8=8A=E5=8D=881:42, Marc MERLIN wrote:
-> On Wed, Oct 24, 2018 at 01:07:25PM +0800, Qu Wenruo wrote:
->>> saruman:/mnt/btrfs_pool1# btrfs balance start -musage=3D80 -v .
->>> Dumping filters: flags 0x6, state 0x0, force is off
->>>   METADATA (flags 0x2): balancing, usage=3D80
->>>   SYSTEM (flags 0x2): balancing, usage=3D80
->>> Done, had to relocate 5 out of 202 chunks
->>> saruman:/mnt/btrfs_pool1# btrfs fi show .
->>> Label: 'btrfs_pool1'  uuid: fda628bc-1ca4-49c5-91c2-4260fe967a23
->>> 	Total devices 1 FS bytes used 188.24GiB
->>> 	devid    1 size 228.67GiB used 203.54GiB path /dev/mapper/pool1
->>>
->>> and it's back to 15GB :-/
->>>
->>> How can I get 188.24 and 203.54 to converge further? Where is all tha=
-t
->>> space gone?
->>
->> Your original chunks are already pretty compact.
->> Thus really no need to do extra balance.
->>
->> You may get some extra space by doing full system balance (no usage=3D=
-
->> filter), but that's really not worthy in my opinion.
->>
->> Maybe you could try defrag to free some space wasted by CoW instead?
->> (If you're not using many snapshots)
+On 2018/10/28 =E4=B8=8A=E5=8D=886:58, Dave wrote:
+> I'm using btrfs and snapper on a system with an SSD. On this system
+> when I run `snapper -c root ls` (where `root` is the snapper config
+> for /), the process takes a very long time and top shows the following
+> process using 100% of the CPU:
 >=20
-> Thanks for the reply.
->=20
-> So right now, I have:
-> saruman:~# btrfs fi show /mnt/btrfs_pool1/
-> Label: 'btrfs_pool1'  uuid: fda628bc-1ca4-49c5-91c2-4260fe967a23
-> 	Total devices 1 FS bytes used 188.25GiB
-> 	devid    1 size 228.67GiB used 203.54GiB path /dev/mapper/pool1
+>     kworker/u8:6+btrfs-qgroup-rescan
 
-The fs is over 50G, so your metadata chunk will be allocated in 1G size.
+Not sure about what snapper is doing, but it looks like snapper needs to
+use btrfs qgroup.
+
+And then enable btrfs qgroup will do a initial qgroup scan.
+
+If you have a lot of snapshots or a lot of files, it will take a long
+time to do the initial rescan.
+
+That's the designed behavior.
 
 >=20
-> saruman:~# btrfs fi df /mnt/btrfs_pool1/
-> Data, single: total=3D192.48GiB, used=3D184.87GiB
+> I have multiple computers (also with SSD's) set up the same way with
+> snapper and btrfs. On the other computers, `snapper -c root ls`
+> completes almost instantly, even on systems with many more snapshots.
 
-Your data usage is over 96%, so your data chunks are already pretty compa=
-ct.
+The size of each subvolume also counts.
 
-In theory you could reach the minimal data usage 185G, but I think any
-new data write would cause new data chunks to be created in that case.
+The time consumed by qgroup rescan depends on the number of references.
+Snapshots, reflinks all contribute to that number.
 
-To reclaim that 7.5G, you need to use -dusage filter other than your
--musage filter.
-And your usage parameter may be pretty low.
+Also, large files contribute less than small files, as one large file
+(128M) could only contain one reference, while 128 small files (1M)
+contains 128 references.
 
-> System, DUP: total=3D32.00MiB, used=3D48.00KiB
-> Metadata, DUP: total=3D5.50GiB, used=3D3.38GiB
+Snapshot is one of the heaviest workload in such case.
+If one extent is shared 4 times between 4 snapshots, then it will cost 4
+times CPU resource to do the rescan.
 
-Metadata looks more sparse than data.
+> This system has 20 total snapshots on `/`.
 
-But considering your metadata chunks are allocated in 1G size and CoW
-happens more frequently, it's not that easy to reclaim more space.
-
-And even you succeeded relocating all these metadata chunks, you could
-only reclaim at most 2~4G.
-
-> GlobalReserve, single: total=3D512.00MiB, used=3D0.00B
->=20
-> I've been using btrfs for a long time now but I've never had a
-> filesystem where I had 15GB apparently unusable (7%) after a balance.
-
-You really don't need to worry, and that "15G" is not unusable.
-
-It's will mostly likely to be used by data, and from your "fi df"
-output, your data:metadata ratio is over 10, so it should be completely
-fine.
+That already sounds a lot, especially considering the size of the fs.
 
 >=20
-> I can't drop all the snapshots since at least two is used for btrfs
-> send/receive backups.
-> However, if I delete more snapshots, and do a full balance, you think
-> it'll free up more space?
+> System info:
+>=20
+>     4.18.16-arch1-1-ARCH (Arch Linux)
+>     btrfs-progs v4.17.1
+>     scrub started at Sat Oct 27 18:37:21 2018 and finished after 00:04:=
+02
+>     total bytes scrubbed: 75.97GiB with 0 errors
+>=20
+>     Filesystem           Size  Used Avail Use% Mounted on
+>     /dev/mapper/cryptdv  116G   77G   38G  67% /
+>=20
+>     Data, single: total=3D72.01GiB, used=3D71.38GiB
+>     System, DUP: total=3D32.00MiB, used=3D16.00KiB
+>     Metadata, DUP: total=3D3.50GiB, used=3D2.22GiB
 
-No.
+=46rom a quick glance, it indeed needs some time do to the rescan.
 
-You're already too worried about an non-existing problem.
-Your fs looks pretty healthy.
+
+Also, to make sure it's not some deadlock, you could check the rescan
+progress by the following command:
+
+# btrfs ins dump-tree -t quota /dev/mapper/cryptdv
+
+And look for the following item:
+
+	item 0 key (0 QGROUP_STATUS 0) itemoff 16251 itemsize 32
+		version 1 generation 7 flags ON|RESCAN scan 1024
+
+That scan number should change with rescan progress.
+(That number is only updated after each transaction, so you need to wait
+some time to see that change).
 
 Thanks,
 Qu
 
-> I can try a defrag next, but since I have COW for snapshots, it's not
-> going to help much, correct?>
-> Thanks,
-> Marc
+>=20
+> What other info would be helpful? What troubleshooting steps should I t=
+ry?
 >=20
 
 
---lTX407wTP5CvPVT6how2ndDkF9jnrGPRk--
+--tHOcQMUFgRF4NRFhBKlRtPvKRZHJjwG8t--
 
---C3TMKhItbaWtubrnLi03sdTaze89e1KIJ
+--zXqqlKsT7t18XV7DecBf4n2S78SHPbS1Y
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlvU9FoACgkQwj2R86El
-/qhiJQgAjnha57v7eImFqDknydyhXBEgiIzodGJwbUuuRG6hI1k0atSvUXjV9i+d
-19v6VlN4vMQ2j+yREDPOkTTEUnthsAaSjDpm5XHJZLi5tdE3H0OvG5U8XP8h/6A0
-x9Sm4WW+YAaBAClcxtINhnvmNnhTU4LJALGfUCLtpjpvHGjJbDzhF1n850J2Xtid
-qvRAuySgpHqZecs3hTOqDUOSH/xAlIm88l2nuq+qseZW/D8D/tyVRnWwJ4WKX4Ew
-aK5ci6DAnTOT/MeqH8X/T0nGWPB7GGJAmowjBOlqh0NNSdGfdbgKdLW3RNPRPBPi
-P5ZGlUiFSs4jFbk4/mbLgjZH02iSUA==
-=asuX
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlvU+9IACgkQwj2R86El
+/qhW5Qf9ExF6EOnKX4zbOlukO5cT584M9i8A1nqEnmXLrmqSNCMfDbsk7zMutDzM
+nn4NTT2ngKOOq7oDgQchej1/VeK2tHVVOz6N8Betjp2y4aV+yI6SpIoCvWAYSMD1
+6385PFpoq+TUUzWxSH5b/3AbfrUFIh6ewqJdQ105glR1ppB1ovOVpxAezNBidLUD
+rV0vexXzMtRzqqdJq96vJxMqvuhkDNT0YcIlA/s7iSGVnxY3pQxQVX+PTOHKkvfO
+xlp7Ux2pRcrZZdSUY+xl7gKrty333c0SYJNLOdBwzk2krK4dceiWVP+fseT37ZKn
+P5HvqWTeVrrhW4cvkR14B8zPdYLruQ==
+=1U+Q
 -----END PGP SIGNATURE-----
 
---C3TMKhItbaWtubrnLi03sdTaze89e1KIJ--
+--zXqqlKsT7t18XV7DecBf4n2S78SHPbS1Y--

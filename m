@@ -7,40 +7,41 @@ X-Spam-Status: No, score=-9.6 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B236AC46475
-	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Oct 2018 09:42:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 483C6C2BC61
+	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Oct 2018 09:43:47 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 76A2A2084A
-	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Oct 2018 09:42:13 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 130C22084A
+	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Oct 2018 09:43:47 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=kernel.org header.i=@kernel.org header.b="bTxmiPiL"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 76A2A2084A
+	dkim=pass (1024-bit key) header.d=kernel.org header.i=@kernel.org header.b="eHvTke/F"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 130C22084A
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=kernel.org
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729540AbeJ2SaE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 29 Oct 2018 14:30:04 -0400
-Received: from mail.kernel.org ([198.145.29.99]:49368 "EHLO mail.kernel.org"
+        id S1729784AbeJ2Sbj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 29 Oct 2018 14:31:39 -0400
+Received: from mail.kernel.org ([198.145.29.99]:50202 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726720AbeJ2SaE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 29 Oct 2018 14:30:04 -0400
+        id S1729588AbeJ2Sbi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 29 Oct 2018 14:31:38 -0400
 Received: from localhost.localdomain (bl8-197-74.dsl.telepac.pt [85.241.197.74])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 057DA2084A
-        for <linux-btrfs@vger.kernel.org>; Mon, 29 Oct 2018 09:42:09 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id 12EDB2084A;
+        Mon, 29 Oct 2018 09:43:43 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1540806130;
-        bh=R3wyu7BWnqMVeN3rV6uRj7F2Pn0zDQvvk56Qm0GPPdY=;
-        h=From:To:Subject:Date:From;
-        b=bTxmiPiLh78KHdBekXRnOYtatjVNMhgcm0BQDOFgdtyDzOqERkbDIkNP5BVVcyr5I
-         1v3YSJUp7dr5pSFZkoyX/mgdTHhzxjoB5RIYQwDxAts7Nqco38wOuBrHo8LXJ/cDlc
-         TlKBWLDs3tFD4BO+Q822V558WOscK5fV9roBL0e8=
+        s=default; t=1540806224;
+        bh=K7XDU1BfLS52QzoOWlpLpzvklCfOeRvBDuU4yfbgR9Y=;
+        h=From:To:Cc:Subject:Date:From;
+        b=eHvTke/FU8v3T69v+S4OZO9M069CmKPC7nbP4lyXyN5utCmCg+CaukDQ6KiyxEsle
+         4akXMAdoDZCl7mRA+W8XnVTyrNcKdDLkbqZRXKClsxQUbmolOSE9HkZOJxuPtZ6iI3
+         eb4sahndpyPMC3zwbmkuaQIm2ZwDLLjL+zXiV/OE=
 From:   fdmanana@kernel.org
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: fix missing data checksums after a ranged fsync (msync)
-Date:   Mon, 29 Oct 2018 09:42:06 +0000
-Message-Id: <20181029094206.18079-1-fdmanana@kernel.org>
+To:     fstests@vger.kernel.org
+Cc:     linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] fstests: fix fssum to actually ignore file holes when supposed to
+Date:   Mon, 29 Oct 2018 09:43:40 +0000
+Message-Id: <20181029094340.18154-1-fdmanana@kernel.org>
 X-Mailer: git-send-email 2.11.0
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
@@ -49,124 +50,121 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-Recently we got a massive simplification for fsync, where for the fast
-path we no longer log new extents while their respective ordered extents
-are still running.
+Unless the '-s' option is passed to fssum, it should not detect file holes
+and have their existence influence the computed checksum for a file. This
+tool was added to test btrfs' send/receive feature, so that it checks for
+any metadata and data differences between the original filesystem and the
+filesystem that receives send streams.
 
-However that simplification introduced a subtle regression for the case
-where we use a ranged fsync (msync). Consider the following example:
+For a long time the test btrfs/007, which tests btrfs' send/receive with
+fsstress, fails sporadically reporting data differences between files.
+However the md5sum/sha1sum from the reported files in the original and
+new filesystems are the same. The reason why fssum fails is because even
+in normal mode it still accounts for number of holes that exist in the
+file and their respective lengths. This is done using the SEEK_DATA mode
+of lseek. The btrfs send feature does not preserve holes nor prealloc
+extents (not supported by the current protocol), so whenever a hole or
+prealloc (unwritten) extent is detected in the source filesystem, it
+issues a write command full of zeroes, which will translate to a regular
+(written) extent in the destination filesystem. This is why fssum reports
+a different checksum. A prealloc extent also counts as hole when using
+lseek.
 
-               CPU 0                                    CPU 1
+For example when passing a seed of 1540592967 to fsstress in btrfs/007,
+the test fails, as file p0/d0/f7 has a prealloc extent in the original
+filesystem (in the incr snapshot).
 
-                                            mmap write to range [2Mb, 4Mb[
-  mmap write to range [512Kb, 1Mb[
-  msync range [512K, 1Mb[
-    --> triggers fast fsync
-        (BTRFS_INODE_NEEDS_FULL_SYNC
-         not set)
-    --> creates extent map A for this
-        range and adds it to list of
-        modified extents
-    --> starts ordered extent A for
-        this range
-    --> waits for it to complete
+Fix this by making fssum just read the hole file and feed its data to the
+digest calculation function when option '-s' is not given. If we ever get
+btrfs' send/receive to support holes and fallocate, we can just change
+the test and pass the '-s' option to all fssum calls.
 
-                                            writeback triggered for range
-                                            [2Mb, 4Mb[
-                                              --> create extent map B and
-                                                  adds it to the list of
-                                                  modified extents
-                                              --> creates ordered extent B
-
-    --> start looking for and logging
-        modified extents
-    --> logs extent maps A and B
-    --> finds checksums for extent A
-        in the csum tree, but not for
-        extent B
-  fsync (msync) finishes
-
-                                              --> ordered extent B
-                                                  finishes and its
-                                                  checksums are added
-                                                  to the csum tree
-
-                                <power cut>
-
-After replaying the log, we have the extent covering the range [2Mb, 4Mb[
-but do not have the data checksum items covering that file range.
-
-This happens because at the very beginning of an fsync (btrfs_sync_file())
-we start and wait for IO in the given range [512Kb, 1Mb[ and therefore
-wait for any ordered extents in that range to complete before we start
-logging the extents. However if right before we start logging the extent
-in our range [512Kb, 1Mb[, writeback is started for any other dirty range,
-such as the range [2Mb, 4Mb[ due to memory pressure or a concurrent fsync
-or msync (btrfs_sync_file() starts writeback before acquiring the inode's
-lock), an ordered extent is created for that other range and a new extent
-map is created to represent that range and added to the inode's list of
-modified extents.
-
-That means that we will see that other extent in that list when collecting
-extents for logging (done at btrfs_log_changed_extents()) and log the
-extent before the respective ordered extent finishes - namely before the
-checksum items are added to the checksums tree, which is where
-log_extent_csums() looks for the checksums, therefore making us log an
-extent without logging its checksums. Before that massive simplification
-of fsync, this wasn't a problem because besides looking for checkums in
-the checksums tree, we also looked for them in any ordered extent still
-running.
-
-The consequence of data checksums missing for a file range is that users
-attempting to read the affected file range will get -EIO errors and dmesg
-reports the following:
-
- [10188.358136] BTRFS info (device sdc): no csum found for inode 297 start 57344
- [10188.359278] BTRFS warning (device sdc): csum failed root 5 ino 297 off 57344 csum 0x98f94189 expected csum 0x00000000 mirror 1
-
-So fix this by skipping an extents outside of our logging range at
-btrfs_log_changed_extents() and leaving them on the list of modified
-extents so that any subsequent ranged fsync may collect them if needed.
-Also, if we find a hole extent outside of the range still log it, just
-to prevent having gaps between extent items after replaying the log,
-otherwise fsck will complain when we are not using the NO_HOLES feature
-(fstest btrfs/056 triggers such case).
-
-Fixes: e7175a692765 ("btrfs: remove the wait ordered logic in the log_one_extent path")
-CC: stable@vger.kernel.org # 4.19+
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/tree-log.c | 17 +++++++++++++++++
- 1 file changed, 17 insertions(+)
+ src/fssum.c | 65 +++++--------------------------------------------------------
+ 1 file changed, 5 insertions(+), 60 deletions(-)
 
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index c86c5dd100b2..d49edd25f2e5 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -4394,6 +4394,23 @@ static int btrfs_log_changed_extents(struct btrfs_trans_handle *trans,
- 	test_gen = root->fs_info->last_trans_committed;
+diff --git a/src/fssum.c b/src/fssum.c
+index 5da39abf..f1da72fb 100644
+--- a/src/fssum.c
++++ b/src/fssum.c
+@@ -224,71 +224,16 @@ int
+ sum_file_data_permissive(int fd, sum_t *dst)
+ {
+ 	int ret;
+-	off_t pos;
+-	off_t old;
+-	int i;
+-	uint64_t zeros = 0;
+-
+-	pos = lseek(fd, 0, SEEK_CUR);
+-	if (pos == (off_t)-1)
+-		return errno == ENXIO ? 0 : -2;
  
- 	list_for_each_entry_safe(em, n, &tree->modified_extents, list) {
-+		/*
-+		 * Skip extents outside our logging range. It's important to do
-+		 * it for correctness because if we don't ignore them, we may
-+		 * log them before their ordered extent completes, and therefore
-+		 * we could log them without logging their respective checksums
-+		 * (the checksum items are added to the csum tree at the very
-+		 * end of btrfs_finish_ordered_io()). Also leave such extents
-+		 * outside of our range in the list, since we may have another
-+		 * ranged fsync in the near future that needs them. If an extent
-+		 * outside our range corresponds to a hole, log it to avoid
-+		 * leaving gaps between extents (fsck will complain when we are
-+		 * not using the NO_HOLES feature).
-+		 */
-+		if ((em->start > end || em->start + em->len <= start) &&
-+		    em->block_start != EXTENT_MAP_HOLE)
-+			continue;
-+
- 		list_del_init(&em->list);
- 		/*
- 		 * Just an arbitrary number, this can be really CPU intensive
+ 	while (1) {
+-		old = pos;
+-		pos = lseek(fd, pos, SEEK_DATA);
+-		if (pos == (off_t)-1) {
+-			if (errno == ENXIO) {
+-				ret = 0;
+-				pos = lseek(fd, 0, SEEK_END);
+-				if (pos != (off_t)-1)
+-					zeros += pos - old;
+-			} else {
+-				ret = -2;
+-			}
+-			break;
+-		}
+ 		ret = read(fd, buf, sizeof(buf));
+-		assert(ret); /* eof found by lseek */
+-		if (ret <= 0)
++		if (ret < 0)
++			return -errno;
++		sum_add(dst, buf, ret);
++		if (ret < sizeof(buf))
+ 			break;
+-		if (old < pos) /* hole */
+-			zeros += pos - old;
+-		for (i = 0; i < ret; ++i) {
+-			for (old = i; buf[i] == 0 && i < ret; ++i)
+-				;
+-			if (old < i) /* code like a hole */
+-				zeros += i - old;
+-			if (i == ret)
+-				break;
+-			if (zeros) {
+-				if (verbose >= 2)
+-					fprintf(stderr,
+-						"adding %llu zeros to sum\n",
+-						(unsigned long long)zeros);
+-				sum_add_u64(dst, 0);
+-				sum_add_u64(dst, zeros);
+-				zeros = 0;
+-			}
+-			for (old = i; buf[i] != 0 && i < ret; ++i)
+-				;
+-			if (verbose >= 2)
+-				fprintf(stderr, "adding %u non-zeros to sum\n",
+-					i - (int)old);
+-			sum_add(dst, buf + old, i - old);
+-		}
+-		pos += ret;
+ 	}
+-
+-	if (zeros) {
+-		if (verbose >= 2)
+-			fprintf(stderr,
+-				"adding %llu zeros to sum (finishing)\n",
+-				(unsigned long long)zeros);
+-		sum_add_u64(dst, 0);
+-		sum_add_u64(dst, zeros);
+-	}
+-
+-	return ret;
++	return 0;
+ }
+ 
+ int
 -- 
 2.11.0
 

@@ -1,143 +1,127 @@
-Return-Path: <SRS0=kVXZ=NI=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=e2uI=NJ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.7 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
+	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BD0E0C6786F
-	for <linux-btrfs@archiver.kernel.org>; Sun, 28 Oct 2018 18:01:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 35CA5C2BC61
+	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Oct 2018 05:54:27 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 72B372082D
-	for <linux-btrfs@archiver.kernel.org>; Sun, 28 Oct 2018 18:01:16 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 72B372082D
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
+	by mail.kernel.org (Postfix) with ESMTP id CD46020827
+	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Oct 2018 05:54:26 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org CD46020827
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=gmx.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726549AbeJ2Cqg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 28 Oct 2018 22:46:36 -0400
-Received: from mx2.suse.de ([195.135.220.15]:52894 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726330AbeJ2Cqg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 28 Oct 2018 22:46:36 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id D04E0ADC0;
-        Sun, 28 Oct 2018 18:01:12 +0000 (UTC)
-Subject: Re: [PATCH] Btrfs: remove no longer used logged range variables when
- logging extents
-To:     fdmanana@kernel.org, linux-btrfs@vger.kernel.org
-References: <20181026202640.24131-1-fdmanana@kernel.org>
-From:   Nikolay Borisov <nborisov@suse.com>
+        id S1729166AbeJ2Okq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 29 Oct 2018 10:40:46 -0400
+Received: from mout.gmx.net ([212.227.15.15]:44629 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1729058AbeJ2Okp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 29 Oct 2018 10:40:45 -0400
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx003
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 0Lpspj-1fbvEo2GE3-00fhm1; Mon, 29
+ Oct 2018 06:53:26 +0100
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx003
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 0Lpspj-1fbvEo2GE3-00fhm1; Mon, 29
+ Oct 2018 06:53:26 +0100
+Subject: Re: [PATCH v2] btrfs: Fix error handling in
+ btrfs_cleanup_ordered_extents
+To:     Nikolay Borisov <nborisov@suse.com>, Qu Wenruo <wqu@suse.de>,
+        David Sterba <DSterba@suse.com>
+Cc:     linux-btrfs@vger.kernel.org
+References: <1540554115-11226-1-git-send-email-nborisov@suse.com>
+ <abaee0e6-c865-3402-3352-33dc6a1d4ed7@suse.de>
+ <10430924-b70e-4882-15fc-61c0376d83a4@suse.com>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
 Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <e1921f55-d1a9-78af-7d07-ac7bdba48c92@suse.com>
-Date:   Sun, 28 Oct 2018 20:01:11 +0200
+Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
+ bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
+ ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
+ rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
+ FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
+ 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
+ ilaVzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
+ CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
+ /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
+ GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
+ q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
+ ABEBAAHCwHwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
+ CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
+ f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
+ mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
+ 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
+ h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
+Message-ID: <86d8a6c9-8492-86c0-40d1-324342ab1e2a@gmx.com>
+Date:   Mon, 29 Oct 2018 13:53:19 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <20181026202640.24131-1-fdmanana@kernel.org>
+In-Reply-To: <10430924-b70e-4882-15fc-61c0376d83a4@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
+X-Provags-ID: V03:K1:7hK7xgnQfNvS6mDzCOIx/FZ5qTU4s6bmhsEVH3ybUZ4FkExKoz6
+ gCbNtnaoYmvnewW/XO5f4pB+1BLPAl2BcXXcpbSAU61L+MAZPZ/WU754Yj0snBMcGZIsSm0
+ +UIplRp2GvXNInaXa+1TJN0m2pOacKMMwo3r1tQnuBLbV5+OsnNEJ9/o6Zfmj4vsFq4cewt
+ CgZ5k4bjcbbxMVsb10Jcw==
+X-UI-Out-Filterresults: notjunk:1;V01:K0:riG2MzD08LQ=:4b08x0tIoVOZpZ9RdO/ARU
+ cA45UbscnJ2o33OzkMrRY2syDxjuxxsEhLQjLtC892au9Wj4Phf9jrfMxSfb3K0syQJViiUOV
+ cTuaH7o4oXNgmlgJgyAUIiE82zwpwmHGmh58m1YMW/3fITw0VmXh4v9wTi3oOT/X6mdlTZNQ3
+ jFs/B3zV4hZlIUsJR7eTcAasPWh5GRVrXazx8iYoA6Ou/tpiTwImAQaRpe1vAwMGhhwXY69PW
+ xUES30w1hPceFKwrYkGSdEISsvcUfkMPoZzB5446qsrYyMU1ansqDnWArf7UfnwuGpbCwmtRl
+ qSEHTjOsxBDtlcKMV8Atm9Y4ohre8CtZRdwf5/NPvBO7inmmC2QXj6w+NyNKtabHvwXkLBFJt
+ avfFqypc35+da9JWv5jl2qRZRFUQe7rVgy++BfwFhMZNURZDEEbzTzWekdvJ9pTX1rnBys+6y
+ y8PqruKhVMZ2j2ZL/yTvbmMSON+49ZrzThlSGczRjdzcG5YGvOJQyQcKeEyteHUNxO2iiRen1
+ 41+IgzQ7VOcFUkm2GrxeXA2ayUhCDZb1OEzgPjqsSPhXTdYoNFVpDJgiRxcp45l6XTIKch+wz
+ JBkTzgOXx07d1vufeyhQrm6TLntY5V79F7CBU0EKg1L46etUXge4vL8nqXAD7E/z1diI5HTPV
+ Bdurpb6fEhPFLx29LhJFcVeDmk+CnRGAzzc25juX7KLdc7ghnkMhh7tioJZgq+/Y7eI8MF6yS
+ QG+gdM+TAY2jAxucJWaiXLUW8NhP5xlRJFvnhaCdJsmOaBSykNJKWaTOamM1CPPv4T5Om14xL
+ V8Ny/Pc10ubv28a/hhfcdJdJsPjdWWe7y/yyXu7JUw3HIrcfS8=
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-
-
-On 26.10.18 г. 23:26 ч., fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
+[snip]
+>> The cause sounds valid, however would you please explain more about how
+>> such cleaning on unrelated delalloc range happens?
 > 
-> The logged_start and logged_end variables, at btrfs_log_changed_extents(),
-> were added in commit 8c6c592831a0 ("btrfs: log csums for all modified
-> extents"). However since the recent simplification for fsync, which makes
-> us wait for all ordered extents to complete before logging extents, we
-> no longer need those variables. Commit a2120a473a80 ("btrfs: clean up the
-> left over logged_list usage") forgot to remove them.
+> So in my case the following happened - 2 block groups were created as
+> delalloc ranges in the - 0-1m and 1m-128m. Their respective pages were
+> dirtied, so when page 0 - 0-4k when into writepage_delalloc,
+> find_lock_delalloc_range would return the range 0-1m. So the call to
+> fill_delalloc instantiates OE 0-1m and writeback continues as expected.
 > 
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> Now, when the 2nd page from range 0-1m is again set for writeback and
+> find_lock_delalloc_range is called with delalloc_start ==  4096 it will
+> actually return the range 1m-128m.
 
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+IMHO this looks strange and may need extra investigation.
 
-> ---
->  fs/btrfs/tree-log.c | 8 --------
->  1 file changed, 8 deletions(-)
+Normally I would expect it returns the range 0~1M or 4K~1M.
+
+But that doesn't affect the fix patch anyway.
+
+Thanks,
+Qu
+
+> Then fill_delalloc is called with
+> locked_page belonging to the range which was already instantiated and
+> the start/end arguments pointing to 1m-128m if an error occurred in
+> run_delalloc_range in this case then  btrfs_cleanup_ordered_extents will
+> be called which will clear Private2 bit for pages belonging to 1m-128m
+> range and the OE will be cleared of all but the first page (since the
+> code wrongly assumed locked_page always belongs to the range currently
+> being instantiated).
 > 
-> diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-> index 1673dccc76c2..c86c5dd100b2 100644
-> --- a/fs/btrfs/tree-log.c
-> +++ b/fs/btrfs/tree-log.c
-> @@ -4383,7 +4383,6 @@ static int btrfs_log_changed_extents(struct btrfs_trans_handle *trans,
->  	struct extent_map *em, *n;
->  	struct list_head extents;
->  	struct extent_map_tree *tree = &inode->extent_tree;
-> -	u64 logged_start, logged_end;
->  	u64 test_gen;
->  	int ret = 0;
->  	int num = 0;
-> @@ -4393,8 +4392,6 @@ static int btrfs_log_changed_extents(struct btrfs_trans_handle *trans,
->  	down_write(&inode->dio_sem);
->  	write_lock(&tree->lock);
->  	test_gen = root->fs_info->last_trans_committed;
-> -	logged_start = start;
-> -	logged_end = end;
->  
->  	list_for_each_entry_safe(em, n, &tree->modified_extents, list) {
->  		list_del_init(&em->list);
-> @@ -4418,11 +4415,6 @@ static int btrfs_log_changed_extents(struct btrfs_trans_handle *trans,
->  		    em->start >= i_size_read(&inode->vfs_inode))
->  			continue;
->  
-> -		if (em->start < logged_start)
-> -			logged_start = em->start;
-> -		if ((em->start + em->len - 1) > logged_end)
-> -			logged_end = em->start + em->len - 1;
-> -
->  		/* Need a ref to keep it from getting evicted from cache */
->  		refcount_inc(&em->refs);
->  		set_bit(EXTENT_FLAG_LOGGING, &em->flags);
-> 
+

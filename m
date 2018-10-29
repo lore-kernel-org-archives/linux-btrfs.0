@@ -2,109 +2,171 @@ Return-Path: <SRS0=e2uI=NJ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.6 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 16518C2BC61
-	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Oct 2018 09:31:29 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B236AC46475
+	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Oct 2018 09:42:13 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 0533B20827
-	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Oct 2018 09:31:28 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 76A2A2084A
+	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Oct 2018 09:42:13 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="Fplc7pVh"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 0533B20827
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
+	dkim=pass (1024-bit key) header.d=kernel.org header.i=@kernel.org header.b="bTxmiPiL"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 76A2A2084A
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=kernel.org
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729615AbeJ2STQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 29 Oct 2018 14:19:16 -0400
-Received: from mail-oi1-f194.google.com ([209.85.167.194]:43309 "EHLO
-        mail-oi1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1729486AbeJ2STP (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 29 Oct 2018 14:19:15 -0400
-Received: by mail-oi1-f194.google.com with SMTP id j202-v6so5978954oih.10
-        for <linux-btrfs@vger.kernel.org>; Mon, 29 Oct 2018 02:31:25 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=WbLZqpn7uGPmOpV/+rYJAhAXnzNghobavNkRYodmDEU=;
-        b=Fplc7pVhgOBgq5WnyiUSOFXM0h1sQgUnjSDxekMiXpL5pAfXYqjsueY+6HqP0jAtdY
-         T6IX/ihwLUcjnkYL9cxOorUluiUeEYoydxH8iXBj/tkBQraXuPmNyxkRFWH143MxV9Ep
-         HkDHzwqtqMR+4dcmmMVQC0bXckbm0QhezVrYIigyeX2UnPmmVPwXglUGNMh01UnU9WG0
-         X5FqD2Ao0b3TMjTek1rP5jYrck2aU205kAPAA7oy/7dYCl/Km2JFmTzgQ9uWHdRK+t+K
-         4yvwedWEuR330XbDoPuSKSSdqNQQ3/WsMQZdtvQPu5RkVa0o5LUHARS6suPeBe0miQU1
-         Mj/A==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=WbLZqpn7uGPmOpV/+rYJAhAXnzNghobavNkRYodmDEU=;
-        b=Rf8zjkFENgzYD7+Jz+5sp14xRaVtLn7SgLecaO/1zs3aoUdvABn78IELLPLMESTzjp
-         hLQVZcg+pXN8wYK4DCPFRMSrm0sXfZR3ZXBPeXMn9cMeWpP3uy1ZX0YlvIQ0JGq5tOLX
-         FNpcpLeOMJjKKjrX/QYS+ImCwnYJtaeHsKV0JyRdbVxl/lcTLSUgERV/CHJbCqB5Sn4f
-         1FTDLKMyFAJjdb2LAOlITCeTh771nD+e9NK8vFQ5gxUFoD0V5JBjNINNBYYxubegJgAv
-         5be2clBqLI3oL0wRGlSHqqPI936zLcQLTyWAfC/ajnbN42bJrkLCpgOeTiLD4+rtZTLL
-         QHUg==
-X-Gm-Message-State: AGRZ1gLl4YDFrJRbUZ10mr8bHCACD4HtgIpLBcuMGiW46zkkYtUfnXA2
-        SbWzipPjqSp34mHKVAkTZz5UxuivwubC4uV3IfU=
-X-Google-Smtp-Source: AJdET5fnLxlyeTP5FpvfodtCZkhMh7OiVW6jAmN/JdoXQ4chnZ8Jx2+Mt7bTa0GTqJULlmSOQDSPKjH75BNIPadz97c=
-X-Received: by 2002:aca:5e83:: with SMTP id s125-v6mr7564642oib.134.1540805485399;
- Mon, 29 Oct 2018 02:31:25 -0700 (PDT)
-MIME-Version: 1.0
-References: <CAH=dxU4QoRn71+JF3BYC3OZ+=PHfwy59thiVRrZ9OhjxNVzULA@mail.gmail.com>
-In-Reply-To: <CAH=dxU4QoRn71+JF3BYC3OZ+=PHfwy59thiVRrZ9OhjxNVzULA@mail.gmail.com>
-From:   Henk Slager <eye1tm@gmail.com>
-Date:   Mon, 29 Oct 2018 10:31:14 +0100
-Message-ID: <CAPmG0jaAGuogO-DGg+i+WTEAC4+M-GpObLkToY-hKD0Duvp71Q@mail.gmail.com>
-Subject: Re: a new kind of "No space left on device" error
-To:     davestechshop@gmail.com
-Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+        id S1729540AbeJ2SaE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 29 Oct 2018 14:30:04 -0400
+Received: from mail.kernel.org ([198.145.29.99]:49368 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726720AbeJ2SaE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 29 Oct 2018 14:30:04 -0400
+Received: from localhost.localdomain (bl8-197-74.dsl.telepac.pt [85.241.197.74])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id 057DA2084A
+        for <linux-btrfs@vger.kernel.org>; Mon, 29 Oct 2018 09:42:09 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=default; t=1540806130;
+        bh=R3wyu7BWnqMVeN3rV6uRj7F2Pn0zDQvvk56Qm0GPPdY=;
+        h=From:To:Subject:Date:From;
+        b=bTxmiPiLh78KHdBekXRnOYtatjVNMhgcm0BQDOFgdtyDzOqERkbDIkNP5BVVcyr5I
+         1v3YSJUp7dr5pSFZkoyX/mgdTHhzxjoB5RIYQwDxAts7Nqco38wOuBrHo8LXJ/cDlc
+         TlKBWLDs3tFD4BO+Q822V558WOscK5fV9roBL0e8=
+From:   fdmanana@kernel.org
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: fix missing data checksums after a ranged fsync (msync)
+Date:   Mon, 29 Oct 2018 09:42:06 +0000
+Message-Id: <20181029094206.18079-1-fdmanana@kernel.org>
+X-Mailer: git-send-email 2.11.0
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Oct 29, 2018 at 7:20 AM Dave <davestechshop@gmail.com> wrote:
->
-> This is one I have not seen before.
->
-> When running a simple, well-tested and well-used script that makes
-> backups using btrfs send | receive, I got these two errors:
->
-> At subvol snapshot
-> ERROR: rename o131621-1091-0 ->
-> usr/lib/node_modules/node-gyp/gyp/pylib/gyp/MSVSVersion.py failed: No
-> space left on device
->
-> At subvol snapshot
-> ERROR: rename o259-1095-0 -> myser/.bash_profile failed: No space left on device
->
-> I have run this script many, many times and never seen errors like
-> this. There is plenty of room on the device:
->
-> # btrfs fi df /mnt/
-> Data, single: total=18.01GiB, used=16.53GiB
-> System, DUP: total=8.00MiB, used=16.00KiB
-> Metadata, DUP: total=1.00GiB, used=145.12MiB
-> GlobalReserve, single: total=24.53MiB, used=0.00B
->
-> # df -h /mnt/
-> Filesystem      Size  Used Avail Use% Mounted on
-> /dev/sdc2        54G   17G   36G  33% /mnt
->
-> The send | receive appears to have mostly succeeded because the final
-> expected size is about 17G, as shown above. That will use only about
-> 1/3 of the available disk space, when completed. I don't see any
-> reason for "No space left on device" errors, but maybe somebody here
-> can spot a problem I am missing.
-What kernel and progs versions?
-What are the mount options for the filesystem?
-Can you tell something about the device /dev/sdc2 (SSD, HDD, SD-card,
-USBstick, LANstorage, etc)?
-Could it be that your ENOSPACE has the same cause as this:
-https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg81554.html
+From: Filipe Manana <fdmanana@suse.com>
+
+Recently we got a massive simplification for fsync, where for the fast
+path we no longer log new extents while their respective ordered extents
+are still running.
+
+However that simplification introduced a subtle regression for the case
+where we use a ranged fsync (msync). Consider the following example:
+
+               CPU 0                                    CPU 1
+
+                                            mmap write to range [2Mb, 4Mb[
+  mmap write to range [512Kb, 1Mb[
+  msync range [512K, 1Mb[
+    --> triggers fast fsync
+        (BTRFS_INODE_NEEDS_FULL_SYNC
+         not set)
+    --> creates extent map A for this
+        range and adds it to list of
+        modified extents
+    --> starts ordered extent A for
+        this range
+    --> waits for it to complete
+
+                                            writeback triggered for range
+                                            [2Mb, 4Mb[
+                                              --> create extent map B and
+                                                  adds it to the list of
+                                                  modified extents
+                                              --> creates ordered extent B
+
+    --> start looking for and logging
+        modified extents
+    --> logs extent maps A and B
+    --> finds checksums for extent A
+        in the csum tree, but not for
+        extent B
+  fsync (msync) finishes
+
+                                              --> ordered extent B
+                                                  finishes and its
+                                                  checksums are added
+                                                  to the csum tree
+
+                                <power cut>
+
+After replaying the log, we have the extent covering the range [2Mb, 4Mb[
+but do not have the data checksum items covering that file range.
+
+This happens because at the very beginning of an fsync (btrfs_sync_file())
+we start and wait for IO in the given range [512Kb, 1Mb[ and therefore
+wait for any ordered extents in that range to complete before we start
+logging the extents. However if right before we start logging the extent
+in our range [512Kb, 1Mb[, writeback is started for any other dirty range,
+such as the range [2Mb, 4Mb[ due to memory pressure or a concurrent fsync
+or msync (btrfs_sync_file() starts writeback before acquiring the inode's
+lock), an ordered extent is created for that other range and a new extent
+map is created to represent that range and added to the inode's list of
+modified extents.
+
+That means that we will see that other extent in that list when collecting
+extents for logging (done at btrfs_log_changed_extents()) and log the
+extent before the respective ordered extent finishes - namely before the
+checksum items are added to the checksums tree, which is where
+log_extent_csums() looks for the checksums, therefore making us log an
+extent without logging its checksums. Before that massive simplification
+of fsync, this wasn't a problem because besides looking for checkums in
+the checksums tree, we also looked for them in any ordered extent still
+running.
+
+The consequence of data checksums missing for a file range is that users
+attempting to read the affected file range will get -EIO errors and dmesg
+reports the following:
+
+ [10188.358136] BTRFS info (device sdc): no csum found for inode 297 start 57344
+ [10188.359278] BTRFS warning (device sdc): csum failed root 5 ino 297 off 57344 csum 0x98f94189 expected csum 0x00000000 mirror 1
+
+So fix this by skipping an extents outside of our logging range at
+btrfs_log_changed_extents() and leaving them on the list of modified
+extents so that any subsequent ranged fsync may collect them if needed.
+Also, if we find a hole extent outside of the range still log it, just
+to prevent having gaps between extent items after replaying the log,
+otherwise fsck will complain when we are not using the NO_HOLES feature
+(fstest btrfs/056 triggers such case).
+
+Fixes: e7175a692765 ("btrfs: remove the wait ordered logic in the log_one_extent path")
+CC: stable@vger.kernel.org # 4.19+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/tree-log.c | 17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
+
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index c86c5dd100b2..d49edd25f2e5 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -4394,6 +4394,23 @@ static int btrfs_log_changed_extents(struct btrfs_trans_handle *trans,
+ 	test_gen = root->fs_info->last_trans_committed;
+ 
+ 	list_for_each_entry_safe(em, n, &tree->modified_extents, list) {
++		/*
++		 * Skip extents outside our logging range. It's important to do
++		 * it for correctness because if we don't ignore them, we may
++		 * log them before their ordered extent completes, and therefore
++		 * we could log them without logging their respective checksums
++		 * (the checksum items are added to the csum tree at the very
++		 * end of btrfs_finish_ordered_io()). Also leave such extents
++		 * outside of our range in the list, since we may have another
++		 * ranged fsync in the near future that needs them. If an extent
++		 * outside our range corresponds to a hole, log it to avoid
++		 * leaving gaps between extents (fsck will complain when we are
++		 * not using the NO_HOLES feature).
++		 */
++		if ((em->start > end || em->start + em->len <= start) &&
++		    em->block_start != EXTENT_MAP_HOLE)
++			continue;
++
+ 		list_del_init(&em->list);
+ 		/*
+ 		 * Just an arbitrary number, this can be really CPU intensive
+-- 
+2.11.0
+

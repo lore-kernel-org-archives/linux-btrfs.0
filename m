@@ -2,85 +2,98 @@ Return-Path: <SRS0=iJ2R=NK=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,
-	URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EA94CC2BC61
-	for <linux-btrfs@archiver.kernel.org>; Tue, 30 Oct 2018 15:29:15 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3658AC6786F
+	for <linux-btrfs@archiver.kernel.org>; Tue, 30 Oct 2018 16:20:06 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id A95E620657
-	for <linux-btrfs@archiver.kernel.org>; Tue, 30 Oct 2018 15:29:15 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=linux-foundation.org header.i=@linux-foundation.org header.b="WGdBnrn7"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org A95E620657
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=linux-foundation.org
+	by mail.kernel.org (Postfix) with ESMTP id BDB9A20657
+	for <linux-btrfs@archiver.kernel.org>; Tue, 30 Oct 2018 16:20:05 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org BDB9A20657
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=rus.uni-stuttgart.de
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727545AbeJaAXI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 30 Oct 2018 20:23:08 -0400
-Received: from mail-lj1-f193.google.com ([209.85.208.193]:37096 "EHLO
-        mail-lj1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726700AbeJaAXI (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 30 Oct 2018 20:23:08 -0400
-Received: by mail-lj1-f193.google.com with SMTP id c4-v6so11786614lja.4
-        for <linux-btrfs@vger.kernel.org>; Tue, 30 Oct 2018 08:29:12 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=linux-foundation.org; s=google;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=SZtmXnmJyWcV3ODY01HTI6Wn9QrRQ/iAqsvYQvID67M=;
-        b=WGdBnrn7F16rz92FKgx1F4F3xq2L9ulvrmEfPrKuWXMSJg17Aa63Fxb4Gpe3Qz7ahS
-         SQx/RzzxMUHxL+geYcHIhSUG6fGusw3Q4xKa1lJPbq7lgRXc/NSDMDIEFgl3LPHIqfJ8
-         80TSVyN3Gc0SnuacfrYuhwkcImopJDcH4u/ig=
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=SZtmXnmJyWcV3ODY01HTI6Wn9QrRQ/iAqsvYQvID67M=;
-        b=gLiUciFLVyaBnwkXW16PTJR5wYM9J5RFIbMtNT33a0mr0bdxEuDDtnI1okw9H4nJCX
-         +vfE+ilx3f8mWH5z5n2uwG2+5/mZWscZmB5IPfarv2tZK0l9wv9mmo1t8gb/ZCh4VjOF
-         MQmU3OGiSVjmnKBMrh5uMdfVSGxFaX/HvLsPoEIvVs4WhHEbAedrArEBb0I6G3UANTjO
-         2ti0j1RmN0QI5Xjb2T+UdEXY5E1cLi2quEY4oC13tdbMPAMIPZf+g/PCgFmy4fz4nor3
-         mT6idz0NQkrOto35uW8boqs2cO9eCv4eadRabvNStE+5YsG71egM7C/8xYas+GRz7+CF
-         V08A==
-X-Gm-Message-State: AGRZ1gLT/FdrOORVr3Sfj41h5wAsZcZ52BxYhvc+X8LNx2nRhQXcRsUN
-        sKTchNddKtifH8+SppSo5GRj8kM6v3BeaQ==
-X-Google-Smtp-Source: AJdET5es42cuuxI7KrPpj0p3A7kh20bQ78EeD3fvZeAxQnLDrTOCYK0oF+fMcNXoWtqsvv7eoH8uRw==
-X-Received: by 2002:a2e:5dd9:: with SMTP id v86-v6mr8025208lje.86.1540913351294;
-        Tue, 30 Oct 2018 08:29:11 -0700 (PDT)
-Received: from mail-lf1-f53.google.com (mail-lf1-f53.google.com. [209.85.167.53])
-        by smtp.gmail.com with ESMTPSA id o2-v6sm1200956lfl.2.2018.10.30.08.29.10
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Tue, 30 Oct 2018 08:29:10 -0700 (PDT)
-Received: by mail-lf1-f53.google.com with SMTP id d7-v6so9203438lfi.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 30 Oct 2018 08:29:10 -0700 (PDT)
-X-Received: by 2002:a19:7019:: with SMTP id h25-v6mr2315708lfc.147.1540913349579;
- Tue, 30 Oct 2018 08:29:09 -0700 (PDT)
+        id S1726679AbeJaBOL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 30 Oct 2018 21:14:11 -0400
+Received: from smtp01.belwue.de ([129.143.71.86]:55446 "EHLO smtp01.belwue.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726249AbeJaBOL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 30 Oct 2018 21:14:11 -0400
+X-Greylist: delayed 600 seconds by postgrey-1.27 at vger.kernel.org; Tue, 30 Oct 2018 21:14:09 EDT
+Received: from fex.rus.uni-stuttgart.de (fex.rus.uni-stuttgart.de [129.69.1.129])
+        by smtp01.belwue.de (Postfix) with SMTP id 490BD2E37
+        for <linux-btrfs@vger.kernel.org>; Tue, 30 Oct 2018 17:10:03 +0100 (MET)
+Date:   Tue, 30 Oct 2018 17:10:03 +0100
+From:   Ulli Horlacher <framstag@rus.uni-stuttgart.de>
+To:     linux-btrfs@vger.kernel.org
+Subject: Re: Understanding "btrfs filesystem usage"
+Message-ID: <20181030161003.GA25765@rus.uni-stuttgart.de>
+Mail-Followup-To: linux-btrfs@vger.kernel.org
+References: <20181029181141.GA31256@rus.uni-stuttgart.de>
+ <85a63523-7e77-f4ca-9947-2c957c5c577a@georgianit.com>
 MIME-Version: 1.0
-References: <cover.1540904580.git.dsterba@suse.com>
-In-Reply-To: <cover.1540904580.git.dsterba@suse.com>
-From:   Linus Torvalds <torvalds@linux-foundation.org>
-Date:   Tue, 30 Oct 2018 08:28:53 -0700
-X-Gmail-Original-Message-ID: <CAHk-=wgPmELRt00f1tbOoG4kMU6Kn1nvF1AysxXJk2V45WPNJA@mail.gmail.com>
-Message-ID: <CAHk-=wgPmELRt00f1tbOoG4kMU6Kn1nvF1AysxXJk2V45WPNJA@mail.gmail.com>
-Subject: Re: [GIT PULL] Btrfs updates for 4.20, part 2
-To:     dsterba@suse.com
-Cc:     Chris Mason <clm@fb.com>, linux-btrfs@vger.kernel.org,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <85a63523-7e77-f4ca-9947-2c957c5c577a@georgianit.com>
+User-Agent: Mutt/1.5.23 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Oct 30, 2018 at 6:24 AM David Sterba <dsterba@suse.com> wrote:
->
-> this part contains a few minor updates and fixes that were under testing
-> or arrived shortly after the merge window freeze, mostly stable material.
 
-Pulled,
+On Mon 2018-10-29 (17:57), Remi Gauvin wrote:
+> On 2018-10-29 02:11 PM, Ulli Horlacher wrote:
+> 
+> > I want to know how many free space is left and have problems in
+> > interpreting the output of: 
+> > 
+> > btrfs filesystem usage
+> > btrfs filesystem df
+> > btrfs filesystem show
+> 
+> In my not so humble opinion, the filesystem usage command has the
+> easiest to understand output.  It' lays out all the pertinent information.
+> 
+> You can clearly see 825GiB is allocated, with 494GiB used, therefore,
+> filesystem show is actually using the "Allocated" value as "Used".
+> Allocated can be thought of "Reserved For".
 
-                 Linus
+And what is "Device unallocated"? Not reserved?
+
+
+> As the output of the Usage command and df command clearly show, you have
+> almost 400GiB space available.
+
+This is the good part :-)
+
+
+> The disparity between 498GiB used and 823Gib is pretty high.  This is
+> probably the result of using an SSD with an older kernel.  If your
+> kernel is not very recent, (sorry, I forget where this was fixed,
+> somewhere around 4.14 or 4.15), then consider mounting with the nossd
+> option.
+
+I am running kernel 4.4 (it is a Ubuntu 16.04 system)
+But /local is on a SSD. Should I really use nossd mount option?!
+
+
+
+> You can improve this by running a balance.
+> 
+> Something like:
+> btrfs balance start -dusage=55
+
+I run balance via cron weekly (adapted 
+https://software.opensuse.org/package/btrfsmaintenance)
+
+
+-- 
+Ullrich Horlacher              Server und Virtualisierung
+Rechenzentrum TIK         
+Universitaet Stuttgart         E-Mail: horlacher@tik.uni-stuttgart.de
+Allmandring 30a                Tel:    ++49-711-68565868
+70569 Stuttgart (Germany)      WWW:    http://www.tik.uni-stuttgart.de/
+REF:<85a63523-7e77-f4ca-9947-2c957c5c577a@georgianit.com>

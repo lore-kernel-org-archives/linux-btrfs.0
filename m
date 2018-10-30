@@ -2,121 +2,130 @@ Return-Path: <SRS0=iJ2R=NK=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.9 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-8.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BA069C2BC61
-	for <linux-btrfs@archiver.kernel.org>; Tue, 30 Oct 2018 10:04:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5D614C6786F
+	for <linux-btrfs@archiver.kernel.org>; Tue, 30 Oct 2018 10:18:29 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 5C37520823
-	for <linux-btrfs@archiver.kernel.org>; Tue, 30 Oct 2018 10:04:13 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=synology.com header.i=@synology.com header.b="Pnijko3v"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 5C37520823
-Authentication-Results: mail.kernel.org; dmarc=fail (p=quarantine dis=none) header.from=synology.com
+	by mail.kernel.org (Postfix) with ESMTP id 12AEA20827
+	for <linux-btrfs@archiver.kernel.org>; Tue, 30 Oct 2018 10:18:29 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 12AEA20827
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726551AbeJ3S47 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 30 Oct 2018 14:56:59 -0400
-Received: from synology.com ([59.124.61.242]:42652 "EHLO synology.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726451AbeJ3S47 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 30 Oct 2018 14:56:59 -0400
-Received: from localhost.localdomain (unknown [10.13.20.241])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by synology.com (Postfix) with ESMTPSA id 036BF24F6A6F;
-        Tue, 30 Oct 2018 18:04:11 +0800 (CST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=synology.com; s=123;
-        t=1540893851; bh=8zA7/BwF5sc2DLauegiQ9dTMAea1LwEB+9OhX8PuwgE=;
-        h=From:To:Cc:Subject:Date;
-        b=Pnijko3vcVJXmY2yOVGL+WhZRlAaWi8RkKLmEWyVZAtleh8G82tZ43Illf4IPVmy3
-         wACW7IELd0+hksZpJ+KpbXuti55sv5WXTCcSAe9R6+AI4hDz1h2Wmll7qvj2NqhiGi
-         mtdtIbqA0DuWEyeciOwYCVIrEeRw/IPVJyFAyKvI=
-From:   robbieko <robbieko@synology.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     Robbie Ko <robbieko@synology.com>
-Subject: [PATCH] Btrfs: fix cur_offset in the error case for nocow
-Date:   Tue, 30 Oct 2018 18:04:04 +0800
-Message-Id: <1540893844-3480-1-git-send-email-robbieko@synology.com>
-X-Mailer: git-send-email 1.9.1
-X-Synology-MCP-Status: no
-X-Synology-Spam-Flag: no
-X-Synology-Spam-Status: score=0, required 6, WHITELIST_FROM_ADDRESS 0
-X-Synology-Virus-Status: no
+        id S1727545AbeJ3TLR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 30 Oct 2018 15:11:17 -0400
+Received: from mx2.suse.de ([195.135.220.15]:54476 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726840AbeJ3TLR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 30 Oct 2018 15:11:17 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 61651AF71;
+        Tue, 30 Oct 2018 10:18:25 +0000 (UTC)
+From:   Qu Wenruo <wqu@suse.com>
+To:     fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
+Subject: [PATCH v3] fstests: btrfs/057: Fix false alerts due to orphan files
+Date:   Tue, 30 Oct 2018 18:18:19 +0800
+Message-Id: <20181030101819.19510-1-wqu@suse.com>
+X-Mailer: git-send-email 2.19.1
+MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Robbie Ko <robbieko@synology.com>
+For any recent kernel, there is a chance that btrfs/057 reports false
+errors.
 
-When the cow_file_range fail, the related resources are
-unlocked according to the range (start-end), so the unlock
-cannot be repeated in run_delalloc_nocow.
+The false error would look like:
+  btrfs/057 4s ... - output mismatch (see /home/adam/xfstests-dev/results//btrfs/057.out.bad)
+      --- tests/btrfs/057.out	2017-08-21 09:25:33.166666666 +0800
+      +++ /home/adam/xfstests-dev/results//btrfs/057.out.bad	2018-10-29 14:07:28.443651293 +0800
+      @@ -1,3 +1,3 @@
+       QA output created by 057
+       4096 4096
+      -4096 4096
+      +28672 28672
 
-In some cases (e.g. cur_offset <= end && cow_start!= -1),
-cur_offset is not updated correctly, so move the cur_offset
-update before cow_file_range.
+This is related to the fact that "btrfs subvolume sync" (or
+vanilla sync) will not ensure orphan (unlinked but still exist) files to
+be removed.
 
-------------[ cut here ]------------
-kernel BUG at mm/page-writeback.c:2663!
-Internal error: Oops - BUG: 0 [#1] SMP
-CPU: 3 PID: 31525 Comm: kworker/u8:7 Tainted: P O
-Hardware name: Realtek_RTD1296 (DT)
-Workqueue: writeback wb_workfn (flush-btrfs-1)
-task: ffffffc076db3380 ti: ffffffc02e9ac000 task.ti: ffffffc02e9ac000
-PC is at clear_page_dirty_for_io+0x1bc/0x1e8
-LR is at clear_page_dirty_for_io+0x14/0x1e8
-pc : [<ffffffc00033c91c>] lr : [<ffffffc00033c774>] pstate: 40000145
-sp : ffffffc02e9af4f0
-Process kworker/u8:7 (pid: 31525, stack limit = 0xffffffc02e9ac020)
-Call trace:
-[<ffffffc00033c91c>] clear_page_dirty_for_io+0x1bc/0x1e8
-[<ffffffbffc514674>] extent_clear_unlock_delalloc+0x1e4/0x210 [btrfs]
-[<ffffffbffc4fb168>] run_delalloc_nocow+0x3b8/0x948 [btrfs]
-[<ffffffbffc4fb948>] run_delalloc_range+0x250/0x3a8 [btrfs]
-[<ffffffbffc514c0c>] writepage_delalloc.isra.21+0xbc/0x1d8 [btrfs]
-[<ffffffbffc516048>] __extent_writepage+0xe8/0x248 [btrfs]
-[<ffffffbffc51630c>] extent_write_cache_pages.isra.17+0x164/0x378 [btrfs]
-[<ffffffbffc5185a8>] extent_writepages+0x48/0x68 [btrfs]
-[<ffffffbffc4f5828>] btrfs_writepages+0x20/0x30 [btrfs]
-[<ffffffc00033d758>] do_writepages+0x30/0x88
-[<ffffffc0003ba0f4>] __writeback_single_inode+0x34/0x198
-[<ffffffc0003ba6c4>] writeback_sb_inodes+0x184/0x3c0
-[<ffffffc0003ba96c>] __writeback_inodes_wb+0x6c/0xc0
-[<ffffffc0003bac20>] wb_writeback+0x1b8/0x1c0
-[<ffffffc0003bb0f0>] wb_workfn+0x150/0x250
-[<ffffffc0002b0014>] process_one_work+0x1dc/0x388
-[<ffffffc0002b02f0>] worker_thread+0x130/0x500
-[<ffffffc0002b6344>] kthread+0x10c/0x110
-[<ffffffc000284590>] ret_from_fork+0x10/0x40
-Code: d503201f a9025bb5 a90363b7 f90023b9 (d4210000)
----[ end trace 65fecee7c2296f25 ]---
+In fact, for that false error case, if inspecting the fs after umount,
+its qgroup number is correct and btrfs check won't report qgroup error.
 
-Signed-off-by: Robbie Ko <robbieko@synology.com>
+To fix the false alerts, just skip any manual qgroup number comparison,
+and let fsck done after the test case to detect problem.
+
+This also elimiate the necessary of using specified mount and mkfs
+option, allowing us to improve coverage.
+
+Reported-by: Nikolay Borisov <nborisov@suse.com>
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+Reviewed-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/inode.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Changelog:
+v2:
+  Update commit message to show this is a long existing bug.
+v3:
+  Remove an old comment since now we don't need to specify the leaf
+  size.
+  Added Reviewed-by tags.
+---
+ tests/btrfs/057     | 18 ++++--------------
+ tests/btrfs/057.out |  3 +--
+ 2 files changed, 5 insertions(+), 16 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 181c58b..b62299b 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -1532,10 +1532,10 @@ static noinline int run_delalloc_nocow(struct inode *inode,
+diff --git a/tests/btrfs/057 b/tests/btrfs/057
+index b019f4e1e054..82e3162ebfeb 100755
+--- a/tests/btrfs/057
++++ b/tests/btrfs/057
+@@ -32,13 +32,9 @@ _require_scratch
  
- 	if (cur_offset <= end && cow_start == (u64)-1) {
- 		cow_start = cur_offset;
--		cur_offset = end;
- 	}
+ rm -f $seqres.full
  
- 	if (cow_start != (u64)-1) {
-+		cur_offset = end;
- 		ret = cow_file_range(inode, locked_page, cow_start, end, end,
- 				     page_started, nr_written, 1, NULL);
- 		if (ret)
+-# use small leaf size to get higher btree height.
+-run_check _scratch_mkfs "-b 1g --nodesize 4096"
++run_check _scratch_mkfs "-b 1g"
+ 
+-# inode cache is saved in the FS tree itself for every
+-# individual FS tree,that affects the sizes reported by qgroup show
+-# so we need to explicitly turn it off to get consistent values.
+-_scratch_mount "-o noinode_cache"
++_scratch_mount
+ 
+ # -w ensures that the only ops are ones which cause write I/O
+ run_check $FSSTRESS_PROG -d $SCRATCH_MNT -w -p 5 -n 1000 \
+@@ -53,14 +49,8 @@ run_check $FSSTRESS_PROG -d $SCRATCH_MNT/snap1 -w -p 5 -n 1000 \
+ _run_btrfs_util_prog quota enable $SCRATCH_MNT
+ _run_btrfs_util_prog quota rescan -w $SCRATCH_MNT
+ 
+-# remove all file/dir other than subvolume
+-rm -rf $SCRATCH_MNT/snap1/* >& /dev/null
+-rm -rf $SCRATCH_MNT/p* >& /dev/null
+-
+-_run_btrfs_util_prog filesystem sync $SCRATCH_MNT
+-units=`_btrfs_qgroup_units`
+-$BTRFS_UTIL_PROG qgroup show $units $SCRATCH_MNT | $SED_PROG -n '/[0-9]/p' \
+-	| $AWK_PROG '{print $2" "$3}'
++echo "Silence is golden"
++# btrfs check will detect any qgroup number mismatch.
+ 
+ status=0
+ exit
+diff --git a/tests/btrfs/057.out b/tests/btrfs/057.out
+index 60cb92d0926c..185023c79961 100644
+--- a/tests/btrfs/057.out
++++ b/tests/btrfs/057.out
+@@ -1,3 +1,2 @@
+ QA output created by 057
+-4096 4096
+-4096 4096
++Silence is golden
 -- 
-1.9.1
+2.19.1
 

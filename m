@@ -6,31 +6,31 @@ X-Spam-Status: No, score=-8.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BAFEEECDE44
-	for <linux-btrfs@archiver.kernel.org>; Tue, 30 Oct 2018 14:43:36 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 905F4C6786F
+	for <linux-btrfs@archiver.kernel.org>; Tue, 30 Oct 2018 14:43:38 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 8F4D72075D
-	for <linux-btrfs@archiver.kernel.org>; Tue, 30 Oct 2018 14:43:36 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 8F4D72075D
+	by mail.kernel.org (Postfix) with ESMTP id 5E6B52075D
+	for <linux-btrfs@archiver.kernel.org>; Tue, 30 Oct 2018 14:43:38 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 5E6B52075D
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726720AbeJ3XhU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 30 Oct 2018 19:37:20 -0400
-Received: from mx2.suse.de ([195.135.220.15]:42368 "EHLO mx1.suse.de"
+        id S1726686AbeJ3XhT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 30 Oct 2018 19:37:19 -0400
+Received: from mx2.suse.de ([195.135.220.15]:42342 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726219AbeJ3XhT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1726532AbeJ3XhT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Tue, 30 Oct 2018 19:37:19 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 924ACB0E4
-        for <linux-btrfs@vger.kernel.org>; Tue, 30 Oct 2018 14:43:33 +0000 (UTC)
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id CF501B0F7
+        for <linux-btrfs@vger.kernel.org>; Tue, 30 Oct 2018 14:43:32 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 4/6] btrfs: Introduce 2 more members to struct btrfs_fs_devices
-Date:   Tue, 30 Oct 2018 16:43:26 +0200
-Message-Id: <1540910608-4121-5-git-send-email-nborisov@suse.com>
+Subject: [PATCH 5/6] btrfs: Handle one more split-brain scenario during fsid change
+Date:   Tue, 30 Oct 2018 16:43:27 +0200
+Message-Id: <1540910608-4121-6-git-send-email-nborisov@suse.com>
 X-Mailer: git-send-email 2.7.4
 In-Reply-To: <1540910608-4121-1-git-send-email-nborisov@suse.com>
 References: <1540910608-4121-1-git-send-email-nborisov@suse.com>
@@ -39,84 +39,162 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-In order to gracefully handle split-brain scenario which are very
-unlikely, yet possible, while performing the FSID change I'm
-gonna need two more pieces of information:
+This commit continues hardening the scanning code to handle cases where
+power loss could have caused disks in a multi-disk filesystem to be
+in inconsistent state. Namely handle the situation that can occur when
+some of the disks in multi-disk fs have completed their fsid change i.e
+they have METADATA_UUID incompat flag set, have cleared the
+CHANGING_FSID_V2 flag and their fsid/metadata_uuid are different. At
+the same time the other half of the disks will have their
+fsid/metadata_uuid unchanged and will only have CHANGING_FSID_V2 flag.
 
- 1. The highest generation number among all devices registered to a
- particular btrfs_fs_devices
+This is handled by introducing code in the scan path which:
 
- 2. A boolean flag whether a given btrfs_fs_devices was created by a
- device which had the FSID_CHANGING_V2 flag set.
+ a) Handles the case when a device with CHANGING_FSID_V2 flag is
+ scanned and as a result btrfs_fs_devices is created with matching
+ fsid/metdata_uuid. Subsequently, when a device with completed fsid
+ change is scanned it will detect this via the new code in find_fsid
+ i.e that such an fs_devices exist that fsid_change flag is set to true,
+ it's metadata_uuid/fsid match and the metadata_uuid of the scanned
+ device matches that of the fs_devices. In this case, it's important to
+ note that the devices which has its fsid change completed will have a
+ higher generation number than the device with FSID_CHANGING_V2 flag
+ set, so its superblock block will be used during mount. To prevent an
+ assertion triggering because the sb used for mounting will have
+ differing fsid/metadata_uuid than the ones in the fs_devices struct
+ also add code in device_list_add which overwrites the values in
+ fs_devices.
 
-This is a preparatory patch and just introduces the variables as well
-as code which sets them, their actual use is going to happen in a later
-patch.
+ b) Alternatively we can end up with a device that completed its
+ fsid change be scanned first which will create the respective
+ btrfs_fs_devices struct with differing fsid/metadata_uuid. In this
+ case when a device with FSID_CHANGING_V2 flag set is scanned it will
+ call the newly added find_fsid_inprogress function which will return
+ the correct fs_devices.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/volumes.c | 9 ++++++++-
- fs/btrfs/volumes.h | 5 +++++
- 2 files changed, 13 insertions(+), 1 deletion(-)
+ fs/btrfs/volumes.c | 78 +++++++++++++++++++++++++++++++++++++++++++++++++++---
+ 1 file changed, 74 insertions(+), 4 deletions(-)
 
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index bf0aa900f22c..f9dcbe74093c 100644
+index f9dcbe74093c..f967e995feff 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -785,6 +785,8 @@ static noinline struct btrfs_device *device_list_add(const char *path,
- 	u64 devid = btrfs_stack_device_id(&disk_super->dev_item);
- 	bool has_metadata_uuid = (btrfs_super_incompat_flags(disk_super) &
- 		BTRFS_FEATURE_INCOMPAT_METADATA_UUID);
-+	bool fsid_change_in_progress = (btrfs_super_flags(disk_super) &
-+					BTRFS_SUPER_FLAG_CHANGING_FSID_V2);
+@@ -382,6 +382,26 @@ find_fsid(const u8 *fsid, const u8 *metadata_fsid)
  
- 	if (has_metadata_uuid)
- 		fs_devices = find_fsid(disk_super->fsid, disk_super->metadata_uuid);
-@@ -798,6 +800,8 @@ static noinline struct btrfs_device *device_list_add(const char *path,
- 		else
- 			fs_devices = alloc_fs_devices(disk_super->fsid, NULL);
+ 	ASSERT(fsid);
  
-+		fs_devices->fsid_change = fsid_change_in_progress;
++	if (metadata_fsid) {
 +
- 		if (IS_ERR(fs_devices))
- 			return ERR_CAST(fs_devices);
- 
-@@ -904,8 +908,11 @@ static noinline struct btrfs_device *device_list_add(const char *path,
- 	 * it back. We need it to pick the disk with largest generation
- 	 * (as above).
- 	 */
--	if (!fs_devices->opened)
-+	if (!fs_devices->opened) {
- 		device->generation = found_transid;
-+		fs_devices->latest_generation = max(found_transid,
-+						fs_devices->latest_generation);
++               /*
++                * Handle scanned device having completed its fsid change but
++                * belonging to a fs_devices that was created by first scanning
++                * a device which didn't have it's fsid/metadata_uuid changed
++                * at all and the CHANGING_FSID_V2 flag set.
++                */
++               list_for_each_entry(fs_devices, &fs_uuids, fs_list) {
++                       if (fs_devices->fsid_change &&
++                           memcmp(metadata_fsid, fs_devices->fsid,
++                                  BTRFS_FSID_SIZE) == 0 &&
++                           memcmp(fs_devices->fsid, fs_devices->metadata_uuid,
++                                  BTRFS_FSID_SIZE) == 0) {
++                               return fs_devices;
++                       }
++               }
 +	}
- 
- 	fs_devices->total_devices = btrfs_super_num_devices(disk_super);
- 
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 04860497b33c..6b2a01c55426 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -211,6 +211,7 @@ BTRFS_DEVICE_GETSET_FUNCS(bytes_used);
- struct btrfs_fs_devices {
- 	u8 fsid[BTRFS_FSID_SIZE]; /* FS specific uuid */
- 	u8 metadata_uuid[BTRFS_FSID_SIZE];
-+	bool fsid_change;
- 	struct list_head fs_list;
- 
- 	u64 num_devices;
-@@ -219,6 +220,10 @@ struct btrfs_fs_devices {
- 	u64 missing_devices;
- 	u64 total_rw_bytes;
- 	u64 total_devices;
 +
-+	/* Highest generation number of seen devices */
-+	u64 latest_generation;
-+
- 	struct block_device *latest_bdev;
++	/* Handle non-split brain cases */
+ 	list_for_each_entry(fs_devices, &fs_uuids, fs_list) {
+ 		if (metadata_fsid) {
+ 			if (memcmp(fsid, fs_devices->fsid, BTRFS_FSID_SIZE) == 0
+@@ -768,6 +788,27 @@ static int btrfs_open_one_device(struct btrfs_fs_devices *fs_devices,
+ }
  
- 	/* all of the devices in the FS, protected by a mutex
+ /*
++ * Handle scanned device having its CHANGING_FSID_V2 flag set and the fs_devices
++ * being created with a disk that has already completed its fsid change.
++ */
++static struct btrfs_fs_devices *find_fsid_inprogress(
++					struct btrfs_super_block *disk_super)
++{
++	struct btrfs_fs_devices *fs_devices;
++
++	list_for_each_entry(fs_devices, &fs_uuids, fs_list) {
++		if (memcmp(fs_devices->metadata_uuid, fs_devices->fsid,
++			   BTRFS_FSID_SIZE) != 0 &&
++		    memcmp(fs_devices->metadata_uuid, disk_super->fsid,
++			   BTRFS_FSID_SIZE) == 0 && !fs_devices->fsid_change) {
++			return fs_devices;
++		}
++	}
++
++	return NULL;
++}
++
++/*
+  * Add new device to list of registered devices
+  *
+  * Returns:
+@@ -779,7 +820,7 @@ static noinline struct btrfs_device *device_list_add(const char *path,
+ 			   bool *new_device_added)
+ {
+ 	struct btrfs_device *device;
+-	struct btrfs_fs_devices *fs_devices;
++	struct btrfs_fs_devices *fs_devices = NULL;
+ 	struct rcu_string *name;
+ 	u64 found_transid = btrfs_super_generation(disk_super);
+ 	u64 devid = btrfs_stack_device_id(&disk_super->dev_item);
+@@ -788,10 +829,24 @@ static noinline struct btrfs_device *device_list_add(const char *path,
+ 	bool fsid_change_in_progress = (btrfs_super_flags(disk_super) &
+ 					BTRFS_SUPER_FLAG_CHANGING_FSID_V2);
+ 
+-	if (has_metadata_uuid)
+-		fs_devices = find_fsid(disk_super->fsid, disk_super->metadata_uuid);
+-	else
++	if (fsid_change_in_progress && !has_metadata_uuid) {
++               /*
++                * When we have an image which has CHANGING_FSID_V2 set it might
++		* belong to either a filesystem which has disks with completed
++		* fsid change or it might belong to fs with no uuid changes in
++		* effect, handle both.
++                */
++		fs_devices = find_fsid_inprogress(disk_super);
++		if (!fs_devices)
++			fs_devices = find_fsid(disk_super->fsid, NULL);
++
++	} else if (has_metadata_uuid) {
++		fs_devices = find_fsid(disk_super->fsid,
++				       disk_super->metadata_uuid);
++	} else {
+ 		fs_devices = find_fsid(disk_super->fsid, NULL);
++	}
++
+ 
+ 	if (!fs_devices) {
+ 		if (has_metadata_uuid)
+@@ -813,6 +868,21 @@ static noinline struct btrfs_device *device_list_add(const char *path,
+ 		mutex_lock(&fs_devices->device_list_mutex);
+ 		device = find_device(fs_devices, devid,
+ 				disk_super->dev_item.uuid);
++
++                /*
++                 * If this disk has been pulled into an fs devices created by
++                 * a device which had the FSID_CHANGING flag then replace the
++                 * metadata_uuid/fsid values of the fs_devices.
++                 */
++                if (has_metadata_uuid && fs_devices->fsid_change &&
++                    found_transid > fs_devices->latest_generation) {
++                        memcpy(fs_devices->fsid, disk_super->fsid,
++                               BTRFS_FSID_SIZE);
++                        memcpy(fs_devices->metadata_uuid,
++                               disk_super->metadata_uuid, BTRFS_FSID_SIZE);
++
++                        fs_devices->fsid_change = false;
++                }
+ 	}
+ 
+ 	if (!device) {
 -- 
 2.7.4
 

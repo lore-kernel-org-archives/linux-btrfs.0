@@ -2,36 +2,35 @@ Return-Path: <SRS0=iJ2R=NK=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,
-	UNWANTED_LANGUAGE_BODY,USER_AGENT_GIT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-8.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 748F1C2BC61
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BAFEEECDE44
 	for <linux-btrfs@archiver.kernel.org>; Tue, 30 Oct 2018 14:43:36 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 3ACD82075D
+	by mail.kernel.org (Postfix) with ESMTP id 8F4D72075D
 	for <linux-btrfs@archiver.kernel.org>; Tue, 30 Oct 2018 14:43:36 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 3ACD82075D
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 8F4D72075D
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726699AbeJ3XhT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 30 Oct 2018 19:37:19 -0400
-Received: from mx2.suse.de ([195.135.220.15]:42336 "EHLO mx1.suse.de"
+        id S1726720AbeJ3XhU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 30 Oct 2018 19:37:20 -0400
+Received: from mx2.suse.de ([195.135.220.15]:42368 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725853AbeJ3XhT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1726219AbeJ3XhT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Tue, 30 Oct 2018 19:37:19 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id B74BCB0F6
-        for <linux-btrfs@vger.kernel.org>; Tue, 30 Oct 2018 14:43:32 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 924ACB0E4
+        for <linux-btrfs@vger.kernel.org>; Tue, 30 Oct 2018 14:43:33 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 2/6] btrfs: Remove fsid/metadata_fsid fields from btrfs_info
-Date:   Tue, 30 Oct 2018 16:43:24 +0200
-Message-Id: <1540910608-4121-3-git-send-email-nborisov@suse.com>
+Subject: [PATCH 4/6] btrfs: Introduce 2 more members to struct btrfs_fs_devices
+Date:   Tue, 30 Oct 2018 16:43:26 +0200
+Message-Id: <1540910608-4121-5-git-send-email-nborisov@suse.com>
 X-Mailer: git-send-email 2.7.4
 In-Reply-To: <1540910608-4121-1-git-send-email-nborisov@suse.com>
 References: <1540910608-4121-1-git-send-email-nborisov@suse.com>
@@ -40,235 +39,84 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Currently btrfs_fs_info structure contains a copy of the
-fsid/metadata_uuid fields. Same values are also contained in the
-btrfs_fs_devices structure which fs_info has a reference to. Let's
-reduce duplication by removing the fields from fs_info and always refer
-to the ones in fs_devices. No functional changes.
+In order to gracefully handle split-brain scenario which are very
+unlikely, yet possible, while performing the FSID change I'm
+gonna need two more pieces of information:
+
+ 1. The highest generation number among all devices registered to a
+ particular btrfs_fs_devices
+
+ 2. A boolean flag whether a given btrfs_fs_devices was created by a
+ device which had the FSID_CHANGING_V2 flag set.
+
+This is a preparatory patch and just introduces the variables as well
+as code which sets them, their actual use is going to happen in a later
+patch.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/check-integrity.c   |  2 +-
- fs/btrfs/ctree.c             |  5 +++--
- fs/btrfs/ctree.h             |  2 --
- fs/btrfs/disk-io.c           | 21 ++++++++++++---------
- fs/btrfs/extent-tree.c       |  2 +-
- fs/btrfs/ioctl.c             |  2 +-
- fs/btrfs/super.c             |  2 +-
- fs/btrfs/volumes.c           | 10 ++++------
- include/trace/events/btrfs.h |  2 +-
- 9 files changed, 24 insertions(+), 24 deletions(-)
+ fs/btrfs/volumes.c | 9 ++++++++-
+ fs/btrfs/volumes.h | 5 +++++
+ 2 files changed, 13 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/check-integrity.c b/fs/btrfs/check-integrity.c
-index 2e43fba44035..781cae168d2a 100644
---- a/fs/btrfs/check-integrity.c
-+++ b/fs/btrfs/check-integrity.c
-@@ -1720,7 +1720,7 @@ static int btrfsic_test_for_metadata(struct btrfsic_state *state,
- 	num_pages = state->metablock_size >> PAGE_SHIFT;
- 	h = (struct btrfs_header *)datav[0];
- 
--	if (memcmp(h->fsid, fs_info->fsid, BTRFS_FSID_SIZE))
-+	if (memcmp(h->fsid, fs_info->fs_devices->fsid, BTRFS_FSID_SIZE))
- 		return 1;
- 
- 	for (i = 0; i < num_pages; i++) {
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 75cd41bf12f7..61f14a9836a1 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -12,6 +12,7 @@
- #include "transaction.h"
- #include "print-tree.h"
- #include "locking.h"
-+#include "volumes.h"
- 
- static int split_node(struct btrfs_trans_handle *trans, struct btrfs_root
- 		      *root, struct btrfs_path *path, int level);
-@@ -224,7 +225,7 @@ int btrfs_copy_root(struct btrfs_trans_handle *trans,
- 	else
- 		btrfs_set_header_owner(cow, new_root_objectid);
- 
--	write_extent_buffer_fsid(cow, fs_info->metadata_fsid);
-+	write_extent_buffer_fsid(cow, fs_info->fs_devices->metadata_uuid);
- 
- 	WARN_ON(btrfs_header_generation(buf) > trans->transid);
- 	if (new_root_objectid == BTRFS_TREE_RELOC_OBJECTID)
-@@ -1050,7 +1051,7 @@ static noinline int __btrfs_cow_block(struct btrfs_trans_handle *trans,
- 	else
- 		btrfs_set_header_owner(cow, root->root_key.objectid);
- 
--	write_extent_buffer_fsid(cow, fs_info->metadata_fsid);
-+	write_extent_buffer_fsid(cow, fs_info->fs_devices->metadata_uuid);
- 
- 	ret = update_ref_for_cow(trans, root, buf, cow, &last_ref);
- 	if (ret) {
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 501ada9ec7bd..8531f0f5d672 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -749,8 +749,6 @@ struct btrfs_delayed_root;
- #define BTRFS_FS_BALANCE_RUNNING		18
- 
- struct btrfs_fs_info {
--	u8 fsid[BTRFS_FSID_SIZE]; /* User-visible fs UUID */
--	u8 metadata_fsid[BTRFS_FSID_SIZE]; /* UUID written to btree blocks */
- 	u8 chunk_tree_uuid[BTRFS_UUID_SIZE];
- 	unsigned long flags;
- 	struct btrfs_root *extent_root;
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index b76b18388b93..a458ef5b605e 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -551,7 +551,7 @@ static int csum_dirty_buffer(struct btrfs_fs_info *fs_info, struct page *page)
- 	if (WARN_ON(!PageUptodate(page)))
- 		return -EUCLEAN;
- 
--	ASSERT(memcmp_extent_buffer(eb, fs_info->metadata_fsid,
-+	ASSERT(memcmp_extent_buffer(eb, fs_info->fs_devices->metadata_uuid,
- 			btrfs_header_fsid(), BTRFS_FSID_SIZE) == 0);
- 
- 	return csum_tree_block(fs_info, eb, 0);
-@@ -2490,11 +2490,12 @@ static int validate_super(struct btrfs_fs_info *fs_info,
- 		ret = -EINVAL;
- 	}
- 
--	if (memcmp(fs_info->metadata_fsid, sb->dev_item.fsid,
-+	if (memcmp(fs_info->fs_devices->metadata_uuid, sb->dev_item.fsid,
- 		   BTRFS_FSID_SIZE) != 0) {
- 		btrfs_err(fs_info,
- 			   "dev_item UUID does not match metadata fsid: %pU != %pU",
--			   fs_info->metadata_fsid, sb->dev_item.fsid);
-+			   fs_info->fs_devices->metadata_uuid,
-+			   sb->dev_item.fsid);
- 		ret = -EINVAL;
- 	}
- 
-@@ -2834,14 +2835,16 @@ int open_ctree(struct super_block *sb,
- 	       sizeof(*fs_info->super_for_commit));
- 	brelse(bh);
- 
--	memcpy(fs_info->fsid, fs_info->super_copy->fsid, BTRFS_FSID_SIZE);
-+	ASSERT(!memcmp(fs_info->fs_devices->fsid, fs_info->super_copy->fsid,
-+		       BTRFS_FSID_SIZE));
-+
- 	if (btrfs_fs_incompat(fs_info, METADATA_UUID)) {
--		memcpy(fs_info->metadata_fsid,
--		       fs_info->super_copy->metadata_uuid, BTRFS_FSID_SIZE);
--	} else {
--		memcpy(fs_info->metadata_fsid, fs_info->fsid, BTRFS_FSID_SIZE);
-+		ASSERT(!memcmp(fs_info->fs_devices->metadata_uuid,
-+				fs_info->super_copy->metadata_uuid,
-+				BTRFS_FSID_SIZE));
- 	}
- 
-+
- 	ret = btrfs_validate_mount_super(fs_info);
- 	if (ret) {
- 		btrfs_err(fs_info, "superblock contains fatal errors");
-@@ -2961,7 +2964,7 @@ int open_ctree(struct super_block *sb,
- 
- 	sb->s_blocksize = sectorsize;
- 	sb->s_blocksize_bits = blksize_bits(sectorsize);
--	memcpy(&sb->s_uuid, fs_info->fsid, BTRFS_FSID_SIZE);
-+	memcpy(&sb->s_uuid, fs_info->fs_devices->fsid, BTRFS_FSID_SIZE);
- 
- 	mutex_lock(&fs_info->chunk_mutex);
- 	ret = btrfs_read_sys_array(fs_info);
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 047fba06a8d8..c98638155652 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -8169,7 +8169,7 @@ btrfs_init_new_buffer(struct btrfs_trans_handle *trans, struct btrfs_root *root,
- 	btrfs_set_header_generation(buf, trans->transid);
- 	btrfs_set_header_backref_rev(buf, BTRFS_MIXED_BACKREF_REV);
- 	btrfs_set_header_owner(buf, owner);
--	write_extent_buffer_fsid(buf, fs_info->metadata_fsid);
-+	write_extent_buffer_fsid(buf, fs_info->fs_devices->metadata_uuid);
- 	write_extent_buffer_chunk_tree_uuid(buf, fs_info->chunk_tree_uuid);
- 	if (root->root_key.objectid == BTRFS_TREE_LOG_OBJECTID) {
- 		buf->log_index = root->log_transid % 2;
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index a990a9045139..510635e49319 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -3135,7 +3135,7 @@ static long btrfs_ioctl_fs_info(struct btrfs_fs_info *fs_info,
- 	}
- 	rcu_read_unlock();
- 
--	memcpy(&fi_args->fsid, fs_info->fsid, sizeof(fi_args->fsid));
-+	memcpy(&fi_args->fsid, fs_devices->fsid, sizeof(fi_args->fsid));
- 	fi_args->nodesize = fs_info->nodesize;
- 	fi_args->sectorsize = fs_info->sectorsize;
- 	fi_args->clone_alignment = fs_info->sectorsize;
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index b362b45dd757..1163183fe6dd 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -2090,7 +2090,7 @@ static int btrfs_statfs(struct dentry *dentry, struct kstatfs *buf)
- 	u64 total_free_data = 0;
- 	u64 total_free_meta = 0;
- 	int bits = dentry->d_sb->s_blocksize_bits;
--	__be32 *fsid = (__be32 *)fs_info->fsid;
-+	__be32 *fsid = (__be32 *)fs_info->fs_devices->fsid;
- 	unsigned factor = 1;
- 	struct btrfs_block_rsv *block_rsv = &fs_info->global_block_rsv;
- 	int ret;
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index e3e12c94834f..bf0aa900f22c 100644
+index bf0aa900f22c..f9dcbe74093c 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -1744,8 +1744,8 @@ static int btrfs_add_dev_item(struct btrfs_trans_handle *trans,
- 	ptr = btrfs_device_uuid(dev_item);
- 	write_extent_buffer(leaf, device->uuid, ptr, BTRFS_UUID_SIZE);
- 	ptr = btrfs_device_fsid(dev_item);
--	write_extent_buffer(leaf, trans->fs_info->metadata_fsid, ptr,
--			    BTRFS_FSID_SIZE);
-+	write_extent_buffer(leaf, trans->fs_info->fs_devices->metadata_uuid,
-+			    ptr, BTRFS_FSID_SIZE);
- 	btrfs_mark_buffer_dirty(leaf);
+@@ -785,6 +785,8 @@ static noinline struct btrfs_device *device_list_add(const char *path,
+ 	u64 devid = btrfs_stack_device_id(&disk_super->dev_item);
+ 	bool has_metadata_uuid = (btrfs_super_incompat_flags(disk_super) &
+ 		BTRFS_FEATURE_INCOMPAT_METADATA_UUID);
++	bool fsid_change_in_progress = (btrfs_super_flags(disk_super) &
++					BTRFS_SUPER_FLAG_CHANGING_FSID_V2);
  
- 	ret = 0;
-@@ -2278,9 +2278,7 @@ static int btrfs_prepare_sprout(struct btrfs_fs_info *fs_info)
- 	fs_devices->seed = seed_devices;
+ 	if (has_metadata_uuid)
+ 		fs_devices = find_fsid(disk_super->fsid, disk_super->metadata_uuid);
+@@ -798,6 +800,8 @@ static noinline struct btrfs_device *device_list_add(const char *path,
+ 		else
+ 			fs_devices = alloc_fs_devices(disk_super->fsid, NULL);
  
- 	generate_random_uuid(fs_devices->fsid);
--	memcpy(fs_info->fsid, fs_devices->fsid, BTRFS_FSID_SIZE);
- 	memcpy(fs_devices->metadata_uuid, fs_devices->fsid, BTRFS_FSID_SIZE);
--	memcpy(fs_info->metadata_fsid, fs_devices->fsid, BTRFS_FSID_SIZE);
- 	memcpy(disk_super->fsid, fs_devices->fsid, BTRFS_FSID_SIZE);
- 	mutex_unlock(&fs_devices->device_list_mutex);
- 
-@@ -2522,7 +2520,7 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
- 		 * so rename the fsid on the sysfs
- 		 */
- 		snprintf(fsid_buf, BTRFS_UUID_UNPARSED_SIZE, "%pU",
--						fs_info->fsid);
-+						fs_info->fs_devices->fsid);
- 		if (kobject_rename(&fs_devices->fsid_kobj, fsid_buf))
- 			btrfs_warn(fs_info,
- 				   "sysfs: failed to create fsid for sprout");
-@@ -6671,7 +6669,7 @@ static int read_one_dev(struct btrfs_fs_info *fs_info,
- 	read_extent_buffer(leaf, fs_uuid, btrfs_device_fsid(dev_item),
- 			   BTRFS_FSID_SIZE);
- 
--	if (memcmp(fs_uuid, fs_info->metadata_fsid, BTRFS_FSID_SIZE)) {
-+	if (memcmp(fs_uuid, fs_devices->metadata_uuid, BTRFS_FSID_SIZE)) {
- 		fs_devices = open_seed_devices(fs_info, fs_uuid);
++		fs_devices->fsid_change = fsid_change_in_progress;
++
  		if (IS_ERR(fs_devices))
- 			return PTR_ERR(fs_devices);
-diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
-index 8568946f491d..4b8400f7d4fa 100644
---- a/include/trace/events/btrfs.h
-+++ b/include/trace/events/btrfs.h
-@@ -92,7 +92,7 @@ TRACE_DEFINE_ENUM(COMMIT_TRANS);
- #define TP_STRUCT__entry_fsid __array(u8, fsid, BTRFS_FSID_SIZE)
+ 			return ERR_CAST(fs_devices);
  
- #define TP_fast_assign_fsid(fs_info)					\
--	memcpy(__entry->fsid, fs_info->fsid, BTRFS_FSID_SIZE)
-+	memcpy(__entry->fsid, fs_info->fs_devices->fsid, BTRFS_FSID_SIZE)
+@@ -904,8 +908,11 @@ static noinline struct btrfs_device *device_list_add(const char *path,
+ 	 * it back. We need it to pick the disk with largest generation
+ 	 * (as above).
+ 	 */
+-	if (!fs_devices->opened)
++	if (!fs_devices->opened) {
+ 		device->generation = found_transid;
++		fs_devices->latest_generation = max(found_transid,
++						fs_devices->latest_generation);
++	}
  
- #define TP_STRUCT__entry_btrfs(args...)					\
- 	TP_STRUCT__entry(						\
+ 	fs_devices->total_devices = btrfs_super_num_devices(disk_super);
+ 
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 04860497b33c..6b2a01c55426 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -211,6 +211,7 @@ BTRFS_DEVICE_GETSET_FUNCS(bytes_used);
+ struct btrfs_fs_devices {
+ 	u8 fsid[BTRFS_FSID_SIZE]; /* FS specific uuid */
+ 	u8 metadata_uuid[BTRFS_FSID_SIZE];
++	bool fsid_change;
+ 	struct list_head fs_list;
+ 
+ 	u64 num_devices;
+@@ -219,6 +220,10 @@ struct btrfs_fs_devices {
+ 	u64 missing_devices;
+ 	u64 total_rw_bytes;
+ 	u64 total_devices;
++
++	/* Highest generation number of seen devices */
++	u64 latest_generation;
++
+ 	struct block_device *latest_bdev;
+ 
+ 	/* all of the devices in the FS, protected by a mutex
 -- 
 2.7.4
 

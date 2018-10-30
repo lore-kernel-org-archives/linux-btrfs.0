@@ -1,151 +1,123 @@
-Return-Path: <SRS0=e2uI=NJ=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=iJ2R=NK=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.3 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-8.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4DDDBC0044C
-	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Oct 2018 22:46:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 84FD1C2BC61
+	for <linux-btrfs@archiver.kernel.org>; Tue, 30 Oct 2018 06:58:41 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id CBFAA2082B
-	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Oct 2018 22:46:05 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org CBFAA2082B
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=carfax.org.uk
+	by mail.kernel.org (Postfix) with ESMTP id 239E820657
+	for <linux-btrfs@archiver.kernel.org>; Tue, 30 Oct 2018 06:58:40 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (1024-bit key) header.d=synology.com header.i=@synology.com header.b="pzxuacnD"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 239E820657
+Authentication-Results: mail.kernel.org; dmarc=fail (p=quarantine dis=none) header.from=synology.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730252AbeJ3Hgu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 30 Oct 2018 03:36:50 -0400
-Received: from frost.carfax.org.uk ([85.119.82.111]:55339 "EHLO
-        frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1730244AbeJ3Hgt (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 30 Oct 2018 03:36:49 -0400
-Received: from hrm by frost.carfax.org.uk with local (Exim 4.80)
-        (envelope-from <hrm@carfax.org.uk>)
-        id 1gHGII-0005Tj-T8; Mon, 29 Oct 2018 22:45:58 +0000
-Date:   Mon, 29 Oct 2018 22:45:58 +0000
-From:   Hugo Mills <hugo@carfax.org.uk>
-To:     Remi Gauvin <remi@georgianit.com>
-Cc:     Ulli Horlacher <framstag@rus.uni-stuttgart.de>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Understanding "btrfs filesystem usage"
-Message-ID: <20181029224558.GE21649@carfax.org.uk>
-Mail-Followup-To: Hugo Mills <hugo@carfax.org.uk>,
-        Remi Gauvin <remi@georgianit.com>,
-        Ulli Horlacher <framstag@rus.uni-stuttgart.de>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <20181029181141.GA31256@rus.uni-stuttgart.de>
- <85a63523-7e77-f4ca-9947-2c957c5c577a@georgianit.com>
-MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-        protocol="application/pgp-signature"; boundary="h56sxpGKRmy85csR"
-Content-Disposition: inline
-In-Reply-To: <85a63523-7e77-f4ca-9947-2c957c5c577a@georgianit.com>
-X-GPG-Fingerprint: DD84 D558 9D81 DDEE 930D  2054 585E 1475 E2AB 1DE4
-X-GPG-Key: E2AB1DE4
-X-Parrot: It is no more. It has joined the choir invisible.
-X-IRC-Nicks: darksatanic darkersatanic darkling darkthing
-User-Agent: Mutt/1.5.21 (2010-09-15)
+        id S1726476AbeJ3Pux (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 30 Oct 2018 11:50:53 -0400
+Received: from synology.com ([59.124.61.242]:36272 "EHLO synology.com"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726136AbeJ3Puw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 30 Oct 2018 11:50:52 -0400
+Received: from localhost.localdomain (unknown [10.13.20.241])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by synology.com (Postfix) with ESMTPSA id 5FBFA2535028;
+        Tue, 30 Oct 2018 14:58:36 +0800 (CST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=synology.com; s=123;
+        t=1540882716; bh=Y7+5rAuss99oRsFsAnWFiuRYJPEYokTLc/wVzn4ApSE=;
+        h=From:To:Cc:Subject:Date;
+        b=pzxuacnDzzbsLQNvaoiPXJOP/YmOn7P05FK50FsAbxNDHxzvM62jSv/E6C1puxjat
+         4PRoYi1/O/5pTvoLQJ7FLEah9pQwmhwqCop1Lx9oDaFxjxQ+Ja4dHBndXswmq+WATg
+         ik5lMskIHnxJsI/jA6hRKd7WsuibnIZ1fYj9W7fo=
+From:   robbieko <robbieko@synology.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     Robbie Ko <robbieko@synology.com>
+Subject: [PATCH] Btrfs: incremental send, fix infinite loop when apply children dir moves
+Date:   Tue, 30 Oct 2018 14:58:22 +0800
+Message-Id: <1540882702-21104-1-git-send-email-robbieko@synology.com>
+X-Mailer: git-send-email 1.9.1
+X-Synology-MCP-Status: no
+X-Synology-Spam-Flag: no
+X-Synology-Spam-Status: score=0, required 6, WHITELIST_FROM_ADDRESS 0
+X-Synology-Virus-Status: no
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+From: Robbie Ko <robbieko@synology.com>
 
---h56sxpGKRmy85csR
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+In apply_children_dir_moves, we first create an empty list (stack),
+then we get an entry from pending_dir_moves and add it to the stack,
+but we didn't delete the entry from rb_tree.
 
-On Mon, Oct 29, 2018 at 05:57:10PM -0400, Remi Gauvin wrote:
-> On 2018-10-29 02:11 PM, Ulli Horlacher wrote:
-> > I want to know how many free space is left and have problems in
-> > interpreting the output of: 
-> > 
-> > btrfs filesystem usage
-> > btrfs filesystem df
-> > btrfs filesystem show
-> > 
-> >
-> 
-> In my not so humble opinion, the filesystem usage command has the
-> easiest to understand output.  It' lays out all the pertinent information.
+So, in add_pending_dir_move, we create a new entry and then use the
+parent_ino in the current rb_tree to find the corresponding entry,
+and if so, add the new entry to the corresponding list.
 
-   Opinions are divided. I find it almost impossible to read, and
-always use btrfs fi df and btrfs fi show together.
+However, the entry may have been added to the stack, causing new
+entries to be added to the stack as well.
 
-   There's short tutorials of how to read the output in both cases in
-the FAQ, which is where I start out by directing people in this
-instance.
+Finally, each time we take the first entry from the stack and start
+processing, it ends up with an infinite loop.
 
-   Hugo.
+Fix this problem by remove node from pending_dir_moves,
+avoid add new pending_dir_move to error list.
 
-> You can clearly see 825GiB is allocated, with 494GiB used, therefore,
-> filesystem show is actually using the "Allocated" value as "Used".
-> Allocated can be thought of "Reserved For".  As the output of the Usage
-> command and df command clearly show, you have almost 400GiB space available.
-> 
-> Note that the btrfs commands are clearly and explicitly displaying
-> values in Binary units, (Mi, and Gi prefix, respectively).  If you want
-> df command to match, use -h instead of -H (see man df)
-> 
-> An observation:
-> 
-> The disparity between 498GiB used and 823Gib is pretty high.  This is
-> probably the result of using an SSD with an older kernel.  If your
-> kernel is not very recent, (sorry, I forget where this was fixed,
-> somewhere around 4.14 or 4.15), then consider mounting with the nossd
-> option.  You can improve this by running a balance.
-> 
-> Something like:
-> btrfs balance start -dusage=55
-> 
-> You do *not* want to end up with all your space allocated to Data, but
-> not actually used by data.  Bad things can happen if you run out of
-> Unallocated space for more metadata. (not catastrophic, but awkward and
-> unexpected downtime that can be a little tricky to sort out.)
-> 
-> 
+Signed-off-by: Robbie Ko <robbieko@synology.com>
+---
+ fs/btrfs/send.c | 11 ++++++++---
+ 1 file changed, 8 insertions(+), 3 deletions(-)
 
-> begin:vcard
-> fn:Remi Gauvin
-> n:Gauvin;Remi
-> org:Georgian Infotech
-> adr:;;3-51 Sykes St. N.;Meaford;ON;N4L 1X3;Canada
-> email;internet:remi@georgianit.com
-> tel;work:226-256-1545
-> version:2.1
-> end:vcard
-> 
-
-
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index 094cc144..5be83b5 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -3340,7 +3340,8 @@ static void free_pending_move(struct send_ctx *sctx, struct pending_dir_move *m)
+ 	kfree(m);
+ }
+ 
+-static void tail_append_pending_moves(struct pending_dir_move *moves,
++static void tail_append_pending_moves(struct send_ctx *sctx,
++				      struct pending_dir_move *moves,
+ 				      struct list_head *stack)
+ {
+ 	if (list_empty(&moves->list)) {
+@@ -3351,6 +3352,10 @@ static void tail_append_pending_moves(struct pending_dir_move *moves,
+ 		list_add_tail(&moves->list, stack);
+ 		list_splice_tail(&list, stack);
+ 	}
++	if (!RB_EMPTY_NODE(&moves->node)) {
++		rb_erase(&moves->node, &sctx->pending_dir_moves);
++		RB_CLEAR_NODE(&moves->node);
++	}
+ }
+ 
+ static int apply_children_dir_moves(struct send_ctx *sctx)
+@@ -3365,7 +3370,7 @@ static int apply_children_dir_moves(struct send_ctx *sctx)
+ 		return 0;
+ 
+ 	INIT_LIST_HEAD(&stack);
+-	tail_append_pending_moves(pm, &stack);
++	tail_append_pending_moves(sctx, pm, &stack);
+ 
+ 	while (!list_empty(&stack)) {
+ 		pm = list_first_entry(&stack, struct pending_dir_move, list);
+@@ -3376,7 +3381,7 @@ static int apply_children_dir_moves(struct send_ctx *sctx)
+ 			goto out;
+ 		pm = get_pending_dir_moves(sctx, parent_ino);
+ 		if (pm)
+-			tail_append_pending_moves(pm, &stack);
++			tail_append_pending_moves(sctx, pm, &stack);
+ 	}
+ 	return 0;
+ 
 -- 
-Hugo Mills             | Great oxymorons of the world, no. 8:
-hugo@... carfax.org.uk | The Latest In Proven Technology
-http://carfax.org.uk/  |
-PGP: E2AB1DE4          |
+1.9.1
 
---h56sxpGKRmy85csR
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJb142mAAoJEFheFHXiqx3kQz0P/jRhL8ioOfqC3guUWAIT7AUa
-NZIgTDho5/X0HO0hKxrfY0bdcojVbbYQ459u5gqKzLcUJJ0DkbCXog5RxV+LAoo+
-oUHso0lRQRD9jIMHEX9knTKc6RhfDi6uzecKMhJkz/tSi54n1BdoOrmetPgV3WII
-sH5SxOE4mSzpPU2GKyPNpmOiCBr44RuWbK8uT2w5w8gQ9oBCAwW233WjzNrV4KIP
-IzlIhsldDQvegn+ExQYmIJAfvPo/Fd75OisR2PxurZLBtqTy87yxw+JA0oA/ONNn
-VUuRzT43353RMOAM3AmwPdaV6b2WyuDkui0TEPtQJpAVl+DOMcD2+w4IJm1FHLL+
-mZrfmy2kZoLHzSdj31ooovsnUy7ZS88N1XBLdK+VK5lOKB0ZdM/mGGdvdpo5eRZ8
-Yu04blPo4qp5VMCS/hNBZAzRg/oEqVqmwLM8ARY9Yafxs5OWQvnu8emNaFCiOn/i
-l77flpQ4fMxVRIPSyQ/sRPEbhc+xdc/b7F/NfaIwMVTidr1Z8XHQn6PtkQ/qmbhu
-Z8M4L43s3iVCRK2Rwa4wlFKjWX5WFD0ftZOlPcbmwBLaPgvOhNI0mbv5HN8/ZDTh
-OOpOzgSRB71n5BEbOo4bavHP64fOtOGbrAl0CCAOI/BV3Ekdm9cnmXQmpowjCEwl
-ezz1HftU9BYUIW1vksZY
-=zTAh
------END PGP SIGNATURE-----
-
---h56sxpGKRmy85csR--

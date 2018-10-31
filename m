@@ -6,29 +6,30 @@ X-Spam-Status: No, score=-6.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0DA59C0044C
-	for <linux-btrfs@archiver.kernel.org>; Wed, 31 Oct 2018 09:01:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1AF69ECDE46
+	for <linux-btrfs@archiver.kernel.org>; Wed, 31 Oct 2018 09:01:07 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id C9F5220685
-	for <linux-btrfs@archiver.kernel.org>; Wed, 31 Oct 2018 09:01:05 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org C9F5220685
+	by mail.kernel.org (Postfix) with ESMTP id D259120685
+	for <linux-btrfs@archiver.kernel.org>; Wed, 31 Oct 2018 09:01:06 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org D259120685
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727610AbeJaR6R (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 31 Oct 2018 13:58:17 -0400
-Received: from mx2.suse.de ([195.135.220.15]:52734 "EHLO mx1.suse.de"
+        id S1727705AbeJaR6S (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 31 Oct 2018 13:58:18 -0400
+Received: from mx2.suse.de ([195.135.220.15]:52740 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727020AbeJaR6R (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1727764AbeJaR6R (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Wed, 31 Oct 2018 13:58:17 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 5794B54035;
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id A780D54038;
         Wed, 31 Oct 2018 09:01:02 +0000 (UTC)
-Subject: Re: [PATCH] Btrfs: fix missing delayed iputs on unmount
-To:     Omar Sandoval <osandov@osandov.com>, linux-btrfs@vger.kernel.org
-Cc:     kernel-team@fb.com
-References: <9b8c7d1ce662d216cf29ffcb756d177b0bf60b64.1540944854.git.osandov@fb.com>
+Subject: Re: [PATCH v3] fstests: btrfs/057: Fix false alerts due to orphan
+ files
+To:     Qu Wenruo <wqu@suse.com>, fstests@vger.kernel.org,
+        linux-btrfs@vger.kernel.org
+References: <20181030101819.19510-1-wqu@suse.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -73,12 +74,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  KIuxEcV8wcVjr+Wr9zRl06waOCkgrQbTPp631hToxo+4rA1jiQF2M80HAet65ytBVR2pFGZF
  zGYYLqiG+mpUZ+FPjxk9kpkRYz61mTLSY7tuFljExfJWMGfgSg1OxfLV631jV1TcdUnx+h3l
  Sqs2vMhAVt14zT8mpIuu2VNxcontxgVr1kzYA/tQg32fVRbGr449j1gw57BV9i0vww==
-Message-ID: <4817ac90-a79d-c258-96e1-f1108cfe7225@suse.com>
-Date:   Wed, 31 Oct 2018 10:43:02 +0200
+Message-ID: <96e63270-1697-479a-b2b0-f6b2e78ede90@suse.com>
+Date:   Wed, 31 Oct 2018 10:55:23 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <9b8c7d1ce662d216cf29ffcb756d177b0bf60b64.1540944854.git.osandov@fb.com>
+In-Reply-To: <20181030101819.19510-1-wqu@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -89,112 +90,100 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 31.10.18 г. 2:14 ч., Omar Sandoval wrote:
-> From: Omar Sandoval <osandov@fb.com>
+On 30.10.18 г. 12:18 ч., Qu Wenruo wrote:
+> For any recent kernel, there is a chance that btrfs/057 reports false
+> errors.
 > 
-> There's a race between close_ctree() and cleaner_kthread().
-> close_ctree() sets btrfs_fs_closing(), and the cleaner stops when it
-> sees it set, but this is racy; the cleaner might have already checked
-> the bit and could be cleaning stuff. In particular, if it deletes unused
-> block groups, it will create delayed iputs for the free space cache
-> inodes. As of "btrfs: don't run delayed_iputs in commit", we're no
-> longer running delayed iputs after a commit. Therefore, if the cleaner
-> creates more delayed iputs after delayed iputs are run in
-> btrfs_commit_super(), we will leak inodes on unmount and get a busy
-> inode crash from the VFS.
+> The false error would look like:
+>   btrfs/057 4s ... - output mismatch (see /home/adam/xfstests-dev/results//btrfs/057.out.bad)
+>       --- tests/btrfs/057.out	2017-08-21 09:25:33.166666666 +0800
+>       +++ /home/adam/xfstests-dev/results//btrfs/057.out.bad	2018-10-29 14:07:28.443651293 +0800
+>       @@ -1,3 +1,3 @@
+>        QA output created by 057
+>        4096 4096
+>       -4096 4096
+>       +28672 28672
 > 
-> Fix it by parking the cleaner before we actually close anything. Then,
-> any remaining delayed iputs will always be handled in
-> btrfs_commit_super(). This also ensures that the commit in close_ctree()
-> is really the last commit, so we can get rid of the commit in
-> cleaner_kthread().
+> This is related to the fact that "btrfs subvolume sync" (or
+> vanilla sync) will not ensure orphan (unlinked but still exist) files to
+> be removed.
 > 
-> Fixes: 30928e9baac2 ("btrfs: don't run delayed_iputs in commit")
-> Signed-off-by: Omar Sandoval <osandov@fb.com>
+> In fact, for that false error case, if inspecting the fs after umount,
+> its qgroup number is correct and btrfs check won't report qgroup error.
+> 
+> To fix the false alerts, just skip any manual qgroup number comparison,
+> and let fsck done after the test case to detect problem.
+> 
+> This also elimiate the necessary of using specified mount and mkfs
+> option, allowing us to improve coverage.
+
+Something's fishy about this test! THe description states that "
+ Quota rescan stress test, we run fsstress and quota rescan
+concurrently" yet fsstress is not run concurrently to quota. We first
+run fsstress, then trigger rescan with -w. How exactly are rescan and
+fsstress run concurrently ?
+
+> 
+> Reported-by: Nikolay Borisov <nborisov@suse.com>
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> Reviewed-by: Filipe Manana <fdmanana@suse.com>
 > ---
-> We found this with a stress test that our containers team runs. I'm
-> wondering if this same race could have caused any other issues other
-> than this new iput thing, but I couldn't identify any.
+> Changelog:
+> v2:
+>   Update commit message to show this is a long existing bug.
+> v3:
+>   Remove an old comment since now we don't need to specify the leaf
+>   size.
+>   Added Reviewed-by tags.
+> ---
+>  tests/btrfs/057     | 18 ++++--------------
+>  tests/btrfs/057.out |  3 +--
+>  2 files changed, 5 insertions(+), 16 deletions(-)
 > 
->  fs/btrfs/disk-io.c | 40 +++++++---------------------------------
->  1 file changed, 7 insertions(+), 33 deletions(-)
-> 
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index b0ab41da91d1..7c17284ae3c2 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -1664,9 +1664,8 @@ static int cleaner_kthread(void *arg)
->  	struct btrfs_root *root = arg;
->  	struct btrfs_fs_info *fs_info = root->fs_info;
->  	int again;
-> -	struct btrfs_trans_handle *trans;
+> diff --git a/tests/btrfs/057 b/tests/btrfs/057
+> index b019f4e1e054..82e3162ebfeb 100755
+> --- a/tests/btrfs/057
+> +++ b/tests/btrfs/057
+> @@ -32,13 +32,9 @@ _require_scratch
 >  
-> -	do {
-> +	while (1) {
->  		again = 0;
+>  rm -f $seqres.full
 >  
->  		/* Make the cleaner go to sleep early. */
-> @@ -1715,42 +1714,16 @@ static int cleaner_kthread(void *arg)
->  		 */
->  		btrfs_delete_unused_bgs(fs_info);
->  sleep:
-> +		if (kthread_should_park())
-> +			kthread_parkme();
-> +		if (kthread_should_stop())
-> +			return 0;
->  		if (!again) {
->  			set_current_state(TASK_INTERRUPTIBLE);
-> -			if (!kthread_should_stop())
-> -				schedule();
-> +			schedule();
->  			__set_current_state(TASK_RUNNING);
->  		}
-> -	} while (!kthread_should_stop());
+> -# use small leaf size to get higher btree height.
+> -run_check _scratch_mkfs "-b 1g --nodesize 4096"
+> +run_check _scratch_mkfs "-b 1g"
+>  
+> -# inode cache is saved in the FS tree itself for every
+> -# individual FS tree,that affects the sizes reported by qgroup show
+> -# so we need to explicitly turn it off to get consistent values.
+> -_scratch_mount "-o noinode_cache"
+> +_scratch_mount
+>  
+>  # -w ensures that the only ops are ones which cause write I/O
+>  run_check $FSSTRESS_PROG -d $SCRATCH_MNT -w -p 5 -n 1000 \
+> @@ -53,14 +49,8 @@ run_check $FSSTRESS_PROG -d $SCRATCH_MNT/snap1 -w -p 5 -n 1000 \
+>  _run_btrfs_util_prog quota enable $SCRATCH_MNT
+>  _run_btrfs_util_prog quota rescan -w $SCRATCH_MNT
+>  
+> -# remove all file/dir other than subvolume
+> -rm -rf $SCRATCH_MNT/snap1/* >& /dev/null
+> -rm -rf $SCRATCH_MNT/p* >& /dev/null
 > -
-> -	/*
-> -	 * Transaction kthread is stopped before us and wakes us up.
-> -	 * However we might have started a new transaction and COWed some
-> -	 * tree blocks when deleting unused block groups for example. So
-> -	 * make sure we commit the transaction we started to have a clean
-> -	 * shutdown when evicting the btree inode - if it has dirty pages
-> -	 * when we do the final iput() on it, eviction will trigger a
-> -	 * writeback for it which will fail with null pointer dereferences
-> -	 * since work queues and other resources were already released and
-> -	 * destroyed by the time the iput/eviction/writeback is made.
-> -	 */
-> -	trans = btrfs_attach_transaction(root);
-> -	if (IS_ERR(trans)) {
-> -		if (PTR_ERR(trans) != -ENOENT)
-> -			btrfs_err(fs_info,
-> -				  "cleaner transaction attach returned %ld",
-> -				  PTR_ERR(trans));
-> -	} else {
-> -		int ret;
-> -
-> -		ret = btrfs_commit_transaction(trans);
-> -		if (ret)
-> -			btrfs_err(fs_info,
-> -				  "cleaner open transaction commit returned %d",
-> -				  ret);
->  	}
-> -
-> -	return 0;
->  }
+> -_run_btrfs_util_prog filesystem sync $SCRATCH_MNT
+> -units=`_btrfs_qgroup_units`
+> -$BTRFS_UTIL_PROG qgroup show $units $SCRATCH_MNT | $SED_PROG -n '/[0-9]/p' \
+> -	| $AWK_PROG '{print $2" "$3}'
+> +echo "Silence is golden"
+> +# btrfs check will detect any qgroup number mismatch.
 >  
->  static int transaction_kthread(void *arg)
-> @@ -3931,6 +3904,7 @@ void close_ctree(struct btrfs_fs_info *fs_info)
->  	int ret;
->  
->  	set_bit(BTRFS_FS_CLOSING_START, &fs_info->flags);
-> +	kthread_park(fs_info->cleaner_kthread);
-
-Can't you directly call kthread_stop here? When you park the thread it
-will sleep and then when you call kthread_stop that function will unpark
-the thread and the cleaner kthread will see KTHREAD_SHOULD_STOP bit and
-just return 0. So the from the moment the thread is parked until it's
-stopped it doesn't have a chance to do useful work.
-
->  
->  	/* wait for the qgroup rescan worker to stop */
->  	btrfs_qgroup_wait_for_completion(fs_info, false);
+>  status=0
+>  exit
+> diff --git a/tests/btrfs/057.out b/tests/btrfs/057.out
+> index 60cb92d0926c..185023c79961 100644
+> --- a/tests/btrfs/057.out
+> +++ b/tests/btrfs/057.out
+> @@ -1,3 +1,2 @@
+>  QA output created by 057
+> -4096 4096
+> -4096 4096
+> +Silence is golden
 > 

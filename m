@@ -2,78 +2,60 @@ Return-Path: <SRS0=X8W1=NL=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.3 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DF341C0044C
-	for <linux-btrfs@archiver.kernel.org>; Wed, 31 Oct 2018 12:07:49 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A7F67C0044C
+	for <linux-btrfs@archiver.kernel.org>; Wed, 31 Oct 2018 15:45:17 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id C6DAB2064C
-	for <linux-btrfs@archiver.kernel.org>; Wed, 31 Oct 2018 12:07:48 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org C6DAB2064C
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=rus.uni-stuttgart.de
+	by mail.kernel.org (Postfix) with ESMTP id 65C342080A
+	for <linux-btrfs@archiver.kernel.org>; Wed, 31 Oct 2018 15:45:17 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 65C342080A
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728545AbeJaVFc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 31 Oct 2018 17:05:32 -0400
-Received: from smtp02.belwue.de ([129.143.71.87]:53648 "EHLO smtp02.belwue.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725897AbeJaVFc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 31 Oct 2018 17:05:32 -0400
-Received: from fex.rus.uni-stuttgart.de (fex.rus.uni-stuttgart.de [129.69.1.129])
-        by smtp02.belwue.de (Postfix) with SMTP id D470665F9
-        for <linux-btrfs@vger.kernel.org>; Wed, 31 Oct 2018 13:07:44 +0100 (MET)
-Date:   Wed, 31 Oct 2018 13:07:44 +0100
-From:   Ulli Horlacher <framstag@rus.uni-stuttgart.de>
-To:     linux-btrfs@vger.kernel.org
-Subject: Re: Understanding "btrfs filesystem usage"
-Message-ID: <20181031120744.GA4990@rus.uni-stuttgart.de>
-Mail-Followup-To: linux-btrfs@vger.kernel.org
-References: <20181029181141.GA31256@rus.uni-stuttgart.de>
- <85a63523-7e77-f4ca-9947-2c957c5c577a@georgianit.com>
- <20181030161003.GA25765@rus.uni-stuttgart.de>
+        id S1729615AbeKAAns (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 31 Oct 2018 20:43:48 -0400
+Received: from mx2.suse.de ([195.135.220.15]:49552 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1727623AbeKAAns (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 31 Oct 2018 20:43:48 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 27744B060;
+        Wed, 31 Oct 2018 15:45:14 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 54D50DAB9E; Wed, 31 Oct 2018 16:45:02 +0100 (CET)
+Date:   Wed, 31 Oct 2018 16:45:02 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     Phillip Potter <phil@philpotter.co.uk>
+Cc:     clm@fb.com, jbacik@fb.com, amir73il@gmail.com,
+        linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+        viro@zeniv.linux.org.uk
+Subject: Re: [RFC][PATCH v3 10/10] btrfs: use common file type conversion
+Message-ID: <20181031154501.GI9136@suse.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Phillip Potter <phil@philpotter.co.uk>,
+        clm@fb.com, jbacik@fb.com, amir73il@gmail.com,
+        linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+        viro@zeniv.linux.org.uk
+References: <20181027005331.GA9924@pathfinder>
+ <20181027005348.GA9996@pathfinder>
+ <20181030190317.GH9136@twin.jikos.cz>
+ <20181031092231.GC19486@pathfinder>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20181030161003.GA25765@rus.uni-stuttgart.de>
-User-Agent: Mutt/1.5.23 (2014-03-12)
+In-Reply-To: <20181031092231.GC19486@pathfinder>
+User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue 2018-10-30 (17:10), Ulli Horlacher wrote:
-> 
-> On Mon 2018-10-29 (17:57), Remi Gauvin wrote:
-> 
-> > On 2018-10-29 02:11 PM, Ulli Horlacher wrote:
-> > 
-> > > I want to know how many free space is left and have problems in
-> > > interpreting the output of: 
-> > > 
-> > > btrfs filesystem usage
-> > > btrfs filesystem df
-> > > btrfs filesystem show
-> > 
-> > In my not so humble opinion, the filesystem usage command has the
-> > easiest to understand output.  It' lays out all the pertinent information.
-> > 
-> > You can clearly see 825GiB is allocated, with 494GiB used, therefore,
-> > filesystem show is actually using the "Allocated" value as "Used".
-> > Allocated can be thought of "Reserved For".
-> 
-> And what is "Device unallocated"? Not reserved?
+On Wed, Oct 31, 2018 at 09:22:31AM +0000, Phillip Potter wrote:
+> Thanks for this - are you happy for me to move the compile-time tests as per
+> Amir's suggestion?
 
-The answer is in the FAQ and I am stupid not to looked at it, first :-}
-
-https://btrfs.wiki.kernel.org/index.php/FAQ#How_much_free_space_do_I_have.3F
-
-
--- 
-Ullrich Horlacher              Server und Virtualisierung
-Rechenzentrum TIK         
-Universitaet Stuttgart         E-Mail: horlacher@tik.uni-stuttgart.de
-Allmandring 30a                Tel:    ++49-711-68565868
-70569 Stuttgart (Germany)      WWW:    http://www.tik.uni-stuttgart.de/
-REF:<20181030161003.GA25765@rus.uni-stuttgart.de>
+Yes that's ok.

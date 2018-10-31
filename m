@@ -2,48 +2,48 @@ Return-Path: <SRS0=X8W1=NL=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.3 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-9.3 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E97F9C0044C
-	for <linux-btrfs@archiver.kernel.org>; Wed, 31 Oct 2018 17:56:40 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EB395ECDE44
+	for <linux-btrfs@archiver.kernel.org>; Wed, 31 Oct 2018 17:58:02 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 8E2AB2080A
-	for <linux-btrfs@archiver.kernel.org>; Wed, 31 Oct 2018 17:56:40 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9B2E92080A
+	for <linux-btrfs@archiver.kernel.org>; Wed, 31 Oct 2018 17:58:02 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=fb.com header.i=@fb.com header.b="hPuX2gfs"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 8E2AB2080A
+	dkim=pass (1024-bit key) header.d=fb.com header.i=@fb.com header.b="RD2kkia7"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 9B2E92080A
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=fb.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729656AbeKACzm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 31 Oct 2018 22:55:42 -0400
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:33890 "EHLO
-        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1729477AbeKACzl (ORCPT
+        id S1729930AbeKAC5E (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 31 Oct 2018 22:57:04 -0400
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:39366 "EHLO
+        mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1729477AbeKAC5E (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 31 Oct 2018 22:55:41 -0400
-Received: from pps.filterd (m0044010.ppops.net [127.0.0.1])
-        by mx0a-00082601.pphosted.com (8.16.0.22/8.16.0.22) with SMTP id w9VHkRCY017329
-        for <linux-btrfs@vger.kernel.org>; Wed, 31 Oct 2018 10:56:38 -0700
+        Wed, 31 Oct 2018 22:57:04 -0400
+Received: from pps.filterd (m0148460.ppops.net [127.0.0.1])
+        by mx0a-00082601.pphosted.com (8.16.0.22/8.16.0.22) with SMTP id w9VHmrUe027347
+        for <linux-btrfs@vger.kernel.org>; Wed, 31 Oct 2018 10:57:59 -0700
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=fb.com; h=from : to : cc : subject
- : date : message-id : mime-version : content-type; s=facebook;
- bh=LjLY+HfGn+GHp4csOSGRf6XSZzdTsLLz39FeWev8o7M=;
- b=hPuX2gfsfCPpuO7TwT0FPS/asyd9pAMtQomcj0lU9JkOnkQRA8UcMJdP0+feu/zz8JU+
- 7aMhpJmRsnVLPbhVH+dqhKoqmT0j5nV79eqDTBWQcrpz/IFKAv7/NOyyNBkymUlryRQR
- P4/65LYRibLg7vJtz+Alico7YM5rEJIUeJY= 
+ : date : message-id : in-reply-to : references : mime-version :
+ content-type; s=facebook; bh=i/MCAFirotAhCJoOAjqMnfd831tRpbDHiiuPEotnuuY=;
+ b=RD2kkia7PenrPhF/+o96+WgVqZEEZBKP5ji6EdqFSlBeB1OD8yxRiivBcTLQJY8UJ5IQ
+ t0mYXh03YXbG4jEyQl3j++dXDLa+kS1XPG2TfXIIYFbnaXhSum6sRtmBX5D2juZ6SpqA
+ 6OGoSPQASoBecOu3SMy4a3hVJ6GyUKmUH1M= 
 Received: from maileast.thefacebook.com ([199.201.65.23])
-        by mx0a-00082601.pphosted.com with ESMTP id 2nffa60djn-4
+        by mx0a-00082601.pphosted.com with ESMTP id 2nfe82gq9x-2
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-SHA384 bits=256 verify=NOT)
-        for <linux-btrfs@vger.kernel.org>; Wed, 31 Oct 2018 10:56:38 -0700
+        for <linux-btrfs@vger.kernel.org>; Wed, 31 Oct 2018 10:57:59 -0700
 Received: from mx-out.facebook.com (2620:10d:c0a1:3::13) by
- mail.thefacebook.com (2620:10d:c021:18::172) with Microsoft SMTP Server
+ mail.thefacebook.com (2620:10d:c021:18::175) with Microsoft SMTP Server
  (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA) id 15.1.1531.3;
- Wed, 31 Oct 2018 10:56:35 -0700
+ Wed, 31 Oct 2018 10:57:59 -0700
 Received: by devvm3802.prn3.facebook.com (Postfix, from userid 32154)
-        id 0989025B87BC; Wed, 31 Oct 2018 10:56:26 -0700 (PDT)
+        id 20EB825C1CA2; Wed, 31 Oct 2018 10:57:55 -0700 (PDT)
 Smtp-Origin-Hostprefix: devvm
 From:   Nick Terrell <terrelln@fb.com>
 Smtp-Origin-Hostname: devvm3802.prn3.facebook.com
@@ -52,10 +52,12 @@ CC:     David Sterba <dsterba@suse.cz>, <kernel-team@fb.com>,
         <linux-btrfs@vger.kernel.org>, <grub-devel@gnu.org>,
         Daniel Kiper <dkiper@net-space.pl>
 Smtp-Origin-Cluster: prn3c11
-Subject: [PATCH v4 0/2] btrfs: Add zstd support to grub btrfs
-Date:   Wed, 31 Oct 2018 10:56:15 -0700
-Message-ID: <20181031175617.230241-1-terrelln@fb.com>
+Subject: [PATCH v4 2/2] btrfs: Add zstd support to grub btrfs
+Date:   Wed, 31 Oct 2018 10:56:17 -0700
+Message-ID: <20181031175617.230241-3-terrelln@fb.com>
 X-Mailer: git-send-email 2.17.1
+In-Reply-To: <20181031175617.230241-1-terrelln@fb.com>
+References: <20181031175617.230241-1-terrelln@fb.com>
 X-FB-Internal: Safe
 MIME-Version: 1.0
 Content-Type: text/plain
@@ -68,111 +70,264 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi all,
+Adds zstd support to the btrfs module.
 
-This patch set imports the upstream zstd library, adds zstd support to the
-btrfs module, and adds a test case. I've also tested the patch set by storing
-my boot partition in btrfs with and without zstd compression and rebooting.
+Tested on Ubuntu-18.04 with a btrfs /boot partition with and without zstd
+compression. A test case was also added to the test suite that fails before
+the patch, and passes after.
 
-The fist patch imports the files needed to support zstd decompression from
-zstd-1.3.6 as-is. It is a very large patch. In case it doesn't make it,
-I've included the commit hash and the script I used to download the files.
-
-Upstream zstd commit hash: 4fa456d7f12f8b27bd3b2f5dfd4f46898cb31c24
-Upstream zstd commit name: Merge pull request #1354 from facebook/dev
-
-```
-#!/bin/sh -e
-
-curl -L -O https://github.com/facebook/zstd/releases/download/v1.3.6/zstd-1.3.6.tar.gz
-curl -L -O https://github.com/facebook/zstd/releases/download/v1.3.6/zstd-1.3.6.tar.gz.sha256
-sha256sum --check zstd-1.3.6.tar.gz.sha256
-tar xzf zstd-1.3.6.tar.gz
-
-SRC_LIB="zstd-1.3.6/lib"
-DST_LIB="grub-core/lib/zstd"
-rm -rf $DST_LIB
-mkdir -p $DST_LIB
-cp $SRC_LIB/zstd.h $DST_LIB/
-cp $SRC_LIB/common/*.[hc] $DST_LIB/
-cp $SRC_LIB/decompress/*.[hc] $DST_LIB/
-rm $DST_LIB/{pool.[hc],threading.[hc]}
-rm -rf zstd-1.3.6*
-echo SUCCESS!
-```
-
-Best,
-Nick Terrell
-
-Changelog:
-
+Signed-off-by: Nick Terrell <terrelln@fb.com>
+---
 v1 -> v2:
-- Switch to upstream zstd-1.3.6 and drop all the local patches.
 - Fix comments from Daniel Kiper.
 
 v2 -> v3:
-- Remove an extra file accidentally included in the first patch.
 - Use grub_error() to set grub_errno in grub_btrfs_zstd_decompress().
 - Fix style and formatting comments.
 
 v3 -> v4:
-- Put zstd in its own module.
-- Update commit messages.
 - Use attribute unused.
-- Rebase on top of RAID patchset.
 
-Nick Terrell (2):
-  Import upstream zstd-1.3.6
-  btrfs: Add zstd support to grub btrfs
+ Makefile.util.def            |  10 +++-
+ grub-core/Makefile.core.def  |   2 +-
+ grub-core/fs/btrfs.c         | 108 ++++++++++++++++++++++++++++++++++-
+ tests/btrfs_test.in          |   1 +
+ tests/util/grub-fs-tester.in |   2 +-
+ 5 files changed, 119 insertions(+), 4 deletions(-)
 
- Makefile.util.def                    |   10 +-
- grub-core/Makefile.core.def          |   17 +-
- grub-core/fs/btrfs.c                 |  108 +-
- grub-core/lib/zstd/bitstream.h       |  458 ++++
- grub-core/lib/zstd/compiler.h        |  133 ++
- grub-core/lib/zstd/cpu.h             |  215 ++
- grub-core/lib/zstd/debug.c           |   44 +
- grub-core/lib/zstd/debug.h           |  123 +
- grub-core/lib/zstd/entropy_common.c  |  236 ++
- grub-core/lib/zstd/error_private.c   |   48 +
- grub-core/lib/zstd/error_private.h   |   76 +
- grub-core/lib/zstd/fse.h             |  708 ++++++
- grub-core/lib/zstd/fse_decompress.c  |  309 +++
- grub-core/lib/zstd/huf.h             |  334 +++
- grub-core/lib/zstd/huf_decompress.c  | 1096 +++++++++
- grub-core/lib/zstd/mem.h             |  374 ++++
- grub-core/lib/zstd/module.c          |    3 +
- grub-core/lib/zstd/xxhash.c          |  876 ++++++++
- grub-core/lib/zstd/xxhash.h          |  305 +++
- grub-core/lib/zstd/zstd.h            | 1516 +++++++++++++
- grub-core/lib/zstd/zstd_common.c     |   81 +
- grub-core/lib/zstd/zstd_decompress.c | 3108 ++++++++++++++++++++++++++
- grub-core/lib/zstd/zstd_errors.h     |   92 +
- grub-core/lib/zstd/zstd_internal.h   |  257 +++
- tests/btrfs_test.in                  |    1 +
- tests/util/grub-fs-tester.in         |    2 +-
- 26 files changed, 10526 insertions(+), 4 deletions(-)
- create mode 100644 grub-core/lib/zstd/bitstream.h
- create mode 100644 grub-core/lib/zstd/compiler.h
- create mode 100644 grub-core/lib/zstd/cpu.h
- create mode 100644 grub-core/lib/zstd/debug.c
- create mode 100644 grub-core/lib/zstd/debug.h
- create mode 100644 grub-core/lib/zstd/entropy_common.c
- create mode 100644 grub-core/lib/zstd/error_private.c
- create mode 100644 grub-core/lib/zstd/error_private.h
- create mode 100644 grub-core/lib/zstd/fse.h
- create mode 100644 grub-core/lib/zstd/fse_decompress.c
- create mode 100644 grub-core/lib/zstd/huf.h
- create mode 100644 grub-core/lib/zstd/huf_decompress.c
- create mode 100644 grub-core/lib/zstd/mem.h
- create mode 100644 grub-core/lib/zstd/module.c
- create mode 100644 grub-core/lib/zstd/xxhash.c
- create mode 100644 grub-core/lib/zstd/xxhash.h
- create mode 100644 grub-core/lib/zstd/zstd.h
- create mode 100644 grub-core/lib/zstd/zstd_common.c
- create mode 100644 grub-core/lib/zstd/zstd_decompress.c
- create mode 100644 grub-core/lib/zstd/zstd_errors.h
- create mode 100644 grub-core/lib/zstd/zstd_internal.h
+diff --git a/Makefile.util.def b/Makefile.util.def
+index 9ae45f351..3ce9388ae 100644
+--- a/Makefile.util.def
++++ b/Makefile.util.def
+@@ -54,7 +54,7 @@ library = {
+ library = {
+   name = libgrubmods.a;
+   cflags = '-fno-builtin -Wno-undef';
+-  cppflags = '-I$(top_srcdir)/grub-core/lib/minilzo -I$(srcdir)/grub-core/lib/xzembed -DMINILZO_HAVE_CONFIG_H';
++  cppflags = '-I$(srcdir)/grub-core/lib/minilzo -I$(srcdir)/grub-core/lib/xzembed -I$(srcdir)/grub-core/lib/zstd -DMINILZO_HAVE_CONFIG_H';
 
+   common_nodist = grub_script.tab.c;
+   common_nodist = grub_script.yy.c;
+@@ -165,6 +165,14 @@ library = {
+   common = grub-core/lib/xzembed/xz_dec_bcj.c;
+   common = grub-core/lib/xzembed/xz_dec_lzma2.c;
+   common = grub-core/lib/xzembed/xz_dec_stream.c;
++  common = grub-core/lib/zstd/debug.c;
++  common = grub-core/lib/zstd/entropy_common.c;
++  common = grub-core/lib/zstd/error_private.c;
++  common = grub-core/lib/zstd/fse_decompress.c;
++  common = grub-core/lib/zstd/huf_decompress.c;
++  common = grub-core/lib/zstd/xxhash.c;
++  common = grub-core/lib/zstd/zstd_common.c;
++  common = grub-core/lib/zstd/zstd_decompress.c;
+ };
+
+ program = {
+diff --git a/grub-core/Makefile.core.def b/grub-core/Makefile.core.def
+index 540a31f78..b09319328 100644
+--- a/grub-core/Makefile.core.def
++++ b/grub-core/Makefile.core.def
+@@ -1280,7 +1280,7 @@ module = {
+   common = fs/btrfs.c;
+   common = lib/crc.c;
+   cflags = '$(CFLAGS_POSIX) -Wno-undef';
+-  cppflags = '-I$(srcdir)/lib/posix_wrap -I$(srcdir)/lib/minilzo -DMINILZO_HAVE_CONFIG_H';
++  cppflags = '-I$(srcdir)/lib/posix_wrap -I$(srcdir)/lib/minilzo -I$(srcdir)/lib/zstd -DMINILZO_HAVE_CONFIG_H';
+ };
+
+ module = {
+diff --git a/grub-core/fs/btrfs.c b/grub-core/fs/btrfs.c
+index cac9ef588..8cfb997c5 100644
+--- a/grub-core/fs/btrfs.c
++++ b/grub-core/fs/btrfs.c
+@@ -17,6 +17,8 @@
+  *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>.
+  */
+
++#define ZSTD_STATIC_LINKING_ONLY
++
+ #include <grub/err.h>
+ #include <grub/file.h>
+ #include <grub/mm.h>
+@@ -27,6 +29,7 @@
+ #include <grub/lib/crc.h>
+ #include <grub/deflate.h>
+ #include <minilzo.h>
++#include <zstd.h>
+ #include <grub/i18n.h>
+ #include <grub/btrfs.h>
+ #include <grub/crypto.h>
+@@ -47,6 +50,9 @@ GRUB_MOD_LICENSE ("GPLv3+");
+ #define GRUB_BTRFS_LZO_BLOCK_MAX_CSIZE (GRUB_BTRFS_LZO_BLOCK_SIZE + \
+ 				     (GRUB_BTRFS_LZO_BLOCK_SIZE / 16) + 64 + 3)
+
++#define ZSTD_BTRFS_MAX_WINDOWLOG 17
++#define ZSTD_BTRFS_MAX_INPUT     (1 << ZSTD_BTRFS_MAX_WINDOWLOG)
++
+ typedef grub_uint8_t grub_btrfs_checksum_t[0x20];
+ typedef grub_uint16_t grub_btrfs_uuid_t[8];
+
+@@ -217,6 +223,7 @@ struct grub_btrfs_extent_data
+ #define GRUB_BTRFS_COMPRESSION_NONE 0
+ #define GRUB_BTRFS_COMPRESSION_ZLIB 1
+ #define GRUB_BTRFS_COMPRESSION_LZO  2
++#define GRUB_BTRFS_COMPRESSION_ZSTD 3
+
+ #define GRUB_BTRFS_OBJECT_ID_CHUNK 0x100
+
+@@ -1216,6 +1223,91 @@ grub_btrfs_read_inode (struct grub_btrfs_data *data,
+   return grub_btrfs_read_logical (data, elemaddr, inode, sizeof (*inode), 0);
+ }
+
++static void* grub_zstd_malloc (void* state __attribute__((unused)), size_t size)
++{
++	return grub_malloc (size);
++}
++
++static void grub_zstd_free (void* state __attribute__((unused)), void* address)
++{
++	return grub_free (address);
++}
++
++static ZSTD_customMem grub_zstd_allocator (void)
++{
++	ZSTD_customMem allocator;
++
++	allocator.customAlloc = &grub_zstd_malloc;
++	allocator.customFree = &grub_zstd_free;
++	allocator.opaque = NULL;
++
++	return allocator;
++}
++
++static grub_ssize_t
++grub_btrfs_zstd_decompress (char *ibuf, grub_size_t isize, grub_off_t off,
++			    char *obuf, grub_size_t osize)
++{
++	void *allocated = NULL;
++	char *otmpbuf = obuf;
++	grub_size_t otmpsize = osize;
++	ZSTD_DCtx *dctx = NULL;
++	grub_size_t zstd_ret;
++	grub_ssize_t ret = -1;
++
++	/*
++	 * Zstd will fail if it can't fit the entire output in the destination
++	 * buffer, so if osize isn't large enough, allocate a temporary buffer.
++	 */
++	if (otmpsize < ZSTD_BTRFS_MAX_INPUT) {
++		allocated = grub_malloc (ZSTD_BTRFS_MAX_INPUT);
++		if (!allocated) {
++			goto err;
++		}
++		otmpbuf = (char*)allocated;
++		otmpsize = ZSTD_BTRFS_MAX_INPUT;
++	}
++
++	/* Create the ZSTD_DCtx. */
++	dctx = ZSTD_createDCtx_advanced (grub_zstd_allocator ());
++	if (!dctx) {
++		grub_error (GRUB_ERR_OUT_OF_MEMORY, "zstd out of memory");
++		goto err;
++	}
++
++	/*
++	 * Get the real input size, there may be junk at the
++	 * end of the frame.
++	 */
++	isize = ZSTD_findFrameCompressedSize (ibuf, isize);
++	if (ZSTD_isError (isize)) {
++		grub_error (GRUB_ERR_BAD_COMPRESSED_DATA,
++			    "zstd data corrupted");
++		goto err;
++	}
++
++	/* Decompress and check for errors. */
++	zstd_ret = ZSTD_decompressDCtx (dctx, otmpbuf, otmpsize, ibuf, isize);
++	if (ZSTD_isError (zstd_ret)) {
++		grub_error (GRUB_ERR_BAD_COMPRESSED_DATA,
++			    "zstd data corrupted");
++		goto err;
++	}
++
++	/*
++	 * Move the requested data into the obuf. obuf may be equal
++	 * to otmpbuf, which is why grub_memmove() is required.
++	 */
++	grub_memmove (obuf, otmpbuf + off, osize);
++	ret = osize;
++
++err:
++	grub_free (allocated);
++	ZSTD_freeDCtx (dctx);
++
++	return ret;
++}
++
+ static grub_ssize_t
+ grub_btrfs_lzo_decompress(char *ibuf, grub_size_t isize, grub_off_t off,
+ 			  char *obuf, grub_size_t osize)
+@@ -1391,7 +1483,8 @@ grub_btrfs_extent_read (struct grub_btrfs_data *data,
+
+       if (data->extent->compression != GRUB_BTRFS_COMPRESSION_NONE
+ 	  && data->extent->compression != GRUB_BTRFS_COMPRESSION_ZLIB
+-	  && data->extent->compression != GRUB_BTRFS_COMPRESSION_LZO)
++	  && data->extent->compression != GRUB_BTRFS_COMPRESSION_LZO
++	  && data->extent->compression != GRUB_BTRFS_COMPRESSION_ZSTD)
+ 	{
+ 	  grub_error (GRUB_ERR_NOT_IMPLEMENTED_YET,
+ 		      "compression type 0x%x not supported",
+@@ -1431,6 +1524,15 @@ grub_btrfs_extent_read (struct grub_btrfs_data *data,
+ 		  != (grub_ssize_t) csize)
+ 		return -1;
+ 	    }
++	  else if (data->extent->compression == GRUB_BTRFS_COMPRESSION_ZSTD)
++	    {
++	      if (grub_btrfs_zstd_decompress(data->extent->inl, data->extsize -
++					     ((grub_uint8_t *) data->extent->inl
++					      - (grub_uint8_t *) data->extent),
++					     extoff, buf, csize)
++		  != (grub_ssize_t) csize)
++		return -1;
++	    }
+ 	  else
+ 	    grub_memcpy (buf, data->extent->inl + extoff, csize);
+ 	  break;
+@@ -1468,6 +1570,10 @@ grub_btrfs_extent_read (struct grub_btrfs_data *data,
+ 		ret = grub_btrfs_lzo_decompress (tmp, zsize, extoff
+ 				    + grub_le_to_cpu64 (data->extent->offset),
+ 				    buf, csize);
++	      else if (data->extent->compression == GRUB_BTRFS_COMPRESSION_ZSTD)
++		ret = grub_btrfs_zstd_decompress (tmp, zsize, extoff
++				    + grub_le_to_cpu64 (data->extent->offset),
++				    buf, csize);
+ 	      else
+ 		ret = -1;
+
+diff --git a/tests/btrfs_test.in b/tests/btrfs_test.in
+index 2b37ddd33..0c9bf3a68 100644
+--- a/tests/btrfs_test.in
++++ b/tests/btrfs_test.in
+@@ -18,6 +18,7 @@ fi
+ "@builddir@/grub-fs-tester" btrfs
+ "@builddir@/grub-fs-tester" btrfs_zlib
+ "@builddir@/grub-fs-tester" btrfs_lzo
++"@builddir@/grub-fs-tester" btrfs_zstd
+ "@builddir@/grub-fs-tester" btrfs_raid0
+ "@builddir@/grub-fs-tester" btrfs_raid1
+ "@builddir@/grub-fs-tester" btrfs_single
+diff --git a/tests/util/grub-fs-tester.in b/tests/util/grub-fs-tester.in
+index ef65fbc93..bc14a05ca 100644
+--- a/tests/util/grub-fs-tester.in
++++ b/tests/util/grub-fs-tester.in
+@@ -629,7 +629,7 @@ for LOGSECSIZE in $(range "$MINLOGSECSIZE" "$MAXLOGSECSIZE" 1); do
+ 		    ;;
+ 		x"btrfs")
+ 		    "mkfs.btrfs" -s $SECSIZE -L "$FSLABEL" "${MOUNTDEVICE}" ;;
+-		x"btrfs_zlib" | x"btrfs_lzo")
++		x"btrfs_zlib" | x"btrfs_lzo" | x"btrfs_zstd")
+ 		    "mkfs.btrfs" -s $SECSIZE -L "$FSLABEL" "${MOUNTDEVICE}"
+ 		    MOUNTOPTS="compress=${fs/btrfs_/},"
+ 		    MOUNTFS="btrfs"
 --
 2.17.1

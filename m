@@ -2,36 +2,33 @@ Return-Path: <SRS0=X8W1=NL=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D7430C0044C
-	for <linux-btrfs@archiver.kernel.org>; Wed, 31 Oct 2018 08:38:50 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0DA59C0044C
+	for <linux-btrfs@archiver.kernel.org>; Wed, 31 Oct 2018 09:01:06 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 924372080A
-	for <linux-btrfs@archiver.kernel.org>; Wed, 31 Oct 2018 08:38:50 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 924372080A
+	by mail.kernel.org (Postfix) with ESMTP id C9F5220685
+	for <linux-btrfs@archiver.kernel.org>; Wed, 31 Oct 2018 09:01:05 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org C9F5220685
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727427AbeJaRf6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 31 Oct 2018 13:35:58 -0400
-Received: from mx2.suse.de ([195.135.220.15]:49238 "EHLO mx1.suse.de"
+        id S1727610AbeJaR6R (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 31 Oct 2018 13:58:17 -0400
+Received: from mx2.suse.de ([195.135.220.15]:52734 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725955AbeJaRf5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 31 Oct 2018 13:35:57 -0400
+        id S1727020AbeJaR6R (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 31 Oct 2018 13:58:17 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 3227B53F61;
-        Wed, 31 Oct 2018 08:38:47 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 5794B54035;
+        Wed, 31 Oct 2018 09:01:02 +0000 (UTC)
 Subject: Re: [PATCH] Btrfs: fix missing delayed iputs on unmount
-To:     Lu Fengqi <lufq.fnst@cn.fujitsu.com>,
-        Omar Sandoval <osandov@osandov.com>
-Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
+To:     Omar Sandoval <osandov@osandov.com>, linux-btrfs@vger.kernel.org
+Cc:     kernel-team@fb.com
 References: <9b8c7d1ce662d216cf29ffcb756d177b0bf60b64.1540944854.git.osandov@fb.com>
- <20181031071409.GA2656@fnst.localdomain>
- <6a169410-8b78-36d4-f103-bb72468a5da4@gmail.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -76,12 +73,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  KIuxEcV8wcVjr+Wr9zRl06waOCkgrQbTPp631hToxo+4rA1jiQF2M80HAet65ytBVR2pFGZF
  zGYYLqiG+mpUZ+FPjxk9kpkRYz61mTLSY7tuFljExfJWMGfgSg1OxfLV631jV1TcdUnx+h3l
  Sqs2vMhAVt14zT8mpIuu2VNxcontxgVr1kzYA/tQg32fVRbGr449j1gw57BV9i0vww==
-Message-ID: <1b76aac9-04ab-4b65-e6bb-e873e60cf7bc@suse.com>
-Date:   Wed, 31 Oct 2018 10:38:44 +0200
+Message-ID: <4817ac90-a79d-c258-96e1-f1108cfe7225@suse.com>
+Date:   Wed, 31 Oct 2018 10:43:02 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <6a169410-8b78-36d4-f103-bb72468a5da4@gmail.com>
+In-Reply-To: <9b8c7d1ce662d216cf29ffcb756d177b0bf60b64.1540944854.git.osandov@fb.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -92,64 +89,112 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 31.10.18 г. 10:26 ч., Nikolay Borisov wrote:
+On 31.10.18 г. 2:14 ч., Omar Sandoval wrote:
+> From: Omar Sandoval <osandov@fb.com>
 > 
+> There's a race between close_ctree() and cleaner_kthread().
+> close_ctree() sets btrfs_fs_closing(), and the cleaner stops when it
+> sees it set, but this is racy; the cleaner might have already checked
+> the bit and could be cleaning stuff. In particular, if it deletes unused
+> block groups, it will create delayed iputs for the free space cache
+> inodes. As of "btrfs: don't run delayed_iputs in commit", we're no
+> longer running delayed iputs after a commit. Therefore, if the cleaner
+> creates more delayed iputs after delayed iputs are run in
+> btrfs_commit_super(), we will leak inodes on unmount and get a busy
+> inode crash from the VFS.
 > 
-> On 31.10.18 г. 9:14 ч., Lu Fengqi wrote:
->> On Tue, Oct 30, 2018 at 05:14:42PM -0700, Omar Sandoval wrote:
->>> From: Omar Sandoval <osandov@fb.com>
->>>
->>> There's a race between close_ctree() and cleaner_kthread().
->>> close_ctree() sets btrfs_fs_closing(), and the cleaner stops when it
->>> sees it set, but this is racy; the cleaner might have already checked
->>> the bit and could be cleaning stuff. In particular, if it deletes unused
->>> block groups, it will create delayed iputs for the free space cache
->>> inodes. As of "btrfs: don't run delayed_iputs in commit", we're no
->>> longer running delayed iputs after a commit. Therefore, if the cleaner
->>> creates more delayed iputs after delayed iputs are run in
->>> btrfs_commit_super(), we will leak inodes on unmount and get a busy
->>> inode crash from the VFS.
->>>
->>> Fix it by parking the cleaner before we actually close anything. Then,
->>> any remaining delayed iputs will always be handled in
->>> btrfs_commit_super(). This also ensures that the commit in close_ctree()
->>> is really the last commit, so we can get rid of the commit in
->>> cleaner_kthread().
->>>
->>> Fixes: 30928e9baac2 ("btrfs: don't run delayed_iputs in commit")
->>> Signed-off-by: Omar Sandoval <osandov@fb.com>
->>> ---
->>> We found this with a stress test that our containers team runs. I'm
->>> wondering if this same race could have caused any other issues other
->>> than this new iput thing, but I couldn't identify any.
->>
->> I noticed an inode leak issue in generic/475, but whether dropping commit
->> 30928e9baac2 ("btrfs: don't run delayed_iputs in commit") or applying
->> this patch, the issue still exists.
->>
->> I have attached the dmesg.
+> Fix it by parking the cleaner before we actually close anything. Then,
+> any remaining delayed iputs will always be handled in
+> btrfs_commit_super(). This also ensures that the commit in close_ctree()
+> is really the last commit, so we can get rid of the commit in
+> cleaner_kthread().
 > 
-> Are you able to trigger this reliably i.e 100% or just, say, 80-90% of
-> the time? If it's sporadic (but frequent) then it is likely an issue
-> with error handling. Also looking at the log I see:
+> Fixes: 30928e9baac2 ("btrfs: don't run delayed_iputs in commit")
+> Signed-off-by: Omar Sandoval <osandov@fb.com>
+> ---
+> We found this with a stress test that our containers team runs. I'm
+> wondering if this same race could have caused any other issues other
+> than this new iput thing, but I couldn't identify any.
 > 
-> [  367.977998] BTRFS info (device dm-3): at unmount delalloc count 8192
+>  fs/btrfs/disk-io.c | 40 +++++++---------------------------------
+>  1 file changed, 7 insertions(+), 33 deletions(-)
 > 
-> Meaning we are leaking 8k of delalloc space which should have been
-> cleaned up. And the warn is caused because we have an inode in the inode
-> rb tree. I will suggest that you patch btrfs_free_fs_root to print the
-> ino's if root->inode_tree is not empty. That way you can see if the inos
-> correspond to a data file or a freespace ino. But given btrfs free_fs
-> also complains of delaloc bytes I'd be willing to say it's data inodes.
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index b0ab41da91d1..7c17284ae3c2 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -1664,9 +1664,8 @@ static int cleaner_kthread(void *arg)
+>  	struct btrfs_root *root = arg;
+>  	struct btrfs_fs_info *fs_info = root->fs_info;
+>  	int again;
+> -	struct btrfs_trans_handle *trans;
+>  
+> -	do {
+> +	while (1) {
+>  		again = 0;
+>  
+>  		/* Make the cleaner go to sleep early. */
+> @@ -1715,42 +1714,16 @@ static int cleaner_kthread(void *arg)
+>  		 */
+>  		btrfs_delete_unused_bgs(fs_info);
+>  sleep:
+> +		if (kthread_should_park())
+> +			kthread_parkme();
+> +		if (kthread_should_stop())
+> +			return 0;
+>  		if (!again) {
+>  			set_current_state(TASK_INTERRUPTIBLE);
+> -			if (!kthread_should_stop())
+> -				schedule();
+> +			schedule();
+>  			__set_current_state(TASK_RUNNING);
+>  		}
+> -	} while (!kthread_should_stop());
+> -
+> -	/*
+> -	 * Transaction kthread is stopped before us and wakes us up.
+> -	 * However we might have started a new transaction and COWed some
+> -	 * tree blocks when deleting unused block groups for example. So
+> -	 * make sure we commit the transaction we started to have a clean
+> -	 * shutdown when evicting the btree inode - if it has dirty pages
+> -	 * when we do the final iput() on it, eviction will trigger a
+> -	 * writeback for it which will fail with null pointer dereferences
+> -	 * since work queues and other resources were already released and
+> -	 * destroyed by the time the iput/eviction/writeback is made.
+> -	 */
+> -	trans = btrfs_attach_transaction(root);
+> -	if (IS_ERR(trans)) {
+> -		if (PTR_ERR(trans) != -ENOENT)
+> -			btrfs_err(fs_info,
+> -				  "cleaner transaction attach returned %ld",
+> -				  PTR_ERR(trans));
+> -	} else {
+> -		int ret;
+> -
+> -		ret = btrfs_commit_transaction(trans);
+> -		if (ret)
+> -			btrfs_err(fs_info,
+> -				  "cleaner open transaction commit returned %d",
+> -				  ret);
+>  	}
+> -
+> -	return 0;
+>  }
+>  
+>  static int transaction_kthread(void *arg)
+> @@ -3931,6 +3904,7 @@ void close_ctree(struct btrfs_fs_info *fs_info)
+>  	int ret;
+>  
+>  	set_bit(BTRFS_FS_CLOSING_START, &fs_info->flags);
+> +	kthread_park(fs_info->cleaner_kthread);
 
-As a matter of fact this should have been fixed by :
+Can't you directly call kthread_stop here? When you park the thread it
+will sleep and then when you call kthread_stop that function will unpark
+the thread and the cleaner kthread will see KTHREAD_SHOULD_STOP bit and
+just return 0. So the from the moment the thread is parked until it's
+stopped it doesn't have a chance to do useful work.
 
-fe816d0f1d4c ("btrfs: Fix delalloc inodes invalidation during
-transaction abort")
-
-
-Perhaps this commit is not a full fix ?
-
-> 
-> <snip>
+>  
+>  	/* wait for the qgroup rescan worker to stop */
+>  	btrfs_qgroup_wait_for_completion(fs_info, false);
 > 

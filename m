@@ -2,120 +2,172 @@ Return-Path: <SRS0=X8W1=NL=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_MUTT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5B9CBC0044C
-	for <linux-btrfs@archiver.kernel.org>; Wed, 31 Oct 2018 07:34:57 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 36C9DC0044C
+	for <linux-btrfs@archiver.kernel.org>; Wed, 31 Oct 2018 07:41:53 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 1559320840
-	for <linux-btrfs@archiver.kernel.org>; Wed, 31 Oct 2018 07:34:57 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="b4LqVDtx"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 1559320840
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
+	by mail.kernel.org (Postfix) with ESMTP id D4B7720821
+	for <linux-btrfs@archiver.kernel.org>; Wed, 31 Oct 2018 07:41:52 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org D4B7720821
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=cn.fujitsu.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726235AbeJaQbw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 31 Oct 2018 12:31:52 -0400
-Received: from mail-qt1-f170.google.com ([209.85.160.170]:46780 "EHLO
-        mail-qt1-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725955AbeJaQbw (ORCPT
+        id S1726364AbeJaQit (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 31 Oct 2018 12:38:49 -0400
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:6577 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1725955AbeJaQit (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 31 Oct 2018 12:31:52 -0400
-Received: by mail-qt1-f170.google.com with SMTP id c16-v6so16561894qtj.13
-        for <linux-btrfs@vger.kernel.org>; Wed, 31 Oct 2018 00:34:55 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=pTjN1vwrglTwiOdjzAnn3CE2yXqN5y1hmJrFgWdbK8U=;
-        b=b4LqVDtxqOv7SS9TrM6OFkNB0YAchV5fuuIfyHB9edhEPSpVWi6GK51jiYgDHr9GPw
-         CLOiKdoDUAMy05y8Zuj3j47LRug8i3qdErFe72oZQEk3RzhO5GMzez7UV6MfJSGEulUJ
-         K/4Mk3EUunVOk4YXEcfa3HkJ9wL1d760x6sZ2Hq4iqRwozG2iTPd9uG3aaDsVv+FTWiu
-         YrHFRm/JINHT3pFdY3pbcwI73sO6kM3FzYcfKHHj4nYhbL2VnV6p7oti3w/8Tuz45Ao6
-         SJc7NrRyFcCvdwsHRUUHH1Z5ZQi8IHrUsxm7NuPTYNKqmq+LzDpMI3WGm3EJtUf8YkXu
-         ObtQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=pTjN1vwrglTwiOdjzAnn3CE2yXqN5y1hmJrFgWdbK8U=;
-        b=ODsAURefU9epNLr/mh5O0QC9yYX9U+wgpIYMLRIdEUKJaR8ndftRO2Fi5OIXcOxwqf
-         829hpu1U8cd0K9tyjbKJhDDQH3oo/pn4PzaCE/fw4lH1p8UaWJfqlXrD/AdMTMOKa8kP
-         4Ilvj3uXCtyvwZBd154XTyyZ9ZO+ba63dFOHhzRE2S0s+RfqmyxxAO7iRpaDsKMNzTkJ
-         cenM73PHl02Zd6hS87gn4N6Kf3LtuuQW4eaJCxaJY50EQRGW3xmUZePxvCeYiCF9+pON
-         m66zG9dOBVpaHXmvI0YODGIqFg1CftJGBVsWCgJGWKpy+HXhT+pW8TrIaPjAH5oqvV1h
-         3V2g==
-X-Gm-Message-State: AGRZ1gI3wkhXhdO0+NKRFgulZc4hCpVoVWDkUPw2Sd/BpbkBdQyj3vSc
-        g14BvTtuhJagZZIm8+VwTTA5UzP/1lnkH46ucG/lvLeS
-X-Google-Smtp-Source: AJdET5f562KqulNgX4vLOJKEgR5M7wmOvuK4d6kenbRrUjngC8iGfYWUpxdOb4Mx4qsCemabz5RvSliXGKchgR3LG7Y=
-X-Received: by 2002:ac8:1207:: with SMTP id x7-v6mr1630752qti.317.1540971294853;
- Wed, 31 Oct 2018 00:34:54 -0700 (PDT)
+        Wed, 31 Oct 2018 12:38:49 -0400
+X-IronPort-AV: E=Sophos;i="5.43,368,1503331200"; 
+   d="scan'208";a="47045492"
+Received: from unknown (HELO cn.fujitsu.com) ([10.167.33.5])
+  by heian.cn.fujitsu.com with ESMTP; 31 Oct 2018 15:41:49 +0800
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
+        by cn.fujitsu.com (Postfix) with ESMTP id C5DB54B71EA6;
+        Wed, 31 Oct 2018 15:41:49 +0800 (CST)
+Received: from fnst.localdomain (10.167.226.155) by
+ G08CNEXCHPEKD01.g08.fujitsu.local (10.167.33.89) with Microsoft SMTP Server
+ (TLS) id 14.3.408.0; Wed, 31 Oct 2018 15:41:56 +0800
+Date:   Wed, 31 Oct 2018 15:41:47 +0800
+From:   Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+To:     Omar Sandoval <osandov@osandov.com>
+CC:     <linux-btrfs@vger.kernel.org>, <kernel-team@fb.com>
+Subject: Re: [PATCH] Btrfs: fix missing delayed iputs on unmount
+Message-ID: <20181031074147.GB2656@fnst.localdomain>
+References: <9b8c7d1ce662d216cf29ffcb756d177b0bf60b64.1540944854.git.osandov@fb.com>
 MIME-Version: 1.0
-References: <CAJzMQG2xPu7vy60qDjip+u93=3GU0v_ZXE9h8t_Tj1Vf6f5EnA@mail.gmail.com>
- <CAJCQCtTTBOdK5Z=7SDb8W+q7Px+kyLb6hAo06piw=zxDYtrSgA@mail.gmail.com>
- <CAJzMQG2mAfux8+ij9KqeOfmfN0b-_6kHzh3dwoofYExNk0KiAw@mail.gmail.com>
- <CAJCQCtSFnGz+M+xRNzajwdqFbhcAQtLAf8aAqB1xXcbvEd9j7g@mail.gmail.com> <CAJCQCtQiqUVNin9Ga7HB8oUrgwQ9h9V+etZLooqX3_Sb_KNz0Q@mail.gmail.com>
-In-Reply-To: <CAJCQCtQiqUVNin9Ga7HB8oUrgwQ9h9V+etZLooqX3_Sb_KNz0Q@mail.gmail.com>
-From:   Barbet Alain <alian123soleil@gmail.com>
-Date:   Wed, 31 Oct 2018 08:34:39 +0100
-Message-ID: <CAJzMQG1-cv6iNzw4jAv8QALo7Z2maapsyzPJOwALZks-=7HvFg@mail.gmail.com>
-Subject: Re: Where is my disk space ?
-To:     lists@colorremedies.com
-Cc:     linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset="us-ascii"
+Content-Disposition: inline
+In-Reply-To: <9b8c7d1ce662d216cf29ffcb756d177b0bf60b64.1540944854.git.osandov@fb.com>
+User-Agent: Mutt/1.10.1 (2018-07-13)
+X-Originating-IP: [10.167.226.155]
+X-yoursite-MailScanner-ID: C5DB54B71EA6.AD583
+X-yoursite-MailScanner: Found to be clean
+X-yoursite-MailScanner-From: lufq.fnst@cn.fujitsu.com
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-> Also, since you don't have any snapshots, you could also find this
-> conventionally:
+On Tue, Oct 30, 2018 at 05:14:42PM -0700, Omar Sandoval wrote:
+>From: Omar Sandoval <osandov@fb.com>
 >
-> # du -sh /*
+>There's a race between close_ctree() and cleaner_kthread().
+>close_ctree() sets btrfs_fs_closing(), and the cleaner stops when it
+>sees it set, but this is racy; the cleaner might have already checked
+>the bit and could be cleaning stuff. In particular, if it deletes unused
+>block groups, it will create delayed iputs for the free space cache
+>inodes. As of "btrfs: don't run delayed_iputs in commit", we're no
+>longer running delayed iputs after a commit. Therefore, if the cleaner
+>creates more delayed iputs after delayed iputs are run in
+>btrfs_commit_super(), we will leak inodes on unmount and get a busy
+
+Since the assert added via commit e187831e1875 ("btrfs: assert on non-empty
+delayed iputs") wasn't triggered, it doesn't seem to be the cause of inode
+leak.
+
+-- 
+Thanks,
+Lu
+
+>inode crash from the VFS.
+>
+>Fix it by parking the cleaner before we actually close anything. Then,
+>any remaining delayed iputs will always be handled in
+>btrfs_commit_super(). This also ensures that the commit in close_ctree()
+>is really the last commit, so we can get rid of the commit in
+>cleaner_kthread().
+>
+>Fixes: 30928e9baac2 ("btrfs: don't run delayed_iputs in commit")
+>Signed-off-by: Omar Sandoval <osandov@fb.com>
+>---
+>We found this with a stress test that our containers team runs. I'm
+>wondering if this same race could have caused any other issues other
+>than this new iput thing, but I couldn't identify any.
+>
+> fs/btrfs/disk-io.c | 40 +++++++---------------------------------
+> 1 file changed, 7 insertions(+), 33 deletions(-)
+>
+>diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+>index b0ab41da91d1..7c17284ae3c2 100644
+>--- a/fs/btrfs/disk-io.c
+>+++ b/fs/btrfs/disk-io.c
+>@@ -1664,9 +1664,8 @@ static int cleaner_kthread(void *arg)
+> 	struct btrfs_root *root = arg;
+> 	struct btrfs_fs_info *fs_info = root->fs_info;
+> 	int again;
+>-	struct btrfs_trans_handle *trans;
+> 
+>-	do {
+>+	while (1) {
+> 		again = 0;
+> 
+> 		/* Make the cleaner go to sleep early. */
+>@@ -1715,42 +1714,16 @@ static int cleaner_kthread(void *arg)
+> 		 */
+> 		btrfs_delete_unused_bgs(fs_info);
+> sleep:
+>+		if (kthread_should_park())
+>+			kthread_parkme();
+>+		if (kthread_should_stop())
+>+			return 0;
+> 		if (!again) {
+> 			set_current_state(TASK_INTERRUPTIBLE);
+>-			if (!kthread_should_stop())
+>-				schedule();
+>+			schedule();
+> 			__set_current_state(TASK_RUNNING);
+> 		}
+>-	} while (!kthread_should_stop());
+>-
+>-	/*
+>-	 * Transaction kthread is stopped before us and wakes us up.
+>-	 * However we might have started a new transaction and COWed some
+>-	 * tree blocks when deleting unused block groups for example. So
+>-	 * make sure we commit the transaction we started to have a clean
+>-	 * shutdown when evicting the btree inode - if it has dirty pages
+>-	 * when we do the final iput() on it, eviction will trigger a
+>-	 * writeback for it which will fail with null pointer dereferences
+>-	 * since work queues and other resources were already released and
+>-	 * destroyed by the time the iput/eviction/writeback is made.
+>-	 */
+>-	trans = btrfs_attach_transaction(root);
+>-	if (IS_ERR(trans)) {
+>-		if (PTR_ERR(trans) != -ENOENT)
+>-			btrfs_err(fs_info,
+>-				  "cleaner transaction attach returned %ld",
+>-				  PTR_ERR(trans));
+>-	} else {
+>-		int ret;
+>-
+>-		ret = btrfs_commit_transaction(trans);
+>-		if (ret)
+>-			btrfs_err(fs_info,
+>-				  "cleaner open transaction commit returned %d",
+>-				  ret);
+> 	}
+>-
+>-	return 0;
+> }
+> 
+> static int transaction_kthread(void *arg)
+>@@ -3931,6 +3904,7 @@ void close_ctree(struct btrfs_fs_info *fs_info)
+> 	int ret;
+> 
+> 	set_bit(BTRFS_FS_CLOSING_START, &fs_info->flags);
+>+	kthread_park(fs_info->cleaner_kthread);
+> 
+> 	/* wait for the qgroup rescan worker to stop */
+> 	btrfs_qgroup_wait_for_completion(fs_info, false);
+>-- 
+>2.19.1
+>
+>
+>
+>
 
 
-Usually yes, but here not. It's just like when you remove a file when
-a process still use it and write in it, and fcsk will be not happy
-next time.
-But I reboot & check with btrfs check withtout any issue :-/
-
-alian@alian:/> sudo btrfs fi du -s *
-     Total   Exclusive  Set shared  Filename
-   1.58MiB     1.58MiB       0.00B  bin
-  42.69MiB    42.69MiB       0.00B  boot
-  14.78MiB    14.78MiB       0.00B  etc
- 532.40MiB   532.40MiB       0.00B  lib
-   9.88MiB     9.88MiB       0.00B  lib64
-     0.00B       0.00B       0.00B  mnt
-  23.96MiB    23.96MiB       0.00B  opt
- 128.00KiB   128.00KiB       0.00B  root
-   9.74MiB     9.74MiB       0.00B  sbin
-     0.00B       0.00B       0.00B  selinux
-     0.00B       0.00B       0.00B  srv
-  15.92MiB    15.92MiB       0.00B  tmp
-   4.86GiB     4.86GiB       0.00B  usr
- 345.65MiB   345.65MiB       0.00B  var
-
-alian@alian:~> sudo du --exclude /home -sh /*
-2,1M    /bin
-43M     /boot
-0       /dev
-20M     /etc
-534M    /lib
-11M     /lib64
-0       /mnt
-24M     /opt
-0       /proc
-172K    /root
-18M     /run
-11M     /sbin
-0       /selinux
-0       /srv
-0       /sys
-16M     /tmp
-5,2G    /usr
-355M    /var

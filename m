@@ -7,57 +7,54 @@ X-Spam-Status: No, score=-9.3 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EB395ECDE44
-	for <linux-btrfs@archiver.kernel.org>; Wed, 31 Oct 2018 17:58:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9727FC0044C
+	for <linux-btrfs@archiver.kernel.org>; Wed, 31 Oct 2018 18:11:42 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9B2E92080A
-	for <linux-btrfs@archiver.kernel.org>; Wed, 31 Oct 2018 17:58:02 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 247D720664
+	for <linux-btrfs@archiver.kernel.org>; Wed, 31 Oct 2018 18:11:42 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=fb.com header.i=@fb.com header.b="RD2kkia7"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 9B2E92080A
+	dkim=pass (1024-bit key) header.d=fb.com header.i=@fb.com header.b="IUsKvRB7"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 247D720664
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=fb.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729930AbeKAC5E (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 31 Oct 2018 22:57:04 -0400
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:39366 "EHLO
-        mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1729477AbeKAC5E (ORCPT
+        id S1729961AbeKADKr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 31 Oct 2018 23:10:47 -0400
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:33256 "EHLO
+        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1729828AbeKADKq (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 31 Oct 2018 22:57:04 -0400
-Received: from pps.filterd (m0148460.ppops.net [127.0.0.1])
-        by mx0a-00082601.pphosted.com (8.16.0.22/8.16.0.22) with SMTP id w9VHmrUe027347
-        for <linux-btrfs@vger.kernel.org>; Wed, 31 Oct 2018 10:57:59 -0700
+        Wed, 31 Oct 2018 23:10:46 -0400
+Received: from pps.filterd (m0109334.ppops.net [127.0.0.1])
+        by mx0a-00082601.pphosted.com (8.16.0.22/8.16.0.22) with SMTP id w9VI7sOx011444
+        for <linux-btrfs@vger.kernel.org>; Wed, 31 Oct 2018 11:11:37 -0700
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=fb.com; h=from : to : cc : subject
- : date : message-id : in-reply-to : references : mime-version :
- content-type; s=facebook; bh=i/MCAFirotAhCJoOAjqMnfd831tRpbDHiiuPEotnuuY=;
- b=RD2kkia7PenrPhF/+o96+WgVqZEEZBKP5ji6EdqFSlBeB1OD8yxRiivBcTLQJY8UJ5IQ
- t0mYXh03YXbG4jEyQl3j++dXDLa+kS1XPG2TfXIIYFbnaXhSum6sRtmBX5D2juZ6SpqA
- 6OGoSPQASoBecOu3SMy4a3hVJ6GyUKmUH1M= 
-Received: from maileast.thefacebook.com ([199.201.65.23])
-        by mx0a-00082601.pphosted.com with ESMTP id 2nfe82gq9x-2
+ : date : message-id : mime-version : content-type; s=facebook;
+ bh=EVgjpJhNTi2unUN9S/T6JxvzdR4AcdymVWylD/pEhp8=;
+ b=IUsKvRB7Mr3bNNZ2402NVGvvfNCMzmiSJuCiEO/gZQkzHF4oI0AMBrmu7fryo5qlK+bQ
+ kcYwxr3TV7piMBetQc97F03AbdxvqaSiTXesPEfMxP4o5w7GLD48tynsmB3CBUa/cCOJ
+ gScq4Rqj0DF8SGCO/TYRHCcX0++fELEFsLw= 
+Received: from mail.thefacebook.com ([199.201.64.23])
+        by mx0a-00082601.pphosted.com with ESMTP id 2nfgsg855w-11
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-SHA384 bits=256 verify=NOT)
-        for <linux-btrfs@vger.kernel.org>; Wed, 31 Oct 2018 10:57:59 -0700
-Received: from mx-out.facebook.com (2620:10d:c0a1:3::13) by
- mail.thefacebook.com (2620:10d:c021:18::175) with Microsoft SMTP Server
+        for <linux-btrfs@vger.kernel.org>; Wed, 31 Oct 2018 11:11:37 -0700
+Received: from mx-out.facebook.com (2620:10d:c081:10::13) by
+ mail.thefacebook.com (2620:10d:c081:35::126) with Microsoft SMTP Server
  (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA) id 15.1.1531.3;
- Wed, 31 Oct 2018 10:57:59 -0700
+ Wed, 31 Oct 2018 11:11:16 -0700
 Received: by devvm3802.prn3.facebook.com (Postfix, from userid 32154)
-        id 20EB825C1CA2; Wed, 31 Oct 2018 10:57:55 -0700 (PDT)
+        id 4D81C2660932; Wed, 31 Oct 2018 11:11:12 -0700 (PDT)
 Smtp-Origin-Hostprefix: devvm
 From:   Nick Terrell <terrelln@fb.com>
 Smtp-Origin-Hostname: devvm3802.prn3.facebook.com
 To:     Nick Terrell <terrelln@fb.com>
-CC:     David Sterba <dsterba@suse.cz>, <kernel-team@fb.com>,
-        <linux-btrfs@vger.kernel.org>, <grub-devel@gnu.org>,
-        Daniel Kiper <dkiper@net-space.pl>
+CC:     <kernel-team@fb.com>, Omar Sandoval <osandov@fb.com>,
+        <linux-btrfs@vger.kernel.org>, Jennifer Liu <jenniferliu620@fb.com>
 Smtp-Origin-Cluster: prn3c11
-Subject: [PATCH v4 2/2] btrfs: Add zstd support to grub btrfs
-Date:   Wed, 31 Oct 2018 10:56:17 -0700
-Message-ID: <20181031175617.230241-3-terrelln@fb.com>
+Subject: [PATCH v2] btrfs: add zstd compression level support
+Date:   Wed, 31 Oct 2018 11:11:08 -0700
+Message-ID: <20181031181108.289340-1-terrelln@fb.com>
 X-Mailer: git-send-email 2.17.1
-In-Reply-To: <20181031175617.230241-1-terrelln@fb.com>
-References: <20181031175617.230241-1-terrelln@fb.com>
 X-FB-Internal: Safe
 MIME-Version: 1.0
 Content-Type: text/plain
@@ -70,264 +67,613 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Adds zstd support to the btrfs module.
+From: Jennifer Liu <jenniferliu620@fb.com>
 
-Tested on Ubuntu-18.04 with a btrfs /boot partition with and without zstd
-compression. A test case was also added to the test suite that fails before
-the patch, and passes after.
+Adds zstd compression level support to btrfs. Zstd requires
+different amounts of memory for each level, so the design had
+to be modified to allow set_level() to allocate memory. We
+preallocate one workspace of the maximum size to guarantee
+forward progress. This feature is expected to be useful for
+read-mostly filesystems, or when creating images.
 
+Benchmarks run in qemu on Intel x86 with a single core.
+The benchmark measures the time to copy the Silesia corpus [0] to
+a btrfs filesystem 10 times, then read it back.
+
+The two important things to note are:
+- The decompression speed and memory remains constant.
+  The memory required to decompress is the same as level 1.
+- The compression speed and ratio will vary based on the source.
+
+Level	Ratio	Compression	Decompression	Compression Memory
+1    	2.59 	153 MB/s   	112 MB/s     	0.8 MB
+2    	2.67 	136 MB/s   	113 MB/s     	1.0 MB
+3    	2.72 	106 MB/s   	115 MB/s     	1.3 MB
+4    	2.78 	86  MB/s   	109 MB/s     	0.9 MB
+5    	2.83 	69  MB/s   	109 MB/s     	1.4 MB
+6    	2.89 	53  MB/s   	110 MB/s     	1.5 MB
+7    	2.91 	40  MB/s   	112 MB/s     	1.4 MB
+8    	2.92 	34  MB/s   	110 MB/s     	1.8 MB
+9    	2.93 	27  MB/s   	109 MB/s     	1.8 MB
+10   	2.94 	22  MB/s   	109 MB/s     	1.8 MB
+11   	2.95 	17  MB/s   	114 MB/s     	1.8 MB
+12   	2.95 	13  MB/s   	113 MB/s     	1.8 MB
+13   	2.95 	10  MB/s   	111 MB/s     	2.3 MB
+14   	2.99 	7   MB/s   	110 MB/s     	2.6 MB
+15   	3.03 	6   MB/s   	110 MB/s     	2.6 MB
+
+[0] http://sun.aei.polsl.pl/~sdeor/index.php?page=silesia
+
+Signed-off-by: Jennifer Liu <jenniferliu620@fb.com>
 Signed-off-by: Nick Terrell <terrelln@fb.com>
+Reviewed-by: Omar Sandoval <osandov@fb.com>
 ---
 v1 -> v2:
-- Fix comments from Daniel Kiper.
+- Don't reflow the unchanged line.
 
-v2 -> v3:
-- Use grub_error() to set grub_errno in grub_btrfs_zstd_decompress().
-- Fix style and formatting comments.
+ fs/btrfs/compression.c | 169 +++++++++++++++++++++++++----------------
+ fs/btrfs/compression.h |  18 +++--
+ fs/btrfs/lzo.c         |   5 +-
+ fs/btrfs/super.c       |   7 +-
+ fs/btrfs/zlib.c        |  33 ++++----
+ fs/btrfs/zstd.c        |  74 +++++++++++++-----
+ 6 files changed, 202 insertions(+), 104 deletions(-)
 
-v3 -> v4:
-- Use attribute unused.
+diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+index 2955a4ea2fa8..b46652cb653e 100644
+--- a/fs/btrfs/compression.c
++++ b/fs/btrfs/compression.c
+@@ -822,9 +822,12 @@ void __init btrfs_init_compress(void)
 
- Makefile.util.def            |  10 +++-
- grub-core/Makefile.core.def  |   2 +-
- grub-core/fs/btrfs.c         | 108 ++++++++++++++++++++++++++++++++++-
- tests/btrfs_test.in          |   1 +
- tests/util/grub-fs-tester.in |   2 +-
- 5 files changed, 119 insertions(+), 4 deletions(-)
-
-diff --git a/Makefile.util.def b/Makefile.util.def
-index 9ae45f351..3ce9388ae 100644
---- a/Makefile.util.def
-+++ b/Makefile.util.def
-@@ -54,7 +54,7 @@ library = {
- library = {
-   name = libgrubmods.a;
-   cflags = '-fno-builtin -Wno-undef';
--  cppflags = '-I$(top_srcdir)/grub-core/lib/minilzo -I$(srcdir)/grub-core/lib/xzembed -DMINILZO_HAVE_CONFIG_H';
-+  cppflags = '-I$(srcdir)/grub-core/lib/minilzo -I$(srcdir)/grub-core/lib/xzembed -I$(srcdir)/grub-core/lib/zstd -DMINILZO_HAVE_CONFIG_H';
-
-   common_nodist = grub_script.tab.c;
-   common_nodist = grub_script.yy.c;
-@@ -165,6 +165,14 @@ library = {
-   common = grub-core/lib/xzembed/xz_dec_bcj.c;
-   common = grub-core/lib/xzembed/xz_dec_lzma2.c;
-   common = grub-core/lib/xzembed/xz_dec_stream.c;
-+  common = grub-core/lib/zstd/debug.c;
-+  common = grub-core/lib/zstd/entropy_common.c;
-+  common = grub-core/lib/zstd/error_private.c;
-+  common = grub-core/lib/zstd/fse_decompress.c;
-+  common = grub-core/lib/zstd/huf_decompress.c;
-+  common = grub-core/lib/zstd/xxhash.c;
-+  common = grub-core/lib/zstd/zstd_common.c;
-+  common = grub-core/lib/zstd/zstd_decompress.c;
- };
-
- program = {
-diff --git a/grub-core/Makefile.core.def b/grub-core/Makefile.core.def
-index 540a31f78..b09319328 100644
---- a/grub-core/Makefile.core.def
-+++ b/grub-core/Makefile.core.def
-@@ -1280,7 +1280,7 @@ module = {
-   common = fs/btrfs.c;
-   common = lib/crc.c;
-   cflags = '$(CFLAGS_POSIX) -Wno-undef';
--  cppflags = '-I$(srcdir)/lib/posix_wrap -I$(srcdir)/lib/minilzo -DMINILZO_HAVE_CONFIG_H';
-+  cppflags = '-I$(srcdir)/lib/posix_wrap -I$(srcdir)/lib/minilzo -I$(srcdir)/lib/zstd -DMINILZO_HAVE_CONFIG_H';
- };
-
- module = {
-diff --git a/grub-core/fs/btrfs.c b/grub-core/fs/btrfs.c
-index cac9ef588..8cfb997c5 100644
---- a/grub-core/fs/btrfs.c
-+++ b/grub-core/fs/btrfs.c
-@@ -17,6 +17,8 @@
-  *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>.
-  */
-
-+#define ZSTD_STATIC_LINKING_ONLY
-+
- #include <grub/err.h>
- #include <grub/file.h>
- #include <grub/mm.h>
-@@ -27,6 +29,7 @@
- #include <grub/lib/crc.h>
- #include <grub/deflate.h>
- #include <minilzo.h>
-+#include <zstd.h>
- #include <grub/i18n.h>
- #include <grub/btrfs.h>
- #include <grub/crypto.h>
-@@ -47,6 +50,9 @@ GRUB_MOD_LICENSE ("GPLv3+");
- #define GRUB_BTRFS_LZO_BLOCK_MAX_CSIZE (GRUB_BTRFS_LZO_BLOCK_SIZE + \
- 				     (GRUB_BTRFS_LZO_BLOCK_SIZE / 16) + 64 + 3)
-
-+#define ZSTD_BTRFS_MAX_WINDOWLOG 17
-+#define ZSTD_BTRFS_MAX_INPUT     (1 << ZSTD_BTRFS_MAX_WINDOWLOG)
-+
- typedef grub_uint8_t grub_btrfs_checksum_t[0x20];
- typedef grub_uint16_t grub_btrfs_uuid_t[8];
-
-@@ -217,6 +223,7 @@ struct grub_btrfs_extent_data
- #define GRUB_BTRFS_COMPRESSION_NONE 0
- #define GRUB_BTRFS_COMPRESSION_ZLIB 1
- #define GRUB_BTRFS_COMPRESSION_LZO  2
-+#define GRUB_BTRFS_COMPRESSION_ZSTD 3
-
- #define GRUB_BTRFS_OBJECT_ID_CHUNK 0x100
-
-@@ -1216,6 +1223,91 @@ grub_btrfs_read_inode (struct grub_btrfs_data *data,
-   return grub_btrfs_read_logical (data, elemaddr, inode, sizeof (*inode), 0);
+ 		/*
+ 		 * Preallocate one workspace for each compression type so
+-		 * we can guarantee forward progress in the worst case
++		 * we can guarantee forward progress in the worst case.
++		 * Provide the maximum compression level to guarantee large
++		 * enough workspace.
+ 		 */
+-		workspace = btrfs_compress_op[i]->alloc_workspace();
++		workspace = btrfs_compress_op[i]->alloc_workspace(
++				btrfs_compress_op[i]->max_level);
+ 		if (IS_ERR(workspace)) {
+ 			pr_warn("BTRFS: cannot preallocate compression workspace, will try later\n");
+ 		} else {
+@@ -835,23 +838,78 @@ void __init btrfs_init_compress(void)
+ 	}
  }
 
-+static void* grub_zstd_malloc (void* state __attribute__((unused)), size_t size)
++/*
++ * put a workspace struct back on the list or free it if we have enough
++ * idle ones sitting around
++ */
++static void __free_workspace(int type, struct list_head *workspace,
++			     bool heuristic)
 +{
-+	return grub_malloc (size);
++	int idx = type - 1;
++	struct list_head *idle_ws;
++	spinlock_t *ws_lock;
++	atomic_t *total_ws;
++	wait_queue_head_t *ws_wait;
++	int *free_ws;
++
++	if (heuristic) {
++		idle_ws	 = &btrfs_heuristic_ws.idle_ws;
++		ws_lock	 = &btrfs_heuristic_ws.ws_lock;
++		total_ws = &btrfs_heuristic_ws.total_ws;
++		ws_wait	 = &btrfs_heuristic_ws.ws_wait;
++		free_ws	 = &btrfs_heuristic_ws.free_ws;
++	} else {
++		idle_ws	 = &btrfs_comp_ws[idx].idle_ws;
++		ws_lock	 = &btrfs_comp_ws[idx].ws_lock;
++		total_ws = &btrfs_comp_ws[idx].total_ws;
++		ws_wait	 = &btrfs_comp_ws[idx].ws_wait;
++		free_ws	 = &btrfs_comp_ws[idx].free_ws;
++	}
++
++	spin_lock(ws_lock);
++	if (*free_ws <= num_online_cpus()) {
++		list_add(workspace, idle_ws);
++		(*free_ws)++;
++		spin_unlock(ws_lock);
++		goto wake;
++	}
++	spin_unlock(ws_lock);
++
++	if (heuristic)
++		free_heuristic_ws(workspace);
++	else
++		btrfs_compress_op[idx]->free_workspace(workspace);
++	atomic_dec(total_ws);
++wake:
++	cond_wake_up(ws_wait);
 +}
 +
-+static void grub_zstd_free (void* state __attribute__((unused)), void* address)
++static void free_workspace(int type, struct list_head *ws)
 +{
-+	return grub_free (address);
++	return __free_workspace(type, ws, false);
 +}
 +
-+static ZSTD_customMem grub_zstd_allocator (void)
-+{
-+	ZSTD_customMem allocator;
-+
-+	allocator.customAlloc = &grub_zstd_malloc;
-+	allocator.customFree = &grub_zstd_free;
-+	allocator.opaque = NULL;
-+
-+	return allocator;
-+}
-+
-+static grub_ssize_t
-+grub_btrfs_zstd_decompress (char *ibuf, grub_size_t isize, grub_off_t off,
-+			    char *obuf, grub_size_t osize)
-+{
-+	void *allocated = NULL;
-+	char *otmpbuf = obuf;
-+	grub_size_t otmpsize = osize;
-+	ZSTD_DCtx *dctx = NULL;
-+	grub_size_t zstd_ret;
-+	grub_ssize_t ret = -1;
-+
-+	/*
-+	 * Zstd will fail if it can't fit the entire output in the destination
-+	 * buffer, so if osize isn't large enough, allocate a temporary buffer.
-+	 */
-+	if (otmpsize < ZSTD_BTRFS_MAX_INPUT) {
-+		allocated = grub_malloc (ZSTD_BTRFS_MAX_INPUT);
-+		if (!allocated) {
-+			goto err;
+ /*
+  * This finds an available workspace or allocates a new one.
+  * If it's not possible to allocate a new one, waits until there's one.
+  * Preallocation makes a forward progress guarantees and we do not return
+  * errors.
+  */
+-static struct list_head *__find_workspace(int type, bool heuristic)
++static struct list_head *__find_workspace(unsigned int type_level,
++					  bool heuristic)
+ {
+ 	struct list_head *workspace;
+ 	int cpus = num_online_cpus();
++	int type = type_level & 0xF;
+ 	int idx = type - 1;
+-	unsigned nofs_flag;
++	unsigned int level = (type_level & 0xF0) >> 4;
++	unsigned int nofs_flag;
+ 	struct list_head *idle_ws;
+ 	spinlock_t *ws_lock;
+ 	atomic_t *total_ws;
+ 	wait_queue_head_t *ws_wait;
+ 	int *free_ws;
++	int ret;
+
+ 	if (heuristic) {
+ 		idle_ws	 = &btrfs_heuristic_ws.idle_ws;
+@@ -874,8 +932,17 @@ static struct list_head *__find_workspace(int type, bool heuristic)
+ 		list_del(workspace);
+ 		(*free_ws)--;
+ 		spin_unlock(ws_lock);
++		if (!heuristic) {
++			nofs_flag = memalloc_nofs_save();
++			ret = btrfs_compress_op[idx]->set_level(workspace,
++								level);
++			memalloc_nofs_restore(nofs_flag);
++			if (!ret) {
++				free_workspace(type, workspace);
++				goto again;
++			}
 +		}
-+		otmpbuf = (char*)allocated;
-+		otmpsize = ZSTD_BTRFS_MAX_INPUT;
-+	}
+ 		return workspace;
+-
+ 	}
+ 	if (atomic_read(total_ws) > cpus) {
+ 		DEFINE_WAIT(wait);
+@@ -899,7 +966,8 @@ static struct list_head *__find_workspace(int type, bool heuristic)
+ 	if (heuristic)
+ 		workspace = alloc_heuristic_ws();
+ 	else
+-		workspace = btrfs_compress_op[idx]->alloc_workspace();
++		workspace = btrfs_compress_op[idx]->alloc_workspace(level);
 +
-+	/* Create the ZSTD_DCtx. */
-+	dctx = ZSTD_createDCtx_advanced (grub_zstd_allocator ());
-+	if (!dctx) {
-+		grub_error (GRUB_ERR_OUT_OF_MEMORY, "zstd out of memory");
-+		goto err;
-+	}
-+
+ 	memalloc_nofs_restore(nofs_flag);
+
+ 	if (IS_ERR(workspace)) {
+@@ -930,60 +998,22 @@ static struct list_head *__find_workspace(int type, bool heuristic)
+ 	return workspace;
+ }
+
+-static struct list_head *find_workspace(int type)
++static struct list_head *find_workspace(unsigned int type_level)
+ {
+-	return __find_workspace(type, false);
++	return __find_workspace(type_level, false);
+ }
+
+-/*
+- * put a workspace struct back on the list or free it if we have enough
+- * idle ones sitting around
+- */
+-static void __free_workspace(int type, struct list_head *workspace,
+-			     bool heuristic)
++static struct list_head *find_decompression_workspace(unsigned int type)
+ {
+-	int idx = type - 1;
+-	struct list_head *idle_ws;
+-	spinlock_t *ws_lock;
+-	atomic_t *total_ws;
+-	wait_queue_head_t *ws_wait;
+-	int *free_ws;
 +	/*
-+	 * Get the real input size, there may be junk at the
-+	 * end of the frame.
++	 * Use the lowest level for decompression, since we don't need to
++	 * compress. This can help us save memory when using levels lower than
++	 * the default level.
 +	 */
-+	isize = ZSTD_findFrameCompressedSize (ibuf, isize);
-+	if (ZSTD_isError (isize)) {
-+		grub_error (GRUB_ERR_BAD_COMPRESSED_DATA,
-+			    "zstd data corrupted");
-+		goto err;
-+	}
++	const unsigned int level = 1;
++	const unsigned int type_level = (level << 4) | (type & 0xF);
+
+-	if (heuristic) {
+-		idle_ws	 = &btrfs_heuristic_ws.idle_ws;
+-		ws_lock	 = &btrfs_heuristic_ws.ws_lock;
+-		total_ws = &btrfs_heuristic_ws.total_ws;
+-		ws_wait	 = &btrfs_heuristic_ws.ws_wait;
+-		free_ws	 = &btrfs_heuristic_ws.free_ws;
+-	} else {
+-		idle_ws	 = &btrfs_comp_ws[idx].idle_ws;
+-		ws_lock	 = &btrfs_comp_ws[idx].ws_lock;
+-		total_ws = &btrfs_comp_ws[idx].total_ws;
+-		ws_wait	 = &btrfs_comp_ws[idx].ws_wait;
+-		free_ws	 = &btrfs_comp_ws[idx].free_ws;
+-	}
+-
+-	spin_lock(ws_lock);
+-	if (*free_ws <= num_online_cpus()) {
+-		list_add(workspace, idle_ws);
+-		(*free_ws)++;
+-		spin_unlock(ws_lock);
+-		goto wake;
+-	}
+-	spin_unlock(ws_lock);
+-
+-	if (heuristic)
+-		free_heuristic_ws(workspace);
+-	else
+-		btrfs_compress_op[idx]->free_workspace(workspace);
+-	atomic_dec(total_ws);
+-wake:
+-	cond_wake_up(ws_wait);
+-}
+-
+-static void free_workspace(int type, struct list_head *ws)
+-{
+-	return __free_workspace(type, ws, false);
++	return find_workspace(type_level);
+ }
+
+ /*
+@@ -1044,9 +1074,7 @@ int btrfs_compress_pages(unsigned int type_level, struct address_space *mapping,
+ 	int ret;
+ 	int type = type_level & 0xF;
+
+-	workspace = find_workspace(type);
+-
+-	btrfs_compress_op[type - 1]->set_level(workspace, type_level);
++	workspace = find_workspace(type_level);
+ 	ret = btrfs_compress_op[type-1]->compress_pages(workspace, mapping,
+ 						      start, pages,
+ 						      out_pages,
+@@ -1075,7 +1103,7 @@ static int btrfs_decompress_bio(struct compressed_bio *cb)
+ 	int ret;
+ 	int type = cb->compress_type;
+
+-	workspace = find_workspace(type);
++	workspace = find_decompression_workspace(type);
+ 	ret = btrfs_compress_op[type - 1]->decompress_bio(workspace, cb);
+ 	free_workspace(type, workspace);
+
+@@ -1093,7 +1121,7 @@ int btrfs_decompress(int type, unsigned char *data_in, struct page *dest_page,
+ 	struct list_head *workspace;
+ 	int ret;
+
+-	workspace = find_workspace(type);
++	workspace = find_decompression_workspace(type);
+
+ 	ret = btrfs_compress_op[type-1]->decompress(workspace, data_in,
+ 						  dest_page, start_byte,
+@@ -1591,12 +1619,23 @@ int btrfs_compress_heuristic(struct inode *inode, u64 start, u64 end)
+
+ unsigned int btrfs_compress_str2level(const char *str)
+ {
+-	if (strncmp(str, "zlib", 4) != 0)
++	int ret;
++	int type;
++	unsigned int level;
 +
-+	/* Decompress and check for errors. */
-+	zstd_ret = ZSTD_decompressDCtx (dctx, otmpbuf, otmpsize, ibuf, isize);
-+	if (ZSTD_isError (zstd_ret)) {
-+		grub_error (GRUB_ERR_BAD_COMPRESSED_DATA,
-+			    "zstd data corrupted");
-+		goto err;
++	if (strncmp(str, "zlib", 4) == 0)
++		type = BTRFS_COMPRESS_ZLIB;
++	else if (strncmp(str, "zstd", 4) == 0)
++		type = BTRFS_COMPRESS_ZSTD;
++	else
+ 		return 0;
+
+-	/* Accepted form: zlib:1 up to zlib:9 and nothing left after the number */
+-	if (str[4] == ':' && '1' <= str[5] && str[5] <= '9' && str[6] == 0)
+-		return str[5] - '0';
++	if (str[4] == ':') {
++		ret = kstrtouint(str + 5, 10, &level);
++		if (ret == 0 && 0 < level &&
++		    level <= btrfs_compress_op[type-1]->max_level)
++			return level;
 +	}
-+
+
+-	return BTRFS_ZLIB_DEFAULT_LEVEL;
++	return btrfs_compress_op[type-1]->default_level;
+ }
+diff --git a/fs/btrfs/compression.h b/fs/btrfs/compression.h
+index ddda9b80bf20..a582a4483077 100644
+--- a/fs/btrfs/compression.h
++++ b/fs/btrfs/compression.h
+@@ -23,8 +23,6 @@
+ /* Maximum size of data before compression */
+ #define BTRFS_MAX_UNCOMPRESSED		(SZ_128K)
+
+-#define	BTRFS_ZLIB_DEFAULT_LEVEL		3
+-
+ struct compressed_bio {
+ 	/* number of bios pending for this compressed extent */
+ 	refcount_t pending_bios;
+@@ -87,7 +85,7 @@ blk_status_t btrfs_submit_compressed_write(struct inode *inode, u64 start,
+ blk_status_t btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
+ 				 int mirror_num, unsigned long bio_flags);
+
+-unsigned btrfs_compress_str2level(const char *str);
++unsigned int btrfs_compress_str2level(const char *str);
+
+ enum btrfs_compression_type {
+ 	BTRFS_COMPRESS_NONE  = 0,
+@@ -98,7 +96,7 @@ enum btrfs_compression_type {
+ };
+
+ struct btrfs_compress_op {
+-	struct list_head *(*alloc_workspace)(void);
++	struct list_head *(*alloc_workspace)(unsigned int level);
+
+ 	void (*free_workspace)(struct list_head *workspace);
+
+@@ -119,7 +117,17 @@ struct btrfs_compress_op {
+ 			  unsigned long start_byte,
+ 			  size_t srclen, size_t destlen);
+
+-	void (*set_level)(struct list_head *ws, unsigned int type);
 +	/*
-+	 * Move the requested data into the obuf. obuf may be equal
-+	 * to otmpbuf, which is why grub_memmove() is required.
++	 * Check if memory allocated in workspace is greater than
++	 * or equal to memory needed to compress with given level.
++	 * If not, try to reallocate memory for the compression level.
++	 * Returns true on success.
 +	 */
-+	grub_memmove (obuf, otmpbuf + off, osize);
-+	ret = osize;
++	bool (*set_level)(struct list_head *ws, unsigned int level);
 +
-+err:
-+	grub_free (allocated);
-+	ZSTD_freeDCtx (dctx);
++	unsigned int max_level;
 +
-+	return ret;
++	unsigned int default_level;
+ };
+
+ extern const struct btrfs_compress_op btrfs_zlib_compress;
+diff --git a/fs/btrfs/lzo.c b/fs/btrfs/lzo.c
+index b6a4cc178bee..ed9f0da8ceda 100644
+--- a/fs/btrfs/lzo.c
++++ b/fs/btrfs/lzo.c
+@@ -71,7 +71,7 @@ static void lzo_free_workspace(struct list_head *ws)
+ 	kfree(workspace);
+ }
+
+-static struct list_head *lzo_alloc_workspace(void)
++static struct list_head *lzo_alloc_workspace(unsigned int level)
+ {
+ 	struct workspace *workspace;
+
+@@ -485,8 +485,9 @@ static int lzo_decompress(struct list_head *ws, unsigned char *data_in,
+ 	return ret;
+ }
+
+-static void lzo_set_level(struct list_head *ws, unsigned int type)
++static bool lzo_set_level(struct list_head *ws, unsigned int level)
+ {
++	return true;
+ }
+
+ const struct btrfs_compress_op btrfs_lzo_compress = {
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index b362b45dd757..77ebd69371f1 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -520,7 +520,8 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
+ 				compress_type = "zlib";
+
+ 				info->compress_type = BTRFS_COMPRESS_ZLIB;
+-				info->compress_level = BTRFS_ZLIB_DEFAULT_LEVEL;
++				info->compress_level =
++					btrfs_zlib_compress.default_level;
+ 				/*
+ 				 * args[0] contains uninitialized data since
+ 				 * for these tokens we don't expect any
+@@ -542,9 +543,11 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
+ 				btrfs_clear_opt(info->mount_opt, NODATASUM);
+ 				btrfs_set_fs_incompat(info, COMPRESS_LZO);
+ 				no_compress = 0;
+-			} else if (strcmp(args[0].from, "zstd") == 0) {
++			} else if (strncmp(args[0].from, "zstd", 4) == 0) {
+ 				compress_type = "zstd";
+ 				info->compress_type = BTRFS_COMPRESS_ZSTD;
++				info->compress_level =
++					btrfs_compress_str2level(args[0].from);
+ 				btrfs_set_opt(info->mount_opt, COMPRESS);
+ 				btrfs_clear_opt(info->mount_opt, NODATACOW);
+ 				btrfs_clear_opt(info->mount_opt, NODATASUM);
+diff --git a/fs/btrfs/zlib.c b/fs/btrfs/zlib.c
+index 970ff3e35bb3..4c30a99b80f6 100644
+--- a/fs/btrfs/zlib.c
++++ b/fs/btrfs/zlib.c
+@@ -20,6 +20,9 @@
+ #include <linux/refcount.h>
+ #include "compression.h"
+
++#define BTRFS_ZLIB_DEFAULT_LEVEL 3
++#define BTRFS_ZLIB_MAX_LEVEL 9
++
+ struct workspace {
+ 	z_stream strm;
+ 	char *buf;
+@@ -36,7 +39,19 @@ static void zlib_free_workspace(struct list_head *ws)
+ 	kfree(workspace);
+ }
+
+-static struct list_head *zlib_alloc_workspace(void)
++static bool zlib_set_level(struct list_head *ws, unsigned int level)
++{
++	struct workspace *workspace = list_entry(ws, struct workspace, list);
++
++	if (level > BTRFS_ZLIB_MAX_LEVEL)
++		level = BTRFS_ZLIB_MAX_LEVEL;
++
++	workspace->level = level > 0 ? level : BTRFS_ZLIB_DEFAULT_LEVEL;
++
++	return true;
 +}
 +
- static grub_ssize_t
- grub_btrfs_lzo_decompress(char *ibuf, grub_size_t isize, grub_off_t off,
- 			  char *obuf, grub_size_t osize)
-@@ -1391,7 +1483,8 @@ grub_btrfs_extent_read (struct grub_btrfs_data *data,
++static struct list_head *zlib_alloc_workspace(unsigned int level)
+ {
+ 	struct workspace *workspace;
+ 	int workspacesize;
+@@ -53,6 +68,7 @@ static struct list_head *zlib_alloc_workspace(void)
+ 		goto fail;
 
-       if (data->extent->compression != GRUB_BTRFS_COMPRESSION_NONE
- 	  && data->extent->compression != GRUB_BTRFS_COMPRESSION_ZLIB
--	  && data->extent->compression != GRUB_BTRFS_COMPRESSION_LZO)
-+	  && data->extent->compression != GRUB_BTRFS_COMPRESSION_LZO
-+	  && data->extent->compression != GRUB_BTRFS_COMPRESSION_ZSTD)
- 	{
- 	  grub_error (GRUB_ERR_NOT_IMPLEMENTED_YET,
- 		      "compression type 0x%x not supported",
-@@ -1431,6 +1524,15 @@ grub_btrfs_extent_read (struct grub_btrfs_data *data,
- 		  != (grub_ssize_t) csize)
- 		return -1;
- 	    }
-+	  else if (data->extent->compression == GRUB_BTRFS_COMPRESSION_ZSTD)
-+	    {
-+	      if (grub_btrfs_zstd_decompress(data->extent->inl, data->extsize -
-+					     ((grub_uint8_t *) data->extent->inl
-+					      - (grub_uint8_t *) data->extent),
-+					     extoff, buf, csize)
-+		  != (grub_ssize_t) csize)
-+		return -1;
-+	    }
- 	  else
- 	    grub_memcpy (buf, data->extent->inl + extoff, csize);
- 	  break;
-@@ -1468,6 +1570,10 @@ grub_btrfs_extent_read (struct grub_btrfs_data *data,
- 		ret = grub_btrfs_lzo_decompress (tmp, zsize, extoff
- 				    + grub_le_to_cpu64 (data->extent->offset),
- 				    buf, csize);
-+	      else if (data->extent->compression == GRUB_BTRFS_COMPRESSION_ZSTD)
-+		ret = grub_btrfs_zstd_decompress (tmp, zsize, extoff
-+				    + grub_le_to_cpu64 (data->extent->offset),
-+				    buf, csize);
- 	      else
- 		ret = -1;
+ 	INIT_LIST_HEAD(&workspace->list);
++	zlib_set_level(&workspace->list, level);
 
-diff --git a/tests/btrfs_test.in b/tests/btrfs_test.in
-index 2b37ddd33..0c9bf3a68 100644
---- a/tests/btrfs_test.in
-+++ b/tests/btrfs_test.in
-@@ -18,6 +18,7 @@ fi
- "@builddir@/grub-fs-tester" btrfs
- "@builddir@/grub-fs-tester" btrfs_zlib
- "@builddir@/grub-fs-tester" btrfs_lzo
-+"@builddir@/grub-fs-tester" btrfs_zstd
- "@builddir@/grub-fs-tester" btrfs_raid0
- "@builddir@/grub-fs-tester" btrfs_raid1
- "@builddir@/grub-fs-tester" btrfs_single
-diff --git a/tests/util/grub-fs-tester.in b/tests/util/grub-fs-tester.in
-index ef65fbc93..bc14a05ca 100644
---- a/tests/util/grub-fs-tester.in
-+++ b/tests/util/grub-fs-tester.in
-@@ -629,7 +629,7 @@ for LOGSECSIZE in $(range "$MINLOGSECSIZE" "$MAXLOGSECSIZE" 1); do
- 		    ;;
- 		x"btrfs")
- 		    "mkfs.btrfs" -s $SECSIZE -L "$FSLABEL" "${MOUNTDEVICE}" ;;
--		x"btrfs_zlib" | x"btrfs_lzo")
-+		x"btrfs_zlib" | x"btrfs_lzo" | x"btrfs_zstd")
- 		    "mkfs.btrfs" -s $SECSIZE -L "$FSLABEL" "${MOUNTDEVICE}"
- 		    MOUNTOPTS="compress=${fs/btrfs_/},"
- 		    MOUNTFS="btrfs"
+ 	return &workspace->list;
+ fail:
+@@ -390,22 +406,13 @@ static int zlib_decompress(struct list_head *ws, unsigned char *data_in,
+ 	return ret;
+ }
+
+-static void zlib_set_level(struct list_head *ws, unsigned int type)
+-{
+-	struct workspace *workspace = list_entry(ws, struct workspace, list);
+-	unsigned level = (type & 0xF0) >> 4;
+-
+-	if (level > 9)
+-		level = 9;
+-
+-	workspace->level = level > 0 ? level : 3;
+-}
+-
+ const struct btrfs_compress_op btrfs_zlib_compress = {
+ 	.alloc_workspace	= zlib_alloc_workspace,
+ 	.free_workspace		= zlib_free_workspace,
+ 	.compress_pages		= zlib_compress_pages,
+ 	.decompress_bio		= zlib_decompress_bio,
+ 	.decompress		= zlib_decompress,
+-	.set_level              = zlib_set_level,
++	.set_level		= zlib_set_level,
++	.max_level		= BTRFS_ZLIB_MAX_LEVEL,
++	.default_level		= BTRFS_ZLIB_DEFAULT_LEVEL,
+ };
+diff --git a/fs/btrfs/zstd.c b/fs/btrfs/zstd.c
+index af6ec59972f5..e5d7c2eae65c 100644
+--- a/fs/btrfs/zstd.c
++++ b/fs/btrfs/zstd.c
+@@ -19,12 +19,13 @@
+
+ #define ZSTD_BTRFS_MAX_WINDOWLOG 17
+ #define ZSTD_BTRFS_MAX_INPUT (1 << ZSTD_BTRFS_MAX_WINDOWLOG)
+-#define ZSTD_BTRFS_DEFAULT_LEVEL 3
++#define BTRFS_ZSTD_DEFAULT_LEVEL 3
++#define BTRFS_ZSTD_MAX_LEVEL 15
+
+-static ZSTD_parameters zstd_get_btrfs_parameters(size_t src_len)
++static ZSTD_parameters zstd_get_btrfs_parameters(size_t src_len,
++						 unsigned int level)
+ {
+-	ZSTD_parameters params = ZSTD_getParams(ZSTD_BTRFS_DEFAULT_LEVEL,
+-						src_len, 0);
++	ZSTD_parameters params = ZSTD_getParams(level, src_len, 0);
+
+ 	if (params.cParams.windowLog > ZSTD_BTRFS_MAX_WINDOWLOG)
+ 		params.cParams.windowLog = ZSTD_BTRFS_MAX_WINDOWLOG;
+@@ -37,10 +38,25 @@ struct workspace {
+ 	size_t size;
+ 	char *buf;
+ 	struct list_head list;
++	unsigned int level;
+ 	ZSTD_inBuffer in_buf;
+ 	ZSTD_outBuffer out_buf;
+ };
+
++static bool zstd_reallocate_mem(struct workspace *workspace, int size)
++{
++	void *new_mem;
++
++	new_mem = kvmalloc(size, GFP_KERNEL);
++	if (new_mem) {
++		kvfree(workspace->mem);
++		workspace->mem = new_mem;
++		workspace->size = size;
++		return true;
++	}
++	return false;
++}
++
+ static void zstd_free_workspace(struct list_head *ws)
+ {
+ 	struct workspace *workspace = list_entry(ws, struct workspace, list);
+@@ -50,10 +66,34 @@ static void zstd_free_workspace(struct list_head *ws)
+ 	kfree(workspace);
+ }
+
+-static struct list_head *zstd_alloc_workspace(void)
++static bool zstd_set_level(struct list_head *ws, unsigned int level)
++{
++	struct workspace *workspace = list_entry(ws, struct workspace, list);
++	ZSTD_parameters params;
++	int size;
++
++	if (level > BTRFS_ZSTD_MAX_LEVEL)
++		level = BTRFS_ZSTD_MAX_LEVEL;
++
++	if (level == 0)
++		level = BTRFS_ZSTD_DEFAULT_LEVEL;
++
++	params = ZSTD_getParams(level, ZSTD_BTRFS_MAX_INPUT, 0);
++	size = max_t(size_t,
++			ZSTD_CStreamWorkspaceBound(params.cParams),
++			ZSTD_DStreamWorkspaceBound(ZSTD_BTRFS_MAX_INPUT));
++	if (size > workspace->size) {
++		if (!zstd_reallocate_mem(workspace, size))
++			return false;
++	}
++	workspace->level = level;
++	return true;
++}
++
++static struct list_head *zstd_alloc_workspace(unsigned int level)
+ {
+ 	ZSTD_parameters params =
+-			zstd_get_btrfs_parameters(ZSTD_BTRFS_MAX_INPUT);
++			zstd_get_btrfs_parameters(ZSTD_BTRFS_MAX_INPUT, level);
+ 	struct workspace *workspace;
+
+ 	workspace = kzalloc(sizeof(*workspace), GFP_KERNEL);
+@@ -69,6 +109,7 @@ static struct list_head *zstd_alloc_workspace(void)
+ 		goto fail;
+
+ 	INIT_LIST_HEAD(&workspace->list);
++	zstd_set_level(&workspace->list, level);
+
+ 	return &workspace->list;
+ fail:
+@@ -95,7 +136,8 @@ static int zstd_compress_pages(struct list_head *ws,
+ 	unsigned long len = *total_out;
+ 	const unsigned long nr_dest_pages = *out_pages;
+ 	unsigned long max_out = nr_dest_pages * PAGE_SIZE;
+-	ZSTD_parameters params = zstd_get_btrfs_parameters(len);
++	ZSTD_parameters params = zstd_get_btrfs_parameters(len,
++							   workspace->level);
+
+ 	*out_pages = 0;
+ 	*total_out = 0;
+@@ -419,15 +461,13 @@ static int zstd_decompress(struct list_head *ws, unsigned char *data_in,
+ 	return ret;
+ }
+
+-static void zstd_set_level(struct list_head *ws, unsigned int type)
+-{
+-}
+-
+ const struct btrfs_compress_op btrfs_zstd_compress = {
+-	.alloc_workspace = zstd_alloc_workspace,
+-	.free_workspace = zstd_free_workspace,
+-	.compress_pages = zstd_compress_pages,
+-	.decompress_bio = zstd_decompress_bio,
+-	.decompress = zstd_decompress,
+-	.set_level = zstd_set_level,
++	.alloc_workspace	= zstd_alloc_workspace,
++	.free_workspace		= zstd_free_workspace,
++	.compress_pages		= zstd_compress_pages,
++	.decompress_bio		= zstd_decompress_bio,
++	.decompress		= zstd_decompress,
++	.set_level		= zstd_set_level,
++	.max_level		= BTRFS_ZSTD_MAX_LEVEL,
++	.default_level		= BTRFS_ZSTD_DEFAULT_LEVEL,
+ };
 --
 2.17.1

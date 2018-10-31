@@ -2,215 +2,241 @@ Return-Path: <SRS0=X8W1=NL=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.8 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-6.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 81838C0044C
-	for <linux-btrfs@archiver.kernel.org>; Wed, 31 Oct 2018 09:49:57 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 26700C0044C
+	for <linux-btrfs@archiver.kernel.org>; Wed, 31 Oct 2018 09:51:44 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 22A6C20821
-	for <linux-btrfs@archiver.kernel.org>; Wed, 31 Oct 2018 09:49:57 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=fujitsu.onmicrosoft.com header.i=@fujitsu.onmicrosoft.com header.b="eQU++3Jy"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 22A6C20821
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=fujitsu.com
+	by mail.kernel.org (Postfix) with ESMTP id DE142205F4
+	for <linux-btrfs@archiver.kernel.org>; Wed, 31 Oct 2018 09:51:43 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org DE142205F4
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727716AbeJaSrT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 31 Oct 2018 14:47:19 -0400
-Received: from esa1.fujitsucc.c3s2.iphmx.com ([68.232.152.245]:48411 "EHLO
-        esa1.fujitsucc.c3s2.iphmx.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1727645AbeJaSrT (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 31 Oct 2018 14:47:19 -0400
-X-Greylist: delayed 583 seconds by postgrey-1.27 at vger.kernel.org; Wed, 31 Oct 2018 14:47:17 EDT
-X-IronPort-AV: E=McAfee;i="5900,7806,9062"; a="9626619"
-X-IronPort-AV: E=Sophos;i="5.54,447,1534777200"; 
-   d="scan'208";a="9626619"
-Received: from mail-sg2apc01lp0244.outbound.protection.outlook.com (HELO APC01-SG2-obe.outbound.protection.outlook.com) ([65.55.88.244])
-  by ob1.fujitsucc.iphmx.com with ESMTP/TLS/AES256-SHA256; 31 Oct 2018 18:40:11 +0900
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
- d=fujitsu.onmicrosoft.com; s=selector1-fujitsu-onmicrosoft-com;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=sShdtulUvn6yvf6abRShMoLiJVfN0yt4wDNIVky99ys=;
- b=eQU++3Jy2VJXCO3+ZKZhXCmQGg9Gvp7Ce2bJYNa3Z4dsUdwnsfKEDk2w+Km9eYwomZEK7Pqt8BkVFOOn/Ifg82m7xWOyYkX9AL0D5blfnIB7cj00MXY7TU/5KXFJtXRPeAhyW4n7ZdpnIlq7r+nGvKD7Ko8EAlfZnUr4UBQNBuQ=
-Received: from TY2PR01MB3050.jpnprd01.prod.outlook.com (20.177.99.84) by
- TY2PR01MB2539.jpnprd01.prod.outlook.com (20.177.98.76) with Microsoft SMTP
- Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- 15.20.1294.21; Wed, 31 Oct 2018 09:40:06 +0000
-Received: from TY2PR01MB3050.jpnprd01.prod.outlook.com
- ([fe80::c05e:cea2:fd7d:ac08]) by TY2PR01MB3050.jpnprd01.prod.outlook.com
- ([fe80::c05e:cea2:fd7d:ac08%5]) with mapi id 15.20.1294.021; Wed, 31 Oct 2018
- 09:40:06 +0000
-From:   "misono.tomohiro@fujitsu.com" <misono.tomohiro@fujitsu.com>
-To:     Nikolay Borisov <nborisov@suse.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        David Sterba <dsterba@suse.cz>
-Subject: Re: [PATCH 1/3] btrfs-progs: check: lowmem: Factor out inline extent
- checking code in its own function
-Thread-Topic: [PATCH 1/3] btrfs-progs: check: lowmem: Factor out inline extent
- checking code in its own function
-Thread-Index: AQHUS1ostjbBxi+aX0+2tSuDX7p8waU5ZLQA
-Date:   Wed, 31 Oct 2018 09:40:06 +0000
-Message-ID: <ea46886c-623d-7f71-4e90-81152232aec5@fujitsu.com>
-References: <20180913120507.18197-1-nborisov@suse.com>
- <20180913120507.18197-2-nborisov@suse.com>
-In-Reply-To: <20180913120507.18197-2-nborisov@suse.com>
-Accept-Language: ja-JP, en-US
-Content-Language: en-US
-X-MS-Has-Attach: 
-X-MS-TNEF-Correlator: 
-authentication-results: spf=none (sender IP is )
- smtp.mailfrom=misono.tomohiro@fujitsu.com; 
-x-originating-ip: [180.43.167.188]
-x-ms-publictraffictype: Email
-x-microsoft-exchange-diagnostics: 1;TY2PR01MB2539;6:WcDLlQn/CH9Jp3VqvvVBtZQFO7zDQfS7TFrcQAKAnDltM6ZTpNatNCY1IYow+kh7D4ngOq2PrCbU5+OCRe74kMb2IF1YqnJitP0uieraJfeHi4cYOo9Ekk2TQjNjmniXxkQFeYbYRcknk5EuJqV/oHOL7CrjZR21YC4WQ1hS/4kXsPgtsAw2IZC/F9YNk9OduwNVB5NpNDSk4SCWMc+xUtFcyvULU5k6mMzlgkFPVbAGFdrpew7algvSeGueNma1n15nmLQnJgMA3IJLY70bL92hYm47G5M8fgsC+3euHkcgHOheSf0XaPG++w/555GNmTYtX1TvfUHFvjjxiQ5iN0sEyW7tUCe25DKv5qHZrAV/qXgaBi4hzVqox1lhFeoM7rUhfVqAL5uqY81gdTTLlDDFGpgF9KiS8vsV2iCMAL/uz/qkJaefrm/89cDeNgZZ81gqoLNqH6ysLWHQZd11tA==;5:/ibv/xO186piBpZFSZZruV4KKpcIFEXGLn/f3xfXB+e7J7wJ/KOpulAGClGgiIH5CYoT/fjfQjAsWTbCsC1UvjKWcI28Dh0tz3ulo7hCXQ14E13XKX3FoHpHPiQA9oJTYnDKSW540vEQUv5V20xP9SWuDc/sqRIq3NoUmgujBSU=;7:dSiLKIingbBhmXGbtl2+9UFz2FZA1lD9vvDu1OoEQrwiPTrJB19577lNQnvsoU0aoy8ZmsyuNfmTc0BRlv7tK2MNu0dwWquQ2tGlTEvFv8Hv1zzLwuU7mAFko3ywuWc3SgfAvdScxph3AtyUiGBC7w==
-x-ms-exchange-antispam-srfa-diagnostics: SOS;
-x-ms-office365-filtering-correlation-id: 91364cc8-1ebe-4d17-428b-08d63f14d7a5
-x-microsoft-antispam: BCL:0;PCL:0;RULEID:(7020095)(4652040)(8989299)(5600074)(711020)(4534185)(4627221)(201703031133081)(201702281549075)(8990200)(2017052603328)(7193020);SRVR:TY2PR01MB2539;
-x-ms-traffictypediagnostic: TY2PR01MB2539:
-x-microsoft-antispam-prvs: <TY2PR01MB25398257B5DDC41F28BDAE14E5CD0@TY2PR01MB2539.jpnprd01.prod.outlook.com>
-x-exchange-antispam-report-test: UriScan:(163750095850);
-x-ms-exchange-senderadcheck: 1
-x-exchange-antispam-report-cfa-test: BCL:0;PCL:0;RULEID:(8211001083)(6040522)(2401047)(8121501046)(5005006)(3231382)(944501410)(52105095)(3002001)(10201501046)(93006095)(93001095)(6055026)(148016)(149066)(150057)(6041310)(201703131423095)(201702281528075)(20161123555045)(201703061421075)(201703061406153)(20161123558120)(20161123562045)(20161123560045)(20161123564045)(201708071742011)(7699051)(76991095);SRVR:TY2PR01MB2539;BCL:0;PCL:0;RULEID:;SRVR:TY2PR01MB2539;
-x-forefront-prvs: 084285FC5C
-x-forefront-antispam-report: SFV:NSPM;SFS:(10009020)(346002)(136003)(396003)(376002)(366004)(39860400002)(189003)(199004)(31686004)(2906002)(3846002)(105586002)(106356001)(66066001)(68736007)(305945005)(7736002)(14454004)(11346002)(316002)(5660300001)(53936002)(6486002)(478600001)(2501003)(26005)(36756003)(6116002)(486006)(446003)(476003)(2616005)(6512007)(97736004)(110136005)(8676002)(76176011)(186003)(81166006)(5250100002)(2900100001)(6436002)(256004)(99286004)(81156014)(8936002)(31696002)(102836004)(71200400001)(6506007)(25786009)(229853002)(86362001)(85182001)(6246003)(71190400001)(53546011)(14444005)(777600001);DIR:OUT;SFP:1101;SCL:1;SRVR:TY2PR01MB2539;H:TY2PR01MB3050.jpnprd01.prod.outlook.com;FPR:;SPF:None;LANG:en;PTR:InfoNoRecords;MX:1;A:1;
-x-microsoft-antispam-message-info: uQ/dJeiLaHISR322EboytEJrEDgez5L62wq/QSkC7PevTe+jaPBSH2jeZAZ88Kg6C2ySBRVBMQAFFMU+35yBLvmKul3vKrDSeGH3tLpS5I8Ep9G3O9h2EIGaoOa0kikxYsP1BJKyLH+vazwgQTXsyaJHtqKWEFSoVEHiyN2iiyKYmJwgCab8NV3/VTYIzuHiKtQBgUZnnJUZBLO6Q2zdwt/zZMAuk/4ozE4beGtcDWdSmslwZLFhAbULYxMflHjgv7lJW9EJogZxOoiqiYdlrZKoaCce5qaa+AwFmDLl2nRNMQgjH++auJAMq6ocFTXULZQQvwtwKJ8BdClAMVm4y4t6qeHhd2qoyixm6q62nKc=
-spamdiagnosticoutput: 1:99
-spamdiagnosticmetadata: NSPM
-Content-Type: text/plain; charset="utf-8"
-Content-ID: <347F3763AEDA3F46A148E2FCCAD51AA4@jpnprd01.prod.outlook.com>
-Content-Transfer-Encoding: base64
+        id S1728007AbeJaStH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 31 Oct 2018 14:49:07 -0400
+Received: from mx2.suse.de ([195.135.220.15]:44294 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1727527AbeJaStH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 31 Oct 2018 14:49:07 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 23C1FAF94;
+        Wed, 31 Oct 2018 09:51:41 +0000 (UTC)
+Subject: Re: [PATCH v3] fstests: btrfs/057: Fix false alerts due to orphan
+ files
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>, Qu Wenruo <wqu@suse.com>,
+        fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
+References: <20181030101819.19510-1-wqu@suse.com>
+ <96e63270-1697-479a-b2b0-f6b2e78ede90@suse.com>
+ <c3617dc2-cbb0-492e-5161-bcc264cbf673@gmx.com>
+From:   Nikolay Borisov <nborisov@suse.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <add06369-26b8-c895-93c8-354ac80e4428@suse.com>
+Date:   Wed, 31 Oct 2018 11:51:38 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.2.1
 MIME-Version: 1.0
-X-OriginatorOrg: fujitsu.com
-X-MS-Exchange-CrossTenant-Network-Message-Id: 91364cc8-1ebe-4d17-428b-08d63f14d7a5
-X-MS-Exchange-CrossTenant-originalarrivaltime: 31 Oct 2018 09:40:06.8881
- (UTC)
-X-MS-Exchange-CrossTenant-fromentityheader: Hosted
-X-MS-Exchange-CrossTenant-id: a19f121d-81e1-4858-a9d8-736e267fd4c7
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: TY2PR01MB2539
+In-Reply-To: <c3617dc2-cbb0-492e-5161-bcc264cbf673@gmx.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-SGVsbG8sDQoNCmZzY2stdGVzdCAwMDYgZmFpbHMgZm9yIGxvdy1tZW0gbW9kZSBpbiBjdXJyZW50
-IGRldmVsIGJyYW5jaCBhbmQgYmlzZWN0IHBvaW50cyB0aGlzLg0KDQpPbiAyMDE4LzA5LzEzIDIx
-OjA1LCBOaWtvbGF5IEJvcmlzb3Ygd3JvdGU6DQo+IFNpbmNlIHRoZSBpbmxpbmUgZXh0ZW50IGNv
-ZGUgY2FuIGJlIGxhcmdlbHkgc2VsZi1zdWZmaWNpZW50LCBmYWN0b3INCj4gaXQgb3V0IGZyb20g
-Y2hlY2tfZmlsZV9leHRlbnQuIE5vIGZ1bmN0aW9uYWwgY2hhbmdlcy4NCj4gDQo+IFNpZ25lZC1v
-ZmYtYnk6IE5pa29sYXkgQm9yaXNvdiA8bmJvcmlzb3ZAc3VzZS5jb20+DQo+IC0tLQ0KPiAgY2hl
-Y2svbW9kZS1sb3dtZW0uYyB8IDE0MiArKysrKysrKysrKysrKysrKysrKysrKysrKy0tLS0tLS0t
-LS0tLS0tLS0tLQ0KPiAgMSBmaWxlIGNoYW5nZWQsIDgzIGluc2VydGlvbnMoKyksIDU5IGRlbGV0
-aW9ucygtKQ0KPiANCj4gZGlmZiAtLWdpdCBhL2NoZWNrL21vZGUtbG93bWVtLmMgYi9jaGVjay9t
-b2RlLWxvd21lbS5jDQo+IGluZGV4IDFiY2U0NGY1NjU4YS4uNDhjMTUzN2U3NDQwIDEwMDY0NA0K
-PiAtLS0gYS9jaGVjay9tb2RlLWxvd21lbS5jDQo+ICsrKyBiL2NoZWNrL21vZGUtbG93bWVtLmMN
-Cj4gQEAgLTE4MDAsNiArMTgwMCw4NyBAQCBzdGF0aWMgaW50IHJlcGFpcl9pbmxpbmVfcmFtX2J5
-dGVzKHN0cnVjdCBidHJmc19yb290ICpyb290LA0KPiAgCXJldHVybiByZXQ7DQo+ICB9DQo+ICAN
-Cj4gKw0KPiArc3RhdGljIGludCBjaGVja19maWxlX2V4dGVudF9pbmxpbmUoc3RydWN0IGJ0cmZz
-X3Jvb3QgKnJvb3QsDQo+ICsJCQkJICAgIHN0cnVjdCBidHJmc19wYXRoICpwYXRoLCB1NjQgKnNp
-emUsDQo+ICsJCQkJICAgIHU2NCAqZW5kKQ0KPiArew0KPiArCXUzMiBtYXhfaW5saW5lX2V4dGVu
-dF9zaXplID0gbWluX3QodTMyLCByb290LT5mc19pbmZvLT5zZWN0b3JzaXplIC0gMSwNCj4gKwkJ
-CQlCVFJGU19NQVhfSU5MSU5FX0RBVEFfU0laRShyb290LT5mc19pbmZvKSk7DQo+ICsJc3RydWN0
-IGV4dGVudF9idWZmZXIgKm5vZGUgPSBwYXRoLT5ub2Rlc1swXTsNCj4gKwlzdHJ1Y3QgYnRyZnNf
-aXRlbSAqZSA9IGJ0cmZzX2l0ZW1fbnIoMCk7DQogICAgICAgICAgICAgICAgICAgICAgICAgICAg
-ICAgYnRyZnNfaXRlbV9ucihwYXRoLT5zbG90c1swXSkNCg0KSSB0aGluayB0aGlzIGZpeGVzIHRo
-ZSBwcm9ibGVtLg0KVGhhbmtzLg0KDQpNaXNvbm8NCg0KDQo+ICsJc3RydWN0IGJ0cmZzX2ZpbGVf
-ZXh0ZW50X2l0ZW0gKmZpOw0KPiArCXN0cnVjdCBidHJmc19rZXkgZmtleTsNCj4gKwl1NjQgZXh0
-ZW50X251bV9ieXRlczsNCj4gKwl1MzIgaXRlbV9pbmxpbmVfbGVuOw0KPiArCWludCByZXQ7DQo+
-ICsJaW50IGNvbXByZXNzZWQgPSAwOw0KPiArCWludCBlcnIgPSAwOw0KPiArDQo+ICsJZmkgPSBi
-dHJmc19pdGVtX3B0cihub2RlLCBwYXRoLT5zbG90c1swXSwNCj4gKwkJCSAgICBzdHJ1Y3QgYnRy
-ZnNfZmlsZV9leHRlbnRfaXRlbSk7DQo+ICsJaXRlbV9pbmxpbmVfbGVuID0gYnRyZnNfZmlsZV9l
-eHRlbnRfaW5saW5lX2l0ZW1fbGVuKG5vZGUsIGUpOw0KPiArCWV4dGVudF9udW1fYnl0ZXMgPSBi
-dHJmc19maWxlX2V4dGVudF9yYW1fYnl0ZXMobm9kZSwgZmkpOw0KPiArCWNvbXByZXNzZWQgPSBi
-dHJmc19maWxlX2V4dGVudF9jb21wcmVzc2lvbihub2RlLCBmaSk7DQo+ICsJYnRyZnNfaXRlbV9r
-ZXlfdG9fY3B1KG5vZGUsICZma2V5LCBwYXRoLT5zbG90c1swXSk7DQo+ICsNCj4gKwlpZiAoZXh0
-ZW50X251bV9ieXRlcyA9PSAwKSB7DQo+ICsJCWVycm9yKA0KPiArInJvb3QgJWxsdSBFWFRFTlRf
-REFUQVslbGx1ICVsbHVdIGhhcyBlbXB0eSBpbmxpbmUgZXh0ZW50IiwNCj4gKwkJCQlyb290LT5v
-YmplY3RpZCwgZmtleS5vYmplY3RpZCwgZmtleS5vZmZzZXQpOw0KPiArCQllcnIgfD0gRklMRV9F
-WFRFTlRfRVJST1I7DQo+ICsJfQ0KPiArDQo+ICsJaWYgKGNvbXByZXNzZWQpIHsNCj4gKwkJaWYg
-KGV4dGVudF9udW1fYnl0ZXMgPiByb290LT5mc19pbmZvLT5zZWN0b3JzaXplKSB7DQo+ICsJCQll
-cnJvcigNCj4gKyJyb290ICVsbHUgRVhURU5UX0RBVEFbJWxsdSAlbGx1XSB0b28gbGFyZ2UgaW5s
-aW5lIGV4dGVudCByYW0gc2l6ZSwgaGF2ZSAlbGx1LCBtYXg6ICV1IiwNCj4gKwkJCQlyb290LT5v
-YmplY3RpZCwgZmtleS5vYmplY3RpZCwNCj4gKwkJCQlma2V5Lm9mZnNldCwgZXh0ZW50X251bV9i
-eXRlcywNCj4gKwkJCQlyb290LT5mc19pbmZvLT5zZWN0b3JzaXplIC0gMSk7DQo+ICsJCQkJZXJy
-IHw9IEZJTEVfRVhURU5UX0VSUk9SOw0KPiArCQl9DQo+ICsNCj4gKwkJaWYgKGl0ZW1faW5saW5l
-X2xlbiA+IG1heF9pbmxpbmVfZXh0ZW50X3NpemUpIHsNCj4gKwkJCWVycm9yKA0KPiArInJvb3Qg
-JWxsdSBFWFRFTlRfREFUQVslbGx1ICVsbHVdIHRvbyBsYXJnZSBpbmxpbmUgZXh0ZW50IG9uLWRp
-c2sgc2l6ZSwgaGF2ZSAldSwgbWF4OiAldSIsDQo+ICsJCQkJcm9vdC0+b2JqZWN0aWQsIGZrZXku
-b2JqZWN0aWQsDQo+ICsJCQkJZmtleS5vZmZzZXQsIGl0ZW1faW5saW5lX2xlbiwNCj4gKwkJCQlt
-YXhfaW5saW5lX2V4dGVudF9zaXplKTsNCj4gKwkJCQllcnIgfD0gRklMRV9FWFRFTlRfRVJST1I7
-DQo+ICsJCX0NCj4gKw0KPiArCX0gZWxzZSB7DQo+ICsNCj4gKwkJaWYgKGV4dGVudF9udW1fYnl0
-ZXMgPiBtYXhfaW5saW5lX2V4dGVudF9zaXplKSB7DQo+ICsJCQllcnJvcigNCj4gKyJyb290ICVs
-bHUgRVhURU5UX0RBVEFbJWxsdSAlbGx1XSB0b28gbGFyZ2UgaW5saW5lIGV4dGVudCBzaXplLCBo
-YXZlICVsbHUsIG1heDogJXUiLA0KPiArCQkJCXJvb3QtPm9iamVjdGlkLCBma2V5Lm9iamVjdGlk
-LCBma2V5Lm9mZnNldCwNCj4gKwkJCQlleHRlbnRfbnVtX2J5dGVzLCBtYXhfaW5saW5lX2V4dGVu
-dF9zaXplKTsNCj4gKwkJCQllcnIgfD0gRklMRV9FWFRFTlRfRVJST1I7DQo+ICsJCX0NCj4gKw0K
-PiArCX0NCj4gKwlpZiAoIWNvbXByZXNzZWQgJiYgZXh0ZW50X251bV9ieXRlcyAhPSBpdGVtX2lu
-bGluZV9sZW4pIHsNCj4gKwkJZXJyb3IoDQo+ICsicm9vdCAlbGx1IEVYVEVOVF9EQVRBWyVsbHUg
-JWxsdV0gd3JvbmcgaW5saW5lIHNpemUsIGhhdmU6ICVsbHUsIGV4cGVjdGVkOiAldSIsDQo+ICsJ
-CQkJcm9vdC0+b2JqZWN0aWQsIGZrZXkub2JqZWN0aWQsIGZrZXkub2Zmc2V0LA0KPiArCQkJCWV4
-dGVudF9udW1fYnl0ZXMsIGl0ZW1faW5saW5lX2xlbik7DQo+ICsJCWlmIChyZXBhaXIpIHsNCj4g
-KwkJCXJldCA9IHJlcGFpcl9pbmxpbmVfcmFtX2J5dGVzKHJvb3QsIHBhdGgsDQo+ICsJCQkJCQkg
-ICAgICAmZXh0ZW50X251bV9ieXRlcyk7DQo+ICsJCQlpZiAocmV0KQ0KPiArCQkJCWVyciB8PSBG
-SUxFX0VYVEVOVF9FUlJPUjsNCj4gKwkJfSBlbHNlIHsNCj4gKwkJCWVyciB8PSBGSUxFX0VYVEVO
-VF9FUlJPUjsNCj4gKwkJfQ0KPiArCX0NCj4gKwkqZW5kICs9IGV4dGVudF9udW1fYnl0ZXM7DQo+
-ICsJKnNpemUgKz0gZXh0ZW50X251bV9ieXRlczsNCj4gKw0KPiArCXJldHVybiBlcnI7DQo+ICt9
-DQo+ICsNCj4gIC8qDQo+ICAgKiBDaGVjayBmaWxlIGV4dGVudCBkYXRhc3VtL2hvbGUsIHVwZGF0
-ZSB0aGUgc2l6ZSBvZiB0aGUgZmlsZSBleHRlbnRzLA0KPiAgICogY2hlY2sgYW5kIHVwZGF0ZSB0
-aGUgbGFzdCBvZmZzZXQgb2YgdGhlIGZpbGUgZXh0ZW50Lg0KPiBAQCAtMTgyNCw4ICsxOTA1LDYg
-QEAgc3RhdGljIGludCBjaGVja19maWxlX2V4dGVudChzdHJ1Y3QgYnRyZnNfcm9vdCAqcm9vdCwg
-c3RydWN0IGJ0cmZzX3BhdGggKnBhdGgsDQo+ICAJdTY0IGNzdW1fZm91bmQ7CQkvKiBJbiBieXRl
-IHNpemUsIHNlY3RvcnNpemUgYWxpZ25lZCAqLw0KPiAgCXU2NCBzZWFyY2hfc3RhcnQ7CS8qIExv
-Z2ljYWwgcmFuZ2Ugc3RhcnQgd2Ugc2VhcmNoIGZvciBjc3VtICovDQo+ICAJdTY0IHNlYXJjaF9s
-ZW47CQkvKiBMb2dpY2FsIHJhbmdlIGxlbiB3ZSBzZWFyY2ggZm9yIGNzdW0gKi8NCj4gLQl1MzIg
-bWF4X2lubGluZV9leHRlbnRfc2l6ZSA9IG1pbl90KHUzMiwgcm9vdC0+ZnNfaW5mby0+c2VjdG9y
-c2l6ZSAtIDEsDQo+IC0JCQkJQlRSRlNfTUFYX0lOTElORV9EQVRBX1NJWkUocm9vdC0+ZnNfaW5m
-bykpOw0KPiAgCXVuc2lnbmVkIGludCBleHRlbnRfdHlwZTsNCj4gIAl1bnNpZ25lZCBpbnQgaXNf
-aG9sZTsNCj4gIAlpbnQgc2xvdCA9IHBhdGgtPnNsb3RzWzBdOw0KPiBAQCAtMTgzOCw2MyArMTkx
-Nyw4IEBAIHN0YXRpYyBpbnQgY2hlY2tfZmlsZV9leHRlbnQoc3RydWN0IGJ0cmZzX3Jvb3QgKnJv
-b3QsIHN0cnVjdCBidHJmc19wYXRoICpwYXRoLA0KPiAgDQo+ICAJLyogQ2hlY2sgaW5saW5lIGV4
-dGVudCAqLw0KPiAgCWV4dGVudF90eXBlID0gYnRyZnNfZmlsZV9leHRlbnRfdHlwZShub2RlLCBm
-aSk7DQo+IC0JaWYgKGV4dGVudF90eXBlID09IEJUUkZTX0ZJTEVfRVhURU5UX0lOTElORSkgew0K
-PiAtCQlzdHJ1Y3QgYnRyZnNfaXRlbSAqZSA9IGJ0cmZzX2l0ZW1fbnIoc2xvdCk7DQo+IC0JCXUz
-MiBpdGVtX2lubGluZV9sZW47DQo+IC0NCj4gLQkJaXRlbV9pbmxpbmVfbGVuID0gYnRyZnNfZmls
-ZV9leHRlbnRfaW5saW5lX2l0ZW1fbGVuKG5vZGUsIGUpOw0KPiAtCQlleHRlbnRfbnVtX2J5dGVz
-ID0gYnRyZnNfZmlsZV9leHRlbnRfcmFtX2J5dGVzKG5vZGUsIGZpKTsNCj4gLQkJY29tcHJlc3Nl
-ZCA9IGJ0cmZzX2ZpbGVfZXh0ZW50X2NvbXByZXNzaW9uKG5vZGUsIGZpKTsNCj4gLQkJaWYgKGV4
-dGVudF9udW1fYnl0ZXMgPT0gMCkgew0KPiAtCQkJZXJyb3IoDQo+IC0JCSJyb290ICVsbHUgRVhU
-RU5UX0RBVEFbJWxsdSAlbGx1XSBoYXMgZW1wdHkgaW5saW5lIGV4dGVudCIsDQo+IC0JCQkJcm9v
-dC0+b2JqZWN0aWQsIGZrZXkub2JqZWN0aWQsIGZrZXkub2Zmc2V0KTsNCj4gLQkJCWVyciB8PSBG
-SUxFX0VYVEVOVF9FUlJPUjsNCj4gLQkJfQ0KPiAtCQlpZiAoY29tcHJlc3NlZCkgew0KPiAtCQkJ
-aWYgKGV4dGVudF9udW1fYnl0ZXMgPiByb290LT5mc19pbmZvLT5zZWN0b3JzaXplKSB7DQo+IC0J
-CQkJZXJyb3IoDQo+IC0icm9vdCAlbGx1IEVYVEVOVF9EQVRBWyVsbHUgJWxsdV0gdG9vIGxhcmdl
-IGlubGluZSBleHRlbnQgcmFtIHNpemUsIGhhdmUgJWxsdSwgbWF4OiAldSIsDQo+IC0JCQkJCXJv
-b3QtPm9iamVjdGlkLCBma2V5Lm9iamVjdGlkLA0KPiAtCQkJCQlma2V5Lm9mZnNldCwgZXh0ZW50
-X251bV9ieXRlcywNCj4gLQkJCQkJcm9vdC0+ZnNfaW5mby0+c2VjdG9yc2l6ZSAtIDEpOw0KPiAt
-CQkJCWVyciB8PSBGSUxFX0VYVEVOVF9FUlJPUjsNCj4gLQkJCX0NCj4gLQkJCWlmIChpdGVtX2lu
-bGluZV9sZW4gPiBtYXhfaW5saW5lX2V4dGVudF9zaXplKSB7DQo+IC0JCQkJZXJyb3IoDQo+IC0i
-cm9vdCAlbGx1IEVYVEVOVF9EQVRBWyVsbHUgJWxsdV0gdG9vIGxhcmdlIGlubGluZSBleHRlbnQg
-b24tZGlzayBzaXplLCBoYXZlICV1LCBtYXg6ICV1IiwNCj4gLQkJCQkJcm9vdC0+b2JqZWN0aWQs
-IGZrZXkub2JqZWN0aWQsDQo+IC0JCQkJCWZrZXkub2Zmc2V0LCBpdGVtX2lubGluZV9sZW4sDQo+
-IC0JCQkJCW1heF9pbmxpbmVfZXh0ZW50X3NpemUpOw0KPiAtCQkJCWVyciB8PSBGSUxFX0VYVEVO
-VF9FUlJPUjsNCj4gLQkJCX0NCj4gLQkJfSBlbHNlIHsNCj4gLQkJCWlmIChleHRlbnRfbnVtX2J5
-dGVzID4gbWF4X2lubGluZV9leHRlbnRfc2l6ZSkgew0KPiAtIAkJCWVycm9yKA0KPiAtICJyb290
-ICVsbHUgRVhURU5UX0RBVEFbJWxsdSAlbGx1XSB0b28gbGFyZ2UgaW5saW5lIGV4dGVudCBzaXpl
-LCBoYXZlICVsbHUsIG1heDogJXUiLA0KPiAtIAkJCQlyb290LT5vYmplY3RpZCwgZmtleS5vYmpl
-Y3RpZCwgZmtleS5vZmZzZXQsDQo+IC0gCQkJCWV4dGVudF9udW1fYnl0ZXMsIG1heF9pbmxpbmVf
-ZXh0ZW50X3NpemUpOw0KPiAtCQkJCWVyciB8PSBGSUxFX0VYVEVOVF9FUlJPUjsNCj4gLQkJCX0N
-Cj4gLQkJfQ0KPiAtCQlpZiAoIWNvbXByZXNzZWQgJiYgZXh0ZW50X251bV9ieXRlcyAhPSBpdGVt
-X2lubGluZV9sZW4pIHsNCj4gLQkJCWVycm9yKA0KPiAtCQkicm9vdCAlbGx1IEVYVEVOVF9EQVRB
-WyVsbHUgJWxsdV0gd3JvbmcgaW5saW5lIHNpemUsIGhhdmU6ICVsbHUsIGV4cGVjdGVkOiAldSIs
-DQo+IC0JCQkJcm9vdC0+b2JqZWN0aWQsIGZrZXkub2JqZWN0aWQsIGZrZXkub2Zmc2V0LA0KPiAt
-CQkJCWV4dGVudF9udW1fYnl0ZXMsIGl0ZW1faW5saW5lX2xlbik7DQo+IC0JCQlpZiAocmVwYWly
-KSB7DQo+IC0JCQkJcmV0ID0gcmVwYWlyX2lubGluZV9yYW1fYnl0ZXMocm9vdCwgcGF0aCwNCj4g
-LQkJCQkJCQkgICAgICAmZXh0ZW50X251bV9ieXRlcyk7DQo+IC0JCQkJaWYgKHJldCkNCj4gLQkJ
-CQkJZXJyIHw9IEZJTEVfRVhURU5UX0VSUk9SOw0KPiAtCQkJfSBlbHNlIHsNCj4gLQkJCQllcnIg
-fD0gRklMRV9FWFRFTlRfRVJST1I7DQo+IC0JCQl9DQo+IC0JCX0NCj4gLQkJKmVuZCArPSBleHRl
-bnRfbnVtX2J5dGVzOw0KPiAtCQkqc2l6ZSArPSBleHRlbnRfbnVtX2J5dGVzOw0KPiAtCQlyZXR1
-cm4gZXJyOw0KPiAtCX0NCj4gKwlpZiAoZXh0ZW50X3R5cGUgPT0gQlRSRlNfRklMRV9FWFRFTlRf
-SU5MSU5FKQ0KPiArCQlyZXR1cm4gY2hlY2tfZmlsZV9leHRlbnRfaW5saW5lKHJvb3QsIHBhdGgs
-IHNpemUsIGVuZCk7DQo+ICANCj4gIAkvKiBDaGVjayBleHRlbnQgdHlwZSAqLw0KPiAgCWlmIChl
-eHRlbnRfdHlwZSAhPSBCVFJGU19GSUxFX0VYVEVOVF9SRUcgJiYNCj4g
+
+
+On 31.10.18 г. 11:22 ч., Qu Wenruo wrote:
+> 
+> 
+> On 2018/10/31 下午4:55, Nikolay Borisov wrote:
+>>
+>>
+>> On 30.10.18 г. 12:18 ч., Qu Wenruo wrote:
+>>> For any recent kernel, there is a chance that btrfs/057 reports false
+>>> errors.
+>>>
+>>> The false error would look like:
+>>>   btrfs/057 4s ... - output mismatch (see /home/adam/xfstests-dev/results//btrfs/057.out.bad)
+>>>       --- tests/btrfs/057.out	2017-08-21 09:25:33.166666666 +0800
+>>>       +++ /home/adam/xfstests-dev/results//btrfs/057.out.bad	2018-10-29 14:07:28.443651293 +0800
+>>>       @@ -1,3 +1,3 @@
+>>>        QA output created by 057
+>>>        4096 4096
+>>>       -4096 4096
+>>>       +28672 28672
+>>>
+>>> This is related to the fact that "btrfs subvolume sync" (or
+>>> vanilla sync) will not ensure orphan (unlinked but still exist) files to
+>>> be removed.
+>>>
+>>> In fact, for that false error case, if inspecting the fs after umount,
+>>> its qgroup number is correct and btrfs check won't report qgroup error.
+>>>
+>>> To fix the false alerts, just skip any manual qgroup number comparison,
+>>> and let fsck done after the test case to detect problem.
+>>>
+>>> This also elimiate the necessary of using specified mount and mkfs
+>>> option, allowing us to improve coverage.
+>>
+>> Something's fishy about this test! THe description states that "
+>>  Quota rescan stress test, we run fsstress and quota rescan
+>> concurrently" yet fsstress is not run concurrently to quota. We first
+>> run fsstress, then trigger rescan with -w. How exactly are rescan and
+>> fsstress run concurrently ?
+> 
+> Indeed that description is just garbage.
+> 
+> The real objective looks like just fsstress + rescan test.
+> No concurrency at all from the very beginning.
+> 
+> Not sure what to do with it.
+
+I guess the real question here is whether the test as-is tests for
+anything useful - if not, we have to either:
+
+a) Rewrite it so that it is useful. From the original commit log:
+
+ Test flow is to run fsstress after triggering quota rescan.
+ the ruler is simple, we just remove all files and directories,
+ sync filesystem and see if qgroup's ref and excl are nodesize.
+
+b) Delete it
+
+
+I can see how a concurrent write to the fs and a pending rescan could be
+a useful thing to exercise. Perhaps it's just a question of making
+fsstress run in the background with slightly bigger workload (and do
+away with the awful (and deprecated) style of stream redirection
+'>&/dev/null').
+
+From bash's man page:
+
+There are two formats for redirecting standard output and standard error:
+
+    &>word
+       and
+    >&word
+
+Of the two forms, the first is preferred.
+
+
+
+
+
+> 
+> Thanks,
+> Qu
+> 
+>>
+>>>
+>>> Reported-by: Nikolay Borisov <nborisov@suse.com>
+>>> Signed-off-by: Qu Wenruo <wqu@suse.com>
+>>> Reviewed-by: Filipe Manana <fdmanana@suse.com>
+>>> ---
+>>> Changelog:
+>>> v2:
+>>>   Update commit message to show this is a long existing bug.
+>>> v3:
+>>>   Remove an old comment since now we don't need to specify the leaf
+>>>   size.
+>>>   Added Reviewed-by tags.
+>>> ---
+>>>  tests/btrfs/057     | 18 ++++--------------
+>>>  tests/btrfs/057.out |  3 +--
+>>>  2 files changed, 5 insertions(+), 16 deletions(-)
+>>>
+>>> diff --git a/tests/btrfs/057 b/tests/btrfs/057
+>>> index b019f4e1e054..82e3162ebfeb 100755
+>>> --- a/tests/btrfs/057
+>>> +++ b/tests/btrfs/057
+>>> @@ -32,13 +32,9 @@ _require_scratch
+>>>  
+>>>  rm -f $seqres.full
+>>>  
+>>> -# use small leaf size to get higher btree height.
+>>> -run_check _scratch_mkfs "-b 1g --nodesize 4096"
+>>> +run_check _scratch_mkfs "-b 1g"
+>>>  
+>>> -# inode cache is saved in the FS tree itself for every
+>>> -# individual FS tree,that affects the sizes reported by qgroup show
+>>> -# so we need to explicitly turn it off to get consistent values.
+>>> -_scratch_mount "-o noinode_cache"
+>>> +_scratch_mount
+>>>  
+>>>  # -w ensures that the only ops are ones which cause write I/O
+>>>  run_check $FSSTRESS_PROG -d $SCRATCH_MNT -w -p 5 -n 1000 \
+>>> @@ -53,14 +49,8 @@ run_check $FSSTRESS_PROG -d $SCRATCH_MNT/snap1 -w -p 5 -n 1000 \
+>>>  _run_btrfs_util_prog quota enable $SCRATCH_MNT
+>>>  _run_btrfs_util_prog quota rescan -w $SCRATCH_MNT
+>>>  
+>>> -# remove all file/dir other than subvolume
+>>> -rm -rf $SCRATCH_MNT/snap1/* >& /dev/null
+>>> -rm -rf $SCRATCH_MNT/p* >& /dev/null
+>>> -
+>>> -_run_btrfs_util_prog filesystem sync $SCRATCH_MNT
+>>> -units=`_btrfs_qgroup_units`
+>>> -$BTRFS_UTIL_PROG qgroup show $units $SCRATCH_MNT | $SED_PROG -n '/[0-9]/p' \
+>>> -	| $AWK_PROG '{print $2" "$3}'
+>>> +echo "Silence is golden"
+>>> +# btrfs check will detect any qgroup number mismatch.
+>>>  
+>>>  status=0
+>>>  exit
+>>> diff --git a/tests/btrfs/057.out b/tests/btrfs/057.out
+>>> index 60cb92d0926c..185023c79961 100644
+>>> --- a/tests/btrfs/057.out
+>>> +++ b/tests/btrfs/057.out
+>>> @@ -1,3 +1,2 @@
+>>>  QA output created by 057
+>>> -4096 4096
+>>> -4096 4096
+>>> +Silence is golden
+>>>
+> 

@@ -3,91 +3,77 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,UNPARSEABLE_RELAY,URIBL_BLOCKED,USER_AGENT_MUTT
-	autolearn=ham autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E9B6EC0044C
-	for <linux-btrfs@archiver.kernel.org>; Wed, 31 Oct 2018 12:06:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DF341C0044C
+	for <linux-btrfs@archiver.kernel.org>; Wed, 31 Oct 2018 12:07:49 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 79BA72081B
-	for <linux-btrfs@archiver.kernel.org>; Wed, 31 Oct 2018 12:06:58 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 79BA72081B
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=net-space.pl
+	by mail.kernel.org (Postfix) with ESMTP id C6DAB2064C
+	for <linux-btrfs@archiver.kernel.org>; Wed, 31 Oct 2018 12:07:48 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org C6DAB2064C
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=rus.uni-stuttgart.de
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728539AbeJaVEl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 31 Oct 2018 17:04:41 -0400
-Received: from dibed.net-space.pl ([84.10.22.86]:33740 "EHLO
-        dibed.net-space.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726830AbeJaVEl (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 31 Oct 2018 17:04:41 -0400
-Received: (from localhost user: 'dkiper' uid#4000 fake: STDIN
-        (dkiper@dibed.net-space.pl)) by router-fw-old.i.net-space.pl
-        id S1877753AbeJaMGX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 31 Oct 2018 13:06:23 +0100
-Date:   Wed, 31 Oct 2018 13:06:23 +0100
-From:   Daniel Kiper <dkiper@net-space.pl>
-To:     Nick Terrell <terrelln@fb.com>
-Cc:     Daniel Kiper <dkiper@net-space.pl>,
-        Goffredo Baroncelli <kreijack@libero.it>,
-        "grub-devel@gnu.org" <grub-devel@gnu.org>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH V10] Add support for BTRFS raid5/6 to GRUB
-Message-ID: <20181031120623.GA13223@router-fw-old.i.net-space.pl>
-References: <20181018175541.9532-1-kreijack@libero.it> <20181022110245.GB12705@router-fw-old.i.net-space.pl> <2F6AF0F1-DD4A-4406-9319-431CB1783BF5@fb.com>
-Mime-Version: 1.0
+        id S1728545AbeJaVFc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 31 Oct 2018 17:05:32 -0400
+Received: from smtp02.belwue.de ([129.143.71.87]:53648 "EHLO smtp02.belwue.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1725897AbeJaVFc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 31 Oct 2018 17:05:32 -0400
+Received: from fex.rus.uni-stuttgart.de (fex.rus.uni-stuttgart.de [129.69.1.129])
+        by smtp02.belwue.de (Postfix) with SMTP id D470665F9
+        for <linux-btrfs@vger.kernel.org>; Wed, 31 Oct 2018 13:07:44 +0100 (MET)
+Date:   Wed, 31 Oct 2018 13:07:44 +0100
+From:   Ulli Horlacher <framstag@rus.uni-stuttgart.de>
+To:     linux-btrfs@vger.kernel.org
+Subject: Re: Understanding "btrfs filesystem usage"
+Message-ID: <20181031120744.GA4990@rus.uni-stuttgart.de>
+Mail-Followup-To: linux-btrfs@vger.kernel.org
+References: <20181029181141.GA31256@rus.uni-stuttgart.de>
+ <85a63523-7e77-f4ca-9947-2c957c5c577a@georgianit.com>
+ <20181030161003.GA25765@rus.uni-stuttgart.de>
+MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <2F6AF0F1-DD4A-4406-9319-431CB1783BF5@fb.com>
-User-Agent: Mutt/1.3.28i
+In-Reply-To: <20181030161003.GA25765@rus.uni-stuttgart.de>
+User-Agent: Mutt/1.5.23 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Oct 22, 2018 at 07:49:40PM +0000, Nick Terrell wrote:
->
->
-> > On Oct 22, 2018, at 4:02 AM, Daniel Kiper <dkiper@net-space.pl> wrote:
-> >
-> > On Thu, Oct 18, 2018 at 07:55:32PM +0200, Goffredo Baroncelli wrote:
-> >>
-> >> Hi All,
-> >>
-> >> the aim of this patches set is to provide support for a BTRFS raid5/6
-> >> filesystem in GRUB.
-> >>
-> >> The first patch, implements the basic support for raid5/6. I.e this works when
-> >> all the disks are present.
-> >>
-> >> The next 5 patches, are preparatory ones.
-> >>
-> >> The 7th patch implements the raid5 recovery for btrfs (i.e. handling the
-> >> disappearing of 1 disk).
-> >> The 8th patch makes the code for handling the raid6 recovery more generic.
-> >> The last one implements the raid6 recovery for btrfs (i.e. handling the
-> >> disappearing up to two disks).
-> >>
-> >> I tested the code in grub-emu, and it works both with all the disks,
-> >> and with some disks missing. I checked the crc32 calculated from grub and
-> >> from linux and these matched. Finally I checked if the support for md raid6
-> >> still works properly, and it does (with all drives and with up to 2 drives
-> >> missing)
-> >>
-> >> Comments are welcome.
-> >
-> > In general whole patch series LGTM. +/- some nit picks including changes
-> > for patch #7. If you are OK with them and there are no objections then
-> > I will apply the patches in a week or so.
->
-> Awesome! I'll look for the update and send an rebased version of the zstd
-> patch set when it is out.
+On Tue 2018-10-30 (17:10), Ulli Horlacher wrote:
+> 
+> On Mon 2018-10-29 (17:57), Remi Gauvin wrote:
+> 
+> > On 2018-10-29 02:11 PM, Ulli Horlacher wrote:
+> > 
+> > > I want to know how many free space is left and have problems in
+> > > interpreting the output of: 
+> > > 
+> > > btrfs filesystem usage
+> > > btrfs filesystem df
+> > > btrfs filesystem show
+> > 
+> > In my not so humble opinion, the filesystem usage command has the
+> > easiest to understand output.  It' lays out all the pertinent information.
+> > 
+> > You can clearly see 825GiB is allocated, with 494GiB used, therefore,
+> > filesystem show is actually using the "Allocated" value as "Used".
+> > Allocated can be thought of "Reserved For".
+> 
+> And what is "Device unallocated"? Not reserved?
 
-v11 pushed.
+The answer is in the FAQ and I am stupid not to looked at it, first :-}
 
-Goffredo, thank you for doing the work.
+https://btrfs.wiki.kernel.org/index.php/FAQ#How_much_free_space_do_I_have.3F
 
-Nick, you can go ahead and rebase yours patchset.
 
-Daniel
+-- 
+Ullrich Horlacher              Server und Virtualisierung
+Rechenzentrum TIK         
+Universitaet Stuttgart         E-Mail: horlacher@tik.uni-stuttgart.de
+Allmandring 30a                Tel:    ++49-711-68565868
+70569 Stuttgart (Germany)      WWW:    http://www.tik.uni-stuttgart.de/
+REF:<20181030161003.GA25765@rus.uni-stuttgart.de>

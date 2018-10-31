@@ -2,287 +2,213 @@ Return-Path: <SRS0=X8W1=NL=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.8 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3DC92ECDE44
-	for <linux-btrfs@archiver.kernel.org>; Wed, 31 Oct 2018 09:43:30 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 83199ECDE46
+	for <linux-btrfs@archiver.kernel.org>; Wed, 31 Oct 2018 09:45:23 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id ED90A20685
-	for <linux-btrfs@archiver.kernel.org>; Wed, 31 Oct 2018 09:43:29 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org ED90A20685
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
+	by mail.kernel.org (Postfix) with ESMTP id 08F4F20685
+	for <linux-btrfs@archiver.kernel.org>; Wed, 31 Oct 2018 09:45:23 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (1024-bit key) header.d=fujitsu.onmicrosoft.com header.i=@fujitsu.onmicrosoft.com header.b="Cq8o3raF"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 08F4F20685
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=fujitsu.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727999AbeJaSku (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 31 Oct 2018 14:40:50 -0400
-Received: from mx2.suse.de ([195.135.220.15]:42834 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727436AbeJaSku (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 31 Oct 2018 14:40:50 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id C5BDDAF3C;
-        Wed, 31 Oct 2018 09:43:26 +0000 (UTC)
-Subject: Re: [PATCH 1/3] btrfs-progs: check: lowmem: Factor out inline extent
- checking code in its own function
-To:     "misono.tomohiro@fujitsu.com" <misono.tomohiro@fujitsu.com>,
+        id S1727961AbeJaSmn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 31 Oct 2018 14:42:43 -0400
+Received: from esa10.fujitsucc.c3s2.iphmx.com ([68.232.159.247]:54404 "EHLO
+        esa10.fujitsucc.c3s2.iphmx.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1726075AbeJaSmn (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 31 Oct 2018 14:42:43 -0400
+X-Greylist: delayed 592 seconds by postgrey-1.27 at vger.kernel.org; Wed, 31 Oct 2018 14:42:41 EDT
+X-IronPort-AV: E=McAfee;i="5900,7806,9062"; a="1397684"
+X-IronPort-AV: E=Sophos;i="5.54,447,1534777200"; 
+   d="scan'208";a="1397684"
+Received: from mail-hk2apc01lp0213.outbound.protection.outlook.com (HELO APC01-HK2-obe.outbound.protection.outlook.com) ([65.55.88.213])
+  by ob1.fujitsucc.c3s2.iphmx.com with ESMTP/TLS/AES256-SHA256; 31 Oct 2018 18:35:26 +0900
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=fujitsu.onmicrosoft.com; s=selector1-fujitsu-onmicrosoft-com;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=/IAhM6m6VRuQc5KifkJqw69NlZR4mSi0xMS4UVWRtRk=;
+ b=Cq8o3raFGUCa4YyoDAY9ZaVUnre/0oaNz9EPSxte2yv7IF2NaxEPgJ9kTnY8hSFtBl5iJAl9VJmFh/INy0tSWBKI5oRMgCZyI//7W5i53XUUBBEsmTVI+ZD+zqBdgvAfqmbWaUlSVUp3U2wwQJF6+cq+Fg05atmH/i0sO8/Hqwk=
+Received: from TY2PR01MB3050.jpnprd01.prod.outlook.com (20.177.99.84) by
+ TY2PR01MB3353.jpnprd01.prod.outlook.com (20.178.133.74) with Microsoft SMTP
+ Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
+ 15.20.1273.27; Wed, 31 Oct 2018 09:35:21 +0000
+Received: from TY2PR01MB3050.jpnprd01.prod.outlook.com
+ ([fe80::c05e:cea2:fd7d:ac08]) by TY2PR01MB3050.jpnprd01.prod.outlook.com
+ ([fe80::c05e:cea2:fd7d:ac08%5]) with mapi id 15.20.1294.021; Wed, 31 Oct 2018
+ 09:35:21 +0000
+From:   "misono.tomohiro@fujitsu.com" <misono.tomohiro@fujitsu.com>
+To:     Nikolay Borisov <nborisov@suse.com>,
         "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
         David Sterba <dsterba@suse.cz>
+Subject: Re: [PATCH 1/3] btrfs-progs: check: lowmem: Factor out inline extent
+ checking code in its own function
+Thread-Topic: [PATCH 1/3] btrfs-progs: check: lowmem: Factor out inline extent
+ checking code in its own function
+Thread-Index: AQHUS1ostjbBxi+aX0+2tSuDX7p8waU5Y2GA
+Date:   Wed, 31 Oct 2018 09:35:21 +0000
+Message-ID: <09347419-aba9-7fdb-e756-109ed8d3eaee@fujitsu.com>
 References: <20180913120507.18197-1-nborisov@suse.com>
  <20180913120507.18197-2-nborisov@suse.com>
- <09347419-aba9-7fdb-e756-109ed8d3eaee@fujitsu.com>
-From:   Nikolay Borisov <nborisov@suse.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <7bc87724-9d43-e487-140b-fc184cd83873@suse.com>
-Date:   Wed, 31 Oct 2018 11:43:20 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.2.1
-MIME-Version: 1.0
-In-Reply-To: <09347419-aba9-7fdb-e756-109ed8d3eaee@fujitsu.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <20180913120507.18197-2-nborisov@suse.com>
+Accept-Language: ja-JP, en-US
 Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+X-MS-Has-Attach: 
+X-MS-TNEF-Correlator: 
+authentication-results: spf=none (sender IP is )
+ smtp.mailfrom=misono.tomohiro@fujitsu.com; 
+x-originating-ip: [180.43.167.188]
+x-ms-publictraffictype: Email
+x-microsoft-exchange-diagnostics: 1;TY2PR01MB3353;6:M+kUxsQM2Htvojbn0k/33Jo4Jaqv+jzhftGCNpKirsPy9ow0q7EoWpIampb51OE/PP+UzniFt4locPUpvWwMLtFTqVIyWgxQM0A1s6lt6zMzLfxcJjD3+vTiNTfNm4hqXZxKvj4fSrf2Gw3TFaYcgDv75aoAX9KXzKnrHAP4QXnV7zo+uJ9sYGcMpty3AJbn3nk+QnMY4ktUoLO/NYcs0cgxmg7tylOvsuU0gkdffTiayHoWdmyhKLMyXy5exjKVIKJiqMZ9X1cgAEPoiiCPBivulhWyGqOdUtkAF3tfczrn6nPh2OJ2xF4ou/tcjdHR5cHMuVDLuarc4jG2bEDNMy5VcAbKcbAwE5YSClEUUjcqzUQA4A+mC5oE2PB1g1ca8lKedzjZDqjRGEwksEdyMzoY/SJNu20aTVSc3vdm8lUWJxObZmXVqdSZ9KgqPvLxwjrQNRKFMLVtoCLAO8ef8g==;5:QvIZowIjfl0KUMAYbgvar8wx/SFZZueBHxAiIuhWV451r1LH4WHP4mPWLMwCMOsFVmbUNeT6HIucCwvuzTaHo0aqFAsy9eoYOc8dh90EoUTghmcec6eyw53fcsHvuqaHwv/7m03zD8EEc/yS7vzpsrx+J5PC1CtfeQyW3KUH0cs=;7:Cems2miQaGcoWWlqOq6+UaIATkWe2LoZbt5xqc1+DA+2umiTUuTYFyCCGZyrZr4VW4gQsG3tk+NRR+Bhzg/erfsGZSkwH8F0N5KcD5suWe6P0TcUDuql5gOMz1EeDs7RdQVkba1P2JAjTTPgmMq7qg==
+x-ms-exchange-antispam-srfa-diagnostics: SOS;
+x-ms-office365-filtering-correlation-id: 2d2882b5-09ed-42c6-f14b-08d63f142dc3
+x-microsoft-antispam: BCL:0;PCL:0;RULEID:(7020095)(4652040)(8989299)(4534185)(4627221)(201703031133081)(201702281549075)(8990200)(5600074)(711020)(2017052603328)(7193020);SRVR:TY2PR01MB3353;
+x-ms-traffictypediagnostic: TY2PR01MB3353:
+x-microsoft-antispam-prvs: <TY2PR01MB33539563F7D90D4CD47B4933E5CD0@TY2PR01MB3353.jpnprd01.prod.outlook.com>
+x-exchange-antispam-report-test: UriScan:(163750095850);
+x-ms-exchange-senderadcheck: 1
+x-exchange-antispam-report-cfa-test: BCL:0;PCL:0;RULEID:(8211001083)(6040522)(2401047)(8121501046)(5005006)(93006095)(93001095)(10201501046)(3002001)(3231382)(944501410)(52105095)(6055026)(148016)(149066)(150057)(6041310)(20161123558120)(20161123564045)(20161123560045)(20161123562045)(201703131423095)(201702281528075)(20161123555045)(201703061421075)(201703061406153)(201708071742011)(7699051)(76991095);SRVR:TY2PR01MB3353;BCL:0;PCL:0;RULEID:;SRVR:TY2PR01MB3353;
+x-forefront-prvs: 084285FC5C
+x-forefront-antispam-report: SFV:NSPM;SFS:(10009020)(136003)(376002)(39860400002)(396003)(346002)(366004)(189003)(199004)(31686004)(6436002)(14444005)(316002)(6512007)(8936002)(71190400001)(229853002)(105586002)(71200400001)(186003)(6486002)(76176011)(256004)(6246003)(106356001)(53936002)(66066001)(81166006)(81156014)(102836004)(26005)(8676002)(6506007)(486006)(110136005)(36756003)(2501003)(6116002)(31696002)(478600001)(5250100002)(25786009)(68736007)(86362001)(85182001)(5660300001)(2906002)(305945005)(7736002)(11346002)(14454004)(2616005)(446003)(2900100001)(99286004)(476003)(3846002)(97736004)(777600001);DIR:OUT;SFP:1101;SCL:1;SRVR:TY2PR01MB3353;H:TY2PR01MB3050.jpnprd01.prod.outlook.com;FPR:;SPF:None;LANG:en;PTR:InfoNoRecords;MX:1;A:1;
+x-microsoft-antispam-message-info: 8yoxFb1Mzmg5KyBbMkyELsmzxWqilNTcd0hdnDMllxz+7S57WLqxQ081imHeNhrHqiSFMU12msj0dMyiyTR7oJKQQYpMwHEyoCwnnnHF5H7HyWbCN/SBEgIEAEhy3/JjiEEKIfuYdgPIy7Qx6msszPc46UdOvYn+hzL79XI1gC0EKZb1CAiDofEW4cPlMAjz4as5YIsxYxY84EcVUKk2O5x3Wv0DY7dhc6sjBwT0uLbCh3nY3hdOVhsgh/nm6rzMGrPWEWDkIGxOf1Kmz7L05pZFL/iT+YPp8WCADF1WWmH/1Vcr1J7mxKCv6k6OLmosDxfr9vKJioZmkgv4JQyjsX8YAKfMpWF8TqgrilRauEg=
+spamdiagnosticoutput: 1:99
+spamdiagnosticmetadata: NSPM
+Content-Type: text/plain; charset="utf-8"
+Content-ID: <904CEC807FA3E2468E807C29ED68144A@jpnprd01.prod.outlook.com>
+Content-Transfer-Encoding: base64
+MIME-Version: 1.0
+X-OriginatorOrg: fujitsu.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: 2d2882b5-09ed-42c6-f14b-08d63f142dc3
+X-MS-Exchange-CrossTenant-originalarrivaltime: 31 Oct 2018 09:35:21.8895
+ (UTC)
+X-MS-Exchange-CrossTenant-fromentityheader: Hosted
+X-MS-Exchange-CrossTenant-id: a19f121d-81e1-4858-a9d8-736e267fd4c7
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: TY2PR01MB3353
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-
-
-On 31.10.18 г. 11:35 ч., misono.tomohiro@fujitsu.com wrote:
-> Hello,
-> 
-> fsck-test 006 fails for low-mem mode in current devel branch and bisect points this.
-> 
->> Since the inline extent code can be largely self-sufficient, factor
->> it out from check_file_extent. No functional changes.
->>
->> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
->> ---
->>  check/mode-lowmem.c | 142 ++++++++++++++++++++++++++------------------
->>  1 file changed, 83 insertions(+), 59 deletions(-)
->>
->> diff --git a/check/mode-lowmem.c b/check/mode-lowmem.c
->> index 1bce44f5658a..48c1537e7440 100644
->> --- a/check/mode-lowmem.c
->> +++ b/check/mode-lowmem.c
->> @@ -1800,6 +1800,87 @@ static int repair_inline_ram_bytes(struct btrfs_root *root,
->>  	return ret;
->>  }
->>  
->> +
->> +static int check_file_extent_inline(struct btrfs_root *root,
->> +				    struct btrfs_path *path, u64 *size,
->> +				    u64 *end)
->> +{
->> +	u32 max_inline_extent_size = min_t(u32, root->fs_info->sectorsize - 1,
->> +				BTRFS_MAX_INLINE_DATA_SIZE(root->fs_info));
->> +	struct extent_buffer *node = path->nodes[0];
->> +	struct btrfs_item *e = btrfs_item_nr(0);
->                                btrfs_item_nr(path->slots[0])
-> 
-> I think this fixes the problem.
-
-Indeed, the original code uses path->slots[0] as the slot whereas I've
-fixed that at slow 0, which of course is not always going to be the case.
-
-David will you fold this in the original patch ?
-
-> Thanks.
-> 
-> Misono
-> 
->> +	struct btrfs_file_extent_item *fi;
->> +	struct btrfs_key fkey;
->> +	u64 extent_num_bytes;
->> +	u32 item_inline_len;
->> +	int ret;
->> +	int compressed = 0;
->> +	int err = 0;
->> +
->> +	fi = btrfs_item_ptr(node, path->slots[0],
->> +			    struct btrfs_file_extent_item);
->> +	item_inline_len = btrfs_file_extent_inline_item_len(node, e);
->> +	extent_num_bytes = btrfs_file_extent_ram_bytes(node, fi);
->> +	compressed = btrfs_file_extent_compression(node, fi);
->> +	btrfs_item_key_to_cpu(node, &fkey, path->slots[0]);
->> +
->> +	if (extent_num_bytes == 0) {
->> +		error(
->> +"root %llu EXTENT_DATA[%llu %llu] has empty inline extent",
->> +				root->objectid, fkey.objectid, fkey.offset);
->> +		err |= FILE_EXTENT_ERROR;
->> +	}
->> +
->> +	if (compressed) {
->> +		if (extent_num_bytes > root->fs_info->sectorsize) {
->> +			error(
->> +"root %llu EXTENT_DATA[%llu %llu] too large inline extent ram size, have %llu, max: %u",
->> +				root->objectid, fkey.objectid,
->> +				fkey.offset, extent_num_bytes,
->> +				root->fs_info->sectorsize - 1);
->> +				err |= FILE_EXTENT_ERROR;
->> +		}
->> +
->> +		if (item_inline_len > max_inline_extent_size) {
->> +			error(
->> +"root %llu EXTENT_DATA[%llu %llu] too large inline extent on-disk size, have %u, max: %u",
->> +				root->objectid, fkey.objectid,
->> +				fkey.offset, item_inline_len,
->> +				max_inline_extent_size);
->> +				err |= FILE_EXTENT_ERROR;
->> +		}
->> +
->> +	} else {
->> +
->> +		if (extent_num_bytes > max_inline_extent_size) {
->> +			error(
->> +"root %llu EXTENT_DATA[%llu %llu] too large inline extent size, have %llu, max: %u",
->> +				root->objectid, fkey.objectid, fkey.offset,
->> +				extent_num_bytes, max_inline_extent_size);
->> +				err |= FILE_EXTENT_ERROR;
->> +		}
->> +
->> +	}
->> +	if (!compressed && extent_num_bytes != item_inline_len) {
->> +		error(
->> +"root %llu EXTENT_DATA[%llu %llu] wrong inline size, have: %llu, expected: %u",
->> +				root->objectid, fkey.objectid, fkey.offset,
->> +				extent_num_bytes, item_inline_len);
->> +		if (repair) {
->> +			ret = repair_inline_ram_bytes(root, path,
->> +						      &extent_num_bytes);
->> +			if (ret)
->> +				err |= FILE_EXTENT_ERROR;
->> +		} else {
->> +			err |= FILE_EXTENT_ERROR;
->> +		}
->> +	}
->> +	*end += extent_num_bytes;
->> +	*size += extent_num_bytes;
->> +
->> +	return err;
->> +}
->> +
->>  /*
->>   * Check file extent datasum/hole, update the size of the file extents,
->>   * check and update the last offset of the file extent.
->> @@ -1824,8 +1905,6 @@ static int check_file_extent(struct btrfs_root *root, struct btrfs_path *path,
->>  	u64 csum_found;		/* In byte size, sectorsize aligned */
->>  	u64 search_start;	/* Logical range start we search for csum */
->>  	u64 search_len;		/* Logical range len we search for csum */
->> -	u32 max_inline_extent_size = min_t(u32, root->fs_info->sectorsize - 1,
->> -				BTRFS_MAX_INLINE_DATA_SIZE(root->fs_info));
->>  	unsigned int extent_type;
->>  	unsigned int is_hole;
->>  	int slot = path->slots[0];
->> @@ -1838,63 +1917,8 @@ static int check_file_extent(struct btrfs_root *root, struct btrfs_path *path,
->>  
->>  	/* Check inline extent */
->>  	extent_type = btrfs_file_extent_type(node, fi);
->> -	if (extent_type == BTRFS_FILE_EXTENT_INLINE) {
->> -		struct btrfs_item *e = btrfs_item_nr(slot);
->> -		u32 item_inline_len;
->> -
->> -		item_inline_len = btrfs_file_extent_inline_item_len(node, e);
->> -		extent_num_bytes = btrfs_file_extent_ram_bytes(node, fi);
->> -		compressed = btrfs_file_extent_compression(node, fi);
->> -		if (extent_num_bytes == 0) {
->> -			error(
->> -		"root %llu EXTENT_DATA[%llu %llu] has empty inline extent",
->> -				root->objectid, fkey.objectid, fkey.offset);
->> -			err |= FILE_EXTENT_ERROR;
->> -		}
->> -		if (compressed) {
->> -			if (extent_num_bytes > root->fs_info->sectorsize) {
->> -				error(
->> -"root %llu EXTENT_DATA[%llu %llu] too large inline extent ram size, have %llu, max: %u",
->> -					root->objectid, fkey.objectid,
->> -					fkey.offset, extent_num_bytes,
->> -					root->fs_info->sectorsize - 1);
->> -				err |= FILE_EXTENT_ERROR;
->> -			}
->> -			if (item_inline_len > max_inline_extent_size) {
->> -				error(
->> -"root %llu EXTENT_DATA[%llu %llu] too large inline extent on-disk size, have %u, max: %u",
->> -					root->objectid, fkey.objectid,
->> -					fkey.offset, item_inline_len,
->> -					max_inline_extent_size);
->> -				err |= FILE_EXTENT_ERROR;
->> -			}
->> -		} else {
->> -			if (extent_num_bytes > max_inline_extent_size) {
->> - 			error(
->> - "root %llu EXTENT_DATA[%llu %llu] too large inline extent size, have %llu, max: %u",
->> - 				root->objectid, fkey.objectid, fkey.offset,
->> - 				extent_num_bytes, max_inline_extent_size);
->> -				err |= FILE_EXTENT_ERROR;
->> -			}
->> -		}
->> -		if (!compressed && extent_num_bytes != item_inline_len) {
->> -			error(
->> -		"root %llu EXTENT_DATA[%llu %llu] wrong inline size, have: %llu, expected: %u",
->> -				root->objectid, fkey.objectid, fkey.offset,
->> -				extent_num_bytes, item_inline_len);
->> -			if (repair) {
->> -				ret = repair_inline_ram_bytes(root, path,
->> -							      &extent_num_bytes);
->> -				if (ret)
->> -					err |= FILE_EXTENT_ERROR;
->> -			} else {
->> -				err |= FILE_EXTENT_ERROR;
->> -			}
->> -		}
->> -		*end += extent_num_bytes;
->> -		*size += extent_num_bytes;
->> -		return err;
->> -	}
->> +	if (extent_type == BTRFS_FILE_EXTENT_INLINE)
->> +		return check_file_extent_inline(root, path, size, end);
->>  
->>  	/* Check extent type */
->>  	if (extent_type != BTRFS_FILE_EXTENT_REG &&
+SGVsbG8sDQoNCmZzY2stdGVzdCAwMDYgZmFpbHMgZm9yIGxvdy1tZW0gbW9kZSBpbiBjdXJyZW50
+IGRldmVsIGJyYW5jaCBhbmQgYmlzZWN0IHBvaW50cyB0aGlzLg0KDQo+IFNpbmNlIHRoZSBpbmxp
+bmUgZXh0ZW50IGNvZGUgY2FuIGJlIGxhcmdlbHkgc2VsZi1zdWZmaWNpZW50LCBmYWN0b3INCj4g
+aXQgb3V0IGZyb20gY2hlY2tfZmlsZV9leHRlbnQuIE5vIGZ1bmN0aW9uYWwgY2hhbmdlcy4NCj4g
+DQo+IFNpZ25lZC1vZmYtYnk6IE5pa29sYXkgQm9yaXNvdiA8bmJvcmlzb3ZAc3VzZS5jb20+DQo+
+IC0tLQ0KPiAgY2hlY2svbW9kZS1sb3dtZW0uYyB8IDE0MiArKysrKysrKysrKysrKysrKysrKysr
+KysrKy0tLS0tLS0tLS0tLS0tLS0tLQ0KPiAgMSBmaWxlIGNoYW5nZWQsIDgzIGluc2VydGlvbnMo
+KyksIDU5IGRlbGV0aW9ucygtKQ0KPiANCj4gZGlmZiAtLWdpdCBhL2NoZWNrL21vZGUtbG93bWVt
+LmMgYi9jaGVjay9tb2RlLWxvd21lbS5jDQo+IGluZGV4IDFiY2U0NGY1NjU4YS4uNDhjMTUzN2U3
+NDQwIDEwMDY0NA0KPiAtLS0gYS9jaGVjay9tb2RlLWxvd21lbS5jDQo+ICsrKyBiL2NoZWNrL21v
+ZGUtbG93bWVtLmMNCj4gQEAgLTE4MDAsNiArMTgwMCw4NyBAQCBzdGF0aWMgaW50IHJlcGFpcl9p
+bmxpbmVfcmFtX2J5dGVzKHN0cnVjdCBidHJmc19yb290ICpyb290LA0KPiAgCXJldHVybiByZXQ7
+DQo+ICB9DQo+ICANCj4gKw0KPiArc3RhdGljIGludCBjaGVja19maWxlX2V4dGVudF9pbmxpbmUo
+c3RydWN0IGJ0cmZzX3Jvb3QgKnJvb3QsDQo+ICsJCQkJICAgIHN0cnVjdCBidHJmc19wYXRoICpw
+YXRoLCB1NjQgKnNpemUsDQo+ICsJCQkJICAgIHU2NCAqZW5kKQ0KPiArew0KPiArCXUzMiBtYXhf
+aW5saW5lX2V4dGVudF9zaXplID0gbWluX3QodTMyLCByb290LT5mc19pbmZvLT5zZWN0b3JzaXpl
+IC0gMSwNCj4gKwkJCQlCVFJGU19NQVhfSU5MSU5FX0RBVEFfU0laRShyb290LT5mc19pbmZvKSk7
+DQo+ICsJc3RydWN0IGV4dGVudF9idWZmZXIgKm5vZGUgPSBwYXRoLT5ub2Rlc1swXTsNCj4gKwlz
+dHJ1Y3QgYnRyZnNfaXRlbSAqZSA9IGJ0cmZzX2l0ZW1fbnIoMCk7DQogICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgYnRyZnNfaXRlbV9ucihwYXRoLT5zbG90c1swXSkNCg0KSSB0aGluayB0
+aGlzIGZpeGVzIHRoZSBwcm9ibGVtLg0KVGhhbmtzLg0KDQpNaXNvbm8NCg0KPiArCXN0cnVjdCBi
+dHJmc19maWxlX2V4dGVudF9pdGVtICpmaTsNCj4gKwlzdHJ1Y3QgYnRyZnNfa2V5IGZrZXk7DQo+
+ICsJdTY0IGV4dGVudF9udW1fYnl0ZXM7DQo+ICsJdTMyIGl0ZW1faW5saW5lX2xlbjsNCj4gKwlp
+bnQgcmV0Ow0KPiArCWludCBjb21wcmVzc2VkID0gMDsNCj4gKwlpbnQgZXJyID0gMDsNCj4gKw0K
+PiArCWZpID0gYnRyZnNfaXRlbV9wdHIobm9kZSwgcGF0aC0+c2xvdHNbMF0sDQo+ICsJCQkgICAg
+c3RydWN0IGJ0cmZzX2ZpbGVfZXh0ZW50X2l0ZW0pOw0KPiArCWl0ZW1faW5saW5lX2xlbiA9IGJ0
+cmZzX2ZpbGVfZXh0ZW50X2lubGluZV9pdGVtX2xlbihub2RlLCBlKTsNCj4gKwlleHRlbnRfbnVt
+X2J5dGVzID0gYnRyZnNfZmlsZV9leHRlbnRfcmFtX2J5dGVzKG5vZGUsIGZpKTsNCj4gKwljb21w
+cmVzc2VkID0gYnRyZnNfZmlsZV9leHRlbnRfY29tcHJlc3Npb24obm9kZSwgZmkpOw0KPiArCWJ0
+cmZzX2l0ZW1fa2V5X3RvX2NwdShub2RlLCAmZmtleSwgcGF0aC0+c2xvdHNbMF0pOw0KPiArDQo+
+ICsJaWYgKGV4dGVudF9udW1fYnl0ZXMgPT0gMCkgew0KPiArCQllcnJvcigNCj4gKyJyb290ICVs
+bHUgRVhURU5UX0RBVEFbJWxsdSAlbGx1XSBoYXMgZW1wdHkgaW5saW5lIGV4dGVudCIsDQo+ICsJ
+CQkJcm9vdC0+b2JqZWN0aWQsIGZrZXkub2JqZWN0aWQsIGZrZXkub2Zmc2V0KTsNCj4gKwkJZXJy
+IHw9IEZJTEVfRVhURU5UX0VSUk9SOw0KPiArCX0NCj4gKw0KPiArCWlmIChjb21wcmVzc2VkKSB7
+DQo+ICsJCWlmIChleHRlbnRfbnVtX2J5dGVzID4gcm9vdC0+ZnNfaW5mby0+c2VjdG9yc2l6ZSkg
+ew0KPiArCQkJZXJyb3IoDQo+ICsicm9vdCAlbGx1IEVYVEVOVF9EQVRBWyVsbHUgJWxsdV0gdG9v
+IGxhcmdlIGlubGluZSBleHRlbnQgcmFtIHNpemUsIGhhdmUgJWxsdSwgbWF4OiAldSIsDQo+ICsJ
+CQkJcm9vdC0+b2JqZWN0aWQsIGZrZXkub2JqZWN0aWQsDQo+ICsJCQkJZmtleS5vZmZzZXQsIGV4
+dGVudF9udW1fYnl0ZXMsDQo+ICsJCQkJcm9vdC0+ZnNfaW5mby0+c2VjdG9yc2l6ZSAtIDEpOw0K
+PiArCQkJCWVyciB8PSBGSUxFX0VYVEVOVF9FUlJPUjsNCj4gKwkJfQ0KPiArDQo+ICsJCWlmIChp
+dGVtX2lubGluZV9sZW4gPiBtYXhfaW5saW5lX2V4dGVudF9zaXplKSB7DQo+ICsJCQllcnJvcigN
+Cj4gKyJyb290ICVsbHUgRVhURU5UX0RBVEFbJWxsdSAlbGx1XSB0b28gbGFyZ2UgaW5saW5lIGV4
+dGVudCBvbi1kaXNrIHNpemUsIGhhdmUgJXUsIG1heDogJXUiLA0KPiArCQkJCXJvb3QtPm9iamVj
+dGlkLCBma2V5Lm9iamVjdGlkLA0KPiArCQkJCWZrZXkub2Zmc2V0LCBpdGVtX2lubGluZV9sZW4s
+DQo+ICsJCQkJbWF4X2lubGluZV9leHRlbnRfc2l6ZSk7DQo+ICsJCQkJZXJyIHw9IEZJTEVfRVhU
+RU5UX0VSUk9SOw0KPiArCQl9DQo+ICsNCj4gKwl9IGVsc2Ugew0KPiArDQo+ICsJCWlmIChleHRl
+bnRfbnVtX2J5dGVzID4gbWF4X2lubGluZV9leHRlbnRfc2l6ZSkgew0KPiArCQkJZXJyb3IoDQo+
+ICsicm9vdCAlbGx1IEVYVEVOVF9EQVRBWyVsbHUgJWxsdV0gdG9vIGxhcmdlIGlubGluZSBleHRl
+bnQgc2l6ZSwgaGF2ZSAlbGx1LCBtYXg6ICV1IiwNCj4gKwkJCQlyb290LT5vYmplY3RpZCwgZmtl
+eS5vYmplY3RpZCwgZmtleS5vZmZzZXQsDQo+ICsJCQkJZXh0ZW50X251bV9ieXRlcywgbWF4X2lu
+bGluZV9leHRlbnRfc2l6ZSk7DQo+ICsJCQkJZXJyIHw9IEZJTEVfRVhURU5UX0VSUk9SOw0KPiAr
+CQl9DQo+ICsNCj4gKwl9DQo+ICsJaWYgKCFjb21wcmVzc2VkICYmIGV4dGVudF9udW1fYnl0ZXMg
+IT0gaXRlbV9pbmxpbmVfbGVuKSB7DQo+ICsJCWVycm9yKA0KPiArInJvb3QgJWxsdSBFWFRFTlRf
+REFUQVslbGx1ICVsbHVdIHdyb25nIGlubGluZSBzaXplLCBoYXZlOiAlbGx1LCBleHBlY3RlZDog
+JXUiLA0KPiArCQkJCXJvb3QtPm9iamVjdGlkLCBma2V5Lm9iamVjdGlkLCBma2V5Lm9mZnNldCwN
+Cj4gKwkJCQlleHRlbnRfbnVtX2J5dGVzLCBpdGVtX2lubGluZV9sZW4pOw0KPiArCQlpZiAocmVw
+YWlyKSB7DQo+ICsJCQlyZXQgPSByZXBhaXJfaW5saW5lX3JhbV9ieXRlcyhyb290LCBwYXRoLA0K
+PiArCQkJCQkJICAgICAgJmV4dGVudF9udW1fYnl0ZXMpOw0KPiArCQkJaWYgKHJldCkNCj4gKwkJ
+CQllcnIgfD0gRklMRV9FWFRFTlRfRVJST1I7DQo+ICsJCX0gZWxzZSB7DQo+ICsJCQllcnIgfD0g
+RklMRV9FWFRFTlRfRVJST1I7DQo+ICsJCX0NCj4gKwl9DQo+ICsJKmVuZCArPSBleHRlbnRfbnVt
+X2J5dGVzOw0KPiArCSpzaXplICs9IGV4dGVudF9udW1fYnl0ZXM7DQo+ICsNCj4gKwlyZXR1cm4g
+ZXJyOw0KPiArfQ0KPiArDQo+ICAvKg0KPiAgICogQ2hlY2sgZmlsZSBleHRlbnQgZGF0YXN1bS9o
+b2xlLCB1cGRhdGUgdGhlIHNpemUgb2YgdGhlIGZpbGUgZXh0ZW50cywNCj4gICAqIGNoZWNrIGFu
+ZCB1cGRhdGUgdGhlIGxhc3Qgb2Zmc2V0IG9mIHRoZSBmaWxlIGV4dGVudC4NCj4gQEAgLTE4MjQs
+OCArMTkwNSw2IEBAIHN0YXRpYyBpbnQgY2hlY2tfZmlsZV9leHRlbnQoc3RydWN0IGJ0cmZzX3Jv
+b3QgKnJvb3QsIHN0cnVjdCBidHJmc19wYXRoICpwYXRoLA0KPiAgCXU2NCBjc3VtX2ZvdW5kOwkJ
+LyogSW4gYnl0ZSBzaXplLCBzZWN0b3JzaXplIGFsaWduZWQgKi8NCj4gIAl1NjQgc2VhcmNoX3N0
+YXJ0OwkvKiBMb2dpY2FsIHJhbmdlIHN0YXJ0IHdlIHNlYXJjaCBmb3IgY3N1bSAqLw0KPiAgCXU2
+NCBzZWFyY2hfbGVuOwkJLyogTG9naWNhbCByYW5nZSBsZW4gd2Ugc2VhcmNoIGZvciBjc3VtICov
+DQo+IC0JdTMyIG1heF9pbmxpbmVfZXh0ZW50X3NpemUgPSBtaW5fdCh1MzIsIHJvb3QtPmZzX2lu
+Zm8tPnNlY3RvcnNpemUgLSAxLA0KPiAtCQkJCUJUUkZTX01BWF9JTkxJTkVfREFUQV9TSVpFKHJv
+b3QtPmZzX2luZm8pKTsNCj4gIAl1bnNpZ25lZCBpbnQgZXh0ZW50X3R5cGU7DQo+ICAJdW5zaWdu
+ZWQgaW50IGlzX2hvbGU7DQo+ICAJaW50IHNsb3QgPSBwYXRoLT5zbG90c1swXTsNCj4gQEAgLTE4
+MzgsNjMgKzE5MTcsOCBAQCBzdGF0aWMgaW50IGNoZWNrX2ZpbGVfZXh0ZW50KHN0cnVjdCBidHJm
+c19yb290ICpyb290LCBzdHJ1Y3QgYnRyZnNfcGF0aCAqcGF0aCwNCj4gIA0KPiAgCS8qIENoZWNr
+IGlubGluZSBleHRlbnQgKi8NCj4gIAlleHRlbnRfdHlwZSA9IGJ0cmZzX2ZpbGVfZXh0ZW50X3R5
+cGUobm9kZSwgZmkpOw0KPiAtCWlmIChleHRlbnRfdHlwZSA9PSBCVFJGU19GSUxFX0VYVEVOVF9J
+TkxJTkUpIHsNCj4gLQkJc3RydWN0IGJ0cmZzX2l0ZW0gKmUgPSBidHJmc19pdGVtX25yKHNsb3Qp
+Ow0KPiAtCQl1MzIgaXRlbV9pbmxpbmVfbGVuOw0KPiAtDQo+IC0JCWl0ZW1faW5saW5lX2xlbiA9
+IGJ0cmZzX2ZpbGVfZXh0ZW50X2lubGluZV9pdGVtX2xlbihub2RlLCBlKTsNCj4gLQkJZXh0ZW50
+X251bV9ieXRlcyA9IGJ0cmZzX2ZpbGVfZXh0ZW50X3JhbV9ieXRlcyhub2RlLCBmaSk7DQo+IC0J
+CWNvbXByZXNzZWQgPSBidHJmc19maWxlX2V4dGVudF9jb21wcmVzc2lvbihub2RlLCBmaSk7DQo+
+IC0JCWlmIChleHRlbnRfbnVtX2J5dGVzID09IDApIHsNCj4gLQkJCWVycm9yKA0KPiAtCQkicm9v
+dCAlbGx1IEVYVEVOVF9EQVRBWyVsbHUgJWxsdV0gaGFzIGVtcHR5IGlubGluZSBleHRlbnQiLA0K
+PiAtCQkJCXJvb3QtPm9iamVjdGlkLCBma2V5Lm9iamVjdGlkLCBma2V5Lm9mZnNldCk7DQo+IC0J
+CQllcnIgfD0gRklMRV9FWFRFTlRfRVJST1I7DQo+IC0JCX0NCj4gLQkJaWYgKGNvbXByZXNzZWQp
+IHsNCj4gLQkJCWlmIChleHRlbnRfbnVtX2J5dGVzID4gcm9vdC0+ZnNfaW5mby0+c2VjdG9yc2l6
+ZSkgew0KPiAtCQkJCWVycm9yKA0KPiAtInJvb3QgJWxsdSBFWFRFTlRfREFUQVslbGx1ICVsbHVd
+IHRvbyBsYXJnZSBpbmxpbmUgZXh0ZW50IHJhbSBzaXplLCBoYXZlICVsbHUsIG1heDogJXUiLA0K
+PiAtCQkJCQlyb290LT5vYmplY3RpZCwgZmtleS5vYmplY3RpZCwNCj4gLQkJCQkJZmtleS5vZmZz
+ZXQsIGV4dGVudF9udW1fYnl0ZXMsDQo+IC0JCQkJCXJvb3QtPmZzX2luZm8tPnNlY3RvcnNpemUg
+LSAxKTsNCj4gLQkJCQllcnIgfD0gRklMRV9FWFRFTlRfRVJST1I7DQo+IC0JCQl9DQo+IC0JCQlp
+ZiAoaXRlbV9pbmxpbmVfbGVuID4gbWF4X2lubGluZV9leHRlbnRfc2l6ZSkgew0KPiAtCQkJCWVy
+cm9yKA0KPiAtInJvb3QgJWxsdSBFWFRFTlRfREFUQVslbGx1ICVsbHVdIHRvbyBsYXJnZSBpbmxp
+bmUgZXh0ZW50IG9uLWRpc2sgc2l6ZSwgaGF2ZSAldSwgbWF4OiAldSIsDQo+IC0JCQkJCXJvb3Qt
+Pm9iamVjdGlkLCBma2V5Lm9iamVjdGlkLA0KPiAtCQkJCQlma2V5Lm9mZnNldCwgaXRlbV9pbmxp
+bmVfbGVuLA0KPiAtCQkJCQltYXhfaW5saW5lX2V4dGVudF9zaXplKTsNCj4gLQkJCQllcnIgfD0g
+RklMRV9FWFRFTlRfRVJST1I7DQo+IC0JCQl9DQo+IC0JCX0gZWxzZSB7DQo+IC0JCQlpZiAoZXh0
+ZW50X251bV9ieXRlcyA+IG1heF9pbmxpbmVfZXh0ZW50X3NpemUpIHsNCj4gLSAJCQllcnJvcigN
+Cj4gLSAicm9vdCAlbGx1IEVYVEVOVF9EQVRBWyVsbHUgJWxsdV0gdG9vIGxhcmdlIGlubGluZSBl
+eHRlbnQgc2l6ZSwgaGF2ZSAlbGx1LCBtYXg6ICV1IiwNCj4gLSAJCQkJcm9vdC0+b2JqZWN0aWQs
+IGZrZXkub2JqZWN0aWQsIGZrZXkub2Zmc2V0LA0KPiAtIAkJCQlleHRlbnRfbnVtX2J5dGVzLCBt
+YXhfaW5saW5lX2V4dGVudF9zaXplKTsNCj4gLQkJCQllcnIgfD0gRklMRV9FWFRFTlRfRVJST1I7
+DQo+IC0JCQl9DQo+IC0JCX0NCj4gLQkJaWYgKCFjb21wcmVzc2VkICYmIGV4dGVudF9udW1fYnl0
+ZXMgIT0gaXRlbV9pbmxpbmVfbGVuKSB7DQo+IC0JCQllcnJvcigNCj4gLQkJInJvb3QgJWxsdSBF
+WFRFTlRfREFUQVslbGx1ICVsbHVdIHdyb25nIGlubGluZSBzaXplLCBoYXZlOiAlbGx1LCBleHBl
+Y3RlZDogJXUiLA0KPiAtCQkJCXJvb3QtPm9iamVjdGlkLCBma2V5Lm9iamVjdGlkLCBma2V5Lm9m
+ZnNldCwNCj4gLQkJCQlleHRlbnRfbnVtX2J5dGVzLCBpdGVtX2lubGluZV9sZW4pOw0KPiAtCQkJ
+aWYgKHJlcGFpcikgew0KPiAtCQkJCXJldCA9IHJlcGFpcl9pbmxpbmVfcmFtX2J5dGVzKHJvb3Qs
+IHBhdGgsDQo+IC0JCQkJCQkJICAgICAgJmV4dGVudF9udW1fYnl0ZXMpOw0KPiAtCQkJCWlmIChy
+ZXQpDQo+IC0JCQkJCWVyciB8PSBGSUxFX0VYVEVOVF9FUlJPUjsNCj4gLQkJCX0gZWxzZSB7DQo+
+IC0JCQkJZXJyIHw9IEZJTEVfRVhURU5UX0VSUk9SOw0KPiAtCQkJfQ0KPiAtCQl9DQo+IC0JCSpl
+bmQgKz0gZXh0ZW50X251bV9ieXRlczsNCj4gLQkJKnNpemUgKz0gZXh0ZW50X251bV9ieXRlczsN
+Cj4gLQkJcmV0dXJuIGVycjsNCj4gLQl9DQo+ICsJaWYgKGV4dGVudF90eXBlID09IEJUUkZTX0ZJ
+TEVfRVhURU5UX0lOTElORSkNCj4gKwkJcmV0dXJuIGNoZWNrX2ZpbGVfZXh0ZW50X2lubGluZShy
+b290LCBwYXRoLCBzaXplLCBlbmQpOw0KPiAgDQo+ICAJLyogQ2hlY2sgZXh0ZW50IHR5cGUgKi8N
+Cj4gIAlpZiAoZXh0ZW50X3R5cGUgIT0gQlRSRlNfRklMRV9FWFRFTlRfUkVHICYmDQo+IA==

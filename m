@@ -2,259 +2,295 @@ Return-Path: <SRS0=DppP=NM=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
+X-Spam-Status: No, score=-0.7 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
+	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C5870C6786F
-	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Nov 2018 11:57:31 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1B867C0044C
+	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Nov 2018 11:59:32 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 83C0A2081B
-	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Nov 2018 11:57:31 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 83C0A2081B
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
+	by mail.kernel.org (Postfix) with ESMTP id 9E3A42081B
+	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Nov 2018 11:59:31 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 9E3A42081B
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=web.de
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728347AbeKAVAJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 1 Nov 2018 17:00:09 -0400
-Received: from mx2.suse.de ([195.135.220.15]:44150 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1728085AbeKAVAI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 1 Nov 2018 17:00:08 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id C536CADCE;
-        Thu,  1 Nov 2018 11:57:28 +0000 (UTC)
-Subject: Re: [PATCH] btrfs: use tagged writepage to mitigate livelock of
- snapshot
-To:     Ethan Lien <ethanlien@synology.com>, linux-btrfs@vger.kernel.org
-References: <20181101064903.11638-1-ethanlien@synology.com>
-From:   Nikolay Borisov <nborisov@suse.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <857dc4ea-245b-623e-a734-b247d5b54149@suse.com>
-Date:   Thu, 1 Nov 2018 13:57:26 +0200
+        id S1728325AbeKAVCJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 1 Nov 2018 17:02:09 -0400
+Received: from mout.web.de ([212.227.15.3]:45355 "EHLO mout.web.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1728266AbeKAVCJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 1 Nov 2018 17:02:09 -0400
+Received: from [139.20.65.111] ([139.20.65.111]) by smtp.web.de (mrweb002
+ [213.165.67.108]) with ESMTPSA (Nemesis) id 0LiUZg-1fhkLj0OD6-00cfVS for
+ <linux-btrfs@vger.kernel.org>; Thu, 01 Nov 2018 12:59:27 +0100
+Received: from [139.20.65.111] ([139.20.65.111]) by smtp.web.de (mrweb002
+ [213.165.67.108]) with ESMTPSA (Nemesis) id 0LiUZg-1fhkLj0OD6-00cfVS for
+ <linux-btrfs@vger.kernel.org>; Thu, 01 Nov 2018 12:59:27 +0100
+To:     linux-btrfs@vger.kernel.org
+From:   "Oliver R." <r.oliver@web.de>
+Subject: BTRFS RAID5 disk failed while balancing
+Message-ID: <fb23de3a-c269-4f84-10d0-dd1055e6b653@web.de>
+Date:   Thu, 1 Nov 2018 12:59:16 +0100
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <20181101064903.11638-1-ethanlien@synology.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: de-LU
+Content-Transfer-Encoding: 7bit
+X-Provags-ID: V03:K1:Ll7ngWmYbo8PCKgVEceKe5yuZHiRE4BhY2zJjb0pGbx+ktHe7k2
+ egl0XPgSNPBLLCCYBDgmy6tYWdIxPW568qdxrqUEQ0EeSl4iSY/uXvAfCv8d7/YCTRBZJ6K
+ IlyUrFeFTBmNB4ARj1gboF8FQ7hNVYRHfxYhXefQcFlD+nwCrX2Vq6x+7H7zpM1vH0EEF8/
+ tjP38wgfk7GK/vsUYq3QQ==
+X-UI-Out-Filterresults: notjunk:1;V01:K0:BfnuEOIfhlY=:hdjCU6fROOdO23dPNeImuG
+ OTG7Y65RF0g219/HFimSmYxURlXiSip2SyjHHm0HY7spPvfCCYcp5sU58WX6keaM2yHjdpi90
+ gWdANjgUXkHEr2LpoD6eeTULIEJ8joN6yEkl4/d33MwC+iQHvXzNtATcGeJif8uVp0HwvxLUC
+ bKHGj+GrvNBRPDMjBMp85nW4JFj8NqeGGQLnjSv9ncgciITnkhtRErCZNhxk6BW53u+m2KY/B
+ GhhEZn6gt1miOHb7MDKjuGvi565LxqYt2X+oS/AgFgfK82v/ZVAOssJZ4ne9BmUfurGoQjAkr
+ lkIB8I48ez4msMicFDugTVgZU0yBQPJYJiyxxRZ9TFxzVON0V3aRuaP15aTz2nzcMhCGX6SWh
+ MCwd6hMI+qMeRN+P5ulJrFXnUg0jFntLwpnEVN7Q+sU+jtulO9m99T1ZKvhmovNPcDioIuHo5
+ Y+arknhI2++AOqBGmGQApo4yYQTDWGDLNH2SCFgv3Zb8KN5/gOxAk6lwGuQWoHjXjN11/A2do
+ o1udbC8sA5KQtTZcHCDjtu9manaX9kz+LCEqlByIKkp0FEXr2g0J0iuTNrQ3lzE201cOOPzVe
+ H6nkedBUD+/1PZ2cj0mIjYwp5YSvXH8XV4EYiIuWAoQTu3XGi1pOz/6cEep5+THIDMIuIN5CU
+ sxMTd52LF+KdovzEeoHqzzo2BT18UKL8J9leEfyb+TyDcZVslKmrO36dz40xAu7ejttQBasGq
+ xxRIUN4Z+LlF1E21txtst3zUS0gpYtbRxFY1Sh09opln06nKHBW0DOA0makk4BevIXty2yYns
+ MNwo1Iq0KeQHFyYhK2DCOhGWXplQJVIgz4ku+0zpi1YOmoulGeb1MP7qvV/fZGdyQ4MIZo8P7
+ fgO3Xj7mAPLLUMvbBkH8sOezOdHUpEzP+5LT7GMMOBx5o73auoSd79VkGzus3E
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+If you clicked on the link to this topic: Thank you!
 
+I have the following setup:
 
-On 1.11.18 г. 8:49 ч., Ethan Lien wrote:
-> Snapshot is expected to be fast. But if there are writers steadily
-> create dirty pages in our subvolume, the snapshot may take a very long
-> time to complete. To fix the problem, we use tagged writepage for snapshot
-> flusher as we do in the generic write_cache_pages(), so we can ommit pages
-> dirtied after the snapshot command.
-> 
-> We do a simple snapshot speed test on a Intel D-1531 box:
-> 
-> fio --ioengine=libaio --iodepth=32 --bs=4k --rw=write --size=64G
-> --direct=0 --thread=1 --numjobs=1 --time_based --runtime=120
-> --filename=/mnt/sub/testfile --name=job1 --group_reporting & sleep 5;
-> time btrfs sub snap -r /mnt/sub /mnt/snap; killall fio
-> 
-> original: 1m58sec
-> patched:  6.54sec
-> 
-> This is the best case for this patch since for a sequential write case,
-> we omit nearly all pages dirtied after the snapshot command.
-> 
-> For a multi writers, random write test:
-> 
-> fio --ioengine=libaio --iodepth=32 --bs=4k --rw=randwrite --size=64G
-> --direct=0 --thread=1 --numjobs=4 --time_based --runtime=120
-> --filename=/mnt/sub/testfile --name=job1 --group_reporting & sleep 5;
-> time btrfs sub snap -r /mnt/sub /mnt/snap; killall fio
-> 
-> original: 15.83sec
-> patched:  10.35sec
-> 
-> The improvement is less compared with the sequential write case, since
-> we omit only half of the pages dirtied after snapshot command.
-> 
-> Signed-off-by: Ethan Lien <ethanlien@synology.com>
-> ---
->  fs/btrfs/btrfs_inode.h |  1 +
->  fs/btrfs/ctree.h       |  2 +-
->  fs/btrfs/extent_io.c   | 16 ++++++++++++++--
->  fs/btrfs/inode.c       | 10 ++++++----
->  fs/btrfs/ioctl.c       |  2 +-
->  5 files changed, 23 insertions(+), 8 deletions(-)
-> 
-> diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-> index 1343ac57b438..4182bfbb56be 100644
-> --- a/fs/btrfs/btrfs_inode.h
-> +++ b/fs/btrfs/btrfs_inode.h
-> @@ -29,6 +29,7 @@ enum {
->  	BTRFS_INODE_IN_DELALLOC_LIST,
->  	BTRFS_INODE_READDIO_NEED_LOCK,
->  	BTRFS_INODE_HAS_PROPS,
-> +	BTRFS_INODE_TAGGED_FLUSH,
->  };
->  
->  /* in memory btrfs inode */
-> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-> index 2cddfe7806a4..82682da5a40d 100644
-> --- a/fs/btrfs/ctree.h
-> +++ b/fs/btrfs/ctree.h
-> @@ -3155,7 +3155,7 @@ int btrfs_truncate_inode_items(struct btrfs_trans_handle *trans,
->  			       struct inode *inode, u64 new_size,
->  			       u32 min_type);
->  
-> -int btrfs_start_delalloc_inodes(struct btrfs_root *root);
-> +int btrfs_start_delalloc_snapshot(struct btrfs_root *root);
->  int btrfs_start_delalloc_roots(struct btrfs_fs_info *fs_info, int nr);
->  int btrfs_set_extent_delalloc(struct inode *inode, u64 start, u64 end,
->  			      unsigned int extra_bits,
-> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-> index 4dd6faab02bb..c21d8a0e010a 100644
-> --- a/fs/btrfs/extent_io.c
-> +++ b/fs/btrfs/extent_io.c
-> @@ -3928,12 +3928,24 @@ static int extent_write_cache_pages(struct address_space *mapping,
->  			range_whole = 1;
->  		scanned = 1;
->  	}
-> -	if (wbc->sync_mode == WB_SYNC_ALL)
-> +
-> +	/*
-> +	 * We don't care if we are the one who set BTRFS_INODE_TAGGED_FLUSH in
-> +	 * start_delalloc_inodes(). We do the tagged writepage as long as we are
-> +	 * the first one who do the filemap_flush() on this inode.
-> +	 */
-> +	if (range_whole && wbc->nr_to_write == LONG_MAX &&
-> +			wbc->sync_mode == WB_SYNC_NONE &&
-> +			test_and_clear_bit(BTRFS_INODE_TAGGED_FLUSH,
-> +				&BTRFS_I(inode)->runtime_flags))
-Actually this check can be simplified to:
+6x 500GB HDD-Drives
+1x 32GB NVME-SSD (Intel Optane)
 
-range_whole && test_and_clear_bit. filemap_flush triggers range_whole =
-1 and then you care about TAGGED_FLUSH (or w/e it's going to be named)
-to be set. The nr_to_write && syncmode just make it a tad more difficult
-to reason about the code.
+I used bcache to setup up the SSD as caching device and all other six 
+drives are backing devices. After all that was in place, I formatted the 
+six HHDs with btrfs in RAID5. Everything works as expected for the last 
+7 months now.
 
+By now I have a spare of 6x 2TB HDD drives and I want to replace the old 
+500GB disks one by one. So I started with the first one by deleting it 
+from the btrfs. This worked fine, I had no issues there. After that I 
+cleanly detached the empty disk from bcache, still everything is fine, 
+so I removed it. Here are the commandlines for this:
 
-> +		wbc->tagged_writepages = 1;
-> +
-> +	if (wbc->sync_mode == WB_SYNC_ALL || wbc->tagged_writepages)
->  		tag = PAGECACHE_TAG_TOWRITE;
->  	else
->  		tag = PAGECACHE_TAG_DIRTY;
->  retry:
-> -	if (wbc->sync_mode == WB_SYNC_ALL)
-> +	if (wbc->sync_mode == WB_SYNC_ALL || wbc->tagged_writepages)
->  		tag_pages_for_writeback(mapping, index, end);
->  	done_index = index;
->  	while (!done && !nr_to_write_done && (index <= end) &&
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 3ea5339603cf..3df3cbbe91c5 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -9975,7 +9975,7 @@ static struct btrfs_delalloc_work *btrfs_alloc_delalloc_work(struct inode *inode
->   * some fairly slow code that needs optimization. This walks the list
->   * of all the inodes with pending delalloc and forces them to disk.
->   */
-> -static int start_delalloc_inodes(struct btrfs_root *root, int nr)
-> +static int start_delalloc_inodes(struct btrfs_root *root, int nr, int snapshot)
->  {
->  	struct btrfs_inode *binode;
->  	struct inode *inode;
-> @@ -10003,6 +10003,8 @@ static int start_delalloc_inodes(struct btrfs_root *root, int nr)
->  		}
->  		spin_unlock(&root->delalloc_lock);
->  
-> +		if (snapshot)
-> +			set_bit(BTRFS_INODE_TAGGED_FLUSH, &binode->runtime_flags);
->  		work = btrfs_alloc_delalloc_work(inode);
->  		if (!work) {
->  			iput(inode);
-> @@ -10036,7 +10038,7 @@ static int start_delalloc_inodes(struct btrfs_root *root, int nr)
->  	return ret;
->  }
->  
-> -int btrfs_start_delalloc_inodes(struct btrfs_root *root)
-> +int btrfs_start_delalloc_snapshot(struct btrfs_root *root)
->  {
->  	struct btrfs_fs_info *fs_info = root->fs_info;
->  	int ret;
-> @@ -10044,7 +10046,7 @@ int btrfs_start_delalloc_inodes(struct btrfs_root *root)
->  	if (test_bit(BTRFS_FS_STATE_ERROR, &fs_info->fs_state))
->  		return -EROFS;
->  
-> -	ret = start_delalloc_inodes(root, -1);
-> +	ret = start_delalloc_inodes(root, -1, 1);
->  	if (ret > 0)
->  		ret = 0;
->  	return ret;
-> @@ -10073,7 +10075,7 @@ int btrfs_start_delalloc_roots(struct btrfs_fs_info *fs_info, int nr)
->  			       &fs_info->delalloc_roots);
->  		spin_unlock(&fs_info->delalloc_root_lock);
->  
-> -		ret = start_delalloc_inodes(root, nr);
-> +		ret = start_delalloc_inodes(root, nr, 0);
->  		btrfs_put_fs_root(root);
->  		if (ret < 0)
->  			goto out;
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index d60b6caf09e8..d1293b6c31f6 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -775,7 +775,7 @@ static int create_snapshot(struct btrfs_root *root, struct inode *dir,
->  	wait_event(root->subv_writers->wait,
->  		   percpu_counter_sum(&root->subv_writers->counter) == 0);
->  
-> -	ret = btrfs_start_delalloc_inodes(root);
-> +	ret = btrfs_start_delalloc_snapshot(root);
->  	if (ret)
->  		goto dec_and_free;
->  
-> 
+     sudo btrfs device delete /dev/bcacheX /media/raid
+     cat /sys/block/bcacheX/bcache/state
+     cat /sys/block/bcacheX/bcache/dirty_data
+     sudo sh -c "echo 1 > /sys/block/bcacheX/bcache/detach"
+     cat /sys/block/bcacheX/bcache/state
+
+After that I installed one of 2TB drives, attached it to bcache and 
+added it to the raid. The next step was to balance the data over to the 
+new drive. Please see the commandlines:
+
+     sudo make-bcache -B /dev/sdY
+     sudo sh -c "echo '60a63f7c-2e68-4503-9f25-71b6b00e47b2' > 
+/sys/block/bcacheY/bcache/attach"
+     sudo sh -c "echo writeback > /sys/block/bcacheY/bcache/cache_mode"
+     sudo btrfs device add /dev/bcacheY /media/raid
+     sudo btrfs fi ba start /media/raid/
+
+The balance worked fine until ~164GB were written to the new drive, this 
+is about 50% of the data to be balanced. Suddenly write errors on the 
+disk appear. The Raid slowly became unusable (I was running 3 VMs of the 
+RAID while balancing). I think it worked for some time due to the SSD 
+commiting the writes. At some point the balancing stopped and I was only 
+able to kill the VMs. I checked the I/Os on the disks and the SSD spit 
+out constant 1,2 GB/s read. I think the bcache somehow delivered data to 
+the btrfs and it got rejected there and requested again, but this is 
+just a guess. Anyway, I ended up resetting the host and I physically 
+disconnected the broken disk and put a new one in place. I also created 
+a bcache backing device on it and issued the following command to 
+replace the faulty disk:
+
+     sudo btrfs replace start -r 7 /dev/bcache5 /media/raid
+
+The filesystem needs to be mounted read/write for this command to work. 
+It is now doing its work, but very slow, about 3,5 MB/s. Unfortunately 
+the syslog reports a lot of these messages:
+
+     ...
+     scrub_missing_raid56_worker: 62 callbacks suppressed
+     BTRFS error (device bcache0): failed to rebuild valid logical 
+4929143865344 for dev (null)
+     ...
+     BTRFS error (device bcache0): failed to rebuild valid logical 
+4932249866240 for dev (null)
+     scrub_missing_raid56_worker: 1 callbacks suppressed
+     BTRFS error (device bcache0): failed to rebuild valid logical 
+4933254250496 for dev (null)
+     ....
+
+If I try to read a file from the filesystem, the output-command fails 
+with a simple I/O error and the syslog shows something entries similar 
+to this:
+
+     BTRFS warning (device bcache0): csum failed root 5 ino 1143 off 
+7274496 csum 0xccccf554 expected csum 0x6340b527 mirror 2
+
+So far, so good (or bad). It took about 6 hours for 4,3% of the 
+replacement so far. No read or write errors have been reported for the 
+replacement procedure ("btrfs replace status"). I will let it to its 
+thing until finished. Before the first 2TB disk failed, 164 GB of data 
+have been written according to "btrfs filesystem show". If  I check the 
+amount of data written to the new drive, the 4,3% represent about 82 GB 
+(according to /proc/diskstats). I don't know how to interpret this, but 
+anyway.
+
+And now finally my questions: If the replace command finishes 
+successfully, what should I do next. A scrub? A balance? Another backup? ;-)
+Do you see anything that I have done wrong in this procedure? Do the 
+warnings and the errors reported from btrfs mean, that the data is lost? :-(
+
+Here is some additional info (**edited**):
+
+     $ sudo btrfs fi sh
+     Total devices 7 FS bytes used 1.56TiB
+     Label: none  uuid: 9f765025-5354-47e4-afcc-a601b2a52703
+     devid    0 size 1.82TiB used 164.03GiB path /dev/bcache5
+     devid    1 size 465.76GiB used 360.03GiB path /dev/bcache4
+     devid    3 size 465.76GiB used 360.00GiB path /dev/bcache3
+     devid    4 size 465.76GiB used 359.03GiB path /dev/bcache1
+     devid    5 size 465.76GiB used 360.00GiB path /dev/bcache0
+     devid    6 size 465.76GiB used 360.03GiB path /dev/bcache2
+     *** Some devices missing
+
+     $ sudo btrfs dev stats /media/raid/
+     [/dev/bcache5].write_io_errs    0
+     [/dev/bcache5].read_io_errs     0
+     [/dev/bcache5].flush_io_errs    0
+     [/dev/bcache5].corruption_errs  0
+     [/dev/bcache5].generation_errs  0
+     [/dev/bcache4].write_io_errs    0
+     [/dev/bcache4].read_io_errs     0
+     [/dev/bcache4].flush_io_errs    0
+     [/dev/bcache4].corruption_errs  0
+     [/dev/bcache4].generation_errs  0
+     [/dev/bcache3].write_io_errs    0
+     [/dev/bcache3].read_io_errs     0
+     [/dev/bcache3].flush_io_errs    0
+     [/dev/bcache3].corruption_errs  0
+     [/dev/bcache3].generation_errs  0
+     [/dev/bcache1].write_io_errs    0
+     [/dev/bcache1].read_io_errs     0
+     [/dev/bcache1].flush_io_errs    0
+     [/dev/bcache1].corruption_errs  0
+     [/dev/bcache1].generation_errs  0
+     [/dev/bcache0].write_io_errs    0
+     [/dev/bcache0].read_io_errs     0
+     [/dev/bcache0].flush_io_errs    0
+     [/dev/bcache0].corruption_errs  0
+     [/dev/bcache0].generation_errs  0
+     [/dev/bcache2].write_io_errs    0
+     [/dev/bcache2].read_io_errs     0
+     [/dev/bcache2].flush_io_errs    0
+     [/dev/bcache2].corruption_errs  0
+     [/dev/bcache2].generation_errs  0
+     [devid:7].write_io_errs    9525186
+     [devid:7].read_io_errs     10136573
+     [devid:7].flush_io_errs    143
+     [devid:7].corruption_errs  0
+     [devid:7].generation_errs  0
+
+     $ sudo btrfs fi df /media/raid/
+     Data, RAID5: total=1.56TiB, used=1.55TiB
+     System, RAID1: total=64.00MiB, used=128.00KiB
+     Metadata, RAID1: total=4.00GiB, used=2.48GiB
+     GlobalReserve, single: total=512.00MiB, used=0.00B
+
+     $ uname -a
+     Linux hostname 4.15.0-36-generic #39-Ubuntu SMP Mon Sep 24 16:19:09 
+UTC 2018 x86_64 x86_64 x86_64 GNU/Linux
+
+     $ btrfs --version
+     btrfs-progs v4.15.1
+
+     $ cat /etc/lsb-release
+     DISTRIB_ID=Ubuntu
+     DISTRIB_RELEASE=18.04
+     DISTRIB_CODENAME=bionic
+     DISTRIB_DESCRIPTION="Ubuntu 18.04.1 LTS"
+
+The 'device replace' just finished. It was next to the 9% mark, I think 
+this percentage matches the written amount of data on the drive: 164 GiB 
+from a total size of 1,82 TiB. So 100% would mean a full 2TB 
+replacemant. So here some additional output:
+
+     $ btrfs replace status -1 /media/raid/
+     Started on 30.Oct 08:16:53, finished on 30.Oct 21:05:22, 0 write 
+errs, 0 uncorr. read errs
+
+     $ sudo btrfs fi sh
+     Label: none  uuid: 9f765025-5354-47e4-afcc-a601b2a52703
+     Total devices 6 FS bytes used 1.56TiB
+     devid    1 size 465.76GiB used 360.03GiB path /dev/bcache4
+     devid    3 size 465.76GiB used 360.00GiB path /dev/bcache3
+     devid    4 size 465.76GiB used 359.03GiB path /dev/bcache1
+     devid    5 size 465.76GiB used 360.00GiB path /dev/bcache0
+     devid    6 size 465.76GiB used 360.03GiB path /dev/bcache2
+     devid    7 size 1.82TiB used 164.03GiB path /dev/bcache5
+
+Reading files still aborts with I/O errors, syslog still shows:
+
+     BTRFS warning (device bcache0): csum failed root 5 ino 1143 off 
+7274496 csum 0x98f94189 expected csum 0x6340b527 mirror 1
+     BTRFS warning (device bcache0): csum failed root 5 ino 1143 off 
+7274496 csum 0xccccf554 expected csum 0x6340b527 mirror 2
+
+So I think the most harmless action is a read-only scrub, I just started 
+the process. Errors and warnings flood the syslog:
+
+     $ sudo btrfs scrub start -BdrR /media/raid # -B no backgroud, -d 
+statistics per device, -rread-only, -R raw statistics per device
+     $ tail -f /var/log/syslog
+     BTRFS error (device bcache0): bdev /dev/bcache5 errs: wr 0, rd 0, 
+flush 0, corrupt 2848, gen 0
+     BTRFS warning (device bcache0): checksum error at logical 
+4590109331456 on dev /dev/bcache5, physical 2954104832, root 5, inode 
+418, offset 1030803456, length 4096, links 1 (path: 
+VMs/Virtualbox/Windows 10 Imaging VMs/Windows 10 Imaging/Windows 10 
+Imaging-fixed.vdi)
+     BTRFS error (device bcache0): bdev /dev/bcache5 errs: wr 0, rd 0, 
+flush 0, corrupt 2849, gen 0
+     BTRFS warning (device bcache0): checksum error at logical 
+4590108811264 on dev /dev/bcache5, physical 2953977856, root 5, inode 
+1533, offset 93051236352, length 4096, links 1 (path: 
+VMs/Virtualbox/vmrbreb/vmrbreb-fixed.vdi)
+     BTRFS error (device bcache0): bdev /dev/bcache5 errs: wr 0, rd 0, 
+flush 0, corrupt 2850, gen 0
+     BTRFS warning (device bcache0): checksum error at logical 
+4590109335552 on dev /dev/bcache5, physical 2954108928, root 5, inode 
+418, offset 1030807552, length 4096, links 1 (path: 
+VMs/Virtualbox/Windows 10 Imaging VMs/Windows 10 Imaging/Windows 10 
+Imaging-fixed.vdi)
+     BTRFS error (device bcache0): bdev /dev/bcache5 errs: wr 0, rd 0, 
+flush 0, corrupt 2851, gen 0
+     BTRFS warning (device bcache0): checksum error at logical 
+4590108815360 on dev /dev/bcache5, physical 2953981952, root 5, inode 
+621, offset 11864412160, length 4096, links 1 (path: 
+VMs/Virtualbox/Win102016_Alter-Firefox/Win102016_Alter-Firefox-disk1.vdi)
+     BTRFS error (device bcache0): bdev /dev/bcache5 errs: wr 0, rd 0, 
+flush 0, corrupt 2852, gen 0
+     BTRFS warning (device bcache0): checksum error at logical 
+4590109339648 on dev /dev/bcache5, physical 2954113024, root 5, inode 
+418, offset 1030811648, length 4096, links 1 (path: 
+VMs/Virtualbox/Windows 10 Imaging VMs/Windows 10 Imaging/Windows 10 
+Imaging-fixed.vdi)
+     BTRFS error (device bcache0): bdev /dev/bcache5 errs: wr 0, rd 0, 
+flush 0, corrupt 2853, gen 0
+     BTRFS warning (device bcache0): checksum error at logical 
+4590109343744 on dev /dev/bcache5, physical 2954117120, root 5, inode 
+418, offset 1030815744, length 4096, links 1 (path: 
+VMs/Virtualbox/Windows 10 Imaging VMs/Windows 10 Imaging
+
+My questions still remain: What should I do next. A scrub? A balance? 
+Did I do something completely wrong? How to interpret the errors and 
+warnings from the read-only scrub, may btrfs be able to fix them?
+
+Thank you for reading and hopefully your answers!

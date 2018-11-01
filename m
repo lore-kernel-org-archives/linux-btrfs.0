@@ -2,224 +2,188 @@ Return-Path: <SRS0=DppP=NM=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DAD3FC0044C
-	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Nov 2018 15:10:43 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AE25BC0044C
+	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Nov 2018 15:22:56 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 90530205F4
-	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Nov 2018 15:10:43 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="D1Pr2vKg"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 90530205F4
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
+	by mail.kernel.org (Postfix) with ESMTP id 7D1252081B
+	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Nov 2018 15:22:56 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 7D1252081B
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728669AbeKBAOD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 1 Nov 2018 20:14:03 -0400
-Received: from mail-pl1-f194.google.com ([209.85.214.194]:40894 "EHLO
-        mail-pl1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728364AbeKBAOD (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Nov 2018 20:14:03 -0400
-Received: by mail-pl1-f194.google.com with SMTP id b9-v6so9080760pls.7
-        for <linux-btrfs@vger.kernel.org>; Thu, 01 Nov 2018 08:10:41 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=subject:to:cc:references:from:message-id:date:user-agent
-         :mime-version:in-reply-to:content-language:content-transfer-encoding;
-        bh=gGt/tPykMo2hgiUYmG1DC5D9mHS/UuBBSeDqRCa6kXE=;
-        b=D1Pr2vKgIWHPzY6r2YzxnjjLZrMpWcpFRN9ei9J6XOk0ch8QXpNqmJh0N0c2YJFpr1
-         sZ6O+Zarx1H5WybUGZyq+vVJyiXmAineun60J8srGBI8WrX98lmq1IIOtZnkm/J7YwWT
-         4q8bTMj2m3HeLkg94M7m/cZG7fFJ5FJbDBDYtuoDZSvblIUsxu6JPcRh5YsrmFWwJkiG
-         ElqyifDuxN6Bvju8GGihjh2JXsnp0+mp9eiQsTlcDRFGpLKbUxH2Ql/cOil2kP5jg6Xk
-         dsCkKQxT+dqnMzNVy4XDSlhpoQREhjXmzwvYSdNCcj3Rk2RfUo44CRjM3TpRvDl3/HBE
-         FAKw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=gGt/tPykMo2hgiUYmG1DC5D9mHS/UuBBSeDqRCa6kXE=;
-        b=cUwvaGr30vd+IoMu7G6Whq9MqEsLI0WfPXNafI4UJQ3fpHcEKdgxnaL8nYoqehOJtV
-         f4yGHYnymnGzSumzcJY9jD/gtxg4eVIhQxZg46gXMVel8remkzgJpafBrzDhEWsGJGfk
-         6VOq0Lg4NVNiSOT1FAZ259joHY9D8XIso8Ee2fn0NzAyLuDfGW1d6Bnpu87vhTlYTdPH
-         mwkYB5L+fGP3HGF94hQEE/f0wJqd8pRHP/I8IowwgQYH/ttB8JPnYjew/mK19S0JOooQ
-         SWUhlLwCvbjJF/1KQsFarTV6oajxcP3qdzO+bMJz/oHtxZZHI2u1jAVIB1OGYJNWqS6j
-         plcg==
-X-Gm-Message-State: AGRZ1gKAcuGb+fln7lnhLSCOfUnzoVpSFhfRcaqo+n3hdg7M2eX1rwIs
-        R/Lr2YcRsoTdFrAQIPPVJ5QSo2GN
-X-Google-Smtp-Source: AJdET5c6cHCaIov0Yv8LG03JMWmrG8WfqIgw06ei3vQowqDqLII4+MnCEC70cp9CTIaHMYjZKVoNcA==
-X-Received: by 2002:a17:902:6e08:: with SMTP id u8-v6mr8000378plk.64.1541085041362;
-        Thu, 01 Nov 2018 08:10:41 -0700 (PDT)
-Received: from [10.20.1.223] (ivokamhome.ddns.nbis.net. [87.120.136.31])
-        by smtp.gmail.com with ESMTPSA id q25-v6sm51440222pfk.154.2018.11.01.08.10.39
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Thu, 01 Nov 2018 08:10:40 -0700 (PDT)
-Subject: Re: [PATCH v2] Btrfs: fix missing delayed iputs on unmount
-To:     Nikolay Borisov <nborisov@suse.com>,
+        id S1728483AbeKBA0T (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 1 Nov 2018 20:26:19 -0400
+Received: from mx2.suse.de ([195.135.220.15]:45694 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1727966AbeKBA0T (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 1 Nov 2018 20:26:19 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 47759AC5E;
+        Thu,  1 Nov 2018 15:22:53 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id AAA54DAAFC; Thu,  1 Nov 2018 16:22:29 +0100 (CET)
+Date:   Thu, 1 Nov 2018 16:22:29 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     dsterba@suse.cz, Chris Mason <clm@fb.com>,
         Omar Sandoval <osandov@osandov.com>,
-        linux-btrfs@vger.kernel.org
-Cc:     kernel-team@fb.com
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Kernel Team <Kernel-team@fb.com>,
+        Nikolay Borisov <nborisov@suse.com>
+Subject: Re: [PATCH v2] Btrfs: fix missing delayed iputs on unmount
+Message-ID: <20181101152229.GN9136@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Chris Mason <clm@fb.com>,
+        Omar Sandoval <osandov@osandov.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Kernel Team <Kernel-team@fb.com>,
+        Nikolay Borisov <nborisov@suse.com>
 References: <5d98091d3e089b4f74cb61fb2ed691e1f4dd1d6b.1541005462.git.osandov@fb.com>
- <a0a00740-6c97-7689-54dd-b381d4c8a2db@suse.com>
-From:   Nikolay Borisov <n.borisov.lkml@gmail.com>
-Message-ID: <44d61374-3250-2cb5-b4f0-dd8f4d3678c6@gmail.com>
-Date:   Thu, 1 Nov 2018 17:10:37 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.2.1
+ <20181101101532.GL9136@twin.jikos.cz>
+ <2DCF4F92-0B05-420C-ADEB-3A7A69F6DB37@fb.com>
+ <20181101150831.GM9136@twin.jikos.cz>
 MIME-Version: 1.0
-In-Reply-To: <a0a00740-6c97-7689-54dd-b381d4c8a2db@suse.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20181101150831.GM9136@twin.jikos.cz>
+User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-
-
-On 1.11.18 г. 16:35 ч., Nikolay Borisov wrote:
+On Thu, Nov 01, 2018 at 04:08:32PM +0100, David Sterba wrote:
+> On Thu, Nov 01, 2018 at 01:31:18PM +0000, Chris Mason wrote:
+> > On 1 Nov 2018, at 6:15, David Sterba wrote:
+> > 
+> > > On Wed, Oct 31, 2018 at 10:06:08AM -0700, Omar Sandoval wrote:
+> > >> From: Omar Sandoval <osandov@fb.com>
+> > >>
+> > >> There's a race between close_ctree() and cleaner_kthread().
+> > >> close_ctree() sets btrfs_fs_closing(), and the cleaner stops when it
+> > >> sees it set, but this is racy; the cleaner might have already checked
+> > >> the bit and could be cleaning stuff. In particular, if it deletes 
+> > >> unused
+> > >> block groups, it will create delayed iputs for the free space cache
+> > >> inodes. As of "btrfs: don't run delayed_iputs in commit", we're no
+> > >> longer running delayed iputs after a commit. Therefore, if the 
+> > >> cleaner
+> > >> creates more delayed iputs after delayed iputs are run in
+> > >> btrfs_commit_super(), we will leak inodes on unmount and get a busy
+> > >> inode crash from the VFS.
+> > >>
+> > >> Fix it by parking the cleaner
+> > >
+> > > Ouch, that's IMO wrong way to fix it. The bug is on a higher level,
+> > > we're missing a commit or clean up data structures. Messing with state
+> > > of a thread would be the last thing I'd try after proving that it's 
+> > > not
+> > > possible to fix in the logic of btrfs itself.
+> > >
+> > > The shutdown sequence in close_tree is quite tricky and we've had bugs
+> > > there. The interdependencies of thread and data structures and other
+> > > subsystems cannot have loops that could not find an ordering that will
+> > > not leak something.
+> > >
+> > > It's not a big problem if some step is done more than once, like
+> > > committing or cleaning up some other structures if we know that
+> > > it could create new.
+> > 
+> > The problem is the cleaner thread needs to be told to stop doing new 
+> > work, and we need to wait for the work it's already doing to be 
+> > finished.  We're getting "stop doing new work" already because the 
+> > cleaner thread checks to see if the FS is closing, but we don't have a 
+> > way today to wait for him to finish what he's already doing.
+> > 
+> > kthread_park() is basically the same as adding another mutex or 
+> > synchronization point.  I'm not sure how we could change close_tree() or 
+> > the final commit to pick this up more effectively?
+> 
+> The idea is:
+> 
+> cleaner                                     close_ctree thread
+> 
+>                                             tell cleaner to stop
+> 					    wait
+> start work
+> if should_stop, then exit
+>                                             cleaner is stopped
+> 
+> [does not run: finish work]
+> [does not run: loop]
+>                                             pick up the work or make
+> 					    sure there's nothing in
+> 					    progress anymore
 > 
 > 
-> On 31.10.18 г. 19:06 ч., Omar Sandoval wrote:
->> From: Omar Sandoval <osandov@fb.com>
->>
->> There's a race between close_ctree() and cleaner_kthread().
->> close_ctree() sets btrfs_fs_closing(), and the cleaner stops when it
->> sees it set, but this is racy; the cleaner might have already checked
->> the bit and could be cleaning stuff. In particular, if it deletes unused
->> block groups, it will create delayed iputs for the free space cache
->> inodes. As of "btrfs: don't run delayed_iputs in commit", we're no
->> longer running delayed iputs after a commit. Therefore, if the cleaner
->> creates more delayed iputs after delayed iputs are run in
->> btrfs_commit_super(), we will leak inodes on unmount and get a busy
->> inode crash from the VFS.
->>
->> Fix it by parking the cleaner before we actually close anything. Then,
->> any remaining delayed iputs will always be handled in
->> btrfs_commit_super(). This also ensures that the commit in close_ctree()
->> is really the last commit, so we can get rid of the commit in
->> cleaner_kthread().
->>
->> Fixes: 30928e9baac2 ("btrfs: don't run delayed_iputs in commit")
->> Signed-off-by: Omar Sandoval <osandov@fb.com>
+> A simplified version in code:
 > 
-> Also I believe this patch renders the wake_up_process in
-> btrfs_commit_super a null op so it can also be removed, which leaves a
-> single place that could wake up the cleaner - transaction_kthread.
+>   set_bit(BTRFS_FS_CLOSING_START, &fs_info->flags);
 > 
-> So can't we stop transaction and cleaner thread right after setting
-> CLOSING_FS. And commit the transaction in close_ctree whenever we deem
-> necessary (in btrfs_commit_super for example) ?
-
-Ok, that won't work because commit_super is called in other contexts
-where it can genuinely wake up the trans kthread, blimey. Why can't we
-stop transaction kthread first thing in close_ctree ?
-
-
-
+>   wait for defrag - could be started from cleaner but next iteration will
+> 		    see the fs closed and will not continue
 > 
->> ---
->> Changes from v1:
->>
->> - Add a comment explaining why it needs to be a kthread_park(), not
->>   kthread_stop()
->> - Update later comment now that the cleaner thread is definitely stopped
->>
->>  fs/btrfs/disk-io.c | 51 ++++++++++++++--------------------------------
->>  1 file changed, 15 insertions(+), 36 deletions(-)
->>
->> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
->> index b0ab41da91d1..40bcc45d827d 100644
->> --- a/fs/btrfs/disk-io.c
->> +++ b/fs/btrfs/disk-io.c
->> @@ -1664,9 +1664,8 @@ static int cleaner_kthread(void *arg)
->>  	struct btrfs_root *root = arg;
->>  	struct btrfs_fs_info *fs_info = root->fs_info;
->>  	int again;
->> -	struct btrfs_trans_handle *trans;
->>  
->> -	do {
->> +	while (1) {
->>  		again = 0;
->>  
->>  		/* Make the cleaner go to sleep early. */
->> @@ -1715,42 +1714,16 @@ static int cleaner_kthread(void *arg)
->>  		 */
->>  		btrfs_delete_unused_bgs(fs_info);
->>  sleep:
->> +		if (kthread_should_park())
->> +			kthread_parkme();
->> +		if (kthread_should_stop())
->> +			return 0;
->>  		if (!again) {
->>  			set_current_state(TASK_INTERRUPTIBLE);
->> -			if (!kthread_should_stop())
->> -				schedule();
->> +			schedule();
->>  			__set_current_state(TASK_RUNNING);
->>  		}
->> -	} while (!kthread_should_stop());
->> -
->> -	/*
->> -	 * Transaction kthread is stopped before us and wakes us up.
->> -	 * However we might have started a new transaction and COWed some
->> -	 * tree blocks when deleting unused block groups for example. So
->> -	 * make sure we commit the transaction we started to have a clean
->> -	 * shutdown when evicting the btree inode - if it has dirty pages
->> -	 * when we do the final iput() on it, eviction will trigger a
->> -	 * writeback for it which will fail with null pointer dereferences
->> -	 * since work queues and other resources were already released and
->> -	 * destroyed by the time the iput/eviction/writeback is made.
->> -	 */
->> -	trans = btrfs_attach_transaction(root);
->> -	if (IS_ERR(trans)) {
->> -		if (PTR_ERR(trans) != -ENOENT)
->> -			btrfs_err(fs_info,
->> -				  "cleaner transaction attach returned %ld",
->> -				  PTR_ERR(trans));
->> -	} else {
->> -		int ret;
->> -
->> -		ret = btrfs_commit_transaction(trans);
->> -		if (ret)
->> -			btrfs_err(fs_info,
->> -				  "cleaner open transaction commit returned %d",
->> -				  ret);
->>  	}
->> -
->> -	return 0;
->>  }
->>  
->>  static int transaction_kthread(void *arg)
->> @@ -3931,6 +3904,13 @@ void close_ctree(struct btrfs_fs_info *fs_info)
->>  	int ret;
->>  
->>  	set_bit(BTRFS_FS_CLOSING_START, &fs_info->flags);
->> +	/*
->> +	 * We don't want the cleaner to start new transactions, add more delayed
->> +	 * iputs, etc. while we're closing. We can't use kthread_stop() yet
->> +	 * because that frees the task_struct, and the transaction kthread might
->> +	 * still try to wake up the cleaner.
->> +	 */
->> +	kthread_park(fs_info->cleaner_kthread);
->>  
->>  	/* wait for the qgroup rescan worker to stop */
->>  	btrfs_qgroup_wait_for_completion(fs_info, false);
->> @@ -3958,9 +3938,8 @@ void close_ctree(struct btrfs_fs_info *fs_info)
->>  
->>  	if (!sb_rdonly(fs_info->sb)) {
->>  		/*
->> -		 * If the cleaner thread is stopped and there are
->> -		 * block groups queued for removal, the deletion will be
->> -		 * skipped when we quit the cleaner thread.
->> +		 * The cleaner kthread is stopped, so do one final pass over
->> +		 * unused block groups.
->>  		 */
->>  		btrfs_delete_unused_bgs(fs_info);
->>  
->>
+>   kthread_stop(transaction_kthread)
+> 
+>   kthread_stop(cleaner_kthread)
+> 
+>   /* next, everything that could be left from cleaner should be finished */
+> 
+>   btrfs_delete_unused_bgs();
+>   assert there are no defrags
+>   assert there are no delayed iputs
+>   commit if necessary
+> 
+> IOW the unused block groups are removed from close_ctree too early,
+> moving that after the threads stop AND makins sure that it does not need
+> either of them should work.
+> 
+> The "AND" above is not currently implemented as btrfs_delete_unused_bgs
+> calls plain btrfs_end_transaction that wakes up transaction ktread, so
+> there would need to be an argument passed to tell it to do full commit.
+
+Not perfect, relies on the fact that wake_up_process(thread) on a stopped
+thread is a no-op, arguments would need to be added to skip that in
+btrfs_delete_unused_bgs and btrfs_commit_super.
+
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3956,11 +3956,18 @@ void close_ctree(struct btrfs_fs_info *fs_info)
+ 
+        cancel_work_sync(&fs_info->async_reclaim_work);
+ 
++       if (test_bit(BTRFS_FS_STATE_ERROR, &fs_info->fs_state) ||
++           test_bit(BTRFS_FS_STATE_TRANS_ABORTED, &fs_info->fs_state))
++               btrfs_error_commit_super(fs_info);
++
++       kthread_stop(fs_info->transaction_kthread);
++       kthread_stop(fs_info->cleaner_kthread);
++
+        if (!sb_rdonly(fs_info->sb)) {
+                /*
+-                * If the cleaner thread is stopped and there are
+-                * block groups queued for removal, the deletion will be
+-                * skipped when we quit the cleaner thread.
++                * The cleaner thread is now stopped and if there are block
++                * groups queued for removal, we have to pick up the work here
++                * so there are no delayed iputs triggered.
+                 */
+                btrfs_delete_unused_bgs(fs_info);
+ 
+@@ -3969,13 +3976,6 @@ void close_ctree(struct btrfs_fs_info *fs_info)
+                        btrfs_err(fs_info, "commit super ret %d", ret);
+        }
+ 
+-       if (test_bit(BTRFS_FS_STATE_ERROR, &fs_info->fs_state) ||
+-           test_bit(BTRFS_FS_STATE_TRANS_ABORTED, &fs_info->fs_state))
+-               btrfs_error_commit_super(fs_info);
+-
+-       kthread_stop(fs_info->transaction_kthread);
+-       kthread_stop(fs_info->cleaner_kthread);
+-
+        ASSERT(list_empty(&fs_info->delayed_iputs));
+        set_bit(BTRFS_FS_CLOSING_DONE, &fs_info->flags);

@@ -6,31 +6,31 @@ X-Spam-Status: No, score=-8.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CE9C3C6786F
-	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Nov 2018 12:09:59 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 21272C6786F
+	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Nov 2018 12:10:01 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id A2DF920657
-	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Nov 2018 12:09:59 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org A2DF920657
+	by mail.kernel.org (Postfix) with ESMTP id E004D20657
+	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Nov 2018 12:10:00 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org E004D20657
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728513AbeKAVMj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 1 Nov 2018 17:12:39 -0400
-Received: from mx2.suse.de ([195.135.220.15]:45986 "EHLO mx1.suse.de"
+        id S1728529AbeKAVMk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 1 Nov 2018 17:12:40 -0400
+Received: from mx2.suse.de ([195.135.220.15]:46004 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1728369AbeKAVMj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 1 Nov 2018 17:12:39 -0400
+        id S1728489AbeKAVMk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 1 Nov 2018 17:12:40 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 89DC4AC8C
-        for <linux-btrfs@vger.kernel.org>; Thu,  1 Nov 2018 12:09:56 +0000 (UTC)
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 5A9D0ABCE
+        for <linux-btrfs@vger.kernel.org>; Thu,  1 Nov 2018 12:09:57 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 2/8] btrfs: Remove extent_io_ops::writepage_start_hook
-Date:   Thu,  1 Nov 2018 14:09:47 +0200
-Message-Id: <1541074194-22227-3-git-send-email-nborisov@suse.com>
+Subject: [PATCH 5/8] btrfs: Remove extent_io_ops::set_bit_hook extent_io callback
+Date:   Thu,  1 Nov 2018 14:09:50 +0200
+Message-Id: <1541074194-22227-6-git-send-email-nborisov@suse.com>
 X-Mailer: git-send-email 2.7.4
 In-Reply-To: <1541074194-22227-1-git-send-email-nborisov@suse.com>
 References: <1541074194-22227-1-git-send-email-nborisov@suse.com>
@@ -39,101 +39,130 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This hook is called only from __extent_writepage_io which is already
-called only from the data page writeout path. So there is no need to
-make an indirect call via extent_io_ops. This patch just removes the
-callback definition, exports the callback function and calls it
-directly at the only call site. Also give the function a more descriptive
-name. No functional changes.
+This callback is used to properly account delalloc extents for
+data inodes (ordinary file inodes and freespace v1 inodes). Those can
+be easily identified since they have their extent_io trees
+->private_data member point to the inode. Let's exploit this fact to
+remove the needless indirection through extent_io_hooks and directly
+call the function. Also give the function a name which reflects its
+purpose - btrfs_set_delalloc_extent.
+
+This patch also modified test_find_delalloc so that the extent_io_tree
+used for testing doesn't have its ->private_data set which would have
+caused a crash in btrfs_set_delalloc_extent due to the
+btrfs_inode->root member not being initialised. The old version of the
+code also didn't call set_bit_hook since the extent_io ops weren't set
+for the inode.  No functional changes.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/ctree.h     |  1 +
- fs/btrfs/extent_io.c | 23 ++++++++++-------------
- fs/btrfs/extent_io.h |  1 -
- fs/btrfs/inode.c     |  3 +--
- 4 files changed, 12 insertions(+), 16 deletions(-)
+ fs/btrfs/ctree.h                 |  2 ++
+ fs/btrfs/extent_io.c             | 11 +++--------
+ fs/btrfs/extent_io.h             |  2 --
+ fs/btrfs/inode.c                 | 12 ++++--------
+ fs/btrfs/tests/extent-io-tests.c |  2 +-
+ 5 files changed, 10 insertions(+), 19 deletions(-)
 
 diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index dbeb5b2486d5..8e73301eaa65 100644
+index 10f4dad8b16d..8fd9db7aa8de 100644
 --- a/fs/btrfs/ctree.h
 +++ b/fs/btrfs/ctree.h
-@@ -3189,6 +3189,7 @@ int btrfs_prealloc_file_range_trans(struct inode *inode,
- int run_delalloc_range(void *private_data, struct page *locked_page, u64 start,
- 		       u64 end, int *page_started, unsigned long *nr_written,
- 		       struct writeback_control *wbc);
-+int btrfs_writepage_cow_fixup(struct page *page, u64 start, u64 end);
- extern const struct dentry_operations btrfs_dentry_operations;
- 
- /* ioctl.c */
+@@ -3150,6 +3150,8 @@ int btrfs_create_subvol_root(struct btrfs_trans_handle *trans,
+ 			     struct btrfs_root *new_root,
+ 			     struct btrfs_root *parent_root,
+ 			     u64 new_dirid);
++void btrfs_set_delalloc_extent(struct inode *inode, struct extent_state *state,
++			       unsigned *bits);
+ int btrfs_merge_bio_hook(struct page *page, unsigned long offset,
+ 			 size_t size, struct bio *bio,
+ 			 unsigned long bio_flags);
 diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 2e6191aa25f3..c5c713ebb9b1 100644
+index de171ae2ef20..31bdc596e623 100644
 --- a/fs/btrfs/extent_io.c
 +++ b/fs/btrfs/extent_io.c
-@@ -3321,20 +3321,17 @@ static noinline_for_stack int __extent_writepage_io(struct inode *inode,
- 	int nr = 0;
- 	bool compressed;
- 
--	if (tree->ops && tree->ops->writepage_start_hook) {
--		ret = tree->ops->writepage_start_hook(page, start,
--						      page_end);
--		if (ret) {
--			/* Fixup worker will requeue */
--			if (ret == -EBUSY)
--				wbc->pages_skipped++;
--			else
--				redirty_page_for_writepage(wbc, page);
-+	ret = btrfs_writepage_cow_fixup(page, start, page_end);
-+	if (ret) {
-+		/* Fixup worker will requeue */
-+		if (ret == -EBUSY)
-+			wbc->pages_skipped++;
-+		else
-+			redirty_page_for_writepage(wbc, page);
- 
--			update_nr_written(wbc, nr_written);
--			unlock_page(page);
--			return 1;
--		}
-+		update_nr_written(wbc, nr_written);
-+		unlock_page(page);
-+		return 1;
+@@ -404,13 +404,6 @@ static void merge_state(struct extent_io_tree *tree,
  	}
+ }
  
- 	/*
+-static void set_state_cb(struct extent_io_tree *tree,
+-			 struct extent_state *state, unsigned *bits)
+-{
+-	if (tree->ops && tree->ops->set_bit_hook)
+-		tree->ops->set_bit_hook(tree->private_data, state, bits);
+-}
+-
+ static void clear_state_cb(struct extent_io_tree *tree,
+ 			   struct extent_state *state, unsigned *bits)
+ {
+@@ -809,7 +802,9 @@ static void set_state_bits(struct extent_io_tree *tree,
+ 	unsigned bits_to_set = *bits & ~EXTENT_CTLBITS;
+ 	int ret;
+ 
+-	set_state_cb(tree, state, bits);
++	if (tree->private_data)
++		btrfs_set_delalloc_extent(tree->private_data, state, bits);
++
+ 	if ((bits_to_set & EXTENT_DIRTY) && !(state->state & EXTENT_DIRTY)) {
+ 		u64 range = state->end - state->start + 1;
+ 		tree->dirty_bytes += range;
 diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index ca48187b86ba..4275a1061f5a 100644
+index 3cb84a0fbaab..b3235d46b5c3 100644
 --- a/fs/btrfs/extent_io.h
 +++ b/fs/btrfs/extent_io.h
-@@ -106,7 +106,6 @@ struct extent_io_ops {
+@@ -106,8 +106,6 @@ struct extent_io_ops {
  	/*
  	 * Optional hooks, called if the pointer is not NULL
  	 */
--	int (*writepage_start_hook)(struct page *page, u64 start, u64 end);
- 	void (*writepage_end_io_hook)(struct page *page, u64 start, u64 end,
- 				      struct extent_state *state, int uptodate);
- 	void (*set_bit_hook)(void *private_data, struct extent_state *state,
+-	void (*set_bit_hook)(void *private_data, struct extent_state *state,
+-			     unsigned *bits);
+ 	void (*clear_bit_hook)(void *private_data,
+ 			struct extent_state *state,
+ 			unsigned *bits);
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index aa6d6b64a70a..5c07c6f9f7db 100644
+index 7110686e9b0e..d1c56c56a413 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -2154,7 +2154,7 @@ static void btrfs_writepage_fixup_worker(struct btrfs_work *work)
-  * to fix it up.  The async helper will wait for ordered extents, set
-  * the delalloc bit and make it safe to write the page.
+@@ -1757,15 +1757,12 @@ static void btrfs_del_delalloc_inode(struct btrfs_root *root,
+ }
+ 
+ /*
+- * extent_io.c set_bit_hook, used to track delayed allocation
+- * bytes in this file, and to maintain the list of inodes that
+- * have pending delalloc work to be done.
++ * Properly track delayed allocation bytes in the inode and to maintain the
++ * list of inodes that have pending delalloc work to be done.
   */
--static int btrfs_writepage_start_hook(struct page *page, u64 start, u64 end)
-+int btrfs_writepage_cow_fixup(struct page *page, u64 start, u64 end)
+-static void btrfs_set_bit_hook(void *private_data,
+-			       struct extent_state *state, unsigned *bits)
++void btrfs_set_delalloc_extent(struct inode *inode, struct extent_state *state,
++			       unsigned *bits)
  {
- 	struct inode *inode = page->mapping->host;
+-	struct inode *inode = private_data;
+-
  	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
-@@ -10523,7 +10523,6 @@ static const struct extent_io_ops btrfs_extent_io_ops = {
+ 
+ 	if ((*bits & EXTENT_DEFRAG) && !(*bits & EXTENT_DELALLOC))
+@@ -10508,7 +10505,6 @@ static const struct extent_io_ops btrfs_extent_io_ops = {
+ 	.readpage_io_failed_hook = btrfs_readpage_io_failed_hook,
  
  	/* optional callbacks */
- 	.writepage_end_io_hook = btrfs_writepage_end_io_hook,
--	.writepage_start_hook = btrfs_writepage_start_hook,
- 	.set_bit_hook = btrfs_set_bit_hook,
+-	.set_bit_hook = btrfs_set_bit_hook,
  	.clear_bit_hook = btrfs_clear_bit_hook,
  	.merge_extent_hook = btrfs_merge_extent_hook,
+ 	.split_extent_hook = btrfs_split_extent_hook,
+diff --git a/fs/btrfs/tests/extent-io-tests.c b/fs/btrfs/tests/extent-io-tests.c
+index 9e0f4a01be14..ac8b5e35797d 100644
+--- a/fs/btrfs/tests/extent-io-tests.c
++++ b/fs/btrfs/tests/extent-io-tests.c
+@@ -76,7 +76,7 @@ static int test_find_delalloc(u32 sectorsize)
+ 		return -ENOMEM;
+ 	}
+ 
+-	extent_io_tree_init(&tmp, inode);
++	extent_io_tree_init(&tmp, NULL);
+ 
+ 	/*
+ 	 * First go through and create and mark all of our pages dirty, we pin
 -- 
 2.7.4
 

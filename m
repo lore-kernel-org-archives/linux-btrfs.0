@@ -2,114 +2,94 @@ Return-Path: <SRS0=DppP=NM=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.3 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_MUTT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.3 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2A0A9C0044C
-	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Nov 2018 17:04:24 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 62063C6786F
+	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Nov 2018 17:16:08 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id ED0712081B
-	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Nov 2018 17:04:23 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org ED0712081B
+	by mail.kernel.org (Postfix) with ESMTP id 27DB02064C
+	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Nov 2018 17:16:08 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 27DB02064C
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727250AbeKBCIL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 1 Nov 2018 22:08:11 -0400
-Received: from mx2.suse.de ([195.135.220.15]:35386 "EHLO mx1.suse.de"
+        id S1727508AbeKBCT5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 1 Nov 2018 22:19:57 -0400
+Received: from mx2.suse.de ([195.135.220.15]:38176 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725982AbeKBCIL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 1 Nov 2018 22:08:11 -0400
+        id S1725843AbeKBCT5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 1 Nov 2018 22:19:57 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 73839AE4C;
-        Thu,  1 Nov 2018 17:04:21 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 8269DAF9A;
+        Thu,  1 Nov 2018 17:16:05 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id EF2A4DAAFC; Thu,  1 Nov 2018 18:04:09 +0100 (CET)
-Date:   Thu, 1 Nov 2018 18:04:09 +0100
+        id A7E08DAAFC; Thu,  1 Nov 2018 18:15:54 +0100 (CET)
+Date:   Thu, 1 Nov 2018 18:15:54 +0100
 From:   David Sterba <dsterba@suse.cz>
-To:     Anand Jain <anand.jain@oracle.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH RFC RESEND] btrfs: harden agaist duplicate fsid
-Message-ID: <20181101170409.GR9136@twin.jikos.cz>
+To:     Nikolay Borisov <nborisov@suse.com>
+Cc:     dsterba@suse.cz, Omar Sandoval <osandov@osandov.com>,
+        Chris Mason <clm@fb.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Kernel Team <Kernel-team@fb.com>
+Subject: Re: [PATCH v2] Btrfs: fix missing delayed iputs on unmount
+Message-ID: <20181101171554.GS9136@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Anand Jain <anand.jain@oracle.com>,
-        linux-btrfs@vger.kernel.org
-References: <1539571517-7900-1-git-send-email-anand.jain@oracle.com>
+Mail-Followup-To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
+        Omar Sandoval <osandov@osandov.com>, Chris Mason <clm@fb.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Kernel Team <Kernel-team@fb.com>
+References: <5d98091d3e089b4f74cb61fb2ed691e1f4dd1d6b.1541005462.git.osandov@fb.com>
+ <20181101101532.GL9136@twin.jikos.cz>
+ <2DCF4F92-0B05-420C-ADEB-3A7A69F6DB37@fb.com>
+ <20181101150831.GM9136@twin.jikos.cz>
+ <20181101152229.GN9136@twin.jikos.cz>
+ <20181101152425.GB18005@vader>
+ <20181101152948.GP9136@twin.jikos.cz>
+ <20181101160056.GD18005@vader>
+ <20181101164447.GQ9136@twin.jikos.cz>
+ <7c60425a-0244-fef9-2b9d-aab204d04d4e@suse.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=utf-8
 Content-Disposition: inline
-In-Reply-To: <1539571517-7900-1-git-send-email-anand.jain@oracle.com>
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <7c60425a-0244-fef9-2b9d-aab204d04d4e@suse.com>
 User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Oct 15, 2018 at 10:45:17AM +0800, Anand Jain wrote:
-> (Thanks for the comments on requiring to warn_on if we fail the device change.)
-> (This fixes an ugly bug, I appreciate if you have any further comments).
+On Thu, Nov 01, 2018 at 06:50:03PM +0200, Nikolay Borisov wrote:
 > 
-> Its not that impossible to imagine that a device OR a btrfs image is
-> been copied just by using the dd or the cp command. Which in case both
-> the copies of the btrfs will have the same fsid. If on the system with
-> automount enabled, the copied FS gets scanned.
 > 
-> We have a known bug in btrfs, that we let the device path be changed
-> after the device has been mounted. So using this loop hole the new
-> copied device would appears as if its mounted immediately after its
-> been copied.
+> On 1.11.18 г. 18:44 ч., David Sterba wrote:
+> > On Thu, Nov 01, 2018 at 09:00:56AM -0700, Omar Sandoval wrote:
+> >>> That was an assumption for the demonstration purposes, the wording was
+> >>> confusing sorry.
+> >>
+> >> Oh, well in that case, that's exactly what kthread_park() is ;) Stop the
+> >> thread and make wake_up a noop, and then we don't need to add special
+> >> cases everywhere else.
+> > 
+> > The end result is equivalent and should be, I'm now weighing both
+> > approaches. Explicit state tracking outside of the thread structures
+> > seems more clear and in case we want to query the status, we can't after
+> > kthread_stop is called. My current version below.
+> > 
 > 
-> For example:
+> <snip>
 > 
-> Initially.. /dev/mmcblk0p4 is mounted as /
+> > +static inline void btrfs_wake_up_transaction(struct btrfs_fs_info *fs_info)
+> > +{
+> > +	if (!test_bit(BTRFS_FS_CLOSING_SINGLE, &fs_info->flags)) {
 > 
-> lsblk
-> NAME        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
-> mmcblk0     179:0    0 29.2G  0 disk
-> |-mmcblk0p4 179:4    0    4G  0 part /
-> |-mmcblk0p2 179:2    0  500M  0 part /boot
-> |-mmcblk0p3 179:3    0  256M  0 part [SWAP]
-> `-mmcblk0p1 179:1    0  256M  0 part /boot/efi
-> 
-> btrfs fi show
->    Label: none  uuid: 07892354-ddaa-4443-90ea-f76a06accaba
->    Total devices 1 FS bytes used 1.40GiB
->    devid    1 size 4.00GiB used 3.00GiB path /dev/mmcblk0p4
-> 
-> Copy mmcblk0 to sda
->    dd if=/dev/mmcblk0 of=/dev/sda
-> 
-> And immediately after the copy completes the change in the device
-> superblock is notified which the automount scans using
-> btrfs device scan and the new device sda becomes the mounted root
-> device.
-> 
-> lsblk
-> NAME        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
-> sda           8:0    1 14.9G  0 disk
-> |-sda4        8:4    1    4G  0 part /
-> |-sda2        8:2    1  500M  0 part
-> |-sda3        8:3    1  256M  0 part
-> `-sda1        8:1    1  256M  0 part
-> mmcblk0     179:0    0 29.2G  0 disk
-> |-mmcblk0p4 179:4    0    4G  0 part
-> |-mmcblk0p2 179:2    0  500M  0 part /boot
-> |-mmcblk0p3 179:3    0  256M  0 part [SWAP]
-> `-mmcblk0p1 179:1    0  256M  0 part /boot/efi
-> 
-> btrfs fi show /
->  Label: none  uuid: 07892354-ddaa-4443-90ea-f76a06accaba
->  Total devices 1 FS bytes used 1.40GiB
->  devid    1 size 4.00GiB used 3.00GiB path /dev/sda4
-> 
-> The bug is quite nasty that you can't either unmount /dev/sda4 or
-> /dev/mmcblk0p4. And the problem does not get solved until you take
-> sda out of the system on to another system to change its fsid
-> using the 'btrfstune -u' command.
-> 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> Why do we need a separate flag for a predicate? If we use
+> FS_CLOSING_START then waking up becomes a noop from the moment
+> close_ctree is called.
 
-The fix for that case looks ok to me, block devices with duplicate UUIDs
-are problematic. I'll add the patch to for-next, thanks.
+Yeah it's not strictly necessary, it's a leftover from when I had a
+WARN_ON in the wakeup helpers that triggered too often so another flag
+was added just after the threads were stopped.

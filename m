@@ -2,46 +2,68 @@ Return-Path: <SRS0=DppP=NM=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.3 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,
+	URIBL_BLOCKED,USER_AGENT_MUTT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AE25BC0044C
-	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Nov 2018 15:22:56 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7B674C0044C
+	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Nov 2018 15:23:23 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 7D1252081B
-	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Nov 2018 15:22:56 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 7D1252081B
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
+	by mail.kernel.org (Postfix) with ESMTP id 2958E2081B
+	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Nov 2018 15:23:23 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="BJTBVuNd"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 2958E2081B
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=osandov.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728483AbeKBA0T (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 1 Nov 2018 20:26:19 -0400
-Received: from mx2.suse.de ([195.135.220.15]:45694 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727966AbeKBA0T (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 1 Nov 2018 20:26:19 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 47759AC5E;
-        Thu,  1 Nov 2018 15:22:53 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id AAA54DAAFC; Thu,  1 Nov 2018 16:22:29 +0100 (CET)
-Date:   Thu, 1 Nov 2018 16:22:29 +0100
-From:   David Sterba <dsterba@suse.cz>
+        id S1728540AbeKBA0q (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 1 Nov 2018 20:26:46 -0400
+Received: from mail-pl1-f196.google.com ([209.85.214.196]:41475 "EHLO
+        mail-pl1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728372AbeKBA0q (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Nov 2018 20:26:46 -0400
+Received: by mail-pl1-f196.google.com with SMTP id p16-v6so2957162plr.8
+        for <linux-btrfs@vger.kernel.org>; Thu, 01 Nov 2018 08:23:21 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=osandov-com.20150623.gappssmtp.com; s=20150623;
+        h=date:from:to:subject:message-id:references:mime-version
+         :content-disposition:in-reply-to:user-agent;
+        bh=W9ff05aT6Ayg/QkWua/59MeRsCsGTqxHzyAQUzPwLfg=;
+        b=BJTBVuNdLWpqcmNg/wxfBf3M8SklblZPzQXUc9sQMQRwBhsvTCv+Qgqi/HkQ9/7z21
+         HpFKzCt5WhKXUv7bhGWmHGqtbOICVRRYUsQYPRHYifcUKJLbnEyNa39uSXT+bYfCjBy7
+         zvsSulGE4xBXg6vx1qiGY0GMEd43IX+eG08X2BzgpbKnS1QvpgK1IXXyOLigFj7FJ6oB
+         VeJkuCas3CsYG9wE6L/vlkOQ4OeRBTCGozFeLeFMkrRF7J/J3hMwNFRP5YXto3bnS1+V
+         qCl0gck9iVZYXczDrfP7UXBtLXz2wCigvL1DsnH8wlVXe4rsWHCXqOlNJv62WneWhagn
+         yZng==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:date:from:to:subject:message-id:references
+         :mime-version:content-disposition:in-reply-to:user-agent;
+        bh=W9ff05aT6Ayg/QkWua/59MeRsCsGTqxHzyAQUzPwLfg=;
+        b=RoA5I4oMBk18yAW+t44yAX7oXPes2RE1VFqZ0BuEU6CrsdekzWrVDreVaFK+0tZH6n
+         7FBCttQIXX9KB4g6SSI59v3Dmd9+0l091/h6TpwXUBxDymciarKk5eCqSOt5DFvsQgW3
+         Ox4fL+W+Z4pjDDuW8QK7ZgAjeaGdK/XjCCtj6L9ft2bdPY//Q5yzD2+1zPvot1na5rpq
+         UKNH0nI5FxEo1m+biPlWDxjNnHqJxNq3M+d4C0q/xB8YW+szGBrVF19bgOlX2OzXYZJ/
+         LwAYejOyXPR9HwuOc/TFCOFCU2ueyUBlbI0NPVHQoy4acNWTjN0aZz6LQRFV83kPIWj/
+         9JJw==
+X-Gm-Message-State: AGRZ1gJ1RatAJQhKGpiZ35hsSoYFV1bI1qQEMqGWc7oTMEsvK15Ac1Zv
+        FffuXhsXTwcavDoaBIJEL+Bv4w==
+X-Google-Smtp-Source: AJdET5caUOQNG8WzdDK+GwqBibqwe0kYTXTBKUKXvODDRNetZgkmSvjfD187jsbzDMqwtzs45Fg/IQ==
+X-Received: by 2002:a17:902:380c:: with SMTP id l12-v6mr8071236plc.37.1541085800546;
+        Thu, 01 Nov 2018 08:23:20 -0700 (PDT)
+Received: from vader ([2601:602:8800:a9a9:e6a7:a0ff:fe0b:c9a8])
+        by smtp.gmail.com with ESMTPSA id b2-v6sm6651167pgh.85.2018.11.01.08.23.19
+        (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
+        Thu, 01 Nov 2018 08:23:20 -0700 (PDT)
+Date:   Thu, 1 Nov 2018 08:23:17 -0700
+From:   Omar Sandoval <osandov@osandov.com>
 To:     dsterba@suse.cz, Chris Mason <clm@fb.com>,
-        Omar Sandoval <osandov@osandov.com>,
         "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
         Kernel Team <Kernel-team@fb.com>,
         Nikolay Borisov <nborisov@suse.com>
 Subject: Re: [PATCH v2] Btrfs: fix missing delayed iputs on unmount
-Message-ID: <20181101152229.GN9136@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Chris Mason <clm@fb.com>,
-        Omar Sandoval <osandov@osandov.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Kernel Team <Kernel-team@fb.com>,
-        Nikolay Borisov <nborisov@suse.com>
+Message-ID: <20181101152317.GA18005@vader>
 References: <5d98091d3e089b4f74cb61fb2ed691e1f4dd1d6b.1541005462.git.osandov@fb.com>
  <20181101101532.GL9136@twin.jikos.cz>
  <2DCF4F92-0B05-420C-ADEB-3A7A69F6DB37@fb.com>
@@ -50,7 +72,7 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
 In-Reply-To: <20181101150831.GM9136@twin.jikos.cz>
-User-Agent: Mutt/1.5.23.1 (2014-03-12)
+User-Agent: Mutt/1.10.1 (2018-07-13)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -146,44 +168,6 @@ On Thu, Nov 01, 2018 at 04:08:32PM +0100, David Sterba wrote:
 > calls plain btrfs_end_transaction that wakes up transaction ktread, so
 > there would need to be an argument passed to tell it to do full commit.
 
-Not perfect, relies on the fact that wake_up_process(thread) on a stopped
-thread is a no-op, arguments would need to be added to skip that in
-btrfs_delete_unused_bgs and btrfs_commit_super.
-
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -3956,11 +3956,18 @@ void close_ctree(struct btrfs_fs_info *fs_info)
- 
-        cancel_work_sync(&fs_info->async_reclaim_work);
- 
-+       if (test_bit(BTRFS_FS_STATE_ERROR, &fs_info->fs_state) ||
-+           test_bit(BTRFS_FS_STATE_TRANS_ABORTED, &fs_info->fs_state))
-+               btrfs_error_commit_super(fs_info);
-+
-+       kthread_stop(fs_info->transaction_kthread);
-+       kthread_stop(fs_info->cleaner_kthread);
-+
-        if (!sb_rdonly(fs_info->sb)) {
-                /*
--                * If the cleaner thread is stopped and there are
--                * block groups queued for removal, the deletion will be
--                * skipped when we quit the cleaner thread.
-+                * The cleaner thread is now stopped and if there are block
-+                * groups queued for removal, we have to pick up the work here
-+                * so there are no delayed iputs triggered.
-                 */
-                btrfs_delete_unused_bgs(fs_info);
- 
-@@ -3969,13 +3976,6 @@ void close_ctree(struct btrfs_fs_info *fs_info)
-                        btrfs_err(fs_info, "commit super ret %d", ret);
-        }
- 
--       if (test_bit(BTRFS_FS_STATE_ERROR, &fs_info->fs_state) ||
--           test_bit(BTRFS_FS_STATE_TRANS_ABORTED, &fs_info->fs_state))
--               btrfs_error_commit_super(fs_info);
--
--       kthread_stop(fs_info->transaction_kthread);
--       kthread_stop(fs_info->cleaner_kthread);
--
-        ASSERT(list_empty(&fs_info->delayed_iputs));
-        set_bit(BTRFS_FS_CLOSING_DONE, &fs_info->flags);
+It's too fragile to run around in the filesystem with these threads
+freed. We can probably make it now, but I'm worried that we'll add
+another wakeup somewhere and blow up.

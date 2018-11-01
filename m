@@ -2,742 +2,326 @@ Return-Path: <SRS0=DppP=NM=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D4B64C0044C
-	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Nov 2018 09:58:08 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B74AEC6786F
+	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Nov 2018 10:01:16 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 6F8AD20820
-	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Nov 2018 09:58:08 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="lzE/7gPj"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 6F8AD20820
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
+	by mail.kernel.org (Postfix) with ESMTP id 64C5020820
+	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Nov 2018 10:01:16 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 64C5020820
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728065AbeKATAY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 1 Nov 2018 15:00:24 -0400
-Received: from mail-ot1-f66.google.com ([209.85.210.66]:44893 "EHLO
-        mail-ot1-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727644AbeKATAY (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Nov 2018 15:00:24 -0400
-Received: by mail-ot1-f66.google.com with SMTP id p23so17211095otf.11
-        for <linux-btrfs@vger.kernel.org>; Thu, 01 Nov 2018 02:58:06 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc:content-transfer-encoding;
-        bh=gt1jS7Pkmefw+bTPPILfbPifXcOrHODpH3IXCALeSyc=;
-        b=lzE/7gPjWxQy5RxsgvtJjMdwDCvb/hHnOA0XVqdcVCfAIOayIqGQQAHPJk7vpnEI/t
-         XZDwrbVJVzh52sTxB8rH34ixJfY6Mk4NHkSNqYmrto2ZMhHjAor++rmd3M8LN6KPtJJf
-         01jEemoIki0I62fBv12Meq7k+CdKnDC8u/DjzFy874SNLg+/h8Z29d/uJOh9XfC8UDL7
-         7Kki83pr6ZGUeKYBBFof0xUBp+OI+Gu6X4uDce8sLh8ubyA9GZdfqkRDmkZquaZBR017
-         kXAWsOB57NMp2cufkjQM7JOJBW/zMMzzUn2kIqrJQVP0MyD0BOQpGQ7dBB7pwCdkJo+X
-         M5mg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc:content-transfer-encoding;
-        bh=gt1jS7Pkmefw+bTPPILfbPifXcOrHODpH3IXCALeSyc=;
-        b=q7o5uwbzalWTtX5L5nz2JqUeKIuo6bGPhlMsdraTEDRlFnROnRcYTlggqJLJJeE9jU
-         wiYhV0j0nzpjrV/4pw7lzo6Ywn1ViJXlA2I83+VSNDqBg5D5oQNvJK6dBJ5pBu7bk7M2
-         9m8YAvjQsR95x0U+f9G9+X9HZyn3qV6+yGD3aa6p0TO6zC5ak3eZweyx4+MGz/7AWu2U
-         lhaiRIjmkHgPPTrnEA/rQfOuejdu3BCIqKcAWKVYSoB9mWiJQ+/5Y+0IH42I0T5CPmur
-         QZyla08YKsh5J97fmvcvNSz+RBX2oBHRy9JwO8Z8IHkYFtOfVAQwvOdacNV9HCoH8a25
-         4ASw==
-X-Gm-Message-State: AGRZ1gIVnjCteNUQuInfxO78y6TpRmxMzjkYxQu0QGecvpr333AYnOii
-        QsTAVKCEA9MMHNX2PrHFK9SizKzuC852Wgl6k+Ex5gFJ
-X-Google-Smtp-Source: AJdET5eY8BPNYESdYNYd9zXlxgEOvUbRY9M5N1q8bNKjnEUGvU14yU7HrZB81Df6TvD7L6wk1E1Xg8Ce0PP1tNg7IIo=
-X-Received: by 2002:a9d:738a:: with SMTP id j10mr4277414otk.188.1541066285154;
- Thu, 01 Nov 2018 02:58:05 -0700 (PDT)
+        id S1728030AbeKATDc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 1 Nov 2018 15:03:32 -0400
+Received: from mx2.suse.de ([195.135.220.15]:53980 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1728027AbeKATDb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 1 Nov 2018 15:03:31 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 460F4AFE1;
+        Thu,  1 Nov 2018 10:01:13 +0000 (UTC)
+Subject: Re: [PATCH] btrfs: use tagged writepage to mitigate livelock of
+ snapshot
+To:     ethanlien <ethanlien@synology.com>
+Cc:     linux-btrfs@vger.kernel.org
+References: <20181101064903.11638-1-ethanlien@synology.com>
+ <2e566c40-f61e-6cea-42ba-c0c3fa3b9d76@suse.com>
+ <33824f7912f4d590d2425ef0ecebd039@synology.com>
+From:   Nikolay Borisov <nborisov@suse.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <5ebd95dc-f684-baef-494d-1a40760e6157@suse.com>
+Date:   Thu, 1 Nov 2018 12:01:12 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.2.1
 MIME-Version: 1.0
-References: <20181031181108.289340-1-terrelln@fb.com>
-In-Reply-To: <20181031181108.289340-1-terrelln@fb.com>
-From:   Timofey Titovets <nefelim4ag@gmail.com>
-Date:   Thu, 1 Nov 2018 12:57:28 +0300
-Message-ID: <CAGqmi75-K4sZmSgp6f-zCki9FWga_vvKZ-9ajtV71hSwac9tqA@mail.gmail.com>
-Subject: Re: [PATCH v2] btrfs: add zstd compression level support
-To:     Nick Terrell <terrelln@fb.com>
-Cc:     kernel-team@fb.com, osandov@fb.com,
-        linux-btrfs <linux-btrfs@vger.kernel.org>, jenniferliu620@fb.com
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+In-Reply-To: <33824f7912f4d590d2425ef0ecebd039@synology.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-=D1=81=D1=80, 31 =D0=BE=D0=BA=D1=82. 2018 =D0=B3. =D0=B2 21:12, Nick Terrel=
-l <terrelln@fb.com>:
->
-> From: Jennifer Liu <jenniferliu620@fb.com>
->
-> Adds zstd compression level support to btrfs. Zstd requires
-> different amounts of memory for each level, so the design had
-> to be modified to allow set_level() to allocate memory. We
-> preallocate one workspace of the maximum size to guarantee
-> forward progress. This feature is expected to be useful for
-> read-mostly filesystems, or when creating images.
->
-> Benchmarks run in qemu on Intel x86 with a single core.
-> The benchmark measures the time to copy the Silesia corpus [0] to
-> a btrfs filesystem 10 times, then read it back.
->
-> The two important things to note are:
-> - The decompression speed and memory remains constant.
->   The memory required to decompress is the same as level 1.
-> - The compression speed and ratio will vary based on the source.
->
-> Level   Ratio   Compression     Decompression   Compression Memory
-> 1       2.59    153 MB/s        112 MB/s        0.8 MB
-> 2       2.67    136 MB/s        113 MB/s        1.0 MB
-> 3       2.72    106 MB/s        115 MB/s        1.3 MB
-> 4       2.78    86  MB/s        109 MB/s        0.9 MB
-> 5       2.83    69  MB/s        109 MB/s        1.4 MB
-> 6       2.89    53  MB/s        110 MB/s        1.5 MB
-> 7       2.91    40  MB/s        112 MB/s        1.4 MB
-> 8       2.92    34  MB/s        110 MB/s        1.8 MB
-> 9       2.93    27  MB/s        109 MB/s        1.8 MB
-> 10      2.94    22  MB/s        109 MB/s        1.8 MB
-> 11      2.95    17  MB/s        114 MB/s        1.8 MB
-> 12      2.95    13  MB/s        113 MB/s        1.8 MB
-> 13      2.95    10  MB/s        111 MB/s        2.3 MB
-> 14      2.99    7   MB/s        110 MB/s        2.6 MB
-> 15      3.03    6   MB/s        110 MB/s        2.6 MB
->
-> [0] http://sun.aei.polsl.pl/~sdeor/index.php?page=3Dsilesia
->
-> Signed-off-by: Jennifer Liu <jenniferliu620@fb.com>
-> Signed-off-by: Nick Terrell <terrelln@fb.com>
-> Reviewed-by: Omar Sandoval <osandov@fb.com>
-> ---
-> v1 -> v2:
-> - Don't reflow the unchanged line.
->
->  fs/btrfs/compression.c | 169 +++++++++++++++++++++++++----------------
->  fs/btrfs/compression.h |  18 +++--
->  fs/btrfs/lzo.c         |   5 +-
->  fs/btrfs/super.c       |   7 +-
->  fs/btrfs/zlib.c        |  33 ++++----
->  fs/btrfs/zstd.c        |  74 +++++++++++++-----
->  6 files changed, 202 insertions(+), 104 deletions(-)
->
-> diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-> index 2955a4ea2fa8..b46652cb653e 100644
-> --- a/fs/btrfs/compression.c
-> +++ b/fs/btrfs/compression.c
-> @@ -822,9 +822,12 @@ void __init btrfs_init_compress(void)
->
->                 /*
->                  * Preallocate one workspace for each compression type so
-> -                * we can guarantee forward progress in the worst case
-> +                * we can guarantee forward progress in the worst case.
-> +                * Provide the maximum compression level to guarantee lar=
-ge
-> +                * enough workspace.
->                  */
-> -               workspace =3D btrfs_compress_op[i]->alloc_workspace();
-> +               workspace =3D btrfs_compress_op[i]->alloc_workspace(
-> +                               btrfs_compress_op[i]->max_level);
->                 if (IS_ERR(workspace)) {
->                         pr_warn("BTRFS: cannot preallocate compression wo=
-rkspace, will try later\n");
->                 } else {
-> @@ -835,23 +838,78 @@ void __init btrfs_init_compress(void)
->         }
->  }
->
-> +/*
-> + * put a workspace struct back on the list or free it if we have enough
-> + * idle ones sitting around
-> + */
-> +static void __free_workspace(int type, struct list_head *workspace,
-> +                            bool heuristic)
-> +{
-> +       int idx =3D type - 1;
-> +       struct list_head *idle_ws;
-> +       spinlock_t *ws_lock;
-> +       atomic_t *total_ws;
-> +       wait_queue_head_t *ws_wait;
-> +       int *free_ws;
-> +
-> +       if (heuristic) {
-> +               idle_ws  =3D &btrfs_heuristic_ws.idle_ws;
-> +               ws_lock  =3D &btrfs_heuristic_ws.ws_lock;
-> +               total_ws =3D &btrfs_heuristic_ws.total_ws;
-> +               ws_wait  =3D &btrfs_heuristic_ws.ws_wait;
-> +               free_ws  =3D &btrfs_heuristic_ws.free_ws;
-> +       } else {
-> +               idle_ws  =3D &btrfs_comp_ws[idx].idle_ws;
-> +               ws_lock  =3D &btrfs_comp_ws[idx].ws_lock;
-> +               total_ws =3D &btrfs_comp_ws[idx].total_ws;
-> +               ws_wait  =3D &btrfs_comp_ws[idx].ws_wait;
-> +               free_ws  =3D &btrfs_comp_ws[idx].free_ws;
-> +       }
-> +
-> +       spin_lock(ws_lock);
-> +       if (*free_ws <=3D num_online_cpus()) {
-> +               list_add(workspace, idle_ws);
-> +               (*free_ws)++;
-> +               spin_unlock(ws_lock);
-> +               goto wake;
-> +       }
-> +       spin_unlock(ws_lock);
-> +
-> +       if (heuristic)
-> +               free_heuristic_ws(workspace);
-> +       else
-> +               btrfs_compress_op[idx]->free_workspace(workspace);
-> +       atomic_dec(total_ws);
-> +wake:
-> +       cond_wake_up(ws_wait);
-> +}
-> +
-> +static void free_workspace(int type, struct list_head *ws)
-> +{
-> +       return __free_workspace(type, ws, false);
-> +}
-> +
->  /*
->   * This finds an available workspace or allocates a new one.
->   * If it's not possible to allocate a new one, waits until there's one.
->   * Preallocation makes a forward progress guarantees and we do not retur=
-n
->   * errors.
->   */
-> -static struct list_head *__find_workspace(int type, bool heuristic)
-> +static struct list_head *__find_workspace(unsigned int type_level,
-> +                                         bool heuristic)
->  {
->         struct list_head *workspace;
->         int cpus =3D num_online_cpus();
-> +       int type =3D type_level & 0xF;
->         int idx =3D type - 1;
-> -       unsigned nofs_flag;
-> +       unsigned int level =3D (type_level & 0xF0) >> 4;
-> +       unsigned int nofs_flag;
->         struct list_head *idle_ws;
->         spinlock_t *ws_lock;
->         atomic_t *total_ws;
->         wait_queue_head_t *ws_wait;
->         int *free_ws;
-> +       int ret;
->
->         if (heuristic) {
->                 idle_ws  =3D &btrfs_heuristic_ws.idle_ws;
-> @@ -874,8 +932,17 @@ static struct list_head *__find_workspace(int type, =
-bool heuristic)
->                 list_del(workspace);
->                 (*free_ws)--;
->                 spin_unlock(ws_lock);
-> +               if (!heuristic) {
-> +                       nofs_flag =3D memalloc_nofs_save();
-> +                       ret =3D btrfs_compress_op[idx]->set_level(workspa=
-ce,
-> +                                                               level);
-> +                       memalloc_nofs_restore(nofs_flag);
-> +                       if (!ret) {
-> +                               free_workspace(type, workspace);
-> +                               goto again;
-> +                       }
-> +               }
->                 return workspace;
-> -
->         }
->         if (atomic_read(total_ws) > cpus) {
->                 DEFINE_WAIT(wait);
-> @@ -899,7 +966,8 @@ static struct list_head *__find_workspace(int type, b=
-ool heuristic)
->         if (heuristic)
->                 workspace =3D alloc_heuristic_ws();
->         else
-> -               workspace =3D btrfs_compress_op[idx]->alloc_workspace();
-> +               workspace =3D btrfs_compress_op[idx]->alloc_workspace(lev=
-el);
-> +
->         memalloc_nofs_restore(nofs_flag);
->
->         if (IS_ERR(workspace)) {
-> @@ -930,60 +998,22 @@ static struct list_head *__find_workspace(int type,=
- bool heuristic)
->         return workspace;
->  }
->
-> -static struct list_head *find_workspace(int type)
-> +static struct list_head *find_workspace(unsigned int type_level)
->  {
-> -       return __find_workspace(type, false);
-> +       return __find_workspace(type_level, false);
->  }
->
-> -/*
-> - * put a workspace struct back on the list or free it if we have enough
-> - * idle ones sitting around
-> - */
-> -static void __free_workspace(int type, struct list_head *workspace,
-> -                            bool heuristic)
-> +static struct list_head *find_decompression_workspace(unsigned int type)
->  {
-> -       int idx =3D type - 1;
-> -       struct list_head *idle_ws;
-> -       spinlock_t *ws_lock;
-> -       atomic_t *total_ws;
-> -       wait_queue_head_t *ws_wait;
-> -       int *free_ws;
-> +       /*
-> +        * Use the lowest level for decompression, since we don't need to
-> +        * compress. This can help us save memory when using levels lower=
- than
-> +        * the default level.
-> +        */
-> +       const unsigned int level =3D 1;
-> +       const unsigned int type_level =3D (level << 4) | (type & 0xF);
->
-> -       if (heuristic) {
-> -               idle_ws  =3D &btrfs_heuristic_ws.idle_ws;
-> -               ws_lock  =3D &btrfs_heuristic_ws.ws_lock;
-> -               total_ws =3D &btrfs_heuristic_ws.total_ws;
-> -               ws_wait  =3D &btrfs_heuristic_ws.ws_wait;
-> -               free_ws  =3D &btrfs_heuristic_ws.free_ws;
-> -       } else {
-> -               idle_ws  =3D &btrfs_comp_ws[idx].idle_ws;
-> -               ws_lock  =3D &btrfs_comp_ws[idx].ws_lock;
-> -               total_ws =3D &btrfs_comp_ws[idx].total_ws;
-> -               ws_wait  =3D &btrfs_comp_ws[idx].ws_wait;
-> -               free_ws  =3D &btrfs_comp_ws[idx].free_ws;
-> -       }
-> -
-> -       spin_lock(ws_lock);
-> -       if (*free_ws <=3D num_online_cpus()) {
-> -               list_add(workspace, idle_ws);
-> -               (*free_ws)++;
-> -               spin_unlock(ws_lock);
-> -               goto wake;
-> -       }
-> -       spin_unlock(ws_lock);
-> -
-> -       if (heuristic)
-> -               free_heuristic_ws(workspace);
-> -       else
-> -               btrfs_compress_op[idx]->free_workspace(workspace);
-> -       atomic_dec(total_ws);
-> -wake:
-> -       cond_wake_up(ws_wait);
-> -}
-> -
-> -static void free_workspace(int type, struct list_head *ws)
-> -{
-> -       return __free_workspace(type, ws, false);
-> +       return find_workspace(type_level);
->  }
->
->  /*
-> @@ -1044,9 +1074,7 @@ int btrfs_compress_pages(unsigned int type_level, s=
-truct address_space *mapping,
->         int ret;
->         int type =3D type_level & 0xF;
->
-> -       workspace =3D find_workspace(type);
-> -
-> -       btrfs_compress_op[type - 1]->set_level(workspace, type_level);
-> +       workspace =3D find_workspace(type_level);
->         ret =3D btrfs_compress_op[type-1]->compress_pages(workspace, mapp=
-ing,
->                                                       start, pages,
->                                                       out_pages,
-> @@ -1075,7 +1103,7 @@ static int btrfs_decompress_bio(struct compressed_b=
-io *cb)
->         int ret;
->         int type =3D cb->compress_type;
->
-> -       workspace =3D find_workspace(type);
-> +       workspace =3D find_decompression_workspace(type);
->         ret =3D btrfs_compress_op[type - 1]->decompress_bio(workspace, cb=
-);
->         free_workspace(type, workspace);
->
-> @@ -1093,7 +1121,7 @@ int btrfs_decompress(int type, unsigned char *data_=
-in, struct page *dest_page,
->         struct list_head *workspace;
->         int ret;
->
-> -       workspace =3D find_workspace(type);
-> +       workspace =3D find_decompression_workspace(type);
->
->         ret =3D btrfs_compress_op[type-1]->decompress(workspace, data_in,
->                                                   dest_page, start_byte,
-> @@ -1591,12 +1619,23 @@ int btrfs_compress_heuristic(struct inode *inode,=
- u64 start, u64 end)
->
->  unsigned int btrfs_compress_str2level(const char *str)
->  {
-> -       if (strncmp(str, "zlib", 4) !=3D 0)
-> +       int ret;
-> +       int type;
-> +       unsigned int level;
-> +
-> +       if (strncmp(str, "zlib", 4) =3D=3D 0)
-> +               type =3D BTRFS_COMPRESS_ZLIB;
-> +       else if (strncmp(str, "zstd", 4) =3D=3D 0)
-> +               type =3D BTRFS_COMPRESS_ZSTD;
-> +       else
->                 return 0;
->
-> -       /* Accepted form: zlib:1 up to zlib:9 and nothing left after the =
-number */
-> -       if (str[4] =3D=3D ':' && '1' <=3D str[5] && str[5] <=3D '9' && st=
-r[6] =3D=3D 0)
-> -               return str[5] - '0';
-> +       if (str[4] =3D=3D ':') {
-> +               ret =3D kstrtouint(str + 5, 10, &level);
-> +               if (ret =3D=3D 0 && 0 < level &&
-> +                   level <=3D btrfs_compress_op[type-1]->max_level)
-> +                       return level;
-> +       }
->
-> -       return BTRFS_ZLIB_DEFAULT_LEVEL;
-> +       return btrfs_compress_op[type-1]->default_level;
->  }
-> diff --git a/fs/btrfs/compression.h b/fs/btrfs/compression.h
-> index ddda9b80bf20..a582a4483077 100644
-> --- a/fs/btrfs/compression.h
-> +++ b/fs/btrfs/compression.h
-> @@ -23,8 +23,6 @@
->  /* Maximum size of data before compression */
->  #define BTRFS_MAX_UNCOMPRESSED         (SZ_128K)
->
-> -#define        BTRFS_ZLIB_DEFAULT_LEVEL                3
-> -
->  struct compressed_bio {
->         /* number of bios pending for this compressed extent */
->         refcount_t pending_bios;
-> @@ -87,7 +85,7 @@ blk_status_t btrfs_submit_compressed_write(struct inode=
- *inode, u64 start,
->  blk_status_t btrfs_submit_compressed_read(struct inode *inode, struct bi=
-o *bio,
->                                  int mirror_num, unsigned long bio_flags)=
-;
->
-> -unsigned btrfs_compress_str2level(const char *str);
-> +unsigned int btrfs_compress_str2level(const char *str);
->
->  enum btrfs_compression_type {
->         BTRFS_COMPRESS_NONE  =3D 0,
-> @@ -98,7 +96,7 @@ enum btrfs_compression_type {
->  };
->
->  struct btrfs_compress_op {
-> -       struct list_head *(*alloc_workspace)(void);
-> +       struct list_head *(*alloc_workspace)(unsigned int level);
->
->         void (*free_workspace)(struct list_head *workspace);
->
-> @@ -119,7 +117,17 @@ struct btrfs_compress_op {
->                           unsigned long start_byte,
->                           size_t srclen, size_t destlen);
->
-> -       void (*set_level)(struct list_head *ws, unsigned int type);
-> +       /*
-> +        * Check if memory allocated in workspace is greater than
-> +        * or equal to memory needed to compress with given level.
-> +        * If not, try to reallocate memory for the compression level.
-> +        * Returns true on success.
-> +        */
-> +       bool (*set_level)(struct list_head *ws, unsigned int level);
-> +
-> +       unsigned int max_level;
-> +
-> +       unsigned int default_level;
->  };
->
->  extern const struct btrfs_compress_op btrfs_zlib_compress;
-> diff --git a/fs/btrfs/lzo.c b/fs/btrfs/lzo.c
-> index b6a4cc178bee..ed9f0da8ceda 100644
-> --- a/fs/btrfs/lzo.c
-> +++ b/fs/btrfs/lzo.c
-> @@ -71,7 +71,7 @@ static void lzo_free_workspace(struct list_head *ws)
->         kfree(workspace);
->  }
->
-> -static struct list_head *lzo_alloc_workspace(void)
-> +static struct list_head *lzo_alloc_workspace(unsigned int level)
->  {
->         struct workspace *workspace;
->
-> @@ -485,8 +485,9 @@ static int lzo_decompress(struct list_head *ws, unsig=
-ned char *data_in,
->         return ret;
->  }
->
-> -static void lzo_set_level(struct list_head *ws, unsigned int type)
-> +static bool lzo_set_level(struct list_head *ws, unsigned int level)
->  {
-> +       return true;
->  }
->
->  const struct btrfs_compress_op btrfs_lzo_compress =3D {
-> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-> index b362b45dd757..77ebd69371f1 100644
-> --- a/fs/btrfs/super.c
-> +++ b/fs/btrfs/super.c
-> @@ -520,7 +520,8 @@ int btrfs_parse_options(struct btrfs_fs_info *info, c=
-har *options,
->                                 compress_type =3D "zlib";
->
->                                 info->compress_type =3D BTRFS_COMPRESS_ZL=
-IB;
-> -                               info->compress_level =3D BTRFS_ZLIB_DEFAU=
-LT_LEVEL;
-> +                               info->compress_level =3D
-> +                                       btrfs_zlib_compress.default_level=
-;
->                                 /*
->                                  * args[0] contains uninitialized data si=
-nce
->                                  * for these tokens we don't expect any
-> @@ -542,9 +543,11 @@ int btrfs_parse_options(struct btrfs_fs_info *info, =
-char *options,
->                                 btrfs_clear_opt(info->mount_opt, NODATASU=
-M);
->                                 btrfs_set_fs_incompat(info, COMPRESS_LZO)=
-;
->                                 no_compress =3D 0;
-> -                       } else if (strcmp(args[0].from, "zstd") =3D=3D 0)=
- {
-> +                       } else if (strncmp(args[0].from, "zstd", 4) =3D=
-=3D 0) {
->                                 compress_type =3D "zstd";
->                                 info->compress_type =3D BTRFS_COMPRESS_ZS=
-TD;
-> +                               info->compress_level =3D
-> +                                       btrfs_compress_str2level(args[0].=
-from);
->                                 btrfs_set_opt(info->mount_opt, COMPRESS);
->                                 btrfs_clear_opt(info->mount_opt, NODATACO=
-W);
->                                 btrfs_clear_opt(info->mount_opt, NODATASU=
-M);
-> diff --git a/fs/btrfs/zlib.c b/fs/btrfs/zlib.c
-> index 970ff3e35bb3..4c30a99b80f6 100644
-> --- a/fs/btrfs/zlib.c
-> +++ b/fs/btrfs/zlib.c
-> @@ -20,6 +20,9 @@
->  #include <linux/refcount.h>
->  #include "compression.h"
->
-> +#define BTRFS_ZLIB_DEFAULT_LEVEL 3
-> +#define BTRFS_ZLIB_MAX_LEVEL 9
-> +
->  struct workspace {
->         z_stream strm;
->         char *buf;
-> @@ -36,7 +39,19 @@ static void zlib_free_workspace(struct list_head *ws)
->         kfree(workspace);
->  }
->
-> -static struct list_head *zlib_alloc_workspace(void)
-> +static bool zlib_set_level(struct list_head *ws, unsigned int level)
-> +{
-> +       struct workspace *workspace =3D list_entry(ws, struct workspace, =
-list);
-> +
-> +       if (level > BTRFS_ZLIB_MAX_LEVEL)
-> +               level =3D BTRFS_ZLIB_MAX_LEVEL;
-> +
-> +       workspace->level =3D level > 0 ? level : BTRFS_ZLIB_DEFAULT_LEVEL=
-;
-> +
-> +       return true;
-> +}
-> +
-> +static struct list_head *zlib_alloc_workspace(unsigned int level)
->  {
->         struct workspace *workspace;
->         int workspacesize;
-> @@ -53,6 +68,7 @@ static struct list_head *zlib_alloc_workspace(void)
->                 goto fail;
->
->         INIT_LIST_HEAD(&workspace->list);
-> +       zlib_set_level(&workspace->list, level);
->
->         return &workspace->list;
->  fail:
-> @@ -390,22 +406,13 @@ static int zlib_decompress(struct list_head *ws, un=
-signed char *data_in,
->         return ret;
->  }
->
-> -static void zlib_set_level(struct list_head *ws, unsigned int type)
-> -{
-> -       struct workspace *workspace =3D list_entry(ws, struct workspace, =
-list);
-> -       unsigned level =3D (type & 0xF0) >> 4;
-> -
-> -       if (level > 9)
-> -               level =3D 9;
-> -
-> -       workspace->level =3D level > 0 ? level : 3;
-> -}
-> -
->  const struct btrfs_compress_op btrfs_zlib_compress =3D {
->         .alloc_workspace        =3D zlib_alloc_workspace,
->         .free_workspace         =3D zlib_free_workspace,
->         .compress_pages         =3D zlib_compress_pages,
->         .decompress_bio         =3D zlib_decompress_bio,
->         .decompress             =3D zlib_decompress,
-> -       .set_level              =3D zlib_set_level,
-> +       .set_level              =3D zlib_set_level,
-> +       .max_level              =3D BTRFS_ZLIB_MAX_LEVEL,
-> +       .default_level          =3D BTRFS_ZLIB_DEFAULT_LEVEL,
->  };
-> diff --git a/fs/btrfs/zstd.c b/fs/btrfs/zstd.c
-> index af6ec59972f5..e5d7c2eae65c 100644
-> --- a/fs/btrfs/zstd.c
-> +++ b/fs/btrfs/zstd.c
-> @@ -19,12 +19,13 @@
->
->  #define ZSTD_BTRFS_MAX_WINDOWLOG 17
->  #define ZSTD_BTRFS_MAX_INPUT (1 << ZSTD_BTRFS_MAX_WINDOWLOG)
-> -#define ZSTD_BTRFS_DEFAULT_LEVEL 3
-> +#define BTRFS_ZSTD_DEFAULT_LEVEL 3
-> +#define BTRFS_ZSTD_MAX_LEVEL 15
->
-> -static ZSTD_parameters zstd_get_btrfs_parameters(size_t src_len)
-> +static ZSTD_parameters zstd_get_btrfs_parameters(size_t src_len,
-> +                                                unsigned int level)
->  {
-> -       ZSTD_parameters params =3D ZSTD_getParams(ZSTD_BTRFS_DEFAULT_LEVE=
-L,
-> -                                               src_len, 0);
-> +       ZSTD_parameters params =3D ZSTD_getParams(level, src_len, 0);
->
->         if (params.cParams.windowLog > ZSTD_BTRFS_MAX_WINDOWLOG)
->                 params.cParams.windowLog =3D ZSTD_BTRFS_MAX_WINDOWLOG;
-> @@ -37,10 +38,25 @@ struct workspace {
->         size_t size;
->         char *buf;
->         struct list_head list;
-> +       unsigned int level;
->         ZSTD_inBuffer in_buf;
->         ZSTD_outBuffer out_buf;
->  };
->
-> +static bool zstd_reallocate_mem(struct workspace *workspace, int size)
-> +{
-> +       void *new_mem;
-> +
-> +       new_mem =3D kvmalloc(size, GFP_KERNEL);
-> +       if (new_mem) {
-> +               kvfree(workspace->mem);
-> +               workspace->mem =3D new_mem;
-> +               workspace->size =3D size;
-> +               return true;
-> +       }
-> +       return false;
-> +}
-> +
->  static void zstd_free_workspace(struct list_head *ws)
->  {
->         struct workspace *workspace =3D list_entry(ws, struct workspace, =
-list);
-> @@ -50,10 +66,34 @@ static void zstd_free_workspace(struct list_head *ws)
->         kfree(workspace);
->  }
->
-> -static struct list_head *zstd_alloc_workspace(void)
-> +static bool zstd_set_level(struct list_head *ws, unsigned int level)
-> +{
-> +       struct workspace *workspace =3D list_entry(ws, struct workspace, =
-list);
-> +       ZSTD_parameters params;
-> +       int size;
-> +
-> +       if (level > BTRFS_ZSTD_MAX_LEVEL)
-> +               level =3D BTRFS_ZSTD_MAX_LEVEL;
-> +
-> +       if (level =3D=3D 0)
-> +               level =3D BTRFS_ZSTD_DEFAULT_LEVEL;
-> +
-> +       params =3D ZSTD_getParams(level, ZSTD_BTRFS_MAX_INPUT, 0);
-> +       size =3D max_t(size_t,
-> +                       ZSTD_CStreamWorkspaceBound(params.cParams),
-> +                       ZSTD_DStreamWorkspaceBound(ZSTD_BTRFS_MAX_INPUT))=
-;
-> +       if (size > workspace->size) {
-> +               if (!zstd_reallocate_mem(workspace, size))
-> +                       return false;
-> +       }
-> +       workspace->level =3D level;
-> +       return true;
-> +}
-> +
-> +static struct list_head *zstd_alloc_workspace(unsigned int level)
->  {
->         ZSTD_parameters params =3D
-> -                       zstd_get_btrfs_parameters(ZSTD_BTRFS_MAX_INPUT);
-> +                       zstd_get_btrfs_parameters(ZSTD_BTRFS_MAX_INPUT, l=
-evel);
->         struct workspace *workspace;
->
->         workspace =3D kzalloc(sizeof(*workspace), GFP_KERNEL);
-> @@ -69,6 +109,7 @@ static struct list_head *zstd_alloc_workspace(void)
->                 goto fail;
->
->         INIT_LIST_HEAD(&workspace->list);
-> +       zstd_set_level(&workspace->list, level);
->
->         return &workspace->list;
->  fail:
-> @@ -95,7 +136,8 @@ static int zstd_compress_pages(struct list_head *ws,
->         unsigned long len =3D *total_out;
->         const unsigned long nr_dest_pages =3D *out_pages;
->         unsigned long max_out =3D nr_dest_pages * PAGE_SIZE;
-> -       ZSTD_parameters params =3D zstd_get_btrfs_parameters(len);
-> +       ZSTD_parameters params =3D zstd_get_btrfs_parameters(len,
-> +                                                          workspace->lev=
-el);
->
->         *out_pages =3D 0;
->         *total_out =3D 0;
-> @@ -419,15 +461,13 @@ static int zstd_decompress(struct list_head *ws, un=
-signed char *data_in,
->         return ret;
->  }
->
-> -static void zstd_set_level(struct list_head *ws, unsigned int type)
-> -{
-> -}
-> -
->  const struct btrfs_compress_op btrfs_zstd_compress =3D {
-> -       .alloc_workspace =3D zstd_alloc_workspace,
-> -       .free_workspace =3D zstd_free_workspace,
-> -       .compress_pages =3D zstd_compress_pages,
-> -       .decompress_bio =3D zstd_decompress_bio,
-> -       .decompress =3D zstd_decompress,
-> -       .set_level =3D zstd_set_level,
-> +       .alloc_workspace        =3D zstd_alloc_workspace,
-> +       .free_workspace         =3D zstd_free_workspace,
-> +       .compress_pages         =3D zstd_compress_pages,
-> +       .decompress_bio         =3D zstd_decompress_bio,
-> +       .decompress             =3D zstd_decompress,
-> +       .set_level              =3D zstd_set_level,
-> +       .max_level              =3D BTRFS_ZSTD_MAX_LEVEL,
-> +       .default_level          =3D BTRFS_ZSTD_DEFAULT_LEVEL,
->  };
-> --
-> 2.17.1
 
-Reviewed-by: Timofey Titovets <nefelim4ag@gmail.com>
 
-You didn't mention, so:
-Did you test compression ratio/performance with compress-force or just comp=
-ress?
+On 1.11.18 г. 11:56 ч., ethanlien wrote:
+> Nikolay Borisov 於 2018-11-01 16:59 寫到:
+>> On 1.11.18 г. 8:49 ч., Ethan Lien wrote:
+>>> Snapshot is expected to be fast. But if there are writers steadily
+>>> create dirty pages in our subvolume, the snapshot may take a very long
+>>> time to complete. To fix the problem, we use tagged writepage for
+>>> snapshot
+>>> flusher as we do in the generic write_cache_pages(), so we can ommit
+>>> pages
+>>> dirtied after the snapshot command.
+>>
+>> So the gist of this commit really is that you detect when filemap_flush
+>> has been called from snapshot context and tag all pages at *that* time
+>> as PAGECACHE_TAG_TOWRITE and then write them, ignoring any pages that
+>> might have been dirtied beforehand. Your description kind of dances
+>> around this idea without really saying it explicitly. Those semantics
+>> make sense, however i'd like to be stated more explicitly in the change
+>>  log.
+>>
+>> However, this is done at the expense of consistency, so we have faster
+>> snapshots but depending the file which are stored in them they might be
+>> broken (i.e a database) since they will be missing pages.
+>>
+> 
+> tag_pages_for_writeback() will tag all pages with PAGECACHE_TAG_DIRTY.
+> If a dirty
+> page get missed here, it means someone has initiated the flush before
+> us, so we
+> will wait that dirty page to complete in create_snapshot() ->
+> btrfs_wait_ordered_extents().
 
-Thanks.
+And what happens in the scenario where you have  someone dirtying pages,
+you issue the snapshot ioctl, mark all currently dirtied pages as
+TOWRITE and then you have more delalloc pages being dirtied following
+initial call to tag_pages_for_writeback , you will miss those, no ?
 
---=20
-Have a nice day,
-Timofey.
+> 
+>>>
+>>> We do a simple snapshot speed test on a Intel D-1531 box:
+>>>
+>>> fio --ioengine=libaio --iodepth=32 --bs=4k --rw=write --size=64G
+>>> --direct=0 --thread=1 --numjobs=1 --time_based --runtime=120
+>>> --filename=/mnt/sub/testfile --name=job1 --group_reporting & sleep 5;
+>>> time btrfs sub snap -r /mnt/sub /mnt/snap; killall fio
+>>>
+>>> original: 1m58sec
+>>> patched:  6.54sec
+>>
+>> Nice.
+>>
+>>>
+>>> This is the best case for this patch since for a sequential write case,
+>>> we omit nearly all pages dirtied after the snapshot command.
+>>>
+>>> For a multi writers, random write test:
+>>>
+>>> fio --ioengine=libaio --iodepth=32 --bs=4k --rw=randwrite --size=64G
+>>> --direct=0 --thread=1 --numjobs=4 --time_based --runtime=120
+>>> --filename=/mnt/sub/testfile --name=job1 --group_reporting & sleep 5;
+>>> time btrfs sub snap -r /mnt/sub /mnt/snap; killall fio
+>>>
+>>> original: 15.83sec
+>>> patched:  10.35sec
+>>>
+>>> The improvement is less compared with the sequential write case, since
+>>> we omit only half of the pages dirtied after snapshot command.
+>>>
+>>> Signed-off-by: Ethan Lien <ethanlien@synology.com>
+>>> ---
+>>>  fs/btrfs/btrfs_inode.h |  1 +
+>>>  fs/btrfs/ctree.h       |  2 +-
+>>>  fs/btrfs/extent_io.c   | 16 ++++++++++++++--
+>>>  fs/btrfs/inode.c       | 10 ++++++----
+>>>  fs/btrfs/ioctl.c       |  2 +-
+>>>  5 files changed, 23 insertions(+), 8 deletions(-)
+>>>
+>>> diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
+>>> index 1343ac57b438..4182bfbb56be 100644
+>>> --- a/fs/btrfs/btrfs_inode.h
+>>> +++ b/fs/btrfs/btrfs_inode.h
+>>> @@ -29,6 +29,7 @@ enum {
+>>>      BTRFS_INODE_IN_DELALLOC_LIST,
+>>>      BTRFS_INODE_READDIO_NEED_LOCK,
+>>>      BTRFS_INODE_HAS_PROPS,
+>>> +    BTRFS_INODE_TAGGED_FLUSH,
+>>
+>> IMO the name of the flag should be different. Something like "lie flush"
+
+I meant "lite flush" or "strict flush" or something like that, alluding
+to the fact we are restricting the set of pages being flushed.
+
+>> or whatever. Because all flushes are tagged i.e TAG_DIRTY or TAG_TOWRITE.
+>>
+> 
+> OK I'll use another name.
+> 
+>>>  };
+>>>
+>>>  /* in memory btrfs inode */
+>>> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+>>> index 2cddfe7806a4..82682da5a40d 100644
+>>> --- a/fs/btrfs/ctree.h
+>>> +++ b/fs/btrfs/ctree.h
+>>> @@ -3155,7 +3155,7 @@ int btrfs_truncate_inode_items(struct
+>>> btrfs_trans_handle *trans,
+>>>                     struct inode *inode, u64 new_size,
+>>>                     u32 min_type);
+>>>
+>>> -int btrfs_start_delalloc_inodes(struct btrfs_root *root);
+>>> +int btrfs_start_delalloc_snapshot(struct btrfs_root *root);
+>>>  int btrfs_start_delalloc_roots(struct btrfs_fs_info *fs_info, int nr);
+>>>  int btrfs_set_extent_delalloc(struct inode *inode, u64 start, u64 end,
+>>>                    unsigned int extra_bits,
+>>> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+>>> index 4dd6faab02bb..c21d8a0e010a 100644
+>>> --- a/fs/btrfs/extent_io.c
+>>> +++ b/fs/btrfs/extent_io.c
+>>> @@ -3928,12 +3928,24 @@ static int extent_write_cache_pages(struct
+>>> address_space *mapping,
+>>>              range_whole = 1;
+>>>          scanned = 1;
+>>>      }
+>>> -    if (wbc->sync_mode == WB_SYNC_ALL)
+>>> +
+>>> +    /*
+>>> +     * We don't care if we are the one who set
+>>> BTRFS_INODE_TAGGED_FLUSH in
+>>> +     * start_delalloc_inodes(). We do the tagged writepage as long
+>>> as we are
+>>> +     * the first one who do the filemap_flush() on this inode.
+>>> +     */
+>>
+>> I think the first sentence of this comment could be removed.
+>>
+> 
+> OK.
+> 
+>>> +    if (range_whole && wbc->nr_to_write == LONG_MAX &&
+>>> +            wbc->sync_mode == WB_SYNC_NONE &&
+>>> +            test_and_clear_bit(BTRFS_INODE_TAGGED_FLUSH,
+>>> +                &BTRFS_I(inode)->runtime_flags))
+>>> +        wbc->tagged_writepages = 1;
+>>> +
+>>> +    if (wbc->sync_mode == WB_SYNC_ALL || wbc->tagged_writepages)
+>>>          tag = PAGECACHE_TAG_TOWRITE;
+>>>      else
+>>>          tag = PAGECACHE_TAG_DIRTY;
+>>>  retry:
+>>> -    if (wbc->sync_mode == WB_SYNC_ALL)
+>>> +    if (wbc->sync_mode == WB_SYNC_ALL || wbc->tagged_writepages)
+>>>          tag_pages_for_writeback(mapping, index, end);
+>>>      done_index = index;
+>>>      while (!done && !nr_to_write_done && (index <= end) &&
+>>> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+>>> index 3ea5339603cf..3df3cbbe91c5 100644
+>>> --- a/fs/btrfs/inode.c
+>>> +++ b/fs/btrfs/inode.c
+>>> @@ -9975,7 +9975,7 @@ static struct btrfs_delalloc_work
+>>> *btrfs_alloc_delalloc_work(struct inode *inode
+>>>   * some fairly slow code that needs optimization. This walks the list
+>>>   * of all the inodes with pending delalloc and forces them to disk.
+>>>   */
+>>> -static int start_delalloc_inodes(struct btrfs_root *root, int nr)
+>>> +static int start_delalloc_inodes(struct btrfs_root *root, int nr,
+>>> int snapshot)
+>>
+>> snapshot is a boolean value, so define it as such and not an int. I know
+>> the codebase is inconsistent in that manner but long-term all boolean
+>> 'int's shall be converted to bools.
+>>
+> 
+> OK i'll use boolean here.
+> 
+>>>  {
+>>>      struct btrfs_inode *binode;
+>>>      struct inode *inode;
+>>> @@ -10003,6 +10003,8 @@ static int start_delalloc_inodes(struct
+>>> btrfs_root *root, int nr)
+>>>          }
+>>>          spin_unlock(&root->delalloc_lock);
+>>>
+>>> +        if (snapshot)
+>>> +            set_bit(BTRFS_INODE_TAGGED_FLUSH, &binode->runtime_flags);
+>>>          work = btrfs_alloc_delalloc_work(inode);
+>>>          if (!work) {
+>>>              iput(inode);
+>>> @@ -10036,7 +10038,7 @@ static int start_delalloc_inodes(struct
+>>> btrfs_root *root, int nr)
+>>>      return ret;
+>>>  }
+>>>
+>>> -int btrfs_start_delalloc_inodes(struct btrfs_root *root)
+>>> +int btrfs_start_delalloc_snapshot(struct btrfs_root *root)
+>>>  {
+>>>      struct btrfs_fs_info *fs_info = root->fs_info;
+>>>      int ret;
+>>> @@ -10044,7 +10046,7 @@ int btrfs_start_delalloc_inodes(struct
+>>> btrfs_root *root)
+>>>      if (test_bit(BTRFS_FS_STATE_ERROR, &fs_info->fs_state))
+>>>          return -EROFS;
+>>>
+>>> -    ret = start_delalloc_inodes(root, -1);
+>>> +    ret = start_delalloc_inodes(root, -1, 1);
+>>>      if (ret > 0)
+>>>          ret = 0;
+>>>      return ret;
+>>> @@ -10073,7 +10075,7 @@ int btrfs_start_delalloc_roots(struct
+>>> btrfs_fs_info *fs_info, int nr)
+>>>                     &fs_info->delalloc_roots);
+>>>          spin_unlock(&fs_info->delalloc_root_lock);
+>>>
+>>> -        ret = start_delalloc_inodes(root, nr);
+>>> +        ret = start_delalloc_inodes(root, nr, 0);
+>>>          btrfs_put_fs_root(root);
+>>>          if (ret < 0)
+>>>              goto out;
+>>> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+>>> index d60b6caf09e8..d1293b6c31f6 100644
+>>> --- a/fs/btrfs/ioctl.c
+>>> +++ b/fs/btrfs/ioctl.c
+>>> @@ -775,7 +775,7 @@ static int create_snapshot(struct btrfs_root
+>>> *root, struct inode *dir,
+>>>      wait_event(root->subv_writers->wait,
+>>>             percpu_counter_sum(&root->subv_writers->counter) == 0);
+>>>
+>>> -    ret = btrfs_start_delalloc_inodes(root);
+>>> +    ret = btrfs_start_delalloc_snapshot(root);
+>>>      if (ret)
+>>>          goto dec_and_free;
+>>>
+>>>
+> 
+> 

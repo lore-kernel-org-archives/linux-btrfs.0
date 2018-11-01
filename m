@@ -7,83 +7,87 @@ X-Spam-Status: No, score=-5.8 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
 	SPF_PASS,URIBL_BLOCKED,USER_AGENT_NEOMUTT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 360E1C0044C
-	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Nov 2018 19:00:41 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6D45CC0044C
+	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Nov 2018 19:03:48 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id DD5A4205F4
-	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Nov 2018 19:00:40 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 0E295205F4
+	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Nov 2018 19:03:48 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="CsxjpEGu"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org DD5A4205F4
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="Z6cxENfU"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 0E295205F4
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=toxicpanda.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726098AbeKBEEw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 2 Nov 2018 00:04:52 -0400
-Received: from mail-yw1-f68.google.com ([209.85.161.68]:38661 "EHLO
-        mail-yw1-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725935AbeKBEEw (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 2 Nov 2018 00:04:52 -0400
-Received: by mail-yw1-f68.google.com with SMTP id d126-v6so8323834ywa.5
-        for <linux-btrfs@vger.kernel.org>; Thu, 01 Nov 2018 12:00:39 -0700 (PDT)
+        id S1726381AbeKBEH7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 2 Nov 2018 00:07:59 -0400
+Received: from mail-qk1-f196.google.com ([209.85.222.196]:42421 "EHLO
+        mail-qk1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726219AbeKBEH7 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 2 Nov 2018 00:07:59 -0400
+Received: by mail-qk1-f196.google.com with SMTP id u68so9000695qkg.9
+        for <linux-btrfs@vger.kernel.org>; Thu, 01 Nov 2018 12:03:45 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=date:from:to:cc:subject:message-id:references:mime-version
          :content-disposition:in-reply-to:user-agent;
-        bh=az8KmCsPWy235sIec82sITmaLYBQQogLbWdllgjyHVs=;
-        b=CsxjpEGusJib8kihvc8dXIS1O3+fAytDHRyvLmWEcLeya08pnHkpkLxzgcwc4KRX1B
-         SW0sz+dq+ohg7UyxxVqc4ijLiKq+hyN4dtzwS8m7mIPsPAhjTWZ7UQdRiSiHGW/870HU
-         Q7dg3aujlprAX7ABf1FwJSRaPzloYW94CU1jSnYSa2hgAgqE3NpF2BqAdd3qnK7wtPfi
-         23sGO46AFBIKQ3dHjTRjnP/omkRJy6VU4bYQLBoiK5+KG8yT6KajfL3nNE7CmDFewpOB
-         5+TYPtX5tZBh3xuEDnT9m09AkG4qDYIVS9PQe+TIlLG+gMsVhPtdv0Ft67ipKSYttUiK
-         Bn2A==
+        bh=PEwiYW+iPT3AETwkcCB/lZEO+Bs8G4ZrI9hfFEPuYEY=;
+        b=Z6cxENfUhA5a9ZNq5yvnSj1IqJd0z9Wob1V+yhPLa7INrx8+tOXtu1oHKF8XTddqWE
+         IC6YDL4xfCd//x1jdbmkl8AwaVDpJHpUeFDjZ5ANzbwz3kXdADY6FUq4FVUanx8w6f00
+         V7OEgRifQv2eIU7pATfR3/tH21tHjpVA87BdDH36sn5RnGxRWMb4nKhbi/iQAMcuaqTr
+         Wuft1ETNRpKRYU2y+dHemYacTWIFlEnJATPXCBFwpiCaIaUdjTjKUz9744Z+SwxUV8Y/
+         0ZbSkuipCSJ3wJxSgckqP7sCooXP8vWGOZGhw0gqVSxlWP2gHDOJ1z90gDlGWGfUBYzY
+         rhIw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:date:from:to:cc:subject:message-id:references
          :mime-version:content-disposition:in-reply-to:user-agent;
-        bh=az8KmCsPWy235sIec82sITmaLYBQQogLbWdllgjyHVs=;
-        b=p0uVokjXQtzQZVP5s4E8x7pX9R/9En1icSGXS6t0mn4niY9gYyz/4zcok7BH1Mld0O
-         /7QYxXAl4rGih1ls4phwEmNk46PkxQjiKt97Xxs77QpWt82ewTIA/+Q6n2bS8y2f0DjE
-         jUWo8ASaqGwWkbUdaWwkW9aoJS0LuwCblbRXob2i5fGA2klhcFM/5+6XFou2VxCZnffj
-         ysWTOr23dmY65Z7Fl0vzU/D3uDi1b3xpQQBCxj8tSAoZh1757f2qnhh1MFMiutijlT2G
-         CeQgR3PIax/Dj8hwCY6unNTdEnwd6DoMUQlTzA1kADbe7dSWXAmLUypRUeafbS61Vb7b
-         XZCg==
-X-Gm-Message-State: AGRZ1gJB30UxFW5+TX1RpYQDjoIPeuHid/jLP2PfAaNsXnswz0789eHX
-        ypYbrt3nmSEGnhGO+db5EpqRIQ==
-X-Google-Smtp-Source: AJdET5chP7y6RxAp3I6yCxCv2A99zZsaX9fTPSw3G/4iRv8Ft7hHhK8nvqwXQbzIf5cSMHMqTvBcAA==
-X-Received: by 2002:a81:8a45:: with SMTP id a66-v6mr8061255ywg.431.1541098838990;
-        Thu, 01 Nov 2018 12:00:38 -0700 (PDT)
+        bh=PEwiYW+iPT3AETwkcCB/lZEO+Bs8G4ZrI9hfFEPuYEY=;
+        b=kt5syG42pk4ctxLFy3TSDNw/pzM0//K/QNwuFbVdNGQRB7LH6DfP5dQpD3wz50F5qd
+         ejn9asjGX7CRXNbRzrjUurbhJUJ38SzstkCBQYL50T/TUbNaz8NrSMCBPqW4fUKGi3ih
+         NV/CMwSWAKTli12e8+LrkNPdGk0q094bd5JO0P0hcQF81VYYQMSOrRdlJAk9YDhZzlnv
+         4Qawp26tlvFbcMOHx12BzVsbnSnN+wwLvdsDG+8tw1cKEW1WrlXMvOhevV5eo07tp9By
+         4/nA+hXfMQNT99AgR50H7jg4L291Ax25kA9SyCGsB5O80h5OogJVU89D4nhybW+HNfyV
+         h9/Q==
+X-Gm-Message-State: AGRZ1gI3qJU2Vc9VhxB1nIf6fbb4OjnYIl19O3Y5GokrDvas3IfV0C1W
+        RJC7F45b4dBFnDh/s53f6kGHDQ==
+X-Google-Smtp-Source: AJdET5e9s+/s/7pG8YYTpQoMLNKNeNPMEohkHGqqiWfKS3lfGSA4bMhdzqRuHPeAeLimUveOXqMwSQ==
+X-Received: by 2002:aed:2de3:: with SMTP id i90-v6mr8219293qtd.173.1541099025505;
+        Thu, 01 Nov 2018 12:03:45 -0700 (PDT)
 Received: from localhost ([2620:10d:c091:180::1:c8f8])
-        by smtp.gmail.com with ESMTPSA id g5-v6sm10996380ywa.39.2018.11.01.12.00.37
+        by smtp.gmail.com with ESMTPSA id l123-v6sm6039727qkd.95.2018.11.01.12.03.44
         (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Thu, 01 Nov 2018 12:00:38 -0700 (PDT)
-Date:   Thu, 1 Nov 2018 15:00:37 -0400
+        Thu, 01 Nov 2018 12:03:44 -0700 (PDT)
+Date:   Thu, 1 Nov 2018 15:03:43 -0400
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     Nikolay Borisov <nborisov@suse.com>
 Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 2/8] btrfs: Remove extent_io_ops::writepage_start_hook
-Message-ID: <20181101190035.jdgwlgjf26ehsegk@macbook-pro-91.dhcp.thefacebook.com>
+Subject: Re: [PATCH 3/8] btrfs: Remove extent_io_ops::writepage_end_io_hook
+Message-ID: <20181101190342.bywvhkrihf3y57ah@macbook-pro-91.dhcp.thefacebook.com>
 References: <1541074194-22227-1-git-send-email-nborisov@suse.com>
- <1541074194-22227-3-git-send-email-nborisov@suse.com>
+ <1541074194-22227-4-git-send-email-nborisov@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <1541074194-22227-3-git-send-email-nborisov@suse.com>
+In-Reply-To: <1541074194-22227-4-git-send-email-nborisov@suse.com>
 User-Agent: NeoMutt/20180716
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Nov 01, 2018 at 02:09:47PM +0200, Nikolay Borisov wrote:
-> This hook is called only from __extent_writepage_io which is already
-> called only from the data page writeout path. So there is no need to
-> make an indirect call via extent_io_ops. This patch just removes the
-> callback definition, exports the callback function and calls it
-> directly at the only call site. Also give the function a more descriptive
-> name. No functional changes.
+On Thu, Nov 01, 2018 at 02:09:48PM +0200, Nikolay Borisov wrote:
+> This callback is ony ever called for data page writeout so
+> there is no need to actually abstract it via extent_io_ops. Lets just
+> export it, remove the definition of the callback and call it directly
+> in the functions that invoke the callback. Also rename the function to
+> btrfs_writepage_endio_finish_ordered since what it really does is
+> account finished io in the ordered extent data structures.
+> No functional changes.
 > 
 > Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+
+Could send another cleanup patch to remove the struct extent_state *state from
+the arg list as well.
 
 Reviewed-by: Josef Bacik <josef@toxicpanda.com>
 

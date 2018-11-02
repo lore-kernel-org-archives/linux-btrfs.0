@@ -2,221 +2,146 @@ Return-Path: <SRS0=Mp4+=NN=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.7 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
-	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 26593C32789
-	for <linux-btrfs@archiver.kernel.org>; Fri,  2 Nov 2018 17:18:30 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1BB6BC32789
+	for <linux-btrfs@archiver.kernel.org>; Fri,  2 Nov 2018 17:25:47 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D509C2081F
-	for <linux-btrfs@archiver.kernel.org>; Fri,  2 Nov 2018 17:18:29 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org D509C2081F
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=gmx.de
+	by mail.kernel.org (Postfix) with ESMTP id 3A9A62081F
+	for <linux-btrfs@archiver.kernel.org>; Fri,  2 Nov 2018 17:25:46 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 3A9A62081F
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=oh3mqu.pp.hyper.fi
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727805AbeKCC0U (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 2 Nov 2018 22:26:20 -0400
-Received: from mout.gmx.net ([212.227.15.15]:39443 "EHLO mout.gmx.net"
+        id S1728003AbeKCCdi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 2 Nov 2018 22:33:38 -0400
+Received: from titan.hyper.fi ([80.83.3.82]:33394 "EHLO titan.hyper.fi"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726085AbeKCC0T (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 2 Nov 2018 22:26:19 -0400
-Received: from [192.168.178.27] ([109.193.14.2]) by mail.gmx.com (mrgmx001
- [212.227.17.190]) with ESMTPSA (Nemesis) id 0MePcd-1fuFEn3fih-00QFao; Fri, 02
- Nov 2018 18:18:22 +0100
-Received: from [192.168.178.27] ([109.193.14.2]) by mail.gmx.com (mrgmx001
- [212.227.17.190]) with ESMTPSA (Nemesis) id 0MePcd-1fuFEn3fih-00QFao; Fri, 02
- Nov 2018 18:18:22 +0100
-Subject: Re: Salvage files from broken btrfs
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
-References: <45c08a5b-231a-744f-90e7-b2a33fd9b051@gmx.de>
- <ab4bf22e-5ee0-fa0c-7c46-82d144f8438f@gmx.com>
- <9ebb0148-2cc4-11f4-7028-71d2bce0493c@gmx.de>
- <c913ca2c-d7cd-def9-366c-0d3b511720ac@gmx.com>
-From:   "M. Klingmann" <m.klingmann@gmx.de>
-Openpgp: preference=signencrypt
-Autocrypt: addr=m.klingmann@gmx.de; prefer-encrypt=mutual; keydata=
- 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
-Cc:     linux-btrfs@vger.kernel.org
-Message-ID: <6d8b1c06-5fd1-2198-6c91-f3041a91464e@gmx.de>
-Date:   Fri, 2 Nov 2018 18:18:11 +0100
-User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64; rv:60.0) Gecko/20100101
- Thunderbird/60.2.1
+        id S1726700AbeKCCdi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 2 Nov 2018 22:33:38 -0400
+X-Greylist: delayed 1859 seconds by postgrey-1.27 at vger.kernel.org; Fri, 02 Nov 2018 22:33:37 EDT
+Received: by titan.hyper.fi (Postfix, from userid 500)
+        id A9AF4E7D8C; Fri,  2 Nov 2018 18:54:50 +0200 (EET)
+Received: from localhost (localhost [127.0.0.1])
+        by titan.hyper.fi (Postfix) with ESMTP id A2F35E7D88
+        for <linux-btrfs@vger.kernel.org>; Fri,  2 Nov 2018 18:54:50 +0200 (EET)
+Date:   Fri, 2 Nov 2018 18:54:50 +0200 (EET)
+From:   linux-btrfs@oh3mqu.pp.hyper.fi
+X-X-Sender: oh3mqu@titan.hyper.fi
+To:     linux-btrfs@vger.kernel.org
+Subject: Big amount of snapshots and disk full
+Message-ID: <alpine.LFD.2.00.1811021817540.5224@titan.hyper.fi>
+User-Agent: Alpine 2.00 (LFD 1167 2008-08-23)
 MIME-Version: 1.0
-In-Reply-To: <c913ca2c-d7cd-def9-366c-0d3b511720ac@gmx.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="5SGVEnRCT9s3H3fyQx3nSj7ztE1Ufq14Y"
-X-Provags-ID: V03:K1:n9yRzO3AlXkabCfD9UAtzGBNwBJYKE66W3X8fze+sb3q73hsi7Z
- 0Oj5SCPXcrYAPbI5s+T/5p7na9pdPlPBTcsdCZ39sKoHTaSlKzC+3kYwEw3PgFZussXvyoS
- CMN8tTi+0OIKf/Y8NFJCXHyzJqSPDcgLBxQkNiXQV+0zHINdjYyyu6OcU3TnPH6I5Y/CuDi
- v6C0NT8k+wR6kjY6KX49w==
-X-UI-Out-Filterresults: notjunk:1;V01:K0:YF+lW4Piezg=:yE/LcowTHQ7qCtgCNf4caE
- NfZ3tahifysEblDkWzfQa0xSE8gETJXBZSHKuhb/iIJJT7zOEcl5B0nP6khfmvcd1YzT2Mldp
- n5xVRPLL50fxCi2IwJqBaQP+MkF04Q4lCTqlzFGvmOCvc+tfpANFFtFKoJG2cToxBwfLnZPjr
- MkYPhGXYmKqehO8qG0N+XZaV5Ml4pd7Dvm3bIWEK6fM9ntSPWFXTiG5S4M7ufs5JGm3K1UKd5
- ovVgHizFdIcxVztbToivNZqX2EjrpLFFNpIQvS6bhhTSbKqbeoqY5GXJZWqRSCG+Y8PHjZido
- 1ul4twhkjD0lYxYhBtJpAMdeaZ1zq5Uk6zjTDdSO4dzVd8+aO2Miy8IQNBGNZersrmAu/uG5R
- BglHOzE6a4vz5+bXiEqxXtv3vsWJ3KawpItfVBZgb5/xbiWAuX2eBZjKU1l6Lx8iHk3ar8p2k
- TDiTUFpnOIbt/DclFttYS/RIBpuQ1lmid66HMBOyTRLxyIEJat+CNN4UrKVKcRzhR65Em5E4W
- orndu4oDf0vXejq8X22Wb3muh8S9zYWj7DcX8j5a7i4zRDLwcxXZDS0FFrnmShL+iHceL1gRl
- O3PaH16I4FbuULLN9AJWkCpkCcje7ybjH/KMo587RrMlwDlv6VFJMLJtiZjJszc0H4cGGOCHa
- 7I6c7+45rf7m8AScJaMNbyfJd4d64dwNqYgMmcDpIG3Afcd5/wjAeoDFYxEqeN2WjuRBFB3bX
- SPeGui/CsbXODCCd6lHqvJfuiOcM+139HFD00raC1HSijCG59bJSsAFQdgxTTkJhD5jdp4Hky
- T6IjtAtU119NYjAB0tgvCOM5J14hg==
+Content-Type: TEXT/PLAIN; format=flowed; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---5SGVEnRCT9s3H3fyQx3nSj7ztE1Ufq14Y
-Content-Type: multipart/mixed; boundary="RL1MDsiyYi6uGgyYPz96MGETtJ6MrqPoO";
- protected-headers="v1"
-From: "M. Klingmann" <m.klingmann@gmx.de>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: linux-btrfs@vger.kernel.org
-Message-ID: <6d8b1c06-5fd1-2198-6c91-f3041a91464e@gmx.de>
-Subject: Re: Salvage files from broken btrfs
-References: <45c08a5b-231a-744f-90e7-b2a33fd9b051@gmx.de>
- <ab4bf22e-5ee0-fa0c-7c46-82d144f8438f@gmx.com>
- <9ebb0148-2cc4-11f4-7028-71d2bce0493c@gmx.de>
- <c913ca2c-d7cd-def9-366c-0d3b511720ac@gmx.com>
-In-Reply-To: <c913ca2c-d7cd-def9-366c-0d3b511720ac@gmx.com>
 
---RL1MDsiyYi6uGgyYPz96MGETtJ6MrqPoO
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: quoted-printable
-Content-Language: de-DE
+Hi,
 
-On 02.11.2018 at 15:45 Qu Wenruo wrote:
-> On 2018/11/2 =E4=B8=8B=E5=8D=8810:30, M. Klingmann wrote:
->> On 31.10.2018 at 01:03 Qu Wenruo wrote:
->>> My plan for such recovery is:
->>>
->>> 1) btrfs ins dump-super to make sure system chunk array is valid
->>> 2) btrfs-find-root to find any valid chunk tree blocks
->>> 3) pass that chunk tree bytenr to btrfs-restore
->>>    Unfortunately, btrfs-restore doesn't support specifying chunk root=
+I am doing backups with rsync and do versioning with btrfs snapshots. 
+And last week I got file system full.  I googled some and noticed that 
+there might be bug in space_cache so I cleared cache and mounted it with 
+nospace_cache and system worked about week (managed to delete & create 
+tens of snapshots during that time. Before 1st issue system have worked 
+without problems over year).  Now I got same issue again.  Any Ideas what 
+I should try next?  Disk have never been even half full.
 
->>>    yet. But it's pretty easy to add such support.
->>>
->>> So, please provide the "btrfs ins dump-super -Ffa" output to start wi=
-th.
->> Following your plan, I did 1) and 2).
->> As 2) failed (see below), is there anything I can do to find the tree
->> bytenr to supply btrfs-restore with it?
->>
->> 1) Here's the output given by "btrfs-show-super -Ffa":
->>
->> superblock: bytenr=3D65536, device=3Dsdcard.iso
->> ---------------------------------------------------------
->> csum=C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 0xb8e15dd=
-7 [match]
-[snip]
->> 2) "btrfs-find-root" yields "Couldn't read chunk root; Open ctree fail=
-ed".
-> It's not plain "btrfs-find-root" but "btrfs-find-root -o 5".
->
-> And you should use btrfs-progs v4.17.1, not the old v4.4.
-> The ability to continue search even if chunk tree get corrupted is adde=
-d
-> in v4.5, and I strongly recommend to use latest (v4.17.1) for a lot of
-> fixes and extra debug output.
->
-> If you can't find any handy way to update btrfs-progs, you could use
-> Archlinux iso as a rescue OS to use the latest btrfs-progs.
+An error occurred when script was creating new snapshot, rsync 
+before that was fine.  (And there was another rsync to another destination 
+running at same time)
 
-Using Archlinux in fact is the easiest way to use version 4.17.1
-(Archlinux for 2018-11-01).
+Is there some issue with big amount of snapshots?
 
-Here's the output from "btrfs-find-root sdcard.iso":
+I have nearly 50 machines on backup and most of them have less than ten 
+versions, so my subvol hierarchy is like this.
 
-WARNING: cannot read chunk root, continue anyway
-Superblock thinks the generation is 1757933
-Superblock thinks the level is 0
-
-Here's the output using "btrfs-find-root -o 5 sdcard.iso":
-
-WARNING: cannot read chunk root, continue anyway
-Superblock doesn't contain generation info for root 5
-Superblock doesn't contain the level info for root 5
-
-> For 3), I could easily add such feature btrfs-restore, or just use
-> manually patching your superblock to continue.
-> So as soon as your "btrfs-find-root -o 5" gets some valid output, I
-> could continue the work.
->
-Thank you.
-
---=20
-Mirko
+data (btrfsroot)
+  machine1 (subvol)
+   last (subvol)
+   [date] (readonly snapshot of last)
+   [date2] (readonly snapshot of last)
+   ...
+  machine2 (subvol)
+   last (subvol)
+   [date] (readonly snapshot of last)
+......
 
 
+root@backuprasia:~# btrfs sub list /data |wc -l
+492
 
---RL1MDsiyYi6uGgyYPz96MGETtJ6MrqPoO--
 
---5SGVEnRCT9s3H3fyQx3nSj7ztE1Ufq14Y
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
+root@backuprasia:~# btrfs fi usage /data
+Overall:
+     Device size:                  30.00TiB
+     Device allocated:             13.62TiB
+     Device unallocated:           16.38TiB
+     Device missing:                  0.00B
+     Used:                         13.59TiB
+     Free (estimated):             16.40TiB      (min: 16.40TiB)
+     Data ratio:                       1.00
+     Metadata ratio:                   1.00
+     Global reserve:              512.00MiB      (used: 499.00MiB)
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
+Data,single: Size:13.45TiB, Used:13.43TiB
+    /dev/mapper/datavg-backup1     13.45TiB
 
-iQIcBAEBCAAGBQJb3IbeAAoJEHhAHxjEAlI4g9UP/0sZ7kzNHlH/812pbqY9F8jI
-WIuEpljJIwE9PjwbA3JEYtLEj20zinxnKLaShY4PhvCGUMu+q4i/YGWwyDyzUht1
-lUY6w8O/HjRMFK/YSke/a8xWJDAR2lSGdovIF+93V4+nd6v6PcEvnV5kMFz9nu37
-TC7la45H7UG2BK3kaGyB6pXPHh2bQwJq1LB//JKEhu8KPeWrH/guiysBZS7LEg7C
-wmj4iw4L68aBhqv/H3IE2aewy7ygx/ja/Mek+magoFJjAATlyLH33ng1+IPvSV7G
-0bosj/VFVyWDcZtsi6YPIfaafUOAK+tqVFJgkJQtOndN1/Qdhnm4pEeOQMFfbk2F
-CCQckwOwGR3r2oEXv1f9isF00UxQD19xJg5za9kJ4cOKlTX08gjTGBTfVBJLtGge
-hBd2WMXjhVVYi3SmWIbFZTJT9Ib3DaKZXIW91PJogsOIbeohAPitSlB0l+omh6I2
-TgAlJz0wciAUSW90Uq9xHv4QFDYg/M1J4c3G1ZwZs8ud04M4k4IIWv+kSbbmFz4T
-wucSJQnv1HjcvbsBd6CahbATRDdDdKaDTGGHGRVU3HIRheLKlM41iUn5nA6GYKKV
-IENkmsWN8jpJtlHUH7R/KpiinjJGpNkxYose4e1S2QwOyGB4tNila/mrfXUS/qr8
-BHGpEw4lMpFsCYZrLJt1
-=lmfg
------END PGP SIGNATURE-----
+Metadata,single: Size:172.01GiB, Used:169.20GiB
+    /dev/mapper/datavg-backup1    172.01GiB
 
---5SGVEnRCT9s3H3fyQx3nSj7ztE1Ufq14Y--
+System,single: Size:4.00MiB, Used:1.62MiB
+    /dev/mapper/datavg-backup1      4.00MiB
+
+Unallocated:
+    /dev/mapper/datavg-backup1     16.38TiB
+
+
+root@backuprasia:~# uname -a
+Linux backuprasia 4.15.0-38-generic #41~16.04.1-Ubuntu SMP Wed Oct 10 20:16:04 UTC 2018 x86_64 x86_64 x86_64 GNU/Linux
+
+
+Nov 02 01:58:31 backuprasia kernel: ------------[ cut here ]------------
+Nov 02 01:58:31 backuprasia kernel: BTRFS: Transaction aborted (error -28)
+Nov 02 01:58:31 backuprasia kernel: WARNING: CPU: 8 PID: 14381 at /build/linux-hwe-4LSUYr/linux-hwe-4.15.0/fs/btrfs/extent-tree.c:3784 btrfs_start_dirty_block_groups+0x260//0x430 [btrfs]
+Nov 02 01:58:31 backuprasia kernel: [205245.441842] Modules linked in: ip6table_filter ip6_tables ipt_REJECT nf_reject_ipv4 nf_log_ipv4 nf_log_common xt_LOG xt_limit xt_tcpudp xt_multiport iptable_filter ip_tables x_tables intel_rapl sb_edac x86_pkg_temp_thermal intel_powerclamp coretemp kvm_intel kvm irqbypass intel_cstate 8021q garp mrp mei_me ipmi_ssif stp intel_rapl_perf llc joydev input_leds lpc_ich mei ioatdma shpchp ipmi_si ipmi_devintf ipmi_msghandler acpi_pad acpi_power_meter mac_hid ib_iser rdma_cm iw_cm ib_cm ib_core iscsi_tcp libiscsi_tcp libiscsi scsi_transport_iscsi autofs4 btrfs zstd_compress ses enclosure raid10 raid456 async_raid6_recov async_memcpy async_pq async_xor async_tx xor raid6_pq libcrc32c raid0 multipath linear ast i2c_algo_bit ixgbe ttm crct10dif_pclmul crc32_pclmul drm_kms_helper ghash_clmulni_intel syscopyarea
+Nov 02 01:58:31 backuprasia kernel: [205245.441911]  pcbc sysfillrect aesni_intel sysimgblt fb_sys_fops aes_x86_64 raid1 hid_generic crypto_simd usbhid dca glue_helper mpt3sas ahci ptp raid_class drm r8169 hid mxm_wmi cryptd libahci pps_core scsi_transport_sas mii mdio wmi
+Nov 02 01:58:31 backuprasia kernel:  pcbc sysfillrect aesni_intel sysimgblt fb_sys_fops aes_x86_64 raid1 hid_generic crypto_simd usbhid dca glue_helper mpt3sas ahci ptp rai
+Nov 02 01:58:31 backuprasia kernel: CPU: 8 PID: 14381 Comm: btrfs-transacti Not tainted 4.15.0-38-generic #41~16.04.1-Ubuntu
+Nov 02 01:58:31 backuprasia kernel: Hardware name: Supermicro X10DRi/X10DRI-T, BIOS 2.1 09/13/2016
+Nov 02 01:58:31 backuprasia kernel: RIP: 0010:btrfs_start_dirty_block_groups+0x260/0x430 [btrfs]
+Nov 02 01:58:31 backuprasia kernel: RSP: 0018:ffffb7b60efbbdc0 EFLAGS: 00010282
+Nov 02 01:58:31 backuprasia kernel: RAX: 0000000000000000 RBX: ffff8bd5d4a1bc30 RCX: 0000000000000006
+Nov 02 01:58:31 backuprasia kernel: RDX: 0000000000000007 RSI: 0000000000000092 RDI: ffff8bd77f416490
+Nov 02 01:58:31 backuprasia kernel: RBP: ffffb7b60efbbe30 R08: 0000000000000001 R09: 0000000000000539
+Nov 02 01:58:31 backuprasia kernel: R10: 0000000000000000 R11: 0000000000000539 R12: ffff8bd60128e800
+Nov 02 01:58:31 backuprasia kernel: R13: 0000000000000001 R14: ffff8bd1d1ce32a0 R15: ffff8bd60128e948
+Nov 02 01:58:31 backuprasia kernel: FS:  0000000000000000(0000) GS:ffff8bd77f400000(0000) knlGS:0000000000000000
+Nov 02 01:58:31 backuprasia kernel: CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+Nov 02 01:58:31 backuprasia kernel: CR2: 00007fc65cfc6868 CR3: 0000000f8e80a003 CR4: 00000000003606e0
+Nov 02 01:58:31 backuprasia kernel: DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+Nov 02 01:58:31 backuprasia kernel: DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Nov 02 01:58:31 backuprasia kernel: Call Trace:
+Nov 02 01:58:31 backuprasia kernel:  btrfs_commit_transaction+0x15b/0x930 [btrfs]
+Nov 02 01:58:31 backuprasia kernel:  ? start_transaction+0x9b/0x440 [btrfs]
+Nov 02 01:58:31 backuprasia kernel:  transaction_kthread+0x1a6/0x1c0 [btrfs]
+Nov 02 01:58:31 backuprasia kernel:  kthread+0x105/0x140
+Nov 02 01:58:31 backuprasia kernel:  ? btrfs_cleanup_transaction+0x550/0x550 [btrfs]
+Nov 02 01:58:31 backuprasia kernel:  ? kthread_destroy_worker+0x50/0x50
+Nov 02 01:58:31 backuprasia kernel:  ? do_syscall_64+0x73/0x130
+Nov 02 01:58:31 backuprasia kernel:  ? SyS_exit_group+0x14/0x20
+Nov 02 01:58:31 backuprasia kernel:  ret_from_fork+0x35/0x40
+Nov 02 01:58:31 backuprasia kernel: Code: ff ff 48 8b 53 60 f0 0f ba aa d8 cd 00 00 02 72 1f 83 f8 fb 0f 84 a9 01 00 00 89 c6 48 c7 c7 58 a6 4a c0 89 45 a8 e8 90 6e 68 d1 <
+Nov 02 01:58:31 backuprasia kernel: ---[ end trace eb0162431be8822a ]---
+
+
+root@backuprasia:~# grep data /etc/fstab
+/dev/mapper/datavg-backup1 /data        btrfs   compress=none,nospace_cache,noatime 0 0
+
+
+-- 
+Ari Saastamoinen

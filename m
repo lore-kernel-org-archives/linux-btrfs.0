@@ -2,291 +2,125 @@ Return-Path: <SRS0=Mp4+=NN=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_PASS,T_DKIMWL_WL_MED,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 15734C32789
-	for <linux-btrfs@archiver.kernel.org>; Fri,  2 Nov 2018 19:54:49 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7E96AC6786F
+	for <linux-btrfs@archiver.kernel.org>; Fri,  2 Nov 2018 21:30:13 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B701020831
-	for <linux-btrfs@archiver.kernel.org>; Fri,  2 Nov 2018 19:54:48 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org B701020831
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=dirtcellar.net
+	by mail.kernel.org (Postfix) with ESMTP id 3F40120831
+	for <linux-btrfs@archiver.kernel.org>; Fri,  2 Nov 2018 21:30:13 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="2CrmXRva"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 3F40120831
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=osandov.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726125AbeKCFDR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 3 Nov 2018 01:03:17 -0400
-Received: from smtp.domeneshop.no ([194.63.252.55]:54471 "EHLO
-        smtp.domeneshop.no" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726051AbeKCFDR (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 3 Nov 2018 01:03:17 -0400
-Received: from 0.79-161-197.customer.lyse.net ([79.161.197.0]:33977 helo=[10.0.0.10])
-        by smtp.domeneshop.no with esmtpsa (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128)
-        (Exim 4.84_2)
-        (envelope-from <waxhead@dirtcellar.net>)
-        id 1gIfWi-00080U-On
-        for linux-btrfs@vger.kernel.org; Fri, 02 Nov 2018 20:54:40 +0100
-Reply-To: waxhead@dirtcellar.net
-To:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-From:   waxhead <waxhead@dirtcellar.net>
-Subject: BTRFS did it's job nicely (thanks!)
-Message-ID: <d03d611b-cd2e-d267-268a-255f90348e43@dirtcellar.net>
-Date:   Fri, 2 Nov 2018 20:54:40 +0100
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:52.0) Gecko/20100101
- Firefox/52.0 SeaMonkey/2.49.4
+        id S1728245AbeKCGi6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 3 Nov 2018 02:38:58 -0400
+Received: from mail-io1-f67.google.com ([209.85.166.67]:36029 "EHLO
+        mail-io1-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726100AbeKCGi6 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 3 Nov 2018 02:38:58 -0400
+Received: by mail-io1-f67.google.com with SMTP id o19-v6so2395315iod.3
+        for <linux-btrfs@vger.kernel.org>; Fri, 02 Nov 2018 14:30:11 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=osandov-com.20150623.gappssmtp.com; s=20150623;
+        h=from:to:cc:subject:date:message-id:in-reply-to:references
+         :mime-version:content-transfer-encoding;
+        bh=EQlijbwv+Tr3pUQAHsipW5yfTslWROfiw9T5rb7jgu0=;
+        b=2CrmXRvaIi60DMI2J1g6sHeOhxeb7nAsaBjhmrPq1JdDFWNPdDFZFvW3GqWePCJq1L
+         LYaJrGehYiw4NWwFN9OXd5Olat0rqgqJOqhanxoKX4VYQc7+zq2hk15ABO95erQwjqtb
+         1dGSiDtktpSQwBdS0d2I4sTPtxg9N2oYMyVCu0g9TKvfvR4UPZUK/WkklOSScC4mpm12
+         ioiGaTvI/EhG6rkHZXiVgE8wAjt7+JMGiMKkW92DVE7Pkv9QEVsUxIwTPjF/2txpi5Z1
+         m9gkZye71mAimrKlZ0sQj0ubAQ+J08mcS1jKAOkY9S6bmIUr/QS//MfOmM3eAXVi+Hx5
+         mFng==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
+         :references:mime-version:content-transfer-encoding;
+        bh=EQlijbwv+Tr3pUQAHsipW5yfTslWROfiw9T5rb7jgu0=;
+        b=BCoAkIuayl4MY83svvCBSFWYGDxsZsvSwrjSA5IpvZxG7ocZOBoXeOFYtQpLfVzwfL
+         toq8hdJWo30K8JkTHc7bxIOd5Q4IWzri9tLtG7+HgPrTiwYXRtaPHPsMHrhBcR+NqeoZ
+         7MBl44hF4JqyLIaagGHU7gv5N8+S078bzZqcQldUIjBgBiMpOieGc30iU9J9Gevyx3EY
+         AqSMmJjKSLZhfjGNP06okL7e3xSBTAqBCFGsdUmCffjCKk3bngO3lIIbbTlopIgZRdGc
+         iHyJx3BoCUpgiodRVxELOIKlMgEYELrC4ct5cbO0+UY0he5tW17340xpXB+3HkRTZ0mo
+         m5uA==
+X-Gm-Message-State: AGRZ1gJEeaEoDS80YhYVJxVPwz/BHvGF6JKmgSM1m3nVg5x19Kw/MKzw
+        Z+b0P+S6RCPidx2QHYpcgk+0Kg==
+X-Google-Smtp-Source: AJdET5edwha3rIfxJul9TnrVpVxmft3j4L5wiwshdotFlIyYE+VdISJMBThQ8iBOqOzDbikxz3c/WA==
+X-Received: by 2002:a6b:1412:: with SMTP id 18-v6mr10433619iou.214.1541194210497;
+        Fri, 02 Nov 2018 14:30:10 -0700 (PDT)
+Received: from vader.thefacebook.com ([2620:10d:c090:200::4:e24f])
+        by smtp.gmail.com with ESMTPSA id n130-v6sm929419itb.36.2018.11.02.14.30.09
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Fri, 02 Nov 2018 14:30:10 -0700 (PDT)
+From:   Omar Sandoval <osandov@osandov.com>
+To:     fstests@vger.kernel.org
+Cc:     kernel-team@fb.com, linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/7] generic/{472,496,497}: fix $seeqres typo
+Date:   Fri,  2 Nov 2018 14:29:36 -0700
+Message-Id: <c9a9f45d901273f88c9ecb7bc4f64635d2ab9ba5.1541193856.git.osandov@fb.com>
+X-Mailer: git-send-email 2.19.1
+In-Reply-To: <cover.1541193856.git.osandov@fb.com>
+References: <cover.1541193856.git.osandov@fb.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi,
+From: Omar Sandoval <osandov@fb.com>
 
-my main computer runs on a 7x SSD BTRFS as rootfs with
-data:RAID1 and metadata:RAID10.
+Signed-off-by: Omar Sandoval <osandov@fb.com>
+---
+ tests/generic/472 | 2 +-
+ tests/generic/496 | 2 +-
+ tests/generic/497 | 2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
 
-One SSD is probably about to fail, and it seems that BTRFS fixed it 
-nicely (thanks everyone!)
-
-I decided to just post the ugly details in case someone just wants to 
-have a look. Note that I tend to interpret the btrfs de st / output as 
-if the error was NOT fixed even if (seems clearly that) it was, so I 
-think the output is a bit misleading... just saying...
-
-
-
--- below are the details for those curious (just for fun) ---
-
-scrub status for [YOINK!]
-         scrub started at Fri Nov  2 17:49:45 2018 and finished after 
-00:29:26
-         total bytes scrubbed: 1.15TiB with 1 errors
-         error details: csum=1
-         corrected errors: 1, uncorrectable errors: 0, unverified errors: 0
-
-  btrfs fi us -T /
-Overall:
-     Device size:                   1.18TiB
-     Device allocated:              1.17TiB
-     Device unallocated:            9.69GiB
-     Device missing:                  0.00B
-     Used:                          1.17TiB
-     Free (estimated):              6.30GiB      (min: 6.30GiB)
-     Data ratio:                       2.00
-     Metadata ratio:                   2.00
-     Global reserve:              512.00MiB      (used: 0.00B)
-
-              Data      Metadata  System
-Id Path      RAID1     RAID10    RAID10    Unallocated
--- --------- --------- --------- --------- -----------
-  6 /dev/sda1 236.28GiB 704.00MiB  32.00MiB   485.00MiB
-  7 /dev/sdb1 233.72GiB   1.03GiB  32.00MiB     2.69GiB
-  2 /dev/sdc1 110.56GiB 352.00MiB         -   904.00MiB
-  8 /dev/sdd1 234.96GiB   1.03GiB  32.00MiB     1.45GiB
-  1 /dev/sde1 164.90GiB   1.03GiB  32.00MiB     1.72GiB
-  9 /dev/sdf1 109.00GiB   1.03GiB  32.00MiB   744.00MiB
-10 /dev/sdg1 107.98GiB   1.03GiB  32.00MiB     1.74GiB
--- --------- --------- --------- --------- -----------
-    Total     598.70GiB   3.09GiB  96.00MiB     9.69GiB
-    Used      597.25GiB   1.57GiB 128.00KiB
-
-
-
-uname -a
-Linux main 4.18.0-2-amd64 #1 SMP Debian 4.18.10-2 (2018-10-07) x86_64 
-GNU/Linux
-
-btrfs --version
-btrfs-progs v4.17
-
-
-dmesg | grep -i btrfs
-[    7.801817] Btrfs loaded, crc32c=crc32c-generic
-[    8.163288] BTRFS: device label btrfsroot devid 10 transid 669961 
-/dev/sdg1
-[    8.163433] BTRFS: device label btrfsroot devid 9 transid 669961 
-/dev/sdf1
-[    8.163591] BTRFS: device label btrfsroot devid 1 transid 669961 
-/dev/sde1
-[    8.163734] BTRFS: device label btrfsroot devid 8 transid 669961 
-/dev/sdd1
-[    8.163974] BTRFS: device label btrfsroot devid 2 transid 669961 
-/dev/sdc1
-[    8.164117] BTRFS: device label btrfsroot devid 7 transid 669961 
-/dev/sdb1
-[    8.164262] BTRFS: device label btrfsroot devid 6 transid 669961 
-/dev/sda1
-[    8.206174] BTRFS info (device sde1): disk space caching is enabled
-[    8.206236] BTRFS info (device sde1): has skinny extents
-[    8.348610] BTRFS info (device sde1): enabling ssd optimizations
-[    8.854412] BTRFS info (device sde1): enabling free space tree
-[    8.854471] BTRFS info (device sde1): using free space tree
-[   68.170580] BTRFS warning (device sde1): csum failed root 3760 ino 
-3247424 off 125434560512 csum 0x2e395164 expected csum 0x6514b2c2 mirror 2
-[   68.185973] BTRFS warning (device sde1): csum failed root 3760 ino 
-3247424 off 125434560512 csum 0x2e395164 expected csum 0x6514b2c2 mirror 2
-[   68.185991] BTRFS warning (device sde1): csum failed root 3760 ino 
-3247424 off 125434560512 csum 0x2e395164 expected csum 0x6514b2c2 mirror 2
-[   68.186003] BTRFS warning (device sde1): csum failed root 3760 ino 
-3247424 off 125434560512 csum 0x2e395164 expected csum 0x6514b2c2 mirror 2
-[   68.186015] BTRFS warning (device sde1): csum failed root 3760 ino 
-3247424 off 125434560512 csum 0x2e395164 expected csum 0x6514b2c2 mirror 2
-[   68.186028] BTRFS warning (device sde1): csum failed root 3760 ino 
-3247424 off 125434560512 csum 0x2e395164 expected csum 0x6514b2c2 mirror 2
-[   68.186041] BTRFS warning (device sde1): csum failed root 3760 ino 
-3247424 off 125434560512 csum 0x2e395164 expected csum 0x6514b2c2 mirror 2
-[   68.186052] BTRFS warning (device sde1): csum failed root 3760 ino 
-3247424 off 125434560512 csum 0x2e395164 expected csum 0x6514b2c2 mirror 2
-[   68.186063] BTRFS warning (device sde1): csum failed root 3760 ino 
-3247424 off 125434560512 csum 0x2e395164 expected csum 0x6514b2c2 mirror 2
-[   68.186075] BTRFS warning (device sde1): csum failed root 3760 ino 
-3247424 off 125434560512 csum 0x2e395164 expected csum 0x6514b2c2 mirror 2
-[   68.199237] BTRFS info (device sde1): read error corrected: ino 
-3247424 off 36700160 (dev /dev/sda1 sector 244987192)
-[   68.202602] BTRFS info (device sde1): read error corrected: ino 
-3247424 off 36704256 (dev /dev/sda1 sector 244987192)
-[   68.203176] BTRFS info (device sde1): read error corrected: ino 
-3247424 off 36712448 (dev /dev/sda1 sector 244987192)
-[   68.206762] BTRFS info (device sde1): read error corrected: ino 
-3247424 off 36708352 (dev /dev/sda1 sector 244987192)
-[   68.212071] BTRFS info (device sde1): read error corrected: ino 
-3247424 off 36720640 (dev /dev/sda1 sector 244987192)
-[   68.217220] BTRFS info (device sde1): read error corrected: ino 
-3247424 off 36716544 (dev /dev/sda1 sector 244987192)
-[   68.229984] BTRFS info (device sde1): read error corrected: ino 
-3247424 off 36724736 (dev /dev/sda1 sector 244987192)
-[   68.231579] BTRFS info (device sde1): read error corrected: ino 
-3247424 off 36728832 (dev /dev/sda1 sector 244987192)
-[   68.231725] BTRFS info (device sde1): read error corrected: ino 
-3247424 off 36732928 (dev /dev/sda1 sector 244987192)
-[   68.231772] BTRFS info (device sde1): read error corrected: ino 
-3247424 off 36737024 (dev /dev/sda1 sector 244987192)
-[  912.685787] btrfs_print_data_csum_error: 23 callbacks suppressed
-[  912.685792] BTRFS warning (device sde1): csum failed root 3760 ino 
-3247424 off 125434560512 csum 0xb9ad3e35 expected csum 0x6514b2c2 mirror 2
-[  912.686107] BTRFS warning (device sde1): csum failed root 3760 ino 
-3247424 off 125434560512 csum 0xb9ad3e35 expected csum 0x6514b2c2 mirror 2
-[  912.686335] BTRFS warning (device sde1): csum failed root 3760 ino 
-3247424 off 125434560512 csum 0xb9ad3e35 expected csum 0x6514b2c2 mirror 2
-[  912.695110] BTRFS warning (device sde1): csum failed root 3760 ino 
-3247424 off 125434560512 csum 0xb9ad3e35 expected csum 0x6514b2c2 mirror 2
-[  912.695138] BTRFS warning (device sde1): csum failed root 3760 ino 
-3247424 off 125434560512 csum 0xb9ad3e35 expected csum 0x6514b2c2 mirror 2
-[  912.695150] BTRFS warning (device sde1): csum failed root 3760 ino 
-3247424 off 125434560512 csum 0xb9ad3e35 expected csum 0x6514b2c2 mirror 2
-[  912.695162] BTRFS warning (device sde1): csum failed root 3760 ino 
-3247424 off 125434560512 csum 0xb9ad3e35 expected csum 0x6514b2c2 mirror 2
-[  912.695173] BTRFS warning (device sde1): csum failed root 3760 ino 
-3247424 off 125434560512 csum 0xb9ad3e35 expected csum 0x6514b2c2 mirror 2
-[  912.695185] BTRFS warning (device sde1): csum failed root 3760 ino 
-3247424 off 125434560512 csum 0xb9ad3e35 expected csum 0x6514b2c2 mirror 2
-[  912.695225] BTRFS warning (device sde1): csum failed root 3760 ino 
-3247424 off 125434560512 csum 0xb9ad3e35 expected csum 0x6514b2c2 mirror 2
-[  912.737998] BTRFS info (device sde1): read error corrected: ino 
-3247424 off 36753408 (dev /dev/sda1 sector 244987192)
-[  912.747407] BTRFS info (device sde1): read error corrected: ino 
-3247424 off 36810752 (dev /dev/sda1 sector 244987192)
-[  912.755449] BTRFS info (device sde1): read error corrected: ino 
-3247424 off 36782080 (dev /dev/sda1 sector 244987192)
-[  912.758745] BTRFS info (device sde1): read error corrected: ino 
-3247424 off 36720640 (dev /dev/sda1 sector 244987192)
-[  912.759945] BTRFS info (device sde1): read error corrected: ino 
-3247424 off 36728832 (dev /dev/sda1 sector 244987192)
-[  912.768136] BTRFS info (device sde1): read error corrected: ino 
-3247424 off 36724736 (dev /dev/sda1 sector 244987192)
-[  912.776749] BTRFS info (device sde1): read error corrected: ino 
-3247424 off 36716544 (dev /dev/sda1 sector 244987192)
-[  912.784312] BTRFS info (device sde1): read error corrected: ino 
-3247424 off 36704256 (dev /dev/sda1 sector 244987192)
-[  912.784456] BTRFS info (device sde1): read error corrected: ino 
-3247424 off 36790272 (dev /dev/sda1 sector 244987192)
-[  912.784519] BTRFS info (device sde1): read error corrected: ino 
-3247424 off 36798464 (dev /dev/sda1 sector 244987192)
-[ 1298.747500] btrfs_print_data_csum_error: 7 callbacks suppressed
-[ 1298.747505] BTRFS warning (device sde1): csum failed root 3760 ino 
-3247424 off 125434560512 csum 0xe7cb8d8c expected csum 0x6514b2c2 mirror 2
-[ 1298.747529] BTRFS warning (device sde1): csum failed root 3760 ino 
-3247424 off 125434560512 csum 0xe7cb8d8c expected csum 0x6514b2c2 mirror 2
-[ 1298.748379] BTRFS warning (device sde1): csum failed root 3760 ino 
-3247424 off 125434560512 csum 0xe7cb8d8c expected csum 0x6514b2c2 mirror 2
-[ 1298.763245] BTRFS warning (device sde1): csum failed root 3760 ino 
-3247424 off 125434560512 csum 0xe7cb8d8c expected csum 0x6514b2c2 mirror 2
-[ 1298.763264] BTRFS warning (device sde1): csum failed root 3760 ino 
-3247424 off 125434560512 csum 0xe7cb8d8c expected csum 0x6514b2c2 mirror 2
-[ 1298.763290] BTRFS warning (device sde1): csum failed root 3760 ino 
-3247424 off 125434560512 csum 0xe7cb8d8c expected csum 0x6514b2c2 mirror 2
-[ 1298.763305] BTRFS warning (device sde1): csum failed root 3760 ino 
-3247424 off 125434560512 csum 0xe7cb8d8c expected csum 0x6514b2c2 mirror 2
-[ 1298.763320] BTRFS warning (device sde1): csum failed root 3760 ino 
-3247424 off 125434560512 csum 0xe7cb8d8c expected csum 0x6514b2c2 mirror 2
-[ 1298.764537] BTRFS warning (device sde1): csum failed root 3760 ino 
-3247424 off 125434560512 csum 0xe7cb8d8c expected csum 0x6514b2c2 mirror 2
-[ 1298.764560] BTRFS warning (device sde1): csum failed root 3760 ino 
-3247424 off 125434560512 csum 0xe7cb8d8c expected csum 0x6514b2c2 mirror 2
-[ 1298.788874] BTRFS info (device sde1): read error corrected: ino 
-3247424 off 36704256 (dev /dev/sda1 sector 244987192)
-[ 1298.795023] BTRFS info (device sde1): read error corrected: ino 
-3247424 off 36728832 (dev /dev/sda1 sector 244987192)
-[ 1298.804992] BTRFS info (device sde1): read error corrected: ino 
-3247424 off 36753408 (dev /dev/sda1 sector 244987192)
-[ 1298.819343] BTRFS info (device sde1): read error corrected: ino 
-3247424 off 36724736 (dev /dev/sda1 sector 244987192)
-[ 1298.824461] BTRFS info (device sde1): read error corrected: ino 
-3247424 off 36732928 (dev /dev/sda1 sector 244987192)
-[ 1298.827573] BTRFS info (device sde1): read error corrected: ino 
-3247424 off 36720640 (dev /dev/sda1 sector 244987192)
-[ 1298.935345] BTRFS info (device sde1): read error corrected: ino 
-3247424 off 36712448 (dev /dev/sda1 sector 244987192)
-[ 1298.935474] BTRFS info (device sde1): read error corrected: ino 
-3247424 off 36794368 (dev /dev/sda1 sector 244987192)
-[ 1298.935583] BTRFS info (device sde1): read error corrected: ino 
-3247424 off 36790272 (dev /dev/sda1 sector 244987192)
-[ 1298.935690] BTRFS info (device sde1): read error corrected: ino 
-3247424 off 36806656 (dev /dev/sda1 sector 244987192)
-[ 1326.930851] BTRFS warning (device sde1): checksum error at logical 
-4996352077824 on dev /dev/sda1, physical 125433442304, root 3760, inode 
-3247424, offset 36700160, length 4096, links 1 (path: seamonkey/libxul.so)
-[ 1326.930862] BTRFS error (device sde1): bdev /dev/sda1 errs: wr 0, rd 
-0, flush 0, corrupt 1, gen 0
-[ 1326.988294] BTRFS error (device sde1): fixed up error at logical 
-4996352077824 on dev /dev/sda1
-
-btrfs de st /
-[/dev/sde1].write_io_errs    0
-[/dev/sde1].read_io_errs     0
-[/dev/sde1].flush_io_errs    0
-[/dev/sde1].corruption_errs  0
-[/dev/sde1].generation_errs  0
-[/dev/sdc1].write_io_errs    0
-[/dev/sdc1].read_io_errs     0
-[/dev/sdc1].flush_io_errs    0
-[/dev/sdc1].corruption_errs  0
-[/dev/sdc1].generation_errs  0
-[/dev/sda1].write_io_errs    0
-[/dev/sda1].read_io_errs     0
-[/dev/sda1].flush_io_errs    0
-[/dev/sda1].corruption_errs  1 **** <- Look ma! here I am!
-[/dev/sda1].generation_errs  0
-[/dev/sdb1].write_io_errs    0
-[/dev/sdb1].read_io_errs     0
-[/dev/sdb1].flush_io_errs    0
-[/dev/sdb1].corruption_errs  0
-[/dev/sdb1].generation_errs  0
-[/dev/sdd1].write_io_errs    0
-[/dev/sdd1].read_io_errs     0
-[/dev/sdd1].flush_io_errs    0
-[/dev/sdd1].corruption_errs  0
-[/dev/sdd1].generation_errs  0
-[/dev/sdf1].write_io_errs    0
-[/dev/sdf1].read_io_errs     0
-[/dev/sdf1].flush_io_errs    0
-[/dev/sdf1].corruption_errs  0
-[/dev/sdf1].generation_errs  0
-[/dev/sdg1].write_io_errs    0
-[/dev/sdg1].read_io_errs     0
-[/dev/sdg1].flush_io_errs    0
-[/dev/sdg1].corruption_errs  0
-[/dev/sdg1].generation_errs  0
+diff --git a/tests/generic/472 b/tests/generic/472
+index c74d6c70..04ed3e73 100755
+--- a/tests/generic/472
++++ b/tests/generic/472
+@@ -51,7 +51,7 @@ swapfile_cycle() {
+ 	$CHATTR_PROG +C $swapfile >> $seqres.full 2>&1
+ 	"$here/src/mkswap" $swapfile >> $seqres.full
+ 	"$here/src/swapon" $swapfile 2>&1 | _filter_scratch
+-	swapoff $swapfile 2>> $seeqres.full
++	swapoff $swapfile 2>> $seqres.full
+ 	rm -f $swapfile
+ }
+ 
+diff --git a/tests/generic/496 b/tests/generic/496
+index 1c9651ad..968b8012 100755
+--- a/tests/generic/496
++++ b/tests/generic/496
+@@ -53,7 +53,7 @@ swapfile_cycle() {
+ 	$CHATTR_PROG +C $swapfile >> $seqres.full 2>&1
+ 	"$here/src/mkswap" $swapfile >> $seqres.full
+ 	"$here/src/swapon" $swapfile 2>&1 | _filter_scratch
+-	swapoff $swapfile 2>> $seeqres.full
++	swapoff $swapfile 2>> $seqres.full
+ 	rm -f $swapfile
+ }
+ 
+diff --git a/tests/generic/497 b/tests/generic/497
+index 584af58a..3d5502ef 100755
+--- a/tests/generic/497
++++ b/tests/generic/497
+@@ -53,7 +53,7 @@ swapfile_cycle() {
+ 	$CHATTR_PROG +C $swapfile >> $seqres.full 2>&1
+ 	"$here/src/mkswap" $swapfile >> $seqres.full
+ 	"$here/src/swapon" $swapfile 2>&1 | _filter_scratch
+-	swapoff $swapfile 2>> $seeqres.full
++	swapoff $swapfile 2>> $seqres.full
+ 	rm -f $swapfile
+ }
+ 
+-- 
+2.19.1
 

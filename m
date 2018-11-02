@@ -7,62 +7,62 @@ X-Spam-Status: No, score=-8.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	SPF_PASS,T_DKIMWL_WL_MED,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0039BC32789
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4BFEEC65C22
 	for <linux-btrfs@archiver.kernel.org>; Fri,  2 Nov 2018 21:30:15 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id BC8B42082D
-	for <linux-btrfs@archiver.kernel.org>; Fri,  2 Nov 2018 21:30:14 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 10B2E2082D
+	for <linux-btrfs@archiver.kernel.org>; Fri,  2 Nov 2018 21:30:15 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="J0jh2ZCO"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org BC8B42082D
+	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="jZNu/xsr"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 10B2E2082D
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=osandov.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728280AbeKCGjA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        id S1728283AbeKCGjA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Sat, 3 Nov 2018 02:39:00 -0400
-Received: from mail-it1-f194.google.com ([209.85.166.194]:51318 "EHLO
-        mail-it1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728221AbeKCGi7 (ORCPT
+Received: from mail-it1-f196.google.com ([209.85.166.196]:40607 "EHLO
+        mail-it1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726100AbeKCGi7 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>); Sat, 3 Nov 2018 02:38:59 -0400
-Received: by mail-it1-f194.google.com with SMTP id h13so5119365itl.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 02 Nov 2018 14:30:13 -0700 (PDT)
+Received: by mail-it1-f196.google.com with SMTP id e11so1798318itl.5
+        for <linux-btrfs@vger.kernel.org>; Fri, 02 Nov 2018 14:30:12 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=osandov-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:cc:subject:date:message-id:in-reply-to:references
          :mime-version:content-transfer-encoding;
-        bh=gjAp51U3ifmg7JidLZjofYnOVIERTT3c+O16DBDrf0o=;
-        b=J0jh2ZCOaUtghrsSdyyeE3/taEK5VVjiNqgcTWboUZCLEUjezqnPASvTCDw4qahvtH
-         hnYfH0169xpE7/77kAJjPLp118ym5eptgAetkVNOdp1Z2btrJVoZHWDicgAEEYOAr8LG
-         aIwHyMzpkH3RktRtr0TcOmtaVh1+/fk7Ez+zl8orEiSxrrpbP+PFaPtHWee0slMsyEBD
-         5xyN1lwoS2HPh943ZExr+RU70jzac+IpavUPDYoCJC4lB1U00f9r1O0iADOXpOe4D6qP
-         HyQP9g2Uhd6RszY5kgrGB84e1nc1e17mmtpH9FHEt1ifVcY+z6OdMy8/INMadMXB9RVb
-         jEYw==
+        bh=m5BROwurQKxczGsj4fbck9Sm2kxpwdnTNwXP0TSnM/Q=;
+        b=jZNu/xsrLTHV/usJ/NccmGwYetRzYCkBGMzJPRaS+RXm2kGZGjQw6KYwe654zLOBe0
+         2XunczJmF1qQb4fbntXHwBQgJUHTGrlEVmfdPwwNxz5dAwbSLuj1CDmAVP7P/0EH4fAb
+         Pf1QIISgtYKhXYJcevc/EExcKWcGkHtfJeQh9+td1EacpEo2Wr55hsevElhx+dF8SpbX
+         Q9jLY2mZS+AImdVfYhGPIkFHv7F89NHusGmApP0NF9j2Xiq4WfE0XR865U5SECAtnxvj
+         5QJBlSX2PTDesKvoVPgyUH9UlNjtLEHJ2fRlfJB+v//dq8YQsXlJR8ST/M92tFSEHRKE
+         pejg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=gjAp51U3ifmg7JidLZjofYnOVIERTT3c+O16DBDrf0o=;
-        b=EMotESNvL+wpX1NyQ9qYBnv50fFhT4MD+y7YNToXKK31q3QnwzCvMqlIzYjOJ5oJtu
-         oR3srPJofRdy7yxLllCAkjdqsisKaK7GFU8YB0MuB3YhauaWINJI1s5KtJwWAeBtMlQP
-         bMVH3L0Fn9WPtP39jPYwSBJrxCwEqnnbvsP/hjknjU52D1L1ZYVsEs/YjkxAtN0K8l4c
-         Vak6cVM1s5bqdqDufb16T9aPaPvLaYpQqkK8hAvbB7K3owT7gDRS8y+Q9o6aAUcVYneF
-         pWg1dskSA798gR7Pr1jpNazHs8hkoZlMbRi78CgfPxvRFSeuwAs/MAp3rltfdqrejVHE
-         h1ZA==
-X-Gm-Message-State: AGRZ1gJU+oCtvOn/f2LMmNSw3eO7F9BEi68zhreuxThs/KpOx+a9t3nG
-        DtTOx2FjLh8/UN7H03cGxwojlYNr7b4=
-X-Google-Smtp-Source: AJdET5dGuckXyhnDFdOYsNPE3hwpvpg6laqhCPgseJ+50pWta0afgjy3oQB9jEa3qMMfFSiFHvCZfQ==
-X-Received: by 2002:a05:660c:611:: with SMTP id i17mr270580itk.117.1541194212701;
-        Fri, 02 Nov 2018 14:30:12 -0700 (PDT)
+        bh=m5BROwurQKxczGsj4fbck9Sm2kxpwdnTNwXP0TSnM/Q=;
+        b=a0rrPjpI8ziR49dyjymEWMU3t5gDSA+Gg7MLBlqzUJiGov+7gvrYP3m8qp2G16W0PX
+         vIaPvofVx5UuhnxZxcbI1Uiu2Wh32b1wfyI/+zTpx4bNX0YLWwyyM4XY6BOzFVH2q2WH
+         qU9n5kScvVOzw2UGbmluVHxjukWGEEUVB9vaxh8FkWV9wHqA5+7YfYYAgm91h0BrvU4F
+         xki7ADFllGcqxxaR4f3wP8DoUrs+9nStnfsvTN0vdqHm05czZdIf28dj/Ca6NnwiWHoj
+         Hy8GD3Li1CPvPgjqq7ZJowvLmB3rK1rwfenlRkHiRGl6lEzSZtet5Cm6YVJfZYQCTBmD
+         A/Jw==
+X-Gm-Message-State: AGRZ1gK8uy3QEH3THHqKF2S95+DAQ7NeYpiZ1e+IwAbbV/8VhkE+Cf5R
+        W8mJ+8geI2R7h7b9PgxsM4sdJA==
+X-Google-Smtp-Source: AJdET5eGNytvkYSuq8Z50y/lglN8O3bKKH1iGw4FRdjX433N2jtiQM7cYy4oS2JE1iQbkbt/1VgsFQ==
+X-Received: by 2002:a02:2b29:: with SMTP id h41-v6mr11470226jaa.12.1541194211724;
+        Fri, 02 Nov 2018 14:30:11 -0700 (PDT)
 Received: from vader.thefacebook.com ([2620:10d:c090:200::4:e24f])
-        by smtp.gmail.com with ESMTPSA id n130-v6sm929419itb.36.2018.11.02.14.30.11
+        by smtp.gmail.com with ESMTPSA id n130-v6sm929419itb.36.2018.11.02.14.30.10
         (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Fri, 02 Nov 2018 14:30:12 -0700 (PDT)
+        Fri, 02 Nov 2018 14:30:11 -0700 (PDT)
 From:   Omar Sandoval <osandov@osandov.com>
 To:     fstests@vger.kernel.org
 Cc:     kernel-team@fb.com, linux-btrfs@vger.kernel.org
-Subject: [PATCH 3/7] btrfs: test swap file activation restrictions
-Date:   Fri,  2 Nov 2018 14:29:38 -0700
-Message-Id: <9eeea2eecff0b9fad27f49c082e987232edb40c0.1541193856.git.osandov@fb.com>
+Subject: [PATCH 2/7] generic/{472,496}: fix swap file creation on Btrfs
+Date:   Fri,  2 Nov 2018 14:29:37 -0700
+Message-Id: <6da5f398715af4f7478554920470a85e8a186b50.1541193856.git.osandov@fb.com>
 X-Mailer: git-send-email 2.19.1
 In-Reply-To: <cover.1541193856.git.osandov@fb.com>
 References: <cover.1541193856.git.osandov@fb.com>
@@ -75,99 +75,86 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Omar Sandoval <osandov@fb.com>
 
-Swap files on Btrfs have some restrictions not applicable to other
-filesystems.
+The swap file must be set nocow before it is written to, otherwise it is
+ignored and Btrfs refuses to activate it as swap.
 
+Fixes: 25ce9740065e ("generic: test swapfile creation, activation, and deactivation")
 Signed-off-by: Omar Sandoval <osandov@fb.com>
 ---
- tests/btrfs/173     | 55 +++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/173.out |  5 +++++
- tests/btrfs/group   |  1 +
- 3 files changed, 61 insertions(+)
- create mode 100755 tests/btrfs/173
- create mode 100644 tests/btrfs/173.out
+ tests/generic/472 | 14 ++++++--------
+ tests/generic/496 |  6 +++---
+ 2 files changed, 9 insertions(+), 11 deletions(-)
 
-diff --git a/tests/btrfs/173 b/tests/btrfs/173
-new file mode 100755
-index 00000000..665bec39
---- /dev/null
-+++ b/tests/btrfs/173
-@@ -0,0 +1,55 @@
-+#! /bin/bash
-+# SPDX-License-Identifier: GPL-2.0
-+# Copyright (c) 2018 Facebook.  All Rights Reserved.
-+#
-+# FS QA Test 173
-+#
-+# Test swap file activation restrictions specific to Btrfs.
-+#
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1	# failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+	cd /
-+	rm -f $tmp.*
-+}
-+
-+. ./common/rc
-+. ./common/filter
-+
-+rm -f $seqres.full
-+
-+_supported_fs generic
-+_supported_os Linux
-+_require_scratch_swapfile
-+
-+_scratch_mkfs >> $seqres.full 2>&1
-+_scratch_mount
-+
-+echo "COW file"
-+# We can't use _format_swapfile because we don't want chattr +C, and we can't
-+# unset it after the swap file has been created.
-+rm -f "$SCRATCH_MNT/swap"
-+touch "$SCRATCH_MNT/swap"
-+chmod 0600 "$SCRATCH_MNT/swap"
-+_pwrite_byte 0x61 0 $(($(get_page_size) * 10)) "$SCRATCH_MNT/swap" >> $seqres.full
-+mkswap "$SCRATCH_MNT/swap" >> $seqres.full
-+swapon "$SCRATCH_MNT/swap" 2>&1 | _filter_scratch
-+swapoff "$SCRATCH_MNT/swap" >/dev/null 2>&1
-+
-+echo "Compressed file"
-+rm -f "$SCRATCH_MNT/swap"
-+_format_swapfile "$SCRATCH_MNT/swap" $(($(get_page_size) * 10))
-+$CHATTR_PROG +c "$SCRATCH_MNT/swap"
-+swapon "$SCRATCH_MNT/swap" 2>&1 | _filter_scratch
-+swapoff "$SCRATCH_MNT/swap" >/dev/null 2>&1
-+
-+status=0
-+exit
-diff --git a/tests/btrfs/173.out b/tests/btrfs/173.out
-new file mode 100644
-index 00000000..6d7856bf
---- /dev/null
-+++ b/tests/btrfs/173.out
-@@ -0,0 +1,5 @@
-+QA output created by 173
-+COW file
-+swapon: SCRATCH_MNT/swap: swapon failed: Invalid argument
-+Compressed file
-+swapon: SCRATCH_MNT/swap: swapon failed: Invalid argument
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index a490d7eb..3525014f 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -175,3 +175,4 @@
- 170 auto quick snapshot
- 171 auto quick qgroup
- 172 auto quick punch
-+173 auto quick swap
+diff --git a/tests/generic/472 b/tests/generic/472
+index 04ed3e73..aba4a007 100755
+--- a/tests/generic/472
++++ b/tests/generic/472
+@@ -42,13 +42,15 @@ _scratch_mount >>$seqres.full 2>&1
+ 
+ swapfile=$SCRATCH_MNT/swap
+ len=$((2 * 1048576))
+-page_size=$(get_page_size)
+ 
+ swapfile_cycle() {
+ 	local swapfile="$1"
++	local len="$2"
+ 
++	touch $swapfile
+ 	# Swap files must be nocow on Btrfs.
+ 	$CHATTR_PROG +C $swapfile >> $seqres.full 2>&1
++	_pwrite_byte 0x58 0 $len $swapfile >> $seqres.full
+ 	"$here/src/mkswap" $swapfile >> $seqres.full
+ 	"$here/src/swapon" $swapfile 2>&1 | _filter_scratch
+ 	swapoff $swapfile 2>> $seqres.full
+@@ -57,20 +59,16 @@ swapfile_cycle() {
+ 
+ # Create a regular swap file
+ echo "regular swap" | tee -a $seqres.full
+-_pwrite_byte 0x58 0 $len $swapfile >> $seqres.full
+-swapfile_cycle $swapfile
++swapfile_cycle $swapfile $len
+ 
+ # Create a swap file with a little too much junk on the end
+ echo "too long swap" | tee -a $seqres.full
+-_pwrite_byte 0x58 0 $((len + 3)) $swapfile >> $seqres.full
+-swapfile_cycle $swapfile
++swapfile_cycle $swapfile $((len + 3))
+ 
+ # Create a ridiculously small swap file.  Each swap file must have at least
+ # two pages after the header page.
+ echo "tiny swap" | tee -a $seqres.full
+-tiny_len=$((page_size * 3))
+-_pwrite_byte 0x58 0 $tiny_len $swapfile >> $seqres.full
+-swapfile_cycle $swapfile
++swapfile_cycle $swapfile $(($(get_page_size) * 3))
+ 
+ status=0
+ exit
+diff --git a/tests/generic/496 b/tests/generic/496
+index 968b8012..3083eef0 100755
+--- a/tests/generic/496
++++ b/tests/generic/496
+@@ -49,8 +49,6 @@ page_size=$(get_page_size)
+ swapfile_cycle() {
+ 	local swapfile="$1"
+ 
+-	# Swap files must be nocow on Btrfs.
+-	$CHATTR_PROG +C $swapfile >> $seqres.full 2>&1
+ 	"$here/src/mkswap" $swapfile >> $seqres.full
+ 	"$here/src/swapon" $swapfile 2>&1 | _filter_scratch
+ 	swapoff $swapfile 2>> $seqres.full
+@@ -59,8 +57,10 @@ swapfile_cycle() {
+ 
+ # Create a fallocated swap file
+ echo "fallocate swap" | tee -a $seqres.full
+-$XFS_IO_PROG -f -c "falloc 0 $len" $swapfile >> $seqres.full
++touch $swapfile
++# Swap files must be nocow on Btrfs.
+ $CHATTR_PROG +C $swapfile >> $seqres.full 2>&1
++$XFS_IO_PROG -f -c "falloc 0 $len" $swapfile >> $seqres.full
+ "$here/src/mkswap" $swapfile
+ "$here/src/swapon" $swapfile >> $seqres.full 2>&1 || \
+ 	_notrun "fallocated swap not supported here"
 -- 
 2.19.1
 

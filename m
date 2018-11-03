@@ -2,74 +2,97 @@ Return-Path: <SRS0=HXCT=NO=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.5 required=3.0 tests=DKIM_ADSP_CUSTOM_MED,
+	DKIM_INVALID,DKIM_SIGNED,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_PASS,USER_AGENT_GIT autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 57FD1C0044C
-	for <linux-btrfs@archiver.kernel.org>; Sat,  3 Nov 2018 08:24:48 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8B8FBC6786F
+	for <linux-btrfs@archiver.kernel.org>; Sat,  3 Nov 2018 08:37:32 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id EFE8E2081F
-	for <linux-btrfs@archiver.kernel.org>; Sat,  3 Nov 2018 08:24:47 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org EFE8E2081F
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=cox.net
+	by mail.kernel.org (Postfix) with ESMTP id 4FA7F2081B
+	for <linux-btrfs@archiver.kernel.org>; Sat,  3 Nov 2018 08:37:32 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="k6A35Quw"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 4FA7F2081B
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726498AbeKCRfS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 3 Nov 2018 13:35:18 -0400
-Received: from [195.159.176.226] ([195.159.176.226]:43624 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1726229AbeKCRfR (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 3 Nov 2018 13:35:17 -0400
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-3@m.gmane.org>)
-        id 1gIrCS-0004iM-Bo
-        for linux-btrfs@vger.kernel.org; Sat, 03 Nov 2018 09:22:32 +0100
-X-Injected-Via-Gmane: http://gmane.org/
-To:     linux-btrfs@vger.kernel.org
-From:   Duncan <1i5t5.duncan@cox.net>
-Subject: Re: BTRFS did it's job nicely (thanks!)
-Date:   Sat, 3 Nov 2018 08:22:26 +0000 (UTC)
-Message-ID: <pan$e0431$656787$a32d9060$a6ef81db@cox.net>
-References: <d03d611b-cd2e-d267-268a-255f90348e43@dirtcellar.net>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 8bit
-X-Complaints-To: usenet@blaine.gmane.org
-User-Agent: Pan/0.146 (Hic habitat felicitas; 22c743dad)
+        id S1726948AbeKCRsA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 3 Nov 2018 13:48:00 -0400
+Received: from mail-pf1-f193.google.com ([209.85.210.193]:39748 "EHLO
+        mail-pf1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726290AbeKCRr7 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 3 Nov 2018 13:47:59 -0400
+Received: by mail-pf1-f193.google.com with SMTP id n11-v6so2087440pfb.6;
+        Sat, 03 Nov 2018 01:37:26 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=from:to:cc:subject:date:message-id;
+        bh=8h3CNTWPb6Lvcnin7naV/pZKs8madyTgpUWU5jCTMvY=;
+        b=k6A35QuwuUANaP/GQh4gfcj0qbVQQhwfiLyLXGFJ3/rXBqWY9SzEZN+SZb/xjdL7nd
+         yvzHYuCnMF4VDmrF4VYhtgLz0PUcSCpyozUF/ozYBS7sN2/oNCmGBO8dzTw/5llzHge0
+         g+zs/tTgJudZlZLTSSbca2yHxzWwxAYHlEqmZRII+xXznlq6wuGMv2wh2Aart1fhYWH2
+         9KlAKLVwrRg+WZbUhr/ZRqYeP5GJFyMFANlMnp1t586dckNDF74yxUuO2u9CRjtknENM
+         CzN9WEOq1fSLBLFnmOx8CXOElUbRPuoM1PlJhMweyUUmQgBDAdL1SoTOmTyGHwt1GEH/
+         pjbA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:from:to:cc:subject:date:message-id;
+        bh=8h3CNTWPb6Lvcnin7naV/pZKs8madyTgpUWU5jCTMvY=;
+        b=ov6vceyAT0VN7wSZuIww0KWjpDmi3ZBZsb8rbmg6gUGLQEd8kn/9HAZglCPaUVMCU+
+         EqJH6bw2hpSvcEn6PeRg/TGlUR1GBswJZwHCwPMkwmJAJXVlqCZuMHoBm2RDfbIOWN6g
+         EAHlUKSQVj4pS2D6AIdYBW4jsYWxhZyWCiUtzFXwM48Lwb3im+IKUBGij4rSZ0NnLb4L
+         0nNPkZDQVuaadI7BdZjJR73EXt3t70bWyhFis3MzlOpPzFxvS39bq/KyhQ2I/tkloyy5
+         6//cuuoEPfDRSumKUSzOU8kPtCO7riXVIfrES51UxBY0JKZAr8latwTmiGCfqHPDlfvG
+         lnNg==
+X-Gm-Message-State: AGRZ1gKU/EBiE5+40zdAu2kU6KauFSozehvapapZSq/jgyoiv54AIdSa
+        cJF9F2IxVIhquMb703HP4nuPiqZWH+I=
+X-Google-Smtp-Source: AJdET5f8PKqu9MmtVC1Jel/xCenFpQwgYs1ipE5KSrPVFviGzB0Cl3s8Xzmy48qrPd/To4PKA9KmEw==
+X-Received: by 2002:a63:1342:: with SMTP id 2-v6mr13435345pgt.19.1541234246249;
+        Sat, 03 Nov 2018 01:37:26 -0700 (PDT)
+Received: from localhost.localdomain ([45.56.155.205])
+        by smtp.gmail.com with ESMTPSA id t4-v6sm38185543pfh.45.2018.11.03.01.37.18
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Sat, 03 Nov 2018 01:37:25 -0700 (PDT)
+From:   hmsjwzb <weizhefix@gmail.com>
+Cc:     clm@fb.com, hmsjwzb <weizhefix@gmail.com>,
+        Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>,
+        Omar Sandoval <osandov@fb.com>,
+        Filipe Manana <fdmanana@suse.com>, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+Subject: [PATCH] Change the total_dirty from SZ_256M to SZ_64M.
+Date:   Sat,  3 Nov 2018 16:36:53 +0800
+Message-Id: <20181103083654.655-1-weizhefix@gmail.com>
+X-Mailer: git-send-email 2.17.1
+To:     unlisted-recipients:; (no To-header on input)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-waxhead posted on Fri, 02 Nov 2018 20:54:40 +0100 as excerpted:
+The SZ_256M will cause trouble in platform with less than 256M memory.
+For example, a qemu virtual machine.
 
-> Note that I tend to interpret the btrfs de st / output as if the error
-> was NOT fixed even if (seems clearly that) it was, so I think the output
-> is a bit misleading... just saying...
+Signed-off-by: hmsjwzb <weizhefix@gmail.com>
+---
+ fs/btrfs/tests/extent-io-tests.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-See the btrfs-device manpage, stats subcommand, -z|--reset option, and 
-device stats section:
-
--z|--reset
-Print the stats and reset the values to zero afterwards.
-
-DEVICE STATS
-The device stats keep persistent record of several error classes related 
-to doing IO. The current values are printed at mount time and
-updated during filesystem lifetime or from a scrub run.
-
-
-So stats keeps a count of historic errors and is only reset when you 
-specifically reset it, *NOT* when the error is fixed.
-
-(There's actually a recent patch, I believe in the current dev kernel 
-4.20/5.0, that will reset a device's stats automatically for the btrfs 
-replace case when it's actually a different device afterward anyway.  
-Apparently, it doesn't even do /that/ automatically yet.  Keep that in 
-mind if you replace that device.)
-
+diff --git a/fs/btrfs/tests/extent-io-tests.c b/fs/btrfs/tests/extent-io-tests.c
+index 9e0f4a01be14..cb23dce96a2d 100644
+--- a/fs/btrfs/tests/extent-io-tests.c
++++ b/fs/btrfs/tests/extent-io-tests.c
+@@ -62,7 +62,7 @@ static int test_find_delalloc(u32 sectorsize)
+ 	struct page *page;
+ 	struct page *locked_page = NULL;
+ 	unsigned long index = 0;
+-	u64 total_dirty = SZ_256M;
++	u64 total_dirty = SZ_64M;
+ 	u64 max_bytes = SZ_128M;
+ 	u64 start, end, test_start;
+ 	u64 found;
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+2.17.1
 

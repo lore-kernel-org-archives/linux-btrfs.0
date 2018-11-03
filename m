@@ -5,69 +5,71 @@ X-Spam-Level:
 X-Spam-Status: No, score=-0.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 99B34C32789
-	for <linux-btrfs@archiver.kernel.org>; Sat,  3 Nov 2018 01:38:30 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 57FD1C0044C
+	for <linux-btrfs@archiver.kernel.org>; Sat,  3 Nov 2018 08:24:48 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 301B320831
-	for <linux-btrfs@archiver.kernel.org>; Sat,  3 Nov 2018 01:38:30 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 301B320831
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=scientia.net
+	by mail.kernel.org (Postfix) with ESMTP id EFE8E2081F
+	for <linux-btrfs@archiver.kernel.org>; Sat,  3 Nov 2018 08:24:47 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org EFE8E2081F
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=cox.net
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728404AbeKCKsA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 3 Nov 2018 06:48:00 -0400
-Received: from mailgw-02.dd24.net ([193.46.215.43]:58858 "EHLO
-        mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728233AbeKCKr7 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 3 Nov 2018 06:47:59 -0400
-Received: from mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.27])
-        by mailgw-02.dd24.net (Postfix) with ESMTP id 0AE2F5FF46;
-        Sat,  3 Nov 2018 01:38:27 +0000 (UTC)
-X-Virus-Scanned: Debian amavisd-new at
-        mailpolicy-02.live.igb.homer.key-systems.net
-Received: from smtp.dd24.net ([192.168.1.36])
-        by mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.25]) (amavisd-new, port 10236)
-        with ESMTP id Uq_VsuD6mcjF; Sat,  3 Nov 2018 01:38:25 +0000 (UTC)
-Received: from heisenberg.fritz.box (ppp-82-135-88-3.dynamic.mnet-online.de [82.135.88.3])
-        (using TLSv1.2 with cipher DHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by smtp.dd24.net (Postfix) with ESMTPSA;
-        Sat,  3 Nov 2018 01:38:25 +0000 (UTC)
-Message-ID: <5b35282669719fbfdea0a0076a45732ffb082561.camel@scientia.net>
-Subject: Re: fsck lowmem mode only: ERROR: errors found in fs roots
-From:   Christoph Anton Mitterer <calestyo@scientia.net>
-To:     Su Yue <Damenly_Su@gmx.com>, Su Yue <suy.fnst@cn.fujitsu.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Date:   Sat, 03 Nov 2018 02:38:24 +0100
-In-Reply-To: <a88d9b34-6a99-ce64-4794-8e25f590f50e@gmx.com>
-References: <8d8c90d3edfcc9e73428d3730496d48b1160b39b.camel@scientia.net>
-         <a141cad2-0a08-555e-eb05-da2dceb54025@cn.fujitsu.com>
-         <7146cafcc48d46ad123388d492807cbba08e101c.camel@scientia.net>
-         <94750beb-c339-756a-11ec-f2bcc72b98e3@cn.fujitsu.com>
-         <e2ac3e05ddd1297d4017cbeecfa4b392b04613ad.camel@scientia.net>
-         <04ccd53107bb11e08baaa8c1ec55b11b00133d3b.camel@scientia.net>
-         <412fc97cf7979251b96c101c87e4ff171049a6dc.camel@scientia.net>
-         <a88d9b34-6a99-ce64-4794-8e25f590f50e@gmx.com>
-Content-Type: text/plain; charset="UTF-8"
-User-Agent: Evolution 3.30.1-1 
+        id S1726498AbeKCRfS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 3 Nov 2018 13:35:18 -0400
+Received: from [195.159.176.226] ([195.159.176.226]:43624 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1726229AbeKCRfR (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 3 Nov 2018 13:35:17 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-3@m.gmane.org>)
+        id 1gIrCS-0004iM-Bo
+        for linux-btrfs@vger.kernel.org; Sat, 03 Nov 2018 09:22:32 +0100
+X-Injected-Via-Gmane: http://gmane.org/
+To:     linux-btrfs@vger.kernel.org
+From:   Duncan <1i5t5.duncan@cox.net>
+Subject: Re: BTRFS did it's job nicely (thanks!)
+Date:   Sat, 3 Nov 2018 08:22:26 +0000 (UTC)
+Message-ID: <pan$e0431$656787$a32d9060$a6ef81db@cox.net>
+References: <d03d611b-cd2e-d267-268a-255f90348e43@dirtcellar.net>
 Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+X-Complaints-To: usenet@blaine.gmane.org
+User-Agent: Pan/0.146 (Hic habitat felicitas; 22c743dad)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Sat, 2018-11-03 at 09:34 +0800, Su Yue wrote:
-> Sorry for the late reply cause I'm busy at other things.
-No worries :-)
+waxhead posted on Fri, 02 Nov 2018 20:54:40 +0100 as excerpted:
+
+> Note that I tend to interpret the btrfs de st / output as if the error
+> was NOT fixed even if (seems clearly that) it was, so I think the output
+> is a bit misleading... just saying...
+
+See the btrfs-device manpage, stats subcommand, -z|--reset option, and 
+device stats section:
+
+-z|--reset
+Print the stats and reset the values to zero afterwards.
+
+DEVICE STATS
+The device stats keep persistent record of several error classes related 
+to doing IO. The current values are printed at mount time and
+updated during filesystem lifetime or from a scrub run.
 
 
-> I just looked through related codes and found the bug.
-> The patches can fix it. So no need to do more tests.
-> Thanks to your tests and patience. :)
-Thanks for fixing :-)
+So stats keeps a count of historic errors and is only reset when you 
+specifically reset it, *NOT* when the error is fixed.
 
+(There's actually a recent patch, I believe in the current dev kernel 
+4.20/5.0, that will reset a device's stats automatically for the btrfs 
+replace case when it's actually a different device afterward anyway.  
+Apparently, it doesn't even do /that/ automatically yet.  Keep that in 
+mind if you replace that device.)
 
-Best wishes,
-Chris.
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

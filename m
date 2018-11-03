@@ -2,97 +2,128 @@ Return-Path: <SRS0=HXCT=NO=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.5 required=3.0 tests=DKIM_ADSP_CUSTOM_MED,
-	DKIM_INVALID,DKIM_SIGNED,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_PASS,USER_AGENT_GIT autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8B8FBC6786F
-	for <linux-btrfs@archiver.kernel.org>; Sat,  3 Nov 2018 08:37:32 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B9DC1C0044C
+	for <linux-btrfs@archiver.kernel.org>; Sat,  3 Nov 2018 09:01:23 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 4FA7F2081B
-	for <linux-btrfs@archiver.kernel.org>; Sat,  3 Nov 2018 08:37:32 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="k6A35Quw"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 4FA7F2081B
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
+	by mail.kernel.org (Postfix) with ESMTP id 898242082E
+	for <linux-btrfs@archiver.kernel.org>; Sat,  3 Nov 2018 09:01:23 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 898242082E
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726948AbeKCRsA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 3 Nov 2018 13:48:00 -0400
-Received: from mail-pf1-f193.google.com ([209.85.210.193]:39748 "EHLO
-        mail-pf1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726290AbeKCRr7 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 3 Nov 2018 13:47:59 -0400
-Received: by mail-pf1-f193.google.com with SMTP id n11-v6so2087440pfb.6;
-        Sat, 03 Nov 2018 01:37:26 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=from:to:cc:subject:date:message-id;
-        bh=8h3CNTWPb6Lvcnin7naV/pZKs8madyTgpUWU5jCTMvY=;
-        b=k6A35QuwuUANaP/GQh4gfcj0qbVQQhwfiLyLXGFJ3/rXBqWY9SzEZN+SZb/xjdL7nd
-         yvzHYuCnMF4VDmrF4VYhtgLz0PUcSCpyozUF/ozYBS7sN2/oNCmGBO8dzTw/5llzHge0
-         g+zs/tTgJudZlZLTSSbca2yHxzWwxAYHlEqmZRII+xXznlq6wuGMv2wh2Aart1fhYWH2
-         9KlAKLVwrRg+WZbUhr/ZRqYeP5GJFyMFANlMnp1t586dckNDF74yxUuO2u9CRjtknENM
-         CzN9WEOq1fSLBLFnmOx8CXOElUbRPuoM1PlJhMweyUUmQgBDAdL1SoTOmTyGHwt1GEH/
-         pjbA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id;
-        bh=8h3CNTWPb6Lvcnin7naV/pZKs8madyTgpUWU5jCTMvY=;
-        b=ov6vceyAT0VN7wSZuIww0KWjpDmi3ZBZsb8rbmg6gUGLQEd8kn/9HAZglCPaUVMCU+
-         EqJH6bw2hpSvcEn6PeRg/TGlUR1GBswJZwHCwPMkwmJAJXVlqCZuMHoBm2RDfbIOWN6g
-         EAHlUKSQVj4pS2D6AIdYBW4jsYWxhZyWCiUtzFXwM48Lwb3im+IKUBGij4rSZ0NnLb4L
-         0nNPkZDQVuaadI7BdZjJR73EXt3t70bWyhFis3MzlOpPzFxvS39bq/KyhQ2I/tkloyy5
-         6//cuuoEPfDRSumKUSzOU8kPtCO7riXVIfrES51UxBY0JKZAr8latwTmiGCfqHPDlfvG
-         lnNg==
-X-Gm-Message-State: AGRZ1gKU/EBiE5+40zdAu2kU6KauFSozehvapapZSq/jgyoiv54AIdSa
-        cJF9F2IxVIhquMb703HP4nuPiqZWH+I=
-X-Google-Smtp-Source: AJdET5f8PKqu9MmtVC1Jel/xCenFpQwgYs1ipE5KSrPVFviGzB0Cl3s8Xzmy48qrPd/To4PKA9KmEw==
-X-Received: by 2002:a63:1342:: with SMTP id 2-v6mr13435345pgt.19.1541234246249;
-        Sat, 03 Nov 2018 01:37:26 -0700 (PDT)
-Received: from localhost.localdomain ([45.56.155.205])
-        by smtp.gmail.com with ESMTPSA id t4-v6sm38185543pfh.45.2018.11.03.01.37.18
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Sat, 03 Nov 2018 01:37:25 -0700 (PDT)
-From:   hmsjwzb <weizhefix@gmail.com>
-Cc:     clm@fb.com, hmsjwzb <weizhefix@gmail.com>,
-        Josef Bacik <josef@toxicpanda.com>,
+        id S1726586AbeKCSL4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 3 Nov 2018 14:11:56 -0400
+Received: from mx2.suse.de ([195.135.220.15]:43176 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726539AbeKCSL4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 3 Nov 2018 14:11:56 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 8FEAFB049;
+        Sat,  3 Nov 2018 09:01:16 +0000 (UTC)
+Subject: Re: [PATCH] Change the total_dirty from SZ_256M to SZ_64M.
+To:     hmsjwzb <weizhefix@gmail.com>
+Cc:     clm@fb.com, Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.com>,
         Omar Sandoval <osandov@fb.com>,
         Filipe Manana <fdmanana@suse.com>, linux-btrfs@vger.kernel.org,
         linux-kernel@vger.kernel.org
-Subject: [PATCH] Change the total_dirty from SZ_256M to SZ_64M.
-Date:   Sat,  3 Nov 2018 16:36:53 +0800
-Message-Id: <20181103083654.655-1-weizhefix@gmail.com>
-X-Mailer: git-send-email 2.17.1
-To:     unlisted-recipients:; (no To-header on input)
+References: <20181103083654.655-1-weizhefix@gmail.com>
+From:   Nikolay Borisov <nborisov@suse.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <8965ea1d-c29f-7bdf-44cb-874511899567@suse.com>
+Date:   Sat, 3 Nov 2018 11:01:14 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.2.1
+MIME-Version: 1.0
+In-Reply-To: <20181103083654.655-1-weizhefix@gmail.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The SZ_256M will cause trouble in platform with less than 256M memory.
-For example, a qemu virtual machine.
 
-Signed-off-by: hmsjwzb <weizhefix@gmail.com>
----
- fs/btrfs/tests/extent-io-tests.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/tests/extent-io-tests.c b/fs/btrfs/tests/extent-io-tests.c
-index 9e0f4a01be14..cb23dce96a2d 100644
---- a/fs/btrfs/tests/extent-io-tests.c
-+++ b/fs/btrfs/tests/extent-io-tests.c
-@@ -62,7 +62,7 @@ static int test_find_delalloc(u32 sectorsize)
- 	struct page *page;
- 	struct page *locked_page = NULL;
- 	unsigned long index = 0;
--	u64 total_dirty = SZ_256M;
-+	u64 total_dirty = SZ_64M;
- 	u64 max_bytes = SZ_128M;
- 	u64 start, end, test_start;
- 	u64 found;
--- 
-2.17.1
+On 3.11.18 г. 10:36 ч., hmsjwzb wrote:
+> The SZ_256M will cause trouble in platform with less than 256M memory.
+> For example, a qemu virtual machine.
+> 
+> Signed-off-by: hmsjwzb <weizhefix@gmail.com>
 
+If you have actually taken the care to understand the code in
+test_find_delalloc you would have seen that total_dirty and max_bytes
+are actually inter-dependent so you cannot really change total_bytes
+without adjusting max_bytes as well. Otherwise tests will start breaking.
+
+NACK on this (and likely any future postings of this) since the tests
+are sized in a such a way so as to test design limits (such as the max
+extent size which is 128MB)
+
+
+> ---
+>  fs/btrfs/tests/extent-io-tests.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/tests/extent-io-tests.c b/fs/btrfs/tests/extent-io-tests.c
+> index 9e0f4a01be14..cb23dce96a2d 100644
+> --- a/fs/btrfs/tests/extent-io-tests.c
+> +++ b/fs/btrfs/tests/extent-io-tests.c
+> @@ -62,7 +62,7 @@ static int test_find_delalloc(u32 sectorsize)
+>  	struct page *page;
+>  	struct page *locked_page = NULL;
+>  	unsigned long index = 0;
+> -	u64 total_dirty = SZ_256M;
+> +	u64 total_dirty = SZ_64M;
+>  	u64 max_bytes = SZ_128M;
+>  	u64 start, end, test_start;
+>  	u64 found;
+> 

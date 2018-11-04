@@ -2,326 +2,141 @@ Return-Path: <SRS0=b0aI=NP=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+X-Spam-Status: No, score=-2.3 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED
-	autolearn=ham autolearn_force=no version=3.4.0
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_MUTT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 92E93ECDE44
-	for <linux-btrfs@archiver.kernel.org>; Sun,  4 Nov 2018 15:35:50 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A5D91C32789
+	for <linux-btrfs@archiver.kernel.org>; Sun,  4 Nov 2018 16:09:40 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 2E3C02082E
-	for <linux-btrfs@archiver.kernel.org>; Sun,  4 Nov 2018 15:35:50 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5A04D2082E
+	for <linux-btrfs@archiver.kernel.org>; Sun,  4 Nov 2018 16:09:40 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="djlXYund"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 2E3C02082E
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="LWzBc2LQ"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 5A04D2082E
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730519AbeKEAvL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 4 Nov 2018 19:51:11 -0500
-Received: from mail-lf1-f41.google.com ([209.85.167.41]:42598 "EHLO
-        mail-lf1-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1729687AbeKEAvL (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 4 Nov 2018 19:51:11 -0500
-Received: by mail-lf1-f41.google.com with SMTP id q6-v6so4363633lfh.9
-        for <linux-btrfs@vger.kernel.org>; Sun, 04 Nov 2018 07:35:46 -0800 (PST)
+        id S1730791AbeKEBZH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 4 Nov 2018 20:25:07 -0500
+Received: from mail-pf1-f195.google.com ([209.85.210.195]:43668 "EHLO
+        mail-pf1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1730078AbeKEBZH (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 4 Nov 2018 20:25:07 -0500
+Received: by mail-pf1-f195.google.com with SMTP id g7-v6so946138pfo.10;
+        Sun, 04 Nov 2018 08:09:38 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20161025;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to;
-        bh=MEC0AQuK9d64aaAtNdLTIR6x/0rbY57CVEzYQeeMM9I=;
-        b=djlXYundbfGolz/LsY0kZiunNSxQbQW0aRKLGo59RoRcOO8gJWMcujzsBg9gNN2JtG
-         OsOoLcCzuy34KZU0o1a/F5UQAQpH+lc9ykReVkkeIYAafxWK1+4jnLL+zkRY0B5FNYrg
-         gpwDgrU4rEwZcJVOSwezrhkg5GRMLYqLUBbx9FT6NkvI+WIkPtmzrXiVmx5K2Qq+pev1
-         b5brvMSSSj/OUJcb9AIK76/izn/kwOwKBkHKKymEe0gZKF7X0CinA0LUFWzkgG4i15HP
-         Amdyd9HQWJjLlEnGHKMwG1JSWaodMtsRJp8xSqLVL7nYg94OKubDoIy5Y2vRyQxyGnZA
-         Y92w==
+        h=date:from:to:cc:subject:message-id:references:mime-version
+         :content-disposition:in-reply-to:user-agent;
+        bh=pJH1UJ1UUiZqA2H1nvzPglXtxbwZj5EyROaISkJw4F4=;
+        b=LWzBc2LQTWnbcvJrInkd3YdlttbNw7WYGCIsBGK7L4Q5kqPYOzKYheAMlfFjHY7PWT
+         tEmQ/8nlTe4zC2J6F6WcgPMx0Pe4YzS5eHnxTJFQyHhNwOYOIwb4JQReMAz5R98cFyUT
+         8u7mZINUHKAlmj968CCjgwMRmN57Tu4Mk99qLywT6JZP38iIkqrTi5OsGipA/PNi4+fy
+         6VmsAhCdqZFl7oHe365oQiPYrQPBb+uiiLGhWi035LPHliX+x+xrNip35EBNfRr5ezNX
+         X22UzApYGS3BwA/NGXARhgPSfIi5hV+dk+/6p3fISMJTWdegt1b5mY+PWAvgDBAAEOSw
+         TVgA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to;
-        bh=MEC0AQuK9d64aaAtNdLTIR6x/0rbY57CVEzYQeeMM9I=;
-        b=oy0HgsWuiq3h+x6eJKm9y3B3HVydb6+ECqMvPjpCgNDIDqj3Co4Br+Pu3SCOAFwAqe
-         /ROtk7eliMjhO7rCXeM0pu3JKs4kWwupfv2ddt1s5w6qrcvTPK5LDRXktdw/beizC0FG
-         SA2TNd/zaDeyxIAcYq3BZxd6LEIj0PTTlDIxhOjWFahmLCfXFjDoBVj2IQyeQTqdoZik
-         2y7udycN/ZPf7YAN5VurxSEBq+G60vfpWD+Auz+2EFjjubD4sJXHipM55sBdb46C17yq
-         JChVZfCLEUcnZr/OmAWsBQSFvyPgF5yT/yAdprwaAaRfRHGpE7/MdlW6tP5BeHGMwOks
-         MOGg==
-X-Gm-Message-State: AGRZ1gJowBTrNZAnIjWzJWKDQ+1H8RwznFnYIdJvBZkHBuA1JUqFTxcU
-        tMP/JV1LrtR1CxqDHA0H0GPXh11LnkSoxdXVBWkaRag=
-X-Google-Smtp-Source: AJdET5cr81J4iJBYpmW0swIkCFuQpVOqrn6UwogPaYwDmf4t5pxGNoPRZqmiLzwld22hruxcuNLE6notw508h5uFVJ8=
-X-Received: by 2002:a19:ae03:: with SMTP id f3mr5083583lfc.86.1541345745321;
- Sun, 04 Nov 2018 07:35:45 -0800 (PST)
+        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
+         :mime-version:content-disposition:in-reply-to:user-agent;
+        bh=pJH1UJ1UUiZqA2H1nvzPglXtxbwZj5EyROaISkJw4F4=;
+        b=m70uPTUmfCcSOcPcPyP5t7XKlMSkA2Q6k4Q59zaZjz5EqSe54J7uEE2T09mRWJFZW+
+         8gd9dqwtcQWdyz7ygpg1s6TS+l/jvg1XWRWb0oO4pVNUI5Ln44BTc6jF5LuZtxQlFC7m
+         i2VvF66/t2VBW5jgYIz3eu2MpJRw/8fSuWMnNm5J4r/6uaM2wZM3WJBB6+aiJkkL8YFB
+         /ah4+ZFRkUsh32x+pDVBp0HlMMuliLnoKl+eJJzx5isLd9TME4oWrvT5/m+H9iSetieH
+         aTMzEl1lcYzjUD8MCwfuSqvNllv96EbjEys6wkI4U+xJFdAz7vjYkGup4SVnREeBp3YI
+         MwUw==
+X-Gm-Message-State: AGRZ1gJXeOD+6J/hqN3rzqZaLxq1VZCh+RbYbBwLZWyRQbOP4NkAWqsA
+        RXr0Z3CxGHmaNQwlN+VZWsY/uffHpR88Lg==
+X-Google-Smtp-Source: AJdET5fS+K/0Y9NAR2EJ31/Tlqu5pNYP7gXQy2dtk7uAkqeSK3BrlKpKwkEG4BExYgN0C1b/Dl32Gw==
+X-Received: by 2002:a63:a112:: with SMTP id b18mr17368006pgf.440.1541347778158;
+        Sun, 04 Nov 2018 08:09:38 -0800 (PST)
+Received: from localhost ([128.199.137.77])
+        by smtp.gmail.com with ESMTPSA id b69-v6sm34691583pfc.150.2018.11.04.08.09.36
+        (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
+        Sun, 04 Nov 2018 08:09:37 -0800 (PST)
+Date:   Mon, 5 Nov 2018 00:09:31 +0800
+From:   Eryu Guan <guaneryu@gmail.com>
+To:     Omar Sandoval <osandov@osandov.com>
+Cc:     fstests@vger.kernel.org, kernel-team@fb.com,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 0/7] fstests: test Btrfs swapfile support
+Message-ID: <20181104160931.GE12788@desktop>
+References: <cover.1541193856.git.osandov@fb.com>
 MIME-Version: 1.0
-References: <d03d611b-cd2e-d267-268a-255f90348e43@dirtcellar.net>
-In-Reply-To: <d03d611b-cd2e-d267-268a-255f90348e43@dirtcellar.net>
-From:   Sterling Windmill <swindmill@gmail.com>
-Date:   Sun, 4 Nov 2018 10:35:33 -0500
-Message-ID: <CAMOu_z0879AZEKHPDFOFeGL8H4E2Uj+CzFYV6tSdqHoHF5NyNg@mail.gmail.com>
-Subject: Re: BTRFS did it's job nicely (thanks!)
-To:     linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <cover.1541193856.git.osandov@fb.com>
+User-Agent: Mutt/1.10.1 (2018-07-13)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Out of curiosity, what led to you choosing RAID1 for data but RAID10
-for metadata?
+On Fri, Nov 02, 2018 at 02:29:35PM -0700, Omar Sandoval wrote:
+> From: Omar Sandoval <osandov@fb.com>
+> 
+> This series fixes a couple of generic swapfile tests and adds some
+> Btrfs-specific swapfile tests. Btrfs swapfile support is scheduled for
+> 4.21 [1].
+> 
+> 1: https://www.spinics.net/lists/linux-btrfs/msg83454.html
+> 
+> Thanks!
 
-I've flip flipped between these two modes myself after finding out
-that BTRFS RAID10 doesn't work how I would've expected.
+Thanks for the fixes and new tests!
 
-Wondering what made you choose your configuration.
+> 
+> Omar Sandoval (7):
+>   generic/{472,496,497}: fix $seeqres typo
+>   generic/{472,496}: fix swap file creation on Btrfs
 
-Thanks!
+I've merged above two patches, they're two obvious bug fixes.
 
-On Fri, Nov 2, 2018 at 3:55 PM waxhead <waxhead@dirtcellar.net> wrote:
->
-> Hi,
->
-> my main computer runs on a 7x SSD BTRFS as rootfs with
-> data:RAID1 and metadata:RAID10.
->
-> One SSD is probably about to fail, and it seems that BTRFS fixed it
-> nicely (thanks everyone!)
->
-> I decided to just post the ugly details in case someone just wants to
-> have a look. Note that I tend to interpret the btrfs de st / output as
-> if the error was NOT fixed even if (seems clearly that) it was, so I
-> think the output is a bit misleading... just saying...
->
->
->
-> -- below are the details for those curious (just for fun) ---
->
-> scrub status for [YOINK!]
->          scrub started at Fri Nov  2 17:49:45 2018 and finished after
-> 00:29:26
->          total bytes scrubbed: 1.15TiB with 1 errors
->          error details: csum=1
->          corrected errors: 1, uncorrectable errors: 0, unverified errors: 0
->
->   btrfs fi us -T /
-> Overall:
->      Device size:                   1.18TiB
->      Device allocated:              1.17TiB
->      Device unallocated:            9.69GiB
->      Device missing:                  0.00B
->      Used:                          1.17TiB
->      Free (estimated):              6.30GiB      (min: 6.30GiB)
->      Data ratio:                       2.00
->      Metadata ratio:                   2.00
->      Global reserve:              512.00MiB      (used: 0.00B)
->
->               Data      Metadata  System
-> Id Path      RAID1     RAID10    RAID10    Unallocated
-> -- --------- --------- --------- --------- -----------
->   6 /dev/sda1 236.28GiB 704.00MiB  32.00MiB   485.00MiB
->   7 /dev/sdb1 233.72GiB   1.03GiB  32.00MiB     2.69GiB
->   2 /dev/sdc1 110.56GiB 352.00MiB         -   904.00MiB
->   8 /dev/sdd1 234.96GiB   1.03GiB  32.00MiB     1.45GiB
->   1 /dev/sde1 164.90GiB   1.03GiB  32.00MiB     1.72GiB
->   9 /dev/sdf1 109.00GiB   1.03GiB  32.00MiB   744.00MiB
-> 10 /dev/sdg1 107.98GiB   1.03GiB  32.00MiB     1.74GiB
-> -- --------- --------- --------- --------- -----------
->     Total     598.70GiB   3.09GiB  96.00MiB     9.69GiB
->     Used      597.25GiB   1.57GiB 128.00KiB
->
->
->
-> uname -a
-> Linux main 4.18.0-2-amd64 #1 SMP Debian 4.18.10-2 (2018-10-07) x86_64
-> GNU/Linux
->
-> btrfs --version
-> btrfs-progs v4.17
->
->
-> dmesg | grep -i btrfs
-> [    7.801817] Btrfs loaded, crc32c=crc32c-generic
-> [    8.163288] BTRFS: device label btrfsroot devid 10 transid 669961
-> /dev/sdg1
-> [    8.163433] BTRFS: device label btrfsroot devid 9 transid 669961
-> /dev/sdf1
-> [    8.163591] BTRFS: device label btrfsroot devid 1 transid 669961
-> /dev/sde1
-> [    8.163734] BTRFS: device label btrfsroot devid 8 transid 669961
-> /dev/sdd1
-> [    8.163974] BTRFS: device label btrfsroot devid 2 transid 669961
-> /dev/sdc1
-> [    8.164117] BTRFS: device label btrfsroot devid 7 transid 669961
-> /dev/sdb1
-> [    8.164262] BTRFS: device label btrfsroot devid 6 transid 669961
-> /dev/sda1
-> [    8.206174] BTRFS info (device sde1): disk space caching is enabled
-> [    8.206236] BTRFS info (device sde1): has skinny extents
-> [    8.348610] BTRFS info (device sde1): enabling ssd optimizations
-> [    8.854412] BTRFS info (device sde1): enabling free space tree
-> [    8.854471] BTRFS info (device sde1): using free space tree
-> [   68.170580] BTRFS warning (device sde1): csum failed root 3760 ino
-> 3247424 off 125434560512 csum 0x2e395164 expected csum 0x6514b2c2 mirror 2
-> [   68.185973] BTRFS warning (device sde1): csum failed root 3760 ino
-> 3247424 off 125434560512 csum 0x2e395164 expected csum 0x6514b2c2 mirror 2
-> [   68.185991] BTRFS warning (device sde1): csum failed root 3760 ino
-> 3247424 off 125434560512 csum 0x2e395164 expected csum 0x6514b2c2 mirror 2
-> [   68.186003] BTRFS warning (device sde1): csum failed root 3760 ino
-> 3247424 off 125434560512 csum 0x2e395164 expected csum 0x6514b2c2 mirror 2
-> [   68.186015] BTRFS warning (device sde1): csum failed root 3760 ino
-> 3247424 off 125434560512 csum 0x2e395164 expected csum 0x6514b2c2 mirror 2
-> [   68.186028] BTRFS warning (device sde1): csum failed root 3760 ino
-> 3247424 off 125434560512 csum 0x2e395164 expected csum 0x6514b2c2 mirror 2
-> [   68.186041] BTRFS warning (device sde1): csum failed root 3760 ino
-> 3247424 off 125434560512 csum 0x2e395164 expected csum 0x6514b2c2 mirror 2
-> [   68.186052] BTRFS warning (device sde1): csum failed root 3760 ino
-> 3247424 off 125434560512 csum 0x2e395164 expected csum 0x6514b2c2 mirror 2
-> [   68.186063] BTRFS warning (device sde1): csum failed root 3760 ino
-> 3247424 off 125434560512 csum 0x2e395164 expected csum 0x6514b2c2 mirror 2
-> [   68.186075] BTRFS warning (device sde1): csum failed root 3760 ino
-> 3247424 off 125434560512 csum 0x2e395164 expected csum 0x6514b2c2 mirror 2
-> [   68.199237] BTRFS info (device sde1): read error corrected: ino
-> 3247424 off 36700160 (dev /dev/sda1 sector 244987192)
-> [   68.202602] BTRFS info (device sde1): read error corrected: ino
-> 3247424 off 36704256 (dev /dev/sda1 sector 244987192)
-> [   68.203176] BTRFS info (device sde1): read error corrected: ino
-> 3247424 off 36712448 (dev /dev/sda1 sector 244987192)
-> [   68.206762] BTRFS info (device sde1): read error corrected: ino
-> 3247424 off 36708352 (dev /dev/sda1 sector 244987192)
-> [   68.212071] BTRFS info (device sde1): read error corrected: ino
-> 3247424 off 36720640 (dev /dev/sda1 sector 244987192)
-> [   68.217220] BTRFS info (device sde1): read error corrected: ino
-> 3247424 off 36716544 (dev /dev/sda1 sector 244987192)
-> [   68.229984] BTRFS info (device sde1): read error corrected: ino
-> 3247424 off 36724736 (dev /dev/sda1 sector 244987192)
-> [   68.231579] BTRFS info (device sde1): read error corrected: ino
-> 3247424 off 36728832 (dev /dev/sda1 sector 244987192)
-> [   68.231725] BTRFS info (device sde1): read error corrected: ino
-> 3247424 off 36732928 (dev /dev/sda1 sector 244987192)
-> [   68.231772] BTRFS info (device sde1): read error corrected: ino
-> 3247424 off 36737024 (dev /dev/sda1 sector 244987192)
-> [  912.685787] btrfs_print_data_csum_error: 23 callbacks suppressed
-> [  912.685792] BTRFS warning (device sde1): csum failed root 3760 ino
-> 3247424 off 125434560512 csum 0xb9ad3e35 expected csum 0x6514b2c2 mirror 2
-> [  912.686107] BTRFS warning (device sde1): csum failed root 3760 ino
-> 3247424 off 125434560512 csum 0xb9ad3e35 expected csum 0x6514b2c2 mirror 2
-> [  912.686335] BTRFS warning (device sde1): csum failed root 3760 ino
-> 3247424 off 125434560512 csum 0xb9ad3e35 expected csum 0x6514b2c2 mirror 2
-> [  912.695110] BTRFS warning (device sde1): csum failed root 3760 ino
-> 3247424 off 125434560512 csum 0xb9ad3e35 expected csum 0x6514b2c2 mirror 2
-> [  912.695138] BTRFS warning (device sde1): csum failed root 3760 ino
-> 3247424 off 125434560512 csum 0xb9ad3e35 expected csum 0x6514b2c2 mirror 2
-> [  912.695150] BTRFS warning (device sde1): csum failed root 3760 ino
-> 3247424 off 125434560512 csum 0xb9ad3e35 expected csum 0x6514b2c2 mirror 2
-> [  912.695162] BTRFS warning (device sde1): csum failed root 3760 ino
-> 3247424 off 125434560512 csum 0xb9ad3e35 expected csum 0x6514b2c2 mirror 2
-> [  912.695173] BTRFS warning (device sde1): csum failed root 3760 ino
-> 3247424 off 125434560512 csum 0xb9ad3e35 expected csum 0x6514b2c2 mirror 2
-> [  912.695185] BTRFS warning (device sde1): csum failed root 3760 ino
-> 3247424 off 125434560512 csum 0xb9ad3e35 expected csum 0x6514b2c2 mirror 2
-> [  912.695225] BTRFS warning (device sde1): csum failed root 3760 ino
-> 3247424 off 125434560512 csum 0xb9ad3e35 expected csum 0x6514b2c2 mirror 2
-> [  912.737998] BTRFS info (device sde1): read error corrected: ino
-> 3247424 off 36753408 (dev /dev/sda1 sector 244987192)
-> [  912.747407] BTRFS info (device sde1): read error corrected: ino
-> 3247424 off 36810752 (dev /dev/sda1 sector 244987192)
-> [  912.755449] BTRFS info (device sde1): read error corrected: ino
-> 3247424 off 36782080 (dev /dev/sda1 sector 244987192)
-> [  912.758745] BTRFS info (device sde1): read error corrected: ino
-> 3247424 off 36720640 (dev /dev/sda1 sector 244987192)
-> [  912.759945] BTRFS info (device sde1): read error corrected: ino
-> 3247424 off 36728832 (dev /dev/sda1 sector 244987192)
-> [  912.768136] BTRFS info (device sde1): read error corrected: ino
-> 3247424 off 36724736 (dev /dev/sda1 sector 244987192)
-> [  912.776749] BTRFS info (device sde1): read error corrected: ino
-> 3247424 off 36716544 (dev /dev/sda1 sector 244987192)
-> [  912.784312] BTRFS info (device sde1): read error corrected: ino
-> 3247424 off 36704256 (dev /dev/sda1 sector 244987192)
-> [  912.784456] BTRFS info (device sde1): read error corrected: ino
-> 3247424 off 36790272 (dev /dev/sda1 sector 244987192)
-> [  912.784519] BTRFS info (device sde1): read error corrected: ino
-> 3247424 off 36798464 (dev /dev/sda1 sector 244987192)
-> [ 1298.747500] btrfs_print_data_csum_error: 7 callbacks suppressed
-> [ 1298.747505] BTRFS warning (device sde1): csum failed root 3760 ino
-> 3247424 off 125434560512 csum 0xe7cb8d8c expected csum 0x6514b2c2 mirror 2
-> [ 1298.747529] BTRFS warning (device sde1): csum failed root 3760 ino
-> 3247424 off 125434560512 csum 0xe7cb8d8c expected csum 0x6514b2c2 mirror 2
-> [ 1298.748379] BTRFS warning (device sde1): csum failed root 3760 ino
-> 3247424 off 125434560512 csum 0xe7cb8d8c expected csum 0x6514b2c2 mirror 2
-> [ 1298.763245] BTRFS warning (device sde1): csum failed root 3760 ino
-> 3247424 off 125434560512 csum 0xe7cb8d8c expected csum 0x6514b2c2 mirror 2
-> [ 1298.763264] BTRFS warning (device sde1): csum failed root 3760 ino
-> 3247424 off 125434560512 csum 0xe7cb8d8c expected csum 0x6514b2c2 mirror 2
-> [ 1298.763290] BTRFS warning (device sde1): csum failed root 3760 ino
-> 3247424 off 125434560512 csum 0xe7cb8d8c expected csum 0x6514b2c2 mirror 2
-> [ 1298.763305] BTRFS warning (device sde1): csum failed root 3760 ino
-> 3247424 off 125434560512 csum 0xe7cb8d8c expected csum 0x6514b2c2 mirror 2
-> [ 1298.763320] BTRFS warning (device sde1): csum failed root 3760 ino
-> 3247424 off 125434560512 csum 0xe7cb8d8c expected csum 0x6514b2c2 mirror 2
-> [ 1298.764537] BTRFS warning (device sde1): csum failed root 3760 ino
-> 3247424 off 125434560512 csum 0xe7cb8d8c expected csum 0x6514b2c2 mirror 2
-> [ 1298.764560] BTRFS warning (device sde1): csum failed root 3760 ino
-> 3247424 off 125434560512 csum 0xe7cb8d8c expected csum 0x6514b2c2 mirror 2
-> [ 1298.788874] BTRFS info (device sde1): read error corrected: ino
-> 3247424 off 36704256 (dev /dev/sda1 sector 244987192)
-> [ 1298.795023] BTRFS info (device sde1): read error corrected: ino
-> 3247424 off 36728832 (dev /dev/sda1 sector 244987192)
-> [ 1298.804992] BTRFS info (device sde1): read error corrected: ino
-> 3247424 off 36753408 (dev /dev/sda1 sector 244987192)
-> [ 1298.819343] BTRFS info (device sde1): read error corrected: ino
-> 3247424 off 36724736 (dev /dev/sda1 sector 244987192)
-> [ 1298.824461] BTRFS info (device sde1): read error corrected: ino
-> 3247424 off 36732928 (dev /dev/sda1 sector 244987192)
-> [ 1298.827573] BTRFS info (device sde1): read error corrected: ino
-> 3247424 off 36720640 (dev /dev/sda1 sector 244987192)
-> [ 1298.935345] BTRFS info (device sde1): read error corrected: ino
-> 3247424 off 36712448 (dev /dev/sda1 sector 244987192)
-> [ 1298.935474] BTRFS info (device sde1): read error corrected: ino
-> 3247424 off 36794368 (dev /dev/sda1 sector 244987192)
-> [ 1298.935583] BTRFS info (device sde1): read error corrected: ino
-> 3247424 off 36790272 (dev /dev/sda1 sector 244987192)
-> [ 1298.935690] BTRFS info (device sde1): read error corrected: ino
-> 3247424 off 36806656 (dev /dev/sda1 sector 244987192)
-> [ 1326.930851] BTRFS warning (device sde1): checksum error at logical
-> 4996352077824 on dev /dev/sda1, physical 125433442304, root 3760, inode
-> 3247424, offset 36700160, length 4096, links 1 (path: seamonkey/libxul.so)
-> [ 1326.930862] BTRFS error (device sde1): bdev /dev/sda1 errs: wr 0, rd
-> 0, flush 0, corrupt 1, gen 0
-> [ 1326.988294] BTRFS error (device sde1): fixed up error at logical
-> 4996352077824 on dev /dev/sda1
->
-> btrfs de st /
-> [/dev/sde1].write_io_errs    0
-> [/dev/sde1].read_io_errs     0
-> [/dev/sde1].flush_io_errs    0
-> [/dev/sde1].corruption_errs  0
-> [/dev/sde1].generation_errs  0
-> [/dev/sdc1].write_io_errs    0
-> [/dev/sdc1].read_io_errs     0
-> [/dev/sdc1].flush_io_errs    0
-> [/dev/sdc1].corruption_errs  0
-> [/dev/sdc1].generation_errs  0
-> [/dev/sda1].write_io_errs    0
-> [/dev/sda1].read_io_errs     0
-> [/dev/sda1].flush_io_errs    0
-> [/dev/sda1].corruption_errs  1 **** <- Look ma! here I am!
-> [/dev/sda1].generation_errs  0
-> [/dev/sdb1].write_io_errs    0
-> [/dev/sdb1].read_io_errs     0
-> [/dev/sdb1].flush_io_errs    0
-> [/dev/sdb1].corruption_errs  0
-> [/dev/sdb1].generation_errs  0
-> [/dev/sdd1].write_io_errs    0
-> [/dev/sdd1].read_io_errs     0
-> [/dev/sdd1].flush_io_errs    0
-> [/dev/sdd1].corruption_errs  0
-> [/dev/sdd1].generation_errs  0
-> [/dev/sdf1].write_io_errs    0
-> [/dev/sdf1].read_io_errs     0
-> [/dev/sdf1].flush_io_errs    0
-> [/dev/sdf1].corruption_errs  0
-> [/dev/sdf1].generation_errs  0
-> [/dev/sdg1].write_io_errs    0
-> [/dev/sdg1].read_io_errs     0
-> [/dev/sdg1].flush_io_errs    0
-> [/dev/sdg1].corruption_errs  0
-> [/dev/sdg1].generation_errs  0
+>   btrfs: test swap file activation restrictions
+>   btrfs: test invalid operations on a swap file
+>   btrfs: test swap files on multiple devices
+>   btrfs: test device add/remove/replace with an active swap file
+>   btrfs: test balance and resize with an active swap file
+
+These tests look fine to me, but it'd be really great if btrfs folks
+could help review above tests and provide Reviewed-by tags.
+
+And perhaps we could add test 17[56] to 'volume' group, as they do
+device operations. And similarly, add the last test to 'balance' group.
+
+Thanks,
+Eryu
+
+> 
+>  tests/btrfs/173     | 55 ++++++++++++++++++++++++++++++
+>  tests/btrfs/173.out |  5 +++
+>  tests/btrfs/174     | 66 ++++++++++++++++++++++++++++++++++++
+>  tests/btrfs/174.out | 10 ++++++
+>  tests/btrfs/175     | 73 ++++++++++++++++++++++++++++++++++++++++
+>  tests/btrfs/175.out |  8 +++++
+>  tests/btrfs/176     | 82 +++++++++++++++++++++++++++++++++++++++++++++
+>  tests/btrfs/176.out |  5 +++
+>  tests/btrfs/177     | 64 +++++++++++++++++++++++++++++++++++
+>  tests/btrfs/177.out |  6 ++++
+>  tests/btrfs/group   |  5 +++
+>  tests/generic/472   | 16 ++++-----
+>  tests/generic/496   |  8 ++---
+>  tests/generic/497   |  2 +-
+>  14 files changed, 391 insertions(+), 14 deletions(-)
+>  create mode 100755 tests/btrfs/173
+>  create mode 100644 tests/btrfs/173.out
+>  create mode 100755 tests/btrfs/174
+>  create mode 100644 tests/btrfs/174.out
+>  create mode 100755 tests/btrfs/175
+>  create mode 100644 tests/btrfs/175.out
+>  create mode 100755 tests/btrfs/176
+>  create mode 100644 tests/btrfs/176.out
+>  create mode 100755 tests/btrfs/177
+>  create mode 100644 tests/btrfs/177.out
+> 
+> -- 
+> 2.19.1
+> 

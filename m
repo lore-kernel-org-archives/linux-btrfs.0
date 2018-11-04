@@ -1,115 +1,149 @@
-Return-Path: <SRS0=HXCT=NO=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=b0aI=NP=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.6 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
+X-Spam-Status: No, score=-6.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 58D66C0044C
-	for <linux-btrfs@archiver.kernel.org>; Sat,  3 Nov 2018 21:25:23 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2903FC0044C
+	for <linux-btrfs@archiver.kernel.org>; Sun,  4 Nov 2018 00:39:02 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 109262081F
-	for <linux-btrfs@archiver.kernel.org>; Sat,  3 Nov 2018 21:25:23 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="RlNGohA+"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 109262081F
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=arndb.de
+	by mail.kernel.org (Postfix) with ESMTP id F09AB2081F
+	for <linux-btrfs@archiver.kernel.org>; Sun,  4 Nov 2018 00:39:01 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org F09AB2081F
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.de
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727066AbeKDGhp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 4 Nov 2018 01:37:45 -0500
-Received: from mail-qk1-f195.google.com ([209.85.222.195]:35650 "EHLO
-        mail-qk1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726768AbeKDGhp (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 4 Nov 2018 01:37:45 -0500
-Received: by mail-qk1-f195.google.com with SMTP id v68-v6so8831332qka.2;
-        Sat, 03 Nov 2018 14:25:16 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:sender:in-reply-to:references:from:date:message-id
-         :subject:to:cc:content-transfer-encoding;
-        bh=/4QSxRfWA4eUmLWjxNBtXcxsBRsNWL9AR5jtvVrGzgA=;
-        b=RlNGohA+DjjthJztExxEu36L3Dn3VQC/3Koz90euBfgoCRGJM6U8D4wutbSizs9boz
-         vTNrZ6al/ICEjSMFbOoENzkCFlRSE41Tyq1S+yHOI/qdUzDX+HUaOw7tLpCBV3iPCztJ
-         CnDdorhZwhWQKvY56Btx6P9M3TGlqwriCNrKe0dvlc8ErLixGTW14fVj2Z3/H8q/8OQx
-         TUmZu5nqe9hdHLTCcQ1IPdQ8EyiASy1kaJFn/OKvVS1slI1VzP8Z0x8d7RThPjfQc1AH
-         XWS7vSWiMe05poS58IS1Sb1n/h+vUasiAy4HPI3XEhkYayKEtk9s82HQWWGky2269l9b
-         QpUQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:sender:in-reply-to:references:from
-         :date:message-id:subject:to:cc:content-transfer-encoding;
-        bh=/4QSxRfWA4eUmLWjxNBtXcxsBRsNWL9AR5jtvVrGzgA=;
-        b=Y6yAYmY6OhK26rTQlgLRfcxQBGjapx7eRsmRDalQETRut3xH7k8hvsw+Ylp+5b5Hsu
-         VDGseWkeqdVunQNVlCFHbtun3Ooplksy+VvtbdwMJ5VbYRVt2XZOR0iahdtRx7WGu+Ip
-         CXnXjOhcLaMl6fmCYLAIK+PYkLJLTJ4m96LUJxATwOwUcYSJo/ZntDMEKr+1JjUmEnqy
-         CX7g9oNw/N+IcLbd9Q7/VQex/p+Bwu+MWY2uV+IWmdLbq6fcpSJAZYhzl+TTcDvjFvFS
-         wDhk1ydggAn+cqvMvXQ4HZ1Ltg4VWMlGBccpRNL3GAMzaZS1NbRFD98O8YfxhIruFXHd
-         3JqA==
-X-Gm-Message-State: AGRZ1gIYSgl9ZfeLS9yNldXyAgC5bqEWQBasIhtWzoww5Pl/aUu9xEBB
-        o8DTV0fMCYR1NilXBkYIPUEAtoWBF9IvFJg9oDg=
-X-Google-Smtp-Source: AJdET5dLPukNDR5tHnMMW9dn1z+z9sQiMGVfb6jIUWS0fcMc4pFx/rpaIBF00AVqXpWdSkeH3N//NF3EpyeIYZrceCY=
-X-Received: by 2002:ae9:e102:: with SMTP id g2mr14482787qkm.343.1541280315523;
- Sat, 03 Nov 2018 14:25:15 -0700 (PDT)
-MIME-Version: 1.0
-Received: by 2002:a0c:9881:0:0:0:0:0 with HTTP; Sat, 3 Nov 2018 14:25:14 -0700 (PDT)
-In-Reply-To: <8e3a668d-79d2-6fc0-6291-b3d19b793d6f@suse.com>
-References: <20181103153941.1881966-1-arnd@arndb.de> <8e3a668d-79d2-6fc0-6291-b3d19b793d6f@suse.com>
-From:   Arnd Bergmann <arnd@arndb.de>
-Date:   Sat, 3 Nov 2018 22:25:14 +0100
-X-Google-Sender-Auth: ve6jy82uvd1kCmlkfSJA5D84mEs
-Message-ID: <CAK8P3a0FnpZ4pOyvXiQbhw5F116SqjwiYMY5Ry1k4J+Cvh=_nw@mail.gmail.com>
+        id S1728667AbeKDJvb (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 4 Nov 2018 04:51:31 -0500
+Received: from mx2.suse.de ([195.135.220.15]:44974 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1728545AbeKDJva (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 4 Nov 2018 04:51:30 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 822CCAF71;
+        Sun,  4 Nov 2018 00:38:31 +0000 (UTC)
 Subject: Re: [PATCH] btrfs: avoid link error with CONFIG_NO_AUTO_INLINE
-To:     Nikolay Borisov <nborisov@suse.com>
-Cc:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>,
+To:     Arnd Bergmann <arnd@arndb.de>, Chris Mason <clm@fb.com>,
+        David Sterba <DSterba@suse.com>,
+        Josef Bacik <josef@toxicpanda.com>
+Cc:     Gu Jinxiang <gujx@cn.fujitsu.com>,
         Changbin Du <changbin.du@gmail.com>,
-        Anand Jain <anand.jain@oracle.com>,
         Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>,
-        Qu Wenruo <wqu@suse.com>, Gu Jinxiang <gujx@cn.fujitsu.com>,
+        Anand Jain <anand.jain@oracle.com>,
+        Nikolay Borisov <nborisov@suse.com>,
         linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+References: <20181103153941.1881966-1-arnd@arndb.de>
+From:   Qu Wenruo <wqu@suse.de>
+Openpgp: preference=signencrypt
+Autocrypt: addr=wqu@suse.de; prefer-encrypt=mutual; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
+ bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
+ ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
+ rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
+ FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
+ 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
+ ilaVzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
+ CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
+ /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
+ GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
+ q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
+ ABEBAAHCwHwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
+ CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
+ f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
+ mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
+ 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
+ h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
+Message-ID: <87d4e8ce-2142-9d6e-498a-c7e5b83964eb@suse.de>
+Date:   Sun, 4 Nov 2018 08:38:24 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.2.1
+MIME-Version: 1.0
+In-Reply-To: <20181103153941.1881966-1-arnd@arndb.de>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 11/3/18, Nikolay Borisov <nborisov@suse.com> wrote:
-> On 3.11.18 =D0=B3. 17:39 =D1=87., Arnd Bergmann wrote:
->> On 32-bit ARM with gcc-8, I see a link error with the addition of the
->> CONFIG_NO_AUTO_INLINE option:
->>
->> fs/btrfs/super.o: In function `btrfs_statfs':
->> super.c:(.text+0x67b8): undefined reference to `__aeabi_uldivmod'
->> super.c:(.text+0x67fc): undefined reference to `__aeabi_uldivmod'
->> super.c:(.text+0x6858): undefined reference to `__aeabi_uldivmod'
->> super.c:(.text+0x6920): undefined reference to `__aeabi_uldivmod'
->> super.c:(.text+0x693c): undefined reference to `__aeabi_uldivmod'
->> fs/btrfs/super.o:super.c:(.text+0x6958): more undefined references to
->> `__aeabi_uldivmod' follow
->>
->> So far this is the only file that shows the behavior, so I'd propose
->> to just work around it by marking the functions as 'static inline'
->> that normally get inlined here.
->>
->> The reference to __aeabi_uldivmod comes from a div_u64() which has an
->> optimization for a constant division that uses a straight '/' operator
->> when the result should be known to the compiler. My interpretation is
->> that as we turn off inlining, gcc still expects the result to be constan=
-t
->> but fails to use that constant value.
->
-> I read this as "this is a compiler bug", no ? So you are providing a
-> hack around a compiler bug?
 
-Mostly, yes. The do_div() macro is really pushing the boundaries
-of what we can expect the compiler to do in terms of optimizations,
-and we've had problems with it in the past.
 
-IIRC the gcc developers would not classify this as a bug because
-the result of __builtin_constant_p() is not guaranteed to work the
-way we expect, it just does so most of the time.
+On 2018/11/3 下午11:39, Arnd Bergmann wrote:
+> On 32-bit ARM with gcc-8, I see a link error with the addition of the
+> CONFIG_NO_AUTO_INLINE option:
+> 
+> fs/btrfs/super.o: In function `btrfs_statfs':
+> super.c:(.text+0x67b8): undefined reference to `__aeabi_uldivmod'
+> super.c:(.text+0x67fc): undefined reference to `__aeabi_uldivmod'
+> super.c:(.text+0x6858): undefined reference to `__aeabi_uldivmod'
+> super.c:(.text+0x6920): undefined reference to `__aeabi_uldivmod'
+> super.c:(.text+0x693c): undefined reference to `__aeabi_uldivmod'
+> fs/btrfs/super.o:super.c:(.text+0x6958): more undefined references to `__aeabi_uldivmod' follow
+> 
+> So far this is the only file that shows the behavior, so I'd propose
+> to just work around it by marking the functions as 'static inline'
+> that normally get inlined here.
 
-        Arnd
+As a workaround it looks OK, but it's definitely not the root cause.
+
+> 
+> The reference to __aeabi_uldivmod comes from a div_u64() which has an
+> optimization for a constant division that uses a straight '/' operator
+> when the result should be known to the compiler. My interpretation is
+> that as we turn off inlining, gcc still expects the result to be constant
+> but fails to use that constant value.
+
+It looks more like a bug in div_u64() optimization.
+
+Despite this file in btrfs, did you hit the same problem for any other file?
+
+> 
+> Cc: Changbin Du <changbin.du@gmail.com>
+> Fixes: 943b8435c3bd ("kernel hacking: add a config option to disable compiler auto-inlining")
+
+I can't find it in the mainline kernel, is the commit hash correct?
+If not merged, we should still has a chance to further polish that patch.
+
+Thanks,
+Qu
+
+> Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+> ---
+>  fs/btrfs/super.c | 6 +++---
+>  1 file changed, 3 insertions(+), 3 deletions(-)
+> 
+> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+> index c3c1e7bee49d..b7af0b8936ad 100644
+> --- a/fs/btrfs/super.c
+> +++ b/fs/btrfs/super.c
+> @@ -1922,7 +1922,7 @@ static int btrfs_remount(struct super_block *sb, int *flags,
+>  }
+>  
+>  /* Used to sort the devices by max_avail(descending sort) */
+> -static int btrfs_cmp_device_free_bytes(const void *dev_info1,
+> +static inline int btrfs_cmp_device_free_bytes(const void *dev_info1,
+>  				       const void *dev_info2)
+>  {
+>  	if (((struct btrfs_device_info *)dev_info1)->max_avail >
+> @@ -1951,8 +1951,8 @@ static inline void btrfs_descending_sort_devices(
+>   * The helper to calc the free space on the devices that can be used to store
+>   * file data.
+>   */
+> -static int btrfs_calc_avail_data_space(struct btrfs_fs_info *fs_info,
+> -				       u64 *free_bytes)
+> +static inline int btrfs_calc_avail_data_space(struct btrfs_fs_info *fs_info,
+> +					      u64 *free_bytes)
+>  {
+>  	struct btrfs_device_info *devices_info;
+>  	struct btrfs_fs_devices *fs_devices = fs_info->fs_devices;
+> 

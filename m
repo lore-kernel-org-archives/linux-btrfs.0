@@ -2,219 +2,218 @@ Return-Path: <SRS0=ibH9=NQ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.9 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-10.5 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A0EEAC0044C
-	for <linux-btrfs@archiver.kernel.org>; Mon,  5 Nov 2018 11:12:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BF6E4C0044C
+	for <linux-btrfs@archiver.kernel.org>; Mon,  5 Nov 2018 11:14:11 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 4C6B420869
-	for <linux-btrfs@archiver.kernel.org>; Mon,  5 Nov 2018 11:12:13 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7275920825
+	for <linux-btrfs@archiver.kernel.org>; Mon,  5 Nov 2018 11:14:11 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="W+/ChsMN"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 4C6B420869
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
+	dkim=pass (1024-bit key) header.d=kernel.org header.i=@kernel.org header.b="jphOYt/A"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 7275920825
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=kernel.org
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729265AbeKEUbW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 5 Nov 2018 15:31:22 -0500
-Received: from mail-vk1-f194.google.com ([209.85.221.194]:45375 "EHLO
-        mail-vk1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727820AbeKEUbW (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Nov 2018 15:31:22 -0500
-Received: by mail-vk1-f194.google.com with SMTP id n126so1698149vke.12;
-        Mon, 05 Nov 2018 03:12:10 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:references:in-reply-to:reply-to:from:date:message-id
-         :subject:to:cc:content-transfer-encoding;
-        bh=ePfiqWNkVaTCFg3fhTmbKSLpWlIRHnltkojrNRgLV4g=;
-        b=W+/ChsMNnUEPwj4xCByY1I1u+EqmF0N89gwhlqLi2eNOdqeiGlGVyeTI+KWoTcaH88
-         zk/AvIXTeeWd6rS2x6UFyUyN5kQQcMjuaWEv3NW/YyZ4O21iIH11wreUDAJ4TSnzxhrf
-         +Cb/WoxNe7OHLxcECVmrU1vHOIeA1lOnsmHbiUvse7h9mP2oIwPm8NZ8qWT7DJAytnYB
-         9XyC+B85/brYJJmEOsZgXyBZwU4AyUQjRtodnpg8DZ+PUM5+ritkc7R3A11b8GMNR1oK
-         xYJWC8dzHOHf2/QdaTpUooHvJW786u4EqHawvHw0xVuorY24PKFVEBa0QBMKk+i30Klc
-         cZEw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:reply-to
-         :from:date:message-id:subject:to:cc:content-transfer-encoding;
-        bh=ePfiqWNkVaTCFg3fhTmbKSLpWlIRHnltkojrNRgLV4g=;
-        b=ed/eUAJSJVf8dO1lMo3l5egTjTm1U46Swakk9SyL7c7kfF73LRz9N/79AeaXVnvzfD
-         m58/3bjZnm3FFYdrtwmFubk1EpVUw7uJbGdwnNep5pT30DC1VCsJKbsEFojZs8rvBT5F
-         NXV1GEOGQavmmuj+Qv72QfcssPaML5a26vQMpdn6066Hdsaj0zhAl1b9yq+e+gColuyJ
-         7B8lH8k+MHm0UlpWXcFLsR6KBq6jxXrlIHimaxHiISnJiKfNR7cA/F7swJkyQh7CjqUL
-         R70DwUuEVbXJJHm5qhL42eWd9fGIa5p282RgUtQfdVKr/z7OMtcA5D76T1Locup5SezB
-         L+Gg==
-X-Gm-Message-State: AGRZ1gKlUDyye7Pt3tZb0FI+Fg8p1e/YQyNqZ94T3hJV3LkiCIUb/pV/
-        sZtI4dnFli0Kbpf0Z6CokMJP2/Bkt7LoR2sI/+sxAA==
-X-Google-Smtp-Source: AJdET5fO68aWLT5gUTikRYeZ9SkFA8ifDmiOQ4i+jszNXqr8U/xf3M7mBHPi1aN2m86uhhoADqu9v5cr/hoMKZP7tuo=
-X-Received: by 2002:a1f:5a01:: with SMTP id o1mr4171064vkb.4.1541416330197;
- Mon, 05 Nov 2018 03:12:10 -0800 (PST)
-MIME-Version: 1.0
-References: <1540882702-21104-1-git-send-email-robbieko@synology.com>
- <CAL3q7H4p_fa=5UhfBkSs3GU5EydKQ0J76D5RMShMY-2HQY3F+Q@mail.gmail.com> <d1c2ad795fa14784e4908fd3fa50617e@synology.com>
-In-Reply-To: <d1c2ad795fa14784e4908fd3fa50617e@synology.com>
-Reply-To: fdmanana@gmail.com
-From:   Filipe Manana <fdmanana@gmail.com>
-Date:   Mon, 5 Nov 2018 11:11:58 +0000
-Message-ID: <CAL3q7H7AG7Nwj-v6scS6c9wxsKELRmLpYVOt1hkfK9Jr_sh1Cw@mail.gmail.com>
-Subject: Re: [PATCH] Btrfs: incremental send, fix infinite loop when apply
- children dir moves
-To:     Robbie Ko <robbieko@synology.com>
-Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>,
-        linux-btrfs-owner@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+        id S1729304AbeKEUdV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 5 Nov 2018 15:33:21 -0500
+Received: from mail.kernel.org ([198.145.29.99]:49926 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1727337AbeKEUdV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 5 Nov 2018 15:33:21 -0500
+Received: from localhost.localdomain (bl8-197-74.dsl.telepac.pt [85.241.197.74])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id 21B4920825
+        for <linux-btrfs@vger.kernel.org>; Mon,  5 Nov 2018 11:14:07 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=default; t=1541416448;
+        bh=WY1qCkbguU0/4cFy78zAkwTjFuxO6dzpVOuj9kAyCfg=;
+        h=From:To:Subject:Date:From;
+        b=jphOYt/Ae7EnY8VLY3Z5oMUjlcqirwlwr7vdrMJ/2mZqBxoRXAR8gJUBtARsBwU4Q
+         dT2ro0Zx1AglKP7lxmsnB0HSBFlgxfoYBxk5WAQy9qBnHd2IYzbC5jPPFe0/FeE7cW
+         fHitPxeVHGzi4CO74kIevl6nOzPATO6ISVQTxMds=
+From:   fdmanana@kernel.org
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: fix infinite loop on inode eviction after deduplication of eof block
+Date:   Mon,  5 Nov 2018 11:14:05 +0000
+Message-Id: <20181105111405.11752-1-fdmanana@kernel.org>
+X-Mailer: git-send-email 2.11.0
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Nov 5, 2018 at 4:10 AM robbieko <robbieko@synology.com> wrote:
->
-> Filipe Manana =E6=96=BC 2018-10-30 19:36 =E5=AF=AB=E5=88=B0:
-> > On Tue, Oct 30, 2018 at 7:00 AM robbieko <robbieko@synology.com> wrote:
-> >>
-> >> From: Robbie Ko <robbieko@synology.com>
-> >>
-> >> In apply_children_dir_moves, we first create an empty list (stack),
-> >> then we get an entry from pending_dir_moves and add it to the stack,
-> >> but we didn't delete the entry from rb_tree.
-> >>
-> >> So, in add_pending_dir_move, we create a new entry and then use the
-> >> parent_ino in the current rb_tree to find the corresponding entry,
-> >> and if so, add the new entry to the corresponding list.
-> >>
-> >> However, the entry may have been added to the stack, causing new
-> >> entries to be added to the stack as well.
-> >>
-> >> Finally, each time we take the first entry from the stack and start
-> >> processing, it ends up with an infinite loop.
-> >>
-> >> Fix this problem by remove node from pending_dir_moves,
-> >> avoid add new pending_dir_move to error list.
-> >
-> > I can't parse that explanation.
-> > Can you give a concrete example (reproducer) or did this came out of
-> > thin air?
-> >
-> > Thanks.
-> >
->
-> I am sorry that I replied so late.
->
-> I have no way to give a simple example.
-> But I can provide a btrfs image file
-> You can restore the Image via btrfs-image
-> Then directly command "btrfs send -e -p parent send -f dump_file"
-> Infinite loop will occur.
-> I use ubuntu 16.04, kernel 4.15.0.36-generic can be stable reproduce
+From: Filipe Manana <fdmanana@suse.com>
 
-You have been occasionally submitting fixes for send/receive for a few
-years now, and you know already
-that I always ask for a changelog that describes well the problem and
-an example/reproducer.
+If we attempt to deduplicate the last block of a file A into the middle of
+a file B, and file A's size is not a multiple of the block size, we end
+rounding the deduplication length to 0 bytes, to avoid the data corruption
+issue fixed by commit de02b9f6bb65 ("Btrfs: fix data corruption when
+deduplicating between different files"). However a length of zero will
+cause the insertion of an extent state with a start value greater (by 1)
+then the end value, leading to a corrupt extent state that will trigger a
+warning and cause chaos such as an infinite loop during inode eviction.
+Example trace:
 
-Why did you do this?
+ [96049.833585] ------------[ cut here ]------------
+ [96049.833714] WARNING: CPU: 0 PID: 24448 at fs/btrfs/extent_io.c:436 insert_state+0x101/0x120 [btrfs]
+ [96049.833767] CPU: 0 PID: 24448 Comm: xfs_io Not tainted 4.19.0-rc7-btrfs-next-39 #1
+ [96049.833768] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.11.2-0-gf9626ccb91-prebuilt.qemu-project.org 04/01/2014
+ [96049.833780] RIP: 0010:insert_state+0x101/0x120 [btrfs]
+ [96049.833783] RSP: 0018:ffffafd2c3707af0 EFLAGS: 00010282
+ [96049.833785] RAX: 0000000000000000 RBX: 000000000004dfff RCX: 0000000000000006
+ [96049.833786] RDX: 0000000000000007 RSI: ffff99045c143230 RDI: ffff99047b2168a0
+ [96049.833787] RBP: ffff990457851cd0 R08: 0000000000000001 R09: 0000000000000000
+ [96049.833787] R10: ffffafd2c3707ab8 R11: 0000000000000000 R12: ffff9903b93b12c8
+ [96049.833788] R13: 000000000004e000 R14: ffffafd2c3707b80 R15: ffffafd2c3707b78
+ [96049.833790] FS:  00007f5c14e7d700(0000) GS:ffff99047b200000(0000) knlGS:0000000000000000
+ [96049.833791] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+ [96049.833792] CR2: 00007f5c146abff8 CR3: 0000000115f4c004 CR4: 00000000003606f0
+ [96049.833795] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+ [96049.833796] DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+ [96049.833796] Call Trace:
+ [96049.833809]  __set_extent_bit+0x46c/0x6a0 [btrfs]
+ [96049.833823]  lock_extent_bits+0x6b/0x210 [btrfs]
+ [96049.833831]  ? _raw_spin_unlock+0x24/0x30
+ [96049.833841]  ? test_range_bit+0xdf/0x130 [btrfs]
+ [96049.833853]  lock_extent_range+0x8e/0x150 [btrfs]
+ [96049.833864]  btrfs_double_extent_lock+0x78/0xb0 [btrfs]
+ [96049.833875]  btrfs_extent_same_range+0x14e/0x550 [btrfs]
+ [96049.833885]  ? rcu_read_lock_sched_held+0x3f/0x70
+ [96049.833890]  ? __kmalloc_node+0x2b0/0x2f0
+ [96049.833899]  ? btrfs_dedupe_file_range+0x19a/0x280 [btrfs]
+ [96049.833909]  btrfs_dedupe_file_range+0x270/0x280 [btrfs]
+ [96049.833916]  vfs_dedupe_file_range_one+0xd9/0xe0
+ [96049.833919]  vfs_dedupe_file_range+0x131/0x1b0
+ [96049.833924]  do_vfs_ioctl+0x272/0x6e0
+ [96049.833927]  ? __fget+0x113/0x200
+ [96049.833931]  ksys_ioctl+0x70/0x80
+ [96049.833933]  __x64_sys_ioctl+0x16/0x20
+ [96049.833937]  do_syscall_64+0x60/0x1b0
+ [96049.833939]  entry_SYSCALL_64_after_hwframe+0x49/0xbe
+ [96049.833941] RIP: 0033:0x7f5c1478ddd7
+ [96049.833943] RSP: 002b:00007ffe15b196a8 EFLAGS: 00000202 ORIG_RAX: 0000000000000010
+ [96049.833945] RAX: ffffffffffffffda RBX: 0000000000000000 RCX: 00007f5c1478ddd7
+ [96049.833946] RDX: 00005625ece322d0 RSI: 00000000c0189436 RDI: 0000000000000004
+ [96049.833947] RBP: 0000000000000000 R08: 00007f5c14a46f48 R09: 0000000000000040
+ [96049.833948] R10: 0000000000000541 R11: 0000000000000202 R12: 0000000000000000
+ [96049.833949] R13: 0000000000000000 R14: 0000000000000004 R15: 00005625ece322d0
+ [96049.833954] irq event stamp: 6196
+ [96049.833956] hardirqs last  enabled at (6195): [<ffffffff91b00663>] console_unlock+0x503/0x640
+ [96049.833958] hardirqs last disabled at (6196): [<ffffffff91a037dd>] trace_hardirqs_off_thunk+0x1a/0x1c
+ [96049.833959] softirqs last  enabled at (6114): [<ffffffff92600370>] __do_softirq+0x370/0x421
+ [96049.833964] softirqs last disabled at (6095): [<ffffffff91a8dd4d>] irq_exit+0xcd/0xe0
+ [96049.833965] ---[ end trace db7b05f01b7fa10c ]---
+ [96049.935816] R13: 0000000000000000 R14: 00005562e5259240 R15: 00007ffff092b910
+ [96049.935822] irq event stamp: 6584
+ [96049.935823] hardirqs last  enabled at (6583): [<ffffffff91b00663>] console_unlock+0x503/0x640
+ [96049.935825] hardirqs last disabled at (6584): [<ffffffff91a037dd>] trace_hardirqs_off_thunk+0x1a/0x1c
+ [96049.935827] softirqs last  enabled at (6328): [<ffffffff92600370>] __do_softirq+0x370/0x421
+ [96049.935828] softirqs last disabled at (6313): [<ffffffff91a8dd4d>] irq_exit+0xcd/0xe0
+ [96049.935829] ---[ end trace db7b05f01b7fa123 ]---
+ [96049.935840] ------------[ cut here ]------------
+ [96049.936065] WARNING: CPU: 1 PID: 24463 at fs/btrfs/extent_io.c:436 insert_state+0x101/0x120 [btrfs]
+ [96049.936107] CPU: 1 PID: 24463 Comm: umount Tainted: G        W         4.19.0-rc7-btrfs-next-39 #1
+ [96049.936108] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.11.2-0-gf9626ccb91-prebuilt.qemu-project.org 04/01/2014
+ [96049.936117] RIP: 0010:insert_state+0x101/0x120 [btrfs]
+ [96049.936119] RSP: 0018:ffffafd2c3637bc0 EFLAGS: 00010282
+ [96049.936120] RAX: 0000000000000000 RBX: 000000000004dfff RCX: 0000000000000006
+ [96049.936121] RDX: 0000000000000007 RSI: ffff990445cf88e0 RDI: ffff99047b2968a0
+ [96049.936122] RBP: ffff990457851cd0 R08: 0000000000000001 R09: 0000000000000000
+ [96049.936123] R10: ffffafd2c3637b88 R11: 0000000000000000 R12: ffff9904574301e8
+ [96049.936124] R13: 000000000004e000 R14: ffffafd2c3637c50 R15: ffffafd2c3637c48
+ [96049.936125] FS:  00007fe4b87e72c0(0000) GS:ffff99047b280000(0000) knlGS:0000000000000000
+ [96049.936126] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+ [96049.936128] CR2: 00005562e52618d8 CR3: 00000001151c8005 CR4: 00000000003606e0
+ [96049.936129] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+ [96049.936131] DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+ [96049.936131] Call Trace:
+ [96049.936141]  __set_extent_bit+0x46c/0x6a0 [btrfs]
+ [96049.936154]  lock_extent_bits+0x6b/0x210 [btrfs]
+ [96049.936167]  btrfs_evict_inode+0x1e1/0x5a0 [btrfs]
+ [96049.936172]  evict+0xbf/0x1c0
+ [96049.936174]  dispose_list+0x51/0x80
+ [96049.936176]  evict_inodes+0x193/0x1c0
+ [96049.936180]  generic_shutdown_super+0x3f/0x110
+ [96049.936182]  kill_anon_super+0xe/0x30
+ [96049.936189]  btrfs_kill_super+0x13/0x100 [btrfs]
+ [96049.936191]  deactivate_locked_super+0x3a/0x70
+ [96049.936193]  cleanup_mnt+0x3b/0x80
+ [96049.936195]  task_work_run+0x93/0xc0
+ [96049.936198]  exit_to_usermode_loop+0xfa/0x100
+ [96049.936201]  do_syscall_64+0x17f/0x1b0
+ [96049.936202]  entry_SYSCALL_64_after_hwframe+0x49/0xbe
+ [96049.936204] RIP: 0033:0x7fe4b80cfb37
+ [96049.936206] RSP: 002b:00007ffff092b688 EFLAGS: 00000246 ORIG_RAX: 00000000000000a6
+ [96049.936207] RAX: 0000000000000000 RBX: 00005562e5259060 RCX: 00007fe4b80cfb37
+ [96049.936208] RDX: 0000000000000001 RSI: 0000000000000000 RDI: 00005562e525faa0
+ [96049.936209] RBP: 00005562e525faa0 R08: 00005562e525f770 R09: 0000000000000015
+ [96049.936210] R10: 00000000000006b4 R11: 0000000000000246 R12: 00007fe4b85d1e64
+ [96049.936211] R13: 0000000000000000 R14: 00005562e5259240 R15: 00007ffff092b910
+ [96049.936211] R13: 0000000000000000 R14: 00005562e5259240 R15: 00007ffff092b910
+ [96049.936216] irq event stamp: 6616
+ [96049.936219] hardirqs last  enabled at (6615): [<ffffffff91b00663>] console_unlock+0x503/0x640
+ [96049.936219] hardirqs last disabled at (6616): [<ffffffff91a037dd>] trace_hardirqs_off_thunk+0x1a/0x1c
+ [96049.936222] softirqs last  enabled at (6328): [<ffffffff92600370>] __do_softirq+0x370/0x421
+ [96049.936222] softirqs last disabled at (6313): [<ffffffff91a8dd4d>] irq_exit+0xcd/0xe0
+ [96049.936223] ---[ end trace db7b05f01b7fa124 ]---
 
-What I can read from your answer is that you were too lazy to extract
-a reproducer from that image.
-Just made some change that fixes the infinite loop and because it
-apparently works you're done with it,
-Without an example at least, I don't think you or anyone can fully
-understand the problem, and if what
-you have (despite somewhat making theoretical sense) is really a good
-solution or just a workaround for
-the cause of the problem - after all if you can't give an example, you
-can't explain how in practice such loop
-of dependencies between directories happens. This, as with most
-send/receive problems, is a pure sequential
-and deterministic problem so there's really no excuse for not getting
-a reproducer.
+The second stack trace, from inode eviction, is repeated forever due to
+the infinite loop during eviction.
 
-Without an example, an explanation how it happens in the real world,
-does one know that your change is
-fixing the problem is the right place and not introducing other
-problems? Like the receiver not getting some
-changes (missing directories, files, or renames, etc).
+This is the same type of problem fixed way back in 2015 by commit
+113e8283869b ("Btrfs: fix inode eviction infinite loop after extent_same
+ioctl") and commit ccccf3d67294 ("Btrfs: fix inode eviction infinite loop
+after cloning into it").
 
-Tests are not just to prove a change is correct, they exist to catch
-and prevent regressions in the future too.
+So fix this by returning immediately if the deduplication range length
+gets rounded down to 0 bytes, as there is nothing that needs to be done in
+such case.
 
-You can do better than that.
+Example reproducer:
 
->
-> Image file, please refer to the attachment.
->
-> Thanks.
->
->
-> >>
-> >> Signed-off-by: Robbie Ko <robbieko@synology.com>
-> >> ---
-> >>  fs/btrfs/send.c | 11 ++++++++---
-> >>  1 file changed, 8 insertions(+), 3 deletions(-)
-> >>
-> >> diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-> >> index 094cc144..5be83b5 100644
-> >> --- a/fs/btrfs/send.c
-> >> +++ b/fs/btrfs/send.c
-> >> @@ -3340,7 +3340,8 @@ static void free_pending_move(struct send_ctx
-> >> *sctx, struct pending_dir_move *m)
-> >>         kfree(m);
-> >>  }
-> >>
-> >> -static void tail_append_pending_moves(struct pending_dir_move *moves,
-> >> +static void tail_append_pending_moves(struct send_ctx *sctx,
-> >> +                                     struct pending_dir_move *moves,
-> >>                                       struct list_head *stack)
-> >>  {
-> >>         if (list_empty(&moves->list)) {
-> >> @@ -3351,6 +3352,10 @@ static void tail_append_pending_moves(struct
-> >> pending_dir_move *moves,
-> >>                 list_add_tail(&moves->list, stack);
-> >>                 list_splice_tail(&list, stack);
-> >>         }
-> >> +       if (!RB_EMPTY_NODE(&moves->node)) {
-> >> +               rb_erase(&moves->node, &sctx->pending_dir_moves);
-> >> +               RB_CLEAR_NODE(&moves->node);
-> >> +       }
-> >>  }
-> >>
-> >>  static int apply_children_dir_moves(struct send_ctx *sctx)
-> >> @@ -3365,7 +3370,7 @@ static int apply_children_dir_moves(struct
-> >> send_ctx *sctx)
-> >>                 return 0;
-> >>
-> >>         INIT_LIST_HEAD(&stack);
-> >> -       tail_append_pending_moves(pm, &stack);
-> >> +       tail_append_pending_moves(sctx, pm, &stack);
-> >>
-> >>         while (!list_empty(&stack)) {
-> >>                 pm =3D list_first_entry(&stack, struct pending_dir_mov=
-e,
-> >> list);
-> >> @@ -3376,7 +3381,7 @@ static int apply_children_dir_moves(struct
-> >> send_ctx *sctx)
-> >>                         goto out;
-> >>                 pm =3D get_pending_dir_moves(sctx, parent_ino);
-> >>                 if (pm)
-> >> -                       tail_append_pending_moves(pm, &stack);
-> >> +                       tail_append_pending_moves(sctx, pm, &stack);
-> >>         }
-> >>         return 0;
-> >>
-> >> --
-> >> 1.9.1
-> >>
+ $ mkfs.btrfs -f /dev/sdb
+ $ mount /dev/sdb /mnt
 
+ $ xfs_io -f -c "pwrite -S 0xe6 0 100" /mnt/foo
+ $ xfs_io -f -c "pwrite -S 0xe6 0 1M" /mnt/bar
 
+ # Unmount the filesystem and mount it again so that we start without any
+ # extent state records when we ask for the deduplication.
+ $ umount /mnt
+ $ mount /dev/sdb /mnt
 
---=20
-Filipe David Manana,
+ $ xfs_io -c "dedupe /mnt/foo 0 500K 100" /mnt/bar
 
-=E2=80=9CWhether you think you can, or you think you can't =E2=80=94 you're=
- right.=E2=80=9D
+ # This unmount triggers the infinite loop.
+ $ umount /mnt
+
+A test case for fstests will follow soon.
+
+Fixes: de02b9f6bb65 ("Btrfs: fix data corruption when deduplicating between different files")
+CC: <stable@vger.kernel.org> # 4.19+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/ioctl.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index d60b6caf09e8..f3134fc69880 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -3486,6 +3486,8 @@ static int btrfs_extent_same_range(struct inode *src, u64 loff, u64 olen,
+ 			const u64 sz = BTRFS_I(src)->root->fs_info->sectorsize;
+ 
+ 			len = round_down(i_size_read(src), sz) - loff;
++			if (len == 0)
++				return 0;
+ 			olen = len;
+ 		}
+ 	}
+-- 
+2.11.0
+

@@ -2,176 +2,219 @@ Return-Path: <SRS0=ibH9=NQ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.8 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
-	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-6.9 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BCF06C0044C
-	for <linux-btrfs@archiver.kernel.org>; Mon,  5 Nov 2018 11:03:31 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A0EEAC0044C
+	for <linux-btrfs@archiver.kernel.org>; Mon,  5 Nov 2018 11:12:13 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 7237820825
-	for <linux-btrfs@archiver.kernel.org>; Mon,  5 Nov 2018 11:03:31 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 7237820825
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=gmx.com
+	by mail.kernel.org (Postfix) with ESMTP id 4C6B420869
+	for <linux-btrfs@archiver.kernel.org>; Mon,  5 Nov 2018 11:12:13 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="W+/ChsMN"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 4C6B420869
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729202AbeKEUWi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 5 Nov 2018 15:22:38 -0500
-Received: from mout.gmx.net ([212.227.17.21]:58583 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727275AbeKEUWi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 5 Nov 2018 15:22:38 -0500
-Received: from [0.0.0.0] ([210.140.77.29]) by mail.gmx.com (mrgmx103
- [212.227.17.174]) with ESMTPSA (Nemesis) id 0LrNoG-1fNVkg31vo-0138Gj; Mon, 05
- Nov 2018 12:03:11 +0100
-Received: from [0.0.0.0] ([210.140.77.29]) by mail.gmx.com (mrgmx103
- [212.227.17.174]) with ESMTPSA (Nemesis) id 0LrNoG-1fNVkg31vo-0138Gj; Mon, 05
- Nov 2018 12:03:11 +0100
-Subject: Re: [PATCH] btrfs: tree-checker: Fix misleading group system
- information
-To:     Shaokun Zhang <zhangshaokun@hisilicon.com>,
-        linux-btrfs@vger.kernel.org
-Cc:     David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>,
-        Josef Bacik <josef@toxicpanda.com>
-References: <1541414949-16300-1-git-send-email-zhangshaokun@hisilicon.com>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
- bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
- ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
- rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
- FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
- 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
- ilaVzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAHCwHwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
- CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
- f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
- mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
- 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
- h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <425b8a43-ec24-82f7-0627-82edc81e329d@gmx.com>
-Date:   Mon, 5 Nov 2018 19:03:04 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.2.1
+        id S1729265AbeKEUbW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 5 Nov 2018 15:31:22 -0500
+Received: from mail-vk1-f194.google.com ([209.85.221.194]:45375 "EHLO
+        mail-vk1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727820AbeKEUbW (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Nov 2018 15:31:22 -0500
+Received: by mail-vk1-f194.google.com with SMTP id n126so1698149vke.12;
+        Mon, 05 Nov 2018 03:12:10 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=mime-version:references:in-reply-to:reply-to:from:date:message-id
+         :subject:to:cc:content-transfer-encoding;
+        bh=ePfiqWNkVaTCFg3fhTmbKSLpWlIRHnltkojrNRgLV4g=;
+        b=W+/ChsMNnUEPwj4xCByY1I1u+EqmF0N89gwhlqLi2eNOdqeiGlGVyeTI+KWoTcaH88
+         zk/AvIXTeeWd6rS2x6UFyUyN5kQQcMjuaWEv3NW/YyZ4O21iIH11wreUDAJ4TSnzxhrf
+         +Cb/WoxNe7OHLxcECVmrU1vHOIeA1lOnsmHbiUvse7h9mP2oIwPm8NZ8qWT7DJAytnYB
+         9XyC+B85/brYJJmEOsZgXyBZwU4AyUQjRtodnpg8DZ+PUM5+ritkc7R3A11b8GMNR1oK
+         xYJWC8dzHOHf2/QdaTpUooHvJW786u4EqHawvHw0xVuorY24PKFVEBa0QBMKk+i30Klc
+         cZEw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:reply-to
+         :from:date:message-id:subject:to:cc:content-transfer-encoding;
+        bh=ePfiqWNkVaTCFg3fhTmbKSLpWlIRHnltkojrNRgLV4g=;
+        b=ed/eUAJSJVf8dO1lMo3l5egTjTm1U46Swakk9SyL7c7kfF73LRz9N/79AeaXVnvzfD
+         m58/3bjZnm3FFYdrtwmFubk1EpVUw7uJbGdwnNep5pT30DC1VCsJKbsEFojZs8rvBT5F
+         NXV1GEOGQavmmuj+Qv72QfcssPaML5a26vQMpdn6066Hdsaj0zhAl1b9yq+e+gColuyJ
+         7B8lH8k+MHm0UlpWXcFLsR6KBq6jxXrlIHimaxHiISnJiKfNR7cA/F7swJkyQh7CjqUL
+         R70DwUuEVbXJJHm5qhL42eWd9fGIa5p282RgUtQfdVKr/z7OMtcA5D76T1Locup5SezB
+         L+Gg==
+X-Gm-Message-State: AGRZ1gKlUDyye7Pt3tZb0FI+Fg8p1e/YQyNqZ94T3hJV3LkiCIUb/pV/
+        sZtI4dnFli0Kbpf0Z6CokMJP2/Bkt7LoR2sI/+sxAA==
+X-Google-Smtp-Source: AJdET5fO68aWLT5gUTikRYeZ9SkFA8ifDmiOQ4i+jszNXqr8U/xf3M7mBHPi1aN2m86uhhoADqu9v5cr/hoMKZP7tuo=
+X-Received: by 2002:a1f:5a01:: with SMTP id o1mr4171064vkb.4.1541416330197;
+ Mon, 05 Nov 2018 03:12:10 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <1541414949-16300-1-git-send-email-zhangshaokun@hisilicon.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="K8qmIWbMujQQBjS9cWCBZ6696M31s4w1U"
-X-Provags-ID: V03:K1:9eahrhMnlywjp/3Gv3E+vEFzzqZp4z92T+auR5Jggu3cHVQqxFU
- /f3wxL3LfnSep9018zqXaQ+kbSPZd2f4fFwRn54LYLRPgQd5PZhKy1ekKDlSNL31I4C65Zn
- MxoxCcanPGLl3J3IRTglULWq8IK4rZzmBuhVJTmiVfEqCYWO71FWQTJiAZUp8+83I+6cw7Q
- OE847/ypGyxVRDhVBw1oQ==
-X-UI-Out-Filterresults: notjunk:1;V01:K0:oyB3qrLxHzE=:VwJtWkkDV1BETKyNG+xTOq
- vKJlKUadAr7h/BvLZ+DuLXxXw9UU+Pm/L44WntVN6wz6qfH22XuaSfjqUOgRjmakdpy4sYVO3
- vqNKexvE4WnjN7GCLljSObTgwbwHdbg/OaKpWLsxjxp9WnMLcMQYUvZ+nWWzjHbOFco4cSd17
- tr8HU6b9azkau61PIiu3rpT9lWGlnjdlAolBC5PMLawvZbHGAgJdMftrELFo98GJV9qJ84Her
- K8CUfa3dcTnbHo9jLMKaAJraQM/lozOGTyIZHpxjYZh7u72R4ofYsT50ehnqN2c3SS0u+cRAA
- 1tBRpgFt9qvIM3DNGouBLXMxnxb+ho0TK3K0mgWwzgS5TAuYHbbfmaDE4rGlRxWSDjrwHy9Kx
- 7IJgFeB5uSuI1cgBqKR0+sYX1mJiOnZyUbXFZ5/X635YD0j4Sum5/TNiKTkHz68NFQ7p/+365
- 8V9nLl1WFWHGP53B3/nqxeeCl06NqqfhJyAHt1PI3sPatQLTXtIArc+RgvlAtjIhYM9Xgcl7b
- HpindOL/mAKtveEQ+qk6nr/Uo9NBpHvcg+a9CGDb4xT0TNogZDVH26o4X7SEaU3uYlYZJzaZf
- K8hMW5VlaIEepgTAM9E35BDDg661zDqLN116LhVi5PmjC0DjkNuYffx0uivbX65fn7j9yMjy4
- 54yZr6yWfKojbjVpNmlrA4yuy0ClVhMSzPjvHpDWl/ngFqvXevlRNtTBgqu1jkRoQlJcvVR66
- FXuvytnbP0e08EKjaK5QBF0v3E8Mv/prmZnf85e2pmBWPbNuLZtHb10eOka5eo02s/c89acea
- 9fiekI1PsD9c1fV4uLBMePI0iz7fg==
+References: <1540882702-21104-1-git-send-email-robbieko@synology.com>
+ <CAL3q7H4p_fa=5UhfBkSs3GU5EydKQ0J76D5RMShMY-2HQY3F+Q@mail.gmail.com> <d1c2ad795fa14784e4908fd3fa50617e@synology.com>
+In-Reply-To: <d1c2ad795fa14784e4908fd3fa50617e@synology.com>
+Reply-To: fdmanana@gmail.com
+From:   Filipe Manana <fdmanana@gmail.com>
+Date:   Mon, 5 Nov 2018 11:11:58 +0000
+Message-ID: <CAL3q7H7AG7Nwj-v6scS6c9wxsKELRmLpYVOt1hkfK9Jr_sh1Cw@mail.gmail.com>
+Subject: Re: [PATCH] Btrfs: incremental send, fix infinite loop when apply
+ children dir moves
+To:     Robbie Ko <robbieko@synology.com>
+Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>,
+        linux-btrfs-owner@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---K8qmIWbMujQQBjS9cWCBZ6696M31s4w1U
-Content-Type: multipart/mixed; boundary="vTy3TN7zbyPHZcXMAvJQJADZAEzwnKYCO";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Shaokun Zhang <zhangshaokun@hisilicon.com>, linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>,
- Josef Bacik <josef@toxicpanda.com>
-Message-ID: <425b8a43-ec24-82f7-0627-82edc81e329d@gmx.com>
-Subject: Re: [PATCH] btrfs: tree-checker: Fix misleading group system
- information
-References: <1541414949-16300-1-git-send-email-zhangshaokun@hisilicon.com>
-In-Reply-To: <1541414949-16300-1-git-send-email-zhangshaokun@hisilicon.com>
+On Mon, Nov 5, 2018 at 4:10 AM robbieko <robbieko@synology.com> wrote:
+>
+> Filipe Manana =E6=96=BC 2018-10-30 19:36 =E5=AF=AB=E5=88=B0:
+> > On Tue, Oct 30, 2018 at 7:00 AM robbieko <robbieko@synology.com> wrote:
+> >>
+> >> From: Robbie Ko <robbieko@synology.com>
+> >>
+> >> In apply_children_dir_moves, we first create an empty list (stack),
+> >> then we get an entry from pending_dir_moves and add it to the stack,
+> >> but we didn't delete the entry from rb_tree.
+> >>
+> >> So, in add_pending_dir_move, we create a new entry and then use the
+> >> parent_ino in the current rb_tree to find the corresponding entry,
+> >> and if so, add the new entry to the corresponding list.
+> >>
+> >> However, the entry may have been added to the stack, causing new
+> >> entries to be added to the stack as well.
+> >>
+> >> Finally, each time we take the first entry from the stack and start
+> >> processing, it ends up with an infinite loop.
+> >>
+> >> Fix this problem by remove node from pending_dir_moves,
+> >> avoid add new pending_dir_move to error list.
+> >
+> > I can't parse that explanation.
+> > Can you give a concrete example (reproducer) or did this came out of
+> > thin air?
+> >
+> > Thanks.
+> >
+>
+> I am sorry that I replied so late.
+>
+> I have no way to give a simple example.
+> But I can provide a btrfs image file
+> You can restore the Image via btrfs-image
+> Then directly command "btrfs send -e -p parent send -f dump_file"
+> Infinite loop will occur.
+> I use ubuntu 16.04, kernel 4.15.0.36-generic can be stable reproduce
 
---vTy3TN7zbyPHZcXMAvJQJADZAEzwnKYCO
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+You have been occasionally submitting fixes for send/receive for a few
+years now, and you know already
+that I always ask for a changelog that describes well the problem and
+an example/reproducer.
+
+Why did you do this?
+
+What I can read from your answer is that you were too lazy to extract
+a reproducer from that image.
+Just made some change that fixes the infinite loop and because it
+apparently works you're done with it,
+Without an example at least, I don't think you or anyone can fully
+understand the problem, and if what
+you have (despite somewhat making theoretical sense) is really a good
+solution or just a workaround for
+the cause of the problem - after all if you can't give an example, you
+can't explain how in practice such loop
+of dependencies between directories happens. This, as with most
+send/receive problems, is a pure sequential
+and deterministic problem so there's really no excuse for not getting
+a reproducer.
+
+Without an example, an explanation how it happens in the real world,
+does one know that your change is
+fixing the problem is the right place and not introducing other
+problems? Like the receiver not getting some
+changes (missing directories, files, or renames, etc).
+
+Tests are not just to prove a change is correct, they exist to catch
+and prevent regressions in the future too.
+
+You can do better than that.
+
+>
+> Image file, please refer to the attachment.
+>
+> Thanks.
+>
+>
+> >>
+> >> Signed-off-by: Robbie Ko <robbieko@synology.com>
+> >> ---
+> >>  fs/btrfs/send.c | 11 ++++++++---
+> >>  1 file changed, 8 insertions(+), 3 deletions(-)
+> >>
+> >> diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+> >> index 094cc144..5be83b5 100644
+> >> --- a/fs/btrfs/send.c
+> >> +++ b/fs/btrfs/send.c
+> >> @@ -3340,7 +3340,8 @@ static void free_pending_move(struct send_ctx
+> >> *sctx, struct pending_dir_move *m)
+> >>         kfree(m);
+> >>  }
+> >>
+> >> -static void tail_append_pending_moves(struct pending_dir_move *moves,
+> >> +static void tail_append_pending_moves(struct send_ctx *sctx,
+> >> +                                     struct pending_dir_move *moves,
+> >>                                       struct list_head *stack)
+> >>  {
+> >>         if (list_empty(&moves->list)) {
+> >> @@ -3351,6 +3352,10 @@ static void tail_append_pending_moves(struct
+> >> pending_dir_move *moves,
+> >>                 list_add_tail(&moves->list, stack);
+> >>                 list_splice_tail(&list, stack);
+> >>         }
+> >> +       if (!RB_EMPTY_NODE(&moves->node)) {
+> >> +               rb_erase(&moves->node, &sctx->pending_dir_moves);
+> >> +               RB_CLEAR_NODE(&moves->node);
+> >> +       }
+> >>  }
+> >>
+> >>  static int apply_children_dir_moves(struct send_ctx *sctx)
+> >> @@ -3365,7 +3370,7 @@ static int apply_children_dir_moves(struct
+> >> send_ctx *sctx)
+> >>                 return 0;
+> >>
+> >>         INIT_LIST_HEAD(&stack);
+> >> -       tail_append_pending_moves(pm, &stack);
+> >> +       tail_append_pending_moves(sctx, pm, &stack);
+> >>
+> >>         while (!list_empty(&stack)) {
+> >>                 pm =3D list_first_entry(&stack, struct pending_dir_mov=
+e,
+> >> list);
+> >> @@ -3376,7 +3381,7 @@ static int apply_children_dir_moves(struct
+> >> send_ctx *sctx)
+> >>                         goto out;
+> >>                 pm =3D get_pending_dir_moves(sctx, parent_ino);
+> >>                 if (pm)
+> >> -                       tail_append_pending_moves(pm, &stack);
+> >> +                       tail_append_pending_moves(sctx, pm, &stack);
+> >>         }
+> >>         return 0;
+> >>
+> >> --
+> >> 1.9.1
+> >>
 
 
 
-On 2018/11/5 =E4=B8=8B=E5=8D=886:49, Shaokun Zhang wrote:
-> block_group_err shows the group system as a decimal value with a '0x'
-> prefix, which is somewhat misleading.
->=20
-> Fix it to print hexadecimal, as was intended.
->=20
-> Cc: David Sterba <dsterba@suse.com>=20
-> Cc: Chris Mason <clm@fb.com>
-> Cc: Josef Bacik <josef@toxicpanda.com>=20
-> Signed-off-by: Shaokun Zhang <zhangshaokun@hisilicon.com>
+--=20
+Filipe David Manana,
 
-Reviewed-by: Qu Wenruo <wqu@suse.com>
-
-BTW, did you catch it with some real world case or just by looking into
-the code?
-
-Thanks,
-Qu
-
-> ---
->  fs/btrfs/tree-checker.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
->=20
-> diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
-> index cab0b1f..efcf89a 100644
-> --- a/fs/btrfs/tree-checker.c
-> +++ b/fs/btrfs/tree-checker.c
-> @@ -440,7 +440,7 @@ static int check_block_group_item(struct btrfs_fs_i=
-nfo *fs_info,
->  	    type !=3D (BTRFS_BLOCK_GROUP_METADATA |
->  			   BTRFS_BLOCK_GROUP_DATA)) {
->  		block_group_err(fs_info, leaf, slot,
-> -"invalid type, have 0x%llx (%lu bits set) expect either 0x%llx, 0x%llx=
-, 0x%llu or 0x%llx",
-> +"invalid type, have 0x%llx (%lu bits set) expect either 0x%llx, 0x%llx=
-, 0x%llx or 0x%llx",
->  			type, hweight64(type),
->  			BTRFS_BLOCK_GROUP_DATA, BTRFS_BLOCK_GROUP_METADATA,
->  			BTRFS_BLOCK_GROUP_SYSTEM,
->=20
-
-
---vTy3TN7zbyPHZcXMAvJQJADZAEzwnKYCO--
-
---K8qmIWbMujQQBjS9cWCBZ6696M31s4w1U
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlvgI2gACgkQwj2R86El
-/qjf6gf/ScWkL10kdvipBBZyOkLmEMWXCO+LJMLTq6vuASb2Ljr8jamQN7W0KV2g
-ZrRgS55Oa9kTw5EUTrDPk91wtV9NzPSJU2e+O1c4ctWYfYZ+/uSO+fcXWCnczN4/
-BXx2UhfWGWuo77sfKGhqy64X2sawL4li62qaWrv7XUeVru8ATABZPUJmz7IHbTAt
-vFIRF3TUFubJ3c2FJtnds1lKVrRBSI7fpgXCH2fZbx4XhiDFlSdzN6rZ/Zdva3q8
-dsEv78Q5wZi2y2PahitIjnN+CXvk0ZzHzkVn3OLWq7aCarRtvhZlU2d/kSW+qZE5
-30tdikq3Ws9zS6/1N8MmW99Ku/sTdA==
-=0aBc
------END PGP SIGNATURE-----
-
---K8qmIWbMujQQBjS9cWCBZ6696M31s4w1U--
+=E2=80=9CWhether you think you can, or you think you can't =E2=80=94 you're=
+ right.=E2=80=9D

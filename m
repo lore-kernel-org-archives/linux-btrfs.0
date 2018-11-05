@@ -3,31 +3,33 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A2AE3C0044C
-	for <linux-btrfs@archiver.kernel.org>; Mon,  5 Nov 2018 21:31:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8808FC0044C
+	for <linux-btrfs@archiver.kernel.org>; Mon,  5 Nov 2018 21:35:51 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 6CA722081C
-	for <linux-btrfs@archiver.kernel.org>; Mon,  5 Nov 2018 21:31:25 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 6CA722081C
+	by mail.kernel.org (Postfix) with ESMTP id 4A4F22081C
+	for <linux-btrfs@archiver.kernel.org>; Mon,  5 Nov 2018 21:35:51 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 4A4F22081C
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2388030AbeKFGxE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 6 Nov 2018 01:53:04 -0500
-Received: from mx2.suse.de ([195.135.220.15]:41224 "EHLO mx1.suse.de"
+        id S2387600AbeKFG5c (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 6 Nov 2018 01:57:32 -0500
+Received: from mx2.suse.de ([195.135.220.15]:41948 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S2387846AbeKFGxE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 6 Nov 2018 01:53:04 -0500
+        id S2387441AbeKFG5b (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 6 Nov 2018 01:57:31 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 9E31BB12D;
-        Mon,  5 Nov 2018 21:31:21 +0000 (UTC)
-Subject: Re: [PATCH 1/3] bitops: Fix big endian compilation
+        by mx1.suse.de (Postfix) with ESMTP id 98DA3B12E;
+        Mon,  5 Nov 2018 21:35:47 +0000 (UTC)
+Subject: Re: [PATCH 2/3] task-utils: Fix comparison between pointer and
+ integer
 To:     Rosen Penev <rosenp@gmail.com>, linux-btrfs@vger.kernel.org
 References: <20181105190643.13578-1-rosenp@gmail.com>
+ <20181105190643.13578-2-rosenp@gmail.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -72,12 +74,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  KIuxEcV8wcVjr+Wr9zRl06waOCkgrQbTPp631hToxo+4rA1jiQF2M80HAet65ytBVR2pFGZF
  zGYYLqiG+mpUZ+FPjxk9kpkRYz61mTLSY7tuFljExfJWMGfgSg1OxfLV631jV1TcdUnx+h3l
  Sqs2vMhAVt14zT8mpIuu2VNxcontxgVr1kzYA/tQg32fVRbGr449j1gw57BV9i0vww==
-Message-ID: <6b70f54e-23f2-ed16-ba49-f93c39eb98a2@suse.com>
-Date:   Mon, 5 Nov 2018 23:31:20 +0200
+Message-ID: <b79f886e-20d2-5038-2648-a20d6e57c105@suse.com>
+Date:   Mon, 5 Nov 2018 23:35:46 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <20181105190643.13578-1-rosenp@gmail.com>
+In-Reply-To: <20181105190643.13578-2-rosenp@gmail.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -89,52 +91,31 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 On 5.11.18 г. 21:06 ч., Rosen Penev wrote:
-> Replaced bswap with _ variants. While it's a glibc extension, all of the
-> popular libc implementations (glibc, uClibc, musl, BIONIC) seem to support
-> it.
-> 
-> Added static inline to two functions to match little endian variants. This
-> fixes a linking error experienced when compiling.
+> pthread_t is a pointer type, not an integer one. The > 0 makes no sense
+> and throws a warning.
 
-On what platform did you experience the linking error?
+Code-wise the patch is ok, however, technically pthread_t is an opaque
+type. I guess David could fix it on the way in so no need to resend.
+
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 
 > 
 > Signed-off-by: Rosen Penev <rosenp@gmail.com>
 > ---
->  kernel-lib/bitops.h | 8 ++++----
->  1 file changed, 4 insertions(+), 4 deletions(-)
+>  task-utils.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
 > 
-> diff --git a/kernel-lib/bitops.h b/kernel-lib/bitops.h
-> index b1fd6f5..2c51a26 100644
-> --- a/kernel-lib/bitops.h
-> +++ b/kernel-lib/bitops.h
-> @@ -178,9 +178,9 @@ static inline unsigned long find_next_zero_bit(const unsigned long *addr,
->  static inline unsigned long ext2_swab(const unsigned long y)
->  {
->  #if BITS_PER_LONG == 64
-> -	return (unsigned long) bswap64((u64) y);
-> +	return (unsigned long) bswap_64((u64) y);
->  #elif BITS_PER_LONG == 32
-> -	return (unsigned long) bswap32((u32) y);
-> +	return (unsigned long) bswap_32((u32) y);
->  #else
->  #error BITS_PER_LONG not defined
->  #endif
-> @@ -218,14 +218,14 @@ static inline unsigned long _find_next_bit_le(const unsigned long *addr1,
->  	return min(start + __ffs(ext2_swab(tmp)), nbits);
->  }
+> diff --git a/task-utils.c b/task-utils.c
+> index a9bee8f..e4dcd36 100644
+> --- a/task-utils.c
+> +++ b/task-utils.c
+> @@ -67,7 +67,7 @@ void task_stop(struct task_info *info)
+>  	if (!info)
+>  		return;
 >  
-> -unsigned long find_next_zero_bit_le(const void *addr, unsigned long size,
-> +static inline unsigned long find_next_zero_bit_le(const void *addr, unsigned long size,
->  		unsigned long offset)
->  {
->  	return _find_next_bit_le(addr, NULL, size, offset, ~0UL);
->  }
->  
->  
-> -unsigned long find_next_bit_le(const void *addr, unsigned long size,
-> +static inline unsigned long find_next_bit_le(const void *addr, unsigned long size,
->  		unsigned long offset)
->  {
->  	return _find_next_bit_le(addr, NULL, size, offset, 0UL);
+> -	if (info->id > 0) {
+> +	if (info->id) {
+>  		pthread_cancel(info->id);
+>  		pthread_join(info->id, NULL);
+>  		info->id = 0;
 > 

@@ -7,40 +7,40 @@ X-Spam-Status: No, score=-10.5 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BF6E4C0044C
-	for <linux-btrfs@archiver.kernel.org>; Mon,  5 Nov 2018 11:14:11 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7C00DC46475
+	for <linux-btrfs@archiver.kernel.org>; Mon,  5 Nov 2018 11:14:22 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 7275920825
-	for <linux-btrfs@archiver.kernel.org>; Mon,  5 Nov 2018 11:14:11 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 44FEA20825
+	for <linux-btrfs@archiver.kernel.org>; Mon,  5 Nov 2018 11:14:22 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=kernel.org header.i=@kernel.org header.b="jphOYt/A"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 7275920825
+	dkim=pass (1024-bit key) header.d=kernel.org header.i=@kernel.org header.b="h4N6dO17"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 44FEA20825
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=kernel.org
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729304AbeKEUdV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 5 Nov 2018 15:33:21 -0500
-Received: from mail.kernel.org ([198.145.29.99]:49926 "EHLO mail.kernel.org"
+        id S1729409AbeKEUdc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 5 Nov 2018 15:33:32 -0500
+Received: from mail.kernel.org ([198.145.29.99]:50016 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727337AbeKEUdV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 5 Nov 2018 15:33:21 -0500
+        id S1727337AbeKEUdc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 5 Nov 2018 15:33:32 -0500
 Received: from localhost.localdomain (bl8-197-74.dsl.telepac.pt [85.241.197.74])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 21B4920825
-        for <linux-btrfs@vger.kernel.org>; Mon,  5 Nov 2018 11:14:07 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id B733B20825
+        for <linux-btrfs@vger.kernel.org>; Mon,  5 Nov 2018 11:14:19 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1541416448;
-        bh=WY1qCkbguU0/4cFy78zAkwTjFuxO6dzpVOuj9kAyCfg=;
+        s=default; t=1541416460;
+        bh=V8tVuDG6O1ETbB974h8QaVf8QPcO4qgEnU5B4iXia30=;
         h=From:To:Subject:Date:From;
-        b=jphOYt/Ae7EnY8VLY3Z5oMUjlcqirwlwr7vdrMJ/2mZqBxoRXAR8gJUBtARsBwU4Q
-         dT2ro0Zx1AglKP7lxmsnB0HSBFlgxfoYBxk5WAQy9qBnHd2IYzbC5jPPFe0/FeE7cW
-         fHitPxeVHGzi4CO74kIevl6nOzPATO6ISVQTxMds=
+        b=h4N6dO17rk5+2pw1+cVQFkY+xhDLGrSTrocg/dnNQ9CV72EOj/Bk8XUaIPKDOzAw8
+         GxQwXIAxCgVsrEV09pEzT4yvcXWQKbcI99lZGzb0ygbrpo8MFaUaFs8f16tas0hgYH
+         SuT/sK8oBp5vzejRP4LJnH74AWMe2ustqYF5IC0Y=
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: fix infinite loop on inode eviction after deduplication of eof block
-Date:   Mon,  5 Nov 2018 11:14:05 +0000
-Message-Id: <20181105111405.11752-1-fdmanana@kernel.org>
+Subject: [PATCH] Btrfs: fix data corruption due to cloning of eof block
+Date:   Mon,  5 Nov 2018 11:14:17 +0000
+Message-Id: <20181105111417.11808-1-fdmanana@kernel.org>
 X-Mailer: git-send-email 2.11.0
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
@@ -49,171 +49,94 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-If we attempt to deduplicate the last block of a file A into the middle of
-a file B, and file A's size is not a multiple of the block size, we end
-rounding the deduplication length to 0 bytes, to avoid the data corruption
-issue fixed by commit de02b9f6bb65 ("Btrfs: fix data corruption when
-deduplicating between different files"). However a length of zero will
-cause the insertion of an extent state with a start value greater (by 1)
-then the end value, leading to a corrupt extent state that will trigger a
-warning and cause chaos such as an infinite loop during inode eviction.
-Example trace:
+We currently allow cloning a range from a file which includes the last
+block of the file even if the file's size is not aligned to the block
+size. This is fine and useful when the destination file has the same size,
+but when it does not and the range ends somewhere in the middle of the
+destination file, it leads to corruption because the bytes between the EOF
+and the end of the block have undefined data (when there is support for
+discard/trimming they have a value of 0x00).
 
- [96049.833585] ------------[ cut here ]------------
- [96049.833714] WARNING: CPU: 0 PID: 24448 at fs/btrfs/extent_io.c:436 insert_state+0x101/0x120 [btrfs]
- [96049.833767] CPU: 0 PID: 24448 Comm: xfs_io Not tainted 4.19.0-rc7-btrfs-next-39 #1
- [96049.833768] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.11.2-0-gf9626ccb91-prebuilt.qemu-project.org 04/01/2014
- [96049.833780] RIP: 0010:insert_state+0x101/0x120 [btrfs]
- [96049.833783] RSP: 0018:ffffafd2c3707af0 EFLAGS: 00010282
- [96049.833785] RAX: 0000000000000000 RBX: 000000000004dfff RCX: 0000000000000006
- [96049.833786] RDX: 0000000000000007 RSI: ffff99045c143230 RDI: ffff99047b2168a0
- [96049.833787] RBP: ffff990457851cd0 R08: 0000000000000001 R09: 0000000000000000
- [96049.833787] R10: ffffafd2c3707ab8 R11: 0000000000000000 R12: ffff9903b93b12c8
- [96049.833788] R13: 000000000004e000 R14: ffffafd2c3707b80 R15: ffffafd2c3707b78
- [96049.833790] FS:  00007f5c14e7d700(0000) GS:ffff99047b200000(0000) knlGS:0000000000000000
- [96049.833791] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
- [96049.833792] CR2: 00007f5c146abff8 CR3: 0000000115f4c004 CR4: 00000000003606f0
- [96049.833795] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
- [96049.833796] DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
- [96049.833796] Call Trace:
- [96049.833809]  __set_extent_bit+0x46c/0x6a0 [btrfs]
- [96049.833823]  lock_extent_bits+0x6b/0x210 [btrfs]
- [96049.833831]  ? _raw_spin_unlock+0x24/0x30
- [96049.833841]  ? test_range_bit+0xdf/0x130 [btrfs]
- [96049.833853]  lock_extent_range+0x8e/0x150 [btrfs]
- [96049.833864]  btrfs_double_extent_lock+0x78/0xb0 [btrfs]
- [96049.833875]  btrfs_extent_same_range+0x14e/0x550 [btrfs]
- [96049.833885]  ? rcu_read_lock_sched_held+0x3f/0x70
- [96049.833890]  ? __kmalloc_node+0x2b0/0x2f0
- [96049.833899]  ? btrfs_dedupe_file_range+0x19a/0x280 [btrfs]
- [96049.833909]  btrfs_dedupe_file_range+0x270/0x280 [btrfs]
- [96049.833916]  vfs_dedupe_file_range_one+0xd9/0xe0
- [96049.833919]  vfs_dedupe_file_range+0x131/0x1b0
- [96049.833924]  do_vfs_ioctl+0x272/0x6e0
- [96049.833927]  ? __fget+0x113/0x200
- [96049.833931]  ksys_ioctl+0x70/0x80
- [96049.833933]  __x64_sys_ioctl+0x16/0x20
- [96049.833937]  do_syscall_64+0x60/0x1b0
- [96049.833939]  entry_SYSCALL_64_after_hwframe+0x49/0xbe
- [96049.833941] RIP: 0033:0x7f5c1478ddd7
- [96049.833943] RSP: 002b:00007ffe15b196a8 EFLAGS: 00000202 ORIG_RAX: 0000000000000010
- [96049.833945] RAX: ffffffffffffffda RBX: 0000000000000000 RCX: 00007f5c1478ddd7
- [96049.833946] RDX: 00005625ece322d0 RSI: 00000000c0189436 RDI: 0000000000000004
- [96049.833947] RBP: 0000000000000000 R08: 00007f5c14a46f48 R09: 0000000000000040
- [96049.833948] R10: 0000000000000541 R11: 0000000000000202 R12: 0000000000000000
- [96049.833949] R13: 0000000000000000 R14: 0000000000000004 R15: 00005625ece322d0
- [96049.833954] irq event stamp: 6196
- [96049.833956] hardirqs last  enabled at (6195): [<ffffffff91b00663>] console_unlock+0x503/0x640
- [96049.833958] hardirqs last disabled at (6196): [<ffffffff91a037dd>] trace_hardirqs_off_thunk+0x1a/0x1c
- [96049.833959] softirqs last  enabled at (6114): [<ffffffff92600370>] __do_softirq+0x370/0x421
- [96049.833964] softirqs last disabled at (6095): [<ffffffff91a8dd4d>] irq_exit+0xcd/0xe0
- [96049.833965] ---[ end trace db7b05f01b7fa10c ]---
- [96049.935816] R13: 0000000000000000 R14: 00005562e5259240 R15: 00007ffff092b910
- [96049.935822] irq event stamp: 6584
- [96049.935823] hardirqs last  enabled at (6583): [<ffffffff91b00663>] console_unlock+0x503/0x640
- [96049.935825] hardirqs last disabled at (6584): [<ffffffff91a037dd>] trace_hardirqs_off_thunk+0x1a/0x1c
- [96049.935827] softirqs last  enabled at (6328): [<ffffffff92600370>] __do_softirq+0x370/0x421
- [96049.935828] softirqs last disabled at (6313): [<ffffffff91a8dd4d>] irq_exit+0xcd/0xe0
- [96049.935829] ---[ end trace db7b05f01b7fa123 ]---
- [96049.935840] ------------[ cut here ]------------
- [96049.936065] WARNING: CPU: 1 PID: 24463 at fs/btrfs/extent_io.c:436 insert_state+0x101/0x120 [btrfs]
- [96049.936107] CPU: 1 PID: 24463 Comm: umount Tainted: G        W         4.19.0-rc7-btrfs-next-39 #1
- [96049.936108] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.11.2-0-gf9626ccb91-prebuilt.qemu-project.org 04/01/2014
- [96049.936117] RIP: 0010:insert_state+0x101/0x120 [btrfs]
- [96049.936119] RSP: 0018:ffffafd2c3637bc0 EFLAGS: 00010282
- [96049.936120] RAX: 0000000000000000 RBX: 000000000004dfff RCX: 0000000000000006
- [96049.936121] RDX: 0000000000000007 RSI: ffff990445cf88e0 RDI: ffff99047b2968a0
- [96049.936122] RBP: ffff990457851cd0 R08: 0000000000000001 R09: 0000000000000000
- [96049.936123] R10: ffffafd2c3637b88 R11: 0000000000000000 R12: ffff9904574301e8
- [96049.936124] R13: 000000000004e000 R14: ffffafd2c3637c50 R15: ffffafd2c3637c48
- [96049.936125] FS:  00007fe4b87e72c0(0000) GS:ffff99047b280000(0000) knlGS:0000000000000000
- [96049.936126] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
- [96049.936128] CR2: 00005562e52618d8 CR3: 00000001151c8005 CR4: 00000000003606e0
- [96049.936129] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
- [96049.936131] DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
- [96049.936131] Call Trace:
- [96049.936141]  __set_extent_bit+0x46c/0x6a0 [btrfs]
- [96049.936154]  lock_extent_bits+0x6b/0x210 [btrfs]
- [96049.936167]  btrfs_evict_inode+0x1e1/0x5a0 [btrfs]
- [96049.936172]  evict+0xbf/0x1c0
- [96049.936174]  dispose_list+0x51/0x80
- [96049.936176]  evict_inodes+0x193/0x1c0
- [96049.936180]  generic_shutdown_super+0x3f/0x110
- [96049.936182]  kill_anon_super+0xe/0x30
- [96049.936189]  btrfs_kill_super+0x13/0x100 [btrfs]
- [96049.936191]  deactivate_locked_super+0x3a/0x70
- [96049.936193]  cleanup_mnt+0x3b/0x80
- [96049.936195]  task_work_run+0x93/0xc0
- [96049.936198]  exit_to_usermode_loop+0xfa/0x100
- [96049.936201]  do_syscall_64+0x17f/0x1b0
- [96049.936202]  entry_SYSCALL_64_after_hwframe+0x49/0xbe
- [96049.936204] RIP: 0033:0x7fe4b80cfb37
- [96049.936206] RSP: 002b:00007ffff092b688 EFLAGS: 00000246 ORIG_RAX: 00000000000000a6
- [96049.936207] RAX: 0000000000000000 RBX: 00005562e5259060 RCX: 00007fe4b80cfb37
- [96049.936208] RDX: 0000000000000001 RSI: 0000000000000000 RDI: 00005562e525faa0
- [96049.936209] RBP: 00005562e525faa0 R08: 00005562e525f770 R09: 0000000000000015
- [96049.936210] R10: 00000000000006b4 R11: 0000000000000246 R12: 00007fe4b85d1e64
- [96049.936211] R13: 0000000000000000 R14: 00005562e5259240 R15: 00007ffff092b910
- [96049.936211] R13: 0000000000000000 R14: 00005562e5259240 R15: 00007ffff092b910
- [96049.936216] irq event stamp: 6616
- [96049.936219] hardirqs last  enabled at (6615): [<ffffffff91b00663>] console_unlock+0x503/0x640
- [96049.936219] hardirqs last disabled at (6616): [<ffffffff91a037dd>] trace_hardirqs_off_thunk+0x1a/0x1c
- [96049.936222] softirqs last  enabled at (6328): [<ffffffff92600370>] __do_softirq+0x370/0x421
- [96049.936222] softirqs last disabled at (6313): [<ffffffff91a8dd4d>] irq_exit+0xcd/0xe0
- [96049.936223] ---[ end trace db7b05f01b7fa124 ]---
-
-The second stack trace, from inode eviction, is repeated forever due to
-the infinite loop during eviction.
-
-This is the same type of problem fixed way back in 2015 by commit
-113e8283869b ("Btrfs: fix inode eviction infinite loop after extent_same
-ioctl") and commit ccccf3d67294 ("Btrfs: fix inode eviction infinite loop
-after cloning into it").
-
-So fix this by returning immediately if the deduplication range length
-gets rounded down to 0 bytes, as there is nothing that needs to be done in
-such case.
-
-Example reproducer:
+Example:
 
  $ mkfs.btrfs -f /dev/sdb
  $ mount /dev/sdb /mnt
 
- $ xfs_io -f -c "pwrite -S 0xe6 0 100" /mnt/foo
- $ xfs_io -f -c "pwrite -S 0xe6 0 1M" /mnt/bar
+ $ export foo_size=$((256 * 1024 + 100))
+ $ xfs_io -f -c "pwrite -S 0x3c 0 $foo_size" /mnt/foo
+ $ xfs_io -f -c "pwrite -S 0xb5 0 1M" /mnt/bar
 
- # Unmount the filesystem and mount it again so that we start without any
- # extent state records when we ask for the deduplication.
- $ umount /mnt
- $ mount /dev/sdb /mnt
+ $ xfs_io -c "reflink /mnt/foo 0 512K $foo_size" /mnt/bar
 
- $ xfs_io -c "dedupe /mnt/foo 0 500K 100" /mnt/bar
+ $ od -A d -t x1 /mnt/bar
+ 0000000 b5 b5 b5 b5 b5 b5 b5 b5 b5 b5 b5 b5 b5 b5 b5 b5
+ *
+ 0524288 3c 3c 3c 3c 3c 3c 3c 3c 3c 3c 3c 3c 3c 3c 3c 3c
+ *
+ 0786528 3c 3c 3c 3c 00 00 00 00 00 00 00 00 00 00 00 00
+ 0786544 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ *
+ 0790528 b5 b5 b5 b5 b5 b5 b5 b5 b5 b5 b5 b5 b5 b5 b5 b5
+ *
+ 1048576
 
- # This unmount triggers the infinite loop.
- $ umount /mnt
+The bytes in the range from 786532 (512Kb + 256Kb + 100 bytes) to 790527
+(512Kb + 256Kb + 4Kb - 1) got corrupted, having now a value of 0x00 instead
+of 0xb5.
 
-A test case for fstests will follow soon.
+This is similar to the problem we had for deduplication that got recently
+fixed by commit de02b9f6bb65 ("Btrfs: fix data corruption when
+deduplicating between different files").
 
-Fixes: de02b9f6bb65 ("Btrfs: fix data corruption when deduplicating between different files")
-CC: <stable@vger.kernel.org> # 4.19+
+Fix this by not allowing such operations to be performed and return the
+errno -EINVAL to user space. This is what XFS is doing as well at the VFS
+level. This change however now makes us return -EINVAL instead of
+-EOPNOTSUPP for cases where the source range maps to an inline extent and
+the destination range's end is smaller then the destination file's size,
+since the detection of inline extents is done during the actual process of
+dropping file extent items (at __btrfs_drop_extents()). Returning the
+-EINVAL error is done early on and solely based on the input parameters
+(offsets and length) and destination file's size. This makes us consistent
+with XFS and anyone else supporting cloning since this case is now checked
+at a higher level in the VFS and is where the -EINVAL will be returned
+from starting with kernel 4.20 (the VFS changed was introduced in 4.20-rc1
+by commit 07d19dc9fbe9 ("vfs: avoid problematic remapping requests into
+partial EOF block"). So this change is more geared towards stable kernels,
+as it's unlikely the new VFS checks get removed intentionally.
+
+A test case for fstests follows soon, as well as an update to filter
+existing tests that expect -EOPNOTSUPP to accept -EINVAL as well.
+
+CC: <stable@vger.kernel.org> # 4.4+
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/ioctl.c | 2 ++
- 1 file changed, 2 insertions(+)
+ fs/btrfs/ioctl.c | 12 ++++++++++--
+ 1 file changed, 10 insertions(+), 2 deletions(-)
 
 diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index d60b6caf09e8..f3134fc69880 100644
+index f3134fc69880..30e098970063 100644
 --- a/fs/btrfs/ioctl.c
 +++ b/fs/btrfs/ioctl.c
-@@ -3486,6 +3486,8 @@ static int btrfs_extent_same_range(struct inode *src, u64 loff, u64 olen,
- 			const u64 sz = BTRFS_I(src)->root->fs_info->sectorsize;
+@@ -4277,9 +4277,17 @@ static noinline int btrfs_clone_files(struct file *file, struct file *file_src,
+ 		goto out_unlock;
+ 	if (len == 0)
+ 		olen = len = src->i_size - off;
+-	/* if we extend to eof, continue to block boundary */
+-	if (off + len == src->i_size)
++	/*
++	 * If we extend to eof, continue to block boundary if and only if the
++	 * destination end offset matches the destination file's size, otherwise
++	 * we would be corrupting data by placing the eof block into the middle
++	 * of a file.
++	 */
++	if (off + len == src->i_size) {
++		if (!IS_ALIGNED(len, bs) && destoff + len < inode->i_size)
++			goto out_unlock;
+ 		len = ALIGN(src->i_size, bs) - off;
++	}
  
- 			len = round_down(i_size_read(src), sz) - loff;
-+			if (len == 0)
-+				return 0;
- 			olen = len;
- 		}
- 	}
+ 	if (len == 0) {
+ 		ret = 0;
 -- 
 2.11.0
 

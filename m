@@ -2,120 +2,142 @@ Return-Path: <SRS0=ibH9=NQ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.9 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8808FC0044C
-	for <linux-btrfs@archiver.kernel.org>; Mon,  5 Nov 2018 21:35:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5E3BDC0044C
+	for <linux-btrfs@archiver.kernel.org>; Mon,  5 Nov 2018 21:43:07 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 4A4F22081C
-	for <linux-btrfs@archiver.kernel.org>; Mon,  5 Nov 2018 21:35:51 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 4A4F22081C
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
+	by mail.kernel.org (Postfix) with ESMTP id 1C14E20825
+	for <linux-btrfs@archiver.kernel.org>; Mon,  5 Nov 2018 21:43:07 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="CZcjRKNR"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 1C14E20825
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2387600AbeKFG5c (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 6 Nov 2018 01:57:32 -0500
-Received: from mx2.suse.de ([195.135.220.15]:41948 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S2387441AbeKFG5b (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 6 Nov 2018 01:57:31 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 98DA3B12E;
-        Mon,  5 Nov 2018 21:35:47 +0000 (UTC)
-Subject: Re: [PATCH 2/3] task-utils: Fix comparison between pointer and
- integer
-To:     Rosen Penev <rosenp@gmail.com>, linux-btrfs@vger.kernel.org
-References: <20181105190643.13578-1-rosenp@gmail.com>
- <20181105190643.13578-2-rosenp@gmail.com>
-From:   Nikolay Borisov <nborisov@suse.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <b79f886e-20d2-5038-2648-a20d6e57c105@suse.com>
-Date:   Mon, 5 Nov 2018 23:35:46 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.2.1
+        id S2387974AbeKFHEt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 6 Nov 2018 02:04:49 -0500
+Received: from mail-oi1-f195.google.com ([209.85.167.195]:46911 "EHLO
+        mail-oi1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S2387580AbeKFHEs (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Nov 2018 02:04:48 -0500
+Received: by mail-oi1-f195.google.com with SMTP id k64-v6so8866483oia.13
+        for <linux-btrfs@vger.kernel.org>; Mon, 05 Nov 2018 13:43:05 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc:content-transfer-encoding;
+        bh=j92I/m4I+PiGhzFF9G+wMGnHy/Ep0nH5k2gUNrU1Rkw=;
+        b=CZcjRKNRmE/ArPyGO6UvU2bEE65aT+zeeAJLZqf8A+VQx05TvQK1K38C37oPEPbzjB
+         mErdQcZWbd8LjBQDsNbod0br7b2MhUpd06LDUcz0HOUr1F/OseehePL8O5PyeaOE9jJa
+         TJserfUFshB2z7Vd4Vq5S8DbjpZe9UMav0DM8ISuo3XQPXlmKCE/Ijk2NFCbraRxQlSe
+         IEGogdtQ84Ypqbvt4ohf4NLP/FpG0kgo7XODckST3p+1aZB3BGrPaktks9qGG/fcCQMX
+         yF0LXwMzR7r3EDk+3d4+eKEp7N5MhEYt6G9Ur5ap03FBwkkCH2u2FPD1gdKyLJU2f3qW
+         qelQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc:content-transfer-encoding;
+        bh=j92I/m4I+PiGhzFF9G+wMGnHy/Ep0nH5k2gUNrU1Rkw=;
+        b=Mtl/I5IRY1i21mWhBoj/e4wRdg7EQUTIB7euYTfjMaTGh+HMQ/t+GprQIfz39OCeRr
+         Mx3SzaNPapb0lpuR84QVvbiJTyGvew0DCQY0Z5qO/hQZfl78ADNGboDtjuoR5EN5Ecl0
+         zAaWHACnXvT8vbVA6ErG0FrW709zfvQSr63APEWwNvFWyfUOVMeir6r1/9ykM/7KTn4G
+         VYZRCeW1K/SgwnhfXw8kb5MEgTdMjT9r4m0BO5a9iUyNjEPYTwwra9LJuNe04YNmVqE9
+         w68445/DugexJRq0bwp82XOjLFyaEZhZb0yWhso1di8RQmsvzckvyP8oVtC5ehmJ5oCS
+         xZow==
+X-Gm-Message-State: AGRZ1gLahkRznMcBVTMHIHEpWMlDEfIzV3OBBQnCPSojb7fRMk/ht48X
+        9qmNcd7nuSz4f6ZML5RUidnSqXXHhhGy/T9zHwOBdknU
+X-Google-Smtp-Source: AJdET5fu7Bw/eODhl6ITnirxjTWnbHhCr3EdRHcijy9reo+jGCvFKJcMxr9njIaqL+hKBApBjesXUoyi31wIOZoXRr4=
+X-Received: by 2002:aca:2414:: with SMTP id n20-v6mr12932853oic.40.1541454184526;
+ Mon, 05 Nov 2018 13:43:04 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <20181105190643.13578-2-rosenp@gmail.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+References: <20181105190643.13578-1-rosenp@gmail.com> <6b70f54e-23f2-ed16-ba49-f93c39eb98a2@suse.com>
+In-Reply-To: <6b70f54e-23f2-ed16-ba49-f93c39eb98a2@suse.com>
+From:   Rosen Penev <rosenp@gmail.com>
+Date:   Mon, 5 Nov 2018 13:42:53 -0800
+Message-ID: <CAKxU2N-Q=bGypr+1soXBXTeJuytGnmWmRn8589B822xyiH=hJw@mail.gmail.com>
+Subject: Re: [PATCH 1/3] bitops: Fix big endian compilation
+To:     nborisov@suse.com
+Cc:     linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+On Mon, Nov 5, 2018 at 1:31 PM Nikolay Borisov <nborisov@suse.com> wrote:
+>
+>
+>
+> On 5.11.18 =D0=B3. 21:06 =D1=87., Rosen Penev wrote:
+> > Replaced bswap with _ variants. While it's a glibc extension, all of th=
+e
+> > popular libc implementations (glibc, uClibc, musl, BIONIC) seem to supp=
+ort
+> > it.
+> >
+> > Added static inline to two functions to match little endian variants. T=
+his
+> > fixes a linking error experienced when compiling.
+>
+> On what platform did you experience the linking error?
+MIPS 24kc. OpenWrt specifically. Here's a link with the compile log
+(near the end):
+https://circleci.com/gh/openwrt/packages/77?utm_campaign=3Dworkflow-failed&=
+utm_medium=3Demail&utm_source=3Dnotification
 
+The LTO errors I believe are due to GCC 7.3.0 being broken (fixed in 7.3.1)=
+.
 
-On 5.11.18 г. 21:06 ч., Rosen Penev wrote:
-> pthread_t is a pointer type, not an integer one. The > 0 makes no sense
-> and throws a warning.
-
-Code-wise the patch is ok, however, technically pthread_t is an opaque
-type. I guess David could fix it on the way in so no need to resend.
-
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-
-> 
-> Signed-off-by: Rosen Penev <rosenp@gmail.com>
-> ---
->  task-utils.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/task-utils.c b/task-utils.c
-> index a9bee8f..e4dcd36 100644
-> --- a/task-utils.c
-> +++ b/task-utils.c
-> @@ -67,7 +67,7 @@ void task_stop(struct task_info *info)
->  	if (!info)
->  		return;
->  
-> -	if (info->id > 0) {
-> +	if (info->id) {
->  		pthread_cancel(info->id);
->  		pthread_join(info->id, NULL);
->  		info->id = 0;
-> 
+This patch fixes both issues. I'm still unsure why bswap32 is not
+being included but the _ variant works.
+>
+> >
+> > Signed-off-by: Rosen Penev <rosenp@gmail.com>
+> > ---
+> >  kernel-lib/bitops.h | 8 ++++----
+> >  1 file changed, 4 insertions(+), 4 deletions(-)
+> >
+> > diff --git a/kernel-lib/bitops.h b/kernel-lib/bitops.h
+> > index b1fd6f5..2c51a26 100644
+> > --- a/kernel-lib/bitops.h
+> > +++ b/kernel-lib/bitops.h
+> > @@ -178,9 +178,9 @@ static inline unsigned long find_next_zero_bit(cons=
+t unsigned long *addr,
+> >  static inline unsigned long ext2_swab(const unsigned long y)
+> >  {
+> >  #if BITS_PER_LONG =3D=3D 64
+> > -     return (unsigned long) bswap64((u64) y);
+> > +     return (unsigned long) bswap_64((u64) y);
+> >  #elif BITS_PER_LONG =3D=3D 32
+> > -     return (unsigned long) bswap32((u32) y);
+> > +     return (unsigned long) bswap_32((u32) y);
+> >  #else
+> >  #error BITS_PER_LONG not defined
+> >  #endif
+> > @@ -218,14 +218,14 @@ static inline unsigned long _find_next_bit_le(con=
+st unsigned long *addr1,
+> >       return min(start + __ffs(ext2_swab(tmp)), nbits);
+> >  }
+> >
+> > -unsigned long find_next_zero_bit_le(const void *addr, unsigned long si=
+ze,
+> > +static inline unsigned long find_next_zero_bit_le(const void *addr, un=
+signed long size,
+> >               unsigned long offset)
+> >  {
+> >       return _find_next_bit_le(addr, NULL, size, offset, ~0UL);
+> >  }
+> >
+> >
+> > -unsigned long find_next_bit_le(const void *addr, unsigned long size,
+> > +static inline unsigned long find_next_bit_le(const void *addr, unsigne=
+d long size,
+> >               unsigned long offset)
+> >  {
+> >       return _find_next_bit_le(addr, NULL, size, offset, 0UL);
+> >

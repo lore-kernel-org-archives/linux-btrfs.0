@@ -7,40 +7,42 @@ X-Spam-Status: No, score=-10.5 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7C00DC46475
-	for <linux-btrfs@archiver.kernel.org>; Mon,  5 Nov 2018 11:14:22 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B26EBC0044C
+	for <linux-btrfs@archiver.kernel.org>; Mon,  5 Nov 2018 11:14:57 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 44FEA20825
-	for <linux-btrfs@archiver.kernel.org>; Mon,  5 Nov 2018 11:14:22 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7D06220825
+	for <linux-btrfs@archiver.kernel.org>; Mon,  5 Nov 2018 11:14:57 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=kernel.org header.i=@kernel.org header.b="h4N6dO17"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 44FEA20825
+	dkim=pass (1024-bit key) header.d=kernel.org header.i=@kernel.org header.b="BjdHgvvH"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 7D06220825
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=kernel.org
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729409AbeKEUdc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 5 Nov 2018 15:33:32 -0500
-Received: from mail.kernel.org ([198.145.29.99]:50016 "EHLO mail.kernel.org"
+        id S1729555AbeKEUeH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 5 Nov 2018 15:34:07 -0500
+Received: from mail.kernel.org ([198.145.29.99]:50538 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727337AbeKEUdc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 5 Nov 2018 15:33:32 -0500
+        id S1728961AbeKEUeH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 5 Nov 2018 15:34:07 -0500
 Received: from localhost.localdomain (bl8-197-74.dsl.telepac.pt [85.241.197.74])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id B733B20825
-        for <linux-btrfs@vger.kernel.org>; Mon,  5 Nov 2018 11:14:19 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id C39DB20825;
+        Mon,  5 Nov 2018 11:14:53 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1541416460;
-        bh=V8tVuDG6O1ETbB974h8QaVf8QPcO4qgEnU5B4iXia30=;
-        h=From:To:Subject:Date:From;
-        b=h4N6dO17rk5+2pw1+cVQFkY+xhDLGrSTrocg/dnNQ9CV72EOj/Bk8XUaIPKDOzAw8
-         GxQwXIAxCgVsrEV09pEzT4yvcXWQKbcI99lZGzb0ygbrpo8MFaUaFs8f16tas0hgYH
-         SuT/sK8oBp5vzejRP4LJnH74AWMe2ustqYF5IC0Y=
+        s=default; t=1541416494;
+        bh=NNFn03JzNlSB1ZnV5dGVntsDN11Tk9x5ZYab7UVq/U8=;
+        h=From:To:Cc:Subject:Date:From;
+        b=BjdHgvvHMVOiikOuRicI3JcQofy+dIChc1DorPqfaBC+5BeFbHBnH7GHyhgp7xPAJ
+         0PLXrZVv7kx/CC2Ktmht9zdSfQfK8tAwwmFAnfcNUTYMVUjkLj7/TQeoVT6Ucc2YqG
+         aKoWleIi3lSl1lfZi4j0G9YVpD3OVc/8OxM1q2ME=
 From:   fdmanana@kernel.org
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: fix data corruption due to cloning of eof block
-Date:   Mon,  5 Nov 2018 11:14:17 +0000
-Message-Id: <20181105111417.11808-1-fdmanana@kernel.org>
+To:     fstests@vger.kernel.org
+Cc:     linux-btrfs@vger.kernel.org, linux-xfs@vger.kernel.org,
+        Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH 1/3] generic: test attempt to dedup eof block into the middle of a file
+Date:   Mon,  5 Nov 2018 11:14:45 +0000
+Message-Id: <20181105111445.11870-1-fdmanana@kernel.org>
 X-Mailer: git-send-email 2.11.0
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
@@ -49,94 +51,197 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-We currently allow cloning a range from a file which includes the last
-block of the file even if the file's size is not aligned to the block
-size. This is fine and useful when the destination file has the same size,
-but when it does not and the range ends somewhere in the middle of the
-destination file, it leads to corruption because the bytes between the EOF
-and the end of the block have undefined data (when there is support for
-discard/trimming they have a value of 0x00).
+Test that deduplication of an entire file that has a size that is not
+aligned to the filesystem's block size into the middle of a different
+file does not corrupt the destination's file data by reflinking the last
+(eof) block.
 
-Example:
+This test is motivated by a bug recently found that affects both Btrfs
+and XFS, and is fixed by the following commits/patches for the linux
+kernel:
 
- $ mkfs.btrfs -f /dev/sdb
- $ mount /dev/sdb /mnt
+ 07d19dc9fbe9 ("vfs: avoid problematic remapping requests into partial EOF block")
+ dceeb47b0ed6 ("xfs: fix data corruption w/ unaligned dedupe ranges")
+ de02b9f6bb65 ("Btrfs: fix data corruption when deduplicating between different files")
+ Btrfs: fix infinite loop on inode eviction after deduplication of eof block
 
- $ export foo_size=$((256 * 1024 + 100))
- $ xfs_io -f -c "pwrite -S 0x3c 0 $foo_size" /mnt/foo
- $ xfs_io -f -c "pwrite -S 0xb5 0 1M" /mnt/bar
+The VFS patch was added to kernel 4.20-rc1 and the XFS and first Btrfs
+patches were added to kernel 4.19. The second patch for Btrfs is very
+recent and it is not yet in Linus' tree.
 
- $ xfs_io -c "reflink /mnt/foo 0 512K $foo_size" /mnt/bar
-
- $ od -A d -t x1 /mnt/bar
- 0000000 b5 b5 b5 b5 b5 b5 b5 b5 b5 b5 b5 b5 b5 b5 b5 b5
- *
- 0524288 3c 3c 3c 3c 3c 3c 3c 3c 3c 3c 3c 3c 3c 3c 3c 3c
- *
- 0786528 3c 3c 3c 3c 00 00 00 00 00 00 00 00 00 00 00 00
- 0786544 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
- *
- 0790528 b5 b5 b5 b5 b5 b5 b5 b5 b5 b5 b5 b5 b5 b5 b5 b5
- *
- 1048576
-
-The bytes in the range from 786532 (512Kb + 256Kb + 100 bytes) to 790527
-(512Kb + 256Kb + 4Kb - 1) got corrupted, having now a value of 0x00 instead
-of 0xb5.
-
-This is similar to the problem we had for deduplication that got recently
-fixed by commit de02b9f6bb65 ("Btrfs: fix data corruption when
-deduplicating between different files").
-
-Fix this by not allowing such operations to be performed and return the
-errno -EINVAL to user space. This is what XFS is doing as well at the VFS
-level. This change however now makes us return -EINVAL instead of
--EOPNOTSUPP for cases where the source range maps to an inline extent and
-the destination range's end is smaller then the destination file's size,
-since the detection of inline extents is done during the actual process of
-dropping file extent items (at __btrfs_drop_extents()). Returning the
--EINVAL error is done early on and solely based on the input parameters
-(offsets and length) and destination file's size. This makes us consistent
-with XFS and anyone else supporting cloning since this case is now checked
-at a higher level in the VFS and is where the -EINVAL will be returned
-from starting with kernel 4.20 (the VFS changed was introduced in 4.20-rc1
-by commit 07d19dc9fbe9 ("vfs: avoid problematic remapping requests into
-partial EOF block"). So this change is more geared towards stable kernels,
-as it's unlikely the new VFS checks get removed intentionally.
-
-A test case for fstests follows soon, as well as an update to filter
-existing tests that expect -EOPNOTSUPP to accept -EINVAL as well.
-
-CC: <stable@vger.kernel.org> # 4.4+
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/ioctl.c | 12 ++++++++++--
- 1 file changed, 10 insertions(+), 2 deletions(-)
+ tests/generic/517     | 98 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/517.out | 45 +++++++++++++++++++++++
+ tests/generic/group   |  1 +
+ 3 files changed, 144 insertions(+)
+ create mode 100755 tests/generic/517
+ create mode 100644 tests/generic/517.out
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index f3134fc69880..30e098970063 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -4277,9 +4277,17 @@ static noinline int btrfs_clone_files(struct file *file, struct file *file_src,
- 		goto out_unlock;
- 	if (len == 0)
- 		olen = len = src->i_size - off;
--	/* if we extend to eof, continue to block boundary */
--	if (off + len == src->i_size)
-+	/*
-+	 * If we extend to eof, continue to block boundary if and only if the
-+	 * destination end offset matches the destination file's size, otherwise
-+	 * we would be corrupting data by placing the eof block into the middle
-+	 * of a file.
-+	 */
-+	if (off + len == src->i_size) {
-+		if (!IS_ALIGNED(len, bs) && destoff + len < inode->i_size)
-+			goto out_unlock;
- 		len = ALIGN(src->i_size, bs) - off;
-+	}
- 
- 	if (len == 0) {
- 		ret = 0;
+diff --git a/tests/generic/517 b/tests/generic/517
+new file mode 100755
+index 00000000..601bb24e
+--- /dev/null
++++ b/tests/generic/517
+@@ -0,0 +1,98 @@
++#! /bin/bash
++# SPDX-License-Identifier: GPL-2.0
++# Copyright (C) 2018 SUSE Linux Products GmbH. All Rights Reserved.
++#
++# FS QA Test No. 517
++#
++# Test that deduplication of an entire file that has a size that is not aligned
++# to the filesystem's block size into the middle of a different file does not
++# corrupt the destination's file data by reflinking the last (eof) block.
++#
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++tmp=/tmp/$$
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++	cd /
++	rm -f $tmp.*
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++. ./common/reflink
++
++# real QA test starts here
++_supported_fs generic
++_supported_os Linux
++_require_scratch_dedupe
++
++rm -f $seqres.full
++
++_scratch_mkfs >>$seqres.full 2>&1
++_scratch_mount
++
++# The first byte with a value of 0xae starts at an offset (2518890) which is not
++# a multiple of the block size.
++$XFS_IO_PROG -f \
++	-c "pwrite -S 0x6b 0 2518890" \
++	-c "pwrite -S 0xae 2518890 102398" \
++	$SCRATCH_MNT/foo | _filter_xfs_io
++
++# Create a second file with a length not aligned to the block size, whose bytes
++# all have the value 0x6b, so that its extent(s) can be deduplicated with the
++# first file.
++$XFS_IO_PROG -f -c "pwrite -S 0x6b 0 557771" $SCRATCH_MNT/bar | _filter_xfs_io
++
++# The file is filled with bytes having the value 0x6b from offset 0 to offset
++# 2518889 and with the value 0xae from offset 2518890 to offset 2621287.
++echo "File content before first deduplication:"
++od -t x1 $SCRATCH_MNT/foo
++
++# Now deduplicate the entire second file into a range of the first file that
++# also has all bytes with the value 0x6b. The destination range's end offset
++# must not be aligned to the block size and must be less then the offset of
++# the first byte with the value 0xae (byte at offset 2518890).
++$XFS_IO_PROG -c "dedupe $SCRATCH_MNT/bar 0 1957888 557771" $SCRATCH_MNT/foo \
++	| _filter_xfs_io
++
++# We should have exactly the same data we had before we asked for deduplication.
++echo "File content after first deduplication and before unmounting:"
++od -A d -t x1 $SCRATCH_MNT/foo
++
++# Unmount the filesystem and mount it again. This guarantees any file data in
++# the page cache is dropped.
++_scratch_cycle_mount
++
++# We should have exactly the same data we had before we asked for deduplication.
++echo "File content after first unmount:"
++od -A d -t x1 $SCRATCH_MNT/foo
++
++# Now do a similar test when trying to dedup just the last (eof) block of a file
++# into the middle of another file. This triggered a different bug on btrfs.
++$XFS_IO_PROG -f -c "pwrite -S 0xae 0 100" $SCRATCH_MNT/baz | _filter_xfs_io
++
++# Unmount the filesystem and mount it again before attempting to dedupe baz's
++# last block into foo. This is necessary to trigger that btrfs bug mentioned
++# before.
++_scratch_cycle_mount
++
++# Now attempt to dedupe the single block of baz into foo.
++$XFS_IO_PROG -c "dedupe $SCRATCH_MNT/baz 0 2519040 100" $SCRATCH_MNT/foo \
++    | _filter_xfs_io
++
++# Now attempt to unmount the filesystem before reading from the file. This is
++# meant to trigger the btrfs bug which caused an infinite loop during inode
++# eviction.
++_scratch_cycle_mount
++
++# We should have exactly the same data we had before we asked for deduplication.
++echo "File content after second deduplication:"
++od -A d -t x1 $SCRATCH_MNT/foo
++
++status=0
++exit
+diff --git a/tests/generic/517.out b/tests/generic/517.out
+new file mode 100644
+index 00000000..137a9719
+--- /dev/null
++++ b/tests/generic/517.out
+@@ -0,0 +1,45 @@
++QA output created by 517
++wrote 2518890/2518890 bytes at offset 0
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++wrote 102398/102398 bytes at offset 2518890
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++wrote 557771/557771 bytes at offset 0
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++File content before first deduplication:
++0000000 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b
++*
++11467540 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b ae ae ae ae ae ae
++11467560 ae ae ae ae ae ae ae ae ae ae ae ae ae ae ae ae
++*
++11777540 ae ae ae ae ae ae ae ae
++11777550
++deduped 557771/557771 bytes at offset 1957888
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++File content after first deduplication and before unmounting:
++0000000 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b
++*
++2518880 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b ae ae ae ae ae ae
++2518896 ae ae ae ae ae ae ae ae ae ae ae ae ae ae ae ae
++*
++2621280 ae ae ae ae ae ae ae ae
++2621288
++File content after first unmount:
++0000000 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b
++*
++2518880 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b ae ae ae ae ae ae
++2518896 ae ae ae ae ae ae ae ae ae ae ae ae ae ae ae ae
++*
++2621280 ae ae ae ae ae ae ae ae
++2621288
++wrote 100/100 bytes at offset 0
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++deduped 100/100 bytes at offset 2519040
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++File content after second deduplication:
++0000000 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b
++*
++2518880 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b ae ae ae ae ae ae
++2518896 ae ae ae ae ae ae ae ae ae ae ae ae ae ae ae ae
++*
++2621280 ae ae ae ae ae ae ae ae
++2621288
+diff --git a/tests/generic/group b/tests/generic/group
+index 54d71d55..326d3a1d 100644
+--- a/tests/generic/group
++++ b/tests/generic/group
+@@ -519,3 +519,4 @@
+ 514 auto quick clone
+ 515 auto quick clone
+ 516 auto quick dedupe clone
++517 auto quick dedupe clone
 -- 
 2.11.0
 

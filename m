@@ -2,104 +2,237 @@ Return-Path: <SRS0=BJi/=NR=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 68BCAC32789
-	for <linux-btrfs@archiver.kernel.org>; Tue,  6 Nov 2018 06:38:45 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 42642C32789
+	for <linux-btrfs@archiver.kernel.org>; Tue,  6 Nov 2018 06:41:36 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 300042081D
-	for <linux-btrfs@archiver.kernel.org>; Tue,  6 Nov 2018 06:38:45 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 300042081D
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
+	by mail.kernel.org (Postfix) with ESMTP id E2DF52081D
+	for <linux-btrfs@archiver.kernel.org>; Tue,  6 Nov 2018 06:41:35 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org E2DF52081D
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=cn.fujitsu.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2387491AbeKFQCY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 6 Nov 2018 11:02:24 -0500
-Received: from mx2.suse.de ([195.135.220.15]:44064 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S2387421AbeKFQCX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 6 Nov 2018 11:02:23 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 1CF51B06E;
-        Tue,  6 Nov 2018 06:38:41 +0000 (UTC)
-Subject: Re: Filesystem mounts fine but hangs on access
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        Sebastian Ochmann <ochmann@cs.uni-bonn.de>
-Cc:     linux-btrfs@vger.kernel.org
-References: <f0e1900a-b242-06e0-b68f-0ddc146eca56@cs.uni-bonn.de>
- <7c69325a-7e95-7377-5a47-5c98eb941253@gmx.com>
- <d493b9d8-2ed6-4dfa-d546-e9a09c5924a6@cs.uni-bonn.de>
- <41f9e8ca-d5f9-4d2b-caf0-a810096dbfc3@gmx.com>
-From:   Nikolay Borisov <nborisov@suse.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <d6c607f3-8def-bc8e-756a-487ba43a6202@suse.com>
-Date:   Tue, 6 Nov 2018 08:38:40 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.2.1
+        id S2387444AbeKFQFP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 6 Nov 2018 11:05:15 -0500
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:32866 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S2387399AbeKFQFP (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Nov 2018 11:05:15 -0500
+X-IronPort-AV: E=Sophos;i="5.43,368,1503331200"; 
+   d="scan'208";a="47417651"
+Received: from unknown (HELO cn.fujitsu.com) ([10.167.33.5])
+  by heian.cn.fujitsu.com with ESMTP; 06 Nov 2018 14:41:32 +0800
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
+        by cn.fujitsu.com (Postfix) with ESMTP id 383CF4B714D9;
+        Tue,  6 Nov 2018 14:41:32 +0800 (CST)
+Received: from fnst.lan (10.167.226.155) by G08CNEXCHPEKD01.g08.fujitsu.local
+ (10.167.33.89) with Microsoft SMTP Server (TLS) id 14.3.408.0; Tue, 6 Nov
+ 2018 14:41:35 +0800
+From:   Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+To:     <linux-btrfs@vger.kernel.org>
+CC:     Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>,
+        Qu Wenruo <quwenruo@cn.fujitsu.com>
+Subject: [PATCH v15.1 03/13] btrfs: dedupe: Introduce function to add hash into in-memory tree
+Date:   Tue, 6 Nov 2018 14:41:12 +0800
+Message-ID: <20181106064122.6154-4-lufq.fnst@cn.fujitsu.com>
+X-Mailer: git-send-email 2.19.1
+In-Reply-To: <20181106064122.6154-1-lufq.fnst@cn.fujitsu.com>
+References: <20181106064122.6154-1-lufq.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <41f9e8ca-d5f9-4d2b-caf0-a810096dbfc3@gmx.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+Content-Transfer-Encoding: 7BIT
+Content-Type:   text/plain; charset=US-ASCII
+X-Originating-IP: [10.167.226.155]
+X-yoursite-MailScanner-ID: 383CF4B714D9.A93F0
+X-yoursite-MailScanner: Found to be clean
+X-yoursite-MailScanner-From: lufq.fnst@cn.fujitsu.com
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+
+Introduce static function inmem_add() to add hash into in-memory tree.
+And now we can implement the btrfs_dedupe_add() interface.
+
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+Reviewed-by: Josef Bacik <jbacik@fb.com>
+Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+---
+ fs/btrfs/dedupe.c | 150 ++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 150 insertions(+)
+
+diff --git a/fs/btrfs/dedupe.c b/fs/btrfs/dedupe.c
+index 06523162753d..784bb3a8a5ab 100644
+--- a/fs/btrfs/dedupe.c
++++ b/fs/btrfs/dedupe.c
+@@ -19,6 +19,14 @@ struct inmem_hash {
+ 	u8 hash[];
+ };
+ 
++static inline struct inmem_hash *inmem_alloc_hash(u16 algo)
++{
++	if (WARN_ON(algo >= ARRAY_SIZE(btrfs_hash_sizes)))
++		return NULL;
++	return kzalloc(sizeof(struct inmem_hash) + btrfs_hash_sizes[algo],
++			GFP_NOFS);
++}
++
+ static struct btrfs_dedupe_info *
+ init_dedupe_info(struct btrfs_ioctl_dedupe_args *dargs)
+ {
+@@ -167,3 +175,145 @@ int btrfs_dedupe_disable(struct btrfs_fs_info *fs_info)
+ 	/* Place holder for bisect, will be implemented in later patches */
+ 	return 0;
+ }
++
++static int inmem_insert_hash(struct rb_root *root,
++			     struct inmem_hash *hash, int hash_len)
++{
++	struct rb_node **p = &root->rb_node;
++	struct rb_node *parent = NULL;
++	struct inmem_hash *entry = NULL;
++
++	while (*p) {
++		parent = *p;
++		entry = rb_entry(parent, struct inmem_hash, hash_node);
++		if (memcmp(hash->hash, entry->hash, hash_len) < 0)
++			p = &(*p)->rb_left;
++		else if (memcmp(hash->hash, entry->hash, hash_len) > 0)
++			p = &(*p)->rb_right;
++		else
++			return 1;
++	}
++	rb_link_node(&hash->hash_node, parent, p);
++	rb_insert_color(&hash->hash_node, root);
++	return 0;
++}
++
++static int inmem_insert_bytenr(struct rb_root *root,
++			       struct inmem_hash *hash)
++{
++	struct rb_node **p = &root->rb_node;
++	struct rb_node *parent = NULL;
++	struct inmem_hash *entry = NULL;
++
++	while (*p) {
++		parent = *p;
++		entry = rb_entry(parent, struct inmem_hash, bytenr_node);
++		if (hash->bytenr < entry->bytenr)
++			p = &(*p)->rb_left;
++		else if (hash->bytenr > entry->bytenr)
++			p = &(*p)->rb_right;
++		else
++			return 1;
++	}
++	rb_link_node(&hash->bytenr_node, parent, p);
++	rb_insert_color(&hash->bytenr_node, root);
++	return 0;
++}
++
++static void __inmem_del(struct btrfs_dedupe_info *dedupe_info,
++			struct inmem_hash *hash)
++{
++	list_del(&hash->lru_list);
++	rb_erase(&hash->hash_node, &dedupe_info->hash_root);
++	rb_erase(&hash->bytenr_node, &dedupe_info->bytenr_root);
++
++	if (!WARN_ON(dedupe_info->current_nr == 0))
++		dedupe_info->current_nr--;
++
++	kfree(hash);
++}
++
++/*
++ * Insert a hash into in-memory dedupe tree
++ * Will remove exceeding last recent use hash.
++ *
++ * If the hash mathced with existing one, we won't insert it, to
++ * save memory
++ */
++static int inmem_add(struct btrfs_dedupe_info *dedupe_info,
++		     struct btrfs_dedupe_hash *hash)
++{
++	int ret = 0;
++	u16 algo = dedupe_info->hash_algo;
++	struct inmem_hash *ihash;
++
++	ihash = inmem_alloc_hash(algo);
++
++	if (!ihash)
++		return -ENOMEM;
++
++	/* Copy the data out */
++	ihash->bytenr = hash->bytenr;
++	ihash->num_bytes = hash->num_bytes;
++	memcpy(ihash->hash, hash->hash, btrfs_hash_sizes[algo]);
++
++	mutex_lock(&dedupe_info->lock);
++
++	ret = inmem_insert_bytenr(&dedupe_info->bytenr_root, ihash);
++	if (ret > 0) {
++		kfree(ihash);
++		ret = 0;
++		goto out;
++	}
++
++	ret = inmem_insert_hash(&dedupe_info->hash_root, ihash,
++				btrfs_hash_sizes[algo]);
++	if (ret > 0) {
++		/*
++		 * We only keep one hash in tree to save memory, so if
++		 * hash conflicts, free the one to insert.
++		 */
++		rb_erase(&ihash->bytenr_node, &dedupe_info->bytenr_root);
++		kfree(ihash);
++		ret = 0;
++		goto out;
++	}
++
++	list_add(&ihash->lru_list, &dedupe_info->lru_list);
++	dedupe_info->current_nr++;
++
++	/* Remove the last dedupe hash if we exceed limit */
++	while (dedupe_info->current_nr > dedupe_info->limit_nr) {
++		struct inmem_hash *last;
++
++		last = list_entry(dedupe_info->lru_list.prev,
++				  struct inmem_hash, lru_list);
++		__inmem_del(dedupe_info, last);
++	}
++out:
++	mutex_unlock(&dedupe_info->lock);
++	return 0;
++}
++
++int btrfs_dedupe_add(struct btrfs_fs_info *fs_info,
++		     struct btrfs_dedupe_hash *hash)
++{
++	struct btrfs_dedupe_info *dedupe_info = fs_info->dedupe_info;
++
++	if (!fs_info->dedupe_enabled || !hash)
++		return 0;
++
++	if (WARN_ON(dedupe_info == NULL))
++		return -EINVAL;
++
++	if (WARN_ON(!btrfs_dedupe_hash_hit(hash)))
++		return -EINVAL;
++
++	/* ignore old hash */
++	if (dedupe_info->blocksize != hash->num_bytes)
++		return 0;
++
++	if (dedupe_info->backend == BTRFS_DEDUPE_BACKEND_INMEMORY)
++		return inmem_add(dedupe_info, hash);
++	return -EINVAL;
++}
+-- 
+2.19.1
 
 
-On 5.11.18 г. 2:23 ч., Qu Wenruo wrote:
-> Great, then it's completely free space cache causing the problem.
-> 
-> You could use -o nospace_cache mount option to avoid the problem as a
-> workaround.
-> 
-> Free space cache only speed up free extent search, it doesn't has extra
-> effect on the fs (except the bug).
-> So you could disable free space cache without problem.
 
-I'd rather recommend him use -o space_cache=v2

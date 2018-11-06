@@ -2,123 +2,102 @@ Return-Path: <SRS0=BJi/=NR=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 79A3DC32789
-	for <linux-btrfs@archiver.kernel.org>; Tue,  6 Nov 2018 09:55:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 963A3C32789
+	for <linux-btrfs@archiver.kernel.org>; Tue,  6 Nov 2018 11:17:27 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 2DCE620827
-	for <linux-btrfs@archiver.kernel.org>; Tue,  6 Nov 2018 09:55:09 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 2DCE620827
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
+	by mail.kernel.org (Postfix) with ESMTP id 5887320862
+	for <linux-btrfs@archiver.kernel.org>; Tue,  6 Nov 2018 11:17:27 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="hyejgGK+"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 5887320862
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729972AbeKFTTc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 6 Nov 2018 14:19:32 -0500
-Received: from mx2.suse.de ([195.135.220.15]:46374 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1729241AbeKFTTc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 6 Nov 2018 14:19:32 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id B7250AD93;
-        Tue,  6 Nov 2018 09:55:04 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id C904DDA8C8; Tue,  6 Nov 2018 10:54:51 +0100 (CET)
-Date:   Tue, 6 Nov 2018 10:54:51 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Omar Sandoval <osandov@osandov.com>
-Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com,
-        David Sterba <dsterba@suse.com>, linux-fsdevel@vger.kernel.org
-Subject: Re: [PATCH v9 0/6] Btrfs: implement swap file support
-Message-ID: <20181106095451.GG9136@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Omar Sandoval <osandov@osandov.com>,
-        linux-btrfs@vger.kernel.org, kernel-team@fb.com,
-        David Sterba <dsterba@suse.com>, linux-fsdevel@vger.kernel.org
-References: <cover.1538072009.git.osandov@fb.com>
+        id S1730349AbeKFUmI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 6 Nov 2018 15:42:08 -0500
+Received: from mail-lj1-f173.google.com ([209.85.208.173]:43904 "EHLO
+        mail-lj1-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726976AbeKFUmH (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Nov 2018 15:42:07 -0500
+Received: by mail-lj1-f173.google.com with SMTP id g26-v6so11035132lja.10
+        for <linux-btrfs@vger.kernel.org>; Tue, 06 Nov 2018 03:17:24 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc:content-transfer-encoding;
+        bh=sewfAVa/8DORrpFL4IbagLOYN1Nm6hX1ctgoTQTY2SE=;
+        b=hyejgGK+7MuT5eVKk+tXmn1knWflWNie+R7o6lgAGxuhEFB9+yJcEGDeWT7Avqdebl
+         W1PcpI2tRHedI9EjHZ4jIDLMjxw0f/IveHofPEjKIKUGDEbs0zDqZX3XydPHTIoaOIT5
+         nJ9XSY25R2/OxPnqQh6A1eqIR5CljCsRAe9xAKKekXejG+rFYXVKWXLoL+ugfcmsTakf
+         NSJkJll6s7Q7mcAn7BB48IC5Dx+FspU+d9u+8ZN/nlhUfP8R8l/bYuXxPm7hU0ajaxV2
+         It3h/cu7by31RrWhEhhR1So7pGHNOFwixstYsgD2AIyU89zGTRzr3uOTcoXd1JbSFK54
+         +58A==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc:content-transfer-encoding;
+        bh=sewfAVa/8DORrpFL4IbagLOYN1Nm6hX1ctgoTQTY2SE=;
+        b=IUwp7wVlNKEU023twVK+YVcC8+itUWY1Vr2BUkCOWo+/gUgyjFS3LUEaSqpzDCxBqu
+         LxKh7yKqW32Og1+6hGnL/cguEhMTLxQfudTf0DKAYXXRFSJKYn+CR3QQZeaEsenLsmba
+         KEqK9aozJghODiBQaeYla2Piaqu3FehbNILXIB3FHiFiHgx/0EThIP1g5u45lXAHLwyS
+         TUZw/vvD4Q5OZa8uuHa0O08sTluHxP96V45qj1pvQMyBS5ch07B3S/Smq78YmvWpmkYv
+         N92yjDvPzQq+8kfs5OLg/W5C/uNq+zjSWukXrJj4oTqEdVpVO6BDtc/qODGnoawDGPb+
+         K5aA==
+X-Gm-Message-State: AGRZ1gLovWtixpyK53FiEqVndc0JF/vKAsRoE+5tk3iK6mY+TV8xS5A/
+        d+R3DzF2Ukju9PID+qwE8Qd1tmBEPZLhWrNa4aQ=
+X-Google-Smtp-Source: AJdET5dxgeIZKqmRn+QY3zNGY2/dUAE88teX08Sg7kKeYnfFHvt03uRGANd0M6D2f1hIZkuaqUvhnk0tSpg/Uvjq3ks=
+X-Received: by 2002:a2e:710a:: with SMTP id m10-v6mr13058505ljc.66.1541503043170;
+ Tue, 06 Nov 2018 03:17:23 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <cover.1538072009.git.osandov@fb.com>
-User-Agent: Mutt/1.5.23.1 (2014-03-12)
+References: <CAGSQd28H5RsVe-uzZRu2BYu9-nX+18n3JE=rQMhqM1H8krVMEA@mail.gmail.com>
+ <CAGSQd2_va==dDduBg7iaTyo=oeH7a5jFTM+c1sZkipNZEeaWxA@mail.gmail.com>
+ <1a569e29-d9f1-e86f-15cf-5a8b5e205103@gmx.com> <CAGSQd2-fUDpbBqN-0dAtLg=LBh7mDhHmxg59LGE6tXsRZJ-HAw@mail.gmail.com>
+ <3740e1fd-9078-0655-3fdf-32d8faeafb12@gmx.com>
+In-Reply-To: <3740e1fd-9078-0655-3fdf-32d8faeafb12@gmx.com>
+From:   Attila Vangel <vangel.attila@gmail.com>
+Date:   Tue, 6 Nov 2018 12:17:10 +0100
+Message-ID: <CAGSQd29+36595zW85YHVn20cNcMi8X098q2PKO1f6DsWmwDv0Q@mail.gmail.com>
+Subject: Re: btrfs partition is broken, cannot restore anything
+To:     quwenruo.btrfs@gmx.com
+Cc:     linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Sep 27, 2018 at 11:17:32AM -0700, Omar Sandoval wrote:
-> From: Omar Sandoval <osandov@fb.com>
-> This series implements swap file support for Btrfs.
-> 
-> Changes from v8 [1]:
-> 
-> - Fixed a bug in btrfs_swap_activate() which would cause us to miss some
->   file extents if they were merged into one extent map entry.
-> - Fixed build for !CONFIG_SWAP.
-> - Changed all error messages to KERN_WARN.
-> - Unindented long error messages.
-> 
-> I've Cc'd Jon and Al on patch 3 this time, so hopefully we can get an
-> ack for that one, too.
-> 
-> Thanks!
-> 
-> 1: https://www.spinics.net/lists/linux-btrfs/msg82267.html
-> 
-> Omar Sandoval (6):
->   mm: split SWP_FILE into SWP_ACTIVATED and SWP_FS
->   mm: export add_swap_extent()
->   vfs: update swap_{,de}activate documentation
->   Btrfs: prevent ioctls from interfering with a swap file
->   Btrfs: rename get_chunk_map() and make it non-static
->   Btrfs: support swap files
+Hi Qu,
 
-fstest generic/472 reports an assertion failure. This is on the updated fstests
-git (70c4067285b0bc076), though it should not matter:
+I created an issue for this feature request, so that it is not lost:
+https://github.com/kdave/btrfs-progs/issues/153
 
-[16597.002190] assertion failed: IS_ALIGNED(start, fs_info->sectorsize) && IS_ALIGNED(end + 1, fs_info->sectorsize), file: fs/btrfs/file-item.c, line: 319
-[16597.016154] ------------[ cut here ]------------
-[16597.020911] kernel BUG at fs/btrfs/ctree.h:3448!
-[16597.025692] invalid opcode: 0000 [#1] PREEMPT SMP
-[16597.030540] CPU: 1 PID: 2216 Comm: swapon Tainted: G        W         4.19.0-1.ge195904-vanilla+ #343
-[16597.030542] Hardware name: empty empty/S3993, BIOS PAQEX0-3 02/24/2008
-[16597.030617] RIP: 0010:btrfs_lookup_csums_range+0x3ee/0x6e0 [btrfs]
-[16597.030623] RSP: 0018:ffff959a8210fc00 EFLAGS: 00010286
-[16597.030626] RAX: 000000000000008b RBX: ffff959a8210fc40 RCX: 0000000000000000
-[16597.030628] RDX: 0000000000000000 RSI: ffff89c766fd60a8 RDI: ffff89c766fd60a8
-[16597.030630] RBP: 0000000000f10000 R08: 0000000000000001 R09: 0000000000000000
-[16597.030631] R10: 0000000000000000 R11: 0000000000000000 R12: 0000000000000000
-[16597.030633] R13: ffff89c74f47c000 R14: 0000000000000000 R15: 0000000000003e4f
-[16597.030635] FS:  00007f3d80a18700(0000) GS:ffff89c766e00000(0000) knlGS:0000000000000000
-[16597.030637] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-[16597.030639] CR2: 00007f3d7fa733b0 CR3: 000000021e0b5000 CR4: 00000000000006e0
-[16597.030640] Call Trace:
-[16597.030657]  ? __mutex_unlock_slowpath+0x4b/0x2b0
-[16597.142625]  ? btrfs_cross_ref_exist+0x6d/0xa0 [btrfs]
-[16597.142674]  csum_exist_in_range+0x43/0xc2 [btrfs]
-[16597.152938]  can_nocow_extent+0x442/0x4a0 [btrfs]
-[16597.152993]  btrfs_swap_activate+0x19f/0x680 [btrfs]
-[16597.162947]  __do_sys_swapon+0xdf8/0x1550
-[16597.162965]  do_syscall_64+0x5c/0x1b0
-[16597.162971]  entry_SYSCALL_64_after_hwframe+0x49/0xbe
-[16597.162974] RIP: 0033:0x7f3d7fb1f067
-[16597.198875] RSP: 002b:00007ffcf9c49808 EFLAGS: 00000202 ORIG_RAX: 00000000000000a7
-[16597.198877] RAX: ffffffffffffffda RBX: 0000000000000000 RCX: 00007f3d7fb1f067
-[16597.198879] RDX: 00007ffcf9c49910 RSI: 0000000000000000 RDI: 00007ffcf9c4a8f0
-[16597.198884] RBP: 0000000000000000 R08: 00007f3d7fdd8c40 R09: 00007f3d8081dfc0
-[16597.228520] R10: 000000001cc0c4fd R11: 0000000000000202 R12: 00000000004006a0
-[16597.228522] R13: 00007ffcf9c498f0 R14: 0000000000000000 R15: 0000000000000000
-[16597.311530] ---[ end trace f4dc8cabefc3e36d ]---
-[16597.316318] RIP: 0010:btrfs_lookup_csums_range+0x3ee/0x6e0 [btrfs]
-[16597.341828] RSP: 0018:ffff959a8210fc00 EFLAGS: 00010286
-[16597.341834] RAX: 000000000000008b RBX: ffff959a8210fc40 RCX: 0000000000000000
-[16597.354588] RDX: 0000000000000000 RSI: ffff89c766fd60a8 RDI: ffff89c766fd60a8
-[16597.354590] RBP: 0000000000f10000 R08: 0000000000000001 R09: 0000000000000000
-[16597.354592] R10: 0000000000000000 R11: 0000000000000000 R12: 0000000000000000
-[16597.354593] R13: ffff89c74f47c000 R14: 0000000000000000 R15: 0000000000003e4f
-[16597.354595] FS:  00007f3d80a18700(0000) GS:ffff89c766e00000(0000) knlGS:0000000000000000
-[16597.354596] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-[16597.354598] CR2: 00007f3d7fa733b0 CR3: 000000021e0b5000 CR4: 00000000000006e0
+Thanks for the help again! Now unsubscribing from this list.
+
+Regards,
+Attila
+
+On Tue, Nov 6, 2018 at 9:23 AM Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
+> On 2018/11/6 =E4=B8=8B=E5=8D=884:17, Attila Vangel wrote:
+[snip]
+> > So I propose that "btrs restore" should always print a summary line at
+> > the end to make it more user friendly (e.g. for the first time users).
+> > Something like this:
+> >
+> > x files restored in y directories[, total size of files is z <human
+> > readable unit e.g. GB>]. Use -v command line option for more
+> > information.
+> >
+> > The part in square bracket is optional / nice to have, might be useful
+> > e.g. to estimate the required free space in the target filesystem.
+>
+> Nice idea. Maybe we could enhance btrfs-restore to that direction.
+>
+> Thanks,
+> Qu
+[snip]

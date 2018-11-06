@@ -2,102 +2,369 @@ Return-Path: <SRS0=BJi/=NR=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 963A3C32789
-	for <linux-btrfs@archiver.kernel.org>; Tue,  6 Nov 2018 11:17:27 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6A73FC32789
+	for <linux-btrfs@archiver.kernel.org>; Tue,  6 Nov 2018 12:23:52 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 5887320862
-	for <linux-btrfs@archiver.kernel.org>; Tue,  6 Nov 2018 11:17:27 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D47962085B
+	for <linux-btrfs@archiver.kernel.org>; Tue,  6 Nov 2018 12:23:51 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="hyejgGK+"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 5887320862
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
+	dkim=pass (1024-bit key) header.d=synology.com header.i=@synology.com header.b="psnKTFyE"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org D47962085B
+Authentication-Results: mail.kernel.org; dmarc=fail (p=quarantine dis=none) header.from=synology.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730349AbeKFUmI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 6 Nov 2018 15:42:08 -0500
-Received: from mail-lj1-f173.google.com ([209.85.208.173]:43904 "EHLO
-        mail-lj1-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726976AbeKFUmH (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Nov 2018 15:42:07 -0500
-Received: by mail-lj1-f173.google.com with SMTP id g26-v6so11035132lja.10
-        for <linux-btrfs@vger.kernel.org>; Tue, 06 Nov 2018 03:17:24 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc:content-transfer-encoding;
-        bh=sewfAVa/8DORrpFL4IbagLOYN1Nm6hX1ctgoTQTY2SE=;
-        b=hyejgGK+7MuT5eVKk+tXmn1knWflWNie+R7o6lgAGxuhEFB9+yJcEGDeWT7Avqdebl
-         W1PcpI2tRHedI9EjHZ4jIDLMjxw0f/IveHofPEjKIKUGDEbs0zDqZX3XydPHTIoaOIT5
-         nJ9XSY25R2/OxPnqQh6A1eqIR5CljCsRAe9xAKKekXejG+rFYXVKWXLoL+ugfcmsTakf
-         NSJkJll6s7Q7mcAn7BB48IC5Dx+FspU+d9u+8ZN/nlhUfP8R8l/bYuXxPm7hU0ajaxV2
-         It3h/cu7by31RrWhEhhR1So7pGHNOFwixstYsgD2AIyU89zGTRzr3uOTcoXd1JbSFK54
-         +58A==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc:content-transfer-encoding;
-        bh=sewfAVa/8DORrpFL4IbagLOYN1Nm6hX1ctgoTQTY2SE=;
-        b=IUwp7wVlNKEU023twVK+YVcC8+itUWY1Vr2BUkCOWo+/gUgyjFS3LUEaSqpzDCxBqu
-         LxKh7yKqW32Og1+6hGnL/cguEhMTLxQfudTf0DKAYXXRFSJKYn+CR3QQZeaEsenLsmba
-         KEqK9aozJghODiBQaeYla2Piaqu3FehbNILXIB3FHiFiHgx/0EThIP1g5u45lXAHLwyS
-         TUZw/vvD4Q5OZa8uuHa0O08sTluHxP96V45qj1pvQMyBS5ch07B3S/Smq78YmvWpmkYv
-         N92yjDvPzQq+8kfs5OLg/W5C/uNq+zjSWukXrJj4oTqEdVpVO6BDtc/qODGnoawDGPb+
-         K5aA==
-X-Gm-Message-State: AGRZ1gLovWtixpyK53FiEqVndc0JF/vKAsRoE+5tk3iK6mY+TV8xS5A/
-        d+R3DzF2Ukju9PID+qwE8Qd1tmBEPZLhWrNa4aQ=
-X-Google-Smtp-Source: AJdET5dxgeIZKqmRn+QY3zNGY2/dUAE88teX08Sg7kKeYnfFHvt03uRGANd0M6D2f1hIZkuaqUvhnk0tSpg/Uvjq3ks=
-X-Received: by 2002:a2e:710a:: with SMTP id m10-v6mr13058505ljc.66.1541503043170;
- Tue, 06 Nov 2018 03:17:23 -0800 (PST)
+        id S1730336AbeKFVss (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 6 Nov 2018 16:48:48 -0500
+Received: from synology.com ([59.124.61.242]:47670 "EHLO synology.com"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1730268AbeKFVss (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 6 Nov 2018 16:48:48 -0500
+Received: from _ (localhost [127.0.0.1])
+        by synology.com (Postfix) with ESMTPA id BE75931F1802;
+        Tue,  6 Nov 2018 20:23:47 +0800 (CST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=synology.com; s=123;
+        t=1541507027; bh=rGtWVVmf4luh5yN6b/5Ww2OS4wL9Yd18sOoKDOg8GII=;
+        h=Date:From:To:Cc:Subject:In-Reply-To:References;
+        b=psnKTFyElZSyTG6xGh7OkrrD8ygmTWzY1/MeTrPM/E+kKmztSWUwP3BanZP8E9cn1
+         yBFU1+auOudVD6ZrgClm/eOl1LVEoEhUwgG0T/2e5J8qLevI4F04cBv+GfZa8/xjtm
+         LQSIgo4kqieChm83RLrod8F51A4sAy9NJenXg6fQ=
 MIME-Version: 1.0
-References: <CAGSQd28H5RsVe-uzZRu2BYu9-nX+18n3JE=rQMhqM1H8krVMEA@mail.gmail.com>
- <CAGSQd2_va==dDduBg7iaTyo=oeH7a5jFTM+c1sZkipNZEeaWxA@mail.gmail.com>
- <1a569e29-d9f1-e86f-15cf-5a8b5e205103@gmx.com> <CAGSQd2-fUDpbBqN-0dAtLg=LBh7mDhHmxg59LGE6tXsRZJ-HAw@mail.gmail.com>
- <3740e1fd-9078-0655-3fdf-32d8faeafb12@gmx.com>
-In-Reply-To: <3740e1fd-9078-0655-3fdf-32d8faeafb12@gmx.com>
-From:   Attila Vangel <vangel.attila@gmail.com>
-Date:   Tue, 6 Nov 2018 12:17:10 +0100
-Message-ID: <CAGSQd29+36595zW85YHVn20cNcMi8X098q2PKO1f6DsWmwDv0Q@mail.gmail.com>
-Subject: Re: btrfs partition is broken, cannot restore anything
-To:     quwenruo.btrfs@gmx.com
-Cc:     linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=UTF-8;
+ format=flowed
+Content-Transfer-Encoding: 8bit
+Date:   Tue, 06 Nov 2018 20:23:47 +0800
+From:   robbieko <robbieko@synology.com>
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc:     fdmanana@gmail.com, linux-btrfs <linux-btrfs@vger.kernel.org>,
+        linux-btrfs-owner@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: incremental send, fix infinite loop when apply
+ children dir moves
+In-Reply-To: <a79f2503-04ea-ed85-7c95-2033dd37ae01@gmx.com>
+References: <1540882702-21104-1-git-send-email-robbieko@synology.com>
+ <CAL3q7H4p_fa=5UhfBkSs3GU5EydKQ0J76D5RMShMY-2HQY3F+Q@mail.gmail.com>
+ <d1c2ad795fa14784e4908fd3fa50617e@synology.com>
+ <CAL3q7H7AG7Nwj-v6scS6c9wxsKELRmLpYVOt1hkfK9Jr_sh1Cw@mail.gmail.com>
+ <a79f2503-04ea-ed85-7c95-2033dd37ae01@gmx.com>
+Message-ID: <a7d63a869c4c7c481d55414f94155103@synology.com>
+X-Sender: robbieko@synology.com
+User-Agent: Roundcube Webmail/1.1.2
+X-Synology-MCP-Status: no
+X-Synology-Spam-Flag: no
+X-Synology-Spam-Status: score=0, required 6, WHITELIST_FROM_ADDRESS 0
+X-Synology-Virus-Status: no
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi Qu,
+Hi,
 
-I created an issue for this feature request, so that it is not lost:
-https://github.com/kdave/btrfs-progs/issues/153
+I can reproduce the infinite loop, the following will describe the 
+reason and example.
 
-Thanks for the help again! Now unsubscribing from this list.
+Example:
+tree --inodes parent/ send/
+parent/
+`-- [    261]  261
+     `-- [    271]  271
+         `-- [    266]  266
+             |-- [    259]  259
+             |-- [    260]  260
+             |   `-- [    267]  267
+             |-- [    264]  264
+             |   `-- [    258]  258
+             |       `-- [    257]  257
+             |-- [    265]  265
+             |-- [    268]  268
+             |-- [    269]  269
+             |   `-- [    262]  262
+             |-- [    270]  270
+             |-- [    272]  272
+             |   |-- [    263]  263
+             |   `-- [    275]  275
+             `-- [    274]  274
+                 `-- [    273]  273
+send/
+`-- [    275]  275
+     `-- [    274]  274
+         `-- [    273]  273
+             `-- [    262]  262
+                 `-- [    269]  269
+                     `-- [    258]  258
+                         `-- [    271]  271
+                             `-- [    268]  268
+                                 `-- [    267]  267
+                                     `-- [    270]  270
+                                         |-- [    259]  259
+                                         |   `-- [    265]  265
+                                         `-- [    272]  272
+                                             `-- [    257]  257
+                                                 |-- [    260]  260
+                                                 `-- [    264]  264
+                                                     `-- [    263]  263
+                                                         `-- [    261]  
+261
+                                                             `-- [    
+266]  266
 
-Regards,
-Attila
 
-On Tue, Nov 6, 2018 at 9:23 AM Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
-> On 2018/11/6 =E4=B8=8B=E5=8D=884:17, Attila Vangel wrote:
-[snip]
-> > So I propose that "btrs restore" should always print a summary line at
-> > the end to make it more user friendly (e.g. for the first time users).
-> > Something like this:
-> >
-> > x files restored in y directories[, total size of files is z <human
-> > readable unit e.g. GB>]. Use -v command line option for more
-> > information.
-> >
-> > The part in square bracket is optional / nice to have, might be useful
-> > e.g. to estimate the required free space in the target filesystem.
->
-> Nice idea. Maybe we could enhance btrfs-restore to that direction.
->
+1. While process inode 257, we delay its rename operation because inode 
+272
+has not been renamed (since 272 > 257, that is, beyond the current 
+progress).
+
+2. And so on (inode 258-274), we can get a bunch of waiting waiting 
+relationships
+257 -> (wait for) 272
+258 -> 269
+259 -> 270
+260 -> 272
+261 -> 263
+262 -> 274
+263 -> 264
+264 -> 257
+265 -> 270
+266 -> 263
+267 -> 268
+268 -> 271
+269 -> 262
+270 -> 271
+271 -> 258
+272 -> 274
+274 -> 275
+
+3. While processing inode 275, we rename ./261/271/272/275 to ./275,
+and then now we start processing the waiting subdirectories in 
+apply_children_dir_moves.
+
+4. We first initialize the stack into an empty list, and then we add 274 
+to the stack
+because 274 is waiting for 275 to complete.
+     Every time we take the first object in the stack to process it.
+
+5. So we can observe the change in object in the stack.
+loop:
+  round 1. 274
+             2. 262 -> 272
+             3. 272 -> 269
+             4. 269 -> 257 -> 260
+             5. 257 -> 260 -> 258
+             6. 260 -> 258 -> 264
+             7. 258 -> 264
+             8. 264 -> 271
+             9. 271 -> 263
+           10. 263 -> 268 -> 270
+           11. 268 -> 270 -> 261 -> 266
+           12. 270 -> 261 -> 266 -> 267
+           13. 261 -> 266 -> 267 -> 259 -> 265 (since 270 path loop, so 
+we add 270 waiting for 267)
+           14. 266 -> 267 -> 259 -> 265
+           15. 267 -> 266 -> 259 -> 265  (since 266 path loop, so we add 
+266 waiting for 270, but we don't add to stack)
+           16. 266 -> 259 -> 265 -> 270
+           17. 266 -> 259 -> 265 -> 270  (since 266 path loop, so we add 
+266 waiting for 270, but we don't add to stack)
+           18. 266 -> 259 -> 265 -> 270  (since 266 path loop, so we add 
+266 waiting for 270, but we don't add to stack)
+           19. 266 -> 259 -> 265 -> 270  (since 266 path loop, so we add 
+266 waiting for 270, but we don't add to stack)
+            ... infinite loop
+
+6. In round 13, we processing 270, we delayed the rename because 270 has 
+a path loop with 267,
+and then we add 259, 265 to the stack, but we don't remove from 
+pending_dir_moves rb_tree.
+
+7. In round 15, we processing 266, we delayed the rename because 266 has 
+a path loop with 270,
+So we look for parent_ino equal to 270 from pending_dir_moves, and we 
+find ino 259
+because it was not removed from pending_dir_moves.
+Then we create a new pending_dir and join the ino 259, because the ino 
+259 is currently in the stack,
+the new pending_dir ino 266 is also indirectly added to the stack, 
+placed between 267 and 259.
+
+So we fix this problem by remove node from pending_dir_moves,
+avoid add new pending_dir_move to stack list.
+
+Qu Wenruo 於 2018-11-05 22:35 寫到:
+> On 2018/11/5 下午7:11, Filipe Manana wrote:
+>> On Mon, Nov 5, 2018 at 4:10 AM robbieko <robbieko@synology.com> wrote:
+>>> 
+>>> Filipe Manana 於 2018-10-30 19:36 寫到:
+>>>> On Tue, Oct 30, 2018 at 7:00 AM robbieko <robbieko@synology.com> 
+>>>> wrote:
+>>>>> 
+>>>>> From: Robbie Ko <robbieko@synology.com>
+>>>>> 
+>>>>> In apply_children_dir_moves, we first create an empty list (stack),
+>>>>> then we get an entry from pending_dir_moves and add it to the 
+>>>>> stack,
+>>>>> but we didn't delete the entry from rb_tree.
+>>>>> 
+>>>>> So, in add_pending_dir_move, we create a new entry and then use the
+>>>>> parent_ino in the current rb_tree to find the corresponding entry,
+>>>>> and if so, add the new entry to the corresponding list.
+>>>>> 
+>>>>> However, the entry may have been added to the stack, causing new
+>>>>> entries to be added to the stack as well.
+> 
+> I'm not a send guy, so I can totally be wrong, but that 'may' word 
+> seems
+> to hide the demon.
+> 
+>>>>> 
+>>>>> Finally, each time we take the first entry from the stack and start
+>>>>> processing, it ends up with an infinite loop.
+>>>>> 
+>>>>> Fix this problem by remove node from pending_dir_moves,
+>>>>> avoid add new pending_dir_move to error list.
+>>>> 
+>>>> I can't parse that explanation.
+>>>> Can you give a concrete example (reproducer) or did this came out of
+>>>> thin air?
+>>>> 
+>>>> Thanks.
+>>>> 
+>>> 
+>>> I am sorry that I replied so late.
+>>> 
+>>> I have no way to give a simple example.
+>>> But I can provide a btrfs image file
+>>> You can restore the Image via btrfs-image
+>>> Then directly command "btrfs send -e -p parent send -f dump_file"
+> 
+> According to the name, it doesn't look like a real world case, but some
+> more or less manually crafted image.
+> It shouldn't be that hard to describe the root cause in details if it's
+> crafted.
+> 
+> Or, if it's a image caused by some stress test, then I really hope you
+> could locate the direct and root cause, or at least minimize the image.
+> The extra noise will really take a lot of time from reviewer.
+> 
+> IMHO, it shouldn't be that hard to locate the key/key range that send
+> loops, with that located it should provide some clue to further pin 
+> down
+> the root cause.
+> 
+> I totally understand that everyone has their own work, if you can't
+> really spare time for this, would you please upload the image to public
+> for anyone (me for example) to look into the case?
+> 
 > Thanks,
 > Qu
-[snip]
+> 
+>>> Infinite loop will occur.
+>>> I use ubuntu 16.04, kernel 4.15.0.36-generic can be stable reproduce
+>> 
+>> You have been occasionally submitting fixes for send/receive for a few
+>> years now, and you know already
+>> that I always ask for a changelog that describes well the problem and
+>> an example/reproducer.
+>> 
+>> Why did you do this?
+>> 
+>> What I can read from your answer is that you were too lazy to extract
+>> a reproducer from that image.
+>> Just made some change that fixes the infinite loop and because it
+>> apparently works you're done with it,
+>> Without an example at least, I don't think you or anyone can fully
+>> understand the problem, and if what
+>> you have (despite somewhat making theoretical sense) is really a good
+>> solution or just a workaround for
+>> the cause of the problem - after all if you can't give an example, you
+>> can't explain how in practice such loop
+>> of dependencies between directories happens. This, as with most
+>> send/receive problems, is a pure sequential
+>> and deterministic problem so there's really no excuse for not getting
+>> a reproducer.
+>> 
+>> Without an example, an explanation how it happens in the real world,
+>> does one know that your change is
+>> fixing the problem is the right place and not introducing other
+>> problems? Like the receiver not getting some
+>> changes (missing directories, files, or renames, etc).
+>> 
+>> Tests are not just to prove a change is correct, they exist to catch
+>> and prevent regressions in the future too.
+>> 
+>> You can do better than that.
+>> 
+>>> 
+>>> Image file, please refer to the attachment.
+>>> 
+>>> Thanks.
+>>> 
+>>> 
+>>>>> 
+>>>>> Signed-off-by: Robbie Ko <robbieko@synology.com>
+>>>>> ---
+>>>>>  fs/btrfs/send.c | 11 ++++++++---
+>>>>>  1 file changed, 8 insertions(+), 3 deletions(-)
+>>>>> 
+>>>>> diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+>>>>> index 094cc144..5be83b5 100644
+>>>>> --- a/fs/btrfs/send.c
+>>>>> +++ b/fs/btrfs/send.c
+>>>>> @@ -3340,7 +3340,8 @@ static void free_pending_move(struct send_ctx
+>>>>> *sctx, struct pending_dir_move *m)
+>>>>>         kfree(m);
+>>>>>  }
+>>>>> 
+>>>>> -static void tail_append_pending_moves(struct pending_dir_move 
+>>>>> *moves,
+>>>>> +static void tail_append_pending_moves(struct send_ctx *sctx,
+>>>>> +                                     struct pending_dir_move 
+>>>>> *moves,
+>>>>>                                       struct list_head *stack)
+>>>>>  {
+>>>>>         if (list_empty(&moves->list)) {
+>>>>> @@ -3351,6 +3352,10 @@ static void tail_append_pending_moves(struct
+>>>>> pending_dir_move *moves,
+>>>>>                 list_add_tail(&moves->list, stack);
+>>>>>                 list_splice_tail(&list, stack);
+>>>>>         }
+>>>>> +       if (!RB_EMPTY_NODE(&moves->node)) {
+>>>>> +               rb_erase(&moves->node, &sctx->pending_dir_moves);
+>>>>> +               RB_CLEAR_NODE(&moves->node);
+>>>>> +       }
+>>>>>  }
+>>>>> 
+>>>>>  static int apply_children_dir_moves(struct send_ctx *sctx)
+>>>>> @@ -3365,7 +3370,7 @@ static int apply_children_dir_moves(struct
+>>>>> send_ctx *sctx)
+>>>>>                 return 0;
+>>>>> 
+>>>>>         INIT_LIST_HEAD(&stack);
+>>>>> -       tail_append_pending_moves(pm, &stack);
+>>>>> +       tail_append_pending_moves(sctx, pm, &stack);
+>>>>> 
+>>>>>         while (!list_empty(&stack)) {
+>>>>>                 pm = list_first_entry(&stack, struct 
+>>>>> pending_dir_move,
+>>>>> list);
+>>>>> @@ -3376,7 +3381,7 @@ static int apply_children_dir_moves(struct
+>>>>> send_ctx *sctx)
+>>>>>                         goto out;
+>>>>>                 pm = get_pending_dir_moves(sctx, parent_ino);
+>>>>>                 if (pm)
+>>>>> -                       tail_append_pending_moves(pm, &stack);
+>>>>> +                       tail_append_pending_moves(sctx, pm, 
+>>>>> &stack);
+>>>>>         }
+>>>>>         return 0;
+>>>>> 
+>>>>> --
+>>>>> 1.9.1
+>>>>> 
+>> 
+>> 
+>> 
+

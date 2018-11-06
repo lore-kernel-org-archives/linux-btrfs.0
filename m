@@ -1,143 +1,143 @@
-Return-Path: <SRS0=ibH9=NQ=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=BJi/=NR=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.9 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5E3BDC0044C
-	for <linux-btrfs@archiver.kernel.org>; Mon,  5 Nov 2018 21:43:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0D872C0044C
+	for <linux-btrfs@archiver.kernel.org>; Tue,  6 Nov 2018 01:09:19 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 1C14E20825
-	for <linux-btrfs@archiver.kernel.org>; Mon,  5 Nov 2018 21:43:07 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="CZcjRKNR"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 1C14E20825
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
+	by mail.kernel.org (Postfix) with ESMTP id 9DD5420827
+	for <linux-btrfs@archiver.kernel.org>; Tue,  6 Nov 2018 01:09:18 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 9DD5420827
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=hisilicon.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2387974AbeKFHEt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 6 Nov 2018 02:04:49 -0500
-Received: from mail-oi1-f195.google.com ([209.85.167.195]:46911 "EHLO
-        mail-oi1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2387580AbeKFHEs (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Nov 2018 02:04:48 -0500
-Received: by mail-oi1-f195.google.com with SMTP id k64-v6so8866483oia.13
-        for <linux-btrfs@vger.kernel.org>; Mon, 05 Nov 2018 13:43:05 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc:content-transfer-encoding;
-        bh=j92I/m4I+PiGhzFF9G+wMGnHy/Ep0nH5k2gUNrU1Rkw=;
-        b=CZcjRKNRmE/ArPyGO6UvU2bEE65aT+zeeAJLZqf8A+VQx05TvQK1K38C37oPEPbzjB
-         mErdQcZWbd8LjBQDsNbod0br7b2MhUpd06LDUcz0HOUr1F/OseehePL8O5PyeaOE9jJa
-         TJserfUFshB2z7Vd4Vq5S8DbjpZe9UMav0DM8ISuo3XQPXlmKCE/Ijk2NFCbraRxQlSe
-         IEGogdtQ84Ypqbvt4ohf4NLP/FpG0kgo7XODckST3p+1aZB3BGrPaktks9qGG/fcCQMX
-         yF0LXwMzR7r3EDk+3d4+eKEp7N5MhEYt6G9Ur5ap03FBwkkCH2u2FPD1gdKyLJU2f3qW
-         qelQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc:content-transfer-encoding;
-        bh=j92I/m4I+PiGhzFF9G+wMGnHy/Ep0nH5k2gUNrU1Rkw=;
-        b=Mtl/I5IRY1i21mWhBoj/e4wRdg7EQUTIB7euYTfjMaTGh+HMQ/t+GprQIfz39OCeRr
-         Mx3SzaNPapb0lpuR84QVvbiJTyGvew0DCQY0Z5qO/hQZfl78ADNGboDtjuoR5EN5Ecl0
-         zAaWHACnXvT8vbVA6ErG0FrW709zfvQSr63APEWwNvFWyfUOVMeir6r1/9ykM/7KTn4G
-         VYZRCeW1K/SgwnhfXw8kb5MEgTdMjT9r4m0BO5a9iUyNjEPYTwwra9LJuNe04YNmVqE9
-         w68445/DugexJRq0bwp82XOjLFyaEZhZb0yWhso1di8RQmsvzckvyP8oVtC5ehmJ5oCS
-         xZow==
-X-Gm-Message-State: AGRZ1gLahkRznMcBVTMHIHEpWMlDEfIzV3OBBQnCPSojb7fRMk/ht48X
-        9qmNcd7nuSz4f6ZML5RUidnSqXXHhhGy/T9zHwOBdknU
-X-Google-Smtp-Source: AJdET5fu7Bw/eODhl6ITnirxjTWnbHhCr3EdRHcijy9reo+jGCvFKJcMxr9njIaqL+hKBApBjesXUoyi31wIOZoXRr4=
-X-Received: by 2002:aca:2414:: with SMTP id n20-v6mr12932853oic.40.1541454184526;
- Mon, 05 Nov 2018 13:43:04 -0800 (PST)
+        id S1726945AbeKFKbt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 6 Nov 2018 05:31:49 -0500
+Received: from szxga05-in.huawei.com ([45.249.212.191]:14172 "EHLO huawei.com"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726368AbeKFKbt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 6 Nov 2018 05:31:49 -0500
+Received: from DGGEMS406-HUB.china.huawei.com (unknown [172.30.72.60])
+        by Forcepoint Email with ESMTP id 6369ECBF7BECD;
+        Tue,  6 Nov 2018 09:09:13 +0800 (CST)
+Received: from [127.0.0.1] (10.74.221.148) by DGGEMS406-HUB.china.huawei.com
+ (10.3.19.206) with Microsoft SMTP Server id 14.3.408.0; Tue, 6 Nov 2018
+ 09:09:11 +0800
+Subject: Re: [PATCH] btrfs: tree-checker: Fix misleading group system
+ information
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>, <linux-btrfs@vger.kernel.org>
+References: <1541414949-16300-1-git-send-email-zhangshaokun@hisilicon.com>
+ <425b8a43-ec24-82f7-0627-82edc81e329d@gmx.com>
+ <044651c8-b5b7-2ec2-bf22-bdd967e24eb6@hisilicon.com>
+ <5477c8b2-8b0f-58ff-d4c6-ea95521049f4@gmx.com>
+CC:     David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>,
+        Josef Bacik <josef@toxicpanda.com>
+From:   Zhangshaokun <zhangshaokun@hisilicon.com>
+Message-ID: <b835cc55-6a84-6c8b-f293-41899630b3b6@hisilicon.com>
+Date:   Tue, 6 Nov 2018 09:09:11 +0800
+User-Agent: Mozilla/5.0 (Windows NT 6.1; WOW64; rv:45.0) Gecko/20100101
+ Thunderbird/45.1.1
 MIME-Version: 1.0
-References: <20181105190643.13578-1-rosenp@gmail.com> <6b70f54e-23f2-ed16-ba49-f93c39eb98a2@suse.com>
-In-Reply-To: <6b70f54e-23f2-ed16-ba49-f93c39eb98a2@suse.com>
-From:   Rosen Penev <rosenp@gmail.com>
-Date:   Mon, 5 Nov 2018 13:42:53 -0800
-Message-ID: <CAKxU2N-Q=bGypr+1soXBXTeJuytGnmWmRn8589B822xyiH=hJw@mail.gmail.com>
-Subject: Re: [PATCH 1/3] bitops: Fix big endian compilation
-To:     nborisov@suse.com
-Cc:     linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+In-Reply-To: <5477c8b2-8b0f-58ff-d4c6-ea95521049f4@gmx.com>
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+X-Originating-IP: [10.74.221.148]
+X-CFilter-Loop: Reflected
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Nov 5, 2018 at 1:31 PM Nikolay Borisov <nborisov@suse.com> wrote:
->
->
->
-> On 5.11.18 =D0=B3. 21:06 =D1=87., Rosen Penev wrote:
-> > Replaced bswap with _ variants. While it's a glibc extension, all of th=
-e
-> > popular libc implementations (glibc, uClibc, musl, BIONIC) seem to supp=
-ort
-> > it.
-> >
-> > Added static inline to two functions to match little endian variants. T=
-his
-> > fixes a linking error experienced when compiling.
->
-> On what platform did you experience the linking error?
-MIPS 24kc. OpenWrt specifically. Here's a link with the compile log
-(near the end):
-https://circleci.com/gh/openwrt/packages/77?utm_campaign=3Dworkflow-failed&=
-utm_medium=3Demail&utm_source=3Dnotification
+Hi Qu,
 
-The LTO errors I believe are due to GCC 7.3.0 being broken (fixed in 7.3.1)=
-.
+On 2018/11/5 22:42, Qu Wenruo wrote:
+> 
+> 
+> On 2018/11/5 下午7:33, Zhangshaokun wrote:
+>> Hi Qu,
+>>
+>> On 2018/11/5 19:03, Qu Wenruo wrote:
+>>>
+>>>
+>>> On 2018/11/5 下午6:49, Shaokun Zhang wrote:
+>>>> block_group_err shows the group system as a decimal value with a '0x'
+>>>> prefix, which is somewhat misleading.
+>>>>
+>>>> Fix it to print hexadecimal, as was intended.
+>>>>
+>>>> Cc: David Sterba <dsterba@suse.com> 
+>>>> Cc: Chris Mason <clm@fb.com>
+>>>> Cc: Josef Bacik <josef@toxicpanda.com> 
+>>>> Signed-off-by: Shaokun Zhang <zhangshaokun@hisilicon.com>
+>>>
+>>> Reviewed-by: Qu Wenruo <wqu@suse.com>
+>>>
+>>> BTW, did you catch it with some real world case or just by looking into
+>>> the code?
+>>
+>> I made a mistake (0x%d) when debugged my code, so I grep the similar format
+>> for the kernel code and came across this typo, a trivial patch.
+> 
+> Ok, that's fine.
+> 
+> Just a small tip for your further involvement in kernel, for such small
+> fix, there is really no need to bother all the maintainers.
+> 
 
-This patch fixes both issues. I'm still unsure why bswap32 is not
-being included but the _ variant works.
->
-> >
-> > Signed-off-by: Rosen Penev <rosenp@gmail.com>
-> > ---
-> >  kernel-lib/bitops.h | 8 ++++----
-> >  1 file changed, 4 insertions(+), 4 deletions(-)
-> >
-> > diff --git a/kernel-lib/bitops.h b/kernel-lib/bitops.h
-> > index b1fd6f5..2c51a26 100644
-> > --- a/kernel-lib/bitops.h
-> > +++ b/kernel-lib/bitops.h
-> > @@ -178,9 +178,9 @@ static inline unsigned long find_next_zero_bit(cons=
-t unsigned long *addr,
-> >  static inline unsigned long ext2_swab(const unsigned long y)
-> >  {
-> >  #if BITS_PER_LONG =3D=3D 64
-> > -     return (unsigned long) bswap64((u64) y);
-> > +     return (unsigned long) bswap_64((u64) y);
-> >  #elif BITS_PER_LONG =3D=3D 32
-> > -     return (unsigned long) bswap32((u32) y);
-> > +     return (unsigned long) bswap_32((u32) y);
-> >  #else
-> >  #error BITS_PER_LONG not defined
-> >  #endif
-> > @@ -218,14 +218,14 @@ static inline unsigned long _find_next_bit_le(con=
-st unsigned long *addr1,
-> >       return min(start + __ffs(ext2_swab(tmp)), nbits);
-> >  }
-> >
-> > -unsigned long find_next_zero_bit_le(const void *addr, unsigned long si=
-ze,
-> > +static inline unsigned long find_next_zero_bit_le(const void *addr, un=
-signed long size,
-> >               unsigned long offset)
-> >  {
-> >       return _find_next_bit_le(addr, NULL, size, offset, ~0UL);
-> >  }
-> >
-> >
-> > -unsigned long find_next_bit_le(const void *addr, unsigned long size,
-> > +static inline unsigned long find_next_bit_le(const void *addr, unsigne=
-d long size,
-> >               unsigned long offset)
-> >  {
-> >       return _find_next_bit_le(addr, NULL, size, offset, 0UL);
-> >
+My apologies for the noise to all the maintainers. I shall pay more attention
+on it.
+
+> You could just use "git blame" to find who is causing the problem, in
+> this case it's me unfortunately :( , and Cc that guy.
+> 
+
+In fact, I really used the "git blame" and saw it from your patch. While I
+use the get_maintainer.pl and Cc them directly, forgot to Cc you. I will
+do what you said for the further work.
+
+> Furthermore, you could add a "fixes:" tag.
+> About these common tags, you could refer to 'Describe your changes'
+> section of 'Documentation/process/submitting-patches.rst'.
+> 
+
+Sure, thanks for your nice guidance.
+
+Shaokun
+
+> Thanks,
+> Qu
+> 
+>>
+>> Thanks,
+>> Shaokun
+>>
+>>>
+>>> Thanks,
+>>> Qu
+>>>
+>>>> ---
+>>>>  fs/btrfs/tree-checker.c | 2 +-
+>>>>  1 file changed, 1 insertion(+), 1 deletion(-)
+>>>>
+>>>> diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
+>>>> index cab0b1f..efcf89a 100644
+>>>> --- a/fs/btrfs/tree-checker.c
+>>>> +++ b/fs/btrfs/tree-checker.c
+>>>> @@ -440,7 +440,7 @@ static int check_block_group_item(struct btrfs_fs_info *fs_info,
+>>>>  	    type != (BTRFS_BLOCK_GROUP_METADATA |
+>>>>  			   BTRFS_BLOCK_GROUP_DATA)) {
+>>>>  		block_group_err(fs_info, leaf, slot,
+>>>> -"invalid type, have 0x%llx (%lu bits set) expect either 0x%llx, 0x%llx, 0x%llu or 0x%llx",
+>>>> +"invalid type, have 0x%llx (%lu bits set) expect either 0x%llx, 0x%llx, 0x%llx or 0x%llx",
+>>>>  			type, hweight64(type),
+>>>>  			BTRFS_BLOCK_GROUP_DATA, BTRFS_BLOCK_GROUP_METADATA,
+>>>>  			BTRFS_BLOCK_GROUP_SYSTEM,
+>>>>
+>>>
+>>
+> 
+

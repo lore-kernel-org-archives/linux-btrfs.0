@@ -2,116 +2,192 @@ Return-Path: <SRS0=BJi/=NR=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.0 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 53FDEC32789
-	for <linux-btrfs@archiver.kernel.org>; Tue,  6 Nov 2018 15:34:47 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A936FC32789
+	for <linux-btrfs@archiver.kernel.org>; Tue,  6 Nov 2018 16:08:01 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 1BDD52081D
-	for <linux-btrfs@archiver.kernel.org>; Tue,  6 Nov 2018 15:34:47 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=kernel.org header.i=@kernel.org header.b="ojzK8PIs"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 1BDD52081D
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=kernel.org
+	by mail.kernel.org (Postfix) with ESMTP id 715E82081D
+	for <linux-btrfs@archiver.kernel.org>; Tue,  6 Nov 2018 16:08:01 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 715E82081D
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2388554AbeKGBAa (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 6 Nov 2018 20:00:30 -0500
-Received: from mail.kernel.org ([198.145.29.99]:57286 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S2387480AbeKGBAa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 6 Nov 2018 20:00:30 -0500
-Received: from localhost.localdomain (bl8-197-74.dsl.telepac.pt [85.241.197.74])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 0517A2081D;
-        Tue,  6 Nov 2018 15:34:43 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1541518484;
-        bh=Wx9HZyxWQp2WtHlKfcLEk58YP+MgaeG5aZHEN741srY=;
-        h=From:To:Cc:Subject:Date:From;
-        b=ojzK8PIsCE/gkPytBpBVKy6BafENMaKRLHX07yP+JgCM+01JIohxEw4ctESRsCba/
-         s3sUy0u5I3vU7eUKHDkUVdADGC1zQO/2h3hth5xtihLdfQceN5GG0O/a47q25eeHmo
-         JavAvw3XhwrhemxBm3hhyR6Gw7v0IpHqPn64YELY=
-From:   fdmanana@kernel.org
-To:     fstests@vger.kernel.org
-Cc:     linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] btrfs: fix computation of max fs size for multiple device fs tests
-Date:   Tue,  6 Nov 2018 15:34:37 +0000
-Message-Id: <20181106153437.26870-1-fdmanana@kernel.org>
-X-Mailer: git-send-email 2.11.0
+        id S2389160AbeKGBdx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 6 Nov 2018 20:33:53 -0500
+Received: from mx2.suse.de ([195.135.220.15]:33982 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S2388346AbeKGBdx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 6 Nov 2018 20:33:53 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 18D31B6D7;
+        Tue,  6 Nov 2018 16:07:57 +0000 (UTC)
+Subject: Re: [PATCH] btrfs: Always try all copies when reading extent buffers
+To:     linux-btrfs@vger.kernel.org
+Cc:     wqu@suse.com, josef@toxicpanda.com
+References: <20181106144020.3446-1-nborisov@suse.com>
+From:   Nikolay Borisov <nborisov@suse.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <e37d58ef-4836-80f6-0a81-988be4ad8ebe@suse.com>
+Date:   Tue, 6 Nov 2018 18:07:55 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.2.1
+MIME-Version: 1.0
+In-Reply-To: <20181106144020.3446-1-nborisov@suse.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Filipe Manana <fdmanana@suse.com>
 
-We were sorting numerical values with the 'sort' tool without telling it
-that we are sorting numbers, giving us unexpected ordering. So just pass
-the '-n' option to the 'sort' tool.
 
-Example:
+On 6.11.18 г. 16:40 ч., Nikolay Borisov wrote:
+> When a metadata read is served the endio routine btree_readpage_end_io_hook
+> is called which eventually runs the tree-checker. If tree-checker fails
+> to validate the read eb then it sets EXTENT_BUFFER_CORRUPT flag. This
+> leads to btree_read_extent_buffer_pages wrongly assuming that all
+> available copies of this extent buffer are wrong and failing prematurely.
+> Fix this modify btree_read_extent_buffer_pages to read all copies of
+> the data.
+> 
+> This failure was exhibitted in xfstests btrfs/124 which would
+> spuriously fail its balance operations. The reason was that when balance
+> was run following re-introduction of the missing raid1 disk
+> __btrfs_map_block would map the read request to stripe 0, which
+> corresponded to devid 2 (the disk which is being removed in the test):
+> 
+>     item 2 key (FIRST_CHUNK_TREE CHUNK_ITEM 3553624064) itemoff 15975 itemsize 112
+> 	length 1073741824 owner 2 stripe_len 65536 type DATA|RAID1
+> 	io_align 65536 io_width 65536 sector_size 4096
+> 	num_stripes 2 sub_stripes 1
+> 		stripe 0 devid 2 offset 2156920832
+> 		dev_uuid 8466c350-ed0c-4c3b-b17d-6379b445d5c8
+> 		stripe 1 devid 1 offset 3553624064
+> 		dev_uuid 1265d8db-5596-477e-af03-df08eb38d2ca
+> 
+> This caused read requests for a checksum item that to be routed to the
+> stale disk which triggered the aforementioned logic involving
+> EXTENT_BUFFER_CORRUPT flag. This then triggered cascading failures of
+> the balance operation.
+> 
+> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+> Suggested-by: Qu Wenruo <wqu@suse.com>
+> Fixes: a826d6dcb32d ("Btrfs: check items for correctness as we search")
+> ---
+>  fs/btrfs/disk-io.c | 11 +----------
+>  1 file changed, 1 insertion(+), 10 deletions(-)
+> 
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index 00ee5e37e989..279c6dbcc736 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -477,9 +477,9 @@ static int btree_read_extent_buffer_pages(struct btrfs_fs_info *fs_info,
+>  	int mirror_num = 0;
+>  	int failed_mirror = 0;
+>  
+> -	clear_bit(EXTENT_BUFFER_CORRUPT, &eb->bflags);
+>  	io_tree = &BTRFS_I(fs_info->btree_inode)->io_tree;
+>  	while (1) {
+> +		clear_bit(EXTENT_BUFFER_CORRUPT, &eb->bflags);
+>  		ret = read_extent_buffer_pages(io_tree, eb, WAIT_COMPLETE,
+>  					       mirror_num);
+>  		if (!ret) {
 
-$ echo -e "11\n9\n20" | sort
-11
-20
-9
+Qu, 
 
-$ echo -e "11\n9\n20" | sort -n
-9
-11
-20
+Do you think it makes sense to do refactoring like below in
+ a follow up patch: 
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- tests/btrfs/124 | 2 +-
- tests/btrfs/125 | 2 +-
- tests/btrfs/154 | 2 +-
- 3 files changed, 3 insertions(+), 3 deletions(-)
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 279c6dbcc736..9891e13a2b6f 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -482,16 +482,11 @@ static int btree_read_extent_buffer_pages(struct btrfs_fs_info *fs_info,
+                clear_bit(EXTENT_BUFFER_CORRUPT, &eb->bflags);
+                ret = read_extent_buffer_pages(io_tree, eb, WAIT_COMPLETE,
+                                               mirror_num);
+-               if (!ret) {
+-                       if (verify_parent_transid(io_tree, eb,
+-                                                  parent_transid, 0))
+-                               ret = -EIO;
+-                       else if (verify_level_key(fs_info, eb, level,
+-                                                 first_key, parent_transid))
+-                               ret = -EUCLEAN;
+-                       else
++               if (!ret &&
++                   !verify_parent_transid(io_tree, eb, parent_transid, 0) &&
++                   !verify_level_key(fs_info, eb, level, first_key,
++                                    parent_transid))
+                                break;
+-               }
 
-diff --git a/tests/btrfs/124 b/tests/btrfs/124
-index ce3ad6aa..a52c65f6 100755
---- a/tests/btrfs/124
-+++ b/tests/btrfs/124
-@@ -61,7 +61,7 @@ dev2=`echo $SCRATCH_DEV_POOL | awk '{print $2}'`
- dev1_sz=`blockdev --getsize64 $dev1`
- dev2_sz=`blockdev --getsize64 $dev2`
- # get min of both
--max_fs_sz=`echo -e "$dev1_sz\n$dev2_sz" | sort | head -1`
-+max_fs_sz=`echo -e "$dev1_sz\n$dev2_sz" | sort -n | head -1`
- # Need disks with more than 2G.
- if [ $max_fs_sz -lt 2000000000 ]; then
- 	_scratch_dev_pool_put
-diff --git a/tests/btrfs/125 b/tests/btrfs/125
-index e38de264..5ac68b67 100755
---- a/tests/btrfs/125
-+++ b/tests/btrfs/125
-@@ -68,7 +68,7 @@ dev2_sz=`blockdev --getsize64 $dev2`
- dev3_sz=`blockdev --getsize64 $dev3`
- 
- # get min of both.
--max_fs_sz=`echo -e "$dev1_sz\n$dev2_sz\n$dev3_sz" | sort | head -1`
-+max_fs_sz=`echo -e "$dev1_sz\n$dev2_sz\n$dev3_sz" | sort -n | head -1`
- # Need disks with more than 2G
- if [ $max_fs_sz -lt 2000000000 ]; then
- 	_scratch_dev_pool_put
-diff --git a/tests/btrfs/154 b/tests/btrfs/154
-index 99ea232a..cd6c688f 100755
---- a/tests/btrfs/154
-+++ b/tests/btrfs/154
-@@ -51,7 +51,7 @@ DEV1_SZ=`blockdev --getsize64 $DEV1`
- DEV2_SZ=`blockdev --getsize64 $DEV2`
- 
- # get min
--MAX_FS_SZ=`echo -e "$DEV1_SZ\n$DEV2_SZ" | sort | head -1`
-+MAX_FS_SZ=`echo -e "$DEV1_SZ\n$DEV2_SZ" | sort -n | head -1`
- # Need disks with more than 2G
- if [ $MAX_FS_SZ -lt 2000000000 ]; then
- 	_scratch_dev_pool_put
--- 
-2.11.0
 
+since the ret value doesn't really have any meaning or perhaps the 
+verify_level_key and ret = -EUCLEAN could be reteinaed as well as the 
+if (ret == EUCLEAN) break logic ? 
+
+> @@ -493,15 +493,6 @@ static int btree_read_extent_buffer_pages(struct btrfs_fs_info *fs_info,
+>  				break;
+>  		}
+>  
+> -		/*
+> -		 * This buffer's crc is fine, but its contents are corrupted, so
+> -		 * there is no reason to read the other copies, they won't be
+> -		 * any less wrong.
+> -		 */
+> -		if (test_bit(EXTENT_BUFFER_CORRUPT, &eb->bflags) ||
+> -		    ret == -EUCLEAN)
+> -			break;
+> -
+>  		num_copies = btrfs_num_copies(fs_info,
+>  					      eb->start, eb->len);
+>  		if (num_copies == 1)
+> 

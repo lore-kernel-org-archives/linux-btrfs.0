@@ -2,108 +2,108 @@ Return-Path: <SRS0=BJi/=NR=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,UNPARSEABLE_RELAY,
+	URIBL_BLOCKED,USER_AGENT_MUTT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CF246C32789
-	for <linux-btrfs@archiver.kernel.org>; Tue,  6 Nov 2018 14:40:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 33778C32789
+	for <linux-btrfs@archiver.kernel.org>; Tue,  6 Nov 2018 14:48:57 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9BB322081D
-	for <linux-btrfs@archiver.kernel.org>; Tue,  6 Nov 2018 14:40:25 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 9BB322081D
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
+	by mail.kernel.org (Postfix) with ESMTP id C25E22081D
+	for <linux-btrfs@archiver.kernel.org>; Tue,  6 Nov 2018 14:48:56 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org C25E22081D
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=net-space.pl
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2388832AbeKGAFz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 6 Nov 2018 19:05:55 -0500
-Received: from mx2.suse.de ([195.135.220.15]:44706 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S2388633AbeKGAFz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 6 Nov 2018 19:05:55 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 8FA69B6AA;
-        Tue,  6 Nov 2018 14:40:22 +0000 (UTC)
-From:   Nikolay Borisov <nborisov@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     wqu@suse.com, josef@toxicpanda.com,
-        Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH] btrfs: Always try all copies when reading extent buffers
-Date:   Tue,  6 Nov 2018 16:40:20 +0200
-Message-Id: <20181106144020.3446-1-nborisov@suse.com>
-X-Mailer: git-send-email 2.17.1
+        id S2388766AbeKGAO2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 6 Nov 2018 19:14:28 -0500
+Received: from dibed.net-space.pl ([84.10.22.86]:35005 "EHLO
+        dibed.net-space.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S2388428AbeKGAO2 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Nov 2018 19:14:28 -0500
+Received: (from localhost user: 'dkiper' uid#4000 fake: STDIN
+        (dkiper@dibed.net-space.pl)) by router-fw-old.i.net-space.pl
+        id S1878631AbeKFOsc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 6 Nov 2018 15:48:32 +0100
+Date:   Tue, 6 Nov 2018 15:48:32 +0100
+From:   Daniel Kiper <dkiper@net-space.pl>
+To:     Nick Terrell <terrelln@fb.com>
+Cc:     David Sterba <dsterba@suse.cz>, kernel-team@fb.com,
+        linux-btrfs@vger.kernel.org, grub-devel@gnu.org,
+        Daniel Kiper <dkiper@net-space.pl>
+Subject: Re: [PATCH v4 1/2] Import upstream zstd-1.3.6
+Message-ID: <20181106144832.GA9907@router-fw-old.i.net-space.pl>
+References: <20181031175617.230241-1-terrelln@fb.com> <20181031175617.230241-2-terrelln@fb.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20181031175617.230241-2-terrelln@fb.com>
+User-Agent: Mutt/1.3.28i
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-When a metadata read is served the endio routine btree_readpage_end_io_hook
-is called which eventually runs the tree-checker. If tree-checker fails
-to validate the read eb then it sets EXTENT_BUFFER_CORRUPT flag. This
-leads to btree_read_extent_buffer_pages wrongly assuming that all
-available copies of this extent buffer are wrong and failing prematurely.
-Fix this modify btree_read_extent_buffer_pages to read all copies of
-the data.
+On Wed, Oct 31, 2018 at 10:56:16AM -0700, Nick Terrell wrote:
+> Import zstd-1.3.6 from upstream [1]. Only the files need for decompression
+> are imported. Additionally makes zstd a module by adding module.c which
+> contains the license, and updates Makefile.core.def.
+>
+> I used the latest zstd release, which includes patches [2] to build cleanly
+> in GRUB.
+>
+> Upstream zstd commit hash: 4fa456d7f12f8b27bd3b2f5dfd4f46898cb31c24
+> Upstream zstd commit name: Merge pull request #1354 from facebook/dev
+>
+> I've included the script used to import zstd-1.3.6 below.
+>
+> [1] https://github.com/facebook/zstd/releases/tag/v1.3.6
+> [2] https://github.com/facebook/zstd/pull/1344
+>
+> ```
+> #!/bin/sh -e
+>
+> curl -L -O https://github.com/facebook/zstd/releases/download/v1.3.6/zstd-1.3.6.tar.gz
+> curl -L -O https://github.com/facebook/zstd/releases/download/v1.3.6/zstd-1.3.6.tar.gz.sha256
+> sha256sum --check zstd-1.3.6.tar.gz.sha256
+> tar xzf zstd-1.3.6.tar.gz
+>
+> SRC_LIB="zstd-1.3.6/lib"
+> DST_LIB="grub-core/lib/zstd"
+> rm -rf $DST_LIB
+> mkdir -p $DST_LIB
+> cp $SRC_LIB/zstd.h $DST_LIB/
+> cp $SRC_LIB/common/*.[hc] $DST_LIB/
+> cp $SRC_LIB/decompress/*.[hc] $DST_LIB/
+> rm $DST_LIB/{pool.[hc],threading.[hc]}
+> rm -rf zstd-1.3.6*
+> echo SUCCESS!
+> ```
+>
+> Signed-off-by: Nick Terrell <terrelln@fb.com>
 
-This failure was exhibitted in xfstests btrfs/124 which would
-spuriously fail its balance operations. The reason was that when balance
-was run following re-introduction of the missing raid1 disk
-__btrfs_map_block would map the read request to stripe 0, which
-corresponded to devid 2 (the disk which is being removed in the test):
+I have a few concerns. First of all I can see that you include a lot of
+standard headers, e.g. stdlib.h, string.h, stddef.h, etc. Where do they
+come from? OS? If yes that is wrong. Additionally, I think that you
+should not use standard types, e.g. size_t, because this may not work if
+you cross compile. You have to use, e.g. grub_size_t. IMO the simplest
+solution would be definition and usage of relevant zstd_* types, e.g.
+zstd_size_t. Then e.g. zstd_size_t should be defined as grub_size_t.
 
-    item 2 key (FIRST_CHUNK_TREE CHUNK_ITEM 3553624064) itemoff 15975 itemsize 112
-	length 1073741824 owner 2 stripe_len 65536 type DATA|RAID1
-	io_align 65536 io_width 65536 sector_size 4096
-	num_stripes 2 sub_stripes 1
-		stripe 0 devid 2 offset 2156920832
-		dev_uuid 8466c350-ed0c-4c3b-b17d-6379b445d5c8
-		stripe 1 devid 1 offset 3553624064
-		dev_uuid 1265d8db-5596-477e-af03-df08eb38d2ca
+[...]
 
-This caused read requests for a checksum item that to be routed to the
-stale disk which triggered the aforementioned logic involving
-EXTENT_BUFFER_CORRUPT flag. This then triggered cascading failures of
-the balance operation.
+> diff --git a/grub-core/lib/zstd/module.c b/grub-core/lib/zstd/module.c
+> new file mode 100644
+> index 000000000..e4d0cace8
+> --- /dev/null
+> +++ b/grub-core/lib/zstd/module.c
+> @@ -0,0 +1,3 @@
 
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
-Suggested-by: Qu Wenruo <wqu@suse.com>
-Fixes: a826d6dcb32d ("Btrfs: check items for correctness as we search")
----
- fs/btrfs/disk-io.c | 11 +----------
- 1 file changed, 1 insertion(+), 10 deletions(-)
+Could you copy the header e.g. from grub-core/loader/multiboot_mbi2.c?
+Of course you have to update the dates accordingly.
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 00ee5e37e989..279c6dbcc736 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -477,9 +477,9 @@ static int btree_read_extent_buffer_pages(struct btrfs_fs_info *fs_info,
- 	int mirror_num = 0;
- 	int failed_mirror = 0;
- 
--	clear_bit(EXTENT_BUFFER_CORRUPT, &eb->bflags);
- 	io_tree = &BTRFS_I(fs_info->btree_inode)->io_tree;
- 	while (1) {
-+		clear_bit(EXTENT_BUFFER_CORRUPT, &eb->bflags);
- 		ret = read_extent_buffer_pages(io_tree, eb, WAIT_COMPLETE,
- 					       mirror_num);
- 		if (!ret) {
-@@ -493,15 +493,6 @@ static int btree_read_extent_buffer_pages(struct btrfs_fs_info *fs_info,
- 				break;
- 		}
- 
--		/*
--		 * This buffer's crc is fine, but its contents are corrupted, so
--		 * there is no reason to read the other copies, they won't be
--		 * any less wrong.
--		 */
--		if (test_bit(EXTENT_BUFFER_CORRUPT, &eb->bflags) ||
--		    ret == -EUCLEAN)
--			break;
--
- 		num_copies = btrfs_num_copies(fs_info,
- 					      eb->start, eb->len);
- 		if (num_copies == 1)
--- 
-2.17.1
+> +#include <grub/dl.h>
+> +
+> +GRUB_MOD_LICENSE ("GPLv3");
 
+Daniel

@@ -2,246 +2,178 @@ Return-Path: <SRS0=BJi/=NR=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
-	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
+X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0CF6EC0044C
-	for <linux-btrfs@archiver.kernel.org>; Tue,  6 Nov 2018 01:28:49 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8ED87C46465
+	for <linux-btrfs@archiver.kernel.org>; Tue,  6 Nov 2018 06:27:28 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B83742083D
-	for <linux-btrfs@archiver.kernel.org>; Tue,  6 Nov 2018 01:28:48 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org B83742083D
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=gmx.com
+	by mail.kernel.org (Postfix) with ESMTP id 55D622085B
+	for <linux-btrfs@archiver.kernel.org>; Tue,  6 Nov 2018 06:27:28 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 55D622085B
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726389AbeKFKvY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 6 Nov 2018 05:51:24 -0500
-Received: from mout.gmx.net ([212.227.17.21]:51193 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726156AbeKFKvY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 6 Nov 2018 05:51:24 -0500
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx102
- [212.227.17.174]) with ESMTPSA (Nemesis) id 0MMHaL-1gRovO2kEH-0081v4; Tue, 06
- Nov 2018 02:28:44 +0100
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx102
- [212.227.17.174]) with ESMTPSA (Nemesis) id 0MMHaL-1gRovO2kEH-0081v4; Tue, 06
- Nov 2018 02:28:44 +0100
-Subject: Re: btrfs partition is broken, cannot restore anything
-To:     Attila Vangel <vangel.attila@gmail.com>,
-        linux-btrfs@vger.kernel.org
-References: <CAGSQd28H5RsVe-uzZRu2BYu9-nX+18n3JE=rQMhqM1H8krVMEA@mail.gmail.com>
- <CAGSQd2_va==dDduBg7iaTyo=oeH7a5jFTM+c1sZkipNZEeaWxA@mail.gmail.com>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+        id S2387563AbeKFPvF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 6 Nov 2018 10:51:05 -0500
+Received: from mx2.suse.de ([195.135.220.15]:42766 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S2387393AbeKFPvE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 6 Nov 2018 10:51:04 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 6F3F4B045;
+        Tue,  6 Nov 2018 06:27:23 +0000 (UTC)
+Subject: Re: [PATCH 1/3] bitops: Fix big endian compilation
+To:     Rosen Penev <rosenp@gmail.com>
+Cc:     linux-btrfs@vger.kernel.org
+References: <20181105190643.13578-1-rosenp@gmail.com>
+ <6b70f54e-23f2-ed16-ba49-f93c39eb98a2@suse.com>
+ <CAKxU2N-Q=bGypr+1soXBXTeJuytGnmWmRn8589B822xyiH=hJw@mail.gmail.com>
+From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
-Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
- bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
- ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
- rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
- FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
- 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
- ilaVzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAHCwHwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
- CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
- f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
- mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
- 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
- h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <1a569e29-d9f1-e86f-15cf-5a8b5e205103@gmx.com>
-Date:   Tue, 6 Nov 2018 09:28:39 +0800
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <9cb37782-a28f-b31d-d005-17648b4b86d5@suse.com>
+Date:   Tue, 6 Nov 2018 08:27:22 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <CAGSQd2_va==dDduBg7iaTyo=oeH7a5jFTM+c1sZkipNZEeaWxA@mail.gmail.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="O3rHGST7VQ37ymhFniupYlZACrDeef1hW"
-X-Provags-ID: V03:K1:1etMksmn1XYbLCCL0Jp/jdyEbjtgNXqWBb/piw1Jls4c4wacRJ3
- 0n4jo4wyYTvbr+1pHuk9AA6g6A4eT/mSxYYarmoLg/fuq1HfMiwaOj+tw/Mf159CAZwO+YR
- RNq3MYIETm4uV+FWnQgS3EfroJXhAYHL0613tw6fkZreYgeKwms9AxNvEzuUejZMHanoanM
- wNEDAV7OTAuHH39ECPF+w==
-X-UI-Out-Filterresults: notjunk:1;V01:K0:GlJxpYYgiFs=:wDUX0RmHNB8FM5pXabCGzz
- a0rkQ5pMH9Uyab6cDd6sax0H31TQZKvPBYC65vk2eWFk/D+kSOJ6udDpeEhAhnl8qxfC9IWLY
- 25nRDileerr3SxUH31vvRQBG3iBXl2+VfN1vyGQdJeL01JWsGq/yioW0AAfqfroAenxq7g2aE
- uUL898E+sFKfjZ7pBIbblh9KRgc3MS7iRGBmt72guC6Hrge9DVBkf0MkebDH2VZKm45BOlTZI
- Z+quXy70L3aIwvQ5aKeaY0JAntCuVwSPHqu2KXj/1+Q39uW18ZHUcENTSm7BUe+9Urno+5+Rq
- ggkF8y0Jny4tY/KhvAwST0gh3cv4mL0WmFq4ddHEL5Xs7wkkaazIl8FpRv5rrm2tHYDWFNnWB
- eGRhZcFUdMTPk25bxBz9p9eSkqfENOhowdLc3biYwLAgzeVvx0xlL3ynHHB9IqOyJEYrXIfbF
- 9U/m6OdXlEbpYlNNUEfO1lkRmCxKPLPdopjsD5KCPBHRsxP7hADlz3LI3ZHuuE6OuZnpE/Hcx
- HPTfS+dBHpbmJyf7X20zJF+uYuURI3SWHALt/K+6nO4khrvlLFVxNWqAIV77p5Hxh6SD/tUR9
- M/ptuS7oy/R4hbcjDntddJ9L0RKOK8lDv3RHT+AqrGZsSgdM/2DWtdcotWhvQ9YrnyA14pxUX
- 0aPpgx4PIdhqGGNQBn/a1IXAqcU8aaDUntmEwNn9P4OUrnIp0NpLPQd3LoWgbPGf9eTRZUL3d
- kxEgPgY93vJQ1u4uEAGyTTQz6pA5IbjW+lwjzAE8YF0AzkhJeIQNc2tNiRwHgPIPNuvBGZdQs
- 7vgz2A6UTrt/TYp6xKy2he1fLZzCg==
+In-Reply-To: <CAKxU2N-Q=bGypr+1soXBXTeJuytGnmWmRn8589B822xyiH=hJw@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---O3rHGST7VQ37ymhFniupYlZACrDeef1hW
-Content-Type: multipart/mixed; boundary="HE5qyWTW3tPBEXwez3TpATUm2mvhu0MjV";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Attila Vangel <vangel.attila@gmail.com>, linux-btrfs@vger.kernel.org
-Message-ID: <1a569e29-d9f1-e86f-15cf-5a8b5e205103@gmx.com>
-Subject: Re: btrfs partition is broken, cannot restore anything
-References: <CAGSQd28H5RsVe-uzZRu2BYu9-nX+18n3JE=rQMhqM1H8krVMEA@mail.gmail.com>
- <CAGSQd2_va==dDduBg7iaTyo=oeH7a5jFTM+c1sZkipNZEeaWxA@mail.gmail.com>
-In-Reply-To: <CAGSQd2_va==dDduBg7iaTyo=oeH7a5jFTM+c1sZkipNZEeaWxA@mail.gmail.com>
-
---HE5qyWTW3tPBEXwez3TpATUm2mvhu0MjV
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
 
 
-
-On 2018/11/6 =E4=B8=8A=E5=8D=882:01, Attila Vangel wrote:
-> Hi,
->=20
-> TL;DR: I want to save data from my unmountable btrfs partition.
-> I saw some commands in another thread "Salvage files from broken btrfs"=
-=2E
-> I use the most recent Manjaro live (kernel: 4.19.0-3-MANJARO,
-> btrfs-progs 4.17.1-1) to execute these commands.
->=20
-> $ sudo mount -o ro,nologreplay /dev/nvme0n1p2 /mnt
-> mount: /mnt: wrong fs type, bad option, bad superblock on
-> /dev/nvme0n1p2, missing codepage or helper program, or other error.
->=20
-> Corresponding lines from dmesg:
->=20
-> [ 1517.772302] BTRFS info (device nvme0n1p2): disabling log replay at m=
-ount time
-> [ 1517.772307] BTRFS info (device nvme0n1p2): disk space caching is ena=
-bled
-> [ 1517.772310] BTRFS info (device nvme0n1p2): has skinny extents
-> [ 1517.793414] BTRFS error (device nvme0n1p2): bad tree block start,
-> want 18811453440 have 0
-> [ 1517.793430] BTRFS error (device nvme0n1p2): failed to read block gro=
-ups: -5
-> [ 1517.808619] BTRFS error (device nvme0n1p2): open_ctree failed
-
-Extent tree corrupted.
-
-If it's the only problem, btrfs-restore should be able to salvage data.
-
->=20
-> $ sudo btrfs-find-root /dev/nvme0n1p2
-
-No, that's not what you need.
-
-> Superblock thinks the generation is 220524
-> Superblock thinks the level is 1
-> Found tree root at 25018368 gen 220524 level 1
-> Well block 4243456(gen: 220520 level: 1) seems good, but
-> generation/level doesn't match, want gen: 220524 level: 1
-> Well block 5259264(gen: 220519 level: 1) seems good, but
-> generation/level doesn't match, want gen: 220524 level: 1
-> Well block 4866048(gen: 220518 level: 0) seems good, but
-> generation/level doesn't match, want gen: 220524 level: 1
->=20
-> $ sudo btrfs ins dump-super -Ffa /dev/nvme0n1p2
-> superblock: bytenr=3D65536, device=3D/dev/nvme0n1p2
-[snip]
->=20
-> If I understood correctly, somehow it is possible to use this data to
-> parametrize btrfs restore to save the files from the partition.
-
-None of the output is really helpful.
-
-In your case, your extent tree is corrupted, thus kernel will refuse to
-mount (even RO).
-
-You should run "btrfs check" on the fs to see if btrfs can check fs tree.=
-
-If not, then go directly to "btrfs restore".
-
-Thanks,
-Qu
-
-> Could you please help how to do it in this case? I am not familiar
-> with these technical terms in the outputs.
-> Thanks in advance!
->=20
-> Cheers,
-> Attila
->=20
-> On Thu, Nov 1, 2018 at 8:40 PM Attila Vangel <vangel.attila@gmail.com> =
-wrote:
+On 5.11.18 г. 23:42 ч., Rosen Penev wrote:
+> On Mon, Nov 5, 2018 at 1:31 PM Nikolay Borisov <nborisov@suse.com> wrote:
 >>
->> Hi,
 >>
->> Somehow my btrfs partition got broken. I use Arch, so my kernel is
->> quite new (4.18.x).
->> I don't remember exactly the sequence of events. At some point it was
->> accessible in read-only, but unfortunately I did not take backup
->> immediately. dmesg log from that time:
 >>
->> [ 62.602388] BTRFS warning (device nvme0n1p2): block group
->> 103923318784 has wrong amount of free space
->> [ 62.602390] BTRFS warning (device nvme0n1p2): failed to load free
->> space cache for block group 103923318784, rebuilding it now
->> [ 108.039188] BTRFS error (device nvme0n1p2): bad tree block start 0 1=
-8812026880
->> [ 108.039227] BTRFS: error (device nvme0n1p2) in
->> __btrfs_free_extent:7010: errno=3D-5 IO failure
->> [ 108.039241] BTRFS info (device nvme0n1p2): forced readonly
->> [ 108.039250] BTRFS: error (device nvme0n1p2) in
->> btrfs_run_delayed_refs:3076: errno=3D-5 IO failure
+>> On 5.11.18 г. 21:06 ч., Rosen Penev wrote:
+>>> Replaced bswap with _ variants. While it's a glibc extension, all of the
+>>> popular libc implementations (glibc, uClibc, musl, BIONIC) seem to support
+>>> it.
+>>>
+>>> Added static inline to two functions to match little endian variants. This
+>>> fixes a linking error experienced when compiling.
 >>
->> At the next reboot it failed to mount. Problem may have been that at
->> some point I booted to another distro with older kernel (4.15.x,
->> 4.14.52) and unfortunately attempted some checks/repairs (?) e.g. from=
-
->> gparted, and at that time I did not know it could be destructive.
+>> On what platform did you experience the linking error?
+> MIPS 24kc. OpenWrt specifically. Here's a link with the compile log
+> (near the end):
+> https://circleci.com/gh/openwrt/packages/77?utm_campaign=workflow-failed&utm_medium=email&utm_source=notification
+> 
+> The LTO errors I believe are due to GCC 7.3.0 being broken (fixed in 7.3.1).
+> 
+> This patch fixes both issues. I'm still unsure why bswap32 is not
+> being included but the _ variant works.
 >>
->> Anyway, currently it fails to mount (even with ro and/or recovery),
->> btrfs check results in "checksum verify failed" and "bad tree block"
->> errors, btrfs restore resulted in "We have looped trying to restore
->> files in" errors for a dozen of paths then exit.
->>
->> Is there some hope to save data from the filesystem, and if so, how?
->>
->> BTW I checked some diagnostics commands regarding my SSD with the nvme=
+>>>
+>>> Signed-off-by: Rosen Penev <rosenp@gmail.com>
 
->> client and from that it seems there are no hardware problems.
->>
->> Your help is highly appreciated.
->>
->> Cheers,
->> Attila
+(Some explanation below but the patch is ok)
+
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+
+>>> ---
+>>>  kernel-lib/bitops.h | 8 ++++----
+>>>  1 file changed, 4 insertions(+), 4 deletions(-)
+>>>
+>>> diff --git a/kernel-lib/bitops.h b/kernel-lib/bitops.h
+>>> index b1fd6f5..2c51a26 100644
+>>> --- a/kernel-lib/bitops.h
+>>> +++ b/kernel-lib/bitops.h
+>>> @@ -178,9 +178,9 @@ static inline unsigned long find_next_zero_bit(const unsigned long *addr,
+>>>  static inline unsigned long ext2_swab(const unsigned long y)
+>>>  {
+>>>  #if BITS_PER_LONG == 64
+>>> -     return (unsigned long) bswap64((u64) y);
+>>> +     return (unsigned long) bswap_64((u64) y);
+>>>  #elif BITS_PER_LONG == 32
+>>> -     return (unsigned long) bswap32((u32) y);
+>>> +     return (unsigned long) bswap_32((u32) y);
+
+Alternatively those bswaps* could be replaced by __builtin_bswap32/64
+which come directly from the compiler.
+
+Looking at: https://git.musl-libc.org/cgit/musl/tree/include/byteswap.h
+
+It seems musl only defines bswap_* variants. glibc also seems to define
+only _ variants as per:
+https://sourceware.org/git/?p=glibc.git;a=blob;f=string/byteswap.h;h=a45b3e20ed5d0849bc3939b80272bd3d6d43dc31;hb=HEAD
+
+And indeed http://man7.org/linux/man-pages/man3/bswap.3.html documents
+the functions as having _ suffix so this was a mistake on my  part.
+
+Your solution is correct (and now I have no explanation where did
+bswap64 definition come from so that it didn't fail for me).
 
 
---HE5qyWTW3tPBEXwez3TpATUm2mvhu0MjV--
-
---O3rHGST7VQ37ymhFniupYlZACrDeef1hW
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlvg7kgACgkQwj2R86El
-/qh7mwf/SUaXwp4pZPvOJeFc4pOA36rDIiMDYiV3DhBPCkTydsUqeGPOV/QdPDdj
-vDzjWAIee05jafYwFSSPVQVN+GjO7sr08dU9y3nW3NReVl0VW79ef0KK4+PWiAc5
-TqEnPkVVUk/N7FQd4gnkXPCCC8O+go3Y+CLw1JOtPC5qqbD1/3zyzrywNBgh+4ql
-mlNZ+irvRvBMoXko/9Jnd1mqcgOz3LSIgTglhVWHpVf3d5q4RSHErDKXu8uTVHaI
-A8AjmE6rTEiZzlVEU0fmVQ5Lcy8jRP76mKpqzYM1O3mRVaJvSJLpFeV6ZpA2f8X5
-b4VU87kWnIZSsHpGvKm2zKpqxmvI+A==
-=Dv/m
------END PGP SIGNATURE-----
-
---O3rHGST7VQ37ymhFniupYlZACrDeef1hW--
+>>>  #else
+>>>  #error BITS_PER_LONG not defined
+>>>  #endif
+>>> @@ -218,14 +218,14 @@ static inline unsigned long _find_next_bit_le(const unsigned long *addr1,
+>>>       return min(start + __ffs(ext2_swab(tmp)), nbits);
+>>>  }
+>>>
+>>> -unsigned long find_next_zero_bit_le(const void *addr, unsigned long size,
+>>> +static inline unsigned long find_next_zero_bit_le(const void *addr, unsigned long size,
+>>>               unsigned long offset)
+>>>  {
+>>>       return _find_next_bit_le(addr, NULL, size, offset, ~0UL);
+>>>  }
+>>>
+>>>
+>>> -unsigned long find_next_bit_le(const void *addr, unsigned long size,
+>>> +static inline unsigned long find_next_bit_le(const void *addr, unsigned long size,
+>>>               unsigned long offset)
+>>>  {
+>>>       return _find_next_bit_le(addr, NULL, size, offset, 0UL);
+>>>
+> 

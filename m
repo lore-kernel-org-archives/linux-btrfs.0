@@ -2,41 +2,43 @@ Return-Path: <SRS0=BJi/=NR=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,
+	UNWANTED_LANGUAGE_BODY,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id ED3F0C46475
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B4BB7C5ACCC
 	for <linux-btrfs@archiver.kernel.org>; Tue,  6 Nov 2018 06:41:40 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B6FA52081D
+	by mail.kernel.org (Postfix) with ESMTP id 80BF320862
 	for <linux-btrfs@archiver.kernel.org>; Tue,  6 Nov 2018 06:41:40 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org B6FA52081D
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 80BF320862
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=cn.fujitsu.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2387556AbeKFQFU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 6 Nov 2018 11:05:20 -0500
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:31748 "EHLO
+        id S2387552AbeKFQFT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 6 Nov 2018 11:05:19 -0500
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:32866 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S2387527AbeKFQFT (ORCPT
+        with ESMTP id S2387399AbeKFQFT (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Nov 2018 11:05:19 -0500
 X-IronPort-AV: E=Sophos;i="5.43,368,1503331200"; 
-   d="scan'208";a="47417655"
+   d="scan'208";a="47417654"
 Received: from unknown (HELO cn.fujitsu.com) ([10.167.33.5])
   by heian.cn.fujitsu.com with ESMTP; 06 Nov 2018 14:41:32 +0800
 Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
-        by cn.fujitsu.com (Postfix) with ESMTP id 6644B4B71EA0;
-        Tue,  6 Nov 2018 14:41:33 +0800 (CST)
+        by cn.fujitsu.com (Postfix) with ESMTP id 9B32B4B714AF;
+        Tue,  6 Nov 2018 14:41:31 +0800 (CST)
 Received: from fnst.lan (10.167.226.155) by G08CNEXCHPEKD01.g08.fujitsu.local
  (10.167.33.89) with Microsoft SMTP Server (TLS) id 14.3.408.0; Tue, 6 Nov
- 2018 14:41:36 +0800
+ 2018 14:41:35 +0800
 From:   Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 To:     <linux-btrfs@vger.kernel.org>
-CC:     Qu Wenruo <quwenruo@cn.fujitsu.com>
-Subject: [PATCH v15.1 05/13] btrfs: delayed-ref: Add support for increasing data ref under spinlock
-Date:   Tue, 6 Nov 2018 14:41:14 +0800
-Message-ID: <20181106064122.6154-6-lufq.fnst@cn.fujitsu.com>
+CC:     Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>,
+        Qu Wenruo <quwenruo@cn.fujitsu.com>
+Subject: [PATCH v15.1 02/13] btrfs: dedupe: Introduce function to initialize dedupe info
+Date:   Tue, 6 Nov 2018 14:41:11 +0800
+Message-ID: <20181106064122.6154-3-lufq.fnst@cn.fujitsu.com>
 X-Mailer: git-send-email 2.19.1
 In-Reply-To: <20181106064122.6154-1-lufq.fnst@cn.fujitsu.com>
 References: <20181106064122.6154-1-lufq.fnst@cn.fujitsu.com>
@@ -44,7 +46,7 @@ MIME-Version: 1.0
 Content-Transfer-Encoding: 7BIT
 Content-Type:   text/plain; charset=US-ASCII
 X-Originating-IP: [10.167.226.155]
-X-yoursite-MailScanner-ID: 6644B4B71EA0.A8E0F
+X-yoursite-MailScanner-ID: 9B32B4B714AF.A9ECA
 X-yoursite-MailScanner: Found to be clean
 X-yoursite-MailScanner-From: lufq.fnst@cn.fujitsu.com
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -52,176 +54,247 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 
-For in-band dedupe, btrfs needs to increase data ref with delayed_ref
-locked, so add a new function btrfs_add_delayed_data_ref_lock() to
-increase extent ref with delayed_refs already locked. Export
-init_delayed_ref_head and init_delayed_ref_common for inband dedupe.
+Add generic function to initialize dedupe info.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 Reviewed-by: Josef Bacik <jbacik@fb.com>
 Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 ---
- fs/btrfs/delayed-ref.c | 53 +++++++++++++++++++++++++++++-------------
- fs/btrfs/delayed-ref.h | 15 ++++++++++++
- 2 files changed, 52 insertions(+), 16 deletions(-)
+ fs/btrfs/Makefile          |   2 +-
+ fs/btrfs/dedupe.c          | 169 +++++++++++++++++++++++++++++++++++++
+ fs/btrfs/dedupe.h          |  12 +++
+ include/uapi/linux/btrfs.h |   3 +
+ 4 files changed, 185 insertions(+), 1 deletion(-)
+ create mode 100644 fs/btrfs/dedupe.c
 
-diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
-index 9301b3ad9217..ae8968f10ce0 100644
---- a/fs/btrfs/delayed-ref.c
-+++ b/fs/btrfs/delayed-ref.c
-@@ -533,7 +533,7 @@ update_existing_head_ref(struct btrfs_delayed_ref_root *delayed_refs,
- 	spin_unlock(&existing->lock);
- }
+diff --git a/fs/btrfs/Makefile b/fs/btrfs/Makefile
+index ca693dd554e9..78fdc87dba39 100644
+--- a/fs/btrfs/Makefile
++++ b/fs/btrfs/Makefile
+@@ -10,7 +10,7 @@ btrfs-y += super.o ctree.o extent-tree.o print-tree.o root-tree.o dir-item.o \
+ 	   export.o tree-log.o free-space-cache.o zlib.o lzo.o zstd.o \
+ 	   compression.o delayed-ref.o relocation.o delayed-inode.o scrub.o \
+ 	   reada.o backref.o ulist.o qgroup.o send.o dev-replace.o raid56.o \
+-	   uuid-tree.o props.o free-space-tree.o tree-checker.o
++	   uuid-tree.o props.o free-space-tree.o tree-checker.o dedupe.o
  
--static void init_delayed_ref_head(struct btrfs_delayed_ref_head *head_ref,
-+void btrfs_init_delayed_ref_head(struct btrfs_delayed_ref_head *head_ref,
- 				  struct btrfs_qgroup_extent_record *qrecord,
- 				  u64 bytenr, u64 num_bytes, u64 ref_root,
- 				  u64 reserved, int action, bool is_data,
-@@ -661,7 +661,7 @@ add_delayed_ref_head(struct btrfs_trans_handle *trans,
- }
- 
- /*
-- * init_delayed_ref_common - Initialize the structure which represents a
-+ * btrfs_init_delayed_ref_common - Initialize the structure which represents a
-  *			     modification to a an extent.
-  *
-  * @fs_info:    Internal to the mounted filesystem mount structure.
-@@ -685,7 +685,7 @@ add_delayed_ref_head(struct btrfs_trans_handle *trans,
-  *		when recording a metadata extent or BTRFS_SHARED_DATA_REF_KEY/
-  *		BTRFS_EXTENT_DATA_REF_KEY when recording data extent
-  */
--static void init_delayed_ref_common(struct btrfs_fs_info *fs_info,
-+void btrfs_init_delayed_ref_common(struct btrfs_fs_info *fs_info,
- 				    struct btrfs_delayed_ref_node *ref,
- 				    u64 bytenr, u64 num_bytes, u64 ref_root,
- 				    int action, u8 ref_type)
-@@ -758,14 +758,14 @@ int btrfs_add_delayed_tree_ref(struct btrfs_trans_handle *trans,
- 	else
- 		ref_type = BTRFS_TREE_BLOCK_REF_KEY;
- 
--	init_delayed_ref_common(fs_info, &ref->node, bytenr, num_bytes,
--				ref_root, action, ref_type);
-+	btrfs_init_delayed_ref_common(fs_info, &ref->node, bytenr, num_bytes,
-+				      ref_root, action, ref_type);
- 	ref->root = ref_root;
- 	ref->parent = parent;
- 	ref->level = level;
- 
--	init_delayed_ref_head(head_ref, record, bytenr, num_bytes,
--			      ref_root, 0, action, false, is_system);
-+	btrfs_init_delayed_ref_head(head_ref, record, bytenr, num_bytes,
-+				    ref_root, 0, action, false, is_system);
- 	head_ref->extent_op = extent_op;
- 
- 	delayed_refs = &trans->transaction->delayed_refs;
-@@ -794,6 +794,29 @@ int btrfs_add_delayed_tree_ref(struct btrfs_trans_handle *trans,
- 	return 0;
- }
- 
+ btrfs-$(CONFIG_BTRFS_FS_POSIX_ACL) += acl.o
+ btrfs-$(CONFIG_BTRFS_FS_CHECK_INTEGRITY) += check-integrity.o
+diff --git a/fs/btrfs/dedupe.c b/fs/btrfs/dedupe.c
+new file mode 100644
+index 000000000000..06523162753d
+--- /dev/null
++++ b/fs/btrfs/dedupe.c
+@@ -0,0 +1,169 @@
++// SPDX-License-Identifier: GPL-2.0
 +/*
-+ * Do real delayed data ref insert.
-+ * Caller must hold delayed_refs->lock and allocation memory
-+ * for dref,head_ref and record.
++ * Copyright (C) 2016 Fujitsu.  All rights reserved.
 + */
-+int btrfs_add_delayed_data_ref_locked(struct btrfs_trans_handle *trans,
-+			struct btrfs_delayed_ref_head *head_ref,
-+			struct btrfs_qgroup_extent_record *qrecord,
-+			struct btrfs_delayed_data_ref *ref, int action,
-+			int *qrecord_inserted_ret, int *old_ref_mod,
-+			int *new_ref_mod)
++
++#include "ctree.h"
++#include "dedupe.h"
++#include "btrfs_inode.h"
++#include "delayed-ref.h"
++
++struct inmem_hash {
++	struct rb_node hash_node;
++	struct rb_node bytenr_node;
++	struct list_head lru_list;
++
++	u64 bytenr;
++	u32 num_bytes;
++
++	u8 hash[];
++};
++
++static struct btrfs_dedupe_info *
++init_dedupe_info(struct btrfs_ioctl_dedupe_args *dargs)
 +{
-+	struct btrfs_delayed_ref_root *delayed_refs;
++	struct btrfs_dedupe_info *dedupe_info;
 +
-+	head_ref = add_delayed_ref_head(trans, head_ref, qrecord,
-+					action, qrecord_inserted_ret,
-+					old_ref_mod, new_ref_mod);
++	dedupe_info = kzalloc(sizeof(*dedupe_info), GFP_NOFS);
++	if (!dedupe_info)
++		return ERR_PTR(-ENOMEM);
 +
-+	delayed_refs = &trans->transaction->delayed_refs;
++	dedupe_info->hash_algo = dargs->hash_algo;
++	dedupe_info->backend = dargs->backend;
++	dedupe_info->blocksize = dargs->blocksize;
++	dedupe_info->limit_nr = dargs->limit_nr;
 +
-+	return insert_delayed_ref(trans, delayed_refs, head_ref, &ref->node);
++	/* only support SHA256 yet */
++	dedupe_info->dedupe_driver = crypto_alloc_shash("sha256", 0, 0);
++	if (IS_ERR(dedupe_info->dedupe_driver)) {
++		kfree(dedupe_info);
++		return ERR_CAST(dedupe_info->dedupe_driver);
++	}
++
++	dedupe_info->hash_root = RB_ROOT;
++	dedupe_info->bytenr_root = RB_ROOT;
++	dedupe_info->current_nr = 0;
++	INIT_LIST_HEAD(&dedupe_info->lru_list);
++	mutex_init(&dedupe_info->lock);
++
++	return dedupe_info;
++}
++
++/*
++ * Helper to check if parameters are valid.
++ * The first invalid field will be set to (-1), to info user which parameter
++ * is invalid.
++ * Except dargs->limit_nr or dargs->limit_mem, in that case, 0 will returned
++ * to info user, since user can specify any value to limit, except 0.
++ */
++static int check_dedupe_parameter(struct btrfs_fs_info *fs_info,
++				  struct btrfs_ioctl_dedupe_args *dargs)
++{
++	u64 blocksize = dargs->blocksize;
++	u64 limit_nr = dargs->limit_nr;
++	u64 limit_mem = dargs->limit_mem;
++	u16 hash_algo = dargs->hash_algo;
++	u8 backend = dargs->backend;
++
++	/*
++	 * Set all reserved fields to -1, allow user to detect
++	 * unsupported optional parameters.
++	 */
++	memset(dargs->__unused, -1, sizeof(dargs->__unused));
++	if (blocksize > BTRFS_DEDUPE_BLOCKSIZE_MAX ||
++	    blocksize < BTRFS_DEDUPE_BLOCKSIZE_MIN ||
++	    blocksize < fs_info->sectorsize ||
++	    !is_power_of_2(blocksize) ||
++	    blocksize < PAGE_SIZE) {
++		dargs->blocksize = (u64)-1;
++		return -EINVAL;
++	}
++	if (hash_algo >= ARRAY_SIZE(btrfs_hash_sizes)) {
++		dargs->hash_algo = (u16)-1;
++		return -EINVAL;
++	}
++	if (backend >= BTRFS_DEDUPE_BACKEND_COUNT) {
++		dargs->backend = (u8)-1;
++		return -EINVAL;
++	}
++
++	/* Backend specific check */
++	if (backend == BTRFS_DEDUPE_BACKEND_INMEMORY) {
++		/* only one limit is accepted for enable*/
++		if (dargs->limit_nr && dargs->limit_mem) {
++			dargs->limit_nr = 0;
++			dargs->limit_mem = 0;
++			return -EINVAL;
++		}
++
++		if (!limit_nr && !limit_mem)
++			dargs->limit_nr = BTRFS_DEDUPE_LIMIT_NR_DEFAULT;
++		else {
++			u64 tmp = (u64)-1;
++
++			if (limit_mem) {
++				tmp = div_u64(limit_mem,
++					(sizeof(struct inmem_hash)) +
++					btrfs_hash_sizes[hash_algo]);
++				/* Too small limit_mem to fill a hash item */
++				if (!tmp) {
++					dargs->limit_mem = 0;
++					dargs->limit_nr = 0;
++					return -EINVAL;
++				}
++			}
++			if (!limit_nr)
++				limit_nr = (u64)-1;
++
++			dargs->limit_nr = min(tmp, limit_nr);
++		}
++	}
++	if (backend == BTRFS_DEDUPE_BACKEND_ONDISK)
++		dargs->limit_nr = 0;
++
++	return 0;
++}
++
++int btrfs_dedupe_enable(struct btrfs_fs_info *fs_info,
++			struct btrfs_ioctl_dedupe_args *dargs)
++{
++	struct btrfs_dedupe_info *dedupe_info;
++	int ret = 0;
++
++	ret = check_dedupe_parameter(fs_info, dargs);
++	if (ret < 0)
++		return ret;
++
++	dedupe_info = fs_info->dedupe_info;
++	if (dedupe_info) {
++		/* Check if we are re-enable for different dedupe config */
++		if (dedupe_info->blocksize != dargs->blocksize ||
++		    dedupe_info->hash_algo != dargs->hash_algo ||
++		    dedupe_info->backend != dargs->backend) {
++			btrfs_dedupe_disable(fs_info);
++			goto enable;
++		}
++
++		/* On-fly limit change is OK */
++		mutex_lock(&dedupe_info->lock);
++		fs_info->dedupe_info->limit_nr = dargs->limit_nr;
++		mutex_unlock(&dedupe_info->lock);
++		return 0;
++	}
++
++enable:
++	dedupe_info = init_dedupe_info(dargs);
++	if (IS_ERR(dedupe_info))
++		return PTR_ERR(dedupe_info);
++	fs_info->dedupe_info = dedupe_info;
++	/* We must ensure dedupe_bs is modified after dedupe_info */
++	smp_wmb();
++	fs_info->dedupe_enabled = 1;
++	return ret;
++}
++
++int btrfs_dedupe_disable(struct btrfs_fs_info *fs_info)
++{
++	/* Place holder for bisect, will be implemented in later patches */
++	return 0;
++}
+diff --git a/fs/btrfs/dedupe.h b/fs/btrfs/dedupe.h
+index 222ce7b4d827..87f5b7ce7766 100644
+--- a/fs/btrfs/dedupe.h
++++ b/fs/btrfs/dedupe.h
+@@ -52,6 +52,18 @@ static inline int btrfs_dedupe_hash_hit(struct btrfs_dedupe_hash *hash)
+ 	return (hash && hash->bytenr);
+ }
+ 
++static inline int btrfs_dedupe_hash_size(u16 algo)
++{
++	if (WARN_ON(algo >= ARRAY_SIZE(btrfs_hash_sizes)))
++		return -EINVAL;
++	return sizeof(struct btrfs_dedupe_hash) + btrfs_hash_sizes[algo];
++}
++
++static inline struct btrfs_dedupe_hash *btrfs_dedupe_alloc_hash(u16 algo)
++{
++	return kzalloc(btrfs_dedupe_hash_size(algo), GFP_NOFS);
 +}
 +
  /*
-  * add a delayed data ref. it's similar to btrfs_add_delayed_tree_ref.
-  */
-@@ -820,7 +843,7 @@ int btrfs_add_delayed_data_ref(struct btrfs_trans_handle *trans,
- 	        ref_type = BTRFS_SHARED_DATA_REF_KEY;
- 	else
- 	        ref_type = BTRFS_EXTENT_DATA_REF_KEY;
--	init_delayed_ref_common(fs_info, &ref->node, bytenr, num_bytes,
-+	btrfs_init_delayed_ref_common(fs_info, &ref->node, bytenr, num_bytes,
- 				ref_root, action, ref_type);
- 	ref->root = ref_root;
- 	ref->parent = parent;
-@@ -845,8 +868,8 @@ int btrfs_add_delayed_data_ref(struct btrfs_trans_handle *trans,
- 		}
- 	}
+  * Initial inband dedupe info
+  * Called at dedupe enable time.
+diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+index 9cd15d2a40aa..ba879ac931f2 100644
+--- a/include/uapi/linux/btrfs.h
++++ b/include/uapi/linux/btrfs.h
+@@ -683,6 +683,9 @@ struct btrfs_ioctl_get_dev_stats {
+ /* Hash algorithm, only support SHA256 yet */
+ #define BTRFS_DEDUPE_HASH_SHA256		0
  
--	init_delayed_ref_head(head_ref, record, bytenr, num_bytes, ref_root,
--			      reserved, action, true, false);
-+	btrfs_init_delayed_ref_head(head_ref, record, bytenr, num_bytes,
-+			      ref_root, reserved, action, true, false);
- 	head_ref->extent_op = NULL;
- 
- 	delayed_refs = &trans->transaction->delayed_refs;
-@@ -856,11 +879,9 @@ int btrfs_add_delayed_data_ref(struct btrfs_trans_handle *trans,
- 	 * insert both the head node and the new ref without dropping
- 	 * the spin lock
- 	 */
--	head_ref = add_delayed_ref_head(trans, head_ref, record,
--					action, &qrecord_inserted,
--					old_ref_mod, new_ref_mod);
--
--	ret = insert_delayed_ref(trans, delayed_refs, head_ref, &ref->node);
-+	ret = btrfs_add_delayed_data_ref_locked(trans, head_ref,
-+			record, ref, action, &qrecord_inserted, old_ref_mod,
-+			new_ref_mod);
- 	spin_unlock(&delayed_refs->lock);
- 
- 	trace_add_delayed_data_ref(trans->fs_info, &ref->node, ref,
-@@ -887,7 +908,7 @@ int btrfs_add_delayed_extent_op(struct btrfs_fs_info *fs_info,
- 	if (!head_ref)
- 		return -ENOMEM;
- 
--	init_delayed_ref_head(head_ref, NULL, bytenr, num_bytes, 0, 0,
-+	btrfs_init_delayed_ref_head(head_ref, NULL, bytenr, num_bytes, 0, 0,
- 			      BTRFS_UPDATE_DELAYED_HEAD, extent_op->is_data,
- 			      false);
- 	head_ref->extent_op = extent_op;
-diff --git a/fs/btrfs/delayed-ref.h b/fs/btrfs/delayed-ref.h
-index 8e20c5cb5404..208941e3cca0 100644
---- a/fs/btrfs/delayed-ref.h
-+++ b/fs/btrfs/delayed-ref.h
-@@ -234,11 +234,26 @@ static inline void btrfs_put_delayed_ref_head(struct btrfs_delayed_ref_head *hea
- 		kmem_cache_free(btrfs_delayed_ref_head_cachep, head);
- }
- 
-+void btrfs_init_delayed_ref_head(struct btrfs_delayed_ref_head *head_ref,
-+				  struct btrfs_qgroup_extent_record *qrecord,
-+				  u64 bytenr, u64 num_bytes, u64 ref_root,
-+				  u64 reserved, int action, bool is_data,
-+				  bool is_system);
-+void btrfs_init_delayed_ref_common(struct btrfs_fs_info *fs_info,
-+				    struct btrfs_delayed_ref_node *ref,
-+				    u64 bytenr, u64 num_bytes, u64 ref_root,
-+				    int action, u8 ref_type);
- int btrfs_add_delayed_tree_ref(struct btrfs_trans_handle *trans,
- 			       u64 bytenr, u64 num_bytes, u64 parent,
- 			       u64 ref_root, int level, int action,
- 			       struct btrfs_delayed_extent_op *extent_op,
- 			       int *old_ref_mod, int *new_ref_mod);
-+int btrfs_add_delayed_data_ref_locked(struct btrfs_trans_handle *trans,
-+			struct btrfs_delayed_ref_head *head_ref,
-+			struct btrfs_qgroup_extent_record *qrecord,
-+			struct btrfs_delayed_data_ref *ref, int action,
-+			int *qrecord_inserted_ret, int *old_ref_mod,
-+			int *new_ref_mod);
- int btrfs_add_delayed_data_ref(struct btrfs_trans_handle *trans,
- 			       u64 bytenr, u64 num_bytes,
- 			       u64 parent, u64 ref_root,
++/* Default dedupe limit on number of hash */
++#define BTRFS_DEDUPE_LIMIT_NR_DEFAULT	(32 * 1024)
++
+ /*
+  * This structure is used for dedupe enable/disable/configure
+  * and status ioctl.
 -- 
 2.19.1
 

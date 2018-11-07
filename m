@@ -2,103 +2,79 @@ Return-Path: <SRS0=udTi=NS=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C574FC0044C
-	for <linux-btrfs@archiver.kernel.org>; Wed,  7 Nov 2018 15:28:27 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C2C77C0044C
+	for <linux-btrfs@archiver.kernel.org>; Wed,  7 Nov 2018 16:01:35 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 71B872085B
-	for <linux-btrfs@archiver.kernel.org>; Wed,  7 Nov 2018 15:28:27 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 71B872085B
+	by mail.kernel.org (Postfix) with ESMTP id 9737720827
+	for <linux-btrfs@archiver.kernel.org>; Wed,  7 Nov 2018 16:01:35 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 9737720827
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727698AbeKHA7P (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 7 Nov 2018 19:59:15 -0500
-Received: from mx2.suse.de ([195.135.220.15]:54028 "EHLO mx1.suse.de"
+        id S1731307AbeKHBcb (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 7 Nov 2018 20:32:31 -0500
+Received: from mx2.suse.de ([195.135.220.15]:59980 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727203AbeKHA7P (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 7 Nov 2018 19:59:15 -0500
+        id S1727668AbeKHBcb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 7 Nov 2018 20:32:31 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 48D17B661;
-        Wed,  7 Nov 2018 15:28:24 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id D2D05B65D;
+        Wed,  7 Nov 2018 16:01:32 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 04063DAD1F; Wed,  7 Nov 2018 16:28:10 +0100 (CET)
-Date:   Wed, 7 Nov 2018 16:28:10 +0100
+        id CA16ADAD1F; Wed,  7 Nov 2018 17:01:19 +0100 (CET)
+Date:   Wed, 7 Nov 2018 17:01:19 +0100
 From:   David Sterba <dsterba@suse.cz>
-To:     Nikolay Borisov <nborisov@suse.com>
-Cc:     dsterba@suse.cz, Omar Sandoval <osandov@osandov.com>,
-        linux-btrfs@vger.kernel.org, kernel-team@fb.com,
-        David Sterba <dsterba@suse.com>, linux-fsdevel@vger.kernel.org
-Subject: Re: [PATCH v9 0/6] Btrfs: implement swap file support
-Message-ID: <20181107152810.GF24115@twin.jikos.cz>
+To:     Omar Sandoval <osandov@osandov.com>
+Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com,
+        Nikolay Borisov <nborisov@suse.com>
+Subject: Re: [PATCH v2] Btrfs: fix missing delayed iputs on unmount
+Message-ID: <20181107160119.GG24115@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
-        Omar Sandoval <osandov@osandov.com>, linux-btrfs@vger.kernel.org,
-        kernel-team@fb.com, David Sterba <dsterba@suse.com>,
-        linux-fsdevel@vger.kernel.org
-References: <cover.1538072009.git.osandov@fb.com>
- <20181106095451.GG9136@twin.jikos.cz>
- <20181107144937.GE24115@twin.jikos.cz>
- <aec6451b-1198-7888-9dbc-0d6576d1ea4e@suse.com>
+Mail-Followup-To: dsterba@suse.cz, Omar Sandoval <osandov@osandov.com>,
+        linux-btrfs@vger.kernel.org, kernel-team@fb.com,
+        Nikolay Borisov <nborisov@suse.com>
+References: <5d98091d3e089b4f74cb61fb2ed691e1f4dd1d6b.1541005462.git.osandov@fb.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <aec6451b-1198-7888-9dbc-0d6576d1ea4e@suse.com>
+In-Reply-To: <5d98091d3e089b4f74cb61fb2ed691e1f4dd1d6b.1541005462.git.osandov@fb.com>
 User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Nov 07, 2018 at 05:07:00PM +0200, Nikolay Borisov wrote:
+On Wed, Oct 31, 2018 at 10:06:08AM -0700, Omar Sandoval wrote:
+> From: Omar Sandoval <osandov@fb.com>
 > 
+> There's a race between close_ctree() and cleaner_kthread().
+> close_ctree() sets btrfs_fs_closing(), and the cleaner stops when it
+> sees it set, but this is racy; the cleaner might have already checked
+> the bit and could be cleaning stuff. In particular, if it deletes unused
+> block groups, it will create delayed iputs for the free space cache
+> inodes. As of "btrfs: don't run delayed_iputs in commit", we're no
+> longer running delayed iputs after a commit. Therefore, if the cleaner
+> creates more delayed iputs after delayed iputs are run in
+> btrfs_commit_super(), we will leak inodes on unmount and get a busy
+> inode crash from the VFS.
 > 
-> On 7.11.18 г. 16:49 ч., David Sterba wrote:
-> > On Tue, Nov 06, 2018 at 10:54:51AM +0100, David Sterba wrote:
-> >> On Thu, Sep 27, 2018 at 11:17:32AM -0700, Omar Sandoval wrote:
-> >>> From: Omar Sandoval <osandov@fb.com>
-> >>> This series implements swap file support for Btrfs.
-> >>>
-> >>> Changes from v8 [1]:
-> >>>
-> >>> - Fixed a bug in btrfs_swap_activate() which would cause us to miss some
-> >>>   file extents if they were merged into one extent map entry.
-> >>> - Fixed build for !CONFIG_SWAP.
-> >>> - Changed all error messages to KERN_WARN.
-> >>> - Unindented long error messages.
-> >>>
-> >>> I've Cc'd Jon and Al on patch 3 this time, so hopefully we can get an
-> >>> ack for that one, too.
-> >>>
-> >>> Thanks!
-> >>>
-> >>> 1: https://www.spinics.net/lists/linux-btrfs/msg82267.html
-> >>>
-> >>> Omar Sandoval (6):
-> >>>   mm: split SWP_FILE into SWP_ACTIVATED and SWP_FS
-> >>>   mm: export add_swap_extent()
-> >>>   vfs: update swap_{,de}activate documentation
-> >>>   Btrfs: prevent ioctls from interfering with a swap file
-> >>>   Btrfs: rename get_chunk_map() and make it non-static
-> >>>   Btrfs: support swap files
-> >>
-> >> fstest generic/472 reports an assertion failure. This is on the updated fstests
-> >> git (70c4067285b0bc076), though it should not matter:
-> >>
-> >> [16597.002190] assertion failed: IS_ALIGNED(start, fs_info->sectorsize) && IS_ALIGNED(end + 1, fs_info->sectorsize), file: fs/btrfs/file-item.c, line: 319
-> > 
-> > I have to revert the patch for now as it kills the testing machines.
+> Fix it by parking the cleaner before we actually close anything. Then,
+> any remaining delayed iputs will always be handled in
+> btrfs_commit_super(). This also ensures that the commit in close_ctree()
+> is really the last commit, so we can get rid of the commit in
+> cleaner_kthread().
 > 
-> The reason is that the isize is not aligned to a sectorsize. Ie it
-> should be:
-> 
-> +       u64 isize = ALIGN_DOWN(i_size_read(inode), fs_info->sectorsize);
-> 
-> With this fixlet generic/472 succeeds.
+> Fixes: 30928e9baac2 ("btrfs: don't run delayed_iputs in commit")
+> Signed-off-by: Omar Sandoval <osandov@fb.com>
 
-Thanks for the fix, I'll fold it in.
+I'll queue this patch for rc2 as it fixes crashes I see during testing.
+My version does more changes and would be more suitable for a series,
+that could actually document the shutdown sequence and add a few
+assertions on top.
+
+Reviewed-by: David Sterba <dsterba@suse.com>

@@ -5,30 +5,30 @@ X-Spam-Level:
 X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 53B7BC0044C
-	for <linux-btrfs@archiver.kernel.org>; Wed,  7 Nov 2018 12:17:18 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 56ED3C0044C
+	for <linux-btrfs@archiver.kernel.org>; Wed,  7 Nov 2018 12:19:47 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 1EF3320896
-	for <linux-btrfs@archiver.kernel.org>; Wed,  7 Nov 2018 12:17:17 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 1EF3320896
+	by mail.kernel.org (Postfix) with ESMTP id 0EC08204FD
+	for <linux-btrfs@archiver.kernel.org>; Wed,  7 Nov 2018 12:19:46 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 0EC08204FD
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727567AbeKGVrY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 7 Nov 2018 16:47:24 -0500
-Received: from mx2.suse.de ([195.135.220.15]:48548 "EHLO mx1.suse.de"
+        id S1726635AbeKGVtx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 7 Nov 2018 16:49:53 -0500
+Received: from mx2.suse.de ([195.135.220.15]:48820 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726469AbeKGVrY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 7 Nov 2018 16:47:24 -0500
+        id S1726413AbeKGVtx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 7 Nov 2018 16:49:53 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id C2264AFDB;
-        Wed,  7 Nov 2018 12:17:14 +0000 (UTC)
-Subject: Re: [PATCH 7/9] btrfs: quiten warn if the replace is canceled at
- finish
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 22B67AFDB;
+        Wed,  7 Nov 2018 12:19:43 +0000 (UTC)
+Subject: Re: [PATCH 6/9] btrfs: replace's scrub must not be running in replace
+ suspended state
 To:     Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
 References: <1541591010-29789-1-git-send-email-anand.jain@oracle.com>
- <1541591010-29789-8-git-send-email-anand.jain@oracle.com>
+ <1541591010-29789-7-git-send-email-anand.jain@oracle.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -73,12 +73,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  KIuxEcV8wcVjr+Wr9zRl06waOCkgrQbTPp631hToxo+4rA1jiQF2M80HAet65ytBVR2pFGZF
  zGYYLqiG+mpUZ+FPjxk9kpkRYz61mTLSY7tuFljExfJWMGfgSg1OxfLV631jV1TcdUnx+h3l
  Sqs2vMhAVt14zT8mpIuu2VNxcontxgVr1kzYA/tQg32fVRbGr449j1gw57BV9i0vww==
-Message-ID: <87c528a9-155d-330c-a8ea-90c97fed5bd7@suse.com>
-Date:   Wed, 7 Nov 2018 14:17:13 +0200
+Message-ID: <f8226bea-0d58-ab46-cf09-f107bdb123b1@suse.com>
+Date:   Wed, 7 Nov 2018 14:19:42 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <1541591010-29789-8-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1541591010-29789-7-git-send-email-anand.jain@oracle.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -90,8 +90,8 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 On 7.11.18 г. 13:43 ч., Anand Jain wrote:
-> -	WARN_ON(ret);
-> +	if (ret != -ECANCELED)
-> +		WARN_ON(ret);
+> +		/* scrub for replace must not be running in suspended state */
+> +		if (btrfs_scrub_cancel(fs_info) != -ENOTCONN)
+> +			ASSERT(0);
 
-WARN_ON(ret && ret != -ECANCELED)
+ASSERT(btrfs_scrub_cancel(fs_info) == -ENOTCONN)

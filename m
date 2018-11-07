@@ -2,41 +2,37 @@ Return-Path: <SRS0=udTi=NS=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.8 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
-	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 40247C32789
-	for <linux-btrfs@archiver.kernel.org>; Wed,  7 Nov 2018 00:18:47 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CD91DC46464
+	for <linux-btrfs@archiver.kernel.org>; Wed,  7 Nov 2018 00:23:20 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id EB93420827
-	for <linux-btrfs@archiver.kernel.org>; Wed,  7 Nov 2018 00:18:46 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org EB93420827
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=gmx.com
+	by mail.kernel.org (Postfix) with ESMTP id 9139620827
+	for <linux-btrfs@archiver.kernel.org>; Wed,  7 Nov 2018 00:23:20 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 9139620827
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.de
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730811AbeKGJqf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 7 Nov 2018 04:46:35 -0500
-Received: from mout.gmx.net ([212.227.15.19]:58811 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1730691AbeKGJqf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 7 Nov 2018 04:46:35 -0500
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx003
- [212.227.17.184]) with ESMTPSA (Nemesis) id 0MNq8p-1gQW0N2PBT-007QLA; Wed, 07
- Nov 2018 01:18:38 +0100
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx003
- [212.227.17.184]) with ESMTPSA (Nemesis) id 0MNq8p-1gQW0N2PBT-007QLA; Wed, 07
- Nov 2018 01:18:38 +0100
+        id S1731042AbeKGJvK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 7 Nov 2018 04:51:10 -0500
+Received: from mx2.suse.de ([195.135.220.15]:60896 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1730885AbeKGJvK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 7 Nov 2018 04:51:10 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 272B5AD57;
+        Wed,  7 Nov 2018 00:23:16 +0000 (UTC)
 Subject: Re: [PATCH] btrfs: Always try all copies when reading extent buffers
 To:     Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
-Cc:     wqu@suse.com, josef@toxicpanda.com
+Cc:     josef@toxicpanda.com
 References: <20181106144020.3446-1-nborisov@suse.com>
- <a9c486f8-f8ae-7463-205a-8ba60e011842@gmx.com>
- <bb0c0091-5f00-55be-53b9-6e0376f0e67d@suse.com>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+ <e37d58ef-4836-80f6-0a81-988be4ad8ebe@suse.com>
+From:   Qu Wenruo <wqu@suse.de>
 Openpgp: preference=signencrypt
-Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
+Autocrypt: addr=wqu@suse.de; prefer-encrypt=mutual; keydata=
  xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
  8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
  1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
@@ -60,32 +56,15 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
  4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
  h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <91fcc4a5-1c94-1d7a-962f-378ac7c75965@gmx.com>
-Date:   Wed, 7 Nov 2018 08:18:31 +0800
+Message-ID: <5b56537e-8730-9e32-a448-4a588c304e37@suse.de>
+Date:   Wed, 7 Nov 2018 08:23:11 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <bb0c0091-5f00-55be-53b9-6e0376f0e67d@suse.com>
+In-Reply-To: <e37d58ef-4836-80f6-0a81-988be4ad8ebe@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
-X-Provags-ID: V03:K1:VwsKKyE1gPvk4PEmHZi6ex9rFxJ7+9CL4pSnvgK0TSj7cybzt/M
- wwuSrgBLZOtCKKzDnUviKpboNpyjmfOzqWnTT4CzDWSUxCVmMxXfxpt7jgMTfKS22pwPB5e
- dgaY9mGcW0Blg7AWRAyV3QdBCSZ7CUqJziWsA2pXlR1h6VpH4K6+v3z6fpGbDQ0aUEDnEJS
- zzuxlrspH66K65dCGe2eQ==
-X-UI-Out-Filterresults: notjunk:1;V01:K0:34cLtGjC5nY=:glzuKnHju+jWGbFPUm/z+M
- FkktLXwr8GNlNxnzPzx0ztlMZTuGS9d7lq0QNXFTOf8Wnu6ZVS2zL8yQTrh+jWApOETGskF4f
- dNP8Wh9nOqTHuJrd18n05bHE7JuPssIUk23z8l6hamqsi5wh/DK8MN/oFaoiDe0OKfIrhUOT6
- 39QcIvDYNrYKah4JajfbqCvG00x9BNb73/2G7os+G3DOphqub7k7ZV/J5ynRjc6GpkVKew7kR
- MrmwzofuHJj4kWN2E9qOm8vyqWXOMEpyraPHlY4mrTtGmRrF9EHwU81aC/5SVcgIgwTXwwgVQ
- 1QPKHsD88S03Nev6ZnqENlmCI2W6YJiYPDoKm0AQjCBJ5J6NLbnGgdu1joR0YoNZlh1wzlf97
- DVaaIdCAG4czsoatSrSOQDNB1tL6uzG1cxqmqqPoBgA7d2SIR3PFcGKG5Q3YkDrs5/U4rfMdp
- TBHC2AftadfnH0dES6POqa0NAUidzXQ68Vuo43yHW9OrFtKG/d/Xzp9hzwwUCh/HQocrHhNND
- jm+rkmBdCUts2czfqalMROZQiojdpk9RBxIX9M2RDJH2CbUOjuknMAOi9nauvsvI954xhagmM
- u4YJp/tjzmHWOFZtRZ8zhRtHhDP10ndK4Mv8rR2/DjrnIs0YVY9fND0jxBsyNCg6k6xzEKWhS
- pdag9mBl0lYg4HUIJpuIWLVZXu7hRXCpg/6NNCfXpqvFV1MVzaSQBOuo8v+LkuR+kGX3blJfM
- vqYJva6l7p8ogLtKlo3xw80gHXVGTnHzDkodL/FyYWPW4BMnNwcqweOw09y8X6kYgbZUewF5L
- 6KyiloB2El7Krde8hUsRAdQc9UYEphNYuO4N6GaJ9sHytS4xBQ=
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -93,113 +72,114 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 2018/11/6 下午11:14, Nikolay Borisov wrote:
+On 2018/11/7 上午12:07, Nikolay Borisov wrote:
 > 
 > 
-> On 6.11.18 г. 16:53 ч., Qu Wenruo wrote:
+> On 6.11.18 г. 16:40 ч., Nikolay Borisov wrote:
+>> When a metadata read is served the endio routine btree_readpage_end_io_hook
+>> is called which eventually runs the tree-checker. If tree-checker fails
+>> to validate the read eb then it sets EXTENT_BUFFER_CORRUPT flag. This
+>> leads to btree_read_extent_buffer_pages wrongly assuming that all
+>> available copies of this extent buffer are wrong and failing prematurely.
+>> Fix this modify btree_read_extent_buffer_pages to read all copies of
+>> the data.
 >>
+>> This failure was exhibitted in xfstests btrfs/124 which would
+>> spuriously fail its balance operations. The reason was that when balance
+>> was run following re-introduction of the missing raid1 disk
+>> __btrfs_map_block would map the read request to stripe 0, which
+>> corresponded to devid 2 (the disk which is being removed in the test):
 >>
->> On 2018/11/6 下午10:40, Nikolay Borisov wrote:
->>> When a metadata read is served the endio routine btree_readpage_end_io_hook
->>> is called which eventually runs the tree-checker. If tree-checker fails
->>> to validate the read eb then it sets EXTENT_BUFFER_CORRUPT flag. This
->>> leads to btree_read_extent_buffer_pages wrongly assuming that all
->>> available copies of this extent buffer are wrong and failing prematurely.
->>> Fix this modify btree_read_extent_buffer_pages to read all copies of
->>> the data.
->>>
->>> This failure was exhibitted in xfstests btrfs/124 which would
->>> spuriously fail its balance operations. The reason was that when balance
->>> was run following re-introduction of the missing raid1 disk
->>> __btrfs_map_block would map the read request to stripe 0, which
->>> corresponded to devid 2 (the disk which is being removed in the test):
->>>
->>>     item 2 key (FIRST_CHUNK_TREE CHUNK_ITEM 3553624064) itemoff 15975 itemsize 112
->>> 	length 1073741824 owner 2 stripe_len 65536 type DATA|RAID1
->>> 	io_align 65536 io_width 65536 sector_size 4096
->>> 	num_stripes 2 sub_stripes 1
->>> 		stripe 0 devid 2 offset 2156920832
->>> 		dev_uuid 8466c350-ed0c-4c3b-b17d-6379b445d5c8
->>> 		stripe 1 devid 1 offset 3553624064
->>> 		dev_uuid 1265d8db-5596-477e-af03-df08eb38d2ca
->>>
->>> This caused read requests for a checksum item that to be routed to the
->>> stale disk which triggered the aforementioned logic involving
->>> EXTENT_BUFFER_CORRUPT flag. This then triggered cascading failures of
->>> the balance operation.
->>>
->>> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
->>> Suggested-by: Qu Wenruo <wqu@suse.com>
+>>     item 2 key (FIRST_CHUNK_TREE CHUNK_ITEM 3553624064) itemoff 15975 itemsize 112
+>> 	length 1073741824 owner 2 stripe_len 65536 type DATA|RAID1
+>> 	io_align 65536 io_width 65536 sector_size 4096
+>> 	num_stripes 2 sub_stripes 1
+>> 		stripe 0 devid 2 offset 2156920832
+>> 		dev_uuid 8466c350-ed0c-4c3b-b17d-6379b445d5c8
+>> 		stripe 1 devid 1 offset 3553624064
+>> 		dev_uuid 1265d8db-5596-477e-af03-df08eb38d2ca
 >>
->> Reviewed-by: Qu Wenruo <wqu@suse.com>
+>> This caused read requests for a checksum item that to be routed to the
+>> stale disk which triggered the aforementioned logic involving
+>> EXTENT_BUFFER_CORRUPT flag. This then triggered cascading failures of
+>> the balance operation.
 >>
->> However there is still a tiny piece missing.
+>> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+>> Suggested-by: Qu Wenruo <wqu@suse.com>
+>> Fixes: a826d6dcb32d ("Btrfs: check items for correctness as we search")
+>> ---
+>>  fs/btrfs/disk-io.c | 11 +----------
+>>  1 file changed, 1 insertion(+), 10 deletions(-)
 >>
->> Tree checker is done after some basic checks, including:
->> 1) bytenr
->> 2) level
->> 3) fsid
->> 4) csum
->>
->> 1~2) can be easily skipped just by pure luck.
->>
->> But 3) and especially 4) are not that easy to hit.
->> Not to mention meeting both 3) and 4), since csum range covers fsid.
->>
->> So I must say you're a really super lucky guy!
+>> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+>> index 00ee5e37e989..279c6dbcc736 100644
+>> --- a/fs/btrfs/disk-io.c
+>> +++ b/fs/btrfs/disk-io.c
+>> @@ -477,9 +477,9 @@ static int btree_read_extent_buffer_pages(struct btrfs_fs_info *fs_info,
+>>  	int mirror_num = 0;
+>>  	int failed_mirror = 0;
+>>  
+>> -	clear_bit(EXTENT_BUFFER_CORRUPT, &eb->bflags);
+>>  	io_tree = &BTRFS_I(fs_info->btree_inode)->io_tree;
+>>  	while (1) {
+>> +		clear_bit(EXTENT_BUFFER_CORRUPT, &eb->bflags);
+>>  		ret = read_extent_buffer_pages(io_tree, eb, WAIT_COMPLETE,
+>>  					       mirror_num);
+>>  		if (!ret) {
 > 
-> s/lucky/unlucky/ :)
+> Qu, 
 > 
-> I wonder if reads just land in some random memory on the stale disk
-> hence it's really a matter of what's "there" so that reads fail with
-> random reasons?
+> Do you think it makes sense to do refactoring like below in
+>  a follow up patch: 
+> 
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index 279c6dbcc736..9891e13a2b6f 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -482,16 +482,11 @@ static int btree_read_extent_buffer_pages(struct btrfs_fs_info *fs_info,
+>                 clear_bit(EXTENT_BUFFER_CORRUPT, &eb->bflags);
+>                 ret = read_extent_buffer_pages(io_tree, eb, WAIT_COMPLETE,
+>                                                mirror_num);
+> -               if (!ret) {
+> -                       if (verify_parent_transid(io_tree, eb,
+> -                                                  parent_transid, 0))
+> -                               ret = -EIO;
+> -                       else if (verify_level_key(fs_info, eb, level,
+> -                                                 first_key, parent_transid))
+> -                               ret = -EUCLEAN;
+> -                       else
+> +               if (!ret &&
+> +                   !verify_parent_transid(io_tree, eb, parent_transid, 0) &&
+> +                   !verify_level_key(fs_info, eb, level, first_key,
+> +                                    parent_transid))
+>                                 break;
+> -               }
+> 
+> 
+> since the ret value doesn't really have any meaning or perhaps the 
+> verify_level_key and ret = -EUCLEAN could be reteinaed as well as the 
+> if (ret == EUCLEAN) break logic ? 
 
-Even for random memory, you're still too lucky to hit it.
+Yes, that's a valid cleanup.
 
 Thanks,
 Qu
 
 > 
->>
->> Thanks,
->> Qu
->>
->>
->>> Fixes: a826d6dcb32d ("Btrfs: check items for correctness as we search")
->>> ---
->>>  fs/btrfs/disk-io.c | 11 +----------
->>>  1 file changed, 1 insertion(+), 10 deletions(-)
->>>
->>> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
->>> index 00ee5e37e989..279c6dbcc736 100644
->>> --- a/fs/btrfs/disk-io.c
->>> +++ b/fs/btrfs/disk-io.c
->>> @@ -477,9 +477,9 @@ static int btree_read_extent_buffer_pages(struct btrfs_fs_info *fs_info,
->>>  	int mirror_num = 0;
->>>  	int failed_mirror = 0;
->>>  
->>> -	clear_bit(EXTENT_BUFFER_CORRUPT, &eb->bflags);
->>>  	io_tree = &BTRFS_I(fs_info->btree_inode)->io_tree;
->>>  	while (1) {
->>> +		clear_bit(EXTENT_BUFFER_CORRUPT, &eb->bflags);
->>>  		ret = read_extent_buffer_pages(io_tree, eb, WAIT_COMPLETE,
->>>  					       mirror_num);
->>>  		if (!ret) {
->>> @@ -493,15 +493,6 @@ static int btree_read_extent_buffer_pages(struct btrfs_fs_info *fs_info,
->>>  				break;
->>>  		}
->>>  
->>> -		/*
->>> -		 * This buffer's crc is fine, but its contents are corrupted, so
->>> -		 * there is no reason to read the other copies, they won't be
->>> -		 * any less wrong.
->>> -		 */
->>> -		if (test_bit(EXTENT_BUFFER_CORRUPT, &eb->bflags) ||
->>> -		    ret == -EUCLEAN)
->>> -			break;
->>> -
->>>  		num_copies = btrfs_num_copies(fs_info,
->>>  					      eb->start, eb->len);
->>>  		if (num_copies == 1)
->>>
+>> @@ -493,15 +493,6 @@ static int btree_read_extent_buffer_pages(struct btrfs_fs_info *fs_info,
+>>  				break;
+>>  		}
+>>  
+>> -		/*
+>> -		 * This buffer's crc is fine, but its contents are corrupted, so
+>> -		 * there is no reason to read the other copies, they won't be
+>> -		 * any less wrong.
+>> -		 */
+>> -		if (test_bit(EXTENT_BUFFER_CORRUPT, &eb->bflags) ||
+>> -		    ret == -EUCLEAN)
+>> -			break;
+>> -
+>>  		num_copies = btrfs_num_copies(fs_info,
+>>  					      eb->start, eb->len);
+>>  		if (num_copies == 1)
 >>

@@ -6,31 +6,32 @@ X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A0DB1C0044C
-	for <linux-btrfs@archiver.kernel.org>; Wed,  7 Nov 2018 12:25:48 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 622D4C0044C
+	for <linux-btrfs@archiver.kernel.org>; Wed,  7 Nov 2018 12:26:55 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 5D0442086C
-	for <linux-btrfs@archiver.kernel.org>; Wed,  7 Nov 2018 12:25:48 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 5D0442086C
+	by mail.kernel.org (Postfix) with ESMTP id 2BD672081D
+	for <linux-btrfs@archiver.kernel.org>; Wed,  7 Nov 2018 12:26:55 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 2BD672081D
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726821AbeKGVz4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 7 Nov 2018 16:55:56 -0500
-Received: from mx2.suse.de ([195.135.220.15]:49670 "EHLO mx1.suse.de"
+        id S1727338AbeKGV5E (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 7 Nov 2018 16:57:04 -0500
+Received: from mx2.suse.de ([195.135.220.15]:49830 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726669AbeKGVz4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 7 Nov 2018 16:55:56 -0500
+        id S1726388AbeKGV5D (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 7 Nov 2018 16:57:03 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 80872AFF3;
-        Wed,  7 Nov 2018 12:25:44 +0000 (UTC)
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id A3B14AFF5;
+        Wed,  7 Nov 2018 12:26:51 +0000 (UTC)
 Subject: Re: [PATCH 5/9] btrfs: replace cancel is successful if scrub cancel
  is successful
+From:   Nikolay Borisov <nborisov@suse.com>
 To:     Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
 References: <1541591010-29789-1-git-send-email-anand.jain@oracle.com>
  <1541591010-29789-6-git-send-email-anand.jain@oracle.com>
-From:   Nikolay Borisov <nborisov@suse.com>
+ <c97e7a6b-5fee-9f9d-2f7b-1e3fad586b7b@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  xsFNBFiKBz4BEADNHZmqwhuN6EAzXj9SpPpH/nSSP8YgfwoOqwrP+JR4pIqRK0AWWeWCSwmZ
@@ -74,12 +75,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  KIuxEcV8wcVjr+Wr9zRl06waOCkgrQbTPp631hToxo+4rA1jiQF2M80HAet65ytBVR2pFGZF
  zGYYLqiG+mpUZ+FPjxk9kpkRYz61mTLSY7tuFljExfJWMGfgSg1OxfLV631jV1TcdUnx+h3l
  Sqs2vMhAVt14zT8mpIuu2VNxcontxgVr1kzYA/tQg32fVRbGr449j1gw57BV9i0vww==
-Message-ID: <c97e7a6b-5fee-9f9d-2f7b-1e3fad586b7b@suse.com>
-Date:   Wed, 7 Nov 2018 14:25:43 +0200
+Message-ID: <c0f9ac16-bd00-610c-86c2-af3fd598e23a@suse.com>
+Date:   Wed, 7 Nov 2018 14:26:50 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <1541591010-29789-6-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <c97e7a6b-5fee-9f9d-2f7b-1e3fad586b7b@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -90,58 +91,64 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 7.11.18 г. 13:43 ч., Anand Jain wrote:
-> In btrfs_dev_replace_cancel() we should check if the
-> btrfs_scrub_cancel() is successful. If the btrfs_scrub_cancel() fails, return
-> BTRFS_IOCTL_DEV_REPLACE_RESULT_NOT_STARTED so that user can try to
-> cancel the replace again.
+On 7.11.18 г. 14:25 ч., Nikolay Borisov wrote:
 > 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> ---
->  fs/btrfs/dev-replace.c | 22 +++++++++++++---------
->  1 file changed, 13 insertions(+), 9 deletions(-)
 > 
-> diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-> index 90c124edec76..c092ed559714 100644
-> --- a/fs/btrfs/dev-replace.c
-> +++ b/fs/btrfs/dev-replace.c
-> @@ -799,18 +799,22 @@ int btrfs_dev_replace_cancel(struct btrfs_fs_info *fs_info)
->  		btrfs_dev_replace_write_unlock(dev_replace);
->  		break;
->  	case BTRFS_IOCTL_DEV_REPLACE_STATE_STARTED:
-> -		result = BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_ERROR;
->  		tgt_device = dev_replace->tgtdev;
->  		src_device = dev_replace->srcdev;
->  		btrfs_dev_replace_write_unlock(dev_replace);
-> -		btrfs_scrub_cancel(fs_info);
-> -		/*
-> -		 * btrfs_dev_replace_finishing() will handle the cleanup part
-> -		 */
-> -		btrfs_info_in_rcu(fs_info,
-> -			"dev_replace from %s (devid %llu) to %s canceled",
-> -			btrfs_dev_name(src_device), src_device->devid,
-> -			btrfs_dev_name(tgt_device));
-> +		ret = btrfs_scrub_cancel(fs_info);
-> +		if (ret) {
-> +			result = BTRFS_IOCTL_DEV_REPLACE_RESULT_NOT_STARTED;
-> +		} else {
-> +			result = BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_ERROR;
-> +			/*
-> +			 * btrfs_dev_replace_finishing() will handle the cleanup part
-> +			 */
-> +			btrfs_info_in_rcu(fs_info,
-> +				"dev_replace from %s (devid %llu) to %s canceled",
-> +				btrfs_dev_name(src_device), src_device->devid,
-> +				btrfs_dev_name(tgt_device));
+> On 7.11.18 г. 13:43 ч., Anand Jain wrote:
+>> In btrfs_dev_replace_cancel() we should check if the
+>> btrfs_scrub_cancel() is successful. If the btrfs_scrub_cancel() fails, return
+>> BTRFS_IOCTL_DEV_REPLACE_RESULT_NOT_STARTED so that user can try to
+>> cancel the replace again.
+>>
+>> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+>> ---
+>>  fs/btrfs/dev-replace.c | 22 +++++++++++++---------
+>>  1 file changed, 13 insertions(+), 9 deletions(-)
+>>
+>> diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+>> index 90c124edec76..c092ed559714 100644
+>> --- a/fs/btrfs/dev-replace.c
+>> +++ b/fs/btrfs/dev-replace.c
+>> @@ -799,18 +799,22 @@ int btrfs_dev_replace_cancel(struct btrfs_fs_info *fs_info)
+>>  		btrfs_dev_replace_write_unlock(dev_replace);
+>>  		break;
+>>  	case BTRFS_IOCTL_DEV_REPLACE_STATE_STARTED:
+>> -		result = BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_ERROR;
+>>  		tgt_device = dev_replace->tgtdev;
+>>  		src_device = dev_replace->srcdev;
+>>  		btrfs_dev_replace_write_unlock(dev_replace);
+>> -		btrfs_scrub_cancel(fs_info);
+>> -		/*
+>> -		 * btrfs_dev_replace_finishing() will handle the cleanup part
+>> -		 */
+>> -		btrfs_info_in_rcu(fs_info,
+>> -			"dev_replace from %s (devid %llu) to %s canceled",
+>> -			btrfs_dev_name(src_device), src_device->devid,
+>> -			btrfs_dev_name(tgt_device));
+>> +		ret = btrfs_scrub_cancel(fs_info);
+>> +		if (ret) {
+>> +			result = BTRFS_IOCTL_DEV_REPLACE_RESULT_NOT_STARTED;
+>> +		} else {
+>> +			result = BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_ERROR;
+>> +			/*
+>> +			 * btrfs_dev_replace_finishing() will handle the cleanup part
+>> +			 */
+>> +			btrfs_info_in_rcu(fs_info,
+>> +				"dev_replace from %s (devid %llu) to %s canceled",
+>> +				btrfs_dev_name(src_device), src_device->devid,
+>> +				btrfs_dev_name(tgt_device));
+> 
+> This is identical to the btrfs_info_in_rcu several lines further down.
+> So if btrfs_scrub_cancel is successful you will print this messages
+> twice. Furthermore, there is already an unconditinal call to
+> btrfs_scrub_cancel. You are duplicating this function, this definitely
+> needs another look...
 
-This is identical to the btrfs_info_in_rcu several lines further down.
-So if btrfs_scrub_cancel is successful you will print this messages
-twice. Furthermore, there is already an unconditinal call to
-btrfs_scrub_cancel. You are duplicating this function, this definitely
-needs another look...
-
-> +		}
->  		break;
->  	case BTRFS_IOCTL_DEV_REPLACE_STATE_SUSPENDED:
->  		/*
+Ah, it builds on top of the previous patch which I still haven't
+reviewed. So ignore this, my bad.
 > 
+>> +		}
+>>  		break;
+>>  	case BTRFS_IOCTL_DEV_REPLACE_STATE_SUSPENDED:
+>>  		/*
+>>

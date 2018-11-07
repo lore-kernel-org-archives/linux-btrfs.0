@@ -1,120 +1,91 @@
-Return-Path: <SRS0=BJi/=NR=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=udTi=NS=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIMWL_WL_MED,
-	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.8 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
+	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5545DC32789
-	for <linux-btrfs@archiver.kernel.org>; Tue,  6 Nov 2018 19:43:24 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 40247C32789
+	for <linux-btrfs@archiver.kernel.org>; Wed,  7 Nov 2018 00:18:47 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id E360920830
-	for <linux-btrfs@archiver.kernel.org>; Tue,  6 Nov 2018 19:43:23 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=fb.com header.i=@fb.com header.b="fKc8IShz";
-	dkim=pass (1024-bit key) header.d=fb.onmicrosoft.com header.i=@fb.onmicrosoft.com header.b="UizpHkr8"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org E360920830
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=fb.com
+	by mail.kernel.org (Postfix) with ESMTP id EB93420827
+	for <linux-btrfs@archiver.kernel.org>; Wed,  7 Nov 2018 00:18:46 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org EB93420827
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=gmx.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726176AbeKGFKK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 7 Nov 2018 00:10:10 -0500
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:49606 "EHLO
-        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1725198AbeKGFKK (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 7 Nov 2018 00:10:10 -0500
-Received: from pps.filterd (m0044008.ppops.net [127.0.0.1])
-        by mx0a-00082601.pphosted.com (8.16.0.22/8.16.0.22) with SMTP id wA6JXghQ001699;
-        Tue, 6 Nov 2018 11:43:07 -0800
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=fb.com; h=from : to : cc : subject
- : date : message-id : references : in-reply-to : content-type : content-id
- : content-transfer-encoding : mime-version; s=facebook;
- bh=6pc0uRcgwa5pXCl5Ws2crruBq6vc4rRqRXMl/zfY0gE=;
- b=fKc8IShzrS+5zF2+AIBnk5V22rndvKX1W6Q50Bsp89BkEG7RMhvgaZ+2MyzANj8RFRr0
- Egxyy3WlWDmghOmI1iojnZfttjcZl4a73bj8X+zM5Y+c9T7Rl6c888LyhseFo3vX0PyB
- NWB4fMWkVHSxMrj2YzrRLyfNIl6GA32RANk= 
-Received: from maileast.thefacebook.com ([199.201.65.23])
-        by mx0a-00082601.pphosted.com with ESMTP id 2nkgyb02ns-2
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-SHA384 bits=256 verify=NOT);
-        Tue, 06 Nov 2018 11:43:07 -0800
-Received: from frc-hub05.TheFacebook.com (2620:10d:c021:18::175) by
- frc-hub05.TheFacebook.com (2620:10d:c021:18::175) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384) id
- 15.1.1531.3; Tue, 6 Nov 2018 11:43:06 -0800
-Received: from FRC-CHUB13.TheFacebook.com (2620:10d:c021:18::32) by
- frc-hub05.TheFacebook.com (2620:10d:c021:18::175) with Microsoft SMTP Server
- (version=TLS1_0, cipher=TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA) id 15.1.1531.3
- via Frontend Transport; Tue, 6 Nov 2018 11:43:06 -0800
-Received: from NAM05-CO1-obe.outbound.protection.outlook.com (192.168.183.28)
- by o365-in.thefacebook.com (192.168.177.33) with Microsoft SMTP Server (TLS)
- id 14.3.361.1; Tue, 6 Nov 2018 14:43:06 -0500
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=fb.onmicrosoft.com;
- s=selector1-fb-com;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=6pc0uRcgwa5pXCl5Ws2crruBq6vc4rRqRXMl/zfY0gE=;
- b=UizpHkr8sbxIW2sWuiJIh1O01CigWNTNH8bEOd+fq6RKM4UF6xWzu6dGK+cakd8atCqcfedmEV0OkEYB7jlztEX2h7tMyf9zgT4VuTw57c/CgGZ9LrqxXoizZBRsaSUjjAAlnrLp6xlsHsOP7UK1267jJVAT7Jq2Yg3cYaCmy/w=
-Received: from MW2PR1501MB1993.namprd15.prod.outlook.com (52.132.149.157) by
- MW2PR1501MB2156.namprd15.prod.outlook.com (52.132.150.152) with Microsoft
- SMTP Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- 15.20.1294.26; Tue, 6 Nov 2018 19:43:04 +0000
-Received: from MW2PR1501MB1993.namprd15.prod.outlook.com
- ([fe80::c554:8f41:4255:796f]) by MW2PR1501MB1993.namprd15.prod.outlook.com
- ([fe80::c554:8f41:4255:796f%3]) with mapi id 15.20.1294.034; Tue, 6 Nov 2018
- 19:43:04 +0000
-From:   Nick Terrell <terrelln@fb.com>
-To:     Daniel Kiper <dkiper@net-space.pl>
-CC:     David Sterba <dsterba@suse.cz>, Kernel Team <Kernel-team@fb.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "grub-devel@gnu.org" <grub-devel@gnu.org>
-Subject: Re: [PATCH v4 1/2] Import upstream zstd-1.3.6
-Thread-Topic: [PATCH v4 1/2] Import upstream zstd-1.3.6
-Thread-Index: AQHUcUM8IHtgflvOb06YuNDNIYEQ16VC3QwAgABSXgA=
-Date:   Tue, 6 Nov 2018 19:43:04 +0000
-Message-ID: <AE8FECE1-5414-41B9-882C-B8AE98BA2912@fb.com>
-References: <20181031175617.230241-1-terrelln@fb.com>
- <20181031175617.230241-2-terrelln@fb.com>
- <20181106144832.GA9907@router-fw-old.i.net-space.pl>
-In-Reply-To: <20181106144832.GA9907@router-fw-old.i.net-space.pl>
-Accept-Language: en-US
-Content-Language: en-US
-X-MS-Has-Attach: 
-X-MS-TNEF-Correlator: 
-x-originating-ip: [2620:10d:c090:200::4:3925]
-x-ms-publictraffictype: Email
-x-microsoft-exchange-diagnostics: 1;MW2PR1501MB2156;20:PNQ9WvGRYoRz2UsgFFEKjW2Ze3cuomNsNZtCoZi3fChMPtgmpwb0RK6o3eTlGTySM2KODDpQjyRVPp3GI5n6ufmMx1sD4ZKI2SUSrjRL6j5+FUpcjOBff3qzXjvE9U80LUjaAoxzQhyEHPnkDNqCpeSoBDE0YFawKcSZIWmTU04=
-x-ms-exchange-antispam-srfa-diagnostics: SOS;
-x-ms-office365-filtering-correlation-id: 21d235c0-af38-48f6-95f1-08d644201177
-x-microsoft-antispam: BCL:0;PCL:0;RULEID:(7020095)(4652040)(8989299)(4534185)(4627221)(201703031133081)(201702281549075)(8990200)(5600074)(711020)(2017052603328)(7153060)(7193020);SRVR:MW2PR1501MB2156;
-x-ms-traffictypediagnostic: MW2PR1501MB2156:
-x-microsoft-antispam-prvs: <MW2PR1501MB2156DFD24A27652D335C45E5ABCB0@MW2PR1501MB2156.namprd15.prod.outlook.com>
-x-exchange-antispam-report-test: UriScan:(81227570615382)(166708455590820)(67672495146484);
-x-ms-exchange-senderadcheck: 1
-x-exchange-antispam-report-cfa-test: BCL:0;PCL:0;RULEID:(8211001083)(6040522)(2401047)(8121501046)(5005006)(823302103)(3002001)(93006095)(93001095)(3231382)(11241501184)(944501410)(52105095)(10201501046)(148016)(149066)(150057)(6041310)(201703131423095)(201702281528075)(20161123555045)(201703061421075)(201703061406153)(20161123558120)(20161123564045)(20161123562045)(20161123560045)(201708071742011)(7699051)(76991095);SRVR:MW2PR1501MB2156;BCL:0;PCL:0;RULEID:;SRVR:MW2PR1501MB2156;
-x-forefront-prvs: 0848C1A6AA
-x-forefront-antispam-report: SFV:NSPM;SFS:(10019020)(39860400002)(396003)(366004)(136003)(376002)(346002)(189003)(199004)(51444003)(68736007)(14454004)(46003)(6436002)(71200400001)(83716004)(86362001)(71190400001)(14444005)(6116002)(97736004)(33656002)(106356001)(53936002)(105586002)(6486002)(25786009)(6306002)(966005)(6512007)(478600001)(102836004)(6246003)(5660300001)(54906003)(7736002)(76176011)(53546011)(36756003)(6506007)(316002)(186003)(256004)(6916009)(82746002)(486006)(229853002)(446003)(11346002)(2906002)(4326008)(81166006)(2616005)(81156014)(8676002)(305945005)(99286004)(8936002)(2900100001)(476003);DIR:OUT;SFP:1102;SCL:1;SRVR:MW2PR1501MB2156;H:MW2PR1501MB1993.namprd15.prod.outlook.com;FPR:;SPF:None;LANG:en;PTR:InfoNoRecords;MX:1;A:1;
-received-spf: None (protection.outlook.com: fb.com does not designate
- permitted sender hosts)
-x-microsoft-antispam-message-info: IJvzaeLc7EpOK3V6nzrQo+6ElMnqAsmd6X2y5rgv3fx644tNjESSwFLIue1aCEB+1rEwktXldvJ3XLNee26490Wgk2lXmSAGtKt+n3R01BLX8g70ayat9ee66oHJaZoCQ5fobwRkDrhhPt+bTf5sTbGduTX6YP/2rg1MzyB5h/7MCNmShhUlZf3hB7qybPGwIFcpbpTx5PGoIGRbtJzp2gqENcHYdAaVsl3I4MvoUXCB7M5k0MVXS4Tc5vjVk8m9lHvJTaCJ7J+p+HZzWVbdJdK3bZqPfK2l6X+1heXZ/OnIetmqhzHcYN3JUsw92hWzYRPthehUaGC3gu05KCM7uBhcZbFfSKix7QTi93OpMhY=
-spamdiagnosticoutput: 1:99
-spamdiagnosticmetadata: NSPM
-Content-Type: text/plain; charset="us-ascii"
-Content-ID: <193F24AB3B6E6841835EAEF56696B83D@namprd15.prod.outlook.com>
-Content-Transfer-Encoding: quoted-printable
+        id S1730811AbeKGJqf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 7 Nov 2018 04:46:35 -0500
+Received: from mout.gmx.net ([212.227.15.19]:58811 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1730691AbeKGJqf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 7 Nov 2018 04:46:35 -0500
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx003
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 0MNq8p-1gQW0N2PBT-007QLA; Wed, 07
+ Nov 2018 01:18:38 +0100
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx003
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 0MNq8p-1gQW0N2PBT-007QLA; Wed, 07
+ Nov 2018 01:18:38 +0100
+Subject: Re: [PATCH] btrfs: Always try all copies when reading extent buffers
+To:     Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
+Cc:     wqu@suse.com, josef@toxicpanda.com
+References: <20181106144020.3446-1-nborisov@suse.com>
+ <a9c486f8-f8ae-7463-205a-8ba60e011842@gmx.com>
+ <bb0c0091-5f00-55be-53b9-6e0376f0e67d@suse.com>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
+ bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
+ ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
+ rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
+ FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
+ 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
+ ilaVzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
+ CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
+ /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
+ GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
+ q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
+ ABEBAAHCwHwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
+ CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
+ f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
+ mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
+ 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
+ h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
+Message-ID: <91fcc4a5-1c94-1d7a-962f-378ac7c75965@gmx.com>
+Date:   Wed, 7 Nov 2018 08:18:31 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.2.1
 MIME-Version: 1.0
-X-MS-Exchange-CrossTenant-Network-Message-Id: 21d235c0-af38-48f6-95f1-08d644201177
-X-MS-Exchange-CrossTenant-originalarrivaltime: 06 Nov 2018 19:43:04.1015
- (UTC)
-X-MS-Exchange-CrossTenant-fromentityheader: Hosted
-X-MS-Exchange-CrossTenant-id: 8ae927fe-1255-47a7-a2af-5f3a069daaa2
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: MW2PR1501MB2156
-X-OriginatorOrg: fb.com
-X-Proofpoint-Virus-Version: vendor=fsecure engine=2.50.10434:,, definitions=2018-11-06_09:,,
- signatures=0
-X-Proofpoint-Spam-Reason: safe
-X-FB-Internal: Safe
+In-Reply-To: <bb0c0091-5f00-55be-53b9-6e0376f0e67d@suse.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
+X-Provags-ID: V03:K1:VwsKKyE1gPvk4PEmHZi6ex9rFxJ7+9CL4pSnvgK0TSj7cybzt/M
+ wwuSrgBLZOtCKKzDnUviKpboNpyjmfOzqWnTT4CzDWSUxCVmMxXfxpt7jgMTfKS22pwPB5e
+ dgaY9mGcW0Blg7AWRAyV3QdBCSZ7CUqJziWsA2pXlR1h6VpH4K6+v3z6fpGbDQ0aUEDnEJS
+ zzuxlrspH66K65dCGe2eQ==
+X-UI-Out-Filterresults: notjunk:1;V01:K0:34cLtGjC5nY=:glzuKnHju+jWGbFPUm/z+M
+ FkktLXwr8GNlNxnzPzx0ztlMZTuGS9d7lq0QNXFTOf8Wnu6ZVS2zL8yQTrh+jWApOETGskF4f
+ dNP8Wh9nOqTHuJrd18n05bHE7JuPssIUk23z8l6hamqsi5wh/DK8MN/oFaoiDe0OKfIrhUOT6
+ 39QcIvDYNrYKah4JajfbqCvG00x9BNb73/2G7os+G3DOphqub7k7ZV/J5ynRjc6GpkVKew7kR
+ MrmwzofuHJj4kWN2E9qOm8vyqWXOMEpyraPHlY4mrTtGmRrF9EHwU81aC/5SVcgIgwTXwwgVQ
+ 1QPKHsD88S03Nev6ZnqENlmCI2W6YJiYPDoKm0AQjCBJ5J6NLbnGgdu1joR0YoNZlh1wzlf97
+ DVaaIdCAG4czsoatSrSOQDNB1tL6uzG1cxqmqqPoBgA7d2SIR3PFcGKG5Q3YkDrs5/U4rfMdp
+ TBHC2AftadfnH0dES6POqa0NAUidzXQ68Vuo43yHW9OrFtKG/d/Xzp9hzwwUCh/HQocrHhNND
+ jm+rkmBdCUts2czfqalMROZQiojdpk9RBxIX9M2RDJH2CbUOjuknMAOi9nauvsvI954xhagmM
+ u4YJp/tjzmHWOFZtRZ8zhRtHhDP10ndK4Mv8rR2/DjrnIs0YVY9fND0jxBsyNCg6k6xzEKWhS
+ pdag9mBl0lYg4HUIJpuIWLVZXu7hRXCpg/6NNCfXpqvFV1MVzaSQBOuo8v+LkuR+kGX3blJfM
+ vqYJva6l7p8ogLtKlo3xw80gHXVGTnHzDkodL/FyYWPW4BMnNwcqweOw09y8X6kYgbZUewF5L
+ 6KyiloB2El7Krde8hUsRAdQc9UYEphNYuO4N6GaJ9sHytS4xBQ=
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -122,78 +93,113 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-> On Nov 6, 2018, at 6:48 AM, Daniel Kiper <dkiper@net-space.pl> wrote:
->=20
-> On Wed, Oct 31, 2018 at 10:56:16AM -0700, Nick Terrell wrote:
->> Import zstd-1.3.6 from upstream [1]. Only the files need for decompressi=
-on
->> are imported. Additionally makes zstd a module by adding module.c which
->> contains the license, and updates Makefile.core.def.
->>=20
->> I used the latest zstd release, which includes patches [2] to build clea=
-nly
->> in GRUB.
->>=20
->> Upstream zstd commit hash: 4fa456d7f12f8b27bd3b2f5dfd4f46898cb31c24
->> Upstream zstd commit name: Merge pull request #1354 from facebook/dev
->>=20
->> I've included the script used to import zstd-1.3.6 below.
->>=20
->> [1] https://github.com/facebook/zstd/releases/tag/v1.3.6
->> [2] https://github.com/facebook/zstd/pull/1344
->>=20
->> ```
->> #!/bin/sh -e
->>=20
->> curl -L -O https://github.com/facebook/zstd/releases/download/v1.3.6/zst=
-d-1.3.6.tar.gz
->> curl -L -O https://github.com/facebook/zstd/releases/download/v1.3.6/zst=
-d-1.3.6.tar.gz.sha256
->> sha256sum --check zstd-1.3.6.tar.gz.sha256
->> tar xzf zstd-1.3.6.tar.gz
->>=20
->> SRC_LIB=3D"zstd-1.3.6/lib"
->> DST_LIB=3D"grub-core/lib/zstd"
->> rm -rf $DST_LIB
->> mkdir -p $DST_LIB
->> cp $SRC_LIB/zstd.h $DST_LIB/
->> cp $SRC_LIB/common/*.[hc] $DST_LIB/
->> cp $SRC_LIB/decompress/*.[hc] $DST_LIB/
->> rm $DST_LIB/{pool.[hc],threading.[hc]}
->> rm -rf zstd-1.3.6*
->> echo SUCCESS!
->> ```
->>=20
->> Signed-off-by: Nick Terrell <terrelln@fb.com>
->=20
-> I have a few concerns. First of all I can see that you include a lot of
-> standard headers, e.g. stdlib.h, string.h, stddef.h, etc. Where do they
-> come from? OS? If yes that is wrong. Additionally, I think that you
-> should not use standard types, e.g. size_t, because this may not work if
-> you cross compile. You have to use, e.g. grub_size_t. IMO the simplest
-> solution would be definition and usage of relevant zstd_* types, e.g.
-> zstd_size_t. Then e.g. zstd_size_t should be defined as grub_size_t.
+On 2018/11/6 下午11:14, Nikolay Borisov wrote:
+> 
+> 
+> On 6.11.18 г. 16:53 ч., Qu Wenruo wrote:
+>>
+>>
+>> On 2018/11/6 下午10:40, Nikolay Borisov wrote:
+>>> When a metadata read is served the endio routine btree_readpage_end_io_hook
+>>> is called which eventually runs the tree-checker. If tree-checker fails
+>>> to validate the read eb then it sets EXTENT_BUFFER_CORRUPT flag. This
+>>> leads to btree_read_extent_buffer_pages wrongly assuming that all
+>>> available copies of this extent buffer are wrong and failing prematurely.
+>>> Fix this modify btree_read_extent_buffer_pages to read all copies of
+>>> the data.
+>>>
+>>> This failure was exhibitted in xfstests btrfs/124 which would
+>>> spuriously fail its balance operations. The reason was that when balance
+>>> was run following re-introduction of the missing raid1 disk
+>>> __btrfs_map_block would map the read request to stripe 0, which
+>>> corresponded to devid 2 (the disk which is being removed in the test):
+>>>
+>>>     item 2 key (FIRST_CHUNK_TREE CHUNK_ITEM 3553624064) itemoff 15975 itemsize 112
+>>> 	length 1073741824 owner 2 stripe_len 65536 type DATA|RAID1
+>>> 	io_align 65536 io_width 65536 sector_size 4096
+>>> 	num_stripes 2 sub_stripes 1
+>>> 		stripe 0 devid 2 offset 2156920832
+>>> 		dev_uuid 8466c350-ed0c-4c3b-b17d-6379b445d5c8
+>>> 		stripe 1 devid 1 offset 3553624064
+>>> 		dev_uuid 1265d8db-5596-477e-af03-df08eb38d2ca
+>>>
+>>> This caused read requests for a checksum item that to be routed to the
+>>> stale disk which triggered the aforementioned logic involving
+>>> EXTENT_BUFFER_CORRUPT flag. This then triggered cascading failures of
+>>> the balance operation.
+>>>
+>>> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+>>> Suggested-by: Qu Wenruo <wqu@suse.com>
+>>
+>> Reviewed-by: Qu Wenruo <wqu@suse.com>
+>>
+>> However there is still a tiny piece missing.
+>>
+>> Tree checker is done after some basic checks, including:
+>> 1) bytenr
+>> 2) level
+>> 3) fsid
+>> 4) csum
+>>
+>> 1~2) can be easily skipped just by pure luck.
+>>
+>> But 3) and especially 4) are not that easy to hit.
+>> Not to mention meeting both 3) and 4), since csum range covers fsid.
+>>
+>> So I must say you're a really super lucky guy!
+> 
+> s/lucky/unlucky/ :)
+> 
+> I wonder if reads just land in some random memory on the stale disk
+> hence it's really a matter of what's "there" so that reads fail with
+> random reasons?
 
-I'm getting the standard headers from grub-core/lib/posix_wrap. I need
-to add stddef.h. I'd like to keep using standard types, which are typedefed
-to the grub_ equivalent in posix_wrap/sys/types.h.
+Even for random memory, you're still too lucky to hit it.
 
-I agree it would be nice if zstd put all of its dependencies into a configu=
-ration
-file that we could replace. I'll look into adding this in a future version.=
- However,
-since we are using upstream zstd as-is right now, and posix_wrapper is alre=
-ady
-present, I think that the benefit of using upstream as-is outweighs the cos=
-t of
-using the posix_wrapper. Does that sound reasonable to you?
+Thanks,
+Qu
 
-To test that I'm using the right headers, I looked that the .Po files gener=
-ated,
-and saw that stddef.h was using the system, but the rest were using the
-posix_wrapper. Is that the right approach? Is there something else I should
-be testing?
-
-> [...]
-
-Nick=
+> 
+>>
+>> Thanks,
+>> Qu
+>>
+>>
+>>> Fixes: a826d6dcb32d ("Btrfs: check items for correctness as we search")
+>>> ---
+>>>  fs/btrfs/disk-io.c | 11 +----------
+>>>  1 file changed, 1 insertion(+), 10 deletions(-)
+>>>
+>>> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+>>> index 00ee5e37e989..279c6dbcc736 100644
+>>> --- a/fs/btrfs/disk-io.c
+>>> +++ b/fs/btrfs/disk-io.c
+>>> @@ -477,9 +477,9 @@ static int btree_read_extent_buffer_pages(struct btrfs_fs_info *fs_info,
+>>>  	int mirror_num = 0;
+>>>  	int failed_mirror = 0;
+>>>  
+>>> -	clear_bit(EXTENT_BUFFER_CORRUPT, &eb->bflags);
+>>>  	io_tree = &BTRFS_I(fs_info->btree_inode)->io_tree;
+>>>  	while (1) {
+>>> +		clear_bit(EXTENT_BUFFER_CORRUPT, &eb->bflags);
+>>>  		ret = read_extent_buffer_pages(io_tree, eb, WAIT_COMPLETE,
+>>>  					       mirror_num);
+>>>  		if (!ret) {
+>>> @@ -493,15 +493,6 @@ static int btree_read_extent_buffer_pages(struct btrfs_fs_info *fs_info,
+>>>  				break;
+>>>  		}
+>>>  
+>>> -		/*
+>>> -		 * This buffer's crc is fine, but its contents are corrupted, so
+>>> -		 * there is no reason to read the other copies, they won't be
+>>> -		 * any less wrong.
+>>> -		 */
+>>> -		if (test_bit(EXTENT_BUFFER_CORRUPT, &eb->bflags) ||
+>>> -		    ret == -EUCLEAN)
+>>> -			break;
+>>> -
+>>>  		num_copies = btrfs_num_copies(fs_info,
+>>>  					      eb->start, eb->len);
+>>>  		if (num_copies == 1)
+>>>
+>>

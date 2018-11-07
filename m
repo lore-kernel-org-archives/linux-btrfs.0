@@ -2,33 +2,33 @@ Return-Path: <SRS0=udTi=NS=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 05CBAC0044C
-	for <linux-btrfs@archiver.kernel.org>; Wed,  7 Nov 2018 12:16:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 53B7BC0044C
+	for <linux-btrfs@archiver.kernel.org>; Wed,  7 Nov 2018 12:17:18 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id C837F20896
-	for <linux-btrfs@archiver.kernel.org>; Wed,  7 Nov 2018 12:16:01 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org C837F20896
+	by mail.kernel.org (Postfix) with ESMTP id 1EF3320896
+	for <linux-btrfs@archiver.kernel.org>; Wed,  7 Nov 2018 12:17:17 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 1EF3320896
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726545AbeKGVqH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 7 Nov 2018 16:46:07 -0500
-Received: from mx2.suse.de ([195.135.220.15]:48288 "EHLO mx1.suse.de"
+        id S1727567AbeKGVrY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 7 Nov 2018 16:47:24 -0500
+Received: from mx2.suse.de ([195.135.220.15]:48548 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726469AbeKGVqH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 7 Nov 2018 16:46:07 -0500
+        id S1726469AbeKGVrY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 7 Nov 2018 16:47:24 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id D9286AFE0;
-        Wed,  7 Nov 2018 12:15:57 +0000 (UTC)
-Subject: Re: [PATCH 9/9] btrfs: add explicit check for replace result no error
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id C2264AFDB;
+        Wed,  7 Nov 2018 12:17:14 +0000 (UTC)
+Subject: Re: [PATCH 7/9] btrfs: quiten warn if the replace is canceled at
+ finish
 To:     Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
 References: <1541591010-29789-1-git-send-email-anand.jain@oracle.com>
- <1541591010-29789-10-git-send-email-anand.jain@oracle.com>
+ <1541591010-29789-8-git-send-email-anand.jain@oracle.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -73,12 +73,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  KIuxEcV8wcVjr+Wr9zRl06waOCkgrQbTPp631hToxo+4rA1jiQF2M80HAet65ytBVR2pFGZF
  zGYYLqiG+mpUZ+FPjxk9kpkRYz61mTLSY7tuFljExfJWMGfgSg1OxfLV631jV1TcdUnx+h3l
  Sqs2vMhAVt14zT8mpIuu2VNxcontxgVr1kzYA/tQg32fVRbGr449j1gw57BV9i0vww==
-Message-ID: <47b5f790-b4a6-c149-bb92-59868900c2d8@suse.com>
-Date:   Wed, 7 Nov 2018 14:15:56 +0200
+Message-ID: <87c528a9-155d-330c-a8ea-90c97fed5bd7@suse.com>
+Date:   Wed, 7 Nov 2018 14:17:13 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <1541591010-29789-10-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1541591010-29789-8-git-send-email-anand.jain@oracle.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -90,41 +90,8 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 On 7.11.18 г. 13:43 ч., Anand Jain wrote:
-> We recast the replace return status
-> BTRFS_IOCTL_DEV_REPLACE_RESULT_SCRUB_INPROGRESS to 0, to indicate no
-> error.
-> And since BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_ERROR should also return 0,
-> which is also declared as 0, so we just return. Instead add it to the if
-> statement so that there is enough clarity while reading the code.
-> 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> ---
->  fs/btrfs/dev-replace.c | 5 +++--
->  1 file changed, 3 insertions(+), 2 deletions(-)
-> 
-> diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-> index cf3554554616..ca44998189c7 100644
-> --- a/fs/btrfs/dev-replace.c
-> +++ b/fs/btrfs/dev-replace.c
-> @@ -533,8 +533,9 @@ int btrfs_dev_replace_by_ioctl(struct btrfs_fs_info *fs_info,
->  					args->start.cont_reading_from_srcdev_mode);
->  	args->result = ret;
->  	/* don't warn if EINPROGRESS, someone else might be running scrub */
-> -	if (ret == BTRFS_IOCTL_DEV_REPLACE_RESULT_SCRUB_INPROGRESS)
-> -		ret = 0;
-> +	if (ret == BTRFS_IOCTL_DEV_REPLACE_RESULT_SCRUB_INPROGRESS ||
-> +	    ret == BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_ERROR)
+> -	WARN_ON(ret);
+> +	if (ret != -ECANCELED)
+> +		WARN_ON(ret);
 
-BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_ERROR can only be returned from
-btrfs_dev_replace_cancel, so what you are doing with checking ret ==
-BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_ERROR is redundant. So using
-BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_ERROR is at the very least misleading
-here.
-
-I suggest you drop this patch.
-
-> +		return 0;
->  
->  	return ret;
->  }
-> 
+WARN_ON(ret && ret != -ECANCELED)

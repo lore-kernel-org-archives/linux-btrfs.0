@@ -6,31 +6,32 @@ X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 60668C46465
-	for <linux-btrfs@archiver.kernel.org>; Thu,  8 Nov 2018 06:54:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5697BC32789
+	for <linux-btrfs@archiver.kernel.org>; Thu,  8 Nov 2018 06:54:49 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 20DA32081D
-	for <linux-btrfs@archiver.kernel.org>; Thu,  8 Nov 2018 06:54:04 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 20DA32081D
+	by mail.kernel.org (Postfix) with ESMTP id 26F972081D
+	for <linux-btrfs@archiver.kernel.org>; Thu,  8 Nov 2018 06:54:49 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 26F972081D
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726799AbeKHQ2E (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 8 Nov 2018 11:28:04 -0500
-Received: from mx2.suse.de ([195.135.220.15]:53870 "EHLO mx1.suse.de"
+        id S1726162AbeKHQ2s (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 8 Nov 2018 11:28:48 -0500
+Received: from mx2.suse.de ([195.135.220.15]:53928 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725972AbeKHQ2D (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 8 Nov 2018 11:28:03 -0500
+        id S1725972AbeKHQ2s (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 8 Nov 2018 11:28:48 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 4E9FAABCE;
-        Thu,  8 Nov 2018 06:54:00 +0000 (UTC)
-Subject: Re: [PATCH -next] btrfs: remove set but not used variable 'tree'
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 5F011ABCE;
+        Thu,  8 Nov 2018 06:54:45 +0000 (UTC)
+Subject: Re: [PATCH -next] btrfs: compression: remove set but not used
+ variable 'tree'
 To:     YueHaibing <yuehaibing@huawei.com>, Chris Mason <clm@fb.com>,
         Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.com>
 Cc:     linux-btrfs@vger.kernel.org, kernel-janitors@vger.kernel.org
-References: <1541643283-109411-1-git-send-email-yuehaibing@huawei.com>
+References: <1541643315-109723-1-git-send-email-yuehaibing@huawei.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -75,12 +76,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  KIuxEcV8wcVjr+Wr9zRl06waOCkgrQbTPp631hToxo+4rA1jiQF2M80HAet65ytBVR2pFGZF
  zGYYLqiG+mpUZ+FPjxk9kpkRYz61mTLSY7tuFljExfJWMGfgSg1OxfLV631jV1TcdUnx+h3l
  Sqs2vMhAVt14zT8mpIuu2VNxcontxgVr1kzYA/tQg32fVRbGr449j1gw57BV9i0vww==
-Message-ID: <0e364fdf-e5ce-0e31-aacf-d77699b5654e@suse.com>
-Date:   Thu, 8 Nov 2018 08:53:58 +0200
+Message-ID: <14010d1d-1379-c871-c43d-f270ba566279@suse.com>
+Date:   Thu, 8 Nov 2018 08:54:44 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <1541643283-109411-1-git-send-email-yuehaibing@huawei.com>
+In-Reply-To: <1541643315-109723-1-git-send-email-yuehaibing@huawei.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -91,11 +92,11 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 8.11.18 г. 4:14 ч., YueHaibing wrote:
+On 8.11.18 г. 4:15 ч., YueHaibing wrote:
 > Fixes gcc '-Wunused-but-set-variable' warning:
 > 
-> fs/btrfs/extent_io.c: In function 'end_extent_writepage':
-> fs/btrfs/extent_io.c:2406:25: warning:
+> fs/btrfs/compression.c: In function 'end_compressed_bio_write':
+> fs/btrfs/compression.c:232:25: warning:
 >  variable 'tree' set but not used [-Wunused-but-set-variable]
 > 
 > It not used any more after
@@ -106,25 +107,29 @@ On 8.11.18 г. 4:14 ч., YueHaibing wrote:
 Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 
 > ---
->  fs/btrfs/extent_io.c | 3 ---
->  1 file changed, 3 deletions(-)
+>  fs/btrfs/compression.c | 2 --
+>  1 file changed, 2 deletions(-)
 > 
-> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-> index 0f8f9c0..17a15cc 100644
-> --- a/fs/btrfs/extent_io.c
-> +++ b/fs/btrfs/extent_io.c
-> @@ -2403,11 +2403,8 @@ static int bio_readpage_error(struct bio *failed_bio, u64 phy_offset,
->  void end_extent_writepage(struct page *page, int err, u64 start, u64 end)
+> diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+> index bde8d04..088570c 100644
+> --- a/fs/btrfs/compression.c
+> +++ b/fs/btrfs/compression.c
+> @@ -229,7 +229,6 @@ static noinline void end_compressed_writeback(struct inode *inode,
+>   */
+>  static void end_compressed_bio_write(struct bio *bio)
 >  {
->  	int uptodate = (err == 0);
 > -	struct extent_io_tree *tree;
->  	int ret = 0;
->  
-> -	tree = &BTRFS_I(page->mapping->host)->io_tree;
-> -
->  	btrfs_writepage_endio_finish_ordered(page, start, end, NULL, uptodate);
->  
->  	if (!uptodate) {
+>  	struct compressed_bio *cb = bio->bi_private;
+>  	struct inode *inode;
+>  	struct page *page;
+> @@ -248,7 +247,6 @@ static void end_compressed_bio_write(struct bio *bio)
+>  	 * call back into the FS and do all the end_io operations
+>  	 */
+>  	inode = cb->inode;
+> -	tree = &BTRFS_I(inode)->io_tree;
+>  	cb->compressed_pages[0]->mapping = cb->inode->i_mapping;
+>  	btrfs_writepage_endio_finish_ordered(cb->compressed_pages[0],
+>  			cb->start, cb->start + cb->len - 1, NULL,
 > 
 > 
 > 

@@ -2,58 +2,75 @@ Return-Path: <SRS0=dhPA=NU=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_MUTT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C8204C43441
-	for <linux-btrfs@archiver.kernel.org>; Fri,  9 Nov 2018 12:40:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4FBE2C43441
+	for <linux-btrfs@archiver.kernel.org>; Fri,  9 Nov 2018 14:08:43 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 4E27E20825
-	for <linux-btrfs@archiver.kernel.org>; Fri,  9 Nov 2018 12:40:06 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 4E27E20825
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=net-space.pl
+	by mail.kernel.org (Postfix) with ESMTP id 1A82A20825
+	for <linux-btrfs@archiver.kernel.org>; Fri,  9 Nov 2018 14:08:43 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 1A82A20825
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727843AbeKIWUb (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 9 Nov 2018 17:20:31 -0500
-Received: from dibed.net-space.pl ([84.10.22.86]:43740 "EHLO
-        dibed.net-space.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727662AbeKIWUb (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 Nov 2018 17:20:31 -0500
-Received: (from localhost user: 'dkiper' uid#4000 fake: STDIN
-        (dkiper@dibed.net-space.pl)) by router-fw-old.i.net-space.pl
-        id S1879284AbeKIMje (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 9 Nov 2018 13:39:34 +0100
-Date:   Fri, 9 Nov 2018 13:39:34 +0100
-From:   Daniel Kiper <dkiper@net-space.pl>
-To:     kreijack@inwind.it
-Cc:     Daniel Kiper <dkiper@net-space.pl>, Nick Terrell <terrelln@fb.com>,
-        "grub-devel@gnu.org" <grub-devel@gnu.org>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH V10] Add support for BTRFS raid5/6 to GRUB
-Message-ID: <20181109123934.GA10831@router-fw-old.i.net-space.pl>
-References: <20181018175541.9532-1-kreijack@libero.it> <20181022110245.GB12705@router-fw-old.i.net-space.pl> <2F6AF0F1-DD4A-4406-9319-431CB1783BF5@fb.com> <20181031120623.GA13223@router-fw-old.i.net-space.pl> <71116ba1-997d-44ed-54fa-4b6eff5d8cdd@libero.it>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <71116ba1-997d-44ed-54fa-4b6eff5d8cdd@libero.it>
-User-Agent: Mutt/1.3.28i
+        id S1728688AbeKIXt1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 9 Nov 2018 18:49:27 -0500
+Received: from mx2.suse.de ([195.135.220.15]:49788 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1728682AbeKIXt0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 9 Nov 2018 18:49:26 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 9E4EBADD6
+        for <linux-btrfs@vger.kernel.org>; Fri,  9 Nov 2018 14:08:40 +0000 (UTC)
+From:   Nikolay Borisov <nborisov@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCHv2 0/9] Removal of optionsl extent_io_ops callbacks 
+Date:   Fri,  9 Nov 2018 16:08:29 +0200
+Message-Id: <20181109140838.10457-1-nborisov@suse.com>
+X-Mailer: git-send-email 2.17.1
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Oct 31, 2018 at 07:48:08PM +0100, Goffredo Baroncelli wrote:
-> On 31/10/2018 13.06, Daniel Kiper wrote:
-> [...]
-> >
-> > v11 pushed.
-> >
-> > Goffredo, thank you for doing the work.
->
-> Great ! Many thanks for your support !!
+Here is the 2nd revision of the extent_io_ops optinal callbacks removal. What 
+prompted this version was that I identified a flaw in the initial version - while
+it did check for the presence of an inode in extent_io_tree::private_data, i 
+forgot to explicitly check the ino to be different than the ino of the btree inode. 
 
-You are welcome!
+While this doesn't lead to any corruption or risks at the moment it results in 
+additional operation being performed on the btree inode io_tree. 
 
-Daniel
+This is now fixed by introducing a new function in the first patch and changing
+everything that follows to utilize it in addition to the presence of ->private_data
+
+Testing with xfstests didn't uncover any regressions so this series should be 
+good to replace the on in misc-next. 
+
+Nikolay Borisov (9):
+  btrfs: Add function to distinguish between data and btree inode
+  btrfs: Remove extent_io_ops::fill_delalloc
+  btrfs: Remove extent_io_ops::writepage_start_hook
+  btrfs: Remove extent_io_ops::writepage_end_io_hook
+  btrfs: Remove extent_io_ops::check_extent_io_range callback
+  btrfs: Remove extent_io_ops::set_bit_hook extent_io callback
+  btrfs: Remove extent_io_ops::clear_bit_hook callback
+  btrfs: Remove extent_io_ops::merge_extent_hook callback
+  btrfs: Remove extent_io_ops::split_extent_hook callback
+
+ fs/btrfs/btrfs_inode.h           |   5 ++
+ fs/btrfs/compression.c           |  11 +--
+ fs/btrfs/ctree.h                 |  14 +++
+ fs/btrfs/extent_io.c             | 141 +++++++++++++------------------
+ fs/btrfs/extent_io.h             |  24 ------
+ fs/btrfs/inode.c                 |  91 +++++++-------------
+ fs/btrfs/tests/extent-io-tests.c |   2 +-
+ 7 files changed, 113 insertions(+), 175 deletions(-)
+
+-- 
+2.17.1
+

@@ -2,151 +2,232 @@ Return-Path: <SRS0=dhPA=NU=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.7 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
+	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 47383C43441
-	for <linux-btrfs@archiver.kernel.org>; Fri,  9 Nov 2018 11:46:32 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 37D8CC43441
+	for <linux-btrfs@archiver.kernel.org>; Fri,  9 Nov 2018 12:02:15 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id E0E7320840
-	for <linux-btrfs@archiver.kernel.org>; Fri,  9 Nov 2018 11:46:31 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org E0E7320840
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
+	by mail.kernel.org (Postfix) with ESMTP id F198C2081C
+	for <linux-btrfs@archiver.kernel.org>; Fri,  9 Nov 2018 12:02:14 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org F198C2081C
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=gmx.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728133AbeKIV0q (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 9 Nov 2018 16:26:46 -0500
-Received: from mx2.suse.de ([195.135.220.15]:54622 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727662AbeKIV0p (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 9 Nov 2018 16:26:45 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 33A7BAEB9;
-        Fri,  9 Nov 2018 11:46:28 +0000 (UTC)
-Subject: Re: [PATCH] Btrfs: simpler and more efficient cleanup of a log tree's
- extent io tree
-To:     fdmanana@kernel.org, linux-btrfs@vger.kernel.org
-References: <20181109104308.13123-1-fdmanana@kernel.org>
-From:   Nikolay Borisov <nborisov@suse.com>
+        id S1727793AbeKIVmc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 9 Nov 2018 16:42:32 -0500
+Received: from mout.gmx.net ([212.227.17.21]:56865 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1727662AbeKIVmc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 9 Nov 2018 16:42:32 -0500
+Received: from [0.0.0.0] ([210.140.77.29]) by mail.gmx.com (mrgmx102
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 0M82zV-1fYT0Q22Ft-00vfHm; Fri, 09
+ Nov 2018 13:02:08 +0100
+Subject: Re: [PATCH] Btrfs: do not set log for full commit when creating
+ non-data block groups
+To:     Filipe Manana <fdmanana@kernel.org>
+Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <20181108131750.27833-1-fdmanana@kernel.org>
+ <28ee2da1-4556-3343-5650-917d4c805181@gmx.com>
+ <CAL3q7H51FO9mXUKEfd3zn7ZdOnhcOLjNn-nO80XFNP5aRxrriQ@mail.gmail.com>
+ <CAL3q7H7E+vVLimR1GbjveN1G8Gi5G9K6_v1wnMrtMLBWLeUCiw@mail.gmail.com>
+ <e65de2b0-a331-4965-44f7-d7f2fc4ccc79@gmx.com>
+ <CAL3q7H5qC9xuf224NP2s8pizf2FULQQyVEJR_bUTS45-v7EC9w@mail.gmail.com>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
 Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <9c2801cb-d104-0af7-13be-357d4d8eea14@suse.com>
-Date:   Fri, 9 Nov 2018 13:46:27 +0200
+Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
+ bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
+ ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
+ rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
+ FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
+ 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
+ ilaVzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
+ CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
+ /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
+ GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
+ q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
+ ABEBAAHCwHwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
+ CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
+ f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
+ mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
+ 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
+ h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
+Message-ID: <10b0424b-4e68-e985-6d74-ac4a76cc1f8e@gmx.com>
+Date:   Fri, 9 Nov 2018 20:02:02 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.2.1
+ Thunderbird/60.3.0
 MIME-Version: 1.0
-In-Reply-To: <20181109104308.13123-1-fdmanana@kernel.org>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+In-Reply-To: <CAL3q7H5qC9xuf224NP2s8pizf2FULQQyVEJR_bUTS45-v7EC9w@mail.gmail.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="2SIh3FJ3JLULsvdF68NAkmbQ74XvA8jyK"
+X-Provags-ID: V03:K1:FWxkHP7JEsw8+PyilLof7k2I7s40FtpgFciAZjwqsO7U2J3TYEz
+ KJCwY1Ts+5fGO/RBoSkHDB1+wsSC0SWL3V+KuBUdSl/YpyYxjDsVh7/ATLrIABB5sfzKRUN
+ f1jq3aYLc12KOsLyYAPW+PLJKmGb08LOTTKUeoIs7crON9kWsi8ifCTJy4WFsMen9jbXtKo
+ 8YY0JlfJBVx84YhQ3Kujg==
+X-UI-Out-Filterresults: notjunk:1;V01:K0:g79vHnh/9R8=:KJvu8le0nVPeV/K/ZsJ17w
+ CjAG6mJWVExiZCyW/NzTLXl2fhIMfltU97/2BSL/C9tIyD8rU1WqllXxYsq8kMgo4G+c3XDdK
+ YELCyQyvrA16g/V6vLpfSxofNxDkZyRHyd5D6VSuadl8L5a18ERs7IQ+FCc/xRIbz5/OYl415
+ 82ZeHq+xSTfAlKQaSluQmqJeJj9QdILftbxv/JiCEkNox+uWG2I5zl5J/C7kP+4xWTWyumC5m
+ C5mAft4lA3zaFybUurQ6l51+HYLQiED/JY4/ngsHEx+22aZtujAExhnxt7+sRQppq0+GSExqr
+ Di0t/Fofa7VS9PhNbrN97iGX/DrnjzaiqpQD6ZVFw5bgN4D6o3uMw5PZlPZRi8D77vYreG27p
+ 4OX7hp29BltXw1/QJMO+A3e8oIGD9DBt7fVwTIIXNcCg22fhBNPx96DsWg5JEhFcUJ+o5iWWu
+ KnRSNFVEjyIqxchB7+K/AMBvDZc25VfHoXbtxNfdMA8v/pghNKrll6fU0iAqv9USZGdCgPJ1p
+ qVZgWOUmCgaa5dKZg9u0AZH0OQ9jzycOiCbK8dDT80j98ANcLlcGLV91T+etPoNbaPrPOTPD7
+ 87ztYbng9dwi5i3tkqID6sftX0Iq8eHQGG+UbBhBrk3UBY5//mKRY6OBdoUdHhu78ir+MnOq5
+ Hoa8/fTdhIbvdpxiN0t7kafuH3Eks635SFl3+8Zdr+s9w1fmX9ivY6OkiXsaVZi2DUZ60aCwB
+ r2MQfdLIz/II6HoGCu8atTk7Rsdbp7P6qaQ7afNMpUNfijRkwlCu5H98JziPAA6SakE5aqIPI
+ ofN2DcND12qzYh+EWgnMNOmTAYiZR5ULMZt8sup1/DSZ5H32gnmmeLVq+20uQ3EAUCS44vvjB
+ YLBdjkdEAmRY0tm6okRNfxacXvcpqVEDALAtfsRAY7F8NU0JjxZBBX90X6R8mh
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--2SIh3FJ3JLULsvdF68NAkmbQ74XvA8jyK
+Content-Type: multipart/mixed; boundary="hT3cEGfsgNZOFTJnX08VO68ToGRwUFNT5";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: Filipe Manana <fdmanana@kernel.org>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-ID: <10b0424b-4e68-e985-6d74-ac4a76cc1f8e@gmx.com>
+Subject: Re: [PATCH] Btrfs: do not set log for full commit when creating
+ non-data block groups
+References: <20181108131750.27833-1-fdmanana@kernel.org>
+ <28ee2da1-4556-3343-5650-917d4c805181@gmx.com>
+ <CAL3q7H51FO9mXUKEfd3zn7ZdOnhcOLjNn-nO80XFNP5aRxrriQ@mail.gmail.com>
+ <CAL3q7H7E+vVLimR1GbjveN1G8Gi5G9K6_v1wnMrtMLBWLeUCiw@mail.gmail.com>
+ <e65de2b0-a331-4965-44f7-d7f2fc4ccc79@gmx.com>
+ <CAL3q7H5qC9xuf224NP2s8pizf2FULQQyVEJR_bUTS45-v7EC9w@mail.gmail.com>
+In-Reply-To: <CAL3q7H5qC9xuf224NP2s8pizf2FULQQyVEJR_bUTS45-v7EC9w@mail.gmail.com>
+
+--hT3cEGfsgNZOFTJnX08VO68ToGRwUFNT5
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
 
-On 9.11.18 г. 12:43 ч., fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
-> 
-> We currently are in a loop finding each range (corresponding to a btree
-> node/leaf) in a log root's extent io tree and then clean it up. This is a
-> waste of time since we are traversing the extent io tree's rb_tree more
-> times then needed (one for a range lookup and another for cleaning it up)
-> without any good reason.
-> 
-> We free the log trees when we are in the critical section of a transaction
-> commit (the transaction state is set to TRANS_STATE_COMMIT_DOING), so it's
-> of great convenience to do everything as fast as possible in order to
-> reduce the time we block other tasks from starting a new transaction.
-> 
-> So fix this by traversing the extent io tree once and cleaning up all its
-> records in one go while traversing it.
-> 
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
 
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+On 2018/11/9 =E4=B8=8B=E5=8D=886:21, Filipe Manana wrote:
+> On Fri, Nov 9, 2018 at 12:27 AM Qu Wenruo <quwenruo.btrfs@gmx.com> wrot=
+e:
+>>
+>>
+>>
+>> On 2018/11/8 =E4=B8=8B=E5=8D=8810:48, Filipe Manana wrote:
+>>> On Thu, Nov 8, 2018 at 2:37 PM Filipe Manana <fdmanana@kernel.org> wr=
+ote:
+>>>>
+>>>> On Thu, Nov 8, 2018 at 2:35 PM Qu Wenruo <quwenruo.btrfs@gmx.com> wr=
+ote:
+>>>>>
+>>>>>
+>>>>>
+>>>>> On 2018/11/8 =E4=B8=8B=E5=8D=889:17, fdmanana@kernel.org wrote:
+>>>>>> From: Filipe Manana <fdmanana@suse.com>
+>>>>>>
+>>>>>> When creating a block group we don't need to set the log for full =
+commit
+>>>>>> if the new block group is not used for data. Logged items can only=
+ point
+>>>>>> to logical addresses of data block groups (through file extent ite=
+ms) so
+>>>>>> there is no need to for the next fsync to fallback to a transactio=
+n commit
+>>>>>> if the new block group is for metadata.
+>>>>>
+>>>>> Is it possible for the log tree blocks to be allocated in that new =
+block
+>>>>> group?
+>>>>
+>>>> Yes.
+>>>
+>>> Now I realize what might be your concern, and this would cause troubl=
+e.
+>>> Surprised this didn't trigger any problem and I had this (together
+>>> with other changes) running tests for some weeks already.
+>>
+>> Maybe it's related metadata chunk pre-allocation so it will be super
+>> hard to hit in normal case, or some extent allocation policy preventin=
+g
+>> us from allocating tree block of newly created bg.
+>=20
+> No, I don't think we have such kind of policy, would have noticed it
+> over the years if we did have one.
+> Metadata chunk allocation just happens much less frequently for
+> workloads the tests exercised.
+
+Then smaller fs along with 4K nodesize would help, but I'm still not
+sure if we could hit such case.
+
+Thanks,
+Qu
+
+>=20
+>>
+>> Thanks,
+>> Qu
+>>
+>>>
+>>>>
+>>>>>
+>>>>> Thanks,
+>>>>> Qu
+>>>>>
+>>>>>>
+>>>>>> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+>>>>>> ---
+>>>>>>  fs/btrfs/extent-tree.c | 3 ++-
+>>>>>>  1 file changed, 2 insertions(+), 1 deletion(-)
+>>>>>>
+>>>>>> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+>>>>>> index 577878324799..588fbd1606fb 100644
+>>>>>> --- a/fs/btrfs/extent-tree.c
+>>>>>> +++ b/fs/btrfs/extent-tree.c
+>>>>>> @@ -10112,7 +10112,8 @@ int btrfs_make_block_group(struct btrfs_tr=
+ans_handle *trans, u64 bytes_used,
+>>>>>>       struct btrfs_block_group_cache *cache;
+>>>>>>       int ret;
+>>>>>>
+>>>>>> -     btrfs_set_log_full_commit(fs_info, trans);
+>>>>>> +     if (type & BTRFS_BLOCK_GROUP_DATA)
+>>>>>> +             btrfs_set_log_full_commit(fs_info, trans);
+>>>>>>
+>>>>>>       cache =3D btrfs_create_block_group_cache(fs_info, chunk_offs=
+et, size);
+>>>>>>       if (!cache)
+>>>>>>
+>>>>>
+>>
 
 
-> ---
->  fs/btrfs/tree-log.c | 16 ++--------------
->  1 file changed, 2 insertions(+), 14 deletions(-)
-> 
-> diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-> index d49edd25f2e5..aac3749f697f 100644
-> --- a/fs/btrfs/tree-log.c
-> +++ b/fs/btrfs/tree-log.c
-> @@ -3204,8 +3204,6 @@ static void free_log_tree(struct btrfs_trans_handle *trans,
->  			  struct btrfs_root *log)
->  {
->  	int ret;
-> -	u64 start;
-> -	u64 end;
->  	struct walk_control wc = {
->  		.free = 1,
->  		.process_func = process_one_buffer
-> @@ -3216,18 +3214,8 @@ static void free_log_tree(struct btrfs_trans_handle *trans,
->  	if (ret)
->  		btrfs_abort_transaction(trans, ret);
->  
-> -	while (1) {
-> -		ret = find_first_extent_bit(&log->dirty_log_pages,
-> -				0, &start, &end,
-> -				EXTENT_DIRTY | EXTENT_NEW | EXTENT_NEED_WAIT,
-> -				NULL);
-> -		if (ret)
-> -			break;
-> -
-> -		clear_extent_bits(&log->dirty_log_pages, start, end,
-> -				  EXTENT_DIRTY | EXTENT_NEW | EXTENT_NEED_WAIT);
-> -	}
-> -
-> +	clear_extent_bits(&log->dirty_log_pages, 0, (u64)-1,
-> +			  EXTENT_DIRTY | EXTENT_NEW | EXTENT_NEED_WAIT);
->  	free_extent_buffer(log->node);
->  	kfree(log);
->  }
-> 
+--hT3cEGfsgNZOFTJnX08VO68ToGRwUFNT5--
+
+--2SIh3FJ3JLULsvdF68NAkmbQ74XvA8jyK
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlvldzoACgkQwj2R86El
+/qjJIQf/WjHo+TqUXF96JBR7a0BS9qxmQPvVLYK6y8gcHLL+QR3o5+xGbp/lc0ok
+duqZECNJiLaTpZTuMVteKKzKekmG+tp7YnSizqQEeCcgJSNiTsNEsm09dTIs93Ba
+J2biTxjG8WYzT9J1RpyQCqtRBJlL1mNj0Sn9ZJsvmxxHE9eqMUd4BbVmwf/FMqYu
++on876MD6c0jWoRUxu5mH2N/w/2jxXyfuc9MffkhbjdtDYmId7RhZZBo4/Dw3ay/
+jaii9/NHIdN7RxseQaMV33uS+LUV3YgHHumwC3dgAP8jdyxUBMTQzoppaA5lL8I/
+dWbgBsMDhl/HQFnh3spLN9BLXuoWrA==
+=88Nd
+-----END PGP SIGNATURE-----
+
+--2SIh3FJ3JLULsvdF68NAkmbQ74XvA8jyK--

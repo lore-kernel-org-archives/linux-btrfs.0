@@ -2,100 +2,129 @@ Return-Path: <SRS0=L0dM=NW=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.7 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.4 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_MUTT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6F9FAC43441
-	for <linux-btrfs@archiver.kernel.org>; Sun, 11 Nov 2018 14:22:43 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6F094C43441
+	for <linux-btrfs@archiver.kernel.org>; Sun, 11 Nov 2018 14:38:09 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 34068208A3
-	for <linux-btrfs@archiver.kernel.org>; Sun, 11 Nov 2018 14:22:43 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2EB4E20871
+	for <linux-btrfs@archiver.kernel.org>; Sun, 11 Nov 2018 14:38:09 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="zEQ7PnAj"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 34068208A3
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=oracle.com
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="HU5yo1Sa"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 2EB4E20871
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728386AbeKLALX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 11 Nov 2018 19:11:23 -0500
-Received: from userp2130.oracle.com ([156.151.31.86]:47198 "EHLO
-        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728270AbeKLALX (ORCPT
+        id S1728323AbeKLA0v (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 11 Nov 2018 19:26:51 -0500
+Received: from mail-pl1-f193.google.com ([209.85.214.193]:33608 "EHLO
+        mail-pl1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727805AbeKLA0v (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 11 Nov 2018 19:11:23 -0500
-Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
-        by userp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id wABEIu2J007495
-        for <linux-btrfs@vger.kernel.org>; Sun, 11 Nov 2018 14:22:41 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
- date : message-id : in-reply-to : references; s=corp-2018-07-02;
- bh=x7DTj6+a06P8mBvG7dCWlhyV2jPAbcBQ27BLBj87V90=;
- b=zEQ7PnAjXaPDzGEAKY36GrOpW607DzW0D2BhfDQVH6DLwnO+u/aWVN4sdzcoWUoGxtgS
- 5FAn/w4tMoMNmb2uExwPwbhcCyzRtBfIHqpEPoaF/pTWDBVxpvGgeHTayZJZiT2e5NLZ
- 5S9t3RPrBnu6YHFuGgT7Fu59tfx7rZ+KLAKwFbpkxLWnbDwdoLo4VOZRVUHmdCdkI7L9
- O/B6kv9Mwhc6W3i6CZEjgOMH66ZWwa7lYzXMtarJAw2WM80hNIAsPEYSrQ9dJl/+6hT5
- RhEcPfvERWVHCY6bF3/7eGlKvAqcBwSI+9Yf/OmI1a9BRlyF/e71ANkXiFpR2GlSrR1Y vQ== 
-Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
-        by userp2130.oracle.com with ESMTP id 2nnwg121ny-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Sun, 11 Nov 2018 14:22:40 +0000
-Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id wABEMd9d025734
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Sun, 11 Nov 2018 14:22:40 GMT
-Received: from abhmp0009.oracle.com (abhmp0009.oracle.com [141.146.116.15])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id wABEMdjH006590
-        for <linux-btrfs@vger.kernel.org>; Sun, 11 Nov 2018 14:22:39 GMT
-Received: from tpasj.localdomain (/183.90.37.85)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Sun, 11 Nov 2018 06:22:38 -0800
-From:   Anand Jain <anand.jain@oracle.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 9/9] btrfs: add explicit check for replace result no error
-Date:   Sun, 11 Nov 2018 22:22:24 +0800
-Message-Id: <1541946144-8174-10-git-send-email-anand.jain@oracle.com>
-X-Mailer: git-send-email 1.8.3.1
-In-Reply-To: <1541946144-8174-1-git-send-email-anand.jain@oracle.com>
-References: <1541946144-8174-1-git-send-email-anand.jain@oracle.com>
-X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9073 signatures=668683
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=1 malwarescore=0
- phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=791
- adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.0.1-1807170000 definitions=main-1811110137
+        Sun, 11 Nov 2018 19:26:51 -0500
+Received: by mail-pl1-f193.google.com with SMTP id w22-v6so3075912plk.0;
+        Sun, 11 Nov 2018 06:38:07 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=date:from:to:cc:subject:message-id:references:mime-version
+         :content-disposition:in-reply-to:user-agent;
+        bh=wKO8N9kud+dP84v+Lf4AE+9n+QcM8V9UzO4KS7EyofI=;
+        b=HU5yo1SaQgZZJXXbqIthDcWbUXEQ9MHGa0Z9gAC7Xjos/rkZHePQCqBnqDUta3W0w7
+         W+aeKzS06Nqm5A8LNYVzaNZ3BdFf7tBL/iN3bgEgjD4bM+P3ESfszvchJdaJ6kkDFqaT
+         iKoRMQL4ZpByO2DhlqHyEZ5uTD8dV2Tx0twzocvoKCMbeHxSzUSmtvhdZIu5zgVFc/29
+         j3gICncJ5Sx8BXl49mzHnvCcTI7y9lV4SmNCM+vDagicM+RcwcT4opw9a0as0xlZ/qWs
+         BUGCBeR3AMOatcSKK3FgETgJTD0mm6MR7qeSs0gGx1oDeE1b+YzfOFMhMZdwQ19XWGW7
+         HRYQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
+         :mime-version:content-disposition:in-reply-to:user-agent;
+        bh=wKO8N9kud+dP84v+Lf4AE+9n+QcM8V9UzO4KS7EyofI=;
+        b=sJHALSG3aFihf6CcpPIIW1czJkPeCWA6s6e2WdhJ1J/VmejkBkJU2bfhrObL95TWgq
+         1MFFo1BSwWPJp/0q3as8CpqU7xmPfFl/m3mjpzF+rlN29qhv58XX6ZhyplEmRvI+3MFR
+         dWbnNCAd8g+NOmPU7YbFhFNldPjJ6uMQI2gr79ROyGVz2BM7fOi3jxjBYD7Slu/N1PrU
+         MCl159aefNVGQP17U7atvCr9+Y6gxEWCEBe1Wp8UN5j4ctQz2JbjCE4MN56pwAFstxNC
+         P9FvBOVWaLUuQnC7MH7+Ts9lJfORdLzlnmuWqad5SMTAa1QDl82yelDti95RDRS/iVKJ
+         BItg==
+X-Gm-Message-State: AGRZ1gJJx0H69Cfd8CZSps5VOxq0pjtwZj24UP3LUi6o3sEfCiOOukNH
+        P1dqoAy70RaWQsMLVIK49po=
+X-Google-Smtp-Source: AJdET5eAROBosGJwUZC2UoBQb3cKeudydem8bY2mlomdmMX8+M5dCKK/BDLyAP3Rwx9h0MidOR/F/g==
+X-Received: by 2002:a17:902:ab81:: with SMTP id f1-v6mr16566146plr.103.1541947087165;
+        Sun, 11 Nov 2018 06:38:07 -0800 (PST)
+Received: from localhost ([128.199.137.77])
+        by smtp.gmail.com with ESMTPSA id p69-v6sm6407688pfi.85.2018.11.11.06.38.05
+        (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
+        Sun, 11 Nov 2018 06:38:06 -0800 (PST)
+Date:   Sun, 11 Nov 2018 22:37:59 +0800
+From:   Eryu Guan <guaneryu@gmail.com>
+To:     dsterba@suse.cz
+Cc:     Omar Sandoval <osandov@osandov.com>, fstests@vger.kernel.org,
+        kernel-team@fb.com, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 0/7] fstests: test Btrfs swapfile support
+Message-ID: <20181111143759.GA3889@desktop>
+References: <cover.1541193856.git.osandov@fb.com>
+ <20181104160931.GE12788@desktop>
+ <20181106130630.GA24115@twin.jikos.cz>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20181106130630.GA24115@twin.jikos.cz>
+User-Agent: Mutt/1.10.1 (2018-07-13)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-We recast the replace return status
-BTRFS_IOCTL_DEV_REPLACE_RESULT_SCRUB_INPROGRESS to 0, to indicate no
-error.
-And since BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_ERROR should also return 0,
-which is also declared as 0, so we just return. Instead add it to the if
-statement so that there is enough clarity while reading the code.
+On Tue, Nov 06, 2018 at 02:06:30PM +0100, David Sterba wrote:
+> On Mon, Nov 05, 2018 at 12:09:31AM +0800, Eryu Guan wrote:
+> > On Fri, Nov 02, 2018 at 02:29:35PM -0700, Omar Sandoval wrote:
+> > > From: Omar Sandoval <osandov@fb.com>
+> > > 
+> > > This series fixes a couple of generic swapfile tests and adds some
+> > > Btrfs-specific swapfile tests. Btrfs swapfile support is scheduled for
+> > > 4.21 [1].
+> > > 
+> > > 1: https://www.spinics.net/lists/linux-btrfs/msg83454.html
+> > > 
+> > > Thanks!
+> > 
+> > Thanks for the fixes and new tests!
+> > 
+> > > 
+> > > Omar Sandoval (7):
+> > >   generic/{472,496,497}: fix $seeqres typo
+> > >   generic/{472,496}: fix swap file creation on Btrfs
+> > 
+> > I've merged above two patches, they're two obvious bug fixes.
+> > 
+> > >   btrfs: test swap file activation restrictions
+> > >   btrfs: test invalid operations on a swap file
+> > >   btrfs: test swap files on multiple devices
+> > >   btrfs: test device add/remove/replace with an active swap file
+> > >   btrfs: test balance and resize with an active swap file
+> > 
+> > These tests look fine to me, but it'd be really great if btrfs folks
+> > could help review above tests and provide Reviewed-by tags.
+> 
+> All look good to me,
+> 
+> Reviewed-by: David Sterba <dsterba@suse.com>
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- fs/btrfs/dev-replace.c | 5 +++--
- 1 file changed, 3 insertions(+), 2 deletions(-)
+Thanks a lot for the review!
 
-diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index 40a0942b4659..cc25a34f87b0 100644
---- a/fs/btrfs/dev-replace.c
-+++ b/fs/btrfs/dev-replace.c
-@@ -533,8 +533,9 @@ int btrfs_dev_replace_by_ioctl(struct btrfs_fs_info *fs_info,
- 					args->start.cont_reading_from_srcdev_mode);
- 	args->result = ret;
- 	/* don't warn if EINPROGRESS, someone else might be running scrub */
--	if (ret == BTRFS_IOCTL_DEV_REPLACE_RESULT_SCRUB_INPROGRESS)
--		ret = 0;
-+	if (ret == BTRFS_IOCTL_DEV_REPLACE_RESULT_SCRUB_INPROGRESS ||
-+	    ret == BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_ERROR)
-+		return 0;
- 
- 	return ret;
- }
--- 
-1.8.3.1
+> 
+> A few nits I saw:
+> 
+> - the command names should not be shortened, ie. 'btrfs subvolume
+>   snapshot' instead of 'btrfs subvol snap'
+> - the test description (eg. 3/7 and 4/7) could mention which case is
+>   tested, eg. swapfile with compression or COW or snapshot
+> - 4/7 has typo 'nowcow' in a comment
 
+I've addressed these nits on commit.
+
+Thanks,
+Eryu

@@ -2,32 +2,33 @@ Return-Path: <SRS0=fY4Z=NX=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-4.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1794BC43441
-	for <linux-btrfs@archiver.kernel.org>; Mon, 12 Nov 2018 07:31:21 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5A296C43441
+	for <linux-btrfs@archiver.kernel.org>; Mon, 12 Nov 2018 07:50:42 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D76C821722
-	for <linux-btrfs@archiver.kernel.org>; Mon, 12 Nov 2018 07:31:20 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org D76C821722
+	by mail.kernel.org (Postfix) with ESMTP id 1996B216FD
+	for <linux-btrfs@archiver.kernel.org>; Mon, 12 Nov 2018 07:50:42 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 1996B216FD
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727030AbeKLRXS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 12 Nov 2018 12:23:18 -0500
-Received: from mx2.suse.de ([195.135.220.15]:38580 "EHLO mx1.suse.de"
+        id S1727354AbeKLRmm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 12 Nov 2018 12:42:42 -0500
+Received: from mx2.suse.de ([195.135.220.15]:40644 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727000AbeKLRXS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 12 Nov 2018 12:23:18 -0500
+        id S1725871AbeKLRml (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 12 Nov 2018 12:42:41 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 68530B00B;
-        Mon, 12 Nov 2018 07:31:17 +0000 (UTC)
-Subject: Re: [PATCH] btrfs: remove redundant replace_state init
-To:     Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
-References: <1541999115-10540-1-git-send-email-anand.jain@oracle.com>
+        by mx1.suse.de (Postfix) with ESMTP id DC479B025;
+        Mon, 12 Nov 2018 07:50:36 +0000 (UTC)
+Subject: Re: [RFC] BTRFS_DEV_REPLACE_ITEM_STATE_* doesn't match with on disk
+To:     Anand Jain <anand.jain@oracle.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <e932064c-6182-a87c-3475-bf1765b165bc@oracle.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -72,12 +73,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  KIuxEcV8wcVjr+Wr9zRl06waOCkgrQbTPp631hToxo+4rA1jiQF2M80HAet65ytBVR2pFGZF
  zGYYLqiG+mpUZ+FPjxk9kpkRYz61mTLSY7tuFljExfJWMGfgSg1OxfLV631jV1TcdUnx+h3l
  Sqs2vMhAVt14zT8mpIuu2VNxcontxgVr1kzYA/tQg32fVRbGr449j1gw57BV9i0vww==
-Message-ID: <94850e4f-f132-8ad6-8203-84eb68b01b35@suse.com>
-Date:   Mon, 12 Nov 2018 09:31:16 +0200
+Message-ID: <e19a1d1c-3d93-7b5c-01b1-83c0c53323c8@suse.com>
+Date:   Mon, 12 Nov 2018 09:50:36 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <1541999115-10540-1-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <e932064c-6182-a87c-3475-bf1765b165bc@oracle.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -88,29 +89,77 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 12.11.18 г. 7:05 ч., Anand Jain wrote:
-> dev_replace::replace_state has been set to
-> BTRFS_DEV_REPLACE_ITEM_STATE_NEVER_STARTED (0) in the same function,
-> So delete the line which sets replace_state = 0;
+On 12.11.18 г. 6:58 ч., Anand Jain wrote:
 > 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-
-> ---
->  fs/btrfs/dev-replace.c | 1 -
->  1 file changed, 1 deletion(-)
+> The dev_replace_state defines are miss matched between the
+> BTRFS_IOCTL_DEV_REPLACE_STATE_* and BTRFS_DEV_REPLACE_ITEM_STATE_* [1].
 > 
-> diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-> index cc25a34f87b0..cdc4313446a9 100644
-> --- a/fs/btrfs/dev-replace.c
-> +++ b/fs/btrfs/dev-replace.c
-> @@ -59,7 +59,6 @@ int btrfs_init_dev_replace(struct btrfs_fs_info *fs_info)
->  			BTRFS_DEV_REPLACE_ITEM_STATE_NEVER_STARTED;
->  		dev_replace->cont_reading_from_srcdev_mode =
->  		    BTRFS_DEV_REPLACE_ITEM_CONT_READING_FROM_SRCDEV_MODE_ALWAYS;
-> -		dev_replace->replace_state = 0;
->  		dev_replace->time_started = 0;
->  		dev_replace->time_stopped = 0;
->  		atomic64_set(&dev_replace->num_write_errors, 0);
+> [1]
+> -----------------------------
+> btrfs.h:#define BTRFS_IOCTL_DEV_REPLACE_STATE_FINISHED        2
+> btrfs.h:#define BTRFS_IOCTL_DEV_REPLACE_STATE_CANCELED        3
+> btrfs.h:#define BTRFS_IOCTL_DEV_REPLACE_STATE_SUSPENDED        4
+> 
+> btrfs_tree.h:#define BTRFS_DEV_REPLACE_ITEM_STATE_SUSPENDED    2
+> btrfs_tree.h:#define BTRFS_DEV_REPLACE_ITEM_STATE_FINISHED    3
+> btrfs_tree.h:#define BTRFS_DEV_REPLACE_ITEM_STATE_CANCELED    4
+> -----------------------------
+> 
+> The BTRFS_DEV_REPLACE_ITEM_STATE_* series is unused in both btrfs.ko and
+> btrfs-progs, the on-disk also follows BTRFS_IOCTL_DEV_REPLACE_STATE_*
+> (we set dev_replace->replace_state using the
+> BTRFS_IOCTL_DEV_REPLACE_STATE_* defines and write to the on-disk).
+> 
+>  359         btrfs_set_dev_replace_replace_state(eb, ptr,
+>  360                 dev_replace->replace_state);
+> 
+> IMO it should be ok to delete the BTRFS_DEV_REPLACE_ITEM_STATE_*
+> altogether? But how about the userland progs other than btrfs-progs?
+> If not at least fix the miss match as in [2], any comments?
+
+Unfortunately you are right. This seems to stem from sloppy job back in
+the days of initial dev-replace support. BTRFS_DEV_REPLACE_ITEM_STATE_*
+were added in e922e087a35c ("Btrfs: enhance btrfs structures for device
+replace support"), yet they were never used. And the
+IOCTL_DEV_REPLACE_STATE* were added in e93c89c1aaaa ("Btrfs: add new
+sources for device replace code").
+
+It looks like the ITEM_STATE* definitions were stillborn so to speak and
+personally I'm in favor of removing them. They shouldn't have been
+merged in the first place and indeed the patch doesn't even have a
+Reviewed-by tag. So it originated from the, I'd say, spartan days of
+btrfs development...
+
+David,  any code which is using BTRFS_DEV_REPLACE_ITEM_STATE_SUSPENDED
+is inherently broken, so how about we remove those definitions, then
+when it's compilation is broken in the future the author will actually
+have a chance to fix it, though it's highly unlikely anyone is relying
+on those definitions.
+
+
+> 
+> [2]
+> --------------------------------------
+> diff --git a/include/uapi/linux/btrfs_tree.h
+> b/include/uapi/linux/btrfs_tree.h
+> index aff1356c2bb8..9ffa7534cadf 100644
+> --- a/include/uapi/linux/btrfs_tree.h
+> +++ b/include/uapi/linux/btrfs_tree.h
+> @@ -805,9 +805,9 @@ struct btrfs_dev_stats_item {
+>  #define BTRFS_DEV_REPLACE_ITEM_CONT_READING_FROM_SRCDEV_MODE_AVOID     1
+>  #define BTRFS_DEV_REPLACE_ITEM_STATE_NEVER_STARTED     0
+>  #define BTRFS_DEV_REPLACE_ITEM_STATE_STARTED           1
+> -#define BTRFS_DEV_REPLACE_ITEM_STATE_SUSPENDED         2
+> -#define BTRFS_DEV_REPLACE_ITEM_STATE_FINISHED          3
+> -#define BTRFS_DEV_REPLACE_ITEM_STATE_CANCELED          4
+> +#define BTRFS_DEV_REPLACE_ITEM_STATE_FINISHED          2
+> +#define BTRFS_DEV_REPLACE_ITEM_STATE_CANCELED          3
+> +#define BTRFS_DEV_REPLACE_ITEM_STATE_SUSPENDED         4
+> 
+>  struct btrfs_dev_replace_item {
+>         /*
+> --------------------------------------
+> 
+> 
+> Thanks, Anand
 > 

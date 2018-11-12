@@ -2,282 +2,108 @@ Return-Path: <SRS0=fY4Z=NX=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D6D81C43441
-	for <linux-btrfs@archiver.kernel.org>; Mon, 12 Nov 2018 11:58:50 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5EE6BC43441
+	for <linux-btrfs@archiver.kernel.org>; Mon, 12 Nov 2018 12:26:23 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 785C7223DD
-	for <linux-btrfs@archiver.kernel.org>; Mon, 12 Nov 2018 11:58:50 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 785C7223DD
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=synesis.ru
+	by mail.kernel.org (Postfix) with ESMTP id 15F7C22419
+	for <linux-btrfs@archiver.kernel.org>; Mon, 12 Nov 2018 12:26:23 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 15F7C22419
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=pignat.org
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729394AbeKLVvp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 12 Nov 2018 16:51:45 -0500
-Received: from mail-lj1-f193.google.com ([209.85.208.193]:39948 "EHLO
-        mail-lj1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1729133AbeKLVvp (ORCPT
+        id S1729476AbeKLWTY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 12 Nov 2018 17:19:24 -0500
+Received: from relay6-d.mail.gandi.net ([217.70.183.198]:36961 "EHLO
+        relay6-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1729244AbeKLWTY (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 12 Nov 2018 16:51:45 -0500
-Received: by mail-lj1-f193.google.com with SMTP id t22-v6so7344333lji.7
-        for <linux-btrfs@vger.kernel.org>; Mon, 12 Nov 2018 03:58:47 -0800 (PST)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id:mime-version
-         :content-transfer-encoding;
-        bh=ZuGD9nZYxOpwSJpV5qy7fur2OP4Zii4QnIqPflAzeUg=;
-        b=Zo2Fvc2kd0VmUmHe/MIMDnnU49gCJjgC+nN/88qGQdqDDgOGzJhwulRl/wznt6zqYL
-         A3Ba2GIU2p6Tan+srjbU6PUQUi/vKsiOWFjzyR2WKbCD5gblUR9ZcM0+1AghFD4iqaq7
-         M+R4oz/Vea9vgxJnM+q+CFYinofm9/P26h76PNMWTuIdurWIVtis5BWbpCfwA9Za9qU5
-         G5IhNJwMsDdHpBgc/vEvucBBO92boqt8+MKRavmvOobC2Ssh4iYsskgk4LdBnAWH5k+k
-         GdZCZBEvXPw7ihLswdWdHUifp6gRj6HQ+MhmpwCJ2dtksRptNF7kZLrm1EFGHCnMtJsO
-         hzVQ==
-X-Gm-Message-State: AGRZ1gIaXpxVcuzYWH2oTgbeU2dJ5njYFuHeLCgrWd6clrC5wdpc3zCu
-        TIPeHk66qzx0r4g6pDahGTO7AiRm
-X-Google-Smtp-Source: AJdET5dfQlY6212ZgCafAXTOc8f2y1uiyjqInoaKdQol7+DV/BQQUQsGZ5gi75XVRnaNZio8AjQHJA==
-X-Received: by 2002:a2e:145a:: with SMTP id 26-v6mr495458lju.116.1542023926174;
-        Mon, 12 Nov 2018 03:58:46 -0800 (PST)
-Received: from TitovetsT.synesis.local ([86.57.155.118])
-        by smtp.gmail.com with ESMTPSA id j76-v6sm3110043ljb.12.2018.11.12.03.58.45
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Mon, 12 Nov 2018 03:58:45 -0800 (PST)
-From:   Timofey Titovets <timofey.titovets@synesis.ru>
+        Mon, 12 Nov 2018 17:19:24 -0500
+X-Originating-IP: 153.109.5.233
+Received: from [153.109.5.233] (unknown [153.109.5.233])
+        (Authenticated sender: marc@pignat.org)
+        by relay6-d.mail.gandi.net (Postfix) with ESMTPSA id E34F6C0011
+        for <linux-btrfs@vger.kernel.org>; Mon, 12 Nov 2018 12:26:18 +0000 (UTC)
 To:     linux-btrfs@vger.kernel.org
-Cc:     nborisov@suse.com, Timofey Titovets <nefelim4ag@gmail.com>
-Subject: [PATCH V7] Btrfs: enhance raid1/10 balance heuristic
-Date:   Mon, 12 Nov 2018 14:58:39 +0300
-Message-Id: <20181112115839.13969-1-timofey.titovets@synesis.ru>
-X-Mailer: git-send-email 2.19.1
+From:   Marc Pignat <marc@pignat.org>
+Subject: why /dev/ptmx is in the snapshots?
+Openpgp: preference=signencrypt
+Autocrypt: addr=marc@pignat.org; keydata=
+ xsFNBFDql5wBEADRyGxEtQFSx5hf5GOYoDkbNuSZd+DFwnLeQ/jX/z+9TjFjGA4HIY7srvNu
+ i+r/kcbwP/TAfJn8IlELeFwU0+IePtgQTTIekeTw57cnTcUEmAvq4eA6msCITg8TTRzqvtyd
+ 6b2gTxj1YnCz3JW6z577OXNJeaxRcq3R0nRSo6lHEtHqyU306NqZBnYO2FYNeUxCNLQmP70L
+ dOZjHVClYIvHYcIgepQkqhNXjD+/WJRlGTJ/1fccvv5BiaCK67iYxtceJWJ2vSDWRNgeTyAF
+ GqbVyyQqlIAkAEjLdUg6LX61n7IwdCvS8gaWp/CByyQ3bhqzxJW04pnFbwBEoWyolT98Rumi
+ AAw69ioF0ffPtzFmN92RCysfzApZwClw4qS68Wd4rGNnRowkJm7xZ0nKmRs3WNXnt8vOY7uX
+ fLLUWnQFjOvTRtOQdyeDuG0rcJya4pr4kCMZTWrvZcdiL4NvDrstEru3q8FY3E+AJM6Pdtki
+ rvrhdllnCQ94YxJw6EDoVR6HJfDzdaCmqq7KtIy0WcAy99dBkwqAd2pJzSsmzcqVNEC+Msab
+ p0uXyKvsOnTZl8xodixJKTyjfGVnA5NuNmwgUIVQbUe+T0PSxAD1XA3B6wxgwStzkmMVSLwJ
+ 6A292GjXcKGZL+zk94J8nQAkIPLzUlWz1x3LY5q9My+QpQ9MeQARAQABzR1NYXJjIFBpZ25h
+ dCA8bWFyY0BwaWduYXQub3JnPsLBfwQTAQIAKQIbIwYLCQgHAwIEFQIIAwQWAgMBAh4BAheA
+ AhkBBQJZFCvYBQkRj5W8AAoJEL0Zh88wu28i7UoQAJAn+OCu9DAZet6eiZKtBXjLtUXu5KPq
+ bqQ5uCwCtrRV4SrrrwJosVBhk5JTDSEDya6NPOqva+UmWhVbDon67iLVHxsywYDQ0Kp7H3DM
+ fCXwHXy2GZZ+9XVMA+2dAExjdsOiLh1qPZSMNwbS3AzscwrIyzhXYxNdab5T7VAl1lvbz7Y5
+ zvtfYuiNggEDp+CF3jr2B+qZu/tMAZ/4QUyoIFbp838Kqwxdjax2+SrvnSB1jmd280FDB35R
+ GnOkZoSGd2wc7B4UI0qIArdsbYLrWsEo9d3X6lypLiMVeXZFz+05W5D1toTKFBD1XTgsj8mm
+ AoGyEbxA2wYN45R14S8NzOEquZfaMJX2alyx65NCcC7kY3ztDLwgsCka0IdkaeUqagKEujyW
+ C9bRsspoFxH96mjdull+moB6kSKN+7zzKspfwnibs293F2ndUxhGmFxDaNUO/0d5CMmDmq+7
+ nNwvYnELBPPYmkribjrTYkxKq+P+SNz9KCGQDshLBUYNyBEZFnsNnxiUJKiQO5oG2rwdsxYO
+ bh8DoZX2zJQCCAicScmyRaXTAC+N5G7DLFiH1dPHSDZw1VMchHyJpapIimWdALfkRFuIj/Xx
+ eqrzudkZDJ8E9xG3gUEOki960jxREy0pMfESQGTelQHuP5zMHc13o0TwbC65YH2RPjYy6nES
+ f4HrzsFNBFRYxIABEAChIIh+7dCvNk0BuIzEGFLl2Za93FJgHFwNrotXLxAcwbLXkccp8CYx
+ QMFG5QHwIFHrwu+s+Ip2C+3V4JELgv2Y3cwBCghhfDs0CgS0T9lfCEEmUGxvf1VIV2Q+3S5d
+ Q+amz3S5s5IlQiPuySozNGaE28esR4IBboN7X3Idceyup9vPMlg/laeHrUTCFE5CoOHVhl/h
+ p6EqXyw/EtdwRcA9F21+W6mWcuysNs0efsp0GfRGTaEBVKca2ILReB35w8VxtFlisNvCIT5Y
+ mkvpcDUx2rbUPiKxOS8SrLZxnL+6mjIY5kDkTWlL8zrSAuzbaNSVkp6pzN6/fwDstufqHuoF
+ NT7FHc+DVceRHA9muvc86i2uFaf7xvqDWNl9BtKwFZy+4ACOM7GQ+sWHTt9tl2VumvkzNc6Y
+ d4G4GQmdzHCPx64Vu8kZdP2i35sQWfOvrVU1dQxmElf4jW3L9lpgveAmZEqulNlZmTm+tP5J
+ 8XvJzqNUjMgUH9jGcApXj1oh3/n/UkpxYNqPh9FXI8KvpROMghGdD5eKxd0WR8POC81npjcy
+ wae3ng8xvqURR0neghRkjjc4Puqo09psmX0/MHFCxA9YufpKKaW7MHDsABdgx5RV7BPom189
+ Gk+TAhbt9LpGySRsItwov3I4+NXglMU17ne40BelkJDunAPk7eIH4wARAQABwsFlBBgBAgAP
+ AhsMBQJZFCveBQkOIWjeAAoJEL0Zh88wu28iq+MP/iJhA1QJgEHY55zg+29kxOgA8zL/O3M7
+ dfhCvBH2HVEuaXDbKdh/U5wO5CsqXk0VIYNc5ks1BEQVqkZ+lXtGBEtxaHBYYErspsQFh1Dk
+ /sTCuAYPke3jGtrcgLGAQYCNzqOid5QzWhTu88igfhBM+wqorsYF28sSTBfek+Hlbg6udBRp
+ HRY1YoihE+ZJUAd1FvCwXPSoyBio2oNtt3TQ2YD3eegVijqSV4xzANLTf6Wot66P9J+AEFp8
+ nZVtPwRSbNzv/jWnQeuuAjC5b7pkMsSmODcPwvfnXi1HqNEeIcL6JAUPqUlyle95AGneQTw1
+ 9TmRcGWEyRvJ8Sb2U0VGM1r2JTlaDnOsQrPT8qUGso6FgmwOMckLdwEK6F5AGbng3Am6LCx+
+ LMq3jbRsakiD8ciINauEWzqN2h1fRCjBvbuXR7p43ll3FT50FdM8IhjQaLfUaiQRgMFyJi0g
+ 7NZMxtavEvEinVimca01v7jx85M7zGQLsWO/pBMFG+KEuWfJIAGFrxyPit4IXBB9hEksEKUq
+ P2f6vDydLv5FYnG+nO34GLiFLrenXF0hKjilNZos1xtcMKXty+/6qQ/15wbC+ahU6AKF1E+s
+ 4NJzCezZRe7XVn6epk+pJy9iEe+NRqtvCct8D+G7Y7+LGssGlxCMZS0HriE2oc4HpX+qdq0R F9p4
+Message-ID: <8f13b640-f50e-9134-57de-96993dfb0fa4@pignat.org>
+Date:   Mon, 12 Nov 2018 13:26:17 +0100
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.2.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Timofey Titovets <nefelim4ag@gmail.com>
+I have a btrfs root partition and I use snapper to automatically take snapshots (ubuntu 18.04 LTS). 
 
-Currently btrfs raid1/10 balancer bаlance requests to mirrors,
-based on pid % num of mirrors.
+The `/dev/ptmx` file change between each snapshots despite `/dev` is mounted as a devtmpfs file system.
 
-Make logic understood:
- - if one of underline devices are non rotational
- - Queue length to underline devices
+I have tried creating a file in `/dev`, and as expected it is not snapshotted.
 
-By default try use pid % num_mirrors guessing, but:
- - If one of mirrors are non rotational, repick optimal to it
- - If underline mirror have less queue length then optimal,
-   repick to that mirror
+My first intuition was that one service was started before `/dev` is mounted as a devtmpfs and still using it, but `sudo fuser /dev/ptmx` show no use of that file.
 
-For avoid round-robin request balancing,
-lets round down queue length:
- - By 8 for rotational devs
- - By 2 for all non rotational devs
 
-Some bench results from mail list
-(Dmitrii Tcvetkov <demfloro@demfloro.ru>):
-Benchmark summary (arithmetic mean of 3 runs):
-         Mainline     Patch
-------------------------------------
-RAID1  | 18.9 MiB/s | 26.5 MiB/s
-RAID10 | 30.7 MiB/s | 30.7 MiB/s
-------------------------------------------------------------------------
-mainline, fio got lucky to read from first HDD (quite slow HDD):
-Jobs: 1 (f=1): [r(1)][100.0%][r=8456KiB/s,w=0KiB/s][r=264,w=0 IOPS]
-  read: IOPS=265, BW=8508KiB/s (8712kB/s)(499MiB/60070msec)
-  lat (msec): min=2, max=825, avg=60.17, stdev=65.06
-------------------------------------------------------------------------
-mainline, fio got lucky to read from second HDD (much more modern):
-Jobs: 1 (f=1): [r(1)][8.7%][r=11.9MiB/s,w=0KiB/s][r=380,w=0 IOPS]
-  read: IOPS=378, BW=11.8MiB/s (12.4MB/s)(710MiB/60051msec)
-  lat (usec): min=416, max=644286, avg=42312.74, stdev=48518.56
-------------------------------------------------------------------------
-mainline, fio got lucky to read from an SSD:
-Jobs: 1 (f=1): [r(1)][100.0%][r=436MiB/s,w=0KiB/s][r=13.9k,w=0 IOPS]
-  read: IOPS=13.9k, BW=433MiB/s (454MB/s)(25.4GiB/60002msec)
-  lat (usec): min=343, max=16319, avg=1152.52, stdev=245.36
-------------------------------------------------------------------------
-With the patch, 2 HDDs:
-Jobs: 1 (f=1): [r(1)][100.0%][r=17.5MiB/s,w=0KiB/s][r=560,w=0 IOPS]
-  read: IOPS=560, BW=17.5MiB/s (18.4MB/s)(1053MiB/60052msec)
-  lat (usec): min=435, max=341037, avg=28511.64, stdev=30000.14
-------------------------------------------------------------------------
-With the patch, HDD(old one)+SSD:
-Jobs: 1 (f=1): [r(1)][100.0%][r=371MiB/s,w=0KiB/s][r=11.9k,w=0 IOPS]
-  read: IOPS=11.6k, BW=361MiB/s (379MB/s)(21.2GiB/60084msec)
-  lat  (usec): min=363, max=346752, avg=1381.73, stdev=6948.32
+Can someone explain this behavior?
 
-Changes:
-  v1 -> v2:
-    - Use helper part_in_flight() from genhd.c
-      to get queue length
-    - Move guess code to guess_optimal()
-    - Change balancer logic, try use pid % mirror by default
-      Make balancing on spinning rust if one of underline devices
-      are overloaded
-  v2 -> v3:
-    - Fix arg for RAID10 - use sub_stripes, instead of num_stripes
-  v3 -> v4:
-    - Rebased on latest misc-next
-  v4 -> v5:
-    - Rebased on latest misc-next
-  v5 -> v6:
-    - Fix spelling
-    - Include bench results
-  v6 -> v7:
-    - Fixes based on Nikolay Borisov review:
-      * Assume num == 2
-      * Remove "for" loop based on that assumption, where possible
-      * No functional changes
+Thank you in advance and best regards
 
-Signed-off-by: Timofey Titovets <nefelim4ag@gmail.com>
-Tested-by: Dmitrii Tcvetkov <demfloro@demfloro.ru>
-Reviewed-by: Dmitrii Tcvetkov <demfloro@demfloro.ru>
----
- block/genhd.c      |   1 +
- fs/btrfs/volumes.c | 100 ++++++++++++++++++++++++++++++++++++++++++++-
- 2 files changed, 100 insertions(+), 1 deletion(-)
 
-diff --git a/block/genhd.c b/block/genhd.c
-index be5bab20b2ab..939f0c6a2d79 100644
---- a/block/genhd.c
-+++ b/block/genhd.c
-@@ -81,6 +81,7 @@ void part_in_flight(struct request_queue *q, struct hd_struct *part,
- 				atomic_read(&part->in_flight[1]);
- 	}
- }
-+EXPORT_SYMBOL_GPL(part_in_flight);
- 
- void part_in_flight_rw(struct request_queue *q, struct hd_struct *part,
- 		       unsigned int inflight[2])
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index f4405e430da6..a6632cc2bfab 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -13,6 +13,7 @@
- #include <linux/raid/pq.h>
- #include <linux/semaphore.h>
- #include <linux/uuid.h>
-+#include <linux/genhd.h>
- #include <linux/list_sort.h>
- #include "ctree.h"
- #include "extent_map.h"
-@@ -5159,6 +5160,102 @@ int btrfs_is_parity_mirror(struct btrfs_fs_info *fs_info, u64 logical, u64 len)
- 	return ret;
- }
- 
-+/**
-+ * bdev_get_queue_len - return rounded down in flight queue length of bdev
-+ *
-+ * @bdev: target bdev
-+ * @round_down: round factor big for hdd and small for ssd, like 8 and 2
-+ */
-+static int bdev_get_queue_len(struct block_device *bdev, int round_down)
-+{
-+	int sum;
-+	struct hd_struct *bd_part = bdev->bd_part;
-+	struct request_queue *rq = bdev_get_queue(bdev);
-+	uint32_t inflight[2] = {0, 0};
-+
-+	part_in_flight(rq, bd_part, inflight);
-+
-+	sum = max_t(uint32_t, inflight[0], inflight[1]);
-+
-+	/*
-+	 * Try prevent switch for every sneeze
-+	 * By roundup output num by some value
-+	 */
-+	return ALIGN_DOWN(sum, round_down);
-+}
-+
-+/**
-+ * guess_optimal - return guessed optimal mirror
-+ *
-+ * Optimal expected to be pid % num_stripes
-+ *
-+ * That's generaly ok for spread load
-+ * Add some balancer based on queue length to device
-+ *
-+ * Basic ideas:
-+ *  - Sequential read generate low amount of request
-+ *    so if load of drives are equal, use pid % num_stripes balancing
-+ *  - For mixed rotate/non-rotate mirrors, pick non-rotate as optimal
-+ *    and repick if other dev have "significant" less queue length
-+ *  - Repick optimal if queue length of other mirror are less
-+ */
-+static int guess_optimal(struct map_lookup *map, int num, int optimal)
-+{
-+	int i;
-+	int round_down = 8;
-+	/* Init for missing bdevs */
-+	int qlen[2] = { INT_MAX, INT_MAX };
-+	bool is_nonrot[2] = { false, false };
-+	bool all_bdev_nonrot = true;
-+	bool all_bdev_rotate = true;
-+	struct block_device *bdev;
-+
-+	ASSERT(num == 2);
-+
-+	/* Check accessible bdevs */
-+	for (i = 0; i < 2; i++) {
-+		bdev = map->stripes[i].dev->bdev;
-+		if (bdev) {
-+			qlen[i] = 0;
-+			is_nonrot[i] = blk_queue_nonrot(bdev_get_queue(bdev));
-+			if (is_nonrot[i])
-+				all_bdev_rotate = false;
-+			else
-+				all_bdev_nonrot = false;
-+		}
-+	}
-+
-+	/*
-+	 * Don't bother with computation
-+	 * if only one of two bdevs are accessible
-+	 */
-+	if (qlen[0] == INT_MAX)
-+		return 1;
-+	if (qlen[1] == INT_MAX)
-+		return 0;
-+
-+	if (all_bdev_nonrot)
-+		round_down = 2;
-+
-+	for (i = 0; i < 2; i++) {
-+		bdev = map->stripes[i].dev->bdev;
-+		qlen[i] = bdev_get_queue_len(bdev, round_down);
-+	}
-+
-+	/* For mixed case, pick non rotational dev as optimal */
-+	if (all_bdev_rotate == all_bdev_nonrot) {
-+		if (is_nonrot[0])
-+			optimal = 0;
-+		else
-+			optimal = 1;
-+	}
-+
-+	if (qlen[optimal] > qlen[(optimal + 1) % 2])
-+		optimal = i;
-+
-+	return optimal;
-+}
-+
- static int find_live_mirror(struct btrfs_fs_info *fs_info,
- 			    struct map_lookup *map, int first,
- 			    int dev_replace_is_ongoing)
-@@ -5177,7 +5274,8 @@ static int find_live_mirror(struct btrfs_fs_info *fs_info,
- 	else
- 		num_stripes = map->num_stripes;
- 
--	preferred_mirror = first + current->pid % num_stripes;
-+	preferred_mirror = first + guess_optimal(map, num_stripes,
-+						 current->pid % num_stripes);
- 
- 	if (dev_replace_is_ongoing &&
- 	    fs_info->dev_replace.cont_reading_from_srcdev_mode ==
--- 
-2.19.1
+
+
+
+
+Marc
+
+
+P.S: This is a repost of one of my questions on askubuntu.com, since I still don't have any answer.

@@ -5,30 +5,33 @@ X-Spam-Level:
 X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5EE6BC43441
-	for <linux-btrfs@archiver.kernel.org>; Mon, 12 Nov 2018 12:26:23 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CC2FEC43441
+	for <linux-btrfs@archiver.kernel.org>; Mon, 12 Nov 2018 13:19:03 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 15F7C22419
-	for <linux-btrfs@archiver.kernel.org>; Mon, 12 Nov 2018 12:26:23 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 15F7C22419
+	by mail.kernel.org (Postfix) with ESMTP id 93657223D0
+	for <linux-btrfs@archiver.kernel.org>; Mon, 12 Nov 2018 13:19:03 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 93657223D0
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=pignat.org
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729476AbeKLWTY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 12 Nov 2018 17:19:24 -0500
-Received: from relay6-d.mail.gandi.net ([217.70.183.198]:36961 "EHLO
-        relay6-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1729244AbeKLWTY (ORCPT
+        id S1729281AbeKLXMQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 12 Nov 2018 18:12:16 -0500
+Received: from relay4-d.mail.gandi.net ([217.70.183.196]:59003 "EHLO
+        relay4-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727103AbeKLXMQ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 12 Nov 2018 17:19:24 -0500
+        Mon, 12 Nov 2018 18:12:16 -0500
 X-Originating-IP: 153.109.5.233
 Received: from [153.109.5.233] (unknown [153.109.5.233])
         (Authenticated sender: marc@pignat.org)
-        by relay6-d.mail.gandi.net (Postfix) with ESMTPSA id E34F6C0011
-        for <linux-btrfs@vger.kernel.org>; Mon, 12 Nov 2018 12:26:18 +0000 (UTC)
-To:     linux-btrfs@vger.kernel.org
+        by relay4-d.mail.gandi.net (Postfix) with ESMTPSA id 346F6E0006;
+        Mon, 12 Nov 2018 13:18:59 +0000 (UTC)
+Subject: Re: why /dev/ptmx is in the snapshots?
+To:     Remi Gauvin <remi@georgianit.com>
+References: <8f13b640-f50e-9134-57de-96993dfb0fa4@pignat.org>
+ <2f200616-fe30-b7bc-f92f-f9bc0946f2ce@georgianit.com>
+Cc:     linux-btrfs@vger.kernel.org
 From:   Marc Pignat <marc@pignat.org>
-Subject: why /dev/ptmx is in the snapshots?
 Openpgp: preference=signencrypt
 Autocrypt: addr=marc@pignat.org; keydata=
  xsFNBFDql5wBEADRyGxEtQFSx5hf5GOYoDkbNuSZd+DFwnLeQ/jX/z+9TjFjGA4HIY7srvNu
@@ -72,11 +75,12 @@ Autocrypt: addr=marc@pignat.org; keydata=
  7NZMxtavEvEinVimca01v7jx85M7zGQLsWO/pBMFG+KEuWfJIAGFrxyPit4IXBB9hEksEKUq
  P2f6vDydLv5FYnG+nO34GLiFLrenXF0hKjilNZos1xtcMKXty+/6qQ/15wbC+ahU6AKF1E+s
  4NJzCezZRe7XVn6epk+pJy9iEe+NRqtvCct8D+G7Y7+LGssGlxCMZS0HriE2oc4HpX+qdq0R F9p4
-Message-ID: <8f13b640-f50e-9134-57de-96993dfb0fa4@pignat.org>
-Date:   Mon, 12 Nov 2018 13:26:17 +0100
+Message-ID: <e08379c2-b1a0-a3f2-72a4-139d790f8ee0@pignat.org>
+Date:   Mon, 12 Nov 2018 14:18:58 +0100
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
+In-Reply-To: <2f200616-fe30-b7bc-f92f-f9bc0946f2ce@georgianit.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 7bit
@@ -85,25 +89,32 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-I have a btrfs root partition and I use snapper to automatically take snapshots (ubuntu 18.04 LTS). 
+On 11/12/18 1:50 PM, Remi Gauvin wrote:
+> On 2018-11-12 07:26 AM, Marc Pignat wrote:
+...
+> fuser /mnt/sda3/@/dev/ptmx
 
-The `/dev/ptmx` file change between each snapshots despite `/dev` is mounted as a devtmpfs file system.
+Done the mount somewhere else thing, still no user of this file...
 
-I have tried creating a file in `/dev`, and as expected it is not snapshotted.
+> 
+> Depending on how Ubuntu was installed, you might not have the @
+> subvolume.  I think then, root is just written straight to the root of
+> the fs, so fuser /mnt/sda3/dev/ptmx
+> 
 
-My first intuition was that one service was started before `/dev` is mounted as a devtmpfs and still using it, but `sudo fuser /dev/ptmx` show no use of that file.
+Sure, Ubuntu installer creates a @ and @home volumes.
 
+I think I've found the problem source (not the solution).
 
-Can someone explain this behavior?
+Every time I run snapper create the next status will show:
+....xa /dev/ptmx and
+c..... /var/log/snapper.log
 
-Thank you in advance and best regards
+And if fact, the log files says something about the /dev/ptmx file:
 
+2018-11-12 14:07:53 ERR libsnapper(11939) XAttributes.cc(XAttributes):154 - Couldn't get xattributes names-list size. link: //.snapshots/8/snapshot/dev/ptmx, error: No such file or directory
 
+After the snapshot, the file /mnt/test/@/.snapshots/8/snapshot/dev/ptmx is existing.
 
+Is this a problem in snapper?
 
-
-
-Marc
-
-
-P.S: This is a repost of one of my questions on askubuntu.com, since I still don't have any answer.

@@ -2,227 +2,219 @@ Return-Path: <SRS0=2H/g=NY=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.9 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.8 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
+	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	MENTIONS_GIT_HOSTING,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F108CC43441
-	for <linux-btrfs@archiver.kernel.org>; Tue, 13 Nov 2018 18:55:30 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E33EFC43441
+	for <linux-btrfs@archiver.kernel.org>; Tue, 13 Nov 2018 23:57:16 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 88BE421780
-	for <linux-btrfs@archiver.kernel.org>; Tue, 13 Nov 2018 18:55:30 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=libero.it header.i=@libero.it header.b="IunQUVYm"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 88BE421780
-Authentication-Results: mail.kernel.org; dmarc=fail (p=quarantine dis=none) header.from=libero.it
+	by mail.kernel.org (Postfix) with ESMTP id 9B4502077C
+	for <linux-btrfs@archiver.kernel.org>; Tue, 13 Nov 2018 23:57:16 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 9B4502077C
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=gmx.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726883AbeKNEyx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 13 Nov 2018 23:54:53 -0500
-Received: from smtp-32-i6.italiaonline.it ([213.209.14.32]:45435 "EHLO
-        libero.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726535AbeKNEyw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 13 Nov 2018 23:54:52 -0500
-Received: from venice.bhome ([84.223.217.49])
-        by smtp-32.iol.local with ESMTPA
-        id MdqNgO9gYfnYOMdqNgkDtk; Tue, 13 Nov 2018 19:55:24 +0100
-x-libjamoibt: 1601
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=libero.it; s=s2014;
-        t=1542135324; bh=fBxaV0Qvv1XjSfJMstnJIQ9h2WCNVYiykai3IuUtfvA=;
-        h=Reply-To:Subject:To:Cc:References:From:Date:In-Reply-To;
-        b=IunQUVYmlEOd2g9BvLFKID7ZyKyQK29uvvYg8e4pUlj0ax2oK2vVWbHydu/MX/6g3
-         9uNvBlkOvCvrg7LezxVYVZG8tLb6aByXAsEj01oRyvv+en8pcuncokm3DF4vD9Mrs9
-         uC1qLRrE2euIrLOzV/yX9awO5mNsSjSPl2RJGiHBLowgC3lqtwrHNJC39FXF+NQK5w
-         j7Nyitj8xTz6mSzj+tPXi4j+rLJPOD9WgXpAd4da9fNCC2Rv9c7emwIHHFHlKliZ6f
-         qUXRcBslK74r0HtirREVM105v3YiuJEle84TXKymLMypfFLAyitJFxG6A6cySuevpY
-         xO3Bimk53n7EQ==
-X-CNFS-Analysis: v=2.3 cv=QKq5uTDL c=1 sm=1 tr=0
- a=fIDDTigewxANa3j7Vc0ApQ==:117 a=fIDDTigewxANa3j7Vc0ApQ==:17
- a=IkcTkHD0fZMA:10 a=pGLkceISAAAA:8 a=TD8gUqi8AAAA:8 a=YdJAqheK4nT_SQJDD6kA:9
- a=bV2QCdX8BW85wDs8:21 a=T-NslbJBs0Mp0yk9:21 a=QEXdDO2ut3YA:10
- a=ZAeakzZzxOc8cl0CLKiY:22
-Reply-To: kreijack@inwind.it
-Subject: Re: [PATCH V7] Btrfs: enhance raid1/10 balance heuristic
-To:     Timofey Titovets <timofey.titovets@synesis.ru>,
-        linux-btrfs@vger.kernel.org
-Cc:     nborisov@suse.com, Timofey Titovets <nefelim4ag@gmail.com>
-References: <20181112115839.13969-1-timofey.titovets@synesis.ru>
-From:   Goffredo Baroncelli <kreijack@libero.it>
+        id S1727761AbeKNJ5y (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 14 Nov 2018 04:57:54 -0500
+Received: from mout.gmx.net ([212.227.17.21]:49531 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726937AbeKNJ5x (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 14 Nov 2018 04:57:53 -0500
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx103
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 0MU0U9-1fvwTP3XjF-00QgL1; Wed, 14
+ Nov 2018 00:57:03 +0100
+Subject: Re: [PATCH v2 0/6] btrfs: qgroup: Delay subtree scan to reduce
+ overhead
+To:     fdmanana@gmail.com, dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <20181108054919.18253-1-wqu@suse.com>
+ <20181112213332.GS24115@twin.jikos.cz> <20181113170724.GE24115@twin.jikos.cz>
+ <CAL3q7H5H+c6XzwCQP9=bS_TdUam1fFh3HOiWojDkNfdDsKj=yQ@mail.gmail.com>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
 Openpgp: preference=signencrypt
-Autocrypt: addr=kreijack@libero.it; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <c2402d86-24ff-279a-8398-0f4379721dd4@libero.it>
-Date:   Tue, 13 Nov 2018 19:55:23 +0100
+Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
+ bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
+ ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
+ rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
+ FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
+ 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
+ ilaVzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
+ CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
+ /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
+ GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
+ q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
+ ABEBAAHCwHwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
+ CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
+ f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
+ mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
+ 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
+ h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
+Message-ID: <6027bd4f-10fc-6c70-0967-5a932dc1612e@gmx.com>
+Date:   Wed, 14 Nov 2018 07:56:57 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.3.0
 MIME-Version: 1.0
-In-Reply-To: <20181112115839.13969-1-timofey.titovets@synesis.ru>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
-X-CMAE-Envelope: MS4wfOJXSB4VB7pvlDITzc2jAfFkhXutXhhzJZABMO4UuRPFDIMYoj8SMw0gb0DdpTrIw5mehyrmZUtNheVzYOZeIrJa5SQv0R0PxiRpAWqrA2do6Zftx4dh
- R16oFKQ8lrRY2A3bnD7OZFhzvO+gNnCfB2zoZ5SjOAhMqgJpa4BijrdpFYVZ7LZ/vRKXWy774ZaszBsqCqCrZ0AKHQgUQGflbWms1IgAUfd/vMeG9HL2KJhH
- Dpp8pab6FjeKDWXl+k6lNBG9elPNOT6Z5fHS3NPzZqY=
+In-Reply-To: <CAL3q7H5H+c6XzwCQP9=bS_TdUam1fFh3HOiWojDkNfdDsKj=yQ@mail.gmail.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="nNDXGDTm5laV63I0ywIHfKg9loGExzFUs"
+X-Provags-ID: V03:K1:7O0LcbJ/ClvUGmhKqaUZcVoTWtnAdtL4WAdf3RwqYGH5vGPopxB
+ r1x5eamAjmEq9D0UwBae8kKFFlEjzKgl5UfC12pdV8cxMqtFzFV2K8FO4lY82f+BWqJ1zZF
+ 0tkkI0tJJtxp6qwSIGhtEZPvehYELkyyyJwPczLiaoeCpP47DADOgONG2BD2Fr1+RR0JrwN
+ BhHAU6ctoaaha8kNkki9A==
+X-UI-Out-Filterresults: notjunk:1;V01:K0:7MQJ+6SaVj0=:l23IQUbI0f+SiqsYzPa6/8
+ q/kL7xQpstlNlU7ddAwpjFAE/TIBJtqOh2s5exxunVGtr+FA0FM3MoMDlUpQOGKyXT+JyjmHS
+ jY1yQnqBMhajk5A+CTnbNYEuBNf5lXfCJbFC6uaoke0kT55aFglUE0xovoiZfKdn4+0nt9DT5
+ GrMVdmz2j0RtA/6/OkCLYAHFuVbLrkN9z1+bvKZA949Ml4JrCcQBgmaXc+ykmh6eppuq9zfol
+ GxpvQ9TUNEqY3tkKtaBlWipSUbla5RowoSpMSuPDugrSqHW9KKPW0+fbKVgSrnNpFd7m1xT+o
+ 8T4xOkqFZPVSHZjUVXFwu/e6HTGdv7PYTLuxb/4mMsrQU1UgY46OeJYJG1pzfsGKB31z27M/a
+ SYZn/p5huenRLIV2FwoL5ghLSO36qP0nsQq9WRlwEd0DbxqYPlmWFYxUZuhnyahGgoENSlppO
+ WulSe1WLAllqxboOR+Wq1FFx7t2Q91eEB+3peQPkBzLL5SO8j4jxQ+iNKSrduJSQuQDXOt53D
+ gyEQf+LoLUjLlemnuaQuXgB4V6w/0Jvw4/ZY2FDaeY5a6TPRHsjWOx6aZqBb5W83/J7UVROTh
+ KKnfiIZTESmxQpwrJvfi2HWnclEMnN9FDiSnWoS/8lAvw6AW6TyO1lsrAQukr8EYCy3PVXFqV
+ lJqYoHHCYP+lY4vDD6HveONM2dPu+Q6NVBt/sj9XuiObHQag2n2s5F8r1Oh5zGZ7Ux9WSuwX5
+ dwZ2J9Rdr0zcWcfe01IWao4QWSD0tJOoCkZhrkwp11AC/MF5YYTkeHbOpV8aWEX5eq3/qJIy5
+ xLo/HD7yft2FkEesafVBgpUnfH7Rf+BzpLT4uFzFRuwguwXj2M5CQ7ZcKoOKx841NJlgwPdPC
+ 7ZoAZlnPNfDAp5K7vAHiAI70IiJzUiWh+CDIrv9Q7kM3rXbxEFJz4v2a8J+OzG
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 12/11/2018 12.58, Timofey Titovets wrote:
-> From: Timofey Titovets <nefelim4ag@gmail.com>
-> 
-> Currently btrfs raid1/10 balancer bаlance requests to mirrors,
-> based on pid % num of mirrors.
-[...]
->   v6 -> v7:
->     - Fixes based on Nikolay Borisov review:
->       * Assume num == 2
->       * Remove "for" loop based on that assumption, where possible
->       * No functional changes
-> 
-> Signed-off-by: Timofey Titovets <nefelim4ag@gmail.com>
-> Tested-by: Dmitrii Tcvetkov <demfloro@demfloro.ru>
-> Reviewed-by: Dmitrii Tcvetkov <demfloro@demfloro.ru>
-> ---
-[...]
-> +/**
-> + * guess_optimal - return guessed optimal mirror
-> + *
-> + * Optimal expected to be pid % num_stripes
-> + *
-> + * That's generaly ok for spread load
-> + * Add some balancer based on queue length to device
-> + *
-> + * Basic ideas:
-> + *  - Sequential read generate low amount of request
-> + *    so if load of drives are equal, use pid % num_stripes balancing
-> + *  - For mixed rotate/non-rotate mirrors, pick non-rotate as optimal
-> + *    and repick if other dev have "significant" less queue length
-> + *  - Repick optimal if queue length of other mirror are less
-> + */
-> +static int guess_optimal(struct map_lookup *map, int num, int optimal)
-> +{
-> +	int i;
-> +	int round_down = 8;
-> +	/* Init for missing bdevs */
-> +	int qlen[2] = { INT_MAX, INT_MAX };
-> +	bool is_nonrot[2] = { false, false };
-> +	bool all_bdev_nonrot = true;
-> +	bool all_bdev_rotate = true;
-> +	struct block_device *bdev;
-> +
-> +	ASSERT(num == 2);
-> +
-> +	/* Check accessible bdevs */> +	for (i = 0; i < 2; i++) {
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--nNDXGDTm5laV63I0ywIHfKg9loGExzFUs
+Content-Type: multipart/mixed; boundary="K7WhSvvDikxr0KWfZ4rBDDHJOonGaC3BH";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: fdmanana@gmail.com, dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
+ linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-ID: <6027bd4f-10fc-6c70-0967-5a932dc1612e@gmx.com>
+Subject: Re: [PATCH v2 0/6] btrfs: qgroup: Delay subtree scan to reduce
+ overhead
+References: <20181108054919.18253-1-wqu@suse.com>
+ <20181112213332.GS24115@twin.jikos.cz> <20181113170724.GE24115@twin.jikos.cz>
+ <CAL3q7H5H+c6XzwCQP9=bS_TdUam1fFh3HOiWojDkNfdDsKj=yQ@mail.gmail.com>
+In-Reply-To: <CAL3q7H5H+c6XzwCQP9=bS_TdUam1fFh3HOiWojDkNfdDsKj=yQ@mail.gmail.com>
 
-From your function comment, it is not clear why you are comparing "num" to "2". Pay attention that there are somewhere some patches which implement raid profile with higher redundancy (IIRC up to 4). I suggest to put your assumption also in the comment ("...this function works up to 2 mirrors...") and, better, add a define like 
-
-#define BTRFS_MAX_RAID1_RAID10_MIRRORS 2
-
-And replace "2" with BTRFS_MAX_RAID1_RAID10_MIRRORS
+--K7WhSvvDikxr0KWfZ4rBDDHJOonGaC3BH
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
 
 
-> +		bdev = map->stripes[i].dev->bdev;
-> +		if (bdev) {
-> +			qlen[i] = 0;
-> +			is_nonrot[i] = blk_queue_nonrot(bdev_get_queue(bdev));
-> +			if (is_nonrot[i])
-> +				all_bdev_rotate = false;
-> +			else
-> +				all_bdev_nonrot = false;
-> +		}
-> +	}
-> +
-> +	/*
-> +	 * Don't bother with computation
-> +	 * if only one of two bdevs are accessible
-> +	 */
-> +	if (qlen[0] == INT_MAX)
-> +		return 1;
-> +	if (qlen[1] == INT_MAX)
-> +		return 0;
-> +
-> +	if (all_bdev_nonrot)
-> +		round_down = 2;
-> +
-> +	for (i = 0; i < 2; i++) {
-> +		bdev = map->stripes[i].dev->bdev;
-> +		qlen[i] = bdev_get_queue_len(bdev, round_down);
-> +	}
-> +
-> +	/* For mixed case, pick non rotational dev as optimal */
-> +	if (all_bdev_rotate == all_bdev_nonrot) {
-> +		if (is_nonrot[0])
-> +			optimal = 0;
-> +		else
-> +			optimal = 1;
-> +	}
-> +
-> +	if (qlen[optimal] > qlen[(optimal + 1) % 2])
-> +		optimal = i;
-> +
-> +	return optimal;
-> +}
-> +
->  static int find_live_mirror(struct btrfs_fs_info *fs_info,
->  			    struct map_lookup *map, int first,
->  			    int dev_replace_is_ongoing)
-> @@ -5177,7 +5274,8 @@ static int find_live_mirror(struct btrfs_fs_info *fs_info,
->  	else
->  		num_stripes = map->num_stripes;
->  
-> -	preferred_mirror = first + current->pid % num_stripes;
-> +	preferred_mirror = first + guess_optimal(map, num_stripes,
-> +						 current->pid % num_stripes);
->  
->  	if (dev_replace_is_ongoing &&
->  	    fs_info->dev_replace.cont_reading_from_srcdev_mode ==
-> 
+On 2018/11/14 =E4=B8=8A=E5=8D=881:58, Filipe Manana wrote:
+> On Tue, Nov 13, 2018 at 5:08 PM David Sterba <dsterba@suse.cz> wrote:
+>>
+>> On Mon, Nov 12, 2018 at 10:33:33PM +0100, David Sterba wrote:
+>>> On Thu, Nov 08, 2018 at 01:49:12PM +0800, Qu Wenruo wrote:
+>>>> This patchset can be fetched from github:
+>>>> https://github.com/adam900710/linux/tree/qgroup_delayed_subtree_reba=
+sed
+>>>>
+>>>> Which is based on v4.20-rc1.
+>>>
+>>> Thanks, I'll add it to for-next soon.
+>>
+>> During test generic/517, the logs were full of the warning below. The =
+reference
+>> test on current master, effectively misc-4.20 which was used as base o=
+f your
+>> branch did not get the warning.
+>>
+>> [11540.167829] BTRFS: end < start 2519039 2519040
+>> [11540.170513] WARNING: CPU: 1 PID: 539 at fs/btrfs/extent_io.c:436 in=
+sert_state+0xd8/0x100 [btrfs]
+>> [11540.174411] Modules linked in: dm_thin_pool dm_persistent_data dm_b=
+ufio dm_bio_prison btrfs libcrc32c xor zstd_decompress zstd_compress xxha=
+sh raid6_pq dm_mod loop [last unloaded: libcrc32c]
+>> [11540.178279] CPU: 1 PID: 539 Comm: xfs_io Tainted: G      D W       =
+  4.20.0-rc1-default+ #329
+>> [11540.180616] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), =
+BIOS rel-1.11.2-0-gf9626cc-prebuilt.qemu-project.org 04/01/2014
+>> [11540.183754] RIP: 0010:insert_state+0xd8/0x100 [btrfs]
+>> [11540.189173] RSP: 0018:ffffa0d245eafb20 EFLAGS: 00010282
+>> [11540.189885] RAX: 0000000000000000 RBX: ffff9f0bb3267320 RCX: 000000=
+0000000000
+>> [11540.191646] RDX: 0000000000000002 RSI: 0000000000000001 RDI: ffffff=
+ffa40c400d
+>> [11540.192942] RBP: 0000000000266fff R08: 0000000000000001 R09: 000000=
+0000000000
+>> [11540.193871] R10: 0000000000000000 R11: ffffffffa629da2d R12: ffff9f=
+0ba0281c60
+>> [11540.195527] R13: 0000000000267000 R14: ffffa0d245eafb98 R15: ffffa0=
+d245eafb90
+>> [11540.197026] FS:  00007fa338eb4b80(0000) GS:ffff9f0bbd600000(0000) k=
+nlGS:0000000000000000
+>> [11540.198251] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+>> [11540.199698] CR2: 00007fa33873bfb8 CR3: 000000006fb6e000 CR4: 000000=
+00000006e0
+>> [11540.201428] Call Trace:
+>> [11540.202164]  __set_extent_bit+0x43b/0x5b0 [btrfs]
+>> [11540.203223]  lock_extent_bits+0x5d/0x210 [btrfs]
+>> [11540.204346]  ? _raw_spin_unlock+0x24/0x40
+>> [11540.205381]  ? test_range_bit+0xdf/0x130 [btrfs]
+>> [11540.206573]  lock_extent_range+0xb8/0x150 [btrfs]
+>> [11540.207696]  btrfs_double_extent_lock+0x78/0xb0 [btrfs]
+>> [11540.208988]  btrfs_extent_same_range+0x131/0x4e0 [btrfs]
+>> [11540.210237]  btrfs_remap_file_range+0x337/0x350 [btrfs]
+>> [11540.211448]  vfs_dedupe_file_range_one+0x141/0x150
+>> [11540.212622]  vfs_dedupe_file_range+0x146/0x1a0
+>> [11540.213795]  do_vfs_ioctl+0x520/0x6c0
+>> [11540.214711]  ? __fget+0x109/0x1e0
+>> [11540.215616]  ksys_ioctl+0x3a/0x70
+>> [11540.216233]  __x64_sys_ioctl+0x16/0x20
+>> [11540.216860]  do_syscall_64+0x54/0x180
+>> [11540.217409]  entry_SYSCALL_64_after_hwframe+0x49/0xbe
+>> [11540.218126] RIP: 0033:0x7fa338a4daa7
+>=20
+> That's the infinite loop issue fixed by one of the patches submitted
+> for 4.20-rc2:
+>=20
+> https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/comm=
+it/?h=3Dv4.20-rc2&id=3D11023d3f5fdf89bba5e1142127701ca6e6014587
+>=20
+> The branch you used for testing doesn't have that fix?
+
+Yep, I tried v4.20-rc1 tag, which hits tons of such warning even without
+my patchset.
+
+So it shouldn't be my patches causing the problem.
+
+Thanks,
+Qu
+
+>=20
+>>
+>=20
+>=20
 
 
--- 
-gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+--K7WhSvvDikxr0KWfZ4rBDDHJOonGaC3BH--
+
+--nNDXGDTm5laV63I0ywIHfKg9loGExzFUs
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlvrZMkACgkQwj2R86El
+/qgszAf+NX1p3/WPHt9mmkiuKV7iv+u4YmOlGty8EomEyXd/WGtPLJkdWjYXvINA
+tp/ocEA6IXx1GA+DGEPB+EWK7Cs/0iLe5W34qEilLRHs7NVlwCwayBU6wV3ld/T6
+55xXstS923X5U/1HJvvrzL4eBmMpPrPp3WIICUWQcg2e7gxwcT0h7s6bguQY7CXy
+ucRi1xv7TnfTUCXrMpBG3vOgwUWmJoxPxIIvSUcR2aQ9nNx9EyIYB6eUvOyS9IWm
+7PVQ+zGpzIFu46fgbKLpktuTVrMvQsjAzlfM44Kj8MkuikLtym/3j4yeV/GM1TCV
+APtXxsEaX3eyd9CezrOyeWQOmrOJXg==
+=yISM
+-----END PGP SIGNATURE-----
+
+--nNDXGDTm5laV63I0ywIHfKg9loGExzFUs--

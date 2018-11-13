@@ -2,220 +2,86 @@ Return-Path: <SRS0=2H/g=NY=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_MUTT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 659A7C43441
-	for <linux-btrfs@archiver.kernel.org>; Tue, 13 Nov 2018 17:25:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 11E8EC43441
+	for <linux-btrfs@archiver.kernel.org>; Tue, 13 Nov 2018 17:33:36 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 27A2221780
-	for <linux-btrfs@archiver.kernel.org>; Tue, 13 Nov 2018 17:25:10 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 27A2221780
+	by mail.kernel.org (Postfix) with ESMTP id CFFB4223AE
+	for <linux-btrfs@archiver.kernel.org>; Tue, 13 Nov 2018 17:33:35 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org CFFB4223AE
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731448AbeKNDYK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 13 Nov 2018 22:24:10 -0500
-Received: from mx2.suse.de ([195.135.220.15]:54340 "EHLO mx1.suse.de"
+        id S1731608AbeKNDci (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 13 Nov 2018 22:32:38 -0500
+Received: from mx2.suse.de ([195.135.220.15]:56300 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727019AbeKNDYK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 13 Nov 2018 22:24:10 -0500
+        id S1730730AbeKNDci (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 13 Nov 2018 22:32:38 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 650A8AA7C;
-        Tue, 13 Nov 2018 17:25:05 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id A1B72ABE4;
+        Tue, 13 Nov 2018 17:33:32 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 131B3DAD3E; Tue, 13 Nov 2018 18:24:48 +0100 (CET)
-Date:   Tue, 13 Nov 2018 18:24:48 +0100
+        id 6B291DAD3E; Tue, 13 Nov 2018 18:33:16 +0100 (CET)
+Date:   Tue, 13 Nov 2018 18:33:15 +0100
 From:   David Sterba <dsterba@suse.cz>
 To:     Anand Jain <anand.jain@oracle.com>
 Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 4/9] btrfs: fix UAF due to race between replace start and
- cancel
-Message-ID: <20181113172448.GF24115@twin.jikos.cz>
+Subject: Re: [PATCH 0/9 v2] fix replace-start and replace-cancel racing
+Message-ID: <20181113173315.GG24115@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 Mail-Followup-To: dsterba@suse.cz, Anand Jain <anand.jain@oracle.com>,
         linux-btrfs@vger.kernel.org
 References: <1541946144-8174-1-git-send-email-anand.jain@oracle.com>
- <1541946144-8174-5-git-send-email-anand.jain@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <1541946144-8174-5-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1541946144-8174-1-git-send-email-anand.jain@oracle.com>
 User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Sun, Nov 11, 2018 at 10:22:19PM +0800, Anand Jain wrote:
-> replace cancel thread can race with the replace start thread and if
-> fs_info::scrubs_running is not yet set the btrfs_scrub_cancel() will fail
-> to stop the scrub thread, so the scrub thread continue with the scrub for
-> replace which then shall try to write to the target device and which is
-> already freed by the cancel thread. Please ref to the logs below.
+On Sun, Nov 11, 2018 at 10:22:15PM +0800, Anand Jain wrote:
+> v1->v2:
+>   2/9: Drop writeback required
+>   3/9: Drop writeback required
+>   7/9: Use the condition within the WARN_ON()
+>   6/9: Use the condition within the ASSERT()
 > 
-> So scrub_setup_ctx() warns as tgtdev is null.
+> Replace-start and replace-cancel threads can race to create a messy
+> situation leading to UAF. We use the scrub code to write
+> the blocks on the replace target. So if we haven't have set the
+> replace-scrub-running yet, without this patch we just ignore the error
+> and free the target device. When this happens the system panics with
+> UAF error.
 > 
-> static noinline_for_stack
-> struct scrub_ctx *scrub_setup_ctx(struct btrfs_device *dev, int
-> is_dev_replace)
-> {
-> ::
->         if (is_dev_replace) {
->                 WARN_ON(!fs_info->dev_replace.tgtdev);  <===
->                 sctx->pages_per_wr_bio = SCRUB_PAGES_PER_WR_BIO;
->                 sctx->wr_tgtdev = fs_info->dev_replace.tgtdev;
->                 sctx->flush_all_writes = false;
->         }
+> Its nice to see that btrfs_dev_replace_finishing() already handles
+> the ECANCELED (replace canceled) situation, but for an unknown reason
+> we aren't using it to cleanup the replace cancel situation, instead
+> we just let the replace cancel ioctl thread to cleanup the target
+> device and return and out of synchronous with the scrub code.
 > 
-> [ 6724.497655] BTRFS info (device sdb): dev_replace from /dev/sdb (devid 1) to /dev/sdc started
-> [ 6753.945017] BTRFS info (device sdb): dev_replace from /dev/sdb (devid 1) to /dev/sdc canceled
-> [ 6852.426700] WARNING: CPU: 0 PID: 4494 at fs/btrfs/scrub.c:622 scrub_setup_ctx.isra.19+0x220/0x230 [btrfs]
-> ::
-> [ 6852.428928] RIP: 0010:scrub_setup_ctx.isra.19+0x220/0x230 [btrfs]
-> ::
-> [ 6852.432970] Call Trace:
-> [ 6852.433202]  btrfs_scrub_dev+0x19b/0x5c0 [btrfs]
-> [ 6852.433471]  btrfs_dev_replace_start+0x48c/0x6a0 [btrfs]
-> [ 6852.433800]  btrfs_dev_replace_by_ioctl+0x3a/0x60 [btrfs]
-> [ 6852.434097]  btrfs_ioctl+0x2476/0x2d20 [btrfs]
-> [ 6852.434365]  ? do_sigaction+0x7d/0x1e0
-> [ 6852.434623]  do_vfs_ioctl+0xa9/0x6c0
-> [ 6852.434865]  ? syscall_trace_enter+0x1c8/0x310
-> [ 6852.435124]  ? syscall_trace_enter+0x1c8/0x310
-> [ 6852.435387]  ksys_ioctl+0x60/0x90
-> [ 6852.435663]  __x64_sys_ioctl+0x16/0x20
-> [ 6852.435907]  do_syscall_64+0x50/0x180
-> [ 6852.436150]  entry_SYSCALL_64_after_hwframe+0x49/0xbe
+> This patch 4/9, 5/9 and 6/9 uses the return code of btrfs_scrub_cancel()
+> to check if the scrub was really running. And if its not then shall
+> return an error to the user (replace not started error) so that user
+> can retry replace cancel. And uses btrfs_dev_replace_finishing() code
+> to cleanup after successful cancel of the replace scrub.
 > 
-> Further, as the replace thread enters the
-> scrub_write_page_to_dev_replace() without the target device it panics
+> Further, a suspended replace, when tries to restart, and if it fails
+> (for example target device missing, or excl ops running) it goes to the
+> started state, and so the cli 'btrfs replace status /mnt' hangs with no
+> progress. So patches 2/9 and 3/9 fixes that.
 > 
-> static int scrub_add_page_to_wr_bio(struct scrub_ctx *sctx,
->                                     struct scrub_page *spage)
-> {
-> ::
->       bio_set_dev(bio, sbio->dev->bdev); <======
-> 
-> [ 6929.715145] BUG: unable to handle kernel NULL pointer dereference at 00000000000000a0
-> ::
-> [ 6929.717106] Workqueue: btrfs-scrub btrfs_scrub_helper [btrfs]
-> [ 6929.717420] RIP: 0010:scrub_write_page_to_dev_replace+0xb4/0x260
-> [btrfs]
-> ::
-> [ 6929.721430] Call Trace:
-> [ 6929.721663]  scrub_write_block_to_dev_replace+0x3f/0x60 [btrfs]
-> [ 6929.721975]  scrub_bio_end_io_worker+0x1af/0x490 [btrfs]
-> [ 6929.722277]  normal_work_helper+0xf0/0x4c0 [btrfs]
-> [ 6929.722552]  process_one_work+0x1f4/0x520
-> [ 6929.722805]  ? process_one_work+0x16e/0x520
-> [ 6929.723063]  worker_thread+0x46/0x3d0
-> [ 6929.723313]  kthread+0xf8/0x130
-> [ 6929.723544]  ? process_one_work+0x520/0x520
-> [ 6929.723800]  ? kthread_delayed_work_timer_fn+0x80/0x80
-> [ 6929.724081]  ret_from_fork+0x3a/0x50
-> 
-> Fix this by letting the btrfs_dev_replace_finishing() to do the job of
-> cleaning after the cancel, including freeing of the target device.
-> btrfs_dev_replace_finishing() is called when btrfs_scub_dev() returns
-> along with the scrub return status.
-> 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> ---
->  fs/btrfs/dev-replace.c | 61 ++++++++++++++++++++++++++++++++------------------
->  1 file changed, 39 insertions(+), 22 deletions(-)
-> 
-> diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-> index 35ce10f18607..d32d696d931c 100644
-> --- a/fs/btrfs/dev-replace.c
-> +++ b/fs/btrfs/dev-replace.c
-> @@ -797,39 +797,56 @@ int btrfs_dev_replace_cancel(struct btrfs_fs_info *fs_info)
->  	case BTRFS_IOCTL_DEV_REPLACE_STATE_CANCELED:
->  		result = BTRFS_IOCTL_DEV_REPLACE_RESULT_NOT_STARTED;
->  		btrfs_dev_replace_write_unlock(dev_replace);
-> -		goto leave;
-> +		break;
->  	case BTRFS_IOCTL_DEV_REPLACE_STATE_STARTED:
-> +		result = BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_ERROR;
-> +		tgt_device = dev_replace->tgtdev;
-> +		src_device = dev_replace->srcdev;
-> +		btrfs_dev_replace_write_unlock(dev_replace);
-> +		btrfs_scrub_cancel(fs_info);
-> +		/*
-> +		 * btrfs_dev_replace_finishing() will handle the cleanup part
-> +		 */
-> +		btrfs_info_in_rcu(fs_info,
-> +			"dev_replace from %s (devid %llu) to %s canceled",
-> +			btrfs_dev_name(src_device), src_device->devid,
-> +			btrfs_dev_name(tgt_device));
-> +		break;
->  	case BTRFS_IOCTL_DEV_REPLACE_STATE_SUSPENDED:
-> +		/*
-> +		 * scrub doing the replace isn't running so do the cleanup here
-> +		 */
->  		result = BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_ERROR;
->  		tgt_device = dev_replace->tgtdev;
->  		src_device = dev_replace->srcdev;
->  		dev_replace->tgtdev = NULL;
->  		dev_replace->srcdev = NULL;
-> -		break;
-> -	}
-> -	dev_replace->replace_state = BTRFS_IOCTL_DEV_REPLACE_STATE_CANCELED;
-> -	dev_replace->time_stopped = ktime_get_real_seconds();
-> -	dev_replace->item_needs_writeback = 1;
-> -	btrfs_dev_replace_write_unlock(dev_replace);
-> -	btrfs_scrub_cancel(fs_info);
-> +		dev_replace->replace_state = BTRFS_IOCTL_DEV_REPLACE_STATE_CANCELED;
-> +		dev_replace->time_stopped = ktime_get_real_seconds();
-> +		dev_replace->item_needs_writeback = 1;
->  
-> -	trans = btrfs_start_transaction(root, 0);
-> -	if (IS_ERR(trans)) {
-> -		mutex_unlock(&dev_replace->lock_finishing_cancel_unmount);
-> -		return PTR_ERR(trans);
-> -	}
-> -	ret = btrfs_commit_transaction(trans);
-> -	WARN_ON(ret);
-> +		btrfs_dev_replace_write_unlock(dev_replace);
->  
-> -	btrfs_info_in_rcu(fs_info,
-> -		"dev_replace from %s (devid %llu) to %s canceled",
-> -		btrfs_dev_name(src_device), src_device->devid,
-> -		btrfs_dev_name(tgt_device));
-> +		btrfs_scrub_cancel(fs_info);
-> +
-> +		trans = btrfs_start_transaction(root, 0);
-> +		if (IS_ERR(trans)) {
-> +			mutex_unlock(&dev_replace->lock_finishing_cancel_unmount);
-> +			return PTR_ERR(trans);
-> +		}
-> +		ret = btrfs_commit_transaction(trans);
-> +		WARN_ON(ret);
->  
-> -	if (tgt_device)
-> -		btrfs_destroy_dev_replace_tgtdev(tgt_device);
-> +		btrfs_info_in_rcu(fs_info,
-> +		"suspended dev_replace from %s (devid %llu) to %s canceled",
-> +			btrfs_dev_name(src_device), src_device->devid,
-> +			btrfs_dev_name(tgt_device));
-> +
-> +		if (tgt_device)
-> +			btrfs_destroy_dev_replace_tgtdev(tgt_device);
-> +		break;
-> +	}
->  
-> -leave:
->  	mutex_unlock(&dev_replace->lock_finishing_cancel_unmount);
->  	return result;
+> As the originals code idea of ECANCELED was limited to the situation of
+> the error only and not user requested, there are unnecessary error log
+> and warn log which 7/9 and 8/9 patches fixes.
 
-There's a compiler warning:
-
-fs/btrfs/dev-replace.c: In function ‘btrfs_dev_replace_cancel’:
-fs/btrfs/dev-replace.c:865:9: warning: ‘result’ may be used uninitialized in this function [-Wmaybe-uninitialized]
-  return result;
-         ^~~~~~
-
-I haven't looked closer though it looks valid.
+This fixes quite a few problems, namely the crash in scrub_setup_ctx,
+thanks. I'm going to add the patchset to for-next, the code looks good
+on first glance.

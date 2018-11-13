@@ -2,73 +2,76 @@ Return-Path: <SRS0=2H/g=NY=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-4.7 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+X-Spam-Status: No, score=-1.7 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+	SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A4EBAC43441
-	for <linux-btrfs@archiver.kernel.org>; Tue, 13 Nov 2018 15:42:41 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0206BC43441
+	for <linux-btrfs@archiver.kernel.org>; Tue, 13 Nov 2018 15:47:24 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 63FD02086B
-	for <linux-btrfs@archiver.kernel.org>; Tue, 13 Nov 2018 15:42:41 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id BE0C82086B
+	for <linux-btrfs@archiver.kernel.org>; Tue, 13 Nov 2018 15:47:23 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="JREq+cT0"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 63FD02086B
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="G2M+hMDz"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org BE0C82086B
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=oracle.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731479AbeKNBlR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 13 Nov 2018 20:41:17 -0500
-Received: from aserp2120.oracle.com ([141.146.126.78]:57598 "EHLO
-        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727188AbeKNBlR (ORCPT
+        id S2387902AbeKNBqA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 13 Nov 2018 20:46:00 -0500
+Received: from userp2120.oracle.com ([156.151.31.85]:54154 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726932AbeKNBqA (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 13 Nov 2018 20:41:17 -0500
-Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
-        by aserp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id wADFcduH088617;
-        Tue, 13 Nov 2018 15:42:35 GMT
+        Tue, 13 Nov 2018 20:46:00 -0500
+Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
+        by userp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id wADFiPMv085570;
+        Tue, 13 Nov 2018 15:47:17 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to :
  references : from : message-id : date : mime-version : in-reply-to :
  content-type : content-transfer-encoding; s=corp-2018-07-02;
- bh=kZmcho/FCowMSHRE0UTtILvzeAs2NoEL/Fep8tVPEOk=;
- b=JREq+cT0JBhpJNy3DrHivttY9dAqK3orbsOLqxEcNes4/+zMhPy4lWUXlHMzrO+JEvjL
- 7Rz70T0BDvv2iCg4khBaCfgJbU4Wkzrl5CkY0wSHGYMJyFSPiTS0Hcd1M574Jxpt66oL
- BW2Qqm0NdYogx0LwEsLtT83CId3w2chZX8D8Joy6kyywFtdoR79NHPeXnEcbVbGTsijw
- OwAOxDoiWl0ickAha89c+ds2fNVnivvbeSiVqj11rLiVL3xmMdA3UmdBrmDZlra9yck3
- EG/2wBMa2QS6l3J6o/hoFHq/yN3SQQoOgNST0zz6HsvtLKbIZztDLkFOf52+FdabKT0o bA== 
-Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
-        by aserp2120.oracle.com with ESMTP id 2nnw6ekhck-1
+ bh=PtoWC3+euzvcIBJKqR1PbyXpgxSqB1ZkuxVZtXyGoRI=;
+ b=G2M+hMDzXiLpT+Uf0ozrJO58Hv9/ty9j6f7Un8EKQURgQ843yWE+JlGvL6/Ip5G66P7D
+ tJugUsfoWDgFhagHfsy7OTF3ruRfUKDsd+pg2LHunVd4qOPVyR7t3RzBZyIq8C+2RF/v
+ DeNckR0KanNkZXX02kxQjAghYrqHZ6fLFMfg19tP/iXE2MYCOra6HO2MKXfFmKy8Nf/c
+ JRqMSMYm5885rpsTInmrAXAbWNkg3fPUoHOTDfEGyljUeeu+rsBts2tDKcmlInLq83h9
+ rZ35ssPXD+RhZl1B/OMfU1Ot+ZrwHr16OGZJ0Pj3wePt56K9smPD+2Qxz6icSO8z67Wl iA== 
+Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
+        by userp2120.oracle.com with ESMTP id 2nnwc0kgp3-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Tue, 13 Nov 2018 15:42:34 +0000
-Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id wADFgYBd002230
+        Tue, 13 Nov 2018 15:47:17 +0000
+Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
+        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id wADFlGIG003111
         (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Tue, 13 Nov 2018 15:42:34 GMT
-Received: from abhmp0004.oracle.com (abhmp0004.oracle.com [141.146.116.10])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id wADFgYxF031494;
-        Tue, 13 Nov 2018 15:42:34 GMT
+        Tue, 13 Nov 2018 15:47:16 GMT
+Received: from abhmp0005.oracle.com (abhmp0005.oracle.com [141.146.116.11])
+        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id wADFlGnV007979;
+        Tue, 13 Nov 2018 15:47:16 GMT
 Received: from [192.168.0.120] (/202.156.138.221)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Tue, 13 Nov 2018 07:42:34 -0800
-Subject: Re: [PATCH RFC RESEND] btrfs: harden agaist duplicate fsid
-To:     dsterba@suse.cz, linux-btrfs@vger.kernel.org
-References: <1539571517-7900-1-git-send-email-anand.jain@oracle.com>
- <20181113152147.GC24115@twin.jikos.cz>
+        with ESMTP ; Tue, 13 Nov 2018 07:47:16 -0800
+Subject: Re: [PATCH RFC] btrfs: harden agaist duplicate fsid
+To:     dsterba@suse.cz, "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
+        linux-btrfs@vger.kernel.org
+References: <1538384164-3030-1-git-send-email-anand.jain@oracle.com>
+ <98cd974b-d817-c30b-5cd7-d69214f44f39@gmail.com>
+ <d209b853-4c15-4ef6-58b5-e1b08d409aeb@oracle.com>
+ <20181113153149.GD24115@twin.jikos.cz>
 From:   Anand Jain <anand.jain@oracle.com>
-Message-ID: <c1cb3aa1-0961-a619-dc32-99e5487a635a@oracle.com>
-Date:   Tue, 13 Nov 2018 23:42:37 +0800
+Message-ID: <228b66c4-f85c-11dc-1a24-d46bc5493788@oracle.com>
+Date:   Tue, 13 Nov 2018 23:47:23 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:52.0) Gecko/20100101
  Thunderbird/52.9.1
 MIME-Version: 1.0
-In-Reply-To: <20181113152147.GC24115@twin.jikos.cz>
+In-Reply-To: <20181113153149.GD24115@twin.jikos.cz>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Language: en-US
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: 8bit
 X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9076 signatures=668683
 X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=0 malwarescore=0
  phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
  adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.0.1-1807170000 definitions=main-1811130142
+ engine=8.0.1-1807170000 definitions=main-1811130143
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -76,77 +79,54 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 11/13/2018 11:21 PM, David Sterba wrote:
-> On Mon, Oct 15, 2018 at 10:45:17AM +0800, Anand Jain wrote:
->> (Thanks for the comments on requiring to warn_on if we fail the device change.)
->> (This fixes an ugly bug, I appreciate if you have any further comments).
+On 11/13/2018 11:31 PM, David Sterba wrote:
+> On Mon, Oct 01, 2018 at 09:31:04PM +0800, Anand Jain wrote:
+>>>> +        /*
+>>>> +         * we are going to replace the device path, make sure its the
+>>>> +         * same device if the device mounted
+>>>> +         */
+>>>> +        if (device->bdev) {
+>>>> +            struct block_device *path_bdev;
+>>>> +
+>>>> +            path_bdev = lookup_bdev(path);
+>>>> +            if (IS_ERR(path_bdev)) {
+>>>> +                mutex_unlock(&fs_devices->device_list_mutex);
+>>>> +                return ERR_CAST(path_bdev);
+>>>> +            }
+>>>> +
+>>>> +            if (device->bdev != path_bdev) {
+>>>> +                bdput(path_bdev);
+>>>> +                mutex_unlock(&fs_devices->device_list_mutex);
+>>>> +                return ERR_PTR(-EEXIST);
+>>> It would be _really_ nice to have an informative error message printed
+>>> here.  Aside from the possibility of an admin accidentally making a
+>>> block-level copy of the volume,
 >>
->> Its not that impossible to imagine that a device OR a btrfs image is
->> been copied just by using the dd or the cp command. Which in case both
->> the copies of the btrfs will have the same fsid. If on the system with
->> automount enabled, the copied FS gets scanned.
+>>> this code triggering could represent an
+>>> attempted attack against the system, so it's arguably something that
+>>> should be reported as happening.
 >>
->> We have a known bug in btrfs, that we let the device path be changed
->> after the device has been mounted. So using this loop hole the new
->> copied device would appears as if its mounted immediately after its
->> been copied.
+>>>    Personally, I think a WARN_ON_ONCE for
+>>> this would make sense, ideally per-volume if possible.
 >>
->> For example:
->>
->> Initially.. /dev/mmcblk0p4 is mounted as /
->>
->> lsblk
->> NAME        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
->> mmcblk0     179:0    0 29.2G  0 disk
->> |-mmcblk0p4 179:4    0    4G  0 part /
->> |-mmcblk0p2 179:2    0  500M  0 part /boot
->> |-mmcblk0p3 179:3    0  256M  0 part [SWAP]
->> `-mmcblk0p1 179:1    0  256M  0 part /boot/efi
->>
->> btrfs fi show
->>     Label: none  uuid: 07892354-ddaa-4443-90ea-f76a06accaba
->>     Total devices 1 FS bytes used 1.40GiB
->>     devid    1 size 4.00GiB used 3.00GiB path /dev/mmcblk0p4
->>
->> Copy mmcblk0 to sda
->>     dd if=/dev/mmcblk0 of=/dev/sda
->>
->> And immediately after the copy completes the change in the device
->> superblock is notified which the automount scans using
->> btrfs device scan and the new device sda becomes the mounted root
->> device.
->>
->> lsblk
->> NAME        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
->> sda           8:0    1 14.9G  0 disk
->> |-sda4        8:4    1    4G  0 part /
->> |-sda2        8:2    1  500M  0 part
->> |-sda3        8:3    1  256M  0 part
->> `-sda1        8:1    1  256M  0 part
->> mmcblk0     179:0    0 29.2G  0 disk
->> |-mmcblk0p4 179:4    0    4G  0 part
->> |-mmcblk0p2 179:2    0  500M  0 part /boot
->> |-mmcblk0p3 179:3    0  256M  0 part [SWAP]
->> `-mmcblk0p1 179:1    0  256M  0 part /boot/efi
->>
->> btrfs fi show /
->>   Label: none  uuid: 07892354-ddaa-4443-90ea-f76a06accaba
->>   Total devices 1 FS bytes used 1.40GiB
->>   devid    1 size 4.00GiB used 3.00GiB path /dev/sda4
->>
->> The bug is quite nasty that you can't either unmount /dev/sda4 or
->> /dev/mmcblk0p4. And the problem does not get solved until you take
->> sda out of the system on to another system to change its fsid
->> using the 'btrfstune -u' command.
->>
->> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+>>    Ah. Will add an warn. Thanks, Anand
 > 
-> I'm adding the patch to misc-next now, with an update message that
-> matches the format when a device is scanned.
-> 
-> "BTRFS: device fsid %pU devid %llu moved old:%s new:%s\n",
-> 
-> That way it should be possible to grep for all messages that are related
-> to the scanning ioctl.
+> The requested error message is not in the patch you posted or I have
+> missed that (https://patchwork.kernel.org/patch/10641041/) .
 
-  Right. Looks fine to me. Thanks, Anand
+  No you didn't miss. I missed it. When you integrated this into
+  for-next, I should have sent out v2. Sorry. Thanks for taking
+  care of it.
+
+> Austin, is the following ok for you?
+> 
+>    "BTRFS: duplicate device fsid:devid for %pU:%llu old:%s new:%s\n"
+> 
+>    BTRFS: duplicate device fsid:devid 7c667b96-59eb-43ad-9ae9-c878f6ad51d8:2 old:/dev/sda6 new:/dev/sdb6
+> 
+> As the UUID and paths are long I tried to squeeeze the rest so it's
+> still comprehensible but this would be better confirmed. Thanks.
+
+Thanks, Anand
+
+

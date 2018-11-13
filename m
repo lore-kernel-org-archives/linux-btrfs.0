@@ -2,64 +2,108 @@ Return-Path: <SRS0=2H/g=NY=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_PASS,USER_AGENT_MUTT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-11.0 required=3.0
+	tests=HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
+	SIGNED_OFF_BY,SPF_PASS,USER_AGENT_NEOMUTT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9F47BC43441
-	for <linux-btrfs@archiver.kernel.org>; Tue, 13 Nov 2018 13:46:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AB16CC43441
+	for <linux-btrfs@archiver.kernel.org>; Tue, 13 Nov 2018 14:10:14 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 57C81223CB
-	for <linux-btrfs@archiver.kernel.org>; Tue, 13 Nov 2018 13:46:04 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 57C81223CB
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
+	by mail.kernel.org (Postfix) with ESMTP id 23D7D2087A
+	for <linux-btrfs@archiver.kernel.org>; Tue, 13 Nov 2018 14:10:14 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 23D7D2087A
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=net-space.pl
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1732964AbeKMXoO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 13 Nov 2018 18:44:14 -0500
-Received: from mx2.suse.de ([195.135.220.15]:36560 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1732767AbeKMXoO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 13 Nov 2018 18:44:14 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 396A7B13A;
-        Tue, 13 Nov 2018 13:46:01 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id C5EC9DAD3E; Tue, 13 Nov 2018 14:45:45 +0100 (CET)
-Date:   Tue, 13 Nov 2018 14:45:45 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v15.1 00/13] Btrfs In-band De-duplication
-Message-ID: <20181113134545.GY24115@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Lu Fengqi <lufq.fnst@cn.fujitsu.com>,
-        linux-btrfs@vger.kernel.org
-References: <20181106064122.6154-1-lufq.fnst@cn.fujitsu.com>
+        id S1731231AbeKNAIb (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 13 Nov 2018 19:08:31 -0500
+Received: from dibed.net-space.pl ([84.10.22.86]:37751 "EHLO
+        dibed.net-space.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1730991AbeKNAIb (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 13 Nov 2018 19:08:31 -0500
+Received: from router-fw.i.net-space.pl ([192.168.52.1]:43948 "EHLO
+        tomti.i.net-space.pl") by router-fw-old.i.net-space.pl with ESMTP
+        id S1872254AbeKMOHD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 13 Nov 2018 15:07:03 +0100
+X-Comment: RFC 2476 MSA function at dibed.net-space.pl logged sender identity as: dkiper
+Date:   Tue, 13 Nov 2018 15:06:55 +0100
+From:   Daniel Kiper <dkiper@net-space.pl>
+To:     Nick Terrell <terrelln@fb.com>
+Cc:     David Sterba <dsterba@suse.cz>, kernel-team@fb.com,
+        linux-btrfs@vger.kernel.org, grub-devel@gnu.org
+Subject: Re: [PATCH v5 1/2] Import upstream zstd-1.3.6
+Message-ID: <20181113140655.aga3h62c5yb3aoxs@tomti.i.net-space.pl>
+References: <20181112221446.2154944-1-terrelln@fb.com>
+ <20181112221446.2154944-2-terrelln@fb.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20181106064122.6154-1-lufq.fnst@cn.fujitsu.com>
-User-Agent: Mutt/1.5.23.1 (2014-03-12)
+In-Reply-To: <20181112221446.2154944-2-terrelln@fb.com>
+User-Agent: NeoMutt/20170113 (1.7.2)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Nov 06, 2018 at 02:41:09PM +0800, Lu Fengqi wrote:
-> This patchset can be fetched from github:
-> https://github.com/littleroad/linux.git dedupe_latest
-> 
-> Now the new base is v4.20-rc1.
+On Mon, Nov 12, 2018 at 02:14:45PM -0800, Nick Terrell wrote:
+> - Import zstd-1.3.6 from upstream
+> - Add zstd's module.c file
+> - Add the zstd module to Makefile.core.def
+>
+> Import zstd-1.3.6 from upstream [1]. Only the files need for decompression
+> are imported. I used the latest zstd release, which includes patches [2] to
+> build cleanly in GRUB.
+>
+> I included the script used to import zstd-1.3.6 below at the bottom of the
+> commit message.
+>
+> Upstream zstd commit hash: 4fa456d7f12f8b27bd3b2f5dfd4f46898cb31c24
+> Upstream zstd commit name: Merge pull request #1354 from facebook/dev
+>
+> Zstd requires some posix headers, which it gets from posix_wrap.
+> This can be checked by inspecting the .Po files generated by automake,
+> which contain the header dependencies. After building run the command
+> `cat grub-core/lib/zstd/.deps-core/*.Po` to see the dependencies [3].
+> The only OS dependencies are:
+>
+> - stddef.h, which is already a dependency in posix_wrap, and used for size_t
+>   by lzo and xz.
+> - stdarg.h, which comes from the grub/misc.h header, and we don't use in zstd.
+>
+> All the types like uint64_t are typedefed to grub_uint64_t under the hood.
+> The only exception is size_t, which comes from stddef.h. This is already the
+> case for lzo and xz. I don't think there are any cross-compilation concerns,
+> because cross-compilers provide their own system headers (and it would already
+> be broken).
+>
+> [1] https://github.com/facebook/zstd/releases/tag/v1.3.6
+> [2] https://github.com/facebook/zstd/pull/1344
+> [3] https://gist.github.com/terrelln/7a16b92f5a1b3aecf980f944b4a966c4
+>
+> ```
+> #!/bin/sh -e
+>
+> curl -L -O https://github.com/facebook/zstd/releases/download/v1.3.6/zstd-1.3.6.tar.gz
+> curl -L -O https://github.com/facebook/zstd/releases/download/v1.3.6/zstd-1.3.6.tar.gz.sha256
+> sha256sum --check zstd-1.3.6.tar.gz.sha256
+> tar xzf zstd-1.3.6.tar.gz
+>
+> SRC_LIB="zstd-1.3.6/lib"
+> DST_LIB="grub-core/lib/zstd"
+> rm -rf $DST_LIB
+> mkdir -p $DST_LIB
+> cp $SRC_LIB/zstd.h $DST_LIB/
+> cp $SRC_LIB/common/*.[hc] $DST_LIB/
+> cp $SRC_LIB/decompress/*.[hc] $DST_LIB/
+> rm $DST_LIB/{pool.[hc],threading.[hc]}
+> rm -rf zstd-1.3.6*
+> echo SUCCESS!
+> ```
+>
+> Signed-off-by: Nick Terrell <terrelln@fb.com>
 
-Before anybody spends more time with this patchset: this is a big
-feature and quite intrusive to several btrfs subsystems. Currently it's
-on hold as it requires finishing the design phase, it's still only the
-in-memory backend and before we claim in-band dedupe, the persistent
-hash tree needs to be at least drafted or prototyped.
+Reviewed-by: Daniel Kiper <daniel.kiper@oracle.com>
 
-At this point there are several features that are in a more complete
-state so they get preferred when it comes to merging. I would have to
-look up what was agreed long time ago as merging plan, but at this point
-this series would require a lot of work.
+Daniel

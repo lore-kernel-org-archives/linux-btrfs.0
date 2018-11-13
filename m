@@ -3,32 +3,32 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 410D7C43441
-	for <linux-btrfs@archiver.kernel.org>; Tue, 13 Nov 2018 09:48:24 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BC388C43610
+	for <linux-btrfs@archiver.kernel.org>; Tue, 13 Nov 2018 09:52:13 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 06BD5224E0
-	for <linux-btrfs@archiver.kernel.org>; Tue, 13 Nov 2018 09:48:23 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 06BD5224E0
+	by mail.kernel.org (Postfix) with ESMTP id 8AB6D214F1
+	for <linux-btrfs@archiver.kernel.org>; Tue, 13 Nov 2018 09:52:13 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 8AB6D214F1
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731813AbeKMTpj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 13 Nov 2018 14:45:39 -0500
-Received: from mx2.suse.de ([195.135.220.15]:51192 "EHLO mx1.suse.de"
+        id S1731959AbeKMTta (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 13 Nov 2018 14:49:30 -0500
+Received: from mx2.suse.de ([195.135.220.15]:51858 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1731786AbeKMTpj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 13 Nov 2018 14:45:39 -0500
+        id S1731875AbeKMTta (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 13 Nov 2018 14:49:30 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 83066B122
-        for <linux-btrfs@vger.kernel.org>; Tue, 13 Nov 2018 09:48:19 +0000 (UTC)
-Subject: Re: [PATCH] btrfs: qgroups: Prepare to deprecate
- BTRFS_QGROUP_LIMIT_RSV_RFER/EXCL flags
+        by mx1.suse.de (Postfix) with ESMTP id 3B683B112
+        for <linux-btrfs@vger.kernel.org>; Tue, 13 Nov 2018 09:52:10 +0000 (UTC)
+Subject: Re: [PATCH] btrfs: qgroup: Remove duplicated trace points for
+ qgroup_rsv_add/release()
 To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-References: <20181113060909.27605-1-wqu@suse.com>
+References: <20181113070508.3463-1-wqu@suse.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -73,12 +73,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  KIuxEcV8wcVjr+Wr9zRl06waOCkgrQbTPp631hToxo+4rA1jiQF2M80HAet65ytBVR2pFGZF
  zGYYLqiG+mpUZ+FPjxk9kpkRYz61mTLSY7tuFljExfJWMGfgSg1OxfLV631jV1TcdUnx+h3l
  Sqs2vMhAVt14zT8mpIuu2VNxcontxgVr1kzYA/tQg32fVRbGr449j1gw57BV9i0vww==
-Message-ID: <5123074e-c78d-5324-c6be-91a5a25d4426@suse.com>
-Date:   Tue, 13 Nov 2018 11:48:18 +0200
+Message-ID: <f84177eb-e789-97fc-396c-ec3c6a4e9306@suse.com>
+Date:   Tue, 13 Nov 2018 11:52:09 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <20181113060909.27605-1-wqu@suse.com>
+In-Reply-To: <20181113070508.3463-1-wqu@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -89,85 +89,42 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 13.11.18 г. 8:09 ч., Qu Wenruo wrote:
-> These two flags are only used to set btrfs_qgroup::rsv_rfer/excl number,
-> but then are never used.
+On 13.11.18 г. 9:05 ч., Qu Wenruo wrote:
+> Inside qgroup_rsv_add/release(), we have trace events
+> trace_qgroup_update_reserve() to catch reserved space update.
 > 
-> Nor these flags are really used by btrfs-progs, so it's pretty safe just
-> to deprecate them in next kernel release.
+> However we still have two manual trace_qgroup_update_reserve() calls
+> just outside these functions.
 > 
-> This patch will mark these two flags deprecated and output warning
-> messages, but still handle them.
+> Remove these duplicated calls.
 > 
-> These two flags will be completely removed in next kernel release.
-> 
+> Fixes: 64ee4e751a1c ("btrfs: qgroup: Update trace events to use new separate rsv types")
 > Signed-off-by: Qu Wenruo <wqu@suse.com>
+
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+
 > ---
->  fs/btrfs/qgroup.c          | 16 ++++++++++------
->  include/uapi/linux/btrfs.h | 12 ++++++------
->  2 files changed, 16 insertions(+), 12 deletions(-)
+>  fs/btrfs/qgroup.c | 2 --
+>  1 file changed, 2 deletions(-)
 > 
 > diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-> index 9afad8c14220..d4a52dbad044 100644
+> index 45868fd76209..c1fbd8a30fc4 100644
 > --- a/fs/btrfs/qgroup.c
 > +++ b/fs/btrfs/qgroup.c
-> @@ -1385,21 +1385,25 @@ int btrfs_limit_qgroup(struct btrfs_trans_handle *trans,
->  			qgroup->max_excl = limit->max_excl;
->  		}
->  	}
-> -	if (limit->flags & BTRFS_QGROUP_LIMIT_RSV_RFER) {
-> +	if (limit->flags & __BTRFS_QGROUP_LIMIT_RSV_RFER) {
->  		if (limit->rsv_rfer == CLEAR_VALUE) {
-> -			qgroup->lim_flags &= ~BTRFS_QGROUP_LIMIT_RSV_RFER;
-> -			limit->flags &= ~BTRFS_QGROUP_LIMIT_RSV_RFER;
-> +			qgroup->lim_flags &= ~__BTRFS_QGROUP_LIMIT_RSV_RFER;
-> +			limit->flags &= ~__BTRFS_QGROUP_LIMIT_RSV_RFER;
->  			qgroup->rsv_rfer = 0;
->  		} else {
-> +			btrfs_warn_rl(fs_info,
-> +"BTRFS_QGROUP_LIMIT_RSV_RFER flag is deprecated, will not be supported in v5.1");
->  			qgroup->rsv_rfer = limit->rsv_rfer;
->  		}
->  	}
-> -	if (limit->flags & BTRFS_QGROUP_LIMIT_RSV_EXCL) {
-> +	if (limit->flags & __BTRFS_QGROUP_LIMIT_RSV_EXCL) {
->  		if (limit->rsv_excl == CLEAR_VALUE) {
-> -			qgroup->lim_flags &= ~BTRFS_QGROUP_LIMIT_RSV_EXCL;
-> -			limit->flags &= ~BTRFS_QGROUP_LIMIT_RSV_EXCL;
-> +			qgroup->lim_flags &= ~__BTRFS_QGROUP_LIMIT_RSV_EXCL;
-> +			limit->flags &= ~__BTRFS_QGROUP_LIMIT_RSV_EXCL;
->  			qgroup->rsv_excl = 0;
->  		} else {
-> +			btrfs_warn_rl(fs_info,
-> +"BTRFS_QGROUP_LIMIT_RSV_EXCL flag is deprecated, will not be supported in v5.1");
->  			qgroup->rsv_excl = limit->rsv_excl;
->  		}
->  	}
-> diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
-> index db4c253f8011..ec79ab781ee0 100644
-> --- a/include/uapi/linux/btrfs.h
-> +++ b/include/uapi/linux/btrfs.h
-> @@ -53,12 +53,12 @@ struct btrfs_ioctl_vol_args {
->   * struct btrfs_qgroup_limit.flags
->   * struct btrfs_qgroup_limit_item.flags
->   */
-> -#define BTRFS_QGROUP_LIMIT_MAX_RFER	(1ULL << 0)
-> -#define BTRFS_QGROUP_LIMIT_MAX_EXCL	(1ULL << 1)
-> -#define BTRFS_QGROUP_LIMIT_RSV_RFER	(1ULL << 2)
-> -#define BTRFS_QGROUP_LIMIT_RSV_EXCL	(1ULL << 3)
-> -#define BTRFS_QGROUP_LIMIT_RFER_CMPR	(1ULL << 4)
-> -#define BTRFS_QGROUP_LIMIT_EXCL_CMPR	(1ULL << 5)
-> +#define BTRFS_QGROUP_LIMIT_MAX_RFER	(1ULL << 0) /* reference (rfer) limit */
-> +#define BTRFS_QGROUP_LIMIT_MAX_EXCL	(1ULL << 1) /* exclusive (excl) limit */
-> +#define __BTRFS_QGROUP_LIMIT_RSV_RFER	(1ULL << 2) /* deprecated */
-> +#define __BTRFS_QGROUP_LIMIT_RSV_EXCL	(1ULL << 3) /* deprecated */
-
-We gain absolutely nothing by prepending the __, drop it. What's
-sufficient for this patch is to introduce only the warnings, nothing else.
-
-> +#define BTRFS_QGROUP_LIMIT_RFER_CMPR	(1ULL << 4) /* compressed rfer limit */
-> +#define BTRFS_QGROUP_LIMIT_EXCL_CMPR	(1ULL << 5) /* compressed excl limit */
+> @@ -2952,7 +2952,6 @@ static int qgroup_reserve(struct btrfs_root *root, u64 num_bytes, bool enforce,
 >  
->  struct btrfs_qgroup_limit {
->  	__u64	flags;
+>  		qg = unode_aux_to_qgroup(unode);
+>  
+> -		trace_qgroup_update_reserve(fs_info, qg, num_bytes, type);
+>  		qgroup_rsv_add(fs_info, qg, num_bytes, type);
+>  	}
+>  
+> @@ -3019,7 +3018,6 @@ void btrfs_qgroup_free_refroot(struct btrfs_fs_info *fs_info,
+>  
+>  		qg = unode_aux_to_qgroup(unode);
+>  
+> -		trace_qgroup_update_reserve(fs_info, qg, -(s64)num_bytes, type);
+>  		qgroup_rsv_release(fs_info, qg, num_bytes, type);
+>  
+>  		list_for_each_entry(glist, &qg->groups, next_group) {
 > 

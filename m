@@ -6,32 +6,32 @@ X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 79B23C43441
-	for <linux-btrfs@archiver.kernel.org>; Wed, 14 Nov 2018 13:51:29 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BB740C43441
+	for <linux-btrfs@archiver.kernel.org>; Wed, 14 Nov 2018 13:52:28 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 45DA920817
-	for <linux-btrfs@archiver.kernel.org>; Wed, 14 Nov 2018 13:51:29 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 45DA920817
+	by mail.kernel.org (Postfix) with ESMTP id 85AA02145D
+	for <linux-btrfs@archiver.kernel.org>; Wed, 14 Nov 2018 13:52:28 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 85AA02145D
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727835AbeKNXys (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 14 Nov 2018 18:54:48 -0500
-Received: from mx2.suse.de ([195.135.220.15]:57368 "EHLO mx1.suse.de"
+        id S1733066AbeKNXzr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 14 Nov 2018 18:55:47 -0500
+Received: from mx2.suse.de ([195.135.220.15]:57502 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726823AbeKNXys (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 14 Nov 2018 18:54:48 -0500
+        id S1731746AbeKNXzr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 14 Nov 2018 18:55:47 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id A67B9B088
-        for <linux-btrfs@vger.kernel.org>; Wed, 14 Nov 2018 13:51:25 +0000 (UTC)
-Subject: Re: [PATCH 2/6] btrfs: remove set but not used variable err in
- btrfs_add_link
+        by mx1.suse.de (Postfix) with ESMTP id EF06EB089
+        for <linux-btrfs@vger.kernel.org>; Wed, 14 Nov 2018 13:52:24 +0000 (UTC)
+Subject: Re: [PATCH 6/6] btrfs: unconditionally provide function prototypes
+ from free-space-tree.h
 To:     Johannes Thumshirn <jthumshirn@suse.de>,
         David Sterba <dsterba@suse.com>
 Cc:     Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>
 References: <20181114133520.16069-1-jthumshirn@suse.de>
- <20181114133520.16069-3-jthumshirn@suse.de>
+ <20181114133520.16069-7-jthumshirn@suse.de>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -76,12 +76,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  KIuxEcV8wcVjr+Wr9zRl06waOCkgrQbTPp631hToxo+4rA1jiQF2M80HAet65ytBVR2pFGZF
  zGYYLqiG+mpUZ+FPjxk9kpkRYz61mTLSY7tuFljExfJWMGfgSg1OxfLV631jV1TcdUnx+h3l
  Sqs2vMhAVt14zT8mpIuu2VNxcontxgVr1kzYA/tQg32fVRbGr449j1gw57BV9i0vww==
-Message-ID: <2260d7fd-3229-e0e1-54ed-82d1581f8aef@suse.com>
-Date:   Wed, 14 Nov 2018 15:51:24 +0200
+Message-ID: <f08d71fa-9e30-cd19-8389-ee8b4ef09212@suse.com>
+Date:   Wed, 14 Nov 2018 15:52:24 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <20181114133520.16069-3-jthumshirn@suse.de>
+In-Reply-To: <20181114133520.16069-7-jthumshirn@suse.de>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -93,50 +93,53 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 On 14.11.18 г. 15:35 ч., Johannes Thumshirn wrote:
-> err holds the return value of either btrfs_del_root_ref() or
-> btrfs_del_inode_ref() but it hasn't been checked since it's introduction with
-> commit fe66a05a0679 (Btrfs: improve error handling for btrfs_insert_dir_item
-> callers) in 2012.
+> Currently the function prototypes of:
+> * search_free_space_info()
+> * convert_free_space_to_bitmaps()
+> * convert_free_space_to_extents()
+> * free_space_test_bit()
+> * __remove_from_free_space_tree()
+> * __add_to_free_space_tree()
+> are hidden behind CONFIG_BTRFS_FS_RUN_SANITY_TESTS.
 > 
-> As the error value hasn't been of any interest for 6 years we can just drop it
-> as well.
+> If CONFIG_BTRFS_FS_RUN_SANITY_TESTS is not set, these functions are only
+> used within free-space-tree.c so technically there would be no need to provide
+> the function prototypes. But when CONFIG_BTRFS_FS_RUN_SANITY_TESTS they are
+> also used from tests/free-space-tree-tests.c which explains the need for
+> the function prototypes and the non-static declaration of the functions.
+> 
+> When compiling with -Wmissing-prototypes and
+> CONFIG_BTRFS_FS_RUN_SANITY_TESTS=n gcc emits a warning for each of these
+> functions, so remove the ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS guard to
+> make the compiler happy when running 'make W=1'.
+
+I agree with this patch, however you go into the gray area of
+"everything which is exported should have btrfs_ prefix". It's up to
+David to see if he is content with this change.
+
 > 
 > Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
-
-Technically you are correct, given this is in error path I guess we can
-live by ignoring error from those functions in this context. Ideally we
-should strive to actually handle error wherever we can.
-
 > ---
->  fs/btrfs/inode.c | 13 ++++++-------
->  1 file changed, 6 insertions(+), 7 deletions(-)
+>  fs/btrfs/free-space-tree.h | 2 --
+>  1 file changed, 2 deletions(-)
 > 
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 7d17b0a654e6..57af243b3f59 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -6427,17 +6427,16 @@ int btrfs_add_link(struct btrfs_trans_handle *trans,
->  fail_dir_item:
->  	if (unlikely(ino == BTRFS_FIRST_FREE_OBJECTID)) {
->  		u64 local_index;
-> -		int err;
-> -		err = btrfs_del_root_ref(trans, key.objectid,
-> -					 root->root_key.objectid, parent_ino,
-> -					 &local_index, name, name_len);
-> +
-> +		btrfs_del_root_ref(trans, key.objectid,
-> +				   root->root_key.objectid, parent_ino,
-> +				   &local_index, name, name_len);
+> diff --git a/fs/btrfs/free-space-tree.h b/fs/btrfs/free-space-tree.h
+> index 3133651d7d70..0f4db2ad68c8 100644
+> --- a/fs/btrfs/free-space-tree.h
+> +++ b/fs/btrfs/free-space-tree.h
+> @@ -27,7 +27,6 @@ int add_to_free_space_tree(struct btrfs_trans_handle *trans,
+>  int remove_from_free_space_tree(struct btrfs_trans_handle *trans,
+>  				u64 start, u64 size);
 >  
->  	} else if (add_backref) {
->  		u64 local_index;
-> -		int err;
+> -#ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
+>  struct btrfs_free_space_info *
+>  search_free_space_info(struct btrfs_trans_handle *trans,
+>  		       struct btrfs_fs_info *fs_info,
+> @@ -47,6 +46,5 @@ int convert_free_space_to_extents(struct btrfs_trans_handle *trans,
+>  				  struct btrfs_path *path);
+>  int free_space_test_bit(struct btrfs_block_group_cache *block_group,
+>  			struct btrfs_path *path, u64 offset);
+> -#endif
 >  
-> -		err = btrfs_del_inode_ref(trans, root, name, name_len,
-> -					  ino, parent_ino, &local_index);
-> +		btrfs_del_inode_ref(trans, root, name, name_len,
-> +				    ino, parent_ino, &local_index);
->  	}
->  	return ret;
->  }
+>  #endif
 > 

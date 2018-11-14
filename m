@@ -2,245 +2,366 @@ Return-Path: <SRS0=6ez2=NZ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.7 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 91F39C43441
-	for <linux-btrfs@archiver.kernel.org>; Wed, 14 Nov 2018 05:50:26 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BD6C9C43441
+	for <linux-btrfs@archiver.kernel.org>; Wed, 14 Nov 2018 07:24:52 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 3DD3121780
-	for <linux-btrfs@archiver.kernel.org>; Wed, 14 Nov 2018 05:50:26 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="nuZl/a96"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 3DD3121780
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=oracle.com
+	by mail.kernel.org (Postfix) with ESMTP id 6DE482086A
+	for <linux-btrfs@archiver.kernel.org>; Wed, 14 Nov 2018 07:24:52 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 6DE482086A
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727251AbeKNPwI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 14 Nov 2018 10:52:08 -0500
-Received: from userp2130.oracle.com ([156.151.31.86]:49562 "EHLO
-        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726813AbeKNPwI (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 14 Nov 2018 10:52:08 -0500
-Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
-        by userp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id wAE5mwXa185446
-        for <linux-btrfs@vger.kernel.org>; Wed, 14 Nov 2018 05:50:23 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
- date : message-id : in-reply-to : references : mime-version : content-type
- : content-transfer-encoding; s=corp-2018-07-02;
- bh=wYvBVUqSEOlxah/nyN/E35+3f1gdC6hvhT94SBYOhF0=;
- b=nuZl/a96Yh5B3QzjljP8VqE2KMasq1fvaoFqClndAp+RdfBPWw880GQsxhB9ujIapmZ9
- 7Qb+5IIcNDqQIlo80QoYzE5uRuFQr19SMEH/RsWJFyrqcx1FFml8uA9P48XYhKOSxcYe
- oYr4wMINC4gWG6gSqW2M97rr4pI4hWF5GRB0Jz+vXu3wYCfwPIf/SiAxqqqqO/m6rcdl
- LXhBx3ho7Bi1hM9kmy1hnUoQ2KJ2T0rJDh24lhMaN3zr8BNuSi2mF46vyHyzb/+Xy0xb
- MY5G4D5TLml0bMtOI+ab9dkEFtz7ieNFZFa+B+tPQq91vwhBUbsAZuQpDfzEJNSs5vgm 7A== 
-Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
-        by userp2130.oracle.com with ESMTP id 2nr7cs16hm-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 14 Nov 2018 05:50:23 +0000
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id wAE5oMtK031476
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 14 Nov 2018 05:50:22 GMT
-Received: from abhmp0001.oracle.com (abhmp0001.oracle.com [141.146.116.7])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id wAE5oMOX010643
-        for <linux-btrfs@vger.kernel.org>; Wed, 14 Nov 2018 05:50:22 GMT
-Received: from tpasj.sg.oracle.com (/10.186.50.4)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Tue, 13 Nov 2018 21:50:22 -0800
-From:   Anand Jain <anand.jain@oracle.com>
+        id S1728127AbeKNR0v (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 14 Nov 2018 12:26:51 -0500
+Received: from mx2.suse.de ([195.135.220.15]:45588 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1727375AbeKNR0u (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 14 Nov 2018 12:26:50 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 00899ABEF
+        for <linux-btrfs@vger.kernel.org>; Wed, 14 Nov 2018 07:24:47 +0000 (UTC)
+From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 4/9 v2.1] btrfs: fix UAF due to race between replace start and cancel
-Date:   Wed, 14 Nov 2018 13:50:26 +0800
-Message-Id: <1542174626-26129-1-git-send-email-anand.jain@oracle.com>
-X-Mailer: git-send-email 1.8.3.1
-In-Reply-To: <1541946144-8174-5-git-send-email-anand.jain@oracle.com>
-References: <1541946144-8174-5-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH] btrfs: qgroup: Move reserved data account from btrfs_delayed_ref_head to btrfs_qgroup_extent_record
+Date:   Wed, 14 Nov 2018 15:24:44 +0800
+Message-Id: <20181114072444.21813-1-wqu@suse.com>
+X-Mailer: git-send-email 2.19.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
-X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9076 signatures=668683
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=1 malwarescore=0
- phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
- adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.0.1-1810050000 definitions=main-1811140052
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-replace cancel thread can race with the replace start thread and if
-fs_info::scrubs_running is not yet set the btrfs_scrub_cancel() will fail
-to stop the scrub thread, so the scrub thread continue with the scrub for
-replace which then shall try to write to the target device and which is
-already freed by the cancel thread. Please ref to the logs below.
+[BUG]
+Btrfs/139 will fail with a pretty high possibility if the testing
+machine (VM) only has 2G ram.
 
-So scrub_setup_ctx() warns as tgtdev is null.
+Resulting the final write success while it should fail due to EDQUOT,
+and the result fs will has quota exceeding the limit by 16K.
 
-static noinline_for_stack
-struct scrub_ctx *scrub_setup_ctx(struct btrfs_device *dev, int
-is_dev_replace)
-{
-::
-        if (is_dev_replace) {
-                WARN_ON(!fs_info->dev_replace.tgtdev);  <===
-                sctx->pages_per_wr_bio = SCRUB_PAGES_PER_WR_BIO;
-                sctx->wr_tgtdev = fs_info->dev_replace.tgtdev;
-                sctx->flush_all_writes = false;
-        }
+The simplified reproducer will be: (needs a 2G ram VM)
 
-[ 6724.497655] BTRFS info (device sdb): dev_replace from /dev/sdb (devid 1) to /dev/sdc started
-[ 6753.945017] BTRFS info (device sdb): dev_replace from /dev/sdb (devid 1) to /dev/sdc canceled
-[ 6852.426700] WARNING: CPU: 0 PID: 4494 at fs/btrfs/scrub.c:622 scrub_setup_ctx.isra.19+0x220/0x230 [btrfs]
-::
-[ 6852.428928] RIP: 0010:scrub_setup_ctx.isra.19+0x220/0x230 [btrfs]
-::
-[ 6852.432970] Call Trace:
-[ 6852.433202]  btrfs_scrub_dev+0x19b/0x5c0 [btrfs]
-[ 6852.433471]  btrfs_dev_replace_start+0x48c/0x6a0 [btrfs]
-[ 6852.433800]  btrfs_dev_replace_by_ioctl+0x3a/0x60 [btrfs]
-[ 6852.434097]  btrfs_ioctl+0x2476/0x2d20 [btrfs]
-[ 6852.434365]  ? do_sigaction+0x7d/0x1e0
-[ 6852.434623]  do_vfs_ioctl+0xa9/0x6c0
-[ 6852.434865]  ? syscall_trace_enter+0x1c8/0x310
-[ 6852.435124]  ? syscall_trace_enter+0x1c8/0x310
-[ 6852.435387]  ksys_ioctl+0x60/0x90
-[ 6852.435663]  __x64_sys_ioctl+0x16/0x20
-[ 6852.435907]  do_syscall_64+0x50/0x180
-[ 6852.436150]  entry_SYSCALL_64_after_hwframe+0x49/0xbe
+  mkfs.btrfs -f $dev
+  mount $dev $mnt
 
-Further, as the replace thread enters the
-scrub_write_page_to_dev_replace() without the target device it panics
+  btrfs subv create $mnt/subv
+  btrfs quota enable $mnt
+  btrfs quota rescan -w $mnt
+  btrfs qgroup limit -e 1G $mnt/subv
 
-static int scrub_add_page_to_wr_bio(struct scrub_ctx *sctx,
-                                    struct scrub_page *spage)
-{
-::
-      bio_set_dev(bio, sbio->dev->bdev); <======
+  for i in $(seq -w  1 8); do
+  	xfs_io -f -c "pwrite 0 128M" $mnt/subv/file_$i > /dev/null
+  	echo "file $i written" > /dev/kmsg
+  done
+  sync
+  btrfs qgroup show -pcre --raw $mnt
 
-[ 6929.715145] BUG: unable to handle kernel NULL pointer dereference at 00000000000000a0
-::
-[ 6929.717106] Workqueue: btrfs-scrub btrfs_scrub_helper [btrfs]
-[ 6929.717420] RIP: 0010:scrub_write_page_to_dev_replace+0xb4/0x260
-[btrfs]
-::
-[ 6929.721430] Call Trace:
-[ 6929.721663]  scrub_write_block_to_dev_replace+0x3f/0x60 [btrfs]
-[ 6929.721975]  scrub_bio_end_io_worker+0x1af/0x490 [btrfs]
-[ 6929.722277]  normal_work_helper+0xf0/0x4c0 [btrfs]
-[ 6929.722552]  process_one_work+0x1f4/0x520
-[ 6929.722805]  ? process_one_work+0x16e/0x520
-[ 6929.723063]  worker_thread+0x46/0x3d0
-[ 6929.723313]  kthread+0xf8/0x130
-[ 6929.723544]  ? process_one_work+0x520/0x520
-[ 6929.723800]  ? kthread_delayed_work_timer_fn+0x80/0x80
-[ 6929.724081]  ret_from_fork+0x3a/0x50
+The last pwrite will not trigger EDQUOT and final qgroup show will show
+something like:
 
-Fix this by letting the btrfs_dev_replace_finishing() to do the job of
-cleaning after the cancel, including freeing of the target device.
-btrfs_dev_replace_finishing() is called when btrfs_scub_dev() returns
-along with the scrub return status.
+  qgroupid         rfer         excl     max_rfer     max_excl parent  child
+  --------         ----         ----     --------     -------- ------  -----
+  0/5             16384        16384         none         none ---     ---
+  0/256      1073758208   1073758208         none   1073741824 ---     ---
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
+And 1073758208 is larger than
+  > 1073741824.
+
+[CAUSE]
+It's a bug in btrfs qgroup data reserved space management.
+
+For quota limit, we must ensure that:
+  reserved (data + metadata) + rfer/excl <= limit
+
+Since rfer/excl is only updated at transaction commmit time, reserved
+space needs to be taken special care.
+
+One important part of reserved space is data, and for a new data extent
+written to disk, we still need to take the reserved space until
+rfer/excl numbers get update.
+
+Originally when an ordered extent finishes, we migrate the reserved
+qgroup data space from extent_io tree to delayed ref head of the data
+extent, expecting delayed ref will only be cleaned up at commit
+transaction time.
+
+However for small RAM machine, due to memory pressure dirty pages can be
+flushed back to disk without committing a transaction.
+
+The  related events will be something like:
+
+  BTRFS info (device dm-3): has skinny extents
+  file 1 written
+  btrfs_finish_ordered_io: ino=258 ordered offset=0 len=54947840
+  btrfs_finish_ordered_io: ino=258 ordered offset=54947840 len=5636096
+  btrfs_finish_ordered_io: ino=258 ordered offset=61153280 len=57344
+  btrfs_finish_ordered_io: ino=258 ordered offset=61210624 len=8192
+  btrfs_finish_ordered_io: ino=258 ordered offset=60583936 len=569344
+  cleanup_ref_head: num_bytes=54947840
+  cleanup_ref_head: num_bytes=5636096
+  cleanup_ref_head: num_bytes=569344
+  cleanup_ref_head: num_bytes=57344
+  cleanup_ref_head: num_bytes=8192
+  ^^^^^^^^^^^^^^^^ This will free qgroup data reserved space
+  file 2 written
+  ...
+  file 8 written
+  cleanup_ref_head: num_bytes=8192
+  ...
+  btrfs_commit_transaction  <<< the only transaction committed during
+				the test
+
+When file 2 is written, we have already freed 128M reserved qgroup data
+space for ino 258. Thus later write won't trigger EDQUOT.
+
+This allows us to write more data beyond qgroup limit.
+
+In my 2G ram VM, it could reach about 1.2G before hitting EDQUOT.
+
+[FIX]
+By moving reserved qgroup data space from btrfs_delayed_ref_head to
+btrfs_qgroup_extent_record, we can ensure that reserved qgroup data
+space won't be freed half way before commit transaction, thus fix the
+problem.
+
+Fixes: f64d5ca86821 ("btrfs: delayed_ref: Add new function to record reserved space into delayed ref")
+Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
-v2->v2.1: Fix compiler warning. (I couldn't reproduce on gcc 4.8.5)
+I tried to create a dedicated test case for this, however drop_caches
+interface would also trigger transaction commit, thus allowing bad kernel
+to pass (as transaction commit updates qgroup numbers, killing the leakage).
 
-fs/btrfs/dev-replace.c: In function ‘btrfs_dev_replace_cancel’:
-fs/btrfs/dev-replace.c:865:9: warning: ‘result’ may be used uninitialized in this function [-Wmaybe-uninitialized]
-  return result;
-         ^~~~~~
+Any idea to trigger dirty data pages writeback while without triggering
+a transaction is welcomed.
+---
+ fs/btrfs/delayed-ref.c       | 15 ++++-----------
+ fs/btrfs/delayed-ref.h       | 11 -----------
+ fs/btrfs/extent-tree.c       |  3 ---
+ fs/btrfs/qgroup.c            | 19 +++++++++++++++----
+ fs/btrfs/qgroup.h            | 20 +++++++++++---------
+ include/trace/events/btrfs.h | 29 -----------------------------
+ 6 files changed, 30 insertions(+), 67 deletions(-)
 
-v1->v2: pls ref to the cover letter
-
- fs/btrfs/dev-replace.c | 61 ++++++++++++++++++++++++++++++++------------------
- 1 file changed, 39 insertions(+), 22 deletions(-)
-
-diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index 35ce10f18607..d32d696d931c 100644
---- a/fs/btrfs/dev-replace.c
-+++ b/fs/btrfs/dev-replace.c
-@@ -797,39 +797,56 @@ int btrfs_dev_replace_cancel(struct btrfs_fs_info *fs_info)
- 	case BTRFS_IOCTL_DEV_REPLACE_STATE_CANCELED:
- 		result = BTRFS_IOCTL_DEV_REPLACE_RESULT_NOT_STARTED;
- 		btrfs_dev_replace_write_unlock(dev_replace);
--		goto leave;
-+		break;
- 	case BTRFS_IOCTL_DEV_REPLACE_STATE_STARTED:
-+		result = BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_ERROR;
-+		tgt_device = dev_replace->tgtdev;
-+		src_device = dev_replace->srcdev;
-+		btrfs_dev_replace_write_unlock(dev_replace);
-+		btrfs_scrub_cancel(fs_info);
-+		/*
-+		 * btrfs_dev_replace_finishing() will handle the cleanup part
-+		 */
-+		btrfs_info_in_rcu(fs_info,
-+			"dev_replace from %s (devid %llu) to %s canceled",
-+			btrfs_dev_name(src_device), src_device->devid,
-+			btrfs_dev_name(tgt_device));
-+		break;
- 	case BTRFS_IOCTL_DEV_REPLACE_STATE_SUSPENDED:
-+		/*
-+		 * scrub doing the replace isn't running so do the cleanup here
-+		 */
- 		result = BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_ERROR;
- 		tgt_device = dev_replace->tgtdev;
- 		src_device = dev_replace->srcdev;
- 		dev_replace->tgtdev = NULL;
- 		dev_replace->srcdev = NULL;
--		break;
--	}
--	dev_replace->replace_state = BTRFS_IOCTL_DEV_REPLACE_STATE_CANCELED;
--	dev_replace->time_stopped = ktime_get_real_seconds();
--	dev_replace->item_needs_writeback = 1;
--	btrfs_dev_replace_write_unlock(dev_replace);
--	btrfs_scrub_cancel(fs_info);
-+		dev_replace->replace_state = BTRFS_IOCTL_DEV_REPLACE_STATE_CANCELED;
-+		dev_replace->time_stopped = ktime_get_real_seconds();
-+		dev_replace->item_needs_writeback = 1;
+diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
+index 9301b3ad9217..7e74bf42f2db 100644
+--- a/fs/btrfs/delayed-ref.c
++++ b/fs/btrfs/delayed-ref.c
+@@ -581,17 +581,14 @@ static void init_delayed_ref_head(struct btrfs_delayed_ref_head *head_ref,
+ 	RB_CLEAR_NODE(&head_ref->href_node);
+ 	head_ref->processing = 0;
+ 	head_ref->total_ref_mod = count_mod;
+-	head_ref->qgroup_reserved = 0;
+-	head_ref->qgroup_ref_root = 0;
+ 	spin_lock_init(&head_ref->lock);
+ 	mutex_init(&head_ref->mutex);
  
--	trans = btrfs_start_transaction(root, 0);
--	if (IS_ERR(trans)) {
--		mutex_unlock(&dev_replace->lock_finishing_cancel_unmount);
--		return PTR_ERR(trans);
--	}
--	ret = btrfs_commit_transaction(trans);
--	WARN_ON(ret);
-+		btrfs_dev_replace_write_unlock(dev_replace);
+ 	if (qrecord) {
+ 		if (ref_root && reserved) {
+-			head_ref->qgroup_ref_root = ref_root;
+-			head_ref->qgroup_reserved = reserved;
++			qrecord->data_rsv = reserved;
++			qrecord->data_rsv_refroot = ref_root;
+ 		}
+-
+ 		qrecord->bytenr = bytenr;
+ 		qrecord->num_bytes = num_bytes;
+ 		qrecord->old_roots = NULL;
+@@ -630,10 +627,6 @@ add_delayed_ref_head(struct btrfs_trans_handle *trans,
+ 	existing = htree_insert(&delayed_refs->href_root,
+ 				&head_ref->href_node);
+ 	if (existing) {
+-		WARN_ON(qrecord && head_ref->qgroup_ref_root
+-			&& head_ref->qgroup_reserved
+-			&& existing->qgroup_ref_root
+-			&& existing->qgroup_reserved);
+ 		update_existing_head_ref(delayed_refs, existing, head_ref,
+ 					 old_ref_mod);
+ 		/*
+@@ -745,7 +738,7 @@ int btrfs_add_delayed_tree_ref(struct btrfs_trans_handle *trans,
  
--	btrfs_info_in_rcu(fs_info,
--		"dev_replace from %s (devid %llu) to %s canceled",
--		btrfs_dev_name(src_device), src_device->devid,
--		btrfs_dev_name(tgt_device));
-+		btrfs_scrub_cancel(fs_info);
-+
-+		trans = btrfs_start_transaction(root, 0);
-+		if (IS_ERR(trans)) {
-+			mutex_unlock(&dev_replace->lock_finishing_cancel_unmount);
-+			return PTR_ERR(trans);
+ 	if (test_bit(BTRFS_FS_QUOTA_ENABLED, &fs_info->flags) &&
+ 	    is_fstree(ref_root)) {
+-		record = kmalloc(sizeof(*record), GFP_NOFS);
++		record = kzalloc(sizeof(*record), GFP_NOFS);
+ 		if (!record) {
+ 			kmem_cache_free(btrfs_delayed_tree_ref_cachep, ref);
+ 			kmem_cache_free(btrfs_delayed_ref_head_cachep, head_ref);
+@@ -836,7 +829,7 @@ int btrfs_add_delayed_data_ref(struct btrfs_trans_handle *trans,
+ 
+ 	if (test_bit(BTRFS_FS_QUOTA_ENABLED, &fs_info->flags) &&
+ 	    is_fstree(ref_root)) {
+-		record = kmalloc(sizeof(*record), GFP_NOFS);
++		record = kzalloc(sizeof(*record), GFP_NOFS);
+ 		if (!record) {
+ 			kmem_cache_free(btrfs_delayed_data_ref_cachep, ref);
+ 			kmem_cache_free(btrfs_delayed_ref_head_cachep,
+diff --git a/fs/btrfs/delayed-ref.h b/fs/btrfs/delayed-ref.h
+index 8e20c5cb5404..09e242159acf 100644
+--- a/fs/btrfs/delayed-ref.h
++++ b/fs/btrfs/delayed-ref.h
+@@ -102,17 +102,6 @@ struct btrfs_delayed_ref_head {
+ 	 */
+ 	int ref_mod;
+ 
+-	/*
+-	 * For qgroup reserved space freeing.
+-	 *
+-	 * ref_root and reserved will be recorded after
+-	 * BTRFS_ADD_DELAYED_EXTENT is called.
+-	 * And will be used to free reserved qgroup space at
+-	 * run_delayed_refs() time.
+-	 */
+-	u64 qgroup_ref_root;
+-	u64 qgroup_reserved;
+-
+ 	/*
+ 	 * when a new extent is allocated, it is just reserved in memory
+ 	 * The actual extent isn't inserted into the extent allocation tree
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index a1febf155747..6cf4070fd45f 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -2497,9 +2497,6 @@ static int cleanup_ref_head(struct btrfs_trans_handle *trans,
+ 		}
+ 	}
+ 
+-	/* Also free its reserved qgroup space */
+-	btrfs_qgroup_free_delayed_ref(fs_info, head->qgroup_ref_root,
+-				      head->qgroup_reserved);
+ 	btrfs_delayed_ref_unlock(head);
+ 	btrfs_put_delayed_ref_head(head);
+ 	return 0;
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index c1fbd8a30fc4..f8e68b37916c 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -1540,12 +1540,18 @@ int btrfs_qgroup_trace_extent_nolock(struct btrfs_fs_info *fs_info,
+ 		parent_node = *p;
+ 		entry = rb_entry(parent_node, struct btrfs_qgroup_extent_record,
+ 				 node);
+-		if (bytenr < entry->bytenr)
++		if (bytenr < entry->bytenr) {
+ 			p = &(*p)->rb_left;
+-		else if (bytenr > entry->bytenr)
++		} else if (bytenr > entry->bytenr) {
+ 			p = &(*p)->rb_right;
+-		else
++		} else {
++			if (record->data_rsv && !entry->data_rsv) {
++				entry->data_rsv = record->data_rsv;
++				entry->data_rsv_refroot =
++					record->data_rsv_refroot;
++			}
+ 			return 1;
 +		}
-+		ret = btrfs_commit_transaction(trans);
-+		WARN_ON(ret);
+ 	}
  
--	if (tgt_device)
--		btrfs_destroy_dev_replace_tgtdev(tgt_device);
-+		btrfs_info_in_rcu(fs_info,
-+		"suspended dev_replace from %s (devid %llu) to %s canceled",
-+			btrfs_dev_name(src_device), src_device->devid,
-+			btrfs_dev_name(tgt_device));
+ 	rb_link_node(&record->node, parent_node, p);
+@@ -1591,7 +1597,7 @@ int btrfs_qgroup_trace_extent(struct btrfs_trans_handle *trans, u64 bytenr,
+ 	if (!test_bit(BTRFS_FS_QUOTA_ENABLED, &fs_info->flags)
+ 	    || bytenr == 0 || num_bytes == 0)
+ 		return 0;
+-	record = kmalloc(sizeof(*record), gfp_flag);
++	record = kzalloc(sizeof(*record), gfp_flag);
+ 	if (!record)
+ 		return -ENOMEM;
+ 
+@@ -2570,6 +2576,11 @@ int btrfs_qgroup_account_extents(struct btrfs_trans_handle *trans)
+ 					goto cleanup;
+ 			}
+ 
++			/* Free the reserved data space */
++			btrfs_qgroup_free_refroot(fs_info,
++					record->data_rsv_refroot,
++					record->data_rsv,
++					BTRFS_QGROUP_RSV_DATA);
+ 			/*
+ 			 * Use SEQ_LAST as time_seq to do special search, which
+ 			 * doesn't lock tree or delayed_refs and search current
+diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
+index d8f78f5ab854..fd26fddacd90 100644
+--- a/fs/btrfs/qgroup.h
++++ b/fs/btrfs/qgroup.h
+@@ -45,6 +45,17 @@ struct btrfs_qgroup_extent_record {
+ 	struct rb_node node;
+ 	u64 bytenr;
+ 	u64 num_bytes;
 +
-+		if (tgt_device)
-+			btrfs_destroy_dev_replace_tgtdev(tgt_device);
-+		break;
-+	}
++	/*
++	 * For qgroup reserved data space freeing.
++	 *
++	 * @data_rsv_refroot and @data_rsv will be recorded after
++	 * BTRFS_ADD_DELAYED_EXTENT is called.
++	 * And will be used to free reserved qgroup space at
++	 * transaction commit time.
++	 */
++	u32 data_rsv;		/* reserved data space needs to be freed */
++	u64 data_rsv_refroot;	/* which root the reserved data belongs to */
+ 	struct ulist *old_roots;
+ };
  
--leave:
- 	mutex_unlock(&dev_replace->lock_finishing_cancel_unmount);
- 	return result;
- }
+@@ -252,15 +263,6 @@ int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans, u64 srcid,
+ void btrfs_qgroup_free_refroot(struct btrfs_fs_info *fs_info,
+ 			       u64 ref_root, u64 num_bytes,
+ 			       enum btrfs_qgroup_rsv_type type);
+-static inline void btrfs_qgroup_free_delayed_ref(struct btrfs_fs_info *fs_info,
+-						 u64 ref_root, u64 num_bytes)
+-{
+-	if (!test_bit(BTRFS_FS_QUOTA_ENABLED, &fs_info->flags))
+-		return;
+-	trace_btrfs_qgroup_free_delayed_ref(fs_info, ref_root, num_bytes);
+-	btrfs_qgroup_free_refroot(fs_info, ref_root, num_bytes,
+-				  BTRFS_QGROUP_RSV_DATA);
+-}
+ 
+ #ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
+ int btrfs_verify_qgroup_counts(struct btrfs_fs_info *fs_info, u64 qgroupid,
+diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
+index 8568946f491d..3a5d2581bffd 100644
+--- a/include/trace/events/btrfs.h
++++ b/include/trace/events/btrfs.h
+@@ -1510,35 +1510,6 @@ DEFINE_EVENT(btrfs__qgroup_rsv_data, btrfs_qgroup_release_data,
+ 	TP_ARGS(inode, start, len, reserved, op)
+ );
+ 
+-DECLARE_EVENT_CLASS(btrfs__qgroup_delayed_ref,
+-
+-	TP_PROTO(const struct btrfs_fs_info *fs_info,
+-		 u64 ref_root, u64 reserved),
+-
+-	TP_ARGS(fs_info, ref_root, reserved),
+-
+-	TP_STRUCT__entry_btrfs(
+-		__field(	u64,		ref_root	)
+-		__field(	u64,		reserved	)
+-	),
+-
+-	TP_fast_assign_btrfs(fs_info,
+-		__entry->ref_root	= ref_root;
+-		__entry->reserved	= reserved;
+-	),
+-
+-	TP_printk_btrfs("root=%llu reserved=%llu op=free",
+-		  __entry->ref_root, __entry->reserved)
+-);
+-
+-DEFINE_EVENT(btrfs__qgroup_delayed_ref, btrfs_qgroup_free_delayed_ref,
+-
+-	TP_PROTO(const struct btrfs_fs_info *fs_info,
+-		 u64 ref_root, u64 reserved),
+-
+-	TP_ARGS(fs_info, ref_root, reserved)
+-);
+-
+ DECLARE_EVENT_CLASS(btrfs_qgroup_extent,
+ 	TP_PROTO(const struct btrfs_fs_info *fs_info,
+ 		 const struct btrfs_qgroup_extent_record *rec),
 -- 
-1.8.3.1
+2.19.1
 

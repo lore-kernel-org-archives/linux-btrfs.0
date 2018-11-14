@@ -2,69 +2,72 @@ Return-Path: <SRS0=6ez2=NZ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-4.5 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-10.5 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9F379C43441
-	for <linux-btrfs@archiver.kernel.org>; Wed, 14 Nov 2018 07:47:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 14E10C43610
+	for <linux-btrfs@archiver.kernel.org>; Wed, 14 Nov 2018 07:47:18 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 4EFCC21780
+	by mail.kernel.org (Postfix) with ESMTP id D0C4821780
 	for <linux-btrfs@archiver.kernel.org>; Wed, 14 Nov 2018 07:47:17 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="qX6yifnV"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 4EFCC21780
+	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="xwfmpBQj"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org D0C4821780
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=osandov.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729356AbeKNRtT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 14 Nov 2018 12:49:19 -0500
-Received: from mail-pf1-f194.google.com ([209.85.210.194]:39729 "EHLO
-        mail-pf1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725907AbeKNRtT (ORCPT
+        id S1731325AbeKNRtV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 14 Nov 2018 12:49:21 -0500
+Received: from mail-pg1-f195.google.com ([209.85.215.195]:39140 "EHLO
+        mail-pg1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725907AbeKNRtU (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 14 Nov 2018 12:49:19 -0500
-Received: by mail-pf1-f194.google.com with SMTP id c72so2797861pfc.6
-        for <linux-btrfs@vger.kernel.org>; Tue, 13 Nov 2018 23:47:14 -0800 (PST)
+        Wed, 14 Nov 2018 12:49:20 -0500
+Received: by mail-pg1-f195.google.com with SMTP id r9-v6so6980341pgv.6
+        for <linux-btrfs@vger.kernel.org>; Tue, 13 Nov 2018 23:47:16 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=osandov-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:cc:subject:date:message-id:mime-version
-         :content-transfer-encoding;
-        bh=w78MFz+wFzoJsP6szv9l7x3xRldPZ8s2tW52TRJW/qw=;
-        b=qX6yifnVMtyExN5tCrI+5T8IlFu0012d6/MLP292dWpJxmW/5wEncaQyoSnZu51NmX
-         BK42dY3OHRdzaa75aZWafU+xjPF4SbEZ0MEqPFcMiTOn+q5k6RfMTg4V7nz13zS5RzrL
-         SjaWT3Wo8tOtl87TrzDOw5DVQTvPITruNXR2U4iJv6mgkBf2r8URCbWQLg5zLCiGHV3R
-         aiL5XVwGa9E6Z/Somoj9IaZHUaTxb5kJXH5WwBEaslbg7Pl/T9kD2rj6KLIYwuUty4vh
-         oRnlRfgbkcuJ0T2UVIq4i8uET9AbnOyk/9Di7qs+FnxY/88TE/d8JmsNEGn3DxhVQNuN
-         sl/w==
+        h=from:to:cc:subject:date:message-id:in-reply-to:references
+         :mime-version:content-transfer-encoding;
+        bh=pR4fibd0T4/N6AQiNNQDrJGJeCZwSh47DF+fpOzjcjM=;
+        b=xwfmpBQjjbhvOQsY+DtXQqT3qcOo8zttw6cPiAsE0cYLvpcrPVIvMN5fqQtkUEIDHV
+         y6XIV3bhskdWhNHRaur27NgubRo7GDCfm830/Neg4yS9XfsNLijgUl3g60o9oI8zm2mF
+         L4Efu3k/3+QwGqT7E0+I+t4OZmiHBCDyxjNfkfufC6As6HC4+i+iYTeSljZtVspOgcLb
+         TM9FhQkOg2fXAgTMhF8OGFRUoTHzb9oBVgWE234YiescUbzFufsECoVZcl22+uDFWL1x
+         c+WROd8jSCQ8pVLBxcZuRMfERP4x5fUFgNcF/3Hihi+gVLQ7+t2hnKcgFziRxu+98wLE
+         Jvvw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id:mime-version
-         :content-transfer-encoding;
-        bh=w78MFz+wFzoJsP6szv9l7x3xRldPZ8s2tW52TRJW/qw=;
-        b=rZe0Yaq15+tF1zlVvr+FGDNWuqTmLWs+pT2PsPMQ0IsGxVquaglfhqoGt7E3K0CQ4Y
-         xV4IVeAw5mKJ1SQfGsC0byb+fqB6SgPEX4CH25GmbeFoAaMP+xlxlHZBFm64Ura4utWz
-         Cv4B1mh/at1TnzlHcANzs5pL7rVUMSJgBYQTFH5XtTXeBTNkgB6SA8NBGlybRzTsF/6+
-         2tryTF2WiV4Z78CRP4td4KAdaV/R4KhEfUXgUI9VRo6MZY7FCS+UT2sJRyONWyra4V5n
-         /FN0Iphg79y18v11MuY6/XHrLrn3I76Q2URpjvF6JmB1tIGAn2cM/+YEA3J20JVqXETD
-         DD9Q==
-X-Gm-Message-State: AGRZ1gI39ZZR/E5XcR8re1QgDQQYTgDAT+/x6/vDXGp7r9k7dn75+d+p
-        TkkzSJSUSFvxTPAtKDGw2Z8x+FlTPK/C5A==
-X-Google-Smtp-Source: AJdET5egeKVZaUMxiqxZjQAQvKYQa3zRZIb5Xh5vT2tpif5qzbJJmdrWwuPP+wWlfxUbwSD3s7KndQ==
-X-Received: by 2002:a63:de4c:: with SMTP id y12mr795946pgi.198.1542181633813;
-        Tue, 13 Nov 2018 23:47:13 -0800 (PST)
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
+         :references:mime-version:content-transfer-encoding;
+        bh=pR4fibd0T4/N6AQiNNQDrJGJeCZwSh47DF+fpOzjcjM=;
+        b=DyZ5Wp7AYQAAPskW4MV+m1d3JXTH1UUmuX66jcSCbmER4FKXIRT0nW1kO2Exj4WecL
+         SkfWKYmc3cQcXpjN8uPQfOC/i+vyujexqO+yPL9oxypu+Cj3vK11z+Yx1c77UQYf2xjt
+         WrOMjD4CQj/laeaJf8XJAOxV1bQZ2MrJMrv5Mhf3bKul0Z6lkeDXdf03BcaMALUWWgGJ
+         DDOlplDt4M8FkFwXzueoh0dGIFT5DO1NYyCSlOEC/kIGvAT7JYRuTifFo/iSHlnN5yeC
+         i/fwJ/lS0BpQvbtH3CWeUJPBAdJneMFF7KOS7m3NwDfO/PmKZPBylTUBuouG9xt4/+b/
+         cqyA==
+X-Gm-Message-State: AGRZ1gL4wIPCOL/ucbm+kKtus6Rdk7WQBfwGcsfly9bDsA5N4YmDV5uQ
+        XkaKSBGo10FVME9BJ1yn1Bi7lu+mp+sbJQ==
+X-Google-Smtp-Source: AJdET5eyGrBQUYjVmZnFrt5Yybp382EyM4q7uzh+bEzRMRAaj73MIEO+ess9yMwycE9P9Rm/atE9Rw==
+X-Received: by 2002:a63:df13:: with SMTP id u19mr799080pgg.294.1542181635153;
+        Tue, 13 Nov 2018 23:47:15 -0800 (PST)
 Received: from vader.psav.com ([64.114.255.114])
-        by smtp.gmail.com with ESMTPSA id 18-v6sm34835727pfu.129.2018.11.13.23.47.12
+        by smtp.gmail.com with ESMTPSA id 18-v6sm34835727pfu.129.2018.11.13.23.47.14
         (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Tue, 13 Nov 2018 23:47:13 -0800 (PST)
+        Tue, 13 Nov 2018 23:47:14 -0800 (PST)
 From:   Omar Sandoval <osandov@osandov.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     kernel-team@fb.com,
         Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
-Subject: [PATCH 00/10] btrfs-progs: my libbtrfsutil patch queue
-Date:   Tue, 13 Nov 2018 23:46:55 -0800
-Message-Id: <cover.1542181521.git.osandov@fb.com>
+Subject: [PATCH 02/10] libbtrfsutil: change async parameters to async_ in Python bindings
+Date:   Tue, 13 Nov 2018 23:46:57 -0800
+Message-Id: <4a54e26de572dd857f6cd356f71416226d8c58f2.1542181521.git.osandov@fb.com>
 X-Mailer: git-send-email 2.19.1
+In-Reply-To: <cover.1542181521.git.osandov@fb.com>
+References: <cover.1542181521.git.osandov@fb.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -74,59 +77,93 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Omar Sandoval <osandov@fb.com>
 
-Hi,
+async became a keyword in Python 3.7, so, e.g., create_subvolume('foo',
+async=True) is now a syntax error. Fix it with the Python convention of
+adding a trailing underscore to the keyword (async -> async_). This is
+what several other Python libraries did to handle this.
 
-This series contains my backlog of libbtrfsutil changes which I've been
-collecting over the past few weeks.
+Signed-off-by: Omar Sandoval <osandov@fb.com>
+---
+ libbtrfsutil/python/module.c                | 8 ++++----
+ libbtrfsutil/python/subvolume.c             | 4 ++--
+ libbtrfsutil/python/tests/test_subvolume.py | 4 ++--
+ 3 files changed, 8 insertions(+), 8 deletions(-)
 
-Patches 1-4 are fixes. Patches 5-6 add functionality to the unit tests
-which is needed for patches 7-8. Patches 7-8 add support for the
-unprivileged ioctls added in Linux 4.18; more on those below. Patch 9
-bumps the library version. Patch 10 adds documentation for the available
-API along with examples.
-
-Patches 7-8 are based on Misono Tomohiro's previous patch series [1],
-with a few important changes.
-
-- Both subvolume_info() and create_subvolume_iterator() now have unit
-  tests for the unprivileged case.
-- Both no longer explicitly check that top == 0 in the unprivileged
-  case, since that will already fail with a clear permission error.
-- Unprivileged iteration is much simpler: it uses openat() instead of
-  fchdir() and is based more closely on the original tree search
-  variant. This fixes a bug in post-order iteration in Misono's version.
-- Unprivileged iteration does _not_ support passing in a non-subvolume
-  path; if this behavior is desired, I'd like it to be a separate change
-  with an explicit flag.
-
-Please take a look.
-
-Thanks!
-
-1: https://www.spinics.net/lists/linux-btrfs/msg79285.html
-
-Omar Sandoval (10):
-  libbtrfsutil: use top=0 as default for SubvolumeIterator()
-  libbtrfsutil: change async parameters to async_ in Python bindings
-  libbtrfsutil: document qgroup_inherit parameter in Python bindings
-  libbtrfsutil: use SubvolumeIterator as context manager in tests
-  libbtrfsutil: add test helpers for dropping privileges
-  libbtrfsutil: allow tests to create multiple Btrfs instances
-  libbtrfsutil: relax the privileges of subvolume_info()
-  libbtrfsutil: relax the privileges of subvolume iterator
-  libbtrfsutil: bump version to 1.1.0
-  libbtrfsutil: document API in README
-
- libbtrfsutil/README.md                      | 422 +++++++++++++++++++-
- libbtrfsutil/btrfsutil.h                    |  21 +-
- libbtrfsutil/errors.c                       |   8 +
- libbtrfsutil/python/module.c                |  17 +-
- libbtrfsutil/python/subvolume.c             |   6 +-
- libbtrfsutil/python/tests/__init__.py       |  66 ++-
- libbtrfsutil/python/tests/test_subvolume.py | 215 +++++++---
- libbtrfsutil/subvolume.c                    | 407 ++++++++++++++++---
- 8 files changed, 1029 insertions(+), 133 deletions(-)
-
+diff --git a/libbtrfsutil/python/module.c b/libbtrfsutil/python/module.c
+index 2dbdc7be..625cc9c6 100644
+--- a/libbtrfsutil/python/module.c
++++ b/libbtrfsutil/python/module.c
+@@ -233,22 +233,22 @@ static PyMethodDef btrfsutil_methods[] = {
+ 	 "this ID instead of the given path"},
+ 	{"create_subvolume", (PyCFunction)create_subvolume,
+ 	 METH_VARARGS | METH_KEYWORDS,
+-	 "create_subvolume(path, async=False)\n\n"
++	 "create_subvolume(path, async_=False)\n\n"
+ 	 "Create a new subvolume.\n\n"
+ 	 "Arguments:\n"
+ 	 "path -- string, bytes, or path-like object\n"
+-	 "async -- create the subvolume without waiting for it to commit to\n"
++	 "async_ -- create the subvolume without waiting for it to commit to\n"
+ 	 "disk and return the transaction ID"},
+ 	{"create_snapshot", (PyCFunction)create_snapshot,
+ 	 METH_VARARGS | METH_KEYWORDS,
+-	 "create_snapshot(source, path, recursive=False, read_only=False, async=False)\n\n"
++	 "create_snapshot(source, path, recursive=False, read_only=False, async_=False)\n\n"
+ 	 "Create a new snapshot.\n\n"
+ 	 "Arguments:\n"
+ 	 "source -- string, bytes, path-like object, or open file descriptor\n"
+ 	 "path -- string, bytes, or path-like object\n"
+ 	 "recursive -- also snapshot child subvolumes\n"
+ 	 "read_only -- create a read-only snapshot\n"
+-	 "async -- create the subvolume without waiting for it to commit to\n"
++	 "async_ -- create the subvolume without waiting for it to commit to\n"
+ 	 "disk and return the transaction ID"},
+ 	{"delete_subvolume", (PyCFunction)delete_subvolume,
+ 	 METH_VARARGS | METH_KEYWORDS,
+diff --git a/libbtrfsutil/python/subvolume.c b/libbtrfsutil/python/subvolume.c
+index 6ecde1f6..0f893b91 100644
+--- a/libbtrfsutil/python/subvolume.c
++++ b/libbtrfsutil/python/subvolume.c
+@@ -322,7 +322,7 @@ PyObject *set_default_subvolume(PyObject *self, PyObject *args, PyObject *kwds)
+ 
+ PyObject *create_subvolume(PyObject *self, PyObject *args, PyObject *kwds)
+ {
+-	static char *keywords[] = {"path", "async", "qgroup_inherit", NULL};
++	static char *keywords[] = {"path", "async_", "qgroup_inherit", NULL};
+ 	struct path_arg path = {.allow_fd = false};
+ 	enum btrfs_util_error err;
+ 	int async = 0;
+@@ -352,7 +352,7 @@ PyObject *create_subvolume(PyObject *self, PyObject *args, PyObject *kwds)
+ PyObject *create_snapshot(PyObject *self, PyObject *args, PyObject *kwds)
+ {
+ 	static char *keywords[] = {
+-		"source", "path", "recursive", "read_only", "async",
++		"source", "path", "recursive", "read_only", "async_",
+ 		"qgroup_inherit", NULL,
+ 	};
+ 	struct path_arg src = {.allow_fd = true}, dst = {.allow_fd = false};
+diff --git a/libbtrfsutil/python/tests/test_subvolume.py b/libbtrfsutil/python/tests/test_subvolume.py
+index 0788a564..f2a4cdb8 100644
+--- a/libbtrfsutil/python/tests/test_subvolume.py
++++ b/libbtrfsutil/python/tests/test_subvolume.py
+@@ -202,7 +202,7 @@ class TestSubvolume(BtrfsTestCase):
+         btrfsutil.create_subvolume(subvol + '6//')
+         self.assertTrue(btrfsutil.is_subvolume(subvol + '6'))
+ 
+-        transid = btrfsutil.create_subvolume(subvol + '7', async=True)
++        transid = btrfsutil.create_subvolume(subvol + '7', async_=True)
+         self.assertTrue(btrfsutil.is_subvolume(subvol + '7'))
+         self.assertGreater(transid, 0)
+ 
+@@ -265,7 +265,7 @@ class TestSubvolume(BtrfsTestCase):
+         btrfsutil.create_snapshot(subvol, snapshot + '2', recursive=True)
+         self.assertTrue(os.path.exists(os.path.join(snapshot + '2', 'nested/more_nested/nested_dir')))
+ 
+-        transid = btrfsutil.create_snapshot(subvol, snapshot + '3', recursive=True, async=True)
++        transid = btrfsutil.create_snapshot(subvol, snapshot + '3', recursive=True, async_=True)
+         self.assertTrue(os.path.exists(os.path.join(snapshot + '3', 'nested/more_nested/nested_dir')))
+         self.assertGreater(transid, 0)
+ 
 -- 
 2.19.1
 

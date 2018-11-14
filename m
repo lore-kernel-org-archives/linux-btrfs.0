@@ -2,34 +2,36 @@ Return-Path: <SRS0=6ez2=NZ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A2B64C43441
-	for <linux-btrfs@archiver.kernel.org>; Wed, 14 Nov 2018 13:50:21 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 79B23C43441
+	for <linux-btrfs@archiver.kernel.org>; Wed, 14 Nov 2018 13:51:29 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 7387F20817
-	for <linux-btrfs@archiver.kernel.org>; Wed, 14 Nov 2018 13:50:21 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 7387F20817
+	by mail.kernel.org (Postfix) with ESMTP id 45DA920817
+	for <linux-btrfs@archiver.kernel.org>; Wed, 14 Nov 2018 13:51:29 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 45DA920817
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1732986AbeKNXxj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 14 Nov 2018 18:53:39 -0500
-Received: from mx2.suse.de ([195.135.220.15]:57238 "EHLO mx1.suse.de"
+        id S1727835AbeKNXys (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 14 Nov 2018 18:54:48 -0500
+Received: from mx2.suse.de ([195.135.220.15]:57368 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1732432AbeKNXxj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 14 Nov 2018 18:53:39 -0500
+        id S1726823AbeKNXys (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 14 Nov 2018 18:54:48 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 62C06AE80
-        for <linux-btrfs@vger.kernel.org>; Wed, 14 Nov 2018 13:50:17 +0000 (UTC)
-Subject: Re: [PATCH 0/6] btrfs: fix compiler warning with make W=1
+        by mx1.suse.de (Postfix) with ESMTP id A67B9B088
+        for <linux-btrfs@vger.kernel.org>; Wed, 14 Nov 2018 13:51:25 +0000 (UTC)
+Subject: Re: [PATCH 2/6] btrfs: remove set but not used variable err in
+ btrfs_add_link
 To:     Johannes Thumshirn <jthumshirn@suse.de>,
         David Sterba <dsterba@suse.com>
 Cc:     Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>
 References: <20181114133520.16069-1-jthumshirn@suse.de>
+ <20181114133520.16069-3-jthumshirn@suse.de>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -74,12 +76,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  KIuxEcV8wcVjr+Wr9zRl06waOCkgrQbTPp631hToxo+4rA1jiQF2M80HAet65ytBVR2pFGZF
  zGYYLqiG+mpUZ+FPjxk9kpkRYz61mTLSY7tuFljExfJWMGfgSg1OxfLV631jV1TcdUnx+h3l
  Sqs2vMhAVt14zT8mpIuu2VNxcontxgVr1kzYA/tQg32fVRbGr449j1gw57BV9i0vww==
-Message-ID: <683aa762-c668-d19c-2f7f-7f62a3f2adc6@suse.com>
-Date:   Wed, 14 Nov 2018 15:50:15 +0200
+Message-ID: <2260d7fd-3229-e0e1-54ed-82d1581f8aef@suse.com>
+Date:   Wed, 14 Nov 2018 15:51:24 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <20181114133520.16069-1-jthumshirn@suse.de>
+In-Reply-To: <20181114133520.16069-3-jthumshirn@suse.de>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -91,47 +93,50 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 On 14.11.18 г. 15:35 ч., Johannes Thumshirn wrote:
-> This patchset fixes most of the compiler warnings encountered when building
-> btrfs with make W=1.
+> err holds the return value of either btrfs_del_root_ref() or
+> btrfs_del_inode_ref() but it hasn't been checked since it's introduction with
+> commit fe66a05a0679 (Btrfs: improve error handling for btrfs_insert_dir_item
+> callers) in 2012.
 > 
-> There are two more compiler warnings left in raid56.c:
->   CC [M]  fs/btrfs/raid56.o
-> fs/btrfs/raid56.c: In function ‘finish_rmw’:
-> fs/btrfs/raid56.c:1185:6: warning: variable ‘p_stripe’ set but not used [-Wunused-but-set-variable]
->   int p_stripe = -1;
->       ^
-> fs/btrfs/raid56.c: In function ‘finish_parity_scrub’:
-> fs/btrfs/raid56.c:2343:6: warning: variable ‘p_stripe’ set but not used [-Wunused-but-set-variable]
->   int p_stripe = -1;
->       ^
-> but I'm currently unsure how an appropriate fix would look like. As far as I
-> can tell these variables have always been unused since they have been
-> introduced.
+> As the error value hasn't been of any interest for 6 years we can just drop it
+> as well.
 > 
-> There are still warnings left emitted by kernel-doc but these are subject to
-> another patchset, this one only addresses the warnings generated by gcc.
+> Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
+
+Technically you are correct, given this is in error path I guess we can
+live by ignoring error from those functions in this context. Ideally we
+should strive to actually handle error wherever we can.
+
+> ---
+>  fs/btrfs/inode.c | 13 ++++++-------
+>  1 file changed, 6 insertions(+), 7 deletions(-)
 > 
-> Johannes Thumshirn (6):
->   btrfs: remove unused drop_on_err in btrfs_mkdir()
->   btrfs: remove set but not used variable err in btrfs_add_link
->   btrfs: remove unused function btrfs_sysfs_feature_update()
->   btrfs: remove unused variable tree in bio_readpage_error()
->   btrfs: remove unused variable tree in end_compressed_bio_write()
->   btrfs: unconditionally provide function prototypes from
->     free-space-tree.h
-> 
->  fs/btrfs/compression.c     |  2 --
->  fs/btrfs/extent_io.c       |  3 ---
->  fs/btrfs/free-space-tree.h |  2 --
->  fs/btrfs/inode.c           | 16 ++++++----------
->  fs/btrfs/sysfs.c           | 33 ---------------------------------
->  fs/btrfs/sysfs.h           |  2 --
->  6 files changed, 6 insertions(+), 52 deletions(-)
-
-For the whole series:
-
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-
-However, I have some comments for some of the patches.
-
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 7d17b0a654e6..57af243b3f59 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -6427,17 +6427,16 @@ int btrfs_add_link(struct btrfs_trans_handle *trans,
+>  fail_dir_item:
+>  	if (unlikely(ino == BTRFS_FIRST_FREE_OBJECTID)) {
+>  		u64 local_index;
+> -		int err;
+> -		err = btrfs_del_root_ref(trans, key.objectid,
+> -					 root->root_key.objectid, parent_ino,
+> -					 &local_index, name, name_len);
+> +
+> +		btrfs_del_root_ref(trans, key.objectid,
+> +				   root->root_key.objectid, parent_ino,
+> +				   &local_index, name, name_len);
+>  
+>  	} else if (add_backref) {
+>  		u64 local_index;
+> -		int err;
+>  
+> -		err = btrfs_del_inode_ref(trans, root, name, name_len,
+> -					  ino, parent_ino, &local_index);
+> +		btrfs_del_inode_ref(trans, root, name, name_len,
+> +				    ino, parent_ino, &local_index);
+>  	}
+>  	return ret;
+>  }
 > 

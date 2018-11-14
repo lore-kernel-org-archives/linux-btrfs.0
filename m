@@ -2,315 +2,162 @@ Return-Path: <SRS0=6ez2=NZ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.5 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-9.7 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,UNPARSEABLE_RELAY,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2AA2EC43441
-	for <linux-btrfs@archiver.kernel.org>; Wed, 14 Nov 2018 07:47:26 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F1C99C43441
+	for <linux-btrfs@archiver.kernel.org>; Wed, 14 Nov 2018 09:12:51 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id DA85821780
-	for <linux-btrfs@archiver.kernel.org>; Wed, 14 Nov 2018 07:47:25 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id B065C22360
+	for <linux-btrfs@archiver.kernel.org>; Wed, 14 Nov 2018 09:12:51 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="P0sLY/BY"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org DA85821780
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=osandov.com
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="GUUpvt2V"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org B065C22360
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=oracle.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731825AbeKNRtZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 14 Nov 2018 12:49:25 -0500
-Received: from mail-pl1-f195.google.com ([209.85.214.195]:36859 "EHLO
-        mail-pl1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1731593AbeKNRtY (ORCPT
+        id S1732350AbeKNTPM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 14 Nov 2018 14:15:12 -0500
+Received: from aserp2120.oracle.com ([141.146.126.78]:36316 "EHLO
+        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727776AbeKNTPL (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 14 Nov 2018 12:49:24 -0500
-Received: by mail-pl1-f195.google.com with SMTP id w24-v6so7387750plq.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 13 Nov 2018 23:47:20 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=osandov-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:cc:subject:date:message-id:in-reply-to:references
-         :mime-version:content-transfer-encoding;
-        bh=krj07n1JV41ibN1KZEpU+Ux0fw41vf3pKm1+kXnPgNM=;
-        b=P0sLY/BY7KpKaAriq8m+qRGalqXd/Sm8kRT2Pl31GD8faDHS8kYemSR41/SFPbPHTS
-         qHTg1UeTw0P8+TKIIzkhsOtih0iyZBiUsNWH8Ry2qwIs99hbBNz85OMa02KiF8Sv44e7
-         fd+hVi5Bvz8KwvxCZE5sD8W22gjsMSqKyGRYkHwhTj93lzVYMR4pn4l3PtomXii/eUXY
-         Ii9t6eQn/XbnWIkccoj0FtHL4DjSLaIb0B7nbez6MJ80krpQQY9E1c41EDQIhCRzGMEC
-         w4YNz8w6RDWm3V/y8U85nyst9IPKfwBRQSt8uaXzE7/M30WW867FE8rr8ClQMEQAyL+e
-         HDHw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
-         :references:mime-version:content-transfer-encoding;
-        bh=krj07n1JV41ibN1KZEpU+Ux0fw41vf3pKm1+kXnPgNM=;
-        b=kvAmgOhv59rmy0VFcrzLlb0HNlsST5XAFndQ3CcRRMyq8qaIEvfTlETltq7e7wpmQ3
-         VjEyREN+ul60geDF6QO5++2lBrF8rjWzPKnqeFYI/B+jCMlIFZL1js9QKSDPBDM+SRy5
-         WmISK/ghpnVhZ7cT1LkCJjU2zB2hG4tFD5JcPC390UAz0fXykK5mnmbHN5RLzLFkaiGA
-         q302MI8NQ5YwWJ9qlKPDzzip8VnuD/rwtu4hsJ86dxmgikrLG7lGwZ7QSeF27/XHO0cH
-         hWVd5CKMLNYA//kkzjsZD2e+wNq74e9A5ZUuLb005WLGrzGZiHYkBCA1Xdiiy6iTVFyP
-         An4g==
-X-Gm-Message-State: AGRZ1gIYgd5iw8ioBmWMhKxoGWLwiRENsm1wuW2wdxO6Po7a9qiPmQyF
-        8mZFc1F11AyNhvH+uRLbOesWlh1rnXj6PA==
-X-Google-Smtp-Source: AJdET5fOZoBYD+kA9NKY9oYjOZWJ0oXrZCgpnS66r9rJ5ZonTOUJkXo9HxNxaW1skpkVWTMMf5Mrbw==
-X-Received: by 2002:a17:902:1124:: with SMTP id d33-v6mr884658pla.125.1542181639177;
-        Tue, 13 Nov 2018 23:47:19 -0800 (PST)
-Received: from vader.psav.com ([64.114.255.114])
-        by smtp.gmail.com with ESMTPSA id 18-v6sm34835727pfu.129.2018.11.13.23.47.18
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Tue, 13 Nov 2018 23:47:18 -0800 (PST)
-From:   Omar Sandoval <osandov@osandov.com>
+        Wed, 14 Nov 2018 14:15:11 -0500
+Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
+        by aserp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id wAE998Te111552
+        for <linux-btrfs@vger.kernel.org>; Wed, 14 Nov 2018 09:12:48 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
+ date : message-id : in-reply-to : references; s=corp-2018-07-02;
+ bh=QWJgI/xY0FFzvjMo74Qzle/utoN7TRNiqPcYKnYNLwM=;
+ b=GUUpvt2VtzjTuU+BzSiWRwV+KxU9kGI06U6BpfY3kh32zuT5IeMbQrS10Zm8HrMrQBpO
+ s2HtE9jtkdskxVZeTZI1qHU39W4SPPYuwbEL22GcfUS074q+z9+ix3if+v/J+nVZ+AIS
+ uQukJg+ZJ6uw3dkeZ2qAmErPIpxng0G/warNV9cL/jHzI4ty7EseyFvp8uh4dK1hLiFs
+ IUpSHsEXlqIHvFNhPi/IZl5XizJlFDFj6p+DLA0RWN65mJIsca4ilUaM+iSP/AUyF+Cw
+ qgEuAf20wBdZzvcubWrCNBWO2Wbz7nZnovSK8gvAMpp7Kao/wbhqiJZa0q4UlGgdvPgm ag== 
+Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
+        by aserp2120.oracle.com with ESMTP id 2nr7cs2247-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Wed, 14 Nov 2018 09:12:48 +0000
+Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
+        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id wAE9ClMd013804
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Wed, 14 Nov 2018 09:12:47 GMT
+Received: from abhmp0004.oracle.com (abhmp0004.oracle.com [141.146.116.10])
+        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id wAE9ClhT010716
+        for <linux-btrfs@vger.kernel.org>; Wed, 14 Nov 2018 09:12:47 GMT
+Received: from tpasj.oracle.com (/192.188.170.107)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Wed, 14 Nov 2018 01:12:47 -0800
+From:   Anand Jain <anand.jain@oracle.com>
 To:     linux-btrfs@vger.kernel.org
-Cc:     kernel-team@fb.com,
-        Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
-Subject: [PATCH 07/10] libbtrfsutil: relax the privileges of subvolume_info()
-Date:   Tue, 13 Nov 2018 23:47:02 -0800
-Message-Id: <4412561bf224e10c32bd9851f9281f291f7d3879.1542181521.git.osandov@fb.com>
-X-Mailer: git-send-email 2.19.1
-In-Reply-To: <cover.1542181521.git.osandov@fb.com>
-References: <cover.1542181521.git.osandov@fb.com>
-MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Subject: [PATCH] btrfs: introduce feature to forget a btrfs device
+Date:   Wed, 14 Nov 2018 17:12:47 +0800
+Message-Id: <1542186768-22956-2-git-send-email-anand.jain@oracle.com>
+X-Mailer: git-send-email 1.8.3.1
+In-Reply-To: <1542186768-22956-1-git-send-email-anand.jain@oracle.com>
+References: <1542186768-22956-1-git-send-email-anand.jain@oracle.com>
+X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9076 signatures=668683
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=3 malwarescore=0
+ phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
+ adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.0.1-1810050000 definitions=main-1811140084
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Omar Sandoval <osandov@fb.com>
+Support for a new command 'btrfs dev forget [dev]' is proposed here
+to undo the effects of 'btrfs dev scan [dev]'. For this purpose
+this patch proposes to use ioctl #5 as it was empty.
+	IOW(BTRFS_IOCTL_MAGIC, 5, ..)
+This patch adds new ioctl BTRFS_IOC_FORGET_DEV which can be sent from
+the /dev/btrfs-control to forget one or all devices, (devices which are
+not mounted) from the btrfs kernel.
 
-Attempt to use the BTRFS_IOC_GET_SUBVOL_INFO ioctl (added in kernel
-4.18) for subvolume_info() if not root. Also, rename
-get_subvolume_info_root() -> get_subvolume_info_privileged() for
-consistency with further changes.
+The argument it takes is struct btrfs_ioctl_vol_args, and ::name can be
+set to specify the device path. And all unmounted devices can be removed
+from the kernel if no device path is provided.
 
-This is based on a patch from Misono Tomohiro.
+Again, the devices are removed only if the relevant fsid aren't mounted.
 
-Signed-off-by: Omar Sandoval <osandov@fb.com>
+This new cli can provide..
+ . Release of unwanted btrfs_fs_devices and btrfs_devices memory if the
+   device is not going to be mounted.
+ . Ability to mount the device in degraded mode when one of the other
+   device is corrupted like in split brain raid1.
+ . Running test cases which requires btrfs.ko-reload if the rootfs
+   is btrfs.
+
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 ---
- libbtrfsutil/btrfsutil.h                    |  4 +-
- libbtrfsutil/errors.c                       |  2 +
- libbtrfsutil/python/tests/test_subvolume.py | 42 ++++++++++++----
- libbtrfsutil/subvolume.c                    | 53 +++++++++++++++++++--
- 4 files changed, 89 insertions(+), 12 deletions(-)
+ fs/btrfs/super.c           | 3 +++
+ fs/btrfs/volumes.c         | 9 +++++++++
+ fs/btrfs/volumes.h         | 1 +
+ include/uapi/linux/btrfs.h | 2 ++
+ 4 files changed, 15 insertions(+)
 
-diff --git a/libbtrfsutil/btrfsutil.h b/libbtrfsutil/btrfsutil.h
-index 6d655f49..c1925007 100644
---- a/libbtrfsutil/btrfsutil.h
-+++ b/libbtrfsutil/btrfsutil.h
-@@ -63,6 +63,7 @@ enum btrfs_util_error {
- 	BTRFS_UTIL_ERROR_SYNC_FAILED,
- 	BTRFS_UTIL_ERROR_START_SYNC_FAILED,
- 	BTRFS_UTIL_ERROR_WAIT_SYNC_FAILED,
-+	BTRFS_UTIL_ERROR_GET_SUBVOL_INFO_FAILED,
- };
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 345c64d810d4..f99db6899004 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -2246,6 +2246,9 @@ static long btrfs_control_ioctl(struct file *file, unsigned int cmd,
+ 		ret = PTR_ERR_OR_ZERO(device);
+ 		mutex_unlock(&uuid_mutex);
+ 		break;
++	case BTRFS_IOC_FORGET_DEV:
++		ret = btrfs_forget_devices(vol->name);
++		break;
+ 	case BTRFS_IOC_DEVICES_READY:
+ 		mutex_lock(&uuid_mutex);
+ 		device = btrfs_scan_one_device(vol->name, FMODE_READ,
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index f435d397019e..e1365a122657 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1208,6 +1208,15 @@ static int btrfs_read_disk_super(struct block_device *bdev, u64 bytenr,
+ 	return 0;
+ }
  
- /**
-@@ -266,7 +267,8 @@ struct btrfs_util_subvolume_info {
-  * to check whether the subvolume exists; %BTRFS_UTIL_ERROR_SUBVOLUME_NOT_FOUND
-  * will be returned if it does not.
-  *
-- * This requires appropriate privilege (CAP_SYS_ADMIN).
-+ * This requires appropriate privilege (CAP_SYS_ADMIN) unless @id is zero and
-+ * the kernel supports BTRFS_IOC_GET_SUBVOL_INFO (kernel >= 4.18).
-  *
-  * Return: %BTRFS_UTIL_OK on success, non-zero error code on failure.
-  */
-diff --git a/libbtrfsutil/errors.c b/libbtrfsutil/errors.c
-index 634edc65..cf968b03 100644
---- a/libbtrfsutil/errors.c
-+++ b/libbtrfsutil/errors.c
-@@ -45,6 +45,8 @@ static const char * const error_messages[] = {
- 	[BTRFS_UTIL_ERROR_SYNC_FAILED] = "Could not sync filesystem",
- 	[BTRFS_UTIL_ERROR_START_SYNC_FAILED] = "Could not start filesystem sync",
- 	[BTRFS_UTIL_ERROR_WAIT_SYNC_FAILED] = "Could not wait for filesystem sync",
-+	[BTRFS_UTIL_ERROR_GET_SUBVOL_INFO_FAILED] =
-+		"Could not get subvolume information with BTRFS_IOC_GET_SUBVOL_INFO",
- };
- 
- PUBLIC const char *btrfs_util_strerror(enum btrfs_util_error err)
-diff --git a/libbtrfsutil/python/tests/test_subvolume.py b/libbtrfsutil/python/tests/test_subvolume.py
-index 4049b08e..55ebf34d 100644
---- a/libbtrfsutil/python/tests/test_subvolume.py
-+++ b/libbtrfsutil/python/tests/test_subvolume.py
-@@ -23,7 +23,12 @@ from pathlib import PurePath
- import traceback
- 
- import btrfsutil
--from tests import BtrfsTestCase, HAVE_PATH_LIKE
-+from tests import (
-+    BtrfsTestCase,
-+    drop_privs,
-+    HAVE_PATH_LIKE,
-+    skipUnlessHaveNobody,
-+)
- 
- 
- class TestSubvolume(BtrfsTestCase):
-@@ -87,7 +92,7 @@ class TestSubvolume(BtrfsTestCase):
-         finally:
-             os.chdir(pwd)
- 
--    def test_subvolume_info(self):
-+    def _test_subvolume_info(self, subvol, snapshot):
-         for arg in self.path_or_fd(self.mountpoint):
-             with self.subTest(type=type(arg)):
-                 info = btrfsutil.subvolume_info(arg)
-@@ -100,7 +105,7 @@ class TestSubvolume(BtrfsTestCase):
-                 self.assertEqual(info.parent_uuid, bytes(16))
-                 self.assertEqual(info.received_uuid, bytes(16))
-                 self.assertNotEqual(info.generation, 0)
--                self.assertEqual(info.ctransid, 0)
-+                self.assertGreaterEqual(info.ctransid, 0)
-                 self.assertEqual(info.otransid, 0)
-                 self.assertEqual(info.stransid, 0)
-                 self.assertEqual(info.rtransid, 0)
-@@ -109,9 +114,6 @@ class TestSubvolume(BtrfsTestCase):
-                 self.assertEqual(info.stime, 0)
-                 self.assertEqual(info.rtime, 0)
- 
--        subvol = os.path.join(self.mountpoint, 'subvol')
--        btrfsutil.create_subvolume(subvol)
--
-         info = btrfsutil.subvolume_info(subvol)
-         self.assertEqual(info.id, 256)
-         self.assertEqual(info.parent_id, 5)
-@@ -132,19 +134,43 @@ class TestSubvolume(BtrfsTestCase):
-         self.assertEqual(info.rtime, 0)
- 
-         subvol_uuid = info.uuid
--        snapshot = os.path.join(self.mountpoint, 'snapshot')
--        btrfsutil.create_snapshot(subvol, snapshot)
- 
-         info = btrfsutil.subvolume_info(snapshot)
-         self.assertEqual(info.parent_uuid, subvol_uuid)
- 
-         # TODO: test received_uuid, stransid, rtransid, stime, and rtime
- 
-+    def test_subvolume_info(self):
-+        subvol = os.path.join(self.mountpoint, 'subvol')
-+        btrfsutil.create_subvolume(subvol)
-+        snapshot = os.path.join(self.mountpoint, 'snapshot')
-+        btrfsutil.create_snapshot(subvol, snapshot)
-+
-+        self._test_subvolume_info(subvol, snapshot)
-+
-         for arg in self.path_or_fd(self.mountpoint):
-             with self.subTest(type=type(arg)):
-                 with self.assertRaises(btrfsutil.BtrfsUtilError) as e:
-                     # BTRFS_EXTENT_TREE_OBJECTID
-                     btrfsutil.subvolume_info(arg, 2)
-+                self.assertEqual(e.exception.btrfsutilerror,
-+                                 btrfsutil.ERROR_SUBVOLUME_NOT_FOUND)
-+
-+    @skipUnlessHaveNobody
-+    def test_subvolume_info_unprivileged(self):
-+        subvol = os.path.join(self.mountpoint, 'subvol')
-+        btrfsutil.create_subvolume(subvol)
-+        snapshot = os.path.join(self.mountpoint, 'snapshot')
-+        btrfsutil.create_snapshot(subvol, snapshot)
-+
-+        with drop_privs():
-+            try:
-+                self._test_subvolume_info(subvol, snapshot)
-+            except OSError as e:
-+                if e.errno == errno.ENOTTY:
-+                    self.skipTest('BTRFS_IOC_GET_SUBVOL_INFO is not available')
-+                else:
-+                    raise
- 
-     def test_read_only(self):
-         for arg in self.path_or_fd(self.mountpoint):
-diff --git a/libbtrfsutil/subvolume.c b/libbtrfsutil/subvolume.c
-index 0d7ef5bf..69654db4 100644
---- a/libbtrfsutil/subvolume.c
-+++ b/libbtrfsutil/subvolume.c
-@@ -31,6 +31,11 @@
- 
- #include "btrfsutil_internal.h"
- 
-+static bool is_root(void)
++int btrfs_forget_devices(const char *path)
 +{
-+	return geteuid() == 0;
++	mutex_lock(&uuid_mutex);
++	btrfs_free_stale_devices(strlen(path) ? path:NULL, NULL);
++	mutex_unlock(&uuid_mutex);
++
++	return 0;
 +}
 +
  /*
-  * This intentionally duplicates btrfs_util_is_subvolume_fd() instead of opening
-  * a file descriptor and calling it, because fstat() and fstatfs() don't accept
-@@ -295,8 +300,8 @@ PUBLIC enum btrfs_util_error btrfs_util_subvolume_info(const char *path,
- 	return err;
- }
- 
--static enum btrfs_util_error get_subvolume_info_root(int fd, uint64_t id,
--						     struct btrfs_util_subvolume_info *subvol)
-+static enum btrfs_util_error get_subvolume_info_privileged(int fd, uint64_t id,
-+							   struct btrfs_util_subvolume_info *subvol)
- {
- 	struct btrfs_ioctl_search_args search = {
- 		.key = {
-@@ -383,6 +388,45 @@ static enum btrfs_util_error get_subvolume_info_root(int fd, uint64_t id,
- 	return BTRFS_UTIL_OK;
- }
- 
-+static enum btrfs_util_error get_subvolume_info_unprivileged(int fd,
-+							     struct btrfs_util_subvolume_info *subvol)
-+{
-+	struct btrfs_ioctl_get_subvol_info_args info;
-+	int ret;
-+
-+	ret = ioctl(fd, BTRFS_IOC_GET_SUBVOL_INFO, &info);
-+	if (ret == -1)
-+		return BTRFS_UTIL_ERROR_GET_SUBVOL_INFO_FAILED;
-+
-+	subvol->id = info.treeid;
-+	subvol->parent_id = info.parent_id;
-+	subvol->dir_id = info.dirid;
-+	subvol->flags = info.flags;
-+	subvol->generation = info.generation;
-+
-+	memcpy(subvol->uuid, info.uuid, sizeof(subvol->uuid));
-+	memcpy(subvol->parent_uuid, info.parent_uuid,
-+	       sizeof(subvol->parent_uuid));
-+	memcpy(subvol->received_uuid, info.received_uuid,
-+	       sizeof(subvol->received_uuid));
-+
-+	subvol->ctransid = info.ctransid;
-+	subvol->otransid = info.otransid;
-+	subvol->stransid = info.stransid;
-+	subvol->rtransid = info.rtransid;
-+
-+	subvol->ctime.tv_sec = info.ctime.sec;
-+	subvol->ctime.tv_nsec = info.ctime.nsec;
-+	subvol->otime.tv_sec = info.otime.sec;
-+	subvol->otime.tv_nsec = info.otime.nsec;
-+	subvol->stime.tv_sec = info.stime.sec;
-+	subvol->stime.tv_nsec = info.stime.nsec;
-+	subvol->rtime.tv_sec = info.rtime.sec;
-+	subvol->rtime.tv_nsec = info.rtime.nsec;
-+
-+	return BTRFS_UTIL_OK;
-+}
-+
- PUBLIC enum btrfs_util_error btrfs_util_subvolume_info_fd(int fd, uint64_t id,
- 							  struct btrfs_util_subvolume_info *subvol)
- {
-@@ -393,6 +437,9 @@ PUBLIC enum btrfs_util_error btrfs_util_subvolume_info_fd(int fd, uint64_t id,
- 		if (err)
- 			return err;
- 
-+		if (!is_root())
-+			return get_subvolume_info_unprivileged(fd, subvol);
-+
- 		err = btrfs_util_subvolume_id_fd(fd, &id);
- 		if (err)
- 			return err;
-@@ -404,7 +451,7 @@ PUBLIC enum btrfs_util_error btrfs_util_subvolume_info_fd(int fd, uint64_t id,
- 		return BTRFS_UTIL_ERROR_SUBVOLUME_NOT_FOUND;
- 	}
- 
--	return get_subvolume_info_root(fd, id, subvol);
-+	return get_subvolume_info_privileged(fd, id, subvol);
- }
- 
- PUBLIC enum btrfs_util_error btrfs_util_get_subvolume_read_only_fd(int fd,
+  * Look for a btrfs signature on a device. This may be called out of the mount path
+  * and we are not allowed to call set_blocksize during the scan. The superblock
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index aefce895e994..180297d04938 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -406,6 +406,7 @@ int btrfs_open_devices(struct btrfs_fs_devices *fs_devices,
+ 		       fmode_t flags, void *holder);
+ struct btrfs_device *btrfs_scan_one_device(const char *path,
+ 					   fmode_t flags, void *holder);
++int btrfs_forget_devices(const char *path);
+ int btrfs_close_devices(struct btrfs_fs_devices *fs_devices);
+ void btrfs_free_extra_devids(struct btrfs_fs_devices *fs_devices, int step);
+ void btrfs_assign_next_active_device(struct btrfs_device *device,
+diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+index 5ca1d21fc4a7..b1be7f828cb4 100644
+--- a/include/uapi/linux/btrfs.h
++++ b/include/uapi/linux/btrfs.h
+@@ -836,6 +836,8 @@ enum btrfs_err_code {
+ 				   struct btrfs_ioctl_vol_args)
+ #define BTRFS_IOC_SCAN_DEV _IOW(BTRFS_IOCTL_MAGIC, 4, \
+ 				   struct btrfs_ioctl_vol_args)
++#define BTRFS_IOC_FORGET_DEV _IOW(BTRFS_IOCTL_MAGIC, 5, \
++				   struct btrfs_ioctl_vol_args)
+ /* trans start and trans end are dangerous, and only for
+  * use by applications that know how to avoid the
+  * resulting deadlocks
 -- 
-2.19.1
+1.8.3.1
 

@@ -6,29 +6,29 @@ X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EDDE2C43610
-	for <linux-btrfs@archiver.kernel.org>; Thu, 15 Nov 2018 08:53:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A140EC43610
+	for <linux-btrfs@archiver.kernel.org>; Thu, 15 Nov 2018 08:54:20 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id C35F9223CB
-	for <linux-btrfs@archiver.kernel.org>; Thu, 15 Nov 2018 08:53:58 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org C35F9223CB
+	by mail.kernel.org (Postfix) with ESMTP id 6B3DA2077C
+	for <linux-btrfs@archiver.kernel.org>; Thu, 15 Nov 2018 08:54:20 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 6B3DA2077C
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=redhat.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2387418AbeKOTAo (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 15 Nov 2018 14:00:44 -0500
-Received: from mx1.redhat.com ([209.132.183.28]:48592 "EHLO mx1.redhat.com"
+        id S2387687AbeKOTBG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 15 Nov 2018 14:01:06 -0500
+Received: from mx1.redhat.com ([209.132.183.28]:46402 "EHLO mx1.redhat.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1728564AbeKOTAo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 15 Nov 2018 14:00:44 -0500
-Received: from smtp.corp.redhat.com (int-mx06.intmail.prod.int.phx2.redhat.com [10.5.11.16])
+        id S1728634AbeKOTBG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 15 Nov 2018 14:01:06 -0500
+Received: from smtp.corp.redhat.com (int-mx01.intmail.prod.int.phx2.redhat.com [10.5.11.11])
         (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
         (No client certificate requested)
-        by mx1.redhat.com (Postfix) with ESMTPS id 7C4F5307D992;
-        Thu, 15 Nov 2018 08:53:49 +0000 (UTC)
+        by mx1.redhat.com (Postfix) with ESMTPS id 5067AA4051;
+        Thu, 15 Nov 2018 08:54:11 +0000 (UTC)
 Received: from localhost (ovpn-8-23.pek2.redhat.com [10.72.8.23])
-        by smtp.corp.redhat.com (Postfix) with ESMTP id C21B15C220;
-        Thu, 15 Nov 2018 08:53:36 +0000 (UTC)
+        by smtp.corp.redhat.com (Postfix) with ESMTP id 738D6600C3;
+        Thu, 15 Nov 2018 08:54:09 +0000 (UTC)
 From:   Ming Lei <ming.lei@redhat.com>
 To:     Jens Axboe <axboe@kernel.dk>
 Cc:     linux-block@vger.kernel.org, linux-kernel@vger.kernel.org,
@@ -46,28 +46,29 @@ Cc:     linux-block@vger.kernel.org, linux-kernel@vger.kernel.org,
         linux-ext4@vger.kernel.org, Coly Li <colyli@suse.de>,
         linux-bcache@vger.kernel.org, Boaz Harrosh <ooo@electrozaur.com>,
         Bob Peterson <rpeterso@redhat.com>, cluster-devel@redhat.com
-Subject: [PATCH V10 01/19] block: introduce multi-page page bvec helpers
-Date:   Thu, 15 Nov 2018 16:52:48 +0800
-Message-Id: <20181115085306.9910-2-ming.lei@redhat.com>
+Subject: [PATCH V10 03/19] block: use bio_for_each_bvec() to compute multi-page bvec count
+Date:   Thu, 15 Nov 2018 16:52:50 +0800
+Message-Id: <20181115085306.9910-4-ming.lei@redhat.com>
 In-Reply-To: <20181115085306.9910-1-ming.lei@redhat.com>
 References: <20181115085306.9910-1-ming.lei@redhat.com>
-X-Scanned-By: MIMEDefang 2.79 on 10.5.11.16
-X-Greylist: Sender IP whitelisted, not delayed by milter-greylist-4.5.16 (mx1.redhat.com [10.5.110.48]); Thu, 15 Nov 2018 08:53:50 +0000 (UTC)
+X-Scanned-By: MIMEDefang 2.79 on 10.5.11.11
+X-Greylist: Sender IP whitelisted, not delayed by milter-greylist-4.5.16 (mx1.redhat.com [10.5.110.38]); Thu, 15 Nov 2018 08:54:11 +0000 (UTC)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This patch introduces helpers of 'mp_bvec_iter_*' for multipage
-bvec support.
+First it is more efficient to use bio_for_each_bvec() in both
+blk_bio_segment_split() and __blk_recalc_rq_segments() to compute how
+many multi-page bvecs there are in the bio.
 
-The introduced helpers treate one bvec as real multi-page segment,
-which may include more than one pages.
+Secondly once bio_for_each_bvec() is used, the bvec may need to be
+splitted because its length can be very longer than max segment size,
+so we have to split the big bvec into several segments.
 
-The existed helpers of bvec_iter_* are interfaces for supporting current
-bvec iterator which is thought as single-page by drivers, fs, dm and
-etc. These introduced helpers will build single-page bvec in flight, so
-this way won't break current bio/bvec users, which needn't any change.
+Thirdly when splitting multi-page bvec into segments, the max segment
+limit may be reached, so the bio split need to be considered under
+this situation too.
 
 Cc: Dave Chinner <dchinner@redhat.com>
 Cc: Kent Overstreet <kent.overstreet@gmail.com>
@@ -93,97 +94,161 @@ Cc: Bob Peterson <rpeterso@redhat.com>
 Cc: cluster-devel@redhat.com
 Signed-off-by: Ming Lei <ming.lei@redhat.com>
 ---
- include/linux/bvec.h | 63 +++++++++++++++++++++++++++++++++++++++++++++++++---
- 1 file changed, 60 insertions(+), 3 deletions(-)
+ block/blk-merge.c | 90 ++++++++++++++++++++++++++++++++++++++++++++++---------
+ 1 file changed, 76 insertions(+), 14 deletions(-)
 
-diff --git a/include/linux/bvec.h b/include/linux/bvec.h
-index 02c73c6aa805..8ef904a50577 100644
---- a/include/linux/bvec.h
-+++ b/include/linux/bvec.h
-@@ -23,6 +23,44 @@
- #include <linux/kernel.h>
- #include <linux/bug.h>
- #include <linux/errno.h>
-+#include <linux/mm.h>
-+
+diff --git a/block/blk-merge.c b/block/blk-merge.c
+index 91b2af332a84..6f7deb94a23f 100644
+--- a/block/blk-merge.c
++++ b/block/blk-merge.c
+@@ -160,6 +160,62 @@ static inline unsigned get_max_io_size(struct request_queue *q,
+ 	return sectors;
+ }
+ 
 +/*
-+ * What is multi-page bvecs?
-+ *
-+ * - bvecs stored in bio->bi_io_vec is always multi-page(mp) style
-+ *
-+ * - bvec(struct bio_vec) represents one physically contiguous I/O
-+ *   buffer, now the buffer may include more than one pages after
-+ *   multi-page(mp) bvec is supported, and all these pages represented
-+ *   by one bvec is physically contiguous. Before mp support, at most
-+ *   one page is included in one bvec, we call it single-page(sp)
-+ *   bvec.
-+ *
-+ * - .bv_page of the bvec represents the 1st page in the mp bvec
-+ *
-+ * - .bv_offset of the bvec represents offset of the buffer in the bvec
-+ *
-+ * The effect on the current drivers/filesystem/dm/bcache/...:
-+ *
-+ * - almost everyone supposes that one bvec only includes one single
-+ *   page, so we keep the sp interface not changed, for example,
-+ *   bio_for_each_segment() still returns bvec with single page
-+ *
-+ * - bio_for_each_segment*() will be changed to return single-page
-+ *   bvec too
-+ *
-+ * - during iterating, iterator variable(struct bvec_iter) is always
-+ *   updated in multipage bvec style and that means bvec_iter_advance()
-+ *   is kept not changed
-+ *
-+ * - returned(copied) single-page bvec is built in flight by bvec
-+ *   helpers from the stored multipage bvec
-+ *
-+ * - In case that some components(such as iov_iter) need to support
-+ *   multi-page bvec, we introduce new helpers(mp_bvec_iter_*) for
-+ *   them.
++ * Split the bvec @bv into segments, and update all kinds of
++ * variables.
 + */
- 
- /*
-  * was unsigned short, but we might as well be ready for > 64kB I/O pages
-@@ -50,16 +88,35 @@ struct bvec_iter {
-  */
- #define __bvec_iter_bvec(bvec, iter)	(&(bvec)[(iter).bi_idx])
- 
--#define bvec_iter_page(bvec, iter)				\
-+#define mp_bvec_iter_page(bvec, iter)				\
- 	(__bvec_iter_bvec((bvec), (iter))->bv_page)
- 
--#define bvec_iter_len(bvec, iter)				\
-+#define mp_bvec_iter_len(bvec, iter)				\
- 	min((iter).bi_size,					\
- 	    __bvec_iter_bvec((bvec), (iter))->bv_len - (iter).bi_bvec_done)
- 
--#define bvec_iter_offset(bvec, iter)				\
-+#define mp_bvec_iter_offset(bvec, iter)				\
- 	(__bvec_iter_bvec((bvec), (iter))->bv_offset + (iter).bi_bvec_done)
- 
-+#define mp_bvec_iter_page_idx(bvec, iter)			\
-+	(mp_bvec_iter_offset((bvec), (iter)) / PAGE_SIZE)
++static bool bvec_split_segs(struct request_queue *q, struct bio_vec *bv,
++		unsigned *nsegs, unsigned *last_seg_size,
++		unsigned *front_seg_size, unsigned *sectors)
++{
++	bool need_split = false;
++	unsigned len = bv->bv_len;
++	unsigned total_len = 0;
++	unsigned new_nsegs = 0, seg_size = 0;
 +
-+/*
-+ * <page, offset,length> of single-page(sp) segment.
-+ *
-+ * This helpers are for building sp bvec in flight.
-+ */
-+#define bvec_iter_offset(bvec, iter)					\
-+	(mp_bvec_iter_offset((bvec), (iter)) % PAGE_SIZE)
++	if ((*nsegs >= queue_max_segments(q)) || !len)
++		return need_split;
 +
-+#define bvec_iter_len(bvec, iter)					\
-+	min_t(unsigned, mp_bvec_iter_len((bvec), (iter)),		\
-+	    (PAGE_SIZE - (bvec_iter_offset((bvec), (iter)))))
++	/*
++	 * Multipage bvec may be too big to hold in one segment,
++	 * so the current bvec has to be splitted as multiple
++	 * segments.
++	 */
++	while (new_nsegs + *nsegs < queue_max_segments(q)) {
++		seg_size = min(queue_max_segment_size(q), len);
 +
-+#define bvec_iter_page(bvec, iter)					\
-+	nth_page(mp_bvec_iter_page((bvec), (iter)),		\
-+		 mp_bvec_iter_page_idx((bvec), (iter)))
++		new_nsegs++;
++		total_len += seg_size;
++		len -= seg_size;
 +
- #define bvec_iter_bvec(bvec, iter)				\
- ((struct bio_vec) {						\
- 	.bv_page	= bvec_iter_page((bvec), (iter)),	\
++		if ((queue_virt_boundary(q) && ((bv->bv_offset +
++		    total_len) & queue_virt_boundary(q))) || !len)
++			break;
++	}
++
++	/* split in the middle of the bvec */
++	if (len)
++		need_split = true;
++
++	/* update front segment size */
++	if (!*nsegs) {
++		unsigned first_seg_size = seg_size;
++
++		if (new_nsegs > 1)
++			first_seg_size = queue_max_segment_size(q);
++		if (*front_seg_size < first_seg_size)
++			*front_seg_size = first_seg_size;
++	}
++
++	/* update other varibles */
++	*last_seg_size = seg_size;
++	*nsegs += new_nsegs;
++	if (sectors)
++		*sectors += total_len >> 9;
++
++	return need_split;
++}
++
+ static struct bio *blk_bio_segment_split(struct request_queue *q,
+ 					 struct bio *bio,
+ 					 struct bio_set *bs,
+@@ -173,7 +229,7 @@ static struct bio *blk_bio_segment_split(struct request_queue *q,
+ 	struct bio *new = NULL;
+ 	const unsigned max_sectors = get_max_io_size(q, bio);
+ 
+-	bio_for_each_segment(bv, bio, iter) {
++	bio_for_each_bvec(bv, bio, iter) {
+ 		/*
+ 		 * If the queue doesn't support SG gaps and adding this
+ 		 * offset would create a gap, disallow it.
+@@ -188,8 +244,12 @@ static struct bio *blk_bio_segment_split(struct request_queue *q,
+ 			 */
+ 			if (nsegs < queue_max_segments(q) &&
+ 			    sectors < max_sectors) {
+-				nsegs++;
+-				sectors = max_sectors;
++				/* split in the middle of bvec */
++				bv.bv_len = (max_sectors - sectors) << 9;
++				bvec_split_segs(q, &bv, &nsegs,
++						&seg_size,
++						&front_seg_size,
++						&sectors);
+ 			}
+ 			goto split;
+ 		}
+@@ -214,11 +274,12 @@ static struct bio *blk_bio_segment_split(struct request_queue *q,
+ 		if (nsegs == 1 && seg_size > front_seg_size)
+ 			front_seg_size = seg_size;
+ 
+-		nsegs++;
+ 		bvprv = bv;
+ 		bvprvp = &bvprv;
+-		seg_size = bv.bv_len;
+-		sectors += bv.bv_len >> 9;
++
++		if (bvec_split_segs(q, &bv, &nsegs, &seg_size,
++					&front_seg_size, &sectors))
++			goto split;
+ 
+ 	}
+ 
+@@ -296,6 +357,7 @@ static unsigned int __blk_recalc_rq_segments(struct request_queue *q,
+ 	struct bio_vec bv, bvprv = { NULL };
+ 	int cluster, prev = 0;
+ 	unsigned int seg_size, nr_phys_segs;
++	unsigned front_seg_size = bio->bi_seg_front_size;
+ 	struct bio *fbio, *bbio;
+ 	struct bvec_iter iter;
+ 
+@@ -316,7 +378,7 @@ static unsigned int __blk_recalc_rq_segments(struct request_queue *q,
+ 	seg_size = 0;
+ 	nr_phys_segs = 0;
+ 	for_each_bio(bio) {
+-		bio_for_each_segment(bv, bio, iter) {
++		bio_for_each_bvec(bv, bio, iter) {
+ 			/*
+ 			 * If SG merging is disabled, each bio vector is
+ 			 * a segment
+@@ -336,20 +398,20 @@ static unsigned int __blk_recalc_rq_segments(struct request_queue *q,
+ 				continue;
+ 			}
+ new_segment:
+-			if (nr_phys_segs == 1 && seg_size >
+-			    fbio->bi_seg_front_size)
+-				fbio->bi_seg_front_size = seg_size;
++			if (nr_phys_segs == 1 && seg_size > front_seg_size)
++				front_seg_size = seg_size;
+ 
+-			nr_phys_segs++;
+ 			bvprv = bv;
+ 			prev = 1;
+-			seg_size = bv.bv_len;
++			bvec_split_segs(q, &bv, &nr_phys_segs, &seg_size,
++					&front_seg_size, NULL);
+ 		}
+ 		bbio = bio;
+ 	}
+ 
+-	if (nr_phys_segs == 1 && seg_size > fbio->bi_seg_front_size)
+-		fbio->bi_seg_front_size = seg_size;
++	if (nr_phys_segs == 1 && seg_size > front_seg_size)
++		front_seg_size = seg_size;
++	fbio->bi_seg_front_size = front_seg_size;
+ 	if (seg_size > bbio->bi_seg_back_size)
+ 		bbio->bi_seg_back_size = seg_size;
+ 
 -- 
 2.9.5
 

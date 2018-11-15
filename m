@@ -2,356 +2,171 @@ Return-Path: <SRS0=Mirb=N2=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.7 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-10.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D0DACC43441
-	for <linux-btrfs@archiver.kernel.org>; Thu, 15 Nov 2018 22:37:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6CE77C4161B
+	for <linux-btrfs@archiver.kernel.org>; Thu, 15 Nov 2018 23:24:08 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 80D7E2084C
-	for <linux-btrfs@archiver.kernel.org>; Thu, 15 Nov 2018 22:37:13 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 314BE20869
+	for <linux-btrfs@archiver.kernel.org>; Thu, 15 Nov 2018 23:24:08 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=fb.com header.i=@fb.com header.b="IrKk0XQM"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 80D7E2084C
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=fb.com
+	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="xNHPvfwn"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 314BE20869
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=osandov.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2389089AbeKPIqr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 16 Nov 2018 03:46:47 -0500
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:42086 "EHLO
-        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S2389072AbeKPIqq (ORCPT
+        id S1729090AbeKPJeB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 16 Nov 2018 04:34:01 -0500
+Received: from mail-pf1-f193.google.com ([209.85.210.193]:41598 "EHLO
+        mail-pf1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726233AbeKPJdz (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 16 Nov 2018 03:46:46 -0500
-Received: from pps.filterd (m0044010.ppops.net [127.0.0.1])
-        by mx0a-00082601.pphosted.com (8.16.0.22/8.16.0.22) with SMTP id wAFMK5rY030017
-        for <linux-btrfs@vger.kernel.org>; Thu, 15 Nov 2018 14:37:01 -0800
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=fb.com; h=from : to : cc : subject
- : date : message-id : in-reply-to : references : mime-version :
- content-type; s=facebook; bh=GOLWYCgI8HvmdTMvjld13VdWEX6ozRdKiAoWaHiMJDI=;
- b=IrKk0XQM8LDJmcGB33JlYV3qFQHfdjuS2761ktwaV+KLr7WcI59ZoXLHn1/d2JM2IEnp
- CwhFygamNcr6OmeQny+THJGzhkdO0ec4o9GF7sS5uipp86L5EyD7cIih3dqNSt7cGdQg
- OuRd2tvgszEm1q0N9abN3C3nEr8Ci2/i0Fc= 
-Received: from mail.thefacebook.com ([199.201.64.23])
-        by mx0a-00082601.pphosted.com with ESMTP id 2nsfnxrjee-2
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-SHA384 bits=256 verify=NOT)
-        for <linux-btrfs@vger.kernel.org>; Thu, 15 Nov 2018 14:37:01 -0800
-Received: from mx-out.facebook.com (2620:10d:c081:10::13) by
- mail.thefacebook.com (2620:10d:c081:35::129) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA) id 15.1.1531.3;
- Thu, 15 Nov 2018 14:37:00 -0800
-Received: by devvm3802.prn3.facebook.com (Postfix, from userid 32154)
-        id 62C1A39386A2; Thu, 15 Nov 2018 14:36:56 -0800 (PST)
-Smtp-Origin-Hostprefix: devvm
-From:   Nick Terrell <terrelln@fb.com>
-Smtp-Origin-Hostname: devvm3802.prn3.facebook.com
-To:     Nick Terrell <terrelln@fb.com>
-CC:     David Sterba <dsterba@suse.cz>, <kernel-team@fb.com>,
-        <linux-btrfs@vger.kernel.org>, <grub-devel@gnu.org>,
-        Daniel Kiper <dkiper@net-space.pl>
-Smtp-Origin-Cluster: prn3c11
-Subject: [PATCH v6 2/2] btrfs: Add zstd support to grub btrfs
-Date:   Thu, 15 Nov 2018 14:36:03 -0800
-Message-ID: <20181115223603.3806542-3-terrelln@fb.com>
-X-Mailer: git-send-email 2.17.1
-In-Reply-To: <20181115223603.3806542-1-terrelln@fb.com>
-References: <20181115223603.3806542-1-terrelln@fb.com>
-X-FB-Internal: Safe
+        Fri, 16 Nov 2018 04:33:55 -0500
+Received: by mail-pf1-f193.google.com with SMTP id e22-v6so10421528pfn.8
+        for <linux-btrfs@vger.kernel.org>; Thu, 15 Nov 2018 15:24:00 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=osandov-com.20150623.gappssmtp.com; s=20150623;
+        h=date:from:to:cc:subject:message-id:references:mime-version
+         :content-disposition:in-reply-to:user-agent;
+        bh=jwnypmXRKe0aQmFwiDDHQvx5bHMn94jQ/OjQzX3YuJ0=;
+        b=xNHPvfwni0CT/Ud+WG0Z+eArtj5FLHdX5ny0CAJBgZw/w5k8sAxb3sDWxubpfB1ZS/
+         7WVq1n1Fp4vLIVMGHxTYOo5cgiGZQgwqJ7uYQNM33OACNJrd6jMSaYIYIelZKKlgosfK
+         nkEnkYrUnadWqJ43cAXSq2fMz5RDwApNaX7RGATH2cbmys5FkjmJdNzQ2hvgOQoVv/Gp
+         c5H+d8rWap2eHHnCaFtK4alcHdtD8uBvY3LcbPJXqocRZhw2iSpIq1ao3UU6L1cjlLAN
+         3qaL6ExIwzLXqtDfHjK/EfEagOR/RXXe0pXUMJLjb8iAEqGmsTTgFST/ahlPUZeRcNVf
+         m83Q==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
+         :mime-version:content-disposition:in-reply-to:user-agent;
+        bh=jwnypmXRKe0aQmFwiDDHQvx5bHMn94jQ/OjQzX3YuJ0=;
+        b=FlCm6PaqtuJwu4EyxNWDve1EbKqEhpUhTXX13otG6w8yS9VuXsyE0m5Dpipc4ahYD3
+         A9q8byOySzAhR9D0NpAKogsKdYRPT7a4hpgxNWINucJouLGr6jgKBIc55aK2EJGDn9hk
+         vsc6omCVowtEy9hm/U99nc1cCgUUKfVdJNG+ibcMhkVrRy5XQrJ+PGrJQF+NBQUHb9FV
+         NPBdFE68/yIn0zzuR5LajmsKWuoDJXXl8tuJsDseH3u4znhpv87Zu7Gf/EhB/QIZnQsU
+         UatzdgMoBG3x5t7Bk3my/tfyP/H1Jhzo97Yf0LpfiptDE8/9JgmuHwyFdBFZDl6jJ0aX
+         FWkQ==
+X-Gm-Message-State: AGRZ1gKDUt5sF7BpT+Xg9sjQ5wWBgdjtcJ2aSO5aQMHErTIjYao2Q3sI
+        oZ/0DZy2vP7W3eNpQc4TUPNO9g==
+X-Google-Smtp-Source: AJdET5f1hxetB9UqDibiUkx95kTB/X389pkp9WONJq7RyIqm5kAs3ITocaP1OtKLLpS24I28CEXFdQ==
+X-Received: by 2002:a63:344e:: with SMTP id b75mr7449203pga.184.1542324240224;
+        Thu, 15 Nov 2018 15:24:00 -0800 (PST)
+Received: from vader ([64.114.255.97])
+        by smtp.gmail.com with ESMTPSA id x63-v6sm38337415pfk.14.2018.11.15.15.23.58
+        (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
+        Thu, 15 Nov 2018 15:23:59 -0800 (PST)
+Date:   Thu, 15 Nov 2018 15:23:56 -0800
+From:   Omar Sandoval <osandov@osandov.com>
+To:     Ming Lei <ming.lei@redhat.com>
+Cc:     Jens Axboe <axboe@kernel.dk>, linux-block@vger.kernel.org,
+        linux-kernel@vger.kernel.org, linux-mm@kvack.org,
+        Dave Chinner <dchinner@redhat.com>,
+        Kent Overstreet <kent.overstreet@gmail.com>,
+        Mike Snitzer <snitzer@redhat.com>, dm-devel@redhat.com,
+        Alexander Viro <viro@zeniv.linux.org.uk>,
+        linux-fsdevel@vger.kernel.org, Shaohua Li <shli@kernel.org>,
+        linux-raid@vger.kernel.org, linux-erofs@lists.ozlabs.org,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
+        "Darrick J . Wong" <darrick.wong@oracle.com>,
+        linux-xfs@vger.kernel.org, Gao Xiang <gaoxiang25@huawei.com>,
+        Christoph Hellwig <hch@lst.de>, Theodore Ts'o <tytso@mit.edu>,
+        linux-ext4@vger.kernel.org, Coly Li <colyli@suse.de>,
+        linux-bcache@vger.kernel.org, Boaz Harrosh <ooo@electrozaur.com>,
+        Bob Peterson <rpeterso@redhat.com>, cluster-devel@redhat.com
+Subject: Re: [PATCH V10 05/19] block: introduce bvec_last_segment()
+Message-ID: <20181115232356.GA23238@vader>
+References: <20181115085306.9910-1-ming.lei@redhat.com>
+ <20181115085306.9910-6-ming.lei@redhat.com>
 MIME-Version: 1.0
-Content-Type: text/plain
-X-Proofpoint-Virus-Version: vendor=fsecure engine=2.50.10434:,, definitions=2018-11-15_16:,,
- signatures=0
-X-Proofpoint-Spam-Reason: safe
-X-FB-Internal: Safe
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20181115085306.9910-6-ming.lei@redhat.com>
+User-Agent: Mutt/1.10.1 (2018-07-13)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-- Adds zstd support to the btrfs module.
-- Adds a test case for btrfs zstd support.
-- Changes top_srcdir to srcdir in the btrfs module's lzo include
-  following comments from Daniel Kiper about the zstd include.
+On Thu, Nov 15, 2018 at 04:52:52PM +0800, Ming Lei wrote:
+> BTRFS and guard_bio_eod() need to get the last singlepage segment
+> from one multipage bvec, so introduce this helper to make them happy.
+> 
+> Cc: Dave Chinner <dchinner@redhat.com>
+> Cc: Kent Overstreet <kent.overstreet@gmail.com>
+> Cc: Mike Snitzer <snitzer@redhat.com>
+> Cc: dm-devel@redhat.com
+> Cc: Alexander Viro <viro@zeniv.linux.org.uk>
+> Cc: linux-fsdevel@vger.kernel.org
+> Cc: Shaohua Li <shli@kernel.org>
+> Cc: linux-raid@vger.kernel.org
+> Cc: linux-erofs@lists.ozlabs.org
+> Cc: David Sterba <dsterba@suse.com>
+> Cc: linux-btrfs@vger.kernel.org
+> Cc: Darrick J. Wong <darrick.wong@oracle.com>
+> Cc: linux-xfs@vger.kernel.org
+> Cc: Gao Xiang <gaoxiang25@huawei.com>
+> Cc: Christoph Hellwig <hch@lst.de>
+> Cc: Theodore Ts'o <tytso@mit.edu>
+> Cc: linux-ext4@vger.kernel.org
+> Cc: Coly Li <colyli@suse.de>
+> Cc: linux-bcache@vger.kernel.org
+> Cc: Boaz Harrosh <ooo@electrozaur.com>
+> Cc: Bob Peterson <rpeterso@redhat.com>
+> Cc: cluster-devel@redhat.com
 
-Tested on Ubuntu-18.04 with a btrfs /boot partition with and without zstd
-compression. A test case was also added to the test suite that fails before
-the patch, and passes after.
+Reviewed-by: Omar Sandoval <osandov@fb.com>
 
-Signed-off-by: Nick Terrell <terrelln@fb.com>
----
-v1 -> v2:
-- Fix comments from Daniel Kiper.
+Minor comments below.
 
-v2 -> v3:
-- Use grub_error() to set grub_errno in grub_btrfs_zstd_decompress().
-- Fix style and formatting comments.
+> Signed-off-by: Ming Lei <ming.lei@redhat.com>
+> ---
+>  include/linux/bvec.h | 25 +++++++++++++++++++++++++
+>  1 file changed, 25 insertions(+)
+> 
+> diff --git a/include/linux/bvec.h b/include/linux/bvec.h
+> index 3d61352cd8cf..01616a0b6220 100644
+> --- a/include/linux/bvec.h
+> +++ b/include/linux/bvec.h
+> @@ -216,4 +216,29 @@ static inline bool mp_bvec_iter_advance(const struct bio_vec *bv,
+>  	.bi_bvec_done	= 0,						\
+>  }
+>  
+> +/*
+> + * Get the last singlepage segment from the multipage bvec and store it
+> + * in @seg
+> + */
+> +static inline void bvec_last_segment(const struct bio_vec *bvec,
+> +		struct bio_vec *seg)
 
-v3 -> v4:
-- Use attribute unused.
+Indentation is all messed up here.
 
-v4 -> v5:
-- Add zstd's module.c to Makefile.util.def.
-- Clarify some error logging.
-- Explain why I changed lzo's include.
+> +{
+> +	unsigned total = bvec->bv_offset + bvec->bv_len;
+> +	unsigned last_page = total / PAGE_SIZE;
+> +
+> +	if (last_page * PAGE_SIZE == total)
+> +		last_page--;
 
-v5 -> v6:
-- Formatting changes (no functional changes).
+I think this could just be
 
- Makefile.util.def            |  11 +++-
- grub-core/Makefile.core.def  |   2 +-
- grub-core/fs/btrfs.c         | 120 ++++++++++++++++++++++++++++++++++-
- tests/btrfs_test.in          |   1 +
- tests/util/grub-fs-tester.in |   2 +-
- 5 files changed, 132 insertions(+), 4 deletions(-)
+	unsigned int last_page = (total - 1) / PAGE_SIZE;
 
-diff --git a/Makefile.util.def b/Makefile.util.def
-index 9ae45f351..a0495a87f 100644
---- a/Makefile.util.def
-+++ b/Makefile.util.def
-@@ -54,7 +54,7 @@ library = {
- library = {
-   name = libgrubmods.a;
-   cflags = '-fno-builtin -Wno-undef';
--  cppflags = '-I$(top_srcdir)/grub-core/lib/minilzo -I$(srcdir)/grub-core/lib/xzembed -DMINILZO_HAVE_CONFIG_H';
-+  cppflags = '-I$(srcdir)/grub-core/lib/minilzo -I$(srcdir)/grub-core/lib/xzembed -I$(srcdir)/grub-core/lib/zstd -DMINILZO_HAVE_CONFIG_H';
-
-   common_nodist = grub_script.tab.c;
-   common_nodist = grub_script.yy.c;
-@@ -165,6 +165,15 @@ library = {
-   common = grub-core/lib/xzembed/xz_dec_bcj.c;
-   common = grub-core/lib/xzembed/xz_dec_lzma2.c;
-   common = grub-core/lib/xzembed/xz_dec_stream.c;
-+  common = grub-core/lib/zstd/debug.c;
-+  common = grub-core/lib/zstd/entropy_common.c;
-+  common = grub-core/lib/zstd/error_private.c;
-+  common = grub-core/lib/zstd/fse_decompress.c;
-+  common = grub-core/lib/zstd/huf_decompress.c;
-+  common = grub-core/lib/zstd/module.c;
-+  common = grub-core/lib/zstd/xxhash.c;
-+  common = grub-core/lib/zstd/zstd_common.c;
-+  common = grub-core/lib/zstd/zstd_decompress.c;
- };
-
- program = {
-diff --git a/grub-core/Makefile.core.def b/grub-core/Makefile.core.def
-index 829e7bb57..2d75c4daf 100644
---- a/grub-core/Makefile.core.def
-+++ b/grub-core/Makefile.core.def
-@@ -1291,7 +1291,7 @@ module = {
-   common = fs/btrfs.c;
-   common = lib/crc.c;
-   cflags = '$(CFLAGS_POSIX) -Wno-undef';
--  cppflags = '-I$(srcdir)/lib/posix_wrap -I$(srcdir)/lib/minilzo -DMINILZO_HAVE_CONFIG_H';
-+  cppflags = '-I$(srcdir)/lib/posix_wrap -I$(srcdir)/lib/minilzo -I$(srcdir)/lib/zstd -DMINILZO_HAVE_CONFIG_H';
- };
-
- module = {
-diff --git a/grub-core/fs/btrfs.c b/grub-core/fs/btrfs.c
-index cac9ef588..0d5151af2 100644
---- a/grub-core/fs/btrfs.c
-+++ b/grub-core/fs/btrfs.c
-@@ -17,6 +17,14 @@
-  *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>.
-  */
-
-+/*
-+ * Tell zstd to expose functions that aren't part of the stable API, which
-+ * aren't safe to use when linking against a dynamic library. We vendor in a
-+ * specific zstd version, so we know what we're getting. We need these unstable
-+ * functions to provide our own allocator, which uses grub_malloc(), to zstd.
-+ */
-+#define ZSTD_STATIC_LINKING_ONLY
-+
- #include <grub/err.h>
- #include <grub/file.h>
- #include <grub/mm.h>
-@@ -27,6 +35,7 @@
- #include <grub/lib/crc.h>
- #include <grub/deflate.h>
- #include <minilzo.h>
-+#include <zstd.h>
- #include <grub/i18n.h>
- #include <grub/btrfs.h>
- #include <grub/crypto.h>
-@@ -47,6 +56,9 @@ GRUB_MOD_LICENSE ("GPLv3+");
- #define GRUB_BTRFS_LZO_BLOCK_MAX_CSIZE (GRUB_BTRFS_LZO_BLOCK_SIZE + \
- 				     (GRUB_BTRFS_LZO_BLOCK_SIZE / 16) + 64 + 3)
-
-+#define ZSTD_BTRFS_MAX_WINDOWLOG 17
-+#define ZSTD_BTRFS_MAX_INPUT     (1 << ZSTD_BTRFS_MAX_WINDOWLOG)
-+
- typedef grub_uint8_t grub_btrfs_checksum_t[0x20];
- typedef grub_uint16_t grub_btrfs_uuid_t[8];
-
-@@ -217,6 +229,7 @@ struct grub_btrfs_extent_data
- #define GRUB_BTRFS_COMPRESSION_NONE 0
- #define GRUB_BTRFS_COMPRESSION_ZLIB 1
- #define GRUB_BTRFS_COMPRESSION_LZO  2
-+#define GRUB_BTRFS_COMPRESSION_ZSTD 3
-
- #define GRUB_BTRFS_OBJECT_ID_CHUNK 0x100
-
-@@ -1216,6 +1229,97 @@ grub_btrfs_read_inode (struct grub_btrfs_data *data,
-   return grub_btrfs_read_logical (data, elemaddr, inode, sizeof (*inode), 0);
- }
-
-+static void *grub_zstd_malloc (void *state __attribute__((unused)), size_t size)
-+{
-+    return grub_malloc (size);
-+}
-+
-+static void grub_zstd_free (void *state __attribute__((unused)), void *address)
-+{
-+    return grub_free (address);
-+}
-+
-+static ZSTD_customMem grub_zstd_allocator (void)
-+{
-+    ZSTD_customMem allocator;
-+
-+    allocator.customAlloc = &grub_zstd_malloc;
-+    allocator.customFree = &grub_zstd_free;
-+    allocator.opaque = NULL;
-+
-+    return allocator;
-+}
-+
-+static grub_ssize_t
-+grub_btrfs_zstd_decompress (char *ibuf, grub_size_t isize, grub_off_t off,
-+			    char *obuf, grub_size_t osize)
-+{
-+    void *allocated = NULL;
-+    char *otmpbuf = obuf;
-+    grub_size_t otmpsize = osize;
-+    ZSTD_DCtx *dctx = NULL;
-+    grub_size_t zstd_ret;
-+    grub_ssize_t ret = -1;
-+
-+    /*
-+     * Zstd will fail if it can't fit the entire output in the destination
-+     * buffer, so if osize isn't large enough, allocate a temporary buffer.
-+     */
-+    if (otmpsize < ZSTD_BTRFS_MAX_INPUT)
-+      {
-+	allocated = grub_malloc (ZSTD_BTRFS_MAX_INPUT);
-+	if (!allocated)
-+	  {
-+	    grub_error (GRUB_ERR_OUT_OF_MEMORY,
-+			"failed allocate a zstd buffer");
-+	    goto err;
-+	  }
-+	otmpbuf = (char *) allocated;
-+	otmpsize = ZSTD_BTRFS_MAX_INPUT;
-+      }
-+
-+    /* Create the ZSTD_DCtx. */
-+    dctx = ZSTD_createDCtx_advanced (grub_zstd_allocator ());
-+    if (!dctx)
-+      {
-+	/* ZSTD_createDCtx_advanced() only fails if it is out of memory. */
-+	grub_error (GRUB_ERR_OUT_OF_MEMORY, "failed to create a zstd context");
-+	goto err;
-+      }
-+
-+    /*
-+     * Get the real input size, there may be junk at the
-+     * end of the frame.
-+     */
-+    isize = ZSTD_findFrameCompressedSize (ibuf, isize);
-+    if (ZSTD_isError (isize))
-+      {
-+	grub_error (GRUB_ERR_BAD_COMPRESSED_DATA, "zstd data corrupted");
-+	goto err;
-+      }
-+
-+    /* Decompress and check for errors. */
-+    zstd_ret = ZSTD_decompressDCtx (dctx, otmpbuf, otmpsize, ibuf, isize);
-+    if (ZSTD_isError (zstd_ret))
-+      {
-+	grub_error (GRUB_ERR_BAD_COMPRESSED_DATA, "zstd data corrupted");
-+	goto err;
-+      }
-+
-+    /*
-+     * Move the requested data into the obuf. obuf may be equal
-+     * to otmpbuf, which is why grub_memmove() is required.
-+     */
-+    grub_memmove (obuf, otmpbuf + off, osize);
-+    ret = osize;
-+
-+err:
-+    grub_free (allocated);
-+    ZSTD_freeDCtx (dctx);
-+
-+    return ret;
-+}
-+
- static grub_ssize_t
- grub_btrfs_lzo_decompress(char *ibuf, grub_size_t isize, grub_off_t off,
- 			  char *obuf, grub_size_t osize)
-@@ -1391,7 +1495,8 @@ grub_btrfs_extent_read (struct grub_btrfs_data *data,
-
-       if (data->extent->compression != GRUB_BTRFS_COMPRESSION_NONE
- 	  && data->extent->compression != GRUB_BTRFS_COMPRESSION_ZLIB
--	  && data->extent->compression != GRUB_BTRFS_COMPRESSION_LZO)
-+	  && data->extent->compression != GRUB_BTRFS_COMPRESSION_LZO
-+	  && data->extent->compression != GRUB_BTRFS_COMPRESSION_ZSTD)
- 	{
- 	  grub_error (GRUB_ERR_NOT_IMPLEMENTED_YET,
- 		      "compression type 0x%x not supported",
-@@ -1431,6 +1536,15 @@ grub_btrfs_extent_read (struct grub_btrfs_data *data,
- 		  != (grub_ssize_t) csize)
- 		return -1;
- 	    }
-+	  else if (data->extent->compression == GRUB_BTRFS_COMPRESSION_ZSTD)
-+	    {
-+	      if (grub_btrfs_zstd_decompress (data->extent->inl, data->extsize -
-+					      ((grub_uint8_t *) data->extent->inl
-+					       - (grub_uint8_t *) data->extent),
-+					      extoff, buf, csize)
-+		  != (grub_ssize_t) csize)
-+		return -1;
-+	    }
- 	  else
- 	    grub_memcpy (buf, data->extent->inl + extoff, csize);
- 	  break;
-@@ -1468,6 +1582,10 @@ grub_btrfs_extent_read (struct grub_btrfs_data *data,
- 		ret = grub_btrfs_lzo_decompress (tmp, zsize, extoff
- 				    + grub_le_to_cpu64 (data->extent->offset),
- 				    buf, csize);
-+	      else if (data->extent->compression == GRUB_BTRFS_COMPRESSION_ZSTD)
-+		ret = grub_btrfs_zstd_decompress (tmp, zsize, extoff
-+				    + grub_le_to_cpu64 (data->extent->offset),
-+				    buf, csize);
- 	      else
- 		ret = -1;
-
-diff --git a/tests/btrfs_test.in b/tests/btrfs_test.in
-index 2b37ddd33..0c9bf3a68 100644
---- a/tests/btrfs_test.in
-+++ b/tests/btrfs_test.in
-@@ -18,6 +18,7 @@ fi
- "@builddir@/grub-fs-tester" btrfs
- "@builddir@/grub-fs-tester" btrfs_zlib
- "@builddir@/grub-fs-tester" btrfs_lzo
-+"@builddir@/grub-fs-tester" btrfs_zstd
- "@builddir@/grub-fs-tester" btrfs_raid0
- "@builddir@/grub-fs-tester" btrfs_raid1
- "@builddir@/grub-fs-tester" btrfs_single
-diff --git a/tests/util/grub-fs-tester.in b/tests/util/grub-fs-tester.in
-index ef65fbc93..bc14a05ca 100644
---- a/tests/util/grub-fs-tester.in
-+++ b/tests/util/grub-fs-tester.in
-@@ -629,7 +629,7 @@ for LOGSECSIZE in $(range "$MINLOGSECSIZE" "$MAXLOGSECSIZE" 1); do
- 		    ;;
- 		x"btrfs")
- 		    "mkfs.btrfs" -s $SECSIZE -L "$FSLABEL" "${MOUNTDEVICE}" ;;
--		x"btrfs_zlib" | x"btrfs_lzo")
-+		x"btrfs_zlib" | x"btrfs_lzo" | x"btrfs_zstd")
- 		    "mkfs.btrfs" -s $SECSIZE -L "$FSLABEL" "${MOUNTDEVICE}"
- 		    MOUNTOPTS="compress=${fs/btrfs_/},"
- 		    MOUNTFS="btrfs"
---
-2.17.1
+> +	seg->bv_page = nth_page(bvec->bv_page, last_page);
+> +
+> +	/* the whole segment is inside the last page */
+> +	if (bvec->bv_offset >= last_page * PAGE_SIZE) {
+> +		seg->bv_offset = bvec->bv_offset % PAGE_SIZE;
+> +		seg->bv_len = bvec->bv_len;
+> +	} else {
+> +		seg->bv_offset = 0;
+> +		seg->bv_len = total - last_page * PAGE_SIZE;
+> +	}
+> +}
+> +
+>  #endif /* __LINUX_BVEC_ITER_H */
+> -- 
+> 2.9.5
+> 

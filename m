@@ -2,116 +2,140 @@ Return-Path: <SRS0=Mirb=N2=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.5 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4936CC43441
-	for <linux-btrfs@archiver.kernel.org>; Thu, 15 Nov 2018 18:40:01 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6AE12C43441
+	for <linux-btrfs@archiver.kernel.org>; Thu, 15 Nov 2018 19:51:17 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 0A1E6208E7
-	for <linux-btrfs@archiver.kernel.org>; Thu, 15 Nov 2018 18:40:00 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=rdcsafety-com.20150623.gappssmtp.com header.i=@rdcsafety-com.20150623.gappssmtp.com header.b="kMLxOGjc"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 0A1E6208E7
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=rdcsafety.com
+	by mail.kernel.org (Postfix) with ESMTP id 2E8D02146D
+	for <linux-btrfs@archiver.kernel.org>; Thu, 15 Nov 2018 19:51:17 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 2E8D02146D
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727123AbeKPEsx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 15 Nov 2018 23:48:53 -0500
-Received: from mail-pg1-f182.google.com ([209.85.215.182]:44633 "EHLO
-        mail-pg1-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726453AbeKPEsx (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 15 Nov 2018 23:48:53 -0500
-Received: by mail-pg1-f182.google.com with SMTP id t13so736485pgr.11
-        for <linux-btrfs@vger.kernel.org>; Thu, 15 Nov 2018 10:39:58 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=rdcsafety-com.20150623.gappssmtp.com; s=20150623;
-        h=reply-to:to:from:subject:organization:message-id:date:user-agent
-         :mime-version:content-transfer-encoding:content-language;
-        bh=1z/lZ0kPK2kleapIwGi+JZ1s4bOMrJTIk5dpV/8A22U=;
-        b=kMLxOGjcWnMNTe90nGV5aUKBODm3ly5VI+DFkXJg/71Zj7QGCw7hcvpgMN8fInp3fM
-         h8OzEIDxi24ERuOtxJiWlBf65Avw/UMFppAhjzeFHSBf74bLR4SR4Jp7ICOzDhiUTx7i
-         BZOTCFJWJIEhNoyPSLwUE2Fk+vEBDuYG1I6qI9Wpz7eeFsSk5bbGaT64Om7FhF0UQxac
-         iLv59O0NQJcg1/Jmd5tiylJHv2teTGUw3oQU0f8kYHr4ZSJvb+GRCx0DJtiTCUB3UqkK
-         +8nKuts0eEiA4SEM7jDoO3sQ0YUdrzUxCmrMh0lA6LUo6lq673xzWLEvbCVp8qbHmBEw
-         OxCg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:reply-to:to:from:subject:organization:message-id
-         :date:user-agent:mime-version:content-transfer-encoding
-         :content-language;
-        bh=1z/lZ0kPK2kleapIwGi+JZ1s4bOMrJTIk5dpV/8A22U=;
-        b=LH61EqcIjD+ximlSeZfqEs2C+6JTF/WjLJ44RdFAIt9PYc9wuRA1ArgPbXYNlHB1n6
-         RsUgCPjMyF2ZDs8W2QV7sTu2Jy+D/H04kGv7Ah/DcZo5+pmNHwBwuVqrD6lVuOBJmIvp
-         amVT0AJl122tEbOYqkXtw4cMUOZLAc1NaJ7RI0Vj1jv4pmo4olpoKRj1joubNcoWqr4G
-         iTTqJGuDvweTuI3l98S238xBweUn0XM8DNEzkcdQ+3WhBj805Gm9ts2arOzB0jg1rnmc
-         D/8OUa0eyeN2YkjNhvc/+rCklBArvFMlH8et/VBwDP/1V8736AthNzLtiik5sHDXxyAh
-         EO7Q==
-X-Gm-Message-State: AGRZ1gIMD7nNZsV57x9WVOpxls9mtHRSZZ6P9SqLvUVg4UnNmS4VM4ca
-        F/25rEXUkM9KtTP+CrMGIuTQQcXC0UI=
-X-Google-Smtp-Source: AJdET5efK0tdUM4DHsXPB7w0a4dG67ZKvL1digIwvKoIp+9MldgBVIGoqOBZxyREOWLOLVBkH4tXPA==
-X-Received: by 2002:a63:ef0b:: with SMTP id u11-v6mr6852803pgh.283.1542307197444;
-        Thu, 15 Nov 2018 10:39:57 -0800 (PST)
-Received: from [192.168.3.92] (S0106a8c7ddf0eb43.fm.shawcable.net. [50.65.49.17])
-        by smtp.gmail.com with ESMTPSA id v12-v6sm37263082pfa.167.2018.11.15.10.39.56
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Thu, 15 Nov 2018 10:39:56 -0800 (PST)
-Reply-To: jacirez@rdcsafety.com
-To:     linux-btrfs@vger.kernel.org
-From:   Juan Alberto Cirez <jacirez@rdcsafety.com>
-Subject: BTRFS on production: NVR 16+ IP Cameras
-Organization: RDC Safety Plus, Inc.
-Message-ID: <bf338fb1-11fe-baea-4099-af9dc267e597@rdcsafety.com>
-Date:   Thu, 15 Nov 2018 11:39:58 -0700
-User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64; rv:60.0) Gecko/20100101
+        id S1728465AbeKPGA1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 16 Nov 2018 01:00:27 -0500
+Received: from mx2.suse.de ([195.135.220.15]:36146 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1725869AbeKPGA0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 16 Nov 2018 01:00:26 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id B0384B10D;
+        Thu, 15 Nov 2018 19:51:13 +0000 (UTC)
+Subject: Re: BTRFS on production: NVR 16+ IP Cameras
+To:     jacirez@rdcsafety.com, linux-btrfs@vger.kernel.org
+References: <bf338fb1-11fe-baea-4099-af9dc267e597@rdcsafety.com>
+From:   Nikolay Borisov <nborisov@suse.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <8bc60329-27fa-f7ec-1767-fd1a3c5823a4@suse.com>
+Date:   Thu, 15 Nov 2018 21:51:12 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Transfer-Encoding: 7bit
+In-Reply-To: <bf338fb1-11fe-baea-4099-af9dc267e597@rdcsafety.com>
+Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Is BTRFS mature enough to be deployed on a production system to underpin 
-the storage layer of a 16+ ipcameras-based NVR (or VMS if you prefer)?
-
-Based on our limited experience with BTRFS (1+ year) under the above 
-scenario the answer seems to be no; but I wanted you ask the community 
-at large for their experience before making a final decision to hold off 
-on deploying BTRFS on production systems.
-
-Let us be clear: We think BTRFS has great potential, and as it matures 
-we will continue to watch its progress, so that at some future point we 
-can return to using it.
-
-The issue has been the myriad of problems we have encountered when 
-deploying BTRFS as the storage fs for the NVR/VMS in cases were the 
-camera count exceeds 10: Corrupted file systems, sudden read-only file 
-system, re-balance kernel panics, broken partitions, etc.
-
-One specific case saw the btrfs drive pool mounted under the /var 
-partition so that upon installation the btrfs pool contained all files 
-under /var; /lib/mysql as well as the video storage. Needless to say 
-this was a catastrophe...
-
-At the other end of the spectrum is a use case where ONLY the video 
-storage was on the btrfs pool; but in that case, the btrfs pool became 
-read-only suddenly and would not re-mount as rw despite all the recovery 
-trick btrfs-tools could throw at it. This, of course prevented the 
-NVR/VMS from recording any footage.
-
-So, again, the question is: is BTRFS mature enough to be used in such 
-use case and if so, what approach can be used to mitigate such issues.
 
 
-Thank you all for your assistance
+On 15.11.18 г. 20:39 ч., Juan Alberto Cirez wrote:
+> Is BTRFS mature enough to be deployed on a production system to underpin
+> the storage layer of a 16+ ipcameras-based NVR (or VMS if you prefer)?
+> 
+> Based on our limited experience with BTRFS (1+ year) under the above
+> scenario the answer seems to be no; but I wanted you ask the community
+> at large for their experience before making a final decision to hold off
+> on deploying BTRFS on production systems.
+> 
+> Let us be clear: We think BTRFS has great potential, and as it matures
+> we will continue to watch its progress, so that at some future point we
+> can return to using it.
+> 
+> The issue has been the myriad of problems we have encountered when
+> deploying BTRFS as the storage fs for the NVR/VMS in cases were the
+> camera count exceeds 10: Corrupted file systems, sudden read-only file
+> system, re-balance kernel panics, broken partitions, etc.
 
--Ryan-
--- 
-Ryan Burt, B. Sc. for
-Juan Alberto Cirez, CFPT
+What version of the file system, how many of those issues (if any) have
+you reported to the upstream mailing list? I don't remember seeing any
+reports from you.
+
+> 
+> One specific case saw the btrfs drive pool mounted under the /var
+> partition so that upon installation the btrfs pool contained all files
+> under /var; /lib/mysql as well as the video storage. Needless to say
+> this was a catastrophe...
+
+BTRFS is not suitable for random workloads, such as databases for
+example. In those cases it's recommended, at the very least, to disable
+COW on the database files. Note, disabling CoW doesn't preclude you from
+creating snapshots, it just means that not every 4k write (for example)
+will result in a CoW operation.
+
+> 
+> At the other end of the spectrum is a use case where ONLY the video
+> storage was on the btrfs pool; but in that case, the btrfs pool became
+> read-only suddenly and would not re-mount as rw despite all the recovery
+> trick btrfs-tools could throw at it. This, of course prevented the
+> NVR/VMS from recording any footage.
+
+Again, you give absolutely no information about how you have configured
+the filesystem or versions of the software used.
+
+> 
+> So, again, the question is: is BTRFS mature enough to be used in such
+> use case and if so, what approach can be used to mitigate such issues.
+> 
+> 
+> Thank you all for your assistance
+> 
+> -Ryan-

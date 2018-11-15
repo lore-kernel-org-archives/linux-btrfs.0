@@ -7,58 +7,58 @@ X-Spam-Status: No, score=-10.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
 	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 21FF8C43441
-	for <linux-btrfs@archiver.kernel.org>; Thu, 15 Nov 2018 18:26:08 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D7CA9C43441
+	for <linux-btrfs@archiver.kernel.org>; Thu, 15 Nov 2018 18:29:05 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D77B921780
-	for <linux-btrfs@archiver.kernel.org>; Thu, 15 Nov 2018 18:26:07 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9DB8921780
+	for <linux-btrfs@archiver.kernel.org>; Thu, 15 Nov 2018 18:29:05 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="hqxoBng/"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org D77B921780
+	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="aYeBtxCK"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 9DB8921780
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=osandov.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2388881AbeKPEe7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 15 Nov 2018 23:34:59 -0500
-Received: from mail-pf1-f194.google.com ([209.85.210.194]:36218 "EHLO
-        mail-pf1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2387839AbeKPEe5 (ORCPT
+        id S2388798AbeKPEhu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 15 Nov 2018 23:37:50 -0500
+Received: from mail-pg1-f193.google.com ([209.85.215.193]:44969 "EHLO
+        mail-pg1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S2388805AbeKPEhu (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 15 Nov 2018 23:34:57 -0500
-Received: by mail-pf1-f194.google.com with SMTP id b85so3265156pfc.3
-        for <linux-btrfs@vger.kernel.org>; Thu, 15 Nov 2018 10:26:03 -0800 (PST)
+        Thu, 15 Nov 2018 23:37:50 -0500
+Received: by mail-pg1-f193.google.com with SMTP id t13so723783pgr.11
+        for <linux-btrfs@vger.kernel.org>; Thu, 15 Nov 2018 10:28:56 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=osandov-com.20150623.gappssmtp.com; s=20150623;
         h=date:from:to:cc:subject:message-id:references:mime-version
          :content-disposition:in-reply-to:user-agent;
-        bh=LZBZD86Znd9LyHdczTLvGztQ2bKPH9Yi3lDzItF2KWw=;
-        b=hqxoBng/CavFPILF3XTaCP0hdlrGVTFYcEVuZcRu1M2nQ/9ofUYBnVA6xdnpWWuy3d
-         tLemHB+WZvRYGPE8HH+OLncnhKhFjbQc0l1MYLbbqxnLZoziaQZ6eQ7TOcl7OyVsBZWb
-         CuLQ6BoHuCVbf7yWa7Qmcb1Jt0K44fRqsJYsnhUmjPZav58fEHLN5MMo60kHxUHefXnl
-         K+t0Zu6g8DOdCvuNJHLcYJLRL/ktyo5YxUZMh2viTeAYDO4NRLCHsdZlcCWVUSnwJCLi
-         pddtldwMDnlESbYlmjcwB0C2C+5aGF8SEQD30lRkhsiTdONGwuUR1Y3TWKmoT2O/sZYu
-         cIhw==
+        bh=cKqxCmj+g8wylWj4eAfctUKW1L6Qx1DV5mBadTwoHi0=;
+        b=aYeBtxCKN4fkLNjtgzi/IbgY/RCrYdQBDjus/pC7t2KKIOWW41bLlF0BI3wKNkM6MV
+         XipZqHXMqDKk1Z2fjnHTdMlF78IHpC05xrExzrwEnR044plj42lc60XwAYtybmSMLbXd
+         QU7qyfv8LoQ7Xl0Mdriw1X36qDSz0ir0+R3AfuTOhkQXGe43pSVGXn6LkHZ/SMTwbn8I
+         kkShBdyZ5HroecyXfNNxRrjiyWqSsew3pII+uQ9ToybQq6bzpyWQCNc3PGYVprSXPIxy
+         LPb8+ar3qE9hO8eQ18F8kWROsZ3+jbd1MxdOUkMib1xTGn4X3uFLEemxqbvSKec5wxfS
+         AK1Q==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:date:from:to:cc:subject:message-id:references
          :mime-version:content-disposition:in-reply-to:user-agent;
-        bh=LZBZD86Znd9LyHdczTLvGztQ2bKPH9Yi3lDzItF2KWw=;
-        b=JwIONVjNh9z+8L4hWc05IoY4D3Jk9L6XXYWtQp3YBfJyFmatNFgNLwvjDEpo0H7l+M
-         rb6qJ3d7WHhKu0+lUefZD2FiO4TlB2gklfjA6JcdeNxVmBcwYt6H1olMlkU0v53TGE/8
-         DhNyWdc2Yzjsg5C0orTMvD927fw9fWjkLgC2dofNMmW6IdyLC4DxNDDUYmEWRhuBEkSe
-         G3EIVx6n6S7JFJd/9z2K+7OwIQdzkXdY343AXHAbc4axiRD2Skx/uCB8Vs20oAuZou3Z
-         JPFAZuh0kE54Ed7WrWNT073UtE4I0i+SRncp1cQHswAqhHjbetTvnBtBUIw0eJBOnP6Y
-         SupA==
-X-Gm-Message-State: AGRZ1gKIJnPgcWDYFe5w5yEEKWOFeN6fJNfASMT26HqAekwggMscdVXu
-        6eBDJo0thz8Wt/U6G1rDh4Y8Vw==
-X-Google-Smtp-Source: AJdET5csVSw8rOnSLuu0/5ZHJYO4LwWh4n88DP3oYUT2NICBwFSDWdKjRu6fqlHwL2K1OaBXZhjWbg==
-X-Received: by 2002:a62:5343:: with SMTP id h64-v6mr7523295pfb.226.1542306362402;
-        Thu, 15 Nov 2018 10:26:02 -0800 (PST)
+        bh=cKqxCmj+g8wylWj4eAfctUKW1L6Qx1DV5mBadTwoHi0=;
+        b=GVo30tmTuQYbakb9Rsk1Lsgl+mgmRw+K0RVZK97wgVDy/3tfs0VsBnEvZuqGQ/Fzrl
+         3VpVPz4ykOiktAcmGtWESutqMe4O6HXXD229A+yJTjzJzxcFN4pljUJwjVcRRUFVWKbE
+         B7KSdiVjuQRJQlBUxu/+z9qZaoEYuWj8Qw6RljOFRWcOcCaXaV5STtArPuao/SMOtkCZ
+         TjF5dyiKcZrOqBnbq/B99cffG+49SNAFetiaAKLBbr4fY6Ark6NTXvFuOobcgB4vrZO1
+         VwuuBOHgk/RlshGXVti8ogSXZAYnDz4ozTGyg1SzejqzSJr0sUdwnN6TAmvE8hDV4ykU
+         PmNA==
+X-Gm-Message-State: AGRZ1gKn6HQ5kh1pkDMzTjeBCMtQx+o+SV1JnL3R7DEGn+SPGPpwdYJM
+        /NCGs7Ec4/FChf4ktDOUPw8J/pxTE2HQQ636
+X-Google-Smtp-Source: AJdET5cUkx5Cw0zfoRvC4mN0QBbB0FymNnWasc/6x4Bd2JTU0z9jg4Wqk9Tv9MwiHUzAQ/sFbYLksA==
+X-Received: by 2002:a63:790e:: with SMTP id u14mr6781823pgc.452.1542306535815;
+        Thu, 15 Nov 2018 10:28:55 -0800 (PST)
 Received: from vader ([64.114.255.97])
-        by smtp.gmail.com with ESMTPSA id x12sm26569212pgr.55.2018.11.15.10.26.00
+        by smtp.gmail.com with ESMTPSA id f6-v6sm35792916pfg.128.2018.11.15.10.28.54
         (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
-        Thu, 15 Nov 2018 10:26:01 -0800 (PST)
-Date:   Thu, 15 Nov 2018 10:25:59 -0800
+        Thu, 15 Nov 2018 10:28:55 -0800 (PST)
+Date:   Thu, 15 Nov 2018 10:28:54 -0800
 From:   Omar Sandoval <osandov@osandov.com>
 To:     Ming Lei <ming.lei@redhat.com>
 Cc:     Jens Axboe <axboe@kernel.dk>, linux-block@vger.kernel.org,
@@ -76,31 +76,23 @@ Cc:     Jens Axboe <axboe@kernel.dk>, linux-block@vger.kernel.org,
         linux-ext4@vger.kernel.org, Coly Li <colyli@suse.de>,
         linux-bcache@vger.kernel.org, Boaz Harrosh <ooo@electrozaur.com>,
         Bob Peterson <rpeterso@redhat.com>, cluster-devel@redhat.com
-Subject: Re: [PATCH V10 01/19] block: introduce multi-page page bvec helpers
-Message-ID: <20181115182559.GA9348@vader>
+Subject: Re: [PATCH V10 02/19] block: introduce bio_for_each_bvec()
+Message-ID: <20181115182854.GB9348@vader>
 References: <20181115085306.9910-1-ming.lei@redhat.com>
- <20181115085306.9910-2-ming.lei@redhat.com>
+ <20181115085306.9910-3-ming.lei@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20181115085306.9910-2-ming.lei@redhat.com>
+In-Reply-To: <20181115085306.9910-3-ming.lei@redhat.com>
 User-Agent: Mutt/1.10.1 (2018-07-13)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Nov 15, 2018 at 04:52:48PM +0800, Ming Lei wrote:
-> This patch introduces helpers of 'mp_bvec_iter_*' for multipage
-> bvec support.
-> 
-> The introduced helpers treate one bvec as real multi-page segment,
-> which may include more than one pages.
-> 
-> The existed helpers of bvec_iter_* are interfaces for supporting current
-> bvec iterator which is thought as single-page by drivers, fs, dm and
-> etc. These introduced helpers will build single-page bvec in flight, so
-> this way won't break current bio/bvec users, which needn't any change.
+On Thu, Nov 15, 2018 at 04:52:49PM +0800, Ming Lei wrote:
+> This helper is used for iterating over multi-page bvec for bio
+> split & merge code.
 > 
 > Cc: Dave Chinner <dchinner@redhat.com>
 > Cc: Kent Overstreet <kent.overstreet@gmail.com>
@@ -127,117 +119,51 @@ On Thu, Nov 15, 2018 at 04:52:48PM +0800, Ming Lei wrote:
 
 Reviewed-by: Omar Sandoval <osandov@fb.com>
 
-But a couple of comments below.
+One comment below.
 
 > Signed-off-by: Ming Lei <ming.lei@redhat.com>
 > ---
->  include/linux/bvec.h | 63 +++++++++++++++++++++++++++++++++++++++++++++++++---
->  1 file changed, 60 insertions(+), 3 deletions(-)
+>  include/linux/bio.h  | 34 +++++++++++++++++++++++++++++++---
+>  include/linux/bvec.h | 36 ++++++++++++++++++++++++++++++++----
+>  2 files changed, 63 insertions(+), 7 deletions(-)
 > 
-> diff --git a/include/linux/bvec.h b/include/linux/bvec.h
-> index 02c73c6aa805..8ef904a50577 100644
-> --- a/include/linux/bvec.h
-> +++ b/include/linux/bvec.h
-> @@ -23,6 +23,44 @@
->  #include <linux/kernel.h>
->  #include <linux/bug.h>
->  #include <linux/errno.h>
-> +#include <linux/mm.h>
+> diff --git a/include/linux/bio.h b/include/linux/bio.h
+> index 056fb627edb3..1f0dcf109841 100644
+> --- a/include/linux/bio.h
+> +++ b/include/linux/bio.h
+> @@ -76,6 +76,9 @@
+>  #define bio_data_dir(bio) \
+>  	(op_is_write(bio_op(bio)) ? WRITE : READ)
+>  
+> +#define bio_iter_mp_iovec(bio, iter)				\
+> +	mp_bvec_iter_bvec((bio)->bi_io_vec, (iter))
 > +
-> +/*
-> + * What is multi-page bvecs?
-> + *
-> + * - bvecs stored in bio->bi_io_vec is always multi-page(mp) style
-> + *
-> + * - bvec(struct bio_vec) represents one physically contiguous I/O
-> + *   buffer, now the buffer may include more than one pages after
-> + *   multi-page(mp) bvec is supported, and all these pages represented
-> + *   by one bvec is physically contiguous. Before mp support, at most
-> + *   one page is included in one bvec, we call it single-page(sp)
-> + *   bvec.
-> + *
-> + * - .bv_page of the bvec represents the 1st page in the mp bvec
-> + *
-> + * - .bv_offset of the bvec represents offset of the buffer in the bvec
-> + *
-> + * The effect on the current drivers/filesystem/dm/bcache/...:
-> + *
-> + * - almost everyone supposes that one bvec only includes one single
-> + *   page, so we keep the sp interface not changed, for example,
-> + *   bio_for_each_segment() still returns bvec with single page
-> + *
-> + * - bio_for_each_segment*() will be changed to return single-page
-> + *   bvec too
-> + *
-> + * - during iterating, iterator variable(struct bvec_iter) is always
-> + *   updated in multipage bvec style and that means bvec_iter_advance()
-> + *   is kept not changed
-> + *
-> + * - returned(copied) single-page bvec is built in flight by bvec
-> + *   helpers from the stored multipage bvec
-> + *
-> + * - In case that some components(such as iov_iter) need to support
-> + *   multi-page bvec, we introduce new helpers(mp_bvec_iter_*) for
-> + *   them.
-> + */
-
-This comment sounds more like a commit message (i.e., how were things
-before, and how are we changing them). In a couple of years when I read
-this code, I probably won't care how it was changed, just how it works.
-So I think a comment explaining the concepts of multi-page and
-single-page bvecs is very useful, but please move all of the "foo was
-changed" and "before mp support" type stuff to the commit message.
-
 >  /*
->   * was unsigned short, but we might as well be ready for > 64kB I/O pages
-> @@ -50,16 +88,35 @@ struct bvec_iter {
+>   * Check whether this bio carries any data or not. A NULL bio is allowed.
 >   */
->  #define __bvec_iter_bvec(bvec, iter)	(&(bvec)[(iter).bi_idx])
+> @@ -135,18 +138,33 @@ static inline bool bio_full(struct bio *bio)
+>  #define bio_for_each_segment_all(bvl, bio, i)				\
+>  	for (i = 0, bvl = (bio)->bi_io_vec; i < (bio)->bi_vcnt; i++, bvl++)
 >  
-> -#define bvec_iter_page(bvec, iter)				\
-> +#define mp_bvec_iter_page(bvec, iter)				\
->  	(__bvec_iter_bvec((bvec), (iter))->bv_page)
+> -static inline void bio_advance_iter(struct bio *bio, struct bvec_iter *iter,
+> -				    unsigned bytes)
+> +static inline void __bio_advance_iter(struct bio *bio, struct bvec_iter *iter,
+> +				      unsigned bytes, bool mp)
+>  {
+>  	iter->bi_sector += bytes >> 9;
 >  
-> -#define bvec_iter_len(bvec, iter)				\
-> +#define mp_bvec_iter_len(bvec, iter)				\
->  	min((iter).bi_size,					\
->  	    __bvec_iter_bvec((bvec), (iter))->bv_len - (iter).bi_bvec_done)
->  
-> -#define bvec_iter_offset(bvec, iter)				\
-> +#define mp_bvec_iter_offset(bvec, iter)				\
->  	(__bvec_iter_bvec((bvec), (iter))->bv_offset + (iter).bi_bvec_done)
->  
-> +#define mp_bvec_iter_page_idx(bvec, iter)			\
-> +	(mp_bvec_iter_offset((bvec), (iter)) / PAGE_SIZE)
-> +
-> +/*
-> + * <page, offset,length> of single-page(sp) segment.
-> + *
-> + * This helpers are for building sp bvec in flight.
-> + */
-> +#define bvec_iter_offset(bvec, iter)					\
-> +	(mp_bvec_iter_offset((bvec), (iter)) % PAGE_SIZE)
-> +
-> +#define bvec_iter_len(bvec, iter)					\
-> +	min_t(unsigned, mp_bvec_iter_len((bvec), (iter)),		\
-> +	    (PAGE_SIZE - (bvec_iter_offset((bvec), (iter)))))
+>  	if (bio_no_advance_iter(bio))
+>  		iter->bi_size -= bytes;
+>  	else
+> -		bvec_iter_advance(bio->bi_io_vec, iter, bytes);
+> +		if (!mp)
+> +			bvec_iter_advance(bio->bi_io_vec, iter, bytes);
+> +		else
+> +			mp_bvec_iter_advance(bio->bi_io_vec, iter, bytes);
 
-The parentheses around (bvec_iter_offset((bvec), (iter))) and
-(PAGE_SIZE - (bvec_iter_offset((bvec), (iter)))) are unnecessary
-clutter. This looks easier to read to me:
+if (!foo) {} else {} hurts my brain, please do
 
-#define bvec_iter_len(bvec, iter)					\
-	min_t(unsigned, mp_bvec_iter_len((bvec), (iter)),		\
-	      PAGE_SIZE - bvec_iter_offset((bvec), (iter)))
-
-> +
-> +#define bvec_iter_page(bvec, iter)					\
-> +	nth_page(mp_bvec_iter_page((bvec), (iter)),		\
-> +		 mp_bvec_iter_page_idx((bvec), (iter)))
-> +
->  #define bvec_iter_bvec(bvec, iter)				\
->  ((struct bio_vec) {						\
->  	.bv_page	= bvec_iter_page((bvec), (iter)),	\
-> -- 
-> 2.9.5
-> 
+		if (mp)
+			mp_bvec_iter_advance(bio->bi_io_vec, iter, bytes);
+		else
+			bvec_iter_advance(bio->bi_io_vec, iter, bytes);

@@ -2,217 +2,242 @@ Return-Path: <SRS0=Mirb=N2=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.7 required=3.0 tests=FROM_LOCAL_HEX,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-10.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7AE12C04EBF
-	for <linux-btrfs@archiver.kernel.org>; Thu, 15 Nov 2018 17:30:22 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 21FF8C43441
+	for <linux-btrfs@archiver.kernel.org>; Thu, 15 Nov 2018 18:26:08 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 45E55223CB
-	for <linux-btrfs@archiver.kernel.org>; Thu, 15 Nov 2018 17:30:22 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 45E55223CB
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com
+	by mail.kernel.org (Postfix) with ESMTP id D77B921780
+	for <linux-btrfs@archiver.kernel.org>; Thu, 15 Nov 2018 18:26:07 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="hqxoBng/"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org D77B921780
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=osandov.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2388787AbeKPDi7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 15 Nov 2018 22:38:59 -0500
-Received: from mail-it1-f198.google.com ([209.85.166.198]:51067 "EHLO
-        mail-it1-f198.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2388265AbeKPDir (ORCPT
+        id S2388881AbeKPEe7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 15 Nov 2018 23:34:59 -0500
+Received: from mail-pf1-f194.google.com ([209.85.210.194]:36218 "EHLO
+        mail-pf1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S2387839AbeKPEe5 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 15 Nov 2018 22:38:47 -0500
-Received: by mail-it1-f198.google.com with SMTP id p66so11298652itc.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 15 Nov 2018 09:30:04 -0800 (PST)
+        Thu, 15 Nov 2018 23:34:57 -0500
+Received: by mail-pf1-f194.google.com with SMTP id b85so3265156pfc.3
+        for <linux-btrfs@vger.kernel.org>; Thu, 15 Nov 2018 10:26:03 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=osandov-com.20150623.gappssmtp.com; s=20150623;
+        h=date:from:to:cc:subject:message-id:references:mime-version
+         :content-disposition:in-reply-to:user-agent;
+        bh=LZBZD86Znd9LyHdczTLvGztQ2bKPH9Yi3lDzItF2KWw=;
+        b=hqxoBng/CavFPILF3XTaCP0hdlrGVTFYcEVuZcRu1M2nQ/9ofUYBnVA6xdnpWWuy3d
+         tLemHB+WZvRYGPE8HH+OLncnhKhFjbQc0l1MYLbbqxnLZoziaQZ6eQ7TOcl7OyVsBZWb
+         CuLQ6BoHuCVbf7yWa7Qmcb1Jt0K44fRqsJYsnhUmjPZav58fEHLN5MMo60kHxUHefXnl
+         K+t0Zu6g8DOdCvuNJHLcYJLRL/ktyo5YxUZMh2viTeAYDO4NRLCHsdZlcCWVUSnwJCLi
+         pddtldwMDnlESbYlmjcwB0C2C+5aGF8SEQD30lRkhsiTdONGwuUR1Y3TWKmoT2O/sZYu
+         cIhw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:date:message-id:subject:from:to;
-        bh=eU7IONmejJ2AuTpIlLqzSUMPPWH62GEzwh/fmQ+pFiQ=;
-        b=NucFbJdVbi5LyDfBak+3UC3j6UgLxFxy7S/MdwKvS/kLwVCim0pE94tOkDxxzQ02La
-         BiH6uSjr/LkRC5p1V50P988Tw7jGO4Rw774wRTGwd8q8Mk6d3+iPRI/h5/Y2Ahs5dhfl
-         fRaUOGxFYR0maaTtCH+N5OQPefYH+0op1a80aVgLjdWw5fgpOqoJIwnaCcO8KdfJSE/l
-         dQha9fY69Ny4emG7Xuqoy2IEWRVOWHY3ZdhbSgMoOxDjQ8PTTzdUsXENDMnNNKSzYvmu
-         h5wfwf68uhdcHJAsn1kEhAf0rsh71FhiYeHsQmoscV2Yu7/1aa15tCvIMVSFtrV7SQt6
-         ktaQ==
-X-Gm-Message-State: AGRZ1gIZ5RGxCxDbmwKrakvypcUXGYcvtas8tHWP6bLCq+NxNYrNo4pw
-        x0WUjeEl7RG5wlWpykS8LIm8qBOcuuPn2r9Ll/Y0lkuQyy9G
-X-Google-Smtp-Source: AJdET5dodno51+GlbokLNAmDLr2eESC0HY8TNoFbU87zUtEDHitOoaNs3eF8VZORszEDgnqb0K6lVcPwnJX1t5nyvd3zP5XErUIX
+        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
+         :mime-version:content-disposition:in-reply-to:user-agent;
+        bh=LZBZD86Znd9LyHdczTLvGztQ2bKPH9Yi3lDzItF2KWw=;
+        b=JwIONVjNh9z+8L4hWc05IoY4D3Jk9L6XXYWtQp3YBfJyFmatNFgNLwvjDEpo0H7l+M
+         rb6qJ3d7WHhKu0+lUefZD2FiO4TlB2gklfjA6JcdeNxVmBcwYt6H1olMlkU0v53TGE/8
+         DhNyWdc2Yzjsg5C0orTMvD927fw9fWjkLgC2dofNMmW6IdyLC4DxNDDUYmEWRhuBEkSe
+         G3EIVx6n6S7JFJd/9z2K+7OwIQdzkXdY343AXHAbc4axiRD2Skx/uCB8Vs20oAuZou3Z
+         JPFAZuh0kE54Ed7WrWNT073UtE4I0i+SRncp1cQHswAqhHjbetTvnBtBUIw0eJBOnP6Y
+         SupA==
+X-Gm-Message-State: AGRZ1gKIJnPgcWDYFe5w5yEEKWOFeN6fJNfASMT26HqAekwggMscdVXu
+        6eBDJo0thz8Wt/U6G1rDh4Y8Vw==
+X-Google-Smtp-Source: AJdET5csVSw8rOnSLuu0/5ZHJYO4LwWh4n88DP3oYUT2NICBwFSDWdKjRu6fqlHwL2K1OaBXZhjWbg==
+X-Received: by 2002:a62:5343:: with SMTP id h64-v6mr7523295pfb.226.1542306362402;
+        Thu, 15 Nov 2018 10:26:02 -0800 (PST)
+Received: from vader ([64.114.255.97])
+        by smtp.gmail.com with ESMTPSA id x12sm26569212pgr.55.2018.11.15.10.26.00
+        (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
+        Thu, 15 Nov 2018 10:26:01 -0800 (PST)
+Date:   Thu, 15 Nov 2018 10:25:59 -0800
+From:   Omar Sandoval <osandov@osandov.com>
+To:     Ming Lei <ming.lei@redhat.com>
+Cc:     Jens Axboe <axboe@kernel.dk>, linux-block@vger.kernel.org,
+        linux-kernel@vger.kernel.org, linux-mm@kvack.org,
+        Dave Chinner <dchinner@redhat.com>,
+        Kent Overstreet <kent.overstreet@gmail.com>,
+        Mike Snitzer <snitzer@redhat.com>, dm-devel@redhat.com,
+        Alexander Viro <viro@zeniv.linux.org.uk>,
+        linux-fsdevel@vger.kernel.org, Shaohua Li <shli@kernel.org>,
+        linux-raid@vger.kernel.org, linux-erofs@lists.ozlabs.org,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
+        "Darrick J . Wong" <darrick.wong@oracle.com>,
+        linux-xfs@vger.kernel.org, Gao Xiang <gaoxiang25@huawei.com>,
+        Christoph Hellwig <hch@lst.de>, Theodore Ts'o <tytso@mit.edu>,
+        linux-ext4@vger.kernel.org, Coly Li <colyli@suse.de>,
+        linux-bcache@vger.kernel.org, Boaz Harrosh <ooo@electrozaur.com>,
+        Bob Peterson <rpeterso@redhat.com>, cluster-devel@redhat.com
+Subject: Re: [PATCH V10 01/19] block: introduce multi-page page bvec helpers
+Message-ID: <20181115182559.GA9348@vader>
+References: <20181115085306.9910-1-ming.lei@redhat.com>
+ <20181115085306.9910-2-ming.lei@redhat.com>
 MIME-Version: 1.0
-X-Received: by 2002:a24:55:: with SMTP id 82-v6mr906532ita.31.1542303003779;
- Thu, 15 Nov 2018 09:30:03 -0800 (PST)
-Date:   Thu, 15 Nov 2018 09:30:03 -0800
-X-Google-Appengine-App-Id: s~syzkaller
-X-Google-Appengine-App-Id-Alias: syzkaller
-Message-ID: <000000000000ad2edc057ab76675@google.com>
-Subject: general protection fault in btrfs_scan_one_device
-From:   syzbot <syzbot+46048b9c7ec2fe0d4885@syzkaller.appspotmail.com>
-To:     clm@fb.com, dsterba@suse.com, josef@toxicpanda.com,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-        syzkaller-bugs@googlegroups.com
-Content-Type: text/plain; charset="UTF-8"; format=flowed; delsp=yes
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20181115085306.9910-2-ming.lei@redhat.com>
+User-Agent: Mutt/1.10.1 (2018-07-13)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hello,
+On Thu, Nov 15, 2018 at 04:52:48PM +0800, Ming Lei wrote:
+> This patch introduces helpers of 'mp_bvec_iter_*' for multipage
+> bvec support.
+> 
+> The introduced helpers treate one bvec as real multi-page segment,
+> which may include more than one pages.
+> 
+> The existed helpers of bvec_iter_* are interfaces for supporting current
+> bvec iterator which is thought as single-page by drivers, fs, dm and
+> etc. These introduced helpers will build single-page bvec in flight, so
+> this way won't break current bio/bvec users, which needn't any change.
+> 
+> Cc: Dave Chinner <dchinner@redhat.com>
+> Cc: Kent Overstreet <kent.overstreet@gmail.com>
+> Cc: Mike Snitzer <snitzer@redhat.com>
+> Cc: dm-devel@redhat.com
+> Cc: Alexander Viro <viro@zeniv.linux.org.uk>
+> Cc: linux-fsdevel@vger.kernel.org
+> Cc: Shaohua Li <shli@kernel.org>
+> Cc: linux-raid@vger.kernel.org
+> Cc: linux-erofs@lists.ozlabs.org
+> Cc: David Sterba <dsterba@suse.com>
+> Cc: linux-btrfs@vger.kernel.org
+> Cc: Darrick J. Wong <darrick.wong@oracle.com>
+> Cc: linux-xfs@vger.kernel.org
+> Cc: Gao Xiang <gaoxiang25@huawei.com>
+> Cc: Christoph Hellwig <hch@lst.de>
+> Cc: Theodore Ts'o <tytso@mit.edu>
+> Cc: linux-ext4@vger.kernel.org
+> Cc: Coly Li <colyli@suse.de>
+> Cc: linux-bcache@vger.kernel.org
+> Cc: Boaz Harrosh <ooo@electrozaur.com>
+> Cc: Bob Peterson <rpeterso@redhat.com>
+> Cc: cluster-devel@redhat.com
 
-syzbot found the following crash on:
+Reviewed-by: Omar Sandoval <osandov@fb.com>
 
-HEAD commit:    442b8cea2477 Add linux-next specific files for 20181109
-git tree:       linux-next
-console output: https://syzkaller.appspot.com/x/log.txt?x=173046a3400000
-kernel config:  https://syzkaller.appspot.com/x/.config?x=2f72bdb11df9fbe8
-dashboard link: https://syzkaller.appspot.com/bug?extid=46048b9c7ec2fe0d4885
-compiler:       gcc (GCC) 8.0.1 20180413 (experimental)
+But a couple of comments below.
 
-Unfortunately, I don't have any reproducer for this crash yet.
+> Signed-off-by: Ming Lei <ming.lei@redhat.com>
+> ---
+>  include/linux/bvec.h | 63 +++++++++++++++++++++++++++++++++++++++++++++++++---
+>  1 file changed, 60 insertions(+), 3 deletions(-)
+> 
+> diff --git a/include/linux/bvec.h b/include/linux/bvec.h
+> index 02c73c6aa805..8ef904a50577 100644
+> --- a/include/linux/bvec.h
+> +++ b/include/linux/bvec.h
+> @@ -23,6 +23,44 @@
+>  #include <linux/kernel.h>
+>  #include <linux/bug.h>
+>  #include <linux/errno.h>
+> +#include <linux/mm.h>
+> +
+> +/*
+> + * What is multi-page bvecs?
+> + *
+> + * - bvecs stored in bio->bi_io_vec is always multi-page(mp) style
+> + *
+> + * - bvec(struct bio_vec) represents one physically contiguous I/O
+> + *   buffer, now the buffer may include more than one pages after
+> + *   multi-page(mp) bvec is supported, and all these pages represented
+> + *   by one bvec is physically contiguous. Before mp support, at most
+> + *   one page is included in one bvec, we call it single-page(sp)
+> + *   bvec.
+> + *
+> + * - .bv_page of the bvec represents the 1st page in the mp bvec
+> + *
+> + * - .bv_offset of the bvec represents offset of the buffer in the bvec
+> + *
+> + * The effect on the current drivers/filesystem/dm/bcache/...:
+> + *
+> + * - almost everyone supposes that one bvec only includes one single
+> + *   page, so we keep the sp interface not changed, for example,
+> + *   bio_for_each_segment() still returns bvec with single page
+> + *
+> + * - bio_for_each_segment*() will be changed to return single-page
+> + *   bvec too
+> + *
+> + * - during iterating, iterator variable(struct bvec_iter) is always
+> + *   updated in multipage bvec style and that means bvec_iter_advance()
+> + *   is kept not changed
+> + *
+> + * - returned(copied) single-page bvec is built in flight by bvec
+> + *   helpers from the stored multipage bvec
+> + *
+> + * - In case that some components(such as iov_iter) need to support
+> + *   multi-page bvec, we introduce new helpers(mp_bvec_iter_*) for
+> + *   them.
+> + */
 
-IMPORTANT: if you fix the bug, please add the following tag to the commit:
-Reported-by: syzbot+46048b9c7ec2fe0d4885@syzkaller.appspotmail.com
+This comment sounds more like a commit message (i.e., how were things
+before, and how are we changing them). In a couple of years when I read
+this code, I probably won't care how it was changed, just how it works.
+So I think a comment explaining the concepts of multi-page and
+single-page bvecs is very useful, but please move all of the "foo was
+changed" and "before mp support" type stuff to the commit message.
 
-kasan: CONFIG_KASAN_INLINE enabled
-kasan: GPF could be caused by NULL-ptr deref or user memory access
-general protection fault: 0000 [#1] PREEMPT SMP KASAN
-CPU: 1 PID: 13175 Comm: syz-executor4 Not tainted 4.20.0-rc1-next-20181109+  
-#110
-Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS  
-Google 01/01/2011
-kobject: 'kvm' (000000001e39937e): kobject_uevent_env
-RIP: 0010:device_list_add+0x436/0x1460 fs/btrfs/volumes.c:899
-Code: e8 6f d3 8a fe 31 ff 4c 89 f6 e8 95 d4 8a fe 49 8d 7d 20 4d 85 f6 48  
-b8 00 00 00 00 00 fc ff df 48 89 fa 0f 95 c3 48 c1 ea 03 <0f> b6 04 02 84  
-c0 74 06 0f 8e 32 0d 00 00 41 88 5d 20 4c 89 ee 48
-RSP: 0018:ffff8801cbe46f30 EFLAGS: 00010203
-RAX: dffffc0000000000 RBX: ffffffff8982db01 RCX: ffffffff82f4d54b
-RDX: 0000000000000002 RSI: 0000000000000000 RDI: 0000000000000014
-RBP: ffff8801cbe47148 R08: ffff88017aa6e600 R09: ffffed003b5e5b67
-kobject: 'kvm' (000000001e39937e): fill_kobj_path: path  
-= '/devices/virtual/misc/kvm'
-R10: ffffed003b5e5b67 R11: ffff8801daf2db3b R12: ffff8801cca11000
-R13: fffffffffffffff4 R14: 0000001000000000 R15: 00000000ffffff14
-FS:  00007f250ed2a700(0000) GS:ffff8801daf00000(0000) knlGS:0000000000000000
-CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-CR2: 00007ffe28d69f88 CR3: 00000001bf7b1000 CR4: 00000000001426e0
-DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
-DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
-Call Trace:
-  btrfs_scan_one_device+0x4bc/0x1470 fs/btrfs/volumes.c:1422
-kobject: 'kvm' (000000001e39937e): kobject_uevent_env
-kobject: 'ip_vti0' (000000006f23136f): kobject_add_internal: parent: 'net',  
-set: 'devices'
-kobject: 'kvm' (000000001e39937e): fill_kobj_path: path  
-= '/devices/virtual/misc/kvm'
-kobject: 'ip_vti0' (000000006f23136f): kobject_uevent_env
-kobject: 'ip_vti0' (000000006f23136f): fill_kobj_path: path  
-= '/devices/virtual/net/ip_vti0'
-kobject: 'queues' (00000000975f6f6c): kobject_add_internal:  
-parent: 'ip_vti0', set: '<NULL>'
-  btrfs_mount_root+0xc86/0x1d80 fs/btrfs/super.c:1568
-kobject: 'queues' (00000000975f6f6c): kobject_uevent_env
-  legacy_get_tree+0x12f/0x260 fs/fs_context.c:714
-  vfs_get_tree+0x1cb/0x5c0 fs/super.c:1795
-kobject: 'queues' (00000000975f6f6c): kobject_uevent_env: filter function  
-caused the event to drop!
-  vfs_kern_mount.part.57+0x122/0x1a0 fs/namespace.c:3345
-  vfs_kern_mount+0x4a/0x70 fs/namespace.c:3324
-  btrfs_mount+0x4b4/0x2165 fs/btrfs/super.c:1672
-kobject: 'rx-0' (00000000b0416e92): kobject_add_internal: parent: 'queues',  
-set: 'queues'
-kobject: 'rx-0' (00000000b0416e92): kobject_uevent_env
-kobject: 'rx-0' (00000000b0416e92): fill_kobj_path: path  
-= '/devices/virtual/net/ip_vti0/queues/rx-0'
-kobject: 'tx-0' (00000000c8feb95b): kobject_add_internal: parent: 'queues',  
-set: 'queues'
-kobject: 'tx-0' (00000000c8feb95b): kobject_uevent_env
-kobject: 'tx-0' (00000000c8feb95b): fill_kobj_path: path  
-= '/devices/virtual/net/ip_vti0/queues/tx-0'
-  legacy_get_tree+0x12f/0x260 fs/fs_context.c:714
-kobject: 'ip6_vti0' (000000008583c444): kobject_add_internal:  
-parent: 'net', set: 'devices'
-  vfs_get_tree+0x1cb/0x5c0 fs/super.c:1795
-  do_new_mount fs/namespace.c:2716 [inline]
-  do_mount+0x82a/0x1ff0 fs/namespace.c:3042
-kobject: 'ip6_vti0' (000000008583c444): kobject_uevent_env
-kobject: 'ip6_vti0' (000000008583c444): fill_kobj_path: path  
-= '/devices/virtual/net/ip6_vti0'
-  ksys_mount+0x12d/0x140 fs/namespace.c:3258
-  __do_sys_mount fs/namespace.c:3272 [inline]
-  __se_sys_mount fs/namespace.c:3269 [inline]
-  __x64_sys_mount+0xbe/0x150 fs/namespace.c:3269
-kobject: 'queues' (00000000ed64f9a7): kobject_add_internal:  
-parent: 'ip6_vti0', set: '<NULL>'
-  do_syscall_64+0x1b9/0x820 arch/x86/entry/common.c:290
-kobject: 'queues' (00000000ed64f9a7): kobject_uevent_env
-kobject: 'queues' (00000000ed64f9a7): kobject_uevent_env: filter function  
-caused the event to drop!
-  entry_SYSCALL_64_after_hwframe+0x49/0xbe
-RIP: 0033:0x459fda
-Code: b8 a6 00 00 00 0f 05 48 3d 01 f0 ff ff 0f 83 7d 89 fb ff c3 66 2e 0f  
-1f 84 00 00 00 00 00 66 90 49 89 ca b8 a5 00 00 00 0f 05 <48> 3d 01 f0 ff  
-ff 0f 83 5a 89 fb ff c3 66 0f 1f 84 00 00 00 00 00
-RSP: 002b:00007f250ed29a88 EFLAGS: 00000206 ORIG_RAX: 00000000000000a5
-kobject: 'rx-0' (00000000c0c5ba02): kobject_add_internal: parent: 'queues',  
-set: 'queues'
-RAX: ffffffffffffffda RBX: 00007f250ed29b30 RCX: 0000000000459fda
-RDX: 00007f250ed29ad0 RSI: 0000000020000100 RDI: 00007f250ed29af0
-RBP: 0000000020000100 R08: 00007f250ed29b30 R09: 00007f250ed29ad0
-R10: 0000000000000000 R11: 0000000000000206 R12: 0000000000000004
-R13: 0000000000000000 R14: 00000000004d83e8 R15: 0000000000000003
-Modules linked in:
-kobject: 'loop5' (000000004b229921): kobject_uevent_env
-kobject: 'loop5' (000000004b229921): fill_kobj_path: path  
-= '/devices/virtual/block/loop5'
----[ end trace 6d0d7474702a14d9 ]---
-kobject: 'loop4' (0000000090ac9b5a): kobject_uevent_env
-RIP: 0010:device_list_add+0x436/0x1460 fs/btrfs/volumes.c:899
-kobject: 'loop4' (0000000090ac9b5a): fill_kobj_path: path  
-= '/devices/virtual/block/loop4'
-Code: e8 6f d3 8a fe 31 ff 4c 89 f6 e8 95 d4 8a fe 49 8d 7d 20 4d 85 f6 48  
-b8 00 00 00 00 00 fc ff df 48 89 fa 0f 95 c3 48 c1 ea 03 <0f> b6 04 02 84  
-c0 74 06 0f 8e 32 0d 00 00 41 88 5d 20 4c 89 ee 48
-kobject: 'loop1' (0000000002c6f40b): kobject_uevent_env
-kobject: 'kvm' (000000001e39937e): kobject_uevent_env
-kobject: 'loop1' (0000000002c6f40b): fill_kobj_path: path  
-= '/devices/virtual/block/loop1'
-RSP: 0018:ffff8801cbe46f30 EFLAGS: 00010203
-kobject: 'rx-0' (00000000c0c5ba02): kobject_uevent_env
-RAX: dffffc0000000000 RBX: ffffffff8982db01 RCX: ffffffff82f4d54b
-kobject: 'kvm' (000000001e39937e): fill_kobj_path: path  
-= '/devices/virtual/misc/kvm'
-RDX: 0000000000000002 RSI: 0000000000000000 RDI: 0000000000000014
-kobject: 'rx-0' (00000000c0c5ba02): fill_kobj_path: path  
-= '/devices/virtual/net/ip6_vti0/queues/rx-0'
-RBP: ffff8801cbe47148 R08: ffff88017aa6e600 R09: ffffed003b5e5b67
-kobject: 'loop5' (000000004b229921): kobject_uevent_env
-kobject: 'loop5' (000000004b229921): fill_kobj_path: path  
-= '/devices/virtual/block/loop5'
-R10: ffffed003b5e5b67 R11: ffff8801daf2db3b R12: ffff8801cca11000
-kobject: 'tx-0' (00000000dad0d615): kobject_add_internal: parent: 'queues',  
-set: 'queues'
-R13: fffffffffffffff4 R14: 0000001000000000 R15: 00000000ffffff14
-kobject: 'tx-0' (00000000dad0d615): kobject_uevent_env
-FS:  00007f250ed2a700(0000) GS:ffff8801dae00000(0000) knlGS:0000000000000000
-CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-kobject: 'tx-0' (00000000dad0d615): fill_kobj_path: path  
-= '/devices/virtual/net/ip6_vti0/queues/tx-0'
-kobject: 'loop5' (000000004b229921): kobject_uevent_env
-CR2: 0000000000728000 CR3: 00000001bf7b1000 CR4: 00000000001406f0
-kobject: 'loop5' (000000004b229921): fill_kobj_path: path  
-= '/devices/virtual/block/loop5'
-IPVS: ftp: loaded support on port[0] = 21
-kobject: 'loop1' (0000000002c6f40b): kobject_uevent_env
-kobject: 'loop1' (0000000002c6f40b): fill_kobj_path: path  
-= '/devices/virtual/block/loop1'
-DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
-DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+>  /*
+>   * was unsigned short, but we might as well be ready for > 64kB I/O pages
+> @@ -50,16 +88,35 @@ struct bvec_iter {
+>   */
+>  #define __bvec_iter_bvec(bvec, iter)	(&(bvec)[(iter).bi_idx])
+>  
+> -#define bvec_iter_page(bvec, iter)				\
+> +#define mp_bvec_iter_page(bvec, iter)				\
+>  	(__bvec_iter_bvec((bvec), (iter))->bv_page)
+>  
+> -#define bvec_iter_len(bvec, iter)				\
+> +#define mp_bvec_iter_len(bvec, iter)				\
+>  	min((iter).bi_size,					\
+>  	    __bvec_iter_bvec((bvec), (iter))->bv_len - (iter).bi_bvec_done)
+>  
+> -#define bvec_iter_offset(bvec, iter)				\
+> +#define mp_bvec_iter_offset(bvec, iter)				\
+>  	(__bvec_iter_bvec((bvec), (iter))->bv_offset + (iter).bi_bvec_done)
+>  
+> +#define mp_bvec_iter_page_idx(bvec, iter)			\
+> +	(mp_bvec_iter_offset((bvec), (iter)) / PAGE_SIZE)
+> +
+> +/*
+> + * <page, offset,length> of single-page(sp) segment.
+> + *
+> + * This helpers are for building sp bvec in flight.
+> + */
+> +#define bvec_iter_offset(bvec, iter)					\
+> +	(mp_bvec_iter_offset((bvec), (iter)) % PAGE_SIZE)
+> +
+> +#define bvec_iter_len(bvec, iter)					\
+> +	min_t(unsigned, mp_bvec_iter_len((bvec), (iter)),		\
+> +	    (PAGE_SIZE - (bvec_iter_offset((bvec), (iter)))))
 
+The parentheses around (bvec_iter_offset((bvec), (iter))) and
+(PAGE_SIZE - (bvec_iter_offset((bvec), (iter)))) are unnecessary
+clutter. This looks easier to read to me:
 
----
-This bug is generated by a bot. It may contain errors.
-See https://goo.gl/tpsmEJ for more information about syzbot.
-syzbot engineers can be reached at syzkaller@googlegroups.com.
+#define bvec_iter_len(bvec, iter)					\
+	min_t(unsigned, mp_bvec_iter_len((bvec), (iter)),		\
+	      PAGE_SIZE - bvec_iter_offset((bvec), (iter)))
 
-syzbot will keep track of this bug report. See:
-https://goo.gl/tpsmEJ#bug-status-tracking for how to communicate with  
-syzbot.
+> +
+> +#define bvec_iter_page(bvec, iter)					\
+> +	nth_page(mp_bvec_iter_page((bvec), (iter)),		\
+> +		 mp_bvec_iter_page_idx((bvec), (iter)))
+> +
+>  #define bvec_iter_bvec(bvec, iter)				\
+>  ((struct bio_vec) {						\
+>  	.bv_page	= bvec_iter_page((bvec), (iter)),	\
+> -- 
+> 2.9.5
+> 

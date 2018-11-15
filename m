@@ -2,159 +2,121 @@ Return-Path: <SRS0=Mirb=N2=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.8 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
-	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	MENTIONS_GIT_HOSTING,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_PASS autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B7CABC43441
-	for <linux-btrfs@archiver.kernel.org>; Thu, 15 Nov 2018 05:25:20 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6C4BCC43441
+	for <linux-btrfs@archiver.kernel.org>; Thu, 15 Nov 2018 08:00:37 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 7BD53223CB
-	for <linux-btrfs@archiver.kernel.org>; Thu, 15 Nov 2018 05:25:20 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 7BD53223CB
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=gmx.com
+	by mail.kernel.org (Postfix) with ESMTP id 3E77E2089D
+	for <linux-btrfs@archiver.kernel.org>; Thu, 15 Nov 2018 08:00:37 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 3E77E2089D
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.de
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728253AbeKOPbj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 15 Nov 2018 10:31:39 -0500
-Received: from mout.gmx.net ([212.227.17.20]:35845 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726574AbeKOPbj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 15 Nov 2018 10:31:39 -0500
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx101
- [212.227.17.174]) with ESMTPSA (Nemesis) id 0Ls8Qd-1fKnF23V6N-013sSk; Thu, 15
- Nov 2018 06:23:37 +0100
-Subject: Re: [PATCH v2 0/6] btrfs: qgroup: Delay subtree scan to reduce
- overhead
-To:     dsterba@suse.cz, Filipe Manana <fdmanana@gmail.com>,
-        Qu Wenruo <wqu@suse.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <20181108054919.18253-1-wqu@suse.com>
- <20181112213332.GS24115@twin.jikos.cz> <20181113170724.GE24115@twin.jikos.cz>
- <CAL3q7H5H+c6XzwCQP9=bS_TdUam1fFh3HOiWojDkNfdDsKj=yQ@mail.gmail.com>
- <20181114190520.GJ24115@twin.jikos.cz>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+        id S1728846AbeKOSHU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 15 Nov 2018 13:07:20 -0500
+Received: from mx2.suse.de ([195.135.220.15]:36882 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726574AbeKOSHU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 15 Nov 2018 13:07:20 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id A02EBAF77
+        for <linux-btrfs@vger.kernel.org>; Thu, 15 Nov 2018 08:00:33 +0000 (UTC)
+Subject: Re: [PATCH 5/6] btrfs: remove unused variable tree in
+ end_compressed_bio_write()
+To:     dsterba@suse.cz, David Sterba <dsterba@suse.com>,
+        Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>
+References: <20181114133520.16069-1-jthumshirn@suse.de>
+ <20181114133520.16069-6-jthumshirn@suse.de>
+ <20181114210449.GL24115@twin.jikos.cz>
+From:   Johannes Thumshirn <jthumshirn@suse.de>
 Openpgp: preference=signencrypt
-Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
- bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
- ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
- rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
- FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
- 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
- ilaVzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAHCwHwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
- CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
- f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
- mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
- 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
- h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <ecdd1309-fe6b-0c73-b898-d08ff7c48a21@gmx.com>
-Date:   Thu, 15 Nov 2018 13:23:25 +0800
+Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <5ecdc737-5a2f-58e3-fd53-08a0752b0888@suse.de>
+Date:   Thu, 15 Nov 2018 09:00:33 +0100
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.3.0
+ Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <20181114190520.GJ24115@twin.jikos.cz>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="iA81KyOByBiTGGGIACQBfieOcPbNAVOND"
-X-Provags-ID: V03:K1:G7LeSg84cCTPIRBh0zASUFdygdQPmXydO0nYVbIBkHogyBIK4xs
- J9qmoR8N9VIGme3Y38gaJSKRsrHaJro/RGeCEaqdDuApnlbO7a8+3tVQzDmtX+bi8Mn+1GT
- EG7fLJHFo53ViTlboeCMsmLOczlr238RyElmkrd6LtousCRXuY/R76HxGNVaDUojMydMbU5
- 8gF4EwxCHG/CrUqodADGA==
-X-UI-Out-Filterresults: notjunk:1;V01:K0:cowIM2Ds3LY=:i7TxRf14rpDCNK9JiwAAQF
- m3cz5ADI+B5Gzmptai1b4f1W2P1Aw4KcuucAK0tgzke8GGOSLp8Moc+HiROXBCzyNsBwCu1fK
- lKtRY8jUxBqSknwPlm59LuV6kmJAckBOaw+PVHS7Mzt+0n2I8DW++S7v/bwNRVKzOVxIcfd1t
- 36HPjef+CKVpG8Rw3z3PzHXvyEXCVyCa7QJISpR+hW9qO8V8Im+NJZb26nBAgytFaPBy1SOvx
- 1wiS0FR2LYmJuTegBd0NUKF+6aj7yO4170HTmaQqRJELwiNpSz8iLEKznZ+yRVKSmn+rSwB10
- 82p4C32KJ4ANGcCrqj6coYOL4weo5hrb3vgYbf3CE56KrQLCsKEo6jm14UHoQFgkh+YB1aS0b
- 8Q9tL80hiCy5wphJGq8XNGr4qCRv48afD0Fe8dW+TxhBpT/MyMYQwi7xkFjU0BJyV1Yja+nUM
- JAsqxCI92/g+nQjB33YdThIhaxn9Ra3kgLp3+/oWnBPpbD/fYcrvIzSEIW7pgSpWFn/qKeiGl
- /IMq/JSsZGOcuqC+7mpgiMFMQQ+DCrTY686vyvrUeh5nZyBpYdCK3xXxndzAc6xj5lGWoKaqR
- iEKrQ964NOVaRdjcpDHg88UagnUOpJKWRn92+j/Cow/9awb+mw3Als7Z7505+ExPNSAwbVJNc
- 3FwAgorDiHvHwkvDhI8r3N8GBOTtbxE6oe/wMOq5SMli+00caBQQkfTib57koRYM5ZiLSyNHq
- 3pRafNp5hcONkgmsGoX7Vcd91VJUV9Qi+2VV6g0hVN2HCf/QWSdYN7Ujyuas94xyvwepyEkCj
- GHa9Q6C01FXdJmI8UTxGnCVXNy2AjnUku3RNPur0Bu5uE8V1kh1+aTxOXLiJI/DZtppEiWld0
- zeGOTMBmP2qolJuYFACf8wUkDY/u/pgu59KFU0VliP/9L8DYc9sZFGKM2wEEMy
+In-Reply-To: <20181114210449.GL24115@twin.jikos.cz>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---iA81KyOByBiTGGGIACQBfieOcPbNAVOND
-Content-Type: multipart/mixed; boundary="xrh378ZjB2buzOGGS5g0Ms5wkVXDVWQvG";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: dsterba@suse.cz, Filipe Manana <fdmanana@gmail.com>,
- Qu Wenruo <wqu@suse.com>, linux-btrfs <linux-btrfs@vger.kernel.org>
-Message-ID: <ecdd1309-fe6b-0c73-b898-d08ff7c48a21@gmx.com>
-Subject: Re: [PATCH v2 0/6] btrfs: qgroup: Delay subtree scan to reduce
- overhead
-References: <20181108054919.18253-1-wqu@suse.com>
- <20181112213332.GS24115@twin.jikos.cz> <20181113170724.GE24115@twin.jikos.cz>
- <CAL3q7H5H+c6XzwCQP9=bS_TdUam1fFh3HOiWojDkNfdDsKj=yQ@mail.gmail.com>
- <20181114190520.GJ24115@twin.jikos.cz>
-In-Reply-To: <20181114190520.GJ24115@twin.jikos.cz>
+On 14/11/2018 22:04, David Sterba wrote:
+> The fix has been folded to the original patch already, same the other
+> one removing 'tree'. If you used linux-next to run the build, then it's
+> probably lagging behind the development branches that are synced to
+> kernel.org after some testing. The devel repos are either
+> git://github.com/kdave/btrfs-devel or
+> git://gitlab.com/kdave/btrfs-devel, branch misc-next.
 
---xrh378ZjB2buzOGGS5g0Ms5wkVXDVWQvG
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+Ah OK, I've used your kernel.org btrfs/for-next, I'll rebase for v2.
 
-
-
-On 2018/11/15 =E4=B8=8A=E5=8D=883:05, David Sterba wrote:
-> On Tue, Nov 13, 2018 at 05:58:14PM +0000, Filipe Manana wrote:
->> That's the infinite loop issue fixed by one of the patches submitted
->> for 4.20-rc2:
->>
->> https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/com=
-mit/?h=3Dv4.20-rc2&id=3D11023d3f5fdf89bba5e1142127701ca6e6014587
->>
->> The branch you used for testing doesn't have that fix?
->=20
-> That explains it, thanks.  The branch was based on 4.20-rc1 as I took i=
-t
-> from Qu's repository but did not check the base.
-
-BTW should I always rebase my patches to misc-next or misc-4.20?
-
-IMHO based on -rc tags should make it easier for David to rebase/apply,
-but if it's causing problem like this, I could definitely go misc-* based=
-=2E
-
-Thanks,
-Qu
-
-
---xrh378ZjB2buzOGGS5g0Ms5wkVXDVWQvG--
-
---iA81KyOByBiTGGGIACQBfieOcPbNAVOND
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlvtAs4ACgkQwj2R86El
-/qiPmQgAjkw/slCzdCRxqoeMuz6fXyEWJ0N7Ts+Mfub0uUMVp08LMRDiq+NPvhLG
-4b8rW/ar9Vgc5eiKxHs2FXDvk3gOj+9tpYs0aBxpqJIqtPfEcyIg9G2uNcVBSSs5
-rSSAJ8ZyWf33euZWxoNczaZO9TaDkfwuOuHAJUmVE1T+38nNZnxPzHbyA1mMWuzu
-ceAPEO3ivFTuRpJRXY9wn+EA1SerFzhwQGyhuDBiuMALI5Bf+0/fj0cMVu//hFpI
-S3R7RR7fAhtZiu/4as86uMMnfmZOW+ODlCEJj/+ACJijIq9leurM21tWAzUKaHj4
-ioVMx2w4hV9gK4EUVqevmoWWmw7zAQ==
-=43EL
------END PGP SIGNATURE-----
-
---iA81KyOByBiTGGGIACQBfieOcPbNAVOND--
+-- 
+Johannes Thumshirn                                        SUSE Labs
+jthumshirn@suse.de                                +49 911 74053 689
+SUSE LINUX GmbH, Maxfeldstr. 5, 90409 Nürnberg
+GF: Felix Imendörffer, Jane Smithard, Graham Norton
+HRB 21284 (AG Nürnberg)
+Key fingerprint = EC38 9CAB C2C4 F25D 8600 D0D0 0393 969D 2D76 0850

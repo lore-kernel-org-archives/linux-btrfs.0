@@ -2,168 +2,116 @@ Return-Path: <SRS0=Mirb=N2=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.5 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D7CA9C43441
-	for <linux-btrfs@archiver.kernel.org>; Thu, 15 Nov 2018 18:29:05 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4936CC43441
+	for <linux-btrfs@archiver.kernel.org>; Thu, 15 Nov 2018 18:40:01 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9DB8921780
-	for <linux-btrfs@archiver.kernel.org>; Thu, 15 Nov 2018 18:29:05 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 0A1E6208E7
+	for <linux-btrfs@archiver.kernel.org>; Thu, 15 Nov 2018 18:40:00 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="aYeBtxCK"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 9DB8921780
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=osandov.com
+	dkim=pass (2048-bit key) header.d=rdcsafety-com.20150623.gappssmtp.com header.i=@rdcsafety-com.20150623.gappssmtp.com header.b="kMLxOGjc"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 0A1E6208E7
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=rdcsafety.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2388798AbeKPEhu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 15 Nov 2018 23:37:50 -0500
-Received: from mail-pg1-f193.google.com ([209.85.215.193]:44969 "EHLO
-        mail-pg1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2388805AbeKPEhu (ORCPT
+        id S1727123AbeKPEsx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 15 Nov 2018 23:48:53 -0500
+Received: from mail-pg1-f182.google.com ([209.85.215.182]:44633 "EHLO
+        mail-pg1-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726453AbeKPEsx (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 15 Nov 2018 23:37:50 -0500
-Received: by mail-pg1-f193.google.com with SMTP id t13so723783pgr.11
-        for <linux-btrfs@vger.kernel.org>; Thu, 15 Nov 2018 10:28:56 -0800 (PST)
+        Thu, 15 Nov 2018 23:48:53 -0500
+Received: by mail-pg1-f182.google.com with SMTP id t13so736485pgr.11
+        for <linux-btrfs@vger.kernel.org>; Thu, 15 Nov 2018 10:39:58 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=osandov-com.20150623.gappssmtp.com; s=20150623;
-        h=date:from:to:cc:subject:message-id:references:mime-version
-         :content-disposition:in-reply-to:user-agent;
-        bh=cKqxCmj+g8wylWj4eAfctUKW1L6Qx1DV5mBadTwoHi0=;
-        b=aYeBtxCKN4fkLNjtgzi/IbgY/RCrYdQBDjus/pC7t2KKIOWW41bLlF0BI3wKNkM6MV
-         XipZqHXMqDKk1Z2fjnHTdMlF78IHpC05xrExzrwEnR044plj42lc60XwAYtybmSMLbXd
-         QU7qyfv8LoQ7Xl0Mdriw1X36qDSz0ir0+R3AfuTOhkQXGe43pSVGXn6LkHZ/SMTwbn8I
-         kkShBdyZ5HroecyXfNNxRrjiyWqSsew3pII+uQ9ToybQq6bzpyWQCNc3PGYVprSXPIxy
-         LPb8+ar3qE9hO8eQ18F8kWROsZ3+jbd1MxdOUkMib1xTGn4X3uFLEemxqbvSKec5wxfS
-         AK1Q==
+        d=rdcsafety-com.20150623.gappssmtp.com; s=20150623;
+        h=reply-to:to:from:subject:organization:message-id:date:user-agent
+         :mime-version:content-transfer-encoding:content-language;
+        bh=1z/lZ0kPK2kleapIwGi+JZ1s4bOMrJTIk5dpV/8A22U=;
+        b=kMLxOGjcWnMNTe90nGV5aUKBODm3ly5VI+DFkXJg/71Zj7QGCw7hcvpgMN8fInp3fM
+         h8OzEIDxi24ERuOtxJiWlBf65Avw/UMFppAhjzeFHSBf74bLR4SR4Jp7ICOzDhiUTx7i
+         BZOTCFJWJIEhNoyPSLwUE2Fk+vEBDuYG1I6qI9Wpz7eeFsSk5bbGaT64Om7FhF0UQxac
+         iLv59O0NQJcg1/Jmd5tiylJHv2teTGUw3oQU0f8kYHr4ZSJvb+GRCx0DJtiTCUB3UqkK
+         +8nKuts0eEiA4SEM7jDoO3sQ0YUdrzUxCmrMh0lA6LUo6lq673xzWLEvbCVp8qbHmBEw
+         OxCg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
-         :mime-version:content-disposition:in-reply-to:user-agent;
-        bh=cKqxCmj+g8wylWj4eAfctUKW1L6Qx1DV5mBadTwoHi0=;
-        b=GVo30tmTuQYbakb9Rsk1Lsgl+mgmRw+K0RVZK97wgVDy/3tfs0VsBnEvZuqGQ/Fzrl
-         3VpVPz4ykOiktAcmGtWESutqMe4O6HXXD229A+yJTjzJzxcFN4pljUJwjVcRRUFVWKbE
-         B7KSdiVjuQRJQlBUxu/+z9qZaoEYuWj8Qw6RljOFRWcOcCaXaV5STtArPuao/SMOtkCZ
-         TjF5dyiKcZrOqBnbq/B99cffG+49SNAFetiaAKLBbr4fY6Ark6NTXvFuOobcgB4vrZO1
-         VwuuBOHgk/RlshGXVti8ogSXZAYnDz4ozTGyg1SzejqzSJr0sUdwnN6TAmvE8hDV4ykU
-         PmNA==
-X-Gm-Message-State: AGRZ1gKn6HQ5kh1pkDMzTjeBCMtQx+o+SV1JnL3R7DEGn+SPGPpwdYJM
-        /NCGs7Ec4/FChf4ktDOUPw8J/pxTE2HQQ636
-X-Google-Smtp-Source: AJdET5cUkx5Cw0zfoRvC4mN0QBbB0FymNnWasc/6x4Bd2JTU0z9jg4Wqk9Tv9MwiHUzAQ/sFbYLksA==
-X-Received: by 2002:a63:790e:: with SMTP id u14mr6781823pgc.452.1542306535815;
-        Thu, 15 Nov 2018 10:28:55 -0800 (PST)
-Received: from vader ([64.114.255.97])
-        by smtp.gmail.com with ESMTPSA id f6-v6sm35792916pfg.128.2018.11.15.10.28.54
-        (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
-        Thu, 15 Nov 2018 10:28:55 -0800 (PST)
-Date:   Thu, 15 Nov 2018 10:28:54 -0800
-From:   Omar Sandoval <osandov@osandov.com>
-To:     Ming Lei <ming.lei@redhat.com>
-Cc:     Jens Axboe <axboe@kernel.dk>, linux-block@vger.kernel.org,
-        linux-kernel@vger.kernel.org, linux-mm@kvack.org,
-        Dave Chinner <dchinner@redhat.com>,
-        Kent Overstreet <kent.overstreet@gmail.com>,
-        Mike Snitzer <snitzer@redhat.com>, dm-devel@redhat.com,
-        Alexander Viro <viro@zeniv.linux.org.uk>,
-        linux-fsdevel@vger.kernel.org, Shaohua Li <shli@kernel.org>,
-        linux-raid@vger.kernel.org, linux-erofs@lists.ozlabs.org,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
-        "Darrick J . Wong" <darrick.wong@oracle.com>,
-        linux-xfs@vger.kernel.org, Gao Xiang <gaoxiang25@huawei.com>,
-        Christoph Hellwig <hch@lst.de>, Theodore Ts'o <tytso@mit.edu>,
-        linux-ext4@vger.kernel.org, Coly Li <colyli@suse.de>,
-        linux-bcache@vger.kernel.org, Boaz Harrosh <ooo@electrozaur.com>,
-        Bob Peterson <rpeterso@redhat.com>, cluster-devel@redhat.com
-Subject: Re: [PATCH V10 02/19] block: introduce bio_for_each_bvec()
-Message-ID: <20181115182854.GB9348@vader>
-References: <20181115085306.9910-1-ming.lei@redhat.com>
- <20181115085306.9910-3-ming.lei@redhat.com>
+        h=x-gm-message-state:reply-to:to:from:subject:organization:message-id
+         :date:user-agent:mime-version:content-transfer-encoding
+         :content-language;
+        bh=1z/lZ0kPK2kleapIwGi+JZ1s4bOMrJTIk5dpV/8A22U=;
+        b=LH61EqcIjD+ximlSeZfqEs2C+6JTF/WjLJ44RdFAIt9PYc9wuRA1ArgPbXYNlHB1n6
+         RsUgCPjMyF2ZDs8W2QV7sTu2Jy+D/H04kGv7Ah/DcZo5+pmNHwBwuVqrD6lVuOBJmIvp
+         amVT0AJl122tEbOYqkXtw4cMUOZLAc1NaJ7RI0Vj1jv4pmo4olpoKRj1joubNcoWqr4G
+         iTTqJGuDvweTuI3l98S238xBweUn0XM8DNEzkcdQ+3WhBj805Gm9ts2arOzB0jg1rnmc
+         D/8OUa0eyeN2YkjNhvc/+rCklBArvFMlH8et/VBwDP/1V8736AthNzLtiik5sHDXxyAh
+         EO7Q==
+X-Gm-Message-State: AGRZ1gIMD7nNZsV57x9WVOpxls9mtHRSZZ6P9SqLvUVg4UnNmS4VM4ca
+        F/25rEXUkM9KtTP+CrMGIuTQQcXC0UI=
+X-Google-Smtp-Source: AJdET5efK0tdUM4DHsXPB7w0a4dG67ZKvL1digIwvKoIp+9MldgBVIGoqOBZxyREOWLOLVBkH4tXPA==
+X-Received: by 2002:a63:ef0b:: with SMTP id u11-v6mr6852803pgh.283.1542307197444;
+        Thu, 15 Nov 2018 10:39:57 -0800 (PST)
+Received: from [192.168.3.92] (S0106a8c7ddf0eb43.fm.shawcable.net. [50.65.49.17])
+        by smtp.gmail.com with ESMTPSA id v12-v6sm37263082pfa.167.2018.11.15.10.39.56
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Thu, 15 Nov 2018 10:39:56 -0800 (PST)
+Reply-To: jacirez@rdcsafety.com
+To:     linux-btrfs@vger.kernel.org
+From:   Juan Alberto Cirez <jacirez@rdcsafety.com>
+Subject: BTRFS on production: NVR 16+ IP Cameras
+Organization: RDC Safety Plus, Inc.
+Message-ID: <bf338fb1-11fe-baea-4099-af9dc267e597@rdcsafety.com>
+Date:   Thu, 15 Nov 2018 11:39:58 -0700
+User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64; rv:60.0) Gecko/20100101
+ Thunderbird/60.2.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20181115085306.9910-3-ming.lei@redhat.com>
-User-Agent: Mutt/1.10.1 (2018-07-13)
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Transfer-Encoding: 7bit
+Content-Language: en-US
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Nov 15, 2018 at 04:52:49PM +0800, Ming Lei wrote:
-> This helper is used for iterating over multi-page bvec for bio
-> split & merge code.
-> 
-> Cc: Dave Chinner <dchinner@redhat.com>
-> Cc: Kent Overstreet <kent.overstreet@gmail.com>
-> Cc: Mike Snitzer <snitzer@redhat.com>
-> Cc: dm-devel@redhat.com
-> Cc: Alexander Viro <viro@zeniv.linux.org.uk>
-> Cc: linux-fsdevel@vger.kernel.org
-> Cc: Shaohua Li <shli@kernel.org>
-> Cc: linux-raid@vger.kernel.org
-> Cc: linux-erofs@lists.ozlabs.org
-> Cc: David Sterba <dsterba@suse.com>
-> Cc: linux-btrfs@vger.kernel.org
-> Cc: Darrick J. Wong <darrick.wong@oracle.com>
-> Cc: linux-xfs@vger.kernel.org
-> Cc: Gao Xiang <gaoxiang25@huawei.com>
-> Cc: Christoph Hellwig <hch@lst.de>
-> Cc: Theodore Ts'o <tytso@mit.edu>
-> Cc: linux-ext4@vger.kernel.org
-> Cc: Coly Li <colyli@suse.de>
-> Cc: linux-bcache@vger.kernel.org
-> Cc: Boaz Harrosh <ooo@electrozaur.com>
-> Cc: Bob Peterson <rpeterso@redhat.com>
-> Cc: cluster-devel@redhat.com
+Is BTRFS mature enough to be deployed on a production system to underpin 
+the storage layer of a 16+ ipcameras-based NVR (or VMS if you prefer)?
 
-Reviewed-by: Omar Sandoval <osandov@fb.com>
+Based on our limited experience with BTRFS (1+ year) under the above 
+scenario the answer seems to be no; but I wanted you ask the community 
+at large for their experience before making a final decision to hold off 
+on deploying BTRFS on production systems.
 
-One comment below.
+Let us be clear: We think BTRFS has great potential, and as it matures 
+we will continue to watch its progress, so that at some future point we 
+can return to using it.
 
-> Signed-off-by: Ming Lei <ming.lei@redhat.com>
-> ---
->  include/linux/bio.h  | 34 +++++++++++++++++++++++++++++++---
->  include/linux/bvec.h | 36 ++++++++++++++++++++++++++++++++----
->  2 files changed, 63 insertions(+), 7 deletions(-)
-> 
-> diff --git a/include/linux/bio.h b/include/linux/bio.h
-> index 056fb627edb3..1f0dcf109841 100644
-> --- a/include/linux/bio.h
-> +++ b/include/linux/bio.h
-> @@ -76,6 +76,9 @@
->  #define bio_data_dir(bio) \
->  	(op_is_write(bio_op(bio)) ? WRITE : READ)
->  
-> +#define bio_iter_mp_iovec(bio, iter)				\
-> +	mp_bvec_iter_bvec((bio)->bi_io_vec, (iter))
-> +
->  /*
->   * Check whether this bio carries any data or not. A NULL bio is allowed.
->   */
-> @@ -135,18 +138,33 @@ static inline bool bio_full(struct bio *bio)
->  #define bio_for_each_segment_all(bvl, bio, i)				\
->  	for (i = 0, bvl = (bio)->bi_io_vec; i < (bio)->bi_vcnt; i++, bvl++)
->  
-> -static inline void bio_advance_iter(struct bio *bio, struct bvec_iter *iter,
-> -				    unsigned bytes)
-> +static inline void __bio_advance_iter(struct bio *bio, struct bvec_iter *iter,
-> +				      unsigned bytes, bool mp)
->  {
->  	iter->bi_sector += bytes >> 9;
->  
->  	if (bio_no_advance_iter(bio))
->  		iter->bi_size -= bytes;
->  	else
-> -		bvec_iter_advance(bio->bi_io_vec, iter, bytes);
-> +		if (!mp)
-> +			bvec_iter_advance(bio->bi_io_vec, iter, bytes);
-> +		else
-> +			mp_bvec_iter_advance(bio->bi_io_vec, iter, bytes);
+The issue has been the myriad of problems we have encountered when 
+deploying BTRFS as the storage fs for the NVR/VMS in cases were the 
+camera count exceeds 10: Corrupted file systems, sudden read-only file 
+system, re-balance kernel panics, broken partitions, etc.
 
-if (!foo) {} else {} hurts my brain, please do
+One specific case saw the btrfs drive pool mounted under the /var 
+partition so that upon installation the btrfs pool contained all files 
+under /var; /lib/mysql as well as the video storage. Needless to say 
+this was a catastrophe...
 
-		if (mp)
-			mp_bvec_iter_advance(bio->bi_io_vec, iter, bytes);
-		else
-			bvec_iter_advance(bio->bi_io_vec, iter, bytes);
+At the other end of the spectrum is a use case where ONLY the video 
+storage was on the btrfs pool; but in that case, the btrfs pool became 
+read-only suddenly and would not re-mount as rw despite all the recovery 
+trick btrfs-tools could throw at it. This, of course prevented the 
+NVR/VMS from recording any footage.
+
+So, again, the question is: is BTRFS mature enough to be used in such 
+use case and if so, what approach can be used to mitigate such issues.
+
+
+Thank you all for your assistance
+
+-Ryan-
+-- 
+Ryan Burt, B. Sc. for
+Juan Alberto Cirez, CFPT

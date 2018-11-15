@@ -3,139 +3,63 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6AE12C43441
-	for <linux-btrfs@archiver.kernel.org>; Thu, 15 Nov 2018 19:51:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2E14DC43441
+	for <linux-btrfs@archiver.kernel.org>; Thu, 15 Nov 2018 20:18:58 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 2E8D02146D
-	for <linux-btrfs@archiver.kernel.org>; Thu, 15 Nov 2018 19:51:17 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 2E8D02146D
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
+	by mail.kernel.org (Postfix) with ESMTP id D3D4520858
+	for <linux-btrfs@archiver.kernel.org>; Thu, 15 Nov 2018 20:18:57 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org D3D4520858
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=romanrm.net
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728465AbeKPGA1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 16 Nov 2018 01:00:27 -0500
-Received: from mx2.suse.de ([195.135.220.15]:36146 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725869AbeKPGA0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 16 Nov 2018 01:00:26 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id B0384B10D;
-        Thu, 15 Nov 2018 19:51:13 +0000 (UTC)
+        id S1726941AbeKPG2N (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 16 Nov 2018 01:28:13 -0500
+Received: from len.romanrm.net ([91.121.75.85]:58374 "EHLO len.romanrm.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1725809AbeKPG2N (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 16 Nov 2018 01:28:13 -0500
+Received: from natsu (unknown [IPv6:fd39::e99e:8f1b:cfc9:ccb8])
+        by len.romanrm.net (Postfix) with SMTP id 69D0C20243;
+        Thu, 15 Nov 2018 20:18:54 +0000 (UTC)
+Date:   Fri, 16 Nov 2018 01:18:54 +0500
+From:   Roman Mamedov <rm@romanrm.net>
+To:     Juan Alberto Cirez <jacirez@rdcsafety.com>
+Cc:     linux-btrfs@vger.kernel.org
 Subject: Re: BTRFS on production: NVR 16+ IP Cameras
-To:     jacirez@rdcsafety.com, linux-btrfs@vger.kernel.org
-References: <bf338fb1-11fe-baea-4099-af9dc267e597@rdcsafety.com>
-From:   Nikolay Borisov <nborisov@suse.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <8bc60329-27fa-f7ec-1767-fd1a3c5823a4@suse.com>
-Date:   Thu, 15 Nov 2018 21:51:12 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.2.1
-MIME-Version: 1.0
+Message-ID: <20181116011854.0f1d1c9a@natsu>
 In-Reply-To: <bf338fb1-11fe-baea-4099-af9dc267e597@rdcsafety.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+References: <bf338fb1-11fe-baea-4099-af9dc267e597@rdcsafety.com>
+X-Mailer: Claws Mail 3.11.1 (GTK+ 2.24.31; x86_64-pc-linux-gnu)
+MIME-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+On Thu, 15 Nov 2018 11:39:58 -0700
+Juan Alberto Cirez <jacirez@rdcsafety.com> wrote:
 
-
-On 15.11.18 г. 20:39 ч., Juan Alberto Cirez wrote:
-> Is BTRFS mature enough to be deployed on a production system to underpin
+> Is BTRFS mature enough to be deployed on a production system to underpin 
 > the storage layer of a 16+ ipcameras-based NVR (or VMS if you prefer)?
-> 
-> Based on our limited experience with BTRFS (1+ year) under the above
-> scenario the answer seems to be no; but I wanted you ask the community
-> at large for their experience before making a final decision to hold off
-> on deploying BTRFS on production systems.
-> 
-> Let us be clear: We think BTRFS has great potential, and as it matures
-> we will continue to watch its progress, so that at some future point we
-> can return to using it.
-> 
-> The issue has been the myriad of problems we have encountered when
-> deploying BTRFS as the storage fs for the NVR/VMS in cases were the
-> camera count exceeds 10: Corrupted file systems, sudden read-only file
-> system, re-balance kernel panics, broken partitions, etc.
 
-What version of the file system, how many of those issues (if any) have
-you reported to the upstream mailing list? I don't remember seeing any
-reports from you.
+What are you looking to gain from using Btrfs on an NVR system? It doesn't
+sound like any of its prime-time features -- such as snapshots, checksumming,
+compression or reflink copying -- are a must for a bulk video recording
+scenario.
 
-> 
-> One specific case saw the btrfs drive pool mounted under the /var
-> partition so that upon installation the btrfs pool contained all files
-> under /var; /lib/mysql as well as the video storage. Needless to say
-> this was a catastrophe...
+And even if you don't need or use those features, you still pay the price for
+having them, Btrfs can be 2x to 10x slower than its simpler competitors:
+https://www.phoronix.com/scan.php?page=article&item=linux418-nvme-raid&num=2
 
-BTRFS is not suitable for random workloads, such as databases for
-example. In those cases it's recommended, at the very least, to disable
-COW on the database files. Note, disabling CoW doesn't preclude you from
-creating snapshots, it just means that not every 4k write (for example)
-will result in a CoW operation.
+If you just meant to use its multi-device support instead of a separate RAID
+layer, IMO that can't be considered prime-time or depended upon in production
+(yes, not even RAID 1 or 10).
 
-> 
-> At the other end of the spectrum is a use case where ONLY the video
-> storage was on the btrfs pool; but in that case, the btrfs pool became
-> read-only suddenly and would not re-mount as rw despite all the recovery
-> trick btrfs-tools could throw at it. This, of course prevented the
-> NVR/VMS from recording any footage.
-
-Again, you give absolutely no information about how you have configured
-the filesystem or versions of the software used.
-
-> 
-> So, again, the question is: is BTRFS mature enough to be used in such
-> use case and if so, what approach can be used to mitigate such issues.
-> 
-> 
-> Thank you all for your assistance
-> 
-> -Ryan-
+-- 
+With respect,
+Roman

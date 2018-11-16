@@ -2,76 +2,86 @@ Return-Path: <SRS0=S1wN=N3=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.7 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C0937C43441
-	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Nov 2018 06:38:47 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4F9D5C43441
+	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Nov 2018 06:39:54 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 838CB2145D
-	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Nov 2018 06:38:47 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="O/gJ2fdO"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 838CB2145D
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=oracle.com
+	by mail.kernel.org (Postfix) with ESMTP id 0624B2145D
+	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Nov 2018 06:39:54 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 0624B2145D
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727413AbeKPQtu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 16 Nov 2018 11:49:50 -0500
-Received: from userp2120.oracle.com ([156.151.31.85]:32926 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727380AbeKPQtu (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 16 Nov 2018 11:49:50 -0500
-Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id wAG6cVJp060448;
-        Fri, 16 Nov 2018 06:38:42 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to :
- references : from : message-id : date : mime-version : in-reply-to :
- content-type : content-transfer-encoding; s=corp-2018-07-02;
- bh=5MKnnGEpDEOTL2xgwHNG9C4GwlwlawKN3QJUkESteQ4=;
- b=O/gJ2fdObZOUWG7nBNyjHQXoVWA23bJZxLTmTSO3BXgPD2ScdeRq7bWWzhZ3ASDXXtOg
- P9q5qTcUXSJhpCGA3GbymkpdK2fv5yXjjUzg+Y0gGwzigt877cRHO8pnLIdpUycLc4J4
- CNsuqEaY8d73P44bAz+e/sf9OL1qSXG0FUMkxXOS2Nm5tNKcsbgLQdzq9TOriMyiwRQC
- npQZMihKQZR+/Y8KBAj/nx9Iv5FatKsnzKU4pqdEHLOX/yXg7C1T9TRHKWj/XdPrC355
- +S06/1Erpl8h04Mn5+n1k390CqvmMWSyHDegAzNvpp7vKlZKoNFilKno6PDfnGWY+zUk Bw== 
-Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
-        by userp2120.oracle.com with ESMTP id 2nr7csdgyg-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Fri, 16 Nov 2018 06:38:42 +0000
-Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id wAG6cfpu003126
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Fri, 16 Nov 2018 06:38:42 GMT
-Received: from abhmp0015.oracle.com (abhmp0015.oracle.com [141.146.116.21])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id wAG6cfmY025390;
-        Fri, 16 Nov 2018 06:38:41 GMT
-Received: from [10.186.50.4] (/10.186.50.4)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Thu, 15 Nov 2018 22:38:41 -0800
-Subject: Re: [PATCH 5/9] btrfs: replace cancel is successful if scrub cancel
- is successful
-To:     dsterba@suse.cz, linux-btrfs@vger.kernel.org
-References: <1541946144-8174-1-git-send-email-anand.jain@oracle.com>
- <1541946144-8174-6-git-send-email-anand.jain@oracle.com>
- <20181115152754.GS24115@twin.jikos.cz>
-From:   Anand Jain <anand.jain@oracle.com>
-Message-ID: <8ece8cde-013f-b6ef-b969-8e0b560f8f17@oracle.com>
-Date:   Fri, 16 Nov 2018 14:38:50 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:52.0) Gecko/20100101
- Thunderbird/52.9.1
+        id S1727451AbeKPQu4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 16 Nov 2018 11:50:56 -0500
+Received: from mx2.suse.de ([195.135.220.15]:36734 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1727380AbeKPQu4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 16 Nov 2018 11:50:56 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 90077AE0B
+        for <linux-btrfs@vger.kernel.org>; Fri, 16 Nov 2018 06:39:50 +0000 (UTC)
+Subject: Re: [PATCH] btrfs-progs: Cleanup warning reported by
+ -Wmissing-prototypes except free space tree
+To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+References: <20181116061312.2848-1-wqu@suse.com>
+From:   Nikolay Borisov <nborisov@suse.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <0079c368-c495-49c6-0698-d1844ae747b3@suse.com>
+Date:   Fri, 16 Nov 2018 08:39:49 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <20181115152754.GS24115@twin.jikos.cz>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <20181116061312.2848-1-wqu@suse.com>
+Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
-Content-Transfer-Encoding: 7bit
-X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9078 signatures=668683
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=0 malwarescore=0
- phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
- adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.0.1-1810050000 definitions=main-1811160059
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -79,62 +89,228 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 11/15/2018 11:27 PM, David Sterba wrote:
-> On Sun, Nov 11, 2018 at 10:22:20PM +0800, Anand Jain wrote:
->> In btrfs_dev_replace_cancel() we should check if the
->> btrfs_scrub_cancel() is successful. If the btrfs_scrub_cancel() fails, return
->> BTRFS_IOCTL_DEV_REPLACE_RESULT_NOT_STARTED so that user can try to
->> cancel the replace again.
+On 16.11.18 г. 8:13 ч., Qu Wenruo wrote:
+> The following missing prototypes will be fixed:
+> 1) btrfs.c::handle_special_globals()
+> 2) check/mode-lowmem.c::repair_ternary_lowmem()
+> 3) extent-tree.c::btrfs_search_overlap_extent()
+>    Above 3 can be fixed by making them static
 > 
-> I've updated the subject and changelog as this was not easy to
-> understand what's going on.
+> 4) utils.c::btrfs_check_nodesize()
+>    Fixed by moving it to fsfeatures.c
 > 
->> Signed-off-by: Anand Jain <anand.jain@oracle.com>
->> ---
->>   fs/btrfs/dev-replace.c | 22 +++++++++++++---------
->>   1 file changed, 13 insertions(+), 9 deletions(-)
->>
->> diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
->> index d32d696d931c..9fc3cb8d3918 100644
->> --- a/fs/btrfs/dev-replace.c
->> +++ b/fs/btrfs/dev-replace.c
->> @@ -799,18 +799,22 @@ int btrfs_dev_replace_cancel(struct btrfs_fs_info *fs_info)
->>   		btrfs_dev_replace_write_unlock(dev_replace);
->>   		break;
->>   	case BTRFS_IOCTL_DEV_REPLACE_STATE_STARTED:
->> -		result = BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_ERROR;
->>   		tgt_device = dev_replace->tgtdev;
->>   		src_device = dev_replace->srcdev;
->>   		btrfs_dev_replace_write_unlock(dev_replace);
->> -		btrfs_scrub_cancel(fs_info);
->> -		/*
->> -		 * btrfs_dev_replace_finishing() will handle the cleanup part
->> -		 */
->> -		btrfs_info_in_rcu(fs_info,
->> -			"dev_replace from %s (devid %llu) to %s canceled",
->> -			btrfs_dev_name(src_device), src_device->devid,
->> -			btrfs_dev_name(tgt_device));
->> +		ret = btrfs_scrub_cancel(fs_info);
->> +		if (ret) {
+> 5) chunk-recover.c::btrfs_recover_chunk_tree()
+> 6) super-recover.c::btrfs_recover_superblocks()
+>    Fixed by moving the declaration from cmds-rescue.c to rescue.h
 > 
-> This should be ret < 0, fixed.
+> 7) utils-lib.c::arg_strtou64()
+> 7) utils-lib.c::lookup_path_rootid()
+>    Fixed by include "utils.h"
+> 
+> Free space tree is left untouched, as some unused functions are there
+> for later write support.
 
-  Ok with me. Thanks for fixing. Anand
+Hm, I think freespace tree is more or less done, what else is there?
+There is one function in there: set_free_space_tree_thresholds which i
+think could be removed, can't remember why I backported it. And there
+were some other that could just be made static.
 
 > 
->> +			result = BTRFS_IOCTL_DEV_REPLACE_RESULT_NOT_STARTED;
->> +		} else {
->> +			result = BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_ERROR;
->> +			/*
->> +			 * btrfs_dev_replace_finishing() will handle the cleanup part
->> +			 */
->> +			btrfs_info_in_rcu(fs_info,
->> +				"dev_replace from %s (devid %llu) to %s canceled",
->> +				btrfs_dev_name(src_device), src_device->devid,
->> +				btrfs_dev_name(tgt_device));
->> +		}
->>   		break;
->>   	case BTRFS_IOCTL_DEV_REPLACE_STATE_SUSPENDED:
->>   		/*
->> -- 
->> 1.8.3.1
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+>  btrfs.c             |  2 +-
+>  check/mode-lowmem.c |  6 +++---
+>  chunk-recover.c     |  1 +
+>  cmds-rescue.c       |  4 +---
+>  extent-tree.c       |  2 +-
+>  fsfeatures.c        | 22 ++++++++++++++++++++++
+>  rescue.h            | 14 ++++++++++++++
+>  super-recover.c     |  1 +
+>  utils-lib.c         |  1 +
+>  utils.c             | 23 -----------------------
+>  10 files changed, 45 insertions(+), 31 deletions(-)
+>  create mode 100644 rescue.h
+> 
+> diff --git a/btrfs.c b/btrfs.c
+> index 2d39f2ced3e8..78c468d2e050 100644
+> --- a/btrfs.c
+> +++ b/btrfs.c
+> @@ -210,7 +210,7 @@ static int handle_global_options(int argc, char **argv)
+>  	return shift;
+>  }
+>  
+> -void handle_special_globals(int shift, int argc, char **argv)
+> +static void handle_special_globals(int shift, int argc, char **argv)
+>  {
+>  	int has_help = 0;
+>  	int has_full = 0;
+> diff --git a/check/mode-lowmem.c b/check/mode-lowmem.c
+> index 14bbc9ee6cb6..f56b5e8d45dc 100644
+> --- a/check/mode-lowmem.c
+> +++ b/check/mode-lowmem.c
+> @@ -953,9 +953,9 @@ out:
+>   * returns 0 means success.
+>   * returns not 0 means on error;
+>   */
+> -int repair_ternary_lowmem(struct btrfs_root *root, u64 dir_ino, u64 ino,
+> -			  u64 index, char *name, int name_len, u8 filetype,
+> -			  int err)
+> +static int repair_ternary_lowmem(struct btrfs_root *root, u64 dir_ino, u64 ino,
+> +				 u64 index, char *name, int name_len,
+> +				 u8 filetype, int err)
+>  {
+>  	struct btrfs_trans_handle *trans;
+>  	int stage = 0;
+> diff --git a/chunk-recover.c b/chunk-recover.c
+> index 1d30db51d8ed..1e554b8e8750 100644
+> --- a/chunk-recover.c
+> +++ b/chunk-recover.c
+> @@ -40,6 +40,7 @@
+>  #include "utils.h"
+>  #include "btrfsck.h"
+>  #include "commands.h"
+> +#include "rescue.h"
+>  
+>  struct recover_control {
+>  	int verbose;
+> diff --git a/cmds-rescue.c b/cmds-rescue.c
+> index 2bc50c0841ed..36e9e1277e40 100644
+> --- a/cmds-rescue.c
+> +++ b/cmds-rescue.c
+> @@ -26,15 +26,13 @@
+>  #include "commands.h"
+>  #include "utils.h"
+>  #include "help.h"
+> +#include "rescue.h"
+>  
+>  static const char * const rescue_cmd_group_usage[] = {
+>  	"btrfs rescue <command> [options] <path>",
+>  	NULL
+>  };
+>  
+> -int btrfs_recover_chunk_tree(const char *path, int verbose, int yes);
+> -int btrfs_recover_superblocks(const char *path, int verbose, int yes);
+> -
+>  static const char * const cmd_rescue_chunk_recover_usage[] = {
+>  	"btrfs rescue chunk-recover [options] <device>",
+>  	"Recover the chunk tree by scanning the devices one by one.",
+> diff --git a/extent-tree.c b/extent-tree.c
+> index cd98633992ac..8c9cdeff3b02 100644
+> --- a/extent-tree.c
+> +++ b/extent-tree.c
+> @@ -3749,7 +3749,7 @@ static void __get_extent_size(struct btrfs_root *root, struct btrfs_path *path,
+>   * Return >0 for not found.
+>   * Return <0 for err
+>   */
+> -int btrfs_search_overlap_extent(struct btrfs_root *root,
+> +static int btrfs_search_overlap_extent(struct btrfs_root *root,
+>  				struct btrfs_path *path, u64 bytenr, u64 len)
+>  {
+>  	struct btrfs_key key;
+> diff --git a/fsfeatures.c b/fsfeatures.c
+> index 7d85d60f1277..201d0f576688 100644
+> --- a/fsfeatures.c
+> +++ b/fsfeatures.c
+> @@ -225,3 +225,25 @@ u32 get_running_kernel_version(void)
+>  	return version;
+>  }
+>  
+> +int btrfs_check_nodesize(u32 nodesize, u32 sectorsize, u64 features)
+> +{
+> +	if (nodesize < sectorsize) {
+> +		error("illegal nodesize %u (smaller than %u)",
+> +				nodesize, sectorsize);
+> +		return -1;
+> +	} else if (nodesize > BTRFS_MAX_METADATA_BLOCKSIZE) {
+> +		error("illegal nodesize %u (larger than %u)",
+> +			nodesize, BTRFS_MAX_METADATA_BLOCKSIZE);
+> +		return -1;
+> +	} else if (nodesize & (sectorsize - 1)) {
+> +		error("illegal nodesize %u (not aligned to %u)",
+> +			nodesize, sectorsize);
+> +		return -1;
+> +	} else if (features & BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS &&
+> +		   nodesize != sectorsize) {
+> +		error("illegal nodesize %u (not equal to %u for mixed block group)",
+> +			nodesize, sectorsize);
+> +		return -1;
+> +	}
+> +	return 0;
+> +}
+> diff --git a/rescue.h b/rescue.h
+> new file mode 100644
+> index 000000000000..c9f6e7b80b16
+> --- /dev/null
+> +++ b/rescue.h
+> @@ -0,0 +1,14 @@
+> +/*
+> + * Copyright (C) 2018 SUSE.  All rights reserved.
+> + *
+> + * This program is free software; you can redistribute it and/or
+> + * modify it under the terms of the GNU General Public
+> + * License v2 as published by the Free Software Foundation.
+> + *
+> + * This program is distributed in the hope that it will be useful,
+> + * but WITHOUT ANY WARRANTY; without even the implied warranty of
+> + * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+> + * General Public License for more details.
+> + */
+> +int btrfs_recover_superblocks(const char *path, int verbose, int yes);
+> +int btrfs_recover_chunk_tree(const char *path, int verbose, int yes);
+> diff --git a/super-recover.c b/super-recover.c
+> index 86b3df9867dc..a1af71786034 100644
+> --- a/super-recover.c
+> +++ b/super-recover.c
+> @@ -34,6 +34,7 @@
+>  #include "crc32c.h"
+>  #include "volumes.h"
+>  #include "commands.h"
+> +#include "rescue.h"
+>  
+>  struct btrfs_recover_superblock {
+>  	struct btrfs_fs_devices *fs_devices;
+> diff --git a/utils-lib.c b/utils-lib.c
+> index 044f93fc4446..5bb89f2f1a8d 100644
+> --- a/utils-lib.c
+> +++ b/utils-lib.c
+> @@ -1,4 +1,5 @@
+>  #include "kerncompat.h"
+> +#include "utils.h"
+>  #include <unistd.h>
+>  #include <stdlib.h>
+>  #include <limits.h>
+> diff --git a/utils.c b/utils.c
+> index a310300829eb..607a14e8f287 100644
+> --- a/utils.c
+> +++ b/utils.c
+> @@ -2252,29 +2252,6 @@ int btrfs_tree_search2_ioctl_supported(int fd)
+>  	return ret;
+>  }
+>  
+> -int btrfs_check_nodesize(u32 nodesize, u32 sectorsize, u64 features)
+> -{
+> -	if (nodesize < sectorsize) {
+> -		error("illegal nodesize %u (smaller than %u)",
+> -				nodesize, sectorsize);
+> -		return -1;
+> -	} else if (nodesize > BTRFS_MAX_METADATA_BLOCKSIZE) {
+> -		error("illegal nodesize %u (larger than %u)",
+> -			nodesize, BTRFS_MAX_METADATA_BLOCKSIZE);
+> -		return -1;
+> -	} else if (nodesize & (sectorsize - 1)) {
+> -		error("illegal nodesize %u (not aligned to %u)",
+> -			nodesize, sectorsize);
+> -		return -1;
+> -	} else if (features & BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS &&
+> -		   nodesize != sectorsize) {
+> -		error("illegal nodesize %u (not equal to %u for mixed block group)",
+> -			nodesize, sectorsize);
+> -		return -1;
+> -	}
+> -	return 0;
+> -}
+> -
+>  /*
+>   * Copy a path argument from SRC to DEST and check the SRC length if it's at
+>   * most PATH_MAX and fits into DEST. DESTLEN is supposed to be exact size of
+> 

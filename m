@@ -2,131 +2,113 @@ Return-Path: <SRS0=S1wN=N3=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-4.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,
+	USER_AGENT_MUTT autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9A23AC43441
-	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Nov 2018 15:36:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 84C23C43441
+	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Nov 2018 16:04:45 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 6B5C82087A
-	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Nov 2018 15:36:44 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 6B5C82087A
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
+	by mail.kernel.org (Postfix) with ESMTP id 454B32087C
+	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Nov 2018 16:04:45 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="h8jjfQvC"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 454B32087C
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=osandov.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728195AbeKQBtd (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 16 Nov 2018 20:49:33 -0500
-Received: from mx2.suse.de ([195.135.220.15]:59136 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1728124AbeKQBtd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 16 Nov 2018 20:49:33 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id D6B61ACF8
-        for <linux-btrfs@vger.kernel.org>; Fri, 16 Nov 2018 15:36:40 +0000 (UTC)
-Subject: Re: [PATCH 0/5] Misc cleanups in balance code
-To:     dsterba@suse.cz, linux-btrfs@vger.kernel.org
-References: <1540554201-11305-1-git-send-email-nborisov@suse.com>
- <20181116151806.GZ24115@twin.jikos.cz>
-From:   Nikolay Borisov <nborisov@suse.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <f80bb873-933c-63f7-45a0-57b3ccab46b3@suse.com>
-Date:   Fri, 16 Nov 2018 17:36:39 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.2.1
+        id S2390048AbeKQCRk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 16 Nov 2018 21:17:40 -0500
+Received: from mail-pf1-f194.google.com ([209.85.210.194]:38186 "EHLO
+        mail-pf1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728577AbeKQCRe (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 16 Nov 2018 21:17:34 -0500
+Received: by mail-pf1-f194.google.com with SMTP id q1so3612021pfi.5
+        for <linux-btrfs@vger.kernel.org>; Fri, 16 Nov 2018 08:04:37 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=osandov-com.20150623.gappssmtp.com; s=20150623;
+        h=date:from:to:cc:subject:message-id:references:mime-version
+         :content-disposition:in-reply-to:user-agent;
+        bh=anPsNRx0uZfFKnyoFFFtlbsGc9ac2h1lk5UPV1Hc0z4=;
+        b=h8jjfQvCViz/fLw5xy+8P4+tQZ4Vw11AmPvROiA9QddEBPFl+EG6DdWDUM8Oww3wEL
+         pfvL8qk/JnDe/76MbW6hLKRhgbY5U8B/RjpmmlMV26EtDzj2zlbtKUf5FZKFHFnc20DT
+         4v7Di7rPjVA5po7eckmpcfla148FIQdz7Z92DQ9b8gCXEZtX7a/xvOapmfytOMR9GUFT
+         cjFNj3noQXOoLxSltoJvbzfiurOyiyAPRdOBdaCCBCnjtJfsL+Ni2o5P1iEvsE7l2bYH
+         kmO373EhPVMD+JWhUfBk+aPThn8IeUYfjoJ/wdA+MCxDdOWbnToe5Yeg1eXY7Dz722iI
+         sNTA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
+         :mime-version:content-disposition:in-reply-to:user-agent;
+        bh=anPsNRx0uZfFKnyoFFFtlbsGc9ac2h1lk5UPV1Hc0z4=;
+        b=XP3HJtva4N+Cdgtw865mkYCQwGpa6hddm8ihqFyXIb5UiMF3JEbIJvfLaA2yRMw+oA
+         bLFA4Wajg6Fzl0fuVOVUYzDGsqV7u0/BgmKebnE3bYyPyGUZbqqFjjvRgKKDuPZLf/c/
+         VoBidQ6R11tIHqDFkIBrgsfRpfWMqbZ+JiOj4pfv7fuW1luha/AhhDO3AtMUghHepjLy
+         bEhACPje/Q6lg8gRhbfmEsQasW7BPSM3WYpEtBkBWSmiUjIoBZ2zT5WQEaVkeIZOJIah
+         uC+7pdmU3sIjZ2LYhq3lnrjzWcTfQ5AacaNE4pWPiULBmvDZP2krnsarBmVn91s4wWbv
+         NeXw==
+X-Gm-Message-State: AGRZ1gKrJoaOOYD4HfYe25rP8kyu2InASYEihIge6BrCCb84mXy/mUgG
+        VcpfxObQUArybM8Kgwbd9SIrPg==
+X-Google-Smtp-Source: AJdET5dCSmENmtth+4RvDrhTLZOKB8z/G4vAqSrTrSpiBniMbshmuyCEL+8XmCwl5rLQCRLdrzcxSg==
+X-Received: by 2002:aa7:8254:: with SMTP id e20-v6mr11831931pfn.164.1542384276490;
+        Fri, 16 Nov 2018 08:04:36 -0800 (PST)
+Received: from vader ([64.114.255.114])
+        by smtp.gmail.com with ESMTPSA id d21sm23998333pgv.37.2018.11.16.08.04.35
+        (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
+        Fri, 16 Nov 2018 08:04:35 -0800 (PST)
+Date:   Fri, 16 Nov 2018 08:04:33 -0800
+From:   Omar Sandoval <osandov@osandov.com>
+To:     Christoph Hellwig <hch@lst.de>
+Cc:     Mike Snitzer <snitzer@redhat.com>, Ming Lei <ming.lei@redhat.com>,
+        Jens Axboe <axboe@kernel.dk>, linux-block@vger.kernel.org,
+        linux-kernel@vger.kernel.org, linux-mm@kvack.org,
+        Dave Chinner <dchinner@redhat.com>,
+        Kent Overstreet <kent.overstreet@gmail.com>,
+        dm-devel@redhat.com, Alexander Viro <viro@zeniv.linux.org.uk>,
+        linux-fsdevel@vger.kernel.org, Shaohua Li <shli@kernel.org>,
+        linux-raid@vger.kernel.org, linux-erofs@lists.ozlabs.org,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
+        "Darrick J . Wong" <darrick.wong@oracle.com>,
+        linux-xfs@vger.kernel.org, Gao Xiang <gaoxiang25@huawei.com>,
+        Theodore Ts'o <tytso@mit.edu>, linux-ext4@vger.kernel.org,
+        Coly Li <colyli@suse.de>, linux-bcache@vger.kernel.org,
+        Boaz Harrosh <ooo@electrozaur.com>,
+        Bob Peterson <rpeterso@redhat.com>, cluster-devel@redhat.com
+Subject: Re: [PATCH V10 03/19] block: use bio_for_each_bvec() to compute
+ multi-page bvec count
+Message-ID: <20181116160433.GV23828@vader>
+References: <20181115085306.9910-1-ming.lei@redhat.com>
+ <20181115085306.9910-4-ming.lei@redhat.com>
+ <20181115202028.GC9348@vader>
+ <20181115210510.GA24908@redhat.com>
+ <20181115221847.GD9348@vader>
+ <20181116091956.GA17604@lst.de>
 MIME-Version: 1.0
-In-Reply-To: <20181116151806.GZ24115@twin.jikos.cz>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20181116091956.GA17604@lst.de>
+User-Agent: Mutt/1.10.1 (2018-07-13)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-
-
-On 16.11.18 г. 17:18 ч., David Sterba wrote:
-> On Fri, Oct 26, 2018 at 02:43:16PM +0300, Nikolay Borisov wrote:
->> While investigating the balance hang I came across various inconsistencies in 
->> the source. This series aims to fix those. 
->>
->> The first patch is (I believe) a fix to a longstanding bug that could cause 
->> balance to fail due to ENOSPC. The code no properly ensures that there is 
->> at least 1g of unallocated space on every device being balance.
->>
->> Patch 2 makes btrfs_can_relocate a bit more obvious and removes leftovers from 
->> previous cleanup
->>
->> Patches 3/4/5 remove some redundant code from various functions. 
->>
->> This series has survived multiple xfstest runs. 
->>
->> Nikolay Borisov (5):
->>   btrfs: Ensure at least 1g is free for balance
->>   btrfs: Refactor btrfs_can_relocate
->>   btrfs: Remove superfluous check form btrfs_remove_chunk
->>   btrfs: Sink find_lock_delalloc_range's 'max_bytes' argument
->>   btrfs: Replace BUG_ON with ASSERT in find_lock_delalloc_range
+On Fri, Nov 16, 2018 at 10:19:56AM +0100, Christoph Hellwig wrote:
+> On Thu, Nov 15, 2018 at 02:18:47PM -0800, Omar Sandoval wrote:
+> > My only reason to prefer unsigned int is consistency. unsigned int is
+> > much more common in the kernel:
+> > 
+> > $ ag --cc -s 'unsigned\s+int' | wc -l
+> > 129632
+> > $ ag --cc -s 'unsigned\s+(?!char|short|int|long)' | wc -l
+> > 22435
+> > 
+> > checkpatch also warns on plain unsigned.
 > 
-> Patches 2-5 on the way to misc-next, thanks. The first one can have user
-> visible consequences, so I'd rather first find out why the 1MB was there
-> and if it's really a bug and what exactly will change when it's 1G.
+> Talk about chicken and egg.  unsigned is perfectly valid C, and being
+> shorter often helps being more readable.  checkpath is as so often
+> wrongly opinionated..
 
-I'm fine with that, one thing I don't agree with, though, is the
-conclusion that patch 1 has user visible consequence. As a matter of
-fact it does not. If btrfs_shrink_device fails with ENOSPC we just
-break, i/e we don't try to free balance space for any of the other
-devices, but this doesn't stop from balance actually continuing. As it
-stands today I think "step one" in __btrfs_balance is more or less
-null-op, i.e cycles are wasted since all we do is shrink every device by
-1mb, ensuring one more mb is already free. I think this is very
-insufficient for a balance operation and when it succeeds during normal
-operation it's due to the device already having enough unallocated space
-before the balance.
-
-Anyway, I will speak with Chris to try and find out why the code uses 1mb
-
-> 
+Fair enough. Since enough people don't mind bare unsigned in the block
+code, I retract my comment :)

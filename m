@@ -2,142 +2,90 @@ Return-Path: <SRS0=S1wN=N3=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.7 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-0.9 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 31E99C43441
-	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Nov 2018 12:06:30 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A1704C43441
+	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Nov 2018 12:26:26 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id EB81A2087C
-	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Nov 2018 12:06:29 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 6895C2087A
+	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Nov 2018 12:26:26 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="EbB2lw0A"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org EB81A2087C
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=oracle.com
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="dwiPEPyv"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 6895C2087A
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727963AbeKPWSe (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 16 Nov 2018 17:18:34 -0500
-Received: from aserp2120.oracle.com ([141.146.126.78]:52992 "EHLO
-        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727727AbeKPWSe (ORCPT
+        id S1727997AbeKPWie (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 16 Nov 2018 17:38:34 -0500
+Received: from mail-it1-f173.google.com ([209.85.166.173]:38954 "EHLO
+        mail-it1-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727772AbeKPWie (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 16 Nov 2018 17:18:34 -0500
-Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
-        by aserp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id wAGBrVYh115923;
-        Fri, 16 Nov 2018 12:06:25 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : subject : to :
- references : message-id : date : mime-version : in-reply-to : content-type
- : content-transfer-encoding; s=corp-2018-07-02;
- bh=vVkXinO3niArNVYPp+BgyAz4Yo9zbPmP3wkRVAG+zVk=;
- b=EbB2lw0AbUWw7LbDCwk0bc2dpZBVUJDxTMXDL6xG4Hmf1TXIPhCuc3j0LNJY7kDVSpfK
- sBLcnJLhG1hgVkJl38eu8ypSgPH7o/Smt3pBQ2K7pyY+EPzotIePYtusOFzQNF+Eu5xY
- CcqoNPAj7pWqeBJOt8LIJSqB/KeX6TiU/iYYcy9wrzMd+sVmgcPvQMEPXxYBDuP+NP+x
- Dyxr1mOWLMiNOgcKtedZaGXAGSvxBN7nWZH4iYwGek13p75CVa+UkZYIGLVVERDFFyLq
- HYwME7QrKMFqT+XJNppEzbOVe27rkKf4rVoLl5sFxUVG4boSRXWXy8V4v7hGic7yz3q0 gg== 
-Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
-        by aserp2120.oracle.com with ESMTP id 2nr7csev4w-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Fri, 16 Nov 2018 12:06:25 +0000
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id wAGC6OES028684
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Fri, 16 Nov 2018 12:06:24 GMT
-Received: from abhmp0020.oracle.com (abhmp0020.oracle.com [141.146.116.26])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id wAGC6OUo025246;
-        Fri, 16 Nov 2018 12:06:24 GMT
-Received: from [192.168.0.120] (/202.156.138.221)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Fri, 16 Nov 2018 04:06:24 -0800
-From:   Anand Jain <anand.jain@oracle.com>
-Subject: Re: [PATCH 7/9] btrfs: quiten warn if the replace is canceled at
- finish
-To:     dsterba@suse.cz, linux-btrfs@vger.kernel.org
-References: <1541946144-8174-1-git-send-email-anand.jain@oracle.com>
- <1541946144-8174-8-git-send-email-anand.jain@oracle.com>
- <20181115153546.GU24115@twin.jikos.cz>
-Message-ID: <ae7f7fc1-00de-8caa-a241-35e9dcad36cc@oracle.com>
-Date:   Fri, 16 Nov 2018 20:06:36 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:52.0) Gecko/20100101
- Thunderbird/52.9.1
+        Fri, 16 Nov 2018 17:38:34 -0500
+Received: by mail-it1-f173.google.com with SMTP id m15so34001587itl.4
+        for <linux-btrfs@vger.kernel.org>; Fri, 16 Nov 2018 04:26:24 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=subject:to:references:from:message-id:date:user-agent:mime-version
+         :in-reply-to:content-language:content-transfer-encoding;
+        bh=UmLbCqHsWgLG32iUK9ZIb5/RhyicknCSe+PO5jlk9l0=;
+        b=dwiPEPyvpIXfxzLaE+DHKE+EjFUUlQOCNpXweiiCy0uZ5x87G/NVKdYPCo78s6wxuT
+         1TWdql5U+b2vmom/whktp7YF/gWjyKLffVctQ/wR5SDOiKDpRvO094y7OkhuXBs+7Y2f
+         ANxw1mbUK7+FWV+B0zvbV/AmgETPm2Leyj/EPHwy9r7cSyJrVkj1VS6he1fQO9DR1V3H
+         ms3d8tPrRSW32aNZuPlEZcsPhFMmmy0QW/w+Bv4pHdx9+U/fIaHRQD8ZLNLUSTIDq1jT
+         kM4dDQVKAPVqSCHNWVkyHY0D4gM3BF9F3AvxAT+78Im0uijqhfV/a4MRtFNUASIkjLJ3
+         5kHw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:subject:to:references:from:message-id:date
+         :user-agent:mime-version:in-reply-to:content-language
+         :content-transfer-encoding;
+        bh=UmLbCqHsWgLG32iUK9ZIb5/RhyicknCSe+PO5jlk9l0=;
+        b=ZM9dde3UsZGcehqinc6ch5cWFMEnnwobk9IlE00DV193rzd1BOZ1jPeiwskfNtUN9E
+         4JiDOqgUpUWl8NM29WQPLvYcmVSESSchaT7uiBDNVtZ1K3qEHjdSd5tfdXAme2jEI+T4
+         P3zswuXE3UcTMs8JnfD1lhJRkIDc2WRDVMDTFsjitmjQmc64zPeV5Bmr5IvDxlvmQ6Zs
+         zqtQ2LckTQaGu5G3MYL+i/y5wMKMX8hgT4tXpf9HwTDkSVpViEU1BJiIjHbD3INcNbc2
+         zgVnY4GYGX0ShU9mlpU8OQgfNcb0nBvmBDwZnJ5/DfGk5oZBIkExFPRcYlUr6sOYmTz9
+         AAjw==
+X-Gm-Message-State: AGRZ1gKhOgvBppXcCJmZNFyCEx3xwHspvB9v/VIAyB0CC2hOycTXnlWA
+        x3rpg6ZpkRQe+xa2BlJmH0UBVU7L8vI=
+X-Google-Smtp-Source: AFSGD/WOVAEgaiqX2wXujQf2SrEhPT3zDDqpduLi+UfSV+yWKT4nqL9/+48FzGO49rvp6IsCJC2G9A==
+X-Received: by 2002:a24:2c1:: with SMTP id 184-v6mr9311696itu.7.1542371183343;
+        Fri, 16 Nov 2018 04:26:23 -0800 (PST)
+Received: from [191.9.209.46] (rrcs-70-62-41-24.central.biz.rr.com. [70.62.41.24])
+        by smtp.gmail.com with ESMTPSA id c21sm5562589iob.22.2018.11.16.04.26.22
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Fri, 16 Nov 2018 04:26:22 -0800 (PST)
+Subject: Re: BTRFS on production: NVR 16+ IP Cameras
+To:     jacirez@rdcsafety.com, linux-btrfs@vger.kernel.org
+References: <bf338fb1-11fe-baea-4099-af9dc267e597@rdcsafety.com>
+From:   "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <0bafdbb4-82bf-5b28-b9bd-0fa1a4c2cb2b@gmail.com>
+Date:   Fri, 16 Nov 2018 07:26:19 -0500
+User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64; rv:60.0) Gecko/20100101
+ Thunderbird/60.3.1
 MIME-Version: 1.0
-In-Reply-To: <20181115153546.GU24115@twin.jikos.cz>
+In-Reply-To: <bf338fb1-11fe-baea-4099-af9dc267e597@rdcsafety.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Language: en-US
 Content-Transfer-Encoding: 7bit
-X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9078 signatures=668683
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=0 malwarescore=0
- phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=935
- adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.0.1-1810050000 definitions=main-1811160107
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+On 2018-11-15 13:39, Juan Alberto Cirez wrote:
+> Is BTRFS mature enough to be deployed on a production system to underpin 
+> the storage layer of a 16+ ipcameras-based NVR (or VMS if you prefer)?
+For NVR, I'd say no.  BTRFS does pretty horribly with append-only 
+workloads, even if they are WORM style.  It also does a really bad job 
+with most relational database systems that you would likely use for 
+indexing.
 
-
-On 11/15/2018 11:35 PM, David Sterba wrote:
-> On Sun, Nov 11, 2018 at 10:22:22PM +0800, Anand Jain wrote:
->> When we successfully cancel the replace its scrub returns -ECANCELED,
->> which then passed to btrfs_dev_replace_finishing(), it cleans up based
->> on the scrub returned status and propagates the same -ECANCELED back
->> the parent function. As of now only user can cancel the replace-scrub,
->> so its ok to quieten the warn here.
->>
->> Signed-off-by: Anand Jain <anand.jain@oracle.com>
->> ---
->>   fs/btrfs/dev-replace.c | 4 ++--
->>   1 file changed, 2 insertions(+), 2 deletions(-)
->>
->> diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
->> index 1dc8e86546db..9031a362921a 100644
->> --- a/fs/btrfs/dev-replace.c
->> +++ b/fs/btrfs/dev-replace.c
->> @@ -497,7 +497,7 @@ static int btrfs_dev_replace_start(struct btrfs_fs_info *fs_info,
->>   	ret = btrfs_dev_replace_finishing(fs_info, ret);
->>   	if (ret == -EINPROGRESS) {
->>   		ret = BTRFS_IOCTL_DEV_REPLACE_RESULT_SCRUB_INPROGRESS;
->> -	} else {
->> +	} else if (ret != -ECANCELED) {
->>   		WARN_ON(ret);
-> 
-> While this looks ok, can you please rework it so there are no WARN_ON at
-> random places in device-replace, poorly substituting error handling?
-> 
-> The code flow in this case could be changed to make explicit checks for
-> the know codes and then a catch-all branch like:
-> 
-> if (ret == -EINPROGRESS) {
-> ...
-> } else (if == -ESOMETHINGELSE) {
-> ...
-> } else {
-> 	unknown error, print error and do a proper cleanup
-> }
-> 
-
-As below..
-
->>   	}
->>   
->> @@ -954,7 +954,7 @@ static int btrfs_dev_replace_kthread(void *data)
->>   			      btrfs_device_get_total_bytes(dev_replace->srcdev),
->>   			      &dev_replace->scrub_progress, 0, 1);
->>   	ret = btrfs_dev_replace_finishing(fs_info, ret);
->> -	WARN_ON(ret);
->> +	WARN_ON(ret && ret != -ECANCELED);
-> 
-> This one too, thanks.
-
-
-  btrfs_dev_scrub() can return quite a lot of errno, which is passed
-  here through the btrfs_dev_replace_finishing(), so it won't be
-  possible to code them all.
-
-  (we use -ECANCELED only in replace and balance).
-
-Thanks, Anand
+If you can suggest your reasoning for wanting to use BTRFS though, I can 
+probably point you at alternatives that would work more reliably for 
+your use case.
 

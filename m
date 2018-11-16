@@ -2,94 +2,104 @@ Return-Path: <SRS0=S1wN=N3=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
-	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-4.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,
+	USER_AGENT_MUTT autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7D3ABC43441
-	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Nov 2018 16:17:22 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 256CAC43441
+	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Nov 2018 16:40:40 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 4AC2920825
-	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Nov 2018 16:17:22 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 4AC2920825
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=gmx.de
+	by mail.kernel.org (Postfix) with ESMTP id E13842086B
+	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Nov 2018 16:40:39 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="aB4svGZ9"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org E13842086B
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=osandov.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728809AbeKQCaV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 16 Nov 2018 21:30:21 -0500
-Received: from mout.gmx.net ([212.227.15.18]:51533 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1728175AbeKQCaV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 16 Nov 2018 21:30:21 -0500
-Received: from chaos-desktop.localnet ([88.67.151.196]) by mail.gmx.com
- (mrgmx002 [212.227.17.190]) with ESMTPSA (Nemesis) id
- 0MCLcP-1gF86I3uHx-0095qN for <linux-btrfs@vger.kernel.org>; Fri, 16 Nov 2018
- 17:17:20 +0100
-From:   Stephan Olbrich <stephanolbrich@gmx.de>
-To:     linux-btrfs@vger.kernel.org
-Subject: bad tree block start, want 705757184 have 82362368
-Date:   Fri, 16 Nov 2018 17:17:19 +0100
-Message-ID: <1758973.r4I5FPff6i@chaos-desktop>
+        id S2390269AbeKQCxk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 16 Nov 2018 21:53:40 -0500
+Received: from mail-pf1-f195.google.com ([209.85.210.195]:35860 "EHLO
+        mail-pf1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S2390049AbeKQCxh (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 16 Nov 2018 21:53:37 -0500
+Received: by mail-pf1-f195.google.com with SMTP id b85so4831547pfc.3
+        for <linux-btrfs@vger.kernel.org>; Fri, 16 Nov 2018 08:40:31 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=osandov-com.20150623.gappssmtp.com; s=20150623;
+        h=date:from:to:cc:subject:message-id:references:mime-version
+         :content-disposition:in-reply-to:user-agent;
+        bh=2UIrJLU44vLfyM1GaYdgYb8aFp1tVp8wrSUZpBwp96A=;
+        b=aB4svGZ9OFckPOMSQl095156w9SKLCbC7XiIVLgOnRsJM2+Lu5ln3wjnKRyMtMPe7b
+         oj86T/T8OQMh0LFDqCDd0aynQvY5eBRj0La5PQce+zyuWJQaSNe/Bsv/WKijc50ELDGA
+         yAwfssofJsqDbUc94Rg7YHiC6vutqOGuVSXnmeuuYCTUJ0KTDKR1AN7Xqj0BAtBEMBoJ
+         b0kuMUEPHSeZAx4rvZZnmSglXChKVJz4t/iCg+7qcWRpDiwus46kutTn2NqPIT/ZD7BG
+         fClNkdZeyRvD+z6dbFYbobwlR1AxPt7Dbl9ANQzOfTXR5EnfAvvQdi9AGmw3pihcU542
+         qNGA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
+         :mime-version:content-disposition:in-reply-to:user-agent;
+        bh=2UIrJLU44vLfyM1GaYdgYb8aFp1tVp8wrSUZpBwp96A=;
+        b=WZnrb79Al1SIJbGx7wTkbdavBfPR35ZheU4Yss4RaFunbadgdZQaWJHeQvGnTaNuz3
+         NInqiYeuWLuF1WzclJkIEA5H6lXO7o5/4NuF+SrDM0laO4fKRU310c6gWIx6N38cxbfn
+         lJyRYI03jOzcrEVHVZRtheYB96T5bt+2gqOPIIaluPj05KrBRD3OMfQufcetLnrM3hFj
+         eEImZDnjC5Z3rdFqBBjSeUYfwgTGiy2dyiSFjGL24utODDkqOBYFUxgdRa/GA4OhaNus
+         9RZm+CO/VKmfkFPXmO7CGaCRAlpuej1Y8oCoAIiZCcWguGlLUYODYbij0d0RMQ/U/Dcc
+         Qcvg==
+X-Gm-Message-State: AGRZ1gLvQuilECIwSyecT5T+e2URIHG1nQKNnpOFVE28i3M1JZM5z12v
+        SkWtlg2PZx6UcjMkF7GaRIv6kQ==
+X-Google-Smtp-Source: AJdET5f+s9XT96L6c7XnPZBglWcnGckfH8lsTWflIPtLsRqj3xUKDT2yZwzel9Bs+QmGOb2aTPeQtg==
+X-Received: by 2002:a63:164d:: with SMTP id 13-v6mr10678635pgw.103.1542386431231;
+        Fri, 16 Nov 2018 08:40:31 -0800 (PST)
+Received: from vader ([64.114.255.114])
+        by smtp.gmail.com with ESMTPSA id r6-v6sm41944759pfk.157.2018.11.16.08.40.30
+        (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
+        Fri, 16 Nov 2018 08:40:30 -0800 (PST)
+Date:   Fri, 16 Nov 2018 08:40:28 -0800
+From:   Omar Sandoval <osandov@osandov.com>
+To:     Christoph Hellwig <hch@lst.de>
+Cc:     Ming Lei <ming.lei@redhat.com>, Jens Axboe <axboe@kernel.dk>,
+        linux-block@vger.kernel.org, linux-kernel@vger.kernel.org,
+        linux-mm@kvack.org, Dave Chinner <dchinner@redhat.com>,
+        Kent Overstreet <kent.overstreet@gmail.com>,
+        Mike Snitzer <snitzer@redhat.com>, dm-devel@redhat.com,
+        Alexander Viro <viro@zeniv.linux.org.uk>,
+        linux-fsdevel@vger.kernel.org, Shaohua Li <shli@kernel.org>,
+        linux-raid@vger.kernel.org, linux-erofs@lists.ozlabs.org,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
+        "Darrick J . Wong" <darrick.wong@oracle.com>,
+        linux-xfs@vger.kernel.org, Gao Xiang <gaoxiang25@huawei.com>,
+        Theodore Ts'o <tytso@mit.edu>, linux-ext4@vger.kernel.org,
+        Coly Li <colyli@suse.de>, linux-bcache@vger.kernel.org,
+        Boaz Harrosh <ooo@electrozaur.com>,
+        Bob Peterson <rpeterso@redhat.com>, cluster-devel@redhat.com
+Subject: Re: [PATCH V10 18/19] block: kill QUEUE_FLAG_NO_SG_MERGE
+Message-ID: <20181116164028.GW23828@vader>
+References: <20181115085306.9910-1-ming.lei@redhat.com>
+ <20181115085306.9910-19-ming.lei@redhat.com>
+ <20181116021811.GM23828@vader>
+ <20181116135922.GO3165@lst.de>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 7Bit
-Content-Type: text/plain; charset="us-ascii"
-X-Provags-ID: V03:K1:4iMIhbsoLdqUgNhUDlB7lBrBblgqlAO0lBcM11rIciMeVwzEaNo
- oHkI18vSaOAJMU8tZ5nLGm+eNCwYs+aS67CBR7oJSB+qPk9WPtmTu5WKOKTN7bmX4QfN8n8
- HnedpORegU/utuAUs5w//XL3kX7HN0f8OHECpHS0aUQ7BTA6P3I5VAzm8KClgWFduWESGuC
- yoXn4AoGLo5/MBU06XLbQ==
-X-UI-Out-Filterresults: notjunk:1;V01:K0:E1LiLiqzkHo=:eskyKU3CMU1TjsRJe1gbN6
- OWPa60jZk9XSdWCW+wxgvjtggh2JelbZ6J/jgjLSGNSZtHYx/fBakTu0K9+I+0sh8ZBAMeM1b
- cnkxlZBvUNWSTgj/UXZZnGKzD+xsHHt0jKvQRmVw1vxwrmOBkvCz/h7ogyfrxEpuQrkLQ2lUo
- Q19FBFL7UaboYOLGxEV4o397Z56nuecNDAQ1xy0urS0HdCXTI8hTcL8zODK2fSPqeTVRj7HMW
- lMTFRfrvjLN+Sx+aiEurGgiWqm2mZkaM7kW29C/DA8FDxQtWc4MRx4WeYkPIDd7mrD7IGJzAt
- kWrIDSLklcg+vkorThXWRHJgm5V8ACUjYBtRUpxId0G8t4+Nc86pska5ebXHiK7Mg161HnhvC
- TjjtMM8yDqfBcknEp7j5vU01KEhbEK679+whb53+i87yIJrFNqh8ccCnS4uZOmMYiNKgkVTNh
- x1tLHsEWgXAr/iieLYFNoqSqG2Q3VxV1bIrXyvFr6iz4JfEFMvZrUPtp6aC8I6eAtXpMGIXag
- nF9SA4DLS/Li+gyeGBu15Dv81Kc0d6NHWiz7I7egXcbic6NbeKQ1PX3wTSJdObmrwdS7CqANE
- x3OtpO+IbKpZMGVeN0KqRTFzUDOq/euvG4TxTj5XFnydXwiNZpL+HmL6QU//13s7uu+Tg3zs/
- a8U0ZIG/rwzne4PUw7sAcfx2kE1GJbklUXorOep5RHzzlaiFTKDfT4OtNP4Cl5TPO+bpbxUrJ
- FtL7w9AaKjSZJn2EVfR5FLllc7meIbR0GpS3GcivUvOj7sYqXYJHcxUjxv3QVep91oQyJfJXe
- RceOD7MHH3AtldmzjvrnOg28vUt9bqc8T1E+gvxMz7Iu96dfWNFvQCK0HWcdvPWQjCultdt3i
- jFMoXy+0Nlaygp3yl9DKHlaz3AMAdj4E21gSlbd0nugTPkS8nb7UdPzz36H8YWnUJXpCH726P
- IxquoqxKlvA==
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20181116135922.GO3165@lst.de>
+User-Agent: Mutt/1.10.1 (2018-07-13)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi,
+On Fri, Nov 16, 2018 at 02:59:22PM +0100, Christoph Hellwig wrote:
+> On Thu, Nov 15, 2018 at 06:18:11PM -0800, Omar Sandoval wrote:
+> > This commit message wasn't very clear. Is it the case that
+> > QUEUE_FLAG_NO_SG_MERGE is no longer set by any drivers?
+> 
+> I think he wants to say that not doing S/G merging is rather pointless
+> with the current setup of the I/O path, as it isn't going to save
+> you a significant amount of cycles.
 
-a few days ago my root file system (simple btrfs on a SSD, no RAID or anything) suddenly became read only. 
-Looking at dmsg, I found this:
+Okay, that makes sense. Ming, you can add
 
-[   19.285020] BTRFS error (device sda2): bad tree block start, want 705757184 have 82362368
-[   19.285042] BTRFS: error (device sda2) in __btrfs_free_extent:6804: errno=-5 IO failure
-[   19.285048] BTRFS info (device sda2): forced readonly
-[   19.285051] BTRFS: error (device sda2) in btrfs_run_delayed_refs:2934: errno=-5 IO failure
-[   19.287213] BTRFS error (device sda2): pending csums is 41889792
-
-Late on I got the same errors for my /home partition (on the same drive) as well.
-I have snapshots of all partitions on another drive made by btrbk. To get a working system, I made new (rw) snapshots
-of the most recent backup and setup grub and fstab, so my system would boot from the other drive.
-Unfortunately now I got the "bad tree block start" error again at least once in dmesg but I didn't save it and it's not in syslog :-(
-What I remember is, that it was followed by other btrfs error messages saying something about correcting something.
-And the filesystem was still read/write this time.
-At the moment I can't reproduce it.
-
-Is there any way to find out, which files are affected by the errors above? I don't really trust the data on the drive I'm using at the
-moment, as it has shown errors as well, but I have a less current backup on yet another drive but at it is a few weeks old, I don't
-want to use it to setup the system on the SSD again, but just copy the relevant files if possible.
-Or is it possible to repair the original file system?
-
-Some information about my system:
-Kubuntu 18.04
-Kernel 4.19.1 when the problem occured, now 4.19.2
-btrfs-tools 4.15.1
-
-Regards,
-Stephan
-
-
-
-
-
+Reviewed-by: Omar Sandoval <osandov@fb.com>

@@ -2,131 +2,116 @@ Return-Path: <SRS0=S1wN=N3=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_MUTT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1A4F6C43441
-	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Nov 2018 16:44:41 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9B262C43441
+	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Nov 2018 18:49:33 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B391A2086A
-	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Nov 2018 16:44:40 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org B391A2086A
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
+	by mail.kernel.org (Postfix) with ESMTP id 505392077C
+	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Nov 2018 18:49:33 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 505392077C
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729136AbeKQC5q (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 16 Nov 2018 21:57:46 -0500
-Received: from mx2.suse.de ([195.135.220.15]:33656 "EHLO mx1.suse.de"
+        id S1725819AbeKQFDF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 17 Nov 2018 00:03:05 -0500
+Received: from mx2.suse.de ([195.135.220.15]:51268 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1728684AbeKQC5q (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 16 Nov 2018 21:57:46 -0500
+        id S1725729AbeKQFDE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 17 Nov 2018 00:03:04 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id DC38EAE83;
-        Fri, 16 Nov 2018 16:44:37 +0000 (UTC)
-Subject: Re: bad tree block start, want 705757184 have 82362368
-To:     Stephan Olbrich <stephanolbrich@gmx.de>,
+        by mx1.suse.de (Postfix) with ESMTP id 09F73ABCE;
+        Fri, 16 Nov 2018 18:49:30 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 2096BDAC3E; Fri, 16 Nov 2018 19:49:12 +0100 (CET)
+Date:   Fri, 16 Nov 2018 19:49:12 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     Anand Jain <anand.jain@oracle.com>
+Cc:     dsterba@suse.cz, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 7/9] btrfs: quiten warn if the replace is canceled at
+ finish
+Message-ID: <20181116184912.GA24115@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Anand Jain <anand.jain@oracle.com>,
         linux-btrfs@vger.kernel.org
-References: <1758973.r4I5FPff6i@chaos-desktop>
-From:   Nikolay Borisov <nborisov@suse.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <d41e1327-a08e-8d4c-cbfe-29783a7b83df@suse.com>
-Date:   Fri, 16 Nov 2018 18:44:35 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.2.1
+References: <1541946144-8174-1-git-send-email-anand.jain@oracle.com>
+ <1541946144-8174-8-git-send-email-anand.jain@oracle.com>
+ <20181115153546.GU24115@twin.jikos.cz>
+ <ae7f7fc1-00de-8caa-a241-35e9dcad36cc@oracle.com>
 MIME-Version: 1.0
-In-Reply-To: <1758973.r4I5FPff6i@chaos-desktop>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <ae7f7fc1-00de-8caa-a241-35e9dcad36cc@oracle.com>
+User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+On Fri, Nov 16, 2018 at 08:06:36PM +0800, Anand Jain wrote:
+> 
+> 
+> On 11/15/2018 11:35 PM, David Sterba wrote:
+> > On Sun, Nov 11, 2018 at 10:22:22PM +0800, Anand Jain wrote:
+> >> When we successfully cancel the replace its scrub returns -ECANCELED,
+> >> which then passed to btrfs_dev_replace_finishing(), it cleans up based
+> >> on the scrub returned status and propagates the same -ECANCELED back
+> >> the parent function. As of now only user can cancel the replace-scrub,
+> >> so its ok to quieten the warn here.
+> >>
+> >> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> >> ---
+> >>   fs/btrfs/dev-replace.c | 4 ++--
+> >>   1 file changed, 2 insertions(+), 2 deletions(-)
+> >>
+> >> diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+> >> index 1dc8e86546db..9031a362921a 100644
+> >> --- a/fs/btrfs/dev-replace.c
+> >> +++ b/fs/btrfs/dev-replace.c
+> >> @@ -497,7 +497,7 @@ static int btrfs_dev_replace_start(struct btrfs_fs_info *fs_info,
+> >>   	ret = btrfs_dev_replace_finishing(fs_info, ret);
+> >>   	if (ret == -EINPROGRESS) {
+> >>   		ret = BTRFS_IOCTL_DEV_REPLACE_RESULT_SCRUB_INPROGRESS;
+> >> -	} else {
+> >> +	} else if (ret != -ECANCELED) {
+> >>   		WARN_ON(ret);
+> > 
+> > While this looks ok, can you please rework it so there are no WARN_ON at
+> > random places in device-replace, poorly substituting error handling?
+> > 
+> > The code flow in this case could be changed to make explicit checks for
+> > the know codes and then a catch-all branch like:
+> > 
+> > if (ret == -EINPROGRESS) {
+> > ...
+> > } else (if == -ESOMETHINGELSE) {
+> > ...
+> > } else {
+> > 	unknown error, print error and do a proper cleanup
+> > }
+> > 
+> 
+> As below..
+> 
+> >>   	}
+> >>   
+> >> @@ -954,7 +954,7 @@ static int btrfs_dev_replace_kthread(void *data)
+> >>   			      btrfs_device_get_total_bytes(dev_replace->srcdev),
+> >>   			      &dev_replace->scrub_progress, 0, 1);
+> >>   	ret = btrfs_dev_replace_finishing(fs_info, ret);
+> >> -	WARN_ON(ret);
+> >> +	WARN_ON(ret && ret != -ECANCELED);
+> > 
+> > This one too, thanks.
+> 
+> 
+>   btrfs_dev_scrub() can return quite a lot of errno, which is passed
+>   here through the btrfs_dev_replace_finishing(), so it won't be
+>   possible to code them all.
+> 
+>   (we use -ECANCELED only in replace and balance).
 
-
-On 16.11.18 г. 18:17 ч., Stephan Olbrich wrote:
-> Hi,
-> 
-> a few days ago my root file system (simple btrfs on a SSD, no RAID or anything) suddenly became read only. 
-> Looking at dmsg, I found this:
-> 
-> [   19.285020] BTRFS error (device sda2): bad tree block start, want 705757184 have 82362368
-> [   19.285042] BTRFS: error (device sda2) in __btrfs_free_extent:6804: errno=-5 IO failure
-> [   19.285048] BTRFS info (device sda2): forced readonly
-> [   19.285051] BTRFS: error (device sda2) in btrfs_run_delayed_refs:2934: errno=-5 IO failure
-> [   19.287213] BTRFS error (device sda2): pending csums is 41889792
-> 
-> Late on I got the same errors for my /home partition (on the same drive) as well.
-> I have snapshots of all partitions on another drive made by btrbk. To get a working system, I made new (rw) snapshots
-> of the most recent backup and setup grub and fstab, so my system would boot from the other drive.
-> Unfortunately now I got the "bad tree block start" error again at least once in dmesg but I didn't save it and it's not in syslog :-(
-> What I remember is, that it was followed by other btrfs error messages saying something about correcting something.
-> And the filesystem was still read/write this time.
-> At the moment I can't reproduce it.
-> 
-> Is there any way to find out, which files are affected by the errors above? I don't really trust the data on the drive I'm using at the
-> moment, as it has shown errors as well, but I have a less current backup on yet another drive but at it is a few weeks old, I don't
-> want to use it to setup the system on the SSD again, but just copy the relevant files if possible.
-> Or is it possible to repair the original file system?
-> 
-> Some information about my system:
-> Kubuntu 18.04
-> Kernel 4.19.1 when the problem occured, now 4.19.2
-> btrfs-tools 4.15.1
-
-What is the SMART status of your SSD, how old is the ssd. This really
-sounds like the drive going to lalal land.
-
-> 
-> Regards,
-> Stephan
-> 
-> 
-> 
-> 
-> 
-> 
+I see, filtering out only the replace error codes makes more sense.

@@ -4,32 +4,31 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-6.8 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
 	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2918FC43441
-	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Nov 2018 06:46:32 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9856BC43441
+	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Nov 2018 07:24:34 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D71C8223CB
-	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Nov 2018 06:46:31 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org D71C8223CB
+	by mail.kernel.org (Postfix) with ESMTP id 4B2932145D
+	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Nov 2018 07:24:34 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 4B2932145D
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=gmx.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727410AbeKPQ5f (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 16 Nov 2018 11:57:35 -0500
-Received: from mout.gmx.net ([212.227.15.18]:37773 "EHLO mout.gmx.net"
+        id S1727451AbeKPRfn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 16 Nov 2018 12:35:43 -0500
+Received: from mout.gmx.net ([212.227.15.15]:56139 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727353AbeKPQ5f (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 16 Nov 2018 11:57:35 -0500
-Received: from [0.0.0.0] ([210.140.77.29]) by mail.gmx.com (mrgmx001
- [212.227.17.184]) with ESMTPSA (Nemesis) id 0M936L-1gBgqe0YRR-00CTw3; Fri, 16
- Nov 2018 07:46:22 +0100
-Subject: Re: [PATCH] btrfs-progs: Cleanup warning reported by
- -Wmissing-prototypes except free space tree
-To:     Nikolay Borisov <nborisov@suse.com>, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <20181116061312.2848-1-wqu@suse.com>
- <0079c368-c495-49c6-0698-d1844ae747b3@suse.com>
+        id S1727370AbeKPRfm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 16 Nov 2018 12:35:42 -0500
+Received: from [0.0.0.0] ([210.140.77.29]) by mail.gmx.com (mrgmx002
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 0Lzc5y-1fRpOa0qjy-014lDG; Fri, 16
+ Nov 2018 08:24:27 +0100
+Subject: Re: [PATCH] btrfs-progs: fix gcc8 default build warning caused by
+ '-Wformat-truncation'
+To:     Su Yanjun <suyj.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+References: <20181026015850.15579-1-suyj.fnst@cn.fujitsu.com>
 From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
@@ -56,304 +55,145 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
  4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
  h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <726ed60f-54a6-dc1b-0ed7-c77c57759311@gmx.com>
-Date:   Fri, 16 Nov 2018 14:46:17 +0800
+Message-ID: <063537b3-66c6-b42e-d866-51b66212c746@gmx.com>
+Date:   Fri, 16 Nov 2018 15:24:23 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.3.0
 MIME-Version: 1.0
-In-Reply-To: <0079c368-c495-49c6-0698-d1844ae747b3@suse.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
-X-Provags-ID: V03:K1:UnuPWxduykSO51+msNj6CYsdq/II0zEJyYtsrGW4AvsyhMN2vma
- pFkhh1KP/tCdkKVs7stM7mKluNGu7oQofFq3OlqgPk2Q+hBZxT1H0Ok09z8yUMBTqWBUZOB
- E/xQUmO5KcWFjW0prkLfkxpT9XkjS02kH6a+M+XqDfklwmbJW0BYP2T3U8YhpA1ssUuRoYa
- R/bfqb9AqHwykNOSZGT7A==
-X-UI-Out-Filterresults: notjunk:1;V01:K0:gu/D0CViyDs=:TOKuT+WIDryoG1kd5eLg1L
- FJlIadUqf8ZVmZrvRIbgXtgmUc5MJRqwdOsXzaNpBWlgRB2PKqCG/PfHjc/owON36zin42EYp
- RQnZ3oPRfi0w0YUlYEGeO8AZVoV5KGkpUbUfSSMg9OvlxEJDYJewtGfiOjmQOrRMQ4q1Bsz5n
- b1/zCjkkqH37M2UgovMkAnkvnPF/zcP/3DV2TroOUH4nETodKeMdkrqeq8+E3kfvt0YJFYi6c
- rAZl+Y4WIX9TtuqFjLYqAFfSHsnN68eYthZGDTtohi6xNeLh7aaaQO+tUmWXqq0OCg6nesNBQ
- //ZzNRiAQAUnxvq1/ca8gKPLp0vqbpHfCKigbEhS+sudgAebi5U8Jxz8XFPyL5MpZuMfQ2Kld
- h2U7a5XfJIF0rMy69LbJ1mKmSIn/kN757XfaOufpdN88P8lbTLNghwn3sXPtfYHO+3/+dWvwC
- v9FKu6nTSV/PUurzDCfHfqlzpGsbYEvrXhafkdOBc0nsNwbW8hdKj4kWHw9IMn48HgCj7VmCz
- JKUs/lashXqwZdvHQfbIO+itfHXVex1UkReyoT1iTdvaRr4FmyKfjzGghyG4EIWpX2MPc1IBr
- jd4Tzy1NlbXFq18JErabJMKsA2Yf3+5B2qSCI3R125Xn5m0w4qaf0TxacziWfnhwBISUQ3QKT
- nPbjAjZ4+zHmx1cX7FnA+cmGwz9g3ivMZKhCMwNS3lQHFWfB4KnWZv8VA+FdScd5472mtfc55
- NaIcQIyQIITtwsfxWADFHNARRnD7W2OliUkcVvYy88558TwMscnVeok8fW0L1UX+JpOCfYPmr
- OnuMxJfKdHwxtZAUnsmz6vDe8IEaF1jzxgfHueEuDJHBN44E2i9Hi/IbiyyCcI2hPJ01lWao1
- 5OM3tJGQUc/9xgSXdiJKydg4/xtqZZiQPVGPfw6HEdpgMz98lrZmuGbfWpjfJwVBDLoTDm3rS
- r2/1WJEoUKA==
+In-Reply-To: <20181026015850.15579-1-suyj.fnst@cn.fujitsu.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="XvR5uZ2hd7JnBN6Nh7ETOdvNoXtF7cT3l"
+X-Provags-ID: V03:K1:ZVrgH/045mxA2IPBWl/2+fH2Zx4ZjWRSpYXi9G7hK6hdQFlGvQY
+ nv9rNxx2sprsJWh/+KnDWnG9sY6dgl1hDo45AKtGwr3LU1oOQI79MGk7laZD75c67TgWeu3
+ /niUvyMG2vdMDtJiO0su7xt+jKUHSe1MTtkMB0VLewfkdEC5SkH/07D/wL9OyKtKOf/D+00
+ T+D2bHjf6U1qHLeSWLQDw==
+X-UI-Out-Filterresults: notjunk:1;V01:K0:sJ/EwJQJiSM=:NtYuXVL1Ro2vp5l6OQxNPe
+ CPkbmPyYObdBaLQ7+ELnaegnrRJtV2ovAMwqHqVIBRjDCcMKTT/RKO2O+2quOhQL6uEHfxSbE
+ ojVlC0+VNZOc+5pq8gP0GJ2yF1Qb2ZjxwIkSg8Jm6as+NCxO0Lvx+oYDPG+sLEkJcHs6Euidd
+ mSLPgJSR1pyctxepeZNz9Zh0qrFQCuBsPggwEtwd6x8mK9qr8UvH0Q8gYFqffTh/PVij0jwnQ
+ sx0Jwf9lkJdKqoPLAswc1pW1eg+iAc2zCvEYJqRwsuAaLN0MRnTWMLBQLQH02v+tnHPG08nOX
+ Yv0qCAdSl03kSwbqNlc6kh49CuQmaK32G7IVtOMTLhXzgCCTlCR+wYpidwMAkOlMEhJSDjFzn
+ XZiqp427wrZoAoSt9OMG/dZkyYxzspO+cAGvdX35TmxI1w5wGYLJ6yQcW2eyFY5c1/Ppjkcd0
+ 3ZQmjGp+0LHU5zYkfsoCb1aE1igGIIWJ0xhp0hKqrLZnHx070qSNnX4BnxDcxB8xB68CrGX0z
+ 6DIxXC3t0HvqwkufH9JBGRlbgF7OU4LUiXIVnqtG87e62JqPHGTMF1AGhL9hSEQQMdJPuo8+0
+ KJp1A0Z8O+z+kP8FQZpPLcCivqLncgDxVtX+/XHoXaBUgkfR73BcOYQC5pFdk2EYvyKS+ToAi
+ rq8LNQCxoQ6tSZfC9mw1s4mD2r1HCnW3LBXxX2vlBkssRDVzxwsCu4unwUqwu452QqXcAPs0O
+ ZkgWwOkawBGYhYV7RRHGYb7uHYryEQv3kGj5gdWR7d8o+0+xsIBtxbN9Fw0RSknwsD4oOoYAV
+ bEqd/T9ciJMzdj/Yc7303dB5AOJWMuDPMVFD+79pUcmBc08ukhHEMSnDBD5ybqWoHo5jkAv9q
+ LfvHuMOvMIU5I3/hS6fl114pNYuzkX9mNFAhbCHlEpWYqyR9y6qJliWf33NbIa
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--XvR5uZ2hd7JnBN6Nh7ETOdvNoXtF7cT3l
+Content-Type: multipart/mixed; boundary="D1AX56fqT85sTwINJ1e62xWcfwngU2v8h";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: Su Yanjun <suyj.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+Message-ID: <063537b3-66c6-b42e-d866-51b66212c746@gmx.com>
+Subject: Re: [PATCH] btrfs-progs: fix gcc8 default build warning caused by
+ '-Wformat-truncation'
+References: <20181026015850.15579-1-suyj.fnst@cn.fujitsu.com>
+In-Reply-To: <20181026015850.15579-1-suyj.fnst@cn.fujitsu.com>
+
+--D1AX56fqT85sTwINJ1e62xWcfwngU2v8h
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
 
-On 2018/11/16 下午2:39, Nikolay Borisov wrote:
-> 
-> 
-> On 16.11.18 г. 8:13 ч., Qu Wenruo wrote:
->> The following missing prototypes will be fixed:
->> 1) btrfs.c::handle_special_globals()
->> 2) check/mode-lowmem.c::repair_ternary_lowmem()
->> 3) extent-tree.c::btrfs_search_overlap_extent()
->>    Above 3 can be fixed by making them static
->>
->> 4) utils.c::btrfs_check_nodesize()
->>    Fixed by moving it to fsfeatures.c
->>
->> 5) chunk-recover.c::btrfs_recover_chunk_tree()
->> 6) super-recover.c::btrfs_recover_superblocks()
->>    Fixed by moving the declaration from cmds-rescue.c to rescue.h
->>
->> 7) utils-lib.c::arg_strtou64()
->> 7) utils-lib.c::lookup_path_rootid()
->>    Fixed by include "utils.h"
->>
->> Free space tree is left untouched, as some unused functions are there
->> for later write support.
-> 
-> Hm, I think freespace tree is more or less done,
 
-That's great, I could cut some code out.
+On 2018/10/26 =E4=B8=8A=E5=8D=889:58, Su Yanjun wrote:
+> When using gcc8 compiles utils.c, it complains as below:
+>=20
+> utils.c:852:45: warning: '%s' directive output may be truncated writing=
 
-> what else is there?
-> There is one function in there: set_free_space_tree_thresholds which i
-> think could be removed, can't remember why I backported it. And there
-> were some other that could just be made static.
+> up to 4095 bytes into a region of size 4084 [-Wformat-truncation=3D]
+>    snprintf(path, sizeof(path), "/dev/mapper/%s", name);
+>                                              ^~   ~~~~
+> In file included from /usr/include/stdio.h:873,
+>                  from utils.c:20:
+> /usr/include/bits/stdio2.h:67:10: note: '__builtin___snprintf_chk'
+> output between 13 and 4108 bytes into a destination of size 4096
+>    return __builtin___snprintf_chk (__s, __n, __USE_FORTIFY_LEVEL - 1,
+>           ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+>         __bos (__s), __fmt, __va_arg_pack ());
+>         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+>=20
+> This isn't a type of warning we care about, particularly when PATH_MAX
+> is much less than either.
+>=20
+> Using the GCC option -Wno-format-truncation to disable this for default=
 
-That's the full output for free-space-tree.
+> build.
+>=20
+> Signed-off-by: Su Yanjun <suyj.fnst@cn.fujitsu.com>
+> ---
+>  Makefile.extrawarn | 1 +
+>  configure.ac       | 2 +-
+>  2 files changed, 2 insertions(+), 1 deletion(-)
+>=20
+> diff --git a/Makefile.extrawarn b/Makefile.extrawarn
+> index 1f4bda94a167..ed76fb5b5554 100644
+> --- a/Makefile.extrawarn
+> +++ b/Makefile.extrawarn
+> @@ -47,6 +47,7 @@ warning-1 +=3D -Wold-style-definition
+>  warning-1 +=3D $(call cc-option, -Wmissing-include-dirs)
+>  warning-1 +=3D $(call cc-option, -Wunused-but-set-variable)
+>  warning-1 +=3D $(call cc-disable-warning, missing-field-initializers)
+> +warning-1 +=3D $(call cc-option, -Wformat-truncation)
 
-free-space-tree.c:27:6: warning: no previous prototype for
-'set_free_space_tree_thresholds' [-Wmissing-prototypes]
- void set_free_space_tree_thresholds(struct btrfs_block_group_cache *cache,
-      ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-free-space-tree.c:205:5: warning: no previous prototype for
-'convert_free_space_to_bitmaps' [-Wmissing-prototypes]
- int convert_free_space_to_bitmaps(struct btrfs_trans_handle *trans,
-     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-free-space-tree.c:344:5: warning: no previous prototype for
-'convert_free_space_to_extents' [-Wmissing-prototypes]
- int convert_free_space_to_extents(struct btrfs_trans_handle *trans,
-     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-free-space-tree.c:783:5: warning: no previous prototype for
-'__remove_from_free_space_tree' [-Wmissing-prototypes]
- int __remove_from_free_space_tree(struct btrfs_trans_handle *trans,
-     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-free-space-tree.c:963:5: warning: no previous prototype for
-'__add_to_free_space_tree' [-Wmissing-prototypes]
- int __add_to_free_space_tree(struct btrfs_trans_handle *trans,
-     ^~~~~~~~~~~~~~~~~~~~~~~~
-free-space-tree.c:1423:20: warning: no previous prototype for
-'btrfs_create_tree' [-Wmissing-prototypes]
- struct btrfs_root *btrfs_create_tree(struct btrfs_trans_handle *trans,
-                    ^~~~~~~~~~~~~~~~~
+Have you tried "make W=3D1"?
 
-I'll update these in v2.
+This won't work.
+You should use cc-disable-warning, however we forgot to include that
+function.
+
+I'll fix it and put your patch into my pile of make W=3D1 cleanups.
 
 Thanks,
 Qu
 
+> =20
+>  warning-2 :=3D -Waggregate-return
+>  warning-2 +=3D -Wcast-align
+> diff --git a/configure.ac b/configure.ac
+> index df02f20655d9..c626beca8b77 100644
+> --- a/configure.ac
+> +++ b/configure.ac
+> @@ -12,7 +12,7 @@ LIBBTRFS_MAJOR=3D0
+>  LIBBTRFS_MINOR=3D1
+>  LIBBTRFS_PATCHLEVEL=3D2
+> =20
+> -CFLAGS=3D${CFLAGS:-"-g -O1 -Wall -D_FORTIFY_SOURCE=3D2"}
+> +CFLAGS=3D${CFLAGS:-"-g -O1 -Wall -D_FORTIFY_SOURCE=3D2 -Wno-format-tru=
+ncation"}
+>  AC_SUBST([CFLAGS])
+> =20
+>  AC_PREREQ([2.60])
+>=20
 
-> 
->>
->> Signed-off-by: Qu Wenruo <wqu@suse.com>
->> ---
->>  btrfs.c             |  2 +-
->>  check/mode-lowmem.c |  6 +++---
->>  chunk-recover.c     |  1 +
->>  cmds-rescue.c       |  4 +---
->>  extent-tree.c       |  2 +-
->>  fsfeatures.c        | 22 ++++++++++++++++++++++
->>  rescue.h            | 14 ++++++++++++++
->>  super-recover.c     |  1 +
->>  utils-lib.c         |  1 +
->>  utils.c             | 23 -----------------------
->>  10 files changed, 45 insertions(+), 31 deletions(-)
->>  create mode 100644 rescue.h
->>
->> diff --git a/btrfs.c b/btrfs.c
->> index 2d39f2ced3e8..78c468d2e050 100644
->> --- a/btrfs.c
->> +++ b/btrfs.c
->> @@ -210,7 +210,7 @@ static int handle_global_options(int argc, char **argv)
->>  	return shift;
->>  }
->>  
->> -void handle_special_globals(int shift, int argc, char **argv)
->> +static void handle_special_globals(int shift, int argc, char **argv)
->>  {
->>  	int has_help = 0;
->>  	int has_full = 0;
->> diff --git a/check/mode-lowmem.c b/check/mode-lowmem.c
->> index 14bbc9ee6cb6..f56b5e8d45dc 100644
->> --- a/check/mode-lowmem.c
->> +++ b/check/mode-lowmem.c
->> @@ -953,9 +953,9 @@ out:
->>   * returns 0 means success.
->>   * returns not 0 means on error;
->>   */
->> -int repair_ternary_lowmem(struct btrfs_root *root, u64 dir_ino, u64 ino,
->> -			  u64 index, char *name, int name_len, u8 filetype,
->> -			  int err)
->> +static int repair_ternary_lowmem(struct btrfs_root *root, u64 dir_ino, u64 ino,
->> +				 u64 index, char *name, int name_len,
->> +				 u8 filetype, int err)
->>  {
->>  	struct btrfs_trans_handle *trans;
->>  	int stage = 0;
->> diff --git a/chunk-recover.c b/chunk-recover.c
->> index 1d30db51d8ed..1e554b8e8750 100644
->> --- a/chunk-recover.c
->> +++ b/chunk-recover.c
->> @@ -40,6 +40,7 @@
->>  #include "utils.h"
->>  #include "btrfsck.h"
->>  #include "commands.h"
->> +#include "rescue.h"
->>  
->>  struct recover_control {
->>  	int verbose;
->> diff --git a/cmds-rescue.c b/cmds-rescue.c
->> index 2bc50c0841ed..36e9e1277e40 100644
->> --- a/cmds-rescue.c
->> +++ b/cmds-rescue.c
->> @@ -26,15 +26,13 @@
->>  #include "commands.h"
->>  #include "utils.h"
->>  #include "help.h"
->> +#include "rescue.h"
->>  
->>  static const char * const rescue_cmd_group_usage[] = {
->>  	"btrfs rescue <command> [options] <path>",
->>  	NULL
->>  };
->>  
->> -int btrfs_recover_chunk_tree(const char *path, int verbose, int yes);
->> -int btrfs_recover_superblocks(const char *path, int verbose, int yes);
->> -
->>  static const char * const cmd_rescue_chunk_recover_usage[] = {
->>  	"btrfs rescue chunk-recover [options] <device>",
->>  	"Recover the chunk tree by scanning the devices one by one.",
->> diff --git a/extent-tree.c b/extent-tree.c
->> index cd98633992ac..8c9cdeff3b02 100644
->> --- a/extent-tree.c
->> +++ b/extent-tree.c
->> @@ -3749,7 +3749,7 @@ static void __get_extent_size(struct btrfs_root *root, struct btrfs_path *path,
->>   * Return >0 for not found.
->>   * Return <0 for err
->>   */
->> -int btrfs_search_overlap_extent(struct btrfs_root *root,
->> +static int btrfs_search_overlap_extent(struct btrfs_root *root,
->>  				struct btrfs_path *path, u64 bytenr, u64 len)
->>  {
->>  	struct btrfs_key key;
->> diff --git a/fsfeatures.c b/fsfeatures.c
->> index 7d85d60f1277..201d0f576688 100644
->> --- a/fsfeatures.c
->> +++ b/fsfeatures.c
->> @@ -225,3 +225,25 @@ u32 get_running_kernel_version(void)
->>  	return version;
->>  }
->>  
->> +int btrfs_check_nodesize(u32 nodesize, u32 sectorsize, u64 features)
->> +{
->> +	if (nodesize < sectorsize) {
->> +		error("illegal nodesize %u (smaller than %u)",
->> +				nodesize, sectorsize);
->> +		return -1;
->> +	} else if (nodesize > BTRFS_MAX_METADATA_BLOCKSIZE) {
->> +		error("illegal nodesize %u (larger than %u)",
->> +			nodesize, BTRFS_MAX_METADATA_BLOCKSIZE);
->> +		return -1;
->> +	} else if (nodesize & (sectorsize - 1)) {
->> +		error("illegal nodesize %u (not aligned to %u)",
->> +			nodesize, sectorsize);
->> +		return -1;
->> +	} else if (features & BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS &&
->> +		   nodesize != sectorsize) {
->> +		error("illegal nodesize %u (not equal to %u for mixed block group)",
->> +			nodesize, sectorsize);
->> +		return -1;
->> +	}
->> +	return 0;
->> +}
->> diff --git a/rescue.h b/rescue.h
->> new file mode 100644
->> index 000000000000..c9f6e7b80b16
->> --- /dev/null
->> +++ b/rescue.h
->> @@ -0,0 +1,14 @@
->> +/*
->> + * Copyright (C) 2018 SUSE.  All rights reserved.
->> + *
->> + * This program is free software; you can redistribute it and/or
->> + * modify it under the terms of the GNU General Public
->> + * License v2 as published by the Free Software Foundation.
->> + *
->> + * This program is distributed in the hope that it will be useful,
->> + * but WITHOUT ANY WARRANTY; without even the implied warranty of
->> + * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
->> + * General Public License for more details.
->> + */
->> +int btrfs_recover_superblocks(const char *path, int verbose, int yes);
->> +int btrfs_recover_chunk_tree(const char *path, int verbose, int yes);
->> diff --git a/super-recover.c b/super-recover.c
->> index 86b3df9867dc..a1af71786034 100644
->> --- a/super-recover.c
->> +++ b/super-recover.c
->> @@ -34,6 +34,7 @@
->>  #include "crc32c.h"
->>  #include "volumes.h"
->>  #include "commands.h"
->> +#include "rescue.h"
->>  
->>  struct btrfs_recover_superblock {
->>  	struct btrfs_fs_devices *fs_devices;
->> diff --git a/utils-lib.c b/utils-lib.c
->> index 044f93fc4446..5bb89f2f1a8d 100644
->> --- a/utils-lib.c
->> +++ b/utils-lib.c
->> @@ -1,4 +1,5 @@
->>  #include "kerncompat.h"
->> +#include "utils.h"
->>  #include <unistd.h>
->>  #include <stdlib.h>
->>  #include <limits.h>
->> diff --git a/utils.c b/utils.c
->> index a310300829eb..607a14e8f287 100644
->> --- a/utils.c
->> +++ b/utils.c
->> @@ -2252,29 +2252,6 @@ int btrfs_tree_search2_ioctl_supported(int fd)
->>  	return ret;
->>  }
->>  
->> -int btrfs_check_nodesize(u32 nodesize, u32 sectorsize, u64 features)
->> -{
->> -	if (nodesize < sectorsize) {
->> -		error("illegal nodesize %u (smaller than %u)",
->> -				nodesize, sectorsize);
->> -		return -1;
->> -	} else if (nodesize > BTRFS_MAX_METADATA_BLOCKSIZE) {
->> -		error("illegal nodesize %u (larger than %u)",
->> -			nodesize, BTRFS_MAX_METADATA_BLOCKSIZE);
->> -		return -1;
->> -	} else if (nodesize & (sectorsize - 1)) {
->> -		error("illegal nodesize %u (not aligned to %u)",
->> -			nodesize, sectorsize);
->> -		return -1;
->> -	} else if (features & BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS &&
->> -		   nodesize != sectorsize) {
->> -		error("illegal nodesize %u (not equal to %u for mixed block group)",
->> -			nodesize, sectorsize);
->> -		return -1;
->> -	}
->> -	return 0;
->> -}
->> -
->>  /*
->>   * Copy a path argument from SRC to DEST and check the SRC length if it's at
->>   * most PATH_MAX and fits into DEST. DESTLEN is supposed to be exact size of
->>
+
+--D1AX56fqT85sTwINJ1e62xWcfwngU2v8h--
+
+--XvR5uZ2hd7JnBN6Nh7ETOdvNoXtF7cT3l
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlvucKcACgkQwj2R86El
+/qgwbggAhn0HW9MQezrKD7MA04uU6c65HCbGqoBRgPG0AYWS6Sq3mcPpuJa/qr1J
+MtklCB8ryodC8AB8IV73KMw/oh2gBrvuvqV3GFO0GDiLVIvCnHit0XaEg4lrfmhL
+zz1j2Wcg1SRLfM0ELjcZIO8J84wkXlgFobCkiot2mkppHNopACrt4ZCUgd2IXaFg
+opJlr2KPQrIhUNlZh4t/duACppxbr1PvD3qWJ/FihYI2pGYhKCtn2siUIrKg4MUH
+vZz8dE21cKp4DMq+Owd60IDMbeyg72bNvtRip5+USRt1G8BU+YLXjv+CpK8i0Pf8
+MnEj4VrWJuFTYKbxnyPiwFpm5lpyLQ==
+=jqVq
+-----END PGP SIGNATURE-----
+
+--XvR5uZ2hd7JnBN6Nh7ETOdvNoXtF7cT3l--

@@ -2,112 +2,259 @@ Return-Path: <SRS0=S1wN=N3=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-4.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,
-	USER_AGENT_MUTT autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 32484C43441
-	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Nov 2018 02:18:22 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9DFAFC43441
+	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Nov 2018 06:13:24 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id EADE82145D
-	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Nov 2018 02:18:21 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="mxj5a+9W"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org EADE82145D
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=osandov.com
+	by mail.kernel.org (Postfix) with ESMTP id 5AAE52089D
+	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Nov 2018 06:13:24 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 5AAE52089D
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2389346AbeKPM2u (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 16 Nov 2018 07:28:50 -0500
-Received: from mail-pg1-f195.google.com ([209.85.215.195]:44034 "EHLO
-        mail-pg1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727061AbeKPM2n (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 16 Nov 2018 07:28:43 -0500
-Received: by mail-pg1-f195.google.com with SMTP id t13so1221728pgr.11
-        for <linux-btrfs@vger.kernel.org>; Thu, 15 Nov 2018 18:18:14 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=osandov-com.20150623.gappssmtp.com; s=20150623;
-        h=date:from:to:cc:subject:message-id:references:mime-version
-         :content-disposition:in-reply-to:user-agent;
-        bh=uWxOI7EW+B6BaLJ4pF1Ucb4JKvaIuWDE5mYJ2nvblqE=;
-        b=mxj5a+9WhaUzzn6ENIPyyJMDBjBRDUGhUl2p38GDhnPH+yLz97xJGMlhaOjc+x0c96
-         SZP6XEZfRQZo5jsFCwlLfiDojuqLbpzRHVh52QfLDd9K55bag+4IyroxO1cq3SrkGVbp
-         wpNoT55+M98lKeG/wuihGyrjfR1RhTKeyN+f8S/X2Ktx1Q0eqUJz5rqTgM/A4Pbv7duR
-         LB28WnNvGsapqmb77uTNrgtK4BqM45hHGbHpDKezmNiNdQB2AJf/s09zpqWwyhfB/ShX
-         C70fPi4L089v3cKjZaCZGf6oYE4VzreeOOSc997WA0dDu7InSYJwxQSzz1KHpuUeoL4Q
-         F6Jw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
-         :mime-version:content-disposition:in-reply-to:user-agent;
-        bh=uWxOI7EW+B6BaLJ4pF1Ucb4JKvaIuWDE5mYJ2nvblqE=;
-        b=fd/HlTqliZmopD5D3PdY4q1plR4di6e+AE3IFNvX0XRne4sFyyVo7cra4LEFhpFdKy
-         Q9RHR+CPwzD1rTu3dUXAj0aKnnDZ9Ucz/x+qlioTXxi0DwimftCP93ejW+5x9khWs4ib
-         /MfVxR1Ha6IDdWB1cjYf8oNVYeNU4nJS/miJNPEvdnmP/Qo7UotbL62Olk7FD74NzvUV
-         Egb7+pN3VyeI+2XG2tlofn8ZgChkWdR9jlbUJLOpgTSAFcCrD/cAunUwFK+OsUK2GndU
-         CdIW6zGd6hPVwC6ikbO0+vi4bGvg3p7gDtF8nu7ft6oVnKCTk4QcCdqdyd+4J6XO+m6U
-         1W0Q==
-X-Gm-Message-State: AGRZ1gKZ2p+ingr1/tUA73xb9zfbMBqxgmcxlv2yu/TXwB75BQA7P6xW
-        Rvv8jjppZhK/nPINIawOtggDwg==
-X-Google-Smtp-Source: AJdET5cfhaHk05TqW2Jq6nTxtIdo0ficfDaKFmLY+f8LDNaSqXZd501bp6MC6dyRxNdzTO6b9nJlNw==
-X-Received: by 2002:a63:101d:: with SMTP id f29mr8219269pgl.38.1542334693471;
-        Thu, 15 Nov 2018 18:18:13 -0800 (PST)
-Received: from vader ([64.114.255.97])
-        by smtp.gmail.com with ESMTPSA id v15sm8249986pfn.94.2018.11.15.18.18.12
-        (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
-        Thu, 15 Nov 2018 18:18:12 -0800 (PST)
-Date:   Thu, 15 Nov 2018 18:18:11 -0800
-From:   Omar Sandoval <osandov@osandov.com>
-To:     Ming Lei <ming.lei@redhat.com>
-Cc:     Jens Axboe <axboe@kernel.dk>, linux-block@vger.kernel.org,
-        linux-kernel@vger.kernel.org, linux-mm@kvack.org,
-        Dave Chinner <dchinner@redhat.com>,
-        Kent Overstreet <kent.overstreet@gmail.com>,
-        Mike Snitzer <snitzer@redhat.com>, dm-devel@redhat.com,
-        Alexander Viro <viro@zeniv.linux.org.uk>,
-        linux-fsdevel@vger.kernel.org, Shaohua Li <shli@kernel.org>,
-        linux-raid@vger.kernel.org, linux-erofs@lists.ozlabs.org,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
-        "Darrick J . Wong" <darrick.wong@oracle.com>,
-        linux-xfs@vger.kernel.org, Gao Xiang <gaoxiang25@huawei.com>,
-        Christoph Hellwig <hch@lst.de>, Theodore Ts'o <tytso@mit.edu>,
-        linux-ext4@vger.kernel.org, Coly Li <colyli@suse.de>,
-        linux-bcache@vger.kernel.org, Boaz Harrosh <ooo@electrozaur.com>,
-        Bob Peterson <rpeterso@redhat.com>, cluster-devel@redhat.com
-Subject: Re: [PATCH V10 18/19] block: kill QUEUE_FLAG_NO_SG_MERGE
-Message-ID: <20181116021811.GM23828@vader>
-References: <20181115085306.9910-1-ming.lei@redhat.com>
- <20181115085306.9910-19-ming.lei@redhat.com>
+        id S1727438AbeKPQYX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 16 Nov 2018 11:24:23 -0500
+Received: from mx2.suse.de ([195.135.220.15]:34584 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1727353AbeKPQYX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 16 Nov 2018 11:24:23 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 29E26AE47
+        for <linux-btrfs@vger.kernel.org>; Fri, 16 Nov 2018 06:13:20 +0000 (UTC)
+From:   Qu Wenruo <wqu@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs-progs: Cleanup warning reported by -Wmissing-prototypes except free space tree
+Date:   Fri, 16 Nov 2018 14:13:12 +0800
+Message-Id: <20181116061312.2848-1-wqu@suse.com>
+X-Mailer: git-send-email 2.19.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20181115085306.9910-19-ming.lei@redhat.com>
-User-Agent: Mutt/1.10.1 (2018-07-13)
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Nov 15, 2018 at 04:53:05PM +0800, Ming Lei wrote:
-> Since bdced438acd83ad83a6c ("block: setup bi_phys_segments after splitting"),
-> physical segment number is mainly figured out in blk_queue_split() for
-> fast path, and the flag of BIO_SEG_VALID is set there too.
-> 
-> Now only blk_recount_segments() and blk_recalc_rq_segments() use this
-> flag.
-> 
-> Basically blk_recount_segments() is bypassed in fast path given BIO_SEG_VALID
-> is set in blk_queue_split().
-> 
-> For another user of blk_recalc_rq_segments():
-> 
-> - run in partial completion branch of blk_update_request, which is an unusual case
-> 
-> - run in blk_cloned_rq_check_limits(), still not a big problem if the flag is killed
-> since dm-rq is the only user.
-> 
-> Multi-page bvec is enabled now, QUEUE_FLAG_NO_SG_MERGE doesn't make sense any more.
+The following missing prototypes will be fixed:
+1) btrfs.c::handle_special_globals()
+2) check/mode-lowmem.c::repair_ternary_lowmem()
+3) extent-tree.c::btrfs_search_overlap_extent()
+   Above 3 can be fixed by making them static
 
-This commit message wasn't very clear. Is it the case that
-QUEUE_FLAG_NO_SG_MERGE is no longer set by any drivers?
+4) utils.c::btrfs_check_nodesize()
+   Fixed by moving it to fsfeatures.c
+
+5) chunk-recover.c::btrfs_recover_chunk_tree()
+6) super-recover.c::btrfs_recover_superblocks()
+   Fixed by moving the declaration from cmds-rescue.c to rescue.h
+
+7) utils-lib.c::arg_strtou64()
+7) utils-lib.c::lookup_path_rootid()
+   Fixed by include "utils.h"
+
+Free space tree is left untouched, as some unused functions are there
+for later write support.
+
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ btrfs.c             |  2 +-
+ check/mode-lowmem.c |  6 +++---
+ chunk-recover.c     |  1 +
+ cmds-rescue.c       |  4 +---
+ extent-tree.c       |  2 +-
+ fsfeatures.c        | 22 ++++++++++++++++++++++
+ rescue.h            | 14 ++++++++++++++
+ super-recover.c     |  1 +
+ utils-lib.c         |  1 +
+ utils.c             | 23 -----------------------
+ 10 files changed, 45 insertions(+), 31 deletions(-)
+ create mode 100644 rescue.h
+
+diff --git a/btrfs.c b/btrfs.c
+index 2d39f2ced3e8..78c468d2e050 100644
+--- a/btrfs.c
++++ b/btrfs.c
+@@ -210,7 +210,7 @@ static int handle_global_options(int argc, char **argv)
+ 	return shift;
+ }
+ 
+-void handle_special_globals(int shift, int argc, char **argv)
++static void handle_special_globals(int shift, int argc, char **argv)
+ {
+ 	int has_help = 0;
+ 	int has_full = 0;
+diff --git a/check/mode-lowmem.c b/check/mode-lowmem.c
+index 14bbc9ee6cb6..f56b5e8d45dc 100644
+--- a/check/mode-lowmem.c
++++ b/check/mode-lowmem.c
+@@ -953,9 +953,9 @@ out:
+  * returns 0 means success.
+  * returns not 0 means on error;
+  */
+-int repair_ternary_lowmem(struct btrfs_root *root, u64 dir_ino, u64 ino,
+-			  u64 index, char *name, int name_len, u8 filetype,
+-			  int err)
++static int repair_ternary_lowmem(struct btrfs_root *root, u64 dir_ino, u64 ino,
++				 u64 index, char *name, int name_len,
++				 u8 filetype, int err)
+ {
+ 	struct btrfs_trans_handle *trans;
+ 	int stage = 0;
+diff --git a/chunk-recover.c b/chunk-recover.c
+index 1d30db51d8ed..1e554b8e8750 100644
+--- a/chunk-recover.c
++++ b/chunk-recover.c
+@@ -40,6 +40,7 @@
+ #include "utils.h"
+ #include "btrfsck.h"
+ #include "commands.h"
++#include "rescue.h"
+ 
+ struct recover_control {
+ 	int verbose;
+diff --git a/cmds-rescue.c b/cmds-rescue.c
+index 2bc50c0841ed..36e9e1277e40 100644
+--- a/cmds-rescue.c
++++ b/cmds-rescue.c
+@@ -26,15 +26,13 @@
+ #include "commands.h"
+ #include "utils.h"
+ #include "help.h"
++#include "rescue.h"
+ 
+ static const char * const rescue_cmd_group_usage[] = {
+ 	"btrfs rescue <command> [options] <path>",
+ 	NULL
+ };
+ 
+-int btrfs_recover_chunk_tree(const char *path, int verbose, int yes);
+-int btrfs_recover_superblocks(const char *path, int verbose, int yes);
+-
+ static const char * const cmd_rescue_chunk_recover_usage[] = {
+ 	"btrfs rescue chunk-recover [options] <device>",
+ 	"Recover the chunk tree by scanning the devices one by one.",
+diff --git a/extent-tree.c b/extent-tree.c
+index cd98633992ac..8c9cdeff3b02 100644
+--- a/extent-tree.c
++++ b/extent-tree.c
+@@ -3749,7 +3749,7 @@ static void __get_extent_size(struct btrfs_root *root, struct btrfs_path *path,
+  * Return >0 for not found.
+  * Return <0 for err
+  */
+-int btrfs_search_overlap_extent(struct btrfs_root *root,
++static int btrfs_search_overlap_extent(struct btrfs_root *root,
+ 				struct btrfs_path *path, u64 bytenr, u64 len)
+ {
+ 	struct btrfs_key key;
+diff --git a/fsfeatures.c b/fsfeatures.c
+index 7d85d60f1277..201d0f576688 100644
+--- a/fsfeatures.c
++++ b/fsfeatures.c
+@@ -225,3 +225,25 @@ u32 get_running_kernel_version(void)
+ 	return version;
+ }
+ 
++int btrfs_check_nodesize(u32 nodesize, u32 sectorsize, u64 features)
++{
++	if (nodesize < sectorsize) {
++		error("illegal nodesize %u (smaller than %u)",
++				nodesize, sectorsize);
++		return -1;
++	} else if (nodesize > BTRFS_MAX_METADATA_BLOCKSIZE) {
++		error("illegal nodesize %u (larger than %u)",
++			nodesize, BTRFS_MAX_METADATA_BLOCKSIZE);
++		return -1;
++	} else if (nodesize & (sectorsize - 1)) {
++		error("illegal nodesize %u (not aligned to %u)",
++			nodesize, sectorsize);
++		return -1;
++	} else if (features & BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS &&
++		   nodesize != sectorsize) {
++		error("illegal nodesize %u (not equal to %u for mixed block group)",
++			nodesize, sectorsize);
++		return -1;
++	}
++	return 0;
++}
+diff --git a/rescue.h b/rescue.h
+new file mode 100644
+index 000000000000..c9f6e7b80b16
+--- /dev/null
++++ b/rescue.h
+@@ -0,0 +1,14 @@
++/*
++ * Copyright (C) 2018 SUSE.  All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public
++ * License v2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ */
++int btrfs_recover_superblocks(const char *path, int verbose, int yes);
++int btrfs_recover_chunk_tree(const char *path, int verbose, int yes);
+diff --git a/super-recover.c b/super-recover.c
+index 86b3df9867dc..a1af71786034 100644
+--- a/super-recover.c
++++ b/super-recover.c
+@@ -34,6 +34,7 @@
+ #include "crc32c.h"
+ #include "volumes.h"
+ #include "commands.h"
++#include "rescue.h"
+ 
+ struct btrfs_recover_superblock {
+ 	struct btrfs_fs_devices *fs_devices;
+diff --git a/utils-lib.c b/utils-lib.c
+index 044f93fc4446..5bb89f2f1a8d 100644
+--- a/utils-lib.c
++++ b/utils-lib.c
+@@ -1,4 +1,5 @@
+ #include "kerncompat.h"
++#include "utils.h"
+ #include <unistd.h>
+ #include <stdlib.h>
+ #include <limits.h>
+diff --git a/utils.c b/utils.c
+index a310300829eb..607a14e8f287 100644
+--- a/utils.c
++++ b/utils.c
+@@ -2252,29 +2252,6 @@ int btrfs_tree_search2_ioctl_supported(int fd)
+ 	return ret;
+ }
+ 
+-int btrfs_check_nodesize(u32 nodesize, u32 sectorsize, u64 features)
+-{
+-	if (nodesize < sectorsize) {
+-		error("illegal nodesize %u (smaller than %u)",
+-				nodesize, sectorsize);
+-		return -1;
+-	} else if (nodesize > BTRFS_MAX_METADATA_BLOCKSIZE) {
+-		error("illegal nodesize %u (larger than %u)",
+-			nodesize, BTRFS_MAX_METADATA_BLOCKSIZE);
+-		return -1;
+-	} else if (nodesize & (sectorsize - 1)) {
+-		error("illegal nodesize %u (not aligned to %u)",
+-			nodesize, sectorsize);
+-		return -1;
+-	} else if (features & BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS &&
+-		   nodesize != sectorsize) {
+-		error("illegal nodesize %u (not equal to %u for mixed block group)",
+-			nodesize, sectorsize);
+-		return -1;
+-	}
+-	return 0;
+-}
+-
+ /*
+  * Copy a path argument from SRC to DEST and check the SRC length if it's at
+  * most PATH_MAX and fits into DEST. DESTLEN is supposed to be exact size of
+-- 
+2.19.1
+

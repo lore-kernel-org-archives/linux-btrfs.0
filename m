@@ -2,177 +2,109 @@ Return-Path: <SRS0=S1wN=N3=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.7 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.7 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 69A75C43610
-	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Nov 2018 11:05:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EDECDC43441
+	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Nov 2018 11:08:50 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 24CA42089D
-	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Nov 2018 11:05:25 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A066E208A3
+	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Nov 2018 11:08:50 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="AGNyMu5L"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 24CA42089D
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=oracle.com
+	dkim=pass (1024-bit key) header.d=kernel.org header.i=@kernel.org header.b="chMvCaVQ"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org A066E208A3
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=kernel.org
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2389552AbeKPVRP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 16 Nov 2018 16:17:15 -0500
-Received: from userp2120.oracle.com ([156.151.31.85]:46348 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727633AbeKPVRO (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 16 Nov 2018 16:17:14 -0500
-Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id wAGAxXuY067505;
-        Fri, 16 Nov 2018 11:05:19 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : from : to :
- references : message-id : date : mime-version : in-reply-to : content-type
- : content-transfer-encoding; s=corp-2018-07-02;
- bh=VL1eVTfmR3z/OJjUBjL+qNN9g+UdJ2MuPZvUgj/qYa0=;
- b=AGNyMu5LVqz1r57CVaHfcMIfPNzAsWL/mpnTgQHlDNNsHgo90DUtDHIjIqdnDKA8cZlv
- 9sFVdkGHGyXOwevij3n3LhKwca/BzH71wJWEvlu9RSQUwUZmXL7Sbp6ZVL4/SR8wmwPq
- RO1Y947KY89V3+Qmgs5wpxvvjx4Y5oyqHIDFCQkGmFNpyvzWtmlL0Pw79UsftqF6roJT
- MFnAH0RGZzDXtFqD2SGrCMhh/DxHn8KANETgYtIiF6O0cvpOVBGETiZUBu8b76HlK93H
- lhmzuidG+0hFITQ0Iz9vGLd+IjaGea1eFFJOjr+xvromLpPCcwSmIpeEnZdSGG/T8hN4 zg== 
-Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
-        by userp2120.oracle.com with ESMTP id 2nr7csepj4-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Fri, 16 Nov 2018 11:05:19 +0000
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id wAGB5DUm007242
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Fri, 16 Nov 2018 11:05:14 GMT
-Received: from abhmp0020.oracle.com (abhmp0020.oracle.com [141.146.116.26])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id wAGB5D1F021031;
-        Fri, 16 Nov 2018 11:05:13 GMT
-Received: from [172.20.10.2] (/183.90.37.220)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Fri, 16 Nov 2018 03:05:13 -0800
-Subject: Re: [PATCH 8/9] btrfs: user requsted replace cancel is not an error
-From:   Anand Jain <anand.jain@oracle.com>
-To:     dsterba@suse.cz, linux-btrfs@vger.kernel.org
-References: <1541946144-8174-1-git-send-email-anand.jain@oracle.com>
- <1541946144-8174-9-git-send-email-anand.jain@oracle.com>
- <20181115153124.GT24115@twin.jikos.cz>
- <5e7d6012-5231-a6ed-ddd3-c9e104b536bd@oracle.com>
-Message-ID: <3362ce34-ed38-980d-e867-5892afc1b5bc@oracle.com>
-Date:   Fri, 16 Nov 2018 19:05:15 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:52.0) Gecko/20100101
- Thunderbird/52.9.1
-MIME-Version: 1.0
-In-Reply-To: <5e7d6012-5231-a6ed-ddd3-c9e104b536bd@oracle.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
-X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9078 signatures=668683
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=2 malwarescore=0
- phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
- adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.0.1-1810050000 definitions=main-1811160100
+        id S1727728AbeKPVUl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 16 Nov 2018 16:20:41 -0500
+Received: from mail.kernel.org ([198.145.29.99]:45826 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1727454AbeKPVUl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 16 Nov 2018 16:20:41 -0500
+Received: from localhost.localdomain (bl8-197-74.dsl.telepac.pt [85.241.197.74])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id 47426206BA
+        for <linux-btrfs@vger.kernel.org>; Fri, 16 Nov 2018 11:08:48 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=default; t=1542366528;
+        bh=Mk+diofMuEs8mERF8fOAVmmC0GHDyeAWU/Iq9kPtuDA=;
+        h=From:To:Subject:Date:From;
+        b=chMvCaVQ4m037NfYF8uwmeaxTeu3d2KnL/TIbLGBDrsv8OPfn2Tt2TEHUt+z+03eQ
+         UGqAIanveAjTS6y7wuJaodDI5adz9pHLvVw7QSyfGOJk+kkbrBKOO4tnZoi0/+mUfy
+         qvhi1QbFsY/Ly7D+dD16oAuNLQWDggKCpzvQ7TYY=
+From:   fdmanana@kernel.org
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: bring back key search optimization to btrfs_search_old_slot()
+Date:   Fri, 16 Nov 2018 11:08:45 +0000
+Message-Id: <20181116110845.28561-1-fdmanana@kernel.org>
+X-Mailer: git-send-email 2.11.0
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+From: Filipe Manana <fdmanana@suse.com>
 
+Commit d7396f07358a ("Btrfs: optimize key searches in btrfs_search_slot"),
+dated from August 2013, introduced an optimization to search for keys in a
+node/leaf to both btrfs_search_slot() and btrfs_search_old_slot(). For the
+later, it ended up being reverted in commit d4b4087c43cc ("Btrfs: do a
+full search everytime in btrfs_search_old_slot"), from September 2013,
+because the content of extent buffers were often inconsistent during
+replay. It turned out that the reason why they were often inconsistent was
+because the extent buffer replay stopped being done atomically, and got
+broken after commit c8cc63416537 ("Btrfs: stop using GFP_ATOMIC for the
+tree mod log allocations"), introduced in July 2013. The extent buffer
+replay issue was then found and fixed by commit 5de865eebb83 ("Btrfs: fix
+tree mod logging"), dated from December 2013.
 
-On 11/16/2018 06:29 PM, Anand Jain wrote:
-> 
-> 
-> On 11/15/2018 11:31 PM, David Sterba wrote:
->> On Sun, Nov 11, 2018 at 10:22:23PM +0800, Anand Jain wrote:
->>> As of now only user requested replace cancel can cancel the 
->>> replace-scrub
->>> so no need to log error for it.
->>
->> This has probably some user visible effect or threre are steps to
->> reproduce the message even if it's not expected (ie. the case that this
->> patch fixes). Please update the changelog, thanks.
->>
-> 
-> 
-> 
-> before the patch [1]
->    [1]
->      btrfs: fix use-after-free due to race between replace start and cancel
-> 
->   We used to set the replace_state to CANCELED [2] and then call
->   btrfs_scrub_cancel(), but the problem with this approach is
->   if the scrub isn't running yet, then things get messier.
-> 
-> [2]
-> -       dev_replace->replace_state = 
-> BTRFS_IOCTL_DEV_REPLACE_STATE_CANCELED;
-> 
->   So to fix, [1] shall set replace_state to CANCELED only after the
->   replace cancel thread has successfully canceled the replace using
->   btrfs_scrub_cancel().
-> 
->   And about the cleanup process for the replace target..
->   we call
->     btrfs_dev_replace_finishing(.. ret)
->   after
->    ret= btrfs_scrub_dev()
-> 
->   now ret is -ECANCELED due to replace cancel request by the user.
->   (its not set to -ECANCELED for any other reason).
-> 
->   btrfs_dev_replace_finishing() has the following code [3] which it
->   earlier blocked processing of the cleanup process after the cancel,
->   because the replace_state was already updated to
->   BTRFS_IOCTL_DEV_REPLACE_STATE_CANCELED.
-> 
-> 
-> [3]
-> --------------
-> static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
->                                         int scrub_ret)
-> {
-> 
-> ::
->          /* was the operation canceled, or is it finished? */
->          if (dev_replace->replace_state !=
->              BTRFS_IOCTL_DEV_REPLACE_STATE_STARTED) {
->                  btrfs_dev_replace_read_unlock(dev_replace);
->                  mutex_unlock(&dev_replace->lock_finishing_cancel_unmount);
->                  return 0;
->          }
-> -----------
-> 
->   In fact before this patch [1] the code wasn't sync-ing the IO
->   when replace was canceled. Which this patch also fixes by using
->   the  btrfs_dev_replace_finishing()
-> 
-> 
-> -----------
-> btrfs_dev_replace_finishing
-> ::
->          /*
->           * flush all outstanding I/O and inode extent mappings before the
->           * copy operation is declared as being finished
->           */
->          ret = btrfs_start_delalloc_roots(fs_info, -1);
->          if (ret) {
->                  mutex_unlock(&dev_replace->lock_finishing_cancel_unmount);
->                  return ret;
->          }
->          btrfs_wait_ordered_roots(fs_info, U64_MAX, 0, (u64)-1);
-> -----------
-> 
->   So to answer above question... these warn and error log wasn't
->   reported before when replace was canceled and now since I am
->   using the btrfs_dev_replace_finishing() to finish the job
->   of cancel.. it shall be reported which is ok to quite.
-> 
->   Do you think we still need to update the change log?
+So bring back the optimization to btrfs_search_old_slot() as skipping it
+and its comment about disabling it confusing. After all, if unwinding
+extent buffers resulted in some inconsistency, the normal searches (binary
+searches) would also not always work.
 
-  OR I think more appropriately this patch should be merged with
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/ctree.c | 8 ++------
+ 1 file changed, 2 insertions(+), 6 deletions(-)
 
-  [PATCH 4/9] btrfs: fix UAF due to race between replace start and cancel
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index 089b46c4d97f..cf5487a79c96 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -2966,7 +2966,7 @@ int btrfs_search_old_slot(struct btrfs_root *root, const struct btrfs_key *key,
+ 	int level;
+ 	int lowest_unlock = 1;
+ 	u8 lowest_level = 0;
+-	int prev_cmp = -1;
++	int prev_cmp;
+ 
+ 	lowest_level = p->lowest_level;
+ 	WARN_ON(p->nodes[0] != NULL);
+@@ -2977,6 +2977,7 @@ int btrfs_search_old_slot(struct btrfs_root *root, const struct btrfs_key *key,
+ 	}
+ 
+ again:
++	prev_cmp = -1;
+ 	b = get_old_root(root, time_seq);
+ 	level = btrfs_header_level(b);
+ 	p->locks[level] = BTRFS_READ_LOCK;
+@@ -2994,11 +2995,6 @@ int btrfs_search_old_slot(struct btrfs_root *root, const struct btrfs_key *key,
+ 		 */
+ 		btrfs_unlock_up_safe(p, level + 1);
+ 
+-		/*
+-		 * Since we can unwind ebs we want to do a real search every
+-		 * time.
+-		 */
+-		prev_cmp = -1;
+ 		ret = key_search(b, key, level, &prev_cmp, &slot);
+ 
+ 		if (level != 0) {
+-- 
+2.11.0
 
--Anand
-> HTH.
-> 
-> Thanks, Anand

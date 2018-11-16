@@ -6,29 +6,29 @@ X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E1877C43441
-	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Nov 2018 08:06:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 337F5C43441
+	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Nov 2018 08:08:02 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B44BF208E7
-	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Nov 2018 08:06:37 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org B44BF208E7
+	by mail.kernel.org (Postfix) with ESMTP id 00D67208A3
+	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Nov 2018 08:08:02 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 00D67208A3
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727451AbeKPSRw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 16 Nov 2018 13:17:52 -0500
-Received: from mx2.suse.de ([195.135.220.15]:47318 "EHLO mx1.suse.de"
+        id S1727490AbeKPSTR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 16 Nov 2018 13:19:17 -0500
+Received: from mx2.suse.de ([195.135.220.15]:47762 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727380AbeKPSRw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 16 Nov 2018 13:17:52 -0500
+        id S1727380AbeKPSTR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 16 Nov 2018 13:19:17 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 4977DAC9F
-        for <linux-btrfs@vger.kernel.org>; Fri, 16 Nov 2018 08:06:34 +0000 (UTC)
-Subject: Re: [PATCH 6/9] btrfs-progs: Fix Wsuggest-attribute=format warning
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 4D5CDADE4
+        for <linux-btrfs@vger.kernel.org>; Fri, 16 Nov 2018 08:07:58 +0000 (UTC)
+Subject: Re: [PATCH 8/9] btrfs-progs: Fix Wtype-limits warning
 To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
 References: <20181116075426.4142-1-wqu@suse.com>
- <20181116075426.4142-7-wqu@suse.com>
+ <20181116075426.4142-9-wqu@suse.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -73,12 +73,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  KIuxEcV8wcVjr+Wr9zRl06waOCkgrQbTPp631hToxo+4rA1jiQF2M80HAet65ytBVR2pFGZF
  zGYYLqiG+mpUZ+FPjxk9kpkRYz61mTLSY7tuFljExfJWMGfgSg1OxfLV631jV1TcdUnx+h3l
  Sqs2vMhAVt14zT8mpIuu2VNxcontxgVr1kzYA/tQg32fVRbGr449j1gw57BV9i0vww==
-Message-ID: <ede45728-fe98-b73b-c46d-0e01c7f8466d@suse.com>
-Date:   Fri, 16 Nov 2018 10:06:33 +0200
+Message-ID: <0924bcb7-ed6a-94f4-dbe0-a94d992ea710@suse.com>
+Date:   Fri, 16 Nov 2018 10:07:57 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <20181116075426.4142-7-wqu@suse.com>
+In-Reply-To: <20181116075426.4142-9-wqu@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -90,27 +90,42 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 On 16.11.18 г. 9:54 ч., Qu Wenruo wrote:
-> Add __attribute__ ((format (printf, 4, 0))) to fix the vprintf calling
-> function.
+> The only hit is the following code:
+> 
+>  		tlv_len = le16_to_cpu(tlv_hdr->tlv_len);
+> 
+> 		if (tlv_type == 0 || tlv_type > BTRFS_SEND_A_MAX
+> 		    || tlv_len > BTRFS_SEND_BUF_SIZE) {
+>  			error("invalid tlv in cmd tlv_type = %hu, tlv_len = %hu",
+>  					tlv_type, tlv_len);
+> 
+> @tlv_len is u16, while BTRFS_SEND_BUF_SIZE is 64K.
+> u16 MAX is 64K - 1, so the final check is always false.
+> 
+> Just remove it.
 > 
 > Signed-off-by: Qu Wenruo <wqu@suse.com>
+
+I had an identical patch:
 
 Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 
 > ---
->  string-table.c | 1 +
->  1 file changed, 1 insertion(+)
+>  send-stream.c | 3 +--
+>  1 file changed, 1 insertion(+), 2 deletions(-)
 > 
-> diff --git a/string-table.c b/string-table.c
-> index 95833768960d..455285702d51 100644
-> --- a/string-table.c
-> +++ b/string-table.c
-> @@ -48,6 +48,7 @@ struct string_table *table_create(int columns, int rows)
->   * '>' the text is right aligned. If fmt is equal to '=' the text will
->   * be replaced by a '=====' dimensioned on the basis of the column width
->   */
-> +__attribute__ ((format (printf, 4, 0)))
->  char *table_vprintf(struct string_table *tab, int column, int row,
->  			  const char *fmt, va_list ap)
->  {
+> diff --git a/send-stream.c b/send-stream.c
+> index 3b8e39c9486a..25461e92c37b 100644
+> --- a/send-stream.c
+> +++ b/send-stream.c
+> @@ -157,8 +157,7 @@ static int read_cmd(struct btrfs_send_stream *sctx)
+>  		tlv_type = le16_to_cpu(tlv_hdr->tlv_type);
+>  		tlv_len = le16_to_cpu(tlv_hdr->tlv_len);
+>  
+> -		if (tlv_type == 0 || tlv_type > BTRFS_SEND_A_MAX
+> -		    || tlv_len > BTRFS_SEND_BUF_SIZE) {
+> +		if (tlv_type == 0 || tlv_type > BTRFS_SEND_A_MAX) {
+>  			error("invalid tlv in cmd tlv_type = %hu, tlv_len = %hu",
+>  					tlv_type, tlv_len);
+>  			ret = -EINVAL;
 > 

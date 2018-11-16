@@ -2,113 +2,94 @@ Return-Path: <SRS0=S1wN=N3=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-4.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,
-	USER_AGENT_MUTT autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.8 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
+	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 84C23C43441
-	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Nov 2018 16:04:45 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7D3ABC43441
+	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Nov 2018 16:17:22 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 454B32087C
-	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Nov 2018 16:04:45 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="h8jjfQvC"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 454B32087C
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=osandov.com
+	by mail.kernel.org (Postfix) with ESMTP id 4AC2920825
+	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Nov 2018 16:17:22 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 4AC2920825
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=gmx.de
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2390048AbeKQCRk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 16 Nov 2018 21:17:40 -0500
-Received: from mail-pf1-f194.google.com ([209.85.210.194]:38186 "EHLO
-        mail-pf1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728577AbeKQCRe (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 16 Nov 2018 21:17:34 -0500
-Received: by mail-pf1-f194.google.com with SMTP id q1so3612021pfi.5
-        for <linux-btrfs@vger.kernel.org>; Fri, 16 Nov 2018 08:04:37 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=osandov-com.20150623.gappssmtp.com; s=20150623;
-        h=date:from:to:cc:subject:message-id:references:mime-version
-         :content-disposition:in-reply-to:user-agent;
-        bh=anPsNRx0uZfFKnyoFFFtlbsGc9ac2h1lk5UPV1Hc0z4=;
-        b=h8jjfQvCViz/fLw5xy+8P4+tQZ4Vw11AmPvROiA9QddEBPFl+EG6DdWDUM8Oww3wEL
-         pfvL8qk/JnDe/76MbW6hLKRhgbY5U8B/RjpmmlMV26EtDzj2zlbtKUf5FZKFHFnc20DT
-         4v7Di7rPjVA5po7eckmpcfla148FIQdz7Z92DQ9b8gCXEZtX7a/xvOapmfytOMR9GUFT
-         cjFNj3noQXOoLxSltoJvbzfiurOyiyAPRdOBdaCCBCnjtJfsL+Ni2o5P1iEvsE7l2bYH
-         kmO373EhPVMD+JWhUfBk+aPThn8IeUYfjoJ/wdA+MCxDdOWbnToe5Yeg1eXY7Dz722iI
-         sNTA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
-         :mime-version:content-disposition:in-reply-to:user-agent;
-        bh=anPsNRx0uZfFKnyoFFFtlbsGc9ac2h1lk5UPV1Hc0z4=;
-        b=XP3HJtva4N+Cdgtw865mkYCQwGpa6hddm8ihqFyXIb5UiMF3JEbIJvfLaA2yRMw+oA
-         bLFA4Wajg6Fzl0fuVOVUYzDGsqV7u0/BgmKebnE3bYyPyGUZbqqFjjvRgKKDuPZLf/c/
-         VoBidQ6R11tIHqDFkIBrgsfRpfWMqbZ+JiOj4pfv7fuW1luha/AhhDO3AtMUghHepjLy
-         bEhACPje/Q6lg8gRhbfmEsQasW7BPSM3WYpEtBkBWSmiUjIoBZ2zT5WQEaVkeIZOJIah
-         uC+7pdmU3sIjZ2LYhq3lnrjzWcTfQ5AacaNE4pWPiULBmvDZP2krnsarBmVn91s4wWbv
-         NeXw==
-X-Gm-Message-State: AGRZ1gKrJoaOOYD4HfYe25rP8kyu2InASYEihIge6BrCCb84mXy/mUgG
-        VcpfxObQUArybM8Kgwbd9SIrPg==
-X-Google-Smtp-Source: AJdET5dCSmENmtth+4RvDrhTLZOKB8z/G4vAqSrTrSpiBniMbshmuyCEL+8XmCwl5rLQCRLdrzcxSg==
-X-Received: by 2002:aa7:8254:: with SMTP id e20-v6mr11831931pfn.164.1542384276490;
-        Fri, 16 Nov 2018 08:04:36 -0800 (PST)
-Received: from vader ([64.114.255.114])
-        by smtp.gmail.com with ESMTPSA id d21sm23998333pgv.37.2018.11.16.08.04.35
-        (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
-        Fri, 16 Nov 2018 08:04:35 -0800 (PST)
-Date:   Fri, 16 Nov 2018 08:04:33 -0800
-From:   Omar Sandoval <osandov@osandov.com>
-To:     Christoph Hellwig <hch@lst.de>
-Cc:     Mike Snitzer <snitzer@redhat.com>, Ming Lei <ming.lei@redhat.com>,
-        Jens Axboe <axboe@kernel.dk>, linux-block@vger.kernel.org,
-        linux-kernel@vger.kernel.org, linux-mm@kvack.org,
-        Dave Chinner <dchinner@redhat.com>,
-        Kent Overstreet <kent.overstreet@gmail.com>,
-        dm-devel@redhat.com, Alexander Viro <viro@zeniv.linux.org.uk>,
-        linux-fsdevel@vger.kernel.org, Shaohua Li <shli@kernel.org>,
-        linux-raid@vger.kernel.org, linux-erofs@lists.ozlabs.org,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
-        "Darrick J . Wong" <darrick.wong@oracle.com>,
-        linux-xfs@vger.kernel.org, Gao Xiang <gaoxiang25@huawei.com>,
-        Theodore Ts'o <tytso@mit.edu>, linux-ext4@vger.kernel.org,
-        Coly Li <colyli@suse.de>, linux-bcache@vger.kernel.org,
-        Boaz Harrosh <ooo@electrozaur.com>,
-        Bob Peterson <rpeterso@redhat.com>, cluster-devel@redhat.com
-Subject: Re: [PATCH V10 03/19] block: use bio_for_each_bvec() to compute
- multi-page bvec count
-Message-ID: <20181116160433.GV23828@vader>
-References: <20181115085306.9910-1-ming.lei@redhat.com>
- <20181115085306.9910-4-ming.lei@redhat.com>
- <20181115202028.GC9348@vader>
- <20181115210510.GA24908@redhat.com>
- <20181115221847.GD9348@vader>
- <20181116091956.GA17604@lst.de>
+        id S1728809AbeKQCaV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 16 Nov 2018 21:30:21 -0500
+Received: from mout.gmx.net ([212.227.15.18]:51533 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1728175AbeKQCaV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 16 Nov 2018 21:30:21 -0500
+Received: from chaos-desktop.localnet ([88.67.151.196]) by mail.gmx.com
+ (mrgmx002 [212.227.17.190]) with ESMTPSA (Nemesis) id
+ 0MCLcP-1gF86I3uHx-0095qN for <linux-btrfs@vger.kernel.org>; Fri, 16 Nov 2018
+ 17:17:20 +0100
+From:   Stephan Olbrich <stephanolbrich@gmx.de>
+To:     linux-btrfs@vger.kernel.org
+Subject: bad tree block start, want 705757184 have 82362368
+Date:   Fri, 16 Nov 2018 17:17:19 +0100
+Message-ID: <1758973.r4I5FPff6i@chaos-desktop>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20181116091956.GA17604@lst.de>
-User-Agent: Mutt/1.10.1 (2018-07-13)
+Content-Transfer-Encoding: 7Bit
+Content-Type: text/plain; charset="us-ascii"
+X-Provags-ID: V03:K1:4iMIhbsoLdqUgNhUDlB7lBrBblgqlAO0lBcM11rIciMeVwzEaNo
+ oHkI18vSaOAJMU8tZ5nLGm+eNCwYs+aS67CBR7oJSB+qPk9WPtmTu5WKOKTN7bmX4QfN8n8
+ HnedpORegU/utuAUs5w//XL3kX7HN0f8OHECpHS0aUQ7BTA6P3I5VAzm8KClgWFduWESGuC
+ yoXn4AoGLo5/MBU06XLbQ==
+X-UI-Out-Filterresults: notjunk:1;V01:K0:E1LiLiqzkHo=:eskyKU3CMU1TjsRJe1gbN6
+ OWPa60jZk9XSdWCW+wxgvjtggh2JelbZ6J/jgjLSGNSZtHYx/fBakTu0K9+I+0sh8ZBAMeM1b
+ cnkxlZBvUNWSTgj/UXZZnGKzD+xsHHt0jKvQRmVw1vxwrmOBkvCz/h7ogyfrxEpuQrkLQ2lUo
+ Q19FBFL7UaboYOLGxEV4o397Z56nuecNDAQ1xy0urS0HdCXTI8hTcL8zODK2fSPqeTVRj7HMW
+ lMTFRfrvjLN+Sx+aiEurGgiWqm2mZkaM7kW29C/DA8FDxQtWc4MRx4WeYkPIDd7mrD7IGJzAt
+ kWrIDSLklcg+vkorThXWRHJgm5V8ACUjYBtRUpxId0G8t4+Nc86pska5ebXHiK7Mg161HnhvC
+ TjjtMM8yDqfBcknEp7j5vU01KEhbEK679+whb53+i87yIJrFNqh8ccCnS4uZOmMYiNKgkVTNh
+ x1tLHsEWgXAr/iieLYFNoqSqG2Q3VxV1bIrXyvFr6iz4JfEFMvZrUPtp6aC8I6eAtXpMGIXag
+ nF9SA4DLS/Li+gyeGBu15Dv81Kc0d6NHWiz7I7egXcbic6NbeKQ1PX3wTSJdObmrwdS7CqANE
+ x3OtpO+IbKpZMGVeN0KqRTFzUDOq/euvG4TxTj5XFnydXwiNZpL+HmL6QU//13s7uu+Tg3zs/
+ a8U0ZIG/rwzne4PUw7sAcfx2kE1GJbklUXorOep5RHzzlaiFTKDfT4OtNP4Cl5TPO+bpbxUrJ
+ FtL7w9AaKjSZJn2EVfR5FLllc7meIbR0GpS3GcivUvOj7sYqXYJHcxUjxv3QVep91oQyJfJXe
+ RceOD7MHH3AtldmzjvrnOg28vUt9bqc8T1E+gvxMz7Iu96dfWNFvQCK0HWcdvPWQjCultdt3i
+ jFMoXy+0Nlaygp3yl9DKHlaz3AMAdj4E21gSlbd0nugTPkS8nb7UdPzz36H8YWnUJXpCH726P
+ IxquoqxKlvA==
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Nov 16, 2018 at 10:19:56AM +0100, Christoph Hellwig wrote:
-> On Thu, Nov 15, 2018 at 02:18:47PM -0800, Omar Sandoval wrote:
-> > My only reason to prefer unsigned int is consistency. unsigned int is
-> > much more common in the kernel:
-> > 
-> > $ ag --cc -s 'unsigned\s+int' | wc -l
-> > 129632
-> > $ ag --cc -s 'unsigned\s+(?!char|short|int|long)' | wc -l
-> > 22435
-> > 
-> > checkpatch also warns on plain unsigned.
-> 
-> Talk about chicken and egg.  unsigned is perfectly valid C, and being
-> shorter often helps being more readable.  checkpath is as so often
-> wrongly opinionated..
+Hi,
 
-Fair enough. Since enough people don't mind bare unsigned in the block
-code, I retract my comment :)
+a few days ago my root file system (simple btrfs on a SSD, no RAID or anything) suddenly became read only. 
+Looking at dmsg, I found this:
+
+[   19.285020] BTRFS error (device sda2): bad tree block start, want 705757184 have 82362368
+[   19.285042] BTRFS: error (device sda2) in __btrfs_free_extent:6804: errno=-5 IO failure
+[   19.285048] BTRFS info (device sda2): forced readonly
+[   19.285051] BTRFS: error (device sda2) in btrfs_run_delayed_refs:2934: errno=-5 IO failure
+[   19.287213] BTRFS error (device sda2): pending csums is 41889792
+
+Late on I got the same errors for my /home partition (on the same drive) as well.
+I have snapshots of all partitions on another drive made by btrbk. To get a working system, I made new (rw) snapshots
+of the most recent backup and setup grub and fstab, so my system would boot from the other drive.
+Unfortunately now I got the "bad tree block start" error again at least once in dmesg but I didn't save it and it's not in syslog :-(
+What I remember is, that it was followed by other btrfs error messages saying something about correcting something.
+And the filesystem was still read/write this time.
+At the moment I can't reproduce it.
+
+Is there any way to find out, which files are affected by the errors above? I don't really trust the data on the drive I'm using at the
+moment, as it has shown errors as well, but I have a less current backup on yet another drive but at it is a few weeks old, I don't
+want to use it to setup the system on the SSD again, but just copy the relevant files if possible.
+Or is it possible to repair the original file system?
+
+Some information about my system:
+Kubuntu 18.04
+Kernel 4.19.1 when the problem occured, now 4.19.2
+btrfs-tools 4.15.1
+
+Regards,
+Stephan
+
+
+
+
+

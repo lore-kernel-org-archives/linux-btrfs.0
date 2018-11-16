@@ -6,24 +6,24 @@ X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B897EC43441
-	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Nov 2018 13:37:19 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 00A9CC43441
+	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Nov 2018 13:38:57 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 8BB602087A
-	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Nov 2018 13:37:19 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 8BB602087A
+	by mail.kernel.org (Postfix) with ESMTP id C8E032087A
+	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Nov 2018 13:38:56 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org C8E032087A
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=lst.de
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2389981AbeKPXti (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 16 Nov 2018 18:49:38 -0500
-Received: from verein.lst.de ([213.95.11.211]:49870 "EHLO newverein.lst.de"
+        id S1728088AbeKPXvN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 16 Nov 2018 18:51:13 -0500
+Received: from verein.lst.de ([213.95.11.211]:49888 "EHLO newverein.lst.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727711AbeKPXti (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 16 Nov 2018 18:49:38 -0500
+        id S1727711AbeKPXvN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 16 Nov 2018 18:51:13 -0500
 Received: by newverein.lst.de (Postfix, from userid 2407)
-        id B606E68D62; Fri, 16 Nov 2018 14:37:10 +0100 (CET)
-Date:   Fri, 16 Nov 2018 14:37:10 +0100
+        id 2ECF668D60; Fri, 16 Nov 2018 14:38:45 +0100 (CET)
+Date:   Fri, 16 Nov 2018 14:38:45 +0100
 From:   Christoph Hellwig <hch@lst.de>
 To:     Ming Lei <ming.lei@redhat.com>
 Cc:     Jens Axboe <axboe@kernel.dk>, linux-block@vger.kernel.org,
@@ -41,34 +41,25 @@ Cc:     Jens Axboe <axboe@kernel.dk>, linux-block@vger.kernel.org,
         linux-ext4@vger.kernel.org, Coly Li <colyli@suse.de>,
         linux-bcache@vger.kernel.org, Boaz Harrosh <ooo@electrozaur.com>,
         Bob Peterson <rpeterso@redhat.com>, cluster-devel@redhat.com
-Subject: Re: [PATCH V10 07/19] btrfs: use bvec_last_segment to get bio's
- last page
-Message-ID: <20181116133710.GF3165@lst.de>
-References: <20181115085306.9910-1-ming.lei@redhat.com> <20181115085306.9910-8-ming.lei@redhat.com>
+Subject: Re: [PATCH V10 08/19] btrfs: move bio_pages_all() to btrfs
+Message-ID: <20181116133845.GG3165@lst.de>
+References: <20181115085306.9910-1-ming.lei@redhat.com> <20181115085306.9910-9-ming.lei@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20181115085306.9910-8-ming.lei@redhat.com>
+In-Reply-To: <20181115085306.9910-9-ming.lei@redhat.com>
 User-Agent: Mutt/1.5.17 (2007-11-01)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Nov 15, 2018 at 04:52:54PM +0800, Ming Lei wrote:
-> index 2955a4ea2fa8..161e14b8b180 100644
-> --- a/fs/btrfs/compression.c
-> +++ b/fs/btrfs/compression.c
-> @@ -400,8 +400,11 @@ blk_status_t btrfs_submit_compressed_write(struct inode *inode, u64 start,
->  static u64 bio_end_offset(struct bio *bio)
->  {
->  	struct bio_vec *last = bio_last_bvec_all(bio);
-> +	struct bio_vec bv;
->  
-> -	return page_offset(last->bv_page) + last->bv_len + last->bv_offset;
-> +	bvec_last_segment(last, &bv);
-> +
-> +	return page_offset(bv.bv_page) + bv.bv_len + bv.bv_offset;
+On Thu, Nov 15, 2018 at 04:52:55PM +0800, Ming Lei wrote:
+> BTRFS is the only user of this helper, so move this helper into
+> BTRFS, and implement it via bio_for_each_segment_all(), since
+> bio->bi_vcnt may not equal to number of pages after multipage bvec
+> is enabled.
 
-I don't think we need this.  If last is a multi-page bvec bv_offset
-will already contain the correct offset from the first page.
+btrfs only uses the value to check if it is larger than 1.  No amount
+of multipage bio merging should ever make bi_vcnt go from 0 to 1 or
+vice versa.

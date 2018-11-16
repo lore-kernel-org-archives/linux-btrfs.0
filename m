@@ -2,28 +2,28 @@ Return-Path: <SRS0=S1wN=N3=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_MUTT autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 250C9C43610
-	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Nov 2018 13:55:23 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B1139C43441
+	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Nov 2018 13:58:14 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id EA1102086B
-	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Nov 2018 13:55:22 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org EA1102086B
+	by mail.kernel.org (Postfix) with ESMTP id 84D842086C
+	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Nov 2018 13:58:14 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 84D842086C
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=lst.de
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2389595AbeKQAHo (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 16 Nov 2018 19:07:44 -0500
-Received: from verein.lst.de ([213.95.11.211]:50081 "EHLO newverein.lst.de"
+        id S2389711AbeKQAKh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 16 Nov 2018 19:10:37 -0500
+Received: from verein.lst.de ([213.95.11.211]:50112 "EHLO newverein.lst.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727727AbeKQAHo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 16 Nov 2018 19:07:44 -0500
+        id S1727854AbeKQAKh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 16 Nov 2018 19:10:37 -0500
 Received: by newverein.lst.de (Postfix, from userid 2407)
-        id 445C568D60; Fri, 16 Nov 2018 14:55:12 +0100 (CET)
-Date:   Fri, 16 Nov 2018 14:55:12 +0100
+        id EF8E968D60; Fri, 16 Nov 2018 14:58:03 +0100 (CET)
+Date:   Fri, 16 Nov 2018 14:58:03 +0100
 From:   Christoph Hellwig <hch@lst.de>
 To:     Ming Lei <ming.lei@redhat.com>
 Cc:     Jens Axboe <axboe@kernel.dk>, linux-block@vger.kernel.org,
@@ -41,30 +41,112 @@ Cc:     Jens Axboe <axboe@kernel.dk>, linux-block@vger.kernel.org,
         linux-ext4@vger.kernel.org, Coly Li <colyli@suse.de>,
         linux-bcache@vger.kernel.org, Boaz Harrosh <ooo@electrozaur.com>,
         Bob Peterson <rpeterso@redhat.com>, cluster-devel@redhat.com
-Subject: Re: [PATCH V10 17/19] block: don't use bio->bi_vcnt to figure out
- segment number
-Message-ID: <20181116135512.GM3165@lst.de>
-References: <20181115085306.9910-1-ming.lei@redhat.com> <20181115085306.9910-18-ming.lei@redhat.com>
+Subject: Re: [PATCH V10 18/19] block: kill QUEUE_FLAG_NO_SG_MERGE
+Message-ID: <20181116135803.GN3165@lst.de>
+References: <20181115085306.9910-1-ming.lei@redhat.com> <20181115085306.9910-19-ming.lei@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20181115085306.9910-18-ming.lei@redhat.com>
+In-Reply-To: <20181115085306.9910-19-ming.lei@redhat.com>
 User-Agent: Mutt/1.5.17 (2007-11-01)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Nov 15, 2018 at 04:53:04PM +0800, Ming Lei wrote:
-> It is wrong to use bio->bi_vcnt to figure out how many segments
-> there are in the bio even though CLONED flag isn't set on this bio,
-> because this bio may be splitted or advanced.
+On Thu, Nov 15, 2018 at 04:53:05PM +0800, Ming Lei wrote:
+> Since bdced438acd83ad83a6c ("block: setup bi_phys_segments after splitting"),
+> physical segment number is mainly figured out in blk_queue_split() for
+> fast path, and the flag of BIO_SEG_VALID is set there too.
 > 
-> So always use bio_segments() in blk_recount_segments(), and it shouldn't
-> cause any performance loss now because the physical segment number is figured
-> out in blk_queue_split() and BIO_SEG_VALID is set meantime since
-> bdced438acd83ad83a6c ("block: setup bi_phys_segments after splitting").
+> Now only blk_recount_segments() and blk_recalc_rq_segments() use this
+> flag.
+> 
+> Basically blk_recount_segments() is bypassed in fast path given BIO_SEG_VALID
+> is set in blk_queue_split().
+> 
+> For another user of blk_recalc_rq_segments():
+> 
+> - run in partial completion branch of blk_update_request, which is an unusual case
+> 
+> - run in blk_cloned_rq_check_limits(), still not a big problem if the flag is killed
+> since dm-rq is the only user.
+> 
+> Multi-page bvec is enabled now, QUEUE_FLAG_NO_SG_MERGE doesn't make sense any more.
+> 
+> Cc: Dave Chinner <dchinner@redhat.com>
+> Cc: Kent Overstreet <kent.overstreet@gmail.com>
+> Cc: Mike Snitzer <snitzer@redhat.com>
+> Cc: dm-devel@redhat.com
+> Cc: Alexander Viro <viro@zeniv.linux.org.uk>
+> Cc: linux-fsdevel@vger.kernel.org
+> Cc: Shaohua Li <shli@kernel.org>
+> Cc: linux-raid@vger.kernel.org
+> Cc: linux-erofs@lists.ozlabs.org
+> Cc: David Sterba <dsterba@suse.com>
+> Cc: linux-btrfs@vger.kernel.org
+> Cc: Darrick J. Wong <darrick.wong@oracle.com>
+> Cc: linux-xfs@vger.kernel.org
+> Cc: Gao Xiang <gaoxiang25@huawei.com>
+> Cc: Christoph Hellwig <hch@lst.de>
+> Cc: Theodore Ts'o <tytso@mit.edu>
+> Cc: linux-ext4@vger.kernel.org
+> Cc: Coly Li <colyli@suse.de>
+> Cc: linux-bcache@vger.kernel.org
+> Cc: Boaz Harrosh <ooo@electrozaur.com>
+> Cc: Bob Peterson <rpeterso@redhat.com>
+> Cc: cluster-devel@redhat.com
+> Signed-off-by: Ming Lei <ming.lei@redhat.com>
+> ---
+>  block/blk-merge.c      | 31 ++++++-------------------------
+>  block/blk-mq-debugfs.c |  1 -
+>  block/blk-mq.c         |  3 ---
+>  drivers/md/dm-table.c  | 13 -------------
+>  include/linux/blkdev.h |  1 -
+>  5 files changed, 6 insertions(+), 43 deletions(-)
+> 
+> diff --git a/block/blk-merge.c b/block/blk-merge.c
+> index 153a659fde74..06be298be332 100644
+> --- a/block/blk-merge.c
+> +++ b/block/blk-merge.c
+> @@ -351,8 +351,7 @@ void blk_queue_split(struct request_queue *q, struct bio **bio)
+>  EXPORT_SYMBOL(blk_queue_split);
+>  
+>  static unsigned int __blk_recalc_rq_segments(struct request_queue *q,
+> -					     struct bio *bio,
+> -					     bool no_sg_merge)
+> +					     struct bio *bio)
+>  {
+>  	struct bio_vec bv, bvprv = { NULL };
+>  	int cluster, prev = 0;
+> @@ -379,13 +378,6 @@ static unsigned int __blk_recalc_rq_segments(struct request_queue *q,
+>  	nr_phys_segs = 0;
+>  	for_each_bio(bio) {
+>  		bio_for_each_bvec(bv, bio, iter) {
+> -			/*
+> -			 * If SG merging is disabled, each bio vector is
+> -			 * a segment
+> -			 */
+> -			if (no_sg_merge)
+> -				goto new_segment;
+> -
+>  			if (prev && cluster) {
+>  				if (seg_size + bv.bv_len
+>  				    > queue_max_segment_size(q))
+> @@ -420,27 +412,16 @@ static unsigned int __blk_recalc_rq_segments(struct request_queue *q,
+>  
+>  void blk_recalc_rq_segments(struct request *rq)
+>  {
+> -	bool no_sg_merge = !!test_bit(QUEUE_FLAG_NO_SG_MERGE,
+> -			&rq->q->queue_flags);
+> -
+> -	rq->nr_phys_segments = __blk_recalc_rq_segments(rq->q, rq->bio,
+> -			no_sg_merge);
+> +	rq->nr_phys_segments = __blk_recalc_rq_segments(rq->q, rq->bio);
 
-Looks good, but shouldn't this go to the beginning of the series?
+Can we rename __blk_recalc_rq_segments to blk_recalc_rq_segments
+can kill the old blk_recalc_rq_segments now?
+
+Otherwise looks fine:
 
 Reviewed-by: Christoph Hellwig <hch@lst.de>

@@ -1,118 +1,113 @@
-Return-Path: <SRS0=S1wN=N3=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=Z2Dq=N4=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.7 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.5 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,
+	URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0F50FC43441
-	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Nov 2018 23:57:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 31FB0C43441
+	for <linux-btrfs@archiver.kernel.org>; Sat, 17 Nov 2018 00:19:07 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id BC71E20883
-	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Nov 2018 23:57:06 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id BCCDE20858
+	for <linux-btrfs@archiver.kernel.org>; Sat, 17 Nov 2018 00:19:06 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="OrAduHVD"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org BC71E20883
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=oracle.com
+	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="s5RuQulZ"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org BCCDE20858
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=colorremedies.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728760AbeKQKLd (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 17 Nov 2018 05:11:33 -0500
-Received: from userp2130.oracle.com ([156.151.31.86]:44056 "EHLO
-        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726214AbeKQKLd (ORCPT
+        id S1730378AbeKQKdh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 17 Nov 2018 05:33:37 -0500
+Received: from mail-lf1-f42.google.com ([209.85.167.42]:37261 "EHLO
+        mail-lf1-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727116AbeKQKdh (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 17 Nov 2018 05:11:33 -0500
-Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
-        by userp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id wAGNmmZr113923;
-        Fri, 16 Nov 2018 23:57:02 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to :
- references : from : message-id : date : mime-version : in-reply-to :
- content-type : content-transfer-encoding; s=corp-2018-07-02;
- bh=Tr+weY7kAUDdJKOvec91/FUkDJXmtKHcjQNhBflp+Ag=;
- b=OrAduHVDKVJCCCS0F923vqx0An/4z4Ox26cVpVSYsHHiAr5SLVO8lqiEIVzo5FbZzrY9
- yQrTREkTPHuJ6zyTnUbqddgaWoT+96z6QIdFGKq3P+5tmuFUORLmU0UI4+bN3MetxbxY
- zfUFg1aXytS3+APYdtSXleKrw7rVH+HIVCorKKHQz+qywDLvCfv/UYeEuKviSHK2Q6m4
- wRuSTkAhSApDshSiJAha5Pn21xW5g5IE8PPxLVTxJq9jSCw1X6DQYXFClW6UySmRGB9R
- Re7Gh/KSm/3YwVFkuCVm3kD1y+dvIpeEQfoGz7gpA7vk68Dp0utseBOSAKo1qHOCWlJ+ RA== 
-Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
-        by userp2130.oracle.com with ESMTP id 2nr7cshsgb-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Fri, 16 Nov 2018 23:57:02 +0000
-Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id wAGNv1lm004437
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Fri, 16 Nov 2018 23:57:01 GMT
-Received: from abhmp0016.oracle.com (abhmp0016.oracle.com [141.146.116.22])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id wAGNv0TY020311;
-        Fri, 16 Nov 2018 23:57:01 GMT
-Received: from [192.168.0.120] (/202.156.138.221)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Fri, 16 Nov 2018 15:57:00 -0800
-Subject: Re: [PATCH 3/5] btrfs: Remove superfluous check form
- btrfs_remove_chunk
-To:     Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
-References: <1540554201-11305-1-git-send-email-nborisov@suse.com>
- <1540554201-11305-4-git-send-email-nborisov@suse.com>
-From:   Anand Jain <anand.jain@oracle.com>
-Message-ID: <c15bdbc1-a987-0207-b415-dbe69d6996db@oracle.com>
-Date:   Sat, 17 Nov 2018 07:57:07 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:52.0) Gecko/20100101
- Thunderbird/52.9.1
+        Sat, 17 Nov 2018 05:33:37 -0500
+Received: by mail-lf1-f42.google.com with SMTP id p17so17686018lfh.4
+        for <linux-btrfs@vger.kernel.org>; Fri, 16 Nov 2018 16:19:04 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=Ka/68b+YhDv80BuEkU+OiTYkyeCeJADd+SmNIgWVV0s=;
+        b=s5RuQulZgKOdJdHgXEzuDDAmN6UFmCVdPySmtWu/2EMNSnDUK2K6N+1MSM3DqeqWNe
+         O6Yh/NHyALf6a/a3UobEQZ7i72nIQZrZj9oY+5EWhNGOdyjlZ0m/69icSX8t2eSgCuVQ
+         rdFIQU69P4Q5rVeECJ5s2VwBusIGk6OaAyYuWCZkbAI5+4lOFB2Wp8HhROfachfNgijz
+         2TxOCsGRJolEz2O9kegoECPU+B//8lFLKZRtIMzeKST6F+JqvDrz5OGJaOlgae8w4aME
+         +DWLOtsl6y+jv7eLs3tST3fkGRc/rc6EKgDHHUpGdZtUqz1W+oZ9iBLtADeK/bK+6pL/
+         V/Bg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=Ka/68b+YhDv80BuEkU+OiTYkyeCeJADd+SmNIgWVV0s=;
+        b=ogyrJd8TAv+lh9UHko+Zg4Yue2WD/uq6oGRl7hMCtRJpmdJ9JT86xNFbfhCn1lPmTq
+         Df68M3w6dXfcj5MkLMOmlTBZGMBS+3nOEQjcEZ0a6IR/h/5h7vX7i7fiDAaT/hO606n6
+         jA+PsqQxFczqrX3YpRScvWqhiChaer0mCuPytQKxCGhtxJwz0mWmD3hSfnVnakQ3Cnr8
+         u7+drHKpYhF3rVhTpd/ooxKOKQ3bDMS8YpnUuP2kqqFUGOFjl1DEiZz5/JG96xzGplrU
+         oIs/IBf6Odp6WMR3+Jst8a53seVu8sAphMJiNnJbgo2olP/f1fefI0bEFXgRZC5Bk29g
+         AxKQ==
+X-Gm-Message-State: AGRZ1gJkbJJ2s6cjOlLtdoKgwAEYnYhsVKlBeoz+pT4w+/1UvNJYK0Fo
+        2ZnSFnBc5dfKFgsXpYjtOhJkLv8Y1EcL8X4oHSA4BAbrqVE=
+X-Google-Smtp-Source: AJdET5fvZu1xKNt6dBJnNJ48Wp92ZnwJ3HzolFCWIXu9ElsVIOSr9Uec/HK77jeDFqqodVByOQB7jqjs19I0nDcE5dI=
+X-Received: by 2002:a19:4e59:: with SMTP id c86mr6949167lfb.132.1542413943220;
+ Fri, 16 Nov 2018 16:19:03 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <1540554201-11305-4-git-send-email-nborisov@suse.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
-X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9079 signatures=668683
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=0 malwarescore=0
- phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
- adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.0.1-1810050000 definitions=main-1811160211
+References: <bf338fb1-11fe-baea-4099-af9dc267e597@rdcsafety.com>
+In-Reply-To: <bf338fb1-11fe-baea-4099-af9dc267e597@rdcsafety.com>
+From:   Chris Murphy <lists@colorremedies.com>
+Date:   Fri, 16 Nov 2018 16:18:46 -0800
+Message-ID: <CAJCQCtQwqKYqO1h1SxsVZubUKGHjJnOd_3Atwe-bkzU_O__-Ng@mail.gmail.com>
+Subject: Re: BTRFS on production: NVR 16+ IP Cameras
+To:     Juan Alberto Cirez <jacirez@rdcsafety.com>
+Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+On Thu, Nov 15, 2018 at 10:39 AM Juan Alberto Cirez
+<jacirez@rdcsafety.com> wrote:
+>
+> Is BTRFS mature enough to be deployed on a production system to underpin
+> the storage layer of a 16+ ipcameras-based NVR (or VMS if you prefer)?
+>
+> Based on our limited experience with BTRFS (1+ year) under the above
+> scenario the answer seems to be no; but I wanted you ask the community
+> at large for their experience before making a final decision to hold off
+> on deploying BTRFS on production systems.
+>
+> Let us be clear: We think BTRFS has great potential, and as it matures
+> we will continue to watch its progress, so that at some future point we
+> can return to using it.
+>
+> The issue has been the myriad of problems we have encountered when
+> deploying BTRFS as the storage fs for the NVR/VMS in cases were the
+> camera count exceeds 10: Corrupted file systems, sudden read-only file
+> system, re-balance kernel panics, broken partitions, etc.
+
+Performance problems are separate from reliability problems. No matter
+what, there shouldn't be corruptions or failures when your process is
+writing through the Btrfs kernel driver. Period. So you've either got
+significant hardware/firmware problems as the root cause, or your use
+case is exposing Btrfs bugs.
+
+But you're burdened with providing sufficient details about the
+hardware and storage stack configuration including kernel, btrfs-progs
+versions and mkfs options and mount options being used. Without a way
+for a developer to reproduce your problem it's unlikely the source of
+the problem can be discovered and fixed.
 
 
-On 10/26/2018 07:43 PM, Nikolay Borisov wrote:
-> It's unnecessary to check map->stripes[i].dev for NULL given its value
-> is already set and dereferenced above the the check. No functional changes.
-> 
-> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+> So, again, the question is: is BTRFS mature enough to be used in such
+> use case and if so, what approach can be used to mitigate such issues.
 
-Reviewed-by: Anand Jain <anand.jain@oracle.com>
+What format are the cameras writing out in? It matters if this is a
+continuous appending format, or if it's writing them out as individual
+JPEG files, one per frame, or whatever. What rate, what size, and any
+other concurrent operations, etc.
 
-Thanks, Anand
-
-> ---
->   fs/btrfs/volumes.c | 12 +++++-------
->   1 file changed, 5 insertions(+), 7 deletions(-)
-> 
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index dc53d94a62aa..f0db43d08456 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -2797,13 +2797,11 @@ int btrfs_remove_chunk(struct btrfs_trans_handle *trans, u64 chunk_offset)
->   			mutex_unlock(&fs_info->chunk_mutex);
->   		}
->   
-> -		if (map->stripes[i].dev) {
-> -			ret = btrfs_update_device(trans, map->stripes[i].dev);
-> -			if (ret) {
-> -				mutex_unlock(&fs_devices->device_list_mutex);
-> -				btrfs_abort_transaction(trans, ret);
-> -				goto out;
-> -			}
-> +		ret = btrfs_update_device(trans, device);
-> +		if (ret) {
-> +			mutex_unlock(&fs_devices->device_list_mutex);
-> +			btrfs_abort_transaction(trans, ret);
-> +			goto out;
->   		}
->   	}
->   	mutex_unlock(&fs_devices->device_list_mutex);
-> 
+-- 
+Chris Murphy

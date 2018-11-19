@@ -2,173 +2,296 @@ Return-Path: <SRS0=YqDN=N6=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
-	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_MUTT autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 46858C43441
-	for <linux-btrfs@archiver.kernel.org>; Mon, 19 Nov 2018 06:28:30 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E96A7C43441
+	for <linux-btrfs@archiver.kernel.org>; Mon, 19 Nov 2018 07:51:05 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id ECB1B2086A
-	for <linux-btrfs@archiver.kernel.org>; Mon, 19 Nov 2018 06:28:29 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org ECB1B2086A
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=gmx.com
+	by mail.kernel.org (Postfix) with ESMTP id B232420684
+	for <linux-btrfs@archiver.kernel.org>; Mon, 19 Nov 2018 07:51:05 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org B232420684
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=redhat.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726050AbeKSQvG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 19 Nov 2018 11:51:06 -0500
-Received: from mout.gmx.net ([212.227.17.22]:35663 "EHLO mout.gmx.net"
+        id S1726442AbeKSSNp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 19 Nov 2018 13:13:45 -0500
+Received: from mx1.redhat.com ([209.132.183.28]:51456 "EHLO mx1.redhat.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725908AbeKSQvG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 19 Nov 2018 11:51:06 -0500
-Received: from [0.0.0.0] ([210.140.77.29]) by mail.gmx.com (mrgmx102
- [212.227.17.174]) with ESMTPSA (Nemesis) id 0MHrk1-1gSCTt2Z2L-003gb3; Mon, 19
- Nov 2018 07:28:17 +0100
-Subject: Re: Broken filesystem, looking for guidance
-To:     =?UTF-8?Q?S=c3=a9bastien_Luttringer?= <seblu@seblu.net>,
-        linux-btrfs@vger.kernel.org
-References: <6e66eb52e4c13fc4206d742e1dade38b04592e49.camel@seblu.net>
- <dff4ca38-50e2-7285-10f9-2a5081c5e420@gmx.com>
- <59b638cccb17aa24f2aa5ddba15a5f3f9ad4c4eb.camel@seblu.net>
- <67736550-3c2c-0ba6-81d4-d0cdc9a1d1eb@gmx.com>
- <43ddede36c4d58bd12a9a4f549a9bf05cb9c0c1c.camel@seblu.net>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
- bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
- ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
- rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
- FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
- 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
- ilaVzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAHCwHwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
- CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
- f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
- mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
- 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
- h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <22f635aa-ee0d-7f93-87fd-5d788124ebd6@gmx.com>
-Date:   Mon, 19 Nov 2018 14:28:13 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.3.1
+        id S1726348AbeKSSNp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 19 Nov 2018 13:13:45 -0500
+Received: from smtp.corp.redhat.com (int-mx03.intmail.prod.int.phx2.redhat.com [10.5.11.13])
+        (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
+        (No client certificate requested)
+        by mx1.redhat.com (Postfix) with ESMTPS id 0E3D13002061;
+        Mon, 19 Nov 2018 07:50:55 +0000 (UTC)
+Received: from ming.t460p (ovpn-8-26.pek2.redhat.com [10.72.8.26])
+        by smtp.corp.redhat.com (Postfix) with ESMTPS id C00CE608E7;
+        Mon, 19 Nov 2018 07:50:30 +0000 (UTC)
+Date:   Mon, 19 Nov 2018 15:50:25 +0800
+From:   Ming Lei <ming.lei@redhat.com>
+To:     Omar Sandoval <osandov@osandov.com>
+Cc:     Jens Axboe <axboe@kernel.dk>, linux-block@vger.kernel.org,
+        linux-kernel@vger.kernel.org, linux-mm@kvack.org,
+        Dave Chinner <dchinner@redhat.com>,
+        Kent Overstreet <kent.overstreet@gmail.com>,
+        Mike Snitzer <snitzer@redhat.com>, dm-devel@redhat.com,
+        Alexander Viro <viro@zeniv.linux.org.uk>,
+        linux-fsdevel@vger.kernel.org, Shaohua Li <shli@kernel.org>,
+        linux-raid@vger.kernel.org, linux-erofs@lists.ozlabs.org,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
+        "Darrick J . Wong" <darrick.wong@oracle.com>,
+        linux-xfs@vger.kernel.org, Gao Xiang <gaoxiang25@huawei.com>,
+        Christoph Hellwig <hch@lst.de>, Theodore Ts'o <tytso@mit.edu>,
+        linux-ext4@vger.kernel.org, Coly Li <colyli@suse.de>,
+        linux-bcache@vger.kernel.org, Boaz Harrosh <ooo@electrozaur.com>,
+        Bob Peterson <rpeterso@redhat.com>, cluster-devel@redhat.com
+Subject: Re: [PATCH V10 03/19] block: use bio_for_each_bvec() to compute
+ multi-page bvec count
+Message-ID: <20181119075024.GA16519@ming.t460p>
+References: <20181115085306.9910-1-ming.lei@redhat.com>
+ <20181115085306.9910-4-ming.lei@redhat.com>
+ <20181115202028.GC9348@vader>
 MIME-Version: 1.0
-In-Reply-To: <43ddede36c4d58bd12a9a4f549a9bf05cb9c0c1c.camel@seblu.net>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="T5DriZ0yI9MkrF2r6OcXVpuJSOai9cfsq"
-X-Provags-ID: V03:K1:z/1Mg9Y9ZpDyJVrFR3S7iA1p7dny9YSGcZbL+3/pYu96d6TRoit
- WZfwMG/+yM8eSrBXWIA1byReokr3ruQ5scwht4kXfEmPZKBHg9MVRAb8R2xFR4peOXwuoZX
- pLa9QvWxFVfVh3CuPqoVUY5M3mm6vXp+Vg0mzbhfnh4j77XFi0y2WdYLrM7Sg1qc61yy2qg
- 6f1sGy9Xp9wYSCpvSDLaA==
-X-UI-Out-Filterresults: notjunk:1;V01:K0:78/8K78Eak0=:t2lzOK3LDdzPds05VdFBWd
- h7sTx1L4uZoY0T+Duq1p+MULr0zPZG8z/QUcHqle5R/bLMakE+C4YXKmfJnoi0RWkKSAmQD0Y
- BlBXQ7L585v4ctRi9c+SHUtTpp/ylCy5cYFRwvvDPc6q5Lbsu+leXdmRlXuNMtPvnbj35VFIv
- yMo9sAw9LUZLrm5uBZRMwjIQZrd0LlfO5pvwNVzrwjM8bnsvYXRtR6YM5tfzbIMNr/iZFZ3hl
- gBbkKz5rzbOgmCwcYwKR7e+VG83vUnKqLzHURv222PGW9UBykqz6ie/RKVXq+d4XzMavsyZ1Q
- cpC3+Qbh8AVh10LO1i02SkYSBX9xe+e1wOUq73afKMvZ/nVU0pYx+zKQcW8s3TumCIxydbutU
- AiJLXK/HCdoeivey037FrwT+qzjwHXQOzGQU9UiWDckgwPlVO/+3ILwfpA4K1kiqFXs/iY+pV
- pZ2r7SPmfD7Vco7ZZp5DiTO7CXfgvnfkk6vITk2pB+mJn9A9kpOLauWS/3tdxRJNk/aVuN2qm
- l8mxCDcUowCL4fFkiMsZ79qecGWz2ha+r1ieLirO35PPhaGuoOo09lu/sP/ve0dI/xp6pOUEX
- cUPh5W82uL8tEzCdx53Z4o7KLvljK9kVxQJRychBBrW3AA/njjHRDv60ieO9Q/q4kJ4Uj1D2s
- 8sUvsV3fqWqEkOtRZ9v7dHAGFPD22ZWPIZA873KaM0t6+fOVIAW8E4rQ6SvlucNto2SxgeEwa
- U96isq+5TI9eqQLahQ38ylLgmc9TtHw82tmfwfwBHl/Ka7O496BblgEYkA03DT3wmiSTYOTng
- cFq9e2OsrjPPOde2BbAljSC3IUtksXbVwNJNdbDCbZFe2bDCcNtj3nVzFaG3wvU3hQTC4Rnbu
- rLUNY6cBo3AevYTgGydtM5izvW7KAhID6MQJjZABace+RzyTWbwwObYjSYH0f+
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20181115202028.GC9348@vader>
+User-Agent: Mutt/1.9.1 (2017-09-22)
+X-Scanned-By: MIMEDefang 2.79 on 10.5.11.13
+X-Greylist: Sender IP whitelisted, not delayed by milter-greylist-4.5.16 (mx1.redhat.com [10.5.110.47]); Mon, 19 Nov 2018 07:50:55 +0000 (UTC)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---T5DriZ0yI9MkrF2r6OcXVpuJSOai9cfsq
-Content-Type: multipart/mixed; boundary="zKqBFbCZTfdeGbaSlmcmGxLJ0PIOUUVsp";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: =?UTF-8?Q?S=c3=a9bastien_Luttringer?= <seblu@seblu.net>,
- linux-btrfs@vger.kernel.org
-Message-ID: <22f635aa-ee0d-7f93-87fd-5d788124ebd6@gmx.com>
-Subject: Re: Broken filesystem, looking for guidance
-References: <6e66eb52e4c13fc4206d742e1dade38b04592e49.camel@seblu.net>
- <dff4ca38-50e2-7285-10f9-2a5081c5e420@gmx.com>
- <59b638cccb17aa24f2aa5ddba15a5f3f9ad4c4eb.camel@seblu.net>
- <67736550-3c2c-0ba6-81d4-d0cdc9a1d1eb@gmx.com>
- <43ddede36c4d58bd12a9a4f549a9bf05cb9c0c1c.camel@seblu.net>
-In-Reply-To: <43ddede36c4d58bd12a9a4f549a9bf05cb9c0c1c.camel@seblu.net>
+On Thu, Nov 15, 2018 at 12:20:28PM -0800, Omar Sandoval wrote:
+> On Thu, Nov 15, 2018 at 04:52:50PM +0800, Ming Lei wrote:
+> > First it is more efficient to use bio_for_each_bvec() in both
+> > blk_bio_segment_split() and __blk_recalc_rq_segments() to compute how
+> > many multi-page bvecs there are in the bio.
+> > 
+> > Secondly once bio_for_each_bvec() is used, the bvec may need to be
+> > splitted because its length can be very longer than max segment size,
+> > so we have to split the big bvec into several segments.
+> > 
+> > Thirdly when splitting multi-page bvec into segments, the max segment
+> > limit may be reached, so the bio split need to be considered under
+> > this situation too.
+> > 
+> > Cc: Dave Chinner <dchinner@redhat.com>
+> > Cc: Kent Overstreet <kent.overstreet@gmail.com>
+> > Cc: Mike Snitzer <snitzer@redhat.com>
+> > Cc: dm-devel@redhat.com
+> > Cc: Alexander Viro <viro@zeniv.linux.org.uk>
+> > Cc: linux-fsdevel@vger.kernel.org
+> > Cc: Shaohua Li <shli@kernel.org>
+> > Cc: linux-raid@vger.kernel.org
+> > Cc: linux-erofs@lists.ozlabs.org
+> > Cc: David Sterba <dsterba@suse.com>
+> > Cc: linux-btrfs@vger.kernel.org
+> > Cc: Darrick J. Wong <darrick.wong@oracle.com>
+> > Cc: linux-xfs@vger.kernel.org
+> > Cc: Gao Xiang <gaoxiang25@huawei.com>
+> > Cc: Christoph Hellwig <hch@lst.de>
+> > Cc: Theodore Ts'o <tytso@mit.edu>
+> > Cc: linux-ext4@vger.kernel.org
+> > Cc: Coly Li <colyli@suse.de>
+> > Cc: linux-bcache@vger.kernel.org
+> > Cc: Boaz Harrosh <ooo@electrozaur.com>
+> > Cc: Bob Peterson <rpeterso@redhat.com>
+> > Cc: cluster-devel@redhat.com
+> > Signed-off-by: Ming Lei <ming.lei@redhat.com>
+> > ---
+> >  block/blk-merge.c | 90 ++++++++++++++++++++++++++++++++++++++++++++++---------
+> >  1 file changed, 76 insertions(+), 14 deletions(-)
+> > 
+> > diff --git a/block/blk-merge.c b/block/blk-merge.c
+> > index 91b2af332a84..6f7deb94a23f 100644
+> > --- a/block/blk-merge.c
+> > +++ b/block/blk-merge.c
+> > @@ -160,6 +160,62 @@ static inline unsigned get_max_io_size(struct request_queue *q,
+> >  	return sectors;
+> >  }
+> >  
+> > +/*
+> > + * Split the bvec @bv into segments, and update all kinds of
+> > + * variables.
+> > + */
+> > +static bool bvec_split_segs(struct request_queue *q, struct bio_vec *bv,
+> > +		unsigned *nsegs, unsigned *last_seg_size,
+> > +		unsigned *front_seg_size, unsigned *sectors)
+> > +{
+> > +	bool need_split = false;
+> > +	unsigned len = bv->bv_len;
+> > +	unsigned total_len = 0;
+> > +	unsigned new_nsegs = 0, seg_size = 0;
+> 
+> "unsigned int" here and everywhere else.
+> 
+> > +	if ((*nsegs >= queue_max_segments(q)) || !len)
+> > +		return need_split;
+> > +
+> > +	/*
+> > +	 * Multipage bvec may be too big to hold in one segment,
+> > +	 * so the current bvec has to be splitted as multiple
+> > +	 * segments.
+> > +	 */
+> > +	while (new_nsegs + *nsegs < queue_max_segments(q)) {
+> > +		seg_size = min(queue_max_segment_size(q), len);
+> > +
+> > +		new_nsegs++;
+> > +		total_len += seg_size;
+> > +		len -= seg_size;
+> > +
+> > +		if ((queue_virt_boundary(q) && ((bv->bv_offset +
+> > +		    total_len) & queue_virt_boundary(q))) || !len)
+> > +			break;
+> 
+> Checking queue_virt_boundary(q) != 0 is superfluous, and the len check
+> could just control the loop, i.e.,
+> 
+> 	while (len && new_nsegs + *nsegs < queue_max_segments(q)) {
+> 		seg_size = min(queue_max_segment_size(q), len);
+> 
+> 		new_nsegs++;
+> 		total_len += seg_size;
+> 		len -= seg_size;
+> 
+> 		if ((bv->bv_offset + total_len) & queue_virt_boundary(q))
+> 			break;
+> 	}
+> 
+> And if you rewrite it this way, I _think_ you can get rid of this
+> special case:
+> 
+> 	if ((*nsegs >= queue_max_segments(q)) || !len)
+> 		return need_split;
+> 
+> above.
 
---zKqBFbCZTfdeGbaSlmcmGxLJ0PIOUUVsp
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+Good point, will do in next version.
 
+> 
+> > +	}
+> > +
+> > +	/* split in the middle of the bvec */
+> > +	if (len)
+> > +		need_split = true;
+> 
+> need_split is unnecessary, just return len != 0.
 
+OK.
 
-On 2018/11/19 =E4=B8=8B=E5=8D=881:23, S=C3=A9bastien Luttringer wrote:
-> On Mon, 2018-11-19 at 13:00 +0800, Qu Wenruo wrote:
->> May I ask for the oldest kernel ran on the fs?
-> Looks like the first kernel on the host is 3.12.2.
+> 
+> > +
+> > +	/* update front segment size */
+> > +	if (!*nsegs) {
+> > +		unsigned first_seg_size = seg_size;
+> > +
+> > +		if (new_nsegs > 1)
+> > +			first_seg_size = queue_max_segment_size(q);
+> > +		if (*front_seg_size < first_seg_size)
+> > +			*front_seg_size = first_seg_size;
+> > +	}
+> > +
+> > +	/* update other varibles */
+> > +	*last_seg_size = seg_size;
+> > +	*nsegs += new_nsegs;
+> > +	if (sectors)
+> > +		*sectors += total_len >> 9;
+> > +
+> > +	return need_split;
+> > +}
+> > +
+> >  static struct bio *blk_bio_segment_split(struct request_queue *q,
+> >  					 struct bio *bio,
+> >  					 struct bio_set *bs,
+> > @@ -173,7 +229,7 @@ static struct bio *blk_bio_segment_split(struct request_queue *q,
+> >  	struct bio *new = NULL;
+> >  	const unsigned max_sectors = get_max_io_size(q, bio);
+> >  
+> > -	bio_for_each_segment(bv, bio, iter) {
+> > +	bio_for_each_bvec(bv, bio, iter) {
+> >  		/*
+> >  		 * If the queue doesn't support SG gaps and adding this
+> >  		 * offset would create a gap, disallow it.
+> > @@ -188,8 +244,12 @@ static struct bio *blk_bio_segment_split(struct request_queue *q,
+> >  			 */
+> >  			if (nsegs < queue_max_segments(q) &&
+> >  			    sectors < max_sectors) {
+> > -				nsegs++;
+> > -				sectors = max_sectors;
+> > +				/* split in the middle of bvec */
+> > +				bv.bv_len = (max_sectors - sectors) << 9;
+> > +				bvec_split_segs(q, &bv, &nsegs,
+> > +						&seg_size,
+> > +						&front_seg_size,
+> > +						&sectors);
+> >  			}
+> >  			goto split;
+> >  		}
+> > @@ -214,11 +274,12 @@ static struct bio *blk_bio_segment_split(struct request_queue *q,
+> >  		if (nsegs == 1 && seg_size > front_seg_size)
+> >  			front_seg_size = seg_size;
+> 
+> Hm, do we still need to check this here now that we're updating
+> front_seg_size inside of bvec_split_segs()?
 
-OK, then it makes sense for such strange dir ref corruption.
+Right, the check & update can be removed.
 
->=20
->> To make it clear again, any --init-* should only be used when you're
->> completely sure what is going to happen (at code level).
-> Copy.
->=20
->>
->> From btrfs-check-20181119, all the extra damage are possibly caused by=
+> 
+> >  
+> > -		nsegs++;
+> >  		bvprv = bv;
+> >  		bvprvp = &bvprv;
+> > -		seg_size = bv.bv_len;
+> > -		sectors += bv.bv_len >> 9;
+> > +
+> > +		if (bvec_split_segs(q, &bv, &nsegs, &seg_size,
+> > +					&front_seg_size, &sectors))
+> 
+> What happened to the indent alignment here?
 
->> either --repair or this --init-csum-tree.
-> Copy that.
->=20
->>
->> From 20181029, it may be possible with extra help from btrfs-progs
->> developers. But at current point, it's near impossible to recover it t=
-o
->> a fully functional state.
-> I understand the only solution is to rsync data to another server, form=
-at and
-> rsync back ?
+Will fix it in next version.
 
-That's the basic idea.
+> 
+> > +			goto split;
+> >  
+> >  	}
+> >  
+> > @@ -296,6 +357,7 @@ static unsigned int __blk_recalc_rq_segments(struct request_queue *q,
+> >  	struct bio_vec bv, bvprv = { NULL };
+> >  	int cluster, prev = 0;
+> >  	unsigned int seg_size, nr_phys_segs;
+> > +	unsigned front_seg_size = bio->bi_seg_front_size;
+> >  	struct bio *fbio, *bbio;
+> >  	struct bvec_iter iter;
+> >  
+> > @@ -316,7 +378,7 @@ static unsigned int __blk_recalc_rq_segments(struct request_queue *q,
+> >  	seg_size = 0;
+> >  	nr_phys_segs = 0;
+> >  	for_each_bio(bio) {
+> > -		bio_for_each_segment(bv, bio, iter) {
+> > +		bio_for_each_bvec(bv, bio, iter) {
+> >  			/*
+> >  			 * If SG merging is disabled, each bio vector is
+> >  			 * a segment
+> > @@ -336,20 +398,20 @@ static unsigned int __blk_recalc_rq_segments(struct request_queue *q,
+> >  				continue;
+> >  			}
+> >  new_segment:
+> > -			if (nr_phys_segs == 1 && seg_size >
+> > -			    fbio->bi_seg_front_size)
+> > -				fbio->bi_seg_front_size = seg_size;
+> > +			if (nr_phys_segs == 1 && seg_size > front_seg_size)
+> > +				front_seg_size = seg_size;
+> 
+> Same comment as in blk_bio_segment_split(), do we still need to check
+> this if we're updating front_seg_size in bvec_split_segs()?
+
+I think we can remove it too.
+
 
 Thanks,
-Qu
-
->=20
-> Regards,
->=20
-> S=C3=A9bastien "Seblu" Luttringer
->=20
-
-
---zKqBFbCZTfdeGbaSlmcmGxLJ0PIOUUVsp--
-
---T5DriZ0yI9MkrF2r6OcXVpuJSOai9cfsq
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlvyV/0ACgkQwj2R86El
-/qjqwwgAnhJJgRcai5+fegPDrJ+ncCzVl70zjh4k8Z21I3ZKlzGRgQtIjZej68MJ
-XoFV4tZDub9xcNBFaeV8yFe6v0aoJKj3IcTeqwSY+vEo774x9VX9LZY5sU/fwRyD
-cTwwm5VyAQWfMh6/6ZuTMIh9avaTDu0lSR13v+h2wlo60Mgfb54kKmMBLTp3ZnB4
-B+FFZyzHKF4B9/H4C1VBMlgKAyeQg1EAUYpVRiwCi6Yc6z2ky7kxTgX64+Hs+3dE
-MAUiBEq7/jODNjX0505ulViHbOmwTtiOZsgvnS00wQTjn4M3e2k3BEOmO5fCaOUK
-JcK04ClCQMr3Xqisw5fzAmek+DXbNQ==
-=UE7O
------END PGP SIGNATURE-----
-
---T5DriZ0yI9MkrF2r6OcXVpuJSOai9cfsq--
+Ming

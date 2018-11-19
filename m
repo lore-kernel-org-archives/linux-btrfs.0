@@ -2,163 +2,87 @@ Return-Path: <SRS0=YqDN=N6=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_MUTT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F1B8AC43441
-	for <linux-btrfs@archiver.kernel.org>; Mon, 19 Nov 2018 09:21:11 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 79005C43441
+	for <linux-btrfs@archiver.kernel.org>; Mon, 19 Nov 2018 09:38:35 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id C37BA20817
-	for <linux-btrfs@archiver.kernel.org>; Mon, 19 Nov 2018 09:21:11 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org C37BA20817
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=redhat.com
+	by mail.kernel.org (Postfix) with ESMTP id 46F9120823
+	for <linux-btrfs@archiver.kernel.org>; Mon, 19 Nov 2018 09:38:35 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 46F9120823
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.de
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727390AbeKSToI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 19 Nov 2018 14:44:08 -0500
-Received: from mx1.redhat.com ([209.132.183.28]:57646 "EHLO mx1.redhat.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726988AbeKSToH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 19 Nov 2018 14:44:07 -0500
-Received: from smtp.corp.redhat.com (int-mx06.intmail.prod.int.phx2.redhat.com [10.5.11.16])
-        (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
-        (No client certificate requested)
-        by mx1.redhat.com (Postfix) with ESMTPS id CDC13308339D;
-        Mon, 19 Nov 2018 09:21:04 +0000 (UTC)
-Received: from ming.t460p (ovpn-8-26.pek2.redhat.com [10.72.8.26])
-        by smtp.corp.redhat.com (Postfix) with ESMTPS id 8333F5C70B;
-        Mon, 19 Nov 2018 09:20:45 +0000 (UTC)
-Date:   Mon, 19 Nov 2018 17:20:41 +0800
-From:   Ming Lei <ming.lei@redhat.com>
-To:     Christoph Hellwig <hch@lst.de>
-Cc:     Jens Axboe <axboe@kernel.dk>, linux-block@vger.kernel.org,
-        linux-kernel@vger.kernel.org, linux-mm@kvack.org,
-        Dave Chinner <dchinner@redhat.com>,
-        Kent Overstreet <kent.overstreet@gmail.com>,
-        Mike Snitzer <snitzer@redhat.com>, dm-devel@redhat.com,
-        Alexander Viro <viro@zeniv.linux.org.uk>,
-        linux-fsdevel@vger.kernel.org, Shaohua Li <shli@kernel.org>,
-        linux-raid@vger.kernel.org, linux-erofs@lists.ozlabs.org,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
-        "Darrick J . Wong" <darrick.wong@oracle.com>,
-        linux-xfs@vger.kernel.org, Gao Xiang <gaoxiang25@huawei.com>,
-        Theodore Ts'o <tytso@mit.edu>, linux-ext4@vger.kernel.org,
-        Coly Li <colyli@suse.de>, linux-bcache@vger.kernel.org,
-        Boaz Harrosh <ooo@electrozaur.com>,
-        Bob Peterson <rpeterso@redhat.com>, cluster-devel@redhat.com
-Subject: Re: [PATCH V10 18/19] block: kill QUEUE_FLAG_NO_SG_MERGE
-Message-ID: <20181119092040.GP16736@ming.t460p>
-References: <20181115085306.9910-1-ming.lei@redhat.com>
- <20181115085306.9910-19-ming.lei@redhat.com>
- <20181116135803.GN3165@lst.de>
+        id S1727403AbeKSUBi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 19 Nov 2018 15:01:38 -0500
+Received: from mx2.suse.de ([195.135.220.15]:60134 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1727306AbeKSUBi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 19 Nov 2018 15:01:38 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 09760AEC6
+        for <linux-btrfs@vger.kernel.org>; Mon, 19 Nov 2018 09:38:32 +0000 (UTC)
+From:   Johannes Thumshirn <jthumshirn@suse.de>
+To:     David Sterba <dsterba@suse.com>
+Cc:     Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>,
+        Johannes Thumshirn <jthumshirn@suse.de>
+Subject: [PATCH v2 0/5] btrfs: fix compiler warning with make W=1
+Date:   Mon, 19 Nov 2018 10:38:12 +0100
+Message-Id: <20181119093817.9291-1-jthumshirn@suse.de>
+X-Mailer: git-send-email 2.16.4
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20181116135803.GN3165@lst.de>
-User-Agent: Mutt/1.9.1 (2017-09-22)
-X-Scanned-By: MIMEDefang 2.79 on 10.5.11.16
-X-Greylist: Sender IP whitelisted, not delayed by milter-greylist-4.5.16 (mx1.redhat.com [10.5.110.44]); Mon, 19 Nov 2018 09:21:05 +0000 (UTC)
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Nov 16, 2018 at 02:58:03PM +0100, Christoph Hellwig wrote:
-> On Thu, Nov 15, 2018 at 04:53:05PM +0800, Ming Lei wrote:
-> > Since bdced438acd83ad83a6c ("block: setup bi_phys_segments after splitting"),
-> > physical segment number is mainly figured out in blk_queue_split() for
-> > fast path, and the flag of BIO_SEG_VALID is set there too.
-> > 
-> > Now only blk_recount_segments() and blk_recalc_rq_segments() use this
-> > flag.
-> > 
-> > Basically blk_recount_segments() is bypassed in fast path given BIO_SEG_VALID
-> > is set in blk_queue_split().
-> > 
-> > For another user of blk_recalc_rq_segments():
-> > 
-> > - run in partial completion branch of blk_update_request, which is an unusual case
-> > 
-> > - run in blk_cloned_rq_check_limits(), still not a big problem if the flag is killed
-> > since dm-rq is the only user.
-> > 
-> > Multi-page bvec is enabled now, QUEUE_FLAG_NO_SG_MERGE doesn't make sense any more.
-> > 
-> > Cc: Dave Chinner <dchinner@redhat.com>
-> > Cc: Kent Overstreet <kent.overstreet@gmail.com>
-> > Cc: Mike Snitzer <snitzer@redhat.com>
-> > Cc: dm-devel@redhat.com
-> > Cc: Alexander Viro <viro@zeniv.linux.org.uk>
-> > Cc: linux-fsdevel@vger.kernel.org
-> > Cc: Shaohua Li <shli@kernel.org>
-> > Cc: linux-raid@vger.kernel.org
-> > Cc: linux-erofs@lists.ozlabs.org
-> > Cc: David Sterba <dsterba@suse.com>
-> > Cc: linux-btrfs@vger.kernel.org
-> > Cc: Darrick J. Wong <darrick.wong@oracle.com>
-> > Cc: linux-xfs@vger.kernel.org
-> > Cc: Gao Xiang <gaoxiang25@huawei.com>
-> > Cc: Christoph Hellwig <hch@lst.de>
-> > Cc: Theodore Ts'o <tytso@mit.edu>
-> > Cc: linux-ext4@vger.kernel.org
-> > Cc: Coly Li <colyli@suse.de>
-> > Cc: linux-bcache@vger.kernel.org
-> > Cc: Boaz Harrosh <ooo@electrozaur.com>
-> > Cc: Bob Peterson <rpeterso@redhat.com>
-> > Cc: cluster-devel@redhat.com
-> > Signed-off-by: Ming Lei <ming.lei@redhat.com>
-> > ---
-> >  block/blk-merge.c      | 31 ++++++-------------------------
-> >  block/blk-mq-debugfs.c |  1 -
-> >  block/blk-mq.c         |  3 ---
-> >  drivers/md/dm-table.c  | 13 -------------
-> >  include/linux/blkdev.h |  1 -
-> >  5 files changed, 6 insertions(+), 43 deletions(-)
-> > 
-> > diff --git a/block/blk-merge.c b/block/blk-merge.c
-> > index 153a659fde74..06be298be332 100644
-> > --- a/block/blk-merge.c
-> > +++ b/block/blk-merge.c
-> > @@ -351,8 +351,7 @@ void blk_queue_split(struct request_queue *q, struct bio **bio)
-> >  EXPORT_SYMBOL(blk_queue_split);
-> >  
-> >  static unsigned int __blk_recalc_rq_segments(struct request_queue *q,
-> > -					     struct bio *bio,
-> > -					     bool no_sg_merge)
-> > +					     struct bio *bio)
-> >  {
-> >  	struct bio_vec bv, bvprv = { NULL };
-> >  	int cluster, prev = 0;
-> > @@ -379,13 +378,6 @@ static unsigned int __blk_recalc_rq_segments(struct request_queue *q,
-> >  	nr_phys_segs = 0;
-> >  	for_each_bio(bio) {
-> >  		bio_for_each_bvec(bv, bio, iter) {
-> > -			/*
-> > -			 * If SG merging is disabled, each bio vector is
-> > -			 * a segment
-> > -			 */
-> > -			if (no_sg_merge)
-> > -				goto new_segment;
-> > -
-> >  			if (prev && cluster) {
-> >  				if (seg_size + bv.bv_len
-> >  				    > queue_max_segment_size(q))
-> > @@ -420,27 +412,16 @@ static unsigned int __blk_recalc_rq_segments(struct request_queue *q,
-> >  
-> >  void blk_recalc_rq_segments(struct request *rq)
-> >  {
-> > -	bool no_sg_merge = !!test_bit(QUEUE_FLAG_NO_SG_MERGE,
-> > -			&rq->q->queue_flags);
-> > -
-> > -	rq->nr_phys_segments = __blk_recalc_rq_segments(rq->q, rq->bio,
-> > -			no_sg_merge);
-> > +	rq->nr_phys_segments = __blk_recalc_rq_segments(rq->q, rq->bio);
-> 
-> Can we rename __blk_recalc_rq_segments to blk_recalc_rq_segments
-> can kill the old blk_recalc_rq_segments now?
+This patchset fixes most of the compiler warnings encountered when building
+btrfs with make W=1.
 
-Sure.
+There are two more compiler warnings left in raid56.c:
+  CC [M]  fs/btrfs/raid56.o
+fs/btrfs/raid56.c: In function ‘finish_rmw’:
+fs/btrfs/raid56.c:1185:6: warning: variable ‘p_stripe’ set but not used [-Wunused-but-set-variable]
+  int p_stripe = -1;
+      ^
+fs/btrfs/raid56.c: In function ‘finish_parity_scrub’:
+fs/btrfs/raid56.c:2343:6: warning: variable ‘p_stripe’ set but not used [-Wunused-but-set-variable]
+  int p_stripe = -1;
+      ^
+but I'm currently unsure how an appropriate fix would look like. As far as I
+can tell these variables have always been unused since they have been
+introduced.
 
-Thanks,
-Ming
+There are still warnings left emitted by kernel-doc but these are subject to
+another patchset, this one only addresses the warnings generated by gcc.
+
+Changes to v1:
+* Added Reviews
+* Dropped already applied patches 4 + 5
+* Added EXPORT_FOR_TESTS + users
+
+Johannes Thumshirn (5):
+  btrfs: remove unused drop_on_err in btrfs_mkdir()
+  btrfs: remove set but not used variable err in btrfs_add_link
+  btrfs: remove unused function btrfs_sysfs_feature_update()
+  btrfs: introduce EXPORT_FOR_TESTS macro
+  btrfs: use EXPORT_FOR_TESTS for conditionally shared functions
+
+ fs/btrfs/ctree.h                 |  6 ++++++
+ fs/btrfs/extent_io.c             | 14 ++------------
+ fs/btrfs/extent_io.h             |  7 +++----
+ fs/btrfs/free-space-tree.c       |  8 ++++++--
+ fs/btrfs/inode.c                 | 16 ++++++----------
+ fs/btrfs/sysfs.c                 | 33 ---------------------------------
+ fs/btrfs/sysfs.h                 |  2 --
+ fs/btrfs/tests/extent-io-tests.c | 10 +++++-----
+ 8 files changed, 28 insertions(+), 68 deletions(-)
+
+-- 
+2.16.4
+

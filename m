@@ -6,32 +6,33 @@ X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9689CC43610
-	for <linux-btrfs@archiver.kernel.org>; Mon, 19 Nov 2018 09:00:59 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 113ECC43441
+	for <linux-btrfs@archiver.kernel.org>; Mon, 19 Nov 2018 09:04:49 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 673B720823
-	for <linux-btrfs@archiver.kernel.org>; Mon, 19 Nov 2018 09:00:59 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 673B720823
+	by mail.kernel.org (Postfix) with ESMTP id D6EBE20823
+	for <linux-btrfs@archiver.kernel.org>; Mon, 19 Nov 2018 09:04:48 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org D6EBE20823
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=redhat.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727019AbeKSTXu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 19 Nov 2018 14:23:50 -0500
-Received: from mx1.redhat.com ([209.132.183.28]:52116 "EHLO mx1.redhat.com"
+        id S1726993AbeKST1l (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 19 Nov 2018 14:27:41 -0500
+Received: from mx1.redhat.com ([209.132.183.28]:60484 "EHLO mx1.redhat.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726088AbeKSTXu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 19 Nov 2018 14:23:50 -0500
-Received: from smtp.corp.redhat.com (int-mx06.intmail.prod.int.phx2.redhat.com [10.5.11.16])
+        id S1726088AbeKST1l (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 19 Nov 2018 14:27:41 -0500
+Received: from smtp.corp.redhat.com (int-mx05.intmail.prod.int.phx2.redhat.com [10.5.11.15])
         (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
         (No client certificate requested)
-        by mx1.redhat.com (Postfix) with ESMTPS id 5008A30832D0;
-        Mon, 19 Nov 2018 09:00:50 +0000 (UTC)
+        by mx1.redhat.com (Postfix) with ESMTPS id 16E2D3082E44;
+        Mon, 19 Nov 2018 09:04:41 +0000 (UTC)
 Received: from ming.t460p (ovpn-8-26.pek2.redhat.com [10.72.8.26])
-        by smtp.corp.redhat.com (Postfix) with ESMTPS id 7722A5C223;
-        Mon, 19 Nov 2018 09:00:26 +0000 (UTC)
-Date:   Mon, 19 Nov 2018 17:00:22 +0800
+        by smtp.corp.redhat.com (Postfix) with ESMTPS id 549F55D757;
+        Mon, 19 Nov 2018 09:04:20 +0000 (UTC)
+Date:   Mon, 19 Nov 2018 17:04:16 +0800
 From:   Ming Lei <ming.lei@redhat.com>
-To:     Christoph Hellwig <hch@lst.de>
+To:     Omar Sandoval <osandov@osandov.com>,
+        Huang Ying <ying.huang@intel.com>
 Cc:     Jens Axboe <axboe@kernel.dk>, linux-block@vger.kernel.org,
         linux-kernel@vger.kernel.org, linux-mm@kvack.org,
         Dave Chinner <dchinner@redhat.com>,
@@ -43,86 +44,39 @@ Cc:     Jens Axboe <axboe@kernel.dk>, linux-block@vger.kernel.org,
         David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
         "Darrick J . Wong" <darrick.wong@oracle.com>,
         linux-xfs@vger.kernel.org, Gao Xiang <gaoxiang25@huawei.com>,
-        Theodore Ts'o <tytso@mit.edu>, linux-ext4@vger.kernel.org,
-        Coly Li <colyli@suse.de>, linux-bcache@vger.kernel.org,
-        Boaz Harrosh <ooo@electrozaur.com>,
+        Christoph Hellwig <hch@lst.de>, Theodore Ts'o <tytso@mit.edu>,
+        linux-ext4@vger.kernel.org, Coly Li <colyli@suse.de>,
+        linux-bcache@vger.kernel.org, Boaz Harrosh <ooo@electrozaur.com>,
         Bob Peterson <rpeterso@redhat.com>, cluster-devel@redhat.com
-Subject: Re: [PATCH V10 14/19] block: enable multipage bvecs
-Message-ID: <20181119090021.GL16736@ming.t460p>
+Subject: Re: [PATCH V10 15/19] block: always define BIO_MAX_PAGES as 256
+Message-ID: <20181119090415.GM16736@ming.t460p>
 References: <20181115085306.9910-1-ming.lei@redhat.com>
- <20181115085306.9910-15-ming.lei@redhat.com>
- <20181116135308.GK3165@lst.de>
+ <20181115085306.9910-16-ming.lei@redhat.com>
+ <20181116015936.GJ23828@vader>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20181116135308.GK3165@lst.de>
+In-Reply-To: <20181116015936.GJ23828@vader>
 User-Agent: Mutt/1.9.1 (2017-09-22)
-X-Scanned-By: MIMEDefang 2.79 on 10.5.11.16
-X-Greylist: Sender IP whitelisted, not delayed by milter-greylist-4.5.16 (mx1.redhat.com [10.5.110.44]); Mon, 19 Nov 2018 09:00:50 +0000 (UTC)
+X-Scanned-By: MIMEDefang 2.79 on 10.5.11.15
+X-Greylist: Sender IP whitelisted, not delayed by milter-greylist-4.5.16 (mx1.redhat.com [10.5.110.46]); Mon, 19 Nov 2018 09:04:41 +0000 (UTC)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Nov 16, 2018 at 02:53:08PM +0100, Christoph Hellwig wrote:
-> > -
-> > -		if (page == bv->bv_page && off == bv->bv_offset + bv->bv_len) {
-> > -			bv->bv_len += len;
-> > -			bio->bi_iter.bi_size += len;
-> > -			return true;
-> > -		}
-> > +		struct request_queue *q = NULL;
-> > +
-> > +		if (page == bv->bv_page && off == (bv->bv_offset + bv->bv_len)
-> > +				&& (off + len) <= PAGE_SIZE)
+On Thu, Nov 15, 2018 at 05:59:36PM -0800, Omar Sandoval wrote:
+> On Thu, Nov 15, 2018 at 04:53:02PM +0800, Ming Lei wrote:
+> > Now multi-page bvec can cover CONFIG_THP_SWAP, so we don't need to
+> > increase BIO_MAX_PAGES for it.
 > 
-> How could the page struct be the same, but the range beyond PAGE_SIZE
-> (at least with the existing callers)?
-> 
-> Also no need for the inner btraces, and the && always goes on the
-> first line.
+> You mentioned to it in the cover letter, but this needs more explanation
+> in the commit message. Why did CONFIG_THP_SWAP require > 256? Why does
+> multipage bvecs remove that requirement?
 
-OK.
-
-> 
-> > +		if (bio->bi_disk)
-> > +			q = bio->bi_disk->queue;
-> > +
-> > +		/* disable multi-page bvec too if cluster isn't enabled */
-> > +		if (!q || !blk_queue_cluster(q) ||
-> > +		    ((page_to_phys(bv->bv_page) + bv->bv_offset + bv->bv_len) !=
-> > +		     (page_to_phys(page) + off)))
-> > +			return false;
-> > + merge:
-> > +		bv->bv_len += len;
-> > +		bio->bi_iter.bi_size += len;
-> > +		return true;
-> 
-> Ok, this is scary, as it will give differen results depending on when
-> bi_disk is assigned.
-
-It is just merge or not, both can be handled well now.
-
-> But then again we shouldn't really do the cluster
-> check here, but rather when splitting the bio for the actual low-level
-> driver.
-
-Yeah, I thought of this way too, but it may cause tons of bio split for
-no-clustering, and there are quite a few scsi devices which require
-to disable clustering.
-
-[linux]$ git grep -n DISABLE_CLUSTERING ./drivers/scsi/ | wc -l
-     28
-
-Or we may introduce bio_split_to_single_page_bvec() to allocate &
-convert to single-page bvec table for non-clustering, will try this
-approach in next version.
-
-> 
-> (and eventually we should kill this clustering setting off in favor
-> of our normal segment limits).
-
-Yeah, it has been in my post-multi-page todo list already, :-)
+CONFIG_THP_SWAP needs to split one TH page into normal pages and adds
+them all to one bio. With multipage-bvec, it just takes one bvec to
+hold them all.
 
 thanks,
 Ming

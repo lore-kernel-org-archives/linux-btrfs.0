@@ -2,36 +2,36 @@ Return-Path: <SRS0=YqDN=N6=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_MUTT
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6385CC43441
-	for <linux-btrfs@archiver.kernel.org>; Mon, 19 Nov 2018 09:18:26 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F1B8AC43441
+	for <linux-btrfs@archiver.kernel.org>; Mon, 19 Nov 2018 09:21:11 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 3484E20871
-	for <linux-btrfs@archiver.kernel.org>; Mon, 19 Nov 2018 09:18:26 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 3484E20871
+	by mail.kernel.org (Postfix) with ESMTP id C37BA20817
+	for <linux-btrfs@archiver.kernel.org>; Mon, 19 Nov 2018 09:21:11 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org C37BA20817
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=redhat.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727425AbeKSTlT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 19 Nov 2018 14:41:19 -0500
-Received: from mx1.redhat.com ([209.132.183.28]:52658 "EHLO mx1.redhat.com"
+        id S1727390AbeKSToI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 19 Nov 2018 14:44:08 -0500
+Received: from mx1.redhat.com ([209.132.183.28]:57646 "EHLO mx1.redhat.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726988AbeKSTlT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 19 Nov 2018 14:41:19 -0500
-Received: from smtp.corp.redhat.com (int-mx01.intmail.prod.int.phx2.redhat.com [10.5.11.11])
+        id S1726988AbeKSToH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 19 Nov 2018 14:44:07 -0500
+Received: from smtp.corp.redhat.com (int-mx06.intmail.prod.int.phx2.redhat.com [10.5.11.16])
         (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
         (No client certificate requested)
-        by mx1.redhat.com (Postfix) with ESMTPS id 62C003DE0C;
-        Mon, 19 Nov 2018 09:18:17 +0000 (UTC)
+        by mx1.redhat.com (Postfix) with ESMTPS id CDC13308339D;
+        Mon, 19 Nov 2018 09:21:04 +0000 (UTC)
 Received: from ming.t460p (ovpn-8-26.pek2.redhat.com [10.72.8.26])
-        by smtp.corp.redhat.com (Postfix) with ESMTPS id D559D600C7;
-        Mon, 19 Nov 2018 09:17:51 +0000 (UTC)
-Date:   Mon, 19 Nov 2018 17:17:46 +0800
+        by smtp.corp.redhat.com (Postfix) with ESMTPS id 8333F5C70B;
+        Mon, 19 Nov 2018 09:20:45 +0000 (UTC)
+Date:   Mon, 19 Nov 2018 17:20:41 +0800
 From:   Ming Lei <ming.lei@redhat.com>
-To:     Omar Sandoval <osandov@osandov.com>
+To:     Christoph Hellwig <hch@lst.de>
 Cc:     Jens Axboe <axboe@kernel.dk>, linux-block@vger.kernel.org,
         linux-kernel@vger.kernel.org, linux-mm@kvack.org,
         Dave Chinner <dchinner@redhat.com>,
@@ -43,28 +43,28 @@ Cc:     Jens Axboe <axboe@kernel.dk>, linux-block@vger.kernel.org,
         David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
         "Darrick J . Wong" <darrick.wong@oracle.com>,
         linux-xfs@vger.kernel.org, Gao Xiang <gaoxiang25@huawei.com>,
-        Christoph Hellwig <hch@lst.de>, Theodore Ts'o <tytso@mit.edu>,
-        linux-ext4@vger.kernel.org, Coly Li <colyli@suse.de>,
-        linux-bcache@vger.kernel.org, Boaz Harrosh <ooo@electrozaur.com>,
+        Theodore Ts'o <tytso@mit.edu>, linux-ext4@vger.kernel.org,
+        Coly Li <colyli@suse.de>, linux-bcache@vger.kernel.org,
+        Boaz Harrosh <ooo@electrozaur.com>,
         Bob Peterson <rpeterso@redhat.com>, cluster-devel@redhat.com
 Subject: Re: [PATCH V10 18/19] block: kill QUEUE_FLAG_NO_SG_MERGE
-Message-ID: <20181119091746.GO16736@ming.t460p>
+Message-ID: <20181119092040.GP16736@ming.t460p>
 References: <20181115085306.9910-1-ming.lei@redhat.com>
  <20181115085306.9910-19-ming.lei@redhat.com>
- <20181116021811.GM23828@vader>
+ <20181116135803.GN3165@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20181116021811.GM23828@vader>
+In-Reply-To: <20181116135803.GN3165@lst.de>
 User-Agent: Mutt/1.9.1 (2017-09-22)
-X-Scanned-By: MIMEDefang 2.79 on 10.5.11.11
-X-Greylist: Sender IP whitelisted, not delayed by milter-greylist-4.5.16 (mx1.redhat.com [10.5.110.29]); Mon, 19 Nov 2018 09:18:18 +0000 (UTC)
+X-Scanned-By: MIMEDefang 2.79 on 10.5.11.16
+X-Greylist: Sender IP whitelisted, not delayed by milter-greylist-4.5.16 (mx1.redhat.com [10.5.110.44]); Mon, 19 Nov 2018 09:21:05 +0000 (UTC)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Nov 15, 2018 at 06:18:11PM -0800, Omar Sandoval wrote:
+On Fri, Nov 16, 2018 at 02:58:03PM +0100, Christoph Hellwig wrote:
 > On Thu, Nov 15, 2018 at 04:53:05PM +0800, Ming Lei wrote:
 > > Since bdced438acd83ad83a6c ("block: setup bi_phys_segments after splitting"),
 > > physical segment number is mainly figured out in blk_queue_split() for
@@ -84,22 +84,81 @@ On Thu, Nov 15, 2018 at 06:18:11PM -0800, Omar Sandoval wrote:
 > > since dm-rq is the only user.
 > > 
 > > Multi-page bvec is enabled now, QUEUE_FLAG_NO_SG_MERGE doesn't make sense any more.
+> > 
+> > Cc: Dave Chinner <dchinner@redhat.com>
+> > Cc: Kent Overstreet <kent.overstreet@gmail.com>
+> > Cc: Mike Snitzer <snitzer@redhat.com>
+> > Cc: dm-devel@redhat.com
+> > Cc: Alexander Viro <viro@zeniv.linux.org.uk>
+> > Cc: linux-fsdevel@vger.kernel.org
+> > Cc: Shaohua Li <shli@kernel.org>
+> > Cc: linux-raid@vger.kernel.org
+> > Cc: linux-erofs@lists.ozlabs.org
+> > Cc: David Sterba <dsterba@suse.com>
+> > Cc: linux-btrfs@vger.kernel.org
+> > Cc: Darrick J. Wong <darrick.wong@oracle.com>
+> > Cc: linux-xfs@vger.kernel.org
+> > Cc: Gao Xiang <gaoxiang25@huawei.com>
+> > Cc: Christoph Hellwig <hch@lst.de>
+> > Cc: Theodore Ts'o <tytso@mit.edu>
+> > Cc: linux-ext4@vger.kernel.org
+> > Cc: Coly Li <colyli@suse.de>
+> > Cc: linux-bcache@vger.kernel.org
+> > Cc: Boaz Harrosh <ooo@electrozaur.com>
+> > Cc: Bob Peterson <rpeterso@redhat.com>
+> > Cc: cluster-devel@redhat.com
+> > Signed-off-by: Ming Lei <ming.lei@redhat.com>
+> > ---
+> >  block/blk-merge.c      | 31 ++++++-------------------------
+> >  block/blk-mq-debugfs.c |  1 -
+> >  block/blk-mq.c         |  3 ---
+> >  drivers/md/dm-table.c  | 13 -------------
+> >  include/linux/blkdev.h |  1 -
+> >  5 files changed, 6 insertions(+), 43 deletions(-)
+> > 
+> > diff --git a/block/blk-merge.c b/block/blk-merge.c
+> > index 153a659fde74..06be298be332 100644
+> > --- a/block/blk-merge.c
+> > +++ b/block/blk-merge.c
+> > @@ -351,8 +351,7 @@ void blk_queue_split(struct request_queue *q, struct bio **bio)
+> >  EXPORT_SYMBOL(blk_queue_split);
+> >  
+> >  static unsigned int __blk_recalc_rq_segments(struct request_queue *q,
+> > -					     struct bio *bio,
+> > -					     bool no_sg_merge)
+> > +					     struct bio *bio)
+> >  {
+> >  	struct bio_vec bv, bvprv = { NULL };
+> >  	int cluster, prev = 0;
+> > @@ -379,13 +378,6 @@ static unsigned int __blk_recalc_rq_segments(struct request_queue *q,
+> >  	nr_phys_segs = 0;
+> >  	for_each_bio(bio) {
+> >  		bio_for_each_bvec(bv, bio, iter) {
+> > -			/*
+> > -			 * If SG merging is disabled, each bio vector is
+> > -			 * a segment
+> > -			 */
+> > -			if (no_sg_merge)
+> > -				goto new_segment;
+> > -
+> >  			if (prev && cluster) {
+> >  				if (seg_size + bv.bv_len
+> >  				    > queue_max_segment_size(q))
+> > @@ -420,27 +412,16 @@ static unsigned int __blk_recalc_rq_segments(struct request_queue *q,
+> >  
+> >  void blk_recalc_rq_segments(struct request *rq)
+> >  {
+> > -	bool no_sg_merge = !!test_bit(QUEUE_FLAG_NO_SG_MERGE,
+> > -			&rq->q->queue_flags);
+> > -
+> > -	rq->nr_phys_segments = __blk_recalc_rq_segments(rq->q, rq->bio,
+> > -			no_sg_merge);
+> > +	rq->nr_phys_segments = __blk_recalc_rq_segments(rq->q, rq->bio);
 > 
-> This commit message wasn't very clear. Is it the case that
-> QUEUE_FLAG_NO_SG_MERGE is no longer set by any drivers?
+> Can we rename __blk_recalc_rq_segments to blk_recalc_rq_segments
+> can kill the old blk_recalc_rq_segments now?
 
-OK, I will add the explanation to commit log in next version.
+Sure.
 
-05f1dd53152173 (block: add queue flag for disabling SG merging) introduces this
-flag for NVMe performance purpose only, so that merging to segment can
-be bypassed for NVMe.
-
-Actually this optimization was bypassed by 54efd50bfd873e2d (block: make
-generic_make_request handle arbitrarily sized bios) and bdced438acd83ad83a6c
-("block: setup bi_phys_segments after splitting").
-
-Now segment computation can be very quick, given most of times one bvec
-can be thought as one segment, so we can remove the flag.
-
-thanks, 
+Thanks,
 Ming

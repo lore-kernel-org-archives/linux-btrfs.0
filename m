@@ -2,39 +2,33 @@ Return-Path: <SRS0=YqDN=N6=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 93A5DC43610
-	for <linux-btrfs@archiver.kernel.org>; Mon, 19 Nov 2018 08:21:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 20AA0C4161B
+	for <linux-btrfs@archiver.kernel.org>; Mon, 19 Nov 2018 08:24:26 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 694AE2089F
-	for <linux-btrfs@archiver.kernel.org>; Mon, 19 Nov 2018 08:21:51 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 694AE2089F
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=redhat.com
+	by mail.kernel.org (Postfix) with ESMTP id DF2FE20684
+	for <linux-btrfs@archiver.kernel.org>; Mon, 19 Nov 2018 08:24:25 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org DF2FE20684
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=lst.de
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726977AbeKSSog (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 19 Nov 2018 13:44:36 -0500
-Received: from mx1.redhat.com ([209.132.183.28]:58384 "EHLO mx1.redhat.com"
+        id S1727014AbeKSSrL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 19 Nov 2018 13:47:11 -0500
+Received: from verein.lst.de ([213.95.11.211]:36660 "EHLO newverein.lst.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726784AbeKSSog (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 19 Nov 2018 13:44:36 -0500
-Received: from smtp.corp.redhat.com (int-mx03.intmail.prod.int.phx2.redhat.com [10.5.11.13])
-        (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
-        (No client certificate requested)
-        by mx1.redhat.com (Postfix) with ESMTPS id EAAC6307D84A;
-        Mon, 19 Nov 2018 08:21:41 +0000 (UTC)
-Received: from ming.t460p (ovpn-8-26.pek2.redhat.com [10.72.8.26])
-        by smtp.corp.redhat.com (Postfix) with ESMTPS id 506B360922;
-        Mon, 19 Nov 2018 08:21:29 +0000 (UTC)
-Date:   Mon, 19 Nov 2018 16:21:25 +0800
-From:   Ming Lei <ming.lei@redhat.com>
-To:     Christoph Hellwig <hch@lst.de>
-Cc:     Jens Axboe <axboe@kernel.dk>, linux-block@vger.kernel.org,
-        linux-kernel@vger.kernel.org, linux-mm@kvack.org,
-        Dave Chinner <dchinner@redhat.com>,
+        id S1726784AbeKSSrL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 19 Nov 2018 13:47:11 -0500
+Received: by newverein.lst.de (Postfix, from userid 2407)
+        id 8B0BF68B02; Mon, 19 Nov 2018 09:24:14 +0100 (CET)
+Date:   Mon, 19 Nov 2018 09:24:14 +0100
+From:   Christoph Hellwig <hch@lst.de>
+To:     Ming Lei <ming.lei@redhat.com>
+Cc:     Christoph Hellwig <hch@lst.de>, Jens Axboe <axboe@kernel.dk>,
+        linux-block@vger.kernel.org, linux-kernel@vger.kernel.org,
+        linux-mm@kvack.org, Dave Chinner <dchinner@redhat.com>,
         Kent Overstreet <kent.overstreet@gmail.com>,
         Mike Snitzer <snitzer@redhat.com>, dm-devel@redhat.com,
         Alexander Viro <viro@zeniv.linux.org.uk>,
@@ -46,115 +40,44 @@ Cc:     Jens Axboe <axboe@kernel.dk>, linux-block@vger.kernel.org,
         Theodore Ts'o <tytso@mit.edu>, linux-ext4@vger.kernel.org,
         Coly Li <colyli@suse.de>, linux-bcache@vger.kernel.org,
         Boaz Harrosh <ooo@electrozaur.com>,
-        Bob Peterson <rpeterso@redhat.com>, cluster-devel@redhat.com
-Subject: Re: [PATCH V10 09/19] block: introduce bio_bvecs()
-Message-ID: <20181119082124.GC16736@ming.t460p>
-References: <20181115085306.9910-1-ming.lei@redhat.com>
- <20181115085306.9910-10-ming.lei@redhat.com>
- <20181116134541.GH3165@lst.de>
+        Bob Peterson <rpeterso@redhat.com>, cluster-devel@redhat.com,
+        Chandan Rajendra <chandan@linux.vnet.ibm.com>
+Subject: Re: [PATCH V10 08/19] btrfs: move bio_pages_all() to btrfs
+Message-ID: <20181119082414.GA10678@lst.de>
+References: <20181115085306.9910-1-ming.lei@redhat.com> <20181115085306.9910-9-ming.lei@redhat.com> <20181116133845.GG3165@lst.de> <20181119081922.GB16736@ming.t460p>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20181116134541.GH3165@lst.de>
-User-Agent: Mutt/1.9.1 (2017-09-22)
-X-Scanned-By: MIMEDefang 2.79 on 10.5.11.13
-X-Greylist: Sender IP whitelisted, not delayed by milter-greylist-4.5.16 (mx1.redhat.com [10.5.110.48]); Mon, 19 Nov 2018 08:21:42 +0000 (UTC)
+In-Reply-To: <20181119081922.GB16736@ming.t460p>
+User-Agent: Mutt/1.5.17 (2007-11-01)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Nov 16, 2018 at 02:45:41PM +0100, Christoph Hellwig wrote:
-> On Thu, Nov 15, 2018 at 04:52:56PM +0800, Ming Lei wrote:
-> > There are still cases in which we need to use bio_bvecs() for get the
-> > number of multi-page segment, so introduce it.
+On Mon, Nov 19, 2018 at 04:19:24PM +0800, Ming Lei wrote:
+> On Fri, Nov 16, 2018 at 02:38:45PM +0100, Christoph Hellwig wrote:
+> > On Thu, Nov 15, 2018 at 04:52:55PM +0800, Ming Lei wrote:
+> > > BTRFS is the only user of this helper, so move this helper into
+> > > BTRFS, and implement it via bio_for_each_segment_all(), since
+> > > bio->bi_vcnt may not equal to number of pages after multipage bvec
+> > > is enabled.
+> > 
+> > btrfs only uses the value to check if it is larger than 1.  No amount
+> > of multipage bio merging should ever make bi_vcnt go from 0 to 1 or
+> > vice versa.
 > 
-> The only user in your final tree seems to be the loop driver, and
-> even that one only uses the helper for read/write bios.
+> Could you explain a bit why?
 > 
-> I think something like this would be much simpler in the end:
-> 
-> diff --git a/drivers/block/loop.c b/drivers/block/loop.c
-> index d509902a8046..712511815ac6 100644
-> --- a/drivers/block/loop.c
-> +++ b/drivers/block/loop.c
-> @@ -514,16 +514,18 @@ static int lo_rw_aio(struct loop_device *lo, struct loop_cmd *cmd,
->  	struct request *rq = blk_mq_rq_from_pdu(cmd);
->  	struct bio *bio = rq->bio;
->  	struct file *file = lo->lo_backing_file;
-> +	struct bvec_iter bvec_iter;
-> +	struct bio_vec tmp;
->  	unsigned int offset;
->  	int nr_bvec = 0;
->  	int ret;
->  
-> +	__rq_for_each_bio(bio, rq)
-> +		bio_for_each_bvec(tmp, bio, bvec_iter)
-> +			nr_bvec++;
-> +
->  	if (rq->bio != rq->biotail) {
-> -		struct bvec_iter iter;
-> -		struct bio_vec tmp;
->  
-> -		__rq_for_each_bio(bio, rq)
-> -			nr_bvec += bio_bvecs(bio);
->  		bvec = kmalloc_array(nr_bvec, sizeof(struct bio_vec),
->  				     GFP_NOIO);
->  		if (!bvec)
-> @@ -537,7 +539,7 @@ static int lo_rw_aio(struct loop_device *lo, struct loop_cmd *cmd,
->  		 * API will take care of all details for us.
->  		 */
->  		__rq_for_each_bio(bio, rq)
-> -			bio_for_each_bvec(tmp, bio, iter) {
-> +			bio_for_each_bvec(tmp, bio, bvec_iter) {
->  				*bvec = tmp;
->  				bvec++;
->  			}
-> @@ -551,7 +553,6 @@ static int lo_rw_aio(struct loop_device *lo, struct loop_cmd *cmd,
->  		 */
->  		offset = bio->bi_iter.bi_bvec_done;
->  		bvec = __bvec_iter_bvec(bio->bi_io_vec, bio->bi_iter);
-> -		nr_bvec = bio_bvecs(bio);
->  	}
->  	atomic_set(&cmd->ref, 2);
->  
-> diff --git a/include/linux/bio.h b/include/linux/bio.h
-> index dcad0b69f57a..379440d1ced0 100644
-> --- a/include/linux/bio.h
-> +++ b/include/linux/bio.h
-> @@ -200,30 +200,6 @@ static inline unsigned bio_segments(struct bio *bio)
->  	}
->  }
->  
-> -static inline unsigned bio_bvecs(struct bio *bio)
-> -{
-> -	unsigned bvecs = 0;
-> -	struct bio_vec bv;
-> -	struct bvec_iter iter;
-> -
-> -	/*
-> -	 * We special case discard/write same/write zeroes, because they
-> -	 * interpret bi_size differently:
-> -	 */
-> -	switch (bio_op(bio)) {
-> -	case REQ_OP_DISCARD:
-> -	case REQ_OP_SECURE_ERASE:
-> -	case REQ_OP_WRITE_ZEROES:
-> -		return 0;
-> -	case REQ_OP_WRITE_SAME:
-> -		return 1;
-> -	default:
-> -		bio_for_each_bvec(bv, bio, iter)
-> -			bvecs++;
-> -		return bvecs;
-> -	}
-> -}
-> -
->  /*
->   * get a reference to a bio, so it won't disappear. the intended use is
->   * something like:
+> Suppose 2 physically continuous pages are added to this bio, .bi_vcnt
+> can be 1 in case of multi-page bvec, but it is 2 in case of single-page
+> bvec.
 
-OK, will do it in next version.
+True, I did think of 0 vs 1.
 
-Thanks,
-Ming
+The magic here in btrfs still doesn't make much sense.  The comments
+down in btrfs_check_repairable talk about sectors, so it might be a
+leftover from the blocksize == PAGE_SIZE days (assuming those patches
+actually got merged).  I'd like to have the btrfs folks chime in,
+but in the end we should probably check if the bio was larger than
+a single sector here.

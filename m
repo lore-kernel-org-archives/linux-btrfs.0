@@ -2,36 +2,36 @@ Return-Path: <SRS0=YqDN=N6=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_MUTT autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B2EAEC43441
-	for <linux-btrfs@archiver.kernel.org>; Mon, 19 Nov 2018 08:27:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 83778C43441
+	for <linux-btrfs@archiver.kernel.org>; Mon, 19 Nov 2018 08:28:53 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 7E39720684
-	for <linux-btrfs@archiver.kernel.org>; Mon, 19 Nov 2018 08:27:58 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 7E39720684
+	by mail.kernel.org (Postfix) with ESMTP id 4D84C20684
+	for <linux-btrfs@archiver.kernel.org>; Mon, 19 Nov 2018 08:28:53 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 4D84C20684
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=redhat.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727120AbeKSSuo (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 19 Nov 2018 13:50:44 -0500
-Received: from mx1.redhat.com ([209.132.183.28]:60320 "EHLO mx1.redhat.com"
+        id S1727182AbeKSSvl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 19 Nov 2018 13:51:41 -0500
+Received: from mx1.redhat.com ([209.132.183.28]:36178 "EHLO mx1.redhat.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726961AbeKSSuo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 19 Nov 2018 13:50:44 -0500
-Received: from smtp.corp.redhat.com (int-mx02.intmail.prod.int.phx2.redhat.com [10.5.11.12])
+        id S1726175AbeKSSvl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 19 Nov 2018 13:51:41 -0500
+Received: from smtp.corp.redhat.com (int-mx08.intmail.prod.int.phx2.redhat.com [10.5.11.23])
         (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
         (No client certificate requested)
-        by mx1.redhat.com (Postfix) with ESMTPS id 80DC7307D91A;
-        Mon, 19 Nov 2018 08:27:49 +0000 (UTC)
+        by mx1.redhat.com (Postfix) with ESMTPS id 2E54B89ACE;
+        Mon, 19 Nov 2018 08:28:46 +0000 (UTC)
 Received: from ming.t460p (ovpn-8-26.pek2.redhat.com [10.72.8.26])
-        by smtp.corp.redhat.com (Postfix) with ESMTPS id CB2CF424A;
-        Mon, 19 Nov 2018 08:27:27 +0000 (UTC)
-Date:   Mon, 19 Nov 2018 16:27:23 +0800
+        by smtp.corp.redhat.com (Postfix) with ESMTPS id 6E6331974C;
+        Mon, 19 Nov 2018 08:28:24 +0000 (UTC)
+Date:   Mon, 19 Nov 2018 16:28:20 +0800
 From:   Ming Lei <ming.lei@redhat.com>
-To:     Omar Sandoval <osandov@osandov.com>
+To:     Christoph Hellwig <hch@lst.de>
 Cc:     Jens Axboe <axboe@kernel.dk>, linux-block@vger.kernel.org,
         linux-kernel@vger.kernel.org, linux-mm@kvack.org,
         Dave Chinner <dchinner@redhat.com>,
@@ -43,77 +43,35 @@ Cc:     Jens Axboe <axboe@kernel.dk>, linux-block@vger.kernel.org,
         David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
         "Darrick J . Wong" <darrick.wong@oracle.com>,
         linux-xfs@vger.kernel.org, Gao Xiang <gaoxiang25@huawei.com>,
-        Christoph Hellwig <hch@lst.de>, Theodore Ts'o <tytso@mit.edu>,
-        linux-ext4@vger.kernel.org, Coly Li <colyli@suse.de>,
-        linux-bcache@vger.kernel.org, Boaz Harrosh <ooo@electrozaur.com>,
+        Theodore Ts'o <tytso@mit.edu>, linux-ext4@vger.kernel.org,
+        Coly Li <colyli@suse.de>, linux-bcache@vger.kernel.org,
+        Boaz Harrosh <ooo@electrozaur.com>,
         Bob Peterson <rpeterso@redhat.com>, cluster-devel@redhat.com
 Subject: Re: [PATCH V10 11/19] bcache: avoid to use
  bio_for_each_segment_all() in bch_bio_alloc_pages()
-Message-ID: <20181119082722.GE16736@ming.t460p>
+Message-ID: <20181119082818.GF16736@ming.t460p>
 References: <20181115085306.9910-1-ming.lei@redhat.com>
  <20181115085306.9910-12-ming.lei@redhat.com>
- <20181116004402.GF23828@vader>
+ <20181116134645.GI3165@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20181116004402.GF23828@vader>
+In-Reply-To: <20181116134645.GI3165@lst.de>
 User-Agent: Mutt/1.9.1 (2017-09-22)
-X-Scanned-By: MIMEDefang 2.79 on 10.5.11.12
-X-Greylist: Sender IP whitelisted, not delayed by milter-greylist-4.5.16 (mx1.redhat.com [10.5.110.48]); Mon, 19 Nov 2018 08:27:49 +0000 (UTC)
+X-Scanned-By: MIMEDefang 2.84 on 10.5.11.23
+X-Greylist: Sender IP whitelisted, not delayed by milter-greylist-4.5.16 (mx1.redhat.com [10.5.110.26]); Mon, 19 Nov 2018 08:28:46 +0000 (UTC)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Nov 15, 2018 at 04:44:02PM -0800, Omar Sandoval wrote:
-> On Thu, Nov 15, 2018 at 04:52:58PM +0800, Ming Lei wrote:
-> > bch_bio_alloc_pages() is always called on one new bio, so it is safe
-> > to access the bvec table directly. Given it is the only kind of this
-> > case, open code the bvec table access since bio_for_each_segment_all()
-> > will be changed to support for iterating over multipage bvec.
-> > 
-> > Cc: Dave Chinner <dchinner@redhat.com>
-> > Cc: Kent Overstreet <kent.overstreet@gmail.com>
-> > Acked-by: Coly Li <colyli@suse.de>
-> > Cc: Mike Snitzer <snitzer@redhat.com>
-> > Cc: dm-devel@redhat.com
-> > Cc: Alexander Viro <viro@zeniv.linux.org.uk>
-> > Cc: linux-fsdevel@vger.kernel.org
-> > Cc: Shaohua Li <shli@kernel.org>
-> > Cc: linux-raid@vger.kernel.org
-> > Cc: linux-erofs@lists.ozlabs.org
-> > Cc: David Sterba <dsterba@suse.com>
-> > Cc: linux-btrfs@vger.kernel.org
-> > Cc: Darrick J. Wong <darrick.wong@oracle.com>
-> > Cc: linux-xfs@vger.kernel.org
-> > Cc: Gao Xiang <gaoxiang25@huawei.com>
-> > Cc: Christoph Hellwig <hch@lst.de>
-> > Cc: Theodore Ts'o <tytso@mit.edu>
-> > Cc: linux-ext4@vger.kernel.org
-> > Cc: Coly Li <colyli@suse.de>
-> > Cc: linux-bcache@vger.kernel.org
-> > Cc: Boaz Harrosh <ooo@electrozaur.com>
-> > Cc: Bob Peterson <rpeterso@redhat.com>
-> > Cc: cluster-devel@redhat.com
-> > Signed-off-by: Ming Lei <ming.lei@redhat.com>
-> > ---
-> >  drivers/md/bcache/util.c | 2 +-
-> >  1 file changed, 1 insertion(+), 1 deletion(-)
-> > 
-> > diff --git a/drivers/md/bcache/util.c b/drivers/md/bcache/util.c
-> > index 20eddeac1531..8517aebcda2d 100644
-> > --- a/drivers/md/bcache/util.c
-> > +++ b/drivers/md/bcache/util.c
-> > @@ -270,7 +270,7 @@ int bch_bio_alloc_pages(struct bio *bio, gfp_t gfp_mask)
-> >  	int i;
-> >  	struct bio_vec *bv;
-> >  
+On Fri, Nov 16, 2018 at 02:46:45PM +0100, Christoph Hellwig wrote:
 > > -	bio_for_each_segment_all(bv, bio, i) {
 > > +	for (i = 0, bv = bio->bi_io_vec; i < bio->bi_vcnt; bv++) {
 > 
-> This is missing an i++.
+> This really needs a comment.  Otherwise it looks fine to me.
 
-Good catch, will fix it in next version.
+OK, will do it in next version.
 
-thanks,
+Thanks,
 Ming

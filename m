@@ -2,87 +2,89 @@ Return-Path: <SRS0=YqDN=N6=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 79005C43441
-	for <linux-btrfs@archiver.kernel.org>; Mon, 19 Nov 2018 09:38:35 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5674EC43441
+	for <linux-btrfs@archiver.kernel.org>; Mon, 19 Nov 2018 09:38:38 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 46F9120823
-	for <linux-btrfs@archiver.kernel.org>; Mon, 19 Nov 2018 09:38:35 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 46F9120823
+	by mail.kernel.org (Postfix) with ESMTP id 28C0220823
+	for <linux-btrfs@archiver.kernel.org>; Mon, 19 Nov 2018 09:38:38 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 28C0220823
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.de
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727403AbeKSUBi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 19 Nov 2018 15:01:38 -0500
-Received: from mx2.suse.de ([195.135.220.15]:60134 "EHLO mx1.suse.de"
+        id S1727461AbeKSUBl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 19 Nov 2018 15:01:41 -0500
+Received: from mx2.suse.de ([195.135.220.15]:60160 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727306AbeKSUBi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 19 Nov 2018 15:01:38 -0500
+        id S1727306AbeKSUBl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 19 Nov 2018 15:01:41 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 09760AEC6
-        for <linux-btrfs@vger.kernel.org>; Mon, 19 Nov 2018 09:38:32 +0000 (UTC)
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id CE34FAEC6
+        for <linux-btrfs@vger.kernel.org>; Mon, 19 Nov 2018 09:38:35 +0000 (UTC)
 From:   Johannes Thumshirn <jthumshirn@suse.de>
 To:     David Sterba <dsterba@suse.com>
 Cc:     Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>,
         Johannes Thumshirn <jthumshirn@suse.de>
-Subject: [PATCH v2 0/5] btrfs: fix compiler warning with make W=1
-Date:   Mon, 19 Nov 2018 10:38:12 +0100
-Message-Id: <20181119093817.9291-1-jthumshirn@suse.de>
+Subject: [PATCH v2 1/5] btrfs: remove unused drop_on_err in btrfs_mkdir()
+Date:   Mon, 19 Nov 2018 10:38:13 +0100
+Message-Id: <20181119093817.9291-2-jthumshirn@suse.de>
 X-Mailer: git-send-email 2.16.4
-MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 8bit
+In-Reply-To: <20181119093817.9291-1-jthumshirn@suse.de>
+References: <20181119093817.9291-1-jthumshirn@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This patchset fixes most of the compiler warnings encountered when building
-btrfs with make W=1.
+Up to commit 32955c5422a8 (btrfs: switch to discard_new_inode()) the
+drop_on_err variable in btrfs_mkdir() was used to check whether the inode had
+to be dropped via iput().
 
-There are two more compiler warnings left in raid56.c:
-  CC [M]  fs/btrfs/raid56.o
-fs/btrfs/raid56.c: In function ‘finish_rmw’:
-fs/btrfs/raid56.c:1185:6: warning: variable ‘p_stripe’ set but not used [-Wunused-but-set-variable]
-  int p_stripe = -1;
-      ^
-fs/btrfs/raid56.c: In function ‘finish_parity_scrub’:
-fs/btrfs/raid56.c:2343:6: warning: variable ‘p_stripe’ set but not used [-Wunused-but-set-variable]
-  int p_stripe = -1;
-      ^
-but I'm currently unsure how an appropriate fix would look like. As far as I
-can tell these variables have always been unused since they have been
-introduced.
+After commit 32955c5422a8 (btrfs: switch to discard_new_inode())
+discard_new_inode() is called when err is set and inode is non NULL. Therefore
+drop_on_err is not used anymore and thus causes a warning when building with
+-Wunused-but-set-variable.
 
-There are still warnings left emitted by kernel-doc but these are subject to
-another patchset, this one only addresses the warnings generated by gcc.
+Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
+Reviewed-by: Omar Sandoval <osandov@fb.com>
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+Reviewed-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/inode.c | 3 ---
+ 1 file changed, 3 deletions(-)
 
-Changes to v1:
-* Added Reviews
-* Dropped already applied patches 4 + 5
-* Added EXPORT_FOR_TESTS + users
-
-Johannes Thumshirn (5):
-  btrfs: remove unused drop_on_err in btrfs_mkdir()
-  btrfs: remove set but not used variable err in btrfs_add_link
-  btrfs: remove unused function btrfs_sysfs_feature_update()
-  btrfs: introduce EXPORT_FOR_TESTS macro
-  btrfs: use EXPORT_FOR_TESTS for conditionally shared functions
-
- fs/btrfs/ctree.h                 |  6 ++++++
- fs/btrfs/extent_io.c             | 14 ++------------
- fs/btrfs/extent_io.h             |  7 +++----
- fs/btrfs/free-space-tree.c       |  8 ++++++--
- fs/btrfs/inode.c                 | 16 ++++++----------
- fs/btrfs/sysfs.c                 | 33 ---------------------------------
- fs/btrfs/sysfs.h                 |  2 --
- fs/btrfs/tests/extent-io-tests.c | 10 +++++-----
- 8 files changed, 28 insertions(+), 68 deletions(-)
-
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 2585200cb43a..9becf8543489 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -6645,7 +6645,6 @@ static int btrfs_mkdir(struct inode *dir, struct dentry *dentry, umode_t mode)
+ 	struct btrfs_trans_handle *trans;
+ 	struct btrfs_root *root = BTRFS_I(dir)->root;
+ 	int err = 0;
+-	int drop_on_err = 0;
+ 	u64 objectid = 0;
+ 	u64 index = 0;
+ 
+@@ -6671,7 +6670,6 @@ static int btrfs_mkdir(struct inode *dir, struct dentry *dentry, umode_t mode)
+ 		goto out_fail;
+ 	}
+ 
+-	drop_on_err = 1;
+ 	/* these must be set before we unlock the inode */
+ 	inode->i_op = &btrfs_dir_inode_operations;
+ 	inode->i_fop = &btrfs_dir_file_operations;
+@@ -6692,7 +6690,6 @@ static int btrfs_mkdir(struct inode *dir, struct dentry *dentry, umode_t mode)
+ 		goto out_fail;
+ 
+ 	d_instantiate_new(dentry, inode);
+-	drop_on_err = 0;
+ 
+ out_fail:
+ 	btrfs_end_transaction(trans);
 -- 
 2.16.4
 

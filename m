@@ -6,29 +6,29 @@ X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1015DC43441
-	for <linux-btrfs@archiver.kernel.org>; Mon, 19 Nov 2018 09:55:56 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4453AC43441
+	for <linux-btrfs@archiver.kernel.org>; Mon, 19 Nov 2018 10:07:14 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id CB4B420817
-	for <linux-btrfs@archiver.kernel.org>; Mon, 19 Nov 2018 09:55:55 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org CB4B420817
+	by mail.kernel.org (Postfix) with ESMTP id 0A833206BA
+	for <linux-btrfs@archiver.kernel.org>; Mon, 19 Nov 2018 10:07:13 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 0A833206BA
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727566AbeKSUTB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 19 Nov 2018 15:19:01 -0500
-Received: from mx2.suse.de ([195.135.220.15]:34652 "EHLO mx1.suse.de"
+        id S1727655AbeKSUaV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 19 Nov 2018 15:30:21 -0500
+Received: from mx2.suse.de ([195.135.220.15]:36648 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727084AbeKSUTB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 19 Nov 2018 15:19:01 -0500
+        id S1727553AbeKSUaU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 19 Nov 2018 15:30:20 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 91152AACA;
-        Mon, 19 Nov 2018 09:55:51 +0000 (UTC)
-Subject: Re: [PATCH] Btrfs: fix access to available allocation bits when
- starting balance
+        by mx1.suse.de (Postfix) with ESMTP id 166A7AACA;
+        Mon, 19 Nov 2018 10:07:09 +0000 (UTC)
+Subject: Re: [PATCH] Btrfs: fix deadlock when enabling quotas due to
+ concurrent snapshot creation
 To:     fdmanana@kernel.org, linux-btrfs@vger.kernel.org
-References: <20181119094812.27296-1-fdmanana@kernel.org>
+References: <20181119094823.27346-1-fdmanana@kernel.org>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -73,12 +73,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  KIuxEcV8wcVjr+Wr9zRl06waOCkgrQbTPp631hToxo+4rA1jiQF2M80HAet65ytBVR2pFGZF
  zGYYLqiG+mpUZ+FPjxk9kpkRYz61mTLSY7tuFljExfJWMGfgSg1OxfLV631jV1TcdUnx+h3l
  Sqs2vMhAVt14zT8mpIuu2VNxcontxgVr1kzYA/tQg32fVRbGr449j1gw57BV9i0vww==
-Message-ID: <e9416e6f-f237-09ed-a18c-26946329a67c@suse.com>
-Date:   Mon, 19 Nov 2018 11:55:50 +0200
+Message-ID: <a680ba06-ec55-8b48-7ed8-b1c579e34fab@suse.com>
+Date:   Mon, 19 Nov 2018 12:07:08 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <20181119094812.27296-1-fdmanana@kernel.org>
+In-Reply-To: <20181119094823.27346-1-fdmanana@kernel.org>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -92,96 +92,105 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 On 19.11.18 г. 11:48 ч., fdmanana@kernel.org wrote:
 > From: Filipe Manana <fdmanana@suse.com>
 > 
-> The available allocation bits members from struct btrfs_fs_info are
-> protected by a sequence lock, and when starting balance we access them
-> incorrectly in two different ways:
+> If the quota enable and snapshot creation ioctls are called concurrently
+> we can get into a deadlock where the task enabling quotas will deadlock
+> on the fs_info->qgroup_ioctl_lock mutex because it attempts to lock it
+> twice. The following time diagram shows how this happens.
 > 
-> 1) In the read sequence lock loop at btrfs_balance() we use the values we
->    read from fs_info->avail_*_alloc_bits and we can immediately do actions
->    that have side effects and can not be undone (printing a message and
->    jumping to a label). This is wrong because a retry might be needed, so
->    our actions must not have side effects and must be repeatable as long
->    as read_seqretry() returns a non-zero value. In other words, we were
->    essentially ignoring the sequence lock;
+>            CPU 0                                    CPU 1
 > 
-> 2) Right below the read sequence lock loop, we were reading the values
->    from avail_metadata_alloc_bits and avail_data_alloc_bits without any
->    protection from concurrent writers, that is, reading them outside of
->    the read sequence lock critical section.
+>  btrfs_ioctl()
+>   btrfs_ioctl_quota_ctl()
+>    btrfs_quota_enable()
+>     mutex_lock(fs_info->qgroup_ioctl_lock)
+>     btrfs_start_transaction()
 > 
-> So fix this by making sure we only read the available allocation bits
-> while in a read sequence lock critical section and that what we do in the
-> critical section is repeatable (has nothing that can not be undone) so
-> that any eventual retry that is needed is handled properly.
+>                                              btrfs_ioctl()
+>                                               btrfs_ioctl_snap_create_v2
+>                                                create_snapshot()
+>                                                 --> adds snapshot to the
+>                                                     list pending_snapshots
+>                                                     of the current
+>                                                     transaction
 > 
-> Fixes: de98ced9e743 ("Btrfs: use seqlock to protect fs_info->avail_{data, metadata, system}_alloc_bits")
-> Fixes: 14506127979a ("btrfs: fix a bogus warning when converting only data or metadata")
+>     btrfs_commit_transaction()
+>      create_pending_snapshots()
+>        create_pending_snapshot()
+>         qgroup_account_snapshot()
+>          btrfs_qgroup_inherit()
+> 	   mutex_lock(fs_info->qgroup_ioctl_lock)
+> 	    --> deadlock, mutex already locked
+> 	        by this task at
+> 		btrfs_quota_enable()
+> 
+> So fix this by adding a flag to the transaction handle that signals if the
+> transaction is being used for enabling quotas (only seen by the task doing
+> it) and do not lock the mutex qgroup_ioctl_lock at btrfs_qgroup_inherit()
+> if the transaction handle corresponds to the one being used to enable the
+> quotas.
+> 
+> Fixes: 6426c7ad697d ("btrfs: qgroup: Fix qgroup accounting when creating snapshot")
 > Signed-off-by: Filipe Manana <fdmanana@suse.com>
-
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-
-
 > ---
->  fs/btrfs/volumes.c | 39 +++++++++++++++++++++++----------------
->  1 file changed, 23 insertions(+), 16 deletions(-)
+>  fs/btrfs/qgroup.c      | 10 ++++++++--
+>  fs/btrfs/transaction.h |  1 +
+>  2 files changed, 9 insertions(+), 2 deletions(-)
 > 
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index f4405e430da6..223334f08530 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -3712,6 +3712,7 @@ int btrfs_balance(struct btrfs_fs_info *fs_info,
->  	int ret;
->  	u64 num_devices;
->  	unsigned seq;
-> +	bool reducing_integrity;
+> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+> index d4917c0cddf5..3aec3bfa3d70 100644
+> --- a/fs/btrfs/qgroup.c
+> +++ b/fs/btrfs/qgroup.c
+> @@ -908,6 +908,7 @@ int btrfs_quota_enable(struct btrfs_fs_info *fs_info)
+>  		trans = NULL;
+>  		goto out;
+>  	}
+> +	trans->enabling_quotas = true;
 >  
->  	if (btrfs_fs_closing(fs_info) ||
->  	    atomic_read(&fs_info->balance_pause_req) ||
-> @@ -3796,24 +3797,30 @@ int btrfs_balance(struct btrfs_fs_info *fs_info,
->  		     !(bctl->sys.target & allowed)) ||
->  		    ((bctl->meta.flags & BTRFS_BALANCE_ARGS_CONVERT) &&
->  		     (fs_info->avail_metadata_alloc_bits & allowed) &&
-> -		     !(bctl->meta.target & allowed))) {
-> -			if (bctl->flags & BTRFS_BALANCE_FORCE) {
-> -				btrfs_info(fs_info,
-> -				"balance: force reducing metadata integrity");
-> -			} else {
-> -				btrfs_err(fs_info,
-> -	"balance: reduces metadata integrity, use --force if you want this");
-> -				ret = -EINVAL;
-> -				goto out;
-> -			}
-> -		}
-> +		     !(bctl->meta.target & allowed)))
-> +			reducing_integrity = true;
-> +		else
-> +			reducing_integrity = false;
-> +
-> +		/* if we're not converting, the target field is uninitialized */
-> +		meta_target = (bctl->meta.flags & BTRFS_BALANCE_ARGS_CONVERT) ?
-> +			bctl->meta.target : fs_info->avail_metadata_alloc_bits;
-> +		data_target = (bctl->data.flags & BTRFS_BALANCE_ARGS_CONVERT) ?
-> +			bctl->data.target : fs_info->avail_data_alloc_bits;
->  	} while (read_seqretry(&fs_info->profiles_lock, seq));
+>  	fs_info->qgroup_ulist = ulist_alloc(GFP_KERNEL);
+>  	if (!fs_info->qgroup_ulist) {
+> @@ -2250,7 +2251,11 @@ int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans, u64 srcid,
+>  	u32 level_size = 0;
+>  	u64 nums;
 >  
-> -	/* if we're not converting, the target field is uninitialized */
-> -	meta_target = (bctl->meta.flags & BTRFS_BALANCE_ARGS_CONVERT) ?
-> -		bctl->meta.target : fs_info->avail_metadata_alloc_bits;
-> -	data_target = (bctl->data.flags & BTRFS_BALANCE_ARGS_CONVERT) ?
-> -		bctl->data.target : fs_info->avail_data_alloc_bits;
-> +	if (reducing_integrity) {
-> +		if (bctl->flags & BTRFS_BALANCE_FORCE) {
-> +			btrfs_info(fs_info,
-> +				   "balance: force reducing metadata integrity");
-> +		} else {
-> +			btrfs_err(fs_info,
-> +	  "balance: reduces metadata integrity, use --force if you want this");
-> +			ret = -EINVAL;
-> +			goto out;
-> +		}
-> +	}
+> -	mutex_lock(&fs_info->qgroup_ioctl_lock);
+> +	if (trans->enabling_quotas)
+> +		lockdep_assert_held(&fs_info->qgroup_ioctl_lock);
+> +	else
+> +		mutex_lock(&fs_info->qgroup_ioctl_lock);
 > +
->  	if (btrfs_get_num_tolerated_disk_barrier_failures(meta_target) <
->  		btrfs_get_num_tolerated_disk_barrier_failures(data_target)) {
->  		int meta_index = btrfs_bg_flags_to_raid_index(meta_target);
+
+nit: That's a bit ugly for my taste, but I don't think the 
+alternative is any better: 
+
+ASSERT((trans->enabling_quotas && !lockdep_assert_held(&fs_info->qgroup_ioctl_lock)) || !trans->enabling_quotas)
+
+if (!trans->enabling_quotas)
+	mutex_lock(...)
+
+
+>  	if (!test_bit(BTRFS_FS_QUOTA_ENABLED, &fs_info->flags))
+>  		goto out;
+>  
+> @@ -2413,7 +2418,8 @@ int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans, u64 srcid,
+>  unlock:
+>  	spin_unlock(&fs_info->qgroup_lock);
+>  out:
+> -	mutex_unlock(&fs_info->qgroup_ioctl_lock);
+> +	if (!trans->enabling_quotas)
+> +		mutex_unlock(&fs_info->qgroup_ioctl_lock);
+>  	return ret;
+>  }
+>  
+> diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
+> index 703d5116a2fc..a5553a1dee30 100644
+> --- a/fs/btrfs/transaction.h
+> +++ b/fs/btrfs/transaction.h
+> @@ -122,6 +122,7 @@ struct btrfs_trans_handle {
+>  	bool reloc_reserved;
+>  	bool sync;
+>  	bool dirty;
+> +	bool enabling_quotas;
+>  	struct btrfs_root *root;
+>  	struct btrfs_fs_info *fs_info;
+>  	struct list_head new_bgs;
 > 

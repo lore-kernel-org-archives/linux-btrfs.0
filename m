@@ -2,117 +2,138 @@ Return-Path: <SRS0=YqDN=N6=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.8 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
+	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4453AC43441
-	for <linux-btrfs@archiver.kernel.org>; Mon, 19 Nov 2018 10:07:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B9778C43441
+	for <linux-btrfs@archiver.kernel.org>; Mon, 19 Nov 2018 11:09:43 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 0A833206BA
-	for <linux-btrfs@archiver.kernel.org>; Mon, 19 Nov 2018 10:07:13 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 0A833206BA
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
+	by mail.kernel.org (Postfix) with ESMTP id 7DF5E20989
+	for <linux-btrfs@archiver.kernel.org>; Mon, 19 Nov 2018 11:09:43 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 7DF5E20989
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=gmx.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727655AbeKSUaV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 19 Nov 2018 15:30:21 -0500
-Received: from mx2.suse.de ([195.135.220.15]:36648 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727553AbeKSUaU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 19 Nov 2018 15:30:20 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 166A7AACA;
-        Mon, 19 Nov 2018 10:07:09 +0000 (UTC)
+        id S1728636AbeKSVc7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 19 Nov 2018 16:32:59 -0500
+Received: from mout.gmx.net ([212.227.17.21]:52029 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1728632AbeKSVc7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 19 Nov 2018 16:32:59 -0500
+Received: from [0.0.0.0] ([210.140.77.29]) by mail.gmx.com (mrgmx101
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 0MAloF-1gHqrd3HjP-00BuqY; Mon, 19
+ Nov 2018 12:09:35 +0100
 Subject: Re: [PATCH] Btrfs: fix deadlock when enabling quotas due to
  concurrent snapshot creation
 To:     fdmanana@kernel.org, linux-btrfs@vger.kernel.org
 References: <20181119094823.27346-1-fdmanana@kernel.org>
-From:   Nikolay Borisov <nborisov@suse.com>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
 Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <a680ba06-ec55-8b48-7ed8-b1c579e34fab@suse.com>
-Date:   Mon, 19 Nov 2018 12:07:08 +0200
+Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
+ bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
+ ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
+ rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
+ FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
+ 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
+ ilaVzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
+ CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
+ /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
+ GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
+ q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
+ ABEBAAHCwHwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
+ CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
+ f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
+ mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
+ 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
+ h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
+Message-ID: <f42a7622-0ebb-f431-c484-cb3c4013b7a7@gmx.com>
+Date:   Mon, 19 Nov 2018 19:09:31 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.2.1
+ Thunderbird/60.3.1
 MIME-Version: 1.0
 In-Reply-To: <20181119094823.27346-1-fdmanana@kernel.org>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="LPOHRHsya1dhKKIr0h66B0L8xWL5DL0RA"
+X-Provags-ID: V03:K1:c4VEa/CoaABrVYMCF10qEN77InzafsiLzZu2C2gmPWJVWJTFW2Y
+ LsI43G5WtdgC+50Z25ujy2/zi/2KqR/+hDGe0pFw/q40q2M6WgikHV5XiMM8Hge1c0j0EFl
+ sVTy39zOSMd6A+arhFEEvAd/LdsyCXS7ncgTpPVoXF32wNw4NyjJw419r/rLnUUlb0nNjt8
+ 1gamOGx/9QwuqR112Mraw==
+X-UI-Out-Filterresults: notjunk:1;V01:K0:gAGcZbwlZqw=:8pU/qUN/RPQYae6/Gr8q0o
+ h9A/jUWoIxUr1+6v4JgoHQeFySCO7oakqqRJ61FO9yv5ApVqvA5JhRLdGqT52YZOfsRgVgsft
+ C+3AOMD1X/Vtsogh3+2rfAfJp3dZLYhdRY5IhIgKYMNMagXHYHS0Yea/om/Gl4Y8DKD1pxBp/
+ EeorwqHVZWzIlPQ8YB5jyXUPi3mnmFVBSZsZZumeHYyJMJbb/fpDdKOxoEN3QWyMuL3W4s6gj
+ r+BcwMTgDC7SHbk1JC7Fdr11rsKneTD12wPs9atBthrxU2ofitbxueMzwFDOj+BWq2dcDU5xV
+ 1RPqEic8oei5/eb7utHMUKjclEuMEIYUnMaz7NS9HJ9H7y3LCNamNxxhkY9PhxoZV8648XwTH
+ nQASuhlCiqT43zEm2KuyhwF1ISdRCorg8EvtpKvCQ+NB3dhYIrM9rNbZJsGMSceRL3itKkSke
+ 7FbWA3vhQT4JPZxj7PBY//bvOvt5EuE2dcQNliATekX3t8kiOl+JjWIwQQIKG0yfRdBfKVwvV
+ G5+liC4Pf9t15OsLCrM9J+zw+B2Zn6bJ6U6ygn0HixbRsJLT3gJRhenViLJxc1v5wuvxia4T0
+ pWbQEWvkmEC5Mq3g1y8NTnJySGUJ6kvv3rOUsXkxCXXDy762DlA9F+z8icq9XjDRKJbIHKFOF
+ jLbSviPF6/wv1ZBTm+262CYUcLfWrMRctBq3ekXa7oUqRz+yKOLGix91jPYs3JqZgir1Bl8fs
+ MGBsiE/lp7B3pw4QJVCKSipv6vrS0b3/+fUsxs4SgdWDTux0W5COFXfQFNp0g1K8VBYEif55a
+ 75IWPxTBXH6e1fSuJMuE3eIcVUglL7Evr8BtJlRQB9gQ5VvOjn1fOc11nXNXPVBOcLhlNsd4X
+ AwxOLNiQDNxkSxZUzdN1osUdGOUwXcSju9ZlB0xkkSUMAdnfND0/bQcYCu6+ur
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--LPOHRHsya1dhKKIr0h66B0L8xWL5DL0RA
+Content-Type: multipart/mixed; boundary="s1YQM9Szik5nxecVZH3kdYSoimIUCObGK";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: fdmanana@kernel.org, linux-btrfs@vger.kernel.org
+Message-ID: <f42a7622-0ebb-f431-c484-cb3c4013b7a7@gmx.com>
+Subject: Re: [PATCH] Btrfs: fix deadlock when enabling quotas due to
+ concurrent snapshot creation
+References: <20181119094823.27346-1-fdmanana@kernel.org>
+In-Reply-To: <20181119094823.27346-1-fdmanana@kernel.org>
+
+--s1YQM9Szik5nxecVZH3kdYSoimIUCObGK
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
 
-On 19.11.18 г. 11:48 ч., fdmanana@kernel.org wrote:
+
+On 2018/11/19 =E4=B8=8B=E5=8D=885:48, fdmanana@kernel.org wrote:
 > From: Filipe Manana <fdmanana@suse.com>
-> 
-> If the quota enable and snapshot creation ioctls are called concurrently
-> we can get into a deadlock where the task enabling quotas will deadlock
+>=20
+> If the quota enable and snapshot creation ioctls are called concurrentl=
+y
+> we can get into a deadlock where the task enabling quotas will deadlock=
+
 > on the fs_info->qgroup_ioctl_lock mutex because it attempts to lock it
 > twice. The following time diagram shows how this happens.
-> 
+>=20
 >            CPU 0                                    CPU 1
-> 
+>=20
 >  btrfs_ioctl()
 >   btrfs_ioctl_quota_ctl()
 >    btrfs_quota_enable()
 >     mutex_lock(fs_info->qgroup_ioctl_lock)
 >     btrfs_start_transaction()
-> 
+>=20
 >                                              btrfs_ioctl()
->                                               btrfs_ioctl_snap_create_v2
+>                                               btrfs_ioctl_snap_create_v=
+2
 >                                                create_snapshot()
->                                                 --> adds snapshot to the
->                                                     list pending_snapshots
+>                                                 --> adds snapshot to th=
+e
+>                                                     list pending_snapsh=
+ots
 >                                                     of the current
 >                                                     transaction
-> 
+>=20
 >     btrfs_commit_transaction()
 >      create_pending_snapshots()
 >        create_pending_snapshot()
@@ -122,56 +143,70 @@ On 19.11.18 г. 11:48 ч., fdmanana@kernel.org wrote:
 > 	    --> deadlock, mutex already locked
 > 	        by this task at
 > 		btrfs_quota_enable()
-> 
-> So fix this by adding a flag to the transaction handle that signals if the
-> transaction is being used for enabling quotas (only seen by the task doing
-> it) and do not lock the mutex qgroup_ioctl_lock at btrfs_qgroup_inherit()
-> if the transaction handle corresponds to the one being used to enable the
+
+The backtrace looks valid.
+
+>=20
+> So fix this by adding a flag to the transaction handle that signals if =
+the
+> transaction is being used for enabling quotas (only seen by the task do=
+ing
+> it) and do not lock the mutex qgroup_ioctl_lock at btrfs_qgroup_inherit=
+()
+> if the transaction handle corresponds to the one being used to enable t=
+he
 > quotas.
-> 
-> Fixes: 6426c7ad697d ("btrfs: qgroup: Fix qgroup accounting when creating snapshot")
+>=20
+> Fixes: 6426c7ad697d ("btrfs: qgroup: Fix qgroup accounting when creatin=
+g snapshot")
 > Signed-off-by: Filipe Manana <fdmanana@suse.com>
 > ---
 >  fs/btrfs/qgroup.c      | 10 ++++++++--
 >  fs/btrfs/transaction.h |  1 +
 >  2 files changed, 9 insertions(+), 2 deletions(-)
-> 
+>=20
 > diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
 > index d4917c0cddf5..3aec3bfa3d70 100644
 > --- a/fs/btrfs/qgroup.c
 > +++ b/fs/btrfs/qgroup.c
-> @@ -908,6 +908,7 @@ int btrfs_quota_enable(struct btrfs_fs_info *fs_info)
->  		trans = NULL;
+> @@ -908,6 +908,7 @@ int btrfs_quota_enable(struct btrfs_fs_info *fs_inf=
+o)
+>  		trans =3D NULL;
 >  		goto out;
 >  	}
-> +	trans->enabling_quotas = true;
->  
->  	fs_info->qgroup_ulist = ulist_alloc(GFP_KERNEL);
+> +	trans->enabling_quotas =3D true;
+
+Should we put enabling_quotas bit into btrfs_transaction instead of
+btrfs_trans_handle?
+
+Isn't it possible to have different trans handle pointed to the same
+transaction?
+
+And I'm not really sure about the naming "enabling_quotas".
+What about "quota_ioctl_mutex_hold"? (Well, this also sounds awful)
+
+Thanks,
+Qu
+
+> =20
+>  	fs_info->qgroup_ulist =3D ulist_alloc(GFP_KERNEL);
 >  	if (!fs_info->qgroup_ulist) {
-> @@ -2250,7 +2251,11 @@ int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans, u64 srcid,
->  	u32 level_size = 0;
+> @@ -2250,7 +2251,11 @@ int btrfs_qgroup_inherit(struct btrfs_trans_hand=
+le *trans, u64 srcid,
+>  	u32 level_size =3D 0;
 >  	u64 nums;
->  
+> =20
 > -	mutex_lock(&fs_info->qgroup_ioctl_lock);
 > +	if (trans->enabling_quotas)
 > +		lockdep_assert_held(&fs_info->qgroup_ioctl_lock);
 > +	else
 > +		mutex_lock(&fs_info->qgroup_ioctl_lock);
 > +
-
-nit: That's a bit ugly for my taste, but I don't think the 
-alternative is any better: 
-
-ASSERT((trans->enabling_quotas && !lockdep_assert_held(&fs_info->qgroup_ioctl_lock)) || !trans->enabling_quotas)
-
-if (!trans->enabling_quotas)
-	mutex_lock(...)
-
-
 >  	if (!test_bit(BTRFS_FS_QUOTA_ENABLED, &fs_info->flags))
 >  		goto out;
->  
-> @@ -2413,7 +2418,8 @@ int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans, u64 srcid,
+> =20
+> @@ -2413,7 +2418,8 @@ int btrfs_qgroup_inherit(struct btrfs_trans_handl=
+e *trans, u64 srcid,
 >  unlock:
 >  	spin_unlock(&fs_info->qgroup_lock);
 >  out:
@@ -180,7 +215,7 @@ if (!trans->enabling_quotas)
 > +		mutex_unlock(&fs_info->qgroup_ioctl_lock);
 >  	return ret;
 >  }
->  
+> =20
 > diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
 > index 703d5116a2fc..a5553a1dee30 100644
 > --- a/fs/btrfs/transaction.h
@@ -193,4 +228,26 @@ if (!trans->enabling_quotas)
 >  	struct btrfs_root *root;
 >  	struct btrfs_fs_info *fs_info;
 >  	struct list_head new_bgs;
-> 
+>=20
+
+
+--s1YQM9Szik5nxecVZH3kdYSoimIUCObGK--
+
+--LPOHRHsya1dhKKIr0h66B0L8xWL5DL0RA
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlvymesACgkQwj2R86El
+/qgMBQgAhwA/QBypc7ESM/qv5abLICbCCfIlpkkQmblHzjA9DxOrAWVYh1PshTZA
+a1LOPbgAnl47JYeDLSqS/el0FsN9RUBDttaDts73GcT+F76Qpt0/uokt9LD0TpMN
+D6hfSwyz8Qh53d0P2urvOeUpvtV0fsNIAyjo42xU6UuTvPOE6GsYSLxFK8NSWUK2
+sLOY7j0VoQwD8UCq7pA6y3W9khRH91d7u8ebjo3g79SAasax23PdbR7fALejznX8
+TD+30aqbVCquak1SDU0oyWgmVWs2WYkrM3WxSwzd6KZcxD9TgNQ9GgwK/AVsKx8l
+u7LtLQOPQhUfwk01ZSyUAyLVDWNuBw==
+=JiLt
+-----END PGP SIGNATURE-----
+
+--LPOHRHsya1dhKKIr0h66B0L8xWL5DL0RA--

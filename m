@@ -2,359 +2,296 @@ Return-Path: <SRS0=YqDN=N6=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.6 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
+X-Spam-Status: No, score=-0.8 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
+	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2BBE4C43441
-	for <linux-btrfs@archiver.kernel.org>; Mon, 19 Nov 2018 19:21:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A19E1C43441
+	for <linux-btrfs@archiver.kernel.org>; Mon, 19 Nov 2018 19:42:18 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D1F1920831
-	for <linux-btrfs@archiver.kernel.org>; Mon, 19 Nov 2018 19:21:01 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=fb.com header.i=@fb.com header.b="acvwKO9r"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org D1F1920831
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=fb.com
+	by mail.kernel.org (Postfix) with ESMTP id 5F8AA20851
+	for <linux-btrfs@archiver.kernel.org>; Mon, 19 Nov 2018 19:42:18 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 5F8AA20851
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=gmx.de
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726472AbeKTFqB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 20 Nov 2018 00:46:01 -0500
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:39438 "EHLO
-        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1725987AbeKTFqB (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 20 Nov 2018 00:46:01 -0500
-Received: from pps.filterd (m0109334.ppops.net [127.0.0.1])
-        by mx0a-00082601.pphosted.com (8.16.0.22/8.16.0.22) with SMTP id wAJJIBTr020351
-        for <linux-btrfs@vger.kernel.org>; Mon, 19 Nov 2018 11:20:58 -0800
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=fb.com; h=from : to : cc : subject
- : date : message-id : in-reply-to : references : mime-version :
- content-type; s=facebook; bh=FJ5LlOvESDI063mhJj62Yybpv3fWb6C88oAyDGXL3Z4=;
- b=acvwKO9rayV5piVeqcwUtYoDNgWqpusd+FbG3VrEOBVOLnol+pZXanjVdsSXAtLefyoV
- CsVRDGV6HfY9G0p+MbY/sQet1CQ8VCEQm2OMbSVSZyPCzKB+Yqn2ACFM4hKRFUavA4Qc
- oD8fsxZCaNYB5qdnpozJt7QwTuTLAuZiAvE= 
-Received: from mail.thefacebook.com ([199.201.64.23])
-        by mx0a-00082601.pphosted.com with ESMTP id 2nv1yq0av6-5
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-SHA384 bits=256 verify=NOT)
-        for <linux-btrfs@vger.kernel.org>; Mon, 19 Nov 2018 11:20:58 -0800
-Received: from mx-out.facebook.com (2620:10d:c081:10::13) by
- mail.thefacebook.com (2620:10d:c081:35::128) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA) id 15.1.1531.3;
- Mon, 19 Nov 2018 11:20:57 -0800
-Received: by devvm3802.prn3.facebook.com (Postfix, from userid 32154)
-        id 6D56F3A689E1; Mon, 19 Nov 2018 11:20:53 -0800 (PST)
-Smtp-Origin-Hostprefix: devvm
-From:   Nick Terrell <terrelln@fb.com>
-Smtp-Origin-Hostname: devvm3802.prn3.facebook.com
-To:     Nick Terrell <terrelln@fb.com>
-CC:     David Sterba <dsterba@suse.cz>, <kernel-team@fb.com>,
-        <linux-btrfs@vger.kernel.org>, <grub-devel@gnu.org>,
-        Daniel Kiper <dkiper@net-space.pl>
-Smtp-Origin-Cluster: prn3c11
-Subject: [PATCH v7 2/2] btrfs: Add zstd support to grub btrfs
-Date:   Mon, 19 Nov 2018 11:20:08 -0800
-Message-ID: <20181119192008.3496427-3-terrelln@fb.com>
-X-Mailer: git-send-email 2.17.1
-In-Reply-To: <20181119192008.3496427-1-terrelln@fb.com>
-References: <20181119192008.3496427-1-terrelln@fb.com>
-X-FB-Internal: Safe
+        id S1730139AbeKTGHX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 20 Nov 2018 01:07:23 -0500
+Received: from mout.gmx.net ([212.227.17.21]:50589 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1725963AbeKTGHW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 20 Nov 2018 01:07:22 -0500
+Received: from chaos-desktop.localnet ([188.105.14.225]) by mail.gmx.com
+ (mrgmx101 [212.227.17.168]) with ESMTPSA (Nemesis) id
+ 0MNdxu-1gM4HE0woM-007Ftk for <linux-btrfs@vger.kernel.org>; Mon, 19 Nov 2018
+ 20:42:14 +0100
+From:   Stephan Olbrich <stephanolbrich@gmx.de>
+To:     linux-btrfs@vger.kernel.org
+Subject: Re: bad tree block start, want 705757184 have 82362368
+Date:   Mon, 19 Nov 2018 20:42:13 +0100
+Message-ID: <12062768.DAp5qtROXe@chaos-desktop>
+In-Reply-To: <8262543f-167a-6157-348a-74bb71079bf4@oracle.com>
+References: <1758973.r4I5FPff6i@chaos-desktop> <32822632.LIG5tvG1AF@chaos-desktop> <8262543f-167a-6157-348a-74bb71079bf4@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain
-X-Proofpoint-Virus-Version: vendor=fsecure engine=2.50.10434:,, definitions=2018-11-19_07:,,
- signatures=0
-X-Proofpoint-Spam-Reason: safe
-X-FB-Internal: Safe
+Content-Transfer-Encoding: 7Bit
+Content-Type: text/plain; charset="us-ascii"
+X-Provags-ID: V03:K1:N1qlDj8sEDAUj5WKa9yWvlF1K3dLSJzxuZGMuBZ0w5ibZN1MAMx
+ j+YcrQ5cxqywWALM+FbFcxvxhqHLtB9KJzuqToV3CY8heT0TJ9gHnU4Z/EyQUfrVChePx/b
+ GvWFKrxgXTsfPdkpTTckZ6iBqbl4veT0ifbrOgvELpm9ivVNmmCH6kKghxumGUeKbw7DCcA
+ QX2y1k/klhL6eRoWO3S0A==
+X-UI-Out-Filterresults: notjunk:1;V01:K0:aEKR+TA9STk=:ikBXXlLqB7awI+4gwtC0jk
+ Nyh84ONVDxr1Sr/+mX+0EBlTTxdkIjrJX5nrDfuVjnJU3ZBP3SvV3+Rq2tOQtq+3h/88GFQtB
+ OBRYPhmtviFjrQzT1wa3+RxW7ACbKONTixRPIOHTL69cR26UJFMrs/qJ/x/LvlbD4+WKYm4wS
+ HEsoeNc6ElcJCb7BkDjyQOUyJr2w0iX5iQxc9PtaGwKEqDmYVjKGdixQ8bbqHU6qp3cByzTvG
+ tN/7pBiy9DPczGLhWnPQQ8FxRfWF/PPHiMkQJ1BL+2qvJDZPCPJ0iaYxd47C0194fPWXiFvuz
+ 4Poq2iS8F+cda+jS+x20PLTqP3G2J9LLgF6bLrVcH+vs8Go/5nAdxDCaSBe+2Lv6/FyD+mgSU
+ FYMXB1cSW5kYjbIXFVPaDTZOOLIccIp3ZM45auFwvIQbF5U2Z8xtCHUGKWWlnu+Rz6caNBepl
+ OyZhL4wy6IAM+qCqjQcut81DKwENHnubjxkw0kHtRNuYU8ZZ/O7viXuGyVAZcTmu6AeMrx7Co
+ FsVsXgQja8PQMOghZkgRq9hLpZH1X48DzLmlcS3OBxHN2O//R2TfrG3Yi+pECKUI53uwkqLZz
+ VdKviNSq9pMEL9PQ7F/+febgulbq2QpodKVtu9KalZ4IZgZq1aBriMDZo16l9TST19Lc9EEha
+ +KCUtayrvF9ziFJDjfKryK2ZQFUBw1uEYPY4N9y+tSMNuISg0MuhRgj2EY5rGLy58A9Hvxxpt
+ /yihnzlsGlo5luemnpgZt2LghHOoiWf/JDuzQNKgEUFyXxWgYzrYOHxe8SIPlW/9yTrzaz4w1
+ YDEjTcluZoEGikAFqhHpxHgnGUd/791E6ljEhOgai9cWLg7S+dEidQrM18SmcJqtebEJeAh/F
+ p1oPUVNpqbAT422ULWRTiRKEaSsGO7cqq8twDbLkgEJKANwelTJkFwVjTFAWgZhbEifLcXCFB
+ h++z+ALB8nA==
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-- Adds zstd support to the btrfs module.
-- Adds a test case for btrfs zstd support.
-- Changes top_srcdir to srcdir in the btrfs module's lzo include
-  following comments from Daniel Kiper about the zstd include.
+Am Sonntag, 18. November 2018, 14:31:36 CET schrieb Anand Jain:
+> On 11/18/2018 03:56 PM, Stephan Olbrich wrote:
+> > Am Sonntag, 18. November 2018, 01:30:14 CET schrieb Qu Wenruo:
+> >>>>> Late on I got the same errors for my /home partition (on the same
+> >>>>> drive)
+> >>>>> as well. I have snapshots of all partitions on another drive made by
+> >>>>> btrbk. To get a working system, I made new (rw) snapshots of the most
+> >>>>> recent backup and setup grub and fstab, so my system would boot from
+> >>>>> the
+> >>>>> other drive. Unfortunately now I got the "bad tree block start" error
+> >>>>> again at least once in dmesg but I didn't save it and it's not in
+> >>>>> syslog
+> >>>>> 
+> >>>>> :-( What I remember is, that it was followed by other btrfs error
+> >>>>> 
+> >>>>> messages saying something about correcting something. And the
+> >>>>> filesystem
+> >>>>> was still read/write this time.
+> >>>>> At the moment I can't reproduce it.
+> > 
+> > Today it happend again (sdb is my backup drive, which is my main drive at
+> > the moment): [  286.325857] BTRFS error (device sdb1): bad tree block
+> > start, want 787719208960 have 11268016545161247416 [  286.363245] BTRFS
+> > info (device sdb1): read error corrected: ino 0 off 787719208960 (dev
+> > /dev/sdb1 sector 1243815072) [  286.364087] BTRFS info (device sdb1):
+> > read error corrected: ino 0 off 787719213056 (dev /dev/sdb1 sector
+> > 1243815080) [  286.425946] BTRFS info (device sdb1): read error
+> > corrected: ino 0 off 787719217152 (dev /dev/sdb1 sector 1243815088) [ 
+> > 286.427530] BTRFS info (device sdb1): read error corrected: ino 0 off
+> > 787719221248 (dev /dev/sdb1 sector 1243815096)
+>   Was there any hardware issues? How about the following data from the
+> system..
+> 
+>    btrfs fi df <mnt>
+>    btrfs dev stat <mnt>
 
-Tested on Ubuntu-18.04 with a btrfs /boot partition with and without zstd
-compression. A test case was also added to the test suite that fails before
-the patch, and passes after.
+I didn't have any hardware issues (that I know of).
 
-Signed-off-by: Nick Terrell <terrelln@fb.com>
-Reviewed-by: Daniel Kiper <daniel.kiper@oracle.com>
----
-v1 -> v2:
-- Fix comments from Daniel Kiper.
+$ btrfs fi df /
+Data, single: total=841.00GiB, used=791.92GiB                                                                                                                                                              
+System, DUP: total=8.00MiB, used=112.00KiB                                                                                                                                                                 
+System, single: total=4.00MiB, used=0.00B                                                                                                                                                                  
+Metadata, DUP: total=10.50GiB, used=8.44GiB                                                                                                                                                                
+Metadata, single: total=8.00MiB, used=0.00B                                                                                                                                                                
+GlobalReserve, single: total=512.00MiB, used=0.00B
 
-v2 -> v3:
-- Use grub_error() to set grub_errno in grub_btrfs_zstd_decompress().
-- Fix style and formatting comments.
+$ btrfs dev stat /                                                                                                                                                             
+[/dev/sdb1].write_io_errs    0                                                                                                                                                                             
+[/dev/sdb1].read_io_errs     0                                                                                                                                                                             
+[/dev/sdb1].flush_io_errs    0                                                                                                                                                                             
+[/dev/sdb1].corruption_errs  0                                                                                                                                                                             
+[/dev/sdb1].generation_errs  0 
 
-v3 -> v4:
-- Use attribute unused.
+Also the numbers in the error messages keep changing:
+[ 1577.302959] BTRFS error (device sdb1): bad tree block start, want 788086226944 have 411602213549769407
+[ 1577.369083] BTRFS info (device sdb1): read error corrected: ino 0 off 788086226944 (dev /dev/sdb1 sector 1244531904)
+[ 1577.428139] BTRFS info (device sdb1): read error corrected: ino 0 off 788086231040 (dev /dev/sdb1 sector 1244531912)
+[ 1577.429091] BTRFS info (device sdb1): read error corrected: ino 0 off 788086235136 (dev /dev/sdb1 sector 1244531920)
+[ 1577.478249] BTRFS info (device sdb1): read error corrected: ino 0 off 788086239232 (dev /dev/sdb1 sector 1244531928)
 
-v4 -> v5:
-- Add zstd's module.c to Makefile.util.def.
-- Clarify some error logging.
-- Explain why I changed lzo's include.
+Thanks,
+Stephan
 
-v5 -> v6:
-- Formatting changes (no functional changes).
+> Thanks, Anand
+> 
+> >>>>> Is there any way to find out, which files are affected by the errors
+> >>>>> above?
+> >>>> 
+> >>>> No files are affected, but an essential tree, extent tree, is
+> >>>> corrupted.
+> >>>> 
+> >>>> Normally this may prevent RW mount, and even it mounts it can still
+> >>>> cause problem when doing any write.
+> >>>> It could even prevent RO mount if the corrupted leaf contains block
+> >>>> group item.
+> >>>> 
+> >>>> But your data should be OK if there is no other corruption, and in that
+> >>>> case btrfs-restore should work well.
+> >>>> 
+> >>>>> I don't really trust the data on the drive I'm using at the
+> >>>>> moment, as it has shown errors as well, but I have a less current
+> >>>>> backup
+> >>>>> on yet another drive but at it is a few weeks old, I don't want to use
+> >>>>> it
+> >>>>> to setup the system on the SSD again, but just copy the relevant files
+> >>>>> if
+> >>>>> possible. Or is it possible to repair the original file system?
+> >>>> 
+> >>>> At least we need "btrfs check" output.
+> >>> 
+> >>> I updated btrfs-progs and run btrfs check for / and /home
+> >>> No errors are found on / (sda2), but there are errors on /home ??
+> >>> 
+> >>> $ btrfs --version
+> >>> btrfs-progs v4.19
+> >>> 
+> >>> $ btrfs check /dev/sda2
+> >>> Opening filesystem to check...
+> >>> Checking filesystem on /dev/sda2
+> >>> UUID: 80368989-ffa8-463c-98fb-fe2e28ca7bf3
+> >>> [1/7] checking root items
+> >>> [2/7] checking extents
+> >>> [3/7] checking free space cache
+> >>> [4/7] checking fs roots
+> >>> [5/7] checking only csums items (without verifying data)
+> >>> [6/7] checking root refs
+> >>> [7/7] checking quota groups skipped (not enabled on this FS)
+> >>> found 64816218112 bytes used, no error found
+> >>> total csum bytes: 59518732
+> >>> total tree bytes: 2180268032
+> >>> total fs tree bytes: 1965965312
+> >>> total extent tree bytes: 123289600
+> >>> btree space waste bytes: 478665777
+> >>> file data blocks allocated: 151083261952
+> >>> 
+> >>>   referenced 76879990784
+> >> 
+> >> This fs is completely fine, including your data.
+> >> 
+> >>> $ btrfs check /dev/sda4
+> >>> Opening filesystem to check...
+> >>> Checking filesystem on /dev/sda4
+> >>> UUID: 81c38df8-b7f9-412c-8c88-cfde8db68eb1
+> >>> [1/7] checking root items
+> >>> [2/7] checking extents
+> >>> [3/7] checking free space cache
+> >>> [4/7] checking fs roots
+> >>> root 257 inode 7970563 errors 100, file extent discount
+> >>> 
+> >>> Found file extent holes:
+> >>>          start: 0, len: 20480
+> >>> 
+> >>> root 257 inode 7970564 errors 100, file extent discount
+> >>> 
+> >>> Found file extent holes:
+> >>>          start: 0, len: 77824
+> >>> 
+> >>> ERROR: errors found in fs roots
+> >> 
+> >> These are just minor errors, won't even causing any data mismatch.
+> >> 
+> >> So all your fses should be mostly OK.
+> >> 
+> >> Would you please try to use v4.19-rc* to see if it changes anything?
+> > 
+> > v4.19-rc1 is the only rc I found, but that is older than v4.19, right?
+> > Anyway, here is the output:
+> > 
+> > $ btrfs --version
+> > btrfs-progs v4.19-rc1
+> > 
+> > $ btrfs check /dev/sda2
+> > Opening filesystem to check...
+> > Checking filesystem on /dev/sda2
+> > UUID: 80368989-ffa8-463c-98fb-fe2e28ca7bf3
+> > [1/7] checking root items
+> > [2/7] checking extents
+> > [3/7] checking free space cache
+> > [4/7] checking fs roots
+> > [5/7] checking only csums items (without verifying data)
+> > [6/7] checking root refs
+> > [7/7] checking quota groups skipped (not enabled on this FS)
+> > found 64816218112 bytes used, no error found
+> > total csum bytes: 59518732
+> > total tree bytes: 2180268032
+> > total fs tree bytes: 1965965312
+> > total extent tree bytes: 123289600
+> > btree space waste bytes: 478665777
+> > file data blocks allocated: 151083261952
+> > 
+> >   referenced 76879990784
+> > 
+> > $ btrfs check /dev/sda4
+> > Opening filesystem to check...
+> > Checking filesystem on /dev/sda4
+> > UUID: 81c38df8-b7f9-412c-8c88-cfde8db68eb1
+> > [1/7] checking root items
+> > [2/7] checking extents
+> > [3/7] checking free space cache
+> > [4/7] checking fs roots
+> > root 257 inode 7970563 errors 100, file extent discount
+> > 
+> > Found file extent holes:
+> >          start: 0, len: 20480
+> > 
+> > root 257 inode 7970564 errors 100, file extent discount
+> > 
+> > Found file extent holes:
+> >          start: 0, len: 77824
+> > 
+> > ERROR: errors found in fs roots
+> > found 303386652672 bytes used, error(s) found
+> > total csum bytes: 289501272
+> > total tree bytes: 2336227328
+> > total fs tree bytes: 1766473728
+> > total extent tree bytes: 202014720
+> > btree space waste bytes: 519245278
+> > file data blocks allocated: 6851730792448
+> > 
+> >   referenced 533348069376
+> > 
+> > Thanks,
+> > Stephan
+> > 
+> >> Thanks,
+> >> Qu
+> >> 
+> >>> found 303386652672 bytes used, error(s) found
+> >>> total csum bytes: 289501272
+> >>> total tree bytes: 2336227328
+> >>> total fs tree bytes: 1766473728
+> >>> total extent tree bytes: 202014720
+> >>> btree space waste bytes: 519245278
+> >>> file data blocks allocated: 6851730792448
+> >>> 
+> >>>   referenced 533348069376
+> >>> 
+> >>> Thanks,
+> >>> Stephan
+> >>> 
+> >>>>> Some information about my system:
+> >>>>> Kubuntu 18.04
+> >>>>> Kernel 4.19.1 when the problem occured, now 4.19.2
+> >>>>> btrfs-tools 4.15.1
+> >>>> 
+> >>>> And "btrfs check" should be executed using latest version.
+> >>>> 
+> >>>> Thanks,
+> >>>> Qu
+> >>>> 
+> >>>>> Regards,
+> >>>>> Stephan
 
-v6 -> v7:
-- 2 spaces as first indent, not 4.
 
- Makefile.util.def            |  11 +++-
- grub-core/Makefile.core.def  |   2 +-
- grub-core/fs/btrfs.c         | 119 ++++++++++++++++++++++++++++++++++-
- tests/btrfs_test.in          |   1 +
- tests/util/grub-fs-tester.in |   2 +-
- 5 files changed, 131 insertions(+), 4 deletions(-)
 
-diff --git a/Makefile.util.def b/Makefile.util.def
-index 9ae45f351..a0495a87f 100644
---- a/Makefile.util.def
-+++ b/Makefile.util.def
-@@ -54,7 +54,7 @@ library = {
- library = {
-   name = libgrubmods.a;
-   cflags = '-fno-builtin -Wno-undef';
--  cppflags = '-I$(top_srcdir)/grub-core/lib/minilzo -I$(srcdir)/grub-core/lib/xzembed -DMINILZO_HAVE_CONFIG_H';
-+  cppflags = '-I$(srcdir)/grub-core/lib/minilzo -I$(srcdir)/grub-core/lib/xzembed -I$(srcdir)/grub-core/lib/zstd -DMINILZO_HAVE_CONFIG_H';
 
-   common_nodist = grub_script.tab.c;
-   common_nodist = grub_script.yy.c;
-@@ -165,6 +165,15 @@ library = {
-   common = grub-core/lib/xzembed/xz_dec_bcj.c;
-   common = grub-core/lib/xzembed/xz_dec_lzma2.c;
-   common = grub-core/lib/xzembed/xz_dec_stream.c;
-+  common = grub-core/lib/zstd/debug.c;
-+  common = grub-core/lib/zstd/entropy_common.c;
-+  common = grub-core/lib/zstd/error_private.c;
-+  common = grub-core/lib/zstd/fse_decompress.c;
-+  common = grub-core/lib/zstd/huf_decompress.c;
-+  common = grub-core/lib/zstd/module.c;
-+  common = grub-core/lib/zstd/xxhash.c;
-+  common = grub-core/lib/zstd/zstd_common.c;
-+  common = grub-core/lib/zstd/zstd_decompress.c;
- };
-
- program = {
-diff --git a/grub-core/Makefile.core.def b/grub-core/Makefile.core.def
-index 829e7bb57..2d75c4daf 100644
---- a/grub-core/Makefile.core.def
-+++ b/grub-core/Makefile.core.def
-@@ -1291,7 +1291,7 @@ module = {
-   common = fs/btrfs.c;
-   common = lib/crc.c;
-   cflags = '$(CFLAGS_POSIX) -Wno-undef';
--  cppflags = '-I$(srcdir)/lib/posix_wrap -I$(srcdir)/lib/minilzo -DMINILZO_HAVE_CONFIG_H';
-+  cppflags = '-I$(srcdir)/lib/posix_wrap -I$(srcdir)/lib/minilzo -I$(srcdir)/lib/zstd -DMINILZO_HAVE_CONFIG_H';
- };
-
- module = {
-diff --git a/grub-core/fs/btrfs.c b/grub-core/fs/btrfs.c
-index cac9ef588..3d6d11ec5 100644
---- a/grub-core/fs/btrfs.c
-+++ b/grub-core/fs/btrfs.c
-@@ -17,6 +17,14 @@
-  *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>.
-  */
-
-+/*
-+ * Tell zstd to expose functions that aren't part of the stable API, which
-+ * aren't safe to use when linking against a dynamic library. We vendor in a
-+ * specific zstd version, so we know what we're getting. We need these unstable
-+ * functions to provide our own allocator, which uses grub_malloc(), to zstd.
-+ */
-+#define ZSTD_STATIC_LINKING_ONLY
-+
- #include <grub/err.h>
- #include <grub/file.h>
- #include <grub/mm.h>
-@@ -27,6 +35,7 @@
- #include <grub/lib/crc.h>
- #include <grub/deflate.h>
- #include <minilzo.h>
-+#include <zstd.h>
- #include <grub/i18n.h>
- #include <grub/btrfs.h>
- #include <grub/crypto.h>
-@@ -47,6 +56,9 @@ GRUB_MOD_LICENSE ("GPLv3+");
- #define GRUB_BTRFS_LZO_BLOCK_MAX_CSIZE (GRUB_BTRFS_LZO_BLOCK_SIZE + \
- 				     (GRUB_BTRFS_LZO_BLOCK_SIZE / 16) + 64 + 3)
-
-+#define ZSTD_BTRFS_MAX_WINDOWLOG 17
-+#define ZSTD_BTRFS_MAX_INPUT     (1 << ZSTD_BTRFS_MAX_WINDOWLOG)
-+
- typedef grub_uint8_t grub_btrfs_checksum_t[0x20];
- typedef grub_uint16_t grub_btrfs_uuid_t[8];
-
-@@ -217,6 +229,7 @@ struct grub_btrfs_extent_data
- #define GRUB_BTRFS_COMPRESSION_NONE 0
- #define GRUB_BTRFS_COMPRESSION_ZLIB 1
- #define GRUB_BTRFS_COMPRESSION_LZO  2
-+#define GRUB_BTRFS_COMPRESSION_ZSTD 3
-
- #define GRUB_BTRFS_OBJECT_ID_CHUNK 0x100
-
-@@ -1216,6 +1229,96 @@ grub_btrfs_read_inode (struct grub_btrfs_data *data,
-   return grub_btrfs_read_logical (data, elemaddr, inode, sizeof (*inode), 0);
- }
-
-+static void *grub_zstd_malloc (void *state __attribute__((unused)), size_t size)
-+{
-+  return grub_malloc (size);
-+}
-+
-+static void grub_zstd_free (void *state __attribute__((unused)), void *address)
-+{
-+  return grub_free (address);
-+}
-+
-+static ZSTD_customMem grub_zstd_allocator (void)
-+{
-+  ZSTD_customMem allocator;
-+
-+  allocator.customAlloc = &grub_zstd_malloc;
-+  allocator.customFree = &grub_zstd_free;
-+  allocator.opaque = NULL;
-+
-+  return allocator;
-+}
-+
-+static grub_ssize_t
-+grub_btrfs_zstd_decompress (char *ibuf, grub_size_t isize, grub_off_t off,
-+			    char *obuf, grub_size_t osize)
-+{
-+  void *allocated = NULL;
-+  char *otmpbuf = obuf;
-+  grub_size_t otmpsize = osize;
-+  ZSTD_DCtx *dctx = NULL;
-+  grub_size_t zstd_ret;
-+  grub_ssize_t ret = -1;
-+
-+  /*
-+   * Zstd will fail if it can't fit the entire output in the destination
-+   * buffer, so if osize isn't large enough, allocate a temporary buffer.
-+   */
-+  if (otmpsize < ZSTD_BTRFS_MAX_INPUT)
-+    {
-+      allocated = grub_malloc (ZSTD_BTRFS_MAX_INPUT);
-+      if (!allocated)
-+	{
-+	  grub_error (GRUB_ERR_OUT_OF_MEMORY, "failed allocate a zstd buffer");
-+	  goto err;
-+	}
-+      otmpbuf = (char *) allocated;
-+      otmpsize = ZSTD_BTRFS_MAX_INPUT;
-+    }
-+
-+  /* Create the ZSTD_DCtx. */
-+  dctx = ZSTD_createDCtx_advanced (grub_zstd_allocator ());
-+  if (!dctx)
-+    {
-+      /* ZSTD_createDCtx_advanced() only fails if it is out of memory. */
-+      grub_error (GRUB_ERR_OUT_OF_MEMORY, "failed to create a zstd context");
-+      goto err;
-+    }
-+
-+  /*
-+   * Get the real input size, there may be junk at the
-+   * end of the frame.
-+   */
-+  isize = ZSTD_findFrameCompressedSize (ibuf, isize);
-+  if (ZSTD_isError (isize))
-+    {
-+      grub_error (GRUB_ERR_BAD_COMPRESSED_DATA, "zstd data corrupted");
-+      goto err;
-+    }
-+
-+  /* Decompress and check for errors. */
-+  zstd_ret = ZSTD_decompressDCtx (dctx, otmpbuf, otmpsize, ibuf, isize);
-+  if (ZSTD_isError (zstd_ret))
-+    {
-+      grub_error (GRUB_ERR_BAD_COMPRESSED_DATA, "zstd data corrupted");
-+      goto err;
-+    }
-+
-+  /*
-+   * Move the requested data into the obuf. obuf may be equal
-+   * to otmpbuf, which is why grub_memmove() is required.
-+   */
-+  grub_memmove (obuf, otmpbuf + off, osize);
-+  ret = osize;
-+
-+err:
-+  grub_free (allocated);
-+  ZSTD_freeDCtx (dctx);
-+
-+  return ret;
-+}
-+
- static grub_ssize_t
- grub_btrfs_lzo_decompress(char *ibuf, grub_size_t isize, grub_off_t off,
- 			  char *obuf, grub_size_t osize)
-@@ -1391,7 +1494,8 @@ grub_btrfs_extent_read (struct grub_btrfs_data *data,
-
-       if (data->extent->compression != GRUB_BTRFS_COMPRESSION_NONE
- 	  && data->extent->compression != GRUB_BTRFS_COMPRESSION_ZLIB
--	  && data->extent->compression != GRUB_BTRFS_COMPRESSION_LZO)
-+	  && data->extent->compression != GRUB_BTRFS_COMPRESSION_LZO
-+	  && data->extent->compression != GRUB_BTRFS_COMPRESSION_ZSTD)
- 	{
- 	  grub_error (GRUB_ERR_NOT_IMPLEMENTED_YET,
- 		      "compression type 0x%x not supported",
-@@ -1431,6 +1535,15 @@ grub_btrfs_extent_read (struct grub_btrfs_data *data,
- 		  != (grub_ssize_t) csize)
- 		return -1;
- 	    }
-+	  else if (data->extent->compression == GRUB_BTRFS_COMPRESSION_ZSTD)
-+	    {
-+	      if (grub_btrfs_zstd_decompress (data->extent->inl, data->extsize -
-+					      ((grub_uint8_t *) data->extent->inl
-+					       - (grub_uint8_t *) data->extent),
-+					      extoff, buf, csize)
-+		  != (grub_ssize_t) csize)
-+		return -1;
-+	    }
- 	  else
- 	    grub_memcpy (buf, data->extent->inl + extoff, csize);
- 	  break;
-@@ -1468,6 +1581,10 @@ grub_btrfs_extent_read (struct grub_btrfs_data *data,
- 		ret = grub_btrfs_lzo_decompress (tmp, zsize, extoff
- 				    + grub_le_to_cpu64 (data->extent->offset),
- 				    buf, csize);
-+	      else if (data->extent->compression == GRUB_BTRFS_COMPRESSION_ZSTD)
-+		ret = grub_btrfs_zstd_decompress (tmp, zsize, extoff
-+				    + grub_le_to_cpu64 (data->extent->offset),
-+				    buf, csize);
- 	      else
- 		ret = -1;
-
-diff --git a/tests/btrfs_test.in b/tests/btrfs_test.in
-index 2b37ddd33..0c9bf3a68 100644
---- a/tests/btrfs_test.in
-+++ b/tests/btrfs_test.in
-@@ -18,6 +18,7 @@ fi
- "@builddir@/grub-fs-tester" btrfs
- "@builddir@/grub-fs-tester" btrfs_zlib
- "@builddir@/grub-fs-tester" btrfs_lzo
-+"@builddir@/grub-fs-tester" btrfs_zstd
- "@builddir@/grub-fs-tester" btrfs_raid0
- "@builddir@/grub-fs-tester" btrfs_raid1
- "@builddir@/grub-fs-tester" btrfs_single
-diff --git a/tests/util/grub-fs-tester.in b/tests/util/grub-fs-tester.in
-index ef65fbc93..bc14a05ca 100644
---- a/tests/util/grub-fs-tester.in
-+++ b/tests/util/grub-fs-tester.in
-@@ -629,7 +629,7 @@ for LOGSECSIZE in $(range "$MINLOGSECSIZE" "$MAXLOGSECSIZE" 1); do
- 		    ;;
- 		x"btrfs")
- 		    "mkfs.btrfs" -s $SECSIZE -L "$FSLABEL" "${MOUNTDEVICE}" ;;
--		x"btrfs_zlib" | x"btrfs_lzo")
-+		x"btrfs_zlib" | x"btrfs_lzo" | x"btrfs_zstd")
- 		    "mkfs.btrfs" -s $SECSIZE -L "$FSLABEL" "${MOUNTDEVICE}"
- 		    MOUNTOPTS="compress=${fs/btrfs_/},"
- 		    MOUNTFS="btrfs"
---
-2.17.1

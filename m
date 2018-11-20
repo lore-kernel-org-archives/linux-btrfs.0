@@ -7,60 +7,60 @@ X-Spam-Status: No, score=-10.6 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C7658C4161D
-	for <linux-btrfs@archiver.kernel.org>; Tue, 20 Nov 2018 11:56:47 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E2C50C4161D
+	for <linux-btrfs@archiver.kernel.org>; Tue, 20 Nov 2018 11:57:38 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9206820685
-	for <linux-btrfs@archiver.kernel.org>; Tue, 20 Nov 2018 11:56:47 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3B3AB20685
+	for <linux-btrfs@archiver.kernel.org>; Tue, 20 Nov 2018 11:56:53 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="XI77w8vd"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 9206820685
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="5G4X7zbk"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 3B3AB20685
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=oracle.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729382AbeKTWZc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 20 Nov 2018 17:25:32 -0500
-Received: from userp2130.oracle.com ([156.151.31.86]:58416 "EHLO
-        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728035AbeKTWZc (ORCPT
+        id S1729401AbeKTWZi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 20 Nov 2018 17:25:38 -0500
+Received: from aserp2120.oracle.com ([141.146.126.78]:58726 "EHLO
+        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728035AbeKTWZi (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 20 Nov 2018 17:25:32 -0500
-Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
-        by userp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id wAKBsMBj055896
-        for <linux-btrfs@vger.kernel.org>; Tue, 20 Nov 2018 11:56:45 GMT
+        Tue, 20 Nov 2018 17:25:38 -0500
+Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
+        by aserp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id wAKBscLY022118
+        for <linux-btrfs@vger.kernel.org>; Tue, 20 Nov 2018 11:56:51 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
  date : message-id : in-reply-to : references; s=corp-2018-07-02;
- bh=8YHcpIVCIAy5BG7ob35GErd6KnEqCmFYGQMax9uZlok=;
- b=XI77w8vdqlxbsPQNjT0nrOMnD4YCCncdYcMlh1N3C4pCSV0h2H76zmvbXsF/2Fzp2VHC
- T5i1mOfwD1/H/R8khEIhjM7xh4Vz6UioUi5R8uDhvw9OnEZzsH1DtdXaxBdfr44kz6Fj
- hmOJpJAXG3Xuv0rvrF6o1qhUSCO4Gs6OVqShGl81u43EjI1rie18O2yWUtDZF8g9wY3v
- IlHpElcT7X0OMdNfnW2iCBEuIH1fIfp3YUkVa5ihjHPNMTS45jW3AuK9UziVRBu3bEfR
- jgOH8uJx3vdzDSx/jij+76Ik3zxV5yRFi7A0HyvLmk+9UshBAgl9z47rlknEGlK3kX6W zw== 
+ bh=0OAMahhDgA+MvRF8B1G7Xg7R0Nph+XBO09v1jIL2gto=;
+ b=5G4X7zbk05R0OAoMU19SqH3XHBMy51YX3Xujnt/9KIgnjxjW/YnY2jl3DiMj1lGYMMte
+ XPYRYRdPtRQMWHErgY1mhJPXL/mOHk0OQ+6uqSoeJAicbRoMXyIpCbEB5I6ji7/s51dW
+ UzCR6ss2lDRiuyCEBBtlnqHa+Sh4bKC6n/CghZ8qGSGWQnoyM82MWUjhCOZ9f0xIgXiI
+ N3X61ZlXUXDW5RhflHYJa+F5MLHoYyjbrF3gG958qEwbDMRuFyj0rQZDK8KrGS2APl1F
+ cAmeRvpVeEscFpXOO3Cub6n59BW1mQeS6AeIv7VuaBo3P+zUe1fDzrMVPTLETbu8krIo ig== 
 Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
-        by userp2130.oracle.com with ESMTP id 2ntadtuh11-1
+        by aserp2120.oracle.com with ESMTP id 2ntaxq3fym-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Tue, 20 Nov 2018 11:56:44 +0000
+        for <linux-btrfs@vger.kernel.org>; Tue, 20 Nov 2018 11:56:50 +0000
 Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id wAKBuhBK022321
+        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id wAKBuj5s022372
         (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Tue, 20 Nov 2018 11:56:44 GMT
+        for <linux-btrfs@vger.kernel.org>; Tue, 20 Nov 2018 11:56:45 GMT
 Received: from abhmp0010.oracle.com (abhmp0010.oracle.com [141.146.116.16])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id wAKBuhEa004274
-        for <linux-btrfs@vger.kernel.org>; Tue, 20 Nov 2018 11:56:43 GMT
+        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id wAKBuig8004282
+        for <linux-btrfs@vger.kernel.org>; Tue, 20 Nov 2018 11:56:45 GMT
 Received: from tpasj.localdomain (/202.156.138.221)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Tue, 20 Nov 2018 03:56:43 -0800
+        with ESMTP ; Tue, 20 Nov 2018 03:56:44 -0800
 From:   Anand Jain <anand.jain@oracle.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH RESEND v2 1/2] btrfs: quieten warn if replace is canceled at finish
-Date:   Tue, 20 Nov 2018 19:56:15 +0800
-Message-Id: <1542714976-28502-2-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH RESEND v2 2/2] btrfs: user requsted replace cancel is not an error
+Date:   Tue, 20 Nov 2018 19:56:16 +0800
+Message-Id: <1542714976-28502-3-git-send-email-anand.jain@oracle.com>
 X-Mailer: git-send-email 1.8.3.1
 In-Reply-To: <1542714976-28502-1-git-send-email-anand.jain@oracle.com>
 References: <1542714976-28502-1-git-send-email-anand.jain@oracle.com>
 X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9082 signatures=668683
 X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=1 malwarescore=0
- phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=831
+ phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=850
  adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
  engine=8.0.1-1810050000 definitions=main-1811200108
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -68,42 +68,30 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-When we successfully cancel the replace its scrub returns -ECANCELED,
-which then passed to btrfs_dev_replace_finishing(), it cleans up based
-on the scrub returned status and propagates the same -ECANCELED back
-the parent function. As of now only user can cancel the replace-scrub,
-so its ok to quieten the warn here.
+As of now only user requested replace cancel can cancel the replace-scrub
+so no need to log error for it.
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
-[fix: quieten spelling]
-v1->v2: Use the condition within the WARN_ON()
+v1->v2: none.
 
- fs/btrfs/dev-replace.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ fs/btrfs/dev-replace.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index 1dc8e86546db..9031a362921a 100644
+index 9031a362921a..40a0942b4659 100644
 --- a/fs/btrfs/dev-replace.c
 +++ b/fs/btrfs/dev-replace.c
-@@ -497,7 +497,7 @@ static int btrfs_dev_replace_start(struct btrfs_fs_info *fs_info,
- 	ret = btrfs_dev_replace_finishing(fs_info, ret);
- 	if (ret == -EINPROGRESS) {
- 		ret = BTRFS_IOCTL_DEV_REPLACE_RESULT_SCRUB_INPROGRESS;
--	} else {
-+	} else if (ret != -ECANCELED) {
- 		WARN_ON(ret);
- 	}
- 
-@@ -954,7 +954,7 @@ static int btrfs_dev_replace_kthread(void *data)
- 			      btrfs_device_get_total_bytes(dev_replace->srcdev),
- 			      &dev_replace->scrub_progress, 0, 1);
- 	ret = btrfs_dev_replace_finishing(fs_info, ret);
--	WARN_ON(ret);
-+	WARN_ON(ret && ret != -ECANCELED);
- 
- 	clear_bit(BTRFS_FS_EXCL_OP, &fs_info->flags);
- 	return 0;
+@@ -622,7 +622,8 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
+ 								src_device,
+ 								tgt_device);
+ 	} else {
+-		btrfs_err_in_rcu(fs_info,
++		if (scrub_ret != -ECANCELED)
++			btrfs_err_in_rcu(fs_info,
+ 				 "btrfs_scrub_dev(%s, %llu, %s) failed %d",
+ 				 btrfs_dev_name(src_device),
+ 				 src_device->devid,
 -- 
 1.8.3.1
 

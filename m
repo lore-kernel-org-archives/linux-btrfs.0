@@ -6,30 +6,30 @@ X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E9B4DC43610
-	for <linux-btrfs@archiver.kernel.org>; Tue, 20 Nov 2018 08:46:43 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9DC7AC43610
+	for <linux-btrfs@archiver.kernel.org>; Tue, 20 Nov 2018 08:47:50 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id AF47A20851
-	for <linux-btrfs@archiver.kernel.org>; Tue, 20 Nov 2018 08:46:43 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org AF47A20851
+	by mail.kernel.org (Postfix) with ESMTP id 099C52075B
+	for <linux-btrfs@archiver.kernel.org>; Tue, 20 Nov 2018 08:46:35 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 099C52075B
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726116AbeKTTOk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 20 Nov 2018 14:14:40 -0500
-Received: from mx2.suse.de ([195.135.220.15]:56176 "EHLO mx1.suse.de"
+        id S1726101AbeKTTOb (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 20 Nov 2018 14:14:31 -0500
+Received: from mx2.suse.de ([195.135.220.15]:56158 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725851AbeKTTOk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 20 Nov 2018 14:14:40 -0500
+        id S1725917AbeKTTOb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 20 Nov 2018 14:14:31 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id C993CAE56
-        for <linux-btrfs@vger.kernel.org>; Tue, 20 Nov 2018 08:46:40 +0000 (UTC)
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 2CCB4AE56
+        for <linux-btrfs@vger.kernel.org>; Tue, 20 Nov 2018 08:46:31 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Subject: [PATCH] btrfs: qgroup: Skip delayed data ref for reloc trees
-Date:   Tue, 20 Nov 2018 16:46:36 +0800
-Message-Id: <20181120084636.31346-1-wqu@suse.com>
+Date:   Tue, 20 Nov 2018 16:46:27 +0800
+Message-Id: <20181120084627.31299-1-wqu@suse.com>
 X-Mailer: git-send-email 2.19.1
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit

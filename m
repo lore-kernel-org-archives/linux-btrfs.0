@@ -2,119 +2,88 @@ Return-Path: <SRS0=yZnd=N7=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS autolearn=unavailable autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A1C10C43441
-	for <linux-btrfs@archiver.kernel.org>; Tue, 20 Nov 2018 01:49:38 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 01FA8C43441
+	for <linux-btrfs@archiver.kernel.org>; Tue, 20 Nov 2018 02:45:20 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 253A520831
-	for <linux-btrfs@archiver.kernel.org>; Tue, 20 Nov 2018 01:49:38 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=seblu.net header.i=@seblu.net header.b="eMzMYn+P"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 253A520831
-Authentication-Results: mail.kernel.org; dmarc=fail (p=quarantine dis=none) header.from=seblu.net
+	by mail.kernel.org (Postfix) with ESMTP id BE5B02080C
+	for <linux-btrfs@archiver.kernel.org>; Tue, 20 Nov 2018 02:45:19 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org BE5B02080C
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=intel.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730292AbeKTMQM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 20 Nov 2018 07:16:12 -0500
-Received: from mail.seblu.net ([212.129.28.29]:43132 "EHLO mail.seblu.net"
+        id S1729913AbeKTNL6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 20 Nov 2018 08:11:58 -0500
+Received: from mga04.intel.com ([192.55.52.120]:13768 "EHLO mga04.intel.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726119AbeKTMQM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 20 Nov 2018 07:16:12 -0500
-Received: from localhost (localhost [IPv6:::1])
-        by mail.seblu.net (Postfix) with ESMTP id CD18952E006C;
-        Tue, 20 Nov 2018 02:49:33 +0100 (CET)
-Received: from mail.seblu.net ([IPv6:::1])
-        by localhost (mail.seblu.net [IPv6:::1]) (amavisd-new, port 10032)
-        with ESMTP id pZ6oohOFN9T5; Tue, 20 Nov 2018 02:49:33 +0100 (CET)
-Received: from localhost (localhost [IPv6:::1])
-        by mail.seblu.net (Postfix) with ESMTP id 1EDC152E00B8;
-        Tue, 20 Nov 2018 02:49:33 +0100 (CET)
-DKIM-Filter: OpenDKIM Filter v2.10.3 mail.seblu.net 1EDC152E00B8
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=seblu.net; s=pipa;
-        t=1542678573; bh=nABmuuk5YQUHnc5/iCmH89whGF+FAfyj9OYs3i+vNEw=;
-        h=Message-ID:From:To:Date:Mime-Version;
-        b=eMzMYn+Pz4hK+RKDJG2Uozko/dDQ3uTRq8oMSJqMMSovgEZLtAT9KknRtEO+/FYXL
-         9kcXxcn4V/6AJ4/g5krudkwS9i4P29FCzDzFy6YdrTOjNSdq6LUX9qkxOmA6yINWnF
-         1KWYcoeTZXaHa+CVu3Qvxngw8UitkbAmdjRyl8ZkH0V5Gym6YINsWZaUhz6Au5nfSy
-         g81614DQlg15Im0wMCnNxTjt2AkKlN0nRWvkbWg2Op8UySqvkayS9CDIEcg8z7q2gw
-         6T6DcAruV+4OckBxXJkgV/I2Q6DHXv3V2MblNspJPdHRNemDnn8fTVo7kwTDGhzp9w
-         T46+yavMlJGxQ==
-X-Virus-Scanned: amavisd-new at seblu.net
-Received: from mail.seblu.net ([IPv6:::1])
-        by localhost (mail.seblu.net [IPv6:::1]) (amavisd-new, port 10026)
-        with ESMTP id vY_cXjPZY7UZ; Tue, 20 Nov 2018 02:49:32 +0100 (CET)
-Received: from dolores (astlambert-681-1-17-132.w90-86.abo.wanadoo.fr [90.86.138.132])
-        by mail.seblu.net (Postfix) with ESMTPSA id C9F0E52E006C;
-        Tue, 20 Nov 2018 02:49:32 +0100 (CET)
-Message-ID: <09b7f7debf43d55fc17fac94f528a30f1f3789fa.camel@seblu.net>
-Subject: Re: Broken filesystem, looking for guidance
-From:   =?ISO-8859-1?Q?S=E9bastien?= Luttringer <seblu@seblu.net>
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
-Date:   Tue, 20 Nov 2018 02:49:32 +0100
-In-Reply-To: <22f635aa-ee0d-7f93-87fd-5d788124ebd6@gmx.com>
-References: <6e66eb52e4c13fc4206d742e1dade38b04592e49.camel@seblu.net>
-         <dff4ca38-50e2-7285-10f9-2a5081c5e420@gmx.com>
-         <59b638cccb17aa24f2aa5ddba15a5f3f9ad4c4eb.camel@seblu.net>
-         <67736550-3c2c-0ba6-81d4-d0cdc9a1d1eb@gmx.com>
-         <43ddede36c4d58bd12a9a4f549a9bf05cb9c0c1c.camel@seblu.net>
-         <22f635aa-ee0d-7f93-87fd-5d788124ebd6@gmx.com>
-Content-Type: multipart/signed; micalg="pgp-sha384";
-        protocol="application/pgp-signature"; boundary="=-U2ghrNbOSYQXRgS6WQm5"
-X-Mailer: Evolution 3.28.5 
-Mime-Version: 1.0
+        id S1725992AbeKTNL6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 20 Nov 2018 08:11:58 -0500
+X-Amp-Result: SKIPPED(no attachment in message)
+X-Amp-File-Uploaded: False
+Received: from orsmga002.jf.intel.com ([10.7.209.21])
+  by fmsmga104.fm.intel.com with ESMTP/TLS/DHE-RSA-AES256-GCM-SHA384; 19 Nov 2018 18:45:09 -0800
+X-ExtLoop1: 1
+X-IronPort-AV: E=Sophos;i="5.56,255,1539673200"; 
+   d="scan'208";a="109949215"
+Received: from yhuang-dev.sh.intel.com (HELO yhuang-dev) ([10.239.13.27])
+  by orsmga002.jf.intel.com with ESMTP; 19 Nov 2018 18:45:04 -0800
+From:   "Huang\, Ying" <ying.huang@intel.com>
+To:     Ming Lei <ming.lei@redhat.com>
+Cc:     Omar Sandoval <osandov@osandov.com>, Jens Axboe <axboe@kernel.dk>,
+        <linux-block@vger.kernel.org>, <linux-kernel@vger.kernel.org>,
+        <linux-mm@kvack.org>, Dave Chinner <dchinner@redhat.com>,
+        Kent Overstreet <kent.overstreet@gmail.com>,
+        "Mike Snitzer" <snitzer@redhat.com>, <dm-devel@redhat.com>,
+        Alexander Viro <viro@zeniv.linux.org.uk>,
+        <linux-fsdevel@vger.kernel.org>, Shaohua Li <shli@kernel.org>,
+        <linux-raid@vger.kernel.org>, <linux-erofs@lists.ozlabs.org>,
+        David Sterba <dsterba@suse.com>, <linux-btrfs@vger.kernel.org>,
+        "Darrick J . Wong" <darrick.wong@oracle.com>,
+        <linux-xfs@vger.kernel.org>, Gao Xiang <gaoxiang25@huawei.com>,
+        "Christoph Hellwig" <hch@lst.de>, Theodore Ts'o <tytso@mit.edu>,
+        <linux-ext4@vger.kernel.org>, Coly Li <colyli@suse.de>,
+        <linux-bcache@vger.kernel.org>, Boaz Harrosh <ooo@electrozaur.com>,
+        "Bob Peterson" <rpeterso@redhat.com>, <cluster-devel@redhat.com>
+Subject: Re: [PATCH V10 15/19] block: always define BIO_MAX_PAGES as 256
+References: <20181115085306.9910-1-ming.lei@redhat.com>
+        <20181115085306.9910-16-ming.lei@redhat.com>
+        <20181116015936.GJ23828@vader> <20181119090415.GM16736@ming.t460p>
+Date:   Tue, 20 Nov 2018 10:45:03 +0800
+In-Reply-To: <20181119090415.GM16736@ming.t460p> (Ming Lei's message of "Mon,
+        19 Nov 2018 17:04:16 +0800")
+Message-ID: <87o9ak8o28.fsf@yhuang-dev.intel.com>
+User-Agent: Gnus/5.13 (Gnus v5.13) Emacs/25.2 (gnu/linux)
+MIME-Version: 1.0
+Content-Type: text/plain; charset=ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+Ming Lei <ming.lei@redhat.com> writes:
 
---=-U2ghrNbOSYQXRgS6WQm5
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+> On Thu, Nov 15, 2018 at 05:59:36PM -0800, Omar Sandoval wrote:
+>> On Thu, Nov 15, 2018 at 04:53:02PM +0800, Ming Lei wrote:
+>> > Now multi-page bvec can cover CONFIG_THP_SWAP, so we don't need to
+>> > increase BIO_MAX_PAGES for it.
+>> 
+>> You mentioned to it in the cover letter, but this needs more explanation
+>> in the commit message. Why did CONFIG_THP_SWAP require > 256? Why does
+>> multipage bvecs remove that requirement?
+>
+> CONFIG_THP_SWAP needs to split one TH page into normal pages and adds
+> them all to one bio. With multipage-bvec, it just takes one bvec to
+> hold them all.
 
-On Mon, 2018-11-19 at 14:28 +0800, Qu Wenruo wrote:
->=20
-> On 2018/11/19 =E4=B8=8B=E5=8D=881:23, S=C3=A9bastien Luttringer wrote:
->=20
-> On Mon, 2018-11-19 at 13:00 +0800, Qu Wenruo wrote:
->=20
-> From 20181029, it may be possible with extra help from btrfs-progs
-> developers. But at current point, it's near impossible to recover it to
-> a fully functional state.
-> I understand the only solution is to rsync data to another server, format=
- and
-> rsync back ?
->=20
-> That's the basic idea.
+Yes.  CONFIG_THP_SWAP needs to put 512 normal sub-pages into one bio to
+write the 512 sub-pages together.  With the help of multipage-bvec, it
+needs just bvect to hold 512 normal sub-pages.
 
-Thanks for your help!
+Best Regards,
+Huang, Ying
 
-S=C3=A9bastien "Seblu" Luttringer
-
---=-U2ghrNbOSYQXRgS6WQm5
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part
-Content-Transfer-Encoding: 7bit
-
------BEGIN PGP SIGNATURE-----
-
-iQIrBAABCQAdFiEEVyJOyaX8pvvJK7iqShr8NF6+GPgFAlvzaCwACgkQShr8NF6+
-GPgy1Q+8C8U7mpqermYYuo2lgUwGdF5ntOGQuY6yjdEEJTO/58HBJAcp4/9zCdBX
-2CnlmRJ4oyuomgLe02ckLI++aiPzfDW4XGyc1WyBroZzIC/xfbLVjYBEhIKlD5hi
-NVGRdd+aWg97u0wdx2xEVkREO3g6IUxe6IZqP0pH4LeHdDULqJ5O1KfNZTNNKH+H
-G8Tq594Kx5ntE5hv0pMMg8ODYlHnzNu1afa3I7+zM+1Stj6V7Cy6PVlljP7mHbQE
-puoCEg2d4QwmEcxQaNcP/KPQNr61t71K5FvzHf8QnjlWjULhfhgwoQtcI4lEWHE3
-R54gPQ/eN/umWIa/KsEj3pSTtWDmRGh6+1WG2ELO/EQZRTgK3aY0NCiO9vPLzffH
-44KTJTRY3scNWCsZIz6CTDvF28fFKeLWqSO9ts5gy9CvU/vGB/w5GMCvOSeMNnf7
-pp7bV/2PxxqfaRgzMLs/aIMR1CupFrsBYxPPC2Z7YkltNcfvc/wdQwWiFAHwNAVo
-9lyIMn6zbcLZaf1mf+dbG4GCdcz/c4gRkjtrE+vChRUyccXTXNOQAYdvGwQL90wG
-jfDfVB6WTNwlXhdhTygKP0zahgsvywmm0K0NFlQscB1U/I/I2viv6de7/ZjO4R8S
-zpLdpud7iUywGg9Bct/vMgN2W0Wddkn6ZVhT4wzM
-=AFiy
------END PGP SIGNATURE-----
-
---=-U2ghrNbOSYQXRgS6WQm5--
-
+> thanks,
+> Ming

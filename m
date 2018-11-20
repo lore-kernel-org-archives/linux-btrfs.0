@@ -2,116 +2,166 @@ Return-Path: <SRS0=yZnd=N7=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-4.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4D69BC46463
-	for <linux-btrfs@archiver.kernel.org>; Tue, 20 Nov 2018 20:11:56 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 68290C46475
+	for <linux-btrfs@archiver.kernel.org>; Tue, 20 Nov 2018 21:09:33 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 23C3122513
-	for <linux-btrfs@archiver.kernel.org>; Tue, 20 Nov 2018 20:11:56 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 23C3122513
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=grimberg.me
+	by mail.kernel.org (Postfix) with ESMTP id EB62920685
+	for <linux-btrfs@archiver.kernel.org>; Tue, 20 Nov 2018 21:09:08 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org EB62920685
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727533AbeKUGmf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 21 Nov 2018 01:42:35 -0500
-Received: from mail-oi1-f196.google.com ([209.85.167.196]:43936 "EHLO
-        mail-oi1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725887AbeKUGme (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 21 Nov 2018 01:42:34 -0500
-Received: by mail-oi1-f196.google.com with SMTP id u18so2575541oie.10;
-        Tue, 20 Nov 2018 12:11:40 -0800 (PST)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=+nDOz9mjqo4L3rzgAR7CUb2HdO4CSp5KgwQNxh2bwe8=;
-        b=Xh3kdG12xmlmj21e7ZO8IEInjYVYIEQIrMm3zbzHJwrHOd2xnpumbiaCdLhfXCkzJC
-         BtXnhe9VqNaZgv1izOhaI4nU+9fS2pkNUHkJJEPb47s9Dg8ttKZud0taRZJFk0gjo9Vj
-         H8HQIfg/rSNHvyyrr66lNqMmRggNN8mmM1UWduw0VsXATL6UHPoxKjN5Fpl1P+9SLjqk
-         1oZHrvoBrV+4z9ibjWeS+H8R+uGuQS/Kktw/7gycGVj46w7W14PI1BBSnIdkpr6RqY2L
-         wp4AqUhsZfF0vzaxK+4aEiJVZPmglVHYfS5NIgvJtayY2jGRxiAoxIB8tagAmeBAbKZn
-         7OkQ==
-X-Gm-Message-State: AGRZ1gK5hztfaZOmTBrEGaWzaYP5pEobcP1sPjDpWNcLnJAGnc2H6cJn
-        z/1MRWvdzn3kXXhX+bxhIQo=
-X-Google-Smtp-Source: AJdET5f5ehNN96vcKRz2NXaqMQda85YBO55TqjtSMuwNpXqePnneNcb7NjbLve3qt0sZ+FBHzugBOA==
-X-Received: by 2002:a05:6808:13:: with SMTP id u19mr2037670oic.57.1542744699917;
-        Tue, 20 Nov 2018 12:11:39 -0800 (PST)
-Received: from ?IPv6:2600:1700:65a0:78e0:514:7862:1503:8e4d? ([2600:1700:65a0:78e0:514:7862:1503:8e4d])
-        by smtp.gmail.com with ESMTPSA id i35sm13742439ote.69.2018.11.20.12.11.36
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Tue, 20 Nov 2018 12:11:39 -0800 (PST)
-Subject: Re: [PATCH V10 09/19] block: introduce bio_bvecs()
-To:     Christoph Hellwig <hch@lst.de>
-Cc:     Ming Lei <ming.lei@redhat.com>, Jens Axboe <axboe@kernel.dk>,
-        linux-block@vger.kernel.org, linux-kernel@vger.kernel.org,
-        linux-mm@kvack.org, Dave Chinner <dchinner@redhat.com>,
-        Kent Overstreet <kent.overstreet@gmail.com>,
-        Mike Snitzer <snitzer@redhat.com>, dm-devel@redhat.com,
-        Alexander Viro <viro@zeniv.linux.org.uk>,
-        linux-fsdevel@vger.kernel.org, Shaohua Li <shli@kernel.org>,
-        linux-raid@vger.kernel.org, linux-erofs@lists.ozlabs.org,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
-        "Darrick J . Wong" <darrick.wong@oracle.com>,
-        linux-xfs@vger.kernel.org, Gao Xiang <gaoxiang25@huawei.com>,
-        Theodore Ts'o <tytso@mit.edu>, linux-ext4@vger.kernel.org,
-        Coly Li <colyli@suse.de>, linux-bcache@vger.kernel.org,
-        Boaz Harrosh <ooo@electrozaur.com>,
-        Bob Peterson <rpeterso@redhat.com>, cluster-devel@redhat.com
-References: <20181115085306.9910-1-ming.lei@redhat.com>
- <20181115085306.9910-10-ming.lei@redhat.com> <20181116134541.GH3165@lst.de>
- <002fe56b-25e4-573e-c09b-bb12c3e8d25a@grimberg.me>
- <20181120161651.GB2629@lst.de>
-From:   Sagi Grimberg <sagi@grimberg.me>
-Message-ID: <53526aae-fb9b-ee38-0a01-e5899e2d4e4d@grimberg.me>
-Date:   Tue, 20 Nov 2018 12:11:35 -0800
+        id S1726201AbeKUHkO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 21 Nov 2018 02:40:14 -0500
+Received: from mx2.suse.de ([195.135.220.15]:43454 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1725865AbeKUHkN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 21 Nov 2018 02:40:13 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 7EBBEACFF;
+        Tue, 20 Nov 2018 21:09:04 +0000 (UTC)
+Subject: Re: [PATCH v2] btrfs: Fix error handling in
+ btrfs_cleanup_ordered_extents
+To:     Josef Bacik <josef@toxicpanda.com>
+Cc:     dsterba@suse.com, linux-btrfs@vger.kernel.org, wqu@suse.com
+References: <1540554115-11226-1-git-send-email-nborisov@suse.com>
+ <20181120190050.u4pyaa6m5p5tck27@macbook-pro-91.dhcp.thefacebook.com>
+From:   Nikolay Borisov <nborisov@suse.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <1af84f15-4ef4-0aaf-60a4-f4c3275e08ba@suse.com>
+Date:   Tue, 20 Nov 2018 23:09:03 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <20181120161651.GB2629@lst.de>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <20181120190050.u4pyaa6m5p5tck27@macbook-pro-91.dhcp.thefacebook.com>
+Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
->>> The only user in your final tree seems to be the loop driver, and
->>> even that one only uses the helper for read/write bios.
->>>
->>> I think something like this would be much simpler in the end:
+
+On 20.11.18 г. 21:00 ч., Josef Bacik wrote:
+> On Fri, Oct 26, 2018 at 02:41:55PM +0300, Nikolay Borisov wrote:
+>> Running btrfs/124 in a loop hung up on me sporadically with the
+>> following call trace:
+>> 	btrfs           D    0  5760   5324 0x00000000
+>> 	Call Trace:
+>> 	 ? __schedule+0x243/0x800
+>> 	 schedule+0x33/0x90
+>> 	 btrfs_start_ordered_extent+0x10c/0x1b0 [btrfs]
+>> 	 ? wait_woken+0xa0/0xa0
+>> 	 btrfs_wait_ordered_range+0xbb/0x100 [btrfs]
+>> 	 btrfs_relocate_block_group+0x1ff/0x230 [btrfs]
+>> 	 btrfs_relocate_chunk+0x49/0x100 [btrfs]
+>> 	 btrfs_balance+0xbeb/0x1740 [btrfs]
+>> 	 btrfs_ioctl_balance+0x2ee/0x380 [btrfs]
+>> 	 btrfs_ioctl+0x1691/0x3110 [btrfs]
+>> 	 ? lockdep_hardirqs_on+0xed/0x180
+>> 	 ? __handle_mm_fault+0x8e7/0xfb0
+>> 	 ? _raw_spin_unlock+0x24/0x30
+>> 	 ? __handle_mm_fault+0x8e7/0xfb0
+>> 	 ? do_vfs_ioctl+0xa5/0x6e0
+>> 	 ? btrfs_ioctl_get_supported_features+0x30/0x30 [btrfs]
+>> 	 do_vfs_ioctl+0xa5/0x6e0
+>> 	 ? entry_SYSCALL_64_after_hwframe+0x3e/0xbe
+>> 	 ksys_ioctl+0x3a/0x70
+>> 	 __x64_sys_ioctl+0x16/0x20
+>> 	 do_syscall_64+0x60/0x1b0
+>> 	 entry_SYSCALL_64_after_hwframe+0x49/0xbe
 >>
->> The recently submitted nvme-tcp host driver should also be a user
->> of this. Does it make sense to keep it as a helper then?
+>> Turns out during page writeback it's possible that the code in
+>> writepage_delalloc can instantiate a delalloc range which doesn't
+>> belong to the page currently being written back. This happens since
+>> find_lock_delalloc_range returns up to BTRFS_MAX_EXTENT_SIZE delalloc
+>> range when asked and doens't really consider the range of the passed
+>> page. When such a foregin range is found the code proceeds to
+>> run_delalloc_range and calls the appropriate function to fill the
+>> delalloc and create ordered extents. If, however, a failure occurs
+>> while this operation is in effect then the clean up code in
+>> btrfs_cleanup_ordered_extents will be called. This function has the
+>> wrong assumption that caller of run_delalloc_range always properly
+>> cleans the first page of the range hence when it calls
+>> __endio_write_update_ordered it explicitly ommits the first page of
+>> the delalloc range. This is wrong because this function could be
+>> cleaning a delalloc range that doesn't belong to the current page. This
+>> in turn means that the page cleanup code in __extent_writepage will
+>> not really free the initial page for the range, leaving a hanging
+>> ordered extent with bytes_left set to 4k. This bug has been present
+>> ever since the original introduction of the cleanup code in 524272607e88.
+>>
+>> Fix this by correctly checking whether the current page belongs to the
+>> range being instantiated and if so correctly adjust the range parameters
+>> passed for cleaning up. If it doesn't, then just clean the whole OE
+>> range directly.
+>>
+>> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+>> Fixes: 524272607e88 ("btrfs: Handle delalloc error correctly to avoid ordered extent hang")
 > 
-> I did take a brief look at the code, and I really don't understand
-> why the heck it even deals with bios to start with.  Like all the
-> other nvme transports it is a blk-mq driver and should iterate
-> over segments in a request and more or less ignore bios.  Something
-> is horribly wrong in the design.
+> Can we just remove the endio cleanup in __extent_writepage() and make this do
+> the proper cleanup?  I'm not sure if that is feasible or not, but seems like it
+> would make the cleanup stuff less confusing and more straightforward.  If not
+> you can add
 
-Can you explain a little more? I'm more than happy to change that but
-I'm not completely clear how...
+Quickly skimming the code I think the cleanup in __extent_writepage
+could be moved into __extent_writepage_io where we have 2 branches that
+set PageError. So I guess it could be done, but I will have to
+experiment with it.
 
-Before we begin a data transfer, we need to set our own iterator that
-will advance with the progression of the data transfer. We also need to
-keep in mind that all the data transfer (both send and recv) are
-completely non blocking (and zero-copy when we send).
-
-That means that every data movement needs to be able to suspend
-and resume asynchronously. i.e. we cannot use the following pattern:
-rq_for_each_segment(bvec, rq, rq_iter) {
-	iov_iter_bvec(&iov_iter, WRITE, &bvec, 1, bvec.bv_len);
-	send(sock, iov_iter);
-}
-
-Given that a request can hold more than a single bio, I'm not clear on
-how we can achieve that without iterating over the bios in the request
-ourselves.
-
-Any useful insight?
+> 
+> Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+> 
+> Thanks,
+> 
+> Josef
+> 

@@ -3,62 +3,214 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-5.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 79FE3C04EBA
-	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Nov 2018 14:09:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3706FC43610
+	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Nov 2018 14:34:07 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 4C7C3214C4
-	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Nov 2018 14:09:51 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 4C7C3214C4
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
+	by mail.kernel.org (Postfix) with ESMTP id 00C7721479
+	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Nov 2018 14:34:07 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 00C7721479
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=lst.de
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729280AbeKVAoY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 21 Nov 2018 19:44:24 -0500
-Received: from mx2.suse.de ([195.135.220.15]:38176 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726671AbeKVAoY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 21 Nov 2018 19:44:24 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id B5AB4AF93;
-        Wed, 21 Nov 2018 14:09:48 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id D70D2DA871; Wed, 21 Nov 2018 15:09:30 +0100 (CET)
-Date:   Wed, 21 Nov 2018 15:09:30 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Christoph Hellwig <hch@lst.de>
-Cc:     linux-btrfs@vger.kernel.org, Ming Lei <ming.lei@redhat.com>,
-        Omar Sandoval <osandov@fb.com>, linux-block@vger.kernel.org
-Subject: Re: [PATCH 2/2] btrfs: look at bi_size for repair decisions
-Message-ID: <20181121140930.GN24115@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Christoph Hellwig <hch@lst.de>,
-        linux-btrfs@vger.kernel.org, Ming Lei <ming.lei@redhat.com>,
-        Omar Sandoval <osandov@fb.com>, linux-block@vger.kernel.org
-References: <20181121135908.4720-1-hch@lst.de>
- <20181121135908.4720-3-hch@lst.de>
+        id S1731014AbeKVBIi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 21 Nov 2018 20:08:38 -0500
+Received: from verein.lst.de ([213.95.11.211]:51717 "EHLO newverein.lst.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726778AbeKVBIh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 21 Nov 2018 20:08:37 -0500
+Received: by newverein.lst.de (Postfix, from userid 2407)
+        id E98EB68C19; Wed, 21 Nov 2018 15:33:55 +0100 (CET)
+Date:   Wed, 21 Nov 2018 15:33:55 +0100
+From:   Christoph Hellwig <hch@lst.de>
+To:     Ming Lei <ming.lei@redhat.com>
+Cc:     Jens Axboe <axboe@kernel.dk>, linux-block@vger.kernel.org,
+        linux-kernel@vger.kernel.org, linux-mm@kvack.org,
+        Theodore Ts'o <tytso@mit.edu>, Omar Sandoval <osandov@fb.com>,
+        Sagi Grimberg <sagi@grimberg.me>,
+        Dave Chinner <dchinner@redhat.com>,
+        Kent Overstreet <kent.overstreet@gmail.com>,
+        Mike Snitzer <snitzer@redhat.com>, dm-devel@redhat.com,
+        Alexander Viro <viro@zeniv.linux.org.uk>,
+        linux-fsdevel@vger.kernel.org, Shaohua Li <shli@kernel.org>,
+        linux-raid@vger.kernel.org, David Sterba <dsterba@suse.com>,
+        linux-btrfs@vger.kernel.org,
+        "Darrick J . Wong" <darrick.wong@oracle.com>,
+        linux-xfs@vger.kernel.org, Gao Xiang <gaoxiang25@huawei.com>,
+        Christoph Hellwig <hch@lst.de>, linux-ext4@vger.kernel.org,
+        Coly Li <colyli@suse.de>, linux-bcache@vger.kernel.org,
+        Boaz Harrosh <ooo@electrozaur.com>,
+        Bob Peterson <rpeterso@redhat.com>, cluster-devel@redhat.com
+Subject: Re: [PATCH V11 14/19] block: handle non-cluster bio out of
+ blk_bio_segment_split
+Message-ID: <20181121143355.GB2594@lst.de>
+References: <20181121032327.8434-1-ming.lei@redhat.com> <20181121032327.8434-15-ming.lei@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20181121135908.4720-3-hch@lst.de>
-User-Agent: Mutt/1.5.23.1 (2014-03-12)
+In-Reply-To: <20181121032327.8434-15-ming.lei@redhat.com>
+User-Agent: Mutt/1.5.17 (2007-11-01)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Nov 21, 2018 at 02:59:08PM +0100, Christoph Hellwig wrote:
-> bio_readpage_error currently uses bi_vcnt to decide if it is worth
-> retrying an I/O.  But the vector count is mostly an implementation
-> artifact - it really should figure out if there is more than a
-> single sector worth retrying.  Use bi_size for that and shift by
-> PAGE_SHIFT.  This really should be blocks/sectors, but given that
-> btrfs doesn't support a sector size different from the PAGE_SIZE
-> using the page size keeps the changes to a minimum.
-> 
-> Signed-off-by: Christoph Hellwig <hch@lst.de>
+> +			non-cluster.o
 
-Reviewed-by: David Sterba <dsterba@suse.com>
+Do we really need a new source file for these few functions?
+
+>  	default:
+> +		if (!blk_queue_cluster(q)) {
+> +			blk_queue_non_cluster_bio(q, bio);
+> +			return;
+
+I'd name this blk_bio_segment_split_singlepage or similar.
+
+> +static __init int init_non_cluster_bioset(void)
+> +{
+> +	WARN_ON(bioset_init(&non_cluster_bio_set, BIO_POOL_SIZE, 0,
+> +			   BIOSET_NEED_BVECS));
+> +	WARN_ON(bioset_integrity_create(&non_cluster_bio_set, BIO_POOL_SIZE));
+> +	WARN_ON(bioset_init(&non_cluster_bio_split, BIO_POOL_SIZE, 0, 0));
+
+Please only allocate the resources once a queue without the cluster
+flag is registered, there are only very few modern drivers that do that.
+
+> +static void non_cluster_end_io(struct bio *bio)
+> +{
+> +	struct bio *bio_orig = bio->bi_private;
+> +
+> +	bio_orig->bi_status = bio->bi_status;
+> +	bio_endio(bio_orig);
+> +	bio_put(bio);
+> +}
+
+Why can't we use bio_chain for the split bios?
+
+> +	bio_for_each_segment(from, *bio_orig, iter) {
+> +		if (i++ < max_segs)
+> +			sectors += from.bv_len >> 9;
+> +		else
+> +			break;
+> +	}
+
+The easy to read way would be:
+
+	bio_for_each_segment(from, *bio_orig, iter) {
+		if (i++ == max_segs)
+			break;
+		sectors += from.bv_len >> 9;
+	}
+
+> +	if (sectors < bio_sectors(*bio_orig)) {
+> +		bio = bio_split(*bio_orig, sectors, GFP_NOIO,
+> +				&non_cluster_bio_split);
+> +		bio_chain(bio, *bio_orig);
+> +		generic_make_request(*bio_orig);
+> +		*bio_orig = bio;
+
+I don't think this is very efficient, as this means we now
+clone the bio twice, first to split it at the sector boundary,
+and then again when converting it to single-page bio_vec.
+
+I think this could be something like this (totally untested):
+
+diff --git a/block/non-cluster.c b/block/non-cluster.c
+index 9c2910be9404..60389f275c43 100644
+--- a/block/non-cluster.c
++++ b/block/non-cluster.c
+@@ -13,58 +13,59 @@
+ 
+ #include "blk.h"
+ 
+-static struct bio_set non_cluster_bio_set, non_cluster_bio_split;
++static struct bio_set non_cluster_bio_set;
+ 
+ static __init int init_non_cluster_bioset(void)
+ {
+ 	WARN_ON(bioset_init(&non_cluster_bio_set, BIO_POOL_SIZE, 0,
+ 			   BIOSET_NEED_BVECS));
+ 	WARN_ON(bioset_integrity_create(&non_cluster_bio_set, BIO_POOL_SIZE));
+-	WARN_ON(bioset_init(&non_cluster_bio_split, BIO_POOL_SIZE, 0, 0));
+ 
+ 	return 0;
+ }
+ __initcall(init_non_cluster_bioset);
+ 
+-static void non_cluster_end_io(struct bio *bio)
+-{
+-	struct bio *bio_orig = bio->bi_private;
+-
+-	bio_orig->bi_status = bio->bi_status;
+-	bio_endio(bio_orig);
+-	bio_put(bio);
+-}
+-
+ void blk_queue_non_cluster_bio(struct request_queue *q, struct bio **bio_orig)
+ {
+-	struct bio *bio;
+ 	struct bvec_iter iter;
+-	struct bio_vec from;
+-	unsigned i = 0;
+-	unsigned sectors = 0;
+-	unsigned short max_segs = min_t(unsigned short, BIO_MAX_PAGES,
+-					queue_max_segments(q));
++	struct bio *bio;
++	struct bio_vec bv;
++	unsigned short max_segs, segs = 0;
++
++	bio = bio_alloc_bioset(GFP_NOIO, bio_segments(*bio_orig),
++			&non_cluster_bio_set);
++	bio->bi_disk		= (*bio_orig)->bi_disk;
++	bio->bi_partno		= (*bio_orig)->bi_partno;
++	bio_set_flag(bio, BIO_CLONED);
++	if (bio_flagged(*bio_orig, BIO_THROTTLED))
++		bio_set_flag(bio, BIO_THROTTLED);
++	bio->bi_opf		= (*bio_orig)->bi_opf;
++	bio->bi_ioprio		= (*bio_orig)->bi_ioprio;
++	bio->bi_write_hint	= (*bio_orig)->bi_write_hint;
++	bio->bi_iter.bi_sector	= (*bio_orig)->bi_iter.bi_sector;
++	bio->bi_iter.bi_size	= (*bio_orig)->bi_iter.bi_size;
++
++	if (bio_integrity(*bio_orig))
++		bio_integrity_clone(bio, *bio_orig, GFP_NOIO);
+ 
+-	bio_for_each_segment(from, *bio_orig, iter) {
+-		if (i++ < max_segs)
+-			sectors += from.bv_len >> 9;
+-		else
++	bio_clone_blkcg_association(bio, *bio_orig);
++
++	max_segs = min_t(unsigned short, queue_max_segments(q), BIO_MAX_PAGES);
++	bio_for_each_segment(bv, *bio_orig, iter) {
++		bio->bi_io_vec[segs++] = bv;
++		if (segs++ == max_segs)
+ 			break;
+ 	}
+ 
+-	if (sectors < bio_sectors(*bio_orig)) {
+-		bio = bio_split(*bio_orig, sectors, GFP_NOIO,
+-				&non_cluster_bio_split);
+-		bio_chain(bio, *bio_orig);
+-		generic_make_request(*bio_orig);
+-		*bio_orig = bio;
+-	}
+-	bio = bio_clone_bioset(*bio_orig, GFP_NOIO, &non_cluster_bio_set);
++	bio->bi_vcnt = segs;
++	bio->bi_phys_segments = segs;
++	bio_set_flag(bio, BIO_SEG_VALID);
++	bio_chain(bio, *bio_orig);
+ 
+-	bio->bi_phys_segments = bio_segments(bio);
+-        bio_set_flag(bio, BIO_SEG_VALID);
+-	bio->bi_end_io = non_cluster_end_io;
++	if (bio_integrity(bio))
++		bio_integrity_trim(bio);
++	bio_advance(bio, (*bio_orig)->bi_iter.bi_size);
+ 
+-	bio->bi_private = *bio_orig;
++	generic_make_request(*bio_orig);
+ 	*bio_orig = bio;
+ }
